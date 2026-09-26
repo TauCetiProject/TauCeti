@@ -102,7 +102,7 @@ theorem exists_isCoveringMap_comp_eq_proj (x₀ : X) {F : Type*} [TopologicalSpa
 
 This is the order-preserving half of the Galois correspondence between subgroups of `π₁(X, x₀)`
 and pointed connected covers of `(X, x₀)`. -/
-theorem exists_isCoveringMap_subgroupQuotientProj_comp_eq_iff_le [PathConnectedSpace X] (x₀ : X)
+theorem exists_isCoveringMap_subgroupQuotientProj_comp_eq_iff_le (x₀ : X)
     (H K : Subgroup (FundamentalGroup X x₀)) :
     (∃ g : C(SubgroupQuotient x₀ H, SubgroupQuotient x₀ K), IsCoveringMap g ∧
         g (SubgroupQuotient.basepoint x₀ H) = SubgroupQuotient.basepoint x₀ K ∧

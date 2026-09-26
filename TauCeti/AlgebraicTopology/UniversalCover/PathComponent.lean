@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.PathComponent
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.UniversalCover
+public import TauCeti.Topology.Covering.Clopen
 
 /-!
 # The universal cover of a non-path-connected base
@@ -33,6 +34,11 @@ path-component cover is `(π₁(X, x₀))ᵐᵒᵖ`, with the same opposite-grou
   `x₀`.
 * `TauCeti.UniversalCover.PathComponentCover`: the universal cover of the path component of `x₀`.
 * `TauCeti.UniversalCover.pathComponentCoverProj`: its projection down to `X`.
+* `TauCeti.UniversalCover.isCoveringMap_pathComponentCoverProj` and
+  `TauCeti.UniversalCover.range_pathComponentCoverProj`: it is a covering map of `X` with range
+  the path component of `x₀`.
+* `TauCeti.UniversalCover.existsUnique_continuousMap_lifts_pathComponentCoverProj`: the universal
+  lifting property, stated for maps into `X`.
 * `TauCeti.UniversalCover.deckPathComponentFundamentalGroupEquiv`: its deck group is
   `(π₁(X, x₀))ᵐᵒᵖ`.
 
@@ -69,6 +75,28 @@ abbrev PathComponentCover : Type _ := UniversalCover (pathComponentSelf x₀)
 projection followed by the inclusion of the path component. -/
 abbrev pathComponentCoverProj : PathComponentCover x₀ → X :=
   Subtype.val ∘ UniversalCover.proj
+
+/-- **The universal cover of a path component is a covering map into the ambient space.** The path
+component is clopen, so fibres over the other path components are empty and evenly covered by
+empty trivialisations. -/
+theorem isCoveringMap_pathComponentCoverProj : IsCoveringMap (pathComponentCoverProj x₀) :=
+  (UniversalCover.isCoveringMap (pathComponentSelf x₀)).subtypeVal_comp (IsClopen.pathComponent x₀)
+
+omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] in
+/-- The image of the path-component cover is exactly the path component of `x₀`. -/
+theorem range_pathComponentCoverProj :
+    Set.range (pathComponentCoverProj x₀) = pathComponent x₀ :=
+  (UniversalCover.proj_surjective.range_comp Subtype.val).trans Subtype.range_coe
+
+/-- **Universal property of the path-component cover.** A continuous map into `X` from a locally
+path connected, simply connected space lifts uniquely once the image of one point is prescribed.
+-/
+theorem existsUnique_continuousMap_lifts_pathComponentCoverProj {A : Type*} [TopologicalSpace A]
+    [LocallyPathConnectedSpace A] [SimplyConnectedSpace A] (f : C(A, X))
+    (a₀ : A) (e₀ : PathComponentCover x₀) (he : pathComponentCoverProj x₀ e₀ = f a₀) :
+    ∃! F : C(A, PathComponentCover x₀),
+      F a₀ = e₀ ∧ pathComponentCoverProj x₀ ∘ F = f :=
+  (isCoveringMap_pathComponentCoverProj x₀).existsUnique_continuousMap_lifts f a₀ e₀ he
 
 omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] in
 /-- Postcomposing the endpoint projection with the path-component inclusion does not change its

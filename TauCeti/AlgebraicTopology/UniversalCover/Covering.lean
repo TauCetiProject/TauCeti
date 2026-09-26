@@ -43,7 +43,8 @@ variable {x₀ x : X}
 
 /-- The endpoint projection `proj` is a covering map, assuming `X` is semilocally simply
 connected and locally path-connected. Fibres over points outside the path component of `x₀` are
-empty. -/
+empty. This proof is adapted from
+[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292). -/
 theorem isCoveringMap [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] (x₀ : X) :
     IsCoveringMap (proj (x₀ := x₀)) := by
   intro x

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.SubgroupQuotient
 public import TauCeti.Topology.Covering.Category
 public import TauCeti.Topology.Covering.Quotient
+import TauCeti.AlgebraicTopology.UniversalCover.PathComponent
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 import TauCeti.Topology.IsLocalHomeomorph
 
@@ -19,14 +20,12 @@ the orbit quotient of the universal cover by `H`, and `UniversalCover.subgroupQu
 is its descended endpoint projection. This file proves that the descended projection is a
 covering map.
 
-The two inputs are that `UniversalCover.proj` and `UniversalCover.subgroupQuotientMap` are
-quotient covering maps, for `π₁(X, x₀)` and for `H` respectively, and that the first factors
-through the second. `IsQuotientCoveringMap.isCoveringMap_of_comp` turns exactly that
-data into a covering map: the sheets of the descended projection over the image of a locally
-disjoint set `U` are the images of the translates of `U`. Nothing about good neighbourhoods of
-the base, their path-connectedness, or the transport of a sheet of `proj` along the
-fundamental-group action enters here, because the general statement uses only the disjointness
-built into `IsQuotientCoveringMap`.
+The proof restricts `UniversalCover.proj` to the path component of `x₀`, where it and
+`UniversalCover.subgroupQuotientMap` are quotient covering maps for `π₁(X, x₀)` and `H`
+respectively. `IsQuotientCoveringMap.isCoveringMap_of_comp` makes the descended map to that
+component a covering map. Since locally path-connected spaces have clopen path components,
+composing with the inclusion gives a covering map to `X`, with empty fibres over the other
+components.
 
 The conclusion is not inherited formally from the two quotient maps being covering maps: the
 deck group of `UniversalCover x₀ / H` over `X` is the normalizer quotient `N(H) / H`, which is
@@ -62,17 +61,48 @@ open CategoryTheory Topology
 
 /-- The endpoint projection on the quotient of the universal cover by `H` is a covering map. -/
 theorem isCoveringMap_subgroupQuotientProj [LocallyPathConnectedSpace X]
-    [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
-    (x₀ : X) (H : Subgroup (FundamentalGroup X x₀)) :
-    IsCoveringMap (subgroupQuotientProj x₀ H) :=
-  IsQuotientCoveringMap.isCoveringMap_of_comp (isQuotientCoveringMap (x₀ := x₀))
-    (isQuotientCoveringMap_subgroupQuotientMap x₀ H)
-    (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H)
+    [SemilocallySimplyConnectedSpace X] (x₀ : X)
+    (H : Subgroup (FundamentalGroup X x₀)) :
+    IsCoveringMap (subgroupQuotientProj x₀ H) := by
+  let p : UniversalCover x₀ → pathComponent x₀ := fun e =>
+    ⟨proj e, by rw [← range_proj x₀]; exact ⟨e, rfl⟩⟩
+  have hp : IsQuotientCoveringMap p (FundamentalGroup X x₀) := {
+    toIsQuotientMap :=
+      ({ surjective := fun x => by
+            have hx : (x : X) ∈ Set.range (proj : UniversalCover x₀ → X) := by
+              simpa only [range_proj] using x.2
+            obtain ⟨e, he⟩ := hx
+            exact ⟨e, Subtype.ext (by simpa only [p] using he)⟩
+         continuous := (continuous_proj x₀).codRestrict _
+         isOpenMap := (isCoveringMap x₀).isOpenMap.codRestrict _ } :
+        IsOpenQuotientMap p).isQuotientMap
+    continuous_const_smul g := continuous_const_smul g
+    apply_eq_iff_mem_orbit := by
+      intro e₁ e₂
+      simp only [p, Subtype.mk.injEq]
+      exact proj_eq_iff_mem_orbit
+    disjoint := exists_nhds_smul_disjoint }
+  let r : SubgroupQuotient x₀ H → pathComponent x₀ := fun y =>
+    ⟨subgroupQuotientProj x₀ H y, by
+      rw [← range_proj x₀]
+      obtain ⟨e, rfl⟩ := (isQuotientCoveringMap_subgroupQuotientMap x₀ H).surjective y
+      exact ⟨e, (congrFun (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H) e).symm⟩⟩
+  have hr : r ∘ subgroupQuotientMap x₀ H = p := by
+    funext e
+    apply Subtype.ext
+    exact congrFun (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H) e
+  have hr_cov : IsCoveringMap r := hp.isCoveringMap_of_comp
+    (isQuotientCoveringMap_subgroupQuotientMap x₀ H) hr
+  have hr_coe : Subtype.val ∘ r = subgroupQuotientProj x₀ H := by
+    funext y
+    rfl
+  rw [← hr_coe]
+  exact hr_cov.subtypeVal_comp (IsClopen.pathComponent x₀)
 
 /-- The quotient of the universal cover by a subgroup is locally path-connected, being the total
 space of a covering space of the locally path-connected base `X`. -/
 theorem locallyPathConnectedSpace_subgroupQuotient [LocallyPathConnectedSpace X]
-    [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X] (x₀ : X)
+    [SemilocallySimplyConnectedSpace X] (x₀ : X)
     (H : Subgroup (FundamentalGroup X x₀)) : LocallyPathConnectedSpace (SubgroupQuotient x₀ H) :=
   (isCoveringMap_subgroupQuotientProj x₀ H).isLocalHomeomorph.locallyPathConnectedSpace
 
