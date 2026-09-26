@@ -16,7 +16,7 @@ import Mathlib.GroupTheory.Perm.Cycle.Type
 /-!
 # A monoid algebra is non-reduced in the presence of `p`-torsion
 
-This file records the failure of the monoid algebra `R[G]` of a commutative monoid `G` to be
+This file records the failure of the monoid algebra `R[G]` of a monoid `G` to be
 reduced whenever `R` has prime characteristic `p` and `G` has a nontrivial element killed by `p`.
 
 The mechanism is the freshman's dream: if `g ≠ 1` with `g ^ p = 1`, then in characteristic `p`
@@ -33,7 +33,7 @@ nilpotent and `R[G]` is not reduced.
 * `TauCeti.not_isReduced_monoidAlgebra`: `R[G]` is not reduced when `G` has nontrivial
   `p`-torsion and `R` has characteristic `p`.
 * `TauCeti.not_isReduced_monoidAlgebra_of_not_isUnit_card`: over a field, noninvertibility
-  of the order of a finite commutative group forces its group algebra to be non-reduced.
+  of the order of a finite group forces its group algebra to be non-reduced.
 
 ## References
 
@@ -48,7 +48,7 @@ public section
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] {G : Type*} [CommMonoid G]
+variable {R : Type*} [CommRing R] {G : Type*} [Monoid G]
 variable (p : ℕ) [hp : Fact p.Prime] [CharP R p]
 
 /-- In characteristic `p`, the `p`-th power of `single g 1 - 1` vanishes when `g ^ p = 1`. -/
@@ -58,7 +58,8 @@ theorem single_sub_one_pow_eq_zero {g : G} (hgp : g ^ p = 1) :
   have : CharP (MonoidAlgebra R G) p :=
     charP_of_injective_algebraMap
       (FaithfulSMul.algebraMap_injective R (MonoidAlgebra R G)) p
-  rw [sub_pow_char, MonoidAlgebra.single_pow, one_pow, hgp, one_pow,
+  rw [sub_pow_char_of_commute p (Commute.one_right _), MonoidAlgebra.single_pow,
+    one_pow, hgp, one_pow,
     ← MonoidAlgebra.one_def, sub_self]
 
 /-- The group-like difference `single g 1 - 1` is nilpotent when `g ^ p = 1` in characteristic
@@ -77,10 +78,10 @@ theorem not_isReduced_monoidAlgebra [Nontrivial R] {g : G} (hg : g ≠ 1) (hgp :
   exact single_sub_one_ne_zero hg
     (isNilpotent_iff_eq_zero.mp (isNilpotent_single_sub_one (R := R) p hgp))
 
-/-- If the order of a finite commutative group vanishes in a field, its group algebra is
+/-- If the order of a finite group vanishes in a field, its group algebra is
 non-reduced. Cauchy's theorem supplies a nontrivial element of order the characteristic. -/
 theorem not_isReduced_monoidAlgebra_of_not_isUnit_card
-    (k G : Type*) [Field k] [CommGroup G] [Finite G]
+    (k G : Type*) [Field k] [Group G] [Finite G]
     (h : ¬ IsUnit (Nat.card G : k)) : ¬ IsReduced (MonoidAlgebra k G) := by
   rw [isUnit_iff_ne_zero] at h
   have hdiv : ringChar k ∣ Nat.card G :=
