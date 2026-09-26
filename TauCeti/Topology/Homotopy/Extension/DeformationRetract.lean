@@ -37,15 +37,6 @@ No closedness assumption on `A` is needed.
 * `TauCeti.HasHomotopyExtensionProperty.exists_strong_deformation_retraction_iff`: the
   characterisation of strong deformation retracts among such subsets.
 
-## Implementation notes
-
-Each of the first two results solves a single homotopy extension problem.  For the relative
-homotopy, let `h` be a homotopy from the identity of `X` to `r`.  For `a ∈ A` the path which runs
-along `h` from `a` to `r a = a` and back is contracted onto the constant path at `a` by a
-contraction that is constant on a triangle of the square `I × I` joining time `0` to time `1`.
-The contraction is extended over `X` as a homotopy with values in the path space `C(I, X)`, a
-space in the universe of `X`, and read off along that triangle.
-
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
