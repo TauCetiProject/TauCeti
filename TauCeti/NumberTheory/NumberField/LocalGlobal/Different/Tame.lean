@@ -89,7 +89,6 @@ theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff :
 
 /-- The global different exponent at `w` is `e(w/v) - 1` precisely when the canonical
 completed extension is tamely ramified. -/
-@[simp]
 theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff_isTamelyRamified :
     multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) =
       w.asIdeal.ramificationIdx (𝓞 K) - 1 ↔
@@ -102,7 +101,6 @@ theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff_isTamelyRamif
 
 /-- The global different exponent at `w` reaches `e(w/v)` precisely when the canonical
 completed extension is wildly ramified. -/
-@[simp]
 theorem ramificationIdx_le_multiplicity_differentIdeal_iff_isWildlyRamified :
     w.asIdeal.ramificationIdx (𝓞 K) ≤
       multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) ↔
