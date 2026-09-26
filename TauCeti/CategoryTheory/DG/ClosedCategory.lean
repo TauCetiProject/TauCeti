@@ -34,7 +34,6 @@ universe v u
 variable (R : Type v) [CommRing R] {C : Type u} [DGCategory R C]
 
 /-- The degree-zero component of a morphism in the underlying category of a DG category. -/
-@[expose]
 noncomputable def dgClosedHom
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
     DGHom R 0 (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
@@ -49,7 +48,7 @@ theorem dgClosedHom_def
     dgClosedHom R f =
       ((ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ) f).f 0).hom
         ((singleObjXSelf (ComplexShape.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv 1) :=
-  rfl
+  (rfl)
 
 /-- The degree-zero component of an underlying morphism is closed. -/
 theorem dgClosedHom_mem_dgCycles
