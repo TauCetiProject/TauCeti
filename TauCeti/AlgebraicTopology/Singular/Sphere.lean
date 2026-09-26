@@ -68,6 +68,9 @@ end Normed
 
 variable {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
 
+-- `reducedSingularHomologySuccIso` targets `singularHomologyFunctor`, while the
+-- Mayer–Vietoris connecting morphism starts at `TopCat.toSSet` homology. Ordinary
+-- singular homology is defined using `TopCat.toSSet`, so these objects are definitionally equal.
 private abbrev singularHomologyFunctor_obj_eq_toSSetHomology (n : ℕ) (X : TopCat.{w}) :
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X =
       (TopCat.toSSet.obj X).homology R n := rfl
@@ -76,6 +79,7 @@ private lemma singularHomologyFunctor_obj_eq_toSSetHomology_hom_comp
     (n : ℕ) (X : TopCat.{w}) {Y : C}
     (f : (TopCat.toSSet.obj X).homology R n ⟶ Y) :
     (eqToIso (singularHomologyFunctor_obj_eq_toSSetHomology R n X)).hom ≫ f = f := by
+  -- The equality above is `rfl`, so its `eqToIso` is the identity after reduction.
   change 𝟙 _ ≫ f = f
   exact Category.id_comp f
 
@@ -113,6 +117,7 @@ lemma reducedSingularHomologySphereSuccIso_hom (k : ℕ) :
   simp only [reducedSingularHomologySphereSuccIso, Iso.trans_hom, Iso.app_hom,
     reducedSingularHomologySuccIso_hom, ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom]
   simp only [singularHomologyFunctor_obj_eq_toSSetHomology_hom_comp, asIso_hom]
+  -- Both remaining compositions use the same `toSSet` homology object definitionally.
   rfl
 
 end TauCeti
