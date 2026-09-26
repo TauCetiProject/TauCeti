@@ -27,6 +27,41 @@ namespace NumericalType
 
 open Matrix
 
+/-- Two components of multiplicity one, weight two and genus one, meeting doubly: a numerical
+type of signed genus three. -/
+noncomputable abbrev twoComponentWeightTwoExample : NumericalType.{0} where
+  Component := Fin 2
+  multiplicity _ := 1
+  weight _ := 2
+  intersection := !![-2, 2; 2, -2]
+  intersection_isSymm := Matrix.IsSymm.ext fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl
+  offDiagonal_nonneg i j h := by
+    fin_cases i <;> fin_cases j <;> first | exact absurd rfl h | decide
+  connected := by
+    have key : ∀ i j : Fin 2, i ≠ j → (0 : ℤ) < !![(-2 : ℤ), 2; 2, -2] i j := by
+      intro i j h
+      fin_cases i <;> fin_cases j <;> first | exact absurd rfl h | decide
+    intro i j
+    rcases eq_or_ne i j with rfl | h
+    · exact Relation.ReflTransGen.refl
+    · exact Relation.ReflTransGen.single ⟨h, key i j h⟩
+  fiber_relation i := by fin_cases i <;> decide
+  weight_dvd i j := by fin_cases i <;> fin_cases j <;> decide
+  genus _ := 1
+
+/-- The two-component weight-two example has signed genus three. -/
+@[simp]
+lemma twoComponentWeightTwoExample_arithmeticGenus :
+    twoComponentWeightTwoExample.arithmeticGenus = 3 := by
+  rw [arithmeticGenus_def]
+  decide
+
+example :
+    ({ twoComponentWeightTwoExample with genus := fun _ ↦ 0 } : NumericalType).arithmeticGenus =
+      -1 := by
+  rw [arithmeticGenus_def]
+  decide
+
 /-- The weighted intersection matrix of the two-component weight-two example. -/
 @[simp]
 lemma twoComponentWeightTwoExample_weightedIntersection :
@@ -35,10 +70,13 @@ lemma twoComponentWeightTwoExample_weightedIntersection :
   fin_cases i <;> fin_cases j <;>
     norm_num [weightedIntersection_apply, twoComponentWeightTwoExample]
 
-private lemma twoComponentWeightTwoExample_intersection :
+/-- The intersection matrix of the two-component weight-two example. -/
+@[simp]
+lemma twoComponentWeightTwoExample_intersection :
     twoComponentWeightTwoExample.intersection = !![-2, 2; 2, -2] := rfl
 
 /-- The principal multidegrees in the weight-two example are exactly the pairs with sum zero. -/
+@[simp]
 theorem twoComponentWeightTwoExample_mem_principalDivisors_iff (d : Fin 2 → ℤ) :
     d ∈ twoComponentWeightTwoExample.principalDivisors ↔ d 0 + d 1 = 0 := by
   rw [twoComponentWeightTwoExample.mem_principalDivisors_iff]
@@ -73,7 +111,7 @@ private lemma twoComponentWeightTwoExample_ker_sum :
 
 /-- The weighted Picard group of the two-component example is infinite cyclic, with a
 multidegree sent to the sum of its two coordinates. -/
-noncomputable def twoComponentWeightTwoExamplePicEquivInt :
+noncomputable def twoComponentWeightTwoExamplePicLinearEquivInt :
     twoComponentWeightTwoExample.Pic ≃ₗ[ℤ] ℤ :=
   (Submodule.quotEquivOfEq _ _ twoComponentWeightTwoExample_ker_sum.symm) |>.trans
     (twoComponentWeightTwoExampleSum.quotKerEquivOfSurjective
@@ -81,22 +119,23 @@ noncomputable def twoComponentWeightTwoExamplePicEquivInt :
 
 /-- The Picard-class isomorphism is the sum of multidegrees. -/
 @[simp]
-theorem twoComponentWeightTwoExamplePicEquivInt_mk (d : Fin 2 → ℤ) :
-    twoComponentWeightTwoExamplePicEquivInt (Submodule.Quotient.mk d) = d 0 + d 1 := by
-  simp only [twoComponentWeightTwoExamplePicEquivInt, LinearEquiv.trans_apply,
+theorem twoComponentWeightTwoExamplePicLinearEquivInt_mk (d : Fin 2 → ℤ) :
+    twoComponentWeightTwoExamplePicLinearEquivInt (Submodule.Quotient.mk d) = d 0 + d 1 := by
+  simp only [twoComponentWeightTwoExamplePicLinearEquivInt, LinearEquiv.trans_apply,
     Submodule.quotEquivOfEq_mk]
   rw [LinearMap.quotKerEquivOfSurjective_apply_mk]
   simp [twoComponentWeightTwoExampleSum]
 
+/-- The weighted Picard group of the two-component example is torsion-free. -/
+instance twoComponentWeightTwoExample_isTorsionFree_pic :
+    Module.IsTorsionFree ℤ twoComponentWeightTwoExample.Pic :=
+  twoComponentWeightTwoExamplePicLinearEquivInt.injective.moduleIsTorsionFree _ (map_smul _)
+
 /-- The weighted Picard group has no nonzero two-torsion. -/
-theorem twoComponentWeightTwoExample_pic_no_two_torsion
+theorem twoComponentWeightTwoExample_pic_eq_zero_of_two_smul_eq_zero
     (x : twoComponentWeightTwoExample.Pic) (hx : (2 : ℤ) • x = 0) :
-    x = 0 := by
-  apply twoComponentWeightTwoExamplePicEquivInt.injective
-  have h := congrArg twoComponentWeightTwoExamplePicEquivInt hx
-  simp only [map_smul, map_zero, smul_eq_mul] at h
-  have hz : twoComponentWeightTwoExamplePicEquivInt x = 0 := by omega
-  simpa using hz
+    x = 0 :=
+  (smul_eq_zero_iff_right two_ne_zero).mp hx
 
 /-- The raw intersection cokernel of the weight-two example contains nonzero two-torsion:
 the class of `(1, -1)` has order two. -/
