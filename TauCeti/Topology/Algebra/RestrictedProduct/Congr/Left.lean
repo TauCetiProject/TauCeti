@@ -29,7 +29,9 @@ The identification is stated at two levels.
 * `restrictedProductCongrLeft U e` is the same equivalence as a multiplicative equivalence, for a
   family `U` of reference sets closed under multiplication, and `restrictedProductReindex U e` is
   its inverse, `x ↦ (j ↦ x (e j))`.  The latter is the orientation in which a restricted product
-  is decomposed along a finite set of indices, by reindexing along `Equiv.sumCompl`.
+  is decomposed along a finite set of indices, by reindexing along `Equiv.sumCompl`.  Both are
+  also stated for additive reference families (`addRestrictedProductCongrLeft`,
+  `addRestrictedProductReindex`).
 
 The statement shape and the pinning equation `… y (e j) = y j` follow the declarations
 `Equiv.restrictedProductCongrLeft` and `MulEquiv.restrictedProductCongrLeft` of the FLT project
@@ -133,6 +135,10 @@ variable (U : ∀ i, S i) (e : ι' ≃ ι)
 /-- Reindexing a restricted product along an equivalence `e : ι' ≃ ι` of index types, as a
 multiplicative equivalence, from the restricted product of the pulled-back family over `ι'` to
 the restricted product over `ι`.  The image of `y` has coordinate `y j` at `e j`. -/
+@[to_additive addRestrictedProductCongrLeft /-- Reindexing a restricted product along an
+equivalence `e : ι' ≃ ι` of index types, as an additive equivalence, from the restricted product
+of the pulled-back family over `ι'` to the restricted product over `ι`.  The image of `y` has
+coordinate `y j` at `e j`. -/]
 def restrictedProductCongrLeft : (Πʳ j, [G (e j), U (e j)]) ≃* (Πʳ i, [G i, U i]) where
   toEquiv := restrictedProductCongrLeftEquiv (fun i ↦ (U i : Set (G i))) e
   map_mul' y z := by
@@ -142,6 +148,8 @@ def restrictedProductCongrLeft : (Πʳ j, [G (e j), U (e j)]) ≃* (Πʳ i, [G i
 
 /-- The underlying equivalence of `restrictedProductCongrLeft` is the reindexing equivalence of
 the underlying reference sets. -/
+@[to_additive addRestrictedProductCongrLeft_toEquiv /-- The underlying equivalence of
+`addRestrictedProductCongrLeft` is the reindexing equivalence of the underlying reference sets. -/]
 theorem restrictedProductCongrLeft_toEquiv :
     (restrictedProductCongrLeft U e : (Πʳ j, [G (e j), U (e j)]) ≃ (Πʳ i, [G i, U i])) =
       restrictedProductCongrLeftEquiv (fun i ↦ (U i : Set (G i))) e := by
@@ -149,7 +157,9 @@ theorem restrictedProductCongrLeft_toEquiv :
 
 /-- The reindexed element has coordinate `y j` at `e j`; as `e` is surjective, this pins
 `restrictedProductCongrLeft`. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongrLeft_apply_apply /-- The additively reindexed
+element has coordinate `y j` at `e j`; as `e` is surjective, this pins
+`addRestrictedProductCongrLeft`. -/]
 theorem restrictedProductCongrLeft_apply_apply (y : Πʳ j, [G (e j), U (e j)]) (j : ι') :
     restrictedProductCongrLeft U e y (e j) = y j := by
   rw [← MulEquiv.coe_toEquiv, restrictedProductCongrLeft_toEquiv,
@@ -158,6 +168,8 @@ theorem restrictedProductCongrLeft_apply_apply (y : Πʳ j, [G (e j), U (e j)]) 
 -- Not `@[simp]`: `simp` rewrites the left side by `restrictedProductCongrLeft_symm` and
 -- `restrictedProductReindex_apply`.
 /-- The inverse of `restrictedProductCongrLeft` sends `x` to `j ↦ x (e j)`. -/
+@[to_additive addRestrictedProductCongrLeft_symm_apply /-- The inverse of
+`addRestrictedProductCongrLeft` sends `x` to `j ↦ x (e j)`. -/]
 theorem restrictedProductCongrLeft_symm_apply (x : Πʳ i, [G i, U i]) (j : ι') :
     (restrictedProductCongrLeft U e).symm x j = x (e j) := by
   rw [← MulEquiv.coe_toEquiv, MulEquiv.toEquiv_symm, restrictedProductCongrLeft_toEquiv,
@@ -165,23 +177,29 @@ theorem restrictedProductCongrLeft_symm_apply (x : Πʳ i, [G i, U i]) (j : ι')
 
 /-- Reindexing a restricted product along an equivalence `e : ι' ≃ ι` of index types, in the
 orientation `x ↦ (j ↦ x (e j))`: the inverse of `restrictedProductCongrLeft`. -/
+@[to_additive addRestrictedProductReindex /-- Reindexing a restricted product along an equivalence
+`e : ι' ≃ ι` of index types, as an additive equivalence, in the orientation
+`x ↦ (j ↦ x (e j))`: the inverse of `addRestrictedProductCongrLeft`. -/]
 def restrictedProductReindex : (Πʳ i, [G i, U i]) ≃* (Πʳ j, [G (e j), U (e j)]) :=
   (restrictedProductCongrLeft U e).symm
 
 /-- The inverse of `restrictedProductCongrLeft` is `restrictedProductReindex`. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongrLeft_symm /-- The inverse of
+`addRestrictedProductCongrLeft` is `addRestrictedProductReindex`. -/]
 theorem restrictedProductCongrLeft_symm :
     (restrictedProductCongrLeft U e).symm = restrictedProductReindex U e :=
   (rfl)
 
 /-- The inverse of `restrictedProductReindex` is `restrictedProductCongrLeft`. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductReindex_symm /-- The inverse of
+`addRestrictedProductReindex` is `addRestrictedProductCongrLeft`. -/]
 theorem restrictedProductReindex_symm :
     (restrictedProductReindex U e).symm = restrictedProductCongrLeft U e :=
   (rfl)
 
 /-- `restrictedProductReindex` sends `x` to `j ↦ x (e j)`. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductReindex_apply /-- `addRestrictedProductReindex`
+sends `x` to `j ↦ x (e j)`. -/]
 theorem restrictedProductReindex_apply (x : Πʳ i, [G i, U i]) (j : ι') :
     restrictedProductReindex U e x j = x (e j) :=
   restrictedProductCongrLeft_symm_apply U e x j
@@ -190,6 +208,8 @@ theorem restrictedProductReindex_apply (x : Πʳ i, [G i, U i]) (j : ι') :
 -- `restrictedProductCongrLeft_apply_apply`.
 /-- The inverse of `restrictedProductReindex` has coordinate `y j` at `e j`; as `e` is
 surjective, this pins it. -/
+@[to_additive addRestrictedProductReindex_symm_apply /-- The inverse of
+`addRestrictedProductReindex` has coordinate `y j` at `e j`; as `e` is surjective, this pins it. -/]
 theorem restrictedProductReindex_symm_apply (y : Πʳ j, [G (e j), U (e j)]) (j : ι') :
     (restrictedProductReindex U e).symm y (e j) = y j :=
   restrictedProductCongrLeft_apply_apply U e y j
@@ -197,21 +217,29 @@ theorem restrictedProductReindex_symm_apply (y : Πʳ j, [G (e j), U (e j)]) (j 
 variable [∀ i, TopologicalSpace (G i)]
 
 /-- `restrictedProductCongrLeft` is continuous for every reference family. -/
+@[to_additive continuous_addRestrictedProductCongrLeft /-- `addRestrictedProductCongrLeft` is
+continuous for every reference family. -/]
 theorem continuous_restrictedProductCongrLeft : Continuous (restrictedProductCongrLeft U e) := by
   rw [← MulEquiv.coe_toEquiv, restrictedProductCongrLeft_toEquiv]
   exact continuous_restrictedProductCongrLeftEquiv _ e
 
 /-- The inverse of `restrictedProductCongrLeft` is continuous for every reference family. -/
+@[to_additive continuous_addRestrictedProductCongrLeft_symm /-- The inverse of
+`addRestrictedProductCongrLeft` is continuous for every reference family. -/]
 theorem continuous_restrictedProductCongrLeft_symm :
     Continuous (restrictedProductCongrLeft U e).symm := by
   rw [← MulEquiv.coe_toEquiv, MulEquiv.toEquiv_symm, restrictedProductCongrLeft_toEquiv]
   exact continuous_restrictedProductCongrLeftEquiv_symm _ e
 
 /-- `restrictedProductReindex` is continuous for every reference family. -/
+@[to_additive continuous_addRestrictedProductReindex /-- `addRestrictedProductReindex` is continuous
+for every reference family. -/]
 theorem continuous_restrictedProductReindex : Continuous (restrictedProductReindex U e) :=
   continuous_restrictedProductCongrLeft_symm U e
 
 /-- The inverse of `restrictedProductReindex` is continuous for every reference family. -/
+@[to_additive continuous_addRestrictedProductReindex_symm /-- The inverse of
+`addRestrictedProductReindex` is continuous for every reference family. -/]
 theorem continuous_restrictedProductReindex_symm :
     Continuous (restrictedProductReindex U e).symm :=
   continuous_restrictedProductCongrLeft U e

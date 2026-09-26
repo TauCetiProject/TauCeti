@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
+public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 
 /-!
 # Orienting a simple graph and recovering its doubled quiver
@@ -30,6 +31,9 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver`: the quiver of the chosen darts.
 * `TauCeti.DoubledQuiver.OrientedQuiver.homEquiv`: its arrows over a pair of graph vertices are
   exactly the adjacency proofs whose dart the orientation selects.
+* `TauCeti.DoubledQuiver.OrientedQuiver.card_hom_ofLinearOrder` and
+  `TauCeti.DoubledQuiver.OrientedQuiver.isAcyclic_ofLinearOrder`: arrow counts and acyclicity for
+  the linear-order orientation.
 * `TauCeti.DoubledQuiver.symmetrifyMap`: the canonical prefunctor from the symmetrification of an
   oriented graph to its doubled quiver.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
@@ -183,6 +187,50 @@ theorem homEquiv_symm_apply {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G
 theorem exists_eq_arrow {i j : V} (e : vertex G o i ⟶ vertex G o j) :
     ∃ (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o), e = arrow G o h ho :=
   ⟨(homEquiv G o i j e).1, (homEquiv G o i j e).2, Subsingleton.elim _ _⟩
+
+/-- For the linear-order orientation, there is one arrow from `i` to `j` exactly when `i < j`
+and the vertices are adjacent. -/
+@[simp]
+theorem card_hom_ofLinearOrder [LinearOrder V] (i j : V) [Decidable (i < j ∧ G.Adj i j)] :
+    Nat.card (vertex G (Orientation.ofLinearOrder G) i ⟶
+        vertex G (Orientation.ofLinearOrder G) j) =
+      if i < j ∧ G.Adj i j then 1 else 0 := by
+  rw [Nat.card_congr (homEquiv G (Orientation.ofLinearOrder G) i j)]
+  simp only [Orientation.mem_ofLinearOrder_iff]
+  split_ifs with h
+  · exact Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ ↦ Subtype.ext rfl⟩, ⟨⟨h.2, h.1⟩⟩⟩
+  · exact @Nat.card_of_isEmpty _ ⟨fun p ↦ h ⟨p.2, p.1⟩⟩
+
+private theorem path_length_zero_or_lt_ofLinearOrder [LinearOrder V]
+    {a b : OrientedQuiver G (Orientation.ofLinearOrder G)}
+    (p : _root_.Quiver.Path a b) : p.length = 0 ∨
+      (vertexEquiv G (Orientation.ofLinearOrder G)).symm a <
+        (vertexEquiv G (Orientation.ofLinearOrder G)).symm b := by
+  induction p with
+  | nil => exact Or.inl rfl
+  | @cons b c p e ih =>
+    right
+    have he : (vertexEquiv G (Orientation.ofLinearOrder G)).symm b <
+        (vertexEquiv G (Orientation.ofLinearOrder G)).symm c := by
+      have he' := (homEquiv G (Orientation.ofLinearOrder G)
+        ((vertexEquiv G (Orientation.ofLinearOrder G)).symm b)
+        ((vertexEquiv G (Orientation.ofLinearOrder G)).symm c)
+        (by simpa only [← vertexEquiv_apply, Equiv.apply_symm_apply] using e)).2
+      simpa only [Orientation.mem_ofLinearOrder_iff] using he'
+    rcases ih with hp | hp
+    · rw [(Path.eq_of_length_zero p hp)]
+      exact he
+    · exact lt_trans hp he
+
+/-- Orienting every edge of a graph from the smaller vertex to the larger makes an acyclic
+quiver. -/
+theorem isAcyclic_ofLinearOrder [LinearOrder V] :
+    TauCeti.Quiver.IsAcyclic (OrientedQuiver G (Orientation.ofLinearOrder G)) := by
+  apply TauCeti.Quiver.isAcyclic_def.mpr
+  intro a p
+  rcases path_length_zero_or_lt_ofLinearOrder G p with hp | hp
+  · exact p.eq_nil_of_length_zero hp
+  · exact (lt_irrefl _ hp).elim
 
 /-- An orientation has one arrow, in total across the two directions, over each edge. -/
 theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :

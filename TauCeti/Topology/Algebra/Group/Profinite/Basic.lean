@@ -33,6 +33,8 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
 
 * `Subgroup.eq_iInf_sup_openNormalSubgroup`: a closed subgroup is the infimum of the
   subgroups `N ⊔ U` with `U` open normal.
+* `Subgroup.exists_le_of_iInf_le_of_directed`: in a compact group, a directed family of closed
+  subgroups whose infimum lies in an open subgroup has a member lying in it.
 * `Subgroup.exists_openNormalSubgroup_comap_le`: open normal subgroups of a subgroup are
   refined by pullbacks of ambient open normal subgroups.
 * `QuotientGroup.connectedComponent_one`, `QuotientGroup.instTotallyDisconnectedSpace`:
@@ -97,6 +99,21 @@ theorem _root_.Subgroup.eq_iInf_sup_openNormalSubgroup (N : Subgroup G)
   obtain ⟨U₀, hU₀⟩ :=
     ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hKopen (Subgroup.one_mem K)
   exact hxK ((sup_le hKN fun y hy => hU₀ hy) (Subgroup.mem_iInf.mp hx U₀))
+
+omit [IsTopologicalGroup G] [TotallyDisconnectedSpace G] in
+/-- **Compactness for directed families of closed subgroups.** In a compact group, if the
+infimum of a downward directed family of closed subgroups lies in an open subgroup `M`, then
+already one member of the family does. -/
+theorem _root_.Subgroup.exists_le_of_iInf_le_of_directed {ι : Type*} [Nonempty ι]
+    {U : ι → Subgroup G} (hU : ∀ i, IsClosed (U i : Set G)) (hdir : Directed (· ≥ ·) U)
+    {M : Subgroup G} (hM : IsOpen (M : Set G)) (h : ⨅ i, U i ≤ M) : ∃ i, U i ≤ M := by
+  have hc : IsCompact ((M : Set G)ᶜ) := hM.isClosed_compl.isCompact
+  obtain ⟨i, hi⟩ := hc.elim_directed_family_closed (fun i ↦ (U i : Set G)) hU
+    (Set.disjoint_compl_left_iff_subset.mpr fun x hx ↦
+      h (Subgroup.mem_iInf.mpr (Set.mem_iInter.mp hx)))
+    (fun i j ↦ (hdir i j).imp fun k hk ↦
+      ⟨SetLike.coe_subset_coe.mpr hk.1, SetLike.coe_subset_coe.mpr hk.2⟩)
+  exact ⟨i, fun x hx ↦ by_contra fun hxM ↦ hi.notMem_of_mem_left hxM hx⟩
 
 /-- Every open normal subgroup of a subgroup of a profinite group contains the pullback of
 an ambient open normal subgroup. -/

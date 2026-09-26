@@ -39,8 +39,9 @@ fix a single universe for the ring and the category.
   object and it is an essential epimorphism.
 * `TauCeti.exists_essentialEpi_projective`: **every object of `ModuleCat R` over a semiprimary ring
   receives an essential epimorphism from a projective object.**
-* `TauCeti.exists_projectiveCover`: the same for a module over a finite-dimensional algebra, with
-  the two clauses of essentiality written out.
+* `TauCeti.exists_projectiveCover`: the same for a module over a ring finite over an Artinian ring,
+  such as a finite-dimensional algebra over a field, with the two clauses of essentiality written
+  out.
 
 ## References
 
@@ -119,16 +120,16 @@ theorem exists_essentialEpi_projective (R : Type u) [Ring R] [IsSemiprimaryRing 
     rwa [ModuleCat.hom_ofHom]
   exact ⟨_, _, hcov.projective_obj, hcov.isEssentialEpi⟩
 
-/-- **Every object of `ModuleCat A` over a finite-dimensional algebra `A` has a projective
-cover.** A finite-dimensional algebra is an Artinian ring, hence semiprimary, so this is
-`TauCeti.exists_essentialEpi_projective` read through that instance; no finiteness is required of
-the module. Essentiality is spelled out here as its two clauses, so that the statement is usable
-without unfolding `TauCeti.IsEssentialEpi`. -/
-theorem exists_projectiveCover {k : Type v} [Field k] {A : Type u} [Ring A] [Algebra k A]
-    [FiniteDimensional k A] (M : ModuleCat.{u} A) :
+/-- **Every object of `ModuleCat A` over a ring `A` finite over an Artinian ring has a projective
+cover.** Here `K` is an Artinian ring acting on `A` compatibly with its multiplication, with `A`
+finite as a `K`-module; for instance, `A` may be a finite-dimensional algebra over a field. No
+finiteness is required of the module. Essentiality is spelled out here as its two clauses, so that
+the statement is usable without unfolding `TauCeti.IsEssentialEpi`. -/
+theorem exists_projectiveCover (K : Type v) [Ring K] [IsArtinianRing K] {A : Type u} [Ring A]
+    [Module K A] [IsScalarTower K A A] [Module.Finite K A] (M : ModuleCat.{u} A) :
     ∃ (P : ModuleCat.{u} A) (π : P ⟶ M), Projective P ∧ Epi π ∧
       ∀ (X : ModuleCat.{u} A) (i : X ⟶ P), Epi (i ≫ π) → Epi i := by
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
+  have : IsArtinianRing A := IsArtinianRing.of_finite K A
   obtain ⟨P, π, hP, hπ⟩ := exists_essentialEpi_projective A M
   exact ⟨P, π, hP, hπ.epi, fun _ i => hπ.epi_of_epi_comp i⟩
 

@@ -5,15 +5,16 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.RepresentationTheory.GaloisDescent.Range
+public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.RingTheory.Flat.Basic
 import TauCeti.Algebra.TensorProduct.BaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Galois invariants of a scalar extension
 
-For a finite Galois extension `L/k`, the elements of `L ⊗[k] A` fixed by the scalar-factor
+For a Galois extension `L/k`, the elements of `L ⊗[k] A` fixed by the scalar-factor
 action are precisely the tensors `1 ⊗ a`. This identifies the original vector space inside its
 scalar extension, in arbitrary characteristic. An algebra morphism between scalar extensions
 therefore descends uniquely if and only if it commutes with the scalar-factor Galois action.
@@ -38,37 +39,33 @@ open scoped TensorProduct
 namespace TauCeti.GaloisDescent
 
 variable {k L A : Type*} [Field k] [Field L] [Algebra k L]
-variable [AddCommGroup A] [Module k A] [FiniteDimensional k L] [IsGalois k L]
+variable [AddCommGroup A] [Module k A] [IsGalois k L]
 
-/-- The fixed elements of a scalar extension along a finite Galois extension are exactly
+/-- The fixed elements of a scalar extension along a Galois extension are exactly
 the image of the original vector space. -/
 theorem tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq (x : L ⊗[k] A) :
     (∀ σ : L ≃ₐ[k] L, TensorProduct.map σ.toLinearMap LinearMap.id x = x) ↔
       ∃ a : A, 1 ⊗ₜ[k] a = x := by
-  let ρ : Representation k (L ≃ₐ[k] L) (L ⊗[k] A) :=
-    { toFun := fun σ ↦ TensorProduct.map σ.toLinearMap LinearMap.id
-      map_one' := by ext; simp
-      map_mul' := by intros; ext; simp }
-  let f : A →ₗ[k] L ⊗[k] A := TensorProduct.mk k L A 1
-  have hrange : LinearMap.range f = ρ.invariants :=
-    GaloisDescent.range_eq_invariants_of_liftBaseChange_surjective
-      (k := k) (L := L) (ρ := ρ) (f := f)
-      (fun σ a y ↦ by
-        induction y using TensorProduct.inductionOn with
-        | add x y hx hy => simp only [smul_add, map_add, hx, hy]
-        | tmul b c => simp [ρ, TensorProduct.smul_tmul', map_mul])
-      (fun σ a ↦ by simp [ρ, f])
-      (fun y ↦ ⟨y, by
-        induction y using TensorProduct.inductionOn with
-        | add x y hx hy => simp only [map_add, hx, hy]
-        | tmul a b =>
-            simp only [LinearMap.liftBaseChange_tmul, f, TensorProduct.mk_apply]
-            exact (TensorProduct.smul_tmul' a (1 : L) b).trans (by simp)⟩)
-  have hx : (∀ σ : L ≃ₐ[k] L, TensorProduct.map σ.toLinearMap LinearMap.id x = x) ↔
-      x ∈ ρ.invariants := by
-    simp [Representation.mem_invariants, ρ]
-  rw [hx, ← hrange]
-  simp only [LinearMap.mem_range, f, TensorProduct.mk_apply]
+  classical
+  let b := Module.Free.chooseBasis k A
+  constructor
+  · intro hx
+    have hc (i) : ∃ c : k, algebraMap k L c = (b.baseChange L).repr x i := by
+      apply (InfiniteGalois.mem_range_algebraMap_iff_fixed _).mpr
+      intro σ
+      exact (b.map_baseChange_repr σ.toLinearMap x i).trans
+        (congrArg (fun y ↦ (b.baseChange L).repr y i) (hx σ))
+    choose c hc using hc
+    refine ⟨∑ i ∈ ((b.baseChange L).repr x).support, c i • b i, ?_⟩
+    conv_rhs => rw [← (b.baseChange L).linearCombination_repr x]
+    simp only [TensorProduct.tmul_sum, TensorProduct.tmul_smul,
+      Finsupp.linearCombination_apply, Finsupp.sum, Module.Basis.baseChange_apply]
+    apply Finset.sum_congr rfl
+    intro i hi
+    rw [← hc i]
+    simp [Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul']
+  · rintro ⟨a, rfl⟩ σ
+    simp
 
 end TauCeti.GaloisDescent
 
@@ -76,7 +73,7 @@ namespace AlgHom
 
 variable {k L A B : Type*} [Field k] [Field L] [Algebra k L]
 variable [Semiring A] [Semiring B] [Algebra k A] [Algebra k B]
-variable [FiniteDimensional k L] [IsGalois k L]
+variable [IsGalois k L]
 
 variable (F : L ⊗[k] A →ₐ[L] L ⊗[k] B)
 variable (hF : ∀ (σ : L ≃ₐ[k] L) (x : L ⊗[k] A),
@@ -126,7 +123,7 @@ theorem map_galoisDescend :
     TensorProduct.tmul_eq_smul_one_tmul l a, map_smul,
     ← one_tmul_galoisDescend F hF, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
 
-/-- An algebra morphism over a finite Galois extension descends uniquely exactly when it
+/-- An algebra morphism over a Galois extension descends uniquely exactly when it
 commutes with the scalar-factor Galois action. -/
 theorem existsUnique_map_eq_iff :
     (∃! f : A →ₐ[k] B, Algebra.TensorProduct.map (AlgHom.id L L) f = F) ↔

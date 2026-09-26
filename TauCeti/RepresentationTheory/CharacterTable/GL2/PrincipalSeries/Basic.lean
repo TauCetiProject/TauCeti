@@ -51,6 +51,8 @@ representation is not proved here.
   representation associated to `TauCeti.GL2Borel.linearChar`.
 * `TauCeti.GL2BorelRep_def`: the bundled Borel representation is `TauCeti.GL2Borel.linearRep`, the
   form to reason from when the action itself, and not only its character, is needed.
+* `TauCeti.GL2Borel.nonempty_iso_borelRep_iff`: two inducing Borel lines are isomorphic exactly
+  when their ordered parameter pairs agree.
 * `TauCeti.finrank_GL2PrincipalSeries` and `TauCeti.character_one_GL2PrincipalSeries`: the
   principal series has dimension `q + 1`.
 
@@ -86,7 +88,7 @@ on the index type `Fin 2`, and carrying an unused instance argument would be fla
 
 public section
 
-open Matrix
+open CategoryTheory Matrix
 
 namespace TauCeti
 
@@ -215,6 +217,21 @@ theorem character_GL2BorelRep (α β : Fˣ →* ℂˣ) (g : GL2Borel F) :
   GL2Borel.character_linearRep (R := F) (k := ℂ) α β g
 
 end CommRing
+
+namespace GL2Borel
+
+variable {F : Type*} [CommRing F]
+
+/-- **The inducing Borel lines remember their ordered parameter pair.** Two representations
+`α ⊗ β` and `γ ⊗ δ` of the Borel subgroup are isomorphic exactly when `α = γ` and `β = δ`. -/
+@[simp]
+theorem nonempty_iso_borelRep_iff (α β γ δ : Fˣ →* ℂˣ) :
+    Nonempty (GL2BorelRep F α β ≅ GL2BorelRep F γ δ) ↔ α = γ ∧ β = δ := by
+  rw [GL2BorelRep_def, GL2BorelRep_def, linearRep_def, linearRep_def,
+    ← FDRep.ofLinearCharacter_def, ← FDRep.ofLinearCharacter_def,
+    FDRep.nonempty_iso_ofLinearCharacter_iff, linearChar_inj]
+
+end GL2Borel
 
 /-! ### The principal series -/
 

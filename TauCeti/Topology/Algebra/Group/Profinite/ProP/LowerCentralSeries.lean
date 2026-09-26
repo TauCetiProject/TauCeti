@@ -92,8 +92,6 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
     let U : OpenSubgroup G := ⟨pLowerCentralSeries p G k, ih⟩
     have : CompactSpace U.toSubgroup :=
       isCompact_iff_compactSpace.mp (isClosed_pLowerCentralSeries k).isCompact
-    have hopen : IsOpen (proPFrattini p U.toSubgroup : Set U.toSubgroup) :=
-      (hG.of_openSubgroup U).isOpen_proPFrattini p
     -- The Frattini subgroup of `λ_k` maps into `λ_{k+1}`.
     have hle : (proPFrattini p U.toSubgroup).map U.toSubgroup.subtype ≤
         pLowerCentralSeries p G (k + 1) := by
@@ -105,9 +103,7 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
         (le_sup_of_le_right (commutator_mono (map_subtype_le _) le_top))
       rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
       exact Subgroup.subset_closure ⟨x, x.2, (Subgroup.coe_pow _ x p).symm⟩
-    refine isOpen_mono hle ?_
-    rw [coe_map, coe_subtype]
-    exact ih.isOpenMap_subtype_val _ hopen
+    exact isOpen_mono hle (hG.isOpen_map_subtype_proPFrattini p U)
 
 /-- For a prime `p`, in a topologically finitely generated profinite group every quotient
 `G ⧸ λ_k` is finite. -/

@@ -464,8 +464,7 @@ theorem not_hasCancellation_of_isNormTwistOnGood {χ : UnitaryIdealWeight K} {u 
       UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
   have hne : (NumberField.dedekindZeta_residue K : ℂ) *
       ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ)) ≠ 0 :=
-    mul_ne_zero (by exact_mod_cast (NumberField.dedekindZeta_residue_pos K).ne')
-      (prod_one_sub_absNorm_cpow_neg_ne_zero S (by simp))
+    dedekindZeta_residue_mul_prod_one_sub_absNorm_cpow_neg_one_ne_zero S
   exact hne (tendsto_nhds_unique ((hχ.tendsto_sub_one_mul_LSeries hS).congr' heq) hzero)
 
 /-- **A weight that is trivial on its good ideals has no cancellation**: its `L`-series is the

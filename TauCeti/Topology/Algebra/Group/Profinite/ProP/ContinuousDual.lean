@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Topology.Algebra.ContinuousZModDual
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!

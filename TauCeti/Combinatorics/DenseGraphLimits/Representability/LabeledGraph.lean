@@ -24,7 +24,10 @@ underlying connection matrices and reflection positivity.
 * `TauCeti.DenseGraphLimits.LabeledGraph.glue` glues two of them along their labels;
 * `TauCeti.DenseGraphLimits.LabeledGraph.glueInl` and
   `TauCeti.DenseGraphLimits.LabeledGraph.glueInr` are the two vertex maps into the gluing;
-* `TauCeti.DenseGraphLimits.LabeledGraph.forgetLabels` is the underlying unlabeled graph.
+* `TauCeti.DenseGraphLimits.LabeledGraph.forgetLabels` is the underlying unlabeled graph;
+* `TauCeti.DenseGraphLimits.LabeledGraph.labelSumUnlabeledEquiv` and
+  `TauCeti.DenseGraphLimits.LabeledGraph.glueEquiv` are the coordinates splitting the vertices of a
+  labeled graph, and of a gluing, into labels and unlabeled vertices.
 
 ## Main results
 
@@ -46,7 +49,12 @@ underlying connection matrices and reflection positivity.
 * `TauCeti.DenseGraphLimits.LabeledGraph.glueCommIso` is the commutativity of the gluing algebra,
   the isomorphism between the two orders of a gluing that makes connection matrices symmetric, and
   `TauCeti.DenseGraphLimits.LabeledGraph.glueCommIso_label` says it retains the labels, so it is an
-  isomorphism of `k`-labeled graphs and commutativity survives a further gluing.
+  isomorphism of `k`-labeled graphs and commutativity survives a further gluing;
+* `TauCeti.DenseGraphLimits.LabeledGraph.glue_adj_label` says two labels of a gluing are joined
+  exactly when they are joined on one side, and
+  `TauCeti.DenseGraphLimits.LabeledGraph.glueInl_labelSumUnlabeledEquiv` and
+  `TauCeti.DenseGraphLimits.LabeledGraph.glueInr_labelSumUnlabeledEquiv` express the two vertex
+  maps into a gluing in coordinates.
 
 ## Implementation
 
@@ -494,6 +502,80 @@ theorem glueCommIso_label (G₁ G₂ : LabeledGraph k) (i : Fin k) :
     G₁.glueCommIso G₂ ((G₁.glue G₂).label i) = (G₂.glue G₁).label i := by
   rw [congrFun (glueInl_label G₁ G₂) i]
   exact (glueCommEquiv_glueInl G₁ G₂ (G₁.label i)).trans (congrFun (glueInr_label G₂ G₁) i).symm
+
+/-! ### Coordinates
+
+The vertices of a `k`-labeled graph split into its labels and its unlabeled vertices, and the
+vertices of a gluing split into the shared labels and the unlabeled vertices of the two sides.
+These splittings are the coordinates in which a vertex assignment of a gluing is a labeled part
+together with one private part for each side. -/
+
+/-- The vertices of a `k`-labeled graph are its `k` labels together with its unlabeled
+vertices. -/
+noncomputable def labelSumUnlabeledEquiv (G : LabeledGraph k) : Fin k ⊕ G.Unlabeled ≃ Fin G.n :=
+  ((Equiv.ofInjective G.label G.label_injective).sumCongr
+    (Equiv.subtypeEquivRight (fun a => by simp only [Set.mem_range]; push Not; rfl))).trans
+      (Equiv.sumCompl (· ∈ Set.range G.label))
+
+@[simp]
+theorem labelSumUnlabeledEquiv_inl (G : LabeledGraph k) (i : Fin k) :
+    G.labelSumUnlabeledEquiv (Sum.inl i) = G.label i := (rfl)
+
+@[simp]
+theorem labelSumUnlabeledEquiv_inr (G : LabeledGraph k) (a : G.Unlabeled) :
+    G.labelSumUnlabeledEquiv (Sum.inr a) = a := (rfl)
+
+/-- The vertices of a gluing are the shared labels together with the unlabeled vertices of each
+side. -/
+noncomputable def glueEquiv (G₁ G₂ : LabeledGraph k) :
+    Fin k ⊕ (G₁.Unlabeled ⊕ G₂.Unlabeled) ≃ Fin (G₁.glue G₂).n :=
+  G₁.glueIndex G₂
+
+@[simp]
+theorem glueEquiv_inl (G₁ G₂ : LabeledGraph k) (i : Fin k) :
+    G₁.glueEquiv G₂ (Sum.inl i) = (G₁.glue G₂).label i := (rfl)
+
+@[simp]
+theorem glueEquiv_inr_inl (G₁ G₂ : LabeledGraph k) (a : G₁.Unlabeled) :
+    G₁.glueEquiv G₂ (Sum.inr (Sum.inl a)) = G₁.glueInl G₂ a := by
+  rw [glueInl_apply, glueLeft_of_unlabeled G₁ G₂ a.2]
+  rfl
+
+@[simp]
+theorem glueEquiv_inr_inr (G₁ G₂ : LabeledGraph k) (b : G₂.Unlabeled) :
+    G₁.glueEquiv G₂ (Sum.inr (Sum.inr b)) = G₁.glueInr G₂ b := by
+  rw [glueInr_apply, glueRight_of_unlabeled G₁ G₂ b.2]
+  rfl
+
+/-- In coordinates, the left vertex map of a gluing sends the labels to the shared labels and the
+unlabeled vertices to the private left summand. -/
+@[simp]
+theorem glueInl_labelSumUnlabeledEquiv (G₁ G₂ : LabeledGraph k) (s : Fin k ⊕ G₁.Unlabeled) :
+    G₁.glueInl G₂ (G₁.labelSumUnlabeledEquiv s) = G₁.glueEquiv G₂ (Sum.map id Sum.inl s) := by
+  rcases s with i | a
+  · rw [labelSumUnlabeledEquiv_inl, Sum.map_inl, glueEquiv_inl, glueInl_label,
+      Function.comp_apply, id]
+  · rw [labelSumUnlabeledEquiv_inr, Sum.map_inr, glueEquiv_inr_inl]
+
+/-- In coordinates, the right vertex map of a gluing sends the labels to the shared labels and the
+unlabeled vertices to the private right summand. -/
+@[simp]
+theorem glueInr_labelSumUnlabeledEquiv (G₁ G₂ : LabeledGraph k) (s : Fin k ⊕ G₂.Unlabeled) :
+    G₁.glueInr G₂ (G₂.labelSumUnlabeledEquiv s) = G₁.glueEquiv G₂ (Sum.map id Sum.inr s) := by
+  rcases s with i | b
+  · rw [labelSumUnlabeledEquiv_inl, Sum.map_inl, glueEquiv_inl, glueInr_label,
+      Function.comp_apply, id]
+  · rw [labelSumUnlabeledEquiv_inr, Sum.map_inr, glueEquiv_inr_inr]
+
+/-- **Adjacency between labels.**  Two labels of a gluing are joined exactly when they are joined
+on one of the two sides. -/
+@[simp]
+theorem glue_adj_label (G₁ G₂ : LabeledGraph k) (i j : Fin k) :
+    (G₁.glue G₂).graph.Adj ((G₁.glue G₂).label i) ((G₁.glue G₂).label j) ↔
+      G₁.graph.Adj (G₁.label i) (G₁.label j) ∨ G₂.graph.Adj (G₂.label i) (G₂.label j) := by
+  rw [congrFun (glueInl_label G₁ G₂) i, congrFun (glueInl_label G₁ G₂) j, Function.comp_apply,
+    Function.comp_apply, glue_adj_inl]
+  simp [G₁.label_injective.eq_iff]
 
 end LabeledGraph
 

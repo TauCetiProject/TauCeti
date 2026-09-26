@@ -35,8 +35,9 @@ integrally closed, then swallows everything integral over `k[x]`.
 * `TauCeti.Place.adjoin_le_integers_iff`: `k[x] ⊆ 𝒪_P` exactly when `x ∈ 𝒪_P`.
 * `TauCeti.Place.center`: the height one prime of an affine model below a place finite on it,
   with `TauCeti.Place.valuation_center` identifying the adic valuation of that prime with the
-  valuation of the place, and `TauCeti.Place.center_injective` showing that a place finite on a
-  model is determined by its centre.
+  valuation of the place, `TauCeti.Place.center_injective` showing that a place finite on a
+  model is determined by its centre, and `TauCeti.Place.comap_center_asIdeal` showing that the
+  centre on a larger model contracts to the centre on a smaller one.
 * `TauCeti.Place.existsUnique_valuation_eq`: the uniqueness statement, and
   `TauCeti.Place.valuationSubringAtPrime_eq_integers`: the valuation ring of the place is the
   localization of the model at the centre.
@@ -115,6 +116,15 @@ theorem mem_center_asIdeal_iff_ord_pos {r : R} (hr : r ≠ 0) :
   rw [mem_center_asIdeal, P.valuation_eq_exp_neg_ord hr', ← WithZero.exp_zero (M := ℤ),
     WithZero.exp_lt_exp]
   omega
+
+/-- **The centre is compatible with enlarging the model**: if the model `R` sits inside a second
+model `B` with the same fraction field `F`, the centre of `P` on `B` contracts to the centre of
+`P` on `R`. -/
+theorem comap_center_asIdeal {B : Type*} [CommRing B] [Algebra B F] [IsFractionRing B F]
+    [Algebra R B] [IsScalarTower R B F] (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    (P.center hB).asIdeal.comap (algebraMap R B) = (P.center hR).asIdeal := by
+  ext r
+  rw [Ideal.mem_comap, mem_center_asIdeal, mem_center_asIdeal, IsScalarTower.algebraMap_apply R B F]
 
 section Dedekind
 

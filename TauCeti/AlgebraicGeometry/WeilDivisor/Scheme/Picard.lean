@@ -291,12 +291,9 @@ def isoSheafOfCoeffEq
       WeilDivisor.coeff D y = -X.ord (trivializationGeneratorRationalUnit M e hU t : _) y) :
     M ≅ sheaf D :=
   have : IsIso (sheafLift D _ (rationalTrivializationHom_app_mem_sections hD)) :=
-    Hom.isIso_iff_isIso_app.mpr fun W ↦ by
-      rw [ConcreteCategory.isIso_iff_bijective]
-      refine ⟨fun a b hab ↦ rationalTrivializationHom_app_injective M e hU W ?_, fun q ↦ ?_⟩
-      · simpa only [sheafι_app_sheafLift] using congrArg (Hom.app (sheafι D) W) hab
-      · obtain ⟨s, hs⟩ := exists_rationalTrivializationHom_app_eq hX hD W (sheafι_app_mem D W q)
-        exact ⟨s, sheafι_app_injective D W (by rw [sheafι_app_sheafLift, hs])⟩
+    isIso_sheafLift D _ (rationalTrivializationHom_app_mem_sections hD)
+      (rationalTrivializationHom_app_injective M e hU)
+      (exists_rationalTrivializationHom_app_eq hX hD)
   asIso (sheafLift D _ (rationalTrivializationHom_app_mem_sections hD))
 
 /-- The isomorphism `isoSheafOfCoeffEq`, followed by the inclusion `𝒪_X(D) ⟶ 𝒦_X`, is the

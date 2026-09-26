@@ -48,6 +48,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 * `TauCeti.Huber.IsAdic.comap`: an adic topology transports along a ring equivalence that is an
   inducing map. This is what lets a ring of definition carry an ideal of definition that natively
   lives in a merely equivalent ring, which is what `TauCeti.Huber.PairOfDefinition` needs.
+* `TauCeti.Huber.IsTateRing.of_continuous`: a continuous homomorphism out of a Tate ring makes a
+  Huber target Tate.
 * `TauCeti.Huber.IsHuberRing.toNonarchimedeanRing`: a Huber ring is nonarchimedean.
 * `TauCeti.Huber.IsHuberRing.isCountablyGenerated_nhds_zero`: its neighbourhoods of zero are
   countably generated. With the previous bullet these are exactly the two hypotheses Henkel's open
@@ -225,6 +227,16 @@ theorem IsAdic.comap (e : B ≃+* A) (he : IsInducing e) {I : Ideal A} (h : IsAd
     obtain ⟨t, ht, hts⟩ := hs
     obtain ⟨n, hn⟩ := hnhds t ht
     exact ⟨n, by rw [hset n]; exact fun b hb ↦ hts (hn hb)⟩
+
+/-- **A continuous homomorphism out of a Tate ring makes a Huber target Tate** (Wedhorn,
+*Adic Spaces*, Proposition 6.25): the image of a pseudouniformiser of `A` is a pseudouniformiser
+of `B`.
+
+The target must already be known to be Huber; this supplies only the pseudouniformiser. -/
+theorem IsTateRing.of_continuous {F : Type*} [IsTateRing A] [IsHuberRing B] [FunLike F A B]
+    [MonoidWithZeroHomClass F A B] {φ : F} (hφ : Continuous φ) : IsTateRing B where
+  exists_isPseudoUniformizer :=
+    (IsTateRing.exists_isPseudoUniformizer (A := A)).imp' φ fun _ ha ↦ ha.map hφ
 
 end Transport
 

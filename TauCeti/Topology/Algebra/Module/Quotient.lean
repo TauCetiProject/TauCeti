@@ -35,6 +35,7 @@ theorem discreteTopology_of_isOpen (p : Submodule R M) (hp : IsOpen (p : Set M))
     DiscreteTopology (M ⧸ p) :=
   QuotientAddGroup.discreteTopology (N := p.toAddSubgroup) hp
 
+omit [SeparatelyContinuousAdd M] in
 /-- The quotient of a discrete topological module by a submodule is discrete. -/
 instance discreteTopology [DiscreteTopology M] (p : Submodule R M) : DiscreteTopology (M ⧸ p) :=
   discreteTopology_of_isOpen p (isOpen_discrete _)

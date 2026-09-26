@@ -20,8 +20,9 @@ for every finite graph.  Here `U` and `W` may live on different probability spac
 standard-Borel, atomlessness, or common-carrier assumption is needed.
 
 This is the easy direction of the inverse-counting/separation theorem.  The converse — equality of
-all homomorphism densities implies cut distance zero — is the hard inverse-counting theorem and
-belongs in the subsequent separation development.
+all homomorphism densities implies cut distance zero — is the inverse counting lemma
+`TauCeti.DenseGraphLimits.cutDist_eq_zero_of_forall_homDensity_eq` in
+`TauCeti.Combinatorics.DenseGraphLimits.Separation.Inverse`.
 
 ## Main results
 

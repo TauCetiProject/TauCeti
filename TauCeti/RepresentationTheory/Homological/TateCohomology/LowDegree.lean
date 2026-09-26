@@ -418,6 +418,14 @@ def HNegTwoAddEquivTensorOfIsTrivial :
     (TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).app A
   e.toLinearEquiv.toAddEquiv.trans (H1AddEquivOfIsTrivial A)
 
+/-- The degree `-2` Tate identification factors through the comparison with first homology. -/
+theorem HNegTwoAddEquivTensorOfIsTrivial_apply (x : tateCohomology A (-2)) :
+    HNegTwoAddEquivTensorOfIsTrivial A x =
+      H1AddEquivOfIsTrivial A
+        ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app A x) := by
+  rw [HNegTwoAddEquivTensorOfIsTrivial]
+  rfl
+
 -- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.
 /-- The degree-`-2` identification sends the homology class represented by `(g, a)` to the
 elementary tensor `⟦g⟧ ⊗ₜ a`. -/
