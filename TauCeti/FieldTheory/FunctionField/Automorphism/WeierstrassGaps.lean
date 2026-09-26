@@ -62,7 +62,6 @@ theorem isPoleNumber_smul_iff : (σ • P).IsPoleNumber n ↔ P.IsPoleNumber n :
   · exact IsPoleNumber.smul σ P n
 
 /-- Gaps at the image of a place are precisely its original gaps. -/
-@[simp]
 theorem isGap_smul_iff : (σ • P).IsGap n ↔ P.IsGap n := by
   simp only [isGap_iff_not_isPoleNumber, isPoleNumber_smul_iff σ P n]
 
