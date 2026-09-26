@@ -299,10 +299,16 @@ theorem kostantToralGroupScheme_eq_hopfSpec :
 
 /-- Algebra-valued points of the toral closure, transported to scheme-valued points. -/
 noncomputable def kostantToralSchemePointMulEquiv (A : Type) [CommRing A] :
+    letI := braidedAlgSpec (R := CommRingCat.of ℤ)
     WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
         (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A) ≃*
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
-        (kostantToralGroupScheme e h ρ M hM hnil b wt).X) :=
+        ((@Functor.mapGrp ((CommAlgCat ℤ)ᵒᵖ) inferInstance inferInstance
+          (Over (Spec (CommRingCat.of ℤ))) inferInstance inferInstance
+          (algSpec (CommRingCat.of ℤ)) inferInstance).obj (Opposite.unop
+            ((commHopfAlgCatEquivCogrpCommAlgCat ℤ).functor.obj
+              (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+                (kostantToralDefiningIdeal e h ρ M hM hnil b wt))))).X) :=
   CommHopfAlgCat.mapMulEquivOfPresentation _ A
     (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
 
@@ -311,7 +317,16 @@ noncomputable def kostantToralSchemePointMulEquiv (A : Type) [CommRing A] :
 theorem kostantToralSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
     (q : WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
       (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A)) :
-    (kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A q).left =
+    letI := braidedAlgSpec (R := CommRingCat.of ℤ)
+    @Over.Hom.left Scheme _ (Spec (CommRingCat.of ℤ))
+        ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)))
+        ((@Functor.mapGrp ((CommAlgCat ℤ)ᵒᵖ) inferInstance inferInstance
+          (Over (Spec (CommRingCat.of ℤ))) inferInstance inferInstance
+          (algSpec (CommRingCat.of ℤ)) inferInstance).obj (Opposite.unop
+            ((commHopfAlgCatEquivCogrpCommAlgCat ℤ).functor.obj
+              (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+                (kostantToralDefiningIdeal e h ρ M hM hnil b wt))))).X
+        (kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A q) =
       Spec.map (CommRingCat.ofHom (q.ofConv :
         CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
           (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →+* A)) ≫

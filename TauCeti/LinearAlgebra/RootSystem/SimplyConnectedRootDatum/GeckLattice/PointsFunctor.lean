@@ -131,17 +131,34 @@ theorem geckSchemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (t.geckGroupScheme ht).X) :
     t.geckSchemePointsMulEquiv ht B
-        ((Spec.map (CommRingCat.ofHom f.toRingHom)).asOver
-          (Spec (CommRingCat.of ℤ)) ≫ p) =
-      (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f.toRingHom
+        ((@Scheme.Hom.asOver _ _ (Spec.map (CommRingCat.ofHom (f : A →+* B)))
+          (Spec (CommRingCat.of ℤ)) inferInstance inferInstance (by
+            simpa only [AlgHom.toRingHom_eq_coe] using
+              (inferInstance : (Spec.map (CommRingCat.ofHom f.toRingHom)).IsOver
+                (Spec (CommRingCat.of ℤ))))) ≫ p) =
+      (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) (f : A →+* B)
         (t.geckSchemePointsMulEquiv ht A p) := by
   let q := (t.geckGroupSchemePointMulEquiv ht A).symm p
   have hpre :
       (t.geckGroupSchemePointMulEquiv ht B).symm
-          ((Spec.map (CommRingCat.ofHom f.toRingHom)).asOver
-            (Spec (CommRingCat.of ℤ)) ≫ p) =
+          ((@Scheme.Hom.asOver _ _ (Spec.map (CommRingCat.ofHom (f : A →+* B)))
+            (Spec (CommRingCat.of ℤ)) inferInstance inferInstance (by
+              simpa only [AlgHom.toRingHom_eq_coe] using
+                (inferInstance : (Spec.map (CommRingCat.ofHom f.toRingHom)).IsOver
+                  (Spec (CommRingCat.of ℤ))))) ≫ p) =
         HopfAlgebra.mapPoints (H := t.geckCoordinateHopfAlgebra ht)
           (CommAlgCat.ofHom f) q := by
+    have hover :
+        @Scheme.Hom.asOver _ _ (Spec.map (CommRingCat.ofHom (f : A →+* B)))
+            (Spec (CommRingCat.of ℤ)) inferInstance inferInstance (by
+              simpa only [AlgHom.toRingHom_eq_coe] using
+                (inferInstance : (Spec.map (CommRingCat.ofHom f.toRingHom)).IsOver
+                  (Spec (CommRingCat.of ℤ)))) =
+          (Spec.map (CommRingCat.ofHom f.toRingHom)).asOver
+            (Spec (CommRingCat.of ℤ)) := by
+      ext
+      simp only [Scheme.Hom.asOver, OverClass.asOverHom, AlgHom.toRingHom_eq_coe]
+    rw [hover]
     simpa only [q, geckGroupSchemePointMulEquiv] using
       CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
         (t.geckCoordinateHopfAlgebra ht) f (t.geckGroupScheme_eq_hopfSpec ht) p
