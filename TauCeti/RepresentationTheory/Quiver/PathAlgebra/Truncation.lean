@@ -140,7 +140,9 @@ theorem arrowIdealQuotientBasis_repr (n : ℕ)
     (arrowIdealQuotientBasis k Q n).repr x = arrowIdealQuotientEquiv k Q n x := by
   simp [arrowIdealQuotientBasis, Module.Basis.map_repr]
 
-/-- **The rank of a truncated path algebra is the number of short paths.** -/
+/-- The `finrank` of a truncated path algebra is `Nat.card` of its short paths. When the quiver
+has finitely many arrows between any two vertices this is the dimension and the number of short
+paths; otherwise both sides may be infinite and hence both equal `0`. -/
 theorem finrank_arrowIdealQuotient [Nontrivial k] (n : ℕ) :
     Module.finrank k (pathAlgebra k Q ⧸ arrowIdeal k Q ^ n) = Nat.card (ShortPath Q n) :=
   Module.finrank_eq_nat_card_basis (arrowIdealQuotientBasis k Q n)
