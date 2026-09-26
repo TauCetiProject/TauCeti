@@ -193,10 +193,10 @@ theorem psl2zToPSL2R_smul (g : PSL(2, ℤ)) (τ : ℍ) : psl2zToPSL2R g • τ =
 theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
   rw [pslS_def, psl2zToPSL2R_smul, pslMk_smul]
 
-/-- `pslS` is an involution of `ℍ`. -/
+/-- `pslS` is an involution of `ℍ`, transported from the group-level `pslS_mul_self`. -/
 @[simp]
 theorem pslS_smul_pslS_smul (τ : ℍ) : pslS • pslS • τ = τ := by
-  rw [pslS_smul, pslS_smul, _root_.ModularGroup.S_smul_S_smul]
+  rw [← mul_smul, pslS_mul_self, one_smul]
 
 /-- `pslS` reverses the sign of the real part, up to the norm-square factor. -/
 theorem re_pslS_smul (τ : ℍ) : (pslS • τ : ℍ).re = -τ.re / Complex.normSq (τ : ℂ) := by

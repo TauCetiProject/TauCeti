@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 -- does not re-export under the module system
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.OrderOf
 
 /-!
 # Maps into `PSL(2, ℝ)`
@@ -145,24 +146,23 @@ noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PS
 from another module, since its body is not `@[expose]`d. -/
 theorem pslS_def : pslS = psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ)) := by rfl
 
-private theorem SL2Z_S_mul_S : (_root_.ModularGroup.S : SL(2, ℤ)) * _root_.ModularGroup.S = -1 := by
-  ext i j
-  have h := _root_.ModularGroup.S_mul_S_eq
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+/-- `ModularGroup.S` is its own inverse in `PSL(2, ℤ)`: `S⁻¹ = -S` (Mathlib's `ModularGroup.S_inv`)
+and negation doesn't change a class in `PSL` (`Matrix.ProjectiveSpecialLinearGroup.mk_neg`). -/
+theorem S_inv_PSL2Z :
+    (_root_.ModularGroup.S : PSL(2, ℤ))⁻¹ = (_root_.ModularGroup.S : PSL(2, ℤ)) := by
+  -- the quotient coercion is a monoid hom, so it commutes with `⁻¹`
+  rw [show ((_root_.ModularGroup.S : PSL(2, ℤ)))⁻¹ = ((_root_.ModularGroup.S⁻¹ : SL(2, ℤ)) :
+    PSL(2, ℤ)) from rfl, _root_.ModularGroup.S_inv, Matrix.ProjectiveSpecialLinearGroup.mk_neg]
 
-private theorem neg_one_mem_center_SL2R : (-1 : SL(2, ℝ)) ∈ Subgroup.center SL(2, ℝ) :=
-  Matrix.SpecialLinearGroup.mem_center_iff.mpr
-    ⟨-1, by norm_num, by ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.scalar]⟩
+/-- `ModularGroup.S` squares to the identity in `PSL(2, ℤ)`. -/
+theorem S_mul_S_PSL2Z :
+    (_root_.ModularGroup.S : PSL(2, ℤ)) * (_root_.ModularGroup.S : PSL(2, ℤ)) = 1 :=
+  inv_eq_iff_mul_eq_one.mp S_inv_PSL2Z
 
-/-- `pslS` squares to the identity of `PSL(2, ℝ)`, since `ModularGroup.S * ModularGroup.S = -1`
-(Mathlib's `ModularGroup.S_mul_S_eq`) and `-1` is central. -/
+/-- `pslS` squares to the identity of `PSL(2, ℝ)`, transported from `S_mul_S_PSL2Z` along the
+monoid hom `psl2zToPSL2R`. -/
 theorem pslS_mul_self : pslS * pslS = 1 := by
-  rw [pslS, ← map_mul, show ((_root_.ModularGroup.S : PSL(2, ℤ)) * (_root_.ModularGroup.S :
-    PSL(2, ℤ))) = ((_root_.ModularGroup.S * _root_.ModularGroup.S : SL(2, ℤ)) : PSL(2, ℤ))
-    from rfl, SL2Z_S_mul_S, psl2zToPSL2R_mk, sl2zToPSL2R_apply]
-  rw [show ((Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ)) (-1 : SL(2, ℤ)) : SL(2, ℝ)) = -1
-    from by ext i j; fin_cases i <;> fin_cases j <;> simp]
-  exact (QuotientGroup.eq_one_iff _).mpr neg_one_mem_center_SL2R
+  rw [pslS, ← map_mul, S_mul_S_PSL2Z, map_one]
 
 /-- `pslS` is its own inverse. -/
 @[simp]
