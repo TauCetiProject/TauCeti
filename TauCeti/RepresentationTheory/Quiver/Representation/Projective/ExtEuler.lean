@@ -107,8 +107,9 @@ variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q] [Fintype Q]
 
 /-! ### Comparison with the Euler form of the quiver -/
 
-/-- **The Ext-Euler characteristic of a vertex projective is the quiver Euler form.** For every
-`kQ`-module `Y`, `χ(Pᵢ, Y)` is the Euler form `⟨dim Pᵢ, dim Y⟩` of the two dimension vectors. -/
+/-- **The Ext-Euler characteristic of a vertex projective is the quiver Euler form.** For a
+`kQ`-module `Y` Euler-admissible against `Pᵢ`, `χ(Pᵢ, Y)` is the Euler form `⟨dim Pᵢ, dim Y⟩` of
+the two dimension vectors. -/
 theorem extEuler_indecProjModule_eq_eulerForm (i : Q) [∀ a : Q, Finite (Quiver.Path i a)]
     {Y : ModuleCat (pathAlgebra k Q)} (h : IsEulerAdmissible k (indecProjModule k Q i) Y) :
     extEuler k h

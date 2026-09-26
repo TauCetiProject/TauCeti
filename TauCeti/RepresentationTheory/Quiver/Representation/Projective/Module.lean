@@ -82,11 +82,10 @@ instance (i : Q) : Projective (indecProjModule k Q i) :=
       (inferInstanceAs (Projective ((quiverRepFunctor k Q).obj (indecProjModule k Q i)))))
 
 /-- **The universal property of the vertex projective in the module category**: a `kQ`-linear map
-out of `TauCeti.indecProjModule` is an element of the `i`-th vertex space of the target. It is
-`TauCeti.indecProjRepHomEquiv` read through the `k`-linear isomorphism that
-`TauCeti.quiverRepFunctor` induces on morphism spaces, so it is a composite of three transports
-and has no closed form beyond that; the dimension and finiteness statements below are what it is
-for. -/
+out of `TauCeti.indecProjModule` is, `k`-linearly in the map, an element of the `i`-th vertex space
+of the target. `TauCeti.finrank_hom_indecProjModule` and
+`TauCeti.finiteDimensional_hom_indecProjModule` below read the dimension and the
+finite-dimensionality of `Hom(Pᵢ, Y)` off it. -/
 noncomputable def indecProjModuleHomEquiv (i : Q) (Y : ModuleCat (pathAlgebra k Q)) :
     (indecProjModule k Q i ⟶ Y) ≃ₗ[k] ((quiverRepFunctor k Q).obj Y).obj ((Paths.of Q).obj i) :=
   (((quiverRepFunctor k Q).homLinearEquiv k (indecProjModule k Q i) Y).trans
