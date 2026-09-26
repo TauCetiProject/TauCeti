@@ -81,7 +81,7 @@ theorem orthogonalSpinorNorm_orthogonalGroupProd (hQ₁ : Q₁.Nondegenerate)
 
 /-- The spinor norm of the orthogonal sum of two special orthogonal automorphisms is the product
 of their spinor norms. -/
-@[simp]
+-- `spinorNorm_apply` already simplifies the left-hand side, so this is not a simp-normal form.
 theorem spinorNorm_specialOrthogonalGroupProd (hQ₁ : Q₁.Nondegenerate)
     (hQ₂ : Q₂.Nondegenerate)
     (g : QuadraticMap.specialOrthogonalGroup Q₁ × QuadraticMap.specialOrthogonalGroup Q₂) :

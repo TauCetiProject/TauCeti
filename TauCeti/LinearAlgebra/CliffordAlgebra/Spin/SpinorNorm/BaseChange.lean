@@ -93,7 +93,7 @@ theorem orthogonalSpinorNorm_orthogonalGroupBaseChange (Q : QuadraticForm K V)
 
 /-- The spinor norm of a special orthogonal automorphism after extending scalars from `K` to `L`
 is the image of its spinor norm under the pushforward of square classes. -/
-@[simp]
+-- `spinorNorm_apply` already simplifies the left-hand side, so this is not a simp-normal form.
 theorem spinorNorm_specialOrthogonalGroupBaseChange (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (g : QuadraticMap.specialOrthogonalGroup Q) :
     letI : Invertible (2 : L) :=
