@@ -76,12 +76,19 @@ theorem extendReduced_apply (f : ReducedTensorWords R M →ₗ[R] ReducedTensorW
     extendReduced f w = reducedInclusion R M (f (reducedProjection R M w)) := by
   simp only [extendReduced, LinearMap.coe_comp, Function.comp_apply]
 
-/-- The extension annihilates every word of length zero. -/
+/-- The extension annihilates every word of length zero.
+
+The tag is `@[simp high]`, not `[simp]`: at the default priority `extendReduced_apply` rewrites
+the same left-hand side first, so a plain `[simp]` tag would be a shadowed duplicate. -/
+@[simp high]
 theorem extendReduced_of_zero (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
     (z : TensorPower R 0 M) : extendReduced f (of R M 0 z) = 0 := by
   rw [extendReduced_apply, reducedProjection_of_zero, map_zero, map_zero]
 
-/-- The extension annihilates the empty word. -/
+/-- The extension annihilates the empty word.
+
+As above, the tag is `@[simp high]`, so that this rule fires before `extendReduced_apply`. -/
+@[simp high]
 theorem extendReduced_one (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) :
     extendReduced f (1 : TensorWords R M) = 0 := by
   rw [one_eq_of_zero, extendReduced_of_zero]
