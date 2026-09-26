@@ -71,8 +71,6 @@ again a division ring because the opposite of a local ring is local
   Algebras, Vol. 1*, LMS Student Texts 65, CUP (2006), IV.1 and VII.1, where the arrows of the
   Auslander-Reiten quiver are counted by the dimensions of `rad / rad²` over the residue division
   rings.
-* [Quiver-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md),
-  Layer 6, "The AR quiver".
 -/
 
 public section
