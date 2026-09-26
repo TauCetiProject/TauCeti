@@ -45,6 +45,11 @@ variable {R : Type*} [CommRing R] (a : R)
 def coord (i : Fin 2) : NodeAlgebra R a :=
   Ideal.Quotient.mk _ (X i)
 
+/-- The quotient map sends each polynomial variable to its coordinate function. -/
+@[simp]
+lemma mk_X (i : Fin 2) :
+    Ideal.Quotient.mk (Ideal.span {X 0 * X 1 - C a}) (X i) = coord a i := (rfl)
+
 /-- The defining equation of the nodal algebra. -/
 @[simp]
 lemma coord_zero_mul_coord_one :
@@ -75,7 +80,7 @@ def lift {A : Type*} [CommRing A] [Algebra R A] (x y : A)
 @[simp]
 lemma lift_coord_zero {A : Type*} [CommRing A] [Algebra R A] (x y : A)
     (h : x * y = algebraMap R A a) : lift a x y h (coord a 0) = x := by
-  simpa [lift, coord] using
+  simpa [lift, coord, -mk_X] using
     AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (aeval_eq_zero_of_mem a x y h))
       (X (0 : Fin 2))
 
@@ -83,7 +88,7 @@ lemma lift_coord_zero {A : Type*} [CommRing A] [Algebra R A] (x y : A)
 @[simp]
 lemma lift_coord_one {A : Type*} [CommRing A] [Algebra R A] (x y : A)
     (h : x * y = algebraMap R A a) : lift a x y h (coord a 1) = y := by
-  simpa [lift, coord] using
+  simpa [lift, coord, -mk_X] using
     AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (aeval_eq_zero_of_mem a x y h))
       (X (1 : Fin 2))
 
@@ -121,7 +126,7 @@ private lemma prePresentation_jacobian (i : Fin 2) :
     (prePresentation a i).jacobian = coord a i := by
   rw [PreSubmersivePresentation.jacobian_eq_jacobiMatrix_det, Matrix.det_unique]
   rw [PreSubmersivePresentation.jacobiMatrix_apply]
-  fin_cases i <;> simp [prePresentation, presentation, coord] <;> rfl
+  fin_cases i <;> simp [prePresentation, presentation, coord, -mk_X] <;> rfl
 
 /-- Each coordinate chart of `xy = a` is standard smooth of relative dimension one. -/
 theorem isStandardSmoothOfRelativeDimension_localizationAway_coord (i : Fin 2) :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
 public import TauCeti.RingTheory.LocalRing.Polynomial
+public import TauCeti.RingTheory.Node
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!
@@ -122,17 +123,17 @@ omit [IsRegularRing R] in
 `n ≠ 0`, that is, exactly when the origin of the special fibre lies on the model. -/
 theorem isPrime_map_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R) (n : ℕ) :
     (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (Ideal.Quotient.mk (span {X 0 * X 1 - C π ^ n}))).IsPrime ↔ n ≠ 0 := by
+      (algebraMap (MvPolynomial (Fin 2) R) (NodeAlgebra R (π ^ n)))).IsPrime ↔ n ≠ 0 := by
   refine ⟨?_, fun hn ↦ map_isPrime_of_surjective Ideal.Quotient.mk_surjective ?_⟩
   · -- for `n = 0` the image of `x` is a unit
     rintro h rfl
+    rw [pow_zero] at h
     have hX0 : X (0 : Fin 2) ∈
         (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R) := by simp
     refine h.ne_top (eq_top_of_isUnit_mem _ (mem_map_of_mem _ hX0)
-      (IsUnit.of_mul_eq_one (Ideal.Quotient.mk _ (X 1)) ?_))
-    rw [← map_mul, ← sub_eq_zero, ← map_one (Ideal.Quotient.mk _), ← map_sub,
-      Ideal.Quotient.eq_zero_iff_mem]
-    simp
+      (IsUnit.of_mul_eq_one (NodeAlgebra.coord (1 : R) 1) ?_))
+    simpa only [Ideal.Quotient.algebraMap_eq, NodeAlgebra.mk_X, map_one] using
+      NodeAlgebra.coord_zero_mul_coord_one (1 : R)
   · rw [mk_ker, span_le, Set.singleton_subset_iff, SetLike.mem_coe, mem_comap]
     simpa [hn] using hπ
 
@@ -143,12 +144,12 @@ when `n = 1`.** Here `π ∈ 𝔪_R \ 𝔪_R²` for a regular local ring `R`, an
 theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R)
     (hπ2 : π ∉ maximalIdeal R ^ 2) (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (Ideal.Quotient.mk (span {X 0 * X 1 - C π ^ n}))).IsPrime] :
+      (algebraMap (MvPolynomial (Fin 2) R) (NodeAlgebra R (π ^ n)))).IsPrime] :
     IsRegularLocalRing (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (Ideal.Quotient.mk (span {X 0 * X 1 - C π ^ n})))) ↔ n = 1 := by
+        (algebraMap (MvPolynomial (Fin 2) R) (NodeAlgebra R (π ^ n))))) ↔ n = 1 := by
   set 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
-  set f : MvPolynomial (Fin 2) R := X 0 * X 1 - C π ^ n
+  set f : MvPolynomial (Fin 2) R := X 0 * X 1 - C (π ^ n)
   set q := Ideal.Quotient.mk (span {f})
   set B := Localization.AtPrime 𝔪
   set J := span {algebraMap (MvPolynomial (Fin 2) R) B f}
@@ -156,7 +157,7 @@ theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff (hπ : π
   have hfJ : span {f} ≤ J.comap (algebraMap (MvPolynomial (Fin 2) R) B) := by
     rw [span_le, Set.singleton_subset_iff, SetLike.mem_coe, mem_comap]
     exact mem_span_singleton_self _
-  let : Algebra (MvPolynomial (Fin 2) R ⧸ span {f}) (B ⧸ J) :=
+  let : Algebra (NodeAlgebra R (π ^ n)) (B ⧸ J) :=
     Ideal.Quotient.algebraQuotientOfLEComap hfJ
   have hloc := IsLocalization.of_surjective (S := B) (S' := B ⧸ J) 𝔪.primeCompl q
       Ideal.Quotient.mk_surjective
@@ -178,7 +179,7 @@ theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff (hπ : π
       exact ⟨p, ha, rfl⟩
   rw [hsub] at hloc
   let e := IsLocalization.algEquiv (𝔪.map q).primeCompl (Localization.AtPrime (𝔪.map q)) (B ⧸ J)
-  rw [← isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff hπ hπ2 n]
+  rw [← isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff hπ hπ2 n, ← C_pow]
   exact ⟨fun _ ↦ .of_ringEquiv (R := Localization.AtPrime (𝔪.map q)) e.toRingEquiv,
     fun _ ↦ .of_ringEquiv (R := B ⧸ J) e.symm.toRingEquiv⟩
 
@@ -194,10 +195,10 @@ exactly when `n = 1`.** For a uniformizer `π` of a discrete valuation ring `R`,
 theorem isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff_of_irreducible
     (hπ : Irreducible π) (n : ℕ)
     [(((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (Ideal.Quotient.mk (span {X 0 * X 1 - C π ^ n}))).IsPrime] :
+      (algebraMap (MvPolynomial (Fin 2) R) (NodeAlgebra R (π ^ n)))).IsPrime] :
     IsRegularLocalRing (Localization.AtPrime
       (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-        (Ideal.Quotient.mk (span {X 0 * X 1 - C π ^ n})))) ↔ n = 1 := by
+        (algebraMap (MvPolynomial (Fin 2) R) (NodeAlgebra R (π ^ n))))) ↔ n = 1 := by
   have hm := (IsDiscreteValuationRing.irreducible_iff_uniformizer π).mp hπ
   refine isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff
     (hm ▸ mem_span_singleton_self π) (fun h ↦ hπ.not_isUnit ?_) n
