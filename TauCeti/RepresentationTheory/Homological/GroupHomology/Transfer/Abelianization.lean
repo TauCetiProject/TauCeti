@@ -6,20 +6,21 @@ Authors: Claude
 module
 
 public import TauCeti.GroupTheory.Transfer
-public import TauCeti.RepresentationTheory.Homological.Augmentation
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Augmentation
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Induced
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Delta
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Coinduced
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
 # The transfer on first homology is the Verlagerung
 
-Let `S` be a subgroup of a finite group `G` and `A` a trivial representation over a commutative
-ring `k`. With trivial coefficients, first group homology is the abelianization tensored with the
-coefficients, `H₁(G, A) ≃ Gᵃᵇ ⊗ A` (Mathlib's `groupHomology.H1AddEquivOfIsTrivial`). This file
+Let `S` be a finite-index subgroup of a group `G` and `A` a trivial representation over a
+commutative ring `k`. With trivial coefficients, first group homology is the abelianization
+tensored with the coefficients, `H₁(G, A) ≃ Gᵃᵇ ⊗ A` (Mathlib's
+`groupHomology.H1AddEquivOfIsTrivial`). This file
 proves that, under these identifications, the homological transfer `H₁(G, A) ⟶ H₁(S, A)` of
 `TauCeti.groupHomology.transfer` is the group-theoretic transfer (Verlagerung)
 `Gᵃᵇ → Sᵃᵇ` of Mathlib's `MonoidHom.transfer`, tensored with `A`.
@@ -34,12 +35,10 @@ because `H₁(S, k[G]) = 0`, and in degree zero the transfer is the relative tra
 
 ## Main results
 
-* `TauCeti.groupHomology.isZero_groupHomology_res_leftRegular`: for a finite subgroup `S ≤ G`,
-  `Hₙ(S, k[G]) = 0` for `n > 0`.
 * `TauCeti.groupHomology.transfer_mkH1OfIsTrivial`: the transfer sends the class of `g ⊗ a` to the
   class of `V(g) ⊗ a`, where `V : Gᵃᵇ → Sᵃᵇ` is the Verlagerung.
 * `TauCeti.groupHomology.H1AddEquivOfIsTrivial_transfer`: the same statement for every class,
-  through `H₁(G, k) ≃ Gᵃᵇ ⊗ k`.
+  through `H₁(G, A) ≃ Gᵃᵇ ⊗ A` and `H₁(S, A) ≃ Sᵃᵇ ⊗ A`.
 
 ## References
 
@@ -60,73 +59,24 @@ open _root_.groupHomology
 
 variable {k G : Type u} [CommRing k] [Group G]
 
-section Augmentation
-
-/-! ### Elements of the augmentation ideal
-
-The augmentation ideal is a categorical kernel, so its elements are named through their images in
-`k[G]`: `augElt a h` is the element mapping to `[h] a - [1] a`. -/
-
-variable (k G) in
-/-- The augmentation sequence, with its maps named. -/
-private theorem shortExact_aug :
-    (ShortComplex.mk (augmentationι k G) (augmentation k G)
-      (augmentationι_comp_augmentation k G)).ShortExact :=
-  augmentationSES_def k G ▸ augmentationSES_shortExact k G
-
-variable (k G) in
-private theorem exact_aug :
-    Function.Exact (augmentationι k G).hom (augmentation k G).hom := by
-  have h := (shortExact_aug k G).exact.map (forget₂ (Rep k G) (ModuleCat k))
-  rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact] at h
-  exact h
-
-private theorem augmentation_single_sub (a : k) (h : G) :
-    (augmentation k G).hom (MonoidAlgebra.single h a - MonoidAlgebra.single 1 a) = 0 := by
-  rw [map_sub]
-  simp
-
-/-- An element of the augmentation ideal mapping to `[h] a - [1] a`. -/
-private def augElt (a : k) (h : G) : augmentationIdeal k G :=
-  Classical.choose <| (exact_aug k G _).1 (augmentation_single_sub a h)
-
-private theorem augElt_spec (a : k) (h : G) :
-    (augmentationι k G).hom (augElt a h) = MonoidAlgebra.single h a - MonoidAlgebra.single 1 a :=
-  Classical.choose_spec <| (exact_aug k G _).1 (augmentation_single_sub a h)
-
-private theorem ι_injective : Function.Injective (augmentationι k G).hom :=
-  (Rep.mono_iff_injective _).1 inferInstance
-
-/-- `G` acts on the elements `augElt a y` through the left regular action on `y`. -/
-private theorem ρ_augElt (a : k) (x y : G) :
-    (augmentationIdeal k G).ρ x (augElt a y) = augElt a (x * y) - augElt a x := by
-  apply ι_injective
-  rw [hom_comm_apply, map_sub, augElt_spec, augElt_spec, augElt_spec, map_sub]
-  simp
-
-private theorem augElt_one (a : k) : augElt a (1 : G) = 0 := by
-  apply ι_injective
-  rw [augElt_spec, sub_self, map_zero]
-
-end Augmentation
-
 section Transfer
 
 variable (S : Subgroup G)
 
 /-- The class of `augElt a y` in `H₀(S, I_G)`. -/
 private abbrev θ (a : k) (y : G) : H0 (res S.subtype (augmentationIdeal k G)) :=
-  H0π (res S.subtype (augmentationIdeal k G)) (augElt a y)
+  H0π (res S.subtype (augmentationIdeal k G)) (TauCeti.AugmentationIdeal.singleSub k G a y)
 
 variable {S} in
 /-- `θ` is additive in a left factor from `S`, because `S` acts trivially on `H₀(S, I_G)`. -/
 private theorem θ_mul (a : k) {s : G} (hs : s ∈ S) (y : G) :
     θ S a (s * y) = θ S a s + θ S a y := by
-  have h := ρ_augElt a s y
+  have h := TauCeti.AugmentationIdeal.ρ_singleSub k G a s y
   rw [eq_sub_iff_add_eq] at h
   have h2 : H0π (res S.subtype (augmentationIdeal k G))
-      ((augmentationIdeal k G).ρ s (augElt a y)) =
-        H0π (res S.subtype (augmentationIdeal k G)) (augElt a y) :=
+      ((augmentationIdeal k G).ρ s (TauCeti.AugmentationIdeal.singleSub k G a y)) =
+        H0π (res S.subtype (augmentationIdeal k G))
+          (TauCeti.AugmentationIdeal.singleSub k G a y) :=
     (H0π_eq_iff _).2 (Representation.Coinvariants.sub_mem_ker (ρ := (res S.subtype
       (augmentationIdeal k G)).ρ) ⟨s, hs⟩ _)
   rw [θ, θ, θ, ← h, map_add, h2, add_comm]
@@ -136,7 +86,7 @@ private def ψ (a : k) :
     Abelianization S →* Multiplicative (H0 (res S.subtype (augmentationIdeal k G))) :=
   Abelianization.lift
     { toFun s := Multiplicative.ofAdd (θ S a s)
-      map_one' := by simp [θ, augElt_one]
+      map_one' := by simp [θ]
       map_mul' s t := by
         simp only [Subgroup.coe_mul, θ_mul a s.2, ofAdd_add] }
 
@@ -148,12 +98,13 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 /-- The relative transfer of `augElt a h` is the transfer of `h` into `Sᵃᵇ`, read through `ψ`. -/
 private theorem H0π_relTransfer_augElt [S.FiniteIndex] (a : k) (h : G) :
     H0π (res S.subtype (augmentationIdeal k G))
-        (Representation.relTransfer (augmentationIdeal k G).ρ S (augElt a h)) =
+        (Representation.relTransfer (augmentationIdeal k G).ρ S
+          (TauCeti.AugmentationIdeal.singleSub k G a h)) =
       (ψ S a ((Abelianization.of : S →* Abelianization S).transfer h)).toAdd := by
   rw [MonoidHom.transfer_eq_prod_of_bijective _ (fun q : G ⧸ S ↦ q.out) (by simp) h (h • ·)
     (QuotientGroup.mk_out_smul h), map_prod, toAdd_prod, Representation.relTransfer_apply,
     map_sum]
-  simp_rw [ρ_augElt, map_sub]
+  simp_rw [TauCeti.AugmentationIdeal.ρ_singleSub, map_sub]
   rw [Finset.sum_sub_distrib, ← Equiv.sum_comp (MulAction.toPerm h : Equiv.Perm (G ⧸ S))]
   simp_rw [ψ_of, toAdd_ofAdd]
   rw [sub_eq_iff_eq_add, ← Finset.sum_add_distrib]
@@ -163,39 +114,18 @@ private theorem H0π_relTransfer_augElt [S.FiniteIndex] (a : k) (h : G) :
   have hs : (h • q).out⁻¹ * (h * q.out) ∈ S := QuotientGroup.eq.mp (QuotientGroup.mk_out_smul h q)
   rw [MulAction.toPerm_apply, ← θ_mul a hs, mul_assoc, mul_assoc, mul_inv_cancel, mul_one]
 
-/-- The connecting map `H₁(G, k) ⟶ H₀(G, I_G)` of the augmentation sequence sends the class of
-`g ⊗ a` to the class of `[g⁻¹] a - [1] a`. -/
-private theorem δ_mkH1OfIsTrivial (g : G) (a : k) :
-    δ (shortExact_aug k G) 1 0 rfl
-        (mkH1OfIsTrivial (trivial k G k) (Additive.ofMul (Abelianization.of g)) a) =
-      H0π (augmentationIdeal k G) (augElt a g⁻¹) := by
-  rw [mkH1OfIsTrivial_apply]
-  exact δ₀_apply (shortExact_aug k G) _ (single g (MonoidAlgebra.single 1 a))
-    (by rw [cycles₁IsoOfIsTrivial_inv_apply]; simp) _ (by rw [augElt_spec, d₁₀_single]; simp)
-
-/-- The connecting map `H₁(S, k) ⟶ H₀(S, I_G)` of the restricted augmentation sequence, on the
-class of `x ⊗ a`. -/
-private theorem δ_res_mkH1OfIsTrivial (x : Abelianization S) (a : k) :
-    δ ((shortExact_res S.subtype).2 (shortExact_aug k G)) 1 0 rfl
+private theorem δ_res_mkH1OfIsTrivial_ofAbelianization
+    (hAug : (ShortComplex.mk (augmentationι k G) (augmentation k G)
+      (augmentationι_comp_augmentation k G)).ShortExact) (x : Abelianization S) (a : k) :
+    δ ((shortExact_res S.subtype).2 hAug) 1 0 rfl
         (mkH1OfIsTrivial (res S.subtype (trivial k G k)) (Additive.ofMul x) a) =
       (ψ S a x⁻¹).toAdd := by
   obtain ⟨s, rfl⟩ : ∃ s : S, Abelianization.of s = x := QuotientGroup.mk'_surjective _ x
-  rw [mkH1OfIsTrivial_apply, ← map_inv, ψ_of, toAdd_ofAdd]
-  exact δ₀_apply ((shortExact_res S.subtype).2 (shortExact_aug k G)) _
-    (single s (MonoidAlgebra.single 1 a)) (by rw [cycles₁IsoOfIsTrivial_inv_apply]; simp) _
-    (by rw [d₁₀_single]; exact (augElt_spec a _).trans (by simp))
-
-variable (k) in
-/-- For a finite subgroup `S` of `G`, the group homology of `S` with coefficients in the
-restriction of `k[G]` vanishes in positive degrees. -/
-theorem isZero_groupHomology_res_leftRegular [Finite S] (n : ℕ) [NeZero n] :
-    IsZero (groupHomology (res S.subtype (leftRegular k G)) n) :=
-  have : Fintype S := Fintype.ofFinite S
-  (TauCeti.TateCohomology.isZero_res_leftRegular S (-(n + 1))).of_iso
-    ((_root_.TateCohomology.isoGroupHomology (-(n + 1)) n rfl).app _).symm
+  rw [← map_inv, ψ_of, toAdd_ofAdd]
+  exact δ_res_mkH1OfIsTrivial S hAug s a
 
 /-- `transfer_mkH1OfIsTrivial` for the coefficients `k` themselves. -/
-private theorem transfer_mkH1OfIsTrivial_trivial [Finite G] (x : Additive (Abelianization G))
+private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (Abelianization G))
     (a : k) :
     transfer (trivial k G k) S 1 (mkH1OfIsTrivial (trivial k G k) x a) =
       mkH1OfIsTrivial (res S.subtype (trivial k G k))
@@ -206,21 +136,27 @@ private theorem transfer_mkH1OfIsTrivial_trivial [Finite G] (x : Additive (Abeli
   -- The connecting map of the augmentation sequence restricted to `S` is injective on `H₁(S, k)`,
   -- and it carries both sides to the same class of `H₀(S, I_G)`: the left side through the
   -- degree-zero transfer, the right side directly.
-  have hXS := (shortExact_res S.subtype).2 (shortExact_aug k G)
+  let hAug : (ShortComplex.mk (augmentationι k G) (augmentation k G)
+      (augmentationι_comp_augmentation k G)).ShortExact :=
+    augmentationSES_def k G ▸ augmentationSES_shortExact k G
+  have hXS := (shortExact_res S.subtype).2 hAug
   have : Mono (δ hXS 1 0 rfl) :=
-    mono_δ_of_isZero hXS 0 (isZero_groupHomology_res_leftRegular k S 1)
+    mono_δ_of_isZero hXS 0 (isZero_groupHomology_res_leftRegular (k := k) S 0)
   apply (ModuleCat.mono_iff_injective _).1 this
   rw [MonoidHom.toAdditive_apply_apply, toMul_ofMul, Abelianization.lift_apply_of,
-    δ_res_mkH1OfIsTrivial, ← map_inv, ← H0π_relTransfer_augElt, ← transfer_zero_H0π,
+    δ_res_mkH1OfIsTrivial_ofAbelianization S hAug, ← map_inv,
+    ← H0π_relTransfer_augElt,
+    ← transfer_zero_H0π,
     ← δ_mkH1OfIsTrivial, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-    δ_comp_transfer S (shortExact_aug k G) 1 0 rfl]
+    δ_comp_transfer S hAug 1 0 rfl]
 
 /-- **The transfer on `H₁` with trivial coefficients is the Verlagerung.** For a subgroup `S` of a
-finite group `G` and trivial coefficients `A`, the transfer `H₁(G, A) ⟶ H₁(S, A)` sends the class
+group `G`, a finite-index subgroup `S`, and trivial coefficients `A`, the transfer
+`H₁(G, A) ⟶ H₁(S, A)` sends the class
 of `x ⊗ a` to the class of `V x ⊗ a`, where `V : Gᵃᵇ → Sᵃᵇ` is the group-theoretic transfer
 `MonoidHom.transfer` of `Abelianization.of : S →* Sᵃᵇ`, descended to `Gᵃᵇ`. -/
 @[simp]
-theorem transfer_mkH1OfIsTrivial [Finite G] (A : Rep k G) [A.IsTrivial]
+theorem transfer_mkH1OfIsTrivial [S.FiniteIndex] (A : Rep k G) [A.IsTrivial]
     (x : Additive (Abelianization G)) (a : A) :
     transfer A S 1 (mkH1OfIsTrivial A x a) =
       mkH1OfIsTrivial (res S.subtype A)
@@ -242,7 +178,7 @@ theorem transfer_mkH1OfIsTrivial [Finite G] (A : Rep k G) [A.IsTrivial]
 identifications `H₁(G, A) ≃ Gᵃᵇ ⊗ A` and `H₁(S, A) ≃ Sᵃᵇ ⊗ A`: the transfer becomes `V ⊗ A`, for
 `V : Gᵃᵇ → Sᵃᵇ` the group-theoretic transfer. -/
 @[simp]
-theorem H1AddEquivOfIsTrivial_transfer [Finite G] (A : Rep k G) [A.IsTrivial] (x : H1 A) :
+theorem H1AddEquivOfIsTrivial_transfer [S.FiniteIndex] (A : Rep k G) [A.IsTrivial] (x : H1 A) :
     H1AddEquivOfIsTrivial (res S.subtype A) (transfer A S 1 x) =
       LinearMap.rTensor A (AddMonoidHom.toIntLinearMap
         (Abelianization.lift (Abelianization.of : S →* Abelianization S).transfer).toAdditive)

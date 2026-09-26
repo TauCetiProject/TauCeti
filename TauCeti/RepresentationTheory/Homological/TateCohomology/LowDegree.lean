@@ -412,11 +412,18 @@ variable (A : Rep R G) [A.IsTrivial]
 
 /-- For a trivial representation `A`, degree-`-2` Tate cohomology is the tensor product of the
 additive abelianization of the group with `A`. -/
-def HNegTwoAddEquivTensorOfIsTrivial :
+@[expose] def HNegTwoAddEquivTensorOfIsTrivial :
     tateCohomology A (-2) ≃+ (Additive <| Abelianization G) ⊗[ℤ] A :=
   let e : tateCohomology A (-2) ≅ groupHomology.H1 A :=
     (TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).app A
   e.toLinearEquiv.toAddEquiv.trans (H1AddEquivOfIsTrivial A)
+
+/-- The degree `-2` Tate identification factors through the comparison with first homology. -/
+theorem HNegTwoAddEquivTensorOfIsTrivial_apply (x : tateCohomology A (-2)) :
+    HNegTwoAddEquivTensorOfIsTrivial A x =
+      H1AddEquivOfIsTrivial A
+        ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app A x) :=
+  rfl
 
 -- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.
 /-- The degree-`-2` identification sends the homology class represented by `(g, a)` to the
