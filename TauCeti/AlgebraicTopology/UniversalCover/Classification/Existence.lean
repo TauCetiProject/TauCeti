@@ -107,7 +107,8 @@ theorem locallyPathConnectedSpace_subgroupQuotient [LocallyPathConnectedSpace X]
   (isCoveringMap_subgroupQuotientProj x₀ H).isLocalHomeomorph.locallyPathConnectedSpace
 
 /-- The connected covering space associated to a subgroup `H ≤ π₁(X, x₀)`, obtained by
-quotienting the universal cover by `H`. -/
+quotienting the universal cover by `H`. Its fibres outside the path component of `x₀` are
+empty, so the base need not be path-connected. -/
 def subgroupCover [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (x₀ : X) (H : Subgroup (FundamentalGroup X x₀)) :
     ConnectedCoveringSpace (TopCat.of X) :=
