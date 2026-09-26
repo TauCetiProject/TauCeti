@@ -20,10 +20,10 @@ The identification is elementary: an element of `μ₂` is a root of unity `ζ` 
 with `ζ ^ 2 = 1`, so `ζ` is `±1`, and `±1 ∈ K`, so the Galois action on `μ₂` is trivial
 (`TauCeti.kummerCoeff_smul_eq_self`). The value dictionary `TauCeti.mu2EquivZMod2` is the
 specialization of the general roots-of-unity dictionary `IsPrimitiveRoot.zmodEquivRootsOfUnity` of
-`TauCeti.RingTheory.RootsOfUnity.ZMod` at the primitive root `-1` of
-`TauCeti.isPrimitiveRoot_neg_one`; it sends `0` to `0` and `-1` to `1`, and its type pins it,
-because `ZMod 2` has no additive self-equivalence other than the identity, so sending `0` to `0`
-already determines it.
+`TauCeti.RingTheory.RootsOfUnity.ZMod` at the primitive root `-1`, which is primitive at every
+characteristic other than `2` (`IsPrimitiveRoot.neg_one`); it sends `0` to `0` and `-1` to `1`,
+and its type pins it, because `ZMod 2` has no additive self-equivalence other than the identity,
+so sending `0` to `0` already determines it.
 
 Crossed with the universe lift of `TauCeti.trivialF2Equiv` and read in the category
 `TopRep ℤ G_K`, this is the isomorphism of coefficient objects
@@ -48,8 +48,6 @@ precisely where the action on `μ₂` is not trivial.
   a separable closure are `1` and `-1`, so an element of `μ₂` is `0` or `negOne`.
 * `TauCeti.negOne_ne_zero` and `TauCeti.zero_ne_negOne`: the two elements of `μ₂` are distinct,
   because `2` is invertible in `K`.
-* `TauCeti.isPrimitiveRoot_neg_one`: `-1` is a primitive `2`nd root of unity in `Kˢ`, which is
-  what makes the value dictionary a specialization of `IsPrimitiveRoot.zmodEquivRootsOfUnity`.
 * `TauCeti.mu2EquivZMod2_apply_zero`, `TauCeti.mu2EquivZMod2_apply_negOne`,
   `TauCeti.mu2EquivZMod2_eq_one_iff`: the value dictionary on its two values.
 * `TauCeti.kummerCoeff_smul_eq_self`: the Galois action on `μ₂` is trivial.
@@ -108,16 +106,19 @@ theorem eq_zero_or_eq_negOne (x : KummerCoeff K 2) :
   · exact Or.inl (Additive.toMul.injective h)
   · exact Or.inr (Additive.toMul.injective (Subtype.ext (h.trans toMul_negOne.symm)))
 
-/-- `-1` is not `1` in a separable closure of a field in which `2` is invertible: `2 = 1 + (-1)`
-would then vanish there, and it does not, because the algebra map is injective. -/
-private theorem neg_one_ne_one [Invertible (2 : K)] : (-1 : (SeparableClosure K)) ≠ 1 := by
-  intro h'
-  have hz : (2 : (SeparableClosure K)) = 0 := by
-    rw [show (2 : (SeparableClosure K)) = 1 + 1 by norm_num,
-      show (1 : (SeparableClosure K)) + 1 = 0 from
-        (congrArg (fun z : (SeparableClosure K) => z + 1) h'.symm).trans (neg_add_cancel 1)]
+/-- The separable closure of a field in which `2` is invertible does not have characteristic `2`:
+`2` would then vanish in it, and it does not, because the algebra map into it is injective. -/
+private theorem ringChar_ne_two [Invertible (2 : K)] : ringChar (SeparableClosure K) ≠ 2 := by
+  intro h
+  have hz : (2 : (SeparableClosure K)) = 0 :=
+    (ringChar.spec (SeparableClosure K) 2).mpr (h ▸ dvd_rfl)
   exact (map_ne_zero (algebraMap K (SeparableClosure K)) (a := (2 : K))).mpr
     (Invertible.ne_zero (2 : K)) hz
+
+/-- `-1` is not `1` in a separable closure of a field in which `2` is invertible: its
+characteristic is not `2`, and characteristic `≠ 2` is what separates `-1` from `1`. -/
+private theorem neg_one_ne_one [Invertible (2 : K)] : (-1 : (SeparableClosure K)) ≠ 1 :=
+  Ring.neg_one_ne_one_of_char_ne_two ringChar_ne_two
 
 /-- The two elements of `μ₂` are distinct, because `2` is invertible in the base field. -/
 theorem negOne_ne_zero [Invertible (2 : K)] : negOne ≠ (0 : KummerCoeff K 2) := by
@@ -148,34 +149,35 @@ theorem kummerCoeff_smul_eq_self (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 
 
 variable [Invertible (2 : K)]
 
-/-- **`-1` is a primitive `2`nd root of unity in a separable closure**: its square is `1`, and it
-is not `1` because `2` is invertible in the base field (`TauCeti.negOne_ne_zero` is the same fact
-read inside `μ₂`), so its multiplicative order is exactly `2`. This is what makes the value
-dictionary the specialization of the general roots-of-unity equivalence
-`IsPrimitiveRoot.zmodEquivRootsOfUnity` of `TauCeti.RingTheory.RootsOfUnity.ZMod` rather than a
-hand-built one. -/
-theorem isPrimitiveRoot_neg_one : IsPrimitiveRoot (-1 : (SeparableClosure K)ˣ) 2 := by
-  rw [IsPrimitiveRoot.iff_orderOf, orderOf_eq_prime_iff (hp := ⟨Nat.prime_two⟩)]
-  refine ⟨by simp, fun h => neg_one_ne_one (K := K) ?_⟩
-  simpa using congrArg Units.val h
+/-- **`-1` is a primitive `2`nd root of unity in a separable closure**: this is Mathlib's
+`IsPrimitiveRoot.neg_one`, read at the characteristic of the separable closure, which is not `2`
+because `2` is invertible in the base field, and transferred to the units by
+`IsPrimitiveRoot.coe_units_iff`. It is what makes the value dictionary the specialization of the
+general roots-of-unity equivalence `IsPrimitiveRoot.zmodEquivRootsOfUnity` of
+`TauCeti.RingTheory.RootsOfUnity.ZMod` rather than a hand-built one. -/
+private theorem isPrimitiveRoot_negOne : IsPrimitiveRoot (-1 : (SeparableClosure K)ˣ) 2 := by
+  have h : IsPrimitiveRoot (-1 : (SeparableClosure K)) 2 :=
+    IsPrimitiveRoot.neg_one (p := ringChar (SeparableClosure K)) (h := ringChar.of_eq rfl)
+      ringChar_ne_two
+  exact IsPrimitiveRoot.coe_units_iff.mp h
 
 /-- **The `μ₂` coefficient module is `ZMod 2`**, as an additive group: it is the specialization of
-`IsPrimitiveRoot.zmodEquivRootsOfUnity` at the primitive root `-1`
-(`TauCeti.isPrimitiveRoot_neg_one`), read backwards. The generator is canonical: it is the
-nontrivial element `-1` of `μ₂`, so the dictionary sends `0` to `0` and `-1` to `1`, and there is
-only one additive equivalence `ZMod 2 ≃+ ZMod 2`. -/
+`IsPrimitiveRoot.zmodEquivRootsOfUnity` at the primitive root `-1` (`IsPrimitiveRoot.neg_one`,
+since the characteristic of `Kˢ` is not `2` when `2` is invertible in `K`), read backwards. The
+generator is canonical: it is the nontrivial element `-1` of `μ₂`, so the dictionary sends `0` to
+`0` and `-1` to `1`, and there is only one additive equivalence `ZMod 2 ≃+ ZMod 2`. -/
 noncomputable def mu2EquivZMod2 : KummerCoeff K 2 ≃+ ZMod 2 :=
-  (isPrimitiveRoot_neg_one K).zmodEquivRootsOfUnity.symm
+  (isPrimitiveRoot_negOne K).zmodEquivRootsOfUnity.symm
 
 @[simp]
 theorem mu2EquivZMod2_apply_zero : mu2EquivZMod2 K 0 = 0 := by
-  have h0 : (isPrimitiveRoot_neg_one K).zmodEquivRootsOfUnity 0 = 0 :=
-    (isPrimitiveRoot_neg_one K).zmodEquivRootsOfUnity.map_zero
+  have h0 : (isPrimitiveRoot_negOne K).zmodEquivRootsOfUnity 0 = 0 :=
+    (isPrimitiveRoot_negOne K).zmodEquivRootsOfUnity.map_zero
   rw [mu2EquivZMod2, ← h0, AddEquiv.symm_apply_apply]
 
 @[simp]
 theorem mu2EquivZMod2_apply_negOne : mu2EquivZMod2 K negOne = 1 := by
-  have h1 : (isPrimitiveRoot_neg_one K).zmodEquivRootsOfUnity ((1 : ℕ) : ZMod 2) = negOne := by
+  have h1 : (isPrimitiveRoot_negOne K).zmodEquivRootsOfUnity ((1 : ℕ) : ZMod 2) = negOne := by
     refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
     rw [IsPrimitiveRoot.coe_zmodEquivRootsOfUnity_apply_natCast]
     simp [toMul_negOne]
