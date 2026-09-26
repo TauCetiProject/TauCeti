@@ -33,9 +33,9 @@ noncomputable section
 open NumberField NumberField.Units NumberField.InfinitePlace
 open scoped NumberField
 
-namespace TauCeti.NumberField.Units
-
 variable {K : Type*} [Field K] [NumberField K]
+
+namespace NumberField.InfinitePlace
 
 /-- At a real place, multiply a unit by a torsion unit of order at most two so that its real
 embedding is its (positive) absolute value. -/
@@ -52,6 +52,10 @@ theorem exists_torsion_mul_embedding_eq_abs (w : InfinitePlace K) (hw : w.IsReal
   · refine ⟨⟨-1, neg_one_mem_torsion⟩, ?_⟩
     have hneg : φ (v : K) < 0 := lt_of_not_ge h
     simpa [φ, abs_of_neg hneg] using hv
+
+end NumberField.InfinitePlace
+
+namespace TauCeti.NumberField.Units
 
 open scoped Classical in
 /-- A unit with strictly smaller nonzero logarithmic embedding than `u` can be inverted and
@@ -75,7 +79,7 @@ theorem exists_normalized_unit_between (hr : rank K = 1) (u v : (𝓞 K)ˣ)
     (logEmbedding_norm_lt_iff_at_place hr u v w hu).mp hv₁
   have hvpos : 0 < w v := Units.pos_at_place v w
   by_cases h : 1 < w v
-  · obtain ⟨ε, hε⟩ := exists_torsion_mul_embedding_eq_abs w hw v
+  · obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw v
     refine ⟨ε, v, Or.inl rfl, ?_, ?_⟩
     · rwa [hε]
     · rw [hε]
@@ -92,7 +96,7 @@ theorem exists_normalized_unit_between (hr : rank K = 1) (u v : (𝓞 K)ˣ)
       exact (one_lt_inv₀ hvpos).mpr hlt
     have hlogInv : Real.log (w (v⁻¹)) = -Real.log (w v) := by
       rw [hwInv, Real.log_inv]
-    obtain ⟨ε, hε⟩ := exists_torsion_mul_embedding_eq_abs w hw (v⁻¹)
+    obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw (v⁻¹)
     refine ⟨ε, v⁻¹, Or.inr rfl, ?_, ?_⟩
     · rw [hε]
       simpa using hinv
