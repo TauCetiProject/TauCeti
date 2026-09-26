@@ -16,14 +16,14 @@ A contractible space has the singular homology of a point: its homology vanishes
 degree, and its reduced homology vanishes in every degree.
 
 For every topological pair `(X, A)`, the connecting morphism `Hₖ₊₁(X, A) ⟶ Hₖ(A)` of the long
-exact sequence lands in the reduced homology `H̃ₖ(A)`: in degree zero, it is followed by the map
+exact sequence lands in the reduced homology `H~ₖ(A)`: in degree zero, it is followed by the map
 `H₀(A) ⟶ H₀(X)`, which commutes with the augmentations.  This defines the reduced connecting
-morphism `Hₖ₊₁(X, A) ⟶ H̃ₖ(A)`, natural in maps of pairs.  When the reduced homology of `X`
+morphism `Hₖ₊₁(X, A) ⟶ H~ₖ(A)`, natural in maps of pairs.  When the reduced homology of `X`
 vanishes in degrees `k` and `k + 1` it is an isomorphism, and in particular it is an isomorphism
 in every degree when `X` is contractible.  For the pair `TauCeti.diskBoundaryPair n` of a disk and
 its boundary sphere, whose ambient space is contractible by
 `TauCeti.contractibleSpace_diskBoundaryPair_fst`, this identifies `Hₖ₊₁(Dⁿ, Sⁿ⁻¹)` with the
-reduced homology `H̃ₖ(Sⁿ⁻¹)`, by the connecting morphism itself, so that the relative homology of
+reduced homology `H~ₖ(Sⁿ⁻¹)`, by the connecting morphism itself, so that the relative homology of
 a disk modulo its boundary is computed by the reduced homology of spheres.
 
 Coefficients are an object `R` of an abelian category with coproducts, as everywhere in relative
@@ -35,7 +35,7 @@ singular homology.
   homology of a contractible space vanishes.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_of_contractibleSpace`: the reduced singular
   homology of a contractible space vanishes in every degree.
-* `TopPair.reducedSingularHomologyδ`: the connecting morphism `Hₖ₊₁(X, A) ⟶ H̃ₖ(A)` into the
+* `TopPair.reducedSingularHomologyδ`: the connecting morphism `Hₖ₊₁(X, A) ⟶ H~ₖ(A)` into the
   reduced homology of the subspace, with `TopPair.reducedSingularHomologyδ_comp_ι` and
   `TopPair.reducedSingularHomologyδ_naturality`.
 * `TopPair.isIso_reducedSingularHomologyδ`: it is an isomorphism when the reduced homology of the
@@ -121,7 +121,7 @@ private lemma δ_comp_singularHomology₀ε : δ P R 0 ≫ P.snd.singularHomolog
   rw [← singularHomologyMap_singularHomology₀ε R P.map, ← Category.assoc]
   exact (P.singularHomologyδ_comp R 1 0 =≫ _).trans zero_comp
 
-/-- The connecting morphism `Hₖ₊₁(X, A) ⟶ H̃ₖ(A)` of a topological pair `(X, A)`, into the reduced
+/-- The connecting morphism `Hₖ₊₁(X, A) ⟶ H~ₖ(A)` of a topological pair `(X, A)`, into the reduced
 singular homology of the subspace.  It lifts the connecting morphism of the long exact sequence
 of the pair through the inclusion of reduced into ordinary homology
 (`TopPair.reducedSingularHomologyδ_comp_ι`). -/
@@ -153,7 +153,7 @@ lemma reducedSingularHomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (
 
 /-- **The reduced connecting morphism is an isomorphism when the ambient space is acyclic in the
 adjacent degrees**: if the reduced homology of `X` vanishes in degrees `k` and `k + 1`, then
-`Hₖ₊₁(X, A) ⟶ H̃ₖ(A)` is an isomorphism. -/
+`Hₖ₊₁(X, A) ⟶ H~ₖ(A)` is an isomorphism. -/
 theorem isIso_reducedSingularHomologyδ {k : ℕ}
     (h₁ : IsZero ((reducedSingularHomologyFunctor R (k + 1)).obj P.fst))
     (h₀ : IsZero ((reducedSingularHomologyFunctor R k).obj P.fst)) :
