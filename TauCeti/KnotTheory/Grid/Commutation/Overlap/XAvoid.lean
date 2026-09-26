@@ -15,40 +15,6 @@ When `recutLeftEqLeft` promotes the first recut rectangle to a pentagon via `ofR
 new pentagon's `coveredSquares` include an extra strip `{finRotate n a} ×ˢ cIco bottom s`
 beyond its underlying rectangle, where `bottom` is the recut's first rectangle's bottom row.
 
-## Branch 1
-
-In Branch 1 of the recut (`E.first.left = D.toRectangleDecomposition.first.right`), the
-recut's first rectangle's bottom row coincides with the original pentagon's bottom row
-(`recut_first_bottom_eq_pentagon_bottom_of_branch1`); both are `x` applied to the original
-rectangle's terminal side. The strip's row interval then coincides with the original
-pentagon's, so the original X-avoidance applies (`recut_X_not_mem_of_branch1`).
-
-The branch-1 recut *rectangle* `E.second` retains the original rectangle's column sides, but
-its row span differs from the original's, so its covered squares are not contained in the
-original rectangle's and the naive subset transfer does not apply; its X-avoidance in the
-column-swapped diagram needs a separate argument.
-
-## Branch 2
-
-In Branch 2 (`E.first.left = D.toRectangleDecomposition.first.left`), the new pentagon's
-bottom row is `x D.rectangle.left`. Its extra strip avoids X by combining the original
-rectangle's X-avoidance with the original pentagon's X-avoidance over the two halves of a
-cyclic-ordered row interval, via the interval-union lemma
-`Grid.notMem_cIco_of_cIco_union`:
-`GridPentagonBetween.disjoint_coveredSquares_XSet_iff` supplies the pentagon half and
-`TauCeti.GridDiagram.X_not_mem_coveredRows_of_disjoint` the rectangle half.
-
-The branch-2 recut *rectangle* `E.second` spans the columns `cIco (finRotate n a)
-D.rectangle.right`. The covered-columns iff
-`a ∈ coveredColumns ↔ finRotate n a ∈ coveredColumns` is `False ↔ True` here, so the
-iff-based transfer lemma
-`TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns` does
-not apply; the interval-shaped subinterval transfer
-`TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_of_cIco` is used
-instead, with `a ∈ cIco a r` from `Grid.left_mem_cIco`, `a ∉ cIco (a + 1) r` from
-`Grid.notMem_cIco_finRotate_left`, and the column inclusion from
-`Grid.cIco_subset_of_mem_cIoo`.
-
 ## Main results
 
 * `TauCeti.GridRectanglePentagonDecomposition.recut_first_bottom_eq_pentagon_bottom_of_branch1`:

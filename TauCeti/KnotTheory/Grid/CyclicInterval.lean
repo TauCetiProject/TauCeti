@@ -783,9 +783,9 @@ theorem mem_cIco_of_mem_cIco_of_mem_cIoo {A B C s : Fin n}
   exact Finset.mem_union.mpr (Or.inl hmem)
 
 /-- A point is never in the half-open cyclic interval starting at its own successor.
-The interval `cIco (c + 1) r` starts just after `c` (note `c + 1 = finRotate n c`
-by `finRotate_apply`); since `c` is the immediate predecessor of the left endpoint,
-`c` can only appear as the (excluded) right endpoint.
+Going clockwise from `c + 1`, the point `c` is the last point reached — only after a full
+cycle. The half-open arc `cIco (c + 1) r` stops before `r`, hence before completing the
+cycle, so it never reaches `c`.
 Stated with `c + 1` rather than `finRotate n c` so the left-hand side is already
 in simp normal form (`finRotate_apply` would otherwise rewrite it). -/
 @[simp high]
