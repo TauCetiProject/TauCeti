@@ -349,7 +349,8 @@ noncomputable def baseChangeSymplecticSchemePointsMulEquiv
           (Spec (CommRingCat.of k))))).groupIsoToMulEquiv
 
 /-- The scheme-point equivalence is postcomposition with the carrier--symplectic isomorphism. -/
-@[simp]
+-- Not `@[simp]`: the reducible `Symplectic.groupScheme` target prevents the left-hand side from
+-- being in simp normal form.
 theorem baseChangeSymplecticSchemePointsMulEquiv_apply
     (A : Type) [CommRing A] [Algebra k A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of k)) ⟶
