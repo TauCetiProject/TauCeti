@@ -68,7 +68,6 @@ def skeletonMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
           (skeletonLT C (n : ℕ∞)).subset_complex x.2)))⟩
 
 /-- On points, the skeletal map is the restriction of the original map. -/
-@[simp]
 lemma skeletonMap_apply (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ)
     (x : skeletonObj C n) :
     (((skeletonMap f hf n) x : skeletonObj C' n) : Y) =
