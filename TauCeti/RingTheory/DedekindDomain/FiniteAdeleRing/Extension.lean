@@ -38,8 +38,7 @@ instance under base change and norm.
 
 The placewise construction follows the FLT project's finite-adele base change
 (`FLT/DedekindDomain/FiniteAdeleRing/BaseChange.lean`, `FiniteAdeleRing.mapRingHom` and its
-continuity lemma; Kevin Buzzard et al., Apache-2.0). The uniqueness proof here uses strong
-approximation, and the tower lemma follows from that uniqueness.
+continuity lemma; Kevin Buzzard et al., Apache-2.0).
 -/
 
 public section
@@ -120,6 +119,7 @@ theorem eq_finiteAdeleExtension_of_continuous {f : FiniteAdeleRing R K →+* Fin
     (continuous_finiteAdeleExtension R K B L) (funext fun x ↦ by simp [hfK])
 
 /-- The extension maps of finite adele rings compose in a tower `K ⊆ L ⊆ M`. -/
+@[simp]
 theorem finiteAdeleExtension_comp (C M : Type*) [CommRing C] [IsDedekindDomain C] [Algebra B C]
     [Algebra.IsIntegral B C] [Field M] [Algebra L M] [Algebra B M] [IsScalarTower B L M]
     [Algebra C M] [IsFractionRing C M] [IsScalarTower B C M] [Algebra R C]

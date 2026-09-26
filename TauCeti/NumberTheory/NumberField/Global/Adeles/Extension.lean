@@ -100,6 +100,7 @@ theorem eq_infiniteAdeleExtension_of_continuous [NumberField K]
     (continuous_infiniteAdeleExtension K L) (funext fun x ↦ by simp [hfK])
 
 /-- The extension maps of infinite adele rings compose in a tower `K ⊆ L ⊆ M`. -/
+@[simp]
 theorem infiniteAdeleExtension_comp (M : Type*) [Field M] [Algebra L M]
     [Algebra K M] [IsScalarTower K L M] :
     (infiniteAdeleExtension L M).comp (infiniteAdeleExtension K L) =
@@ -198,20 +199,13 @@ theorem adeleExtension_algebraMap (x : K) :
     adeleExtension R K B L (algebraMap K (AdeleRing R K) x) =
       algebraMap L (AdeleRing B L) (algebraMap K L x) := by
   refine Prod.ext ?_ ?_
-  · rw [adeleExtension_fst]
-    change (infiniteAdeleExtension K L)
-      ((algebraMap K (InfiniteAdeleRing K × FiniteAdeleRing R K)) x).1 =
-      ((algebraMap L (InfiniteAdeleRing L × FiniteAdeleRing B L)) (algebraMap K L x)).1
-    rw [Prod.algebraMap_apply, Prod.algebraMap_apply]
+  · rw [adeleExtension_fst, AdeleRing.algebraMap_fst, AdeleRing.algebraMap_fst]
     exact infiniteAdeleExtension_algebraMap K L x
-  · rw [adeleExtension_snd]
-    change (finiteAdeleExtension R K B L)
-      ((algebraMap K (InfiniteAdeleRing K × FiniteAdeleRing R K)) x).2 =
-      ((algebraMap L (InfiniteAdeleRing L × FiniteAdeleRing B L)) (algebraMap K L x)).2
-    rw [Prod.algebraMap_apply, Prod.algebraMap_apply]
+  · rw [adeleExtension_snd, AdeleRing.algebraMap_snd, AdeleRing.algebraMap_snd]
     exact finiteAdeleExtension_algebraMap R K B L x
 
 /-- The extension maps of adele rings compose in a tower `K ⊆ L ⊆ M`. -/
+@[simp]
 theorem adeleExtension_comp (C M : Type*) [CommRing C] [IsDedekindDomain C]
     [Algebra B C] [Algebra.IsIntegral B C] [Field M] [Algebra L M] [Algebra B M]
     [IsScalarTower B L M] [Algebra C M] [IsFractionRing C M] [IsScalarTower B C M] [Algebra R C]
