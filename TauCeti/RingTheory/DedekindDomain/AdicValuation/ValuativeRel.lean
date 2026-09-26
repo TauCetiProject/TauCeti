@@ -244,6 +244,31 @@ instance compactSpace_adicCompletionIntegers
         (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
   exact f.compactSpace
 
+/-- **An element has order of vanishing exactly `1` at `v` exactly when its adic value is
+`WithZero.exp (-1)`.**
+
+The value group of `HeightOneSpectrum.valuation` is `WithZero (Multiplicative ℤ)` and its `1`
+is the *top* of that group, that is, value zero.  So `v.valuation K x = 1` says that `x` is a local
+unit at `v`, and the order of vanishing `1` is instead the value `WithZero.exp (-1)`, the value of a
+generator of `v.asIdeal`.  This is the equivalence that relates the multiplicative value of an
+element to the additive order of vanishing used by the class-group interface, whose `adicOrd` is
+`-WithZero.log` of this valuation. -/
+theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) [NumberField K] :
+    -WithZero.log (v.valuation K x) = 1 ↔
+      v.valuation K x = (WithZero.exp (-1 : ℤ) : WithZero (Multiplicative ℤ)) := by
+  constructor
+  · intro h
+    have hlog : WithZero.log (v.valuation K x) = -1 := (neg_eq_iff_eq_neg).mp h
+    have hx : v.valuation K x ≠ 0 := by
+      intro hx0
+      rw [hx0] at hlog
+      simp at hlog
+    calc v.valuation K x = WithZero.exp (WithZero.log (v.valuation K x)) :=
+        (WithZero.exp_log hx).symm
+      _ = WithZero.exp (-1) := by rw [hlog]
+  · intro h
+    rw [h, WithZero.log_exp, neg_neg]
+
 end IsDedekindDomain.HeightOneSpectrum
 
 end

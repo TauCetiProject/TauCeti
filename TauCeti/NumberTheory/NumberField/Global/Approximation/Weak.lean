@@ -373,4 +373,21 @@ theorem exists_fieldUnit_valuation_eq_and_signHom_eq
     exact hxf v hv
   rw [Valuation.map_eq_of_sub_lt (v.valuation K) hlt, hp v]
 
+/-- **A field unit which is negative at every real place of a prescribed finite set.**
+
+Prescribing a sign at each real place of a finite set is weak approximation data, so
+`exists_fieldUnit_valuation_eq_and_signHom_eq` supplies the element in one step: take the finite set
+of places to be empty, so only the signs are prescribed.  The construction uses no finite-place
+data at all, which is why the empty `S` is the right input here. -/
+theorem exists_fieldUnit_negative_at (T : Finset {w : InfinitePlace K // w.IsReal}) :
+    ∃ x : Kˣ, ∀ w ∈ T, embedding_of_isReal w.2 (x : K) < 0 := by
+  classical
+  obtain ⟨x, -, hxs⟩ := exists_fieldUnit_valuation_eq_and_signHom_eq (S := ∅)
+    (fun _ => 0) (fun w => if w ∈ T then -1 else 1)
+  refine ⟨x, fun w hw => ?_⟩
+  have hs : signHom x w = -1 := by
+    have h := congrFun hxs w
+    simpa [hw] using h
+  rwa [signHom_apply_eq_neg_one_iff] at hs
+
 end TauCeti.GlobalNumberFields
