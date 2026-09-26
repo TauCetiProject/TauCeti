@@ -29,7 +29,7 @@ public section
 
 noncomputable section
 
-open Set UpperHalfPlane
+open Set UpperHalfPlane TauCeti
 open scoped OnePoint
 
 namespace TauCeti
@@ -59,8 +59,8 @@ theorem exists_ball_inter_range_schwarzChristoffelCompactifiedBoundary_eq_ball_i
     continuous_schwarzChristoffelCompactifiedBoundary a e z₀ hfinite hinfty
   have hxT : (x : OnePoint ℝ) ∈ T := ⟨x, hx, rfl⟩
   obtain ⟨ε, hε, hball_range⟩ :=
-    exists_ball_inter_range_eq_ball_inter_image_of_isEmbedding
-      (hΓcont.isClosedEmbedding hinj).isEmbedding hTopen hxT
+    (hΓcont.isClosedEmbedding hinj).isEmbedding.exists_ball_inter_range_eq_ball_inter_image
+      hTopen hxT
   have hxΓ : Γ (x : OnePoint ℝ) = schwarzChristoffelBoundary a e z₀ x := by
     simp only [Γ, schwarzChristoffelCompactifiedBoundary_coe]
   rw [hxΓ] at hball_range

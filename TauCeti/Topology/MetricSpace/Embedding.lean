@@ -20,11 +20,13 @@ open Set
 
 namespace TauCeti
 
+namespace Topology.IsEmbedding
+
 variable {X Y : Type*} [TopologicalSpace X] [PseudoMetricSpace Y]
 
 /-- Near the image of a point in an open set, the range of an embedding agrees with the image
 of that open set. -/
-theorem exists_ball_inter_range_eq_ball_inter_image_of_isEmbedding
+theorem exists_ball_inter_range_eq_ball_inter_image
     {f : X → Y} (hf : Topology.IsEmbedding f) {s : Set X} (hs : IsOpen s)
     {x : X} (hx : x ∈ s) :
     ∃ ε : ℝ, 0 < ε ∧
@@ -43,5 +45,7 @@ theorem exists_ball_inter_range_eq_ball_inter_image_of_isEmbedding
     exact ⟨hw, hball hw, hr⟩
   · rintro ⟨hw, _, hr⟩
     exact ⟨hw, hr⟩
+
+end Topology.IsEmbedding
 
 end TauCeti
