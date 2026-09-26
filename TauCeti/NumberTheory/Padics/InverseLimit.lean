@@ -91,6 +91,7 @@ theorem proj_apply (n : ℕ) (x : inverseLimit p) : proj p n x = x.1 n :=
   (rfl)
 
 /-- The projections from the inverse limit form a compatible family. -/
+@[simp]
 theorem cast_proj (m n : ℕ) (h : m ≤ n) :
     (ZMod.castHom (pow_dvd_pow p h) (ZMod (p ^ m))).comp (proj p n) = proj p m := by
   ext x
