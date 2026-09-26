@@ -62,23 +62,26 @@ lemma coord_zero_mul_coord_one :
     Ideal.Quotient.mk_algebraMap R _ a
   simpa only [coord, map_sub, map_mul, hC] using h
 
-private lemma aeval_eq_zero_of_mem {A : Type*} [CommRing A] [Algebra R A] (x y : A)
+private lemma aeval_eq_zero_of_mem {A : Type*} [CommSemiring A] [Algebra R A] (x y : A)
     (h : x * y = algebraMap R A a) (p : MvPolynomial (Fin 2) R)
     (hp : p ∈ Ideal.span {X 0 * X 1 - C a}) : aeval ![x, y] p = 0 := by
   have hker : Ideal.span {X (0 : Fin 2) * X 1 - C a} ≤
       RingHom.ker (aeval ![x, y]).toRingHom := by
     rw [Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
-    simpa using sub_eq_zero.mpr h
+    simp only [sub_eq_add_neg, ← map_neg C, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+      map_add, map_mul, aeval_X, aeval_C, Matrix.cons_val_zero,
+      Matrix.cons_val_one, h]
+    rw [← map_add, add_neg_cancel, map_zero]
   exact RingHom.mem_ker.mp (hker hp)
 
 /-- Evaluate the nodal algebra at two elements satisfying its defining equation. -/
-def lift {A : Type*} [CommRing A] [Algebra R A] (x y : A)
+def lift {A : Type*} [CommSemiring A] [Algebra R A] (x y : A)
     (h : x * y = algebraMap R A a) : NodeAlgebra R a →ₐ[R] A :=
   Ideal.Quotient.liftₐ _ (aeval ![x, y]) (aeval_eq_zero_of_mem a x y h)
 
 /-- Evaluation sends the first coordinate to the chosen first element. -/
 @[simp]
-lemma lift_coord_zero {A : Type*} [CommRing A] [Algebra R A] (x y : A)
+lemma lift_coord_zero {A : Type*} [CommSemiring A] [Algebra R A] (x y : A)
     (h : x * y = algebraMap R A a) : lift a x y h (coord a 0) = x := by
   simpa [lift, coord, -mk_X] using
     AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (aeval_eq_zero_of_mem a x y h))
@@ -86,7 +89,7 @@ lemma lift_coord_zero {A : Type*} [CommRing A] [Algebra R A] (x y : A)
 
 /-- Evaluation sends the second coordinate to the chosen second element. -/
 @[simp]
-lemma lift_coord_one {A : Type*} [CommRing A] [Algebra R A] (x y : A)
+lemma lift_coord_one {A : Type*} [CommSemiring A] [Algebra R A] (x y : A)
     (h : x * y = algebraMap R A a) : lift a x y h (coord a 1) = y := by
   simpa [lift, coord, -mk_X] using
     AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp _ _ (aeval_eq_zero_of_mem a x y h))
@@ -105,12 +108,9 @@ lemma hom_ext {A : Type*} [Semiring A] [Algebra R A]
   · exact h₀
   · exact h₁
 
-private def presentation : Presentation R (NodeAlgebra R a) (Fin 2) Unit where
-  __ := Generators.naive
-  relation _ := X 0 * X 1 - C a
-  span_range_relation_eq_ker := by
-    simpa using (Generators.ker_naive (R := R)
-      (σ := Fin 2) (I := Ideal.span {X 0 * X 1 - C a}) _ _).symm
+private def presentation : Presentation R (NodeAlgebra R a) (Fin 2) Unit :=
+  (Presentation.naive (v := fun _ : Unit ↦ X 0 * X 1 - C a)).ofAlgEquiv
+    (Ideal.quotientEquivAlgOfEq R (by simp))
 
 /-- The nodal equation is an algebra of finite presentation over its coefficient ring. -/
 instance : FinitePresentation R (NodeAlgebra R a) :=
@@ -125,8 +125,9 @@ private def prePresentation (i : Fin 2) :
 private lemma prePresentation_jacobian (i : Fin 2) :
     (prePresentation a i).jacobian = coord a i := by
   rw [PreSubmersivePresentation.jacobian_eq_jacobiMatrix_det, Matrix.det_unique]
-  rw [PreSubmersivePresentation.jacobiMatrix_apply]
-  fin_cases i <;> simp [prePresentation, presentation, coord, -mk_X] <;> rfl
+  rw [PreSubmersivePresentation.jacobiMatrix_apply, Generators.algebraMap_apply]
+  fin_cases i <;> simp [prePresentation, presentation, coord, -mk_X,
+    Presentation.naive, Generators.naive]
 
 /-- Each coordinate chart of `xy = a` is standard smooth of relative dimension one. -/
 theorem isStandardSmoothOfRelativeDimension_localizationAway_coord (i : Fin 2) :
