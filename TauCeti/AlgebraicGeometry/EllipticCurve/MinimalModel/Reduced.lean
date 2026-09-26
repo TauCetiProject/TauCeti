@@ -217,7 +217,6 @@ instance isElliptic_reducedMinimalModel (E : WeierstrassCurve ℚ) [E.IsElliptic
   infer_instance
 
 /-- The reduced minimal model is reduced minimal. -/
-@[simp]
 theorem isReducedMinimal_reducedMinimalModel (E : WeierstrassCurve ℚ) [E.IsElliptic] :
     IsReducedMinimal (reducedMinimalModel E) :=
   (exists_isReducedMinimal_smul E).choose_spec
