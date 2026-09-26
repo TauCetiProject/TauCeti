@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Pairing
+public import TauCeti.KnotTheory.Grid.Commutation.Disjoint.Pairing
 
 /-!
 # The disjoint contribution to the pentagon chain-map equation
