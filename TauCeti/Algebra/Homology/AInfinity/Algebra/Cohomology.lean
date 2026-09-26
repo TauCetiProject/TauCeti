@@ -54,8 +54,6 @@ strict morphisms of these `A∞` algebras.
   classes of homogeneous cycles.
 * `TauCeti.AInfinityAlgebra.cohomologyAInfinityAlgebra`: the cohomology as an `A∞` algebra whose
   only nonzero operation is `m₂`.
-* `NonUnitalAlgHom.cohomologyStrictHom`: a degree-preserving morphism of cohomology
-  algebras as a strict morphism of the cohomology `A∞` algebras.
 
 ## Main results
 
@@ -466,6 +464,13 @@ noncomputable def cohomologyAInfinityAlgebra (𝒜 : AInfinityAlgebra R A) :
     AInfinityAlgebra R 𝒜.Cohomology :=
   (isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece).toAInfinityAlgebra
 
+/-- The cohomology `A∞` algebra is the zero-differential DG algebra converted to an `A∞`
+algebra. -/
+theorem cohomologyAInfinityAlgebra_eq_toAInfinityAlgebra (𝒜 : AInfinityAlgebra R A) :
+    𝒜.cohomologyAInfinityAlgebra =
+      (isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece).toAInfinityAlgebra := by
+  rw [cohomologyAInfinityAlgebra]
+
 /-- The grading of the cohomology `A∞` algebra is the grading of the cohomology. -/
 @[simp]
 theorem cohomologyAInfinityAlgebra_grading (𝒜 : AInfinityAlgebra R A) :
@@ -502,34 +507,3 @@ end AInfinity
 end AInfinityAlgebra
 
 end TauCeti
-
-namespace NonUnitalAlgHom
-
-open TauCeti
-
-universe uR uA uB
-
-variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
-  {B : Type uB} [AddCommGroup B] [Module R B] {𝒜 : AInfinityAlgebra R A}
-  {ℬ : AInfinityAlgebra R B}
-
-/-- A degree-preserving morphism between cohomology algebras is a strict morphism between the
-corresponding cohomology `A∞` algebras. -/
-noncomputable def cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomology)
-    (hφ : ∀ {p : ℤ} {c : 𝒜.Cohomology}, c ∈ 𝒜.cohomologyGrading.piece p →
-      φ c ∈ ℬ.cohomologyGrading.piece p) :
-    AInfinityStrictHom 𝒜.cohomologyAInfinityAlgebra ℬ.cohomologyAInfinityAlgebra :=
-  NonUnitalDGAlgHom.toAInfinityStrictHom
-    (hA := isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece)
-    (hB := isNonUnitalDGAlgebra_zero ℬ.cohomologyGrading.piece)
-    { toNonUnitalAlgHom := φ
-      map_mem' := hφ
-      map_d' := fun _ ↦ by simp only [LinearMap.zero_apply, map_zero] }
-
-/-- The strict morphism of cohomology `A∞` algebras induced by `φ` is `φ` itself. -/
-@[simp]
-theorem coe_cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomology) (hφ) :
-    ⇑(φ.cohomologyStrictHom hφ) = φ :=
-  NonUnitalDGAlgHom.coe_toAInfinityStrictHom _
-
-end NonUnitalAlgHom

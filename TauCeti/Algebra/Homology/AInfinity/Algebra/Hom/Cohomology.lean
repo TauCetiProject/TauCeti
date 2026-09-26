@@ -29,6 +29,8 @@ solely through the boundary it produces.
 
 * `TauCeti.AInfinityHom.cyclesMap`: the linear part restricted to cycles.
 * `TauCeti.AInfinityHom.cohomologyMap`: the induced morphism of nonunital cohomology algebras.
+* `NonUnitalAlgHom.cohomologyStrictHom`: a degree-preserving morphism of cohomology
+  algebras as a strict morphism of the cohomology `A∞` algebras.
 * `TauCeti.AInfinityHom.cohomologyStrictHom`: the induced map as a strict morphism of the
   cohomology `A∞` algebras.
 * `TauCeti.AInfinityHom.IsQuasiIso`: a morphism inducing a bijection on cohomology.
@@ -61,6 +63,55 @@ solely through the boundary it produces.
 public section
 
 open scoped TensorProduct
+
+namespace NonUnitalAlgHom
+
+open TauCeti
+
+universe uR uA uB
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
+  {B : Type uB} [AddCommGroup B] [Module R B] {𝒜 : AInfinityAlgebra R A}
+  {ℬ : AInfinityAlgebra R B}
+
+private def castStrictHom {𝒜 𝒜' : AInfinityAlgebra R A} {ℬ ℬ' : AInfinityAlgebra R B}
+    (h𝒜 : 𝒜 = 𝒜') (hℬ : ℬ = ℬ') (f : AInfinityStrictHom 𝒜' ℬ') :
+    AInfinityStrictHom 𝒜 ℬ := by
+  cases h𝒜
+  cases hℬ
+  exact f
+
+private theorem coe_castStrictHom {𝒜 𝒜' : AInfinityAlgebra R A}
+    {ℬ ℬ' : AInfinityAlgebra R B} (h𝒜 : 𝒜 = 𝒜') (hℬ : ℬ = ℬ')
+    (f : AInfinityStrictHom 𝒜' ℬ') : ⇑(castStrictHom h𝒜 hℬ f) = f := by
+  cases h𝒜
+  cases hℬ
+  rfl
+
+/-- A degree-preserving morphism between cohomology algebras is a strict morphism between the
+corresponding cohomology `A∞` algebras. -/
+noncomputable def cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomology)
+    (hφ : ∀ {p : ℤ} {c : 𝒜.Cohomology}, c ∈ 𝒜.cohomologyGrading.piece p →
+      φ c ∈ ℬ.cohomologyGrading.piece p) :
+    AInfinityStrictHom 𝒜.cohomologyAInfinityAlgebra ℬ.cohomologyAInfinityAlgebra :=
+  castStrictHom 𝒜.cohomologyAInfinityAlgebra_eq_toAInfinityAlgebra
+    ℬ.cohomologyAInfinityAlgebra_eq_toAInfinityAlgebra
+    (NonUnitalDGAlgHom.toAInfinityStrictHom
+      (hA := isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece)
+      (hB := isNonUnitalDGAlgebra_zero ℬ.cohomologyGrading.piece)
+      { toNonUnitalAlgHom := φ
+        map_mem' := hφ
+        map_d' := fun _ ↦ by simp only [LinearMap.zero_apply, map_zero] })
+
+/-- The strict morphism of cohomology `A∞` algebras induced by `φ` is `φ` itself. -/
+@[simp]
+theorem coe_cohomologyStrictHom (φ : 𝒜.Cohomology →ₙₐ[R] ℬ.Cohomology) (hφ) :
+    ⇑(φ.cohomologyStrictHom hφ) = φ := by
+  simp only [cohomologyStrictHom, coe_castStrictHom,
+    NonUnitalDGAlgHom.coe_toAInfinityStrictHom]
+  rfl
+
+end NonUnitalAlgHom
 
 namespace TauCeti
 
@@ -359,21 +410,20 @@ theorem cohomologyLinearEquiv_apply {f : AInfinityHom AA BB} (hf : f.IsQuasiIso)
 /-- The inverse of the map induced on cohomology by a quasi-isomorphism, as a morphism of
 cohomology algebras. -/
 noncomputable def cohomologyMapInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
-    BB.Cohomology →ₙₐ[R] AA.Cohomology where
-  toFun := hf.cohomologyLinearEquiv.symm
-  map_smul' := hf.cohomologyLinearEquiv.symm.map_smul
-  map_zero' := hf.cohomologyLinearEquiv.symm.map_zero
-  map_add' := hf.cohomologyLinearEquiv.symm.map_add
-  map_mul' x y := hf.cohomologyLinearEquiv.injective (by
-    rw [LinearEquiv.apply_symm_apply, cohomologyLinearEquiv_apply, map_mul,
-      ← cohomologyLinearEquiv_apply hf, ← cohomologyLinearEquiv_apply hf,
-      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply])
+    BB.Cohomology →ₙₐ[R] AA.Cohomology :=
+  f.cohomologyMap.inverse hf.cohomologyLinearEquiv.symm
+    (fun x ↦ by
+      rw [← hf.cohomologyLinearEquiv_apply x]
+      exact hf.cohomologyLinearEquiv.symm_apply_apply x)
+    (fun x ↦ by
+      rw [← hf.cohomologyLinearEquiv_apply (hf.cohomologyLinearEquiv.symm x)]
+      exact hf.cohomologyLinearEquiv.apply_symm_apply x)
 
 /-- The inverse cohomology algebra map is the inverse linear equivalence. -/
 @[simp]
 theorem cohomologyMapInv_apply {f : AInfinityHom AA BB} (hf : f.IsQuasiIso)
     (c : BB.Cohomology) : hf.cohomologyMapInv c = hf.cohomologyLinearEquiv.symm c := by
-  rw [cohomologyMapInv, NonUnitalAlgHom.coe_mk]
+  simp only [cohomologyMapInv, NonUnitalAlgHom.coe_inverse]
 
 /-- The inverse cohomology algebra map is a left inverse to the cohomology map. -/
 @[simp]
@@ -507,7 +557,7 @@ theorem isQuasiIso_cohomologyStrictHom {f : AInfinityHom AA BB} (hf : f.IsQuasiI
     f.cohomologyStrictHom.toAInfinityHom.IsQuasiIso :=
   isQuasiIso_cohomologyModelStrictHom f.cohomologyStrictHom (by
     simpa only [coe_cohomologyStrictHom] using
-      (show Function.Bijective f.cohomologyMap from hf))
+      (isQuasiIso_def f).1 hf)
 
 end IsQuasiIso
 
