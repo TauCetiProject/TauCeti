@@ -13,11 +13,8 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 
 At a finite prime `w` over `v` of a number-field extension, the coefficient of the different
 equals `e(w/v) - 1` exactly when the canonical completed extension `L_w / K_v` is tamely ramified,
-and it reaches `e(w/v)` exactly when `L_w / K_v` is wildly ramified. The residue fields are finite,
-so their extension is separable and the Dedekind-domain criteria
-`TauCeti.multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff` and
-`TauCeti.ramificationIdx_le_multiplicity_differentIdeal_iff` apply; the completion-facing forms
-follow from `isTamelyRamified_adicCompletion_iff` and `isWildlyRamified_adicCompletion_iff`.
+and it is at least `e(w/v)` exactly when `L_w / K_v` is wildly ramified. These criteria read tame
+and wild ramification of the completed extension directly from the global different exponent.
 
 ## References
 
@@ -47,7 +44,7 @@ theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff_isTamelyRamif
     w.asIdeal).trans <| (and_iff_right (by infer_instance)).trans
       (isTamelyRamified_adicCompletion_iff v w).symm
 
-/-- The global different exponent at `w` reaches `e(w/v)` precisely when the canonical
+/-- The global different exponent at `w` is at least `e(w/v)` precisely when the canonical
 completed extension is wildly ramified. -/
 theorem ramificationIdx_le_multiplicity_differentIdeal_iff_isWildlyRamified :
     w.asIdeal.ramificationIdx (𝓞 K) ≤
