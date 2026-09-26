@@ -43,18 +43,6 @@ attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
 @[simp] theorem cone_obj (f : X ⟶ Y) : (cone f).obj = CurvedDuplex.cone f.hom := rfl
 
-@[simp] theorem cone_X₀ (f : X ⟶ Y) :
-    (cone f).obj.X₀ = (X.obj.X₁ ⊞ Y.obj.X₀) := CurvedDuplex.cone_X₀ _
-
-@[simp] theorem cone_X₁ (f : X ⟶ Y) :
-    (cone f).obj.X₁ = (X.obj.X₀ ⊞ Y.obj.X₁) := CurvedDuplex.cone_X₁ _
-
-@[simp] theorem cone_d₀ (f : X ⟶ Y) :
-    (cone f).obj.d₀ = CurvedDuplex.coneD₀ f.hom := CurvedDuplex.cone_d₀ _
-
-@[simp] theorem cone_d₁ (f : X ⟶ Y) :
-    (cone f).obj.d₁ = CurvedDuplex.coneD₁ f.hom := CurvedDuplex.cone_d₁ _
-
 /-- The canonical inclusion of the codomain into the cone. -/
 @[expose] noncomputable def coneInclusion (f : X ⟶ Y) : Y ⟶ cone f :=
   ⟨CurvedDuplex.coneInclusion f.hom⟩
