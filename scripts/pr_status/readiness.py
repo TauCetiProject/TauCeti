@@ -189,7 +189,9 @@ def assess(pr, repo=None, now=None):
     number = int(pr)
     current, comments, statuses = evidence(number, repo)
     head = current["head"]["sha"]
-    # The same compare the merge job asks; core.gh_api keeps the rate-limit circuit breaker.
+    # The same compare the merge job asks, so the merge base is the one it will require;
+    # core.gh_api keeps the rate-limit circuit breaker. A bare head SHA also resolves for fork
+    # PRs, whose heads GitHub keeps in this repository as refs/pull/<n>/head.
     merge_base = core.gh_api(f"repos/{repo}/compare/{current['base']['sha']}...{head}?per_page=1",
                              jq=".merge_base_commit.sha").strip()
     if not merge_base:
