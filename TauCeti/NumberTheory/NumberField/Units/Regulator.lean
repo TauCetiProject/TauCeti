@@ -120,6 +120,25 @@ theorem norm_logEmbedding_eq_mult_abs_log (hr : rank K = 1) (u : (𝓞 K)ˣ)
     _ = w.mult * |Real.log (w u)| :=
       (mult_abs_log_eq_index_mul_regulator hr u w).symm
 
+/-- In unit rank one, a unit whose absolute value exceeds one at an infinite place has absolute
+value less than one at the other infinite place. -/
+theorem apply_lt_one_of_rank_eq_one (hr : rank K = 1) {w w' : InfinitePlace K} (hne : w' ≠ w)
+    {v : (𝓞 K)ˣ} (hv : 1 < w v) : w' v < 1 := by
+  classical
+  have hcard : Fintype.card (InfinitePlace K) = 2 := by
+    unfold rank at hr
+    omega
+  have huniv : (Finset.univ : Finset (InfinitePlace K)) = {w', w} :=
+    (Finset.eq_univ_of_card _ (by rw [Finset.card_pair hne, hcard])).symm
+  have h := sum_mult_mul_log v
+  rw [huniv, Finset.sum_pair hne] at h
+  have hm : (0 : ℝ) < w.mult := by exact_mod_cast mult_pos
+  have hm' : (0 : ℝ) < w'.mult := by exact_mod_cast mult_pos
+  have hlog : Real.log (w' v) < 0 := by
+    have := Real.log_pos hv
+    nlinarith
+  exact (Real.log_neg_iff (Units.pos_at_place v w')).mp hlog
+
 open scoped Classical in
 /-- In unit rank one, a positive real value of a unit in `(1, B]` bounds the norm of its
 logarithmic embedding by `log B`. -/
