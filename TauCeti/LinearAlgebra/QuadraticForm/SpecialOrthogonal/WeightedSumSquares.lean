@@ -161,7 +161,6 @@ theorem specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSum
 
 /-- Membership in the general-linear carrier of the standard real sum-of-squares special
 orthogonal group is matrix special-orthogonal membership. -/
-@[simp]
 theorem mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff
     (ι : Type u) [Fintype ι] [DecidableEq ι]
     (U : Matrix.GeneralLinearGroup ι ℝ) :
@@ -187,7 +186,6 @@ theorem mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff
 
 /-- Membership in the positive-definite `realCliffordForm n 0` special-orthogonal carrier is matrix
 special-orthogonal membership. -/
-@[simp]
 theorem mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff
     (n : ℕ) (U : Matrix.GeneralLinearGroup (Fin n) ℝ) :
     U ∈ MonoidHom.range (specialOrthogonalToGeneralLinear (realCliffordForm n 0)) ↔
