@@ -13,7 +13,7 @@ import TauCeti.Algebra.TensorProduct.BaseChange
 /-!
 # Galois descent of bialgebra morphisms
 
-A morphism between scalar-extended bialgebras over a finite Galois extension descends uniquely
+A morphism between scalar-extended bialgebras over a Galois extension descends uniquely
 if and only if it commutes with the Galois action on the scalar factor. The descended algebra
 morphism preserves the counit and comultiplication, since these identities can be checked after
 the injective scalar extension. For Hopf algebras, antipode compatibility then follows from
@@ -42,7 +42,7 @@ namespace BialgHom
 
 variable {k L A B : Type*} [Field k] [Field L] [Algebra k L]
 variable [Semiring A] [Semiring B] [Bialgebra k A] [Bialgebra k B]
-variable [FiniteDimensional k L] [IsGalois k L]
+variable [IsGalois k L]
 
 variable (F : L ⊗[k] A →ₐc[L] L ⊗[k] B)
 variable (hF : ∀ (σ : L ≃ₐ[k] L) (x : L ⊗[k] A),
@@ -115,7 +115,7 @@ theorem map_galoisDescend :
   simpa only [Bialgebra.TensorProduct.map_toAlgHom, id_toAlgHom,
     galoisDescend_toAlgHom] using F.toAlgHom.map_galoisDescend hF
 
-/-- A bialgebra morphism over a finite Galois extension descends uniquely exactly when it
+/-- A bialgebra morphism over a Galois extension descends uniquely exactly when it
 commutes with the scalar-factor Galois action. In particular this applies to coordinate Hopf
 algebras of affine group schemes. -/
 theorem existsUnique_map_eq_iff :
