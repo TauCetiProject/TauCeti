@@ -39,6 +39,8 @@ respects, such as the Alexander grading, descends to this quotient.
 ## Main definitions
 
 * `TauCeti.GridDiagram.unblockedHomology`: the unblocked grid homology `GH⁻`.
+* `TauCeti.GridDiagram.unblockedHomologyBaseModule`: the coefficient-ring action obtained by
+  restricting the polynomial action.
 * `TauCeti.GridDiagram.unblockedHomologyIso`: `GH⁻` is `ker ∂⁻ ⧸ im ∂⁻`.
 * `TauCeti.GridDiagram.unblockedHomologyClass`: the class in `GH⁻` of a cycle.
 * `TauCeti.GridDiagram.IsKnot.unblockedHomologyModule`: the `R[U]`-module structure on the
@@ -80,6 +82,16 @@ variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
 the polynomial ring `R[V₀, …, V_{n-1}]`. -/
 noncomputable abbrev unblockedHomology : ModuleCat (MvPolynomial (Fin n) R) :=
   (G.unblockedComplex R).homology ()
+
+/-- Restriction of the polynomial action on grid homology along the coefficient embedding. -/
+noncomputable instance unblockedHomologyBaseModule : Module R (G.unblockedHomology R) :=
+  Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial (Fin n) R)
+
+/-- The coefficient action on grid homology agrees with the polynomial action through the
+coefficient embedding. -/
+instance unblockedHomologyBaseScalarTower :
+    IsScalarTower R (MvPolynomial (Fin n) R) (G.unblockedHomology R) :=
+  IsScalarTower.of_compHom R (MvPolynomial (Fin n) R) _
 
 variable {G R}
 
