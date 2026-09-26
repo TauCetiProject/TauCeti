@@ -39,25 +39,21 @@ theorem multiplicity_map_adicCompletionIntegers (v : HeightOneSpectrum R)
   let P : Ideal B := IsLocalRing.maximalIdeal B
   have hmap : Ideal.map (algebraMap R B) v.asIdeal = P :=
     v.map_asIdeal_adicCompletionIntegers (K := K)
-  have hfaith : FaithfulSMul R B :=
-    (faithfulSMul_iff_algebraMap_injective R B).mpr
-      (FaithfulSMul.algebraMap_injective R B)
-  let _ := hfaith
   have hP : P ≠ ⊥ := IsDiscreteValuationRing.not_a_field B
-  have : P.IsPrime := inferInstance
+  have hPprime : P.IsPrime := inferInstance
   have : P.LiesOver v.asIdeal :=
-    (Ideal.liesOver_iff_dvd_map (Ideal.IsPrime.ne_top (show P.IsPrime from inferInstance))).2
+    (Ideal.liesOver_iff_dvd_map hPprime.ne_top).2
       (by rw [hmap])
   have hidx : Ideal.ramificationIdx' v.asIdeal P = 1 := by
     rw [← hmap]
     exact Ideal.ramificationIdx'_map_self_eq_one
-      (by rw [hmap]; exact Ideal.IsPrime.ne_top (show P.IsPrime from inferInstance))
+      (by rw [hmap]; exact hPprime.ne_top)
       (by rw [hmap]; exact hP)
   have h := Ideal.IsDedekindDomain.emultiplicity_map_eq_ramificationIdx'_mul hI
-    v.irreducible (Ideal.prime_of_isPrime hP (show P.IsPrime from inferInstance)).irreducible hP
+    v.irreducible (Ideal.prime_of_isPrime hP hPprime).irreducible hP
   rw [hidx, Nat.cast_one, one_mul,
     (FiniteMultiplicity.of_prime_left
-      (Ideal.prime_of_isPrime hP (show P.IsPrime from inferInstance))
+      (Ideal.prime_of_isPrime hP hPprime)
         (Ideal.map_ne_bot_of_ne_bot hI)).emultiplicity_eq_multiplicity,
     (FiniteMultiplicity.of_prime_left v.prime hI).emultiplicity_eq_multiplicity] at h
   exact_mod_cast h

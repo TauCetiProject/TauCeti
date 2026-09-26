@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Different
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Different.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Multiplicity
 
 /-!
@@ -34,20 +34,22 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L))
   [w.asIdeal.LiesOver v.asIdeal]
 
-/-- The exponent of the global different at `w` is the exponent of the completed different in
-the maximal ideal of the completed integer ring. -/
-theorem multiplicity_differentIdeal_eq_completion :
-    multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) =
-      multiplicity (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L))
-        (differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) := by
+/-- The exponent of the completed different at the maximal ideal is the exponent of the global
+different at `w`. -/
+@[simp]
+theorem multiplicity_differentIdeal_adicCompletionIntegers_eq_multiplicity_asIdeal :
+    multiplicity (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L))
+        (differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) =
+      multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) := by
   calc
-    multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) =
-        multiplicity (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L))
-          ((differentIdeal (𝓞 K) (𝓞 L)).map
-            (algebraMap (𝓞 L) (w.adicCompletionIntegers L))) :=
-      (w.multiplicity_map_adicCompletionIntegers (K := L)
-        (differentIdeal (𝓞 K) (𝓞 L)) differentIdeal_ne_bot).symm
-    _ = _ := by rw [map_differentIdeal_eq_differentIdeal_adicCompletionIntegers v w]
+    multiplicity (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L))
+        (differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) =
+      multiplicity (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L))
+        ((differentIdeal (𝓞 K) (𝓞 L)).map
+          (algebraMap (𝓞 L) (w.adicCompletionIntegers L))) := by
+        rw [map_differentIdeal_eq_differentIdeal_adicCompletionIntegers v w]
+    _ = _ := w.multiplicity_map_adicCompletionIntegers (K := L)
+      (differentIdeal (𝓞 K) (𝓞 L)) differentIdeal_ne_bot
 
 end IsDedekindDomain.HeightOneSpectrum
 
