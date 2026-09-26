@@ -91,8 +91,7 @@ theorem submatrix_toMatrix_titsPolarForm :
   simpa only [Matrix.submatrix_apply, Matrix.add_apply, Matrix.transpose_apply,
     LinearMap.BilinForm.toMatrix_apply, titsPolarForm_def] using h
 
-/-- **The Tits form of the `E₈` quiver is positive definite**, because its polarization has the
-positive definite Gram matrix `CartanMatrix.E 8`. -/
+/-- **The Tits form of the `E₈` quiver is positive definite.** -/
 theorem titsForm_posDef : (titsForm E8).PosDef := by
   rw [titsForm_posDef_iff_posDef_toMatrix]
   have h : (titsPolarForm E8).toMatrix (Pi.basisFun ℤ E8) =
