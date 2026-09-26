@@ -51,6 +51,8 @@ statement is asserted.
 
 * `TauCeti.DynkinType.geckDefiningIdeal` and `TauCeti.DynkinType.geckGroupScheme`: the defining
   Hopf ideal and the resulting affine group scheme over `ℤ`.
+* `TauCeti.DynkinType.geckCoordinateHopfAlgebra`: the coordinate Hopf algebra representing the
+  carrier.
 * `TauCeti.DynkinType.geckGroupSchemeι`: its closed immersion into `GLₙ`.
 * `TauCeti.DynkinType.geckRootSubgroup` and `TauCeti.DynkinType.geckWeightTorus`: the root subgroup
   and weight-torus morphisms into the carrier.
@@ -167,6 +169,22 @@ theorem geckGroupScheme_def :
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.isNilpotent_geckRepresentation_rootGenerator ht)
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) := (rfl)
+
+/-- The coordinate Hopf algebra of the Geck carrier. -/
+abbrev geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+    (TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.isNilpotent_geckRepresentation_rootGenerator ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht))
+
+/-- The Geck carrier is the group scheme represented by `geckCoordinateHopfAlgebra`. -/
+theorem geckGroupScheme_eq_hopfSpec :
+    t.geckGroupScheme ht =
+      (hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op (t.geckCoordinateHopfAlgebra ht)) :=
+  by rw [geckGroupScheme_def]
 
 /-- The Geck carrier is a closed subgroup scheme of `GLₙ`. -/
 def geckGroupSchemeι :
