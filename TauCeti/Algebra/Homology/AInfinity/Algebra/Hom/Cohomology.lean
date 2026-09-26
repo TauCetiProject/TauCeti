@@ -466,9 +466,12 @@ private theorem cohomologyModelClass_bijective (AA : AInfinityAlgebra R A) :
   rw [heq]
   exact e.bijective
 
-/-- The inverse strict morphism between cohomology `A∞` algebras is a quasi-isomorphism. -/
-theorem isQuasiIso_cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
-    hf.cohomologyStrictHomInv.toAInfinityHom.IsQuasiIso := by
+/-- A strict map between cohomology models is a quasi-isomorphism when its underlying map is
+bijective. -/
+private theorem isQuasiIso_cohomologyModelStrictHom
+    (g : AInfinityStrictHom AA.cohomologyAInfinityAlgebra
+      BB.cohomologyAInfinityAlgebra) (hg : Function.Bijective g) :
+    g.toAInfinityHom.IsQuasiIso := by
   let eA : AA.Cohomology → AA.cohomologyAInfinityAlgebra.Cohomology :=
     fun x => AA.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
       simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply])
@@ -477,40 +480,34 @@ theorem isQuasiIso_cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQua
       simp only [AInfinityAlgebra.mem_cycles, BB.cohomologyAInfinityAlgebra_m_one_apply])
   have hA : Function.Bijective eA := cohomologyModelClass_bijective AA
   have hB : Function.Bijective eB := cohomologyModelClass_bijective BB
-  have hcomm : ⇑hf.cohomologyStrictHomInv.toAInfinityHom.cohomologyMap ∘ eB =
-      eA ∘ ⇑hf.cohomologyMapInv := by
+  have hcomm : ⇑g.toAInfinityHom.cohomologyMap ∘ eA = eB ∘ ⇑g := by
     funext x
     simp only [Function.comp_apply, eA, eB, cohomologyMap_cohomologyClass]
     congr 1
     simp only [AInfinityStrictHom.linearPart_toAInfinityHom,
-      AInfinityStrictHom.coe_toLinearMap, cohomologyStrictHomInv,
-      NonUnitalAlgHom.coe_cohomologyStrictHom]
-  apply (Function.Bijective.of_comp_iff _ hB).1
+      AInfinityStrictHom.coe_toLinearMap]
+  apply (Function.Bijective.of_comp_iff _ hA).1
   rw [hcomm]
-  exact hA.comp hf.cohomologyLinearEquiv.symm.bijective
+  exact hB.comp hg
+
+/-- The inverse strict morphism between cohomology `A∞` algebras is a quasi-isomorphism. -/
+theorem isQuasiIso_cohomologyStrictHomInv {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
+    hf.cohomologyStrictHomInv.toAInfinityHom.IsQuasiIso := by
+  have heq : (⇑hf.cohomologyMapInv : BB.Cohomology → AA.Cohomology) =
+      ⇑hf.cohomologyLinearEquiv.symm := by
+    funext x
+    exact hf.cohomologyMapInv_apply x
+  apply isQuasiIso_cohomologyModelStrictHom hf.cohomologyStrictHomInv
+  simpa only [coe_cohomologyStrictHomInv, heq] using
+    hf.cohomologyLinearEquiv.symm.bijective
 
 /-- The strict morphism induced on cohomology by a quasi-isomorphism is itself a
 quasi-isomorphism. -/
 theorem isQuasiIso_cohomologyStrictHom {f : AInfinityHom AA BB} (hf : f.IsQuasiIso) :
-    f.cohomologyStrictHom.toAInfinityHom.IsQuasiIso := by
-  let eA : AA.Cohomology → AA.cohomologyAInfinityAlgebra.Cohomology :=
-    fun x => AA.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
-      simp only [AInfinityAlgebra.mem_cycles, AA.cohomologyAInfinityAlgebra_m_one_apply])
-  let eB : BB.Cohomology → BB.cohomologyAInfinityAlgebra.Cohomology :=
-    fun x => BB.cohomologyAInfinityAlgebra.cohomologyClass (x := x) (by
-      simp only [AInfinityAlgebra.mem_cycles, BB.cohomologyAInfinityAlgebra_m_one_apply])
-  have hA : Function.Bijective eA := cohomologyModelClass_bijective AA
-  have hB : Function.Bijective eB := cohomologyModelClass_bijective BB
-  have hcomm : ⇑f.cohomologyStrictHom.toAInfinityHom.cohomologyMap ∘ eA =
-      eB ∘ ⇑f.cohomologyMap := by
-    funext x
-    simp only [Function.comp_apply, eA, eB, cohomologyMap_cohomologyClass]
-    congr 1
-    simp only [AInfinityStrictHom.linearPart_toAInfinityHom,
-      AInfinityStrictHom.coe_toLinearMap, coe_cohomologyStrictHom]
-  apply (Function.Bijective.of_comp_iff _ hA).1
-  rw [hcomm]
-  exact hB.comp hf
+    f.cohomologyStrictHom.toAInfinityHom.IsQuasiIso :=
+  isQuasiIso_cohomologyModelStrictHom f.cohomologyStrictHom (by
+    simpa only [coe_cohomologyStrictHom] using
+      (show Function.Bijective f.cohomologyMap from hf))
 
 end IsQuasiIso
 
