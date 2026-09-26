@@ -177,12 +177,16 @@ theorem hilbertSymbol_self (a : Kˣ) : hilbertSymbol a a = hilbertSymbol a (-1) 
     · intro ha
       have hmem' : a⁻¹ * -a ∈ quadraticNormSubgroup (a : K) :=
         Subgroup.mul_mem _ (Subgroup.inv_mem _ ha) (neg_radicand_mem_quadraticNormSubgroup a)
-      rw [show a⁻¹ * -a = -1 by ext; push_cast; field_simp] at hmem'
+      -- `a⁻¹ * -a` is the unit `-1`, the identity being checked on the values in `K`
+      have hunit : a⁻¹ * -a = -1 := Units.ext (by simp)
+      rw [hunit] at hmem'
       exact hmem'
     · intro h
       have hmem' : -1 * -a ∈ quadraticNormSubgroup (a : K) :=
         Subgroup.mul_mem _ h (neg_radicand_mem_quadraticNormSubgroup a)
-      rw [show -1 * -a = a by ext; push_cast; ring] at hmem'
+      -- likewise `-1 * -a` is the unit `a`
+      have hunit : -1 * -a = a := Units.ext (by simp)
+      rw [hunit] at hmem'
       exact hmem'
   by_cases ha_mem : a ∈ quadraticNormSubgroup (a : K)
   · rw [(hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a a).mpr ha_mem,
