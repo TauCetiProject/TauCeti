@@ -44,6 +44,7 @@ attribute [local instance high] Algebra.toModule
 variable (t : DynkinType) (ht : t.Valid)
 
 /-- The pinned raising generators at nodes with zero Cartan pairing have zero Lie bracket. -/
+@[simp]
 theorem lie_geckSimpleRaising_eq_zero (i j : Fin t.rank)
     (hij : t.cartanMatrix i j = 0) :
     ⁅(t.lieBasis ht).e i, (t.lieBasis ht).e j⁆ = 0 := by
@@ -52,6 +53,7 @@ theorem lie_geckSimpleRaising_eq_zero (i j : Fin t.rank)
   simpa [hji] using h
 
 /-- The pinned lowering generators at nodes with zero Cartan pairing have zero Lie bracket. -/
+@[simp]
 theorem lie_geckSimpleLowering_eq_zero (i j : Fin t.rank)
     (hij : t.cartanMatrix i j = 0) :
     ⁅(t.lieBasis ht).f i, (t.lieBasis ht).f j⁆ = 0 := by
@@ -60,6 +62,7 @@ theorem lie_geckSimpleLowering_eq_zero (i j : Fin t.rank)
   simpa [hji] using h
 
 /-- Raising at one node and lowering at a distinct node have zero Lie bracket. -/
+@[simp]
 theorem lie_geckSimpleRaising_lowering_eq_zero (i j : Fin t.rank) (hij : i ≠ j) :
     ⁅(t.lieBasis ht).e i, (t.lieBasis ht).f j⁆ = 0 :=
   (t.isSerreSystem_lieBasis ht).lie_E_F_of_ne i j hij
