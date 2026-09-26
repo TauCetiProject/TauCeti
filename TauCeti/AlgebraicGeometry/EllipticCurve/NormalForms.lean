@@ -174,7 +174,7 @@ variable {k : Type*} [Field k] [Invertible (2 : k)]
 
 /-- The quadratic coefficient after completing the square. -/
 @[simp]
-theorem toCharNeTwoNF_a₂ (W : WeierstrassCurve k) :
+theorem toCharNeTwoNF_a₂ {W : WeierstrassCurve k} :
     (W.toCharNeTwoNF • W).a₂ = W.a₂ + (W.a₁ / 2) ^ 2 := by
   have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
   simp [variableChange_a₂, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
@@ -183,7 +183,7 @@ theorem toCharNeTwoNF_a₂ (W : WeierstrassCurve k) :
 
 /-- The linear coefficient after completing the square. -/
 @[simp]
-theorem toCharNeTwoNF_a₄ (W : WeierstrassCurve k) :
+theorem toCharNeTwoNF_a₄ {W : WeierstrassCurve k} :
     (W.toCharNeTwoNF • W).a₄ = W.a₄ + 2 * (W.a₁ / 2) * (W.a₃ / 2) := by
   have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
   simp [variableChange_a₄, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
@@ -192,7 +192,7 @@ theorem toCharNeTwoNF_a₄ (W : WeierstrassCurve k) :
 
 /-- The constant coefficient after completing the square. -/
 @[simp]
-theorem toCharNeTwoNF_a₆ (W : WeierstrassCurve k) :
+theorem toCharNeTwoNF_a₆ {W : WeierstrassCurve k} :
     (W.toCharNeTwoNF • W).a₆ = W.a₆ + (W.a₃ / 2) ^ 2 := by
   have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
   simp [variableChange_a₆, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
