@@ -48,7 +48,7 @@ variable [IsNoetherianRing k] [Module.Flat k C]
 
 /-- A finite comodule over a flat coalgebra over a Noetherian ring is completely reducible exactly
 when every monomorphism into it admits a retraction. -/
-theorem isCompletelyReducible_iff_isSplitMono (M : FGComoduleCat.{u, v, w} k C) :
+theorem isCompletelyReducible_iff_forall_isSplitMono (M : FGComoduleCat.{u, v, w} k C) :
     Comodule.IsCompletelyReducible k C M ↔
       ∀ (N : FGComoduleCat.{u, v, w} k C) (f : N ⟶ M), Mono f → IsSplitMono f := by
   constructor
@@ -108,7 +108,7 @@ theorem nonempty_splitting_of_isCompletelyReducible
     (S : ShortComplex (FGComoduleCat.{u, v, w} k C)) (hS : S.ShortExact)
     (hM : Comodule.IsCompletelyReducible k C S.X₂) : Nonempty S.Splitting := by
   obtain ⟨r, hr⟩ :=
-    ((isCompletelyReducible_iff_isSplitMono S.X₂).mp hM S.X₁ S.f hS.mono_f).exists_splitMono
+    ((isCompletelyReducible_iff_forall_isSplitMono S.X₂).mp hM S.X₁ S.f hS.mono_f).exists_splitMono
   exact ⟨ShortComplex.Splitting.ofExactOfRetraction S hS.exact r hr hS.epi_g⟩
 
 end FGComoduleCat
@@ -134,7 +134,7 @@ theorem isLinearlyReductive_iff_nonempty_splitting :
   · intro h
     apply IsLinearlyReductive.of_forall_isCompletelyReducible
     intro V _ _ _ _
-    apply (FGComoduleCat.isCompletelyReducible_iff_isSplitMono
+    apply (FGComoduleCat.isCompletelyReducible_iff_forall_isSplitMono
       (FGComoduleCat.of (R := k) (C := C) V)).mpr
     intro N f hf
     obtain ⟨s⟩ := h (ShortComplex.cokernelSequence f)
