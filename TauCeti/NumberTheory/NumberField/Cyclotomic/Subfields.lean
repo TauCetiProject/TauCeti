@@ -50,7 +50,13 @@ private theorem card_orderTwoSubgroup : Nat.card (orderTwoSubgroup (K := K)) = 2
 /-- The unique quadratic intermediate field of the fifth cyclotomic field, defined as the fixed
 field of the order-two subgroup with cyclotomic exponents `±1`. -/
 noncomputable def fifthCyclotomicQuadraticSubfield : IntermediateField ℚ K :=
-  fixedField (orderTwoSubgroup (K := K))
+  fixedField (Subgroup.zpowers ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ)))
+
+/-- The quadratic subfield is the fixed field of the automorphism with cyclotomic exponent `-1`. -/
+theorem fifthCyclotomicQuadraticSubfield_def :
+    fifthCyclotomicQuadraticSubfield (K := K) =
+      fixedField (Subgroup.zpowers ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ))) := by
+  rw [fifthCyclotomicQuadraticSubfield]
 
 /-- An element lies in the quadratic subfield exactly when the automorphism with cyclotomic
 exponent `-1` fixes it. -/
