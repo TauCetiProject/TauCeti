@@ -23,11 +23,11 @@ zero, in `TauCeti.NumberTheory.LocalField.QuadraticForm.EvenValuation`, where it
 class up to a square and so has the same norms, namely the elements of even normalized valuation.
 
 The sign indicator of an index-two subgroup is a character, so the local Hilbert symbol is
-bimultiplicative in both arguments. The same index theorem gives nondegeneracy: the norms from the
-unramified class are exactly the elements of even normalized valuation, so a uniformizer, which has
-valuation one, is not such a norm and the symbol with it is `-1`. A radicand of odd valuation is
-therefore separated by the unramified class, and a radicand of even valuation, being the unramified
-class up to a square, by a uniformizer.
+bimultiplicative in both arguments. The same index theorem gives nondegeneracy, and there that step
+is purely group-theoretic: the sign indicator of a proper subgroup of index two is onto, so it takes
+the value `-1` off the subgroup. The field-level statement is
+`TauCeti.exists_hilbertSymbol_eq_neg_one_of_index_eq_two`, which asks only that the norm subgroup of
+`a` have index two, so the theorem here needs no case split on the valuation of `a`.
 
 The diagonal entry `(a, a)_K = (a, -1)_K` needs no arithmetic input and is stated for an arbitrary
 field in `TauCeti.NumberTheory.HilbertSymbol.NormSubgroup`, as
@@ -86,18 +86,12 @@ theorem hilbertSymbol_mul_left (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
   simp only [hilbertSymbol_comm _ a, hilbertSymbol_mul_right h2]
 
 /-- **Nondegeneracy of the local Hilbert symbol.** Away from residue characteristic two, for every
-nonsquare `a` there is a `b ∈ Kˣ` with `(a, b)_K = -1`. A radicand of odd valuation is separated
-by the unramified class, and a radicand of even valuation by a uniformizer. -/
+nonsquare `a` there is a `b ∈ Kˣ` with `(a, b)_K = -1`. It is the field-level consequence of
+the norm index theorem, `TauCeti.exists_hilbertSymbol_eq_neg_one_of_index_eq_two`, and so needs
+no case split on the valuation of `a`. -/
 theorem exists_hilbertSymbol_eq_neg_one (h2 : IsUnit (2 : 𝒪[K])) {a : Kˣ} (ha : ¬IsSquare a) :
-    ∃ b : Kˣ, hilbertSymbol a b = -1 := by
-  by_cases hev : Even (normalizedValuation K a).toAdd
-  · obtain ⟨Δ, -, hsq, hΔ⟩ := exists_unramified_class_isSquare_mul_of_even_of_not_isSquare h2 hev ha
-    obtain ⟨π, hπ⟩ := exists_isUniformizer K
-    refine ⟨π, (hilbertSymbol_congr_sq a Δ π π hsq ⟨π, rfl⟩).trans ?_⟩
-    rw [hilbertSymbol_unramified hΔ π, (isUniformizer_def π).mp hπ, toAdd_ofAdd]
-    simp only [Int.not_even_one, ↓reduceIte]
-  · obtain ⟨b, -, hb⟩ := exists_hilbertSymbol_eq_neg_one_of_odd
-      (two_ne_zero_of_isUnit_two h2) (Int.not_even_iff_odd.mp hev)
-    exact ⟨b, hb⟩
+    ∃ b : Kˣ, hilbertSymbol a b = -1 :=
+  exists_hilbertSymbol_eq_neg_one_of_index_eq_two a
+    (quadraticNormSubgroup_index_eq_two_of_not_isSquare h2 ha)
 
 end TauCeti

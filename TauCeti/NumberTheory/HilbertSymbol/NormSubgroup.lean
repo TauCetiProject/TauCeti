@@ -21,7 +21,8 @@ Hilbert symbol is exactly the sign indicator of this subgroup.
 This separates the ring-generic group theory from the arithmetic input used over a
 nonarchimedean local field. Once the quadratic norm subgroup is known to have index two, its
 sign indicator is multiplicative, which is the group-theoretic step in the
-bimultiplicativity of the local Hilbert symbol.
+bimultiplicativity of the local Hilbert symbol, and it takes the value `-1` off the subgroup,
+which is the group-theoretic step in the nondegeneracy of that symbol.
 
 The diagonal entry of the symbol, `TauCeti.hilbertSymbol_self`, needs no arithmetic input at
 all: the norm subgroup for the radicand `a` contains the norm `-a` of the square-root generator,
@@ -236,6 +237,21 @@ theorem ker_hilbertSymbolHom (a : Kˣ)
     (hindex : (quadraticNormSubgroup (a : K)).index ∣ 2) :
     (hilbertSymbolHom a hindex).ker = quadraticNormSubgroup (a : K) := by
   rw [hilbertSymbolHom, Subgroup.ker_signIndicatorHom]
+
+/-- **Nondegeneracy of the Hilbert symbol for a radicand of norm index two.** If the quadratic
+norm subgroup of `a` has index two, then the Hilbert symbol with first argument `a` is a
+nontrivial sign-valued character, so it takes the value `-1`. This is the field-level form:
+no arithmetic beyond the index is needed. -/
+theorem exists_hilbertSymbol_eq_neg_one_of_index_eq_two (a : Kˣ)
+    (hindex : (quadraticNormSubgroup (a : K)).index = 2) :
+    ∃ b : Kˣ, hilbertSymbol a b = -1 := by
+  -- The character of a proper subgroup of index dividing two is onto, so `-1` is a value.
+  have hdvd : (quadraticNormSubgroup (a : K)).index ∣ 2 := hindex ▸ dvd_rfl
+  obtain ⟨b, hb⟩ :=
+    (Subgroup.signIndicatorHom_surjective_iff_index_eq_two
+      (quadraticNormSubgroup (a : K)) hdvd).mpr hindex (-1)
+  rw [Subgroup.signIndicatorHom_apply, ← hilbertSymbol_eq_signIndicator] at hb
+  exact ⟨b, hb⟩
 
 end Field
 
