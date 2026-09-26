@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect
 public import TauCeti.NumberTheory.LocalField.Squares
 
-import TauCeti.NumberTheory.LocalField.QuadraticForm.NormIndex
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Index
 import TauCeti.NumberTheory.LocalField.QuadraticForm.RamificationDictionary
 
 /-!
