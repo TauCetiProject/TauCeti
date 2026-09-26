@@ -29,8 +29,10 @@ that the Frattini step takes commutators inside the subgroup while the lower `p`
 them against the whole group.
 
 Nothing here assumes `p` prime or `G` profinite. For a profinite `G` and a prime `p` the step is
-the honest pro-`p` Frattini subgroup, so `Φ_{k+1} = Φ(Φ_k)`, and the two series are cofinal in one
-another; see `TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Series`.
+the honest pro-`p` Frattini subgroup, so `Φ_{k+1} = Φ(Φ_k)`; and in a topologically finitely
+generated pro-`p` group the inclusion `Φ_k ≤ λ_k` reverses cofinally — every `Φ_k` contains some
+`λ_j` — so there the two series are cofinal in one another. See
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Series`.
 
 ## Main definitions
 
@@ -170,8 +172,10 @@ variable (p : ℕ) (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGrou
 /-- The **Frattini series** of a topological group, 0-based like the lower `p`-series:
 `Φ₀ = G` and `Φ_{k+1} = closure (Φ_kᵖ ⬝ [Φ_k, Φ_k])`. For a prime `p` and a profinite group it
 is the iterated pro-`p` Frattini subgroup
-(`TauCeti.proPFrattiniSeries_succ_eq_map_proPFrattini`), and it interleaves with the lower
-`p`-series (`TauCeti.proPFrattiniSeries_le_pLowerCentralSeries`). -/
+(`TauCeti.proPFrattiniSeries_succ_eq_map_proPFrattini`), and it always lies below the lower
+`p`-series (`TauCeti.proPFrattiniSeries_le_pLowerCentralSeries`); in a topologically finitely
+generated pro-`p` group the two series are moreover cofinal in one another
+(`TauCeti.IsProP.exists_pLowerCentralSeries_le_proPFrattiniSeries`). -/
 def proPFrattiniSeries : ℕ → Subgroup G
   | 0 => ⊤
   | k + 1 => proPFrattiniStep p (proPFrattiniSeries k)
