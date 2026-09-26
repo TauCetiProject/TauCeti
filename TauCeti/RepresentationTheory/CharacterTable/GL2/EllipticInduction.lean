@@ -532,6 +532,8 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
       rw [hdelta_one]
       norm_num
     · ring
+  -- The preceding rewrites expose the pairing as a raw sum; fold the local abbreviations `p`
+  -- and `delta` into that sum before splitting it into its constant and correction terms.
   -- The quotient character cancels on `Eˣ`; the embedded `Fˣ` has `q - 1` elements, so only
   -- the constant term and the correction on those base-field units remain.
   change (Nat.card (GL2NonSplitTorus F E hE) : ℂ)⁻¹ *
