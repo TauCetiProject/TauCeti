@@ -47,6 +47,8 @@ complete Hausdorff targets.
   pair of definition for it.
 * `isTateRing_completion_locTopology_of_isTopologicallyNilpotent`: a topologically nilpotent
   denominator becomes a pseudouniformiser, so the completed localization is Tate.
+* `isTateRing_completion_locTopology_of_isTateRing`: over a Tate base the completed localization
+  is Tate for every denominator.
 * `existsUnique_continuous_ringHom_completion_locTopology`: the universal property, for complete
   Hausdorff targets.
 * `completion_locTopology_ringHom_ext_of_continuous`: two continuous ring homomorphisms out of
@@ -406,6 +408,25 @@ theorem isTateRing_completion_locTopology_of_isTopologicallyNilpotent [IsTopolog
   let _ := isHuberRing_completion_locTopology P T s S hden
   exact ⟨⟨toCompletionLoc P T s S hden s,
     isPseudoUniformizer_toCompletionLoc P T s S hden hs⟩⟩
+
+/-- **A rational localization of a Tate ring is Tate.** `A⟨T/s⟩` is a Tate ring whenever `A` is,
+for every denominator `s`.
+
+`isTateRing_completion_locTopology_of_isTopologicallyNilpotent` is the companion for a
+topologically nilpotent denominator; it asks no Tate hypothesis of the base. -/
+theorem isTateRing_completion_locTopology_of_isTateRing [IsTopologicalRing A] [IsTateRing A]
+    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    IsTateRing (UniformSpace.Completion S) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  -- the structure map is continuous, so `IsTateRing.of_continuous` carries the pseudouniformiser
+  exact IsTateRing.of_continuous (A := A) (continuous_toCompletionLoc P T s S hden)
 
 /-- **Maps out of `A⟨T/s⟩` are determined on `A`.** Two continuous ring homomorphisms into a
 semiring carrying a Hausdorff topology that agree after composing with the structure map

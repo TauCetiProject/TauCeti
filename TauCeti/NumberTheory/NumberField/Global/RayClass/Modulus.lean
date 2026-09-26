@@ -133,6 +133,13 @@ theorem dvd_trans {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ 𝔫) (h₂ : �
   dvd_iff.mpr ⟨(dvd_iff.mp h₁).1.trans (dvd_iff.mp h₂).1,
     (dvd_iff.mp h₁).2.trans (dvd_iff.mp h₂).2⟩
 
+/-- Divisibility of moduli is antisymmetric. -/
+theorem dvd_antisymm {𝔪 𝔫 : Modulus K} (hm : 𝔪 ∣ 𝔫) (hn : 𝔫 ∣ 𝔪) : 𝔪 = 𝔫 := by
+  apply Modulus.ext
+  · exact le_antisymm (Ideal.dvd_iff_le.mp (dvd_iff.mp hn).1)
+      (Ideal.dvd_iff_le.mp (dvd_iff.mp hm).1)
+  · exact Finset.Subset.antisymm (dvd_iff.mp hm).2 (dvd_iff.mp hn).2
+
 /-- The **support** of a modulus: the finite set of height-one primes dividing its finite part. -/
 noncomputable def support (𝔪 : Modulus K) : Finset (HeightOneSpectrum (𝓞 K)) :=
   (Ideal.finite_factors 𝔪.finitePart_ne_zero).toFinset
@@ -236,6 +243,10 @@ def one (K : Type*) [Field K] [NumberField K] : Modulus K where
 
 theorem one_dvd (𝔪 : Modulus K) : one K ∣ 𝔪 :=
   dvd_iff.mpr ⟨by rw [one_finitePart, ← Ideal.one_eq_top]; exact _root_.one_dvd _, by simp⟩
+
+/-- The trivial modulus is the only divisor of itself. -/
+theorem eq_one_of_dvd_one {𝔪 : Modulus K} (h : 𝔪 ∣ one K) : 𝔪 = one K :=
+  dvd_antisymm h (one_dvd 𝔪)
 
 end Modulus
 

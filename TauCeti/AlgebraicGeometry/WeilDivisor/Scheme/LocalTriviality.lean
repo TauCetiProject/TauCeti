@@ -72,22 +72,12 @@ private def localTrivializations (hD : IsLocallyPrincipal D) (hX : ∀ y : X, co
   let hg : ∀ x (y : CodimensionOnePoint X), (y : X) ∈ U x →
       WeilDivisor.coeff D y = orderAt y (g x) :=
     fun x ↦ (hD' x).choose_spec.2.choose_spec
-  exact
-    { I := X
-      X := U
-      coversTop := (Opens.coversTop_iff (X : Type u) U).mpr (by
-        rw [TopologicalSpace.IsOpenCover]
-        ext x
-        constructor
-        · exact fun _ ↦ Opens.mem_top x
-        · exact fun _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩)
-      iso := fun x ↦
-        TauCeti.SheafOfModules.freePUnitIsoUnit (X.ringCatSheaf.over (U x)) ≪≫
-          (SheafOfModules.overFunctor X.ringCatSheaf (U x)).mapIso
-            (unitIsoSheafZero hX) ≪≫
-          (sheafOverMulIsoOfCoeffEq D 0 (U x) (g x) (by
-            intro y hy
-            simpa using hg x y hy)).symm }
+  exact SheafOfModules.LocalTrivializations.ofForallMem X U hx fun x ↦
+    (SheafOfModules.overFunctor X.ringCatSheaf (U x)).mapIso
+      (unitIsoSheafZero hX) ≪≫
+      (sheafOverMulIsoOfCoeffEq D 0 (U x) (g x) (by
+        intro y hy
+        simpa using hg x y hy)).symm
 
 /-- **The sheaf of a locally principal Weil divisor is a line bundle.** On a locally Noetherian
 integral scheme of dimension at most one whose codimension-one local rings are discrete

@@ -265,6 +265,12 @@ private theorem map_apply_impl (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A
 theorem map_apply (f : A →ₗ[R] B) (hf) (a : DiscreteCoind G U A) (g : G) :
     map f hf a g = f (a g) := map_apply_impl f hf a g
 
+/-- Coinduction of a coefficient map commutes with the right-translation action. -/
+theorem map_smul [ContinuousMul G] (f : A →ₗ[R] B) (hf)
+    (g : G) (a : DiscreteCoind G U A) : map f hf (g • a) = g • map f hf a := by
+  ext x
+  simp only [map_apply, coe_smul]
+
 @[simp]
 theorem map_id :
     map (G := G) (U := U) (LinearMap.id (R := R) (M := A)) (fun _ _ => rfl) =

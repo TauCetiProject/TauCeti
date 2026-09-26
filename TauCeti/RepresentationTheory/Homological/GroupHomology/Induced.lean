@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.Basic
 public import TauCeti.RepresentationTheory.Induction.TrivialSubgroup
+public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 import Mathlib.RepresentationTheory.Homological.GroupHomology.Functoriality
 import Mathlib.RepresentationTheory.Homological.GroupHomology.Shapiro
 
@@ -24,6 +25,8 @@ The statements follow `ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.le
 
 * `groupHomology.isZero_indBot_succ`: `Hₙ₊₁(G, Ind_⊥^G X) = 0`.
 * `groupHomology.isZero_res_indBot_succ`: `Hₙ₊₁(S, Ind_⊥^G X) = 0` for every subgroup `S ≤ G`.
+* `TauCeti.groupHomology.isZero_res_leftRegular_succ`: `Hₙ₊₁(S, k[G]) = 0`
+  for every subgroup.
 
 ## References
 
@@ -59,3 +62,16 @@ theorem isZero_res_indBot_succ (S : Subgroup G) (X : Type u) [AddCommGroup X] [M
     ((groupHomology.functor k S (n + 1)).mapIso (resIndBotIso S X))
 
 end groupHomology
+
+namespace TauCeti.groupHomology
+
+/-- Positive-degree homology of a subgroup with coefficients in the restricted left regular
+representation vanishes, without any finiteness assumption. -/
+theorem isZero_res_leftRegular_succ {k G : Type u} [CommRing k] [Group G]
+    (S : Subgroup G) (n : ℕ) :
+    Limits.IsZero (groupHomology (res S.subtype (leftRegular k G)) (n + 1)) :=
+  (_root_.groupHomology.isZero_res_indBot_succ S k n).of_iso
+    ((_root_.groupHomology.functor k S (n + 1)).mapIso
+      ((resFunctor S.subtype).mapIso indBotIsoLeftRegular.symm))
+
+end TauCeti.groupHomology

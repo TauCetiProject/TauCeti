@@ -41,16 +41,17 @@ scaling factor of valuation `1`.
   minimal model to a minimal model.
 * `WeierstrassCurve.valuation_u_eq_one_of_isMinimal_smul`: for an elliptic curve, the scaling
   factor of such a change of variables satisfies `v (u) = 1`.
+* `WeierstrassCurve.VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul`: the scaling
+  factor is the image of a unit of the discrete valuation ring.
 * `WeierstrassCurve.valuation_Δ_minimal_smul` and
   `WeierstrassCurve.valuation_c₄_minimal_smul`: the chosen minimal equations of isomorphic curves
   have the same discriminant and `c₄` valuations.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
 
-`valuation_u_eq_one_of_isMinimal_smul` is what the last one runs on, though it is only half of
-what the descent needs.
-`v (u) = 1` over a discrete valuation ring says `u` is a unit of `R`; turning that into a change of
-variables actually *defined* over `R` is the job of
+`valuation_u_eq_one_of_isMinimal_smul` and
+`VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul` supply the unit needed for descent.
+Turning that into a change of variables actually *defined* over `R` is the job of
 `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`, which also consumes integrality
 of both models. A change of variables defined over `R` is one the reduction can see, and that is
 what carries split multiplicativity across.
@@ -261,6 +262,20 @@ theorem valuation_u_eq_one_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [I
     exact inv_eq_one.mp h1
   exact (pow_eq_one_iff_of_nonneg zero_le (by norm_num)).mp h12
 
+namespace VariableChange
+
+/-- The scaling factor between two minimal elliptic equations is the image of a unit of the
+discrete valuation ring. -/
+theorem exists_unit_algebraMap_eq_u_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K}
+    [IsMinimal R W₁] [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K)
+    (hD : D • W₁ = W₂) : ∃ u₀ : Rˣ, algebraMap R K u₀ = D.u := by
+  obtain ⟨u₀, hau⟩ := associated_of_valuation_eq (A := R) 1 (↑D.u : K)
+    (by rw [map_one]; exact (valuation_u_eq_one_of_isMinimal_smul R D hD).symm)
+  rw [Units.smul_def, Algebra.smul_def, mul_one] at hau
+  exact ⟨u₀, hau⟩
+
+end VariableChange
+
 /-- The discriminants of the chosen minimal equations have the same valuation after a change of
 variables. -/
 @[simp]
@@ -304,9 +319,7 @@ theorem HasSplitMultiplicativeReduction.of_isMinimal_smul {W₁ W₂ : Weierstra
   have : IsMinimal R W₁ := hm₁.toIsMinimal
   -- `v (D.u) = 1`, so `D.u` is the image of a unit of `R` and `D` descends to some `C₀` over `R`.
   have hvu := valuation_u_eq_one_of_isMinimal_smul R D hD
-  obtain ⟨u₀, hau⟩ :=
-    associated_of_valuation_eq (A := R) 1 (↑D.u : K) (by rw [map_one]; exact hvu.symm)
-  rw [Units.smul_def, Algebra.smul_def, mul_one] at hau
+  obtain ⟨u₀, hau⟩ := VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul R D hD
   obtain ⟨C₀, hDC₀⟩ := VariableChange.exists_baseChange_eq_of_smul_eq R D hD u₀ hau
   have hW₂eq : (C₀ • W₁.integralModel R).baseChange K = W₂ := by
     rw [WeierstrassCurve.baseChange, ← map_variableChange, ← hD, ← hDC₀]

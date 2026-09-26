@@ -75,13 +75,12 @@ theorem exists_trace_mul_algebraMap_eq (f : B →ₗ[A] A) :
   have hg : Set.EqOn g₁ g₂ (Set.range b') := by
     rintro _ ⟨i, rfl⟩
     simp [g₁, g₂, φ, hb']
-  obtain ⟨a, ha, hax⟩ := exists_smul_mem_span_basis A K b b' hb'
+  obtain ⟨a, ha, hax⟩ := IsLocalization.exists_smul_mem_span_basis A⁰ b b' hb'
     (IsIntegralClosure.algebraMap_injective B A L) x
   have h := LinearMap.eqOn_span' hg hax
   simp only [map_smul] at h
-  have ha' : algebraMap A K a ≠ 0 := (IsFractionRing.injective A K).ne_iff' (map_zero _) |>.mpr ha
   rw [← algebraMap_smul K, ← algebraMap_smul K a (g₂ x)] at h
-  exact smul_right_injective K ha' h
+  exact (IsLocalization.map_units K ⟨a, ha⟩).smul_left_cancel.mp h
 
 variable [Module.Finite A B] [Module.Projective A B]
 

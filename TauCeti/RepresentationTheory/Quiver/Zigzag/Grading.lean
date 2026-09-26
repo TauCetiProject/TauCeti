@@ -33,11 +33,14 @@ structure, and it computes the concrete pieces.
 
 ## Main results
 
+* `TauCeti.DoubledQuiver.backtrackElem_mem_grade_two`: a backtrack has degree two.
 * `TauCeti.IsZigzagRelator.isHomogeneousElem` and
   `TauCeti.IsQuadraticZigzagRelator.mem_grade_two`: the relators are homogeneous, the quadratic
   ones in degree two.
 * `TauCeti.isHomogeneous_zigzagIdeal` and `TauCeti.isHomogeneous_quadraticZigzagIdeal`: **the
   relation ideals are homogeneous.**
+* `TauCeti.mem_zigzagGrade_iff`: a graded piece consists of the classes of the homogeneous
+  elements of its degree.
 * `TauCeti.isInternal_zigzagGrade`: **the quotient is the internal direct sum of its graded
   pieces**, the comparison of the direct-sum graded algebra with the ungraded quotient asked for
   by the roadmap.
@@ -63,6 +66,13 @@ namespace TauCeti
 open PathAlgebra
 
 universe u w
+
+/-- A backtrack element has degree two: it is the basis element of a single length-two path. -/
+theorem DoubledQuiver.backtrackElem_mem_grade_two (k : Type w) [Semiring k] {V : Type u}
+    (G : SimpleGraph V) {i j : V} (h : G.Adj i j) :
+    DoubledQuiver.backtrackElem G k h ∈ grade k (DoubledQuiver G) 2 := by
+  rw [DoubledQuiver.backtrackElem_eq_ofPath]
+  exact ofPath_mem_grade_of_length (DoubledQuiver.length_backtrackPath G h)
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
@@ -126,6 +136,11 @@ theorem zigzagMk_mem_zigzagGrade {n : ℕ} {y : pathAlgebra k (DoubledQuiver G)}
     (hy : y ∈ grade k (DoubledQuiver G) n) : zigzagMk k G y ∈ zigzagGrade k G n := by
   rw [zigzagGrade, zigzagMk_apply]
   exact TauCeti.GradedAlgebra.mk_mem_quotientPiece _ _ hy
+
+/-- Membership in a graded piece is being the class of a homogeneous element of that degree. -/
+theorem mem_zigzagGrade_iff {n : ℕ} {x : nonisolatedZigzagQuotient k G} :
+    x ∈ zigzagGrade k G n ↔ ∃ y ∈ grade k (DoubledQuiver G) n, zigzagMk k G y = x := by
+  simp only [zigzagGrade, TauCeti.GradedAlgebra.mem_quotientPiece_iff, zigzagMk_apply]
 
 /-- **The quotient is the internal direct sum of its graded pieces**: this is the comparison of
 the direct-sum graded algebra with the ungraded quotient asked for by the roadmap, in the
@@ -223,9 +238,7 @@ theorem zigzagGrade_two_eq_span_range_zigzagVolume :
     by_cases hi : ∃ j, G.Adj i j
     · obtain ⟨j, hj⟩ := hi
       rw [zigzagVolume_eq_zigzagMk_backtrackElem k G hj]
-      refine zigzagMk_mem_zigzagGrade k G ?_
-      rw [backtrackElem_eq_ofPath]
-      exact PathAlgebra.ofPath_mem_grade_of_length (length_backtrackPath G hj)
+      exact zigzagMk_mem_zigzagGrade k G (backtrackElem_mem_grade_two k G hj)
     · have hiso : G.IsIsolated i := fun w hw => hi ⟨w, hw⟩
       rw [zigzagVolume_eq_zero_of_isIsolated k G hiso]
       exact Submodule.zero_mem _

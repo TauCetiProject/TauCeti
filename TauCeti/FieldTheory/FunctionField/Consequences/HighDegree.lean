@@ -266,15 +266,7 @@ theorem exists_poles_eq_natCast_zsmul_ofPoint_of_two_mul_genus_sub_one_le_sub_on
   obtain ⟨x, hx0, hxP, hxQ⟩ :=
     P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_two_mul_genus_sub_one_le_sub_one_mul_degree
       hF hex hnpos hn
-  refine ⟨Units.mk0 x hx0, WeilDivisor.ext fun Q ↦ ?_⟩
-  rcases eq_or_ne Q P with rfl | hQP
-  · rw [Divisor.coeff_poles, Units.val_mk0, hxP, WeilDivisor.coeff_zsmul,
-      WeilDivisor.coeff_ofPoint_self, mul_one]
-    omega
-  · rw [Divisor.coeff_poles, Units.val_mk0, WeilDivisor.coeff_zsmul,
-      WeilDivisor.coeff_ofPoint_of_ne hQP, mul_zero]
-    have := hxQ Q hQP
-    omega
+  exact ⟨Units.mk0 x hx0, Divisor.poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg hF hxP hxQ⟩
 
 /-- For every place `P` and `n >= 2g`, some function has pole divisor exactly `nP`
 (Stichtenoth, Proposition 1.6.6). -/

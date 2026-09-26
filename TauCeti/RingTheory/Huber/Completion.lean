@@ -561,12 +561,10 @@ theorem isPowerBounded_completion_coe_iff [IsHuberRing A] {a : A} :
 instance IsHuberRing.completion [IsHuberRing A] : IsHuberRing (Completion A) :=
   ⟨IsHuberRing.nonempty_pairOfDefinition.elim fun P ↦ ⟨P.completion⟩⟩
 
-/-- Wedhorn Remark 6.8: the completion of a Tate ring is a Tate ring, the image of a
-pseudouniformiser being one. -/
-instance IsTateRing.completion [IsTateRing A] : IsTateRing (Completion A) where
-  exists_isPseudoUniformizer := by
-    obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-    exact ⟨Completion.coeRingHom a, ha.map Completion.continuous_coeRingHom⟩
+/-- Wedhorn Remark 6.8: the completion of a Tate ring is a Tate ring. -/
+instance IsTateRing.completion [IsTateRing A] : IsTateRing (Completion A) :=
+  -- the structure map is continuous, so `IsTateRing.of_continuous` carries the pseudouniformiser
+  IsTateRing.of_continuous (A := A) Completion.continuous_coeRingHom
 
 /-- **The closure in `Â` of the image of a subring of `A⁰` lies in `Â⁰`**: the image lies in `Â⁰`
 by `isPowerBounded_completion_coe_of_isPowerBounded`, and `Â⁰` is open, hence closed. -/

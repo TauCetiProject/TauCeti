@@ -56,6 +56,7 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
   valuation is the inverse of any surjective `ℤᵐ⁰`-valued valuation compatible with `K`.
 * `TauCeti.normalizedValuation_eq_one_of_isOfFinOrder`: the normalized valuation vanishes on the
   roots of unity of `K`.
+* `TauCeti.normalizedValuation_neg`: negation does not change the normalized valuation.
 * `TauCeti.even_toAdd_normalizedValuation_of_isSquare`: a square has even normalized valuation.
 * `TauCeti.normalizedAbsoluteValue_apply_ne_zero`: the formula `|x|_K = q ^ (-v_K(x))`.
 * `TauCeti.isNonarchimedean_normalizedAbsoluteValue`: the normalized absolute value satisfies the
@@ -234,6 +235,13 @@ free, so a unit of finite order has normalized valuation `1`. -/
 theorem normalizedValuation_eq_one_of_isOfFinOrder {x : Kˣ} (hx : IsOfFinOrder x) :
     normalizedValuation K x = 1 :=
   ((normalizedValuation K).isOfFinOrder hx).eq_one'
+
+/-- Negation does not change the normalized valuation: `-1` is a root of unity. -/
+@[simp]
+theorem normalizedValuation_neg (x : Kˣ) :
+    normalizedValuation K (-x) = normalizedValuation K x := by
+  rw [← neg_one_mul, map_mul, normalizedValuation_eq_one_of_isOfFinOrder
+    (isOfFinOrder_iff_pow_eq_one.mpr ⟨2, two_pos, by simp⟩), one_mul]
 
 /-- A square has even normalized valuation. -/
 theorem even_toAdd_normalizedValuation_of_isSquare {a : Kˣ} (ha : IsSquare a) :
