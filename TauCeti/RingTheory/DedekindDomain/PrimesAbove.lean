@@ -35,6 +35,8 @@ downstairs: `IsDedekindDomain.selmerGroupAbove R B L S n` is Mathlib's `L⟮prim
   `HeightOneSpectrum.under R w ∈ S`.
 * `IsDedekindDomain.HeightOneSpectrum.primesAbove_finite`: finitely many primes lie above a
   finite set.
+* `IsDedekindDomain.HeightOneSpectrum.tendsto_under_cofinite`: consequently, contraction tends to
+  the cofinite filter along the cofinite filter.
 * `IsDedekindDomain.HeightOneSpectrum.finite_liesOver`: finitely many height one primes lie over
   a given one.
 
@@ -102,6 +104,14 @@ lemma primesAbove_finite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R
   have : (under R w).asIdeal.IsMaximal := Ideal.IsMaximal.under R w.asIdeal
   exact ((primesOver_finite (under R w).asIdeal B).preimage asIdeal_injective.injOn).subset
     fun w' hw' ↦ ⟨w'.isPrime, ⟨congrArg asIdeal hw'.symm⟩⟩
+
+/-- Only finitely many primes of `B` contract to each prime of `R`, so contraction tends to the
+cofinite filter along the cofinite filter. -/
+lemma tendsto_under_cofinite [IsDomain R] [IsDedekindDomain B] [Algebra.IsIntegral R B]
+    [Module.IsTorsionFree R B] :
+    Filter.Tendsto (under R (B := B)) Filter.cofinite Filter.cofinite :=
+  Filter.Tendsto.cofinite_of_finite_preimage_singleton fun v ↦
+    (primesAbove_finite R B (Set.finite_singleton v)).to_subtype
 
 variable {R B}
 
