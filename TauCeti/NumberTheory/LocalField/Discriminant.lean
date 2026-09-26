@@ -16,22 +16,28 @@ of an extension `L/K` of nonarchimedean local fields. The discriminant `𝔩(L/K
 extension is an ideal of the *base* ring `𝒪[K]`: it is the norm image `N_{L/K}(𝔡(L/K))`. The two
 ideals live in different rings and are not to be conflated: `TauCeti.differentExponent` reads the
 exponent of `𝔡(L/K)` in the maximal ideal of `𝒪[L]`, and this file adds
-`TauCeti.discriminantExponent K L`, the exponent `δ(L/K)` of the maximal ideal of `𝒪[K]` in
-`𝔩(L/K)`.
+`TauCeti.discriminantExponent K L`, for `L/K` separable, the exponent `δ(L/K)` of the maximal
+ideal of `𝒪[K]` in `𝔩(L/K)`.
+
+`TauCeti.discriminantExponent` is read for `L/K` separable. The trace form of an inseparable
+extension is degenerate, so the different ideal, and with it the discriminant ideal, is the zero
+ideal, and `multiplicity 𝓂 (⊥ : Ideal 𝒪[K]) = 0` whatever the maximal ideal: an `ℕ`-valued
+order of vanishing would there be `0` for every power of the maximal ideal. The definition and
+the results below therefore carry `[Algebra.IsSeparable K L]`.
 
 A norm multiplies valuations by the residue degree, by `TauCeti.toAdd_normalizedValuation_norm`, so
 `𝓂[K] ^ f(L/K)` generates the norm image of `𝓂[L]`
 (`TauCeti.map_maximalIdeal_norm_eq_maximalIdeal_pow`). The discriminant ideal is then
 `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`, the ideal form of the product formula `δ(L/K) = f(L/K) · d(L/K)`
-(`TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent`). Since
+(`TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent`). Since for `L/K` separable
 `TauCeti.differentExponent` is `0` exactly for unramified extensions, the discriminant inherits the
 unramified criterion and the bound `e(L/K) - 1 ≤ δ(L/K)`.
 
 ## Main definitions
 
 * `TauCeti.discriminantIdeal`: the local discriminant ideal `𝔩(L/K) = N_{L/K}(𝔡(L/K))`.
-* `TauCeti.discriminantExponent`: the local discriminant exponent `δ(L/K)`, the multiplicity of
-  `𝓂[K]` in `𝔩(L/K)`.
+* `TauCeti.discriminantExponent`: the local discriminant exponent `δ(L/K)` of a separable
+  extension, the multiplicity of `𝓂[K]` in `𝔩(L/K)`.
 
 ## Main results
 
@@ -178,19 +184,35 @@ theorem map_maximalIdeal_norm_eq_maximalIdeal_pow :
         (Ideal.span_singleton_pow (π : 𝒪[K]) (inertiaDegree K L)).symm
     _ = 𝓂[K] ^ inertiaDegree K L := by rw [hπ.maximalIdeal_eq]
 
-/-- The local discriminant exponent `δ(L/K)` of an extension of nonarchimedean local fields: the
-multiplicity of the maximal ideal of `𝒪[K]` in the discriminant ideal `discriminantIdeal K L`.
-For `L/K` separable the discriminant ideal is `𝓂[K] ^ δ(L/K)`, by
+variable [Algebra.IsSeparable K L]
+
+-- The parameters of `discriminantExponent` are spelled out rather than taken from the enclosing
+-- `variable`s, so that the separability instance is an argument of the definition itself and
+-- `discriminantExponent` cannot be formed at all for an inseparable extension.
+/--
+The local discriminant exponent `δ(L/K)` of a separable extension `L/K` of nonarchimedean
+local fields: the multiplicity of the maximal ideal of `𝒪[K]` in the discriminant ideal
+`discriminantIdeal K L`.
+
+The separability hypothesis belongs to the definition and not only to the theorems below. The
+trace form of an inseparable extension is degenerate, so the different ideal and with it `𝔩(L/K)`
+is the zero ideal, and the multiplicity of a maximal ideal in the zero ideal is `0` whatever that
+maximal ideal is: an `ℕ`-valued order of vanishing of `𝔩(L/K)` would then be `0` for every power
+of the maximal ideal and carry no information. The exponent is read only where the trace form is
+non-degenerate.
+
+The discriminant ideal is `𝓂[K] ^ δ(L/K)`, by
 `discriminantIdeal_eq_maximalIdeal_pow`, and the exponent is the product `f(L/K) · d(L/K)`, by
 `discriminantExponent_eq_inertiaDegree_mul_differentExponent`. -/
-def discriminantExponent : ℕ :=
+def discriminantExponent (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    [Algebra.IsSeparable K L] : ℕ :=
   multiplicity 𝓂[K] (discriminantIdeal K L)
 
 /-- The defining formula of `discriminantExponent`. -/
 theorem discriminantExponent_def :
     discriminantExponent K L = multiplicity 𝓂[K] (discriminantIdeal K L) := (rfl)
-
-variable [Algebra.IsSeparable K L]
 
 /-- The local discriminant ideal is the `f(L/K) · d(L/K)`-th power of the maximal ideal of the
 base ring, the form in which the norm image of the different is computed before the discriminant
