@@ -40,13 +40,18 @@ variable {C : Type u} [Category.{v} C] [Preadditive C]
 
 variable [HasBinaryBiproducts C]
 
+private theorem ofComponents_eq_desc_lift {A B D E : C}
+    (p : A ⟶ D) (q : A ⟶ E) (r : B ⟶ D) (s : B ⟶ E) :
+    Biprod.ofComponents p q r s = biprod.desc (biprod.lift p q) (biprod.lift r s) := by
+  ext <;> simp
+
 /-- The first differential of the cone, from `X₁ ⊞ Y₀` to `X₀ ⊞ Y₁`. -/
 noncomputable def coneD₀ (f : X ⟶ Y) : X.X₁ ⊞ Y.X₀ ⟶ X.X₀ ⊞ Y.X₁ :=
-  biprod.desc (biprod.lift (-X.d₁) f.f₁) (biprod.lift 0 Y.d₀)
+  Biprod.ofComponents (-X.d₁) f.f₁ 0 Y.d₀
 
 /-- The second differential of the cone, from `X₀ ⊞ Y₁` to `X₁ ⊞ Y₀`. -/
 noncomputable def coneD₁ (f : X ⟶ Y) : X.X₀ ⊞ Y.X₁ ⟶ X.X₁ ⊞ Y.X₀ :=
-  biprod.desc (biprod.lift (-X.d₀) f.f₀) (biprod.lift 0 Y.d₁)
+  Biprod.ofComponents (-X.d₀) f.f₀ 0 Y.d₁
 
 /-- The mapping cone of a closed even map of curved duplexes. Both squares of its differential
 are multiplication by the original curvature `w`. -/
@@ -58,9 +63,9 @@ are multiplication by the original curvature `w`. -/
   d₀ := coneD₀ f
   d₁ := coneD₁ f
   d₀_comp_d₁ := by
-    ext <;> simp [coneD₀, coneD₁, Category.assoc, Preadditive.add_comp, ← f.comm₁]
+    ext <;> simp [coneD₀, coneD₁, ← f.comm₁]
   d₁_comp_d₀ := by
-    ext <;> simp [coneD₀, coneD₁, Category.assoc, Preadditive.add_comp, ← f.comm₀]
+    ext <;> simp [coneD₀, coneD₁, ← f.comm₀]
 
 @[simp] theorem cone_X₀ (f : X ⟶ Y) : (cone f).X₀ = (X.X₁ ⊞ Y.X₀) := by
   simp only [cone]
@@ -74,19 +79,35 @@ are multiplication by the original curvature `w`. -/
 @[simp] theorem cone_d₁ (f : X ⟶ Y) : (cone f).d₁ = coneD₁ f := by
   simp only [cone]
 
+@[simp] theorem biprod_inl_comp_cone_d₀ (f : X ⟶ Y) :
+    biprod.inl ≫ (cone f).d₀ = (-X.d₁) ≫ biprod.inl + f.f₁ ≫ biprod.inr := by
+  simp [coneD₀]
+
+@[simp] theorem biprod_inr_comp_cone_d₀ (f : X ⟶ Y) :
+    biprod.inr ≫ (cone f).d₀ = Y.d₀ ≫ biprod.inr := by
+  simp [coneD₀]
+
+@[simp] theorem biprod_inl_comp_cone_d₁ (f : X ⟶ Y) :
+    biprod.inl ≫ (cone f).d₁ = (-X.d₀) ≫ biprod.inl + f.f₀ ≫ biprod.inr := by
+  simp [coneD₁]
+
+@[simp] theorem biprod_inr_comp_cone_d₁ (f : X ⟶ Y) :
+    biprod.inr ≫ (cone f).d₁ = Y.d₁ ≫ biprod.inr := by
+  simp [coneD₁]
+
 /-- The canonical inclusion of the codomain into the cone. -/
 noncomputable def coneInclusion (f : X ⟶ Y) : Y ⟶ cone f where
   f₀ := biprod.inr
   f₁ := biprod.inr
-  comm₀ := by simp [cone, coneD₀, biprod.lift_eq]
-  comm₁ := by simp [cone, coneD₁, biprod.lift_eq]
+  comm₀ := by simp [cone, coneD₀]
+  comm₁ := by simp [cone, coneD₁]
 
 /-- The canonical projection from the cone onto the parity shift of the domain. -/
 noncomputable def coneProjection (f : X ⟶ Y) : cone f ⟶ (parityShift C w).obj X where
   f₀ := biprod.fst
   f₁ := biprod.fst
-  comm₀ := by simp [cone, coneD₀, biprod.desc_eq, Category.assoc]
-  comm₁ := by simp [cone, coneD₁, biprod.desc_eq, Category.assoc]
+  comm₀ := by simp [cone, coneD₀]
+  comm₁ := by simp [cone, coneD₁]
 
 @[simp] theorem coneInclusion_f₀ (f : X ⟶ Y) : (coneInclusion f).f₀ = biprod.inr := by
   simp only [coneInclusion]
@@ -120,10 +141,10 @@ theorem nullHomotopicMap_cone_isIso (f : X ⟶ Y) [IsIso f] :
   have h₁' : (inv f).f₁ ≫ f.f₁ = 𝟙 Y.X₁ := by
     simpa only [comp_f₁, id_f₁] using congrArg Hom.f₁ (IsIso.inv_hom_id f)
   ext
-  · simp [cone, coneD₀, coneD₁, biprod.lift_eq, biprod.desc_eq,
+  · simp [cone, coneD₀, coneD₁, ofComponents_eq_desc_lift, biprod.lift_eq, biprod.desc_eq,
       Preadditive.add_comp, Preadditive.comp_add, Category.assoc]
     simp [← Category.assoc, ← (inv f).comm₀, h₁, h₀']
-  · simp [cone, coneD₀, coneD₁, biprod.lift_eq, biprod.desc_eq,
+  · simp [cone, coneD₀, coneD₁, ofComponents_eq_desc_lift, biprod.lift_eq, biprod.desc_eq,
       Preadditive.add_comp, Preadditive.comp_add, Category.assoc]
     simp [← Category.assoc, ← (inv f).comm₁, h₀, h₁']
 
@@ -144,14 +165,14 @@ noncomputable def coneMap (f : X ⟶ Y) (g : X' ⟶ Y')
   f₁ := biprod.map a.f₀ b.f₁
   comm₀ := by
     apply biprod.hom_ext <;> apply biprod.hom_ext' <;>
-      simp [cone, coneD₀, biprod.map_eq, biprod.lift_eq, biprod.desc_eq,
-      Category.assoc, Preadditive.add_comp, Preadditive.comp_add,
+      simp [cone, coneD₀, ofComponents_eq_desc_lift, biprod.map_eq, biprod.lift_eq,
+      biprod.desc_eq, Category.assoc, Preadditive.add_comp, Preadditive.comp_add,
       a.comm₁, b.comm₀]
     simpa only [comp_f₁] using (congrArg Hom.f₁ h).symm
   comm₁ := by
     apply biprod.hom_ext <;> apply biprod.hom_ext' <;>
-      simp [cone, coneD₁, biprod.map_eq, biprod.lift_eq, biprod.desc_eq,
-      Category.assoc, Preadditive.add_comp, Preadditive.comp_add,
+      simp [cone, coneD₁, ofComponents_eq_desc_lift, biprod.map_eq, biprod.lift_eq,
+      biprod.desc_eq, Category.assoc, Preadditive.add_comp, Preadditive.comp_add,
       a.comm₀, b.comm₁]
     simpa only [comp_f₀] using (congrArg Hom.f₀ h).symm
 
@@ -210,15 +231,9 @@ theorem coneMap_comp {X'' Y'' : CurvedDuplex C w} (f : X ⟶ Y) (g : X' ⟶ Y')
       coneMap f g a b h ≫ coneMap g k a' b' h' := by
   ext
   · simp only [comp_f₀, coneMap_f₀]
-    apply biprod.hom_ext <;> simp only [cone, Category.assoc, biprod.map_fst, biprod.map_snd]
-    all_goals simp only [← Category.assoc]
-    all_goals first | rw [biprod.map_fst] | rw [biprod.map_snd]
-    all_goals simp [Category.assoc]
+    apply biprod.hom_ext <;> simp [Category.assoc]
   · simp only [comp_f₁, coneMap_f₁]
-    apply biprod.hom_ext <;> simp only [cone, Category.assoc, biprod.map_fst, biprod.map_snd]
-    all_goals simp only [← Category.assoc]
-    all_goals first | rw [biprod.map_fst] | rw [biprod.map_snd]
-    all_goals simp [Category.assoc]
+    apply biprod.hom_ext <;> simp [Category.assoc]
 
 end CurvedDuplex
 end TauCeti
