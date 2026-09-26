@@ -75,24 +75,24 @@ private theorem map_pairReindex_eq_self_of_forall_finset
     (h : ∀ F : Finset (ℕ × ℕ), ∃ σ' τ' : Equiv.Perm ℕ,
       ρ.map (pairReindex σ' τ') = ρ ∧
         ∀ p ∈ F, σ' p.1 = σ p.1 ∧ τ' p.2 = τ p.2) :
-    (ρ.map fun x : ℕ × ℕ → α => fun p => x (σ p.1, τ p.2)) =
-      ρ.map fun x : ℕ × ℕ → α => fun p => x p := by
+    (ρ.map fun x : ℕ × ℕ → α ↦ fun p ↦ x (σ p.1, τ p.2)) =
+      ρ.map fun x : ℕ × ℕ → α ↦ fun p ↦ x p := by
   have hmeas : ∀ π π' : Equiv.Perm ℕ,
-      AEMeasurable (fun x : ℕ × ℕ → α => fun p : ℕ × ℕ => x (π p.1, π' p.2)) ρ :=
-    fun π π' => by
+      AEMeasurable (fun x : ℕ × ℕ → α ↦ fun p : ℕ × ℕ ↦ x (π p.1, π' p.2)) ρ :=
+    fun π π' ↦ by
       rw [← pairReindex_def]
       exact (measurable_pairReindex π π').aemeasurable
   rw [ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq (hmeas σ τ)
-    (Measurable.of_eval fun p => measurable_pi_apply p).aemeasurable]
+    (Measurable.of_eval fun p ↦ measurable_pi_apply p).aemeasurable]
   intro F
   obtain ⟨σ', τ', hinv, hagree⟩ := h F
-  have hinv' : (ρ.map fun x : ℕ × ℕ → α => fun p => x (σ' p.1, τ' p.2)) =
-      ρ.map fun x : ℕ × ℕ → α => fun p => x p := by
+  have hinv' : (ρ.map fun x : ℕ × ℕ → α ↦ fun p ↦ x (σ' p.1, τ' p.2)) =
+      ρ.map fun x : ℕ × ℕ → α ↦ fun p ↦ x p := by
     simpa only [← pairReindex_def, Measure.map_id'] using hinv
   have hres := (ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq (hmeas σ' τ')
-    (Measurable.of_eval fun p => measurable_pi_apply p).aemeasurable).mp hinv' F
-  have heq : (fun x : ℕ × ℕ → α => F.restrict fun p => x (σ' p.1, τ' p.2)) =
-      fun x : ℕ × ℕ → α => F.restrict fun p => x (σ p.1, τ p.2) := by
+    (Measurable.of_eval fun p ↦ measurable_pi_apply p).aemeasurable).mp hinv' F
+  have heq : (fun x : ℕ × ℕ → α ↦ F.restrict fun p ↦ x (σ' p.1, τ' p.2)) =
+      fun x : ℕ × ℕ → α ↦ F.restrict fun p ↦ x (σ p.1, τ p.2) := by
     funext x p
     obtain ⟨q, hq⟩ := p
     simp only [Finset.restrict_def, (hagree q hq).1, (hagree q hq).2]
@@ -102,7 +102,7 @@ private theorem map_pairReindex_eq_self_of_forall_finset
 exchangeable: invariant under the diagonal relabelling by every permutation of `ℕ`. -/
 theorem jointlyExchangeable_of_smulInvariantMeasure {ρ : Measure (ℕ × ℕ → α)}
     [IsFiniteMeasure ρ] [SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ] :
-    JointlyExchangeable ρ fun p x => x p := by
+    JointlyExchangeable ρ fun p x ↦ x p := by
   rw [jointlyExchangeable_iff]
   intro σ
   apply map_pairReindex_eq_self_of_forall_finset
@@ -134,7 +134,7 @@ theorem separatelyExchangeable_of_map_pairReindex_finitary
     {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
     (h : ∀ σ τ : Equiv.Perm ℕ, (MulAction.fixedBy ℕ σ)ᶜ.Finite → (MulAction.fixedBy ℕ τ)ᶜ.Finite →
       ρ.map (pairReindex σ τ) = ρ) :
-    SeparatelyExchangeable ρ fun p x => x p := by
+    SeparatelyExchangeable ρ fun p x ↦ x p := by
   rw [separatelyExchangeable_iff]
   intro σ τ
   apply map_pairReindex_eq_self_of_forall_finset
@@ -144,36 +144,36 @@ theorem separatelyExchangeable_of_map_pairReindex_finitary
     Equiv.Perm.exists_finite_compl_fixedBy_apply_eq_on_finset σ (F.image Prod.fst)
   obtain ⟨τ', hτ'fin, hτ'⟩ :=
     Equiv.Perm.exists_finite_compl_fixedBy_apply_eq_on_finset τ (F.image Prod.snd)
-  exact ⟨σ', τ', h σ' τ' hσ'fin hτ'fin, fun p hp =>
+  exact ⟨σ', τ', h σ' τ' hσ'fin hτ'fin, fun p hp ↦
     ⟨hσ' _ (Finset.mem_image_of_mem _ hp), hτ' _ (Finset.mem_image_of_mem _ hp)⟩⟩
 
 /-- A finite law on array path space is separately exchangeable if and only if it is invariant
 under every pair of finitely supported axis relabellings. -/
 theorem separatelyExchangeable_iff_map_pairReindex_finitary
     {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ] :
-    SeparatelyExchangeable ρ (fun p x => x p) ↔
+    SeparatelyExchangeable ρ (fun p x ↦ x p) ↔
       ∀ σ τ : Equiv.Perm ℕ, (MulAction.fixedBy ℕ σ)ᶜ.Finite → (MulAction.fixedBy ℕ τ)ᶜ.Finite →
         ρ.map (pairReindex σ τ) = ρ :=
-  ⟨fun h σ τ _ _ => (h.measurePreserving_pairReindex σ τ).map_eq,
+  ⟨fun h σ τ _ _ ↦ (h.measurePreserving_pairReindex σ τ).map_eq,
     separatelyExchangeable_of_map_pairReindex_finitary⟩
 
 /-- A finite law is jointly exchangeable if and only if it is invariant under the finitary
 diagonal action. -/
 theorem jointlyExchangeable_iff_smulInvariantMeasure {ρ : Measure (ℕ × ℕ → α)}
     [IsFiniteMeasure ρ] :
-    JointlyExchangeable ρ (fun p x => x p) ↔ SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ :=
-  ⟨JointlyExchangeable.smulInvariantMeasure, fun _ => jointlyExchangeable_of_smulInvariantMeasure⟩
+    JointlyExchangeable ρ (fun p x ↦ x p) ↔ SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ :=
+  ⟨JointlyExchangeable.smulInvariantMeasure, fun _ ↦ jointlyExchangeable_of_smulInvariantMeasure⟩
 
 /-- The convex set of jointly exchangeable probability laws on array path space. -/
 def jointlyExchangeableProbabilityMeasures (α : Type*) [MeasurableSpace α] :
     Set (Measure (ℕ × ℕ → α)) :=
-  {ν | JointlyExchangeable ν (fun p x => x p) ∧ IsProbabilityMeasure ν}
+  {ν | JointlyExchangeable ν (fun p x ↦ x p) ∧ IsProbabilityMeasure ν}
 
 /-- Membership in the jointly exchangeable probability laws. -/
 @[simp]
 theorem mem_jointlyExchangeableProbabilityMeasures_iff {ν : Measure (ℕ × ℕ → α)} :
     ν ∈ jointlyExchangeableProbabilityMeasures α
-      ↔ JointlyExchangeable ν (fun p x => x p) ∧ IsProbabilityMeasure ν :=
+      ↔ JointlyExchangeable ν (fun p x ↦ x p) ∧ IsProbabilityMeasure ν :=
   Iff.rfl
 
 /-- The jointly exchangeable probability laws are the probability laws invariant under the
@@ -184,7 +184,8 @@ theorem jointlyExchangeableProbabilityMeasures_eq :
   ext ν
   rw [mem_invariantMeasuresOfMeasureUnivEq_iff]
   constructor
-  · rintro ⟨hν, hp⟩; exact ⟨hν.smulInvariantMeasure, hp.measure_univ⟩
+  · rintro ⟨hν, hp⟩
+    exact ⟨hν.smulInvariantMeasure, hp.measure_univ⟩
   · rintro ⟨hν, hp⟩
     have : IsProbabilityMeasure ν := ⟨hp⟩
     exact ⟨jointlyExchangeable_of_smulInvariantMeasure, inferInstance⟩
@@ -192,14 +193,15 @@ theorem jointlyExchangeableProbabilityMeasures_eq :
 /-- The jointly exchangeable probability laws form a convex set. -/
 theorem convex_jointlyExchangeableProbabilityMeasures :
     Convex ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α) := by
-  rw [jointlyExchangeableProbabilityMeasures_eq]; exact convex_invariantMeasuresOfMeasureUnivEq
+  rw [jointlyExchangeableProbabilityMeasures_eq]
+  exact convex_invariantMeasuresOfMeasureUnivEq
 
 /-- **Joint dissociation is extremality**: a jointly exchangeable probability law is an extreme
 point of the jointly exchangeable probability laws if and only if its coordinate array is jointly
 dissociated. -/
 theorem jointlyDissociated_iff_mem_extremePoints {ρ : Measure (ℕ × ℕ → α)}
-    [IsProbabilityMeasure ρ] (hexch : JointlyExchangeable ρ fun p x => x p) :
-    JointlyDissociated ρ (fun p x => x p)
+    [IsProbabilityMeasure ρ] (hexch : JointlyExchangeable ρ fun p x ↦ x p) :
+    JointlyDissociated ρ (fun p x ↦ x p)
       ↔ ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α) := by
   rw [jointlyDissociated_iff_ergodicSMul hexch, jointlyExchangeableProbabilityMeasures_eq]
   exact ErgodicSMul.iff_mem_extremePoints
@@ -243,17 +245,17 @@ probability law carried by `s` is an extreme point of the jointly exchangeable l
 if and only if its coordinate array is jointly dissociated. -/
 theorem jointlyDissociated_iff_mem_extremePoints_on {s : Set (ℕ × ℕ → α)}
     {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
-    (hexch : JointlyExchangeable ρ fun p x => x p) (hs : ρ sᶜ = 0) :
-    JointlyDissociated ρ (fun p x => x p)
+    (hexch : JointlyExchangeable ρ fun p x ↦ x p) (hs : ρ sᶜ = 0) :
+    JointlyDissociated ρ (fun p x ↦ x p)
       ↔ ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasuresOn α s) := by
   rw [extremePoints_jointlyExchangeableProbabilityMeasuresOn, Set.mem_inter_iff,
     ← jointlyDissociated_iff_mem_extremePoints hexch]
-  exact ⟨fun h => ⟨⟨⟨hexch, inferInstance⟩, hs⟩, h⟩, fun h => h.2⟩
+  exact ⟨fun h ↦ ⟨⟨⟨hexch, inferInstance⟩, hs⟩, h⟩, fun h ↦ h.2⟩
 
 /-- An extreme point of the jointly exchangeable probability laws is jointly exchangeable. -/
 theorem jointlyExchangeable_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → α)}
     (h : ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α)) :
-    JointlyExchangeable ρ fun p x => x p :=
+    JointlyExchangeable ρ fun p x ↦ x p :=
   h.1.1
 
 /-- An extreme point of the jointly exchangeable probability laws is a probability law. -/
@@ -266,7 +268,7 @@ theorem isProbabilityMeasure_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → 
 jointly dissociated. -/
 theorem jointlyDissociated_of_mem_extremePoints {ρ : Measure (ℕ × ℕ → α)}
     (h : ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasures α)) :
-    JointlyDissociated ρ fun p x => x p :=
+    JointlyDissociated ρ fun p x ↦ x p :=
   have := isProbabilityMeasure_of_mem_extremePoints h
   (jointlyDissociated_iff_mem_extremePoints (jointlyExchangeable_of_mem_extremePoints h)).2 h
 
@@ -275,7 +277,7 @@ jointly dissociated. -/
 theorem jointlyDissociated_of_mem_extremePoints_on {s : Set (ℕ × ℕ → α)}
     {ρ : Measure (ℕ × ℕ → α)}
     (h : ρ ∈ extremePoints ℝ≥0∞ (jointlyExchangeableProbabilityMeasuresOn α s)) :
-    JointlyDissociated ρ fun p x => x p :=
+    JointlyDissociated ρ fun p x ↦ x p :=
   jointlyDissociated_of_mem_extremePoints
     ((extremePoints_jointlyExchangeableProbabilityMeasuresOn s ▸ h).2)
 
@@ -309,11 +311,11 @@ exchangeable, then almost every `κ z` is `ρ` itself. This is the integral form
 theorem JointlyDissociated.ae_eq_of_comp_eq [StandardBorelSpace α] {Z : Type*}
     [MeasurableSpace Z] {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ] {π : Measure Z}
     {κ : Kernel Z (ℕ × ℕ → α)} [IsMarkovKernel κ]
-    (hρ : JointlyDissociated ρ fun p x => x p)
-    (hκ : ∀ᵐ z ∂π, JointlyExchangeable (κ z) fun p x => x p) (hmix : κ ∘ₘ π = ρ) :
+    (hρ : JointlyDissociated ρ fun p x ↦ x p)
+    (hκ : ∀ᵐ z ∂π, JointlyExchangeable (κ z) fun p x ↦ x p) (hmix : κ ∘ₘ π = ρ) :
     ∀ᵐ z ∂π, κ z = ρ := by
   have hinv : ∀ᵐ z ∂π, SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) (κ z) :=
-    hκ.mono fun _ hz => hz.smulInvariantMeasure
+    hκ.mono fun _ hz ↦ hz.smulInvariantMeasure
   have : SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ := hmix ▸ smulInvariantMeasure_comp hinv
   have := ergodicSMul_of_jointlyDissociated hρ
   exact ErgodicSMul.ae_eq_of_comp_eq hinv hmix
