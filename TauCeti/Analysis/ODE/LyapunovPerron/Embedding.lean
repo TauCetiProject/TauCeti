@@ -25,6 +25,10 @@ the stable and unstable manifolds used in Morse trajectory spaces.
 * `ContinuousLinearMap.localStableSetHomeomorph` and
   `ContinuousLinearMap.localUnstableSetHomeomorph` parameterize the confined local invariant
   sets by closed balls in their respective spectral subspaces.
+* `ContinuousLinearMap.exists_localStableSetHomeomorph` and
+  `ContinuousLinearMap.exists_localUnstableSetHomeomorph` supply a truncation radius for which
+  those parameterizations exist, so that a caller with a ball of confinement need not produce
+  one.
 
 ## References
 
@@ -140,6 +144,42 @@ theorem coe_localUnstableSetHomeomorph_symm_apply
         range (ContinuousLinearMap.id ℝ X - P)) : X) = (ContinuousLinearMap.id ℝ X - P) x := by
   simp only [localUnstableSetHomeomorph, Homeomorph.symm_trans_apply,
     TauCeti.Homeomorph.setCongr_symm_apply, coe_graphHomeomorph_symm_apply]
+
+/-- A radius small enough for the local stable and unstable graph descriptions: the uniform
+bound on Lyapunov--Perron solutions keeps a solution started within it inside the ball of
+radius `r`. -/
+private theorem exists_radius (hsmall : 2 * K * (ε * 2) < α) (hr0 : 0 < r) :
+    ∃ ρ > 0, (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ρ ≤ r := by
+  have hsmall' : 2 * (K : ℝ) * ((ε : ℝ) * 2) < α := by exact_mod_cast hsmall
+  have hα : (0 : ℝ) < α := lt_of_le_of_lt (by positivity) hsmall'
+  have hq : 2 * (K : ℝ) * ((ε : ℝ) * 2) / α < 1 := (div_lt_one hα).2 hsmall'
+  have hbound : (0 : ℝ) ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) := by
+    have : (0 : ℝ) < 1 - 2 * (K : ℝ) * ((ε : ℝ) * 2) / α := by linarith
+    positivity
+  refine ⟨r / ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) + 1), div_pos hr0 (by linarith), ?_⟩
+  rw [mul_div_assoc', div_le_iff₀ (by linarith)]
+  nlinarith
+
+include hs hu hN hsmall hN0 hP hAP in
+/-- For a small enough truncation radius, the local stable set of confined forward solutions is
+homeomorphic to a closed ball in the stable spectral subspace. -/
+theorem exists_localStableSetHomeomorph (hr0 : 0 < r) :
+    ∃ ρ > 0, Nonempty ({v : range P | ‖(v : X)‖ ≤ ρ} ≃ₜ
+      {z : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ w ↦ A w + N w) (Ici 0) ∧
+          y 0 = z ∧ MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P z‖ ≤ ρ}) := by
+  obtain ⟨ρ, hρ0, hρ⟩ := exists_radius r hsmall hr0
+  exact ⟨ρ, hρ0, ⟨localStableSetHomeomorph A P N r hs hu hr0.le hN hsmall hN0 hP hAP hρ⟩⟩
+
+include hs hu hN hsmall hN0 hP hAP in
+/-- For a small enough truncation radius, the local unstable set of confined backward solutions
+is homeomorphic to a closed ball in the unstable spectral subspace. -/
+theorem exists_localUnstableSetHomeomorph (hr0 : 0 < r) :
+    ∃ ρ > 0, Nonempty ({v : range (ContinuousLinearMap.id ℝ X - P) | ‖(v : X)‖ ≤ ρ} ≃ₜ
+      {z : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ w ↦ A w + N w) (Iic 0) ∧
+          y 0 = z ∧ MapsTo y (Iic 0) (closedBall 0 r)) ∧
+          ‖(ContinuousLinearMap.id ℝ X - P) z‖ ≤ ρ}) := by
+  obtain ⟨ρ, hρ0, hρ⟩ := exists_radius r hsmall hr0
+  exact ⟨ρ, hρ0, ⟨localUnstableSetHomeomorph A P N r hs hu hr0.le hN hsmall hN0 hP hAP hρ⟩⟩
 
 end ContinuousLinearMap
 

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.ExponentialDichotomy
-public import TauCeti.Analysis.ODE.LyapunovPerron.Local
+public import TauCeti.Analysis.ODE.LyapunovPerron.Embedding
+import Mathlib.Analysis.ODE.Transform
 
 /-!
 # Local invariant sets at a Morse critical point
@@ -31,6 +32,13 @@ structure are not established here.
 Applying the same construction after reversing time gives the corresponding local unstable set
 as a Lipschitz graph tangent at the origin to the unstable Hessian spectral subspace.
 
+Because the projection inverts the graph parameterization, each of the two sets is homeomorphic to
+a closed ball in the spectral subspace it is a graph over, hence to a Euclidean closed ball of the
+dimension of that subspace. This is where the Morse index acquires its geometric meaning: the
+local unstable set is a disk of dimension the Morse index, and the local stable set a disk of
+complementary dimension. At the two extreme indices one of the disks is a single point, the
+critical point itself, which always belongs to both sets.
+
 ## Main declarations
 
 * `IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph`: confined forward
@@ -38,6 +46,16 @@ as a Lipschitz graph tangent at the origin to the unstable Hessian spectral subs
   tangent at the origin to the stable Hessian spectral subspace.
 * `IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_lipschitzGraph`: the backward-time
   counterpart, tangent at the origin to the unstable Hessian spectral subspace.
+* `IsNondegenerateCriticalPoint.exists_localStableSet_homeomorph_closedBall` and
+  `IsNondegenerateCriticalPoint.exists_localUnstableSet_homeomorph_closedBall`: the two sets are
+  closed disks of dimension the ambient dimension minus the Morse index, respectively the Morse
+  index.
+* `IsNondegenerateCriticalPoint.zero_mem_localStableSet` and
+  `IsNondegenerateCriticalPoint.zero_mem_localUnstableSet`: both sets contain the critical point.
+* `IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_singleton_of_morseIndex_eq_zero` and
+  `IsNondegenerateCriticalPoint.exists_localStableSet_eq_singleton_of_morseIndex_eq_finrank`: at a
+  local minimum, respectively a local maximum, the degenerate one of the two disks is exactly the
+  critical point.
 
 ## References
 
@@ -82,6 +100,13 @@ private theorem neg_gradient_centered_eq :
   funext z
   simpa only [add_sub_cancel_left, neg_apply] using
     (neg_gradient_eq_neg_hessianOperator_add_negativeGradientRemainder f x (x + z)).symm
+
+/-- The same splitting, read as the time-independent vector field the integral-curve API takes. -/
+private theorem neg_gradient_centered_time_eq :
+    (fun (_ : ℝ) (z : E) ↦
+        (-hessianOperator f x) z + negativeGradientRemainder f x (x + z)) =
+      fun (_ : ℝ) z ↦ (-∇ f) (x + z) :=
+  congrArg (fun F : E → E ↦ fun (_ : ℝ) ↦ F) neg_gradient_centered_eq
 
 /-- **The Lyapunov--Perron data of a Morse critical point.** For every positive `C` there are
 exponential dichotomy constants `K`, `alpha` for the linearization `-hessianOperator f x` along
@@ -177,13 +202,11 @@ theorem exists_localStableSet_eq_lipschitzGraph
   have hN' : HasFDerivAt N (0 : E →L[ℝ] E) 0 := by
     rw [hNdef]
     exact h.hasFDerivAt_negativeGradientRemainder_centered
-  have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
-    rw [hNdef]
-    exact neg_gradient_centered_eq
   have hfield_time :
       (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
-        fun (_ : ℝ) z ↦ (-∇ f) (x + z) :=
-    congrArg (fun F : E → E ↦ fun (_ : ℝ) ↦ F) hfield
+        fun (_ : ℝ) z ↦ (-∇ f) (x + z) := by
+    rw [hNdef]
+    exact neg_gradient_centered_time_eq
   obtain ⟨rho, hrho, hset⟩ :=
     ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
       (A := -hessianOperator f x) (P := h.stableProjection) (N := N)
@@ -255,13 +278,11 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
   have hN' : HasFDerivAt N (0 : E →L[ℝ] E) 0 := by
     rw [hNdef]
     exact h.hasFDerivAt_negativeGradientRemainder_centered
-  have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
-    rw [hNdef]
-    exact neg_gradient_centered_eq
   have hfield_time :
       (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
-        fun (_ : ℝ) z ↦ (-∇ f) (x + z) :=
-    congrArg (fun F : E → E ↦ fun (_ : ℝ) ↦ F) hfield
+        fun (_ : ℝ) z ↦ (-∇ f) (x + z) := by
+    rw [hNdef]
+    exact neg_gradient_centered_time_eq
   obtain ⟨rho, hrho, hset⟩ :=
     ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
       (A := -hessianOperator f x) (P := h.stableProjection) (N := N)
@@ -300,6 +321,130 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
     · rw [hfield_time]
       exact hy
     · exact hmaps
+
+/-- **The local stable set at a Morse critical point is a closed disk whose dimension is the
+ambient dimension less the Morse index.** For suitable radii `r` and `rho`, the initial
+displacements of forward negative-gradient solutions confined to `closedBall 0 r` and restricted
+by `norm (stableProjection z) ≤ rho` are homeomorphic to a closed ball of that dimension. -/
+theorem exists_localStableSet_homeomorph_closedBall (h : IsNondegenerateCriticalPoint f x) :
+    ∃ r > 0, ∃ rho > 0, Nonempty (
+      {z : E | (∃ y : ℝ → E,
+          IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) ∧ y 0 = z ∧
+            MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖h.stableProjection z‖ ≤ rho} ≃ₜ
+        closedBall (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E - morseIndex f x))) rho) := by
+  obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, -⟩ := h.exists_lyapunovPerronData 1 one_pos
+  obtain ⟨rho, hrho, ⟨e⟩⟩ := ContinuousLinearMap.exists_localStableSetHomeomorph
+    (-hessianOperator f x) h.stableProjection (fun z ↦ negativeGradientRemainder f x (x + z)) r
+    hs hu hN hsmall h.negativeGradientRemainder_centered_zero
+    h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection hr
+  refine ⟨r, hr, rho, hrho, ⟨(Homeomorph.setCongr ?_).trans (e.symm.trans ?_)⟩⟩
+  · rw [← neg_gradient_centered_time_eq (f := f) (x := x)]
+  · have hk : Module.finrank ℝ h.contDiffAt.stableLinearSubspace =
+        Module.finrank ℝ E - morseIndex f x := by
+      have := h.finrank_stableLinearSubspace_add_morseIndex
+      omega
+    have hrange : Set.range (h.stableProjection : E → E) =
+        (h.contDiffAt.stableLinearSubspace : Set E) := by
+      rw [← h.range_stableProjection]
+      rfl
+    exact (Homeomorph.subtype (Homeomorph.setCongr hrange) (fun _ ↦ Iff.rfl)).trans
+      (Homeomorph.subtype
+        (p := fun v : (h.contDiffAt.stableLinearSubspace : Set E) ↦ ‖(v : E)‖ ≤ rho)
+        (q := fun w ↦ w ∈ closedBall
+          (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E - morseIndex f x))) rho)
+        ((stdOrthonormalBasis ℝ h.contDiffAt.stableLinearSubspace).reindex
+          (finCongr hk)).repr.toHomeomorph
+        (fun v ↦ by
+          simp only [LinearIsometryEquiv.coe_toHomeomorph, mem_closedBall_zero_iff,
+            LinearIsometryEquiv.norm_map, Submodule.norm_coe]))
+
+/-- **The local unstable set at a Morse critical point is a closed disk whose dimension is the
+Morse index.** For suitable radii `r` and `rho`, the initial displacements of backward
+negative-gradient solutions confined to `closedBall 0 r` and restricted by
+`norm (unstableProjection z) ≤ rho` are homeomorphic to a closed ball of that dimension. -/
+theorem exists_localUnstableSet_homeomorph_closedBall (h : IsNondegenerateCriticalPoint f x) :
+    ∃ r > 0, ∃ rho > 0, Nonempty (
+      {z : E | (∃ y : ℝ → E,
+          IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) ∧ y 0 = z ∧
+            MapsTo y (Iic 0) (closedBall 0 r)) ∧ ‖h.unstableProjection z‖ ≤ rho} ≃ₜ
+        closedBall (0 : EuclideanSpace ℝ (Fin (morseIndex f x))) rho) := by
+  obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, -⟩ := h.exists_lyapunovPerronData 1 one_pos
+  obtain ⟨rho, hrho, ⟨e⟩⟩ := ContinuousLinearMap.exists_localUnstableSetHomeomorph
+    (-hessianOperator f x) h.stableProjection (fun z ↦ negativeGradientRemainder f x (x + z)) r
+    hs hu hN hsmall h.negativeGradientRemainder_centered_zero
+    h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection hr
+  refine ⟨r, hr, rho, hrho, ⟨(Homeomorph.setCongr ?_).trans (e.symm.trans ?_)⟩⟩
+  · rw [← neg_gradient_centered_time_eq (f := f) (x := x), ← h.unstableProjection_def]
+  · have hrange : Set.range (ContinuousLinearMap.id ℝ E - h.stableProjection) =
+        (h.contDiffAt.unstableLinearSubspace : Set E) := by
+      rw [← h.unstableProjection_def, ← h.range_unstableProjection]
+      rfl
+    exact (Homeomorph.subtype (Homeomorph.setCongr hrange) (fun _ ↦ Iff.rfl)).trans
+      (Homeomorph.subtype
+        (p := fun v : (h.contDiffAt.unstableLinearSubspace : Set E) ↦ ‖(v : E)‖ ≤ rho)
+        (q := fun w ↦ w ∈ closedBall (0 : EuclideanSpace ℝ (Fin (morseIndex f x))) rho)
+        ((stdOrthonormalBasis ℝ h.contDiffAt.unstableLinearSubspace).reindex
+          (finCongr h.contDiffAt.finrank_unstableLinearSubspace)).repr.toHomeomorph
+        (fun v ↦ by
+          simp only [LinearIsometryEquiv.coe_toHomeomorph, mem_closedBall_zero_iff,
+            LinearIsometryEquiv.norm_map, Submodule.norm_coe]))
+
+/-- The critical point itself lies in the local stable set: the constant trajectory at it is a
+negative-gradient solution confined to every ball. -/
+theorem zero_mem_localStableSet (h : IsNondegenerateCriticalPoint f x) {r rho : ℝ}
+    (hr : 0 ≤ r) (hrho : 0 ≤ rho) :
+    (0 : E) ∈ {z : E | (∃ y : ℝ → E,
+        IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) ∧ y 0 = z ∧
+          MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖h.stableProjection z‖ ≤ rho} :=
+  ⟨⟨fun _ ↦ 0,
+    (isIntegralCurve_const fun _ ↦ by simp [h.gradient_eq_zero]).isIntegralCurveOn _, rfl,
+    fun t _ ↦ by simpa using hr⟩, by simpa using hrho⟩
+
+/-- The critical point itself lies in the local unstable set. -/
+theorem zero_mem_localUnstableSet (h : IsNondegenerateCriticalPoint f x) {r rho : ℝ}
+    (hr : 0 ≤ r) (hrho : 0 ≤ rho) :
+    (0 : E) ∈ {z : E | (∃ y : ℝ → E,
+        IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) ∧ y 0 = z ∧
+          MapsTo y (Iic 0) (closedBall 0 r)) ∧ ‖h.unstableProjection z‖ ≤ rho} :=
+  ⟨⟨fun _ ↦ 0,
+    (isIntegralCurve_const fun _ ↦ by simp [h.gradient_eq_zero]).isIntegralCurveOn _, rfl,
+    fun t _ ↦ by simpa using hr⟩, by simpa using hrho⟩
+
+/-- **At a local minimum the local unstable set degenerates to a point.** A nondegenerate
+critical point of Morse index `0` has no unstable directions, so the only backward
+negative-gradient solution confined near it is the constant one. -/
+theorem exists_localUnstableSet_eq_singleton_of_morseIndex_eq_zero
+    (h : IsNondegenerateCriticalPoint f x) (hind : morseIndex f x = 0) :
+    ∃ r > 0, ∃ rho > 0, {z : E | (∃ y : ℝ → E,
+        IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) ∧ y 0 = z ∧
+          MapsTo y (Iic 0) (closedBall 0 r)) ∧ ‖h.unstableProjection z‖ ≤ rho} = {0} := by
+  obtain ⟨r, hr, rho, hrho, g, -, hg0, -, -, -, hset, -⟩ :=
+    h.exists_localUnstableSet_eq_lipschitzGraph 1 one_pos
+  have hbot : h.contDiffAt.unstableLinearSubspace = ⊥ :=
+    Submodule.finrank_eq_zero.1 (by rw [h.contDiffAt.finrank_unstableLinearSubspace, hind])
+  refine ⟨r, hr, rho, hrho, ?_⟩
+  rw [hset, hbot, Submodule.bot_coe,
+    Set.inter_eq_self_of_subset_left (Set.singleton_subset_iff.2 (mem_closedBall_self hrho.le)),
+    Set.image_singleton, hg0, add_zero]
+
+/-- **At a local maximum the local stable set degenerates to a point.** A nondegenerate critical
+point whose Morse index is the dimension of the ambient space has no stable directions, so the
+only forward negative-gradient solution confined near it is the constant one. -/
+theorem exists_localStableSet_eq_singleton_of_morseIndex_eq_finrank
+    (h : IsNondegenerateCriticalPoint f x) (hind : morseIndex f x = Module.finrank ℝ E) :
+    ∃ r > 0, ∃ rho > 0, {z : E | (∃ y : ℝ → E,
+        IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) ∧ y 0 = z ∧
+          MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖h.stableProjection z‖ ≤ rho} = {0} := by
+  obtain ⟨r, hr, rho, hrho, g, -, hg0, -, -, -, hset, -⟩ :=
+    h.exists_localStableSet_eq_lipschitzGraph 1 one_pos
+  have hbot : h.contDiffAt.stableLinearSubspace = ⊥ :=
+    Submodule.finrank_eq_zero.1 (by
+      have := h.finrank_stableLinearSubspace_add_morseIndex
+      omega)
+  refine ⟨r, hr, rho, hrho, ?_⟩
+  rw [hset, hbot, Submodule.bot_coe,
+    Set.inter_eq_self_of_subset_left (Set.singleton_subset_iff.2 (mem_closedBall_self hrho.le)),
+    Set.image_singleton, hg0, add_zero]
 
 end IsNondegenerateCriticalPoint
 
