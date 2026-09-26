@@ -41,18 +41,24 @@ example (A : C) :
 
 /-- The two-periodic complex associated to the square-zero duplex has zero homology in each
 parity. -/
-theorem isZero_squareZero_periodicHomology [CategoryWithHomology C] (A : C) (i : ZMod 2) :
+theorem isZero_squareZero_periodicHomology (A : C) (i : ZMod 2)
+    [((toPeriodicComplex C R).obj (squareZero (R := R) A)).HasHomology i] :
     IsZero (((toPeriodicComplex C R).obj (squareZero (R := R) A)).homology i) := by
   let K := (toPeriodicComplex C R).obj (squareZero (R := R) A)
-  have h₀ := isZero_quotientFunctor_obj_squareZero (R := R) A
-  have h₁ : IsZero ((_root_.HomotopyCategory.quotient C
-      (ComplexShape.up (ZMod 2))).obj K) := by
-    simpa only [K, HomotopyCategory.toPeriodicComplex_obj_quotientFunctor_obj] using
-      Functor.map_isZero (HomotopyCategory.toPeriodicComplex C R) h₀
-  have h₂ := Functor.map_isZero
-    (_root_.HomotopyCategory.homologyFunctor C (ComplexShape.up (ZMod 2)) i) h₁
-  exact ((_root_.HomotopyCategory.homologyFunctorFactors C
-    (ComplexShape.up (ZMod 2)) i).app K).isZero_iff.mp h₂
+  have h : Nonempty (Homotopy (𝟙 K) 0) := by
+    have h' := (nonempty_homotopy_toPeriodicComplex_map_zero_iff
+      (C := C) (R := R) (𝟙 (squareZero (R := R) A))).2
+        ⟨_, _, nullHomotopicMap_squareZero (R := R) A⟩
+    change Nonempty (Homotopy
+      (𝟙 ((toPeriodicComplex C R).obj (squareZero (R := R) A))) 0)
+    rw [← (toPeriodicComplex C R).map_id (squareZero (R := R) A)]
+    exact h'
+  rw [IsZero.iff_id_eq_zero]
+  calc
+    𝟙 (K.homology i) = HomologicalComplex.homologyMap (𝟙 K) i :=
+      (HomologicalComplex.homologyMap_id K i).symm
+    _ = HomologicalComplex.homologyMap (0 : K ⟶ K) i := h.some.homologyMap_eq i
+    _ = 0 := HomologicalComplex.homologyMap_zero K K i
 
 end CurvedDuplex
 
