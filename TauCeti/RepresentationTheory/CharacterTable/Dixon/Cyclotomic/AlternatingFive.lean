@@ -255,6 +255,7 @@ theorem alternatingGroupFiveCandidateCharacterTable_row_one_ne_row_two :
   decide
 
 /-- The Galois automorphism `ζ ↦ ζ²` exchanges the two degree-three candidate rows. -/
+@[simp]
 theorem alternatingGroupFiveGaloisEquiv_candidateCharacterTable_row_one
     (j : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveGaloisEquiv
@@ -269,6 +270,7 @@ theorem alternatingGroupFiveGaloisEquiv_candidateCharacterTable_row_one
 
 /-- The Galois automorphism `ζ ↦ ζ²` exchanges the two degree-three candidate rows in the
 opposite direction as well. -/
+@[simp]
 theorem alternatingGroupFiveGaloisEquiv_candidateCharacterTable_row_two
     (j : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveGaloisEquiv
