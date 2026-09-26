@@ -82,35 +82,3 @@ theorem liftBialgHom_unique (f : GroupLike R A →* GroupLike R B)
   exact BialgHom.ext (LinearMap.congr_fun h)
 
 end MonoidHom
-
-namespace BialgHom
-
-variable {k L A B : Type*} [CommSemiring k] [CommSemiring L] [Algebra k L]
-  [Semiring A] [Bialgebra k A] [Semiring B] [Bialgebra k B]
-
-/-- A map out of a scalar extension spanned by group-like elements commutes with a scalar
-automorphism exactly when its restriction to group-like elements does. -/
-theorem map_smul_iff_groupLike (f : L ⊗[k] A →ₐc[L] L ⊗[k] B)
-    (hA : Submodule.span L
-      (Set.range (GroupLike.val (R := L) (A := L ⊗[k] A))) = ⊤)
-    (σ : L ≃ₐ[k] L) :
-    (∀ x, f (σ • x) = σ • f x) ↔
-      ∀ x : GroupLike L (L ⊗[k] A),
-        TauCeti.GroupLike.map f (σ • x) = σ • TauCeti.GroupLike.map f x := by
-  constructor
-  · intro h x
-    apply GroupLike.val_injective
-    simpa using h x.val
-  · intro h
-    have heq : (f : L ⊗[k] A →ₗ[L] L ⊗[k] B).comp (TauCeti.ScalarAut.semilinearMap σ) =
-        (TauCeti.ScalarAut.semilinearMap σ).comp (f : L ⊗[k] A →ₗ[L] L ⊗[k] B) := by
-      apply LinearMap.ext_on_range hA
-      intro x
-      simpa only [LinearMap.comp_apply, BialgHom.coe_toLinearMap,
-        TauCeti.ScalarAut.semilinearMap_apply, TauCeti.GroupLike.val_map,
-        TauCeti.ScalarAut.val_smul] using congrArg GroupLike.val (h x)
-    intro x
-    simpa only [LinearMap.comp_apply, BialgHom.coe_toLinearMap,
-      TauCeti.ScalarAut.semilinearMap_apply] using LinearMap.congr_fun heq x
-
-end BialgHom
