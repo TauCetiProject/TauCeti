@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Cohomology
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Projective
 
