@@ -15,7 +15,7 @@ on fundamental groups is trivial: a characterization of trivial range loop by lo
 consequences of triviality of the *source* fundamental group.
 
 `TauCeti.FundamentalGroup.map_range_eq_bot_iff` was extracted from the proof of
-`TauCeti.semilocallySimplyConnectedAt_iff` in
+`semilocallySimplyConnectedAt_iff_range_eq_bot` in
 `TauCeti/AlgebraicTopology/SemilocallySimplyConnected/On.lean`, which is adapted from the Mathlib
 drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 [#31576](https://github.com/leanprover-community/mathlib4/pull/31576), and

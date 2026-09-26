@@ -18,11 +18,17 @@ that make up a class. Since connectedness is decidable, the carrier is a computa
 since equality of classes reduces to a search through the finitely many relabelings, so is the
 quotient.
 
+Finally, it introduces connected triples with a marked label modulo the diagonal relabeling action,
+which moves the label along with the triple. They are the combinatorial invariant of a pointed cover
+of the thrice-punctured sphere, as isomorphism classes of connected triples are of a cover.
+
 ## Main definitions
 
 * `TauCeti.ConnectedTriple`: a permutation triple together with connectedness.
 * `TauCeti.ConnectedIsoClass`: connected triples modulo simultaneous relabeling.
 * `TauCeti.ConnectedIsoClass.orbitFinset`: the connected triples in a class, as a finset.
+* `TauCeti.MarkedIsoClass`: connected triples with a marked label, modulo the diagonal relabeling
+  action `τ • (t, i) = (τ • t, τ i)`, and `TauCeti.MarkedIsoClass.forget`, which forgets the label.
 
 ## Main results
 
@@ -34,6 +40,9 @@ quotient.
   finset of a class consists of the connected triples of that class, and is the class's orbit
   `MulAction.orbitRel.Quotient.orbit`.
 * `TauCeti.ConnectedIsoClass.orbitFinset_injective`: distinct classes have distinct finsets.
+* `TauCeti.MarkedIsoClass.mk_eq_mk_iff_exists_smul`: two marked connected triples have the same
+  class exactly when a relabeling carries one triple onto the other and its label onto the other
+  label.
 -/
 
 open Equiv MulAction
@@ -154,5 +163,56 @@ theorem orbitFinset_injective :
     coe_orbitFinset])
 
 end ConnectedIsoClass
+
+/-- Connected permutation triples of degree `n` with a marked label, modulo the diagonal relabeling
+action `τ • (t, i) = (τ • t, τ i)`: the relabeling moves the label along with the triple.
+Quotienting by the stabilizer of the label instead would never identify pairs with different
+labels. -/
+def MarkedIsoClass (n : ℕ) : Type :=
+  MulAction.orbitRel.Quotient (Perm (Fin n)) (ConnectedTriple n × Fin n)
+
+namespace MarkedIsoClass
+
+variable {n : ℕ}
+
+/-- The class of a connected triple with the marked label `i`. -/
+def mk (t : ConnectedTriple n) (i : Fin n) : MarkedIsoClass n :=
+  Quotient.mk'' (t, i)
+
+/-- Two marked connected triples determine the same class exactly when they are related by the
+diagonal relabeling action. -/
+@[simp]
+theorem mk_eq_mk_iff {t t' : ConnectedTriple n} {i i' : Fin n} :
+    mk t i = mk t' i' ↔
+      MulAction.orbitRel (Perm (Fin n)) (ConnectedTriple n × Fin n) (t, i) (t', i') :=
+  Quotient.eq''
+
+/-- Two marked connected triples have the same class exactly when some relabeling carries the
+second triple onto the first and the second label onto the first. -/
+theorem mk_eq_mk_iff_exists_smul {t t' : ConnectedTriple n} {i i' : Fin n} :
+    mk t i = mk t' i' ↔ ∃ τ : Perm (Fin n), τ • t' = t ∧ τ i' = i := by
+  rw [mk_eq_mk_iff, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+  simp [Prod.ext_iff, Perm.smul_def]
+
+/-- Relabeling a marked triple, label included, does not change its class. -/
+@[simp]
+theorem mk_smul (τ : Perm (Fin n)) (t : ConnectedTriple n) (i : Fin n) :
+    mk (τ • t) (τ i) = mk t i :=
+  mk_eq_mk_iff_exists_smul.2 ⟨τ, rfl, rfl⟩
+
+theorem mk_surjective (c : MarkedIsoClass n) :
+    ∃ (t : ConnectedTriple n) (i : Fin n), mk t i = c :=
+  Quotient.inductionOn' c fun ti => ⟨ti.1, ti.2, rfl⟩
+
+/-- Forgetting the marked label of a class. -/
+def forget : MarkedIsoClass n → ConnectedIsoClass n :=
+  Quotient.map' Prod.fst fun _ _ ⟨τ, hτ⟩ => ⟨τ, congrArg Prod.fst hτ⟩
+
+@[simp]
+theorem forget_mk (t : ConnectedTriple n) (i : Fin n) :
+    (mk t i).forget = ConnectedIsoClass.mk t :=
+  (rfl)
+
+end MarkedIsoClass
 
 end TauCeti

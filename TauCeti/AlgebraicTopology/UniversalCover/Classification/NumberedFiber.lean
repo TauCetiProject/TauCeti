@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.FundamentalGroupAction
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Transport
 public import TauCeti.Topology.Covering.Monodromy.Transitive
+public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 
 /-!
 # Numbered, pointed and bare connected covers of degree `n`
@@ -51,6 +53,12 @@ therefore descends to the other two rigidifications.
 Over a path-connected base the degree does not depend on the basepoint, and a connected cover has
 positive degree.
 
+Over a path-connected, locally path-connected base, a numbered cover is determined up to
+isomorphism by its monodromy representation read through the numbering,
+`π₁(X, x) →* Equiv.Perm (Fin n)`: taking the fibre over `x` with its monodromy action is fully
+faithful (`TauCeti.CoveringSpace.fiberActionFunctor_full`), and the numberings turn equal
+representations into an isomorphism of `π₁(X, x)`-sets preserving the labels.
+
 ## Main declarations
 
 * `TauCeti.ConnectedFiberNumberedCover`, `TauCeti.ConnectedPointedCover`,
@@ -71,6 +79,8 @@ positive degree.
   diagonal orbits of marked numbered classes.
 * `TauCeti.ConnectedCover.nonempty_equiv_fin_of`: a path transports the degree between fibres;
   `TauCeti.ConnectedCover.ne_zero`: over a path-connected base the degree is positive.
+* `TauCeti.connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq`: two numbered
+  covers are isomorphic exactly when their numbered monodromy representations agree.
 
 ## References
 
@@ -700,5 +710,56 @@ theorem ConnectedPointedCoverClass.forgetPoint_surjective (hn : n ≠ 0) :
   obtain ⟨i⟩ := this
   let e := ν.symm i
   exact ⟨mk ⟨c.cover, e, c.nonempty_equiv_fin, c.pathConnected⟩, rfl⟩
+
+/-! ### Numbered monodromy -/
+
+section Monodromy
+
+variable [PathConnectedSpace X] [LocallyPathConnectedSpace X]
+
+/-- **A numbered connected cover is determined by its numbered monodromy.** Two numbered covers
+are isomorphic, by an isomorphism preserving every label, exactly when their monodromy
+representations `π₁(X, x) →* Equiv.Perm (Fin n)`, read through the numberings, agree. -/
+theorem connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq
+    {c c' : ConnectedFiberNumberedCover x n} :
+    ConnectedFiberNumberedCoverIso c c' ↔
+      c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) =
+        c'.ν.permCongrHom.toMonoidHom.comp (c'.cover.isCoveringMap_proj.monodromyPerm x) := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · obtain ⟨f, hf⟩ := connectedFiberNumberedCoverIso_iff_exists.1 h
+    refine (c.cover.isCoveringMap_proj.permutationRepresentation_eq_of_fiberMap
+      c'.cover.isCoveringMap_proj x c.ν c'.ν f.hom.hom.left.hom
+      (CoveringSpace.proj_hom_comp_hom_left_hom ((ConnectedCoveringSpace.forget X).map f.hom))
+      fun e => ?_).symm
+    rw [← c'.ν.apply_symm_apply (c.ν e)]
+    refine congrArg c'.ν (Subtype.ext ?_)
+    rw [Function.fiberMap_apply_coe, ← hf, symm_apply_apply]
+  -- The relabelling `c.ν.trans c'.ν.symm` of fibres is `π₁(X, x)`-equivariant; the fibre-action
+  -- functor is fully faithful, so it is the fibre map of an isomorphism of covers.
+  have hcomm : ∀ (γ : FundamentalGroup X x) e,
+      (c.ν.trans c'.ν.symm) (c.cover.isCoveringMap_proj.monodromy γ e) =
+        c'.cover.isCoveringMap_proj.monodromy γ ((c.ν.trans c'.ν.symm) e) := fun γ e => by
+    have := DFunLike.congr_fun (DFunLike.congr_fun h γ) (c.ν e)
+    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, permCongrHom_coe,
+      permCongr_apply, symm_apply_apply, IsCoveringMap.coe_monodromyPerm] at this
+    simp only [trans_apply, this, symm_apply_apply]
+  let F := ConnectedCoveringSpace.forget X ⋙ CoveringSpace.fiberActionFunctor x
+  let φ : F.obj c.cover ≅ F.obj c'.cover :=
+    Action.mkIso (Equiv.toIso (c.ν.trans c'.ν.symm)) fun γ => by
+      ext e
+      exact hcomm γ e
+  refine connectedFiberNumberedCoverIso_iff_exists.2 ⟨F.preimageIso φ, fun i => ?_⟩
+  have hφ : (CoveringSpace.fiberActionFunctor x).map
+      ((ConnectedCoveringSpace.forget X).map (F.preimage φ.hom)) = φ.hom := F.map_preimage φ.hom
+  have hi := congrArg (fun ψ => ψ.hom (c.ν.symm i)) hφ
+  have hφi : φ.hom.hom (c.ν.symm i) = c'.ν.symm i :=
+    (Equiv.toIso_hom_hom_apply (c.ν.trans c'.ν.symm) (c.ν.symm i)).trans (by simp)
+  rw [CoveringSpace.fiberActionFunctor_map_hom, hφi] at hi
+  rw [Functor.preimageIso_hom]
+  exact (Function.fiberMap_apply_coe _ (CoveringSpace.proj_hom_comp_hom_left_hom
+    ((ConnectedCoveringSpace.forget X).map (F.preimage φ.hom))) x (c.ν.symm i)).symm.trans
+    (congrArg Subtype.val hi)
+
+end Monodromy
 
 end TauCeti

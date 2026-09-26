@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.NotReduced
 public import Mathlib.RingTheory.Smooth.Fiber
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
-import Mathlib.GroupTheory.Perm.Cycle.Type
 
 /-!
 # Étaleness of finite commutative group algebras
@@ -76,18 +75,8 @@ theorem etale_iff_isUnit_card (k : Type*) [Field k] :
     Algebra.Etale k (MonoidAlgebra k G) ↔ IsUnit (Nat.card G : k) := by
   refine ⟨fun he => ?_, etale_of_isUnit_card k G⟩
   let := he
-  rw [isUnit_iff_ne_zero]
-  intro hz
-  have hdiv : ringChar k ∣ Nat.card G := (CharP.cast_eq_zero_iff k (ringChar k) _).mp hz
-  have hp : (ringChar k).Prime := (CharP.char_is_prime_or_zero k (ringChar k)).resolve_right
-    (fun hzero => Nat.card_pos.ne' (zero_dvd_iff.mp (hzero ▸ hdiv)))
-  let : Fact (ringChar k).Prime := ⟨hp⟩
-  obtain ⟨g, hg⟩ := exists_prime_orderOf_dvd_card' (G := G) (ringChar k) hdiv
-  have hgne : g ≠ 1 := by
-    intro hgone
-    simp only [hgone, orderOf_one] at hg
-    exact hp.ne_one hg.symm
-  exact not_isReduced_monoidAlgebra (R := k) (ringChar k) hgne
-    (hg ▸ pow_orderOf_eq_one g) (Algebra.FormallyUnramified.isReduced_of_field k _)
+  by_contra h
+  exact not_isReduced_monoidAlgebra_of_not_isUnit_card k G h
+    (Algebra.FormallyUnramified.isReduced_of_field k _)
 
 end TauCeti.MonoidAlgebra

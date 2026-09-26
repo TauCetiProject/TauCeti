@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.Extreme
+public import TauCeti.Probability.Exchangeability.Arrays.Extreme.Basic
 public import TauCeti.Probability.Exchangeability.Arrays.Windows
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.AdjArray
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite
