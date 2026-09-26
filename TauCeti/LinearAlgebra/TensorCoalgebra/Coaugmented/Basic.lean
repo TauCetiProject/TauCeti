@@ -112,16 +112,9 @@ theorem linearMap_ext {N : Type uN} [AddCommMonoid N] [Module R N]
   exact h n x
 
 /-- Project tensor words to a fixed tensor length. -/
+@[expose]
 noncomputable def component (n : ℕ) : TensorWords R M →ₗ[R] TensorPower R n M :=
   DirectSum.component R ℕ (fun n ↦ TensorPower R n M) n
-
-/-- Evaluation of a finite tensor word is its component projection.
-
-This exposes the evaluation of `component` across module boundaries, where its definition is
-not exposed and `DirectSum.apply_eq_component` alone cannot rewrite it. -/
-theorem apply_eq_component (x : TensorWords R M) (n : ℕ) :
-    x n = component R M n x :=
-  DirectSum.apply_eq_component R x n
 
 /-- The component of an included tensor power at its own length is that tensor power. -/
 @[simp]

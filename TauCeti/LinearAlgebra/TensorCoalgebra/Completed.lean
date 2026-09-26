@@ -169,13 +169,15 @@ theorem deconcatenation_coe (x : TensorWords R M) (p q : ℕ) :
         rw [TensorWords.component_of_of_ne R M hq, TensorProduct.tmul_zero]
       · rw [TensorWords.component_of_of_ne R M hp, TensorProduct.zero_tmul]
   simpa only [deconcatenation_apply, DFinsupp.coeFnLinearMap_apply,
-    TensorWords.apply_eq_component, LinearMap.comp_apply, LinearEquiv.coe_coe] using
+    TensorWords.component, ← DirectSum.apply_eq_component, LinearMap.comp_apply,
+    LinearEquiv.coe_coe] using
     (LinearMap.congr_fun h x).symm
 
 /-- The inclusion of finite tensor words preserves the counit. -/
 theorem counit_coe (x : TensorWords R M) :
     counit R M (DFinsupp.coeFnLinearMap R x) = TensorWords.counit R M x := by
-  rw [counit_apply, TensorWords.counit_apply, ← TensorWords.apply_eq_component]
+  rw [counit_apply, TensorWords.counit_apply, TensorWords.component,
+    ← DirectSum.apply_eq_component]
   rfl
 
 /-- Discard all components of length at least `n`, producing an ordinary finite tensor word. -/
