@@ -42,6 +42,27 @@ private theorem completedSquare (a₂ a₄ a₆ c d x y : F) :
         (x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆) := by
   ring
 
+private theorem charNeTwoNFCoefficients (W : WeierstrassCurve k) (h2 : (2 : k) ≠ 0) :
+    letI : Invertible (2 : k) := invertibleOfNonzero h2
+    let c := W.a₁ / 2
+    let d := W.a₃ / 2
+    (W.toCharNeTwoNF • W).a₂ = W.a₂ + c ^ 2 ∧
+      (W.toCharNeTwoNF • W).a₄ = W.a₄ + 2 * c * d ∧
+      (W.toCharNeTwoNF • W).a₆ = W.a₆ + d ^ 2 := by
+  let : Invertible (2 : k) := invertibleOfNonzero h2
+  dsimp
+  constructor
+  · simp [variableChange_a₂, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
+    field_simp [h2]
+    ring
+  constructor
+  · simp [variableChange_a₄, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
+    field_simp [h2]
+    ring
+  · simp [variableChange_a₆, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
+    field_simp [h2]
+    ring
+
 namespace Place.IsWeierstrassCoordinates
 
 variable {P : Place k F} {W : WeierstrassCurve k} {x y : F}
@@ -84,18 +105,7 @@ theorem toCharNeTwoNF (h : P.IsWeierstrassCoordinates W x y) (h2 : (2 : k) ≠ 0
     exact Q.mem_integers_iff_ord_nonneg.mp (by exact add_mem (add_mem hyQ (mul_mem hcQ hxQ)) hdQ)
   · have hEq := h.equation
     rw [Affine.equation_iff] at hEq ⊢
-    have ha₂ : (W.toCharNeTwoNF • W).a₂ = W.a₂ + c ^ 2 := by
-      simp [variableChange_a₂, WeierstrassCurve.toCharNeTwoNF, c, invOf_eq_inv]
-      field_simp [h2]
-      ring
-    have ha₄ : (W.toCharNeTwoNF • W).a₄ = W.a₄ + 2 * c * d := by
-      simp [variableChange_a₄, WeierstrassCurve.toCharNeTwoNF, c, d, invOf_eq_inv]
-      field_simp [h2]
-      ring
-    have ha₆ : (W.toCharNeTwoNF • W).a₆ = W.a₆ + d ^ 2 := by
-      simp [variableChange_a₆, WeierstrassCurve.toCharNeTwoNF, d, invOf_eq_inv]
-      field_simp [h2]
-      ring
+    obtain ⟨ha₂, ha₄, ha₆⟩ := charNeTwoNFCoefficients W h2
     have hc : W.a₁ = 2 * c := by
       dsimp [c]
       field_simp [h2]
@@ -107,13 +117,8 @@ theorem toCharNeTwoNF (h : P.IsWeierstrassCoordinates W x y) (h2 : (2 : k) ≠ 0
     rw [hc, hd] at hEq
     simp only [a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF, map_zero, zero_mul,
       add_zero, map_add, map_pow, map_mul, map_ofNat] at *
-    change (y + (algebraMap k F) c * x + (algebraMap k F) d) ^ 2 =
-      x ^ 3 + ((algebraMap k F) W.a₂ + (algebraMap k F) c ^ 2) * x ^ 2 +
-        ((algebraMap k F) W.a₄ + 2 * (algebraMap k F) c * (algebraMap k F) d) * x +
-          ((algebraMap k F) W.a₆ + (algebraMap k F) d ^ 2)
-    rw [← sub_eq_zero] at hEq ⊢
-    rw [completedSquare]
-    exact hEq
+    linear_combination completedSquare (algebraMap k F W.a₂) (algebraMap k F W.a₄)
+      (algebraMap k F W.a₆) (algebraMap k F c) (algebraMap k F d) x y + hEq
 
 end Place.IsWeierstrassCoordinates
 
