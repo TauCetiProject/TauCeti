@@ -21,8 +21,7 @@ Consequently a DG functor sends closed degree-zero morphisms to closed ones and 
 boundaries, and it induces a linear functor `H⁰(F) : H⁰(C) ⥤ H⁰(D)` between homotopy categories.
 Its action on the morphisms `H⁰(Hom(X, Y))` is the map induced on degree-zero cohomology by the
 chain map `F.map X Y`, so the quasi-isomorphism conditions on DG functors translate directly into
-statements about `H⁰(F)`.  The definition of `H⁰(F)` exposes its body, so that this action on
-morphisms is available definitionally to the functors and theorems built from it.
+statements about `H⁰(F)`.
 
 ## Main definitions
 

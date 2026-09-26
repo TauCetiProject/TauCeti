@@ -25,11 +25,6 @@ difference is the differential of a degree-minus-one morphism, and that a chain 
 complexes acts on homotopy classes through representatives. The resulting category is naturally
 preadditive and linear over the ground ring.
 
-The constructors `TauCeti.DGHomotopyCategory.of` and `TauCeti.DGHomotopyCategory.underlying`
-expose their bodies, so that the morphisms from `of X` to `of Y` are definitionally the homotopy
-classes `DGHomotopyClass R X Y`; functors between homotopy categories are defined through this
-identification.
-
 ## Main definitions
 
 * TauCeti.dgCycles: the degree-zero cocycles in a DG Hom complex.
