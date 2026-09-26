@@ -44,8 +44,7 @@ not by themselves certify that the rows are the irreducible characters of `A₅`
 ## References
 
 The candidate is the classical displayed `A₅` table; see J.-P. Serre, *Linear Representations of
-Finite Groups*, §5.2. A future certificate can connect it to the Burnside--Dixon--Schneider
-framework developed in the surrounding files.
+Finite Groups*, §5.2.
 -/
 
 public section
@@ -63,34 +62,34 @@ abbrev alternatingGroupFiveGolden : Cyclotomic 5 :=
   Cyclotomic.ofCoeffList 5 [-1, -1, 0, 0]
 
 /-- The Galois conjugate `(1 - √5) / 2` of the positive golden-ratio character value. -/
-abbrev alternatingGroupFiveGoldenConjugate : Cyclotomic 5 :=
+abbrev alternatingGroupFiveGoldenGaloisConjugate : Cyclotomic 5 :=
   Cyclotomic.ofCoeffList 5 [1, 1, 0, 1]
 
 /-- The two golden-ratio character values sum to one. -/
-theorem alternatingGroupFiveGolden_add_conjugate :
-    alternatingGroupFiveGolden + alternatingGroupFiveGoldenConjugate = 1 := by
+theorem alternatingGroupFiveGolden_add_galoisConjugate :
+    alternatingGroupFiveGolden + alternatingGroupFiveGoldenGaloisConjugate = 1 := by
   decide
 
 /-- The two golden-ratio character values have product negative one. -/
-theorem alternatingGroupFiveGolden_mul_conjugate :
-    alternatingGroupFiveGolden * alternatingGroupFiveGoldenConjugate = -1 := by
+theorem alternatingGroupFiveGolden_mul_galoisConjugate :
+    alternatingGroupFiveGolden * alternatingGroupFiveGoldenGaloisConjugate = -1 := by
   decide
 
 /-- The sum of the squares of the two golden-ratio character values is three. -/
-theorem alternatingGroupFiveGolden_sq_add_conjugate_sq :
-    alternatingGroupFiveGolden ^ 2 + alternatingGroupFiveGoldenConjugate ^ 2 = 3 := by
+theorem alternatingGroupFiveGolden_sq_add_galoisConjugate_sq :
+    alternatingGroupFiveGolden ^ 2 + alternatingGroupFiveGoldenGaloisConjugate ^ 2 = 3 := by
   calc
-    alternatingGroupFiveGolden ^ 2 + alternatingGroupFiveGoldenConjugate ^ 2 =
-        (alternatingGroupFiveGolden + alternatingGroupFiveGoldenConjugate) ^ 2 -
-          2 * (alternatingGroupFiveGolden * alternatingGroupFiveGoldenConjugate) := by ring
+    alternatingGroupFiveGolden ^ 2 + alternatingGroupFiveGoldenGaloisConjugate ^ 2 =
+        (alternatingGroupFiveGolden + alternatingGroupFiveGoldenGaloisConjugate) ^ 2 -
+          2 * (alternatingGroupFiveGolden * alternatingGroupFiveGoldenGaloisConjugate) := by ring
     _ = 3 := by
-      rw [alternatingGroupFiveGolden_add_conjugate,
-        alternatingGroupFiveGolden_mul_conjugate]
+      rw [alternatingGroupFiveGolden_add_galoisConjugate,
+        alternatingGroupFiveGolden_mul_galoisConjugate]
       norm_num
 
 /-- The two golden-ratio character values are distinct. -/
-theorem alternatingGroupFiveGolden_ne_conjugate :
-    alternatingGroupFiveGolden ≠ alternatingGroupFiveGoldenConjugate := by
+theorem alternatingGroupFiveGolden_ne_galoisConjugate :
+    alternatingGroupFiveGolden ≠ alternatingGroupFiveGoldenGaloisConjugate := by
   decide
 
 /-- Both golden-ratio character values are fixed by exact complex conjugation. -/
@@ -103,8 +102,9 @@ theorem star_alternatingGroupFiveGolden : star alternatingGroupFiveGolden =
 
 /-- The conjugate golden-ratio character value is also real. -/
 @[simp]
-theorem star_alternatingGroupFiveGoldenConjugate :
-    star alternatingGroupFiveGoldenConjugate = alternatingGroupFiveGoldenConjugate := by
+theorem star_alternatingGroupFiveGoldenGaloisConjugate :
+    star alternatingGroupFiveGoldenGaloisConjugate =
+      alternatingGroupFiveGoldenGaloisConjugate := by
   apply Cyclotomic.ext
   intro j
   fin_cases j <;> decide
@@ -114,7 +114,7 @@ transpositions, three-cycles, and the two classes of five-cycles. -/
 def alternatingGroupFiveCandidateCentralCharacterTable :
     Matrix AlternatingGroupFiveClassIndex AlternatingGroupFiveClassIndex (Cyclotomic 5) :=
   let φ := alternatingGroupFiveGolden
-  let φ' := alternatingGroupFiveGoldenConjugate
+  let φ' := alternatingGroupFiveGoldenGaloisConjugate
   !![1, 15, 20,      12,      12;
      1, -5,  0, 4 * φ,  4 * φ';
      1, -5,  0, 4 * φ', 4 * φ;
@@ -127,7 +127,7 @@ theorem alternatingGroupFiveCandidateCentralCharacterTable_apply
     (i j : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveCandidateCentralCharacterTable i j =
       (let φ := alternatingGroupFiveGolden
-       let φ' := alternatingGroupFiveGoldenConjugate
+       let φ' := alternatingGroupFiveGoldenGaloisConjugate
        !![1, 15, 20,      12,      12;
           1, -5,  0, 4 * φ,  4 * φ';
           1, -5,  0, 4 * φ', 4 * φ;
@@ -142,7 +142,7 @@ candidate central-character data. -/
 def alternatingGroupFiveCandidateCharacterTable :
     Matrix AlternatingGroupFiveClassIndex AlternatingGroupFiveClassIndex (Cyclotomic 5) :=
   let φ := alternatingGroupFiveGolden
-  let φ' := alternatingGroupFiveGoldenConjugate
+  let φ' := alternatingGroupFiveGoldenGaloisConjugate
   !![1,  1,  1,  1,  1;
      3, -1,  0,  φ, φ';
      3, -1,  0, φ',  φ;
@@ -155,7 +155,7 @@ theorem alternatingGroupFiveCandidateCharacterTable_apply
     (i j : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveCandidateCharacterTable i j =
       (let φ := alternatingGroupFiveGolden
-       let φ' := alternatingGroupFiveGoldenConjugate
+       let φ' := alternatingGroupFiveGoldenGaloisConjugate
        !![1,  1,  1,  1,  1;
           3, -1,  0,  φ, φ';
           3, -1,  0, φ',  φ;
@@ -176,6 +176,22 @@ theorem alternatingGroupFiveCandidateCharacterDegrees_apply (i : AlternatingGrou
       ![1, 3, 3, 4, 5] (finCongr numClasses_alternatingGroupFiveClassData i) := by
   fin_cases i <;> decide
 
+/-- The identity-class entry of each candidate row is its candidate degree. -/
+@[simp]
+theorem alternatingGroupFiveCandidateCharacterTable_index_one
+    (i : AlternatingGroupFiveClassIndex) :
+    alternatingGroupFiveCandidateCharacterTable i
+      (alternatingGroupFiveClassData.index 1) =
+        alternatingGroupFiveCandidateCharacterDegrees i := by
+  have hrep : alternatingGroupFiveClassData.rep ⟨0, by simp⟩ = 1 := by
+    -- `ClassData.rep` computes the zeroth entry of the displayed representative list.
+    rfl
+  have hindex : alternatingGroupFiveClassData.index 1 = ⟨0, by simp⟩ := by
+    rw [← hrep]
+    exact alternatingGroupFiveClassData.index_rep _
+  rw [hindex]
+  fin_cases i <;> decide
+
 /-- The two degree-three rows are genuinely distinct. -/
 theorem alternatingGroupFiveCandidateCharacterTable_row_one_ne_row_two :
     alternatingGroupFiveCandidateCharacterTable ⟨1, by simp⟩ ≠
@@ -187,7 +203,9 @@ theorem alternatingGroupFiveCandidateCentralCharacterTable_index_one
     (i : AlternatingGroupFiveClassIndex) :
     alternatingGroupFiveCandidateCentralCharacterTable i
       (alternatingGroupFiveClassData.index 1) = 1 := by
-  have hrep : alternatingGroupFiveClassData.rep ⟨0, by simp⟩ = 1 := by rfl
+  have hrep : alternatingGroupFiveClassData.rep ⟨0, by simp⟩ = 1 := by
+    -- `ClassData.rep` computes the zeroth entry of the displayed representative list.
+    rfl
   have hindex : alternatingGroupFiveClassData.index 1 = ⟨0, by simp⟩ := by
     rw [← hrep]
     exact alternatingGroupFiveClassData.index_rep _
@@ -199,14 +217,14 @@ theorem alternatingGroupFive_candidateCharacterDegrees_pos_and_dvd
     (i : AlternatingGroupFiveClassIndex) :
     0 < alternatingGroupFiveCandidateCharacterDegrees i ∧
       alternatingGroupFiveCandidateCharacterDegrees i ∣ Nat.card (alternatingGroup (Fin 5)) := by
-  rw [natCard_alternatingGroup_five]
+  rw [nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin]
   fin_cases i <;> decide
 
 /-- The sum of the squares of the candidate degrees is the order of `A₅`. -/
 theorem alternatingGroupFive_sum_candidateCharacterDegrees_sq :
     ∑ i, alternatingGroupFiveCandidateCharacterDegrees i ^ 2 =
       Nat.card (alternatingGroup (Fin 5)) := by
-  rw [natCard_alternatingGroup_five]
+  rw [nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin]
   decide
 
 /-- The candidate central and ordinary data obey the division-free conversion formula. -/
@@ -230,37 +248,27 @@ private theorem alternatingGroupFive_candidateCharacterTable_orthogonal_reindex
             ((finCongr numClasses_alternatingGroupFiveClassData).symm j)
             ((finCongr numClasses_alternatingGroupFiveClassData).symm k)) =
       if i = j then (Nat.card (alternatingGroup (Fin 5)) : Cyclotomic 5) else 0 := by
-  rw [natCard_alternatingGroup_five]
-  simp only [alternatingGroupFiveCandidateCharacterTable_apply]
+  rw [nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin]
   have hgolden : alternatingGroupFiveGolden =
-      1 - alternatingGroupFiveGoldenConjugate := by
-    linear_combination alternatingGroupFiveGolden_add_conjugate
-  have hpoly : alternatingGroupFiveGoldenConjugate ^ 2 -
-      alternatingGroupFiveGoldenConjugate - 1 = 0 := by
+      1 - alternatingGroupFiveGoldenGaloisConjugate := by
+    linear_combination alternatingGroupFiveGolden_add_galoisConjugate
+  have hpoly : alternatingGroupFiveGoldenGaloisConjugate ^ 2 -
+      alternatingGroupFiveGoldenGaloisConjugate - 1 = 0 := by
     calc
-      alternatingGroupFiveGoldenConjugate ^ 2 - alternatingGroupFiveGoldenConjugate - 1 =
-          -((1 - alternatingGroupFiveGoldenConjugate) *
-            alternatingGroupFiveGoldenConjugate + 1) := by ring
-      _ = -(alternatingGroupFiveGolden * alternatingGroupFiveGoldenConjugate + 1) := by
+      alternatingGroupFiveGoldenGaloisConjugate ^ 2 -
+          alternatingGroupFiveGoldenGaloisConjugate - 1 =
+          -((1 - alternatingGroupFiveGoldenGaloisConjugate) *
+            alternatingGroupFiveGoldenGaloisConjugate + 1) := by ring
+      _ = -(alternatingGroupFiveGolden * alternatingGroupFiveGoldenGaloisConjugate + 1) := by
         rw [← hgolden]
-      _ = 0 := by rw [alternatingGroupFiveGolden_mul_conjugate]; ring
-  have hsq : alternatingGroupFiveGoldenConjugate ^ 2 =
-      alternatingGroupFiveGoldenConjugate + 1 := by
+      _ = 0 := by rw [alternatingGroupFiveGolden_mul_galoisConjugate]; ring
+  have hsq : alternatingGroupFiveGoldenGaloisConjugate ^ 2 =
+      alternatingGroupFiveGoldenGaloisConjugate + 1 := by
     linear_combination hpoly
   fin_cases i <;> fin_cases j <;>
-    simp only [finCongr_symm, finCongr_apply,
-      card_classFinset_alternatingGroupFiveClassData, Finset.sum_fin_eq_sum_range,
-      Finset.sum_range_succ, Nat.succ_eq_add_one, Nat.reduceAdd,
-      Fin.cast_cast, Fin.cast_eq_self, Fin.zero_eta, Fin.isValue, Matrix.of_apply,
-      Matrix.cons_val', Matrix.cons_val_fin_one, Matrix.cons_val_zero, Fin.mk_one,
-      Matrix.cons_val_one, zero_ne_one, one_ne_zero, Fin.reduceFinMk, Matrix.cons_val,
-      Fin.reduceEq, ↓reduceIte, Nat.cast_ofNat]
+    norm_num [Fin.sum_univ_succ, card_classFinset_alternatingGroupFiveClassData,
+      alternatingGroupFiveCandidateCharacterTable_apply]
   all_goals
-    simp only [Finset.range_zero, Finset.sum_empty, Nat.ofNat_pos, ↓reduceDIte,
-      Nat.cast_one, one_mul, mul_one, zero_add, add_zero, Nat.one_lt_ofNat, Nat.reduceLT,
-      Nat.lt_add_one, star_ofNat, star_one, star_zero, star_neg, mul_neg, neg_mul, neg_neg,
-      neg_zero, mul_zero, zero_mul, star_alternatingGroupFiveGolden,
-      star_alternatingGroupFiveGoldenConjugate]
     try rw [hgolden]
     ring_nf
     try rw [hsq]

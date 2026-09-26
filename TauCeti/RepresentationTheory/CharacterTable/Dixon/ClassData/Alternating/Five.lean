@@ -353,6 +353,7 @@ theorem card_classFinset_alternatingGroupFiveClassData
   have hzero : (alternatingGroupFiveClassData.classFinset ⟨0, by omega⟩).card = 1 := by
     rw [alternatingGroupFiveClassData.card_classFinset,
       alternatingGroupFiveClassData.classOf_eq_mk]
+    -- `ClassData.rep` is executable list lookup; the first entry is definitionally `1`.
     rw [show alternatingGroupFiveClassData.rep ⟨0, by omega⟩ = 1 by rfl]
     exact ConjClasses.ncard_carrier_mk_of_mem_center (Subgroup.one_mem _)
   have hone : (alternatingGroupFiveClassData.classFinset ⟨1, by omega⟩).card = 15 := by
@@ -467,6 +468,7 @@ theorem card_classFinset_alternatingGroupFiveClassData
 @[simp]
 theorem card_classes_alternatingGroupFiveClassData :
     alternatingGroupFiveClassData.classes.map Finset.card = [1, 15, 20, 12, 12] := by
+  -- `ClassData.classes` is the list packaging of the `Fin`-indexed `classFinset` family.
   change [(alternatingGroupFiveClassData.classFinset ⟨0, by simp⟩).card,
     (alternatingGroupFiveClassData.classFinset ⟨1, by simp⟩).card,
     (alternatingGroupFiveClassData.classFinset ⟨2, by simp⟩).card,
@@ -504,10 +506,9 @@ private theorem alternatingGroupFiveFiveCycle_pow_thirty :
   rw [orderOf_alternatingGroupFiveFiveCycle]
   decide
 
-/-- The alternating group of degree five has order sixty: half of `5! = 120`. -/
-theorem natCard_alternatingGroup_five : Nat.card (alternatingGroup (Fin 5)) = 60 := by
-  rw [nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin]
-  rfl
+private theorem alternatingGroupFiveFiveCycle_sq_pow_thirty :
+    (alternatingGroupFiveFiveCycle ^ 2) ^ 30 = 1 := by
+  rw [← pow_mul, Nat.mul_comm, pow_mul, alternatingGroupFiveFiveCycle_pow_thirty, one_pow]
 
 /-- The exponent of the alternating group of degree five is thirty. -/
 theorem exponent_alternatingGroup_five :
@@ -527,13 +528,7 @@ theorem exponent_alternatingGroup_five :
     · exact isConj_one_right.mp
         (alternatingGroupFiveFiveCycle_pow_thirty ▸ hrg.pow 30)
     · exact isConj_one_right.mp
-        ((show (alternatingGroupFiveFiveCycle ^ 2) ^ 30 = 1 by
-          calc
-            (alternatingGroupFiveFiveCycle ^ 2) ^ 30 =
-                alternatingGroupFiveFiveCycle ^ (2 * 30) := by rw [pow_mul]
-            _ = alternatingGroupFiveFiveCycle ^ (30 * 2) := by norm_num
-            _ = (alternatingGroupFiveFiveCycle ^ 30) ^ 2 := by rw [pow_mul]
-            _ = 1 := by rw [alternatingGroupFiveFiveCycle_pow_thirty, one_pow]) ▸ hrg.pow 30)
+        (alternatingGroupFiveFiveCycle_sq_pow_thirty ▸ hrg.pow 30)
   · exact Nat.lcm_dvd
       (orderOf_alternatingGroupFiveDoubleTransposition ▸
         Monoid.order_dvd_exponent alternatingGroupFiveDoubleTransposition)
