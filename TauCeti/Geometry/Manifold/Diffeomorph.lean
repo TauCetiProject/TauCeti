@@ -19,8 +19,6 @@ public section
 open Bundle Manifold
 open scoped ContDiff Manifold
 
-namespace TauCeti
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -72,7 +70,5 @@ theorem mdifferentiableAt_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     exact (h.mdifferentiable hn (f x)).comp x hf
 
 end Diffeomorph
-
-end TauCeti
 
 end

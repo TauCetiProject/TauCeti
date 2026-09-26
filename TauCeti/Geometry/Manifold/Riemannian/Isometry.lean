@@ -128,9 +128,9 @@ protected def symm (Φ : RiemannianIsometry I J M N) :
       (mfderiv J I Φ.toDiffeomorph.symm (Φ.toDiffeomorph x) v)
       (mfderiv J I Φ.toDiffeomorph.symm (Φ.toDiffeomorph x) w)
     rw [hx]
-    rw [TauCeti.Diffeomorph.mfderiv_apply_mfderiv_symm_apply Φ.toDiffeomorph
+    rw [Diffeomorph.mfderiv_apply_mfderiv_symm_apply Φ.toDiffeomorph
         (by simp) x v,
-      TauCeti.Diffeomorph.mfderiv_apply_mfderiv_symm_apply Φ.toDiffeomorph
+      Diffeomorph.mfderiv_apply_mfderiv_symm_apply Φ.toDiffeomorph
         (by simp) x w] at h
     exact h.symm
 
@@ -237,7 +237,7 @@ theorem pathELength_comp (Φ : RiemannianIsometry I J M N)
     -- The remaining tangent norm is the same expression on both sides.
     rfl
   · have hcomp : ¬MDiffAt ((Φ : M → N) ∘ γ) t := by
-      exact mt (TauCeti.Diffeomorph.mdifferentiableAt_comp_iff Φ.toDiffeomorph
+      exact mt (Diffeomorph.mdifferentiableAt_comp_iff Φ.toDiffeomorph
         (by simp)).1 hγ
     rw [mfderiv_zero_of_not_mdifferentiableAt hγ,
       mfderiv_zero_of_not_mdifferentiableAt hcomp]
