@@ -7,8 +7,6 @@ module
 
 -- `TauCeti.GL2CuspidalVirtualCharacter` and its four values are the subject of this file.
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.Cuspidal.Basic
--- `TauCeti.irreducibleCharacters` occurs in the statement of the irreducibility theorem.
-public import TauCeti.RepresentationTheory.CharacterTable.Table
 -- Non-public: Frobenius reciprocity for class functions turns each pairing with an induced
 -- character into a sum over the inducing subgroup.
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
@@ -70,7 +68,10 @@ the sign is fixed by the degree `q - 1`, a natural number
 
 ## Implementation notes
 
-The pairing proofs use classical decidable equality to construct the finite type of `GL₂(F)`.
+The pairing theorems carry a `[DecidableEq F]` hypothesis, as
+`TauCeti.characterPairing_GL2Steinberg_self` does: the character pairing needs the finite type of
+`GL₂(F)`.  The irreducibility theorem, whose statement does not mention the pairing, supplies it
+classically in its proof.
 
 ## References
 
@@ -140,13 +141,6 @@ private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2ScalarUnipotentRep
   rw [Finset.sum_congr rfl fun a _ => hinner a, Finset.sum_const, Finset.card_univ,
     Fintype.card_units, nsmul_eq_mul, Nat.cast_sub Fintype.card_pos, Nat.cast_one]
 
-omit [Fintype F] in
-/-- On a unit of `E` coming from `Fˣ`, the character `u ↦ θ(u^q) θ(u)⁻¹` is trivial. -/
-private theorem div_apply_units_map_algebraMap [Finite F] (θ : Eˣ →* ℂˣ) (a : Fˣ) :
-    (θ.comp (powMonoidHom (Nat.card F)) / θ) (Units.map (algebraMap F E : F →* E) a) = 1 := by
-  rw [MonoidHom.div_apply, MonoidHom.comp_apply, powMonoidHom_apply,
-    FiniteField.units_map_algebraMap_pow_natCard, div_self']
-
 /-- **The cuspidal virtual character against `θ`, summed over the non-split torus.**  The summand
 is `q - 1` on the units coming from `Fˣ` and `-(1 + θ(u^q) θ(u)⁻¹)` off them; for `θ^q ≠ θ` the
 character `u ↦ θ(u^q) θ(u)⁻¹` is nontrivial and the total vanishes. -/
@@ -171,7 +165,8 @@ private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep
       Units.val_inv_eq_inv_val, GL2NonSplitTorus.coe_unitsEquiv_apply]
     by_cases hu : (u : E) ∈ Set.range (algebraMap F E)
     · obtain ⟨a, rfl⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) u).mp hu
-      simp only [hu, ↓reduceIte, hφ, div_apply_units_map_algebraMap, Units.val_one,
+      simp only [hu, ↓reduceIte, hφ, MonoidHom.div_apply, MonoidHom.comp_apply, powMonoidHom_apply,
+        FiniteField.units_map_algebraMap_pow_natCard, div_self', Units.val_one,
         GL2NonSplitTorus.gl2NonSplitTorusHom_map_algebraMap,
         GL2CuspidalVirtualCharacter_apply_scalar]
       field_simp
@@ -227,9 +222,13 @@ private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep
 
 /-! ### The norm of the cuspidal virtual character -/
 
-open Classical in
+section Pairing
+
+variable [DecidableEq F]
+
 /-- **The cuspidal virtual character occurs once in the Gelfand-Graev term**: its pairing with the
 character induced from `Z U` by `(a, t) ↦ θ(a) ψ(t)` is `1`, for every nontrivial `ψ`. -/
+@[simp]
 theorem characterPairing_GL2ScalarUnipotentInduction_GL2CuspidalVirtualCharacter
     (θ : Eˣ →* ℂˣ) {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
     ClassFunction.characterPairing
@@ -250,9 +249,9 @@ theorem characterPairing_GL2ScalarUnipotentInduction_GL2CuspidalVirtualCharacter
       (Nat.cast_ne_zero.mpr Fintype.card_pos.ne')
   exact inv_mul_cancel₀ hq
 
-open Classical in
 /-- **For `θ^q ≠ θ` the cuspidal virtual character is orthogonal to the elliptic induction**
 `Ind_{Eˣ}^{GL₂(F)} θ`. -/
+@[simp]
 theorem characterPairing_GL2EllipticInduction_GL2CuspidalVirtualCharacter {θ : Eˣ →* ℂˣ}
     (hθ : θ.comp (powMonoidHom (Fintype.card F)) ≠ θ) (ψ : AddChar F ℂ) :
     ClassFunction.characterPairing (ClassFunction.ofFDRep (GL2EllipticInduction F E hE θ))
@@ -265,9 +264,9 @@ theorem characterPairing_GL2EllipticInduction_GL2CuspidalVirtualCharacter {θ : 
   simp only [ClassFunction.comap_apply, Subgroup.coe_subtype, ClassFunction.ofFDRep_apply]
   rw [sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep hE hθ ψ, mul_zero]
 
-open Classical in
 /-- **For `θ^q ≠ θ` and `ψ` nontrivial the cuspidal virtual character has norm `1`**: it pairs to
 `1` with the Gelfand-Graev term and to `0` with the elliptic induction. -/
+@[simp]
 theorem characterPairing_GL2CuspidalVirtualCharacter_self {θ : Eˣ →* ℂˣ}
     (hθ : θ.comp (powMonoidHom (Fintype.card F)) ≠ θ) {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
     ClassFunction.characterPairing (GL2CuspidalVirtualCharacter F E hE θ ψ)
@@ -276,6 +275,8 @@ theorem characterPairing_GL2CuspidalVirtualCharacter_self {θ : Eˣ →* ℂˣ}
   rw [map_sub, LinearMap.sub_apply,
     characterPairing_GL2ScalarUnipotentInduction_GL2CuspidalVirtualCharacter hE θ hψ,
     characterPairing_GL2EllipticInduction_GL2CuspidalVirtualCharacter hE hθ ψ, sub_zero]
+
+end Pairing
 
 /-- **The cuspidal characters of `GL₂(𝔽_q)` are irreducible**: for a character `θ` of `Eˣ` with
 `θ^q ≠ θ` and a nontrivial additive character `ψ`, the cuspidal virtual character is the character
