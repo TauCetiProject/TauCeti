@@ -13,7 +13,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 
 An automorphism of a function field transports a function with order `-n` at `P` and
 nonnegative order elsewhere to one with the same property at the image of `P`. Thus pole
-numbers, gaps, and the finite gap sequence are invariant under the action on places. This is
+numbers, gaps, and the finite set of gaps are invariant under the action on places. This is
 the invariance needed to make the exceptional Weierstrass places an invariant set.
 
 The transport uses only the order functions at places; it needs no function-field or
@@ -62,17 +62,18 @@ theorem isPoleNumber_smul_iff : (σ • P).IsPoleNumber n ↔ P.IsPoleNumber n :
   · exact IsPoleNumber.smul σ P n
 
 /-- Gaps at the image of a place are precisely its original gaps. -/
+@[simp]
 theorem isGap_smul_iff : (σ • P).IsGap n ↔ P.IsGap n := by
   simp only [isGap_iff_not_isPoleNumber, isPoleNumber_smul_iff σ P n]
 
-/-- The finite list of gaps up to any bound is unchanged by an automorphism. -/
+/-- The finite set of gaps up to any bound is unchanged by an automorphism. -/
 @[simp]
 theorem gapNumbersUpTo_smul (m : ℕ) :
     (σ • P).gapNumbersUpTo m = P.gapNumbersUpTo m := by
   ext n
   simp only [mem_gapNumbersUpTo_iff, isGap_smul_iff σ P n]
 
-/-- The Weierstrass gap sequence is unchanged by an automorphism. -/
+/-- The finite set of Weierstrass gaps is unchanged by an automorphism. -/
 @[simp]
 theorem weierstrassGaps_smul :
     (σ • P).weierstrassGaps = P.weierstrassGaps := by
