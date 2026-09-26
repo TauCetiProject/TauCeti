@@ -43,6 +43,28 @@ private noncomputable def cocharacterRepresentationIsoDual (T : TorusCommHopfAlg
     exact MultiplicativeTypeCommHopfAlgCat.cocharacterGaloisRepresentation_apply_apply
       (toMultiplicativeTypeCommHopfAlgCat T) σ y x)
 
+/-- The cocharacter-dual comparison is natural in the underlying Galois representations. -/
+private theorem cocharacterRepresentationIsoDual_naturality
+    {S T : TorusCommHopfAlgCat k} (f : S ⟶ T) :
+    cocharacterLatticeRepresentationMap f ≫ (cocharacterRepresentationIsoDual S).hom =
+      (cocharacterRepresentationIsoDual T).hom ≫
+        Rep.dualMap (CommHopfAlgCat.geometricCharacterRepresentationMap f.hom.hom) := by
+  ext y x
+  -- Express the bundled carriers as character and cocharacter modules so their
+  -- evaluation lemmas apply.
+  dsimp only [cocharacterLatticeRepresentation, CommHopfAlgCat.geometricCharacterRepresentation,
+    Rep.ofMulDistribMulAction, Rep.of] at y x
+  change (MultiplicativeTypeCommHopfAlgCat.cocharacterLatticeLinearEquivDual
+      (toMultiplicativeTypeCommHopfAlgCat S))
+      ((cocharacterLatticeRepresentationMap f).hom y) x =
+    (Rep.dualMap (CommHopfAlgCat.geometricCharacterRepresentationMap f.hom.hom)).hom
+      ((MultiplicativeTypeCommHopfAlgCat.cocharacterLatticeLinearEquivDual
+        (toMultiplicativeTypeCommHopfAlgCat T)) y) x
+  erw [Rep.dualMap_hom_apply, cocharacterLatticeRepresentationMap_hom_apply,
+    CommHopfAlgCat.geometricCharacterRepresentationMap_hom_apply]
+  exact MultiplicativeTypeCommHopfAlgCat.cocharacterLatticeLinearEquivDual_cocharacterMap_apply
+    (toMultiplicativeTypeMap f) y x
+
 /-- The cocharacter-lattice functor is the contragredient dual of the character-lattice functor.
 This identifies the intrinsic geometric cocharacters with integral character functionals. -/
 noncomputable def cocharacterLatticeFunctorIsoDual :
@@ -55,31 +77,12 @@ noncomputable def cocharacterLatticeFunctorIsoDual :
       (eqToIso (GaloisLatticeCat.dualFunctor_obj_obj _)).symm)) (fun {X Y} f ↦ by
     apply ObjectProperty.hom_ext
     dsimp
-    simp only [cocharacterLatticeFunctor_map_hom, GaloisLatticeCat.dualFunctor_map_hom,
-      Quiver.Hom.unop_op, characterLatticeFunctor_map_hom,
-      Rep.dualMap_comp]
-    simp only [ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom, Iso.trans_hom,
-      Iso.symm_hom, eqToIso.hom, eqToIso.inv, Rep.dualMap_eqToHom, Category.assoc,
-      eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-    simp only [← Category.assoc, cancel_mono]
-    simp only [Category.assoc, cancel_epi]
-    apply Rep.hom_ext
-    apply Representation.IntertwiningMap.ext
-    ext y x
-    -- Identify the bundled representation carriers with the intrinsic character and
-    -- cocharacter modules before using their evaluation formulas.
-    dsimp only [cocharacterLatticeRepresentation, CommHopfAlgCat.geometricCharacterRepresentation,
-      Rep.ofMulDistribMulAction, Rep.of] at y x
-    change (MultiplicativeTypeCommHopfAlgCat.cocharacterLatticeLinearEquivDual
-        (toMultiplicativeTypeCommHopfAlgCat Y.unop))
-        ((cocharacterLatticeRepresentationMap f.unop).hom y) x =
-      (Rep.dualMap (CommHopfAlgCat.geometricCharacterRepresentationMap f.unop.hom.hom)).hom
-        ((MultiplicativeTypeCommHopfAlgCat.cocharacterLatticeLinearEquivDual
-          (toMultiplicativeTypeCommHopfAlgCat X.unop)) y) x
-    erw [Rep.dualMap_hom_apply, cocharacterLatticeRepresentationMap_hom_apply,
-      CommHopfAlgCat.geometricCharacterRepresentationMap_hom_apply]
-    exact MultiplicativeTypeCommHopfAlgCat.cocharacterLatticeLinearEquivDual_cocharacterMap_apply
-      (toMultiplicativeTypeMap f.unop) y x)
+    simpa [cocharacterLatticeFunctor_map_hom, GaloisLatticeCat.dualFunctor_map_hom,
+      characterLatticeFunctor_map_hom, Category.assoc] using
+      congrArg (fun g ↦ eqToHom (cocharacterLatticeFunctor_obj_obj X) ≫ g ≫
+        eqToHom (congrArg Rep.dual (characterLatticeFunctor_obj_obj Y.unop)).symm ≫
+        eqToHom (GaloisLatticeCat.dualFunctor_obj_obj _).symm)
+        (cocharacterRepresentationIsoDual_naturality f.unop))
 
 /-- The comparison with the dual character functor evaluates a cocharacter on a character. -/
 @[simp]

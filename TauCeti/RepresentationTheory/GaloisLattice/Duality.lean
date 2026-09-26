@@ -14,8 +14,6 @@ public import TauCeti.RepresentationTheory.Rep.Dual
 Integral duals preserve finite freeness and continuity of the Galois action. Evaluation
 into the double dual exhibits this contravariant functor as an equivalence. This is the
 lattice duality relating the character and cocharacter classifications of tori.
-The continuity input is `galoisLatticeProperty_dual`; the double-dual identification uses
-Mathlib's `Module.evalEquiv` through `Rep.doubleDualIso`.
 -/
 
 public section
