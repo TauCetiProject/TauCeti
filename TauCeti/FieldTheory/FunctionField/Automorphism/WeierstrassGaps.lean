@@ -11,10 +11,10 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 /-!
 # Automorphisms preserve Weierstrass gaps
 
-An automorphism of a function field transports a function with its only pole at `P` to one
-with its only pole, of the same order, at the image of `P`. Thus pole numbers, gaps, and the
-finite gap sequence are invariant under the action on places. This is the invariance needed to
-make the exceptional Weierstrass places an invariant set.
+An automorphism of a function field transports a function with order `-n` at `P` and
+nonnegative order elsewhere to one with the same property at the image of `P`. Thus pole
+numbers, gaps, and the finite gap sequence are invariant under the action on places. This is
+the invariance needed to make the exceptional Weierstrass places an invariant set.
 
 The transport uses only the order functions at places; it needs no function-field or
 exact-constant hypothesis.
@@ -62,6 +62,7 @@ theorem isPoleNumber_smul_iff : (σ • P).IsPoleNumber n ↔ P.IsPoleNumber n :
   · exact IsPoleNumber.smul σ P n
 
 /-- Gaps at the image of a place are precisely its original gaps. -/
+@[simp]
 theorem isGap_smul_iff : (σ • P).IsGap n ↔ P.IsGap n := by
   simp only [isGap_iff_not_isPoleNumber, isPoleNumber_smul_iff σ P n]
 
