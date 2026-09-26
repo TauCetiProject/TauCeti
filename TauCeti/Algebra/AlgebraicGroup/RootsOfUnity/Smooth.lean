@@ -33,29 +33,32 @@ universe u
 
 variable {k : Type u} [Field k]
 
-/-- For positive `n`, the coordinate algebra of `μ_n` is smooth exactly when `n` is a unit in
-the ground field. -/
--- Not `@[simp]`: `simp` already proves this from `MonoidAlgebra.smooth_iff_isUnit_card`.
-theorem coordinateRing_smooth_iff (n : ℕ) [NeZero n] :
-    Algebra.Smooth k (MonoidAlgebra k (Multiplicative (ZMod n))) ↔ IsUnit (n : k) := by
-  have hcard : Nat.card (Multiplicative (ZMod n)) = n :=
-    (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
-      (Nat.card_zmod n)
-  simpa only [hcard] using
-    (MonoidAlgebra.smooth_iff_isUnit_card k (Multiplicative (ZMod n)))
-
-/-- In characteristic `p`, the coordinate algebra of `μ_p` is not smooth. -/
-theorem coordinateRing_not_smooth (p : ℕ) [Fact p.Prime] [CharP k p] :
-    ¬ Algebra.Smooth k (MonoidAlgebra k (Multiplicative (ZMod p))) := by
-  let : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
-  intro hs
-  have hu := (coordinateRing_smooth_iff (k := k) p).mp hs
-  exact (isUnit_iff_ne_zero.mp hu) (CharP.cast_eq_zero k p)
-
 private theorem coordinateRing_carrier (n : ℕ) :
     ((DiagonalizableGroup.coordinateRing k (characterGroup n)).obj : Type u) =
       MonoidAlgebra k (ULift.{u} (Multiplicative (ZMod n))) :=
   rfl
+
+/-- For positive `n`, the coordinate algebra of `μ_n` is smooth exactly when `n` is a unit in
+the ground field. -/
+-- Not `@[simp]`: `MonoidAlgebra.smooth_iff_isUnit_card` already rewrites the left-hand side.
+theorem coordinateRing_smooth_iff (n : ℕ) [NeZero n] :
+    Algebra.Smooth k (DiagonalizableGroup.coordinateRing k (characterGroup.{u} n)).obj ↔
+      IsUnit (n : k) := by
+  have hcard : Nat.card (ULift.{u} (Multiplicative (ZMod n))) = n :=
+    (Nat.card_congr (Equiv.ulift : ULift.{u} (Multiplicative (ZMod n)) ≃
+      Multiplicative (ZMod n))).trans <|
+      (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
+        (Nat.card_zmod n)
+  simpa only [coordinateRing_carrier, hcard] using
+    (MonoidAlgebra.smooth_iff_isUnit_card k (ULift.{u} (Multiplicative (ZMod n))))
+
+/-- In characteristic `p`, the coordinate algebra of `μ_p` is not smooth. -/
+theorem coordinateRing_not_smooth (p : ℕ) [Fact p.Prime] [CharP k p] :
+    ¬ Algebra.Smooth k (DiagonalizableGroup.coordinateRing k (characterGroup.{u} p)).obj := by
+  let : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  intro hs
+  have hu := (coordinateRing_smooth_iff (k := k) p).mp hs
+  exact (isUnit_iff_ne_zero.mp hu) (CharP.cast_eq_zero k p)
 
 /-- The structural morphism of the group scheme `μ_n` is smooth exactly when `n` is a unit in
 the ground field. -/
@@ -63,21 +66,10 @@ the ground field. -/
 theorem groupScheme_smooth_iff (n : ℕ) [NeZero n] :
     Smooth (groupScheme k n).X.hom ↔ IsUnit (n : k) := by
   rw [groupScheme, DiagonalizableGroup.groupScheme_def]
-  have hsmooth : Smooth (((hopfSpec (CommRingCat.of k)).obj
-      (Opposite.op (DiagonalizableGroup.coordinateRing k (characterGroup n)).obj)).X.hom) ↔
-      Algebra.Smooth k (MonoidAlgebra k (ULift.{u} (Multiplicative (ZMod n)))) := by
-    have h := (algebraSmooth_iff_smooth_hopfSpec k
-      (DiagonalizableGroup.coordinateRing k (characterGroup n)).obj).symm
-    rw [smoothAffineGroupSchemeProperty_iff, smoothCommHopfAlgProperty_iff] at h
-    simpa only [coordinateRing_carrier] using h
-  rw [hsmooth]
-  have hcard : Nat.card (ULift.{u} (Multiplicative (ZMod n))) = n :=
-    (Nat.card_congr (Equiv.ulift : ULift.{u} (Multiplicative (ZMod n)) ≃
-      Multiplicative (ZMod n))).trans <|
-      (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
-        (Nat.card_zmod n)
-  simpa only [hcard] using
-    (MonoidAlgebra.smooth_iff_isUnit_card k (ULift.{u} (Multiplicative (ZMod n))))
+  have h := (algebraSmooth_iff_smooth_hopfSpec k
+    (DiagonalizableGroup.coordinateRing k (characterGroup n)).obj).symm
+  rw [smoothAffineGroupSchemeProperty_iff, smoothCommHopfAlgProperty_iff] at h
+  exact h.trans (coordinateRing_smooth_iff n)
 
 /-- The roots-of-unity group scheme `μ_p` is not smooth in characteristic `p`. -/
 theorem groupScheme_not_smooth (p : ℕ) [Fact p.Prime] [CharP k p] :
