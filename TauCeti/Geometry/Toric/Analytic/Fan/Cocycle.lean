@@ -29,50 +29,6 @@ namespace TauCeti.Toric.Fan
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular)
 
-private theorem analyticChartMap_comp {α β γ : Φ.cones} (f : α ⟶ β) (g : β ⟶ γ)
-    (x : (Φ.analyticAffineChartDiagram hΦ).obj α) :
-    (Φ.analyticAffineChartDiagram hΦ).map g
-        ((Φ.analyticAffineChartDiagram hΦ).map f x) =
-      (Φ.analyticAffineChartDiagram hΦ).map (f ≫ g) x := by
-  exact (ConcreteCategory.congr_hom ((Φ.analyticAffineChartDiagram hΦ).map_comp f g) x).symm
-
-/-- A point coming from a common face belongs to the overlap of the two charts. -/
-theorem mem_analyticOverlapOpens_of_le {γ σ τ : Φ.cones} (hγσ : γ ≤ σ)
-    (hγτ : γ ≤ τ) (z : (Φ.analyticAffineChartDiagram hΦ).obj γ) :
-    (Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγσ) z ∈
-      Φ.analyticOverlapOpens hΦ σ τ := by
-  let hγ : γ ≤ σ ⊓ τ := le_inf hγσ hγτ
-  apply (Φ.mem_analyticOverlapOpens hΦ σ τ _).2
-  refine ⟨(Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγ) z, ?_⟩
-  rw [Φ.analyticOverlapLeft_def hΦ, Φ.analyticChartMap_comp hΦ]
-  congr 1
-
-/-- On a point from a common face, an overlap transition is the chart map into the
-second cone. -/
-theorem analyticOverlapHomeomorph_apply_of_le {γ σ τ : Φ.cones} (hγσ : γ ≤ σ)
-    (hγτ : γ ≤ τ) (z : (Φ.analyticAffineChartDiagram hΦ).obj γ)
-    (hz : (Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγσ) z ∈
-      Φ.analyticOverlapOpens hΦ σ τ) :
-    ((Φ.analyticOverlapHomeomorph hΦ σ τ)
-      ⟨(Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγσ) z, hz⟩).1 =
-        (Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγτ) z := by
-  let hγ : γ ≤ σ ⊓ τ := le_inf hγσ hγτ
-  have he : (Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγσ) z =
-      Φ.analyticOverlapLeft hΦ σ τ
-        ((Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγ) z) := by
-    rw [Φ.analyticOverlapLeft_def hΦ, Φ.analyticChartMap_comp hΦ]
-    congr 1
-  have he' : (⟨_, hz⟩ : Φ.analyticOverlapOpens hΦ σ τ) =
-      ⟨Φ.analyticOverlapLeft hΦ σ τ
-        ((Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγ) z),
-        Φ.analyticOverlapLeft_mem hΦ σ τ _⟩ := Subtype.ext he
-  rw [he', Φ.analyticOverlapHomeomorph_apply hΦ]
-  -- Remove the subtype coercion before rewriting the map of the right overlap.
-  change Φ.analyticOverlapRight hΦ σ τ
-    ((Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγ) z) = _
-  rw [Φ.analyticOverlapRight_def hΦ, Φ.analyticChartMap_comp hΦ]
-  congr 1
-
 /-- A point in the intersection of two overlap loci comes from the chart of the
 triple intersection cone. -/
 theorem exists_analyticTripleOverlap (σ τ υ : Φ.cones)
