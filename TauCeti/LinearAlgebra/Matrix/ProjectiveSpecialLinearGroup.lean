@@ -150,9 +150,7 @@ theorem pslS_def : pslS = psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ)) := 
 and negation doesn't change a class in `PSL` (`Matrix.ProjectiveSpecialLinearGroup.mk_neg`). -/
 theorem S_inv_PSL2Z :
     (_root_.ModularGroup.S : PSL(2, ℤ))⁻¹ = (_root_.ModularGroup.S : PSL(2, ℤ)) := by
-  -- the quotient coercion is a monoid hom, so it commutes with `⁻¹`
-  rw [show ((_root_.ModularGroup.S : PSL(2, ℤ)))⁻¹ = ((_root_.ModularGroup.S⁻¹ : SL(2, ℤ)) :
-    PSL(2, ℤ)) from rfl, _root_.ModularGroup.S_inv, Matrix.ProjectiveSpecialLinearGroup.mk_neg]
+  rw [← QuotientGroup.mk_inv, _root_.ModularGroup.S_inv, Matrix.ProjectiveSpecialLinearGroup.mk_neg]
 
 /-- `ModularGroup.S` squares to the identity in `PSL(2, ℤ)`. -/
 theorem S_mul_S_PSL2Z :
