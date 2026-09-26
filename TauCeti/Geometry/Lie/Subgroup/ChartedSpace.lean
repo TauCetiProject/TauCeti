@@ -49,10 +49,7 @@ noncomputable def preferredSliceChart (K : Subgroup G)
     (e : OpenPartialHomeomorph G (F × F'))
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
     (g : K) : OpenPartialHomeomorph K F :=
-  (show TauCeti.IsSliceChart (e.translatedChart (g : G))
-      ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G) by
-    rw [← Subtype.range_coe (s := (K : Set G))]
-    exact K.isSliceChart_translatedChart e he g).subtypeChart
+  (K.isSliceChart_translatedChart e he g).subtypeChart
 
 /-- The preferred subgroup chart at `g` sees exactly the subgroup points in the source of its
 translated ambient chart. -/
@@ -100,14 +97,9 @@ theorem coe_preferredSliceChart_symm_apply (K : Subgroup G)
     (g : K) {y : F} (hy : (y, (0 : F')) ∈ e.target) :
     ((preferredSliceChart K e he g).symm y : G) = (g : G) * e.symm (y, 0) := by
   unfold preferredSliceChart
-  rw [show (↑((show TauCeti.IsSliceChart (e.translatedChart (g : G))
-      ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G) by
-        rw [← Subtype.range_coe (s := (K : Set G))]
-        exact K.isSliceChart_translatedChart e he g).subtypeChart.symm y) : G) =
-      (e.translatedChart (g : G)).symm (y, 0) by
-    apply TauCeti.IsSliceChart.coe_subtypeChart_symm_apply
-    simpa using hy]
-  apply OpenPartialHomeomorph.translatedChart_symm_apply
+  rw [TauCeti.IsSliceChart.coe_subtypeChart_symm_apply
+      (h := K.isSliceChart_translatedChart e he g) (by simpa using hy),
+    OpenPartialHomeomorph.translatedChart_symm_apply]
 
 /-- On its source, the ambient translated chart is recovered by reinserting the zero transverse
 coordinate after applying the preferred subgroup chart. -/
@@ -116,11 +108,9 @@ theorem preferredSliceChart_mk_zero_eq (K : Subgroup G)
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
     (g x : K) (hx : x ∈ (preferredSliceChart K e he g).source) :
     (preferredSliceChart K e he g x, (0 : F')) = e ((g : G)⁻¹ * (x : G)) := by
-  have h := (show TauCeti.IsSliceChart (e.translatedChart (g : G))
-      ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G) by
-    rw [← Subtype.range_coe (s := (K : Set G))]
-    exact K.isSliceChart_translatedChart e he g).subtypeChart_mk_zero_eq x hx
-  simpa [preferredSliceChart] using h
+  unfold preferredSliceChart at hx ⊢
+  rw [TauCeti.IsSliceChart.subtypeChart_mk_zero_eq _ x hx,
+    OpenPartialHomeomorph.translatedChart_apply]
 
 /-- One zero-slice chart around the identity equips a subgroup with a charted-space structure.
 

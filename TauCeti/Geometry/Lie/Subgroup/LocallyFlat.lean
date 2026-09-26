@@ -43,7 +43,9 @@ theorem isLocallyFlat_subtypeVal_of_isSliceChart (K : Subgroup G)
       ((↑) : K → G) := by
     refine ⟨IsEmbedding.subtypeVal, fun g => ?_⟩
     exact ⟨φ.translatedChart (g : G), φ.mem_translatedChart_source h1 g,
-      K.isSliceChart_translatedChart φ hφ g⟩
+      by
+        rw [Subtype.range_coe]
+        exact K.isSliceChart_translatedChart φ hφ g⟩
   exact TauCeti.isLocallyFlat_iff_isSliceEmbedding.mpr hflat
 
 end Subgroup

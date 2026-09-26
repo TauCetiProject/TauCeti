@@ -42,7 +42,7 @@ variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
 def translatedChart (φ : OpenPartialHomeomorph G P) (g : G) : OpenPartialHomeomorph G P :=
   (Homeomorph.smul g).symm.transOpenPartialHomeomorph φ
 
-/-- The source of a translated chart consists of the points moved into the source of the identity
+/-- The source of a translated chart consists of the points moved into the source of the original
 chart by multiplication by `g⁻¹`. -/
 @[simp]
 theorem translatedChart_source (φ : OpenPartialHomeomorph G P) (g : G) :
@@ -56,7 +56,8 @@ theorem translatedChart_target (φ : OpenPartialHomeomorph G P) (g : G) :
     (φ.translatedChart g).target = φ.target := by
   simp [translatedChart]
 
-/-- A translated subgroup chart first moves its argument back to the identity chart. -/
+/-- Evaluating a chart translated by `g` first translates the argument by `g⁻¹`, then applies
+the original chart. -/
 @[simp]
 theorem translatedChart_apply (φ : OpenPartialHomeomorph G P) (g y : G) :
     φ.translatedChart g y = φ (g⁻¹ * y) := by
@@ -68,7 +69,7 @@ theorem translatedChart_symm_apply (φ : OpenPartialHomeomorph G P) (g : G) (p :
     (φ.translatedChart g).symm p = g * φ.symm p := by
   simp [translatedChart, smul_eq_mul]
 
-/-- The translated identity chart contains its translating subgroup point in its source. -/
+/-- A chart containing `1` in its source, translated by `g`, contains `g` in its source. -/
 theorem mem_translatedChart_source (φ : OpenPartialHomeomorph G P)
     (h1 : (1 : G) ∈ φ.source) (g : G) : g ∈ (φ.translatedChart g).source := by
   rw [translatedChart_source]
@@ -87,20 +88,19 @@ variable {G P : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
 theorem isSliceChart_translatedChart (K : Subgroup G)
     (φ : OpenPartialHomeomorph G P) {S : Set P}
     (hφ : TauCeti.IsSliceChart φ S (K : Set G)) (g : K) :
-    TauCeti.IsSliceChart (φ.translatedChart (g : G)) S
-      (Set.range ((↑) : K → G)) := by
+    TauCeti.IsSliceChart (φ.translatedChart (g : G)) S (K : Set G) := by
   let e : OpenPartialHomeomorph G G :=
     (Homeomorph.smul (g : G)).symm.toOpenPartialHomeomorph
   have hset : e.source ∩ e ⁻¹' (K : Set G) = (K : Set G) := by
     have hpre : e ⁻¹' (K : Set G) = K := by
-      rw [show e ⁻¹' (K : Set G) = (fun y : G => (g : G)⁻¹ • y) ⁻¹' K from rfl,
-        Set.preimage_smul_inv, smul_coe_set g.property]
+      have he : ⇑e = fun y : G => (g : G)⁻¹ • y := by
+        ext y
+        simp [e, Homeomorph.smul_symm_apply]
+      rw [he, Set.preimage_smul_inv, smul_coe_set g.property]
     rw [hpre]
     simp [e]
   have hchart := hφ.comp e
-  have hset' : e.source ∩ e ⁻¹' (K : Set G) = Set.range ((↑) : K → G) :=
-    hset.trans Subtype.range_coe.symm
-  rw [hset'] at hchart
+  rw [hset] at hchart
   simpa [OpenPartialHomeomorph.translatedChart, e,
     Homeomorph.transOpenPartialHomeomorph_eq_trans] using hchart
 

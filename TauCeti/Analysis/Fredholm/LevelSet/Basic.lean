@@ -95,7 +95,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 implicit-function chart value. -/
 private theorem implicit_mk_snd_eq_apply (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
     (hker : f'.ker.ClosedComplemented) {x : E}
-    (_hx : x ∈ (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).source)
     (hxc : x ∈ {x | f x = c}) :
     (c, (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker x).2) =
       hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker x :=
@@ -123,7 +122,7 @@ noncomputable def levelSetChart (hf : HasStrictFDerivAt f f' a) (hf' : f'.range 
   let Φ := hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker
   Φ.subtypeCoord {x | f x = c} ⟨⟨a, ha⟩⟩ (fun k => (c, k)) Prod.snd
     (apply_implicit_symm_eq hf hf' hker)
-    (implicit_mk_snd_eq_apply hf hf' hker) (fun _ _ => rfl)
+    (fun _ hxc => implicit_mk_snd_eq_apply hf hf' hker hxc) (fun _ _ => rfl)
     (continuous_const.prodMk continuous_id) continuous_snd.continuousOn
 
 /-- The source of the chart of a level set is the source of Mathlib's implicit-function

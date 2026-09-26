@@ -55,6 +55,8 @@ discs (topological sliceness) and for stating the annulus conjecture.
 ## Main definitions
 
 * `TauCeti.IsSliceChart`: an ambient chart flattening a set onto a model slice.
+* `TauCeti.IsSliceChart.subtypeChart`: the chart on a flattened set induced by a zero-slice chart,
+  with values in the tangential model.
 * `TauCeti.IsSliceEmbedding`: an embedding flattened onto a given model slice by ambient charts.
 * `TauCeti.IsLocallyFlat`: a locally flat embedding, the case of the standard coordinate slice.
 

@@ -89,6 +89,8 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
         hf.localInverse)
   let Ψ : PartialDiffeomorph I 𝓘(ℝ, p × q) G (p × q) ∞ :=
     { __ := Φ
+      -- Restricting the open partial homeomorphism changes its source, but not its function
+      -- coercions, so these restricted smoothness proofs use the functions from `localInverse`.
       contMDiffOn_toFun := hf.localInverse.contMDiffOn_toFun.mono (by
         rw [OpenPartialHomeomorph.restrOpen_source, hΦ₀_source_eq]
         exact inter_subset_left)
@@ -96,6 +98,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
         rw [OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
           hΦ₀_target_eq]
         exact inter_subset_left) }
+  have hΨ : Ψ.toOpenPartialHomeomorph = Φ := rfl
   have hΦ₀_toPartialEquiv (x : G) : Φ₀ x = hf.localInverse.toPartialEquiv x := by
     rw [hΦ₀_eq]
     exact (congrFun (OpenPartialHomeomorph.coe_toPartialEquiv
@@ -121,11 +124,9 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       rw [hzero]
       exact Metric.mem_ball_self hε
   refine ⟨p, q, Ψ, hpq, ?_, ?_⟩
-  · change (1 : G) ∈ Φ.source
+  · rw [hΨ]
     exact h1
-  -- `Ψ` was built from `Φ`; expose that underlying open partial homeomorphism here.
-  · change IsSliceChart Φ
-      ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G)
+  · rw [hΨ]
     apply isSliceChart_iff.2
     intro x hx
     -- On the restricted source, write `x = exp z₁ · exp z₂` using the local inverse.
