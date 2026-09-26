@@ -126,7 +126,7 @@ theorem dgMap_mem_dgCycles {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R 
 theorem dgClosedHom_forget_map
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
     dgClosedHom R (F.forget.map f) = F.dgMap 0 (dgClosedHom R f) := by
-  simp only [dgClosedHom, EnrichedFunctor.forget_map, ForgetEnrichment.homTo_homOf,
+  simp only [dgClosedHom_def, EnrichedFunctor.forget_map, ForgetEnrichment.homTo_homOf,
     HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
     EnrichedFunctor.dgMap_apply]
 

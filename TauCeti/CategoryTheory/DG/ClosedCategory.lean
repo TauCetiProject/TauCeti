@@ -42,6 +42,15 @@ noncomputable def dgClosedHom
   ((ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ) f).f 0).hom
     ((singleObjXSelf (ComplexShape.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv 1)
 
+/-- Extracting a closed morphism evaluates the degree-zero component of the enriched map on
+the tensor unit. -/
+theorem dgClosedHom_def
+    {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
+    dgClosedHom R f =
+      ((ForgetEnrichment.homTo (CochainComplex (ModuleCat.{v} R) ℤ) f).f 0).hom
+        ((singleObjXSelf (ComplexShape.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv 1) :=
+  rfl
+
 /-- The degree-zero component of an underlying morphism is closed. -/
 theorem dgClosedHom_mem_dgCycles
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
