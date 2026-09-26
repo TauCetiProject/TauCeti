@@ -134,7 +134,7 @@ theorem sumRootMatrix_mem_typeD (i j : ι) :
   simpa only [Matrix.transpose_zero, neg_zero] using
     Matrix.fromBlocks_mem_typeD (K := K) (ι := ι) 0
       (Matrix.single i j 1 - Matrix.single j i 1) 0
-        (Matrix.transpose_single_sub_single i j) (by simp)
+        (Matrix.transpose_single_sub_single i j (a := (1 : K))) (by simp)
 
 /-- A negative sum-root matrix is skew-adjoint for the split type-`D` Gram matrix. -/
 theorem negSumRootMatrix_mem_typeD (i j : ι) :
@@ -143,7 +143,7 @@ theorem negSumRootMatrix_mem_typeD (i j : ι) :
   simpa only [Matrix.transpose_zero, neg_zero] using
     Matrix.fromBlocks_mem_typeD (K := K) (ι := ι) 0 0
       (Matrix.single i j 1 - Matrix.single j i 1) (by simp)
-        (Matrix.transpose_single_sub_single i j)
+        (Matrix.transpose_single_sub_single i j (a := (1 : K)))
 
 /-! ## Bundled generators -/
 

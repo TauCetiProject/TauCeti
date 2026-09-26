@@ -32,7 +32,8 @@ theorem fromBlocks_mem_typeD {K ι : Type*} [CommRing K] [DecidableEq ι] [Finty
     fromBlocks A B C (-A.transpose) ∈ LieAlgebra.Orthogonal.typeD ι K := by
   rw [LieAlgebra.Orthogonal.typeD, mem_skewAdjointMatricesLieSubalgebra,
     mem_skewAdjointMatricesSubmodule]
-  -- Membership in `typeD` unfolds to this ambient skew-adjoint matrix equation.
+  -- The membership lemmas leave `Matrix.IsSkewAdjoint`; its matrix-form definition reduces to
+  -- this equation, and no public rewrite lemma names that final definitional reduction.
   change (Matrix.fromBlocks A B C (-A.transpose)).transpose *
       LieAlgebra.Orthogonal.JD ι K =
     LieAlgebra.Orthogonal.JD ι K *

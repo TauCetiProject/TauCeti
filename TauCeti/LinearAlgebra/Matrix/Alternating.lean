@@ -19,8 +19,8 @@ covers every ring of odd characteristic.
 
 ## Main results
 
-* `Matrix.transpose_single_sub_single`: transposing the difference of two opposite matrix units
-  negates it.
+* `Matrix.transpose_single_sub_single`: transposing the difference of two opposite singleton
+  matrices with the same coefficient negates it.
 * `Matrix.transpose_map_of_transpose_eq_neg`: the condition passes to the image of the matrix
   under an additive morphism of the entry types.
 * `Matrix.diag_eq_zero_of_transpose_eq_neg`: the diagonal vanishes when doubling is injective at
@@ -36,11 +36,11 @@ namespace Matrix
 
 variable {n : Type*} {S T : Type*}
 
-/-- Transposing the difference of two opposite matrix units negates it. -/
-theorem transpose_single_sub_single {K ι : Type*} [AddGroupWithOne K] [DecidableEq ι]
-    (i j : ι) :
-    (single i j (1 : K) - single j i 1).transpose =
-      -(single i j 1 - single j i 1) := by
+/-- Transposing the difference of two opposite singleton matrices with the same coefficient
+negates it. -/
+theorem transpose_single_sub_single {K ι : Type*} [AddGroup K] [DecidableEq ι]
+    (i j : ι) (a : K) :
+    (single i j a - single j i a).transpose = -(single i j a - single j i a) := by
   simp only [transpose_sub, transpose_single, neg_sub]
 
 /-- **The condition `Mᵀ = -M` passes to the image of the matrix** under an additive morphism of

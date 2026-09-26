@@ -137,7 +137,7 @@ private def forkBlock {K : Type*} [Ring K] : Matrix (Fin n) (Fin n) K :=
 private theorem forkBlock_transpose {K : Type*} [Ring K] :
     (forkBlock (K := K) n hn).transpose = -forkBlock n hn := by
   simpa only [forkBlock] using Matrix.transpose_single_sub_single (K := K)
-    (forkLeft n hn) (forkRight n hn)
+    (forkLeft n hn) (forkRight n hn) (a := 1)
 
 /-- The ambient raising matrix for the simple root at zero-based index `i`, namely Bourbaki node
 `i + 1`, of type `Dₙ`.
