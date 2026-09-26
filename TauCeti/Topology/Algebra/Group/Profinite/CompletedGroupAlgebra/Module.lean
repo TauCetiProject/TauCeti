@@ -165,7 +165,8 @@ theorem toQuotientEnd_apply_apply [Fintype (Γ ⧸ U.toSubgroup)] (x : completed
 module over a topological ring: the quotient `M ⧸ V` is discrete, and each coefficient of the
 projection is continuous. -/
 theorem continuous_toQuotientEnd [TopologicalSpace R] [CompactSpace Γ] [SeparatelyContinuousMul Γ]
-    [TopologicalSpace M] [ContinuousAdd M] [ContinuousSMul R M] (hVo : IsOpen (V : Set M)) :
+    [TopologicalSpace M] [SeparatelyContinuousAdd M] [ContinuousSMul R M]
+    (hVo : IsOpen (V : Set M)) :
     Continuous fun p : completedGroupAlgebra R Γ × (M ⧸ V) ↦ toQuotientEnd hV U hU p.1 p.2 := by
   have := Submodule.Quotient.discreteTopology_of_isOpen V hVo
   refine continuous_prod_of_discrete_right.2 fun y ↦ ?_
