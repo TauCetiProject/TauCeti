@@ -17,9 +17,6 @@ is its finite product. This reads the joint disintegration in `ConditionallyIIDW
 conditional distribution. It is the block form needed when conditional independence is applied to
 the visible entries of an exchangeable array.
 
-The argument uses uniqueness of conditional distributions and the finite-product kernel already
-available in `MeasureTheory.Measure.ProductKernel`.
-
 ## References
 
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 1.
@@ -41,6 +38,7 @@ private def iidBlockKernel (m : ℕ) : Kernel (ProbabilityMeasure α) (Fin m →
     id measurable_id
 
 private instance (m : ℕ) : IsMarkovKernel (iidBlockKernel (α := α) m) :=
+  -- The kernel evaluates to the measure underlying `ProbabilityMeasure.pi` by definition.
   ⟨fun P => by change IsProbabilityMeasure (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure
                infer_instance⟩
 
