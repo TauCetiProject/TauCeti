@@ -387,6 +387,10 @@ theorem rootSpace_neg_typeDWeightAdd_eq_span [NoZeroDivisors K] (h2 : (2 : K) �
 
 /-! ## Dimensions -/
 
+-- In the three proofs below there is no propositional equality to rewrite: a Lie submodule and
+-- its underlying submodule have definitionally the same carrier type. The `change` exposes the
+-- underlying submodule so that the corresponding root-space classification can rewrite it.
+
 /-- Over a field away from characteristic two, the root space of a coordinate-difference root
 `εᵢ - εⱼ` with `i ≠ j` has dimension one. -/
 @[simp]
