@@ -163,27 +163,37 @@ homomorphism `A → B` becomes precomposition by the reversed spectrum map and a
 presented-points map on the corresponding Geck point. -/
 @[simp]
 theorem geckSchemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
-    (f : A →ₐ[ℤ] B)
+    (f : A →+* B)
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (t.geckGroupScheme ht).X) :
     t.geckSchemePointsMulEquiv ht B
-        ((Spec.map (CommRingCat.ofHom f.toRingHom)).asOver
-          (Spec (CommRingCat.of ℤ)) ≫ p) =
-      (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f.toRingHom
+        ((let _ : (Spec.map (CommRingCat.ofHom f)).IsOver
+              (Spec (CommRingCat.of ℤ)) := by
+            have hf : f.toIntAlgHom.toRingHom = f := RingHom.ext fun _ ↦ rfl
+            rw [← hf]
+            infer_instance
+          (Spec.map (CommRingCat.ofHom f)).asOver
+            (Spec (CommRingCat.of ℤ))) ≫ p) =
+      (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht B) f
         (t.geckSchemePointsMulEquiv ht A p) := by
+  have hf : f.toIntAlgHom.toRingHom = f := RingHom.ext fun _ ↦ rfl
+  let _ : (Spec.map (CommRingCat.ofHom f)).IsOver (Spec (CommRingCat.of ℤ)) := by
+    rw [← hf]
+    infer_instance
   let q := (t.geckGroupSchemePointMulEquiv ht A).symm p
   have hpre :
       (t.geckGroupSchemePointMulEquiv ht B).symm
-          ((Spec.map (CommRingCat.ofHom f.toRingHom)).asOver
+          ((Spec.map (CommRingCat.ofHom f)).asOver
             (Spec (CommRingCat.of ℤ)) ≫ p) =
         HopfAlgebra.mapPoints (H := t.geckCoordinateHopfAlgebra ht)
-          (CommAlgCat.ofHom f) q := by
-    simpa only [q, geckGroupSchemePointMulEquiv] using
+          (CommAlgCat.ofHom f.toIntAlgHom) q := by
+    simpa only [q, geckGroupSchemePointMulEquiv, hf] using
       CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
-        (t.geckCoordinateHopfAlgebra ht) f (t.geckGroupScheme_eq_hopfSpec ht) p
+        (t.geckCoordinateHopfAlgebra ht) f.toIntAlgHom
+          (t.geckGroupScheme_eq_hopfSpec ht) p
   simp only [geckSchemePointsMulEquiv, MulEquiv.trans_apply]
   rw [hpre]
-  exact t.geckCoordinatePointMulEquiv_mapPoints ht f q
+  exact t.geckCoordinatePointMulEquiv_mapPoints ht f.toIntAlgHom q
 
 /-- The quotient-coordinate point obtained by evaluating a numbered Geck root subgroup. -/
 private noncomputable def geckRootSubgroupCoordinatePoint (i : Fin t.rank ⊕ Fin t.rank)

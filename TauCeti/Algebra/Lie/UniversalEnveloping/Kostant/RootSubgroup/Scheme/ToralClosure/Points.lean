@@ -311,7 +311,11 @@ noncomputable def kostantToralSchemePointMulEquiv (A : Type) [CommRing A] :
     WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
         (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A) ≃*
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
-        (kostantToralGroupScheme e h ρ M hM hnil b wt).X) :=
+        (letI := (braidedAlgSpec (R := CommRingCat.of ℤ)).toMonoidal
+         ((algSpec (CommRingCat.of ℤ)).mapGrp.obj (Opposite.unop
+           ((commHopfAlgCatEquivCogrpCommAlgCat ℤ).functor.obj
+             (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+               (kostantToralDefiningIdeal e h ρ M hM hnil b wt))))).X)) :=
   CommHopfAlgCat.mapMulEquivOfPresentation _ A
     (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
 
