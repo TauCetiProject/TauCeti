@@ -14,7 +14,8 @@ The two overlap loci of a pair of cones are open subspaces of the two affine cha
 overlap homeomorphisms of `TauCeti.Toric.Fan.analyticOverlapHomeomorph` are homeomorphisms
 between them. This file views each transition as a morphism of the overlap loci, so that the
 `TopCat.GlueData` of the analytic fan can be built from the same transitions that are already
-recorded on the analytic charts, and so that the inverse transitions are visibly morphisms too.
+recorded on the analytic charts. The identity and inverse laws of these transitions are recorded
+here as equations of morphisms.
 
 ## References
 
@@ -43,18 +44,25 @@ noncomputable def analyticOverlapTransition (σ τ : Φ.cones) :
     (Φ.analyticOverlapHomeomorph hΦ σ τ).continuous_toFun⟩
 
 /-- The transition across the overlap of a cone with itself is the identity. -/
+@[simp]
 theorem analyticOverlapTransition_self (σ : Φ.cones) :
-    ⇑(Φ.analyticOverlapTransition hΦ σ σ)
-      = (id : Φ.analyticOverlapOpens hΦ σ σ → Φ.analyticOverlapOpens hΦ σ σ) := by
-  funext x
-  simp [analyticOverlapTransition]
+    Φ.analyticOverlapTransition hΦ σ σ = 𝟙 _ := by
+  apply TopCat.ext
+  intro x
+  change (Φ.analyticOverlapHomeomorph hΦ σ σ) x = x
+  rw [Φ.analyticOverlapHomeomorph_self]
   rfl
 
 /-- A transition followed by the reverse transition is the identity on the first overlap
 locus. -/
-theorem analyticOverlapHomeomorph_trans_symm (σ τ : Φ.cones)
-    (x : Φ.analyticOverlapOpens hΦ σ τ) :
-    Φ.analyticOverlapHomeomorph hΦ τ σ (Φ.analyticOverlapHomeomorph hΦ σ τ x) = x := by
+@[simp]
+theorem analyticOverlapTransition_trans_symm (σ τ : Φ.cones) :
+    Φ.analyticOverlapTransition hΦ σ τ ≫ Φ.analyticOverlapTransition hΦ τ σ = 𝟙 _ := by
+  apply TopCat.ext
+  intro x
+  -- `TopCat` composition is composition of the underlying homeomorphisms.
+  change Φ.analyticOverlapHomeomorph hΦ τ σ
+    (Φ.analyticOverlapHomeomorph hΦ σ τ x) = x
   rw [← Φ.analyticOverlapHomeomorph_symm hΦ σ τ]
   exact (Φ.analyticOverlapHomeomorph hΦ σ τ).symm_apply_apply x
 
