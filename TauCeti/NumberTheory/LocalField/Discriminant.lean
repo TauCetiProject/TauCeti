@@ -93,14 +93,26 @@ theorem discriminantIdeal_def :
 
 variable [Algebra.IsSeparable K L]
 
+/-- `Ideal.relNorm` is the `Ideal.map` along the integral norm: the bridge from the
+monoid-with-zero norm `Ideal.relNorm` to the `Ideal.map` form in which
+`TauCeti.map_maximalIdeal_norm_eq_maximalIdeal_pow` is stated.
+
+Mathlib packages `Ideal.relNorm R` as a monoid-with-zero morphism on ideals whose underlying
+function is `Ideal.spanNorm R`, and defines `Ideal.spanNorm R I` to be
+`Ideal.map (Algebra.intNorm R S) I`. The two steps are `Ideal.spanNorm_eq` and
+`Ideal.spanNorm`, so no definitional equality is assumed. -/
+private theorem relNorm_eq_map_intNorm (I : Ideal 𝒪[L]) :
+    Ideal.relNorm 𝒪[K] I = Ideal.map (Algebra.intNorm 𝒪[K] 𝒪[L]) I := by
+  rw [← Ideal.spanNorm_eq, Ideal.spanNorm]
+
 /-- The local discriminant ideal is the `f(L/K) · d(L/K)`-th power of the maximal ideal of the
 base ring, the form in which the norm image of the different is computed before the discriminant
 exponent is read off it. -/
 private theorem discriminantIdeal_eq_maximalIdeal_pow_mul :
     discriminantIdeal K L = 𝓂[K] ^ (inertiaDegree K L * differentExponent K L) := by
   have hrelNorm : Ideal.relNorm 𝒪[K] 𝓂[L] = 𝓂[K] ^ inertiaDegree K L := by
-    change Ideal.map (Algebra.intNorm 𝒪[K] 𝒪[L]) 𝓂[L] = _
-    rw [Algebra.intNorm_eq_norm, map_maximalIdeal_norm_eq_maximalIdeal_pow (K := K) (L := L)]
+    rw [relNorm_eq_map_intNorm, Algebra.intNorm_eq_norm,
+      map_maximalIdeal_norm_eq_maximalIdeal_pow (K := K) (L := L)]
   rw [discriminantIdeal_def, differentIdeal_eq_maximalIdeal_pow (K := K) (L := L),
     map_pow, hrelNorm, pow_mul]
 
