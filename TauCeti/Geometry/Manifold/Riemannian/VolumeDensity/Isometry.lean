@@ -118,7 +118,7 @@ variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
   [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
 
 /-- The Borel measurable space on the model vector space, used for chart volume. -/
-local instance : MeasurableSpace E := borel E
+local instance chartIsometryMeasurableSpaceE : MeasurableSpace E := borel E
 
 /-- The model vector space's measurable space is its Borel measurable space. -/
 local instance : BorelSpace E := ⟨rfl⟩
