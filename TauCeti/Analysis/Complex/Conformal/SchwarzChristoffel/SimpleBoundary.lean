@@ -85,6 +85,7 @@ theorem image_schwarzChristoffelPrimitive_eq_connectedComponentIn (a e : ι → 
 /-- **The frontier of the Schwarz--Christoffel image is a simple boundary path.** Under the
 hypotheses of `TauCeti.disjoint_image_schwarzChristoffelPrimitive_range`, the frontier of the image
 of the upper half-plane is the whole range of the compactified boundary path. -/
+@[simp]
 theorem frontier_image_schwarzChristoffelPrimitive_eq_range (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1)
     (hinj : Function.Injective (schwarzChristoffelCompactifiedBoundary a e z₀)) :

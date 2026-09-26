@@ -75,11 +75,11 @@ theorem isConnected_compl_range_of_injective_path {p q : ℂ} (γ : Path p q)
       (hasContinuousLogOn_sub_div_sub_range_of_injective_path γ hγ ha hb),
     isPreconnected_connectedComponentIn⟩
 
-/-- **A proper subcontinuum of a Jordan curve does not separate the plane.** Such a subcontinuum
-is a point or a simple arc (`TauCeti.IsJordanCurve.subsingleton_or_exists_injective_path`), and
-neither separates `ℂ`. -/
+/-- **A proper subcontinuum of a Jordan curve does not separate the plane.** If `S` is a compact
+preconnected subset of a Jordan curve `C ⊆ ℂ` with `S ≠ C`, then `Sᶜ` is connected. -/
 theorem IsJordanCurve.isConnected_compl_of_ne {C S : Set ℂ} (h : IsJordanCurve C) (hSC : S ⊆ C)
     (hS : IsCompact S) (hpre : IsPreconnected S) (hSne : S ≠ C) : IsConnected Sᶜ := by
+  -- such a subcontinuum is a point or a simple arc, and neither separates `ℂ`
   rcases h.subsingleton_or_exists_injective_path hSC hS hpre hSne with
     hsub | ⟨p, q, γ, hγ, rfl⟩
   · refine hsub.countable.isConnected_compl_of_one_lt_rank ?_

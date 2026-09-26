@@ -278,12 +278,12 @@ theorem IsJordanCurve.subsingleton_of_subset_closure_sdiff [T2Space X] (h : IsJo
   obtain ⟨p, hp, hpn⟩ := h.exists_notMem_closure_sdiff hSC hS hpre hnsub
   exact hpn (hdense hp)
 
-/-- **A Jordan curve in a real normed space of dimension at least two has empty interior.** A ball
-inside the curve would contain a sphere, a subcontinuum with more than one point every point of
-which is adherent to the rest of the curve, contradicting
-`TauCeti.IsJordanCurve.exists_notMem_closure_sdiff`. -/
+/-- **A Jordan curve in a real normed space of dimension at least two has empty interior.** -/
+@[simp]
 theorem IsJordanCurve.interior_eq_empty {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (hE : 1 < Module.rank ℝ E) {C : Set E} (h : IsJordanCurve C) : interior C = ∅ := by
+  -- A ball inside `C` would contain a sphere: a subcontinuum of `C` with more than one point, every
+  -- point of which is adherent to the rest of `C`, contradicting `exists_notMem_closure_sdiff`.
   refine eq_empty_iff_forall_notMem.mpr fun q hq => ?_
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp isOpen_interior q hq
   have hr₂ : 0 < r / 2 := half_pos hr
