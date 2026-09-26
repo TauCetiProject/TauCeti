@@ -34,10 +34,10 @@ functoriality needed for the overlap and cocycle maps in fan gluing.
 
 ## Main declarations
 
-* `TauCeti.Toric.isLocalization_away_affineCoordinateRingMap_inf_ker`: the coordinate ring of the
-  face `σ ⊓ ker m` is the localization of the coordinate ring of `σ` away from the monomial of
+* `TauCeti.Toric.isLocalization_away_faceAffineCoordinateRingMap_inf_ker`: the coordinate ring of
+  the face `σ ⊓ ker m` is the localization of the coordinate ring of `σ` away from the monomial of
   `m`.
-* `TauCeti.Toric.isOpenImmersion_affineToricSchemeMap_inf_ker`: the affine toric scheme of the
+* `TauCeti.Toric.isOpenImmersion_faceAffineToricSchemeMap_inf_ker`: the affine toric scheme of the
   face is an open subscheme of the affine toric scheme of `σ`.
 * `TauCeti.Toric.faceAffineCoordinateRingMap` and
   `TauCeti.Toric.faceAffineToricSchemeMap`: the canonical restriction map and affine-scheme
@@ -171,14 +171,14 @@ theorem faceAffineToricSchemeMap_comp (hi : IsIntegralLattice i)
 /-- For a character `m` in the dual semigroup of a finitely generated cone `σ`, the restriction
 map from the coordinate ring of `σ` to that of the face `σ ⊓ ker m` is the localization away from
 the monomial of `m`. -/
-theorem isLocalization_away_affineCoordinateRingMap_inf_ker (hi : IsIntegralLattice i)
+theorem isLocalization_away_faceAffineCoordinateRingMap_inf_ker (hi : IsIntegralLattice i)
     (hσ : σ.FG) (m : dualSemigroup hi σ) :
-    letI := (affineCoordinateRingMap
-      (σ := σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m))) (τ := σ) hi hi
-      (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl) (fun _ hx ↦ hx.1)).toRingHom.toAlgebra
+    letI := (faceAffineCoordinateRingMap hi
+      (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.2))).toRingHom.toAlgebra
     IsLocalization.Away (MonoidAlgebra.single (ofAdd m) (1 : ℂ))
       (affineCoordinateRing hi
         (σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)))) := by
+  rw [faceAffineCoordinateRingMap]
   set F := σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m))
   have hmaps : Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) F σ := fun _ hx ↦ hx.1
   set f := AddMonoidHom.toMultiplicative
@@ -214,22 +214,20 @@ theorem isLocalization_away_affineCoordinateRingMap_inf_ker (hi : IsIntegralLatt
 
 /-- For a character `m` in the dual semigroup of a finitely generated cone `σ`, the morphism from
 the affine toric scheme of the face `σ ⊓ ker m` to that of `σ` is an open immersion. -/
-theorem isOpenImmersion_affineToricSchemeMap_inf_ker {N : Type u} [AddCommGroup N]
+theorem isOpenImmersion_faceAffineToricSchemeMap_inf_ker {N : Type u} [AddCommGroup N]
     {i : N →+ V} (hi : IsIntegralLattice i) (hσ : σ.FG) (m : dualSemigroup hi σ) :
-    IsOpenImmersion (affineToricSchemeMap
-      (σ := σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m))) (τ := σ)
-      hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl) (fun _ hx ↦ hx.1)) := by
-  let := (affineCoordinateRingMap
-    (σ := σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m))) (τ := σ)
-    hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl) (fun _ hx ↦ hx.1)).toRingHom.toAlgebra
-  have := isLocalization_away_affineCoordinateRingMap_inf_ker hi hσ m
+    IsOpenImmersion (faceAffineToricSchemeMap hi
+      (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.2))) := by
+  let hface := PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.2)
+  let _ := (faceAffineCoordinateRingMap hi hface).toRingHom.toAlgebra
+  have := isLocalization_away_faceAffineCoordinateRingMap_inf_ker hi hσ m
   have h := IsOpenImmersion.of_isLocalization
     (S := affineCoordinateRing hi
       (σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m))))
     (MonoidAlgebra.single (ofAdd m) (1 : ℂ))
   rw [RingHom.algebraMap_toAlgebra] at h
   convert h using 1
-  exact affineToricSchemeMap_def ..
+  exact faceAffineToricSchemeMap_def ..
 
 private theorem range_faceAffineToricSchemeMap_of_eq (hi : IsIntegralLattice i) (hσ : σ.FG)
     (hτσ : τ.IsFaceOf σ) (m : dualSemigroup hi σ)
@@ -242,7 +240,7 @@ private theorem range_faceAffineToricSchemeMap_of_eq (hi : IsIntegralLattice i) 
   have : IsLocalization.Away (MonoidAlgebra.single (ofAdd m) (1 : ℂ))
       (affineCoordinateRing hi
         (σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)))) :=
-    isLocalization_away_affineCoordinateRingMap_inf_ker hi hσ m
+    isLocalization_away_faceAffineCoordinateRingMap_inf_ker hi hσ m
   rw [faceAffineToricSchemeMap_def]
   exact PrimeSpectrum.localization_away_comap_range _ _
 
@@ -276,7 +274,7 @@ theorem exists_isLocalization_away_faceAffineCoordinateRingMap (hi : IsIntegralL
   subst hτ
   refine ⟨⟨m, hm⟩, ?_⟩
   rw [faceAffineCoordinateRingMap]
-  exact isLocalization_away_affineCoordinateRingMap_inf_ker hi hσ.fg ⟨m, hm⟩
+  exact isLocalization_away_faceAffineCoordinateRingMap_inf_ker hi hσ.fg ⟨m, hm⟩
 
 /-- For a face `τ` of a regular cone `σ`, the morphism from the affine toric scheme of `τ` to that
 of `σ` is an open immersion. -/
@@ -287,9 +285,7 @@ theorem isOpenImmersion_faceAffineToricSchemeMap {N : Type u} [AddCommGroup N] {
   have hh : hτ = PointedCone.isFaceOf_inf_ker
       ((mem_dualSemigroup hi m).1 hm) := Subsingleton.elim _ _
   subst hτ
-  rw [faceAffineToricSchemeMap_def, faceAffineCoordinateRingMap]
-  convert isOpenImmersion_affineToricSchemeMap_inf_ker hi hσ.fg ⟨m, hm⟩ using 1
-  exact (affineToricSchemeMap_def ..).symm
+  exact isOpenImmersion_faceAffineToricSchemeMap_inf_ker hi hσ.fg ⟨m, hm⟩
 
 /-- For two faces `τ` and `υ` of a regular cone `σ`, the image of the affine toric scheme of
 `τ ⊓ υ` in that of `σ` is the intersection of the images of the affine toric schemes of `τ` and
