@@ -68,8 +68,9 @@ theorem coe_toDiffeomorph (Φ : RiemannianIsometry (I := I) (J := J) (M := M) (N
 /-- The differential of a Riemannian isometry preserves tangent-vector norms. -/
 @[simp]
 theorem norm_mfderiv (Φ : RiemannianIsometry (I := I) (J := J) (M := M) (N := N))
-    (x : M) (v : TangentSpace I x) : ‖mfderiv I J Φ.toDiffeomorph x v‖ = ‖v‖ := by
-  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, Φ.inner_mfderiv]
+    (x : M) (v : TangentSpace I x) : ‖mfderiv I J Φ x v‖ = ‖v‖ := by
+  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner]
+  exact congrArg Real.sqrt (by simpa only [coe_toDiffeomorph] using Φ.inner_mfderiv x v v)
 
 /-- The identity diffeomorphism is a Riemannian isometry. -/
 protected def refl (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
@@ -167,7 +168,7 @@ theorem pathELength_comp (Φ : RiemannianIsometry (I := I) (J := J) (M := M) (N 
   -- The length expression coerces `Φ` directly, while the chain rule uses its diffeomorphism.
   change ‖mfderiv 𝓘(ℝ, ℝ) J ((Φ : M → N) ∘ γ) t (1 : ℝ)‖ₑ =
     ‖mfderiv 𝓘(ℝ, ℝ) I γ t (1 : ℝ)‖ₑ
-  rw [hder]
+  rw [hder, coe_toDiffeomorph]
   rw [← ofReal_norm, ← ofReal_norm,
     Φ.norm_mfderiv (γ t) (mfderiv 𝓘(ℝ, ℝ) I γ t 1)]
   rfl
