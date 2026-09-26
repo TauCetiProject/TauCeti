@@ -174,12 +174,8 @@ theorem kostantGeneratedToToral_eq_eqToHom_of_torus_le_elementary
   apply (cancel_mono (kostantToralGroupSchemeι e h ρ M hM hnil b wt)).1
   rw [kostantGeneratedToToral_comp_ι]
   rw [kostantGeneratedGroupSchemeι_def, kostantToralGroupSchemeι_def, hgroup]
-  rw [← Category.assoc,
-    ← CommHopfAlgCat.quotientSpecMapOfLe_eq_eqToHom
-      (GeneralLinear.coordinateHopfAlgebra ℤ n)
-      (kostantToralDefiningIdeal_le_kostantGeneratedDefiningIdeal
-        e h ρ M hM hnil b wt) hideal.symm,
-    CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι]
+  rw [← Category.assoc, CommHopfAlgCat.eqToHom_comp_quotientSpecι]
+  exact hideal.symm
 
 /-- Pointwise generation of the weight torus makes the canonical comparison from the
 root-generated carrier to the toral closure an isomorphism. -/

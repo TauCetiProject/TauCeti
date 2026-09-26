@@ -40,8 +40,6 @@ in the same universe, which is reflected in all scheme-level declarations in thi
   `quotientSpecι` is a closed immersion.
 * `TauCeti.CommHopfAlgCat.quotientSpecMapOfLe`: the closed subgroup morphism induced by
   `I ≤ J`.
-* `TauCeti.CommHopfAlgCat.quotientSpecMapOfLe_eq_eqToHom`: when `I` and `J` are equal, this
-  morphism is transport along the corresponding equality of quotient spectra.
 * `TauCeti.FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec`: a finite-type Hopf
   algebra has quotient group schemes locally of finite type over `Spec R`.
 
@@ -152,14 +150,6 @@ lemma quotientSpecMapOfLe_refl (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal 
     quotientSpecMapOfLe H (le_refl I) = 𝟙 (quotientSpec H I) := by
   rw [quotientSpecMapOfLe_def, quotientMapOfLe_refl]
   exact (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_id _
-
-/-- When an inclusion `I ≤ J` is accompanied by an equality `J = I`, its quotient-spectrum
-morphism is transport along the induced equality of quotient spectra. -/
-theorem quotientSpecMapOfLe_eq_eqToHom (H : _root_.CommHopfAlgCat.{u} R)
-    {I J : HopfIdeal R H} (hIJ : I ≤ J) (hJI : J = I) :
-    quotientSpecMapOfLe H hIJ = eqToHom (congrArg (quotientSpec H) hJI) := by
-  subst J
-  simp
 
 /-- Closed subgroup morphisms compose contravariantly along inclusions `I ≤ J ≤ K`. -/
 @[simp]
