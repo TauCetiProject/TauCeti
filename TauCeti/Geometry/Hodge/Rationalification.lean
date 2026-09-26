@@ -17,19 +17,13 @@ with the concrete complexification `ℂ ⊗[ℤ] V` (see `TauCeti.Hodge.Complexi
 realification `ℝ ⊗[ℤ] V`, it is the middle leg of the `ℤ → ℚ → ℂ` tower used by pure and mixed
 Hodge structures.
 
-The signatures match `HodgeStructures/Suggested.lean` (`Rationalification`,
-`rationalificationMap`, `rationalificationMap_isBaseChange`).
-
 ## Main definitions
 
 * `TauCeti.Hodge.Rationalification`: the rational scalar extension of an integral module.
-* `TauCeti.Hodge.rationalificationMap`: the canonical lattice inclusion `V → ℚ ⊗[ℤ] V`.
+* `TauCeti.Hodge.rationalificationMap`: the canonical map `V → ℚ ⊗[ℤ] V`; it is an inclusion
+  exactly when `V` is flat over `ℤ`, equivalently torsion-free.
 * `TauCeti.Hodge.isBaseChange_rationalificationMap`: the concrete tensor is the canonical
   rational `IsBaseChange` model.
-
-## References
-
-* The signatures elaborate against `HodgeStructures/Suggested.lean` in TauCetiRoadmap.
 -/
 
 public section
@@ -56,17 +50,9 @@ tensor. -/
 theorem rationalificationMap_apply (x : V) : rationalificationMap x = 1 ⊗ₜ[ℤ] x :=
   TensorProduct.mk_apply 1 x
 
-/-- The concrete tensor `ℚ ⊗[ℤ] V` is the canonical rational `IsBaseChange` model
-(Suggested: `rationalificationMap_isBaseChange`). -/
+/-- The concrete tensor `ℚ ⊗[ℤ] V` is the canonical rational `IsBaseChange` model. -/
 theorem isBaseChange_rationalificationMap :
     IsBaseChange ℚ (rationalificationMap (V := V)) :=
   TensorProduct.isBaseChange ℤ V ℚ
-
-/-- The canonical map to the rationalification is injective when the integral module is flat, in
-particular when it is free. -/
-theorem rationalificationMap_injective [Module.Flat ℤ V] :
-    Function.Injective (rationalificationMap : V →ₗ[ℤ] Rationalification V) := by
-  intro x y hxy
-  exact Module.Flat.tensorProduct_mk_injective ℤ V ℚ (by simpa using hxy)
 
 end TauCeti.Hodge
