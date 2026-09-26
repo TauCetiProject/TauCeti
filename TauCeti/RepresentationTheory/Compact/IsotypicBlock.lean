@@ -19,7 +19,9 @@ each irreducible, and this file builds that splitting.
 
 The block `TauCeti.peterWeylBlock model` of an irreducible model is the span, inside `L²(G)`, of
 *all* matrix coefficients of that model -- not only the normalized basis ones. It depends on
-nothing but the model; a family of models enters only where several blocks are compared. The two
+nothing but the model, and in fact only on its equivalence class
+(`TauCeti.peterWeylBlock_eq_of_equiv`); a family of models enters only where several blocks are
+compared. The two
 spans agree (`TauCeti.peterWeylBlock_eq_span_range`), because expanding the two defining vectors in
 the canonical orthonormal basis of the model writes an arbitrary matrix coefficient as a
 combination of the `dᵢ²` basis ones. Those `dᵢ²` coefficients are in fact an orthonormal basis of
@@ -72,8 +74,12 @@ the action is that each block is stable under both translations
 model to matrix coefficients of the same model
 (`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
 `TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`). Equivariance of the identification of a
-block with `End(V_π)` needs the `G × G`-representation structures, hence the tensor decomposition
-`V_π ⊗ V_π^*`, which the library does not have. The character projection
+block with `End(V_π)` is not proved either, and what it needs is a `G × G`-action on each side:
+bi-translation `((g, h) · f) x = f (g⁻¹ * x * h)` on `L²(G)`, of which only the right factor is in
+the library (`TauCeti.rightRegularLp`), and `(g, h) · A = π g ∘ A ∘ π h⁻¹` on `End(V_π)`, together
+with the proof that the identification intertwines them. No `G × G`-action is defined in the
+library, and `TauCeti.endEquivPeterWeylBlock` is built from the canonical basis of the model, so
+nothing is claimed here about its equivariance. The character projection
 `TauCeti.peterWeylBlockProjection` *is* proved here, but not as an instance of
 `TauCeti.ContRepresentation.isotypicProjector`: that projector is built from
 `TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
@@ -99,6 +105,9 @@ model, where it is available.
 * `TauCeti.peterWeylBlock_eq_span_range`: the block is already spanned by the `dᵢ²` normalized
   matrix coefficients of the Peter-Weyl family that belong to it.
 * `TauCeti.finrank_peterWeylBlock`: **the block has dimension `dᵢ²`**.
+* `TauCeti.peterWeylBlock_eq_of_equiv` and `TauCeti.peterWeylBlockProjection_eq_of_equiv`: **the
+  block and its character projection depend on the model only through its equivalence class**, so
+  they identify the same isotypic component of `L²(G)` whichever model of `π` is chosen.
 * `TauCeti.toLp_star_character_mem_peterWeylBlock`: the conjugate character of a model lies in its
   own block, the trace direction of `End(V_π)`.
 * `TauCeti.rightRegularLp_mem_peterWeylBlock` and
@@ -203,6 +212,44 @@ instance finiteDimensional_peterWeylBlock (model : IrrepModel 𝕜 G) :
     FiniteDimensional 𝕜 (peterWeylBlock model) := by
   rw [peterWeylBlock_eq_span_range (fun _ : Unit => model) ()]
   exact FiniteDimensional.span_of_finite 𝕜 (Set.finite_range _)
+
+/-! ### A block depends only on the equivalence class of its model -/
+
+/-- A matrix coefficient of a model is a matrix coefficient of any equivalent model: an equivalence
+`φ` carries `⟪π x v, w⟫` to `⟪π' x (φ v), w⟫`, so running it backwards moves the first defining
+vector by `φ.symm` and the second by the adjoint of `φ`, since `⟪φ u, w⟫ = ⟪u, φ† w⟫`.
+
+This is the computation behind `TauCeti.peterWeylBlock_eq_of_equiv`. -/
+private theorem matrixCoeffLp_eq_of_equiv {model model' : IrrepModel 𝕜 G}
+    (φ : _root_.ContRepresentation.Equiv model.rep model'.rep)
+    (v w : EuclideanSpace 𝕜 (Fin model'.dim)) :
+    ContRepresentation.matrixCoeffLp model'.rep model'.continuous_rep v w =
+      ContRepresentation.matrixCoeffLp model.rep model.continuous_rep (φ.symm v)
+        (ContinuousLinearMap.adjoint φ.toContinuousLinearEquiv.toContinuousLinearMap w) := by
+  rw [ContRepresentation.matrixCoeffLp_def, ContRepresentation.matrixCoeffLp_def]
+  congr 1
+  ext x
+  rw [ContRepresentation.matrixCoeff_apply, ContRepresentation.matrixCoeff_apply,
+    ContinuousLinearMap.adjoint_inner_right]
+  congr 1
+  rw [ContinuousLinearEquiv.coe_coe,
+    _root_.ContRepresentation.Equiv.toContinuousLinearEquiv_apply,
+    φ.toContIntertwiningMap.isIntertwining x (φ.symm v)]
+  simp
+
+/-- **A block depends on its model only through its equivalence class**: equivalent models have the
+same matrix coefficients, hence the same block. -/
+theorem peterWeylBlock_eq_of_equiv {model model' : IrrepModel 𝕜 G}
+    (φ : _root_.ContRepresentation.Equiv model.rep model'.rep) :
+    peterWeylBlock model = peterWeylBlock model' := by
+  have key : ∀ {m m' : IrrepModel 𝕜 G} (_ : _root_.ContRepresentation.Equiv m.rep m'.rep),
+      peterWeylBlock m' ≤ peterWeylBlock m := by
+    intro m m' ψ
+    refine Submodule.span_le.2 ?_
+    rintro - ⟨v, w, rfl⟩
+    rw [SetLike.mem_coe, matrixCoeffLp_eq_of_equiv ψ]
+    exact matrixCoeffLp_mem_peterWeylBlock m _ _
+  exact le_antisymm (key φ.symm) (key φ)
 
 /-- **The conjugate character of a model lies in its own block.** It is the sum of the `dᵢ`
 diagonal matrix coefficients (`TauCeti.ContRepresentation.star_character`), so it spans the trace
@@ -528,6 +575,33 @@ noncomputable def peterWeylBlockProjection (model : IrrepModel 𝕜 G) :
     Lp 𝕜 2 (haarProb G) →L[𝕜] Lp 𝕜 2 (haarProb G) :=
   convolutionOperator ((model.dim : 𝕜) •
     star (ContRepresentation.character model.rep model.continuous_rep))
+
+/-- The character projection is convolution against the kernel `dim V_π · conj χ_π`. -/
+theorem peterWeylBlockProjection_def (model : IrrepModel 𝕜 G) :
+    peterWeylBlockProjection model =
+      convolutionOperator ((model.dim : 𝕜) •
+        star (ContRepresentation.character model.rep model.continuous_rep)) :=
+  (rfl)
+
+/-- **The character projection depends on its model only through its equivalence class**: its
+kernel is built from the dimension and the character, and equivalent models share both -- the
+dimension because an equivalence is a linear isomorphism of the carriers, the character because it
+is a trace, invariant under conjugation (`Representation.char_iso`). -/
+theorem peterWeylBlockProjection_eq_of_equiv {model model' : IrrepModel 𝕜 G}
+    (φ : _root_.ContRepresentation.Equiv model.rep model'.rep) :
+    peterWeylBlockProjection model = peterWeylBlockProjection model' := by
+  have hdim : model.dim = model'.dim := by
+    simpa using φ.toContinuousLinearEquiv.toLinearEquiv.finrank_eq
+  have hrep : Representation.Equiv model.rep.toRepresentation model'.rep.toRepresentation :=
+    Representation.Equiv.mk φ.toContinuousLinearEquiv.toLinearEquiv fun g =>
+      LinearMap.ext fun v => φ.toContIntertwiningMap.isIntertwining g v
+  have hchar : ContRepresentation.character model.rep model.continuous_rep =
+      ContRepresentation.character model'.rep model'.continuous_rep := by
+    refine ContinuousMap.ext fun g => ?_
+    rw [congrFun (ContRepresentation.coe_character model.rep model.continuous_rep) g,
+      congrFun (ContRepresentation.coe_character model'.rep model'.continuous_rep) g]
+    exact congrFun (Representation.char_iso hrep) g
+  rw [peterWeylBlockProjection_def, peterWeylBlockProjection_def, hchar, hdim]
 
 /-- **The character projection fixes the matrix coefficients of its own model.** The kernel
 `dim V_π · conj χ_π` acts on the carrier of `π` as the identity, by
