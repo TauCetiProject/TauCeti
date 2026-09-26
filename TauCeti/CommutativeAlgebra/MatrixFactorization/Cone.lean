@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
 public import TauCeti.Algebra.Homology.Curved.Cone
-public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import TauCeti.Algebra.Category.FGModuleCat.Projective
 
 /-!
 # Mapping cones of finite-projective matrix factorizations
@@ -58,6 +58,29 @@ attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 @[simp] theorem coneProjection_hom (f : X ⟶ Y) :
     (coneProjection f).hom = CurvedDuplex.coneProjection f.hom := rfl
 
+/-- Parity shift commutes with mapping cones, with a sign on the codomain summand. -/
+noncomputable def coneParityShiftIso (f : X ⟶ Y) :
+    (parityShift (S := S) (w := w)).obj (cone f) ≅
+      cone ((parityShift (S := S) (w := w)).map f) :=
+  ObjectProperty.isoMk (P := MatrixFactorization.isProjective S w)
+    (CurvedDuplex.coneParityShiftIso f.hom)
+
+@[simp] theorem coneParityShiftIso_hom_hom_f₀ (f : X ⟶ Y) :
+    (coneParityShiftIso f).hom.hom.f₀ = biprod.map (𝟙 X.obj.X₀) (-𝟙 Y.obj.X₁) :=
+  CurvedDuplex.coneParityShiftIso_hom_f₀ f.hom
+
+@[simp] theorem coneParityShiftIso_hom_hom_f₁ (f : X ⟶ Y) :
+    (coneParityShiftIso f).hom.hom.f₁ = biprod.map (𝟙 X.obj.X₁) (-𝟙 Y.obj.X₀) :=
+  CurvedDuplex.coneParityShiftIso_hom_f₁ f.hom
+
+@[simp] theorem coneParityShiftIso_inv_hom_f₀ (f : X ⟶ Y) :
+    (coneParityShiftIso f).inv.hom.f₀ = biprod.map (𝟙 X.obj.X₀) (-𝟙 Y.obj.X₁) :=
+  CurvedDuplex.coneParityShiftIso_inv_f₀ f.hom
+
+@[simp] theorem coneParityShiftIso_inv_hom_f₁ (f : X ⟶ Y) :
+    (coneParityShiftIso f).inv.hom.f₁ = biprod.map (𝟙 X.obj.X₁) (-𝟙 Y.obj.X₀) :=
+  CurvedDuplex.coneParityShiftIso_inv_f₁ f.hom
+
 /-- The inclusion followed by the projection is zero. -/
 @[reassoc (attr := simp)] theorem coneInclusion_comp_coneProjection (f : X ⟶ Y) :
     coneInclusion f ≫ coneProjection f = 0 := by
@@ -89,6 +112,41 @@ variable {X' Y' : MatrixFactorization S w}
     (coneMap f g a b h).hom =
       CurvedDuplex.coneMap f.hom g.hom a.hom b.hom
         (by simpa using congrArg (·.hom) h) := rfl
+
+/-- The identity square induces the identity on the cone. -/
+@[simp] theorem coneMap_id (f : X ⟶ Y) :
+    coneMap f f (𝟙 X) (𝟙 Y) (by simp) = 𝟙 (cone f) := by
+  apply ObjectProperty.hom_ext
+  simpa only [coneMap_hom, ObjectProperty.FullSubcategory.id_hom, cone_obj] using
+    CurvedDuplex.coneMap_id f.hom
+
+/-- Composing squares composes the induced maps on cones. -/
+@[simp ←] theorem coneMap_comp {X'' Y'' : MatrixFactorization S w}
+    (f : X ⟶ Y) (g : X' ⟶ Y') (k : X'' ⟶ Y'')
+    (a : X ⟶ X') (b : Y ⟶ Y') (a' : X' ⟶ X'') (b' : Y' ⟶ Y'')
+    (h : f ≫ b = a ≫ g) (h' : g ≫ b' = a' ≫ k) :
+    coneMap f k (a ≫ a') (b ≫ b') (by
+      calc
+        f ≫ (b ≫ b') = (f ≫ b) ≫ b' := (Category.assoc _ _ _).symm
+        _ = (a ≫ g) ≫ b' := by rw [h]
+        _ = a ≫ (g ≫ b') := Category.assoc _ _ _
+        _ = a ≫ (a' ≫ k) := by rw [h']
+        _ = (a ≫ a') ≫ k := (Category.assoc _ _ _).symm) =
+      coneMap f g a b h ≫ coneMap g k a' b' h' := by
+  apply ObjectProperty.hom_ext
+  simpa only [coneMap_hom, ObjectProperty.FullSubcategory.comp_hom, cone_obj] using
+    CurvedDuplex.coneMap_comp f.hom g.hom k.hom a.hom b.hom a'.hom b'.hom
+      (by simpa using congrArg (·.hom) h)
+      (by simpa using congrArg (·.hom) h')
+
+/-- A square of isomorphisms induces an isomorphism of cones. -/
+instance isIso_coneMap (f : X ⟶ Y) (g : X' ⟶ Y')
+    (a : X ⟶ X') (b : Y ⟶ Y') (h : f ≫ b = a ≫ g)
+    [IsIso a] [IsIso b] : IsIso (coneMap f g a b h) := by
+  apply ((MatrixFactorization.isProjective S w).isIso_hom_iff _).mp
+  rw [coneMap_hom]
+  exact CurvedDuplex.isIso_coneMap f.hom g.hom a.hom b.hom
+    (by simpa using congrArg (·.hom) h)
 
 /-- Cone maps commute with the inclusions of their codomains. -/
 @[reassoc (attr := simp)] theorem coneInclusion_comp_coneMap

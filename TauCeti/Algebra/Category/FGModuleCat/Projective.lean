@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Projective
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Shrink
@@ -21,6 +22,7 @@ every short exact sequence of finite-dimensional modules splits.
 * `FGModuleCat.projective`: every finite-dimensional module over a division ring is projective.
 * `FGModuleCat.projective_of_moduleProjective`: every finitely generated projective module is a
   projective object.
+* `FGModuleCat.projective_biprod`: finite projective modules are closed under biproducts.
 * `FGModuleCat.projective_of_free`: every finite free module is projective.
 * `FGModuleCat.enoughProjectives`: every finitely generated module is a quotient of a finite free
   module.
@@ -34,11 +36,25 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory
+open CategoryTheory CategoryTheory.Limits
 
 universe u v
 
 variable (R : Type u) [Ring R]
+
+attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
+
+/-- A biproduct of finitely generated projective modules is projective. -/
+theorem _root_.FGModuleCat.projective_biprod
+    (X Y : FGModuleCat.{v} R) [Module.Projective R X] [Module.Projective R Y] :
+    Module.Projective R ((X ⊞ Y : FGModuleCat.{v} R) : Type v) := by
+  let F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
+  let _ : PreservesBinaryBiproduct X Y F :=
+    preservesBinaryBiproduct_of_preservesBinaryCoproduct F
+  let e : F.obj (X ⊞ Y) ≅ ModuleCat.of R (X × Y) :=
+    F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
+  let e' : (X ⊞ Y : FGModuleCat.{v} R) ≅ FGModuleCat.of R (X × Y) := F.preimageIso e
+  exact Module.Projective.of_equiv' (FGModuleCat.isoToLinearEquiv e').symm
 
 /-- A finitely generated projective module is a projective object of `FGModuleCat R`. -/
 theorem _root_.FGModuleCat.projective_of_moduleProjective (X : FGModuleCat.{v} R)
