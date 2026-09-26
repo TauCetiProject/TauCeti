@@ -170,8 +170,7 @@ theorem posSemidef_prod_union {ι : Type w} [DecidableEq α] (L : ι → Finset 
         (fun i j : x.support => ∏ a ∈ s,
           (w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j))) := by
       ext i j
-      change (∏ a ∈ L i ∪ L j, w a) =
-        ∏ a ∈ s, (w a + star (√(1 - w a) * χ a i) * (√(1 - w a) * χ a j))
+      simp only [Matrix.of_apply]
       simp_rw [hterm]
       rw [Finset.prod_ite_mem, Finset.inter_eq_right.mpr (Finset.union_subset (hs i) (hs j))]
     rw [heq]
