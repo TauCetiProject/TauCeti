@@ -94,6 +94,13 @@ theorem IsSink.isSource_reflectAt {q : _root_.Quiver.{v} V} {i : V} (h : @IsSink
   exact ((@IsSink_def V q i).mp h a).elim
     (cast ((hom_reflectAt q i a i).trans (@reflectHom_right V q i a)) e)
 
+/-- A source becomes a sink after reflecting the quiver at that vertex. -/
+theorem IsSource.isSink_reflectAt {q : _root_.Quiver.{v} V} {i : V} (h : @IsSource V q i) :
+    @IsSink V (reflectAt q i) i := by
+  refine (@IsSink_def V (reflectAt q i) i).mpr fun b ↦ ⟨fun e ↦ ?_⟩
+  exact ((@IsSource_def V q i).mp h b).elim
+    (cast ((hom_reflectAt q i i b).trans (@reflectHom_left V q i b)) e)
+
 /-- **Reflection at a vertex is an involution.** Reflecting twice at the same vertex reverses the
 arrows meeting it twice, returning the quiver structure it started from. Since `reflectAt` carries
 the arrows of the type synonym `TauCeti.Quiver.Reflect`, the arrow types agree by

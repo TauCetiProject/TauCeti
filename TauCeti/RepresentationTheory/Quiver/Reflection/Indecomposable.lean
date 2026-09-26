@@ -352,8 +352,8 @@ theorem exists_ne_zero_span_eq_top_of_forall_subsingleton
   · -- the projection onto the line through `y` does not vanish
     exact absurd (Submodule.span_singleton_eq_bot.mp (hproj.submodule_eq_bot_iff.mpr hz)) hy
 
-/-- **An indecomposable representation concentrated at one loopless vertex has the corresponding
-simple dimension vector.** -/
+/-- **An indecomposable representation concentrated at a vertex carrying no nontrivial closed path
+has the corresponding simple dimension vector.** -/
 theorem dimVector_eq_single_of_forall_subsingleton [DecidableEq Q]
     (hloop : ∀ p : Quiver.Path i i, p = Quiver.Path.nil)
     (hM : Indecomposable M) (h : ∀ a : Q, a ≠ i → Subsingleton (M.obj a)) :
