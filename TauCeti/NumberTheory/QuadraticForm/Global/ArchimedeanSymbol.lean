@@ -153,10 +153,7 @@ Given the element `b` whose local nonsquareness a sign-prescription argument pre
 a global unit `a` whose symbol with `b` at `w` is `-1`, and `a` is negative there.  Both operands
 are read at the same real place, so that the symbol can be multiplied with the symbols at the
 other places of the prescribed set.  This is the step that turns a prescribed nonsquare into a
-local non-norm.
-
-The sign criterion `hilbertSymbol_unitAtRealPlace_eq_neg_one_iff` settles it for `a = -1`, since
-`-1` and `b` are both negative at `w` exactly when `b` is. -/
+local non-norm. -/
 theorem exists_hilbertSymbol_eq_neg_one_atRealPlace (w : {w : InfinitePlace K // w.IsReal})
     (b : Kˣ) (hb : embedding_of_isReal w.2 (b : K) < 0) :
     ∃ a : Kˣ, embedding_of_isReal w.2 (a : K) < 0 ∧
