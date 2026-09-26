@@ -44,9 +44,6 @@ primes deleted, which continues across `Re s = 1` apart from a single simple pol
   nontrivial it is analytic at `s = 1`.
 * `NumberField.Chebotarev.cyclotomicCharacterSeriesC_ne_zero_at_one`: for `F = K(μ_m)` and `χ`
   nontrivial it is nonzero at `s = 1`.
-* `NumberField.Chebotarev.exists_differentiableOn_eq_cyclotomicCharacterSeriesC_one_sub`: for the
-  trivial character, the series minus its polar part at `s = 1` extends holomorphically to
-  `Re s > 1 - 1 / [K : ℚ]`.
 
 ## References
 
@@ -109,22 +106,6 @@ theorem logDeriv_cyclotomicCharacterSeriesC (χ : (F ≃ₐ[K] F) →* ℂˣ) {s
   (logDeriv_congr_nhds <| eventually_of_mem
     ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
       fun _ hz ↦ cyclotomicCharacterSeriesC_eq_LSeries K F χ hz).eq_of_nhds
-
-variable (K F) in
-/-- **The trivial character: a single simple pole on `Re s = 1`.** For every finite Galois
-extension `F / K`, there is a function holomorphic on `Re s > 1 - 1 / [K : ℚ]` that agrees on
-`Re s > 1` with the series of the trivial character of `Gal(F/K)` minus `ρ_F / (s - 1)`, where
-`ρ_F = dedekindZeta_residue K * ∏ 𝔭 ∈ ramifiedPrimes K F, (1 - N(𝔭) ^ (-1))`. So that series
-continues meromorphically to `Re s > 1 - 1 / [K : ℚ]` with a single pole, simple with residue `ρ_F`,
-at `s = 1`: the pole of `ζ_K`, corrected by the Euler factors at the ramified primes. -/
-theorem exists_differentiableOn_eq_cyclotomicCharacterSeriesC_one_sub : ∃ G : ℂ → ℂ,
-    DifferentiableOn ℂ G {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} ∧
-      ∀ s : ℂ, 1 < s.re → G s = cyclotomicCharacterSeriesC K F 1 s -
-        dedekindZeta_residue K *
-          (∏ 𝔭 ∈ ramifiedPrimes K F, (1 - (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-1 : ℂ))) / (s - 1) := by
-  obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K (ramifiedPrimes K F)
-  refine ⟨G, hG, fun s hs ↦ ?_⟩
-  rw [cyclotomicCharacterSeriesC_eq_LSeries K F 1 hs, MonoidHom.galoisCharacterWeight_one, hGL s hs]
 
 -- The continuation exists for a nontrivial ray class character: for `F = K(μ_m)` and a character
 -- `χ` of `Gal(F/K)` with `χ ∘ cyclotomicArtin K F m` nontrivial, the `L`-series of the weight of

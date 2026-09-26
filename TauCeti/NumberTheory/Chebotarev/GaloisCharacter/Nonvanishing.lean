@@ -36,6 +36,9 @@ boundary behaviour required to apply a Tauberian theorem to the Frobenius von Ma
   `χ² = 1`, a continuation of the series of `χ` is nonzero on `Re s = 1` away from `s = 1`.
 * `NumberField.Chebotarev.ne_zero_of_eqOn_LSeries_galoisCharacterWeight_one`: a continuation of
   the trivial-character series is nonzero on `Re s = 1` away from `s = 1`.
+* `NumberField.Chebotarev.exists_continuousOn_eq_neg_logDeriv_galoisCharacterWeight_one_sub`:
+  the regularized logarithmic derivative of the trivial character extends continuously to
+  `Re s ≥ 1`.
 
 ## References
 
@@ -150,5 +153,76 @@ theorem ne_zero_of_eqOn_LSeries_galoisCharacterWeight_one {f : ℂ → ℂ} {s :
     f s ≠ 0 :=
   ne_zero_of_eqOn_LSeries_galoisCharacterWeight_of_sq_eq_one 1
     (one_pow (M := (F ≃ₐ[K] F) →* ℂˣ) 2) hs hs1 hf hfL
+
+variable (K F) in
+/-- **The regularized boundary function of the trivial character.** Let `F / K` be a finite
+Galois extension and `L_1` the `L`-series of the trivial character of `Gal(F/K)`, that is the
+Dedekind zeta function of `K` with the Euler factors at the primes ramified in `F` deleted. Then
+`-L_1'(s) / L_1(s) - 1 / (s - 1)` extends from `Re s > 1` to a function continuous on
+`Re s ≥ 1`. -/
+theorem exists_continuousOn_eq_neg_logDeriv_galoisCharacterWeight_one_sub : ∃ G : ℂ → ℂ,
+    ContinuousOn G {s | 1 ≤ s.re} ∧ ∀ s : ℂ, 1 < s.re →
+      G s = -logDeriv (LSeries (normCoeff K
+        (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction)) s -
+          1 / (s - 1) := by
+  obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K
+    (ramifiedPrimes K F)
+  set U := {s : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re}
+  have hU : IsOpen U := isOpen_lt continuous_const continuous_re
+  set ρ := (dedekindZeta_residue K : ℂ) *
+    ∏ 𝔭 ∈ ramifiedPrimes K F, (1 - (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-1 : ℂ))
+  set L₁ := LSeries (normCoeff K
+    (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction)
+  have hGL' {s : ℂ} (hs : 1 < s.re) : G s = L₁ s - ρ / (s - 1) := by
+    dsimp only [L₁, ρ]
+    rw [MonoidHom.galoisCharacterWeight_one]
+    exact hGL s hs
+  -- The residue `ρ` of `L₁` at `s = 1` is nonzero: every deleted Euler factor is nonzero at `1`.
+  have hρ : ρ ≠ 0 :=
+    dedekindZeta_residue_mul_prod_one_sub_absNorm_cpow_neg_one_ne_zero
+      (ramifiedPrimes K F)
+  -- `H(s) = (s - 1) L₁(s)` continues holomorphically to `U`, with value `ρ` at `s = 1`.
+  set H : ℂ → ℂ := fun s ↦ (s - 1) * G s + ρ
+  have hH : DifferentiableOn ℂ H U := ((differentiableOn_id.sub_const 1).mul hG).add_const ρ
+  have hsub {s : ℂ} (hs : 1 < s.re) : s - 1 ≠ 0 :=
+    sub_ne_zero.mpr fun h ↦ by simp [h] at hs
+  have hHL {s : ℂ} (hs : 1 < s.re) : H s = (s - 1) * L₁ s := by
+    simp only [H, hGL' hs]
+    field_simp [hsub hs]
+    ring
+  -- `H` does not vanish on `Re s ≥ 1`.
+  have hH0 {s : ℂ} (hs : 1 ≤ s.re) : H s ≠ 0 := by
+    rcases hs.lt_or_eq with hs | hs
+    · rw [hHL hs]
+      exact mul_ne_zero (hsub hs) (MonoidHom.LSeries_galoisCharacterWeight_ne_zero 1 hs)
+    rcases eq_or_ne s 1 with rfl | hs1
+    · simpa [H] using hρ
+    -- Elsewhere on the line, `H(s) / (s - 1)` is a continuation of `L₁` differentiable at `s`.
+    have hne := ne_zero_of_eqOn_LSeries_galoisCharacterWeight_one (K := K) (F := F)
+      (f := fun z ↦ H z / (z - 1)) hs.symm hs1
+      ((hH.differentiableAt (hU.mem_nhds
+        (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs.le))).div
+        (differentiableAt_id.sub_const 1) (sub_ne_zero.mpr hs1))
+      fun z (hz : 1 < z.re) ↦ by
+        simp only [hHL hz, mul_div_cancel_left₀ _ (hsub hz), L₁]
+    exact fun h ↦ hne (by simp [h])
+  refine ⟨fun s ↦ -logDeriv H s, ?_, fun s hs ↦ ?_⟩
+  · simp only [logDeriv_apply]
+    exact (((hH.deriv hU).continuousOn.mono
+      (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K)).div
+      (hH.continuousOn.mono (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K))
+      fun _ hs ↦ hH0 hs).neg
+  -- On `Re s > 1`, `L₁ = H / (s - 1)` near `s`, so `L₁'/L₁ = H'/H - 1 / (s - 1)`.
+  have hHs : DifferentiableAt ℂ H s :=
+    hH.differentiableAt (hU.mem_nhds
+      (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs.le))
+  have hL : logDeriv L₁ s = logDeriv (H / fun z ↦ z - 1) s :=
+    (logDeriv_congr_nhds <| eventually_of_mem
+      ((isOpen_lt continuous_const continuous_re).mem_nhds hs) fun z (hz : 1 < z.re) ↦ by
+        simp only [Pi.div_apply, hHL hz, mul_div_cancel_left₀ _ (hsub hz)]).eq_of_nhds
+  dsimp only
+  rw [hL, logDeriv_div (g := fun z ↦ z - 1) s (hH0 hs.le) (hsub hs) hHs
+    (differentiableAt_id.sub_const 1), logDeriv_apply (· - 1), deriv_sub_const, deriv_id'']
+  ring
 
 end NumberField.Chebotarev

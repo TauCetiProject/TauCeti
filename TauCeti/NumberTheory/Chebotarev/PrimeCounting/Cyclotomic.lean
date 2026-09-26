@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Nonvanishing
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
+import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Nonvanishing
 import TauCeti.NumberTheory.Chebotarev.PrimeCounting.CharacterExpansion
 import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Partition
 import TauCeti.NumberTheory.LSeries.WienerIkehara.SharpCutoff
@@ -53,7 +54,7 @@ So the Frobenius von Mangoldt series of `σ` minus `(1 / #G) / (s - 1)` extends 
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §13.
 * S. Lang, *Algebraic Number Theory*, Chapter XV.
-* The regularization of the trivial character by the entire function `(s - 1) L(s)` follows
+* The regularization `(s - 1) L(s)`, holomorphic near `Re s ≥ 1`, follows
   Mathlib's `DirichletCharacter.LFunctionTrivChar₁` and
   `DirichletCharacter.continuousOn_neg_logDeriv_LFunctionTrivChar₁`
   (`Mathlib/NumberTheory/LSeries/DirichletContinuation.lean`), used there for Dirichlet's theorem
@@ -75,10 +76,7 @@ variable {K F : Type*} [Field K] [NumberField K] [Field F] [NumberField F] [Alge
 
 variable (K F) in
 /-- **Weighted Chebotarev for cyclotomic extensions.** For `F = K(μ_m)` and `σ ∈ Gal(F/K)`, the
-Frobenius `ψ` function of `σ` satisfies `ψ_σ(x) = x / #Gal(F/K) + o(x)`.
-
-This is the Wiener--Ikehara theorem for the nonnegative coefficients of `ψ_σ`, whose Dirichlet
-series is a combination of the logarithmic derivatives of the character series of `Gal(F/K)`. -/
+Frobenius `ψ` function of `σ` satisfies `ψ_σ(x) = x / #Gal(F/K) + o(x)`. -/
 theorem frobeniusPsi_asymptotic_of_isCyclotomicExtension (m : ℕ) [NeZero m]
     [IsCyclotomicExtension {m} K F] (σ : F ≃ₐ[K] F) :
     (fun x : ℝ ↦ frobeniusPsi K F (ConjClasses.mk σ) x -
@@ -127,11 +125,7 @@ theorem frobeniusPsi_asymptotic_of_isCyclotomicExtension (m : ℕ) [NeZero m]
 open scoped Classical in
 variable (K) in
 /-- **The prime ideal theorem, for Chebyshev's `ψ`.** For every number field `K`, the von Mangoldt
-summatory function `ψ_K(x) = ∑_{N𝔭^j ≤ x} log N𝔭` of `K` satisfies `ψ_K(x) = x + o(x)`.
-
-This is the case `F = K = K(μ_1)` of `frobeniusPsi_asymptotic_of_isCyclotomicExtension`: the
-trivial extension `K / K` has no ramified primes and a single Frobenius class, whose `ψ` function
-is `ψ_K`. -/
+summatory function `ψ_K(x) = ∑_{N𝔭^j ≤ x} log N𝔭` of `K` satisfies `ψ_K(x) = x + o(x)`. -/
 theorem primePsi_univ_asymptotic :
     (fun x : ℝ ↦ primePsi K Set.univ x - x) =o[atTop] fun x : ℝ ↦ x := by
   have : IsCyclotomicExtension {1} K K :=
