@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.RibbonGraph.Classification
+public import TauCeti.Combinatorics.RibbonGraph.EulerCharacteristic
 
 /-!
 # Genus of a bipartite ribbon graph
@@ -16,8 +16,9 @@ bound for the graph. Its combinatorial genus is therefore a natural number satis
 `χ = 2 - 2g` when the graph is connected. It agrees with the genus of any numbered triple,
 independently of the choice of numbering, and is preserved by graph isomorphisms.
 
-This is the genus of the oriented combinatorial surface determined by the rotation system;
-no analytic surface is needed.
+For a connected graph, this is the genus of the oriented combinatorial surface determined by
+the rotation system; no analytic surface is needed. For a disconnected graph, `genus` is the
+truncated quotient `((2 - χ) / 2).toNat`, which need not be the surface genus.
 
 ## References
 
@@ -34,25 +35,6 @@ universe u
 namespace BipartiteRibbonGraph
 
 variable (Γ : BipartiteRibbonGraph.{u})
-
-/-- The Euler characteristic of a ribbon graph agrees with that of its permutation triple for
-any numbering of the edges. -/
-@[simp] theorem eulerChar_toPermutationTriple {n : ℕ} (ν : Γ.E ≃ Fin n) :
-    (Γ.toPermutationTriple ν).eulerChar = Γ.eulerChar := by
-  exact (PermutationTriple.eulerChar_ribbonGraph _).symm.trans
-    (Γ.isoRibbonGraph ν).eulerChar_eq.symm
-
-/-- The Euler characteristic of a finite bipartite ribbon graph is even. -/
-theorem even_eulerChar : Even Γ.eulerChar := by
-  let ν := Fintype.equivFin Γ.E
-  rw [← Γ.eulerChar_toPermutationTriple ν]
-  exact PermutationTriple.even_eulerChar _
-
-/-- A connected bipartite ribbon graph has Euler characteristic at most two. -/
-theorem IsConnected.eulerChar_le_two (hΓ : Γ.IsConnected) : Γ.eulerChar ≤ 2 := by
-  let ν := Fintype.equivFin Γ.E
-  rw [← Γ.eulerChar_toPermutationTriple ν]
-  exact (Γ.isConnected_toPermutationTriple ν).mpr hΓ |>.eulerChar_le_two
 
 /-- The combinatorial genus of a bipartite ribbon graph. It has its geometric meaning for a
 connected graph; the defining truncated quotient need not be a genus for a disconnected graph. -/
