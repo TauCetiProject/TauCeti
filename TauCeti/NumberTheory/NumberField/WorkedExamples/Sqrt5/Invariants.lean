@@ -33,6 +33,7 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 * `TauCeti.NumberField.Sqrt5.discr_eq_five`: `discr K = 5`.
 * `TauCeti.NumberField.Sqrt5.adjoin_eq_top`: `𝓞 K = ℤ[θ]`, and `isMonogenic`.
 * `TauCeti.NumberField.Sqrt5.ncard_primesOver_two_eq_one`,
+  `TauCeti.NumberField.Sqrt5.ramificationIdx_eq_one_of_mem_primesOver_two`,
   `TauCeti.NumberField.Sqrt5.inertiaDeg_eq_two_of_mem_primesOver_two`,
   `TauCeti.NumberField.Sqrt5.isPrime_map_span_two`: `2` is inert.
 
@@ -59,18 +60,18 @@ theorem discr_X_sq_sub_X_sub_one : (X ^ 2 - X - 1 : ℤ[X]).discr = 5 := by
 
 /-- **The index of a root of `X² − X − 1` is `1`**, since `discr (X² − X − 1) = 5` is squarefree. -/
 theorem index_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    IntegralPrimitiveElement.index (⟨θ, hgen⟩ : IntegralPrimitiveElement K) = 1 := by
-  set ϑ : IntegralPrimitiveElement K := ⟨θ, hgen⟩
-  have h := ϑ.discr_minpoly_eq_index_sq_mul_discr
-  rw [show ϑ.1 = θ from rfl, hmin, discr_X_sq_sub_X_sub_one] at h
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : (integralPrimitiveElement hgen).index = 1 := by
+  have h := (integralPrimitiveElement hgen).discr_minpoly_eq_index_sq_mul_discr
+  rw [coe_integralPrimitiveElement, hmin, discr_X_sq_sub_X_sub_one] at h
   -- `index ^ 2` divides `5`, so the index is `1`.
-  have hdvd : ϑ.index ^ 2 ∣ 5 := by
-    have : ((ϑ.index ^ 2 : ℕ) : ℤ) ∣ 5 := ⟨NumberField.discr K, by push_cast; exact h⟩
+  have hdvd : (integralPrimitiveElement hgen).index ^ 2 ∣ 5 := by
+    have : (((integralPrimitiveElement hgen).index ^ 2 : ℕ) : ℤ) ∣ 5 :=
+      ⟨NumberField.discr K, by push_cast; exact h⟩
     exact_mod_cast this
-  have hle : ϑ.index ≤ 2 := by nlinarith [Nat.le_of_dvd (by norm_num) hdvd]
-  have hpos := ϑ.index_pos
-  interval_cases hi : ϑ.index
+  have hle : (integralPrimitiveElement hgen).index ≤ 2 := by
+    nlinarith [Nat.le_of_dvd (by norm_num) hdvd]
+  have hpos := (integralPrimitiveElement hgen).index_pos
+  interval_cases hi : (integralPrimitiveElement hgen).index
   · rfl
   · norm_num at h
     omega
@@ -78,10 +79,10 @@ theorem index_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
 /-- **The ring of integers of `ℚ(√5)` is `ℤ[θ]`**, for a root `θ` of `X² − X − 1`. -/
 theorem adjoin_eq_top (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : Algebra.adjoin ℤ {θ} = ⊤ := by
-  have h : Algebra.adjoin ℤ {(⟨θ, hgen⟩ : IntegralPrimitiveElement K).1} = ⊤ :=
-    (IntegralPrimitiveElement.adjoin_def ⟨θ, hgen⟩).symm.trans
-      ((IntegralPrimitiveElement.index_eq_one_iff ⟨θ, hgen⟩).mp (index_eq_one hmin hgen))
-  exact h
+  have h : Algebra.adjoin ℤ {(integralPrimitiveElement hgen).1} = ⊤ :=
+    (IntegralPrimitiveElement.adjoin_def _).symm.trans
+      ((IntegralPrimitiveElement.index_eq_one_iff _).mp (index_eq_one hmin hgen))
+  rwa [coe_integralPrimitiveElement] at h
 
 /-- `ℚ(√5)` is monogenic. -/
 theorem isMonogenic (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
@@ -91,9 +92,8 @@ theorem isMonogenic (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
 /-- **The discriminant of `ℚ(√5)` is `5`.** -/
 theorem discr_eq_five (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : NumberField.discr K = 5 := by
-  let ϑ : IntegralPrimitiveElement K := ⟨θ, hgen⟩
-  have h := ϑ.discr_minpoly_eq_index_sq_mul_discr
-  rwa [show ϑ.1 = θ from rfl, hmin, discr_X_sq_sub_X_sub_one, index_eq_one hmin hgen,
+  have h := (integralPrimitiveElement hgen).discr_minpoly_eq_index_sq_mul_discr
+  rwa [coe_integralPrimitiveElement, hmin, discr_X_sq_sub_X_sub_one, index_eq_one hmin hgen,
     Nat.cast_one, one_pow, one_mul, eq_comm] at h
 
 /-- There is a single prime of `𝓞 K` above `2`, since `5 ≡ 5 (mod 8)`. -/
@@ -109,21 +109,25 @@ theorem two_notMem_ramifiedPrimes (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   rw [mem_ramifiedPrimes_iff_dvd_discr Nat.prime_two, discr_eq_five hmin hgen]
   norm_num
 
+/-- **`2` is unramified in `ℚ(√5)`**: every prime above `2` has ramification index `1`. -/
+theorem ramificationIdx_eq_one_of_mem_primesOver_two (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {Q : Ideal (𝓞 K)}
+    (hQ : Q ∈ Ideal.primesOver (Ideal.span {(2 : ℤ)}) (𝓞 K)) : Q.ramificationIdx ℤ = 1 := by
+  have hQp : Q.IsPrime := hQ.1
+  have hunr : Algebra.IsUnramifiedIn (𝓞 K) (Ideal.span {(2 : ℤ)}) := by
+    by_contra h
+    exact two_notMem_ramifiedPrimes hmin hgen (mem_ramifiedPrimes_iff.mpr ⟨Nat.prime_two, h⟩)
+  exact hunr.ramificationIdx_eq_one hQ.2
+
 /-- **`2` is inert in `ℚ(√5)`**: the single prime above `2` has residue degree `2`. -/
 theorem inertiaDeg_eq_two_of_mem_primesOver_two (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {Q : Ideal (𝓞 K)}
     (hQ : Q ∈ Ideal.primesOver (Ideal.span {(2 : ℤ)}) (𝓞 K)) : Q.inertiaDeg ℤ = 2 := by
   classical
-  -- `2` is unramified, so `e = 1`, and the fundamental identity `Σ e f = 2` over the single
-  -- prime above `2` gives `f = 2`.
-  have hmax : (Ideal.span {(2 : ℤ)}).IsMaximal :=
-    PrincipalIdealRing.isMaximal_of_irreducible Int.prime_two.irreducible
-  have hpr : (Ideal.span {(2 : ℤ)}).IsPrime := hmax.isPrime
-  have hQp : Q.IsPrime := hQ.1
-  have hunr : Algebra.IsUnramifiedIn (𝓞 K) (Ideal.span {(2 : ℤ)}) := by
-    by_contra h
-    exact two_notMem_ramifiedPrimes hmin hgen (mem_ramifiedPrimes_iff.mpr ⟨Nat.prime_two, h⟩)
-  have he : Q.ramificationIdx ℤ = 1 := hunr.ramificationIdx_eq_one hQ.2
+  -- The fundamental identity `Σ e f = 2` over the single prime above `2`, with `e = 1`.
+  have hpr : (Ideal.span {(2 : ℤ)}).IsPrime :=
+    (PrincipalIdealRing.isMaximal_of_irreducible Int.prime_two.irreducible).isPrime
+  have he := ramificationIdx_eq_one_of_mem_primesOver_two hmin hgen hQ
   obtain ⟨Q', hQ'⟩ := Set.ncard_eq_one.mp (ncard_primesOver_two_eq_one hmin hgen)
   have hsub : Subsingleton (Ideal.primesOver (Ideal.span {(2 : ℤ)}) (𝓞 K)) := by
     rw [hQ']; infer_instance
@@ -142,11 +146,7 @@ theorem map_span_two_eq_of_mem_primesOver (hmin : minpoly ℤ θ = X ^ 2 - X - 1
   classical
   have hmax : (Ideal.span {(2 : ℤ)}).IsMaximal :=
     PrincipalIdealRing.isMaximal_of_irreducible Int.prime_two.irreducible
-  have hQp : Q.IsPrime := hQ.1
-  have hunr : Algebra.IsUnramifiedIn (𝓞 K) (Ideal.span {(2 : ℤ)}) := by
-    by_contra h
-    exact two_notMem_ramifiedPrimes hmin hgen (mem_ramifiedPrimes_iff.mpr ⟨Nat.prime_two, h⟩)
-  have he : Q.ramificationIdx ℤ = 1 := hunr.ramificationIdx_eq_one hQ.2
+  have he := ramificationIdx_eq_one_of_mem_primesOver_two hmin hgen hQ
   obtain ⟨Q', hQ'⟩ := Set.ncard_eq_one.mp (ncard_primesOver_two_eq_one hmin hgen)
   have hQQ : Q = Q' := by rw [hQ'] at hQ; exact hQ
   rw [Ideal.map_algebraMap_eq_finsetProd_pow (by simp), Finset.prod_eq_single Q]
