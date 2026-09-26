@@ -199,6 +199,7 @@ theorem mk_surjective :
 
 /-- Two rigidified line bundles have the same class exactly when an isomorphism of their line
 bundles carries one trivialization to the other. -/
+@[simp]
 theorem mk_eq_mk_iff {P Q : RigidifiedLineBundle s} :
     mk P = mk Q ↔ ∃ e : P.lineBundle.obj ≅ Q.lineBundle.obj,
       (Scheme.Modules.pullback s).map e.hom ≫ Q.rigidification.hom = P.rigidification.hom :=
