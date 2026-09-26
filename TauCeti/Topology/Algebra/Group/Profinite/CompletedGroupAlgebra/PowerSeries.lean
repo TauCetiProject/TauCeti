@@ -177,12 +177,8 @@ private theorem dvd_coeff_of_aeval_eq_zero (hΓ : IsProP p Γ) {γ : Γ}
   obtain ⟨U, hU⟩ := exists_openNormalSubgroup_lt_card_quotient (G := Γ) i
   obtain ⟨n, hn⟩ := IsPGroup.iff_card.mp ((isProP_iff.mp hΓ) U)
   set σ : Γ ⧸ U.toSubgroup := (γ : Γ ⧸ U.toSubgroup)
-  have hσ : ∀ x, x ∈ Subgroup.zpowers σ := by
-    have h := topologicalClosure_closure_eq_top_iff.mp hγ U
-    rw [Set.image_singleton, QuotientGroup.mk'_apply, ← Subgroup.zpowers_eq_closure] at h
-    intro x
-    rw [h]
-    exact Subgroup.mem_top x
+  have hσ : ∀ x, x ∈ Subgroup.zpowers σ :=
+    forall_mem_zpowers_mk_of_topologicalClosure_closure_eq_top hγ U
   -- `(σ - 1) ^ N` is divisible by `p` in `ℤ_p[Γ ⧸ U]`, as `σ ^ N = 1`.
   obtain ⟨z, hz⟩ : (p : MonoidAlgebra ℤ_[p] (Γ ⧸ U.toSubgroup)) ∣
       (MonoidAlgebra.of ℤ_[p] _ σ - 1) ^ Nat.card (Γ ⧸ U.toSubgroup) := by

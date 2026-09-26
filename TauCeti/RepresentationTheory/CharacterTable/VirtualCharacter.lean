@@ -41,6 +41,8 @@ work — a virtual character of norm `1` is, up to sign, an irreducible characte
 
 * `TauCeti.mul_mem_virtualCharacters` and `TauCeti.one_mem_virtualCharacters`: the lattice is
   closed under the pointwise product and contains the constant `1`.
+* `TauCeti.comp_mem_virtualCharacters`: pulling back along a monoid homomorphism preserves virtual
+  characters.
 * `TauCeti.virtualCharacters_le_classFunction`: a virtual character is a class function, and
   `TauCeti.conj_apply_of_mem_virtualCharacters`: over `ℂ` inverting the argument conjugates the
   value, `conj (f g) = f g⁻¹`.
@@ -56,6 +58,9 @@ work — a virtual character of norm `1` is, up to sign, an irreducible characte
   coefficients.
 * `TauCeti.exists_eq_irreducibleCharacter_or_neg`: **a virtual character of norm `1` is `±` an
   irreducible character**.
+* `TauCeti.natCard_nsmul_mem_span_irreducibleCharacters`: **`|G|` times a class function with
+  values in a subring `A` containing the character values is an `A`-combination of the irreducible
+  characters**.
 
 ## Implementation notes
 
@@ -90,7 +95,7 @@ namespace TauCeti
 
 open Module CategoryTheory.MonoidalCategory
 
-universe u v
+universe u v w
 
 section Defs
 
@@ -152,6 +157,34 @@ theorem one_mem_virtualCharacters : (1 : G → k) ∈ virtualCharacters k G := b
   have h : (FDRep.of (Representation.trivial k G k)).character = 1 :=
     funext fun g => FDRep.character_of_trivial g
   exact h ▸ character_mem_virtualCharacters _
+
+/-- **Pulling back along a monoid homomorphism preserves virtual characters.** The pullback
+`f ∘ φ` of a character along `φ : H →* G` is the character of the representation restricted along
+`φ`, Mathlib's `Action.res`, and pullback is additive, so the property propagates through the
+additive generation of the lattice. Restriction to a subgroup and inflation from a quotient are
+the two instances. -/
+theorem comp_mem_virtualCharacters {H : Type w} [Monoid H] (φ : H →* G) {f : G → k}
+    (hf : f ∈ virtualCharacters k G) : f ∘ φ ∈ virtualCharacters k H := by
+  rw [virtualCharacters] at hf ⊢
+  induction hf using AddSubgroup.closure_induction with
+  | mem x hx =>
+    obtain ⟨V, rfl⟩ := hx
+    refine AddSubgroup.subset_closure ⟨(Action.res (FGModuleCat k) φ).obj V, ?_⟩
+    funext h
+    exact V.character_actionRes φ h
+  | zero => rw [Pi.zero_comp]; exact AddSubgroup.zero_mem _
+  | neg x _ ih => rw [Pi.neg_comp]; exact AddSubgroup.neg_mem _ ih
+  | add x y _ _ ihx ihy => rw [Pi.add_comp]; exact AddSubgroup.add_mem _ ihx ihy
+
+/-- **Pulling back along a monoid homomorphism preserves `A`-combinations of virtual characters**,
+for any subring `A` of `k`: pullback is `A`-linear and, by `TauCeti.comp_mem_virtualCharacters`,
+carries virtual characters to virtual characters. -/
+theorem comp_mem_span_virtualCharacters (A : Subring k) {H : Type w} [Monoid H] (φ : H →* G)
+    {f : G → k} (hf : f ∈ Submodule.span A (virtualCharacters k G : Set (G → k))) :
+    f ∘ φ ∈ Submodule.span A (virtualCharacters k H : Set (H → k)) :=
+  (Submodule.map_span_le (LinearMap.funLeft A k φ) _ _).2
+    (fun _ hg => Submodule.subset_span (comp_mem_virtualCharacters φ hg))
+    (Submodule.mem_map_of_mem hf)
 
 end Defs
 
@@ -322,6 +355,43 @@ private theorem eq_sum_smul_ofCharacter {f : ClassFunction k G}
   rw [ClassFunction.ofCharacter_apply, character_irreducibleRepresentation]
 
 end Lattice
+
+section Subring
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+  [Invertible (Nat.card G : k)]
+
+/-- **A class function with values in a subring `A` is, once multiplied by `|G|`, an
+`A`-combination of the irreducible characters**, provided `A` contains the values of the
+irreducible characters: the coefficient of `χᵢ` in `|G| • f` is the group sum `∑ g, χᵢ(g) f(g⁻¹)`.
+
+This is the expansion of a class function in the basis of irreducible characters with the
+division by `|G|` in the character pairing cleared, so that only the ring operations of `A` are
+needed. It is the integrality input of Brauer's induction theorem. -/
+theorem natCard_nsmul_mem_span_irreducibleCharacters (A : Subring k) {f : G → k}
+    (hf : f ∈ ClassFunction k G) (hfA : ∀ g, f g ∈ A)
+    (hA : ∀ (i : Fin (Nat.card (ConjClasses G))) (g : G), irreducibleCharacter k i g ∈ A) :
+    Nat.card G • f ∈ Submodule.span A (irreducibleCharacters k G) := by
+  let _ : Fintype G := Fintype.ofFinite G
+  have hexp : Nat.card G • f =
+      ∑ i, (∑ g, irreducibleCharacter k i g * f g⁻¹) • irreducibleCharacter k i := by
+    funext y
+    have hy := ClassFunction.apply_eq_sum_characterPairing_mul_character
+      (irreducibleRepresentation k) (pairwise_isEmpty_equiv_irreducibleRepresentation k)
+      (by simp) ⟨f, hf⟩ y
+    simp only [ClassFunction.characterPairing_apply, ClassFunction.ofCharacter_apply,
+      character_irreducibleRepresentation] at hy
+    rw [Pi.smul_apply, Finset.sum_apply, nsmul_eq_mul, hy, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [Pi.smul_apply, smul_eq_mul, mul_assoc, mul_inv_cancel_left₀ (Invertible.ne_zero _)]
+  rw [hexp]
+  refine Submodule.sum_mem _ fun i _ => ?_
+  have hc : ∑ g, irreducibleCharacter k i g * f g⁻¹ ∈ A :=
+    A.sum_mem fun g _ => A.mul_mem (hA i g) (hfA g⁻¹)
+  rw [← Subring.smul_def (⟨_, hc⟩ : A)]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span (irreducibleCharacter_mem k i))
+
+end Subring
 
 section Pairing
 

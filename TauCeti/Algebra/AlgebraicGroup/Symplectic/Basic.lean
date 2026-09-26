@@ -143,6 +143,12 @@ linear group scheme. -/
 noncomputable abbrev inclusion : groupScheme R m ⟶ GeneralLinear.groupScheme R (m + m) :=
   ConstantForm.inclusion R (m + m) (JFin m R)
 
+/-- The symplectic inclusion is the specialization of the constant-form inclusion at the
+standard alternating form. -/
+theorem inclusion_eq_constantForm :
+    inclusion R m = ConstantForm.inclusion R (m + m) (JFin m R) := by
+  rfl
+
 /-- The symplectic inclusion is the generic Hopf-ideal closed immersion at the defining Hopf
 ideal. -/
 theorem inclusion_def :

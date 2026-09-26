@@ -88,5 +88,5 @@ unsafe def main (args : List String) : IO UInt32 := do
     IO.print (diagnostic s!"{tag}:1:0: error: {report}")
   else
     IO.print (diagnostic s!"{report}\n-- All linting checks passed!")
-  IO.println (← IO.FS.readFile markerFile).trim
+  IO.println (← IO.FS.readFile markerFile).trimAscii.toString
   return if failed then 1 else 0

@@ -283,7 +283,7 @@ theorem shift_eq_zero_of_isOfFinOrder {χ : HeckeCharacter K} (hχ : IsOfFinOrde
 @[simp]
 theorem shift_ofRayClassCharacter {𝔪 : Modulus K} (η : RayClassCharacter 𝔪) :
     (ofRayClassCharacter 𝔪 η).shift = 0 :=
-  shift_eq_zero_of_isOfFinOrder (isOfFinOrder_ofRayClassCharacter η)
+  shift_eq_zero_of_isOfFinOrder (isFiniteOrder_ofRayClassCharacter η)
 
 /-! ### The unitary part -/
 

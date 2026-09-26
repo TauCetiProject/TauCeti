@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.NumberTheory.RamificationInertia.Unramified
 public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.Int
+import Mathlib.RingTheory.DedekindDomain.Factorization
 import Mathlib.RingTheory.RamificationInertia.Basic
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # Prime ideals of rings of integers
 
-This file records general utilities for choosing prime ideals of a number field above rational
-primes and packaging them as non-zero-divisors so that their classes can be taken with
-`ClassGroup.mk0`.
+This file records general utilities for the prime ideals of a number field above a rational
+prime: packaging them as non-zero-divisors so that their classes can be taken with
+`ClassGroup.mk0`, counting them, and factoring an unramified rational prime into them.
 
 ## Main results
 
@@ -26,6 +29,8 @@ primes and packaging them as non-zero-divisors so that their classes can be take
   ideals above it, packaged for `ClassGroup.mk0`.
 * `TauCeti.NumberField.card_primesOverFinset_le_finrank`: at most `[K : ℚ]` primes of `𝓞 K`
   lie over a nonzero prime of `ℤ`.
+* `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset`: a rational prime unramified in
+  `K` generates the squarefree product of the primes of `𝓞 K` above it.
 -/
 
 public section
@@ -94,5 +99,34 @@ theorem card_primesOverFinset_le_finrank {p : Ideal ℤ} [p.IsMaximal] (hp0 : p 
           (Ideal.inertiaDeg_pos q.1 ℤ).ne')
     _ = Module.finrank ℤ (𝓞 K) := Ideal.sum_ramification_inertia_eq_finrank p (𝓞 K)
     _ = Module.finrank ℚ K := _root_.NumberField.RingOfIntegers.rank K
+
+/-- **An unramified rational prime is the product of the primes above it.** If every prime `P` of
+`𝓞 K` above the rational prime `p` is unramified, then `p` generates the squarefree product of
+those primes: each occurs with ramification index one. -/
+theorem span_natCast_eq_prod_primesOverFinset {p : ℕ} [Fact p.Prime]
+    (hun : ∀ P : Ideal (𝓞 K), ∀ [P.IsPrime] [P.LiesOver (span {(p : ℤ)})],
+      Algebra.IsUnramifiedAt (𝓞 ℚ) P) :
+    span {(p : 𝓞 K)}
+      = ∏ P ∈ IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K), P := by
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    have hpne : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
+    simpa [Ideal.span_singleton_eq_bot] using hpne
+  have hfinset : IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K)
+      = ((span {(p : ℤ)}).primesOver (𝓞 K)).toFinset :=
+    Finset.coe_injective (by
+      rw [IsDedekindDomain.coe_primesOverFinset hp0, Set.coe_toFinset])
+  have hmap : Ideal.map (algebraMap ℤ (𝓞 K)) (span {(p : ℤ)}) = span {(p : 𝓞 K)} := by
+    rw [Ideal.map_span]
+    simp
+  rw [← hmap, Ideal.map_algebraMap_eq_finsetProd_pow hp0, hfinset]
+  refine Finset.prod_congr rfl fun P hP => ?_
+  -- Membership in `primesOver` carries the two instances the ramification index needs.
+  obtain ⟨hPprime, hPover⟩ := Set.mem_toFinset.mp hP
+  have := hPprime
+  have := hPover
+  have := hun P
+  rw [← Ideal.ramificationIdx_ringOfIntegers_rat_eq_int P
+      (Ideal.ne_bot_of_liesOver_of_ne_bot hp0 P),
+    Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, pow_one]
 
 end TauCeti.NumberField

@@ -419,7 +419,7 @@ theorem character_mackeySummand (s : G) [(mackeySubgroup s H K).IsFiniteRelIndex
 the Mackey summands.
 
 This is the formula the roadmap states.  The character of `Ind_H^G A` at `x : K`, read on `G`, is
-the same number: `TauCeti.character_resFDRep` is a `simp` lemma rewriting the left-hand side into
+the same number: `FDRep.character_actionRes` is a `simp` lemma rewriting the left-hand side into
 it. -/
 theorem character_resFDRep_indFDRep_mackey [H.FiniteIndex] (A : FDRep k H) (x : K) :
     (resFDRep K (indFDRep A)).character x =
@@ -427,7 +427,7 @@ theorem character_resFDRep_indFDRep_mackey [H.FiniteIndex] (A : FDRep k H) (x : 
       ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
         (mackeySummand (K := K) D.out A).character x := by
   let := Fintype.ofFinite (DoubleCoset.Quotient (K : Set G) (H : Set G))
-  rw [character_resFDRep]
+  rw [FDRep.character_actionRes]
   simp only [character_mackeySummand]
   rw [← indClassFun_ofFDRep_character]
   exact indClassFun_mackey (ClassFunction.mem_iff.mpr A.char_conj) x

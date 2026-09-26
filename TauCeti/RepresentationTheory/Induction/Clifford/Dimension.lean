@@ -163,7 +163,7 @@ theorem clifford_restrict_inertia_eq_top_of_coprime [IsAlgClosed k] (W : FDRep k
     (mem_inertia_iff.1 (htop ▸ Subgroup.mem_top _)).some
   refine ⟨V, hV, hfinite, e, he, htop, ⟨iso⟩, by rw [hdim, hone, mul_one], fun n ↦ ?_⟩
   have hchar := congrFun (char_iso iso) n
-  rw [character_resFDRep, character_cliffordSum, finsum_unique,
+  rw [FDRep.character_actionRes, character_cliffordSum, finsum_unique,
     congrFun (char_iso hiso) n] at hchar
   exact hchar
 

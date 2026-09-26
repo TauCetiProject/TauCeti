@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ConcreteCategory
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
+public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExactCochains
 
@@ -53,6 +55,8 @@ coefficient maps `TauCeti.ofDiscreteModuleMap`, the form in which a consumer mee
 
 * `TauCeti.ContCohomology.DiscreteShortExact.forget₂_map_delta`: `δ` is the snake-lemma
   connecting map of the forgotten cochain sequence, read through `mapHomologyIso`.
+* `TauCeti.ContCohomology.DiscreteShortExact.delta_apply`: `δ` on representatives: lift a
+  cocycle on `C` to a cochain on `B`, differentiate, and read the result as a cocycle on `A`.
 * `TauCeti.ContCohomology.DiscreteShortExact.longExact_exact₁`,
   `longExact_exact₂` and `longExact_exact₃`: exactness at `Hⁿ⁺¹(G, A)`, `Hⁿ(G, B)` and
   `Hⁿ(G, C)`.
@@ -120,6 +124,64 @@ theorem forget₂_map_delta (n : ℕ) :
   -- The `rfl` tactic checks the definitional unfolding once; the term `(rfl)` checks it twice,
   -- once while propagating the expected type and once more against it (0.3 s).
   rfl
+
+/-- **The connecting map on representatives.** Let `z₃` be a homogeneous `n`-cocycle with values in
+`C`, `x₂` a homogeneous `n`-cochain with values in `B` lifting it, and `z₁` a homogeneous
+`(n + 1)`-cocycle with values in `A` whose image in `B` is the differential of `x₂`. Then `δ` sends
+the class of `z₃` to the class of `z₁`. This is the continuous counterpart of Mathlib's
+`CategoryTheory.ShortComplex.ShortExact.δ_apply`, and the form in which `δ` is compared with
+explicit connecting maps. -/
+theorem delta_apply (n : ℕ) (z₃ : cocycles (ofDiscreteModule ℤ G C) n)
+    (x₂ : S.continuousCochainsShortExact.X₂.X n)
+    (hx₂ : (S.continuousCochainsShortExact.g.f n).hom x₂ =
+      (TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles n z₃)
+    (z₁ : cocycles (ofDiscreteModule ℤ G A) (n + 1))
+    (hx₁ : (S.continuousCochainsShortExact.f.f (n + 1)).hom
+        ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).iCycles (n + 1) z₁) =
+      (S.continuousCochainsShortExact.X₂.d n (n + 1)).hom x₂) :
+    (S.delta n).hom (π (ofDiscreteModule ℤ G C) n z₃) =
+      π (ofDiscreteModule ℤ G A) (n + 1) z₁ := by
+  let F := forget₂ (TopModuleCat.{u} ℤ) (ModuleCat.{u} ℤ)
+  let hS := S.continuousCochainsShortExact_shortExact
+  -- `δ` is computed on the forgotten complexes `F K`. A cycle `z` of a complex `K` of topological
+  -- modules becomes the cycle `(mapCyclesIso F).inv z` of `F K`: it is the cycle built from the
+  -- same cochain, and its class is the class of `z` under `mapHomologyIso`.
+  have hcycles (K : CochainComplex (TopModuleCat.{u} ℤ) ℕ) (i j : ℕ) (z : K.cycles i) hj hz :
+      ((F.mapHomologicalComplex _).obj K).cyclesMk (K.iCycles i z) j hj hz =
+        ((K.sc i).mapCyclesIso F).inv z :=
+    (ModuleCat.mono_iff_injective (((F.mapHomologicalComplex _).obj K).iCycles i)).1
+      inferInstance <| (((F.mapHomologicalComplex _).obj K).i_cyclesMk _ j hj hz).trans
+        (ConcreteCategory.congr_hom
+          ((K.sc i).mapCyclesIso_inv_comp_iCycles F) z).symm
+  have hclass (K : CochainComplex (TopModuleCat.{u} ℤ) ℕ) (i : ℕ) (z : K.cycles i) :
+      ((K.sc i).mapHomologyIso F).hom (((K.sc i).map F).homologyπ
+        (((K.sc i).mapCyclesIso F).inv z)) = K.homologyπ i z :=
+    (ConcreteCategory.congr_hom ((K.sc i).homologyπ_comp_mapHomologyIso_hom F)
+      (((K.sc i).mapCyclesIso F).inv z)).trans
+      (congrArg (F.map (K.sc i).homologyπ).hom (Iso.inv_hom_id_apply ((K.sc i).mapCyclesIso F) z))
+  -- The snake lemma in `ModuleCat ℤ`, on the cycles built from `z₃` and `z₁`.
+  let S' := S.continuousCochainsShortExact.map (F.mapHomologicalComplex (ComplexShape.up ℕ))
+  have hx₃ : (forget₂ (ModuleCat ℤ) Ab).map (S'.X₃.d n (n + 1))
+      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles n z₃) = 0 :=
+    ConcreteCategory.congr_hom (S.continuousCochainsShortExact.X₃.iCycles_d n (n + 1)) z₃
+  have hδ := hS.δ_apply n (n + 1) rfl _ hx₃ x₂ hx₂ _ hx₁ (n + 2) (by simp)
+  have hc₃ : S'.X₃.cyclesMk ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles n z₃)
+      (n + 1) (by simp) hx₃ =
+      ((S.continuousCochainsShortExact.X₃.sc n).mapCyclesIso F).inv z₃ :=
+    hcycles _ _ _ _ _ _
+  have hc₁ : S'.X₁.cyclesMk
+      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).iCycles (n + 1) z₁) (n + 2)
+      (by simp) (hS.d_eq_zero_of_f_eq_d_apply n (n + 1) _ _ hx₁ _) =
+      ((S.continuousCochainsShortExact.X₁.sc (n + 1)).mapCyclesIso F).inv z₁ :=
+    hcycles _ _ _ _ _ _
+  rw [hc₃, hc₁] at hδ
+  -- Transport through `mapHomologyIso` on both sides.
+  refine (congrArg (fun f ↦ f.hom (π (ofDiscreteModule ℤ G C) n z₃))
+    (S.forget₂_map_delta n)).trans ?_
+  refine (congrArg (fun y ↦ ((S.continuousCochainsShortExact.X₁.sc (n + 1)).mapHomologyIso F).hom
+    (hS.δ n (n + 1) rfl y)) ?_).trans ((congrArg _ hδ).trans (hclass _ (n + 1) z₁))
+  exact (congrArg _ (hclass _ n z₃).symm).trans
+    (Iso.hom_inv_id_apply ((S.continuousCochainsShortExact.X₃.sc n).mapHomologyIso F) _)
 
 /-- **Exactness at `Hⁿ⁺¹(G, A)`**: the image of the connecting map `Hⁿ(G, C) ⟶ Hⁿ⁺¹(G, A)` is
 the kernel of the coefficient map induced by `A → B`. -/

@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 
 /-!
 # Smooth differential two-forms on manifolds
@@ -18,12 +19,11 @@ section of the bundle of continuous bilinear forms on the tangent bundle, with t
 alternation law. Its value at a point is exposed as Mathlib's algebraic `LinearMap.BilinForm`, so
 the existing alternating-form API applies without duplicating it.
 
-This is the differential-form prerequisite for Lane F2.1 of the analytic Heegaard Floer roadmap,
-whose next manifold-level target is a symplectic manifold: a smooth two-form which is closed and
-fiberwise nondegenerate. Mathlib has exterior derivatives on normed vector spaces, but not on
-manifolds, so closedness is deliberately not represented by a placeholder here. The smooth
-two-form, closedness, and nondegeneracy are kept as separate layers, matching the roadmap's rule
-that analytic hypotheses remain unbundled until the object itself is available.
+This is the differential-form layer underneath a symplectic manifold: a smooth two-form which is
+closed and fiberwise nondegenerate. The smooth two-form, closedness
+(`TauCeti/Geometry/Manifold/TwoForm/Closed.lean`, through Mathlib's exterior derivative on the
+model space), and nondegeneracy (`TauCeti/Geometry/Symplectic/Manifold/TwoForm.lean`) are kept as
+separate layers.
 
 The file provides the additive and real-scalar API for two-forms and proves that evaluating a
 smooth two-form on two smooth vector fields along a smooth map gives a smooth real-valued
@@ -34,6 +34,7 @@ manifold-valued pseudoholomorphic curves.
 
 * `TauCeti.SmoothTwoForm`: a smooth alternating bilinear form on tangent fibers.
 * `TauCeti.SmoothTwoForm.bilinFormAt`: the algebraic alternating bilinear form at a point.
+* `TauCeti.SmoothTwoForm.altAt`: the continuous alternating two-form at a point, on the model space.
 * `TauCeti.SmoothTwoForm.contMDiff_apply`: smooth evaluation on two smooth vector fields.
 * `TauCeti.SmoothTwoForm.const`: the constant smooth two-form on a model vector space.
 
@@ -91,6 +92,25 @@ lemma bilinFormAt_apply (form : SmoothTwoForm I M) (x : M) (v w : TangentSpace I
 lemma isAlt_bilinFormAt (form : SmoothTwoForm I M) (x : M) :
     (form.bilinFormAt x).IsAlt :=
   fun v ↦ form.isAlt x v
+
+/-- The value of a smooth two-form at `x`, as a continuous alternating two-form on the model
+space `E` of the tangent space `TangentSpace I x`. This is the pointwise object on which Mathlib's
+exterior calculus of differential forms acts; it is stated on `E` because the tangent space
+carries no norm of its own. -/
+def altAt (form : SmoothTwoForm I M) (x : M) : E [⋀^Fin 2]→L[ℝ] ℝ :=
+  let B : E →L[ℝ] E →L[ℝ] ℝ := form.toContMDiffSection x
+  (form.isAlt_bilinFormAt x).toAlternatingMap.mkContinuous ‖B‖ fun v ↦
+    calc ‖(form.isAlt_bilinFormAt x).toAlternatingMap v‖
+        = ‖B (v 0) (v 1)‖ := congrArg norm (LinearMap.IsAlt.toAlternatingMap_apply _ v)
+      _ ≤ ‖B‖ * ∏ i, ‖v i‖ := by
+        rw [Fin.prod_univ_two, ← mul_assoc]
+        exact B.le_opNorm₂ (v 0) (v 1)
+
+@[simp]
+lemma altAt_apply (form : SmoothTwoForm I M) (x : M) (v : Fin 2 → E) :
+    form.altAt x v = form x (v 0) (v 1) := by
+  simp only [altAt]
+  exact LinearMap.IsAlt.toAlternatingMap_apply _ v
 
 /-- The underlying smooth bilinear section determines a smooth two-form. -/
 theorem toContMDiffSection_injective :

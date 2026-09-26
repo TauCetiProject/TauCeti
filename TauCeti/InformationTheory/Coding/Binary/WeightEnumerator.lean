@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Binary.Basic
-public import TauCeti.InformationTheory.Coding.MacWilliams
+public import TauCeti.InformationTheory.Coding.MacWilliams.Basic
 
 /-!
 # Weight-enumerator symmetries of binary codes

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 
 /-!
@@ -57,10 +58,10 @@ exhibiting explicit preimages, and injectivity is then forced by the dimension c
 given an abbreviation, so that every lemma about a general `CliffordAlgebra` applies to it without
 unfolding.
 
-The scaffolding of the four constructions — the two transporting isometries and the two hand-built
-algebra maps together with their surjectivity and the resulting bijectivity — is `private`: the
-public interface is the four `AlgEquiv`s and the lemmas computing them on a generator, which is all
-a downstream file needs.
+Most scaffolding of the four constructions remains `private`. The one- and two-dimensional
+coordinate isometries are public because later low-dimensional reductions compose them, while the
+public algebra interface consists of the four `AlgEquiv`s and the lemmas computing them on a
+generator.
 
 All four identifications are bundled `AlgEquiv`s rather than the `Nonempty` existence statements
 the roadmap asks for, and each comes with a lemma computing it on a generator: it is the
@@ -80,6 +81,8 @@ equivalences and their values, not their bare existence, that the Bott-periodici
   splitter, separating a hyperbolic plane.
 * `TauCeti.realCliffordSignSwitchStandardIsometry`: the isometry which puts a sign-switched form
   with one positive line back into standard signature coordinates.
+* `TauCeti.realCliffordZeroOneIsometry` and `TauCeti.realCliffordZeroTwoIsometry`: the coordinate
+  isometries used in the complex and quaternion base entries.
 * `TauCeti.realCliffordOneZeroEquivProd`, `TauCeti.realCliffordZeroOneEquivComplex`,
   `TauCeti.realCliffordZeroTwoEquivQuaternion`, `TauCeti.realCliffordOneOneEquivMatrix`: the four
   base entries of the Bott table, each with a `..._ι` lemma computing it on a generator.
@@ -675,13 +678,14 @@ theorem realCliffordOneZeroEquivProd_ι (v : Fin (1 + 0) → ℝ) :
 
 /-- The signature `(0,1)` form is Mathlib's `CliffordAlgebraComplex.Q`, `r ↦ -r²`, read on the
 one-dimensional space `Fin (0 + 1) → ℝ`. -/
-private def realCliffordZeroOneIsometry :
+def realCliffordZeroOneIsometry :
     (realCliffordForm 0 1).IsometryEquiv CliffordAlgebraComplex.Q :=
   ⟨(LinearEquiv.funUnique (Fin 1) ℝ ℝ : (Fin (0 + 1) → ℝ) ≃ₗ[ℝ] ℝ), fun v => by
     simp [realCliffordForm_zero_one_apply]⟩
 
 /-- `realCliffordZeroOneIsometry` reads off the single coordinate. -/
-private theorem realCliffordZeroOneIsometry_apply (v : Fin (0 + 1) → ℝ) :
+@[simp]
+theorem realCliffordZeroOneIsometry_apply (v : Fin (0 + 1) → ℝ) :
     realCliffordZeroOneIsometry v = v 0 := by
   simp [realCliffordZeroOneIsometry, ← IsometryEquiv.coe_toLinearEquiv,
     LinearEquiv.funUnique_apply]
@@ -751,6 +755,17 @@ theorem realCliffordZeroTwoEquivQuaternion_ι (v : Fin (0 + 2) → ℝ) :
     CliffordAlgebra.map_apply_ι]
   simp only [IsometryEquiv.toIsometry_apply, CliffordAlgebraQuaternion.equiv_apply,
     CliffordAlgebraQuaternion.toQuaternion_ι, realCliffordZeroTwoIsometry_apply]
+
+/-- The `(0,2)` real Clifford-algebra equivalence identifies Clifford conjugation with quaternion
+conjugation. -/
+@[simp]
+theorem realCliffordZeroTwoEquivQuaternion_star
+    (x : CliffordAlgebra (realCliffordForm 0 2)) :
+    realCliffordZeroTwoEquivQuaternion (star x) =
+      star (realCliffordZeroTwoEquivQuaternion x) := by
+  simp only [realCliffordZeroTwoEquivQuaternion_eq,
+    CliffordAlgebra.equivOfIsometry_apply, CliffordAlgebra.map_star,
+    CliffordAlgebraQuaternion.equiv_apply, CliffordAlgebraQuaternion.toQuaternion_star]
 
 /-! ### `Cliff(1,1) ≅ M₂(ℝ)` -/
 

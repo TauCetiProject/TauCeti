@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Series
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Nonvanishing
+import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
 # Nonvanishing of cyclotomic character series on the line `Re s = 1`
@@ -21,6 +23,8 @@ treated for every finite Galois extension in
 
 * `NumberField.Chebotarev.cyclotomicCharacterSeriesC_ne_zero_of_re_eq_one`: for `F = K(μ_m)`
   and `χ ≠ 1`, the continued series of `χ` is nonzero on `Re s = 1`.
+* `NumberField.Chebotarev.continuousOn_logDeriv_cyclotomicCharacterSeriesC`: for nontrivial
+  characters, the logarithmic derivative is continuous on `Re s ≥ 1`.
 
 ## References
 
@@ -54,7 +58,8 @@ theorem cyclotomicCharacterSeriesC_ne_zero_of_re_eq_one (m : ℕ) [NeZero m]
     (differentiableOn_cyclotomicCharacterSeriesC K F m ψ hψ).differentiableAt <|
       (isOpen_lt continuous_const continuous_re).mem_nhds <| by
         rw [Set.mem_ofPred_eq, hz]
-        exact sub_lt_self 1 (one_div_pos.mpr (Nat.cast_pos.mpr Module.finrank_pos))
+        simpa only [Set.mem_ofPred_eq, hz] using
+          setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hz.ge
   have hL (ψ : (F ≃ₐ[K] F) →* ℂˣ) : Set.EqOn (cyclotomicCharacterSeriesC K F ψ)
       (LSeries (normCoeff K ψ.galoisCharacterWeight.toIdealArithmeticFunction)) {z | 1 < z.re} :=
     fun z hz ↦ cyclotomicCharacterSeriesC_eq_LSeries K F ψ hz
@@ -65,5 +70,23 @@ theorem cyclotomicCharacterSeriesC_ne_zero_of_re_eq_one (m : ℕ) [NeZero m]
       (hdiff χ hχ hs) (hL χ)
   · exact ne_zero_of_eqOn_LSeries_galoisCharacterWeight χ hs (hdiff χ hχ hs) (hL χ)
       (hdiff (χ ^ 2) hχ2 (by norm_num [hs])).continuousAt (hL (χ ^ 2))
+
+variable (K F) in
+/-- **Continuity of the logarithmic derivative on `Re s ≥ 1`.** For `F = K(μ_m)` and a nontrivial
+character `χ` of `Gal(F/K)`, the logarithmic derivative of the continued series of `χ` is
+continuous on the closed half-plane `Re s ≥ 1`: the series is holomorphic on a neighbourhood of it
+and does not vanish on it. -/
+theorem continuousOn_logDeriv_cyclotomicCharacterSeriesC (m : ℕ) [NeZero m]
+    [IsCyclotomicExtension {m} K F] (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) :
+    ContinuousOn (logDeriv (cyclotomicCharacterSeriesC K F χ)) {s | 1 ≤ s.re} := by
+  have hd := differentiableOn_cyclotomicCharacterSeriesC K F m χ hχ
+  refine ((hd.deriv (isOpen_lt continuous_const continuous_re)).continuousOn.mono
+    (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K)).div
+    (hd.continuousOn.mono (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K))
+      fun s (hs : 1 ≤ s.re) ↦ ?_
+  rcases hs.lt_or_eq with hs | hs
+  · rw [cyclotomicCharacterSeriesC_eq_LSeries K F χ hs]
+    exact χ.LSeries_galoisCharacterWeight_ne_zero hs
+  · exact cyclotomicCharacterSeriesC_ne_zero_of_re_eq_one m χ hχ hs.symm
 
 end NumberField.Chebotarev

@@ -100,6 +100,8 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
   `TauCeti.PDE.energyFormLpVariable`.
 * `TauCeti.PDE.energyFormH1L0_comm`: symmetry of the bundled `H¹₀` energy form, from symmetry of
   the energy form at the functions of `H¹₀(Ω)`.
+* `TauCeti.PDE.exists_forcing_energyFormH1_principal_eq`: a weak equation with bounded
+  lower-order coefficients gives a weak equation for its principal part with an `L²` forcing.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.norm_energyFormH1_le`: boundedness of the energy form, with
@@ -642,6 +644,75 @@ theorem energyFormH1L0_comm
     energyFormH1L0 hcoeff u v = energyFormH1L0 hcoeff v u := by
   rw [energyFormH1L0_apply, energyFormH1L0_apply]
   exact hsymm u v
+
+open scoped InnerProductSpace in
+omit [DecidableEq ι] in
+/-- A weak equation with an essentially bounded principal energy density and bounded
+lower-order coefficients admits an `L²` forcing for its principal part alone. Neither
+ellipticity nor a boundary condition on the solution is required. -/
+theorem exists_forcing_energyFormH1_principal_eq {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a b c u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
+    ∃ g : Lp ℝ 2 (mu.restrict Omega), ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, g x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  have hB : MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) :=
+    MemLp.of_bilin (inner ℝ) 1 hb (Lp.memLp _) continuous_inner
+      (.of_forall fun x => by simpa using nnnorm_inner_le_nnnorm (b x) (W1p.gradient u x))
+  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
+    hc.fun_mul (Lp.memLp _)
+  let G := fun x => f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x
+  have hG : MemLp G 2 (mu.restrict Omega) := ((Lp.memLp f).sub hB).sub hC
+  refine ⟨hG.toLp G, fun v => ?_⟩
+  have hv := Lp.memLp (W1p.value (v : W1p mu Omega 2))
+  have hF : Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x)
+      (mu.restrict Omega) := (Lp.memLp f).integrable_mul hv
+  have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ *
+      W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) := hB.integrable_mul hv
+  have hCv : Integrable (fun x => (c x * W1p.value u x) *
+      W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) := hC.integrable_mul hv
+  -- The drift and mass densities are integrable, so the energy form splits into its pieces.
+  have hdrift : Integrable (fun x => energyIntegrand 0 (b x) 0 (jetField u x)
+      (jetField (v : W1p mu Omega 2) x)) (mu.restrict Omega) := by
+    simpa [energyIntegrand_apply, jetField_apply, driftForm_apply, massForm_apply] using hBv
+  have hmass : Integrable (fun x => energyIntegrand 0 0 (c x) (jetField u x)
+      (jetField (v : W1p mu Omega 2) x)) (mu.restrict Omega) := by
+    simpa [energyIntegrand_apply, jetField_apply, driftForm_apply, massForm_apply] using hCv
+  have hdrift_eq : energyFormIntegral (mu.restrict Omega) (fun _ => 0) b (fun _ => 0)
+      (jetField u) (jetField (v : W1p mu Omega 2)) =
+        ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+    rw [energyFormIntegral_def]
+    simp [energyIntegrand_apply, jetField_apply, driftForm_apply, massForm_apply]
+  have hmass_eq : energyFormIntegral (mu.restrict Omega) (fun _ => 0) (fun _ => 0) c
+      (jetField u) (jetField (v : W1p mu Omega 2)) =
+        ∫ x in Omega, (c x * W1p.value u x) * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+    rw [energyFormIntegral_def]
+    simp [energyIntegrand_apply, jetField_apply, driftForm_apply, massForm_apply]
+  -- Unfold the `H¹` wrapper to `energyFormIntegral` in the weak equation and the goal; the
+  -- split lemma writes the vanishing lower-order coefficients as `fun _ => 0`, so the goal's
+  -- `0` is put in that form by `Pi.zero_def` before the two sides are compared.
+  have h := hu v
+  rw [energyFormH1, energyFormIntegral_principal_drift_mass _ _ _ _ _ _
+    (integrable_energyIntegrand_jetField ha u _) hdrift hmass, hdrift_eq, hmass_eq] at h
+  rw [energyFormH1, Pi.zero_def, Pi.zero_def]
+  calc
+    _ = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+        ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ *
+          W1p.value (v : W1p mu Omega 2) x ∂mu -
+        ∫ x in Omega, (c x * W1p.value u x) *
+          W1p.value (v : W1p mu Omega 2) x ∂mu := by linarith
+    _ = ∫ x in Omega, G x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+      simp only [G, sub_mul]
+      rw [integral_sub (hF.sub' hBv) hCv, integral_sub hF hBv]
+    _ = ∫ x in Omega, (hG.toLp G) x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+      apply integral_congr_ae
+      filter_upwards [hG.coeFn_toLp] with x hx
+      rw [hx]
 
 namespace UniformlyEllipticOn
 

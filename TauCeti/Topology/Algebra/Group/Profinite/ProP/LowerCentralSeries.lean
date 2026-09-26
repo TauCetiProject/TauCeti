@@ -46,6 +46,11 @@ finitely generated pro-`p` groups be compared level by level along their lower `
   `TauCeti.IsProP.isPGroup_quotient_pLowerCentralSeries`.
 * `TauCeti.IsProP.exists_pLowerCentralSeries_le`: in a pro-`p` group every open normal subgroup
   contains a term of the lower `p`-series, so `TauCeti.IsProP.iInf_pLowerCentralSeries_eq_bot`.
+* `TauCeti.IsProP.eq_bot_of_le_pLowerCentralStep`: **Nakayama's lemma**, a subgroup `K` of a
+  pro-`p` group with `K ≤ closure (Kᵖ ⬝ [K, G])` is trivial.
+* `TauCeti.IsProP.le_of_le_topologicalClosure_sup_pLowerCentralStep`: **Nakayama's lemma,
+  relative form**, a subgroup `R` with `R ≤ closure (N ⬝ Rᵖ[R, G])` for a closed normal subgroup `N`
+  satisfies `R ≤ N`.
 * `TauCeti.IsProP.existsUnique_forall_mk_eq_pLowerCentralSeries` and
   `TauCeti.IsProP.existsUnique_monoidHom_mk'_comp_eq_pLowerCentralSeries`: a pro-`p` group is the
   inverse limit of its quotients `G ⧸ λ_k`, for elements and for homomorphisms.
@@ -153,6 +158,41 @@ theorem IsProP.iInf_pLowerCentralSeries_eq_bot (hG : IsProP p G) (hp : p.Prime) 
   refine le_iInf fun U ↦ ?_
   obtain ⟨k, hk⟩ := hG.exists_pLowerCentralSeries_le hp U
   exact (iInf_le _ k).trans hk
+
+/-- **Nakayama's lemma for pro-`p` groups.** In a profinite pro-`p` group a subgroup `K` with
+`K ≤ closure (Kᵖ ⬝ [K, G])` is trivial: it lies in every term of the lower `p`-series. -/
+theorem IsProP.eq_bot_of_le_pLowerCentralStep (hG : IsProP p G) (hp : p.Prime) {K : Subgroup G}
+    (h : K ≤ pLowerCentralStep p K) : K = ⊥ := by
+  refine le_bot_iff.mp ?_
+  rw [← hG.iInf_pLowerCentralSeries_eq_bot hp]
+  refine le_iInf fun k ↦ ?_
+  induction k with
+  | zero => rw [pLowerCentralSeries_zero]; exact le_top
+  | succ k ih => rw [pLowerCentralSeries_succ]; exact h.trans (pLowerCentralStep_mono ih)
+
+/-- **Nakayama's lemma for pro-`p` groups, relative form.** If a subgroup `R` of a pro-`p` group
+lies in the closure of `N ⬝ Rᵖ[R, G]` for a closed normal subgroup `N`, then `R ≤ N`: the image of
+`R` in `G ⧸ N` is contained in its own `pLowerCentralStep`, hence trivial. -/
+theorem IsProP.le_of_le_topologicalClosure_sup_pLowerCentralStep (hG : IsProP p G) (hp : p.Prime)
+    {R N : Subgroup G} [N.Normal] (hN : IsClosed (N : Set G))
+    (h : R ≤ (N ⊔ pLowerCentralStep p R).topologicalClosure) : R ≤ N := by
+  -- Closedness of `N` makes the quotient `G ⧸ N` profinite, so it is again pro-`p`.
+  have := hN
+  set q : G →* G ⧸ N := QuotientGroup.mk' N
+  have hq : Continuous q := QuotientGroup.continuous_mk
+  have hmap : R.map q ≤ pLowerCentralStep p (R.map q) := by
+    calc R.map q ≤ ((N ⊔ pLowerCentralStep p R).topologicalClosure).map q := map_mono h
+      _ = ((pLowerCentralStep p R).map q).topologicalClosure := by
+        rw [q.map_topologicalClosure hq _ (isClosed_topologicalClosure _).isCompact,
+          Subgroup.map_sup, (Subgroup.map_eq_bot_iff N).mpr (QuotientGroup.ker_mk' N).ge,
+          bot_sup_eq]
+      _ = pLowerCentralStep p (R.map q) := by
+        rw [q.map_pLowerCentralStep_eq_of_surjective hq hq.isClosedMap
+          (QuotientGroup.mk'_surjective N)]
+        exact SetLike.coe_injective
+          (by rw [topologicalClosure_coe, (isClosed_pLowerCentralStep _).closure_eq])
+  have hbot := (hG.quotient N).eq_bot_of_le_pLowerCentralStep hp hmap
+  rwa [Subgroup.map_eq_bot_iff, QuotientGroup.ker_mk'] at hbot
 
 /-- **A pro-`p` group is the inverse limit of its quotients by the lower `p`-series.** A sequence
 of cosets of the `λ_k`, compatible along the quotient maps, is realized by a unique element. -/

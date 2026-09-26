@@ -53,8 +53,9 @@ orthonormal basis produces a weak Fréchet derivative of `∇u`, that is, the He
 Working on the whole space is what keeps the argument free of cut-offs: no boundary regularity
 is involved, `H¹₀(ℝⁿ) = H¹(ℝⁿ)` (`TauCeti.w1p0Submodule_top_eq_top`), so the solution concept
 `TauCeti.PDE.IsWeakSolutionDirichlet` imposes no boundary condition here, and every difference
-quotient is a legitimate test function. For constant coefficients, interior `H²` regularity on a
-general domain follows by localizing with a cutoff
+quotient is a legitimate test function. For a constant principal coefficient and bounded
+measurable lower-order coefficients, interior `H²` regularity on a general domain follows by
+absorbing the lower-order terms into the forcing and localizing with a cutoff
 (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`); allowing variable Lipschitz
 coefficients needs the difference-quotient estimate itself to be localized.
 

@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
+public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Topology.Algebra.Group.Units
+import Mathlib.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Continuity of homomorphisms and maps involving subgroups and quotients
@@ -18,7 +22,9 @@ packages those maps for a topological group and the subspace and quotient topolo
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
 A homomorphism from a topological group with open kernel is also continuous, for every topology
-on the target. Kernels of continuous homomorphisms into a discrete monoid are closed, so on a
+on the target. It also records the pointwise characterization of finite-order continuous
+homomorphisms and the open kernel of a finite-order continuous character into complex units.
+Kernels of continuous homomorphisms into a discrete monoid are closed, so on a
 compact group the common kernel of a family of them is approximated from outside by the common
 kernels of its finite subfamilies.
 -/
@@ -28,6 +34,39 @@ public section
 namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- A continuous homomorphism into a commutative topological group has finite order exactly when
+all its values have a common positive exponent equal to one. -/
+theorem _root_.ContinuousMonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
+    {A B : Type*} [Monoid A] [TopologicalSpace A] [CommGroup B] [TopologicalSpace B]
+    [IsTopologicalGroup B] (f : A →ₜ* B) :
+    IsOfFinOrder f ↔ ∃ n, 0 < n ∧ ∀ x, f x ^ n = 1 := by
+  constructor
+  · rintro h
+    obtain ⟨n, hn, hfn⟩ := h.exists_pow_eq_one
+    refine ⟨n, hn, fun x ↦ ?_⟩
+    simpa only [ContinuousMonoidHom.pow_apply, ContinuousMonoidHom.coe_one, Pi.one_apply]
+      using DFunLike.congr_fun hfn x
+  · rintro ⟨n, hn, h⟩
+    apply isOfFinOrder_iff_pow_eq_one.mpr
+    refine ⟨n, hn, ?_⟩
+    apply ContinuousMonoidHom.ext
+    intro x
+    simpa only [ContinuousMonoidHom.pow_apply, ContinuousMonoidHom.coe_one, Pi.one_apply] using h x
+
+/-- A finite-order continuous character into the complex units has open kernel. -/
+theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
+    {M : Type*} [Monoid M] [TopologicalSpace M] {χ : M →ₜ* ℂˣ}
+    (hχ : IsOfFinOrder χ) : IsOpen ((χ : M → ℂˣ) ⁻¹' {1}) := by
+  obtain ⟨n, hn, hχn⟩ := χ.isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
+  let _ : NeZero n := ⟨hn.ne'⟩
+  have hmem : ∀ x, χ x ∈ rootsOfUnity n ℂ := fun x ↦ (mem_rootsOfUnity _ _).mpr (hχn x)
+  have hset : ((χ : M → ℂˣ) ⁻¹' {1}) =
+      (fun x : M => (⟨χ x, hmem x⟩ : rootsOfUnity n ℂ)) ⁻¹' {1} := by
+    ext x
+    simp
+  rw [hset]
+  exact (isOpen_discrete _).preimage (χ.continuous.subtype_mk hmem)
 
 /-- A homomorphism with open kernel out of a topological group is continuous for every topology
 on the target: it is constant on the open coset `x * ker f` of each point `x`. -/

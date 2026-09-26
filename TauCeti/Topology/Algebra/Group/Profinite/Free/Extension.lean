@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.EmbeddingProblem
+public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Projective
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
 
 /-!
@@ -18,10 +20,11 @@ continuous homomorphism `F → E`, which is a section of the projection because 
 on the generators. So the extension splits by a continuous homomorphic section taking any
 prescribed preimages on the generators
 (`GroupExtension.exists_splitting_continuous_freeProP_forall_apply_of_eq`), and in particular
-splits (`GroupExtension.exists_splitting_continuous_freeProP`).
+splits even when the total group lives in a different universe
+(`GroupExtension.exists_splitting_continuous_freeProP`).
 
-No finiteness of `X` is needed: the universal property of `freeProP p X` holds for every type, and
-the argument uses nothing else about `F`. Read through the classification of profinite extensions
+No finiteness of `X` is needed: the universal property and projectivity of `freeProP p X` hold
+for every type. Read through the classification of profinite extensions
 by continuous `H²`, this is the vanishing of `H²` of a free pro-`p` group, proved in
 `TauCeti.Topology.Algebra.Group.Profinite.Free.Cohomology`.
 
@@ -43,7 +46,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 open freeProP
 
@@ -71,12 +74,21 @@ theorem _root_.GroupExtension.exists_splitting_continuous_freeProP_forall_apply_
 
 /-- **Extensions of a free pro-`p` group by a pro-`p` group split.** An extension
 `1 → M → E → freeProP p X → 1` of topological groups with profinite total group and pro-`p` kernel
-has a continuous homomorphic section. -/
-theorem _root_.GroupExtension.exists_splitting_continuous_freeProP (hinl : Continuous S.inl)
+has a continuous homomorphic section, even when `E` and `freeProP p X` live in different
+universes. -/
+theorem _root_.GroupExtension.exists_splitting_continuous_freeProP
+    {E' : Type v} [Group E'] [TopologicalSpace E'] [IsTopologicalGroup E'] [CompactSpace E']
+    [TotallyDisconnectedSpace E'] (S : GroupExtension M E' (freeProP p X))
+    (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) (hM : IsProP p M) : ∃ s : S.Splitting, Continuous ⇑s := by
-  choose e he using fun x : X ↦ S.rightHom_surjective (of x)
-  obtain ⟨s, hs, -⟩ :=
-    S.exists_splitting_continuous_freeProP_forall_apply_of_eq hinl hrh hM e he
-  exact ⟨s, hs⟩
+  have hE : IsProP p E' := S.isProP hinl hrh hM (isProP_freeProP p X)
+  -- The projection, bundled with its continuity; it evaluates as `S.rightHom` by construction.
+  let π : E' →ₜ* freeProP p X := ⟨S.rightHom, hrh⟩
+  have hπ : ∀ z, π z = S.rightHom z := fun _ ↦ rfl
+  obtain ⟨s, hs⟩ :=
+    (isProjective_of_hasPGroupSolutions (hasPGroupSolutions_freeProP p X)).exists_continuous_lift
+      hE π S.rightHom_surjective (ContinuousMonoidHom.id _)
+  exact ⟨GroupExtension.Splitting.mk s.toMonoidHom fun y ↦ by
+    simpa [hπ] using DFunLike.congr_fun hs y, s.continuous⟩
 
 end TauCeti

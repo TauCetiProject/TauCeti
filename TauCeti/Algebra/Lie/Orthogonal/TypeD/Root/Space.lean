@@ -113,6 +113,11 @@ theorem typeDWeightAdd_def (i j : ι) :
     typeDWeightAdd (K := K) i j = typeDEpsilon i + typeDEpsilon j := by
   simp [typeDWeightAdd]
 
+/-- Coordinate-sum weights are unchanged when their two coordinates are swapped. -/
+theorem typeDWeightAdd_comm (i j : ι) :
+    typeDWeightAdd (K := K) i j = typeDWeightAdd j i := by
+  rw [typeDWeightAdd_def, typeDWeightAdd_def, add_comm]
+
 /-- The coordinate-difference weight evaluates as the difference of the corresponding diagonal
 entries. -/
 @[simp]

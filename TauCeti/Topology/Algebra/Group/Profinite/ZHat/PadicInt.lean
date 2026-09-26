@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Padics.InverseLimit
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Commutative
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Basic
@@ -18,6 +19,10 @@ class of the generator `zHat.gen` to `1`. Since a Sylow pro-`p` subgroup of a co
 profinite group maps isomorphically onto the maximal pro-`p` quotient, every `p`-Sylow subgroup
 of `ℤ̂` is topologically isomorphic to `ℤ_p`.
 
+Equivalently, the quotient is the inverse limit of the finite cyclic groups
+`Multiplicative (ZMod (p ^ n))`.  The comparison is the composite with the inverse-limit
+presentation of `ℤ_[p]`, and sends the class of `zHat.gen` to the compatible family of ones.
+
 These are the rank-one instances of the pro-`p` theory: a continuous homomorphism from `ℤ̂` to
 a pro-`p` group factors through `ℤ_p`, and the `p`-part of `ℤ̂` may be read off from either the
 quotient or a Sylow subgroup.
@@ -26,6 +31,8 @@ quotient or a Sylow subgroup.
 
 * `TauCeti.zHat.maximalProPQuotientEquivPadicInt`: the maximal pro-`p` quotient of `ℤ̂` is the
   additive group of `ℤ_[p]`.
+* `TauCeti.zHat.maximalProPQuotientEquivZModPowLimit`: the same quotient is the inverse limit
+  of the groups `Multiplicative (ZMod (p ^ n))`.
 * `TauCeti.IsProPSylow.continuousMulEquivPadicInt`: every `p`-Sylow subgroup of `ℤ̂` is the
   additive group of `ℤ_[p]`.
 
@@ -112,6 +119,56 @@ theorem maximalProPQuotientEquivPadicInt_symm_apply (l : Multiplicative ℤ_[p])
   -- The inverse is the `p`-adic power by definition; isolate that reduction in this opaque
   -- theorem so that the definition stays unexposed.
   (rfl)
+
+/-- **The maximal pro-`p` quotient of `ℤ̂` is the inverse limit of `ℤ/p^nℤ`.** This is the
+canonical comparison obtained by taking all residues of the `p`-adic integer associated to an
+element of the maximal pro-`p` quotient. -/
+noncomputable def maximalProPQuotientEquivZModPowLimit :
+    maximalProPQuotient p zHat ≃ₜ* Multiplicative (PadicInt.inverseLimit p) :=
+  (maximalProPQuotientEquivPadicInt p).trans
+    (PadicInt.inverseLimitContinuousMulEquiv p)
+
+/-- The inverse-limit comparison takes a class from `ℤ̂` to the compatible family of residues
+of its image in `ℤ_p`. -/
+@[simp]
+theorem maximalProPQuotientEquivZModPowLimit_mk (x : zHat) :
+    maximalProPQuotientEquivZModPowLimit p
+        (x : maximalProPQuotient p zHat) =
+      Multiplicative.ofAdd
+        (PadicInt.toInverseLimit p (lift (Multiplicative.ofAdd (1 : ℤ_[p])) x).toAdd) := by
+  rw [maximalProPQuotientEquivZModPowLimit, ContinuousMulEquiv.trans_apply,
+    maximalProPQuotientEquivPadicInt_mk]
+  rw [← ofAdd_toAdd (lift (Multiplicative.ofAdd (1 : ℤ_[p])) x),
+    PadicInt.inverseLimitContinuousMulEquiv_apply]
+  simp only [toAdd_ofAdd]
+
+/-- The inverse-limit comparison sends the class of the generator of `ℤ̂` to the compatible
+family of residues of `1`. -/
+theorem maximalProPQuotientEquivZModPowLimit_mk_gen :
+    maximalProPQuotientEquivZModPowLimit p
+        (gen : maximalProPQuotient p zHat) =
+      Multiplicative.ofAdd (PadicInt.toInverseLimit p 1) := by
+  rw [maximalProPQuotientEquivZModPowLimit, ContinuousMulEquiv.trans_apply,
+    maximalProPQuotientEquivPadicInt_mk_gen,
+    PadicInt.inverseLimitContinuousMulEquiv_apply]
+
+/-- The `n`th coordinate of the inverse-limit comparison is reduction modulo `p ^ n` after
+the canonical map from `ℤ̂` to `ℤ_p`. -/
+theorem maximalProPQuotientEquivZModPowLimit_mk_proj (x : zHat) (n : ℕ) :
+    PadicInt.inverseLimit.proj p n
+        (maximalProPQuotientEquivZModPowLimit p
+          (x : maximalProPQuotient p zHat)).toAdd =
+      PadicInt.toZModPow n (lift (Multiplicative.ofAdd (1 : ℤ_[p])) x).toAdd := by
+  rw [maximalProPQuotientEquivZModPowLimit_mk, toAdd_ofAdd,
+    PadicInt.inverseLimit.proj_apply, PadicInt.toInverseLimit_apply]
+
+/-- Each coordinate of the image of the generator of `ℤ̂` in the inverse limit is `1`. -/
+theorem maximalProPQuotientEquivZModPowLimit_mk_gen_proj (n : ℕ) :
+    PadicInt.inverseLimit.proj p n
+        (maximalProPQuotientEquivZModPowLimit p
+          (gen : maximalProPQuotient p zHat)).toAdd = 1 := by
+  rw [maximalProPQuotientEquivZModPowLimit_mk_gen, toAdd_ofAdd,
+    PadicInt.inverseLimit.proj_apply, PadicInt.toInverseLimit_apply, map_one]
 
 end MaximalProPQuotient
 

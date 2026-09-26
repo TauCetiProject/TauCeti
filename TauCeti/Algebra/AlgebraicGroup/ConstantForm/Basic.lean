@@ -359,6 +359,17 @@ theorem inclusion_def :
   unfold inclusion
   rfl
 
+/-- The constant-form inclusion expressed through the quotient-spectrum presentations of its
+source and the ambient general linear group. -/
+theorem inclusion_eq_eqToHom_comp_hopfSpec_map :
+    inclusion R n C =
+      eqToHom (groupScheme_def R n C) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (coordinateMap R n C).op ≫
+        eqToHom (GeneralLinear.groupScheme_def R n).symm := by
+  rw [inclusion_def, GeneralLinear.hopfIdealInclusion_def,
+    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def, eqToIso.hom]
+  simp only [eqToHom_refl, Category.id_comp]
+
 /-- The inclusion into the named general linear group scheme is a closed immersion. -/
 instance isClosedImmersion_inclusion :
     AlgebraicGeometry.IsClosedImmersion (inclusion R n C).hom.hom.left := by

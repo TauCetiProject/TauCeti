@@ -11,14 +11,17 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 # Constructions of open normal subgroups
 
 Bundled constructions of `OpenNormalSubgroup` that Mathlib provides for `OpenSubgroup` but not
-for its normal variant: the preimage under a continuous group homomorphism, the trivial subgroup
-of a group with the discrete topology, and the whole group. All are stated for an arbitrary
-topological space structure on a group; no continuity of the group operations is required.
+for its normal variant: the preimage under a continuous group homomorphism, the product of two
+open normal subgroups, the trivial subgroup of a group with the discrete topology, and the whole
+group. All are stated for an arbitrary topological space structure on a group; no continuity of
+the group operations is required.
 
 ## Main definitions
 
 * `OpenNormalSubgroup.comap`: the preimage of an open normal subgroup under a continuous
   group homomorphism.
+* `OpenNormalSubgroup.prod`: the product of two open normal subgroups, as an open normal subgroup
+  of the product group.
 * `TauCeti.openNormalSubgroupBot`: the trivial subgroup of a group with the discrete
   topology, as an open normal subgroup.
 * `TauCeti.openNormalSubgroupTop`: the whole group, as an open normal subgroup.
@@ -63,6 +66,29 @@ theorem comap_comap {K : Type*} [Group K] [TopologicalSpace K] (U : OpenNormalSu
     (f₂ : H →* K) (hf₂ : Continuous f₂) (f₁ : G →* H) (hf₁ : Continuous f₁) :
     comap (comap U f₂ hf₂) f₁ hf₁ = comap U (f₂.comp f₁) (hf₂.comp hf₁) :=
   (rfl)
+
+/-- The product of two open normal subgroups, as an open normal subgroup of the product group. -/
+def prod (U : OpenNormalSubgroup G) (V : OpenNormalSubgroup H) : OpenNormalSubgroup (G × H) where
+  toOpenSubgroup := U.toOpenSubgroup.prod V.toOpenSubgroup
+  isNormal' := Subgroup.prod_normal U.toSubgroup V.toSubgroup
+
+/-- The product of two open normal subgroups as a set. -/
+@[simp, norm_cast]
+theorem coe_prod (U : OpenNormalSubgroup G) (V : OpenNormalSubgroup H) :
+    (U.prod V : Set (G × H)) = (U : Set G) ×ˢ (V : Set H) :=
+  (rfl)
+
+/-- The underlying subgroup of the product of two open normal subgroups. -/
+@[simp]
+theorem toSubgroup_prod (U : OpenNormalSubgroup G) (V : OpenNormalSubgroup H) :
+    (U.prod V).toSubgroup = U.toSubgroup.prod V.toSubgroup :=
+  (rfl)
+
+/-- Membership in the product of two open normal subgroups. -/
+@[simp]
+theorem mem_prod {U : OpenNormalSubgroup G} {V : OpenNormalSubgroup H} {x : G × H} :
+    x ∈ U.prod V ↔ x.1 ∈ U ∧ x.2 ∈ V :=
+  Iff.rfl
 
 end OpenNormalSubgroup
 
