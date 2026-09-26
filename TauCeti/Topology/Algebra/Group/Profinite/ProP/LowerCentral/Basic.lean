@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 
 /-!
 # The first step of the lower `p`-central series and the pro-`p` Frattini subgroup
