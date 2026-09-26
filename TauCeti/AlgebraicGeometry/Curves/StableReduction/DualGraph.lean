@@ -34,7 +34,7 @@ stability condition of a stable curve is stated.
 
 ## References
 
-* [Caporaso, *On the complexity group of stable curves*](https://arxiv.org/abs/0808.1529),
+* [Busonero, Melo, Stoppino, *On the complexity group of stable curves*](https://arxiv.org/abs/0808.1529),
   Section 1: the dual graph of a nodal curve, its first Betti number `b₁ = δ - γ + c`, the
   valence conditions defining stability, and the arithmetic genus as the sum of component
   genera plus `b₁`.
