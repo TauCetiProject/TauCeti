@@ -41,8 +41,8 @@ residue field below `P`. The comparison lemmas are `simp` lemmas oriented toward
   `ℤ` agree.
 * `Ideal.isArithFrobAt_ringOfIntegers_rat_iff`: the Frobenius conditions over `𝓞 ℚ` and over `ℤ`
   agree.
-* `TauCeti.inertiaDeg_eq_orderOf` and
-  `TauCeti.ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt`:
+* `Ideal.inertiaDeg_eq_orderOf` and
+  `Ideal.ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt`:
   the unramified Frobenius order and prime-count formulas over `ℤ`.
 * `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for a prime `Q` above the rational prime `p`,
   the primes of a subfield above `Q ∩ 𝓞 ℚ` are the primes above `p`.
@@ -172,9 +172,9 @@ theorem exists_absNorm_eq {p : ℕ} (hp : p.Prime) :
 
 end Rat.HeightOneSpectrum
 
-namespace TauCeti
+namespace Ideal
 
-open Ideal Module MulAction
+open Module MulAction
 open scoped NumberField Pointwise
 
 variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
@@ -210,4 +210,4 @@ theorem ncard_primesOver_mul_inertiaDeg_eq_finrank_of_isUnramifiedAt [IsGalois �
     ← horbit, ← Nat.card_prod, Nat.card_congr (orbitProdStabilizerEquivGroup (K ≃ₐ[ℚ] K) Q),
     IsGalois.card_aut_eq_finrank]
 
-end TauCeti
+end Ideal
