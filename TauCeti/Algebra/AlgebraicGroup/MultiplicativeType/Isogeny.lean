@@ -33,7 +33,7 @@ variable {k : Type u} [Field k] {H K : FiniteTypeCommHopfAlgCat.{u, u} k}
 
 /-- The geometric fibre of a morphism of multiplicative-type groups is a central isogeny
 exactly when the induced geometric character map is injective with finite cokernel. -/
-@[simp] theorem isCentralIsogeny_baseChange_iff_characterMap_injective_finite_quotient
+theorem isCentralIsogeny_baseChange_iff_characterMap_injective_finite_quotient
     (hH : multiplicativeTypeCommHopfAlgProperty k H)
     (hK : multiplicativeTypeCommHopfAlgProperty k K) (f : H.obj ⟶ K.obj) :
     CommHopfAlgCat.IsCentralIsogeny
