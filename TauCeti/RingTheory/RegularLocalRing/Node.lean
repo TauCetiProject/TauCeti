@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RegularLocalRing.Polynomial
+public import TauCeti.RingTheory.RegularLocalRing.Polynomial
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!
@@ -45,11 +45,10 @@ until the thickness of every node is at most one.
 
 ## Implementation notes
 
-The base ring `R` is assumed to be a local ring satisfying `IsRegularRing`, which makes `R[x, y]`
-regular (`MvPolynomial.isRegularRing_of_isRegularRing`) and hence `R[x, y]_𝔪` a regular local ring.
-Every regular local ring satisfies this, but that localizations of regular local rings are regular
-is not yet available in Mathlib; discrete valuation rings, the case of interest, are covered through
-Dedekind domains. The point `(𝔪_R, x, y)` is written as the preimage of `𝔪_R` under the constant
+The base ring `R` is assumed to be a local ring satisfying `IsRegularRing`. This gives regularity
+of `R[x, y]` via `MvPolynomial.isRegularRing_of_isRegularRing`, and hence of its localization
+`R[x, y]_𝔪`. Discrete valuation rings satisfy this hypothesis through the Dedekind-domain
+instance. The point `(𝔪_R, x, y)` is written as the preimage of `𝔪_R` under the constant
 coefficient, so that it is visibly a prime ideal of `R[x, y]`.
 
 ## References
@@ -66,28 +65,6 @@ open _root_.IsLocalRing Ideal MvPolynomial
 section IsRegularRing
 
 variable {R : Type*} [CommRing R] [IsLocalRing R]
-
-/-- A polynomial whose constant coefficient is not in `𝔪_R²` does not lie in the square of the
-maximal ideal of `R[x, y]_𝔪`: the constant coefficient extends to `R[x, y]_𝔪 → R`, which maps the
-maximal ideal into `𝔪_R`. -/
-private lemma algebraMap_notMem_maximalIdeal_sq {p : MvPolynomial (Fin 2) R}
-    (hp : constantCoeff p ∉ maximalIdeal R ^ 2) :
-    algebraMap (MvPolynomial (Fin 2) R)
-        (Localization.AtPrime ((maximalIdeal R).comap (constantCoeff (σ := Fin 2)))) p ∉
-      maximalIdeal
-        (Localization.AtPrime ((maximalIdeal R).comap (constantCoeff (σ := Fin 2)))) ^ 2 := by
-  set 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
-  let φ : Localization.AtPrime 𝔪 →+* R :=
-    IsLocalization.lift (M := 𝔪.primeCompl) (g := constantCoeff) fun s ↦
-      notMem_maximalIdeal.mp s.2
-  have hφ : φ.comp (algebraMap _ _) = constantCoeff := IsLocalization.lift_comp _
-  have hmap : (maximalIdeal (Localization.AtPrime 𝔪)).map φ ≤ maximalIdeal R := by
-    rw [← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_map, hφ]
-    exact map_comap_le
-  refine fun h ↦ hp ?_
-  rw [← hφ, RingHom.comp_apply, pow_two]
-  rw [pow_two] at h
-  exact mul_mono hmap hmap (Ideal.map_mul φ _ _ ▸ mem_map_of_mem φ h)
 
 variable [IsRegularRing R] {π : R}
 
@@ -149,7 +126,9 @@ theorem isPrime_map_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R)
   refine ⟨?_, fun hn ↦ map_isPrime_of_surjective Ideal.Quotient.mk_surjective ?_⟩
   · -- for `n = 0` the image of `x` is a unit
     rintro h rfl
-    refine h.ne_top (eq_top_of_isUnit_mem _ (mem_map_of_mem _ (show X 0 ∈ _ by simp))
+    have hX0 : X (0 : Fin 2) ∈
+        (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R) := by simp
+    refine h.ne_top (eq_top_of_isUnit_mem _ (mem_map_of_mem _ hX0)
       (IsUnit.of_mul_eq_one (Ideal.Quotient.mk _ (X 1)) ?_))
     rw [← map_mul, ← sub_eq_zero, ← map_one (Ideal.Quotient.mk _), ← map_sub,
       Ideal.Quotient.eq_zero_iff_mem]
