@@ -52,6 +52,10 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
   reparametrizations.
+* `TauCeti.Manifold.curveVelocity_eq_mfderiv_snd` and
+  `TauCeti.Manifold.curveVelocity_eq_mfderiv_fst`: the two partial velocities of a two-parameter
+  family `f : 𝕜 → 𝕜 → M` are the differential of the uncurried family in the coordinate
+  directions.
 * `TauCeti.Manifold.hasDerivWithinAt_extChartAt_comp_curve`: reading the curve in the chart
   centred at the current point differentiates it to the velocity itself, with
   `TauCeti.Manifold.hasDerivAt_extChartAt_comp_curve` its unrestricted case and
@@ -225,6 +229,32 @@ variable
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜} {w : TangentSpace I (γ t)}
+
+section Surface
+
+variable {f : 𝕜 → 𝕜 → M} {u : 𝕜}
+
+/-- **The velocity of a curve of a two-parameter family.** The velocity of the curve `f u` of a
+family `f : 𝕜 → 𝕜 → M` is the differential of the uncurried family in the direction of the
+second parameter. -/
+theorem curveVelocity_eq_mfderiv_snd
+    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) :
+    curveVelocity I (f u) t =
+      mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t) ((0 : 𝕜), (1 : 𝕜)) :=
+  hf.curveVelocity_comp_mfderiv (g := fun r : 𝕜 ↦ (u, r))
+    ((hasDerivAt_const t u).prodMk (hasDerivAt_id t))
+
+/-- **The transverse velocity of a two-parameter family.** The velocity of the curve
+`q ↦ f q t` of a family `f : 𝕜 → 𝕜 → M` is the differential of the uncurried family in the
+direction of the first parameter. -/
+theorem curveVelocity_eq_mfderiv_fst
+    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) :
+    curveVelocity I (fun q ↦ f q t) u =
+      mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t) ((1 : 𝕜), (0 : 𝕜)) :=
+  hf.curveVelocity_comp_mfderiv (g := fun q : 𝕜 ↦ (q, t))
+    ((hasDerivAt_id u).prodMk (hasDerivAt_const u t))
+
+end Surface
 
 /-- The velocity of a reparametrized curve is the velocity of the original curve multiplied by
 the derivative of the reparametrization. -/

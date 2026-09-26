@@ -24,6 +24,9 @@ manifold differential of a function to tangent vectors whose base point varies.
   tangent bundle is `C^m` when `m + 1 ≤ n`.
 * `ContMDiffOn.contMDiffOn_mvfderiv_apply`: the derivative of a `C^n` function along a `C^m`
   vector field is `C^m` on an open set, when `m + 1 ≤ n`.
+* `ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_apply`: the lifted directional derivative
+  `z ↦ (f z, df_z ξ)` of a `C^n` map from an open subset of a normed space into a manifold is
+  `C^m` into the tangent bundle, when `m + 1 ≤ n`.
 
 ## References
 
@@ -136,3 +139,21 @@ theorem ContMDiffOn.contMDiffOn_mvfderiv_apply {f : M → F} {s : Set M}
       = mfderivWithin I 𝓘(𝕜, F) f s y (A y) := by
     exact tangentMapWithin_snd
   rw [hval, mfderivWithin_of_isOpen hs hy, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- **The lifted directional derivative of a `C^(m+1)` map is `C^m`.** If `f` is `C^n` on an open
+set `U` of a normed space and `m + 1 ≤ n`, then for every fixed direction `ξ` the map
+`z ↦ (f z, df_z ξ)` into the tangent bundle is `C^m` on `U`.  This is the bundled derivative
+`ContMDiffOn.contMDiffOn_tangentMapWithin` restricted to the constant section `z ↦ (z, ξ)` of
+`TF = F × F`, with the within-set derivative replaced by the unrestricted one because `U` is
+open. -/
+theorem ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_apply {f : F → M} {U : Set F}
+    (hf : ContMDiffOn 𝓘(𝕜, F) I n f U) (hmn : m + 1 ≤ n) (hU : IsOpen U) (ξ : F) :
+    ContMDiffOn 𝓘(𝕜, F) I.tangent m
+      (fun z ↦ TotalSpace.mk' E (f z) (mfderiv 𝓘(𝕜, F) I f z ξ)) U := by
+  have hconst : ContMDiff 𝓘(𝕜, F) 𝓘(𝕜, F).tangent m
+      (fun z : F ↦ (TotalSpace.mk' F z ξ : TangentBundle 𝓘(𝕜, F) F)) :=
+    (contMDiff_vectorSpace_iff_contDiff (V := fun _ : F ↦ ξ)).2 contDiff_const
+  have hcomp := (hf.contMDiffOn_tangentMapWithin hmn hU.uniqueMDiffOn).comp hconst.contMDiffOn
+    (fun z hz ↦ hz)
+  refine hcomp.congr fun z hz ↦ ?_
+  simp only [Function.comp_apply, tangentMapWithin, mfderivWithin_of_isOpen hU hz]

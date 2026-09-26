@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ParametricIntegral
+public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
@@ -19,6 +20,11 @@ finite or infinite order and with independent domain and codomain universes.
 These results supply the analytic regularity used by smooth Hadamard factorization, a prerequisite
 for the point-derivation/tangent-space equivalence in the Lie groups roadmap.
 
+The file also differentiates a parametrized interval integral `x ↦ ∫ t in a..b, G (x, t)` in a
+real parameter `x` at a point `x₀`, assuming only that `G` is `C¹` on an open set containing the
+compact segment `{x₀} × [a, b]`: the derivative is the integral of the partial derivative of `G`
+in `x`.
+
 ## References
 
 * [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
@@ -30,7 +36,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ContDiff
+open scoped ContDiff Interval
 
 universe u v
 
@@ -140,3 +146,56 @@ theorem contDiff_integral_Icc_of_contDiff
   funext x
   simpa only [Function.comp_apply, eh, ContinuousLinearEquiv.apply_symm_apply] using
     (isoW.integral_comp_comm (μ := volume.restrict (Set.Icc (0 : ℝ) 1)) (fun t ↦ eh x t))
+
+namespace TauCeti
+
+/-- **Differentiation under a parametrized interval integral.** If `G` is `C¹` on an open set
+containing the segment `{x₀} × [a, b]`, then the partial derivative of `G` in the first variable
+is interval integrable along that segment, and `x ↦ ∫ t in a..b, G (x, t)` is differentiable at
+`x₀` with derivative the integral of this partial derivative. -/
+theorem hasDerivAt_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hG : ContDiffOn ℝ 1 G U) {x₀ a b : ℝ}
+    (hsub : {x₀} ×ˢ Set.uIcc a b ⊆ U) :
+    IntervalIntegrable (fun t ↦ fderiv ℝ G (x₀, t) (1, 0)) volume a b ∧
+      HasDerivAt (fun x ↦ ∫ t in a..b, G (x, t))
+        (∫ t in a..b, fderiv ℝ G (x₀, t) (1, 0)) x₀ := by
+  obtain ⟨u, v, huo, hvo, hu, hv, huv⟩ :=
+    generalized_tube_lemma isCompact_singleton isCompact_uIcc hU hsub
+  have hx₀u : x₀ ∈ u := hu (Set.mem_singleton x₀)
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp (huo.mem_nhds hx₀u)
+  have hK : Metric.closedBall x₀ (ε / 2) ×ˢ Set.uIcc a b ⊆ U := fun z hz ↦
+    huv ⟨hball (Metric.closedBall_subset_ball (half_lt_self hε) hz.1), hv hz.2⟩
+  -- the partial derivative in the first variable, continuous on `U`
+  set G' : ℝ × ℝ → F := fun z ↦ fderiv ℝ G z (1, 0)
+  have hG'cont : ContinuousOn G' U :=
+    (hG.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const
+  obtain ⟨C, hC⟩ := ((isCompact_closedBall x₀ (ε / 2)).prod isCompact_uIcc)
+    |>.exists_bound_of_continuousOn (hG'cont.mono hK)
+  have hslice : ∀ {x : ℝ}, x ∈ u → ∀ {W : ℝ × ℝ → F}, ContinuousOn W U →
+      ContinuousOn (fun t ↦ W (x, t)) (Set.uIcc a b) := by
+    intro x hx W hW
+    exact hW.comp
+      (continuous_const.prodMk continuous_id : Continuous fun t : ℝ ↦ (x, t)).continuousOn
+      fun t ht ↦ huv ⟨hx, hv ht⟩
+  have hdiff : ∀ t ∈ Ι a b, ∀ x ∈ Metric.closedBall x₀ (ε / 2),
+      HasDerivAt (fun x ↦ G (x, t)) (G' (x, t)) x := by
+    intro t ht x hx
+    have hz : (x, t) ∈ U := hK ⟨hx, Set.uIoc_subset_uIcc ht⟩
+    have hGz : HasFDerivAt G (fderiv ℝ G (x, t)) (x, t) :=
+      ((hG.differentiableOn one_ne_zero (x, t) hz).differentiableAt (hU.mem_nhds hz)).hasFDerivAt
+    exact hGz.comp_hasDerivAt x ((hasDerivAt_id x).prodMk (hasDerivAt_const x t))
+  refine (intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (μ := volume) (F := fun x t ↦ G (x, t)) (F' := fun x t ↦ G' (x, t))
+    (bound := fun _ ↦ C) (Metric.closedBall_mem_nhds x₀ (half_pos hε)) ?_ ?_ ?_ ?_
+    intervalIntegrable_const ?_)
+  · filter_upwards [huo.mem_nhds hx₀u] with x hx
+    exact ((hslice hx hG.continuousOn).mono Set.uIoc_subset_uIcc).aestronglyMeasurable
+      measurableSet_uIoc
+  · exact (hslice hx₀u hG.continuousOn).intervalIntegrable
+  · exact ((hslice hx₀u hG'cont).mono Set.uIoc_subset_uIcc).aestronglyMeasurable
+      measurableSet_uIoc
+  · exact Filter.Eventually.of_forall fun t ht x hx ↦
+      hC (x, t) ⟨hx, Set.uIoc_subset_uIcc ht⟩
+  · exact Filter.Eventually.of_forall fun t ht x hx ↦ hdiff t ht x hx
+
+end TauCeti
