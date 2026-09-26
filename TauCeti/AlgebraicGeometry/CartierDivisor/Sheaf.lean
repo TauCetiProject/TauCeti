@@ -37,7 +37,8 @@ This file also proves that it is a line bundle.
 * `Scheme.CartierDivisor.sheaf D`, the sheaf `𝒪_X(D)` of `𝒪_X`-modules, with its inclusion
   `Scheme.CartierDivisor.sheafι D : 𝒪_X(D) ⟶ 𝒦_X` (`sheafι_app_mem`, `range_sheafι_app`) and
   the factorization `Scheme.CartierDivisor.sheafLift` through it of a morphism to `𝒦_X` whose
-  sections satisfy the defining condition;
+  sections satisfy the defining condition, an isomorphism when that morphism is injective with
+  image `𝒪_X(D)` (`Scheme.CartierDivisor.isIso_sheafLift`);
 * `Scheme.CartierDivisor.sheafOverIsoOfRestrictEq`: divisors that agree on an open subset `V` have
   isomorphic sheaves over `V`;
 * `Scheme.CartierDivisor.unitIsoSheafPrincipalCartierDivisor`: the sheaf of the principal divisor
@@ -256,6 +257,17 @@ lemma sheafι_app_sheafLift {M : X.Modules} (D : CartierDivisor X)
       Scheme.Modules.Hom.app φ U s :=
   TauCeti.SheafOfModules.liftToSubmodule_val_app_coe D.submodule φ
     (fun V t ↦ hφ V.unop t) (op U) s
+
+/-- A factorization through `𝒪_X(D)` is an isomorphism if its map into rational functions is
+injective on sections and has image exactly the sections of `𝒪_X(D)`. -/
+theorem isIso_sheafLift {M : X.Modules} (D : CartierDivisor X) (φ : M ⟶ rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ D.sections U)
+    (hinj : ∀ U : X.Opens, Function.Injective (Scheme.Modules.Hom.app φ U))
+    (hsurj : ∀ (U : X.Opens) (s : Γ(rationalFunctions X, U)),
+      s ∈ D.sections U → ∃ t, Scheme.Modules.Hom.app φ U t = s) :
+    IsIso (D.sheafLift φ hφ) :=
+  TauCeti.SheafOfModules.isIso_liftToSubmodule _ _ _ (fun U ↦ hinj U.unop)
+    fun U s hs ↦ hsurj U.unop s ((D.submodule_obj U) ▸ hs)
 
 /-- **Divisors agreeing on an open subset have isomorphic sheaves there.** If `D` and `E` have the
 same restriction to `V`, then `𝒪_X(D)` and `𝒪_X(E)` have the same sections over every open
