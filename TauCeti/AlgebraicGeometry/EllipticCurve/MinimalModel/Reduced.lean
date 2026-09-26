@@ -45,9 +45,10 @@ and `3`.
 * `WeierstrassCurve.existsUnique_reducedMinimal`: the reduced minimal equation in the
   variable-change orbit of `E` exists and is unique. The change of variables reaching it is not
   unique: it may be composed with `[-1]`.
-* `WeierstrassCurve.eq_reducedMinimalModel` and `WeierstrassCurve.reducedMinimalModel_smul`: the
-  reduced minimal model is characterised by being reduced minimal and isomorphic to `E`, so it is
-  invariant under a change of variables.
+* `WeierstrassCurve.eq_reducedMinimalModel` and
+  `WeierstrassCurve.VariableChange.reducedMinimalModel_smul`: the reduced minimal model is
+  characterised by being reduced minimal and isomorphic to `E`, so it is invariant under a change
+  of variables.
 * `WeierstrassCurve.IsReducedMinimal.reducedMinimalModel_eq` and
   `WeierstrassCurve.reducedMinimalModel_reducedMinimalModel`: reduced equations are fixed by the
   construction, so it is idempotent.
@@ -106,6 +107,8 @@ theorem exists_variableChange_reduced (W : WeierstrassCurve ℤ) :
   · simpa [variableChange_a₂, sub_add_eq_add_sub] using hr
   · simpa [variableChange_a₃] using ht
 
+namespace VariableChange
+
 /-- A change of variables over `ℤ` between two equations in reduced form fixes the equation:
 it is the identity when `u = 1`, and the negation automorphism when `u = -1`. -/
 theorem smul_eq_self_of_reduced {W : WeierstrassCurve ℤ} (C : VariableChange ℤ)
@@ -139,6 +142,8 @@ theorem smul_eq_self_of_reduced {W : WeierstrassCurve ℤ} (C : VariableChange �
       (by rw [hr, negVariableChange_r]) (by rw [hs, negVariableChange_s])
       (by rw [ht, negVariableChange_t])
     rw [hC, negVariableChange_smul_self]
+
+end VariableChange
 
 /-! ### Existence and uniqueness -/
 
@@ -178,7 +183,7 @@ theorem IsReducedMinimal.eq_of_smul_eq {W₁ W₂ : WeierstrassCurve ℚ} [W₁.
   rw [← e₁] at a₁ a₂ a₃
   rw [← e₂, ← key] at b₁ b₂ b₃
   simp only [baseChange, map_a₁, map_a₂, map_a₃, algebraMap_int_eq, eq_intCast] at a₁ a₂ a₃ b₁ b₂ b₃
-  have := smul_eq_self_of_reduced C₀ (by exact_mod_cast a₁) (by exact_mod_cast a₂)
+  have := VariableChange.smul_eq_self_of_reduced C₀ (by exact_mod_cast a₁) (by exact_mod_cast a₂)
     (by exact_mod_cast a₃) (by exact_mod_cast b₁) (by exact_mod_cast b₂) (by exact_mod_cast b₃)
   rw [← e₁, ← e₂, ← key, this]
 
@@ -199,7 +204,7 @@ theorem existsUnique_reducedMinimal (E : WeierstrassCurve ℚ) [E.IsElliptic] :
 equation in its variable-change orbit. It is characterised by
 `isReducedMinimal_reducedMinimalModel`, `exists_smul_eq_reducedMinimalModel` and
 `eq_reducedMinimalModel`, fixes reduced equations, and depends only on the
-`ℚ`-isomorphism class of `E` (`reducedMinimalModel_smul`). -/
+`ℚ`-isomorphism class of `E` (`VariableChange.reducedMinimalModel_smul`). -/
 noncomputable def reducedMinimalModel (E : WeierstrassCurve ℚ) [E.IsElliptic] :
     WeierstrassCurve ℚ :=
   (exists_isReducedMinimal_smul E).choose • E
@@ -240,6 +245,8 @@ theorem reducedMinimalModel_reducedMinimalModel (E : WeierstrassCurve ℚ) [E.Is
     reducedMinimalModel (reducedMinimalModel E) = reducedMinimalModel E :=
   (isReducedMinimal_reducedMinimalModel E).reducedMinimalModel_eq
 
+namespace VariableChange
+
 /-- **The reduced minimal model is an isomorphism invariant**: it is unchanged by a change of
 variables. -/
 @[simp]
@@ -248,6 +255,8 @@ theorem reducedMinimalModel_smul (C : VariableChange ℚ) (E : WeierstrassCurve 
   obtain ⟨D, hD⟩ := exists_smul_eq_reducedMinimalModel (C • E)
   exact eq_reducedMinimalModel (isReducedMinimal_reducedMinimalModel (C • E)) (D * C)
     (by rw [mul_smul, hD])
+
+end VariableChange
 
 end WeierstrassCurve
 
