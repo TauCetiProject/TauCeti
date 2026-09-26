@@ -122,7 +122,8 @@ theorem norm_logEmbedding_eq_mult_abs_log (hr : rank K = 1) (u : (𝓞 K)ˣ)
 
 /-- In unit rank one, a unit whose absolute value exceeds one at an infinite place has absolute
 value less than one at the other infinite place. -/
-theorem apply_lt_one_of_rank_eq_one (hr : rank K = 1) {w w' : InfinitePlace K} (hne : w' ≠ w)
+theorem lt_one_of_rank_eq_one_of_ne_of_one_lt (hr : rank K = 1) {w w' : InfinitePlace K}
+    (hne : w' ≠ w)
     {v : (𝓞 K)ˣ} (hv : 1 < w v) : w' v < 1 := by
   classical
   have hcard : Fintype.card (InfinitePlace K) = 2 := by

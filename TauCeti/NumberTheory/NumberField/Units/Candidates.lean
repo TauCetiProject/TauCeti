@@ -11,6 +11,7 @@ import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly
+import TauCeti.NumberTheory.NumberField.Units.Basic
 import TauCeti.NumberTheory.NumberField.Units.PrimeDegree
 
 /-!
@@ -33,8 +34,6 @@ in the given field.
 
 * `TauCeti.NumberField.Units.unitCandidates`: the finite set of candidate minimal polynomials,
   characterised by `TauCeti.NumberField.Units.mem_unitCandidates_iff`.
-* `TauCeti.NumberField.Units.coeff_zero_minpoly_eq_one_or_neg_one`: the constant coefficient
-  of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.minpoly_mem_unitCandidates`: completeness of the candidate set at
   unit rank one and prime degree.
 
@@ -110,30 +109,6 @@ theorem mem_unitCandidates_iff (f : ℤ[X]) (B : ℝ) :
             (Module.finrank ℚ K - 1).choose (k - 1) * B + (Module.finrank ℚ K - 1).choose k :=
   Set.Finite.mem_toFinset _
 
-open scoped IntermediateField in
-/-- The constant coefficient of the minimal polynomial of a unit is `±1`. -/
-theorem coeff_zero_minpoly_eq_one_or_neg_one (v : (𝓞 K)ˣ) :
-    (minpoly ℤ (v : 𝓞 K)).coeff 0 = 1 ∨ (minpoly ℤ (v : 𝓞 K)).coeff 0 = -1 := by
-  have hint : IsIntegral ℚ ((v : 𝓞 K) : K) := IsIntegral.of_finite ℚ _
-  -- The norm of `v` from `ℚ(v)` is `±` the constant coefficient, and its norm from `K` is a
-  -- power of that; the latter is a unit of `ℤ`.
-  have hpb := Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly
-    (IntermediateField.adjoin.powerBasis hint)
-  rw [IntermediateField.adjoin.powerBasis_gen, IntermediateField.minpoly_gen,
-    RingOfIntegers.minpoly_rat_coe, coeff_map, eq_intCast] at hpb
-  have hadj := Algebra.norm_eq_norm_adjoin ℚ ((v : 𝓞 K) : K)
-  rw [← Algebra.coe_norm_int, hpb] at hadj
-  have hZ : Algebra.norm ℤ (v : 𝓞 K) =
-      ((-1) ^ (IntermediateField.adjoin.powerBasis hint).dim * (minpoly ℤ (v : 𝓞 K)).coeff 0) ^
-        Module.finrank ℚ⟮((v : 𝓞 K) : K)⟯ K := by
-    exact_mod_cast hadj
-  have hu : IsUnit (((-1) ^ (IntermediateField.adjoin.powerBasis hint).dim *
-      (minpoly ℤ (v : 𝓞 K)).coeff 0) ^ Module.finrank ℚ⟮((v : 𝓞 K) : K)⟯ K) := by
-    rw [← hZ]
-    exact v.isUnit.map (Algebra.norm ℤ)
-  rw [isUnit_pow_iff Module.finrank_pos.ne'] at hu
-  exact Int.isUnit_iff.mp (isUnit_of_mul_isUnit_right hu)
-
 /-- Every unit generating `K` over `ℚ` whose value at a real infinite place lies in `(1, B]`
 has its minimal polynomial in `unitCandidates K B` when the unit rank is one. -/
 theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
@@ -207,7 +182,7 @@ theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
         have hφ' : φ = embedding w := by
           rw [← ComplexEmbedding.involutive_conjugate K φ, hφ, hreal]
         exact hz.1 (DFunLike.congr_fun hφ' _)
-    exact (apply_lt_one_of_rank_eq_one hr hne hw1).le
+    exact (lt_one_of_rank_eq_one_of_ne_of_one_lt hr hne hw1).le
   have hqcoeff : ∀ j, ‖q.coeff j‖ ≤ (n - 1).choose j := fun j => by
     have h := coeff_le_of_roots_le (f := RingHom.id ℂ) (B := 1) j hqmonic
       (by rwa [map_id]) (by rwa [map_id])
