@@ -202,4 +202,20 @@ theorem ExchangeRelations.periodAction_mem_periodPolynomials (hw : Even w)
       periodAction_right_one_add_add_sq hw U ξ P] at h
     exact h.symm
 
+/-- The action of an element satisfying the exchange relations on period polynomials. -/
+noncomputable def ExchangeRelations.periodActionRestrict (hw : Even w)
+    {ξ : R[TraceFormulaMatrixModule n]} (hξ : ExchangeRelations R n ξ) :
+    Module.End R (periodPolynomials R w) :=
+  (periodAction (R := R) hw ξ).restrict fun _ hP ↦
+    hξ.periodAction_mem_periodPolynomials hw hP
+
+/-- The restricted action agrees with the action on homogeneous forms. -/
+@[simp]
+theorem ExchangeRelations.coe_periodActionRestrict_apply (hw : Even w)
+    {ξ : R[TraceFormulaMatrixModule n]} (hξ : ExchangeRelations R n ξ)
+    (P : periodPolynomials R w) :
+    ((hξ.periodActionRestrict hw P : periodPolynomials R w) :
+        homogeneousSubmodule (Fin 2) R w) = periodAction (R := R) hw ξ P :=
+  LinearMap.coe_restrict_apply _ _
+
 end TauCeti.TraceFormulaMatrixModule
