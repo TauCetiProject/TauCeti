@@ -128,19 +128,9 @@ theorem cohomologyClass_map_eq_iff_exists_vertexFixing_algEquiv (f : k →+* l)
     cohomologyClass l G (c.map f) = cohomologyClass l G (c'.map f) ↔
       ∃ φ : skewZigzagQuotient k G c ≃ₐ[k] skewZigzagQuotient k G c',
         ∀ i : V, φ (skewZigzagMk k G c (PathAlgebra.vertexIdempotent k (vertex G i))) =
-          skewZigzagMk k G c' (PathAlgebra.vertexIdempotent k (vertex G i)) := by
-  constructor
-  · intro h
-    have hc : c.IsGaugeEquivalent c' :=
-      (cohomologyClass_map_eq_iff (k := k) (l := l) (f := f.toMonoidHom) (c := c) (c' := c')
-        hf).mp h
-    exact cohomologyClass_eq_iff_exists_vertexFixing_algEquiv.mp
-      (cohomologyClass_eq_iff.mpr hc)
-  · rintro ⟨φ, hφ⟩
-    have hc : cohomologyClass k G c = cohomologyClass k G c' :=
-      cohomologyClass_eq_iff_exists_vertexFixing_algEquiv.mpr ⟨φ, hφ⟩
-    exact (cohomologyClass_map_eq_iff (k := k) (l := l) (f := f.toMonoidHom) (c := c) (c' := c')
-      hf).mpr (cohomologyClass_eq_iff.mp hc)
+          skewZigzagMk k G c' (PathAlgebra.vertexIdempotent k (vertex G i)) :=
+  (cohomologyClass_map_eq_iff (k := k) (l := l) (f := f.toMonoidHom) (c := c) (c' := c')
+    hf).trans isGaugeEquivalent_iff_exists_vertexFixing_algEquiv
 
 end MapAlgebra
 
