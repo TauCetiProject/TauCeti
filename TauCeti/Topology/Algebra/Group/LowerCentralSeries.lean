@@ -50,6 +50,11 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
 
 * `TauCeti.pLowerCentralStep_le_iff`: a closed subgroup contains `pLowerCentralStep p H` exactly
   when it contains the `p`-th powers of `H` and the commutators `⁅H, G⁆`.
+* `TauCeti.normal_of_pLowerCentralStep_le_of_le`: a subgroup between `pLowerCentralStep p R` and
+  `R` is normal.
+* `TauCeti.pLowerCentralStep_subgroupOf_le_ker_iff`: a homomorphism on a closed normal subgroup
+  `R` with closed kernel kills `pLowerCentralStep p R` exactly when it kills `p`-th powers and is
+  invariant under conjugation by `G`.
 * `TauCeti.pLowerCentralSeries_antitone`, `TauCeti.isClosed_pLowerCentralSeries`,
   `TauCeti.pLowerCentralSeries_normal`: the series is descending, closed and normal.
 * `TauCeti.pow_mem_pLowerCentralSeries`, `TauCeti.commutator_pLowerCentralSeries_top_le`,
@@ -154,6 +159,50 @@ instance pLowerCentralStep_normal (H : Subgroup G) [H.Normal] :
 theorem pLowerCentralStep_le {H : Subgroup G} [H.Normal] (hH : IsClosed (H : Set G)) :
     pLowerCentralStep p H ≤ H :=
   (pLowerCentralStep_le_iff hH).mpr ⟨fun _ hx ↦ H.pow_mem hx p, commutator_le_left H ⊤⟩
+
+/-- A subgroup squeezed between `pLowerCentralStep p R` and `R` is normal: it contains the
+commutators `⁅R, G⁆`, hence its own commutators with `G`. -/
+theorem normal_of_pLowerCentralStep_le_of_le {R K : Subgroup G} (hRK : pLowerCentralStep p R ≤ K)
+    (hKR : K ≤ R) : K.Normal :=
+  commutator_top_right_le_iff.mp
+    ((commutator_mono_left hKR).trans ((commutator_le_pLowerCentralStep R).trans hRK))
+
+/-- **Homomorphisms out of `R` that factor through `R ⧸ Rᵖ[R, G]`.** For a closed normal subgroup
+`R` and a homomorphism `φ` on `R` with closed kernel, `φ` kills `pLowerCentralStep p R` exactly when
+it kills the `p`-th powers and is invariant under conjugation by `G`. -/
+theorem pLowerCentralStep_subgroupOf_le_ker_iff {R : Subgroup G} [R.Normal]
+    (hR : IsClosed (R : Set G)) {A : Type*} [Group A] (φ : R →* A)
+    (hφ : IsClosed (φ.ker : Set R)) :
+    (pLowerCentralStep p R).subgroupOf R ≤ φ.ker ↔
+      (∀ r : R, φ r ^ p = 1) ∧ ∀ (g : G) (r : R), φ (MulAut.conjNormal g r) = φ r := by
+  constructor
+  · intro h
+    refine ⟨fun r ↦ ?_, fun g r ↦ ?_⟩
+    · rw [← map_pow]
+      exact h (mem_subgroupOf.mpr (by rw [coe_pow]; exact pow_mem_pLowerCentralStep r.2))
+    · have hmem : ⁅g, (r : G)⁆ ∈ pLowerCentralStep p R := by
+        rw [← commutatorElement_inv]
+        exact (pLowerCentralStep p R).inv_mem (commutator_mem_pLowerCentralStep r.2 g)
+      have hconj : MulAut.conjNormal g r =
+          ⟨⁅g, (r : G)⁆, commutator_le_right ⊤ R (commutator_mem_commutator (mem_top g) r.2)⟩ * r :=
+        Subtype.ext (by simp only [MulAut.conjNormal_apply, coe_mul, commutatorElement_def]; group)
+      rw [hconj, map_mul, MonoidHom.mem_ker.mp (h (mem_subgroupOf.mpr hmem)), one_mul]
+  · rintro ⟨hpow, hconj⟩
+    -- The image of the kernel in `G` is a closed subgroup containing `Rᵖ` and `⁅R, G⁆`.
+    have hK : IsClosed ((φ.ker.map R.subtype : Subgroup G) : Set G) := by
+      rw [coe_map, coe_subtype]
+      exact hR.isClosedMap_subtype_val _ hφ
+    have hle : pLowerCentralStep p R ≤ φ.ker.map R.subtype := by
+      refine (pLowerCentralStep_le_iff hK).mpr ⟨fun x hx ↦ ?_, commutator_le.mpr fun x hx g _ ↦ ?_⟩
+      · exact ⟨⟨x, hx⟩ ^ p, MonoidHom.mem_ker.mpr (by rw [map_pow, hpow]), rfl⟩
+      · have hxg : ⁅x, g⁆ ∈ R := commutator_le_left R ⊤ (commutator_mem_commutator hx (mem_top g))
+        refine ⟨⟨⁅x, g⁆, hxg⟩, MonoidHom.mem_ker.mpr ?_, rfl⟩
+        have : (⟨⁅x, g⁆, hxg⟩ : R) = ⟨x, hx⟩ * MulAut.conjNormal g (⟨x, hx⟩ : R)⁻¹ :=
+          Subtype.ext (by
+            simp only [MulAut.conjNormal_apply, coe_mul, coe_inv, commutatorElement_def]; group)
+        rw [this, map_mul, hconj, map_inv, mul_inv_cancel]
+    refine (comap_mono hle).trans ?_
+    rw [comap_map_eq, ker_subtype, sup_bot_eq]
 
 variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 

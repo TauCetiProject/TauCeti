@@ -12,7 +12,8 @@ import TauCeti.Algebra.Bialgebra.BaseChange
 /-!
 # Characters over an extension of a splitting ring
 
-For a tower `k → L → K`, a commutative `k`-bialgebra split over `L` has the same
+For a tower `k → L → K`, the scalar-tower homomorphism extends characters without any
+splitting assumption. A commutative `k`-bialgebra split over `L` has the same
 characters over `L` and `K`, provided `L` is a domain, `L ⊗[k] A` is torsion-free
 over `L`, and `Spec K` is connected.
 The comparison extends the coefficients of a character, and intertwines compatible
@@ -27,6 +28,29 @@ public section
 open scoped TensorProduct
 
 namespace TauCeti
+
+section Map
+
+variable {k L K A : Type*} [CommSemiring k] [CommSemiring L] [Algebra k L]
+  [CommSemiring K] [Algebra k K] [Algebra L K] [IsScalarTower k L K]
+  [Semiring A] [Bialgebra k A]
+
+/-- Extension of the coefficients of a character through a tower of scalar rings. -/
+noncomputable def groupLikeScalarTowerHom :
+    _root_.GroupLike L (L ⊗[k] A) →* _root_.GroupLike K (K ⊗[k] A) :=
+  (GroupLike.mapEquiv (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k L A K)).toMonoidHom.comp
+    groupLikeBaseChange
+
+/-- The scalar-tower map extends the scalar coefficients of a character. -/
+@[simp]
+theorem val_groupLikeScalarTowerHom (x : _root_.GroupLike L (L ⊗[k] A)) :
+    (groupLikeScalarTowerHom (K := K) x).val =
+      Algebra.TensorProduct.map (IsScalarTower.toAlgHom k L K) (AlgHom.id k A) x.val := by
+  simp only [groupLikeScalarTowerHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    GroupLike.val_mapEquiv, val_groupLikeBaseChange]
+  exact TensorProduct.baseChangeTowerBialgEquiv_one_tmul k L A K x.val
+
+end Map
 
 variable {k L K A : Type*} [CommRing k] [CommRing L] [Algebra k L]
   [CommRing K] [Algebra k K] [Algebra L K] [IsScalarTower k L K]
@@ -51,11 +75,9 @@ theorem val_groupLikeScalarTowerEquiv
     (x : _root_.GroupLike L (L ⊗[k] A)) :
     (groupLikeScalarTowerEquiv (K := K) hspan x).val =
       Algebra.TensorProduct.map (IsScalarTower.toAlgHom k L K) (AlgHom.id k A) x.val := by
-  simp only [groupLikeScalarTowerEquiv, MulEquiv.trans_apply,
-    groupLikeBaseChangeEquiv_apply, GroupLike.val_mapEquiv, val_groupLikeBaseChange]
-  induction x.val using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
-  | tmul a b => simp [Algebra.smul_def]
+  simpa only [groupLikeScalarTowerEquiv, groupLikeScalarTowerHom, MulEquiv.trans_apply,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, groupLikeBaseChangeEquiv_apply] using
+      val_groupLikeScalarTowerHom (K := K) x
 
 /-- Compatible scalar automorphisms commute with extending a character through a tower.
 

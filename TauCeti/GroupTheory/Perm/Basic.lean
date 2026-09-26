@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.PeriodicPts.Defs
+public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 
@@ -19,6 +20,8 @@ periodic orbit, a permutation transported along an injection, the combination of
 permutations transported along injections with disjoint ranges, the fact that a permutation
 is a single cycle on each of its own orbits, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle.
+It also identifies functions invariant under a permutation with functions on its cycle quotient
+(`TauCeti.invariantColouringEquiv`).
 -/
 
 public section
@@ -116,6 +119,42 @@ theorem sameCycle_permCongr {β : Type*} (e : α ≃ β) {x y : α} :
 end Equiv.Perm
 
 namespace TauCeti
+
+open Equiv Equiv.Perm
+
+variable {α σ : Type*}
+
+/-- Colourings fixed by a permutation are exactly the colourings of its cycles. -/
+def invariantColouringEquiv (π : Perm α) :
+    (Quotient (SameCycle.setoid π) → σ) ≃ {f : α → σ // f ∘ π = f} where
+  toFun g := ⟨fun a => g (Quotient.mk _ a), funext fun a =>
+    congrArg g (Quotient.sound (sameCycle_apply_left.mpr (SameCycle.refl π a)))⟩
+  invFun f := Quotient.lift f.1 fun _ _ h =>
+    SameCycle.apply_eq_of_apply_eq h (congrFun f.2)
+  left_inv _ := funext fun c => Quotient.inductionOn c fun _ => rfl
+  right_inv _ := rfl
+
+/-- The colouring corresponding to a map on cycles evaluates at the cycle containing the point. -/
+@[simp]
+theorem invariantColouringEquiv_apply_coe (π : Perm α)
+    (g : Quotient (SameCycle.setoid π) → σ) (a : α) :
+    (invariantColouringEquiv π g : α → σ) a = g (Quotient.mk _ a) :=
+  (rfl)
+
+/-- The map on cycles corresponding to an invariant colouring evaluates at a cycle by evaluating
+the colouring at any point in that cycle. -/
+@[simp]
+theorem invariantColouringEquiv_symm_apply (π : Perm α)
+    (f : {f : α → σ // f ∘ π = f}) (a : α) :
+    (invariantColouringEquiv π).symm f (Quotient.mk _ a) = f.1 a :=
+  congrFun (congrArg Subtype.val ((invariantColouringEquiv π).apply_symm_apply f)) a
+
+/-- Precomposing a function with a permutation preserves the cardinality of each fiber. -/
+theorem card_filter_comp_perm {ι : Type*} [Fintype α] [DecidableEq ι]
+    (f : α → ι) (g : Perm α) (i : ι) :
+    (Finset.univ.filter fun a => f (g a) = i).card =
+      (Finset.univ.filter fun a => f a = i).card :=
+  Finset.card_equiv g fun a => by simp only [Finset.mem_filter, Finset.mem_univ, true_and]
 
 /-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
 image of the other. -/

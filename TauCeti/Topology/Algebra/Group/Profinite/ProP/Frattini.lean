@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Algebra.Module.ZMod
-public import Mathlib.GroupTheory.Commutator.Basic
+public import Mathlib.GroupTheory.Abelianization.Defs
 public import TauCeti.GroupTheory.ExponentPrime
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
@@ -58,6 +58,9 @@ and total disconnectedness are assumed exactly where they are used.
   prime `p`.
 * `TauCeti.proPFrattini_le_iff`: for a profinite `G`, a closed normal subgroup contains
   `proPFrattini p G` exactly when its quotient is elementary abelian.
+* `TauCeti.proPFrattini_le_ker_of_exponent_dvd`: for a profinite `G`, the pro-`p` Frattini
+  subgroup lies in the kernel of every homomorphism with closed kernel to a commutative group of
+  exponent dividing `p`.
 * `TauCeti.map_proPFrattini_eq_of_surjective` and `TauCeti.comap_proPFrattini_eq_of_surjective`:
   a continuous surjection of profinite groups carries the pro-`p` Frattini subgroup onto the
   pro-`p` Frattini subgroup, and the preimage of the latter is the former joined with the kernel.
@@ -284,6 +287,19 @@ theorem proPFrattini_le_iff (hp : p.Prime) (K : Subgroup G) [K.Normal]
       rw [SetLike.mem_coe, ← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
       exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hexp _
     · exact Subgroup.Normal.quotient_commutative_iff_commutator_le.mp hcomm
+
+/-- For a profinite group `G` and a prime `p`, the pro-`p` Frattini subgroup lies in the kernel of
+every homomorphism with closed kernel to a commutative group of exponent dividing `p`; for
+instance, of every continuous homomorphism to a discrete elementary abelian `p`-group. -/
+theorem proPFrattini_le_ker_of_exponent_dvd (hp : p.Prime) {A : Type*} [CommGroup A]
+    (f : G →* A) (hf : IsClosed (f.ker : Set G)) (hA : Monoid.exponent A ∣ p) :
+    proPFrattini p G ≤ f.ker := by
+  rw [proPFrattini_eq_topologicalClosure hp]
+  refine Subgroup.topologicalClosure_minimal _
+    (sup_le ((Subgroup.closure_le _).mpr ?_) (Abelianization.commutator_subset_ker f)) hf
+  rintro _ ⟨g, rfl⟩
+  rw [SetLike.mem_coe, MonoidHom.mem_ker, map_pow]
+  exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hA _
 
 /-- The pro-`p` Frattini subgroup of a profinite group is trivial exactly when the group is
 already commutative of exponent dividing `p`, that is an `𝔽_p`-vector space. -/

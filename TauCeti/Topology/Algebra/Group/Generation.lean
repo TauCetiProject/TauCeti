@@ -38,6 +38,8 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
   `TauCeti.IsTopologicallyFinitelyGenerated.of_surjective`,
   `TauCeti.IsTopologicallyFinitelyGenerated.quotient`: topological finite generation passes along
   continuous homomorphisms with dense range, along continuous surjections, and to quotients.
+* `TauCeti.topologicalClosure_closure_sup_eq_top_iff`: a subset together with a normal subgroup
+  `K` topologically generates `G` exactly when its image topologically generates `G ⧸ K`.
 * `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup_of_finiteIndex`,
   `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup`: topological finite generation
   passes to open finite-index subgroups, in particular to open subgroups of compact groups.
@@ -132,6 +134,24 @@ theorem IsTopologicallyFinitelyGenerated.of_surjective
 theorem IsTopologicallyFinitelyGenerated.quotient (hG : IsTopologicallyFinitelyGenerated G)
     (N : Subgroup G) [N.Normal] : IsTopologicallyFinitelyGenerated (G ⧸ N) :=
   hG.of_surjective QuotientGroup.continuous_mk (QuotientGroup.mk'_surjective N)
+
+/-- **Generation modulo a normal subgroup.** A subset `s` together with a normal subgroup `K`
+topologically generates `G` exactly when the image of `s` topologically generates the quotient
+`G ⧸ K`. Neither compactness of `G` nor closedness of `K` is needed: the quotient map is open, so
+it exchanges preimages and closures. -/
+theorem topologicalClosure_closure_sup_eq_top_iff {s : Set G} {K : Subgroup G} [K.Normal] :
+    (Subgroup.closure s ⊔ K).topologicalClosure = ⊤ ↔
+      (Subgroup.closure (QuotientGroup.mk' K '' s)).topologicalClosure = ⊤ := by
+  -- `closure s ⊔ K` is the preimage of the image of `closure s`, and the quotient map is open, so
+  -- the closure of that preimage is the preimage of the closure; the map is onto, so a preimage
+  -- is everything exactly when the set is.
+  have hcomap : (Subgroup.closure (QuotientGroup.mk' K '' s)).comap (QuotientGroup.mk' K) =
+      Subgroup.closure s ⊔ K := by
+    rw [← MonoidHom.map_closure, Subgroup.comap_map_eq, QuotientGroup.ker_mk']
+  simp only [← Subgroup.coe_eq_univ, Subgroup.topologicalClosure_coe]
+  rw [← hcomap, Subgroup.coe_comap, QuotientGroup.coe_mk',
+    ← QuotientGroup.isOpenMap_coe.preimage_closure_eq_closure_preimage QuotientGroup.continuous_mk,
+    Set.preimage_eq_univ_iff, QuotientGroup.mk_surjective.range_eq, Set.univ_subset_iff]
 
 /-- An open finite-index subgroup of a topologically finitely generated group is topologically
 finitely generated. -/
