@@ -60,8 +60,9 @@ finite place and the sign at a real place; both are proved here.
   exactly `1` at a finite place is a nonsquare in the completion at that place.
 * `TauCeti.valuation_eq_exp_neg_one_iff_adicOrd`: the same "valuation exactly `1`" condition in
   the additive `adicOrd` form.
-* `TauCeti.exists_hilbertSymbol_eq_neg_one_atRealPlace`: two negative global units at a real place
-  have symbol `-1` there, the archimedean half of step 4 of Layer 4.4.
+* `TauCeti.exists_hilbertSymbol_eq_neg_one_atRealPlace`: a *prescribed* negative global unit at a
+  real place has a negative partner with symbol `-1` there, the archimedean half of step 4 of
+  Layer 4.4.
 * `TauCeti.exists_fieldUnit_negative_at`: a global unit which is negative at every real place of a
   prescribed finite set, the real-place half of the sign prescription of O'Meara 71:19.
 * `TauCeti.isSquare_unitAtFinitePlace_one`: the counterexample that fixes the value-group
@@ -246,17 +247,21 @@ theorem valuation_eq_exp_neg_one_iff_adicOrd (v : HeightOneSpectrum (𝒪 K)) (x
     rw [h, WithZero.log_exp, neg_neg]
 
 omit [NumberField K] in
-/-- **A negative global unit at a real place has a partner with symbol `-1`.**  This is the
-archimedean half of step 4 of Layer 4.4, in the form it needs: the symbol is produced from two
-global units read through the real place, so that it can be multiplied with the symbols at the
-other places of the prescribed set. -/
-theorem exists_hilbertSymbol_eq_neg_one_atRealPlace (w : {w : InfinitePlace K // w.IsReal}) :
-    ∃ a b : Kˣ, embedding_of_isReal w.2 (a : K) < 0 ∧
-      embedding_of_isReal w.2 (b : K) < 0 ∧
+/-- **A prescribed negative global unit at a real place has a partner with symbol `-1`.**  This is
+the archimedean half of step 4 of Layer 4.4, in the form it needs: given the element `b` whose
+local nonsquareness the sign prescription presupposes, there is a global unit `a` whose symbol with
+`b` at `w` is `-1`, and `a` is negative there.  Both operands are read through the real place, so
+that the symbol can be multiplied with the symbols at the other places of the prescribed set.
+
+`a = -1` works because a real place is local, so `(-1, b) = -1` there exactly when `b` is
+negative.  This is the step that turns the prescribed element into a local non-norm. -/
+theorem exists_hilbertSymbol_eq_neg_one_atRealPlace (w : {w : InfinitePlace K // w.IsReal})
+    (b : Kˣ) (hb : embedding_of_isReal w.2 (b : K) < 0) :
+    ∃ a : Kˣ, embedding_of_isReal w.2 (a : K) < 0 ∧
       hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = -1 :=
-  ⟨-1, -1, by simp, by simp, by
+  ⟨-1, by simp, by
       rw [hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
-      norm_num⟩
+      norm_num [hb]⟩
 
 /-- **A global unit which is negative at every real place of a prescribed finite set.**
 
