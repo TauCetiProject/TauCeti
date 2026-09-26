@@ -112,7 +112,7 @@ variable [Fintype ι] [AddZeroClass A] [DecidableEq A]
 
 /-- The **weight of a sum**. Coordinates in the support of both words are counted twice on the
 right, and the coordinates at which `y` cancels `x` are lost from the support of `x + y`. -/
-theorem hammingNorm_add_add_ncard_inter_add_ncard_diff (x y : ι → A) :
+theorem hammingNorm_add_add_ncard_inter_add_ncard_sdiff (x y : ι → A) :
     hammingNorm (x + y) + (support x ∩ support y).ncard + (support x \ support (x + y)).ncard =
       hammingNorm x + hammingNorm y := by
   -- Every coordinate in the support of `x` or `y` either survives in `x + y` or is a coordinate
@@ -130,7 +130,7 @@ theorem hammingNorm_add_add_ncard_inter_add_ncard_diff (x y : ι → A) :
 /-- Hamming weight is subadditive. -/
 theorem hammingNorm_add_le (x y : ι → A) :
     hammingNorm (x + y) ≤ hammingNorm x + hammingNorm y := by
-  have := hammingNorm_add_add_ncard_inter_add_ncard_diff x y
+  have := hammingNorm_add_add_ncard_inter_add_ncard_sdiff x y
   omega
 
 /-- Words with disjoint supports have additive Hamming weight. -/
@@ -140,7 +140,7 @@ theorem hammingNorm_add_of_disjoint {x y : ι → A} (h : Disjoint (support x) (
     refine Set.sdiff_eq_empty.mpr fun i hi ↦ ?_
     have hy : y i = 0 := Function.notMem_support.mp (Set.disjoint_left.mp h hi)
     simpa [hy] using hi
-  have := hammingNorm_add_add_ncard_inter_add_ncard_diff x y
+  have := hammingNorm_add_add_ncard_inter_add_ncard_sdiff x y
   rw [h.inter_eq, hdiff, Set.ncard_empty] at this
   omega
 
