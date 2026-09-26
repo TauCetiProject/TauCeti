@@ -71,7 +71,8 @@ theorem finrank_code (a : F) : Module.finrank F (code a) = 1 := by
 
 /-- The displayed parity-check matrix cuts out exactly the generated code. -/
 @[simp]
-theorem checkedBy_check (a : F) : Submodule.euclideanDual (check a).generatedBy = code a := by
+theorem euclideanDual_generatedBy_check (a : F) :
+    Submodule.euclideanDual (check a).generatedBy = code a := by
   rw [← Matrix.checkedBy_eq_euclideanDual_generatedBy]
   simpa only [generator, check, code] using
     (Matrix.generatedBy_one_fromCols_eq_checkedBy_fromCols_neg_transpose_one
@@ -81,7 +82,7 @@ theorem checkedBy_check (a : F) : Submodule.euclideanDual (check a).generatedBy 
 @[simp]
 theorem mem_code_iff (a : F) (x : Fin 1 ⊕ Fin 1 → F) :
     x ∈ code a ↔ x (Sum.inr 0) = a * x (Sum.inl 0) := by
-  rw [← checkedBy_check, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
+  rw [← euclideanDual_generatedBy_check, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
     Matrix.mem_checkedBy_iff]
   have hentry : (check a *ᵥ x) 0 = -(a * x (Sum.inl 0)) + x (Sum.inr 0) := by
     simp [check, Matrix.mulVec, dotProduct, Matrix.transpose]
