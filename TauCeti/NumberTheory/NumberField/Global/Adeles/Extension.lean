@@ -37,6 +37,15 @@ under base change and norm.
   in `K_∞`.
 * `NumberField.infiniteAdeleExtension_comp`, `NumberField.adeleExtension_comp`: for a number field
   `K`, the extension maps compose in towers.
+* `NumberField.infiniteAdeleExtensionAlgebra`, `NumberField.adeleExtensionAlgebra`: the induced
+  algebra structures, available in the corresponding scopes.
+
+## Provenance
+
+These maps follow the FLT project's adele base-change construction
+(`github.com/ImperialCollegeLondon/FLT`, `FLT/NumberField/InfiniteAdeleRing.lean` and
+`FLT/NumberField/AdeleRing.lean`; Kevin Buzzard et al., Apache-2.0).
+The finite component is described more specifically in `FiniteAdeleRing/Extension.lean`.
 -/
 
 public section
@@ -52,12 +61,9 @@ variable (K L : Type*) [Field K] [Field L] [Algebra K L]
 /-- The extension map of infinite adele rings along `L / K`: the component at an infinite place `w`
 of `L` is the image of the component at `w.comap (algebraMap K L)` under the completion map
 `K_{w.comap (algebraMap K L)} → L_w`. -/
-noncomputable def infiniteAdeleExtension : InfiniteAdeleRing K →+* InfiniteAdeleRing L where
-  toFun x w := LiesOver.completionMap (x (w.comap (algebraMap K L)))
-  map_one' := funext fun _ ↦ map_one LiesOver.completionMap
-  map_mul' _ _ := funext fun _ ↦ map_mul LiesOver.completionMap _ _
-  map_zero' := funext fun _ ↦ map_zero LiesOver.completionMap
-  map_add' _ _ := funext fun _ ↦ map_add LiesOver.completionMap _ _
+noncomputable def infiniteAdeleExtension : InfiniteAdeleRing K →+* InfiniteAdeleRing L :=
+  RingHom.pi fun w ↦
+    LiesOver.completionMap.comp (Pi.evalRingHom _ (w.comap (algebraMap K L)))
 
 variable {K L} in
 /-- The component of `infiniteAdeleExtension K L x` at `w` is the image of the component of `x` at
@@ -80,6 +86,7 @@ theorem infiniteAdeleExtension_algebraMap (x : K) :
   funext w
   rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply,
     InfiniteAdeleRing.algebraMap_apply, LiesOver.completionMap_coe]
+  -- These `WithAbs` lemmas identify the underlying type synonyms on the two sides.
   simp only [WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply]
 
 /-- For a number field `K`, `infiniteAdeleExtension` is the only continuous ring homomorphism of
@@ -101,6 +108,25 @@ theorem infiniteAdeleExtension_comp [NumberField K] (M : Type*) [Field M] [Algeb
     ((continuous_infiniteAdeleExtension L M).comp (continuous_infiniteAdeleExtension K L))
     fun x ↦ by simp [← IsScalarTower.algebraMap_apply]
 
+/-- The algebra structure on infinite adeles induced by `infiniteAdeleExtension`, available in
+the `InfiniteAdeleExtension` scope. -/
+@[reducible]
+noncomputable def infiniteAdeleExtensionAlgebra :
+    Algebra (InfiniteAdeleRing K) (InfiniteAdeleRing L) :=
+  (infiniteAdeleExtension K L).toAlgebra
+
+scoped[InfiniteAdeleExtension] attribute [instance]
+  NumberField.infiniteAdeleExtensionAlgebra
+
+open scoped InfiniteAdeleExtension
+
+/-- The algebra map of `infiniteAdeleExtensionAlgebra` is the infinite extension map. -/
+@[simp]
+theorem algebraMap_infiniteAdeleExtensionAlgebra :
+    algebraMap (InfiniteAdeleRing K) (InfiniteAdeleRing L) =
+      infiniteAdeleExtension K L :=
+  RingHom.algebraMap_toAlgebra _
+
 end Infinite
 
 section Adele
@@ -113,12 +139,8 @@ variable (R K B L : Type*) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra 
 /-- The extension map of adele rings along an integral extension `B / R` of Dedekind domains with
 fraction fields `L / K`: `infiniteAdeleExtension` on the infinite component and
 `finiteAdeleExtension` on the finite component. -/
-noncomputable def adeleExtension : AdeleRing R K →+* AdeleRing B L where
-  toFun a := (infiniteAdeleExtension K L a.1, finiteAdeleExtension R K B L a.2)
-  map_one' := Prod.ext (map_one _) (map_one _)
-  map_mul' _ _ := Prod.ext (map_mul _ _ _) (map_mul _ _ _)
-  map_zero' := Prod.ext (map_zero _) (map_zero _)
-  map_add' _ _ := Prod.ext (map_add _ _ _) (map_add _ _ _)
+noncomputable def adeleExtension : AdeleRing R K →+* AdeleRing B L :=
+  (infiniteAdeleExtension K L).prodMap (finiteAdeleExtension R K B L)
 
 variable {R K B L} in
 /-- The infinite component of `adeleExtension R K B L a` is the infinite extension of the infinite
@@ -139,21 +161,18 @@ theorem adeleExtension_snd (a : AdeleRing R K) :
 /-- The extension map of adele rings is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_adeleExtension : Continuous (adeleExtension R K B L) :=
-  ((continuous_infiniteAdeleExtension K L).comp continuous_fst).prodMk
-    ((continuous_finiteAdeleExtension R K B L).comp continuous_snd)
+  (continuous_infiniteAdeleExtension K L).prodMap
+    (continuous_finiteAdeleExtension R K B L)
 
 /-- The extension map of adele rings extends `K → L` along the diagonal embeddings. -/
 @[simp]
 theorem adeleExtension_algebraMap (x : K) :
     adeleExtension R K B L (algebraMap K (AdeleRing R K) x) =
       algebraMap L (AdeleRing B L) (algebraMap K L x) := by
-  -- `AdeleRing R K` is the product `K_∞ × 𝔸_K^∞` and `K` embeds diagonally into it, so the
-  -- components of `algebraMap K (AdeleRing R K) x` are the diagonal embeddings of `x` into the two
-  -- factors by definition.
   refine Prod.ext ?_ ?_
-  · rw [adeleExtension_fst]
+  · rw [adeleExtension_fst, AdeleRing.algebraMap_fst, AdeleRing.algebraMap_fst]
     exact infiniteAdeleExtension_algebraMap K L x
-  · rw [adeleExtension_snd]
+  · rw [adeleExtension_snd, AdeleRing.algebraMap_snd, AdeleRing.algebraMap_snd]
     exact finiteAdeleExtension_algebraMap R K B L x
 
 /-- For a number field `K`, the extension maps of adele rings compose in a tower `K ⊆ L ⊆ M`. -/
@@ -169,6 +188,22 @@ theorem adeleExtension_comp [NumberField K] (C M : Type*) [CommRing C] [IsDedeki
     exact RingHom.congr_fun (infiniteAdeleExtension_comp K L M) a.1
   · simp only [RingHom.comp_apply, adeleExtension_snd]
     exact RingHom.congr_fun (finiteAdeleExtension_comp R K B L C M) a.2
+
+/-- The algebra structure on adeles induced by `adeleExtension`, available in the
+`AdeleExtension` scope. -/
+@[reducible]
+noncomputable def adeleExtensionAlgebra : Algebra (AdeleRing R K) (AdeleRing B L) :=
+  (adeleExtension R K B L).toAlgebra
+
+scoped[AdeleExtension] attribute [instance] NumberField.adeleExtensionAlgebra
+
+open scoped AdeleExtension
+
+/-- The algebra map of `adeleExtensionAlgebra` is the adele extension map. -/
+@[simp]
+theorem algebraMap_adeleExtensionAlgebra :
+    algebraMap (AdeleRing R K) (AdeleRing B L) = adeleExtension R K B L :=
+  RingHom.algebraMap_toAlgebra _
 
 end Adele
 

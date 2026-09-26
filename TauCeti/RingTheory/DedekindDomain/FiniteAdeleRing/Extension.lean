@@ -31,6 +31,15 @@ instance under base change and norm.
 * `IsDedekindDomain.eq_finiteAdeleExtension_of_continuous`: it is the only continuous ring
   homomorphism with that property, because `K` is dense in its finite adeles.
 * `IsDedekindDomain.finiteAdeleExtension_comp`: the extension maps compose in towers.
+* `IsDedekindDomain.finiteAdeleExtensionAlgebra`: the induced algebra structure, available in the
+  `FiniteAdeleExtension` scope.
+
+## Provenance
+
+The placewise construction follows the FLT project's finite-adele base change
+(`FLT/DedekindDomain/FiniteAdeleRing/BaseChange.lean`, `FiniteAdeleRing.mapRingHom` and its
+continuity lemma; Kevin Buzzard et al., Apache-2.0). The uniqueness proof here uses strong
+approximation, and the tower lemma follows from that uniqueness.
 -/
 
 public section
@@ -44,18 +53,34 @@ variable (R K B L : Type*) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra 
   [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L] [Algebra B L] [IsFractionRing B L]
   [IsScalarTower R B L]
 
+omit [IsFractionRing B L] in
+include K L in
+/-- Contraction of height-one primes tends to cofinite when `K` and `L` are the fraction fields
+of `R` and `B`. -/
+theorem tendsto_under_cofinite_of_isFractionRing :
+    Filter.Tendsto (HeightOneSpectrum.under R : HeightOneSpectrum B → HeightOneSpectrum R)
+      cofinite cofinite := by
+  have := FaithfulSMul.of_field_isFractionRing R B K L
+  exact HeightOneSpectrum.tendsto_under_cofinite R B
+
+/-- The local extension maps preserve the integer subrings needed for the restricted product. -/
+theorem eventually_mapsTo_adicCompletionExtension :
+    ∀ᶠ w : HeightOneSpectrum B in cofinite,
+      Set.MapsTo (HeightOneSpectrum.adicCompletionExtension K L (w.under R) w)
+        (HeightOneSpectrum.adicCompletionIntegers K (w.under R))
+        (HeightOneSpectrum.adicCompletionIntegers L w) :=
+  Eventually.of_forall fun w x hx ↦
+    HeightOneSpectrum.adicCompletionExtension_mem_adicCompletionIntegers K L (w.under R) w
+      ⟨x, hx⟩
+
 /-- The extension map of finite adele rings along an integral extension `B / R` of Dedekind
 domains: the component at a height-one prime `w` of `B` is the image of the component at
 `w.under R` under the completion map `K_{w.under R} → L_w`. -/
 noncomputable def finiteAdeleExtension : FiniteAdeleRing R K →+* FiniteAdeleRing B L :=
   RestrictedProduct.mapAlongRingHom _ _ (HeightOneSpectrum.under R)
-    (by
-      have := FaithfulSMul.of_field_isFractionRing R B K L
-      exact HeightOneSpectrum.tendsto_under_cofinite R B)
+    (tendsto_under_cofinite_of_isFractionRing R K B L)
     (fun w ↦ HeightOneSpectrum.adicCompletionExtension K L (w.under R) w)
-    (Eventually.of_forall fun w x hx ↦
-      HeightOneSpectrum.adicCompletionExtension_mem_adicCompletionIntegers K L (w.under R) w
-        ⟨x, hx⟩)
+    (eventually_mapsTo_adicCompletionExtension R K B L)
 
 variable {R K B L} in
 /-- The component of `finiteAdeleExtension R K B L a` at `w` is the image of the component of `a`
@@ -69,13 +94,11 @@ theorem finiteAdeleExtension_apply (a : FiniteAdeleRing R K) (w : HeightOneSpect
 /-- The extension map of finite adele rings is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_finiteAdeleExtension : Continuous (finiteAdeleExtension R K B L) := by
+  -- `mapAlongRingHom` is definitionally `mapAlong` on functions.
   apply RestrictedProduct.mapAlong_continuous
   case φ_cont => exact fun w ↦ HeightOneSpectrum.continuous_adicCompletionExtension K L _ w
-  case hφ => exact Eventually.of_forall fun w x hx ↦
-    HeightOneSpectrum.adicCompletionExtension_mem_adicCompletionIntegers K L _ w ⟨x, hx⟩
-  case hf =>
-    have := FaithfulSMul.of_field_isFractionRing R B K L
-    exact HeightOneSpectrum.tendsto_under_cofinite R B
+  case hφ => exact eventually_mapsTo_adicCompletionExtension R K B L
+  case hf => exact tendsto_under_cofinite_of_isFractionRing R K B L
 
 /-- The extension map of finite adele rings extends `K → L` along the diagonal embeddings. -/
 @[simp]
@@ -107,5 +130,24 @@ theorem finiteAdeleExtension_comp (C M : Type*) [CommRing C] [IsDedekindDomain C
   eq_finiteAdeleExtension_of_continuous R K C M
     ((continuous_finiteAdeleExtension B L C M).comp (continuous_finiteAdeleExtension R K B L))
     fun x ↦ by simp [← IsScalarTower.algebraMap_apply]
+
+/-- The algebra structure on finite adeles induced by `finiteAdeleExtension`, available in the
+`FiniteAdeleExtension` scope. -/
+@[reducible]
+noncomputable def finiteAdeleExtensionAlgebra :
+    Algebra (FiniteAdeleRing R K) (FiniteAdeleRing B L) :=
+  (finiteAdeleExtension R K B L).toAlgebra
+
+scoped[FiniteAdeleExtension] attribute [instance]
+  IsDedekindDomain.finiteAdeleExtensionAlgebra
+
+open scoped FiniteAdeleExtension
+
+/-- The algebra map of `finiteAdeleExtensionAlgebra` is the finite extension map. -/
+@[simp]
+theorem algebraMap_finiteAdeleExtensionAlgebra :
+    algebraMap (FiniteAdeleRing R K) (FiniteAdeleRing B L) =
+      finiteAdeleExtension R K B L :=
+  RingHom.algebraMap_toAlgebra _
 
 end IsDedekindDomain
