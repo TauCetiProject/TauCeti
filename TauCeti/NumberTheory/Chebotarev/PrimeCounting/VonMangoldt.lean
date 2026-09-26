@@ -35,6 +35,7 @@ their contribution is `o(x)`.
 
 * `NumberField.Chebotarev.frobeniusPsi_eq_sum_range`: `frobeniusPsi` is the inclusive partial sum
   of `frobeniusVonMangoldtCoeff`.
+* `NumberField.Chebotarev.frobeniusPsi_eq_sum_Icc`: the same sum indexed from `1`.
 * `NumberField.Chebotarev.frobeniusPsi_sub_frobeniusTheta_eq_primePowerSummatory`: their
   difference is exactly the contribution from exponents at least two.
 * `NumberField.Chebotarev.frobeniusPsi_sub_frobeniusTheta_le`: that difference is bounded by
@@ -318,6 +319,15 @@ theorem frobeniusPsi_eq_sum_range (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
       (fun _ hI ↦ frobeniusVonMangoldtWeight_eq_zero_of_not_isPrimePow C hI),
     idealSummatory_eq_sum_range_normFiber]
   exact Finset.sum_congr rfl fun n _ ↦ (frobeniusVonMangoldtCoeff_apply C n).symm
+
+/-- Frobenius `ψ` is the sum of its von Mangoldt coefficients indexed from `1`. -/
+theorem frobeniusPsi_eq_sum_Icc (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+    frobeniusPsi K L C x =
+      ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, frobeniusVonMangoldtCoeff K L C n := by
+  rw [frobeniusPsi_eq_sum_range, Nat.range_succ_eq_Icc_zero,
+    ← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le ⌊x⌋₊), Finset.sum_insert (by simp),
+    frobeniusVonMangoldtCoeff_eq_zero_of_not_isPrimePow _ not_isPrimePow_zero, zero_add]
+  simp only [zero_add]
 
 /-- The gap between the Frobenius `ψ` and `ϑ` functions is exactly the sum of the higher
 prime-power weight over the `C`-fibre. -/
