@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Basic
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Maps between compactified Fuchsian quotients
@@ -29,67 +30,24 @@ namespace Subgroup
 
 variable {Δ Γ Θ : Subgroup PSL(2, ℝ)}
 
-/-- An inclusion of projective subgroups sends an orbit in the upper half-plane to the
-corresponding orbit of the larger group. -/
-def coarseQuotientMap (h : Δ ≤ Γ) : orbitRel.Quotient Δ ℍ → orbitRel.Quotient Γ ℍ :=
-  Quotient.map' id fun _ _ hab ↦ by
-    obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp hab)
-    exact orbitRel_apply.mpr (mem_orbit_iff.mpr ⟨⟨g, h g.property⟩, hg⟩)
-
-@[simp]
-theorem coarseQuotientMap_mk (h : Δ ≤ Γ) (z : ℍ) :
-    coarseQuotientMap h (Quotient.mk _ z) = Quotient.mk _ z :=
-  Quotient.map'_mk _ _ _
-
-/-- The orbit map induced by a subgroup inclusion is continuous. -/
-theorem continuous_coarseQuotientMap (h : Δ ≤ Γ) : Continuous (coarseQuotientMap h) :=
-  continuous_id.quotient_map' _
-
-/-- An inclusion of projective subgroups sends a boundary orbit to the corresponding orbit
-of the larger group. -/
-def boundaryOrbitMap (h : Δ ≤ Γ) : Δ.BoundaryOrbit → Γ.BoundaryOrbit :=
-  Quotient.map' id fun _ _ hab ↦ by
-    obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp hab)
-    exact orbitRel_apply.mpr (mem_orbit_iff.mpr ⟨⟨g, h g.property⟩, hg⟩)
-
-@[simp]
-theorem boundaryOrbitMap_mk (h : Δ ≤ Γ) (c : OnePoint ℝ) :
-    boundaryOrbitMap h (Quotient.mk'' c) = Quotient.mk'' c :=
-  Quotient.map'_mk _ _ _
-
-/-- The map on boundary orbits is continuous. -/
-theorem continuous_boundaryOrbitMap (h : Δ ≤ Γ) : Continuous (boundaryOrbitMap h) :=
-  continuous_id.quotient_map' _
-
-@[simp]
-theorem boundaryOrbitMap_id : boundaryOrbitMap (le_refl Δ) = id := by
-  funext C
-  induction C using Quotient.inductionOn with
-  | h c => simp
-
-theorem boundaryOrbitMap_comp (h : Δ ≤ Γ) (k : Γ ≤ Θ) :
-    boundaryOrbitMap k ∘ boundaryOrbitMap h = boundaryOrbitMap (h.trans k) := by
-  funext C
-  induction C using Quotient.inductionOn with
-  | h c => simp
-
 /-- The map on boundary orbits restricts to cusp orbits, since a parabolic element of `Δ`
 is also an element of `Γ`. -/
 def cuspOrbitMap (h : Δ ≤ Γ) : Δ.CuspOrbit → Γ.CuspOrbit :=
-  fun C ↦ ⟨boundaryOrbitMap h C, by
+  fun C ↦ ⟨Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le
+    (X := OnePoint ℝ) h) C, by
     have hc : Δ.IsCuspPoint C.val.out :=
       (isCuspOrbit_mk_iff _).mp (by simpa only [Quotient.out_eq] using C.property)
     have hcΓ : Γ.IsCuspOrbit (Quotient.mk'' C.val.out) :=
       (isCuspOrbit_mk_iff _).mpr (hc.mono h)
     have heq : Quotient.mk'' C.val.out = C.val := Quotient.out_eq _
-    rw [← heq, boundaryOrbitMap_mk]
+    rw [← heq, TauCeti.Setoid.map_of_le_mk]
     exact hcΓ⟩
 
 @[simp]
 theorem cuspOrbitMap_cuspOrbitMk (h : Δ ≤ Γ) (c : Δ.cuspPoints) :
     cuspOrbitMap h (Δ.cuspOrbitMk c) =
       Γ.cuspOrbitMk ⟨c, mem_cuspPoints.mpr ((mem_cuspPoints.mp c.property).mono h)⟩ :=
-  Subtype.ext (by simp only [cuspOrbitMap, cuspOrbitMk_val, boundaryOrbitMap_mk])
+  Subtype.ext (by simp only [cuspOrbitMap, cuspOrbitMk_val, TauCeti.Setoid.map_of_le_mk])
 
 /-- A normalized cusp datum maps to the cusp orbit of the same boundary point in the larger
 group. -/
@@ -97,32 +55,27 @@ theorem cuspOrbitMap_cuspOrbit (h : Δ ≤ Γ) (D : Δ.CuspDatum) :
     cuspOrbitMap h D.cuspOrbit =
       Γ.cuspOrbitMk ⟨D.cusp, mem_cuspPoints.mpr (D.isCuspPoint.mono h)⟩ := by
   apply Subtype.ext
-  simp only [cuspOrbitMap, D.cuspOrbit_val, cuspOrbitMk_val, boundaryOrbitMap_mk]
+  simp only [cuspOrbitMap, D.cuspOrbit_val, cuspOrbitMk_val, TauCeti.Setoid.map_of_le_mk]
 
 /-- An inclusion of projective subgroups induces a map on their compactified
 quotients, agreeing with the ordinary orbit map away from the cusps. -/
 def compactifiedQuotientMap (h : Δ ≤ Γ) :
     Δ.CompactifiedQuotient → Γ.CompactifiedQuotient
-  | .ofQuotient p => .ofQuotient (coarseQuotientMap h p)
+  | .ofQuotient p => .ofQuotient (Setoid.map_of_le
+      (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) p)
   | .ofCusp C => .ofCusp (cuspOrbitMap h C)
 
 @[simp]
 theorem compactifiedQuotientMap_ofQuotient (h : Δ ≤ Γ) (p : orbitRel.Quotient Δ ℍ) :
     compactifiedQuotientMap h (.ofQuotient p) =
-      .ofQuotient (coarseQuotientMap h p) :=
+      .ofQuotient (Setoid.map_of_le
+        (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) p) :=
   (rfl)
 
 @[simp]
 theorem compactifiedQuotientMap_ofCusp (h : Δ ≤ Γ) (C : Δ.CuspOrbit) :
     compactifiedQuotientMap h (.ofCusp C) = .ofCusp (cuspOrbitMap h C) :=
   (rfl)
-
-@[simp]
-theorem coarseQuotientMap_id :
-    coarseQuotientMap (le_refl Δ) = id := by
-  funext p
-  induction p using Quotient.inductionOn with
-  | h z => simp
 
 @[simp]
 theorem cuspOrbitMap_id : cuspOrbitMap (le_refl Δ) = id := by
@@ -134,13 +87,11 @@ theorem cuspOrbitMap_id : cuspOrbitMap (le_refl Δ) = id := by
 theorem compactifiedQuotientMap_id :
     compactifiedQuotientMap (le_refl Δ) = id := by
   funext x
-  cases x <;> simp
-
-theorem coarseQuotientMap_comp (h : Δ ≤ Γ) (k : Γ ≤ Θ) :
-    coarseQuotientMap k ∘ coarseQuotientMap h = coarseQuotientMap (h.trans k) := by
-  funext p
-  induction p using Quotient.inductionOn with
-  | h z => simp
+  cases x with
+  | ofQuotient p =>
+      induction p using Quotient.inductionOn' with
+      | h z => simp
+  | ofCusp C => simp
 
 theorem cuspOrbitMap_comp (h : Δ ≤ Γ) (k : Γ ≤ Θ) :
     cuspOrbitMap k ∘ cuspOrbitMap h = cuspOrbitMap (h.trans k) := by
@@ -153,8 +104,11 @@ theorem compactifiedQuotientMap_comp (h : Δ ≤ Γ) (k : Γ ≤ Θ) :
     compactifiedQuotientMap k ∘ compactifiedQuotientMap h =
       compactifiedQuotientMap (h.trans k) := by
   funext x
-  cases x <;> simp [← congrFun (coarseQuotientMap_comp h k),
-    ← congrFun (cuspOrbitMap_comp h k)]
+  cases x with
+  | ofQuotient p =>
+      induction p using Quotient.inductionOn' with
+      | h z => simp
+  | ofCusp C => simp [← congrFun (cuspOrbitMap_comp h k)]
 
 namespace CompactifiedQuotient
 
@@ -168,7 +122,7 @@ theorem map_cuspNhd_subset (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
   | ofQuotient p =>
       rw [ofQuotient_mem_cuspNhd_iff] at hx
       obtain ⟨z, hz, rfl⟩ := hx
-      rw [compactifiedQuotientMap_ofQuotient, coarseQuotientMap_mk,
+      rw [compactifiedQuotientMap_ofQuotient, TauCeti.Setoid.map_of_le_mk,
         ofQuotient_mem_cuspNhd_iff]
       exact ⟨z, by simpa only [TauCeti.Subgroup.CuspDatum.mem_horodisc, hσ] using hz, rfl⟩
   | ofCusp C =>
@@ -208,11 +162,14 @@ theorem continuous_compactifiedQuotientMap [DiscreteTopology Δ] [DiscreteTopolo
       have hcomp : ContinuousAt
           (compactifiedQuotientMap h ∘ (ofQuotient (Γ := Δ))) p := by
         have heq : compactifiedQuotientMap h ∘ (ofQuotient (Γ := Δ)) =
-            (ofQuotient (Γ := Γ)) ∘ coarseQuotientMap h := by
+            (ofQuotient (Γ := Γ)) ∘ Setoid.map_of_le
+              (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) := by
           funext q
           simp
         rw [heq]
-        exact (continuous_ofQuotient.comp (continuous_coarseQuotientMap h)).continuousAt
+        exact (continuous_ofQuotient.comp
+          (continuous_map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le
+            (X := ℍ) h))).continuousAt
       exact ((isOpenEmbedding_ofQuotient (Γ := Δ)).isInducing.continuousAt_iff'
         ((isOpen_range_ofQuotient (Γ := Δ)).mem_nhds ⟨p, rfl⟩)).mp hcomp
   | ofCusp C =>
