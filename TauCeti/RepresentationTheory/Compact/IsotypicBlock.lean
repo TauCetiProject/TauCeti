@@ -740,16 +740,35 @@ section Projection
 
 variable {models : ι → IrrepModel 𝕜 G}
 
-/-- **For an algebraically closed `𝕜` and a skeleton of the unitary dual, the character averaging
-operator of `models i` maps the whole of `L²(G)` into the block of `models i`.** Exhaustiveness of
-the skeleton is what extends this from the span of the blocks to all of `L²(G)`. -/
-theorem peterWeylBlockAveraging_apply_mem_peterWeylBlock [IsAlgClosed 𝕜]
+/-- **For a skeleton of the unitary dual, the character averaging operator of `models i` maps the
+whole of `L²(G)` into the block of `models i`.** Exhaustiveness of the skeleton is what extends
+this from the span of the blocks to all of `L²(G)`.
+
+Nothing is assumed about `𝕜` beyond `RCLike`: the value of the averaging on its own block is not
+needed here, only that convolution carries a matrix coefficient of a model to a matrix coefficient
+of the same model. -/
+theorem peterWeylBlockAveraging_apply_mem_peterWeylBlock
     (h : IsIrrepSkeleton models) (i : ι) (f : Lp 𝕜 2 (haarProb G)) :
     peterWeylBlockAveraging (models i) f ∈ peterWeylBlock (models i) := by
   -- The preimage `K` of the block is a closed subspace, the block being finite-dimensional, and it
-  -- contains every block of the skeleton: its own by `peterWeylBlockAveraging_apply_of_mem`, the
-  -- others by `peterWeylBlockAveraging_apply_eq_zero_of_mem`. The blocks of a skeleton being
-  -- dense, `K` is everything.
+  -- contains every block of the skeleton: its own by `hself` below, the others by
+  -- `peterWeylBlockAveraging_apply_eq_zero_of_mem`. The blocks of a skeleton being dense, `K` is
+  -- everything.
+  have hself : ∀ x ∈ peterWeylBlock (models i),
+      peterWeylBlockAveraging (models i) x ∈ peterWeylBlock (models i) := by
+    -- Convolution moves the second vector of a matrix coefficient by the integrated operator of
+    -- the kernel (`convolutionOperator_matrixCoeffLp`), so the value is again a matrix coefficient
+    -- of the same model whatever that operator is; this is where the algebraic closure that
+    -- `peterWeylBlockAveraging_apply_of_mem` needs is avoided.
+    intro x hx
+    induction hx using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨v, w, rfl⟩ := hy
+      rw [peterWeylBlockAveraging, convolutionOperator_matrixCoeffLp]
+      exact matrixCoeffLp_mem_peterWeylBlock (models i) _ _
+    | zero => simp
+    | add y z _ _ hy hz => rw [map_add]; exact Submodule.add_mem _ hy hz
+    | smul c y _ hy => rw [map_smul]; exact Submodule.smul_mem _ c hy
   set K := (peterWeylBlock (models i)).comap
     (peterWeylBlockAveraging (models i)).toLinearMap with hK
   have hclosed : IsClosed (K : Set (Lp 𝕜 2 (haarProb G))) :=
@@ -759,8 +778,7 @@ theorem peterWeylBlockAveraging_apply_mem_peterWeylBlock [IsAlgClosed 𝕜]
     refine iSup_le fun j x hx => Submodule.mem_comap.2 ?_
     rw [ContinuousLinearMap.coe_coe]
     rcases eq_or_ne j i with rfl | hji
-    · rw [peterWeylBlockAveraging_apply_of_mem (models j) hx]
-      exact hx
+    · exact hself x hx
     · rw [peterWeylBlockAveraging_apply_eq_zero_of_mem
         (h.pairwise_isEmpty_equiv (Ne.symm hji)) hx]
       exact Submodule.zero_mem _

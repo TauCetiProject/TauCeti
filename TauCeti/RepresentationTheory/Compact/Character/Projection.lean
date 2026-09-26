@@ -115,16 +115,18 @@ theorem integral_star_character_mul_character :
 omit [IsAlgClosed 𝕜] in
 /-- **The character projection kills an inequivalent representation.** If `π` is unitary and there
 is no nonzero continuous intertwiner `ρ → π`, the conjugate character of `π` acts as zero on `ρ`.
+Neither irreducibility of `ρ` nor algebraic closedness of `𝕜` is assumed.
 
 Schur's lemma is not invoked for the intertwiner hypothesis; it is what supplies it for a pair of
-inequivalent irreducibles. Neither irreducibility nor algebraic closedness is needed: the argument
-does not evaluate the operator as a scalar, but pairs it against a vector, which turns it into the
-second Schur orthogonality relation
-(`TauCeti.ContRepresentation.schur_orthogonality_distinct`) summed over the diagonal matrix
-coefficients that make up `conj χ_π` (`TauCeti.ContRepresentation.star_character`). -/
+inequivalent irreducibles. -/
 theorem integratedOperator_star_character_eq_zero (hunitary : IsUnitary π)
     (hdistinct : ∀ φ : ContIntertwiningMap ρ π, φ.toContinuousLinearMap = 0) :
     integratedOperator ρ hρ (star (character π hπ)) = 0 := by
+  -- The operator is not evaluated as a scalar -- which would need Schur's scalar lemma, hence an
+  -- algebraically closed `𝕜` -- but paired against a vector, which turns it into the second Schur
+  -- orthogonality relation (`TauCeti.ContRepresentation.schur_orthogonality_distinct`) summed over
+  -- the diagonal matrix coefficients that make up `conj χ_π`
+  -- (`TauCeti.ContRepresentation.star_character`).
   refine ContinuousLinearMap.ext fun v ↦ ?_
   have key : ∀ w, ⟪w, integratedOperator ρ hρ (star (character π hπ)) v⟫_𝕜 = 0 := by
     intro w
