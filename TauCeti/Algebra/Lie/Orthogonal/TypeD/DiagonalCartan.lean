@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
-public import Mathlib.Algebra.Lie.Classical
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 
 /-!
 # The diagonal Cartan subalgebra of the split orthogonal Lie algebra of type D
@@ -121,24 +121,6 @@ theorem typeDDiagonalMatrix_mem_typeD (d : ι → K) :
   ext (i | i) (j | j) <;> by_cases h : i = j <;>
     simp [typeDDiagonalMatrix, typeDDiagonalValue, LieAlgebra.Orthogonal.JD,
       Matrix.diagonal_mul, Matrix.mul_diagonal, h]
-
-/-- In a type-`D` matrix, the lower-right block is the negative transpose of the upper-left
-block. -/
-@[simp]
-theorem typeD_apply_inr_inr (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
-    (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inr j) =
-      -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inl i) := by
-  have hA := A.2
-  -- The subtype witness is membership in the skew-adjoint matrix submodule.
-  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
-    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
-  rw [mem_skewAdjointMatricesSubmodule] at hA
-  -- Unfold the submodule predicate once to read the two corresponding block entries.
-  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
-    LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
-  have h := congr_fun (congr_fun hA (.inl i)) (.inr j)
-  exact neg_eq_iff_eq_neg.mp (by
-    simpa [LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply] using h.symm)
 
 /-! ### The Cartan subalgebra and its coordinates -/
 
@@ -393,5 +375,25 @@ theorem typeDEpsilon_apply (i : ι) (A : typeDDiagonalCartan K ι) :
       (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inl i) := by
   rw [typeDEpsilon, Module.Basis.dualBasis_apply,
     typeDDiagonalCartanBasis_repr_apply]
+
+/-- The coordinate equivalence sends a standard coordinate vector to the corresponding
+coordinate functional. -/
+@[simp]
+theorem typeDWeightEquiv_single (i : ι) :
+    typeDWeightEquiv (K := K) (Pi.single i 1) = typeDEpsilon i := by
+  ext A
+  simp only [typeDWeightEquiv_apply, Pi.single_apply]
+  rw [Finset.sum_eq_single i]
+  · simp
+  · intro j _ hji
+    simp [hji]
+  · simp
+
+/-- In coordinates, the functional `εᵢ` is the standard coordinate vector at `i`. -/
+@[simp]
+theorem typeDWeightEquiv_symm_epsilon (i : ι) :
+    (typeDWeightEquiv (K := K)).symm (typeDEpsilon i) = Pi.single i 1 := by
+  apply (typeDWeightEquiv (K := K)).injective
+  rw [LinearEquiv.apply_symm_apply, typeDWeightEquiv_single]
 
 end TauCeti
