@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Pi
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Perm.DomMulAct
 public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Permutations preserving the fibers of a map
@@ -250,11 +251,6 @@ variable [Fintype α]
 
 /-- Local decidable equality for computing fiber cardinalities without an API constraint. -/
 noncomputable local instance instDecidableEqFiberColour : DecidableEq ι := Classical.decEq ι
-
-/-- A rearrangement of `f` has fibers of the same sizes as `f`. -/
-private theorem card_filter_comp_perm (f : α → ι) (g : Equiv.Perm α) (i : ι) :
-    #{a | f (g a) = i} = #{a | f a = i} :=
-  card_equiv g fun a => by simp only [mem_filter, mem_univ, true_and]
 
 /-- **The cosets of the fiber subgroup of `f` are the rearrangements of `f`.**  The coset of `g`
 in `Equiv.Perm α ⧸ fiberSubgroup f` is sent to the map `f ∘ g⁻¹`

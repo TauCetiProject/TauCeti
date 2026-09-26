@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.PeriodicPts.Defs
+public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 
@@ -139,6 +140,21 @@ theorem invariantColouringEquiv_apply_coe (π : Perm α)
     (g : Quotient (SameCycle.setoid π) → σ) (a : α) :
     (invariantColouringEquiv π g : α → σ) a = g (Quotient.mk _ a) :=
   (rfl)
+
+/-- The map on cycles corresponding to an invariant colouring evaluates at a cycle by evaluating
+the colouring at any point in that cycle. -/
+@[simp]
+theorem invariantColouringEquiv_symm_apply (π : Perm α)
+    (f : {f : α → σ // f ∘ π = f}) (a : α) :
+    (invariantColouringEquiv π).symm f (Quotient.mk _ a) = f.1 a :=
+  congrFun (congrArg Subtype.val ((invariantColouringEquiv π).apply_symm_apply f)) a
+
+/-- Precomposing a function with a permutation preserves the cardinality of each fiber. -/
+theorem card_filter_comp_perm {ι : Type*} [Fintype α] [DecidableEq ι]
+    (f : α → ι) (g : Perm α) (i : ι) :
+    (Finset.univ.filter fun a => f (g a) = i).card =
+      (Finset.univ.filter fun a => f a = i).card :=
+  Finset.card_equiv g fun a => by simp only [Finset.mem_filter, Finset.mem_univ, true_and]
 
 /-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
 image of the other. -/
