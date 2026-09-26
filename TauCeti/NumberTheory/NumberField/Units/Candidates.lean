@@ -11,7 +11,6 @@ import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly
-import TauCeti.NumberTheory.NumberField.Units.Basic
 import TauCeti.NumberTheory.NumberField.Units.PrimeDegree
 
 /-!

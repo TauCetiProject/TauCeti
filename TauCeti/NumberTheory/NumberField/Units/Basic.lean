@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.Basic
 import Mathlib.NumberTheory.NumberField.Norm
-import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.NumberTheory.NumberField.Minpoly
 
 /-!

@@ -21,7 +21,9 @@ It compares its weighted logarithm with the regulator times the subgroup index, 
 
 In rank one, the norm of a unit's logarithmic embedding equals its weighted absolute logarithm
 at any infinite place. This identifies norm comparisons with logarithm comparisons at a chosen
-place.
+place. The product formula over the two infinite places also forces a unit expanding at one of
+them to contract at the other, which controls the remaining conjugates of a unit bounded at a
+chosen place.
 
 ## References
 
