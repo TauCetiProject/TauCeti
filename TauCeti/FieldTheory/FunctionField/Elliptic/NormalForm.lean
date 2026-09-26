@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
+public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 public import TauCeti.FieldTheory.FunctionField.Elliptic.WeierstrassEquation
 
 /-!
@@ -41,39 +41,6 @@ private theorem completedSquare (a₂ a₄ a₆ c d x y : F) :
       y ^ 2 + (2 * c) * x * y + (2 * d) * y -
         (x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆) := by
   ring
-
-section Coefficients
-
-variable [Invertible (2 : k)]
-
-/-- The quadratic coefficient after completing the square. -/
-@[simp]
-theorem toCharNeTwoNF_a₂ (W : WeierstrassCurve k) :
-    (W.toCharNeTwoNF • W).a₂ = W.a₂ + (W.a₁ / 2) ^ 2 := by
-  have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
-  simp [variableChange_a₂, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
-  field_simp [h2]
-  ring
-
-/-- The linear coefficient after completing the square. -/
-@[simp]
-theorem toCharNeTwoNF_a₄ (W : WeierstrassCurve k) :
-    (W.toCharNeTwoNF • W).a₄ = W.a₄ + 2 * (W.a₁ / 2) * (W.a₃ / 2) := by
-  have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
-  simp [variableChange_a₄, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
-  field_simp [h2]
-  ring
-
-/-- The constant coefficient after completing the square. -/
-@[simp]
-theorem toCharNeTwoNF_a₆ (W : WeierstrassCurve k) :
-    (W.toCharNeTwoNF • W).a₆ = W.a₆ + (W.a₃ / 2) ^ 2 := by
-  have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
-  simp [variableChange_a₆, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
-  field_simp [h2]
-  ring
-
-end Coefficients
 
 namespace Place.IsWeierstrassCoordinates
 
