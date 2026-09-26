@@ -74,6 +74,8 @@ theorem geckFrobenius_geckWeylWordPoint (l : List (Fin t.rank)) :
 
 /-- **Frobenius raises the parameter of every root subgroup of the Geck carrier to its
 `p ^ k`-th power.** The root `w αᵢ` itself is unchanged. -/
+-- Not a `simp` lemma: the existing pointwise and map lemmas already prove it, so `simpNF` rejects
+-- the annotation as a duplicate.
 theorem geckFrobenius_geckWeylRootSubgroupPoints (l : List (Fin t.rank))
     (i : Fin t.rank) (u : Multiplicative A) :
     t.geckFrobenius ht p k A (t.geckWeylRootSubgroupPoints ht l i A u) =
@@ -88,6 +90,8 @@ theorem geckFrobenius_geckWeylRootSubgroupPoints (l : List (Fin t.rank))
 
 /-- A point in a root subgroup of the Geck carrier is fixed by Frobenius exactly when its
 parameter belongs to the Frobenius-fixed subring. -/
+-- Not a `simp` lemma: simplification unfolds membership in `fixedSubgroup` first, so `simpNF`
+-- rejects this left-hand side as non-normal.
 theorem geckWeylRootSubgroupPoints_mem_fixedSubgroup_geckFrobenius_iff
     (l : List (Fin t.rank))
     (i : Fin t.rank) (u : Multiplicative A) :
