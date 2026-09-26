@@ -12,7 +12,7 @@ public import Mathlib.NumberTheory.NumberField.Units.Basic
 
 A number field with a real infinite place has no roots of unity other than `±1`: a primitive root
 of unity of order greater than `2` has no real embedding
-(`NumberField.InfinitePlace.nrRealPlaces_eq_zero_of_two_lt`). So the torsion subgroup of the
+(`IsPrimitiveRoot.nrRealPlaces_eq_zero_of_two_lt`). So the torsion subgroup of the
 units is `{1, -1}` and the torsion order is `2`. This generalises Mathlib's
 `NumberField.Units.torsionOrder_eq_two_of_odd_finrank`, which obtains the real place from odd
 degree, to every field with a real place, in particular to the real quadratic fields.
