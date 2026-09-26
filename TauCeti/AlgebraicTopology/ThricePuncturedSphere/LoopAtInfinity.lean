@@ -28,13 +28,6 @@ Consequently `periph1 * periph0` is the class of `α₊ · δ · α₊.symm`, an
 the circle `|z| = 3` traversed **clockwise** in the affine coordinate `z`, transported to the
 basepoint along `α₊`. In the chart `w = 1/z` at `∞` the same circle runs counterclockwise.
 
-The proof cuts both loops into pieces lying in the closed upper half-plane `im z ≥ 0` or the closed
-lower half-plane `im z ≤ 0` of `ℂ ∖ {0, 1}`. Each of these is star-convex (about `i` and `−i`), so
-simply connected, and the two punctures lie on its boundary line. The cut points are the points
-`−3` and `3` of the big circle, joined along the real axis to the points `−1/2` and `3/2` of the
-small circles; the connecting segments lie in both half-planes, and cancel in the final
-concatenation.
-
 ## Main declarations
 
 * `TauCeti.ThricePuncturedSphere.pPlus`: the point `1/2 + (√35/2)·i` of the circle `|z| = 3`.
@@ -130,6 +123,7 @@ theorem coe_δ (t : unitInterval) : (δ t : ℂ) = circleMap 0 3 (arccos (1 / 6)
 
 /-- The loop `δ` lies on the circle of radius `3` about `0`, which bounds a punctured disc about
 `∞` containing neither `0` nor `1`. -/
+@[simp]
 theorem norm_coe_δ (t : unitInterval) : ‖(δ t : ℂ)‖ = 3 := by
   simp [norm_circleMap_zero]
 
