@@ -15,7 +15,10 @@ public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 The connecting map of the augmentation sequence sends the first-homology class of `g ⊗ a`
 to the coinvariant class of `[g⁻¹] a - [1] a`. The same formula holds after restricting the
-sequence to a subgroup.
+sequence to a subgroup. These formulas identify the connecting-map images of the classes
+`g ⊗ a` in `H₀(G, I_G)` and `H₀(S, I_G)`, which is how the transfer on first homology is compared
+with the group-theoretic transfer (Verlagerung) in
+`TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Abelianization`.
 
 ## Main results
 

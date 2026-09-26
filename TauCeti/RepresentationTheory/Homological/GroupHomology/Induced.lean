@@ -25,7 +25,7 @@ The statements follow `ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.le
 
 * `groupHomology.isZero_indBot_succ`: `Hₙ₊₁(G, Ind_⊥^G X) = 0`.
 * `groupHomology.isZero_res_indBot_succ`: `Hₙ₊₁(S, Ind_⊥^G X) = 0` for every subgroup `S ≤ G`.
-* `TauCeti.groupHomology.isZero_groupHomology_res_leftRegular`: `Hₙ₊₁(S, k[G]) = 0`
+* `TauCeti.groupHomology.isZero_res_leftRegular_succ`: `Hₙ₊₁(S, k[G]) = 0`
   for every subgroup.
 
 ## References
@@ -67,7 +67,7 @@ namespace TauCeti.groupHomology
 
 /-- Positive-degree homology of a subgroup with coefficients in the restricted left regular
 representation vanishes, without any finiteness assumption. -/
-theorem isZero_groupHomology_res_leftRegular {k G : Type u} [CommRing k] [Group G]
+theorem isZero_res_leftRegular_succ {k G : Type u} [CommRing k] [Group G]
     (S : Subgroup G) (n : ℕ) :
     Limits.IsZero (groupHomology (res S.subtype (leftRegular k G)) (n + 1)) :=
   (_root_.groupHomology.isZero_res_indBot_succ S k n).of_iso

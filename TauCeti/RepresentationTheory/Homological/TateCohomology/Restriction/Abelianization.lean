@@ -5,7 +5,6 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Abelianization
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Basic
 
@@ -21,11 +20,11 @@ identifies the two change-of-group maps in this degree under that identification
 * corestriction along a homomorphism `f : H →* G`, `H_Tate⁻²(H, A) ⟶ H_Tate⁻²(G, A)`, is
   `Abelianization.map f`, tensored with `A`.
 
-Both are read off the corresponding statements for first group homology,
-`TauCeti.groupHomology.H1AddEquivOfIsTrivial_transfer` and
-`TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`, through the comparison of negative Tate degrees
-with group homology. For `A = ℤ`, these are the compatibilities of the identification
-`H_Tate⁻²(G, ℤ) ≃ Gᵃᵇ` with restriction and corestriction used by the reciprocity isomorphism.
+Together they make the identification `H_Tate⁻²(G, A) ≃ Gᵃᵇ ⊗ A` natural in the group: a
+statement about restriction or corestriction in Tate degree `-2` can be transported to the
+corresponding statement about the Verlagerung or `Abelianization.map`. For `A = ℤ`, these are the
+compatibilities of the identification `H_Tate⁻²(G, ℤ) ≃ Gᵃᵇ` with restriction and corestriction
+that the reciprocity isomorphism `Gᵃᵇ ≃ Ĥ⁰(G, C)` inherits.
 
 ## Main results
 

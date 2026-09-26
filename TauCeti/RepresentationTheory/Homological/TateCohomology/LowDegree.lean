@@ -412,7 +412,7 @@ variable (A : Rep R G) [A.IsTrivial]
 
 /-- For a trivial representation `A`, degree-`-2` Tate cohomology is the tensor product of the
 additive abelianization of the group with `A`. -/
-@[expose] def HNegTwoAddEquivTensorOfIsTrivial :
+def HNegTwoAddEquivTensorOfIsTrivial :
     tateCohomology A (-2) ≃+ (Additive <| Abelianization G) ⊗[ℤ] A :=
   let e : tateCohomology A (-2) ≅ groupHomology.H1 A :=
     (TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).app A
@@ -422,7 +422,8 @@ additive abelianization of the group with `A`. -/
 theorem HNegTwoAddEquivTensorOfIsTrivial_apply (x : tateCohomology A (-2)) :
     HNegTwoAddEquivTensorOfIsTrivial A x =
       H1AddEquivOfIsTrivial A
-        ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app A x) :=
+        ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app A x) := by
+  rw [HNegTwoAddEquivTensorOfIsTrivial]
   rfl
 
 -- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.

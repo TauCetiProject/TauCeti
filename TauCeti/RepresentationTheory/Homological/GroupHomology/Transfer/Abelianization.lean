@@ -9,9 +9,7 @@ public import TauCeti.GroupTheory.Transfer
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Augmentation
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Induced
-public import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Delta
-public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
@@ -25,13 +23,11 @@ proves that, under these identifications, the homological transfer `H₁(G, A) �
 `TauCeti.groupHomology.transfer` is the group-theoretic transfer (Verlagerung)
 `Gᵃᵇ → Sᵃᵇ` of Mathlib's `MonoidHom.transfer`, tensored with `A`.
 
-By naturality of the transfer in the coefficients it suffices to treat `A = k`. That case is
-proved by dimension shifting along the augmentation sequence
-`0 ⟶ I_G ⟶ k[G] ⟶ k ⟶ 0`. The transfer commutes with its connecting maps
-(`TauCeti.groupHomology.δ_comp_transfer`), the connecting map `H₁(S, k) ⟶ H₀(S, I_G)` is injective
-because `H₁(S, k[G]) = 0`, and in degree zero the transfer is the relative transfer
-`⟦m⟧ ↦ ⟦∑_{q ∈ G ⧸ S} q⁻¹ • m⟧` (`TauCeti.groupHomology.transfer_zero_H0π`), which on the class
-`[g⁻¹] - [1]` of `g ∈ G` is computed coset by coset.
+This is the homological form of the classical fact that the transfer in degree one is the
+Verlagerung. Through the comparison of negative Tate degrees with group homology it identifies
+restriction in Tate degree `-2` with the Verlagerung
+(`TauCeti.TateCohomology.HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes`), which is the form in which
+restriction enters the reciprocity map of class field theory.
 
 ## Main results
 
@@ -141,7 +137,7 @@ private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (
     augmentationSES_def k G ▸ augmentationSES_shortExact k G
   have hXS := (shortExact_res S.subtype).2 hAug
   have : Mono (δ hXS 1 0 rfl) :=
-    mono_δ_of_isZero hXS 0 (isZero_groupHomology_res_leftRegular (k := k) S 0)
+    mono_δ_of_isZero hXS 0 (isZero_res_leftRegular_succ (k := k) S 0)
   apply (ModuleCat.mono_iff_injective _).1 this
   rw [MonoidHom.toAdditive_apply_apply, toMul_ofMul, Abelianization.lift_apply_of,
     δ_res_mkH1OfIsTrivial_ofAbelianization S hAug, ← map_inv,

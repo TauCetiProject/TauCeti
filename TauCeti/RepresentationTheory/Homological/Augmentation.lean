@@ -154,21 +154,21 @@ theorem ι_singleSub (a : k) (g : G) :
   Classical.choose_spec <| (exact_augmentation k G _).1 (augmentation_single_sub k G a g)
 
 /-- The inclusion of the augmentation ideal into `k[G]` is injective. -/
-theorem inclusion_injective : Function.Injective (augmentationι k G).hom :=
+theorem augmentationι_injective : Function.Injective (augmentationι k G).hom :=
   (Rep.mono_iff_injective _).1 inferInstance
 
 /-- The action of `G` on an augmentation ideal element `[g] a - [1] a`. -/
 theorem ρ_singleSub (a : k) (x y : G) :
     (augmentationIdeal k G).ρ x (singleSub k G a y) =
       singleSub k G a (x * y) - singleSub k G a x := by
-  apply inclusion_injective k G
+  apply augmentationι_injective k G
   rw [hom_comm_apply, map_sub, ι_singleSub, ι_singleSub, ι_singleSub, map_sub]
   simp
 
 /-- The augmentation ideal element `[1] a - [1] a` is zero. -/
 @[simp]
 theorem singleSub_one (a : k) : singleSub k G a (1 : G) = 0 := by
-  apply inclusion_injective k G
+  apply augmentationι_injective k G
   rw [ι_singleSub, sub_self, map_zero]
 
 end TauCeti.AugmentationIdeal
