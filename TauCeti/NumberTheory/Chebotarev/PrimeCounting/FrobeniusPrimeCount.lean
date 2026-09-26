@@ -25,6 +25,8 @@ Comparison with the prime ideal theorem for all primes then gives natural densit
   tends to `#C / #Gal(L/K)`.
 * `NumberField.Chebotarev.tendsto_frobeniusPrimeCount`: the prime count divided by `x / log x`
   tends to `#C / #Gal(L/K)`.
+* `NumberField.Chebotarev.frobeniusPrimeCount_isEquivalent_logIntegral`: the prime count is
+  asymptotic to `(#C / #Gal(L/K)) Li(x)`.
 * `NumberField.Chebotarev.hasNaturalDensity_frobeniusPrimeSet`: the same ratio is the natural
   density of the Frobenius prime set.
 
@@ -73,7 +75,7 @@ private theorem frobeniusPrimeCount_sub_mul_logIntegral_isLittleO
       (by simpa only [← frobeniusTheta_def] using frobeniusTheta_asymptotic K L C))
 
 /-- The Frobenius prime count is asymptotic to `(#C / #Gal(L/K)) Li(x)`. -/
-private theorem frobeniusPrimeCount_isEquivalent_logIntegral
+theorem frobeniusPrimeCount_isEquivalent_logIntegral
     (C : ConjClasses (L ≃ₐ[K] L)) :
     (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ)) ~[atTop]
       (fun x ↦ ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) *
