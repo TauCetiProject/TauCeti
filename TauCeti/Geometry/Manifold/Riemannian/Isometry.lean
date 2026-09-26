@@ -65,6 +65,13 @@ theorem ext {Φ Ψ : RiemannianIsometry (I := I) (J := J) (M := M) (N := N)}
 theorem coe_toDiffeomorph (Φ : RiemannianIsometry (I := I) (J := J) (M := M) (N := N)) :
     ⇑Φ.toDiffeomorph = Φ := rfl
 
+/-- The differential of a Riemannian isometry preserves inner products. -/
+@[simp]
+theorem inner_mfderiv_apply (Φ : RiemannianIsometry (I := I) (J := J) (M := M) (N := N))
+    (x : M) (v w : TangentSpace I x) :
+    inner ℝ (mfderiv I J Φ x v) (mfderiv I J Φ x w) = inner ℝ v w := by
+  simpa only [coe_toDiffeomorph] using Φ.inner_mfderiv x v w
+
 /-- The differential of a Riemannian isometry preserves tangent-vector norms. -/
 @[simp]
 theorem norm_mfderiv (Φ : RiemannianIsometry (I := I) (J := J) (M := M) (N := N))
@@ -195,27 +202,39 @@ theorem trans_assoc (Φ : RiemannianIsometry (I := I) (J := J) (M := M) (N := N)
   ext x
   simp
 
-/-- A smooth Riemannian isometry preserves the Riemannian length of a curve differentiable
-on the interior of the interval. -/
+/-- A smooth Riemannian isometry preserves the Riemannian length of any curve. -/
 @[simp]
 theorem pathELength_comp (Φ : RiemannianIsometry (I := I) (J := J) (M := M) (N := N))
-    {γ : ℝ → M} {a b : ℝ} (hγ : ∀ t ∈ Set.Ioo a b, MDiffAt γ t) :
+    {γ : ℝ → M} {a b : ℝ} :
     Manifold.pathELength J (Φ ∘ γ) a b = Manifold.pathELength I γ a b := by
   rw [Manifold.pathELength_eq_lintegral_mfderiv_Ioo,
     Manifold.pathELength_eq_lintegral_mfderiv_Ioo]
   apply MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo
   intro t ht
-  have hder : mfderiv 𝓘(ℝ, ℝ) J ((Φ : M → N) ∘ γ) t (1 : ℝ) =
-      mfderiv I J Φ.toDiffeomorph (γ t) (mfderiv 𝓘(ℝ, ℝ) I γ t 1) :=
-    mfderiv_comp_apply t (Φ.toDiffeomorph.mdifferentiable (by simp) (γ t)) (hγ t ht) 1
   dsimp only
   -- The length expression coerces `Φ` directly, while the chain rule uses its diffeomorphism.
   change ‖mfderiv 𝓘(ℝ, ℝ) J ((Φ : M → N) ∘ γ) t (1 : ℝ)‖ₑ =
     ‖mfderiv 𝓘(ℝ, ℝ) I γ t (1 : ℝ)‖ₑ
-  rw [hder, coe_toDiffeomorph]
-  rw [← ofReal_norm, ← ofReal_norm,
-    Φ.norm_mfderiv (γ t) (mfderiv 𝓘(ℝ, ℝ) I γ t 1)]
-  rfl
+  by_cases hγ : MDiffAt γ t
+  · have hder : mfderiv 𝓘(ℝ, ℝ) J ((Φ : M → N) ∘ γ) t (1 : ℝ) =
+        mfderiv I J Φ.toDiffeomorph (γ t) (mfderiv 𝓘(ℝ, ℝ) I γ t 1) :=
+      mfderiv_comp_apply t (Φ.toDiffeomorph.mdifferentiable (by simp) (γ t)) hγ 1
+    rw [hder, coe_toDiffeomorph]
+    rw [← ofReal_norm, ← ofReal_norm,
+      Φ.norm_mfderiv (γ t) (mfderiv 𝓘(ℝ, ℝ) I γ t 1)]
+    rfl
+  · have hcomp : ¬MDiffAt ((Φ : M → N) ∘ γ) t := by
+      intro hc
+      have h := (Φ.toDiffeomorph.symm.mdifferentiable (by simp) ((Φ : M → N) (γ t))).comp t hc
+      have heq : Φ.toDiffeomorph.symm ∘ ((Φ : M → N) ∘ γ) = γ := by
+        funext s
+        exact Φ.toDiffeomorph.symm_apply_apply (γ s)
+      rw [heq] at h
+      exact hγ h
+    rw [mfderiv_zero_of_not_mdifferentiableAt hγ,
+      mfderiv_zero_of_not_mdifferentiableAt hcomp]
+    change ‖(0 : TangentSpace J (Φ (γ t)))‖ₑ = ‖(0 : TangentSpace I (γ t))‖ₑ
+    simp
 
 end RiemannianIsometry
 
