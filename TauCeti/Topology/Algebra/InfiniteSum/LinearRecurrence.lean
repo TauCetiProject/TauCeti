@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.InfiniteSum.Ring
+public import Mathlib.Algebra.Ring.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -28,7 +29,8 @@ coefficients of a Dirichlet series.
 
 public section
 
-variable {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R] [T2Space R]
+variable {R : Type*} [NonAssocRing R] [TopologicalSpace R]
+  [IsTopologicalAddGroup R] [SeparatelyContinuousMul R] [T2Space R]
   {D S σ : R} {d : ℕ → R}
 
 /-- **The sum of a second-order linear recurrence.** If `d` has sum `σ` and obeys
@@ -42,7 +44,9 @@ theorem HasSum.one_sub_add_mul_eq_of_linearRec₂ (h : HasSum d σ)
   have h₂ : HasSum (fun r ↦ d (r + 2)) (σ - (d 0 + d 1)) := by
     simpa [Finset.sum_range_succ] using (hasSum_nat_add_iff' 2).mpr h
   have h₃ : HasSum (fun r ↦ d (r + 2)) (D * (σ - d 0) - S * σ) := by
-    simpa only [hd] using (h₁.mul_left D).sub (h.mul_left S)
+    simpa only [hd] using!
+      (h₁.map (AddMonoidHom.mulLeft D) (continuous_const_mul D)).sub
+        (h.map (AddMonoidHom.mulLeft S) (continuous_const_mul S))
   calc (1 - D + S) * σ
       = (σ - (d 0 + d 1)) - (D * (σ - d 0) - S * σ) + (d 0 + (d 1 - D * d 0)) := by noncomm_ring
     _ = d 0 + (d 1 - D * d 0) := by rw [h₂.unique h₃, sub_self, _root_.zero_add]
