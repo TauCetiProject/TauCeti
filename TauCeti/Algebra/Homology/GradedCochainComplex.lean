@@ -94,4 +94,99 @@ theorem gradedCochainComplex_d_apply (p : ℤ) (x : ℳ p) :
     rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
     rfl
 
+variable {N : Type uM} [AddCommGroup N] [Module R N]
+  {𝒩 : ℤ → Submodule R N} {dN : N →ₗ[R] N}
+  {hdegN : LinearMap.IsHomogeneous dN 𝒩 𝒩 1}
+  {hsqN : ∀ p (x : 𝒩 p), dN (dN x) = 0}
+
+/-- A degree-preserving linear map commuting with differentials induces a map between the
+cochain complexes assembled from graded modules. -/
+def gradedCochainComplexMap (f : M →ₗ[R] N)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
+    (hcomm : ∀ p (x : ℳ p), dN (f x) = f (dM x)) :
+  gradedCochainComplex ℳ dM hdeg hsq ⟶ gradedCochainComplex 𝒩 dN hdegN hsqN where
+  f n := eqToHom (gradedCochainComplex_X n) ≫
+    ModuleCat.ofHom (f.restrict (fun _ hx ↦ by
+      simpa only [add_zero] using hf.map_mem hx)) ≫
+      eqToHom (gradedCochainComplex_X n).symm
+  comm' i j hij := by
+    obtain rfl : j = i + 1 := hij.symm
+    dsimp [gradedCochainComplex]
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro x
+    apply Subtype.ext
+    simpa [CochainComplex.of_d, ModuleCat.hom_comp, LinearMap.comp_apply,
+      gradedCochainComplex_X, eqToHom]
+      using hcomm i x
+
+/-- On a homogeneous element, the induced cochain map is the original linear map. -/
+@[simp]
+theorem gradedCochainComplexMap_f_apply (f : M →ₗ[R] N)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
+    (hcomm : ∀ p (x : ℳ p), dN (f x) = f (dM x)) (n : ℤ) (x : ℳ n) :
+    (eqToHom (gradedCochainComplex_X n)
+      ((gradedCochainComplexMap (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
+        (hsqN := hsqN) f hf hcomm).f n
+          (eqToHom (gradedCochainComplex_X n).symm x)) : N) = f x := by
+  simp only [gradedCochainComplexMap]
+  rw [gradedCochainComplex_X_proof_eq_rfl (hdeg := hdeg) (hsq := hsq) n,
+    gradedCochainComplex_X_proof_eq_rfl (hdeg := hdegN) (hsq := hsqN) n]
+  rfl
+
+/-- The induced cochain map depends only on the underlying linear map. -/
+theorem gradedCochainComplexMap_congr {f g : M →ₗ[R] N} (h : f = g)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
+    (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0)
+    (hcommf : ∀ p (x : ℳ p), dN (f x) = f (dM x))
+    (hcommg : ∀ p (x : ℳ p), dN (g x) = g (dM x)) :
+    gradedCochainComplexMap (hdeg := hdeg) (hsq := hsq)
+      (hdegN := hdegN) (hsqN := hsqN) f hf hcommf =
+    gradedCochainComplexMap (hdeg := hdeg) (hsq := hsq)
+      (hdegN := hdegN) (hsqN := hsqN) g hg hcommg := by
+  subst g
+  rfl
+
+/-- The cochain map induced by the identity linear map is the identity. -/
+@[simp]
+theorem gradedCochainComplexMap_id :
+    gradedCochainComplexMap (hdeg := hdeg) (hsq := hsq)
+      (hdegN := hdeg) (hsqN := hsq) (LinearMap.id : M →ₗ[R] M)
+      (LinearMap.isHomogeneous_id ℳ) (fun _ _ ↦ rfl) =
+        𝟙 (gradedCochainComplex ℳ dM hdeg hsq) := by
+  apply HomologicalComplex.hom_ext
+  intro n
+  simp only [gradedCochainComplexMap]
+  rw [gradedCochainComplex_X_proof_eq_rfl (hdeg := hdeg) (hsq := hsq) n]
+  rfl
+
+variable {P : Type uM} [AddCommGroup P] [Module R P]
+  {𝒦 : ℤ → Submodule R P} {dP : P →ₗ[R] P}
+  {hdegP : LinearMap.IsHomogeneous dP 𝒦 𝒦 1}
+  {hsqP : ∀ p (x : 𝒦 p), dP (dP x) = 0}
+
+/-- Cochain maps assembled from graded linear maps preserve composition. -/
+@[simp]
+theorem gradedCochainComplexMap_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
+    (hg : LinearMap.IsHomogeneous g 𝒩 𝒦 0)
+    (hcommf : ∀ p (x : ℳ p), dN (f x) = f (dM x))
+    (hcommg : ∀ p (x : 𝒩 p), dP (g x) = g (dN x)) :
+    gradedCochainComplexMap (hdeg := hdeg) (hsq := hsq)
+      (hdegN := hdegP) (hsqN := hsqP) (g.comp f)
+        (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+          simpa only [LinearMap.comp_apply, add_zero] using hg.map_mem (hf.map_mem hx))
+        (fun p x ↦ by
+          have hfx : f x ∈ 𝒩 p := by
+            simpa only [add_zero] using hf.map_mem x.2
+          rw [LinearMap.comp_apply, hcommg p ⟨f x, hfx⟩,
+            hcommf p x, LinearMap.comp_apply]) =
+        gradedCochainComplexMap (hdeg := hdeg) (hsq := hsq)
+          (hdegN := hdegN) (hsqN := hsqN) f hf hcommf ≫
+        gradedCochainComplexMap (hdeg := hdegN) (hsq := hsqN)
+          (hdegN := hdegP) (hsqN := hsqP) g hg hcommg := by
+  apply HomologicalComplex.hom_ext
+  intro n
+  rfl
+
 end TauCeti
