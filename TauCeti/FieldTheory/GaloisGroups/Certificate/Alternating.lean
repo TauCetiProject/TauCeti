@@ -7,8 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisGroups.Certificate.Check
 
-import Mathlib.Algebra.Polynomial.SpecificDegree
-import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
+import TauCeti.Algebra.Polynomial.SpecificDegree
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.LinearCombination
 
@@ -79,40 +78,16 @@ theorem irreducible_X_pow_five_add_twenty_mul_X_sub_sixteen_zmod_three :
       have h := eq_quadratic_of_degree_le_two (degree_le_of_natDegree_le hq2.le)
       have hc : q.coeff 2 = 1 := by simpa [hq2] using hq.coeff_natDegree
       simpa [hc] using h
-    -- Following the division argument in
-    -- `Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five`, a monic quadratic
-    -- divisor would force both coefficients of this remainder to vanish.
-    let a := q.coeff 1
-    let b := q.coeff 0
-    let quotient : (ZMod 3)[X] :=
-      X ^ 3 - C a * X ^ 2 + C (a ^ 2 - b) * X + C (-a ^ 3 + 2 * a * b)
-    let remainder : (ZMod 3)[X] :=
-      C (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + 20) * X + C (a ^ 3 * b - 2 * a * b ^ 2 - 16)
-    have hdivision : f = q * quotient + remainder := by
-      rw [hqeq]
-      simp only [f, quotient, remainder, a, b, map_add, map_sub, map_mul, map_pow,
-        map_neg, map_ofNat]
-      ring
-    have hrem : q ∣ remainder := by
-      rw [hdivision] at hdvd
-      exact (dvd_add_right (dvd_mul_right q quotient)).mp hdvd
-    have hremdeg : remainder.natDegree ≤ 1 := by dsimp [remainder]; compute_degree
-    have hzero : remainder = 0 := by
-      by_contra hr
-      exact hq.not_dvd_of_natDegree_lt hr (by omega) hrem
-    have hlinear : a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + 20 = 0 := by
-      simpa only [remainder, coeff_add, coeff_C_mul_X, coeff_C,
-        coeff_zero, ite_true, ite_false, one_ne_zero, zero_ne_one, add_zero, zero_add]
-        using congrArg (fun p : (ZMod 3)[X] ↦ p.coeff 1) hzero
-    have hconstant : a ^ 3 * b - 2 * a * b ^ 2 - 16 = 0 := by
-      simpa only [remainder, coeff_add, coeff_C_mul_X, coeff_C,
-        coeff_zero, ite_true, ite_false, one_ne_zero, zero_ne_one, add_zero, zero_add]
-        using congrArg (fun p : (ZMod 3)[X] ↦ p.coeff 0) hzero
+    have hdvd' : X ^ 2 + C (q.coeff 1) * X + C (q.coeff 0) ∣
+        X ^ 5 + C (20 : ZMod 3) * X + C (-16 : ZMod 3) := by
+      rw [hqeq] at hdvd
+      simpa only [f, C_neg, C_ofNat, sub_eq_add_neg] using hdvd
+    rw [X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff] at hdvd'
     -- None of the nine coefficient pairs in the prime field satisfies both equations.
     have hno : ∀ a b : ZMod 3,
         ¬ (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + 20 = 0 ∧
-          a ^ 3 * b - 2 * a * b ^ 2 - 16 = 0) := by decide
-    exact hno a b ⟨hlinear, hconstant⟩
+          a ^ 3 * b - 2 * a * b ^ 2 + -16 = 0) := by decide
+    exact hno _ _ hdvd'
 
 /-- The alternating quintic has a single irreducible factor of degree five modulo `3`. -/
 @[simp] theorem factorDegrees_X_pow_five_add_twenty_mul_X_sub_sixteen_three :
