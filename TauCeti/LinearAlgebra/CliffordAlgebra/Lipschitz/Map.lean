@@ -50,8 +50,11 @@ theorem map_mem_lipschitzGroup_of_map_ι (F : CliffordAlgebra Q →+* CliffordAl
       -- Expose the generating set of the target closure before supplying the mapped vector.
       change ↑(Units.map F.toMonoidHom x) ∈ Set.range (ι Q')
       refine ⟨f m, ?_⟩
-      change ι Q' (f m) = F (x : CliffordAlgebra Q)
-      rw [← hm, hF]
+      calc
+        ι Q' (f m) = F (ι Q m) := (hF m).symm
+        _ = F (x : CliffordAlgebra Q) := congrArg F hm
+        _ = F.toMonoidHom (x : CliffordAlgebra Q) := rfl
+        _ = ↑(Units.map F.toMonoidHom x) := (Units.coe_map F.toMonoidHom x).symm
   | one => simp
   | mul x y _ _ hx hy => simpa using mul_mem hx hy
   | inv x _ hx => simpa using inv_mem hx

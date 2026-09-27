@@ -70,10 +70,13 @@ theorem lipschitzGroupBaseChange_inv_coe (x : lipschitzGroup Q) :
 /-- On a pure tensor, the scalar-extended Lipschitz action is the extension of the original
 action. -/
 @[simp]
-theorem lipschitzVectorAction_baseChange_tmul [Invertible (2 : A)]
-    (x : lipschitzGroup Q) (a : A) (m : M) :
+theorem lipschitzVectorAction_baseChange_tmul (x : lipschitzGroup Q) (a : A) (m : M) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
     lipschitzVectorAction (Q.baseChange A) (lipschitzGroupBaseChange (A := A) Q x) (a ⊗ₜ m) =
       a ⊗ₜ lipschitzVectorAction Q x m := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
   suffices hOne :
       lipschitzVectorAction (Q.baseChange A) (lipschitzGroupBaseChange (A := A) Q x)
           (1 ⊗ₜ m) =
@@ -97,9 +100,13 @@ theorem lipschitzVectorAction_baseChange_tmul [Invertible (2 : A)]
 
 /-- Extension of scalars commutes with the Lipschitz homomorphism to the orthogonal group. -/
 @[simp]
-theorem lipschitzToOrthogonal_baseChange [Invertible (2 : A)] (x : lipschitzGroup Q) :
+theorem lipschitzToOrthogonal_baseChange (x : lipschitzGroup Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
     TauCeti.QuadraticMap.orthogonalGroupBaseChange (A := A) Q (lipschitzToOrthogonal Q x) =
       lipschitzToOrthogonal (Q.baseChange A) (lipschitzGroupBaseChange (A := A) Q x) := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
   apply Subtype.ext
   apply LinearEquiv.ext
   intro z
