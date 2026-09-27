@@ -65,6 +65,11 @@ The comparison legs are *defined* as the existing all-degree inflation map
 `TauCeti.ofDiscreteModuleQuotient`, rather than rebuilt from a compatible pair;
 `TauCeti.ContCohomology.coeffMap_ofDiscreteModuleQuotient_comp_infl` supplies the compatible-pair
 presentation, which is what `continuousFiniteQuotientComparisonApp_eq_map` records.
+
+Every definition keeps its body sealed except `continuousFiniteQuotientSystem` and
+`continuousFiniteQuotientCocone`, as in `FiniteQuotient.Basic`: the statements of their `map` and
+`ι` lemmas compare a morphism out of `F.obj U` (or into `c.pt`) with one whose type is what that
+field reduces to, so with the body sealed those characteristic lemmas do not elaborate.
 -/
 
 public section
@@ -281,7 +286,7 @@ theorem continuousFiniteQuotientTransition_comp_comparisonApp (hVU : V ≤ U) (n
 
 /-- The inflation-and-inclusion comparison maps from every level into `Hⁿ(G, M)`, assembled as a
 natural transformation to the constant functor. -/
-@[expose] noncomputable def continuousFiniteQuotientComparison (n : ℕ) :
+noncomputable def continuousFiniteQuotientComparison (n : ℕ) :
     continuousFiniteQuotientSystem G M n ⟶
       (Functor.const ((OpenNormalSubgroup G)ᵒᵖ)).obj
         (continuousCohomology n (ofDiscreteModule ℤ G M)) where
@@ -295,7 +300,7 @@ natural transformation to the constant functor. -/
 theorem continuousFiniteQuotientComparison_app (n : ℕ) (U : OpenNormalSubgroup G) :
     (continuousFiniteQuotientComparison G M n).app (Opposite.op U) =
       continuousFiniteQuotientComparisonApp G M U n :=
-  rfl
+  (rfl)
 
 /-- The canonical cocone over the open-normal-subgroup system in degree `n`, with point `Hⁿ(G, M)`
 and legs the inflation-and-inclusion comparisons. -/
