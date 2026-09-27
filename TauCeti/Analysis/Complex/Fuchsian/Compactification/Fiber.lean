@@ -24,7 +24,46 @@ open scoped MatrixGroups
 
 namespace Subgroup
 
-variable {Δ Γ : Subgroup PSL(2, ℝ)} (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
+variable {Δ Γ : Subgroup PSL(2, ℝ)}
+
+/-- Over an interior point, the ordinary orbit fibre is equivalent to the compactified fibre. -/
+def orbitFiberEquivCompactifiedFiber (h : Δ ≤ Γ) (p : orbitRel.Quotient Γ ℍ) :
+    {q : orbitRel.Quotient Δ ℍ //
+      Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q = p} ≃
+    {y : Δ.CompactifiedQuotient //
+      compactifiedQuotientMap h y = .ofQuotient p} where
+  toFun q := ⟨CompactifiedQuotient.ofQuotient q.1, by
+    simpa only [compactifiedQuotientMap_ofQuotient] using
+      congrArg CompactifiedQuotient.ofQuotient q.2
+  ⟩
+  invFun y := by
+    obtain ⟨y, hy⟩ := y
+    cases y with
+    | ofQuotient p =>
+        simp only [compactifiedQuotientMap_ofQuotient] at hy
+        exact ⟨p, CompactifiedQuotient.ofQuotient.inj hy⟩
+    | ofCusp C =>
+        simp only [compactifiedQuotientMap_ofCusp] at hy
+        cases hy
+  left_inv q := by cases q; rfl
+  right_inv y := by
+    obtain ⟨y, hy⟩ := y
+    cases y with
+    | ofQuotient p => rfl
+    | ofCusp C =>
+        simp only [compactifiedQuotientMap_ofCusp] at hy
+        cases hy
+
+/-- The interior-fibre equivalence inserts an ordinary orbit into the compactification. -/
+@[simp]
+theorem orbitFiberEquivCompactifiedFiber_apply (h : Δ ≤ Γ)
+    (p : orbitRel.Quotient Γ ℍ)
+    (q : {q : orbitRel.Quotient Δ ℍ //
+      Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q = p}) :
+    (orbitFiberEquivCompactifiedFiber h p q).1 = .ofQuotient q.1 :=
+  (rfl)
+
+variable (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
 
 /-- A finite-index inclusion induces a map with finite fibres on cusp orbits. -/
 theorem finite_fiber_cuspOrbitMap (C : Γ.CuspOrbit) :
@@ -52,36 +91,7 @@ theorem finite_fiber_compactifiedQuotientMap (x : Γ.CompactifiedQuotient) :
   cases x with
   | ofQuotient p =>
       have := TauCeti.finite_fiber_orbitRel_map_of_isFiniteRelIndex h p
-      let f : {y : Δ.CompactifiedQuotient //
-          compactifiedQuotientMap h y = .ofQuotient p} →
-          {q : orbitRel.Quotient Δ ℍ //
-            Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q = p} :=
-        fun y => by
-          obtain ⟨y, hy⟩ := y
-          cases y with
-          | ofQuotient q =>
-              simp only [compactifiedQuotientMap_ofQuotient] at hy
-              exact ⟨q, CompactifiedQuotient.ofQuotient.inj hy⟩
-          | ofCusp C =>
-              simp only [compactifiedQuotientMap_ofCusp] at hy
-              cases hy
-      apply Finite.of_injective f
-      intro y z hyz
-      obtain ⟨y, hy⟩ := y
-      obtain ⟨z, hz⟩ := z
-      cases y with
-      | ofQuotient q =>
-          cases z with
-          | ofQuotient r =>
-              apply Subtype.ext
-              exact congrArg CompactifiedQuotient.ofQuotient
-                (congrArg Subtype.val hyz)
-          | ofCusp C =>
-              simp only [compactifiedQuotientMap_ofCusp] at hz
-              cases hz
-      | ofCusp C =>
-          simp only [compactifiedQuotientMap_ofCusp] at hy
-          cases hy
+      exact Finite.of_equiv _ (orbitFiberEquivCompactifiedFiber h p)
   | ofCusp C =>
       have := finite_fiber_cuspOrbitMap h C
       let f : {y : Δ.CompactifiedQuotient //

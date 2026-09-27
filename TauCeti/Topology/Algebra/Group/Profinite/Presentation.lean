@@ -63,6 +63,8 @@ of profinite relators is a quotient of the profinite group they present.
   relators with the same closed normal closure present the same group.
 * `TauCeti.presentedProfiniteGroup.toPresentedProP_surjective`: a presented profinite group maps
   onto the pro-`p` group presented by the images of its relators.
+* `TauCeti.presentedProPGen`: the generators of a pro-`p` group presented on `Fin n`, indexed by
+  `ℕ` with value `1` out of range, as the images of `TauCeti.freeProPGen`.
 
 ## References
 
@@ -534,12 +536,18 @@ theorem dense_closure_range_of :
     ← dense_iff_closure_eq] at h
   exact h
 
+/-- The generators generate the presented pro-`p` group topologically, as an equation of
+subgroups. -/
+theorem topologicalClosure_closure_range_of_eq_top :
+    (Subgroup.closure (Set.range (of p rels))).topologicalClosure = ⊤ :=
+  SetLike.coe_injective <| by
+    rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
+
 /-- A pro-`p` group presented on a finite type is topologically finitely generated. -/
 theorem isTopologicallyFinitelyGenerated [Finite X] :
     IsTopologicallyFinitelyGenerated (presentedProP p X rels) :=
-  (Set.finite_range (of p rels)).isTopologicallyFinitelyGenerated <|
-    SetLike.coe_injective <| by
-      rw [Subgroup.topologicalClosure_coe, dense_closure_range_of.closure_eq, Subgroup.coe_top]
+  (Set.finite_range (of p rels)).isTopologicallyFinitelyGenerated
+    topologicalClosure_closure_range_of_eq_top
 
 /-- A continuous homomorphism from the free pro-`p` group that kills the relators factors through
 the presented pro-`p` group. -/
@@ -898,5 +906,57 @@ theorem IsProP.exists_continuousMulEquiv_presentedProP (hG : IsProP p G)
   exact ⟨_, ⟨presentedProP.equivOfSurjective φ hφ⟩⟩
 
 end Existence
+
+/-! ## The generators of a presentation on `Fin n`, indexed by `ℕ` -/
+
+section NatIndexed
+
+variable (p n : ℕ) (rels : Set (freeProP p (Fin n)))
+
+/-- The generators of a pro-`p` group presented on `Fin n`, indexed by `ℕ` with value `1` out of
+range: the images of `TauCeti.freeProPGen`. -/
+noncomputable def presentedProPGen (i : ℕ) : presentedProP p (Fin n) rels :=
+  presentedProP.mk p rels (freeProPGen p n i)
+
+/-- The quotient map carries `freeProPGen` to `presentedProPGen`. -/
+@[simp]
+theorem presentedProP.mk_freeProPGen (i : ℕ) :
+    presentedProP.mk p rels (freeProPGen p n i) = presentedProPGen p n rels i :=
+  (rfl)
+
+/-- In range, `presentedProPGen p n rels i` is the `i`-th canonical generator. -/
+@[simp]
+theorem presentedProPGen_of_lt {i : ℕ} (h : i < n) :
+    presentedProPGen p n rels i = presentedProP.of p rels ⟨i, h⟩ := by
+  rw [← presentedProP.mk_freeProPGen, freeProPGen_of_lt p h, presentedProP.mk_of]
+
+/-- Out of range, `presentedProPGen p n rels i` is `1`. -/
+@[simp]
+theorem presentedProPGen_eq_one_of_le {i : ℕ} (h : n ≤ i) : presentedProPGen p n rels i = 1 := by
+  rw [← presentedProP.mk_freeProPGen, freeProPGen_eq_one_of_le p h, map_one]
+
+/-- On the values of `Fin n`, `presentedProPGen p n rels` is the canonical generator. -/
+theorem presentedProPGen_val (i : Fin n) :
+    presentedProPGen p n rels i = presentedProP.of p rels i := by
+  rw [← presentedProP.mk_freeProPGen, freeProPGen_val, presentedProP.mk_of]
+
+/-- The value of a homomorphism on the `ℕ`-indexed generators of a presented group. -/
+theorem map_presentedProPGen {K F : Type*} [Group K] [FunLike F (presentedProP p (Fin n) rels) K]
+    [MonoidHomClass F (presentedProP p (Fin n) rels) K] (φ : F) (i : ℕ) :
+    φ (presentedProPGen p n rels i) =
+      if h : i < n then φ (presentedProP.of p rels ⟨i, h⟩) else 1 := by
+  split_ifs with h
+  · rw [presentedProPGen_of_lt p n rels h]
+  · rw [presentedProPGen_eq_one_of_le p n rels (not_lt.mp h), map_one]
+
+/-- The quotient map carries the tuple `freeProPGen` to the tuple `presentedProPGen`: the
+function-level form of `TauCeti.presentedProP.mk_freeProPGen`, which lets a word read on
+`presentedProPGen` be pulled back along the quotient map to the same word on `freeProPGen`. -/
+@[simp]
+theorem presentedProP.mk_comp_freeProPGen :
+    ⇑(presentedProP.mk p rels) ∘ freeProPGen p n = presentedProPGen p n rels :=
+  funext (presentedProP.mk_freeProPGen p n rels)
+
+end NatIndexed
 
 end TauCeti

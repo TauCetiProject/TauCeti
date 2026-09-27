@@ -30,6 +30,8 @@ of restriction of scalars.
   automorphism fixes the intermediate field pointwise.
 * `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one`: the restriction kernel is
   the image of restriction of scalars.
+* `AlgEquiv.restrictNormal_mul_restrictScalars`: multiplying by an automorphism of the top field
+  over the intermediate one does not change the restriction.
 -/
 
 public section
@@ -119,5 +121,15 @@ theorem AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one
     let τ : M ≃ₐ[L] M := AlgEquiv.ofRingEquiv (f := σ.toRingEquiv)
       ((AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M σ).1 h)
     exact ⟨τ, AlgEquiv.ext fun x ↦ by simp [τ]⟩
+
+/-- Multiplying by an automorphism of `M/L` does not change the restriction to `L`. -/
+@[simp]
+theorem AlgEquiv.restrictNormal_mul_restrictScalars (σ : M ≃ₐ[K] M) (τ : M ≃ₐ[L] M) :
+    (σ * τ.restrictScalars K).restrictNormal L = σ.restrictNormal L := by
+  rw [← AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M, map_mul,
+    AlgEquiv.restrictNormalHom_apply_eq_restrictNormal,
+    AlgEquiv.restrictNormalHom_apply_eq_restrictNormal,
+    (AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one K L M
+      (τ.restrictScalars K)).1 ⟨τ, rfl⟩, mul_one]
 
 end Tower
