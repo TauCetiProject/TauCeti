@@ -66,13 +66,13 @@ variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
 
 /-- A subcoalgebra of a linearly reductive coalgebra is linearly reductive. -/
 theorem IsLinearlyReductive.of_injective (f : C →ₗc[k] D)
-    (hf : Function.Injective f) (hD : IsLinearlyReductive.{u, w, u} k D) :
+    (hf : Function.Injective f) (hD : IsLinearlyReductive.{u, w, x} k D) :
     IsLinearlyReductive.{u, v, x} k C := by
   apply IsLinearlyReductive.of_forall_isCompletelyReducible
   intro V _ _ _ _
   let _ : Comodule k D V := Comodule.Corestrict f
   exact Comodule.IsCompletelyReducible.of_corestrict_of_injective f
-    (hD.isCompletelyReducible k) hf
+    (hD.isCompletelyReducible_sameUniverse k V) hf
 
 end Coalgebra
 

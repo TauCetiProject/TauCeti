@@ -30,6 +30,8 @@ coalgebras must preserve the invariant subspaces of their comodules.
   by a coalgebra equivalence.
 * `TauCeti.Subcomodule.ofCorestrictOfInjective`: recover a subcomodule from its corestriction
   along an injective coalgebra morphism over a field.
+* `TauCeti.Subcomodule.corestrictOrderIsoOfInjective`: the resulting order isomorphism of
+  subcomodule lattices.
 * `TauCeti.Subcomodule.map_id_coact_coe_eq_tmul_one`: a vector of a subcomodule fixed by the
   corestricted coaction is fixed by the corestricted coaction of the ambient comodule.
 
@@ -304,6 +306,44 @@ theorem ofCorestrictOfInjective_corestrict (f : C →ₗc[k] D)
     ofCorestrictOfInjective f hf (W.corestrict f) = W := by
   ext m
   simp only [mem_ofCorestrictOfInjective, mem_corestrict]
+
+/-- An injective coalgebra morphism identifies subcomodules with those of the corestricted
+comodule, preserving their underlying submodules. -/
+noncomputable def corestrictOrderIsoOfInjective (f : C →ₗc[k] D)
+    (hf : Function.Injective f) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    Subcomodule k C V ≃o Subcomodule k D V :=
+  letI : Comodule k D V := Comodule.Corestrict f
+  { toFun := fun W ↦ W.corestrict f
+    invFun := ofCorestrictOfInjective f hf
+    left_inv := ofCorestrictOfInjective_corestrict f hf
+    right_inv := corestrict_ofCorestrictOfInjective f hf
+    map_rel_iff' := by
+      rfl }
+
+/-- The forward map of the injective-corestriction order isomorphism is corestriction. -/
+@[simp]
+theorem corestrictOrderIsoOfInjective_apply (f : C →ₗc[k] D)
+    (hf : Function.Injective f) (W : Subcomodule k C V) :
+    corestrictOrderIsoOfInjective f hf W = W.corestrict f :=
+  by
+    let _ : Comodule k D V := Comodule.Corestrict f
+    ext m
+    rfl
+
+/-- The inverse map of the injective-corestriction order isomorphism recovers the original
+subcomodule. -/
+@[simp]
+theorem corestrictOrderIsoOfInjective_symm_apply (f : C →ₗc[k] D)
+    (hf : Function.Injective f)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    (corestrictOrderIsoOfInjective f hf).symm W = ofCorestrictOfInjective f hf W :=
+  by
+    let _ : Comodule k D V := Comodule.Corestrict f
+    ext m
+    rfl
 
 end Injective
 
