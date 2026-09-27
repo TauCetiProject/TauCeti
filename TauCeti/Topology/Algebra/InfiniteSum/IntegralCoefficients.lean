@@ -16,12 +16,12 @@ import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
 /-!
-# Evaluating integral coefficient series in non-archimedean fields
+# Evaluating integral coefficient series in non-archimedean normed rings
 
-Every integer has norm at most one in a non-archimedean normed field. Thus a series with arbitrary
-integer coefficients converges at any parameter of norm below one, provided the field is complete.
-This is the basic convergence fact for integral formal power series over complete valued fields,
-including nondiscretely valued fields and fields of positive characteristic.
+Every integer has norm at most one in a non-archimedean normed ring with `‖1‖ = 1`. Thus a series
+with arbitrary integer coefficients converges at any parameter of norm below one, provided the ring
+is complete. This includes complete valued fields with nondiscrete valuations or positive
+characteristic.
 -/
 
 public section
@@ -31,28 +31,32 @@ open PowerSeries
 namespace TauCeti
 
 /-- The terms of an integer-coefficient power series are absolutely summable at a parameter of
-norm below one in a non-archimedean normed field. -/
-theorem summable_norm_intCast_mul_pow {K : Type*} [NormedField K]
+norm below one in a non-archimedean normed ring. -/
+theorem summable_norm_intCast_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
     [IsUltrametricDist K] (a : ℕ → ℤ) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ ‖(a n : K) * q ^ n‖) := by
   apply Summable.of_nonneg_of_le (fun n ↦ norm_nonneg _) (fun n ↦ ?_)
     (summable_norm_geometric_of_norm_lt_one hq)
-  rw [norm_mul]
-  simpa only [one_mul] using
-    mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_intCast_le_one K (a n))
-      (norm_nonneg (q ^ n))
+  calc
+    ‖(a n : K) * q ^ n‖ ≤ ‖(a n : K)‖ * ‖q ^ n‖ := norm_mul_le _ _
+    _ ≤ 1 * ‖q ^ n‖ :=
+      mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_intCast_le_one K (a n))
+        (norm_nonneg (q ^ n))
+    _ = ‖q ^ n‖ := one_mul _
 
 /-- An arbitrary integer-coefficient power series converges at a parameter of norm below one in
-a complete non-archimedean field. -/
-theorem summable_intCast_mul_pow {K : Type*} [NormedField K] [CompleteSpace K]
+a complete non-archimedean normed ring. -/
+theorem summable_intCast_mul_pow {K : Type*} [NormedRing K] [NormOneClass K]
+    [CompleteSpace K]
     [IsUltrametricDist K] (a : ℕ → ℤ) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ (a n : K) * q ^ n) :=
   (summable_norm_intCast_mul_pow a hq).of_norm
 
 /-- Evaluation of an integral formal power series at a parameter of norm below one in a complete
-non-archimedean field. Integer coefficients are bounded in norm, so the defining sum converges
-without requiring a linear topology on the field. -/
-noncomputable def evalIntSeries {K : Type*} [NormedField K] [CompleteSpace K]
+non-archimedean normed commutative ring. Integer coefficients are bounded in norm, so the defining
+sum converges without requiring a linear topology on the target. -/
+noncomputable def evalIntSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) : ℤ⟦X⟧ →+* K where
   toFun f := ∑' n : ℕ, ((PowerSeries.coeff n f : ℤ) : K) * q ^ n
   map_zero' := by
@@ -82,21 +86,24 @@ noncomputable def evalIntSeries {K : Type*} [NormedField K] [CompleteSpace K]
 
 /-- The evaluation map is the convergent sum of the coefficients times powers of the
 parameter. -/
-theorem evalIntSeries_apply {K : Type*} [NormedField K] [CompleteSpace K]
+theorem evalIntSeries_apply {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
     evalIntSeries q hq f = ∑' n : ℕ, ((PowerSeries.coeff n f : ℤ) : K) * q ^ n :=
   (rfl)
 
 /-- Evaluating the formal parameter gives the chosen element. -/
 @[simp]
-theorem evalIntSeries_X {K : Type*} [NormedField K] [CompleteSpace K]
+theorem evalIntSeries_X {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) :
     evalIntSeries q hq (PowerSeries.X : ℤ⟦X⟧) = q := by
   rw [evalIntSeries_apply]
   simp [PowerSeries.coeff_X]
 
 /-- Evaluation of an integral series inside the open unit ball has norm at most one. -/
-theorem norm_evalIntSeries_le_one {K : Type*} [NormedField K] [CompleteSpace K]
+theorem norm_evalIntSeries_le_one {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
     ‖evalIntSeries q hq f‖ ≤ 1 := by
   rw [evalIntSeries_apply]
@@ -107,15 +114,17 @@ theorem norm_evalIntSeries_le_one {K : Type*} [NormedField K] [CompleteSpace K]
   filter_upwards [] with s
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one (fun n _ ↦ ?_)
   change ‖((coeff n f : ℤ) : K) * q ^ n‖ ≤ 1
-  rw [norm_mul, norm_pow]
   calc
-    _ ≤ 1 * ‖q‖ ^ n :=
+    _ ≤ ‖((coeff n f : ℤ) : K)‖ * ‖q ^ n‖ := norm_mul_le _ _
+    _ ≤ 1 * ‖q ^ n‖ :=
       mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_intCast_le_one K (coeff n f))
-        (pow_nonneg (norm_nonneg q) _)
-    _ ≤ 1 := by simpa using pow_le_one₀ (norm_nonneg q) hq.le
+        (norm_nonneg (q ^ n))
+    _ ≤ 1 * ‖q‖ ^ n := by simpa only [one_mul] using norm_pow_le q n
+    _ ≤ 1 := by simpa only [one_mul] using pow_le_one₀ (norm_nonneg q) hq.le
 
 /-- An integral formal unit evaluates to an element of norm one inside the open unit ball. -/
-theorem norm_evalIntSeries_of_isUnit {K : Type*} [NormedField K] [CompleteSpace K]
+theorem norm_evalIntSeries_eq_one_of_isUnit {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K]
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) {f : ℤ⟦X⟧} (hf : IsUnit f) :
     ‖evalIntSeries q hq f‖ = 1 := by
   obtain ⟨g, hfg⟩ := hf.exists_right_inv
@@ -124,8 +133,8 @@ theorem norm_evalIntSeries_of_isUnit {K : Type*} [NormedField K] [CompleteSpace 
   have hbound := norm_evalIntSeries_le_one q hq g
   have hnonneg := norm_nonneg (evalIntSeries q hq f)
   have hge : 1 ≤ ‖evalIntSeries q hq f‖ := by
-    have h := congrArg norm hmul
-    rw [norm_mul, norm_one] at h
+    have h := norm_mul_le (evalIntSeries q hq f) (evalIntSeries q hq g)
+    rw [hmul, norm_one] at h
     nlinarith
   exact le_antisymm (norm_evalIntSeries_le_one q hq f) hge
 

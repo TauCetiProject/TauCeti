@@ -42,18 +42,6 @@ theorem summable_divisorSumSeries (k : ℕ) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ (((σ k n : ℕ) : ℤ) : K) * q ^ n) :=
   summable_intCast_mul_pow (fun n : ℕ ↦ ((σ k n : ℕ) : ℤ)) hq
 
-/-- The fourth Tate coefficient, obtained by substituting `q` into its integral formal series,
-is a convergent sum. -/
-theorem summable_tateCurve_a₄ {q : K} (hq : ‖q‖ < 1) :
-    Summable (fun n : ℕ ↦ ((PowerSeries.coeff n tateCurve.a₄ : ℤ) : K) * q ^ n) :=
-  summable_intCast_mul_pow (fun n : ℕ ↦ PowerSeries.coeff n tateCurve.a₄) hq
-
-/-- The sixth Tate coefficient converges as an integral series, even when `12` vanishes in the
-field. -/
-theorem summable_tateCurve_a₆ {q : K} (hq : ‖q‖ < 1) :
-    Summable (fun n : ℕ ↦ ((PowerSeries.coeff n tateCurve.a₆ : ℤ) : K) * q ^ n) :=
-  summable_intCast_mul_pow (fun n : ℕ ↦ PowerSeries.coeff n tateCurve.a₆) hq
-
 /-- Evaluation of the integral divisor-sum series in a complete non-archimedean field. Its
 convergence for `‖q‖ < 1` is `summable_divisorSumSeries`. -/
 noncomputable def divisorSumAt (k : ℕ) (q : K) (_hq : ‖q‖ < 1) : K :=
@@ -132,12 +120,12 @@ theorem norm_tateCurveAt_Δ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     ‖(tateCurveAt q hq).Δ‖ = ‖(q : K)‖ := by
   obtain ⟨u, hu, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
   rw [tateCurveAt, WeierstrassCurve.map_Δ, hΔ, map_mul, evalIntSeries_X, norm_mul,
-    norm_evalIntSeries_of_isUnit (q : K) hq
+    norm_evalIntSeries_eq_one_of_isUnit (q : K) hq
       ((isUnit_iff_constantCoeff (φ := u)).mpr (by simp [hu])), mul_one]
 
 /-- A unit parameter of norm below one gives an elliptic curve over the complete valued field,
 with no discreteness or characteristic assumption. -/
-theorem isElliptic_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
+instance isElliptic_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     (tateCurveAt q hq).IsElliptic :=
   ⟨isUnit_tateCurveAt_Δ q hq⟩
 
