@@ -42,7 +42,10 @@ scoped[TauCeti.DiffeomorphWeakWhitney] attribute [instance]
 
 /-- The natural action of `Diff(M)` on `M` is continuous jointly in the diffeomorphism and
 the point. -/
-instance applyContinuousSMul : ContinuousSMul (M ≃ₘ^n⟮I, I⟯ M) M :=
+theorem applyContinuousSMul : ContinuousSMul (M ≃ₘ^n⟮I, I⟯ M) M :=
   ⟨ContinuousEval.continuous_eval⟩
+
+scoped[TauCeti.DiffeomorphWeakWhitney] attribute [instance]
+  Diffeomorph.applyContinuousSMul
 
 end Diffeomorph
