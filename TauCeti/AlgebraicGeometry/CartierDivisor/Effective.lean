@@ -11,8 +11,9 @@ public import TauCeti.AlgebraicGeometry.CartierDivisor.Sheaf
 # Effective Cartier divisors on integral schemes
 
 A Cartier divisor is effective when its local equations are regular at every point. On an
-integral scheme, a nonzero local equation is automatically a nonzerodivisor. This is the
-absolute notion underlying relative effective Cartier divisors in families of curves.
+integral scheme, a nonzero local equation is automatically a nonzerodivisor. This absolute
+divisor construction supports the divisor and line-bundle dictionary and, later, relative
+effective Cartier divisors in families of curves.
 
 Effectivity can be checked using one local equation at each point. Equivalently, the constant
 section `1` of the rational-function sheaf belongs to `𝒪_X(D)` globally. For a principal
@@ -77,6 +78,25 @@ theorem IsEffective.add {D E : CartierDivisor X} (hD : D.IsEffective) (hE : E.Is
   refine ⟨f * g, hf.mul hg, ?_⟩
   exact Subring.mul_mem _ hfr hgr
 
+/-- A natural multiple of an effective Cartier divisor is effective. -/
+theorem IsEffective.nsmul {D : CartierDivisor X} (hD : D.IsEffective) (n : ℕ) :
+    (n • D).IsEffective := by
+  induction n with
+  | zero => simp
+  | succ n ih => simpa only [succ_nsmul] using ih.add hD
+
+/-- Effective Cartier divisors form an additive submonoid. -/
+def effectiveSubmonoid (X : Scheme.{u}) [IsIntegral X] : AddSubmonoid (CartierDivisor X) where
+  carrier := {D | D.IsEffective}
+  zero_mem' := isEffective_zero
+  add_mem' := fun hD hE => hD.add hE
+
+/-- Membership in the effective Cartier divisor submonoid is effectivity. -/
+@[simp]
+theorem mem_effectiveSubmonoid (D : CartierDivisor X) :
+    D ∈ effectiveSubmonoid X ↔ D.IsEffective :=
+  Iff.rfl
+
 /-- Effectivity can be tested by the single global section `1` of `𝒪_X`. -/
 theorem isEffective_iff_one_mem_sections {D : CartierDivisor X} :
     D.IsEffective ↔
@@ -125,7 +145,7 @@ def regularToSheaf (D : CartierDivisor X) (hD : D.IsEffective) :
 
 /-- The inclusion `𝒪_X ⟶ 𝒪_X(D)` of an effective Cartier divisor agrees with the usual
 inclusion after embedding both sheaves in rational functions. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem regularToSheaf_ι (D : CartierDivisor X) (hD : D.IsEffective) :
     D.regularToSheaf hD ≫ D.sheafι = Scheme.toRationalFunctions X :=
   D.sheafLift_ι _ _
