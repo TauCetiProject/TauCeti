@@ -83,6 +83,7 @@ theorem map_algebraMap (r : R) :
   rw [IsScalarTower.algebraMap_apply R S (S ⊗[R] NodeAlgebra R a) r]
   exact (baseChange a).commutes (algebraMap R S r)
 
+/-- Changing coefficients preserves each nodal coordinate. -/
 @[simp]
 theorem map_coord (i : Fin 2) :
     map a (coord a i) = coord (algebraMap R S a) i := by
@@ -92,11 +93,13 @@ theorem map_coord (i : Fin 2) :
 @[simp]
 theorem baseChange_tmul (s : S) (x : NodeAlgebra R a) :
     baseChange a (s ⊗ₜ[R] x) = s • map a x := by
-  have h : s • ((1 : S) ⊗ₜ[R] x) = s ⊗ₜ[R] x := by
-    rw [TensorProduct.smul_tmul']
-    simp
-  rw [← h, map_smul]
-  rfl
+  have hmap : map a x = baseChange a ((1 : S) ⊗ₜ[R] x) := by
+    change (baseChange a)
+      ((Algebra.TensorProduct.includeRight :
+        NodeAlgebra R a →ₐ[R] S ⊗[R] NodeAlgebra R a) x) = _
+    rw [Algebra.TensorProduct.includeRight_apply]
+  rw [hmap]
+  simp only [baseChange, AlgEquiv.ofAlgHom_apply, AlgHom.liftEquiv_tmul, one_smul]
 
 /-- The inverse base-change map sends the new coordinates to the old coordinates in the
 extended algebra. -/
