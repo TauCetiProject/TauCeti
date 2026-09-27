@@ -33,7 +33,7 @@ directions.
 
 The ideal form is what makes the integers of an unramified extension a lattice modelled on the
 residue extension: reduction modulo `𝓂[K] 𝒪[L] = 𝓂[L]` loses no generators, by
-`TauCeti.IsLocalRing.span_eq_top_iff_span_residue_image_eq_top`, and the two extensions have the
+`TauCeti.IsLocalRing.span_residue_image_eq_top_iff_span_eq_top`, and the two extensions have the
 same degree. Bases therefore correspond in both directions: a family of elements of `𝒪[L]`
 lifting a basis of `𝓀[L]` over `𝓀[K]` is a basis of `𝒪[L]` over `𝒪[K]`, and the reduction of a
 basis of `𝒪[L]` over `𝒪[K]` is a basis of `𝓀[L]` over `𝓀[K]`. These integral bases are the
@@ -71,6 +71,9 @@ computational input to the norm and trace of an unramified extension.
   `𝒪[L]` over `𝒪[K]`.
 * `TauCeti.IsUnramified.finrank_integerRing_eq_finrank_residueField`: the rank of `𝒪[L]` over
   `𝒪[K]` is the degree of the residue extension.
+* `TauCeti.IsUnramified.residueBasis_basisOfResidueBasis` and
+  `TauCeti.IsUnramified.basisOfResidueBasis_residueBasis`: the two constructions are mutually
+  inverse.
 * `TauCeti.IsUnramified.exists_basis_residue_eq`: every basis of the residue extension is the
   reduction of an integral basis.
 
@@ -256,8 +259,8 @@ noncomputable def IsUnramified.basisOfResidueBasis [IsUnramified K L]
     Module.Basis ι 𝒪[K] 𝒪[L] :=
   basisOfTopLeSpanOfCardEqFinrank x
     (by
-      have := (isUnramified_iff_formallyUnramified K L).1 ‹_›
-      refine (IsLocalRing.span_eq_top_iff_span_residue_image_eq_top.2 ?_).ge
+      refine ((IsLocalRing.span_residue_image_eq_top_iff_span_eq_top
+        (IsUnramified.map_maximalIdeal (K := K) (L := L))).1 ?_).ge
       rw [← Set.range_comp]
       simpa only [Function.comp_def, hx] using b.span_eq)
     (by rw [IsUnramified.finrank_integerRing_eq_finrank_residueField K L,
@@ -275,9 +278,9 @@ noncomputable def IsUnramified.residueBasis [IsUnramified K L]
     (B : Module.Basis ι 𝒪[K] 𝒪[L]) : Module.Basis ι 𝓀[K] 𝓀[L] :=
   basisOfTopLeSpanOfCardEqFinrank (residue 𝒪[L] ∘ B)
     (by
-      have := (isUnramified_iff_formallyUnramified K L).1 ‹_›
       rw [Set.range_comp]
-      exact (IsLocalRing.span_eq_top_iff_span_residue_image_eq_top.1 B.span_eq).ge)
+      exact ((IsLocalRing.span_residue_image_eq_top_iff_span_eq_top
+        (IsUnramified.map_maximalIdeal (K := K) (L := L))).2 B.span_eq).ge)
     (by rw [← IsUnramified.finrank_integerRing_eq_finrank_residueField K L,
       ← Module.finrank_eq_card_basis B])
 
@@ -285,6 +288,23 @@ noncomputable def IsUnramified.residueBasis [IsUnramified K L]
 theorem IsUnramified.coe_residueBasis [IsUnramified K L] (B : Module.Basis ι 𝒪[K] 𝒪[L]) :
     ⇑(IsUnramified.residueBasis B) = residue 𝒪[L] ∘ B :=
   coe_basisOfTopLeSpanOfCardEqFinrank ..
+
+/-- Reducing the integral basis lifting a residue basis returns that residue basis. -/
+@[simp]
+theorem IsUnramified.residueBasis_basisOfResidueBasis [IsUnramified K L]
+    (b : Module.Basis ι 𝓀[K] 𝓀[L]) (x : ι → 𝒪[L]) (hx : ∀ i, residue 𝒪[L] (x i) = b i) :
+    IsUnramified.residueBasis (IsUnramified.basisOfResidueBasis b x hx) = b :=
+  DFunLike.coe_injective <| by
+    rw [IsUnramified.coe_residueBasis, IsUnramified.coe_basisOfResidueBasis]
+    exact funext hx
+
+/-- Lifting the reduction of an integral basis returns that integral basis. -/
+@[simp]
+theorem IsUnramified.basisOfResidueBasis_residueBasis [IsUnramified K L]
+    (B : Module.Basis ι 𝒪[K] 𝒪[L])
+    (hx : ∀ i, residue 𝒪[L] (B i) = IsUnramified.residueBasis B i) :
+    IsUnramified.basisOfResidueBasis (IsUnramified.residueBasis B) B hx = B :=
+  DFunLike.coe_injective (IsUnramified.coe_basisOfResidueBasis ..)
 
 end ResidueBasis
 
