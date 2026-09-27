@@ -112,12 +112,7 @@ theorem isSplitMono_of_mono_simpleRepToIndecInjRep_comp {i : Q}
     (g : indecInjRep k Q i ⟶ X) (hg : Mono (simpleRepToIndecInjRep k i ≫ g)) :
     IsSplitMono g := by
   have hinj := indecInjRep_app_injective_of_mono_simpleRepToIndecInjRep_comp k h g hg
-  obtain ⟨φ, hφ⟩ := LinearMap.dualMap_surjective_of_injective hinj
-    (indecInjRepHomEquiv i (indecInjRep k Q i) (𝟙 (indecInjRep k Q i)))
-  refine IsSplitMono.mk' ⟨(indecInjRepHomEquiv i X).symm φ, ?_⟩
-  apply (indecInjRepHomEquiv i (indecInjRep k Q i)).injective
-  rw [indecInjRepHomEquiv_comp, LinearEquiv.apply_symm_apply]
-  exact hφ
+  exact isSplitMono_of_indecInjRep_app_injective g hinj
 
 /-- **The vertex injective is the injective envelope of the vertex simple.** If the trivial path
 is the only path `i → i`, the canonical embedding `Sᵢ ↪ Iᵢ` is an essential monomorphism;
