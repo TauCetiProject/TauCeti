@@ -63,4 +63,11 @@ theorem upperJump_herbrand_iff (u : RamificationIndexDomain) :
     simpa only [upperRamificationGroup_def, inverseHerbrand_herbrand] using
       (lowerJump_iff K L u).mp h (inverseHerbrand K L v) h'
 
+/-- The inverse Herbrand function takes upper breaks precisely to lower breaks. -/
+@[simp]
+theorem lowerJump_inverseHerbrand_iff (u : RamificationIndexDomain) :
+    LowerJump K L (inverseHerbrand K L u) ↔ UpperJump K L u := by
+  simpa only [herbrand_inverseHerbrand] using
+    (upperJump_herbrand_iff K L (inverseHerbrand K L u)).symm
+
 end TauCeti.LocalFieldsRamification
