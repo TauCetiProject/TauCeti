@@ -38,8 +38,9 @@ base-change together.
 
 ## References
 
-* The type-`E₇` base-change construction in `TauCeti.Algebra.Lie.E7.Minuscule.PositiveSubsystem`
-  for the interface specialized here.
+* The type-`E₇` base-change construction in
+  `TauCeti.Algebra.Lie.E7.Minuscule.PositiveSubsystem.BaseChange` for the interface specialized
+  here.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4.
 * B. Conrad, *Reductive Group Schemes*, §1.
 -/
