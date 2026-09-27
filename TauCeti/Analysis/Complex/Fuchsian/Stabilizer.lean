@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 import TauCeti.Topology.Algebra.ConstMulAction
+import Mathlib.GroupTheory.Coset.Card
 
 /-!
 # Point stabilizers of Fuchsian groups
@@ -39,6 +40,24 @@ open MulAction UpperHalfPlane
 open scoped MatrixGroups
 
 namespace Subgroup
+
+variable {Δ Γ : Subgroup PSL(2, ℝ)} (h : Δ ≤ Γ) (z : ℍ)
+
+/-- Inclusion of groups restricts to an inclusion of their stabilizers at the same point. -/
+def stabilizerInclusion : stabilizer Δ z →* stabilizer Γ z where
+  toFun g := ⟨⟨g.1.1, h g.1.2⟩, g.2⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+/-- The inclusion of point stabilizers is injective. -/
+theorem stabilizerInclusion_injective : Function.Injective (stabilizerInclusion h z) := by
+  intro a b hab
+  exact Subtype.ext (Subtype.ext (congrArg (fun g : stabilizer Γ z => g.1.1) hab))
+
+/-- An elliptic stabilizer's order divides the order of the stabilizer in a larger group. -/
+theorem card_stabilizer_dvd_card_stabilizer (h : Δ ≤ Γ) (z : ℍ) :
+    Nat.card (stabilizer Δ z) ∣ Nat.card (stabilizer Γ z) :=
+  card_dvd_of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
 
 /-- **The point stabilizers of a Fuchsian group are cyclic**: for a discrete subgroup
 `Γ ≤ PSL(2, ℝ)`, the stabilizer of every point of `ℍ` is cyclic. -/
