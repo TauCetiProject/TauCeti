@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.H2ZMod
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Cohomology
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.InvariantDual
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.MinimalPresentation
@@ -33,9 +34,13 @@ exponent `r` in the order `p ^ r` of `H²(G, 𝔽_p)` **counts the relations** o
 `H²(G, 𝔽_p)` does not see the presentation, that count is the same for every minimal presentation
 of `G`. This is the presentation independence of the relation rank.
 
-The statements are about the order of `H²(G, 𝔽_p)`, for the explicit continuous cohomology `H2` of
-the trivial `G`-module `𝔽_p`; the action of `G` on `ZMod p` is carried as an instance together
-with the hypothesis that it is trivial, as in
+Since `H²(G, 𝔽_p)` is killed by `p` it is a vector space over `𝔽_p`
+(`TauCeti.ContCohomology.instModuleZModH2`), and the count `p ^ r` is equivalently the statement
+that `r` is its dimension. That dimension form is the relation rank `r(G)` of `G`.
+
+The statements are about the order and the dimension of `H²(G, 𝔽_p)`, for the explicit
+continuous cohomology `H2` of the trivial `G`-module `𝔽_p`; the action of `G` on `ZMod p` is
+carried as an instance together with the hypothesis that it is trivial, as in
 `TauCeti.Topology.Algebra.Group.Profinite.ProP.InvariantDual`. The statements about a quotient
 `G ≅ F ⧸ R` of a free pro-`p` group `F` (`TauCeti.finite_H2_iff_of_le_proPFrattini` and
 `TauCeti.natCard_H2_of_le_proPFrattini`) carry the action of `F` on `𝔽_p` in the same way, as an
@@ -50,11 +55,15 @@ of `G` appears.
   `TauCeti.finite_H2_quotient_iff_of_le_proPFrattini` is the finiteness criterion.
 * `TauCeti.natCard_H2_of_le_proPFrattini`: for `G ≅ F ⧸ R` with `F` a free pro-`p` group and
   `R ≤ Φ(F)` closed normal, `H²(G, 𝔽_p)` has `p ^ d(R ⧸ Rᵖ[R, F])` elements;
-  `TauCeti.finite_H2_iff_of_le_proPFrattini` is the finiteness criterion.
+  `TauCeti.finite_H2_iff_of_le_proPFrattini` is the finiteness criterion, and
+  `TauCeti.finrank_H2_of_le_proPFrattini` is the dimension form of the count.
 * `TauCeti.presentedProP.natCard_H2`: for a minimal presentation `⟨X ∣ rels⟩ ≅ G` with relation
   subgroup `R`, `H²(G, 𝔽_p)` has `p ^ d(R ⧸ Rᵖ[R, F])` elements, and
   `TauCeti.presentedProP.natCard_H2_le_pow_iff`: it has at most `p ^ n` elements exactly when `R`
   is generated as a closed normal subgroup of `F` by at most `n` elements.
+* `TauCeti.presentedProP.finrank_H2`: the relation rank, `dim_{𝔽_p} H²(G, 𝔽_p) = d(R ⧸ Rᵖ[R, F])`,
+  and `TauCeti.presentedProP.finrank_H2_le_iff`: that dimension is at most `n` exactly when `R` is
+  generated as a closed normal subgroup of `F` by at most `n` elements.
 * `TauCeti.presentedProP.finite_H2_iff`: `H²(G, 𝔽_p)` is finite exactly when `R ⧸ Rᵖ[R, F]` is
   topologically finitely generated.
 * `TauCeti.presentedProP.topologicalGeneratorRankNat_quotient_pLowerCentralStep_eq`: the count
@@ -171,6 +180,23 @@ theorem natCard_H2_of_le_proPFrattini
   rw [← natCard_H2_quotient_of_le_proPFrattini hRc hR htrivF h]
   exact Nat.card_congr (h2QuotientEquiv e htrivF htriv).toEquiv.symm
 
+/-- **`dim H²(G, 𝔽_p)` counts the generators of `R ⧸ Rᵖ[R, F]` for a quotient of a free pro-`p`
+group.** Let `F` be the free pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup with
+`R ⧸ Rᵖ[R, F]` topologically finitely generated, and let `G ≅ F ⧸ R` be a group acting trivially
+on `𝔽_p`, as does `F`. Then `H²(G, 𝔽_p)` has dimension `d(R ⧸ Rᵖ[R, F])` over `𝔽_p`, where `d` is
+the topological generator rank. -/
+theorem finrank_H2_of_le_proPFrattini
+    (h : IsTopologicallyFinitelyGenerated (R ⧸ (pLowerCentralStep p R).subgroupOf R)) :
+    Module.finrank (ZMod p) (H2 G (ZMod p)) =
+      topologicalGeneratorRankNat (R ⧸ (pLowerCentralStep p R).subgroupOf R) h := by
+  have : Finite (H2 G (ZMod p)) := (finite_H2_iff_of_le_proPFrattini hRc hR e htrivF htriv).mpr h
+  have : Module.Finite (ZMod p) (H2 G (ZMod p)) := Module.Finite.of_finite
+  refine Nat.pow_right_injective (Fact.out : p.Prime).two_le ?_
+  calc p ^ Module.finrank (ZMod p) (H2 G (ZMod p))
+      = Nat.card (H2 G (ZMod p)) := by
+        rw [Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod]
+    _ = _ := natCard_H2_of_le_proPFrattini hRc hR e htrivF htriv h
+
 end Presentation
 
 namespace presentedProP
@@ -241,6 +267,44 @@ theorem natCard_H2_le_pow_iff
           (normalClosure (Subtype.val '' (s : Set (normalClosure rels).topologicalClosure))) =
           (normalClosure rels).topologicalClosure := by
   rw [natCard_H2 rels hrels e htriv h, pow_le_pow_iff_right₀ (Fact.out : p.Prime).one_lt,
+    (isProP_freeProP p X).topologicalGeneratorRankNat_quotient_pLowerCentralStep_le_iff Fact.out
+      (isClosed_topologicalClosure _) h n]
+
+/-- **The relation rank of a pro-`p` group is the dimension of `H²(G, 𝔽_p)`.** Let
+`G ≅ ⟨X ∣ rels⟩` be a presentation of a group acting trivially on `𝔽_p` whose relators lie in the
+Frattini subgroup of the free pro-`p` group `F` on `X`, and let `R` be the closed normal closure of
+the relators, with `R ⧸ Rᵖ[R, F]` topologically finitely generated. Then `H²(G, 𝔽_p)` has dimension
+`d(R ⧸ Rᵖ[R, F])` over `𝔽_p`, the least number of generators of `R` as a closed normal subgroup of
+`F`. -/
+theorem finrank_H2
+    (h : IsTopologicallyFinitelyGenerated ((normalClosure rels).topologicalClosure ⧸
+      (pLowerCentralStep p (normalClosure rels).topologicalClosure).subgroupOf
+        (normalClosure rels).topologicalClosure)) :
+    Module.finrank (ZMod p) (H2 G (ZMod p)) =
+      topologicalGeneratorRankNat ((normalClosure rels).topologicalClosure ⧸
+        (pLowerCentralStep p (normalClosure rels).topologicalClosure).subgroupOf
+          (normalClosure rels).topologicalClosure) h := by
+  let := trivialZModAction (p := p) (freeProP p X)
+  have : ContinuousSMul (freeProP p X) (ZMod p) := ⟨continuous_snd⟩
+  exact finrank_H2_of_le_proPFrattini (isClosed_topologicalClosure _)
+    ((topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels) e (fun _ _ ↦ rfl)
+    htriv h
+
+/-- **The dimension of `H²(G, 𝔽_p)` bounds the number of relations.** Let `G ≅ ⟨X ∣ rels⟩` be a
+presentation of a group acting trivially on `𝔽_p` whose relators lie in the Frattini subgroup of
+the free pro-`p` group `F` on `X`, and let `R` be the closed normal closure of the relators, with
+`R ⧸ Rᵖ[R, F]` topologically finitely generated. Then `H²(G, 𝔽_p)` has dimension at most `n` over
+`𝔽_p` exactly when `R` is generated as a closed normal subgroup of `F` by at most `n` elements. -/
+theorem finrank_H2_le_iff
+    (h : IsTopologicallyFinitelyGenerated ((normalClosure rels).topologicalClosure ⧸
+      (pLowerCentralStep p (normalClosure rels).topologicalClosure).subgroupOf
+        (normalClosure rels).topologicalClosure)) (n : ℕ) :
+    Module.finrank (ZMod p) (H2 G (ZMod p)) ≤ n ↔
+      ∃ s : Finset (normalClosure rels).topologicalClosure, s.card ≤ n ∧
+        Subgroup.topologicalClosure
+          (normalClosure (Subtype.val '' (s : Set (normalClosure rels).topologicalClosure))) =
+          (normalClosure rels).topologicalClosure := by
+  rw [finrank_H2 rels hrels e htriv h,
     (isProP_freeProP p X).topologicalGeneratorRankNat_quotient_pLowerCentralStep_le_iff Fact.out
       (isClosed_topologicalClosure _) h n]
 
