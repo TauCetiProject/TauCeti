@@ -7,17 +7,17 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Global
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
-public import TauCeti.Geometry.Manifold.Boundary.Collar.Basic
 
 /-!
 # A global collar for the Euclidean half-space
 
 The standard half-space has an explicit collar of its boundary: split off the zeroth coordinate
-and restrict the inward normal to the open interval `[0, 1)`.  This model collar supplies the
+and restrict the inward normal to the half-open interval `[0, 1)`.  This model collar supplies the
 standard-coordinate input for local-to-global collar constructions on manifolds with boundary.
 
-The construction reuses Mathlib's `IccLeftChart` to identify `[0, 1)` with the one-dimensional
-half-space, and Tau Ceti's `EuclideanHalfSpace.collarDiffeomorph` for the product identification.
+The construction reuses Tau Ceti's `EuclideanHalfSpace.homeomorphNormalIio` to identify `[0, 1)`
+with the initial segment of the one-dimensional half-space, and
+`EuclideanHalfSpace.collarDiffeomorph` for the product identification.
 
 ## Main results
 
@@ -36,8 +36,8 @@ open scoped Manifold
 
 namespace TauCeti.EuclideanHalfSpace
 
-private noncomputable def depthEmbedding : Ico (0 : ℝ) 1 → EuclideanHalfSpace 1 := by
-  exact (fun t : ↥(normalIio 1) ↦ (t : EuclideanHalfSpace 1)) ∘
+private noncomputable def depthEmbedding : Ico (0 : ℝ) 1 → EuclideanHalfSpace 1 :=
+  (fun t : ↥(normalIio 1) ↦ (t : EuclideanHalfSpace 1)) ∘
     (homeomorphNormalIio 1).symm
 
 private theorem depthEmbedding_isOpenEmbedding : IsOpenEmbedding depthEmbedding := by
@@ -46,19 +46,20 @@ private theorem depthEmbedding_isOpenEmbedding : IsOpenEmbedding depthEmbedding 
 
 private theorem depthEmbedding_apply (t : Ico (0 : ℝ) 1) :
     (depthEmbedding t).1 0 = t := by
-  change ((homeomorphNormalIio 1).symm t).1.1 0 = (t : ℝ)
-  rw [← coe_homeomorphNormalIio]
+  rw [depthEmbedding, Function.comp_apply, ← coe_homeomorphNormalIio]
   exact congrArg (fun s : Ico (0 : ℝ) 1 ↦ (s : ℝ))
     ((homeomorphNormalIio 1).apply_symm_apply t)
 
 private theorem depthEmbedding_apply_zero :
     depthEmbedding (0 : Ico (0 : ℝ) 1) = (0 : EuclideanHalfSpace 1) := by
-  change ((homeomorphNormalIio 1).symm (0 : Ico (0 : ℝ) 1)).1 = 0
-  apply (eq_zero_iff).2
-  rw [← coe_homeomorphNormalIio]
-  have h := congrArg (fun r : Ico (0 : ℝ) 1 ↦ (r : ℝ))
+  apply Subtype.ext
+  apply (WithLp.ext_iff _).2
+  funext i
+  have hi : i = 0 := Fin.eq_zero i
+  subst i
+  rw [depthEmbedding, Function.comp_apply, ← coe_homeomorphNormalIio]
+  exact congrArg (fun s : Ico (0 : ℝ) 1 ↦ (s : ℝ))
     ((homeomorphNormalIio 1).apply_symm_apply (0 : Ico (0 : ℝ) 1))
-  exact h
 
 /-- The explicit collar map of the standard half-space boundary. -/
 noncomputable def boundaryCollar (n : ℕ) :
@@ -67,14 +68,15 @@ noncomputable def boundaryCollar (n : ℕ) :
     Prod.map id depthEmbedding
 
 /-- The zero-depth slice of the explicit collar is the boundary parametrization. -/
-@[simp] theorem boundaryCollar_apply_zero (n : ℕ) (x : EuclideanSpace ℝ (Fin n)) :
+@[simp] theorem boundaryCollar_apply_zero_eq_boundaryParam (n : ℕ)
+    (x : EuclideanSpace ℝ (Fin n)) :
     boundaryCollar n (x, (0 : Ico (0 : ℝ) 1)) = EuclideanHalfSpace.boundaryParam n x := by
   have hzero := depthEmbedding_apply_zero
   rw [boundaryCollar, Function.comp_apply, Prod.map_apply, hzero]
   exact EuclideanHalfSpace.collarDiffeomorph_apply_zero_eq_boundaryParam n x
 
 /-- The normal coordinate of the explicit collar is its depth parameter. -/
-@[simp] theorem boundaryCollar_apply_zero_coord (n : ℕ)
+@[simp] theorem boundaryCollar_apply_zero (n : ℕ)
     (x : EuclideanSpace ℝ (Fin n)) (t : Ico (0 : ℝ) 1) :
     (boundaryCollar n (x, t)).1 0 = (t : ℝ) := by
   rw [boundaryCollar, Function.comp_apply, Prod.map_apply,
@@ -89,10 +91,11 @@ noncomputable def boundaryCollar (n : ℕ) :
     EuclideanHalfSpace.collarDiffeomorph_apply_succ]
   rfl
 
-/-- The standard half-space boundary parametrization is a collar witness. -/
+/-- The explicit map `boundaryCollar n` is a collar of the standard half-space boundary
+parametrization. -/
 theorem isCollar_boundaryParam (n : ℕ) :
     IsCollar (EuclideanHalfSpace.boundaryParam n) (boundaryCollar n) := by
-  refine ⟨?_, boundaryCollar_apply_zero n⟩
+  refine ⟨?_, boundaryCollar_apply_zero_eq_boundaryParam n⟩
   apply (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).toHomeomorph.isOpenEmbedding.comp
   exact IsOpenEmbedding.id.prodMap depthEmbedding_isOpenEmbedding
 
