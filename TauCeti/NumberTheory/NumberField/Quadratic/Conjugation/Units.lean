@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.InfinitePlace
 public import TauCeti.NumberTheory.NumberField.Units.ElementaryTwoQuotient
 import Mathlib.GroupTheory.CosetCover
+import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 
@@ -99,13 +100,12 @@ theorem exists_isTotallyPositive_notMem_square (hmin : minpoly ℤ θ = X ^ 2 - 
   have hindex : H.index ≤ 2 := by
     simpa only [Finset.card_fin] using Subgroup.index_le_of_leftCoset_cover_const hcovers
   have hrank : NumberField.Units.rank K = 1 := by
-    -- A field with a real place and degree two has two real places, hence unit rank one.
-    rw [NumberField.Units.rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
-    have hplaces := InfinitePlace.card_add_two_mul_card_eq_rank K
-    rw [NumberField.finrank_rat_eq_two hmin hgen] at hplaces
+    -- A field with a real place and degree two has unit rank one.
+    classical
     have hnr : InfinitePlace.nrRealPlaces K ≠ 0 := fun h =>
       hreal (nrRealPlaces_eq_zero_iff.mp h)
-    omega
+    obtain ⟨⟨w, hw⟩⟩ := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero hnr)
+    exact rank_eq_one_of_finrank_eq_two_of_isReal (NumberField.finrank_rat_eq_two hmin hgen) hw
   rw [NumberField.units_sq_index_eq, hrank] at hindex
   norm_num at hindex
 
