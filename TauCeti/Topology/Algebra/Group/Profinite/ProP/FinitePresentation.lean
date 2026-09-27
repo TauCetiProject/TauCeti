@@ -52,8 +52,7 @@ theorem finite_H2_iff_exists_finite_relation_system
     Finite (H2 G (ZMod p)) ↔
       ∃ s : Finset (freeProP p X),
         (normalClosure (s : Set (freeProP p X))).topologicalClosure =
-          (normalClosure rels).topologicalClosure ∧
-        Nonempty (presentedProP p X (s : Set (freeProP p X)) ≃ₜ* G) := by
+          (normalClosure rels).topologicalClosure := by
   classical
   let R := (normalClosure rels).topologicalClosure
   have hnormal : R.Normal := inferInstance
@@ -69,18 +68,15 @@ theorem finite_H2_iff_exists_finite_relation_system
     have hs : (normalClosure (s : Set (freeProP p X))).topologicalClosure =
         (normalClosure rels).topologicalClosure := by
       simpa only [s, Finset.coe_image] using ht
-    exact ⟨s, hs, ⟨(congrOfClosureEq (rels := rels) hs.symm).symm.trans e⟩⟩
-  · rintro ⟨s, hsclosure, ⟨e'⟩⟩
-    have hs : (s : Set (freeProP p X)) ⊆ proPFrattini p (freeProP p X) :=
-      fun x hx ↦ (topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels
-        (hsclosure ▸ le_topologicalClosure _ (Subgroup.subset_normalClosure hx))
-    let R' := (normalClosure (s : Set (freeProP p X))).topologicalClosure
-    have hclosed' : IsClosed (R' : Set (freeProP p X)) := isClosed_topologicalClosure _
-    have hmem : ∀ x ∈ s, x ∈ R' := by
+    exact ⟨s, hs⟩
+  · rintro ⟨s, hsclosure⟩
+    have hmem : ∀ x ∈ s, x ∈ R := by
       intro x hx
+      dsimp only [R]
+      rw [← hsclosure]
       exact le_topologicalClosure _ (Subgroup.subset_normalClosure hx)
-    let t : Finset R' := s.subtype (· ∈ R')
-    have ht : (Subtype.val '' (t : Set R')) = (s : Set (freeProP p X)) := by
+    let t : Finset R := s.subtype (· ∈ R)
+    have ht : (Subtype.val '' (t : Set R)) = (s : Set (freeProP p X)) := by
       ext x
       constructor
       · rintro ⟨y, hy, rfl⟩
@@ -88,10 +84,10 @@ theorem finite_H2_iff_exists_finite_relation_system
       · intro hx
         exact ⟨⟨x, hmem x hx⟩, Finset.mem_subtype.mpr hx, rfl⟩
     have hfg : IsTopologicallyFinitelyGenerated
-        (R' ⧸ (pLowerCentralStep p R').subgroupOf R') :=
+        (R ⧸ (pLowerCentralStep p R).subgroupOf R) :=
       (hpro.isTopologicallyFinitelyGenerated_quotient_pLowerCentralStep_iff
-        Fact.out hclosed').mpr ⟨t, by rw [ht]⟩
-    exact (finite_H2_iff (p := p) (s : Set (freeProP p X)) hs e' htriv).mpr hfg
+        Fact.out hclosed).mpr ⟨t, by rw [ht]; exact hsclosure⟩
+    exact (finite_H2_iff rels hrels e htriv).mpr hfg
 
 end presentedProP
 
@@ -114,13 +110,15 @@ theorem IsProP.finite_H2_iff_exists_finite_minimal_presentation
     hG.exists_subset_proPFrattini_continuousMulEquiv_presentedProP h X hX
   constructor
   · intro hf
-    obtain ⟨s, -, ⟨e'⟩⟩ :=
+    obtain ⟨s, hsclosure⟩ :=
       (presentedProP.finite_H2_iff_exists_finite_relation_system rels hrels e htriv).mp hf
+    have e' : presentedProP p X (s : Set (freeProP p X)) ≃ₜ* G :=
+      (presentedProP.congrOfClosureEq (rels := rels) hsclosure.symm).symm.trans e
     exact ⟨s, (presentedProP.subset_proPFrattini_iff_card_eq
       (s : Set (freeProP p X)) e' h).mpr hX, ⟨e'⟩⟩
   · rintro ⟨s, hs, ⟨e'⟩⟩
     exact (presentedProP.finite_H2_iff_exists_finite_relation_system
       (s : Set (freeProP p X)) hs e' htriv).mpr
-        ⟨s, rfl, ⟨e'⟩⟩
+        ⟨s, rfl⟩
 
 end TauCeti
