@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.KrullDimension.LocalRing
+public import TauCeti.RingTheory.KrullDimension.Regular
 public import TauCeti.RingTheory.Length
 
 /-!
@@ -34,10 +36,12 @@ zero divisor on it, and the curve itself is a ring of infinite length. What
 Additivity over the components of a curve of infinite length would need a theory of the associated
 primes of such a module, which this file does not have.
 
-On a two-dimensional regular local surface an element of `𝔪 \ 𝔪²` is a parameter, and the curve it
-cuts out is regular, hence irreducible, hence a domain, so the theorem for an irreducible first
-curve applies to it; the finiteness and additivity statements a parameter gives, and the condition
-that two such equations generate the maximal ideal, are in
+The four statements for such a first equation in a two-dimensional noetherian local ring are
+below: they ask that `(R, 𝔪)` be of Krull dimension two, that `f ∈ 𝔪` be a non-zero-divisor, and
+that `(f)` be prime. On a two-dimensional regular local surface an element of `𝔪 \ 𝔪²` is a
+parameter, and the curve it cuts out is regular, hence irreducible, hence a domain, so the theorem
+for an irreducible first curve applies to it; the finiteness and additivity statements a parameter
+gives, and the condition that two such equations generate the maximal ideal, are in
 `TauCeti.RingTheory.RegularLocalRing.Intersection`. An irreducible curve on a surface need not be a
 parameter — an irreducible singular divisor may have its equation in `𝔪²` — and the statements here
 apply to it all the same.
@@ -63,10 +67,16 @@ In the namespace `TauCeti`:
   second factor is a non-zero-divisor on the first curve, and in particular for an irreducible
   first curve;
 * `length_quotient_span_pair_comm`: that multiplicity is symmetric in the two equations, which
-  transports the additivity above to the first equation.
+  transports the additivity above to the first equation;
+* `radical_span_pair_eq_maximalIdeal_of_prime`, `isFiniteLength_quotient_span_pair_of_prime`,
+  `exists_nat_length_quotient_span_pair_of_prime` and
+  `length_quotient_span_pair_mul_eq_add_of_prime`: in a two-dimensional noetherian local ring, an
+  irreducible first equation, a non-zero-divisor `f ∈ 𝔪` with `(f)` prime, and a proper
+  intersection give an ideal with radical `𝔪`, a finite local intersection multiplicity, a natural
+  number for it, and additivity of that number over a product of equations.
 
-The two-dimensional regular surface statements, where a parameter cuts out a curve that is a
-discrete valuation ring, live in `TauCeti.RingTheory.RegularLocalRing.Intersection`. The general
+The regular surface statements, where a parameter cuts out a curve that is a one-dimensional
+regular local ring, live in `TauCeti.RingTheory.RegularLocalRing.Intersection`. The general
 length facts they rest on are in `TauCeti.RingTheory.Length`: the length of `A ⧸ 𝔪` for a local
 ring `A`, and the finite length of a quotient of a noetherian local ring by a maximal-primary
 ideal.
@@ -83,6 +93,13 @@ exactly when `I = ⊤`. Additivity is `Ring.ord_mul`, the additivity of the orde
 product, read as a length. The finiteness of a proper intersection, and with it the natural number
 it becomes, is `TauCeti.isFiniteLength_quotient_of_radical_eq_maximalIdeal` in
 `TauCeti.RingTheory.Length`.
+
+The four statements for an irreducible first equation use the dimension drop of
+`TauCeti.ringKrullDim_quotient_span_singleton_eq_one` in
+`TauCeti.RingTheory.KrullDimension.Regular`: a non-zero-divisor `f ∈ 𝔪` of a two-dimensional
+noetherian local ring leaves a curve, a ring of Krull dimension one, and a nonzero element of the
+maximal ideal of a one-dimensional local domain has that maximal ideal in the radical of the ideal
+it generates.
 
 ## References
 
@@ -277,5 +294,180 @@ theorem exists_nat_length_quotient_span_pair {f g : R}
   exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
 
 end NoetherianLocalRing
+
+section SurjectiveMap
+
+variable {R S : Type u} [CommRing R] [CommRing S]
+
+/-- **The image of a surjective ring homomorphism determines an ideal that contains the kernel.**
+If `π : R →+* S` is surjective and two ideals `I` and `J` of `R` both contain its kernel, then
+`I = J` as soon as their images agree: `Ideal.map_eq_iff_sup_ker_eq_of_surjective` compares
+`I ⊔ ker π` with `J ⊔ ker π`, and each of those ideals is the ideal itself. -/
+private theorem eq_of_map_eq_of_le_ker (π : R →+* S) (hπ : Function.Surjective π) {I J : Ideal R}
+    (hIJ : I.map π = J.map π) (hI : RingHom.ker π ≤ I) (hJ : RingHom.ker π ≤ J) : I = J := by
+  have h1 : I = I ⊔ RingHom.ker π := (sup_eq_left.mpr hI).symm
+  have h2 : J = J ⊔ RingHom.ker π := (sup_eq_left.mpr hJ).symm
+  rw [h1, h2]
+  exact (Ideal.map_eq_iff_sup_ker_eq_of_surjective π hπ).mp hIJ
+
+end SurjectiveMap
+
+section PrimeCurve
+
+variable {R : Type u} [CommRing R] [IsNoetherianRing R] [IsLocalRing R]
+
+/-- **An irreducible first equation and a proper intersection generate an ideal with radical the
+maximal ideal.**
+
+Let `(R, 𝔪)` be a two-dimensional noetherian local ring, let `f ∈ 𝔪` be a non-zero-divisor whose
+principal ideal is prime, that is, `f` cuts out an irreducible curve through the closed point, and
+let `g ∈ 𝔪` with `g ∉ (f)`, so that the closed point lies on the curve `g = 0` and that curve does
+not contain the curve `f = 0`. Then the radical of `(f, g)` is `𝔪`, which is the
+proper-intersection condition of `TauCeti.exists_nat_length_quotient_span_pair`. No regularity is
+assumed of `R`, and `f` need not be a parameter: a prime Cartier curve on a singular surface is
+covered as well.
+
+The curve `R ⧸ (f)` is a local domain: it is a quotient by an ideal of the maximal ideal of the
+local ring `R`, and `(f)` is prime. Its dimension is that of a curve, `f` being a non-zero-divisor,
+by `TauCeti.ringKrullDim_quotient_span_singleton_eq_one`, and the image of `g` in it is nonzero,
+because `g ∉ (f)`, so `g` generates an ideal with radical the maximal ideal of that curve. An
+ideal of `R` that contains the kernel `(f)` of the quotient map is determined by its image there,
+and the images in question are the maximal ideal of the curve and the image of `𝔪`, so the radical
+of `(f, g)` is `𝔪`. -/
+theorem radical_span_pair_eq_maximalIdeal_of_prime (hd : ringKrullDim R = 2) {f g : R}
+    (hfm : f ∈ maximalIdeal R) (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime)
+    (hgm : g ∈ maximalIdeal R) (hg : g ∉ Ideal.span {f}) :
+    (Ideal.span {f, g}).radical = maximalIdeal R := by
+  -- the curve `R ⧸ (f)` is a local domain: the quotient by an ideal of the maximal ideal of the
+  -- local ring `R` is local, and `(f)` prime says that it is a domain
+  let _ : IsLocalRing (R ⧸ Ideal.span {f}) :=
+    IsLocalRing.of_surjective' (Ideal.Quotient.mk (Ideal.span {f})) Ideal.Quotient.mk_surjective
+  let _ : IsDomain (R ⧸ Ideal.span {f}) :=
+    (Ideal.Quotient.isDomain_iff_prime (Ideal.span {f})).mpr hfprime
+  -- its dimension is that of a curve, `f` being a non-zero-divisor in `R`
+  have hdim : ringKrullDim (R ⧸ Ideal.span {f}) = 1 :=
+    ringKrullDim_quotient_span_singleton_eq_one hd hfm hfnd
+  -- the image of `g` on the curve `f = 0` is a nonzero element of the maximal ideal of that
+  -- one-dimensional local domain, so the ideal it generates has that maximal ideal in its radical
+  have hg0 : Ideal.Quotient.mk (Ideal.span {f}) g ≠ 0 :=
+    fun hzero => hg ((Submodule.Quotient.mk_eq_zero _).mp hzero)
+  have hA : (Ideal.span {Ideal.Quotient.mk (Ideal.span {f}) g}).radical
+      = maximalIdeal (R ⧸ Ideal.span {f}) := by
+    -- a nonzero element of a one-dimensional local domain has the maximal ideal in the radical of
+    -- the ideal it generates
+    have hle : maximalIdeal (R ⧸ Ideal.span {f})
+        ≤ (Ideal.span {Ideal.Quotient.mk (Ideal.span {f}) g}).radical :=
+      ((ringKrullDim_eq_one_iff_of_isLocalRing_isDomain).mp hdim).2 _ hg0
+    -- and the image of `g` lies in the maximal ideal of the curve, being the image of `g ∈ 𝔪`
+    have hge : (Ideal.span {Ideal.Quotient.mk (Ideal.span {f}) g}).radical
+        ≤ maximalIdeal (R ⧸ Ideal.span {f}) := by
+      rw [Ideal.radical_eq_sInf]
+      refine sInf_le ⟨?_, inferInstance⟩
+      rw [Ideal.span_le, Set.singleton_subset_iff,
+        ← map_maximalIdeal_of_surjective (Ideal.Quotient.mk (Ideal.span {f}))
+          Ideal.Quotient.mk_surjective]
+      exact Ideal.mem_map_of_mem _ hgm
+    exact le_antisymm hge hle
+  have hle' : Ideal.span {f} ≤ Ideal.span {f, g} := by
+    rw [Ideal.span_insert f ({g} : Set R)]
+    exact le_sup_left
+  -- under the quotient by `(f)`, the image of the ideal `(f, g)` is the ideal generated by the
+  -- image of `g`, the image of `(f)` being the zero ideal
+  have h1 : (Ideal.span {f}).map (Ideal.Quotient.mk (Ideal.span {f})) = ⊥ :=
+    (Ideal.map_eq_bot_iff_le_ker _).mpr (by rw [Ideal.mk_ker])
+  have h2 : (Ideal.span {g}).map (Ideal.Quotient.mk (Ideal.span {f}))
+      = Ideal.span {Ideal.Quotient.mk (Ideal.span {f}) g} := by
+    rw [Ideal.map_span, Set.image_singleton]
+  have hmap : (Ideal.span {f, g}).map (Ideal.Quotient.mk (Ideal.span {f}))
+      = Ideal.span {Ideal.Quotient.mk (Ideal.span {f}) g} := by
+    rw [Ideal.span_insert f ({g} : Set R), Ideal.map_sup, h1, h2, bot_sup_eq]
+  -- the radical of `(f, g)` therefore has, as its image, the maximal ideal of the curve, which is
+  -- the image of `𝔪`
+  have hrad : ((Ideal.span {f, g}).radical).map (Ideal.Quotient.mk (Ideal.span {f}))
+      = (maximalIdeal R).map (Ideal.Quotient.mk (Ideal.span {f})) := by
+    rw [map_radical_of_surjective (f := Ideal.Quotient.mk (Ideal.span {f}))
+      (I := Ideal.span {f, g}) Ideal.Quotient.mk_surjective
+      (by rw [Ideal.mk_ker]; exact hle'), hmap, hA,
+      map_maximalIdeal_of_surjective (f := Ideal.Quotient.mk (Ideal.span {f}))
+        Ideal.Quotient.mk_surjective]
+  -- both ideals contain the kernel `(f)` of the quotient map, so their images determine them
+  exact eq_of_map_eq_of_le_ker (Ideal.Quotient.mk (Ideal.span {f}))
+    Ideal.Quotient.mk_surjective hrad (by rw [Ideal.mk_ker]; exact hle'.trans Ideal.le_radical)
+    (by rw [Ideal.mk_ker]; exact (Ideal.span_singleton_le_iff_mem (I := maximalIdeal R)).mpr hfm)
+
+/-- **A proper intersection with an irreducible first equation in a two-dimensional noetherian
+local ring has finite local intersection multiplicity.** This is the finiteness of
+`TauCeti.exists_nat_length_quotient_span_pair` when the first equation is an irreducible one, that
+is, a non-zero-divisor `f ∈ 𝔪` with `(f)` prime. The length is finite whether or not the second
+curve contains the closed point, a unit `g` giving the unit ideal and length zero. -/
+theorem isFiniteLength_quotient_span_pair_of_prime (hd : ringKrullDim R = 2) {f g : R}
+    (hfm : f ∈ maximalIdeal R) (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime)
+    (hg : g ∉ Ideal.span {f}) : IsFiniteLength R (R ⧸ Ideal.span {f, g}) := by
+  by_cases hgm : g ∈ maximalIdeal R
+  · exact isFiniteLength_quotient_of_radical_eq_maximalIdeal (Ideal.span {f, g})
+      (radical_span_pair_eq_maximalIdeal_of_prime hd hfm hfnd hfprime hgm hg)
+  · -- a `g` outside the maximal ideal of the local ring `R` is a unit, so `(f, g)` is the unit
+    -- ideal and the quotient is the zero ring, of length zero
+    have hfu : IsUnit g := (IsLocalRing.notMem_maximalIdeal (R := R)).mp hgm
+    have htop : Ideal.span {f, g} = ⊤ := by
+      refine (Ideal.span_insert f ({g} : Set R)).trans ?_
+      rw [Ideal.span_singleton_eq_top.mpr hfu]
+      exact sup_top_eq _
+    rw [htop]
+    let _ : Subsingleton (R ⧸ (⊤ : Ideal R)) := Submodule.Quotient.subsingleton_iff.mpr rfl
+    exact IsFiniteLength.of_subsingleton
+
+/-- **The local intersection multiplicity of a proper intersection with an irreducible first
+equation in a two-dimensional noetherian local ring is a natural number.** This is
+`TauCeti.exists_nat_length_quotient_span_pair` when the first equation is irreducible, that is, a
+non-zero-divisor `f ∈ 𝔪` with `(f)` prime. -/
+theorem exists_nat_length_quotient_span_pair_of_prime (hd : ringKrullDim R = 2) {f g : R}
+    (hfm : f ∈ maximalIdeal R) (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime)
+    (hg : g ∉ Ideal.span {f}) : ∃ n : ℕ, Module.length R (R ⧸ Ideal.span {f, g}) = n := by
+  have hc : Module.length R (R ⧸ Ideal.span {f, g}) ≠ ⊤ :=
+    Module.length_ne_top_iff.mpr (isFiniteLength_quotient_span_pair_of_prime hd hfm hfnd hfprime
+      hg)
+  exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
+
+/-- **The local intersection multiplicity of a proper intersection with an irreducible first
+equation in a two-dimensional noetherian local ring is additive over a product of equations.** Let
+`f ∈ 𝔪` be a non-zero-divisor with `(f)` prime, that is, an irreducible first curve, and let `g`
+and `h` be two further equations. Then the quotient by the two equations `f` and `g * h` has
+length the sum of the lengths of the quotients by `f` and `g` and by `f` and `h`.
+
+This is `TauCeti.length_quotient_span_pair_mul_eq_add` in the case where the first curve is
+irreducible, the image of `h` in the domain `R ⧸ (f)` then being a non-zero-divisor whenever it is
+nonzero. No hypothesis is placed on `h`, and the case where its image there is zero, that is
+`h ∈ (f)`, is included: the images of `h` and of `g * h` are both zero, so `R ⧸ (f, h)` and
+`R ⧸ (f, g * h)` are the curve `f = 0` itself, of infinite length, as
+`TauCeti.length_self_eq_top_of_ringKrullDim_pos` makes that curve a ring of infinite length over
+itself; the length of the remaining summand `R ⧸ (f, g)` is arbitrary, finite or infinite, and its
+sum with an infinite length is again infinite, which is the asserted additivity. -/
+theorem length_quotient_span_pair_mul_eq_add_of_prime (hd : ringKrullDim R = 2) {f g h : R}
+    (hfm : f ∈ maximalIdeal R) (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime) :
+    Module.length R (R ⧸ Ideal.span {f, g * h})
+      = Module.length R (R ⧸ Ideal.span {f, g}) + Module.length R (R ⧸ Ideal.span {f, h}) := by
+  let _ : IsLocalRing (R ⧸ Ideal.span {f}) :=
+    IsLocalRing.of_surjective' (Ideal.Quotient.mk (Ideal.span {f})) Ideal.Quotient.mk_surjective
+  let _ : IsDomain (R ⧸ Ideal.span {f}) :=
+    (Ideal.Quotient.isDomain_iff_prime (Ideal.span {f})).mpr hfprime
+  have hdim : ringKrullDim (R ⧸ Ideal.span {f}) = 1 :=
+    ringKrullDim_quotient_span_singleton_eq_one hd hfm hfnd
+  by_cases hh : h ∈ Ideal.span {f}
+  · -- the image of `h` on the curve `f = 0` is zero, so the image of `g * h` is zero as well, and
+    -- those two quotients are then that curve itself, of infinite length, while the remaining
+    -- summand is arbitrary and stays absorbed by an infinite length
+    have hinf : Module.length (R ⧸ Ideal.span {f}) (R ⧸ Ideal.span {f}) = ⊤ :=
+      length_self_eq_top_of_ringKrullDim_pos (by rw [hdim]; exact zero_lt_one)
+    have hmk : Ideal.Quotient.mk (Ideal.span {f}) h = 0 :=
+      (Submodule.Quotient.mk_eq_zero _).mpr hh
+    rw [← ord_eq_length_quotient_span_pair f (g * h), ← ord_eq_length_quotient_span_pair f g,
+      ← ord_eq_length_quotient_span_pair f h, map_mul, hmk, mul_zero, Ring.ord_zero, hinf]
+    simp
+  · -- `h` does not vanish on the curve `f = 0`, and that curve is a domain, so the image of `h`
+    -- there is a non-zero-divisor
+    exact length_quotient_span_pair_mul_eq_add hfprime hh
+
+end PrimeCurve
 
 end TauCeti

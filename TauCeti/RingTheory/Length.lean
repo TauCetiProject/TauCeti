@@ -22,7 +22,7 @@ length-counting argument needs but Mathlib does not yet have: monotonicity in th
 quotiented by, additivity along a filtration, the length of an image, the fact that finitely
 generated submodules already see the whole length, the length of `I ⧸ aI` for an ideal `I`, the
 length of `R ⧸ 𝔪` for a local ring, the finite length of a quotient of a noetherian
-local ring by a maximal-primary ideal, and the infinite length of a domain of positive Krull
+local ring by a maximal-primary ideal, and the infinite length of a ring of positive Krull
 dimension over itself.
 
 The finite-generation reduction is the load-bearing one. `Module.length` is a supremum over
@@ -58,8 +58,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
 * `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
-* `TauCeti.length_self_eq_top_of_ringKrullDim_ne_zero`: a domain of positive Krull dimension has
-  infinite length over itself.
+* `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
+  length over itself.
 -/
 
 public section
@@ -321,30 +321,31 @@ theorem isFiniteLength_quotient_of_radical_eq_maximalIdeal (I : Ideal A)
 
 end NoetherianLocalRing
 
-section Domain
+section PositiveKrullDimension
 
-variable {A : Type*} [CommRing A] [IsDomain A]
+variable {A : Type*} [CommRing A]
 
-/-- **A domain of positive Krull dimension has infinite length over itself.** A ring of finite
+/-- **A ring of positive Krull dimension has infinite length over itself.** A ring of finite
 length over itself is both noetherian and Artinian, by `Module.length_ne_top_iff` and
-`isFiniteLength_iff_isNoetherian_isArtinian`, and a commutative Artinian domain is a field, by
-`IsArtinianRing.isField_of_isDomain`, whose Krull dimension is zero by
-`ringKrullDim_eq_zero_of_isField`. So a domain whose Krull dimension is not zero is of infinite
-length over itself, and the hypothesis excludes exactly the field case.
+`isFiniteLength_iff_isNoetherian_isArtinian`, and a commutative Artinian ring is of Krull
+dimension zero, by `isArtinianRing_iff_isNoetherianRing_krullDimLE_zero`. So a ring of positive
+Krull dimension is of infinite length over itself, and the hypothesis is what rules out the
+zero-dimensional case, the trivial ring among it, whose `ringKrullDim` is `⊥` rather than `0` and
+which is of length zero over itself.
 
 In particular the length of a one-dimensional local domain over itself is infinite, which is what
 a length read along such a domain, the order of vanishing of an element of it, has to be measured
 against. -/
 @[simp]
-theorem length_self_eq_top_of_ringKrullDim_ne_zero (hne : ringKrullDim A ≠ 0) :
+theorem length_self_eq_top_of_ringKrullDim_pos (hpos : 0 < ringKrullDim A) :
     Module.length A A = ⊤ := by
   by_contra h
   have hfin : IsFiniteLength A A := (Module.length_ne_top_iff).1 fun hc => h hc
   obtain ⟨-, hArt⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hfin
-  let _ : IsArtinianRing A := hArt
-  exact hne (ringKrullDim_eq_zero_of_isField
-    (IsArtinianRing.isField_of_isDomain (R := A)))
+  have hle : ringKrullDim A ≤ 0 :=
+    Ring.krullDimLE_iff.mp (isArtinianRing_iff_isNoetherianRing_krullDimLE_zero.mp hArt).2
+  exact absurd hpos (not_lt_of_ge hle)
 
-end Domain
+end PositiveKrullDimension
 
 end TauCeti
