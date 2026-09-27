@@ -107,10 +107,4 @@ theorem baseChange_symm_coord (i : Fin 2) :
   apply (baseChange a).injective
   simp
 
-/-- Base change identifies the original coordinates with the new ones. -/
-@[simp]
-theorem baseChange_coord (i : Fin 2) :
-    baseChange a (1 ⊗ₜ[R] coord a i) = coord (algebraMap R S a) i := by
-  simp
-
 end TauCeti.NodeAlgebra
