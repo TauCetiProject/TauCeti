@@ -117,6 +117,23 @@ theorem quiverEulerPairingK0_of_of
         (fun i ↦ (dimVector ((quiverRepFunctor k Q).obj N.obj) i : ℤ)) := by
   simp [quiverEulerPairingK0, LinearMap.BilinForm.comp_apply, quiverDimensionVectorK0_of]
 
+/-- The pulled-back Ringel form is determined by its values on pairs of module classes. -/
+theorem quiverEulerPairingK0_unique
+    (b : LinearMap.BilinForm ℤ (ExactK0 (finiteModulesExactStructure (pathAlgebra k Q))))
+    (hb : ∀ M N : FGModuleCat (pathAlgebra k Q),
+      b (ExactK0.of M) (ExactK0.of N) =
+        eulerForm Q
+          (fun i ↦ (dimVector ((quiverRepFunctor k Q).obj M.obj) i : ℤ))
+          (fun i ↦ (dimVector ((quiverRepFunctor k Q).obj N.obj) i : ℤ))) :
+    b = quiverEulerPairingK0 k Q := by
+  apply LinearMap.toAddMonoidHom_injective
+  apply ExactK0.hom_ext
+  intro M
+  apply LinearMap.toAddMonoidHom_injective
+  apply ExactK0.hom_ext
+  intro N
+  exact (hb M N).trans (quiverEulerPairingK0_of_of k Q M N).symm
+
 end EulerPairing
 
 end TauCeti
