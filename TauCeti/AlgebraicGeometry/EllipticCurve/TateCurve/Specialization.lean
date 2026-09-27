@@ -19,9 +19,10 @@ complete non-archimedean normed ring, their sums converge at every parameter of 
 This remains true in residue characteristics `2` and `3`: the sixth coefficient is summed from
 its integral coefficients, with no division in the field.
 
-These sums give a nonsingular Tate equation for every nonzero parameter in the open unit ball,
-including fields with nondiscrete valuation. Its discriminant has the same norm as the parameter.
-Point uniformisation requires further arguments.
+For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring,
+these sums give a nonsingular Tate equation. Over a field, its discriminant has the same norm as
+the parameter, including for nondiscrete valuations. Point uniformisation requires further
+arguments.
 
 ## References
 
@@ -82,7 +83,7 @@ theorem twelve_mul_tateCurveA₆ {q : K} (hq : ‖q‖ < 1) :
   rw [(summable_divisorSumSeries 3 hq).tsum_mul_left,
     (summable_divisorSumSeries 5 hq).tsum_mul_left]
 
-/-- The Tate equation obtained by evaluating the integral formal curve at a nonzero parameter of
+/-- The Tate equation obtained by evaluating the integral formal curve at a unit parameter of
 norm less than one. The unit parameter will also support its integer powers in uniformisation. -/
 noncomputable def tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) : WeierstrassCurve K :=
   tateCurve.map (evalIntSeries (q : K) hq)
