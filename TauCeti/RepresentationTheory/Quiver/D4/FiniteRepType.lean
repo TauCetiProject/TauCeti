@@ -6,32 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.D4.EulerForm
-public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.PosDef
+public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Correspondence
 
 /-!
 # The `D₄` quiver has finite representation type
 
 The Tits form of the `D₄` quiver is positive definite (`TauCeti.Quiver.D4.titsForm_posDef`), so
-`TauCeti.isFiniteRepType_of_titsForm_posDef` applies: over every field it has only finitely many
-finite-dimensional indecomposable representations, at most as many as the twelve positive roots
-counted by `TauCeti.Quiver.D4.card_positiveRoots`.
+the Gabriel correspondence identifies its finite-dimensional indecomposable representations up to
+isomorphism with the twelve positive roots counted by `TauCeti.Quiver.D4.card_positiveRoots`.
 
 This is the first case of the affirming half of Gabriel's dichotomy that is not settled by an
 explicit classification. The `A₂` quiver was: `TauCeti.isFiniteRepType_kronecker` reads its finite
 representation type off the list of its three indecomposables, in
 `TauCeti.card_skeleton_indecomposable_kronecker`. No such list is available for `D₄`, and none is
-needed; the bound comes from the Tits form alone.
-
-The bound is an inequality rather than the equality `12`, because the surjectivity half of the
-Gabriel correspondence -- that every positive root is the dimension vector of an indecomposable --
-is not yet available. It is what would turn this into the count milestone of Layer 5.
+needed; the count comes from the general correspondence and the explicit positive-root calculation.
 
 ## Main results
 
 * `TauCeti.isFiniteRepType_d4`: **the `D₄` quiver has finite representation type over every
   field.**
-* `TauCeti.card_skeleton_indecomposable_d4_le`: it has at most twelve finite-dimensional
-  indecomposable representations up to isomorphism, one for each positive root of `D₄`.
+* `TauCeti.card_skeleton_indecomposable_d4`: it has exactly twelve finite-dimensional
+  indecomposable representations up to isomorphism.
 
 ## References
 
@@ -56,14 +51,13 @@ theorem isFiniteRepType_d4 (k : Type u) [Field k] :
     IsFiniteRepType.{u, 0, 1, max 1 x} k Quiver.D4 :=
   isFiniteRepType_of_titsForm_posDef Quiver.D4.titsForm_posDef
 
-/-- **The `D₄` quiver has at most twelve finite-dimensional indecomposable representations up to
-isomorphism**, one for each of the twelve positive roots of its Tits form. Gabriel's theorem makes
-this an equality; the inequality is what the injectivity of the dimension vector already gives. -/
-theorem card_skeleton_indecomposable_d4_le (k : Type u) [Field k] :
+/-- **The `D₄` quiver has exactly twelve finite-dimensional indecomposable representations up
+to isomorphism**, one for each positive root of its Tits form. -/
+theorem card_skeleton_indecomposable_d4 (k : Type (max 1 x)) [Field k] :
     Nat.card (Skeleton (ObjectProperty.FullSubcategory
-      (fun M : QuiverRep.{u, 0, 1, max 1 x} k Quiver.D4 ↦
-        IsFinDim k Quiver.D4 M ∧ Indecomposable M))) ≤ 12 :=
-  (card_skeleton_indecomposable_le_card_positiveRoots
-    Quiver.D4.titsForm_posDef).trans Quiver.D4.card_positiveRoots.le
+      (fun M : QuiverRep.{max 1 x, 0, 1, max 1 x} k Quiver.D4 ↦
+        IsFinDim k Quiver.D4 M ∧ Indecomposable M))) = 12 :=
+  (card_skeleton_indecomposable_eq_card_positiveRoots
+    Quiver.D4.titsForm_posDef).trans Quiver.D4.card_positiveRoots
 
 end TauCeti
