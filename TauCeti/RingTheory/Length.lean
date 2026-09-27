@@ -53,13 +53,15 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_lsmul_le_of_forall_fg`: the finite-generation reduction for `M ⧸ aM`.
 * `TauCeti.isFiniteLength_quotient_of_nonZeroDivisor_mem`: `A ⧸ I` has finite length when `I`
   contains a non-zero-divisor.
-* `TauCeti.isFiniteLength_quotient_of_radical_eq_maximalIdeal`: `A ⧸ I` has finite length when the
-  radical of `I` is the maximal ideal of a noetherian local ring.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
 * `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
+* `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`: `A ⧸ I` has finite length when the
+  radical of `I` is the maximal ideal of a noetherian local ring. It is in the namespace of `Ideal`
+  rather than that of `TauCeti` because its first explicit argument is an ideal, so that a consumer
+  reads it as `I.isFiniteLength_quotient_of_radical_eq_maximalIdeal`.
 -/
 
 public section
@@ -277,6 +279,10 @@ theorem length_quotient_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdea
 
 end LocalRing
 
+end TauCeti
+
+namespace Ideal
+
 section NoetherianLocalRing
 
 open _root_.IsLocalRing
@@ -320,6 +326,10 @@ theorem isFiniteLength_quotient_of_radical_eq_maximalIdeal (I : Ideal A)
     isArtinian_of_surjective_algebraMap (Ideal.Quotient.mk_surjective (I := I))⟩
 
 end NoetherianLocalRing
+
+end Ideal
+
+namespace TauCeti
 
 section PositiveKrullDimension
 

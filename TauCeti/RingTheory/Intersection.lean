@@ -41,9 +41,9 @@ below: they ask that `(R, 𝔪)` be of Krull dimension two, that `f` be a non-ze
 `(f)` be prime. No hypothesis `f ∈ 𝔪` is placed on `f` in them, because in a local ring a prime
 `(f)` is a proper ideal and `f` is then a nonunit lying in `𝔪`. On a two-dimensional regular local
 surface an element of `𝔪 \ 𝔪²` is a parameter, and the curve it cuts out is regular, hence
-irreducible, hence a domain, so the theorem for an irreducible first curve applies to it; the
-finiteness and additivity statements a parameter gives, and the condition that two such equations
-generate the maximal ideal, are in `TauCeti.RingTheory.RegularLocalRing.Intersection`. An
+irreducible, hence a domain, so the theorem for an irreducible first curve applies to it; that
+domain instance for a parameter is `TauCeti.span_singleton_isPrime_of_notMem_sq`, and the additivity
+a parameter gives is in `TauCeti.RingTheory.RegularLocalRing.Intersection`. An
 irreducible curve on a surface need not be a parameter — an irreducible singular divisor may have
 its equation in `𝔪²` — and the statements here apply to it all the same.
 
@@ -93,7 +93,7 @@ original ring. The two vanishing criteria use `Module.length_eq_zero_iff` and
 `Submodule.Quotient.subsingleton_iff`, the general form of the fact that `R ⧸ I` is trivial
 exactly when `I = ⊤`. Additivity is `Ring.ord_mul`, the additivity of the order of vanishing over a
 product, read as a length. The finiteness of a proper intersection, and with it the natural number
-it becomes, is `TauCeti.isFiniteLength_quotient_of_radical_eq_maximalIdeal` in
+it becomes, is `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal` in
 `TauCeti.RingTheory.Length`.
 
 The four statements for an irreducible first equation use the dimension drop of
@@ -134,8 +134,9 @@ commutative ring, where no hypothesis is placed on `f` or on `g` and the length 
 is the local intersection multiplicity of the two equations once the length is finite: in a
 two-dimensional regular local ring with `f` a parameter, that is
 `f ∈ maximalIdeal R \ maximalIdeal R ^ 2`, and with a proper intersection, that is
-`g ∉ Ideal.span {f}`, the length is finite by
-`TauCeti.isFiniteLength_quotient_span_pair_of_notMem_sq` and is the order of vanishing of `g` on the
+`g ∉ Ideal.span {f}`, whose principal ideal is prime by
+`TauCeti.span_singleton_isPrime_of_notMem_sq`, the length is finite by
+`TauCeti.isFiniteLength_quotient_span_pair_of_prime` and is the order of vanishing of `g` on the
 discrete valuation ring `R ⧸ (f)`, and it is positive, that is, the multiplicity of two curves
 meeting at the closed point, exactly when `g ∈ maximalIdeal R`, by
 `TauCeti.one_le_length_quotient_span_pair`, and is zero otherwise, by
@@ -238,7 +239,7 @@ in `𝔪`, and the quotient by such an ideal is not the zero ring, so by
 `TauCeti.length_quotient_span_pair_eq_zero_iff` the length does not vanish. For `f` a
 parameter of a two-dimensional regular local ring, this is the positivity of the local
 intersection multiplicity of two curves through the closed point, whose finiteness for a proper
-intersection is `TauCeti.isFiniteLength_quotient_span_pair_of_notMem_sq`. -/
+intersection is `TauCeti.isFiniteLength_quotient_span_pair_of_prime`. -/
 theorem one_le_length_quotient_span_pair {f g : R} (hf : f ∈ maximalIdeal R)
     (hgm : g ∈ maximalIdeal R) : 1 ≤ Module.length R (R ⧸ Ideal.span {f, g}) := by
   -- both equations lie in the maximal ideal, so the ideal they generate lies in it as well
@@ -271,7 +272,7 @@ natural number.** Let `(R, 𝔪)` be a noetherian local ring, and let `f` and `g
 generating an ideal with radical `𝔪`. That is the condition that the two curves they define meet
 properly at the closed point and share no component there, and the local intersection multiplicity
 `Module.length R (R ⧸ (f, g))` is then finite, by
-`TauCeti.isFiniteLength_quotient_of_radical_eq_maximalIdeal`, hence a natural number. The
+`Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`, hence a natural number. The
 intersection numbers `aᵢⱼ` and the component multiplicities of a special fibre are natural numbers
 for the same reason.
 
@@ -280,14 +281,15 @@ reducible first equation is admitted, and this is what a reducible or singular c
 `k[[x, y]]`, for instance, the union of the two axes, cut out by `f = x * y`, lies in `𝔪²` and meets
 the curve `g = x + y` properly, with local intersection multiplicity two.
 
-On a two-dimensional regular local ring this condition is available in the parameter form of
-`TauCeti.radical_span_pair_eq_maximalIdeal_of_notMem_sq`, which gives the specialization
-`TauCeti.isFiniteLength_quotient_span_pair_of_notMem_sq`. -/
+On a two-dimensional regular local ring this condition is available for a parameter, whose
+principal ideal is prime by `TauCeti.span_singleton_isPrime_of_notMem_sq`, by
+`TauCeti.radical_span_pair_eq_maximalIdeal_of_prime`, and the finiteness specialization of it is
+then `TauCeti.isFiniteLength_quotient_span_pair_of_prime`. -/
 theorem exists_nat_length_quotient_span_pair {f g : R}
     (hprim : (Ideal.span {f, g}).radical = maximalIdeal R) :
     ∃ n : ℕ, Module.length R (R ⧸ Ideal.span {f, g}) = n := by
   have hc : Module.length R (R ⧸ Ideal.span {f, g}) ≠ ⊤ :=
-    Module.length_ne_top_iff.mpr (isFiniteLength_quotient_of_radical_eq_maximalIdeal _ hprim)
+    Module.length_ne_top_iff.mpr (Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal _ hprim)
   exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
 
 end NoetherianLocalRing
@@ -407,7 +409,7 @@ theorem isFiniteLength_quotient_span_pair_of_prime (hd : ringKrullDim R = 2) {f 
     (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime) (hg : g ∉ Ideal.span {f}) :
     IsFiniteLength R (R ⧸ Ideal.span {f, g}) := by
   by_cases hgm : g ∈ maximalIdeal R
-  · exact isFiniteLength_quotient_of_radical_eq_maximalIdeal (Ideal.span {f, g})
+  · exact Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal (Ideal.span {f, g})
       (radical_span_pair_eq_maximalIdeal_of_prime hd hfnd hfprime hgm hg)
   · -- a `g` outside the maximal ideal of the local ring `R` is a unit, so `(f, g)` is the unit
     -- ideal and the quotient is the zero ring, of length zero
