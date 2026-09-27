@@ -13,6 +13,8 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Stalk.Lo
 
 The adic spectrum with its presentation-limit presheaf is a pre-adic space when the plus
 subring consists of power-bounded elements and contains a ring of definition.
+This packages the structure presheaf, local stalks, and residue valuations into the
+canonical affinoid example for later morphism and sheafiness constructions.
 -/
 
 public section
