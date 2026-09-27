@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 public import TauCeti.AlgebraicTopology.UniversalCover.Action
-import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # Changing the basepoint of a universal cover
 
-A path `γ : Path x y` singles out a point of `UniversalCover x` over `y`. There is a unique
-homeomorphism over `X` from `UniversalCover y` to `UniversalCover x` carrying the constant-path
+A path `γ : Path x y` singles out a point of `UniversalCover x` over `y`. Prepending `γ` gives
+a homeomorphism over `X` from `UniversalCover y` to `UniversalCover x`, carrying the constant-path
 point to this point. This is the basepoint change of the universal cover. The direction agrees
 with concatenation: a path beginning at `y` is regarded, after changing basepoint, as beginning
 with `γ` at `x`.
@@ -29,43 +27,63 @@ open scoped unitInterval
 
 namespace TauCeti.UniversalCover
 
-variable {X : Type*} [TopologicalSpace X] [LocallyPathConnectedSpace X]
-  [SemilocallySimplyConnectedSpace X] {x y : X}
+variable {X : Type*} [TopologicalSpace X] {x y : X}
 
-/-- Changing the basepoint along `γ` gives the unique homeomorphism over `X` that sends the
-constant path at `y` to the class of `γ` at `x`. -/
-def basepointChangeHomeomorph (γ : Path x y) : UniversalCover y ≃ₜ UniversalCover x := by
-  have : LocallyPathConnectedSpace (UniversalCover x) :=
-    (isCoveringMap x).isLocalHomeomorph.locallyPathConnectedSpace
-  have : LocallyPathConnectedSpace (UniversalCover y) :=
-    (isCoveringMap y).isLocalHomeomorph.locallyPathConnectedSpace
-  exact (IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace
-    (f₀ := mk y (Path.Homotopic.Quotient.mk γ))
-    (isCoveringMap y) (isCoveringMap x) (proj_basepointLift y) (by rfl)).choose
+/-- Prepending a fixed path is continuous on the based-path quotient. -/
+theorem continuous_basepointPrepend (γ : Path x y) :
+    Continuous (fun e : UniversalCover y =>
+      mk e.proj ((Path.Homotopic.Quotient.mk γ).trans e.path)) := by
+  rw [(isQuotientMap_ofBasedPath y).continuous_iff]
+  suffices h : Continuous (fun β : BasedPath y =>
+      ofBasedPath x (BasedPath.ofPath (γ.trans β.toPath))) by
+    apply h.congr
+    intro β
+    rw [ofBasedPath_ofPath, Function.comp_apply, ofBasedPath_def,
+      Path.Homotopic.Quotient.mk_trans]
+  refine (continuous_ofBasedPath x).comp (Continuous.subtype_mk ?_ _)
+  refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
+  have h_eval : Continuous fun p : BasedPath y × I => p.1.1 p.2 :=
+    continuous_eval.comp (continuous_subtype_val.prodMap continuous_id)
+  -- The underlying continuous map is the concatenation of a fixed path and a family of paths.
+  change Continuous fun p : BasedPath y × I => γ.trans p.1.toPath p.2
+  exact Path.trans_continuous_family (a := fun _ : BasedPath y => x)
+    (b := fun _ : BasedPath y => y)
+    (c := fun β : BasedPath y => BasedPath.endpoint β)
+    (fun _ => γ) (Path.continuous_uncurry_iff.mpr continuous_const)
+    (fun β => β.toPath) h_eval
 
-private theorem basepointChangeHomeomorph_spec (γ : Path x y) :
-    basepointChangeHomeomorph γ (basepointLift y : UniversalCover y) =
-        mk y (Path.Homotopic.Quotient.mk γ) ∧
-      proj ∘ basepointChangeHomeomorph γ = proj := by
-  unfold basepointChangeHomeomorph
-  have : LocallyPathConnectedSpace (UniversalCover x) :=
-    (isCoveringMap x).isLocalHomeomorph.locallyPathConnectedSpace
-  have : LocallyPathConnectedSpace (UniversalCover y) :=
-    (isCoveringMap y).isLocalHomeomorph.locallyPathConnectedSpace
-  exact (IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace
-    (f₀ := mk y (Path.Homotopic.Quotient.mk γ))
-    (isCoveringMap y) (isCoveringMap x) (proj_basepointLift y) (by rfl)).choose_spec
+/-- Changing the basepoint along `γ` gives a homeomorphism over `X` that sends the constant path
+at `y` to the class of `γ` at `x`. -/
+@[expose] def basepointChangeHomeomorph (γ : Path x y) :
+    UniversalCover y ≃ₜ UniversalCover x where
+  toFun e := mk e.proj ((Path.Homotopic.Quotient.mk γ).trans e.path)
+  invFun e := mk e.proj ((Path.Homotopic.Quotient.mk γ.symm).trans e.path)
+  left_inv e := by
+    rcases e with ⟨z, q⟩
+    simp only [Path.Homotopic.Quotient.mk_symm]
+    congr 1
+    rw [← Path.Homotopic.Quotient.trans_assoc,
+      Path.Homotopic.Quotient.symm_trans, Path.Homotopic.Quotient.refl_trans]
+  right_inv e := by
+    rcases e with ⟨z, q⟩
+    simp only [Path.Homotopic.Quotient.mk_symm]
+    congr 1
+    rw [← Path.Homotopic.Quotient.trans_assoc,
+      Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.refl_trans]
+  continuous_toFun := continuous_basepointPrepend γ
+  continuous_invFun := continuous_basepointPrepend γ.symm
 
 /-- Basepoint change sends the distinguished point to the path class defining the change. -/
 theorem basepointChangeHomeomorph_apply_basepointLift (γ : Path x y) :
     basepointChangeHomeomorph γ (basepointLift y : UniversalCover y) =
       mk y (Path.Homotopic.Quotient.mk γ) :=
-  (basepointChangeHomeomorph_spec γ).1
+  by simp [basepointChangeHomeomorph, basepointLift_coe]
 
 /-- Basepoint change commutes with the projections to `X`. -/
+@[simp]
 theorem proj_basepointChangeHomeomorph (γ : Path x y) (e : UniversalCover y) :
     proj (basepointChangeHomeomorph γ e) = proj e :=
-  congrFun (basepointChangeHomeomorph_spec γ).2 e
+  rfl
 
 /-- Basepoint change prepends `γ` to a represented path class. -/
 @[simp]
@@ -73,78 +91,7 @@ theorem basepointChangeHomeomorph_apply_mk (γ : Path x y) {z : X}
     (q : Path.Homotopic.Quotient y z) :
     basepointChangeHomeomorph γ (mk z q) =
       mk z ((Path.Homotopic.Quotient.mk γ).trans q) := by
-  induction q using Quotient.inductionOn with
-  | h δ =>
-    let α : BasedPath y := BasedPath.ofPath (Path.refl y)
-    let β : BasedPath x := BasedPath.ofPath γ
-    have hα : δ 0 = proj (ofBasedPath y α) := by simp [α]
-    have hβ : δ 0 = proj (ofBasedPath x β) := by simp [β]
-    let Γ : C(I, UniversalCover x) :=
-      (basepointChangeHomeomorph γ : C(UniversalCover y, UniversalCover x)).comp
-        ((isCoveringMap y).liftPath δ (ofBasedPath y α) hα)
-    have hΓ : Γ = (isCoveringMap x).liftPath δ (ofBasedPath x β) hβ := by
-      apply ((isCoveringMap x).eq_liftPath_iff' (γ := δ)
-        (e := ofBasedPath x β) (γ_0 := hβ) (Γ := Γ)).2
-      constructor
-      · funext t
-        change proj (basepointChangeHomeomorph γ
-          ((isCoveringMap y).liftPath δ (ofBasedPath y α) hα t)) = δ t
-        rw [proj_basepointChangeHomeomorph]
-        exact congrFun ((isCoveringMap y).liftPath_lifts δ
-          (ofBasedPath y α) hα) t
-      · change basepointChangeHomeomorph γ
-          ((isCoveringMap y).liftPath δ (ofBasedPath y α) hα 0) =
-            ofBasedPath x β
-        rw [(isCoveringMap y).liftPath_zero]
-        simpa only [α, β, ofBasedPath_ofPath, basepointLift_coe,
-          Path.Homotopic.Quotient.mk_refl] using
-          basepointChangeHomeomorph_apply_basepointLift γ
-    have h := congrArg (fun f : C(I, UniversalCover x) => f 1) hΓ
-    change basepointChangeHomeomorph γ
-      ((isCoveringMap y).liftPath δ (ofBasedPath y α) hα 1) =
-        (isCoveringMap x).liftPath δ (ofBasedPath x β) hβ 1 at h
-    have hs : (isCoveringMap y).liftPath δ (ofBasedPath y α) hα 1 =
-        ofBasedPath y (BasedPath.append α
-          (δ.cast (BasedPath.endpoint_ofPath _) rfl)) := by
-      exact liftPath_apply_one_eq_ofBasedPath_append (x₀ := y) (α := α) _
-    have ht : (isCoveringMap x).liftPath δ (ofBasedPath x β) hβ 1 =
-        ofBasedPath x (BasedPath.append β
-          (δ.cast (BasedPath.endpoint_ofPath _) rfl)) := by
-      have hcast : ((δ.cast (BasedPath.endpoint_ofPath γ) rfl) : C(I, X)) = δ := by
-        ext t
-        rfl
-      simpa only [hcast] using
-        (liftPath_apply_one_eq_ofBasedPath_append (x₀ := x) (α := β)
-          (δ.cast (BasedPath.endpoint_ofPath _) rfl))
-    rw [hs, ht] at h
-    have hsource : ofBasedPath y (BasedPath.append α
-        (δ.cast (BasedPath.endpoint_ofPath _) rfl)) =
-        mk z (Path.Homotopic.Quotient.mk δ) := by
-      rw [ofBasedPath_def]
-      let hend := BasedPath.endpoint_append α (δ.cast (BasedPath.endpoint_ofPath _) rfl)
-      apply UniversalCover.ext hend
-      have hcast : HEq
-          (Path.Homotopic.Quotient.mk
-            (BasedPath.append α (δ.cast (BasedPath.endpoint_ofPath _) rfl)).toPath)
-          (Path.Homotopic.Quotient.mk ((Path.refl y).trans δ)) :=
-        Path.Homotopic.hpath_hext (fun _ ↦ rfl)
-      refine hcast.trans (heq_of_eq ?_)
-      rw [Path.Homotopic.Quotient.mk_trans,
-        Path.Homotopic.Quotient.mk_refl, Path.Homotopic.Quotient.refl_trans]
-    have htarget : ofBasedPath x (BasedPath.append β
-        (δ.cast (BasedPath.endpoint_ofPath _) rfl)) =
-        mk z ((Path.Homotopic.Quotient.mk γ).trans (Path.Homotopic.Quotient.mk δ)) := by
-      rw [ofBasedPath_def]
-      let hend := BasedPath.endpoint_append β (δ.cast (BasedPath.endpoint_ofPath _) rfl)
-      apply UniversalCover.ext hend
-      have hcast : HEq
-          (Path.Homotopic.Quotient.mk
-            (BasedPath.append β (δ.cast (BasedPath.endpoint_ofPath _) rfl)).toPath)
-          (Path.Homotopic.Quotient.mk (γ.trans δ)) :=
-        Path.Homotopic.hpath_hext (fun _ ↦ rfl)
-      refine hcast.trans (heq_of_eq ?_)
-      exact Path.Homotopic.Quotient.mk_trans γ δ
-    rwa [hsource, htarget] at h
+  rfl
 
 /-- Homotopic paths induce the same basepoint change. -/
 theorem basepointChangeHomeomorph_eq_of_homotopic {γ δ : Path x y}
@@ -158,13 +105,23 @@ theorem basepointChangeHomeomorph_eq_of_homotopic {γ δ : Path x y}
   rw [hq]
 
 /-- The inverse basepoint change also commutes with projection. -/
+@[simp]
 theorem proj_basepointChangeHomeomorph_symm (γ : Path x y) (e : UniversalCover x) :
     proj ((basepointChangeHomeomorph γ).symm e) = proj e := by
   rw [← proj_basepointChangeHomeomorph γ, Homeomorph.apply_symm_apply]
 
+/-- Reversing the path reverses the basepoint-change homeomorphism. -/
+@[simp]
+theorem basepointChangeHomeomorph_symm (γ : Path x y) :
+    (basepointChangeHomeomorph γ).symm = basepointChangeHomeomorph γ.symm := by
+  apply Homeomorph.ext
+  rintro ⟨z, q⟩
+  rfl
+
 /-- Projection and the image of the constant path determine the basepoint-change map uniquely
-among continuous maps. -/
+among continuous maps when the projection is a covering map. -/
 theorem eq_basepointChangeHomeomorph (γ : Path x y) (f : C(UniversalCover y, UniversalCover x))
+    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (hf₀ : f (basepointLift y : UniversalCover y) =
       mk y (Path.Homotopic.Quotient.mk γ))
     (hf : ∀ e, proj (f e) = proj e) :
@@ -183,13 +140,8 @@ theorem eq_basepointChangeHomeomorph (γ : Path x y) (f : C(UniversalCover y, Un
 theorem basepointChangeHomeomorph_refl (x : X) :
     basepointChangeHomeomorph (Path.refl x) = Homeomorph.refl (UniversalCover x) := by
   apply Homeomorph.ext
-  have h := eq_basepointChangeHomeomorph (Path.refl x)
-    (ContinuousMap.id (UniversalCover x)) (by
-      simp only [ContinuousMap.id_apply, basepointLift_coe,
-        Path.Homotopic.Quotient.mk_refl])
-    (fun _ => rfl)
-  intro e
-  simpa using congrArg (fun g : C(UniversalCover x, UniversalCover x) => g e) h.symm
+  rintro ⟨z, q⟩
+  simp [basepointChangeHomeomorph]
 
 end TauCeti.UniversalCover
 
