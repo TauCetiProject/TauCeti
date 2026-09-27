@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
-public import TauCeti.FieldTheory.FunctionField.Elliptic.WeierstrassEquation
+public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
+public import TauCeti.FieldTheory.FunctionField.Elliptic.VariableChange
 
 /-!
-# Completing the square in a genus-one function field
+# Normal forms of genus-one function fields
 
 When two is invertible in the constant field, completing the square puts the Weierstrass
 equation supplied by Riemann–Roch in the form `Y² = X³ + a₂X² + a₄X + a₆`.  The coordinate
@@ -17,7 +17,13 @@ change preserves the pole orders two and three at the chosen rational place, so 
 coordinates still generate the function field.  The change of the Weierstrass curve itself is
 Mathlib's `WeierstrassCurve.toCharNeTwoNF`.
 
-This is the characteristic-not-two normal-form part of Stichtenoth, Proposition 6.1.2.
+In characteristic two, Mathlib's `WeierstrassCurve.toCharTwoNF` gives either
+`Y² + XY = X³ + a₂X² + a₆` or `Y² + a₃Y = X³ + a₄X + a₆`. Transport under an admissible
+variable change preserves the same pole orders, so these normal forms also have coordinates
+that generate the function field. These statements concern equations and pole orders;
+nonsingularity is a separate assertion.
+
+These are the normal-form coordinate changes of Stichtenoth, Proposition 6.1.2.
 
 ## References
 
@@ -35,13 +41,6 @@ open AlgebraicGeometry WeierstrassCurve
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
-private theorem completedSquare (a₂ a₄ a₆ c d x y : F) :
-    (y + c * x + d) ^ 2 -
-        (x ^ 3 + (a₂ + c ^ 2) * x ^ 2 + (a₄ + 2 * c * d) * x + (a₆ + d ^ 2)) =
-      y ^ 2 + (2 * c) * x * y + (2 * d) * y -
-        (x ^ 3 + a₂ * x ^ 2 + a₄ * x + a₆) := by
-  ring
-
 namespace Place.IsWeierstrassCoordinates
 
 variable {P : Place k F} {W : WeierstrassCurve k} {x y : F}
@@ -53,50 +52,9 @@ theorem toCharNeTwoNF (h : P.IsWeierstrassCoordinates W x y) (h2 : (2 : k) ≠ 0
     P.IsWeierstrassCoordinates (W.toCharNeTwoNF • W)
       x (y + algebraMap k F (W.a₁ / 2) * x + algebraMap k F (W.a₃ / 2)) := by
   let : Invertible (2 : k) := invertibleOfNonzero h2
-  let c : k := W.a₁ / 2
-  let d : k := W.a₃ / 2
-  have hyc : P.ord (y + algebraMap k F c * x) = -3 := by
-    rcases eq_or_ne c 0 with hc | hc
-    · simpa [hc] using h.ord_y
-    · have hc' : algebraMap k F c ≠ 0 := (map_ne_zero _).mpr hc
-      have hcx : P.ord (algebraMap k F c * x) = -2 := by
-        rw [P.ord_mul hc' h.x_ne_zero, P.ord_algebraMap, h.ord_x]
-        omega
-      rw [P.ord_add_eq_min_of_ord_ne h.y_ne_zero (mul_ne_zero hc' h.x_ne_zero)
-        (by rw [h.ord_y, hcx]; omega), h.ord_y, hcx]
-      decide
-  have hyc0 : y + algebraMap k F c * x ≠ 0 := by
-    intro heq
-    simp [heq] at hyc
-  have hycd : P.ord (y + algebraMap k F c * x + algebraMap k F d) = -3 := by
-    rcases eq_or_ne d 0 with hd | hd
-    · simpa [hd] using hyc
-    · rw [P.ord_add_eq_min_of_ord_ne hyc0 ((map_ne_zero _).mpr hd)
-        (by rw [hyc, P.ord_algebraMap]; omega), hyc, P.ord_algebraMap]
-      decide
-  refine ⟨h.ord_x, h.ord_x_nonneg, ?_, ?_, ?_⟩
-  · exact hycd
-  · intro Q hQ
-    have hxQ : x ∈ Q.integers := Q.mem_integers_iff_ord_nonneg.mpr (h.ord_x_nonneg Q hQ)
-    have hyQ : y ∈ Q.integers := Q.mem_integers_iff_ord_nonneg.mpr (h.ord_y_nonneg Q hQ)
-    have hcQ : algebraMap k F c ∈ Q.integers := Q.algebraMap_mem_integers c
-    have hdQ : algebraMap k F d ∈ Q.integers := Q.algebraMap_mem_integers d
-    exact Q.mem_integers_iff_ord_nonneg.mp (by exact add_mem (add_mem hyQ (mul_mem hcQ hxQ)) hdQ)
-  · have hEq := h.equation
-    rw [Affine.equation_iff] at hEq ⊢
-    have hc : W.a₁ = 2 * c := by
-      dsimp [c]
-      field_simp [h2]
-    have hd : W.a₃ = 2 * d := by
-      dsimp [d]
-      field_simp [h2]
-    simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hEq ⊢
-    rw [toCharNeTwoNF_a₂, toCharNeTwoNF_a₄, toCharNeTwoNF_a₆]
-    rw [hc, hd] at hEq
-    simp only [a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF, map_zero, zero_mul,
-      add_zero, map_add, map_pow, map_mul, map_ofNat] at *
-    linear_combination completedSquare (algebraMap k F W.a₂) (algebraMap k F W.a₄)
-      (algebraMap k F W.a₆) (algebraMap k F c) (algebraMap k F d) x y + hEq
+  -- The inverse of Mathlib's change fixes `x` and adds `(a₁x + a₃)/2` to `y`.
+  simpa [WeierstrassCurve.toCharNeTwoNF, VariableChange.inv_def, invOf_eq_inv,
+    div_eq_mul_inv, mul_comm] using h.variableChange W.toCharNeTwoNF
 
 end Place.IsWeierstrassCoordinates
 
@@ -117,6 +75,18 @@ theorem exists_isWeierstrassCoordinates_isCharNeTwoNF_of_genus_eq_one
   · infer_instance
   · exact h.toCharNeTwoNF h2
 
+/-- At every degree-one place of a genus-one function field in characteristic two,
+there are Weierstrass coordinates in one of Mathlib's two characteristic-two normal forms.
+Their pole orders are two and three, so they generate the function field. -/
+theorem exists_isWeierstrassCoordinates_isCharTwoNF_of_genus_eq_one
+    [CharP k 2] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (hg : genus k F = 1) {P : Place k F} (hP : P.degree = 1) :
+    ∃ (W : WeierstrassCurve k) (x y : F), W.IsCharTwoNF ∧
+      P.IsWeierstrassCoordinates W x y := by
+  obtain ⟨W, x, y, h⟩ := P.exists_isWeierstrassCoordinates_of_genus_eq_one hF hex hg hP
+  obtain ⟨C, hC⟩ := W.exists_variableChange_isCharTwoNF
+  exact ⟨_, _, _, hC, h.variableChange C⟩
+
 end Place
 
 /-- An elliptic function field in characteristic other than two has a rational place with
@@ -130,6 +100,18 @@ theorem IsEllipticFunctionField.exists_isWeierstrassCoordinates_isCharNeTwoNF
   obtain ⟨W, x, y, hW, h⟩ :=
     P.exists_isWeierstrassCoordinates_isCharNeTwoNF_of_genus_eq_one hF hex he.genus_eq_one
       h2 hP
+  exact ⟨P, W, x, y, hP, hW, h⟩
+
+/-- An elliptic function field in characteristic two has a rational place with Weierstrass
+coordinates in the form `Y² + XY = X³ + a₂X² + a₆` or `Y² + a₃Y = X³ + a₄X + a₆`. -/
+theorem IsEllipticFunctionField.exists_isWeierstrassCoordinates_isCharTwoNF
+    [CharP k 2] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (he : IsEllipticFunctionField k F) :
+    ∃ (P : Place k F) (W : WeierstrassCurve k) (x y : F),
+      P.degree = 1 ∧ W.IsCharTwoNF ∧ P.IsWeierstrassCoordinates W x y := by
+  obtain ⟨P, hP⟩ := he.exists_place_degree_eq_one hF hex
+  obtain ⟨W, x, y, hW, h⟩ :=
+    P.exists_isWeierstrassCoordinates_isCharTwoNF_of_genus_eq_one hF hex he.genus_eq_one hP
   exact ⟨P, W, x, y, hP, hW, h⟩
 
 end TauCeti

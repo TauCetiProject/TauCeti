@@ -251,8 +251,9 @@ theorem linearIndependent_mk_ofPath_of_length_lt_two (h : IsAdmissibleIdeal I) :
     omega
   have hli : LinearIndependent k fun x : {x : Quiver.TotalPath Q // x.2.2.length < 2} =>
       (pathAlgebraBasis k Q x.1 : pathAlgebra k Q) := by
-    simpa only [coe_pathAlgebraBasis] using
-      linearIndependent_ofPath k Q fun x : Quiver.TotalPath Q => x.2.2.length < 2
+    simpa only [coe_pathAlgebraBasis, Function.comp_def] using
+      (linearIndependent_ofPath k Q).comp
+        (Subtype.val : {x : Quiver.TotalPath Q // x.2.2.length < 2} → _) Subtype.val_injective
   simpa [Function.comp_def, Ideal.Quotient.mkₐ_eq_mk] using hli.map hdisj
 
 /-- A bound quiver algebra over a nonempty quiver is nonzero: an admissible ideal is proper, the

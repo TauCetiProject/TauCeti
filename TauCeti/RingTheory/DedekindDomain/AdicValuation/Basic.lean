@@ -25,6 +25,11 @@ The general centre construction and its membership lemmas are in
 `TauCeti.RingTheory.Valuation.Center`. There, `Valuation.heightOneSpectrum` bundles a nonzero
 prime ideal as `HeightOneSpectrum R`; the Dedekind assumption here makes it a height one prime.
 
+The value group of the adic valuation itself is read off from Mathlib's definition, and this file
+records the one conversion the rest of the library needs: an element has order of vanishing `1`
+at `v` exactly when its adic value is `WithZero.exp (-1)`, so the additive order of vanishing used
+by the class-group interface and the multiplicative value can be read off from one another.
+
 ## Main results
 
 * `Valuation.eq_valuation_of_forall_mem_asIdeal_iff`: a normalized valuation bounded by `1` on `R`
@@ -32,6 +37,9 @@ prime ideal as `HeightOneSpectrum R`; the Dedekind assumption here makes it a he
 * `Valuation.valuation_heightOneSpectrum`: the adic valuation of the centre of `w` on `R` is `w`.
 * `Valuation.existsUnique_heightOneSpectrum_valuation_eq`: the centre is the only height one prime
   whose adic valuation is `w`.
+* `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff`: order of vanishing `1` at `v`
+  is the value `WithZero.exp (-1)`, which relates the multiplicative value group of the adic
+  valuation to the additive order of vanishing used by the class-group interface.
 
 ## Implementation notes
 
@@ -161,3 +169,40 @@ theorem exists_heightOneSpectrum_isEquiv_of_le_one [IsDedekindDomain R]
 end Comparison
 
 end Valuation
+
+section ValueGroup
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+/-- **An element has order of vanishing exactly `1` at `v` exactly when its adic value is
+`WithZero.exp (-1)`.**
+
+The value group of `HeightOneSpectrum.valuation` is `WithZero (Multiplicative ℤ)`, whose
+multiplicative identity `1` is the value zero, that is, order of vanishing zero; an element of
+order of vanishing `1` is instead written `WithZero.exp (-1)`, the value of a generator of
+`v.asIdeal`.  So `v.valuation K x = 1` says that `x` is a local unit at `v`, which an element of
+nonzero order of vanishing is not.  This is the equivalence that relates the multiplicative value
+of an element to the additive order of vanishing used by the class-group interface, whose
+`adicOrd` is `-WithZero.log` of this valuation. -/
+theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) :
+    -WithZero.log (v.valuation K x) = 1 ↔
+      v.valuation K x = (WithZero.exp (-1 : ℤ) : WithZero (Multiplicative ℤ)) := by
+  constructor
+  · intro h
+    have hlog : WithZero.log (v.valuation K x) = -1 := (neg_eq_iff_eq_neg).mp h
+    have hx : v.valuation K x ≠ 0 := by
+      intro hx0
+      rw [hx0] at hlog
+      simp at hlog
+    calc v.valuation K x = WithZero.exp (WithZero.log (v.valuation K x)) :=
+        (WithZero.exp_log hx).symm
+      _ = WithZero.exp (-1) := by rw [hlog]
+  · intro h
+    rw [h, WithZero.log_exp, neg_neg]
+
+end IsDedekindDomain.HeightOneSpectrum
+
+end ValueGroup
