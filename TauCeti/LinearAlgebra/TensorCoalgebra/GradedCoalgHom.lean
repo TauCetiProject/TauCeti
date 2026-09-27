@@ -41,6 +41,8 @@ suspended component equation.
   components has degree zero.
 * `TauCeti.ReducedTensorWords.IsCoalgHom.comp_eq_comp_iff_letter_comp_eq`: a degree-zero coalgebra
   morphism intertwines two graded coderivations exactly when it does so on letter components.
+* `TauCeti.ReducedTensorWords.IsCoalgHom.isHomogeneous_linearEquiv_symm`: the inverse of a
+  degree-zero coalgebra automorphism is homogeneous of degree zero.
 
 ## References
 
@@ -151,9 +153,7 @@ theorem IsCoalgHom.comp_eq_comp_of_letter_comp_eq
             simp only [map_add] at hu hv ⊢
             rw [add_add_add_comm, hu, hv, add_add_add_comm]
   refine LinearMap.ext fun z ↦ ?_
-  have hz : z ∈ ⨆ n : ℕ, filtration R M n := by rw [iSup_filtration_eq_top]; trivial
-  obtain ⟨n, hn⟩ :=
-    (Submodule.mem_iSup_of_directed _ (filtration_monotone R M).directed_le).1 hz
+  obtain ⟨n, hn⟩ := exists_mem_filtration R M z
   exact key n z hn
 
 /-- A degree-zero coalgebra morphism intertwines a `q`-twisted graded coderivation of `Tᶜ(M)`
@@ -166,6 +166,61 @@ theorem IsCoalgHom.comp_eq_comp_iff_letter_comp_eq
     (hbM : IsGradedCoderivation G q bM) (hbN : IsGradedCoderivation H q bN) :
     bN ∘ₗ F = F ∘ₗ bM ↔ letter R N ∘ₗ bN ∘ₗ F = letter R N ∘ₗ F ∘ₗ bM :=
   ⟨fun h ↦ by rw [h], hF.comp_eq_comp_of_letter_comp_eq hF₀ hbM hbN⟩
+
+/-! ### Inverses -/
+
+section Inverse
+
+variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- The inverse of a degree-zero linear equivalence of reduced tensor coalgebras which is a
+coalgebra morphism is again homogeneous of degree zero. -/
+theorem IsCoalgHom.isHomogeneous_linearEquiv_symm {G : InternalGrading R M}
+    {H : InternalGrading R N} {e : ReducedTensorWords R M ≃ₗ[R] ReducedTensorWords R N}
+    (he : IsCoalgHom R e.toLinearMap)
+    (he₀ : LinearMap.IsHomogeneous e.toLinearMap (gradedPiece G) (gradedPiece H) 0) :
+    LinearMap.IsHomogeneous e.symm.toLinearMap (gradedPiece H) (gradedPiece G) 0 := by
+  -- No independence of the total-degree pieces is available, so the inverse is not read off a
+  -- decomposition.  Instead `e` is corrected by the letterwise inverse of its arity-one
+  -- component `e₁` to a coalgebra endomorphism `U` fixing every letter; `U` preserves each
+  -- total-degree piece and, being the identity up to a filtration-lowering map, maps it onto
+  -- itself.
+  -- The arity-one component `e₁` is a degree-zero linear equivalence of the letters.
+  set e₁ : M ≃ₗ[R] N := LinearEquiv.ofBijective _ he.letter_comp_comp_ofLetter_bijective
+  have he₁ : LinearMap.IsHomogeneous e₁.toLinearMap G.piece H.piece 0 := by
+    rw [LinearMap.isHomogeneous_def]
+    intro p a ha
+    have h := (isHomogeneous_letter H).map_mem (he₀.map_mem (ofLetter_mem_gradedPiece G ha))
+    rw [add_zero, add_zero] at h
+    rw [add_zero]
+    exact h
+  have he₁' := (isHomogeneous_map H G he₁.linearEquiv_symm)
+  -- The correction `U` is a degree-zero coalgebra endomorphism fixing every letter.
+  set U := ReducedTensorWords.map (R := R) e₁.symm.toLinearMap ∘ₗ e.toLinearMap with hUdef
+  have hU : IsCoalgHom R U := (isCoalgHom_map _).comp he
+  have hU₁ : U ∘ₗ ofLetter R M = ofLetter R M := he.map_symm_comp_comp_ofLetter _
+  have hU₀ := he₁'.comp he₀
+  rw [zero_add] at hU₀
+  rw [LinearMap.isHomogeneous_def]
+  intro D w hw
+  rw [add_zero]
+  have hw' : ReducedTensorWords.map (R := R) e₁.symm.toLinearMap w ∈ gradedPiece G D := by
+    simpa only [add_zero] using he₁'.map_mem hw
+  have hp : (gradedPiece G D).map U ≤ gradedPiece G D := by
+    rintro _ ⟨z, hz, rfl⟩
+    simpa only [add_zero] using hU₀.map_mem hz
+  have hw'' : ReducedTensorWords.map (R := R) e₁.symm.toLinearMap w ∈ (gradedPiece G D).map U := by
+    rw [hU.map_eq_of_map_le (p := gradedPiece G D) hU₁ hp]
+    exact hw'
+  obtain ⟨z, hz, hUz⟩ := hw''
+  have hez : e z = w := by
+    have h := congrArg (ReducedTensorWords.map (R := R) e₁.toLinearMap) hUz
+    rwa [hUdef, LinearMap.comp_apply, map_map_symm, map_map_symm, LinearEquiv.coe_coe] at h
+  rw [← hez, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+  exact hz
+
+end Inverse
 
 end ReducedTensorWords
 
