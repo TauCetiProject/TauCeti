@@ -71,7 +71,7 @@ theorem IsCharacteristicVector.add_two_smul {L : IntegralLattice V} {w : L}
   rw [Int.modEq_iff_dvd, map_add, map_smul]
   obtain ⟨k, hk⟩ := Int.modEq_iff_dvd.mp (hw x)
   refine ⟨k - L.integralForm v x, ?_⟩
-  dsimp at hk ⊢
+  simp only [two_zsmul, LinearMap.add_apply] at hk ⊢
   omega
 
 /-- Translation by twice a lattice vector preserves and reflects the characteristic condition. -/
@@ -92,6 +92,15 @@ theorem IsCharacteristicVector.neg {L : IntegralLattice V} {w : L}
   have h : w + (2 : ℤ) • (-w) = -w := by abel
   simpa only [h] using hw.add_two_smul (-w)
 
+/-- Negation preserves and reflects the characteristic condition. -/
+@[simp]
+theorem isCharacteristicVector_neg_iff (L : IntegralLattice V) (w : L) :
+    L.IsCharacteristicVector (-w) ↔ L.IsCharacteristicVector w := by
+  constructor
+  · intro h
+    simpa only [neg_neg] using h.neg
+  · exact IsCharacteristicVector.neg
+
 /-- The pairing of the difference of two characteristic vectors with every lattice vector
 is even. -/
 theorem IsCharacteristicVector.even_integralForm_sub {L : IntegralLattice V}
@@ -102,6 +111,7 @@ theorem IsCharacteristicVector.even_integralForm_sub {L : IntegralLattice V}
   simpa only [sub_self] using (h₁ x).sub (h₂ x)
 
 /-- Isometries preserve and reflect characteristic vectors. -/
+@[simp]
 theorem Isometry.isCharacteristicVector_iff {L : IntegralLattice V}
     {M : IntegralLattice W} (e : Isometry L M) (w : L) :
     M.IsCharacteristicVector (e.carrierEquiv w) ↔ L.IsCharacteristicVector w := by
