@@ -50,7 +50,8 @@ two.
   `GridRectangle.squares` that the marking-avoidance predicate tests.
 * `TauCeti.GridDiagram.disjoint_coveredSquares_XSet_swapColumns_of_subinterval`: X-avoidance
   transfers across a column swap to a rectangle whose covered columns are contained in an
-  X-avoiding rectangle's covered columns and whose rows are contained in its rows.
+  X-avoiding rectangle's covered columns and whose rows are contained in its rows, provided
+  the swapped-out column is covered by the original rectangle but not by the new one.
 * `TauCeti.GridDiagram.X_not_mem_coveredRows_of_disjoint`: the X-marking of a covered column
   avoids an X-avoiding rectangle's covered rows.
 
