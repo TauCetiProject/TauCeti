@@ -25,7 +25,7 @@ combination in the resulting power basis is the minimum of its term valuations.
 * `TauCeti.inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top` and
   `TauCeti.ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top` record its characteristic
   total-ramification consequences.
-* `TauCeti.Polynomial.associated_minpoly_of_eisenstein_isRoot` identifies an Eisenstein
+* `Polynomial.associated_minpoly_of_eisenstein_isRoot` identifies an Eisenstein
   polynomial with the minimal polynomial of a root up to a unit.
 * `TauCeti.addVal_sum_eisenstein_powerBasis` computes the additive valuation of a linear
   combination of powers of an Eisenstein integral generator.
@@ -38,8 +38,6 @@ combination in the resulting power basis is the minimum of its term valuations.
 public section
 
 open ValuativeRel IsLocalRing IsNonarchimedeanLocalField
-
-namespace TauCeti
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -82,6 +80,8 @@ theorem associated_minpoly_of_eisenstein_isRoot [Algebra K L] [ValuativeExtensio
     (minpoly.isIntegrallyClosed_dvd hξ haeval)
 
 end Polynomial
+
+namespace TauCeti
 
 private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension K L]
     [Module.Finite K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
