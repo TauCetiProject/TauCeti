@@ -60,13 +60,9 @@ finiteness of `L/K` is used.
 
 For a **finite** `L/K` the subgroup fixing `σ(L)` is open of index `[L : K]`, so it carries a
 corestriction, and the second square of the functoriality says that corestriction
-`H¹(G_L, μₙ) → H¹(G_K, μₙ)` corresponds to the norm `Lˣ ⧸ (Lˣ)ⁿ → Kˣ ⧸ (Kˣ)ⁿ`. Its proof is the
-classical one, read off two compatibilities instead of a cocycle computation: the connecting map
-`δ⁰` of the Kummer sequence commutes with corestriction (`explicitCor_delta0`) and with the
-transport of the sequence along `σ` (`explicitDelta0_naturality`), while in degree zero
-corestriction is the transversal sum, which on the invariant `σ b` of the fixing subgroup is the
-product of the conjugates of `σ b`, that is `N_{L/K} b`
-(`TauCeti.algebraMap_norm_eq_prod_transversal`).
+`H¹(G_L, μₙ) → H¹(G_K, μₙ)` corresponds to the norm `Lˣ ⧸ (Lˣ)ⁿ → Kˣ ⧸ (Kˣ)ⁿ`. In degree zero,
+corestriction on the invariant `σ b` of the fixing subgroup is the product of the conjugates of
+`σ b`, that is `N_{L/K} b`.
 
 ## Main definitions
 

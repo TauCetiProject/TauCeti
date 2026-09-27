@@ -299,6 +299,18 @@ theorem toMul_coe_embeddedUnitsInvariants (b : Lˣ) :
       Units.map σ.toRingHom.toMonoidHom b :=
   (rfl)
 
+/-- The unit `1` of `L` is the zero invariant. -/
+@[simp]
+theorem embeddedUnitsInvariants_one : embeddedUnitsInvariants K L σ 1 = 0 :=
+  Subtype.ext <| Additive.toMul.injective <| map_one (Units.map σ.toRingHom.toMonoidHom)
+
+/-- Multiplication of units of `L` becomes addition of invariants. -/
+@[simp]
+theorem embeddedUnitsInvariants_mul (a b : Lˣ) :
+    embeddedUnitsInvariants K L σ (a * b) =
+      embeddedUnitsInvariants K L σ a + embeddedUnitsInvariants K L σ b :=
+  Subtype.ext <| Additive.toMul.injective <| map_mul (Units.map σ.toRingHom.toMonoidHom) a b
+
 end Embedded
 
 end TauCeti
