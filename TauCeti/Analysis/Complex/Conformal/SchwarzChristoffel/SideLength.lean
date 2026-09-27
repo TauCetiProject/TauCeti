@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 public import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Side lengths in the Schwarz--Christoffel formula

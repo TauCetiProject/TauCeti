@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Turning
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Short-turn separation of Schwarz--Christoffel sides
