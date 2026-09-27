@@ -1,0 +1,135 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.Basic
+public import TauCeti.FieldTheory.Trace
+import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+
+/-!
+# Trace transfer in a quadratic field extension
+
+If `x` generates a quadratic extension and `x² = d`, the square-root basis `(1, x)`
+identifies the trace transfer of the unit line with `⟨2, 2d⟩`. This supplies the
+field-extension version of the trace-form calculation, with an explicit isometry
+whose coordinates can be used to compute invariants of transferred forms.
+
+The trace-zero calculation is `TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range`.
+
+## References
+
+* W. Scharlau, *Quadratic and Hermitian Forms* (1985), Chapter 2, §5.
+-/
+
+public section
+
+namespace TauCeti
+
+open QuadraticMap QuadraticForm
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+  [FiniteDimensional K L]
+
+/-- The square-root basis `(1, x)` of a quadratic field extension. -/
+noncomputable def quadraticSquareRootBasis {x : L} (hx : x ∉ Set.range (algebraMap K L))
+    (hfin : Module.finrank K L = 2) : Module.Basis (Fin 2) K L :=
+  basisOfLinearIndependentOfCardEqFinrank (b := ![1, x])
+    (linearIndependent_one_of_notMem_range_algebraMap K L hx) (by simp [hfin])
+
+omit [FiniteDimensional K L] in
+@[simp]
+theorem quadraticSquareRootBasis_zero {x : L} (hx : x ∉ Set.range (algebraMap K L))
+    (hfin : Module.finrank K L = 2) : quadraticSquareRootBasis hx hfin 0 = 1 := by
+  simp [quadraticSquareRootBasis]
+
+omit [FiniteDimensional K L] in
+@[simp]
+theorem quadraticSquareRootBasis_one {x : L} (hx : x ∉ Set.range (algebraMap K L))
+    (hfin : Module.finrank K L = 2) : quadraticSquareRootBasis hx hfin 1 = x := by
+  simp [quadraticSquareRootBasis]
+
+/-- In square-root coordinates, the trace transfer of the unit line is `⟨2, 2d⟩`. -/
+theorem traceTransfer_sq_basisRepr {x : L} {d : K}
+    (hfin : Module.finrank K L = 2) (hx : x ∉ Set.range (algebraMap K L))
+    (hx2 : x ^ 2 = algebraMap K L d) :
+    ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).basisRepr
+      (quadraticSquareRootBasis hx hfin) =
+      weightedSumSquares K ![(2 : K), 2 * d] := by
+  let b := quadraticSquareRootBasis hx hfin
+  have htrace : Algebra.trace K L x = 0 :=
+    Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range hx2 hx
+  ext v
+  rw [QuadraticMap.basisRepr, QuadraticMap.comp_apply,
+    QuadraticMap.traceTransfer_sq, LinearMap.BilinMap.toQuadraticMap_apply,
+    Algebra.traceForm_apply]
+  simp only [LinearEquiv.coe_coe, Module.Basis.equivFun_symm_apply,
+    Fin.sum_univ_two, quadraticSquareRootBasis_zero, quadraticSquareRootBasis_one,
+    Algebra.smul_def]
+  have hpoly :
+      ((algebraMap K L) (v 0) * 1 + (algebraMap K L) (v 1) * x) *
+          ((algebraMap K L) (v 0) * 1 + (algebraMap K L) (v 1) * x) =
+        (algebraMap K L) ((v 0) ^ 2 + d * (v 1) ^ 2) +
+          (algebraMap K L) (2 * (v 0) * (v 1)) * x := by
+    simp only [map_add, map_pow, map_mul]
+    calc
+      _ = (algebraMap K L) (v 0) ^ 2 +
+            (algebraMap K L) (v 1) ^ 2 * x ^ 2 +
+            (algebraMap K L) (2 * v 0 * v 1) * x := by
+          simp only [map_mul, map_ofNat]
+          ring
+      _ = _ := by rw [hx2]; simp only [map_mul]; ring
+  have hcross :
+      (Algebra.trace K L) ((algebraMap K L) (2 * v 0 * v 1) * x) = 0 := by
+    rw [← Algebra.smul_def, map_smul, htrace, smul_zero]
+  rw [hpoly, map_add, Algebra.trace_algebraMap, hfin]
+  rw [hcross]
+  simp [weightedSumSquares_apply, Fin.sum_univ_two, nsmul_eq_mul]
+  ring
+
+/-- The square-root coordinate map is an isometry from the transferred unit line
+to the diagonal form `⟨2, 2d⟩`. -/
+noncomputable def traceTransferSqIsometryEquivWeightedSumSquares_of_sq
+    {x : L} {d : K} (hfin : Module.finrank K L = 2)
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d) :
+    ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).IsometryEquiv
+      (weightedSumSquares K ![(2 : K), 2 * d]) := by
+  let b := quadraticSquareRootBasis hx hfin
+  let e := ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).isometryEquivBasisRepr b
+  refine { e with map_app' := fun z => ?_ }
+  rw [← traceTransfer_sq_basisRepr hfin hx hx2]
+  exact e.map_app z
+
+/-- The isometry uses coordinates in the square-root basis. -/
+@[simp]
+theorem traceTransferSqIsometryEquivWeightedSumSquares_of_sq_apply
+    {x : L} {d : K} (hfin : Module.finrank K L = 2)
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d)
+    (z : L) :
+    traceTransferSqIsometryEquivWeightedSumSquares_of_sq hfin hx hx2 z =
+      (quadraticSquareRootBasis hx hfin).equivFun z := by
+  rfl
+
+/-- The inverse isometry reconstructs an element from its square-root coordinates. -/
+@[simp]
+theorem traceTransferSqIsometryEquivWeightedSumSquares_of_sq_symm_apply
+    {x : L} {d : K} (hfin : Module.finrank K L = 2)
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d)
+    (v : Fin 2 → K) :
+    (traceTransferSqIsometryEquivWeightedSumSquares_of_sq hfin hx hx2).symm v =
+      (quadraticSquareRootBasis hx hfin).equivFun.symm v := by
+  rfl
+
+/-- The trace transfer of the unit line in a quadratic field extension generated by
+`x² = d` is equivalent to `⟨2, 2d⟩`. -/
+theorem equivalent_traceTransfer_sq_weightedSumSquares_of_sq
+    {x : L} {d : K} (hfin : Module.finrank K L = 2)
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d) :
+    ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Equivalent
+      (weightedSumSquares K ![(2 : K), 2 * d]) :=
+  ⟨traceTransferSqIsometryEquivWeightedSumSquares_of_sq hfin hx hx2⟩
+
+end TauCeti
