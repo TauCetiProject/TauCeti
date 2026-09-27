@@ -56,7 +56,7 @@ theorem isGeodesicallyCompleteAt_iff (Φ : RiemannianIsometry I J M N) (p : M) :
 
 /-- Geodesic completeness of a Riemannian manifold is invariant under a smooth Riemannian
 isometry. -/
-theorem isGeodesicallyComplete_iff (Φ : RiemannianIsometry I J M N) :
+theorem forall_isGeodesicallyCompleteAt_iff (Φ : RiemannianIsometry I J M N) :
     (∀ p : M, IsGeodesicallyCompleteAt I M p) ↔
       ∀ q : N, IsGeodesicallyCompleteAt J N q := by
   constructor
