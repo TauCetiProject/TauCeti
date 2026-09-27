@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Real.GoldenRatio
-public import TauCeti.NumberTheory.NumberField.Units.Basic
+public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Basic
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly
@@ -22,13 +22,12 @@ infinite place `w` with `w θ = Real.goldenRatio`; a real quadratic field has un
 
 * `TauCeti.NumberField.Sqrt5.exists_isReal_and_apply_eq_goldenRatio`: a real place at the
   golden ratio.
-* `TauCeti.NumberField.Sqrt5.rank_eq_one`: unit rank one.
+* `TauCeti.NumberField.Sqrt5.units_rank_eq_one`: unit rank one.
 -/
 
 public section
 
 open Polynomial NumberField NumberField.InfinitePlace NumberField.Units TauCeti.NumberField
-  TauCeti.NumberField.Units
 open scoped NumberField
 
 namespace TauCeti.NumberField.Sqrt5
@@ -66,7 +65,7 @@ theorem exists_isReal_and_apply_eq_goldenRatio (hmin : minpoly ℤ θ = X ^ 2 - 
   exact abs_of_pos hφ0
 
 /-- `ℚ(√5)` has unit rank one. -/
-theorem rank_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
+theorem units_rank_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : rank K = 1 := by
   obtain ⟨w, hw, -⟩ := exists_isReal_and_apply_eq_goldenRatio hmin hgen
   exact rank_eq_one_of_finrank_eq_two_of_isReal (finrank_eq_two hmin hgen) hw

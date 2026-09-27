@@ -60,7 +60,7 @@ theorem closure_sup_torsion_eq_top (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   obtain ⟨w, hw, hwθ⟩ := exists_isReal_and_apply_eq_goldenRatio hmin hgen
   have hwu : w u = Real.goldenRatio := by rw [hu]; exact hwθ
   have h1 : 1 < w u := by rw [hwu]; exact Real.one_lt_goldenRatio
-  refine UnitCandidateEliminationCertificate.sound ?_ (rank_eq_one hmin hgen)
+  refine UnitCandidateEliminationCertificate.sound ?_ (units_rank_eq_one hmin hgen)
     (finrank_eq_two hmin hgen ▸ Nat.prime_two) hw h1
   rw [hwu]
   exact unitCandidateEliminationCertificate_goldenRatio (finrank_eq_two hmin hgen)
@@ -74,7 +74,7 @@ theorem regulator_eq_log_goldenRatio (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   have hu : (u : 𝓞 K) = θ := Units.val_mkOfMulEqOne _
   have hwu : w u = Real.goldenRatio := by rw [hu]; exact hwθ
   have h1 : 1 < w u := by rw [hwu]; exact Real.one_lt_goldenRatio
-  rw [regulator_eq_mult_log_of_rank_eq_one (rank_eq_one hmin hgen) u
+  rw [regulator_eq_mult_log_of_rank_eq_one (units_rank_eq_one hmin hgen) u
     (closure_sup_torsion_eq_top hmin hgen hu) w h1, hwu, hw.mult_eq_one, Nat.cast_one, one_mul]
 
 /-- The torsion subgroup of the units of `ℚ(√5)` has order `2`. -/

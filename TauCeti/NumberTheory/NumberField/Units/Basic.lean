@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Units.Basic
-public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 import Mathlib.NumberTheory.NumberField.Norm
 import TauCeti.NumberTheory.NumberField.Minpoly
 
@@ -29,8 +28,6 @@ to see that a non-torsion unit of a field of prime degree generates the field.
   of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
   base field `ℚ` is torsion.
-* `TauCeti.NumberField.Units.rank_eq_one_of_finrank_eq_two_of_isReal`: a quadratic field with a
-  real place has unit rank one.
 * `NumberField.InfinitePlace.exists_torsion_mul_embedding_eq_abs`: a torsion sign makes a
   unit's real embedding equal its absolute value at a real place.
 -/
@@ -107,18 +104,5 @@ theorem mem_torsion_of_mem_bot {v : (𝓞 K)ˣ} (hv : (v : K) ∈ (⊥ : Interme
     Real.eq_one_of_pos_of_log_eq_zero (norm_pos_iff.mpr hq0)
       ((mul_eq_zero.mp hlog).resolve_left (by exact_mod_cast Module.finrank_pos.ne'))
   exact (mem_torsion K).mpr fun w => by rw [hval, h1]
-
-/-- **A real quadratic field has unit rank one.** In degree two, a real infinite place forces
-both infinite places to be real, so the unit rank is `2 - 1 = 1`. -/
-theorem rank_eq_one_of_finrank_eq_two_of_isReal (hdeg : Module.finrank ℚ K = 2)
-    {w : InfinitePlace K} (hw : w.IsReal) : rank K = 1 := by
-  classical
-  have hcard := card_add_two_mul_card_eq_rank K
-  rw [hdeg] at hcard
-  have hpos : nrRealPlaces K ≠ 0 := by
-    have : Nonempty {w : InfinitePlace K // w.IsReal} := ⟨⟨w, hw⟩⟩
-    exact Fintype.card_ne_zero
-  rw [rank, card_eq_nrRealPlaces_add_nrComplexPlaces]
-  omega
 
 end TauCeti.NumberField.Units
