@@ -78,7 +78,10 @@ def skeletonMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
         (Continuous.subtype_mk continuous_subtype_val (fun x ↦
           (skeletonLT C (n : ℕ∞)).subset_complex x.2)))⟩
 
-/-- On points, the skeletal map is the restriction of the original map. -/
+/-- On points, the skeletal map is the restriction of the original map.
+
+This is a rewrite lemma: tagging it `simp` fails Mathlib's `simpNF` linter because the
+subtype coercion on the left is simplified before this lemma can apply. -/
 lemma skeletonMap_apply (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ)
     (x : skeletonObj C n) :
     (((skeletonMap f hf n) x : skeletonObj C' n) : Y) =
