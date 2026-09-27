@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Elliptic
+public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Basic
 public import TauCeti.Analysis.Complex.Fuchsian.ProperAction
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 
