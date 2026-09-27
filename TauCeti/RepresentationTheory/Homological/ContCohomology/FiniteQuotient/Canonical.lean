@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functorial
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Comparison
 
 /-!
-# The canonical continuous-cohomology system over finite quotients
+# The canonical continuous-cohomology system over the open normal subgroups
 
 Let `G` be a topological group acting on a discrete module `M`. For every open normal
 subgroup `U`, the fixed points `M^U` are a discrete module over `G ⧸ U`, and hence have canonical
@@ -27,6 +27,12 @@ this cocone is colimiting requires the profinite hypotheses and the all-degree d
 is deliberately separate from the construction here, which needs neither compactness nor total
 disconnectedness.
 
+Nothing below assumes that the quotients `G ⧸ U` are finite, and none of them need be: for an open
+normal subgroup `U` the quotient `G ⧸ U` is discrete, and it is finite exactly when `G` is compact.
+The declarations nevertheless carry `finiteQuotient` in their names, after the tower of quotients
+they are indexed by and in step with the explicit low-degree systems of `FiniteQuotient.Explicit`,
+which are built under these same hypotheses.
+
 The construction is the canonical, all-degree counterpart of the explicit systems in degrees zero,
 one and two in `FiniteQuotient.Explicit`. It follows the finite-quotient system of Neukirch–Schmidt–
 Wingberg, *Cohomology of Number Fields*, (1.2.5), and Ribes–Zalesskii, *Profinite Groups*,
@@ -36,10 +42,34 @@ Corollary 6.5.6(a).
 
 * `TauCeti.ContCohomology.continuousFiniteQuotientTransition`: the canonical transition map in
   every degree.
-* `TauCeti.ContCohomology.continuousFiniteQuotientSystem`: the resulting finite-quotient system.
+* `TauCeti.ContCohomology.continuousFiniteQuotientSystem`: the resulting system on
+  `(OpenNormalSubgroup G)ᵒᵖ`.
 * `TauCeti.ContCohomology.continuousFiniteQuotientComparison`: the inflation-and-inclusion legs.
 * `TauCeti.ContCohomology.continuousFiniteQuotientCocone`: those legs as a cocone with apex
   `Hⁿ(G, M)`.
+
+## Main statements
+
+* `TauCeti.ContCohomology.continuousFiniteQuotientTransition_eq_map` and
+  `TauCeti.ContCohomology.continuousFiniteQuotientComparisonApp_eq_map`: the characteristic
+  equations of the two maps, identifying each with the compatible-pair pullback
+  `ContinuousCohomology.map` it is built from, so that no consumer unfolds either body.
+* `TauCeti.ContCohomology.continuousFiniteQuotientTransition_refl` and
+  `continuousFiniteQuotientTransition_comp`: the two functor laws.
+* `TauCeti.ContCohomology.continuousFiniteQuotientTransition_comp_comparisonApp`: comparison
+  through a deeper quotient agrees with direct comparison, which is the cocone condition.
+
+## Implementation notes
+
+The comparison legs are *defined* as the existing all-degree inflation map
+`TauCeti.ContinuousCohomology.infl` after the coefficient dictionary
+`TauCeti.ofDiscreteModuleQuotient`, rather than rebuilt from a compatible pair;
+`TauCeti.ContCohomology.coeffMap_ofDiscreteModuleQuotient_comp_infl` supplies the compatible-pair
+presentation, which is what `continuousFiniteQuotientComparisonApp_eq_map` records.
+
+`TauCeti.ContCohomology.continuousFiniteQuotientMap_comp_quotientMk` stays in this file rather than
+beside the other `continuousFiniteQuotientMap` lemmas of `FiniteQuotient.Basic`: that module does
+not reach `ContinuousMonoidHom.quotientMk`, which the statement needs.
 -/
 
 public section
@@ -74,8 +104,8 @@ private theorem ofDiscreteModulePair_heq_of_eq
   subst hφ
   exact heq_of_eq (ofDiscreteModulePair_eq_of_hom_apply (G := H) (H := K) φ f _ g fun a ↦ hg a)
 
-/-- The coefficient morphism in the canonical finite-quotient transition from the `U`-level to
-the `V`-level, for `V ≤ U`. Its underlying map is the inclusion `M^U → M^V`. -/
+/-- The coefficient morphism in the canonical transition from the `U`-level to the `V`-level, for
+`V ≤ U`. Its underlying map is the inclusion `M^U → M^V`. -/
 def continuousFiniteQuotientPair (hVU : V ≤ U) :
     TopRep.res (continuousFiniteQuotientMap G hVU : G ⧸ V.toSubgroup →*
         G ⧸ U.toSubgroup)
@@ -89,6 +119,10 @@ def continuousFiniteQuotientPair (hVU : V ≤ U) :
   ofDiscreteModulePair (continuousFiniteQuotientMap G hVU : G ⧸ V.toSubgroup →*
       G ⧸ U.toSubgroup) f (by
     intro q m
+    -- `change` rather than a rewrite: the goal is `f (↑φ q • m) = q • f m`, which differs from the
+    -- reusable equivariance lemma only by the `ℤ`-linear wrapper `f` adds around
+    -- `fixedPointsInclusion` — stated on `FixedPoints.addSubmonoid` — and by the `MonoidHom`
+    -- coercion on `φ`. Both conversions are definitional and neither has a propositional form.
     change fixedPointsInclusion hVU (continuousFiniteQuotientMap G hVU q • m) =
       q • fixedPointsInclusion hVU m
     exact fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU q m)
@@ -98,10 +132,9 @@ def continuousFiniteQuotientPair (hVU : V ≤ U) :
 theorem continuousFiniteQuotientPair_hom_apply (hVU : V ≤ U)
     (m : FixedPoints.addSubgroup U.toSubgroup M) :
     (dsimp% only ((continuousFiniteQuotientPair G M hVU).hom m)) =
-      fixedPointsInclusion hVU m :=
-  by
-    rw [continuousFiniteQuotientPair]
-    exact ofDiscreteModulePair_hom_apply _ _ _ m
+      fixedPointsInclusion hVU m := by
+  rw [continuousFiniteQuotientPair]
+  exact ofDiscreteModulePair_hom_apply _ _ _ m
 
 /-- At a repeated level the coefficient pair is heterogeneously equal to the identity pair. -/
 private theorem continuousFiniteQuotientPair_refl (U : OpenNormalSubgroup G) :
@@ -111,9 +144,7 @@ private theorem continuousFiniteQuotientPair_refl (U : OpenNormalSubgroup G) :
   apply ofDiscreteModulePair_heq_of_eq
     (congrArg ContinuousMonoidHom.toMonoidHom (continuousFiniteQuotientMap_refl G U))
   intro m
-  change m = fixedPointsInclusion (le_refl U) m
-  apply Subtype.ext
-  exact (coe_fixedPointsInclusion (M := M) (le_refl U.toSubgroup) m).symm
+  exact (DFunLike.congr_fun (fixedPointsInclusion_self M U.toSubgroup) m).symm
 
 /-- Coefficient pairs compose as the corresponding inclusions of fixed points. -/
 private theorem continuousFiniteQuotientPair_comp (hWV : W ≤ V) (hVU : V ≤ U) :
@@ -126,16 +157,17 @@ private theorem continuousFiniteQuotientPair_comp (hWV : W ≤ V) (hVU : V ≤ U
     (congrArg ContinuousMonoidHom.toMonoidHom
       (continuousFiniteQuotientMap_comp G hWV hVU).symm)
   intro m
+  -- `change` rather than a rewrite: composition and restriction in `TopRep` leave the underlying
+  -- map a composite by definition, and the evaluation lemma below is stated on the nested
+  -- application. No propositional rewrite reaches the step: the evaluation lemmas of a compatible
+  -- pair are `dsimp% only`-normalized (#8315), so neither `simp` nor `rw` fires on the composite.
   change (continuousFiniteQuotientPair G M hWV).hom
       ((continuousFiniteQuotientPair G M hVU).hom m) =
     fixedPointsInclusion (hWV.trans hVU) m
   rw [continuousFiniteQuotientPair_hom_apply (G := G) (M := M) hVU m,
     continuousFiniteQuotientPair_hom_apply (G := G) (M := M) hWV
       (fixedPointsInclusion hVU m)]
-  apply Subtype.ext
-  exact (coe_fixedPointsInclusion hWV (fixedPointsInclusion hVU m)).trans <|
-    (coe_fixedPointsInclusion hVU m).trans <|
-      (coe_fixedPointsInclusion (hWV.trans hVU) m).symm
+  exact DFunLike.congr_fun (fixedPointsInclusion_comp_fixedPointsInclusion hVU hWV) m
 
 /-- The canonical continuous-cohomology transition
 `Hⁿ(G ⧸ U, M^U) ⟶ Hⁿ(G ⧸ V, M^V)` for `V ≤ U`. -/
@@ -147,11 +179,19 @@ noncomputable def continuousFiniteQuotientTransition (hVU : V ≤ U) (n : ℕ) :
   _root_.ContinuousCohomology.map (continuousFiniteQuotientMap G hVU)
     (continuousFiniteQuotientPair G M hVU) n
 
-/-- The canonical finite-quotient transition from a level to itself is the identity. -/
+/-- **The characteristic equation of the canonical transition**: it is the compatible-pair pullback
+along the quotient homomorphism `G ⧸ V → G ⧸ U` and the inclusion `M^U → M^V`. -/
+theorem continuousFiniteQuotientTransition_eq_map (hVU : V ≤ U) (n : ℕ) :
+    continuousFiniteQuotientTransition G M hVU n =
+      _root_.ContinuousCohomology.map (continuousFiniteQuotientMap G hVU)
+        (continuousFiniteQuotientPair G M hVU) n :=
+  (rfl)
+
+/-- The canonical transition from a level to itself is the identity. -/
 @[simp]
 theorem continuousFiniteQuotientTransition_refl (U : OpenNormalSubgroup G) (n : ℕ) :
     continuousFiniteQuotientTransition G M (le_refl U) n = 𝟙 _ := by
-  rw [continuousFiniteQuotientTransition,
+  rw [continuousFiniteQuotientTransition_eq_map,
     ← _root_.ContinuousCohomology.map_id
       (ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) n]
   refine TauCeti.ContinuousCohomology.map_congr
@@ -164,8 +204,8 @@ theorem continuousFiniteQuotientTransition_comp (hWV : W ≤ V) (hVU : V ≤ U) 
     continuousFiniteQuotientTransition G M (hWV.trans hVU) n =
       continuousFiniteQuotientTransition G M hVU n ≫
         continuousFiniteQuotientTransition G M hWV n := by
-  rw [continuousFiniteQuotientTransition, continuousFiniteQuotientTransition,
-    continuousFiniteQuotientTransition, ← _root_.ContinuousCohomology.map_comp]
+  rw [continuousFiniteQuotientTransition_eq_map, continuousFiniteQuotientTransition_eq_map,
+    continuousFiniteQuotientTransition_eq_map, ← _root_.ContinuousCohomology.map_comp]
   refine TauCeti.ContinuousCohomology.map_congr
     (continuousFiniteQuotientMap_comp G hWV hVU).symm
       (continuousFiniteQuotientPair_comp G M hWV hVU) n
@@ -174,7 +214,7 @@ end Transition
 
 section System
 
-/-- The canonical finite-quotient system in degree `n`. It sends `U` to
+/-- The canonical system over the open normal subgroups of `G` in degree `n`. It sends `U` to
 `Hⁿ(G ⧸ U, M^U)` and an inclusion `V ≤ U` to compatible-pair pullback from the `U`-level to
 the `V`-level. -/
 @[expose] noncomputable def continuousFiniteQuotientSystem (n : ℕ) :
@@ -187,7 +227,7 @@ the `V`-level. -/
   map_comp f g := continuousFiniteQuotientTransition_comp G M
     (leOfHom g.unop) (leOfHom f.unop) n
 
-/-- The object at `U` of the canonical finite-quotient system is `Hⁿ(G ⧸ U, M^U)`. -/
+/-- The object at `U` of the canonical system is `Hⁿ(G ⧸ U, M^U)`. -/
 @[simp]
 theorem continuousFiniteQuotientSystem_obj (n : ℕ) (U : OpenNormalSubgroup G) :
     (continuousFiniteQuotientSystem G M n).obj (Opposite.op U) =
@@ -195,7 +235,7 @@ theorem continuousFiniteQuotientSystem_obj (n : ℕ) (U : OpenNormalSubgroup G) 
         (ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :=
   rfl
 
-/-- Every arrow of the canonical finite-quotient system is the compatible-pair transition. -/
+/-- Every arrow of the canonical system is the compatible-pair transition. -/
 @[simp]
 theorem continuousFiniteQuotientSystem_map (n : ℕ)
     {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
@@ -209,34 +249,47 @@ section Cocone
 
 variable {U V : OpenNormalSubgroup G}
 
-/-- The coefficient pair for comparison with `Hⁿ(G, M)`: quotient projection together with the
-inclusion `M^U → M`. -/
-def continuousFiniteQuotientInflationPair (U : OpenNormalSubgroup G) :
-    TopRep.res (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
-        (ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) ⟶
-      ofDiscreteModule ℤ G M :=
-  ofDiscreteModulePair (ContinuousMonoidHom.quotientMk U.toSubgroup :
-      G →* G ⧸ U.toSubgroup)
-    (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
-    (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m)
-
-omit [IsTopologicalGroup G] in
-/-- The comparison coefficient pair is the inclusion of fixed points on underlying elements. -/
+/-- The quotient homomorphism `G → G ⧸ U` factors through every deeper quotient: for `V ≤ U` it is
+the transition map `G ⧸ V → G ⧸ U` after `G → G ⧸ V`. -/
 @[simp]
-theorem continuousFiniteQuotientInflationPair_hom_apply (U : OpenNormalSubgroup G)
-    (m : FixedPoints.addSubgroup U.toSubgroup M) :
-    (dsimp% only ((continuousFiniteQuotientInflationPair G M U).hom m)) = (m : M) := by
-  rw [continuousFiniteQuotientInflationPair]
-  exact ofDiscreteModulePair_hom_apply _ _ _ m
+theorem continuousFiniteQuotientMap_comp_quotientMk (hVU : V ≤ U) :
+    (continuousFiniteQuotientMap G hVU).comp (ContinuousMonoidHom.quotientMk V.toSubgroup) =
+      ContinuousMonoidHom.quotientMk U.toSubgroup := by
+  ext g
+  simp
 
-/-- The comparison map from the `U`-level into `Hⁿ(G, M)`: canonical compatible-pair
-functoriality along `G → G ⧸ U` and the inclusion `M^U → M`. -/
+/-- The comparison map from the `U`-level into `Hⁿ(G, M)`: the coefficient dictionary
+`TauCeti.ofDiscreteModuleQuotient`, which reads `M^U` as the canonical `U`-invariants of `M`,
+followed by canonical inflation along `G → G ⧸ U`. -/
 noncomputable def continuousFiniteQuotientComparisonApp (U : OpenNormalSubgroup G) (n : ℕ) :
     continuousCohomology n
         (ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) ⟶
       continuousCohomology n (ofDiscreteModule ℤ G M) :=
-  _root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk U.toSubgroup)
-    (continuousFiniteQuotientInflationPair G M U) n
+  TauCeti.ContinuousCohomology.coeffMap (ofDiscreteModuleQuotient G M U.toSubgroup) n ≫
+    TauCeti.ContinuousCohomology.infl U.toSubgroup (ofDiscreteModule ℤ G M) n
+
+omit [IsTopologicalGroup G] in
+/-- The comparison coefficient pair — the quotient homomorphism `G → G ⧸ U` together with the
+inclusion `M^U ↪ M` — is that inclusion on underlying elements. -/
+private theorem ofDiscreteModulePair_quotientMk_subtype_hom_apply (U : OpenNormalSubgroup G)
+    (m : FixedPoints.addSubgroup U.toSubgroup M) :
+    (dsimp% only ((ofDiscreteModulePair
+        (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+        (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
+        (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m)).hom m)) = (m : M) :=
+  ofDiscreteModulePair_hom_apply _ _ _ m
+
+/-- **The characteristic equation of the comparison map**: in every degree it is the
+compatible-pair pullback along the quotient homomorphism `G → G ⧸ U` and the inclusion
+`M^U → M`. -/
+theorem continuousFiniteQuotientComparisonApp_eq_map (U : OpenNormalSubgroup G) (n : ℕ) :
+    continuousFiniteQuotientComparisonApp G M U n =
+      _root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk U.toSubgroup)
+        (ofDiscreteModulePair
+          (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+          (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
+          (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m)) n :=
+  coeffMap_ofDiscreteModuleQuotient_comp_infl G M U.toSubgroup n
 
 /-- Passing from the `U`-level through a deeper `V`-level and then comparing with `Hⁿ(G, M)`
 is the direct comparison from the `U`-level. -/
@@ -245,32 +298,28 @@ theorem continuousFiniteQuotientTransition_comp_comparisonApp (hVU : V ≤ U) (n
     continuousFiniteQuotientTransition G M hVU n ≫
         continuousFiniteQuotientComparisonApp G M V n =
       continuousFiniteQuotientComparisonApp G M U n := by
-  rw [continuousFiniteQuotientTransition, continuousFiniteQuotientComparisonApp,
-    continuousFiniteQuotientComparisonApp, ← _root_.ContinuousCohomology.map_comp]
-  refine TauCeti.ContinuousCohomology.map_congr ?_ ?_ n
-  · ext g
-    simp
-  · refine (ofDiscreteModulePair_heq_of_eq
-      (show (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup) =
-          (continuousFiniteQuotientMap G hVU : G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup).comp
-            (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup) by
-          ext g
-          simp)
-      (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
-      (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m)
-      ((TopRep.resFunctor (ContinuousMonoidHom.quotientMk V.toSubgroup :
-          G →* G ⧸ V.toSubgroup)).map (continuousFiniteQuotientPair G M hVU) ≫
-        continuousFiniteQuotientInflationPair G M V) ?_).symm
-    intro m
-    change (continuousFiniteQuotientInflationPair G M V).hom
-        ((continuousFiniteQuotientPair G M hVU).hom m) = (m : M)
-    rw [continuousFiniteQuotientPair_hom_apply (G := G) (M := M) hVU m,
-      continuousFiniteQuotientInflationPair_hom_apply (G := G) (M := M) V
-        (fixedPointsInclusion hVU m)]
-    exact coe_fixedPointsInclusion hVU m
+  rw [continuousFiniteQuotientTransition_eq_map,
+    continuousFiniteQuotientComparisonApp_eq_map, continuousFiniteQuotientComparisonApp_eq_map,
+    ← _root_.ContinuousCohomology.map_comp]
+  refine TauCeti.ContinuousCohomology.map_congr
+    (continuousFiniteQuotientMap_comp_quotientMk G hVU) ?_ n
+  refine (ofDiscreteModulePair_heq_of_eq
+    (congrArg ContinuousMonoidHom.toMonoidHom
+      (continuousFiniteQuotientMap_comp_quotientMk G hVU)).symm _ _ _ ?_).symm
+  intro m
+  -- `change`: the same definitional composition as in `continuousFiniteQuotientPair_comp`.
+  change (ofDiscreteModulePair
+      (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+      (FixedPoints.addSubgroup V.toSubgroup M).subtype.toIntLinearMap
+      (fun g m ↦ subtype_quotientMk_smul G M V.toSubgroup g m)).hom
+      ((continuousFiniteQuotientPair G M hVU).hom m) = (m : M)
+  rw [continuousFiniteQuotientPair_hom_apply (G := G) (M := M) hVU m,
+    ofDiscreteModulePair_quotientMk_subtype_hom_apply (G := G) (M := M) V
+      (fixedPointsInclusion hVU m)]
+  exact coe_fixedPointsInclusion hVU m
 
-/-- The inflation-and-inclusion comparison maps from every finite level into `Hⁿ(G, M)`,
-assembled as a natural transformation to the constant functor. -/
+/-- The inflation-and-inclusion comparison maps from every level into `Hⁿ(G, M)`, assembled as a
+natural transformation to the constant functor. -/
 @[expose] noncomputable def continuousFiniteQuotientComparison (n : ℕ) :
     continuousFiniteQuotientSystem G M n ⟶
       (Functor.const ((OpenNormalSubgroup G)ᵒᵖ)).obj
@@ -287,21 +336,21 @@ theorem continuousFiniteQuotientComparison_app (n : ℕ) (U : OpenNormalSubgroup
       continuousFiniteQuotientComparisonApp G M U n :=
   rfl
 
-/-- The canonical finite-quotient cocone in degree `n`, with point `Hⁿ(G, M)` and legs the
-inflation-and-inclusion comparisons. -/
+/-- The canonical cocone over the open-normal-subgroup system in degree `n`, with point `Hⁿ(G, M)`
+and legs the inflation-and-inclusion comparisons. -/
 @[expose] noncomputable def continuousFiniteQuotientCocone (n : ℕ) :
     Limits.Cocone (continuousFiniteQuotientSystem G M n) where
   pt := continuousCohomology n (ofDiscreteModule ℤ G M)
   ι := continuousFiniteQuotientComparison G M n
 
-/-- The point of the canonical finite-quotient cocone is `Hⁿ(G, M)`. -/
+/-- The point of the canonical cocone is `Hⁿ(G, M)`. -/
 @[simp]
 theorem continuousFiniteQuotientCocone_pt (n : ℕ) :
     (continuousFiniteQuotientCocone G M n).pt =
       continuousCohomology n (ofDiscreteModule ℤ G M) :=
   rfl
 
-/-- The legs of the canonical finite-quotient cocone are the comparison maps. -/
+/-- The legs of the canonical cocone are the comparison maps. -/
 @[simp]
 theorem continuousFiniteQuotientCocone_ι (n : ℕ) :
     (continuousFiniteQuotientCocone G M n).ι = continuousFiniteQuotientComparison G M n :=
