@@ -289,18 +289,7 @@ def WittRing.traceTransfer : WittRing L →+ WittRing K :=
 theorem WittRing.traceTransfer_wittClass (x : RegularFormClass L) :
     WittRing.traceTransfer (K := K) (L := L) (wittClass x) =
       wittClass (RegularFormClass.traceTransfer K x) := by
-  unfold WittRing.traceTransfer
-  rw [WittRing.scharlauTransfer_wittClass]
-  apply congrArg wittClass
-  induction x using Quotient.inductionOn with
-  | h p =>
-    let canonical : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    let _ : Invertible (2 : L) := canonical
-    rw [← formClass_presentedForm p, RegularFormClass.traceTransfer_formClass,
-      RegularFormClass.scharlauTransfer_formClass]
-    apply (formClass_eq_iff _ _ _ _).mpr
-    rw [QuadraticMap.traceTransfer_eq_scharlauTransfer]
-    exact QuadraticMap.Equivalent.refl _
+  rw [WittRing.traceTransfer, WittRing.scharlauTransfer_wittClass,
+    RegularFormClass.traceTransfer_eq_scharlauTransfer]
 
 end TauCeti
