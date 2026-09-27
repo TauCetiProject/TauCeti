@@ -109,4 +109,23 @@ theorem hilbertSymbol_unit_uniformizer_eq_quadraticChar (h2 : IsUnit (2 : 𝒪[K
   rw [(isUniformizer_def π).mp hπ, toAdd_ofAdd]
   exact odd_one
 
+open Classical in
+/-- For a valuation-zero element of `Kˣ`, the unit–uniformizer symbol is positive exactly
+when that element is a square, in odd residue characteristic. -/
+theorem hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer
+    (h2 : IsUnit (2 : 𝒪[K])) {u π : Kˣ}
+    (hu : (normalizedValuation K u).toAdd = 0) (hπ : IsUniformizer K π) :
+    hilbertSymbol u π = 1 ↔ IsSquare u := by
+  have hu0 : u ∈ unitFiltration K 0 := by
+    apply (mem_unitFiltration_zero u).mpr
+    apply (normalizedValuation_eq_one_iff u).mp
+    exact Multiplicative.toAdd.injective (by simpa using hu)
+  let v : 𝒪[K]ˣ := unitFiltrationZeroEquivIntegerUnits ⟨u, hu0⟩
+  have hv : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) v = u := by
+    apply Units.ext
+    simp [v]
+  rw [← hv, hilbertSymbol_unit_uniformizer_eq_ite h2 v hπ,
+    isSquare_unitsMap_subtype_iff h2 v]
+  by_cases hs : IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) v) <;> simp [hs]
+
 end TauCeti
