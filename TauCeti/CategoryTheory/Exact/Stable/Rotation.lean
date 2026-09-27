@@ -63,6 +63,7 @@ private theorem coneConnectingMap_comp_neg_cokernelMap (f : X ⟶ Y) :
 
 /-- The connecting morphism of the cone sequence is the negative of the map induced by `f` on
 the chosen suspension objects, after passing to the stable category. -/
+@[simp]
 theorem projectiveStableFunctor_map_connectingMap_coneSequence (f : X ⟶ Y) :
     E.projectiveStableFunctor.map
         (hE.connectingMap (hE.conflation_coneSequence f)) =
@@ -98,9 +99,10 @@ noncomputable def stableConeTriangleRotateIso (f : X ⟶ Y) :
     (q.map (hE.coneConnectingMap f))
     (q.map (hE.connectingMap (hE.conflation_coneSequence f)) ≫ JY)
   have hT₀ : T₀ = hE.stableConeTriangle f := by
-    simpa only [T₀, q, JX, stableSuspensionObjIsoShift_hom, Category.assoc] using
+    simpa only [T₀, q, JX] using
       (hE.stableConeTriangle_eq_mk f).symm
   have hT₁ : T₁ = (hE.stableConeTriangle f).rotate := by
+    -- `Triangle.rotate` has no constructor theorem; `T₁` is its constructor normal form.
     change T₀.rotate = (hE.stableConeTriangle f).rotate
     rw [hT₀]
   have hT₂ : T₂ =
@@ -121,6 +123,7 @@ noncomputable def stableConeTriangleRotateIso (f : X ⟶ Y) :
   simpa only [hT₁, hT₂] using hIso
 
 /-- The rotation of a stable cone triangle is distinguished. -/
+@[simp]
 theorem stableConeTriangle_rotate_mem (f : X ⟶ Y) :
     letI := hE.stableHasShift
     (hE.stableConeTriangle f).rotate ∈ hE.stableDistinguishedTriangles := by
@@ -130,7 +133,7 @@ theorem stableConeTriangle_rotate_mem (f : X ⟶ Y) :
     (hE.stableConeTriangleRotateIso f).symm
 
 /-- Distinguished stable triangles are closed under forward rotation. -/
-theorem stable_distinguished_triangle_rotate
+theorem rotate_stable_distinguished_triangle
     (T : (letI := hE.stableHasShift; Triangle E.ProjectiveStableCategory))
     (hT : (letI := hE.stableHasShift; T ∈ hE.stableDistinguishedTriangles)) :
     (letI := hE.stableHasShift; T.rotate ∈ hE.stableDistinguishedTriangles) := by

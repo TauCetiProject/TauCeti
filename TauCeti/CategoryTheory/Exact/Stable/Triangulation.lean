@@ -154,15 +154,16 @@ noncomputable def stableConeTriangle (f : X ⟶ Y) :
     (q.map (hE.coneConnectingMap f) ≫ eqToHom bridge ≫
       e.symm.hom.app (q.obj X))
 
-/-- The stable cone triangle written with its three explicit arrows. -/
+/-- The stable cone triangle written using the canonical comparison from the chosen suspension
+object to the shift. -/
 theorem stableConeTriangle_eq_mk (f : X ⟶ Y) :
     letI := hE.stableHasShift
     hE.stableConeTriangle f = CategoryTheory.Pretriangulated.Triangle.mk
       (E.projectiveStableFunctor.map f)
       (E.projectiveStableFunctor.map (hE.coneInclusion f))
       (E.projectiveStableFunctor.map (hE.coneConnectingMap f) ≫
-        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X).symm ≫
-        hE.stableShiftFunctorOneIso.inv.app (E.projectiveStableFunctor.obj X)) := (rfl)
+        (hE.stableSuspensionObjIsoShift X).hom) := by
+  simp only [stableConeTriangle, stableSuspensionObjIsoShift_hom, Iso.symm_hom]
 
 /-- The first object of the stable cone triangle. -/
 @[simp]
@@ -303,8 +304,7 @@ noncomputable def stableConeTriangleIsoStableConflation (S : ShortComplex C)
         (hE.isProjective_I (hE.suspensionPresentation S.X₁))] at h
     simpa only [Category.comp_id] using h
   -- Writing both triangles explicitly keeps the three components of the comparison visible.
-  let J := eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj S.X₁).symm ≫
-    hE.stableShiftFunctorOneIso.inv.app (E.projectiveStableFunctor.obj S.X₁)
+  let J := (hE.stableSuspensionObjIsoShift S.X₁).hom
   let T₁ : CategoryTheory.Pretriangulated.Triangle E.ProjectiveStableCategory :=
     CategoryTheory.Pretriangulated.Triangle.mk
       (E.projectiveStableFunctor.map S.f)
@@ -316,23 +316,10 @@ noncomputable def stableConeTriangleIsoStableConflation (S : ShortComplex C)
       (E.projectiveStableFunctor.map S.g)
       (E.projectiveStableFunctor.map (hE.connectingMap hS) ≫ J)
   have hT₁ : T₁ = hE.stableConeTriangle S.f := by
-    dsimp [T₁, J]
-    cases hE.stableConeTriangle_obj₁ S.f
-    cases hE.stableConeTriangle_obj₂ S.f
-    cases hE.stableConeTriangle_obj₃ S.f
-    cases hE.stableConeTriangle_mor₁ S.f
-    cases hE.stableConeTriangle_mor₂ S.f
-    cases hE.stableConeTriangle_mor₃ S.f
-    rfl
+    simpa only [T₁, J] using (hE.stableConeTriangle_eq_mk S.f).symm
   have hT₂ : T₂ = hE.stableConflationTriangle S hS := by
-    dsimp [T₂, J]
-    cases hE.stableConflationTriangle_obj₁ S hS
-    cases hE.stableConflationTriangle_obj₂ S hS
-    cases hE.stableConflationTriangle_obj₃ S hS
-    cases hE.stableConflationTriangle_mor₁ S hS
-    cases hE.stableConflationTriangle_mor₂ S hS
-    cases hE.stableConflationTriangle_mor₃ S hS
-    rfl
+    simpa only [T₂, J, stableSuspensionObjIsoShift_hom, Category.assoc] using
+      (hE.stableConflationTriangle_eq_mk S hS).symm
   -- The first two components are identities; the third is the stable cone comparison.
   have hIso : T₁ ≅ T₂ := by
     let _ := hE.isIso_projectiveStableFunctor_map_coneComparison hS

@@ -198,11 +198,12 @@ theorem conflation_coneSequence (f : X ⟶ Y) : E.Conflation (hE.coneSequence f)
   let sq := hE.isPushout_cone f
   have hπ : cobaseChangeπ S sq = hE.coneConnectingMap f := by
     apply sq.hom_ext
-    · have h := inl_cobaseChangeπ S sq
-      change hE.coneInjectiveMap f ≫ cobaseChangeπ S sq = hE.suspensionDeflation X at h
+    · have h : hE.coneInjectiveMap f ≫ cobaseChangeπ S sq =
+          hE.suspensionDeflation X := by
+        simpa only [S] using inl_cobaseChangeπ S sq
       exact h.trans (hE.coneInjectiveMap_comp_coneConnectingMap f).symm
-    · have h := inr_cobaseChangeπ S sq
-      change hE.coneInclusion f ≫ cobaseChangeπ S sq = 0 at h
+    · have h : hE.coneInclusion f ≫ cobaseChangeπ S sq = 0 := by
+        simpa only [S] using inr_cobaseChangeπ S sq
       exact h.trans (hE.coneInclusion_comp_coneConnectingMap f).symm
   have hchange : cobaseChange S sq = hE.coneSequence f := by
     rw [cobaseChange_def]
