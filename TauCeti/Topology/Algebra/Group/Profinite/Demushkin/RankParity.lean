@@ -11,12 +11,9 @@ import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 /-!
 # Parity of the rank of a Demushkin group
 
-At an odd prime, graded commutativity makes the degree-one cup pairing alternating. A trace
-identifying its one-dimensional target with `𝔽_p` turns it into a nondegenerate alternating
-bilinear form. Consequently a Demushkin group at an odd prime has even rank; in particular it
-cannot have rank one. This is the parity constraint on the odd-prime normal forms.
-
-The trace is only used in the proof: the statement is independent of its choice.
+At an odd prime, graded commutativity makes the degree-one cup pairing alternating. Its
+nondegeneracy forces the Demushkin rank to be even; in particular it cannot be one. This is
+the parity constraint on the odd-prime normal forms.
 
 ## Main result
 
@@ -35,8 +32,7 @@ namespace TauCeti
 variable {p : ℕ} [Fact p.Prime] {G : Type*} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
-/-- At an odd prime, the rank of a Demushkin group is even. The cup form is alternating and
-nondegenerate after choosing a trace on its one-dimensional target. -/
+/-- At an odd prime, the rank of a Demushkin group is even. -/
 theorem IsDemushkin.even_demushkinRank_of_ne_two (hG : IsDemushkin p G) (hp : p ≠ 2) :
     Even (demushkinRank hG) := by
   have : Module.Finite (ZMod p) (cohomFp p G 1) := hG.finite_cohomFp_one
@@ -46,16 +42,6 @@ theorem IsDemushkin.even_demushkinRank_of_ne_two (hG : IsDemushkin p G) (hp : p 
     { toFun := fun a ↦ τ.toLinearMap.comp (cupFp p G a)
       map_add' := by intros; ext; simp
       map_smul' := by intros; ext; simp }
-  have hB : B.Nondegenerate := by
-    constructor
-    · intro a ha
-      by_contra hne
-      obtain ⟨b, hb⟩ := hG.cup_separatingLeft a hne
-      exact hb (τ.injective (by simpa [B] using ha b))
-    · intro b hb
-      by_contra hne
-      obtain ⟨a, ha⟩ := hG.cup_separatingRight b hne
-      exact ha (τ.injective (by simpa [B] using hb a))
   have htwo : (2 : ZMod p) ≠ 0 := by
     intro h
     have hdiv : p ∣ 2 := (ZMod.natCast_eq_zero_iff 2 p).mp (by simpa using h)
@@ -69,6 +55,14 @@ theorem IsDemushkin.even_demushkinRank_of_ne_two (hG : IsDemushkin p G) (hp : p 
         exact add_eq_zero_iff_eq_neg.mpr hneg
       exact (smul_eq_zero.mp hsmul).resolve_left htwo
     simp [B, hzero]
+  have hB : B.Nondegenerate := by
+    apply (@LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+      (ZMod p) (cohomFp p G 1) (ZMod p) _ _ _ _ Semiring.toModule B halt.isRefl).mpr
+    intro a ha
+    by_contra hne
+    obtain ⟨b, hb⟩ := hG.cup_separatingLeft a hne
+    have hab : τ (cupFp p G a b) = 0 := ha b
+    exact hb (τ.injective (by simpa using hab))
   rw [← hG.finrank_cohomFp_one]
   exact halt.even_finrank hB
 
