@@ -82,7 +82,7 @@ namespace Tetracode
 
 /-- The tetracode gives a quadratic Lagrangian in the discriminant group of four
 orthogonal copies of the `A₂` root lattice. -/
-theorem isLagrangian_coordinatePowerDiscriminant :
+theorem isLagrangian_codeInTypeA2CoordinatePowerDiscriminant :
     (((typeARootLattice 2).coordinatePower (Fin 4)).discriminantQuadraticModule
       ((isEven_typeARootLattice 2).coordinatePower (Fin 4))).IsLagrangian
         (codeInTypeA2CoordinatePowerDiscriminant tetracode.toAddSubgroup) := by
@@ -95,7 +95,7 @@ namespace TernaryGolay
 
 /-- The extended ternary Golay code gives a quadratic Lagrangian in the discriminant
 group of twelve orthogonal copies of the `A₂` root lattice. -/
-theorem isLagrangian_coordinatePowerDiscriminant :
+theorem isLagrangian_codeInTypeA2CoordinatePowerDiscriminant :
     (((typeARootLattice 2).coordinatePower (Fin 12)).discriminantQuadraticModule
       ((isEven_typeARootLattice 2).coordinatePower (Fin 12))).IsLagrangian
         (codeInTypeA2CoordinatePowerDiscriminant code.toAddSubgroup) := by
@@ -161,7 +161,7 @@ namespace Hexacode
 /-- The hexacode gives a quadratic Lagrangian in the discriminant group of six
 orthogonal copies of the `D₄` root lattice. The root used for the coordinate isometry
 may differ from the root used to define the code. -/
-theorem isLagrangian_coordinatePowerDiscriminant (hF : Nat.card F = 4) {ω ω' : F}
+theorem isLagrangian_codeInTypeD4CoordinatePowerDiscriminant (hF : Nat.card F = 4) {ω ω' : F}
     (hω : ω ^ 2 + ω + 1 = 0) (hω' : ω' ^ 2 + ω' + 1 = 0) :
     (((checkerboardLattice 4).coordinatePower (Fin 6)).discriminantQuadraticModule
       ((isEven_checkerboardLattice 4).coordinatePower (Fin 6))).IsLagrangian
