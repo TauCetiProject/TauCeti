@@ -17,9 +17,6 @@ subdomain. For finite `p`, these fields converge in the local `Lᵖ` norm as the
 tends to zero. This is the norm-convergence input for constructing local smooth Sobolev
 approximations; the derivative identities for the mollifications are separate.
 
-The proof uses the isometric zero extension and the strong `Lᵖ` approximate identity already
-available in Tau Ceti. It needs no boundary regularity of the domain.
-
 ## References
 
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.3.1.
@@ -57,7 +54,7 @@ theorem Wkp.tendsto_mollified_value (hp : p ≠ ∞) (hU : U ≤ Omega)
             (Wkp.value k u))) l (nhds (Wkp.value k (Wkp.restrictL hU k u))) := by
   rw [Wkp.value_restrictL]
   exact tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.measurableSet
-    U.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hU) hphi (Wkp.value k u)
+    (SetLike.coe_subset_coe.mpr hU) hphi (Wkp.value k u)
 
 /-- Mollification of the zero extension of the highest derivative of
 `u ∈ W^{k+1,p}(Ω)` converges in `Lᵖ(U)` to the corresponding derivative of its restriction.
@@ -76,7 +73,7 @@ theorem Wkp.tendsto_mollified_iteratedGradient (hp : p ≠ ∞) (hU : U ≤ Omeg
       (nhds (Wkp.iteratedGradient k (Wkp.restrictL hU (k + 1) u))) := by
   rw [Wkp.iteratedGradient_restrictL]
   exact tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.measurableSet
-    U.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hU) hphi
+    (SetLike.coe_subset_coe.mpr hU) hphi
     (Wkp.iteratedGradient k u)
 
 end TauCeti
