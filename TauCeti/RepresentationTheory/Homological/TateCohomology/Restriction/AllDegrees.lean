@@ -85,6 +85,23 @@ def cor (M : Rep.{u} R G) (H : Subgroup G) :
 @[simp]
 theorem cor_zero (M : Rep.{u} R G) (H : Subgroup G) : cor M H 0 = H0Cor M H := by rfl
 
+/-- In positive degrees, uniform Tate corestriction is ordinary corestriction transported
+through the canonical comparison isomorphisms. -/
+@[simp]
+theorem cor_ofNat_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
+    cor M H ((n : ℤ) + 1) =
+      (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).hom.app
+          (Rep.res H.subtype M) ≫
+        groupCohomology.corestriction H M (n + 1) ≫
+          (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).inv.app M := by
+  -- The recursor reduces at `Int.ofNat (n + 1)`; normalize the casted sum to that index first.
+  simpa only [Int.natCast_add, Int.cast_ofNat_Int] using
+    (show cor M H ((n + 1 : ℕ) : ℤ) =
+      (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).hom.app
+          (Rep.res H.subtype M) ≫
+        groupCohomology.corestriction H M (n + 1) ≫
+          (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).inv.app M from rfl)
+
 /-- In degree minus one, uniform Tate corestriction includes the subgroup norm kernel. -/
 @[simp]
 theorem cor_neg_one (M : Rep.{u} R G) (H : Subgroup G) :
@@ -115,7 +132,7 @@ theorem cor_pos_comp_isoGroupCohomology_hom (M : Rep.{u} R G) (H : Subgroup G) (
 
 /-- Restriction followed by corestriction multiplies every Tate class by the subgroup index,
 in every integer degree. -/
-@[reassoc, elementwise]
+@[simp, reassoc (attr := simp), elementwise (attr := simp)]
 theorem res_comp_cor (M : Rep.{u} R G) (H : Subgroup G) (r : ℤ) :
     res M H r ≫ cor M H r = H.index • 𝟙 (tateCohomology M r) := by
   cases r with
