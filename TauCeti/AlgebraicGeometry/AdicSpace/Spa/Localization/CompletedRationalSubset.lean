@@ -90,10 +90,10 @@ theorem spaComapLoc_preimage_mem_spaRationalFamily (P : PairOfDefinition A) (Apl
   have hcont : Continuous (algebraMap A S) := by
     have h := continuous_algebraMap_locTopology P T s S hden
     rwa [← locUniformSpace_toTopologicalSpace P T s S hden] at h
-  have hlocOpen : ∀ V : Finset A, IsOpen (Ideal.span (V : Set A) : Set A) →
-      IsOpen (Ideal.map (algebraMap A S) (Ideal.span (V : Set A)) : Set S) := by
-    intro V hV
-    have hopen := isOpen_map_algebraMap_locTopology P T s S hden hV
+  have hlocOpen : ∀ J : Ideal A, IsOpen (J : Set A) →
+      IsOpen (Ideal.map (algebraMap A S) J : Set S) := by
+    intro J hJ
+    have hopen := isOpen_map_algebraMap_locTopology P T s S hden hJ
     rwa [← locUniformSpace_toTopologicalSpace P T s S hden] at hopen
   rw [spaComapLoc_eq_comp P Aplus T s S hden hcont
       (algebraMap_mem_integralClosure_adjoin_plus Aplus T s S) Completion.continuous_coeRingHom

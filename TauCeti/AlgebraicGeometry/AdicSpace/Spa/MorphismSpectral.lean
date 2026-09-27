@@ -15,7 +15,7 @@ import TauCeti.RingTheory.Huber.OpenIdeal
 # Spectral maps of adic spectra
 
 A continuous morphism of Huber pairs induces a continuous map of adic spectra. The map is
-spectral when the image of every finite set spanning an open ideal again spans an open ideal:
+spectral when the image of every open ideal again generates an open ideal:
 the preimage of each rational open is then rational, hence quasi-compact. For a Tate source,
 every open ideal is the unit ideal, so this condition holds for every morphism into a Huber
 ring. These statements give the compact-open control needed when pulling back the rational
@@ -26,8 +26,8 @@ criterion does not require the underlying ring map to be open or surjective.
 
 ## Main results
 
-* `spaComap_preimage_mem_spaRationalFamily`: preimages of rational opens are rational under the
-  openness hypothesis.
+* `spaComap_preimage_mem_spaRationalFamily`: preimages of rational opens are rational when
+  images of open ideals are open.
 * `spaComap_preimage_mem_spaRationalFamily_of_isOpen_map_extendedIdealOfDefinition`: the
   rational-preimage result under the ideal-of-definition criterion.
 * `spaComap_preimage_mem_spaRationalFamily_of_isTateRing`: the rational-preimage result for a
@@ -39,9 +39,11 @@ criterion does not require the underlying ring map to be open or surjective.
 
 ## References
 
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.23 for morphisms of Huber pairs
-  and Theorem 7.35 for the rational basis of quasi-compact opens used here. The openness
-  criterion and its Tate corollary are formulated here, rather than quoted from Wedhorn.
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, §6.5 for related adic homomorphisms and
+  Proposition 6.25 on maps from Tate rings, Definition 7.23 for morphisms of Huber pairs,
+  and Theorem 7.35 for the rational basis of quasi-compact opens used here.
+* R. Huber, *Continuous valuations*, Math. Z. 212 (1993), §3, for adic spectra and their
+  rational subsets.
 -/
 
 public section
@@ -52,12 +54,10 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A]
   [CommRing B] [TopologicalSpace B]
 
 open scoped Classical in
-/-- Rational opens pull back to rational opens when images of finite open numerator ideals are
-open. -/
+/-- Rational opens pull back to rational opens when images of open ideals are open. -/
 theorem spaComap_preimage_mem_spaRationalFamily (φ : A →+* B) (hφ : Continuous φ)
     (Aplus : Subring A) (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
-    (hopen : ∀ V : Finset A, IsOpen (Ideal.span (V : Set A) : Set A) →
-      IsOpen (Ideal.map φ (Ideal.span (V : Set A)) : Set B))
+    (hopen : ∀ J : Ideal A, IsOpen (J : Set A) → IsOpen (Ideal.map φ J : Set B))
     {U : Set (spa Aplus)} (hU : U ∈ spaRationalFamily Aplus) :
     spaComap φ hφ Aplus Bplus hplus ⁻¹' U ∈ spaRationalFamily Bplus := by
   obtain ⟨V, s, hV, rfl⟩ := mem_spaRationalFamily_iff.mp hU
@@ -65,7 +65,7 @@ theorem spaComap_preimage_mem_spaRationalFamily (φ : A →+* B) (hφ : Continuo
   exact mem_spaRationalFamily_iff.mpr
     ⟨V.image φ, φ s, by
       rw [Finset.coe_image, ← Ideal.map_span]
-      exact hopen V hV, rfl⟩
+      exact hopen _ hV, rfl⟩
 
 end TauCeti.ValuationSpectrum
 
@@ -83,19 +83,19 @@ open scoped Classical in
 /-- Under the openness hypothesis, the preimage of a rational open under a Huber-pair morphism
 is again rational. -/
 theorem spaComap_preimage_mem_spaRationalFamily (f : Hom S T)
-    (hopen : ∀ V : Finset A, IsOpen (Ideal.span (V : Set A) : Set A) →
-      IsOpen (Ideal.map f.toRingHom (Ideal.span (V : Set A)) : Set B))
+    (hopen : ∀ J : Ideal A, IsOpen (J : Set A) →
+      IsOpen (Ideal.map f.toRingHom J : Set B))
     {U : Set (spa S.plus)} (hU : U ∈ spaRationalFamily S.plus) :
     f.spaComap ⁻¹' U ∈ spaRationalFamily T.plus := by
   rw [f.spaComap_def]
   exact ValuationSpectrum.spaComap_preimage_mem_spaRationalFamily
     f.toRingHom f.continuous_toRingHom S.plus T.plus f.map_mem_plus hopen hU
 
-/-- The adic-spectrum map of a Huber-pair morphism is spectral when the images of finite sets
-spanning open ideals again span open ideals. -/
+/-- The adic-spectrum map of a Huber-pair morphism is spectral when images of open ideals
+are open. -/
 theorem isSpectralMap_spaComap (f : Hom S T)
-    (hopen : ∀ V : Finset A, IsOpen (Ideal.span (V : Set A) : Set A) →
-      IsOpen (Ideal.map f.toRingHom (Ideal.span (V : Set A)) : Set B)) :
+    (hopen : ∀ J : Ideal A, IsOpen (J : Set A) →
+      IsOpen (Ideal.map f.toRingHom J : Set B)) :
     IsSpectralMap f.spaComap := by
   apply TauCeti.isSpectralMap_of_isTopologicalBasis
     (isTopologicalBasis_spaRationalFamily S.plus) f.continuous_spaComap
@@ -111,21 +111,17 @@ theorem spaComap_preimage_mem_spaRationalFamily_of_isOpen_map_extendedIdealOfDef
     (hP : IsOpen (Ideal.map f.toRingHom P.extendedIdealOfDefinition : Set B))
     {U : Set (spa S.plus)} (hU : U ∈ spaRationalFamily S.plus) :
     f.spaComap ⁻¹' U ∈ spaRationalFamily T.plus := by
-  apply f.spaComap_preimage_mem_spaRationalFamily _ hU
-  intro V hV
-  exact (IsHuberRing.nonempty_pairOfDefinition (A := B)).elim fun Q ↦
-    P.isOpen_map_of_isOpen_map_extendedIdealOfDefinition Q f.toRingHom hP hV
+  exact f.spaComap_preimage_mem_spaRationalFamily
+    (fun _ hJ ↦ P.isOpen_map_of_isOpen_map_extendedIdealOfDefinition_of_isHuberRing
+      f.toRingHom hP hJ) hU
 
 /-- Openness of the image of one ideal of definition makes the induced map spectral. -/
 theorem isSpectralMap_spaComap_of_isOpen_map_extendedIdealOfDefinition
     (f : Hom S T) (P : PairOfDefinition A)
     (hP : IsOpen (Ideal.map f.toRingHom P.extendedIdealOfDefinition : Set B)) :
-    IsSpectralMap f.spaComap := by
-  apply TauCeti.isSpectralMap_of_isTopologicalBasis
-    (isTopologicalBasis_spaRationalFamily S.plus) f.continuous_spaComap
-  intro U hU
-  exact isCompact_of_mem_spaRationalFamily
-    (f.spaComap_preimage_mem_spaRationalFamily_of_isOpen_map_extendedIdealOfDefinition P hP hU)
+    IsSpectralMap f.spaComap :=
+  f.isSpectralMap_spaComap (fun _ hJ ↦
+    P.isOpen_map_of_isOpen_map_extendedIdealOfDefinition_of_isHuberRing f.toRingHom hP hJ)
 
 end General
 
@@ -139,21 +135,14 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 assumption is needed on the target. -/
 theorem spaComap_preimage_mem_spaRationalFamily_of_isTateRing (f : Hom S T)
     {U : Set (spa S.plus)} (hU : U ∈ spaRationalFamily S.plus) :
-    f.spaComap ⁻¹' U ∈ spaRationalFamily T.plus := by
-  apply f.spaComap_preimage_mem_spaRationalFamily _ hU
-  intro V hV
-  have htop : Ideal.span (V : Set A) = ⊤ := IsTateRing.eq_top_of_isOpen hV
-  rw [htop, Ideal.map_top]
-  exact isOpen_univ
+    f.spaComap ⁻¹' U ∈ spaRationalFamily T.plus :=
+  f.spaComap_preimage_mem_spaRationalFamily
+    (fun _ hJ ↦ IsTateRing.isOpen_map_of_isOpen f.toRingHom hJ) hU
 
 /-- A morphism from a Tate Huber pair induces a spectral map of adic spectra. -/
 theorem isSpectralMap_spaComap_of_isTateRing (f : Hom S T) :
-    IsSpectralMap f.spaComap := by
-  apply TauCeti.isSpectralMap_of_isTopologicalBasis
-    (isTopologicalBasis_spaRationalFamily S.plus) f.continuous_spaComap
-  intro U hU
-  exact isCompact_of_mem_spaRationalFamily
-    (f.spaComap_preimage_mem_spaRationalFamily_of_isTateRing hU)
+    IsSpectralMap f.spaComap :=
+  f.isSpectralMap_spaComap (fun _ hJ ↦ IsTateRing.isOpen_map_of_isOpen f.toRingHom hJ)
 
 end Tate
 
