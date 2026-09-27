@@ -94,22 +94,13 @@ componentwise operations, and `TauCeti.Octonion.linearEquivProd` packages a vect
 tuple of its four entries, a linear isomorphism over any semiring acting on the coefficients; the
 dimension count runs through it with `R` acting on itself.
 
-The norm is available both as the bare map `Octonion R → R` the roadmap pins and, through
+The norm is available both as the bare map `Octonion R → R` and, through
 `TauCeti.Octonion.normQuadraticForm`, as a `QuadraticForm R (Octonion R)`; the bundled form is what
 gives its polarization Mathlib's bilinearity and symmetry API for free. The derivation algebra
 `Der 𝕆` is
 `TauCeti.derivationLieAlgebra R (Octonion R)`, built in `TauCeti/Algebra/Lie/Derivation/Basic.lean`.
 
 ## References
-
-This implements the split-octonion target of Layer 8 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` ("The split octonions `𝕆` ... built
-here (`Octonion K`) with its conjugation, norm, alternative and Moufang identities, and its
-multiplication as an honest `K`-bilinear operation"), whose `Suggested.lean` pins it as `Octonion`,
-`finrank_octonion`, `octonionConj`, `octonionNorm`, `octonionNorm_mul`, `octonion_left_alternative`,
-`imaginaryOctonion` and `finrank_imaginaryOctonion`; those are the declarations below, named inside
-the `Octonion` namespace. That roadmap's `## Ordering` marks this unit as buildable from scratch at
-any time, independently of every other layer.
 
 The model is M. Zorn, *Alternativkörper und quadratische Systeme*, Abh. Math. Sem. Univ. Hamburg 9
 (1933); see also T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional

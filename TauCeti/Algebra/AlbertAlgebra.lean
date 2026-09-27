@@ -322,8 +322,8 @@ theorem trace_surjective : Function.Surjective (trace : AlbertAlgebra R →ₗ[R
 
 /-- **The trace-zero submodule** `J₀ ⊆ H₃(𝕆)`, the kernel of the trace. Over a ring
 satisfying `StrongRankCondition` it is `26`-dimensional
-(`TauCeti.AlbertAlgebra.finrank_traceZero`). When `3` is invertible, it complements the scalar
-matrices; in characteristic `3`, it contains the identity matrix. -/
+(`TauCeti.AlbertAlgebra.finrank_traceZero`). Over a ring in which `3` is invertible, it
+complements the scalar matrices; in characteristic `3`, it contains the identity matrix. -/
 def traceZero (R : Type*) [Semiring R] : Submodule R (AlbertAlgebra R) := LinearMap.ker trace
 
 @[simp] theorem mem_traceZero {A : AlbertAlgebra R} : A ∈ traceZero R ↔ trace A = 0 :=
