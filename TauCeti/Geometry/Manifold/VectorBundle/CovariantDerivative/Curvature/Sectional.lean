@@ -11,21 +11,24 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 /-!
 # Sectional curvature
 
-The sectional curvature of the tangent plane spanned by linearly independent vectors `u, v` is
+For a metric-compatible connection, the sectional curvature of the tangent plane spanned by
+linearly independent vectors `u, v` is
 
 `<R(u, v)v, u> / det(Gram(u, v))`.
 
-This file defines that quotient for a smooth connection on a Riemannian tangent bundle and packages
-the pointwise and global constant-sectional-curvature predicates.  The quotient is defined for all
-pairs, as is conventional for an algebraic API; the geometric predicates quantify only over
-linearly independent pairs, where the Gram determinant is strictly positive.
+This file defines that quotient for a smooth metric-compatible connection on a Riemannian tangent
+bundle and packages the pointwise and global constant-sectional-curvature predicates.  The
+quotient is defined for all pairs, as is conventional for an algebraic API; the geometric
+predicates quantify only over linearly independent pairs, where the Gram determinant is strictly
+positive.  Metric compatibility supplies the curvature symmetries that make the quotient
+independent of the chosen basis of the tangent plane; no torsion-free hypothesis is needed.
 
 The constant-curvature tensor `R(w, u)v = κ * (<u, v> * w - <w, v> * u)` has sectional
 curvature `κ`, fixing the sign convention and providing the form used to state constant negative
 curvature.
 
 The definition and convention follow J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
-Springer GTM 176 (2018), Chapter 8, §1.  The curvature convention is
+Springer GTM 176 (2018), Chapter 8, pp. 250–254 (Proposition 8.36).  The curvature convention is
 `R(X,Y)Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z - ∇_[X,Y] Z`.
 
 ## Main definitions
@@ -51,6 +54,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
   (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
   [ContMDiffCovariantDerivative cov ∞]
 
@@ -63,86 +67,109 @@ local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
 Its geometric use is on linearly independent vectors.  Defining the quotient on all pairs makes
 it an ordinary real-valued function; the constant-curvature predicates below impose linear
 independence explicitly. -/
-def sectionalCurvature (x : M) (u v : TangentSpace I x) : ℝ :=
+def sectionalCurvature (_hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (x : M)
+    (u v : TangentSpace I x) : ℝ :=
   inner ℝ (curvature x u v v) u / (Matrix.gram ℝ ![u, v]).det
 
 /-- The defining quotient for sectional curvature. -/
-theorem sectionalCurvature_apply (x : M) (u v : TangentSpace I x) :
-    cov.sectionalCurvature x u v =
+theorem sectionalCurvature_apply (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (x : M)
+    (u v : TangentSpace I x) :
+    cov.sectionalCurvature hcov x u v =
       inner ℝ (curvature x u v v) u / (Matrix.gram ℝ ![u, v]).det :=
   (rfl)
 
 /-- On an orthonormal pair, sectional curvature is just `<R(u,v)v,u>`. -/
-theorem sectionalCurvature_eq_of_orthonormal (x : M) (u v : TangentSpace I x)
+theorem sectionalCurvature_eq_of_orthonormal (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov)
+    (x : M) (u v : TangentSpace I x)
     (h : Orthonormal ℝ ![u, v]) :
-    cov.sectionalCurvature x u v = inner ℝ (curvature x u v v) u := by
+    cov.sectionalCurvature hcov x u v = inner ℝ (curvature x u v v) u := by
   rw [sectionalCurvature_apply, (Matrix.gram_eq_one_iff_orthonormal.mpr h), Matrix.det_one,
     div_one]
 
 /-- Rescaling either spanning vector by a nonzero scalar does not change sectional curvature. -/
-theorem sectionalCurvature_smul_smul (x : M) (u v : TangentSpace I x) (a b : ℝ)
+theorem sectionalCurvature_smul_smul (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov)
+    (x : M) (u v : TangentSpace I x) (a b : ℝ)
     (ha : a ≠ 0) (hb : b ≠ 0) :
-    cov.sectionalCurvature x (a • u) (b • v) = cov.sectionalCurvature x u v := by
+    cov.sectionalCurvature hcov x (a • u) (b • v) =
+      cov.sectionalCurvature hcov x u v := by
   rw [sectionalCurvature_apply, sectionalCurvature_apply, Matrix.real_det_gram_fin_two,
     Matrix.real_det_gram_fin_two]
   simp only [map_smul, LinearMap.smul_apply, real_inner_smul_left, real_inner_smul_right]
   field_simp [ha, hb]
 
+variable {cov} in
 /-- For a metric-compatible connection, sectional curvature is symmetric in its two spanning
 vectors. -/
 theorem IsMetricCompatible.sectionalCurvature_comm
-    [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun x : M ↦ TangentSpace I x) cov)
     (x : M) (u v : TangentSpace I x) :
-    cov.sectionalCurvature x u v = cov.sectionalCurvature x v u := by
+    cov.sectionalCurvature hcov x u v = cov.sectionalCurvature hcov x v u := by
   rw [sectionalCurvature_apply, sectionalCurvature_apply, Matrix.real_det_gram_fin_two,
     Matrix.real_det_gram_fin_two, cov.curvatureTensor_antisymm x v u]
   simp only [LinearMap.neg_apply, inner_neg_left]
-  rw [hcov.inner_curvatureTensor_eq_neg x u v u v, real_inner_comm u]
-  rw [real_inner_comm v u]
-  simp only [neg_neg, mul_comm]
+  rw [hcov.inner_curvatureTensor_eq_neg x u v u v,
+    real_inner_comm (curvature x u v v) u, real_inner_comm v u]
+  ring
 
 /-- A connection has sectional curvature `k` at `x` when every tangent two-plane at `x` has
 sectional curvature `k`. -/
-def HasSectionalCurvatureAt (x : M) (k : ℝ) : Prop :=
+def HasSectionalCurvatureAt (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (x : M) (k : ℝ) : Prop :=
   ∀ (u v : TangentSpace I x), LinearIndependent ℝ ![u, v] →
-    cov.sectionalCurvature x u v = k
+    cov.sectionalCurvature hcov x u v = k
 
 /-- The pointwise characterization of having prescribed sectional curvature. -/
-theorem hasSectionalCurvatureAt_iff (x : M) (k : ℝ) :
-    cov.HasSectionalCurvatureAt x k ↔
+theorem hasSectionalCurvatureAt_iff (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (x : M) (k : ℝ) :
+    cov.HasSectionalCurvatureAt hcov x k ↔
       ∀ u v : TangentSpace I x, LinearIndependent ℝ ![u, v] →
-        cov.sectionalCurvature x u v = k :=
+        cov.sectionalCurvature hcov x u v = k :=
   Iff.rfl
 
+variable {cov} in
 /-- Evaluate the prescribed sectional curvature of a linearly independent tangent pair. -/
-theorem HasSectionalCurvatureAt.sectionalCurvature_eq {x : M} {k : ℝ}
-    (h : cov.HasSectionalCurvatureAt x k) (u v : TangentSpace I x)
-    (huv : LinearIndependent ℝ ![u, v]) : cov.sectionalCurvature x u v = k :=
+theorem HasSectionalCurvatureAt.sectionalCurvature_eq
+    {hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov} {x : M} {k : ℝ}
+    (h : cov.HasSectionalCurvatureAt hcov x k) (u v : TangentSpace I x)
+    (huv : LinearIndependent ℝ ![u, v]) : cov.sectionalCurvature hcov x u v = k :=
   h u v huv
 
 /-- A connection has constant sectional curvature `k` when it has sectional curvature `k` at
 every point. -/
-def HasConstantSectionalCurvature (k : ℝ) : Prop :=
-  ∀ x : M, cov.HasSectionalCurvatureAt x k
+def HasConstantSectionalCurvature (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (k : ℝ) : Prop :=
+  ∀ x : M, cov.HasSectionalCurvatureAt hcov x k
 
 /-- The pointwise characterization of constant sectional curvature. -/
-theorem hasConstantSectionalCurvature_iff (k : ℝ) :
-    cov.HasConstantSectionalCurvature k ↔ ∀ x : M, cov.HasSectionalCurvatureAt x k :=
+theorem hasConstantSectionalCurvature_iff (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (k : ℝ) :
+    cov.HasConstantSectionalCurvature hcov k ↔
+      ∀ x : M, cov.HasSectionalCurvatureAt hcov x k :=
   Iff.rfl
 
+variable {cov} in
 /-- Constant sectional curvature specializes to the prescribed curvature at each point. -/
-theorem HasConstantSectionalCurvature.hasSectionalCurvatureAt {k : ℝ}
-    (h : cov.HasConstantSectionalCurvature k) (x : M) : cov.HasSectionalCurvatureAt x k :=
+theorem HasConstantSectionalCurvature.hasSectionalCurvatureAt
+    {hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov} {k : ℝ}
+    (h : cov.HasConstantSectionalCurvature hcov k) (x : M) :
+    cov.HasSectionalCurvatureAt hcov x k :=
   h x
 
 /-- The algebraic constant-curvature tensor with parameter `k` has sectional curvature `k` on
 every tangent two-plane at the point. -/
-theorem hasSectionalCurvatureAt_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
+theorem hasSectionalCurvatureAt_of_curvatureTensor_eq_smul_inner_sub
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov) (x : M) (k : ℝ)
     (h : ∀ w u v : TangentSpace I x, curvature x w u v =
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
-    cov.HasSectionalCurvatureAt x k := by
+    cov.HasSectionalCurvatureAt hcov x k := by
   intro u v huv
   rw [sectionalCurvature_apply, h u v v,
     div_eq_iff (Matrix.det_gram_ne_zero_iff_linearIndependent.2 huv),
@@ -153,17 +180,21 @@ theorem hasSectionalCurvatureAt_of_curvatureTensor_eq_smul_inner_sub (x : M) (k 
 
 /-- If the curvature tensor has the constant-curvature form with the same parameter at every
 point, then the connection has constant sectional curvature with that parameter. -/
-theorem hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub (k : ℝ)
+theorem hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov) (k : ℝ)
     (h : ∀ (x : M) (w u v : TangentSpace I x), curvature x w u v =
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
-    cov.HasConstantSectionalCurvature k := fun x =>
-  cov.hasSectionalCurvatureAt_of_curvatureTensor_eq_smul_inner_sub x k (h x)
+    cov.HasConstantSectionalCurvature hcov k := fun x =>
+  cov.hasSectionalCurvatureAt_of_curvatureTensor_eq_smul_inner_sub hcov x k (h x)
 
 /-- A connection whose curvature tensor vanishes everywhere has constant sectional curvature
 zero. -/
 theorem hasConstantSectionalCurvature_zero_of_curvatureTensor_eq_zero
-    (h : ∀ x : M, curvature x = 0) : cov.HasConstantSectionalCurvature 0 := by
-  apply cov.hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub 0
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov) (h : ∀ x : M, curvature x = 0) :
+    cov.HasConstantSectionalCurvature hcov 0 := by
+  apply cov.hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub hcov 0
   intro x w u v
   simp [h x]
 
