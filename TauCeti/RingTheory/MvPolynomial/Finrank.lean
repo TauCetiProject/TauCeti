@@ -62,7 +62,6 @@ theorem finrank_homogeneousSubmodule_eq_multichoose (σ R : Type*) [Fintype σ]
       simp
 
 /-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
-@[simp]
 theorem finrank_homogeneousSubmodule_fin_two (R : Type*) [CommSemiring R]
     [StrongRankCondition R] (w : ℕ) :
     Module.finrank R (homogeneousSubmodule (Fin 2) R w) = w + 1 := by
