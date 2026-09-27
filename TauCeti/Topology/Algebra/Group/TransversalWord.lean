@@ -5,26 +5,33 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Quotient.Basic
+public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.GroupTheory.TransversalWord
 
 /-!
 # Continuity of the transversal word
 
-For an open subgroup `U` of a group `G` with separately continuous multiplication,
-`continuous_lWord` says that the transversal word is continuous in the group variable for each
-fixed coset. The joint statement `continuous_lWord_inv_smul` allows the coset index to be
-translated by a second group variable. Neither theorem requires the transversal map to be
-continuous.
+For a subgroup `U` of a group `G` and a map `t : G ⧸ U → G`, the transversal word
+`ℓᵗ_u(γ) = (t u)⁻¹ * γ * t (γ⁻¹ • u)` of `TauCeti.lWord` is a purely group-theoretic construction.
+This file adds the one statement about it that needs a topology: if `G` is a topological group and
+`U` is *open*, then `γ ↦ ℓᵗ_u(γ)` is continuous (`TauCeti.continuous_lWord`). Of the three factors,
+`(t u)⁻¹` is constant and `γ ↦ γ` is the continuous identity; the only one whose continuity is not
+immediate is `γ ↦ t (γ⁻¹ • u)`, and openness of `U` makes `G ⧸ U` discrete, so that factor is
+locally constant and no continuity is required of `t` itself. The variant
+`TauCeti.continuous_lWord_inv_smul` lets the coset index itself be translated by a second group
+variable, which is the shape the degree-two corestriction sum is indexed by.
 
-The group-theoretic calculus is in `TauCeti/GroupTheory/TransversalWord.lean`.
+This is the continuity clause of the transversal calculus of the Layer 6 milestone of the
+human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`. It lives here, rather
+than with the calculus in `TauCeti/GroupTheory/TransversalWord.lean`, so that the group theory does
+not depend on the topological-group hierarchy.
 -/
 
 public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
   (U : Subgroup G) (t : G ⧸ U → G)
 
 /-- For an *open* subgroup `U` the transversal word `γ ↦ ℓᵗ_u(γ)` is continuous, for any map `t`
@@ -33,10 +40,8 @@ theorem continuous_lWord (hU : IsOpen (U : Set G)) (u : G ⧸ U) : Continuous (l
   have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
   have h : lWord U t u = fun γ : G => (t u)⁻¹ * γ * t (γ⁻¹ • u) := funext (lWord_def U t u)
   rw [h]
-  have hmul : Continuous (fun p : G × (G ⧸ U) => (t u)⁻¹ * p.1 * t p.2) :=
-    continuous_prod_of_discrete_right.mpr fun x => by
-      simpa using (continuous_const_mul ((t u)⁻¹)).mul_const (t x)
-  exact hmul.comp (continuous_id.prodMk (QuotientGroup.continuous_inv_smul U hU u))
+  exact (continuous_const.mul continuous_id).mul
+    (continuous_of_discreteTopology.comp (continuous_inv.smul continuous_const))
 
 /-- For an *open* subgroup `U` the transversal word is continuous jointly in its group variable
 and in a coset index translated by a second group variable: `(γ, η) ↦ ℓᵗ_{γ⁻¹ • u}(η)`. Here both
@@ -50,16 +55,9 @@ theorem continuous_lWord_inv_smul (hU : IsOpen (U : Set G)) (u : G ⧸ U) :
     funext fun q => lWord_def U t _ _
   rw [h]
   have hfst : Continuous fun q : G × G => (q.1⁻¹ • u : G ⧸ U) :=
-    (QuotientGroup.continuous_inv_smul U hU u).comp continuous_fst
-  have hsnd : Continuous fun q : G × G => (q.2⁻¹ • q.1⁻¹ • u : G ⧸ U) := by
-    have hact : Continuous (fun p : G × (G ⧸ U) => p.1⁻¹ • p.2) :=
-      continuous_prod_of_discrete_right.mpr fun x =>
-        QuotientGroup.continuous_inv_smul U hU x
-    exact hact.comp (continuous_snd.prodMk hfst)
-  have hmul : Continuous (fun p : G × ((G ⧸ U) × (G ⧸ U)) =>
-      (t p.2.1)⁻¹ * p.1 * t p.2.2) :=
-    continuous_prod_of_discrete_right.mpr fun x => by
-      simpa using (continuous_const_mul ((t x.1)⁻¹)).mul_const (t x.2)
-  exact hmul.comp (continuous_snd.prodMk (hfst.prodMk hsnd))
+    (continuous_inv.comp continuous_fst).smul continuous_const
+  exact ((continuous_of_discreteTopology.comp hfst).inv.mul continuous_snd).mul
+    (continuous_of_discreteTopology.comp
+      ((continuous_inv.comp continuous_snd).smul hfst))
 
 end TauCeti

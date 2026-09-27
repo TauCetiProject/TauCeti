@@ -17,8 +17,6 @@ coordinate at `x` is the transversal word `t(x)⁻¹ g t(g⁻¹ • x)`. The coc
 gives the homomorphism, and both the coset-indexed and finite-coordinate forms are injective.
 The public maps are `TauCeti.monomialHom` and `TauCeti.monomialFinHom`, with `U` as their
 first explicit argument.
-This is Layer 13, milestone 2 of the Profinite Cohomology roadmap, using the Layer 6
-transversal word and the wreath product from milestone 1.
 Continuity for an open subgroup is proved in
 `TauCeti.Topology.Algebra.Group.WreathProduct.Monomial`.
 
@@ -47,17 +45,21 @@ def monomialHom (t : G ⧸ U → G)
     apply SemidirectProduct.ext
     · funext x
       apply Subtype.ext
-      exact lWord_one U t x
+      simpa only [SemidirectProduct.one_left, Pi.one_apply, OneMemClass.coe_one] using
+        lWord_one U t x
     · exact map_one (MulAction.toPermHom G (G ⧸ U))
   map_mul' g h := by
     apply SemidirectProduct.ext
     · funext x
       apply Subtype.ext
-      exact (lWord_mul_lWord U t x g h).symm
+      have hperm : ((MulAction.toPermHom G (G ⧸ U) g)⁻¹ x) = g⁻¹ • x := by
+        rw [← map_inv, MulAction.toPermHom_apply, MulAction.toPerm_apply]
+      simpa only [WreathProduct.mul_left, Subgroup.coe_mul, hperm] using
+        (lWord_mul_lWord U t x g h).symm
     · exact map_mul (MulAction.toPermHom G (G ⧸ U)) g h
 
 /-- The coordinate of the monomial homomorphism is the transversal word. -/
-@[simp] theorem monomialHom_left (t : G ⧸ U → G)
+@[simp] theorem coe_monomialHom_left (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x)
     (g : G) (x : G ⧸ U) :
     ((monomialHom U t ht g).left x : G) = lWord U t x g := by
@@ -81,7 +83,7 @@ theorem monomialHom_injective (t : G ⧸ U → G)
     simpa only [monomialHom_right] using this
   have hw : lWord U t (g • x) g = lWord U t (g • x) h := by
     have := congrArg (fun w : WreathProduct U (G ⧸ U) => ((w.left (g • x) : U) : G)) heq
-    simpa only [monomialHom_left] using this
+    simpa only [coe_monomialHom_left] using this
   have heq' : g * t x = h * t x := by
     calc
       g * t x = t (g • x) * lWord U t (g • x) g :=
@@ -94,8 +96,9 @@ section FiniteIndex
 
 variable [U.FiniteIndex]
 
-/-- Relabel the cosets by `Fin (G : U)`, identifying the monomial representation with a
-homomorphism to `U^(G : U) ⋊ Sym(G : U)`. The coset-indexed map above avoids this labeling. -/
+/-- Relabel the cosets by `Fin (G : U)` using the choice-supplied bijection
+`Finite.equivFinOfCardEq U.index_eq_card.symm`. The coordinate at `i` is the transversal word
+at the coset named by this bijection; the coset-indexed map avoids this choice. -/
 noncomputable def monomialFinHom (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     G →* WreathProduct U (Fin U.index) :=
@@ -103,7 +106,7 @@ noncomputable def monomialFinHom (t : G ⧸ U → G)
     (Finite.equivFinOfCardEq U.index_eq_card.symm)).toMonoidHom.comp (monomialHom U t ht)
 
 /-- The finite-coordinate homomorphism is the relabeling of the coset-indexed map. -/
--- A simp tag here makes `monomialFinHom_left` and `monomialFinHom_right` fail `simpNF`.
+-- A simp tag here makes `coe_monomialFinHom_left` and `monomialFinHom_right` fail `simpNF`.
 theorem monomialFinHom_apply (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) :
     monomialFinHom U t ht g =
@@ -112,7 +115,7 @@ theorem monomialFinHom_apply (t : G ⧸ U → G)
   rfl
 
 /-- A finite coordinate is the transversal word at the corresponding coset. -/
-@[simp] theorem monomialFinHom_left (t : G ⧸ U → G)
+@[simp] theorem coe_monomialFinHom_left (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x)
     (g : G) (i : Fin U.index) :
     ((monomialFinHom U t ht g).left i : G) =

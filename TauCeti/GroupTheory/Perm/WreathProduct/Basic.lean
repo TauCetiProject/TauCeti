@@ -80,6 +80,14 @@ theorem mul_left (a b : WreathProduct D ι) (i : ι) :
   rw [mulAutArrow_apply_apply] at h
   exact h
 
+/-- Inversion in a permutation wreath product, written in coordinates. -/
+@[simp]
+theorem inv_left (a : WreathProduct D ι) (i : ι) :
+    (a⁻¹).left i = (a.left (a.right i))⁻¹ := by
+  rw [SemidirectProduct.inv_left]
+  change (a.left⁻¹) ((a.right⁻¹)⁻¹ i) = (a.left (a.right i))⁻¹
+  simp
+
 /-- The natural cardinality of a full permutation wreath product with finite index type. -/
 theorem card [Finite ι] :
     Nat.card (WreathProduct D ι) =

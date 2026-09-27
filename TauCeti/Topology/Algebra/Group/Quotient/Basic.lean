@@ -15,7 +15,7 @@ public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 # Quotients of topological groups by subgroups
 
 Generic facts about quotients by subgroups of topological groups. Most results use
-`[IsTopologicalGroup G]`; inverse translation on an open coset quotient needs only
+`[IsTopologicalGroup G]`; continuity of translation on a coset quotient needs only
 `[SeparatelyContinuousMul G]`. Neither compactness nor total disconnectedness is needed.
 
 ## Main definitions
@@ -26,8 +26,7 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 
 ## Main results
 
-* `TauCeti.QuotientGroup.continuous_inv_smul`: inverse translation of a fixed coset is continuous
-  when the subgroup is open, without continuous inversion on `G`.
+* `TauCeti.QuotientGroup.continuous_smul_const`: translation of a fixed coset is continuous.
 * `QuotientGroup.instDiscreteTopology`: the quotient of a discrete group by any subgroup is
   discrete.
 * `QuotientGroup.isClopen_image_mk`: the image of an open subgroup of `G` under the
@@ -46,24 +45,12 @@ namespace QuotientGroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
-/-- Inverse translation of a fixed left coset is continuous when the subgroup is open,
-without assuming continuous inversion on `G`. -/
-theorem continuous_inv_smul (U : Subgroup G) (hU : IsOpen (U : Set G)) (u : G ⧸ U) :
-    Continuous (fun γ : G => γ⁻¹ • u) := by
-  have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
-  rw [continuous_discrete_rng]
-  intro v
-  have h : (fun γ : G => γ⁻¹ • u) ⁻¹' {v} =
-      (fun γ : G => γ • v) ⁻¹' {u} := by
-    ext γ
-    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using
-      (inv_smul_eq_iff (g := γ) (a := u) (b := v)).trans eq_comm
-  rw [h]
-  have horbit : Continuous (fun γ : G => γ • v) := by
-    convert QuotientGroup.continuous_mk.comp (continuous_mul_const v.out) using 1
-    ext γ
-    exact (MulAction.Quotient.mk_smul_out U γ v).symm
-  exact (isOpen_discrete _).preimage horbit
+/-- Translation of a fixed left coset is continuous under separate continuity of multiplication. -/
+theorem continuous_smul_const (U : Subgroup G) (u : G ⧸ U) :
+    Continuous (fun γ : G => γ • u) := by
+  convert QuotientGroup.continuous_mk.comp (continuous_mul_const u.out) using 1
+  ext γ
+  exact (MulAction.Quotient.mk_smul_out U γ u).symm
 
 section Discrete
 
