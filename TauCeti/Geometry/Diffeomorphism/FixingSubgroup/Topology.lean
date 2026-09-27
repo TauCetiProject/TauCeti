@@ -62,9 +62,11 @@ theorem coe_closedFixingSubgroup (s : Set M) :
 @[simp]
 theorem mem_closedFixingSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
     f ∈ closedFixingSubgroup (I := I) (n := n) s ↔ ∀ x ∈ s, f x = x := by
-  change f ∈ (closedFixingSubgroup (I := I) (n := n) s : Subgroup _) ↔
-    ∀ x ∈ s, f x = x
-  rw [coe_closedFixingSubgroup]
-  exact mem_fixingSubgroup_iff
+  calc
+    -- A closed subgroup's `SetLike` carrier is its underlying subgroup's carrier.
+    f ∈ closedFixingSubgroup (I := I) (n := n) s ↔
+        f ∈ (closedFixingSubgroup (I := I) (n := n) s : Subgroup _) := Iff.rfl
+    _ ↔ f ∈ fixingSubgroup (I := I) (n := n) s := by rw [coe_closedFixingSubgroup]
+    _ ↔ ∀ x ∈ s, f x = x := mem_fixingSubgroup_iff
 
 end Diffeomorph
