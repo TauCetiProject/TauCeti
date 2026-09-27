@@ -118,10 +118,12 @@ theorem h1EquivContinuousZModDual_apply_mk (f : Z1 G (ZMod n)) (g : G) :
 @[simp]
 theorem h1EquivContinuousZModDual_symm_apply (φ : continuousZModDual n G) :
     (h1EquivContinuousZModDual htriv).symm φ
-      = ((Z1EquivOfSmulEqSelf htriv).symm φ : H1 G (ZMod n)) := by
-  refine (h1EquivContinuousZModDual htriv).symm_apply_eq.2 ?_
-  exact ((Z1EquivOfSmulEqSelf htriv).apply_symm_apply φ).symm.trans
-    (H1EquivOfSmulEqSelf_mk htriv _).symm
+      = ((Z1EquivOfSmulEqSelf htriv).symm φ : H1 G (ZMod n)) :=
+  -- `h1EquivContinuousZModDual` is `H1EquivOfSmulEqSelf` read as a `ZMod n`-module isomorphism,
+  -- so the inverse of the former is the inverse of the latter.
+  (congrFun (AddEquiv.coe_toLinearEquiv_symm (H1EquivOfSmulEqSelf htriv)
+      (ZMod.map_smul (H1EquivOfSmulEqSelf htriv))) φ).trans
+    (H1EquivOfSmulEqSelf_symm_apply htriv φ)
 
 end ContinuousDual
 
