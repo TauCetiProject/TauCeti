@@ -23,6 +23,8 @@ the corresponding norm-index theorem supplies the bimultiplicativity used in the
 
 The convention is `∏_{i<j} (aᵢ,aⱼ)`, as in Lam, *Introduction to Quadratic Forms over Fields*,
 V.3.17, and Serre, *A Course in Arithmetic*, IV §2. The value is `1` in ranks zero and one.
+
+The orthogonal-sum proof is adapted from `RegularFormClass.hasseInvariant_add_mk`.
 -/
 
 public section
@@ -33,24 +35,6 @@ namespace TauCeti.RegularFormClass
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-/-- The Hilbert symbol on square classes of a nonarchimedean local field. -/
-noncomputable def hilbertSymbolOnSquareClasses (x y : SquareClassGroup K) : ℤˣ :=
-  hilbertSymbol (Additive.toMul (Quotient.out x)) (Additive.toMul (Quotient.out y))
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- The square-class pairing agrees with the Hilbert symbol on representatives. -/
-@[simp]
-theorem hilbertSymbolOnSquareClasses_squareClass (a b : Kˣ) :
-    hilbertSymbolOnSquareClasses (squareClass a) (squareClass b) = hilbertSymbol a b := by
-  unfold hilbertSymbolOnSquareClasses
-  apply hilbertSymbol_congr_sq
-  · apply (squareClass_eq_iff_isSquare_mul _ _).mp
-    rw [squareClass_def, ofMul_toMul]
-    exact Quotient.out_eq _
-  · apply (squareClass_eq_iff_isSquare_mul _ _).mp
-    rw [squareClass_def, ofMul_toMul]
-    exact Quotient.out_eq _
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 private theorem localHasseProd_eq_of_permutationStep (h2 : IsUnit (2 : 𝒪[K]))
@@ -107,6 +91,12 @@ theorem localHasseOfIsUnitTwo_zero (h2 : IsUnit (2 : 𝒪[K])) :
     localHasseOfIsUnitTwo h2 (0 : RegularFormClass K) = 1 :=
   localHasseOfIsUnitTwo_eq_one_of_rank_le_one h2 (by simp)
 
+/-- The unit class has trivial local Hasse sign. -/
+@[simp]
+theorem localHasseOfIsUnitTwo_one (h2 : IsUnit (2 : 𝒪[K])) :
+    localHasseOfIsUnitTwo h2 (1 : RegularFormClass K) = 1 :=
+  localHasseOfIsUnitTwo_eq_one_of_rank_le_one h2 rank_one.le
+
 /-- A regular form has the Hasse sign of any of its diagonalizations. -/
 theorem localHasseOfIsUnitTwo_formClass (h2 : IsUnit (2 : 𝒪[K]))
     {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
@@ -133,8 +123,7 @@ theorem localHasseOfIsUnitTwo_mk_binary (h2 : IsUnit (2 : 𝒪[K])) (a b : Kˣ) 
   simp [Fin.prod_univ_succ]
 
 /-- For diagonal forms, the Hasse sign of an orthogonal sum is the product of the two signs
-times the Hilbert symbol of their discriminant representatives. The proof is adapted from
-`RegularFormClass.hasseInvariant_add_mk`. -/
+times the Hilbert symbol of their discriminant representatives. -/
 theorem localHasseOfIsUnitTwo_add_mk (h2 : IsUnit (2 : 𝒪[K]))
     (p q : RegularFormPresentation K) :
     localHasseOfIsUnitTwo h2 (Quotient.mk (regularFormSetoid K) p +

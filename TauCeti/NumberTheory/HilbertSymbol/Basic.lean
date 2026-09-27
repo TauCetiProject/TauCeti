@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
+public import TauCeti.FieldTheory.SquareClassGroup.Basic
 
 /-!
 # The norm-equation Hilbert symbol
@@ -149,6 +150,23 @@ theorem hilbertSymbol_congr_sq (a a' b b' : Kˣ)
     rw [div_pow, pow_two d, ← hd]
     simp [pow_two, div_eq_mul_inv, mul_assoc, mul_left_comm]
   rw [ha', hb', hilbertSymbol_mul_sq_left, hilbertSymbol_mul_sq_right]
+
+/-- The Hilbert symbol on square classes of a field. -/
+def hilbertSymbolOnSquareClasses (x y : SquareClassGroup K) : ℤˣ :=
+  hilbertSymbol (Additive.toMul (Quotient.out x)) (Additive.toMul (Quotient.out y))
+
+/-- The square-class pairing agrees with the Hilbert symbol on representatives. -/
+@[simp]
+theorem hilbertSymbolOnSquareClasses_squareClass (a b : Kˣ) :
+    hilbertSymbolOnSquareClasses (squareClass a) (squareClass b) = hilbertSymbol a b := by
+  unfold hilbertSymbolOnSquareClasses
+  apply hilbertSymbol_congr_sq
+  · apply (squareClass_eq_iff_isSquare_mul _ _).mp
+    rw [squareClass_def, ofMul_toMul]
+    exact Quotient.out_eq _
+  · apply (squareClass_eq_iff_isSquare_mul _ _).mp
+    rw [squareClass_def, ofMul_toMul]
+    exact Quotient.out_eq _
 
 variable [Invertible (2 : K)]
 
