@@ -30,6 +30,7 @@ graded commutativity of the cup product in bidegree `(1, 1)` reads `cupFp p G a 
 ## Main results
 
 * `TauCeti.cupFp_res`: restriction to a subgroup preserves `cupFp`.
+* `TauCeti.cupFp_map`: a continuous group homomorphism preserves `cupFp`.
 * `TauCeti.fpPairing_flip`: the opposite of the multiplication pairing is itself.
 * `TauCeti.cupFp_gradedComm`: the cup square is graded-commutative, `cupFp a b = - cupFp b a`.
 
@@ -140,6 +141,27 @@ theorem cupFp_res (S : Subgroup G) (a b : cohomFp p G 1) :
   -- the degree of the cup square is `1 + 1`, that of the restriction `2`
   exact (congrArg (fun z ↦ eqToHom (congrArg (continuousCohomology 2) (res_trivialFp p G S)) z)
     h₁).trans h₂
+
+/-- A continuous group homomorphism preserves the cup product with trivial `ZMod p`
+coefficients. -/
+@[simp]
+theorem cupFp_map {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    (φ : H →ₜ* G) (a b : cohomFp p G 1) :
+    cohomFpMap p φ 2 (cupFp p G a b) =
+      cupFp p H (cohomFpMap p φ 1 a) (cohomFpMap p φ 1 b) := by
+  have hpair (x y : (trivialFp p G).V) :
+      eqToHom (res_trivialFp_hom p φ) ((fpPairing p G).bil x y) =
+        (fpPairing p H).bil (eqToHom (res_trivialFp_hom p φ) x)
+          (eqToHom (res_trivialFp_hom p φ) y) := by
+    apply (trivialFpEquiv p H).injective
+    simp only [trivialFpEquiv_eqToHom_res_trivialFp_hom p φ,
+      fpPairing_bil_apply, LinearEquiv.apply_symm_apply]
+  simpa only [cohomFpMap_def, cupFp_def, show 1 + 1 = 2 from rfl] using
+    (fpPairing p G).cup_map (fpPairing p H) φ
+      (eqToHom (res_trivialFp_hom p φ))
+      (eqToHom (res_trivialFp_hom p φ))
+      (eqToHom (res_trivialFp_hom p φ)) hpair 1 1 a b
+
 /-- **Graded commutativity of the cup square**, `cupFp a b = - cupFp b a`: the bidegree-`(1, 1)`
 graded commutativity of the cup product at the multiplication pairing, whose opposite pairing is
 itself. -/

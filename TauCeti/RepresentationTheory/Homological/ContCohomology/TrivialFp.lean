@@ -30,6 +30,8 @@ without repeatedly transporting across the definitional equality of trivial repr
 * `TauCeti.trivialFp`: trivial `ZMod p` coefficients in the universe of the group.
 * `TauCeti.cohomFp`: continuous cohomology with trivial `ZMod p` coefficients.
 * `TauCeti.trivialFpResMap`: restriction on `cohomFp`.
+* `TauCeti.cohomFpMap`: the map induced by a continuous group homomorphism.
+* `TauCeti.cohomFpLinearEquiv`: invariance under topological group isomorphism.
 
 ## Main results
 
@@ -153,5 +155,83 @@ theorem trivialFpResMap_def (S : Subgroup G) (n : ℕ) :
   (rfl)
 
 end Group
+
+section Hom
+
+open CategoryTheory
+
+variable (p : ℕ) {G H K : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  [Group K] [TopologicalSpace K] [IsTopologicalGroup K]
+
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- Restriction along a continuous group homomorphism preserves trivial coefficients. -/
+theorem res_trivialFp_hom (φ : H →ₜ* G) :
+    TopRep.res (φ : H →* G) (trivialFp p G) = trivialFp p H :=
+  res_trivial (ZMod p) G (ULift.{u} (ZMod p)) φ.toMonoidHom
+
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- The transport to trivial coefficients along a homomorphism leaves coefficient values
+unchanged. -/
+@[simp]
+theorem trivialFpEquiv_eqToHom_res_trivialFp_hom (φ : H →ₜ* G)
+    (x : (TopRep.res (φ : H →* G) (trivialFp p G)).V) :
+    trivialFpEquiv p H (eqToHom (res_trivialFp_hom p φ) x) =
+      trivialFpEquiv p G x :=
+  (rfl)
+
+/-- The contravariant map on cohomology with trivial `ZMod p` coefficients. -/
+noncomputable def cohomFpMap (φ : H →ₜ* G) (n : ℕ) :
+    cohomFp p G n ⟶ cohomFp p H n :=
+  ContinuousCohomology.map φ (eqToHom (res_trivialFp_hom p φ)) n
+
+/-- The cohomology map is the general map with identity transport on trivial coefficients. -/
+theorem cohomFpMap_def (φ : H →ₜ* G) (n : ℕ) :
+    cohomFpMap p φ n =
+      ContinuousCohomology.map φ (eqToHom (res_trivialFp_hom p φ)) n :=
+  (rfl)
+
+/-- The identity homomorphism induces the identity on cohomology. -/
+@[simp]
+theorem cohomFpMap_id (n : ℕ) :
+    cohomFpMap p (ContinuousMonoidHom.id G) n = 𝟙 _ := by
+  have h : (eqToHom (res_trivialFp_hom p (ContinuousMonoidHom.id G))) =
+      𝟙 (trivialFp p G) := eqToHom_refl _ _
+  simpa only [cohomFpMap, h] using (ContinuousCohomology.map_id (trivialFp p G) n)
+
+/-- Cohomology maps with trivial coefficients compose contravariantly. -/
+theorem cohomFpMap_comp (φ : H →ₜ* G) (ψ : K →ₜ* H) (n : ℕ) :
+    cohomFpMap p (φ.comp ψ) n = cohomFpMap p φ n ≫ cohomFpMap p ψ n := by
+  unfold cohomFpMap
+  rw [← ContinuousCohomology.map_comp]
+  congr 1
+
+/-- The cohomology map induced by a topological group isomorphism is a linear equivalence,
+with the inverse induced by the inverse group isomorphism. -/
+noncomputable def cohomFpLinearEquiv (e : G ≃ₜ* H) (n : ℕ) :
+    cohomFp p G n ≃ₗ[ZMod p] cohomFp p H n := by
+  let f : H →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom e.symm
+  let g : G →ₜ* H := ContinuousMonoidHom.toContinuousMonoidHom e
+  have hfg : f.comp g = ContinuousMonoidHom.id G := by
+    ext x
+    exact e.symm_apply_apply x
+  have hgf : g.comp f = ContinuousMonoidHom.id H := by
+    ext x
+    exact e.apply_symm_apply x
+  let i : cohomFp p G n ≅ cohomFp p H n :=
+    { hom := cohomFpMap p f n
+      inv := cohomFpMap p g n
+      hom_inv_id := by rw [← cohomFpMap_comp, hfg, cohomFpMap_id]
+      inv_hom_id := by rw [← cohomFpMap_comp, hgf, cohomFpMap_id] }
+  exact i.toContinuousLinearEquiv.toLinearEquiv
+
+/-- The cohomology equivalence acts by the map induced by the inverse group isomorphism. -/
+@[simp]
+theorem cohomFpLinearEquiv_apply (e : G ≃ₜ* H) (n : ℕ) (x : cohomFp p G n) :
+    cohomFpLinearEquiv p e n x =
+      cohomFpMap p (ContinuousMonoidHom.toContinuousMonoidHom e.symm) n x :=
+  (rfl)
+
+end Hom
 
 end TauCeti
