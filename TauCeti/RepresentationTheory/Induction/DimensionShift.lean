@@ -48,6 +48,10 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
   restriction and after tensoring on the left with any representation.
 * `Rep.dimensionShiftDownSES_shortExact`, `Rep.dimensionShiftDownSES_res_shortExact`,
   `Rep.dimensionShiftDownSES_tensorLeft_shortExact`: the same for the downward sequence.
+* `Rep.dimensionShiftUpMap`, `Rep.dimensionShiftDownMap`: coefficient maps on both shifts,
+  characterized by commutation with the quotient projection and kernel inclusion.
+* `Rep.coindBotUnit_naturality`, `Rep.indBotCounit_naturality`: naturality of the maps defining
+  the two sequences.
 
 ## References
 
@@ -216,5 +220,130 @@ theorem dimensionShiftDownSES_tensorLeft_shortExact (A M : Rep k G) :
     rw [indBotCounit_hom_mk, inv_one, map_one, Module.End.one_apply]
   have : Mono (dimensionShiftDownSES A).f := (dimensionShiftDownSES_shortExact A).mono_f
   exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A).exact M _ hs
+
+/-! ### Functoriality of the dimension-shifting sequences -/
+
+/-- The morphism induced on the upward dimension shift by a representation morphism. -/
+def dimensionShiftUpMap {A B : Rep k G} (f : A ⟶ B) :
+    dimensionShiftUp A ⟶ dimensionShiftUp B :=
+  cokernel.map (coindBotUnit A) (coindBotUnit B) f (coindBotMap f)
+    (coindBotUnit_naturality f).symm
+
+/-- The map on upward shifts commutes with their quotient projections. -/
+@[reassoc (attr := simp)]
+theorem dimensionShiftUpπ_naturality {A B : Rep k G} (f : A ⟶ B) :
+    dimensionShiftUpπ A ≫ dimensionShiftUpMap f =
+      coindBotMap f ≫ dimensionShiftUpπ B := by
+  exact cokernel.π_desc _ _ _
+
+/-- The upward shift map preserves identity morphisms. -/
+@[simp]
+theorem dimensionShiftUpMap_id (A : Rep k G) : dimensionShiftUpMap (𝟙 A) = 𝟙 _ := by
+  simp [dimensionShiftUpMap, dimensionShiftUp]
+
+/-- The upward shift map preserves composition. -/
+@[simp]
+theorem dimensionShiftUpMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
+    dimensionShiftUpMap (f ≫ g) = dimensionShiftUpMap f ≫ dimensionShiftUpMap g := by
+  apply (cancel_epi (dimensionShiftUpπ A)).mp
+  calc
+    dimensionShiftUpπ A ≫ dimensionShiftUpMap (f ≫ g) =
+        coindBotMap (f ≫ g) ≫ dimensionShiftUpπ C :=
+      dimensionShiftUpπ_naturality (f ≫ g)
+    _ = (coindBotMap f ≫ coindBotMap g) ≫ dimensionShiftUpπ C := by
+      rw [coindBotMap_comp]
+    _ = coindBotMap f ≫ (coindBotMap g ≫ dimensionShiftUpπ C) :=
+      Category.assoc _ _ _
+    _ = coindBotMap f ≫ (dimensionShiftUpπ B ≫ dimensionShiftUpMap g) := by
+      rw [dimensionShiftUpπ_naturality g]
+    _ = (coindBotMap f ≫ dimensionShiftUpπ B) ≫ dimensionShiftUpMap g :=
+      (Category.assoc _ _ _).symm
+    _ = (dimensionShiftUpπ A ≫ dimensionShiftUpMap f) ≫ dimensionShiftUpMap g := by
+      rw [dimensionShiftUpπ_naturality f]
+
+/-- A coefficient morphism induces a morphism of the public presentations of the upward
+dimension-shifting sequences (`dimensionShiftUpSES_def`). -/
+def dimensionShiftUpSESMap {A B : Rep k G} (f : A ⟶ B) :
+    ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
+        (coindBotUnit_comp_dimensionShiftUpπ A) ⟶
+      ShortComplex.mk (coindBotUnit B) (dimensionShiftUpπ B)
+        (coindBotUnit_comp_dimensionShiftUpπ B) :=
+  { τ₁ := f
+    τ₂ := coindBotMap f
+    τ₃ := dimensionShiftUpMap f
+    comm₁₂ := coindBotUnit_naturality f
+    comm₂₃ := (dimensionShiftUpπ_naturality f).symm }
+
+/-- The first component of the upward sequence morphism. -/
+@[simp]
+theorem dimensionShiftUpSESMap_τ₁ {A B : Rep k G} (f : A ⟶ B) :
+    (dimensionShiftUpSESMap f).τ₁ = f := (rfl)
+
+/-- The middle component of the upward sequence morphism. -/
+@[simp]
+theorem dimensionShiftUpSESMap_τ₂ {A B : Rep k G} (f : A ⟶ B) :
+    (dimensionShiftUpSESMap f).τ₂ = coindBotMap f := (rfl)
+
+/-- The last component of the upward sequence morphism. -/
+@[simp]
+theorem dimensionShiftUpSESMap_τ₃ {A B : Rep k G} (f : A ⟶ B) :
+    (dimensionShiftUpSESMap f).τ₃ = dimensionShiftUpMap f := (rfl)
+
+/-- The morphism induced on the downward dimension shift by a representation morphism. -/
+def dimensionShiftDownMap {A B : Rep k G} (f : A ⟶ B) :
+    dimensionShiftDown A ⟶ dimensionShiftDown B :=
+  kernel.map (indBotCounit A) (indBotCounit B) (indBotMap f) f
+    (indBotCounit_naturality f).symm
+
+/-- The map on downward shifts commutes with their inclusions into induced modules. -/
+@[reassoc (attr := simp)]
+theorem dimensionShiftDownι_naturality {A B : Rep k G} (f : A ⟶ B) :
+    dimensionShiftDownMap f ≫ dimensionShiftDownι B =
+      dimensionShiftDownι A ≫ indBotMap f := by
+  exact kernel.lift_ι _ _ _
+
+/-- The downward shift map preserves identity morphisms. -/
+@[simp]
+theorem dimensionShiftDownMap_id (A : Rep k G) : dimensionShiftDownMap (𝟙 A) = 𝟙 _ := by
+  simp only [dimensionShiftDownMap, dimensionShiftDown, indBotMap_id]
+  -- Unfold the kernel wrapper to apply the generic identity law for `kernel.map`.
+  change kernel.map (indBotCounit A) (indBotCounit A)
+    (𝟙 (indBot k G A.V)) (𝟙 A) _ = 𝟙 _
+  exact kernel.map_id (indBotCounit A) (𝟙 A) (by simp)
+
+/-- The downward shift map preserves composition. -/
+@[simp]
+theorem dimensionShiftDownMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
+    dimensionShiftDownMap (f ≫ g) = dimensionShiftDownMap f ≫ dimensionShiftDownMap g := by
+  apply (cancel_mono (dimensionShiftDownι C)).mp
+  simp [dimensionShiftDownMap, dimensionShiftDownι, dimensionShiftDown, kernel.map, indBotMap_comp]
+
+/-- A coefficient morphism induces a morphism of the public presentations of the downward
+dimension-shifting sequences (`dimensionShiftDownSES_def`). -/
+def dimensionShiftDownSESMap {A B : Rep k G} (f : A ⟶ B) :
+    ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
+        (dimensionShiftDownι_comp_indBotCounit A) ⟶
+      ShortComplex.mk (dimensionShiftDownι B) (indBotCounit B)
+        (dimensionShiftDownι_comp_indBotCounit B) :=
+  { τ₁ := dimensionShiftDownMap f
+    τ₂ := indBotMap f
+    τ₃ := f
+    comm₁₂ := dimensionShiftDownι_naturality f
+    comm₂₃ := indBotCounit_naturality f }
+
+/-- The first component of the downward sequence morphism. -/
+@[simp]
+theorem dimensionShiftDownSESMap_τ₁ {A B : Rep k G} (f : A ⟶ B) :
+    (dimensionShiftDownSESMap f).τ₁ = dimensionShiftDownMap f := (rfl)
+
+/-- The middle component of the downward sequence morphism. -/
+@[simp]
+theorem dimensionShiftDownSESMap_τ₂ {A B : Rep k G} (f : A ⟶ B) :
+    (dimensionShiftDownSESMap f).τ₂ = indBotMap f := (rfl)
+
+/-- The last component of the downward sequence morphism. -/
+@[simp]
+theorem dimensionShiftDownSESMap_τ₃ {A B : Rep k G} (f : A ⟶ B) :
+    (dimensionShiftDownSESMap f).τ₃ = f := (rfl)
 
 end Rep

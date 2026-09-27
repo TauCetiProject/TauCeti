@@ -39,6 +39,7 @@ The homomorphism from field automorphisms to residue-field automorphisms is Math
 * `TauCeti.decompositionSubgroup_valuationSubring_eq_top`: every automorphism preserves the
   valuation subring of `L`, so Mathlib's `ValuationSubring.decompositionSubgroup` is everything.
 * `TauCeti.integerRingFaithfulSMul`: an automorphism is determined by its action on `𝒪[L]`.
+* `TauCeti.integerRingSMulCommClass`: the action on `𝒪[L]` is by `𝒪[K]`-algebra automorphisms.
 
 ## References
 
@@ -242,5 +243,11 @@ instance integerRingFaithfulSMul : FaithfulSMul (L ≃ₐ[K] L) 𝒪[L] where
     rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.coe_smul_integerRing, map_mul, map_mul,
       AlgEquiv.commutes, AlgEquiv.commutes] at hσ
     exact mul_left_cancel₀ ha' hσ
+
+/-- Automorphisms act on the ring of integers by `𝒪[K]`-algebra automorphisms: the action commutes
+with the scalars from the ring of integers of the base field. -/
+instance integerRingSMulCommClass : SMulCommClass (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] :=
+  ⟨fun σ x y ↦ by
+    simpa only [AlgEquiv.integerRingEquiv_apply] using map_smul σ.integerRingEquiv x y⟩
 
 end TauCeti

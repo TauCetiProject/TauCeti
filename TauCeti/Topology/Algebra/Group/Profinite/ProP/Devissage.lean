@@ -141,8 +141,7 @@ theorem IsProP.forall_subsingleton_continuousCohomology_iff_forall_natCard_eq (h
       [DistribMulAction G A] [ContinuousSMul G A] [Finite A], Nat.card A = p →
       (∀ (g : G) (a : A), g • a = a) →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A)) :=
-  ⟨fun H A _ _ _ _ _ _ hA _ ↦
-    H A (isPPrimaryTorsion_iff.2 fun a ↦ ⟨1, by rw [pow_one, ← hA]; exact card_nsmul_eq_zero'⟩),
+  ⟨fun H A _ _ _ _ _ _ hA _ ↦ H A (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm)),
     fun h M _ _ _ _ _ _ hM ↦
       hG.subsingleton_continuousCohomology_of_forall_natCard_eq_smul_eq_self h M hM⟩
 
