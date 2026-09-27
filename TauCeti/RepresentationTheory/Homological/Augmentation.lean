@@ -36,6 +36,8 @@ Nothing here mentions cohomology: the cohomological consequences live in
   `[g] a - [1] a` and its image under the inclusion.
 * `TauCeti.AugmentationIdeal.ρ_singleSub`, `TauCeti.AugmentationIdeal.singleSub_one`:
   the group action and value at the identity.
+* `TauCeti.AugmentationIdeal.sum_coeff_augmentationι`: the coefficients of an augmentation-ideal
+  element sum to zero.
 
 ## References
 
@@ -173,11 +175,11 @@ theorem singleSub_one (a : k) : singleSub k G a (1 : G) = 0 := by
 
 /-- The coefficients of an element of the augmentation ideal sum to zero after inclusion in the
 group ring. -/
-theorem sum_coeff_augmentationι [Fintype G] (x : augmentationIdeal k G) :
-    ∑ g : G, ((augmentationι k G).hom x).coeff g = 0 := by
+theorem sum_coeff_augmentationι (x : augmentationIdeal k G) :
+    ((augmentationι k G).hom x).coeff.sum (fun _ a ↦ a) = 0 := by
   have h : (augmentation k G).hom ((augmentationι k G).hom x) = 0 := by
     rw [← ConcreteCategory.comp_apply, augmentationι_comp_augmentation]
     rfl
-  simpa [augmentation, leftRegularHom, MonoidAlgebra.lift_apply, Finsupp.sum_fintype] using h
+  simpa [augmentation, leftRegularHom, MonoidAlgebra.lift_apply] using h
 
 end TauCeti.AugmentationIdeal

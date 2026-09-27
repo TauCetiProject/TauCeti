@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Augmentation
+public import TauCeti.RepresentationTheory.Homological.Augmentation
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
 # The splitting module of a degree-two cohomology class
 
-For a representation `A` of a finite group `G` and a class `u ∈ H²(G, A)`, this file
+For a representation `A` of a group `G` and a class `u ∈ H²(G, A)`, this file
 constructs the **splitting module** `A(u)`. Its underlying module is `I_G × A`, where `I_G` is
 the augmentation ideal. A cocycle representing `u` twists the diagonal action on this product.
 There is a short exact sequence
@@ -31,7 +32,6 @@ It is adapted to Mathlib's `Rep` and low-degree cohomology API from
 
 ## Main definitions
 
-* `Rep.h2Representative`: a chosen two-cocycle representing a class in `H²`.
 * `Rep.splittingModule`: the splitting module of a degree-two class.
 * `Rep.splittingModuleSES`: its short exact sequence with the augmentation ideal.
 
@@ -52,22 +52,6 @@ open CategoryTheory Limits BigOperators
 namespace Rep
 
 variable {k G : Type u} [CommRing k] [Group G]
-
-/-- A chosen two-cocycle representing `u ∈ H²(G, A)`. -/
-def h2Representative (A : Rep k G) (u : groupCohomology A 2) :
-    groupCohomology.cocycles₂ A :=
-  Classical.choose ((ModuleCat.epi_iff_surjective (groupCohomology.H2π A)).mp inferInstance u)
-
-/-- The chosen two-cocycle represents the original second-cohomology class. -/
-@[simp]
-theorem H2π_h2Representative (A : Rep k G) (u : groupCohomology A 2) :
-    groupCohomology.H2π A (h2Representative A u) = u :=
-  Classical.choose_spec
-    ((ModuleCat.epi_iff_surjective (groupCohomology.H2π A)).mp inferInstance u)
-
-variable [Finite G]
-/-- A finite enumeration of `G`, used only to write the coefficient sums in the construction. -/
-local instance splittingModuleFintype : Fintype G := Fintype.ofFinite G
 variable (A : Rep k G) (u : groupCohomology A 2)
 
 /-- The linear correction term contributed by a cocycle to the action on its splitting module. -/
@@ -84,8 +68,10 @@ def splittingTwist (g : G) : augmentationIdeal k G →ₗ[k] A :=
 /-- The correction term is the coefficientwise pairing with the chosen cocycle representative. -/
 theorem splittingTwist_apply (g : G) (x : augmentationIdeal k G) :
     splittingTwist A u g x =
-      ∑ h : G, ((augmentationι k G).hom x).coeff h • h2Representative A u (g, h) := by
-  simp [splittingTwist, Finsupp.sum_fintype]
+      ((augmentationι k G).hom x).coeff.sum fun h a ↦
+        a • h2Representative A u (g, h) := by
+  simp only [splittingTwist, LinearMap.comp_apply, Finsupp.lsum_apply]
+  exact Finsupp.sum_congr fun _ _ ↦ rfl
 
 /-- The correction term at the identity is zero. -/
 @[simp]
@@ -93,8 +79,17 @@ theorem splittingTwist_one : splittingTwist A u 1 = 0 := by
   ext x
   rw [splittingTwist_apply]
   simp only [groupCohomology.cocycles₂_map_one_fst]
-  rw [← Finset.sum_smul, TauCeti.AugmentationIdeal.sum_coeff_augmentationι, zero_smul,
-    LinearMap.zero_apply]
+  rw [Finsupp.sum, ← Finset.sum_smul]
+  have hsum := TauCeti.AugmentationIdeal.sum_coeff_augmentationι k G x
+  rw [Finsupp.sum] at hsum
+  rw [hsum, zero_smul, LinearMap.zero_apply]
+
+private theorem coeff_splitting_action (g : G) (x : augmentationIdeal k G) :
+    ((augmentationι k G).hom ((augmentationIdeal k G).ρ g x)).coeff =
+      Finsupp.equivMapDomain (Equiv.mulLeft g) ((augmentationι k G).hom x).coeff := by
+  ext h
+  rw [hom_comm_apply]
+  simp [Finsupp.equivMapDomain_apply, Representation.coeff_ofMulAction]
 
 /-- The cocycle identity is precisely the identity needed for the twisted maps to form a group
 action on the splitting module. -/
@@ -107,48 +102,45 @@ theorem splittingTwist_mul (g₁ g₂ : G) (x : augmentationIdeal k G) :
     eq_sub_iff_add_eq.mpr
       ((groupCohomology.mem_cocycles₂_iff (h2Representative A u)).mp
         (h2Representative A u).2 a b c)
-  simp only [hcocycle, smul_sub, smul_add, Finset.sum_sub_distrib,
-    Finset.sum_add_distrib, map_sum, map_smul]
-  rw [← Finset.sum_smul, TauCeti.AugmentationIdeal.sum_coeff_augmentationι, zero_smul,
-    sub_zero, add_right_inj]
-  conv_rhs => rw [← Equiv.sum_comp (Equiv.mulLeft g₂)]
-  refine Finset.sum_congr rfl fun h _ ↦ ?_
-  rw [hom_comm_apply]
-  simp
-
-/-- The representation on `I_G × A` twisted by a two-cocycle representing `u`.
-
-For `g : G`, the second coordinate of `g • (x, a)` is
-`g • a + ∑_h x_h • c(g,h)`, where `c` is the chosen representative of `u`. -/
-@[expose]
-def splittingModuleRepresentation :
-    Representation k G (augmentationIdeal k G × A) where
-  toFun g :=
-    { toFun x :=
-        ((augmentationIdeal k G).ρ g x.1,
-          A.ρ g x.2 + splittingTwist A u g x.1)
-      map_add' x y := by ext <;> simp [add_add_add_comm]
-      map_smul' r x := by ext <;> simp }
-  map_one' := by
-    apply LinearMap.ext
-    intro x
-    apply Prod.ext
-    · simp
-    · simp
-  map_mul' g₁ g₂ := by
-    apply LinearMap.ext
-    intro x
-    apply Prod.ext
-    · simp
-    · simp [splittingTwist_mul, add_assoc]
+  simp only [hcocycle, smul_sub, smul_add, Finsupp.sum_sub, Finsupp.sum_add,
+    map_finsuppSum, map_smul]
+  have hconst :
+      ((augmentationι k G).hom x).coeff.sum
+          (fun _ a ↦ a • h2Representative A u (g₁, g₂)) = 0 := by
+    rw [Finsupp.sum, ← Finset.sum_smul]
+    have hsum := TauCeti.AugmentationIdeal.sum_coeff_augmentationι k G x
+    rw [Finsupp.sum] at hsum
+    rw [hsum, zero_smul]
+  rw [hconst, sub_zero, add_right_inj, coeff_splitting_action,
+    Finsupp.sum_equivMapDomain]
+  exact Finsupp.sum_congr fun _ _ ↦ rfl
 
 /-- The **splitting module** `A(u)` of a class `u ∈ H²(G, A)`. Its underlying module is
 `I_G × A`; the action is twisted by a chosen cocycle representing `u`. -/
 @[expose]
 def splittingModule : Rep k G :=
-  Rep.of (splittingModuleRepresentation A u)
+  Rep.of
+    { toFun g :=
+        { toFun x :=
+            ((augmentationIdeal k G).ρ g x.1,
+              A.ρ g x.2 + splittingTwist A u g x.1)
+          map_add' x y := by ext <;> simp [add_add_add_comm]
+          map_smul' r x := by ext <;> simp }
+      map_one' := by
+        apply LinearMap.ext
+        intro x
+        apply Prod.ext
+        · simp
+        · simp
+      map_mul' g₁ g₂ := by
+        apply LinearMap.ext
+        intro x
+        apply Prod.ext
+        · simp
+        · simp [splittingTwist_mul, add_assoc] }
 
 /-- The action on the splitting module, in terms of the chosen cocycle representative. -/
+@[simp]
 theorem splittingModule_ρ_apply (g : G) (x : splittingModule A u) :
     (splittingModule A u).ρ g x =
       ((augmentationIdeal k G).ρ g x.1,
@@ -159,11 +151,7 @@ theorem splittingModule_ρ_apply (g : G) (x : splittingModule A u) :
 @[expose]
 def splittingModuleIncl : A ⟶ splittingModule A u :=
   ofHom ⟨LinearMap.inr k (augmentationIdeal k G) A, fun g ↦ by
-    ext a
-    · change 0 = (augmentationIdeal k G).ρ g 0
-      simp
-    · change A.ρ g a = A.ρ g a + splittingTwist A u g 0
-      simp⟩
+    ext a <;> simp⟩
 
 /-- The inclusion into the splitting module sends `a` to `(0,a)`. -/
 @[simp]
@@ -195,6 +183,8 @@ def splittingModuleSES : ShortComplex (Rep k G) :=
 theorem splittingModuleSES_shortExact : (splittingModuleSES A u).ShortExact := by
   refine
     { exact := by
+        -- `Rep.exact_iff_function_exact` exposes the underlying functions, but `ShortComplex.f`
+        -- and `.g` have no projection lemmas that identify them with `inr` and `fst`.
         change
           (ShortComplex.mk (splittingModuleIncl A u) (splittingModuleProj A u)
             (by ext; rfl)).Exact
@@ -223,6 +213,8 @@ theorem splittingModuleCochain_coboundary (g h : G) :
       splittingModuleIncl A u (h2Representative A u (g, h)) := by
   rw [splittingModule_ρ_apply, splittingModuleCochain, splittingModuleCochain,
     splittingModuleCochain, splittingModuleIncl_apply]
+  -- Addition and subtraction on the exposed `Rep.of` carrier have no exported projection
+  -- rewrite lemmas, so normalize the carrier once before applying the `Prod` interface.
   change
     (((((augmentationIdeal k G).ρ g) (TauCeti.AugmentationIdeal.singleSub k G 1 h),
           A.ρ g (A.ρ h (h2Representative A u (1, 1))) +
@@ -239,18 +231,9 @@ theorem splittingModuleCochain_coboundary (g h : G) :
   · simp only [Prod.snd_sub, Prod.snd_add, map_mul, Module.End.mul_apply,
       add_sub_cancel_left, splittingTwist_apply]
     rw [TauCeti.AugmentationIdeal.ι_singleSub]
-    simp only [MonoidAlgebra.coeff_sub, MonoidAlgebra.coeff_single, Finsupp.coe_sub,
-      Pi.sub_apply, sub_smul, Finset.sum_sub_distrib]
-    have hsum (y : G) :
-        ∑ x : G, (Finsupp.single y (1 : k)) x • h2Representative A u (g, x) =
-          h2Representative A u (g, y) := by
-      classical
-      rw [Finset.sum_eq_single y]
-      · simp
-      · intro x _ hxy
-        simp [hxy]
-      · simp
-    rw [hsum h, hsum 1]
+    simp only [MonoidAlgebra.coeff_sub, MonoidAlgebra.coeff_single]
+    rw [Finsupp.sum_sub_index (fun _ _ _ ↦ sub_smul _ _ _),
+      Finsupp.sum_single_index, Finsupp.sum_single_index] <;> simp
     have hone : h2Representative A u (g, 1) =
         A.ρ g (h2Representative A u (1, 1)) := by
       simpa [add_comm] using
@@ -281,6 +264,8 @@ theorem map_splittingModuleIncl_eq_zero :
       rw [← ModuleCat.comp_apply, groupCohomology.H2π_comp_map, ModuleCat.comp_apply]
     _ = 0 := by
       rw [groupCohomology.H2π_eq_zero_iff]
+      -- `mapCocycles₂` at the identity group homomorphism is definitionally postcomposition by
+      -- the coefficient morphism; there is no separate application lemma for this wrapper.
       change (splittingModuleIncl A u) ∘ (h2Representative A u) ∈
         groupCohomology.coboundaries₂ (splittingModule A u)
       exact h2Representative_mem_coboundaries A u
