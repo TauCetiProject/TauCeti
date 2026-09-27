@@ -29,21 +29,23 @@ namespace WeierstrassCurve
 
 variable (W : WeierstrassCurve ℤ) [(W.baseChange ℚ).IsElliptic]
 
+omit [(W.baseChange ℚ).IsElliptic] in
+private theorem integral_equation_baseChange (x y : ℤ) (h : W.toAffine.Equation x y) :
+    (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) := by
+  change (W.toAffine.map (Int.castRingHom ℚ)).Equation (x : ℚ) (y : ℚ)
+  exact h.map (Int.castRingHom ℚ)
+
 /-- An integral solution of the affine Weierstrass equation determines a rational point. -/
 def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.Point :=
-  .mk (by
-    -- `baseChange` is the map of coefficients along the integer cast.
-    change (W.toAffine.map (Int.castRingHom ℚ)).Equation (x : ℚ) (y : ℚ)
-    exact h.map (Int.castRingHom ℚ))
+  .mk (W.integral_equation_baseChange x y h)
 
 /-- The affine coordinates of the rational point constructed from an integral solution. -/
 @[simp]
 theorem pointEquiv_pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.pointEquiv (W.pointOfIntegralSolution x y h) =
       .some ⟨⟨(x : ℚ), (y : ℚ)⟩, by
-        change (W.toAffine.map (Int.castRingHom ℚ)).Equation (x : ℚ) (y : ℚ)
-        exact h.map (Int.castRingHom ℚ)⟩ := by
+        exact W.integral_equation_baseChange x y h⟩ := by
   simp only [pointOfIntegralSolution, Affine.pointEquiv_some]
   congr 1
 
@@ -84,7 +86,9 @@ theorem neg_mem_integralPoints {P : (W.baseChange ℚ).toAffine.Point}
   refine ⟨x, y', h', ?_⟩
   simp only [pointOfIntegralSolution, Affine.Point.mk, Affine.Point.neg_some]
   congr 1
-  simp [y', Affine.negY, WeierstrassCurve.baseChange]
+  change (W.toAffine.map (Int.castRingHom ℚ)).negY (x : ℚ) (y : ℚ) =
+    ((W.toAffine.negY x y : ℤ) : ℚ)
+  exact W.toAffine.map_negY (Int.castRingHom ℚ) x y
 
 /-- Negation preserves and reflects integrality of affine points. -/
 @[simp]
@@ -101,6 +105,28 @@ def integralYCoordBound (x : ℤ) : ℕ :=
   (|W.a₁ * x + W.a₃| +
     |x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆| + 1).toNat
 
+private theorem abs_le_of_quadratic_eq {y b c : ℤ} (h : y ^ 2 + b * y = c) :
+    |y| ≤ |b| + |c| + 1 := by
+  have hle : |y| ^ 2 ≤ |b| * |y| + |c| := by
+    have h' : y ^ 2 = c - b * y := by nlinarith only [h]
+    calc
+      |y| ^ 2 = |y ^ 2| := by rw [abs_pow]
+      _ = |c - b * y| := by rw [h']
+      _ ≤ |c| + |b * y| := by simpa only [sub_eq_add_neg, abs_neg] using
+        (abs_add_le c (-(b * y)))
+      _ = |b| * |y| + |c| := by rw [abs_mul]; omega
+  by_contra hn
+  have hlarge : |b| + |c| + 1 < |y| := lt_of_not_ge hn
+  have hy_nonneg := abs_nonneg y
+  have hb_nonneg := abs_nonneg b
+  have hc_nonneg := abs_nonneg c
+  have hprod₁ : 0 ≤ (|y| - |b| - |c| - 1) * |y| :=
+    mul_nonneg (by omega) hy_nonneg
+  have hprod₂ : 0 ≤ |c| * (|y| - 1) :=
+    mul_nonneg hc_nonneg (by omega)
+  have hpos : 0 < |y| := by omega
+  nlinarith only [hle, hprod₁, hprod₂, hpos]
+
 omit [(W.baseChange ℚ).IsElliptic] in
 /-- The quadratic Weierstrass equation bounds the absolute `yCoord` by its linear and constant
 coefficients. This makes a search bounded only in `xCoord` finite. -/
@@ -112,30 +138,7 @@ theorem abs_yCoord_le_integralYCoordBound {x y : ℤ}
     have := (W.toAffine.equation_iff x y).mp h
     dsimp [b, c]
     nlinarith
-  have hbound : |y| ≤ |b| + |c| + 1 := by
-    rcases le_total 0 y with hy | hy
-    · rcases le_total 0 b with hb | hb
-      · rcases le_total 0 c with hc | hc
-        · simp only [abs_of_nonneg hy, abs_of_nonneg hb, abs_of_nonneg hc]
-          nlinarith [sq_nonneg (y - b - c - 1)]
-        · simp only [abs_of_nonneg hy, abs_of_nonneg hb, abs_of_nonpos hc]
-          nlinarith [sq_nonneg (y - b + c - 1)]
-      · rcases le_total 0 c with hc | hc
-        · simp only [abs_of_nonneg hy, abs_of_nonpos hb, abs_of_nonneg hc]
-          nlinarith [sq_nonneg (y + b - c - 1)]
-        · simp only [abs_of_nonneg hy, abs_of_nonpos hb, abs_of_nonpos hc]
-          nlinarith [sq_nonneg (y + b + c - 1)]
-    · rcases le_total 0 b with hb | hb
-      · rcases le_total 0 c with hc | hc
-        · simp only [abs_of_nonpos hy, abs_of_nonneg hb, abs_of_nonneg hc]
-          nlinarith [sq_nonneg (y + b + c + 1)]
-        · simp only [abs_of_nonpos hy, abs_of_nonneg hb, abs_of_nonpos hc]
-          nlinarith [sq_nonneg (y + b - c + 1)]
-      · rcases le_total 0 c with hc | hc
-        · simp only [abs_of_nonpos hy, abs_of_nonpos hb, abs_of_nonneg hc]
-          nlinarith [sq_nonneg (y - b + c + 1)]
-        · simp only [abs_of_nonpos hy, abs_of_nonpos hb, abs_of_nonpos hc]
-          nlinarith [sq_nonneg (y - b - c + 1)]
+  have hbound := abs_le_of_quadratic_eq heq
   -- Unfold the natural bound as its nonnegative integer cast.
   change |y| ≤ ((|b| + |c| + 1).toNat : ℤ)
   rw [Int.toNat_of_nonneg (by positivity)]
