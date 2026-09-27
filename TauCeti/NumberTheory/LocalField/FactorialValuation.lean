@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 
 /-!
@@ -28,8 +27,6 @@ valuation, with a margin that grows linearly in `n`.
 
 ## Main results
 
-* `TauCeti.natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat`: the valuation of a
-  natural-number cast in a finite extension of `ℚ_[p]`.
 * `TauCeti.sub_one_mul_natCastValuation_factorial`: Legendre's formula after base change.
 * `TauCeti.sub_one_mul_natCastValuation_factorial_lt`: the strict factorial estimate.
 * `TauCeti.natCastValuation_factorial_lt_mul_of_absoluteRamificationIndex_lt`: the estimate at
@@ -49,63 +46,18 @@ open ValuativeRel IsNonarchimedeanLocalField
 namespace TauCeti
 
 variable (K : Type*) [Field K]
-
-/-- A nonzero natural number remains nonzero in a field carrying an algebra structure over
-`ℚ_[p]`. -/
-theorem natCast_ne_zero_of_padicAlgebra (p n : ℕ) [Fact p.Prime] [Algebra ℚ_[p] K]
-    (hn : n ≠ 0) : (n : K) ≠ 0 := by
-  have hnQ : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  simpa only [map_natCast] using
-    (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr hnQ
-
 variable [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 variable (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p]
-
-/-- In a finite extension `K/ℚ_[p]`, the normalized valuation of a nonzero natural number is the
-absolute ramification index times its `p`-adic valuation. -/
-theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
-    (n : ℕ) (hn : n ≠ 0) :
-    natCastValuation K n (natCast_ne_zero_of_padicAlgebra K p n hn) =
-      absoluteRamificationIndex K p * padicValNat p n := by
-  let hnQ : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  let hnK : (n : K) ≠ 0 := natCast_ne_zero_of_padicAlgebra K p n hn
-  have hmap : Units.map (algebraMap ℚ_[p] K : ℚ_[p] →* K)
-      (Units.mk0 (n : ℚ_[p]) hnQ) = Units.mk0 (n : K) hnK := by
-    ext
-    simp
-  have h := toAdd_normalizedValuation_algebraMap (K := ℚ_[p]) (L := K)
-    (Units.mk0 (n : ℚ_[p]) hnQ)
-  rw [hmap, toAdd_normalizedValuation_natCast K n hnK,
-    toAdd_normalizedValuation_natCast ℚ_[p] n hnQ,
-    Padic.natCastValuation_eq_padicValNat] at h
-  have hnval : natCastValuation K n hnK =
-      ramificationIndex ℚ_[p] K * padicValNat p n := by
-    exact_mod_cast h
-  let hpQ : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  let hpK : (p : K) ≠ 0 :=
-    natCast_ne_zero_of_padicAlgebra K p p (Fact.out : p.Prime).ne_zero
-  have hpmap : Units.map (algebraMap ℚ_[p] K : ℚ_[p] →* K)
-      (Units.mk0 (p : ℚ_[p]) hpQ) = Units.mk0 (p : K) hpK := by
-    ext
-    simp
-  have hpval := toAdd_normalizedValuation_algebraMap (K := ℚ_[p]) (L := K)
-    (Units.mk0 (p : ℚ_[p]) hpQ)
-  rw [hpmap, toAdd_normalizedValuation_natCast K p hpK,
-    toAdd_normalizedValuation_natCast ℚ_[p] p hpQ,
-    Padic.natCastValuation_self] at hpval
-  have hpval' : natCastValuation K p hpK = ramificationIndex ℚ_[p] K := by
-    have : natCastValuation K p hpK = ramificationIndex ℚ_[p] K * 1 := by
-      exact_mod_cast hpval
-    simpa using this
-  rw [absoluteRamificationIndex_eq_natCastValuation]
-  simpa only [hpval'] using hnval
 
 /-- Legendre's formula for the normalized valuation of a factorial in a finite extension of
 `ℚ_[p]`. -/
 theorem sub_one_mul_natCastValuation_factorial (n : ℕ) :
     (p - 1) * natCastValuation K n.factorial
-        (natCast_ne_zero_of_padicAlgebra K p n.factorial
-          (Nat.factorial_ne_zero n)) =
+        (by
+          simpa only [map_natCast] using
+            (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
+              (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n) :
+                (n.factorial : ℚ_[p]) ≠ 0)) =
       absoluteRamificationIndex K p * (n - (p.digits n).sum) := by
   rw [natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p n.factorial
     (Nat.factorial_ne_zero n), ← Nat.mul_assoc, Nat.mul_comm (p - 1), Nat.mul_assoc,
@@ -115,8 +67,11 @@ theorem sub_one_mul_natCastValuation_factorial (n : ℕ) :
 finite extension of `ℚ_[p]`. -/
 theorem sub_one_mul_natCastValuation_factorial_lt {n : ℕ} (hn : n ≠ 0) :
     (p - 1) * natCastValuation K n.factorial
-        (natCast_ne_zero_of_padicAlgebra K p n.factorial
-          (Nat.factorial_ne_zero n)) <
+        (by
+          simpa only [map_natCast] using
+            (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
+              (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n) :
+                (n.factorial : ℚ_[p]) ≠ 0)) <
       absoluteRamificationIndex K p * n := by
   rw [natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p n.factorial
     (Nat.factorial_ne_zero n), ← Nat.mul_assoc, Nat.mul_comm (p - 1), Nat.mul_assoc]
@@ -129,14 +84,20 @@ theorem sub_one_mul_natCastValuation_factorial_lt {n : ℕ} (hn : n ≠ 0) :
 theorem natCastValuation_factorial_lt_mul_of_absoluteRamificationIndex_lt
     {i n : ℕ} (hi : absoluteRamificationIndex K p < (p - 1) * i) (hn : n ≠ 0) :
     natCastValuation K n.factorial
-        (natCast_ne_zero_of_padicAlgebra K p n.factorial
-          (Nat.factorial_ne_zero n)) < n * i := by
+        (by
+          simpa only [map_natCast] using
+            (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
+              (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n) :
+                (n.factorial : ℚ_[p]) ≠ 0)) < n * i := by
   have hp : 0 < p - 1 := Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt
   apply (Nat.mul_lt_mul_left hp).mp
   calc
     (p - 1) * natCastValuation K n.factorial
-          (natCast_ne_zero_of_padicAlgebra K p n.factorial
-            (Nat.factorial_ne_zero n))
+          (by
+            simpa only [map_natCast] using
+              (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
+                (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n) :
+                  (n.factorial : ℚ_[p]) ≠ 0))
         < absoluteRamificationIndex K p * n :=
       sub_one_mul_natCastValuation_factorial_lt K p hn
     _ < ((p - 1) * i) * n := Nat.mul_lt_mul_of_pos_right hi (Nat.pos_of_ne_zero hn)
