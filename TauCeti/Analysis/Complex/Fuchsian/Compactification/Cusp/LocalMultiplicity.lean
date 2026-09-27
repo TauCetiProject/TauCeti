@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Index
-public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Manifold
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.EllipticRamification
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 
 /-!
@@ -23,18 +23,16 @@ Forms*, §2.4.
 
 public noncomputable section
 
-open Filter Function IsManifold Set Topology TauCeti.Subgroup.CuspDatum TauCeti.RiemannSurface
-  UpperHalfPlane
+open Filter Function IsManifold MulAction Set Topology TauCeti.Subgroup.CuspDatum
+  TauCeti.RiemannSurface UpperHalfPlane
 open scoped Manifold MatrixGroups
 
 namespace Subgroup.CompactifiedQuotient
 
 variable {Δ Γ : Subgroup PSL(2, ℝ)}
-variable [DiscreteTopology Δ] [DiscreteTopology Γ]
 
-/-- On a cusp neighbourhood defined by normalized cusp data with the same scaling, the map of
-compactified quotients is holomorphic. -/
-theorem mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd (h : Δ ≤ Γ)
+private theorem mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd
+    [DiscreteTopology Δ] [DiscreteTopology Γ] (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hσ : D.scaling = E.scaling)
     {A : ℝ} (hD : D.width ≤ A) {x : Δ.CompactifiedQuotient} (hx : x ∈ cuspNhd D A) :
@@ -66,13 +64,72 @@ theorem mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd (h : Δ ≤ Γ)
   simpa [e, e', n, comp_apply, e.right_inv hz] using
     (cuspChart_compactifiedQuotientMap_eq_pow_widthIndex h D E hc hσ hD hz')
 
+/-- The map of compactified quotients induced by an inclusion of discrete projective subgroups is
+holomorphic. -/
+theorem mdifferentiable_compactifiedQuotientMap [DiscreteTopology Γ] (h : Δ ≤ Γ) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (compactifiedQuotientMap h) := by
+  have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+  intro x
+  cases x with
+  | ofQuotient p =>
+      induction p using Quotient.inductionOn' with
+      | h z =>
+          obtain ⟨ε, hε, hΔ, hΓ⟩ :=
+            (eventually_mem_nhdsWithin.and
+              ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Δ z).and
+                (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z))).exists
+          let e := stabilizerBallQuotientChart hε hΔ
+          let e' := stabilizerBallQuotientChart hε hΓ
+          let c := ofQuotientChart e
+          let c' := ofQuotientChart e'
+          have hze : Quotient.mk (orbitRel Δ ℍ) z ∈ e.source := by
+            rw [mem_stabilizerBallQuotientChart_source_iff hε hΔ]
+            exact ⟨1, by simpa using hε⟩
+          have hze' : Quotient.mk (orbitRel Γ ℍ) z ∈ e'.source := by
+            rw [mem_stabilizerBallQuotientChart_source_iff hε hΓ]
+            exact ⟨1, by simpa using hε⟩
+          have hxc : ofQuotient (Quotient.mk (orbitRel Δ ℍ) z) ∈ c.source := by
+            simpa [c, e] using hze
+          have hfxc : compactifiedQuotientMap h
+                (ofQuotient (Quotient.mk (orbitRel Δ ℍ) z)) ∈ c'.source := by
+            simpa [c', e'] using hze'
+          have hc : c ∈ maximalAtlas 𝓘(ℂ) 1 Δ.CompactifiedQuotient :=
+            IsManifold.subset_maximalAtlas
+              (ofQuotientChart_mem_atlas
+                (stabilizerBallQuotientChart_mem_atlas (Γ := Δ) hε hΔ))
+          have hc' : c' ∈ maximalAtlas 𝓘(ℂ) 1 Γ.CompactifiedQuotient :=
+            IsManifold.subset_maximalAtlas
+              (ofQuotientChart_mem_atlas
+                (stabilizerBallQuotientChart_mem_atlas (Γ := Γ) hε hΓ))
+          rw [← mdifferentiableWithinAt_univ,
+            mdifferentiableWithinAt_iff_of_mem_maximalAtlas hc hc' hxc hfxc]
+          refine ⟨(continuous_compactifiedQuotientMap h).continuousAt.continuousWithinAt, ?_⟩
+          simp only [mfld_simps]
+          rw [differentiableWithinAt_univ]
+          refine ((analyticAt_id.pow
+            (ellipticRamificationIndex h z)).differentiableAt).congr_of_eventuallyEq ?_
+          filter_upwards [c.open_target.mem_nhds (c.map_source hxc)] with u hu
+          have hu' : u ∈ e.target := by simpa [c] using hu
+          simpa [c, c', e, e', comp_apply] using
+            (compactifiedQuotientMap_ellipticChart h z hε hΔ hΓ hu')
+  | ofCusp C =>
+      obtain ⟨D, rfl⟩ := CuspDatum.cuspOrbit_surjective C
+      obtain ⟨E, -, hσ⟩ :=
+        (D.isCuspPoint.mono h).exists_cuspDatum D.scaling_smul_cusp
+      exact mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd h D E hσ.symm
+        le_rfl (ofCusp_mem_cuspNhd D D.width)
+
 /-- For normalized cusp data with the same scaling, the local multiplicity at an adjoined cusp of
 a compactified quotient map is the canonical positive integer by which the cusp width changes. -/
-theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex (h : Δ ≤ Γ)
+theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex [DiscreteTopology Γ]
+    (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hσ : D.scaling = E.scaling) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     localMultiplicity (compactifiedQuotientMap h) (ofCusp D.cuspOrbit) =
       widthIndex h D E (D.cusp_eq_of_scaling_eq E hσ) hσ := by
+  have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   let hc : D.cusp = E.cusp := D.cusp_eq_of_scaling_eq E hσ
   let n := widthIndex h D E hc hσ
   have hn : 0 < n := widthIndex_pos h D E hc hσ
@@ -93,13 +150,9 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex (h : Δ �
     IsManifold.subset_maximalAtlas (cuspChart_mem_atlas D hD)
   have he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 Γ.CompactifiedQuotient :=
     IsManifold.subset_maximalAtlas (cuspChart_mem_atlas E hE)
-  have hxNhd : x ∈ cuspNhd D D.width := by
-    dsimp only [x]
-    exact ofCusp_mem_cuspNhd D D.width
   have hf : ∀ᶠ y in 𝓝 x,
       MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (compactifiedQuotientMap h) y := by
-    filter_upwards [(isOpen_cuspNhd D D.width).mem_nhds hxNhd] with y hy
-    exact mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd h D E hσ hD hy
+    exact Filter.Eventually.of_forall (mdifferentiable_compactifiedQuotientMap h)
   rw [localMultiplicity_eq_analyticOrderNatAt he he' hxe hfxe hf]
   have hex : e x = 0 := by simp [e, x]
   have hefx : e' (compactifiedQuotientMap h x) = 0 := by simp [e', hfx]
