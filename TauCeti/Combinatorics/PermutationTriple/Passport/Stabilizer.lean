@@ -30,6 +30,33 @@ public section
 
 namespace TauCeti
 
+namespace PermutationTriple
+
+variable {n : ℕ}
+
+/-- The stabilizer of a triple under the normalizer of its monodromy group is the
+centralizer of that group, regarded as a subgroup of the normalizer. -/
+theorem stabilizer_normalizer (t : PermutationTriple n) :
+    MulAction.stabilizer
+        (Subgroup.normalizer (t.monodromyGroup : Set (Perm (Fin n)))) t =
+      (Subgroup.centralizer (t.monodromyGroup : Set (Perm (Fin n)))).subgroupOf
+        (Subgroup.normalizer (t.monodromyGroup : Set (Perm (Fin n)))) := by
+  ext τ
+  simp only [MulAction.mem_stabilizer_iff, Subgroup.mem_subgroupOf]
+  rw [← t.automorphismGroup_eq_centralizer_monodromyGroup]
+  rw [PermutationTriple.mem_automorphismGroup_iff]
+  simp only [Subgroup.smul_def]
+  constructor
+  · intro hfix
+    exact ⟨by rw [← PermutationTriple.smul_σ0, hfix],
+      by rw [← PermutationTriple.smul_σ1, hfix]⟩
+  · intro hfix
+    exact PermutationTriple.ext_of_two
+      (by rw [PermutationTriple.smul_σ0, hfix.1])
+      (by rw [PermutationTriple.smul_σ1, hfix.2])
+
+end PermutationTriple
+
 namespace PassportSpec
 
 variable {n : ℕ} (P : PassportSpec n)
@@ -41,26 +68,13 @@ theorem stabilizer_generatingTriple (g : P.GeneratingTriple) :
     MulAction.stabilizer (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) g =
       (Subgroup.centralizer (P.G : Set (Perm (Fin n)))).subgroupOf
         (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) := by
+  have h := g.1.stabilizer_normalizer
+  rw [g.2.monodromyGroup_eq] at h
+  rw [← h]
   ext τ
-  simp only [MulAction.mem_stabilizer_iff, Subgroup.mem_subgroupOf]
-  have h : ((τ : Perm (Fin n)) • g.1 = g.1) ↔
-      (τ : Perm (Fin n)) ∈ Subgroup.centralizer (P.G : Set (Perm (Fin n))) := by
-    calc
-      _ ↔ (τ : Perm (Fin n)) ∈ g.1.automorphismGroup := by
-        rw [PermutationTriple.mem_automorphismGroup_iff]
-        constructor
-        · intro hfix
-          exact ⟨by rw [← PermutationTriple.smul_σ0, hfix],
-            by rw [← PermutationTriple.smul_σ1, hfix]⟩
-        · intro hfix
-          exact PermutationTriple.ext_of_two
-            (by rw [PermutationTriple.smul_σ0, hfix.1])
-            (by rw [PermutationTriple.smul_σ1, hfix.2])
-      _ ↔ (τ : Perm (Fin n)) ∈
-          Subgroup.centralizer (g.1.monodromyGroup : Set (Perm (Fin n))) := by
-        rw [PermutationTriple.automorphismGroup_eq_centralizer_monodromyGroup]
-      _ ↔ _ := by rw [g.2.monodromyGroup_eq]
-  exact Subtype.ext_iff.trans h
+  simp only [MulAction.mem_stabilizer_iff]
+  simpa only [GeneratingTriple.coe_smul, Subgroup.smul_def] using
+    (Subtype.ext_iff : τ • g = g ↔ (τ • g).1 = g.1)
 
 /-- Orbit-stabilizer for a generating triple, with its stabilizer expressed as the
 centralizer of the reference monodromy group. -/
