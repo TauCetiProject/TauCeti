@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZMod
-public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
 /-!
