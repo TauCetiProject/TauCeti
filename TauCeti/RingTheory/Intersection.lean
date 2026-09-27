@@ -14,25 +14,25 @@ public import TauCeti.RingTheory.Length
 # The length of a quotient by two equations
 
 Fix a commutative ring `R` and two of its elements `f` and `g`. The quotient `R ⧸ (f, g)` by the
-ideal the two generate carries the local intersection multiplicity of the two curves `f = 0` and
-`g = 0` where they meet: when they meet properly, that is, when `(f, g)` is
-primary to the maximal ideal of a noetherian local ring, the length `Module.length R (R ⧸ (f, g))`
-is finite and counts the intersection with multiplicity. In a general ring `(f, g)` is only the
-ideal of the two equations, not a point: it is the unit ideal exactly when the two curves have no
-common point. This file proves the local algebra that reading rests on, in an arbitrary commutative
-ring, with no hypothesis of regularity anywhere: the
-order of vanishing of `g` along `f = 0` is that length, the length is symmetric in the two
-equations, it vanishes exactly when the two equations generate the unit ideal, it is positive when
-both equations lie in the maximal ideal of a local ring, it is a natural number for a proper
-intersection, and it is additive over a product of equations.
+ideal the two generate carries the length `Module.length R (R ⧸ (f, g))`, which is finite when
+`(f, g)` is primary to the maximal ideal of a noetherian local ring. That finite number is the
+local intersection multiplicity of the two curves `f = 0` and `g = 0` meeting at the closed point,
+and counting the intersection with multiplicity is a statement about a surface, given at the end of
+this introduction; the statements below are the local algebra that reading rests on, in an
+arbitrary commutative ring, with no hypothesis of regularity anywhere: the order of vanishing of
+`g` along `f = 0` is that length, the length is symmetric in the two equations, it vanishes
+exactly when the two equations generate the unit ideal, it is positive when both equations lie in
+the maximal ideal of a local ring, it is a natural number for an `𝔪`-primary pair, and it is
+additive over a product of equations. In a general ring `(f, g)` is only the ideal of the two
+equations, not a point: it is the unit ideal exactly when the two curves have no common point.
 
 Additivity needs a non-zero-divisor on the first curve, and primality of `(f)` is what supplies
 one: for a prime ideal `(f)`, that is, for an irreducible first curve, the quotient `R ⧸ (f)` is a
 domain. A reducible first equation is not covered by it. In `k[[x, y]]` the union of the two axes,
 cut out by the reducible equation `f = x * y`, is not a domain, so a second equation can have a
 zero divisor on it, and the curve itself is a ring of infinite length. What
-`TauCeti.exists_nat_length_quotient_span_pair` makes finite is the proper-intersection quotient
-`R ⧸ (f, g)`, which for the two axes together with the second equation `g = x + y` has length two.
+`TauCeti.exists_nat_length_quotient_span_pair` makes finite is the quotient by an `𝔪`-primary pair,
+which for the two axes together with the second equation `g = x + y` has length two.
 Additivity over the components of a curve of infinite length would need a theory of the associated
 primes of such a module, which this file does not have.
 
@@ -41,11 +41,18 @@ below: they ask that `(R, 𝔪)` be of Krull dimension two, that `f` be a non-ze
 `(f)` be prime. No hypothesis `f ∈ 𝔪` is placed on `f` in them, because in a local ring a prime
 `(f)` is a proper ideal and `f` is then a nonunit lying in `𝔪`. On a two-dimensional regular local
 surface an element of `𝔪 \ 𝔪²` is a parameter, and the curve it cuts out is regular, hence
-irreducible, hence a domain, so the theorem for an irreducible first curve applies to it; that
-domain instance for a parameter is `TauCeti.span_singleton_isPrime_of_notMem_sq`, and the additivity
-a parameter gives is in `TauCeti.RingTheory.RegularLocalRing.Intersection`. An
-irreducible curve on a surface need not be a parameter — an irreducible singular divisor may have
+irreducible, hence a domain, so the theorem for an irreducible first curve applies to it; the
+domain instance for a parameter is
+`TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`, and the additivity a parameter
+gives is in `TauCeti.RingTheory.RegularLocalRing.Intersection`. An irreducible curve on a surface
+need not be a parameter — an irreducible singular divisor may have
 its equation in `𝔪²` — and the statements here apply to it all the same.
+
+The curve reading of the finite length is therefore a statement about a surface: on a
+two-dimensional noetherian local ring an `𝔪`-primary pair `(f, g)` is a proper intersection of the
+two curves `f = 0` and `g = 0` at the closed point, sharing no component there, and the natural
+number `TauCeti.exists_nat_length_quotient_span_pair` gives for it is their local intersection
+multiplicity.
 
 ## Main results
 
@@ -61,21 +68,22 @@ In the namespace `TauCeti`:
 * `one_le_length_quotient_span_pair`: in a local ring, the length of the quotient by two equations
   through the closed point is positive;
 * `exists_nat_length_quotient_span_pair`: in a noetherian local ring, two equations generating an
-  `𝔪`-primary ideal have a finite local intersection multiplicity, which is a natural number;
+  `𝔪`-primary ideal give a finite length, which is a natural number;
 * `length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors` and
-  `length_quotient_span_pair_mul_eq_add`: the local intersection multiplicity is additive over a
-  product of equations, which is additivity over a union of curves, whenever the image of the
-  second factor is a non-zero-divisor on the first curve, and in particular for an irreducible
-  first curve;
-* `length_quotient_span_pair_comm`: that multiplicity is symmetric in the two equations, which
+  `length_quotient_span_pair_mul_eq_add`: that length is additive over a product of equations,
+  which is additivity over a union of curves, whenever the image of the second factor is a
+  non-zero-divisor on the first curve, and in particular for an irreducible first curve; no
+  condition is placed on the two further equations, so the three lengths may be infinite;
+* `length_quotient_span_pair_comm`: that length is symmetric in the two equations, which
   transports the additivity above to the first equation;
-* `radical_span_pair_eq_maximalIdeal_of_prime`, `isFiniteLength_quotient_span_pair_of_prime`,
-  `exists_nat_length_quotient_span_pair_of_prime` and
-  `length_quotient_span_pair_mul_eq_add_of_prime`: in a two-dimensional noetherian local ring, an
+* `radical_span_pair_eq_maximalIdeal_of_prime`, `isFiniteLength_quotient_span_pair_of_prime` and
+  `exists_nat_length_quotient_span_pair_of_prime`: in a two-dimensional noetherian local ring, an
   irreducible first equation, a non-zero-divisor `f` with `(f)` prime, which lies in `𝔪` for that
-  reason, and a proper intersection give an ideal with radical `𝔪`, a finite local intersection
-  multiplicity, a natural number for it, and additivity of that number over a product of
-  equations.
+  reason, and a second equation outside `(f)` give an ideal with radical `𝔪`, a finite length, and
+  a natural number for it;
+* `length_quotient_span_pair_mul_eq_add_of_prime`: the same additivity over a product of equations
+  for such a first equation, with no condition at all on the two further equations, so that it is
+  an identity of lengths, of intersection numbers wherever both pairs are proper intersections.
 
 The regular surface statements, where a parameter cuts out a curve that is a one-dimensional
 regular local ring, live in `TauCeti.RingTheory.RegularLocalRing.Intersection`. The general
@@ -92,8 +100,8 @@ which identifies the length of a module over a surjective quotient with its leng
 original ring. The two vanishing criteria use `Module.length_eq_zero_iff` and
 `Submodule.Quotient.subsingleton_iff`, the general form of the fact that `R ⧸ I` is trivial
 exactly when `I = ⊤`. Additivity is `Ring.ord_mul`, the additivity of the order of vanishing over a
-product, read as a length. The finiteness of a proper intersection, and with it the natural number
-it becomes, is `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal` in
+product, read as a length. The finiteness of an `𝔪`-primary pair of equations, and with it the
+natural number it becomes, is `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal` in
 `TauCeti.RingTheory.Length`.
 
 The four statements for an irreducible first equation use the dimension drop of
@@ -135,7 +143,7 @@ is the local intersection multiplicity of the two equations once the length is f
 two-dimensional regular local ring with `f` a parameter, that is
 `f ∈ maximalIdeal R \ maximalIdeal R ^ 2`, and with a proper intersection, that is
 `g ∉ Ideal.span {f}`, whose principal ideal is prime by
-`TauCeti.span_singleton_isPrime_of_notMem_sq`, the length is finite by
+`TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`, the length is finite by
 `TauCeti.isFiniteLength_quotient_span_pair_of_prime` and is the order of vanishing of `g` on the
 discrete valuation ring `R ⧸ (f)`, and it is positive, that is, the multiplicity of two curves
 meeting at the closed point, exactly when `g ∈ maximalIdeal R`, by
@@ -267,14 +275,16 @@ section NoetherianLocalRing
 
 variable {R : Type u} [CommRing R] [IsNoetherianRing R] [IsLocalRing R]
 
-/-- **The local intersection multiplicity of a proper intersection in a noetherian local ring is a
-natural number.** Let `(R, 𝔪)` be a noetherian local ring, and let `f` and `g` be two equations
-generating an ideal with radical `𝔪`. That is the condition that the two curves they define meet
-properly at the closed point and share no component there, and the local intersection multiplicity
-`Module.length R (R ⧸ (f, g))` is then finite, by
-`Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`, hence a natural number. The
-intersection numbers `aᵢⱼ` and the component multiplicities of a special fibre are natural numbers
-for the same reason.
+/-- **In a noetherian local ring, two equations generating an `𝔪`-primary ideal have a finite
+length, which is a natural number.** Let `(R, 𝔪)` be a noetherian local ring, and let `f` and `g`
+be two equations generating an ideal with radical `𝔪`. Then the length
+`Module.length R (R ⧸ (f, g))` is finite, by
+`Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`, hence a natural number. No dimension
+hypothesis is placed on `R`: what the condition says is that the closed point is the only common
+point of the two equations there, and in a two-dimensional local ring it is what says that the two
+curves they define meet properly at the closed point and share no component there. The finite
+length is then the local intersection multiplicity of the two curves, and the intersection numbers
+`aᵢⱼ` and the component multiplicities of a special fibre are natural numbers for the same reason.
 
 No regularity is assumed of `R`, and no hypothesis of the form `f ∉ 𝔪²` is placed on `f`: a
 reducible first equation is admitted, and this is what a reducible or singular curve needs. In
@@ -282,7 +292,8 @@ reducible first equation is admitted, and this is what a reducible or singular c
 the curve `g = x + y` properly, with local intersection multiplicity two.
 
 On a two-dimensional regular local ring this condition is available for a parameter, whose
-principal ideal is prime by `TauCeti.span_singleton_isPrime_of_notMem_sq`, by
+principal ideal is prime by
+`TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`, by
 `TauCeti.radical_span_pair_eq_maximalIdeal_of_prime`, and the finiteness specialization of it is
 then `TauCeti.isFiniteLength_quotient_span_pair_of_prime`. -/
 theorem exists_nat_length_quotient_span_pair {f g : R}
@@ -433,21 +444,31 @@ theorem exists_nat_length_quotient_span_pair_of_prime (hd : ringKrullDim R = 2) 
     Module.length_ne_top_iff.mpr (isFiniteLength_quotient_span_pair_of_prime hd hfnd hfprime hg)
   exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
 
-/-- **The local intersection multiplicity of a proper intersection with an irreducible first
-equation in a two-dimensional noetherian local ring is additive over a product of equations.** Let
-`f` be a non-zero-divisor with `(f)` prime, that is, an irreducible first curve, which lies in
-`𝔪` for that reason, and let `g` and `h` be two further equations. Then the quotient by the two
-equations `f` and `g * h` has length the sum of the lengths of the quotients by `f` and `g` and
-by `f` and `h`.
+/-- **In a two-dimensional noetherian local ring, the length by an irreducible first equation
+and a product of two further equations is the sum of the two lengths.** Let `(R, 𝔪)` be a
+two-dimensional noetherian local ring, let `f` be a non-zero-divisor with `(f)` prime, that is, an
+irreducible first curve, which lies in `𝔪` for that reason, and let `g` and `h` be two further
+equations. Then
+
+`Module.length R (R ⧸ (f, g * h)) = Module.length R (R ⧸ (f, g)) + Module.length R (R ⧸ (f, h))`,
+
+the quotient by the two equations `f` and `g * h` having length the sum of the lengths of the
+quotients by `f` and `g` and by `f` and `h`. No condition is placed on `g` or on `h`, so this is
+additivity of lengths, of which the three may be infinite, and not of intersection numbers.
 
 This is `TauCeti.length_quotient_span_pair_mul_eq_add` in the case where the first curve is
 irreducible, the image of `h` in the domain `R ⧸ (f)` then being a non-zero-divisor whenever it is
-nonzero. No hypothesis is placed on `h`, and the case where its image there is zero, that is
-`h ∈ (f)`, is included: the images of `h` and of `g * h` are both zero, so `R ⧸ (f, h)` and
-`R ⧸ (f, g * h)` are the curve `f = 0` itself, of infinite length, as
-`TauCeti.length_self_eq_top_of_ringKrullDim_pos` makes that curve a ring of infinite length over
-itself; the length of the remaining summand `R ⧸ (f, g)` is arbitrary, finite or infinite, and its
-sum with an infinite length is again infinite, which is the asserted additivity. -/
+nonzero. The case where that image is zero, that is `h ∈ (f)`, is included: the images of `h` and
+of `g * h` are then both zero, so `R ⧸ (f, h)` and `R ⧸ (f, g * h)` are the curve `f = 0` itself,
+of infinite length, as `TauCeti.length_self_eq_top_of_ringKrullDim_pos` makes that curve a ring of
+infinite length over itself; the length of the remaining summand `R ⧸ (f, g)` is arbitrary, finite
+or infinite, and its sum with an infinite length is again infinite, which is the asserted
+additivity.
+
+Where both pairs are proper intersections, that is, where `g` and `h` lie in `𝔪` outside `(f)`, the
+two ideals have radical `𝔪` by `TauCeti.radical_span_pair_eq_maximalIdeal_of_prime`, all three
+lengths are natural numbers by `TauCeti.exists_nat_length_quotient_span_pair_of_prime`, and the
+statement is the additivity of the two intersection numbers. -/
 theorem length_quotient_span_pair_mul_eq_add_of_prime (hd : ringKrullDim R = 2) {f g h : R}
     (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
