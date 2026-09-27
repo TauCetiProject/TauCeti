@@ -44,8 +44,9 @@ noncomputable def traceTransferSqIsometryEquivWeightedSumSquares (d : K) :
     rw [QuadraticMap.basisRepr, QuadraticMap.comp_apply,
       QuadraticMap.traceTransfer_apply]
     simp only [QuadraticMap.sq_apply, LinearEquiv.coe_coe]
-    rw [show b.equivFun.symm v = (QuadraticAlgebra.linearEquivTuple d 0).symm v by rfl,
-      QuadraticAlgebra.linearEquivTuple_symm_apply]
+    have hb : b.equivFun = QuadraticAlgebra.linearEquivTuple d 0 := by
+      simp only [b, QuadraticAlgebra.basis, Module.Basis.equivFun_ofEquivFun]
+    rw [hb, QuadraticAlgebra.linearEquivTuple_symm_apply]
     rw [QuadraticAlgebra.algebraTrace_eq_trace]
     simp [QuadraticAlgebra.trace_def, weightedSumSquares_apply, Fin.sum_univ_two]
     ring
