@@ -16,6 +16,8 @@ homology of consecutive skeleta. Naturality of the connecting morphism of a pair
 quotient map to relative homology shows that these maps commute with the cellular differential.
 Thus a cellular map induces a map of cellular chain complexes, respecting identities and
 composition. No choice of characteristic maps or cellular representatives is involved.
+The predicate is used as `TauCeti.IsCellular f`, and its induced chain map as
+`TauCeti.cellularChainComplexMap R f hf`.
 
 This is the map-level form of the cellular differential in Hatcher, *Algebraic Topology*,
 Section 2.2.
