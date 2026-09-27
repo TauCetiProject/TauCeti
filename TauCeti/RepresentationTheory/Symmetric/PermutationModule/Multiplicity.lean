@@ -30,9 +30,7 @@ spanned by the polytabloid `e_t`.  Moving it across an intertwiner therefore sho
 intertwiner sends `e_t` to a scalar multiple of itself, and the orbit of `e_t` spans the Specht
 module.
 
-These two results give the diagonal and the zero region of the Kostka multiplicity matrix.  The
-remaining, strictly dominant case of Young's rule is the construction of a basis of this
-intertwiner space indexed by the semistandard tableaux counted by `TauCeti.kostkaNumber`.
+These two results give the diagonal and the zero region of the Kostka multiplicity matrix.
 
 ## Main definitions
 
@@ -51,8 +49,6 @@ intertwiner space indexed by the semistandard tableaux counted by `TauCeti.kostk
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapters 4 and 13.
 * B. E. Sagan, *The Symmetric Group*, 2nd ed. (2001), Section 2.11.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "Young's rule proper".
 -/
 
 public section
@@ -73,6 +69,12 @@ noncomputable def spechtMultiplicity (lam : YoungDiagram) (μ : lam.card.Partiti
   Module.finrank ℚ
     (Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
       (permutationModule μ).ρ)
+
+/-- The Specht multiplicity is the dimension of the corresponding intertwiner space. -/
+theorem spechtMultiplicity_def (lam : YoungDiagram) (μ : lam.card.Partition) :
+    spechtMultiplicity lam μ = Module.finrank ℚ
+      (Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
+        (permutationModule μ).ρ) := (rfl)
 
 /-- **The Specht multiplicity vanishes outside the dominance cone.**  If `lam` does not dominate
 `μ`, James's dominance lemma makes every intertwiner `S^lam → M^μ` zero, so their vector space has
@@ -200,9 +202,7 @@ noncomputable def spechtSelfMultiplicityEquiv (lam : YoungDiagram) :
 /-- The diagonal equivalence sends `κ` to `κ` times the inclusion. -/
 @[simp]
 theorem spechtSelfMultiplicityEquiv_apply (lam : YoungDiagram) (κ : ℚ) :
-    spechtSelfMultiplicityEquiv lam κ = κ • (spechtSubrepresentation lam).subtype := by
-  change (scalarToSpechtIntertwiningMap lam) κ = _
-  rfl
+    spechtSelfMultiplicityEquiv lam κ = κ • (spechtSubrepresentation lam).subtype := (rfl)
 
 /-- **The diagonal Specht multiplicity is one.**  There is exactly one copy of `S^lam` in
 `M^lam`: every equivariant map `S^lam → M^lam` is a scalar multiple of the inclusion. -/
