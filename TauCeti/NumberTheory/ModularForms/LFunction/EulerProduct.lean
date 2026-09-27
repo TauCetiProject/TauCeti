@@ -84,18 +84,20 @@ theorem LSeries_eulerProduct (f : Eigenform N k)
             (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
               (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s)) := by
-  have habs := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le f.toCuspForm
-  rw [strictWidthInfty_Gamma1] at habs
-  have hsum : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
-    LSeriesSummable_of_abscissaOfAbsConv_lt_re
-      (habs.trans_lt (by exact_mod_cast hs))
-  exact TauCeti.LSeries.LSeries_eulerProduct_of_recurrence
-    (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
-    (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
-    (fun hm hn hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
-    (fun p hp r ↦ by
-      simpa only [← mul_assoc] using f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
-    hsum
+  let F : ℕ → ℂ := fun p ↦
+    (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
+      (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
+        (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹
+  have hprod : HasProd (fun p : Nat.Primes ↦ F p)
+      (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) :=
+    f.LSeries_eulerProduct_hasProd h₁ hs
+  have h := ((hasProd_subtype_iff_mulIndicator (f := F)
+    (s := {p : ℕ | Nat.Prime p})).mp hprod).tendsto_prod_nat
+  have H (n : ℕ) : ∏ i ∈ Finset.range n, Set.mulIndicator {p | Nat.Prime p} F i =
+      ∏ p ∈ Nat.primesBelow n, F p :=
+    Finset.prod_mulIndicator_eq_prod_filter (Finset.range n) (fun _ ↦ F)
+      (fun _ ↦ {p | Nat.Prime p}) id
+  simpa only [F, H] using h
 
 /-- The Euler product in Mathlib's `ModularForm.L` normalization. At level `Γ₁(N)` the
 width at infinity is one, so its Dirichlet series is the coefficient L-series above. -/
@@ -123,11 +125,9 @@ theorem L_eulerProduct_hasProd (f : Eigenform N k)
           (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
             (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹)
       (ModularForm.L hk f.toCuspForm s) := by
-  have hL : LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s =
-      ModularForm.L hk f.toCuspForm s := by
-    simpa using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
-  rw [← hL]
-  exact f.LSeries_eulerProduct_hasProd h₁ hs
+  have h := f.LSeries_eulerProduct_hasProd h₁ hs
+  rw [← f.LSeries_eulerProduct_tprod h₁ hs, f.L_eulerProduct_tprod h₁ hk hs] at h
+  exact h
 
 /-- Finite products of the quadratic Euler factors converge to Mathlib's `ModularForm.L`. -/
 theorem L_eulerProduct (f : Eigenform N k)
@@ -139,10 +139,8 @@ theorem L_eulerProduct (f : Eigenform N k)
             (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
               (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (ModularForm.L hk f.toCuspForm s)) := by
-  have hL : LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s =
-      ModularForm.L hk f.toCuspForm s := by
-    simpa using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
-  rw [← hL]
-  exact f.LSeries_eulerProduct h₁ hs
+  have h := f.LSeries_eulerProduct h₁ hs
+  rw [← f.LSeries_eulerProduct_tprod h₁ hs, f.L_eulerProduct_tprod h₁ hk hs] at h
+  exact h
 
 end HeckeRing.GL2.Eigenform
