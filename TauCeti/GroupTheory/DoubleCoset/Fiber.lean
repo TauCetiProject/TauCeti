@@ -20,8 +20,10 @@ subgroup index, with no finite-index assumption. For an infinite index, both `Na
 and the index are zero.
 
 In general, the stabilizer of the representative acts on the coset space, and its orbit
-space is exactly the fibre of the map between orbit spaces. Thus ramification identifies
-precisely the cosets which give the same point of the fibre.
+space is exactly the fibre of the map between orbit spaces. Thus two cosets give the same
+point of the fibre precisely when they lie in the same stabilizer orbit. In geometric
+applications satisfying the relevant hypotheses, these identifications can describe
+ramification.
 -/
 
 public noncomputable section
@@ -130,8 +132,9 @@ theorem stabilizerOrbitQuotientEquivOrbitRelMapFiber_mk {H K : Subgroup G}
   (rfl)
 
 /-- The cardinality of an orbit-map fibre is the number of stabilizer-orbits on the
-subgroup coset space. This formula includes ramified fibres, where several cosets lie in
-one stabilizer orbit. -/
+subgroup coset space. Several cosets can lie in one stabilizer orbit and hence determine
+the same point of the fibre. In geometric applications satisfying the relevant hypotheses,
+these identifications can describe ramification. -/
 theorem card_fiber_orbitRel_map_eq_card_stabilizerOrbitQuotient {H K : Subgroup G}
     (h : H ≤ K) (x : X) :
     Nat.card {q : orbitRel.Quotient H X //

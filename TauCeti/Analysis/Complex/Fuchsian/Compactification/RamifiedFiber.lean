@@ -14,10 +14,11 @@ For an inclusion `Δ ≤ Γ` of projective subgroups, the fibre of the induced c
 quotient map over the orbit of an interior point `z` is canonically the orbit space of the
 stabilizer of `z` in `Γ` acting on the cosets `Γ / Δ`.
 
-This gives the exact point count for every interior fibre. At a free point the stabilizer action
-is trivial and the count is the subgroup index. In general, stabilizer orbits record exactly which
-cosets represent the same fibre point. Under the relevant geometric hypotheses, non-singleton
-orbits describe the resulting ramification identifications.
+This gives the exact point count for every finite interior fibre; for an infinite fibre, both
+sides of the cardinality formula are zero by the convention for `Nat.card`. At a free point the
+stabilizer action is trivial and the count is the subgroup index. In general, stabilizer orbits
+record exactly which cosets represent the same fibre point. Under the relevant geometric
+hypotheses, non-singleton orbits describe the resulting ramification identifications.
 -/
 
 public noncomputable section
