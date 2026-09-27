@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.CoarseQuotient
 public import TauCeti.GroupTheory.GroupAction.Stabilizer
-import Mathlib.GroupTheory.Index
 
 /-!
 # Ramification in elliptic charts of Fuchsian quotients
@@ -64,19 +63,29 @@ this is the exponent of the local power map at the orbit of `z`. -/
 def ellipticRamificationIndex (_h : Δ ≤ Γ) (z : ℍ) : ℕ :=
   ((stabilizer Δ z).map Δ.subtype).relIndex ((stabilizer Γ z).map Γ.subtype)
 
+/-- The elliptic ramification index is the relative index of the ambient point stabilizers. -/
+theorem ellipticRamificationIndex_def (h : Δ ≤ Γ) (z : ℍ) :
+    ellipticRamificationIndex h z =
+      ((stabilizer Δ z).map Δ.subtype).relIndex ((stabilizer Γ z).map Γ.subtype) := by
+  rw [ellipticRamificationIndex]
+
 /-- The relative stabilizer index depends only on the source orbit. -/
 theorem ellipticRamificationIndex_smul (h : Δ ≤ Γ) (g : Δ) (z : ℍ) :
     ellipticRamificationIndex h (g • z) = ellipticRamificationIndex h z := by
   let gΓ : Γ := ⟨g.1, h g.2⟩
-  have hgΓ : gΓ • z = g • z := rfl
+  have hgΓ : gΓ • z = g • z := by
+    change (gΓ : PSL(2, ℝ)) • z = (g : PSL(2, ℝ)) • z
+    simp only [gΓ]
   calc
     ellipticRamificationIndex h (g • z) =
         (ambientStabilizer Δ (g • z)).relIndex
-          (ambientStabilizer Γ (gΓ • z)) := by rw [hgΓ]; rfl
+          (ambientStabilizer Γ (gΓ • z)) := by
+            simp only [ellipticRamificationIndex_def, ambientStabilizer, hgΓ]
     _ = (ambientStabilizer Δ z).relIndex (ambientStabilizer Γ z) := by
       rw [ambientStabilizer_smul Δ g z, ambientStabilizer_smul Γ gΓ z]
       exact Subgroup.relIndex_pointwise_smul (MulAut.conj (g : PSL(2, ℝ))) _ _
-    _ = ellipticRamificationIndex h z := rfl
+    _ = ellipticRamificationIndex h z := by
+      simp only [ellipticRamificationIndex_def, ambientStabilizer]
 
 /-- Ramification is trivial exactly when the two ambient point stabilizers agree. -/
 @[simp]
