@@ -18,8 +18,9 @@ hypotheses of `TauCeti.LSeries.LSeries_eulerProduct_tprod_of_recurrence`. The ch
 extended by zero at primes dividing the level, so the quadratic Euler factor becomes linear
 there.
 
-This gives the Euler product for the coefficient L-series. The newform version follows once
-the bad-prime eigenrelations upgrade a newform to a full eigenform.
+This gives the Euler product for the coefficient L-series and, through the width-one
+normalization, for Mathlib's `ModularForm.L`. It applies to newforms equipped with a full
+eigenform structure from their bad-prime eigenrelations.
 
 ## References
 
@@ -37,13 +38,6 @@ namespace HeckeRing.GL2.Eigenform
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
-private lemma coeff_summable (f : Eigenform N k) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
-    LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
-  LSeriesSummable_of_isBigO_rpow hs (by
-    simpa [strictWidthInfty_Gamma1] using
-      CuspFormClass.qExpansion_isBigO f.toCuspForm)
-
 /-- The quadratic Euler factors of a normalized full Hecke eigenform have product equal to
 its coefficient L-series on `Re s > k/2 + 1`. The zero-extended character makes the factors
 linear at bad primes. -/
@@ -55,25 +49,30 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
           (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
             (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹)
       (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) := by
+  have habs := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le f.toCuspForm
+  rw [strictWidthInfty_Gamma1] at habs
+  have hsum : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
+    LSeriesSummable_of_abscissaOfAbsConv_lt_re
+      (habs.trans_lt (by exact_mod_cast hs))
   exact TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence
     (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
     (fun hm hn hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
     (fun p hp r ↦ by
       simpa only [← mul_assoc] using f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
-    (f.coeff_summable hs)
+    hsum
 
 /-- **Euler product of a normalized full Hecke eigenform**, as a `tprod` equality on
 `Re s > k/2 + 1`. -/
-theorem LSeries_eq_eulerProduct_tprod (f : Eigenform N k)
+theorem LSeries_eulerProduct_tprod (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {s : ℂ}
     (hs : (k : ℝ) / 2 + 1 < s.re) :
-    LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s =
-      ∏' p : Nat.Primes,
+    (∏' p : Nat.Primes,
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
           (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
-            (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹ :=
-  (f.LSeries_eulerProduct_hasProd h₁ hs).tprod_eq.symm
+            (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹) =
+      LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
+  (f.LSeries_eulerProduct_hasProd h₁ hs).tprod_eq
 
 /-- Finite products of the quadratic Euler factors converge to the coefficient L-series. -/
 theorem LSeries_eulerProduct (f : Eigenform N k)
@@ -85,29 +84,34 @@ theorem LSeries_eulerProduct (f : Eigenform N k)
             (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
               (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s)) := by
+  have habs := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le f.toCuspForm
+  rw [strictWidthInfty_Gamma1] at habs
+  have hsum : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
+    LSeriesSummable_of_abscissaOfAbsConv_lt_re
+      (habs.trans_lt (by exact_mod_cast hs))
   exact TauCeti.LSeries.LSeries_eulerProduct_of_recurrence
     (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
     (fun hm hn hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
     (fun p hp r ↦ by
       simpa only [← mul_assoc] using f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
-    (f.coeff_summable hs)
+    hsum
 
 /-- The Euler product in Mathlib's `ModularForm.L` normalization. At level `Γ₁(N)` the
 width at infinity is one, so its Dirichlet series is the coefficient L-series above. -/
-theorem L_eq_eulerProduct_tprod (f : Eigenform N k)
+theorem L_eulerProduct_tprod (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (hk : 0 < k) {s : ℂ}
     (hs : (k : ℝ) / 2 + 1 < s.re) :
-    ModularForm.L hk f.toCuspForm s =
-      ∏' p : Nat.Primes,
+    (∏' p : Nat.Primes,
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
           (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
-            (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹ := by
+            (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹) =
+      ModularForm.L hk f.toCuspForm s := by
   have hL : LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s =
       ModularForm.L hk f.toCuspForm s := by
     simpa using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
   rw [← hL]
-  exact f.LSeries_eq_eulerProduct_tprod h₁ hs
+  exact f.LSeries_eulerProduct_tprod h₁ hs
 
 /-- The quadratic Euler factors have product equal to Mathlib's `ModularForm.L` for a
 normalized full Hecke eigenform. -/
