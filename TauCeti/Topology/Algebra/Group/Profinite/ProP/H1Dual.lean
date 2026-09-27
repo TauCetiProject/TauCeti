@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.DualRank
 
 /-!
-# The `H¹` interpretation: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of `G`
+# The `H¹` interpretation for a pro-`p` group: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of the
+# Frattini quotient
 
 For a profinite group `G`, a prime `p`, and the trivial `G`-module `𝔽_p = ZMod p`, a class of
 `H¹(G, 𝔽_p)` is represented by a continuous `1`-cocycle, and with trivial coefficients a
@@ -18,16 +18,18 @@ continuous `1`-cocycle is a continuous character, so
 `TauCeti.ContCohomology.H1EquivOfSmulEqSelf` identifies `H¹(G, 𝔽_p)` with the group of
 continuous `𝔽_p`-valued characters of `G`. The characteristic fact of this degree is that the
 `1`-coboundaries vanish in it — the character group is what is left over, not a quotient of a
-larger group of homomorphisms.
+larger group of homomorphisms. Neither the `ZMod p`-module structure that makes this
+identification an isomorphism of `𝔽_p`-vector spaces (`TauCeti.instModuleH1`,
+`TauCeti.h1EquivContinuousZModDual`) nor the `ZMod n`-generality of those two declarations needs
+a profiniteness or a pro-`p` hypothesis, so both live one level up, in
+`TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod`, which this file imports.
 
-This file supplies the `𝔽_p`-vector-space structure that this identification deserves. Scalar `p`
-kills the character values, hence every continuous `1`-cocycle with values in `𝔽_p`, hence the
-classes of `H¹(G, 𝔽_p)`, which therefore form an `𝔽_p`-vector space
-(`TauCeti.instModuleH1`); the additive correspondence of the degree-one file then becomes an
-isomorphism of `𝔽_p`-vector spaces (`TauCeti.h1EquivContinuousZModDual`), and composing it with
-precomposition along the projection to the pro-`p` Frattini quotient gives the further
-identification with the continuous `𝔽_p`-dual of `G ⧸ Φ(G)`
-(`TauCeti.h1EquivFrattiniQuotientDual`).
+What is specific to the pro-`p` case is the next step. Every continuous `𝔽_p`-valued character of
+`G` kills the pro-`p` Frattini subgroup, so composing the above with precomposition along the
+projection to the Frattini quotient gives the further identification with the continuous
+`𝔽_p`-dual of `G ⧸ Φ(G)` (`TauCeti.h1EquivFrattiniQuotientDual`), whose application lemmas
+`TauCeti.h1EquivFrattiniQuotientDual_mk` and `TauCeti.h1EquivFrattiniQuotientDual_symm_apply`
+compute it in both directions.
 
 Burnside's basis theorem in cardinal form
 (`TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`) transfers from the
@@ -41,14 +43,13 @@ rank.
 
 ## Main definitions
 
-* `TauCeti.instModuleH1`: `H¹(G, 𝔽_p)` is an `𝔽_p`-vector space.
-* `TauCeti.h1EquivContinuousZModDual`: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual
-  `TauCeti.continuousZModDual p G` of `G`, as `𝔽_p`-vector spaces.
 * `TauCeti.h1EquivFrattiniQuotientDual`: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of the
   pro-`p` Frattini quotient `G ⧸ Φ(G)`.
 
 ## Main results
 
+* `TauCeti.h1EquivFrattiniQuotientDual_mk` and `TauCeti.h1EquivFrattiniQuotientDual_symm_apply`:
+  the identification in both directions, evaluated on the Frattini quotient.
 * `TauCeti.IsProP.rank_H1_eq_topologicalGeneratorRank`: the dimension of `H¹(G, 𝔽_p)` over
   `𝔽_p` is the topological generator rank of `G`, as an identity of cardinals.
 * `TauCeti.IsProP.finrank_H1_eq_topologicalGeneratorRankNat`: the natural-number form of the
@@ -80,40 +81,12 @@ attribute [local instance 2000] Ring.toAddCommGroup
 
 variable {p : ℕ} [Fact p.Prime]
 
-section ModuleStructure
-
-variable {G : Type u} [Monoid G] [TopologicalSpace G] [DistribMulAction G (ZMod p)]
-  [ContinuousSMul G (ZMod p)]
-
-/-- **`H¹(G, 𝔽_p)` is an `𝔽_p`-vector space.** Scalar `p` kills every continuous
-`𝔽_p`-valued character, so it kills the group of continuous `1`-cocycles, and the quotient by the
-`1`-coboundaries inherits the `𝔽_p`-module structure of the character group
-`TauCeti.continuousZModDual p G`. -/
-noncomputable instance instModuleH1 : Module (ZMod p) (H1 G (ZMod p)) :=
-  QuotientAddGroup.zmodModule fun x ↦ by
-    -- The `p`-fold multiple of a cocycle with values in `ZMod p` is the zero cocycle, and the
-    -- zero cocycle is a `1`-coboundary.
-    have hx : (p • x : Z1 G (ZMod p)) = 0 := by
-      apply Subtype.ext
-      funext g
-      simp
-    rw [hx]
-    exact AddSubgroup.zero_mem _
-
-end ModuleStructure
-
 section ContinuousDual
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [DistribMulAction G (ZMod p)]
   [ContinuousSMul G (ZMod p)] (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
 
 include htriv
-
-/-- **`H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of `G`.** A class of `H¹(G, 𝔽_p)` is sent to
-the continuous homomorphism `G → Multiplicative 𝔽_p` that its cocycle defines, which for trivial
-coefficients is that cocycle itself, as an isomorphism of `𝔽_p`-vector spaces. -/
-noncomputable def h1EquivContinuousZModDual : H1 G (ZMod p) ≃ₗ[ZMod p] continuousZModDual p G :=
-  (H1EquivOfSmulEqSelf htriv).toLinearEquiv (ZMod.map_smul (H1EquivOfSmulEqSelf htriv))
 
 /-- **`H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of the pro-`p` Frattini quotient.** Every
 continuous `𝔽_p`-valued character of `G` kills the pro-`p` Frattini subgroup, so the continuous
@@ -123,6 +96,27 @@ noncomputable def h1EquivFrattiniQuotientDual :
     H1 G (ZMod p) ≃ₗ[ZMod p] continuousZModDual p (G ⧸ proPFrattini p G) :=
   (h1EquivContinuousZModDual htriv).trans
     (frattiniQuotientDualEquiv (p := p)).symm
+
+/-- The image of a class of `H¹(G, 𝔽_p)` is the character its cocycle defines on the Frattini
+quotient: evaluated on the class of `g` it is the cocycle's value at `g`. -/
+@[simp]
+theorem h1EquivFrattiniQuotientDual_mk (f : Z1 G (ZMod p)) (g : G) :
+    Additive.toMul (h1EquivFrattiniQuotientDual htriv (f : H1 G (ZMod p)))
+      (g : G ⧸ proPFrattini p G) = Multiplicative.ofAdd ((f : G → ZMod p) g) := by
+  simp [h1EquivFrattiniQuotientDual]
+
+/-- The inverse image of a continuous `𝔽_p`-valued character of the Frattini quotient is the
+class in `H¹(G, 𝔽_p)` of the continuous `1`-cocycle that lifts it to `G`. -/
+@[simp]
+theorem h1EquivFrattiniQuotientDual_symm_apply
+    (x : continuousZModDual p (G ⧸ proPFrattini p G)) :
+    (h1EquivFrattiniQuotientDual htriv).symm x
+      = ((Z1EquivOfSmulEqSelf htriv).symm ((frattiniQuotientDualEquiv (p := p) (G := G)) x)
+          : H1 G (ZMod p)) := by
+  refine (h1EquivFrattiniQuotientDual htriv).symm_apply_eq.2 ?_
+  rw [h1EquivFrattiniQuotientDual, LinearEquiv.trans_apply,
+    ← h1EquivContinuousZModDual_symm_apply, LinearEquiv.apply_symm_apply,
+    LinearEquiv.symm_apply_apply]
 
 end ContinuousDual
 
