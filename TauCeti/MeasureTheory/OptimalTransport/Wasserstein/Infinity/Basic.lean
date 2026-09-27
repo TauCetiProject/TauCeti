@@ -194,18 +194,20 @@ theorem wassersteinEDist_top_le_iff (μ ν : Measure X) [IsFiniteMeasure μ]
     exact eLpNormEssSup_le_of_ae_enorm_bound (by simpa only [enorm_eq_self] using hbound)
 
 /-- On a space whose distinct points are at least `r` apart, two measures at
-`W_∞` distance strictly less than `r` agree. Indeed, an optimal coupling cannot move
+`W_∞` distance strictly less than `r` agree. A coupling below the strict bound cannot move
 mass between distinct points. This also applies when the distance is infinite. -/
-theorem eq_of_wassersteinEDist_top_lt_of_pairwise_edist_ge (μ ν : Measure X)
-    [IsFiniteMeasure μ]
-    (hcoup : ∃ π, IsCoupling π μ ν) {r : ℝ≥0∞}
-    (hsep : Pairwise fun x y : X ↦ r ≤ edist x y)
+theorem eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt
+    {Y : Type*} [MeasurableSpace Y] [EDist Y] (μ ν : Measure Y)
+    (hd : Measurable fun z : Y × Y ↦ edist z.1 z.2) {r : ℝ≥0∞}
+    (hsep : Pairwise fun x y : Y ↦ r ≤ edist x y)
     (h : wassersteinEDist ∞ μ ν < r) : μ = ν := by
-  obtain ⟨π, hπ, hπd⟩ := (wassersteinEDist_top_le_iff μ ν hcoup
-    (r := wassersteinEDist ∞ μ ν)).mp le_rfl
-  have hae : (fun z : X × X ↦ z.1) =ᵐ[π] (fun z ↦ z.2) := hπd.mono fun z hz ↦ by
+  obtain ⟨π, hπ, hπd⟩ := wassersteinEDist_lt_iff.mp h
+  have hbound := ae_le_eLpNormEssSup (f := fun z : Y × Y ↦ edist z.1 z.2) (μ := π)
+  rw [← eLpNorm_exponent_top hd.aestronglyMeasurable] at hbound
+  simp only [enorm_eq_self] at hbound
+  have hae : (fun z : Y × Y ↦ z.1) =ᵐ[π] (fun z ↦ z.2) := hbound.mono fun z hz ↦ by
     by_contra hne
-    exact (not_lt_of_ge (hsep hne)) (hz.trans_lt h)
+    exact (not_lt_of_ge (hsep hne)) (hz.trans_lt hπd)
   calc
     μ = π.fst := hπ.fst_eq.symm
     _ = π.snd := Measure.map_congr hae

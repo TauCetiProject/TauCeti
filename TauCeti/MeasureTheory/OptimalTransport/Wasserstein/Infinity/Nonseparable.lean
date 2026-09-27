@@ -20,7 +20,7 @@ coupling that moves mass less than one unit almost everywhere must be diagonal, 
 has equal marginals. Thus `P_∞(ℕ)` contains uncountably many disjoint open balls.
 
 The separation argument uses
-`TauCeti.eq_of_wassersteinEDist_top_lt_of_pairwise_edist_ge`, which applies to any
+`TauCeti.eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt`, which applies to any
 uniformly separated metric space. This example explains why the finite-exponent
 separability and Borel-space arguments cannot simply be used at exponent `∞`.
 -/
@@ -55,10 +55,10 @@ private theorem bernoulliLaw_separated {p q : unitInterval} (hpq : p ≠ q) :
     intro x y hxy
     rw [edist_dist]
     simpa using ENNReal.ofReal_le_ofReal (Nat.pairwise_one_le_dist hxy)
-  have hm := eq_of_wassersteinEDist_top_lt_of_pairwise_edist_ge
+  have hm := eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt
     ((bernoulliLaw p : ProbabilityMeasure ℕ) : Measure ℕ)
     ((bernoulliLaw q : ProbabilityMeasure ℕ) : Measure ℕ)
-    ⟨_, isCoupling_prod _ _⟩ hsep hlt
+    measurable_edist hsep hlt
   have hpm : WassersteinSpace.toProbabilityMeasure (bernoulliLaw p) =
       WassersteinSpace.toProbabilityMeasure (bernoulliLaw q) := Subtype.ext hm
   -- The inclusion into probability measures is opaque, so invoke its characteristic lemma.
