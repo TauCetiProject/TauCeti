@@ -223,12 +223,12 @@ theorem isAddTorsion (h : IsPPrimaryTorsion p M) (hp : p ≠ 0) : IsAddTorsion M
 /-- A finite `p`-primary torsion group is annihilated by one power of `p`. -/
 theorem exists_pow_smul_eq_zero [Finite M] (h : IsPPrimaryTorsion p M) :
     ∃ k : ℕ, ∀ m : M, p ^ k • m = 0 := by
-  classical
-  have : Fintype M := Fintype.ofFinite M
-  choose k hk using isPPrimaryTorsion_iff.1 h
-  refine ⟨Finset.univ.sup k, fun m ↦ ?_⟩
-  obtain ⟨c, hc⟩ := pow_dvd_pow p (Finset.le_sup (f := k) (Finset.mem_univ m))
-  rw [hc, mul_comm (p ^ k m) c, mul_smul, hk, smul_zero]
+  have hp : IsPGroup p (Multiplicative M) :=
+    (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 h
+  obtain ⟨k, hk⟩ := isPGroup_iff_exists_pow_pow_eq_one.mp hp
+  exact ⟨k, fun m ↦ by
+    have hm := congrArg Multiplicative.toAdd (hk (Multiplicative.ofAdd m))
+    simpa using hm⟩
 
 end IsPPrimaryTorsion
 
