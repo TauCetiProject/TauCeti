@@ -90,14 +90,6 @@ theorem mfderivToLinearIsometryEquiv_symm_apply (Φ : RiemannianIsometry I J M N
   exact (Diffeomorph.mfderiv_apply_mfderiv_symm_apply
     Φ.toDiffeomorph (by simp) x v).symm
 
-/-- The differential of the inverse isometry cancels the differential of the isometry. -/
-@[simp]
-theorem mfderiv_symm_apply_mfderiv_apply
-    (Φ : RiemannianIsometry I J M N) (x : M) (v : TangentSpace I x) :
-    mfderiv J I Φ.symm (Φ x) (mfderiv I J Φ x v) = v := by
-  rw [coe_symm]
-  exact Diffeomorph.mfderiv_symm_apply_mfderiv_apply Φ.toDiffeomorph (by simp) x v
-
 /-- The tangent-bundle lift of a Riemannian isometry uses its fibrewise linear isometric
 equivalence on tangent vectors. -/
 theorem toDiffeomorph_tangent_apply [IsManifold I 1 M] [IsManifold J 1 N]
