@@ -210,13 +210,13 @@ def RegularFormClass.traceTransfer : RegularFormClass L →+ RegularFormClass K 
   RegularFormClass.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L)
 
 /-- Trace transfer is Scharlau transfer along the algebra trace. -/
-@[simp]
 theorem RegularFormClass.traceTransfer_eq_scharlauTransfer :
     RegularFormClass.traceTransfer K =
       RegularFormClass.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L) := by
   rw [RegularFormClass.traceTransfer]
 
 /-- Trace transfer of the class of a regular form is the class of its form-level trace transfer. -/
+@[simp]
 theorem RegularFormClass.traceTransfer_formClass {V : Type w} [AddCommGroup V]
     [Module L V] [Module K V] [IsScalarTower K L V] [FiniteDimensional L V]
     (Q : QuadraticForm L V) (hQ : Q.Nondegenerate) :
@@ -234,6 +234,7 @@ theorem RegularFormClass.traceTransfer_formClass {V : Type w} [AddCommGroup V]
   rw [QuadraticMap.traceTransfer_eq_scharlauTransfer]
 
 /-- Trace transfer multiplies rank by the degree of the field extension. -/
+@[simp]
 theorem RegularFormClass.rank_traceTransfer (x : RegularFormClass L) :
     (RegularFormClass.traceTransfer K x).rank = Module.finrank K L * x.rank := by
   rw [RegularFormClass.traceTransfer_eq_scharlauTransfer,
