@@ -89,8 +89,8 @@ instance instIsTopologicalGroup [IsTopologicalGroup D] [DiscreteTopology ι] :
       have heval : Continuous (fun p :
           (WreathProduct D ι × WreathProduct D ι) × ι => p.1.2.left p.2) :=
         continuous_prod_of_discrete_right.mpr fun j => by
-          change Continuous (fun p : WreathProduct D ι × WreathProduct D ι => p.2.left j)
-          exact (continuous_left j).comp continuous_snd
+          simpa only [Function.comp_def] using (continuous_left j).comp
+            (continuous_snd : Continuous (fun p : WreathProduct D ι × WreathProduct D ι => p.2))
       have hb : Continuous (fun p : WreathProduct D ι × WreathProduct D ι =>
           p.2.left (p.1.right⁻¹ i)) :=
         heval.comp (continuous_id.prodMk hi)
@@ -103,8 +103,8 @@ instance instIsTopologicalGroup [IsTopologicalGroup D] [DiscreteTopology ι] :
       have heval : Continuous (fun p :
           (WreathProduct D ι × WreathProduct D ι) × ι => p.1.1.right p.2) :=
         continuous_prod_of_discrete_right.mpr fun j => by
-          change Continuous (fun p : WreathProduct D ι × WreathProduct D ι => p.1.right j)
-          exact (continuous_right j).comp continuous_fst
+          simpa only [Function.comp_def] using (continuous_right j).comp
+            (continuous_fst : Continuous (fun p : WreathProduct D ι × WreathProduct D ι => p.1))
       have hc : Continuous (fun p : WreathProduct D ι × WreathProduct D ι =>
           p.1.right (p.2.right i)) :=
         heval.comp (continuous_id.prodMk hi)
@@ -123,6 +123,7 @@ instance instIsTopologicalGroup [IsTopologicalGroup D] [DiscreteTopology ι] :
       convert hb using 1
       ext w
       rw [SemidirectProduct.inv_left]
+      -- The permutation acts on functions by precomposition with its inverse.
       change (w.left⁻¹) ((w.right⁻¹)⁻¹ i) = (w.left (w.right i))⁻¹
       simp
     · intro i
