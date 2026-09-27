@@ -22,24 +22,12 @@ classes. This file proves it **surjective**: every positive root is realized
 classes of finite-dimensional indecomposables onto the positive roots. No algebraic closedness is
 needed anywhere: the Bernstein-Gelfand-Ponomarev reflection functors work over any field.
 
-## The argument
-
-The injective half runs the sink reflection functors forwards until they annihilate the
-representation; the surjective half runs the *source* reflection functors backwards from a vertex
-simple, along the word the Weyl-orbit reduction supplies.
-
-1. *One word.* `TauCeti.exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg` carries a
-   positive root `d` to a simple root by finitely many full passes of a sink-admissible ordering
-   followed by an initial segment of it, with every intermediate vector nonnegative;
-   `TauCeti.exists_isSinkAdmissible_vertexPreReflectionList_eq_single_and_nonneg` glues those
-   passes into one sink-admissible word.
-2. *Read it backwards.* The reverse of a sink-admissible word is source-admissible for the fully
-   reflected quiver (`TauCeti.Quiver.IsSinkAdmissible.isSourceAdmissible_reverse`), and
-   `TauCeti.nonneg_vertexPreReflectionList_take_reverse` turns the nonnegativity of the forward
-   chain into nonnegativity of the backward one.
-3. *Rebuild.* `TauCeti.indecomposable_and_dimVector_sourceReflectionFunctorList` carries the vertex
-   simple `Sⱼ` at the endpoint of the word back to an indecomposable representation, which is
-   `TauCeti.exists_indecomposable_dimVector_eq_vertexPreReflectionList_single`.
+Where the injective half runs the sink reflection functors forwards until they annihilate the
+representation, the surjective half runs the *source* reflection functors backwards from a vertex
+simple. `TauCeti.exists_isSinkAdmissible_vertexPreReflectionList_eq_single_and_nonneg` supplies
+the word to travel along,
+`TauCeti.exists_indecomposable_dimVector_eq_vertexPreReflectionList_single` travels along its
+reverse, and `TauCeti.exists_indecomposable_dimVector_eq` is their composite.
 
 ## Implementation notes
 
@@ -76,6 +64,20 @@ public section
 namespace TauCeti
 
 universe v w x
+
+-- The argument, step by step:
+-- 1. One word. `exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg` carries a positive
+--    root `d` to a simple root by finitely many full passes of a sink-admissible ordering followed
+--    by an initial segment of it, with every intermediate vector nonnegative;
+--    `exists_isSinkAdmissible_vertexPreReflectionList_eq_single_and_nonneg` glues those passes into
+--    one sink-admissible word.
+-- 2. Read it backwards. The reverse of a sink-admissible word is source-admissible for the fully
+--    reflected quiver (`Quiver.IsSinkAdmissible.isSourceAdmissible_reverse`), and
+--    `nonneg_vertexPreReflectionList_take_reverse` turns the nonnegativity of the forward chain
+--    into nonnegativity of the backward one.
+-- 3. Rebuild. `indecomposable_and_dimVector_sourceReflectionFunctorList` carries the vertex simple
+--    `Sⱼ` at the endpoint of the word back to an indecomposable representation, which is
+--    `exists_indecomposable_dimVector_eq_vertexPreReflectionList_single`.
 
 /-! ### A single sink-admissible word carrying a positive root to a simple root -/
 
