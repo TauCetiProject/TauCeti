@@ -43,7 +43,7 @@ noncomputable local instance instFintypeResidueField : Fintype 𝓀[K] := Fintyp
 open Classical in
 /-- The symbol of a unit and an element of odd valuation is positive exactly when the unit has
 square residue, in odd residue characteristic. -/
-theorem hilbertSymbol_unit_oddValuation_eq_ite (h2 : IsUnit (2 : 𝒪[K]))
+theorem hilbertSymbol_unit_eq_ite_of_odd (h2 : IsUnit (2 : 𝒪[K]))
     (u : 𝒪[K]ˣ) {b : Kˣ} (hb : Odd (normalizedValuation K b).toAdd) :
     hilbertSymbol (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) b =
       if IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) then 1 else -1 := by
@@ -74,15 +74,19 @@ theorem hilbertSymbol_unit_oddValuation_eq_ite (h2 : IsUnit (2 : 𝒪[K]))
 
 open Classical in
 /-- The unit–odd-valuation symbol equals the quadratic residue character of the reduced unit. -/
-theorem hilbertSymbol_unit_oddValuation_eq_quadraticChar (h2 : IsUnit (2 : 𝒪[K]))
+theorem hilbertSymbol_unit_eq_quadraticChar_of_odd (h2 : IsUnit (2 : 𝒪[K]))
     (u : 𝒪[K]ˣ) {b : Kˣ} (hb : Odd (normalizedValuation K b).toAdd) :
     ((hilbertSymbol (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) b : ℤˣ) : ℤ) =
       quadraticChar 𝓀[K] ((Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u : 𝓀[K]ˣ) : 𝓀[K]) := by
   classical
-  rw [hilbertSymbol_unit_oddValuation_eq_ite h2 u hb]
-  simp only [quadraticChar_apply, quadraticCharFun, Units.ne_zero, ↓reduceIte]
-  simp only [← isSquare_units_val_iff]
-  split_ifs <;> simp
+  rw [hilbertSymbol_unit_eq_ite_of_odd h2 u hb]
+  by_cases hs : IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u)
+  · simp only [hs, ↓reduceIte]
+    exact ((quadraticChar_one_iff_isSquare (Units.ne_zero _)).mpr
+      (isSquare_units_val_iff.mpr hs)).symm
+  · simp only [hs, ↓reduceIte]
+    exact (quadraticChar_neg_one_iff_not_isSquare.mpr
+      (isSquare_units_val_iff.not.mpr hs)).symm
 
 open Classical in
 /-- The symbol of a unit and a uniformizer is positive exactly when the unit has square residue.
@@ -91,7 +95,7 @@ theorem hilbertSymbol_unit_uniformizer_eq_ite (h2 : IsUnit (2 : 𝒪[K]))
     (u : 𝒪[K]ˣ) {π : Kˣ} (hπ : IsUniformizer K π) :
     hilbertSymbol (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) π =
       if IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) then 1 else -1 := by
-  apply hilbertSymbol_unit_oddValuation_eq_ite h2 u
+  apply hilbertSymbol_unit_eq_ite_of_odd h2 u
   rw [(isUniformizer_def π).mp hπ, toAdd_ofAdd]
   exact odd_one
 
@@ -101,7 +105,7 @@ theorem hilbertSymbol_unit_uniformizer_eq_quadraticChar (h2 : IsUnit (2 : 𝒪[K
     (u : 𝒪[K]ˣ) {π : Kˣ} (hπ : IsUniformizer K π) :
     ((hilbertSymbol (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) π : ℤˣ) : ℤ) =
       quadraticChar 𝓀[K] ((Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u : 𝓀[K]ˣ) : 𝓀[K]) := by
-  apply hilbertSymbol_unit_oddValuation_eq_quadraticChar h2 u
+  apply hilbertSymbol_unit_eq_quadraticChar_of_odd h2 u
   rw [(isUniformizer_def π).mp hπ, toAdd_ofAdd]
   exact odd_one
 
