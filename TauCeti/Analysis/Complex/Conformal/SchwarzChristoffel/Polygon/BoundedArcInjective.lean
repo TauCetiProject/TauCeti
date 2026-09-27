@@ -16,9 +16,9 @@ consecutive, this parametrization is injective. The hypothesis is phrased entire
 the polygon's side segments, so it applies equally to convex and reentrant polygons. In the
 nonconvex case it is the bridge from side-separation criteria to a simple compactified boundary.
 
-The proof uses the strict monotonicity of the boundary map on each individual side and covers the
-bounded prevertex interval by consecutive closed intervals. No condition on the sum of the turning
-exponents at infinity is needed for this bounded arc.
+This gives a bounded-arc injectivity criterion in terms of side intersections, including for
+polygons with reentrant corners. No condition on the sum of the turning exponents at infinity is
+needed for this bounded arc.
 
 ## References
 
@@ -51,7 +51,7 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersection
   let B := schwarzChristoffelBoundary a e z₀
   have hfree (i : Fin n) :
       ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) :=
-    fun k _ ↦ not_mem_Ioo_prevertices_succ a ha i k
+    fun k _ ↦ not_mem_Ioo_castSucc_succ a ha i k
   have hinterval (i : Fin n) :
       InjOn B (Icc (a i.castSucc) (a i.succ)) :=
     schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree i) (hfinite _) (hfinite _)

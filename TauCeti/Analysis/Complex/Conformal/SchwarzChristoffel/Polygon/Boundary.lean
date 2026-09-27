@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
-import Mathlib.Data.Fin.SuccPredOrder
-import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
 # The Schwarz--Christoffel compactified boundary is polygonal
@@ -46,22 +45,6 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- A point between the first and last prevertices lies between consecutive prevertices. -/
-theorem exists_mem_Icc_castSucc_succ (a : Fin (n + 1) → ℝ) (ha : Monotone a)
-    (hn : n ≠ 0) {x : ℝ} (hx : x ∈ Icc (a 0) (a (Fin.last n))) :
-    ∃ i : Fin n, x ∈ Icc (a i.castSucc) (a i.succ) := by
-  rcases hx.1.eq_or_lt with h | h
-  · refine ⟨⟨0, Nat.pos_of_ne_zero hn⟩, ?_⟩
-    rw [← h]
-    exact ⟨le_rfl, ha (Fin.zero_le _)⟩
-  · have hx' : x ∈ ⋃ j ∈ Ico 0 (Fin.last n), Ioc (a j) (a (Order.succ j)) := by
-      rw [ha.biUnion_Ico_Ioc_map_succ]
-      exact ⟨h, hx.2⟩
-    simp only [mem_iUnion, mem_Ico] at hx'
-    obtain ⟨j, ⟨-, hj⟩, hxj⟩ := hx'
-    obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.mpr hj.ne
-    exact ⟨i, Ioc_subset_Icc_self (by simpa only [Fin.orderSucc_castSucc] using hxj)⟩
-
 /-- **The compactified Schwarz--Christoffel boundary traces the polygon boundary.**  For ordered
 prevertices, integrability at every finite prevertex and decay at infinity make each
 closed finite interval map onto its corresponding bounded side.  Each unbounded interval traces
@@ -80,7 +63,7 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
   let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
   have hfree (i : Fin n) :
       ∀ j, e j ≠ 0 → a j ∉ Ioo (a i.castSucc) (a i.succ) :=
-    fun j _ ↦ not_mem_Ioo_prevertices_succ a ha i j
+    fun j _ ↦ not_mem_Ioo_castSucc_succ a ha i j
   have hright : ∀ i, e i ≠ 0 → a i ≤ a (Fin.last n) := by
     intro i _
     exact ha i.le_last
