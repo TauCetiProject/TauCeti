@@ -50,7 +50,9 @@ theorem res_zero (M : Rep.{u} R G) (H : Subgroup G) : res M H 0 = H0Res M H := b
 /-- In positive degrees, uniform Tate restriction is ordinary cohomological restriction. -/
 @[simp]
 theorem res_ofNat_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
-    res M H ((n + 1 : ℕ) : ℤ) = posRes M H n := by rfl
+    res M H ((n : ℤ) + 1) = posRes M H n := by
+  simpa only [Int.natCast_add, Int.cast_ofNat_Int] using
+    (show res M H ((n + 1 : ℕ) : ℤ) = posRes M H n from rfl)
 
 /-- In degree minus one, uniform Tate restriction uses the relative transfer on norm kernels. -/
 @[simp]
