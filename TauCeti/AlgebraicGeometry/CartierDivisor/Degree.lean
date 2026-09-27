@@ -74,7 +74,6 @@ variable {X Y : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
 
 /-- The Weil--Cartier equivalence preserves residue-degree-weighted degree. -/
-@[simp]
 theorem relativeDegree_equivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (f : X ⟶ Y) (D : SchemeWeilDivisor X) :
     Scheme.CartierDivisor.relativeDegree f (equivCartierDivisor hX D) =
@@ -126,7 +125,6 @@ variable {k : Type u} [Field k] {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
   [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
 
 /-- A principal Cartier divisor has degree zero on a proper integral curve. -/
-@[simp]
 theorem relativeDegree_principalCartierDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (g : Additive X.functionFieldˣ) :
     relativeDegree (X ↘ Spec (.of k)) (principalCartierDivisorAddHom X g) = 0 := by
@@ -134,7 +132,6 @@ theorem relativeDegree_principalCartierDivisor (hX : ∀ x : X, coheight x ≤ 1
   exact SchemeWeilDivisor.relativeDegree_principalDivisor k hX g
 
 /-- Translation by a principal Cartier divisor preserves degree on a proper curve. -/
-@[simp]
 theorem relativeDegree_add_principalCartierDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (D : CartierDivisor X) (g : Additive X.functionFieldˣ) :
     relativeDegree (X ↘ Spec (.of k)) (D + principalCartierDivisorAddHom X g) =
