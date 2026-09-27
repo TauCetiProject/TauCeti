@@ -255,6 +255,8 @@ theorem projective_baseChangeFunctor_X₀ (f : S →+* T)
     Module.Projective T ((baseChangeFunctor f).obj X).obj.X₀.obj := by
   let _ : Algebra S T := f.toAlgebra
   rw [baseChangeFunctor_obj_X₀]
+  -- Mathlib's projectivity instance is for `TensorProduct`; `extendScalars.obj` is
+  -- definitionally that tensor product after installing the algebra structure from `f`.
   change Module.Projective T (TensorProduct S T X.obj.X₀)
   infer_instance
 
@@ -264,6 +266,8 @@ theorem projective_baseChangeFunctor_X₁ (f : S →+* T)
     Module.Projective T ((baseChangeFunctor f).obj X).obj.X₁.obj := by
   let _ : Algebra S T := f.toAlgebra
   rw [baseChangeFunctor_obj_X₁]
+  -- The odd scalar extension is definitionally a tensor product, where Mathlib provides
+  -- the projectivity instance.
   change Module.Projective T (TensorProduct S T X.obj.X₁)
   infer_instance
 
@@ -273,6 +277,8 @@ theorem finite_baseChangeFunctor_X₀ (f : S →+* T)
     Module.Finite T ((baseChangeFunctor f).obj X).obj.X₀.obj := by
   let _ : Algebra S T := f.toAlgebra
   rw [baseChangeFunctor_obj_X₀]
+  -- Mathlib's finite-generation instance is for `TensorProduct`; `extendScalars.obj`
+  -- reduces to that tensor product under the algebra structure induced by `f`.
   change Module.Finite T (TensorProduct S T X.obj.X₀)
   infer_instance
 
@@ -282,6 +288,8 @@ theorem finite_baseChangeFunctor_X₁ (f : S →+* T)
     Module.Finite T ((baseChangeFunctor f).obj X).obj.X₁.obj := by
   let _ : Algebra S T := f.toAlgebra
   rw [baseChangeFunctor_obj_X₁]
+  -- The odd scalar extension is definitionally a tensor product, where Mathlib provides
+  -- the finite-generation instance.
   change Module.Finite T (TensorProduct S T X.obj.X₁)
   infer_instance
 
