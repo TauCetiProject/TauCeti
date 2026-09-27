@@ -48,7 +48,9 @@ because finite-dimensional marginals determine the array law.
   event is fixed by every pair of finitely supported axis permutations, not only by the diagonal
   ones;
 * `TauCeti.Probability.jointlyDissociated_iff_ergodicSMul` — joint dissociation is ergodicity of
-  that action for a jointly exchangeable array law.
+  that action for a jointly exchangeable array law;
+* `TauCeti.Probability.jointlyDissociated_iff_ergodicSMul_pair` — joint dissociation is
+  ergodicity of the independent row-and-column action for a separately exchangeable array law.
 
 ## References
 
@@ -493,6 +495,46 @@ theorem preimage_finitaryPermPair_smul_array_eq_self_of_measurableSet_arrayTail
   change pairReindex (FinitaryPerm.toPerm g.1)⁻¹
     (FinitaryPerm.toPerm g.2)⁻¹ ⁻¹' s = s
   exact preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs h₁ h₂
+
+/-- Joint dissociation is ergodicity for the independent row-and-column action on a separately
+exchangeable array law. -/
+theorem jointlyDissociated_iff_ergodicSMul_pair {ρ : Measure (ℕ × ℕ → α)}
+    [IsZeroOrProbabilityMeasure ρ] (hexch : SeparatelyExchangeable ρ fun p x => x p) :
+    JointlyDissociated ρ (fun p x => x p) ↔
+      ErgodicSMul (FinitaryPerm × FinitaryPerm) (ℕ × ℕ → α) ρ := by
+  constructor
+  · intro hdiss
+    let := hexch.smulInvariantMeasure_pair
+    let := hexch.jointlyExchangeable.smulInvariantMeasure
+    let : ErgodicSMul FinitaryPerm (ℕ × ℕ → α) ρ :=
+      ergodicSMul_of_jointlyDissociated hdiss
+    apply TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant
+    intro s hs hinv
+    apply MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq FinitaryPerm hs.nullMeasurableSet
+    intro g
+    have hact : (fun x : ℕ × ℕ → α => (g, g) • x) = fun x => g • x := by
+      funext x p
+      simp [finitaryPermPair_smul_array_apply, finitaryPerm_smul_array_apply]
+    exact EventuallyEq.of_eq (by rw [← hact]; exact hinv (g, g))
+  · intro herg
+    let := hexch.smulInvariantMeasure_pair
+    let : ErgodicSMul (FinitaryPerm × FinitaryPerm) (ℕ × ℕ → α) ρ := herg
+    apply (jointlyDissociated_iff_forall_arrayTail_measure_eq_zero_or_one
+      (X := fun p (x : ℕ × ℕ → α) => x p)
+      (fun p => measurable_pi_apply p) hexch.jointlyExchangeable).mpr
+    intro s hs
+    rcases eq_zero_or_isProbabilityMeasure ρ with rfl | _
+    · exact Or.inl rfl
+    have hconst : EventuallyEmptyOrUniv s (ae ρ) :=
+      MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq
+        (FinitaryPerm × FinitaryPerm)
+        ((arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
+          fun p _ _ => measurable_pi_apply p) s hs).nullMeasurableSet
+        fun g => EventuallyEq.of_eq
+          (preimage_finitaryPermPair_smul_array_eq_self_of_measurableSet_arrayTail hs g)
+    rcases eventuallyEmptyOrUniv_iff'.mp hconst with h | h
+    · exact Or.inl (by simpa using measure_congr h)
+    · exact Or.inr (by simpa using measure_congr h)
 
 end Probability
 
