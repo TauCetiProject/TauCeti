@@ -72,13 +72,11 @@ theorem t2Space_iff_isClosed_chartRel :
     (Homeomorph.prodComm _ _).trans Homeomorph.sigmaProdDistrib
   rw [← e₂.symm.isClosed_preimage, isClosed_sigma_iff]
   apply forall_congr' fun j ↦ ?_
-  -- Unfolding the two distributivity homeomorphisms identifies this fiber with the kernel
-  -- relation between the `j`-th and `i`-th charts.
-  change IsClosed {p : D.U j × D.U i | π ⟨i, p.2⟩ = π ⟨j, p.1⟩} ↔
-    IsClosed (D.chartRel j i)
-  rw [show {p : D.U j × D.U i | π ⟨i, p.2⟩ = π ⟨j, p.1⟩} = D.chartRel j i by
-    ext p
-    exact eq_comm.trans (D.mem_chartRel_iff (p := p)).symm]
+  congr! 1
+  ext ⟨x, y⟩
+  simp only [e₁, e₂, Set.mem_preimage, Set.mem_ofPred_eq,
+    Homeomorph.symm_trans_apply, Homeomorph.sigmaProdDistrib_symm_apply,
+    Homeomorph.prodComm_symm, Homeomorph.coe_prodComm, Prod.swap, mem_chartRel_iff, eq_comm]
 
 /-- A glued space with countably many second-countable charts is second countable. -/
 instance secondCountableTopology [Countable D.J]
