@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # The GNS translation representation of a positive-definite function
@@ -89,7 +89,8 @@ def gnsTranslation (g : G) : hF.gnsSpace ≃ₗᵢ[ℂ] hF.gnsSpace :=
 @[simp]
 theorem gnsTranslation_gnsVector (g a : G) :
     hF.gnsTranslation g (hF.gnsVector a) = hF.gnsVector (g + a) :=
-  hF.posSemidef.kolmogorovEquiv_apply _ _ _ a
+  by simpa only [gnsTranslation, gnsVector] using
+    hF.posSemidef.kolmogorovEquiv_apply _ _ _ a
 
 /-- The translation at zero is the identity operator. -/
 @[simp]
@@ -121,30 +122,42 @@ def gnsRepresentation : Multiplicative G →* (hF.gnsSpace ≃ₗᵢ[ℂ] hF.gns
     rw [toAdd_mul, LinearIsometryEquiv.mul_def]
     exact hF.gnsTranslation_add (Multiplicative.toAdd g) (Multiplicative.toAdd k))
 
+/-- The representation operator at `g` is translation by `g`. -/
+@[simp]
+theorem gnsRepresentation_ofAdd (g : G) :
+    hF.gnsRepresentation (Multiplicative.ofAdd g) = hF.gnsTranslation g := by
+  simp [gnsRepresentation]
+
 /-- The representation translates each GNS vector. -/
 @[simp]
 theorem gnsRepresentation_gnsVector (g a : G) :
     hF.gnsRepresentation (Multiplicative.ofAdd g) (hF.gnsVector a) =
       hF.gnsVector (g + a) :=
-  hF.gnsTranslation_gnsVector g a
+  by simpa only [hF.gnsRepresentation_ofAdd] using hF.gnsTranslation_gnsVector g a
 
 /-- A positive-definite function is a matrix coefficient of its canonical unitary
 representation. -/
 theorem eq_inner_gnsRepresentation (g : G) :
     F g = ⟪hF.gnsRepresentation (Multiplicative.ofAdd g) (hF.gnsVector 0),
       hF.gnsVector 0⟫_ℂ := by
-  simp
+  simp only [hF.gnsRepresentation_gnsVector, add_zero, hF.inner_gnsVector, sub_zero]
 
-/-- Continuity of a positive-definite function makes its canonical feature map continuous.
-This is the regularity needed before the translation representation can be treated as a strongly
-continuous representation. -/
+/-- Continuity of a positive-definite function at zero makes its canonical feature map
+continuous. This is the regularity needed for a strongly continuous representation. -/
 theorem continuous_gnsVector [TopologicalSpace G] [IsTopologicalAddGroup G]
-    (hcont : Continuous F) : Continuous hF.gnsVector := by
+    (hcont : ContinuousAt F 0) : Continuous hF.gnsVector := by
   rw [continuous_iff_continuousAt]
   intro a
+  have hsub : ContinuousAt (fun b : G => b - a) a := by fun_prop
+  have hsub0 : Tendsto (fun b : G => b - a) (nhds a) (nhds 0) := by
+    convert hsub.tendsto using 1
+    simp
+  have hcomp : ContinuousAt (fun b : G => F (b - a)) a := by
+    change Tendsto (fun b : G => F (b - a)) (nhds a) (nhds (F (a - a)))
+    simpa only [sub_self, Function.comp_def] using hcont.tendsto.comp hsub0
   have hrhs : ContinuousAt (fun b : G =>
       2 * ((F 0).re - (F (b - a)).re)) a := by
-    fun_prop
+    exact (continuousAt_const.sub (Complex.continuous_re.continuousAt.comp hcomp)).const_mul 2
   have hsq : Tendsto (fun b : G => ‖hF.gnsVector b - hF.gnsVector a‖ ^ 2)
       (nhds a) (nhds 0) := by
     simp only [hF.norm_gnsVector_sub_sq]
@@ -156,7 +169,7 @@ theorem continuous_gnsVector [TopologicalSpace G] [IsTopologicalAddGroup G]
   exact tendsto_iff_norm_sub_tendsto_zero.mpr hsqrt
 
 private theorem continuous_gnsTranslation_gnsVector [TopologicalSpace G] [IsTopologicalAddGroup G]
-    (hcont : Continuous F) (a : G) :
+    (hcont : ContinuousAt F 0) (a : G) :
     Continuous (fun g : G => hF.gnsTranslation g (hF.gnsVector a)) := by
   simpa [Function.comp_def] using
     (hF.continuous_gnsVector hcont).comp (continuous_id.add continuous_const)
@@ -165,7 +178,7 @@ private theorem continuous_gnsTranslation_gnsVector [TopologicalSpace G] [IsTopo
 orbit. This follows from continuity on the dense span of kernel vectors and the fact that every
 translation is an isometry. -/
 theorem continuous_gnsTranslation_apply [TopologicalSpace G] [IsTopologicalAddGroup G]
-    (hcont : Continuous F) (x : hF.gnsSpace) :
+    (hcont : ContinuousAt F 0) (x : hF.gnsSpace) :
     Continuous (fun g : G => hF.gnsTranslation g x) := by
   have hdense : Dense (Submodule.span ℂ (Set.range hF.gnsVector) : Set hF.gnsSpace) :=
     Submodule.dense_iff_topologicalClosure_eq_top.mpr hF.gnsVector_dense
@@ -193,34 +206,27 @@ theorem continuous_gnsTranslation_apply [TopologicalSpace G] [IsTopologicalAddGr
       exact hy.const_smul c
   rw [continuous_iff_continuousAt]
   intro g
-  apply Metric.tendsto_nhds.mpr
-  intro ε hε
-  obtain ⟨y, hy, hxy⟩ := hdense.exists_dist_lt x (show 0 < ε / 4 by positivity)
-  have hylimit : ∀ᶠ b : G in nhds g,
-      dist (hF.gnsTranslation b y) (hF.gnsTranslation g y) < ε / 2 :=
-    Metric.tendsto_nhds.mp ((hspan y hy).continuousAt (x := g))
-      (ε / 2) (show 0 < ε / 2 by positivity)
-  filter_upwards [hylimit] with b hb
-  have hleft : dist (hF.gnsTranslation b x) (hF.gnsTranslation b y) = dist x y :=
-    (hF.gnsTranslation b).isometry.dist_eq x y
-  have hright : dist (hF.gnsTranslation g y) (hF.gnsTranslation g x) = dist x y := by
-    rw [(hF.gnsTranslation g).isometry.dist_eq, dist_comm]
-  calc
-    dist (hF.gnsTranslation b x) (hF.gnsTranslation g x)
-        ≤ dist (hF.gnsTranslation b x) (hF.gnsTranslation b y) +
-            dist (hF.gnsTranslation b y) (hF.gnsTranslation g x) := dist_triangle _ _ _
-    _ ≤ dist (hF.gnsTranslation b x) (hF.gnsTranslation b y) +
-          (dist (hF.gnsTranslation b y) (hF.gnsTranslation g y) +
-            dist (hF.gnsTranslation g y) (hF.gnsTranslation g x)) := by
-          gcongr
-          exact dist_triangle _ _ _
-    _ < ε := by rw [hleft, hright]; linarith
+  let T (b : G) : hF.gnsSpace →L[ℂ] hF.gnsSpace :=
+    (hF.gnsTranslation b).toLinearIsometry.toContinuousLinearMap
+  have hbound : ∀ᶠ b : G in nhds g, ‖T b‖ ≤ (1 : ℝ) :=
+    Filter.Eventually.of_forall fun b =>
+      (hF.gnsTranslation b).toLinearIsometry.norm_toContinuousLinearMap_le
+  have htendsto : ∀ y ∈ Submodule.span ℂ (Set.range hF.gnsVector),
+      Tendsto (fun b => T b y) (nhds g) (nhds (T g y)) := by
+    intro y hy
+    simpa only [T, LinearIsometry.coe_toContinuousLinearMap,
+      LinearIsometryEquiv.coe_toLinearIsometry] using (hspan y hy).continuousAt.tendsto
+  change Tendsto (fun b : G => hF.gnsTranslation b x) (nhds g)
+    (nhds (hF.gnsTranslation g x))
+  simpa only [T, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry] using
+      (ContinuousLinearMap.tendsto_apply_of_dense hdense hbound htendsto x)
 
 /-- The canonical unitary representation has continuous orbits. -/
 theorem continuous_gnsRepresentation_apply [TopologicalSpace G] [IsTopologicalAddGroup G]
-    (hcont : Continuous F) (x : hF.gnsSpace) :
+    (hcont : ContinuousAt F 0) (x : hF.gnsSpace) :
     Continuous (fun g : G => hF.gnsRepresentation (Multiplicative.ofAdd g) x) :=
-  hF.continuous_gnsTranslation_apply hcont x
+  by simpa only [hF.gnsRepresentation_ofAdd] using hF.continuous_gnsTranslation_apply hcont x
 
 end IsPositiveDefiniteSub
 
