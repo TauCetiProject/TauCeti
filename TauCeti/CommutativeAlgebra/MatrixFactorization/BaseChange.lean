@@ -146,21 +146,19 @@ instance baseChangeFunctor_additive (f : S →+* T) :
     apply ObjectProperty.hom_ext
     apply CurvedDuplex.hom_ext
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-      apply ModuleCat.ExtendScalars.hom_ext
-      intro m
-      -- Unfold the composite functor and extended maps at a pure tensor to use `tmul_add`.
-      change (1 : T) ⊗ₜ[S,f] (g.hom.f₀ m + h.hom.f₀ m) =
-        (1 : T) ⊗ₜ[S,f] (g.hom.f₀ m) + (1 : T) ⊗ₜ[S,f] (h.hom.f₀ m)
       let _ : Algebra S T := f.toAlgebra
-      exact TensorProduct.tmul_add _ _ _
+      apply ModuleCat.hom_ext
+      -- The even component is the base change of the underlying sum of linear maps.
+      change (g.hom.f₀.hom.hom + h.hom.f₀.hom.hom).baseChange T =
+        g.hom.f₀.hom.hom.baseChange T + h.hom.f₀.hom.hom.baseChange T
+      exact LinearMap.baseChange_add _ _
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-      apply ModuleCat.ExtendScalars.hom_ext
-      intro m
-      -- The odd component unfolds to the same pure-tensor identity.
-      change (1 : T) ⊗ₜ[S,f] (g.hom.f₁ m + h.hom.f₁ m) =
-        (1 : T) ⊗ₜ[S,f] (g.hom.f₁ m) + (1 : T) ⊗ₜ[S,f] (h.hom.f₁ m)
       let _ : Algebra S T := f.toAlgebra
-      exact TensorProduct.tmul_add _ _ _
+      apply ModuleCat.hom_ext
+      -- The odd component has the same underlying base-change formula.
+      change (g.hom.f₁.hom.hom + h.hom.f₁.hom.hom).baseChange T =
+        g.hom.f₁.hom.hom.baseChange T + h.hom.f₁.hom.hom.baseChange T
+      exact LinearMap.baseChange_add _ _
 
 /-- Extension of scalars along a map killing the potential sends a finite-projective matrix
 factorization to a square-zero duplex. The target components are the tensor products of the
