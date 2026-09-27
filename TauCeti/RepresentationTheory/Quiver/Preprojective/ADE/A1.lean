@@ -1,0 +1,165 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
+public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimpleGraph
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
+
+/-!
+# The preprojective algebra of `A₁`
+
+The one-vertex Dynkin quiver has no arrows. Its doubled path algebra has only the trivial path,
+and the preprojective relation ideal is zero. Thus its preprojective algebra is one-dimensional
+and the relation ideal is admissible. This is the rank-one case of finite-dimensionality for
+finite ADE preprojective algebras.
+
+The convention for this preprojective algebra differs from the zigzag algebra of `A₁`, which is
+instead the dual numbers. See Crawley-Boevey, *Quiver algebras, weighted projective lines, and the
+Deligne--Simpson problem*, Section 1, for the preprojective presentation.
+-/
+
+public section
+
+namespace TauCeti
+
+open _root_.Quiver PathAlgebra DoubledQuiver
+
+/-- The one-vertex Dynkin diagram, with no edges. -/
+abbrev preprojectiveA1Graph : SimpleGraph (Fin 1) := ⊥
+
+/-- The one-vertex graph is the Bourbaki-numbered `A₁` Dynkin diagram. -/
+theorem preprojectiveA1Graph_eq_dynkin :
+    preprojectiveA1Graph = diagramGraph (DynkinType.A 1).cartanMatrix := by
+  ext i j
+  fin_cases i; fin_cases j
+  simp
+
+/-- The source-to-sink orientation of the one-vertex Dynkin diagram. -/
+abbrev preprojectiveA1Quiver := OrientedQuiver preprojectiveA1Graph
+  (Orientation.ofLinearOrder preprojectiveA1Graph)
+
+/-- There are no arrows in the `A₁` quiver. -/
+instance (i j : preprojectiveA1Quiver) : IsEmpty (i ⟶ j) := by
+  constructor
+  intro e
+  exact (show preprojectiveA1Graph.Adj _ _ from e.1).elim
+
+/-- The doubled `A₁` quiver also has no arrows. -/
+instance (i j : Symmetrify preprojectiveA1Quiver) : IsEmpty (i ⟶ j) := by
+  -- The symmetrification is a type synonym, and its arrow type is a sum.
+  change IsEmpty (((show preprojectiveA1Quiver from i) ⟶
+    (show preprojectiveA1Quiver from j)) ⊕
+    ((show preprojectiveA1Quiver from j) ⟶ (show preprojectiveA1Quiver from i)))
+  infer_instance
+
+/-- The doubled `A₁` quiver is acyclic. -/
+theorem isAcyclic_symmetrify_preprojectiveA1Quiver :
+    Quiver.IsAcyclic (Symmetrify preprojectiveA1Quiver) :=
+  Quiver.IsAcyclic.of_isEmpty_hom
+
+/-- Finite enumeration of vertices in the one-vertex orientation. -/
+noncomputable instance instFintypePreprojectiveA1Quiver :
+    Fintype preprojectiveA1Quiver := Fintype.ofFinite _
+
+/-- Finite enumeration of arrows in the one-vertex orientation. -/
+noncomputable instance instFintypePreprojectiveA1QuiverHom (i j : preprojectiveA1Quiver) :
+    Fintype (i ⟶ j) := Fintype.ofFinite _
+
+/-- The doubled `A₁` path algebra has no arrow ideal. -/
+@[simp]
+theorem arrowIdeal_preprojectiveA1_eq_bot (k : Type*) [CommRing k] :
+    arrowIdeal k (Symmetrify preprojectiveA1Quiver) = ⊥ := by
+  have hcard : Nat.card (Symmetrify preprojectiveA1Quiver) = 1 := by
+    rw [Nat.card_congr (Equiv.ofBijective _ symmetrify_of_obj_bijective).symm,
+      Nat.card_congr (OrientedQuiver.vertexEquiv _ _).symm]
+    exact Nat.card_fin 1
+  have hpath : pathSpan k (Symmetrify preprojectiveA1Quiver) 1 = ⊥ := by
+    simpa only [hcard] using pathSpan_eq_bot_of_isAcyclic k _
+      isAcyclic_symmetrify_preprojectiveA1Quiver
+  apply le_antisymm
+  · intro x hx
+    have hx' : x ∈ (arrowIdeal k (Symmetrify preprojectiveA1Quiver) ^ 1).restrictScalars k := by
+      -- Restricting scalars does not change membership in the underlying ideal.
+      change x ∈ arrowIdeal k (Symmetrify preprojectiveA1Quiver) ^ 1
+      rwa [Submodule.pow_one]
+    rw [restrictScalars_arrowIdeal_pow, hpath] at hx'
+    simpa using hx'
+  · exact bot_le
+
+/-- The relation ideal of the rank-one preprojective algebra is zero: there are no arrows from
+which to form local backtracks. -/
+@[simp]
+theorem preprojectiveIdeal_A1_eq_bot (k : Type*) [CommRing k] :
+    (preprojectiveIdeal k preprojectiveA1Quiver).asIdeal = ⊥ := by
+  apply le_antisymm
+  · have h := preprojectiveIdeal_le_arrowIdeal_sq (k := k) (Q := preprojectiveA1Quiver)
+    simpa [arrowIdeal_preprojectiveA1_eq_bot] using h
+  · exact bot_le
+
+/-- The relation ideal of `A₁` is admissible: in fact, both it and the arrow ideal vanish. -/
+theorem isAdmissibleIdeal_preprojectiveIdeal_A1 (k : Type*) [CommRing k] :
+    IsAdmissibleIdeal (preprojectiveIdeal k preprojectiveA1Quiver).asIdeal := by
+  constructor
+  · refine ⟨1, ?_⟩
+    simp [arrowIdeal_preprojectiveA1_eq_bot]
+  · exact preprojectiveIdeal_le_arrowIdeal_sq (k := k) (Q := preprojectiveA1Quiver)
+
+/-- The preprojective algebra of `A₁` is finite-dimensional over every field. -/
+noncomputable instance instFiniteDimensionalPreprojectiveAlgebraA1 (k : Type*) [Field k] :
+    FiniteDimensional k (preprojectiveAlgebra k preprojectiveA1Quiver) :=
+  (isAdmissibleIdeal_preprojectiveIdeal_A1 k).finiteDimensional_quotient
+
+/-- The doubled `A₁` quiver has exactly one path, its vertex path. -/
+theorem card_totalPath_preprojectiveA1 :
+    Nat.card (Quiver.TotalPath (Symmetrify preprojectiveA1Quiver)) = 1 := by
+  let v : Symmetrify preprojectiveA1Quiver :=
+    Symmetrify.of.obj (OrientedQuiver.vertex preprojectiveA1Graph
+      (Orientation.ofLinearOrder preprojectiveA1Graph) 0)
+  let e : Fin 1 ≃ Symmetrify preprojectiveA1Quiver :=
+    (OrientedQuiver.vertexEquiv _ _).trans
+      (Equiv.ofBijective _ symmetrify_of_obj_bijective)
+  let : Subsingleton (Symmetrify preprojectiveA1Quiver) := Equiv.subsingleton.symm e
+  have hvertex (x : Symmetrify preprojectiveA1Quiver) : x = v :=
+    Subsingleton.elim _ _
+  have hpath (x : Quiver.TotalPath (Symmetrify preprojectiveA1Quiver)) :
+      x = ⟨v, v, Path.nil⟩ := by
+    rcases x with ⟨a, b, p⟩
+    obtain rfl := hvertex a
+    obtain rfl := hvertex b
+    exact congrArg (fun q : Path v v => (⟨v, v, q⟩ : Quiver.TotalPath _))
+      (isAcyclic_symmetrify_preprojectiveA1Quiver.eq_nil p)
+  let : Unique (Quiver.TotalPath (Symmetrify preprojectiveA1Quiver)) :=
+    { default := ⟨v, v, Path.nil⟩
+      uniq := hpath }
+  exact Nat.card_unique
+
+/-- The rank-one preprojective algebra has dimension one. -/
+theorem finrank_preprojectiveAlgebra_A1 (k : Type*) [Field k] :
+    Module.finrank k (preprojectiveAlgebra k preprojectiveA1Quiver) = 1 := by
+  have e : preprojectiveAlgebra k preprojectiveA1Quiver ≃ₐ[k]
+      pathAlgebra k (Symmetrify preprojectiveA1Quiver) :=
+    (Ideal.quotientEquivAlgOfEq k (preprojectiveIdeal_A1_eq_bot k)).trans
+      (AlgEquiv.quotientBot k _)
+  rw [e.toLinearEquiv.finrank_eq, finrank_pathAlgebra, card_totalPath_preprojectiveA1]
+
+/-- The rank-one preprojective algebra is canonically the coefficient field. -/
+noncomputable def preprojectiveAlgebraEquivA1 (k : Type*) [Field k] :
+    preprojectiveAlgebra k preprojectiveA1Quiver ≃ₐ[k] k :=
+  (AlgEquiv.ofBijective (Algebra.ofId k (preprojectiveAlgebra k preprojectiveA1Quiver))
+    (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp
+      (finrank_preprojectiveAlgebra_A1 k))).symm
+
+/-- The inverse rank-one comparison sends a coefficient to its scalar image. -/
+@[simp]
+theorem preprojectiveAlgebraEquivA1_symm_apply (k : Type*) [Field k] (x : k) :
+    (preprojectiveAlgebraEquivA1 k).symm x =
+      algebraMap k (preprojectiveAlgebra k preprojectiveA1Quiver) x := by
+  simp only [preprojectiveAlgebraEquivA1, AlgEquiv.symm_symm]
+  exact (AlgEquiv.ofBijective_apply _ _ x).trans (Algebra.ofId_apply (R := k) (A := _) x)
+
+end TauCeti
