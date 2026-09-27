@@ -37,8 +37,6 @@ it into a sum over the fibre of `y' = e'.symm w` inside the chart neighbourhood.
 
 ## Main declarations
 
-* `TauCeti.RiemannSurface.exists_nhds_eq_singleton_of_finite_fiber`: a point of a finite fibre of a
-  map is isolated in that fibre.
 * `TauCeti.RiemannSurface.exists_nhds_localMultiplicity_fiber_sum`: the local fibre count.
 
 ## References
@@ -60,32 +58,6 @@ namespace TauCeti.RiemannSurface
 variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [TopologicalSpace Y]
   [ChartedSpace ℂ Y] {f : X → Y} {x : X} {e : OpenPartialHomeomorph X ℂ}
   {e' : OpenPartialHomeomorph Y ℂ}
-
-/-! ### Isolation in a finite fibre -/
-
-/-- **A point of a finite fibre is isolated in it.** If every fibre of `g : α → β` is finite and `α`
-is a `T1` space, then `a` is isolated in the fibre `g ⁻¹' {g a}`: some neighbourhood of `a` meets
-that fibre only at `a`.
-
-A finite set of a `T1` space is closed, so the complement of the fibre with `a` deleted is an open
-neighbourhood of `a`. This is the step that lets a fibre sum be cut down to the term at `a`; the
-theorem below proves the corresponding statement for a holomorphic map, where finiteness of the
-whole fibre is not yet available. -/
-theorem exists_nhds_eq_singleton_of_finite_fiber {α β : Type*} [TopologicalSpace α] [T1Space α]
-    {g : α → β} {a : α} (hfin : ∀ y, {a' | g a' = y}.Finite) :
-    ∃ U ∈ 𝓝 a, g ⁻¹' {g a} ∩ U = {a} := by
-  classical
-  have hclosed : IsClosed (g ⁻¹' {g a} \ {a}) := (hfin (g a)).sdiff.isClosed
-  refine ⟨(g ⁻¹' {g a} \ {a})ᶜ, (isOpen_compl_iff.mpr hclosed).mem_nhds (by simp), ?_⟩
-  ext b
-  change b ∈ g ⁻¹' {g a} ∧ b ∉ g ⁻¹' {g a} \ {a} ↔ b = a
-  constructor
-  · intro hb
-    by_contra hne
-    exact hb.2 ⟨hb.1, fun h => hne h⟩
-  · intro hb
-    subst hb
-    exact ⟨by simp, fun h => h.2 rfl⟩
 
 /-! ### The local fibre count -/
 
