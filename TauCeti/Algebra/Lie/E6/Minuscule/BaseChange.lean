@@ -124,6 +124,7 @@ theorem coordinateMap_surjective : Function.Surjective (coordinateMap A).hom := 
     (GeneralLinear.coordinateHopfAlgebra A 27) (baseChangeDefiningIdeal A)
 
 /-- The kernel of the specialized carrier coordinate morphism is the transported defining ideal. -/
+@[simp]
 theorem coordinateMap_ker :
     RingHom.ker (coordinateMap A).hom.toAlgHom.toRingHom =
       (baseChangeDefiningIdeal A).toIdeal := by
