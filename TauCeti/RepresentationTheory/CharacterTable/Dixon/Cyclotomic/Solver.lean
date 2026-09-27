@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.FinEnum
 import Mathlib.Data.List.NodupEquivFin
+import TauCeti.Data.Array.OfFn
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Checker
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Lift
@@ -255,7 +256,11 @@ private theorem conjugateResidueRow_mem_of_mem_candidates (e : ℕ) (he : e = Mo
       (Cyclotomic.conjugateResidues_lift hroot
         (fun l ↦ d.canonicalModularRow q (perms l i) k)) j
   simp only [canonicalModularRow] at hrow
-  simp only [Array.getElem_ofFn, Fin.eta]
+  -- Read the outer pair of lookups first. `simp only [Array.getElem_ofFn]` alone would also
+  -- descend into the outer array and rewrite the lookups inside its entries, where the resulting
+  -- definitional check is prohibitively expensive.
+  simp only [Array.getElem_getElem_ofFn_ofFn]
+  simp only [Array.getElem_ofFn]
   rw [hrow]
   simpa only [canonicalModularRow] using canonicalModularRow_mem d q (perms j i)
 

@@ -19,6 +19,8 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # Finite-set infrastructure
 
+* `Finset.exists_nat_prod_lt` bounds both coordinates of a finite set of pairs of
+  natural numbers.
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
 * `TauCeti.card_nonempty_finset` counts the nonempty finsets of a finite type.
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
@@ -146,6 +148,14 @@ theorem card_odd_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
 end TauCeti
 
 namespace Finset
+
+/-- The two coordinates of every element of a finite set of natural-number pairs lie below a
+common bound. -/
+theorem exists_nat_prod_lt (I : Finset (ℕ × ℕ)) :
+    ∃ n : ℕ, ∀ p ∈ I, p.1 < n ∧ p.2 < n := by
+  refine ⟨(I.sup fun p ↦ max p.1 p.2) + 1, fun p hp ↦ ?_⟩
+  have hle := le_sup (f := fun p : ℕ × ℕ ↦ max p.1 p.2) hp
+  omega
 
 open Classical in
 /-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead

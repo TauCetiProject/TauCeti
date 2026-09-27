@@ -288,6 +288,14 @@ theorem trivializationCoordinate_map_trivializationGenerator (M : X.Modules) {V 
     exact h.symm
   rw [h', map_one, LinearEquiv.apply_symm_apply]
 
+/-- The basis section of a rank-one trivialization has coordinate one. -/
+@[simp]
+theorem trivializationCoordinate_trivializationGenerator (M : X.Modules) {V : X.Opens}
+    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) :
+    trivializationCoordinate M t (𝟙 V) (trivializationGenerator M t) = 1 := by
+  have h := trivializationCoordinate_map_trivializationGenerator M t (𝟙 V)
+  rwa [op_id, M.presheaf.map_id, ConcreteCategory.id_apply] at h
+
 /-- A section is its coordinate times the restricted basis section of a rank-one
 trivialization. -/
 theorem eq_trivializationCoordinate_smul_map_trivializationGenerator (M : X.Modules)
@@ -344,6 +352,19 @@ theorem trivializationGenerator_ne_zero (M : X.Modules) {V : X.Opens}
   have hcoord := trivializationCoordinate_map_trivializationGenerator M t (𝟙 V)
   rw [op_id, M.presheaf.map_id, ConcreteCategory.id_apply, h, map_zero] at hcoord
   exact zero_ne_one (α := Γ(X, V)) hcoord
+
+open TopologicalSpace in
+/-- Every point of a scheme lies in the domain of a rank-one trivialization of an invertible
+sheaf. -/
+theorem exists_mem_trivialization (M : X.Modules)
+    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M] (x : X) :
+    ∃ (V : X.Opens) (_ : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V),
+      x ∈ V := by
+  let t := TauCeti.SheafOfModules.LocalTrivializations.ofIsInvertible M
+  have ht : ⨆ i, t.X i = ⊤ := by
+    simpa only [IsOpenCover] using (Opens.coversTop_iff (X : Type u) t.X).mp t.coversTop
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (ht ▸ Opens.mem_top x : x ∈ ⨆ i, t.X i)
+  exact ⟨t.X i, t.iso i, hi⟩
 
 end
 

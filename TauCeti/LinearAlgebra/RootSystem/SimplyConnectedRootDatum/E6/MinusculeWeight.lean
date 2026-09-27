@@ -177,6 +177,13 @@ theorem e6MinusculeReflection_eq_self_iff (i : Fin 6) (a : Fin 27) :
     rw [e6MinusculeWeight_reflection]
     simp [h]
 
+/-- A simple reflection moves an `E₆` minuscule weight earlier in the explicit table exactly
+when its simple-coroot coordinate is `-1`. -/
+@[simp]
+theorem e6MinusculeReflection_lt_iff (i : Fin 6) (a : Fin 27) :
+    e6MinusculeReflection i a < a ↔ e6MinusculeWeight a i = -1 := by
+  fin_cases i <;> fin_cases a <;> decide +kernel
+
 /-- The explicit permutation agrees with reflection in the pinned simply connected root datum. -/
 @[simp]
 theorem e6SimplyConnectedRootDatum_reflection_e6MinusculeWeight

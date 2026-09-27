@@ -150,9 +150,8 @@ private lemma diagonalIdele_add (t u : ℝ) :
   congr 1
   exact Units.ext (by simp [Real.exp_add])
 
-private lemma diagonalIdele_zero : diagonalIdele (K := K) 0 = 1 := by
-  ext1
-  simp [diagonalIdele]
+private lemma diagonalIdele_zero : diagonalIdele (K := K) 0 = 1 :=
+  Units.ext (by simp [diagonalIdele])
 
 private lemma continuous_diagonalIdele : Continuous (diagonalIdele (K := K)) := by
   have hc : Continuous fun t : ℝ ↦

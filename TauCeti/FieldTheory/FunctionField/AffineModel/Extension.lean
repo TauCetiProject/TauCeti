@@ -156,7 +156,6 @@ theorem ramificationIdx_eq_ramificationIdx_center :
   have := center_liesOver (R := R) k F P' hS
   set hR := algebraMap_mem_integers_restrict (R := R) k F P' hS
   set 𝔭 := (P'.restrict k F).center hR
-  rw [← Ideal.ramificationIdx'_eq_ramificationIdx 𝔭.asIdeal _ 𝔭.ne_bot]
   refine ramificationIdx_eq_of_forall_ord_eq k F P' fun x ↦ ?_
   rcases eq_or_ne x 0 with rfl | hx
   · simp
@@ -185,7 +184,7 @@ theorem relativeDegree_eq_inertiaDeg_center :
     (P'.quotientAlgEquivResidueField hS).toRingEquiv ?_).symm
   refine Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ ?_)
   simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingHom.coe_coe, AlgEquiv.coe_ringEquiv, Ideal.Quotient.algebraMap_mk_of_liesOver,
+    RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, Ideal.Quotient.algebraMap_mk_of_liesOver,
     quotientAlgEquivResidueField_mk, residueHom_apply,
     IsLocalRing.ResidueField.algebraMap_residue]
   refine congrArg _ (Subtype.ext ?_)

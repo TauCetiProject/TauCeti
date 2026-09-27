@@ -91,7 +91,7 @@ theorem zigzagComponentGrade_eq_bot_of_three_le (C : G.ConnectedComponent)
       dualNumberGrade_eq_bot k (by omega) (by omega), Submodule.mem_bot] at hx
     apply (zigzagComponentAlgebraEquivULiftDualNumber k G C).injective
     rw [map_zero]
-    exact ULift.ext _ _ hx
+    exact ULift.ext hx
   · rw [mem_zigzagComponentGrade_of_nontrivial,
       zigzagGrade_eq_bot_of_three_le k C.toSimpleGraph hn, Submodule.mem_bot] at hx
     exact (zigzagComponentAlgebraEquivNonisolated k G C).map_eq_zero_iff.mp hx

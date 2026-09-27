@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
 -- Public: `Measure.infinitePi` appears in the infinite-product statement.
 public import Mathlib.Probability.ProductMeasure
+public import Mathlib.Probability.Kernel.Basic
 -- Non-public: `map_infinitePi_infinitePi_of_inj` is used inside the prefix-marginal and
 -- block-selection proofs.
 import Mathlib.Probability.Independence.InfinitePi
@@ -34,6 +35,8 @@ Measurability:
 * the constant-coordinate (`fun _ : Fin m ↦ ν ω`) specializations
   `measurable_probabilityMeasure_pi_const_toMeasure` and
   `aemeasurable_probabilityMeasure_pi_const_toMeasure`.
+* `iidBlockKernel` — the Markov kernel sending a probability measure to its finite i.i.d.
+  product law.
 * `measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure` — the **joint** kernel
   `ω ↦ δ_{ν ω} ⊗ (ν ω)^{⊗ Fin m}`, pairing the block kernel with a Dirac mass at the mixing
   measure. This is the joint-space input a conditional (joint-law) reading of the mixture
@@ -148,6 +151,26 @@ theorem aemeasurable_probabilityMeasure_pi_const_toMeasure {α : Type*} [Measura
     (ν : Ω → ProbabilityMeasure α) (hν : AEMeasurable ν μ) :
     AEMeasurable (fun ω ↦ (ProbabilityMeasure.pi fun _ : Fin m ↦ ν ω).toMeasure) μ :=
   aemeasurable_probabilityMeasure_pi_toMeasure (fun _ ↦ ν) (fun _ ↦ hν)
+
+/-- The Markov kernel taking a probability measure to its finite i.i.d. product law. -/
+def iidBlockKernel {α : Type*} [MeasurableSpace α] (m : ℕ) :
+    ProbabilityTheory.Kernel (ProbabilityMeasure α) (Fin m → α) where
+  toFun P := (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure
+  measurable' := measurable_probabilityMeasure_pi_const_toMeasure id measurable_id
+
+/-- Evaluating the finite i.i.d. block kernel gives the product measure. -/
+@[simp]
+theorem iidBlockKernel_apply {α : Type*} [MeasurableSpace α] (m : ℕ)
+    (P : ProbabilityMeasure α) :
+    iidBlockKernel m P = (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure := by
+  unfold iidBlockKernel
+  rfl
+
+instance {α : Type*} [MeasurableSpace α] (m : ℕ) :
+    ProbabilityTheory.IsMarkovKernel (iidBlockKernel (α := α) m) :=
+  -- The kernel evaluates to the measure underlying `ProbabilityMeasure.pi` by definition.
+  ⟨fun P => by change IsProbabilityMeasure (ProbabilityMeasure.pi fun _ : Fin m => P).toMeasure
+               infer_instance⟩
 
 /-- **Joint-kernel measurability.** The random measure
 `ω ↦ δ_{ν ω} ⊗ (ν ω)^{⊗ Fin m}` on `ProbabilityMeasure α × (Fin m → α)` is measurable.

@@ -32,6 +32,8 @@ presheaf at `x` is a local ring whose maximal ideal is the support of the point 
 * `notMem_supp_iff_exists_isUnit_ringHomOfRationalSubsetSubset`: the
   criterion — `f` does not vanish at `x` exactly when it becomes a unit on a rational
   neighbourhood of `x`, which may be taken with an admissible presentation.
+* `isUnit_toCompletionLoc_iff_forall_notMem_supp`: an element of `A` becomes a unit in
+  `A⟨T/s⟩` exactly when it vanishes at no point of `R(T/s)`.
 
 ## References
 
@@ -262,6 +264,48 @@ theorem notMem_supp_iff_exists_isUnit_ringHomOfRationalSubsetSubset
   rintro ⟨q, -, hxq, hsub, hunit⟩
   exact notMem_supp_of_isUnit_ringHomOfRationalSubsetSubset P Aplus hP hAplus T s S hden q.num
     q.den _ q.hasDenominatorPower hsub ⟨x.1, hxq⟩ f hunit
+
+/-- An element of `A` is invertible on `R(T/s)` exactly when its support misses that rational
+subset. This transfers the unit criterion for the complete Huber pair `A⟨T/s⟩` across the
+homeomorphism of its spectrum with `R(T/s)`. -/
+theorem isUnit_toCompletionLoc_iff_forall_notMem_supp
+    (P : PairOfDefinition A) (Aplus : Subring A) (hP : P.ringOfDefinition ≤ Aplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (a : A) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    IsUnit (toCompletionLoc P T s S hden a) ↔
+      ∀ v ∈ rationalSubset Aplus T s, a ∉ supp v := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  rw [isUnit_iff_forall_mem_spa_notMem_supp _
+    (isRingOfIntegralElements_completedPlusSubring P Aplus
+      (fun j _ ↦ hP j.property) hAplus T s S hden)]
+  constructor
+  · intro h v hv
+    let w := (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm
+      ⟨⟨v, rationalSubset_subset_spa Aplus T s hv⟩, hv⟩
+    have hw := h w.1 w.2
+    have he : (spaComapLoc P Aplus T s S hden w).1 = v := by
+      have he' := (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).apply_symm_apply
+        ⟨⟨v, rationalSubset_subset_spa Aplus T s hv⟩, hv⟩
+      simpa only [spaCompletedLocalizationHomeomorph_apply, spaLocToRationalSubset_val]
+        using congrArg (fun x ↦ (x.1.1 : Spv A)) he'
+    rw [← he, spaComapLoc_val, mem_supp_iff, comap_vle, map_zero]
+    exact (mem_supp_iff w.1 _).not.mp hw
+  · intro h w hw
+    have hv : (spaComapLoc P Aplus T s S hden ⟨w, hw⟩).1 ∈
+        rationalSubset Aplus T s := by
+      simpa only [Set.mem_preimage, spaCompletedLocalizationHomeomorph_apply,
+        spaLocToRationalSubset_val] using
+        (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden ⟨w, hw⟩).2
+    have := h _ hv
+    rw [mem_supp_iff, spaComapLoc_val, comap_vle, map_zero] at this
+    exact (mem_supp_iff w _).not.mpr this
 
 end TauCeti.ValuationSpectrum
 

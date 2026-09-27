@@ -77,10 +77,8 @@ variable {μ₁ : Measure Ω₁} {μ₂ : Measure Ω₂} [IsProbabilityMeasure �
 carriers, at cut distance zero have the same sampling laws: a law on the finite lattice of graphs is
 determined by its upper-ray masses, which are homomorphism densities. -/
 theorem sampleGraph_eq_of_cutDist_eq_zero (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
-    (h : cutDist U W = 0) (n : ℕ) : sampleGraph U n = sampleGraph W n := by
-  classical
-  refine Measure.ext_of_Ici_of_finite _ _ fun F => ?_
-  rw [sampleGraph_Ici, sampleGraph_Ici, forall_homDensity_eq_of_cutDist_eq_zero U W h n F]
+    (h : cutDist U W = 0) (n : ℕ) : sampleGraph U n = sampleGraph W n :=
+  sampleGraph_eq_of_forall_homDensity_eq U W n (forall_homDensity_eq_of_cutDist_eq_zero U W h n)
 
 end CrossCarrier
 

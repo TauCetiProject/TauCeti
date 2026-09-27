@@ -12,18 +12,9 @@ import Mathlib.Data.Rat.Star
 /-!
 # Positive definiteness over the rationals
 
-`Matrix.PosDef` is stated relative to the coefficient ring, so for a matrix of integers it says
-that the associated quadratic form is positive on nonzero *integer* vectors. That is formally
-weaker than positivity on nonzero *rational* vectors, and it is the rational statement that later
-arguments want, since a rational vector may be built from a construction that does not respect
-denominators. This file records one implication: an integer matrix that is positive definite over
-`ℤ` stays positive definite after casting its entries into `ℚ`.
-
-The proof is the obvious one. A nonzero rational vector becomes a nonzero integer vector after
-multiplying by a common denominator, and the quadratic form scales by the square of that
-denominator, which is positive. The index type need not be finite: a test vector for
-`Matrix.PosDef` is finitely supported, so the general case follows from the finite one applied to
-the principal submatrix on the support of the vector.
+For an integer matrix, positive definiteness over `ℤ` is equivalent to positive definiteness
+after casting its entries to `ℚ`. This lets results about rational quadratic forms certify
+positive definiteness of integer matrices, and conversely.
 
 The file also records the standard way of certifying a rational matrix as positive definite: write
 it as `Bᴴ * B` for an explicit `B`, and check that it is invertible. One general fact about
@@ -36,6 +27,7 @@ Cartan families need.
 * `Matrix.PosDef.of_isEmpty`: a matrix on an empty index type is positive definite.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
+* `TauCeti.Matrix.posDef_map_intCast_iff`: positive definiteness over `ℤ` and over `ℚ` agree.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
   form `Bᴴ * B` is positive definite.
 -/
@@ -123,6 +115,24 @@ theorem posDef_map_intCast {A : Matrix n n ℤ} (hA : A.PosDef) :
   have hne : Finsupp.comapDomain e x hinj.injOn ≠ 0 := fun h ↦ hx (by rw [← hmap, h]; simp)
   rw [← hmap]
   simpa [Finsupp.sum_mapDomain_index, add_mul, mul_add] using hsub.2 hne
+
+/-- **An integer matrix is positive definite over `ℤ` exactly when its cast to `ℚ` is positive
+definite.** This transfers positive definiteness results between integer and rational matrices. -/
+theorem posDef_map_intCast_iff {A : Matrix n n ℤ} :
+    (A.map (Int.cast : ℤ → ℚ)).PosDef ↔ A.PosDef := by
+  refine ⟨fun hA ↦ ⟨?_, fun x hx ↦ ?_⟩, posDef_map_intCast⟩
+  · ext i j
+    have h := hA.isHermitian.apply i j
+    simp only [_root_.Matrix.map_apply, star_trivial, Int.cast_inj] at h
+    simp [h]
+  · have hy : x.mapRange (Int.cast : ℤ → ℚ) Int.cast_zero ≠ 0 := by
+      rw [← Finsupp.mapRange_zero (f := (Int.cast : ℤ → ℚ)) (hf := Int.cast_zero)]
+      exact (Finsupp.mapRange_injective _ Int.cast_zero Int.cast_injective).ne hx
+    have h := hA.2 hy
+    rw [Finsupp.sum_mapRange_index fun i ↦ by simp] at h
+    simp only [Finsupp.sum_mapRange_index, star_trivial, _root_.Matrix.map_apply, mul_zero,
+      implies_true] at h
+    exact_mod_cast h
 
 /-- **An invertible rational matrix of the form `Bᴴ * B` is positive definite.** Being of that
 form gives positive *semi*definiteness for free; invertibility upgrades it, by way of the

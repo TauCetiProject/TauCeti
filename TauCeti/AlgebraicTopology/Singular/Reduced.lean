@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
+public import Mathlib.Topology.Homotopy.Equiv
 
 /-!
 # Reduced singular homology
@@ -136,6 +137,33 @@ lemma reducedSingularHomologyFunctor_map_eq_of_homotopy {X Y : TopCat.{w}} {f g 
     (reducedSingularHomologyι R n).naturality]
   exact congrArg (((reducedSingularHomologyι R n).app X) ≫ ·)
     (H.congr_homologyMap_singularChainComplexFunctor R n)
+
+/-- A homotopy equivalence induces an isomorphism on reduced singular homology in every degree,
+with inverse induced by the homotopy inverse. -/
+def _root_.ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso {X Y : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] (e : ContinuousMap.HomotopyEquiv X Y) (n : ℕ) :
+    (reducedSingularHomologyFunctor R n).obj (TopCat.of X) ≅
+      (reducedSingularHomologyFunctor R n).obj (TopCat.of Y) where
+  hom := (reducedSingularHomologyFunctor R n).map (TopCat.ofHom e.toFun)
+  inv := (reducedSingularHomologyFunctor R n).map (TopCat.ofHom e.invFun)
+  hom_inv_id := by
+    rw [← Functor.map_comp, ← CategoryTheory.Functor.map_id]
+    exact reducedSingularHomologyFunctor_map_eq_of_homotopy R e.left_inv.some n
+  inv_hom_id := by
+    rw [← Functor.map_comp, ← CategoryTheory.Functor.map_id]
+    exact reducedSingularHomologyFunctor_map_eq_of_homotopy R e.right_inv.some n
+
+@[simp]
+lemma _root_.ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom {X Y : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] (e : ContinuousMap.HomotopyEquiv X Y) (n : ℕ) :
+    (e.reducedSingularHomologyIso R n).hom =
+      (reducedSingularHomologyFunctor R n).map (TopCat.ofHom e.toFun) := (rfl)
+
+@[simp]
+lemma _root_.ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_inv {X Y : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] (e : ContinuousMap.HomotopyEquiv X Y) (n : ℕ) :
+    (e.reducedSingularHomologyIso R n).inv =
+      (reducedSingularHomologyFunctor R n).map (TopCat.ofHom e.invFun) := (rfl)
 
 /-- The reduced zeroth homology of a path-connected space is zero. -/
 lemma isZero_reducedSingularHomologyFunctor_zero (X : TopCat.{w}) [PathConnectedSpace X] :

@@ -96,13 +96,13 @@ restriction along the inverse isomorphism.  This is the `Rep` analogue of Mathli
 The body is sealed; `resFunctorEquiv_functor` and `resFunctorEquiv_inverse` are the interface
 identifying its two functors with restriction. -/
 def resFunctorEquiv (e : H ≃* K) : Rep k K ≌ Rep k H :=
-  -- Mathlib's `MulEquiv.coe_monoidHom_comp_coe_monoidHom_symm` and its mirror, restated for
+  -- Mathlib's `MulEquiv.toMonoidHom_comp_toMonoidHom_symm` and its mirror, restated for
   -- `MulEquiv.toMonoidHom`: the coercion in those lemmas is `toMonoidHom` definitionally but not
   -- syntactically, so `rw` needs this form.
   have comp_symm : e.toMonoidHom.comp e.symm.toMonoidHom = MonoidHom.id K :=
-    MulEquiv.coe_monoidHom_comp_coe_monoidHom_symm e
+    MulEquiv.toMonoidHom_comp_toMonoidHom_symm e
   have symm_comp : e.symm.toMonoidHom.comp e.toMonoidHom = MonoidHom.id H :=
-    MulEquiv.coe_monoidHom_symm_comp_coe_monoidHom e
+    MulEquiv.toMonoidHom_symm_comp_toMonoidHom e
   CategoryTheory.Equivalence.mk (Rep.resFunctor e.toMonoidHom) (Rep.resFunctor e.symm.toMonoidHom)
     (eqToIso (by rw [← resFunctor_comp, comp_symm, resFunctor_id]))
     (eqToIso (by rw [← resFunctor_comp, symm_comp, resFunctor_id]))

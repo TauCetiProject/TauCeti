@@ -348,7 +348,7 @@ theorem Path.segment_rung_homotopy {a b c d : X} (U : Set X) (hU : IsPathHomotop
     (hγ : Set.range γ ⊆ U) (hγ' : Set.range γ' ⊆ U)
     (hα_start : Set.range α_start ⊆ U) (hα_end : Set.range α_end ⊆ U) :
     Path.Homotopic (γ.trans α_end) (α_start.trans γ') := by
-  apply hU.apply
+  apply isPathHomotopyTrivial_def.mp hU
   · rw [Path.trans_range]; exact Set.union_subset hγ hα_end
   · rw [Path.trans_range]; exact Set.union_subset hα_start hγ'
 
@@ -502,7 +502,7 @@ theorem Path.paste_segment_homotopies {x y y' : X} {n : ℕ}
 theorem Path.nullhomotopic_of_range_subset_pathHomotopyTrivial {x : X} (γ : Path x x)
     (U : Set X) (hU : IsPathHomotopyTrivial U) (hγU : Set.range γ ⊆ U) :
     Path.Homotopic γ (Path.refl x) :=
-  hU.apply γ (Path.refl x) hγU <| by
+  isPathHomotopyTrivial_def.mp hU γ (Path.refl x) hγU <| by
     rintro _ ⟨_, rfl⟩
     simpa [γ.source] using hγU ⟨0, rfl⟩
 

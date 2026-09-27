@@ -42,7 +42,11 @@ theorem isLocallyFlat_subtypeVal_of_isSliceChart (K : Subgroup G)
   have hflat : TauCeti.IsSliceEmbedding ((univ : Set F) ×ˢ ({0} : Set F'))
       ((↑) : K → G) := by
     refine ⟨IsEmbedding.subtypeVal, fun g => ?_⟩
-    exact K.exists_isSliceChart_of_isSliceChart φ hφ h1 g
+    refine ⟨(Homeomorph.smul (g : G)).symm.transOpenPartialHomeomorph φ, ?_, ?_⟩
+    · rw [Homeomorph.transOpenPartialHomeomorph_source]
+      simpa [Homeomorph.smul_symm_apply, smul_eq_mul] using h1
+    · rw [Subtype.range_coe]
+      exact K.isSliceChart_smul_symm_transOpenPartialHomeomorph φ hφ g
   exact TauCeti.isLocallyFlat_iff_isSliceEmbedding.mpr hflat
 
 end Subgroup

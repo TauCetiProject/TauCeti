@@ -10,25 +10,22 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Uni
 public import TauCeti.Topology.Covering.Clopen
 
 /-!
-# The universal cover of a path component
+# The universal cover of a non-path-connected base
 
-The universal-cover development assumes that the base is path connected, so that the endpoint
-projection is surjective. Dropping that assumption, based paths out of `x₀` still only see the
-path component of `x₀`, so this file builds the cover of `pathComponent x₀` instead.
+The endpoint projection `UniversalCover.proj : UniversalCover x₀ → X` is a covering map for any
+locally path connected, semilocally simply connected `X` (`UniversalCover.isCoveringMap`); when
+`X` is not path connected its range is exactly the path component of `x₀`
+(`UniversalCover.range_proj`), and the fibres over the other path components are empty.
 
-For `X` locally path connected and semilocally simply connected — but *not* assumed path
-connected — the path component of `x₀` is path connected, is open and therefore locally path
+The deck-group computation `UniversalCover.deckFundamentalGroupEquiv` does use path
+connectedness, since it goes through regularity of the covering, which includes surjectivity. For
+a base that is not path connected this file therefore passes to the universal cover of the path
+component of `x₀`. That component is path connected, is open and therefore locally path
 connected, and absorbs ambient null-homotopies, so it inherits all three standing hypotheses
-(`TauCeti/AlgebraicTopology/PathComponent.lean`). Its universal cover is therefore available,
-and because the subspace is clopen the composite of its endpoint projection with the inclusion
-is a covering map of `X` itself, with range exactly `pathComponent x₀`. Total-space path
-connectedness and simple connectivity are inherited from the universal cover, being statements
-about the same topological space.
-
-The deck group is unchanged by the inclusion, and
-`FundamentalGroup.pathComponentMulEquiv` identifies the fundamental group of the path
-component with that of `X` at the same point. Thus the deck group of the path-component cover is
-`(π₁(X, x₀))ᵐᵒᵖ`, with the same opposite-group convention pinned in
+(`TauCeti/AlgebraicTopology/PathComponent.lean`). The deck group is unchanged by composing with
+the inclusion into `X`, and `FundamentalGroup.pathComponentMulEquiv` identifies the fundamental
+group of the path component with that of `X` at the same point. Thus the deck group of the
+path-component cover is `(π₁(X, x₀))ᵐᵒᵖ`, with the same opposite-group convention pinned in
 `TauCeti.UniversalCover.deckFundamentalGroupEquiv`.
 
 ## Main declarations

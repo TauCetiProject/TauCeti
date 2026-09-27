@@ -233,45 +233,51 @@ theorem exists_forall_sub_algebraMap_mem_adicCompletionIntegers (a : FiniteAdele
     exact hx v
   simpa only [neg_sub] using neg_mem hxa
 
-variable (R K) in
-/-- **Strong approximation**: `K` is dense in the finite adele ring of `R`. -/
-theorem denseRange_algebraMap : DenseRange (algebraMap K (FiniteAdeleRing R K)) := by
-  intro a
-  refine mem_closure_iff_nhds.mpr fun U hU ↦ ?_
-  -- translate to a neighbourhood of `0`, which contains a product neighbourhood of `0` in the
-  -- integral finite adeles
-  have hU0 : (a + ·) ⁻¹' U ∈ 𝓝 (0 : FiniteAdeleRing R K) :=
-    (continuous_const_add a).continuousAt.preimage_mem_nhds (by rwa [add_zero])
+/-- **Every neighbourhood of `0` in the finite adele ring contains a basic congruence
+neighbourhood.**  There are a finite set `I` of places and exponents `n` such that every finite
+adele integral at every place, with `v`-adic valuation at most `exp (-n v)` at each `v ∈ I`, lies in
+the neighbourhood. -/
+theorem exists_finset_forall_mem_of_mem_nhds_zero {U : Set (FiniteAdeleRing R K)} (hU : U ∈ 𝓝 0) :
+    ∃ (I : Finset (HeightOneSpectrum R)) (n : HeightOneSpectrum R → ℕ),
+      ∀ a : FiniteAdeleRing R K, (∀ v, a v ∈ v.adicCompletionIntegers K) →
+        (∀ v ∈ I, Valued.v (a v) ≤ exp (-(n v : ℤ))) → a ∈ U := by
   have hopen (v : HeightOneSpectrum R) :
       IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K)) :=
     Valued.isOpen_valuationSubring _
   -- `FiniteAdeleRing R K` is by definition the restricted product, so its neighbourhoods of `0`
   -- are images of neighbourhoods of `0` in the product of the `𝒪_v`
-  have hU1 : (fun y ↦ a + integralEmbedding (R := R) (K := K) y) ⁻¹' U ∈ 𝓝 0 :=
+  have hU1 : integralEmbedding (R := R) (K := K) ⁻¹' U ∈ 𝓝 0 :=
     (RestrictedProduct.nhds_zero_eq_map_structureMap (fun v : HeightOneSpectrum R ↦
-      v.adicCompletion K) (B := fun v ↦ v.adicCompletionIntegers K) hopen).ge hU0
+      v.adicCompletion K) (B := fun v ↦ v.adicCompletionIntegers K) hopen).ge hU
   rw [nhds_pi, Filter.mem_pi] at hU1
   obtain ⟨I, hI, t, ht, hIt⟩ := hU1
   choose n hn using fun v ↦ exists_maximalIdeal_pow_subset_of_mem_nhds v (ht v)
-  obtain ⟨x, hxI, hx⟩ :=
-    exists_forall_valued_sub_le_and_forall_valued_sub_le_one a hI.toFinset n
-  refine ⟨algebraMap K _ x, ?_, x, rfl⟩
-  let w : ∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K :=
-    fun v ↦ ⟨algebraMap K (v.adicCompletion K) x - a v, hx v⟩
+  refine ⟨hI.toFinset, n, fun a ha hav ↦ ?_⟩
+  let w : ∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K := fun v ↦ ⟨a v, ha v⟩
   have hw : w ∈ I.pi t := fun v hv ↦
-    hn v ((mem_maximalIdeal_pow_iff v).mpr (hxI v (hI.mem_toFinset.mpr hv)))
-  have heq : a + integralEmbedding (R := R) (K := K) w =
-      algebraMap K (FiniteAdeleRing R K) x := by
+    hn v ((mem_maximalIdeal_pow_iff v).mpr (hav v (hI.mem_toFinset.mpr hv)))
+  have heq : integralEmbedding (R := R) (K := K) w = a := by
     apply RestrictedProduct.ext
     intro v
-    calc
-      (a + integralEmbedding (R := R) (K := K) w) v =
-          a v + (integralEmbedding (R := R) (K := K) w) v :=
-        RestrictedProduct.add_apply _ _ _ v
-      _ = a v + (w v : v.adicCompletion K) := by simp
-      _ = algebraMap K (v.adicCompletion K) x := add_sub_cancel _ _
-      _ = (algebraMap K (FiniteAdeleRing R K) x) v := (algebraMap_apply R K x v).symm
-  exact heq ▸ hIt hw
+    exact integralEmbedding_apply w v
+  rw [← heq]
+  exact hIt hw
+
+variable (R K) in
+/-- **Strong approximation**: `K` is dense in the finite adele ring of `R`. -/
+theorem denseRange_algebraMap : DenseRange (algebraMap K (FiniteAdeleRing R K)) := by
+  intro a
+  refine mem_closure_iff_nhds.mpr fun U hU ↦ ?_
+  -- translate to a neighbourhood of `0`, which contains a basic congruence neighbourhood
+  have hU0 : (a + ·) ⁻¹' U ∈ 𝓝 (0 : FiniteAdeleRing R K) :=
+    (continuous_const_add a).continuousAt.preimage_mem_nhds (by rwa [add_zero])
+  obtain ⟨I, n, hIn⟩ := exists_finset_forall_mem_of_mem_nhds_zero hU0
+  obtain ⟨x, hxI, hx⟩ := exists_forall_valued_sub_le_and_forall_valued_sub_le_one a I n
+  refine ⟨algebraMap K _ x, ?_, x, rfl⟩
+  have h := hIn (algebraMap K (FiniteAdeleRing R K) x - a)
+    (fun v ↦ by rw [mem_adicCompletionIntegers, sub_apply, algebraMap_apply]; exact hx v)
+    (fun v hv ↦ by rw [sub_apply, algebraMap_apply]; exact hxI v hv)
+  rwa [Set.mem_preimage, add_sub_cancel] at h
 
 end FiniteAdeleRing
 

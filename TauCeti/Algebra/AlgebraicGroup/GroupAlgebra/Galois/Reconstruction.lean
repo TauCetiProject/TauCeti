@@ -103,7 +103,7 @@ private theorem characterEvaluationEquiv_characterInvariantsAlgHom (a : H) :
       1 ⊗ₜ[k] a := by
   rw [characterInvariantsAlgHom_val, BialgEquiv.apply_symm_apply]
 
-variable [FiniteDimensional k L] [IsGalois k L]
+variable [IsGalois k L]
 
 private theorem characterInvariantsAlgHom_bijective :
     Function.Bijective (characterInvariantsAlgHom k L H hspan) := by
@@ -125,6 +125,8 @@ private theorem characterInvariantsAlgHom_bijective :
     obtain ⟨a, ha⟩ := (tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq _).mp hx
     refine ⟨a, Subtype.ext ?_⟩
     rw [characterInvariantsAlgHom_val, ha, BialgEquiv.symm_apply_apply]
+
+variable [FiniteDimensional k L]
 
 private theorem characterInvariantsAlgHom_counit :
     (Bialgebra.counitAlgHom k (groupAlgebraInvariants ρ)).comp

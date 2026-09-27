@@ -153,7 +153,7 @@ theorem transferHom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c)
         (MonoidHom.ofInjective T'.galHom_injective).symm.toMonoidHom =
       MonoidHom.transfer ((Abelianization.of.comp
         (MonoidHom.ofInjective (T.trans T').galHom_injective).symm.toMonoidHom).comp
-        (MonoidHomClass.toMonoidHom (Subgroup.subgroupOfEquivOfLe hle))) := by
+        (MonoidHom.ofClass (Subgroup.subgroupOfEquivOfLe hle))) := by
     ext z
     obtain ⟨m, rfl⟩ := (MonoidHom.ofInjective T'.galHom_injective).surjective z
     rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply]

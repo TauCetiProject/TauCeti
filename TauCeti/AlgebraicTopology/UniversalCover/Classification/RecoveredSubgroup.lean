@@ -68,8 +68,7 @@ theorem SubgroupQuotient.basepointLift_coe (H : Subgroup (FundamentalGroup X x�
 of the acting subgroup. The opposite records the left-action convention used by quotient-cover
 monodromy. -/
 noncomputable def SubgroupQuotient.fundamentalGroupEquiv
-    [LocallyPathConnectedSpace X] [PathConnectedSpace X]
-    [SemilocallySimplyConnectedSpace X]
+    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (H : Subgroup (FundamentalGroup X x₀)) :
     FundamentalGroup (SubgroupQuotient x₀ H)
         (SubgroupQuotient.basepoint x₀ H) ≃* Hᵐᵒᵖ :=
@@ -80,8 +79,7 @@ noncomputable def SubgroupQuotient.fundamentalGroupEquiv
 endpoint of that loop's monodromy lift. -/
 @[simp]
 theorem SubgroupQuotient.fundamentalGroupEquiv_unop_smul
-    [LocallyPathConnectedSpace X] [PathConnectedSpace X]
-    [SemilocallySimplyConnectedSpace X]
+    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (H : Subgroup (FundamentalGroup X x₀))
     (g : FundamentalGroup (SubgroupQuotient x₀ H)
       (SubgroupQuotient.basepoint x₀ H)) :
@@ -109,8 +107,7 @@ private theorem proj_eq_of_mem_fiber_subgroupQuotientMap
     _ = subgroupQuotientProj x₀ H (SubgroupQuotient.basepoint x₀ H) := by rw [hbase]
     _ = x₀ := subgroupQuotientProj_basepoint x₀ H
 
-variable [LocallyPathConnectedSpace X] [PathConnectedSpace X]
-  [SemilocallySimplyConnectedSpace X]
+variable [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
 
 /-- Monodromy along the quotient map followed by the descended endpoint map agrees with
 monodromy of the universal-cover projection. -/

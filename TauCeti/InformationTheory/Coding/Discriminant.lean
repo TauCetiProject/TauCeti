@@ -143,7 +143,7 @@ theorem isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual
       AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual := by
   rw [FiniteBilinearModule.isIsotropic_iff_le_orthogonalComplement,
     orthogonalComplement_coordinatePower_zmodStandard]
-  simp only [SetLike.le_def, Submodule.mem_toAddSubgroup, AddSubgroup.mem_toZModSubmodule]
+  simp only [IsConcreteLE.le_iff, Submodule.mem_toAddSubgroup, AddSubgroup.mem_toZModSubmodule]
 
 /-- **The Lagrangian condition for a code over `ℤ/m` is self-duality.** -/
 @[simp]

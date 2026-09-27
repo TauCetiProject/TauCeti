@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.DG.HomotopyCategory
+public import TauCeti.CategoryTheory.DG.ClosedCategory
 
 /-!
 # Differential graded functors and their homotopy functors
@@ -122,6 +122,31 @@ theorem dgMap_mem_dgCycles {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R 
     F.dgMap 0 f ∈ dgCycles R (F.obj X) (F.obj Y) :=
   map_mem_dgCycles R (F.map X Y) hf
 
+/-- The underlying functor of a DG functor acts on closed morphisms by its degree-zero map. -/
+@[simp]
+theorem dgClosedHom_forget_map
+    {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
+    dgClosedHom R (ForgetEnrichment.homOf _
+      (ForgetEnrichment.homTo _ f ≫
+        F.map (ForgetEnrichment.to _ X) (ForgetEnrichment.to _ Y))) =
+      F.dgMap 0 (dgClosedHom R f) := by
+  simp only [dgClosedHom_def, ForgetEnrichment.homTo_homOf,
+    HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
+    EnrichedFunctor.dgMap_apply]
+
+/-- The underlying functor sends a morphism represented by a cocycle to the morphism
+represented by its image under the DG functor. -/
+@[simp]
+theorem forget_map_dgClosedHomOf
+    {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
+    ForgetEnrichment.homOf _
+      (ForgetEnrichment.homTo _ (dgClosedHomOf R f hf) ≫ F.map X Y) =
+      dgClosedHomOf R (F.dgMap 0 f) (F.dgMap_mem_dgCycles hf) := by
+  apply dgClosedHom_injective R
+  have h := F.dgClosedHom_forget_map (f := dgClosedHomOf R f hf)
+  simp only [ForgetEnrichment.to_of] at h
+  rw [h, dgClosedHom_dgClosedHomOf, dgClosedHom_dgClosedHomOf]
+
 /-- A DG functor sends degree-zero boundaries to degree-zero boundaries. -/
 theorem dgMap_mem_dgBoundaries {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgBoundaries R X Y) :
     F.dgMap 0 f ∈ dgBoundaries R (F.obj X) (F.obj Y) := by
@@ -178,6 +203,34 @@ theorem mapDGHomotopyCategory_map_homOf {X Y : C} (f : DGHom R 0 X Y) (hf : f �
       DGHomotopyCategory.homOf R (F.dgMap 0 f) (F.dgMap_mem_dgCycles hf) := by
   rw [DGHomotopyCategory.homOf_def, DGHomotopyCategory.homOf_def]
   exact homologyMap_dgHomotopyClass R (F.map X Y) hf
+
+/-- Taking the homotopy class of a closed morphism commutes with a DG functor. -/
+@[expose]
+def forgetCompDgClosedToHomotopyIso :
+    F.forget ⋙ dgClosedToHomotopy (C := D) R ≅
+      dgClosedToHomotopy (C := C) R ⋙ F.mapDGHomotopyCategory :=
+  NatIso.ofComponents (fun _ => Iso.refl _) fun f => by
+    refine (Category.comp_id _).trans (Eq.trans ?_ (Category.id_comp _).symm)
+    simp only [Functor.comp_map, dgClosedToHomotopy_map, EnrichedFunctor.forget_map,
+      F.dgClosedHom_forget_map]
+    exact (F.mapDGHomotopyCategory_map_homOf (dgClosedHom R f)
+      (dgClosedHom_mem_dgCycles R f)).symm
+
+/-- The forward component of the comparison between `Z⁰(F)` followed by the quotient and
+the quotient followed by `H⁰(F)` is the identity. -/
+@[simp]
+theorem forgetCompDgClosedToHomotopyIso_hom_app
+    (X : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) :
+    F.forgetCompDgClosedToHomotopyIso.hom.app X = 𝟙 _ :=
+  rfl
+
+/-- The inverse component of the comparison between `Z⁰(F)` followed by the quotient and
+the quotient followed by `H⁰(F)` is the identity. -/
+@[simp]
+theorem forgetCompDgClosedToHomotopyIso_inv_app
+    (X : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) :
+    F.forgetCompDgClosedToHomotopyIso.inv.app X = 𝟙 _ :=
+  rfl
 
 instance : F.mapDGHomotopyCategory.Additive where
   map_add {X Y} f g := map_add (homologyMap (F.map (DGHomotopyCategory.underlying R X)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Map
 
 /-!
@@ -27,6 +28,8 @@ fixed-complement result specializes this naturality to an orthogonal summand.
   isometry has an isometric left inverse.
 * `QuadraticMap.Isometry.spinGroupMap_spinVectorAction` proves naturality of the Spin vector
   action.
+* `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal` proves
+  naturality of the Spin homomorphism to the special orthogonal group.
 * `QuadraticMap.IsometryEquiv.spinGroupMap_fixed_of_prod` proves that the Spin group of one
   summand fixes the other summand.
 * `QuadraticMap.IsometryEquiv.spinGroupMap_spinVectorAction_prod` combines these facts into the
@@ -200,6 +203,27 @@ variable {R : Type u} [CommRing R]
   {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
   {N : Type x} [AddCommGroup N] [Module R N]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q : QuadraticForm R N}
+
+/-- The homomorphism from the Spin group to the special orthogonal group is natural under
+isometric equivalences of quadratic forms. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_spinToSpecialOrthogonal [Invertible (2 : R)]
+    (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
+    e.specialOrthogonalGroupCongr (CliffordAlgebra.spinToSpecialOrthogonal Q₁ x) =
+      CliffordAlgebra.spinToSpecialOrthogonal Q₂ (e.spinGroupEquiv x) := by
+  ext m
+  rw [e.coe_specialOrthogonalGroupCongr_apply,
+    CliffordAlgebra.coe_spinToSpecialOrthogonal_apply,
+    CliffordAlgebra.coe_spinToSpecialOrthogonal_apply, spinGroupEquiv_apply]
+  calc
+    e.toIsometry (CliffordAlgebra.spinVectorAction Q₁ x (e.symm m)) =
+        CliffordAlgebra.spinVectorAction Q₂ (e.toIsometry.spinGroupMap x)
+          (e.toIsometry (e.symm m)) :=
+      (QuadraticMap.Isometry.spinGroupMap_spinVectorAction
+        e.toIsometry x (e.symm m)).symm
+    _ = CliffordAlgebra.spinVectorAction Q₂ (e.toIsometry.spinGroupMap x) m := by
+      have he : e.toIsometry (e.symm m) = m := e.apply_symm_apply m
+      rw [he]
 
 /-- Under an orthogonal-product isometry, the image of the Spin group of the first summand fixes
 every vector in the second summand. -/

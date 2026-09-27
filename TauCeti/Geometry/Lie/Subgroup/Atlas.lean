@@ -23,8 +23,8 @@ The complement, transverse separation radius, and local product chart are suppli
 
 * `TauCeti.Lie.exists_isSliceChart_of_isClosed_subgroup` packages the identity slice chart.
 
-The theorem stops at the topological chart interface: it does not install a manifold or Lie-group
-structure on the subgroup subtype.
+The resulting chart retains the smoothness of both directions of the local diffeomorphism. A
+separate construction installs the induced manifold structure on the subgroup subtype.
 
 ## References
 
@@ -49,14 +49,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothnessThree
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- A closed subgroup is the zero-complement slice in a complementary exponential chart at `1`. -/
+/-- A closed subgroup is the zero-complement slice in a smooth complementary exponential chart
+at `1`. -/
 theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     ∃ (p q : _root_.Submodule ℝ (LeftInvariantDerivation I G))
       (Φ : OpenPartialHomeomorph G (p × q)),
       IsCompl p q ∧ (1 : G) ∈ Φ.source ∧
-        IsSliceChart Φ ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G) := by
+        IsSliceChart Φ ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G) ∧
+        ContMDiffOn I 𝓘(ℝ, p × q) ∞ Φ Φ.source ∧
+        ContMDiffOn 𝓘(ℝ, p × q) I ∞ Φ.symm Φ.target := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
   dsimp only
   let p : _root_.Submodule ℝ (LeftInvariantDerivation I G) :=
@@ -105,7 +108,31 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       change Φ₀ 1 ∈ A
       rw [hzero]
       exact Metric.mem_ball_self hε
-  refine ⟨p, q, Φ, hpq, h1, ?_⟩
+  have hΦ_source : Φ.source ⊆ hf.localInverse.source := by
+    -- Expose the restricted homeomorphism hidden by the local names `Φ` and `Φ₀`.
+    change (Φ₀.restrOpen V hV).source ⊆ hf.localInverse.source
+    rw [OpenPartialHomeomorph.restrOpen_source]
+    intro x hx
+    rw [← hΦ₀_source_eq]
+    exact hx.1
+  have hΦ_target : Φ.target ⊆ hf.localInverse.target := by
+    -- Expose the same wrapper so that `restr_target` can describe its target.
+    change (hf.localInverse.toOpenPartialHomeomorph.restrOpen V hV).target ⊆
+      hf.localInverse.target
+    rw [OpenPartialHomeomorph.restrOpen_toPartialEquiv,
+      PartialEquiv.restr_target]
+    exact inter_subset_left
+  have hΦ_contMDiff : ContMDiffOn I 𝓘(ℝ, p × q) ∞ Φ Φ.source := by
+    -- A restriction has the same underlying map as the local inverse; only its source shrinks.
+    change ContMDiffOn I 𝓘(ℝ, p × q) ∞ hf.localInverse
+      (hf.localInverse.toOpenPartialHomeomorph.restrOpen V hV).source
+    exact hf.contMDiffOn_localInverse.mono hΦ_source
+  have hΦ_symm_contMDiff : ContMDiffOn 𝓘(ℝ, p × q) I ∞ Φ.symm Φ.target := by
+    -- Its inverse likewise has the local inverse's `invFun`; only its target shrinks.
+    change ContMDiffOn 𝓘(ℝ, p × q) I ∞ hf.localInverse.invFun
+      (hf.localInverse.toOpenPartialHomeomorph.restrOpen V hV).target
+    exact hf.localInverse.contMDiffOn_invFun.mono hΦ_target
+  refine ⟨p, q, Φ, hpq, h1, ?_, hΦ_contMDiff, hΦ_symm_contMDiff⟩
   -- Unfold the local name `Φ`; the remaining chart equality uses the coercion fact above.
   change IsSliceChart (Φ₀.restrOpen V hV)
     ((univ : Set p) ×ˢ ({0} : Set q)) (K : Set G)

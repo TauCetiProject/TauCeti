@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RepresentationTheory.Rep.Res
 
 /-!
@@ -30,6 +31,11 @@ Nothing here mentions cohomology: the cohomological consequences live in
 
 * `Rep.augmentationSES_shortExact`, `Rep.augmentationSES_res_shortExact`: the augmentation
   sequence is short exact, also after restriction along a monoid homomorphism.
+* `TauCeti.AugmentationIdeal.singleSub`, `TauCeti.AugmentationIdeal.ι_singleSub`:
+  an element mapping to
+  `[g] a - [1] a` and its image under the inclusion.
+* `TauCeti.AugmentationIdeal.ρ_singleSub`, `TauCeti.AugmentationIdeal.singleSub_one`:
+  the group action and value at the identity.
 
 ## References
 
@@ -118,3 +124,51 @@ theorem augmentationSES_res_shortExact {H : Type*} [Monoid H] (f : H →* G) :
   (shortExact_res f).mpr (augmentationSES_shortExact k G)
 
 end Rep
+
+namespace TauCeti.AugmentationIdeal
+
+open _root_.Rep
+
+variable (k G : Type u) [CommRing k] [Group G]
+
+private theorem exact_augmentation :
+    Function.Exact (augmentationι k G).hom (augmentation k G).hom := by
+  have h := (augmentationSES_shortExact k G).exact.map (forget₂ (Rep k G) (ModuleCat k))
+  rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact] at h
+  exact h
+
+private theorem augmentation_single_sub (a : k) (g : G) :
+    (augmentation k G).hom (MonoidAlgebra.single g a - MonoidAlgebra.single 1 a) = 0 := by
+  rw [map_sub]
+  simp
+
+/-- The element of the augmentation ideal whose image in `k[G]` is `[g] a - [1] a`. -/
+def singleSub (a : k) (g : G) : augmentationIdeal k G :=
+  Classical.choose <| (exact_augmentation k G _).1 (augmentation_single_sub k G a g)
+
+/-- The image of `singleSub a g` under the inclusion into `k[G]`. -/
+@[simp]
+theorem ι_singleSub (a : k) (g : G) :
+    (augmentationι k G).hom (singleSub k G a g) =
+      MonoidAlgebra.single g a - MonoidAlgebra.single 1 a :=
+  Classical.choose_spec <| (exact_augmentation k G _).1 (augmentation_single_sub k G a g)
+
+/-- The inclusion of the augmentation ideal into `k[G]` is injective. -/
+theorem augmentationι_injective : Function.Injective (augmentationι k G).hom :=
+  (Rep.mono_iff_injective _).1 inferInstance
+
+/-- The action of `G` on an augmentation ideal element `[g] a - [1] a`. -/
+theorem ρ_singleSub (a : k) (x y : G) :
+    (augmentationIdeal k G).ρ x (singleSub k G a y) =
+      singleSub k G a (x * y) - singleSub k G a x := by
+  apply augmentationι_injective k G
+  rw [hom_comm_apply, map_sub, ι_singleSub, ι_singleSub, ι_singleSub, map_sub]
+  simp
+
+/-- The augmentation ideal element `[1] a - [1] a` is zero. -/
+@[simp]
+theorem singleSub_one (a : k) : singleSub k G a (1 : G) = 0 := by
+  apply augmentationι_injective k G
+  rw [ι_singleSub, sub_self, map_zero]
+
+end TauCeti.AugmentationIdeal

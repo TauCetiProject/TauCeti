@@ -200,7 +200,11 @@ variable (k wt)
 noncomputable def gradeByBasis (m : M) :
     Module.Basis {x : Quiver.TotalPath Q // x.2.2.addWeight wt = m} k (gradeBy k wt m) :=
   (Module.Basis.span
-      (linearIndependent_ofPath k Q fun x : Quiver.TotalPath Q => x.2.2.addWeight wt = m)).map
+      (by
+        simpa only [Function.comp_def] using
+          (linearIndependent_ofPath k Q).comp
+            (Subtype.val : {x : Quiver.TotalPath Q // x.2.2.addWeight wt = m} → _)
+            Subtype.val_injective)).map
     (LinearEquiv.ofEq _ _ (gradeBy_eq_span_range k wt m).symm)
 
 variable {k wt}
@@ -482,7 +486,11 @@ variable (k Q)
 noncomputable def gradeBasis (n : ℕ) :
     Module.Basis {x : Quiver.TotalPath Q // x.2.2.length = n} k (grade k Q n) :=
   (Module.Basis.span
-      (linearIndependent_ofPath k Q fun x : Quiver.TotalPath Q => x.2.2.length = n)).map
+      (by
+        simpa only [Function.comp_def] using
+          (linearIndependent_ofPath k Q).comp
+            (Subtype.val : {x : Quiver.TotalPath Q // x.2.2.length = n} → _)
+            Subtype.val_injective)).map
     (LinearEquiv.ofEq _ _ (grade_eq_span_range k Q n).symm)
 
 variable {k Q}

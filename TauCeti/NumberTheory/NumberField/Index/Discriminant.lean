@@ -31,6 +31,8 @@ factor relating the two discriminants.
 
 * `TauCeti.NumberField.IntegralPrimitiveElement.discr_minpoly_eq_index_sq_mul_discr`: the index
   formula `disc (minpoly ℤ θ) = [𝓞 K : ℤ[θ]]² · disc K`.
+* `TauCeti.NumberField.IntegralPrimitiveElement.index_eq_one_of_squarefree_discr`: a squarefree
+  polynomial discriminant forces index `1`.
 * `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_not_dvd_discr_minpoly`: a
   natural number not dividing `disc (minpoly ℤ θ)` does not divide the index.
 * `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_squarefree_map`: a prime modulo
@@ -134,5 +136,13 @@ theorem not_dvd_index_of_squarefree_map (θ : IntegralPrimitiveElement K) {p : �
     ← (minpoly.monic θ.1.isIntegral).discr_map]
   exact ((minpoly.monic θ.1.isIntegral).map _).discr_ne_zero_iff.mpr
     (PerfectField.separable_iff_squarefree.mpr hsq)
+
+/-- **A squarefree polynomial discriminant forces index `1`.** If the discriminant of
+`minpoly ℤ θ` is squarefree, then `ℤ[θ] = 𝓞 K`. -/
+theorem index_eq_one_of_squarefree_discr (θ : IntegralPrimitiveElement K)
+    (hsq : Squarefree (minpoly ℤ θ.1).discr) : θ.index = 1 := by
+  have hu : IsUnit (θ.index : ℤ) :=
+    hsq _ (by rw [← sq]; exact ⟨_, θ.discr_minpoly_eq_index_sq_mul_discr⟩)
+  exact_mod_cast Int.isUnit_iff_natAbs_eq.mp hu
 
 end TauCeti.NumberField.IntegralPrimitiveElement

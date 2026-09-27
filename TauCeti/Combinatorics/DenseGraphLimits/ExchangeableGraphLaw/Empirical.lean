@@ -145,13 +145,9 @@ theorem mixtureExchangeableLaw_eq_of_tendsto_empiricalMixing {P : ProbabilityMea
   -- convergence, under `L` by the collision estimate.
   refine ExchangeableGraphLaw.ext_upperMass fun k F => ?_
   rw [upperMass_mixtureExchangeableLaw]
-  -- `t(F, ·)` as a bounded continuous function, with values in `[0, 1]`
-  let f : GraphonSpaceI →ᵇ ℝ :=
-    .mkOfBound ⟨homDensityOnSpace F, continuous_homDensityOnSpace F⟩ 1 fun x y =>
-      Real.dist_le_of_mem_Icc_01 ⟨homDensityOnSpace_nonneg F x, homDensityOnSpace_le_one F x⟩
-        ⟨homDensityOnSpace_nonneg F y, homDensityOnSpace_le_one F y⟩
-  exact tendsto_nhds_unique (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hconv f)
-    ((tendsto_integral_homDensityOnSpace_empiricalMixing L F).comp hφ)
+  have hP := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hconv (homDensityBCF F)
+  simp only [homDensityBCF_apply] at hP
+  exact tendsto_nhds_unique hP ((tendsto_integral_homDensityOnSpace_empiricalMixing L F).comp hφ)
 
 end DenseGraphLimits
 

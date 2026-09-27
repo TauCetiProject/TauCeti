@@ -26,7 +26,8 @@ inline for the same reason.
 Alongside them, the `n`-th coefficient bundled as a `ℂ`-linear functional on *cusp* forms,
 `CuspForm.qExpansionCoeffₗ` — the linear map above, composed with the inclusion of cusp forms
 and with `PowerSeries.coeff n`. It is what a coefficient computation on a linear combination of
-cusp forms is run through.
+cusp forms is run through, and `CuspForm.qExpansion_injective` turns the resulting coefficient
+identity back into an identity of cusp forms.
 
 Alongside those, the effect of a `1 / d` translation on the `q`-powers a support condition
 leaves alive: shifting the argument by `1 / d` scales the `n`-th `q`-power by a `d`-th root of
@@ -41,6 +42,7 @@ stated here rather than at the descent because it mentions only coefficients, di
 * `TauCeti.UpperHalfPlane.qExpansion_coeff_unique`.
 * `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
   coefficient as a `ℂ`-linear functional on cusp forms.
+* `CuspForm.qExpansion_injective`: a cusp form is determined by its `q`-expansion.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
 
@@ -107,6 +109,18 @@ lemma _root_.CuspForm.qExpansionCoeffₗ_apply {Γ : Subgroup (GL (Fin 2) ℝ)} 
   rw [CuspForm.qExpansionCoeffₗ, LinearMap.comp_apply, LinearMap.comp_apply,
     ModularForm.qExpansionLinearMap_apply]
   exact congrArg (fun g ↦ (qExpansion h g).coeff n) (funext (CuspForm.toModularFormₗ_apply f))
+
+/-- **A cusp form is determined by its `q`-expansion.** The cusp-form counterpart of Mathlib's
+`ModularForm.qExpansion_injective`: a cusp form and its image under the injective inclusion
+`CuspForm.toModularFormₗ` have the same underlying function. -/
+lemma _root_.CuspForm.qExpansion_injective {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+    (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) {k : ℤ} :
+    Function.Injective (fun f : CuspForm Γ k ↦ qExpansion h f) := by
+  have hcoe (f : CuspForm Γ k) : ⇑(CuspForm.toModularFormₗ f) = ⇑f :=
+    funext (CuspForm.toModularFormₗ_apply f)
+  refine fun f g hfg ↦ CuspForm.toModularFormₗ_injective
+    (_root_.ModularForm.qExpansion_injective hh hΓ ?_)
+  simpa only [hcoe] using hfg
 
 /-- The translate `1 / d +ᵥ σ`, read in `ℂ`, is the subtraction `TauCeti.Periodic.qParam_sub`
 expects: that lemma is stated at `z - j`, and the shift here enters as a `+ᵥ` on `ℍ`. Naming the

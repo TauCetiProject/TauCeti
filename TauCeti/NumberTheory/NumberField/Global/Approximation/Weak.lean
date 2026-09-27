@@ -232,16 +232,15 @@ theorem weakApproximation_denseRange
     Metric.mem_nhds_iff.mp ((hVinf w).1.mem_nhds (hainf w))
   -- Convert the value-group radii supplied by the valued topology back to `ℤᵐ⁰` radii.
   let εₑ : FinitePlace K Sₑ → ℤᵐ⁰ := fun v =>
-    MonoidWithZeroHom.ValueGroup₀.embedding (γ v : MonoidWithZeroHom.ValueGroup₀
-      (.ofClass (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰)))
+    MonoidWithZeroHom.ValueGroup₀.embedding
+      (γ v : (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰).ValueGroup₀)
   have hεₑ : ∀ v, εₑ v ≠ 0 := fun v => by
     intro h
     apply Units.ne_zero (γ v)
     apply MonoidWithZeroHom.ValueGroup₀.embedding_injective
     -- Unfold only the chosen radius; the value-group embedding itself remains abstract.
     change MonoidWithZeroHom.ValueGroup₀.embedding
-      (γ v : MonoidWithZeroHom.ValueGroup₀
-        (.ofClass (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰))) = 0 at h
+      (γ v : (Valued.v : Valuation (v.1.adicCompletion K) ℤᵐ⁰).ValueGroup₀) = 0 at h
     rw [map_zero]
     exact h
   obtain ⟨x, hxₑ, hxinf⟩ := exists_mixed_approximation aₑ ainf εₑ hεₑ einf heinf
@@ -372,5 +371,16 @@ theorem exists_fieldUnit_valuation_eq_and_signHom_eq
     rw [hp v]
     exact hxf v hv
   rw [Valuation.map_eq_of_sub_lt (v.valuation K) hlt, hp v]
+
+/-- **A field unit which is negative at every real place.**
+
+Being negative at a real place is exactly being a nonsquare there, so this supplies, in a single
+element of `Kˣ`, the datum `b` that a sign prescription reads off at the real places of its
+prescribed set.  Signs are not the only datum a prescription can impose on a field unit —
+`exists_fieldUnit_valuation_eq_and_signHom_eq` prescribes finite-place valuations as well — but
+they are the one datum that a single element of `Kˣ` realizes at every real place at once. -/
+theorem exists_fieldUnit_negative_at :
+    ∃ x : Kˣ, ∀ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.2 (x : K) < 0 :=
+  ⟨-1, fun _ => by simp⟩
 
 end TauCeti.GlobalNumberFields

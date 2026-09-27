@@ -58,7 +58,7 @@ variable {X : Type u} [TopologicalSpace X]
 namespace TauCeti.UniversalCover
 
 variable (x0 : X) {A : Type v} [MulAction (FundamentalGroup X x0) A]
-  [LocallyPathConnectedSpace X] [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+  [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
 
 /-- The connected covering space attached to a point `a` of a `π₁(X, x₀)`-set: it is the
 universal cover modulo the stabilizer of `a`.

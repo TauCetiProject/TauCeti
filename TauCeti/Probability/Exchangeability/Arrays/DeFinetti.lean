@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.Block
+public import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 public import TauCeti.Probability.Exchangeability.Arrays.MixingLaw
 public import TauCeti.Probability.DeFinetti.Theorem
 
@@ -22,7 +22,7 @@ reaches `DeFinetti.Theorem` too, transitively through this module, which is as i
 coding representation is a de Finetti consequence. What changed is that the dependency now arrives
 through the one file whose subject it is.
 
-`Arrays.Basic` carries the symmetry predicates and their elementary theory, `Arrays.Block` the
+`Arrays.Basic` carries the symmetry predicates and their elementary theory, `Arrays.Block.Basic` the
 combinatorics of blocks, and `Arrays.MixingLaw` the results that hold of *any* supplied mixing
 representative. Each of those is now independent of `DeFinetti.Theorem`, so a file needing only
 array symmetry — for instance `Arrays.AldousHoover.Basic`, which uses four declarations from

@@ -213,6 +213,35 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofCompletion
     v.ideleFiniteCoord (IdeleGroup.ofCompletion R K w u) = 1 :=
   Units.ext (rfl)
 
+/-- **Ideles are determined by their coordinates**: two ideles with the same coordinate at every
+infinite place and the same finite component are equal. -/
+@[ext]
+theorem NumberField.IdeleGroup.ext {x y : IdeleGroup R K}
+    (hinf : ∀ w : InfinitePlace K, w.ideleInfiniteCoord x = w.ideleInfiniteCoord y)
+    (hfin : IdeleGroup.toFiniteIdele R K x = IdeleGroup.toFiniteIdele R K y) : x = y := by
+  refine Units.ext (Prod.ext (funext fun w ↦ ?_) ?_)
+  · have h := congrArg Units.val (hinf w)
+    rwa [InfinitePlace.coe_ideleInfiniteCoord, InfinitePlace.coe_ideleInfiniteCoord] at h
+  · have h := congrArg Units.val hfin
+    rwa [IdeleGroup.coe_toFiniteIdele, IdeleGroup.coe_toFiniteIdele] at h
+
+/-- **An idele is the product of its archimedean components and its finite component**: the
+ideles concentrated at the infinite places, carrying the infinite coordinates of `x`, times the
+idele with the finite component of `x` and trivial infinite components. -/
+theorem NumberField.IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele [NumberField K]
+    (x : IdeleGroup R K) :
+    (∏ w, IdeleGroup.ofCompletion R K w (w.ideleInfiniteCoord x)) *
+      IdeleGroup.ofFiniteIdele R K (IdeleGroup.toFiniteIdele R K x) = x := by
+  classical
+  refine IdeleGroup.ext (fun w ↦ ?_) ?_
+  · rw [map_mul, map_prod, InfinitePlace.ideleInfiniteCoord_ofFiniteIdele, mul_one,
+      Finset.prod_eq_single w
+        (fun w' _ hw' ↦ InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w hw'.symm _)
+        (fun h ↦ (h (Finset.mem_univ _)).elim),
+      InfinitePlace.ideleInfiniteCoord_ofCompletion_self]
+  · rw [map_mul, map_prod, IdeleGroup.toFiniteIdele_ofFiniteIdele]
+    simp [IdeleGroup.toFiniteIdele_ofCompletion]
+
 end Coordinates
 
 namespace TauCeti.GlobalNumberFields
@@ -298,7 +327,7 @@ theorem ideleNorm_unitEmbedding (x : Kˣ) : ideleNorm (IdeleGroup.unitEmbedding 
     rw [normalizedAbsValue_inl, ← FinitePlace.norm_embedding]
     simp only [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding, Units.coe_map,
       RingHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_coe]
+      MonoidHom.coe_ofClass]
     rw [IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
       FinitePlace.embedding_apply]
     simp
@@ -306,7 +335,7 @@ theorem ideleNorm_unitEmbedding (x : Kˣ) : ideleNorm (IdeleGroup.unitEmbedding 
   rw [coe_ideleNorm, finprod_congr hfin, finprod_normalizedAbsValue_inl x.ne_zero]
   simp only [InfinitePlace.ideleInfiniteCoord_unitEmbedding, Units.coe_map,
     RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_coe, infiniteCompletionNormalizedAbsValue_algebraMap,
+    MonoidHom.coe_ofClass, infiniteCompletionNormalizedAbsValue_algebraMap,
     InfinitePlace.prod_eq_abs_norm]
   have h0 : |Algebra.norm ℚ (x : K)| ≠ 0 := by simp [Algebra.norm_eq_zero_iff]
   push_cast

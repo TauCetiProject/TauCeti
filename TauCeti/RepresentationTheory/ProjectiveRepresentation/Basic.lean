@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Equiv.Basic
-public import TauCeti.Algebra.MonoidAlgebra.Twisted
+public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
 
 /-!
 # Projective representations and their factor sets

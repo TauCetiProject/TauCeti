@@ -225,8 +225,12 @@ lemma valuation_algebraMap_eq [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
     (w : HeightOneSpectrum (W.ringOfIntegersFactor R p)) (z : K) :
     (HeightOneSpectrum.under R w).valuation K z ^
         ((HeightOneSpectrum.under R w).asIdeal.ramificationIdx' w.asIdeal) =
-      w.valuation (𝕃 p) (ι p z) :=
-  HeightOneSpectrum.valuation_liesOver _ _ _ z
+      w.valuation (𝕃 p) (ι p z) := by
+  -- Mathlib's `valuation_liesOver` states the exponent as `w.asIdeal.ramificationIdx R`, which
+  -- `ramificationIdx'_eq_ramificationIdx` identifies with the `ramificationIdx'` used here.
+  rw [Ideal.ramificationIdx'_eq_ramificationIdx _ w.asIdeal
+    (HeightOneSpectrum.under R w).ne_bot]
+  exact HeightOneSpectrum.valuation_liesOver _ _ _ z
 
 /-- If `z` is integral at the prime under `w`, then it is integral at `w`. -/
 lemma valuation_algebraMap_le_one [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
@@ -237,7 +241,7 @@ lemma valuation_algebraMap_le_one [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Fact
   simpa using pow_le_pow_left' hz _
 
 /-- A prime `w` not lying above a bad prime lies over a good prime of `R`. -/
-lemma under_notMem_badPrimes [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
+lemma under_notMem_badPrimes (p : W.f.Factors)
     {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
     (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
     HeightOneSpectrum.under R w ∉ W.badPrimes R :=

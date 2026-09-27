@@ -133,6 +133,13 @@ theorem dvd_trans {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ 𝔫) (h₂ : �
   dvd_iff.mpr ⟨(dvd_iff.mp h₁).1.trans (dvd_iff.mp h₂).1,
     (dvd_iff.mp h₁).2.trans (dvd_iff.mp h₂).2⟩
 
+/-- Divisibility of moduli is antisymmetric. -/
+theorem dvd_antisymm {𝔪 𝔫 : Modulus K} (hm : 𝔪 ∣ 𝔫) (hn : 𝔫 ∣ 𝔪) : 𝔪 = 𝔫 := by
+  apply Modulus.ext
+  · exact le_antisymm (Ideal.dvd_iff_le.mp (dvd_iff.mp hn).1)
+      (Ideal.dvd_iff_le.mp (dvd_iff.mp hm).1)
+  · exact Finset.Subset.antisymm (dvd_iff.mp hm).2 (dvd_iff.mp hn).2
+
 /-- The **support** of a modulus: the finite set of height-one primes dividing its finite part. -/
 noncomputable def support (𝔪 : Modulus K) : Finset (HeightOneSpectrum (𝓞 K)) :=
   (Ideal.finite_factors 𝔪.finitePart_ne_zero).toFinset
@@ -170,14 +177,17 @@ theorem exponent_pos_of_mem_support {𝔪 : Modulus K} {v : HeightOneSpectrum (�
     (hv : v ∈ 𝔪.support) : 0 < 𝔪.exponent v :=
   Nat.pos_of_ne_zero ((mem_support_iff_exponent_ne_zero 𝔪 v).mp hv)
 
+/-- **The exponent is the exact multiplicity of the prime in the finite part**: `v ^ n` divides the
+finite part exactly when `n` is at most the exponent of `v`. -/
+theorem pow_dvd_finitePart_iff_le_exponent (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K))
+    {n : ℕ} : v.asIdeal ^ n ∣ 𝔪.finitePart ↔ n ≤ 𝔪.exponent v := by
+  rw [exponent, le_count_associates_iff_le_pow v 𝔪.finitePart_ne_bot, Ideal.dvd_iff_le]
+
 /-- **The prescribed prime power divides the finite part.**  This is what turns membership in the
 finite part into the valuation bound recorded by `IsCongrOne`. -/
 theorem pow_exponent_dvd_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
-    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart := by
-  have h : Associates.mk v.asIdeal ^ 𝔪.exponent v ≤ Associates.mk 𝔪.finitePart :=
-    (Associates.prime_pow_dvd_iff_le (Associates.mk_ne_zero.mpr 𝔪.finitePart_ne_zero)
-      (Associates.irreducible_mk.mpr v.irreducible)).mpr le_rfl
-  rwa [← Associates.mk_pow, Associates.mk_le_mk_iff_dvd] at h
+    v.asIdeal ^ 𝔪.exponent v ∣ 𝔪.finitePart :=
+  (pow_dvd_finitePart_iff_le_exponent 𝔪 v).mpr le_rfl
 
 /-- **Membership in the finite part is a local condition.**  An algebraic integer lying in the
 prime power prescribed by the exponent at every prime dividing the finite part lies in the finite
@@ -236,6 +246,10 @@ def one (K : Type*) [Field K] [NumberField K] : Modulus K where
 
 theorem one_dvd (𝔪 : Modulus K) : one K ∣ 𝔪 :=
   dvd_iff.mpr ⟨by rw [one_finitePart, ← Ideal.one_eq_top]; exact _root_.one_dvd _, by simp⟩
+
+/-- The trivial modulus is the only divisor of itself. -/
+theorem eq_one_of_dvd_one {𝔪 : Modulus K} (h : 𝔪 ∣ one K) : 𝔪 = one K :=
+  dvd_antisymm h (one_dvd 𝔪)
 
 end Modulus
 
@@ -405,7 +419,7 @@ def unitsCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
 theorem unitsMap_mem_primeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
     Units.map (algebraMap (𝓞 K) K).toMonoidHom u ∈ primeToSubgroup 𝔪 := by
   refine mem_primeToSubgroup.mpr fun v _ ↦ ?_
-  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, valuation_of_algebraMap]
+  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, valuation_of_algebraMap]
   refine intValuation_eq_one_iff.mpr fun hu ↦ v.isPrime.ne_top ?_
   exact Ideal.eq_top_of_isUnit_mem _ hu u.isUnit
 
@@ -453,7 +467,7 @@ positive integer units.** -/
   ext u
   rw [mem_unitsCongruenceSubgroup, isCongrOne_narrowModulus_iff,
     mem_totallyPositiveIntegerUnits]
-  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
 /-! ### Ideals prime to a modulus -/
 

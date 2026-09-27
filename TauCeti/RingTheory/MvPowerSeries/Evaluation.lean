@@ -115,7 +115,7 @@ private theorem prod_mem_pow_mul {j c : ℕ} (hmem : ∀ i, a i ∈ I ^ j) {d : 
     have hdeg : d.degree = ∑ s ∈ d.support, d s := rfl
     rw [Finsupp.prod, hdeg]
     exact prod_mem_pow_mul_sum hmem d d.support
-  exact SetLike.le_def.mp (Ideal.pow_le_pow_right hle) hprod
+  exact IsConcreteLE.le_iff.mp (Ideal.pow_le_pow_right hle) hprod
 
 end Monomial
 

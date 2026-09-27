@@ -233,6 +233,29 @@ theorem valued_ideleFiniteCoord_eq_one (hx : x ∈ ideleCongruenceSubgroup 𝔪)
   · exact 𝔪.valued_eq_one_of_valued_sub_one_le hv (valued_ideleFiniteCoord_sub_one_le hx hv)
   · exact (mem_ideleCongruenceSubgroup_iff.mp hx).1 v hv
 
+/-- **The finite components of a congruence idele are integral**: at every finite place `v`, the
+`v`-component of the underlying adele lies in the valuation ring. -/
+theorem snd_mem_adicCompletionIntegers (hx : x ∈ ideleCongruenceSubgroup 𝔪)
+    (v : HeightOneSpectrum (𝓞 K)) : (x : 𝔸[K]).2 v ∈ v.adicCompletionIntegers K := by
+  rw [mem_adicCompletionIntegers, ← coe_ideleFiniteCoord]
+  exact (valued_ideleFiniteCoord_eq_one hx v).le
+
+/-- **The congruence condition on the underlying adele**: if `v ^ n` divides the finite part of
+`𝔪`, then the `v`-component of a congruence idele is congruent to `1` to level `n`.  For `n = 0`
+this is the integrality of the component. -/
+theorem valued_snd_sub_one_le_of_pow_dvd (hx : x ∈ ideleCongruenceSubgroup 𝔪)
+    {v : HeightOneSpectrum (𝓞 K)} {n : ℕ} (hn : v.asIdeal ^ n ∣ 𝔪.finitePart) :
+    Valued.v ((x : 𝔸[K]).2 v - 1) ≤ WithZero.exp (-(n : ℤ)) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn0
+  · have h := sub_mem (snd_mem_adicCompletionIntegers hx v) (one_mem (v.adicCompletionIntegers K))
+    rw [mem_adicCompletionIntegers] at h
+    simpa using h
+  · rw [← coe_ideleFiniteCoord]
+    refine (valued_ideleFiniteCoord_sub_one_le hx ((dvd_pow_self _ hn0.ne').trans hn)).trans
+      (WithZero.exp_le_exp.mpr ?_)
+    have := (𝔪.pow_dvd_finitePart_iff_le_exponent v).mp hn
+    omega
+
 end ideleCongruenceSubgroup
 
 /-- **The idele congruence subgroups decrease as the modulus grows.** -/
@@ -288,11 +311,9 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
   have hmemA : ∀ x ∈ ideleCongruenceSubgroup 𝔪, (x : 𝔸[K]) ∈ A := by
     intro x hx
     refine ⟨fun v ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · rw [mem_adicCompletionIntegers, ← HeightOneSpectrum.coe_ideleFiniteCoord,
-        ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v]
-    · rw [← HeightOneSpectrum.coe_ideleFiniteCoord]
-      exact ideleCongruenceSubgroup.valued_ideleFiniteCoord_sub_one_le hx
-        ((Modulus.mem_support_iff 𝔪 v).mp hv)
+    · exact ideleCongruenceSubgroup.snd_mem_adicCompletionIntegers hx v
+    · exact ideleCongruenceSubgroup.valued_snd_sub_one_le_of_pow_dvd hx
+        (𝔪.pow_exponent_dvd_finitePart v)
     · rw [← InfinitePlace.coe_ideleInfiniteCoord]
       exact ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx hw
   have hset : (ideleCongruenceSubgroup 𝔪 : Set (IdeleGroup (𝓞 K) K)) =
@@ -333,7 +354,7 @@ theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ}
           v.adicCompletion K) - 1) = v.valuation K ((x : K) - 1) := by
     intro v
     rw [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding, Units.coe_map]
-    simp only [MonoidHom.coe_coe, RingHom.toMonoidHom_eq_coe]
+    simp only [MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
     rw [← map_one (algebraMap K (v.adicCompletion K)), ← map_sub]
     simp only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
       Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']

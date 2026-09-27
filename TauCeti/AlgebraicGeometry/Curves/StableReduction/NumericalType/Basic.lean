@@ -79,8 +79,9 @@ matrix that forces `∑ᵢ mᵢ aᵢᵢ` to be even
 ## Implementation notes
 
 Abstract numerical types can have negative genus, so `arithmeticGenus` lands in `ℤ` rather than
-`ℕ`; the genus-zero variant of `weightedExample` at the end of the file has genus `-1`. Nor may
-the halving be distributed over the sum: `oddDiagonalExample` has odd diagonal entries.
+`ℕ`; the genus-zero variant of `twoComponentWeightTwoExample` in `Picard/WeightedExample.lean`
+has genus `-1`. Nor may the halving be distributed over the sum: `oddDiagonalExample` has odd
+diagonal entries.
 
 Symmetry of the intersection matrix is recorded through Mathlib's `Matrix.IsSymm` rather than as
 a bare pointwise equation, so that a reindexed matrix inherits it from `Matrix.IsSymm.submatrix`.
@@ -584,33 +585,6 @@ lemma nonempty_equiv_iff {T' : NumericalType.{v}} :
   ⟨fun ⟨f⟩ ↦ ⟨f.toEquiv, f.reindex_eq⟩, fun ⟨e, he⟩ ↦ he ▸ ⟨T.equivReindex e⟩⟩
 
 /-! ### Worked examples -/
-
-/-- Two components of multiplicity one, weight two and genus one, meeting doubly: a numerical
-type of signed genus three. -/
-private noncomputable abbrev weightedExample : NumericalType.{0} where
-  Component := Fin 2
-  multiplicity _ := 1
-  weight _ := 2
-  intersection := !![-2, 2; 2, -2]
-  intersection_isSymm := Matrix.IsSymm.ext fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl
-  offDiagonal_nonneg i j h := by
-    fin_cases i <;> fin_cases j <;> first | exact absurd rfl h | decide
-  connected := by
-    have key : ∀ i j : Fin 2, i ≠ j → (0 : ℤ) < !![(-2 : ℤ), 2; 2, -2] i j := by
-      intro i j h
-      fin_cases i <;> fin_cases j <;> first | exact absurd rfl h | decide
-    intro i j
-    rcases eq_or_ne i j with rfl | h
-    · exact Relation.ReflTransGen.refl
-    · exact Relation.ReflTransGen.single ⟨h, key i j h⟩
-  fiber_relation i := by fin_cases i <;> decide
-  weight_dvd i j := by fin_cases i <;> fin_cases j <;> decide
-  genus _ := 1
-
-example : weightedExample.arithmeticGenus = 3 := by decide
-
-example : ({ weightedExample with genus := fun _ ↦ 0 } : NumericalType).arithmeticGenus = -1 := by
-  decide
 
 /-- Two components of multiplicity and weight one and genus one, meeting transversally. Both
 diagonal entries are odd, so the halving in the genus formula cannot be distributed over the

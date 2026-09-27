@@ -50,6 +50,7 @@ public section
 noncomputable section
 
 open scoped unitInterval
+open Topology
 
 variable {X : Type*} [TopologicalSpace X] {x₀ : X}
 
@@ -149,6 +150,23 @@ theorem proj_eq_iff_mem_orbit {p₁ p₂ : UniversalCover x₀} :
   · rintro ⟨g, hg⟩
     rw [← hg, proj_smul]
 
+/-- The fundamental-group action is properly discontinuous: every point of the universal cover
+has a neighbourhood whose non-identity translates are disjoint from it. -/
+theorem exists_nhds_smul_disjoint [LocallyPathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] (e : UniversalCover x₀) :
+    ∃ U ∈ 𝓝 e, ∀ g : FundamentalGroup X x₀, ((g • ·) '' U ∩ U).Nonempty → g = 1 := by
+  rcases e with ⟨x, q⟩
+  obtain ⟨V, hV_open, hxV, -, hV_triv⟩ :=
+    exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial x
+  have hmem : mk x q ∈ sheet V hxV q := by
+    induction q using Quotient.inductionOn with
+    | h p => exact ofBasedPath_ofPath p ▸ mem_sheet_self hxV p
+  refine ⟨sheet V hxV q, (isOpen_sheet V hV_open hxV q).mem_nhds hmem, fun g hg ↦ ?_⟩
+  obtain ⟨_, ⟨y, hy, rfl⟩, hgy⟩ := hg
+  -- `proj` is injective on the sheet, so `g • y = y`, and the action is free.
+  have hgy' : g • y = y := proj_injOn_sheet hV_triv hxV q hgy hy (proj_smul g y)
+  exact IsCancelSMul.right_cancel g 1 y (hgy'.trans (one_smul _ y).symm)
+
 /-- The endpoint projection is surjective when the base is path-connected. -/
 theorem proj_surjective [PathConnectedSpace X] :
     Function.Surjective (proj : UniversalCover x₀ → X) := fun x ↦
@@ -187,7 +205,7 @@ theorem basepointLift_coe (x₀ : X) :
 /-- Monodromy of the universal covering projection at its constant-path basepoint is the
 fundamental-group action by the inverse loop class. -/
 @[simp]
-theorem monodromy_basepointLift [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+theorem monodromy_basepointLift [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ : X) (g : FundamentalGroup X x₀) :
     ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) : UniversalCover x₀) =
       g⁻¹ • (basepointLift x₀ : UniversalCover x₀) := by

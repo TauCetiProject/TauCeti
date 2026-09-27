@@ -70,7 +70,6 @@ section Generator
 variable (γ : Γ) (U : OpenNormalSubgroup Γ)
 
 /-- Evaluation at `γ - 1` sends the polynomial `(1 + X) ^ |Γ ⧸ U| - 1` to `γ ^ |Γ ⧸ U| - 1`. -/
-@[simp]
 theorem aeval_one_add_X_pow_card_sub_one :
     PowerSeries.aeval (isTopologicallyNilpotent_of_sub_one hΓ γ)
       ((1 + PowerSeries.X) ^ Nat.card (Γ ⧸ U.toSubgroup) - 1 : PowerSeries ℤ_[p]) =

@@ -139,6 +139,15 @@ theorem analyticAffineChartDiagram_map (hΦ : Φ.IsRegular) {τ σ : Φ.cones} (
         ((isRegular_iff.mp hΦ) σ.1 σ.2) f :=
   (rfl)
 
+/-- Pointwise composition of maps in the analytic affine chart diagram. -/
+theorem analyticChartMap_comp (hΦ : Φ.IsRegular) {α β γ : Φ.cones}
+    (f : α ⟶ β) (g : β ⟶ γ)
+    (x : (Φ.analyticAffineChartDiagram hΦ).obj α) :
+    (Φ.analyticAffineChartDiagram hΦ).map g
+        ((Φ.analyticAffineChartDiagram hΦ).map f x) =
+      (Φ.analyticAffineChartDiagram hΦ).map (f ≫ g) x := by
+  exact (ConcreteCategory.congr_hom ((Φ.analyticAffineChartDiagram hΦ).map_comp f g) x).symm
+
 /-- Every map in the analytic chart diagram is an open embedding. -/
 theorem isOpenEmbedding_analyticAffineChartDiagram_map (hΦ : Φ.IsRegular) {τ σ : Φ.cones}
     (f : τ ⟶ σ) :

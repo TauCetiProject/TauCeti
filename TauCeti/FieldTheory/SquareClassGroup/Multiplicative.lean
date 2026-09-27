@@ -45,7 +45,8 @@ subgroup of squares. -/
 abbrev MultiplicativeSquareClassGroup (K : Type*) [Field K] : Type _ :=
   Kˣ ⧸ Subgroup.square Kˣ
 
-private theorem squareClassHom_surjective :
+/-- Every square class has a unit representative. -/
+theorem squareClassHom_surjective :
     Function.Surjective (squareClassHom (K := K)) := by
   intro x
   obtain ⟨u, rfl⟩ :=

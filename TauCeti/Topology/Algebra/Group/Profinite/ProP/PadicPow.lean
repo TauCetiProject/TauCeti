@@ -46,6 +46,7 @@ abelian pro-`p` groups is stated.
 * `TauCeti.IsProP.continuous_padicPow`: the action `ℤ_[p] × A → A` is jointly continuous.
 * `TauCeti.IsProP.eq_padicPow_of_continuous`, `TauCeti.IsProP.map_padicPow`: the power is the
   unique continuous extension of the natural powers, and continuous homomorphisms preserve it.
+* `TauCeti.IsProP.padicPow_mem`: a closed subgroup containing `a` contains its `p`-adic powers.
 * `TauCeti.IsProP.padicPow_ofAdd_apply_one`: along a continuous additive homomorphism
   `g : ℤ_[p] →+ X`, the `p`-adic power of `ofAdd (g 1)` in `Multiplicative X` is `ofAdd ∘ g`.
 * `TauCeti.IsProP.module_smul`, `TauCeti.IsProP.continuousSMul_module`: the module structure
@@ -237,6 +238,18 @@ theorem eq_padicPow_of_continuous (hA : IsProP p A) {a : A} {f : ℤ_[p] → A} 
     hA.continuous_padicPow.comp (continuous_id.prodMk continuous_const)
   exact congrFun (PadicInt.denseRange_natCast.equalizer hf hcont
     (funext fun k ↦ by simp [hnat k])) l
+
+/-- A closed subgroup containing `a` contains every `p`-adic power of `a`. -/
+theorem padicPow_mem (hA : IsProP p A) {H : Subgroup A} (hH : IsClosed (H : Set A)) {a : A}
+    (ha : a ∈ H) (l : ℤ_[p]) : hA.padicPow a l ∈ H := by
+  -- The exponents `l` with `a ^ l ∈ H` form a closed set containing the dense subset `ℕ`.
+  have hclosed : IsClosed {l : ℤ_[p] | hA.padicPow a l ∈ H} :=
+    hH.preimage (hA.continuous_padicPow.comp (continuous_id.prodMk continuous_const))
+  have hnat : Set.range (Nat.cast : ℕ → ℤ_[p]) ⊆ {l : ℤ_[p] | hA.padicPow a l ∈ H} := by
+    rintro _ ⟨k, rfl⟩
+    simpa using H.pow_mem ha k
+  exact hclosed.closure_subset_iff.mpr hnat
+    ((PadicInt.denseRange_natCast (p := p)).closure_range ▸ Set.mem_univ l)
 
 /-- Continuous homomorphisms between pro-`p` groups preserve the `p`-adic power. -/
 theorem map_padicPow {B : Type v} [Group B] [TopologicalSpace B] [IsTopologicalGroup B]

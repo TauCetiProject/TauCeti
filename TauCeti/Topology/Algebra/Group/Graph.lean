@@ -33,7 +33,7 @@ homomorphism out of it. -/
   /-- An additive monoid is continuously additively equivalent to the submonoid graph of a
   continuous homomorphism out of it. -/]
 def MonoidHomClass.mgraphEquiv (f : F) :
-    G ≃ₜ* (MonoidHomClass.toMonoidHom f).mgraph where
+    G ≃ₜ* (MonoidHom.ofClass f).mgraph where
   toFun g := ⟨(g, f g), rfl⟩
   invFun x := x.1.1
   left_inv _ := rfl
@@ -58,7 +58,7 @@ theorem MonoidHomClass.coe_mgraphEquiv_apply (f : F) (g : G) :
 @[to_additive (attr := simp)
   /-- The inverse additive submonoid graph equivalence is the first projection. -/]
 theorem MonoidHomClass.mgraphEquiv_symm_apply (f : F)
-    (x : (MonoidHomClass.toMonoidHom f).mgraph) :
+    (x : (MonoidHom.ofClass f).mgraph) :
     (MonoidHomClass.mgraphEquiv f).symm x = x.1.1 := (rfl)
 
 /-- The submonoid graph of a continuous homomorphism into a Hausdorff monoid is closed. -/
@@ -66,9 +66,9 @@ theorem MonoidHomClass.mgraphEquiv_symm_apply (f : F)
   /-- The additive submonoid graph of a continuous additive homomorphism into a Hausdorff additive
   monoid is closed. -/]
 theorem MonoidHomClass.isClosed_mgraph [T2Space H] (f : F) :
-    IsClosed ((MonoidHomClass.toMonoidHom f).mgraph : Set (G × H)) := by
+    IsClosed ((MonoidHom.ofClass f).mgraph : Set (G × H)) := by
   have hgraph :
-      ((MonoidHomClass.toMonoidHom f).mgraph : Set (G × H)) = {x | f x.1 = x.2} := by
+      ((MonoidHom.ofClass f).mgraph : Set (G × H)) = {x | f x.1 = x.2} := by
     ext x
     exact MonoidHom.mem_mgraph
   rw [hgraph]
@@ -87,7 +87,7 @@ homomorphism out of it. -/
   /-- An additive group is continuously additively equivalent to the subgroup graph of a continuous
   homomorphism out of it. -/]
 def MonoidHomClass.graphEquiv (f : F) :
-    G ≃ₜ* (MonoidHomClass.toMonoidHom f).graph :=
+    G ≃ₜ* (MonoidHom.ofClass f).graph :=
   MonoidHomClass.mgraphEquiv f
 
 /-- The subgroup graph equivalence sends an element to the corresponding point of the graph. -/
@@ -101,14 +101,14 @@ theorem MonoidHomClass.coe_graphEquiv_apply (f : F) (g : G) :
 @[to_additive (attr := simp)
   /-- The inverse additive subgroup graph equivalence is the first projection. -/]
 theorem MonoidHomClass.graphEquiv_symm_apply (f : F)
-    (x : (MonoidHomClass.toMonoidHom f).graph) :
+    (x : (MonoidHom.ofClass f).graph) :
     (MonoidHomClass.graphEquiv f).symm x = x.1.1 := (rfl)
 
 /-- The graph of a continuous homomorphism into a Hausdorff group is closed. -/
 @[to_additive
   /-- The graph of a continuous additive homomorphism into a Hausdorff additive group is closed. -/]
 theorem MonoidHomClass.isClosed_graph [T2Space H] (f : F) :
-    IsClosed ((MonoidHomClass.toMonoidHom f).graph : Set (G × H)) := by
+    IsClosed ((MonoidHom.ofClass f).graph : Set (G × H)) := by
   exact MonoidHomClass.isClosed_mgraph f
 
 end Group

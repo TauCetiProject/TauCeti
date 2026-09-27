@@ -52,11 +52,15 @@ profinite group.
 * `TauCeti.isTopologicallyFinitelyGenerated_iff_exists_rank_le`: topological finite generation
   is exactly a uniform bound on the ranks of the finite quotients.
 * `TauCeti.ConvergesToOne`: a set has only finitely many elements outside every neighborhood of
-  `1`.
+  `1`; `TauCeti.ConvergesToOne.tendsto_coe` is the defining limit of the inclusion.
 * `TauCeti.convergesToOne_iff_openNormalSubgroup`: in a profinite group, the same holds for
   every open normal subgroup.
 * `TauCeti.ConvergesToOne.image`: a continuous map preserving `1` carries a set converging to one
   to another such set.
+* `Filter.Tendsto.convergesToOne_range`: the range of a map tending to `1` along the cofinite
+  filter converges to one.
+* `TauCeti.ConvergesToOne.isCompact_insert_one`, `TauCeti.ConvergesToOne.isClosed_insert_one`: a
+  set converging to one is compact, and in a Hausdorff space closed, once `1` is added to it.
 * `Subgroup.exists_convergesToOne_lift_quotient`: a converging set in a quotient by a closed
   normal subgroup has a converging set of representatives upstairs.
 * `Subgroup.exists_convergesToOne_lift_quotient_topologicallyGenerates`: if the set generates the
@@ -95,6 +99,12 @@ generating sets in the cardinal-valued topological generator rank of a profinite
 def ConvergesToOne (s : Set G) : Prop :=
   Tendsto ((↑) : s → G) cofinite (𝓝 1)
 
+/-- The inclusion of a set converging to one tends to `1` along the cofinite filter. This is the
+definition of `TauCeti.ConvergesToOne`, which is not unfolded outside this module. -/
+theorem ConvergesToOne.tendsto_coe {s : Set G} (hs : ConvergesToOne s) :
+    Tendsto ((↑) : s → G) cofinite (𝓝 1) :=
+  hs
+
 /-- A set converges to one exactly when only finitely many of its elements lie outside each
 neighborhood of `1`. -/
 theorem convergesToOne_iff {s : Set G} :
@@ -128,6 +138,26 @@ theorem ConvergesToOne.union {s t : Set G} (hs : ConvergesToOne s) (ht : Converg
   rcases hx.1 with hxs | hxt
   · exact Or.inl ⟨hxs, hx.2⟩
   · exact Or.inr ⟨hxt, hx.2⟩
+
+/-- The range of a map tending to `1` along the cofinite filter converges to one. -/
+theorem _root_.Filter.Tendsto.convergesToOne_range {ι : Type*} {f : ι → G}
+    (hf : Tendsto f cofinite (𝓝 1)) : ConvergesToOne (Set.range f) := by
+  rw [convergesToOne_iff]
+  intro U hU
+  refine ((mem_cofinite.mp (hf hU)).image f).subset ?_
+  rintro _ ⟨⟨i, rfl⟩, hi⟩
+  exact ⟨i, hi, rfl⟩
+
+/-- A set converging to one is compact once `1` is added to it. -/
+theorem ConvergesToOne.isCompact_insert_one {s : Set G} (hs : ConvergesToOne s) :
+    IsCompact (insert 1 s) := by
+  simpa only [Subtype.range_coe] using hs.isCompact_insert_range_of_cofinite
+
+/-- In a Hausdorff space, a set converging to one is closed once `1` is added to it; so for a
+profinite group `G` the subspace `insert 1 s` is a profinite space. -/
+theorem ConvergesToOne.isClosed_insert_one [T2Space G] {s : Set G} (hs : ConvergesToOne s) :
+    IsClosed (insert 1 s) :=
+  hs.isCompact_insert_one.isClosed
 
 end One
 

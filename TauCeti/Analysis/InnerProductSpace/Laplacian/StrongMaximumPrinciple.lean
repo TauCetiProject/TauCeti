@@ -237,7 +237,7 @@ theorem eqOn_const_closure_of_laplacian_nonneg_of_isMaxOn (hU : IsOpen U) (ha : 
     (hmax : IsMaxOn u (closure U) a) :
     EqOn u (const E (u a)) (closure U) :=
   (eqOn_const_of_laplacian_nonneg_of_isMaxOn hU ha hUconn hcd hlap
-    (hmax.on_subset subset_closure)).of_subset_closure hcont continuousOn_const subset_closure
+    (hmax.of_subset subset_closure)).of_subset_closure hcont continuousOn_const subset_closure
     Subset.rfl
 
 /-- **Strong minimum principle up to the boundary.** If `u` is continuous on `closure U`, is `C²`
@@ -249,7 +249,7 @@ theorem eqOn_const_closure_of_laplacian_nonpos_of_isMinOn (hU : IsOpen U) (ha : 
     (hmin : IsMinOn u (closure U) a) :
     EqOn u (const E (u a)) (closure U) :=
   (eqOn_const_of_laplacian_nonpos_of_isMinOn hU ha hUconn hcd hlap
-    (hmin.on_subset subset_closure)).of_subset_closure hcont continuousOn_const subset_closure
+    (hmin.of_subset subset_closure)).of_subset_closure hcont continuousOn_const subset_closure
     Subset.rfl
 
 /-- **Strong comparison principle up to the boundary.** Let `u` and `v` be continuous on

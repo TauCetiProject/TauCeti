@@ -56,6 +56,9 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
   `p`-primary torsion exactly when `M` is a `p`-group.
 * `TauCeti.IsPPrimaryTorsion.of_injective`, `TauCeti.IsPPrimaryTorsion.of_surjective`: the
   condition passes to subgroups and to quotients.
+* `TauCeti.IsPPrimaryTorsion.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
+* `TauCeti.IsPPrimaryTorsion.exists_pow_smul_eq_zero`: a finite `p`-primary torsion group is
+  annihilated by one power of `p`.
 -/
 
 public section
@@ -191,6 +194,11 @@ theorem isPPrimaryTorsion_additive_iff {M : Type*} [CommGroup M] :
     IsPPrimaryTorsion p (Additive M) ↔ IsPGroup p M := by
   simp [isPPrimaryTorsion_iff, IsPGroup, Additive.forall, ← ofMul_pow]
 
+/-- A group of order `p ^ k` is `p`-primary torsion: the additive form of `IsPGroup.of_card`. -/
+theorem isPPrimaryTorsion_of_natCard_eq_pow {k : ℕ} (h : Nat.card M = p ^ k) :
+    IsPPrimaryTorsion p M :=
+  (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).2 (IsPGroup.of_card h)
+
 namespace IsPPrimaryTorsion
 
 variable {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
@@ -209,6 +217,23 @@ theorem of_surjective (h : IsPPrimaryTorsion p M) (f : F) (hf : Function.Surject
   (isPPrimaryTorsion_additive_iff (M := Multiplicative N)).2
     (((isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 h).of_surjective
       (AddMonoidHom.toMultiplicative (f : M →+ N)) hf)
+
+/-- A `p`-primary torsion group is torsion, for `p ≠ 0`: the power of `p` killing an element is a
+positive natural number. The hypothesis is used, since `0 ^ k • m = 0` holds for `k = 1` and
+every `m`. -/
+theorem isAddTorsion (h : IsPPrimaryTorsion p M) (hp : p ≠ 0) : IsAddTorsion M := fun m ↦ by
+  obtain ⟨k, hk⟩ := isPPrimaryTorsion_iff.1 h m
+  exact isOfFinAddOrder_iff_nsmul_eq_zero.2 ⟨p ^ k, pow_pos (Nat.pos_of_ne_zero hp) k, hk⟩
+
+/-- A finite `p`-primary torsion group is annihilated by one power of `p`. -/
+theorem exists_pow_smul_eq_zero [Finite M] (h : IsPPrimaryTorsion p M) :
+    ∃ k : ℕ, ∀ m : M, p ^ k • m = 0 := by
+  have hp : IsPGroup p (Multiplicative M) :=
+    (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 h
+  obtain ⟨k, hk⟩ := isPGroup_iff_exists_pow_pow_eq_one.mp hp
+  exact ⟨k, fun m ↦ by
+    have hm := congrArg Multiplicative.toAdd (hk (Multiplicative.ofAdd m))
+    simpa using hm⟩
 
 end IsPPrimaryTorsion
 

@@ -37,6 +37,8 @@ the two marking permutations, hence the sign of the component permutation `𝕏�
 ## Main definitions
 
 * `TauCeti.OddComponentGridDiagram`: a grid diagram with an odd number of link components.
+* `TauCeti.GridDiagram.IsKnot.toOddComponentGridDiagram`: a knot grid has one, hence an odd
+  number of components.
 * `TauCeti.OddComponentGridDiagram.alexanderℤ`: the integer Alexander grading.
 * `TauCeti.OddComponentGridDiagram.bidegree`: the (`O`-Maslov, Alexander) degree of a grid state.
 * `TauCeti.OddComponentGridDiagram.alexanderSupport`: the Alexander degrees occupied by grid
@@ -315,6 +317,16 @@ end GridDiagram
 /-- A grid diagram with an odd number of link components. -/
 abbrev OddComponentGridDiagram (n : ℕ) :=
   {G : GridDiagram n // Odd G.componentCount}
+
+namespace GridDiagram.IsKnot
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
+
+/-- A knot grid, viewed as a grid with an odd number of components. -/
+abbrev toOddComponentGridDiagram : OddComponentGridDiagram n :=
+  ⟨G, by rw [G.isKnot_def.mp hG]; exact odd_one⟩
+
+end GridDiagram.IsKnot
 
 namespace OddComponentGridDiagram
 

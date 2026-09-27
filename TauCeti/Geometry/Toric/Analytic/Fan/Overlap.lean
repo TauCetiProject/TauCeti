@@ -213,4 +213,41 @@ theorem analyticOverlapRight_self (σ : Φ.cones) :
   obtain ⟨y, rfl⟩ := (Φ.mem_analyticOverlapOpens hΦ σ σ x).1 hx
   simp [analyticOverlapRight_self]
 
+/-- A point coming from a common face belongs to the overlap of the two charts. -/
+theorem mem_analyticOverlapOpens_of_le {γ σ τ : Φ.cones} (hγσ : γ ≤ σ)
+    (hγτ : γ ≤ τ) (z : (Φ.analyticAffineChartDiagram hΦ).obj γ) :
+    (Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγσ) z ∈
+      Φ.analyticOverlapOpens hΦ σ τ := by
+  let hγ : γ ≤ σ ⊓ τ := le_inf hγσ hγτ
+  apply (Φ.mem_analyticOverlapOpens hΦ σ τ _).2
+  refine ⟨(Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγ) z, ?_⟩
+  rw [Φ.analyticOverlapLeft_def hΦ, Φ.analyticChartMap_comp hΦ]
+  congr 1
+
+/-- On a point from a common face, an overlap transition is the chart map into the
+second cone. -/
+theorem analyticOverlapHomeomorph_apply_of_le {γ σ τ : Φ.cones} (hγσ : γ ≤ σ)
+    (hγτ : γ ≤ τ) (z : (Φ.analyticAffineChartDiagram hΦ).obj γ) :
+    ((Φ.analyticOverlapHomeomorph hΦ σ τ)
+      ⟨(Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγσ) z,
+        Φ.mem_analyticOverlapOpens_of_le hΦ hγσ hγτ z⟩).1 =
+        (Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγτ) z := by
+  let hγ : γ ≤ σ ⊓ τ := le_inf hγσ hγτ
+  have he : (Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγσ) z =
+      Φ.analyticOverlapLeft hΦ σ τ
+        ((Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγ) z) := by
+    rw [Φ.analyticOverlapLeft_def hΦ, Φ.analyticChartMap_comp hΦ]
+    congr 1
+  have he' : (⟨_, Φ.mem_analyticOverlapOpens_of_le hΦ hγσ hγτ z⟩ :
+      Φ.analyticOverlapOpens hΦ σ τ) =
+      ⟨Φ.analyticOverlapLeft hΦ σ τ
+        ((Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγ) z),
+        Φ.analyticOverlapLeft_mem hΦ σ τ _⟩ := Subtype.ext he
+  rw [he', Φ.analyticOverlapHomeomorph_apply hΦ]
+  -- Remove the subtype coercion before rewriting the map of the right overlap.
+  change Φ.analyticOverlapRight hΦ σ τ
+    ((Φ.analyticAffineChartDiagram hΦ).map (homOfLE hγ) z) = _
+  rw [Φ.analyticOverlapRight_def hΦ, Φ.analyticChartMap_comp hΦ]
+  congr 1
+
 end TauCeti.Toric.Fan

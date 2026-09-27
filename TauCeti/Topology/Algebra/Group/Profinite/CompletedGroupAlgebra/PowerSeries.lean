@@ -7,15 +7,19 @@ module
 
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.Algebra.Group.TypeTags.Finite
+public import Mathlib.NumberTheory.Padics.MahlerBasis
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Algebra.MonoidAlgebra.Cyclic
 public import TauCeti.NumberTheory.Padics.MonoidAlgebra
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Evaluation
+public import TauCeti.RingTheory.PowerSeries.Substitution
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Procyclic
 public import TauCeti.Topology.Algebra.Module.Compact
 public import TauCeti.Topology.Algebra.Nonarchimedean.Profinite
 
@@ -50,6 +54,16 @@ such as that on the relation module of a Demushkin group, can be read as `ℤ_p�
 structures through it. The concrete instance `Γ = Multiplicative ℤ_[p]` with
 `γ = Multiplicative.ofAdd (1 : ℤ_[p])` is recorded.
 
+The coordinate depends on the generator, and the dependence is a substitution. The binomial series
+`(1 + X) ^ u ∈ ℤ_p⟦X⟧`, for `u ∈ ℤ_p`, evaluates at `γ - 1` to the `p`-adic power `γ ^ u`
+(`TauCeti.completedGroupAlgebra.aeval_binomialSeries`). Every other topological generator of `Γ` is
+`γ ^ u` for a unit `u` of `ℤ_p`, and the coordinate attached to `γ ^ u` is the coordinate attached
+to `γ` composed with the substitution `X ↦ (1 + X) ^ u - 1`
+(`TauCeti.completedGroupAlgebra.powerSeriesCoordinate_padicPow_apply`,
+`TauCeti.completedGroupAlgebra.exists_isUnit_powerSeriesCoordinate_eq_subst`). A statement about
+`ℤ_p[[Γ]]` read through a coordinate is therefore independent of the chosen generator exactly when
+it is invariant under these substitutions.
+
 ## Main results
 
 * `TauCeti.completedGroupAlgebra.isTopologicallyNilpotent_of_sub_one`: `γ - 1` is topologically
@@ -63,6 +77,12 @@ structures through it. The concrete instance `Γ = Multiplicative ℤ_[p]` with
 * `TauCeti.completedGroupAlgebra.powerSeriesCoordinate`: the resulting isomorphism of
   `ℤ_p`-algebras `ℤ_p⟦X⟧ ≃ₐ[ℤ_p] ℤ_p[[Γ]]`, with `powerSeriesCoordinate_X`,
   `powerSeriesCoordinate_one_add_X`, and its continuity in both directions.
+* `TauCeti.completedGroupAlgebra.aeval_binomialSeries`,
+  `TauCeti.completedGroupAlgebra.powerSeriesCoordinate_binomialSeries`: the binomial series
+  `(1 + X) ^ u` goes to the `p`-adic power `γ ^ u`.
+* `TauCeti.completedGroupAlgebra.powerSeriesCoordinate_padicPow_apply`,
+  `TauCeti.completedGroupAlgebra.exists_isUnit_powerSeriesCoordinate_eq_subst`: changing the
+  topological generator changes the coordinate by the substitution `X ↦ (1 + X) ^ u - 1`.
 * `TauCeti.completedGroupAlgebra.aeval_bijective_multiplicative_padicInt`: the case of the
   Iwasawa algebra `ℤ_p[[ℤ_p]]`.
 
@@ -159,6 +179,34 @@ theorem aeval_surjective (hΓ : IsProP p Γ) {γ : Γ}
     rw [← hclosed.closure_eq]
     exact closure_mono hspan ((dense_span_range_of ℤ_[p] Γ).closure_eq ▸ Set.mem_univ x)
   exact hx
+
+/-! ### The binomial series and the `p`-adic powers -/
+
+section Binomial
+
+variable [TotallyDisconnectedSpace Γ]
+
+/-- **The binomial series `(1 + X) ^ u` evaluates at `γ - 1` to the `p`-adic power `γ ^ u`**, for
+every exponent `u ∈ ℤ_[p]`. -/
+@[simp]
+theorem aeval_binomialSeries (hΓ : IsProP p Γ) (γ : Γ) (u : ℤ_[p]) :
+    PowerSeries.aeval (isTopologicallyNilpotent_of_sub_one hΓ γ)
+      (PowerSeries.binomialSeries ℤ_[p] u) = of ℤ_[p] Γ (hΓ.padicPow γ u) := by
+  -- Both sides are continuous in `u` and agree on the dense subset `ℕ`, where the binomial
+  -- series is `(1 + X) ^ k` and the `p`-adic power is `γ ^ k`.
+  have hbin : Continuous fun u : ℤ_[p] ↦ PowerSeries.binomialSeries ℤ_[p] u := by
+    refine continuous_iff_continuousAt.mpr fun u ↦
+      (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
+    simp only [PowerSeries.binomialSeries_coeff, smul_eq_mul, mul_one]
+    exact (PadicInt.continuous_choose n).continuousAt
+  have hpow : Continuous fun u : ℤ_[p] ↦ of ℤ_[p] Γ (hΓ.padicPow γ u) :=
+    (continuous_of ℤ_[p] Γ).comp
+      (hΓ.continuous_padicPow.comp (continuous_id.prodMk continuous_const))
+  exact congrFun (PadicInt.denseRange_natCast.equalizer
+    ((PowerSeries.continuous_aeval _).comp hbin) hpow
+    (funext fun k ↦ by simp [hΓ.padicPow_natCast])) u
+
+end Binomial
 
 /-! ### Injectivity, and the power-series coordinate of an infinite procyclic group -/
 
@@ -300,6 +348,47 @@ theorem continuous_powerSeriesCoordinate_symm :
   have : CompactSpace (PowerSeries ℤ_[p]) := inferInstanceAs (CompactSpace ((Unit →₀ ℕ) → ℤ_[p]))
   exact (Continuous.homeoOfEquivCompactToT2 (f := (powerSeriesCoordinate hΓ hγ).toEquiv)
     (continuous_powerSeriesCoordinate hΓ hγ)).symm.continuous
+
+/-- The power-series coordinate sends the binomial series `(1 + X) ^ u` to the group element
+`γ ^ u`, the `p`-adic power of the generator. -/
+@[simp]
+theorem powerSeriesCoordinate_binomialSeries (u : ℤ_[p]) :
+    powerSeriesCoordinate hΓ hγ (PowerSeries.binomialSeries ℤ_[p] u) =
+      of ℤ_[p] Γ (hΓ.padicPow γ u) := by
+  rw [coe_powerSeriesCoordinate, aeval_binomialSeries]
+
+/-- **Change of topological generator.** If the `p`-adic power `γ ^ u` again topologically
+generates `Γ`, the power-series coordinate attached to `γ ^ u` is the coordinate attached to `γ`
+composed with the substitution `X ↦ (1 + X) ^ u - 1`. -/
+theorem powerSeriesCoordinate_padicPow_apply (u : ℤ_[p])
+    (hγu : (Subgroup.closure ({hΓ.padicPow γ u} : Set Γ)).topologicalClosure = ⊤)
+    (ψ : PowerSeries ℤ_[p]) :
+    powerSeriesCoordinate hΓ hγu ψ =
+      powerSeriesCoordinate hΓ hγ (ψ.subst (PowerSeries.binomialSeries ℤ_[p] u - 1)) := by
+  have hX : (powerSeriesCoordinate hΓ hγ).toAlgHom (PowerSeries.binomialSeries ℤ_[p] u - 1) =
+      of ℤ_[p] Γ (hΓ.padicPow γ u) - 1 := by
+    rw [AlgEquiv.coe_toAlgHom, map_sub, map_one, powerSeriesCoordinate_binomialSeries]
+  have hb : PowerSeries.HasEval
+      ((powerSeriesCoordinate hΓ hγ).toAlgHom (PowerSeries.binomialSeries ℤ_[p] u - 1)) :=
+    hX ▸ isTopologicallyNilpotent_of_sub_one hΓ (hΓ.padicPow γ u)
+  have h := PowerSeries.aeval_subst (ε := (powerSeriesCoordinate hΓ hγ).toAlgHom)
+    (hasSubst_binomialSeries_sub_one u) (continuous_powerSeriesCoordinate hΓ hγ) hb ψ
+  -- Both sides are evaluations of `ψ`, at points identified by `hX`.
+  rw [coe_powerSeriesCoordinate]
+  refine Eq.trans ?_ h.symm
+  rw [congrFun (PowerSeries.coe_aeval (isTopologicallyNilpotent_of_sub_one hΓ _)) ψ,
+    congrFun (PowerSeries.coe_aeval hb) ψ, hX]
+
+/-- **Any two power-series coordinates differ by a substitution `X ↦ (1 + X) ^ u - 1` with `u` a
+unit of `ℤ_p`.** For a second topological generator `γ'` of `Γ`, there is a unit `u` with
+`γ' = γ ^ u`, and the coordinate attached to `γ'` is the coordinate attached to `γ` composed with
+the substitution `X ↦ (1 + X) ^ u - 1`. -/
+theorem exists_isUnit_powerSeriesCoordinate_eq_subst {γ' : Γ}
+    (hγ' : (Subgroup.closure ({γ'} : Set Γ)).topologicalClosure = ⊤) :
+    ∃ u : ℤ_[p], IsUnit u ∧ ∀ ψ : PowerSeries ℤ_[p], powerSeriesCoordinate hΓ hγ' ψ =
+      powerSeriesCoordinate hΓ hγ (ψ.subst (PowerSeries.binomialSeries ℤ_[p] u - 1)) := by
+  obtain ⟨u, hu, rfl⟩ := hΓ.exists_isUnit_padicPow_eq_of_topologicalClosure_closure_eq_top hγ hγ'
+  exact ⟨u, hu, powerSeriesCoordinate_padicPow_apply hΓ hγ u hγ'⟩
 
 end Injective
 

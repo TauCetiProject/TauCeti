@@ -117,13 +117,13 @@ theorem frobeniusAlgEquiv_restrictNormal :
   let σ := frobeniusAlgEquiv (K := K) (L := M)
   apply eq_frobeniusAlgEquiv_of_valuation_sub_pow_lt_one
   intro y
-  let d : 𝒪[L] := (σ.restrictNormal L).integerRingAlgEquiv y - y ^ Nat.card 𝓀[K]
+  let d : 𝒪[L] := (σ.restrictNormal L).integerRingEquiv y - y ^ Nat.card 𝓀[K]
   have hdcoe : (d : L) =
       (σ.restrictNormal L) (y : L) - (y : L) ^ Nat.card 𝓀[K] := by
     -- Expose the field-valued expression represented by the integer-ring difference `d`.
-    change ((((σ.restrictNormal L).integerRingAlgEquiv y : 𝒪[L]) : L) -
+    change ((((σ.restrictNormal L).integerRingEquiv y : 𝒪[L]) : L) -
       (y : L) ^ Nat.card 𝓀[K]) = _
-    rw [AlgEquiv.integerRingAlgEquiv_apply, AlgEquiv.coe_smul_integerRing]
+    rw [AlgEquiv.integerRingEquiv_apply, AlgEquiv.coe_smul_integerRing]
   have hd : d ∈ IsLocalRing.maximalIdeal 𝒪[L] := by
     have hσ := valuation_frobeniusAlgEquiv_sub_pow (K := K) (L := M)
       (algebraMap 𝒪[L] 𝒪[M] y)

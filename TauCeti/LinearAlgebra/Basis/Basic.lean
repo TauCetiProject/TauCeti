@@ -22,6 +22,8 @@ and the coordinate isomorphism are involved.
 
 * `Module.Basis.eq_smul_of_repr_support_subset_singleton`: a vector supported on one coordinate is
   that coordinate times the corresponding basis vector.
+* `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
+  linear equivalence are the coordinates of the vector transported back.
 -/
 
 public section
@@ -51,5 +53,13 @@ theorem repr_map_eq_of_map_basis
     exact (congrArg c.repr (hf i)).trans
       ((c.repr_self i).trans (b.repr_self i).symm)
   exact DFunLike.congr_fun h x
+
+/-- The coordinates with respect to the basis `b.map f` transported along a linear equivalence
+`f` are the coordinates with respect to `b` of the vector transported back along `f`. Not a simp
+lemma: simp already unfolds the left side through `Module.Basis.coord_apply`. -/
+theorem coord_map_apply {R M M' ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid M'] [Module R M'] (b : Module.Basis ι R M) (f : M ≃ₗ[R] M') (i : ι) (x : M') :
+    (b.map f).coord i x = b.coord i (f.symm x) := by
+  simp only [coord_apply, map_repr, LinearEquiv.trans_apply]
 
 end Module.Basis

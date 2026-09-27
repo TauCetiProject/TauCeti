@@ -115,6 +115,14 @@ theorem linearMap_ext {N : Type uN} [AddCommMonoid N] [Module R N]
 noncomputable def component (n : ℕ) : TensorWords R M →ₗ[R] TensorPower R n M :=
   DirectSum.component R ℕ (fun n ↦ TensorPower R n M) n
 
+/-- Applying the length projection reads the corresponding coordinate.
+
+The specialized projection rules for included words take precedence. -/
+@[simp low]
+theorem component_apply (n : ℕ) (x : TensorWords R M) :
+    component R M n x = x n :=
+  (DirectSum.apply_eq_component R x n).symm
+
 /-- The component of an included tensor power at its own length is that tensor power. -/
 @[simp]
 theorem component_of (n : ℕ) (x : TensorPower R n M) :
@@ -141,11 +149,16 @@ theorem toModule_of {N : Type uN} [AddCommMonoid N] [Module R N]
 noncomputable def counit : TensorWords R M →ₗ[R] R :=
   (TensorPower.algebraMap₀ (R := R) (M := M)).symm.toLinearMap ∘ₗ component R M 0
 
+/-- The counit evaluates the length-zero component using the scalar identification. -/
+theorem counit_apply (x : TensorWords R M) :
+    counit R M x = (TensorPower.algebraMap₀ (R := R) (M := M)).symm (component R M 0 x) :=
+  (rfl)
+
 /-- On the empty length the counit is the canonical identification with the ground ring. -/
 @[simp]
 theorem counit_of_zero (z : TensorPower R 0 M) :
     counit R M (of R M 0 z) = (TensorPower.algebraMap₀ (R := R) (M := M)).symm z := by
-  simp [counit]
+  simp only [counit, LinearMap.comp_apply, LinearEquiv.coe_coe, component_of]
 
 /-- The counit annihilates every word of positive length. -/
 @[simp]
@@ -221,6 +234,51 @@ noncomputable def deconcatenation :
 theorem deconcatenation_of (n : ℕ) (x : TensorPower R n M) :
     deconcatenation R M (of R M n x) = deconcatenationComponent R M n x := by
   simp [deconcatenation, of]
+
+/-- Each bidegree of deconcatenation splits the component of the total length. -/
+theorem map_component_comp_deconcatenation (p q : ℕ) :
+    TensorProduct.map (component R M p) (component R M q) ∘ₗ
+      deconcatenation R M =
+    (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap ∘ₗ
+      component R M (p + q) := by
+  classical
+  apply linearMap_ext
+  intro n x
+  simp only [LinearMap.comp_apply, deconcatenation_of,
+    deconcatenationComponent_tprod, map_sum, TensorProduct.map_tmul]
+  by_cases hn : n = p + q
+  · subst n
+    rw [component_of]
+    rw [Finset.sum_eq_single ⟨p, by omega⟩]
+    · simp only [component_of]
+      have hq {m : ℕ} (hm : m = q) (z : TensorPower R m M) :
+          component R M q (of R M m z) = TensorPower.cast R M hm z := by
+        subst m
+        simp only [component_of, TensorPower.cast_refl, LinearEquiv.refl_apply]
+      rw [hq (Nat.add_sub_cancel_left p q), TensorPower.cast_tprod]
+      apply TensorPower.mulEquiv.injective
+      rw [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, ← TensorPower.gMul_def,
+        TensorPower.tprod_mul_tprod]
+      congr 1
+      funext i
+      refine Fin.addCases ?_ ?_ i
+      · intro j
+        rw [Fin.append_left]
+        congr 1
+      · intro j
+        rw [Fin.append_right]
+        exact congrArg x (Fin.ext (by simp))
+    · intro i _ hi
+      have hp : i.val ≠ p := fun h ↦ hi (Fin.ext h)
+      rw [component_of_of_ne R M hp, TensorProduct.zero_tmul]
+    · simp
+  · rw [component_of_of_ne R M hn, map_zero]
+    apply Finset.sum_eq_zero
+    intro i _
+    by_cases hp : i.val = p
+    · have hq : n - i.val ≠ q := by have := i.isLt; omega
+      rw [component_of_of_ne R M hq, TensorProduct.tmul_zero]
+    · rw [component_of_of_ne R M hp, TensorProduct.zero_tmul]
 
 section Subword
 

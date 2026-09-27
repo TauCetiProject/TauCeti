@@ -24,6 +24,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   `∫ f ∂μ`.
 - `ae_eq_condExp_of_forall_setIntegral_fiber_eq`: conditional-expectation uniqueness can be
   checked on the fibers of a countable-valued observation.
+- `condExp_ae_eq_of_le_of_le`: if conditioning on a σ-algebra agrees a.e. with conditioning on a
+  coarser one, then so does conditioning on every σ-algebra between them.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -191,6 +193,19 @@ theorem ae_eq_condExp_of_forall_setIntegral_fiber_eq
   rw [hs, integral_iUnion hmeas hdisj hg.integrableOn,
     integral_iUnion hmeas hdisj hf.integrableOn]
   exact tsum_congr fun i => hfg i.val
+
+/-- **Conditioning on an intermediate σ-algebra.** If conditioning `f` on `m₃` gives a.e. the same
+result as conditioning on the coarser `m₁ ≤ m₃`, then so does conditioning on any `m₂` between
+them. -/
+theorem condExp_ae_eq_of_le_of_le {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {m₁ m₂ m₃ m₀ : MeasurableSpace Ω} {μ : Measure Ω} {f : Ω → E}
+    (h₁₂ : m₁ ≤ m₂) (h₂₃ : m₂ ≤ m₃) (h₃ : m₃ ≤ m₀) [SigmaFinite (μ.trim h₃)]
+    [SigmaFinite (μ.trim (h₂₃.trans h₃))] (h : μ[f | m₃] =ᵐ[μ] μ[f | m₁]) :
+    μ[f | m₂] =ᵐ[μ] μ[f | m₁] := calc
+  μ[f | m₂] =ᵐ[μ] μ[μ[f | m₃] | m₂] := (condExp_condExp_of_le h₂₃ h₃).symm
+  _ =ᵐ[μ] μ[μ[f | m₁] | m₂] := condExp_congr_ae h
+  _ = μ[f | m₁] := condExp_of_stronglyMeasurable (h₂₃.trans h₃)
+    (stronglyMeasurable_condExp.mono h₁₂) integrable_condExp
 
 end MeasureTheory
 

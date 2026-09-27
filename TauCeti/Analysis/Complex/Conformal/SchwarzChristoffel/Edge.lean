@@ -65,6 +65,8 @@ prevertex `a i` rotates the edge direction by `-π · e i`, which for the classi
 * `TauCeti.exists_tendsto_schwarzChristoffelPrimitive_sub_eq` -- the Schwarz--Christoffel map
   extends continuously to a prevertex-free real interval, and an increment of the extension is a
   real multiple of the edge direction.
+* `TauCeti.exists_hasDerivAt_schwarzChristoffelPrimitive_continuation` -- on a disc around a
+  regular edge interval, the primitive has a holomorphic continuation with explicit derivative.
 * `TauCeti.exists_tendsto_schwarzChristoffelPrimitive_injOn_collinear` -- consequently the
   interval is carried injectively onto a collinear set: the boundary arc runs along a straight
   line.
@@ -335,6 +337,54 @@ theorem tendsto_schwarzChristoffelIntegrand_nhdsWithin (a e : ι → ℝ) {p q x
   filter_upwards [self_mem_nhdsWithin] with z hz
   exact (schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz).symm
 
+/-- On a disc with prevertex-free real diameter, the Schwarz--Christoffel primitive has a
+holomorphic continuation whose derivative is the continued integrand times the edge direction.
+This is the analytic continuation underlying both the boundary increment formula and local
+injectivity at a regular edge point. -/
+theorem exists_hasDerivAt_schwarzChristoffelPrimitive_continuation
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) {p q : ℝ}
+    (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) :
+    ∃ G : ℂ → ℂ,
+      (∀ z ∈ Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2),
+        HasDerivAt G
+          (Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
+            schwarzChristoffelContinuedIntegrand a e p z) z) ∧
+      EqOn G (schwarzChristoffelPrimitive a e z₀)
+        (Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2) ∩ upperHalfPlaneSet) := by
+  set C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
+  set g : ℂ → ℂ := fun z => C * schwarzChristoffelContinuedIntegrand a e p z
+  have hUre : ∀ z ∈ Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2),
+      z.re ∈ Ioo p q := by
+    intro z hz
+    have hnorm : ‖z - (((p + q) / 2 : ℝ) : ℂ)‖ < (q - p) / 2 := by
+      simpa [dist_eq_norm] using Metric.mem_ball.mp hz
+    have h := (Complex.abs_re_le_norm (z - (((p + q) / 2 : ℝ) : ℂ))).trans_lt hnorm
+    rw [Complex.sub_re, Complex.ofReal_re, abs_lt] at h
+    constructor <;> linarith [h.1, h.2]
+  have hgdiff : DifferentiableOn ℂ g
+      (Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2)) :=
+    fun z hz => ((differentiableOn_schwarzChristoffelContinuedIntegrand a e ha z
+      (hUre z hz)).differentiableAt
+        ((isOpen_Ioo.preimage Complex.continuous_re).mem_nhds (hUre z hz))).const_mul C
+        |>.differentiableWithinAt
+  obtain ⟨P, hP⟩ := hgdiff.isExactOn_ball
+  set V := Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2) ∩ upperHalfPlaneSet
+  have hVopen : IsOpen V := Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
+  have hVpre : IsPreconnected V :=
+    ((convex_ball _ _).inter (convex_halfSpace_im_gt 0)).isPreconnected
+  have hFd : ∀ z ∈ V, HasDerivAt (schwarzChristoffelPrimitive a e z₀) (g z) z := by
+    intro z hz
+    have h := hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz.2
+    rwa [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz.2] at h
+  have hPd : ∀ z ∈ V, HasDerivAt P (g z) z := fun z hz => hP z hz.1
+  obtain ⟨k, hk⟩ := hVopen.exists_eq_add_of_deriv_eq hVpre
+    (fun z hz => (hFd z hz).differentiableAt.differentiableWithinAt)
+    (fun z hz => (hPd z hz).differentiableAt.differentiableWithinAt)
+    fun z hz => by rw [(hFd z hz).deriv, (hPd z hz).deriv]
+  refine ⟨fun z => P z + k, fun z hz => ?_, fun z hz => ?_⟩
+  · exact (hP z hz).add_const k
+  · exact (hk hz).symm
+
 /-- **The Schwarz--Christoffel map has straight image edges.**  Let every prevertex `a i` with
 nonzero exponent avoid the real interval `Ioo p q`; a prevertex with zero exponent contributes the
 constant factor `1` and is harmless.  Then the Schwarz--Christoffel primitive extends continuously
@@ -353,53 +403,31 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_sub_eq (a e : ι → ℝ) (z�
           Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) := by
   set C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
   set g : ℂ → ℂ := fun z => C * schwarzChristoffelContinuedIntegrand a e p z with hg
-  have hUre : ∀ z ∈ Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2), z.re ∈ Ioo p q := by
-    intro z hz
-    have hnorm : ‖z - (((p + q) / 2 : ℝ) : ℂ)‖ < (q - p) / 2 := by
-      simpa [dist_eq_norm] using Metric.mem_ball.mp hz
-    have h := (Complex.abs_re_le_norm (z - (((p + q) / 2 : ℝ) : ℂ))).trans_lt hnorm
-    rw [Complex.sub_re, Complex.ofReal_re, abs_lt] at h
-    constructor <;> linarith [h.1, h.2]
   have hUmem : ∀ x ∈ Ioo p q, ((x : ℂ)) ∈ Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2) := by
     intro x hx
     rw [Metric.mem_ball, Complex.dist_eq, ← Complex.ofReal_sub, Complex.norm_real,
       Real.norm_eq_abs, abs_lt]
     constructor <;> [linarith [hx.1]; linarith [hx.2]]
-  have hgdiff : DifferentiableOn ℂ g (Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2)) :=
-    fun z hz => ((differentiableOn_schwarzChristoffelContinuedIntegrand a e ha z
-      (hUre z hz)).differentiableAt ((isOpen_Ioo.preimage Complex.continuous_re).mem_nhds
-        (hUre z hz))).const_mul C |>.differentiableWithinAt
-  obtain ⟨P, hP⟩ := hgdiff.isExactOn_ball
-  set V := Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2) ∩ upperHalfPlaneSet
-  have hVopen : IsOpen V := Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
-  have hVpre : IsPreconnected V :=
-    ((convex_ball _ _).inter (convex_halfSpace_im_gt 0)).isPreconnected
-  have hFd : ∀ z ∈ V, HasDerivAt (schwarzChristoffelPrimitive a e z₀) (g z) z := by
-    intro z hz
-    have h := hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz.2
-    rwa [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz.2] at h
-  have hPd : ∀ z ∈ V, HasDerivAt P (g z) z := fun z hz => hP z hz.1
-  obtain ⟨k, hk⟩ := hVopen.exists_eq_add_of_deriv_eq hVpre
-    (fun z hz => (hFd z hz).differentiableAt.differentiableWithinAt)
-    (fun z hz => (hPd z hz).differentiableAt.differentiableWithinAt)
-    fun z hz => by rw [(hFd z hz).deriv, (hPd z hz).deriv]
-  refine ⟨fun x => P (x : ℂ) + k, fun x hx => ?_, fun x hx => ?_, fun x hx y hy => ?_⟩
+  obtain ⟨G, hGderiv, hGeq⟩ :=
+    exists_hasDerivAt_schwarzChristoffelPrimitive_continuation a e z₀ ha
+  have hGdiff : DifferentiableOn ℂ G
+      (Metric.ball (((p + q) / 2 : ℝ) : ℂ) ((q - p) / 2)) :=
+    fun z hz => (hGderiv z hz).differentiableAt.differentiableWithinAt
+  refine ⟨fun x => G (x : ℂ), fun x hx => ?_, fun x hx => ?_, fun x hx y hy => ?_⟩
   · have hxU := hUmem x hx
     refine Tendsto.congr' ?_
-      (((hP _ hxU).differentiableAt.continuousAt.tendsto.add tendsto_const_nhds).mono_left
-        nhdsWithin_le_nhds)
+      (((hGderiv _ hxU).continuousAt.tendsto).mono_left nhdsWithin_le_nhds)
     filter_upwards [self_mem_nhdsWithin,
       mem_nhdsWithin_of_mem_nhds (Metric.isOpen_ball.mem_nhds hxU)] with z hz₁ hz₂
-    exact (hk ⟨hz₂, hz₁⟩).symm
-  · exact ((hP _ (hUmem x hx)).comp_ofReal.continuousAt.add
-      continuousAt_const).continuousWithinAt
+    exact hGeq ⟨hz₂, hz₁⟩
+  · exact hGdiff.continuousOn.comp Complex.continuous_ofReal.continuousOn hUmem x hx
   · have hsub : uIcc y x ⊆ Ioo p q := (Set.ordConnected_Ioo).uIcc_subset hy hx
-    have hderiv : ∀ t ∈ uIcc y x, HasDerivAt (fun s : ℝ => P (s : ℂ)) (g (t : ℂ)) t :=
-      fun t ht => (hP _ (hUmem t (hsub ht))).comp_ofReal
+    have hderiv : ∀ t ∈ uIcc y x, HasDerivAt (fun s : ℝ => G (s : ℂ)) (g (t : ℂ)) t :=
+      fun t ht => (hGderiv _ (hUmem t (hsub ht))).comp_ofReal
     have hgcont : ContinuousOn (fun t : ℝ => g (t : ℂ)) (uIcc y x) := by
-      have := hgdiff.continuousOn.comp Complex.continuous_ofReal.continuousOn
-        fun t ht => hUmem t (hsub ht)
-      simpa [Function.comp_def] using this
+      have hcont := (differentiableOn_schwarzChristoffelContinuedIntegrand a e ha).continuousOn
+        |>.comp Complex.continuous_ofReal.continuousOn (fun t ht => by simpa using hsub ht)
+      simpa [g, Function.comp_def] using hcont.const_mul C
     have hint : IntervalIntegrable (fun t : ℝ => g (t : ℂ)) volume y x :=
       hgcont.intervalIntegrable
     have hval : EqOn (fun t : ℝ => g (t : ℂ))
@@ -410,8 +438,8 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_sub_eq (a e : ι → ℝ) (z�
         fun i he hi => (hsub ht).2.trans_le (not_lt.mp fun h => ha i he ⟨hi, h⟩)
       simp only [hg, h]
       ring
-    calc P (x : ℂ) + k - (P (y : ℂ) + k) = ∫ t in y..x, g (t : ℂ) := by
-          rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint]; ring
+    calc G (x : ℂ) - G (y : ℂ) = ∫ t in y..x, g (t : ℂ) := by
+          rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint]
       _ = ∫ t in y..x, (schwarzChristoffelDensity a e t : ℂ) * C :=
           intervalIntegral.integral_congr hval
       _ = (∫ t in y..x, (schwarzChristoffelDensity a e t : ℂ)) * C :=

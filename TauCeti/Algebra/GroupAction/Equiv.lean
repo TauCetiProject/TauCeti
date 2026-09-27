@@ -17,11 +17,15 @@ This file records elementary facts about additive equivalences that intertwine g
 
 * `AddEquiv.symm_map_smul_of_map_smul`: the inverse of an equivariant additive
   equivalence is equivariant.
+* `AddEquiv.symm_map_smul_of_map_mulEquiv_smul`: the same along a change of the acting group by a
+  multiplicative equivalence.
 -/
 
 public section
 
 namespace AddEquiv
+
+section
 
 variable {G M N : Type*} [Add M] [Add N] [SMul G M] [SMul G N]
 
@@ -31,6 +35,24 @@ theorem symm_map_smul_of_map_smul (e : M ≃+ N)
     e.symm (g • n) = g • e.symm n := by
   apply e.injective
   rw [e.apply_symm_apply, hequiv, e.apply_symm_apply]
+
+end
+
+section ChangeOfGroup
+
+variable {G H M N : Type*} [Mul G] [Mul H] [Add M] [Add N] [SMul G M] [SMul H N]
+
+/-- The inverse of an additive equivalence compatible with a change of the acting group is
+compatible with the inverse change: if `e (φ h • m) = h • e m` for a multiplicative equivalence
+`φ : H ≃* G`, then `e.symm (φ.symm g • n) = g • e.symm n`. -/
+theorem symm_map_smul_of_map_mulEquiv_smul (e : M ≃+ N) (φ : H ≃* G)
+    (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) (g : G) (n : N) :
+    e.symm (φ.symm g • n) = g • e.symm n := by
+  apply e.injective
+  rw [e.apply_symm_apply]
+  conv_rhs => rw [← φ.apply_symm_apply g, hequiv, e.apply_symm_apply]
+
+end ChangeOfGroup
 
 end AddEquiv
 

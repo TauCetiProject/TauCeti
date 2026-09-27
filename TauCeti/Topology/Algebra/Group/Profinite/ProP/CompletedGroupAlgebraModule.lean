@@ -38,6 +38,10 @@ one constructed here (Labute, §4, p. 121).
   `TauCeti.IsProP.isScalarTower_completedGroupAlgebraModule`,
   `TauCeti.IsProP.continuousSMul_completedGroupAlgebraModule`: the group elements act as `Γ`
   does, the structure extends the `ℤ_p`-module structure, and it is topological.
+* `TauCeti.IsProP.span_completedGroupAlgebraModule_eq_top`,
+  `TauCeti.IsProP.module_finite_completedGroupAlgebraModule`: a finite set whose `Γ`-orbit
+  generates a dense subgroup of `A` spans the module over `ℤ_p[[Γ]]`, so the module is finitely
+  generated.
 
 ## References
 
@@ -101,6 +105,42 @@ theorem continuousSMul_completedGroupAlgebraModule (hA : IsProP p A) :
   letI := hA.module
   letI := hA.smulCommClass_module (Γ := Γ)
   hA.isCompactModule.continuousSMul_completedGroupAlgebraModule
+
+section FiniteGeneration
+
+open scoped Pointwise
+
+/-- **Generation over `ℤ_p[[Γ]]`.** If the `Γ`-orbit of a finite subset `T` of an abelian pro-`p`
+group `A` generates a dense subgroup, then the additive classes of the elements of `T` span
+`Additive A` over `ℤ_p[[Γ]]`. This is the general
+`TauCeti.IsCompactModule.span_completedGroupAlgebraModule_eq_top_of_dense_closure_univ_smul`, with
+the generation hypothesis read on the multiplicative group `A`, where its topology lives. -/
+theorem span_completedGroupAlgebraModule_eq_top (hA : IsProP p A) {T : Set A} (hT : T.Finite)
+    (hgen : Dense (Subgroup.closure ((Set.univ : Set Γ) • T) : Set A)) :
+    letI := hA.completedGroupAlgebraModule Γ
+    Submodule.span (completedGroupAlgebra ℤ_[p] Γ) (Additive.ofMul '' T) = ⊤ := by
+  let _ : Module ℤ_[p] (Additive A) := hA.module
+  let _ : SMulCommClass Γ ℤ_[p] (Additive A) := hA.smulCommClass_module
+  refine hA.isCompactModule.span_completedGroupAlgebraModule_eq_top_of_dense_closure_univ_smul Γ
+    (hT.image _) ?_
+  -- The orbit of the additive classes is the additive image of the orbit.
+  rw [← Additive.ofMul_image_smul, Equiv.image_eq_preimage_symm, Additive.ofMul_symm_eq,
+    ← Subgroup.toAddSubgroup_closure, Subgroup.dense_toAddSubgroup_iff]
+  exact hgen
+
+/-- **Finite generation over `ℤ_p[[Γ]]`.** If the `Γ`-orbit of a finite subset `T` of an abelian
+pro-`p` group `A` generates a dense subgroup, then `Additive A` is a finitely generated
+`ℤ_p[[Γ]]`-module, spanned by the classes of the elements of `T`
+(`TauCeti.IsProP.span_completedGroupAlgebraModule_eq_top`). -/
+theorem module_finite_completedGroupAlgebraModule (hA : IsProP p A) {T : Set A} (hT : T.Finite)
+    (hgen : Dense (Subgroup.closure ((Set.univ : Set Γ) • T) : Set A)) :
+    letI := hA.completedGroupAlgebraModule Γ
+    Module.Finite (completedGroupAlgebra ℤ_[p] Γ) (Additive A) :=
+  letI := hA.completedGroupAlgebraModule Γ
+  Module.finite_def.2
+    (hA.span_completedGroupAlgebraModule_eq_top Γ hT hgen ▸ Submodule.fg_span (hT.image _))
+
+end FiniteGeneration
 
 end Module
 

@@ -135,9 +135,9 @@ theorem repRingCharacter_repRingRes (φ : G →* H) (x : repRing k H) :
 with inverse restriction along the inverse isomorphism. -/
 noncomputable def repRingResEquiv (e : G ≃* H) : repRing k H ≃+* repRing k G :=
   have comp_symm : e.toMonoidHom.comp e.symm.toMonoidHom = MonoidHom.id H :=
-    MulEquiv.coe_monoidHom_comp_coe_monoidHom_symm e
+    MulEquiv.toMonoidHom_comp_toMonoidHom_symm e
   have symm_comp : e.symm.toMonoidHom.comp e.toMonoidHom = MonoidHom.id G :=
-    MulEquiv.coe_monoidHom_symm_comp_coe_monoidHom e
+    MulEquiv.toMonoidHom_symm_comp_toMonoidHom e
   { repRingRes k e.toMonoidHom with
     invFun := repRingRes k e.symm.toMonoidHom
     left_inv := fun x => by

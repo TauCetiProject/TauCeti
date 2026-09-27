@@ -558,7 +558,7 @@ theorem referenceSubgroup_five_two_eq_normalizer_referenceSubgroup_five_zero :
           ([0, 1, 3, 2].formPerm : Perm (Fin 5))⁻¹ = finRotate 5 ^ 2 := by decide
       have hconj' : ((MulAut.conj ([0, 1, 3, 2].formPerm : Perm (Fin 5)) :
           Perm (Fin 5) →* Perm (Fin 5))) (finRotate 5) = finRotate 5 ^ 2 := by
-        simpa only [MonoidHom.coe_coe, MulAut.conj_apply] using hconj
+        simpa only [MonoidHom.coe_ofClass, MulAut.conj_apply] using hconj
       rw [hconj']
       refine Subgroup.eq_of_le_of_card_ge
         (Subgroup.zpowers_le.2 (pow_mem (Subgroup.mem_zpowers _) _)) ?_

@@ -63,7 +63,7 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
       change (H.map e.toMonoidHom).map (MulAut.conj (e g)).toMonoidHom = J.map e.toMonoidHom
       have hmap : (H.map e.toMonoidHom).map (MulAut.conj (e g)).toMonoidHom =
           (H.map (MulAut.conj g).toMonoidHom).map e.toMonoidHom := by
-        simpa only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_coe] using
+        simpa only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass] using
           (Subgroup.map_map_conj H e.toMonoidHom g).symm
       exact hmap.trans (congrArg (·.map e.toMonoidHom) hg)
     · intro h

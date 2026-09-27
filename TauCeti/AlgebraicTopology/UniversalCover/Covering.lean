@@ -27,6 +27,13 @@ This file is adapted from Kim Morrison's
 * `UniversalCover.pathConnectedSpace`: the universal cover is path-connected.
 * `UniversalCover.simplyConnectedSpace`: the universal cover is simply connected.
 * `UniversalCover.existsUnique_continuousMap_lifts`: the universal lifting property.
+
+## Implementation notes
+
+`UniversalCover.isCoveringMap` does not assume `X` is path-connected. Over a point with no path
+from `x₀` the preimage of a good neighbourhood is empty, hence evenly covered
+(`IsEvenlyCovered.of_preimage_eq_empty`); over the path component of `x₀` the sheet
+trivialization applies.
 -/
 
 public section
@@ -42,37 +49,44 @@ namespace TauCeti.UniversalCover
 variable {x₀ x : X}
 
 /-- The endpoint projection `proj` is a covering map, assuming `X` is semilocally simply
-connected, locally path-connected, and path-connected. -/
-theorem isCoveringMap [LocallyPathConnectedSpace X] [PathConnectedSpace X]
-    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
+connected and locally path-connected. Fibres over points outside the path component of `x₀` are
+empty. -/
+theorem isCoveringMap [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] (x₀ : X) :
     IsCoveringMap (proj (x₀ := x₀)) := by
   intro x
   obtain ⟨U, hU_open, hxU, hU_pathConn, hU_slsc⟩ :=
     exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial x
-  let S := sheet (x₀ := x₀) U hxU
-  have _ne_ι : Nonempty (Path.Homotopic.Quotient x₀ x) :=
-    ⟨Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x₀ x)⟩
-  have _ne_fun : Nonempty (X → TauCeti.UniversalCover x₀) :=
-    ⟨fun _ ↦ ofBasedPath x₀ (BasedPath.ofPath (PathConnectedSpace.somePath x₀ x₀))⟩
-  have h_open_iff : ∀ q : Path.Homotopic.Quotient x₀ x, ∀ {W : Set X}, W ⊆ U →
-      (IsOpen W ↔ IsOpen (proj (x₀ := x₀) ⁻¹' W ∩ S q)) := by
-    intro q W hWU
-    refine ⟨fun hW ↦ (hW.preimage (continuous_proj x₀)).inter (isOpen_sheet U hU_open hxU q),
-      fun h_open_inter ↦ ?_⟩
-    have h := isOpenMap_proj x₀ _ h_open_inter
-    rwa [Set.image_preimage_inter,
-      Set.inter_eq_left.mpr (hWU.trans (proj_surjOn_sheet hU_pathConn hxU q))] at h
-  refine ((IsEvenlyCovered.of_trivialization (t :=
-    IsOpen.trivializationDiscrete (f := proj (x₀ := x₀))
-      S U hU_open h_open_iff (proj_injOn_sheet hU_slsc hxU)
-      (proj_surjOn_sheet hU_pathConn hxU) (pairwise_disjoint_sheet hU_slsc hxU)
-      (sheet_exhaustive hU_pathConn hxU))
-    ?_).to_isEvenlyCovered_preimage)
-  rw [IsOpen.trivializationDiscrete_baseSet]
-  exact hxU
+  -- This case split, which removes the path-connectedness hypothesis, is adapted from
+  -- https://github.com/leanprover-community/mathlib4/pull/38292.
+  cases isEmpty_or_nonempty (Path.Homotopic.Quotient x₀ x) with
+  | inl h =>
+    refine (IsEvenlyCovered.of_preimage_eq_empty Empty (hU_open.mem_nhds hxU)
+      ?_).to_isEvenlyCovered_preimage
+    apply Set.eq_empty_of_subset_empty
+    simpa using sheet_exhaustive (x₀ := x₀) hU_pathConn hxU
+  | inr h =>
+    let S := sheet (x₀ := x₀) U hxU
+    have : Nonempty (X → TauCeti.UniversalCover x₀) :=
+      ⟨fun _ ↦ ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀))⟩
+    have h_open_iff : ∀ q : Path.Homotopic.Quotient x₀ x, ∀ {W : Set X}, W ⊆ U →
+        (IsOpen W ↔ IsOpen (proj (x₀ := x₀) ⁻¹' W ∩ S q)) := by
+      intro q W hWU
+      refine ⟨fun hW ↦ (hW.preimage (continuous_proj x₀)).inter (isOpen_sheet U hU_open hxU q),
+        fun h_open_inter ↦ ?_⟩
+      have h := isOpenMap_proj x₀ _ h_open_inter
+      rwa [Set.image_preimage_inter,
+        Set.inter_eq_left.mpr (hWU.trans (proj_surjOn_sheet hU_pathConn hxU q))] at h
+    refine ((IsEvenlyCovered.of_trivialization (t :=
+      IsOpen.trivializationDiscrete (f := proj (x₀ := x₀))
+        S U hU_open h_open_iff (proj_injOn_sheet hU_slsc hxU)
+        (proj_surjOn_sheet hU_pathConn hxU) (pairwise_disjoint_sheet hU_slsc hxU)
+        (sheet_exhaustive hU_pathConn hxU))
+      ?_).to_isEvenlyCovered_preimage)
+    rw [IsOpen.trivializationDiscrete_baseSet]
+    exact hxU
 
 /-- Fibers of the universal cover are discrete. -/
-instance discreteTopology_fiber [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+instance discreteTopology_fiber [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ x : X) :
     DiscreteTopology (proj (x₀ := x₀) ⁻¹' {x}) :=
   (isCoveringMap x₀ x).discreteTopology_fiber
@@ -149,8 +163,7 @@ private theorem ofBasedPath_append_initialSegmentFamily_one {α : BasedPath x₀
 /-- The lift through `proj` of a path `γ` starting at the class of `α` ends at the class of
 the concatenated based path `α.append γ`. -/
 theorem liftPath_apply_one_eq_ofBasedPath_append
-    [LocallyPathConnectedSpace X] [PathConnectedSpace X]
-    [SemilocallySimplyConnectedSpace X] {α : BasedPath x₀} {y : X}
+    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] {α : BasedPath x₀} {y : X}
     (γ : Path (BasedPath.endpoint α) y) : (isCoveringMap x₀).liftPath γ (ofBasedPath x₀ α)
       (by simp) 1 =
       ofBasedPath x₀ (BasedPath.append α γ) := by
@@ -200,7 +213,7 @@ private theorem quotient_mk_eq_refl_of_ofBasedPath_append_eq {α : BasedPath x�
   exact h'.trans (Path.Homotopic.trans_refl α.toPath).symm
 
 /-- The universal cover is simply connected. -/
-instance simplyConnectedSpace [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+instance simplyConnectedSpace [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ : X) :
     SimplyConnectedSpace (TauCeti.UniversalCover x₀) := by
   rw [simply_connected_iff_loops_nullhomotopic]
@@ -235,7 +248,7 @@ instance simplyConnectedSpace [LocallyPathConnectedSpace X] [PathConnectedSpace 
 locally path-connected space lifts uniquely after specifying the image of one point. -/
 theorem existsUnique_continuousMap_lifts {A : Type*} [TopologicalSpace A]
     [SimplyConnectedSpace A] [LocallyPathConnectedSpace A]
-    [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+    [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ : X)
     (f : C(A, X)) (a₀ : A) (e₀ : TauCeti.UniversalCover x₀) (he : proj e₀ = f a₀) :
     ∃! F : C(A, TauCeti.UniversalCover x₀), F a₀ = e₀ ∧ proj ∘ F = f :=

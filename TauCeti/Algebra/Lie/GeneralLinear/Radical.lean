@@ -315,7 +315,7 @@ theorem slIdeal_le_or_le_center (htwo : (2 : K) ≠ 0) :
     slIdeal K n ≤ I ∨ I ≤ LieAlgebra.center K (Matrix n n K) := by
   by_cases hle : I ≤ LieAlgebra.center K (Matrix n n K)
   · exact Or.inr hle
-  · obtain ⟨x, hxI, hx⟩ := SetLike.not_le_iff_exists.mp hle
+  · obtain ⟨x, hxI, hx⟩ := IsConcreteLE.not_le_iff_exists.mp hle
     exact Or.inl (slIdeal_le_of_notMem_center I htwo hxI hx)
 
 end Ideals
@@ -396,7 +396,7 @@ theorem radical_matrix_eq_center (htwo : (2 : K) ≠ 0) :
   intro I hI
   rw [Set.mem_ofPred_eq] at hI
   by_contra hIc
-  obtain ⟨x, hxI, hx⟩ := SetLike.not_le_iff_exists.mp hIc
+  obtain ⟨x, hxI, hx⟩ := IsConcreteLE.not_le_iff_exists.mp hIc
   have hnt : Nontrivial n := nontrivial_of_notMem_center hx
   exact not_isSolvable_slIdeal (isUnit_iff_ne_zero.mpr htwo)
     (LieAlgebra.le_solvable_ideal_solvable (slIdeal_le_of_notMem_center I htwo hxI hx) hI)

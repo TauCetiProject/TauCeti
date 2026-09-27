@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
 public import TauCeti.Topology.Algebra.Module.Compact
-public import Mathlib.Topology.Algebra.Module.Compact
+public import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.NumberTheory.Padics.ProperSpace
 
 /-!
@@ -30,6 +31,10 @@ Thus a topologically finitely generated abelian pro-`p` group is a finitely gene
 * `TauCeti.IsProP.isTopologicallyFinitelyGenerated_iff_module_finite`: topological finite
   generation of an abelian pro-`p` group is equivalent to finite generation of its canonical
   `ℤ_[p]`-module.
+* `TauCeti.IsProP.exists_finite_subset_le_topologicalClosure_closure`,
+  `TauCeti.IsProP.isTopologicallyFinitelyGenerated_of_isClosed`: a closed subgroup of a
+  topologically finitely generated abelian pro-`p` group is topologically finitely generated, by
+  finitely many of its own elements.
 
 ## References
 
@@ -81,30 +86,15 @@ theorem isTopologicallyFinitelyGenerated_iff_module_finite (hA : IsProP p A) :
   constructor
   · intro hfg
     obtain ⟨s, hs⟩ := isTopologicallyFinitelyGenerated_iff.mp hfg
-    let t : Set (Additive A) := Additive.ofMul '' (s : Set A)
-    have htfinite : t.Finite := s.finite_toSet.image Additive.ofMul
-    have htclosed : IsClosed (Submodule.span ℤ_[p] t : Set (Additive A)) :=
-      (Submodule.isCompact_of_fg (Submodule.fg_span htfinite)).isClosed
-    have hclosure_le : Subgroup.closure (s : Set A) ≤
-        (Submodule.span ℤ_[p] t).toAddSubgroup.toSubgroup' := by
-      rw [Subgroup.closure_le]
-      intro x hx
-      have hxt : Additive.ofMul x ∈ t := ⟨x, hx, rfl⟩
-      have hmem : Additive.ofMul x ∈ Submodule.span ℤ_[p] t := Submodule.subset_span hxt
-      exact hmem
-    have htop : (Submodule.span ℤ_[p] t).toAddSubgroup.toSubgroup' = ⊤ := by
-      apply top_unique
-      rw [← hs]
-      exact Subgroup.topologicalClosure_minimal _ hclosure_le htclosed
-    have hspan : Submodule.span ℤ_[p] t = ⊤ := by
-      apply SetLike.ext
-      intro x
-      have hx : x.toMul ∈ (Submodule.span ℤ_[p] t).toAddSubgroup.toSubgroup' :=
-        htop.symm ▸ trivial
-      simpa using hx
-    exact Module.Finite.of_fg_top ⟨htfinite.toFinset, by
-      rw [htfinite.coe_toFinset]
-      exact hspan⟩
+    have ht : (Additive.ofMul '' (s : Set A)).Finite := s.finite_toSet.image _
+    -- The additive classes of `s` span: their `ℤ_p`-span is closed and contains the dense
+    -- subgroup they generate.
+    have hspan : Submodule.span ℤ_[p] (Additive.ofMul '' (s : Set A)) = ⊤ := by
+      refine Submodule.span_eq_top_of_dense_closure ht Submodule.subset_span ?_
+      rw [Equiv.image_eq_preimage_symm, Additive.ofMul_symm_eq, ← Subgroup.toAddSubgroup_closure,
+        Subgroup.dense_toAddSubgroup_iff, Subgroup.dense_iff_topologicalClosure_eq_top]
+      exact hs
+    exact Module.finite_def.2 (hspan ▸ Submodule.fg_span ht)
   · intro hfinite
     obtain ⟨s, hs⟩ := hfinite.fg_top
     classical
@@ -142,5 +132,46 @@ theorem isTopologicallyFinitelyGenerated_iff_module_finite (hA : IsProP p A) :
       change x ∈ _root_.closure
         (Subgroup.closure ((s.image Additive.toMul : Finset A) : Set A) : Set A)
       simpa only [Finset.coe_image] using hx
+
+/-- **Closed subgroups of topologically finitely generated abelian pro-`p` groups are topologically
+finitely generated**, by finitely many of their own elements: a closed subgroup is a
+`ℤ_p`-submodule of the canonical module `TauCeti.IsProP.module`, which is a finitely generated
+module over the Noetherian ring `ℤ_p`. -/
+theorem exists_finite_subset_le_topologicalClosure_closure (hA : IsProP p A)
+    (hfg : IsTopologicallyFinitelyGenerated A) {K : Subgroup A} (hK : IsClosed (K : Set A)) :
+    ∃ t : Set A, t.Finite ∧ t ⊆ K ∧ K ≤ (Subgroup.closure t).topologicalClosure := by
+  let _ : Module ℤ_[p] (Additive A) := hA.module
+  have : Module.Finite ℤ_[p] (Additive A) :=
+    hA.isTopologicallyFinitelyGenerated_iff_module_finite.1 hfg
+  -- The closed subgroup `K` is a `ℤ_p`-submodule: its span lies in its closure, which is itself.
+  have hspan : (Submodule.span ℤ_[p] (K.toAddSubgroup : Set (Additive A)) : Set (Additive A)) ⊆
+      K.toAddSubgroup := by
+    refine (hA.span_le_topologicalClosure_closure _).trans ?_
+    rw [AddSubgroup.closure_eq, ← Subgroup.toAddSubgroup_topologicalClosure,
+      hK.subgroup_topologicalClosure_eq]
+  -- The span is finitely generated, because `ℤ_p` is Noetherian.
+  obtain ⟨t', ht'⟩ :=
+    IsNoetherian.noetherian (Submodule.span ℤ_[p] (K.toAddSubgroup : Set (Additive A)))
+  refine ⟨Additive.toMul '' (t' : Set (Additive A)), t'.finite_toSet.image _, ?_, fun x hx ↦ ?_⟩
+  · rintro _ ⟨y, hy, rfl⟩
+    exact hspan (ht' ▸ Submodule.subset_span hy)
+  · have h1 : Additive.ofMul x ∈
+        (AddSubgroup.closure (t' : Set (Additive A))).topologicalClosure :=
+      hA.span_le_topologicalClosure_closure _ (ht' ▸ Submodule.subset_span (by simpa using hx))
+    rwa [← Additive.toMul.injective.preimage_image (t' : Set (Additive A)),
+      ← Subgroup.toAddSubgroup_closure, ← Subgroup.toAddSubgroup_topologicalClosure,
+      Additive.mem_toAddSubgroup, toMul_ofMul] at h1
+
+/-- **A closed subgroup of a topologically finitely generated abelian pro-`p` group is
+topologically finitely generated.** -/
+theorem isTopologicallyFinitelyGenerated_of_isClosed (hA : IsProP p A)
+    (hfg : IsTopologicallyFinitelyGenerated A) {K : Subgroup A} (hK : IsClosed (K : Set A)) :
+    IsTopologicallyFinitelyGenerated K := by
+  obtain ⟨t, ht, htK, hle⟩ := hA.exists_finite_subset_le_topologicalClosure_closure hfg hK
+  refine (ht.preimage Subtype.val_injective.injOn).isTopologicallyFinitelyGenerated ?_
+  rw [← Subgroup.dense_iff_topologicalClosure_eq_top, Subgroup.closure_coe_preimage_of_subset htK,
+    Subgroup.coe_comap, Subgroup.coe_subtype,
+    Subgroup.dense_preimage_val_iff_le_topologicalClosure ((Subgroup.closure_le K).2 htK)]
+  exact hle
 
 end TauCeti.IsProP

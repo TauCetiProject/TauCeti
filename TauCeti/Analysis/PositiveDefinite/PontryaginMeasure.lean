@@ -37,7 +37,8 @@ theorem _root_.MeasureTheory.FiniteMeasure.isPositiveDefiniteSub_pontryaginMeasu
   have hint (i j : Fin n) :
       Integrable (fun χ : PontryaginDual (Multiplicative G) =>
         (c i * conj (c j)) * (χ (Multiplicative.ofAdd (v i - v j)) : ℂ)) μ.toMeasure :=
-    (PontryaginDual.integrable_eval_ofAdd (μ := μ.toMeasure) (v i - v j)).const_mul _
+    (PontryaginDual.integrable_coe_eval (μ := μ.toMeasure)
+      (Multiplicative.ofAdd (v i - v j))).const_mul _
   have hsum :
       (∫ χ, ∑ i : Fin n, ∑ j : Fin n,
         (c i * conj (c j)) * (χ (Multiplicative.ofAdd (v i - v j)) : ℂ) ∂μ.toMeasure) =

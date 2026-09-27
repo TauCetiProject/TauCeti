@@ -182,7 +182,7 @@ theorem HasElementaryAbelianSolutions.hasPGroupSolutions [Fact p.Prime]
       MulEquiv.ofBijective_apply_symm_apply _ hbij
     rw [_root_.QuotientGroup.mk'_apply] at hg
     rw [MonoidHom.comp_apply, MonoidHom.comp_apply,
-      ← _root_.QuotientGroup.lift_mk' _ (P.α.ker.pLowerCentralSeries_le p m), MonoidHom.coe_coe, hg,
-      ← MonoidHom.comp_apply, hβπ]
+      ← _root_.QuotientGroup.lift_mk' _ (P.α.ker.pLowerCentralSeries_le p m),
+      MonoidHom.coe_ofClass, hg, ← MonoidHom.comp_apply, hβπ]
 
 end TauCeti

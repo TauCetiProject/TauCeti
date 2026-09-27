@@ -95,7 +95,7 @@ theorem card_primesOverFinset_le_finrank {p : Ideal ℤ} [p.IsMaximal] (hp0 : p 
         ← IsDedekindDomain.coe_primesOverFinset hp0 (𝓞 K), Set.ncard_coe_finset]
     _ ≤ ∑ q : p.primesOver (𝓞 K), q.1.ramificationIdx ℤ * q.1.inertiaDeg ℤ :=
       Finset.sum_le_sum fun q _ => Nat.one_le_iff_ne_zero.mpr
-        (Nat.mul_ne_zero (Ideal.ramificationIdx_pos q.1 ℤ).ne'
+        (Nat.mul_ne_zero (Ideal.ramificationIdx_pos ℤ q.1).ne'
           (Ideal.inertiaDeg_pos q.1 ℤ).ne')
     _ = Module.finrank ℤ (𝓞 K) := Ideal.sum_ramification_inertia_eq_finrank p (𝓞 K)
     _ = Module.finrank ℚ K := _root_.NumberField.RingOfIntegers.rank K

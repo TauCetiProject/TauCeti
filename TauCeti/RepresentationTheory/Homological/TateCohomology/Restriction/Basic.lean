@@ -60,6 +60,8 @@ homology, `TauCeti.groupHomology.transfer_comp_map_subtype_id`, with corestricti
   representative.
 * `TauCeti.TateCohomology.HNegTwoRes_def`: restriction in degree `-2` is the transfer in first
   group homology, transported through Mathlib's comparison with group homology.
+* `TauCeti.TateCohomology.HNegTwoRes_comp_isoGroupHomology_hom`: this comparison commutes
+  with restriction and homological transfer.
 * `TauCeti.TateCohomology.H0Res_comp_H0Cor`,
   `TauCeti.TateCohomology.HNegOneRes_comp_HNegOneCor` and
   `TauCeti.TateCohomology.negSuccRes_comp_negSuccCor`: corestriction after restriction is
@@ -125,6 +127,16 @@ theorem HNegTwoRes_def :
           (_root_.TateCohomology.isoGroupHomology (-2) 1 (by norm_num)).inv.app
             (Rep.res H.subtype M) := by
   rfl
+
+/-- Restriction in degree `-2` commutes with the comparison to first group homology. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem HNegTwoRes_comp_isoGroupHomology_hom :
+    HNegTwoRes M H ≫ (_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app
+      (Rep.res H.subtype M) =
+      (_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).hom.app M ≫
+        TauCeti.groupHomology.transfer M H 1 :=
+  (Iso.eq_comp_inv ((_root_.TateCohomology.isoGroupHomology (-2) 1 rfl).app _)).1
+    ((HNegTwoRes_def _ _).trans (Category.assoc _ _ _).symm)
 
 /-- Restriction followed by corestriction is multiplication by the index, in every Tate degree
 `-(n+1)` with `n > 0`. -/
