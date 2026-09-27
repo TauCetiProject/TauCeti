@@ -31,14 +31,17 @@ open scoped Pointwise
 
 variable {n : ℕ} (t : PermutationTriple n)
 
+/-- The monodromy action of a permutation triple is primitive. -/
+@[expose] def IsPrimitive : Prop := IsPreprimitive t.monodromyGroup (Fin n)
+
 /-- Decide whether a set of sheets is a block by testing every monodromy permutation. -/
-def isBlockB (B : Finset (Fin n)) : Bool :=
+@[expose] def isBlockBool (B : Finset (Fin n)) : Bool :=
   decide (∀ g ∈ t.monodromyFinset, g • B = B ∨ Disjoint (g • B) B)
 
 /-- The finite block test agrees with Mathlib's block predicate for the monodromy action. -/
-@[simp] theorem isBlockB_eq_true_iff (B : Finset (Fin n)) :
-    t.isBlockB B = true ↔ IsBlock t.monodromyGroup (B : Set (Fin n)) := by
-  rw [isBlockB, decide_eq_true_eq, isBlock_iff_smul_eq_or_disjoint]
+@[simp] theorem isBlockBool_eq_true_iff (B : Finset (Fin n)) :
+    t.isBlockBool B = true ↔ IsBlock t.monodromyGroup (B : Set (Fin n)) := by
+  rw [isBlockBool, decide_eq_true_eq, isBlock_iff_smul_eq_or_disjoint]
   constructor
   · intro h g
     have hg := h g.1 ((t.mem_monodromyFinset).2 g.2)
@@ -51,15 +54,15 @@ def isBlockB (B : Finset (Fin n)) : Bool :=
 
 /-- Decide primitivity by checking transitivity and every subset of the sheets for a
 nontrivial block. -/
-def isPreprimitiveB : Bool :=
+@[expose] def isPreprimitiveBool : Bool :=
   decide ((∀ i, t.monodromyOrbitFinset i = Finset.univ) ∧
-    ∀ B : Finset (Fin n), t.isBlockB B = true →
+    ∀ B : Finset (Fin n), t.isBlockBool B = true →
     B.card ≤ 1 ∨ B = Finset.univ)
 
-/-- The finite primitivity test agrees with Mathlib's preprimitive action predicate. -/
-@[simp] theorem isPreprimitiveB_eq_true_iff :
-    t.isPreprimitiveB = true ↔ IsPreprimitive t.monodromyGroup (Fin n) := by
-  rw [isPreprimitiveB, decide_eq_true_eq]
+/-- The finite primitivity test agrees with primitivity of the triple. -/
+@[simp] theorem isPreprimitiveBool_eq_true_iff :
+    t.isPreprimitiveBool = true ↔ t.IsPrimitive := by
+  rw [IsPrimitive, isPreprimitiveBool, decide_eq_true_eq]
   constructor
   · rintro ⟨htrans, hblocks⟩
     have htrans' : IsPretransitive t.monodromyGroup (Fin n) := by
@@ -69,8 +72,8 @@ def isPreprimitiveB : Bool :=
     intro B hB
     classical
     have hfin := hblocks B.toFinset
-    have hblock : t.isBlockB B.toFinset = true :=
-      (t.isBlockB_eq_true_iff _).2 (by simpa using hB)
+    have hblock : t.isBlockBool B.toFinset = true :=
+      (t.isBlockBool_eq_true_iff _).2 (by simpa using hB)
     rcases hfin hblock with hsmall | hall
     · left
       simpa only [Set.coe_toFinset] using Finset.card_le_one_iff_subsingleton.mp hsmall
@@ -82,7 +85,7 @@ def isPreprimitiveB : Bool :=
       exact (Finset.isPretransitive_closure_iff_forall_orbitFinset_eq_univ _).1
         h.toIsPretransitive
     intro B hB
-    have htrivial := h.isTrivialBlock_of_isBlock ((t.isBlockB_eq_true_iff B).1 hB)
+    have htrivial := h.isTrivialBlock_of_isBlock ((t.isBlockBool_eq_true_iff B).1 hB)
     rcases htrivial with hsmall | hall
     · left
       exact Finset.card_le_one_iff_subsingleton.mpr hsmall
@@ -90,8 +93,8 @@ def isPreprimitiveB : Bool :=
       exact Finset.coe_inj.mp (hall.trans Finset.coe_univ.symm)
 
 /-- Primitivity of the monodromy action is decidable by the finite block test. -/
-instance : Decidable (IsPreprimitive t.monodromyGroup (Fin n)) :=
-  decidable_of_iff _ t.isPreprimitiveB_eq_true_iff
+instance : Decidable t.IsPrimitive :=
+  decidable_of_iff _ t.isPreprimitiveBool_eq_true_iff
 
 end PermutationTriple
 

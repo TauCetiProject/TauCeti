@@ -24,20 +24,20 @@ namespace PermutationTriple
 open MulAction
 
 /-- The torus triple is imprimitive: `{0, 2}` is a nontrivial block. -/
-theorem isPreprimitiveB_torusTriple : torusTriple.isPreprimitiveB = false := by
+theorem isPreprimitiveBool_torusTriple : torusTriple.isPreprimitiveBool = false := by
   apply Bool.eq_false_iff.mpr
   intro h
-  exact not_isPreprimitive_torusTriple ((isPreprimitiveB_eq_true_iff _).mp h)
+  exact not_isPreprimitive_torusTriple ((isPreprimitiveBool_eq_true_iff _).mp h)
 
 /-- The degree-three symmetric triple is primitive. -/
-theorem isPreprimitiveB_s3Triple : s3Triple.isPreprimitiveB = true := by
-  apply (isPreprimitiveB_eq_true_iff _).mpr
+theorem isPreprimitiveBool_s3Triple : s3Triple.isPreprimitiveBool = true := by
+  apply (isPreprimitiveBool_eq_true_iff _).mpr
   exact @IsPreprimitive.of_prime_card _ _ _ _ isConnected_s3Triple.isPretransitive
     (by simpa using (by decide : Nat.Prime 3))
 
 /-- The degree-one triple is primitive. -/
-theorem isPreprimitiveB_cyclicTriple_one : (cyclicTriple 1).isPreprimitiveB = true := by
-  apply (isPreprimitiveB_eq_true_iff _).mpr
+theorem isPreprimitiveBool_cyclicTriple_one : (cyclicTriple 1).isPreprimitiveBool = true := by
+  apply (isPreprimitiveBool_eq_true_iff _).mpr
   exact IsPreprimitive.of_subsingleton
 
 end PermutationTriple
