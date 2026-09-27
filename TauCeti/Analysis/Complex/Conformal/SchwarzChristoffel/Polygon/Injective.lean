@@ -39,11 +39,13 @@ namespace TauCeti
 
 variable {n : ℕ} {a e : Fin (n + 1) → ℝ} {z₀ : UpperHalfPlane}
 
-/-- Adjacent bounded sides meet only at their common vertex when the corner exponent lies in
-`(-1, 0)`. -/
+/-- Adjacent bounded sides meet only at their common vertex when the prevertices are
+nondecreasing, both sides have distinct endpoints, the endpoint exponent sums exceed `-1`,
+and the corner exponent sum lies in `(-1, 0)`. -/
 theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacent
-    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : Monotone a)
     (i j : Fin n) (hadj : i.val + 1 = j.val)
+    (hi : a i.castSucc < a i.succ) (hj : a j.castSucc < a j.succ)
     (hleft : -1 < ∑ l with a l = a i.castSucc, e l)
     (hcorner : ∑ l with a l = a i.succ, e l ∈ Ioo (-1 : ℝ) 0)
     (hright : -1 < ∑ l with a l = a j.succ, e l) :
@@ -53,10 +55,10 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacen
   have hmid : i.succ = j.castSucc := Fin.ext hadj
   have hfree (k : Fin n) :
       ∀ l, e l ≠ 0 → a l ∉ Ioo (a k.castSucc) (a k.succ) :=
-    fun l _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone k l
+    fun l _ ↦ not_mem_Ioo_castSucc_succ a ha k l
   have haff := affineIndependent_schwarzChristoffelVertex_of_adjacent a e z₀
-    i.castSucc i.succ j.succ (ha i.castSucc_lt_succ)
-    (by rw [hmid]; exact ha j.castSucc_lt_succ)
+    i.castSucc i.succ j.succ hi
+    (by rw [hmid]; exact hj)
     (hfree i) (by rw [hmid]; exact hfree j)
     hleft hcorner hright
   rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
@@ -90,7 +92,8 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval
     have hcorner : ∑ l with a l = a i.succ, e l ∈ Ioo (-1 : ℝ) 0 := by
       simpa [ha.injective.eq_iff, Finset.filter_eq'] using he i.succ
     exact schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacent
-      a e z₀ ha i j hadj (hfinite _) hcorner (hfinite _) ⟨hzi, hzj⟩
+      a e z₀ ha.monotone i j hadj (ha i.castSucc_lt_succ)
+      (ha j.castSucc_lt_succ) (hfinite _) hcorner (hfinite _) ⟨hzi, hzj⟩
   · have hd := disjoint_schwarzChristoffelPolygon_bounded_edgeSet a e z₀ ha he hsum i j
       (by simp only [Fin.lt_def] at hij; omega)
     exact False.elim (Set.disjoint_left.mp hd hzi hzj)
