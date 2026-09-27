@@ -27,6 +27,8 @@ combination in the resulting power basis is the minimum of its term valuations.
   total-ramification consequences.
 * `TauCeti.minpoly_eq_of_eisenstein_adjoin_eq_top` identifies a monic Eisenstein polynomial
   with the minimal polynomial of its integral generator.
+* `TauCeti.associated_minpoly_of_eisenstein_adjoin_eq_top` gives the identification up to a unit
+  for an arbitrary Eisenstein polynomial.
 * `TauCeti.addVal_sum_eisenstein_powerBasis` computes the additive valuation of a linear
   combination of powers of an Eisenstein integral generator.
 
@@ -161,6 +163,15 @@ theorem minpoly_eq_of_eisenstein_adjoin_eq_top [Algebra K L] [ValuativeExtension
     (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) : minpoly 𝒪[K] ξ = f :=
   Polynomial.eq_of_monic_of_associated (minpoly.monic (IsIntegral.of_finite 𝒪[K] ξ))
     hmonic (eisenstein_adjoin_eq_top_data f hf ξ hroot hgen).2.2.2
+
+/-- The minimal polynomial of an integral generator is associated to any Eisenstein polynomial
+that has the generator as a root. -/
+theorem associated_minpoly_of_eisenstein_adjoin_eq_top [Algebra K L]
+    [ValuativeExtension K L] [Module.Finite K L]
+    (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K]) (ξ : 𝒪[L])
+    (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
+    (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) : Associated (minpoly 𝒪[K] ξ) f :=
+  (eisenstein_adjoin_eq_top_data f hf ξ hroot hgen).2.2.2
 
 /-- The additive valuation of a linear combination in an Eisenstein power basis is the least
 of its term valuations. -/
