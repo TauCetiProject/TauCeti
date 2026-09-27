@@ -174,7 +174,8 @@ theorem iteratedGradient_restrictL_ae (hU : U ≤ Omega) (k : ℕ)
     iteratedGradient k (restrictL hU (k + 1) u) =ᵐ[mu.restrict U] iteratedGradient k u :=
   (exists_restrict_succ hU k u).choose_spec.2.1
 
-/-- Restriction commutes with the highest weak derivative projection. -/
+/-- Restriction commutes with the highest weak derivative projection.
+Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
 theorem iteratedGradient_restrictL (hU : U ≤ Omega) (k : ℕ)
     (u : Wkp mu Omega p (k + 1)) :
     iteratedGradient k (restrictL hU (k + 1) u) =
@@ -184,7 +185,8 @@ theorem iteratedGradient_restrictL (hU : U ≤ Omega) (k : ℕ)
   Lp.ext ((iteratedGradient_restrictL_ae hU k u).trans
     (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).symm)
 
-/-- Forgetting the highest derivative commutes with restriction. -/
+/-- Forgetting the highest derivative commutes with restriction.
+Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
 theorem lowerOrder_restrictL (hU : U ≤ Omega) (k : ℕ)
     (u : Wkp mu Omega p (k + 1)) :
     lowerOrder k (restrictL hU (k + 1) u) = restrictL hU k (lowerOrder k u) := by
