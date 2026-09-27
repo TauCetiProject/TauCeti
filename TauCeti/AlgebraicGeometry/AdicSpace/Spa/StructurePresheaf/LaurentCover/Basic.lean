@@ -15,11 +15,10 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections
 
 For `f ∈ A` the rational opens `R({f, 1}/1) = {|f| ≤ 1}` and `R({1}/f) = {|f| ≥ 1}` cover
 `X = Spa(A, A⁺)`. When `A` is a complete Hausdorff strongly noetherian Tate ring and `A⁺` consists
-of power-bounded elements, the presentation-limit presheaf satisfies the sheaf condition for this
-cover: a section over `X` is determined by its restrictions to the two pieces, and sections over the
-pieces that agree on their overlap are the restrictions of a section over `X`. This is the
-degree-zero part of Wedhorn's Lemma 8.33, and of the acyclicity of this cover in his
-Lemma 8.34(i), stated for `presentationLimit`.
+of power-bounded elements, the augmented two-piece Čech sequence of the presentation-limit
+presheaf is exact: sections glue uniquely, and every section on the overlap is a difference of
+restrictions. This is Wedhorn's Lemma 8.33 and the Laurent-cover case of Lemma 8.34(i), stated
+for `presentationLimit`.
 
 ## Main definitions
 
@@ -32,6 +31,8 @@ Lemma 8.34(i), stated for `presentationLimit`.
   `X` to the two pieces is injective.
 * `TauCeti.ValuationSpectrum.exists_presentationLimitMap_eq_of_laurentCoverOpen` : sections over
   the two pieces that agree on their overlap come from a section over `X`.
+* `TauCeti.ValuationSpectrum.surjective_presentationLimitMap_sub_laurentCoverOpen` : the difference
+  of restrictions from the two pieces onto their overlap is surjective.
 
 ## References
 
@@ -271,5 +272,203 @@ theorem exists_presentationLimitMap_eq_of_laurentCoverOpen
   exact ⟨(toPresentationLimit Aplus ⊤).hom.1 c, fun b ↦
     (presentationLimitMap_apply_toPresentationLimit_apply_eq_iff hAplus _
       (isOpen_span_laurentPresentation P f b)).2 (hc b)⟩
+
+open scoped Pointwise in
+/-- **Wedhorn's Lemma 8.33, degree-one surjectivity, for the presentation-limit presheaf.**
+Every section on the intersection of the two Laurent pieces is a difference of restrictions of
+sections on the pieces. Together with the degree-zero results above, this gives exactness of the
+augmented two-piece Čech complex. -/
+theorem surjective_presentationLimitMap_sub_laurentCoverOpen
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (f : A) :
+    Function.Surjective fun (x :
+        presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f true) ×
+          presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f false)) ↦
+      (presentationLimitMap (P := P) (inf_le_left :
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1 x.1 -
+      (presentationLimitMap (P := P) (inf_le_right :
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1 x.2 := by
+  classical
+  let p := laurentPresentation P f
+  let q := laurentOverlapPresentation P f
+  have hp := isOpen_span_laurentPresentation P f
+  have hq : IsOpen (Ideal.span (q.num : Set A) : Set A) :=
+    isOpen_span_of_one_mem (by simp [q])
+  have hT₁ : ∀ t ∈ (p true).num, t * f ∈ q.num := by grind
+  have hT₂ : ∀ t ∈ (p false).num, t * 1 ∈ q.num := by grind
+  have hU (b : Bool) : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus (p b).num (p b).den :=
+    spaBasicOpen_le_spaBasicOpen_iff.mpr <| rationalSubset_subset_rationalSubset_of_le Aplus <|
+      Presentation.le_def.mpr <| b.rec ⟨1, mul_comm 1 f, hT₂⟩ ⟨f, rfl, hT₁⟩
+  -- The ring-level overlap presentation represents the intersection of the two Laurent opens.
+  have hnum : ({f, 1} : Finset A) * ({f, 1} : Finset A) =
+      ({f * f, f, 1} : Finset A) := by
+    ext x
+    constructor
+    · intro hx
+      obtain ⟨a, ha, b, hb, rfl⟩ := Finset.mem_mul.mp hx
+      simp only [Finset.mem_insert, Finset.mem_singleton] at ha hb
+      rcases ha with rfl | rfl <;> rcases hb with rfl | rfl <;> simp
+    · intro hx
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hx
+      rcases hx with h | h | h
+      · rw [h]
+        exact Finset.mul_mem_mul (by simp) (by simp)
+      · rw [h]
+        simpa using (Finset.mul_mem_mul (by simp : f ∈ ({f, 1} : Finset A))
+          (by simp : (1 : A) ∈ ({f, 1} : Finset A)))
+      · rw [h]
+        simpa using (Finset.mul_mem_mul (by simp : (1 : A) ∈ ({f, 1} : Finset A))
+          (by simp : (1 : A) ∈ ({f, 1} : Finset A)))
+  have hEq : spaBasicOpen Aplus q.num q.den =
+      laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false := by
+    apply Opens.ext
+    apply Set.ext
+    intro x
+    simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen]
+    rw [← Set.mem_inter_iff, rationalSubset_inter]
+    simp [q, hnum]
+  let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  let _ := locUniformSpace P (p true).num (p true).den _ (p true).hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P (p true).num (p true).den _
+    (p true).hasDenominatorPower
+  let _ := locUniformSpace P (p false).num (p false).den _ (p false).hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P (p false).num (p false).den _
+    (p false).hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P (p true).num (p true).den _
+    (p true).hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P (p false).num (p false).den _
+    (p false).hasDenominatorPower
+  let ringDifference :
+      UniformSpace.Completion (Localization.Away (p true).den) ×
+        UniformSpace.Completion (Localization.Away (p false).den) →
+          UniformSpace.Completion (Localization.Away q.den) := fun x ↦
+    restrictionRingHom P (p true).num (p true).den _ (p true).hasDenominatorPower
+        q.num q.den _ q.hasDenominatorPower f rfl hT₁ x.1 -
+      restrictionRingHom P (p false).num (p false).den _ (p false).hasDenominatorPower
+        q.num q.den _ q.hasDenominatorPower 1 (mul_comm 1 f) hT₂ x.2
+  -- Identify the pointwise difference with the additive map in `laurentCover_surjective`.
+  have hRingDifference : ringDifference = ⇑(
+      (restrictionRingHom P (p true).num (p true).den _ (p true).hasDenominatorPower
+        q.num q.den _ q.hasDenominatorPower f rfl hT₁).toAddMonoidHom.comp
+        (AddMonoidHom.fst (UniformSpace.Completion (Localization.Away (p true).den))
+          (UniformSpace.Completion (Localization.Away (p false).den))) -
+      (restrictionRingHom P (p false).num (p false).den _ (p false).hasDenominatorPower
+        q.num q.den _ q.hasDenominatorPower 1 (mul_comm 1 f) hT₂).toAddMonoidHom.comp
+        (AddMonoidHom.snd (UniformSpace.Completion (Localization.Away (p true).den))
+          (UniformSpace.Completion (Localization.Away (p false).den)))) := by
+    funext x
+    rfl
+  have hsurj : Function.Surjective ringDifference := by
+    rw [hRingDifference]
+    exact laurentCover_surjective P f (Localization.Away (1 : A))
+      (Localization.Away f) (Localization.Away (1 * f)) (p false).hasDenominatorPower
+  -- The map in `laurentCover_surjective` is the pointwise difference of the two
+  -- restriction maps used below.
+  have ringDifference_apply (u : UniformSpace.Completion (Localization.Away (p true).den))
+      (v : UniformSpace.Completion (Localization.Away (p false).den)) :
+      ringDifference (u, v) =
+        restrictionRingHom P (p true).num (p true).den _ (p true).hasDenominatorPower
+          q.num q.den _ q.hasDenominatorPower f rfl hT₁ u -
+        restrictionRingHom P (p false).num (p false).den _ (p false).hasDenominatorPower
+          q.num q.den _ q.hasDenominatorPower 1 (mul_comm 1 f) hT₂ v := by
+    rfl
+  -- Transport the ring-level theorem through the rational-section isomorphisms.
+  have hqSurj : Function.Surjective fun (x :
+      presentationLimit (P := P) Aplus (spaBasicOpen Aplus (p true).num (p true).den) ×
+        presentationLimit (P := P) Aplus (spaBasicOpen Aplus (p false).num (p false).den)) ↦
+      (presentationLimitMap (hU true)).hom.1 x.1 -
+        (presentationLimitMap (hU false)).hom.1 x.2 := by
+    intro z
+    obtain ⟨⟨u, v⟩, huv⟩ := hsurj
+      ((eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).1
+        ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.1 z))
+    let x₁ : presentationLimit (P := P) Aplus
+        (spaBasicOpen Aplus (p true).num (p true).den) :=
+      (presentationLimitRationalIso Aplus hAplus (p true) (hp true)).inv.hom.1
+        ((eqToHom (completionLocObj_obj P (p true).num (p true).den _
+          (p true).hasDenominatorPower).symm).1 u)
+    let x₂ : presentationLimit (P := P) Aplus
+        (spaBasicOpen Aplus (p false).num (p false).den) :=
+      (presentationLimitRationalIso Aplus hAplus (p false) (hp false)).inv.hom.1
+        ((eqToHom (completionLocObj_obj P (p false).num (p false).den _
+          (p false).hasDenominatorPower).symm).1 v)
+    have hx₁ : (eqToHom (completionLocObj_obj P (p true).num (p true).den _
+        (p true).hasDenominatorPower)).1
+          ((presentationLimitRationalIso Aplus hAplus (p true) (hp true)).hom.hom.1 x₁) =
+        u := by
+      dsimp [x₁]
+      exact (congrArg (eqToHom (completionLocObj_obj P (p true).num (p true).den _
+        (p true).hasDenominatorPower)).1
+          ((presentationLimitRationalIso Aplus hAplus (p true) (hp true)).inv_hom_id_apply _)).trans
+            (eqToHom_symm_apply_eqToHom_apply _ _)
+    have hx₂ : (eqToHom (completionLocObj_obj P (p false).num (p false).den _
+        (p false).hasDenominatorPower)).1
+          ((presentationLimitRationalIso Aplus hAplus (p false) (hp false)).hom.hom.1 x₂) =
+        v := by
+      dsimp [x₂]
+      let e := presentationLimitRationalIso Aplus hAplus (p false) (hp false)
+      have hIso := e.inv_hom_id_apply
+          ((eqToHom (completionLocObj_obj P (p false).num (p false).den _
+            (p false).hasDenominatorPower).symm).1 v)
+      exact (congrArg (eqToHom (completionLocObj_obj P (p false).num (p false).den _
+        (p false).hasDenominatorPower)).1 hIso).trans
+            (eqToHom_symm_apply_eqToHom_apply _ _)
+    refine ⟨(x₁, x₂), ?_⟩
+    apply (injective_eqToHom
+      (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).comp <|
+      Function.LeftInverse.injective
+        (presentationLimitRationalIso Aplus hAplus q hq).hom_inv_id_apply
+    -- The concrete-category map unfolds to the underlying continuous ring homomorphism.
+    change (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).1
+        ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.1
+          ((presentationLimitMap (hU true)).hom.1 x₁ -
+            (presentationLimitMap (hU false)).hom.1 x₂)) =
+      (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).1
+        ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.1 z)
+    rw [map_sub, map_sub]
+    calc
+      _ = restrictionRingHom P (p true).num (p true).den _ (p true).hasDenominatorPower
+            q.num q.den _ q.hasDenominatorPower f rfl hT₁
+              ((eqToHom (completionLocObj_obj P (p true).num (p true).den _
+                (p true).hasDenominatorPower)).1
+                ((presentationLimitRationalIso Aplus hAplus (p true) (hp true)).hom.hom.1 x₁)) -
+          restrictionRingHom P (p false).num (p false).den _ (p false).hasDenominatorPower
+            q.num q.den _ q.hasDenominatorPower 1 (mul_comm 1 f) hT₂
+              ((eqToHom (completionLocObj_obj P (p false).num (p false).den _
+                (p false).hasDenominatorPower)).1
+                ((presentationLimitRationalIso Aplus hAplus (p false) (hp false)).hom.hom.1
+                  x₂)) := by
+            exact congrArg₂ (· - ·)
+              (rationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁ (hU true) x₁)
+              (rationalIso_map_apply hAplus (p false) q (hp false) hq 1 (mul_comm 1 f) hT₂
+                (hU false) x₂)
+      _ = _ := by
+        rw [hx₁, hx₂]
+        exact (ringDifference_apply u v).symm.trans huv
+  -- Return from the explicit rational presentation to the literal intersection.
+  intro z
+  obtain ⟨⟨x₁, x₂⟩, hx⟩ := hqSurj ((presentationLimitMap hEq.le).hom.1 z)
+  refine ⟨(x₁, x₂), ?_⟩
+  have h₁ := presentationLimitMap_apply_presentationLimitMap_apply (hU true) hEq.ge x₁
+  have h₂ := presentationLimitMap_apply_presentationLimitMap_apply (hU false) hEq.ge x₂
+  have hInv : (presentationLimitMap (P := P) hEq.ge).hom.1
+      ((presentationLimitMap (P := P) hEq.le).hom.1 z) = z := by
+    calc
+      _ = (presentationLimitMap (P := P) (le_refl _)).hom.1 z :=
+        presentationLimitMap_apply_presentationLimitMap_apply hEq.le hEq.ge z
+      _ = z := by
+        rw [presentationLimitMap_refl]
+        exact ConcreteCategory.id_apply z
+  calc
+    _ = (presentationLimitMap (P := P) hEq.ge).hom.1
+        ((presentationLimitMap (hU true)).hom.1 x₁ -
+          (presentationLimitMap (hU false)).hom.1 x₂) := by
+        rw [map_sub]
+        exact congrArg₂ (· - ·) h₁.symm h₂.symm
+    _ = (presentationLimitMap (P := P) hEq.ge).hom.1
+        ((presentationLimitMap (P := P) hEq.le).hom.1 z) :=
+      congrArg (presentationLimitMap (P := P) hEq.ge).hom.1 hx
+    _ = z := hInv
 
 end TauCeti.ValuationSpectrum
