@@ -57,7 +57,8 @@ theorem frobeniusCharacteristic_spechtCharacter (d : ℕ) (h : n ≤ d)
         symmetricHomogeneousSubmodule (Fin d) ℂ n) : MvPolynomial (Fin d) ℂ) =
       schurPoly (Fin d) ℂ μ := by
   rw [← spechtCharacterBasis_apply, frobeniusCharacteristic, Module.Basis.equiv_apply]
-  exact coe_schurPolyBasis (partitionEquivSchurIndex n d h μ)
+  simpa only [partitionEquivSchurIndex_apply] using
+    coe_schurPolyBasis (partitionEquivSchurIndex n d h μ)
 
 /-- The Schur coordinate of a Frobenius characteristic is the pairing with the corresponding
 Specht character. -/
@@ -68,7 +69,9 @@ theorem schurPolyBasis_repr_frobeniusCharacteristic (d : ℕ) (h : n ≤ d)
     (schurPolyBasis (Fin d) ℂ n).repr (frobeniusCharacteristic n d h f) μ =
       ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ.1).ρ) f := by
   let e := partitionEquivSchurIndex n d h
-  have hμ : e μ.1 = μ := Subtype.ext rfl
+  have hμ : e μ.1 = μ := by
+    apply Subtype.ext
+    exact partitionEquivSchurIndex_apply n d h μ.1
   conv_lhs => rw [← hμ]
   rw [frobeniusCharacteristic]
   have hrepr := Module.Basis.repr_reindex_apply (schurPolyBasis (Fin d) ℂ n)

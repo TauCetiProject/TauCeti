@@ -94,12 +94,18 @@ open Finset MvPolynomial
 
 /-- For an alphabet with at least `n` letters, every partition of `n` indexes a Schur basis
 vector. -/
-@[expose] def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
+def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
     n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
   toFun μ := ⟨μ, (partition_card_parts_le μ).trans (by simpa using h)⟩
   invFun μ := μ.1
   left_inv _ := rfl
   right_inv _ := Subtype.ext rfl
+
+/-- Reindexing a partition into the Schur basis retains the same underlying partition. -/
+@[simp]
+theorem partitionEquivSchurIndex_apply (n d : ℕ) (h : n ≤ d) (μ : n.Partition) :
+    (partitionEquivSchurIndex n d h μ).1 = μ := by
+  simp [partitionEquivSchurIndex]
 
 section CommSemiring
 
