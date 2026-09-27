@@ -8,14 +8,14 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import TauCeti.GroupTheory.Coset.Basic
-public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Faithful flatness of maps of group algebras
 
-For a commutative target group, an injective homomorphism `p : M →* N` makes `R[N]` free over
-`R[M]`, with basis indexed by the cosets of `p.range`. For commutative groups and a nonzero
-commutative base ring, the induced ring map is faithfully flat exactly when `p` is injective.
+An injective group homomorphism `p : M →* N` makes `R[N]` free as a left `R[M]`-module.
+The basis consists of the inverses of chosen left-coset representatives of `p.range`, which
+represent its right cosets. For commutative groups and a nonzero commutative base ring, the
+induced ring map is faithfully flat exactly when `p` is injective.
 This is the coordinate-algebra criterion for faithful flatness of morphisms of diagonalizable
 groups.
 -/
@@ -28,28 +28,31 @@ open MonoidAlgebra
 
 namespace TauCeti.MonoidAlgebra
 
-variable {R M N : Type*} [Semiring R] [Group M] [CommGroup N]
+variable {R M N : Type*} [Semiring R] [Group M] [Group N]
 
-/-- Regroup the coefficients of the target group algebra by cosets of the image. -/
+/-- Regroup coefficients using `(q, m) ↦ p m * q.out⁻¹`, obtained by inverting the usual
+left-coset decomposition. -/
 private def cosetAddEquiv (p : M →* N) (hp : Function.Injective p) :
     ((N ⧸ p.range) →₀ R[M]) ≃+ R[N] :=
   (Finsupp.mapRange.addEquiv coeffAddEquiv).trans <|
     Finsupp.curryAddEquiv.symm.trans <|
-      (Finsupp.domCongr ((Equiv.prodCongr (Equiv.refl _) (MonoidHom.ofInjective hp).toEquiv).trans
-        Subgroup.groupEquivQuotientProdSubgroup.symm)).trans coeffAddEquiv.symm
+      (Finsupp.domCongr ((Equiv.prodCongr (Equiv.refl _)
+        ((Equiv.inv M).trans (MonoidHom.ofInjective hp).toEquiv)).trans
+          (Subgroup.groupEquivQuotientProdSubgroup.symm.trans (Equiv.inv N)))).trans
+            coeffAddEquiv.symm
 
 private theorem cosetAddEquiv_single_single (p : M →* N) (hp : Function.Injective p)
     (q : N ⧸ p.range) (m : M) (r : R) :
-    cosetAddEquiv p hp (Finsupp.single q (single m r)) = single (q.out * p m) r := by
+    cosetAddEquiv p hp (Finsupp.single q (single m r)) = single (p m * q.out⁻¹) r := by
   simp [cosetAddEquiv, Finsupp.curryAddEquiv, Finsupp.curryEquiv,
     Subgroup.groupEquivQuotientProdSubgroup_symm_apply, MonoidHom.ofInjective_apply]
 
 private theorem cosetAddEquiv_single (p : M →* N) (hp : Function.Injective p)
     (q : N ⧸ p.range) (a : R[M]) :
-    cosetAddEquiv p hp (Finsupp.single q a) = single q.out 1 * mapDomain p a := by
+    cosetAddEquiv p hp (Finsupp.single q a) = mapDomain p a * single q.out⁻¹ 1 := by
   induction a using induction_linear with
   | zero => simp
-  | add a b ha hb => simp [Finsupp.single_add, ha, hb, mapDomain_add, mul_add]
+  | add a b ha hb => simp [Finsupp.single_add, ha, hb, mapDomain_add, add_mul]
   | single m r => simp [cosetAddEquiv_single_single, single_mul_single]
 
 /-- The coset decomposition is linear for the source group-algebra action. -/
@@ -66,26 +69,23 @@ private def cosetLinearEquiv (p : M →* N) (hp : Function.Injective p) :
   | single q b =>
     rw [Finsupp.smul_single, smul_eq_mul, cosetAddEquiv_single, cosetAddEquiv_single,
       RingHom.toModule_smul]
-    simp only [mapDomainRingHom_apply, mapDomain_mul]
-    rw [← mul_assoc, ← mul_assoc]
-    congr 1
-    exact (mapDomain_commute_single (fun _ => Commute.all _ _)
-      (fun _ => Commute.one_right _) a).symm.eq
+    simp [mapDomainRingHom_apply, mapDomain_mul, mul_assoc]
 
 variable (R)
 
-/-- Coset representatives form a basis of the target group algebra over the source of an
-injective group-algebra map. Scalars act through `mapDomainRingHom R p`. -/
+/-- Inverses of left-coset representatives form a basis of the target group algebra over the
+source of an injective group-algebra map. These inverses represent the right cosets, as required
+for the left scalar action through `mapDomainRingHom R p`. -/
 def basisCosets (p : M →* N) (hp : Function.Injective p) :
     letI := (mapDomainRingHom R p).toModule
     Module.Basis (N ⧸ p.range) R[M] R[N] := by
   letI := (mapDomainRingHom R p).toModule
   exact ⟨(cosetLinearEquiv p hp).symm⟩
 
-/-- The coset basis vector is the monomial at the chosen representative. -/
+/-- The coset basis vector is the monomial at the inverse of the chosen representative. -/
 @[simp]
 theorem basisCosets_apply (p : M →* N) (hp : Function.Injective p) (q : N ⧸ p.range) :
-    basisCosets R p hp q = single q.out (1 : R) := by
+    basisCosets R p hp q = single q.out⁻¹ (1 : R) := by
   simp [basisCosets, Module.Basis.coe_ofRepr, cosetLinearEquiv, cosetAddEquiv_single]
 
 section CommRing
