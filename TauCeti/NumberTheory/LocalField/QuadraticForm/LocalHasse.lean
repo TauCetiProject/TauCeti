@@ -106,7 +106,6 @@ theorem localHasseOfOdd_eq_one_of_rank_le_one (h2 : IsUnit (2 : 𝒪[K]))
     omega
 
 /-- Every regular rank-one form has trivial local Hasse invariant. -/
-@[simp]
 theorem localHasseOfOdd_mk_rankOne (h2 : IsUnit (2 : 𝒪[K])) (a : Kˣ) :
     localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = 1 :=
   localHasseOfOdd_eq_one_of_rank_le_one h2 (by rw [rank_mk])
