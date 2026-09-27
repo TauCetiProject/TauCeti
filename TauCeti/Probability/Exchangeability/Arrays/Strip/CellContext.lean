@@ -51,19 +51,19 @@ def cellContext (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
 
 omit [MeasurableSpace α] in
 @[simp]
-theorem cellContext_block (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
+theorem cellContext_block_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
     (cellContext e f i j x).1.1 p = x (e p.1, f p.2) :=
   (rfl)
 
 omit [MeasurableSpace α] in
 @[simp]
-theorem cellContext_rowStrip (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (b : ℕ) :
+theorem cellContext_rowStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (b : ℕ) :
     (cellContext e f i j x).1.2 b = x (i, f b) :=
   (rfl)
 
 omit [MeasurableSpace α] in
 @[simp]
-theorem cellContext_colStrip (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (a : ℕ) :
+theorem cellContext_colStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (a : ℕ) :
     (cellContext e f i j x).2 a = x (e a, j) :=
   (rfl)
 
