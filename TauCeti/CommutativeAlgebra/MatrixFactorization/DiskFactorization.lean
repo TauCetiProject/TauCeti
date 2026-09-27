@@ -35,7 +35,7 @@ attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
 /-- The direct sum of the odd disk and the parity-shifted even disk of a matrix factorization.
 Both components are the finite projective module `X₁ ⊞ X₀`. -/
--- Expose the underlying duplex because it occurs in the types of the factorization maps.
+-- The component types in the public map formulas require this constructor to be exposed.
 @[expose] noncomputable def diskSum (X : MatrixFactorization S w) : MatrixFactorization S w :=
   ofCurvedDuplex (CurvedDuplex.diskSum X.obj)
     -- The full-subcategory property sees the underlying carrier of the component biproduct.
@@ -53,6 +53,14 @@ Both components are the finite projective module `X₁ ⊞ X₀`. -/
 @[simp] theorem diskSum_X₁ (X : MatrixFactorization S w) :
     (diskSum X).obj.X₁ = (X.obj.X₁ ⊞ X.obj.X₀) := rfl
 
+@[simp] theorem diskSum_d₀ (X : MatrixFactorization S w) :
+    (diskSum X).obj.d₀ =
+      CategoryTheory.Limits.biprod.map (𝟙 X.obj.X₁) (-(w • 𝟙 X.obj.X₀)) := rfl
+
+@[simp] theorem diskSum_d₁ (X : MatrixFactorization S w) :
+    (diskSum X).obj.d₁ =
+      CategoryTheory.Limits.biprod.map (w • 𝟙 X.obj.X₁) (-𝟙 X.obj.X₀) := rfl
+
 /-- The canonical map from a factorization into its disk sum. -/
 noncomputable def toDiskSum (X : MatrixFactorization S w) : X ⟶ diskSum X :=
   ⟨CurvedDuplex.toDiskSum X.obj⟩
@@ -62,8 +70,28 @@ noncomputable def fromDiskSum (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
     (h₁ : X.obj.X₁ ⟶ Y.obj.X₀) : diskSum X ⟶ Y :=
   ⟨CurvedDuplex.fromDiskSum h₀ h₁⟩
 
+@[simp] theorem toDiskSum_hom_f₀ (X : MatrixFactorization S w) :
+    (toDiskSum X).hom.f₀ = CategoryTheory.Limits.biprod.lift X.obj.d₀ (𝟙 X.obj.X₀) := by
+  simp [toDiskSum]
+
+@[simp] theorem toDiskSum_hom_f₁ (X : MatrixFactorization S w) :
+    (toDiskSum X).hom.f₁ = CategoryTheory.Limits.biprod.lift (𝟙 X.obj.X₁) (-X.obj.d₁) := by
+  simp [toDiskSum]
+
+@[simp] theorem fromDiskSum_hom_f₀ (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
+    (h₁ : X.obj.X₁ ⟶ Y.obj.X₀) :
+    (fromDiskSum h₀ h₁).hom.f₀ =
+      CategoryTheory.Limits.biprod.desc h₁ (h₀ ≫ Y.obj.d₁) := by
+  simp [fromDiskSum]
+
+@[simp] theorem fromDiskSum_hom_f₁ (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
+    (h₁ : X.obj.X₁ ⟶ Y.obj.X₀) :
+    (fromDiskSum h₀ h₁).hom.f₁ =
+      CategoryTheory.Limits.biprod.desc (h₁ ≫ Y.obj.d₀) (-h₀) := by
+  simp [fromDiskSum]
+
 /-- The composite through the disk sum is the boundary of the given odd homotopy. -/
-theorem toDiskSum_comp_fromDiskSum (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
+@[simp] theorem toDiskSum_comp_fromDiskSum (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
     (h₁ : X.obj.X₁ ⟶ Y.obj.X₀) :
     toDiskSum X ≫ fromDiskSum h₀ h₁ =
       ⟨CurvedDuplex.nullHomotopicMap h₀ h₁⟩ :=

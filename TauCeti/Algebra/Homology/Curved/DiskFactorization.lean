@@ -37,7 +37,7 @@ attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
 /-- The two elementary disks associated to the components of a duplex, with the disk on the
 even component shifted in parity. -/
--- Expose the components because they occur in the types of maps to and from the disk sum.
+-- The component types in the public map formulas require this constructor to be exposed.
 @[expose] noncomputable def diskSum (X : CurvedDuplex C w) : CurvedDuplex C w :=
   biprod (disk w X.X₁) ((parityShift C w).obj (disk w X.X₀))
 
@@ -46,6 +46,12 @@ even component shifted in parity. -/
 
 @[simp] theorem diskSum_X₁ (X : CurvedDuplex C w) :
     (diskSum X).X₁ = (X.X₁ ⊞ X.X₀) := rfl
+
+@[simp] theorem diskSum_d₀ (X : CurvedDuplex C w) :
+    (diskSum X).d₀ = CategoryTheory.Limits.biprod.map (𝟙 X.X₁) (-(w • 𝟙 X.X₀)) := rfl
+
+@[simp] theorem diskSum_d₁ (X : CurvedDuplex C w) :
+    (diskSum X).d₁ = CategoryTheory.Limits.biprod.map (w • 𝟙 X.X₁) (-𝟙 X.X₀) := rfl
 
 /-- The canonical map from a duplex to the disk on its odd component. -/
 def toOddDisk (X : CurvedDuplex C w) : X ⟶ disk w X.X₁ where
@@ -83,8 +89,26 @@ noncomputable def fromDiskSum (h₀ : X.X₀ ⟶ Y.X₁) (h₁ : X.X₁ ⟶ Y.X�
     diskSum X ⟶ Y :=
   biprodDesc (fromOddDisk h₁) (fromEvenShiftedDisk h₀)
 
+@[simp] theorem toDiskSum_f₀ (X : CurvedDuplex C w) :
+    (toDiskSum X).f₀ = CategoryTheory.Limits.biprod.lift X.d₀ (𝟙 X.X₀) := by
+  simp [toDiskSum, toOddDisk, toEvenShiftedDisk]
+
+@[simp] theorem toDiskSum_f₁ (X : CurvedDuplex C w) :
+    (toDiskSum X).f₁ = CategoryTheory.Limits.biprod.lift (𝟙 X.X₁) (-X.d₁) := by
+  simp [toDiskSum, toOddDisk, toEvenShiftedDisk]
+
+@[simp] theorem fromDiskSum_f₀ (h₀ : X.X₀ ⟶ Y.X₁) (h₁ : X.X₁ ⟶ Y.X₀) :
+    (fromDiskSum h₀ h₁).f₀ =
+      CategoryTheory.Limits.biprod.desc h₁ (h₀ ≫ Y.d₁) := by
+  simp [fromDiskSum, fromOddDisk, fromEvenShiftedDisk]
+
+@[simp] theorem fromDiskSum_f₁ (h₀ : X.X₀ ⟶ Y.X₁) (h₁ : X.X₁ ⟶ Y.X₀) :
+    (fromDiskSum h₀ h₁).f₁ =
+      CategoryTheory.Limits.biprod.desc (h₁ ≫ Y.d₀) (-h₀) := by
+  simp [fromDiskSum, fromOddDisk, fromEvenShiftedDisk]
+
 /-- A homotopy boundary factors through the direct sum of two elementary disks. -/
-theorem toDiskSum_comp_fromDiskSum (h₀ : X.X₀ ⟶ Y.X₁) (h₁ : X.X₁ ⟶ Y.X₀) :
+@[simp] theorem toDiskSum_comp_fromDiskSum (h₀ : X.X₀ ⟶ Y.X₁) (h₁ : X.X₁ ⟶ Y.X₀) :
     toDiskSum X ≫ fromDiskSum h₀ h₁ = nullHomotopicMap h₀ h₁ := by
   ext <;> simp [toDiskSum, fromDiskSum, fromOddDisk, fromEvenShiftedDisk,
     toOddDisk, toEvenShiftedDisk, diskSum, biprod.lift_desc, add_comm]
