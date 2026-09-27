@@ -162,10 +162,8 @@ def kummerCocycleClass
   H1pi (AbsoluteGaloisGroup K) (KummerCoeff K n) ⟨kummerCocycle hα, kummerCocycle_mem_Z1 hα⟩
 
 -- Not `@[simp]`: `kummerCocycleClass` is the intended normal form, and this lemma unfolds it.
-/-- **The defining equation of `TauCeti.kummerCocycleClass`**: it is the image of its named
-cocycle under the quotient map to `H¹`. The body of `kummerCocycleClass` is not exposed, so this
-is the public rule that presents the class by a representative, as
-`TauCeti.kummerCocycleModTwoClass_eq` needs. -/
+/-- **The defining equation of `TauCeti.kummerCocycleClass`**: it is the class in `H¹`
+represented by the cocycle `TauCeti.kummerCocycle`. -/
 theorem kummerCocycleClass_def
     (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
     kummerCocycleClass hα =

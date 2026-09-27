@@ -25,6 +25,7 @@ continuous cohomology are formed from. It is the `ℤ`-coefficient counterpart o
 
 * `TauCeti.trivialF2TopPairing_bil_apply`: the pairing multiplies the underlying values in
   `ZMod 2`.
+* `TauCeti.trivialF2TopPairing_flip`: the opposite of the multiplication pairing is itself.
 -/
 
 public section
@@ -34,20 +35,6 @@ namespace TauCeti
 open CategoryTheory
 
 universe u
-
-namespace TopPairing
-
-/-- **Transport of a coefficient pairing along an equality of coefficient objects**, read on
-carriers: the transported pairing is the original one conjugated by the transports of the
-carriers. -/
-private theorem bil_transport {R : Type*} [CommRing R] [TopologicalSpace R] {H : Type*} [Monoid H]
-    {X Y : TopRep R H} (h : X = Y) (P : TopPairing X X X) (x y : Y.V) :
-    (h ▸ P).bil x y = eqToHom h (P.bil (eqToHom h.symm x) (eqToHom h.symm y)) := by
-  -- With `h` substituted, all three transports are `eqToHom rfl`, the identity morphism.
-  subst h
-  rfl
-
-end TopPairing
 
 variable (G : Type u) [Monoid G]
 
@@ -71,5 +58,19 @@ theorem trivialF2TopPairing_bil_apply (x y : (trivialF2 G).V) :
   rw [trivialF2TopPairing, TopPairing.bil_transport, eqToHom_ofDiscreteModule_trivialF2_symm_apply,
     eqToHom_ofDiscreteModule_trivialF2_symm_apply, ofDiscreteModulePairing_bil_apply,
     eqToHom_ofDiscreteModule_trivialF2_apply, trivialF2Pairing_apply]
+
+/-- Multiplication on the trivial `𝔽₂` coefficient object is symmetric. -/
+theorem trivialF2TopPairing_bil_comm (x y : (trivialF2 G).V) :
+    (trivialF2TopPairing G).bil x y = (trivialF2TopPairing G).bil y x := by
+  simp only [trivialF2TopPairing_bil_apply, mul_comm]
+
+/-- The opposite of the multiplication pairing is itself, because multiplication in `ZMod 2` is
+commutative. -/
+@[simp]
+theorem trivialF2TopPairing_flip : (trivialF2TopPairing G).flip = trivialF2TopPairing G :=
+  -- `DFunLike.ext` rather than `LinearMap.ext₂`: the latter would synthesize the `ℤ`-module
+  -- structure on the carrier as `AddCommGroup.toIntModule`, not the coefficient object's own.
+  TopPairing.ext (DFunLike.ext _ _ fun x ↦ DFunLike.ext _ _ fun y ↦ by
+    rw [TopPairing.flip_bil, trivialF2TopPairing_bil_comm])
 
 end TauCeti
