@@ -13,8 +13,8 @@ public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 Pulling back a finite locally free sheaf along the identity is naturally isomorphic to the
 original sheaf. Pullback along a composite is naturally isomorphic to successive pullback. These
 comparisons are the restrictions of the corresponding comparisons for all modules on a scheme.
-They provide the identity and composition coherence for the sheaf side of the base-change
-naturality required of the vector-bundle equivalence in AlgebraicVectorBundles L2B.
+They provide the identity and composition coherence for the sheaf side of base-change
+naturality of the vector-bundle equivalence.
 
 The construction follows the full-subcategory comparisons for invertible sheaves in
 `TauCeti/AlgebraicGeometry/LineBundle/Functoriality.lean`; finite local freeness replaces
