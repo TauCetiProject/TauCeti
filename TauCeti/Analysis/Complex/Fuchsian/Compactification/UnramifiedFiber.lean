@@ -8,13 +8,14 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Fiber
 
 /-!
-# Fibres over free points of Fuchsian quotient maps
+# Unramified interior fibres of Fuchsian quotient maps
 
-At a point of the upper half-plane with trivial stabilizer in the larger group, the fibre of
-an induced map of compactified quotients has exactly the subgroup index many points. Such
-fibres give the unramified count used in the global degree formula. For an infinite index,
-both sides of the cardinality theorem are zero by Mathlib's `Nat.card` and subgroup-index
-conventions. The group-theoretic coset equivalence is in
+When the stabilizer acts trivially on the subgroup cosets, the fibre of an induced map of
+compactified quotients has exactly the subgroup index many points. In particular, this holds
+at points with trivial stabilizer in the larger group. Such fibres give the unramified count
+used in the global degree formula. For an infinite index, both sides of the cardinality theorem
+are zero by Mathlib's `Nat.card` and subgroup-index conventions. The group-theoretic coset
+equivalence is in
 `TauCeti.GroupTheory.DoubleCoset.Fiber`.
 -/
 
@@ -26,6 +27,16 @@ open scoped MatrixGroups
 namespace Subgroup
 
 variable {Δ Γ : Subgroup PSL(2, ℝ)}
+
+/-- Over an interior orbit, the compactified fibre has cardinality `[Γ : Δ]` when
+the stabilizer acts trivially on the cosets of `Δ` in `Γ`. -/
+theorem card_fiber_compactifiedQuotientMap_of_stabilizer_le_normalCore (h : Δ ≤ Γ)
+    (z : ℍ) (hz : stabilizer Γ z ≤ (Δ.subgroupOf Γ).normalCore) :
+    Nat.card {y : Δ.CompactifiedQuotient //
+      compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)} =
+      (Δ.subgroupOf Γ).index := by
+  rw [← Nat.card_congr (orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z))]
+  exact TauCeti.card_fiber_orbitRel_map_of_stabilizer_le_normalCore h z hz
 
 /-- The fibre of the compactified quotient map over a free interior point has cardinality
 `[Γ : Δ]`. -/
