@@ -22,11 +22,8 @@ This is the chart-level finiteness and positivity statement behind the basepoint
 a holomorphic disk. The chart condition is local: a disk whose image is not contained in one chart
 must be covered by charts before its global intersection number can be defined.
 
-The zero-set finiteness theorem is `TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, and the
-analytic order theorem is Mathlib's `AnalyticOnNhd.analyticOrderAt_ne_top_of_isPreconnected`.
-The divisor equation comes from `TauCeti.Geometry.Manifold.SymmetricPower`. The geometric
-convention follows Ozsváth--Szabó, *Holomorphic disks and topological invariants for closed
-three-manifolds*, §2.
+The geometric convention follows Ozsváth--Szabó, *Holomorphic disks and topological invariants
+for closed three-manifolds*, §2.
 -/
 
 public section
@@ -41,8 +38,9 @@ variable {f : ℂ → Sym α n} {U K : Set ℂ} {s : Sym α n}
 
 /-- A fixed symmetric chart gives an analytic scalar equation for the basepoint divisor
 along a curve. If the curve meets and leaves the divisor in `U`, the equation has a
-zero and a nonzero value there. -/
-theorem exists_basepointDivisor_chart_equation (z : α)
+zero and a nonzero value there. This specializes
+`exists_continuousLinearMap_ne_zero_mem_iff_symChartAt`. -/
+theorem exists_analyticOnNhd_basepointDivisor_equation_in_chart (z : α)
     (hchart : ∀ t ∈ U, f t ∈ (symChartAt (K := ℂ) s).source)
     (ha : AnalyticOnNhd ℂ (fun t => symChartAt (K := ℂ) s (f t)) U)
     (houtside : ∃ t ∈ U, f t ∉ Sym.basepointDivisor z)
@@ -71,7 +69,8 @@ theorem exists_basepointDivisor_chart_equation (z : α)
 /-- On a connected parameter domain, a holomorphic curve whose image lies in one symmetric
 chart either lies in the basepoint divisor everywhere or meets it at only finitely many points
 of each compact subset. This states the latter case, witnessed by one point outside the divisor.
-The chart-coordinate map is required to be analytic on a neighborhood of every point of `U`. -/
+The chart-coordinate map is required to be analytic on a neighborhood of every point of `U`.
+The compact zero-set step uses `finite_setOf_mem_and_eq_zero_of_isCompact`. -/
 theorem finite_basepointDivisor_intersections_in_chart (z : α)
     (hU : IsPreconnected U) (hK : IsCompact K) (hKU : K ⊆ U)
     (hchart : ∀ w ∈ U, f w ∈ (symChartAt (K := ℂ) s).source)
@@ -81,7 +80,7 @@ theorem finite_basepointDivisor_intersections_in_chart (z : α)
   by_cases hhit : ∃ w ∈ U, f w ∈ Sym.basepointDivisor z
   · obtain ⟨w, hwU, hwD⟩ := hhit
     obtain ⟨ℓ, b, g, _, _, hg, hzero, t₀, ht₀U, hgt₀⟩ :=
-      exists_basepointDivisor_chart_equation z hchart ha houtside w hwU hwD
+      exists_analyticOnNhd_basepointDivisor_equation_in_chart z hchart ha houtside w hwU hwD
     have hfinite : {t ∈ K | g t = 0}.Finite :=
       finite_setOf_mem_and_eq_zero_of_isCompact hg hU ht₀U hgt₀ hK hKU
     have heq : K ∩ f ⁻¹' Sym.basepointDivisor z = {t ∈ K | g t = 0} := by
@@ -103,23 +102,24 @@ theorem finite_basepointDivisor_intersections_in_chart (z : α)
 
 /-- If an analytic curve stays in one symmetric chart over a connected domain and is not
 contained in the basepoint divisor, each intersection has a finite, positive order of vanishing.
-The domain is a neighborhood of the intersection, where the local equation is valid.
+The equation characterizes divisor membership throughout the domain.
 In particular, the infinite-order case of `basepointDivisor_intersection_order` cannot occur
-under these hypotheses. -/
+under these hypotheses. Finite order uses
+`AnalyticOnNhd.analyticOrderAt_ne_top_of_isPreconnected`. -/
 theorem basepointDivisor_intersection_order_ne_top_in_chart (z : α)
     (hU : IsPreconnected U)
     (hchart : ∀ t ∈ U, f t ∈ (symChartAt (K := ℂ) s).source)
     (ha : AnalyticOnNhd ℂ (fun t => symChartAt (K := ℂ) s (f t)) U)
     (houtside : ∃ t ∈ U, f t ∉ Sym.basepointDivisor z)
-    (w : ℂ) (hwU : w ∈ U) (hUnhds : U ∈ 𝓝 w)
+    (w : ℂ) (hwU : w ∈ U)
     (hwD : f w ∈ Sym.basepointDivisor z) :
     ∃ (ℓ : (Fin n → ℂ) →L[ℂ] ℂ) (b : ℂ) (g : ℂ → ℂ),
       ℓ ≠ 0 ∧ g = (fun t => ℓ (symChartAt (K := ℂ) s (f t)) - b) ∧
       AnalyticAt ℂ g w ∧ g w = 0 ∧
-      (∀ᶠ t in 𝓝 w, (f t ∈ Sym.basepointDivisor z ↔ g t = 0)) ∧
+      (∀ t ∈ U, (f t ∈ Sym.basepointDivisor z ↔ g t = 0)) ∧
       analyticOrderAt g w ≠ 0 ∧ analyticOrderAt g w ≠ ⊤ := by
   obtain ⟨ℓ, b, g, hℓne, hgformula, hg, hzero, t₀, ht₀U, hgt₀⟩ :=
-    exists_basepointDivisor_chart_equation z hchart ha houtside w hwU hwD
+    exists_analyticOnNhd_basepointDivisor_equation_in_chart z hchart ha houtside w hwU hwD
   have hgw : g w = 0 := (hzero w hwU).1 hwD
   have horder₀ : analyticOrderAt g t₀ ≠ ⊤ := by
     rw [(hg t₀ ht₀U).analyticOrderAt_eq_zero.mpr hgt₀]
@@ -128,9 +128,7 @@ theorem basepointDivisor_intersection_order_ne_top_in_chart (z : α)
     hg.analyticOrderAt_ne_top_of_isPreconnected hU ht₀U hwU horder₀
   have hpositive : analyticOrderAt g w ≠ 0 :=
     analyticOrderAt_ne_zero.mpr ⟨hg w hwU, hgw⟩
-  refine ⟨ℓ, b, g, hℓne, hgformula, hg w hwU, hgw, ?_, hpositive, hfinite⟩
-  filter_upwards [hUnhds] with t htU
-  exact hzero t htU
+  exact ⟨ℓ, b, g, hℓne, hgformula, hg w hwU, hgw, hzero, hpositive, hfinite⟩
 
 end TauCeti
 
