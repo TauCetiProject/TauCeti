@@ -97,30 +97,6 @@ def absoluteRamificationIndex (K : Type*) [Field K] [ValuativeRel K] [Topologica
 theorem absoluteRamificationIndex_pos : 0 < absoluteRamificationIndex K p := by
   exact ramificationIndex_pos (K := ℚ_[p]) (L := K)
 
-/-- The absolute ramification index is the normalized valuation of the residue prime `p` in
-`K`. -/
-@[simp]
-theorem absoluteRamificationIndex_eq_natCastValuation :
-    absoluteRamificationIndex K p = natCastValuation K p
-      (by
-        simpa only [map_natCast] using
-          (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
-            (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero : (p : ℚ_[p]) ≠ 0)) := by
-  rw [absoluteRamificationIndex]
-  let hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  let hpK : (p : K) ≠ 0 :=
-    by simpa only [map_natCast] using
-      (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr hp
-  have hmap : Units.map (algebraMap ℚ_[p] K : ℚ_[p] →* K) (Units.mk0 (p : ℚ_[p]) hp) =
-      Units.mk0 (p : K) hpK := by
-    ext
-    simp
-  have h := toAdd_normalizedValuation_algebraMap (K := ℚ_[p]) (L := K)
-    (Units.mk0 (p : ℚ_[p]) hp)
-  rw [hmap, normalizedValuation_natCast K p hpK,
-    normalizedValuation_natCast ℚ_[p] p hp, Padic.natCastValuation_self] at h
-  simpa using h.symm
-
 /-- In a finite extension `K/ℚ_[p]`, the normalized valuation of a nonzero natural number is the
 absolute ramification index times its `p`-adic valuation. -/
 theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
@@ -148,6 +124,21 @@ theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
       ramificationIndex ℚ_[p] K * padicValNat p n := by
     exact_mod_cast h
   simpa only [absoluteRamificationIndex] using hnval
+
+/-- The absolute ramification index is the normalized valuation of the residue prime `p` in
+`K`. -/
+@[simp]
+theorem absoluteRamificationIndex_eq_natCastValuation :
+    absoluteRamificationIndex K p = natCastValuation K p
+      (by
+        simpa only [map_natCast] using
+          (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
+            (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero : (p : ℚ_[p]) ≠ 0)) := by
+  have hpval : padicValNat p p = 1 := by
+    simpa only [Padic.natCastValuation_eq_padicValNat] using
+      (Padic.natCastValuation_self (p := p))
+  rw [natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p p
+    (Fact.out : p.Prime).ne_zero, hpval, Nat.mul_one]
 
 /-- The absolute ramification index of `ℚ_[p]` is one. -/
 -- Not `@[simp]`: the preceding comparison and the p-adic valuation API already simplify this
