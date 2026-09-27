@@ -28,35 +28,39 @@ namespace TauCeti
 
 open Complex InnerProductSpace
 
+private theorem hasDerivAt_planarNewtonianKernel_affine (b v : ℂ) (h : b + v ≠ 0) :
+    HasDerivAt (fun t : ℝ => planarNewtonianKernel (b + t • v))
+      ((-(2 * Real.pi)⁻¹ * (‖b + v‖ ^ 2)⁻¹) * ⟪b + v, v⟫_ℝ) 1 := by
+  have hf := hasFDerivAt_planarNewtonianKernel h
+  have hf' : HasFDerivAt planarNewtonianKernel
+      ((-(2 * Real.pi)⁻¹ * (‖b + v‖ ^ 2)⁻¹) • innerSL ℝ (b + v))
+      (b + (1 : ℝ) • v) := by
+    simpa only [one_smul] using hf
+  have hcurve : HasDerivAt (fun t : ℝ => b + t • v) v 1 :=
+    by simpa only [id_eq, one_smul] using
+      ((hasDerivAt_id (1 : ℝ)).smul_const v).const_add b
+  simpa only [Function.comp_def, one_smul, smul_apply, smul_eq_mul,
+    innerSL_apply_apply] using hf'.comp_hasDerivAt 1 hcurve
+
 /-- On the boundary of the unit disk, the outward radial derivative of the Green kernel
 with pole `a` is the negative of the Poisson kernel divided by `2π`. -/
 theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
     HasDerivAt (fun t : ℝ => planarGreenKernel a (t • z))
       (-(poissonKernel 0 a z) / (2 * Real.pi)) 1 := by
-  obtain ⟨hza, hca⟩ := planarGreenKernel_boundary_ne ha hz
-  have hf₁ := hasFDerivAt_planarNewtonianKernel_sub (sub_ne_zero.mp hza)
+  obtain ⟨hza, hca⟩ :=
+    planarGreenKernel_log_arguments_ne_of_norm_lt_one_of_norm_eq_one ha hz
   have h₁ : HasDerivAt (fun t : ℝ => planarNewtonianKernel (t • z - a))
       ((-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) * ⟪z - a, z⟫_ℝ) 1 := by
-    have hf : HasFDerivAt (fun w : ℂ => planarNewtonianKernel (w - a))
-        ((-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) • innerSL ℝ (z - a))
-        ((fun t : ℝ => t • z) 1) := by simpa only [one_smul] using hf₁
-    simpa only [Function.comp_def, id_eq, one_smul, smul_apply, smul_eq_mul,
-      innerSL_apply_apply] using
-      hf.comp_hasDerivAt 1 ((hasDerivAt_id (1 : ℝ)).smul_const z)
-  have hf₂ := hasFDerivAt_planarNewtonianKernel hca
+    simpa only [sub_eq_add_neg, add_comm] using
+      hasDerivAt_planarNewtonianKernel_affine (-a) z (by simpa only [add_comm,
+        ← sub_eq_add_neg] using hza)
   have h₂ : HasDerivAt
       (fun t : ℝ => planarNewtonianKernel (1 + t • (-(starRingEnd ℂ a * z))))
       ((-(2 * Real.pi)⁻¹ * (‖1 - starRingEnd ℂ a * z‖ ^ 2)⁻¹) *
         ⟪1 - starRingEnd ℂ a * z, -(starRingEnd ℂ a * z)⟫_ℝ) 1 := by
-    have hf : HasFDerivAt planarNewtonianKernel
-        ((-(2 * Real.pi)⁻¹ * (‖1 - starRingEnd ℂ a * z‖ ^ 2)⁻¹) •
-          innerSL ℝ (1 - starRingEnd ℂ a * z))
-        ((fun t : ℝ => 1 + t • (-(starRingEnd ℂ a * z))) 1) := by
-      simpa only [one_smul, ← sub_eq_add_neg] using hf₂
-    simpa only [Function.comp_def, id_eq, one_smul, smul_apply, smul_eq_mul,
-      innerSL_apply_apply] using
-      hf.comp_hasDerivAt 1
-        (((hasDerivAt_id (1 : ℝ)).smul_const (-(starRingEnd ℂ a * z))).const_add 1)
+    simpa only [sub_eq_add_neg] using
+      hasDerivAt_planarNewtonianKernel_affine 1 (-(starRingEnd ℂ a * z))
+        (by simpa only [← sub_eq_add_neg] using hca)
   have harg (t : ℝ) : 1 - starRingEnd ℂ a * (t • z) =
       1 + t • (-(starRingEnd ℂ a * z)) := by
     rw [mul_smul_comm, smul_neg]

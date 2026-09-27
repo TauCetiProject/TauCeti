@@ -66,7 +66,7 @@ private theorem differentiableAt_planarGreenKernel {a z : ℂ}
 
 /-- At a boundary point of the unit disk, neither logarithmic argument in the planar Green
 kernel vanishes when the pole lies inside the disk. -/
-theorem planarGreenKernel_boundary_ne {a z : ℂ}
+theorem planarGreenKernel_log_arguments_ne_of_norm_lt_one_of_norm_eq_one {a z : ℂ}
     (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
     z - a ≠ 0 ∧ 1 - starRingEnd ℂ a * z ≠ 0 := by
   have hza : z - a ≠ 0 := by
@@ -87,7 +87,8 @@ pole lies inside the disk. -/
 theorem differentiableAt_planarGreenKernel_boundary {a z : ℂ}
     (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
     DifferentiableAt ℝ (planarGreenKernel a) z := by
-  obtain ⟨hza, hca⟩ := planarGreenKernel_boundary_ne ha hz
+  obtain ⟨hza, hca⟩ :=
+    planarGreenKernel_log_arguments_ne_of_norm_lt_one_of_norm_eq_one ha hz
   exact differentiableAt_planarGreenKernel hza hca
 
 /-- The reflected logarithmic term in `planarGreenKernel` is harmonic at every point of the
