@@ -76,21 +76,18 @@ noncomputable def quiverDimensionVectorK0 :
 /-- The dimension-vector map sends the class of a module to the dimensions of its vertex
 components. -/
 @[simp]
-theorem quiverDimensionVectorK0_of (M : FGModuleCat (pathAlgebra k Q)) (i : Q) :
-    quiverDimensionVectorK0 k Q (ExactK0.of M) i =
-      dimVector ((quiverRepFunctor k Q).obj M.obj) i := by
-  exact congrFun (ExactK0.lift_of (quiverDimensionVectorInvariant k Q) M) i
+theorem quiverDimensionVectorK0_of (M : FGModuleCat (pathAlgebra k Q)) :
+    quiverDimensionVectorK0 k Q (ExactK0.of M) =
+      fun i ↦ (dimVector ((quiverRepFunctor k Q).obj M.obj) i : ℤ) :=
+  ExactK0.lift_of (quiverDimensionVectorInvariant k Q) M
 
 /-- The map on `K₀` is characterized by its values on module classes. -/
 theorem quiverDimensionVectorK0_unique
     (f : ExactK0 (finiteModulesExactStructure (pathAlgebra k Q)) →+ (Q → ℤ))
-    (hf : ∀ M : FGModuleCat (pathAlgebra k Q), ∀ i : Q,
-      f (ExactK0.of M) i = dimVector ((quiverRepFunctor k Q).obj M.obj) i) :
-    f = quiverDimensionVectorK0 k Q := by
-  apply ExactK0.hom_ext
-  intro M
-  funext i
-  rw [hf, quiverDimensionVectorK0_of]
+    (hf : ∀ M : FGModuleCat (pathAlgebra k Q),
+      f (ExactK0.of M) = fun i ↦ (dimVector ((quiverRepFunctor k Q).obj M.obj) i : ℤ)) :
+    f = quiverDimensionVectorK0 k Q :=
+  ExactK0.lift_unique (quiverDimensionVectorInvariant k Q) f hf
 
 section EulerPairing
 

@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import TauCeti.RepresentationTheory.Quiver.Representation.Basic
 public import TauCeti.RepresentationTheory.Quiver.Representation.OfModule
-public import Mathlib.Algebra.Category.ModuleCat.Algebra
 
 /-!
 # Finite-dimensional quiver representations
@@ -85,10 +83,9 @@ theorem isFinDim_quiverRepFunctor_obj (M : ModuleCat (pathAlgebra k Q))
   have := hM
   rw [isFinDim_iff]
   intro v
-  -- Objects of `Paths Q` are the vertices of `Q`.
+  -- The objects of `Paths Q` are the vertices of `Q`.
   change Q at v
-  -- The functor's value at a vertex is its idempotent component.
-  change FiniteDimensional k (vertexComponent k M v)
+  rw [quiverRepFunctor_obj, quiverRepOfModule_obj]
   infer_instance
 
 end TauCeti
