@@ -92,7 +92,6 @@ theorem exists_nhds_eq_singleton_of_finite_fiber {α β : Type*} [TopologicalSpa
 /-- A small disc about the chart coordinate of `x` on which the chart representative is analytic,
 stays inside the chart sources, and has `e x` as an isolated zero. -/
 private theorem exists_radius_of_notEventuallyConst
-    [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
     (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 Y)
     (hx : x ∈ e.source) (hfx : f x ∈ e'.source)
     (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
