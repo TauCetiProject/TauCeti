@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Long
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ClosingSide
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.BoundedArcInjective
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Turning
 
 import Mathlib.Data.Fin.SuccPredOrder
 
@@ -38,43 +37,6 @@ open scoped ComplexOrder
 namespace TauCeti
 
 variable {n : ℕ} {a e : Fin (n + 1) → ℝ} {z₀ : UpperHalfPlane}
-
-/-- Adjacent bounded sides meet only at their common vertex when the prevertices are
-nondecreasing, both sides have distinct endpoints, the endpoint exponent sums exceed `-1`,
-and the corner exponent sum lies in `(-1, 0)`. -/
-theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacent
-    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : Monotone a)
-    (i j : Fin n) (hadj : i.val + 1 = j.val)
-    (hi : a i.castSucc < a i.succ) (hj : a j.castSucc < a j.succ)
-    (hleft : -1 < ∑ l with a l = a i.castSucc, e l)
-    (hcorner : ∑ l with a l = a i.succ, e l ∈ Ioo (-1 : ℝ) 0)
-    (hright : -1 < ∑ l with a l = a j.succ, e l) :
-    (schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc ∩
-        (schwarzChristoffelPolygon a e z₀).edgeSet ℝ j.castSucc.castSucc ⊆
-      {schwarzChristoffelVertex a e z₀ i.succ} := by
-  have hmid : i.succ = j.castSucc := Fin.ext hadj
-  have hfree (k : Fin n) :
-      ∀ l, e l ≠ 0 → a l ∉ Ioo (a k.castSucc) (a k.succ) :=
-    fun l _ ↦ not_mem_Ioo_castSucc_succ a ha k l
-  have haff := affineIndependent_schwarzChristoffelVertex_of_adjacent a e z₀
-    i.castSucc i.succ j.succ hi
-    (by rw [hmid]; exact hj)
-    (hfree i) (by rw [hmid]; exact hfree j)
-    hleft hcorner hright
-  rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
-    ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))] at haff
-  have hlin : LinearIndependent ℝ
-      ![schwarzChristoffelVertex a e z₀ i.castSucc - schwarzChristoffelVertex a e z₀ i.succ,
-        schwarzChristoffelVertex a e z₀ j.succ - schwarzChristoffelVertex a e z₀ i.succ] := by
-    convert! haff using 1
-    ext k
-    fin_cases k <;> simp [finSuccAboveEquiv_apply]
-  intro z hz
-  rw [mem_inter_iff, schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
-    schwarzChristoffelPolygon_edgeSet_castSucc_castSucc] at hz
-  rw [Set.mem_singleton_iff]
-  apply segment_inter_subset_endpoint_of_linearIndependent_sub ℝ hlin
-  exact ⟨by simpa [segment_symm] using hz.1, by simpa [hmid] using hz.2⟩
 
 /-- The Schwarz--Christoffel boundary is injective between its first and last finite prevertices
 under the classical convex-polygon hypotheses. -/
