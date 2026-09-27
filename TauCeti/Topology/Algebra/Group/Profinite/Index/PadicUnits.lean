@@ -28,8 +28,9 @@ which is the value `2 ^ ∞` that the `V`-family formula takes at `f = ∞`.
 The last line of the table is the supernatural index `(A : A²)` of the closed subgroup of squares
 of a closed subgroup `A ≤ ℤ_2ˣ`. It is `p` for a principal unit group `U^(f)` in `ℤ_pˣ` when
 `f ≥ 1`, with the additional restriction `f ≥ 2` when `p = 2`; for `p = 2`
-it is `2` for `U^(f)` and `U^[f]` and `4` for `V^(f)`; the three values `1`, `2` and `4` are the
-only ones it takes. It is the numerical invariant that distinguishes the non-procyclic family
+it is `2` for `U^(f)`, `{±1}` and `U^[f]` and `4` for `V^(f)`; the three values `1`, `2` and `4`
+are the only ones it takes, `1` exactly for the trivial subgroup and `4` exactly for the
+`V^(f)`. It is the numerical invariant that distinguishes the non-procyclic family
 `V^(f)` from the procyclic ones, and the one read off from the image of a continuous character of
 a pro-`2` group in `ℤ_2ˣ`.
 
@@ -42,10 +43,15 @@ a pro-`2` group in `ℤ_2ˣ`.
   of the `V`-family at `f = ∞`.
 * `TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_unitsPrincipal`,
   `TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_two_unitsPlusMinus`,
+  `TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_two_zpowers_neg_one`,
   `TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_two_topologicalClosure_zpowers_two`:
-  the values `p`, `4` and `2` of `(A : A²)` on the three families.
+  the values `p`, `4`, `2` and `2` of `(A : A²)` on the four families, each read off from the
+  ordinary relative index by `TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower`.
 * `TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_one_or_two_or_four`: `(A : A²)` is
-  `1`, `2` or `4` for every closed subgroup `A ≤ ℤ_2ˣ`.
+  `1`, `2` or `4` for every closed subgroup `A ≤ ℤ_2ˣ`;
+  `TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_one_iff` and
+  `TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_primePower_two_iff` say which
+  subgroups take the values `1` and `4`.
 
 ## References
 
@@ -93,12 +99,6 @@ from `2` vanishes. This is the value of the `V`-family at `f = ∞`, where `V^(�
 theorem profiniteIndex_zpowers_neg_one :
     Subgroup.profiniteIndex (Subgroup.zpowers (-1 : ℤ_[2]ˣ)) =
       Supernatural.primePower (⟨2, Nat.prime_two⟩ : Nat.Primes) ⊤ := by
-  have hclosed : IsClosed ((Subgroup.zpowers (-1 : ℤ_[2]ˣ)) : Set ℤ_[2]ˣ) := by
-    apply Set.Finite.isClosed
-    refine (Set.finite_singleton (-1 : ℤ_[2]ˣ)).insert 1 |>.subset ?_
-    intro x hx
-    simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using
-      (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hx
   have htwo : Subgroup.profiniteIndex (Subgroup.zpowers (-1 : ℤ_[2]ˣ))
       (⟨2, Nat.prime_two⟩ : Nat.Primes) = ⊤ := by
     refine ENat.eq_top_iff_forall_ge.mpr fun n ↦ ?_
@@ -119,11 +119,26 @@ theorem profiniteIndex_zpowers_neg_one :
       isProP_iff_profiniteOrder_apply_eq_zero.mp isProP_units_padicInt_two q
         (fun h ↦ hq (Subtype.ext h))
     have hlagrange := (Subgroup.zpowers (-1 : ℤ_[2]ˣ)).profiniteOrder_apply_eq_add_profiniteIndex
-      hclosed q
+      isClosed_zpowers_neg_one q
     rw [horder] at hlagrange
     exact (add_eq_zero.mp hlagrange.symm).2
 
 /-! ### The supernatural index of the squares -/
+
+/-- The supernatural index `(A : A^p)` of the subgroup of `p`-th powers of a closed subgroup
+`A ≤ ℤ_pˣ` is the supernatural prime power whose exponent at `p` is read off from the ordinary
+relative index. -/
+theorem profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower {A : Subgroup ℤ_[p]ˣ}
+    (hA : IsClosed (A : Set ℤ_[p]ˣ)) {k : ℕ}
+    (h : (A.map (powMonoidHom p)).relIndex A = p ^ k) :
+    Subgroup.profiniteIndex ((A.map (powMonoidHom p)).subgroupOf A) =
+      Supernatural.primePower (⟨p, hp.out⟩ : Nat.Primes) k :=
+  Subgroup.profiniteIndex_subgroupOf_eq_primePower
+    (by
+      rw [Subgroup.coe_subgroupOf]
+      exact (Subgroup.isClosed_map hA.isCompact _ (continuous_pow p)).preimage
+        continuous_subtype_val)
+    hA h
 
 /-- `(U^(f) : (U^(f))^p) = p` as a supernatural number, for `f ≥ 1`, and `f ≥ 2` when
 `p = 2`. -/
@@ -132,12 +147,7 @@ theorem profiniteIndex_subgroupOf_map_powMonoidHom_unitsPrincipal {f : ℕ} (hf 
     Subgroup.profiniteIndex
         (((unitsPrincipal p f).map (powMonoidHom p)).subgroupOf (unitsPrincipal p f)) =
       Supernatural.primePower (⟨p, hp.out⟩ : Nat.Primes) 1 :=
-  Subgroup.profiniteIndex_subgroupOf_eq_primePower
-    (by
-      rw [Subgroup.coe_subgroupOf]
-      exact (Subgroup.isClosed_map (isClosed_unitsPrincipal p f).isCompact _
-        (continuous_pow p)).preimage continuous_subtype_val)
-    (isClosed_unitsPrincipal p f)
+  profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower (isClosed_unitsPrincipal p f)
     (by rw [relIndex_map_powMonoidHom_unitsPrincipal hf hf₂, pow_one])
 
 /-- `(V^(f) : (V^(f))²) = 4` as a supernatural number, for `f ≥ 2`. -/
@@ -145,13 +155,20 @@ theorem profiniteIndex_subgroupOf_map_powMonoidHom_two_unitsPlusMinus {f : ℕ} 
     Subgroup.profiniteIndex
         (((unitsPlusMinus f).map (powMonoidHom 2)).subgroupOf (unitsPlusMinus f)) =
       Supernatural.primePower (⟨2, Nat.prime_two⟩ : Nat.Primes) 2 :=
-  Subgroup.profiniteIndex_subgroupOf_eq_primePower
-    (by
-      rw [Subgroup.coe_subgroupOf]
-      exact (Subgroup.isClosed_map (isClosed_unitsPlusMinus f).isCompact _
-        (continuous_pow 2)).preimage continuous_subtype_val)
-    (isClosed_unitsPlusMinus f)
+  profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower (isClosed_unitsPlusMinus f)
     (by rw [relIndex_map_powMonoidHom_two_unitsPlusMinus hf]; rfl)
+
+/-- `({±1} : {±1}²) = 2` as a supernatural number: squaring kills `{±1}`, which has order
+`2`. This is the entry of the `(A : A²)` table at the closed subgroup `{±1} = V^(∞)`. -/
+theorem profiniteIndex_subgroupOf_map_powMonoidHom_two_zpowers_neg_one :
+    Subgroup.profiniteIndex
+        (((Subgroup.zpowers (-1 : ℤ_[2]ˣ)).map (powMonoidHom 2)).subgroupOf
+          (Subgroup.zpowers (-1 : ℤ_[2]ˣ))) =
+      Supernatural.primePower (⟨2, Nat.prime_two⟩ : Nat.Primes) 1 :=
+  profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower isClosed_zpowers_neg_one
+    (by
+      rw [Subgroup.relIndex_map_powMonoidHom_two_zpowers_neg_one
+        PadicInt.units_neg_one_ne_one, pow_one])
 
 /-- `(U^[f] : (U^[f])²) = 2` as a supernatural number, for `f ≥ 2` and `-u` of exact level
 `f`. -/
@@ -162,18 +179,14 @@ theorem profiniteIndex_subgroupOf_map_powMonoidHom_two_topologicalClosure_zpower
         (((Subgroup.zpowers u).topologicalClosure.map (powMonoidHom 2)).subgroupOf
           (Subgroup.zpowers u).topologicalClosure) =
       Supernatural.primePower (⟨2, Nat.prime_two⟩ : Nat.Primes) 1 :=
-  Subgroup.profiniteIndex_subgroupOf_eq_primePower
-    (by
-      rw [Subgroup.coe_subgroupOf]
-      exact (Subgroup.isClosed_map (Subgroup.isClosed_topologicalClosure _).isCompact _
-        (continuous_pow 2)).preimage continuous_subtype_val)
+  profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower
     (Subgroup.isClosed_topologicalClosure _)
     (by rw [relIndex_map_powMonoidHom_two_topologicalClosure_zpowers_two hf hneg hneg']; rfl)
 
-/-- **The supernatural index `(A : A²)` of a closed subgroup of `ℤ_2ˣ` is `1`, `2` or `4`.** Which
-of the three values occurs is recorded at the level of ordinary indices by
-`TauCeti.relIndex_map_powMonoidHom_two_eq_one_iff` and
-`TauCeti.relIndex_map_powMonoidHom_two_eq_four_iff`. -/
+/-- **The supernatural index `(A : A²)` of a closed subgroup of `ℤ_2ˣ` is `1`, `2` or `4`.**
+Which of the three values occurs is settled by
+`TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_one_iff` and
+`TauCeti.profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_primePower_two_iff`. -/
 theorem profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_one_or_two_or_four
     {A : Subgroup ℤ_[2]ˣ} (hA : IsClosed (A : Set ℤ_[2]ˣ)) :
     Subgroup.profiniteIndex ((A.map (powMonoidHom 2)).subgroupOf A) = 1 ∨
@@ -181,18 +194,49 @@ theorem profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_one_or_two_or_four
         Supernatural.primePower (⟨2, Nat.prime_two⟩ : Nat.Primes) 1 ∨
       Subgroup.profiniteIndex ((A.map (powMonoidHom 2)).subgroupOf A) =
         Supernatural.primePower (⟨2, Nat.prime_two⟩ : Nat.Primes) 2 := by
-  have hsq : IsClosed ((A.map (powMonoidHom 2) : Subgroup ℤ_[2]ˣ) : Set ℤ_[2]ˣ) :=
-    Subgroup.isClosed_map hA.isCompact _ (continuous_pow 2)
   rcases relIndex_map_powMonoidHom_two_eq_one_or_two_or_four hA with h | h | h
-  · refine Or.inl ((Subgroup.profiniteIndex_subgroupOf_eq_primePower
-      (by rw [Subgroup.coe_subgroupOf]; exact hsq.preimage continuous_subtype_val) hA
-      (q := (⟨2, Nat.prime_two⟩ : Nat.Primes)) (k := 0) (by rw [h]; rfl)).trans ?_)
-    exact Supernatural.primePower_zero _
-  · exact Or.inr (Or.inl (Subgroup.profiniteIndex_subgroupOf_eq_primePower
-      (by rw [Subgroup.coe_subgroupOf]; exact hsq.preimage continuous_subtype_val) hA
-      (by rw [h]; rfl)))
-  · exact Or.inr (Or.inr (Subgroup.profiniteIndex_subgroupOf_eq_primePower
-      (by rw [Subgroup.coe_subgroupOf]; exact hsq.preimage continuous_subtype_val) hA
-      (by rw [h]; rfl)))
+  · exact Or.inl ((profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA
+      (k := 0) (by rw [h]; rfl)).trans (Supernatural.primePower_zero _))
+  · exact Or.inr (Or.inl (profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA
+      (k := 1) (by rw [h]; rfl)))
+  · exact Or.inr (Or.inr (profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA
+      (k := 2) (by rw [h]; rfl)))
+
+/-- `(A : A²) = 1` exactly for the trivial subgroup, among the closed subgroups of `ℤ_2ˣ`: every
+nontrivial closed subgroup has a non-square. -/
+theorem profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_one_iff {A : Subgroup ℤ_[2]ˣ}
+    (hA : IsClosed (A : Set ℤ_[2]ˣ)) :
+    Subgroup.profiniteIndex ((A.map (powMonoidHom 2)).subgroupOf A) = 1 ↔ A = ⊥ := by
+  rw [← relIndex_map_powMonoidHom_two_eq_one_iff hA]
+  refine ⟨fun h ↦ ?_, fun h ↦ (profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA
+    (k := 0) (by rw [h]; rfl)).trans (Supernatural.primePower_zero _)⟩
+  rcases relIndex_map_powMonoidHom_two_eq_one_or_two_or_four hA with h₁ | h₁ | h₁
+  · exact h₁
+  · rw [profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA (k := 1) (by rw [h₁]; rfl),
+      ← Supernatural.primePower_zero (⟨2, Nat.prime_two⟩ : Nat.Primes)] at h
+    exact absurd (Supernatural.primePower_injective _ h) (by simp)
+  · rw [profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA (k := 2) (by rw [h₁]; rfl),
+      ← Supernatural.primePower_zero (⟨2, Nat.prime_two⟩ : Nat.Primes)] at h
+    exact absurd (Supernatural.primePower_injective _ h) (by simp)
+
+/-- `(A : A²) = 4`, that is `2 ^ 2` as a supernatural number, exactly for the subgroups
+`A = V^(f)`, `f ≥ 2`, among the closed subgroups of `ℤ_2ˣ`: the value `4` characterizes the one
+non-procyclic family. -/
+theorem profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_primePower_two_iff
+    {A : Subgroup ℤ_[2]ˣ} (hA : IsClosed (A : Set ℤ_[2]ˣ)) :
+    Subgroup.profiniteIndex ((A.map (powMonoidHom 2)).subgroupOf A) =
+        Supernatural.primePower (⟨2, Nat.prime_two⟩ : Nat.Primes) 2 ↔
+      ∃ f : ℕ, 2 ≤ f ∧ A = unitsPlusMinus f := by
+  rw [← relIndex_map_powMonoidHom_two_eq_four_iff hA]
+  refine ⟨fun h ↦ ?_, fun h ↦ profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA
+    (k := 2) (by rw [h]; rfl)⟩
+  rcases relIndex_map_powMonoidHom_two_eq_one_or_two_or_four hA with h₁ | h₁ | h₁
+  · rw [profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA (k := 0)
+      (by rw [h₁]; rfl)] at h
+    exact absurd (Supernatural.primePower_injective _ h) (by simp)
+  · rw [profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA (k := 1)
+      (by rw [h₁]; rfl)] at h
+    exact absurd (Supernatural.primePower_injective _ h) (by simp)
+  · exact h₁
 
 end TauCeti

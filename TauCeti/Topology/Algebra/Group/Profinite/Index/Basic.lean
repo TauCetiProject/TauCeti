@@ -213,8 +213,10 @@ theorem _root_.OpenSubgroup.profiniteIndex_apply_eq_padicValNat (U : OpenSubgrou
       Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) ℓ
 
 /-- **An open subgroup of prime-power index has that supernatural prime power as its index.**
-This is the shape every index in a pro-`q` group takes, and it avoids the positivity side
-condition of `OpenSubgroup.profiniteIndex_eq_ofNat_index`. -/
+This is the shape every *open*-subgroup index in a pro-`q` group takes, and it avoids the
+positivity side condition of `OpenSubgroup.profiniteIndex_eq_ofNat_index`. Openness is not
+superfluous: by `Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex` a closed subgroup
+that is not open has an index no finite exponent describes. -/
 theorem _root_.Subgroup.profiniteIndex_eq_primePower {H : Subgroup G} (hH : IsOpen (H : Set G))
     {q : Nat.Primes} {k : ℕ} (h : H.index = (q : ℕ) ^ k) :
     Subgroup.profiniteIndex H = Supernatural.primePower q k := by
