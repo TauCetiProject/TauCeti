@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SimpleMapping
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.RegularEdge
 import TauCeti.Analysis.Complex.PlaneSeparation.LocalSeparation
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LocallyStraight
 import TauCeti.Algebra.BigOperators.Finset.Fiber
@@ -49,8 +50,8 @@ theorem image_schwarzChristoffelPrimitive_eq_filledHull_sdiff
   obtain ⟨p, q, x, ha, hx⟩ := exists_schwarzChristoffel_prevertex_free_interval a e
   let B := schwarzChristoffelBoundary a e z₀
   let C := range (schwarzChristoffelCompactifiedBoundary a e z₀)
-  -- Pick a regular edge beyond every prevertex. Simplicity makes this part of the
-  -- compactified boundary locally the only boundary arc.
+  -- Pick a regular edge beyond every prevertex with nonzero exponent. Simplicity makes
+  -- this part of the compactified boundary locally the only boundary arc.
   obtain ⟨ε, hε, hlocal⟩ := schwarzChristoffelCompactifiedBoundary_locally_openSegment
     a e z₀ ha hfinite hinfty hinj hx
   have hpq : B p ≠ B q := by

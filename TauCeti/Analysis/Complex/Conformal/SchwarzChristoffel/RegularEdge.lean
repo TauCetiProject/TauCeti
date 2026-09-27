@@ -30,7 +30,31 @@ open Complex Filter Set Topology UpperHalfPlane
 
 namespace TauCeti
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
+
+/-- There is a real interval beyond all prevertices with nonzero exponent, with a point in its
+interior. -/
+theorem exists_schwarzChristoffel_prevertex_free_interval [Finite ι] (a e : ι → ℝ) :
+    ∃ p q x : ℝ, (∀ i, e i ≠ 0 → a i ∉ Ioo p q) ∧ x ∈ Ioo p q := by
+  let : Fintype ι := Fintype.ofFinite ι
+  let S : ℝ := ∑ i, |a i|
+  let p := S + 1
+  let x := p + 1
+  let q := p + 2
+  have hbound (i : ι) : a i ≤ S := by
+    have hle : |a i| ≤ S := by
+      dsimp [S]
+      exact Finset.single_le_sum (fun j _ => abs_nonneg (a j)) (Finset.mem_univ i)
+    exact (le_abs_self (a i)).trans hle
+  have ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q := by
+    intro i _ hi
+    have := hbound i
+    dsimp [p] at hi
+    exact (not_lt.mpr (by linarith : a i ≤ S + 1)) hi.1
+  have hx : x ∈ Ioo p q := by dsimp [x, q]; constructor <;> linarith
+  exact ⟨p, q, x, ha, hx⟩
+
+variable [Fintype ι]
 
 /-- At a point of a prevertex-free boundary interval, the Schwarz--Christoffel primitive has a
 holomorphic continuation which is injective on a neighbourhood of that point. Its value at the
