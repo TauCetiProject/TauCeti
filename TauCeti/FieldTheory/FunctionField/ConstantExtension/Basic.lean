@@ -11,11 +11,9 @@ public import TauCeti.FieldTheory.FunctionField.Basic
 /-!
 # Finite extensions of the constant field
 
-When a finite extension of constants is adjoined to an algebraic function field,
-the compositum is again an algebraic function field over the enlarged constant field.  This
-gives the function-field structure needed to discuss its places, divisors, and genus.
-
-Separability and exactness of the original constant field are not needed here.
+When a finite extension of constants is adjoined to a field, its compositum is finite over
+that field. The function-field statement for arbitrary algebraic constant extensions is in
+`ConstantExtension.Algebraic`.
 
 ## Reference
 
@@ -54,16 +52,5 @@ theorem finiteDimensional_of_constantCompositum_eq_top [FiniteDimensional k k']
   have := IntermediateField.finiteDimensional_adjoin hi
   rw [htop] at this
   exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
-
-/-- Adjoining a finite extension of constants to a function field produces a
-function field over the enlarged constant field.  The statement uses an ambient compositum
-equation so that it applies to any compatible field realization. -/
-theorem IsFunctionField.of_constantCompositum_eq_top [FiniteDimensional k k']
-    (hF : IsFunctionField k F)
-    (h : constantCompositum F k' F' = ⊤) : IsFunctionField k' F' := by
-  let := finiteDimensional_of_constantCompositum_eq_top (k := k) (F := F) (k' := k')
-    (F' := F') h
-  let : Algebra.IsAlgebraic k k' := Algebra.IsAlgebraic.of_finite k k'
-  exact (hF.finite_extension (E := F')).of_isAlgebraic
 
 end TauCeti
