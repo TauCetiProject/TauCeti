@@ -172,7 +172,6 @@ theorem WittGrothendieckRing.baseChange_toWittGrothendieck (x : RegularFormClass
     Algebra.GrothendieckAddGroup.ofRingHom_apply, RegularFormClass.baseChangeHom_apply]
 
 /-- Scalar extension to the same field is the identity on Witt-Grothendieck rings. -/
-@[simp]
 theorem WittGrothendieckRing.baseChange_self_apply (x : WittGrothendieckRing K) :
     WittGrothendieckRing.baseChange (L := K) x = x := by
   obtain ⟨a, b, rfl⟩ := exists_eq_sub_toWittGrothendieck x
@@ -183,7 +182,7 @@ theorem WittGrothendieckRing.baseChange_self_apply (x : WittGrothendieckRing K) 
 theorem WittGrothendieckRing.baseChange_self :
     WittGrothendieckRing.baseChange (K := K) (L := K) = RingHom.id _ := by
   ext x
-  simp
+  exact WittGrothendieckRing.baseChange_self_apply x
 
 /-- Scalar extension of virtual forms preserves their integer rank. -/
 @[simp]
@@ -235,7 +234,6 @@ theorem WittRing.baseChange_wittClass (x : RegularFormClass K) :
     WittGrothendieckRing.baseChange_toWittGrothendieck]
 
 /-- Scalar extension to the same field is the identity on Witt rings. -/
-@[simp]
 theorem WittRing.baseChange_self_apply (x : WittRing K) :
     WittRing.baseChange (L := K) x = x := by
   obtain ⟨q, rfl⟩ := wittClass_surjective x
@@ -246,7 +244,7 @@ theorem WittRing.baseChange_self_apply (x : WittRing K) :
 theorem WittRing.baseChange_self :
     WittRing.baseChange (K := K) (L := K) = RingHom.id _ := by
   ext x
-  simp
+  exact WittRing.baseChange_self_apply x
 
 variable [Algebra K M] [Algebra L M] [IsScalarTower K L M] [Invertible (2 : M)]
 
