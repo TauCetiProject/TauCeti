@@ -269,6 +269,18 @@ noncomputable def positiveRootSubgroup (i : Fin 6) :
     positiveSimpleRoots (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1)
     (inl_mem_positiveSimpleRoots i) ≫ eqToHom positiveSubsystemGroupScheme_def.symm
 
+/-- The positive simple-root subgroup is the corresponding generic Kostant subsystem map,
+transported to the named positive carrier. -/
+theorem positiveRootSubgroup_def (i : Fin 6) :
+    positiveRootSubgroup i =
+      TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToTorusSubsystem rootGen cartanGen
+          weightTable.rep (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝓑
+          weightTable.weight positiveSimpleRoots
+          (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1)
+          (inl_mem_positiveSimpleRoots i) ≫
+        eqToHom positiveSubsystemGroupScheme_def.symm := by
+  rw [positiveRootSubgroup]
+
 /-- Factoring a positive root subgroup through the positive subsystem and including it into the
 full carrier recovers the named root subgroup. -/
 @[simp]
@@ -301,6 +313,17 @@ noncomputable def positiveWeightTorus :
     (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝓑 weightTable.weight
     positiveSimpleRoots (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1) ≫
       eqToHom positiveSubsystemGroupScheme_def.symm
+
+/-- The positive weight torus is the generic Kostant subsystem torus map, transported to the
+named positive carrier. -/
+theorem positiveWeightTorus_def :
+    positiveWeightTorus =
+      TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToTorusSubsystem rootGen cartanGen
+          weightTable.rep (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝓑
+          weightTable.weight positiveSimpleRoots
+          (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1) ≫
+        eqToHom positiveSubsystemGroupScheme_def.symm := by
+  rw [positiveWeightTorus]
 
 /-- Factoring the weight torus through the positive subsystem and including it into the full
 carrier recovers the named weight torus. -/
