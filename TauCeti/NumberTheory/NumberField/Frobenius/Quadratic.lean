@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Frobenius
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
+import TauCeti.NumberTheory.Multiquadratic.Frobenius
 
 /-!
 # Frobenius in a quadratic number field
@@ -16,8 +17,8 @@ Frobenius at an odd prime away from `d` is the identity exactly when `d` is a
 quadratic residue at that prime. This identifies the automorphism, rather than
 only its action on the chosen square root.
 
-The square-root calculation is `NumberField.isArithFrobAt_apply_sqrt_eq_self_iff`;
-generation of the field turns fixing the root into equality with the identity.
+This is the singleton case of `NumberField.isArithFrobAt_multiquadratic_eq_one_iff`,
+applied to Mathlib's chosen arithmetic Frobenius.
 
 The splitting interpretation is the quadratic case of the Frobenius splitting
 law in Neukirch, *Algebraic Number Theory*, Chapter I, §10.
@@ -42,21 +43,12 @@ theorem arithFrobAt_eq_one_iff_legendreSym [IsGalois ℚ K]
     (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (Ideal.span {(p : ℤ)})]
     [Finite (𝓞 K ⧸ Q)] :
     arithFrobAt ℤ (K ≃ₐ[ℚ] K) Q = 1 ↔ legendreSym p d = 1 := by
-  let σ := arithFrobAt ℤ (K ≃ₐ[ℚ] K) Q
-  have hσ : IsArithFrobAt ℤ σ Q := IsArithFrobAt.arithFrobAt ℤ (K ≃ₐ[ℚ] K) Q
-  change σ = 1 ↔ legendreSym p d = 1
-  rw [← NumberField.isArithFrobAt_apply_sqrt_eq_self_iff hodd hd
-    (NumberField.coe_gen_sq hmin) Q hσ]
-  constructor
-  · intro h
-    rw [h]
-    rfl
-  · intro h
-    have heq : σ.toAlgHom = (1 : K ≃ₐ[ℚ] K).toAlgHom := by
-      apply AlgHom.ext_of_adjoin_eq_top hgen
-      rintro x rfl
-      simpa using h
-    exact AlgEquiv.ext (AlgHom.ext_iff.mp heq)
+  have htop : IntermediateField.adjoin ℚ (Set.range fun _ : Unit => (θ : K)) = ⊤ := by
+    simpa using IntermediateField.adjoin_eq_top_of_algebra ℚ {(θ : K)} hgen
+  simpa using NumberField.isArithFrobAt_multiquadratic_eq_one_iff
+    (fun _ : Unit => d) (fun _ => (θ : K))
+    (fun _ => NumberField.coe_gen_sq hmin) htop hodd (fun _ => hd) Q
+    (IsArithFrobAt.arithFrobAt ℤ (K ≃ₐ[ℚ] K) Q)
 
 end TauCeti.NumberField
 
