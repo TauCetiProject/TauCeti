@@ -70,6 +70,7 @@ finiteness of `L/K` is used.
 ## Main results
 
 * `TauCeti.kummerCocycle_mem_Z1`: `g ↦ g α / α` is a continuous `1`-cocycle.
+* `TauCeti.kummerCocycleClass_def`: the cocycle class is the class of its named cocycle.
 * `TauCeti.kummerCocycleClass_congr`: independence of the choice of `n`th root.
 * `TauCeti.kummerMap_eq_kummerCocycleClass`: the Kummer class of `a` is the class of
   `g ↦ g α / α`.
@@ -160,7 +161,11 @@ def kummerCocycleClass
     H1 (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
   H1pi (AbsoluteGaloisGroup K) (KummerCoeff K n) ⟨kummerCocycle hα, kummerCocycle_mem_Z1 hα⟩
 
-/-- The Kummer cocycle class is the image of its named cocycle under the quotient map to `H¹`. -/
+-- Not `@[simp]`: `kummerCocycleClass` is the intended normal form, and this lemma unfolds it.
+/-- **The defining equation of `TauCeti.kummerCocycleClass`**: it is the image of its named
+cocycle under the quotient map to `H¹`. The body of `kummerCocycleClass` is not exposed, so this
+is the public rule that presents the class by a representative, as
+`TauCeti.kummerCocycleModTwoClass_eq` needs. -/
 theorem kummerCocycleClass_def
     (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
     kummerCocycleClass hα =

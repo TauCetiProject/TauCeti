@@ -70,8 +70,10 @@ the class of `a` to `(a)`.
   homomorphism from `Kˣ` into `H¹(G_K, 𝔽₂)` written additively.
 * `TauCeti.kummerCocycleModTwo_apply`: the explicit Kummer cocycle is `0` when a Galois
   element fixes the chosen square root and `1` otherwise.
-* `TauCeti.kummerCocycleModTwoClass_eq` and `TauCeti.kummerClass_eq_of_sq_eq`: the explicit
-  mod-two cocycle class agrees with the canonical Kummer class after the two comparison maps.
+* `TauCeti.kummerCocycleModTwoClass_eq`: the explicit mod-two cocycle class is the generic Kummer
+  cocycle class read through the coefficient dictionary `μ₂ ≃ 𝔽₂`.
+* `TauCeti.kummerClass_eq_of_sq_eq`: that explicit class is the canonical Kummer class, under the
+  degree-one comparison with continuous cohomology.
 * `TauCeti.kummerClass_eq_zero_iff_square`: the Kummer class of a unit of `Kˣ` vanishes exactly
   at the squares in `Kˣ`.
 * `TauCeti.kummerSquareClassEquiv_squareClass`: a square class is sent to the Kummer class of
@@ -471,8 +473,11 @@ theorem kummerCocycleModTwoClass_eq {a : Kˣ} {α : (SeparableClosure K)ˣ}
       ((⟨kummerCocycle hα, kummerCocycle_mem_Z1 hα⟩ :
         Z1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :
           H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2))
-  rw [explicitCoeff1Equiv_mk]
-  rfl
+  rw [explicitCoeff1Equiv_mk, kummerCocycleModTwo]
+  -- `explicitCoeff1Equiv` repackages the coefficient dictionary as an equivariant map and coerces
+  -- it back to an additive homomorphism. That repackaging leaves the underlying map alone, which
+  -- is all that the two coefficient pushforwards of the cocycle depend on.
+  congr 1
 
 /-- The explicit mod-two Kummer cocycle class does not depend on the chosen square root. -/
 theorem kummerCocycleModTwoClass_congr {a : Kˣ} {α β : (SeparableClosure K)ˣ}
@@ -522,20 +527,72 @@ theorem kummerClass_eq_zero_iff_square {a : Kˣ} :
     rw [kummerClass, hzero]
     simp
 
-/-- **The mod-two Kummer class is represented by the Kummer cocycle of any square root.**
-If `α² = a`, first take the explicit class of `g ↦ g • α / α`, then pass to canonical
-continuous cohomology and identify `μ₂` with the trivial `𝔽₂` coefficient object. -/
+/-- **The degree-one comparison carries the coefficient dictionary to `TauCeti.kummerCohomMap`.**
+Reading the explicit coefficient equivalence `μ₂ ≃ 𝔽₂` on explicit `H¹` and then comparing with
+canonical continuous cohomology is the same as comparing first and then applying the map that
+`TauCeti.kummerCoeffIsoTrivialF2` induces; the trailing transport is the one of
+`TauCeti.ofDiscreteModule_trivialF2`, which `kummerCoeffIsoTrivialF2` absorbs into its target. -/
+private theorem kummerCohomMap_explicitH1 (x : H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :
+    (kummerCohomMap K).hom
+        (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (KummerCoeff K 2) x) =
+      (eqToHom (congrArg (continuousCohomology 1)
+          (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)))).hom
+        (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+          (trivialF2 (AbsoluteGaloisGroup K)).V
+          (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
+            continuous_of_discreteTopology continuous_of_discreteTopology
+            (kummerCoeffEquiv_equivariant K) x)) := by
+  have hmap : kummerCohomMap K =
+      ContinuousCohomology.coeffMap (kummerCoeffToTrivialF2 K) 1 ≫
+        eqToHom (congrArg (continuousCohomology 1)
+          (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K))) := by
+    rw [kummerCohomMap, kummerCoeffIsoTrivialF2, Functor.mapIso_hom, Iso.trans_hom,
+      kummerCoeffIsoDiscreteImage, eqToIso.hom, Functor.map_comp,
+      ContinuousCohomology.continuousCohomologyFunctor_map,
+      ContinuousCohomology.continuousCohomologyFunctor_map,
+      ContinuousCohomology.coeffMap_eqToHom]
+    -- what is left is the `hom` field of the isomorphism literal
+    rfl
+  rw [hmap, ConcreteCategory.comp_apply]
+  refine congrArg _ ?_
+  have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id (AbsoluteGaloisGroup K) :
+        AbsoluteGaloisGroup K →* AbsoluteGaloisGroup K)
+      (kummerCoeffEquiv K).toAddMonoidHom.toIntLinearMap
+        (fun g m ↦ kummerCoeffEquiv_equivariant K g m) = kummerCoeffToTrivialF2 K :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  rw [ContinuousCohomology.coeffMap_def, ← hpair,
+    explicitH1AddEquivContinuousCohomology_map (AbsoluteGaloisGroup K) (KummerCoeff K 2)
+      (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V
+      (ContinuousMonoidHom.id _) (kummerCoeffEquiv K).toAddMonoidHom
+      (fun g m ↦ kummerCoeffEquiv_equivariant K g m) x]
+  refine congrArg _ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | H c =>
+    -- Both sides push the cocycle forward along the same additive homomorphism; the coefficient
+    -- equivalence only repackages it as an equivariant map.
+    exact (explicitMap1_mk (AbsoluteGaloisGroup K) (KummerCoeff K 2) (AbsoluteGaloisGroup K)
+      (trivialF2 (AbsoluteGaloisGroup K)).V (ContinuousMonoidHom.id _)
+      (kummerCoeffEquiv K).toAddMonoidHom continuous_of_discreteTopology
+      (fun g m ↦ kummerCoeffEquiv_equivariant K g m) c).trans
+      (explicitCoeff1Equiv_mk (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
+        continuous_of_discreteTopology continuous_of_discreteTopology
+        (kummerCoeffEquiv_equivariant K) c).symm
+
+/-- **The mod-two Kummer class is the explicit mod-two cocycle class of any square root.**
+If `α² = a`, the class `TauCeti.kummerCocycleModTwoClass` of the `𝔽₂`-valued cocycle
+`g ↦ g • α / α` becomes the Kummer class `(a)` under the degree-one comparison with canonical
+continuous cohomology, followed by the transport of `TauCeti.ofDiscreteModule_trivialF2` that
+identifies the coefficient object of the comparison with `TauCeti.trivialF2` itself. -/
 theorem kummerClass_eq_of_sq_eq (a : Kˣ) (α : (SeparableClosure K)ˣ)
     (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
     kummerClass a =
-      ((ContinuousCohomology.continuousCohomologyFunctor ℤ
-          (AbsoluteGaloisGroup K) 1).mapIso (kummerCoeffIsoTrivialF2 K)).hom
+      (eqToHom (congrArg (continuousCohomology 1)
+          (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)))).hom
         (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
-          (KummerCoeff K 2) (kummerCocycleClass hα)) := by
+          (trivialF2 (AbsoluteGaloisGroup K)).V (kummerCocycleModTwoClass K hα)) := by
   rw [kummerClass, explicitIso_kummerMap,
-    kummerMap_eq_kummerCocycleClass (isUnit_of_invertible (2 : K)) hα]
-  rw [kummerCohomMap]
-  rfl
+    kummerMap_eq_kummerCocycleClass (isUnit_of_invertible (2 : K)) hα, kummerCocycleModTwoClass_eq]
+  exact kummerCohomMap_explicitH1 K (kummerCocycleClass hα)
 
 /-! ### The Kummer isomorphism on square classes -/
 
