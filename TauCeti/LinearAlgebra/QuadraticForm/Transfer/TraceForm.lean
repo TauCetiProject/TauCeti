@@ -51,11 +51,10 @@ noncomputable def traceTransferSqIsometryEquivWeightedSumSquares (d : K) :
     rw [QuadraticAlgebra.algebraTrace_eq_trace]
     simp [QuadraticAlgebra.trace_def, weightedSumSquares_apply, Fin.sum_univ_two]
     ring
-  let e := ((QuadraticMap.sq (R := QuadraticAlgebra K d 0)
-    (A := QuadraticAlgebra K d 0)).traceTransfer K).isometryEquivBasisRepr b
-  refine { toLinearEquiv := e.toLinearEquiv, map_app' := fun z => ?_ }
+  refine { toLinearEquiv := b.equivFun, map_app' := fun z => ?_ }
   rw [← hform]
-  exact e.map_app z
+  simp only [QuadraticMap.basisRepr, QuadraticMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.toFun_eq_coe, LinearEquiv.symm_apply_apply]
 
 /-- The isometry's underlying linear equivalence is the coordinate equivalence
 for the basis `(1, ω)`. -/
