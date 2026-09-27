@@ -92,7 +92,7 @@ theorem prod_map_ι_mem_evenOdd_one_of_odd_length {l : List M} (hlen : Odd l.len
 /-- **A generator commutes with each graded part of a central element.** The commutator of a
 generator with the even part is odd and the commutator with the odd part is even, while the two sum
 to zero, so both vanish. -/
-theorem commute_ι_of_mem_evenOdd_of_add_mem_center {x₀ x₁ : CliffordAlgebra Q}
+private theorem commute_ι_of_mem_evenOdd_of_add_mem_center {x₀ x₁ : CliffordAlgebra Q}
     (h₀ : x₀ ∈ evenOdd Q 0) (h₁ : x₁ ∈ evenOdd Q 1)
     (hx : x₀ + x₁ ∈ Subalgebra.center R (CliffordAlgebra Q)) (m : M) :
     Commute x₀ (ι Q m) ∧ Commute x₁ (ι Q m) := by
