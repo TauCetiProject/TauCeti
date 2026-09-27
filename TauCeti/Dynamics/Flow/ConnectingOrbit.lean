@@ -30,7 +30,7 @@ variable {α : Type*} [TopologicalSpace α] [T1Space α]
   {φ : _root_.Flow ℝ α} {p q x : α}
 
 /-- An orbit connecting distinct backward and forward limits has a free time parameter. -/
-theorem orbit_injective_of_mem_unstableSet_inter_stableSet
+theorem orbit_injective_of_ne_of_mem_unstableSet_inter_stableSet
     (hpq : p ≠ q) (hx : x ∈ unstableSet φ p ∩ stableSet φ q) :
     Function.Injective (fun t : ℝ => φ t x) := by
   by_cases hxq : x = q
