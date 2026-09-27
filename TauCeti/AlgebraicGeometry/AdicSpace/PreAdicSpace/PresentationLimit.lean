@@ -77,9 +77,10 @@ theorem presentationLimitPreAdicSpace_ringPresheaf {A : Type u} [CommRing A]
     [TopologicalSpace A] [IsTopologicalRing A] (P : PairOfDefinition A) (Aplus : Subring A)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     (hP : P.ringOfDefinition ≤ Aplus) :
-    @HEq ((presentationLimitPreAdicSpace P Aplus hAplus hP).toRingPresheafedSpace.carrier.Presheaf
+    @HEq ((presentationLimitPreAdicSpace P Aplus hAplus hP).toPresheafedSpace.carrier.Presheaf
       CommRingCat.{u})
-      (presentationLimitPreAdicSpace P Aplus hAplus hP).toRingPresheafedSpace.presheaf
+      ((presentationLimitPreAdicSpace P Aplus hAplus hP).toPresheafedSpace.presheaf ⋙
+        TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat)
       ((TopCat.of ↥(spa Aplus)).Presheaf CommRingCat.{u})
       (presentationLimitPresheafInCommRingCat P Aplus) :=
   HEq.rfl
