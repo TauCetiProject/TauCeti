@@ -74,9 +74,12 @@ theorem _root_.ModuleCat.dualTensorIhomNatIso_hom_app (N : ModuleCat.{u} R) :
 @[simp]
 theorem _root_.ModuleCat.dualTensorIhomIso_ev (N : ModuleCat.{u} R)
     (m : M) (f : Module.Dual R M) (n : N) :
-    ((𝟙 M ⊗ₘ (dualTensorIhomIso M N).hom) ≫ (ihom.ev M).app N)
-      (m ⊗ₜ[R] (f ⊗ₜ[R] n)) = f m • n := by
-  rw [ModuleCat.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.id_apply]
+    (@DFunLike.coe
+      (↑(M ⊗ (ihom M).obj N : ModuleCat.{u} R) →ₗ[R] N)
+      (↑(M ⊗ (ihom M).obj N : ModuleCat.{u} R))
+      (fun _ => N) LinearMap.instFunLike
+      ((ihom.ev M).app N).hom)
+      (m ⊗ₜ[R] (dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)) = f m • n := by
   rw [ModuleCat.ihom_ev_app]
   -- The uncurry map evaluates the internal-Hom element at `m`.
   change ((dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)).hom m = f m • n
