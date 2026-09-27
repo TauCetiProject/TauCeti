@@ -12,9 +12,10 @@ public import Mathlib.Analysis.Convex.Segment
 # Separating planar segments by a supporting line
 
 Multiplication by a complex number followed by imaginary part is a real-linear
-functional. When it is constant on one segment and has a strict sign at both
-endpoints of another, the segments are disjoint. This is a convenient signed
-half-plane test for polygonal boundaries with reentrant corners.
+functional. Suppose this functional, applied to displacement from the first
+segment's initial endpoint, vanishes on that segment and has the same strict
+sign at both endpoints of another. Then the segments are disjoint. This is a
+convenient signed half-plane test for polygonal boundaries with reentrant corners.
 -/
 
 public section
