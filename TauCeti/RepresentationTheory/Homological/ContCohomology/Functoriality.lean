@@ -262,6 +262,57 @@ theorem infl_comp_infl (P : Subgroup (G ⧸ N)) [P.Normal] (X : TopRep R G) (n :
 
 end Infl
 
+section Elementwise
+
+variable {R} {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  {X : TopRep R G} {Y : TopRep R H} (φ : H →ₜ* G) (f : TopRep.res (φ : H →* G) X ⟶ Y)
+
+/-- The map induced by a compatible pair on the `(i + 1)`-st term of the coinduced resolution,
+evaluated at a point of `H`: it is the map induced on the `i`-th term, applied to the value at the
+image point, `(F ↦ f ∘ F ∘ φ)` read one level down. -/
+@[simp]
+theorem resolutionMap_succ_apply (i : ℕ) (F : (TopRep.resolutionX X (i + 1)).V) (h : H) :
+    ((_root_.ContinuousCohomology.resolutionMap φ f (i + 1)) F :
+        C(H, (TopRep.resolutionX Y i).V)) h =
+      (_root_.ContinuousCohomology.resolutionMap φ f i) (F (φ h)) :=
+  rfl
+
+/-- The underlying resolution element of the image of a homogeneous cochain under the cochain map
+of a compatible pair is the image of its underlying element under the resolution map. -/
+theorem coe_cochainsMap_f_apply (i : ℕ) (v : (TopRep.homogeneousCochains X).X i) :
+    Subtype.val ((_root_.ContinuousCohomology.cochainsMap φ f).f i v) =
+      (_root_.ContinuousCohomology.resolutionMap φ f (i + 1)) v.1 :=
+  rfl
+
+/-- The map on continuous cohomology induced by a compatible pair, on the class of a cocycle: it
+is the class of the image of the cocycle. -/
+@[simp]
+theorem map_π_apply (n : ℕ) (a : _root_.ContinuousCohomology.cocycles X n) :
+    _root_.ContinuousCohomology.map φ f n (_root_.ContinuousCohomology.π X n a) =
+      _root_.ContinuousCohomology.π Y n (_root_.ContinuousCohomology.cocyclesMap φ f n a) := by
+  have h := ConcreteCategory.congr_hom (_root_.ContinuousCohomology.π_map φ f n) a
+  simpa only [ConcreteCategory.comp_apply] using h
+
+/-- The underlying cochain of the image of a cocycle under the cocycle map of a compatible pair is
+the image of its underlying cochain under the cochain map. -/
+theorem iCycles_cocyclesMap_apply (n : ℕ) (a : _root_.ContinuousCohomology.cocycles X n) :
+    (TopRep.homogeneousCochains Y).iCycles n (_root_.ContinuousCohomology.cocyclesMap φ f n a) =
+      (_root_.ContinuousCohomology.cochainsMap φ f).f n
+        ((TopRep.homogeneousCochains X).iCycles n a) := by
+  have h := ConcreteCategory.congr_hom
+    (HomologicalComplex.cyclesMap_i (_root_.ContinuousCohomology.cochainsMap φ f) n) a
+  simpa only [ConcreteCategory.comp_apply] using h
+
+/-- A coefficient map along an equality of coefficient objects is the transport along the induced
+equality of cohomology groups. -/
+@[simp]
+theorem coeffMap_eqToHom {X Y : TopRep R G} (e : X = Y) (n : ℕ) :
+    coeffMap (eqToHom e) n = eqToHom (congrArg (continuousCohomology n) e) := by
+  subst e
+  simp
+
+end Elementwise
+
 end ContinuousCohomology
 
 end TauCeti
