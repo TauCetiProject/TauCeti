@@ -28,7 +28,7 @@ of these finite-level `p`-groups.
   `q ^ n`.
 * `TauCeti.isPGroup_unitFiltration_succ_quotient_add_succ`: every positive-depth finite-level
   quotient `U(K,m+1) / U(K,m+n+1)` is a `p`-group.
-* `TauCeti.unitFiltration_one_isProP`: the principal-unit group is pro-`p`.
+* `TauCeti.isProP_unitFiltration_one`: the principal-unit group is pro-`p`.
 
 ## References
 
@@ -117,7 +117,7 @@ private theorem exists_unitFiltration_subgroupOf_le
 characteristic of the residue field. Equivalently, every continuous finite quotient of
 `U(K,1)` is a `p`-group. Primality of `p` need not be assumed: it follows from `hp`, since
 the residue field is finite. -/
-theorem unitFiltration_one_isProP (p : ℕ) (hp : ringChar 𝓀[K] = p) :
+theorem isProP_unitFiltration_one (p : ℕ) (hp : ringChar 𝓀[K] = p) :
     IsProP p (unitFiltration K 1) := by
   rw [isProP_iff]
   intro U
