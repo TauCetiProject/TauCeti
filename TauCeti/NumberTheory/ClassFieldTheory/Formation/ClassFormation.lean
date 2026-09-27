@@ -130,7 +130,7 @@ theorem natCard_H2 (cf : ClassFormation F) (L : NormalLayer G) :
 /-- There is exactly one class of invariant `1 / [K : F]`. -/
 theorem existsUnique_inv_eq (cf : ClassFormation F) (L : NormalLayer G) :
     ∃! u : L.H F 2, cf.inv L u = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) :=
-  AddCircle.existsUnique_apply_eq_coe_period_div (1 : ℚ) L.degree_pos (cf.inv_injective L)
+  AddCircle.existsUnique_apply_eq_coe_period_div (1 : ℚ) (cf.inv_injective L)
     (cf.range_inv L)
 
 /-- The **fundamental class** `u_{K/F}` of a finite normal layer: the unique class of invariant
