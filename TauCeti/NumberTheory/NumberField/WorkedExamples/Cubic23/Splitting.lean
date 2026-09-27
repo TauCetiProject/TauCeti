@@ -177,7 +177,10 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 include hmin hgen
 
-private theorem inertiaDegrees_eq_factorDegrees (p : ℕ) [Fact p.Prime]
+/-- Away from the discriminant prime `23`, the residue degrees above `p` are the factor degrees
+of the defining cubic modulo `p`. -/
+theorem map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
+    (p : ℕ) [Fact p.Prime]
     (hp : ¬ (p : ℤ) ∣ (-23 : ℤ)) :
     (Finset.univ : Finset ((span {(p : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) = (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees p := by
@@ -210,50 +213,55 @@ theorem ramificationIdx_eq_one_of_not_dvd_neg_twenty_three (p : ℕ) [Fact p.Pri
   exact (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp hur) Q inferInstance
 
 /-- The prime `2` is inert: its sole prime ideal has residue degree three. -/
-theorem inertiaDegrees_two :
+theorem map_inertiaDeg_primesOver_two :
     (Finset.univ : Finset ((span {(2 : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) = {3} := by
   -- The generic and concrete forms choose extensionally equal finite enumerations of primes.
-  convert inertiaDegrees_eq_factorDegrees hmin hgen 2 (by norm_num) using 1
+  convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
+    hmin hgen 2 (by norm_num) using 1
   ext a
   simp only [factorDegrees_two]
 
 /-- The prime `3` is inert: its sole prime ideal has residue degree three. -/
-theorem inertiaDegrees_three :
+theorem map_inertiaDeg_primesOver_three :
     (Finset.univ : Finset ((span {(3 : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) = {3} := by
-  convert inertiaDegrees_eq_factorDegrees hmin hgen 3 (by norm_num) using 1
+  convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
+    hmin hgen 3 (by norm_num) using 1
   ext a
   simp only [factorDegrees_three]
 
 /-- The prime `5` has two primes above it, of residue degrees one and two. -/
-theorem inertiaDegrees_five :
+theorem map_inertiaDeg_primesOver_five :
     (Finset.univ : Finset ((span {(5 : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) = {1, 2} := by
-  convert inertiaDegrees_eq_factorDegrees hmin hgen 5 (by norm_num) using 1
+  convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
+    hmin hgen 5 (by norm_num) using 1
   ext a
   simp only [factorDegrees_five]
 
 /-- The prime `7` has two primes above it, of residue degrees one and two. -/
-theorem inertiaDegrees_seven :
+theorem map_inertiaDeg_primesOver_seven :
     (Finset.univ : Finset ((span {(7 : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) = {1, 2} := by
-  convert inertiaDegrees_eq_factorDegrees hmin hgen 7 (by norm_num) using 1
+  convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
+    hmin hgen 7 (by norm_num) using 1
   ext a
   simp only [factorDegrees_seven]
 
 /-- The prime `59` splits completely: three primes above it each have residue degree one. -/
-theorem inertiaDegrees_fifty_nine :
+theorem map_inertiaDeg_primesOver_fifty_nine :
     (Finset.univ : Finset ((span {(59 : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) = {1, 1, 1} := by
-  convert inertiaDegrees_eq_factorDegrees hmin hgen 59 (by norm_num) using 1
+  convert map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
+    hmin hgen 59 (by norm_num) using 1
   ext a
   simp only [factorDegrees_fifty_nine]
 
 /-- The prime `59` splits completely in the cubic field. -/
 theorem ncard_primesOver_fifty_nine_eq_finrank :
     (primesOver (span {(59 : ℤ)}) (𝓞 K)).ncard = Module.finrank ℚ K := by
-  have h := congrArg Multiset.card (inertiaDegrees_fifty_nine hmin hgen)
+  have h := congrArg Multiset.card (map_inertiaDeg_primesOver_fifty_nine hmin hgen)
   simpa [Nat.card_eq_fintype_card, Nat.card_coe_set_eq,
     finrank_eq_three hmin hgen] using h
 

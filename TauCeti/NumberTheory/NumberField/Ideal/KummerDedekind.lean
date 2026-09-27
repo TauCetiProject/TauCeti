@@ -11,14 +11,16 @@ import Mathlib.RingTheory.Polynomial.Cyclotomic.Factorization
 import TauCeti.NumberTheory.NumberField.Index.Exponent
 
 /-!
-# Counting the primes above a rational prime by Kummer–Dedekind
+# Prime counts and residue degrees by Kummer–Dedekind
 
 Mathlib's number-field Kummer–Dedekind theorem
 (`NumberField.Ideal.primesOverSpanEquivMonicFactorsMod`) is a bijection between the primes of
 `𝓞 K` above a rational prime `p` and the monic irreducible factors of `minpoly ℤ θ` modulo `p`,
 valid whenever `p` does not divide the conductor exponent of the algebraic integer `θ`. This file
-records its cardinality form: the number of primes above `p` is the number of those factors. This is
-the shape in which splitting laws are read off a generator, for instance the quadratic laws of
+records both its cardinality form and its residue-degree form: the number of primes above `p` is
+the number of distinct factors, and their residue degrees are the factors' degrees. When the
+reduction is squarefree, its factor-degree multiset gives the splitting type directly. These
+forms are used to read splitting laws from a generator, for instance the quadratic laws of
 `TauCeti.NumberTheory.NumberField.Quadratic.Splitting`.
 
 The first instance is the prime `2` for a generator `ω` with minimal polynomial `X² - X + c` and
