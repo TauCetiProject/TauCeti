@@ -39,7 +39,7 @@ instance (R : CommRingCat.{u}) : (moduleSpecΓFunctor (R := R)).IsRightAdjoint :
 
 /-- An epimorphism between quasicoherent sheaves on an affine scheme is surjective on global
 sections. -/
-theorem surjective_globalSections_of_epi_of_isQuasicoherent
+theorem moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent
     (f : M ⟶ N) [Epi f] [M.IsQuasicoherent] [N.IsQuasicoherent] :
     Function.Surjective ((moduleSpecΓFunctor (R := R)).map f) := by
   let P := SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf
@@ -47,21 +47,16 @@ theorem surjective_globalSections_of_epi_of_isQuasicoherent
   let G : P.FullSubcategory := ⟨N, inferInstance⟩
   let g : F ⟶ G := ObjectProperty.homMk f
   have hg : Epi g := by
-    constructor
-    intro Z a b hab
-    apply ObjectProperty.hom_ext
-    apply (cancel_epi f).1
-    exact congrArg (fun h : F ⟶ Z => h.hom) hab
+    apply P.ι.epi_of_epi_map
+    change Epi f
+    infer_instance
   have hΓ : Epi ((tildeEquiv (R := R)).inverse.map g) :=
     Functor.map_epi _ g
   have hmap : (tildeEquiv (R := R)).inverse.map g =
       (moduleSpecΓFunctor (R := R)).map f := by
-    -- `tildeEquiv_inverse` identifies the inverse with inclusion followed by global sections.
-    change (moduleSpecΓFunctor (R := R)).map g.hom = _
-    have hg_hom : g.hom = f := by
-      change (ObjectProperty.homMk (X := F) (Y := G) f).hom = f
-      exact ObjectProperty.homMk_hom (X := F) (Y := G) f
-    rw [hg_hom]
+    -- `tildeEquiv_inverse` identifies the inverse functor with inclusion followed by Γ.
+    exact congrArg (moduleSpecΓFunctor (R := R)).map
+      (ObjectProperty.homMk_hom (X := F) (Y := G) f)
   rw [hmap] at hΓ
   exact (ModuleCat.epi_iff_surjective _).mp hΓ
 
@@ -79,7 +74,7 @@ theorem shortExact_map_moduleSpecΓFunctor_of_isQuasicoherent
   have : Epi S.g := hS.epi_g
   have hΓ : Epi ((moduleSpecΓFunctor (R := R)).map S.g) :=
     (ModuleCat.epi_iff_surjective _).mpr
-      (surjective_globalSections_of_epi_of_isQuasicoherent S.g)
+      (moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent S.g)
   exact { exact := h.1, mono_f := h.2, epi_g := hΓ }
 
 end AlgebraicGeometry
