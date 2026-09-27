@@ -61,6 +61,7 @@ structure. The topology is forgotten only after taking the limits that define se
     TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat
 
 /-- Forgetting the topology of the presentation-limit presheaf gives its ring presheaf. -/
+@[simp]
 theorem presentationLimitPresheafInCommRingCat_def (P : PairOfDefinition A)
     (Aplus : Subring A) :
     presentationLimitPresheafInCommRingCat P Aplus = presentationLimitPresheaf P Aplus ⋙
