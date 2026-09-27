@@ -12,8 +12,7 @@ public import Mathlib.CategoryTheory.Enriched.Ordinary.Basic
 
 The monoidal unit gives graded natural transformations with ordinary components. This module
 relates their graded naturality to naturality after forgetting enrichment, and provides identity
-and composition for these transformations. Opening `TauCeti` enables dot notation for these
-operations on Mathlib's `GradedNatTrans` and `EnrichedFunctor`.
+and composition for these transformations.
 -/
 
 public section
@@ -247,10 +246,8 @@ theorem unitComp_app_homOf {F G H : EnrichedFunctor V C' D'}
 
 end CategoryTheory.GradedNatTrans
 
-namespace CategoryTheory.EnrichedFunctor
-
 /-- Identity graded natural transformation at the monoidal unit. -/
-noncomputable def unitId (F : EnrichedFunctor V C' D') :
+noncomputable def unitGradedNatTransId (F : EnrichedFunctor V C' D') :
     GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F F where
   app X := eId V (F.obj X)
   naturality X Y := by
@@ -276,12 +273,10 @@ noncomputable def unitId (F : EnrichedFunctor V C' D') :
 
 /-- A component of the identity at the monoidal unit. -/
 @[simp]
-theorem unitId_app (F : EnrichedFunctor V C' D') (X : C') :
-    (unitId F).app X = eId V (F.obj X) := by
-  unfold unitId
+theorem unitGradedNatTransId_app (F : EnrichedFunctor V C' D') (X : C') :
+    (unitGradedNatTransId F).app X = eId V (F.obj X) := by
+  unfold unitGradedNatTransId
   rfl
-
-end CategoryTheory.EnrichedFunctor
 
 end GradedBridge
 

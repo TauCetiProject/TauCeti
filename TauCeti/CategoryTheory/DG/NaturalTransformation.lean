@@ -45,7 +45,7 @@ namespace DGNatTrans
 
 /-- The identity DG natural transformation. -/
 noncomputable def id (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
-    DGNatTrans F F := TauCeti.CategoryTheory.EnrichedFunctor.unitId F
+    DGNatTrans F F := unitGradedNatTransId F
 
 /-- Composition of DG natural transformations. -/
 noncomputable def comp {F G H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
@@ -56,7 +56,7 @@ noncomputable def comp {F G H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R
 @[simp]
 theorem id_app (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
     (X : C) : (id F).app X = eId _ (F.obj X) := by
-  simp only [id, TauCeti.CategoryTheory.EnrichedFunctor.unitId_app]
+  simp only [id, unitGradedNatTransId_app]
   rfl
 
 /-- The component of a composite DG natural transformation. -/
