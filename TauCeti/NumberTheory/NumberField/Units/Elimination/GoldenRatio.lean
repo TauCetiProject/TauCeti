@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Real.GoldenRatio
-public import TauCeti.NumberTheory.NumberField.Units.Elimination
+public import TauCeti.NumberTheory.NumberField.Units.Elimination.Basic
 
 /-!
 # The elimination certificate at the golden ratio
