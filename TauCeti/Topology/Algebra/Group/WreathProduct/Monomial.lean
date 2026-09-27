@@ -30,7 +30,8 @@ universe u
 
 variable {G : Type u} [Group G] (U : Subgroup G)
 
-/-- The monomial homomorphism is continuous when `U` is open. -/
+/-- The monomial homomorphism is continuous when `U` is open. Its left coordinates use
+`continuous_lWord`, hence the topological-group continuity assumptions here. -/
 theorem continuous_monomialHom [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
     (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
