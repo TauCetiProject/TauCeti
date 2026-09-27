@@ -137,6 +137,15 @@ def InducesRiemannianDistance
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   IsRiemannianManifold I M
 
+omit [FiniteDimensional ℝ E] [T2Space (TangentBundle I M)] in
+@[simp]
+theorem inducesRiemannianDistance_iff
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :
+    g.InducesRiemannianDistance (I := I) (M := M) ↔
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      IsRiemannianManifold I M := by
+  rfl
+
 end Bundle.ContMDiffRiemannianMetric
 
 section NormMFDeriv

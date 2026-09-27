@@ -47,7 +47,19 @@ structure HyperbolicMetric where
   /-- The Riemannian distance is metrically complete. -/
   complete : CompleteSpace M
   /-- The Levi-Civita connection has the constant-curvature tensor with parameter `-1`. -/
-  curvature : metric.IsConstantCurvatureTensorMetric (I := I) (M := M) (-1)
+  curvature : metric.IsConstantCurvatureTensor (I := I) (M := M) (-1)
+
+/-- A manifold is hyperbolic when it admits a complete smooth metric of constant curvature `-1`.
+
+This is the existence predicate used by later hyperbolic-volume and Mostow-rigidity statements;
+the chosen metric remains available through `HyperbolicMetric` when a proof is needed. -/
+def IsHyperbolic : Prop := Nonempty (HyperbolicMetric (I := I) (M := M))
+
+omit [T2Space (TangentBundle I M)] in
+@[simp]
+theorem isHyperbolic_iff :
+    IsHyperbolic (I := I) (M := M) ↔ Nonempty (HyperbolicMetric (I := I) (M := M)) := by
+  rfl
 
 namespace HyperbolicMetric
 
@@ -59,10 +71,28 @@ theorem curvatureTensor_eq (g : HyperbolicMetric (I := I) (M := M))
       ⟨g.metric.toRiemannianMetric⟩
     (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x w u v =
       (-1 : ℝ) • (inner ℝ u v • w - inner ℝ w v • u) := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨g.metric.toRiemannianMetric⟩
   have h := g.curvature
-  simpa only [Bundle.ContMDiffRiemannianMetric.IsConstantCurvatureTensorMetric,
-    Bundle.RiemannianMetric.IsConstantCurvatureTensor] using (h x w u v)
+  have hmetric :=
+    (Bundle.ContMDiffRiemannianMetric.isConstantCurvatureTensor_iff g.metric (-1)).mp h
+  have hcurvature :=
+    (Bundle.RiemannianMetric.isConstantCurvatureTensor_iff g.metric.toRiemannianMetric
+      (CovariantDerivative.leviCivitaConnection I M) inferInstance (-1)).mp hmetric
+  exact hcurvature x w u v
 
 end HyperbolicMetric
+
+omit [T2Space (TangentBundle I M)] in
+theorem IsHyperbolic.exists_curvatureTensor_eq
+    (h : IsHyperbolic (I := I) (M := M)) :
+    ∃ g : HyperbolicMetric (I := I) (M := M),
+      ∀ (x : M) (w u v : TangentSpace I x),
+        letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨g.metric.toRiemannianMetric⟩
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x w u v =
+          (-1 : ℝ) • (inner ℝ u v • w - inner ℝ w v • u) := by
+  rcases h with ⟨g⟩
+  exact ⟨g, fun x w u v => g.curvatureTensor_eq x w u v⟩
 
 end TauCeti
