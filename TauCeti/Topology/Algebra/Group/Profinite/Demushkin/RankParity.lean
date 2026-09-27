@@ -58,8 +58,10 @@ theorem IsDemushkin.even_demushkinRank_of_ne_two (hG : IsDemushkin p G) (hp : p 
     by_contra hne
     obtain ⟨b, hb⟩ := hG.cup_separatingLeft a hne
     have hab : τ (cupFp p G a b) = 0 := by
-      simpa only [LinearMap.compr₂_apply, LinearEquiv.coe_toLinearMap] using
-        (show ((cupFp p G).compr₂ τ.toLinearMap) a b = 0 from ha b)
+      calc
+        τ (cupFp p G a b) = B a b := by
+          simp only [B, LinearMap.compr₂_apply, LinearEquiv.coe_toLinearMap]
+        _ = 0 := ha b
     exact hb (τ.injective (by simpa using hab))
   rw [← hG.finrank_cohomFp_one]
   exact halt.even_finrank hB
