@@ -12,6 +12,8 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
 
 The quotient-coordinate presentation identifies scheme-valued points of the carrier with its
 matrix-valued points. The numbered root subgroups and weight torus agree under this equivalence.
+These identifications transfer equations between quotient-coordinate, matrix-valued, and
+scheme-valued points, so the carrier's matrix-point laws yield scheme-level statements.
 -/
 
 public section
