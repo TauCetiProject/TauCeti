@@ -364,6 +364,9 @@ theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
   intro g
   apply LinearMap.ext
   intro a
+  -- The functor composition and `indBotMap` have the same underlying induction map;
+  -- `indBotMap` inserts `eqToHom` transports for the public `indBot` presentation.
+  -- Normalize those transports here, then compare both maps on `IndV.mk` generators.
   change ((indBotFunctor k G).map ((forget₂ (Rep k G) (ModuleCat k)).map f)).hom
       (IndV.mk (⊥ : Subgroup G).subtype
         (Representation.trivial k (⊥ : Subgroup G) A.V) g a) =
