@@ -93,6 +93,7 @@ theorem conductor_maximal : (maximalNumberFieldOrder K).conductor = ⊤ := by
       (y : K) ∈ integralClosure ℤ K)
 
 /-- An order is maximal exactly when its conductor is the unit ideal. -/
+@[simp]
 theorem conductor_eq_top_iff (O : NumberFieldOrder K) :
     O.conductor = ⊤ ↔ O = maximalNumberFieldOrder K := by
   constructor
