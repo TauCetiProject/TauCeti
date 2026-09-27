@@ -37,6 +37,8 @@ algebraic closedness, and the answer names the basis vectors involved.
 
 * `Module.Basis.repr_apply_of_apply_basis`: the coordinates of `f w` are those of `w` scaled by
   the eigenvalues.
+* `Module.Basis.repr_eq_zero_of_weight_ne`: a joint eigenvector has zero coordinate at a basis
+  vector of a different joint weight.
 * `Module.Basis.self_mem_of_repr_ne_zero` and `Module.Basis.eq_span_self_mem`: an invariant
   subspace contains every basis vector occurring in one of its elements, and is spanned by the
   basis vectors it contains.
@@ -70,6 +72,25 @@ theorem _root_.Module.Basis.repr_apply_of_apply_basis (b : Module.Basis ι K V)
   simpa using LinearMap.congr_fun key w
 
 end CommSemiring
+
+section NoZeroDivisors
+
+variable {κ : Type*} [CommRing K] [NoZeroDivisors K] [AddCommGroup V] [Module K V]
+  {f : κ → Module.End K V} {a : ι → κ → K}
+
+/-- A joint eigenvector has zero coordinate at every basis vector of a different joint weight,
+when a family of endomorphisms is diagonal in the basis. -/
+theorem _root_.Module.Basis.repr_eq_zero_of_weight_ne (b : Module.Basis ι K V)
+    (hf : ∀ i j, f j (b i) = a i j • b i) {w : V} {c : κ → K}
+    (hw : ∀ j, f j w = c j • w) {i : ι} (hi : a i ≠ c) : b.repr w i = 0 := by
+  obtain ⟨j, hj⟩ := Function.ne_iff.mp hi
+  have hcoord := b.repr_apply_of_apply_basis (f := f j) (a := fun k => a k j)
+    (fun k => hf k j) w i
+  rw [hw j, map_smul, Finsupp.smul_apply, smul_eq_mul] at hcoord
+  have hzero : (a i j - c j) * b.repr w i = 0 := by rw [sub_mul, ← hcoord, sub_self]
+  exact (mul_eq_zero.mp hzero).resolve_left (sub_ne_zero.mpr hj)
+
+end NoZeroDivisors
 
 /-! ### Invariant subspaces are spanned by basis vectors -/
 
