@@ -95,7 +95,7 @@ theorem SeparatelyExchangeable.condDistrib_subblock_rest_ae_eq_local
   have hg : Measurable fun x : ℕ × ℕ → α ↦ (Cᶜ : Set (ℕ × ℕ)).domRestrict x :=
     Set.measurable_restrict _
   have hf : Measurable fun x : ℕ × ℕ → α ↦ B.domRestrict x :=
-    Measurable.of_eval fun c ↦ measurable_pi_apply c.1
+    Set.measurable_restrict _
   exact (condIndepFun_iff_condDistrib_prod_ae_eq_prodMkRight hf hg hk).mp
     (hρ.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset hS hT hC hBsub
       hCsub).symm
@@ -117,7 +117,7 @@ theorem SeparatelyExchangeable.jointLaw_subblock_rest_eq_compProd_local
         (Cᶜ : Set (ℕ × ℕ)).domRestrict x)) ρ :=
     ((Set.measurable_restrict _).prodMk (Set.measurable_restrict _)).aemeasurable
   have hf : AEMeasurable (fun x : ℕ × ℕ → α ↦ B.domRestrict x) ρ :=
-    (Measurable.of_eval fun c ↦ measurable_pi_apply c.1).aemeasurable
+    (Set.measurable_restrict _).aemeasurable
   exact (condDistrib_ae_eq_iff_measure_eq_compProd hk hf _).mp
     (hρ.condDistrib_subblock_rest_ae_eq_local hS hT hC hBsub hCsub)
 
