@@ -34,27 +34,28 @@ def j (z : ℍ) : ℂ := E₄ z ^ 3 / discriminant z
 theorem j_apply (z : ℍ) : j z = E₄ z ^ 3 / discriminant z := by rfl
 
 /-- The modular invariant is holomorphic on the upper half-plane. -/
-theorem j_holo : MDiff j := by
+theorem mdifferentiable_j : MDiff j := by
   exact (ModularForm.holo' E₄).pow 3 |>.div (CuspForm.discriminant.holo') discriminant_ne_zero
 
 /-- The weight factors cancel, so `j` is invariant under `SL₂(ℤ)`. -/
+@[simp]
 theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
   have hγ : mapGL ℝ γ ∈ (𝒮ℒ : Subgroup (GL (Fin 2) ℝ)) := ⟨γ, rfl⟩
-  have hE := SlashInvariantForm.slash_action_eqn'' E₄ hγ z
-  have hΔ := SlashInvariantForm.slash_action_eqn'' CuspForm.discriminant hγ z
-  have hd : denom (mapGL ℝ γ) z ≠ 0 := denom_ne_zero _ _
-  have hE' : E₄ (γ • z) = denom (mapGL ℝ γ) z ^ (4 : ℤ) * E₄ z := by
-    simpa only [MulAction.compHom_smul_def] using hE
-  have hΔ' : discriminant (γ • z) =
-      denom (mapGL ℝ γ) z ^ (12 : ℤ) * discriminant z := by
-    simpa only [MulAction.compHom_smul_def, CuspForm.coe_discriminant] using hΔ
-  have hp : (denom (mapGL ℝ γ) z ^ (4 : ℤ)) ^ 3 =
-      denom (mapGL ℝ γ) z ^ (12 : ℤ) := by
-    rw [← zpow_natCast, ← zpow_mul]
-    norm_num
-  rw [j_apply, j_apply, hE', hΔ']
-  rw [mul_pow, hp]
-  exact mul_div_mul_left _ _ (zpow_ne_zero _ hd)
+  have hE : (⇑(E₄.pow 3) ∣[(12 : ℤ)] (mapGL ℝ γ)) = ⇑(E₄.pow 3) := by
+    simpa using SlashInvariantForm.slash_action_eqn (E₄.pow 3) _ hγ
+  have hΔ : (⇑CuspForm.discriminant ∣[(12 : ℤ)] (mapGL ℝ γ)) =
+      ⇑CuspForm.discriminant := by
+    simpa using SlashInvariantForm.slash_action_eqn CuspForm.discriminant _ hγ
+  have h : (⇑(E₄.pow 3) / ⇑CuspForm.discriminant) ∣[(12 : ℤ) - 12] γ =
+      ⇑(E₄.pow 3) / ⇑CuspForm.discriminant := by
+    rw [div_slash_SL2]
+    change (⇑(E₄.pow 3) ∣[(12 : ℤ)] (mapGL ℝ γ)) /
+      (⇑CuspForm.discriminant ∣[(12 : ℤ)] (mapGL ℝ γ)) = _
+    rw [hE, hΔ]
+  have hpow (w : ℍ) : (E₄.pow 3) w = E₄ w ^ 3 := by
+    exact congrFun (ModularForm.coe_pow E₄ 3) w
+  have hz := congrFun h z
+  simpa [SL_slash_apply, j, hpow] using hz
 
 /-- The other standard expression for the modular invariant. -/
 theorem j_sub_1728 (z : ℍ) : j z - 1728 = E₆ z ^ 2 / discriminant z := by
@@ -66,10 +67,12 @@ theorem j_sub_1728 (z : ℍ) : j z - 1728 = E₆ z ^ 2 / discriminant z := by
   linear_combination -hΔ
 
 /-- The zero fibre of `j` is exactly the zero locus of `E₄`. -/
+@[simp]
 theorem j_eq_zero_iff (z : ℍ) : j z = 0 ↔ E₄ z = 0 := by
   simp [j_apply, discriminant_ne_zero z]
 
 /-- The fibre of `j` above `1728` is exactly the zero locus of `E₆`. -/
+@[simp]
 theorem j_eq_1728_iff (z : ℍ) : j z = 1728 ↔ E₆ z = 0 := by
   rw [← sub_eq_zero, j_sub_1728]
   simp [discriminant_ne_zero z]
