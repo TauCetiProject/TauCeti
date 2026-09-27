@@ -104,6 +104,7 @@ private noncomputable def vertices : Fin 1 ≃ Symmetrify preprojectiveA1Quiver 
     (Equiv.ofBijective _ symmetrify_of_obj_bijective)
 
 /-- The doubled `A₁` quiver has exactly one path, its vertex path. -/
+@[simp]
 theorem card_totalPath_preprojectiveA1 :
     Nat.card (Quiver.TotalPath (Symmetrify preprojectiveA1Quiver)) = 1 := by
   let v : Symmetrify preprojectiveA1Quiver :=
@@ -126,6 +127,7 @@ theorem card_totalPath_preprojectiveA1 :
   exact Nat.card_unique
 
 /-- The rank-one preprojective algebra has dimension one. -/
+@[simp]
 theorem finrank_preprojectiveAlgebra_A1 (k : Type*) [CommRing k]
     [StrongRankCondition k] :
     Module.finrank k (preprojectiveAlgebra k preprojectiveA1Quiver) = 1 := by
