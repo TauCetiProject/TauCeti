@@ -52,4 +52,20 @@ def SmaleConjecture : Prop :=
       Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) =
       fun A ↦ orthogonalToDiffSphere 3 ∞ A
 
+/-- Smale's conjecture is stable under taking the product of two copies of the spaces. -/
+theorem smaleConjecture_prod (h : SmaleConjecture) :
+    ∃ e : ContinuousMap.HomotopyEquiv
+        (Matrix.orthogonalGroup (Fin 4) ℝ × Matrix.orthogonalGroup (Fin 4) ℝ)
+        (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞ ×
+          Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞),
+      (e.toFun : Matrix.orthogonalGroup (Fin 4) ℝ × Matrix.orthogonalGroup (Fin 4) ℝ →
+        Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞ ×
+          Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) =
+        fun p ↦ (orthogonalToDiffSphere 3 ∞ p.1, orthogonalToDiffSphere 3 ∞ p.2) := by
+  rcases h with ⟨e, he⟩
+  refine ⟨e.prodCongr e, ?_⟩
+  funext p
+  simp only [ContinuousMap.HomotopyEquiv.prodCongr, ContinuousMap.prodMap_apply, he]
+  rfl
+
 end TauCeti
