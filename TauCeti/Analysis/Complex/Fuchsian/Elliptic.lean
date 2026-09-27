@@ -266,9 +266,9 @@ theorem exists_common_elliptic_chart_radius
     ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Δ z).and
       (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z))).exists
 
-/-- In elliptic charts centered at the same upper-half-plane point, the quotient map induced
-by `Δ ≤ Γ` is locally `u ↦ u ^ e`, where `e` is the ratio of stabilizer orders. -/
-private theorem stabilizerBallQuotientChart_map_ofQuotient
+/-- For a representative lying in both chart balls centered at the same point, the map induced
+by `Δ ≤ Γ` has chart expression `u ↦ u ^ e`. The two chart radii may differ. -/
+theorem stabilizerBallQuotientChart_map_ofQuotient_eq_pow_ellipticRamificationIndex
     [Finite (stabilizer Γ z)]
     {εΔ εΓ : ℝ} (hεΔ : 0 < εΔ) (hεΓ : 0 < εΓ)
     (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z εΔ))
@@ -337,7 +337,7 @@ theorem stabilizerBallQuotientChart_map_eq_pow_ellipticRamificationIndex
       have heq : (Quotient.mk _ (g • τ) : orbitRel.Quotient Δ ℍ) = Quotient.mk _ τ :=
         Quotient.sound (orbitRel_apply.mpr (mem_orbit τ g))
       simpa only [heq] using
-        (stabilizerBallQuotientChart_map_ofQuotient
+        (stabilizerBallQuotientChart_map_ofQuotient_eq_pow_ellipticRamificationIndex
           h z hε hε hopenΔ hopenΓ hg hg)
 
 end Subgroup

@@ -58,6 +58,14 @@ def ellipticRamificationIndex (_h : Δ ≤ Γ) (z : ℍ)
   letI := Fintype.ofFinite (stabilizer Γ z)
   exact Fintype.card (stabilizer Γ z) / Fintype.card (stabilizer Δ z)
 
+/-- The elliptic ramification index is the quotient of the stabilizer orders. -/
+theorem ellipticRamificationIndex_def [Finite (stabilizer Γ z)] :
+    ellipticRamificationIndex h z =
+      Nat.card (stabilizer Γ z) / Nat.card (stabilizer Δ z) := by
+  let : Finite (stabilizer Δ z) :=
+    Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+  simp only [ellipticRamificationIndex, Fintype.card_eq_nat_card]
+
 /-- The stabilizer order upstairs times the elliptic ramification index is the stabilizer
 order downstairs. -/
 theorem card_stabilizer_mul_ellipticRamificationIndex (h : Δ ≤ Γ) (z : ℍ)
@@ -66,8 +74,8 @@ theorem card_stabilizer_mul_ellipticRamificationIndex (h : Δ ≤ Γ) (z : ℍ)
       Nat.card (stabilizer Γ z) := by
   let : Finite (stabilizer Δ z) :=
     Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
-  simpa only [ellipticRamificationIndex, Fintype.card_eq_nat_card] using
-    Nat.mul_div_cancel' (card_stabilizer_dvd_card_stabilizer h z)
+  rw [ellipticRamificationIndex_def]
+  exact Nat.mul_div_cancel' (card_stabilizer_dvd_card_stabilizer h z)
 
 /-- Elliptic ramification indices are positive. -/
 theorem ellipticRamificationIndex_pos [Finite (stabilizer Γ z)] :

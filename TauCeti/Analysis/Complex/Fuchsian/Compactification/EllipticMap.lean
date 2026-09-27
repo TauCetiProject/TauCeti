@@ -27,7 +27,7 @@ public noncomputable section
 open MulAction Set Topology UpperHalfPlane
 open scoped MatrixGroups
 
-namespace Subgroup
+namespace Subgroup.CompactifiedQuotient
 
 variable {Δ Γ : Subgroup PSL(2, ℝ)} (h : Δ ≤ Γ) (z : ℍ)
 
@@ -41,16 +41,16 @@ theorem ofQuotientChart_compactifiedQuotientMap_eq_pow_ellipticRamificationIndex
     {q : orbitRel.Quotient Δ ℍ} :
     let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     q ∈ (stabilizerBallQuotientChart hε hopenΔ).source →
-    CompactifiedQuotient.ofQuotientChart (stabilizerBallQuotientChart hε hopenΓ)
+    ofQuotientChart (stabilizerBallQuotientChart hε hopenΓ)
       (compactifiedQuotientMap h (.ofQuotient q)) =
-      (CompactifiedQuotient.ofQuotientChart (stabilizerBallQuotientChart hε hopenΔ)
+      (ofQuotientChart (stabilizerBallQuotientChart hε hopenΔ)
         (.ofQuotient q)) ^ ellipticRamificationIndex h z := by
   dsimp only
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   intro hq
   simpa only [compactifiedQuotientMap_ofQuotient,
-    CompactifiedQuotient.ofQuotientChart_ofQuotient] using
+    ofQuotientChart_ofQuotient] using
     (stabilizerBallQuotientChart_map_eq_pow_ellipticRamificationIndex
       h z hε hopenΔ hopenΓ hq)
 
-end Subgroup
+end Subgroup.CompactifiedQuotient
