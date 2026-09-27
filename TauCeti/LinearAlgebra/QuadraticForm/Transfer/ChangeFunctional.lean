@@ -24,6 +24,8 @@ public section
 
 namespace TauCeti
 
+open scoped TensorProduct
+
 section CommSemiring
 
 variable {K L V : Type*} [CommSemiring K] [CommRing L] [Algebra K L]
@@ -51,6 +53,12 @@ theorem scharlauTransferChangeFunctional_apply (Q : QuadraticForm L V)
       (TensorProduct.lid L V).symm x := by
   rfl
 
+@[simp]
+theorem scharlauTransferChangeFunctional_symm_apply (Q : QuadraticForm L V)
+    (s : L →ₗ[K] K) (a : L) (x : L ⊗[L] V) :
+    (scharlauTransferChangeFunctional Q s a).symm x = TensorProduct.lid L V x := by
+  rfl
+
 end CommSemiring
 
 section Field
@@ -67,13 +75,10 @@ theorem exists_unit_scharlauTransfer_changeFunctional (Q : QuadraticForm L V)
       ((QuadraticForm.tmul
         ((a : L) • (QuadraticMap.sq (R := L) (A := L) : QuadraticForm L L)) Q).scharlauTransfer
         s) := by
-  obtain ⟨a, ha, _⟩ := s.existsUnique_unit_apply_eq_apply_mul t hs ht
+  obtain ⟨a, h⟩ := Q.exists_unit_scharlauTransfer_eq s t hs ht
   refine ⟨a, ?_⟩
-  have h : t = s.comp (LinearMap.mul K L (a : L)) := by
-    ext x
-    simpa using ha x
   rw [h]
-  exact ⟨scharlauTransferChangeFunctional Q s (a : L)⟩
+  exact ⟨(tensorLIdSmul Q (a : L)).symm.scharlauTransfer s⟩
 
 end Field
 

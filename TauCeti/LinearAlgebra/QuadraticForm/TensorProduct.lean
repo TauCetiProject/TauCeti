@@ -48,6 +48,7 @@ def tensorLIdSmul {V : Type*} [AddCommGroup V] [Module R V]
       apply _root_.baseChange_ext
       intro v
       simp [QuadraticForm.tmul, mul_comm]
+    -- The isometry goal unfolds the quadratic-form wrapper around `map_app'`.
     change (a • Q) (TensorProduct.lid R V x) = _
     simpa only [h] using QuadraticForm.tmul_tensorLId_apply (a • Q) x
 
@@ -55,6 +56,12 @@ def tensorLIdSmul {V : Type*} [AddCommGroup V] [Module R V]
 theorem tensorLIdSmul_apply {V : Type*} [AddCommGroup V] [Module R V]
     (Q : QuadraticForm R V) (a : R) (x : R ⊗[R] V) :
     tensorLIdSmul Q a x = TensorProduct.lid R V x :=
+  rfl
+
+@[simp]
+theorem tensorLIdSmul_symm_apply {V : Type*} [AddCommGroup V] [Module R V]
+    (Q : QuadraticForm R V) (a : R) (x : V) :
+    (tensorLIdSmul Q a).symm x = (TensorProduct.lid R V).symm x :=
   rfl
 
 /-- Tensor product of isometric equivalences of quadratic forms. -/
