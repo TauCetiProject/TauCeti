@@ -28,12 +28,8 @@ coalgebras must preserve the invariant subspaces of their comodules.
   coalgebra equivalence.
 * `TauCeti.Subcomodule.corestrictOrderIso`: the carrier-preserving order isomorphism induced
   by a coalgebra equivalence.
-* `TauCeti.Subcomodule.ofCorestrictOfInjective`: recover a subcomodule from its corestriction
-  along an injective coalgebra morphism over a field.
-* `TauCeti.Subcomodule.corestrictOrderIsoOfInjective`: the resulting order isomorphism of
-  subcomodule lattices.
-* `TauCeti.Subcomodule.ofCorestrictOfSplit` and `corestrictOrderIsoOfSplit`: the same
-  recovery and order correspondence given a linear retraction over a commutative semiring.
+* `TauCeti.Subcomodule.ofCorestrictOfSplit` and `corestrictOrderIsoOfSplit`: recovery and
+  order correspondence given a linear retraction over a commutative semiring.
 * `TauCeti.Subcomodule.map_id_coact_coe_eq_tmul_one`: a vector of a subcomodule fixed by the
   corestricted coaction is fixed by the corestricted coaction of the ambient comodule.
 
@@ -334,14 +330,8 @@ def corestrictOrderIsoOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
   letI : Comodule k D V := Comodule.Corestrict f
   { toFun := fun W ↦ W.corestrict f
     invFun := ofCorestrictOfSplit f r hr
-    left_inv := by
-      intro W
-      ext m
-      rfl
-    right_inv := by
-      intro W
-      ext m
-      rfl
+    left_inv := ofCorestrictOfSplit_corestrict f r hr
+    right_inv := corestrict_ofCorestrictOfSplit f r hr
     map_rel_iff' := by
       rfl }
 
@@ -367,99 +357,6 @@ theorem corestrictOrderIsoOfSplit_symm_apply (f : C →ₗc[k] D) (r : D →ₗ[
   rfl
 
 end Split
-
-section Injective
-
-variable {k : Type u} [Field k]
-variable {C : Type v} {D : Type w}
-variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
-variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
-variable {V : Type x} [AddCommMonoid V] [Module k V] [Comodule k C V]
-
-/-- An invariant subspace for a corestricted comodule is invariant before corestriction
-when the coalgebra morphism is injective. Its underlying subspace is unchanged. -/
-noncomputable def ofCorestrictOfInjective (f : C →ₗc[k] D)
-    (hf : Function.Injective f)
-    (W : letI : Comodule k D V := Comodule.Corestrict f
-      Subcomodule k D V) : Subcomodule k C V := by
-  exact ofCorestrictOfSplit f (Coalgebra.linearRetractionOfInjective f hf)
-    (Coalgebra.linearRetractionOfInjective_comp f hf) W
-
-/-- Recovering an invariant subspace from an injective corestriction preserves its
-underlying submodule. -/
-@[simp]
-theorem ofCorestrictOfInjective_toSubmodule (f : C →ₗc[k] D)
-    (hf : Function.Injective f)
-    (W : letI : Comodule k D V := Comodule.Corestrict f
-      Subcomodule k D V) :
-    letI : Comodule k D V := Comodule.Corestrict f
-    (ofCorestrictOfInjective f hf W).toSubmodule = W.toSubmodule := by
-  unfold ofCorestrictOfInjective
-  exact Subcomodule.ofSubmodule_carrier _ _
-
-/-- Membership is unchanged when recovering a subcomodule from an injective
-corestriction. -/
-@[simp]
-theorem mem_ofCorestrictOfInjective (f : C →ₗc[k] D)
-    (hf : Function.Injective f)
-    (W : letI : Comodule k D V := Comodule.Corestrict f
-      Subcomodule k D V) (m : V) :
-    letI : Comodule k D V := Comodule.Corestrict f
-    m ∈ ofCorestrictOfInjective f hf W ↔ m ∈ W := by
-  let _ : Comodule k D V := Comodule.Corestrict f
-  rw [← mem_toSubmodule, ofCorestrictOfInjective_toSubmodule, mem_toSubmodule]
-
-/-- Corestricting a recovered subcomodule gives the original subcomodule. -/
-@[simp]
-theorem corestrict_ofCorestrictOfInjective (f : C →ₗc[k] D)
-    (hf : Function.Injective f)
-    (W : letI : Comodule k D V := Comodule.Corestrict f
-      Subcomodule k D V) :
-    letI : Comodule k D V := Comodule.Corestrict f
-    (ofCorestrictOfInjective f hf W).corestrict f = W := by
-  let _ : Comodule k D V := Comodule.Corestrict f
-  ext m
-  simp only [mem_corestrict, mem_ofCorestrictOfInjective]
-
-/-- Recovering a corestricted subcomodule gives the original subcomodule. -/
-@[simp]
-theorem ofCorestrictOfInjective_corestrict (f : C →ₗc[k] D)
-    (hf : Function.Injective f) (W : Subcomodule k C V) :
-    ofCorestrictOfInjective f hf (W.corestrict f) = W := by
-  ext m
-  simp only [mem_ofCorestrictOfInjective, mem_corestrict]
-
-/-- An injective coalgebra morphism identifies subcomodules with those of the corestricted
-comodule, preserving their underlying submodules. -/
-noncomputable def corestrictOrderIsoOfInjective (f : C →ₗc[k] D)
-    (hf : Function.Injective f) :
-    letI : Comodule k D V := Comodule.Corestrict f
-    Subcomodule k C V ≃o Subcomodule k D V := by
-  exact corestrictOrderIsoOfSplit f (Coalgebra.linearRetractionOfInjective f hf)
-    (Coalgebra.linearRetractionOfInjective_comp f hf)
-
-/-- The forward map of the injective-corestriction order isomorphism is corestriction. -/
-@[simp]
-theorem corestrictOrderIsoOfInjective_apply (f : C →ₗc[k] D)
-    (hf : Function.Injective f) (W : Subcomodule k C V) :
-    corestrictOrderIsoOfInjective f hf W = W.corestrict f :=
-  by
-    let _ : Comodule k D V := Comodule.Corestrict f
-    exact corestrictOrderIsoOfSplit_apply f _ _ W
-
-/-- The inverse map of the injective-corestriction order isomorphism recovers the original
-subcomodule. -/
-@[simp]
-theorem corestrictOrderIsoOfInjective_symm_apply (f : C →ₗc[k] D)
-    (hf : Function.Injective f)
-    (W : letI : Comodule k D V := Comodule.Corestrict f
-      Subcomodule k D V) :
-    letI : Comodule k D V := Comodule.Corestrict f
-    (corestrictOrderIsoOfInjective f hf).symm W = ofCorestrictOfInjective f hf W := by
-  let _ : Comodule k D V := Comodule.Corestrict f
-  exact corestrictOrderIsoOfSplit_symm_apply f _ _ W
-
-end Injective
 
 end Subcomodule
 
