@@ -29,29 +29,11 @@ namespace TauCeti.ClassFieldTheory
 variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G]
 
-namespace NormalLayer
-
-variable (L : NormalLayer G)
-
-/-- The canonical generator of degree-zero Tate cohomology with trivial integral coefficients:
-the class of `1 ∈ ℤ`. -/
-def trivialTateHZeroOne : L.TrivialTateH 0 :=
-  TauCeti.TateCohomology.H0π (Rep.trivial ℤ L.Gal ℤ)
-    ⟨1, by simp [Representation.invariants]⟩
-
-/-- Under the identification with `ZMod |U/V|`, the class of `1` is `1`. -/
-@[simp]
-theorem H0LinearEquivTrivialIntZModCard_trivialTateHZeroOne :
-    TauCeti.TateCohomology.H0LinearEquivTrivialIntZModCard L.Gal
-      L.trivialTateHZeroOne = 1 := by
-  simp [trivialTateHZeroOne]
-
-end NormalLayer
-
 /-- In degree zero, cup product with `u` sends the canonical trivial-coefficient class of `1`
 to `u` in Tate degree two. This fixes the orientation of the degree-zero Tate isomorphism. -/
 theorem cupClass_trivialTateHZeroOne (F : Formation G) (L : NormalLayer G) (u : L.H F 2) :
-    cupClass F L u 0 L.trivialTateHZeroOne = (L.tateHIsoH F 2).inv u := by
+    cupClass F L u 0 (TauCeti.TateCohomology.trivialTateHZeroOne L.Gal) =
+      (L.tateHIsoH F 2).inv u := by
   let one : (Rep.trivial ℤ L.Gal ℤ).ρ.invariants := ⟨1, by simp [Representation.invariants]⟩
   have hunit :
       Rep.tensorInvariant (L.rep F) one ≫ (β_ (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom ≫
@@ -62,7 +44,8 @@ theorem cupClass_trivialTateHZeroOne (F : Formation G) (L : NormalLayer G) (u : 
       TauCeti.TateCohomology.cup0H (Rep.trivial ℤ L.Gal ℤ) (L.rep F) 2 := by
     convert TauCeti.TateCohomology.cup_zero_left
       (Rep.trivial ℤ L.Gal ℤ) (L.rep F) 2 (by omega) using 1 <;> rfl
-  rw [cupClass_apply, NormalLayer.trivialTateHZeroOne]
+  rw [TauCeti.TateCohomology.trivialTateHZeroOne_eq_H0π]
+  rw [cupClass_apply]
   rw [hcup]
   rw [TauCeti.TateCohomology.cup0H_H0π]
   -- The cup definition stores its target degree as `0 + 2`; after specialization it is `2`.
@@ -84,7 +67,7 @@ theorem cupClass_zero_bijective (F : Formation G) (L : NormalLayer G) (u : L.H F
   have hsurj : Function.Surjective (cupClass F L u 0) := by
     intro x
     obtain ⟨m, hm⟩ := hgen ((L.tateHIsoH F 2).hom x)
-    refine ⟨m • L.trivialTateHZeroOne, ?_⟩
+    refine ⟨m • TauCeti.TateCohomology.trivialTateHZeroOne L.Gal, ?_⟩
     rw [map_zsmul, cupClass_trivialTateHZeroOne]
     apply (L.tateHIsoH F 2).toLinearEquiv.injective
     rw [map_zsmul, Iso.toLinearEquiv_apply, Iso.inv_hom_id_apply]
@@ -128,17 +111,18 @@ theorem cupFundamentalClass_zero_bijective (cf : ClassFormation F) (L : NormalLa
 /-- The degree-zero Tate isomorphism of a class formation, with underlying map cup product
 by the fundamental class. -/
 def cupFundamentalClassZeroEquiv (cf : ClassFormation F) (L : NormalLayer G) :
-    L.TrivialTateH 0 ≃+ L.TateH F 2 := by
-  convert AddEquiv.ofBijective (cf.cupFundamentalClass L 0)
-    (cf.cupFundamentalClass_zero_bijective L) using 1; rfl
+    L.TrivialTateH 0 ≃+ L.TateH F 2 :=
+  AddEquiv.ofBijective (cf.cupFundamentalClass L 0)
+    (cf.cupFundamentalClass_zero_bijective L)
 
 /-- The degree-zero equivalence acts by cup product with the fundamental class. -/
 @[simp]
 theorem cupFundamentalClassZeroEquiv_apply (cf : ClassFormation F) (L : NormalLayer G)
     (x : L.TrivialTateH 0) :
     cf.cupFundamentalClassZeroEquiv L x = cf.cupFundamentalClass L 0 x := by
-  simp [cupFundamentalClassZeroEquiv, AddEquiv.ofBijective]
-  rfl
+  simpa only [cupFundamentalClassZeroEquiv, zero_add] using
+    AddEquiv.ofBijective_apply (cf.cupFundamentalClass L 0)
+      (cf.cupFundamentalClass_zero_bijective L) x
 
 end ClassFormation
 
