@@ -20,7 +20,7 @@ public section
 
 open MeasureTheory ProbabilityTheory
 
-namespace TauCeti.MeasureTheory.Measure
+namespace TauCeti.Probability
 
 variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 
@@ -57,4 +57,4 @@ theorem infinitePi_map_pair_domRestrict (P : ∀ i, Measure (α i))
     (Set.measurable_restrict S).aemeasurable (Set.measurable_restrict T).aemeasurable
   simpa only [Measure.infinitePi_map_restrict'] using hprod
 
-end TauCeti.MeasureTheory.Measure
+end TauCeti.Probability

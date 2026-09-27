@@ -84,7 +84,7 @@ theorem ConditionallyIIDWith.jointLaw_pair_domRestrict [IsFiniteMeasure μ]
                     ((Set.measurable_restrict S).prodMk (Set.measurable_restrict T))).symm
             _ = _ := by
               rw [Measure.map_id,
-                TauCeti.MeasureTheory.Measure.infinitePi_map_pair_domRestrict
+                TauCeti.Probability.infinitePi_map_pair_domRestrict
                   (fun _ : ℕ => (P : Measure α)) hST]
 
 end TauCeti.Probability
