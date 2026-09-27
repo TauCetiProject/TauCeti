@@ -20,6 +20,12 @@ conditionally independent of the entries outside the block given the other entri
 rectangle. This is the finite-block form of the local conditional-independence principle used to
 factor the visible-cell laws in the Aldous--Hoover representation.
 
+The block whose law is controlled may be a sub-block of the hidden block: if `C` is a finite set
+of cells in the rectangle and `B ⊆ C`, then `B` is conditionally independent of the complement of
+the hidden block `C` given the reservoir, the rectangle with `C` removed. Nothing forces `B` to
+be all of `C`, and `C` need not be minimal, so the reservoir -- the rest of the rectangle -- may be
+chosen coarsely as long as it still avoids `B`.
+
 ## References
 
 * D. Aldous, "Representations for partially exchangeable arrays of random variables",
@@ -111,42 +117,47 @@ theorem SeparatelyExchangeable.condIndepFun_domRestrict_of_finite_reindexing
   obtain ⟨a, b, ha, hb, hfix, hinto⟩ := hreindex C hC hCU
   exact hρ.condIndepFun_domRestrict_of_reindexing C R D hRD a b ha hb hfix hinto
 
-/-- A finite set of array entries in an infinite rectangle is conditionally independent of the
-rest of the array given the other entries of that rectangle. -/
-theorem SeparatelyExchangeable.condIndepFun_domRestrict_compl_of_finite
+/-- **A finite block of array entries in an infinite rectangle is conditionally independent of
+everything outside a finite block containing it, given the rest of the rectangle.**
+
+The entries that are read off are the sub-block `B ⊆ C`, while the conditioning set is the
+rectangle with the whole hidden block `C` removed, and the events compared are those of the
+complement of `C`. Taking `B = C` recovers the statement that one finite block is conditionally
+independent of the rest of the array given the other entries of the rectangle; taking `B` to be
+a proper sub-block of `C` says the same for a part of the hidden block, with a reservoir that is
+allowed to hide more of the hidden block than that part needs.
+
+`C` is the only set that has to be finite: `B` needs no finiteness hypothesis of its own, since
+`B ⊆ C`. -/
+theorem SeparatelyExchangeable.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) {S T : Set ℕ} (hS : S.Infinite)
-    (hT : T.Infinite) {C : Set (ℕ × ℕ)} (hC : C.Finite) (hCsub : C ⊆ S ×ˢ T) :
-    C.domRestrict ⟂ᵢ[(S ×ˢ T \ C).domRestrict, Set.measurable_restrict _; ρ]
+    (hT : T.Infinite) {B C : Set (ℕ × ℕ)} (hC : C.Finite) (hBsub : B ⊆ C)
+    (hCsub : C ⊆ S ×ˢ T) :
+    B.domRestrict ⟂ᵢ[((S ×ˢ T) \ C).domRestrict, Set.measurable_restrict _; ρ]
       Cᶜ.domRestrict := by
-  let F : Set ℕ := Prod.fst '' C
-  let G : Set ℕ := Prod.snd '' C
-  have hFS : F ⊆ S := by
+  have hFS : Prod.fst '' C ⊆ S := by
     rintro i ⟨p, hp, rfl⟩
     exact (hCsub hp).1
-  have hGT : G ⊆ T := by
+  have hGT : Prod.snd '' C ⊆ T := by
     rintro j ⟨p, hp, rfl⟩
     exact (hCsub hp).2
-  -- Reindex each axis into the rectangle while fixing every coordinate used by the block.
+  -- Each axis of the rectangle reindexes into itself while fixing every coordinate used by `C`.
   obtain ⟨a, ha, haF, haS⟩ := hS.exists_injective_into_eqOn_of_finite
     (hC.image Prod.fst) hFS
   obtain ⟨b, hb, hbG, hbT⟩ := hT.exists_injective_into_eqOn_of_finite
     (hC.image Prod.snd) hGT
-  let R : Set (ℕ × ℕ) := S ×ˢ T \ C
-  let D : Set (ℕ × ℕ) := Cᶜ
-  have hRD : R ⊆ D := Set.sdiff_subset_compl _ _
-  have hfixed : ∀ c ∈ C, (a c.1, b c.2) = c := by
-    intro c hc
-    exact Prod.ext (haF c.1 ⟨c, hc, rfl⟩) (hbG c.2 ⟨c, hc, rfl⟩)
-  have hmem : ∀ q ∈ D, (a q.1, b q.2) ∈ R := by
-    intro q hq
-    refine ⟨⟨haS _, hbT _⟩, fun hc ↦ hq ?_⟩
-    have hq1 : q.1 = a q.1 :=
-      ha (haF (a q.1) ⟨(a q.1, b q.2), hc, rfl⟩).symm
-    have hq2 : q.2 = b q.2 :=
-      hb (hbG (b q.2) ⟨(a q.1, b q.2), hc, rfl⟩).symm
-    have hqeq : q = (a q.1, b q.2) := Prod.ext hq1 hq2
-    exact hqeq ▸ hc
-  exact hρ.condIndepFun_domRestrict_of_reindexing C R D hRD a b ha hb hfixed hmem
+  refine hρ.condIndepFun_domRestrict_of_finite_reindexing (S ×ˢ T \ C) Cᶜ B
+    (Set.sdiff_subset_compl _ _) ?_
+  intro C' _ hC'B
+  refine ⟨a, b, ha, hb, fun p hp => ?_, fun p hp => ?_⟩
+  · exact Prod.ext (haF p.1 ⟨p, hBsub (hC'B hp), rfl⟩) (hbG p.2 ⟨p, hBsub (hC'B hp), rfl⟩)
+  · refine ⟨⟨haS p.1, hbT p.2⟩, fun hc ↦ hp ?_⟩
+    have hp1 : p.1 = a p.1 :=
+      ha (haF (a p.1) ⟨(a p.1, b p.2), hc, rfl⟩).symm
+    have hp2 : p.2 = b p.2 :=
+      hb (hbG (b p.2) ⟨(a p.1, b p.2), hc, rfl⟩).symm
+    have hpEq : p = (a p.1, b p.2) := Prod.ext hp1 hp2
+    exact hpEq ▸ hc
 
 end TauCeti.Probability
 
