@@ -105,7 +105,6 @@ theorem quiverEulerPairing_apply
 
 /-- On classes of finite-dimensional representations, the transported pairing is the Euler form
 of their dimension vectors. -/
-@[simp]
 theorem quiverEulerPairing_of_of
     (M N : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :
     quiverEulerPairing k Q (ExactK0.of M) (ExactK0.of N) =
