@@ -31,8 +31,21 @@ public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
   (U : Subgroup G) (t : G ⧸ U → G)
+
+private theorem continuous_inv_smul_coset (hU : IsOpen (U : Set G)) (u : G ⧸ U) :
+    Continuous (fun γ : G => γ⁻¹ • u) := by
+  have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
+  rw [continuous_discrete_rng]
+  intro v
+  have h : (fun γ : G => γ⁻¹ • u) ⁻¹' {v} =
+      (fun γ : G => γ • v) ⁻¹' {u} := by
+    ext γ
+    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using
+      (inv_smul_eq_iff (g := γ) (a := u) (b := v)).trans eq_comm
+  rw [h]
+  exact (isOpen_discrete _).preimage (continuous_id.smul continuous_const)
 
 /-- For an *open* subgroup `U` the transversal word `γ ↦ ℓᵗ_u(γ)` is continuous, for any map `t`
 at all: the quotient `G ⧸ U` is discrete, so `γ ↦ t (γ⁻¹ • u)` is locally constant. -/
@@ -41,7 +54,9 @@ theorem continuous_lWord (hU : IsOpen (U : Set G)) (u : G ⧸ U) : Continuous (l
   have h : lWord U t u = fun γ : G => (t u)⁻¹ * γ * t (γ⁻¹ • u) := funext (lWord_def U t u)
   rw [h]
   exact (continuous_const.mul continuous_id).mul
-    (continuous_of_discreteTopology.comp (continuous_inv.smul continuous_const))
+    (continuous_of_discreteTopology.comp (continuous_inv_smul_coset U hU u))
+
+variable [ContinuousInv G]
 
 /-- For an *open* subgroup `U` the transversal word is continuous jointly in its group variable
 and in a coset index translated by a second group variable: `(γ, η) ↦ ℓᵗ_{γ⁻¹ • u}(η)`. Here both

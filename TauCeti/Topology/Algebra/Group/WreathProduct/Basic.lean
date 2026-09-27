@@ -33,8 +33,34 @@ instance instTopologicalSpace [TopologicalSpace D] [TopologicalSpace ι] :
 variable {D ι} {κ : Type*} [TopologicalSpace D] [TopologicalSpace ι]
   [TopologicalSpace κ]
 
+/-- A map into a permutation wreath product is continuous exactly when each base and
+permutation coordinate is continuous. -/
+theorem continuous_iff {α : Type*} [TopologicalSpace α]
+    {f : α → WreathProduct D ι} :
+    Continuous f ↔
+      (∀ i, Continuous fun a => (f a).left i) ∧
+      (∀ i, Continuous fun a => (f a).right i) := by
+  constructor
+  · intro hf
+    have h : Continuous (fun a => ((f a).left, ((f a).right : ι → ι))) :=
+      continuous_induced_rng.mp hf
+    exact ⟨fun i => (continuous_apply i).comp h.fst,
+      fun i => (continuous_apply i).comp h.snd⟩
+  · rintro ⟨hl, hr⟩
+    exact continuous_induced_rng.mpr ((continuous_pi hl).prodMk (continuous_pi hr))
+
+/-- Evaluation of a base coordinate is continuous. -/
+@[continuity, fun_prop] theorem continuous_left (i : ι) :
+    Continuous (fun w : WreathProduct D ι => w.left i) :=
+  (continuous_iff.mp continuous_id).1 i
+
+/-- Evaluation of a permutation coordinate is continuous. -/
+@[continuity, fun_prop] theorem continuous_right (i : ι) :
+    Continuous (fun w : WreathProduct D ι => w.right i) :=
+  (continuous_iff.mp continuous_id).2 i
+
 /-- Relabeling a wreath product is continuous when the relabeling of its index type is
-continuous. Both coordinates are checked in the coordinate topology. -/
+continuous. -/
 theorem continuous_congr (e : ι ≃ κ) (he : Continuous e) :
     Continuous (congr (D := D) e) := by
   have hcoords : Continuous (fun w : WreathProduct D ι =>

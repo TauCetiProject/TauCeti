@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 public import TauCeti.GroupTheory.TransversalWord
-public import Mathlib.GroupTheory.IndexNormal
 
 /-!
 # The monomial homomorphism of a subgroup transversal
@@ -34,7 +33,7 @@ variable {G : Type u} [Group G] (U : Subgroup G)
 /-- The monomial homomorphism associated to a transversal `t` of `U`. Its permutation part is
 left translation on `G ⧸ U`; the coordinate at `x` is the element
 `t(x)⁻¹ g t(g⁻¹ • x)` of `U`. -/
-@[expose] def monomialHom (t : G ⧸ U → G)
+def monomialHom (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     G →* WreathProduct U (G ⧸ U) where
   toFun g := ⟨(fun x => ⟨lWord U t x g, lWord_mem U t ht x g⟩),
@@ -93,11 +92,19 @@ variable [U.FiniteIndex]
 
 /-- Relabel the cosets by `Fin (G : U)`, identifying the monomial representation with a
 homomorphism to `U^(G : U) ⋊ Sym(G : U)`. The coset-indexed map above avoids this labeling. -/
-@[expose] noncomputable def monomialFinHom (t : G ⧸ U → G)
+noncomputable def monomialFinHom (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     G →* WreathProduct U (Fin U.index) :=
   (WreathProduct.congr
     (Finite.equivFinOfCardEq U.index_eq_card.symm)).toMonoidHom.comp (monomialHom U t ht)
+
+/-- The finite-coordinate homomorphism is the relabeling of the coset-indexed map. -/
+theorem monomialFinHom_apply (t : G ⧸ U → G)
+    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) :
+    monomialFinHom U t ht g =
+      WreathProduct.congr (Finite.equivFinOfCardEq U.index_eq_card.symm)
+        (monomialHom U t ht g) := by
+  rfl
 
 /-- A finite coordinate is the transversal word at the corresponding coset. -/
 @[simp] theorem monomialFinHom_left (t : G ⧸ U → G)

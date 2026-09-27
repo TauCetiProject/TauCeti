@@ -401,7 +401,7 @@ section DegreeOne
 Openness of `U` makes every corestriction cochain continuous, so the cochain layer above descends
 to `H¹ = Z¹/B¹`. -/
 
-variable [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
+variable [TopologicalSpace G] [ContinuousMul G]
   [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
   (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
   (hU : IsOpen (U : Set G))
