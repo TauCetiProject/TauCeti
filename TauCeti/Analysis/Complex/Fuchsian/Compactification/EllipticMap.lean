@@ -47,13 +47,15 @@ theorem card_stabilizer_dvd_card_stabilizer (h : Δ ≤ Γ) (z : ℍ) :
     Nat.card (stabilizer Δ z) ∣ Nat.card (stabilizer Γ z) :=
   card_dvd_of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
 
-/-- The elliptic ramification index at `z` is the ratio of the stabilizer orders. -/
-def ellipticRamificationIndex (_h : Δ ≤ Γ) (z : ℍ) : ℕ :=
+/-- The elliptic ramification index at `z` is the ratio of the finite stabilizer orders. -/
+def ellipticRamificationIndex (_h : Δ ≤ Γ) (z : ℍ)
+    [Finite (stabilizer Δ z)] [Finite (stabilizer Γ z)] : ℕ :=
   Nat.card (stabilizer Γ z) / Nat.card (stabilizer Δ z)
 
 /-- The stabilizer order upstairs times the elliptic ramification index is the stabilizer
 order downstairs. -/
-theorem card_stabilizer_mul_ellipticRamificationIndex (h : Δ ≤ Γ) (z : ℍ) :
+theorem card_stabilizer_mul_ellipticRamificationIndex (h : Δ ≤ Γ) (z : ℍ)
+    [Finite (stabilizer Δ z)] [Finite (stabilizer Γ z)] :
     Nat.card (stabilizer Δ z) * ellipticRamificationIndex h z =
       Nat.card (stabilizer Γ z) := by
   exact Nat.mul_div_cancel' (card_stabilizer_dvd_card_stabilizer h z)
@@ -66,7 +68,8 @@ theorem ellipticRamificationIndex_pos [Finite (stabilizer Δ z)]
 
 /-- The ratio of stabilizer orders is the group-theoretic index of the smaller stabilizer
 inside the larger one. -/
-theorem ellipticRamificationIndex_eq_index [Finite (stabilizer Γ z)] :
+theorem ellipticRamificationIndex_eq_index
+    [Finite (stabilizer Δ z)] [Finite (stabilizer Γ z)] :
     ellipticRamificationIndex h z = (stabilizerInclusion h z).range.index := by
   rw [ellipticRamificationIndex, Subgroup.index_eq_card_div]
   rw [Nat.card_congr (Equiv.ofInjective (stabilizerInclusion h z)
@@ -83,7 +86,7 @@ theorem ellipticRamificationIndex_self (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
 /-- Elliptic ramification indices multiply in a tower of subgroup inclusions. -/
 theorem ellipticRamificationIndex_mul {Θ : Subgroup PSL(2, ℝ)}
     (h : Δ ≤ Γ) (k : Γ ≤ Θ) (z : ℍ)
-    [Finite (stabilizer Δ z)] :
+    [Finite (stabilizer Δ z)] [Finite (stabilizer Γ z)] [Finite (stabilizer Θ z)] :
     ellipticRamificationIndex h z * ellipticRamificationIndex k z =
       ellipticRamificationIndex (h.trans k) z := by
   apply Nat.eq_of_mul_eq_mul_left (Nat.card_pos (α := stabilizer Δ z))
