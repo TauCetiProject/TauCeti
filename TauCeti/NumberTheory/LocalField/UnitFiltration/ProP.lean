@@ -17,15 +17,14 @@ Let `K` be a nonarchimedean local field with residue characteristic `p`. This fi
 the group `U(K,1)` of principal units is pro-`p`.
 
 The finite-level input is the unit filtration. Every quotient
-`U(K,m+1) / U(K,m+n+1)` has order `q ^ n`, where `q` is the cardinality of the residue field.
+`U(K,m+1) / U(K,m+n+1)` has order `q ^ n`, where `q` is the cardinality of the residue field
+(`TauCeti.natCard_unitFiltration_succ_quotient_add_succ`).
 Since `q` is a power of `p`, these quotients are `p`-groups. The subgroups `U(K,n+1)` form a
 neighbourhood basis of `1`, so every continuous finite quotient of `U(K,1)` is a quotient of one
 of these finite-level `p`-groups.
 
 ## Main results
 
-* `TauCeti.relIndex_unitFiltration_add_succ`: the index of `U(K,m+n+1)` in `U(K,m+1)` is
-  `q ^ n`.
 * `TauCeti.isPGroup_unitFiltration_succ_quotient_add_succ`: every positive-depth finite-level
   quotient `U(K,m+1) / U(K,m+n+1)` is a `p`-group.
 * `TauCeti.isProP_unitFiltration_one`: the principal-unit group is pro-`p`.
@@ -47,55 +46,12 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- The index of `U(K,m+n+1)` in `U(K,m+1)` is `q ^ n`, where `q = #𝓀[K]`. -/
-theorem relIndex_unitFiltration_add_succ (m n : ℕ) :
-    (unitFiltration K (m + n + 1)).relIndex (unitFiltration K (m + 1)) =
-      (Nat.card 𝓀[K]) ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-      rw [Nat.add_succ]
-      calc
-        (unitFiltration K (m + n + 2)).relIndex (unitFiltration K (m + 1)) =
-            (unitFiltration K (m + n + 2)).relIndex (unitFiltration K (m + n + 1)) *
-              (unitFiltration K (m + n + 1)).relIndex (unitFiltration K (m + 1)) :=
-          (Subgroup.relIndex_mul_relIndex _ _ _
-            (unitFiltration_antitone (K := K) (by omega : m + n + 1 ≤ m + n + 2))
-            (unitFiltration_antitone (K := K) (by omega : m + 1 ≤ m + n + 1))).symm
-        _ = (Nat.card 𝓀[K]) ^ (n + 1) := by
-          rw [relIndex_unitFiltration_succ_succ, ih, pow_succ']
-
-/-- Every inclusion `U(K,m+n+1) ≤ U(K,m+1)` has finite relative index. -/
-noncomputable instance unitFiltration_add_succ_isFiniteRelIndex_succ (m n : ℕ) :
-    (unitFiltration K (m + n + 1)).IsFiniteRelIndex (unitFiltration K (m + 1)) := by
-  rw [Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero, relIndex_unitFiltration_add_succ]
-  exact pow_ne_zero n Nat.card_pos.ne'
-
-/-- Every `U(K,n+1)` has finite relative index in the principal units `U(K,1)`. -/
-noncomputable instance unitFiltration_succ_isFiniteRelIndex_one (n : ℕ) :
-    (unitFiltration K (n + 1)).IsFiniteRelIndex (unitFiltration K 1) := by
-  induction n with
-  | zero => infer_instance
-  | succ n ih =>
-      exact (unitFiltration_add_succ_isFiniteRelIndex_succ n 1).trans ih
-
-/-- The positive-depth finite-level quotient `U(K,m+1) / U(K,m+n+1)` has `q ^ n` elements,
-where `q = #𝓀[K]`. -/
-theorem natCard_unitFiltration_succ_quotient_add_succ (m n : ℕ) :
-    Nat.card (unitFiltration K (m + 1) ⧸
-      (unitFiltration K (m + n + 1)).subgroupOf (unitFiltration K (m + 1))) =
-        (Nat.card 𝓀[K]) ^ n := by
-  rw [← Subgroup.index_eq_card]
-  exact relIndex_unitFiltration_add_succ m n
-
 /-- Every positive-depth finite-level quotient `U(K,m+1) / U(K,m+n+1)` is a `p`-group when `p`
 is the residue characteristic. No primality hypothesis is needed: the residue field is finite,
 so its characteristic is automatically prime. -/
-theorem isPGroup_unitFiltration_succ_quotient_add_succ (p m n : ℕ)
-    (hp : ringChar 𝓀[K] = p) :
+theorem isPGroup_unitFiltration_succ_quotient_add_succ (p : ℕ) [CharP 𝓀[K] p] (m n : ℕ) :
     IsPGroup p (unitFiltration K (m + 1) ⧸
       (unitFiltration K (m + n + 1)).subgroupOf (unitFiltration K (m + 1))) := by
-  let _ : CharP 𝓀[K] p := ringChar.of_eq hp
   let _ := Fintype.ofFinite 𝓀[K]
   obtain ⟨d, -, hcard⟩ := FiniteField.card 𝓀[K] p
   apply IsPGroup.of_card (n := (d : ℕ) * n)
@@ -119,6 +75,7 @@ characteristic of the residue field. Equivalently, every continuous finite quoti
 the residue field is finite. -/
 theorem isProP_unitFiltration_one (p : ℕ) (hp : ringChar 𝓀[K] = p) :
     IsProP p (unitFiltration K 1) := by
+  have _ : CharP 𝓀[K] p := ringChar.of_eq hp
   rw [isProP_iff]
   intro U
   obtain ⟨n, hn⟩ := exists_unitFiltration_subgroupOf_le U
@@ -130,7 +87,7 @@ theorem isProP_unitFiltration_one (p : ℕ) (hp : ringChar 𝓀[K] = p) :
     change IsPGroup p (unitFiltration K 1 ⧸
       (unitFiltration K (n + 1)).subgroupOf (unitFiltration K 1))
     rw [← hlevel]
-    exact isPGroup_unitFiltration_succ_quotient_add_succ p 0 n hp
+    exact isPGroup_unitFiltration_succ_quotient_add_succ p 0 n
   exact hN.of_surjective (QuotientGroup.mapOfLE hn) (QuotientGroup.mapOfLE_surjective hn)
 
 end TauCeti

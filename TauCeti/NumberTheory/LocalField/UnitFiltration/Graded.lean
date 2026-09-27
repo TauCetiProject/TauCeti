@@ -32,6 +32,9 @@ has `#𝓀[K]` elements.
 * `TauCeti.natCard_unitFiltrationGraded_succ` and
   `TauCeti.relIndex_unitFiltration_succ_succ`: the positive graded pieces and relative indices
   have cardinality `#𝓀[K]`.
+* `TauCeti.relIndex_unitFiltration_add_succ` and
+  `TauCeti.natCard_unitFiltration_succ_quotient_add_succ`: more generally,
+  `U(K,m+1) / U(K,m+n+1)` has `#𝓀[K] ^ n` elements.
 
 The final identification reuses Mathlib's `Ideal.quotEquivPowQuotPowSucc`, the linear equivalence
 between a quotient by a nonzero principal ideal and each successive quotient of its powers.
@@ -278,5 +281,43 @@ theorem relIndex_unitFiltration_succ_succ (n : ℕ) :
     (unitFiltration K (n + 2)).relIndex (unitFiltration K (n + 1)) = Nat.card 𝓀[K] := by
   rw [Subgroup.relIndex, Subgroup.index]
   simpa only [UnitFiltrationGraded] using natCard_unitFiltrationGraded_succ (K := K) n
+
+/-- The index of `U(K,m+n+1)` in `U(K,m+1)` is `q ^ n`, where `q = #𝓀[K]`. -/
+theorem relIndex_unitFiltration_add_succ (m n : ℕ) :
+    (unitFiltration K (m + n + 1)).relIndex (unitFiltration K (m + 1)) =
+      (Nat.card 𝓀[K]) ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+      rw [Nat.add_succ]
+      calc
+        (unitFiltration K (m + n + 2)).relIndex (unitFiltration K (m + 1)) =
+            (unitFiltration K (m + n + 2)).relIndex (unitFiltration K (m + n + 1)) *
+              (unitFiltration K (m + n + 1)).relIndex (unitFiltration K (m + 1)) :=
+          (Subgroup.relIndex_mul_relIndex _ _ _
+            (unitFiltration_antitone (K := K) (by omega : m + n + 1 ≤ m + n + 2))
+            (unitFiltration_antitone (K := K) (by omega : m + 1 ≤ m + n + 1))).symm
+        _ = (Nat.card 𝓀[K]) ^ (n + 1) := by
+          rw [relIndex_unitFiltration_succ_succ, ih, pow_succ']
+
+/-- Every inclusion `U(K,m+n+1) ≤ U(K,m+1)` has finite relative index. -/
+noncomputable instance unitFiltration_add_succ_isFiniteRelIndex_succ (m n : ℕ) :
+    (unitFiltration K (m + n + 1)).IsFiniteRelIndex (unitFiltration K (m + 1)) := by
+  rw [Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero, relIndex_unitFiltration_add_succ]
+  exact pow_ne_zero n Nat.card_pos.ne'
+
+/-- Every `U(K,n+1)` has finite relative index in the principal units `U(K,1)`. -/
+noncomputable instance unitFiltration_succ_isFiniteRelIndex_one (n : ℕ) :
+    (unitFiltration K (n + 1)).IsFiniteRelIndex (unitFiltration K 1) := by
+  simpa only [Nat.zero_add] using unitFiltration_add_succ_isFiniteRelIndex_succ (K := K) 0 n
+
+/-- The positive-depth finite-level quotient `U(K,m+1) / U(K,m+n+1)` has `q ^ n` elements,
+where `q = #𝓀[K]`. -/
+theorem natCard_unitFiltration_succ_quotient_add_succ (m n : ℕ) :
+    Nat.card (unitFiltration K (m + 1) ⧸
+      (unitFiltration K (m + n + 1)).subgroupOf (unitFiltration K (m + 1))) =
+        (Nat.card 𝓀[K]) ^ n := by
+  rw [← Subgroup.index_eq_card]
+  exact relIndex_unitFiltration_add_succ m n
 
 end TauCeti
