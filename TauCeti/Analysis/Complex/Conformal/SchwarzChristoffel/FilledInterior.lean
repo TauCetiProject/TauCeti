@@ -66,7 +66,8 @@ theorem image_schwarzChristoffelPrimitive_eq_filledHull_sdiff
     a e z₀ ha hfinite hinfty hinj hx
   have hpq : B p ≠ B q := by
     intro heq
-    have h : (p : OnePoint ℝ) = (q : OnePoint ℝ) := hinj (by simpa [B] using heq)
+    have h : (p : OnePoint ℝ) = (q : OnePoint ℝ) :=
+      hinj (by simpa only [B, schwarzChristoffelCompactifiedBoundary_coe] using heq)
     have : p = q := by simpa using h
     dsimp [p, q] at this
     linarith
