@@ -357,9 +357,22 @@ theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
 /-- The induction endofunctor acts on morphisms by `indBotMap`. -/
 @[simp] theorem indBotRepFunctor_map (f : A ⟶ B) :
     (indBotRepFunctor (k := k) (G := G)).map f = indBotMap f := by
-  -- `indBotMap` transports across `indBotFunctor_obj`; the underlying maps agree directly.
   apply Rep.hom_ext
-  rfl
+  apply Representation.IntertwiningMap.ext
+  apply Representation.IndV.hom_ext (⊥ : Subgroup G).subtype
+    (Representation.trivial k (⊥ : Subgroup G) A.V)
+  intro g
+  apply LinearMap.ext
+  intro a
+  change ((indBotFunctor k G).map ((forget₂ (Rep k G) (ModuleCat k)).map f)).hom
+      (IndV.mk (⊥ : Subgroup G).subtype
+        (Representation.trivial k (⊥ : Subgroup G) A.V) g a) =
+    (indBotMap f).hom
+      (IndV.mk (⊥ : Subgroup G).subtype
+        (Representation.trivial k (⊥ : Subgroup G) A.V) g a)
+  exact (indBotFunctor_map_hom_mk
+    ((forget₂ (Rep k G) (ModuleCat k)).map f) g a).trans
+      (indBotMap_hom_mk f g a).symm
 
 /-- The canonical projection from induction, as a natural transformation. -/
 @[expose] def indBotCounitNatTrans : indBotRepFunctor (k := k) (G := G) ⟶ 𝟭 (Rep k G) where
