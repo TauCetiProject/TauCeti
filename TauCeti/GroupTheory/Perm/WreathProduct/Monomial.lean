@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
-public import TauCeti.Topology.Algebra.Group.TransversalWord
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.GroupTheory.TransversalWord
+public import Mathlib.GroupTheory.IndexNormal
 
 /-!
 # The monomial homomorphism of a subgroup transversal
@@ -29,42 +29,12 @@ namespace TauCeti
 
 universe u v
 
-namespace WreathProduct
-
-variable (D : Type u) (ι : Type v) [Group D]
-
-/-- The coordinate topology on a permutation wreath product. The base coordinates have the
-product topology, while the permutation has the topology of pointwise convergence. -/
-instance instTopologicalSpace [TopologicalSpace D] [TopologicalSpace ι] :
-    TopologicalSpace (WreathProduct D ι) :=
-  TopologicalSpace.induced
-    (fun w : WreathProduct D ι => (w.left, (w.right : ι → ι))) inferInstance
-
-variable {D ι} {κ : Type*} [TopologicalSpace D] [TopologicalSpace ι]
-  [TopologicalSpace κ]
-
-/-- Relabeling a wreath product is continuous when the relabeling of its index type is
-continuous. Both coordinates are checked in the coordinate topology. -/
-theorem continuous_congr (e : ι ≃ κ) (he : Continuous e) :
-    Continuous (congr (D := D) e) := by
-  have hcoords : Continuous (fun w : WreathProduct D ι =>
-      (w.left, (w.right : ι → ι))) := continuous_induced_dom
-  apply continuous_induced_rng.mpr
-  exact (continuous_pi fun i => by
-    simpa only [congr_left, Function.comp_def] using
-      (continuous_apply (e.symm i)).comp hcoords.fst).prodMk
-      (continuous_pi fun i => by
-        simpa only [congr_right, Equiv.permCongr_apply, Function.comp_def] using
-          he.comp ((continuous_apply (e.symm i)).comp hcoords.snd))
-
-end WreathProduct
-
 variable {G : Type u} [Group G] (U : Subgroup G)
 
 /-- The monomial homomorphism associated to a transversal `t` of `U`. Its permutation part is
 left translation on `G ⧸ U`; the coordinate at `x` is the element
 `t(x)⁻¹ g t(g⁻¹ • x)` of `U`. -/
-def monomialHom (t : G ⧸ U → G)
+@[expose] def monomialHom (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     G →* WreathProduct U (G ⧸ U) where
   toFun g := ⟨(fun x => ⟨lWord U t x g, lWord_mem U t ht x g⟩),
@@ -117,43 +87,34 @@ theorem monomialHom_injective (t : G ⧸ U → G)
       _ = h * t x := transversal_smul_mul_lWord U t x h
   exact mul_right_cancel heq'
 
-/-- The monomial homomorphism is continuous when `U` is open. Continuity is coordinatewise:
-the transversal word is locally continuous, and the coset permutation varies continuously at
-each coset. -/
-theorem continuous_monomialHom [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
-    Continuous (monomialHom U t ht) := by
-  apply continuous_induced_rng.mpr
-  exact (continuous_pi fun x =>
-    (continuous_lWord U t hU x).subtype_mk _).prodMk
-      (continuous_pi fun x => continuous_id.smul continuous_const)
-
-/-- The continuous monomial homomorphism for an open subgroup and a chosen transversal. -/
-def monomialContinuousHom [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
-    G →ₜ* WreathProduct U (G ⧸ U) :=
-  ⟨monomialHom U t ht, continuous_monomialHom U hU t ht⟩
-
-/-- The continuous monomial homomorphism has the same underlying homomorphism. -/
-@[simp] theorem monomialContinuousHom_apply [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) :
-    monomialContinuousHom U hU t ht g = monomialHom U t ht g := by
-  rfl
-
 section FiniteIndex
 
 variable [U.FiniteIndex]
 
 /-- Relabel the cosets by `Fin (G : U)`, identifying the monomial representation with a
 homomorphism to `U^(G : U) ⋊ Sym(G : U)`. The coset-indexed map above avoids this labeling. -/
-noncomputable def monomialFinHom (t : G ⧸ U → G)
+@[expose] noncomputable def monomialFinHom (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     G →* WreathProduct U (Fin U.index) :=
   (WreathProduct.congr
     (Finite.equivFinOfCardEq U.index_eq_card.symm)).toMonoidHom.comp (monomialHom U t ht)
+
+/-- A finite coordinate is the transversal word at the corresponding coset. -/
+@[simp] theorem monomialFinHom_left (t : G ⧸ U → G)
+    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x)
+    (g : G) (i : Fin U.index) :
+    ((monomialFinHom U t ht g).left i : G) =
+      lWord U t ((Finite.equivFinOfCardEq U.index_eq_card.symm).symm i) g := by
+  simp [monomialFinHom]
+
+/-- The finite permutation coordinate translates the corresponding coset. -/
+@[simp] theorem monomialFinHom_right (t : G ⧸ U → G)
+    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x)
+    (g : G) (i : Fin U.index) :
+    (monomialFinHom U t ht g).right i =
+      (Finite.equivFinOfCardEq U.index_eq_card.symm)
+        (g • (Finite.equivFinOfCardEq U.index_eq_card.symm).symm i) := by
+  simp [monomialFinHom]
 
 /-- The finite-coordinate monomial homomorphism is injective. -/
 theorem monomialFinHom_injective (t : G ⧸ U → G)
@@ -162,31 +123,6 @@ theorem monomialFinHom_injective (t : G ⧸ U → G)
   (WreathProduct.congr
     (Finite.equivFinOfCardEq U.index_eq_card.symm)).injective.comp
       (monomialHom_injective U t ht)
-
-/-- The finite-coordinate monomial homomorphism is continuous for an open subgroup. -/
-theorem continuous_monomialFinHom [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
-    Continuous (monomialFinHom U t ht) := by
-  have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
-  exact (WreathProduct.continuous_congr
-    (Finite.equivFinOfCardEq U.index_eq_card.symm)
-    continuous_of_discreteTopology).comp (continuous_monomialHom U hU t ht)
-
-/-- The finite-coordinate continuous monomial homomorphism for an open subgroup. -/
-noncomputable def monomialFinContinuousHom [TopologicalSpace G] [ContinuousMul G]
-    [ContinuousInv G] (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
-    G →ₜ* WreathProduct U (Fin U.index) :=
-  ⟨monomialFinHom U t ht, continuous_monomialFinHom U hU t ht⟩
-
-/-- The finite-coordinate continuous map has the finite-coordinate monomial homomorphism as
-its underlying map. -/
-@[simp] theorem monomialFinContinuousHom_apply [TopologicalSpace G] [ContinuousMul G]
-    [ContinuousInv G] (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) :
-    monomialFinContinuousHom U hU t ht g = monomialFinHom U t ht g := by
-  rfl
 
 end FiniteIndex
 
