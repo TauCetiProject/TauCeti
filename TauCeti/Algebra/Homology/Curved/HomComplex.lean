@@ -103,7 +103,7 @@ theorem evenDifferential_eq_zero_iff (f : EvenHom X Y) :
   simp [Prod.ext_iff, sub_eq_zero]
 
 /-- A closed even map gives a cycle in the Hom complex. -/
-@[simp] theorem evenDifferential_hom (f : X ⟶ Y) :
+theorem evenDifferential_hom (f : X ⟶ Y) :
     evenDifferential X Y (f.f₀, f.f₁) = 0 := by
   exact (evenDifferential_eq_zero_iff X Y _).2 ⟨f.comm₀, f.comm₁⟩
 
@@ -129,7 +129,7 @@ def homEquivCycles : (X ⟶ Y) ≃ₗ[R] (evenDifferential X Y).ker where
   simp [homEquivCycles]
 
 /-- An odd boundary is the pair of components of the null-homotopic map it defines. -/
-@[simp] theorem oddDifferential_eq_nullHomotopicMap (h : OddHom X Y) :
+theorem oddDifferential_eq_nullHomotopicMap (h : OddHom X Y) :
     oddDifferential X Y h =
       ((nullHomotopicMap h.1 h.2).f₀, (nullHomotopicMap h.1 h.2).f₁) := by
   simp
