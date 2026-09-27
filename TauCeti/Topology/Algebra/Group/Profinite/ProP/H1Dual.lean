@@ -12,26 +12,27 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.DualRank
 # The `H¹` interpretation for a pro-`p` group: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of the
 # Frattini quotient
 
-For a profinite group `G`, a prime `p`, and the trivial `G`-module `𝔽_p = ZMod p`, a class of
-`H¹(G, 𝔽_p)` is represented by a continuous `1`-cocycle, and with trivial coefficients a
+For a group `G` with a topology, a prime `p`, and the trivial `G`-module `𝔽_p = ZMod p`, a class
+of `H¹(G, 𝔽_p)` is represented by a continuous `1`-cocycle, and with trivial coefficients a
 continuous `1`-cocycle is a continuous character, so
 `TauCeti.ContCohomology.H1EquivOfSmulEqSelf` identifies `H¹(G, 𝔽_p)` with the group of
 continuous `𝔽_p`-valued characters of `G`. The characteristic fact of this degree is that the
 `1`-coboundaries vanish in it — the character group is what is left over, not a quotient of a
-larger group of homomorphisms. Neither the `ZMod p`-module structure that makes this
-identification an isomorphism of `𝔽_p`-vector spaces (`TauCeti.instModuleH1`,
-`TauCeti.h1EquivContinuousZModDual`) nor the `ZMod n`-generality of those two declarations needs
-a profiniteness or a pro-`p` hypothesis, so both live one level up, in
-`TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod`, which this file imports.
+larger group of homomorphisms. The `ZMod p`-module structure that makes this identification an
+isomorphism of `𝔽_p`-vector spaces (`TauCeti.instModuleH1`,
+`TauCeti.h1EquivContinuousZModDual`) needs neither profiniteness nor a pro-`p` hypothesis, and
+holds for every modulus `n`, not only for a prime.
 
-What is specific to the pro-`p` case is the next step. Every continuous `𝔽_p`-valued character of
-`G` kills the pro-`p` Frattini subgroup, so composing the above with precomposition along the
-projection to the Frattini quotient gives the further identification with the continuous
-`𝔽_p`-dual of `G ⧸ Φ(G)` (`TauCeti.h1EquivFrattiniQuotientDual`), whose application lemmas
+Every continuous `𝔽_p`-valued character of `G` also kills the pro-`p` Frattini subgroup, so
+composing the above with precomposition along the projection to the Frattini quotient gives the
+further identification with the continuous `𝔽_p`-dual of `G ⧸ Φ(G)`
+(`TauCeti.h1EquivFrattiniQuotientDual`), whose application lemmas
 `TauCeti.h1EquivFrattiniQuotientDual_apply_mk` and
-`TauCeti.h1EquivFrattiniQuotientDual_symm_apply` compute it in both directions.
+`TauCeti.h1EquivFrattiniQuotientDual_symm_apply` compute it in both directions. This step, too,
+needs neither profiniteness nor a pro-`p` hypothesis; what is specific to a pro-`p` group is the
+numerical transfer that follows, for which compactness and total disconnectedness are needed.
 
-Burnside's basis theorem in cardinal form
+For a profinite pro-`p` group, Burnside's basis theorem in cardinal form
 (`TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`) transfers from the
 continuous dual to `H¹`, and this is the content of the transfer: the dimension of `H¹(G, 𝔽_p)`
 over `𝔽_p` is the topological generator rank of `G`, with no finiteness hypothesis. In particular
@@ -150,9 +151,7 @@ finite-dimensional over `𝔽_p` exactly when `G` is topologically finitely gene
 theorem IsProP.finite_H1_iff (hG : IsProP p G) (htriv : ∀ (g : G) (m : ZMod p), g • m = m) :
     Module.Finite (ZMod p) (H1 G (ZMod p)) ↔ IsTopologicallyFinitelyGenerated G := by
   rw [Module.finite_iff_finite (R := ZMod p), (h1EquivContinuousZModDual htriv).toEquiv.finite_iff,
-    ← Module.finite_iff_finite (R := ZMod p), ← Module.rank_lt_aleph0_iff,
-    ← hG.topologicalGeneratorRank_eq_rank_continuousZModDual,
-    topologicalGeneratorRank_lt_aleph0_iff]
+    ← Module.finite_iff_finite (R := ZMod p), hG.finite_continuousZModDual_iff]
 
 /-- **`H¹(G, 𝔽_p)` counts the generators of `G`.** For a topologically finitely generated
 profinite pro-`p` group, `H¹(G, 𝔽_p)` has `p ^ d(G)` elements, where `d` is the topological
