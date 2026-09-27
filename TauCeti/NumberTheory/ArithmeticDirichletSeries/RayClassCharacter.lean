@@ -13,8 +13,9 @@ import Mathlib.Analysis.Normed.Ring.Finite
 /-!
 # Ideal weights of ray class characters
 
-A ray class character is defined on ideals prime to its modulus. Extending its values by zero
-on the remaining ideals gives a completely multiplicative ideal weight. Its bad primes are
+A ray class character is defined on the ray class group of its modulus. Extending its induced
+evaluation `χ.onIdeals` on prime-to integral ideals by zero on the remaining ideals gives a
+completely multiplicative ideal weight. Its bad primes are
 exactly the prime divisors of the finite part of the modulus. Finiteness of the ray class group
 also makes the weight unitary, so its norm coefficients can be used in the Dirichlet series of
 arithmetic characters.
@@ -37,7 +38,8 @@ namespace TauCeti.GlobalNumberFields.RayClassCharacter
 variable {K : Type*} [Field K] [NumberField K] {𝔪 : Modulus K}
 
 open Classical in
-/-- Extend a ray class character from ideals prime to its modulus by zero on all other ideals. -/
+/-- Extend the induced evaluation `χ.onIdeals` on prime-to integral ideals by zero on all other
+ideals. -/
 noncomputable def toMultiplicativeIdealWeight (χ : RayClassCharacter 𝔪) :
     TauCeti.MultiplicativeIdealWeight K where
   toMonoidWithZeroHom :=
