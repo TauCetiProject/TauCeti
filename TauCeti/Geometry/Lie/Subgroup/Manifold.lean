@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.ChartedSpace
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 
 /-!
 # Smooth subgroup slice charts

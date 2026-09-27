@@ -109,22 +109,26 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
       rw [hzero]
       exact Metric.mem_ball_self hε
   have hΦ_source : Φ.source ⊆ hf.localInverse.source := by
+    -- Expose the restricted homeomorphism hidden by the local names `Φ` and `Φ₀`.
     change (Φ₀.restrOpen V hV).source ⊆ hf.localInverse.source
     rw [OpenPartialHomeomorph.restrOpen_source]
     intro x hx
     rw [← hΦ₀_source_eq]
     exact hx.1
   have hΦ_target : Φ.target ⊆ hf.localInverse.target := by
+    -- Expose the same wrapper so that `restr_target` can describe its target.
     change (hf.localInverse.toOpenPartialHomeomorph.restrOpen V hV).target ⊆
       hf.localInverse.target
     rw [OpenPartialHomeomorph.restrOpen_toPartialEquiv,
       PartialEquiv.restr_target]
     exact inter_subset_left
   have hΦ_contMDiff : ContMDiffOn I 𝓘(ℝ, p × q) ∞ Φ Φ.source := by
+    -- A restriction has the same underlying map as the local inverse; only its source shrinks.
     change ContMDiffOn I 𝓘(ℝ, p × q) ∞ hf.localInverse
       (hf.localInverse.toOpenPartialHomeomorph.restrOpen V hV).source
     exact hf.contMDiffOn_localInverse.mono hΦ_source
   have hΦ_symm_contMDiff : ContMDiffOn 𝓘(ℝ, p × q) I ∞ Φ.symm Φ.target := by
+    -- Its inverse likewise has the local inverse's `invFun`; only its target shrinks.
     change ContMDiffOn 𝓘(ℝ, p × q) I ∞ hf.localInverse.invFun
       (hf.localInverse.toOpenPartialHomeomorph.restrOpen V hV).target
     exact hf.localInverse.contMDiffOn_invFun.mono hΦ_target
