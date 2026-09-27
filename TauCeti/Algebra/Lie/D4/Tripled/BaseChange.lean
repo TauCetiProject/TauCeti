@@ -123,8 +123,9 @@ theorem coordinateMap_surjective : Function.Surjective (coordinateMap A).hom := 
 
 /-- The kernel of the specialized carrier coordinate morphism is its transported defining
 ideal. -/
+@[simp]
 theorem coordinateMap_ker :
-    RingHom.ker (coordinateMap A).hom.toAlgHom.toRingHom =
+    RingHom.ker (coordinateMap A).hom =
       (baseChangeDefiningIdeal A).toIdeal := by
   unfold coordinateMap
   exact CommHopfAlgCat.mkQuotient_ker
@@ -136,6 +137,7 @@ variable {B : Type w} [CommRing B] [Algebra A B]
 
 /-- Mapping a carrier point along the coordinate morphism gives the corresponding quotient
 point of the ambient general linear group. -/
+@[simp]
 theorem mapPointsFunctor_coordinateMap_app
     (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra A) (CommAlgCat.of A B)) :
     (CommHopfAlgCat.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =

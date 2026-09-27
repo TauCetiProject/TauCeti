@@ -64,23 +64,6 @@ noncomputable def standardComodule :
 
 attribute [local instance] GeneralLinear.standardComodule standardComodule
 
-/-- The standard carrier coaction is the general-linear coaction followed by the quotient
-coordinate morphism. -/
-@[simp]
-theorem standardComodule_coact :
-    let _ := GeneralLinear.standardComodule R 24
-    Comodule.corestrictCoact
-        (R := R) (C := GeneralLinear.coordinateHopfAlgebra R 24)
-        (D := coordinateHopfAlgebra R) (M := Fin 24 → R)
-        (coordinateMap R).hom.toCoalgHom =
-      TensorProduct.map LinearMap.id
-          (coordinateMap R).hom.toCoalgHom.toLinearMap ∘ₗ
-        GeneralLinear.standardCoact R 24 := by
-  apply LinearMap.ext
-  intro v
-  rw [Comodule.corestrictCoact_apply, LinearMap.comp_apply,
-    GeneralLinear.standardComodule_coact]
-
 /-- **The standard comodule of the specialized tripled type-`D₄` carrier is faithful.** -/
 theorem isFaithful_standardComodule :
     Comodule.IsFaithful (k := R) (H := coordinateHopfAlgebra R) (V := Fin 24 → R) := by
