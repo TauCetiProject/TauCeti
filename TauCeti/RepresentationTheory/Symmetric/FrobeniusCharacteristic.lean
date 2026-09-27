@@ -40,15 +40,6 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- When the alphabet has at least `n` letters, every partition of `n` indexes a Schur basis
-vector: it has at most `n` nonzero parts. -/
-private def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
-    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
-  toFun μ := ⟨μ, (partition_card_parts_le μ).trans (by simpa using h)⟩
-  invFun μ := μ.1
-  left_inv _ := rfl
-  right_inv _ := Subtype.ext rfl
-
 /-- The finite-variable Frobenius characteristic is the linear equivalence sending the
 character of each complex Specht module to the Schur polynomial of the same shape. -/
 noncomputable def frobeniusCharacteristic (n d : ℕ) (h : n ≤ d) :

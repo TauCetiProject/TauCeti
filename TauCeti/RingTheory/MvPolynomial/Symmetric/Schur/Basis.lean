@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import TauCeti.Combinatorics.Enumerative.Partition.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Monomial
 
@@ -57,6 +58,8 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
   monomials.
 * `TauCeti.msymmBasis`: **the monomial basis**.
 * `TauCeti.schurPolyBasis`: **the Schur basis**.
+* `TauCeti.partitionEquivSchurIndex`: identifies partitions of `n` with the Schur basis index
+  when the alphabet is `Fin d` and `n ≤ d`.
 
 ## Main results
 
@@ -88,6 +91,15 @@ public section
 namespace TauCeti
 
 open Finset MvPolynomial
+
+/-- For an alphabet with at least `n` letters, every partition of `n` indexes a Schur basis
+vector. -/
+@[expose] def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
+    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
+  toFun μ := ⟨μ, (Nat.Partition.card_parts_le μ).trans (by simpa using h)⟩
+  invFun μ := μ.1
+  left_inv _ := rfl
+  right_inv _ := Subtype.ext rfl
 
 section CommSemiring
 
