@@ -47,9 +47,10 @@ theorem moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent
   let G : P.FullSubcategory := ⟨N, inferInstance⟩
   let g : F ⟶ G := ObjectProperty.homMk f
   have hg : Epi g := by
+    have hg_hom : g.hom = f := ObjectProperty.homMk_hom (X := F) (Y := G) f
     apply P.ι.epi_of_epi_map
-    change Epi f
-    infer_instance
+    rw [ObjectProperty.ι_map, hg_hom]
+    exact (inferInstance : Epi f)
   have hΓ : Epi ((tildeEquiv (R := R)).inverse.map g) :=
     Functor.map_epi _ g
   have hmap : (tildeEquiv (R := R)).inverse.map g =
