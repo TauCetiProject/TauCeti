@@ -52,20 +52,15 @@ theorem shortPathCoords_apply (n : ℕ) (x : pathAlgebra k Q) (p : ShortPath Q n
 theorem ker_shortPathCoords (n : ℕ) :
     LinearMap.ker (shortPathCoords k Q n) = pathSpan k Q n := by
   ext x
-  rw [LinearMap.mem_ker, mem_pathSpan_iff]
+  rw [LinearMap.mem_ker, mem_pathSpan_iff, shortPathCoords, LinearMap.comp_apply,
+    Finsupp.lsubtypeDomain_apply, Finsupp.subtypeDomain_eq_zero_iff']
   constructor
   · intro hx p hp
     by_contra hn
-    have hlt : p.2.2.length < n := Nat.lt_of_not_ge hn
-    have h := congrArg (fun y : ShortPath Q n →₀ k => y ⟨p, hlt⟩) hx
-    exact hp (by simpa using h)
-  · intro hx
-    apply Finsupp.ext
-    intro ⟨p, hp⟩
-    rw [shortPathCoords_apply]
-    by_cases h : (pathAlgebraBasis k Q).repr x p = 0
-    · simp [h]
-    · exact (hp.not_ge (hx p h)).elim
+    exact hp (hx p (Nat.lt_of_not_ge hn))
+  · intro hx p hp
+    by_contra hn
+    exact hp.not_ge (hx p hn)
 
 /-- Every collection of coefficients on short paths extends to a path-algebra element. -/
 theorem shortPathCoords_surjective (n : ℕ) :
