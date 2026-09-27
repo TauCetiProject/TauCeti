@@ -33,7 +33,9 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-noncomputable local instance : Fintype 𝓀[K] := Fintype.ofFinite _
+/-- The finite residue field, used to state the quadratic character formula. -/
+noncomputable local instance instFintypeOddResidueFormula : Fintype 𝓀[K] :=
+  Fintype.ofFinite _
 
 /-- The sign of the quadratic character of the reduction of an integral unit. -/
 noncomputable def oddResidueSign (u : 𝒪[K]ˣ) : ℤˣ :=
