@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.MacWilliams.Basic
+public import TauCeti.InformationTheory.Coding.Weight.Enumerator
 
 /-!
 # MacWilliams checks for the zero and whole-space codes
@@ -30,13 +30,6 @@ namespace TauCeti
 open MvPolynomial
 
 variable {R ι : Type*} [Semiring R] [DecidableEq R] [Fintype ι]
-
-/-- The zero code has just its zero word, of weight zero. -/
-theorem weightEnumerator_bot :
-    ((⊥ : Submodule R (ι → R)) : Set (ι → R)).weightEnumerator =
-      (X 0 : MvPolynomial (Fin 2) ℤ) ^ Fintype.card ι := by
-  simp only [Submodule.bot_coe, weightEnumerator_singleton, hammingNorm_zero,
-    Nat.sub_zero, pow_zero, mul_one]
 
 variable [Finite R]
 
