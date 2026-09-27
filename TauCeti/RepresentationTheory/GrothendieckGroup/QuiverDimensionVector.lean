@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
-public import TauCeti.CategoryTheory.GrothendieckGroup.Exact
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 
@@ -39,8 +38,11 @@ open scoped ModuleCat
 
 universe u v w
 
-variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q] [Finite Q]
-  [FiniteDimensional k (pathAlgebra k Q)]
+variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
+
+section DimensionVector
+
+variable [Finite Q] [FiniteDimensional k (pathAlgebra k Q)]
 
 private noncomputable def quiverDimensionVectorInvariant :
     ExactK0.AdditiveInvariant (finiteModulesExactStructure (pathAlgebra k Q)) (Q → ℤ) where
@@ -89,9 +91,12 @@ theorem quiverDimensionVectorK0_unique
     f = quiverDimensionVectorK0 k Q :=
   ExactK0.lift_unique (quiverDimensionVectorInvariant k Q) f hf
 
+end DimensionVector
+
 section EulerPairing
 
 variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
+  [FiniteDimensional k (pathAlgebra k Q)]
 
 /-- The Ringel form pulled back to the exact Grothendieck group of finite-dimensional path
 algebra modules. This is the integral form against which the Ext-Euler pairing is compared. -/
