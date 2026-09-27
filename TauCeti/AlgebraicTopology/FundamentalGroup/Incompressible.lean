@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.Topology.Maps.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
+public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 
 /-!
@@ -71,9 +72,7 @@ theorem comp {T : Type*} [TopologicalSpace T] {g : C(M, T)}
   have hcomp (γ : FundamentalGroup S s) :
       FundamentalGroup.map (g.comp f) s γ =
         FundamentalGroup.map g (f s) (FundamentalGroup.map f s γ) := by
-    change Path.Homotopic.Quotient.map γ (g.comp f) =
-      Path.Homotopic.Quotient.map (Path.Homotopic.Quotient.map γ f) g
-    exact Path.Homotopic.Quotient.map_comp
+    exact FundamentalGroupoid.map_comp_map g f γ
   rw [hcomp γ₁, hcomp γ₂] at hγ
   exact hγ
 
