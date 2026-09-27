@@ -23,7 +23,9 @@ so this applies to the nonsingular points of singular Weierstrass curves as well
   a commutative ring.
 * `WeierstrassCurve.Affine.Point.equivVariableChange_some` and
   `WeierstrassCurve.Affine.Point.equivVariableChange_symm_some`: the forward and inverse
-  coordinate formulas, both tagged `@[simp]`.
+  coordinate formulas; `WeierstrassCurve.Affine.Point.equivVariableChange_zero` and
+  `WeierstrassCurve.Affine.Point.equivVariableChange_symm_zero`: both fix the point at
+  infinity. All four are tagged `@[simp]`.
 * `WeierstrassCurve.Affine.Point.addEquivVariableChange`: the group isomorphism over a field
   with decidable equality, whose underlying functions are given by
   `WeierstrassCurve.Affine.Point.coe_addEquivVariableChange` and
@@ -91,20 +93,38 @@ private lemma mapVariableChangeFun_injective :
     exact ⟨hx,
       (C.u.isUnit.pow 3).mul_left_cancel (by linear_combination hY - (C.u : R) ^ 2 * C.s * hx)⟩
 
+private lemma cast_zero {V V' : WeierstrassCurve R} (h : V = V') :
+    Equiv.cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) 0 = 0 := by
+  subst h; rfl
+
+private lemma cast_some {V V' : WeierstrassCurve R} (h : V = V') {x y : R}
+    (hns : V.toAffine.Nonsingular x y) :
+    Equiv.cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) (.some x y hns)
+      = .some x y (h ▸ hns) := by
+  subst h; rfl
+
 /-- The inverse map `W.Point → (C • W).Point`, induced by `C⁻¹` via `C⁻¹ • (C • W) = W`. -/
-private def mapVariableChangeInvFun : W.toAffine.Point → (C • W).toAffine.Point
-  | .zero => .zero
-  | .some x y h => .some (((C⁻¹).u : R) ^ 2 * x + (C⁻¹).r)
-      (((C⁻¹).u : R) ^ 3 * y + ((C⁻¹).u : R) ^ 2 * (C⁻¹).s * x + (C⁻¹).t)
-      ((variableChange_nonsingular (C • W) C⁻¹ x y).mpr ((inv_smul_smul C W).symm ▸ h))
+private def mapVariableChangeInvFun (P : W.toAffine.Point) : (C • W).toAffine.Point :=
+  mapVariableChangeFun (C • W) C⁻¹
+    (Equiv.cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point)
+      (inv_smul_smul C W).symm) P)
+
+private lemma mapVariableChangeInvFun_some {x y : R} (h : W.toAffine.Nonsingular x y) :
+    mapVariableChangeInvFun W C (.some x y h)
+      = .some (((C⁻¹).u : R) ^ 2 * x + (C⁻¹).r)
+          (((C⁻¹).u : R) ^ 3 * y + ((C⁻¹).u : R) ^ 2 * (C⁻¹).s * x + (C⁻¹).t)
+          ((variableChange_nonsingular (C • W) C⁻¹ x y).mpr
+            ((inv_smul_smul C W).symm ▸ h)) := by
+  rw [mapVariableChangeInvFun, cast_some (inv_smul_smul C W).symm, mapVariableChangeFun_some]
 
 private lemma mapVariableChangeFun_mapVariableChangeInvFun (P : W.toAffine.Point) :
     mapVariableChangeFun W C (mapVariableChangeInvFun W C P) = P := by
   rcases P with _ | ⟨x, y, h⟩
-  · rfl
+  · rw [mapVariableChangeInvFun, ← zero_def, cast_zero (inv_smul_smul C W).symm,
+      mapVariableChangeFun_zero, mapVariableChangeFun_zero]
   · have hu : (C.u : R) * ((C.u⁻¹ : Rˣ) : R) = 1 := C.u.mul_inv
-    simp only [mapVariableChangeInvFun, mapVariableChangeFun_some, some.injEq,
-      VariableChange.inv_def]
+    rw [mapVariableChangeInvFun_some, mapVariableChangeFun_some]
+    simp only [some.injEq, VariableChange.inv_def]
     set a := (C.u : R) * ((C.u⁻¹ : Rˣ) : R)
     exact ⟨by linear_combination (a + 1) * (x - C.r) * hu,
       by linear_combination ((a ^ 2 + a + 1) * (y - C.s * x + C.r * C.s - C.t)
@@ -126,6 +146,14 @@ def equivVariableChange : (C • W).toAffine.Point ≃ W.toAffine.Point where
           ((variableChange_nonsingular W C x y).mpr h) :=
   mapVariableChangeFun_some W C h
 
+/-- The change-of-variables bijection fixes the point at infinity. -/
+@[simp] lemma equivVariableChange_zero : equivVariableChange W C 0 = 0 :=
+  mapVariableChangeFun_zero W C
+
+/-- The inverse of the change-of-variables bijection fixes the point at infinity. -/
+@[simp] lemma equivVariableChange_symm_zero : (equivVariableChange W C).symm 0 = 0 :=
+  (Equiv.symm_apply_eq _).2 (equivVariableChange_zero W C).symm
+
 private lemma equivVariableChange_symm_apply (P : W.toAffine.Point) :
     (equivVariableChange W C).symm P = mapVariableChangeInvFun W C P := rfl
 
@@ -135,8 +163,8 @@ private lemma equivVariableChange_symm_apply (P : W.toAffine.Point) :
       = .some (((C⁻¹).u : R) ^ 2 * x + (C⁻¹).r)
           (((C⁻¹).u : R) ^ 3 * y + ((C⁻¹).u : R) ^ 2 * (C⁻¹).s * x + (C⁻¹).t)
           ((variableChange_nonsingular (C • W) C⁻¹ x y).mpr
-            ((inv_smul_smul C W).symm ▸ h)) :=
-  equivVariableChange_symm_apply W C _
+            ((inv_smul_smul C W).symm ▸ h)) := by
+  rw [equivVariableChange_symm_apply, mapVariableChangeInvFun_some]
 
 end Point
 
@@ -169,10 +197,14 @@ private lemma addEquivVariableChange_apply (P : (C • W).toAffine.Point) :
 private lemma addEquivVariableChange_symm_apply (P : W.toAffine.Point) :
     (addEquivVariableChange W C).symm P = (equivVariableChange W C).symm P := rfl
 
+/-- The group isomorphism `addEquivVariableChange` has underlying function
+`equivVariableChange`. -/
 @[simp] lemma coe_addEquivVariableChange :
     ⇑(addEquivVariableChange W C) = equivVariableChange W C :=
   funext (addEquivVariableChange_apply W C)
 
+/-- The inverse of the group isomorphism `addEquivVariableChange` has underlying function the
+inverse of `equivVariableChange`. -/
 @[simp] lemma coe_addEquivVariableChange_symm :
     ⇑(addEquivVariableChange W C).symm = (equivVariableChange W C).symm :=
   funext (addEquivVariableChange_symm_apply W C)
