@@ -32,12 +32,12 @@ theorem parts_equivCast {m l : ℕ} (h : m = l) (p : m.Partition) :
     (Equiv.cast (congrArg Nat.Partition h) p).parts = p.parts := by
   subst h; rfl
 
-namespace Nat.Partition
-
 /-- The number of parts of a partition is at most the number it partitions. -/
-theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
+theorem partition_card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
   have h := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx => μ.parts_pos hx)
   simpa [μ.parts_sum] using h
+
+namespace Nat.Partition
 
 /-- The partition `(1ⁿ)` of `n` into `n` parts, each equal to `1`.
 
