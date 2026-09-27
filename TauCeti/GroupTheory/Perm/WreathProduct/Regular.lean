@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
+public import TauCeti.GroupTheory.Perm.Subgroup
 public import Mathlib.GroupTheory.RegularWreathProduct
-public import Mathlib.GroupTheory.Perm.Subgroup
 
 /-!
 # Regular wreath products as permutation wreath products
@@ -32,22 +32,6 @@ namespace TauCeti
 universe u v
 
 variable (D : Type u) (Q : Type v) [Group D] [Group Q]
-
-/-- Restricting `MulAction.toPermHom` to its image leaves its action on points unchanged. -/
-@[simp]
-theorem subgroupOfMulAction_apply (G H : Type*) [Group G] [MulAction G H]
-    [FaithfulSMul G H] (g : G) (x : H) :
-    ((Equiv.Perm.subgroupOfMulAction G H g : (MulAction.toPermHom G H).range) :
-      Equiv.Perm H) x = g • x := rfl
-
-/-- The inverse of Cayley's equivalence acts by the inverse group element. -/
-@[simp]
-theorem subgroupOfMulAction_inv_apply (G H : Type*) [Group G] [MulAction G H]
-    [FaithfulSMul G H] (g : G) (x : H) :
-    (((Equiv.Perm.subgroupOfMulAction G H g : (MulAction.toPermHom G H).range) :
-      Equiv.Perm H)⁻¹) x = g⁻¹ • x := by
-  simpa only [map_inv, Subgroup.coe_inv] using
-    subgroupOfMulAction_apply G H g⁻¹ x
 
 /-- Mathlib's regular wreath product is the permutation wreath product whose top group
 is the left regular image of `Q`. The isomorphism preserves each base coordinate. -/
