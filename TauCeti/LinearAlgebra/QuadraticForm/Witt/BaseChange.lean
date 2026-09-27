@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
-public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Pfister.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.Witt.FundamentalIdeal
+public import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Base change of Witt theory
@@ -29,8 +30,7 @@ modulo two and every power of the fundamental ideal.
 * `TauCeti.WittGrothendieckRing.baseChange` and `TauCeti.WittRing.baseChange`: scalar extension
   as ring homomorphisms, with identity and tower laws.
 * `TauCeti.WittRing.baseChange_mk`: compatibility with the Witt-ring quotient map.
-* `TauCeti.WittRing.baseChange_oneFoldPfisterClass` and
-  `TauCeti.WittRing.baseChange_pfisterClass`: compatibility with Pfister generators.
+* `TauCeti.WittRing.baseChange_oneFoldPfisterClass`: compatibility with one-fold Pfister classes.
 * `TauCeti.WittRing.map_fundamentalIdeal_pow_le`: compatibility with the fundamental ideal
   filtration.
 
@@ -242,13 +242,6 @@ theorem WittRing.baseChange_oneFoldPfisterClass (a : Kˣ) :
     (RegularFormPresentation.ext (by simp) fun i ↦ ?_)
   apply Units.ext
   simp
-
-/-- Scalar extension carries a Pfister class to the class with mapped parameters. -/
-@[simp]
-theorem WittRing.baseChange_pfisterClass {n : ℕ} (a : Fin n → Kˣ) :
-    WittRing.baseChange (L := L) (pfisterClass a) =
-      pfisterClass (fun i ↦ Units.map (algebraMap K L).toMonoidHom (a i)) := by
-  simp only [pfisterClass_eq_prod, map_prod, WittRing.baseChange_oneFoldPfisterClass]
 
 /-- Scalar extension to the same field is the identity Witt ring homomorphism. -/
 @[simp]
