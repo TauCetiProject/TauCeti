@@ -40,8 +40,8 @@ integral toral closure is used; no flatness is asserted.
   points of the integral short-root toral closure, as matrices.
 * `TauCeti.G2ShortRoot.PrimeField.weightTorusPoints_conj_rootSubgroupPoints`: the pinning
   equation on points.
-* `TauCeti.G2ShortRoot.PrimeField.weightTorus_conj_rootSubgroup`: the same pinning equation on
-  scheme-valued points.
+* `TauCeti.G2ShortRoot.PrimeField.weightTorus_conj_rootSubgroup`: the same torus-conjugation
+  equation on scheme-valued points.
 * `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_rootSubgroup` and
   `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_weightTorus`: the point maps induced
   by the scheme-level generators are the named pinned point homomorphisms.

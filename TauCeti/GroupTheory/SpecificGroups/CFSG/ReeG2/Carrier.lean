@@ -62,7 +62,7 @@ that any group below is finite, perfect, or simple.
 * `TauCeti.ReeG2LieIndex.rootGeneratorWeight_eq_root_simpleIndex` certifies that the carrier and
   index use the same Bourbaki numbering of the simple roots.
 * `TauCeti.ReeG2LieIndex.weightTorusPoints_conj_simpleRootSubgroup` states the corresponding
-  pinning equation on the index's numbered root subgroups.
+  torus-conjugation equation on the index's numbered root subgroups.
 * `TauCeti.ReeG2LieIndex.frobenius_eq_primeFrobenius_pow` identifies the `q`-power Frobenius as
   the recorded iterate of the prime-field one.
 * `TauCeti.ReeG2LieIndex.mem_fixedSubgroup_frobenius_iff` characterizes the `q`-rational points
