@@ -36,11 +36,13 @@ the trivialization up to the automorphisms of `L`; an automorphism of `L` given 
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.RigidifiedLineBundle s`: line bundles on `Y` rigidified along `s`;
+* `RigidifiedLineBundle.trivial`: the canonically rigidified structure sheaf;
 * `TauCeti.AlgebraicGeometry.RigidifiedLineBundle.pullback`: pullback along a commutative square;
 * `TauCeti.AlgebraicGeometry.RigidifiedLineBundleClass s`: isomorphism classes of rigidified line
   bundles, with `RigidifiedLineBundleClass.mk_eq_mk_iff` characterizing equality of classes;
 * `TauCeti.AlgebraicGeometry.RigidifiedLineBundleClass.pullback`, with the functoriality
-  statements `RigidifiedLineBundleClass.pullback_id` and `RigidifiedLineBundleClass.pullback_comp`;
+  statements `RigidifiedLineBundleClass.pullback_id`, `RigidifiedLineBundleClass.pullback_comp`,
+  and `RigidifiedLineBundleClass.pullback_trivial`;
 * `TauCeti.AlgebraicGeometry.RigidifiedLineBundleClass.toLineBundleClass`: forgetting the
   trivialization, compatibly with pullback (`toLineBundleClass_pullback`).
 
@@ -78,6 +80,23 @@ structure RigidifiedLineBundle (s : T ⟶ Y) where
 namespace RigidifiedLineBundle
 
 variable {s : T ⟶ Y}
+
+/-- The structure sheaf, with its canonical rigidification along `s`. -/
+-- The underlying sheaf must reduce to the unit for pullback coherence isomorphisms.
+@[expose]
+def trivial (s : T ⟶ Y) : RigidifiedLineBundle s where
+  lineBundle := ⟨SheafOfModules.unit Y.ringCatSheaf, inferInstance⟩
+  rigidification := Scheme.Modules.pullbackObjUnitIso s
+
+/-- The underlying sheaf of the canonical rigidified line bundle is the structure sheaf. -/
+@[simp]
+lemma trivial_lineBundle_obj (s : T ⟶ Y) :
+    (trivial s).lineBundle.obj = 𝟙_ Y.Modules := rfl
+
+/-- The rigidification of the trivial line bundle is the canonical pullback isomorphism. -/
+@[simp]
+lemma trivial_rigidification (s : T ⟶ Y) :
+    (trivial s).rigidification = Scheme.Modules.pullbackObjUnitIso s := rfl
 
 /-- Isomorphism of rigidified line bundles: an isomorphism of the underlying line bundles whose
 pullback along `s` carries the first trivialization to the second. -/
@@ -234,6 +253,36 @@ lemma pullback_mk (w : s' ≫ h = g ≫ s) (P : RigidifiedLineBundle s) :
     pullback w (mk P) = mk (RigidifiedLineBundle.pullback w P) :=
   (rfl)
 
+/-- Base change preserves the canonically rigidified trivial line bundle. -/
+lemma pullback_trivial (w : s' ≫ h = g ≫ s) :
+    pullback w (mk (RigidifiedLineBundle.trivial s)) =
+      mk (RigidifiedLineBundle.trivial s') := by
+  rw [pullback_mk, mk_eq_mk_iff]
+  let e : (RigidifiedLineBundle.pullback w (RigidifiedLineBundle.trivial s)).lineBundle.obj ≅
+      (RigidifiedLineBundle.trivial s').lineBundle.obj :=
+    Scheme.Modules.pullbackObjUnitIso h
+  refine ⟨e, ?_⟩
+  simp only [e, RigidifiedLineBundle.pullbackRigidification,
+    RigidifiedLineBundle.pullback_rigidification, RigidifiedLineBundle.trivial,
+    Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom]
+  -- Expose the unit sheaf underlying the pulled-back bundle so the pullback coherence lemmas match.
+  change (Scheme.Modules.pullback s').map (Scheme.Modules.pullbackObjUnitIso h).hom ≫
+      (Scheme.Modules.pullbackObjUnitIso s').hom =
+    (Scheme.Modules.pullbackComp s' h).hom.app (𝟙_ Y.Modules) ≫
+      (Scheme.Modules.pullbackCongr w).hom.app (𝟙_ Y.Modules) ≫
+      (Scheme.Modules.pullbackComp g s).inv.app (𝟙_ Y.Modules) ≫
+      (Scheme.Modules.pullback g).map (Scheme.Modules.pullbackObjUnitIso s).hom ≫
+      (Scheme.Modules.pullbackObjUnitIso g).hom
+  rw [← cancel_epi ((Scheme.Modules.pullbackComp s' h).inv.app _)]
+  simp only [Iso.inv_hom_id_app_assoc]
+  rw [Scheme.Modules.pullbackObjUnitIso_comp s' h]
+  calc
+    _ = (Scheme.Modules.pullbackCongr w).hom.app (𝟙_ Y.Modules) ≫
+          (Scheme.Modules.pullbackObjUnitIso (g ≫ s)).hom :=
+        (Scheme.Modules.pullbackObjUnitIso_congr w).symm
+    _ = _ := by
+        rw [← Scheme.Modules.pullbackObjUnitIso_comp g s]
+
 /-- Pullback along a square whose vertical morphisms are identities is the identity on classes of
 rigidified line bundles. -/
 lemma pullback_id {h : Y ⟶ Y} {g : T ⟶ T} (hh : h = 𝟙 Y) (hg : g = 𝟙 T) (w : s ≫ h = g ≫ s)
@@ -269,6 +318,15 @@ def toLineBundleClass : RigidifiedLineBundleClass s → LineBundleClass Y :=
 lemma toLineBundleClass_mk (P : RigidifiedLineBundle s) :
     toLineBundleClass (mk P) = LineBundleClass.mk P.lineBundle :=
   (rfl)
+
+/-- Forgetting the rigidification of the canonical class gives the identity of the Picard
+monoid. -/
+lemma toLineBundleClass_trivial :
+    toLineBundleClass (mk (RigidifiedLineBundle.trivial s)) = 1 := by
+  rw [toLineBundleClass_mk]
+  rw [← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff]
+  rw [RigidifiedLineBundle.trivial_lineBundle_obj, InvertibleSheaf.trivial_obj]
+  exact ⟨(TauCeti.SheafOfModules.freePUnitIsoUnit Y.ringCatSheaf).symm⟩
 
 /-- Forgetting the trivialization commutes with pullback. -/
 @[simp]

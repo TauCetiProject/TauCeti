@@ -35,6 +35,16 @@ complex whose middle term is discrete has discrete cycles and discrete homology,
 degreewise for a homological complex. This is what makes continuous cohomology of a discrete
 representation of a compact group an isomorphism problem between *discrete* topological modules
 rather than between the quotient topologies the cochain spaces happen to carry.
+
+Both identifications are then turned into elementwise constructors. `ShortComplex.cyclesMkOfEq`
+builds the cycle determined by an element of the middle term killed by `S.g`; it is the
+counterpart, for `TopModuleCat R`, of Mathlib's `CategoryTheory.ShortComplex.cyclesMk`, which asks
+for an abelian category and so does not apply here. `ShortComplex.descHomologyₗ` descends a linear
+map out of the cycles that vanishes on the kernel of the class map to a linear map out of the
+homology; unlike Mathlib's `CategoryTheory.ShortComplex.descHomology` it produces a *linear* map
+into an arbitrary module rather than a morphism of `TopModuleCat R`, which is what a bilinear
+operation on homology, such as a cup product, needs in its first variable. Both have degreewise
+forms for a homological complex.
 -/
 
 public section
@@ -59,6 +69,13 @@ theorem exact_of_forget₂_map_eq {X₁ X₂ X₃ : TopModuleCat R} {f : X₁ �
     (e₃ := e₃.toLinearEquiv) (g₁₂ := f.hom.toLinearMap) (g₂₃ := g.hom.toLinearMap)
     (congrArg ModuleCat.Hom.hom ((Iso.inv_comp_eq e₁).1 hf.symm).symm)
     (congrArg ModuleCat.Hom.hom ((Iso.inv_comp_eq e₂).1 hg.symm).symm) h
+
+/-- The continuous linear equivalence underlying an isomorphism of topological modules acts as the
+forward morphism of the isomorphism. -/
+@[simp]
+theorem _root_.CategoryTheory.Iso.toContinuousLinearEquiv_apply {X Y : TopModuleCat R} (e : X ≅ Y)
+    (x : X) : e.toContinuousLinearEquiv x = e.hom x :=
+  rfl
 
 end TopModuleCat
 
@@ -136,6 +153,65 @@ theorem discreteTopology_homology [DiscreteTopology S.X₂] : DiscreteTopology S
   have := discreteTopology_cycles S
   (homologyIsoCoker S).toContinuousLinearEquiv.toHomeomorph.isEmbedding.discreteTopology
 
+/-- The cycle of a short complex of topological modules determined by an element of the middle
+term killed by `S.g`. This is the counterpart for `TopModuleCat R` of Mathlib's
+`CategoryTheory.ShortComplex.cyclesMk`, which requires an abelian category. -/
+noncomputable def cyclesMkOfEq (x : S.X₂) (hx : S.g x = 0) : S.cycles :=
+  (S.isoCyclesOfIsLimit (TopModuleCat.isLimitKer S.g)).hom ⟨x, hx⟩
+
+/-- The underlying element of `S.cyclesMkOfEq x hx` is `x`. -/
+@[simp]
+theorem iCycles_cyclesMkOfEq (x : S.X₂) (hx : S.g x = 0) :
+    S.iCycles (S.cyclesMkOfEq x hx) = x := by
+  have h := ConcreteCategory.congr_hom
+    (S.isoCyclesOfIsLimit_hom_iCycles (TopModuleCat.isLimitKer S.g)) ⟨x, hx⟩
+  simp only [ConcreteCategory.comp_apply, Limits.KernelFork.ι_ofι] at h
+  -- the point of the kernel fork is `TopModuleCat.ker S.g` and its leg is the subtype inclusion,
+  -- by definition of `TopModuleCat.isLimitKer`
+  exact h
+
+/-- A cycle is the cycle determined by its underlying element. -/
+@[simp]
+theorem cyclesMkOfEq_iCycles (z : S.cycles) (hz : S.g (S.iCycles z) = 0) :
+    S.cyclesMkOfEq (S.iCycles z) hz = z :=
+  S.iCycles_injective (S.iCycles_cyclesMkOfEq _ hz)
+
+section descHomology
+
+variable {W : Type*} [AddCommGroup W] [Module R W]
+
+/-- **Descent of a linear map to homology.** A linear map out of the cycles of a short complex of
+topological modules that vanishes on the kernel of the class map `S.homologyπ` descends to a linear
+map out of the homology, with `descHomologyₗ_π` as its defining equation. Unlike Mathlib's
+`CategoryTheory.ShortComplex.descHomology`, the target is an arbitrary module rather than an object
+of `TopModuleCat R`, so that maps into spaces of linear maps can be descended. -/
+noncomputable def descHomologyₗ (k : S.cycles →ₗ[R] W) (hk : ∀ z, S.homologyπ z = 0 → k z = 0) :
+    S.homology →ₗ[R] W :=
+  (S.toCycles.hom.range.liftQ k
+    (show S.toCycles.hom.range ≤ LinearMap.ker k from fun z hz ↦
+      LinearMap.mem_ker.2 (hk z (S.homologyπ_eq_zero_iff.2 (LinearMap.mem_range.1 hz))))).comp
+    (homologyIsoCoker S).toContinuousLinearEquiv.toLinearEquiv.toLinearMap
+
+/-- The defining equation of `descHomologyₗ`: on the class of a cycle it takes the given value. -/
+@[simp]
+theorem descHomologyₗ_π (k : S.cycles →ₗ[R] W) (hk : ∀ z, S.homologyπ z = 0 → k z = 0)
+    (z : S.cycles) : S.descHomologyₗ k hk (S.homologyπ z) = k z := by
+  have h := ConcreteCategory.congr_hom (homologyπ_comp_homologyIsoCoker_hom S) z
+  simp only [ConcreteCategory.comp_apply] at h
+  rw [descHomologyₗ, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_toLinearEquiv, Iso.toContinuousLinearEquiv_apply, h,
+    TopModuleCat.hom_cokerπ, Submodule.mkQ_apply]
+  exact Submodule.liftQ_apply _ k z
+
+end descHomology
+
+/-- When the incoming map of a short complex of topological modules vanishes, the class map from
+its cycles to its homology is injective. -/
+theorem homologyπ_injective_of_f_eq_zero (hf : S.f = 0) :
+    Function.Injective S.homologyπ.hom :=
+  have := S.isIso_homologyπ hf
+  (asIso S.homologyπ).toContinuousLinearEquiv.injective
+
 end CategoryTheory.ShortComplex
 
 namespace HomologicalComplex
@@ -173,5 +249,65 @@ homology in degree `n`. -/
 theorem discreteTopology_homology [DiscreteTopology (K.X n)] : DiscreteTopology (K.homology n) :=
   have : DiscreteTopology (K.sc n).X₂ := ‹DiscreteTopology (K.X n)›
   ShortComplex.discreteTopology_homology (K.sc n)
+
+section Elementwise
+
+variable {n}
+
+/-- The degree-`n` cycle of a homological complex of topological modules determined by an element
+of degree `n` killed by the differential to the next degree `j`. This is the counterpart for
+`TopModuleCat R` of Mathlib's `HomologicalComplex.cyclesMk`, which requires an abelian category. -/
+noncomputable def cyclesMkOfEq (x : K.X n) (j : ι) (hj : c.next n = j) (hx : (K.d n j).hom x = 0) :
+    K.cycles n :=
+  (K.sc n).cyclesMkOfEq x (by subst hj; exact hx)
+
+/-- The underlying element of `K.cyclesMkOfEq x j hj hx` is `x`. -/
+@[simp]
+theorem iCycles_cyclesMkOfEq (x : K.X n) (j : ι) (hj : c.next n = j) (hx : (K.d n j).hom x = 0) :
+    K.iCycles n (K.cyclesMkOfEq x j hj hx) = x := by
+  subst hj
+  exact (K.sc n).iCycles_cyclesMkOfEq x _
+
+/-- The differential vanishes on the underlying element of a cycle. -/
+@[simp]
+theorem d_iCycles_apply (j : ι) (z : K.cycles n) : (K.d n j).hom (K.iCycles n z) = 0 := by
+  have h := ConcreteCategory.congr_hom (K.iCycles_d n j) z
+  simpa only [ConcreteCategory.comp_apply, TopModuleCat.hom_zero_apply] using h
+
+/-- The underlying element of the cycle `K.toCycles i n x` is the differential of `x`. -/
+@[simp]
+theorem iCycles_toCycles_apply (i : ι) [K.HasHomology n] (x : K.X i) :
+    K.iCycles n (K.toCycles i n x) = (K.d i n).hom x := by
+  have h := ConcreteCategory.congr_hom (K.toCycles_i i n) x
+  simpa only [ConcreteCategory.comp_apply] using h
+
+section descHomology
+
+variable {W : Type*} [AddCommGroup W] [Module R W]
+
+/-- **Descent of a linear map to degreewise homology.** A linear map out of the degree-`n` cycles
+of a homological complex of topological modules that vanishes on the kernel of the class map
+descends to the degree-`n` homology, with `descHomologyₗ_π` as its defining equation. -/
+noncomputable def descHomologyₗ [K.HasHomology n] (k : K.cycles n →ₗ[R] W)
+    (hk : ∀ z, K.homologyπ n z = 0 → k z = 0) : K.homology n →ₗ[R] W :=
+  (K.sc n).descHomologyₗ k hk
+
+/-- The defining equation of `descHomologyₗ`: on the class of a cycle it takes the given value. -/
+@[simp]
+theorem descHomologyₗ_π [K.HasHomology n] (k : K.cycles n →ₗ[R] W)
+    (hk : ∀ z, K.homologyπ n z = 0 → k z = 0) (z : K.cycles n) :
+    K.descHomologyₗ k hk (K.homologyπ n z) = k z :=
+  (K.sc n).descHomologyₗ_π k hk z
+
+end descHomology
+
+/-- When the differential into degree `n` vanishes, the class map from the degree-`n` cycles to
+the degree-`n` homology is injective, `m` being the degree preceding `n`. -/
+theorem homologyπ_injective_of_d_eq_zero [K.HasHomology n] {m : ι} (hm : c.prev n = m)
+    (h : K.d m n = 0) : Function.Injective (K.homologyπ n).hom := by
+  subst hm
+  exact (K.sc n).homologyπ_injective_of_f_eq_zero h
+
+end Elementwise
 
 end HomologicalComplex

@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.Algebra.Squarefree
 
 /-!
-# Polynomials of degree three and four
+# Polynomials of small degree
 
 Splitting criteria for low-degree polynomials and a separability criterion, all read off the
 coefficients.
@@ -28,7 +28,8 @@ coefficients.
 * A monic quadratic `X² + aX + b` divides a depressed quartic `X⁴ + pX² + qX + r` exactly when
   the two coefficients of the remainder of the division vanish. Over `ℤ` this reduces the search
   for a quadratic factor of an explicit quartic to two Diophantine equations, which a reduction
-  modulo a small prime can rule out.
+  modulo a small prime can rule out. The analogous criterion for `X⁵ + cX + d` supports
+  finite-field irreducibility tests for quintics.
 
 Together these turn the single test "the resolvent cubic of a quartic has a root in the base
 field" into the classical resolvent conditions — irreducible, splits completely, exactly one root
@@ -45,6 +46,8 @@ field" into the classical resolvent conditions — irreducible, splits completel
   `Polynomial.Splits.exists_isRoot_ne`
 * `Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_four_add_iff`: when a monic quadratic divides a
   depressed quartic, by explicit division with remainder
+* `Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff`: when a monic quadratic divides
+  `X⁵ + cX + d`
 -/
 
 public section
@@ -251,6 +254,41 @@ theorem X_sq_add_C_mul_X_add_C_dvd_X_pow_four_add_iff (a b p q r : R) :
     have hc1 : q - a ^ 3 + 2 * a * b - a * p = 0 := by rw [hq]; ring
     have hc0 : r - a ^ 2 * b + b ^ 2 - b * p = 0 := by rw [hr]; ring
     rw [hdiv, hc1, hc0, C_0, zero_mul, zero_add, add_zero]
+
+/-- A monic quadratic `X² + aX + b` divides `X⁵ + cX + d` exactly when
+`a⁴ - 3a²b + b² + c = 0` and `a³b - 2ab² + d = 0`. This holds over any commutative ring. -/
+theorem X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff (a b c d : R) :
+    X ^ 2 + C a * X + C b ∣ X ^ 5 + C c * X + C d ↔
+      a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + c = 0 ∧ a ^ 3 * b - 2 * a * b ^ 2 + d = 0 := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact iff_of_true ⟨1, Subsingleton.elim _ _⟩ ⟨Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  -- Extracted from `Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five`.
+  let quotient : R[X] :=
+    X ^ 3 - C a * X ^ 2 + C (a ^ 2 - b) * X + C (-a ^ 3 + 2 * a * b)
+  let remainder : R[X] :=
+    C (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + c) * X + C (a ^ 3 * b - 2 * a * b ^ 2 + d)
+  have hdivision : X ^ 5 + C c * X + C d =
+      (X ^ 2 + C a * X + C b) * quotient + remainder := by
+    simp only [quotient, remainder, map_add, map_sub, map_mul, map_pow, map_neg, map_ofNat]
+    ring
+  constructor
+  · intro hdvd
+    have hrem : X ^ 2 + C a * X + C b ∣ remainder := by
+      rw [hdivision] at hdvd
+      exact (dvd_add_right (dvd_mul_right _ quotient)).mp hdvd
+    have hmonic : (X ^ 2 + C a * X + C b : R[X]).Monic := by monicity!
+    have hdeg : (X ^ 2 + C a * X + C b : R[X]).natDegree = 2 := by compute_degree!
+    have hremdeg : remainder.natDegree ≤ 1 := by dsimp [remainder]; compute_degree
+    have hzero : remainder = 0 := by
+      by_contra hr
+      exact hmonic.not_dvd_of_natDegree_lt hr (by omega) hrem
+    have h1 := congrArg (fun p : R[X] ↦ p.coeff 1) hzero
+    have h0 := congrArg (fun p : R[X] ↦ p.coeff 0) hzero
+    simpa only [remainder, coeff_add, coeff_C_mul_X, coeff_C, coeff_zero,
+      one_ne_zero, zero_ne_one, ite_true, ite_false, add_zero, zero_add] using And.intro h1 h0
+  · rintro ⟨h1, h0⟩
+    refine ⟨quotient, ?_⟩
+    simpa only [remainder, h1, h0, C_0, zero_mul, zero_add, add_zero] using hdivision
 
 end CommRing
 

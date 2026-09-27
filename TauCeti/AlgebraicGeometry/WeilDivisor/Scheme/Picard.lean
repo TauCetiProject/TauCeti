@@ -36,9 +36,8 @@ Hartogs' principle is the order bound defining `𝒪_X(D)`.
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.toLineBundleClass_surjective` and
   `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.classGroupToLineBundleClass_surjective`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.classGroupAddEquivLineBundleClass`, the additive
-  equivalence `Cl(X) ≃+ Pic(X)`;
-* `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.isUnit_lineBundleClass`: every line-bundle class
-  on such a curve is invertible under tensor product.
+  equivalence `Cl(X) ≃+ Pic(X)`. The Picard group structure itself comes from Cartier divisors
+  on any integral scheme.
 
 The argument follows Hartshorne, *Algebraic Geometry*, Proposition II.6.13 and Corollary II.6.16,
 and the Stacks Project, *Divisors*, Tag 0BE0. No formalization is vendored.
@@ -243,21 +242,9 @@ theorem classGroupToLineBundleClass_surjective :
   obtain ⟨D, rfl⟩ := toLineBundleClass_surjective hX a
   exact ⟨_, classGroupToLineBundleClass_divisorClass hX D⟩
 
-/-- **Line bundles on a curve are invertible under tensor product.** Every line-bundle class is
-the class of some `𝒪_X(D)`, which `𝒪_X(-D)` inverts. -/
-theorem isUnit_lineBundleClass (a : LineBundleClass X) : IsUnit a := by
-  obtain ⟨D, rfl⟩ := toLineBundleClass_surjective hX a
-  exact isUnit_toLineBundleClass hX D
-
 omit hX
 
 variable [hX : Fact (∀ y : X, coheight y ≤ 1)]
-
-/-- Tensor product makes the line-bundle classes into the Picard group of a Noetherian integral
-scheme `X` of dimension at most one (`Fact (∀ y : X, coheight y ≤ 1)`) whose codimension-one local
-rings are discrete valuation rings. -/
-noncomputable instance : CommGroup (LineBundleClass X) :=
-  commGroupOfIsUnit (isUnit_lineBundleClass hX.out)
 
 variable (X) in
 /-- **`Cl(X) ≅ Pic(X)`.** On a Noetherian integral scheme of dimension at most one whose

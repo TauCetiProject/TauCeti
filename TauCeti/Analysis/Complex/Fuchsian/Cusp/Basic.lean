@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
@@ -171,6 +172,48 @@ theorem cuspOrbitMk_surjective {Γ : Subgroup PSL(2, ℝ)} :
   intro C
   obtain ⟨c, hc, hC⟩ := C.property
   exact ⟨⟨c, hc⟩, Subtype.ext hC⟩
+
+variable {Δ Γ Θ : Subgroup PSL(2, ℝ)}
+
+/-- Inclusion of projective subgroups sends each cusp orbit to its orbit under the larger group. -/
+def cuspOrbitMap (h : Δ ≤ Γ) : Δ.CuspOrbit → Γ.CuspOrbit :=
+  Subtype.map (Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le
+    (X := OnePoint ℝ) h)) fun _ ⟨c, hc, hC⟩ ↦ by
+      rw [← hC, TauCeti.Setoid.map_of_le_mk]
+      exact (isCuspOrbit_mk_iff c).mpr (hc.mono h)
+
+@[simp]
+theorem cuspOrbitMap_val (h : Δ ≤ Γ) (C : Δ.CuspOrbit) :
+    (cuspOrbitMap h C : Γ.BoundaryOrbit) =
+      Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le
+        (X := OnePoint ℝ) h) C :=
+  (rfl)
+
+@[simp]
+theorem cuspOrbitMap_cuspOrbitMk (h : Δ ≤ Γ) (c : Δ.cuspPoints) :
+    cuspOrbitMap h (Δ.cuspOrbitMk c) =
+      Γ.cuspOrbitMk ⟨c, mem_cuspPoints.mpr ((mem_cuspPoints.mp c.property).mono h)⟩ :=
+  Subtype.ext (by simp)
+
+/-- The cusp-orbit map for a reflexive inclusion is the identity. -/
+@[simp]
+theorem cuspOrbitMap_self : cuspOrbitMap (le_refl Δ) = id := by
+  funext C
+  obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
+  simp
+
+/-- Two subgroup inclusions induce the map for their composite on each cusp orbit. -/
+@[simp]
+theorem cuspOrbitMap_cuspOrbitMap (h : Δ ≤ Γ) (k : Γ ≤ Θ) (C : Δ.CuspOrbit) :
+    cuspOrbitMap k (cuspOrbitMap h C) = cuspOrbitMap (h.trans k) C := by
+  obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
+  simp
+
+/-- Cusp-orbit maps compose along a tower of subgroup inclusions. -/
+theorem cuspOrbitMap_comp (h : Δ ≤ Γ) (k : Γ ≤ Θ) :
+    cuspOrbitMap k ∘ cuspOrbitMap h = cuspOrbitMap (h.trans k) := by
+  funext C
+  exact cuspOrbitMap_cuspOrbitMap h k C
 
 /-- The cusp points of a countable subgroup form a countable set: each is the fixed point of one
 of its parabolic elements. -/

@@ -315,21 +315,20 @@ theorem indClassFun_diagGL (f : GL2ScalarUnipotent F → k) {t : Fin 2 → Fˣ} 
 
 section Elliptic
 
-variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- **The induced class function vanishes on the elliptic classes**: `E` is a field, so
 `(x - u)² = 0` would force `x` to be the scalar `u`, which lies in `F`. -/
 @[simp]
 theorem indClassFun_gl2NonSplitTorusHom (f : GL2ScalarUnipotent F → k) {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    indClassFun (GL2ScalarUnipotent F) f (GL2NonSplitTorusHom F E hE x) = 0 := by
-  have : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
+    indClassFun (GL2ScalarUnipotent F) f (GL2NonSplitTorusHom F E x) = 0 := by
   refine indClassFun_eq_zero_of_forall_sq_ne_zero f fun u hu => hx ⟨(u : F), ?_⟩
   -- the square-zero matrix is the matrix of `(x - u)²`, and `leftMulMatrix` is injective
   have hpow : ((x : E) - algebraMap F E (u : F)) ^ 2 = 0 :=
-    Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E hE) (by
-      rw [map_pow, map_sub, (Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)).commutes,
-        ← GL2NonSplitTorus.coe_gl2NonSplitTorusHom hE, hu, map_zero])
+    Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E) (by
+      rw [map_pow, map_sub, (Algebra.leftMulMatrix (nonSplitTorusBasis F E)).commutes,
+        ← GL2NonSplitTorus.coe_gl2NonSplitTorusHom, hu, map_zero])
   exact (sub_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp hpow)).symm
 
 end Elliptic
@@ -529,15 +528,15 @@ theorem character_GL2ScalarUnipotentInduction_diagGL {t : Fin 2 → Fˣ} (ht : t
 
 section Elliptic
 
-variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- **The scalar--unipotent induced character vanishes on elliptic elements.** -/
 @[simp]
 theorem character_GL2ScalarUnipotentInduction_gl2NonSplitTorusHom {z : Eˣ}
     (hz : (z : E) ∉ Set.range (algebraMap F E)) :
-    (GL2ScalarUnipotentInduction F μ ψ).character (GL2NonSplitTorusHom F E hE z) = 0 := by
+    (GL2ScalarUnipotentInduction F μ ψ).character (GL2NonSplitTorusHom F E z) = 0 := by
   rw [character_GL2ScalarUnipotentInduction_eq_indClassFun]
-  exact GL2ScalarUnipotent.indClassFun_gl2NonSplitTorusHom hE _ hz
+  exact GL2ScalarUnipotent.indClassFun_gl2NonSplitTorusHom _ hz
 
 end Elliptic
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
 public import Mathlib.Probability.Kernel.CondDistrib
+import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.ProductKernel
 
 /-!
@@ -44,23 +45,12 @@ theorem ConditionallyIIDWith.condDistrib_block_ae_eq_pi [StandardBorelSpace α] 
   let K : Kernel (ProbabilityMeasure α) (Fin m → α) :=
     TauCeti.MeasureTheory.iidBlockKernel m
   have hK : μ.map (fun ω => (ν ω, fun i : Fin m => X (k i) ω)) = μ.map ν ⊗ₘ K := by
-    apply Measure.ext_prod
-    intro S B hS hB
-    rw [h.jointLaw_eq_disintegration k hk, Measure.compProd_apply_prod hS hB]
-    rw [Measure.bind_apply (MeasurableSet.prod hS hB)]
-    · simp only [Measure.prod_prod, Measure.dirac_apply' _ hS]
-      rw [← lintegral_indicator hS]
-      have hf : Measurable fun P : ProbabilityMeasure α =>
-          S.indicator (fun P => K P B) P :=
-        (K.measurable_coe hB).indicator hS
-      rw [lintegral_map hf h.measurable_directing]
-      apply lintegral_congr
-      intro ω
-      by_cases hSω : ν ω ∈ S
-      · simp [Set.indicator, hSω, K]
-      · simp [Set.indicator, hSω]
-    · exact (TauCeti.MeasureTheory.measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure
-        ν h.measurable_directing).aemeasurable
+    rw [h.jointLaw_eq_disintegration k hk, Measure.compProd_eq_comp_prod,
+      TauCeti.MeasureTheory.bind_map h.measurable_directing.aemeasurable
+        (Kernel.id ×ₖ K).measurable.aemeasurable]
+    congr 1
+    funext ω
+    simp [K, Kernel.prod_apply, Kernel.id_apply, TauCeti.MeasureTheory.iidBlockKernel_apply]
   have hblock : AEMeasurable (fun ω => fun i : Fin m => X (k i) ω) μ :=
     AEMeasurable.of_eval fun i => h.aemeasurable (k i)
   have hcond := condDistrib_ae_eq_of_measure_eq_compProd

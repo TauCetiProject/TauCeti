@@ -56,6 +56,8 @@ together with the invariant-class constructor `degreeZeroClass` that the same la
 * `TauCeti.ContinuousCohomology.coeffMap_comp_zeroIso_hom`,
   `TauCeti.ContinuousCohomology.res_comp_zeroIso_hom`,
   `TauCeti.ContinuousCohomology.infl_comp_zeroIso_hom`: the same for the three named instances.
+* `TauCeti.ContinuousCohomology.degreeZeroClass_eq_π`: the degree-zero class of an invariant
+  vector is the class of any `0`-cocycle with that value at `1`.
 * `TauCeti.ContinuousCohomology.map_degreeZeroClass`: compatible-pair functoriality on classes of
   invariant vectors.
 * `TauCeti.ContinuousCohomology.isIso_infl_zero`, `TauCeti.ContinuousCohomology.mono_res_zero`:
@@ -226,6 +228,16 @@ noncomputable def degreeZeroClass (X : TopRep R G) (u : X.V) (hu : ∀ g : G, X.
 theorem coe_zeroIso_hom_degreeZeroClass (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
     (dsimp% only (((zeroIso X).hom (degreeZeroClass X u hu)) : X.V)) = u := by
   simp [degreeZeroClass]
+
+/-- **The degree-zero class of an invariant vector is the class of any `0`-cocycle whose value at
+`1` is that vector.** A homogeneous `0`-cocycle is determined by its value at `1`, so this
+identifies `degreeZeroClass` with the class map `π X 0` on cocycles. -/
+theorem degreeZeroClass_eq_π (σ : cocycles X 0) (u : X.V) (hu : ∀ g : G, X.ρ g u = u)
+    (h : ((homogeneousCochains X).iCycles 0 σ).1 1 = u) :
+    degreeZeroClass X u hu = π X 0 σ := by
+  have hσ : (zeroIso X).hom (π X 0 σ) = ⟨u, (ContRepresentation.mem_invariants u).2 hu⟩ :=
+    Subtype.ext ((coe_zeroIso_hom_π X σ).trans h)
+  rw [degreeZeroClass, ← hσ, Iso.hom_inv_id_apply]
 
 /-- Every degree-zero class is the class of an invariant vector. -/
 theorem exists_degreeZeroClass_eq (x : continuousCohomology 0 X) :

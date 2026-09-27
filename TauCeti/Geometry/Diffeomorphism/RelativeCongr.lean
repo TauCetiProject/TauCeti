@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Congr
-public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup
+public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Basic
 
 /-!
 # Transporting relative diffeomorphism groups
