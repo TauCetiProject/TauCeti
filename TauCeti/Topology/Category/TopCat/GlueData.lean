@@ -32,6 +32,13 @@ identifies their images. -/
 def chartRel (i j : D.J) : Set (D.U i × D.U j) :=
   {p | D.Rel ⟨i, p.1⟩ ⟨j, p.2⟩}
 
+/-- Two points in different charts are related exactly when they come from a point in their
+overlap via the two transition maps. -/
+theorem mem_chartRel_iff_exists (i j : D.J) (x : D.U i) (y : D.U j) :
+    (x, y) ∈ D.chartRel i j ↔
+      ∃ z : D.V (i, j), D.f i j z = x ∧ D.f j i (D.t i j z) = y :=
+  Iff.rfl
+
 /-- Membership in the relation between two charts is equivalent to equality of their images in
 the glued space. -/
 @[simp]
@@ -41,23 +48,17 @@ theorem mem_chartRel_iff (i j : D.J) (x : D.U i) (y : D.U j) :
 
 /-- The space obtained by gluing open charts is Hausdorff exactly when the gluing relation between
 every pair of charts is closed in the product of those charts. -/
-theorem t2Space_glued_iff_isClosed_chartRel :
+theorem t2Space_iff_isClosed_chartRel :
     T2Space D.toGlueData.glued ↔ ∀ i j, IsClosed (D.chartRel i j) := by
   constructor
   · intro h i j
     let _ := h
-    have hcontinuous : Continuous fun p : D.U i × D.U j ↦
-        (D.toGlueData.ι i p.1, D.toGlueData.ι j p.2) :=
-      (D.toGlueData.ι i).hom.continuous_toFun.comp continuous_fst |>.prodMk
-        ((D.toGlueData.ι j).hom.continuous_toFun.comp continuous_snd)
-    have heq : D.chartRel i j =
-        (fun p : D.U i × D.U j ↦
-          (D.toGlueData.ι i p.1, D.toGlueData.ι j p.2)) ⁻¹' Set.diagonal _ := by
+    rw [show D.chartRel i j = {p | D.toGlueData.ι i p.1 = D.toGlueData.ι j p.2} by
       ext p
-      rw [Set.mem_preimage, Set.mem_diagonal_iff]
-      exact D.mem_chartRel_iff i j p.1 p.2
-    rw [heq]
-    exact isClosed_diagonal.preimage hcontinuous
+      exact D.mem_chartRel_iff i j p.1 p.2]
+    exact isClosed_eq
+      ((D.toGlueData.ι i).hom.continuous_toFun.comp continuous_fst)
+      ((D.toGlueData.ι j).hom.continuous_toFun.comp continuous_snd)
   · intro h
     rw [t2Space_iff]
     intro x y hxy
