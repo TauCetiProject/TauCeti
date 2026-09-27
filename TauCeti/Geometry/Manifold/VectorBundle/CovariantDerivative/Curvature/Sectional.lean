@@ -83,8 +83,8 @@ theorem sectionalCurvature_eq_of_orthonormal (x : M) (u v : TangentSpace I x)
 theorem sectionalCurvature_smul_smul (x : M) (u v : TangentSpace I x) (a b : ℝ)
     (ha : a ≠ 0) (hb : b ≠ 0) :
     cov.sectionalCurvature x (a • u) (b • v) = cov.sectionalCurvature x u v := by
-  rw [sectionalCurvature_apply, sectionalCurvature_apply, Matrix.det_gram_fin_two,
-    Matrix.det_gram_fin_two]
+  rw [sectionalCurvature_apply, sectionalCurvature_apply, Matrix.real_det_gram_fin_two,
+    Matrix.real_det_gram_fin_two]
   simp only [map_smul, LinearMap.smul_apply, real_inner_smul_left, real_inner_smul_right]
   field_simp [ha, hb]
 
@@ -96,8 +96,8 @@ theorem IsMetricCompatible.sectionalCurvature_comm
       (V := fun x : M ↦ TangentSpace I x) cov)
     (x : M) (u v : TangentSpace I x) :
     cov.sectionalCurvature x u v = cov.sectionalCurvature x v u := by
-  rw [sectionalCurvature_apply, sectionalCurvature_apply, Matrix.det_gram_fin_two,
-    Matrix.det_gram_fin_two, cov.curvatureTensor_antisymm x v u]
+  rw [sectionalCurvature_apply, sectionalCurvature_apply, Matrix.real_det_gram_fin_two,
+    Matrix.real_det_gram_fin_two, cov.curvatureTensor_antisymm x v u]
   simp only [LinearMap.neg_apply, inner_neg_left]
   rw [hcov.inner_curvatureTensor_eq_neg x u v u v, real_inner_comm u]
   rw [real_inner_comm v u]
@@ -109,6 +109,13 @@ def HasSectionalCurvatureAt (x : M) (k : ℝ) : Prop :=
   ∀ (u v : TangentSpace I x), LinearIndependent ℝ ![u, v] →
     cov.sectionalCurvature x u v = k
 
+/-- The pointwise characterization of having prescribed sectional curvature. -/
+theorem hasSectionalCurvatureAt_iff (x : M) (k : ℝ) :
+    cov.HasSectionalCurvatureAt x k ↔
+      ∀ u v : TangentSpace I x, LinearIndependent ℝ ![u, v] →
+        cov.sectionalCurvature x u v = k :=
+  Iff.rfl
+
 /-- Evaluate the prescribed sectional curvature of a linearly independent tangent pair. -/
 theorem HasSectionalCurvatureAt.sectionalCurvature_eq {x : M} {k : ℝ}
     (h : cov.HasSectionalCurvatureAt x k) (u v : TangentSpace I x)
@@ -119,6 +126,11 @@ theorem HasSectionalCurvatureAt.sectionalCurvature_eq {x : M} {k : ℝ}
 every point. -/
 def HasConstantSectionalCurvature (k : ℝ) : Prop :=
   ∀ x : M, cov.HasSectionalCurvatureAt x k
+
+/-- The pointwise characterization of constant sectional curvature. -/
+theorem hasConstantSectionalCurvature_iff (k : ℝ) :
+    cov.HasConstantSectionalCurvature k ↔ ∀ x : M, cov.HasSectionalCurvatureAt x k :=
+  Iff.rfl
 
 /-- Constant sectional curvature specializes to the prescribed curvature at each point. -/
 theorem HasConstantSectionalCurvature.hasSectionalCurvatureAt {k : ℝ}
@@ -132,10 +144,9 @@ theorem hasSectionalCurvatureAt_of_curvatureTensor_eq_smul_inner_sub (x : M) (k 
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
     cov.HasSectionalCurvatureAt x k := by
   intro u v huv
-  have hden : inner ℝ u u * inner ℝ v v - inner ℝ u v ^ 2 ≠ 0 :=
-    ((TauCeti.real_inner_mul_inner_self_sub_sq_pos_iff_linearIndependent u v).2 huv).ne'
-  rw [sectionalCurvature_apply, h u v v, Matrix.det_gram_fin_two]
-  rw [div_eq_iff hden]
+  rw [sectionalCurvature_apply, h u v v,
+    div_eq_iff (Matrix.det_gram_ne_zero_iff_linearIndependent.2 huv),
+    Matrix.real_det_gram_fin_two]
   simp only [inner_sub_left, real_inner_smul_left]
   rw [real_inner_comm v u]
   ring
