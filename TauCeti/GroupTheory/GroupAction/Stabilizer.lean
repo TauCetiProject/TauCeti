@@ -77,6 +77,26 @@ normality of it is equivalent to freeness of the action of the image.
 
 public section
 
+namespace Subgroup
+
+open MulAction
+
+/-- Restricting a group action to a smaller subgroup preserves finiteness of a point
+stabilizer. -/
+theorem finite_stabilizer_of_le {G X : Type*} [Group G] [MulAction G X]
+    {Δ Γ : Subgroup G} (h : Δ ≤ Γ) (x : X)
+    [Finite (stabilizer Γ x)] : Finite (stabilizer Δ x) := by
+  let f : stabilizer Δ x → stabilizer Γ x := fun g =>
+    ⟨⟨g.1.1, h g.1.2⟩, by
+      simpa only [mem_stabilizer_iff, Subgroup.smul_def] using g.2⟩
+  exact Finite.of_injective f (by
+    intro a b hab
+    apply Subtype.ext
+    apply Subtype.ext
+    exact congrArg (fun y : stabilizer Γ x => (y.1 : Γ).1) hab)
+
+end Subgroup
+
 namespace TauCeti
 
 variable {G α : Type*} [Group G] [MulAction G α]
