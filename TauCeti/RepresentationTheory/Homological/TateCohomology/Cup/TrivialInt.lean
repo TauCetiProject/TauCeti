@@ -14,6 +14,9 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 The canonical class of `1` acts as the identity under cup product after removing the left tensor
 unit. Consequently, cup product with a generating class is bijective when the target has the
 order of the finite group.
+
+These Tate cohomology operations are parameterized by a representation and live alongside the
+generic cup product in `TauCeti.TateCohomology`.
 -/
 
 public noncomputable section
