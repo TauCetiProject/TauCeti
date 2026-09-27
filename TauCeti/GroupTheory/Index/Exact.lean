@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Index
+import Mathlib.Algebra.Group.PUnit
 import Mathlib.Tactic.Ring
 
 /-!
@@ -26,15 +27,44 @@ statement about orders.
 
 ## Main results
 
-* `MonoidHom.card_mul_card_mul_card_of_exact`: the six-term alternating identity.
+* `MonoidHom.card_mul_card_mul_card_mul_card_mul_card_of_exact`: the nine-term alternating
+  identity `|A₀| * |A₂| * |A₄| * |A₆| * |A₈| = |A₁| * |A₃| * |A₅| * |A₇|`, the shape of a long exact
+  cohomology sequence cut off by a vanishing `H³`.
+* `MonoidHom.card_mul_card_mul_card_of_exact`: the six-term alternating identity
+  `|A₀| * |A₂| * |A₄| = |A₁| * |A₃| * |A₅|`, the nine-term one padded with trivial groups.
 -/
 
 public section
 
 namespace MonoidHom
 
-variable {A₀ A₁ A₂ A₃ A₄ A₅ : Type*} [Group A₀] [Group A₁] [Group A₂] [Group A₃] [Group A₄]
-  [Group A₅]
+variable {A₀ A₁ A₂ A₃ A₄ A₅ A₆ A₇ A₈ : Type*} [Group A₀] [Group A₁] [Group A₂] [Group A₃]
+  [Group A₄] [Group A₅] [Group A₆] [Group A₇] [Group A₈]
+
+/-- **The alternating product of orders along a nine-term exact sequence.** For an exact sequence
+`1 → A₀ → A₁ → ⋯ → A₇ → A₈ → 1` of groups,
+`|A₀| * |A₂| * |A₄| * |A₆| * |A₈| = |A₁| * |A₃| * |A₅| * |A₇|`. -/
+@[to_additive card_mul_card_mul_card_mul_card_mul_card_of_exact /-- **The alternating product of
+orders along a nine-term exact sequence.** For an exact sequence `0 → A₀ → A₁ → ⋯ → A₇ → A₈ → 0` of
+additive groups, `|A₀| * |A₂| * |A₄| * |A₆| * |A₈| = |A₁| * |A₃| * |A₅| * |A₇|`. -/]
+theorem card_mul_card_mul_card_mul_card_mul_card_of_exact (f₀ : A₀ →* A₁) (f₁ : A₁ →* A₂)
+    (f₂ : A₂ →* A₃) (f₃ : A₃ →* A₄) (f₄ : A₄ →* A₅) (f₅ : A₅ →* A₆) (f₆ : A₆ →* A₇)
+    (f₇ : A₇ →* A₈) (h₀ : Function.Injective f₀) (h₁ : f₀.range = f₁.ker)
+    (h₂ : f₁.range = f₂.ker) (h₃ : f₂.range = f₃.ker) (h₄ : f₃.range = f₄.ker)
+    (h₅ : f₄.range = f₅.ker) (h₆ : f₅.range = f₆.ker) (h₇ : f₆.range = f₇.ker)
+    (h₈ : Function.Surjective f₇) :
+    Nat.card A₀ * Nat.card A₂ * Nat.card A₄ * Nat.card A₆ * Nat.card A₈ =
+      Nat.card A₁ * Nat.card A₃ * Nat.card A₅ * Nat.card A₇ := by
+  have e₀ : Nat.card A₀ = Nat.card f₀.range := by
+    rw [← Subgroup.card_ker_mul_card_range f₀, (ker_eq_bot_iff f₀).2 h₀, Subgroup.card_bot, one_mul]
+  have e₈ : Nat.card A₈ = Nat.card f₇.range := by
+    rw [range_eq_top.2 h₈, Subgroup.card_top]
+  -- at each inner node, `|Aᵢ| = |ker fᵢ| * |range fᵢ| = |range fᵢ₋₁| * |range fᵢ|`
+  rw [e₀, e₈, ← Subgroup.card_ker_mul_card_range f₁, ← h₁, ← Subgroup.card_ker_mul_card_range f₂,
+    ← h₂, ← Subgroup.card_ker_mul_card_range f₃, ← h₃, ← Subgroup.card_ker_mul_card_range f₄,
+    ← h₄, ← Subgroup.card_ker_mul_card_range f₅, ← h₅, ← Subgroup.card_ker_mul_card_range f₆,
+    ← h₆, ← Subgroup.card_ker_mul_card_range f₇, ← h₇]
+  ring
 
 /-- **The alternating product of orders along a six-term exact sequence.** For an exact sequence
 `1 → A₀ → A₁ → A₂ → A₃ → A₄ → A₅ → 1` of groups, `|A₀| * |A₂| * |A₄| = |A₁| * |A₃| * |A₅|`. -/
@@ -46,14 +76,10 @@ theorem card_mul_card_mul_card_of_exact (f₀ : A₀ →* A₁) (f₁ : A₁ →
     (h₂ : f₁.range = f₂.ker) (h₃ : f₂.range = f₃.ker) (h₄ : f₃.range = f₄.ker)
     (h₅ : Function.Surjective f₄) :
     Nat.card A₀ * Nat.card A₂ * Nat.card A₄ = Nat.card A₁ * Nat.card A₃ * Nat.card A₅ := by
-  have e₀ : Nat.card A₀ = Nat.card f₀.range := by
-    rw [← Subgroup.card_ker_mul_card_range f₀, (ker_eq_bot_iff f₀).2 h₀, Subgroup.card_bot, one_mul]
-  have e₅ : Nat.card A₅ = Nat.card f₄.range := by
-    rw [range_eq_top.2 h₅, Subgroup.card_top]
-  -- at each inner node, `|Aᵢ| = |ker fᵢ| * |range fᵢ| = |range fᵢ₋₁| * |range fᵢ|`
-  rw [e₀, e₅, ← Subgroup.card_ker_mul_card_range f₁, ← h₁, ← Subgroup.card_ker_mul_card_range f₂,
-    ← h₂, ← Subgroup.card_ker_mul_card_range f₃, ← h₃, ← Subgroup.card_ker_mul_card_range f₄,
-    ← h₄]
-  ring
+  -- pad the sequence with three trivial groups and read off the nine-term identity
+  have h := card_mul_card_mul_card_mul_card_mul_card_of_exact f₀ f₁ f₂ f₃ f₄ (1 : A₅ →* Unit)
+    (1 : Unit →* Unit) (1 : Unit →* Unit) h₀ h₁ h₂ h₃ h₄ ((range_eq_top.2 h₅).trans ker_one.symm)
+    (Subsingleton.elim _ _) (Subsingleton.elim _ _) (Function.surjective_to_subsingleton _)
+  simpa only [Nat.card_unique, mul_one] using h
 
 end MonoidHom
