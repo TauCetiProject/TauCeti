@@ -252,7 +252,7 @@ private theorem positiveRoot_mulVec_single_sub (i : Fin 7) (a : Fin 56)
     ext b c
     simp
   rw [hmatrix]
-  rw [weightTable.raisingMatrix_map_mulVec_single]
+  rw [Matrix.mulVec_single_one, weightTable.raisingMatrix_map_col]
   simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
 
 private theorem negativeRoot_mulVec_single_sub (i : Fin 7) (a : Fin 56)
@@ -268,7 +268,7 @@ private theorem negativeRoot_mulVec_single_sub (i : Fin 7) (a : Fin 56)
     ext b c
     simp
   rw [hmatrix]
-  rw [weightTable.loweringMatrix_map_mulVec_single]
+  rw [Matrix.mulVec_single_one, weightTable.loweringMatrix_map_col]
   simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
 
 /-- Invariance under the two simple-root points makes membership of coordinate basis vectors
