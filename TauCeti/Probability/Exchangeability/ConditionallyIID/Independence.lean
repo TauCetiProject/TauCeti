@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegration
-import TauCeti.MeasureTheory.Measure.InfinitePiIndependence
+import TauCeti.Probability.Independence.InfinitePi
 import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!

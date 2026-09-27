@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Independence.InfinitePi
-public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import TauCeti.Probability.Independence.DisjointBlocks
 
 /-!
