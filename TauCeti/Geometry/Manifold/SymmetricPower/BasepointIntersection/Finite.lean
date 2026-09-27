@@ -70,7 +70,7 @@ theorem exists_analyticOnNhd_basepointDivisor_equation_in_chart (z : α)
 chart either lies in the basepoint divisor everywhere or meets it at only finitely many points
 of each compact subset. This states the latter case, witnessed by one point outside the divisor.
 The chart-coordinate map is required to be analytic on a neighborhood of every point of `U`.
-The compact zero-set step uses `finite_setOf_mem_and_eq_zero_of_isCompact`. -/
+-/
 theorem finite_basepointDivisor_intersections_in_chart (z : α)
     (hU : IsPreconnected U) (hK : IsCompact K) (hKU : K ⊆ U)
     (hchart : ∀ w ∈ U, f w ∈ (symChartAt (K := ℂ) s).source)
@@ -104,8 +104,7 @@ theorem finite_basepointDivisor_intersections_in_chart (z : α)
 contained in the basepoint divisor, each intersection has a finite, positive order of vanishing.
 The equation characterizes divisor membership throughout the domain.
 In particular, the infinite-order case of `basepointDivisor_intersection_order` cannot occur
-under these hypotheses. Finite order uses
-`AnalyticOnNhd.analyticOrderAt_ne_top_of_isPreconnected`. -/
+under these hypotheses. -/
 theorem basepointDivisor_intersection_order_ne_top_in_chart (z : α)
     (hU : IsPreconnected U)
     (hchart : ∀ t ∈ U, f t ∈ (symChartAt (K := ℂ) s).source)
