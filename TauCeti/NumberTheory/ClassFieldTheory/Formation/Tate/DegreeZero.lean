@@ -36,63 +36,40 @@ to `u` in Tate degree two. This fixes the orientation of the degree-zero Tate is
 theorem cupClass_trivialTateHZeroOne (F : Formation G) (L : NormalLayer G) (u : L.H F 2) :
     cupClass F L u 0 (TauCeti.TateCohomology.trivialTateHZeroOne L.Gal) =
       (L.tateHIsoH F 2).inv u := by
-  let one : (Rep.trivial ℤ L.Gal ℤ).ρ.invariants := ⟨1, by simp [Representation.invariants]⟩
-  have hunit :
-      Rep.tensorInvariant (L.rep F) one ≫ (β_ (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom ≫
-        (λ_ (L.rep F)).hom = 𝟙 (L.rep F) :=
-    Rep.tensorInvariant_one_braiding_leftUnitor (L.rep F)
-  have hcup : TauCeti.TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (L.rep F)
-      0 2 (0 + 2) (by omega) =
-      TauCeti.TateCohomology.cup0H (Rep.trivial ℤ L.Gal ℤ) (L.rep F) 2 := by
-    convert TauCeti.TateCohomology.cup_zero_left
-      (Rep.trivial ℤ L.Gal ℤ) (L.rep F) 2 (by omega) using 1 <;> rfl
-  simp only [TauCeti.TateCohomology.trivialTateHZeroOne]
   rw [cupClass_apply]
-  rw [hcup]
-  rw [TauCeti.TateCohomology.cup0H_H0π]
-  -- The cup definition stores its target degree as `0 + 2`; after specialization it is `2`.
-  change (tateCohomologyFunctor 2).map (λ_ (L.rep F)).hom
-      ((tateCohomologyFunctor 2).map
-        (Rep.tensorInvariant (L.rep F) one ≫
-          (β_ (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom)
-          ((L.tateHIsoH F 2).inv u)) = (L.tateHIsoH F 2).inv u
-  rw [← ModuleCat.comp_apply, ← Functor.map_comp, Category.assoc, hunit]
-  simp
+  convert TauCeti.TateCohomology.cupTrivialInt_trivialTateHZeroOne
+    (L.rep F) ((L.tateHIsoH F 2).inv u) using 1
+  simp only [TauCeti.TateCohomology.cupTrivialInt_apply]
 
 /-- Degree-zero case of Tate's cup-product criterion: if a degree-two class generates
 `H²(U/V, A^V)` and this group has order `[U : V]`, cupping with it is an equivalence from
 degree-zero Tate cohomology with trivial integral coefficients to Tate degree two. -/
-theorem cupClass_zero_bijective (F : Formation G) (L : NormalLayer G) (u : L.H F 2)
+theorem cupClass_degree_zero_bijective (F : Formation G) (L : NormalLayer G) (u : L.H F 2)
     (hgen : ∀ y : L.H F 2, ∃ m : ℤ, m • u = y)
     (hcardH : Nat.card (L.H F 2) = L.degree) :
     Function.Bijective (cupClass F L u 0) := by
-  have hsurj : Function.Surjective (cupClass F L u 0) := by
-    intro x
-    obtain ⟨m, hm⟩ := hgen ((L.tateHIsoH F 2).hom x)
-    refine ⟨m • TauCeti.TateCohomology.trivialTateHZeroOne L.Gal, ?_⟩
-    rw [map_zsmul, cupClass_trivialTateHZeroOne]
+  have hgen' : ∀ y : L.TateH F 2, ∃ m : ℤ, m • (L.tateHIsoH F 2).inv u = y := by
+    intro y
+    obtain ⟨m, hm⟩ := hgen ((L.tateHIsoH F 2).hom y)
+    refine ⟨m, ?_⟩
     apply (L.tateHIsoH F 2).toLinearEquiv.injective
     rw [map_zsmul, Iso.toLinearEquiv_apply, Iso.inv_hom_id_apply]
     rw [Iso.toLinearEquiv_apply]
     exact hm
-  have hcard : Nat.card (L.TrivialTateH 0) = Nat.card (L.TateH F 2) := by
+  have hcard' : Nat.card (L.TateH F 2) = Fintype.card L.Gal := by
     calc
-      Nat.card (L.TrivialTateH 0) = Nat.card L.Gal :=
-        TauCeti.TateCohomology.natCard_tateCohomology_zero_trivial_int_eq_card L.Gal
-      _ = L.degree := L.degree_eq_natCard_gal.symm
-      _ = Nat.card (L.H F 2) := hcardH.symm
-      _ = Nat.card (L.TateH F 2) :=
-        (Nat.card_congr (L.tateHIsoH F 2).toLinearEquiv.toEquiv).symm
-  have hcard' : Nat.card (L.TrivialTateH 0) = Nat.card (L.TateH F (0 + 2)) := by
-    simpa only [zero_add] using hcard
-  have hsource : Nat.card (L.TrivialTateH 0) = L.degree := by
-    exact TauCeti.TateCohomology.natCard_tateCohomology_zero_trivial_int_eq_card L.Gal |>.trans
-      L.degree_eq_natCard_gal.symm
-  have hsource_ne : Nat.card (L.TrivialTateH 0) ≠ 0 := by
-    rw [hsource]
-    exact L.degree_pos.ne'
-  exact (@Nat.bijective_iff_surjective_and_card _ _
-    (Nat.finite_of_card_ne_zero hsource_ne) (cupClass F L u 0)).2 ⟨hsurj, hcard'⟩
+      Nat.card (L.TateH F 2) = Nat.card (L.H F 2) :=
+        Nat.card_congr (L.tateHIsoH F 2).toLinearEquiv.toEquiv
+      _ = L.degree := hcardH
+      _ = Nat.card L.Gal := L.degree_eq_natCard_gal
+      _ = Fintype.card L.Gal := Nat.card_eq_fintype_card
+  have heq : cupClass F L u 0 =
+      TauCeti.TateCohomology.cupTrivialInt (L.rep F) ((L.tateHIsoH F 2).inv u) := by
+    ext x
+    rw [cupClass_apply, TauCeti.TateCohomology.cupTrivialInt_apply]
+  rw [heq]
+  exact TauCeti.TateCohomology.cupTrivialInt_bijective (L.rep F)
+    ((L.tateHIsoH F 2).inv u) hgen' hcard'
 
 namespace ClassFormation
 
@@ -106,7 +83,7 @@ theorem cupFundamentalClass_zero_bijective (cf : ClassFormation F) (L : NormalLa
     ext x
     exact cf.cupFundamentalClass_apply L 0 x
   rw [heq]
-  exact cupClass_zero_bijective F L (cf.fundamentalClass L)
+  exact cupClass_degree_zero_bijective F L (cf.fundamentalClass L)
     (fun y ↦ (cf.fundamentalClass_generates L y).imp fun _ h ↦ h.symm)
     (cf.natCard_H2 L)
 
@@ -125,6 +102,14 @@ theorem cupFundamentalClassZeroEquiv_apply (cf : ClassFormation F) (L : NormalLa
   simpa only [cupFundamentalClassZeroEquiv, zero_add] using
     AddEquiv.ofBijective_apply (cf.cupFundamentalClass L 0)
       (cf.cupFundamentalClass_zero_bijective L) x
+
+/-- The underlying homomorphism of the degree-zero equivalence is cup product with the
+fundamental class. -/
+theorem cupFundamentalClassZeroEquiv_toAddMonoidHom (cf : ClassFormation F)
+    (L : NormalLayer G) :
+    (cf.cupFundamentalClassZeroEquiv L).toAddMonoidHom = cf.cupFundamentalClass L 0 := by
+  ext x
+  exact cf.cupFundamentalClassZeroEquiv_apply L x
 
 end ClassFormation
 
