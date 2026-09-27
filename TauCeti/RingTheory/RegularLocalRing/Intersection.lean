@@ -43,8 +43,12 @@ theory of the associated primes of a module of infinite length, which this file 
 This file develops these local statements, which are the local input for the intersection numbers
 `aᵢⱼ` and the component multiplicities of the special fibre of a regular model of a curve, and
 more generally for the intersection multiplicities of Cartier divisors on a regular surface. The
-local model `R[x, y] ⧸ (xy - πⁿ)` of a node is a regular local ring for `n = 1`, and its two branch
-equations are then a parameter and a second equation outside it, so the length computed here is the
+local model of a node of a regular model of a curve, over a discrete valuation ring `V` with
+uniformiser `π`, is the quotient `V[x, y] ⧸ (xy - πⁿ)`, and the theorems of this file apply to it
+only at the maximal ideal `m = (π, x, y)` of the node: that quotient is not itself a local ring,
+and a regular local ring is what they require. For `n = 1` the local ring of
+`V[x, y] ⧸ (xy - π)` at `m` is a two-dimensional regular local ring, and its two branch equations
+`x` and `y` are a parameter and a second equation outside it, so the length computed here is the
 thickness of that node. For `n > 1` the model is singular, neither branch ideal `(x)` nor `(y)` is
 prime in it, and the theorems of this file do not apply there; the thickness of such a node is a
 separate application of the general length results of `TauCeti.RingTheory.Intersection`.
@@ -73,9 +77,10 @@ ideal of the local ring `R`, a domain by primality of `(f)`, and of dimension on
 `TauCeti.ringKrullDim_quotient_span_singleton_eq_one` along the non-zero-divisor `f`. The image of
 `g` in it is a nonzero element of its maximal ideal, so the ideal it generates has the maximal
 ideal of the curve in its radical; an ideal of `R` that contains the kernel of the quotient map is
-determined by its image there, by `Ideal.map_eq_iff_sup_ker_eq_of_surjective`, so that equality
-pulls back to the radical of `(f, g)` being `𝔪`. The parameter case is that same prime statement of
-`TauCeti.RingTheory.Intersection` specialised to a parameter, whose principal ideal is prime by
+determined by its image there, by `TauCeti.Ideal.eq_of_map_eq_of_le_ker` in
+`TauCeti.RingTheory.Ideal.Maps`, so that equality pulls back to the radical of `(f, g)` being
+`𝔪`. The parameter case is that same prime statement of `TauCeti.RingTheory.Intersection`
+specialised to a parameter, whose principal ideal is prime by
 `TauCeti.span_singleton_isPrime_of_notMem_sq`. The infinite length of the curve over itself, which
 absorbs the remaining summand in the additivity statement, is
 `TauCeti.length_self_eq_top_of_ringKrullDim_pos` in `TauCeti.RingTheory.Length`.
@@ -92,7 +97,7 @@ public section
 
 namespace TauCeti
 
-open Ideal
+open _root_.Ideal
 open _root_.IsLocalRing
 
 universe u
@@ -134,7 +139,7 @@ theorem radical_span_pair_eq_maximalIdeal_of_notMem_sq (hd : ringKrullDim R = 2)
   have hfm : f ∈ maximalIdeal R := by
     rintro hfu
     exact hg (by rw [Ideal.span_singleton_eq_top.mpr hfu]; exact Submodule.mem_top)
-  exact radical_span_pair_eq_maximalIdeal_of_prime hd hfm
+  exact radical_span_pair_eq_maximalIdeal_of_prime hd
     (mem_nonZeroDivisors_of_ne_zero (by rintro rfl; exact hf2 (zero_mem _)))
     (span_singleton_isPrime_of_notMem_sq hfm hf2) hgm hg
 
@@ -150,7 +155,7 @@ theorem isFiniteLength_quotient_span_pair_of_notMem_sq (hd : ringKrullDim R = 2)
   have hfm : f ∈ maximalIdeal R := by
     rintro hfu
     exact hg (by rw [Ideal.span_singleton_eq_top.mpr hfu]; exact Submodule.mem_top)
-  exact isFiniteLength_quotient_span_pair_of_prime hd hfm
+  exact isFiniteLength_quotient_span_pair_of_prime hd
     (mem_nonZeroDivisors_of_ne_zero (by rintro rfl; exact hf2 (zero_mem _)))
     (span_singleton_isPrime_of_notMem_sq hfm hf2) hg
 
@@ -165,8 +170,9 @@ theorem exists_nat_length_quotient_span_pair_of_notMem_sq (hd : ringKrullDim R =
   exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
 
 /-- **The local intersection multiplicity of a proper intersection with a parameter on a regular
-surface is additive over a product of equations.** Let `f ∈ 𝔪 \ 𝔪²` in a two-dimensional regular
-local ring, so that `f` is a parameter, and let `g` and `h` be two further equations. Then
+surface is additive over a product of equations.** Let `f ∉ 𝔪²` in a two-dimensional regular
+local ring, so that `f` is a parameter whenever it is a nonunit, and let `g` and `h` be two further
+equations. Then
 
 `Module.length R (R ⧸ (f, g * h)) = Module.length R (R ⧸ (f, g)) + Module.length R (R ⧸ (f, h))`,
 
@@ -176,21 +182,38 @@ and the parameter is the first, and `TauCeti.length_quotient_span_pair_comm` tra
 statement to the first equation.
 
 This is `TauCeti.length_quotient_span_pair_mul_eq_add_of_prime` for a parameter, whose principal
-ideal is prime. No hypothesis is placed on `h`, and the case where its image on `R ⧸ (f)` is zero,
-that is `h ∈ (f)`, is included: the images of `h` and of `g * h` are both zero there, so
-`R ⧸ (f, h)` and `R ⧸ (f, g * h)` are the curve `f = 0` itself, of infinite length, and the
-remaining summand, finite or infinite, is absorbed by it. When the intersections are proper, that
-is when `(f, g)` and `(f, h)` have radical `𝔪`, all three lengths are natural numbers by
-`TauCeti.exists_nat_length_quotient_span_pair_of_notMem_sq`, and the statement says that the
+ideal is prime, together with the case of a unit `f`, which is admitted here as well: `(f)` is then
+the unit ideal, `(f, g * h)`, `(f, g)` and `(f, h)` are all the unit ideal, and all three lengths
+are zero, so the identity reads `0 = 0 + 0`. No hypothesis is placed on `h`, and the case where its
+image on `R ⧸ (f)` is zero, that is `h ∈ (f)`, is included: the images of `h` and of `g * h` are
+both zero there, so `R ⧸ (f, h)` and `R ⧸ (f, g * h)` are the curve `f = 0` itself, of infinite
+length, and the remaining summand, finite or infinite, is absorbed by it. When the intersections
+are proper, that is when `(f, g)` and `(f, h)` have radical `𝔪`, all three lengths are natural
+numbers by `TauCeti.exists_nat_length_quotient_span_pair_of_notMem_sq`, and the statement says
+that the
 intersection number at the closed point of a union of two curves with a curve through the closed
 point sharing no component with either is the sum of the two intersection numbers. -/
 theorem length_quotient_span_pair_mul_eq_add_of_notMem_sq (hd : ringKrullDim R = 2) {f g h : R}
-    (hf : f ∈ maximalIdeal R) (hf2 : f ∉ maximalIdeal R ^ 2) :
+    (hf2 : f ∉ maximalIdeal R ^ 2) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
       = Module.length R (R ⧸ Ideal.span {f, g}) + Module.length R (R ⧸ Ideal.span {f, h}) := by
-  exact length_quotient_span_pair_mul_eq_add_of_prime hd hf
-    (mem_nonZeroDivisors_of_ne_zero (by rintro rfl; exact hf2 (zero_mem _)))
-    (span_singleton_isPrime_of_notMem_sq hf hf2)
+  by_cases hfu : IsUnit f
+  · -- a unit `f` makes `(f)` the unit ideal, so all three quotients are the zero ring, of length
+    -- zero, and the identity is `0 = 0 + 0`
+    have htop : ∀ x : R, Ideal.span {f, x} = ⊤ := by
+      intro x
+      rw [Ideal.span_insert f ({x} : Set R), Ideal.span_singleton_eq_top.mpr hfu, top_sup_eq]
+    rw [htop (g * h), htop g, htop h]
+    let _ : Subsingleton (R ⧸ (⊤ : Ideal R)) := Submodule.Quotient.subsingleton_iff.mpr rfl
+    simp
+  · -- otherwise `f` is a nonunit of the local ring `R`, so it lies in `𝔪` and is a parameter
+    have hle : Ideal.span {f} ≤ maximalIdeal R :=
+      IsLocalRing.le_maximalIdeal fun htop => hfu (Ideal.span_singleton_eq_top.mp htop)
+    have hfm : f ∈ maximalIdeal R :=
+      (Ideal.span_singleton_le_iff_mem (I := maximalIdeal R)).mp hle
+    exact length_quotient_span_pair_mul_eq_add_of_prime hd
+      (mem_nonZeroDivisors_of_ne_zero (by rintro rfl; exact hf2 (zero_mem _)))
+      (span_singleton_isPrime_of_notMem_sq hfm hf2)
 
 end Surface
 
