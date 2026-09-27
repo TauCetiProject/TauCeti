@@ -158,10 +158,9 @@ theorem h2KummerToUnits_explicitH2AddEquivContinuousCohomology (hn : IsUnit (n :
       ofDiscreteModuleMap
         (kummerShortExact K n hn).inclDistribMulActionHom.toAddMonoidHom.toIntLinearMap
         fun g m ↦ map_smul (kummerShortExact K n hn).inclDistribMulActionHom g m := by
-    rw [kummerCoeffToUnits]
+    rw [kummerCoeffToUnits, DiscreteShortExact.ofDiscreteModuleMap_inclDistribMulActionHom]
     congr 1
-    ext m
-    simp [DiscreteShortExact.inclDistribMulActionHom_apply]
+    exact congrArg AddMonoidHom.toIntLinearMap (kummerShortExact_incl K n hn).symm
   rw [h2KummerToUnits, hmap]
   exact explicitH2AddEquivContinuousCohomology_coeffMap _ _ _
     (kummerShortExact K n hn).inclDistribMulActionHom x

@@ -70,7 +70,8 @@ hypothesis beyond `IsTopologicalGroup G` is needed anywhere in the file.
 
 * `TauCeti.TopPairing`: an equivariant jointly continuous bilinear pairing of topological
   representations, with `TauCeti.ofDiscreteModulePairing` for an equivariant biadditive map of
-  discrete modules, and `TauCeti.TopPairing.flip` for the opposite pairing `(y, x) ↦ μ x y`.
+  discrete modules, `TauCeti.TopPairing.flip` for the opposite pairing `(y, x) ↦ μ x y`, and
+  `TauCeti.TopPairing.res` for the restriction along a monoid homomorphism.
 * `TauCeti.TopPairing.pointwise`: pairing a coefficient with every value of an iterated map.
 * `TauCeti.TopPairing.resolutionCup`: the Alexander–Whitney pairing on the coinduced resolution,
   with explicit total degree.
@@ -178,6 +179,27 @@ namespace TopPairing
 variable {R : Type u} [CommRing R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {X Y Z : TopRep.{max v w} R G} (P : TopPairing X Y Z)
+
+/-! ### The restricted pairing -/
+
+section Res
+
+variable {G : Type v} [Group G] {H : Type*} [Monoid H] {X Y Z : TopRep.{w} R G}
+
+/-- **The restriction of a coefficient pairing** along a monoid homomorphism `φ : H →* G`: the same
+bilinear map, which is `H`-equivariant for the restricted actions. -/
+def res (P : TopPairing X Y Z) (φ : H →* G) :
+    TopPairing (TopRep.res φ X) (TopRep.res φ Y) (TopRep.res φ Z) where
+  bil := P.bil
+  cont := P.cont
+  equivariant h x y := P.equivariant (φ h) x y
+
+/-- The restricted pairing has the same underlying bilinear map. -/
+@[simp]
+theorem res_bil (P : TopPairing X Y Z) (φ : H →* G) : (P.res φ).bil = P.bil :=
+  (rfl)
+
+end Res
 
 /-! ### Pairing a coefficient with every value of an iterated map
 
