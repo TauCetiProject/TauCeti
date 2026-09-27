@@ -592,8 +592,7 @@ statements say that `n` is nonzero, and `algebraMap K L` carries `n` to `n` and 
 is the direction the hypotheses of corestriction travel in, `IsUnit.map (algebraMap K L)` being
 the direction restriction uses. -/
 theorem isUnit_natCast_of_isUnit_natCast (hn : IsUnit (n : L)) : IsUnit (n : K) :=
-  isUnit_iff_ne_zero.2 fun h =>
-    hn.ne_zero (by rw [← map_natCast (algebraMap K L), h, map_zero])
+  IsUnit.of_map (algebraMap K L) (n : K) (by rwa [map_natCast])
 
 /-- **The Kummer coefficients of `L` as Kummer coefficients of `K`**, along a `K`-embedding
 `σ : L →ₐ[K] Kˢ`: the chosen identification `separableClosureRingEquiv K L σ : Lˢ ≃+* Kˢ` read on

@@ -8,6 +8,8 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
+public import TauCeti.FieldTheory.Normal.Embeddings
+public import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # The norm of a finite subextension as a product over the absolute Galois group
@@ -32,10 +34,9 @@ sum `x ↦ ∑ u, t u • x` over a transversal is the standard degree-zero core
 `Kˢ` fixed by `Gal(Kˢ/σ(L))`, that sum is the norm of `L/K`.
 
 Separability of `L/K` is not assumed. An embedding of `L` into a separable closure of `K` forces
-it, because the minimal polynomial of `x : L` over `K` is that of `σ x`, and the argument is
-recorded as `TauCeti.algebra_isSeparable_of_algHom_separableClosure`. Finiteness of `L/K` is used
-twice: it bounds the index of `Gal(Kˢ/σ(L))` by `[L : K]`, so that the coset space is a finite
-index set, and it is the hypothesis of Mathlib's product formula for the norm.
+it by Mathlib's `Algebra.IsSeparable.of_algHom`. Finiteness of `L/K` is used twice: it bounds the
+index of `Gal(Kˢ/σ(L))` by `[L : K]`, so that the coset space is a finite index set, and it is the
+hypothesis of Mathlib's product formula for the norm.
 
 ## Main definitions
 
@@ -44,8 +45,6 @@ index set, and it is the hypothesis of Mathlib's product formula for the norm.
 
 ## Main results
 
-* `TauCeti.algebra_isSeparable_of_algHom_separableClosure`: a field embedding over `K` into a
-  separable closure of `K` is separable over `K`.
 * `TauCeti.algebraMap_norm_eq_prod_transversal`: the norm of `L/K` is the product of the
   conjugates of `σ`, indexed by a transversal of `Gal(Kˢ/σ(L))`.
 
@@ -68,62 +67,37 @@ variable (K : Type*) [Field K] (L : Type*) [Field L] [Algebra K L]
 
 include σ
 
-/-- **A field with a `K`-embedding into a separable closure of `K` is separable over `K`**: the
-minimal polynomial of `x` over `K` is the minimal polynomial of `σ x`, which is separable. -/
-theorem algebra_isSeparable_of_algHom_separableClosure : Algebra.IsSeparable K L :=
-  ⟨fun x => by
-    simpa only [IsSeparable, minpoly.algHom_eq σ σ.injective] using
-      Algebra.IsSeparable.isSeparable K (σ x)⟩
-
-/-- Every `K`-embedding of `L` into `Kˢ` is `σ` moved by an automorphism of `Kˢ`: two embeddings
-into a normal extension differ by an element of its automorphism group. -/
-theorem exists_algHom_comp_eq (f : L →ₐ[K] SeparableClosure K) :
-    ∃ g : AbsoluteGaloisGroup K, g.toAlgHom.comp σ = f := by
-  let _ : Algebra L (SeparableClosure K) := σ.toRingHom.toAlgebra
-  have : IsScalarTower K L (SeparableClosure K) :=
-    IsScalarTower.of_algebraMap_eq fun x => (σ.commutes x).symm
-  refine ⟨AlgEquiv.ofBijective (f.liftNormal (SeparableClosure K))
-    (AlgHom.normal_bijective K (SeparableClosure K) (SeparableClosure K) _),
-    AlgHom.ext fun x => ?_⟩
-  simpa [RingHom.algebraMap_toAlgebra] using f.liftNormal_commutes (SeparableClosure K) x
-
-variable [FiniteDimensional K L]
-
 /-! ### The cosets of the subgroup cut out by `σ` -/
 
-/-- **Two automorphisms of `Kˢ` agree on `σ(L)` exactly when they lie in the same coset** of the
-subgroup `Gal(Kˢ/σ(L))` cut out by `σ`. -/
-theorem algHom_comp_eq_iff_quotientGroup_mk_eq {g₁ g₂ : AbsoluteGaloisGroup K} :
-    g₁.toAlgHom.comp σ = g₂.toAlgHom.comp σ ↔
-      (QuotientGroup.mk g₁ : AbsoluteGaloisGroup K ⧸ σ.fieldRange.fixingSubgroup) =
-        QuotientGroup.mk g₂ := by
-  rw [QuotientGroup.eq, ← galoisSubgroup_toSubgroup K L σ, OpenSubgroup.mem_toSubgroup,
-    mem_galoisSubgroup_iff]
-  refine ⟨fun h x => ?_, fun h => AlgHom.ext fun x => ?_⟩
-  · have hx : g₁ (σ x) = g₂ (σ x) := congrArg (fun f : L →ₐ[K] SeparableClosure K => f x) h
-    simpa [AlgEquiv.mul_apply] using congrArg g₁.symm hx.symm
-  · simpa [AlgEquiv.mul_apply] using (congrArg g₁ (h x)).symm
+private theorem stabilizer_algHom_eq_fixingSubgroup :
+    MulAction.stabilizer (AbsoluteGaloisGroup K) σ = σ.fieldRange.fixingSubgroup := by
+  ext g
+  rw [MulAction.mem_stabilizer_iff, IntermediateField.mem_fixingSubgroup_iff]
+  constructor
+  · rintro h _ ⟨x, rfl⟩
+    exact AlgEquiv.apply_of_smul_eq h x
+  · intro h
+    ext x
+    exact congrArg Subtype.val (h (σ x) ⟨x, rfl⟩)
 
 /-- **The cosets of `Gal(Kˢ/σ(L))` are the `K`-embeddings of `L` into `Kˢ`**, the coset of
 `g` corresponding to `g ∘ σ`. Composed with `galoisSubgroup_index` it is the statement that a
 finite separable extension of degree `d` has exactly `d` embeddings into a separable closure. -/
 def fixingSubgroupQuotientEquivAlgHom :
     AbsoluteGaloisGroup K ⧸ σ.fieldRange.fixingSubgroup ≃ (L →ₐ[K] SeparableClosure K) :=
-  Equiv.ofBijective
-    (fun q => Quotient.liftOn' q (fun g : AbsoluteGaloisGroup K => g.toAlgHom.comp σ)
-      fun _ _ h => algHom_comp_eq_iff_quotientGroup_mk_eq K L σ |>.2 (Quotient.sound h))
-    ⟨by
-      refine fun q q' => Quotient.inductionOn₂' q q' fun g g' h => ?_
-      exact (algHom_comp_eq_iff_quotientGroup_mk_eq K L σ).1 h,
-      fun f => by
-        obtain ⟨g, hg⟩ := exists_algHom_comp_eq K L σ f
-        exact ⟨QuotientGroup.mk g, hg⟩⟩
+  (Subgroup.quotientEquivOfEq (stabilizer_algHom_eq_fixingSubgroup K L σ).symm).trans
+    (quotientStabilizerEquiv (AbsoluteGaloisGroup K) σ)
 
 /-- `fixingSubgroupQuotientEquivAlgHom` sends the coset of `g` to `g ∘ σ`. -/
 @[simp]
 theorem fixingSubgroupQuotientEquivAlgHom_mk (g : AbsoluteGaloisGroup K) :
     fixingSubgroupQuotientEquivAlgHom K L σ (QuotientGroup.mk g) = g.toAlgHom.comp σ :=
-  (rfl)
+  by
+    rw [fixingSubgroupQuotientEquivAlgHom, Equiv.trans_apply,
+      Subgroup.quotientEquivOfEq_mk, quotientStabilizerEquiv_mk,
+      AlgEquiv.smul_algHom_def]
+
+variable [FiniteDimensional K L]
 
 /-! ### The norm as a product of conjugates -/
 
@@ -139,7 +113,7 @@ theorem algebraMap_norm_eq_prod_transversal
     (ht : ∀ u, (QuotientGroup.mk (t u) :
       AbsoluteGaloisGroup K ⧸ σ.fieldRange.fixingSubgroup) = u) (b : L) :
     algebraMap K (SeparableClosure K) (Algebra.norm K b) = ∏ u, t u (σ b) := by
-  have := algebra_isSeparable_of_algHom_separableClosure K L σ
+  have := Algebra.IsSeparable.of_algHom K (SeparableClosure K) σ
   have hsplits : ∀ x : L, ((minpoly K x).map
       (algebraMap K (SeparableClosure K))).Splits := fun x =>
     IsSepClosed.splits_codomain _ (Algebra.IsSeparable.isSeparable K x)
