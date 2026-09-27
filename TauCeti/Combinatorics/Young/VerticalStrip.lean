@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Young.Diagram
+public import TauCeti.Combinatorics.Young.BetaNumbers
 public import TauCeti.Combinatorics.Young.Interlacing
 public import TauCeti.Combinatorics.Young.OfRowLens
 
@@ -39,6 +39,9 @@ directions of that correspondence are `YoungDiagram.isVerticalStrip_ofRowLensFin
 * `YoungDiagram.isVerticalStrip_ofRowLensFin` and `YoungDiagram.card_ofRowLensFin_add_ite`: adding
   one cell to each row in a set `T` gives a vertical strip whenever the resulting row lengths are
   still weakly decreasing, and it has `T.card` more cells.
+* `YoungDiagram.antitone_rowLen_add_ite_of_injective`: raising by one the beta-numbers
+  (`YoungDiagram.betaNumber`) indexed by a set `T` keeps the row lengths weakly decreasing as soon
+  as it keeps the beta-numbers pairwise distinct.
 * `YoungDiagram.IsVerticalStrip.ofRowLensFin_lengthenedRows`: conversely, a vertical strip over `ν`
   with at most `N` rows is obtained in this way from `YoungDiagram.lengthenedRows`, whose size is
   computed by `YoungDiagram.IsVerticalStrip.card_lengthenedRows`.
@@ -47,9 +50,6 @@ directions of that correspondence are `YoungDiagram.isVerticalStrip_ofRowLensFin
 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 5, where horizontal and vertical strips index the two Pieri rules.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7, and the [classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 4, which name the Pieri rule among the Schur-polynomial identities.
 -/
 
 public section
@@ -132,6 +132,35 @@ theorem isVerticalStrip_iff_interlacedBy_transpose :
     have h2 : ((i, ν.rowLen i) : ℕ × ℕ) ∈ ν := mem_transpose.mp h1
     exact absurd (_root_.YoungDiagram.mem_iff_lt_rowLen.mp h2) (lt_irrefl _)
 
+/-- **An injective indicator shift of the beta-numbers is a shape.**  The beta-numbers of `ν`
+relative to `N` strictly decrease, so raising by one those indexed by a set `T` leaves them pairwise
+distinct only if the shifted row lengths `ν_j + 1_T(j)` are still weakly decreasing: two adjacent
+beta-numbers differ, and the indicator can move them by at most the single step that separates them.
+
+This is the criterion under which such a shift describes a shape at all; only this implication is
+used, the sets whose shifted beta-numbers repeat being discarded downstream because their alternant
+vanishes. -/
+theorem antitone_rowLen_add_ite_of_injective {N : ℕ} {T : Finset (Fin N)}
+    (hinj : Function.Injective fun j : Fin N => ν.betaNumber N j + if j ∈ T then 1 else 0) :
+    Antitone fun j : Fin N => ν.rowLen j + if j ∈ T then 1 else 0 := by
+  rcases Nat.eq_zero_or_pos N with hN | hN
+  · subst hN
+    exact fun a _ _ => absurd a.isLt (Nat.not_lt_zero _)
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN.ne'
+  rw [Fin.antitone_iff_succ_le]
+  intro i
+  -- Two adjacent beta-numbers are distinct, and the shift by an indicator moves them by at most
+  -- the one step that separates them, so the row lengths cannot increase.
+  have hne : (Fin.castSucc i) ≠ i.succ := fun h => by simpa using congrArg Fin.val h
+  have hfne : ν.betaNumber (n + 1) (Fin.castSucc i) + (if Fin.castSucc i ∈ T then 1 else 0) ≠
+      ν.betaNumber (n + 1) i.succ + (if i.succ ∈ T then 1 else 0) := fun h => hne (hinj h)
+  have hrow : ν.rowLen ((i.succ : Fin (n + 1)) : ℕ) ≤
+      ν.rowLen ((Fin.castSucc i : Fin (n + 1)) : ℕ) := ν.rowLen_anti _ _ (by simp)
+  have hlt : ((Fin.castSucc i : Fin (n + 1)) : ℕ) < n + 1 := (Fin.castSucc i).isLt
+  rw [betaNumber_def, betaNumber_def] at hfne
+  simp only [Fin.val_succ, Fin.val_castSucc] at hfne hrow hlt ⊢
+  split_ifs at hfne ⊢ <;> omega
+
 section Rows
 
 variable {N : ℕ} {T : Finset (Fin N)}
@@ -145,7 +174,10 @@ theorem isVerticalStrip_ofRowLensFin (hν : ν.colLen 0 ≤ N) :
     IsVerticalStrip (ofRowLensFin _ hT) ν := by
   intro i
   by_cases hi : i < N
-  · rw [show i = ((⟨i, hi⟩ : Fin N) : ℕ) from rfl, rowLen_ofRowLensFin _ hT]
+  · have hrow : (ofRowLensFin _ hT).rowLen i
+        = ν.rowLen i + if (⟨i, hi⟩ : Fin N) ∈ T then 1 else 0 := by
+      simpa using rowLen_ofRowLensFin _ hT ⟨i, hi⟩
+    rw [hrow]
     split_ifs <;> omega
   · rw [rowLen_ofRowLensFin_eq_zero_of_le _ hT (Nat.not_lt.mp hi),
       rowLen_eq_zero_of_colLen_le (hν.trans (Nat.not_lt.mp hi))]
@@ -198,15 +230,23 @@ theorem IsVerticalStrip.ofRowLensFin_lengthenedRows :
     ofRowLensFin _ (h.antitone_rowLen_add_ite (N := N)) = μ := by
   refine rowLen_injective (funext fun i => ?_)
   by_cases hi : i < N
-  · rw [show i = ((⟨i, hi⟩ : Fin N) : ℕ) from rfl, rowLen_ofRowLensFin]
-    simp only [mem_lengthenedRows]
-    exact (h.rowLen_eq_add_ite _).symm
+  · have hrow : (ofRowLensFin _ (h.antitone_rowLen_add_ite (N := N))).rowLen i
+        = ν.rowLen i + if ν.rowLen i < μ.rowLen i then 1 else 0 := by
+      simpa using rowLen_ofRowLensFin _ (h.antitone_rowLen_add_ite (N := N)) ⟨i, hi⟩
+    rw [hrow]
+    exact (h.rowLen_eq_add_ite i).symm
   · rw [rowLen_ofRowLensFin_eq_zero_of_le _ _ (Nat.not_lt.mp hi),
       rowLen_eq_zero_of_colLen_le (hμ.trans (Nat.not_lt.mp hi))]
 
 /-- A vertical strip lengthens exactly as many rows as it has cells over the shape below it. -/
-theorem IsVerticalStrip.card_lengthenedRows (hν : ν.colLen 0 ≤ N) :
+theorem IsVerticalStrip.card_lengthenedRows :
     μ.card = ν.card + (lengthenedRows N μ ν).card := by
+  -- The shape below the strip has no more rows than the strip itself.
+  have hν : ν.colLen 0 ≤ N := by
+    by_contra hcon
+    have hmem : ((N, 0) : ℕ × ℕ) ∈ μ :=
+      h.le (_root_.YoungDiagram.mem_iff_lt_colLen.mpr (Nat.lt_of_not_le hcon))
+    exact absurd (_root_.YoungDiagram.mem_iff_lt_colLen.mp hmem) (Nat.not_lt.mpr hμ)
   conv_lhs => rw [← h.ofRowLensFin_lengthenedRows hμ]
   exact card_ofRowLensFin_add_ite _ hν
 
