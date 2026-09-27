@@ -64,8 +64,6 @@ the class of `a` to `(a)`.
 * `TauCeti.mu2EquivZMod2_apply_mu2NegOne`, `TauCeti.mu2EquivZMod2_eq_one_iff`: the value
   dictionary on the nontrivial element of `μ₂`.
 * `TauCeti.mu2_smul_eq_self`: the Galois action on `μ₂` is trivial.
-* `TauCeti.mu2EquivZMod2_equivariant`: the value dictionary is fixed by `G_K`, which is what makes
-  it a morphism of coefficient objects.
 * `TauCeti.kummerClass_one` and `TauCeti.kummerClass_mul`: the Kummer class of a unit is a
   homomorphism from `Kˣ` into `H¹(G_K, 𝔽₂)` written additively.
 * `TauCeti.kummerClass_eq_zero_iff_square`: the Kummer class of a unit of `Kˣ` vanishes exactly
@@ -202,13 +200,6 @@ theorem mu2EquivZMod2_eq_one_iff (x : KummerCoeff K 2) :
     mu2EquivZMod2 K x = 1 ↔ x = mu2NegOne := by
   rw [← mu2EquivZMod2_apply_mu2NegOne (K := K), AddEquiv.apply_eq_iff_eq]
 
-/-- The `μ₂` coefficient identification is equivariant: the Galois action on `μ₂` is trivial, so
-the value dictionary is fixed by `G_K`. This is what makes the Kummer coefficients at `n = 2`
-isomorphic to a trivial coefficient object. -/
-theorem mu2EquivZMod2_equivariant (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 2) :
-    mu2EquivZMod2 K (g • x) = mu2EquivZMod2 K x :=
-  congrArg (mu2EquivZMod2 K) (mu2_smul_eq_self K g x)
-
 /-! ### The coefficient object -/
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
@@ -241,7 +232,7 @@ theorem kummerCoeffEquiv_symm_apply (b : (trivialF2 (AbsoluteGaloisGroup K)).V) 
 /-- The dictionary is `G_K`-equivariant, the two sides being the trivial action. -/
 private theorem kummerCoeffEquiv_equivariant (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 2) :
     kummerCoeffEquiv K (g • x) = g • kummerCoeffEquiv K x := by
-  simp only [kummerCoeffEquiv_apply, mu2EquivZMod2_equivariant,
+  simp only [kummerCoeffEquiv_apply, mu2_smul_eq_self,
     TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
 
 /-- The coefficient dictionary read as a morphism of coefficient objects: the additive

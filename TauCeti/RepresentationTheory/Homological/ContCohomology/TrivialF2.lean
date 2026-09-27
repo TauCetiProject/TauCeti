@@ -109,22 +109,20 @@ theorem ofDiscreteModule_trivialF2 :
     ofDiscreteModule ℤ G (trivialF2 G).V = trivialF2 G :=
   ofDiscreteModule_eq_self (trivialF2 G)
 
-/-- The transported identity of `TauCeti.ofDiscreteModule_trivialF2` acts as the identity on
-carriers, on the side of the transported morphism. A consumer that transports a morphism *into*
-the trivial object needs this to read that morphism on carriers: the body of
-`TauCeti.trivialF2` is not exposed, so at a use site the transport does not reduce, and this
-carrier statement has to travel with the object equation. This is
-`TauCeti.eqToIso (ofDiscreteModule_trivialF2 G)` read on carriers, by
-`TauCeti.eqToIso.hom`. -/
+/-- **The transported identity of `TauCeti.ofDiscreteModule_trivialF2` acts as the identity on
+carriers**: `TauCeti.eqToHom (ofDiscreteModule_trivialF2 G)` is the morphism
+`TauCeti.eqToIso (ofDiscreteModule_trivialF2 G)` read by `TauCeti.eqToIso.hom`, so it is the
+identity on the carrier of `trivialF2 G`. -/
 @[simp]
 theorem eqToHom_ofDiscreteModule_trivialF2_apply (x : (trivialF2 G).V) :
     (CategoryTheory.eqToHom (ofDiscreteModule_trivialF2 G)) x = x := by
   rw [CategoryTheory.eqToHom]
   rfl
 
-/-- The transported identity of `TauCeti.ofDiscreteModule_trivialF2` acts as the identity on
-carriers, on the side of the transported inverse, in the role of
-`TauCeti.eqToHom_ofDiscreteModule_trivialF2_apply` for the inverse. -/
+/-- **The transported inverse of `TauCeti.ofDiscreteModule_trivialF2` acts as the identity on
+carriers**: `TauCeti.eqToHom (ofDiscreteModule_trivialF2 G).symm` is the inverse morphism
+`TauCeti.eqToIso (ofDiscreteModule_trivialF2 G)` read by `TauCeti.eqToIso.inv`, so it too is the
+identity on the carrier of `trivialF2 G`. -/
 @[simp]
 theorem eqToHom_ofDiscreteModule_trivialF2_symm_apply (x : (trivialF2 G).V) :
     (CategoryTheory.eqToHom (ofDiscreteModule_trivialF2 G).symm) x = x := by
