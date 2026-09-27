@@ -47,8 +47,21 @@ with pole `a` is the negative of the Poisson kernel divided by `2π`. -/
 theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
     HasDerivAt (fun t : ℝ => planarGreenKernel a (t • z))
       (-(poissonKernel 0 a z) / (2 * Real.pi)) 1 := by
-  obtain ⟨hza, hca⟩ :=
-    planarGreenKernel_log_arguments_ne_of_norm_lt_one_of_norm_eq_one ha hz
+  have hnorm : ‖1 - starRingEnd ℂ a * z‖ = ‖z - a‖ := by
+    have hsq := norm_sq_one_sub_conj_mul_sub_norm_sq_sub z a
+    rw [hz] at hsq
+    norm_num at hsq
+    nlinarith [norm_nonneg (1 - starRingEnd ℂ a * z), norm_nonneg (z - a)]
+  have hza : z - a ≠ 0 := by
+    intro h
+    have : z = a := sub_eq_zero.mp h
+    rw [this] at hz
+    linarith
+  have hca : 1 - starRingEnd ℂ a * z ≠ 0 := by
+    intro h
+    apply hza
+    apply norm_eq_zero.mp
+    rw [← hnorm, h, norm_zero]
   have h₁ : HasDerivAt (fun t : ℝ => planarNewtonianKernel (t • z - a))
       ((-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) * ⟪z - a, z⟫_ℝ) 1 := by
     simpa only [sub_eq_add_neg, add_comm] using
@@ -72,11 +85,6 @@ theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz :
     rw [planarGreenKernel_def]
     rw [harg]
   rw [heq]
-  have hnorm : ‖1 - starRingEnd ℂ a * z‖ = ‖z - a‖ := by
-    have hsq := norm_sq_one_sub_conj_mul_sub_norm_sq_sub z a
-    rw [hz] at hsq
-    norm_num at hsq
-    nlinarith [norm_nonneg (1 - starRingEnd ℂ a * z), norm_nonneg (z - a)]
   have hzsq : z.re ^ 2 + z.im ^ 2 = 1 := by
     have h : ‖z‖ ^ 2 = 1 := by rw [hz]; norm_num
     rw [Complex.sq_norm, normSq_apply] at h
