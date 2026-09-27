@@ -34,13 +34,16 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 abbrev preprojectiveA2Quiver := OrientedQuiver zigzagA2Graph
   (Orientation.ofLinearOrder zigzagA2Graph)
 
-private abbrev v0 : preprojectiveA2Quiver := OrientedQuiver.vertex zigzagA2Graph
+/-- The vertex `0` of the chosen `A₂` orientation. -/
+abbrev preprojectiveA2VertexZero : preprojectiveA2Quiver := OrientedQuiver.vertex zigzagA2Graph
   (Orientation.ofLinearOrder zigzagA2Graph) 0
 
-private abbrev v1 : preprojectiveA2Quiver := OrientedQuiver.vertex zigzagA2Graph
+/-- The vertex `1` of the chosen `A₂` orientation. -/
+abbrev preprojectiveA2VertexOne : preprojectiveA2Quiver := OrientedQuiver.vertex zigzagA2Graph
   (Orientation.ofLinearOrder zigzagA2Graph) 1
 
-private def a2Arrow : (OrientedQuiver.vertex zigzagA2Graph
+/-- The unique arrow from vertex `0` to vertex `1` in the chosen `A₂` orientation. -/
+def preprojectiveA2Arrow : (OrientedQuiver.vertex zigzagA2Graph
     (Orientation.ofLinearOrder zigzagA2Graph) 0 ⟶
     OrientedQuiver.vertex zigzagA2Graph
     (Orientation.ofLinearOrder zigzagA2Graph) 1) :=
@@ -48,14 +51,14 @@ private def a2Arrow : (OrientedQuiver.vertex zigzagA2Graph
     ((zigzagA2Graph_adj 0 1).2 (by decide)) (by
       simpa only [Orientation.mem_ofLinearOrder_iff] using (show (0 : Fin 2) < 1 by decide))
 
-private instance : IsEmpty (v0 ⟶ v0) := by
+instance : IsEmpty (preprojectiveA2VertexZero ⟶ preprojectiveA2VertexZero) := by
   constructor
   intro e
   have h : zigzagA2Graph.Adj 0 0 := by
     simpa only [OrientedQuiver.vertexEquiv_symm_vertex] using e.1
   exact (zigzagA2Graph_adj 0 0).mp h (by decide)
 
-private instance : IsEmpty (v1 ⟶ v0) := by
+instance : IsEmpty (preprojectiveA2VertexOne ⟶ preprojectiveA2VertexZero) := by
   constructor
   intro e
   have h : (1 : Fin 2) < 0 := by
@@ -63,7 +66,7 @@ private instance : IsEmpty (v1 ⟶ v0) := by
       Orientation.mem_ofLinearOrder_iff] using e.2
   omega
 
-private instance : IsEmpty (v1 ⟶ v1) := by
+instance : IsEmpty (preprojectiveA2VertexOne ⟶ preprojectiveA2VertexOne) := by
   constructor
   intro e
   have h : zigzagA2Graph.Adj 1 1 := by
@@ -79,40 +82,50 @@ noncomputable instance instFintypePreprojectiveA2QuiverHom (i j : preprojectiveA
     Fintype (i ⟶ j) := Fintype.ofFinite _
 
 private theorem sum_a2 {M : Type*} [AddCommMonoid M] (f : preprojectiveA2Quiver → M) :
-    ∑ i : preprojectiveA2Quiver, f i = f v0 + f v1 := by
+    ∑ i : preprojectiveA2Quiver, f i = f preprojectiveA2VertexZero +
+      f preprojectiveA2VertexOne := by
   let e := OrientedQuiver.vertexEquiv zigzagA2Graph
     (Orientation.ofLinearOrder zigzagA2Graph)
   calc
     _ = ∑ i : Fin 2, f (e i) :=
       (Fintype.sum_equiv e (fun i => f (e i)) f (fun _ => rfl)).symm
-    _ = _ := by simp [Fin.sum_univ_two, e, v0, v1]
+    _ = _ := by simp [Fin.sum_univ_two, e, preprojectiveA2VertexZero,
+      preprojectiveA2VertexOne]
 
 private theorem localPreprojectiveRelator_zero (k : Type*) [CommRing k] :
-    localPreprojectiveRelator k v0 = -tailBacktrackElem k a2Arrow := by
+    localPreprojectiveRelator k preprojectiveA2VertexZero =
+      -tailBacktrackElem k preprojectiveA2Arrow := by
   rw [localPreprojectiveRelator_def, sum_a2, sum_a2]
-  simp [Fintype.sum_subsingleton (fun a : v0 ⟶ v1 =>
-    tailBacktrackElem k a) a2Arrow]
+  simp [Fintype.sum_subsingleton
+    (fun a : preprojectiveA2VertexZero ⟶ preprojectiveA2VertexOne =>
+      tailBacktrackElem k a) preprojectiveA2Arrow]
 
 private theorem localPreprojectiveRelator_one (k : Type*) [CommRing k] :
-    localPreprojectiveRelator k v1 = headBacktrackElem k a2Arrow := by
+    localPreprojectiveRelator k preprojectiveA2VertexOne =
+      headBacktrackElem k preprojectiveA2Arrow := by
   rw [localPreprojectiveRelator_def, sum_a2, sum_a2]
-  simp [Fintype.sum_subsingleton (fun a : v0 ⟶ v1 =>
-    headBacktrackElem k a) a2Arrow]
+  simp [Fintype.sum_subsingleton
+    (fun a : preprojectiveA2VertexZero ⟶ preprojectiveA2VertexOne =>
+      headBacktrackElem k a) preprojectiveA2Arrow]
 
 private theorem tailBacktrack_mem_preprojectiveIdeal (k : Type*) [CommRing k] :
-    tailBacktrackElem k a2Arrow ∈ preprojectiveIdeal k preprojectiveA2Quiver := by
-  have h := localPreprojectiveRelator_mem_preprojectiveIdeal k v0
+    tailBacktrackElem k preprojectiveA2Arrow ∈
+      preprojectiveIdeal k preprojectiveA2Quiver := by
+  have h := localPreprojectiveRelator_mem_preprojectiveIdeal k preprojectiveA2VertexZero
   rw [localPreprojectiveRelator_zero] at h
   exact neg_mem_iff.mp h
 
 private theorem headBacktrack_mem_preprojectiveIdeal (k : Type*) [CommRing k] :
-    headBacktrackElem k a2Arrow ∈ preprojectiveIdeal k preprojectiveA2Quiver := by
+    headBacktrackElem k preprojectiveA2Arrow ∈
+      preprojectiveIdeal k preprojectiveA2Quiver := by
   rw [← localPreprojectiveRelator_one]
-  exact localPreprojectiveRelator_mem_preprojectiveIdeal k v1
+  exact localPreprojectiveRelator_mem_preprojectiveIdeal k preprojectiveA2VertexOne
 
-private def e01 : (Symmetrify.of.obj v0 ⟶ Symmetrify.of.obj v1) := Sum.inl a2Arrow
+private def e01 : (Symmetrify.of.obj preprojectiveA2VertexZero ⟶
+    Symmetrify.of.obj preprojectiveA2VertexOne) := Sum.inl preprojectiveA2Arrow
 
-private def e10 : (Symmetrify.of.obj v1 ⟶ Symmetrify.of.obj v0) := Sum.inr a2Arrow
+private def e10 : (Symmetrify.of.obj preprojectiveA2VertexOne ⟶
+    Symmetrify.of.obj preprojectiveA2VertexZero) := Sum.inr preprojectiveA2Arrow
 
 private theorem reverse_e01 : Quiver.reverse e01 = e10 := by
   simp [e01, e10, symmetrify_reverse]
@@ -123,14 +136,19 @@ private noncomputable def vertices : Fin 2 ≃ Symmetrify preprojectiveA2Quiver 
     (Orientation.ofLinearOrder zigzagA2Graph)).trans
       (Equiv.ofBijective _ symmetrify_of_obj_bijective)
 
-private theorem vertices_zero : vertices 0 = Symmetrify.of.obj v0 := by
-  simp [vertices, v0, OrientedQuiver.vertexEquiv_apply]; rfl
+private theorem vertices_zero :
+    vertices 0 = Symmetrify.of.obj preprojectiveA2VertexZero := by
+  simp [vertices, preprojectiveA2VertexZero, OrientedQuiver.vertexEquiv_apply]
+  rfl
 
-private theorem vertices_one : vertices 1 = Symmetrify.of.obj v1 := by
-  simp [vertices, v1, OrientedQuiver.vertexEquiv_apply]; rfl
+private theorem vertices_one :
+    vertices 1 = Symmetrify.of.obj preprojectiveA2VertexOne := by
+  simp [vertices, preprojectiveA2VertexOne, OrientedQuiver.vertexEquiv_apply]
+  rfl
 
 private theorem vertex_cases (i : Symmetrify preprojectiveA2Quiver) :
-    i = Symmetrify.of.obj v0 ∨ i = Symmetrify.of.obj v1 := by
+    i = Symmetrify.of.obj preprojectiveA2VertexZero ∨
+      i = Symmetrify.of.obj preprojectiveA2VertexOne := by
   have hcases : ∀ x : Fin 2, x = 0 ∨ x = 1 := by
     intro x
     fin_cases x <;> simp
@@ -146,48 +164,59 @@ private theorem vertex_cases (i : Symmetrify preprojectiveA2Quiver) :
       _ = _ := by rw [h, vertices_one]
 
 private theorem doubleArrow_cases {i j : Symmetrify preprojectiveA2Quiver} (e : i ⟶ j) :
-    (i = Symmetrify.of.obj v0 ∧ j = Symmetrify.of.obj v1 ∧ HEq e e01) ∨
-      (i = Symmetrify.of.obj v1 ∧ j = Symmetrify.of.obj v0 ∧ HEq e e10) := by
+    (i = Symmetrify.of.obj preprojectiveA2VertexZero ∧
+      j = Symmetrify.of.obj preprojectiveA2VertexOne ∧ HEq e e01) ∨
+      (i = Symmetrify.of.obj preprojectiveA2VertexOne ∧
+        j = Symmetrify.of.obj preprojectiveA2VertexZero ∧ HEq e e10) := by
   rcases vertex_cases i with rfl | rfl <;> rcases vertex_cases j with rfl | rfl
   · cases e with
     | inl a =>
-        have ha : v0 ⟶ v0 := by simpa only [symmetrify_of_obj] using a
+        have ha : preprojectiveA2VertexZero ⟶ preprojectiveA2VertexZero := by
+          simpa only [symmetrify_of_obj] using a
         exact isEmptyElim ha
     | inr a =>
-        have ha : v0 ⟶ v0 := by simpa only [symmetrify_of_obj] using a
+        have ha : preprojectiveA2VertexZero ⟶ preprojectiveA2VertexZero := by
+          simpa only [symmetrify_of_obj] using a
         exact isEmptyElim ha
   · cases e with
     | inl a =>
         simp only [symmetrify_of_obj] at a
-        have he : a = a2Arrow := Subsingleton.elim _ _
+        have he : a = preprojectiveA2Arrow := Subsingleton.elim _ _
         exact Or.inl ⟨rfl, rfl, by simp [e01, he]⟩
     | inr a =>
-        have ha : v1 ⟶ v0 := by simpa only [symmetrify_of_obj] using a
+        have ha : preprojectiveA2VertexOne ⟶ preprojectiveA2VertexZero := by
+          simpa only [symmetrify_of_obj] using a
         exact isEmptyElim ha
   · cases e with
     | inl a =>
-        have ha : v1 ⟶ v0 := by simpa only [symmetrify_of_obj] using a
+        have ha : preprojectiveA2VertexOne ⟶ preprojectiveA2VertexZero := by
+          simpa only [symmetrify_of_obj] using a
         exact isEmptyElim ha
     | inr a =>
         simp only [symmetrify_of_obj] at a
-        have he : a = a2Arrow := Subsingleton.elim _ _
+        have he : a = preprojectiveA2Arrow := Subsingleton.elim _ _
         exact Or.inr ⟨rfl, rfl, by simp [e10, he]⟩
   · cases e with
     | inl a =>
-        have ha : v1 ⟶ v1 := by simpa only [symmetrify_of_obj] using a
+        have ha : preprojectiveA2VertexOne ⟶ preprojectiveA2VertexOne := by
+          simpa only [symmetrify_of_obj] using a
         exact isEmptyElim ha
     | inr a =>
-        have ha : v1 ⟶ v1 := by simpa only [symmetrify_of_obj] using a
+        have ha : preprojectiveA2VertexOne ⟶ preprojectiveA2VertexOne := by
+          simpa only [symmetrify_of_obj] using a
         exact isEmptyElim ha
 
-private theorem v0_ne_v1 : (Symmetrify.of.obj v0 : Symmetrify preprojectiveA2Quiver) ≠
-    Symmetrify.of.obj v1 := by
+private theorem v0_ne_v1 :
+    (Symmetrify.of.obj preprojectiveA2VertexZero : Symmetrify preprojectiveA2Quiver) ≠
+      Symmetrify.of.obj preprojectiveA2VertexOne := by
   intro h
-  have hq : v0 = v1 := (symmetrify_of_obj_bijective (Q := preprojectiveA2Quiver)).1 h
+  have hq : preprojectiveA2VertexZero = preprojectiveA2VertexOne :=
+    (symmetrify_of_obj_bijective (Q := preprojectiveA2Quiver)).1 h
   have h' : (0 : Fin 2) = 1 :=
     (OrientedQuiver.vertexEquiv zigzagA2Graph
       (Orientation.ofLinearOrder zigzagA2Graph)).injective (by
-        simpa only [OrientedQuiver.vertexEquiv_apply, v0, v1] using hq)
+        simpa only [OrientedQuiver.vertexEquiv_apply, preprojectiveA2VertexZero,
+          preprojectiveA2VertexOne] using hq)
   exact (by decide : (0 : Fin 2) ≠ 1) h'
 
 private theorem mul_arrows_mem_preprojectiveIdeal (k : Type*) [CommRing k]
