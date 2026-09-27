@@ -23,10 +23,6 @@ Continuity for an open subgroup is proved in
 This is the monomial construction used in Evens' multiplicative transfer; see L. Evens,
 "A generalization of the transfer map in the cohomology of groups", Trans. AMS 108 (1963),
 §§2–3.
-It is Layer 13's second general-construction milestone in the ProfiniteCohomology roadmap:
-this group homomorphism uses the Layer 6 transversal word and the first milestone's wreath product.
-The map uses no cup product or explicit index-two identities; those belong to the
-cohomological parts of Layer 13.
 -/
 
 public section

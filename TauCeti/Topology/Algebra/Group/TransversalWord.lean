@@ -51,10 +51,6 @@ theorem continuous_lWord_inv_smul (hU : IsOpen (U : Set G)) (u : G ⧸ U) :
   rw [h]
   have hfst : Continuous fun q : G × G => (q.1⁻¹ • u : G ⧸ U) :=
     (QuotientGroup.continuous_inv_smul U hU u).comp continuous_fst
-  have htinv : Continuous (fun x : G ⧸ U => (t x)⁻¹) :=
-    continuous_of_discreteTopology
-  have hfirst : Continuous fun q : G × G => (t (q.1⁻¹ • u))⁻¹ :=
-    htinv.comp hfst
   have hsnd : Continuous fun q : G × G => (q.2⁻¹ • q.1⁻¹ • u : G ⧸ U) := by
     have hact : Continuous (fun p : G × (G ⧸ U) => p.1⁻¹ • p.2) :=
       continuous_prod_of_discrete_right.mpr fun x =>
