@@ -15,8 +15,8 @@ public import Mathlib.SetTheory.Cardinal.NatCard
 A permutation commuting with every element of a transitive group of permutations, and fixing one
 letter, is the identity: transitivity carries the fixed letter to any other letter, and the
 commutation then makes the permutation fix that letter too. So the centralizer of a transitive
-group of permutations, acting on the letters by evaluation, has trivial stabilizers, and its order
-divides the number of letters.
+group of permutations, acting on the letters by evaluation, has trivial stabilizers, and on a
+finite set of letters its order divides the number of letters.
 
 This bounds the size of the centralizer of a transitive permutation group, which is the
 semiregularity step behind the order bound for the automorphism group of a permutation group
@@ -28,7 +28,10 @@ action.
   identity.
 * `Subgroup.centralizer_stabilizer_eq_bot`: the centralizer of a transitive group of permutations
   acts freely on the letters.
-* `Subgroup.card_centralizer_dvd`: the order of that centralizer divides the number of letters.
+* `Subgroup.natCard_centralizer_dvd`: the `Nat.card` of that centralizer divides the `Nat.card`
+  of the letters.
+* `Subgroup.card_centralizer_dvd`: on a finite set of letters, the order of that centralizer
+  divides the number of letters.
 
 The counting step is Mathlib's `MulAction.selfEquivOrbitsQuotientProd`, which exhibits a set with
 trivial stabilizers as the product of its orbit space with the acting group.
@@ -70,9 +73,12 @@ theorem _root_.Subgroup.centralizer_stabilizer_eq_bot
   rw [Subgroup.mem_bot]
   exact Subtype.ext (Subgroup.eq_one_of_mem_centralizer_of_apply_eq hG τ.property hfix)
 
-/-- The cardinality of the centralizer of a transitive group of permutations divides the cardinality
-of the letters, the centralizer being free on them. -/
-theorem _root_.Subgroup.card_centralizer_dvd (G : Subgroup (Equiv.Perm α))
+/-- The cardinality of the centralizer of a transitive group of permutations divides the
+cardinality of the letters, the centralizer being free on them and so exhibiting the letters as
+the product of their orbit space with the centralizer. Since `Nat.card` is `0` on an infinite
+carrier, this bounds the order of the centralizer only on a finite set of letters, where
+`TauCeti.Subgroup.card_centralizer_dvd` is the bound. -/
+theorem _root_.Subgroup.natCard_centralizer_dvd (G : Subgroup (Equiv.Perm α))
     (hG : MulAction.IsPretransitive G α) :
     Nat.card (Subgroup.centralizer (G : Set (Equiv.Perm α))) ∣ Nat.card α := by
   have hfree : ∀ i : α,
@@ -81,5 +87,14 @@ theorem _root_.Subgroup.card_centralizer_dvd (G : Subgroup (Equiv.Perm α))
   have hcard := Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hfree)
   rw [Nat.card_prod] at hcard
   exact ⟨_, hcard.trans (mul_comm _ _)⟩
+
+/-- **The order of the centralizer of a transitive group of permutations divides the number of
+letters**: on a finite set of letters the centralizer is free on them, so its order divides their
+number. -/
+theorem _root_.Subgroup.card_centralizer_dvd [Fintype α] (G : Subgroup (Equiv.Perm α))
+    (hG : MulAction.IsPretransitive G α) :
+    Nat.card (Subgroup.centralizer (G : Set (Equiv.Perm α))) ∣ Fintype.card α := by
+  have hcard : Nat.card α = Fintype.card α := Nat.card_eq_fintype_card
+  exact hcard ▸ Subgroup.natCard_centralizer_dvd G hG
 
 end TauCeti
