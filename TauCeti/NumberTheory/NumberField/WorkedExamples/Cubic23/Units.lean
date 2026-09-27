@@ -61,7 +61,7 @@ theorem sq_sub_mul_eq_neg_one (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1) :
 omit [NumberField K] in
 /-- The element `θ² - θ` is a unit. -/
 theorem isUnit_sq_sub (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1) : IsUnit (θ ^ 2 - θ) := by
-  refine isUnit_iff_exists_inv.mpr ⟨-θ, ?_⟩
+  refine IsUnit.of_mul_eq_one (-θ) ?_
   simp only [mul_neg, sq_sub_mul_eq_neg_one hmin, neg_neg]
 
 omit [NumberField K] in
@@ -86,7 +86,7 @@ private theorem realEmbedding_apply_lt_zero (hmin : minpoly ℤ θ = X ^ 3 - X ^
 
 /-- At a real place, the absolute value of the unit `θ² - θ` is its positive real-embedding
 value. -/
-theorem unit_value_eq (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
+theorem unit_value_eq_sq_sub (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
     {w : InfinitePlace K} (hw : w.IsReal) {u : (𝓞 K)ˣ} (hu : (u : 𝓞 K) = θ ^ 2 - θ) :
     w u = w.embedding_of_isReal hw θ ^ 2 - w.embedding_of_isReal hw θ := by
   let φ := w.embedding_of_isReal hw
@@ -127,7 +127,7 @@ theorem unit_value_mem_Ioo (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
       nlinarith [sq_nonneg (φ θ)]
     have hp := mul_nonneg (sub_nonneg.mpr hle) hq.le
     nlinarith
-  have hval := unit_value_eq hmin hw hu
+  have hval := unit_value_eq_sq_sub hmin hw hu
   have hinv : (φ θ ^ 2 - φ θ) * (-φ θ) = 1 := by
     nlinarith
   have hlo : (5 / 4 : ℝ) < φ θ ^ 2 - φ θ := by
@@ -149,9 +149,10 @@ theorem unit_value_pow_three_sub_self_sub_one
     (w u) ^ 3 - w u - 1 = 0 := by
   let φ := w.embedding_of_isReal hw
   let ψ : 𝓞 K →+* ℝ := φ.comp (algebraMap (𝓞 K) K)
-  have hval := unit_value_eq hmin hw hu
+  have hval := unit_value_eq_sq_sub hmin hw hu
   have hc := congrArg ψ (sq_sub_pow_three_sub_self_sub_one hmin)
-  simp only [map_sub, map_pow, map_one, map_zero] at hc
+  have hcomp : ψ θ = φ θ := rfl
+  simp only [map_sub, map_pow, map_one, map_zero, hcomp] at hc
   rw [hval]
   exact hc
 
