@@ -39,13 +39,9 @@ theorem IsDemushkin.even_demushkinRank_of_ne_two (hG : IsDemushkin p G) (hp : p 
   let τ : cohomFp p G 2 ≃ₗ[ZMod p] ZMod p :=
     (Module.nonempty_linearEquiv_of_finrank_eq_one hG.finrank_cohomFp_two).some.symm
   let B : LinearMap.BilinForm (ZMod p) (cohomFp p G 1) :=
-    { toFun := fun a ↦ τ.toLinearMap.comp (cupFp p G a)
-      map_add' := by intros; ext; simp
-      map_smul' := by intros; ext; simp }
-  have htwo : (2 : ZMod p) ≠ 0 := by
-    intro h
-    have hdiv : p ∣ 2 := (ZMod.natCast_eq_zero_iff 2 p).mp (by simpa using h)
-    exact hp ((Nat.prime_dvd_prime_iff_eq (Fact.out : p.Prime) Nat.prime_two).mp hdiv)
+    (cupFp p G).compr₂ τ.toLinearMap
+  have htwo : (2 : ZMod p) ≠ 0 :=
+    CharP.cast_ne_zero_of_ne_of_prime (ZMod p) Nat.prime_two hp
   have halt : B.IsAlt := by
     intro a
     have hneg : cupFp p G a a = -cupFp p G a a := cupFp_gradedComm p G a a
