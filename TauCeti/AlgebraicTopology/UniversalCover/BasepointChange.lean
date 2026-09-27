@@ -57,7 +57,6 @@ private theorem basepointChangeHomeomorph_spec (γ : Path x y) :
     (isCoveringMap y) (isCoveringMap x) (proj_basepointLift y) (by rfl)).choose_spec
 
 /-- Basepoint change sends the distinguished point to the path class defining the change. -/
-@[simp]
 theorem basepointChangeHomeomorph_apply_basepointLift (γ : Path x y) :
     basepointChangeHomeomorph γ (basepointLift y : UniversalCover y) =
       mk y (Path.Homotopic.Quotient.mk γ) :=
