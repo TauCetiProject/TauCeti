@@ -61,6 +61,7 @@ theorem squareClass_def (u : Kˣ) :
   (rfl)
 
 /-- The unit underlying a quotient representative has the original square class. -/
+@[simp]
 theorem squareClass_toMul_out (x : SquareClassGroup K) :
     squareClass (Additive.toMul (Quotient.out x)) = x := by
   rw [squareClass_def, ofMul_toMul]
