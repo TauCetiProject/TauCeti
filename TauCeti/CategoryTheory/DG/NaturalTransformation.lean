@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.Algebra.Homology.Monoidal.Braiding
+public import Mathlib.CategoryTheory.Enriched.Ordinary.Basic
 
 /-!
 # DG natural transformations on homotopy categories
 
 A DG natural transformation has closed degree-zero components that commute with every homogeneous
-arrow. Mathlib's `EnrichedNatTrans` supplies the components and ordinary naturality; the extra
-condition below supplies naturality on all degrees. Passing the components to cohomology gives a
-natural transformation between the induced functors on `H⁰`.
+arrow. Mathlib's unit-graded `GradedNatTrans` supplies closed degree-zero components and naturality
+on all degrees. Passing the components to cohomology gives a natural transformation between the
+induced functors on `H⁰`.
 
 ## Reference
 
@@ -22,7 +24,7 @@ natural transformation between the induced functors on `H⁰`.
 
 public section
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory
 
 universe v u₁ u₂
 
@@ -31,136 +33,293 @@ namespace TauCeti
 variable {R : Type v} [CommRing R] {C : Type u₁} {D : Type u₂}
 variable [TauCeti.DGCategory R C] [TauCeti.DGCategory R D]
 
-/-- A closed degree-zero DG natural transformation. Besides naturality on closed arrows, its
-components commute with every homogeneous arrow. -/
-structure DGNatTrans
-    (F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) where
-  /-- The closed degree-zero components and their ordinary naturality. -/
-  toEnrichedNatTrans : F ⟶ G
-  /-- Naturality on a homogeneous arrow of arbitrary degree. -/
-  naturality : ∀ {X Y : C} (n : ℤ) (f : TauCeti.DGHom R n X Y),
-    TauCeti.dgComp R (F.dgMap n f)
-      (TauCeti.dgClosedHom R (toEnrichedNatTrans.out.app
-        (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y))) (add_zero n) =
-    TauCeti.dgComp R
-      (TauCeti.dgClosedHom R (toEnrichedNatTrans.out.app
-        (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)))
-      (G.dgMap n f) (zero_add n)
+/-- Closed degree-zero DG natural transformations, using Mathlib's graded enriched
+natural transformations at the monoidal unit. -/
+abbrev DGNatTrans
+    (F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :=
+  GradedNatTrans
+    ((Center.ofBraided (CochainComplex (ModuleCat.{v} R) ℤ)).obj
+      (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))) F G
+
+section GradedBridge
+
+universe w
+variable {V : Type v} [Category.{w} V] [MonoidalCategory V] [BraidedCategory V]
+variable {C' : Type u₁} {D' : Type u₂} [EnrichedCategory V C'] [EnrichedCategory V D']
+
+private theorem unit_braiding (H : V) :
+    (λ_ H).inv ≫ (β_ (𝟙_ V) H).hom = (ρ_ H).inv := by
+  have h : (β_ (𝟙_ V) H).hom = (λ_ H).hom ≫ (ρ_ H).inv :=
+    ((ρ_ H).eq_comp_inv).mpr (braiding_rightUnitor H)
+  rw [h]
+  simp
+private theorem unitGradedNaturality
+    (F G : EnrichedFunctor V C' D') (X Y : C')
+    (aX : 𝟙_ V ⟶ F.obj X ⟶[V] G.obj X)
+    (aY : 𝟙_ V ⟶ F.obj Y ⟶[V] G.obj Y)
+    (h : (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫
+      (F.map X Y ⊗ₘ aY) ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) =
+      (aX ⊗ₘ G.map X Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y))
+    (f : 𝟙_ V ⟶ X ⟶[V] Y) :
+    (λ_ (𝟙_ V)).inv ≫ ((f ≫ F.map X Y) ⊗ₘ aY) ≫
+      eComp V (F.obj X) (F.obj Y) (G.obj Y) =
+    (λ_ (𝟙_ V)).inv ≫ (aX ⊗ₘ (f ≫ G.map X Y)) ≫
+      eComp V (F.obj X) (G.obj X) (G.obj Y) := by
+  have h' :
+      (f ≫ (λ_ (X ⟶[V] Y)).inv) ≫
+        ((β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫
+          (F.map X Y ⊗ₘ aY) ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y)) =
+      (f ≫ (λ_ (X ⟶[V] Y)).inv) ≫
+        ((aX ⊗ₘ G.map X Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) := by rw [h]
+  have hL :
+      (λ_ (𝟙_ V)).inv ≫ ((f ≫ F.map X Y) ⊗ₘ aY) =
+      f ≫ (λ_ (X ⟶[V] Y)).inv ≫
+        (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫ (F.map X Y ⊗ₘ aY) := by
+    rw [unitors_inv_equal, rightUnitor_inv_comp_tensorHom]
+    calc
+      _ = f ≫ ((ρ_ (X ⟶[V] Y)).inv ≫ (F.map X Y ⊗ₘ aY)) := by
+        rw [rightUnitor_inv_comp_tensorHom]
+        simp only [Category.assoc]
+      _ = f ≫ (((λ_ (X ⟶[V] Y)).inv ≫
+        (β_ (𝟙_ V) (X ⟶[V] Y)).hom) ≫ (F.map X Y ⊗ₘ aY)) := by
+          rw [unit_braiding]
+      _ = _ := by simp only [Category.assoc]
+  have hR :
+      (λ_ (𝟙_ V)).inv ≫ (aX ⊗ₘ (f ≫ G.map X Y)) =
+      f ≫ (λ_ (X ⟶[V] Y)).inv ≫ (aX ⊗ₘ G.map X Y) := by
+    simp only [leftUnitor_inv_comp_tensorHom, Category.assoc]
+  calc
+    _ = (f ≫ (λ_ (X ⟶[V] Y)).inv) ≫
+      ((β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫
+        (F.map X Y ⊗ₘ aY) ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y)) := by
+          simpa only [Category.assoc] using
+            (congrArg (fun q => q ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y)) hL)
+    _ = (f ≫ (λ_ (X ⟶[V] Y)).inv) ≫
+      ((aX ⊗ₘ G.map X Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) := h'
+    _ = _ := by simpa only [Category.assoc] using
+      (congrArg (fun q => q ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) hR.symm)
+private noncomputable def gradedNatTransToOrdinary
+    {F G : EnrichedFunctor V C' D'}
+    (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G) :
+    F.forget ⟶ G.forget where
+  app X := α.app (ForgetEnrichment.to V X)
+  naturality := by
+    intro X Y f
+    apply_fun ForgetEnrichment.homTo V
+    · change
+        ForgetEnrichment.homTo V
+          (F.forget.map f ≫ ForgetEnrichment.homOf (C := D') V (α.app _)) =
+        ForgetEnrichment.homTo V
+          (ForgetEnrichment.homOf (C := D') V (α.app _) ≫ G.forget.map f)
+      simp only [ForgetEnrichment.homTo_comp, EnrichedFunctor.forget_map]
+      dsimp [ForgetEnrichment.homTo, ForgetEnrichment.homOf,
+        ForgetEnrichment.to, ForgetEnrichment.of]
+      simpa only [ForgetEnrichment.to, ForgetEnrichment.homTo, Category.assoc] using
+        (unitGradedNaturality F G (ForgetEnrichment.to V X) (ForgetEnrichment.to V Y)
+          (α.app _) (α.app _) (α.naturality _ _) (ForgetEnrichment.homTo V f))
+    · intro a b hab
+      exact hab
+
+private theorem unitNatSquare
+    (F G : EnrichedFunctor V C' D') (X Y : C')
+    (aX : 𝟙_ V ⟶ F.obj X ⟶[V] G.obj X)
+    (aY : 𝟙_ V ⟶ F.obj Y ⟶[V] G.obj Y)
+    (h : (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫
+      (F.map X Y ⊗ₘ aY) ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) =
+      (aX ⊗ₘ G.map X Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) :
+    F.map X Y ≫ eHomWhiskerLeft V (ForgetEnrichment.of V (F.obj X))
+      (ForgetEnrichment.homOf V aY) =
+    G.map X Y ≫ eHomWhiskerRight V (ForgetEnrichment.homOf V aX)
+      (ForgetEnrichment.of V (G.obj Y)) := by
+  change F.map X Y ≫ (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
+      (F.obj X ⟶[V] F.obj Y) ◁ aY ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) =
+    G.map X Y ≫ (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
+      aX ▷ (G.obj X ⟶[V] G.obj Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)
+  apply (cancel_epi (λ_ (X ⟶[V] Y)).hom).mp
+  have hb : (λ_ (X ⟶[V] Y)).hom ≫ (ρ_ (X ⟶[V] Y)).inv =
+      (β_ (𝟙_ V) (X ⟶[V] Y)).hom :=
+    (((ρ_ (X ⟶[V] Y)).eq_comp_inv).mpr
+      (braiding_rightUnitor (X ⟶[V] Y))).symm
+  have hl : (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y ≫
+      (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
+      (F.obj X ⟶[V] F.obj Y) ◁ aY =
+      (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫ (F.map X Y ⊗ₘ aY) := by
+    calc
+      _ = (λ_ (X ⟶[V] Y)).hom ≫
+          ((ρ_ (X ⟶[V] Y)).inv ≫ (F.map X Y ⊗ₘ aY)) := by
+            rw [rightUnitor_inv_comp_tensorHom]
+      _ = ((λ_ (X ⟶[V] Y)).hom ≫ (ρ_ (X ⟶[V] Y)).inv) ≫
+          (F.map X Y ⊗ₘ aY) := by simp only [Category.assoc]
+      _ = _ := by rw [hb]
+  have hr : (λ_ (X ⟶[V] Y)).hom ≫ G.map X Y ≫
+      (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
+      aX ▷ (G.obj X ⟶[V] G.obj Y) = aX ⊗ₘ G.map X Y := by
+    calc
+      _ = (λ_ (X ⟶[V] Y)).hom ≫
+          ((λ_ (X ⟶[V] Y)).inv ≫ (aX ⊗ₘ G.map X Y)) := by
+            rw [leftUnitor_inv_comp_tensorHom]
+      _ = _ := by simp
+  calc
+    _ = (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫
+        (F.map X Y ⊗ₘ aY) ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) := by
+          simpa only [Category.assoc] using
+            (congrArg (fun q => q ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y)) hl)
+    _ = (aX ⊗ₘ G.map X Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y) := h
+    _ = _ := by simpa only [Category.assoc] using
+      (congrArg (fun q => q ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) hr.symm)
+
+private theorem unitNatSquareReverse
+    (F G : EnrichedFunctor V C' D') (X Y : C')
+    (aX : 𝟙_ V ⟶ F.obj X ⟶[V] G.obj X)
+    (aY : 𝟙_ V ⟶ F.obj Y ⟶[V] G.obj Y)
+    (hs : F.map X Y ≫ eHomWhiskerLeft V (ForgetEnrichment.of V (F.obj X))
+        (ForgetEnrichment.homOf V aY) =
+      G.map X Y ≫ eHomWhiskerRight V (ForgetEnrichment.homOf V aX)
+        (ForgetEnrichment.of V (G.obj Y))) :
+    (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫
+      (F.map X Y ⊗ₘ aY) ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) =
+    (aX ⊗ₘ G.map X Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y) := by
+  change F.map X Y ≫ (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
+      (F.obj X ⟶[V] F.obj Y) ◁ aY ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) =
+    G.map X Y ≫ (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
+      aX ▷ (G.obj X ⟶[V] G.obj Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y) at hs
+  have hb : (λ_ (X ⟶[V] Y)).hom ≫ (ρ_ (X ⟶[V] Y)).inv =
+      (β_ (𝟙_ V) (X ⟶[V] Y)).hom :=
+    (((ρ_ (X ⟶[V] Y)).eq_comp_inv).mpr
+      (braiding_rightUnitor (X ⟶[V] Y))).symm
+  have hl : (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y ≫
+      (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
+      (F.obj X ⟶[V] F.obj Y) ◁ aY =
+      (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫ (F.map X Y ⊗ₘ aY) := by
+    calc
+      _ = (λ_ (X ⟶[V] Y)).hom ≫
+          ((ρ_ (X ⟶[V] Y)).inv ≫ (F.map X Y ⊗ₘ aY)) := by
+            rw [rightUnitor_inv_comp_tensorHom]
+      _ = ((λ_ (X ⟶[V] Y)).hom ≫ (ρ_ (X ⟶[V] Y)).inv) ≫
+          (F.map X Y ⊗ₘ aY) := by simp only [Category.assoc]
+      _ = _ := by rw [hb]
+  have hr : (λ_ (X ⟶[V] Y)).hom ≫ G.map X Y ≫
+      (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
+      aX ▷ (G.obj X ⟶[V] G.obj Y) = aX ⊗ₘ G.map X Y := by
+    calc
+      _ = (λ_ (X ⟶[V] Y)).hom ≫
+          ((λ_ (X ⟶[V] Y)).inv ≫ (aX ⊗ₘ G.map X Y)) := by
+            rw [leftUnitor_inv_comp_tensorHom]
+      _ = _ := by simp
+  calc
+    _ = (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y ≫
+      (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
+      (F.obj X ⟶[V] F.obj Y) ◁ aY ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) := by
+        simpa only [Category.assoc] using
+          (congrArg (fun q => q ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y)) hl.symm)
+    _ = (λ_ (X ⟶[V] Y)).hom ≫ G.map X Y ≫
+      (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
+      aX ▷ (G.obj X ⟶[V] G.obj Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y) := by
+        simpa only [Category.assoc] using
+          (congrArg (fun q => (λ_ (X ⟶[V] Y)).hom ≫ q) hs)
+    _ = _ := by simpa only [Category.assoc] using
+      (congrArg (fun q => q ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) hr)
+
+omit [BraidedCategory V] in
+private theorem composeNaturalSquares
+    {E : Type u₂} [Category E] [EnrichedOrdinaryCategory V E]
+    {FX GX HX FY GY HY : E} {M : V}
+    (fMap : M ⟶ FX ⟶[V] FY) (gMap : M ⟶ GX ⟶[V] GY)
+    (hMap : M ⟶ HX ⟶[V] HY)
+    (aX : FX ⟶ GX) (aY : FY ⟶ GY)
+    (bX : GX ⟶ HX) (bY : GY ⟶ HY)
+    (ha : fMap ≫ eHomWhiskerLeft V FX aY =
+      gMap ≫ eHomWhiskerRight V aX GY)
+    (hb : gMap ≫ eHomWhiskerLeft V GX bY =
+      hMap ≫ eHomWhiskerRight V bX HY) :
+    fMap ≫ eHomWhiskerLeft V FX (aY ≫ bY) =
+      hMap ≫ eHomWhiskerRight V (aX ≫ bX) HY := by
+  rw [eHomWhiskerLeft_comp, eHomWhiskerRight_comp]
+  calc
+    _ = gMap ≫ eHomWhiskerRight V aX GY ≫ eHomWhiskerLeft V FX bY := by
+      simpa only [Category.assoc] using
+        (congrArg (fun q => q ≫ eHomWhiskerLeft V FX bY) ha)
+    _ = gMap ≫ eHomWhiskerLeft V GX bY ≫ eHomWhiskerRight V aX HY := by
+      rw [eHom_whisker_exchange]
+    _ = _ := by simpa only [Category.assoc] using
+      (congrArg (fun q => q ≫ eHomWhiskerRight V aX HY) hb)
+
+
+/-- Composition of graded natural transformations at the monoidal unit. -/
+noncomputable def unitGradedNatTransComp {F G H : EnrichedFunctor V C' D'}
+    (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G)
+    (γ : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) G H) :
+    GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F H where
+  app X := eHomEquiv V
+    (ForgetEnrichment.homOf V (α.app X) ≫ ForgetEnrichment.homOf V (γ.app X))
+  naturality X Y := by
+    have hα := unitNatSquare F G X Y (α.app X) (α.app Y) (α.naturality X Y)
+    have hγ := unitNatSquare G H X Y (γ.app X) (γ.app Y) (γ.naturality X Y)
+    dsimp [Center.ofBraided, Center.ofBraidedObj] at hα hγ ⊢
+    apply unitNatSquareReverse F H X Y _ _
+    let aX := ForgetEnrichment.homOf V (α.app X)
+    let aY := ForgetEnrichment.homOf V (α.app Y)
+    let bX := ForgetEnrichment.homOf V (γ.app X)
+    let bY := ForgetEnrichment.homOf V (γ.app Y)
+    change F.map X Y ≫ eHomWhiskerLeft V (ForgetEnrichment.of V (F.obj X))
+        (aY ≫ bY) =
+      H.map X Y ≫ eHomWhiskerRight V (aX ≫ bX)
+        (ForgetEnrichment.of V (H.obj Y))
+    exact composeNaturalSquares (V := V) (F.map X Y) (G.map X Y) (H.map X Y)
+      aX aY bX bY hα hγ
+
+/-- Identity graded natural transformation at the monoidal unit. -/
+noncomputable def unitGradedNatTransId (F : EnrichedFunctor V C' D') :
+    GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F F where
+  app X := eId V (F.obj X)
+  naturality X Y := by
+    dsimp [Center.ofBraided, Center.ofBraidedObj]
+    simp only [tensorHom_def, Category.assoc]
+    conv_rhs => rw [← whisker_exchange_assoc]
+    have hcomp : ((F.obj X ⟶[V] F.obj Y) ◁ eId V (F.obj Y)) ≫
+        eComp V (F.obj X) (F.obj Y) (F.obj Y) =
+        (ρ_ (F.obj X ⟶[V] F.obj Y)).hom := by
+      simpa using ((ρ_ (F.obj X ⟶[V] F.obj Y)).inv_comp_eq).mp
+        (e_comp_id V (F.obj X) (F.obj Y))
+    have hid : (eId V (F.obj X) ▷ (F.obj X ⟶[V] F.obj Y)) ≫
+        eComp V (F.obj X) (F.obj X) (F.obj Y) =
+        (λ_ (F.obj X ⟶[V] F.obj Y)).hom := by
+      simpa using ((λ_ (F.obj X ⟶[V] F.obj Y)).inv_comp_eq).mp
+        (e_id_comp V (F.obj X) (F.obj Y))
+    rw [hcomp, hid, rightUnitor_naturality]
+    calc
+      _ = ((β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫
+          (ρ_ (X ⟶[V] Y)).hom) ≫ F.map X Y := by rw [Category.assoc]
+      _ = (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y := by rw [braiding_rightUnitor]
+      _ = _ := by rw [leftUnitor_naturality]
+
+
+end GradedBridge
 
 namespace DGNatTrans
 
-/-- Two DG transformations with the same underlying enriched transformation are equal. -/
+/-- DG natural transformations agree when their components agree. -/
 @[ext]
 theorem ext {F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
-    {α β : DGNatTrans F G}
-    (h : α.toEnrichedNatTrans = β.toEnrichedNatTrans) : α = β := by
+    {α β : DGNatTrans F G} (h : ∀ X, α.app X = β.app X) : α = β := by
   cases α with
   | mk a ha =>
     cases β with
     | mk b hb =>
-      cases h
-      rfl
+      congr 1
+      funext X
+      exact h X
 
 /-- The identity DG natural transformation. -/
 @[expose]
 noncomputable def id (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
-    DGNatTrans F F where
-  toEnrichedNatTrans := 𝟙 F
-  naturality := by
-    intro X Y n f
-    change TauCeti.dgComp R (F.dgMap n f)
-      (TauCeti.dgClosedHom R
-        (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (F.obj Y))))
-      (add_zero n) =
-      TauCeti.dgComp R
-        (TauCeti.dgClosedHom R
-          (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (F.obj X))))
-        (F.dgMap n f) (zero_add n)
-    have hY := TauCeti.dgClosedHom_id (C := D) R
-      (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (F.obj Y))
-    have hX := TauCeti.dgClosedHom_id (C := D) R
-      (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (F.obj X))
-    rw [hY, hX]
-    simp only [ForgetEnrichment.to_of, TauCeti.dgComp_dgId, TauCeti.dgId_dgComp]
+    DGNatTrans F F := unitGradedNatTransId F
 
 /-- Composition of DG natural transformations. -/
 @[expose]
 noncomputable def comp {F G H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
-    (α : DGNatTrans F G) (β : DGNatTrans G H) : DGNatTrans F H where
-  toEnrichedNatTrans := α.toEnrichedNatTrans ≫ β.toEnrichedNatTrans
-  naturality := by
-    intro X Y n f
-    change TauCeti.dgComp R (F.dgMap n f)
-      (TauCeti.dgClosedHom R
-        (α.toEnrichedNatTrans.out.app
-          (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y) ≫
-        β.toEnrichedNatTrans.out.app
-          (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y))) (add_zero n) =
-      TauCeti.dgComp R
-        (TauCeti.dgClosedHom R
-          (α.toEnrichedNatTrans.out.app
-            (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X) ≫
-          β.toEnrichedNatTrans.out.app
-            (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)))
-        (H.dgMap n f) (zero_add n)
-    have hY := TauCeti.dgClosedHom_comp (C := D) R
-      (α.toEnrichedNatTrans.out.app
-        (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y))
-      (β.toEnrichedNatTrans.out.app
-        (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y))
-    have hX := TauCeti.dgClosedHom_comp (C := D) R
-      (α.toEnrichedNatTrans.out.app
-        (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X))
-      (β.toEnrichedNatTrans.out.app
-        (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X))
-    rw [hY, hX]
-    simp only [TauCeti.dgCompZero_def]
-    calc
-      TauCeti.dgComp R (F.dgMap n f)
-          (TauCeti.dgComp R
-            (TauCeti.dgClosedHom R (α.toEnrichedNatTrans.out.app
-              (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y)))
-            (TauCeti.dgClosedHom R (β.toEnrichedNatTrans.out.app
-              (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y)))
-            (zero_add 0)) (add_zero n) =
-        TauCeti.dgComp R
-          (TauCeti.dgComp R (F.dgMap n f)
-            (TauCeti.dgClosedHom R (α.toEnrichedNatTrans.out.app
-              (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y)))
-            (add_zero n))
-          (TauCeti.dgClosedHom R (β.toEnrichedNatTrans.out.app
-            (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y)))
-          (add_zero n) := by rw [TauCeti.dgComp_assoc]; omega
-      _ = TauCeti.dgComp R
-          (TauCeti.dgComp R
-            (TauCeti.dgClosedHom R (α.toEnrichedNatTrans.out.app
-              (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)))
-            (G.dgMap n f) (zero_add n))
-          (TauCeti.dgClosedHom R (β.toEnrichedNatTrans.out.app
-            (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y)))
-          (add_zero n) := by rw [α.naturality n f]
-      _ = TauCeti.dgComp R
-          (TauCeti.dgClosedHom R (α.toEnrichedNatTrans.out.app
-            (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)))
-          (TauCeti.dgComp R (G.dgMap n f)
-            (TauCeti.dgClosedHom R (β.toEnrichedNatTrans.out.app
-              (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Y)))
-            (add_zero n)) (zero_add n) := by rw [TauCeti.dgComp_assoc]; omega
-      _ = TauCeti.dgComp R
-          (TauCeti.dgClosedHom R (α.toEnrichedNatTrans.out.app
-            (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)))
-          (TauCeti.dgComp R
-            (TauCeti.dgClosedHom R (β.toEnrichedNatTrans.out.app
-              (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)))
-            (H.dgMap n f) (zero_add n)) (zero_add n) := by rw [β.naturality n f]
-      _ = TauCeti.dgComp R
-          (TauCeti.dgComp R
-            (TauCeti.dgClosedHom R (α.toEnrichedNatTrans.out.app
-              (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)))
-            (TauCeti.dgClosedHom R (β.toEnrichedNatTrans.out.app
-              (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)))
-            (zero_add 0))
-          (H.dgMap n f) (zero_add n) := by rw [TauCeti.dgComp_assoc]; omega
+    (α : DGNatTrans F G) (β : DGNatTrans G H) : DGNatTrans F H :=
+  unitGradedNatTransComp α β
 
 end DGNatTrans
 
@@ -177,19 +336,27 @@ noncomputable instance : Category (DGFunctor R C D) where
   id_comp := by
     intro F G α
     apply DGNatTrans.ext
-    change (𝟙 F.toEnrichedFunctor) ≫ α.toEnrichedNatTrans = α.toEnrichedNatTrans
-    simp
+    intro X
+    simp [DGNatTrans.comp, DGNatTrans.id, unitGradedNatTransComp, unitGradedNatTransId, eHomEquiv]
+    rfl
   comp_id := by
     intro F G α
     apply DGNatTrans.ext
-    change α.toEnrichedNatTrans ≫ (𝟙 G.toEnrichedFunctor) = α.toEnrichedNatTrans
-    simp
+    intro X
+    simp [DGNatTrans.comp, DGNatTrans.id, unitGradedNatTransComp, unitGradedNatTransId, eHomEquiv]
+    rfl
   assoc := by
     intro F G H I α β γ
     apply DGNatTrans.ext
-    change (α.toEnrichedNatTrans ≫ β.toEnrichedNatTrans) ≫ γ.toEnrichedNatTrans =
-      α.toEnrichedNatTrans ≫ (β.toEnrichedNatTrans ≫ γ.toEnrichedNatTrans)
-    simp only [Category.assoc]
+    intro X
+    simp only [DGNatTrans.comp, unitGradedNatTransComp, eHomEquiv]
+    change (ForgetEnrichment.homOf _ (α.app X) ≫
+        ForgetEnrichment.homOf _ (β.app X)) ≫
+        ForgetEnrichment.homOf _ (γ.app X) =
+      ForgetEnrichment.homOf _ (α.app X) ≫
+        (ForgetEnrichment.homOf _ (β.app X) ≫
+          ForgetEnrichment.homOf _ (γ.app X))
+    exact Category.assoc _ _ _
 
 /-- The component of a DG natural transformation on the homotopy category is the
 homotopy class of its closed degree-zero component. -/
@@ -198,15 +365,15 @@ noncomputable def mapDGHomotopyCategoryNatTrans
     (α : DGNatTrans F G) :
     F.mapDGHomotopyCategory ⟶ G.mapDGHomotopyCategory where
   app X := (TauCeti.dgClosedToHomotopy (C := D) R).map
-    (α.toEnrichedNatTrans.out.app (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ)
-      (TauCeti.DGHomotopyCategory.underlying R X)))
+    (ForgetEnrichment.homOf (C := D) (CochainComplex (ModuleCat.{v} R) ℤ)
+      (α.app (TauCeti.DGHomotopyCategory.underlying R X)))
   naturality := by
     intro X Y f
     rcases X with ⟨X⟩
     rcases Y with ⟨Y⟩
     obtain ⟨g, hg, rfl⟩ := TauCeti.exists_dgHomotopyClass_eq R f
     have h := congrArg (fun q => (TauCeti.dgClosedToHomotopy (C := D) R).map q)
-      (α.toEnrichedNatTrans.out.naturality (TauCeti.dgClosedHomOf R g hg))
+      ((gradedNatTransToOrdinary α).naturality (TauCeti.dgClosedHomOf R g hg))
     rw [Functor.map_comp, Functor.map_comp] at h
     have hmap (J : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
         (TauCeti.dgClosedToHomotopy (C := D) R).map
@@ -230,8 +397,8 @@ theorem mapDGHomotopyCategoryNatTrans_app
     (mapDGHomotopyCategoryNatTrans α).app (TauCeti.DGHomotopyCategory.of R X) =
       TauCeti.DGHomotopyCategory.homOf R
         (TauCeti.dgClosedHom R
-          (α.toEnrichedNatTrans.out.app
-            (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)))
+          (ForgetEnrichment.homOf (C := D) (CochainComplex (ModuleCat.{v} R) ℤ)
+            (α.app X)))
         (TauCeti.dgClosedHom_mem_dgCycles R _) := by
   unfold mapDGHomotopyCategoryNatTrans
   dsimp only [TauCeti.DGHomotopyCategory.underlying_of]
@@ -245,8 +412,8 @@ theorem mapDGHomotopyCategoryNatTrans_app_eq_zero_iff
     (X : C) :
     (mapDGHomotopyCategoryNatTrans α).app (TauCeti.DGHomotopyCategory.of R X) = 0 ↔
       TauCeti.dgClosedHom R
-        (α.toEnrichedNatTrans.out.app
-          (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) X)) ∈
+        (ForgetEnrichment.homOf (C := D) (CochainComplex (ModuleCat.{v} R) ℤ)
+          (α.app X)) ∈
           TauCeti.dgBoundaries R (F.obj X) (G.obj X) := by
   rw [mapDGHomotopyCategoryNatTrans_app]
   exact TauCeti.DGHomotopyCategory.homOf_eq_zero_iff R _
