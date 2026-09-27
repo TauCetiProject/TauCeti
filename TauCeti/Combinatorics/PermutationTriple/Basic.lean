@@ -487,6 +487,7 @@ theorem automorphismGroup_eq_centralizer_monodromyGroup :
 
 /-- The stabilizer of a triple under the normalizer of its monodromy group is the
 centralizer of that group, regarded as a subgroup of the normalizer. -/
+@[simp]
 theorem stabilizer_normalizer_eq_centralizer_subgroupOf :
     MulAction.stabilizer
         (Subgroup.normalizer (t.monodromyGroup : Set (Perm (Fin n)))) t =
