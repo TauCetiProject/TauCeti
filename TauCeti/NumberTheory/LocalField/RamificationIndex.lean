@@ -298,6 +298,7 @@ theorem valuation_algebraMap_irreducible {πK : 𝒪[K]} (hπK : Irreducible πK
 
 /-- The additive valuation on the integer ring scales under the algebra map by the ramification
 index. -/
+@[simp]
 theorem addVal_algebraMap (a : 𝒪[K]) :
     IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] a) =
       ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] a := by
