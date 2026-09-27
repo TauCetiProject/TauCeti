@@ -158,20 +158,29 @@ def coindBotMap {A B : Rep k G} (f : A ⟶ B) :
     coindBot k G A.V ⟶ coindBot k G B.V :=
   (coindBotFunctor k G).map ((forget₂ (Rep k G) (ModuleCat k)).map f)
 
+variable {A B : Rep k G}
+
+/-- The coinduction endofunctor acts on objects by coinduction of underlying modules. -/
+@[simp] theorem coindBotRepFunctor_obj (A : Rep k G) :
+    (coindBotRepFunctor (k := k) (G := G)).obj A = coindBot k G A.V := rfl
+
+/-- The coinduction endofunctor acts on morphisms by `coindBotMap`. -/
+@[simp] theorem coindBotRepFunctor_map (f : A ⟶ B) :
+    (coindBotRepFunctor (k := k) (G := G)).map f = coindBotMap f := by
+  simp [coindBotRepFunctor, coindBotMap]
+
 /-- The map induced by an identity morphism is the identity. -/
 @[simp]
 theorem coindBotMap_id (A : Rep k G) : coindBotMap (𝟙 A) = 𝟙 _ := by
-  change (coindBotRepFunctor (k := k) (G := G)).map (𝟙 A) = 𝟙 _
-  exact (coindBotRepFunctor (k := k) (G := G)).map_id A
+  simpa only [coindBotRepFunctor_map, coindBotRepFunctor_obj] using
+    (coindBotRepFunctor (k := k) (G := G)).map_id A
 
 /-- The map induced by a composite is the composite of the induced maps. -/
 @[simp]
 theorem coindBotMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
     coindBotMap (f ≫ g) = coindBotMap f ≫ coindBotMap g := by
-  change (coindBotRepFunctor (k := k) (G := G)).map (f ≫ g) =
-    (coindBotRepFunctor (k := k) (G := G)).map f ≫
-      (coindBotRepFunctor (k := k) (G := G)).map g
-  exact Functor.map_comp _ _ _
+  simpa only [coindBotRepFunctor_map, coindBotRepFunctor_obj] using
+    (coindBotRepFunctor (k := k) (G := G)).map_comp f g
 
 /-- The coinduced map acts pointwise by the underlying map. -/
 @[simp]
@@ -193,17 +202,6 @@ theorem coindBotUnit_naturality {A B : Rep k G} (f : A ⟶ B) :
   rw [coindBotUnit_hom_apply_coe, coindBotMap_hom_apply_coe,
     coindBotUnit_hom_apply_coe]
   exact (Rep.hom_comm_apply f g a).symm
-
-variable {A B : Rep k G}
-
-/-- The coinduction endofunctor acts on objects by coinduction of underlying modules. -/
-@[simp] theorem coindBotRepFunctor_obj (A : Rep k G) :
-    (coindBotRepFunctor (k := k) (G := G)).obj A = coindBot k G A.V := rfl
-
-/-- The coinduction endofunctor acts on morphisms by `coindBotMap`. -/
-@[simp] theorem coindBotRepFunctor_map (f : A ⟶ B) :
-    (coindBotRepFunctor (k := k) (G := G)).map f = coindBotMap f := by
-  simp [coindBotRepFunctor, coindBotMap]
 
 /-- The canonical embedding into coinduction, as a natural transformation. -/
 @[expose] def coindBotUnitNatTrans : 𝟭 (Rep k G) ⟶ coindBotRepFunctor (k := k) (G := G) where
