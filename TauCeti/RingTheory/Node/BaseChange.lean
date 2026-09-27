@@ -94,10 +94,9 @@ theorem map_coord (i : Fin 2) :
 theorem baseChange_tmul (s : S) (x : NodeAlgebra R a) :
     baseChange a (s ⊗ₜ[R] x) = s • map a x := by
   have hmap : map a x = baseChange a ((1 : S) ⊗ₜ[R] x) := by
-    change (baseChange a)
-      ((Algebra.TensorProduct.includeRight :
-        NodeAlgebra R a →ₐ[R] S ⊗[R] NodeAlgebra R a) x) = _
-    rw [Algebra.TensorProduct.includeRight_apply]
+    simp only [map, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom, AlgEquiv.toAlgHom_apply,
+      Algebra.TensorProduct.includeRight_apply]
   rw [hmap]
   simp only [baseChange, AlgEquiv.ofAlgHom_apply, AlgHom.liftEquiv_tmul, one_smul]
 
