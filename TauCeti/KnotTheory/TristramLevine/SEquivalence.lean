@@ -59,13 +59,13 @@ theorem tristramLevineSignature_eq {V W : IntegralSquareMatrix} (h : IsMove V W)
       change tristramLevineSignature ((enlargeColumnFin V xi).map (Int.castRingHom ℝ)) omega =
         tristramLevineSignature (V.map (Int.castRingHom ℝ)) omega
       rw [map_enlargeColumnFin]
-      rw [enlargeColumnFin, tristramLevineSignature_submatrix_equiv_self,
+      rw [enlargeColumnFin_def, tristramLevineSignature_submatrix_equiv_self,
         tristramLevineSignature_enlargeColumn]
   | enlargeRow V eta =>
       change tristramLevineSignature ((enlargeRowFin V eta).map (Int.castRingHom ℝ)) omega =
         tristramLevineSignature (V.map (Int.castRingHom ℝ)) omega
       rw [map_enlargeRowFin]
-      rw [enlargeRowFin, tristramLevineSignature_submatrix_equiv_self,
+      rw [enlargeRowFin_def, tristramLevineSignature_submatrix_equiv_self,
         tristramLevineSignature_enlargeRow]
 
 end IsMove
@@ -76,11 +76,10 @@ namespace SEquivalent
 theorem tristramLevineSignature_eq {V W : IntegralSquareMatrix} (h : SEquivalent V W) (omega : ℂ) :
     tristramLevineSignature (V.2.map ((↑) : ℤ → ℝ)) omega =
       tristramLevineSignature (W.2.map ((↑) : ℤ → ℝ)) omega := by
-  induction h with
-  | rel _ _ hmove => exact (hmove.tristramLevineSignature_eq omega).symm
-  | refl => rfl
-  | symm _ _ _ ih => exact ih.symm
-  | trans _ _ _ _ _ ihUV ihVW => exact ihUV.trans ihVW
+  apply Relation.EqvGen.eqvGen_le (r' := Setoid.ker fun X : IntegralSquareMatrix ↦
+    tristramLevineSignature (X.2.map ((↑) : ℤ → ℝ)) omega) ?_ V W h
+  intro X Y hmove
+  exact (hmove.tristramLevineSignature_eq omega).symm
 
 end SEquivalent
 
