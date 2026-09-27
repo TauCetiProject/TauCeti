@@ -44,8 +44,9 @@ algebra rather than the scalars, is *not* proved here and needs hypotheses this 
 basis. `TauCeti/RepresentationTheory/Spin/Center.lean` makes them, and one more: for a quadratic
 space of odd dimension over a field of characteristic not two carrying a
 `TauCeti.SpinPolarizationData`, the volume element of an anisotropic orthogonal basis is shown to
-span the centre together with `1`. Over a separably closed field every nondegenerate form carries
-such a polarization, so the rank-two count holds there for nondegeneracy alone. For `Q = 0` on
+span the centre together with `1`. The rank-two count itself,
+`CliffordAlgebra.finrank_center_eq_two_of_odd_finrank`, needs no polarization and holds over every
+field of characteristic not two. For `Q = 0` on
 `R ^ 3` the Clifford algebra is the exterior algebra and its centre is much larger instead. The
 odd-dimensional splitting does run on the volume element:
 `TauCeti/LinearAlgebra/CliffordAlgebra/OddSplitting.lean` splits the Clifford algebra as two copies
