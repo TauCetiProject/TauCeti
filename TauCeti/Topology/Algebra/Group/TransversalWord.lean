@@ -11,17 +11,11 @@ public import TauCeti.GroupTheory.TransversalWord
 /-!
 # Continuity of the transversal word
 
-For a subgroup `U` of a group `G` and a map `t : G ⧸ U → G`, the transversal word
-`ℓᵗ_u(γ) = (t u)⁻¹ * γ * t (γ⁻¹ • u)` of `TauCeti.lWord` is a purely group-theoretic construction.
-This file proves its continuity when multiplication is separately continuous and `U` is *open*.
-Of the three factors in `γ ↦ ℓᵗ_u(γ)` (`TauCeti.continuous_lWord`),
-`(t u)⁻¹` is constant and `γ ↦ γ` is the continuous identity; the only one whose continuity is not
-immediate is `γ ↦ t (γ⁻¹ • u)`, and openness of `U` makes `G ⧸ U` discrete, so that factor is
-locally constant and no continuity is required of `t` itself. Inverse translation on the coset
-quotient is continuous because the inverse orbit's fibers are fibers of forward translation.
-The variant
-`TauCeti.continuous_lWord_inv_smul` lets the coset index itself be translated by a second group
-variable, which is the shape the degree-two corestriction sum is indexed by.
+For an open subgroup `U` of a group `G` with separately continuous multiplication,
+`continuous_lWord` says that the transversal word is continuous in the group variable for each
+fixed coset. The joint statement `continuous_lWord_inv_smul` allows the coset index to be
+translated by a second group variable. Neither theorem requires the transversal map to be
+continuous.
 
 The group-theoretic calculus is in `TauCeti/GroupTheory/TransversalWord.lean`.
 -/

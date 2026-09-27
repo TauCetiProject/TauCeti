@@ -14,8 +14,9 @@ public import TauCeti.GroupTheory.TransversalWord
 A transversal for `U ≤ G` embeds `G` in the permutation wreath product with base group `U`
 and coordinates indexed by `G ⧸ U`. Its permutation part is left translation on cosets; its
 coordinate at `x` is the transversal word `t(x)⁻¹ g t(g⁻¹ • x)`. The cocycle law for that word
-is exactly the multiplication law of the wreath product. For an open subgroup the map is
-continuous in the coordinate topology, even though the transversal itself need not be continuous.
+gives the homomorphism, and both the coset-indexed and finite-coordinate forms are injective.
+Continuity for an open subgroup is proved in
+`TauCeti.Topology.Algebra.Group.WreathProduct.Monomial`.
 
 This is the monomial construction used in Evens' multiplicative transfer; see L. Evens,
 "A generalization of the transfer map in the cohomology of groups", Trans. AMS 108 (1963),

@@ -62,6 +62,15 @@ def monomialContinuousHom [TopologicalSpace G] [SeparatelyContinuousMul G]
     monomialContinuousHom U hU t ht g = monomialHom U t ht g := by
   rfl
 
+/-- The continuous monomial homomorphism is injective. -/
+theorem monomialContinuousHom_injective [TopologicalSpace G] [SeparatelyContinuousMul G]
+    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
+    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
+    Function.Injective (monomialContinuousHom U hU t ht) := by
+  intro g h heq
+  apply monomialHom_injective U t ht
+  simpa only [monomialContinuousHom_apply] using heq
+
 section FiniteIndex
 
 variable [U.FiniteIndex]
@@ -91,6 +100,15 @@ its underlying map. -/
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) :
     monomialFinContinuousHom U hU t ht g = monomialFinHom U t ht g := by
   rfl
+
+/-- The finite-coordinate continuous monomial homomorphism is injective. -/
+theorem monomialFinContinuousHom_injective [TopologicalSpace G] [SeparatelyContinuousMul G]
+    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
+    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
+    Function.Injective (monomialFinContinuousHom U hU t ht) := by
+  intro g h heq
+  apply monomialFinHom_injective U t ht
+  simpa only [monomialFinContinuousHom_apply] using heq
 
 end FiniteIndex
 

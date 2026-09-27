@@ -123,7 +123,8 @@ instance instIsTopologicalGroup [IsTopologicalGroup D] [DiscreteTopology ι] :
       convert hb using 1
       ext w
       rw [SemidirectProduct.inv_left]
-      -- The permutation acts on functions by precomposition with its inverse.
+      -- The goal retains the semidirect action as an `SMul` instance. The `change` reduces that
+      -- instance to precomposition by the inverse permutation, so `simp` can cancel both inverses.
       change (w.left⁻¹) ((w.right⁻¹)⁻¹ i) = (w.left (w.right i))⁻¹
       simp
     · intro i
