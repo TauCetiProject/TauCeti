@@ -55,9 +55,11 @@ by its image under the right tensor inclusion. -/
 theorem lTensor_ker_of_flat (f : B →ₐ[R] C) :
     RingHom.ker (map (AlgHom.id R A) f) =
       (RingHom.ker f).map (includeRight : B →ₐ[R] A ⊗[R] B) := by
-  have hmap (x : A ⊗[R] B) :
-      map (AlgHom.id R A) f x = TensorProduct.AlgebraTensorModule.lTensor R A f.toLinearMap x := by
-    induction x using TensorProduct.inductionOn <;> simp_all
+  have hmap : ⇑(map (AlgHom.id R A) f) =
+      TensorProduct.AlgebraTensorModule.lTensor R A f.toLinearMap := by
+    rw [← AlgHom.coe_toLinearMap, toLinearMap_map, AlgHom.toLinearMap_id,
+      TensorProduct.AlgebraTensorModule.map_eq, TensorProduct.AlgebraTensorModule.coe_lTensor,
+      LinearMap.lTensor_def]
   have hker : (RingHom.ker f).restrictScalars R = LinearMap.ker f.toLinearMap := by
     ext; simp
   have hrange : LinearMap.range
