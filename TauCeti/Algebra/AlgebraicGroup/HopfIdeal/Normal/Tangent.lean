@@ -103,7 +103,8 @@ noncomputable def IsNormal.lieIdeal (hI : I.IsNormal) :
   lie_mem := hI.lie_mem_lieSubalgebra _
 
 /-- The underlying Lie subalgebra of the normal-subgroup Lie ideal is the closed-subgroup
-Lie subalgebra. -/
+Lie subalgebra. To identify their underlying submodules, use
+`rw [← LieIdeal.toLieSubalgebra_toSubmodule, hI.lieIdeal_toLieSubalgebra]`. -/
 @[simp]
 theorem IsNormal.lieIdeal_toLieSubalgebra (hI : I.IsNormal) :
     LieIdeal.toLieSubalgebra B _ (hI.lieIdeal (B := B)) = I.lieSubalgebra (B := B) := by
