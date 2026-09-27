@@ -138,7 +138,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- A connection has constant-curvature tensor `κ` when
 `R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)` at every point. -/
-def IsConstantCurvatureTensor
+@[expose] def IsConstantCurvatureTensor
     (g : RiemannianMetric (fun x : M ↦ TangentSpace I x))
     (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
     (hcov : CovariantDerivative.ContMDiffCovariantDerivative cov ∞) (κ : ℝ) : Prop :=
@@ -146,19 +146,6 @@ def IsConstantCurvatureTensor
   letI := hcov
     ∀ (x : M) (w u v : TangentSpace I x),
     cov.curvatureTensor x w u v = κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u)
-
-omit [T2Space (TangentBundle I M)] in
-@[simp]
-theorem isConstantCurvatureTensor_iff
-    (g : RiemannianMetric (fun x : M ↦ TangentSpace I x))
-    (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
-    (hcov : CovariantDerivative.ContMDiffCovariantDerivative cov ∞) (κ : ℝ) :
-    g.IsConstantCurvatureTensor cov hcov κ ↔
-      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g⟩
-      letI := hcov
-      ∀ (x : M) (w u v : TangentSpace I x),
-        cov.curvatureTensor x w u v = κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) := by
-  rfl
 
 end Bundle.RiemannianMetric
 
@@ -170,22 +157,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsManifold I ∞ M] [T2Space (TangentBundle I M)]
 
 /-- The Levi-Civita connection of `g` has constant curvature `κ`. -/
-def IsConstantCurvatureTensor
+@[expose] def IsConstantCurvatureTensor
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ) : Prop :=
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) := inferInstance
   g.toRiemannianMetric.IsConstantCurvatureTensor
     (CovariantDerivative.leviCivitaConnection I M) inferInstance κ
-
-omit [T2Space (TangentBundle I M)] in
-@[simp]
-theorem isConstantCurvatureTensor_iff
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ) :
-    g.IsConstantCurvatureTensor κ ↔
-      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-      letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) := inferInstance
-      g.toRiemannianMetric.IsConstantCurvatureTensor
-        (CovariantDerivative.leviCivitaConnection I M) inferInstance κ := by
-  rfl
 
 end Bundle.ContMDiffRiemannianMetric
