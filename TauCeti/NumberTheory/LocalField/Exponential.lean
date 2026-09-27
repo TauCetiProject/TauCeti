@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.NumberTheory.LocalField.FactorialValuation
 
@@ -16,13 +17,13 @@ integral depth `i` satisfying `e < (p - 1) * i`, the exponential series
 
 `∑ n, x ^ n / n !`
 
-converges for `x ∈ 𝓂[K] ^ i`.  This file defines its sum as `localExponential` and proves this
-convergence.  The proof uses the exact factorial-valuation estimate: the normalized valuations of
-the terms tend to infinity linearly, and a series in a complete nonarchimedean field is summable
-exactly when its terms tend to zero.
+converges for `x ∈ 𝓂[K] ^ i`, and this file proves that convergence.  Its sum is Mathlib's
+`NormedSpace.exp`, so no new exponential is introduced here.  The proof uses the exact
+factorial-valuation estimate: the normalized valuations of the terms tend to infinity linearly, and
+a series in a complete nonarchimedean field is summable exactly when its terms tend to zero.
 
 The logarithm series and the inverse identities between exponential and logarithm are subsequent
-steps; convergence of the exponential is isolated here so those arguments can reuse a named sum.
+steps; convergence of the exponential is isolated here so those arguments can reuse it.
 
 ## Main results
 
@@ -30,8 +31,8 @@ steps; convergence of the exponential is isolated here so those arguments can re
   when the argument has sufficiently large normalized valuation.
 * `TauCeti.summable_expSeries_of_mem_maximalIdeal_pow`: the exponential series is summable on
   `𝓂[K] ^ i` in the convergence range.
-* `TauCeti.localExponential`: the sum of the exponential series on `𝓂[K] ^ i`.
-* `TauCeti.hasSum_localExponential`: the defining series converges to `localExponential`.
+* `TauCeti.hasSum_exp_of_mem_maximalIdeal_pow`: on `𝓂[K] ^ i` in the convergence range the
+  exponential series sums to `NormedSpace.exp`.
 
 ## References
 
@@ -40,7 +41,6 @@ steps; convergence of the exponential is isolated here so those arguments can re
 -/
 
 public section
-noncomputable section
 
 open Filter ValuativeRel IsNonarchimedeanLocalField
 
@@ -160,24 +160,11 @@ theorem summable_expSeries_of_mem_maximalIdeal_pow {i : ℕ}
         (by simpa only [Units.val_mk0, zpow_natCast] using hxval)
     exact tendsto_expSeries_term_zero_of_le_normalizedValuation hx hxi hi
 
-/-- The local exponential on the `i`-th power of the maximal ideal, defined by its power series.
-The convergence theorem `hasSum_localExponential` applies when `e(K/ℚ_p) < (p - 1) * i`. -/
-noncomputable def localExponential (i : ℕ) (x : (𝓂[K] ^ i : Ideal 𝒪[K])) : K :=
-  ∑' n : ℕ, (x : K) ^ n / (n.factorial : K)
-
-/-- The local exponential sends zero to one. -/
-@[simp]
-theorem localExponential_zero (i : ℕ) :
-    localExponential (K := K) i (0 : (𝓂[K] ^ i : Ideal 𝒪[K])) = 1 := by
-  rw [localExponential, tsum_eq_single 0]
-  · simp
-  · intro n hn
-    simp [hn]
-
-/-- The exponential series of a deep element sums to `localExponential`. -/
-theorem hasSum_localExponential {i : ℕ} (x : (𝓂[K] ^ i : Ideal 𝒪[K]))
+/-- The exponential series of a deep element sums to Mathlib's exponential `NormedSpace.exp`. -/
+theorem hasSum_exp_of_mem_maximalIdeal_pow {i : ℕ} (x : (𝓂[K] ^ i : Ideal 𝒪[K]))
     (hi : absoluteRamificationIndex K p < (p - 1) * i) :
-    HasSum (fun n : ℕ => (x : K) ^ n / (n.factorial : K)) (localExponential i x) :=
-  (summable_expSeries_of_mem_maximalIdeal_pow x hi).hasSum
+    HasSum (fun n : ℕ => (x : K) ^ n / (n.factorial : K)) (NormedSpace.exp (x : K)) := by
+  rw [NormedSpace.exp_eq_expSeries_sum ℚ_[p], NormedSpace.expSeries_sum_eq_div]
+  exact (summable_expSeries_of_mem_maximalIdeal_pow x hi).hasSum
 
 end TauCeti
