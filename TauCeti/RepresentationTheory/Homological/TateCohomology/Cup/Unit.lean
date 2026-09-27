@@ -38,8 +38,8 @@ def cupUnit : tateCohomology (𝟙_ (Rep k G)) 0 :=
 @[simp]
 theorem cup_right_unit (M : Rep k G) (p : ℤ) (x : tateCohomology M p) :
     (tateCohomologyFunctor p).map (ρ_ M).hom
-      (cup M (𝟙_ (Rep k G)) p 0 p (add_zero p) x cupUnit) = x := by
-  rw [cup_zero_right, cupUnit, cupH0_H0π, ← ModuleCat.comp_apply, ← Functor.map_comp]
+      (cupH0 M (𝟙_ (Rep k G)) p x cupUnit) = x := by
+  rw [cupUnit, cupH0_H0π, ← ModuleCat.comp_apply, ← Functor.map_comp]
   have h : Rep.tensorInvariant M (⟨1, fun _ ↦ rfl⟩ : (𝟙_ (Rep k G)).ρ.invariants) ≫
       (ρ_ M).hom = 𝟙 M := by
     ext m
@@ -55,9 +55,9 @@ theorem cup_right_unit (M : Rep k G) (p : ℤ) (x : tateCohomology M p) :
 @[simp]
 theorem cup_left_unit (M : Rep k G) (p : ℤ) (x : tateCohomology M p) :
     (tateCohomologyFunctor p).map (λ_ M).hom
-      (cup (𝟙_ (Rep k G)) M 0 p p (zero_add p) cupUnit x) = x := by
-  rw [cup_zero_left, cup0H_apply, ← ModuleCat.comp_apply, ← Functor.map_comp,
+      (cup0H (𝟙_ (Rep k G)) M p cupUnit x) = x := by
+  rw [cup0H_apply, ← ModuleCat.comp_apply, ← Functor.map_comp,
     braiding_leftUnitor]
-  simpa only [cup_zero_right] using cup_right_unit M p x
+  exact cup_right_unit M p x
 
 end TauCeti.TateCohomology
