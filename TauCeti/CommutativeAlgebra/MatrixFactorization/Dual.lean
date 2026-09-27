@@ -106,21 +106,25 @@ def dualMap {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
   InducedCategory.homMk (CurvedDuplex.dualMap f.hom)
 
 /-- The underlying curved-duplex morphism of a dual morphism of matrix factorizations. -/
-theorem dualMap_hom {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+@[simp] theorem dualMap_hom {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
     (dualMap f).hom = CurvedDuplex.dualMap f.hom := (rfl)
 
-@[simp] theorem dualMap_f₀ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+theorem dualMap_f₀ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
     (dualMap f).hom.f₀ = FGModuleCat.dualMap S f.hom.f₀ := by
   rw [dualMap_hom, CurvedDuplex.dualMap_f₀]
 
-@[simp] theorem dualMap_f₁ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+theorem dualMap_f₁ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
     (dualMap f).hom.f₁ = FGModuleCat.dualMap S f.hom.f₁ := by
   rw [dualMap_hom, CurvedDuplex.dualMap_f₁]
 
+/-- Dualization is contravariant on morphisms: the dual of the identity of a matrix
+factorization is the identity of its dual. -/
 @[simp] theorem dualMap_id (X : MatrixFactorization S w) :
     dualMap (𝟙 X) = 𝟙 (dual (S := S) (w := w) X) :=
   InducedCategory.hom_ext (CurvedDuplex.dualMap_id _)
 
+/-- Dualization is contravariant on morphisms: the dual of a composite is the composite of the
+duals in the opposite order. -/
 @[simp] theorem dualMap_comp {X Y Z : MatrixFactorization S w} (f : X ⟶ Y) (g : Y ⟶ Z) :
     dualMap (f ≫ g) = dualMap g ≫ dualMap f :=
   InducedCategory.hom_ext (CurvedDuplex.dualMap_comp _ _)
@@ -142,10 +146,10 @@ def dualFunctor : (MatrixFactorization S w)ᵒᵖ ⥤ MatrixFactorization S (-w)
   unfold dualFunctor
   rfl
 
-/-- The morphism part of `dualFunctor` is the transpose `MatrixFactorization.dualMap`, along the
-two canonical identifications that its object part exhibits. The form is the one of the finite
-convolution dual in `FiniteLocallyFreeBicommutativeHopfAlgCat.dualFunctor_map`, so that the
-definition of the functor itself can stay opaque. -/
+/-- The morphism part of `dualFunctor` is the transpose `MatrixFactorization.dualMap` of the
+morphism of the opposite category, carried along the two canonical identifications that
+`MatrixFactorization.dualFunctor_obj` exhibits between the duals of the two objects and the
+matrix factorizations the morphism map is stated at. -/
 @[simp] theorem dualFunctor_map {X Y : (MatrixFactorization S w)ᵒᵖ} (f : X ⟶ Y) :
     (dualFunctor (S := S) (w := w)).map f =
       eqToHom (dualFunctor_obj (S := S) (w := w) X) ≫ MatrixFactorization.dualMap f.unop
@@ -153,9 +157,9 @@ definition of the functor itself can stay opaque. -/
   unfold dualFunctor
   rfl
 
-/-- The double dual of a matrix factorization is a matrix factorization of the *same* potential: the
-two minus signs contributed by the two duals cancel, so it is a factorization of `w` and not of
-`- -w`. -/
+/-- The double dual of a matrix factorization is a matrix factorization of the *same* potential
+`w`: dualizing twice crosses the differentials twice, so each of them is negated twice and the
+two minus signs cancel. -/
 abbrev doubleDual (X : MatrixFactorization S w) : MatrixFactorization S w :=
   ofCurvedDuplex X.obj.doubleDual inferInstance inferInstance
 
@@ -185,29 +189,29 @@ noncomputable def doubleDualIso (X : MatrixFactorization S w) :
   ObjectProperty.isoMk (P := MatrixFactorization.isProjective S w)
     (CurvedDuplex.doubleDualIso X.obj)
 
-theorem doubleDualIso_hom_hom (X : MatrixFactorization S w) :
+@[simp] theorem doubleDualIso_hom_hom (X : MatrixFactorization S w) :
     (X.doubleDualIso).hom.hom = (CurvedDuplex.doubleDualIso X.obj).hom := (rfl)
 
-theorem doubleDualIso_inv_hom (X : MatrixFactorization S w) :
+@[simp] theorem doubleDualIso_inv_hom (X : MatrixFactorization S w) :
     (X.doubleDualIso).inv.hom = (CurvedDuplex.doubleDualIso X.obj).inv := (rfl)
 
-@[simp] theorem doubleDualIso_f₀ (X : MatrixFactorization S w) :
+theorem doubleDualIso_f₀ (X : MatrixFactorization S w) :
     (X.doubleDualIso).hom.hom.f₀ = -(FGModuleCat.dualEvalIso S X.obj.X₀).hom :=
   by rw [doubleDualIso_hom_hom, CurvedDuplex.doubleDualIso_f₀]
 
-@[simp] theorem doubleDualIso_f₁ (X : MatrixFactorization S w) :
+theorem doubleDualIso_f₁ (X : MatrixFactorization S w) :
     (X.doubleDualIso).hom.hom.f₁ = (FGModuleCat.dualEvalIso S X.obj.X₁).hom :=
   by rw [doubleDualIso_hom_hom, CurvedDuplex.doubleDualIso_f₁]
 
 /-- The even component of the inverse of the double dual isomorphism is the negated inverse
 evaluation isomorphism. -/
-@[simp] theorem doubleDualIso_inv_f₀ (X : MatrixFactorization S w) :
+theorem doubleDualIso_inv_f₀ (X : MatrixFactorization S w) :
     (X.doubleDualIso).inv.hom.f₀ = -(FGModuleCat.dualEvalIso S X.obj.X₀).inv :=
   by rw [doubleDualIso_inv_hom, CurvedDuplex.doubleDualIso_inv_f₀]
 
 /-- The odd component of the inverse of the double dual isomorphism is the inverse evaluation
 isomorphism. -/
-@[simp] theorem doubleDualIso_inv_f₁ (X : MatrixFactorization S w) :
+theorem doubleDualIso_inv_f₁ (X : MatrixFactorization S w) :
     (X.doubleDualIso).inv.hom.f₁ = (FGModuleCat.dualEvalIso S X.obj.X₁).inv :=
   by rw [doubleDualIso_inv_hom, CurvedDuplex.doubleDualIso_inv_f₁]
 

@@ -48,10 +48,6 @@ below describe them.
 * `FGModuleCat.dualMap_dualMap_dualEvalIso`: the double transpose of a morphism is the original
   morphism, conjugated by the evaluation isomorphisms. This is the fact that makes double duals an
   equivalence.
-* `FGModuleCat.negDualMap_comp_dualMap`,
-  `FGModuleCat.negDualMap_dualMap_comp_negDualMap_dualMap`: the composite of a crossed pair of
-  transposes of a curved pair of maps is the negated curvature, and the same holds for the
-  composite of the two negated double transposes, which is the original curvature again.
 -/
 
 public section
@@ -92,12 +88,16 @@ private theorem smul_hom_apply (a : R) {M N : FGModuleCat.{u} R} (f : M ⟶ N) :
 private theorem neg_hom_apply {M N : FGModuleCat.{u} R} (f : M ⟶ N) :
     (-f).hom.hom = -f.hom.hom := rfl
 
+/-- Dualization is contravariant on morphisms: the transpose of the identity is the
+identity. -/
 @[simp] theorem dualMap_id {M : FGModuleCat.{u} R} [Module.Projective R M] :
     FGModuleCat.dualMap (R := R) (𝟙 M) = 𝟙 (FGModuleCat.dual R M) := by
   apply FGModuleCat.hom_ext
   simp only [FGModuleCat.dualMap_hom, FGModuleCat.hom_hom_id]
   exact LinearMap.dualMap_id
 
+/-- Dualization is contravariant on morphisms: the transpose of a composite is the composite
+of the transposes in the opposite order. -/
 @[simp] theorem dualMap_comp {M N P : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] [Module.Projective R P] (f : M ⟶ N) (g : N ⟶ P) :
     FGModuleCat.dualMap (R := R) (f ≫ g) = FGModuleCat.dualMap (R := R) g ≫
@@ -160,43 +160,5 @@ morphisms. -/
   simp only [LinearMap.comp_apply, ← Module.evalEquiv_toLinearMap,
     LinearEquiv.coe_toLinearMap] at key ⊢
   rw [← key, (Module.evalEquiv R N).symm_apply_apply]
-
-/-- For a curved pair of maps `f` and `g` with `f ≫ g = w • 𝟙`, the composite of the negated
-transpose of `g` with the transpose of `f` is multiplication by `-w` on the dual. This is the
-computation behind the two differential equations of a dual of curvature `-w`. -/
-theorem negDualMap_comp_dualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
-    [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap R g) ≫ FGModuleCat.dualMap R f) = -w • 𝟙 (FGModuleCat.dual R M) := by
-  calc (-FGModuleCat.dualMap R g) ≫ FGModuleCat.dualMap R f
-      = -(FGModuleCat.dualMap R g ≫ FGModuleCat.dualMap R f) := by simp only [neg_comp]
-    _ = -FGModuleCat.dualMap R (f ≫ g) := by
-      rw [FGModuleCat.dualMap_comp (f := f) (g := g)]
-    _ = -FGModuleCat.dualMap R (w • 𝟙 M) := by rw [h]
-    _ = -(w • FGModuleCat.dualMap R (𝟙 M)) := by rw [FGModuleCat.dualMap_smul]
-    _ = -(w • 𝟙 (FGModuleCat.dual R M)) := by rw [FGModuleCat.dualMap_id]
-    _ = -w • 𝟙 (FGModuleCat.dual R M) := by rw [neg_smul]
-
-/-- The same computation one dual further: the composite of the two negated double transposes of
-a curved pair of maps is multiplication by the original `w` on the double dual. This is the
-computation behind the two differential equations of a double dual, and the reason a double dual
-has the same curvature as its source. -/
-theorem negDualMap_dualMap_comp_negDualMap_dualMap {M N : FGModuleCat.{u} R}
-    [Module.Projective R M] [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M)
-    (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap R (FGModuleCat.dualMap R f)) ≫
-      (-FGModuleCat.dualMap R (FGModuleCat.dualMap R g)))
-      = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
-  calc (-FGModuleCat.dualMap R (FGModuleCat.dualMap R f)) ≫
-        (-FGModuleCat.dualMap R (FGModuleCat.dualMap R g))
-      = FGModuleCat.dualMap R (FGModuleCat.dualMap R f) ≫
-          FGModuleCat.dualMap R (FGModuleCat.dualMap R g) := by
-            rw [Preadditive.neg_comp_neg]
-    _ = FGModuleCat.dualMap R (FGModuleCat.dualMap R (f ≫ g)) := by
-      rw [← FGModuleCat.dualMap_comp, ← FGModuleCat.dualMap_comp]
-    _ = FGModuleCat.dualMap R (FGModuleCat.dualMap R (w • 𝟙 M)) := by rw [h]
-    _ = w • FGModuleCat.dualMap R (FGModuleCat.dualMap R (𝟙 M)) := by
-      simp only [FGModuleCat.dualMap_smul]
-    _ = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
-      rw [FGModuleCat.dualMap_id, FGModuleCat.dualMap_id]
 
 end FGModuleCat
