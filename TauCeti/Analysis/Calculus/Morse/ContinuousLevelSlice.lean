@@ -133,6 +133,7 @@ theorem IsNegativeGradient.exists_continuous_levelSlice
     have heq : t ⟨φ u x.1, ⟨isInvariant_unstableSet φ p u x.2.1,
         isInvariant_stableSet φ q u x.2.2⟩⟩ + u = t x := by
       apply hstrict.injective
+      -- Unfold the orbit function in the injectivity goal to expose the flow composition.
       change f (φ (t ⟨φ u x.1, ⟨isInvariant_unstableSet φ p u x.2.1,
         isInvariant_stableSet φ q u x.2.2⟩⟩ + u) x.1) = f (φ (t x) x.1)
       rw [φ.map_add]
