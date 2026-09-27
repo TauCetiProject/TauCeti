@@ -39,7 +39,7 @@ the same diagram without passing through any statement about the underlying abst
   `conj_mem_hopfIdealPointsSubgroup_of_mem_kostantToralPointsSubgroup`: the universal property
   above, for an arbitrary closed subgroup scheme of `GLₙ`, on defining ideals, schemes, and
   points. The scheme morphism is a closed immersion and its composite with the target inclusion
-  is conjugation followed by the source inclusion.
+  is the source inclusion followed by conjugation.
 * `map_conj_kostantToralPointsSubgroup_le`: conjugation by `P` maps the points of one toral closure
   into those of a second when it maps its generators there.
 * `map_reindex_conj_kostantToralPointsSubgroup_eq` and `kostantToralPointsReindexConjMulEquiv`:
