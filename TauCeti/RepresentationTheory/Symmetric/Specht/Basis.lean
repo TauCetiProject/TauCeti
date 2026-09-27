@@ -57,6 +57,7 @@ theorem spechtCharacterBasis_apply (μ : n.Partition) :
 
 /-- The coordinate of a class function at a Specht character is its character pairing with
 that character. -/
+@[simp]
 theorem spechtCharacterBasis_repr (f : ClassFunction ℂ (Equiv.Perm (Fin n)))
     (μ : n.Partition) :
     (spechtCharacterBasis n).repr f μ =

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Basis
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
-import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
 # The finite-variable Frobenius characteristic
