@@ -25,9 +25,8 @@ manifold structures and intersected to form Morse trajectory spaces.
 
 ## Main declarations
 
-* `mem_localInvariantSet_Ici_iff_negativeGradientFlow` and
-  `mem_localInvariantSet_Iic_iff_negativeGradientFlow`: characterize local invariant sets using
-  the global flow.
+* `mem_localInvariantSet_iff_negativeGradientFlow`: characterizes a local invariant set over an
+  order-connected time set using the global flow.
 * `stableSet_eq_biUnion_orbit_localInvariantSet_Ici`: a convergent forward local invariant set
   generates the global stable set under the flow.
 * `unstableSet_eq_biUnion_orbit_localInvariantSet_Iic`: the backward-time counterpart.
@@ -53,26 +52,37 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f : E → ℝ} {x : E} {K : ℝ≥0}
 
-/-- Membership in a forward local invariant set can be witnessed by the global negative-gradient
-orbit: the orbit stays in the chosen ball for nonnegative time and its initial projection obeys
-the cutoff. -/
-theorem mem_localInvariantSet_Ici_iff_negativeGradientFlow (hf : LipschitzWith K (∇ f))
-    (Q : E →L[ℝ] E) {r rho : ℝ} {z : E} :
-    z ∈ localInvariantSet f x (Ici 0) Q r rho ↔
-      (∀ t, 0 ≤ t → negativeGradientFlow f hf t (x + z) - x ∈ closedBall 0 r) ∧
+/-- Membership in a local invariant set over an order-connected time set containing zero can be
+witnessed by the global negative-gradient orbit: the orbit stays in the chosen ball throughout
+the time set and its initial projection obeys the cutoff. -/
+theorem mem_localInvariantSet_iff_negativeGradientFlow (hf : LipschitzWith K (∇ f))
+    (Q : E →L[ℝ] E) {s : Set ℝ} (hs : s.OrdConnected) (h0 : 0 ∈ s)
+    {r rho : ℝ} {z : E} :
+    z ∈ localInvariantSet f x s Q r rho ↔
+      (∀ t ∈ s, negativeGradientFlow f hf t (x + z) - x ∈ closedBall 0 r) ∧
         ‖Q z‖ ≤ rho := by
   constructor
   · rw [mem_localInvariantSet]
     rintro ⟨⟨y, hy, hy0, hmaps⟩, hQ⟩
     refine ⟨fun t ht ↦ ?_, hQ⟩
-    rw [← eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Ici hf hy hy0 ht]
+    rw [← eq_centeredNegativeGradientFlow_of_isIntegralCurveOn hf hy hy0
+      (hs.uIcc_subset h0 ht)]
     exact hmaps ht
   · rintro ⟨hball, hQ⟩
     rw [mem_localInvariantSet]
     refine ⟨⟨fun t ↦ negativeGradientFlow f hf t (x + z) - x,
-      (isIntegralCurve_centeredNegativeGradientFlow hf x z).isIntegralCurveOn _, ?_, ?_⟩, hQ⟩
+      (isIntegralCurve_centeredNegativeGradientFlow hf x z).isIntegralCurveOn s, ?_, ?_⟩, hQ⟩
     · simp only [_root_.Flow.map_zero_apply, add_sub_cancel_left]
-    · exact fun t ht ↦ hball t ht
+    · exact hball
+
+/-- Membership in a forward local invariant set can be witnessed by the global negative-gradient
+orbit, with the confinement condition imposed at nonnegative times. -/
+theorem mem_localInvariantSet_Ici_iff_negativeGradientFlow (hf : LipschitzWith K (∇ f))
+    (Q : E →L[ℝ] E) {r rho : ℝ} {z : E} :
+    z ∈ localInvariantSet f x (Ici 0) Q r rho ↔
+      (∀ t, 0 ≤ t → negativeGradientFlow f hf t (x + z) - x ∈ closedBall 0 r) ∧
+        ‖Q z‖ ≤ rho :=
+  mem_localInvariantSet_iff_negativeGradientFlow hf Q ordConnected_Ici (by simp)
 
 /-- Membership in a backward local invariant set can be witnessed by the global negative-gradient
 orbit, with the confinement condition imposed at nonpositive times. -/
@@ -80,19 +90,8 @@ theorem mem_localInvariantSet_Iic_iff_negativeGradientFlow (hf : LipschitzWith K
     (Q : E →L[ℝ] E) {r rho : ℝ} {z : E} :
     z ∈ localInvariantSet f x (Iic 0) Q r rho ↔
       (∀ t, t ≤ 0 → negativeGradientFlow f hf t (x + z) - x ∈ closedBall 0 r) ∧
-        ‖Q z‖ ≤ rho := by
-  constructor
-  · rw [mem_localInvariantSet]
-    rintro ⟨⟨y, hy, hy0, hmaps⟩, hQ⟩
-    refine ⟨fun t ht ↦ ?_, hQ⟩
-    rw [← eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Iic hf hy hy0 ht]
-    exact hmaps ht
-  · rintro ⟨hball, hQ⟩
-    rw [mem_localInvariantSet]
-    refine ⟨⟨fun t ↦ negativeGradientFlow f hf t (x + z) - x,
-      (isIntegralCurve_centeredNegativeGradientFlow hf x z).isIntegralCurveOn _, ?_, ?_⟩, hQ⟩
-    · simp only [_root_.Flow.map_zero_apply, add_sub_cancel_left]
-    · exact fun t ht ↦ hball t ht
+        ‖Q z‖ ≤ rho :=
+  mem_localInvariantSet_iff_negativeGradientFlow hf Q ordConnected_Iic (by simp)
 
 /-- Translating a forward local invariant set back to the base point gives points in the global
 stable set, provided every trajectory confined to the chosen ball converges. -/
@@ -174,15 +173,6 @@ theorem exists_negativeGradientFlow_sub_mem_localInvariantSet_Iic_of_mem_unstabl
       (hT (T + s) (add_le_of_nonpos_right hs)).1
   · simpa only [mem_closedBall, dist_zero_right] using (hT T le_rfl).2
 
-omit [InnerProductSpace ℝ E] [CompleteSpace E] in
-private theorem mem_orbit_add_apply_sub (φ : _root_.Flow ℝ E) (x p : E) (T : ℝ) :
-    p ∈ φ.orbit (x + (φ T p - x)) := by
-  rw [_root_.Flow.mem_orbit_iff]
-  refine ⟨-T, ?_⟩
-  have hxz : x + (φ T p - x) = φ T p := by abel
-  rw [hxz, ← φ.map_add]
-  simp
-
 /-- A forward local invariant set whose confined trajectories converge generates the whole global
 stable set under the negative-gradient flow. -/
 theorem stableSet_eq_biUnion_orbit_localInvariantSet_Ici
@@ -202,7 +192,9 @@ theorem stableSet_eq_biUnion_orbit_localInvariantSet_Ici
         hf Q hr hrho hp
     refine mem_iUnion.2 ⟨φ T p - x, mem_iUnion.2 ⟨?_, ?_⟩⟩
     · simpa only [φ] using hT
-    · exact mem_orbit_add_apply_sub φ x p T
+    · have hxz : x + (φ T p - x) = φ T p := by abel
+      rw [hxz]
+      exact φ.toAddAction.mem_orbit_vadd T p
   · intro p hp
     obtain ⟨z, hp⟩ := mem_iUnion.1 hp
     obtain ⟨hz, hp⟩ := mem_iUnion.1 hp
@@ -230,7 +222,9 @@ theorem unstableSet_eq_biUnion_orbit_localInvariantSet_Iic
         hf Q hr hrho hp
     refine mem_iUnion.2 ⟨φ T p - x, mem_iUnion.2 ⟨?_, ?_⟩⟩
     · simpa only [φ] using hT
-    · exact mem_orbit_add_apply_sub φ x p T
+    · have hxz : x + (φ T p - x) = φ T p := by abel
+      rw [hxz]
+      exact φ.toAddAction.mem_orbit_vadd T p
   · intro p hp
     obtain ⟨z, hp⟩ := mem_iUnion.1 hp
     obtain ⟨hz, hp⟩ := mem_iUnion.1 hp
@@ -242,18 +236,6 @@ theorem unstableSet_eq_biUnion_orbit_localInvariantSet_Iic
 variable [FiniteDimensional ℝ E]
 
 namespace IsNondegenerateCriticalPoint
-
-private theorem localStableSet_eq_localInvariantSet (h : IsNondegenerateCriticalPoint f x)
-    (r rho : ℝ) :
-    h.localStableSet r rho = localInvariantSet f x (Ici 0) h.stableProjection r rho := by
-  ext z
-  rw [mem_localStableSet, mem_localInvariantSet]
-
-private theorem localUnstableSet_eq_localInvariantSet (h : IsNondegenerateCriticalPoint f x)
-    (r rho : ℝ) :
-    h.localUnstableSet r rho = localInvariantSet f x (Iic 0) h.unstableProjection r rho := by
-  ext z
-  rw [mem_localUnstableSet, mem_localInvariantSet]
 
 /-- Membership in the local stable set is equivalent to confinement of the global
 negative-gradient orbit together with the stable-projection cutoff. -/
