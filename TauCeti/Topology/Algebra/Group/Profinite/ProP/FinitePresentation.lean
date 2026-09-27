@@ -43,13 +43,16 @@ variable {X : Type u} [Finite X] (rels : Set (freeProP p X))
   [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
 
 /-- A minimal presentation on a finite generating type can be replaced by a finite relation
-system exactly when `H²(G, 𝔽_p)` is finite. The new presentation uses the same generators. -/
+system exactly when `H²(G, 𝔽_p)` is finite. The new presentation uses the same generators and
+has the same closed normal relation subgroup. -/
 theorem finite_H2_iff_exists_finite_presentation
     (hrels : rels ⊆ proPFrattini p (freeProP p X))
     (e : presentedProP p X rels ≃ₜ* G)
     (htriv : ∀ (g : G) (m : ZMod p), g • m = m) :
     Finite (H2 G (ZMod p)) ↔
       ∃ s : Finset (freeProP p X),
+        (normalClosure (s : Set (freeProP p X))).topologicalClosure =
+          (normalClosure rels).topologicalClosure ∧
         Nonempty (presentedProP p X (s : Set (freeProP p X)) ≃ₜ* G) := by
   classical
   let R := (normalClosure rels).topologicalClosure
@@ -63,9 +66,11 @@ theorem finite_H2_iff_exists_finite_presentation
       (hpro.isTopologicallyFinitelyGenerated_quotient_pLowerCentralStep_iff
         Fact.out hclosed).mp hfg
     let s : Finset (freeProP p X) := t.image Subtype.val
-    refine ⟨s, ⟨(congrOfClosureEq (rels := rels) ?_).symm.trans e⟩⟩
-    simpa only [s, Finset.coe_image] using ht.symm
-  · rintro ⟨s, ⟨e'⟩⟩
+    have hs : (normalClosure (s : Set (freeProP p X))).topologicalClosure =
+        (normalClosure rels).topologicalClosure := by
+      simpa only [s, Finset.coe_image] using ht
+    exact ⟨s, hs, ⟨(congrOfClosureEq (rels := rels) hs.symm).symm.trans e⟩⟩
+  · rintro ⟨s, -, ⟨e'⟩⟩
     have hgen : IsTopologicallyFinitelyGenerated G :=
       (isTopologicallyFinitelyGenerated_congr e).mp
         (presentedProP.isTopologicallyFinitelyGenerated (p := p) (X := X) (rels := rels))
@@ -108,13 +113,13 @@ theorem IsProP.finite_H2_iff_exists_finite_minimal_presentation
     hG.exists_subset_proPFrattini_continuousMulEquiv_presentedProP h X hX
   constructor
   · intro hf
-    obtain ⟨s, ⟨e'⟩⟩ :=
+    obtain ⟨s, -, ⟨e'⟩⟩ :=
       (presentedProP.finite_H2_iff_exists_finite_presentation rels hrels e htriv).mp hf
     exact ⟨s, (presentedProP.subset_proPFrattini_iff_card_eq
       (s : Set (freeProP p X)) e' h).mpr hX, ⟨e'⟩⟩
   · rintro ⟨s, hs, ⟨e'⟩⟩
     exact (presentedProP.finite_H2_iff_exists_finite_presentation
       (s : Set (freeProP p X)) hs e' htriv).mpr
-        ⟨s, ⟨e'⟩⟩
+        ⟨s, rfl, ⟨e'⟩⟩
 
 end TauCeti
