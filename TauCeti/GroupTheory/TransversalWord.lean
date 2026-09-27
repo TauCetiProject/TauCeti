@@ -25,7 +25,9 @@ lies in `U` whenever `t` really is a transversal, and it is a `1`-cocycle for th
 ℓᵗ_u(γ) * ℓᵗ_{γ⁻¹ • u}(η) = ℓᵗ_u(γ * η).
 ```
 
-This file records that calculus: `TauCeti.lWord` and the three identities that make it useful,
+This file also defines `TauCeti.CosetTransversal`, a representative map bundled with its
+section property for constructions that require a genuine transversal. It records the word
+calculus through `TauCeti.lWord` and the three identities that make it useful,
 namely `TauCeti.lWord_mem`, `TauCeti.lWord_mul_lWord`, and
 `TauCeti.transversal_mul_lWord`, the last of which is the rewriting rule
 `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` that turns a `U`-cocycle relation into a `G`-cocycle relation.
@@ -37,8 +39,8 @@ it is `γ * s` and `s⁻¹ * γ` respectively. Continuity of `γ ↦ ℓᵗ_u(γ
 an open subgroup of a topological group is `TauCeti.continuous_lWord`, in
 `TauCeti/Topology/Algebra/Group/TransversalWord.lean`; nothing in this file needs a topology.
 
-The transversal is a variable throughout, and no condition is imposed on it except where one is
-needed: only `lWord_mem` and `transversalDiff_mem` ask that `t` be a transversal at all.
+In the word calculus, the transversal is a variable, and only `lWord_mem` and
+`transversalDiff_mem` ask that `t` actually represent each coset.
 
 ## Implementation notes
 
@@ -56,7 +58,16 @@ public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] (U : Subgroup G) (t t' : G ⧸ U → G)
+variable {G : Type*} [Group G]
+
+/-- A choice of representative for each left coset of `U`, together with its section property. -/
+structure CosetTransversal (U : Subgroup G) where
+  /-- The chosen representative of each left coset. -/
+  rep : G ⧸ U → G
+  /-- Each representative belongs to the coset it represents. -/
+  mk_rep : ∀ x, (QuotientGroup.mk (rep x) : G ⧸ U) = x
+
+variable (U : Subgroup G) (t t' : G ⧸ U → G)
 
 /-- The **transversal word** `ℓᵗ_u(γ) = (t u)⁻¹ * γ * t (γ⁻¹ • u)` of a subgroup `U ≤ G`, a map
 `t : G ⧸ U → G`, a coset `u` and a group element `γ`. It lies in `U` as soon as `t` is a
