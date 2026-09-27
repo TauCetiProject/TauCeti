@@ -230,7 +230,7 @@ theorem hasseInvariant_add_mk (p q : RegularFormPresentation K) :
     toFun := fun a => quaternionClass a b
     map_one' := quaternionClass_one_left b
     map_mul' := fun a c => quaternionClass_mul_left a c b }
-  rw [mk_add_mk, RegularFormPresentation.append_eq, hasseInvariant_mk, hasseInvariant_mk,
+  rw [mk_add_mk, RegularFormPresentation.append, hasseInvariant_mk, hasseInvariant_mk,
     hasseInvariant_mk]
   rw [prod_prod_Ioi_append]
   congr 1

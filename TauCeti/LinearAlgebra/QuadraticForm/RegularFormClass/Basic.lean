@@ -216,13 +216,9 @@ theorem RegularFormClass.rank_mk (p : RegularFormPresentation K) :
 
 /-- The orthogonal sum of two diagonal presentations, obtained by concatenating the two weight
 tuples. -/
-def RegularFormPresentation.append (p q : RegularFormPresentation K) :
+@[expose] def RegularFormPresentation.append (p q : RegularFormPresentation K) :
     RegularFormPresentation K :=
   ⟨p.1 + q.1, Fin.append p.2 q.2⟩
-
-/-- The underlying weights of an orthogonal sum are the concatenation of the two weight lists. -/
-theorem RegularFormPresentation.append_eq (p q : RegularFormPresentation K) :
-    p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := (rfl)
 
 /-- Concatenation adds the two ranks. -/
 @[simp]

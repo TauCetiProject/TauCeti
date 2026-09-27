@@ -129,7 +129,7 @@ theorem localHasseOfOdd_add_mk (h2 : IsUnit (2 : 𝒪[K]))
     toFun := fun a => hilbertSymbol a b
     map_one' := hilbertSymbol_one_left b
     map_mul' := fun a c => hilbertSymbol_mul_left h2 b a c }
-  rw [mk_add_mk, RegularFormPresentation.append_eq, localHasseOfOdd_mk,
+  rw [mk_add_mk, RegularFormPresentation.append, localHasseOfOdd_mk,
     localHasseOfOdd_mk, localHasseOfOdd_mk, prod_prod_Ioi_append]
   congr 1
   calc
