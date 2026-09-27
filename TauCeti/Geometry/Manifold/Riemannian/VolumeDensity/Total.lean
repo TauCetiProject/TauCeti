@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import Mathlib.MeasureTheory.Measure.Real
 
 /-!
@@ -88,28 +87,13 @@ theorem _root_.Homeomorph.riemannianTotalVolume_eq (Φ : M ≃ₜ N)
 namespace RiemannianIsometry
 
 variable {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  {N : Type*} [TopologicalSpace N] [CompactSpace N] [ChartedSpace H' N]
   [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
   [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace J y)]
-  [LindelofSpace N]
 
-/-- A Riemannian isometry preserves the Riemannian volume measure.
-
-This packages the general homeomorphism theorem at the canonical `RiemannianIsometry` API. -/
-theorem measurePreserving_riemannianVolume (Φ : RiemannianIsometry I J M N) :
-    MeasurePreserving Φ (riemannianVolume I M) (riemannianVolume J N) := by
-  apply Homeomorph.measurePreserving_riemannianVolume Φ.toDiffeomorph.toHomeomorph
-    Φ.mdifferentiable
-  intro x v w
-  -- The coercions from a Riemannian isometry to its diffeomorphism and homeomorphism
-  -- are definitionally the same map, but `mfderiv` does not unfold those wrappers itself.
-  change ⟪mfderiv I J Φ x v, mfderiv I J Φ x w⟫_ℝ = ⟪v, w⟫_ℝ
-  exact Φ.inner_mfderiv x v w
-
-omit [LindelofSpace N] in
 /-- A Riemannian isometry between compact manifolds preserves total Riemannian volume. -/
-theorem riemannianTotalVolume_eq [CompactSpace N]
+theorem riemannianTotalVolume_eq
     (Φ : RiemannianIsometry I J M N) :
     riemannianTotalVolume I M = riemannianTotalVolume J N := by
   apply Homeomorph.riemannianTotalVolume_eq Φ.toDiffeomorph.toHomeomorph Φ.mdifferentiable
