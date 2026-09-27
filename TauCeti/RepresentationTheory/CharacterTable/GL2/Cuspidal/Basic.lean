@@ -28,7 +28,7 @@ import TauCeti.Algebra.GroupWithZero.Units.Basic
 Let `F` be a finite field with `q` elements, `E/F` a degree-`2` extension, `θ` a character of `Eˣ`
 and `ψ` a nontrivial additive character of `F`.  The **cuspidal virtual character**
 
-`TauCeti.GL2CuspidalVirtualCharacter F E hE θ ψ
+`TauCeti.GL2CuspidalVirtualCharacter F E θ ψ
   = χ(Ind_{Z U}^{GL₂(F)} (θ|_{Fˣ} ⊗ ψ)) - χ(Ind_{Eˣ}^{GL₂(F)} θ)`
 
 is the difference of the two induced characters computed in
@@ -123,7 +123,7 @@ open Matrix
 namespace TauCeti
 
 variable (F : Type*) [Field F] [Fintype F] (E : Type*) [Field E] [Algebra F E]
-  (hE : Module.finrank F E = 2)
+  [Algebra.IsQuadraticExtension F E]
 
 /-- **The cuspidal virtual character of `GL₂(𝔽_q)`** attached to a character `θ` of `Eˣ` and an
 additive character `ψ` of `F`: the character induced from the scalar--unipotent subgroup by
@@ -135,40 +135,40 @@ noncomputable def GL2CuspidalVirtualCharacter (θ : Eˣ →* ℂˣ) (ψ : AddCha
     ClassFunction ℂ (GL (Fin 2) F) :=
   ClassFunction.ofFDRep
       (GL2ScalarUnipotentInduction F (θ.comp (Units.map (algebraMap F E : F →* E))) ψ) -
-    ClassFunction.ofFDRep (GL2EllipticInduction F E hE θ)
+    ClassFunction.ofFDRep (GL2EllipticInduction F E θ)
 
 variable {F E}
 
 /-- The defining equation of the cuspidal virtual character, as class functions: it is the
 difference of the class functions of the two induced representations. -/
 theorem GL2CuspidalVirtualCharacter_def (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
-    GL2CuspidalVirtualCharacter F E hE θ ψ =
+    GL2CuspidalVirtualCharacter F E θ ψ =
       ClassFunction.ofFDRep
           (GL2ScalarUnipotentInduction F (θ.comp (Units.map (algebraMap F E : F →* E))) ψ) -
-        ClassFunction.ofFDRep (GL2EllipticInduction F E hE θ) :=
+        ClassFunction.ofFDRep (GL2EllipticInduction F E θ) :=
   (rfl)
 
 /-- The defining equation of the cuspidal virtual character, as functions on `GL₂(F)`: it is the
 difference of the two induced characters. -/
 theorem coe_GL2CuspidalVirtualCharacter (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
-    (GL2CuspidalVirtualCharacter F E hE θ ψ).1 =
+    (GL2CuspidalVirtualCharacter F E θ ψ).1 =
       (GL2ScalarUnipotentInduction F (θ.comp (Units.map (algebraMap F E : F →* E))) ψ).character -
-        (GL2EllipticInduction F E hE θ).character := by
+        (GL2EllipticInduction F E θ).character := by
   rw [GL2CuspidalVirtualCharacter_def, Submodule.coe_sub]
   exact congrArg₂ (· - ·) (funext (ClassFunction.ofFDRep_apply _))
     (funext (ClassFunction.ofFDRep_apply _))
 
 /-- The defining equation of the cuspidal virtual character, pointwise. -/
 theorem GL2CuspidalVirtualCharacter_apply (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) (g : GL (Fin 2) F) :
-    (GL2CuspidalVirtualCharacter F E hE θ ψ).1 g =
+    (GL2CuspidalVirtualCharacter F E θ ψ).1 g =
       (GL2ScalarUnipotentInduction F (θ.comp (Units.map (algebraMap F E : F →* E))) ψ).character g -
-        (GL2EllipticInduction F E hE θ).character g := by
+        (GL2EllipticInduction F E θ).character g := by
   rw [coe_GL2CuspidalVirtualCharacter, Pi.sub_apply]
 
 /-- **The cuspidal virtual character is a virtual character**, being a difference of two
 characters.  This is what makes the classical norm-`1` test available for it. -/
 theorem GL2CuspidalVirtualCharacter_mem_virtualCharacters (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
-    (GL2CuspidalVirtualCharacter F E hE θ ψ).1 ∈ virtualCharacters ℂ (GL (Fin 2) F) := by
+    (GL2CuspidalVirtualCharacter F E θ ψ).1 ∈ virtualCharacters ℂ (GL (Fin 2) F) := by
   rw [coe_GL2CuspidalVirtualCharacter]
   exact sub_mem (character_mem_virtualCharacters _) (character_mem_virtualCharacters _)
 
@@ -178,7 +178,7 @@ theorem GL2CuspidalVirtualCharacter_mem_virtualCharacters (θ : Eˣ →* ℂˣ) 
 characters contribute `(q² - 1) θ(a)` and `q (q - 1) θ(a)`. -/
 @[simp]
 theorem GL2CuspidalVirtualCharacter_apply_scalar (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) (a : Fˣ) :
-    (GL2CuspidalVirtualCharacter F E hE θ ψ).1
+    (GL2CuspidalVirtualCharacter F E θ ψ).1
         (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       ((Fintype.card F : ℂ) - 1) * θ (Units.map (algebraMap F E : F →* E) a) := by
   rw [GL2CuspidalVirtualCharacter_apply, character_GL2ScalarUnipotentInduction_scalar,
@@ -190,30 +190,30 @@ induced characters doing so. -/
 @[simp]
 theorem GL2CuspidalVirtualCharacter_apply_diagGL (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ)
     {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
-    (GL2CuspidalVirtualCharacter F E hE θ ψ).1 (diagGL t) = 0 := by
+    (GL2CuspidalVirtualCharacter F E θ ψ).1 (diagGL t) = 0 := by
   rw [GL2CuspidalVirtualCharacter_apply, character_GL2ScalarUnipotentInduction_diagGL _ _ ht,
-    character_GL2EllipticInduction_diagGL _ _ _ _ ht, sub_zero]
+    character_GL2EllipticInduction_diagGL _ _ _ ht, sub_zero]
 
 /-- **The cuspidal virtual character at a nontrivial Jordan block** is `-θ(a)`: only the
 Gelfand-Graev term contributes, and its value there is `-θ(a)` for every nontrivial `ψ`. -/
 @[simp]
 theorem GL2CuspidalVirtualCharacter_apply_jordanGL (θ : Eˣ →* ℂˣ) {ψ : AddChar F ℂ} (hψ : ψ ≠ 1)
     (a : Fˣ) {b : F} (hb : b ≠ 0) :
-    (GL2CuspidalVirtualCharacter F E hE θ ψ).1 (jordanGL a b) =
+    (GL2CuspidalVirtualCharacter F E θ ψ).1 (jordanGL a b) =
       -(θ (Units.map (algebraMap F E : F →* E) a) : ℂ) := by
   rw [GL2CuspidalVirtualCharacter_apply, character_GL2ScalarUnipotentInduction_jordanGL _ _ hψ a hb,
-    character_GL2EllipticInduction_jordanGL _ _ _ _ a hb, sub_zero, MonoidHom.comp_apply]
+    character_GL2EllipticInduction_jordanGL _ _ _ a hb, sub_zero, MonoidHom.comp_apply]
 
 /-- **The cuspidal virtual character at an elliptic element** is `-(θ(u) + θ(u^q))`: only the
 torus term contributes, and it contributes the two torus elements conjugate to the given one. -/
 @[simp]
 theorem GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ)
     {u : Eˣ} (hu : (u : E) ∉ Set.range (algebraMap F E)) :
-    (GL2CuspidalVirtualCharacter F E hE θ ψ).1 (GL2NonSplitTorusHom F E hE u) =
+    (GL2CuspidalVirtualCharacter F E θ ψ).1 (GL2NonSplitTorusHom F E u) =
       -((θ u : ℂ) + θ (u ^ Fintype.card F)) := by
   rw [GL2CuspidalVirtualCharacter_apply,
-    character_GL2ScalarUnipotentInduction_gl2NonSplitTorusHom _ _ hE hu,
-    character_GL2EllipticInduction_gl2NonSplitTorusHom _ _ _ _ hu, zero_sub,
+    character_GL2ScalarUnipotentInduction_gl2NonSplitTorusHom _ _ hu,
+    character_GL2EllipticInduction_gl2NonSplitTorusHom _ _ _ hu, zero_sub,
     Nat.card_eq_fintype_card]
 
 /-- **The cuspidal virtual character has degree `q - 1`**, the difference `(q² - 1) - q (q - 1)`
@@ -221,7 +221,7 @@ of the two inducing indices.  It is the dimension the cuspidal representation at
 classically has. -/
 @[simp]
 theorem GL2CuspidalVirtualCharacter_apply_one (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
-    (GL2CuspidalVirtualCharacter F E hE θ ψ).1 1 = (Fintype.card F : ℂ) - 1 := by
+    (GL2CuspidalVirtualCharacter F E θ ψ).1 1 = (Fintype.card F : ℂ) - 1 := by
   have hone : (1 : GL (Fin 2) F) = Matrix.GeneralLinearGroup.scalar (Fin 2) (1 : Fˣ) :=
     (map_one _).symm
   rw [hone, GL2CuspidalVirtualCharacter_apply_scalar]
@@ -233,16 +233,16 @@ theorem GL2CuspidalVirtualCharacter_apply_one (θ : Eˣ →* ℂˣ) (ψ : AddCha
 to build its Gelfand-Graev term: the four values do not mention `ψ`. -/
 theorem GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one (θ : Eˣ →* ℂˣ) {ψ ψ' : AddChar F ℂ}
     (hψ : ψ ≠ 1) (hψ' : ψ' ≠ 1) :
-    GL2CuspidalVirtualCharacter F E hE θ ψ = GL2CuspidalVirtualCharacter F E hE θ ψ' := by
-  refine ClassFunction.ext_gl2NormalForm E hE (fun a => ?_) (fun a b hab => ?_)
+    GL2CuspidalVirtualCharacter F E θ ψ = GL2CuspidalVirtualCharacter F E θ ψ' := by
+  refine ClassFunction.ext_gl2NormalForm E (fun a => ?_) (fun a b hab => ?_)
     (fun a => ?_) (fun x hx => ?_)
   · rw [GL2CuspidalVirtualCharacter_apply_scalar, GL2CuspidalVirtualCharacter_apply_scalar]
-  · rw [GL2CuspidalVirtualCharacter_apply_diagGL _ _ _ (by simpa using hab),
-      GL2CuspidalVirtualCharacter_apply_diagGL _ _ _ (by simpa using hab)]
-  · rw [GL2CuspidalVirtualCharacter_apply_jordanGL _ _ hψ a one_ne_zero,
-      GL2CuspidalVirtualCharacter_apply_jordanGL _ _ hψ' a one_ne_zero]
-  · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ _ hx,
-      GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ _ hx]
+  · rw [GL2CuspidalVirtualCharacter_apply_diagGL _ _ (by simpa using hab),
+      GL2CuspidalVirtualCharacter_apply_diagGL _ _ (by simpa using hab)]
+  · rw [GL2CuspidalVirtualCharacter_apply_jordanGL _ hψ a one_ne_zero,
+      GL2CuspidalVirtualCharacter_apply_jordanGL _ hψ' a one_ne_zero]
+  · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hx,
+      GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hx]
 
 /-- **The cuspidal virtual character of `θ^q` is that of `θ`**: the `q`-power map fixes `Fˣ`, so
 the central and Jordan values are unchanged, and it is an involution on `Eˣ` exchanging the two
@@ -250,29 +250,29 @@ elliptic summands.  So the construction is constant on the orbits `{θ, θ^q}` o
 `TauCeti.eq_or_eq_comp_powMonoidHom_of_GL2CuspidalVirtualCharacter_eq` is the converse, that
 distinct orbits give distinct virtual characters. -/
 theorem GL2CuspidalVirtualCharacter_comp_powMonoidHom (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
-    GL2CuspidalVirtualCharacter F E hE (θ.comp (powMonoidHom (Fintype.card F))) ψ =
-      GL2CuspidalVirtualCharacter F E hE θ ψ := by
+    GL2CuspidalVirtualCharacter F E (θ.comp (powMonoidHom (Fintype.card F))) ψ =
+      GL2CuspidalVirtualCharacter F E θ ψ := by
   -- the restriction of `θ^q` to `Fˣ` is that of `θ`, so the Gelfand-Graev terms coincide
   have hcomp : (θ.comp (powMonoidHom (Fintype.card F))).comp
       (Units.map (algebraMap F E : F →* E)) = θ.comp (Units.map (algebraMap F E : F →* E)) :=
     MonoidHom.ext fun a => by
       rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.comp_apply, powMonoidHom_apply,
         ← Nat.card_eq_fintype_card, FiniteField.units_map_algebraMap_pow_natCard]
-  refine ClassFunction.ext_gl2NormalForm E hE (fun a => ?_) (fun a b hab => ?_)
+  refine ClassFunction.ext_gl2NormalForm E (fun a => ?_) (fun a b hab => ?_)
     (fun a => ?_) (fun x hx => ?_)
   · rw [GL2CuspidalVirtualCharacter_apply, GL2CuspidalVirtualCharacter_apply, hcomp,
       character_GL2EllipticInduction_scalar, character_GL2EllipticInduction_scalar,
       MonoidHom.comp_apply, powMonoidHom_apply, ← Nat.card_eq_fintype_card,
       FiniteField.units_map_algebraMap_pow_natCard]
-  · rw [GL2CuspidalVirtualCharacter_apply_diagGL _ _ _ (by simpa using hab),
-      GL2CuspidalVirtualCharacter_apply_diagGL _ _ _ (by simpa using hab)]
+  · rw [GL2CuspidalVirtualCharacter_apply_diagGL _ _ (by simpa using hab),
+      GL2CuspidalVirtualCharacter_apply_diagGL _ _ (by simpa using hab)]
   · rw [GL2CuspidalVirtualCharacter_apply, GL2CuspidalVirtualCharacter_apply, hcomp,
-      character_GL2EllipticInduction_jordanGL _ _ _ _ a one_ne_zero,
-      character_GL2EllipticInduction_jordanGL _ _ _ _ a one_ne_zero]
-  · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ _ hx,
-      GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ _ hx,
+      character_GL2EllipticInduction_jordanGL _ _ _ a one_ne_zero,
+      character_GL2EllipticInduction_jordanGL _ _ _ a one_ne_zero]
+  · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hx,
+      GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hx,
       MonoidHom.comp_apply, MonoidHom.comp_apply, powMonoidHom_apply, powMonoidHom_apply,
-      ← Nat.card_eq_fintype_card, FiniteField.units_pow_natCard_pow_natCard hE x, add_comm]
+      ← Nat.card_eq_fintype_card, FiniteField.units_pow_natCard_pow_natCard x, add_comm]
 
 /-! ### Distinct orbits give distinct virtual characters -/
 
@@ -283,7 +283,7 @@ single value, and the central value `(q - 1) θ(a)` supplies that value once `q 
 reading uses the additive character, so the two may differ. -/
 theorem apply_add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq {θ θ' : Eˣ →* ℂˣ}
     {ψ ψ' : AddChar F ℂ}
-    (h : GL2CuspidalVirtualCharacter F E hE θ ψ = GL2CuspidalVirtualCharacter F E hE θ' ψ')
+    (h : GL2CuspidalVirtualCharacter F E θ ψ = GL2CuspidalVirtualCharacter F E θ' ψ')
     (u : Eˣ) :
     (θ u : ℂ) + θ (u ^ Fintype.card F) = (θ' u : ℂ) + θ' (u ^ Fintype.card F) := by
   by_cases hu : (u : E) ∈ Set.range (algebraMap F E)
@@ -300,8 +300,8 @@ theorem apply_add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq {θ θ' : 
     simp only [GL2CuspidalVirtualCharacter_apply_scalar] at hval
     rw [hfix, mul_left_cancel₀ hq hval]
   · have hval := congrArg (fun f : ClassFunction ℂ (GL (Fin 2) F) =>
-      f.1 (GL2NonSplitTorusHom F E hE u)) h
-    simp only [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ _ hu] at hval
+      f.1 (GL2NonSplitTorusHom F E u)) h
+    simp only [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hu] at hval
     exact neg_injective hval
 
 /-- **Distinct orbits give distinct cuspidal virtual characters.** The construction determines
@@ -312,21 +312,21 @@ with `TauCeti.GL2CuspidalVirtualCharacter_comp_powMonoidHom` makes the orbit the
 the construction. -/
 theorem eq_or_eq_comp_powMonoidHom_of_GL2CuspidalVirtualCharacter_eq {θ θ' : Eˣ →* ℂˣ}
     {ψ ψ' : AddChar F ℂ}
-    (h : GL2CuspidalVirtualCharacter F E hE θ ψ = GL2CuspidalVirtualCharacter F E hE θ' ψ') :
+    (h : GL2CuspidalVirtualCharacter F E θ ψ = GL2CuspidalVirtualCharacter F E θ' ψ') :
     θ' = θ ∨ θ' = θ.comp (powMonoidHom (Fintype.card F)) := by
   rcases MonoidHom.eq_and_eq_or_eq_and_eq_of_add_eq_add
       (a := (Units.coeHom ℂ).comp θ)
       (b := (Units.coeHom ℂ).comp (θ.comp (powMonoidHom (Fintype.card F))))
       (c := (Units.coeHom ℂ).comp θ')
       (d := (Units.coeHom ℂ).comp (θ'.comp (powMonoidHom (Fintype.card F))))
-      (by norm_num) (apply_add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq hE h) with
+      (by norm_num) (apply_add_apply_pow_card_eq_of_GL2CuspidalVirtualCharacter_eq h) with
     ⟨hac, -⟩ | ⟨had, -⟩
   · exact Or.inl ((MonoidHom.cancel_left Units.coeHom_injective).mp hac).symm
   · have hθ : θ = θ'.comp (powMonoidHom (Fintype.card F)) :=
       (MonoidHom.cancel_left Units.coeHom_injective).mp had
     refine Or.inr ?_
     rw [hθ, ← Nat.card_eq_fintype_card, MonoidHom.comp_assoc,
-      FiniteField.units_powMonoidHom_comp_powMonoidHom hE, MonoidHom.comp_id]
+      FiniteField.units_powMonoidHom_comp_powMonoidHom, MonoidHom.comp_id]
 
 /-- **The orbit `{θ, θ^q}` is the exact fibre of the cuspidal virtual character**: two cuspidal
 virtual characters built from nontrivial additive characters agree exactly when their inducing
@@ -336,12 +336,12 @@ discrete series rests on: for `θ^q ≠ θ` these virtual characters are irreduc
 @[simp]
 theorem GL2CuspidalVirtualCharacter_eq_iff (θ θ' : Eˣ →* ℂˣ) {ψ ψ' : AddChar F ℂ}
     (hψ : ψ ≠ 1) (hψ' : ψ' ≠ 1) :
-    GL2CuspidalVirtualCharacter F E hE θ ψ = GL2CuspidalVirtualCharacter F E hE θ' ψ' ↔
+    GL2CuspidalVirtualCharacter F E θ ψ = GL2CuspidalVirtualCharacter F E θ' ψ' ↔
       θ' = θ ∨ θ' = θ.comp (powMonoidHom (Fintype.card F)) := by
-  refine ⟨eq_or_eq_comp_powMonoidHom_of_GL2CuspidalVirtualCharacter_eq hE, ?_⟩
+  refine ⟨eq_or_eq_comp_powMonoidHom_of_GL2CuspidalVirtualCharacter_eq, ?_⟩
   rintro (rfl | rfl)
-  · exact GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one hE _ hψ hψ'
+  · exact GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one _ hψ hψ'
   · rw [GL2CuspidalVirtualCharacter_comp_powMonoidHom]
-    exact GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one hE _ hψ hψ'
+    exact GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one _ hψ hψ'
 
 end TauCeti
