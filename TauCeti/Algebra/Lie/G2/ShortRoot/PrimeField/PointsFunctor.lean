@@ -40,6 +40,8 @@ integral toral closure is used; no flatness is asserted.
   points of the integral short-root toral closure, as matrices.
 * `TauCeti.G2ShortRoot.PrimeField.weightTorusPoints_conj_rootSubgroupPoints`: the pinning
   equation on points.
+* `TauCeti.G2ShortRoot.PrimeField.weightTorus_conj_rootSubgroup`: the same torus-conjugation
+  equation on scheme-valued points.
 * `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_rootSubgroup` and
   `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_weightTorus`: the point maps induced
   by the scheme-level generators are the named pinned point homomorphisms.
@@ -606,6 +608,34 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Typ
     (IntegralToralClosure.weightTorusPoints_conj_rootSubgroupPoints k A s u)
   simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_weightTorusPoints,
     coe_rootSubgroupPoints] using hint
+
+/-- **The torus-conjugation equation on scheme-valued points of the carrier**: conjugation by a
+point of the weight torus rescales the parameter of each numbered simple root subgroup by the
+corresponding type-`G₂` root character. -/
+@[simp]
+theorem weightTorus_conj_rootSubgroup (k : Fin 2 ⊕ Fin 2)
+    (A : Type) [CommRing A] [Algebra (ZMod 3) A]
+    (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
+      (SplitTorus.groupScheme (ZMod 3) (Fin 2)).X)
+    (u : A) :
+    (s ≫ weightTorus.hom.hom) *
+        ((AdditiveGroup.groupSchemePointMulEquiv A)
+            ((AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) (A := A)).symm
+              (Multiplicative.ofAdd u)) ≫ (rootSubgroup k).hom.hom) *
+        (s ≫ weightTorus.hom.hom)⁻¹ =
+      (AdditiveGroup.schemePointsMulEquiv A).symm
+          (Multiplicative.ofAdd
+            ((TauCeti.torusCharacter
+              (SplitTorus.schemePointsMulEquiv (R := ZMod 3) (A := A) s)
+                (rootWeight k) : A) * u)) ≫
+        (rootSubgroup k).hom.hom := by
+  apply (schemePointsMulEquiv A).injective
+  simp only [map_mul, map_inv, schemePointsMulEquiv_comp_weightTorus,
+    schemePointsMulEquiv_comp_rootSubgroup,
+    AdditiveGroup.schemePointsMulEquiv_groupSchemePointMulEquiv,
+    MulEquiv.apply_symm_apply]
+  exact weightTorusPoints_conj_rootSubgroupPoints k A
+    (SplitTorus.schemePointsMulEquiv s) (Multiplicative.ofAdd u)
 
 /-! ## Functoriality -/
 

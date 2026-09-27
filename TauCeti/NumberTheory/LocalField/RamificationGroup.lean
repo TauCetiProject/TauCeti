@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.GaloisAction
+public import TauCeti.NumberTheory.LocalField.RamificationIndex
+public import TauCeti.NumberTheory.RamificationInertia.Galois
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 
 /-!
@@ -45,12 +47,15 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   `Ideal.ramificationGroup` of the maximal ideal of `𝒪[L]`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_zero_eq_map_inertiaSubgroup`: `G_0` is
   Mathlib's `ValuationSubring.inertiaSubgroup` of the valuation subring of `L`.
+* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero`: `#G_0 = e(L/K)`.
 * `TauCeti.LocalFieldsRamification.instNormalLowerRamificationGroup`: each `G_i` is normal.
 * `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_eq_bot` and
   `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_bot_iff`: `G_i = 1` for large `i`,
   precisely for `i` past the largest jump when the Galois group is nontrivial.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_of_sub_one_lt_of_le`: the real
   indexing is constant on each interval `(i - 1, i]`.
+* `TauCeti.LocalFieldsRamification.mem_lowerRamificationGroupReal_iff_of_lowerIndex_eq`: when
+  `i(σ) = n` is finite, `σ ∈ G_u ↔ u ≤ n - 1`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_bot_iff`: for a nontrivial
   Galois group, `G_u = 1` exactly for real `u` past the largest jump.
 * `TauCeti.LocalFieldsRamification.lowerJump_eq_intCast`: every lower break has an integer index.
@@ -131,6 +136,18 @@ theorem lowerRamificationGroup_natCast (i : ℕ) :
 instance instNormalLowerRamificationGroup (i : ℤ) : (lowerRamificationGroup K L i).Normal := by
   rw [lowerRamificationGroup_def]
   infer_instance
+
+/-- **The inertia group has order the ramification index**: `#G_0 = e(L/K)`. -/
+theorem natCard_lowerRamificationGroup_zero [IsGalois K L] :
+    Nat.card (lowerRamificationGroup K L 0) = ramificationIndex K L := by
+  have hunder : 𝓂[L].under 𝒪[K] = 𝓂[K] := Ideal.LiesOver.over.symm
+  have hfinite : Finite (𝒪[K] ⧸ 𝓂[K]) := inferInstanceAs (Finite 𝓀[K])
+  let _ : Finite (𝒪[K] ⧸ 𝓂[L].under 𝒪[K]) := hunder.symm ▸ hfinite
+  let _ : Finite (𝓂[L].under 𝒪[K]).ResidueField := inferInstance
+  let _ := Fintype.ofFinite (𝓂[L].under 𝒪[K]).ResidueField
+  let _ : PerfectField (𝓂[L].under 𝒪[K]).ResidueField := inferInstance
+  rw [lowerRamificationGroup_zero, Ideal.card_inertia_eq_ramificationIdx 𝒪[K] (L ≃ₐ[K] L) 𝓂[L],
+    ramificationIndex_eq_ramificationIdx]
 
 /-! ### Comparison with Mathlib's inertia subgroup of a valuation subring -/
 
@@ -248,6 +265,14 @@ theorem mem_lowerRamificationGroupReal_iff {u : ℝ} {σ : L ≃ₐ[K] L} :
 theorem lowerRamificationGroupReal_intCast (i : ℤ) :
     lowerRamificationGroupReal K L (i : ℝ) = lowerRamificationGroup K L i :=
   TauCeti.IsLocalRing.ramificationGroupReal_intCast _ _ i
+
+variable {K L} in
+/-- When Serre's lower index of `σ` is the natural number `n`, `σ ∈ G_u` exactly when
+`u ≤ n - 1`. -/
+theorem mem_lowerRamificationGroupReal_iff_of_lowerIndex_eq {u : ℝ} {σ : L ≃ₐ[K] L} {n : ℕ}
+    (hn : TauCeti.IsLocalRing.lowerIndex 𝒪[L] σ = n) :
+    σ ∈ lowerRamificationGroupReal K L u ↔ u ≤ (n : ℝ) - 1 :=
+  TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq hn
 
 /-- The real-indexed lower filtration is constant on each interval `(i - 1, i]`. -/
 theorem lowerRamificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ}

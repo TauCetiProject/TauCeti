@@ -9,15 +9,16 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
-public import TauCeti.RepresentationTheory.Quiver.Representation.Basic
+public import TauCeti.RepresentationTheory.Quiver.Representation.OfModule
 
 /-!
 # Finite-dimensional quiver representations
 
 A representation of a quiver is **pointwise finite-dimensional** when the vector space it puts at
-every vertex is finite-dimensional. This file defines that property, `TauCeti.IsFinDim`, and proves
-that it transports along an isomorphism of representations. It also equips the full subcategory
-of pointwise finite-dimensional representations with its induced exact structure.
+every vertex is finite-dimensional. This file defines that property, `TauCeti.IsFinDim`, proves
+that it transports along an isomorphism, equips its full subcategory with an exact structure,
+and shows that a path algebra module finite-dimensional over the base field gives such a
+representation.
 
 ## Main definitions
 
@@ -26,6 +27,8 @@ of pointwise finite-dimensional representations with its induced exact structure
 ## Main results
 
 * `TauCeti.IsFinDim.of_iso`: pointwise finite-dimensionality transports along an isomorphism.
+* `TauCeti.isFinDim_quiverRepFunctor_obj`: finite-dimensionality passes from a module to its
+  associated representation.
 
 ## Implementation notes
 
@@ -34,6 +37,11 @@ category of representations is a functor category, with no ambient module to be 
 over an infinite vertex set the two conditions genuinely differ. Over a finite quiver they agree,
 and that is the setting the theory is meant for.
 
+## References
+
+This implements the `IsFinDim` part of the "finite representation type" item of Layer 5 of
+`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`; the property itself is
+finite-dimensionality of representations, and is used well before that layer's theory.
 -/
 
 public section
@@ -41,6 +49,7 @@ public section
 namespace TauCeti
 
 open CategoryTheory
+open scoped ModuleCat
 
 universe u v w t
 
@@ -134,5 +143,20 @@ theorem finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff
     (ExactStructure.abelian_conflation _)
 
 end ExactStructure
+
+variable (k Q) [Finite Q]
+
+/-- A path algebra module finite-dimensional over the base field gives a representation with
+finite-dimensional vertex spaces. -/
+theorem isFinDim_quiverRepFunctor_obj (M : ModuleCat (pathAlgebra k Q))
+    (hM : FiniteDimensional k M) :
+    IsFinDim k Q ((quiverRepFunctor k Q).obj M) := by
+  have := hM
+  rw [isFinDim_iff]
+  intro v
+  -- The objects of `Paths Q` are the vertices of `Q`.
+  change Q at v
+  rw [quiverRepFunctor_obj, quiverRepOfModule_obj]
+  infer_instance
 
 end TauCeti
