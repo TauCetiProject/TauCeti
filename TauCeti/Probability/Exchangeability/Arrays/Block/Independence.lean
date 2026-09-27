@@ -19,11 +19,11 @@ conditionally independent of everything outside the block given the other entrie
 rectangle. This is the finite-block form of the local conditional-independence principle used to
 factor the visible-cell laws in the Aldous--Hoover representation.
 
-The block whose law is controlled may be a sub-block of the block that is hidden from the
-reservoir: if `B ⊆ C` are finite sets of cells in the rectangle, then `B` is conditionally
-independent of the complement of `C` given the rectangle with `C` removed. Nothing forces `B` to
-be all of `C`, and `C` need not be minimal, so the reservoir -- the rest of the rectangle -- may
-be chosen coarsely as long as it still avoids `B`.
+The block whose law is controlled may be a sub-block of the hidden block: if `B ⊆ C` are finite
+sets of cells in the rectangle, then `B` is conditionally independent of the complement of the
+hidden block `C` given the reservoir, the rectangle with `C` removed. Nothing forces `B` to be
+all of `C`, and `C` need not be minimal, so the reservoir -- the rest of the rectangle -- may be
+chosen coarsely as long as it still avoids `B`.
 
 ## References
 
@@ -47,16 +47,16 @@ variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α]
 everything outside a finite block containing it, given the rest of the rectangle.**
 
 The entries that are read off are the sub-block `B ⊆ C`, while the conditioning set is the
-rectangle with the whole block `C` removed, and the events compared are those of the complement
-of `C`. Taking `B = C` recovers the statement that one finite block is conditionally independent
-of the rest of the array given the other entries of the rectangle; taking `B` to be a proper
-sub-block of `C` says the same for a part of the block, with a reservoir that is allowed to hide
-more of the block than that part needs.
+rectangle with the whole hidden block `C` removed, and the events compared are those of the
+complement of `C`. Taking `B = C` recovers the statement that one finite block is conditionally
+independent of the rest of the array given the other entries of the rectangle; taking `B` to be
+a proper sub-block of `C` says the same for a part of the hidden block, with a reservoir that is
+allowed to hide more of the hidden block than that part needs.
 
 `C` is the only set that has to be finite: `B` needs no finiteness hypothesis of its own, since
 `B ⊆ C`. The finiteness of `C` is what lets each axis of the rectangle be reindexed by an
 injection fixing every coordinate used by `C`, and that reindexing is what carries the argument. -/
-theorem SeparatelyExchangeable.condIndepFun_domRestrict_compl_of_finite_block
+theorem SeparatelyExchangeable.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) {S T : Set ℕ} (hS : S.Infinite)
     (hT : T.Infinite) {B C : Set (ℕ × ℕ)} (hC : C.Finite) (hBsub : B ⊆ C)
     (hCsub : C ⊆ S ×ˢ T) :
