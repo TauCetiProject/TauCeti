@@ -31,6 +31,7 @@ noncomputable section
 
 namespace TauCeti.RealOpenUnitBall
 
+/-- The restricted Euclidean Riemannian metric on the real open unit ball. -/
 local instance : RiemannianBundle
     (fun x : realOpenUnitBall ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
   Manifold.instRiemannianBundleOpen realOpenUnitBall
