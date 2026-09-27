@@ -232,6 +232,14 @@ theorem cohomFpLinearEquiv_apply (e : G ≃ₜ* H) (n : ℕ) (x : cohomFp p G n)
       cohomFpMap p (ContinuousMonoidHom.toContinuousMonoidHom e.symm) n x :=
   (rfl)
 
+/-- The inverse cohomology equivalence acts by the map induced by the forward group
+isomorphism. -/
+@[simp]
+theorem cohomFpLinearEquiv_symm_apply (e : G ≃ₜ* H) (n : ℕ) (x : cohomFp p H n) :
+    (cohomFpLinearEquiv p e n).symm x =
+      cohomFpMap p (ContinuousMonoidHom.toContinuousMonoidHom e) n x :=
+  (rfl)
+
 end Hom
 
 end TauCeti

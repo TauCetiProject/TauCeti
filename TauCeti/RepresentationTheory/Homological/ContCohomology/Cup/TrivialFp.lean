@@ -156,7 +156,7 @@ theorem cupFp_map {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGrou
     apply (trivialFpEquiv p H).injective
     simp only [trivialFpEquiv_eqToHom_res_trivialFp_hom p φ,
       fpPairing_bil_apply, LinearEquiv.apply_symm_apply]
-  simpa only [cohomFpMap_def, cupFp_def, show 1 + 1 = 2 from rfl] using
+  simpa only [cohomFpMap_def, cupFp_def, one_add_one_eq_two] using
     (fpPairing p G).cup_map (fpPairing p H) φ
       (eqToHom (res_trivialFp_hom p φ))
       (eqToHom (res_trivialFp_hom p φ))
