@@ -26,12 +26,10 @@ the closure of the virtual characters of a subgroup under restriction and under 
 proof uses the multiplier `f` only through its restrictions to the family, so it is stated in that
 generality as `TauCeti.ClassFunction.mul_mem_indVirtualCharacters_of_forall_comp_subtype`: `V_G` is
 an ideal already for the possibly larger ring of class functions restricting to virtual characters
-on the family.  With that
-generality the local-to-global criterion
+on the family.  With that generality the local-to-global criterion
 `TauCeti.ClassFunction.mem_indVirtualCharacters_iff_forall_comp_subtype` follows at once: once `1`
 is induced from the family, a class function is induced from the family exactly when all of its
-restrictions to its members are virtual characters.  Brauer's
-characterization of characters, in
+restrictions to its members are virtual characters.  Brauer's characterization of characters, in
 `TauCeti.RepresentationTheory.Induction.Brauer.Characterization`, is that criterion for the
 elementary subgroups.
 
