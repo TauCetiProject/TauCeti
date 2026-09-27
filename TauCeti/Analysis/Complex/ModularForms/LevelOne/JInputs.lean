@@ -58,10 +58,11 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
   have hz := congrFun h z
   have hinv : j (γ • z) = j z := by
     simpa [SL_slash_apply, j, hpow] using hz
-  have hmap (g : SL(2, ℝ)) : map (RingHom.id ℝ) g = g := by
-    ext i k
+  have hAction : (map (Int.castRingHom ℝ) γ) • z = γ • z := by
+    rw [ModularGroup.sl_moeb]
     rfl
-  simpa [ModularGroup.sl_moeb, MulAction.compHom_smul_def, mapGL, hmap] using hinv
+  rw [hAction]
+  exact hinv
 
 /-- The identity `j - 1728 = E₆² / Δ`. -/
 theorem j_sub_1728 (z : ℍ) : j z - 1728 = E₆ z ^ 2 / discriminant z := by
