@@ -32,7 +32,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- At a finite place where two and every diagonal coefficient are units, every pairwise Hilbert
 symbol, and hence their product, equals one. -/
-@[simp] theorem diagonalHasse_eq_one_of_valuation_eq_one {n : ℕ} (a : Fin n → Kˣ)
+theorem diagonalHasse_eq_one_of_valuation_eq_one {n : ℕ} (a : Fin n → Kˣ)
     (v : HeightOneSpectrum (𝓞 K)) (h2 : v.valuation K 2 = 1)
     (ha : ∀ i, v.valuation K (a i) = 1) :
     ∏ ij ∈ univ.filter (fun ij : Fin n × Fin n => ij.1 < ij.2),
