@@ -37,7 +37,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- Mathlib's coherently chosen arithmetic Frobenius at a prime of a
 quadratic number field is trivial exactly at the quadratic residues. -/
-theorem arithFrobAt_eq_one_iff_legendreSym [IsGalois ℚ K]
+theorem arithFrobAt_eq_one_iff_legendreSym_eq_one [IsGalois ℚ K]
     (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
     (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (Ideal.span {(p : ℤ)})]
