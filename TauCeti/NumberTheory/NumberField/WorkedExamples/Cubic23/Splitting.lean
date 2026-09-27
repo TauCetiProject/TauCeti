@@ -181,6 +181,17 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 include hmin hgen
 
+omit hgen [NumberField K] in
+private theorem squarefree_reduction_of_not_dvd_neg_twenty_three
+    (p : ℕ) [Fact p.Prime] (hp : ¬ (p : ℤ) ∣ (-23 : ℤ)) :
+    Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))) := by
+  rw [hmin]
+  have hsep : ((X ^ 3 - X ^ 2 + 1 : ℤ[X]).map
+      (Int.castRingHom (ZMod p))).Separable :=
+    (monic_polynomial.separable_map_zmod_iff_not_dvd_discr p).mpr
+      (by simpa only [discr_polynomial] using hp)
+  exact hsep.squarefree
+
 /-- Away from the discriminant prime `23`, the residue degrees above `p` are the factor degrees
 of the defining cubic modulo `p`. -/
 theorem map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
@@ -194,13 +205,8 @@ theorem map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
       (⟨θ, hgen⟩ : IntegralPrimitiveElement K))
     rw [index_eq_one hmin hgen] at hd
     exact (Fact.out : Nat.Prime p).ne_one (Nat.dvd_one.mp hd)
-  have hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))) := by
-    rw [hmin]
-    have hsep : ((X ^ 3 - X ^ 2 + 1 : ℤ[X]).map
-        (Int.castRingHom (ZMod p))).Separable :=
-      (monic_polynomial.separable_map_zmod_iff_not_dvd_discr p).mpr
-        (by simpa only [discr_polynomial] using hp)
-    exact hsep.squarefree
+  have hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))) :=
+    squarefree_reduction_of_not_dvd_neg_twenty_three hmin p hp
   simpa only [hmin] using
     RingOfIntegers.map_inertiaDeg_primesOver_eq_factorDegrees θ hexp hsq
 
@@ -217,13 +223,8 @@ theorem fullCycleType_frob_eq_factorDegrees_of_not_dvd_neg_twenty_three
     (Polynomial.Gal.galActionHom (minpoly ℚ (θ : K)) M
       (Polynomial.Gal.restrict (minpoly ℚ (θ : K)) M σ)).fullCycleType =
         (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees p := by
-  have hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))) := by
-    rw [hmin]
-    have hsep : ((X ^ 3 - X ^ 2 + 1 : ℤ[X]).map
-        (Int.castRingHom (ZMod p))).Separable :=
-      (monic_polynomial.separable_map_zmod_iff_not_dvd_discr p).mpr
-        (by simpa only [discr_polynomial] using hp)
-    exact hsep.squarefree
+  have hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))) :=
+    squarefree_reduction_of_not_dvd_neg_twenty_three hmin p hp
   have hnodup : (UniqueFactorizationMonoid.normalizedFactors
       ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))).Nodup :=
     (UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors
