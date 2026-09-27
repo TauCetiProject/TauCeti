@@ -152,7 +152,6 @@ def cellularChainGroupMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ)
   TopPair.singularHomologyMap (skeletonPairMap f hf n) R n
 
 /-- The cellular chain group map is the relative homology map of the skeletal pair map. -/
-@[simp]
 lemma cellularChainGroupMap_eq (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
     cellularChainGroupMap R f hf n =
       TopPair.singularHomologyMap (skeletonPairMap f hf n) R n := by
