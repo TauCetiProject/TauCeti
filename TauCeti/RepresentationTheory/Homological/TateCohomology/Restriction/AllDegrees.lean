@@ -15,6 +15,9 @@ For a subgroup `H` of a finite group `G`, the separate constructions of restrict
 corestriction in positive, zero, minus one, and lower negative degrees assemble into maps in
 every integer degree. Their composite is multiplication by the index `[G : H]`. These uniform
 maps are the group-change operations used in the restriction law for the Tate cup product.
+Tower composition for class-field-theory layers is provided by
+`ClassFieldTheory.LayerRestriction.tateRes_trans` and
+`ClassFieldTheory.LayerRestriction.tateCor_trans`.
 
 In positive degrees the maps use the canonical comparison with ordinary group cohomology; in
 degrees zero and minus one they use invariants and norm kernels; below minus one they use the
