@@ -101,7 +101,8 @@ group for `u ≤ -1`. -/
 abbrev RamificationIndexDomain : Set ℝ := Ici (-1 : ℝ)
 
 /-- A natural number lies in the domain `[-1, ∞)` of the Herbrand function. -/
-theorem natCast_mem_ramificationIndexDomain (n : ℕ) : (n : ℝ) ∈ RamificationIndexDomain :=
+private theorem natCast_mem_ramificationIndexDomain (n : ℕ) :
+    (n : ℝ) ∈ RamificationIndexDomain :=
   le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)
 
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -479,7 +480,8 @@ def psiNat (n : ℕ) : ℕ :=
 @[simp]
 theorem coe_psiNat (n : ℕ) :
     (psiNat K L n : ℝ) =
-      (inverseHerbrand K L ⟨(n : ℝ), natCast_mem_ramificationIndexDomain n⟩ : ℝ) :=
+      (inverseHerbrand K L
+        ⟨(n : ℝ), le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)⟩ : ℝ) :=
   (inverseHerbrand_natCast_eq_floor K L n).symm
 
 /-- `ψℕ_{L/K}(n) = m` exactly when `#G_1 + ⋯ + #G_m = n · #G_0`, that is when `φ_{L/K}(m) = n`. -/
