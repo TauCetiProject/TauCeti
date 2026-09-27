@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 public import Mathlib.FieldTheory.IsRealClosed.Basic
 
 import Mathlib.Algebra.Polynomial.SpecificDegree
+import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 import Mathlib.Tactic
 
 /-! # Signs of irreducible quadratics over real closed fields
@@ -75,19 +76,12 @@ theorem irreducible_quadratic_eval_neg_iff {a b c : R} (ha : a ≠ 0)
     (C a * X ^ 2 + C b * X + C c).eval x < 0 ↔ a < 0 := by
   exact quadratic_neg_iff_of_discrim_neg ((irreducible_quadratic_iff_discrim_neg ha).mp hi) x
 
-omit [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R] in
-private theorem quadratic_coeff_repr (p : R[X]) (hdeg : p.natDegree = 2) :
-    p = C (p.coeff 2) * X ^ 2 + C (p.coeff 1) * X + C (p.coeff 0) := by
-  rw [p.as_sum_range_C_mul_X_pow' (n := 3) (by omega)]
-  simp [Finset.sum_range_succ]
-  ring
-
 /-- The value of an irreducible polynomial of degree two is positive exactly when its leading
 coefficient is positive. This form does not require a coefficient presentation. -/
 @[simp]
-theorem irreducible_eval_pos_iff_leadingCoeff_pos {p : R[X]} (hi : Irreducible p)
+theorem irreducible_quadratic_eval_pos_iff_leadingCoeff_pos {p : R[X]} (hi : Irreducible p)
     (hdeg : p.natDegree = 2) (x : R) : 0 < p.eval x ↔ 0 < p.leadingCoeff := by
-  have hrepr := quadratic_coeff_repr p hdeg
+  have hrepr := eq_quadratic_of_degree_le_two (p := p) (degree_le_of_natDegree_le hdeg.le)
   have ha : p.coeff 2 ≠ 0 := by
     simpa only [leadingCoeff, hdeg] using (leadingCoeff_ne_zero.mpr hi.ne_zero)
   have h := irreducible_quadratic_eval_pos_iff ha (hrepr ▸ hi) x
@@ -96,9 +90,9 @@ theorem irreducible_eval_pos_iff_leadingCoeff_pos {p : R[X]} (hi : Irreducible p
 
 /-- The negative-sign form for an arbitrary irreducible quadratic. -/
 @[simp]
-theorem irreducible_eval_neg_iff_leadingCoeff_neg {p : R[X]} (hi : Irreducible p)
+theorem irreducible_quadratic_eval_neg_iff_leadingCoeff_neg {p : R[X]} (hi : Irreducible p)
     (hdeg : p.natDegree = 2) (x : R) : p.eval x < 0 ↔ p.leadingCoeff < 0 := by
-  have hrepr := quadratic_coeff_repr p hdeg
+  have hrepr := eq_quadratic_of_degree_le_two (p := p) (degree_le_of_natDegree_le hdeg.le)
   have ha : p.coeff 2 ≠ 0 := by
     simpa only [leadingCoeff, hdeg] using (leadingCoeff_ne_zero.mpr hi.ne_zero)
   have h := irreducible_quadratic_eval_neg_iff ha (hrepr ▸ hi) x
