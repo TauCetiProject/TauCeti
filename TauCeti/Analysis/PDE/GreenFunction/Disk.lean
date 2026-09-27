@@ -65,12 +65,6 @@ theorem harmonicAt_planarGreenKernelDisk {c a z : ℂ} {R : ℝ} (hR : 0 < R)
   exact (harmonicAt_comp_const_add_smul_iff (x := -(R⁻¹ • c)) hRne).2
     (by simpa only [smul_sub, neg_add_eq_sub] using hh)
 
-/-- A boundary point of a positive-radius disk has unit norm in normalized coordinates. -/
-theorem norm_inv_smul_sub_eq_one_of_norm_sub_eq {c z : ℂ} {R : ℝ}
-    (hR : 0 < R) (hz : ‖z - c‖ = R) : ‖R⁻¹ • (z - c)‖ = 1 := by
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, hz]
-  exact inv_mul_cancel₀ hR.ne'
-
 /-- The Green kernel vanishes on the boundary circle of its disk. -/
 @[simp] theorem planarGreenKernelDisk_eq_zero_of_norm_sub_eq {c a z : ℂ} {R : ℝ}
     (hR : 0 < R) (hz : ‖z - c‖ = R) :
