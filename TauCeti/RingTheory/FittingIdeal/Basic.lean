@@ -194,7 +194,9 @@ private theorem minorsIdeal_prod_top_succ (N : Submodule R F) (p : ℕ) :
         (smul_mem _ _ (subset_span (Set.mem_insert _ _)))
     let μ : MultilinearMap R (fun _ : Fin (p + 1) ↦ F × R) R :=
       Matrix.detRowAlternating.toMultilinearMap.compLinearMap fun _ ↦ LinearMap.pi f
-    have hμ (w : Fin (p + 1) → F × R) : μ w = (Matrix.of fun i j ↦ f j (w i)).det := rfl
+    have hμ (w : Fin (p + 1) → F × R) : μ w = (Matrix.of fun i j ↦ f j (w i)).det := by
+      simp only [μ, MultilinearMap.compLinearMap_apply, Matrix.det]
+      congr 1
     rw [← hμ]
     refine span_le.2 ?_ (μ.map_mem_span_image_pi (fun _ ↦ T) hT)
     rintro _ ⟨w, hw, rfl⟩
@@ -227,8 +229,8 @@ private theorem minorsIdeal_prod_top_pi (N : Submodule R F) (r p : ℕ) :
         N.prod ⊤ := by
       ext ⟨x, y⟩
       simp only [mem_comap, mem_prod, mem_top, and_true]
-      -- `e (x, y) = ((x, Fin.tail y), y 0)` holds by definition.
-      exact Iff.rfl
+      simp [e, LinearEquiv.prodCongr_apply, LinearEquiv.prodComm_apply,
+        LinearEquiv.prodAssoc]
     rw [← he, minorsIdeal_comap_equiv, ← add_assoc, minorsIdeal_prod_top_succ, ih]
 
 /-- Adjoining a free summand `G` of finite rank shifts the minors ideals by the rank of `G`. -/
