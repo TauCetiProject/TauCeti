@@ -10,6 +10,7 @@ import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Semiring
 
 /-!
 # Scalar extension of isometry classes and their discriminants
@@ -355,6 +356,20 @@ theorem RegularFormClass.baseChange_mul (x y : RegularFormClass K) :
   rw [RegularFormClass.mk_mul_mk, RegularFormClass.baseChange_mk, RegularFormClass.baseChange_mk,
     RegularFormClass.baseChange_mk, RegularFormClass.mk_mul_mk,
     RegularFormPresentation.baseChange_tmul]
+
+/-- Scalar extension of regular form classes as a ring homomorphism. -/
+def RegularFormClass.baseChangeHom : RegularFormClass K →+* RegularFormClass L where
+  toFun := RegularFormClass.baseChange L
+  map_zero' := RegularFormClass.baseChange_zero L
+  map_one' := RegularFormClass.baseChange_one L
+  map_add' := RegularFormClass.baseChange_add L
+  map_mul' := RegularFormClass.baseChange_mul L
+
+/-- The ring homomorphism acts by the existing scalar extension of form classes. -/
+@[simp]
+theorem RegularFormClass.baseChangeHom_apply (x : RegularFormClass K) :
+    RegularFormClass.baseChangeHom x = RegularFormClass.baseChange L x := by
+  rfl
 
 /-! ### Scalar extension of the discriminant -/
 
