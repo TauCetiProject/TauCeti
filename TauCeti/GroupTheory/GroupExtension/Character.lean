@@ -38,14 +38,26 @@ variable {G M A : Type} [Group G] [CommGroup M] [CommGroup A]
   [MulDistribMulAction G M] [MulDistribMulAction G A]
   (α : FactorSet G M) (hA : ∀ (g : G) (a : A), g • a = a)
 
+/-- Character transgression sends an equivariant kernel character `χ` to the class of
+`χ ∘ α`. For a trivial coefficient action, its kernel consists of the characters
+extending to the whole factor-set extension. -/
+noncomputable def characterTransgression (χ : M →*[G] A) :
+    H2 (Rep.ofMulDistribMulAction G A) :=
+  (α.map χ).cohomologyClass
+
+@[simp]
+theorem characterTransgression_apply (χ : M →*[G] A) :
+    α.characterTransgression χ = (α.map χ).cohomologyClass :=
+  (rfl)
+
 include hA
 
 /-- An invariant kernel character has trivial transgression exactly when it extends
 to a character of the factor-set extension. -/
-theorem cohomologyClass_map_eq_zero_iff (χ : M →*[G] A) :
-    (α.map χ).cohomologyClass = 0 ↔
+theorem characterTransgression_eq_zero_iff (χ : M →*[G] A) :
+    α.characterTransgression χ = 0 ↔
       ∃ ψ : α.Extension →* A, ψ.comp (inl α) = χ.toMonoidHom := by
-  rw [cohomologyClass_eq_zero_iff]
+  rw [characterTransgression_apply, cohomologyClass_eq_zero_iff]
   constructor
   · rintro ⟨c, hc⟩
     have hc1 : c 1 = 1 := by simpa [hA] using hc 1 1
@@ -68,25 +80,27 @@ theorem cohomologyClass_map_eq_zero_iff (χ : M →*[G] A) :
 
 /-- Two invariant kernel characters have the same transgression exactly when their
 quotient extends to the whole extension. -/
-theorem cohomologyClass_map_eq_iff (χ χ' : M →*[G] A) :
-    (α.map χ).cohomologyClass = (α.map χ').cohomologyClass ↔
+theorem characterTransgression_eq_iff (χ χ' : M →*[G] A) :
+    α.characterTransgression χ = α.characterTransgression χ' ↔
       ∃ ψ : α.Extension →* A,
         ψ.comp (inl α) = χ.toMonoidHom / χ'.toMonoidHom := by
   let δ : M →*[G] A :=
     { χ.toMonoidHom / χ'.toMonoidHom with
       map_smul' g a := by simp [map_smul, hA] }
   have hδ_apply (a : M) : δ a = χ a / χ' a := rfl
-  rw [← α.cohomologyClass_map_eq_zero_iff hA δ, cohomologyClass_eq_zero_iff,
+  rw [← α.characterTransgression_eq_zero_iff hA δ,
+    characterTransgression_apply, characterTransgression_apply, characterTransgression_apply,
+    cohomologyClass_eq_zero_iff,
     cohomologyClass_eq_iff]
   simp only [IsMulCoboundary₂, map_apply, hδ_apply]
 
 /-- For a stem extension, different invariant characters of the kernel give different
 second-cohomology classes. No finiteness or divisibility assumption is needed. -/
-theorem cohomologyClass_map_injective_of_range_inl_le_commutator
+theorem characterTransgression_injective_of_range_inl_le_commutator
     (hstem : (inl α).range ≤ commutator α.Extension) :
-    Function.Injective (fun χ : M →*[G] A ↦ (α.map χ).cohomologyClass) := by
+    Function.Injective (α.characterTransgression (A := A)) := by
   intro χ χ' heq
-  obtain ⟨ψ, hψ⟩ := (α.cohomologyClass_map_eq_iff hA χ χ').1 heq
+  obtain ⟨ψ, hψ⟩ := (α.characterTransgression_eq_iff hA χ χ').1 heq
   ext a
   have hmem := Abelianization.commutator_subset_ker ψ (hstem ⟨a, rfl⟩)
   have hval := DFunLike.congr_fun hψ a
