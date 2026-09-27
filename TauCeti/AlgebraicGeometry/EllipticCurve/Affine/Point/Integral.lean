@@ -29,10 +29,16 @@ namespace WeierstrassCurve
 
 variable (W : WeierstrassCurve ℤ) [(W.baseChange ℚ).IsElliptic]
 
+-- The affine curve of the rational base change is the coefficientwise map of the integral curve.
+omit [(W.baseChange ℚ).IsElliptic] in
+private theorem integral_toAffine_baseChange :
+    (W.baseChange ℚ).toAffine = W.toAffine.map (Int.castRingHom ℚ) := by
+  rfl
+
 omit [(W.baseChange ℚ).IsElliptic] in
 private theorem integral_equation_baseChange (x y : ℤ) (h : W.toAffine.Equation x y) :
     (W.baseChange ℚ).toAffine.Equation (x : ℚ) (y : ℚ) := by
-  change (W.toAffine.map (Int.castRingHom ℚ)).Equation (x : ℚ) (y : ℚ)
+  rw [W.integral_toAffine_baseChange]
   exact h.map (Int.castRingHom ℚ)
 
 /-- An integral solution of the affine Weierstrass equation determines a rational point. -/
@@ -86,8 +92,7 @@ theorem neg_mem_integralPoints {P : (W.baseChange ℚ).toAffine.Point}
   refine ⟨x, y', h', ?_⟩
   simp only [pointOfIntegralSolution, Affine.Point.mk, Affine.Point.neg_some]
   congr 1
-  change (W.toAffine.map (Int.castRingHom ℚ)).negY (x : ℚ) (y : ℚ) =
-    ((W.toAffine.negY x y : ℤ) : ℚ)
+  rw [W.integral_toAffine_baseChange]
   exact W.toAffine.map_negY (Int.castRingHom ℚ) x y
 
 /-- Negation preserves and reflects integrality of affine points. -/
