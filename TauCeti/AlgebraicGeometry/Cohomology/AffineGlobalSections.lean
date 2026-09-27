@@ -64,11 +64,12 @@ theorem surjective_globalSections_of_epi_of_isQuasicoherent
     Functor.map_epi _ g
   exact (ModuleCat.epi_iff_surjective _).mp hΓ
 
-/-- Taking global sections preserves a short exact sequence of quasicoherent sheaves on
-`Spec R`. The exactness hypothesis is in the ambient category of sheaves of modules. -/
+/-- Taking global sections preserves a short exact sequence whose middle and right terms are
+quasicoherent sheaves on `Spec R`. The exactness hypothesis is in the ambient category of sheaves
+of modules. -/
 theorem shortExact_globalSections_of_isQuasicoherent
     {S : ShortComplex (Spec R).Modules} (hS : S.ShortExact)
-    [S.X₁.IsQuasicoherent] [S.X₂.IsQuasicoherent] [S.X₃.IsQuasicoherent] :
+    [S.X₂.IsQuasicoherent] [S.X₃.IsQuasicoherent] :
     (S.map (moduleSpecΓFunctor (R := R))).ShortExact := by
   have : (moduleSpecΓFunctor (R := R)).Additive :=
     (moduleSpecΓFunctor (R := R)).additive_of_preserves_binary_products
