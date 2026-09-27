@@ -11,7 +11,8 @@ public import Mathlib.GroupTheory.GroupAction.Primitive
 /-!
 # Primitivity of a permutation triple
 
-The monodromy action is primitive when it is preprimitive in Mathlib's sense.
+This module supplies the primitivity predicate for permutation triples. The finite decision
+procedure and its correctness theorem use this predicate to state what their test decides.
 -/
 
 public section
@@ -24,7 +25,8 @@ open MulAction
 
 variable {n : ℕ} (t : PermutationTriple n)
 
-/-- The monodromy action of a permutation triple is primitive in the roadmap's convention. -/
+/-- The monodromy action is pretransitive and has only trivial blocks of sheets.
+This uses Mathlib's `IsPreprimitive`, which also holds for an empty set of sheets. -/
 def IsPrimitive : Prop := IsPreprimitive t.monodromyGroup (Fin n)
 
 /-- Primitivity of a triple is preprimitivity of its monodromy action. -/
