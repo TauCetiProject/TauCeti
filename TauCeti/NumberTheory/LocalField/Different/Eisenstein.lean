@@ -57,7 +57,7 @@ theorem natCast_differentExponent_eq_iInf_of_eisenstein_adjoin_eq_top
     ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
   have hdeg : 0 < f.natDegree := he ▸ ramificationIndex_pos (K := K) (L := L)
   have hassoc : Associated (minpoly 𝒪[K] ξ) f :=
-    Polynomial.associated_minpoly_of_eisenstein_isRoot f hf ξ hroot
+    associated_minpoly_of_eisenstein_isRoot f hf ξ hroot
   have hscale : f = Polynomial.C f.leadingCoeff * minpoly 𝒪[K] ξ :=
     Polynomial.eq_leadingCoeff_mul_of_monic_of_dvd_of_natDegree_le
       (minpoly.monic (IsIntegral.of_finite 𝒪[K] ξ)) hassoc.dvd
