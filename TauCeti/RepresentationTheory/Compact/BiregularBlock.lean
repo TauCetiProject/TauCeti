@@ -20,9 +20,11 @@ vector and the left translation onto its second,
 
 `(g, h) · π_{v, w} = π_{π h v, π g w}`
 
-(`TauCeti.biregularLp_matrixCoeffLp`).  So the block is spanned by a set that two-sided translation
-maps into itself, and the block is therefore stable.  Because the two-sided action is unitary, the
-restricted action is unitary too, and the block is an honest unitary `G × G`-representation.
+(`TauCeti.biregularLp_matrixCoeffLp`, proved with the two one-sided identities in
+`TauCeti.RepresentationTheory.Compact.MatrixCoefficient`).  So the block is spanned by a set that
+two-sided translation maps into itself, and the block is therefore stable.  Because the two-sided
+action is unitary, the restricted action is unitary too, and the block is an honest unitary
+`G × G`-representation.
 
 This is the group-theoretic half of the Peter--Weyl decomposition that
 `TauCeti.RepresentationTheory.Compact.IsotypicBlock` deliberately leaves out: the statements there
@@ -39,20 +41,18 @@ addition the `G × G`-action `(g, h) · A = π g ∘ A ∘ π h⁻¹` on `End(V_
 
 ## Main statements
 
-* `TauCeti.biregularLp_matrixCoeffLp`: two-sided translation of a matrix coefficient of a unitary
-  representation is the matrix coefficient with the two translations absorbed into its two vectors.
 * `TauCeti.biregularLp_mem_peterWeylBlock`: a block is stable under two-sided translation, so it is
   a `G × G`-subrepresentation of `L²(G)`, and
   `TauCeti.biregularLp_mem_iSup_peterWeylBlock`: so is the sum of the blocks of a family, the
   subspace whose closure is all of `L²(G)` for a skeleton
   (`TauCeti.topologicalClosure_iSup_peterWeylBlock`).
-* `TauCeti.isUnitary_peterWeylBlockBiregular`: the restricted two-sided action is unitary.
+* `TauCeti.isUnitary_peterWeylBlockBiregular` and
+  `TauCeti.continuous_peterWeylBlockBiregular`: the restricted two-sided action is unitary, and
+  continuous for the operator norm, the block being finite-dimensional.
 
 ## References
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 2.
-* [Compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-  Layer 5, "The isotypic decomposition".
 
 ## Tags
 
@@ -69,20 +69,6 @@ section CompactGroup
 
 variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-
-/-! ### Two-sided translation of a matrix coefficient -/
-
-/-- **Two-sided translation absorbs into the defining vectors of a matrix coefficient.**  For a
-continuous unitary `π`, the `(g, h)`-translate of `π_{v, w} : g ↦ ⟪π g v, w⟫` is `π_{π h v, π g w}`:
-the right translation lands on the first vector and the left translation on the second. -/
-theorem biregularLp_matrixCoeffLp {V : Type*} [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-    {π : ContRepresentation 𝕜 G V} (hπ : Continuous π)
-    (hunitary : ContRepresentation.IsUnitary π) (a : G × G) (v w : V) :
-    biregularLp 𝕜 G a (ContRepresentation.matrixCoeffLp π hπ v w)
-      = ContRepresentation.matrixCoeffLp π hπ (π a.2 v) (π a.1 w) := by
-  rw [ContRepresentation.matrixCoeffLp_def, biregularLp_toLp, ← ContinuousMap.comp_assoc,
-    ContRepresentation.matrixCoeff_comp_mulLeft hπ hunitary, inv_inv,
-    ContRepresentation.matrixCoeff_comp_mulRight, ← ContRepresentation.matrixCoeffLp_def]
 
 /-! ### Stability of a block -/
 
@@ -131,11 +117,21 @@ theorem coe_peterWeylBlockBiregular_apply (model : IrrepModel 𝕜 G) (a : G × 
 /-- **The block representation is unitary**, the ambient two-sided translation being unitary and the
 block carrying the restricted norm. -/
 theorem isUnitary_peterWeylBlockBiregular (model : IrrepModel 𝕜 G) :
-    ContRepresentation.IsUnitary (peterWeylBlockBiregular model) := by
-  rw [ContRepresentation.isUnitary_iff_norm_map]
-  intro a f
-  rw [← Submodule.norm_coe, ← Submodule.norm_coe f, coe_peterWeylBlockBiregular_apply]
-  exact (ContRepresentation.isUnitary_iff_norm_map _).mp (isUnitary_biregularLp 𝕜 G) a _
+    ContRepresentation.IsUnitary (peterWeylBlockBiregular model) :=
+  (isUnitary_biregularLp 𝕜 G).subrepresentation _
+
+/-- **The block representation is continuous** for the operator norm.  The block is
+finite-dimensional (`TauCeti.finiteDimensional_peterWeylBlock`), so continuity may be checked one
+vector at a time; on a vector it is the strong continuity of two-sided translation
+(`TauCeti.continuous_biregularLp_apply`).  This is what lets a block be fed to the parts of the
+library that consume a continuous representation. -/
+theorem continuous_peterWeylBlockBiregular (model : IrrepModel 𝕜 G) :
+    Continuous (peterWeylBlockBiregular model) := by
+  rw [continuous_clm_apply]
+  intro f
+  rw [Topology.IsInducing.subtypeVal.continuous_iff]
+  simpa only [Function.comp_def, coe_peterWeylBlockBiregular_apply] using
+    continuous_biregularLp_apply (f : Lp 𝕜 2 (haarProb G))
 
 end CompactGroup
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Compact.Haar
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import Mathlib.GroupTheory.NoncommCoprod
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
 
@@ -63,14 +64,14 @@ unify with the `DomMulAct` action definitionally. Its strong continuity is Mathl
 
 Left translation needs the inverse, `f ↦ f ∘ (g⁻¹ * ·)`, since precomposition reverses composition;
 so neither of its two monoid-hom laws is an action law of a `DomMulAct` action on the nose, and both
-are proved by rewriting the translating map. That rewriting is not a `simp` step, because the
-measure-preserving hypothesis of `Lp.compMeasurePreserving` is indexed by the map being rewritten;
-it is done once, in the private `compMeasurePreserving_congr`.
+are proved by rewriting the translating map with
+`MeasureTheory.Lp.compMeasurePreserving_congr_fun`.
 
-The two-sided representation is *defined* as the product of the two one-sided ones rather than as
-precomposition with `x ↦ g⁻¹ * x * h`, so that its unitarity, strong continuity and translation
-lemmas all reduce to the corresponding facts for the two factors, and no separate two-sided
-measure-preserving lemma is needed.
+The two-sided representation is *defined* as the product of the two one-sided ones, assembled by
+`MonoidHom.noncommCoprod` out of the fact that they commute, rather than as precomposition with
+`x ↦ g⁻¹ * x * h`; so its unitarity, strong continuity and translation lemmas all reduce to the
+corresponding facts for the two factors, and no separate two-sided measure-preserving lemma is
+needed.
 -/
 
 public section
@@ -155,17 +156,6 @@ theorem continuous_rightRegularLp_apply (f : Lp 𝕜 2 (haarProb G)) :
 
 /-! ### The left regular representation -/
 
--- Private: the substitution of one translating map for another under `Lp.compMeasurePreserving`,
--- needed only to state the two monoid-hom laws of `leftRegularLp`. It is not a rewrite rule,
--- because the measure-preserving hypothesis is indexed by the map being replaced.
-private theorem compMeasurePreserving_congr {φ ψ : G → G}
-    (hφ : MeasurePreserving φ (haarProb G) (haarProb G))
-    (hψ : MeasurePreserving ψ (haarProb G) (haarProb G)) (hφψ : φ = ψ)
-    (f : Lp 𝕜 2 (haarProb G)) :
-    Lp.compMeasurePreserving φ hφ f = Lp.compMeasurePreserving ψ hψ f := by
-  subst hφψ
-  rfl
-
 variable (𝕜 G) in
 /-- **The left regular representation** of a compact group on `L²(G)`: the element `g` acts by
 `f ↦ (x ↦ f (g⁻¹ * x))`, which preserves normalized Haar measure and hence the `L²` norm.
@@ -179,7 +169,7 @@ noncomputable def leftRegularLp : ContRepresentation 𝕜 G (Lp 𝕜 2 (haarProb
     { toFun g := (Lp.compMeasurePreservingₗᵢ 𝕜 (g⁻¹ * ·)
         (measurePreserving_mul_left (haarProb G) g⁻¹)).toContinuousLinearMap
       map_one' := ContinuousLinearMap.ext fun x =>
-        (compMeasurePreserving_congr (ψ := id) _ (.id _)
+        (Lp.compMeasurePreserving_congr_fun (g := id) _ (.id _)
             (funext fun y => by rw [inv_one, one_mul, id]) x).trans
           (Lp.compMeasurePreserving_id_apply x)
       map_mul' g h := ContinuousLinearMap.ext fun x => by
@@ -187,7 +177,7 @@ noncomputable def leftRegularLp : ContRepresentation 𝕜 G (Lp 𝕜 2 (haarProb
             = (fun y : G => h⁻¹ * y) ∘ (fun y : G => g⁻¹ * y) :=
           funext fun y => by rw [Function.comp_apply, mul_inv_rev, mul_assoc]
         simp only [mul_apply_eq_comp]
-        refine (compMeasurePreserving_congr _
+        refine (Lp.compMeasurePreserving_congr_fun _
           ((measurePreserving_mul_left (haarProb G) h⁻¹).comp
             (measurePreserving_mul_left (haarProb G) g⁻¹)) hfun x).trans ?_
         exact Lp.compMeasurePreserving_comp_apply x (measurePreserving_mul_left (haarProb G) h⁻¹)
@@ -254,7 +244,7 @@ theorem commute_leftRegularLp_rightRegularLp (g h : G) :
       (measurePreserving_mul_left (haarProb G) g⁻¹),
     ← Lp.compMeasurePreserving_comp_apply f (measurePreserving_mul_left (haarProb G) g⁻¹)
       (measurePreserving_mul_right (haarProb G) h)]
-  exact compMeasurePreserving_congr _ _ hfun f
+  exact Lp.compMeasurePreserving_congr_fun _ _ hfun f
 
 variable (𝕜 G) in
 /-- **The two-sided regular representation** of a compact group: `G × G` acts on `L²(G)` by
@@ -265,21 +255,15 @@ It is defined as the product of the two one-sided representations, which is a mo
 exactly because they commute (`TauCeti.commute_leftRegularLp_rightRegularLp`). This is the action
 under which the Peter-Weyl blocks of `L²(G)` are subrepresentations. -/
 noncomputable def biregularLp : ContRepresentation 𝕜 (G × G) (Lp 𝕜 2 (haarProb G)) :=
-  .ofMonoidHom
-    { toFun a := rightRegularLp 𝕜 G a.2 * leftRegularLp 𝕜 G a.1
-      map_one' := by simp
-      map_mul' a b := by
-        have hcomm : leftRegularLp 𝕜 G a.1 * rightRegularLp 𝕜 G b.2
-            = rightRegularLp 𝕜 G b.2 * leftRegularLp 𝕜 G a.1 :=
-          (commute_leftRegularLp_rightRegularLp a.1 b.2).eq
-        simp only [Prod.fst_mul, Prod.snd_mul, map_mul]
-        rw [mul_assoc, mul_assoc, ← mul_assoc (rightRegularLp 𝕜 G b.2),
-          ← mul_assoc (leftRegularLp 𝕜 G a.1), hcomm] }
+  .ofMonoidHom ((leftRegularLp 𝕜 G).toMonoidHom.noncommCoprod (rightRegularLp 𝕜 G).toMonoidHom
+    commute_leftRegularLp_rightRegularLp)
 
 /-- **The two-sided action is right translation after left translation.** -/
 theorem biregularLp_apply (a : G × G) (f : Lp 𝕜 2 (haarProb G)) :
     biregularLp 𝕜 G a f = rightRegularLp 𝕜 G a.2 (leftRegularLp 𝕜 G a.1 f) :=
-  (rfl)
+  congrArg (fun T : Lp 𝕜 2 (haarProb G) →L[𝕜] Lp 𝕜 2 (haarProb G) => T f)
+    (MonoidHom.noncommCoprod_apply' (leftRegularLp 𝕜 G).toMonoidHom
+      (rightRegularLp 𝕜 G).toMonoidHom commute_leftRegularLp_rightRegularLp a)
 
 /-- On the first factor of `G × G` the two-sided action is the left regular representation. -/
 @[simp]
@@ -319,14 +303,10 @@ theorem biregularLp_toLp (F : C(G, 𝕜)) (a : G × G) :
 variable (𝕜 G) in
 /-- **The two-sided regular representation is unitary**, both translations preserving normalized
 Haar measure. -/
-theorem isUnitary_biregularLp : ContRepresentation.IsUnitary (biregularLp 𝕜 G) := by
-  rw [ContRepresentation.isUnitary_iff_norm_map]
-  intro a f
-  rw [biregularLp_apply]
-  exact
-    ((ContRepresentation.isUnitary_iff_norm_map _).mp
-        (isUnitary_rightRegularLp 𝕜 G) a.2 _).trans
-      ((ContRepresentation.isUnitary_iff_norm_map _).mp (isUnitary_leftRegularLp 𝕜 G) a.1 f)
+theorem isUnitary_biregularLp : ContRepresentation.IsUnitary (biregularLp 𝕜 G) :=
+  (ContRepresentation.isUnitary_iff_norm_map _).mpr fun a f => by
+    rw [biregularLp_apply, (isUnitary_rightRegularLp 𝕜 G).norm_map,
+      (isUnitary_leftRegularLp 𝕜 G).norm_map]
 
 /-- **The two-sided regular representation is strongly continuous:** each orbit map
 `(g, h) ↦ (g, h) · f` is continuous. Left translation contributes the strong continuity of

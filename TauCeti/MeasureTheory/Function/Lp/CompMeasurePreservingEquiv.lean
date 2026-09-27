@@ -29,6 +29,9 @@ inverse has that inverse on both sides.
 * `MeasureTheory.Lp.compMeasurePreservingₗᵢ_apply` is the application lemma for Mathlib's
   linear isometry. Mathlib's `@[simps!]` generates only `compMeasurePreservingₗᵢ_apply_coe`,
   which unfolds one level too far to rewrite with.
+* `MeasureTheory.Lp.compMeasurePreserving_congr_fun` substitutes an equal map under
+  `MeasureTheory.Lp.compMeasurePreserving`, whose measure-preserving argument is indexed by the map
+  and therefore has to change with it.
 * `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv` upgrades that linear isometry to a
   `LinearIsometryEquiv` given a one-sided almost-everywhere inverse partner.
 * `MeasureTheory.Lp.coeFn_compMeasurePreservingₗᵢEquiv` and
@@ -62,6 +65,20 @@ theorem compMeasurePreservingₗᵢ_apply {α β E : Type*} [MeasurableSpace α]
     (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [Fact (1 ≤ p)]
     (hf : MeasurePreserving f μ μb) (x : Lp E p μb) :
     compMeasurePreservingₗᵢ 𝕜 f hf x = compMeasurePreserving f hf x :=
+  rfl
+
+/-- **Precomposition depends on the map only.** Two equal measure-preserving maps precompose
+alike, whatever proofs of measure preservation they carry.
+
+This is not usable as a rewrite rule with `rw`: the measure-preserving hypothesis of
+`MeasureTheory.Lp.compMeasurePreserving` is indexed by the map being replaced, so replacing the
+map has to replace that hypothesis at the same time. -/
+theorem compMeasurePreserving_congr_fun {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {μb : Measure β} {p : ℝ≥0∞} [NormedAddCommGroup E] {f g : α → β}
+    (hf : MeasurePreserving f μ μb) (hg : MeasurePreserving g μ μb) (hfg : f = g)
+    (x : Lp E p μb) :
+    compMeasurePreserving f hf x = compMeasurePreserving g hg x := by
+  subst hfg
   rfl
 
 /-- If `f` and `g` are measure-preserving and `f ∘ g` is the identity almost everywhere, then
