@@ -44,9 +44,8 @@ namespace TraceFormulaMatrixModule
 
 /-- The coefficient of a nonzero scalar class in Popa–Zagier's element is `1/6`. -/
 theorem coeff_popaZagierElement_scalar {k : Type*} [DivisionRing k] [CharZero k]
-    (a : ℤ) (ha : a ≠ 0) :
-    (popaZagierElement k (a ^ 2)).coeff
-      (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm)) = 1 / 6 := by
+    {n : ℤ} (a : ℤ) (h : a * a = n) (ha : a ≠ 0) :
+    (popaZagierElement k n).coeff (mk (TraceFormulaMatrix.diagonal a a h)) = 1 / 6 := by
   rw [coeff_popaZagierElement_mk]
   rcases lt_or_gt_of_ne ha with h | h <;>
     simp [PopaZagier.weight, PopaZagier.weight₁, PopaZagier.weight₂,
@@ -54,56 +53,60 @@ theorem coeff_popaZagierElement_scalar {k : Type*} [DivisionRing k] [CharZero k]
       h.le, h, not_le.mpr h] <;> norm_num
 
 /-- A scalar matrix acts on degree-`w` binary forms by `aʷ`. -/
-theorem binaryFormAction_scalar {R : Type*} [CommRing R] (w : ℕ) (hw : Even w) (a : ℤ) :
-    binaryFormAction (R := R) hw (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm)) =
+theorem binaryFormAction_scalar {R : Type*} [CommRing R] {n : ℤ}
+    (w : ℕ) (hw : Even w) (a : ℤ) (h : a * a = n) :
+    binaryFormAction (R := R) hw (mk (TraceFormulaMatrix.diagonal a a h)) =
       (a : R) ^ w • (1 : Module.End R (homogeneousSubmodule (Fin 2) R w)) := by
   simpa only [binaryFormAction_mk, TraceFormulaMatrix.val_diagonal] using
     (binaryFormRep_op_scalar (R := R) (w := w) a)
 
-private theorem weighted_scalar_trace {k : Type*} [Field k] [CharZero k]
-    (w : ℕ) (hw : Even w) (a : ℤ) (ha : a ≠ 0) :
-    (popaZagierElement k (a ^ 2)).coeff
-        (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm)) *
+/-- The coefficient-weighted scalar action has trace `(w + 1) aʷ / 6`. -/
+theorem coeff_popaZagierElement_mul_trace_binaryFormAction_scalar
+    {k : Type*} [Field k] [CharZero k] {n : ℤ}
+    (w : ℕ) (hw : Even w) (a : ℤ) (h : a * a = n) (ha : a ≠ 0) :
+    (popaZagierElement k n).coeff (mk (TraceFormulaMatrix.diagonal a a h)) *
         LinearMap.trace k (homogeneousSubmodule (Fin 2) k w)
           (binaryFormAction (R := k) hw
-            (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm))) =
+            (mk (TraceFormulaMatrix.diagonal a a h))) =
       (w + 1 : ℕ) * (a : k) ^ w / 6 := by
-  rw [coeff_popaZagierElement_scalar a ha, binaryFormAction_scalar w hw a]
+  rw [coeff_popaZagierElement_scalar a h ha, binaryFormAction_scalar w hw a h]
   simp only [map_smul, LinearMap.trace_one, finrank_homogeneousSubmodule_fin_two, smul_eq_mul]
   ring
 
 /-- The scalar-class summand of Popa–Zagier's element contributes `(w + 1) aʷ / 6` to the
 trace of its action on all binary forms of degree `w`. -/
 theorem trace_periodAction_single_scalar {k : Type*} [Field k] [CharZero k]
-    (w : ℕ) (hw : Even w) (a : ℤ) (ha : a ≠ 0) :
+    {n : ℤ} (w : ℕ) (hw : Even w) (a : ℤ) (h : a * a = n) (ha : a ≠ 0) :
     LinearMap.trace k (homogeneousSubmodule (Fin 2) k w)
         (periodAction (R := k) hw
-          (single (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm))
-            ((popaZagierElement k (a ^ 2)).coeff
-              (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm))))) =
+          (single (mk (TraceFormulaMatrix.diagonal a a h))
+            ((popaZagierElement k n).coeff (mk (TraceFormulaMatrix.diagonal a a h))))) =
       (w + 1 : ℕ) * (a : k) ^ w / 6 := by
   rw [periodAction_single, map_smul, smul_eq_mul]
-  exact weighted_scalar_trace w hw a ha
+  exact coeff_popaZagierElement_mul_trace_binaryFormAction_scalar w hw a h ha
 
 /-- The scalar contribution to the ambient trace matches the pair of `t = ±2a`
 terms in Zagier's class-number sum. Both sides are halved when passing to the cusp-form trace. -/
 theorem trace_periodAction_single_scalar_eq_neg_dickson_eval_mul_hurwitzClassNumber_zero
-    (w : ℕ) (hw : Even w)
-    (a : ℤ) (ha : a ≠ 0) :
-    LinearMap.trace ℚ (homogeneousSubmodule (Fin 2) ℚ w)
-          (periodAction (R := ℚ) hw
-            (single (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm))
-              ((popaZagierElement ℚ (a ^ 2)).coeff
-                (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm))))) =
-      -((Polynomial.dickson 2 ((a : ℚ) ^ 2) w).eval (2 * (a : ℚ)) *
-            hurwitzClassNumber 0 +
-          (Polynomial.dickson 2 ((a : ℚ) ^ 2) w).eval (-2 * (a : ℚ)) *
-            hurwitzClassNumber 0) := by
-  rw [trace_periodAction_single_scalar w hw a ha]
-  have hminus : (Polynomial.dickson 2 ((a : ℚ) ^ 2) w).eval (-2 * (a : ℚ)) =
-      (w + 1 : ℕ) * (a : ℚ) ^ w := by
+    {k : Type*} [Field k] [CharZero k] {n : ℤ}
+    (w : ℕ) (hw : Even w) (a : ℤ) (h : a * a = n) (ha : a ≠ 0) :
+    LinearMap.trace k (homogeneousSubmodule (Fin 2) k w)
+          (periodAction (R := k) hw
+            (single (mk (TraceFormulaMatrix.diagonal a a h))
+              ((popaZagierElement k n).coeff
+                (mk (TraceFormulaMatrix.diagonal a a h))))) =
+      -((Polynomial.dickson 2 (n : k) w).eval (2 * (a : k)) *
+            (hurwitzClassNumber 0 : k) +
+          (Polynomial.dickson 2 (n : k) w).eval (-2 * (a : k)) *
+            (hurwitzClassNumber 0 : k)) := by
+  rw [trace_periodAction_single_scalar w hw a h ha]
+  have hn : (n : k) = (a : k) ^ 2 := by
+    rw [← h, Int.cast_mul, pow_two]
+  rw [hn]
+  have hminus : (Polynomial.dickson 2 ((a : k) ^ 2) w).eval (-2 * (a : k)) =
+      (w + 1 : ℕ) * (a : k) ^ w := by
     simpa [neg_sq, neg_pow, hw.neg_one_pow] using
-      (Polynomial.dickson_two_sq_eval_two_mul (-(a : ℚ)) w)
+      (Polynomial.dickson_two_sq_eval_two_mul (-(a : k)) w)
   rw [Polynomial.dickson_two_sq_eval_two_mul, hminus, hurwitzClassNumber_zero]
   push_cast
   ring

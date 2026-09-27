@@ -29,6 +29,13 @@ instance homogeneousSubmodule_moduleFinite {σ R : Type*} [CommSemiring R] [Fini
     (n : ℕ) : Module.Finite R (homogeneousSubmodule σ R n) :=
   Module.Finite.of_fg (homogeneousSubmodule_fg σ R n)
 
+/-- A homogeneous component in finitely many variables is a free module. -/
+instance homogeneousSubmodule_moduleFree {σ R : Type*} [CommSemiring R] [Finite σ]
+    (n : ℕ) : Module.Free R (homogeneousSubmodule σ R n) := by
+  classical
+  rw [homogeneousSubmodule_eq_finsupp_supported]
+  exact Module.Free.of_basis (basisRestrictSupport R {d : σ →₀ ℕ | d.degree = n})
+
 /-- The dimension of a homogeneous component is the number of exponent vectors of its degree. -/
 theorem finrank_homogeneousSubmodule (σ R : Type*) [Finite σ] [CommSemiring R]
     [StrongRankCondition R] (n : ℕ) :
