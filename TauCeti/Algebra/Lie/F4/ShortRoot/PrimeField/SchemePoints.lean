@@ -52,6 +52,8 @@ noncomputable def schemePointsMulEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ 
     ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶ groupScheme.X) ≃* points A :=
   (groupSchemePointMulEquiv A).symm.trans (coordinatePointsEquiv A)
 
+/-- The scheme point represented by a quotient-coordinate point maps to its corresponding
+matrix point under the scheme-point equivalence. -/
 @[simp] theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ A]
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
     schemePointsMulEquiv A (groupSchemePointMulEquiv A q) = coordinatePointsEquiv A q := by
@@ -101,7 +103,8 @@ theorem groupSchemePointMulEquiv_comp_coordinateMap
       (groupSchemePointMulEquiv_apply_left A)
       (groupSchemePointMulEquiv_apply_left A) phi q
   have heval : ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of 𝔽₂ A)) q =
-        AlgHom.mapDomain phi.hom q := rfl
+        AlgHom.mapDomain phi.hom q := by
+    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.mapDomain_apply]
   rw [heval] at h
   exact h
 
