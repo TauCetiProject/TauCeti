@@ -42,7 +42,8 @@ def cupClass (F : Formation G) (L : NormalLayer G) (u : L.H F 2) (r : ℤ) :
     map_add' := by intro x y; simp }
 
 /-- The map `cupClass` evaluates by taking the Tate cup product with the degree-two image of
-`u`, then applying the left unitor to the coefficient representation. -/
+`u`, then applying the left unitor to the coefficient representation. Use this as a named
+rewrite: making it a simp lemma would make `cupClass_trivialTateHZeroOne` fail `simpNF`. -/
 theorem cupClass_apply (F : Formation G) (L : NormalLayer G) (u : L.H F 2) (r : ℤ)
     (x : L.TrivialTateH r) :
     cupClass F L u r x =
