@@ -37,7 +37,7 @@ constants over `k` stays linearly independent over `F`.
   a common overfield is linearly disjoint from `F`.
 * `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: a linearly independent
   family of separable elements stays linearly independent after extending scalars from `k` to `F`.
-* `TauCeti.IntermediateField.finrank_adjoin_eq_of_isIntegrallyClosedIn`: extending exact
+* `TauCeti.intermediateField_finrank_adjoin_eq_of_isIntegrallyClosedIn`: extending exact
   constants preserves the degree over a rational parameter.
 
 ## References
@@ -184,15 +184,13 @@ theorem linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn
 
 end Field
 
-namespace IntermediateField
-
 variable {k : Type u} {L : Type v} [Field k] [Field L] [Algebra k L]
 
 /-- A finite separable extension of an exact field of constants preserves the degree over any
 rational parameter. The equation is stated for the compositum `L = A · B` inside a common ambient
 field; `A ⊔ k(x)` is the enlarged rational subfield. This is Stichtenoth,
 *Algebraic Function Fields and Codes*, second edition, Proposition 3.6.1(c). -/
-theorem finrank_adjoin_eq_of_isIntegrallyClosedIn
+theorem intermediateField_finrank_adjoin_eq_of_isIntegrallyClosedIn
     (A B : IntermediateField k L) (x : B)
     (hA : FiniteDimensional k A) [Algebra.IsSeparable k A]
     (hex : IsIntegrallyClosedIn k B)
@@ -209,14 +207,12 @@ theorem finrank_adjoin_eq_of_isIntegrallyClosedIn
   let C : IntermediateField k L := IntermediateField.adjoin k {(x : L)}
   have hCB : C ≤ B := IntermediateField.adjoin_le_iff.mpr
     (Set.singleton_subset_iff.mpr x.property)
-  have hdegree := finrank_sup_eq_finrank_of_linearDisjoint A B C hCB hA h
+  have hdegree := intermediateField_finrank_sup_eq_finrank_of_linearDisjoint A B C hCB hA h
   have htop : (IntermediateField.extendScalars (sup_le_sup_left hCB A) :
       IntermediateField ↥(A ⊔ C) L) = ⊤ := by
     ext y
     simp only [IntermediateField.mem_extendScalars, hAB, IntermediateField.mem_top]
   rw [htop, IntermediateField.finrank_top'] at hdegree
   exact hdegree
-
-end IntermediateField
 
 end TauCeti
