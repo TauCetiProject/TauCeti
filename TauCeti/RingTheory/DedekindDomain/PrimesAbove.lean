@@ -11,10 +11,9 @@ public import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 /-!
 # Primes above a set of primes, and the Selmer group relative to them
 
-For an injective algebra map of commutative rings `R → B`, the nonzero prime ideals of `B`
-lying over a nonzero prime `v` of `R` correspond to `Ideal.primesOver v.asIdeal B`. If `B` is
-a Dedekind domain, only finitely many such primes lie over `v`; this does not require
-integrality or a Dedekind hypothesis on `R`.
+For an injective algebra map of commutative rings `R → B` with `B` Dedekind, only finitely
+many nonzero prime ideals of `B` lie over a given nonzero prime `v` of `R`. This does not
+require integrality or a Dedekind hypothesis on `R`.
 
 For domains `R` and `B` with `B` integral over `R`, contraction defines
 `HeightOneSpectrum.under R`. For a set `S` of primes of `R`,
@@ -29,8 +28,6 @@ The Selmer group of the fraction field of `B` relative to these primes is
   of `R`, as a preimage under `HeightOneSpectrum.under`.
 * `IsDedekindDomain.selmerGroupAbove`: the `n`-Selmer group of `L` relative to the primes of `B`
   above `S`.
-* `IsDedekindDomain.HeightOneSpectrum.liesOverEquivPrimesOver`: the height one primes of `B`
-  lying over a height one prime `v` of `R` are `Ideal.primesOver v.asIdeal B`.
 
 ## Main results
 
@@ -104,35 +101,7 @@ section
 
 variable {R B}
 
-/-- A height one prime of `B` taken from the subtype of those lying over `v` lies over `v`. -/
-instance liesOver_val {v : HeightOneSpectrum R}
-    (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-    w.1.asIdeal.LiesOver v.asIdeal :=
-  w.2
-
 variable (B) [FaithfulSMul R B]
-
-/-- The nonzero prime ideals of `B` lying over a nonzero prime `v` of `R` are precisely
-`Ideal.primesOver v.asIdeal B`. Injectivity of the algebra map ensures that an ideal lying
-above `v` is nonzero; neither ring needs to be a Dedekind domain. -/
-def liesOverEquivPrimesOver (v : HeightOneSpectrum R) :
-    {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ≃ v.asIdeal.primesOver B where
-  toFun w := ⟨w.1.asIdeal, w.1.isPrime, w.2⟩
-  invFun Q := ⟨⟨Q.1, Q.2.1, Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q.1⟩, Q.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-theorem liesOverEquivPrimesOver_apply (v : HeightOneSpectrum R)
-    (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-    (liesOverEquivPrimesOver B v w : Ideal B) = w.1.asIdeal :=
-  (rfl)
-
-@[simp]
-theorem liesOverEquivPrimesOver_symm_apply (v : HeightOneSpectrum R)
-    (Q : v.asIdeal.primesOver B) :
-    ((liesOverEquivPrimesOver B v).symm Q).1.asIdeal = Q :=
-  (rfl)
 
 /-- Only finitely many nonzero primes of a Dedekind domain `B` lie over a given nonzero
 prime of `R`. The extension need not be integral, and `R` need not be Dedekind. -/

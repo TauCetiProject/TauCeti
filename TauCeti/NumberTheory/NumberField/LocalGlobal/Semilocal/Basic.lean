@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
 public import TauCeti.RingTheory.DedekindDomain.PrimesAbove
+public import TauCeti.RingTheory.Ideal.PrimesOver
 
 /-!
 # The semi-local map `K_v ⊗[K] L → ∏_{w ∣ v} L_w`
