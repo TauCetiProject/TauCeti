@@ -79,6 +79,7 @@ theorem counit_apply (x : CompletedTensorWords R M) :
   (rfl)
 
 /-- Applying the counit to the first output of the coproduct recovers each component. -/
+@[simp↓]
 theorem counit_left (x : CompletedTensorWords R M) (n : ℕ) :
     TensorProduct.lid R (TensorPower R n M)
       (TensorProduct.map (TensorPower.algebraMap₀ (R := R) (M := M)).symm.toLinearMap
@@ -90,6 +91,7 @@ theorem counit_left (x : CompletedTensorWords R M) (n : ℕ) :
   exact hcast (Nat.zero_add n)
 
 /-- Applying the counit to the second output of the coproduct recovers each component. -/
+@[simp↓]
 theorem counit_right (x : CompletedTensorWords R M) (n : ℕ) :
     TensorProduct.rid R (TensorPower R n M)
       (TensorProduct.map LinearMap.id
@@ -100,6 +102,7 @@ theorem counit_right (x : CompletedTensorWords R M) (n : ℕ) :
 
 /-- On finite tensor words the completed coproduct is the ordinary coproduct, projected to
 its output bidegree. Thus the canonical direct-sum inclusion respects deconcatenation. -/
+@[simp↓]
 theorem deconcatenation_coe (x : TensorWords R M) (p q : ℕ) :
     deconcatenation R M (DFinsupp.coeFnLinearMap R x) p q =
       TensorProduct.map (TensorWords.component R M p) (TensorWords.component R M q)
@@ -110,6 +113,7 @@ theorem deconcatenation_coe (x : TensorWords R M) (p q : ℕ) :
     (LinearMap.congr_fun (TensorWords.map_component_comp_deconcatenation R M p q) x).symm
 
 /-- The inclusion of finite tensor words preserves the counit. -/
+@[simp↓]
 theorem counit_coe (x : TensorWords R M) :
     counit R M (DFinsupp.coeFnLinearMap R x) = TensorWords.counit R M x := by
   rw [counit_apply, TensorWords.counit_apply, TensorWords.component_apply]
