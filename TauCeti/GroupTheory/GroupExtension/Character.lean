@@ -177,7 +177,7 @@ theorem characterTransgression_injective_iff_range_inl_le_commutator_of_separate
 
 variable {k : Type} [Field k] [IsAlgClosed k]
 
-/-- The trivial action of `G` on the units of `k`. -/
+/-- The trivial multiplicative action of `G` on the units of `k`. -/
 local instance : MulDistribMulAction G kˣ :=
   MulDistribMulAction.compHom kˣ (1 : G →* MulAut kˣ)
 
