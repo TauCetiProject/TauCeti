@@ -61,10 +61,7 @@ private theorem dualTensorIhom_app_eq_aux :
       ModuleCat.MonoidalCategory.whiskerRight_apply,
       ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
       ModuleCat.ihom_ev_app]
-    -- Only the linear-map calculation inside evaluation remains.
-    change (ModuleCat.homLinearEquiv (S := R) f) m • n =
-      (ModuleCat.homLinearEquiv (S := R) f) m • n
-    simp
+    rfl
   | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
 
 /-- The categorical dual-tensor comparison is linear contraction, after identifying internal

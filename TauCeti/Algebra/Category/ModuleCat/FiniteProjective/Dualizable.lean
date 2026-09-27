@@ -50,6 +50,20 @@ noncomputable instance _root_.ModuleCat.hasRightDualOfFiniteProjective
     [Module.Finite R M] [Module.Projective R M] : HasRightDual M :=
   BraidedCategory.hasRightDualOfHasLeftDual
 
+/-- The chosen left dual of a finite projective module is its internal Hom into the unit. -/
+@[simp]
+theorem _root_.ModuleCat.leftDual_of_finite_projective
+    [Module.Finite R M] [Module.Projective R M] :
+    HasLeftDual.leftDual (Y := M) = (ihom M).obj (𝟙_ (ModuleCat.{u} R)) :=
+  rfl
+
+/-- The chosen right dual of a finite projective module is its internal Hom into the unit. -/
+@[simp]
+theorem _root_.ModuleCat.rightDual_of_finite_projective
+    [Module.Finite R M] [Module.Projective R M] :
+    HasRightDual.rightDual (X := M) = (ihom M).obj (𝟙_ (ModuleCat.{u} R)) :=
+  rfl
+
 /-- A dualizable module is finite projective: its coevaluation gives a finite dual basis. -/
 theorem _root_.ModuleCat.finite_projective_of_hasLeftDual [HasLeftDual M] :
     Module.Finite R M ∧ Module.Projective R M := by
