@@ -18,28 +18,34 @@ import TauCeti.RingTheory.Norm.Quotient
 # Norms in unramified extensions of local fields
 
 Let `L/K` be a finite unramified extension of nonarchimedean local fields. This file proves that
-the norm maps the units of `𝒪[L]` onto the units of `𝒪[K]`,
+the norm maps every step of the unit filtration of `L` onto the corresponding step of the unit
+filtration of `K`,
 
-`N_{L/K}(U(L,0)) = U(K,0)`,
+`N_{L/K}(U(L,i)) = U(K,i)` for every `i : ℕ`,
 
 and deduces the norm-equation criterion: an element `x` of `Kˣ` is a norm from `L` exactly when
 the residue degree `f(L/K)` divides `v_K(x)`. So `N_{L/K}(Lˣ) = π^{fℤ} × 𝒪[K]ˣ` for any
 uniformizer `π` of `K`, in the form that decides the norm equation one element at a time.
 
-Surjectivity on units is Hensel's lemma for the norm
-(`TauCeti.Algebra.exists_norm_eq_of_norm_sub_mem_maximalIdeal`), applied to the finite free
-`𝒪[K]`-algebra `𝒪[L]`. Its two residual inputs hold because `𝓂[K] 𝒪[L] = 𝓂[L]`, so that
-`𝒪[L] ⧸ 𝓂[K] 𝒪[L]` is the residue field of `L`, a finite extension of the finite residue field of
-`K`: the norm of a finite extension of finite fields is surjective, and its trace is surjective
-because the extension is separable. Norm and trace commute with reduction modulo `𝓂[K]`.
+The inclusion `N_{L/K}(U(L,i)) ⊆ U(K,i)` is the case `e(L/K) = 1` of the general inclusion
+`N_{L/K}(U(L, e i)) ⊆ U(K, i)`. Surjectivity is Hensel's lemma for the norm
+(`TauCeti.Algebra.exists_norm_eq_of_norm_sub_mem`), applied to the finite free `𝒪[K]`-algebra
+`𝒪[L]`, which is Henselian at every positive power of `𝓂[K]`. Its residual inputs hold because
+`𝓂[K] 𝒪[L] = 𝓂[L]`, so that `𝒪[L] ⧸ 𝓂[K] 𝒪[L]` is the residue field of `L`, a finite extension
+of the finite residue field of `K`: the norm of a finite extension of finite fields is surjective,
+which supplies the approximate solution at depth `0`, and its trace is surjective because the
+extension is separable, which supplies the unit of unit trace that Hensel's lemma needs. At
+positive depth `i` the approximate solution is `1`, and Hensel's lemma at `𝓂[K]^i` returns a
+solution congruent to `1` modulo `𝓂[K]^i 𝒪[L] = 𝓂[L]^i`.
 
 ⚠ Both statements fail for ramified extensions: at `L = ℚ_2(√2)` the norms of the units of
-`𝒪[L]` form a subgroup of index `2` in `ℤ_2ˣ`.
+`𝒪[L]` form a subgroup of index `2` in `ℤ_2ˣ`, and in general the norm carries `U(L,i)` only into
+a Herbrand-shifted step of the filtration of `K`.
 
 ## Main results
 
-* `TauCeti.map_normUnits_unitFiltration_zero`: in an unramified extension the norm maps
-  `U(L,0)` onto `U(K,0)`.
+* `TauCeti.map_normUnits_unitFiltration`: in an unramified extension the norm maps `U(L,i)` onto
+  `U(K,i)`, for every `i`.
 * `TauCeti.mem_normGroup_iff_dvd_normalizedValuation`: in an unramified extension `x ∈ Kˣ` is a
   norm exactly when `f(L/K)` divides `v_K(x)`.
 
@@ -113,20 +119,38 @@ private theorem exists_isUnit_trace :
     exact zero_ne_one hw
 
 variable (K L) in
-/-- **The norm is surjective on units in an unramified extension.** If `L/K` is unramified, the
-norm maps the units of `𝒪[L]` onto the units of `𝒪[K]`: `N_{L/K}(U(L,0)) = U(K,0)`. -/
-theorem map_normUnits_unitFiltration_zero :
-    (unitFiltration L 0).map (Algebra.normUnits K) = unitFiltration K 0 := by
-  refine le_antisymm (map_normUnits_unitFiltration_zero_le K L) fun x hx ↦ ?_
-  let u := unitFiltrationZeroEquivIntegerUnits ⟨x, hx⟩
+/-- **The norm is surjective on every step of the unit filtration in an unramified extension.** If
+`L/K` is unramified, the norm maps `U(L,i)` onto `U(K,i)` for every `i : ℕ`:
+`N_{L/K}(U(L,i)) = U(K,i)`. At `i = 0` this is the surjectivity of the norm on units. -/
+@[simp]
+theorem map_normUnits_unitFiltration (i : ℕ) :
+    (unitFiltration L i).map (Algebra.normUnits K) = unitFiltration K i := by
+  refine le_antisymm ?_ fun x hx ↦ ?_
+  · have h := map_normUnits_unitFiltration_le K L i
+    rwa [IsUnramified.ramificationIndex_eq_one, one_mul] at h
   obtain ⟨w, hw, htr⟩ := exists_isUnit_trace (K := K) (L := L)
-  obtain ⟨a, ha⟩ := exists_norm_sub_mem_maximalIdeal (L := L) (u : 𝒪[K])
-  obtain ⟨y, hy, -⟩ := Algebra.exists_norm_eq_of_norm_sub_mem_maximalIdeal hw htr u.isUnit ha
-  have hyK : Algebra.norm K (y : L) = x := by
-    rw [← coe_norm_integerRing, hy, coe_unitFiltrationZeroEquivIntegerUnits]
-  have hy0 : (y : L) ≠ 0 := fun h ↦ x.ne_zero (by rw [← hyK, h, Algebra.norm_zero])
-  have hyx : Algebra.normUnits K (Units.mk0 (y : L) hy0) = x := Units.ext (by simpa using hyK)
-  exact ⟨Units.mk0 (y : L) hy0, normUnits_mem_unitFiltration_zero_iff.1 (hyx ▸ hx), hyx⟩
+  obtain ⟨u, hu, hux⟩ := mem_unitFiltration_iff_exists.mp hx
+  rcases i with _ | i
+  · -- Depth `0`: the residue norm is surjective, and Hensel's lemma at `𝓂[K]` lifts an
+    -- approximate solution to a solution, which is a unit because its norm is one.
+    obtain ⟨a, ha⟩ := exists_norm_sub_mem_maximalIdeal (L := L) (u : 𝒪[K])
+    obtain ⟨y, hy, -⟩ := Algebra.exists_norm_eq_of_norm_sub_mem hw htr u.isUnit ha
+    have hyK : Algebra.norm K (y : L) = x := by rw [← coe_norm_integerRing, hy, hux]
+    have hy0 : (y : L) ≠ 0 := fun h ↦ x.ne_zero (by rw [← hyK, h, Algebra.norm_zero])
+    have hyx : Algebra.normUnits K (Units.mk0 (y : L) hy0) = x := Units.ext (by simpa using hyK)
+    exact ⟨Units.mk0 (y : L) hy0, normUnits_mem_unitFiltration_zero_iff.1 (hyx ▸ hx), hyx⟩
+  · -- Positive depth: `1` is an approximate solution modulo `𝓂[K]^(i+1)`, and Hensel's lemma at
+    -- `𝓂[K]^(i+1)` lifts it to a solution congruent to `1` modulo `𝓂[K]^(i+1) 𝒪[L] = 𝓂[L]^(i+1)`.
+    obtain ⟨y, hy, hy1⟩ := Algebra.exists_norm_eq_of_norm_sub_mem (I := 𝓂[K] ^ (i + 1)) hw htr
+      (a := 1) u.isUnit (by rw [map_one, ← neg_sub, Ideal.neg_mem_iff]; exact hu)
+    rw [Ideal.map_pow, IsUnramified.map_maximalIdeal (K := K)] at hy1
+    have hyu : IsUnit y := isUnit_of_mem_nonunits_one_sub_self y <|
+      (mem_maximalIdeal _).1 <| by
+        rw [← neg_sub, Ideal.neg_mem_iff]
+        exact Ideal.pow_le_self i.succ_ne_zero hy1
+    have hyK : Algebra.norm K (y : L) = x := by rw [← coe_norm_integerRing, hy, hux]
+    refine ⟨Units.map (Subring.subtype 𝒪[L]).toMonoidHom hyu.unit,
+      (mem_unitFiltration_succ_congr i _).2 (by simpa using hy1), Units.ext (by simpa using hyK)⟩
 
 /-- **The norm-equation criterion in an unramified extension.** If `L/K` is unramified, an
 element `x` of `Kˣ` is a norm from `L` exactly when the residue degree `f(L/K)` divides
@@ -140,7 +164,7 @@ theorem mem_normGroup_iff_dvd_normalizedValuation {x : Kˣ} :
     mem_normGroup_iff.2 ⟨Units.map (algebraMap K L : K →* L) π, by
       simp [Algebra.norm_algebraMap, IsUnramified.inertiaDegree_eq_finrank]⟩
   have hU : unitFiltration K 0 ≤ normGroup K L := by
-    rw [← map_normUnits_unitFiltration_zero K L]
+    rw [← map_normUnits_unitFiltration K L 0]
     rintro _ ⟨y, -, rfl⟩
     exact mem_normGroup_iff.2 ⟨y, by simp⟩
   have hu : x * (π ^ inertiaDegree K L) ^ (-m) ∈ unitFiltration K 0 := by

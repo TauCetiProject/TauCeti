@@ -34,7 +34,7 @@ open scoped NumberField
 
 namespace TauCeti.GlobalNumberFields.RayClassCharacter
 
-variable {K : Type*} [Field K] [NumberField K] {𝔪 : Modulus K}
+variable {K : Type*} [Field K] [NumberField K] {𝔪 𝔫 : Modulus K}
 
 open Classical in
 /-- Extend the induced evaluation `χ.onIdeals` on prime-to integral ideals by zero on all other
@@ -194,6 +194,30 @@ theorem toUnitaryIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
     (χ * ψ).toUnitaryIdealWeight = χ.toUnitaryIdealWeight * ψ.toUnitaryIdealWeight := by
   apply Subtype.ext
   simp
+
+/-- Increasing the modulus restricts the induced character's ideal weight away from the finite
+primes of the larger modulus. -/
+theorem toUnitaryIdealWeight_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
+    (induced h χ).toUnitaryIdealWeight =
+      χ.toUnitaryIdealWeight.restrict 𝔫.support 𝔫.support.finite_toSet := by
+  apply Subtype.ext
+  ext I
+  by_cases hI : Ideal.IsPrimeTo I 𝔫.support
+  · have hI𝔪 : Ideal.IsPrimeTo I 𝔪.support := hI.mono (Modulus.support_mono h)
+    rw [TauCeti.UnitaryIdealWeight.val_restrict,
+      TauCeti.MultiplicativeIdealWeight.restrict_apply]
+    simp only [hI, ite_true]
+    rw [val_toUnitaryIdealWeight, val_toUnitaryIdealWeight,
+      toMultiplicativeIdealWeight_apply_of_isPrimeTo _ hI,
+      toMultiplicativeIdealWeight_apply_of_isPrimeTo _ hI𝔪,
+      onIdeals_induced]
+    congr 2
+    exact Subtype.ext (coe_integralIdealsPrimeToInclusion h _)
+  · rw [TauCeti.UnitaryIdealWeight.val_restrict,
+      TauCeti.MultiplicativeIdealWeight.restrict_apply]
+    simp only [hI, ite_false]
+    rw [val_toUnitaryIdealWeight,
+      toMultiplicativeIdealWeight_apply_of_not_isPrimeTo _ hI]
 
 /-- The unitary extensions distinguish ray class characters. -/
 theorem toUnitaryIdealWeight_injective :
