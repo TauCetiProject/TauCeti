@@ -18,8 +18,8 @@ support lies inside `Ω`, the classical derivative of the mollification is the m
 of the weak derivative. Zero extension need not preserve weak differentiability at the boundary;
 the support condition ensures that no boundary term enters the identity.
 
-`HasWeakFDerivOn.hasFDerivAt_convolution_indicator_right` states this for arbitrary kernels.
-`HasWeakFDerivOn.hasFDerivAt_normedBump_indicator` specializes to normalized smooth bumps,
+`HasWeakFDerivOn.hasFDerivAt_indicator_convolution_right` states this for arbitrary kernels.
+`HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed` specializes to normalized smooth bumps,
 with the geometric condition that the closed ball of the outer radius lies inside the domain.
 The vector-valued formulation applies to successive weak derivative fields when constructing
 smooth local approximations in higher-order Sobolev spaces.
@@ -41,9 +41,11 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   {mu : Measure E} [mu.IsAddHaarMeasure] [SFinite mu] [IsLocallyFiniteMeasure mu]
   {Omega : Opens E} {u : E → F} {U : E → E →L[ℝ] F} {p q : ℝ≥0∞}
 
-/-- Interior differentiation of convolution after extension by zero. The function and its
-weak derivative may have different integrability exponents, including infinity. -/
-theorem HasWeakFDerivOn.hasFDerivAt_convolution_indicator_right
+/-- If `U` is a weak derivative field of `u` on `Omega`, with `u ∈ Lᵖ(Omega)` and
+`U ∈ L^q(Omega)` for `1 ≤ p, q ≤ ∞`, the convolution of the zero extension of `u` with a
+smooth compactly supported kernel `rho` has derivative at `x` the convolution of the zero
+extension of `U` with `rho`, whenever `x - tsupport rho ⊆ Omega`. -/
+theorem HasWeakFDerivOn.hasFDerivAt_indicator_convolution_right
     (h : HasWeakFDerivOn mu Omega u U)
     (hu : MemLp u p (mu.restrict Omega)) (hU : MemLp U q (mu.restrict Omega))
     (hp : 1 ≤ p) (hq : 1 ≤ q) (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho)
@@ -59,16 +61,30 @@ theorem HasWeakFDerivOn.hasFDerivAt_convolution_indicator_right
     (memLp_indicator_iff_restrict (f := u) Omega.isOpen.measurableSet).2 hu
   have hU_ext : MemLp ((Omega : Set E).indicator U) q mu :=
     (memLp_indicator_iff_restrict (f := U) Omega.isOpen.measurableSet).2 hU
-  have h_ext : HasWeakFDerivOn mu Omega
-      ((Omega : Set E).indicator u) ((Omega : Set E).indicator U) :=
-    (h.congr_ae (indicator_ae_eq_restrict Omega.isOpen.measurableSet).symm).congr_ae_deriv
-      (indicator_ae_eq_restrict Omega.isOpen.measurableSet).symm
-  exact h_ext.hasFDerivAt_convolution_right (hu_ext.locallyIntegrable hp)
+  exact h.indicator.hasFDerivAt_convolution_right (hu_ext.locallyIntegrable hp)
     (hU_ext.locallyIntegrable hq) rho hrho hrho_cpt x hx
 
-/-- Mollification by a normalized smooth bump differentiates a domain weak derivative inside
-any closed ball of the bump's outer radius contained in the domain. -/
-theorem HasWeakFDerivOn.hasFDerivAt_normedBump_indicator
+/-- Where `x - tsupport rho ⊆ Omega`, the Fréchet derivative of the convolution of the zero
+extension of `u` with `rho` equals the convolution of the zero extension of its weak derivative
+field `U` with `rho`. The fields may have different integrability exponents `1 ≤ p, q ≤ ∞`. -/
+theorem HasWeakFDerivOn.fderiv_indicator_convolution_right
+    (h : HasWeakFDerivOn mu Omega u U)
+    (hu : MemLp u p (mu.restrict Omega)) (hU : MemLp U q (mu.restrict Omega))
+    (hp : 1 ≤ p) (hq : 1 ≤ q) (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho)
+    (hrho_cpt : HasCompactSupport rho) (x : E)
+    (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
+    fderiv ℝ
+      (((Omega : Set E).indicator u) ⋆[
+        (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip, mu] rho) x =
+      (((Omega : Set E).indicator U) ⋆[
+        (ContinuousLinearMap.lsmul ℝ ℝ :
+          ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F).flip, mu] rho) x :=
+  (h.hasFDerivAt_indicator_convolution_right hu hU hp hq rho hrho hrho_cpt x hx).fderiv
+
+/-- At any point `x` whose closed ball of radius `phi.rOut` lies in `Omega`, the mollification
+of the zero extension of `u` by the normalized bump has derivative the mollification of the
+zero extension of its weak derivative field `U`. -/
+theorem HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed
     [FiniteDimensional ℝ E] [HasContDiffBump E]
     (h : HasWeakFDerivOn mu Omega u U)
     (hu : MemLp u p (mu.restrict Omega)) (hU : MemLp U q (mu.restrict Omega))
@@ -80,12 +96,29 @@ theorem HasWeakFDerivOn.hasFDerivAt_normedBump_indicator
       ((((Omega : Set E).indicator U) ⋆[
         (ContinuousLinearMap.lsmul ℝ ℝ :
           ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F).flip, mu] phi.normed mu) x) x := by
-  apply h.hasFDerivAt_convolution_indicator_right hu hU hp hq
+  apply h.hasFDerivAt_indicator_convolution_right hu hU hp hq
     (phi.normed mu) phi.contDiff_normed phi.hasCompactSupport_normed x
   intro y hy
   apply hx
   rw [phi.tsupport_normed_eq] at hy
   simpa only [Metric.mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg,
     sub_zero] using hy
+
+/-- At a point `x` with `closedBall x phi.rOut ⊆ Omega`, the Fréchet derivative of the
+mollification of the zero extension of `u` by the normalized bump equals the mollification
+of the zero extension of its weak derivative field `U`. -/
+theorem HasWeakFDerivOn.fderiv_indicator_convolution_normed
+    [FiniteDimensional ℝ E] [HasContDiffBump E]
+    (h : HasWeakFDerivOn mu Omega u U)
+    (hu : MemLp u p (mu.restrict Omega)) (hU : MemLp U q (mu.restrict Omega))
+    (hp : 1 ≤ p) (hq : 1 ≤ q) (phi : ContDiffBump (0 : E)) (x : E)
+    (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
+    fderiv ℝ
+      (((Omega : Set E).indicator u) ⋆[
+        (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip, mu] phi.normed mu) x =
+      (((Omega : Set E).indicator U) ⋆[
+        (ContinuousLinearMap.lsmul ℝ ℝ :
+          ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F).flip, mu] phi.normed mu) x :=
+  (h.hasFDerivAt_indicator_convolution_normed hu hU hp hq phi x hx).fderiv
 
 end TauCeti

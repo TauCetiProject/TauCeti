@@ -69,6 +69,15 @@ private theorem hasCompactSupport_const_sub (rho : E → ℝ)
     HasCompactSupport fun t ↦ rho (x - t) :=
   hrho.comp_homeomorph (Homeomorph.subLeft x)
 
+omit [MeasurableSpace E] [NormedSpace ℝ E] [BorelSpace E] in
+private theorem tsupport_const_sub_subset (rho : E → ℝ) (x : E)
+    (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
+    tsupport (fun t ↦ rho (x - t)) ⊆ Omega := by
+  intro t ht
+  have ht' : x - t ∈ tsupport rho :=
+    tsupport_comp_subset_preimage rho (continuous_const.sub continuous_id) ht
+  exact (sub_sub_cancel x t) ▸ hx (x - t) ht'
+
 omit [MeasurableSpace E] [BorelSpace E] in
 private theorem lineDeriv_const_sub (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho)
     (x t v : E) :
@@ -99,13 +108,9 @@ theorem HasWeakLineDerivOn.hasLineDerivAt_convolution_right {u u' : E → F} {v 
         ℝ →L[ℝ] F →L[ℝ] F).flip, mu] rho) x) x v := by
   let rhoTest : 𝓓(Omega, ℝ) :=
     ⟨fun t ↦ rho (x - t), contDiff_const_sub rho hrho x,
-      hasCompactSupport_const_sub rho hrho_cpt x, fun t ht => by
-        have ht' : x - t ∈ tsupport rho :=
-          tsupport_comp_subset_preimage rho (continuous_const.sub continuous_id) ht
-        exact (sub_sub_cancel x t) ▸ hx (x - t) ht'⟩
+      hasCompactSupport_const_sub rho hrho_cpt x, tsupport_const_sub_subset rho x hx⟩
   have hweak := h.integral_lineDeriv_smul_eq_neg_integral_smul rhoTest
-  have hrhoTest : (rhoTest : E → ℝ) = fun t => rho (x - t) := rfl
-  rw [hrhoTest] at hweak
+  simp only [rhoTest, TestFunction.coe_mk] at hweak
   have hconv :
       ∫ t, fderiv ℝ rho (x - t) v • u t ∂mu =
         ∫ t, rho (x - t) • u' t ∂mu := by
