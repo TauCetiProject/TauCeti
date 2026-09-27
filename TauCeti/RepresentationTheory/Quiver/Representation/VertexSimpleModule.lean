@@ -46,6 +46,13 @@ noncomputable def vertexSimpleModuleIso (i : Q) :
     (quiverRepFunctor k Q).obj (vertexSimpleModule k Q i) ≅ simpleRep k Q i :=
   (quiverRepFunctor k Q).objObjPreimageIso _
 
+/-- Every vertex space of a vertex simple path-algebra module is finite-dimensional. -/
+instance finiteDimensional_vertexSimpleModule_obj (i j : Q) :
+    FiniteDimensional k
+      (((quiverRepFunctor k Q).obj (vertexSimpleModule k Q i)).obj j) := by
+  have := finiteDimensional_simpleRep_obj (k := k) i j
+  exact ((vertexSimpleModuleIso k Q i).symm.app j).toLinearEquiv.finiteDimensional
+
 /-- The vertex simple is a simple object of the path algebra module category. -/
 instance simple_vertexSimpleModule (i : Q) : Simple (vertexSimpleModule k Q i) :=
   simple_obj (quiverRepFunctor k Q).inv (simpleRep k Q i)
