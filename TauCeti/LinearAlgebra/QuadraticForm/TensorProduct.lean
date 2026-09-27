@@ -20,6 +20,8 @@ forms. It complements Mathlib's tensor product of quadratic-form isometries.
 * `QuadraticMap.IsometryEquiv.tmul`: the tensor product of two isometric equivalences.
 * `QuadraticMap.Equivalent.tmul`: tensor products preserve equivalence of quadratic forms.
 * `QuadraticForm.IsometryEquiv.tmulProd`: tensor product distributes over orthogonal product.
+* `TauCeti.tensorLIdSmul`: the tensor product of a scaled line and a form isometric to the
+  scaled form.
 -/
 
 public section
@@ -30,6 +32,30 @@ open scoped TensorProduct
 open QuadraticMap
 
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
+
+/-- The tensor product of `⟨a⟩` with `Q` is isometric to `a • Q` by the left unit map. -/
+@[expose, simps toLinearEquiv]
+def tensorLIdSmul {V : Type*} [AddCommGroup V] [Module R V]
+    (Q : QuadraticForm R V) (a : R) :
+    (QuadraticForm.tmul
+      (a • (QuadraticMap.sq (R := R) (A := R) : QuadraticForm R R)) Q).IsometryEquiv
+      (a • Q) where
+  toLinearEquiv := TensorProduct.lid R V
+  map_app' x := by
+    have h : QuadraticForm.tmul (a • (QuadraticMap.sq (R := R) (A := R) : QuadraticForm R R)) Q =
+        QuadraticForm.tmul (QuadraticMap.sq (R := R) (A := R) : QuadraticForm R R)
+          (a • Q) := by
+      apply _root_.baseChange_ext
+      intro v
+      simp [QuadraticForm.tmul, mul_comm]
+    change (a • Q) (TensorProduct.lid R V x) = _
+    simpa only [h] using QuadraticForm.tmul_tensorLId_apply (a • Q) x
+
+@[simp]
+theorem tensorLIdSmul_apply {V : Type*} [AddCommGroup V] [Module R V]
+    (Q : QuadraticForm R V) (a : R) (x : R ⊗[R] V) :
+    tensorLIdSmul Q a x = TensorProduct.lid R V x :=
+  rfl
 
 /-- Tensor product of isometric equivalences of quadratic forms. -/
 def _root_.QuadraticMap.IsometryEquiv.tmul

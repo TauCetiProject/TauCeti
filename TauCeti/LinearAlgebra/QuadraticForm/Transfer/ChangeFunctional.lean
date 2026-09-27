@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.Basic
-public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct.Isometries
+public import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
 
 /-!
 # Changing the functional in Scharlau transfer
@@ -24,37 +24,34 @@ public section
 
 namespace TauCeti
 
-section CommRing
+section CommSemiring
 
-variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
+variable {K L V : Type*} [CommSemiring K] [CommRing L] [Algebra K L]
   [Invertible (2 : L)] [AddCommGroup V] [Module L V]
   [Module K V] [IsScalarTower K L V]
 
-/-- The tensor product of `⟨a⟩` with `Q` is isometric to `a • Q` by the left unit map. -/
-def tensorLIdSmul (Q : QuadraticForm L V) (a : L) :
-    (QuadraticForm.tmul
-      (a • (QuadraticMap.sq (R := L) (A := L) : QuadraticForm L L)) Q).IsometryEquiv
-      (a • Q) := by
-  have h : QuadraticForm.tmul (a • (QuadraticMap.sq (R := L) (A := L) : QuadraticForm L L)) Q =
-      QuadraticForm.tmul (QuadraticMap.sq (R := L) (A := L) : QuadraticForm L L)
-        (a • Q) := by
-    apply _root_.baseChange_ext
-    intro v
-    simp [QuadraticForm.tmul, mul_comm]
-  rw [h]
-  exact QuadraticForm.tensorLId (a • Q)
-
 /-- Changing the functional by `x ↦ s (a * x)` tensors the form with `⟨a⟩`.
 No nonzeroness or finite-dimensionality is needed for this isometry. -/
+@[expose, simps toLinearEquiv]
 def scharlauTransferChangeFunctional (Q : QuadraticForm L V)
     (s : L →ₗ[K] K) (a : L) :
     (Q.scharlauTransfer (s.comp (LinearMap.mul K L a))).IsometryEquiv
       ((QuadraticForm.tmul
-        (a • (QuadraticMap.sq (R := L) (A := L) : QuadraticForm L L)) Q).scharlauTransfer s) := by
-  rw [QuadraticMap.scharlauTransfer_comp_mul]
-  exact ((tensorLIdSmul Q a).scharlauTransfer s).symm
+        (a • (QuadraticMap.sq (R := L) (A := L) : QuadraticForm L L)) Q).scharlauTransfer s) where
+  toLinearEquiv := (TensorProduct.lid L V).symm.restrictScalars K
+  map_app' x := by
+    rw [QuadraticMap.scharlauTransfer_comp_mul]
+    simp only [QuadraticMap.scharlauTransfer_apply]
+    exact congrArg s ((tensorLIdSmul Q a).symm.map_app x)
 
-end CommRing
+@[simp]
+theorem scharlauTransferChangeFunctional_apply (Q : QuadraticForm L V)
+    (s : L →ₗ[K] K) (a : L) (x : V) :
+    scharlauTransferChangeFunctional Q s a x =
+      (TensorProduct.lid L V).symm x := by
+  rfl
+
+end CommSemiring
 
 section Field
 
@@ -63,8 +60,7 @@ variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
   [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
 
 /-- Transfers along two nonzero functionals on a finite extension differ by tensoring
-with a one-dimensional form. The unit relating the functionals is unique, although the
-resulting isometry need not determine it. -/
+with a one-dimensional form. -/
 theorem exists_unit_scharlauTransfer_changeFunctional (Q : QuadraticForm L V)
     (s t : L →ₗ[K] K) (hs : s ≠ 0) (ht : t ≠ 0) :
     ∃ a : Lˣ, (Q.scharlauTransfer t).Equivalent
