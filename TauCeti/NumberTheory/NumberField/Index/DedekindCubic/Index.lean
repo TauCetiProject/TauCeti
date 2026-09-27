@@ -29,16 +29,14 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
-/-- The index of Dedekind's order in the full ring of integers when `θ` generates `K`. -/
-def dedekindOrderIndex (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0)
-    (_hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : ℕ :=
+/-- The index of Dedekind's order in the full ring of integers. -/
+def dedekindOrderIndex (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : ℕ :=
   (dedekindOrder hθ).toSubmodule.cardQuot
 
 /-- The index is the cardinality of the additive quotient by Dedekind's order. -/
 theorem dedekindOrderIndex_def
-    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    dedekindOrderIndex hθ hgen =
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindOrderIndex hθ =
       Nat.card (𝓞 K ⧸ (dedekindOrder hθ).toSubmodule) :=
   Submodule.cardQuot_apply _
 
@@ -62,16 +60,15 @@ theorem finite_quotient_dedekindOrder
 theorem dedekindOrderIndex_pos
     (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    0 < dedekindOrderIndex hθ hgen := by
+    0 < dedekindOrderIndex hθ := by
   let _ := finite_quotient_dedekindOrder hθ hgen
   rw [dedekindOrderIndex_def]
   exact Nat.card_pos
 
 /-- Dedekind's cubic order has index one exactly when it is the full ring of integers. -/
 @[simp] theorem dedekindOrderIndex_eq_one_iff
-    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    dedekindOrderIndex hθ hgen = 1 ↔ dedekindOrder hθ = ⊤ := by
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindOrderIndex hθ = 1 ↔ dedekindOrder hθ = ⊤ := by
   rw [dedekindOrderIndex, Submodule.cardQuot_eq_one_iff, Algebra.toSubmodule_eq_top]
 
 end TauCeti.NumberField
