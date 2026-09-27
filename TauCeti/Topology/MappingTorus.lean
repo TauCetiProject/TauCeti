@@ -61,35 +61,18 @@ def action (φ : F ≃ₜ F) : AddAction ℤ (F × ℝ) where
     · push_cast
       ring_nf
 
-/-- The setoid of orbits of the integer monodromy action. -/
-def quotientSetoid (φ : F ≃ₜ F) : Setoid (F × ℝ) :=
-  @AddAction.orbitRel ℤ (F × ℝ) inferInstance (action φ)
-
 end MappingTorus
 
 /-- The topological mapping torus of a self-homeomorphism. -/
-abbrev MappingTorus (φ : F ≃ₜ F) := Quotient (MappingTorus.quotientSetoid φ)
+abbrev MappingTorus (φ : F ≃ₜ F) :=
+  @AddAction.orbitRel.Quotient ℤ (F × ℝ) inferInstance (MappingTorus.action φ)
 
 namespace MappingTorus
 
 /-- The quotient map from the cylinder used to construct the mapping torus. -/
 def mk (φ : F ≃ₜ F) (x : F) (t : ℝ) : MappingTorus φ :=
-  @Quotient.mk' (F × ℝ) (MappingTorus.quotientSetoid φ) (x, t)
-
-@[simp]
-theorem mk_eq (φ : F ≃ₜ F) (x y : F) (s t : ℝ) :
-    mk φ x s = mk φ y t ↔
-      @AddAction.orbitRel ℤ (F × ℝ) inferInstance (MappingTorus.action φ) (x, s) (y, t) := by
-  exact Quotient.eq'
-
-/-- Shifting along the integer action does not change a mapping-torus point. -/
-@[simp]
-theorem mk_add_int (φ : F ≃ₜ F) (x : F) (t : ℝ) (n : ℤ) :
-    mk φ ((φ ^ n) x) (t + n) = mk φ x t := by
-  let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
-  change (⟦((φ ^ n) x, t + n)⟧ : Quotient (MappingTorus.quotientSetoid φ)) = ⟦(x, t)⟧
-  apply Quotient.sound
-  exact ⟨n, rfl⟩
+  @Quotient.mk'' (F × ℝ)
+    (@AddAction.orbitRel ℤ (F × ℝ) inferInstance (MappingTorus.action φ)) (x, t)
 
 /-- The canonical projection of a mapping torus to the circle. -/
 def proj (φ : F ≃ₜ F) : MappingTorus φ → UnitAddCircle :=
@@ -109,8 +92,9 @@ theorem proj_mk (φ : F ≃ₜ F) (x : F) (t : ℝ) :
 
 /-- The quotient map from the cylinder into the mapping torus is continuous. -/
 theorem continuous_mk (φ : F ≃ₜ F) :
-    Continuous (fun p : F × ℝ ↦ mk φ p.1 p.2) := by
-  change Continuous (@Quotient.mk' (F × ℝ) (MappingTorus.quotientSetoid φ))
+  Continuous (fun p : F × ℝ ↦ mk φ p.1 p.2) := by
+  let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
+  change Continuous (@Quotient.mk' (F × ℝ) (AddAction.orbitRel ℤ (F × ℝ)))
   exact isQuotientMap_quotient_mk'.continuous
 
 /-- The canonical projection from a mapping torus to the additive circle is continuous. -/
@@ -118,7 +102,7 @@ theorem continuous_proj (φ : F ≃ₜ F) : Continuous (proj φ) := by
   unfold proj
   let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
   simpa using
-    ((isQuotientMap_quotient_mk' (s := MappingTorus.quotientSetoid φ)).continuous_iff.mpr
+    ((isQuotientMap_quotient_mk' (s := AddAction.orbitRel ℤ (F × ℝ))).continuous_iff.mpr
       ((AddCircle.continuous_mk' (1 : ℝ)).comp continuous_snd))
 
 end MappingTorus
