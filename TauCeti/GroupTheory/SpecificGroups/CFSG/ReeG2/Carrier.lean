@@ -133,6 +133,7 @@ theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
 carrier's rank-two split weight torus conjugates the subgroup at node `i` to itself, rescaling its
 parameter by the value of the corresponding root of
 `TauCeti.DynkinType.G2.simplyConnectedRootDatum`. -/
+@[simp]
 theorem weightTorusPoints_conj_simpleRootSubgroup (i : Fin d.1.rank)
     (s : Fin 2 → d.1.Closureˣ) (u : Multiplicative d.1.Closure) :
     G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure s * d.simpleRootSubgroup i u *
