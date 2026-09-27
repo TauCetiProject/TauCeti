@@ -38,17 +38,10 @@ namespace TauCeti
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 
-/-- The zero-skeleton is discrete also through the `TopCat` abbreviation `skeletonObj`. -/
-instance zeroSkeletonObjDiscreteTopology : DiscreteTopology (skeletonObj C 1) :=
-  zeroSkeletonDiscreteTopology C
-
-/-- The empty preceding skeleton through the `TopCat` abbreviation `skeletonObj`. -/
-instance zeroSkeletonObjPreviousIsEmpty : IsEmpty (skeletonObj C 0) :=
-  zeroSkeletonPreviousIsEmpty C
-
 /-- The degree-zero skeletal pair is isomorphic to the zero-skeleton modulo the empty space. -/
 def skeletonPairZeroIso :
     skeletonPair C 0 ≅ TopPair.incl.obj (skeletonObj C 1) := by
+  letI : IsEmpty (skeletonObj C 0) := zeroSkeletonPreviousIsEmpty C
   letI : IsEmpty ((skeletonPair C 0).snd : Type w) := by
     rw [skeletonPair_snd]
     infer_instance
@@ -83,8 +76,9 @@ def zeroSkeletonHomologyIso :
 /-- The degree-zero cellular group of an absolute CW complex is the coproduct of one copy of the
 coefficient object for each zero-cell. -/
 def cellularChainGroupZeroIso :
-    cellularChainGroup C R 0 ≅ ∐ fun _ : cell C 0 ↦ R :=
-  (zeroSkeletonHomologyIso C R).symm ≪≫
+    cellularChainGroup C R 0 ≅ ∐ fun _ : cell C 0 ↦ R := by
+  letI : DiscreteTopology (skeletonObj C 1) := zeroSkeletonDiscreteTopology C
+  exact (zeroSkeletonHomologyIso C R).symm ≪≫
     AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
       (skeletonObj C 1) ≪≫
     (Sigma.reindex (zeroCellEquiv C) (fun _ : skeletonObj C 1 ↦ R)).symm
@@ -93,10 +87,13 @@ def cellularChainGroupZeroIso :
 class of its characteristic point in the zero-skeleton, then to the skeletal pair. The middle
 inverse is Mathlib's identification of zeroth homology of a discrete space with its point basis. -/
 @[simp] lemma cellularChainGroupZeroIso_inv_ι (i : cell C 0) :
+    letI : DiscreteTopology (skeletonObj C 1) := zeroSkeletonDiscreteTopology C
     Sigma.ι (fun _ : cell C 0 ↦ R) i ≫ (cellularChainGroupZeroIso C R).inv =
       Sigma.ι (fun _ : skeletonObj C 1 ↦ R) (zeroCellPoint C i) ≫
         (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
           (skeletonObj C 1)).inv ≫ (zeroSkeletonHomologyIso C R).hom := by
+  refine (fun [inst : DiscreteTopology (skeletonObj C 1)] => ?_)
+    (inst := zeroSkeletonDiscreteTopology C)
   have hcomp : (cellularChainGroupZeroIso C R).inv =
       (Sigma.reindex (zeroCellEquiv C) (fun _ : skeletonObj C 1 ↦ R)).hom ≫
         (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
