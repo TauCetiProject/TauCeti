@@ -1,0 +1,408 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+import Mathlib.Analysis.Normed.Module.Connected
+public import TauCeti.Analysis.Analytic.IsolatedZeros
+public import TauCeti.Analysis.Complex.Conformal.LocalDegree
+public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
+
+/-!
+# The local fibre count of a holomorphic map between Riemann surfaces
+
+`TauCeti.localDegree` counts, on a disc in the complex plane, the orders of vanishing of `f - w`
+as `w` ranges over the values close to `f z₀`; it is the analytic form of the statement that a
+nonconstant holomorphic function maps a small disc onto a disc around the image of its centre,
+counted with multiplicity. This file transports that count to a map `f : X → Y` between Riemann
+surfaces, where the count is read as a sum of `TauCeti.RiemannSurface.localMultiplicity` over a
+fibre of `f` restricted to a chart neighbourhood of the point. It is the local normal form
+`z ↦ z ^ m` of a nonconstant holomorphic map, obtained as a count rather than as a conjugacy.
+
+Two ingredients are transported from `TauCeti.Analysis.Complex.Conformal.LocalDegree` and
+`TauCeti.Analysis.Analytic.IsolatedZeros`. In charts `e` at `x` and `e'` at `f x` the
+representative `F = e' ∘ f ∘ e.symm` is analytic at `e x`, and the local multiplicity of `f` at
+`x` is the order of vanishing of `F - F (e x)` there, by
+`TauCeti.RiemannSurface.localMultiplicity_eq_analyticOrderNatAt`; re-applying that identity at
+each `x'` in the chart ball shows that the summand of the planar count at `z` is
+`localMultiplicity f (e.symm z)`. The zeros of `F - w` inside a closed disc are finite by
+`TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, and reindexing the count along `e.symm` turns
+it into a sum over the fibre of `y' = e'.symm w` inside the chart neighbourhood. Nonconstancy of
+`f` near `x` enters as the hypothesis `¬ EventuallyConst f (𝓝 x)`, which by
+`TauCeti.RiemannSurface.localMultiplicity_pos_iff` says that the count is positive; it also makes
+`e x` an isolated zero of the recentred representative `F - F (e x)`, so that
+`TauCeti.localDegree` applies to it.
+
+## Main declarations
+
+* `TauCeti.RiemannSurface.exists_nhds_eq_singleton_of_finite_fiber`: a point of a finite fibre of a
+  map is isolated in that fibre.
+* `TauCeti.RiemannSurface.exists_nhds_localMultiplicity_fiber_sum`: the local fibre count.
+
+## References
+
+* Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81,
+  Springer, 1981, §10.
+* Rick Miranda, *Algebraic Curves and Riemann Surfaces*, Graduate Studies in Mathematics 5,
+  American Mathematical Society, 1995, Chapter III §3.
+-/
+
+public noncomputable section
+
+open Filter Function IsManifold Set Topology
+
+open scoped Manifold
+
+namespace TauCeti.RiemannSurface
+
+variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [TopologicalSpace Y]
+  [ChartedSpace ℂ Y] {f : X → Y} {x : X} {e : OpenPartialHomeomorph X ℂ}
+  {e' : OpenPartialHomeomorph Y ℂ}
+
+/-! ### Isolation in a finite fibre -/
+
+/-- **A point of a finite fibre is isolated in it.** If every fibre of `g : α → β` is finite and `α`
+is a `T1` space, then `a` is isolated in the fibre `g ⁻¹' {g a}`: some neighbourhood of `a` meets
+that fibre only at `a`.
+
+A finite set of a `T1` space is closed, so the complement of the fibre with `a` deleted is an open
+neighbourhood of `a`. This is the step that lets a fibre sum be cut down to the term at `a`; the
+theorem below proves the corresponding statement for a holomorphic map, where finiteness of the
+whole fibre is not yet available. -/
+theorem exists_nhds_eq_singleton_of_finite_fiber {α β : Type*} [TopologicalSpace α] [T1Space α]
+    {g : α → β} {a : α} (hfin : ∀ y, {a' | g a' = y}.Finite) :
+    ∃ U ∈ 𝓝 a, g ⁻¹' {g a} ∩ U = {a} := by
+  classical
+  have hclosed : IsClosed (g ⁻¹' {g a} \ {a}) := (hfin (g a)).sdiff.isClosed
+  refine ⟨(g ⁻¹' {g a} \ {a})ᶜ, (isOpen_compl_iff.mpr hclosed).mem_nhds (by simp), ?_⟩
+  ext b
+  change b ∈ g ⁻¹' {g a} ∧ b ∉ g ⁻¹' {g a} \ {a} ↔ b = a
+  constructor
+  · intro hb
+    by_contra hne
+    exact hb.2 ⟨hb.1, fun h => hne h⟩
+  · intro hb
+    subst hb
+    exact ⟨by simp, fun h => h.2 rfl⟩
+
+/-! ### The local fibre count -/
+
+/-- A small disc about the chart coordinate of `x` on which the chart representative is analytic,
+stays inside the chart sources, and has `e x` as an isolated zero. -/
+private theorem exists_radius_of_notEventuallyConst
+    [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+    (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 Y)
+    (hx : x ∈ e.source) (hfx : f x ∈ e'.source)
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hne : ¬ EventuallyConst f (𝓝 x)) :
+    ∃ r > 0,
+      (∀ z ∈ Metric.closedBall (e x) r, e.symm z ∈ e.source) ∧
+      (∀ z ∈ Metric.closedBall (e x) r, f (e.symm z) ∈ e'.source) ∧
+      (∀ z ∈ Metric.closedBall (e x) r, z ≠ e x → f (e.symm z) ≠ f x) ∧
+      AnalyticOnNhd ℂ (fun z ↦ e' (f (e.symm z))) (Metric.closedBall (e x) r) := by
+  set F : ℂ → ℂ := fun z ↦ e' (f (e.symm z)) with hF
+  have hFa : AnalyticAt ℂ F (e x) := analyticAt_chart_comp_comp_symm he he' hx hfx hf
+  have hF0 : F (e x) = e' (f x) := by simp only [F, e.left_inv hx]
+  have hcont : Tendsto (fun z ↦ f (e.symm z)) (𝓝 (e x)) (𝓝 (f x)) :=
+    hf.self_of_nhds.continuousAt.tendsto.comp (e.tendsto_symm hx)
+  have hZ1 : ∀ᶠ z in 𝓝 (e x), e.symm z ∈ e.source :=
+    (e.tendsto_symm hx).eventually (e.open_source.mem_nhds hx)
+  have hZ2 : ∀ᶠ z in 𝓝 (e x), f (e.symm z) ∈ e'.source :=
+    hcont.eventually (e'.open_source.mem_nhds hfx)
+  -- Nonconstancy of `f` near `x` says that the representative `F` is not constant near `e x`.
+  have hneF : ¬ EventuallyConst F (𝓝 (e x)) := by
+    intro h
+    obtain ⟨c, hc⟩ := h.eventuallyEq_const
+    have hc0 : c = e' (f x) := by
+      have hcz := hc.self_of_nhds
+      simp only [F, e.left_inv hx] at hcz
+      exact hcz.symm
+    refine hne ((EventuallyConst.const (f x)).congr ?_)
+    have hP2 : ∀ᶠ z in 𝓝 x, f (e.symm (e z)) ∈ e'.source := by
+      exact (Filter.eventually_map (m := e) (f := 𝓝 x)
+        (P := fun z => f (e.symm z) ∈ e'.source)).mp
+          (Filter.Eventually.filter_mono (e.continuousAt hx).tendsto hZ2)
+    have hP3 : ∀ᶠ z in 𝓝 x, F (e z) = c := by
+      exact (Filter.eventually_map (m := e) (f := 𝓝 x) (P := fun z => F z = c)).mp
+          (Filter.Eventually.filter_mono (e.continuousAt hx).tendsto hc.eventually)
+    filter_upwards [e.open_source.mem_nhds hx, hP2, hP3] with x' hxsrc hz2 hz3
+    have h3 : e' (f (e.symm (e x'))) = c := by simpa only [F] using hz3
+    simpa only [e.left_inv hxsrc] using (e'.injOn hz2 hfx (h3.trans hc0)).symm
+  -- Since `F - F (e x)` is analytic at `e x` and does not vanish identically there, `e x` is an
+  -- isolated zero of it.
+  have hsub : AnalyticAt ℂ (fun z ↦ F z - F (e x)) (e x) := hFa.sub analyticAt_const
+  have hiso : ∀ᶠ z in 𝓝 (e x), z ≠ e x → F z ≠ F (e x) := by
+    have : ∀ᶠ z in 𝓝[≠] (e x), F z ≠ F (e x) := by
+      rcases hsub.eventually_eq_zero_or_eventually_ne_zero with heq | hne'
+      · exfalso
+        refine hneF ((EventuallyConst.const (F (e x))).congr ?_)
+        filter_upwards [heq] with z hz
+        exact (sub_eq_zero.mp hz).symm
+      · simpa only [sub_ne_zero] using hne'
+    simpa only [eventually_nhdsWithin_iff, Set.mem_compl_singleton_iff, not_not] using this
+  -- Shrinking the radius, the representative is analytic, its inverse chart is defined, its image
+  -- stays in the target chart, and the zero `e x` of `F - F (e x)` is isolated there too.
+  obtain ⟨ε₁, hε₁, hA₁⟩ := Metric.eventually_nhds_iff.mp hFa.eventually_analyticAt
+  have hZ3 : ∀ᶠ z in 𝓝 (e x), F z = e' (f x) → z = e x :=
+    hiso.mono fun z hz => fun hcon => by
+      by_contra hne
+      exact hz hne (hcon.trans hF0.symm)
+  obtain ⟨ε₂, hε₂, hall'⟩ := Metric.eventually_nhds_iff.mp
+    (Filter.Eventually.and hZ1 hZ2)
+  obtain ⟨ε₃, hε₃, hall''⟩ := Metric.eventually_nhds_iff.mp hZ3
+  have hρ1 : min (ε₁ / 2) (min (ε₂ / 2) (ε₃ / 2)) ≤ ε₁ / 2 := min_le_left _ _
+  have hρ2 : min (ε₁ / 2) (min (ε₂ / 2) (ε₃ / 2)) ≤ ε₂ / 2 :=
+    le_trans (min_le_right (ε₁ / 2) (min (ε₂ / 2) (ε₃ / 2))) (min_le_left _ _)
+  have hρ3 : min (ε₁ / 2) (min (ε₂ / 2) (ε₃ / 2)) ≤ ε₃ / 2 :=
+    le_trans (min_le_right (ε₁ / 2) (min (ε₂ / 2) (ε₃ / 2))) (min_le_right _ _)
+  have hdist1 : ∀ z ∈ Metric.closedBall (e x) (min (ε₁ / 2) (min (ε₂ / 2) (ε₃ / 2))),
+      dist z (e x) < ε₁ := fun _ hz => by
+    exact lt_of_le_of_lt (Metric.mem_closedBall.mp hz) (lt_of_le_of_lt hρ1 (by linarith))
+  have hdist2 : ∀ z ∈ Metric.closedBall (e x) (min (ε₁ / 2) (min (ε₂ / 2) (ε₃ / 2))),
+      dist z (e x) < ε₂ := fun _ hz => by
+    exact lt_of_le_of_lt (Metric.mem_closedBall.mp hz) (lt_of_le_of_lt hρ2 (by linarith))
+  have hdist3 : ∀ z ∈ Metric.closedBall (e x) (min (ε₁ / 2) (min (ε₂ / 2) (ε₃ / 2))),
+      dist z (e x) < ε₃ := fun _ hz => by
+    exact lt_of_le_of_lt (Metric.mem_closedBall.mp hz) (lt_of_le_of_lt hρ3 (by linarith))
+  refine ⟨min (ε₁ / 2) (min (ε₂ / 2) (ε₃ / 2)),
+    lt_min (by linarith) (lt_min (by linarith) (by linarith)),
+    fun z hz => (hall' (hdist2 z hz)).1,
+    fun z hz => (hall' (hdist2 z hz)).2,
+    fun z hz hzne hcon => ?_,
+    fun z hz => ?_⟩
+  · exact hzne (hall'' (hdist3 z hz) (by simp only [F, hcon]))
+  · exact hA₁ (hdist1 z hz)
+
+/-- **The local fibre count.** Let `f : X → Y` be differentiable at every point of a neighbourhood
+of `x` and not constant near `x`, and let `e` and `e'` be charts of the maximal atlases at `x`
+and `f x`. There are neighbourhoods `U` of `x` and `V` of `f x` such that `x` is the only preimage
+of `f x` inside `U`, and for every `y' ∈ V` different from `f x` the fibre of `y'` meets `U`, is
+finite there, and the sum of the local multiplicities over it is exactly
+`localMultiplicity f x`.
+
+This is the local normal form `z ↦ z ^ m` of a nonconstant holomorphic map, read as a count: the
+multiplicity of `f` at `x` is the number of preimages of a nearby value, counted with
+multiplicities. -/
+theorem exists_nhds_localMultiplicity_fiber_sum
+    [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+    (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 Y)
+    (hx : x ∈ e.source) (hfx : f x ∈ e'.source)
+    (hDiff : ∃ Ω ∈ 𝓝 x, ∀ y ∈ Ω, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hne : ¬ EventuallyConst f (𝓝 x)) :
+    ∃ U ∈ 𝓝 x, ∃ V ∈ 𝓝 (f x),
+      f ⁻¹' {f x} ∩ U = {x} ∧
+      ∀ y' ∈ V, y' ≠ f x →
+        (f ⁻¹' {y'} ∩ U) ≠ ∅ ∧
+        (f ⁻¹' {y'} ∩ U).Finite ∧
+        (∑ᶠ x' ∈ f ⁻¹' {y'} ∩ U, localMultiplicity f x') = localMultiplicity f x := by
+  classical
+  -- The neighbourhood on which `f` is differentiable, taken open.
+  obtain ⟨Ω₀, hΩ₀mem, hΩ₀⟩ := hDiff
+  have hΩopen : IsOpen (interior Ω₀) := isOpen_interior
+  have hΩmem : interior Ω₀ ∈ 𝓝 x :=
+    hΩopen.mem_nhds (mem_interior_iff_mem_nhds.2
+      (Filter.eventually_of_mem hΩ₀mem fun y hy => hy))
+  have hΩpt : ∀ y ∈ interior Ω₀, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y :=
+    fun y hy => hΩ₀ y ((interior_subset : interior Ω₀ ⊆ Ω₀) hy)
+  have hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y :=
+    Filter.eventually_of_mem hΩmem fun y hy => hΩpt y hy
+  -- A chart ball on which the chart representative is analytic and has no other zero over
+  -- `e' (f x)`, shrunk so that its inverse image lies in the neighbourhood above.
+  obtain ⟨r₀, hr₀, hsrc₀, hfimg₀, hisol₀, hA₀⟩ :=
+    exists_radius_of_notEventuallyConst he he' hx hfx hf hne
+  have hpre : ∀ᶠ z in 𝓝 (e x), e.symm z ∈ interior Ω₀ ∧ z ∈ e.target := by
+    filter_upwards [(e.tendsto_symm hx).eventually
+        (Filter.eventually_of_mem hΩmem fun y hy => hy),
+      Filter.eventually_of_mem (e.open_target.mem_nhds (e.map_source hx)) fun z hz => hz] with
+      z hz₁ hz₂
+    exact ⟨hz₁, hz₂⟩
+  obtain ⟨ρ, hρ, hρ'⟩ := Metric.eventually_nhds_iff_ball.mp hpre
+  set r := min r₀ ρ with hrdef
+  have hr : 0 < r := lt_min hr₀ hρ
+  have hle : r ≤ r₀ := min_le_left r₀ ρ
+  have hleq : r ≤ ρ := min_le_right r₀ ρ
+  have hdist : ∀ z ∈ Metric.closedBall (e x) r, z ∈ Metric.closedBall (e x) r₀ := by
+    intro z hz
+    have hlt : dist z (e x) ≤ r := Metric.mem_closedBall.1 hz
+    have hlt' : dist z (e x) ≤ r₀ := hlt.trans hle
+    exact Metric.mem_closedBall.2 hlt'
+  have hsrc : ∀ z ∈ Metric.closedBall (e x) r, e.symm z ∈ e.source :=
+    fun z hz => hsrc₀ z (hdist z hz)
+  have hfimg : ∀ z ∈ Metric.closedBall (e x) r, f (e.symm z) ∈ e'.source :=
+    fun z hz => hfimg₀ z (hdist z hz)
+  have hisol : ∀ z ∈ Metric.closedBall (e x) r, z ≠ e x → f (e.symm z) ≠ f x :=
+    fun z hz => hisol₀ z (hdist z hz)
+  have hA : AnalyticOnNhd ℂ (fun z ↦ e' (f (e.symm z))) (Metric.closedBall (e x) r) :=
+    fun z hz => hA₀ z (hdist z hz)
+  have hcoord : ∀ z ∈ Metric.ball (e x) r, e.symm z ∈ interior Ω₀ ∧ z ∈ e.target := by
+    intro z hz
+    exact hρ' z (Metric.mem_ball.mpr (lt_of_lt_of_le (Metric.mem_ball.mp hz) hleq))
+  -- The differential condition holds eventually at every point of the chart neighbourhood.
+  have hmd : ∀ x' ∈ e.symm '' Metric.ball (e x) r,
+      ∀ᶠ y in 𝓝 x', MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y := by
+    intro x' hx'
+    have hx'Ω : x' ∈ interior Ω₀ := by
+      obtain ⟨z, hz, rfl⟩ := (Set.mem_image e.symm _ _).1 hx'
+      exact (hcoord z hz).1
+    exact Filter.eventually_of_mem (hΩopen.mem_nhds hx'Ω) fun y hy => hΩpt y hy
+  -- Isolation of `x`, in the coordinates of the two charts.
+  have hisol' : ∀ z ∈ Metric.closedBall (e x) r, z ≠ e x →
+      e' (f (e.symm z)) ≠ e' (f (e.symm (e x))) := by
+    intro z hz hzne hcon
+    rw [e.left_inv hx] at hcon
+    exact hisol z hz hzne (e'.injOn (hfimg z hz) hfx hcon)
+  obtain ⟨δ, hδ, hcount⟩ := TauCeti.localDegree hr hA hisol'
+  rw [e.left_inv hx] at hcount
+  have hm : localMultiplicity f x
+      = analyticOrderNatAt (fun z ↦ e' (f (e.symm z)) - e' (f x)) (e x) :=
+    localMultiplicity_eq_analyticOrderNatAt he he' hx hfx hf
+  -- The chart ball is a neighbourhood of `x`.
+  have hU : e.symm '' Metric.ball (e x) r ∈ 𝓝 x :=
+    (e.isOpen_image_symm_of_subset_target Metric.isOpen_ball
+      fun z hz => (hcoord z hz).2).mem_nhds ⟨e x, Metric.mem_ball_self hr, e.left_inv hx⟩
+  refine ⟨e.symm '' Metric.ball (e x) r, hU,
+    (e' : Y → ℂ) ⁻¹' Metric.ball (e' (f x)) δ ∩ e'.source, ?_, ?_, ?_⟩
+  · refine inter_mem ?_ (e'.open_source.mem_nhds hfx)
+    exact (e'.continuousAt hfx).preimage_mem_nhds (Metric.ball_mem_nhds (e' (f x)) hδ)
+  · ext b
+    constructor
+    · rintro ⟨hbf, hbU⟩
+      have hbf' : f b = f x := by simpa using Set.mem_preimage.1 hbf
+      obtain ⟨z, hz, rfl⟩ := (Set.mem_image e.symm _ _).1 hbU
+      by_cases hze : z = e x
+      · rw [hze]
+        exact e.left_inv hx
+      · exact ((hisol z (Metric.ball_subset_closedBall hz) hze) hbf').elim
+    · intro hb
+      refine ⟨?_, ?_⟩
+      · rw [hb]
+        simp
+      · rw [hb]
+        exact (Set.mem_image e.symm _ _).2 ⟨e x, Metric.mem_ball_self hr, e.left_inv hx⟩
+  · intro y' hy' hy'ne
+    obtain ⟨hwy, hy'dom⟩ := hy'
+    have hw : dist (e' y') (e' (f x)) < δ := Metric.mem_ball.1 (Set.mem_preimage.1 hwy)
+    have hne' : e' (f x) ≠ e' y' := by
+      intro hcon
+      exact hy'ne (e'.injOn hfx hy'dom hcon).symm
+    -- The zeros of the recentred representative in the closed chart ball form a finite set.
+    have hZfin : {z ∈ Metric.closedBall (e x) r | e' (f (e.symm z)) = e' y'}.Finite := by
+      have han : AnalyticOnNhd ℂ (fun z : ℂ ↦ e' (f (e.symm z)) - e' y')
+          (Metric.closedBall (e x) r) := hA.sub analyticOnNhd_const
+      have hz0 : e' (f (e.symm (e x))) - e' y' ≠ 0 := by
+        rw [e.left_inv hx]
+        exact sub_ne_zero.mpr hne'
+      have hfin := finite_setOf_mem_and_eq_zero_of_isCompact
+        (g := fun z : ℂ ↦ e' (f (e.symm z)) - e' y') (U := Metric.closedBall (e x) r)
+        (K := Metric.closedBall (e x) r) han ((convex_closedBall _ _).isPreconnected)
+        (Metric.mem_closedBall_self (le_of_lt hr)) hz0 (isCompact_closedBall _ _) subset_rfl
+      refine hfin.subset fun z hz => ?_
+      have hz : z ∈ Metric.closedBall (e x) r ∧ e' (f (e.symm z)) = e' y' := by
+        simpa only [Set.mem_ofPred_eq] using hz
+      exact ⟨hz.1, sub_eq_zero.mpr hz.2⟩
+    -- The zeros of the recentred representative inside the open chart ball.
+    set Sb : Finset ℂ := hZfin.toFinset.filter (fun z => dist z (e x) < r) with hSb
+    have hSbin : ∀ z ∈ Sb, z ∈ Metric.ball (e x) r ∧ e' (f (e.symm z)) = e' y' := by
+      intro z hz
+      obtain ⟨hz', hz''⟩ := Finset.mem_filter.mp hz
+      have hz' : z ∈ Metric.closedBall (e x) r ∧ e' (f (e.symm z)) = e' y' :=
+        Set.mem_ofPred_eq.mp (hZfin.mem_toFinset.1 hz')
+      exact ⟨Metric.mem_ball.mpr hz'', hz'.2⟩
+    -- Wherever the recentred representative has a positive order of vanishing inside the chart
+    -- ball, it vanishes, so it is a zero counted by `Sb`.
+    have hsub : (Metric.ball (e x) r ∩ Function.support
+        (fun z : ℂ ↦ analyticOrderNatAt (fun ζ ↦ e' (f (e.symm ζ)) - e' y') z)) ⊆ ↑Sb := by
+      intro z hz
+      have hz0 : (fun ζ ↦ e' (f (e.symm ζ)) - e' y') z = 0 := by
+        refine apply_eq_zero_of_analyticOrderNatAt_ne_zero
+          (f := fun ζ ↦ e' (f (e.symm ζ)) - e' y') (z₀ := z) ?_
+        exact Function.mem_support.1 hz.2
+      exact Finset.mem_coe.2 (Finset.mem_filter.2
+        ⟨hZfin.mem_toFinset.2 ⟨Metric.ball_subset_closedBall hz.1, sub_eq_zero.mp hz0⟩, hz.1⟩)
+    have hsum : (∑ᶠ z ∈ Metric.ball (e x) r,
+          analyticOrderNatAt (fun ζ ↦ e' (f (e.symm ζ)) - e' y') z)
+        = ∑ z ∈ Sb, analyticOrderNatAt (fun ζ ↦ e' (f (e.symm ζ)) - e' y') z :=
+      finsum_mem_eq_sum_of_subset _ hsub fun z hz => (hSbin z hz).1
+    -- At each point of the fibre, the summand of the planar count is the local multiplicity.
+    have hval : ∀ x' ∈ f ⁻¹' {y'} ∩ e.symm '' Metric.ball (e x) r,
+        localMultiplicity f x' = analyticOrderNatAt (fun ζ ↦ e' (f (e.symm ζ)) - e' y') (e x') := by
+      intro x' hx'
+      obtain ⟨hxf, hx'U⟩ := hx'
+      obtain ⟨w, hw, rfl⟩ := (Set.mem_image e.symm _ _).1 hx'U
+      have hx'src : e.symm w ∈ e.source := hsrc w (Metric.ball_subset_closedBall hw)
+      have hfz : f (e.symm w) ∈ e'.source := hfimg w (Metric.ball_subset_closedBall hw)
+      have h1 := localMultiplicity_eq_analyticOrderNatAt he he' hx'src hfz (hmd _ hx'U)
+      rw [congrArg e' hxf] at h1
+      exact h1
+    -- The chart ball carries the fibre of `y'` over `Sb`, in the coordinates of `e`.
+    have hbij :
+        (f ⁻¹' {y'} ∩ e.symm '' Metric.ball (e x) r).BijOn (fun x' : X => e x') Sb := by
+      refine ⟨?_, e.injOn.mono fun x' hx' => ?_, ?_⟩
+      · intro x' hx'
+        obtain ⟨hxf, hx'U⟩ := hx'
+        obtain ⟨w, hw, rfl⟩ := (Set.mem_image e.symm _ _).1 hx'U
+        change e (e.symm w) ∈ ↑Sb
+        rw [e.right_inv ((hcoord w hw).2)]
+        refine Finset.mem_coe.2 (Finset.mem_filter.2
+          ⟨hZfin.mem_toFinset.2
+            ⟨Metric.ball_subset_closedBall (Metric.mem_ball.2 hw), congrArg e' hxf⟩,
+            Metric.mem_ball.2 hw⟩)
+      · obtain ⟨w, hw, rfl⟩ := (Set.mem_image e.symm _ _).1 hx'.2
+        exact hsrc w (Metric.ball_subset_closedBall hw)
+      · intro z hz
+        obtain ⟨hzball, hzf⟩ := hSbin z hz
+        have hsrcz : e.symm z ∈ e.source := hsrc z (Metric.ball_subset_closedBall hzball)
+        have hfz : f (e.symm z) ∈ e'.source := hfimg z (Metric.ball_subset_closedBall hzball)
+        refine ⟨e.symm z, ⟨?_, (Set.mem_image e.symm _ _).2 ⟨z, hzball, rfl⟩⟩, ?_⟩
+        · rw [Set.mem_preimage]
+          exact e'.injOn hfz hy'dom hzf
+        · exact e.right_inv ((hcoord z hzball).2)
+    have hSbF : (↑Sb : Set ℂ).Finite := Finset.finite_toSet _
+    have hconv : hSbF.toFinset = Sb := by
+      ext z
+      simp only [Set.Finite.mem_toFinset, Finset.mem_coe]
+    have hsum2 :
+        (∑ᶠ x' ∈ f ⁻¹' {y'} ∩ e.symm '' Metric.ball (e x) r, localMultiplicity f x')
+          = ∑ z ∈ Sb, analyticOrderNatAt (fun ζ ↦ e' (f (e.symm ζ)) - e' y') z := by
+      calc (∑ᶠ x' ∈ f ⁻¹' {y'} ∩ e.symm '' Metric.ball (e x) r, localMultiplicity f x')
+          = ∑ᶠ z ∈ (↑Sb : Set ℂ),
+              analyticOrderNatAt (fun ζ ↦ e' (f (e.symm ζ)) - e' y') z :=
+            finsum_mem_eq_of_bijOn _ hbij hval
+        _ = ∑ z ∈ Sb, analyticOrderNatAt (fun ζ ↦ e' (f (e.symm ζ)) - e' y') z :=
+            finsum_mem_eq_finite_toFinset_sum _ hSbF |>.trans (by rw [hconv])
+    have hcount' : (∑ z ∈ Sb, analyticOrderNatAt (fun ζ ↦ e' (f (e.symm ζ)) - e' y') z)
+        = localMultiplicity f x := by
+      rw [← hsum, hm]
+      exact hcount (e' y') (by simpa only [dist_eq_norm] using hw)
+    refine ⟨?_, ?_, hsum2.trans hcount'⟩
+    · -- The count is positive, so the chart ball carries a point of the fibre of `y'`.
+      have hpos : 0 < localMultiplicity f x := (localMultiplicity_pos_iff hf).mpr hne
+      have hSbne : Sb.Nonempty := by
+        by_contra hc
+        have hzero : (∑ z ∈ Sb,
+            analyticOrderNatAt (fun ζ ↦ e' (f (e.symm ζ)) - e' y') z) = 0 := by
+          rw [Finset.not_nonempty_iff_eq_empty.1 hc, Finset.sum_empty]
+        rw [hzero] at hcount'
+        exact hpos.ne' hcount'.symm
+      obtain ⟨z, hz⟩ := hSbne
+      obtain ⟨hzball, hzf⟩ := hSbin z hz
+      have hsrcz : e.symm z ∈ e.source := hsrc z (Metric.ball_subset_closedBall hzball)
+      have hfz : f (e.symm z) ∈ e'.source := hfimg z (Metric.ball_subset_closedBall hzball)
+      refine Set.nonempty_iff_ne_empty.1 ⟨e.symm z, ?_⟩
+      refine ⟨?_, (Set.mem_image e.symm _ _).2 ⟨z, hzball, rfl⟩⟩
+      rw [Set.mem_preimage]
+      exact e'.injOn hfz hy'dom hzf
+    · -- The fibre in the chart ball lies in the image of the finite set `Sb`.
+      refine ((Finset.finite_toSet Sb).image e.symm).subset fun x' hx' => ?_
+      obtain ⟨hxf, hx'U⟩ := hx'
+      obtain ⟨w, hw, rfl⟩ := (Set.mem_image e.symm _ _).1 hx'U
+      have hzball : w ∈ Metric.closedBall (e x) r := Metric.ball_subset_closedBall hw
+      have hfz : f (e.symm w) ∈ e'.source := hfimg w hzball
+      exact (Set.mem_image e.symm _ _).2 ⟨w, Finset.mem_coe.2 (Finset.mem_filter.2
+        ⟨hZfin.mem_toFinset.2 ⟨hzball, congrArg e' hxf⟩, hw⟩), rfl⟩
+
+end TauCeti.RiemannSurface
+
+end
