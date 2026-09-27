@@ -8,7 +8,6 @@ module
 -- The equivalence instance is needed for `quiverRepFunctor` to preserve short exact sequences.
 public import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 public import TauCeti.CategoryTheory.GrothendieckGroup.Exact
-public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
