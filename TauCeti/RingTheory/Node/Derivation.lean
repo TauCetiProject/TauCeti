@@ -130,67 +130,46 @@ private lemma polynomialDerivation_ker (u : DerivationValues (M := M) a)
   change (mk a (X 0 * X 1 - C a)) • polynomialDerivation a u q = 0
   rw [hr, zero_smul]
 
-private def liftRep (b : NodeAlgebra R a) : polynomialRing (R := R) :=
-  (mk_surjective a b).choose
-
-private lemma mk_liftRep (b : NodeAlgebra R a) : mk a (liftRep a b) = b :=
-  (mk_surjective a b).choose_spec
-
-private lemma polynomialDerivation_liftRep (u : DerivationValues (M := M) a)
-    (p : polynomialRing (R := R)) :
-    polynomialDerivation a u (liftRep a (mk a p)) = polynomialDerivation a u p := by
+private def descendedLinearMap (u : DerivationValues (M := M) a) :
+    NodeAlgebra R a →ₗ[R] M := by
+  letI := polynomialModule (M := M) a
+  let d := polynomialDerivation a u
   let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup (NodeAlgebra R a)
-  let _ := polynomialModule (M := M) a
-  apply sub_eq_zero.mp
-  rw [← map_sub]
-  apply polynomialDerivation_ker a u
-  rw [map_sub, mk_liftRep, sub_self]
+  let g := (mk a).toLinearMap
+  let e := g.quotKerEquivOfSurjective (mk_surjective a)
+  exact ((LinearMap.ker g).liftQ d.toLinearMap (by
+    intro p hp
+    apply LinearMap.mem_ker.mpr
+    exact polynomialDerivation_ker a u p (LinearMap.mem_ker.mp hp))).comp e.symm.toLinearMap
+
+private lemma descendedLinearMap_mk (u : DerivationValues (M := M) a)
+    (p : polynomialRing (R := R)) :
+    descendedLinearMap a u (mk a p) = polynomialDerivation a u p := by
+  have h : ((mk a).toLinearMap.quotKerEquivOfSurjective (mk_surjective a)).symm
+      (mk a p) = Submodule.Quotient.mk p := by
+    exact (mk a).toLinearMap.quotKerEquivOfSurjective_symm_apply (mk_surjective a) p
+  simp only [descendedLinearMap, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    h, Submodule.liftQ_apply]
+  rfl
 
 private def derivationOfValues (u : DerivationValues (M := M) a) :
     Derivation R (NodeAlgebra R a) M := by
-  -- Choose polynomial representatives; the kernel lemma makes their derived values independent
-  -- of that choice. The following `change` steps expose this representative function.
   letI := polynomialModule (M := M) a
   let d := polynomialDerivation a u
-  let f : NodeAlgebra R a →ₗ[R] M := {
-    toFun := fun b => d (liftRep a b)
-    map_add' := by
-      intro x y
-      obtain ⟨p, rfl⟩ := mk_surjective a x
-      obtain ⟨q, rfl⟩ := mk_surjective a y
-      change d (liftRep a (mk a p + mk a q)) =
-        d (liftRep a (mk a p)) + d (liftRep a (mk a q))
-      rw [← map_add (mk a), polynomialDerivation_liftRep,
-        polynomialDerivation_liftRep, polynomialDerivation_liftRep, map_add]
-    map_smul' := by
-      intro r x
-      obtain ⟨p, rfl⟩ := mk_surjective a x
-      change d (liftRep a (r • mk a p)) = r • d (liftRep a (mk a p))
-      have hsmul : mk a (r • p) = r • mk a p :=
-        (mk a).toLinearMap.map_smul r p
-      rw [← hsmul, polynomialDerivation_liftRep,
-        polynomialDerivation_liftRep]
-      exact d.map_smul r p }
-  refine { toLinearMap := f, map_one_eq_zero' := ?_, leibniz' := ?_ }
-  · change d (liftRep a 1) = 0
-    rw [← map_one (mk a), polynomialDerivation_liftRep]
-    exact d.map_one_eq_zero
-  · intro x y
-    obtain ⟨p, rfl⟩ := mk_surjective a x
-    obtain ⟨q, rfl⟩ := mk_surjective a y
-    change d (liftRep a (mk a p * mk a q)) =
-      mk a p • d (liftRep a (mk a q)) + mk a q • d (liftRep a (mk a p))
-    rw [← map_mul (mk a), polynomialDerivation_liftRep,
-      polynomialDerivation_liftRep, polynomialDerivation_liftRep]
-    let _ := polynomialModule (M := M) a
-    exact d.leibniz p q
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup (NodeAlgebra R a)
+  let f := descendedLinearMap a u
+  refine Derivation.mk' f ?_
+  intro x y
+  obtain ⟨p, rfl⟩ := mk_surjective a x
+  obtain ⟨q, rfl⟩ := mk_surjective a y
+  rw [← map_mul (mk a)]
+  simp only [f, descendedLinearMap_mk]
+  exact d.leibniz p q
 
 private lemma derivationOfValues_coord (u : DerivationValues (M := M) a) (i : Fin 2) :
     derivationOfValues a u (coord a i) = u.1 i := by
   rw [← mk_X a i]
-  -- Evaluate the chosen representative and then use independence of the choice.
-  change polynomialDerivation a u (liftRep a (mk a (X i))) = u.1 i
-  rw [polynomialDerivation_liftRep]
+  simp only [derivationOfValues, Derivation.coe_mk', descendedLinearMap_mk]
   let _ := polynomialModule (M := M) a
   let _ := polynomialScalarTower (M := M) a
   exact MvPolynomial.mkDerivation_X R u.1 i
