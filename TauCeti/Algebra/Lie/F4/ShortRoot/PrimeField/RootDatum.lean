@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.QuotientSpecialIsogeny
+public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.SchemePoints
 public import TauCeti.Algebra.Lie.F4.ShortRoot.RootDatum
 
 /-!
@@ -24,6 +24,8 @@ The carrier and the pinned Chevalley--Demazure group are not identified here.
 The root conventions are those of N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
 Plate VIII; the construction of the carrier follows R. W. Carter, *Simple Groups of Lie Type*,
 §§4.4 and 7.1.
+The corresponding integral construction is
+`TauCeti.Algebra.Lie.F4.ShortRoot.RootDatum`.
 -/
 
 public section
