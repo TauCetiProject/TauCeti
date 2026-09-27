@@ -8,9 +8,6 @@ module
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
 public import TauCeti.Algebra.Homology.Periodic.Duplex
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
-public import Mathlib.Algebra.Module.Projective
-public import Mathlib.RingTheory.Ideal.Quotient.Basic
-public import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
 # Reducing matrix factorizations to two-periodic complexes
@@ -38,7 +35,8 @@ open scoped ChangeOfRings
 
 variable {S T : Type u} [CommRing S] [CommRing T] {w : S}
 
-private theorem scalarExtension_map_curvature (f : S →+* T)
+/-- Scalar extension sends multiplication by the potential to multiplication by its image. -/
+theorem scalarExtension_map_curvature (f : S →+* T)
     (M : FGModuleCat.{u} S) :
     (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S) ⋙ ModuleCat.extendScalars f).map
       (w • 𝟙 M) = f w • 𝟙 _ := by
@@ -53,7 +51,7 @@ private theorem scalarExtension_map_curvature (f : S →+* T)
 
 /-- Extension of scalars carries a finite-projective matrix factorization of `w` to one of
 `f w`, without requiring the potential to vanish. -/
-noncomputable def baseChangeMF (f : S →+* T) :
+@[expose] noncomputable def baseChangeFunctor (f : S →+* T) :
     MatrixFactorization S w ⥤ MatrixFactorization T (f w) := by
   let F := forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S) ⋙ ModuleCat.extendScalars f
   let G : FGModuleCat.{u} S ⥤ FGModuleCat.{u} T :=
@@ -104,147 +102,187 @@ noncomputable def baseChangeMF (f : S →+* T) :
   · apply ObjectProperty.hom_ext
     apply CurvedDuplex.hom_ext <;> simp
 
-@[simp] theorem baseChangeMF_obj_X₀ (f : S →+* T) (X : MatrixFactorization S w) :
-    ((baseChangeMF f).obj X).obj.X₀.obj =
+@[simp] theorem baseChangeFunctor_obj_X₀ (f : S →+* T) (X : MatrixFactorization S w) :
+    ((baseChangeFunctor f).obj X).obj.X₀.obj =
       (ModuleCat.extendScalars f).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₀) := by
-  unfold baseChangeMF
   rfl
 
-@[simp] theorem baseChangeMF_obj_X₁ (f : S →+* T) (X : MatrixFactorization S w) :
-    ((baseChangeMF f).obj X).obj.X₁.obj =
+@[simp] theorem baseChangeFunctor_obj_X₁ (f : S →+* T) (X : MatrixFactorization S w) :
+    ((baseChangeFunctor f).obj X).obj.X₁.obj =
       (ModuleCat.extendScalars f).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₁) := by
-  unfold baseChangeMF
   rfl
+
+@[simp] theorem baseChangeFunctor_obj_d₀ (f : S →+* T) (X : MatrixFactorization S w) :
+    (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+        ((baseChangeFunctor f).obj X).obj.d₀ =
+      (ModuleCat.extendScalars f).map
+        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₀) := rfl
+
+@[simp] theorem baseChangeFunctor_obj_d₁ (f : S →+* T) (X : MatrixFactorization S w) :
+    (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+        ((baseChangeFunctor f).obj X).obj.d₁ =
+      (ModuleCat.extendScalars f).map
+        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₁) := rfl
+
+@[simp] theorem baseChangeFunctor_map_f₀ (f : S →+* T)
+    {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
+    (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+        ((baseChangeFunctor f).map g).hom.f₀ =
+      (ModuleCat.extendScalars f).map
+        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₀) := rfl
+
+@[simp] theorem baseChangeFunctor_map_f₁ (f : S →+* T)
+    {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
+    (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+        ((baseChangeFunctor f).map g).hom.f₁ =
+      (ModuleCat.extendScalars f).map
+        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₁) := rfl
+
+/-- Scalar extension preserves addition of closed even maps. -/
+instance baseChangeFunctor_additive (f : S →+* T) :
+    (baseChangeFunctor (w := w) f).Additive where
+  map_add := by
+    intro X Y g h
+    apply ObjectProperty.hom_ext
+    apply CurvedDuplex.hom_ext
+    · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
+      apply ModuleCat.ExtendScalars.hom_ext
+      intro m
+      change (1 : T) ⊗ₜ[S,f] (g.hom.f₀ m + h.hom.f₀ m) =
+        (1 : T) ⊗ₜ[S,f] (g.hom.f₀ m) + (1 : T) ⊗ₜ[S,f] (h.hom.f₀ m)
+      let _ : Algebra S T := f.toAlgebra
+      exact TensorProduct.tmul_add _ _ _
+    · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
+      apply ModuleCat.ExtendScalars.hom_ext
+      intro m
+      change (1 : T) ⊗ₜ[S,f] (g.hom.f₁ m + h.hom.f₁ m) =
+        (1 : T) ⊗ₜ[S,f] (g.hom.f₁ m) + (1 : T) ⊗ₜ[S,f] (h.hom.f₁ m)
+      let _ : Algebra S T := f.toAlgebra
+      exact TensorProduct.tmul_add _ _ _
 
 /-- Extension of scalars along a map killing the potential sends a finite-projective matrix
 factorization to a square-zero duplex. The target components are the tensor products of the
 original components with the target ring. -/
-@[expose] noncomputable def baseChange (f : S →+* T) (hw : f w = 0) :
+@[expose] noncomputable def baseChangeToCurvedDuplex (f : S →+* T) (hw : f w = 0) :
     MatrixFactorization S w ⥤ CurvedDuplex (ModuleCat.{u} T) (0 : T) :=
-  let F := forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S) ⋙ ModuleCat.extendScalars f
-  {
-  obj X :=
-    { X₀ := F.obj X.obj.X₀
-      X₁ := F.obj X.obj.X₁
-      d₀ := F.map X.obj.d₀
-      d₁ := F.map X.obj.d₁
-      d₀_comp_d₁ := by
-        rw [← Functor.map_comp, X.obj.d₀_comp_d₁, scalarExtension_map_curvature f]
-        simp [hw]
-      d₁_comp_d₀ := by
-        rw [← Functor.map_comp, X.obj.d₁_comp_d₀, scalarExtension_map_curvature f]
-        simp [hw] }
-  map g :=
-    { f₀ := F.map g.hom.f₀
-      f₁ := F.map g.hom.f₁
-      comm₀ := by
-        exact (F.map_comp _ _).symm.trans
-          ((congrArg F.map g.hom.comm₀).trans (F.map_comp _ _))
-      comm₁ := by
-        exact (F.map_comp _ _).symm.trans
-          ((congrArg F.map g.hom.comm₁).trans (F.map_comp _ _)) }
-  map_id X := by
-    apply CurvedDuplex.hom_ext <;> simp
-  map_comp g h := by
-    apply CurvedDuplex.hom_ext <;> simp }
+  let F := forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)
+  baseChangeFunctor f ⋙ inclusion ⋙
+    { obj := fun X =>
+        { X₀ := X.X₀.obj
+          X₁ := X.X₁.obj
+          d₀ := F.map X.d₀
+          d₁ := F.map X.d₁
+          d₀_comp_d₁ := by
+            change F.map (X.d₀ ≫ X.d₁) = (0 : T) • 𝟙 _
+            simp [X.d₀_comp_d₁, hw]
+          d₁_comp_d₀ := by
+            change F.map (X.d₁ ≫ X.d₀) = (0 : T) • 𝟙 _
+            simp [X.d₁_comp_d₀, hw] }
+      map := fun g =>
+        { f₀ := F.map g.f₀
+          f₁ := F.map g.f₁
+          comm₀ := (F.map_comp _ _).symm.trans
+            ((congrArg F.map g.comm₀).trans (F.map_comp _ _))
+          comm₁ := (F.map_comp _ _).symm.trans
+            ((congrArg F.map g.comm₁).trans (F.map_comp _ _)) }
+      map_id := by intro X; apply CurvedDuplex.hom_ext <;> rfl
+      map_comp := by intro X Y Z g h; apply CurvedDuplex.hom_ext <;> rfl }
 
 /-- The even component of square-zero base change is the underlying component of finite-projective
 base change. -/
-theorem baseChange_obj_X₀_eq_baseChangeMF (f : S →+* T) (hw : f w = 0)
+theorem baseChangeToCurvedDuplex_obj_X₀_eq_baseChangeFunctor (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((baseChange f hw).obj X).X₀ = ((baseChangeMF f).obj X).obj.X₀.obj := by
-  unfold baseChange baseChangeMF
+    ((baseChangeToCurvedDuplex f hw).obj X).X₀ = ((baseChangeFunctor f).obj X).obj.X₀.obj := by
   rfl
 
 /-- The odd component of square-zero base change is the underlying component of finite-projective
 base change. -/
-theorem baseChange_obj_X₁_eq_baseChangeMF (f : S →+* T) (hw : f w = 0)
+theorem baseChangeToCurvedDuplex_obj_X₁_eq_baseChangeFunctor (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((baseChange f hw).obj X).X₁ = ((baseChangeMF f).obj X).obj.X₁.obj := by
-  unfold baseChange baseChangeMF
+    ((baseChangeToCurvedDuplex f hw).obj X).X₁ = ((baseChangeFunctor f).obj X).obj.X₁.obj := by
   rfl
 
-@[simp] theorem baseChange_obj_X₀ (f : S →+* T) (hw : f w = 0)
+@[simp] theorem baseChangeToCurvedDuplex_obj_X₀ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((baseChange f hw).obj X).X₀ =
+    ((baseChangeToCurvedDuplex f hw).obj X).X₀ =
       (ModuleCat.extendScalars f).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₀) := rfl
 
-@[simp] theorem baseChange_obj_X₁ (f : S →+* T) (hw : f w = 0)
+@[simp] theorem baseChangeToCurvedDuplex_obj_X₁ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((baseChange f hw).obj X).X₁ =
+    ((baseChangeToCurvedDuplex f hw).obj X).X₁ =
       (ModuleCat.extendScalars f).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₁) := rfl
 
-@[simp] theorem baseChange_obj_d₀ (f : S →+* T) (hw : f w = 0)
+@[simp] theorem baseChangeToCurvedDuplex_obj_d₀ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((baseChange f hw).obj X).d₀ =
+    ((baseChangeToCurvedDuplex f hw).obj X).d₀ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₀) := rfl
 
-@[simp] theorem baseChange_obj_d₁ (f : S →+* T) (hw : f w = 0)
+@[simp] theorem baseChangeToCurvedDuplex_obj_d₁ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((baseChange f hw).obj X).d₁ =
+    ((baseChangeToCurvedDuplex f hw).obj X).d₁ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₁) := rfl
 
-@[simp] theorem baseChange_map_f₀ (f : S →+* T) (hw : f w = 0)
+@[simp] theorem baseChangeToCurvedDuplex_map_f₀ (f : S →+* T) (hw : f w = 0)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
-    ((baseChange f hw).map g).f₀ =
+    ((baseChangeToCurvedDuplex f hw).map g).f₀ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₀) := rfl
 
-@[simp] theorem baseChange_map_f₁ (f : S →+* T) (hw : f w = 0)
+@[simp] theorem baseChangeToCurvedDuplex_map_f₁ (f : S →+* T) (hw : f w = 0)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
-    ((baseChange f hw).map g).f₁ =
+    ((baseChangeToCurvedDuplex f hw).map g).f₁ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₁) := rfl
 
 /-- Base change keeps the even component projective over the target ring. -/
-theorem projective_baseChange_X₀ (f : S →+* T) (hw : f w = 0)
+theorem projective_baseChangeToCurvedDuplex_X₀ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    Module.Projective T ((baseChange f hw).obj X).X₀ := by
+    Module.Projective T ((baseChangeToCurvedDuplex f hw).obj X).X₀ := by
   let _ : Algebra S T := f.toAlgebra
-  rw [baseChange_obj_X₀]
+  rw [baseChangeToCurvedDuplex_obj_X₀]
   -- The extension-of-scalars object is the tensor product used by Mathlib's instance.
   change Module.Projective T (TensorProduct S T X.obj.X₀)
   infer_instance
 
 /-- Base change keeps the odd component projective over the target ring. -/
-theorem projective_baseChange_X₁ (f : S →+* T) (hw : f w = 0)
+theorem projective_baseChangeToCurvedDuplex_X₁ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    Module.Projective T ((baseChange f hw).obj X).X₁ := by
+    Module.Projective T ((baseChangeToCurvedDuplex f hw).obj X).X₁ := by
   let _ : Algebra S T := f.toAlgebra
-  rw [baseChange_obj_X₁]
+  rw [baseChangeToCurvedDuplex_obj_X₁]
   -- The extension-of-scalars object is the tensor product used by Mathlib's instance.
   change Module.Projective T (TensorProduct S T X.obj.X₁)
   infer_instance
 
 /-- Base change keeps the even component finitely generated over the target ring. -/
-theorem finite_baseChange_X₀ (f : S →+* T) (hw : f w = 0)
+theorem finite_baseChangeToCurvedDuplex_X₀ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    Module.Finite T ((baseChange f hw).obj X).X₀ := by
+    Module.Finite T ((baseChangeToCurvedDuplex f hw).obj X).X₀ := by
   let _ : Algebra S T := f.toAlgebra
-  rw [baseChange_obj_X₀]
+  rw [baseChangeToCurvedDuplex_obj_X₀]
   -- The extension-of-scalars object is the tensor product in `Module.Finite.base_change`.
   change Module.Finite T (TensorProduct S T X.obj.X₀)
   infer_instance
 
 /-- Base change keeps the odd component finitely generated over the target ring. -/
-theorem finite_baseChange_X₁ (f : S →+* T) (hw : f w = 0)
+theorem finite_baseChangeToCurvedDuplex_X₁ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    Module.Finite T ((baseChange f hw).obj X).X₁ := by
+    Module.Finite T ((baseChangeToCurvedDuplex f hw).obj X).X₁ := by
   let _ : Algebra S T := f.toAlgebra
-  rw [baseChange_obj_X₁]
+  rw [baseChangeToCurvedDuplex_obj_X₁]
   -- The extension-of-scalars object is the tensor product in `Module.Finite.base_change`.
   change Module.Finite T (TensorProduct S T X.obj.X₁)
   infer_instance
 
 /-- Extension of scalars is additive on closed even maps of matrix factorizations. -/
-instance baseChange_additive (f : S →+* T) (hw : f w = 0) :
-    (baseChange f hw).Additive where
+instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
+    (baseChangeToCurvedDuplex f hw).Additive where
   map_add := by
     intro X Y g h
     apply CurvedDuplex.hom_ext
@@ -268,33 +306,33 @@ that kills its potential. -/
 @[expose] noncomputable def toPeriodicComplex (f : S →+* T) (hw : f w = 0) :
     MatrixFactorization S w ⥤ HomologicalComplex (ModuleCat.{u} T)
       (ComplexShape.up (ZMod 2)) :=
-  baseChange f hw ⋙ CurvedDuplex.toPeriodicComplex (ModuleCat.{u} T) T
+  baseChangeToCurvedDuplex f hw ⋙ CurvedDuplex.toPeriodicComplex (ModuleCat.{u} T) T
 
 @[simp] theorem toPeriodicComplex_obj_X_zero (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((toPeriodicComplex f hw).obj X).X 0 = ((baseChange f hw).obj X).X₀ := by
+    ((toPeriodicComplex f hw).obj X).X 0 = ((baseChangeToCurvedDuplex f hw).obj X).X₀ := by
   simp [toPeriodicComplex]
 
 @[simp] theorem toPeriodicComplex_obj_X_one (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((toPeriodicComplex f hw).obj X).X 1 = ((baseChange f hw).obj X).X₁ := by
+    ((toPeriodicComplex f hw).obj X).X 1 = ((baseChangeToCurvedDuplex f hw).obj X).X₁ := by
   simp [toPeriodicComplex]
 
 @[simp] theorem toPeriodicComplex_obj_d_zero_one (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((toPeriodicComplex f hw).obj X).d 0 1 = ((baseChange f hw).obj X).d₀ := rfl
+    ((toPeriodicComplex f hw).obj X).d 0 1 = ((baseChangeToCurvedDuplex f hw).obj X).d₀ := rfl
 
 @[simp] theorem toPeriodicComplex_obj_d_one_zero (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
-    ((toPeriodicComplex f hw).obj X).d 1 0 = ((baseChange f hw).obj X).d₁ := rfl
+    ((toPeriodicComplex f hw).obj X).d 1 0 = ((baseChangeToCurvedDuplex f hw).obj X).d₁ := rfl
 
 @[simp] theorem toPeriodicComplex_map_f_zero (f : S →+* T) (hw : f w = 0)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
-    ((toPeriodicComplex f hw).map g).f 0 = ((baseChange f hw).map g).f₀ := rfl
+    ((toPeriodicComplex f hw).map g).f 0 = ((baseChangeToCurvedDuplex f hw).map g).f₀ := rfl
 
 @[simp] theorem toPeriodicComplex_map_f_one (f : S →+* T) (hw : f w = 0)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
-    ((toPeriodicComplex f hw).map g).f 1 = ((baseChange f hw).map g).f₁ := rfl
+    ((toPeriodicComplex f hw).map g).f 1 = ((baseChangeToCurvedDuplex f hw).map g).f₁ := rfl
 
 instance toPeriodicComplex_additive (f : S →+* T) (hw : f w = 0) :
     (toPeriodicComplex f hw).Additive := by
