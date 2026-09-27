@@ -80,6 +80,38 @@ def fromEvenShiftedDisk (h₀ : X.X₀ ⟶ Y.X₁) :
   comm₀ := by simp
   comm₁ := by simp
 
+omit [HasBinaryBiproducts C] in
+@[simp] theorem toOddDisk_f₀ (X : CurvedDuplex C w) :
+    (toOddDisk X).f₀ = X.d₀ := by rfl
+
+omit [HasBinaryBiproducts C] in
+@[simp] theorem toOddDisk_f₁ (X : CurvedDuplex C w) :
+    (toOddDisk X).f₁ = 𝟙 X.X₁ := by rfl
+
+omit [HasBinaryBiproducts C] in
+@[simp] theorem toEvenShiftedDisk_f₀ (X : CurvedDuplex C w) :
+    (toEvenShiftedDisk X).f₀ = 𝟙 X.X₀ := by rfl
+
+omit [HasBinaryBiproducts C] in
+@[simp] theorem toEvenShiftedDisk_f₁ (X : CurvedDuplex C w) :
+    (toEvenShiftedDisk X).f₁ = -X.d₁ := by rfl
+
+omit [HasBinaryBiproducts C] in
+@[simp] theorem fromOddDisk_f₀ (h₁ : X.X₁ ⟶ Y.X₀) :
+    (fromOddDisk h₁).f₀ = h₁ := by simp [fromOddDisk]
+
+omit [HasBinaryBiproducts C] in
+@[simp] theorem fromOddDisk_f₁ (h₁ : X.X₁ ⟶ Y.X₀) :
+    (fromOddDisk h₁).f₁ = h₁ ≫ Y.d₀ := by simp [fromOddDisk]
+
+omit [HasBinaryBiproducts C] in
+@[simp] theorem fromEvenShiftedDisk_f₀ (h₀ : X.X₀ ⟶ Y.X₁) :
+    (fromEvenShiftedDisk h₀).f₀ = h₀ ≫ Y.d₁ := by rfl
+
+omit [HasBinaryBiproducts C] in
+@[simp] theorem fromEvenShiftedDisk_f₁ (h₀ : X.X₀ ⟶ Y.X₁) :
+    (fromEvenShiftedDisk h₀).f₁ = -h₀ := by rfl
+
 /-- The map into the two disks determined by the source duplex. -/
 noncomputable def toDiskSum (X : CurvedDuplex C w) : X ⟶ diskSum X :=
   biprodLift (toOddDisk X) (toEvenShiftedDisk X)
