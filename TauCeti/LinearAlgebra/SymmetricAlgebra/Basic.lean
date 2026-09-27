@@ -11,8 +11,13 @@ public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 # Injectivity of symmetric-algebra generators
 
 The canonical map from a module over a commutative semiring into its symmetric algebra is
-injective, without a freeness assumption. The square-zero extension `R ⊕ M` supplies a retraction,
-as in Mathlib's `TensorAlgebra.ι_leftInverse`.
+injective, without a freeness assumption. Its main application is that an abelian Lie algebra
+embeds in its universal enveloping algebra, which is its symmetric algebra
+(`TauCeti.UniversalEnvelopingAlgebra.ι_injective`).
+
+## Implementation notes
+
+The proof adapts Mathlib's `TensorAlgebra.ι_leftInverse`.
 -/
 
 public section
