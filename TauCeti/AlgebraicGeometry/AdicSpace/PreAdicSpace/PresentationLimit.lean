@@ -13,8 +13,8 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Stalk.Lo
 
 The adic spectrum with its presentation-limit presheaf is a pre-adic space when the plus
 subring consists of power-bounded elements and contains a ring of definition.
-This packages the structure presheaf, local stalks, and residue valuations into the
-canonical affinoid example for later morphism and sheafiness constructions.
+This packages the structure presheaf, local stalks, and residue valuations into a
+pre-adic-space object on the adic spectrum for later morphism and sheafiness constructions.
 -/
 
 public section
@@ -82,7 +82,9 @@ theorem presentationLimitPreAdicSpace_ringPresheaf {A : Type u} [CommRing A]
         TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat)
       ((TopCat.of ↥(spa Aplus)).Presheaf CommRingCat.{u})
       (presentationLimitPresheafInCommRingCat P Aplus) :=
-  HEq.rfl
+  by
+    rw [presentationLimitPresheafInCommRingCat_def]
+    exact HEq.rfl
 
 /-- The valuation of a presentation-limit pre-adic space is the stalk residue valuation. -/
 @[simp]
@@ -93,7 +95,11 @@ theorem presentationLimitPreAdicSpace_valuation {A : Type u} [CommRing A]
     HEq ((presentationLimitPreAdicSpace P Aplus hAplus hP).valuation
       ((presentationLimitPreAdicSpace_carrier P Aplus hAplus hP).symm ▸ x))
       (presentationLimitStalkResidueValuation hAplus hP x) :=
-  HEq.rfl
+  by
+    let e := presentationLimitPresheafInCommRingCat_def P Aplus
+    -- Transport the stalk and its local-ring instance together in the residue-field type.
+    cases e
+    exact HEq.rfl
 
 end TauCeti.ValuationSpectrum
 
