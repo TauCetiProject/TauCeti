@@ -42,9 +42,9 @@ asks for `α 1 g = α g 1 = 1`, which holds only for a normalized family of twis
 twist nor its intertwining relation needs `V` simple, so both are stated for an arbitrary
 `V : FDRep k N`; simplicity and algebraic closedness enter with Schur's lemma.
 
-The intertwining relation is stated with Mathlib's `MulAut.conjNormal`, matching
-`TauCeti.conjNormalFDRep_ρ`, and `TauCeti.inertiaTwist_apply_conj_mk` restates it with the
-conjugate written in the ambient group.
+The intertwining relation is stated with `(MulAut.conjNormal g).symm`, the simp-normal form of
+the conjugating automorphism that `TauCeti.conjNormalFDRep_ρ` produces, and
+`TauCeti.inertiaTwist_apply_conj_mk` restates it with the conjugate written in the ambient group.
 
 ## Main definitions
 
@@ -131,9 +131,13 @@ private theorem rawInertiaTwist_one_symm_apply (n : N) (v : V) :
 
 /-- **The defining relation of the twist**: `T g` intertwines the conjugate action `{}^g ρ`
 with `ρ`. -/
+@[simp]
 theorem inertiaTwist_apply_conj (g : inertia V) (n : N) (v : V) :
-    inertiaTwist V g (V.ρ (MulAut.conjNormal (g : G)⁻¹ n) v) = V.ρ n (inertiaTwist V g v) := by
-  rw [inertiaTwist_apply, inertiaTwist_apply, rawInertiaTwist_apply_conj V g n v,
+    inertiaTwist V g (V.ρ ((MulAut.conjNormal (g : G)).symm n) v)
+      = V.ρ n (inertiaTwist V g v) := by
+  have key : (MulAut.conjNormal (g : G)).symm n = MulAut.conjNormal ((g : G)⁻¹) n := by
+    rw [← MulAut.inv_apply, ← map_inv]
+  rw [key, inertiaTwist_apply, inertiaTwist_apply, rawInertiaTwist_apply_conj V g n v,
     rawInertiaTwist_one_symm_apply V n]
 
 /-- The defining relation of the twist, with the conjugate written in the ambient group. -/
@@ -141,7 +145,7 @@ theorem inertiaTwist_apply_conj_mk (g : inertia V) (n : N) (v : V) :
     inertiaTwist V g (V.ρ ⟨(g : G)⁻¹ * (n : G) * (g : G),
         hN.conj_mem' (n : G) n.2 (g : G)⟩ v) = V.ρ n (inertiaTwist V g v) := by
   refine Eq.trans (congrArg _ (congrArg (fun m => V.ρ m v) ?_)) (inertiaTwist_apply_conj V g n v)
-  exact Subtype.ext (MulAut.conjNormal_inv_apply (g : G) n).symm
+  exact Subtype.ext (MulAut.conjNormal_symm_apply (g : G) n).symm
 
 variable [IsAlgClosed k] [Simple V]
 
@@ -149,11 +153,11 @@ variable [IsAlgClosed k] [Simple V]
 `g` is a unit multiple of `TauCeti.inertiaTwist V g`; in particular the twist is determined up to a
 scalar, which is exactly why the factor set below is well defined only up to a coboundary. -/
 theorem exists_units_eq_smul_inertiaTwist (g : inertia V) (f : V →ₗ[k] V) (hf0 : f ≠ 0)
-    (hf : ∀ (n : N) (v : V), f (V.ρ (MulAut.conjNormal (g : G)⁻¹ n) v) = V.ρ n (f v)) :
+    (hf : ∀ (n : N) (v : V), f (V.ρ ((MulAut.conjNormal (g : G)).symm n) v) = V.ρ n (f v)) :
     ∃ c : kˣ, ∀ v : V, f v = (c : k) • inertiaTwist V g v := by
   have := FDRep.isIrreducible_of_simple V
   have hsymm : ∀ (n : N) (v : V), (inertiaTwist V g).symm (V.ρ n v)
-      = V.ρ (MulAut.conjNormal (g : G)⁻¹ n) ((inertiaTwist V g).symm v) := fun n v => by
+      = V.ρ ((MulAut.conjNormal (g : G)).symm n) ((inertiaTwist V g).symm v) := fun n v => by
     refine (inertiaTwist V g).injective ?_
     rw [LinearEquiv.apply_symm_apply,
       inertiaTwist_apply_conj V g n ((inertiaTwist V g).symm v),
@@ -176,11 +180,12 @@ theorem exists_units_eq_smul_inertiaTwist (g : inertia V) (f : V →ₗ[k] V) (h
   exact ⟨Units.mk0 c hc0, fun v => by simpa using hcv v⟩
 
 /-- **The twist is multiplicative up to a unit scalar.** The comparing units are the factor set
-`TauCeti.inertiaFactorSet` below, whose class in the Schur multiplier is the Clifford-theory
-obstruction. -/
+`TauCeti.inertiaFactorSet` below, which measures how far the chosen twists are from composing
+strictly, and so records the projective action of `inertia V` on `V`. -/
 -- Both `T g ∘ T h` and `T (g * h)` obey the intertwining relation at `g * h`, so Schur's lemma
--- compares them.
-theorem exists_units_inertiaTwist_mul (g h : inertia V) :
+-- compares them.  The witness is immediately fixed by `inertiaFactorSet` and exposed through
+-- `inertiaTwist_mul_apply`, so the existence statement itself stays private.
+private theorem exists_units_inertiaTwist_mul (g h : inertia V) :
     ∃ c : kˣ, ∀ v : V,
       inertiaTwist V g (inertiaTwist V h v) = (c : k) • inertiaTwist V (g * h) v := by
   have hnt : Nontrivial V :=
@@ -194,17 +199,17 @@ theorem exists_units_inertiaTwist_mul (g h : inertia V) :
     exact hv ((inertiaTwist V h).map_eq_zero_iff.mp ((inertiaTwist V g).map_eq_zero_iff.mp hz))
   have hconj : ∀ (n : N) (v : V),
       (((inertiaTwist V g : V →ₗ[k] V)) ∘ₗ ((inertiaTwist V h : V →ₗ[k] V)))
-          (V.ρ (MulAut.conjNormal ((g * h : inertia V) : G)⁻¹ n) v)
+          (V.ρ ((MulAut.conjNormal ((g * h : inertia V) : G)).symm n) v)
         = V.ρ n ((((inertiaTwist V g : V →ₗ[k] V)) ∘ₗ
           ((inertiaTwist V h : V →ₗ[k] V))) v) := fun n v => by
-    have key : MulAut.conjNormal ((g * h : inertia V) : G)⁻¹ n
-        = MulAut.conjNormal ((h : G))⁻¹ (MulAut.conjNormal ((g : G))⁻¹ n) := by
-      have hinv : ((g * h : inertia V) : G)⁻¹ = ((h : G))⁻¹ * ((g : G))⁻¹ := by
-        rw [Subgroup.coe_mul, mul_inv_rev]
-      rw [hinv, map_mul]
-      rfl
+    have key : (MulAut.conjNormal ((g * h : inertia V) : G)).symm n
+        = (MulAut.conjNormal (h : G)).symm ((MulAut.conjNormal (g : G)).symm n) := by
+      refine Subtype.ext ?_
+      rw [MulAut.conjNormal_symm_apply, MulAut.conjNormal_symm_apply,
+        MulAut.conjNormal_symm_apply, Subgroup.coe_mul]
+      group
     simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe, key]
-    rw [inertiaTwist_apply_conj V h (MulAut.conjNormal ((g : G))⁻¹ n) v,
+    rw [inertiaTwist_apply_conj V h ((MulAut.conjNormal (g : G)).symm n) v,
       inertiaTwist_apply_conj V g n (inertiaTwist V h v)]
   obtain ⟨c, hc⟩ := exists_units_eq_smul_inertiaTwist V (g * h)
     (((inertiaTwist V g : V →ₗ[k] V)) ∘ₗ ((inertiaTwist V h : V →ₗ[k] V))) hne hconj
@@ -269,11 +274,11 @@ theorem exists_units_inertiaTwist_coe_eq_smul (n : N) :
     rw [hzero] at hz
     exact hv hz.symm
   have hconj : ∀ (m : N) (v : V),
-      V.ρ n (V.ρ (MulAut.conjNormal ((⟨(n : G), le_inertia V n.2⟩ : inertia V) : G)⁻¹ m) v)
+      V.ρ n (V.ρ ((MulAut.conjNormal ((⟨(n : G), le_inertia V n.2⟩ : inertia V) : G)).symm m) v)
         = V.ρ m (V.ρ n v) := fun m v => by
-    have key : n * (MulAut.conjNormal ((n : G))⁻¹ m) = m * n := by
+    have key : n * ((MulAut.conjNormal (n : G)).symm m) = m * n := by
       refine Subtype.ext ?_
-      rw [Subgroup.coe_mul, Subgroup.coe_mul, MulAut.conjNormal_apply, inv_inv]
+      rw [Subgroup.coe_mul, Subgroup.coe_mul, MulAut.conjNormal_symm_apply]
       group
     rw [← Module.End.mul_apply, ← map_mul, key, map_mul, Module.End.mul_apply]
   obtain ⟨c, hc⟩ :=
