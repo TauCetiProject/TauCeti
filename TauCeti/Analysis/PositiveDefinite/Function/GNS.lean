@@ -17,8 +17,8 @@ obtained from its translation-invariant positive-definite kernel. Translation of
 vectors extends uniquely to a unitary operator. These operators form a group representation,
 and the original function is a matrix coefficient of its vector at zero.
 
-This is the representation-theoretic input to Bochner's theorem on locally compact abelian
-groups: the spectral measure of the commuting translations represents the function.
+The translation action is part of the GNS/Kolmogorov decomposition of a positive-definite
+function. Its later use in LCA Bochner theory requires spectral measures and Pontryagin duality.
 
 ## References
 
