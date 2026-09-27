@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.Valuation.AddValuation
 
 /-!
 # The lower index of a quotient of a Galois group
@@ -134,18 +135,11 @@ theorem ramificationIndex_mul_lowerIndex_restrictNormal (σ : M ≃ₐ[K] M) :
   have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
   obtain ⟨x, hx⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := 𝒪[K]) (S := 𝒪[M])
   obtain ⟨y, hy⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := 𝒪[K]) (S := 𝒪[L])
-  have hprod (f : (M ≃ₐ[L] M) → 𝒪[M]) :
-      IsDiscreteValuationRing.addVal 𝒪[M] (∏ τ, f τ) =
-        ∑ τ, IsDiscreteValuationRing.addVal 𝒪[M] (f τ) :=
-    by
-      have h := _root_.map_prod (IsDiscreteValuationRing.addVal 𝒪[M]).toMonoidHom
-        f Finset.univ
-      exact (congrArg Multiplicative.toAdd h).trans (_root_.toAdd_prod _ _)
   simp_rw [lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hy,
     lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hx, ← nsmul_eq_mul,
     ← addVal_algebraMap, map_sub,
     ← AlgEquiv.smul_algebraMap_integerRing, AddValuation.map_sub_swap _ _ x,
-    ← hprod, ← eval_smul_charpoly]
+    ← AddValuation.map_prod, ← eval_smul_charpoly]
   exact (IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2 <| associated_of_dvd_dvd
     (smul_sub_dvd_eval_smul_charpoly hy σ x)
     (dvd_sub_comm.1 (eval_smul_charpoly_dvd_sub_smul hx y σ))
