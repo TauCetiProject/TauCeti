@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.Decidable
-public import TauCeti.Combinatorics.PermutationTriple.Examples
+public import Mathlib.GroupTheory.GroupAction.Primitive
 
 /-!
 # Deciding primitivity of a permutation triple
@@ -17,8 +17,7 @@ computed monodromy group. Testing just the two generators would be unsound: the 
 that a translate of a block is equal or disjoint need not survive products of generators.
 
 The Boolean tests agree with Mathlib's `MulAction.IsBlock` and
-`MulAction.IsPreprimitive`. The torus triple, the degree-three symmetric triple, and the
-degree-one triple exercise imprimitive and primitive cases.
+`MulAction.IsPreprimitive`.
 -/
 
 public section
@@ -93,23 +92,6 @@ def isPreprimitiveB : Bool :=
 /-- Primitivity of the monodromy action is decidable by the finite block test. -/
 instance : Decidable (IsPreprimitive t.monodromyGroup (Fin n)) :=
   decidable_of_iff _ t.isPreprimitiveB_eq_true_iff
-
-/-- The torus triple is imprimitive: `{0, 2}` is a nontrivial block. -/
-theorem isPreprimitiveB_torusTriple : torusTriple.isPreprimitiveB = false := by
-  apply Bool.eq_false_iff.mpr
-  intro h
-  exact not_isPreprimitive_torusTriple ((isPreprimitiveB_eq_true_iff _).mp h)
-
-/-- The degree-three symmetric triple is primitive. -/
-theorem isPreprimitiveB_s3Triple : s3Triple.isPreprimitiveB = true := by
-  apply (isPreprimitiveB_eq_true_iff _).mpr
-  exact @IsPreprimitive.of_prime_card _ _ _ _ isConnected_s3Triple.isPretransitive
-    (by simpa using (by decide : Nat.Prime 3))
-
-/-- The degree-one triple is primitive. -/
-theorem isPreprimitiveB_cyclicTriple_one : (cyclicTriple 1).isPreprimitiveB = true := by
-  apply (isPreprimitiveB_eq_true_iff _).mpr
-  exact IsPreprimitive.of_subsingleton
 
 end PermutationTriple
 
