@@ -16,7 +16,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 This file packages the data used by a hyperbolic structure: a smooth Riemannian metric, metric
 completeness, and the standard constant-curvature tensor with parameter `-1` (the tensor form of
 constant sectional curvature). The metric is bundled so that later volume and Mostow statements
-can quantify over a chosen metric; `IsHyperbolic` forgets the choice and records only existence.
+can quantify over a chosen metric; an existence predicate is deferred until a concrete model is
+available.
 
 The curvature convention follows Lee, *Introduction to Riemannian Manifolds*, 2nd edition,
 Chapter 7.
@@ -90,9 +91,5 @@ theorem curvatureTensor_eq (g : HyperbolicMetric (I := I) (M := M))
   simpa only [IsConstantCurvatureTensorMetric, IsConstantCurvatureTensor] using (h x w u v)
 
 end HyperbolicMetric
-
-/-- A manifold is hyperbolic when it admits a complete metric of constant curvature `-1`. -/
-def IsHyperbolic : Prop := Nonempty (HyperbolicMetric (I := I) (M := M))
-
 
 end TauCeti
