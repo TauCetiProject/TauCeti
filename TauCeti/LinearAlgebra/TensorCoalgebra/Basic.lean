@@ -381,6 +381,28 @@ theorem map_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
       ReducedTensorWords.map (R := R) g ∘ₗ ReducedTensorWords.map (R := R) f := by
   simp only [map, PiTensorProduct.map_comp, DirectSum.lmap_comp]
 
+/-- Applying a linear equivalence and then its inverse to every letter is the identity. -/
+@[simp]
+theorem map_symm_map (e : M ≃ₗ[R] N) (z : ReducedTensorWords R M) :
+    ReducedTensorWords.map (R := R) e.symm.toLinearMap
+      (ReducedTensorWords.map (R := R) e.toLinearMap z) = z := by
+  rw [← LinearMap.comp_apply, ← map_comp, LinearEquiv.symm_comp, map_id, LinearMap.id_apply]
+
+/-- Applying the inverse of a linear equivalence and then the equivalence to every letter is the
+identity. -/
+@[simp]
+theorem map_map_symm (e : M ≃ₗ[R] N) (z : ReducedTensorWords R N) :
+    ReducedTensorWords.map (R := R) e.toLinearMap
+      (ReducedTensorWords.map (R := R) e.symm.toLinearMap z) = z := by
+  rw [← LinearMap.comp_apply, ← map_comp, LinearEquiv.comp_symm, map_id, LinearMap.id_apply]
+
+/-- Applying a linear equivalence to every letter is a bijection of reduced tensor words, with
+inverse the letterwise inverse equivalence. -/
+theorem map_bijective (e : M ≃ₗ[R] N) :
+    Function.Bijective (ReducedTensorWords.map (R := R) e.toLinearMap) :=
+  Function.bijective_iff_has_inverse.2
+    ⟨ReducedTensorWords.map (R := R) e.symm.toLinearMap, map_symm_map R e, map_map_symm R e⟩
+
 /-- Reduced deconcatenation is natural with respect to linear maps of the letters. -/
 theorem deconcatenation_natural (f : M →ₗ[R] N) :
     deconcatenation R N ∘ₗ ReducedTensorWords.map (R := R) f =

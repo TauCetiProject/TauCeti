@@ -452,6 +452,23 @@ theorem RegularFormClass.rank_add (x y : RegularFormClass K) :
 theorem RegularFormClass.rank_zero : RegularFormClass.rank (0 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.zero_def, RegularFormClass.rank_mk]
 
+/-- A regular-form class has rank zero exactly when it is the zero class. -/
+@[simp]
+theorem RegularFormClass.rank_eq_zero_iff {x : RegularFormClass K} :
+    x.rank = 0 ↔ x = 0 := by
+  constructor
+  · intro hx
+    induction x using Quotient.inductionOn with
+    | h p =>
+      rw [RegularFormClass.rank_mk] at hx
+      rw [RegularFormClass.zero_def]
+      apply congrArg (Quotient.mk (regularFormSetoid K))
+      apply RegularFormPresentation.ext hx
+      intro i
+      exact (Fin.cast hx i).elim0
+  · rintro rfl
+    exact RegularFormClass.rank_zero
+
 /-! ### Induction on the rank -/
 
 private theorem RegularFormClass.mk_succ {n : ℕ} (w : Fin (n + 1) → Kˣ) :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
+public import TauCeti.Geometry.Manifold.Riemannian.VariationField
 
 /-!
 # The Gauss lemma for the Riemannian exponential map
@@ -124,16 +124,14 @@ private theorem inner_curveVelocity_radialVariation_self
   exact inner_curveVelocity_maximalGeodesic_self ht
 
 /-- **Metric compatibility along the radial variation.**  At a parameter of the central geodesic,
-the inner product of the transverse covariant derivative of the radial velocity field with that
-radial velocity is `⟪v, w⟫`.  It is half the derivative at `u = 0` of the squared speed
-`⟪v + u • w, v + u • w⟫`, which is the squared speed of the radial curve at parameter `u` because
-that curve is a geodesic. -/
-private theorem inner_alongCurve_curveVelocity_radialVariation
+the inner product of the covariant derivative along that geodesic of the variation field with the
+radial velocity is `⟪v, w⟫`.  It is half the transverse derivative at `u = 0` of the squared speed
+of the radial curves, which is `⟪v + u • w, v + u • w⟫` at parameter `u` because that curve is a
+geodesic. -/
+private theorem inner_alongCurve_variationField_radialVariation
     (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {t : ℝ}
     (ht : t ∈ geodesicInterval I M p v) :
-    inner ℝ
-        (alongCurve (leviCivitaConnection I M) (fun q ↦ F q t)
-          (fun q ↦ curveVelocity I (F q) t) 0)
+    inner ℝ (alongCurve (leviCivitaConnection I M) (F 0) (variationField I F) t)
         (curveVelocity I (F 0) t) =
       inner ℝ v w := by
   let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
@@ -141,15 +139,7 @@ private theorem inner_alongCurve_curveVelocity_radialVariation
     mem_geodesicInterval_iff_smul_mem_expDomain.mp ht
   have hsurface : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t) :=
     contMDiffAt_radialVariation hF (u := 0) (t := t) (by simpa using htExp)
-  have hbase : F 0 t ∈ (trivializationAt E (TangentSpace I) (F 0 t)).baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F 0 t)
-  have hfield := (hsurface.of_le (by simp))
-    |>.differentiableAt_sectionCoord_curveVelocity_snd (f := F) hbase
-  have hcurve : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) 0 :=
-    (hsurface.comp 0 (contMDiff_iff_contDiff.mpr
-      (contDiff_prodMk_left (n := ∞) t)).contMDiffAt).mdifferentiableAt (by simp)
-  have hleft := (isMetricCompatible_leviCivitaConnection (I := I) (M := M))
-    |>.hasDerivAt_inner_alongCurve hcurve hfield hfield
+  have hleft := hasDerivAt_norm_sq_curveVelocity (hsurface.of_le (by simp))
   -- Near `u = 0` the radial curve of the variation still reaches `t`, so its squared speed there
   -- is the squared norm `⟪v + u • w, v + u • w⟫` of its initial velocity.
   have hnear : ∀ᶠ u in nhds (0 : ℝ), t ∈ geodesicInterval I M p (v + u • w) := by
@@ -159,18 +149,15 @@ private theorem inner_alongCurve_curveVelocity_radialVariation
       hcont.preimage_mem_nhds (by simpa using hopen)
     filter_upwards [hpre] with u hu
     exact mem_geodesicInterval_iff_smul_mem_expDomain.mpr hu
-  have heq : (fun u ↦ inner ℝ (curveVelocity I (F u) t) (curveVelocity I (F u) t)) =ᶠ[nhds (0 : ℝ)]
+  have heq : (fun u ↦ ‖curveVelocity I (F u) t‖ ^ 2) =ᶠ[nhds (0 : ℝ)]
       fun u ↦ inner ℝ (v + u • w) (v + u • w) :=
-    hnear.mono fun u hu ↦ inner_curveVelocity_radialVariation_self hF hu
+    hnear.mono fun u hu ↦
+      (real_inner_self_eq_norm_sq _).symm.trans (inner_curveVelocity_radialVariation_self hF hu)
   have ha : HasDerivAt (fun u : ℝ ↦ v + u • w) w 0 := by
     simpa using (hasDerivAt_id (0 : ℝ)).smul_const w |>.const_add v
   have hderiv_eq := hleft.unique ((ha.inner ℝ ha).congr_of_eventuallyEq heq)
-  -- Both sides of the product rule are symmetric in their two arguments, so the identity halves.
-  have halve : ∀ {x : M} (a b : TangentSpace I x) (c d : TangentSpace I p),
-      inner ℝ a b + inner ℝ b a = inner ℝ d c + inner ℝ c d → inner ℝ a b = inner ℝ c d := by
-    intro x a b c d h
-    linarith [real_inner_comm a b, real_inner_comm c d]
-  exact (halve _ _ _ _ hderiv_eq).trans (by rw [zero_smul, add_zero, real_inner_comm])
+  rw [zero_smul, add_zero, real_inner_comm v w, ← two_mul] at hderiv_eq
+  exact mul_left_cancel₀ two_ne_zero hderiv_eq
 
 end RadialVariation
 
@@ -195,8 +182,9 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     radialVariation_eq_maximalGeodesic hF u
   have hIcc : Icc (0 : ℝ) 1 ⊆ geodesicInterval I M p v :=
     ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.mp hv)
-  -- Metric compatibility and symmetry of mixed covariant derivatives compute the derivative of
-  -- `⟪∂ᵤ F, ∂ₜ F⟩` along the central radial geodesic.
+  -- The product rule for the variation field against the radial velocity, the vanishing
+  -- acceleration of the central geodesic and the metric-compatibility identity above compute the
+  -- derivative of `⟪∂ᵤ F, ∂ₜ F⟩` along the central radial geodesic.
   have hmain : ∀ t ∈ Icc (0 : ℝ) 1,
       HasDerivAt (fun r ↦ inner ℝ (Q r 0) (P 0 r)) (inner ℝ v w) t := by
     intro t ht
@@ -205,33 +193,13 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
       mem_geodesicInterval_iff_smul_mem_expDomain.mp htJ
     have hsurface : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t) :=
       contMDiffAt_radialVariation hF (u := 0) (t := t) (by simpa using htExp)
-    have hbase : F 0 t ∈ (trivializationAt E (TangentSpace I) (F 0 t)).baseSet :=
-      FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F 0 t)
     have haccel : alongCurve cov (F 0) (curveVelocity I (F 0)) t = 0 :=
       alongCurve_curveVelocity_radialVariation_eq_zero hF (u := 0) (by simpa using htJ)
-    have hDuP_inner : inner ℝ (alongCurve cov (fun q ↦ F q t) (fun q ↦ P q t) 0) (P 0 t) =
+    have hDtV_inner : inner ℝ (alongCurve cov (F 0) (variationField I F) t) (P 0 t) =
         inner ℝ v w :=
-      inner_alongCurve_curveVelocity_radialVariation hF htJ
-    have hQcoord := (hsurface.of_le (by simp))
-      |>.differentiableAt_sectionCoord_curveVelocity_fst (f := F) hbase
-    have hPcoord : DifferentiableAt ℝ
-        (sectionCoord (F := E) (F 0) (curveVelocity I (F 0)) (F 0 t)) t := by
-      have hFzero : F 0 = maximalGeodesic I M p v := by
-        simpa using hF_eq_maximal 0
-      exact differentiableAt_sectionCoord_curveVelocity (I := I) (E := E) (M := M) (γ := F 0)
-        ((isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v)
-          |>.isGeodesicCurveOn.contMDiffOn.congr fun r _ ↦ congrFun hFzero r)
-        isOpen_geodesicInterval htJ
-    have hcurve : MDifferentiableAt 𝓘(ℝ, ℝ) I (F 0) t :=
-      (hsurface.comp t (contMDiff_iff_contDiff.mpr
-        (contDiff_prodMk_right (n := ∞) 0)).contMDiffAt).mdifferentiableAt (by simp)
-    have hprod := (isMetricCompatible_leviCivitaConnection (I := I) (M := M))
-      |>.hasDerivAt_inner_alongCurve hcurve hQcoord hPcoord
-    have hswap := CovariantDerivative.alongCurve_curveVelocity_comm cov
-      ((CovariantDerivative.isTorsionFree_iff_torsion_eq_zero cov).2
-        (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I))
-      (f := F) (u := 0) (v := t) (hsurface.of_le (by simp))
-    rw [haccel, inner_zero_right, add_zero, hswap, hDuP_inner] at hprod
+      inner_alongCurve_variationField_radialVariation hF htJ
+    have hprod := hasDerivAt_inner_variationField_curveVelocity (hsurface.of_le (by simp))
+    rw [haccel, inner_zero_right, add_zero, hDtV_inner, variationField_def] at hprod
     simpa only [P, Q] using hprod
   have hzero : inner ℝ (Q 0 0) (P 0 0) = 0 := by
     have hQzero : Q 0 0 = 0 := by

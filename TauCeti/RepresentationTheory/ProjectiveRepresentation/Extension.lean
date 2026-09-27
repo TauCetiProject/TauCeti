@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Basic
 
@@ -27,8 +28,9 @@ that arise this way are exactly those under which the central copy of `kˣ` acts
 so `TauCeti.isProjectiveRepEquivExtensionHom` is a bijection between the projective representations
 of `G` with factor set `α` and the linear representations of `E_α` with that property.
 
-Two bookkeeping bridges are needed first, because the two halves of the theory spell a factor set
-differently. `TauCeti.FactorSet` is the uncurried, bundled `G × G → M` of a general `G`-module `M`,
+The curried/uncurried bookkeeping bridges come first, because the two halves of the theory
+spell a factor set differently. `TauCeti.FactorSet` is the uncurried, bundled `G × G → M`
+of a general `G`-module `M`,
 which is what the group extension is built from, while `TauCeti.IsFactorSet` is a curried
 `Prop`-valued class on `G → G → kˣ`, which is what a projective representation carries. The two
 agree when `G` acts **trivially** on `kˣ`, the case in which the extension is central
@@ -41,12 +43,18 @@ any action be fed to the statements, and only the results that genuinely need ce
 it. A projective representation itself carries no action, so the closing existence statement
 supplies the trivial one, `TauCeti.trivialMulDistribMulAction`, and asks for nothing of its caller.
 
+For a factor set whose values have exponent dividing `n`,
+`TauCeti.IsFactorSet.toRootsOfUnityFactorSet` also restricts the values to `rootsOfUnity n k`.
+This lets finite lifting extensions use roots of unity as their kernel coefficients.
+
 ## Main definitions
 
 * `TauCeti.trivialMulDistribMulAction`: the trivial action, the one a projective representation's
   own factor set is bundled over, since a projective representation carries no action.
 * `TauCeti.IsFactorSet.toFactorSet`: a normalized curried factor set, bundled as a
   `TauCeti.FactorSet` for a trivial action, so that its central extension is available.
+* `TauCeti.IsFactorSet.toRootsOfUnityFactorSet`: a factor set with values of exponent dividing
+  `n`, bundled with coefficients in the `n`-th roots of unity for finite lifting extensions.
 * `TauCeti.IsProjectiveRep.linearization`: the homomorphism `E_α → (V ≃ₗ[k] V)` attached to a
   projective representation with factor set `α`, with
   `TauCeti.IsProjectiveRep.linearizationRepresentation` its packaging as a
@@ -129,6 +137,27 @@ theorem trivialMulDistribMulAction_smul {G M : Type*} [Monoid G] [Monoid M] (g :
   rfl
 
 end TrivialActionSmul
+
+section RootsOfUnity
+
+attribute [local instance] trivialMulDistribMulAction
+
+variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ}
+
+/-- A factor set whose values have exponent dividing `n`, valued in the `n`-th roots of unity. -/
+def IsFactorSet.toRootsOfUnityFactorSet (hα : IsFactorSet α) {n : ℕ}
+    (hpow : ∀ g h, α g h ^ n = 1) : FactorSet G (rootsOfUnity n k) where
+  toFun p := ⟨α p.1 p.2, (mem_rootsOfUnity _ _).2 (hpow p.1 p.2)⟩
+  isMulCocycle₂' g h j := Subtype.ext (hα.cocycle g h j)
+  map_one_one' := Subtype.ext (hα.one_left 1)
+
+@[simp]
+theorem IsFactorSet.coe_toRootsOfUnityFactorSet_apply (hα : IsFactorSet α) {n : ℕ}
+    (hpow : ∀ g h, α g h ^ n = 1) (p : G × G) :
+    (hα.toRootsOfUnityFactorSet hpow p : kˣ) = α p.1 p.2 :=
+  (rfl)
+
+end RootsOfUnity
 
 section GeneralAction
 
