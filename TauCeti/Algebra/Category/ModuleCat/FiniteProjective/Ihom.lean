@@ -44,6 +44,8 @@ argument and scaling the tensor's second factor. -/
 theorem _root_.ModuleCat.dualTensorIhomIso_hom_tmul (N : ModuleCat.{u} R) (f : Module.Dual R M)
     (n : N) (m : M) :
     ((dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)).hom m = f m • n := by
+  -- `toModuleIso` and `homLinearEquiv` wrap the contraction in categorical Hom data;
+  -- the Mathlib lemma states its value as a linear map.
   change dualTensorHomEquiv R M N (f ⊗ₜ[R] n) m = f m • n
   exact dualTensorHomEquiv_tmul f m n
 
@@ -54,6 +56,7 @@ def _root_.ModuleCat.dualTensorIhomNatIso :
     ext x
     apply ModuleCat.Hom.ext
     ext m
+    -- The goal composes categorical maps; contraction naturality composes linear maps.
     change dualTensorHom R M P (g.hom.lTensor _ x) m =
       (g.hom.compRight R (dualTensorHom R M N x)) m
     exact congrArg (fun h : M →ₗ[R] P => h m)
@@ -82,7 +85,8 @@ theorem _root_.ModuleCat.dualTensorIhomIso_ev (N : ModuleCat.{u} R)
       ((ihom.ev M).app N).hom)
       (m ⊗ₜ[R] (dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)) = f m • n := by
   rw [ModuleCat.ihom_ev_app]
-  -- The uncurry map evaluates the internal-Hom element at `m`.
+  -- `ihom_ev_app` describes evaluation through an uncurry map, while the contraction
+  -- lemma describes the resulting internal-Hom element applied to `m`.
   change ((dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)).hom m = f m • n
   exact dualTensorIhomIso_hom_tmul M N f n m
 
@@ -96,6 +100,8 @@ theorem _root_.ModuleCat.dualTensorIhomIso_naturality_left
   ext x
   apply ModuleCat.Hom.ext
   ext m
+  -- `pre` and tensoring by the dual map are categorical wrappers around the two
+  -- linear-map compositions in `dualTensorHom_comp_rTensor_dualMap`.
   change dualTensorHom R M N (φ.hom.dualMap.rTensor N x) m =
     (φ.hom.lcomp R N (dualTensorHom R M' N x)) m
   exact congrArg (fun h : M →ₗ[R] N => h m)
