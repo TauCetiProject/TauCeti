@@ -139,7 +139,6 @@ theorem gnsRepresentation_ofAdd (g : G) :
   simp [gnsRepresentation]
 
 /-- The representation translates each GNS vector. -/
-@[simp]
 theorem gnsRepresentation_gnsVector (g a : G) :
     hF.gnsRepresentation (Multiplicative.ofAdd g) (hF.gnsVector a) =
       hF.gnsVector (g + a) :=
