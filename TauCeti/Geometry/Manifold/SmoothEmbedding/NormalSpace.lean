@@ -64,6 +64,7 @@ noncomputable def NormalSpace (f : SmoothEmbedding I J n M N) (x : M) (hn : n �
 left inverse. -/
 theorem isClosed_tangentRange (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     IsClosed (f.tangentRange x hn : Set (TangentSpace J (f x))) := by
+  -- `tangentRange` is the linear range, whose carrier is the set range of `mfderiv`.
   change IsClosed (Set.range (mfderiv I J (f : M → N) x))
   exact ContinuousLinearMap.HasLeftInverse.isClosed_range
     (isDiffImmersionAt_iff.mp (f.isImmersion.isDiffImmersionAt hn x))
@@ -105,6 +106,7 @@ noncomputable def normalLiftL (f : SmoothEmbedding I J n M N) (x : M) (hn : n �
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) : f.NormalSpace x hn →L[𝕜] V :=
   (f.tangentRange x hn).liftQL g (by
     intro v hv
+    -- Membership in the continuous linear map's kernel means that its value is zero.
     change g v = 0
     exact hg v hv)
 
@@ -117,6 +119,13 @@ theorem normalLiftL_comp_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (h
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) :
     (f.normalLiftL x hn g hg).comp (f.normalClassL x hn) = g := by
   ext v
+  let hker : f.tangentRange x hn ≤ g.ker := by
+    intro w hw
+    exact (LinearMap.mem_ker).2 (hg w hw)
+  -- Identify the normal-space wrappers with Mathlib's quotient maps for the evaluation lemmas.
+  change (f.tangentRange x hn).liftQL g hker ((f.tangentRange x hn).mkQL v) = g v
+  rw [Submodule.mkQL_apply, Submodule.liftQL_apply, Submodule.mkQ_apply,
+    Submodule.liftQ_apply]
   rfl
 
 /-- Every normal vector has an ambient tangent representative. -/
@@ -134,6 +143,12 @@ theorem normalClass_eq_zero_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n 
     change (Submodule.Quotient.mk v : TangentSpace J (f x) ⧸ f.tangentRange x hn) = 0 ↔ _
     exact Submodule.Quotient.mk_eq_zero (p := f.tangentRange x hn) (x := v)
 
+/-- The kernel of the normal-class map is the tangent range. -/
+@[simp]
+theorem normalClass_ker (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    LinearMap.ker (f.normalClass x hn) = f.tangentRange x hn := by
+  convert Submodule.ker_mkQ (f.tangentRange x hn) using 1; rfl
+
 /-- The differential of the embedding has zero normal class. -/
 @[simp]
 theorem normalClass_mfderiv (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
@@ -143,6 +158,7 @@ theorem normalClass_mfderiv (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 
 
 /-- Two ambient tangent vectors represent the same normal vector exactly when their difference
 is tangent to the embedded submanifold. -/
+@[simp]
 theorem normalClass_eq_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (v w : TangentSpace J (f x)) :
     f.normalClass x hn v = f.normalClass x hn w ↔ v - w ∈ f.tangentRange x hn := by
@@ -176,13 +192,25 @@ theorem normalLift_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0)
     (h : f.NormalSpace x hn →ₗ[𝕜] V) (hh : h.comp (f.normalClass x hn) = g) :
     h = f.normalLift x hn g hg := by
-  apply LinearMap.ext
-  intro z
-  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn z
-  have hv := congrArg (fun k : TangentSpace J (f x) →ₗ[𝕜] V ↦ k v) hh
-  simp only [LinearMap.comp_apply] at hv ⊢
-  exact hv.trans (congrArg (fun k : TangentSpace J (f x) →ₗ[𝕜] V ↦ k v)
-    (f.normalLift_comp_normalClass x hn g hg)).symm
+  apply Submodule.linearMap_qext
+  exact hh.trans (f.normalLift_comp_normalClass x hn g hg).symm
+
+/-- A continuous linear map out of the normal space is determined by its composition with
+the continuous normal-class map. -/
+theorem normalLiftL_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
+    (g : TangentSpace J (f x) →L[𝕜] V)
+    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0)
+    (h : f.NormalSpace x hn →L[𝕜] V) (hh : h.comp (f.normalClassL x hn) = g) :
+    h = f.normalLiftL x hn g hg := by
+  apply ContinuousLinearMap.coe_injective
+  apply Submodule.linearMap_qext
+  have hcomp := congrArg ContinuousLinearMap.toLinearMap hh
+  have hlift := congrArg ContinuousLinearMap.toLinearMap
+    (f.normalLiftL_comp_normalClassL x hn g hg)
+  convert hcomp.trans hlift.symm using 1 <;>
+    simp only [ContinuousLinearMap.toLinearMap_comp, normalClassL_toLinearMap,
+      normalClass] <;> rfl
 
 /-- The normal dimension plus the tangent dimension equals the ambient dimension for a
 finite-dimensional smooth embedding. -/
