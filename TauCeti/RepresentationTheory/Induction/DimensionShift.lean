@@ -9,6 +9,7 @@ import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+public import Mathlib.Algebra.Homology.ShortComplex.FunctorEquivalence
 public import TauCeti.RepresentationTheory.Induction.TrivialSubgroup
 
 /-!
@@ -348,30 +349,6 @@ theorem dimensionShiftDownSESMap_τ₃ {A B : Rep k G} (f : A ⟶ B) :
 
 variable {A B : Rep k G}
 
-/-- The upward short-complex map sends the identity to the identity. -/
-@[simp]
-theorem dimensionShiftUpSESMap_id (A : Rep k G) :
-    dimensionShiftUpSESMap (𝟙 A) = 𝟙 _ := by
-  apply ShortComplex.Hom.ext <;> simp
-
-/-- The upward short-complex map preserves composition. -/
-@[simp]
-theorem dimensionShiftUpSESMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) :
-    dimensionShiftUpSESMap (f ≫ g) = dimensionShiftUpSESMap f ≫ dimensionShiftUpSESMap g := by
-  apply ShortComplex.Hom.ext <;> simp
-
-/-- The downward short-complex map sends the identity to the identity. -/
-@[simp]
-theorem dimensionShiftDownSESMap_id (A : Rep k G) :
-    dimensionShiftDownSESMap (𝟙 A) = 𝟙 _ := by
-  apply ShortComplex.Hom.ext <;> simp
-
-/-- The downward short-complex map preserves composition. -/
-@[simp]
-theorem dimensionShiftDownSESMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) :
-    dimensionShiftDownSESMap (f ≫ g) = dimensionShiftDownSESMap f ≫ dimensionShiftDownSESMap g := by
-  apply ShortComplex.Hom.ext <;> simp
-
 /-! ### Bundled coefficient functoriality -/
 
 /-- The upward dimension shift as an endofunctor on representations. -/
@@ -404,12 +381,15 @@ theorem dimensionShiftDownSESMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) 
     (dimensionShiftUpπNatTrans (k := k) (G := G)).app A = dimensionShiftUpπ A := rfl
 
 /-- The upward short exact sequence as a functor of coefficient representations. -/
-@[expose] def dimensionShiftUpSESFunctor : Rep k G ⥤ ShortComplex (Rep k G) where
-  obj A := ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
-    (coindBotUnit_comp_dimensionShiftUpπ A)
-  map := fun f => dimensionShiftUpSESMap f
-  map_id := dimensionShiftUpSESMap_id
-  map_comp := fun f g => dimensionShiftUpSESMap_comp f g
+@[expose] def dimensionShiftUpSESFunctor : Rep k G ⥤ ShortComplex (Rep k G) :=
+  (ShortComplex.functorEquivalence (Rep k G) (Rep k G)).functor.obj
+    (ShortComplex.mk (coindBotUnitNatTrans (k := k) (G := G))
+      (dimensionShiftUpπNatTrans (k := k) (G := G)) (by
+        apply NatTrans.ext
+        funext A
+        simp only [NatTrans.comp_app, zero_app, coindBotUnitNatTrans_app,
+          dimensionShiftUpπNatTrans_app]
+        exact coindBotUnit_comp_dimensionShiftUpπ A))
 
 /-- The upward sequence functor evaluates to the upward short exact sequence. -/
 @[simp] theorem dimensionShiftUpSESFunctor_obj (A : Rep k G) :
@@ -418,7 +398,10 @@ theorem dimensionShiftDownSESMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) 
 
 /-- The upward sequence functor acts on morphisms by `dimensionShiftUpSESMap`. -/
 @[simp] theorem dimensionShiftUpSESFunctor_map (f : A ⟶ B) :
-    (dimensionShiftUpSESFunctor (k := k) (G := G)).map f = dimensionShiftUpSESMap f := rfl
+    (dimensionShiftUpSESFunctor (k := k) (G := G)).map f = dimensionShiftUpSESMap f := by
+  apply ShortComplex.Hom.ext <;>
+    simp [dimensionShiftUpSESFunctor, ShortComplex.functorEquivalence,
+      ShortComplex.FunctorEquivalence.functor]
 
 /-- The downward dimension shift as an endofunctor on representations. -/
 @[expose] def dimensionShiftDownFunctor : Rep k G ⥤ Rep k G where
@@ -450,12 +433,15 @@ theorem dimensionShiftDownSESMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) 
     (dimensionShiftDownιNatTrans (k := k) (G := G)).app A = dimensionShiftDownι A := rfl
 
 /-- The downward short exact sequence as a functor of coefficient representations. -/
-@[expose] def dimensionShiftDownSESFunctor : Rep k G ⥤ ShortComplex (Rep k G) where
-  obj A := ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
-    (dimensionShiftDownι_comp_indBotCounit A)
-  map := fun f => dimensionShiftDownSESMap f
-  map_id := dimensionShiftDownSESMap_id
-  map_comp := fun f g => dimensionShiftDownSESMap_comp f g
+@[expose] def dimensionShiftDownSESFunctor : Rep k G ⥤ ShortComplex (Rep k G) :=
+  (ShortComplex.functorEquivalence (Rep k G) (Rep k G)).functor.obj
+    (ShortComplex.mk (dimensionShiftDownιNatTrans (k := k) (G := G))
+      (indBotCounitNatTrans (k := k) (G := G)) (by
+        apply NatTrans.ext
+        funext A
+        simp only [NatTrans.comp_app, zero_app, dimensionShiftDownιNatTrans_app,
+          indBotCounitNatTrans_app]
+        exact dimensionShiftDownι_comp_indBotCounit A))
 
 /-- The downward sequence functor evaluates to the downward short exact sequence. -/
 @[simp] theorem dimensionShiftDownSESFunctor_obj (A : Rep k G) :
@@ -464,6 +450,9 @@ theorem dimensionShiftDownSESMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) 
 
 /-- The downward sequence functor acts on morphisms by `dimensionShiftDownSESMap`. -/
 @[simp] theorem dimensionShiftDownSESFunctor_map (f : A ⟶ B) :
-    (dimensionShiftDownSESFunctor (k := k) (G := G)).map f = dimensionShiftDownSESMap f := rfl
+    (dimensionShiftDownSESFunctor (k := k) (G := G)).map f = dimensionShiftDownSESMap f := by
+  apply ShortComplex.Hom.ext <;>
+    simp [dimensionShiftDownSESFunctor, ShortComplex.functorEquivalence,
+      ShortComplex.FunctorEquivalence.functor]
 
 end Rep
