@@ -29,18 +29,12 @@ open Set UpperHalfPlane
 
 namespace TauCeti
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
 
-/-- A simple compactified Schwarz--Christoffel boundary makes the primitive a bijection from
-the upper half-plane onto the complementary component containing its base-point image. -/
-theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary
-    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
-    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1)
-    (hinj : Function.Injective (schwarzChristoffelCompactifiedBoundary a e z₀)) :
-    BijOn (schwarzChristoffelPrimitive a e z₀) upperHalfPlaneSet
-      (connectedComponentIn (range (schwarzChristoffelCompactifiedBoundary a e z₀))ᶜ
-        (schwarzChristoffelPrimitive a e z₀ z₀)) := by
-  let F := schwarzChristoffelPrimitive a e z₀
+/-- There is a real interval beyond all the prevertices, with a point in its interior. -/
+theorem exists_schwarzChristoffel_prevertex_free_interval [Finite ι] (a e : ι → ℝ) :
+    ∃ p q x : ℝ, (∀ i, e i ≠ 0 → a i ∉ Ioo p q) ∧ x ∈ Ioo p q := by
+  let : Fintype ι := Fintype.ofFinite ι
   let S : ℝ := ∑ i, |a i|
   let p := S + 1
   let x := p + 1
@@ -56,6 +50,21 @@ theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary
     dsimp [p] at hi
     exact (not_lt.mpr (by linarith : a i ≤ S + 1)) hi.1
   have hx : x ∈ Ioo p q := by dsimp [x, q]; constructor <;> linarith
+  exact ⟨p, q, x, ha, hx⟩
+
+variable [Fintype ι]
+
+/-- A simple compactified Schwarz--Christoffel boundary makes the primitive a bijection from
+the upper half-plane onto the complementary component containing its base-point image. -/
+theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1)
+    (hinj : Function.Injective (schwarzChristoffelCompactifiedBoundary a e z₀)) :
+    BijOn (schwarzChristoffelPrimitive a e z₀) upperHalfPlaneSet
+      (connectedComponentIn (range (schwarzChristoffelCompactifiedBoundary a e z₀))ᶜ
+        (schwarzChristoffelPrimitive a e z₀ z₀)) := by
+  let F := schwarzChristoffelPrimitive a e z₀
+  obtain ⟨p, q, x, ha, hx⟩ := exists_schwarzChristoffel_prevertex_free_interval a e
   obtain ⟨U, hUopen, hxU, G, hGF, hGinj, _, _⟩ :=
     exists_injOn_schwarzChristoffelPrimitive_continuation a e z₀ ha hx
   obtain ⟨ε, hε, hnear⟩ :=

@@ -46,18 +46,7 @@ theorem image_schwarzChristoffelPrimitive_eq_filledHull_sdiff
     schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet =
       filledHull (range (schwarzChristoffelCompactifiedBoundary a e z₀)) \
         range (schwarzChristoffelCompactifiedBoundary a e z₀) := by
-  let S : ℝ := ∑ i, |a i|
-  let p := S + 1
-  let x := p + 1
-  let q := p + 2
-  have hbound (i : ι) : a i ≤ S := by
-    have hle : |a i| ≤ S := Finset.single_le_sum
-      (fun j _ => abs_nonneg (a j)) (Finset.mem_univ i)
-    exact (le_abs_self (a i)).trans hle
-  have ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q := by
-    intro i _ hi
-    exact (not_lt_of_ge (by dsimp [p]; linarith [hbound i] : a i ≤ p)) hi.1
-  have hx : x ∈ Ioo p q := by dsimp [x, q]; constructor <;> linarith
+  obtain ⟨p, q, x, ha, hx⟩ := exists_schwarzChristoffel_prevertex_free_interval a e
   let B := schwarzChristoffelBoundary a e z₀
   let C := range (schwarzChristoffelCompactifiedBoundary a e z₀)
   -- Pick a regular edge beyond every prevertex. Simplicity makes this part of the
@@ -69,8 +58,7 @@ theorem image_schwarzChristoffelPrimitive_eq_filledHull_sdiff
     have h : (p : OnePoint ℝ) = (q : OnePoint ℝ) :=
       hinj (by simpa only [B, schwarzChristoffelCompactifiedBoundary_coe] using heq)
     have : p = q := by simpa using h
-    dsimp [p, q] at this
-    linarith
+    exact (ne_of_lt (hx.1.trans hx.2)) this
   have hwseg : B x ∈ openSegment ℝ (B p) (B q) := by
     rw [← schwarzChristoffelBoundary_image_Ioo a e z₀ (hx.1.trans hx.2) ha
       (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p)
