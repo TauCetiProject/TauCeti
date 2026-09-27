@@ -16,8 +16,8 @@ orbit; at a cusp it sends the orbit of a parabolic fixed point to its larger orb
 continuous also at the adjoined cusp points. The construction applies to arbitrary subgroup
 inclusions; finite index is needed only for subsequent finiteness and ramification results.
 
-The continuity argument compares horodiscs with the same representative and scaling. Their
-geometric sets are identical even when their groups have different primitive cusp widths.
+Cusp data with the same representative and scaling define the same horodiscs, even when their
+groups have different primitive cusp widths.
 -/
 
 public noncomputable section
@@ -79,7 +79,7 @@ theorem compactifiedQuotientMap_comp (h : Δ ≤ Γ) (k : Γ ≤ Θ) :
   funext x
   exact compactifiedQuotientMap_compactifiedQuotientMap h k x
 
-/-- The compactified map commutes with the open embeddings of the coarse quotients. -/
+/-- The compactified map commutes with the coarse-quotient constructors. -/
 theorem compactifiedQuotientMap_comp_ofQuotient (h : Δ ≤ Γ) :
     compactifiedQuotientMap h ∘ (CompactifiedQuotient.ofQuotient (Γ := Δ)) =
       (CompactifiedQuotient.ofQuotient (Γ := Γ)) ∘ Setoid.map_of_le
