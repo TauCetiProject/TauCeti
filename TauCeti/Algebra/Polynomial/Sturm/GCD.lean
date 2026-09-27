@@ -11,10 +11,11 @@ public import Mathlib.RingTheory.Polynomial.Content
 /-!
 # The last polynomial in a Sturm sequence
 
-The signed Euclidean remainder sequence ends at a greatest common divisor of its first two
-polynomials, up to a nonzero scalar. This identifies the common roots retained by the sequence,
-including when the second polynomial is zero, without choosing a normalization for its final
-remainder. It is the algebraic gcd relation used when Sturm sequences count distinct roots.
+For a nonzero first polynomial, the signed Euclidean remainder sequence ends at a greatest common
+divisor of its first two polynomials, up to a nonzero scalar. This identifies the common roots
+retained by the sequence, including when the second polynomial is zero, without choosing a
+normalization for its final remainder. It is the algebraic gcd relation used when Sturm sequences
+count distinct roots.
 -/
 
 public section
@@ -55,8 +56,8 @@ theorem getLast?_sturmSeq_associated_gcd (p q s : K[X])
   obtain ⟨hsp, hsq⟩ := getLast?_sturmSeq_dvd p q s hs
   have hmem : s ∈ sturmSeq p q := by
     exact List.mem_of_mem_getLast? (by rw [hs]; exact Option.mem_some_self s)
-  exact associated_of_dvd_dvd (dvd_gcd hsp hsq)
-    (dvd_of_mem_sturmSeq (gcd_dvd_left p q) (gcd_dvd_right p q) hmem)
+  exact gcd_greatest_associated hsp hsq
+    (fun _ hep heq => dvd_of_mem_sturmSeq hep heq hmem)
 
 /-- For a nonzero first polynomial, the Sturm sequence has a final entry associated to its gcd
 with the second polynomial. -/
