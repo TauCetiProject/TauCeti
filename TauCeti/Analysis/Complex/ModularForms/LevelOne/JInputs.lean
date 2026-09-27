@@ -30,7 +30,6 @@ namespace TauCeti.ModularForm
 /-- The normalized modular invariant `j = E₄³ / Δ` on the upper half-plane. -/
 def j (z : ℍ) : ℂ := E₄ z ^ 3 / discriminant z
 
-@[simp]
 theorem j_apply (z : ℍ) : j z = E₄ z ^ 3 / discriminant z := by rfl
 
 /-- The modular invariant is holomorphic on the upper half-plane. -/
@@ -38,7 +37,6 @@ theorem mdifferentiable_j : MDiff j := by
   exact (ModularForm.holo' E₄).pow 3 |>.div (CuspForm.discriminant.holo') discriminant_ne_zero
 
 /-- The weight factors cancel, so `j` is invariant under `SL₂(ℤ)`. -/
-@[simp]
 theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
   have hγ : mapGL ℝ γ ∈ (𝒮ℒ : Subgroup (GL (Fin 2) ℝ)) := ⟨γ, rfl⟩
   have hE : (⇑(E₄.pow 3) ∣[(12 : ℤ)] (mapGL ℝ γ)) = ⇑(E₄.pow 3) := by
