@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Diffeomorph
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 
