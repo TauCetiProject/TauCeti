@@ -19,6 +19,7 @@ forms. It complements Mathlib's tensor product of quadratic-form isometries.
 
 * `QuadraticMap.IsometryEquiv.tmul`: the tensor product of two isometric equivalences.
 * `QuadraticMap.Equivalent.tmul`: tensor products preserve equivalence of quadratic forms.
+* `QuadraticMap.rankOneTensorIsometry`: tensoring with `a • sq` scales the other form by `a`.
 * `QuadraticForm.IsometryEquiv.tmulProd`: tensor product distributes over orthogonal product.
 -/
 
@@ -30,6 +31,21 @@ open scoped TensorProduct
 open QuadraticMap
 
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
+
+/-- Tensoring a form with the quadratic line `a • sq` is isometric to scaling by `a`.
+The isometry is the left unit equivalence of the tensor product. -/
+def _root_.QuadraticMap.rankOneTensorIsometry
+    {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a : R) :
+    (QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm R R)) Q).IsometryEquiv (a • Q) where
+  toLinearEquiv := TensorProduct.lid R V
+  map_app' x := by
+    have h : (a • Q).comp (TensorProduct.lid R V).toLinearMap =
+        QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm R R)) Q := by
+      apply baseChange_ext
+      intro v
+      simp [QuadraticForm.tensorDistrib_tmul, QuadraticMap.sq_apply, smul_eq_mul,
+        mul_comm]
+    exact congrArg (fun P : QuadraticForm R (R ⊗[R] V) => P x) h
 
 /-- Tensor product of isometric equivalences of quadratic forms. -/
 def _root_.QuadraticMap.IsometryEquiv.tmul
