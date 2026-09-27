@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Index.DedekindCubic.Order
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
-import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 import Mathlib.Tactic.ComputeDegree
 
 /-!
@@ -32,15 +31,13 @@ namespace TauCeti.NumberField
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 /-- The index of Dedekind's order in the full ring of integers. -/
-def dedekindOrderIndex (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
-    (_hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : ℕ :=
+def dedekindOrderIndex (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) : ℕ :=
   (dedekindOrder (dedekindCubic_relation hmin)).toSubmodule.cardQuot
 
 /-- The index is the cardinality of the additive quotient by Dedekind's order. -/
 theorem dedekindOrderIndex_def
-    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    dedekindOrderIndex hmin hgen =
+    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+    dedekindOrderIndex hmin =
       Nat.card (𝓞 K ⧸ (dedekindOrder (dedekindCubic_relation hmin)).toSubmodule) :=
   Submodule.cardQuot_apply _
 
@@ -62,6 +59,7 @@ theorem finite_dedekindOrderQuotient
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     Finite (𝓞 K ⧸ (dedekindOrder (dedekindCubic_relation hmin)).toSubmodule) := by
   apply Submodule.finiteQuotientOfFreeOfRankEq
+  -- `toSubmodule` and the subalgebra have the same carrier, hence the same subtype module.
   change Module.finrank ℤ (dedekindOrder (dedekindCubic_relation hmin)) =
     Module.finrank ℤ (𝓞 K)
   rw [Module.finrank_eq_card_basis (dedekindOrderBasis hmin),
@@ -71,16 +69,15 @@ theorem finite_dedekindOrderQuotient
 /-- The index of Dedekind's cubic order is positive. -/
 theorem dedekindOrderIndex_pos
     (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : 0 < dedekindOrderIndex hmin hgen := by
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : 0 < dedekindOrderIndex hmin := by
   let _ := finite_dedekindOrderQuotient hmin hgen
   rw [dedekindOrderIndex_def]
   exact Nat.card_pos
 
 /-- Dedekind's cubic order has index one exactly when it is the full ring of integers. -/
 @[simp] theorem dedekindOrderIndex_eq_one_iff
-    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    dedekindOrderIndex hmin hgen = 1 ↔
+    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+    dedekindOrderIndex hmin = 1 ↔
       dedekindOrder (dedekindCubic_relation hmin) = ⊤ := by
   rw [dedekindOrderIndex, Submodule.cardQuot_eq_one_iff, Algebra.toSubmodule_eq_top]
 
