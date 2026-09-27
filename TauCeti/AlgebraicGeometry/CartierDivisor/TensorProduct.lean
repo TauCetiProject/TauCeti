@@ -23,8 +23,8 @@ in `CartierDivisor/Picard.lean`.
 ## Main declarations
 
 * `Scheme.CartierDivisor.tensorProductSheafIso`: `𝒪_X(D) ⊗ 𝒪_X(E) ≅ 𝒪_X(D + E)`;
-* `Scheme.CartierDivisor.tensorProductSheafIso_hom`: the forward multiplication map through
-  sheafification.
+* `Scheme.CartierDivisor.tensorProductSheafIso_hom_tmul`: the action of the isomorphism on
+  pure tensors of sections.
 
 This is the Cartier divisor version of Hartshorne, *Algebraic Geometry*, II.6.13. The
 construction of the multiplication map follows the Weil divisor construction in
@@ -190,7 +190,7 @@ theorem exists_sectionsMul_eq (s : Γ((D + E).sheaf, V)) :
   simp
 
 /-- Multiplication by the local equation `g` gives a linear retraction of section multiplication. -/
-def sectionsMulRetraction :
+private def sectionsMulRetraction :
     Γ((D + E).sheaf, V) →ₗ[Γ(X, V)]
       TensorProduct Γ(X, V) Γ(D.sheaf, V) Γ(E.sheaf, V) where
   toFun s := sectionMk _ (mul_localEquation_mem_sections hg D s) ⊗ₜ
@@ -205,7 +205,7 @@ def sectionsMulRetraction :
     exact sheafι_app_injective D V (by simp)
 
 /-- Multiplication by the local equation `g` retracts section multiplication. -/
-theorem sectionsMulRetraction_sectionsMul (a : Γ(D.sheaf, V)) (b : Γ(E.sheaf, V)) :
+private theorem sectionsMulRetraction_sectionsMul (a : Γ(D.sheaf, V)) (b : Γ(E.sheaf, V)) :
     sectionsMulRetraction hg D (sectionsMul D E V a b) = a ⊗ₜ b := by
   obtain ⟨r, hr⟩ : ∃ r : Γ(X, V), Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) V r =
       Scheme.rationalFunctionsMulBilin X V (Scheme.Modules.Hom.app (sheafι E) V b)
@@ -245,7 +245,7 @@ theorem sectionsMulRetraction_sectionsMul (a : Γ(D.sheaf, V)) (b : Γ(E.sheaf, 
   rw [h1, TensorProduct.smul_tmul, h2]
 
 /-- Multiplication is injective on a domain with a local equation of `E`. -/
-theorem sectionsMulLift_injective : Function.Injective (sectionsMulLift D E V) := by
+private theorem sectionsMulLift_injective : Function.Injective (sectionsMulLift D E V) := by
   have key : Function.LeftInverse (sectionsMulRetraction hg D) (sectionsMulLift D E V) := by
     intro w
     induction w using TensorProduct.inductionOn with
@@ -262,7 +262,7 @@ section TensorProduct
 variable (D E : CartierDivisor X)
 
 /-- Multiplication is locally surjective on tensor products of sections. -/
-theorem isLocallySurjective_tensorPresheafHom :
+private theorem isLocallySurjective_tensorPresheafHom :
     Presheaf.IsLocallySurjective (Opens.grothendieckTopology X)
       ((PresheafOfModules.toPresheaf X.ringCatSheaf.obj).map (tensorPresheafHom D E)) where
   imageSieve_mem {U} s x hx := by
@@ -273,7 +273,7 @@ theorem isLocallySurjective_tensorPresheafHom :
     exact ⟨V, homOfLE hVU, ⟨a ⊗ₜ b, hab⟩, hxV⟩
 
 /-- Multiplication is locally injective on tensor products of sections. -/
-theorem isLocallyInjective_tensorPresheafHom :
+private theorem isLocallyInjective_tensorPresheafHom :
     Presheaf.IsLocallyInjective (Opens.grothendieckTopology X)
       ((PresheafOfModules.toPresheaf X.ringCatSheaf.obj).map (tensorPresheafHom D E)) where
   equalizerSieve_mem {U} z z' h x hx := by
@@ -285,7 +285,7 @@ theorem isLocallyInjective_tensorPresheafHom :
         (PresheafOfModules.naturality_apply (tensorPresheafHom D E) (homOfLE hVU).op z').symm)
 
 /-- Sheafification of multiplication is an isomorphism since it is locally bijective. -/
-theorem isIso_sheafification_map_tensorPresheafHom :
+private theorem isIso_sheafification_map_tensorPresheafHom :
     IsIso ((PresheafOfModules.sheafification (R := X.ringCatSheaf)
       (𝟙 X.ringCatSheaf.obj)).map (tensorPresheafHom D E)) := by
   have := isLocallySurjective_tensorPresheafHom D E
@@ -307,7 +307,7 @@ def tensorProductSheafIso :
     TauCeti.SheafOfModules.sheafificationIso X.ringCatSheaf (D + E).sheaf
 
 /-- The forward tensor product isomorphism is sheafified multiplication of sections. -/
-theorem tensorProductSheafIso_hom :
+private theorem tensorProductSheafIso_hom :
     (tensorProductSheafIso D E).hom =
       (TauCeti.SheafOfModules.tensorProductIso X.sheaf D.sheaf E.sheaf).hom ≫
         (PresheafOfModules.sheafification (R := X.ringCatSheaf) (𝟙 X.ringCatSheaf.obj)).map
