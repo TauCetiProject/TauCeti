@@ -180,6 +180,7 @@ lemma cellularChainGroupMap_comp {f : ContinuousMap C C'} {g : ContinuousMap C' 
 
 /-- Naturality of the connecting map from a skeletal pair to the homology of its lower
 skeleton. -/
+@[reassoc]
 lemma skeletonPairδ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
     skeletonPairδ C R n ≫
         SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n =
@@ -193,6 +194,7 @@ lemma skeletonPairδ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n 
 
 /-- Naturality of the quotient map from the homology of a skeleton to its cellular chain
 group. -/
+@[reassoc]
 lemma skeletonPairπ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
     SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n ≫
         skeletonPairπ C' R n =
@@ -205,6 +207,7 @@ lemma skeletonPairπ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n 
 
 /-- The maps induced on consecutive skeletal relative homology groups commute with the
 cellular differential. -/
+@[reassoc]
 lemma cellularChainGroupMap_comp_cellularDifferential (f : ContinuousMap C C')
     (hf : IsCellular f) (n : ℕ) :
     cellularChainGroupMap R f hf (n + 1) ≫ cellularDifferential C' R n =
