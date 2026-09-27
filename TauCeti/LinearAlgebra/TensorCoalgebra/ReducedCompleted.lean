@@ -166,17 +166,17 @@ projected to its two output lengths. -/
       exact CompletedTensorWords.deconcatenation_coe R M
         (TensorWords.reducedInclusion R M x) p.1 q.1
     _ = _ := by
+      have hp : ReducedTensorWords.component R M p ∘ₗ
+          TensorWords.reducedProjection R M = TensorWords.component R M p.1 :=
+        LinearMap.ext (fun w ↦ TensorWords.component_reducedProjection R M p w)
+      have hq : ReducedTensorWords.component R M q ∘ₗ
+          TensorWords.reducedProjection R M = TensorWords.component R M q.1 :=
+        LinearMap.ext (fun w ↦ TensorWords.component_reducedProjection R M q w)
       have h := congrArg
         (TensorProduct.map (ReducedTensorWords.component R M p)
           (ReducedTensorWords.component R M q))
         (TensorWords.map_reducedProjection_deconcatenation_reducedInclusion R M x)
-      simpa only [TensorProduct.map_map,
-        show ReducedTensorWords.component R M p ∘ₗ TensorWords.reducedProjection R M =
-          TensorWords.component R M p.1 from
-          LinearMap.ext (fun w ↦ TensorWords.component_reducedProjection R M p w),
-        show ReducedTensorWords.component R M q ∘ₗ TensorWords.reducedProjection R M =
-          TensorWords.component R M q.1 from
-          LinearMap.ext (fun w ↦ TensorWords.component_reducedProjection R M q w)] using h
+      simpa only [TensorProduct.map_map, hp, hq] using h
 
 /-- The reduced completed coproduct is coassociative in each triple of positive lengths. -/
 theorem deconcatenation_coassoc (x : CompletedReducedTensorWords R M)
@@ -249,12 +249,6 @@ noncomputable def truncate (n : ℕ) : CompletedReducedTensorWords R M →ₗ[R]
   split_ifs with hk
   · exact toCompleted_pos R M x k
   · rfl
-
-/-- Truncation evaluated at a positive length keeps that coordinate below its cutoff. -/
-theorem truncate_apply (n : ℕ) (x : CompletedReducedTensorWords R M)
-    (k : {k : ℕ // 0 < k}) :
-    truncate R M n x k = if k.1 < n then x k else 0 := by
-  rw [ReducedTensorWords.apply_eq_component, truncate_component]
 
 /-- Truncating after insertion into the coaugmented completion agrees with inserting the
 truncated reduced word. -/
