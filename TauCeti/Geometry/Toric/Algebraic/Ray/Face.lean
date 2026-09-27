@@ -107,8 +107,7 @@ theorem finrank_span_face_eq_card_rays_of_isSimplicial (hσ : σ.IsSimplicial) (
       simp
     let ρ : ToricRay F.toPointedCone := ⟨G, hG⟩
     refine ⟨ρ, ?_⟩
-    have h := hf ρ
-    change e G = {f ρ} at h
+    have h : e G = {f ρ} := by simpa only [ρ, Subtype.coe_mk] using hf ρ
     rw [e.apply_symm_apply] at h
     exact Set.singleton_injective h.symm
   rw [hdim ⟨F.toPointedCone, PointedCone.IsFaceOf.refl _⟩]
