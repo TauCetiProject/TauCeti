@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
-public import TauCeti.Topology.Algebra.InfiniteSum.IntegralCoefficients
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import Mathlib.Analysis.Normed.Ring.Lemmas
 
@@ -37,16 +37,6 @@ namespace TauCeti
 
 variable {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
-/-- The divisor-sum series `s_k(q) = ∑ σ_k(n) q^n` converges for `‖q‖ < 1`. -/
-theorem summable_divisorSumSeries (k : ℕ) {q : K} (hq : ‖q‖ < 1) :
-    Summable (fun n : ℕ ↦ (((σ k n : ℕ) : ℤ) : K) * q ^ n) :=
-  summable_intCast_mul_pow (fun n : ℕ ↦ ((σ k n : ℕ) : ℤ)) hq
-
-/-- Evaluation of the integral divisor-sum series in a complete non-archimedean field. Its
-convergence for `‖q‖ < 1` is `summable_divisorSumSeries`. -/
-noncomputable def divisorSumAt (k : ℕ) (q : K) (_hq : ‖q‖ < 1) : K :=
-  ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n
-
 /-- The analytic fourth Tate coefficient, obtained from the integral formal series. -/
 noncomputable def tateCurveA4 (q : K) (_hq : ‖q‖ < 1) : K :=
   ∑' n : ℕ, ((PowerSeries.coeff n tateCurve.a₄ : ℤ) : K) * q ^ n
@@ -57,13 +47,20 @@ noncomputable def tateCurveA6 (q : K) (_hq : ‖q‖ < 1) : K :=
   ∑' n : ℕ, ((PowerSeries.coeff n tateCurve.a₆ : ℤ) : K) * q ^ n
 
 omit [CompleteSpace K] [IsUltrametricDist K] in
+/-- The sixth Tate coefficient is the sum of its evaluated integral coefficients. -/
+theorem tateCurveA6_apply (q : K) (hq : ‖q‖ < 1) :
+    tateCurveA6 q hq =
+      ∑' n : ℕ, ((PowerSeries.coeff n tateCurve.a₆ : ℤ) : K) * q ^ n := by
+  simp only [tateCurveA6]
+
+omit [CompleteSpace K] [IsUltrametricDist K] in
 /-- The fourth coefficient equals `-5 s₃(q)`. -/
 theorem tateCurveA4_eq (q : K) (hq : ‖q‖ < 1) :
     tateCurveA4 q hq = -5 * divisorSumAt 3 q hq := by
   simp_rw [tateCurveA4, coeff_tateCurve_a₄, Int.cast_mul, Int.cast_neg, Int.cast_ofNat,
     neg_mul, mul_assoc]
   rw [tsum_neg, tsum_mul_left]
-  rfl
+  simp only [divisorSumAt_apply]
 
 /-- The integral identity `12 a₆(q) = -(5 s₃(q) + 7 s₅(q))` holds in every complete
 non-archimedean field, even when `12 = 0` there. -/
@@ -78,7 +75,7 @@ theorem twelve_mul_tateCurveA6 {q : K} (hq : ‖q‖ < 1) :
   simp_rw [mul_assoc]
   rw [tsum_neg, (summable_divisorSumSeries 3 hq |>.mul_left 5).tsum_add
     (summable_divisorSumSeries 5 hq |>.mul_left 7)]
-  simp only [← tsum_mul_left, divisorSumAt]
+  simp only [← tsum_mul_left, divisorSumAt_apply]
 
 /-- The Tate equation obtained by evaluating the integral formal curve at a nonzero parameter of
 norm less than one. The unit parameter will also support its integer powers in uniformisation. -/

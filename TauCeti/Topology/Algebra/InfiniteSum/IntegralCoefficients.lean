@@ -107,13 +107,8 @@ theorem norm_evalIntSeries_le_one {K : Type*} [NormedCommRing K] [NormOneClass K
     [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f : ℤ⟦X⟧) :
     ‖evalIntSeries q hq f‖ ≤ 1 := by
   rw [evalIntSeries_apply]
-  let a : ℕ → K := fun n ↦ ((coeff n f : ℤ) : K) * q ^ n
-  have ha : Summable a := summable_intCast_mul_pow (fun n ↦ coeff n f) hq
-  change ‖∑' n, a n‖ ≤ 1
-  apply le_of_tendsto ha.hasSum.norm
-  filter_upwards [] with s
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one (fun n _ ↦ ?_)
-  change ‖((coeff n f : ℤ) : K) * q ^ n‖ ≤ 1
+  apply IsUltrametricDist.norm_tsum_le_of_forall_le
+  intro n
   calc
     _ ≤ ‖((coeff n f : ℤ) : K)‖ * ‖q ^ n‖ := norm_mul_le _ _
     _ ≤ 1 * ‖q ^ n‖ :=
