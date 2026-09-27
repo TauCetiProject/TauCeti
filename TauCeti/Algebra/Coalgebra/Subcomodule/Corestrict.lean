@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Coalgebra.Equiv
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
@@ -27,6 +28,8 @@ coalgebras must preserve the invariant subspaces of their comodules.
   coalgebra equivalence.
 * `TauCeti.Subcomodule.corestrictOrderIso`: the carrier-preserving order isomorphism induced
   by a coalgebra equivalence.
+* `TauCeti.Subcomodule.ofCorestrictOfInjective`: recover a subcomodule from its corestriction
+  along an injective coalgebra morphism over a field.
 * `TauCeti.Subcomodule.map_id_coact_coe_eq_tmul_one`: a vector of a subcomodule fixed by the
   corestricted coaction is fixed by the corestricted coaction of the ambient comodule.
 
@@ -224,6 +227,65 @@ theorem map_id_coact_coe_eq_tmul_one (f : C →ₗc[R] D) (W : Subcomodule R C M
   exact h
 
 end Induced
+
+section Injective
+
+variable {k : Type u} [Field k]
+variable {C : Type v} {D : Type w}
+variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
+variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
+variable {V : Type x} [AddCommMonoid V] [Module k V] [Comodule k C V]
+
+/-- An invariant subspace for a corestricted comodule is invariant before corestriction
+when the coalgebra morphism is injective. Its underlying subspace is unchanged. -/
+noncomputable def ofCorestrictOfInjective (f : C →ₗc[k] D)
+    (hf : Function.Injective f)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) : Subcomodule k C V :=
+  letI : Comodule k D V := Comodule.Corestrict f
+  Subcomodule.ofSubmodule W.carrier (fun m hm ↦ by
+    let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+    let _ : AddCommGroup D := Module.addCommMonoidToAddCommGroup k
+    let l : C →ₗ[k] D := f.toLinearMap
+    have hker : LinearMap.ker l = ⊥ :=
+      LinearMap.ker_eq_bot_of_injective (f := l) (by
+        intro x y h
+        exact hf h)
+    let r : D →ₗ[k] C := l.leftInverse
+    have hr : r.comp l = LinearMap.id := LinearMap.leftInverse_comp_of_inj hker
+    have hrf : r.comp f.toLinearMap = LinearMap.id := hr
+    obtain ⟨t, ht⟩ := W.coact_mem hm
+    refine ⟨TensorProduct.map LinearMap.id r t, ?_⟩
+    have h := congrArg (TensorProduct.map (LinearMap.id : V →ₗ[k] V) r) ht
+    simpa only [Comodule.corestrict_coact_apply, TensorProduct.map_map,
+      LinearMap.id_comp, LinearMap.comp_id, hrf, TensorProduct.map_id,
+      LinearMap.id_apply] using h)
+
+/-- Recovering an invariant subspace from an injective corestriction preserves its
+underlying submodule. -/
+@[simp]
+theorem ofCorestrictOfInjective_toSubmodule (f : C →ₗc[k] D)
+    (hf : Function.Injective f)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    (ofCorestrictOfInjective f hf W).toSubmodule = W.toSubmodule := by
+  unfold ofCorestrictOfInjective
+  exact Subcomodule.ofSubmodule_carrier _ _
+
+/-- Membership is unchanged when recovering a subcomodule from an injective
+corestriction. -/
+@[simp]
+theorem mem_ofCorestrictOfInjective (f : C →ₗc[k] D)
+    (hf : Function.Injective f)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) (m : V) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    m ∈ ofCorestrictOfInjective f hf W ↔ m ∈ W := by
+  let _ : Comodule k D V := Comodule.Corestrict f
+  rw [← mem_toSubmodule, ofCorestrictOfInjective_toSubmodule, mem_toSubmodule]
+
+end Injective
 
 end Subcomodule
 
