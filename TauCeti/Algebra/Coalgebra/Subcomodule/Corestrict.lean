@@ -285,6 +285,26 @@ theorem mem_ofCorestrictOfInjective (f : C →ₗc[k] D)
   let _ : Comodule k D V := Comodule.Corestrict f
   rw [← mem_toSubmodule, ofCorestrictOfInjective_toSubmodule, mem_toSubmodule]
 
+/-- Corestricting a recovered subcomodule gives the original subcomodule. -/
+@[simp]
+theorem corestrict_ofCorestrictOfInjective (f : C →ₗc[k] D)
+    (hf : Function.Injective f)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    (ofCorestrictOfInjective f hf W).corestrict f = W := by
+  let _ : Comodule k D V := Comodule.Corestrict f
+  ext m
+  simp only [mem_corestrict, mem_ofCorestrictOfInjective]
+
+/-- Recovering a corestricted subcomodule gives the original subcomodule. -/
+@[simp]
+theorem ofCorestrictOfInjective_corestrict (f : C →ₗc[k] D)
+    (hf : Function.Injective f) (W : Subcomodule k C V) :
+    ofCorestrictOfInjective f hf (W.corestrict f) = W := by
+  ext m
+  simp only [mem_ofCorestrictOfInjective, mem_corestrict]
+
 end Injective
 
 end Subcomodule

@@ -43,10 +43,10 @@ variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
 variable {V : Type x} [AddCommMonoid V] [Module k V] [Comodule k C V]
 
 /-- Complete reducibility descends along an injective coalgebra morphism. -/
-theorem isCompletelyReducible_of_corestrict_of_injective (f : C →ₗc[k] D)
-    (hf : Function.Injective f)
+theorem IsCompletelyReducible.of_corestrict_of_injective (f : C →ₗc[k] D)
     (h : letI : Comodule k D V := Comodule.Corestrict f
-      IsCompletelyReducible k D V) : IsCompletelyReducible k C V := by
+      IsCompletelyReducible k D V) (hf : Function.Injective f) :
+    IsCompletelyReducible k C V := by
   apply IsCompletelyReducible.of_exists_isCompl
   intro W
   let _ : Comodule k D V := Comodule.Corestrict f
@@ -71,8 +71,8 @@ theorem IsLinearlyReductive.of_injective (f : C →ₗc[k] D)
   apply IsLinearlyReductive.of_forall_isCompletelyReducible
   intro V _ _ _ _
   let _ : Comodule k D V := Comodule.Corestrict f
-  exact Comodule.isCompletelyReducible_of_corestrict_of_injective f hf
-    (hD.isCompletelyReducible k)
+  exact Comodule.IsCompletelyReducible.of_corestrict_of_injective f
+    (hD.isCompletelyReducible k) hf
 
 end Coalgebra
 
