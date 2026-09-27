@@ -48,7 +48,7 @@ instance finiteProjectiveModules_isMonoidal : (finiteProjectiveModules R).IsMono
 
 /-- The symmetric monoidal structure on finite projective modules is inherited from
 `ModuleCat R`. -/
-instance finiteProjectiveModules_symmetricCategory :
+instance finiteProjectiveModulesSymmetricCategory :
     SymmetricCategory (finiteProjectiveModules R).FullSubcategory :=
   ObjectProperty.fullSymmetricSubcategory _
 
