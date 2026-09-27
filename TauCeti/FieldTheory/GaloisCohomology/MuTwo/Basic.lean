@@ -52,6 +52,8 @@ the class of `a` to `(a)`.
   `TauCeti.kummerCoeffIsoTrivialF2_inv_apply` are the value dictionary and its inverse.
 * `TauCeti.kummerClass`: the Kummer class `(a) ∈ H¹(G_K, 𝔽₂)` of a unit, read in the
   `trivialF2 G_K` carrier.
+* `TauCeti.kummerCocycleModTwo` and `TauCeti.kummerCocycleModTwoClass`: the explicit
+  `𝔽₂`-valued Kummer cocycle of a chosen square root and its cohomology class.
 * `TauCeti.kummerSquareClassEquiv`: the Kummer isomorphism on the square-class group
   `Kˣ ⧸ (Kˣ)²`, an additive equivalence with `H¹(G_K, 𝔽₂)`.
 
@@ -66,6 +68,10 @@ the class of `a` to `(a)`.
 * `TauCeti.mu2_smul_eq_self`: the Galois action on `μ₂` is trivial.
 * `TauCeti.kummerClass_one` and `TauCeti.kummerClass_mul`: the Kummer class of a unit is a
   homomorphism from `Kˣ` into `H¹(G_K, 𝔽₂)` written additively.
+* `TauCeti.kummerCocycleModTwo_apply`: the explicit Kummer cocycle is `0` when a Galois
+  element fixes the chosen square root and `1` otherwise.
+* `TauCeti.kummerCocycleModTwoClass_eq` and `TauCeti.kummerClass_eq_of_sq_eq`: the explicit
+  mod-two cocycle class agrees with the canonical Kummer class after the two comparison maps.
 * `TauCeti.kummerClass_eq_zero_iff_square`: the Kummer class of a unit of `Kˣ` vanishes exactly
   at the squares in `Kˣ`.
 * `TauCeti.kummerSquareClassEquiv_squareClass`: a square class is sent to the Kummer class of
@@ -382,6 +388,94 @@ theorem kummerClass_mul (a b : Kˣ) :
     kummerClass (a * b) = kummerClass a + kummerClass b := by
   simp [kummerClass]
 
+local instance : ContinuousSMul (AbsoluteGaloisGroup K)
+    (trivialF2 (AbsoluteGaloisGroup K)).V :=
+  (isSmoothDiscrete_trivialF2 (AbsoluteGaloisGroup K)).continuousSMul
+
+local instance : DecidableEq (SeparableClosure K)ˣ := Classical.decEq _
+
+/-- **The `𝔽₂`-valued Kummer cocycle of a chosen square root.** If `α² = a`, this is
+the ratio cocycle `g ↦ g • α / α`, transported from `μ₂` to the trivial `𝔽₂` coefficient
+module. Its decoded values are computed by `TauCeti.kummerCocycleModTwo_apply`. -/
+noncomputable def kummerCocycleModTwo {a : Kˣ} {α : (SeparableClosure K)ˣ}
+    (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    Z1 (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V :=
+    cocyclesMap1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)
+    (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V
+    (ContinuousMonoidHom.id _) (kummerCoeffEquiv K).toAddMonoidHom
+    continuous_of_discreteTopology (fun g x => by simp [kummerCoeffEquiv_apply])
+    ⟨kummerCocycle hα, kummerCocycle_mem_Z1 hα⟩
+
+/-- **The square-root formula for the mod-two Kummer cocycle.** Its value at `g` is `0` when
+`g` fixes the chosen square root and `1` when it exchanges the two square roots. -/
+@[simp]
+theorem kummerCocycleModTwo_apply {a : Kˣ} {α : (SeparableClosure K)ˣ}
+    (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    (g : AbsoluteGaloisGroup K) :
+    trivialF2Equiv (AbsoluteGaloisGroup K)
+        ((kummerCocycleModTwo K hα : _ → _) g) =
+      if g • α = α then 0 else 1 := by
+  classical
+  rw [kummerCocycleModTwo, cocyclesMap1_apply, ContinuousMonoidHom.coe_id, id_eq]
+  -- The coefficient map inside `cocyclesMap1` is stored as an additive homomorphism; expose
+  -- its underlying equivalence application so the two value dictionaries can cancel.
+  change trivialF2Equiv (AbsoluteGaloisGroup K)
+    (kummerCoeffEquiv K (kummerCocycle hα g)) = _
+  rw [kummerCoeffEquiv_apply, AddEquiv.apply_symm_apply]
+  split_ifs with hfix
+  · have hc : kummerCocycle hα g = (0 : KummerCoeff K 2) := by
+      refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
+      simp [hfix]
+    simp [hc]
+  · have hc : kummerCocycle hα g = mu2NegOne := by
+      rcases eq_zero_or_eq_mu2NegOne (kummerCocycle hα g) with hz | hz
+      · exfalso
+        apply hfix
+        have hz' := congrArg
+          (fun z : KummerCoeff K 2 => (z.toMul : (SeparableClosure K)ˣ)) hz
+        exact mul_inv_eq_one.mp <|
+          (toMul_kummerCocycle hα g).symm.trans (by simpa using hz')
+      · exact hz
+    simp [hc]
+
+/-- The explicit cohomology class of the mod-two Kummer cocycle attached to a chosen square
+root. It is independent of that choice because it is the coefficient transport of
+`TauCeti.kummerCocycleClass`. -/
+noncomputable def kummerCocycleModTwoClass {a : Kˣ} {α : (SeparableClosure K)ˣ}
+    (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    H1 (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V :=
+  kummerCocycleModTwo K hα
+
+/-- The explicit mod-two cocycle class is the generic Kummer cocycle class transported along
+the coefficient equivalence `μ₂ ≃ 𝔽₂`. -/
+theorem kummerCocycleModTwoClass_eq {a : Kˣ} {α : (SeparableClosure K)ˣ}
+    (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    kummerCocycleModTwoClass K hα =
+      explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2)
+        (kummerCoeffEquiv K) continuous_of_discreteTopology continuous_of_discreteTopology
+        (fun g x => by simp [kummerCoeffEquiv_apply]) (kummerCocycleClass hα) := by
+  rw [kummerCocycleModTwoClass, kummerCocycleClass_def]
+  -- Both sides are quotient classes. Exposing their cocycle representatives reduces the
+  -- comparison theorem to `explicitCoeff1Equiv_mk`.
+  change (kummerCocycleModTwo K hα :
+      H1 (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V) =
+    explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2)
+      (kummerCoeffEquiv K) continuous_of_discreteTopology continuous_of_discreteTopology
+      (fun g x => by simp [kummerCoeffEquiv_apply])
+      ((⟨kummerCocycle hα, kummerCocycle_mem_Z1 hα⟩ :
+        Z1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :
+          H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2))
+  rw [explicitCoeff1Equiv_mk]
+  rfl
+
+/-- The explicit mod-two Kummer cocycle class does not depend on the chosen square root. -/
+theorem kummerCocycleModTwoClass_congr {a : Kˣ} {α β : (SeparableClosure K)ˣ}
+    (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    (hβ : β ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    kummerCocycleModTwoClass K hα = kummerCocycleModTwoClass K hβ := by
+  rw [kummerCocycleModTwoClass_eq, kummerCocycleModTwoClass_eq,
+    kummerCocycleClass_congr hα hβ]
+
 /-- **The Kummer class of a unit vanishes exactly at the squares in `Kˣ`.** -/
 @[simp]
 theorem kummerClass_eq_zero_iff_square {a : Kˣ} :
@@ -421,6 +515,21 @@ theorem kummerClass_eq_zero_iff_square {a : Kˣ} :
       simp
     rw [kummerClass, hzero]
     simp
+
+/-- **The mod-two Kummer class is represented by the Kummer cocycle of any square root.**
+If `α² = a`, first take the explicit class of `g ↦ g • α / α`, then pass to canonical
+continuous cohomology and identify `μ₂` with the trivial `𝔽₂` coefficient object. -/
+theorem kummerClass_eq_of_sq_eq (a : Kˣ) (α : (SeparableClosure K)ˣ)
+    (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    kummerClass a =
+      ((ContinuousCohomology.continuousCohomologyFunctor ℤ
+          (AbsoluteGaloisGroup K) 1).mapIso (kummerCoeffIsoTrivialF2 K)).hom
+        (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+          (KummerCoeff K 2) (kummerCocycleClass hα)) := by
+  rw [kummerClass, explicitIso_kummerMap,
+    kummerMap_eq_kummerCocycleClass (isUnit_of_invertible (2 : K)) hα]
+  rw [kummerCohomMap]
+  rfl
 
 /-! ### The Kummer isomorphism on square classes -/
 

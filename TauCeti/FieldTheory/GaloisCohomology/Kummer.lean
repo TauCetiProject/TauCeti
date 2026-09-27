@@ -160,6 +160,14 @@ def kummerCocycleClass
     H1 (AbsoluteGaloisGroup K) (KummerCoeff K n) :=
   H1pi (AbsoluteGaloisGroup K) (KummerCoeff K n) ⟨kummerCocycle hα, kummerCocycle_mem_Z1 hα⟩
 
+/-- The Kummer cocycle class is the image of its named cocycle under the quotient map to `H¹`. -/
+theorem kummerCocycleClass_def
+    (hα : α ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a) :
+    kummerCocycleClass hα =
+      H1pi (AbsoluteGaloisGroup K) (KummerCoeff K n)
+        ⟨kummerCocycle hα, kummerCocycle_mem_Z1 hα⟩ :=
+  (rfl)
+
 /-- **The Kummer class is independent of the chosen `n`th root.** Two `n`th roots of the same `a`
 differ by an element `ζ` of `μₙ`, and `g (α ζ) / (α ζ) = (g α / α) · (g ζ / ζ)` differs from
 `g α / α` by the coboundary of `ζ`. -/
