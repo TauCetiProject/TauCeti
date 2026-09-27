@@ -62,8 +62,14 @@ coefficients.
   `TauCeti.ContCohomology.h1EquivCohomFpULift_apply_mk` and
   `TauCeti.ContCohomology.h1EquivCohomFpULift_symm_apply`: the comparison in both directions, over
   the lifted carrier.
-* `TauCeti.h1EquivCohomFp_apply_mk`: the class of a continuous `1`-cocycle is sent to the
-  canonical cohomology class of the cocycle it defines.
+* `TauCeti.h1EquivCohomFp_apply_mk` and `TauCeti.h1EquivCohomFp_symm_apply`: the comparison in
+  both directions, the class of a continuous `1`-cocycle being sent to the canonical cohomology
+  class of the cocycle it defines, and a canonical cohomology class being sent back to the class
+  of the continuous `1`-cocycle it carries.
+* `TauCeti.ContCohomology.cohomFpCocycleEquiv1_apply`, `TauCeti.h1CoeffEquiv_apply_mk` and
+  `TauCeti.h1CoeffEquiv_symm_apply`: the same formulas for the cocycle comparison and the
+  coefficient transport, so that both directions of the comparison are computed by `simp` without
+  unfolding.
 
 ## References
 
@@ -295,6 +301,23 @@ theorem cohomFpCocycleEquiv1_symm_apply
   rw [AddEquiv.symm_apply_apply, e, cochainEquiv1_apply]
   simp
 
+/-- The forward one-cocycle comparison is the homogeneous form of the cocycle, curried: at `g` and
+`h` it is the value of `c` at `g⁻¹ * h`, the action on the lifted carrier being trivial. -/
+@[simp]
+theorem cohomFpCocycleEquiv1_apply (c : Z1 G (ULift.{u} (ZMod n))) (g h : G) :
+    ((TopRep.homogeneousCochains (trivialFp n G)).iCycles 1
+      (cohomFpCocycleEquiv1 n G c)).val g h = c.val (g⁻¹ * h) := by
+  -- Read the short-complex inclusion as the inclusion of the homogeneous complex.
+  have e : (TopRep.homogeneousCochains (trivialFp n G)).iCycles 1 (cohomFpCocycleEquiv1 n G c) =
+      cochainEquiv1 n G ⟨c.val, Z1_le_C1 G (ULift.{u} (ZMod n)) c.property⟩ :=
+    ConcreteCategory.congr_hom
+      (Limits.IsLimit.conePointUniqueUpToIso_hom_comp (TopModuleCat.isLimitKer _)
+        ((TopRep.homogeneousCochains (trivialFp n G)).cyclesIsKernel 1 2 (by simp))
+        Limits.WalkingParallelPair.zero) _
+  rw [e, cochainEquiv1_apply]
+  simp
+  rfl
+
 /-- The comparison sends the explicit coboundary of an element of the carrier to its canonical
 boundary, with the same primitive under the degree-zero cochain comparison. -/
 private theorem cohomFpCocycleEquiv1_d0 (m : ULift.{u} (ZMod n)) :
@@ -407,6 +430,57 @@ noncomputable def h1CoeffEquiv (htriv : ∀ (g : G) (m : ZMod n), g • m = m) :
     (trivialFpEquiv n G).symm.toAddEquiv continuous_of_discreteTopology
     continuous_of_discreteTopology (fun g m => by rw [htriv g m]; rfl)
 
+omit [IsTopologicalGroup G] in
+/-- **The coefficient transport is postcomposition with the cocycle.** A class of `H¹(G, 𝔽_n)` is
+sent to the continuous `1`-cocycle it defines, with its values lifted into the carrier of
+`TauCeti.trivialFp n G` by `TauCeti.trivialFpEquiv`. The instance
+`TauCeti.ContCohomology.explicitCoeff1_mk` completes the right-hand side to the class of that
+cocycle, so with this formula `TauCeti.h1EquivCohomFp_apply_mk` computes a class of
+`TauCeti.cohomFp n G 1` from the cocycle itself, with no unfolding. -/
+@[simp]
+theorem h1CoeffEquiv_apply_mk (htriv : ∀ (g : G) (m : ZMod n), g • m = m)
+    (c : Z1 G (ZMod n)) :
+    h1CoeffEquiv htriv (c : H1 G (ZMod n)) =
+      ContCohomology.explicitCoeff1 G (ZMod n)
+        ({ (trivialFpEquiv n G).symm.toAddEquiv.toAddMonoidHom with
+            map_smul' := fun g m => by rw [htriv g m]; rfl } :
+          ZMod n →+[G] ULift.{u} (ZMod n))
+        continuous_of_discreteTopology (c : H1 G (ZMod n)) := by
+  unfold h1CoeffEquiv
+  exact ContCohomology.explicitCoeff1Equiv_apply (G := G) (M := ZMod n)
+    (N := ULift.{u} (ZMod n)) (trivialFpEquiv n G).symm.toAddEquiv
+    continuous_of_discreteTopology continuous_of_discreteTopology
+    (fun g m => by rw [htriv g m]; rfl) (c : H1 G (ZMod n))
+
+/-- **The inverse coefficient transport reads the values back into `ZMod n`.** A class of the
+lifted `H¹` is sent to the class of the `1`-cocycle obtained by postcomposition with
+`ULift.moduleEquiv`, the equivalence identifying the lifted carrier with the carrier of
+`TauCeti.trivialFp n G`. The argument is the class of a canonical `1`-cocycle, the form
+`TauCeti.h1EquivCohomFp_symm_apply` produces. -/
+@[simp]
+theorem h1CoeffEquiv_symm_apply
+    (htriv : ∀ (g : G) (m : ZMod n), g • m = m)
+    (c : _root_.ContinuousCohomology.cocycles (trivialFp n G) 1) :
+    (h1CoeffEquiv htriv).symm ((cohomFpCocycleEquiv1 n G).symm c :
+        H1 G (ULift.{u} (ZMod n))) =
+      ContCohomology.explicitCoeff1 G (ULift.{u} (ZMod n))
+        ({ (ULift.moduleEquiv : ULift.{u} (ZMod n) ≃ₗ[ZMod n] ZMod n).toAddMonoidHom with
+            map_smul' := fun g m => by rw [smul_trivial, htriv] })
+        continuous_of_discreteTopology ((cohomFpCocycleEquiv1 n G).symm c :
+          H1 G (ULift.{u} (ZMod n))) := by
+  rw [h1CoeffEquiv,
+    ContCohomology.explicitCoeff1Equiv_symm_apply (G := G) (M := ZMod n)
+      (N := ULift.{u} (ZMod n)) (trivialFpEquiv n G).symm.toAddEquiv
+      continuous_of_discreteTopology continuous_of_discreteTopology
+      (fun g m => by rw [htriv g m]; rfl)
+      ((cohomFpCocycleEquiv1 n G).symm c : H1 G (ULift.{u} (ZMod n)))]
+  refine congrArg (fun f : ULift.{u} (ZMod n) →+[G] ZMod n =>
+    ContCohomology.explicitCoeff1 G (ULift.{u} (ZMod n)) f continuous_of_discreteTopology
+      ((cohomFpCocycleEquiv1 n G).symm c : H1 G (ULift.{u} (ZMod n)))) ?_
+  ext m
+  change (trivialFpEquiv n G) m = ULift.down m
+  exact trivialFpEquiv_apply (G := G) (p := n) (x := (m : ULift.{u} (ZMod n)))
+
 /-- **`H¹(G, 𝔽_n)` is the degree-one continuous cohomology of `TauCeti.cohomFp n G`, as an
 isomorphism of `ZMod n`-modules.**
 
@@ -433,6 +507,21 @@ theorem h1EquivCohomFp_apply_mk (htriv : ∀ (g : G) (m : ZMod n), g • m = m)
       ContCohomology.h1EquivCohomFpULift n G (h1CoeffEquiv htriv (c : H1 G (ZMod n))) := by
   unfold h1EquivCohomFp
   rfl
+
+/-- The inverse comparison sends a canonical cohomology class to the class of the continuous
+`1`-cocycle it corresponds to, read back into `ZMod n`. With
+`TauCeti.h1CoeffEquiv_symm_apply` this computes the class of that cocycle, so the comparison can
+be used in both directions without unfolding. -/
+@[simp]
+theorem h1EquivCohomFp_symm_apply (htriv : ∀ (g : G) (m : ZMod n), g • m = m)
+    (c : _root_.ContinuousCohomology.cocycles (trivialFp n G) 1) :
+    (h1EquivCohomFp htriv).symm
+        ((TopRep.homogeneousCochains (trivialFp n G)).homologyπ 1 c) =
+      (((h1CoeffEquiv htriv).symm
+          ((cohomFpCocycleEquiv1 n G).symm c : H1 G (ULift.{u} (ZMod n)))) :
+        H1 G (ZMod n)) := by
+  unfold h1EquivCohomFp
+  simp
 
 end Coefficients
 

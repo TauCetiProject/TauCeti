@@ -31,7 +31,14 @@ further identification with the continuous `𝔽_p`-dual of `G ⧸ Φ(G)`
 `TauCeti.h1EquivFrattiniQuotientDual_apply_mk` and
 `TauCeti.h1EquivFrattiniQuotientDual_symm_apply` compute it in both directions. This step, too,
 needs neither profiniteness nor a pro-`p` hypothesis; what is specific to a pro-`p` group is the
-numerical transfer that follows, for which compactness and total disconnectedness are needed.
+numerical transfer that follows, for which compactness and total disconnectedness are needed. The
+same two identifications on the canonical carrier,
+`TauCeti.cohomFpEquivContinuousZModDual` and
+`TauCeti.cohomFpEquivFrattiniQuotientDual`, are computed in both directions by
+`TauCeti.cohomFpEquivContinuousZModDual_apply`,
+`TauCeti.cohomFpEquivContinuousZModDual_symm_apply`,
+`TauCeti.cohomFpEquivFrattiniQuotientDual_apply` and
+`TauCeti.cohomFpEquivFrattiniQuotientDual_symm_apply`.
 
 Here `H¹` is the explicit inhomogeneous group `TauCeti.ContCohomology.H1 G (ZMod p) = Z¹/B¹`.
 Continuous cohomology with the same coefficients is reached through
@@ -66,6 +73,12 @@ rank.
 * `TauCeti.h1EquivFrattiniQuotientDual_apply_mk` and
   `TauCeti.h1EquivFrattiniQuotientDual_symm_apply`: the identification in both directions, evaluated
   on the Frattini quotient.
+* `TauCeti.cohomFpEquivContinuousZModDual_apply`,
+  `TauCeti.cohomFpEquivContinuousZModDual_symm_apply`,
+  `TauCeti.cohomFpEquivFrattiniQuotientDual_apply` and
+  `TauCeti.cohomFpEquivFrattiniQuotientDual_symm_apply`: the two identifications on the canonical
+  carrier, in both directions, evaluated on the homogeneous `1`-cocycle a class carries and on a
+  continuous character.
 * `TauCeti.IsProP.rank_H1_eq_topologicalGeneratorRank`: the dimension of `H¹(G, 𝔽_p)` over
   `𝔽_p` is the topological generator rank of `G`, as an identity of cardinals.
 * `TauCeti.IsProP.finrank_H1_eq_topologicalGeneratorRankNat`: the natural-number form of the
@@ -164,6 +177,67 @@ identification itself. -/
 noncomputable def cohomFpEquivFrattiniQuotientDual :
     cohomFp p G 1 ≃ₗ[ZMod p] continuousZModDual p (G ⧸ proPFrattini p G) :=
   (h1EquivCohomFp htriv).symm.trans (h1EquivFrattiniQuotientDual htriv)
+
+/-- The image of a canonical cohomology class is the character its homogeneous cocycle defines:
+evaluated at `g` it is the value of the inhomogeneous `1`-cocycle the class carries, read through
+`TauCeti.trivialFpEquiv`. -/
+@[simp]
+theorem cohomFpEquivContinuousZModDual_apply
+    (c : _root_.ContinuousCohomology.cocycles (trivialFp p G) 1) (g : G) :
+    Additive.toMul (cohomFpEquivContinuousZModDual htriv
+        ((TopRep.homogeneousCochains (trivialFp p G)).homologyπ 1 c)) g
+      = Multiplicative.ofAdd
+          (trivialFpEquiv p G (((cohomFpCocycleEquiv1 p G).symm c :
+            G → ULift.{u} (ZMod p)) g)) := by
+  simp only [cohomFpEquivContinuousZModDual, LinearEquiv.trans_apply,
+    h1EquivContinuousZModDual_apply_mk, h1EquivCohomFp_symm_apply, h1CoeffEquiv_symm_apply,
+    ContCohomology.explicitCoeff1_mk, ContCohomology.cocyclesMap1_apply,
+    cohomFpCocycleEquiv1_symm_apply, CategoryTheory.Functor.mapHomologicalComplex_obj_X]
+  exact (trivialFpEquiv_apply (p := p) (G := G) (x := _)).symm
+
+/-- The inverse image of a continuous `𝔽_p`-valued character of `G` is the canonical
+cohomology class of the homogeneous `1`-cocycle it corresponds to, read from the class of the
+continuous `1`-cocycle in `H¹(G, 𝔽_p)`. -/
+@[simp]
+theorem cohomFpEquivContinuousZModDual_symm_apply (φ : continuousZModDual p G) :
+    (cohomFpEquivContinuousZModDual htriv).symm φ
+      = h1EquivCohomFp htriv (((Z1EquivOfSmulEqSelf htriv).symm φ : H1 G (ZMod p))) := by
+  refine (cohomFpEquivContinuousZModDual htriv).symm_apply_eq.2 ?_
+  rw [cohomFpEquivContinuousZModDual, LinearEquiv.trans_apply,
+    LinearEquiv.symm_apply_apply, ← h1EquivContinuousZModDual_symm_apply,
+    LinearEquiv.apply_symm_apply]
+
+/-- The image of a canonical cohomology class is the character its homogeneous cocycle defines on
+the pro-`p` Frattini quotient: evaluated on the class of `g` it is the value of the inhomogeneous
+`1`-cocycle the class carries, read through `TauCeti.trivialFpEquiv`. -/
+@[simp]
+theorem cohomFpEquivFrattiniQuotientDual_apply
+    (c : _root_.ContinuousCohomology.cocycles (trivialFp p G) 1) (g : G) :
+    Additive.toMul (cohomFpEquivFrattiniQuotientDual htriv
+        ((TopRep.homogeneousCochains (trivialFp p G)).homologyπ 1 c))
+      (g : G ⧸ proPFrattini p G) = Multiplicative.ofAdd
+          (trivialFpEquiv p G (((cohomFpCocycleEquiv1 p G).symm c :
+            G → ULift.{u} (ZMod p)) g)) := by
+  simp only [cohomFpEquivFrattiniQuotientDual, LinearEquiv.trans_apply,
+    h1EquivFrattiniQuotientDual_apply_mk, h1EquivCohomFp_symm_apply, h1CoeffEquiv_symm_apply,
+    ContCohomology.explicitCoeff1_mk, ContCohomology.cocyclesMap1_apply,
+    cohomFpCocycleEquiv1_symm_apply, CategoryTheory.Functor.mapHomologicalComplex_obj_X]
+  exact (trivialFpEquiv_apply (p := p) (G := G) (x := _)).symm
+
+/-- The inverse image of a continuous `𝔽_p`-valued character of the pro-`p` Frattini
+quotient is the canonical cohomology class of the homogeneous `1`-cocycle it corresponds to, read
+from the class in `H¹(G, 𝔽_p)`. -/
+@[simp]
+theorem cohomFpEquivFrattiniQuotientDual_symm_apply
+    (φ : continuousZModDual p (G ⧸ proPFrattini p G)) :
+    (cohomFpEquivFrattiniQuotientDual htriv).symm φ
+      = h1EquivCohomFp htriv
+          (((Z1EquivOfSmulEqSelf htriv).symm
+              ((frattiniQuotientDualEquiv (p := p) (G := G)) φ) : H1 G (ZMod p))) := by
+  refine (cohomFpEquivFrattiniQuotientDual htriv).symm_apply_eq.2 ?_
+  rw [cohomFpEquivFrattiniQuotientDual, LinearEquiv.trans_apply,
+    LinearEquiv.symm_apply_apply, ← h1EquivFrattiniQuotientDual_symm_apply,
+    LinearEquiv.apply_symm_apply]
 
 end CohomFp
 
