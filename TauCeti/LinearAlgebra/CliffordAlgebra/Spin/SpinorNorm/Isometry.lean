@@ -89,17 +89,12 @@ theorem map_ker_spinorNorm (e : Q.IsometryEquiv Q') (hQ : Q.Nondegenerate) :
       MonoidHom.ker (@spinorNorm K W _ _ _ e.toLinearEquiv.finiteDimensional _ Q'
         (e.nondegenerate_iff.mp hQ)) := by
   let _ : FiniteDimensional K W := e.toLinearEquiv.finiteDimensional
+  apply (Subgroup.map_symm_eq_iff_map_eq
+    (MonoidHom.ker (spinorNorm Q hQ))).mp
+  rw [← MonoidHom.ker_comp_mulEquiv]
+  congr 1
   ext g
-  constructor
-  · rintro ⟨f, hf, rfl⟩
-    exact (e.spinorNorm_specialOrthogonalGroupCongr hQ f).trans hf
-  · intro hg
-    refine ⟨e.specialOrthogonalGroupCongr.symm g, ?_,
-      e.specialOrthogonalGroupCongr.apply_symm_apply g⟩
-    have h := e.spinorNorm_specialOrthogonalGroupCongr hQ
-      (e.specialOrthogonalGroupCongr.symm g)
-    rw [e.specialOrthogonalGroupCongr.apply_symm_apply] at h
-    exact h.symm.trans hg
+  exact e.spinorNorm_specialOrthogonalGroupCongr hQ g
 
 /-- An isometric equivalence restricts to an equivalence of spinor-norm kernels. -/
 noncomputable def spinorNormKernelCongr (e : Q.IsometryEquiv Q') (hQ : Q.Nondegenerate) :
