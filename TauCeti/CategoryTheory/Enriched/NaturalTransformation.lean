@@ -12,7 +12,8 @@ public import Mathlib.CategoryTheory.Enriched.Ordinary.Basic
 
 The monoidal unit gives graded natural transformations with ordinary components. This module
 relates their graded naturality to naturality after forgetting enrichment, and provides identity
-and composition for these transformations.
+and composition for these transformations. Opening `TauCeti` enables dot notation for these
+operations on Mathlib's `GradedNatTrans` and `EnrichedFunctor`.
 -/
 
 public section
@@ -135,7 +136,7 @@ private theorem unitGradedNaturality
     _ = _ := by simpa only [Category.assoc] using
       (congrArg (fun q => q ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) hR.symm)
 
-namespace GradedNatTrans
+namespace CategoryTheory.GradedNatTrans
 
 /-- Forget enrichment of a graded natural transformation at the monoidal unit. -/
 noncomputable def toOrdinary
@@ -171,7 +172,7 @@ theorem toOrdinary_app
   unfold toOrdinary
   rfl
 
-end GradedNatTrans
+end CategoryTheory.GradedNatTrans
 
 omit [BraidedCategory V] in
 /-- Two enriched whiskering squares compose along their ordinary components. -/
@@ -198,7 +199,7 @@ theorem composeNaturalSquares
     _ = _ := by simpa only [Category.assoc] using
       (congrArg (fun q => q ≫ eHomWhiskerRight V aX HY) hb)
 
-namespace GradedNatTrans
+namespace CategoryTheory.GradedNatTrans
 
 /-- Composition of graded natural transformations at the monoidal unit. -/
 noncomputable def unitComp {F G H : EnrichedFunctor V C' D'}
@@ -244,9 +245,9 @@ theorem unitComp_app_homOf {F G H : EnrichedFunctor V C' D'}
   rw [unitComp_app]
   rfl
 
-end GradedNatTrans
+end CategoryTheory.GradedNatTrans
 
-namespace GradedNatTrans
+namespace CategoryTheory.EnrichedFunctor
 
 /-- Identity graded natural transformation at the monoidal unit. -/
 noncomputable def unitId (F : EnrichedFunctor V C' D') :
@@ -280,7 +281,7 @@ theorem unitId_app (F : EnrichedFunctor V C' D') (X : C') :
   unfold unitId
   rfl
 
-end GradedNatTrans
+end CategoryTheory.EnrichedFunctor
 
 end GradedBridge
 

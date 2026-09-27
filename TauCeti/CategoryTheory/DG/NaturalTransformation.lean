@@ -45,18 +45,18 @@ namespace DGNatTrans
 
 /-- The identity DG natural transformation. -/
 noncomputable def id (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
-    DGNatTrans F F := GradedNatTrans.unitId F
+    DGNatTrans F F := TauCeti.CategoryTheory.EnrichedFunctor.unitId F
 
 /-- Composition of DG natural transformations. -/
 noncomputable def comp {F G H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
     (α : DGNatTrans F G) (β : DGNatTrans G H) : DGNatTrans F H :=
-  GradedNatTrans.unitComp α β
+  TauCeti.CategoryTheory.GradedNatTrans.unitComp α β
 
 /-- The component of the identity DG natural transformation. -/
 @[simp]
 theorem id_app (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
     (X : C) : (id F).app X = eId _ (F.obj X) := by
-  simp only [id, GradedNatTrans.unitId_app]
+  simp only [id, TauCeti.CategoryTheory.EnrichedFunctor.unitId_app]
   rfl
 
 /-- The component of a composite DG natural transformation. -/
@@ -65,7 +65,7 @@ theorem comp_app {F G H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ)
     (α : DGNatTrans F G) (β : DGNatTrans G H) (X : C) :
     (comp α β).app X = eHomEquiv _
       (ForgetEnrichment.homOf _ (α.app X) ≫ ForgetEnrichment.homOf _ (β.app X)) := by
-  simp only [comp, GradedNatTrans.unitComp_app]
+  simp only [comp, TauCeti.CategoryTheory.GradedNatTrans.unitComp_app]
   rfl
 
 end DGNatTrans
@@ -124,8 +124,9 @@ noncomputable def mapDGHomotopyCategory
     rcases Y with ⟨Y⟩
     obtain ⟨g, hg, rfl⟩ := TauCeti.exists_dgHomotopyClass_eq R f
     have h := congrArg (fun q => (TauCeti.dgClosedToHomotopy (C := D) R).map q)
-      ((GradedNatTrans.toOrdinary α).naturality (TauCeti.dgClosedHomOf R g hg))
-    simp only [GradedNatTrans.toOrdinary_app] at h
+      ((TauCeti.CategoryTheory.GradedNatTrans.toOrdinary α).naturality
+        (TauCeti.dgClosedHomOf R g hg))
+    simp only [TauCeti.CategoryTheory.GradedNatTrans.toOrdinary_app] at h
     rw [Functor.map_comp, Functor.map_comp] at h
     have hmap (J : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
         (TauCeti.dgClosedToHomotopy (C := D) R).map
