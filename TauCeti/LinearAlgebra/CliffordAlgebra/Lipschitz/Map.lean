@@ -76,7 +76,6 @@ theorem coe_lipschitzGroupMapOf_apply (F : CliffordAlgebra Q →+* CliffordAlgeb
   exact Units.coe_map F.toMonoidHom (x : (CliffordAlgebra Q)ˣ)
 
 /-- Mapping the inverse of a Lipschitz unit agrees with taking the inverse after restriction. -/
-@[simp]
 theorem lipschitzGroupMapOf_inv_coe (F : CliffordAlgebra Q →+* CliffordAlgebra Q')
     (f : M → N) (hF : ∀ m, F (ι Q m) = ι Q' (f m)) (x : lipschitzGroup Q) :
     F ((((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) =
