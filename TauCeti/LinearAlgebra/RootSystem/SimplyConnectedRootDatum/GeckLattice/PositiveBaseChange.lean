@@ -264,10 +264,10 @@ theorem geckTorusPositiveBaseChangeCoordinateIso_hom_comp_root
     (i : Fin t.rank) :
     (t.geckTorusPositiveBaseChangeCoordinateIso ht A).hom ≫
         CommHopfAlgCat.baseChangeMap
-          ((eqToIso (congrArg
+          (eqToHom (congrArg
               (CommHopfAlgCat.quotient
                 (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
-              (t.geckTorusPositiveDefiningIdeal_def ht))).hom ≫
+              (t.geckTorusPositiveDefiningIdeal_def ht)) ≫
             kostantRootSubgroupTorusSubsystemCoordinateMap
               (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
               (t.geckCoordinateLattice ht).toAddSubgroup
@@ -279,7 +279,7 @@ theorem geckTorusPositiveBaseChangeCoordinateIso_hom_comp_root
   apply CommHopfAlgCat.mkQuotient_hom_ext
   rw [← Category.assoc, mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateIso_hom,
     ← (CommHopfAlgCat.baseChangeFunctor (K := A)).map_comp,
-    ← Category.assoc, eqToIso.hom,
+    ← Category.assoc,
     CommHopfAlgCat.mkQuotient_comp_eqToHom
       (t.geckTorusPositiveDefiningIdeal_def ht).symm,
     mkQuotient_comp_kostantRootSubgroupTorusSubsystemCoordinateMap,
@@ -324,10 +324,10 @@ extension of its integral factorization through the positive carrier. -/
 theorem geckTorusPositiveBaseChangeCoordinateIso_hom_comp_weightTorus :
     (t.geckTorusPositiveBaseChangeCoordinateIso ht A).hom ≫
         CommHopfAlgCat.baseChangeMap
-          ((eqToIso (congrArg
+          (eqToHom (congrArg
               (CommHopfAlgCat.quotient
                 (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
-              (t.geckTorusPositiveDefiningIdeal_def ht))).hom ≫
+              (t.geckTorusPositiveDefiningIdeal_def ht)) ≫
             kostantWeightTorusTorusSubsystemCoordinateMap
               (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
               (t.geckCoordinateLattice ht).toAddSubgroup
@@ -338,7 +338,7 @@ theorem geckTorusPositiveBaseChangeCoordinateIso_hom_comp_weightTorus :
   apply CommHopfAlgCat.mkQuotient_hom_ext
   rw [← Category.assoc, mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateIso_hom,
     ← (CommHopfAlgCat.baseChangeFunctor (K := A)).map_comp,
-    ← Category.assoc, eqToIso.hom,
+    ← Category.assoc,
     CommHopfAlgCat.mkQuotient_comp_eqToHom
       (t.geckTorusPositiveDefiningIdeal_def ht).symm,
     mkQuotient_comp_kostantWeightTorusTorusSubsystemCoordinateMap,
