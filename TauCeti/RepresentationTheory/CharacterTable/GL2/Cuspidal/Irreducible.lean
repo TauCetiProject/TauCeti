@@ -9,6 +9,8 @@ module
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.Cuspidal.Basic
 public import TauCeti.RepresentationTheory.Simple.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.Complex
+-- Non-public: bundling a representation with `FDRep.of` preserves its character.
+import TauCeti.RepresentationTheory.FDRep
 -- Non-public: Frobenius reciprocity for class functions turns each pairing with an induced
 -- character into a sum over the inducing subgroup.
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
@@ -324,11 +326,6 @@ private theorem gl2CuspidalRepresentation_spec (theta : Eˣ →* ℂˣ) (psi : A
         (GL2CuspidalVirtualCharacter F E hE theta psi).1 :=
   (exists_gl2Cuspidal hE theta psi hpsi htheta).choose_spec.choose_spec
 
-private theorem character_fdRepOf {G : Type*} {V : Type} [Monoid G] [AddCommGroup V]
-    [Module ℂ V] [FiniteDimensional ℂ V] (rho : Representation ℂ G V) :
-    (FDRep.of rho).character = rho.character := by
-  rfl
-
 /-- **The cuspidal representation of `GL₂(𝔽_q)` attached to a general-position character
 `θ : Eˣ → ℂˣ`.** The auxiliary additive character is Mathlib's canonical primitive complex
 character of `F`, so it does not appear in the public cuspidal datum. -/
@@ -348,7 +345,7 @@ theorem character_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (GL2Cuspidal hE theta htheta).character =
       (GL2CuspidalVirtualCharacter F E hE theta
         (AddChar.FiniteField.primitiveChar_to_Complex F)).1 := by
-  rw [GL2Cuspidal, character_fdRepOf]
+  rw [GL2Cuspidal, FDRep.character_of]
   exact (gl2CuspidalRepresentation_spec hE theta
     (AddChar.FiniteField.primitiveChar_to_Complex F)
     (by
