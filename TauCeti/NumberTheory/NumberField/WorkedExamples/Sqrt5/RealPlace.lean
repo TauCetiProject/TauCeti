@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
+public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Basic
-import Mathlib.Analysis.Real.Sqrt
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 
 /-!
 # The real places of `ℚ(√5)`
 
 For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ = X² − X − 1`, the
-golden ratio `φ = (1 + √5)/2` is a real root of `X² − X − 1`, so there is a real infinite place
-`w` with `w θ = φ`; in degree two this forces two real places, hence unit rank one.
+golden ratio `Real.goldenRatio = (1 + √5)/2` is a real root of `X² − X − 1`, so there is a real
+infinite place `w` with `w θ = Real.goldenRatio`; in degree two this forces two real places,
+hence unit rank one.
 
 ## Main results
 
@@ -31,30 +32,16 @@ open scoped NumberField
 
 namespace TauCeti.NumberField.Sqrt5
 
-/-- The golden ratio `(1 + √5) / 2` is a root of `X² − X − 1`. -/
-theorem goldenRatio_sq : ((1 + Real.sqrt 5) / 2) ^ 2 = (1 + Real.sqrt 5) / 2 + 1 := by
-  have h := Real.sq_sqrt (show (0 : ℝ) ≤ 5 by norm_num)
-  linear_combination h / 4
-
-/-- Numerical bounds on the golden ratio: `1.6 < (1 + √5) / 2 < 1.62`. -/
-theorem goldenRatio_bounds :
-    (1.6 : ℝ) < (1 + Real.sqrt 5) / 2 ∧ (1 + Real.sqrt 5) / 2 < 1.62 := by
-  have h1 : (2.2 : ℝ) < Real.sqrt 5 := by
-    rw [Real.lt_sqrt (by norm_num)]; norm_num
-  have h2 : Real.sqrt 5 < 2.24 := by
-    rw [Real.sqrt_lt' (by norm_num)]; norm_num
-  constructor <;> linarith
-
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 /-- **The real place at the golden ratio.** There is a real infinite place `w` of `ℚ(√5)` with
-`w θ = (1 + √5) / 2`. -/
+`w θ = Real.goldenRatio`. -/
 theorem exists_isReal_and_apply_eq_goldenRatio (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    ∃ w : InfinitePlace K, w.IsReal ∧ w θ = (1 + Real.sqrt 5) / 2 := by
-  obtain ⟨φ, hφ⟩ : ∃ φ : ℝ, φ = (1 + Real.sqrt 5) / 2 := ⟨_, rfl⟩
-  have hφ2 : φ ^ 2 = φ + 1 := by rw [hφ]; exact goldenRatio_sq
-  have hφl : 1.6 < φ := by rw [hφ]; exact goldenRatio_bounds.1
+    ∃ w : InfinitePlace K, w.IsReal ∧ w θ = Real.goldenRatio := by
+  obtain ⟨φ, hφ⟩ : ∃ φ : ℝ, φ = Real.goldenRatio := ⟨_, rfl⟩
+  have hφ2 : φ ^ 2 = φ + 1 := by rw [hφ]; exact Real.goldenRatio_sq
+  have hφ0 : 0 < φ := by rw [hφ]; exact Real.goldenRatio_pos
   let ϑ : IntegralPrimitiveElement K := ⟨θ, hgen⟩
   -- The real embedding sending `θ` to `φ`.
   have hroot : aeval φ (minpoly ℚ (IntegralPrimitiveElement.powerBasis ϑ).gen) = 0 := by
@@ -76,7 +63,7 @@ theorem exists_isReal_and_apply_eq_goldenRatio (hmin : minpoly ℤ θ = X ^ 2 - 
   rw [InfinitePlace.apply, ← hφ]
   simp only [ψ, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hfθ,
     Complex.ofRealHom_eq_coe, Complex.norm_real, Real.norm_eq_abs]
-  exact abs_of_pos (by linarith)
+  exact abs_of_pos hφ0
 
 /-- `ℚ(√5)` has unit rank one. -/
 theorem rank_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
