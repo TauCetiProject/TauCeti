@@ -49,7 +49,9 @@ theorem projectiveLiftingFactorSet_characterTransgression_surjective :
   have hfac : (projectiveLiftingFactorSet k G).map ev =
       (isProjectiveRep_twistedRegularRep k G α).factorSet := by
     ext p
-    simp [ev, b, IsProjectiveRep.factorSet_apply]
+    simp only [FactorSet.map_apply, ev, projectiveLiftingCharacter_apply,
+      projectiveLiftingFactorSet_apply, b, IsFactorSet.coe_toRootsOfUnityFactorSet_apply,
+      IsProjectiveRep.factorSet_apply]
   exact (congrArg FactorSet.cohomologyClass hfac).trans
     ((IsProjectiveRep.cohomologyClass_def _).symm.trans hx)
 

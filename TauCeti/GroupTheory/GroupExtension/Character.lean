@@ -45,10 +45,46 @@ noncomputable def characterTransgression (χ : M →*[G] A) :
     H2 (Rep.ofMulDistribMulAction G A) :=
   (α.map χ).cohomologyClass
 
-@[simp]
 theorem characterTransgression_apply (χ : M →*[G] A) :
     α.characterTransgression χ = (α.map χ).cohomologyClass :=
   (rfl)
+
+/-- The trivial kernel character has zero transgression. -/
+@[simp]
+theorem characterTransgression_one :
+    α.characterTransgression
+      { (1 : M →* A) with
+        toFun := (1 : M →* A)
+        map_smul' := fun _ _ ↦ (smul_one _).symm } = 0 := by
+  rw [characterTransgression_apply]
+  have h : α.map
+      { (1 : M →* A) with
+        toFun := (1 : M →* A)
+        map_smul' := fun _ _ ↦ (smul_one _).symm } = trivial G A := by
+    ext p
+    simp only [map_apply, trivial_apply]
+    rfl
+  rw [h, cohomologyClass_trivial]
+
+/-- Pointwise products of kernel characters transgress to sums of cohomology classes. -/
+@[simp]
+theorem characterTransgression_mul (χ χ' : M →*[G] A) :
+    α.characterTransgression
+      { χ.toMonoidHom * χ'.toMonoidHom with
+        toFun := χ.toMonoidHom * χ'.toMonoidHom
+        map_smul' := fun g a ↦ by
+          change χ (g • a) * χ' (g • a) = g • (χ a * χ' a)
+          rw [map_smul, map_smul, smul_mul'] } =
+      α.characterTransgression χ + α.characterTransgression χ' := by
+  simp only [characterTransgression_apply, cohomologyClass_def, ← map_add]
+  congr 1
+  apply cocycles₂_ext
+  intro g h
+  simp only [coe_toCocycles₂, map_apply]
+  change Additive.ofMul (χ (α (g, h)) * χ' (α (g, h))) =
+    (α.map χ).toCocycles₂ (g, h) + (α.map χ').toCocycles₂ (g, h)
+  simp only [coe_toCocycles₂, map_apply, ofMul_mul]
+  rfl
 
 include hA
 

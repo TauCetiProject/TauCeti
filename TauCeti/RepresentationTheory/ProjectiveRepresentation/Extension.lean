@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Basic
 
@@ -129,6 +130,27 @@ theorem trivialMulDistribMulAction_smul {G M : Type*} [Monoid G] [Monoid M] (g :
   rfl
 
 end TrivialActionSmul
+
+section RootsOfUnity
+
+attribute [local instance] trivialMulDistribMulAction
+
+variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ}
+
+/-- A factor set whose values have exponent dividing `n`, valued in the `n`-th roots of unity. -/
+def IsFactorSet.toRootsOfUnityFactorSet (hα : IsFactorSet α) {n : ℕ}
+    (hpow : ∀ g h, α g h ^ n = 1) : FactorSet G (rootsOfUnity n k) where
+  toFun p := ⟨α p.1 p.2, (mem_rootsOfUnity _ _).2 (hpow p.1 p.2)⟩
+  isMulCocycle₂' g h j := Subtype.ext (hα.cocycle g h j)
+  map_one_one' := Subtype.ext (hα.one_left 1)
+
+@[simp]
+theorem IsFactorSet.coe_toRootsOfUnityFactorSet_apply (hα : IsFactorSet α) {n : ℕ}
+    (hpow : ∀ g h, α g h ^ n = 1) (p : G × G) :
+    (hα.toRootsOfUnityFactorSet hpow p : kˣ) = α p.1 p.2 :=
+  (rfl)
+
+end RootsOfUnity
 
 section GeneralAction
 

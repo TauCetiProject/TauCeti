@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Extension
-public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Finite
 
 /-!
@@ -81,25 +80,6 @@ theorem projectiveLiftingFactorSet_ker_le_center :
 
 end
 
-section RootsOfUnity
-
-variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ}
-
-/-- A factor set whose values have exponent dividing `n`, valued in the `n`-th roots of unity. -/
-def IsFactorSet.toRootsOfUnityFactorSet (hα : IsFactorSet α) {n : ℕ}
-    (hpow : ∀ g h, α g h ^ n = 1) : FactorSet G (rootsOfUnity n k) where
-  toFun p := ⟨α p.1 p.2, (mem_rootsOfUnity _ _).2 (hpow p.1 p.2)⟩
-  isMulCocycle₂' g h j := Subtype.ext (hα.cocycle g h j)
-  map_one_one' := Subtype.ext (hα.one_left 1)
-
-@[simp]
-theorem IsFactorSet.coe_toRootsOfUnityFactorSet_apply (hα : IsFactorSet α) {n : ℕ}
-    (hpow : ∀ g h, α g h ^ n = 1) (p : G × G) :
-    (hα.toRootsOfUnityFactorSet hpow p : kˣ) = α p.1 p.2 :=
-  (rfl)
-
-end RootsOfUnity
-
 section
 
 variable {k G : Type*} [Field k] [Group G] [Finite G]
@@ -125,7 +105,8 @@ theorem IsProjectiveRep.exists_commonExtension_linearization [IsAlgClosed k]
       (Function.curry ⇑((projectiveLiftingFactorSet k G).map ev)) := by
     have heq : Function.curry ⇑((projectiveLiftingFactorSet k G).map ev) = β := by
       funext g h
-      simp [Function.curry, ev, b, β]
+      simp only [Function.curry, FactorSet.map_apply, ev, projectiveLiftingCharacter_apply,
+        projectiveLiftingFactorSet_apply, b, IsFactorSet.coe_toRootsOfUnityFactorSet_apply, β]
     rw [heq]
     exact hβ
   refine ⟨(hβ'.linearization trivialMulDistribMulAction_smul).comp
