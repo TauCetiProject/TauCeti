@@ -17,9 +17,10 @@ value of the defining function exactly once. Thus an intermediate level provides
 canonical time origin for each parametrized connecting trajectory, a useful slice when forming
 Morse trajectory spaces modulo time translation.
 
-The argument only needs differentiability along the orbit. In particular it does not require
-global regularity of the gradient: a hypothetical plateau would force a stationary interval,
-and hence a periodic orbit, which is impossible for a nonconstant negative-gradient trajectory.
+The argument needs differentiability along the orbit and continuity of the defining function
+at the limiting endpoints. It does not require global regularity of the gradient: a hypothetical
+plateau would force a stationary interval, and hence a periodic orbit, which is impossible for a
+nonconstant negative-gradient trajectory.
 
 The level-slice construction follows the trajectory-space viewpoint of Audin--Damian,
 *Morse Theory and Floer Homology*, Chapter 2.
@@ -35,11 +36,10 @@ namespace Flow
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {φ : _root_.Flow ℝ E} {f : E → ℝ} {p q x : E}
 
-/-- On a connecting orbit with distinct endpoints, the defining function strictly decreases
-with time. In particular no two times on that orbit have the same value. -/
-theorem IsNegativeGradient.strictAnti_value_of_mem_unstableSet_inter_stableSet
+/-- On a nonconstant negative-gradient orbit, the defining function strictly decreases with time. -/
+theorem IsNegativeGradient.orbit_strictAnti_of_nonconstant
     (hφ : IsNegativeGradient φ f) (hf : ∀ t, DifferentiableAt ℝ f (φ t x))
-    (hpq : p ≠ q) (hx : x ∈ unstableSet φ p ∩ stableSet φ q) :
+    (hnonconst : ∃ t, φ t x ≠ x) :
     StrictAnti (fun t : ℝ ↦ f (φ t x)) := by
   have hanti := hφ.orbit_antitone x hf
   apply hanti.strictAnti_of_injective
@@ -81,9 +81,21 @@ theorem IsNegativeGradient.strictAnti_value_of_mem_unstableSet_inter_stableSet
     simp only [φ.map_add, hfix]
   have hconst := TauCeti.IsIntegralCurve.eq_of_periodic_neg_gradient
     (hφ.isIntegralCurve x) hf (sub_pos.mpr huv) hperiod
+  obtain ⟨t, ht⟩ := hnonconst
+  exact ht (by simpa only [φ.map_zero_apply] using hconst t 0)
+
+/-- On a connecting orbit with distinct endpoints, the defining function strictly decreases
+with time. In particular no two times on that orbit have the same value. -/
+theorem IsNegativeGradient.orbit_strictAnti_of_mem_unstableSet_inter_stableSet
+    (hφ : IsNegativeGradient φ f) (hf : ∀ t, DifferentiableAt ℝ f (φ t x))
+    (hpq : p ≠ q) (hx : x ∈ unstableSet φ p ∩ stableSet φ q) :
+    StrictAnti (fun t : ℝ ↦ f (φ t x)) := by
+  apply hφ.orbit_strictAnti_of_nonconstant hf
+  by_contra hnonconst
   have horbit : ∀ t, φ t x = x := by
     intro t
-    simpa only [φ.map_zero_apply] using hconst t 0
+    by_contra ht
+    exact hnonconst ⟨t, ht⟩
   have hxp : x = p := tendsto_nhds_unique tendsto_const_nhds (by
     simpa only [horbit] using (mem_unstableSet.mp hx.1))
   have hxq : x = q := tendsto_nhds_unique tendsto_const_nhds (by
@@ -91,12 +103,12 @@ theorem IsNegativeGradient.strictAnti_value_of_mem_unstableSet_inter_stableSet
   exact hpq (hxp.symm.trans hxq)
 
 /-- A connecting negative-gradient trajectory crosses each value strictly between its limiting
-critical values at exactly one time. The unique time gives a canonical representative of its
+endpoint values at exactly one time. The unique time gives a canonical representative of its
 time-translation orbit on that level. -/
 theorem IsNegativeGradient.existsUnique_time_value_of_mem_unstableSet_inter_stableSet
     (hφ : IsNegativeGradient φ f) (hf : ∀ t, DifferentiableAt ℝ f (φ t x))
     (hfp : ContinuousAt f p) (hfq : ContinuousAt f q)
-    (hpq : p ≠ q) (hx : x ∈ unstableSet φ p ∩ stableSet φ q)
+    (hx : x ∈ unstableSet φ p ∩ stableSet φ q)
     {c : ℝ} (hc : f q < c ∧ c < f p) :
     ∃! t : ℝ, f (φ t x) = c := by
   have hcont : Continuous (fun t : ℝ ↦ f (φ t x)) := by
@@ -112,8 +124,12 @@ theorem IsNegativeGradient.existsUnique_time_value_of_mem_unstableSet_inter_stab
   obtain ⟨t, ht⟩ := intermediate_value_univ₂_eventually₂ continuous_const hcont
     (hbot.eventually (eventually_gt_nhds hc.2) |>.mono fun _ h ↦ h.le)
     (htop.eventually (eventually_lt_nhds hc.1) |>.mono fun _ h ↦ h.le)
+  have hpq : p ≠ q := by
+    intro hpq
+    simp only [hpq] at hc
+    exact (lt_asymm hc.1 hc.2)
   exact ⟨t, ht.symm, fun u hu ↦
-    (hφ.strictAnti_value_of_mem_unstableSet_inter_stableSet hf hpq hx).injective
+    (hφ.orbit_strictAnti_of_mem_unstableSet_inter_stableSet hf hpq hx).injective
       (hu.trans ht)⟩
 
 end Flow
