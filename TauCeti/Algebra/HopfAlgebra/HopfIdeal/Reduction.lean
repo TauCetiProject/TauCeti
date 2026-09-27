@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
+public import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
 # Reduction of commutative Hopf algebras
@@ -72,7 +72,8 @@ noncomputable def reduction
 @[simp]
 theorem reduction_toIdeal
     [IsReduced ((H ⧸ nilradical H) ⊗[R] (H ⧸ nilradical H))] :
-    (reduction R H).toIdeal = nilradical H := (rfl)
+    (reduction R H).toIdeal = nilradical H :=
+  (toIdeal_carrier _).trans (ofIdeal_carrier _ _ _ _)
 
 /-- Membership in the reduction Hopf ideal is nilpotence. -/
 @[simp]
@@ -84,9 +85,8 @@ theorem mem_reduction
 /-- The quotient by the reduction Hopf ideal is reduced. -/
 instance isReduced_quotient_reduction
     [IsReduced ((H ⧸ nilradical H) ⊗[R] (H ⧸ nilradical H))] :
-    IsReduced (H ⧸ (reduction R H).toIdeal) := by
-  rw [← Ideal.isRadical_iff_quotient_reduced, reduction_toIdeal]
-  exact Ideal.radical_isRadical ⊥
+    IsReduced (H ⧸ (reduction R H).toIdeal) :=
+  inferInstanceAs (IsReduced (H ⧸ nilradical H))
 
 /-- The reduction is contained in every Hopf ideal whose quotient is reduced. -/
 theorem reduction_le_of_isReduced_quotient
