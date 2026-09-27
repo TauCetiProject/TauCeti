@@ -34,9 +34,7 @@ theorem card_fiber_compactifiedQuotientMap_of_stabilizer_eq_bot (h : Δ ≤ Γ)
     Nat.card {y : Δ.CompactifiedQuotient //
       compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)} =
       (Δ.subgroupOf Γ).index := by
-  rw [← Nat.card_congr (orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z))]
-  apply TauCeti.card_fiber_orbitRel_map_of_stabilizer_le_normalCore h z
-  rw [hz]
-  exact bot_le
+  apply card_fiber_compactifiedQuotientMap_of_stabilizer_le_normalCore h z
+  simpa only [hz] using (bot_le : (⊥ : Subgroup Γ) ≤ (Δ.subgroupOf Γ).normalCore)
 
 end Subgroup

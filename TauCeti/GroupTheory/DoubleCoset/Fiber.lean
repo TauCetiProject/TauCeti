@@ -40,6 +40,13 @@ noncomputable def cosetToOrbitRelMapFiber {H K : Subgroup G} (h : H ≤ K) (x : 
       simp only [orbitOfCosetTranslate_mk, TauCeti.Setoid.map_of_le_mk]
       exact Quotient.sound (orbitRel_apply.mpr (mem_orbit _ k⁻¹))⟩
 
+/-- The coset-to-fibre map sends a coset to the orbit of its inverse translate. -/
+@[simp]
+theorem cosetToOrbitRelMapFiber_apply {H K : Subgroup G} (h : H ≤ K) (x : X)
+    (q : K ⧸ H.subgroupOf K) :
+    (cosetToOrbitRelMapFiber h x q).1 = orbitOfCosetTranslate x q :=
+  (rfl)
+
 /-- Every orbit in the fibre is represented by a coset. -/
 theorem cosetToOrbitRelMapFiber_surjective {H K : Subgroup G} (h : H ≤ K) (x : X) :
     Function.Surjective (cosetToOrbitRelMapFiber h x) := by
@@ -57,7 +64,7 @@ theorem cosetToOrbitRelMapFiber_surjective {H K : Subgroup G} (h : H ≤ K) (x :
   rw [Quotient.eq'', orbitRel_apply, mem_orbit_iff] at hy
   obtain ⟨k, hk⟩ := hy
   refine ⟨((k⁻¹ : K) : K ⧸ H.subgroupOf K), Subtype.ext ?_⟩
-  simp only [cosetToOrbitRelMapFiber, orbitOfCosetTranslate_mk]
+  simp only [cosetToOrbitRelMapFiber_apply, orbitOfCosetTranslate_mk]
   have heq := congrArg (fun z : X =>
     (Quotient.mk'' z : orbitRel.Quotient H X)) hk
   have heq' : (Quotient.mk'' ((k : G) • x) : orbitRel.Quotient H X) =

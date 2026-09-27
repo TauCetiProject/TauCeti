@@ -63,6 +63,16 @@ theorem orbitFiberEquivCompactifiedFiber_apply (h : Δ ≤ Γ)
     (orbitFiberEquivCompactifiedFiber h p q).1 = .ofQuotient q.1 :=
   (rfl)
 
+/-- Over an interior orbit, the compactified fibre has cardinality `[Γ : Δ]` when
+the stabilizer acts trivially on the cosets of `Δ` in `Γ`. -/
+theorem card_fiber_compactifiedQuotientMap_of_stabilizer_le_normalCore (h : Δ ≤ Γ)
+    (z : ℍ) (hz : stabilizer Γ z ≤ (Δ.subgroupOf Γ).normalCore) :
+    Nat.card {y : Δ.CompactifiedQuotient //
+      compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)} =
+      (Δ.subgroupOf Γ).index := by
+  rw [← Nat.card_congr (orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z))]
+  exact TauCeti.card_fiber_orbitRel_map_of_stabilizer_le_normalCore h z hz
+
 variable (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
 
 /-- A finite-index inclusion induces a map with finite fibres on cusp orbits. -/
