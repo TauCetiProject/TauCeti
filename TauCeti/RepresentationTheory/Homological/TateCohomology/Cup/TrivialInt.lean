@@ -36,9 +36,9 @@ def cupTrivialInt (N : Rep ℤ H) {q : ℤ} (u : tateCohomology N q) :
     map_zero' := by simp
     map_add' := by intro x y; simp }
 
-/-- The trivial-integral cup map evaluates by cup product followed by the left unitor. Use this
-as a named rewrite: making it a simp lemma would make
-`cupTrivialInt_trivialTateHZeroOne` fail `simpNF`. -/
+-- Keep this as a named rewrite: making it a simp lemma would make
+-- `cupTrivialInt_trivialTateHZeroOne` fail `simpNF`.
+/-- The trivial-integral cup map evaluates by cup product followed by the left unitor. -/
 theorem cupTrivialInt_apply (N : Rep ℤ H) {q : ℤ} (u : tateCohomology N q)
     (x : tateCohomology (Rep.trivial ℤ H ℤ) 0) :
     cupTrivialInt N u x = (tateCohomologyFunctor q).map (λ_ N).hom
