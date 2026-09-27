@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Flow.ConnectingOrbit
-public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import TauCeti.Analysis.Calculus.Gradient
 import Mathlib.Algebra.Module.LinearMap.DivisionRing
 
 /-!
@@ -69,7 +69,9 @@ theorem fderiv_surjective_of_mem_unstableSet_inter_stableSet
   apply gradient_ne_zero_of_mem_unstableSet_inter_stableSet hrest hpq hx
   have hderiv' : fderiv ℝ f x = 0 := by
     exact_mod_cast hderiv
-  rwa [← toDual_gradient, map_eq_zero_iff _ (toDual ℝ E).injective] at hderiv'
+  apply norm_eq_zero.mp
+  rw [TauCeti.norm_gradient_eq_norm_fderiv, hderiv']
+  simp
 
 end Flow
 
