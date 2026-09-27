@@ -52,20 +52,31 @@ private theorem dualTensorIhom_app_eq_aux :
       ((curry ((α_ M ((ihom M).obj (𝟙_ (ModuleCat.{u} R))) N).inv ≫
         (ihom.ev M).app (𝟙_ (ModuleCat.{u} R)) ▷ N ≫ (λ_ N).hom)).hom
           (f ⊗ₜ[R] n)).hom m
-    rw [ModuleCat.monoidalClosed_curry]
-    rfl
+    rw [ModuleCat.monoidalClosed_curry, dualTensorHom_apply]
+    change (ModuleCat.homLinearEquiv (S := R) f) m • n =
+      (λ_ N).hom (((ihom.ev M).app (𝟙_ (ModuleCat.{u} R)) ▷ N)
+        ((α_ M ((ihom M).obj (𝟙_ (ModuleCat.{u} R))) N).inv
+          (m ⊗ₜ[R] (f ⊗ₜ[R] n))))
+    rw [ModuleCat.MonoidalCategory.associator_inv_apply,
+      ModuleCat.MonoidalCategory.whiskerRight_apply,
+      ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
+      ModuleCat.ihom_ev_app]
+    -- Only the linear-map calculation inside evaluation remains.
+    change (ModuleCat.homLinearEquiv (S := R) f) m • n =
+      (ModuleCat.homLinearEquiv (S := R) f) m • n
+    simp
   | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
 
 /-- The categorical dual-tensor comparison is linear contraction, after identifying internal
 Homs with linear maps. -/
 theorem _root_.ModuleCat.dualTensorIhom_app_eq :
-    ((ModuleCat.homLinearEquiv.toModuleIso :
+    (dualTensorIhom M).app N =
+      ((ModuleCat.homLinearEquiv.toModuleIso :
         (ihom M).obj (𝟙_ (ModuleCat.{u} R)) ≅ ModuleCat.of R (Module.Dual R M)).hom ▷ N) ≫
       ModuleCat.ofHom (dualTensorHom R M N) ≫
       (ModuleCat.homLinearEquiv.toModuleIso :
-        (ihom M).obj N ≅ ModuleCat.of R (M →ₗ[R] N)).inv =
-        (dualTensorIhom M).app N := by
-  exact dualTensorIhom_app_eq_aux M N
+        (ihom M).obj N ≅ ModuleCat.of R (M →ₗ[R] N)).inv := by
+  exact (dualTensorIhom_app_eq_aux M N).symm
 
 /-- At a target module `N`, the categorical dual-tensor comparison is invertible exactly when
 linear contraction `Mᵛ ⊗ N → Hom(M,N)` is bijective. -/
@@ -80,7 +91,7 @@ theorem _root_.ModuleCat.isIso_dualTensorIhom_app_iff (N : ModuleCat.{u} R) :
   have hd : IsIso (d.hom ▷ N) := inferInstance
   have he : IsIso e.inv := inferInstance
   have hEq : (dualTensorIhom M).app N = (d.hom ▷ N) ≫ φ ≫ e.inv :=
-    (ModuleCat.dualTensorIhom_app_eq M N).symm
+    ModuleCat.dualTensorIhom_app_eq M N
   rw [hEq]
   rw [isIso_comp_left_iff, isIso_comp_right_iff]
   exact ConcreteCategory.isIso_iff_bijective φ

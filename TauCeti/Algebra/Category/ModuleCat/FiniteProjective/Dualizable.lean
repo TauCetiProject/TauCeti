@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.DualTensorIhom
+public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 
 /-!
 # Dualizable modules and finite projectivity
@@ -43,6 +44,12 @@ noncomputable instance _root_.ModuleCat.hasLeftDualOfFiniteProjective
   refine { leftDual := (ihom M).obj (𝟙_ (ModuleCat.{u} R)), exact := ?_ }
   exact exactPairingOfIsIsoDualTensorIhom (Y := M)
 
+/-- A finite projective module also has a right dual in the symmetric monoidal category
+`ModuleCat R`. -/
+noncomputable instance _root_.ModuleCat.hasRightDualOfFiniteProjective
+    [Module.Finite R M] [Module.Projective R M] : HasRightDual M :=
+  BraidedCategory.hasRightDualOfHasLeftDual
+
 /-- A dualizable module is finite projective: its coevaluation gives a finite dual basis. -/
 theorem _root_.ModuleCat.finite_projective_of_hasLeftDual [HasLeftDual M] :
     Module.Finite R M ∧ Module.Projective R M := by
@@ -53,6 +60,12 @@ theorem _root_.ModuleCat.finite_projective_of_hasLeftDual [HasLeftDual M] :
   exact ⟨Module.Finite.of_one_mem_range_dualTensorHom hmem,
     Module.Projective.of_one_mem_range_dualTensorHom hmem⟩
 
+/-- A module with a right dual is finite projective. -/
+theorem _root_.ModuleCat.finite_projective_of_hasRightDual [HasRightDual M] :
+    Module.Finite R M ∧ Module.Projective R M := by
+  let _ : HasLeftDual M := BraidedCategory.hasLeftDualOfHasRightDual
+  exact ModuleCat.finite_projective_of_hasLeftDual M
+
 /-- An `R`-module is dualizable if and only if it is finite projective. -/
 theorem _root_.ModuleCat.nonempty_hasLeftDual_iff_finite_projective :
     Nonempty (HasLeftDual M) ↔ Module.Finite R M ∧ Module.Projective R M := by
@@ -60,6 +73,18 @@ theorem _root_.ModuleCat.nonempty_hasLeftDual_iff_finite_projective :
   · rintro ⟨h⟩
     let _ : HasLeftDual M := h
     exact ModuleCat.finite_projective_of_hasLeftDual M
+  · rintro ⟨hfinite, hproj⟩
+    let _ : Module.Finite R M := hfinite
+    let _ : Module.Projective R M := hproj
+    exact ⟨inferInstance⟩
+
+/-- An `R`-module has a right dual if and only if it is finite projective. -/
+theorem _root_.ModuleCat.nonempty_hasRightDual_iff_finite_projective :
+    Nonempty (HasRightDual M) ↔ Module.Finite R M ∧ Module.Projective R M := by
+  constructor
+  · rintro ⟨h⟩
+    let _ : HasRightDual M := h
+    exact ModuleCat.finite_projective_of_hasRightDual M
   · rintro ⟨hfinite, hproj⟩
     let _ : Module.Finite R M := hfinite
     let _ : Module.Projective R M := hproj
