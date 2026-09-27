@@ -41,6 +41,14 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L))
   [w.asIdeal.LiesOver v.asIdeal]
 
+private theorem integerEquivAdicCompletionIntegers_comp :
+    (algebraMap (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)).comp
+        (v.integerEquivAdicCompletionIntegers (K := K)).toRingHom =
+      (w.integerEquivAdicCompletionIntegers (K := L)).toRingHom.comp
+        (algebraMap (ValuativeRel.valuation (v.adicCompletion K)).integer
+          (ValuativeRel.valuation (w.adicCompletion L)).integer) :=
+  RingHom.ext fun x ↦ (integerEquivAdicCompletionIntegers_algebraMap K L v w x).symm
+
 /-- A generator of the abstract valuation integer ring remains a generator after identifying it
 with the concrete adic-completion integer ring. -/
 theorem adjoin_integerEquivAdicCompletionIntegers_eq_top
@@ -55,7 +63,7 @@ theorem adjoin_integerEquivAdicCompletionIntegers_eq_top
         eL.toRingHom.comp
           (algebraMap (ValuativeRel.valuation (v.adicCompletion K)).integer
             (ValuativeRel.valuation (w.adicCompletion L)).integer) :=
-    RingHom.ext fun y ↦ (integerEquivAdicCompletionIntegers_algebraMap K L v w y).symm
+    integerEquivAdicCompletionIntegers_comp v w
   rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.range_eq_top]
   intro y
   have hmem : eL.symm y ∈
@@ -88,6 +96,8 @@ theorem map_minpoly_integerEquivAdicCompletionIntegers
         (w.integerEquivAdicCompletionIntegers (K := L) x) := by
   let eK := v.integerEquivAdicCompletionIntegers (K := K)
   let eL := w.integerEquivAdicCompletionIntegers (K := L)
+  -- Expose the opaque integer-ring equivalences as ring homomorphisms so the two minimal
+  -- polynomials have visibly corresponding coefficient and element maps.
   change (minpoly (ValuativeRel.valuation (v.adicCompletion K)).integer x).map
       eK.toRingHom = minpoly (v.adicCompletionIntegers K) (eL.toRingHom x)
   have hcomp :
@@ -95,7 +105,7 @@ theorem map_minpoly_integerEquivAdicCompletionIntegers
         eL.toRingHom.comp
           (algebraMap (ValuativeRel.valuation (v.adicCompletion K)).integer
             (ValuativeRel.valuation (w.adicCompletion L)).integer) :=
-    RingHom.ext fun y ↦ (integerEquivAdicCompletionIntegers_algebraMap K L v w y).symm
+    integerEquivAdicCompletionIntegers_comp v w
   have hcomp_symm :
       (algebraMap (ValuativeRel.valuation (v.adicCompletion K)).integer
         (ValuativeRel.valuation (w.adicCompletion L)).integer).comp eK.symm.toRingHom =
@@ -154,7 +164,7 @@ theorem map_differentIdeal_integerEquivAdicCompletionIntegers :
         eL.toRingHom.comp
           (algebraMap (ValuativeRel.valuation (v.adicCompletion K)).integer
             (ValuativeRel.valuation (w.adicCompletion L)).integer) :=
-    RingHom.ext fun x ↦ (integerEquivAdicCompletionIntegers_algebraMap K L v w x).symm
+    integerEquivAdicCompletionIntegers_comp v w
   obtain ⟨x, hx⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top
     (R := (ValuativeRel.valuation (v.adicCompletion K)).integer)
     (S := (ValuativeRel.valuation (w.adicCompletion L)).integer)
