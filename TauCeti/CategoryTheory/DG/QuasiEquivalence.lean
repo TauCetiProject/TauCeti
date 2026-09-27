@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.CategoryTheory.DG.FullSubcategory
-public import TauCeti.CategoryTheory.DG.Functor
 public import TauCeti.CategoryTheory.DG.Opposite.Functor
 
 /-!
