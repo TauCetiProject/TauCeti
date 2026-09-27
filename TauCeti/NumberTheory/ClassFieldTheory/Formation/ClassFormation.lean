@@ -154,8 +154,9 @@ theorem eq_fundamentalClass_iff (cf : ClassFormation F) {L : NormalLayer G} (x :
 /-- Every class in `H²` of a layer is an integer multiple of the fundamental class. -/
 theorem fundamentalClass_generates (cf : ClassFormation F) (L : NormalLayer G) (x : L.H F 2) :
     ∃ m : ℤ, x = m • cf.fundamentalClass L := by
-  obtain ⟨m, hm⟩ := AddCircle.exists_zsmul_eq_of_apply_eq_coe_period_div (1 : ℚ) L.degree_pos
-    (cf.inv_injective L) (cf.range_inv L) (cf.inv_fundamentalClass L) x
+  obtain ⟨m, hm⟩ := AddCircle.exists_zsmul_eq_of_apply_eq_coe_period_div (1 : ℚ)
+    (Nat.cast_ne_zero.mpr L.degree_pos.ne') (cf.inv_injective L) (cf.range_inv L)
+    (cf.inv_fundamentalClass L) x
   exact ⟨m, hm.symm⟩
 
 /-- The fundamental class generates `H²` of its layer. -/
