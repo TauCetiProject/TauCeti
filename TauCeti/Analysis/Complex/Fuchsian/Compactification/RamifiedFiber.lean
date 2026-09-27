@@ -15,8 +15,9 @@ quotient map over the orbit of an interior point `z` is canonically the orbit sp
 stabilizer of `z` in `Γ` acting on the cosets `Γ / Δ`.
 
 This gives the exact point count for every interior fibre. At a free point the stabilizer action
-is trivial and the count is the subgroup index. At an elliptic point, its nontrivial orbits record
-the cosets identified by ramification.
+is trivial and the count is the subgroup index. In general, stabilizer orbits record exactly which
+cosets represent the same fibre point. Under the relevant geometric hypotheses, non-singleton
+orbits describe the resulting ramification identifications.
 -/
 
 public noncomputable section
