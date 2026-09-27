@@ -114,7 +114,8 @@ section DegreeOne
 /-! ### The degree-one shapes
 
 Openness of `U` enters exactly as in `TauCeti.ContCohomology.explicitCor1`: it is what makes the
-corestriction of a continuous cochain continuous. -/
+corestriction of a continuous cochain continuous. These formulas use that corestriction API and
+inherit its separately continuous multiplication hypothesis. -/
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]

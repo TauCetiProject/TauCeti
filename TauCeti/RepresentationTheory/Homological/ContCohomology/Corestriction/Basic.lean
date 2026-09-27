@@ -399,7 +399,8 @@ section DegreeOne
 /-! ### Corestriction on `H¹`
 
 Openness of `U` makes every corestriction cochain continuous, so the cochain layer above descends
-to `H¹ = Z¹/B¹`. -/
+to `H¹ = Z¹/B¹`. The required continuity of the transversal word uses only separately continuous
+multiplication, which suffices here as well. -/
 
 variable [TopologicalSpace G] [SeparatelyContinuousMul G]
   [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
