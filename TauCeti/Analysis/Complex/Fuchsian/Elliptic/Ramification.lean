@@ -12,9 +12,9 @@ import Mathlib.GroupTheory.Index
 /-!
 # Ramification in elliptic charts of Fuchsian quotients
 
-For an inclusion `Δ ≤ Γ` of subgroups of `PSL(2, ℝ)`, the local power-map exponent
-is the relative index of their point stabilizers. This file computes the induced map
-in the elliptic charts of the coarse quotients.
+For an inclusion `Δ ≤ Γ` of subgroups of `PSL(2, ℝ)`, the relative index of their point
+stabilizers is the local power-map exponent when the stabilizers are finite. This file computes
+the induced map in the elliptic charts of the coarse quotients.
 
 The local cyclic-disc model follows Farkas--Kra, *Riemann Surfaces*, Chapter I, §§4--5.
 -/
@@ -22,7 +22,7 @@ The local cyclic-disc model follows Farkas--Kra, *Riemann Surfaces*, Chapter I, 
 public noncomputable section
 
 open Filter Metric MulAction TauCeti Topology UpperHalfPlane
-open scoped MatrixGroups
+open scoped MatrixGroups Pointwise
 
 namespace Subgroup
 
@@ -43,37 +43,45 @@ private theorem card_ambientStabilizer (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
     Nat.card (ambientStabilizer Γ z) = Nat.card (stabilizer Γ z) :=
   Subgroup.card_map_of_injective Γ.subtype_injective
 
-/-- A point stabilizer remains finite on restriction to a smaller subgroup. -/
-theorem finite_stabilizer_of_le (h : Δ ≤ Γ) (z : ℍ)
-    [Finite (stabilizer Γ z)] : Finite (stabilizer Δ z) := by
-  let f : stabilizer Δ z → stabilizer Γ z := fun g =>
-    ⟨⟨g.1.1, h g.1.2⟩, by
-      simpa only [mem_stabilizer_iff, Subgroup.smul_def] using g.2⟩
-  exact Finite.of_injective f (by
-    intro a b hab
-    apply Subtype.ext
-    apply Subtype.ext
-    exact congrArg (fun x : stabilizer Γ z => (x.1 : Γ).1) hab)
+private theorem ambientStabilizer_smul (Γ : Subgroup PSL(2, ℝ)) (g : Γ) (z : ℍ) :
+    ambientStabilizer Γ (g • z) =
+      MulAut.conj (g : PSL(2, ℝ)) • ambientStabilizer Γ z := by
+  unfold ambientStabilizer
+  rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj,
+    Subgroup.pointwise_smul_def, Subgroup.map_map]
+  let f : PSL(2, ℝ) →* PSL(2, ℝ) :=
+    (MulDistribMulAction.toMonoidEnd (MulAut PSL(2, ℝ)) PSL(2, ℝ))
+      (MulAut.conj (g : PSL(2, ℝ)))
+  calc
+    _ = (stabilizer Γ z).map (f.comp Γ.subtype) := by
+      apply congrArg (fun k : Γ →* PSL(2, ℝ) => (stabilizer Γ z).map k)
+      ext x
+      simp [f, MulAut.conj_apply]
+    _ = _ := (Subgroup.map_map (stabilizer Γ z) f Γ.subtype).symm
 
-/-- The index of the smaller point stabilizer in the larger one. This is the exponent of the
-local power map at the orbit of `z`. -/
+/-- The relative index of the smaller point stabilizer in the larger one. For finite stabilizers,
+this is the exponent of the local power map at the orbit of `z`. -/
 def ellipticRamificationIndex (_h : Δ ≤ Γ) (z : ℍ) : ℕ :=
   ((stabilizer Δ z).map Δ.subtype).relIndex ((stabilizer Γ z).map Γ.subtype)
 
-/-- The ramification index is the relative index of the stabilizers embedded in `PSL(2, ℝ)`. -/
-theorem ellipticRamificationIndex_def (h : Δ ≤ Γ) (z : ℍ) :
-    ellipticRamificationIndex h z =
-      ((stabilizer Δ z).map Δ.subtype).relIndex
-        ((stabilizer Γ z).map Γ.subtype) := by
+/-- The relative stabilizer index depends only on the source orbit. -/
+theorem ellipticRamificationIndex_smul (h : Δ ≤ Γ) (g : Δ) (z : ℍ) :
+    ellipticRamificationIndex h (g • z) = ellipticRamificationIndex h z := by
+  let gΓ : Γ := ⟨g.1, h g.2⟩
   unfold ellipticRamificationIndex
-  rfl
+  change (ambientStabilizer Δ (g • z)).relIndex
+      (ambientStabilizer Γ (gΓ • z)) =
+    (ambientStabilizer Δ z).relIndex (ambientStabilizer Γ z)
+  rw [ambientStabilizer_smul Δ g z, ambientStabilizer_smul Γ gΓ z]
+  exact Subgroup.relIndex_pointwise_smul (MulAut.conj (g : PSL(2, ℝ))) _ _
 
 /-- Ramification is trivial exactly when the two ambient point stabilizers agree. -/
 @[simp]
 theorem ellipticRamificationIndex_eq_one_iff (h : Δ ≤ Γ) (z : ℍ) :
     ellipticRamificationIndex h z = 1 ↔
       (stabilizer Δ z).map Δ.subtype = (stabilizer Γ z).map Γ.subtype := by
-  rw [ellipticRamificationIndex_def, Subgroup.relIndex_eq_one]
+  unfold ellipticRamificationIndex
+  rw [Subgroup.relIndex_eq_one]
   exact ⟨fun hk => le_antisymm (ambientStabilizer_mono h z) hk,
     fun he => he ▸ le_refl _⟩
 
@@ -83,11 +91,11 @@ theorem ellipticRamificationIndex_eq_one_of_stabilizer_eq_bot (h : Δ ≤ Γ) (z
     (hz : stabilizer Γ z = ⊥) : ellipticRamificationIndex h z = 1 := by
   apply (ellipticRamificationIndex_eq_one_iff h z).2
   apply le_antisymm (ambientStabilizer_mono h z)
-  change (stabilizer Γ z).map Γ.subtype ≤ (stabilizer Δ z).map Δ.subtype
+  simp only [ambientStabilizer] at *
   simp [hz]
 
-/-- The order of the larger point stabilizer is the order of the smaller stabilizer times the
-elliptic ramification index. -/
+/-- The `Nat.card` of the larger point stabilizer equals that of the smaller stabilizer times
+the relative index. For finite stabilizers, this is an identity of group orders. -/
 theorem card_stabilizer_mul_ellipticRamificationIndex (h : Δ ≤ Γ) (z : ℍ) :
     Nat.card (stabilizer Δ z) * ellipticRamificationIndex h z =
       Nat.card (stabilizer Γ z) := by
@@ -113,7 +121,7 @@ theorem ellipticRamificationIndex_self (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
   exact Subgroup.relIndex_self _
 
 /-- Elliptic ramification indices multiply in a tower of subgroup inclusions. -/
-theorem ellipticRamificationIndex_mul {Θ : Subgroup PSL(2, ℝ)}
+theorem ellipticRamificationIndex_tower {Θ : Subgroup PSL(2, ℝ)}
     (h : Δ ≤ Γ) (k : Γ ≤ Θ) (z : ℍ) :
     ellipticRamificationIndex h z * ellipticRamificationIndex k z =
       ellipticRamificationIndex (h.trans k) z :=
@@ -170,14 +178,14 @@ theorem stabilizerBallQuotientChart_map_of_le_symm (h : Δ ≤ Γ) (z : ℍ)
   simpa [stabilizerBallQuotientChart_mk hε hΔ hτ, τ] using
     stabilizerBallQuotientChart_map_of_le h z τ hε hΔ hΓ hτ
 
-/-- A common positive radius gives elliptic quotient charts for both groups in an inclusion. -/
+/-- A common positive radius gives elliptic quotient charts for two properly discontinuous
+actions. -/
 theorem exists_pos_isOpenEmbedding_stabilizerBallQuotientToQuotient_pair
-    (h : Δ ≤ Γ) (z : ℍ) [DiscreteTopology Γ] :
-    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+    (Δ Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
+    [ProperlyDiscontinuousSMul Δ ℍ] [ProperlyDiscontinuousSMul Γ ℍ] :
     ∃ ε : ℝ, 0 < ε ∧
       IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε) ∧
       IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε) := by
-  have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   exact (eventually_mem_nhdsWithin.and
     ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Δ z).and
       (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z))).exists
