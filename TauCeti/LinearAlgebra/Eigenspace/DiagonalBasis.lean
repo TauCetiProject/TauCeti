@@ -73,9 +73,9 @@ theorem _root_.Module.Basis.repr_apply_of_apply_basis (b : Module.Basis ι K V)
 
 end CommSemiring
 
-section NoZeroDivisors
+section IsCancelMulZero
 
-variable {κ : Type*} [CommRing K] [NoZeroDivisors K] [AddCommGroup V] [Module K V]
+variable {κ : Type*} [CommSemiring K] [IsCancelMulZero K] [AddCommMonoid V] [Module K V]
   {f : κ → Module.End K V} {a : ι → κ → K}
 
 /-- A joint eigenvector has zero coordinate at every basis vector of a different joint weight,
@@ -87,10 +87,10 @@ theorem _root_.Module.Basis.repr_eq_zero_of_weight_ne (b : Module.Basis ι K V)
   have hcoord := b.repr_apply_of_apply_basis (f := f j) (a := fun k => a k j)
     (fun k => hf k j) w i
   rw [hw j, map_smul, Finsupp.smul_apply, smul_eq_mul] at hcoord
-  have hzero : (a i j - c j) * b.repr w i = 0 := by rw [sub_mul, ← hcoord, sub_self]
-  exact (mul_eq_zero.mp hzero).resolve_left (sub_ne_zero.mpr hj)
+  by_contra hne
+  exact hj (mul_right_cancel₀ hne hcoord).symm
 
-end NoZeroDivisors
+end IsCancelMulZero
 
 /-! ### Invariant subspaces are spanned by basis vectors -/
 
