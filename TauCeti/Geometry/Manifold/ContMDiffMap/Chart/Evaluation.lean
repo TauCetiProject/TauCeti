@@ -12,7 +12,7 @@ public import Mathlib.Topology.Compactness.LocallyCompact
 # Joint evaluation in the manifold weak Whitney topology
 
 The weak Whitney topology controls map values on compact subsets of source charts. For
-boundaryless models, local compactness of the source model gives a compact chart neighbourhood
+the boundaryless source model, local compactness gives a compact chart neighbourhood
 of each point, so evaluation is continuous jointly in the map and the point. This is the
 continuity needed for the natural action of the diffeomorphism group on its manifold.
 
@@ -35,7 +35,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I n M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
-  [J.Boundaryless]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J n N]
 
 /-- Evaluation of a `C^n` map is continuous jointly in the map and the source point for the
@@ -48,23 +47,26 @@ theorem continuous_eval_manifoldWeakWhitney_joint :
   rintro ⟨f, x⟩ hfx
   let φ := extChartAt I x
   let ψ := extChartAt J (f x)
-  have hS : IsOpen (ψ.source ∩ U) := (isOpen_extChartAt_source (I := J) (f x)).inter hU
+  obtain ⟨W, hW, hmem, hsub⟩ := continuousOn_iff.mp
+    (continuousOn_extChartAt_symm (I := J) (f x)) _ (mem_extChartAt_target (f x))
+      U hU (by simpa only [mem_preimage, extChartAt_to_inv] using hfx)
+  have hS : IsOpen (ψ.source ∩ ψ ⁻¹' W) :=
+    (continuousOn_extChartAt (I := J) (f x)).isOpen_inter_preimage
+      (isOpen_extChartAt_source (I := J) (f x)) hW
   let z : φ.target := ⟨φ x, mem_extChartAt_target x⟩
   let Fmap : φ.target → N := fun w ↦ f (φ.symm w)
   have hFmap : Continuous Fmap :=
     (map_continuous f).comp ((continuousOn_extChartAt_symm x).domRestrict)
-  have hO : IsOpen (Fmap ⁻¹' (ψ.source ∩ U)) := hS.preimage hFmap
-  have hzO : z ∈ Fmap ⁻¹' (ψ.source ∩ U) := by
+  have hO : IsOpen (Fmap ⁻¹' (ψ.source ∩ ψ ⁻¹' W)) := hS.preimage hFmap
+  have hzO : z ∈ Fmap ⁻¹' (ψ.source ∩ ψ ⁻¹' W) := by
     have hφx : φ.symm (φ x) = x := extChartAt_to_inv x
-    have hfx' : f x ∈ ψ.source ∩ U := ⟨mem_extChartAt_source (f x), hfx⟩
+    have hfx' : f x ∈ ψ.source ∩ ψ ⁻¹' W :=
+      ⟨mem_extChartAt_source (f x), hmem⟩
     simpa only [mem_preimage, mem_inter_iff, Fmap, z, hφx] using hfx'
   let : LocallyCompactSpace φ.target :=
     (isOpen_extChartAt_target (I := I) x).locallyCompactSpace
   obtain ⟨K, hK, hzK, hKO⟩ := exists_compact_subset hO hzO
   obtain ⟨B, hB, hB_eq⟩ := isOpen_induced_iff.mp (isOpen_interior : IsOpen (interior K))
-  let W : Set F := ψ.target ∩ ψ.symm ⁻¹' U
-  have hW : IsOpen W := (continuousOn_extChartAt_symm (I := J) (f x)).isOpen_inter_preimage
-    (isOpen_extChartAt_target (I := J) (f x)) hU
   let V : Set (E [×0]→L[𝕜] F) := (fun A ↦ A 0) ⁻¹' W
   have hV : IsOpen V := hW.preimage (by fun_prop)
   let T : Set C^n⟮I, M; J, N⟯ := chartJetSet x (f x) 0 K V
@@ -73,13 +75,10 @@ theorem continuous_eval_manifoldWeakWhitney_joint :
     simp only [T, mem_chartJetSet]
     intro w hw
     have hwO := hKO hw
-    have hfw : f (φ.symm w) ∈ ψ.source ∩ U := hwO
+    have hfw : f (φ.symm w) ∈ ψ.source ∩ ψ ⁻¹' W := hwO
     refine ⟨hfw.1, ?_⟩
     simp only [V, mem_preimage, iteratedFDerivWithin_zero_apply, Function.comp_apply]
-    have hψU : ψ.symm (ψ (f (φ.symm w))) ∈ U := by
-      rw [ψ.left_inv hfw.1]
-      exact hfw.2
-    exact ⟨ψ.mapsTo hfw.1, hψU⟩
+    exact hfw.2
   let A : Set M := φ.source ∩ φ ⁻¹' B
   have hA : IsOpen A := (continuousOn_extChartAt (I := I) x).isOpen_inter_preimage
     (isOpen_extChartAt_source (I := I) x) hB
@@ -101,6 +100,8 @@ theorem continuous_eval_manifoldWeakWhitney_joint :
     simp only [φ] at hgy
     simpa only [hφy, V, mem_preimage,
       iteratedFDerivWithin_zero_apply, Function.comp_apply] using hgy
-  simpa only [mem_preimage, ψ.left_inv hgy'.1] using hgy'.2.2
+  have hu := hsub ⟨hgy'.2, ψ.mapsTo hgy'.1⟩
+  change ψ.symm (ψ (g y)) ∈ U at hu
+  rwa [ψ.left_inv hgy'.1] at hu
 
 end ContMDiffMap
