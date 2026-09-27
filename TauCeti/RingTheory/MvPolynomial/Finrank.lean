@@ -30,7 +30,7 @@ instance homogeneousSubmodule_moduleFinite {σ R : Type*} [CommSemiring R] [Fini
   Module.Finite.of_fg (homogeneousSubmodule_fg σ R n)
 
 /-- A homogeneous component in finitely many variables is a free module. -/
-instance homogeneousSubmodule_moduleFree {σ R : Type*} [CommSemiring R] [Finite σ]
+instance homogeneousSubmodule_moduleFree {σ R : Type*} [CommSemiring R]
     (n : ℕ) : Module.Free R (homogeneousSubmodule σ R n) := by
   classical
   rw [homogeneousSubmodule_eq_finsupp_supported]
