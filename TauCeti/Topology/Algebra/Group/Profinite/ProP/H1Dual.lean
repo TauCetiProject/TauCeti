@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomFpH1
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.DualRank
 
@@ -33,12 +34,15 @@ needs neither profiniteness nor a pro-`p` hypothesis; what is specific to a pro-
 numerical transfer that follows, for which compactness and total disconnectedness are needed.
 
 Here `H¹` is the explicit inhomogeneous group `TauCeti.ContCohomology.H1 G (ZMod p) = Z¹/B¹`.
-Continuous cohomology with the same coefficients is reached through the merged degree-one
-comparison `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology :
-H1 G M ≃+ continuousCohomology 1 (ofDiscreteModule ℤ G M)` for a discrete `G`-module `M`, which
-is additive over `ℤ`; the four results below are stated on the explicit group, because the
-`ZMod p`-module structure whose rank and finiteness they compute is the one
-`TauCeti.instModuleH1` puts there.
+Continuous cohomology with the same coefficients is reached through
+`TauCeti.h1EquivCohomFp : H1 G (ZMod p) ≃ₗ[ZMod p] cohomFp p G 1`, the degree-one comparison
+with the coefficient object `TauCeti.trivialFp p G` of `TauCeti.cohomFp` as a `ZMod p`-linear
+isomorphism of modules. Every result below is therefore a statement about
+`TauCeti.cohomFp p G 1`: each of them is stated on both carriers, the `cohomFp` form being the
+`ZMod p`-module isomorphism read in the direction the canonical carrier is defined, and the
+`H¹` form being the one the transfer of Burnside's basis theorem computes. The `ZMod p`-module
+structure on the explicit side is `TauCeti.instModuleH1`, the one on the canonical side is the
+canonical module structure of `TauCeti.cohomFp`.
 
 For a profinite pro-`p` group, Burnside's basis theorem in cardinal form
 (`TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`) transfers from the
@@ -54,6 +58,8 @@ rank.
 
 * `TauCeti.h1EquivFrattiniQuotientDual`: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of the
   pro-`p` Frattini quotient `G ⧸ Φ(G)`.
+* `TauCeti.cohomFpEquivContinuousZModDual` and `TauCeti.cohomFpEquivFrattiniQuotientDual`: the
+  same two identifications, with `TauCeti.cohomFp p G 1` in place of `H¹(G, 𝔽_p)`.
 
 ## Main results
 
@@ -67,6 +73,10 @@ rank.
 * `TauCeti.IsProP.finite_H1_iff`: `H¹(G, 𝔽_p)` is finite-dimensional over `𝔽_p` exactly when
   `G` is topologically finitely generated.
 * `TauCeti.IsProP.natCard_H1`: in that case `H¹(G, 𝔽_p)` has `p ^ d(G)` elements.
+* `TauCeti.IsProP.rank_cohomFp_eq_topologicalGeneratorRank`,
+  `TauCeti.IsProP.finrank_cohomFp_eq_topologicalGeneratorRankNat`,
+  `TauCeti.IsProP.finite_cohomFp_iff` and `TauCeti.IsProP.natCard_cohomFp`: the same four
+  results, with the carrier `TauCeti.cohomFp p G 1` of the canonical continuous cohomology.
 
 ## References
 
@@ -130,6 +140,33 @@ theorem h1EquivFrattiniQuotientDual_symm_apply
 
 end ContinuousDual
 
+section CohomFp
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
+  (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
+
+include htriv
+
+/-- **`TauCeti.cohomFp p G 1` is the continuous `𝔽_p`-dual of `G`.** This is
+`TauCeti.h1EquivContinuousZModDual` read through the degree-one comparison
+`TauCeti.h1EquivCohomFp`, so that the rank and finite-dimensionality computed on the canonical
+carrier are the ones the transfer below computes on `H¹(G, 𝔽_p)`. The hypothesis on the group is
+that of `TauCeti.cohomFp` itself, so a profinite pro-`p` group qualifies. -/
+noncomputable def cohomFpEquivContinuousZModDual :
+    cohomFp p G 1 ≃ₗ[ZMod p] continuousZModDual p G :=
+  (h1EquivCohomFp htriv).symm.trans (h1EquivContinuousZModDual htriv)
+
+/-- **`TauCeti.cohomFp p G 1` is the continuous `𝔽_p`-dual of the pro-`p` Frattini quotient.** This
+is `TauCeti.h1EquivFrattiniQuotientDual` read through `TauCeti.h1EquivCohomFp`, and it holds for
+every topological group with a trivial action, profiniteness not being needed for the
+identification itself. -/
+noncomputable def cohomFpEquivFrattiniQuotientDual :
+    cohomFp p G 1 ≃ₗ[ZMod p] continuousZModDual p (G ⧸ proPFrattini p G) :=
+  (h1EquivCohomFp htriv).symm.trans (h1EquivFrattiniQuotientDual htriv)
+
+end CohomFp
+
 section Burnside
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
@@ -173,6 +210,45 @@ theorem IsProP.natCard_H1 (hG : IsProP p G) (htriv : ∀ (g : G) (m : ZMod p), g
   rw [Nat.card_congr (h1EquivContinuousZModDual htriv).toEquiv,
     Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod,
     hG.finrank_continuousZModDual_eq_topologicalGeneratorRankNat hfg]
+
+/-- **Burnside's basis theorem for `TauCeti.cohomFp p G 1`, cardinal form.** The dimension of the
+degree-one continuous cohomology of a pro-`p` group `G` with trivial `𝔽_p` coefficients over
+`TauCeti.cohomFp` is the topological generator rank of `G`, as an identity of cardinals and with
+no finiteness hypothesis. This is `TauCeti.IsProP.rank_H1_eq_topologicalGeneratorRank` read
+through `TauCeti.h1EquivCohomFp`. -/
+theorem IsProP.rank_cohomFp_eq_topologicalGeneratorRank (hG : IsProP p G)
+    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) :
+    Module.rank (ZMod p) (cohomFp p G 1) = topologicalGeneratorRank G := by
+  rw [← (h1EquivCohomFp htriv).rank_eq]
+  exact hG.rank_H1_eq_topologicalGeneratorRank htriv
+
+/-- **Burnside's basis theorem for `TauCeti.cohomFp p G 1`, numerical form.** The dimension of the
+degree-one continuous cohomology of a topologically finitely generated profinite pro-`p` group
+with trivial `𝔽_p` coefficients over `TauCeti.cohomFp` is its topological generator rank. -/
+theorem IsProP.finrank_cohomFp_eq_topologicalGeneratorRankNat (hG : IsProP p G)
+    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) (hfg : IsTopologicallyFinitelyGenerated G) :
+    Module.finrank (ZMod p) (cohomFp p G 1) = topologicalGeneratorRankNat G hfg := by
+  rw [← (h1EquivCohomFp htriv).finrank_eq]
+  exact hG.finrank_H1_eq_topologicalGeneratorRankNat htriv hfg
+
+/-- **Finiteness of the degree-one continuous cohomology with trivial `𝔽_p` coefficients.** For a
+profinite pro-`p` group, `TauCeti.cohomFp p G 1` is finite-dimensional over `𝔽_p` exactly when `G`
+is topologically finitely generated. -/
+theorem IsProP.finite_cohomFp_iff (hG : IsProP p G)
+    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) :
+    Module.Finite (ZMod p) (cohomFp p G 1) ↔ IsTopologicallyFinitelyGenerated G := by
+  rw [Module.finite_iff_finite (R := ZMod p),
+    (h1EquivCohomFp htriv).symm.toEquiv.finite_iff, ← Module.finite_iff_finite (R := ZMod p)]
+  exact hG.finite_H1_iff htriv
+
+/-- **`TauCeti.cohomFp p G 1` counts the generators of `G`.** For a topologically finitely
+generated profinite pro-`p` group, the degree-one continuous cohomology with trivial `𝔽_p`
+coefficients has `p ^ d(G)` elements, where `d` is the topological generator rank. -/
+theorem IsProP.natCard_cohomFp (hG : IsProP p G)
+    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) (hfg : IsTopologicallyFinitelyGenerated G) :
+    Nat.card (cohomFp p G 1) = p ^ topologicalGeneratorRankNat G hfg := by
+  rw [← Nat.card_congr (h1EquivCohomFp htriv).toEquiv]
+  exact hG.natCard_H1 htriv hfg
 
 end Burnside
 
