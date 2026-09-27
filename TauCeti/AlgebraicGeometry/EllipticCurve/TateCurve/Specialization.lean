@@ -58,7 +58,7 @@ theorem tateCurveA₆_def (q : K) (hq : ‖q‖ < 1) :
   simp only [tateCurveA₆, evalIntSeries_apply]
 
 /-- The fourth coefficient equals `-5 s₃(q)`. -/
-theorem tateCurveA₄_eq (q : K) (hq : ‖q‖ < 1) :
+@[simp] theorem tateCurveA₄_eq (q : K) (hq : ‖q‖ < 1) :
     tateCurveA₄ q hq = -5 * divisorSumAt 3 q := by
   simp_rw [tateCurveA₄, evalIntSeries_apply, coeff_tateCurve_a₄, Int.cast_mul, Int.cast_neg,
     Int.cast_ofNat, neg_mul, mul_assoc]
