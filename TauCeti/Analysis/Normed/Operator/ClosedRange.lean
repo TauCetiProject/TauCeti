@@ -17,9 +17,9 @@ makes the failure quantitative, in the classical form
 
 `‖x‖ ≤ C * ‖T x‖ + ‖P x‖`,
 
-where `P` is a continuous projection of `E` onto `ker T`. For a Fredholm operator the kernel is
-finite-dimensional. Over a proper normed field, such as `ℝ` or `ℂ`, the correction term then
-ranges over a locally compact space.
+where `P` is a continuous projection of `E` onto `ker T`. When `ker T` is finite-dimensional, as
+for a Fredholm operator, `P x` lies in a finite-dimensional space, and over a proper normed field,
+such as `ℝ` or `ℂ`, the finite-rank projection `P` is a compact operator.
 
 The proof is one application of the open mapping theorem, in the packaged form
 `ContinuousLinearMap.antilipschitz_of_injective_of_isClosed_range`: on a topological complement
@@ -110,9 +110,9 @@ complement discharged: there is a continuous projection `P` of `E` onto `ker T` 
 `C > 0` with
 `‖x‖ ≤ C * ‖T x‖ + ‖P x‖`.
 
-When `ker T` is finite-dimensional, the correction term `‖P x‖` ranges over a finite-dimensional
-space. Over a proper normed field, this says that a Fredholm operator is bounded below
-"up to a compact error". -/
+When `ker T` is finite-dimensional, `P x` lies in the finite-dimensional space `ker T`, and over
+a proper normed field the finite-rank projection `P` is compact. This says that a Fredholm
+operator is bounded below "up to a compact error". -/
 theorem exists_projection_norm_le (T : E →L[𝕜] F)
     (hclosed : IsClosed (T.range : Set F)) (hcompl : T.ker.ClosedComplemented) :
     ∃ (P : E →L[𝕜] E) (C : ℝ), 0 < C ∧ IsIdempotentElem P ∧ P.range = T.ker ∧
