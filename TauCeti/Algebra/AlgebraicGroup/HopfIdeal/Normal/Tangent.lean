@@ -110,15 +110,9 @@ theorem IsNormal.lieIdeal_toLieSubalgebra (hI : I.IsNormal) :
   ext d
   rfl
 
-/-- Forgetting bracket stability recovers the closed-subgroup tangent submodule. -/
-@[simp]
-theorem IsNormal.lieIdeal_toSubmodule (hI : I.IsNormal) :
-    (hI.lieIdeal (B := B)).toSubmodule = (I.lieSubalgebra (B := B)).toSubmodule :=
-  (rfl)
-
 /-- Membership in the normal-subgroup Lie ideal is vanishing on its defining Hopf ideal. -/
 @[simp]
-theorem IsNormal.mem_lieIdeal (hI : I.IsNormal)
+theorem IsNormal.mem_lieIdeal_iff (hI : I.IsNormal)
     (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
     d ∈ hI.lieIdeal (B := B) ↔ ∀ x ∈ I.toIdeal, d x = 0 :=
   I.mem_lieSubalgebra_iff d
