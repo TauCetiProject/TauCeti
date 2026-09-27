@@ -42,12 +42,13 @@ Additivity over a union of curves is `TauCeti.length_quot_span_pair_mul_eq_add`:
 irreducible first curve, that is, for a prime ideal `(f)` in a commutative ring `R`, and a second
 equation `h` that does not vanish on that curve, the length of `R ⧸ (f, g * h)` is the sum of
 the lengths of `R ⧸ (f, g)` and `R ⧸ (f, h)`. Irreducibility is what makes `R ⧸ (f)` a domain
-in which the image of `h` is a non-zero-divisor. A reducible first equation is not covered here: the
-length of the curve `f = 0` is then a finite number that is not the order of vanishing of a single
-equation, and additivity over the components of that curve needs a theory of the associated primes
-of a module of finite length, which this file does not have. On a regular surface the irreducible
-first curve is a parameter, and `TauCeti.length_quot_span_pair_mul_eq_add_of_notMem_sq` is that
-specialization.
+in which the image of `h` is a non-zero-divisor. A reducible first equation is not covered here.
+What `TauCeti.isFiniteLength_quot_span_pair` makes finite is the proper-intersection quotient
+`R ⧸ (f, g)`, in `k[[x, y]]` the quotient by the two axes `x * y` together with the second equation
+`x + y`, of length two. The curve `R ⧸ (f)` itself is of infinite length, so additivity over the
+components of that curve needs a theory of the associated primes of a module of infinite length,
+which this file does not have. On a regular surface the irreducible first curve is a parameter, and
+`TauCeti.length_quot_span_pair_mul_eq_add_of_notMem_sq` is that specialization.
 
 Positivity, the length of two equations through the closed point being at least one, is
 `TauCeti.one_le_length_quot_span_pair`, and that length vanishes exactly when the two equations
@@ -223,10 +224,12 @@ separate matter of `TauCeti.isFiniteLength_quot_span_pair`, applied to the ideal
 Primality of `(f)` is the one hypothesis not placed on a regular surface in
 `TauCeti.length_quot_span_pair_mul_eq_add_of_notMem_sq`, and it is not a restriction to smooth
 first curves: a reducible first equation, `f = x * y` for a node or a tangent pair of lines, is
-precisely the case left out here, and the length of the union of the two axes is a finite number
-that is not the order of vanishing of a single equation on a domain, so additivity over its
-components needs a theory of the associated primes of a module of finite length that this file does
-not have. -/
+precisely the case left out here. The curve itself, `k[[x, y]] ⧸ (x * y)`, is a one-dimensional ring
+of infinite length, and what is finite is the proper-intersection quotient by `x * y` and a second
+equation through the closed point, by `TauCeti.isFiniteLength_quot_span_pair`. That finite number is
+not the order of vanishing of a single equation on a domain, so additivity over the components of
+the curve needs a theory of the associated primes of a module of infinite length that this file
+does not have. -/
 theorem length_quot_span_pair_mul_eq_add {f g h : R} (hfprime : (Ideal.span {f}).IsPrime)
     (hh : h ∉ Ideal.span {f}) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
