@@ -39,16 +39,20 @@ variable {K L V W : Type*} [CommRing K] [CommRing L] [Algebra K L]
 
 section FrobeniusReciprocity
 
-variable [Invertible (2 : K)] [Invertible (2 : L)]
+variable [Invertible (2 : K)]
 
 /-- Pulling the tensor product of the transferred form and a base form back along the canonical
 tensor cancellation gives the transfer of the tensor product with its scalar extension. -/
 theorem scharlauTransfer_tmul_baseChange_comp_cancelBaseChange
     (Q : QuadraticForm L V) (R : QuadraticForm K W) (s : L →ₗ[K] K) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     ((Q.scharlauTransfer s).tmul R).comp
-        (LinearEquiv.toLinearMap
-          ((TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K)) =
-      (Q.tmul (R.baseChange L)).scharlauTransfer s := by
+          (LinearEquiv.toLinearMap
+            ((TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K)) =
+        (Q.tmul (R.baseChange L)).scharlauTransfer s := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   refine (associated_rightInverse K).injective ?_
   rw [associated_comp, QuadraticForm.associated_tmul]
   apply LinearMap.ext
@@ -97,30 +101,59 @@ The underlying isometry is the canonical cancellation
 `V ⊗[L] (L ⊗[K] W) ≃ V ⊗[K] W`. -/
 def IsometryEquiv.scharlauTransferTmulBaseChange
     (Q : QuadraticForm L V) (R : QuadraticForm K W) (s : L →ₗ[K] K) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     ((Q.tmul (R.baseChange L)).scharlauTransfer s).IsometryEquiv
-      ((Q.scharlauTransfer s).tmul R) where
-  toLinearEquiv :=
-    (TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K
-  map_app' x := DFunLike.congr_fun
-    (scharlauTransfer_tmul_baseChange_comp_cancelBaseChange Q R s) x
+      ((Q.scharlauTransfer s).tmul R) := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  exact
+    { toLinearEquiv :=
+        (TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K
+      map_app' x := DFunLike.congr_fun
+        (scharlauTransfer_tmul_baseChange_comp_cancelBaseChange Q R s) x }
 
 /-- The linear equivalence underlying Frobenius reciprocity is tensor cancellation. -/
 @[simp]
 theorem IsometryEquiv.scharlauTransferTmulBaseChange_toLinearEquiv
     (Q : QuadraticForm L V) (R : QuadraticForm K W) (s : L →ₗ[K] K) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     (IsometryEquiv.scharlauTransferTmulBaseChange Q R s).toLinearEquiv =
-      (TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K :=
-  (rfl)
+      (TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  rfl
 
 /-- The Frobenius-reciprocity isometry is the canonical cancellation of scalar extension. -/
 @[simp]
 theorem IsometryEquiv.scharlauTransferTmulBaseChange_apply
     (Q : QuadraticForm L V) (R : QuadraticForm K W) (s : L →ₗ[K] K)
     (x : V ⊗[L] (L ⊗[K] W)) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     IsometryEquiv.scharlauTransferTmulBaseChange Q R s x =
-      (TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K x :=
-  LinearEquiv.congr_fun
+      (TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K x := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  exact LinearEquiv.congr_fun
     (IsometryEquiv.scharlauTransferTmulBaseChange_toLinearEquiv Q R s) x
+
+/-- The inverse Frobenius-reciprocity isometry inserts the unit in the scalar-extension
+factor on pure tensors. -/
+@[simp]
+theorem IsometryEquiv.scharlauTransferTmulBaseChange_symm_apply
+    (Q : QuadraticForm L V) (R : QuadraticForm K W) (s : L →ₗ[K] K) (v : V) (w : W) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    (IsometryEquiv.scharlauTransferTmulBaseChange Q R s).symm (v ⊗ₜ[K] w) =
+      v ⊗ₜ[L] (1 ⊗ₜ[K] w) := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  change
+    ((TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K).symm
+        (v ⊗ₜ[K] w) = _
+  exact TensorProduct.AlgebraTensorModule.cancelBaseChange_symm_tmul K L L v w
 
 end FrobeniusReciprocity
 

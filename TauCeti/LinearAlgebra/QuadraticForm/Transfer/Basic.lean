@@ -184,19 +184,27 @@ theorem polar_scharlauTransfer (Q : QuadraticForm L V) (s : L →ₗ[K] K) (x y 
 /-- The associated bilinear form of a Scharlau transfer is obtained by applying the
 functional to the associated bilinear form. -/
 @[simp]
-theorem associated_scharlauTransfer [Invertible (2 : K)] [Invertible (2 : L)]
+theorem associated_scharlauTransfer [Invertible (2 : K)]
     (Q : QuadraticForm L V) (s : L →ₗ[K] K) (x y : V) :
-    associated (Q.scharlauTransfer s) x y = s (associated Q x y) := by
+    associated (Q.scharlauTransfer s) x y =
+      letI : Invertible (2 : L) :=
+        (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+      s (associated Q x y) := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [associated_apply, associated_apply]
+  change
+    ⅟(2 : Module.End K K) • QuadraticMap.polar (Q.scharlauTransfer s) x y =
+      s (⅟(2 : Module.End L L) • QuadraticMap.polar Q x y)
+  rw [polar_scharlauTransfer]
   rw [invOf_smul_eq_iff]
-  simp only [scharlauTransfer_apply, map_sub, Module.End.smul_def]
   have h (z : L) :
       (2 : Module.End K K) (s ((⅟(2 : Module.End L L)) z)) = s z := by
     rw [Module.End.ofNat_apply (R := K), ← map_nsmul]
     apply congrArg s
     rw [← Module.End.ofNat_apply (R := L) 2, ← Module.End.mul_apply,
       mul_invOf_self, Module.End.one_apply]
-  rw [h, h, h, ← map_sub, ← map_sub]
+  exact (h (QuadraticMap.polar Q x y)).symm
 
 /-- A Frobenius functional preserves the radical when two is invertible. -/
 @[simp]
