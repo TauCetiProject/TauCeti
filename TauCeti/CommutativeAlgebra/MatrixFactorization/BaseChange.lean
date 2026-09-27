@@ -276,6 +276,8 @@ instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
   map_add := by
     intro X Y g h
     apply CurvedDuplex.hom_ext
+    -- Unfold the composite into its forgetful image of `baseChangeFunctor` on the even map.
+    -- The map formula rewrites individual maps, but not the target hom's addition.
     · change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
           (((baseChangeFunctor f).map (g + h)).hom.f₀) =
         (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
@@ -287,10 +289,14 @@ instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
           (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map k.hom.f₀)
         ((baseChangeFunctor f).map_add (f := g) (g := h))
       refine h₀.trans ?_
+      -- Addition of factorization morphisms is componentwise; expose its even component
+      -- before applying additivity of the forgetful functor.
       change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
           (((baseChangeFunctor f).map g).hom.f₀ +
             ((baseChangeFunctor f).map h).hom.f₀) = _
       rw [Functor.map_add]
+    -- The odd component requires the same unfolding of the composite and forgetful map;
+    -- the individual map formula likewise does not rewrite addition of target homs.
     · change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
           (((baseChangeFunctor f).map (g + h)).hom.f₁) =
         (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
@@ -302,6 +308,7 @@ instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
           (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map k.hom.f₁)
         ((baseChangeFunctor f).map_add (f := g) (g := h))
       refine h₁.trans ?_
+      -- Expose componentwise addition of factorization morphisms on the odd component.
       change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
           (((baseChangeFunctor f).map g).hom.f₁ +
             ((baseChangeFunctor f).map h).hom.f₁) = _
