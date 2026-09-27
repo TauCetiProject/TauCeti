@@ -135,6 +135,7 @@ theorem valence_def (v : G.Vertex) : G.valence v = (G.incident v).card := by rfl
 
 /-- Every half-edge meets exactly one vertex, so the valences sum to the number of half-edges,
 which is twice the number of edges. -/
+@[simp]
 theorem sum_valence : ∑ v, G.valence v = 2 * Fintype.card G.Edge := by
   classical
   have : ∑ v, G.valence v = Finset.univ.card (α := G.HalfEdge) := by
