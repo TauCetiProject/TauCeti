@@ -67,11 +67,19 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacen
   have hfree (k : Fin n) :
       ∀ l, e l ≠ 0 → a l ∉ Ioo (a k.castSucc) (a k.succ) :=
     fun l _ ↦ not_mem_Ioo_castSucc_succ a ha k l
+  have hcornerSin : Real.sin (Real.pi * ∑ l with a l = a i.succ, e l) ≠ 0 := by
+    have hlow : -Real.pi < Real.pi * ∑ l with a l = a i.succ, e l := by
+      nlinarith [mul_lt_mul_of_pos_left hcorner.1 Real.pi_pos]
+    have hupp : Real.pi * ∑ l with a l = a i.succ, e l < Real.pi := by
+      nlinarith [mul_lt_mul_of_pos_left hcorner.2 Real.pi_pos]
+    intro hsin
+    exact (mul_ne_zero Real.pi_ne_zero hcorner.2.ne)
+      ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
   have haff := affineIndependent_schwarzChristoffelVertex_of_adjacent a e z₀
     i.castSucc i.succ j.succ hi
     (by rw [hmid]; exact hj)
     (hfree i) (by rw [hmid]; exact hfree j)
-    hleft ⟨hcorner.1, lt_trans hcorner.2 (by norm_num)⟩ hcorner.2.ne hright
+    hleft hcorner.1 hcornerSin hright
   rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
     ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))] at haff
   have hlin : LinearIndependent ℝ

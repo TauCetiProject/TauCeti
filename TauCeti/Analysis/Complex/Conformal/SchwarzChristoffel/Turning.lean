@@ -71,20 +71,21 @@ theorem schwarzChristoffelEdgeAngle_mem_Ioo_of_adjacent (a e : ι → ℝ) {p q 
     schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent a e hpq ha
   constructor <;> nlinarith [Real.pi_pos, hq.1, hq.2]
 
-/-- Three consecutive Schwarz--Christoffel boundary values around a non-flat prevertex of total
-exponent in `(-1, 1)` are affinely independent.
+/-- Three consecutive Schwarz--Christoffel boundary values around a non-flat prevertex are
+affinely independent.
 
 The hypotheses ask that the open intervals `(p, q)` and `(q, r)` contain no prevertex with
 nonzero exponent, that the endpoint exponent sums at `p` and `r` exceed `-1`, and that the middle
-exponent sum lies in `(-1, 1) \ {0}`. The three boundary values are therefore not collinear, so
+exponent sum exceeds `-1` with a nonzero sine of its `π` multiple. The three boundary values are
+therefore not collinear, so
 `schwarzChristoffelBoundary a e z₀ q` is a genuine corner of the boundary chain. -/
 theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {p q r : ℝ} (hpq : p < q) (hqr : q < r)
     (hpqFree : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
     (hqrFree : ∀ i, e i ≠ 0 → a i ∉ Ioo q r)
     (hp : -1 < ∑ i with a i = p, e i)
-    (hq : ∑ i with a i = q, e i ∈ Ioo (-1 : ℝ) 1)
-    (hq0 : ∑ i with a i = q, e i ≠ 0)
+    (hq : -1 < ∑ i with a i = q, e i)
+    (hqSin : Real.sin (Real.pi * ∑ i with a i = q, e i) ≠ 0)
     (hr : -1 < ∑ i with a i = r, e i) :
     AffineIndependent ℝ ![schwarzChristoffelBoundary a e z₀ p,
       schwarzChristoffelBoundary a e z₀ q,
@@ -109,13 +110,7 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
         -(Real.pi * ∑ i with a i = q, e i) := by linarith [hangle]
     rw [hdelta, Real.sin_neg]
     simp only [neg_ne_zero]
-    have hlow : -Real.pi < Real.pi * ∑ i with a i = q, e i := by
-      nlinarith [mul_lt_mul_of_pos_left hq.1 Real.pi_pos]
-    have hupp : Real.pi * ∑ i with a i = q, e i < Real.pi := by
-      nlinarith [mul_lt_mul_of_pos_left hq.2 Real.pi_pos]
-    intro hsin
-    exact (mul_ne_zero Real.pi_ne_zero hq0)
-      ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
+    exact hqSin
   have hdir : LinearIndependent ℝ ![up, uq] := by
     rw [linearIndependent_fin2]
     constructor
@@ -135,16 +130,16 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
         ring
       exact hdet him
   have hpqEq : B q - B p = (‖B q - B p‖ : ℂ) * up := by
-    exact schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hpqFree hp hq.1
+    exact schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hpqFree hp hq
       ⟨hpq.le, le_rfl⟩ ⟨le_rfl, hpq.le⟩ hpq.le
   have hqrEq : B r - B q = (‖B r - B q‖ : ℂ) * uq := by
-    exact schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hqrFree hq.1 hr
+    exact schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hqrFree hq hr
       ⟨hqr.le, le_rfl⟩ ⟨le_rfl, hqr.le⟩ hqr.le
   have hpqne : B q - B p ≠ 0 := sub_ne_zero.mpr <|
-    fun h => hpq.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hpqFree hp hq.1
+    fun h => hpq.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hpqFree hp hq
       ⟨le_rfl, hpq.le⟩ ⟨hpq.le, le_rfl⟩ h.symm
   have hqrne : B r - B q ≠ 0 := sub_ne_zero.mpr <|
-    fun h => hqr.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hqrFree hq.1 hr
+    fun h => hqr.ne <| schwarzChristoffelBoundary_injOn_Icc a e z₀ hqrFree hq hr
       ⟨le_rfl, hqr.le⟩ ⟨hqr.le, le_rfl⟩ h.symm
   have hscaled : LinearIndependent ℝ
       ![-(‖B q - B p‖ • up), ‖B r - B q‖ • uq] := by
@@ -179,22 +174,23 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
   exact hscaled
 
 /-- Three indexed Schwarz--Christoffel vertices at consecutive ordered prevertices are affinely
-independent when the total exponent at the middle prevertex lies in `(-1, 1) \ {0}`. -/
+independent when the total exponent at the middle prevertex exceeds `-1` and its `π` multiple
+has nonzero sine. -/
 theorem affineIndependent_schwarzChristoffelVertex_of_adjacent (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (j k l : ι) (hjk : a j < a k) (hkl : a k < a l)
     (hjkFree : ∀ i, e i ≠ 0 → a i ∉ Ioo (a j) (a k))
     (hklFree : ∀ i, e i ≠ 0 → a i ∉ Ioo (a k) (a l))
     (hj : -1 < ∑ i with a i = a j, e i)
-    (hk : ∑ i with a i = a k, e i ∈ Ioo (-1 : ℝ) 1)
-    (hk0 : ∑ i with a i = a k, e i ≠ 0)
+    (hk : -1 < ∑ i with a i = a k, e i)
+    (hkSin : Real.sin (Real.pi * ∑ i with a i = a k, e i) ≠ 0)
     (hl : -1 < ∑ i with a i = a l, e i) :
     AffineIndependent ℝ ![schwarzChristoffelVertex a e z₀ j,
       schwarzChristoffelVertex a e z₀ k, schwarzChristoffelVertex a e z₀ l] := by
   simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk.1,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ l hl] using
     affineIndependent_schwarzChristoffelBoundary_of_adjacent a e z₀ hjk hkl hjkFree hklFree
-      hj hk hk0 hl
+      hj hk hkSin hl
 
 variable {m : ℕ}
 
@@ -223,9 +219,17 @@ theorem affineIndependent_schwarzChristoffelVertex_of_consecutive_of_ne_zero
     omega
   have hsum (i : Fin m) : ∑ t with a t = a i, e t = e i := by
     simp [ha.injective.eq_iff, Finset.filter_eq']
+  have hkSin : Real.sin (Real.pi * e k) ≠ 0 := by
+    have hlow : -Real.pi < Real.pi * e k := by
+      nlinarith [mul_lt_mul_of_pos_left hk.1 Real.pi_pos]
+    have hupp : Real.pi * e k < Real.pi := by
+      nlinarith [mul_lt_mul_of_pos_left hk.2 Real.pi_pos]
+    intro hsin
+    exact (mul_ne_zero Real.pi_ne_zero hk0)
+      ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
   exact affineIndependent_schwarzChristoffelVertex_of_adjacent
     a e z₀ j k l hjk' hkl' hfree₁ hfree₂
-    (by rw [hsum]; exact hj) (by rw [hsum]; exact hk) (by rw [hsum]; exact hk0)
+    (by rw [hsum]; exact hj) (by rw [hsum]; exact hk.1) (by rw [hsum]; exact hkSin)
     (by rw [hsum]; exact hl)
 
 /-- The two sides at a nonflat finite corner of a Schwarz--Christoffel polygon intersect only
@@ -288,8 +292,14 @@ theorem affineIndependent_schwarzChristoffelBoundary_left_endpoint (a e : ι →
       hxpFree hpqFree
     · rw [hxsum]
       norm_num
-    · exact ⟨hp.1, lt_trans hp.2 (by norm_num)⟩
-    · exact hp.2.ne
+    · exact hp.1
+    · have hlow : -Real.pi < Real.pi * ∑ i with a i = p, e i := by
+        nlinarith [mul_lt_mul_of_pos_left hp.1 Real.pi_pos]
+      have hupp : Real.pi * ∑ i with a i = p, e i < Real.pi := by
+        nlinarith [mul_lt_mul_of_pos_left hp.2 Real.pi_pos]
+      intro hsin
+      exact (mul_ne_zero Real.pi_ne_zero hp.2.ne)
+        ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
     · exact hq
   have hximage : B x ∈ B '' Iic p := ⟨x, hxp.le, rfl⟩
   rw [schwarzChristoffelBoundary_image_Iic a e z₀ hp.1 ha hS] at hximage
@@ -339,8 +349,14 @@ theorem affineIndependent_schwarzChristoffelBoundary_right_endpoint (a e : ι �
     apply affineIndependent_schwarzChristoffelBoundary_of_adjacent a e z₀ hqp hpx
       hqpFree hpxFree
     · exact hq
-    · exact ⟨hp.1, lt_trans hp.2 (by norm_num)⟩
-    · exact hp.2.ne
+    · exact hp.1
+    · have hlow : -Real.pi < Real.pi * ∑ i with a i = p, e i := by
+        nlinarith [mul_lt_mul_of_pos_left hp.1 Real.pi_pos]
+      have hupp : Real.pi * ∑ i with a i = p, e i < Real.pi := by
+        nlinarith [mul_lt_mul_of_pos_left hp.2 Real.pi_pos]
+      intro hsin
+      exact (mul_ne_zero Real.pi_ne_zero hp.2.ne)
+        ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
     · rw [hxsum]
       norm_num
   have hximage : B x ∈ B '' Ici p := ⟨x, hpx.le, rfl⟩
