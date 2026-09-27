@@ -27,8 +27,9 @@ The restriction to finite-dimensional path algebras is essential: `Module.finran
 on infinite-dimensional spaces, and a finitely generated module over a cyclic quiver's path algebra
 need not be finite-dimensional over the base field.
 
-For arbitrary quivers, the exact Grothendieck group of pointwise finite-dimensional
-representations also has a dimension-vector map and, for finite quivers, a pulled-back Euler form.
+When the category of pointwise finite-dimensional representations is essentially small, its exact
+Grothendieck group also has a dimension-vector map. For finite vertex sets with finite arrow types,
+this map pulls back the Euler form to a pairing on that group.
 
 See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
 Chapter III, Section 3, for dimension vectors and the Grothendieck group of finite-dimensional
@@ -153,14 +154,15 @@ variable [EssentiallySmall.{t}
 
 private noncomputable def quiverRepDimensionVectorInvariant :
     ExactK0.AdditiveInvariant
-      (finiteDimensionalQuiverRepresentationsExactStructure k Q) (Q → ℤ) where
+      (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure k Q) (Q → ℤ) where
   obj M := fun i ↦ (dimVector M.1 i : ℤ)
   map_iso {_ _} e := by
     funext i
     exact congrArg (fun n : ℕ ↦ (n : ℤ))
       (congrFun (dimVector_eq_of_iso ((ObjectProperty.ι (IsFinDim k Q)).mapIso e)) i)
   map_conflation {S} hS := by
-    have hs := (finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff k Q S).mp hS
+    have hs :=
+      (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure_conflation_iff k Q S).mp hS
     have h₁ : ∀ i : Q, FiniteDimensional k
         ((S.map (ObjectProperty.ι (IsFinDim k Q))).X₁.obj ((Paths.of Q).obj i)) :=
       fun i ↦ by
@@ -180,7 +182,7 @@ private noncomputable def quiverRepDimensionVectorInvariant :
 /-- The dimension vector as an additive map from the exact Grothendieck group of pointwise
 finite-dimensional quiver representations to the integral vertex lattice. -/
 noncomputable def quiverDimensionVector :
-    ExactK0 (finiteDimensionalQuiverRepresentationsExactStructure k Q) →+ (Q → ℤ) :=
+    ExactK0 (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure k Q) →+ (Q → ℤ) :=
   ExactK0.lift (quiverRepDimensionVectorInvariant k Q)
 
 /-- The Grothendieck-group dimension map sends an object class to its dimension vector. -/
@@ -190,6 +192,14 @@ theorem quiverDimensionVector_of
     quiverDimensionVector k Q (ExactK0.of M) = fun i ↦ (dimVector M.1 i : ℤ) :=
   ExactK0.lift_of (quiverRepDimensionVectorInvariant k Q) M
 
+/-- The dimension-vector map is determined by its values on representation classes. -/
+theorem quiverDimensionVector_unique
+    (f : ExactK0 (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure k Q) →+ (Q → ℤ))
+    (hf : ∀ M : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q),
+      f (ExactK0.of M) = fun i ↦ (dimVector M.1 i : ℤ)) :
+    f = quiverDimensionVector k Q :=
+  ExactK0.lift_unique (quiverRepDimensionVectorInvariant k Q) f hf
+
 section FiniteQuiver
 
 variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
@@ -198,17 +208,36 @@ variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
 quiver representations through their dimension vectors. -/
 noncomputable def quiverEulerPairing :
     LinearMap.BilinForm ℤ
-      (ExactK0 (finiteDimensionalQuiverRepresentationsExactStructure k Q)) :=
+      (ExactK0 (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure k Q)) :=
   (eulerForm Q).comp (quiverDimensionVector k Q).toIntLinearMap
     (quiverDimensionVector k Q).toIntLinearMap
 
-/-- The transported pairing evaluates by applying the Ringel form to the two dimension vectors. -/
+/-- On representation classes, the transported pairing is the Ringel form of their dimension
+vectors. -/
 @[simp]
-theorem quiverEulerPairing_apply
-    (x y : ExactK0 (finiteDimensionalQuiverRepresentationsExactStructure k Q)) :
-    quiverEulerPairing k Q x y =
-      eulerForm Q (quiverDimensionVector k Q x) (quiverDimensionVector k Q y) := by
-  simp [quiverEulerPairing]
+theorem quiverEulerPairing_of_of
+    (M N : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :
+    quiverEulerPairing k Q (ExactK0.of M) (ExactK0.of N) =
+      eulerForm Q (fun i ↦ (dimVector M.1 i : ℤ))
+        (fun i ↦ (dimVector N.1 i : ℤ)) := by
+  simp [quiverEulerPairing, LinearMap.BilinForm.comp_apply, quiverDimensionVector_of]
+
+/-- The transported pairing is determined by its values on pairs of representation classes. -/
+theorem quiverEulerPairing_unique
+    (b : LinearMap.BilinForm ℤ
+      (ExactK0 (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure k Q)))
+    (hb : ∀ M N : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q),
+      b (ExactK0.of M) (ExactK0.of N) =
+        eulerForm Q (fun i ↦ (dimVector M.1 i : ℤ))
+          (fun i ↦ (dimVector N.1 i : ℤ))) :
+    b = quiverEulerPairing k Q := by
+  apply LinearMap.toAddMonoidHom_injective
+  apply ExactK0.hom_ext
+  intro M
+  apply LinearMap.toAddMonoidHom_injective
+  apply ExactK0.hom_ext
+  intro N
+  exact (hb M N).trans (quiverEulerPairing_of_of k Q M N).symm
 
 end FiniteQuiver
 

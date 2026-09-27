@@ -37,11 +37,6 @@ category of representations is a functor category, with no ambient module to be 
 over an infinite vertex set the two conditions genuinely differ. Over a finite quiver they agree,
 and that is the setting the theory is meant for.
 
-## References
-
-This implements the `IsFinDim` part of the "finite representation type" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`; the property itself is
-finite-dimensionality of representations, and is used well before that layer's theory.
 -/
 
 public section
@@ -101,7 +96,7 @@ instance : ObjectProperty.ContainsZero (IsFinDim.{u, v, w, t} k Q) where
     infer_instance
 
 /-- Pointwise finite-dimensional representations are closed under extensions. -/
-theorem isExtensionClosed_finiteDimensionalQuiverRepresentations :
+theorem isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations :
     (ExactStructure.abelian (QuiverRep.{u, v, w, t} k Q)).IsExtensionClosed
       (IsFinDim k Q) := by
   refine ⟨fun {S} hS h₁ h₃ => ?_⟩
@@ -122,24 +117,25 @@ theorem isExtensionClosed_finiteDimensionalQuiverRepresentations :
 
 /-- Binary products keep the finite-dimensional full subcategory additive, as required by its
 induced exact structure. -/
-instance : ObjectProperty.IsClosedUnderBinaryProducts (IsFinDim.{u, v, w, t} k Q) :=
-  (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q).isClosedUnderBinaryProducts
+instance : ObjectProperty.IsClosedUnderBinaryProducts (IsFinDim.{u, v, w, t} k Q) := by
+  have h := isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q
+  exact h.isClosedUnderBinaryProducts
 
 /-- The exact structure on pointwise finite-dimensional quiver representations. -/
-noncomputable def finiteDimensionalQuiverRepresentationsExactStructure :
+noncomputable def pointwiseFiniteDimensionalQuiverRepresentationsExactStructure :
     ExactStructure (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :=
   (ExactStructure.abelian _).fullSubcategory _
-    (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q)
+    (isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q)
 
-/-- Conflations of finite-dimensional quiver representations are exactly their short exact
+/-- Conflations of pointwise finite-dimensional quiver representations are exactly their short exact
 sequences in the ambient functor category. -/
 @[simp]
-theorem finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff
+theorem pointwiseFiniteDimensionalQuiverRepresentationsExactStructure_conflation_iff
     (S : ShortComplex (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q))) :
-    (finiteDimensionalQuiverRepresentationsExactStructure k Q).Conflation S ↔
+    (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure k Q).Conflation S ↔
       (S.map (ObjectProperty.ι (IsFinDim k Q))).ShortExact :=
   (ExactStructure.fullSubcategory_conflation_iff
-    (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q) S).trans
+    (isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q) S).trans
     (ExactStructure.abelian_conflation _)
 
 end ExactStructure
