@@ -274,10 +274,8 @@ theorem identityComponentHopfIdeal_eq_bot_iff_connectedSpace :
     let z : PrimeSpectrum H := Bialgebra.augmentationPoint k H
     apply HopfIdeal.ext
     intro x
-    rw [mem_identityComponentHopfIdeal]
-    -- Identify the augmentation point with its prime-spectrum presentation.
-    change x ∈ PrimeSpectrum.connectedComponentIdeal z ↔ x = 0
-    rw [PrimeSpectrum.mem_connectedComponentIdeal_iff]
+    rw [mem_identityComponentHopfIdeal, HopfIdeal.mem_bot]
+    rw [PrimeSpectrum.mem_connectedComponentIdeal_iff (x := z)]
     simp only [PrimeSpectrum.connectedComponentIdempotent_eq_one, sub_self, mul_zero,
       exists_const]
     exact ⟨Eq.symm, Eq.symm⟩
