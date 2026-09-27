@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.GlobalTurning
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ShortTurn
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
-import Mathlib.Data.Fin.SuccPredOrder
-import Mathlib.Order.SuccPred.IntervalSucc
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 
 /-!
 # Separation of Schwarz--Christoffel sides from the closing side
@@ -308,20 +307,11 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
       linarith [(he 0).1]
     · have hsum' : e 0 + e 1 = -2 := by simpa [Fin.sum_univ_succ] using hsum
       linarith [(he 0).1, (he 1).1]
-  have hx' : x ∈ ⋃ j ∈ Ico 0 (Fin.last n), Ioc (a j) (a (Order.succ j)) := by
-    rw [ha.monotone.biUnion_Ico_Ioc_map_succ]
-    exact ⟨hx.1, hx.2.le⟩
-  simp only [mem_iUnion, mem_Ico] at hx'
-  obtain ⟨j, ⟨-, hj⟩, hxj⟩ := hx'
-  obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.mpr hj.ne
-  have hxi : x ∈ Icc (a i.castSucc) (a i.succ) :=
-    Ioc_subset_Icc_self (by simpa only [Fin.orderSucc_castSucc] using hxj)
-  have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) := by
-    intro k _ hk
-    have h₁ := ha.lt_iff_lt.mp hk.1
-    have h₂ := ha.lt_iff_lt.mp hk.2
-    simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at h₁ h₂
-    omega
+  have hn' : n ≠ 0 := by omega
+  obtain ⟨i, hxi⟩ := exists_mem_Icc_castSucc_succ a ha.monotone hn'
+    ⟨hx.1.le, hx.2.le⟩
+  have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) :=
+    fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k
   have hmem : schwarzChristoffelBoundary a e z₀ x ∈
       segment ℝ (schwarzChristoffelVertex a e z₀ i.castSucc)
         (schwarzChristoffelVertex a e z₀ i.succ) := by
