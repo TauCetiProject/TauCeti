@@ -38,6 +38,8 @@ linear-independence theorem for the constant terms at all cusps.
   to the character space prescribed by its induced nebentypus.
 * `TauCeti.mem_eisensteinSubspace`: every prescribed-nebentypus generator belongs to the
   Eisenstein subspace.
+* `TauCeti.mem_eisensteinSubspace_iff`: membership is equivalent to being a finite linear
+  combination of the prescribed-nebentypus generators.
 * `TauCeti.eisensteinSubspace_le`: the elimination rule for the span.
 * `TauCeti.eisensteinSubspace_ne_bot_iff`: the subspace is nonzero exactly when its indexing
   type is inhabited.
@@ -106,7 +108,8 @@ theorem form_mem_modFormCharSpace [NeZero N] (hk : 3 ≤ (k : ℤ)) :
   exact normalizedCharEisensteinSeriesMFRaise_mem_modFormCharSpace
     a.psi a.phi hk a.level_dvd
 
-/-- The coefficient at the first supported index `t` of an indexed Eisenstein series is `1`. -/
+/-- The coefficient at the first positive supported index `t` of an indexed Eisenstein series
+is `1`. -/
 @[simp]
 theorem qExpansion_form_coeff_t [NeZero N] (hk : 3 ≤ (k : ℤ)) :
     (qExpansion 1 (a.form hk)).coeff a.t = 1 :=
@@ -170,6 +173,16 @@ theorem mem_eisensteinSubspace (hk : 3 ≤ (k : ℤ)) (a : CharIndex N k)
     (hchi : a.nebentypus = chi) : a.inCharSpace hk hchi ∈ eisensteinSubspace chi hk := by
   rw [eisensteinSubspace_def]
   exact Submodule.subset_span ⟨⟨a, hchi⟩, rfl⟩
+
+/-- A form belongs to the Eisenstein subspace exactly when it is a finite linear combination of
+the indexed series with induced nebentypus `chi`. -/
+theorem mem_eisensteinSubspace_iff (hk : 3 ≤ (k : ℤ))
+    (f : modFormCharSpace (k : ℤ) chi) :
+    f ∈ eisensteinSubspace chi hk ↔
+      ∃ c : {a : CharIndex N k // a.nebentypus = chi} →₀ ℂ,
+        c.sum (fun a z ↦ z • a.1.inCharSpace hk a.2) = f := by
+  rw [eisensteinSubspace_def]
+  exact Finsupp.mem_span_range_iff_exists_finsupp
 
 /-- Elimination rule for the Eisenstein subspace: a subspace containing every indexed series of
 nebentypus `chi` contains their span. -/
