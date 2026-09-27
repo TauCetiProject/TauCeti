@@ -13,10 +13,12 @@ public import TauCeti.RingTheory.Length
 
 Fix a commutative ring `R` and two of its elements `f` and `g`. The quotient `R ⧸ (f, g)` by the
 ideal the two generate carries the local intersection multiplicity of the two curves `f = 0` and
-`g = 0` at the point `(f, g)`: when those curves meet properly there, that is, when `(f, g)` is
+`g = 0` where they meet: when they meet properly, that is, when `(f, g)` is
 primary to the maximal ideal of a noetherian local ring, the length `Module.length R (R ⧸ (f, g))`
-is finite and counts the intersection with multiplicity. This file proves the local algebra that
-reading rests on, in an arbitrary commutative ring, with no hypothesis of regularity anywhere: the
+is finite and counts the intersection with multiplicity. In a general ring `(f, g)` is only the
+ideal of the two equations, not a point: it is the unit ideal exactly when the two curves have no
+common point. This file proves the local algebra that reading rests on, in an arbitrary commutative
+ring, with no hypothesis of regularity anywhere: the
 order of vanishing of `g` along `f = 0` is that length, the length is symmetric in the two
 equations, it vanishes exactly when the two equations generate the unit ideal, it is positive when
 both equations lie in the maximal ideal of a local ring, it is a natural number for a proper
@@ -139,7 +141,7 @@ theorem length_quotient_span_pair_comm (f g : R) :
 /-- **The length of the quotient by two equations vanishes exactly when they generate the unit
 ideal.** In an arbitrary commutative ring, the module `R ⧸ (f, g)` is of length zero exactly when
 it is trivial, that is, exactly when `Ideal.span {f, g} = ⊤`; no hypothesis is placed on `f` or on
-`g`. The point `(f, g)` is then on neither curve, and there is nothing to intersect. -/
+`g`. The two curves then have no common point, and there is nothing to intersect. -/
 @[simp]
 theorem length_quotient_span_pair_eq_zero_iff (f g : R) :
     Module.length R (R ⧸ Ideal.span {f, g}) = 0 ↔ Ideal.span {f, g} = ⊤ := by
@@ -191,9 +193,9 @@ first equation, `f = x * y` for a node or a tangent pair of lines, is precisely 
 here. The curve itself, `k[[x, y]] ⧸ (x * y)`, is a one-dimensional ring of infinite length, and
 what is finite is the proper-intersection quotient by `x * y` and a second equation through the
 closed point, by `TauCeti.exists_nat_length_quotient_span_pair`. That finite number is not the
-order of vanishing of a single equation on a domain, so additivity over the components of the curve
-needs a theory of the associated primes of a module of infinite length that this file does not
-have. -/
+order of vanishing of a single equation on a domain, which is infinite there, so a proof of
+additivity over the components of such a curve through this route would need a theory of the
+associated primes of a module of infinite length, which this file does not have. -/
 theorem length_quotient_span_pair_mul_eq_add {f g h : R} (hfprime : (Ideal.span {f}).IsPrime)
     (hh : h ∉ Ideal.span {f}) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
