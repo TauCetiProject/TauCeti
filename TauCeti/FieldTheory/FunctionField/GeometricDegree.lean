@@ -69,18 +69,6 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
   (Corollary 3.1.14) is the cross-multiplied conorm identity this feeds, in
   `TauCeti.FieldTheory.FunctionField.Divisor.Conorm`.
 
-## Implementation notes
-
-The two lemmas that *use* the hypothesis `[F·k' : F] = [k' : k]`,
-`TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq` and
-`TauCeti.finrank_dvd_finrank_of_finrank_constantCompositum_eq`, are arithmetic in the tower
-`F ⊆ F·k' ⊆ F'` and assume no relation between `k` and `F`, because Lean's `unusedSectionVars`
-linter — which this repository enforces and does not disable — rejects a statement carrying
-instances that appear neither in it nor in its proof.  The remaining two declarations of that
-section — `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint` and
-`TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`, where linear disjointness is
-*established* — are stated over the compatible tower `k → F → F'`, `k → k' → F'`, as is the
-consumer `TauCeti.Divisor.degree_conorm`.
 -/
 
 public section
@@ -127,6 +115,36 @@ theorem constantCompositum_def :
 theorem constantCompositum_le_iff {K : IntermediateField F F'} :
     constantCompositum F k' F' ≤ K ↔ ∀ c : k', algebraMap k' F' c ∈ K := by
   simp [constantCompositum_def, IntermediateField.adjoin_le_iff, Set.range_subset_iff]
+
+section GeneratedCompositum
+
+variable [Algebra k k'] [Algebra k F] [Algebra k F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+
+/-- If a set generates `k'` over `k`, its image generates the compositum over `F`. -/
+theorem constantCompositum_eq_adjoin_of_adjoin_eq_top (S : Set k')
+    (hS : IntermediateField.adjoin k S = ⊤) :
+    constantCompositum F k' F' =
+      IntermediateField.adjoin F ((algebraMap k' F') '' S) := by
+  have hrange : Set.range (algebraMap k' F') =
+      (IntermediateField.adjoin k ((algebraMap k' F') '' S) : IntermediateField k F') := by
+    rw [← IsScalarTower.toAlgHom_fieldRange k k' F', AlgHom.fieldRange_eq_map, ← hS,
+      IntermediateField.adjoin_map]
+    rfl
+  have hle : IntermediateField.adjoin k ((algebraMap k' F') '' S) ≤
+      (IntermediateField.adjoin F ((algebraMap k' F') '' S)).restrictScalars k := by
+    apply IntermediateField.adjoin_le_iff.mpr
+    rintro x ⟨c, hc, rfl⟩
+    exact (IntermediateField.mem_restrictScalars k).2
+      (IntermediateField.subset_adjoin F _ ⟨c, hc, rfl⟩)
+  refine le_antisymm ((constantCompositum_le_iff F k' F').2 fun c ↦ ?_) ?_
+  · exact (IntermediateField.mem_restrictScalars k).1
+      (hle (hrange.le (Set.mem_range_self c)))
+  · apply IntermediateField.adjoin_le_iff.mpr
+    rintro x ⟨c, _, rfl⟩
+    exact algebraMap_mem_constantCompositum F k' F' c
+
+end GeneratedCompositum
 
 /-- The **geometric degree** `n(F'/F)` of a finite extension `F' / k'` of the function field
 `F / k`: the degree of `F'` over the compositum `F · k'`, that is, the degree of the extension

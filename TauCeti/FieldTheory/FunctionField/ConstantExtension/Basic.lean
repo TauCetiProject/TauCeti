@@ -35,29 +35,6 @@ variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-/-- If a set generates `k'` over `k`, its image generates the compositum over `F`. -/
-theorem constantCompositum_eq_adjoin_of_adjoin_eq_top (S : Set k')
-    (hS : IntermediateField.adjoin k S = ⊤) :
-    constantCompositum F k' F' =
-      IntermediateField.adjoin F ((algebraMap k' F') '' S) := by
-  have hrange : Set.range (algebraMap k' F') =
-      (IntermediateField.adjoin k ((algebraMap k' F') '' S) : IntermediateField k F') := by
-    rw [← IsScalarTower.toAlgHom_fieldRange k k' F', AlgHom.fieldRange_eq_map, ← hS,
-      IntermediateField.adjoin_map]
-    rfl
-  have hle : IntermediateField.adjoin k ((algebraMap k' F') '' S) ≤
-      (IntermediateField.adjoin F ((algebraMap k' F') '' S)).restrictScalars k := by
-    apply IntermediateField.adjoin_le_iff.mpr
-    rintro x ⟨c, hc, rfl⟩
-    exact (IntermediateField.mem_restrictScalars k).2
-      (IntermediateField.subset_adjoin F _ ⟨c, hc, rfl⟩)
-  refine le_antisymm ((constantCompositum_le_iff F k' F').2 fun c ↦ ?_) ?_
-  · exact (IntermediateField.mem_restrictScalars k).1
-      (hle (hrange.le (Set.mem_range_self c)))
-  · apply IntermediateField.adjoin_le_iff.mpr
-    rintro x ⟨c, _, rfl⟩
-    exact algebraMap_mem_constantCompositum F k' F' c
-
 /-- A compositum with finite constants is finite over the original field. The ambient field
 `F'` is assumed to be precisely the compositum of `F` and `k'`. -/
 theorem finiteDimensional_of_constantCompositum_eq_top [FiniteDimensional k k']
