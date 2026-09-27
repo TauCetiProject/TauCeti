@@ -7,13 +7,16 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import TauCeti.RepresentationTheory.Quiver.Representation.Basic
+public import TauCeti.RepresentationTheory.Quiver.Representation.OfModule
+public import Mathlib.Algebra.Category.ModuleCat.Algebra
 
 /-!
 # Finite-dimensional quiver representations
 
 A representation of a quiver is **pointwise finite-dimensional** when the vector space it puts at
-every vertex is finite-dimensional. This file defines that property, `TauCeti.IsFinDim`, and proves
-that it transports along an isomorphism of representations.
+every vertex is finite-dimensional. This file defines that property, `TauCeti.IsFinDim`, proves
+that it transports along an isomorphism, and shows that a path algebra module finite-dimensional
+over the base field gives such a representation.
 
 ## Main definitions
 
@@ -22,6 +25,8 @@ that it transports along an isomorphism of representations.
 ## Main results
 
 * `TauCeti.IsFinDim.of_iso`: pointwise finite-dimensionality transports along an isomorphism.
+* `TauCeti.isFinDim_quiverRepFunctor_obj`: finite-dimensionality passes from a module to its
+  associated representation.
 
 ## Implementation notes
 
@@ -42,6 +47,7 @@ public section
 namespace TauCeti
 
 open CategoryTheory
+open scoped ModuleCat
 
 universe u v w t
 
@@ -68,5 +74,21 @@ theorem IsFinDim.of_iso {M N : QuiverRep.{u, v, w, t} k Q} (h : IsFinDim k Q M) 
   intro v
   have := h v
   exact (e.app v).toLinearEquiv.finiteDimensional
+
+variable (k Q) [Finite Q]
+
+/-- A path algebra module finite-dimensional over the base field gives a representation with
+finite-dimensional vertex spaces. -/
+theorem isFinDim_quiverRepFunctor_obj (M : ModuleCat (pathAlgebra k Q))
+    (hM : FiniteDimensional k M) :
+    IsFinDim k Q ((quiverRepFunctor k Q).obj M) := by
+  have := hM
+  rw [isFinDim_iff]
+  intro v
+  -- Objects of `Paths Q` are the vertices of `Q`.
+  change Q at v
+  -- The functor's value at a vertex is its idempotent component.
+  change FiniteDimensional k (vertexComponent k M v)
+  infer_instance
 
 end TauCeti
