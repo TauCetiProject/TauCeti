@@ -9,7 +9,6 @@ public import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 public import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Exchangeability.Arrays.Block.Independence
 import TauCeti.Data.Set.Infinite
-import Mathlib.Probability.Independence.Process.Basic
 
 /-!
 # Conditional independence of crossing array strips
@@ -42,29 +41,6 @@ namespace TauCeti.Probability
 variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α]
   {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
 
-private theorem SeparatelyExchangeable.condIndepFun_strip_of_reindexing
-    (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) (R D U : Set (ℕ × ℕ))
-    (hRD : R ⊆ D)
-    (hreindex : ∀ C : Set (ℕ × ℕ), C.Finite → C ⊆ U →
-      ∃ a b : ℕ → ℕ, Function.Injective a ∧ Function.Injective b ∧
-        (∀ p ∈ C, (a p.1, b p.2) = p) ∧ ∀ p ∈ D, (a p.1, b p.2) ∈ R) :
-    U.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ] D.domRestrict := by
-  classical
-  -- Extend independence of finite observations to the entire strip.
-  apply Kernel.IndepFun.process_indepFun
-    (fun p : U ↦ measurable_pi_apply p.1) (Set.measurable_restrict _)
-  intro F
-  let C : Set (ℕ × ℕ) := Subtype.val '' (F : Set U)
-  have hC : C.Finite := F.finite_toSet.image Subtype.val
-  have hCU : C ⊆ U := by rintro p ⟨q, _, rfl⟩; exact q.2
-  suffices h : C.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ]
-      D.domRestrict by
-    exact h.comp (Measurable.of_eval fun p : F ↦
-      measurable_pi_apply (⟨p.1.1, ⟨p.1, p.2, rfl⟩⟩ : C)) measurable_id
-  -- Fix the observed coordinates while moving the other strip into the conditioning block.
-  obtain ⟨a, b, ha, hb, hfix, hinto⟩ := hreindex C hC hCU
-  exact hρ.condIndepFun_domRestrict_of_reindexing C R D hRD a b ha hb hfix hinto
-
 /-- The row strips along `T` and the column strips along `S` are conditionally independent given
 the entire intersection block whenever at least one of `S` and `T` is infinite. -/
 theorem SeparatelyExchangeable.condIndepFun_rowStrip_colStrip
@@ -74,7 +50,7 @@ theorem SeparatelyExchangeable.condIndepFun_rowStrip_colStrip
       (S ×ˢ Set.univ).domRestrict := by
   rcases hST with hS | hT
   · apply CondIndepFun.symm
-    refine hρ.condIndepFun_strip_of_reindexing (S ×ˢ T) (Set.univ ×ˢ T)
+    refine hρ.condIndepFun_domRestrict_of_finite_reindexing (S ×ˢ T) (Set.univ ×ˢ T)
       (S ×ˢ Set.univ) (Set.prod_mono_left (Set.subset_univ S)) ?_
     intro C hC hCS
     obtain ⟨a, ha, haC, haS⟩ := hS.exists_injective_into_eqOn_of_finite
@@ -82,7 +58,7 @@ theorem SeparatelyExchangeable.condIndepFun_rowStrip_colStrip
     exact ⟨a, id, ha, Function.injective_id,
       fun p hp ↦ Prod.ext (haC p.1 ⟨p, hp, rfl⟩) rfl,
       fun p hp ↦ ⟨haS _, hp.2⟩⟩
-  · refine hρ.condIndepFun_strip_of_reindexing (S ×ˢ T) (S ×ˢ Set.univ)
+  · refine hρ.condIndepFun_domRestrict_of_finite_reindexing (S ×ˢ T) (S ×ˢ Set.univ)
       (Set.univ ×ˢ T) (Set.prod_mono_right (Set.subset_univ T)) ?_
     intro C hC hCT
     obtain ⟨b, hb, hbC, hbT⟩ := hT.exists_injective_into_eqOn_of_finite

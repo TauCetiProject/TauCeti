@@ -10,6 +10,7 @@ public import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Independence.Conditional
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.Data.Set.Infinite
+import Mathlib.Probability.Independence.Process.Basic
 
 /-!
 # Local conditional independence of finite array blocks
@@ -86,6 +87,29 @@ theorem SeparatelyExchangeable.condIndepFun_domRestrict_of_reindexing
     (Set.measurable_restrict C) hW (Set.measurable_restrict D) hpair (hWR.trans hRD') hA
   exact hcontr.trans (TauCeti.MeasureTheory.condExp_ae_eq_of_le_of_le hWR hRD'
     (Set.measurable_restrict D).comap_le hcontr).symm
+
+/-- Conditional independence of all entries in `U` follows when every finite subset can be fixed
+by a reindexing that moves `D` into the intermediate conditioning set `R`. -/
+theorem SeparatelyExchangeable.condIndepFun_domRestrict_of_finite_reindexing
+    (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) (R D U : Set (ℕ × ℕ))
+    (hRD : R ⊆ D)
+    (hreindex : ∀ C : Set (ℕ × ℕ), C.Finite → C ⊆ U →
+      ∃ a b : ℕ → ℕ, Function.Injective a ∧ Function.Injective b ∧
+        (∀ p ∈ C, (a p.1, b p.2) = p) ∧ ∀ p ∈ D, (a p.1, b p.2) ∈ R) :
+    U.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ] D.domRestrict := by
+  classical
+  apply Kernel.IndepFun.process_indepFun
+    (fun p : U ↦ measurable_pi_apply p.1) (Set.measurable_restrict _)
+  intro F
+  let C : Set (ℕ × ℕ) := Subtype.val '' (F : Set U)
+  have hC : C.Finite := F.finite_toSet.image Subtype.val
+  have hCU : C ⊆ U := by rintro p ⟨q, _, rfl⟩; exact q.2
+  suffices h : C.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ]
+      D.domRestrict by
+    exact h.comp (Measurable.of_eval fun p : F ↦
+      measurable_pi_apply (⟨p.1.1, ⟨p.1, p.2, rfl⟩⟩ : C)) measurable_id
+  obtain ⟨a, b, ha, hb, hfix, hinto⟩ := hreindex C hC hCU
+  exact hρ.condIndepFun_domRestrict_of_reindexing C R D hRD a b ha hb hfix hinto
 
 /-- A finite set of array entries in an infinite rectangle is conditionally independent of the
 rest of the array given the other entries of that rectangle. -/
