@@ -34,7 +34,7 @@ the general case follows by induction on `|M|` along the trivial filtration of
 `TauCeti.exists_addSubgroup_natCard_eq_invariant_of_isProP`, each step being the six-term exact
 sequence `0 → H⁰(N) → H⁰(M) → H⁰(M ⧸ N) → H¹(N) → H¹(M) → H¹(M ⧸ N) → H²(N) = 0` of the explicit
 long exact sequence, read through the alternating identity
-`AddMonoidHom.card_mul_card_mul_card_of_exact`. Finiteness of `H¹(G, M)` is a consequence.
+`AddMonoidHom.card_mul_card_mul_card_of_exact`.
 
 Applied to the permutation module `Coind_U^G 𝔽_p` of an open subgroup `U`, which has order
 `p ^ [G : U]`, Shapiro's lemma turns the identity into the **two-term Euler formula**
@@ -51,13 +51,12 @@ open subgroup, `TauCeti.Topology.Algebra.Group.Profinite.Free.OpenSubgroup`.
 
 * `TauCeti.IsProP.natCard_H1_of_natCard_eq`: `|H¹(G, A)| = p ^ d(G)` for a trivial module `A` of
   order `p`.
-* `TauCeti.IsProP.natCard_H1_mul_natCard` and `TauCeti.IsProP.finite_H1`: the multiplicative
-  Euler identity `|H¹(G, M)| * |M| = |H⁰(G, M)| * |M| ^ d(G)`, and the finiteness of `H¹(G, M)`.
+* `TauCeti.IsProP.natCard_H1_mul_natCard`: the multiplicative Euler identity
+  `|H¹(G, M)| * |M| = |H⁰(G, M)| * |M| ^ d(G)`.
 * `TauCeti.IsProP.topologicalGeneratorRankNat_add_index` and
   `TauCeti.IsProP.one_sub_topologicalGeneratorRankNat_eq`: the two-term Euler formula for an open
   subgroup, in `ℕ` and in `ℤ`.
 * `TauCeti.CohomologicalDimensionLE.natCard_H1_mul_natCard`,
-  `TauCeti.CohomologicalDimensionLE.finite_H1`,
   `TauCeti.CohomologicalDimensionLE.topologicalGeneratorRankNat_add_index`: the same under the
   hypothesis `cd_p G ≤ 1`.
 
@@ -94,8 +93,8 @@ theorem natCard_H1_of_natCard_eq (hG : IsProP p G) (hfg : IsTopologicallyFinitel
     (htriv : ∀ (g : G) (a : A), g • a = a) :
     Nat.card (H1 G A) = p ^ topologicalGeneratorRankNat G hfg := by
   -- `A` is cyclic of order `p`, hence isomorphic to `ZMod p`
-  let e₀ : ZMod p ≃+ A := (ZMod.ringEquivCongr hA.symm).toAddEquiv.trans
-    (zmodAddCyclicAddEquiv (isAddCyclic_of_prime_card hA))
+  have : IsAddCyclic A := isAddCyclic_of_prime_card hA
+  let e₀ : ZMod p ≃+ A := addEquivOfAddCyclicCardEq ((Nat.card_zmod p).trans hA.symm)
   let e : Multiplicative A ≃* Multiplicative (ZMod p) := AddEquiv.toMultiplicative e₀.symm
   -- composing with `e` identifies the continuous characters of `G` valued in `A` and in `ZMod p`
   let φ : (G →ₜ* Multiplicative A) ≃ (G →ₜ* Multiplicative (ZMod p)) :=
@@ -203,16 +202,6 @@ theorem natCard_H1_mul_natCard (M : Type v) [AddCommGroup M] [TopologicalSpace M
     _ = p * Nat.card (H0 G (M ⧸ N)) * (Nat.card (H0 G M) * Nat.card M ^ d) := by
         rw [hMcard]; ring
 
-/-- **Finiteness of `H¹`.** Under the hypotheses of `TauCeti.IsProP.natCard_H1_mul_natCard`,
-`H¹(G, M)` is finite for every finite discrete `p`-primary `G`-module `M`. -/
-theorem finite_H1 (M : Type v) [AddCommGroup M] [TopologicalSpace M]
-    [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
-    (hM : IsPPrimaryTorsion p M) : Finite (H1 G M) := by
-  have h := hG.natCard_H1_mul_natCard hfg h2 M hM
-  refine Nat.finite_of_card_ne_zero fun h0 ↦ ?_
-  rw [h0, zero_mul] at h
-  exact Nat.mul_ne_zero Nat.card_pos.ne' (pow_ne_zero _ Nat.card_pos.ne') h.symm
-
 end Euler
 
 section OpenSubgroup
@@ -284,15 +273,6 @@ theorem natCard_H1_mul_natCard (M : Type u) [AddCommGroup M] [TopologicalSpace M
     Nat.card (H1 G M) * Nat.card M =
       Nat.card (H0 G M) * Nat.card M ^ topologicalGeneratorRankNat G hfg :=
   hG.natCard_H1_mul_natCard hfg (fun A _ _ _ _ _ _ hA _ ↦ hcd.subsingleton_H2 A
-    (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm))) M hM
-
-/-- **Finiteness of `H¹` under `cd_p G ≤ 1`.** For a topologically finitely generated profinite
-pro-`p` group `G` with `cd_p G ≤ 1` and a finite discrete `p`-primary `G`-module `M`, `H¹(G, M)`
-is finite. -/
-theorem finite_H1 (M : Type u) [AddCommGroup M] [TopologicalSpace M]
-    [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
-    (hM : IsPPrimaryTorsion p M) : Finite (H1 G M) :=
-  hG.finite_H1 hfg (fun A _ _ _ _ _ _ hA _ ↦ hcd.subsingleton_H2 A
     (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm))) M hM
 
 /-- **The two-term Euler formula under `cd_p G ≤ 1`.** For a topologically finitely generated

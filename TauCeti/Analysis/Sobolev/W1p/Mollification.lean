@@ -139,7 +139,7 @@ theorem W1p.normedBumpL_mem_range_of_ae_eq_zero (hp : p ≠ ∞) (phi : ContDiff
   let conv : E → Sobolev1Jet E := phi.normed nu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, nu] Jt
   have hbridge : ((W1p.normedBumpL hp phi u : W1p mu ⊤ p) : Sobolev1JetLp mu ⊤ p) =ᵐ[nu] conv := by
     rw [W1p.coe_normedBumpL, ← hJdef, ← hJ_eq]
-    exact normedBumpLp_ae_eq_convolution hp phi hJt_mem hJt_cpt
+    exact normedBumpLp_ae_eq_convolution hp phi hJt_mem
   have hconv_smooth : ContDiff ℝ (⊤ : ℕ∞) conv :=
     phi.hasCompactSupport_normed.contDiff_convolution_left (ContinuousLinearMap.lsmul ℝ ℝ)
       phi.contDiff_normed (hJt_mem.locallyIntegrable Fact.out)
