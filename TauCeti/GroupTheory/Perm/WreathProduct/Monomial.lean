@@ -101,7 +101,7 @@ noncomputable def monomialFinHom (t : G ⧸ U → G)
     (Finite.equivFinOfCardEq U.index_eq_card.symm)).toMonoidHom.comp (monomialHom U t ht)
 
 /-- The finite-coordinate homomorphism is the relabeling of the coset-indexed map. -/
-theorem monomialFinHom_apply (t : G ⧸ U → G)
+@[simp] theorem monomialFinHom_apply (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) :
     monomialFinHom U t ht g =
       WreathProduct.congr (Finite.equivFinOfCardEq U.index_eq_card.symm)
