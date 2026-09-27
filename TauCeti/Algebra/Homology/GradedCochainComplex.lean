@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Category.ModuleCat.Basic
+import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.Algebra.Homology.HomologicalComplex
+import Mathlib.Algebra.Homology.Additive
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
@@ -100,16 +102,11 @@ theorem gradedCochainComplex_d_apply (p : ℤ) (x : ℳ p) :
 
 /-- The graded cochain complex in a common module universe. Its degree-`p` term is
 `ULift (ℳ p)`, and its differential is the lifted restriction of `dM`. -/
-def gradedCochainComplexLift.{uLift} (ℳ : ℤ → Submodule R M) (dM : M →ₗ[R] M)
+noncomputable def gradedCochainComplexLift.{uLift} (ℳ : ℤ → Submodule R M) (dM : M →ₗ[R] M)
     (hdeg : LinearMap.IsHomogeneous dM ℳ ℳ 1) (hsq : ∀ p (x : ℳ p), dM (dM x) = 0) :
     CochainComplex (ModuleCat.{max uM uLift} R) ℤ :=
-  CochainComplex.of (fun p ↦ ModuleCat.of R (ULift.{uLift} (ℳ p)))
-    (fun p ↦ ModuleCat.ofHom <|
-      ULift.moduleEquiv.symm.toLinearMap.comp <|
-        ((dM.restrict (p := ℳ p) (q := ℳ (p + 1)) fun _ hx ↦ hdeg.map_mem hx).comp
-          ULift.moduleEquiv.toLinearMap))
-    fun p ↦ ModuleCat.hom_ext (LinearMap.ext fun x ↦
-      ULift.ext (Subtype.ext (hsq p x.down)))
+  (ModuleCat.uliftFunctor.{uLift, uM} R).mapHomologicalComplex (ComplexShape.up ℤ) |>.obj
+    (gradedCochainComplex ℳ dM hdeg hsq)
 
 @[simp]
 theorem gradedCochainComplexLift_X (p : ℤ) :
@@ -127,30 +124,29 @@ variable {N : Type uN} [AddCommGroup N] [Module R N]
 /-- A degree-preserving linear map commuting with differentials induces a map between the
 cochain complexes assembled from graded modules, even when their carriers have different
 universes. -/
-def gradedCochainComplexMap (f : M →ₗ[R] N)
+noncomputable def gradedCochainComplexMap (f : M →ₗ[R] N)
     (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
     (hcomm : ∀ p (x : ℳ p), dN (f x) = f (dM x)) :
     gradedCochainComplexLift.{uR, uM, max uN uExtra} ℳ dM hdeg hsq ⟶
-      gradedCochainComplexLift.{uR, uN, max uM uExtra} 𝒩 dN hdegN hsqN where
-  f n := by
+      gradedCochainComplexLift.{uR, uN, max uM uExtra} 𝒩 dN hdegN hsqN :=
+  CochainComplex.ofHom (fun n ↦ by
     change ModuleCat.of R (ULift.{max uN uExtra} (ℳ n)) ⟶
       ModuleCat.of R (ULift.{max uM uExtra} (𝒩 n))
     exact ModuleCat.ofHom <|
       ULift.moduleEquiv.symm.toLinearMap.comp <|
         ((f.restrict (fun _ hx ↦ by simpa only [add_zero] using hf.map_mem hx)).comp
-          ULift.moduleEquiv.toLinearMap)
-  comm' i j hij := by
-    obtain rfl : j = i + 1 := hij.symm
+          ULift.moduleEquiv.toLinearMap)) (fun i ↦ by
     apply ModuleCat.hom_ext
     apply LinearMap.ext
     intro x
     apply ULift.ext
     apply Subtype.ext
-    dsimp [gradedCochainComplexLift, CochainComplex.of, ModuleCat.hom_comp,
+    dsimp [gradedCochainComplexLift, gradedCochainComplex, ModuleCat.hom_comp,
       LinearMap.comp_apply]
-    simp only [CochainComplex.of_d]
     change ULift.{max uN uExtra} (ℳ i) at x
-    exact hcomm i x.down
+    simp only [CochainComplex.of_d]
+    change dN (f x.down.val) = f (dM x.down.val)
+    exact hcomm i x.down)
 
 /-- On a homogeneous element, the induced cochain map is the original linear map. -/
 @[simp]
