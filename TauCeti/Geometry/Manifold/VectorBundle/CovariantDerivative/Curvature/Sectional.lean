@@ -102,6 +102,24 @@ theorem sectionalCurvature_smul_smul (hcov : CovariantDerivative.IsMetricCompati
   simp only [map_smul, LinearMap.smul_apply, real_inner_smul_left, real_inner_smul_right]
   field_simp [ha, hb]
 
+/-- Adding a multiple of the first spanning vector to the second does not change sectional
+curvature. -/
+theorem sectionalCurvature_add_smul_right (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov)
+    (x : M) (u v : TangentSpace I x) (a : ℝ) :
+    cov.sectionalCurvature hcov x u (v + a • u) =
+      cov.sectionalCurvature hcov x u v := by
+  have hzero : inner ℝ (curvature x u v u) u = 0 := by
+    apply CharZero.eq_neg_self_iff.mp
+    simpa [real_inner_comm] using hcov.inner_curvatureTensor_eq_neg x u v u u
+  rw [sectionalCurvature_apply, sectionalCurvature_apply, Matrix.real_det_gram_fin_two,
+    Matrix.real_det_gram_fin_two]
+  simp only [map_add, LinearMap.add_apply, map_smul, LinearMap.smul_apply,
+    cov.curvatureTensor_self, LinearMap.zero_apply, inner_add_left, inner_add_right,
+    real_inner_smul_left, real_inner_smul_right, inner_zero_left, hzero]
+  rw [real_inner_comm v u]
+  ring
+
 variable {cov} in
 /-- For a metric-compatible connection, sectional curvature is symmetric in its two spanning
 vectors. -/
