@@ -39,11 +39,12 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
 /-- A local-field extension is totally ramified when its ramification index equals its degree. -/
-def IsTotallyRamified (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
-    [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-    [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] : Prop :=
+def IsTotallyRamified (K L : Type*) [Field K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] : Prop :=
   ramificationIndex K L = Module.finrank K L
 
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [ValuativeExtension K L] in
 /-- The defining condition for total ramification. -/
 theorem isTotallyRamified_def :
     IsTotallyRamified K L ↔ ramificationIndex K L = Module.finrank K L := Iff.rfl
@@ -60,7 +61,6 @@ theorem isTotallyRamified_iff_inertiaDegree_eq_one :
     simp [h]
 
 /-- The residue degree of a totally ramified extension is one. -/
-@[simp]
 theorem IsTotallyRamified.inertiaDegree_eq_one (h : IsTotallyRamified K L) :
     inertiaDegree K L = 1 :=
   isTotallyRamified_iff_inertiaDegree_eq_one.mp h
