@@ -221,7 +221,6 @@ def RegularFormPresentation.append (p q : RegularFormPresentation K) :
   ⟨p.1 + q.1, Fin.append p.2 q.2⟩
 
 /-- The underlying weights of an orthogonal sum are the concatenation of the two weight lists. -/
-@[simp]
 theorem RegularFormPresentation.append_eq (p q : RegularFormPresentation K) :
     p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := (rfl)
 

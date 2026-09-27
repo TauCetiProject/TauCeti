@@ -100,13 +100,11 @@ theorem localHasseOfOdd_formClass (h2 : IsUnit (2 : 𝒪[K]))
     localHasseOfOdd_mk]
 
 /-- A unary diagonal form has trivial local Hasse sign. -/
-@[simp]
 theorem localHasseOfOdd_mk_rankOne (h2 : IsUnit (2 : 𝒪[K])) (a : Kˣ) :
     localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) = 1 :=
   localHasseOfOdd_eq_one_of_rank_le_one h2 (by rw [rank_mk])
 
 /-- A binary diagonal form has Hasse sign equal to its one Hilbert symbol. -/
-@[simp]
 theorem localHasseOfOdd_mk_binary (h2 : IsUnit (2 : 𝒪[K])) (a b : Kˣ) :
     localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) =
       hilbertSymbol a b := by
