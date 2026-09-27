@@ -96,13 +96,18 @@ theorem cor_negSucc_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
 through the canonical comparison. -/
 @[reassoc (attr := simp)]
 theorem cor_pos_comp_isoGroupCohomology_hom (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
-    cor M H ((n + 1 : ℕ) : ℤ) ≫
+    cor M H ((n : ℤ) + 1) ≫
         (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).hom.app M =
       (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).hom.app
           (Rep.res H.subtype M) ≫ groupCohomology.corestriction H M (n + 1) := by
-  simp only [cor]
-  exact (Iso.eq_comp_inv ((_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).app M)).1
-    (by rfl)
+  simpa only [Int.natCast_add, Int.cast_ofNat_Int] using
+    (show cor M H ((n + 1 : ℕ) : ℤ) ≫
+        (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).hom.app M =
+      (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).hom.app
+        (Rep.res H.subtype M) ≫ groupCohomology.corestriction H M (n + 1) from by
+      simp only [cor]
+      exact (Iso.eq_comp_inv
+        ((_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).app M)).1 (by rfl))
 
 /-- Restriction followed by corestriction multiplies every Tate class by the subgroup index,
 in every integer degree. -/
