@@ -13,6 +13,7 @@ public import TauCeti.Combinatorics.PermutationTriple.Passport.Normalizer
 The normalizer of a passport's reference monodromy group acts on its generating triples.
 Every generating triple has the same stabilizer: the centralizer of that reference group,
 viewed as a subgroup of the normalizer. Orbit-stabilizer then gives the size of each orbit.
+This per-orbit equation uses no total generating-triple count.
 
 The result uses only the fact that the first two permutations generate the reference group;
 no connectedness or admissibility hypothesis is needed.
