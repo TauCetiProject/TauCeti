@@ -7,8 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified
-public import TauCeti.NumberTheory.LocalField.GaloisAction
-public import TauCeti.NumberTheory.RamificationInertia.Galois
+public import TauCeti.NumberTheory.LocalField.RamificationGroup
 
 /-!
 # Residue correspondence for unramified local extensions
@@ -92,16 +91,11 @@ theorem ker_residueField_toAlgAut :
 
 /-- The inertia group of an unramified finite Galois extension of local fields is trivial. -/
 theorem IsUnramified.inertia_eq_bot [IsUnramified K L] :
-    𝓂[L].inertia (L ≃ₐ[K] L) = ⊥ := by
-  have hunder : 𝓂[L].under 𝒪[K] = 𝓂[K] := Ideal.LiesOver.over.symm
-  have hfinite : Finite (𝒪[K] ⧸ 𝓂[K]) := inferInstanceAs (Finite 𝓀[K])
-  let _ : Finite (𝒪[K] ⧸ 𝓂[L].under 𝒪[K]) := hunder.symm ▸ hfinite
-  let _ : Finite (𝓂[L].under 𝒪[K]).ResidueField := inferInstance
-  let _ := Fintype.ofFinite (𝓂[L].under 𝒪[K]).ResidueField
-  let _ : PerfectField (𝓂[L].under 𝒪[K]).ResidueField := inferInstance
-  apply Subgroup.eq_bot_of_card_eq
-  rw [Ideal.card_inertia_eq_ramificationIdx 𝒪[K] (L ≃ₐ[K] L) 𝓂[L],
-    ← ramificationIndex_eq_ramificationIdx, IsUnramified.ramificationIndex_eq_one]
+    𝓂[L].inertia (L ≃ₐ[K] L) = ⊥ :=
+  Subgroup.eq_bot_of_card_eq _ <| by
+    rw [← LocalFieldsRamification.lowerRamificationGroup_zero,
+      LocalFieldsRamification.natCard_lowerRamificationGroup_zero,
+      IsUnramified.ramificationIndex_eq_one]
 
 /-- Reduction from the Galois group to the residue-field Galois group is surjective. -/
 theorem residueField_toAlgAut_surjective :
