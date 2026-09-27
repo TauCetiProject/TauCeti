@@ -8,6 +8,10 @@ module
 -- The untwisted Steinberg values and the four class representatives occur in the statements below,
 -- and this module re-exports `Representation.ofLinearCharacter`, which the definitions below use.
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.CharacterValues
+-- `TauCeti.irreducibleCharacters`, the set the linear characters are shown to belong to.
+public import TauCeti.RepresentationTheory.CharacterTable.Table
+-- Non-public: a one-dimensional representation is irreducible, inside a proof only.
+import TauCeti.RepresentationTheory.Irreducible
 
 /-!
 # Linear characters and Steinberg twists of `GL₂(𝔽_q)`
@@ -42,6 +46,8 @@ is `TauCeti.nonempty_iso_GL2PrincipalSeries_self` in
 * `TauCeti.GL2LinearChar_comp_gl2BorelSubtype`: restriction to the Borel subgroup is the boundary
   character `α ⊗ α`.
 * `TauCeti.GL2Linear_character_injective`: distinct multiplicative characters give distinct rows.
+* `TauCeti.character_GL2Linear_mem_irreducibleCharacters`: the linear characters are irreducible
+  characters of `GL₂(F)`.
 * The `_scalar`, `_diagGL`, `_jordanGL`, and `_gl2NonSplitTorusHom` theorems compute both families
   on the four class representatives.
 
@@ -134,6 +140,15 @@ theorem GL2Linear_character_injective :
   apply Units.ext
   have := congrFun h g
   simpa using this
+
+/-- **The linear characters `α ∘ det` are irreducible characters of `GL₂(F)`**, being the
+characters of one-dimensional representations. -/
+@[simp]
+theorem character_GL2Linear_mem_irreducibleCharacters (α : Fˣ →* ℂˣ) :
+    (GL2Linear F α).character ∈ irreducibleCharacters ℂ (GL (Fin 2) F) :=
+  have : Representation.IsIrreducible (GL2Linear F α).ρ :=
+    Representation.isIrreducible_of_finrank_eq_one _ (finrank_GL2Linear α)
+  character_mem_irreducibleCharacters (GL2Linear F α).ρ
 
 /-- **The determinant character restricts to the boundary Borel character `α ⊗ α`.** -/
 @[simp]

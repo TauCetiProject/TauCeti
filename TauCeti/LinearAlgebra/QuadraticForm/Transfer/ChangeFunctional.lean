@@ -19,6 +19,11 @@ For a finite field extension, every pair of nonzero functionals differs in this 
 This change-of-functional formula controls the dependence on the functional when transfer is
 descended to Witt classes.
 
+## Main definitions
+
+* `QuadraticForm.scharlauTransferCompMul`: the change-of-functional isometry, together with its
+  forward and inverse application rules.
+
 ## References
 
 * W. Scharlau, *Quadratic and Hermitian Forms* (1985), Chapter 2, §5.
@@ -29,24 +34,49 @@ public section
 
 open scoped TensorProduct
 
-namespace QuadraticMap
-
-section CommRing
+namespace QuadraticForm
 
 variable {K L V : Type*} [CommSemiring K] [CommRing L] [Algebra K L]
   [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
   [Invertible (2 : L)]
 
-/-- Multiplication of the input of a functional is tensoring with a quadratic line before
-Scharlau transfer. This is an isometry of forms over the base ring `K`. -/
-theorem equivalent_scharlauTransfer_comp_mul_rankOneTensor
-    (Q : QuadraticForm L V) (s : L →ₗ[K] K) (a : L) :
-    (Q.scharlauTransfer (s.comp (LinearMap.mul K L a))).Equivalent
-      ((QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm L L)) Q).scharlauTransfer s) := by
-  rw [scharlauTransfer_comp_mul]
-  exact ⟨(rankOneTensorIsometry Q a).symm.scharlauTransfer s⟩
+/-- **Change of functional for Scharlau transfer.** Transfer of `Q` along the functional
+`x ↦ s (a * x)` is isometric to transfer along `s` after tensoring `Q` with `⟨a⟩`.
+The statement also holds for `a = 0`; applications comparing nonzero functionals take `a` to
+be the unique unit relating them. -/
+def scharlauTransferCompMul (Q : QuadraticForm L V) (s : L →ₗ[K] K) (a : L) :
+    (Q.scharlauTransfer (s.comp (LinearMap.mul K L a))).IsometryEquiv
+      ((QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm L L)) Q).scharlauTransfer s) :=
+  let e := (QuadraticMap.rankOneTensorIsometry Q a).symm.scharlauTransfer s
+  { toLinearEquiv := e.toLinearEquiv
+    map_app' := fun v => by
+      rw [QuadraticMap.scharlauTransfer_comp_mul]
+      exact e.map_app v }
 
-end CommRing
+/-- The change-of-functional isometry sends `v` to `1 ⊗ v`. -/
+@[simp]
+theorem scharlauTransferCompMul_apply (Q : QuadraticForm L V)
+    (s : L →ₗ[K] K) (a : L) (v : V) :
+    scharlauTransferCompMul Q s a v = 1 ⊗ₜ[L] v := by
+  unfold scharlauTransferCompMul
+  -- The definition rebuilds the transferred rank-one isometry only to replace its source form
+  -- along `scharlauTransfer_comp_mul`; its underlying linear equivalence is copied unchanged.
+  change ((QuadraticMap.rankOneTensorIsometry Q a).symm.scharlauTransfer s) v = _
+  rw [QuadraticMap.IsometryEquiv.scharlauTransfer_apply,
+    QuadraticMap.rankOneTensorIsometry_symm_apply]
+
+/-- The inverse change-of-functional isometry acts by the canonical left unitor. -/
+@[simp]
+theorem scharlauTransferCompMul_symm_apply (Q : QuadraticForm L V)
+    (s : L →ₗ[K] K) (a : L) (x : L ⊗[L] V) :
+    (scharlauTransferCompMul Q s a).symm x = TensorProduct.lid L V x := by
+  rw [QuadraticMap.IsometryEquiv.symm_apply_eq, scharlauTransferCompMul_apply]
+  simpa only [TensorProduct.lid_symm_apply] using
+    (TensorProduct.lid L V).symm_apply_apply x |>.symm
+
+end QuadraticForm
+
+namespace QuadraticMap
 
 section Field
 
