@@ -75,7 +75,8 @@ noncomputable def cupFp :
     cohomFp p G 1 →ₗ[ZMod p] cohomFp p G 1 →ₗ[ZMod p] cohomFp p G 2 :=
   (fpPairing p G).cup 1 1
 
-/-- The specialized cup product is the general cup product of the multiplication pairing. -/
+/-- The specialized cup product is the general cup product of the multiplication pairing.
+This equation lets general cup-product results apply to arbitrary cohomology classes. -/
 theorem cupFp_def : cupFp p G = (fpPairing p G).cup 1 1 := by
   simp only [cupFp]
 
