@@ -50,32 +50,42 @@ theorem mem_chartRel_iff (i j : D.J) (x : D.U i) (y : D.U j) :
 every pair of charts is closed in the product of those charts. -/
 theorem t2Space_iff_isClosed_chartRel :
     T2Space D.toGlueData.glued ↔ ∀ i j, IsClosed (D.chartRel i j) := by
-  constructor
-  · intro h i j
-    let _ := h
-    rw [show D.chartRel i j = {p | D.toGlueData.ι i p.1 = D.toGlueData.ι j p.2} by
-      ext p
-      exact D.mem_chartRel_iff i j p.1 p.2]
-    exact isClosed_eq
-      ((D.toGlueData.ι i).hom.continuous_toFun.comp continuous_fst)
-      ((D.toGlueData.ι j).hom.continuous_toFun.comp continuous_snd)
-  · intro h
-    rw [t2Space_iff]
-    intro x y hxy
-    obtain ⟨i, a, rfl⟩ := D.ι_jointly_surjective x
-    obtain ⟨j, b, rfl⟩ := D.ι_jointly_surjective y
-    have hab : (a, b) ∈ (D.chartRel i j)ᶜ := by
-      simpa only [Set.mem_compl_iff, D.mem_chartRel_iff] using hxy
-    obtain ⟨u, v, hu, hv, ha, hb, huv⟩ :=
-      isOpen_prod_iff.mp (h i j).isOpen_compl a b hab
-    refine ⟨D.toGlueData.ι i '' u, D.toGlueData.ι j '' v,
-      D.open_image_open i ⟨u, hu⟩, D.open_image_open j ⟨v, hv⟩,
-      ⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩, ?_⟩
-    rw [Set.disjoint_left]
-    rintro z ⟨a', ha', rfl⟩ ⟨b', hb', hab'⟩
-    have hrel : (a', b') ∈ D.chartRel i j :=
-      (D.mem_chartRel_iff i j a' b').2 hab'.symm
-    exact (huv ⟨ha', hb'⟩) hrel
+  let π : (Σ i, D.U i) → D.toGlueData.glued := fun x ↦ D.toGlueData.ι x.1 x.2
+  have hπ : IsOpenQuotientMap π := {
+    surjective := by
+      intro x
+      obtain ⟨i, y, rfl⟩ := D.ι_jointly_surjective x
+      exact ⟨⟨i, y⟩, rfl⟩
+    continuous := continuous_sigma fun i ↦ (D.toGlueData.ι i).hom.continuous_toFun
+    isOpenMap := by
+      intro s hs
+      rw [isOpen_sigma_iff] at hs
+      rw [show π '' s = ⋃ i, D.toGlueData.ι i '' ((fun y : D.U i ↦ ⟨i, y⟩) ⁻¹' s) by
+        ext x
+        simp only [Set.mem_image, Set.mem_iUnion, Set.mem_preimage]
+        constructor
+        · rintro ⟨⟨i, y⟩, hy, rfl⟩
+          exact ⟨i, y, hy, rfl⟩
+        · rintro ⟨i, y, hy, rfl⟩
+          exact ⟨⟨i, y⟩, hy, rfl⟩]
+      exact isOpen_iUnion fun i ↦ D.open_image_open i ⟨_, hs i⟩ }
+  rw [t2Space_iff_of_isOpenQuotientMap hπ]
+  rw [show (∀ i j, IsClosed (D.chartRel i j)) ↔
+      ∀ i j, IsClosed (D.chartRel j i) by
+    constructor <;> intro h i j <;> exact h _ _]
+  let e₁ : ((Σ i, D.U i) × (Σ i, D.U i)) ≃ₜ Σ i, D.U i × (Σ i, D.U i) :=
+    Homeomorph.sigmaProdDistrib
+  rw [← e₁.symm.isClosed_preimage, isClosed_sigma_iff]
+  apply forall_congr' fun i ↦ ?_
+  let e₂ : (D.U i × (Σ j, D.U j)) ≃ₜ Σ j, D.U j × D.U i :=
+    (Homeomorph.prodComm _ _).trans Homeomorph.sigmaProdDistrib
+  rw [← e₂.symm.isClosed_preimage, isClosed_sigma_iff]
+  apply forall_congr' fun j ↦ ?_
+  change IsClosed {p : D.U j × D.U i | π ⟨i, p.2⟩ = π ⟨j, p.1⟩} ↔
+    IsClosed (D.chartRel j i)
+  rw [show {p : D.U j × D.U i | π ⟨i, p.2⟩ = π ⟨j, p.1⟩} = D.chartRel j i by
+    ext p
+    exact eq_comm.trans (D.mem_chartRel_iff j i p.1 p.2).symm]
 
 /-- A glued space with countably many second-countable charts is second countable. -/
 instance secondCountableTopology [Countable D.J]
