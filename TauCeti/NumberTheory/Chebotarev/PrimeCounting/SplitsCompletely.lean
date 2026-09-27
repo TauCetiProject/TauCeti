@@ -28,7 +28,7 @@ that closure.
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §13.
-* The normal-closure proof pattern is adapted from
+* For the analogous Dirichlet-density result, see
   `NumberField.Chebotarev.hasDirichletDensity_setOf_ncard_primesOver_eq_finrank` in
   `TauCeti.NumberTheory.Chebotarev.Density.SplitsCompletely`.
 -/
