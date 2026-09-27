@@ -30,13 +30,15 @@ namespace TauCeti.ModularForm
 /-- The normalized modular invariant `j = E₄³ / Δ` on the upper half-plane. -/
 def j (z : ℍ) : ℂ := E₄ z ^ 3 / discriminant z
 
+@[simp]
 theorem j_apply (z : ℍ) : j z = E₄ z ^ 3 / discriminant z := by rfl
 
 /-- The modular invariant is holomorphic on the upper half-plane. -/
-theorem mdifferentiable_j : MDiff j := by
+theorem j_mdifferentiable : MDiff j := by
   exact (ModularForm.holo' E₄).pow 3 |>.div (CuspForm.discriminant.holo') discriminant_ne_zero
 
 /-- The weight factors cancel, so `j` is invariant under `SL₂(ℤ)`. -/
+@[simp]
 theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
   have hγ : mapGL ℝ γ ∈ (𝒮ℒ : Subgroup (GL (Fin 2) ℝ)) := ⟨γ, rfl⟩
   have hE : (⇑(E₄.pow 3) ∣[(12 : ℤ)] (mapGL ℝ γ)) = ⇑(E₄.pow 3) := by
@@ -47,6 +49,7 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
   have h : (⇑(E₄.pow 3) / ⇑CuspForm.discriminant) ∣[(12 : ℤ) - 12] γ =
       ⇑(E₄.pow 3) / ⇑CuspForm.discriminant := by
     rw [div_slash_SL2]
+    -- The `SL₂` slash action uses `mapGL ℝ γ` definitionally, as in `hE` and `hΔ`.
     change (⇑(E₄.pow 3) ∣[(12 : ℤ)] (mapGL ℝ γ)) /
       (⇑CuspForm.discriminant ∣[(12 : ℤ)] (mapGL ℝ γ)) = _
     rw [hE, hΔ]
@@ -55,7 +58,7 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
   have hz := congrFun h z
   simpa [SL_slash_apply, j, hpow] using hz
 
-/-- The other standard expression for the modular invariant. -/
+/-- The identity `j - 1728 = E₆² / Δ`. -/
 theorem j_sub_1728 (z : ℍ) : j z - 1728 = E₆ z ^ 2 / discriminant z := by
   have hΔ : (1728 : ℂ) * discriminant z = E₄ z ^ 3 - E₆ z ^ 2 := by
     rw [discriminant_eq_E₄_cube_sub_E₆_sq]
