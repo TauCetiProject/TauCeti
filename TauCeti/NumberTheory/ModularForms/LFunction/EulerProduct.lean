@@ -20,8 +20,7 @@ there.
 
 This gives the Euler product for the coefficient L-series and, through the width-one
 normalization, for Mathlib's `ModularForm.L`. It applies to newforms equipped with a full
-eigenform structure from their bad-prime eigenrelations. It supplies the analytic prerequisite
-for the Layer 7 newform Euler product; the newform-to-full-eigenform upgrade is separate.
+eigenform structure from their bad-prime eigenrelations.
 
 ## References
 
@@ -85,20 +84,18 @@ theorem LSeries_eulerProduct (f : Eigenform N k)
             (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
               (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s)) := by
-  let F : ℕ → ℂ := fun p ↦
-    (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
-      (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
-        (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹
-  have hprod : HasProd (fun p : Nat.Primes ↦ F p)
-      (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) :=
-    f.LSeries_eulerProduct_hasProd h₁ hs
-  have h := ((hasProd_subtype_iff_mulIndicator (f := F)
-    (s := {p : ℕ | Nat.Prime p})).mp hprod).tendsto_prod_nat
-  have H (n : ℕ) : ∏ i ∈ Finset.range n, Set.mulIndicator {p | Nat.Prime p} F i =
-      ∏ p ∈ Nat.primesBelow n, F p :=
-    Finset.prod_mulIndicator_eq_prod_filter (Finset.range n) (fun _ ↦ F)
-      (fun _ ↦ {p | Nat.Prime p}) id
-  simpa only [F, H] using h
+  have habs := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le f.toCuspForm
+  rw [strictWidthInfty_Gamma1] at habs
+  have hsum : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
+    LSeriesSummable_of_abscissaOfAbsConv_lt_re
+      (habs.trans_lt (by exact_mod_cast hs))
+  exact TauCeti.LSeries.LSeries_eulerProduct_of_recurrence
+    (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
+    (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
+    (fun hm hn hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
+    (fun p hp r ↦ by
+      simpa only [← mul_assoc] using f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
+    hsum
 
 /-- The Euler product in Mathlib's `ModularForm.L` normalization. At level `Γ₁(N)` the
 width at infinity is one, so its Dirichlet series is the coefficient L-series above. -/
