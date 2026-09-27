@@ -37,6 +37,16 @@ def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
     change (W.toAffine.map (Int.castRingHom ℚ)).Equation (x : ℚ) (y : ℚ)
     exact h.map (Int.castRingHom ℚ))
 
+/-- The affine coordinates of the rational point constructed from an integral solution. -/
+@[simp]
+theorem pointEquiv_pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
+    (W.baseChange ℚ).toAffine.pointEquiv (W.pointOfIntegralSolution x y h) =
+      .some ⟨⟨(x : ℚ), (y : ℚ)⟩, by
+        change (W.toAffine.map (Int.castRingHom ℚ)).Equation (x : ℚ) (y : ℚ)
+        exact h.map (Int.castRingHom ℚ)⟩ := by
+  simp only [pointOfIntegralSolution, Affine.pointEquiv_some]
+  congr 1
+
 /-- The affine rational points with both coordinates integral. The point at infinity is excluded. -/
 def integralPoints : Set (W.baseChange ℚ).toAffine.Point :=
   {P | ∃ x y : ℤ, ∃ h : W.toAffine.Equation x y, P = W.pointOfIntegralSolution x y h}
