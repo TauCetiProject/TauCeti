@@ -365,9 +365,10 @@ noncomputable def spinTransvectionHom (hQ : Q.Nondegenerate) (hu : Q u = 0) :
 /-- The quotient homomorphism sends the class of `w` to the Spin lift `L_{u,w}`. -/
 @[simp]
 theorem toMul_spinTransvectionHom_mk (hQ : Q.Nondegenerate) (hu : Q u = 0)
-    (huw : polar Q u w = 0) :
-    Additive.toMul (spinTransvectionHom hQ hu (Submodule.Quotient.mk ⟨w, by simpa using huw⟩)) =
-      spinTransvection hQ hu huw :=
+    (w : LinearMap.ker (Q.polarBilin u)) :
+    Additive.toMul (spinTransvectionHom hQ hu (Submodule.Quotient.mk w)) =
+      spinTransvection hQ (w := (w : V)) hu (by
+        simpa only [QuadraticMap.polarBilin_apply_apply] using LinearMap.mem_ker.mp w.2) :=
   -- `Submodule.Quotient.mk` is the additive quotient map, on which `QuotientAddGroup.lift`
   -- computes by definition.
   spinTransvectionAddHom_apply hQ hu _
@@ -397,9 +398,13 @@ theorem _root_.QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_spinTransvectionHo
       congrFun e.spinGroupEquiv.coe_toMonoidHom _
     apply Additive.toMul.injective
     simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul]
-    rw [hparam, e.transvectionParameterEquiv_mk, toMul_spinTransvectionHom_mk hQ hu huw,
+    rw [hparam, e.transvectionParameterEquiv_mk,
+      toMul_spinTransvectionHom_mk hQ hu ⟨w, hw⟩,
       toMul_spinTransvectionHom_mk (e.nondegenerate_iff.mp hQ) ((e.map_app u).trans hu)
-        ((e.polar_apply u w).trans huw), htransport,
+        ⟨e w, by
+          rw [LinearMap.mem_ker, QuadraticMap.polarBilin_apply_apply]
+          exact (e.polar_apply u w).trans huw⟩,
+      htransport,
       e.spinGroupEquiv_spinTransvection]
 
 /-- **The Spin lifts lift the Eichler transvections**: followed by the projection
@@ -414,7 +419,7 @@ theorem spinToSpecialOrthogonal_comp_spinTransvectionHom (hQ : Q.Nondegenerate) 
   apply Additive.toMul.injective
   apply Subtype.ext
   rw [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
-    toMul_spinTransvectionHom_mk hQ hu huw, coe_spinToSpecialOrthogonal_spinTransvection,
+    toMul_spinTransvectionHom_mk hQ hu ⟨w, hw⟩, coe_spinToSpecialOrthogonal_spinTransvection,
     coe_transvectionHom_mk hu huw]
 
 /-- For `u ≠ 0`, the Spin lifts of the Eichler transvections with isotropic vector `u` form a copy
