@@ -50,6 +50,68 @@ namespace TauCeti.Toric
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {σ : PointedCone ℝ V}
 
+private theorem finrank_span_face_eq_card_faceOrderIsoSet
+    {C : PointedCone ℝ V} {ι : Type*} [Finite ι] (v : ι → V)
+    (hv : LinearIndependent ℝ v) (hcone : C = PointedCone.hull ℝ (Set.range v))
+    (G : C.Face) :
+    Module.finrank ℝ (Submodule.span ℝ (G.toPointedCone : Set V)) =
+      Nat.card {a : ι // a ∈ PointedCone.faceOrderIsoSet hv hcone G} := by
+  classical
+  let _ : Fintype ι := Fintype.ofFinite ι
+  let e := PointedCone.faceOrderIsoSet hv hcone
+  have hface : G.toPointedCone = PointedCone.hull ℝ (v '' e G) := by
+    simpa only [e, PointedCone.faceOrderIsoSet_apply] using G.eq_hull_image hcone
+  have hrange : Set.range (fun a : {a : ι // a ∈ e G} ↦ v a.1) = v '' e G := by
+    ext x
+    simp [Set.mem_range, Set.mem_image]
+  have hspan : Submodule.span ℝ (G.toPointedCone : Set V) =
+      Submodule.span ℝ (Set.range (fun a : {a : ι // a ∈ e G} ↦ v a.1)) := by
+    rw [hrange, hface]
+    apply le_antisymm
+    · exact Submodule.span_le.mpr (PointedCone.hull_le_span ℝ _)
+    · exact Submodule.span_mono PointedCone.subset_hull
+  rw [hspan, Nat.card_eq_fintype_card]
+  exact finrank_span_eq_card (hv.comp Subtype.val Subtype.val_injective)
+
+private noncomputable def toricRayEquivOfLinearIndependent
+    {C : PointedCone ℝ V} {ι : Type*} [Finite ι] (v : ι → V)
+    (hv : LinearIndependent ℝ v) (hcone : C = PointedCone.hull ℝ (Set.range v)) :
+    ToricRay C ≃ ι := by
+  classical
+  let _ : Fintype ι := Fintype.ofFinite ι
+  let e := PointedCone.faceOrderIsoSet hv hcone
+  have hdim (G : C.Face) :
+      Module.finrank ℝ (Submodule.span ℝ (G.toPointedCone : Set V)) =
+        Nat.card {a : ι // a ∈ e G} :=
+    finrank_span_face_eq_card_faceOrderIsoSet v hv hcone G
+  let f : ToricRay C → ι := fun ρ ↦
+    (Classical.choose (Nat.card_eq_one_iff_exists.mp ((hdim ρ.1).symm.trans ρ.2))).1
+  have hf (ρ : ToricRay C) : e ρ.1 = {f ρ} := by
+    let h := Nat.card_eq_one_iff_exists.mp ((hdim ρ.1).symm.trans ρ.2)
+    ext a
+    constructor
+    · intro ha
+      exact congrArg Subtype.val (Classical.choose_spec h ⟨a, ha⟩)
+    · intro ha
+      subst a
+      exact (Classical.choose h).2
+  have hfinj : Function.Injective f := by
+    intro ρ ν h
+    apply Subtype.ext
+    exact e.injective (by rw [hf ρ, hf ν, h])
+  have hfsurj : Function.Surjective f := by
+    intro a
+    let G := e.symm {a}
+    have hG : Module.finrank ℝ (Submodule.span ℝ (G.toPointedCone : Set V)) = 1 := by
+      rw [hdim, e.apply_symm_apply]
+      simp
+    let ρ : ToricRay C := ⟨G, hG⟩
+    refine ⟨ρ, ?_⟩
+    have h : e G = {f ρ} := by simpa only [ρ, Subtype.coe_mk] using hf ρ
+    rw [e.apply_symm_apply] at h
+    exact Set.singleton_injective h.symm
+  exact Equiv.ofBijective f ⟨hfinj, hfsurj⟩
+
 /-- The real dimension of a face of a simplicial cone is its number of rays. -/
 theorem finrank_span_face_eq_card_rays_of_isSimplicial (hσ : σ.IsSimplicial) (F : σ.Face) :
     Module.finrank ℝ (Submodule.span ℝ (F.toPointedCone : Set V)) =
@@ -70,46 +132,8 @@ theorem finrank_span_face_eq_card_rays_of_isSimplicial (hσ : σ.IsSimplicial) (
   let _ : Fintype t := ht.fintype
   have hdim (G : F.toPointedCone.Face) :
       Module.finrank ℝ (Submodule.span ℝ (G.toPointedCone : Set V)) =
-        Nat.card {a : t // a ∈ e G} := by
-    have hface : G.toPointedCone = PointedCone.hull ℝ (v '' e G) := by
-      simpa only [e, PointedCone.faceOrderIsoSet_apply] using G.eq_hull_image hcone
-    have hrange : Set.range (fun a : {a : t // a ∈ e G} ↦ v a.1) = v '' e G := by
-      ext x
-      simp [Set.mem_range, Set.mem_image]
-    have hspan : Submodule.span ℝ (G.toPointedCone : Set V) =
-        Submodule.span ℝ (Set.range (fun a : {a : t // a ∈ e G} ↦ v a.1)) := by
-      rw [hrange, hface]
-      apply le_antisymm
-      · exact Submodule.span_le.mpr (PointedCone.hull_le_span ℝ _)
-      · exact Submodule.span_mono PointedCone.subset_hull
-    rw [hspan, Nat.card_eq_fintype_card]
-    exact finrank_span_eq_card (hv.comp Subtype.val Subtype.val_injective)
-  let f : ToricRay F.toPointedCone → t := fun ρ ↦
-    (Classical.choose (Nat.card_eq_one_iff_exists.mp ((hdim ρ.1).symm.trans ρ.2))).1
-  have hf (ρ : ToricRay F.toPointedCone) : e ρ.1 = {f ρ} := by
-    let h := Nat.card_eq_one_iff_exists.mp ((hdim ρ.1).symm.trans ρ.2)
-    ext a
-    constructor
-    · intro ha
-      exact congrArg Subtype.val (Classical.choose_spec h ⟨a, ha⟩)
-    · intro ha
-      subst a
-      exact (Classical.choose h).2
-  have hfinj : Function.Injective f := by
-    intro ρ ν h
-    apply Subtype.ext
-    exact e.injective (by rw [hf ρ, hf ν, h])
-  have hfsurj : Function.Surjective f := by
-    intro a
-    let G := e.symm {a}
-    have hG : Module.finrank ℝ (Submodule.span ℝ (G.toPointedCone : Set V)) = 1 := by
-      rw [hdim, e.apply_symm_apply]
-      simp
-    let ρ : ToricRay F.toPointedCone := ⟨G, hG⟩
-    refine ⟨ρ, ?_⟩
-    have h : e G = {f ρ} := by simpa only [ρ, Subtype.coe_mk] using hf ρ
-    rw [e.apply_symm_apply] at h
-    exact Set.singleton_injective h.symm
+        Nat.card {a : t // a ∈ e G} :=
+    finrank_span_face_eq_card_faceOrderIsoSet v hv hcone G
   rw [hdim ⟨F.toPointedCone, PointedCone.IsFaceOf.refl _⟩]
   have he : e ⟨F.toPointedCone, PointedCone.IsFaceOf.refl _⟩ = Set.univ := by
     ext a
@@ -117,7 +141,7 @@ theorem finrank_span_face_eq_card_rays_of_isSimplicial (hσ : σ.IsSimplicial) (
     rw [hcone]
     exact PointedCone.subset_hull ⟨a, rfl⟩
   rw [he]
-  simpa using (Nat.card_congr (Equiv.ofBijective f ⟨hfinj, hfsurj⟩)).symm
+  simpa using (Nat.card_congr (toricRayEquivOfLinearIndependent v hv hcone)).symm
 
 namespace IsRegularCone
 
