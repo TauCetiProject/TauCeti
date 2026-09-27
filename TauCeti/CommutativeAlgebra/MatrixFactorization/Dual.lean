@@ -25,13 +25,17 @@ Duality is **contravariant**, as the roadmap records: a morphism `f : X ⟶ Y` o
 factorizations dualizes to a morphism `dualHom f : Yᵛ ⟶ Xᵛ`, whose two components are the
 transposes of the components of `f`, and whose commutativity conditions are the commutativity
 conditions of `f` with the two differentials exchanged. Both the objects and the morphisms are
-here; the double dual, which turns duality into an equivalence of the two potentials, is the next
-step.
+here, and so is the object-level double dual, which is isomorphic to the original: dualizing
+twice lands back at the potential `w` and at an isomorphic factorization. The double dual of a
+morphism, and with it the natural isomorphism that turns duality into an equivalence of the two
+potentials, is the next step.
 
 ## Main definitions
 
 * `MatrixFactorization.dual`: the dual of a matrix factorization of `w`, of potential `-w`.
 * `MatrixFactorization.dualHom`: the dual of a morphism, contravariantly.
+* `MatrixFactorization.doubleDual`, `MatrixFactorization.doubleDualEquiv`: the double dual, of the
+  original potential, and its isomorphism with the original factorization.
 
 ## Main results
 
@@ -39,6 +43,8 @@ step.
   morphism.
 * `MatrixFactorization.dualHom_id`, `MatrixFactorization.dualHom_comp`: the dual of a morphism
   reverses identity and composition, which is what makes duality contravariant.
+* `MatrixFactorization.doubleDualEquiv`: a double dual is isomorphic to the original matrix
+  factorization, by the evaluation pairing with the single minus sign on the even component.
 
 ## References
 
@@ -103,6 +109,38 @@ the dual of the source, with transposed components. -/
 @[simp] theorem dualHom_comp {X Y Z : MatrixFactorization S w} (f : X ⟶ Y) (g : Y ⟶ Z) :
     dualHom (f ≫ g) = dualHom g ≫ dualHom f :=
   InducedCategory.hom_ext (CurvedDuplex.dualHom_comp _ _)
+
+/-- The double dual of a matrix factorization is a matrix factorization of the *same* potential: the
+two minus signs contributed by the two duals cancel, so it is a factorization of `w` and not of
+`- -w`. -/
+abbrev doubleDual (X : MatrixFactorization S w) : MatrixFactorization S w :=
+  ofCurvedDuplex X.obj.doubleDual inferInstance inferInstance
+
+@[simp] theorem doubleDual_obj (X : MatrixFactorization S w) :
+    (doubleDual (S := S) (w := w) X).obj = CurvedDuplex.doubleDual X.obj := rfl
+
+@[simp] theorem doubleDual_obj_X₀ (X : MatrixFactorization S w) :
+    (doubleDual (S := S) (w := w) X).obj.X₀ =
+      FGModuleCat.dual S (FGModuleCat.dual S X.obj.X₀) := rfl
+
+@[simp] theorem doubleDual_obj_X₁ (X : MatrixFactorization S w) :
+    (doubleDual (S := S) (w := w) X).obj.X₁ =
+      FGModuleCat.dual S (FGModuleCat.dual S X.obj.X₁) := rfl
+
+@[simp] theorem doubleDual_obj_d₀ (X : MatrixFactorization S w) :
+    (doubleDual (S := S) (w := w) X).obj.d₀ =
+      -FGModuleCat.dualHom S (FGModuleCat.dualHom S X.obj.d₀) := rfl
+
+@[simp] theorem doubleDual_obj_d₁ (X : MatrixFactorization S w) :
+    (doubleDual (S := S) (w := w) X).obj.d₁ =
+      -FGModuleCat.dualHom S (FGModuleCat.dualHom S X.obj.d₁) := rfl
+
+/-- A double dual of a matrix factorization is isomorphic to the original, by the evaluation
+pairing with the single minus sign on the even component. -/
+@[expose] noncomputable def doubleDualEquiv (X : MatrixFactorization S w) :
+    doubleDual (S := S) (w := w) X ≅ X :=
+  ObjectProperty.isoMk (P := MatrixFactorization.isProjective S w)
+    (CurvedDuplex.doubleDualEquiv X.obj)
 
 end MatrixFactorization
 

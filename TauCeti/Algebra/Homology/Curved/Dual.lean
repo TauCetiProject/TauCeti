@@ -27,14 +27,15 @@ transposes is the transpose of the original composite, and the minus sign turns 
 Duality is contravariant, and this file records it as such: `CurvedDuplex.dualHom` sends a
 morphism to a morphism from the dual of its target to the dual of its source, and reverses
 identity and composition. Crossing the differentials twice therefore lands back at the original
-curvature, with the negated double transposes as the differentials of a double dual; `simp`
-derives those formulas from `CurvedDuplex.dual_d₀`, `CurvedDuplex.dual_d₁` and
-`FGModuleCat.dualHom_neg`.
+curvature, with the negated double transposes as the differentials of a double dual, and the two
+evaluations identify a double dual with the original duplex.
 
 ## Main definitions
 
 * `CurvedDuplex.dual`: the dual of a curved duplex with projective components, of curvature `-w`.
 * `CurvedDuplex.dualHom`: the dual of a morphism of curved duplexes, contravariantly.
+* `CurvedDuplex.doubleDual`, `CurvedDuplex.doubleDualEquiv`: the double dual, of the original
+  curvature, and its isomorphism with the original duplex.
 
 ## Main results
 
@@ -42,6 +43,8 @@ derives those formulas from `CurvedDuplex.dual_d₀`, `CurvedDuplex.dual_d₁` a
 * `CurvedDuplex.dual_d₀`, `CurvedDuplex.dual_d₁`: the crossed transposed differentials.
 * `CurvedDuplex.dualHom_id`, `CurvedDuplex.dualHom_comp`: the dual of a morphism reverses identity
   and composition, which is what makes duality contravariant.
+* `CurvedDuplex.doubleDualEquiv`: a double dual is isomorphic to the original curved duplex, by
+  the evaluation pairing with the single minus sign on the even component.
 -/
 
 public section
@@ -134,6 +137,81 @@ with the two differentials exchanged, which is what the crossed transposes need.
   refine hom_ext ?_ ?_
   · exact FGModuleCat.dualHom_comp S f.f₀ g.f₀
   · exact FGModuleCat.dualHom_comp S f.f₁ g.f₁
+
+/-- The double dual of a curved duplex is a curved duplex of the *same* curvature: the two minus
+signs contributed by the two duals cancel. It is therefore stated directly at curvature `w`
+instead of as a second application of `CurvedDuplex.dual`, whose curvature term would be `- -w`,
+a term Lean does not identify with `w`. Its differentials are the negated double transposes. -/
+abbrev doubleDual (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
+    [Module.Projective S X.X₁] : CurvedDuplex (FGModuleCat.{u} S) w where
+  X₀ := FGModuleCat.dual S (FGModuleCat.dual S X.X₀)
+  X₁ := FGModuleCat.dual S (FGModuleCat.dual S X.X₁)
+  d₀ := -FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₀)
+  d₁ := -FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₁)
+  d₀_comp_d₁ := by
+    calc (-FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₀))
+        ≫ (-FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₁))
+        = FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₀) ≫
+            FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₁) := by
+              rw [Preadditive.neg_comp_neg]
+      _ = FGModuleCat.dualHom S (FGModuleCat.dualHom S (X.d₀ ≫ X.d₁)) := by
+        rw [← FGModuleCat.dualHom_comp, ← FGModuleCat.dualHom_comp]
+      _ = FGModuleCat.dualHom S (FGModuleCat.dualHom S (w • 𝟙 X.X₀)) := by rw [X.d₀_comp_d₁]
+      _ = w • FGModuleCat.dualHom S (FGModuleCat.dualHom S (𝟙 X.X₀)) := by
+        simp only [FGModuleCat.dualHom_smul]
+      _ = w • 𝟙 (FGModuleCat.dual S (FGModuleCat.dual S X.X₀)) := by
+        rw [FGModuleCat.dualHom_id, FGModuleCat.dualHom_id]
+  d₁_comp_d₀ := by
+    calc (-FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₁))
+        ≫ (-FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₀))
+        = FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₁) ≫
+            FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₀) := by
+              rw [Preadditive.neg_comp_neg]
+      _ = FGModuleCat.dualHom S (FGModuleCat.dualHom S (X.d₁ ≫ X.d₀)) := by
+        rw [← FGModuleCat.dualHom_comp, ← FGModuleCat.dualHom_comp]
+      _ = FGModuleCat.dualHom S (FGModuleCat.dualHom S (w • 𝟙 X.X₁)) := by rw [X.d₁_comp_d₀]
+      _ = w • FGModuleCat.dualHom S (FGModuleCat.dualHom S (𝟙 X.X₁)) := by
+        simp only [FGModuleCat.dualHom_smul]
+      _ = w • 𝟙 (FGModuleCat.dual S (FGModuleCat.dual S X.X₁)) := by
+        rw [FGModuleCat.dualHom_id, FGModuleCat.dualHom_id]
+
+/-- A double dual is isomorphic to the original curved duplex. The isomorphism is the evaluation
+pairing, with the single minus sign on the even component: that is the placement which makes the
+two commutativity conditions hold against the negated double transposes. -/
+@[expose] noncomputable def doubleDualEquiv (X : CurvedDuplex (FGModuleCat.{u} S) w)
+    [Module.Projective S X.X₀] [Module.Projective S X.X₁] : doubleDual X ≅ X :=
+  isoMk
+    { hom := -(FGModuleCat.dualEvalEquiv S X.X₀).hom
+      inv := -(FGModuleCat.dualEvalEquiv S X.X₀).inv
+      hom_inv_id := by
+        change (-(FGModuleCat.dualEvalEquiv S X.X₀).hom) ≫
+          (-(FGModuleCat.dualEvalEquiv S X.X₀).inv)
+            = 𝟙 (FGModuleCat.dual S (FGModuleCat.dual S X.X₀))
+        rw [Preadditive.neg_comp_neg, (FGModuleCat.dualEvalEquiv S X.X₀).hom_inv_id]
+      inv_hom_id := by
+        change (-(FGModuleCat.dualEvalEquiv S X.X₀).inv) ≫
+          (-(FGModuleCat.dualEvalEquiv S X.X₀).hom) = 𝟙 X.X₀
+        rw [Preadditive.neg_comp_neg, (FGModuleCat.dualEvalEquiv S X.X₀).inv_hom_id] }
+    { hom := (FGModuleCat.dualEvalEquiv S X.X₁).hom
+      inv := (FGModuleCat.dualEvalEquiv S X.X₁).inv
+      hom_inv_id := by
+        change (FGModuleCat.dualEvalEquiv S X.X₁).hom ≫ (FGModuleCat.dualEvalEquiv S X.X₁).inv
+          = 𝟙 (FGModuleCat.dual S (FGModuleCat.dual S X.X₁))
+        exact (FGModuleCat.dualEvalEquiv S X.X₁).hom_inv_id
+      inv_hom_id := by
+        change (FGModuleCat.dualEvalEquiv S X.X₁).inv ≫
+          (FGModuleCat.dualEvalEquiv S X.X₁).hom = 𝟙 X.X₁
+        exact (FGModuleCat.dualEvalEquiv S X.X₁).inv_hom_id }
+    (by
+      change (-(FGModuleCat.dualEvalEquiv S X.X₀).hom) ≫ X.d₀ =
+        (-FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₀)) ≫
+          (FGModuleCat.dualEvalEquiv S X.X₁).hom
+      rw [neg_comp, neg_comp, FGModuleCat.dualHom_dualHom_dualEvalEquiv])
+    (by
+      change (FGModuleCat.dualEvalEquiv S X.X₁).hom ≫ X.d₁ =
+        (-FGModuleCat.dualHom S (FGModuleCat.dualHom S X.d₁)) ≫
+          (-(FGModuleCat.dualEvalEquiv S X.X₀).hom)
+      rw [Preadditive.neg_comp_neg, FGModuleCat.dualHom_dualHom_dualEvalEquiv])
 
 end CurvedDuplex
 
