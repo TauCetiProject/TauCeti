@@ -71,6 +71,8 @@ computational input to the norm and trace of an unramified extension.
   `𝒪[L]` over `𝒪[K]`.
 * `TauCeti.IsUnramified.finrank_integerRing_eq_finrank_residueField`: the rank of `𝒪[L]` over
   `𝒪[K]` is the degree of the residue extension.
+* `TauCeti.IsUnramified.residueBasis_repr`: the coordinates of a residue in the residue basis
+  are the residues of the integral coordinates.
 * `TauCeti.IsUnramified.residueBasis_basisOfResidueBasis` and
   `TauCeti.IsUnramified.basisOfResidueBasis_residueBasis`: the two constructions are mutually
   inverse.
@@ -273,7 +275,9 @@ theorem IsUnramified.coe_basisOfResidueBasis [IsUnramified K L]
   coe_basisOfTopLeSpanOfCardEqFinrank ..
 
 /-- **The residue basis of an integral basis of an unramified extension**: the reduction of a
-basis of `𝒪[L]` over `𝒪[K]` is a basis of `𝓀[L]` over `𝓀[K]`. -/
+basis of `𝒪[L]` over `𝒪[K]` is a basis of `𝓀[L]` over `𝓀[K]`. This is Mathlib's
+`IsLocalRing.basisQuotient` for the quotients by `𝓂[K]` and `𝓂[K] 𝒪[L]`, stated for the residue
+fields themselves, which it identifies because `𝓂[K] 𝒪[L] = 𝓂[L]`. -/
 noncomputable def IsUnramified.residueBasis [IsUnramified K L]
     (B : Module.Basis ι 𝒪[K] 𝒪[L]) : Module.Basis ι 𝓀[K] 𝓀[L] :=
   basisOfTopLeSpanOfCardEqFinrank (residue 𝒪[L] ∘ B)
@@ -289,6 +293,18 @@ theorem IsUnramified.coe_residueBasis [IsUnramified K L] (B : Module.Basis ι �
     ⇑(IsUnramified.residueBasis B) = residue 𝒪[L] ∘ B :=
   coe_basisOfTopLeSpanOfCardEqFinrank ..
 
+/-- The coordinates of the residue of `x` in the residue basis of `B` are the residues of the
+coordinates of `x` in `B`. -/
+@[simp]
+theorem IsUnramified.residueBasis_repr [IsUnramified K L] (B : Module.Basis ι 𝒪[K] 𝒪[L])
+    (x : 𝒪[L]) (i : ι) :
+    (IsUnramified.residueBasis B).repr (residue 𝒪[L] x) i = residue 𝒪[K] (B.repr x i) := by
+  have hx : residue 𝒪[L] x = ∑ c, residue 𝒪[K] (B.repr x c) • IsUnramified.residueBasis B c := by
+    conv_lhs => rw [← B.sum_repr x]
+    simp only [map_sum, Algebra.smul_def, map_mul, ← ResidueField.algebraMap_residue,
+      IsUnramified.coe_residueBasis, Function.comp_apply]
+  rw [hx, Module.Basis.repr_sum_self]
+
 /-- Reducing the integral basis lifting a residue basis returns that residue basis. -/
 @[simp]
 theorem IsUnramified.residueBasis_basisOfResidueBasis [IsUnramified K L]
@@ -301,9 +317,9 @@ theorem IsUnramified.residueBasis_basisOfResidueBasis [IsUnramified K L]
 /-- Lifting the reduction of an integral basis returns that integral basis. -/
 @[simp]
 theorem IsUnramified.basisOfResidueBasis_residueBasis [IsUnramified K L]
-    (B : Module.Basis ι 𝒪[K] 𝒪[L])
-    (hx : ∀ i, residue 𝒪[L] (B i) = IsUnramified.residueBasis B i) :
-    IsUnramified.basisOfResidueBasis (IsUnramified.residueBasis B) B hx = B :=
+    (B : Module.Basis ι 𝒪[K] 𝒪[L]) :
+    IsUnramified.basisOfResidueBasis (IsUnramified.residueBasis B) B
+      (fun i ↦ (congrFun (IsUnramified.coe_residueBasis B) i).symm) = B :=
   DFunLike.coe_injective (IsUnramified.coe_basisOfResidueBasis ..)
 
 end ResidueBasis
