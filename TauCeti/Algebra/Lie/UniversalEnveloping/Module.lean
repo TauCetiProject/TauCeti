@@ -78,16 +78,6 @@ below is named after its counterparts there wherever one exists.
 * `TauCeti.UniversalEnvelopingAlgebra.complementedLattice_lieSubmodule_iff_isSemisimpleModule`:
   complete reducibility of a Lie module is semisimplicity of the corresponding `U(L)`-module.
 
-## Roadmap
-
-This is the pinned enveloping-algebra dictionary (`asModule`, `lieSubmoduleOrderIso`) of the
-decomposition toolkit in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, which asks that the Lie-level
-isotypic notions consume Mathlib's ring-level machinery in `Mathlib/RingTheory/SimpleModule/`
-through this dictionary rather than duplicate it. The converse translation
-`TauCeti.UniversalEnvelopingAlgebra.asLieRingModule` is what Layer 3 needs in order to read a
-module manufactured as a quotient of `U(L)` as a Lie module.
-
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Chapter V, §17.
