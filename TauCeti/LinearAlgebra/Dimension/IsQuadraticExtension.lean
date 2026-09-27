@@ -91,6 +91,29 @@ theorem TauCeti.linearIndependent_one_of_notMem_range_algebraMap [Semiring L] [A
   exact (LinearIndependent.pair_iff' one_ne_zero).mpr fun a ha ↦
     hθ ⟨a, by rwa [Algebra.algebraMap_eq_smul_one]⟩
 
+namespace TauCeti
+
+/-- The basis `(1, x)` of a degree-two field extension for an element outside the base field. -/
+noncomputable def quadraticExtensionBasis [Field L] [Algebra K L] {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) (hfin : Module.finrank K L = 2) :
+    Module.Basis (Fin 2) K L :=
+  basisOfLinearIndependentOfCardEqFinrank (b := ![1, x])
+    (linearIndependent_one_of_notMem_range_algebraMap K L hx) (by simp [hfin])
+
+@[simp]
+theorem quadraticExtensionBasis_zero [Field L] [Algebra K L] {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) (hfin : Module.finrank K L = 2) :
+    quadraticExtensionBasis K L hx hfin 0 = 1 := by
+  simp [quadraticExtensionBasis]
+
+@[simp]
+theorem quadraticExtensionBasis_one [Field L] [Algebra K L] {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) (hfin : Module.finrank K L = 2) :
+    quadraticExtensionBasis K L hx hfin 1 = x := by
+  simp [quadraticExtensionBasis]
+
+end TauCeti
+
 /-- **Every element of a quadratic extension is `b + aθ`** for a fixed generator `θ`: the basis
 `1, θ` spans `L` over `K`. The `θ`-coefficient may vanish, exactly when the element lies in the
 base field; `exists_ne_zero_eq_algebraMap_add_algebraMap_mul` records that it does not for a second
