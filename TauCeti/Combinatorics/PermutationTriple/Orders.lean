@@ -25,7 +25,9 @@ three ways, which sources on triangle groups and dessins tend to conflate:
   group of `t`.
 
 Exact orders are dividing orders, and a triple has dividing orders `(a, b, c)` exactly when its
-order triple divides `(a, b, c)` componentwise.
+order triple divides `(a, b, c)` componentwise. Exact orders can also be read off one component at
+a time, and a first order of one is the repeated form `(1, m, m)`: a monodromy of order one is the
+identity, so the product relation makes the other two inverse.
 
 The file then records necessary conditions for a connected triple of degree `n` with given orders
 to exist. Each entry of the order triple is the least common multiple of a partition of `n`.
@@ -43,6 +45,11 @@ hyperbolic cases it is no condition at all. None of these conditions is claimed 
 * `TauCeti.PermutationTriple.hasDividingOrders_iff_orderTriple_dvd`: dividing orders are
   multiples of the order triple.
 * `TauCeti.PermutationTriple.HasExactOrders.hasDividingOrders`: exact orders are dividing orders.
+* `TauCeti.PermutationTriple.orderOf_eq_of_hasExactOrders`: the three component orders of a triple
+  with exact orders `(a, b, c)`.
+* `TauCeti.PermutationTriple.orderOf_σ1_eq_orderOf_σinf_of_σ0_eq_one` and
+  `TauCeti.PermutationTriple.b_eq_c_of_hasExactOrders_one`: a first monodromy of order one is the
+  identity, so an exact signature `(1, b, c)` is the repeated form `(1, m, m)`.
 * `TauCeti.PermutationTriple.hasSurjectiveMonodromy_iff`: the dividing relations automatically
   give a representation surjective onto the monodromy group.
 * `TauCeti.PermutationTriple.exists_partition_lcm_eq_orderTriple`: each component order is the
@@ -146,6 +153,30 @@ theorem exists_partition_lcm_eq_of_orderTriple_eq (h : t.HasExactOrders a b c) :
       ∃ p : n.Partition, p.parts.lcm = c := by
   simpa only [(t.hasExactOrders_iff).mp h, Prod.fst, Prod.snd] using
     t.exists_partition_lcm_eq_orderTriple
+
+/-- The three component orders of a triple with exact orders `(a, b, c)`, read off its order
+triple. -/
+theorem orderOf_eq_of_hasExactOrders (h : t.HasExactOrders a b c) :
+    orderOf t.σ0 = a ∧ orderOf t.σ1 = b ∧ orderOf t.σinf = c := by
+  have h' : t.orderTriple = (a, b, c) := (t.hasExactOrders_iff).mp h
+  have h1 : orderOf t.σ1 = b := (orderTriple_σ1 t).symm.trans (congrArg (fun p => p.2.1) h')
+  have h2 : orderOf t.σinf = c :=
+    (orderTriple_σinf t).symm.trans (congrArg (fun p => p.2.2) h')
+  exact ⟨(orderTriple_σ0 t).symm.trans (congrArg Prod.fst h'), h1, h2⟩
+
+/-- A trivial first monodromy makes the other two inverse, by the product relation
+`σinf * σ1 * σ0 = 1`, so the second and third entries of the order triple agree. -/
+theorem orderOf_σ1_eq_orderOf_σinf_of_σ0_eq_one (h : t.σ0 = 1) :
+    orderOf t.σ1 = orderOf t.σinf := by
+  rw [t.σinf_eq_inv, h, mul_one, orderOf_inv]
+
+/-- An exact signature `(1, b, c)` is the repeated form `(1, m, m)`, since a first monodromy of
+order one is the identity and the other two are inverse. -/
+theorem b_eq_c_of_hasExactOrders_one (h : t.HasExactOrders 1 b c) : b = c := by
+  obtain ⟨h0, h1, h2⟩ := orderOf_eq_of_hasExactOrders t h
+  have key : orderOf t.σ1 = orderOf t.σinf :=
+    orderOf_σ1_eq_orderOf_σinf_of_σ0_eq_one t (orderOf_eq_one_iff.mp h0)
+  exact h1.symm.trans (key.trans h2)
 
 /-! ### The Euler characteristic bound -/
 
