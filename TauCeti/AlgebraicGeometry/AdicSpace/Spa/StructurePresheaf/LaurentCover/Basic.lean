@@ -334,6 +334,11 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
   let _ := locUniformSpace P (p false).num (p false).den _ (p false).hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P (p false).num (p false).den _
     (p false).hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P (p true).num (p true).den _
+    (p true).hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P (p false).num (p false).den _
+    (p false).hasDenominatorPower
   let ringDifference :
       UniformSpace.Completion (Localization.Away (p true).den) ×
         UniformSpace.Completion (Localization.Away (p false).den) →
@@ -342,8 +347,21 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
         q.num q.den _ q.hasDenominatorPower f rfl hT₁ x.1 -
       restrictionRingHom P (p false).num (p false).den _ (p false).hasDenominatorPower
         q.num q.den _ q.hasDenominatorPower 1 (mul_comm 1 f) hT₂ x.2
-  have hsurj : Function.Surjective ringDifference :=
-    laurentCover_surjective P f (Localization.Away (1 : A))
+  -- Identify the pointwise difference with the additive map in `laurentCover_surjective`.
+  have hRingDifference : ringDifference = ⇑(
+      (restrictionRingHom P (p true).num (p true).den _ (p true).hasDenominatorPower
+        q.num q.den _ q.hasDenominatorPower f rfl hT₁).toAddMonoidHom.comp
+        (AddMonoidHom.fst (UniformSpace.Completion (Localization.Away (p true).den))
+          (UniformSpace.Completion (Localization.Away (p false).den))) -
+      (restrictionRingHom P (p false).num (p false).den _ (p false).hasDenominatorPower
+        q.num q.den _ q.hasDenominatorPower 1 (mul_comm 1 f) hT₂).toAddMonoidHom.comp
+        (AddMonoidHom.snd (UniformSpace.Completion (Localization.Away (p true).den))
+          (UniformSpace.Completion (Localization.Away (p false).den)))) := by
+    funext x
+    rfl
+  have hsurj : Function.Surjective ringDifference := by
+    rw [hRingDifference]
+    exact laurentCover_surjective P f (Localization.Away (1 : A))
       (Localization.Away f) (Localization.Away (1 * f)) (p false).hasDenominatorPower
   -- The map in `laurentCover_surjective` is the pointwise difference of the two
   -- restriction maps used below.
