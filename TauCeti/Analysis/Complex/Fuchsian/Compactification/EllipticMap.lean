@@ -49,8 +49,10 @@ theorem card_stabilizer_dvd_card_stabilizer (h : Δ ≤ Γ) (z : ℍ) :
 
 /-- The elliptic ramification index at `z` is the ratio of the finite stabilizer orders. -/
 def ellipticRamificationIndex (_h : Δ ≤ Γ) (z : ℍ)
-    [Finite (stabilizer Δ z)] [Finite (stabilizer Γ z)] : ℕ :=
-  Nat.card (stabilizer Γ z) / Nat.card (stabilizer Δ z)
+    [Finite (stabilizer Δ z)] [Finite (stabilizer Γ z)] : ℕ := by
+  letI := Fintype.ofFinite (stabilizer Δ z)
+  letI := Fintype.ofFinite (stabilizer Γ z)
+  exact Fintype.card (stabilizer Γ z) / Fintype.card (stabilizer Δ z)
 
 /-- The stabilizer order upstairs times the elliptic ramification index is the stabilizer
 order downstairs. -/
@@ -58,20 +60,24 @@ theorem card_stabilizer_mul_ellipticRamificationIndex (h : Δ ≤ Γ) (z : ℍ)
     [Finite (stabilizer Δ z)] [Finite (stabilizer Γ z)] :
     Nat.card (stabilizer Δ z) * ellipticRamificationIndex h z =
       Nat.card (stabilizer Γ z) := by
-  exact Nat.mul_div_cancel' (card_stabilizer_dvd_card_stabilizer h z)
+  simpa only [ellipticRamificationIndex, Fintype.card_eq_nat_card] using
+    Nat.mul_div_cancel' (card_stabilizer_dvd_card_stabilizer h z)
 
 /-- Elliptic ramification indices are positive. -/
 theorem ellipticRamificationIndex_pos [Finite (stabilizer Δ z)]
     [Finite (stabilizer Γ z)] : 0 < ellipticRamificationIndex h z :=
-  Nat.div_pos (Nat.le_of_dvd Nat.card_pos (card_stabilizer_dvd_card_stabilizer h z))
-    Nat.card_pos
+  by
+    simpa only [ellipticRamificationIndex, Fintype.card_eq_nat_card] using
+      Nat.div_pos (Nat.le_of_dvd Nat.card_pos
+        (card_stabilizer_dvd_card_stabilizer h z)) Nat.card_pos
 
 /-- The ratio of stabilizer orders is the group-theoretic index of the smaller stabilizer
 inside the larger one. -/
 theorem ellipticRamificationIndex_eq_index
     [Finite (stabilizer Δ z)] [Finite (stabilizer Γ z)] :
     ellipticRamificationIndex h z = (stabilizerInclusion h z).range.index := by
-  rw [ellipticRamificationIndex, Subgroup.index_eq_card_div]
+  rw [ellipticRamificationIndex, Fintype.card_eq_nat_card, Fintype.card_eq_nat_card,
+    Subgroup.index_eq_card_div]
   rw [Nat.card_congr (Equiv.ofInjective (stabilizerInclusion h z)
     (stabilizerInclusion_injective h z))]
   rfl
@@ -81,7 +87,8 @@ theorem ellipticRamificationIndex_eq_index
 theorem ellipticRamificationIndex_self (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
     [Finite (stabilizer Γ z)] :
     ellipticRamificationIndex (le_refl Γ) z = 1 := by
-  exact Nat.div_self (Nat.card_pos (α := stabilizer Γ z))
+  simpa only [ellipticRamificationIndex, Fintype.card_eq_nat_card] using
+    Nat.div_self (Nat.card_pos (α := stabilizer Γ z))
 
 /-- Elliptic ramification indices multiply in a tower of subgroup inclusions. -/
 theorem ellipticRamificationIndex_mul {Θ : Subgroup PSL(2, ℝ)}
