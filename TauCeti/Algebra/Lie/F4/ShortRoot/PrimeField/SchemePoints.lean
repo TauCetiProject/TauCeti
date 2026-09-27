@@ -57,6 +57,35 @@ noncomputable def schemePointsMulEquiv (A : Type) [CommRing A] [Algebra 𝔽₂ 
     schemePointsMulEquiv A (groupSchemePointMulEquiv A q) = coordinatePointsEquiv A q := by
   simp only [schemePointsMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
 
+/-- The inverse comparison presents a matrix point as a quotient-coordinate scheme point. -/
+@[simp] theorem schemePointsMulEquiv_symm_apply (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (g : points A) :
+    (schemePointsMulEquiv A).symm g =
+      groupSchemePointMulEquiv A ((coordinatePointsEquiv A).symm g) := by
+  rfl
+
+/-- The scheme-point comparison commutes with change of coefficient algebra. -/
+theorem schemePointsMulEquiv_mapValue {A B : Type} [CommRing A] [CommRing B]
+    [Algebra 𝔽₂ A] [Algebra 𝔽₂ B] (φ : A →ₐ[𝔽₂] B)
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶ groupScheme.X) :
+    schemePointsMulEquiv B
+        ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
+          (Spec (CommRingCat.of 𝔽₂)) ≫ p) =
+      pointsMap φ (schemePointsMulEquiv A p) := by
+  let q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A) :=
+    (groupSchemePointMulEquiv A).symm p
+  have hpre :
+      (groupSchemePointMulEquiv B).symm
+          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
+            (Spec (CommRingCat.of 𝔽₂)) ≫ p) =
+        HopfAlgebra.mapPoints (H := Q) (CommAlgCat.ofHom φ) q := by
+    simpa only [q, groupSchemePointMulEquiv] using
+      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue Q φ
+        (GeneralLinear.generatedGroupScheme_def 26 generator) p
+  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
+  rw [hpre, HopfAlgebra.mapPoints_apply]
+  exact coordinatePointsEquiv_mapPoints φ q
+
 /-- A coordinate endomorphism acts on scheme-valued points by precomposition. -/
 theorem groupSchemePointMulEquiv_comp_coordinateMap
     (A : Type) [CommRing A] [Algebra 𝔽₂ A] (phi : Q ⟶ Q)
@@ -180,6 +209,28 @@ private theorem coe_coordinatePointsEquiv_commonKernelLift
         DiagonalizableGroup.schemePointsMulEquiv_eq_pointsMulEquiv_groupSchemePointsMulEquiv,
         MulEquiv.apply_symm_apply]
       exact SplitTorus.pointsMulEquiv_eq_freeAbelianCharEquiv q
+
+/-- Conjugation by the weight torus rescales every numbered root subgroup by its root
+character, on scheme-valued points. -/
+theorem weightTorus_conj_rootSubgroup (k : Fin 4 ⊕ Fin 4)
+    (A : Type) [CommRing A] [Algebra 𝔽₂ A]
+    (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of 𝔽₂)) ⟶
+      (SplitTorus.groupScheme 𝔽₂ (Fin 4)).X) (u : A) :
+    (s ≫ weightTorus.hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm (Multiplicative.ofAdd u) ≫
+          (rootSubgroup k).hom.hom) *
+        (s ≫ weightTorus.hom.hom)⁻¹ =
+      (AdditiveGroup.schemePointsMulEquiv A).symm
+          (Multiplicative.ofAdd
+            ((TauCeti.torusCharacter (SplitTorus.schemePointsMulEquiv s)
+                (DynkinType.F4.rootGeneratorWeight DynkinType.valid_F4 k) : A) * u)) ≫
+        (rootSubgroup k).hom.hom := by
+  apply (schemePointsMulEquiv A).injective
+  simpa only [map_mul, map_inv, schemePointsMulEquiv_comp_weightTorus,
+    schemePointsMulEquiv_comp_rootSubgroup, MulEquiv.apply_symm_apply,
+    toAdd_ofAdd] using
+    weightTorusPoints_conj_rootSubgroupPoints k A
+      (SplitTorus.schemePointsMulEquiv s) (Multiplicative.ofAdd u)
 
 end
 

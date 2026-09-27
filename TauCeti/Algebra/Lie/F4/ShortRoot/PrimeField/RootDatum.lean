@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.SchemePoints
-public import TauCeti.Algebra.Lie.F4.ShortRoot.RootDatum
 
 /-!
 # The prime-field F₄ carrier and its named simple roots
@@ -41,43 +40,43 @@ open scoped CategoryTheory.MonObj
 /-- The weight-torus character of a positive numbered simple-root subgroup of the prime-field
 carrier is the matching simple root of the simply connected type-`F₄` datum. -/
 theorem weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex
-    (i : Fin 4) (A : Type v) [CommRing A] [Algebra (ZMod 2) A]
+    (ht : F4.Valid) (i : Fin 4) (A : Type v) [CommRing A] [Algebra (ZMod 2) A]
     (s : Fin 4 → Aˣ) (u : Multiplicative A) :
     weightTorusPoints A s * rootSubgroupPoints (.inl i) A u *
         (weightTorusPoints A s)⁻¹ =
       rootSubgroupPoints (.inl i) A
         (Multiplicative.ofAdd
           ((TauCeti.torusCharacter s
-              ((F4.simplyConnectedRootDatum valid_F4).root (F4.simpleIndex valid_F4 i)) : A) *
+              ((F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i)) : A) *
             Multiplicative.toAdd u)) := by
   have hroot : F4.rootGeneratorWeight valid_F4 (.inl i) =
-      (F4.simplyConnectedRootDatum valid_F4).root (F4.simpleIndex valid_F4 i) := by
-    simpa only [rank_F4] using F4.rootGeneratorWeight_inl_eq_root_simpleIndex valid_F4 i
+      (F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i) := by
+    simpa only [rank_F4] using F4.rootGeneratorWeight_inl_eq_root_simpleIndex ht i
   rw [← hroot]
   exact weightTorusPoints_conj_rootSubgroupPoints (.inl i) A s u
 
 /-- The weight-torus character of a negative numbered simple-root subgroup of the prime-field
 carrier is the negative of the matching simple root of the simply connected type-`F₄` datum. -/
 theorem weightTorusPoints_conj_rootSubgroupPoints_neg_root_simpleIndex
-    (i : Fin 4) (A : Type v) [CommRing A] [Algebra (ZMod 2) A]
+    (ht : F4.Valid) (i : Fin 4) (A : Type v) [CommRing A] [Algebra (ZMod 2) A]
     (s : Fin 4 → Aˣ) (u : Multiplicative A) :
     weightTorusPoints A s * rootSubgroupPoints (.inr i) A u *
         (weightTorusPoints A s)⁻¹ =
       rootSubgroupPoints (.inr i) A
         (Multiplicative.ofAdd
           ((TauCeti.torusCharacter s
-              (-(F4.simplyConnectedRootDatum valid_F4).root (F4.simpleIndex valid_F4 i)) : A) *
+              (-(F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i)) : A) *
             Multiplicative.toAdd u)) := by
   have hroot : F4.rootGeneratorWeight valid_F4 (.inr i) =
-      -(F4.simplyConnectedRootDatum valid_F4).root (F4.simpleIndex valid_F4 i) := by
-    simpa only [rank_F4] using F4.rootGeneratorWeight_inr_eq_neg_root_simpleIndex valid_F4 i
+      -(F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i) := by
+    simpa only [rank_F4] using F4.rootGeneratorWeight_inr_eq_neg_root_simpleIndex ht i
   rw [← hroot]
   exact weightTorusPoints_conj_rootSubgroupPoints (.inr i) A s u
 
 /-- Conjugation by the weight torus rescales a positive numbered simple-root subgroup by the
 matching root of the simply connected `F₄` datum, on scheme-valued points. -/
 theorem weightTorus_conj_rootSubgroup_root_simpleIndex
-    (i : Fin 4) (A : Type) [CommRing A] [Algebra (ZMod 2) A]
+    (ht : F4.Valid) (i : Fin 4) (A : Type) [CommRing A] [Algebra (ZMod 2) A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 2))) ⟶
       (SplitTorus.groupScheme (ZMod 2) (Fin 4)).X) (u : A) :
     (s ≫ weightTorus.hom.hom) *
@@ -87,20 +86,19 @@ theorem weightTorus_conj_rootSubgroup_root_simpleIndex
       (AdditiveGroup.schemePointsMulEquiv A).symm
           (Multiplicative.ofAdd
             ((TauCeti.torusCharacter (SplitTorus.schemePointsMulEquiv s)
-                ((F4.simplyConnectedRootDatum valid_F4).root
-                  (F4.simpleIndex valid_F4 i)) : A) * u)) ≫
+                ((F4.simplyConnectedRootDatum ht).root
+                  (F4.simpleIndex ht i)) : A) * u)) ≫
         (rootSubgroup (.inl i)).hom.hom := by
-  apply (schemePointsMulEquiv A).injective
-  simpa only [map_mul, map_inv, schemePointsMulEquiv_comp_weightTorus,
-    schemePointsMulEquiv_comp_rootSubgroup, MulEquiv.apply_symm_apply,
-    toAdd_ofAdd] using
-    weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex i A
-      (SplitTorus.schemePointsMulEquiv s) (Multiplicative.ofAdd u)
+  have hroot : F4.rootGeneratorWeight valid_F4 (.inl i) =
+      (F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i) := by
+    simpa only [rank_F4] using F4.rootGeneratorWeight_inl_eq_root_simpleIndex ht i
+  rw [← hroot]
+  exact weightTorus_conj_rootSubgroup (.inl i) A s u
 
 /-- Conjugation by the weight torus rescales a negative numbered simple-root subgroup by the
 negative of the matching root of the simply connected `F₄` datum, on scheme-valued points. -/
 theorem weightTorus_conj_rootSubgroup_neg_root_simpleIndex
-    (i : Fin 4) (A : Type) [CommRing A] [Algebra (ZMod 2) A]
+    (ht : F4.Valid) (i : Fin 4) (A : Type) [CommRing A] [Algebra (ZMod 2) A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 2))) ⟶
       (SplitTorus.groupScheme (ZMod 2) (Fin 4)).X) (u : A) :
     (s ≫ weightTorus.hom.hom) *
@@ -110,14 +108,13 @@ theorem weightTorus_conj_rootSubgroup_neg_root_simpleIndex
       (AdditiveGroup.schemePointsMulEquiv A).symm
           (Multiplicative.ofAdd
             ((TauCeti.torusCharacter (SplitTorus.schemePointsMulEquiv s)
-                (-(F4.simplyConnectedRootDatum valid_F4).root
-                  (F4.simpleIndex valid_F4 i)) : A) * u)) ≫
+                (-(F4.simplyConnectedRootDatum ht).root
+                  (F4.simpleIndex ht i)) : A) * u)) ≫
         (rootSubgroup (.inr i)).hom.hom := by
-  apply (schemePointsMulEquiv A).injective
-  simpa only [map_mul, map_inv, schemePointsMulEquiv_comp_weightTorus,
-    schemePointsMulEquiv_comp_rootSubgroup, MulEquiv.apply_symm_apply,
-    toAdd_ofAdd] using
-    weightTorusPoints_conj_rootSubgroupPoints_neg_root_simpleIndex i A
-      (SplitTorus.schemePointsMulEquiv s) (Multiplicative.ofAdd u)
+  have hroot : F4.rootGeneratorWeight valid_F4 (.inr i) =
+      -(F4.simplyConnectedRootDatum ht).root (F4.simpleIndex ht i) := by
+    simpa only [rank_F4] using F4.rootGeneratorWeight_inr_eq_neg_root_simpleIndex ht i
+  rw [← hroot]
+  exact weightTorus_conj_rootSubgroup (.inr i) A s u
 
 end TauCeti.F4ShortRoot.PrimeField
