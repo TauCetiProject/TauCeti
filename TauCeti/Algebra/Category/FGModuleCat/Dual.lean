@@ -79,6 +79,7 @@ instance (M : FGModuleCat.{u} R) [Module.Projective R M] :
     Module.Projective R ((FGModuleCat.dual R M).obj) :=
   inferInstanceAs (Module.Projective R (Module.Dual R M))
 
+/-- The underlying module of a dual is the module dual `Module.Dual R M`. -/
 @[simp] theorem dual_obj (M : FGModuleCat.{u} R) [Module.Projective R M] :
     (FGModuleCat.dual R M).obj = Module.Dual R M := rfl
 
@@ -116,6 +117,8 @@ of the transposes in the opposite order. -/
   simp only [FGModuleCat.dualMap_hom, FGModuleCat.hom_hom_comp]
   exact (LinearMap.dualMap_comp_dualMap f.hom.hom g.hom.hom).symm
 
+/-- Transposing is compatible with the `R`-linear structure on morphisms: the transpose of a
+scalar multiple of a morphism is the same scalar multiple of the transpose. -/
 @[simp] theorem dualMap_smul (a : R) {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (f : M ⟶ N) :
     FGModuleCat.dualMap (R := R) (a • f) = a • FGModuleCat.dualMap (R := R) f := by
@@ -134,9 +137,13 @@ pairing. -/
 @[simp] theorem dualEvalIso_hom (M : FGModuleCat.{u} R) [Module.Projective R M] :
     (FGModuleCat.dualEvalIso R M).hom.hom.hom = (Module.evalEquiv R M).symm.toLinearMap := (rfl)
 
+/-- The underlying module map of the inverse of the double dual isomorphism is the evaluation
+pairing itself, the other half of `FGModuleCat.dualEvalIso_hom`. -/
 @[simp] theorem dualEvalIso_inv (M : FGModuleCat.{u} R) [Module.Projective R M] :
     (FGModuleCat.dualEvalIso R M).inv.hom.hom = (Module.evalEquiv R M).toLinearMap := (rfl)
 
+/-- Transposing is compatible with the additive structure on morphisms: the transpose of a
+negated morphism is the negation of the transpose. -/
 @[simp] theorem dualMap_neg {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (f : M ⟶ N) :
     FGModuleCat.dualMap (R := R) (-f) = -(FGModuleCat.dualMap (R := R) f) := by

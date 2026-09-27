@@ -83,15 +83,22 @@ abbrev dual (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀
   d₀_comp_d₁ := FGModuleCat.dualMap_negDualMap S w X.d₀ X.d₁ X.d₀_comp_d₁
   d₁_comp_d₀ := FGModuleCat.negDualMap_comp_dualMap S w X.d₁ X.d₀ X.d₁_comp_d₀
 
+/-- The even component of a dual curved duplex is the dual of the even component. -/
 @[simp] theorem dual_X₀ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] : X.dual.X₀ = FGModuleCat.dual S X.X₀ := rfl
 
+/-- The odd component of a dual curved duplex is the dual of the odd component. -/
 @[simp] theorem dual_X₁ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] : X.dual.X₁ = FGModuleCat.dual S X.X₁ := rfl
 
+/-- The even differential of a dual is the transpose of the *odd* differential of the original.
+The differentials are crossed because transposition reverses composition, so that the two
+composites of the dual are the transposes of the two composites of the original. -/
 @[simp] theorem dual_d₀ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] : X.dual.d₀ = FGModuleCat.dualMap S X.d₁ := rfl
 
+/-- The odd differential of a dual is the negated transpose of the even differential of the
+original. The single minus sign is what turns a curvature `w` into a curvature `-w`. -/
 @[simp] theorem dual_d₁ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] : X.dual.d₁ = -FGModuleCat.dualMap S X.d₀ := rfl
 
@@ -107,10 +114,14 @@ def dualMap {X Y : CurvedDuplex (FGModuleCat.{u} S) w} [Module.Projective S X.X�
       simp only [comp_neg, neg_comp]
       rw [← FGModuleCat.dualMap_comp, ← FGModuleCat.dualMap_comp, f.comm₀])
 
+/-- The even component of the dual of a morphism of curved duplexes is the transpose of the even
+component of the morphism. -/
 @[simp] theorem dualMap_f₀ {X Y : CurvedDuplex (FGModuleCat.{u} S) w} [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] [Module.Projective S Y.X₀] [Module.Projective S Y.X₁] (f : X ⟶ Y) :
     (dualMap f).f₀ = FGModuleCat.dualMap S f.f₀ := (rfl)
 
+/-- The odd component of the dual of a morphism of curved duplexes is the transpose of the odd
+component of the morphism. -/
 @[simp] theorem dualMap_f₁ {X Y : CurvedDuplex (FGModuleCat.{u} S) w} [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] [Module.Projective S Y.X₀] [Module.Projective S Y.X₁] (f : X ⟶ Y) :
     (dualMap f).f₁ = FGModuleCat.dualMap S f.f₁ := (rfl)
@@ -149,18 +160,25 @@ abbrev doubleDual (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S 
   d₁_comp_d₀ :=
     FGModuleCat.negDualMap_dualMap_comp_negDualMap_dualMap S w X.d₁ X.d₀ X.d₁_comp_d₀
 
+/-- The even component of a double dual is the double dual of the even component. -/
 @[simp] theorem doubleDual_X₀ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] :
     (X.doubleDual).X₀ = FGModuleCat.dual S (FGModuleCat.dual S X.X₀) := rfl
 
+/-- The odd component of a double dual is the double dual of the odd component. -/
 @[simp] theorem doubleDual_X₁ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] :
     (X.doubleDual).X₁ = FGModuleCat.dual S (FGModuleCat.dual S X.X₁) := rfl
 
+/-- The even differential of a double dual is the negated double transpose of the even
+differential of the original. Crossing twice no longer swaps the two components, and the two
+minus signs cancel when the differentials are composed, so the curvature is `w` again. -/
 @[simp] theorem doubleDual_d₀ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] :
     (X.doubleDual).d₀ = -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.d₀) := rfl
 
+/-- The odd differential of a double dual is the negated double transpose of the odd
+differential of the original, with the sign on the odd component. -/
 @[simp] theorem doubleDual_d₁ (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] :
     (X.doubleDual).d₁ = -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.d₁) := rfl
