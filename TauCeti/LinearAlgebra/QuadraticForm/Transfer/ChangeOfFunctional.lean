@@ -29,9 +29,9 @@ public section
 
 open scoped TensorProduct
 
-namespace QuadraticMap
+namespace QuadraticForm
 
-variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
+variable {K L V : Type*} [CommSemiring K] [CommRing L] [Algebra K L]
   [Invertible (2 : L)] [AddCommGroup V] [Module L V] [Module K V]
   [IsScalarTower K L V]
 
@@ -39,32 +39,34 @@ variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
 `x ↦ s (a * x)` is isometric to transfer along `s` after tensoring `Q` with `⟨a⟩`.
 The statement also holds for `a = 0`; applications comparing nonzero functionals take `a` to
 be the unique unit relating them. -/
-def IsometryEquiv.scharlauTransferCompMul (Q : QuadraticForm L V)
+def scharlauTransferCompMul (Q : QuadraticForm L V)
     (s : L →ₗ[K] K) (a : L) :
     (Q.scharlauTransfer (s.comp (LinearMap.mul K L a))).IsometryEquiv
       ((QuadraticForm.tmul (a • QuadraticMap.sq (R := L)) Q).scharlauTransfer s) :=
-  let e := (QuadraticForm.tensorLIdSMul a Q).symm.scharlauTransfer s
+  let e := (_root_.QuadraticForm.tensorLIdSMul a Q).symm.scharlauTransfer s
   { toLinearEquiv := e.toLinearEquiv
     map_app' := fun v => by
-      rw [scharlauTransfer_comp_mul]
+      rw [QuadraticMap.scharlauTransfer_comp_mul]
       exact e.map_app v }
 
 /-- The change-of-functional isometry sends `v` to `1 ⊗ v`. -/
 @[simp]
-theorem IsometryEquiv.scharlauTransferCompMul_apply (Q : QuadraticForm L V)
+theorem scharlauTransferCompMul_apply (Q : QuadraticForm L V)
     (s : L →ₗ[K] K) (a : L) (v : V) :
-    IsometryEquiv.scharlauTransferCompMul Q s a v = 1 ⊗ₜ[L] v := by
-  change (QuadraticForm.tensorLIdSMul a Q).symm.scharlauTransfer s v = _
-  simp
+    scharlauTransferCompMul Q s a v = 1 ⊗ₜ[L] v := by
+  unfold scharlauTransferCompMul
+  change ((_root_.QuadraticForm.tensorLIdSMul a Q).symm.scharlauTransfer s) v = _
+  rw [QuadraticMap.IsometryEquiv.scharlauTransfer_apply,
+    _root_.QuadraticForm.tensorLIdSMul_symm_apply]
 
 /-- The inverse change-of-functional isometry acts by the canonical left unitor. -/
 @[simp]
-theorem IsometryEquiv.scharlauTransferCompMul_symm_apply (Q : QuadraticForm L V)
+theorem scharlauTransferCompMul_symm_apply (Q : QuadraticForm L V)
     (s : L →ₗ[K] K) (a : L) (x : L ⊗[L] V) :
-    (IsometryEquiv.scharlauTransferCompMul Q s a).symm x = TensorProduct.lid L V x := by
-  rw [IsometryEquiv.symm_apply_eq]
-  rw [IsometryEquiv.scharlauTransferCompMul_apply]
+    (scharlauTransferCompMul Q s a).symm x = TensorProduct.lid L V x := by
+  rw [QuadraticMap.IsometryEquiv.symm_apply_eq]
+  rw [scharlauTransferCompMul_apply]
   simpa only [TensorProduct.lid_symm_apply] using
     (TensorProduct.lid L V).symm_apply_apply x |>.symm
 
-end QuadraticMap
+end QuadraticForm
