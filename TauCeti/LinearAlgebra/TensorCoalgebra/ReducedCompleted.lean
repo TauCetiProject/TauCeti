@@ -143,7 +143,7 @@ noncomputable def deconcatenation : CompletedReducedTensorWords R M →ₗ[R]
   simp [deconcatenation]
 
 /-- Reduced deconcatenation agrees with coaugmented deconcatenation in positive bidegrees. -/
-@[simp] theorem deconcatenation_eq_completed (x : CompletedReducedTensorWords R M)
+theorem deconcatenation_eq_completed (x : CompletedReducedTensorWords R M)
     (p q : {n : ℕ // 0 < n}) :
     deconcatenation R M x p q =
       CompletedTensorWords.deconcatenation R M (toCompleted R M x) p.1 q.1 := by
@@ -240,16 +240,23 @@ noncomputable def truncate (n : ℕ) : CompletedReducedTensorWords R M →ₗ[R]
   TensorWords.reducedProjection R M ∘ₗ
     CompletedTensorWords.truncate R M n ∘ₗ toCompleted R M
 
-/-- Truncation keeps precisely the positive-length coordinates below its cutoff. -/
-@[simp] theorem truncate_apply (n : ℕ) (x : CompletedReducedTensorWords R M)
+/-- Truncation keeps precisely the positive-length components below its cutoff. -/
+@[simp] theorem truncate_component (n : ℕ) (x : CompletedReducedTensorWords R M)
     (k : {k : ℕ // 0 < k}) :
-    truncate R M n x k = if k.1 < n then x k else 0 := by
-  rw [ReducedTensorWords.apply_eq_component, truncate, LinearMap.comp_apply,
+    ReducedTensorWords.component R M k (truncate R M n x) =
+      if k.1 < n then x k else 0 := by
+  rw [truncate, LinearMap.comp_apply,
     LinearMap.comp_apply, TensorWords.component_reducedProjection,
     TensorWords.component_apply, CompletedTensorWords.truncate_apply]
   split_ifs with hk
   · exact toCompleted_pos R M x k
   · rfl
+
+/-- Truncation evaluated at a positive length keeps that coordinate below its cutoff. -/
+theorem truncate_apply (n : ℕ) (x : CompletedReducedTensorWords R M)
+    (k : {k : ℕ // 0 < k}) :
+    truncate R M n x k = if k.1 < n then x k else 0 := by
+  rw [ReducedTensorWords.apply_eq_component, truncate_component]
 
 /-- The length filtration is the kernel of finite truncation. -/
 theorem filtration_eq_ker_truncate (n : ℕ) :
