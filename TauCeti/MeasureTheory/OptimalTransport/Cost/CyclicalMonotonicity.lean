@@ -109,6 +109,24 @@ theorem add_le_add_swap {S : Set (X × Y)} (h : IsCyclicallyMonotone c S)
 
 end IsCyclicallyMonotone
 
+/-- Adding a function of the source and a function of the target does not change
+cyclical monotonicity. Each permutation preserves the sums of both marginal terms. -/
+theorem isCyclicallyMonotone_add_split_iff {G : Type*} [AddCommGroup G]
+    [PartialOrder G] [IsOrderedAddMonoid G]
+    (c : X × Y → G) (a : X → G) (b : Y → G) (S : Set (X × Y)) :
+    IsCyclicallyMonotone (fun p ↦ c p + a p.1 + b p.2) S ↔
+      IsCyclicallyMonotone c S := by
+  rw [isCyclicallyMonotone_iff, isCyclicallyMonotone_iff]
+  constructor
+  · intro h n x y hmem σ
+    have h' := h n x y hmem σ
+    have hb : (∑ i, b (y (σ i))) = ∑ i, b (y i) := Equiv.sum_comp σ (b ∘ y)
+    simpa only [Finset.sum_add_distrib, hb, add_le_add_iff_right] using h'
+  · intro h n x y hmem σ
+    have h' := h n x y hmem σ
+    have hb : (∑ i, b (y (σ i))) = ∑ i, b (y i) := Equiv.sum_comp σ (b ∘ y)
+    simpa only [Finset.sum_add_distrib, hb, add_le_add_iff_right] using h'
+
 end
 
 /-- The empty set is cyclically monotone for every cost. -/
