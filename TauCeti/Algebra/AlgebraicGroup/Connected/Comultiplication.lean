@@ -255,6 +255,7 @@ theorem mem_identityComponentHopfIdeal
 
 /-- The identity-component Hopf ideal of a finite-type affine group vanishes exactly when its
 spectrum is connected. -/
+@[simp]
 theorem identityComponentHopfIdeal_eq_bot_iff_connectedSpace :
     identityComponentHopfIdeal (k := k) (H := H) = ⊥ ↔
       ConnectedSpace (PrimeSpectrum H) := by
