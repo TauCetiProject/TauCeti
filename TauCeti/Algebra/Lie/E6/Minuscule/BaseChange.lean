@@ -370,27 +370,18 @@ noncomputable def weightTorusToBaseChangeCoordinateMap :
     weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
     weightTable.weight A
 
-/-- The factored weight-torus map recovers its ambient transported coordinate map. -/
-@[simp]
-theorem mkQuotient_comp_weightTorusToBaseChangeCoordinateMap :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 27)
-          (baseChangeDefiningIdeal A) ≫
-        weightTorusToBaseChangeCoordinateMap A =
-      GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A weightTable.weight := by
-  unfold baseChangeDefiningIdeal weightTorusToBaseChangeCoordinateMap
-  exact mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateMap
-    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
-    (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
-    weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
-    weightTable.weight A
-
 /-- The factored weight-torus map composed with the carrier coordinate morphism recovers its
 ambient transported coordinate map. -/
 @[simp]
 theorem coordinateMap_comp_weightTorusToBaseChangeCoordinateMap :
     coordinateMap A ≫ weightTorusToBaseChangeCoordinateMap A =
       GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A weightTable.weight := by
-  exact mkQuotient_comp_weightTorusToBaseChangeCoordinateMap A
+  unfold coordinateMap baseChangeDefiningIdeal weightTorusToBaseChangeCoordinateMap
+  exact mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateMap
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
+    weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
+    weightTable.weight A
 
 /-- Under the base-change coordinate isomorphism, the factored weight-torus map is the scalar
 extension of its integral coordinate map. -/
