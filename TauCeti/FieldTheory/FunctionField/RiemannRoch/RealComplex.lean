@@ -51,6 +51,8 @@ theorem dim_zero_real_ratFunc_complex :
         simp only [IntermediateField.coe_smul, Algebra.smul_def,
           IntermediateField.coe_mul, IntermediateField.coe_algebraMap_apply,
           RingHom.id_apply]
+        -- The two subtype modules have different scalar instances; after coercion to the
+        -- ambient field, this goal is the scalar-tower compatibility equality.
         change (algebraMap ℝ (RatFunc ℂ) r) * (x : RatFunc ℂ) =
           (r : ℂ) • (x : RatFunc ℂ)
         rw [Algebra.smul_def, IsScalarTower.algebraMap_apply ℝ ℂ (RatFunc ℂ)]
