@@ -12,8 +12,9 @@ public import TauCeti.RepresentationTheory.Quiver.Representation.OfModule
 
 A representation of a quiver is **pointwise finite-dimensional** when the vector space it puts at
 every vertex is finite-dimensional. This file defines that property, `TauCeti.IsFinDim`, proves
-that it transports along an isomorphism, and shows that a path algebra module finite-dimensional
-over the base field gives such a representation.
+that it transports along an isomorphism, that over a finite quiver the morphisms between two such
+representations form a finite-dimensional space, and shows that a path algebra module
+finite-dimensional over the base field gives such a representation.
 
 ## Main definitions
 
@@ -22,6 +23,8 @@ over the base field gives such a representation.
 ## Main results
 
 * `TauCeti.IsFinDim.of_iso`: pointwise finite-dimensionality transports along an isomorphism.
+* `TauCeti.IsFinDim.finiteDimensional_hom`: over a finite quiver, the morphisms between two
+  pointwise finite-dimensional representations form a finite-dimensional space.
 * `TauCeti.isFinDim_quiverRepFunctor_obj`: finite-dimensionality passes from a module to its
   associated representation.
 
@@ -30,7 +33,10 @@ over the base field gives such a representation.
 `IsFinDim` is stated vertex by vertex rather than as a single finiteness of the total space: the
 category of representations is a functor category, with no ambient module to be finite over, and
 over an infinite vertex set the two conditions genuinely differ. Over a finite quiver they agree,
-and that is the setting the theory is meant for.
+and that is the setting the theory is meant for. `TauCeti.IsFinDim.finiteDimensional_hom` is where
+the finiteness of the vertex set is what makes the difference: a morphism of representations is a
+family of linear maps indexed by the vertices, and the space of such families is
+finite-dimensional only when there are finitely many vertices.
 
 ## References
 
@@ -71,6 +77,26 @@ theorem IsFinDim.of_iso {M N : QuiverRep.{u, v, w, t} k Q} (h : IsFinDim k Q M) 
   intro v
   have := h v
   exact (e.app v).toLinearEquiv.finiteDimensional
+
+/-- **Morphisms between pointwise finite-dimensional representations of a finite quiver form a
+finite-dimensional space.** Taking components embeds `M ⟶ N` into the product over the vertices of
+the spaces of linear maps `M.obj v →ₗ[k] N.obj v`, which is finite-dimensional because the vertex
+set is finite and each factor is. -/
+theorem IsFinDim.finiteDimensional_hom [Finite Q] {M N : QuiverRep.{u, v, w, t} k Q}
+    (hM : IsFinDim k Q M) (hN : IsFinDim k Q N) : FiniteDimensional k (M ⟶ N) := by
+  -- The objects of `Paths Q` are the vertices of `Q`.
+  have : Finite (Paths Q) := inferInstanceAs (Finite Q)
+  have (v : Paths Q) : FiniteDimensional k (M.obj v) := hM v
+  have (v : Paths Q) : FiniteDimensional k (N.obj v) := hN v
+  have (v : Paths Q) : FiniteDimensional k (M.obj v ⟶ N.obj v) :=
+    Module.Finite.equiv (ModuleCat.homLinearEquiv (S := k)).symm
+  -- Taking components is `k`-linear, because both the addition and the scalar action of the
+  -- functor category are defined vertexwise.
+  let component : (M ⟶ N) →ₗ[k] (∀ v : Paths Q, (M.obj v ⟶ N.obj v)) :=
+    { toFun f := f.app
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+  exact Module.Finite.of_injective component fun _ _ h ↦ NatTrans.ext h
 
 variable (k Q) [Finite Q]
 
