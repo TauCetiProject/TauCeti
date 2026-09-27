@@ -34,9 +34,9 @@ The two differential equations of the dual are the crossed-transpose computation
 `FGModuleCat.negDualMap_comp_dualMap` and `FGModuleCat.dualMap_negDualMap`, the two placements of
 the minus sign between the crossed transposes, and the two differential equations of the double
 dual are its one-dual-further version `FGModuleCat.negDualMap_dualMap_comp_negDualMap_dualMap`.
-Those three statements are about morphisms of `FGModuleCat` alone, but they are the curvature
-equations of a dual and of a double dual, so they are proved here beside the constructions whose
-differential equations they discharge.
+Those three statements are about morphisms of `FGModuleCat` alone, so they are proved in
+`TauCeti.Algebra.Category.FGModuleCat.Dual`, which this file imports; here they are the
+curvature equations of the dual and the double dual defined below.
 
 ## Main definitions
 
@@ -47,11 +47,6 @@ differential equations they discharge.
 
 ## Main results
 
-* `FGModuleCat.negDualMap_comp_dualMap`, `FGModuleCat.dualMap_negDualMap`: the composite of the
-  crossed transposes of a curved pair of maps, with the single minus sign on either of them, is
-  multiplication by `-w` on the dual.
-* `FGModuleCat.negDualMap_dualMap_comp_negDualMap_dualMap`: the same computation one dual
-  further, for the two negated double transposes, which is the original curvature again.
 * `CurvedDuplex.dual_d₀`, `CurvedDuplex.dual_d₁`: the crossed transposed differentials.
 * `CurvedDuplex.dualMap_f₀`, `CurvedDuplex.dualMap_f₁`: the components of a dual morphism are the
   transposes of the components; `CurvedDuplex.dualMap` itself is not exposed.
@@ -66,68 +61,6 @@ differential equations they discharge.
 public section
 
 universe u
-
-open CategoryTheory Module Preadditive
-
--- The crossed-transpose calculations below are the differential equations of a dual and of a
--- double dual, so they are proved here, beside the constructions that use them. They are
--- statements about morphisms of `FGModuleCat`, and are therefore declared in that namespace.
-namespace FGModuleCat
-
-variable (R : Type u) [CommRing R]
-
-/-- For a curved pair of maps `f` and `g` with `f ≫ g = w • 𝟙`, the composite of the negated
-transpose of `g` with the transpose of `f` is multiplication by `-w` on the dual. This is one of
-the two differential equations of a dual of curvature `-w`, the one in which the minus sign sits
-on the left-hand factor of the composite; `FGModuleCat.dualMap_negDualMap` is the same
-calculation with the minus sign on the right-hand factor. -/
-theorem negDualMap_comp_dualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
-    [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap R g) ≫ FGModuleCat.dualMap R f) = -w • 𝟙 (FGModuleCat.dual R M) := by
-  calc (-FGModuleCat.dualMap R g) ≫ FGModuleCat.dualMap R f
-      = -(FGModuleCat.dualMap R g ≫ FGModuleCat.dualMap R f) := by simp only [neg_comp]
-    _ = -FGModuleCat.dualMap R (f ≫ g) := by
-      rw [FGModuleCat.dualMap_comp (f := f) (g := g)]
-    _ = -FGModuleCat.dualMap R (w • 𝟙 M) := by rw [h]
-    _ = -(w • FGModuleCat.dualMap R (𝟙 M)) := by rw [FGModuleCat.dualMap_smul]
-    _ = -(w • 𝟙 (FGModuleCat.dual R M)) := by rw [FGModuleCat.dualMap_id]
-    _ = -w • 𝟙 (FGModuleCat.dual R M) := by rw [neg_smul]
-
-/-- The other placement of the minus sign: for a curved pair of maps `f` and `g` with
-`f ≫ g = w • 𝟙`, the composite of the transpose of `g` with the negated transpose of `f` is
-multiplication by `-w` on the dual. This is the other of the two differential equations of a
-dual of curvature `-w`, the one in which the minus sign sits on the right-hand factor of the
-composite. It is `FGModuleCat.negDualMap_comp_dualMap` read the other way round, since negating
-either factor of a composite negates the composite. -/
-theorem dualMap_negDualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
-    [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
-    (FGModuleCat.dualMap R g ≫ (-FGModuleCat.dualMap R f)) = -w • 𝟙 (FGModuleCat.dual R M) := by
-  rw [Preadditive.comp_neg, ← Preadditive.neg_comp, negDualMap_comp_dualMap (R := R) w f g h]
-
-/-- The same computation one dual further: the composite of the two negated double transposes of
-a curved pair of maps is multiplication by the original `w` on the double dual. This is the
-computation behind the two differential equations of a double dual, and the reason a double dual
-has the same curvature as its source. -/
-theorem negDualMap_dualMap_comp_negDualMap_dualMap {M N : FGModuleCat.{u} R}
-    [Module.Projective R M] [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M)
-    (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap R (FGModuleCat.dualMap R f)) ≫
-      (-FGModuleCat.dualMap R (FGModuleCat.dualMap R g)))
-      = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
-  calc (-FGModuleCat.dualMap R (FGModuleCat.dualMap R f)) ≫
-        (-FGModuleCat.dualMap R (FGModuleCat.dualMap R g))
-      = FGModuleCat.dualMap R (FGModuleCat.dualMap R f) ≫
-          FGModuleCat.dualMap R (FGModuleCat.dualMap R g) := by
-            rw [Preadditive.neg_comp_neg]
-    _ = FGModuleCat.dualMap R (FGModuleCat.dualMap R (f ≫ g)) := by
-      rw [← FGModuleCat.dualMap_comp, ← FGModuleCat.dualMap_comp]
-    _ = FGModuleCat.dualMap R (FGModuleCat.dualMap R (w • 𝟙 M)) := by rw [h]
-    _ = w • FGModuleCat.dualMap R (FGModuleCat.dualMap R (𝟙 M)) := by
-      simp only [FGModuleCat.dualMap_smul]
-    _ = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
-      rw [FGModuleCat.dualMap_id, FGModuleCat.dualMap_id]
-
-end FGModuleCat
 
 namespace TauCeti
 
@@ -200,11 +133,11 @@ the duals in the opposite order. -/
   · exact FGModuleCat.dualMap_comp S f.f₀ g.f₀
   · exact FGModuleCat.dualMap_comp S f.f₁ g.f₁
 
-/-- The double dual of a curved duplex is a curved duplex of the *same* curvature: dualizing
-twice crosses the differentials twice, so each of them is negated twice and the two minus signs
-cancel. Its differentials are the negated double transposes, and the evaluation pairing with the
-single minus sign on the even component identifies it with the original duplex, as
-`CurvedDuplex.doubleDualIso` records. -/
+/-- The double dual of a curved duplex is a curved duplex of the *same* curvature: each of its
+differentials is the negated double transpose of the corresponding differential of the original,
+and the two minus signs cancel when the differentials are composed, so the composite is
+multiplication by `w` again. The evaluation pairing with the single minus sign on the even
+component identifies it with the original duplex, as `CurvedDuplex.doubleDualIso` records. -/
 abbrev doubleDual (X : CurvedDuplex (FGModuleCat.{u} S) w) [Module.Projective S X.X₀]
     [Module.Projective S X.X₁] : CurvedDuplex (FGModuleCat.{u} S) w where
   X₀ := FGModuleCat.dual S (FGModuleCat.dual S X.X₀)

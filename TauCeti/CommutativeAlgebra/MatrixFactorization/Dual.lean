@@ -158,8 +158,8 @@ matrix factorizations the morphism map is stated at. -/
   rfl
 
 /-- The double dual of a matrix factorization is a matrix factorization of the *same* potential
-`w`: dualizing twice crosses the differentials twice, so each of them is negated twice and the
-two minus signs cancel. -/
+`w`: each of its differentials is the negated double transpose of the corresponding differential
+of the original, and the two minus signs cancel when the differentials are composed. -/
 abbrev doubleDual (X : MatrixFactorization S w) : MatrixFactorization S w :=
   ofCurvedDuplex X.obj.doubleDual inferInstance inferInstance
 
