@@ -75,22 +75,7 @@ noncomputable instance instFintypePreprojectiveA1QuiverHom (i j : preprojectiveA
 @[simp]
 theorem arrowIdeal_preprojectiveA1_eq_bot (k : Type*) [CommRing k] :
     arrowIdeal k (Symmetrify preprojectiveA1Quiver) = ⊥ := by
-  have hcard : Nat.card (Symmetrify preprojectiveA1Quiver) = 1 := by
-    rw [Nat.card_congr (Equiv.ofBijective _ symmetrify_of_obj_bijective).symm,
-      Nat.card_congr (OrientedQuiver.vertexEquiv _ _).symm]
-    exact Nat.card_fin 1
-  have hpath : pathSpan k (Symmetrify preprojectiveA1Quiver) 1 = ⊥ := by
-    simpa only [hcard] using pathSpan_eq_bot_of_isAcyclic k _
-      isAcyclic_symmetrify_preprojectiveA1Quiver
-  apply le_antisymm
-  · intro x hx
-    have hx' : x ∈ (arrowIdeal k (Symmetrify preprojectiveA1Quiver) ^ 1).restrictScalars k := by
-      -- Restricting scalars does not change membership in the underlying ideal.
-      change x ∈ arrowIdeal k (Symmetrify preprojectiveA1Quiver) ^ 1
-      rwa [Submodule.pow_one]
-    rw [restrictScalars_arrowIdeal_pow, hpath] at hx'
-    simpa using hx'
-  · exact bot_le
+  rw [arrowIdeal_eq_span_arrows, Set.range_eq_empty, Ideal.span_empty]
 
 /-- The relation ideal of the rank-one preprojective algebra is zero: there are no arrows from
 which to form local backtracks. -/
@@ -157,6 +142,26 @@ noncomputable def preprojectiveAlgebraEquivA1 (k : Type*) [CommRing k] :
   (Ideal.quotientEquivAlgOfEq k (preprojectiveIdeal_A1_eq_bot k)).trans
     ((Ideal.quotientEquivAlgOfEq k (arrowIdeal_preprojectiveA1_eq_bot k).symm).trans
       ((quotientArrowIdealAlgEquiv k _).trans (AlgEquiv.funUnique k _ k)))
+
+/-- The rank-one comparison reads the coefficient of the sole vertex path. -/
+@[simp]
+theorem preprojectiveAlgebraEquivA1_preprojectiveMk (k : Type*) [CommRing k]
+    (x : pathAlgebra k (Symmetrify preprojectiveA1Quiver)) :
+    preprojectiveAlgebraEquivA1 k (preprojectiveMk k preprojectiveA1Quiver x) =
+      trivialCoeff k (Symmetrify preprojectiveA1Quiver) x
+        (Symmetrify.of.obj (OrientedQuiver.vertex preprojectiveA1Graph
+          (Orientation.ofLinearOrder preprojectiveA1Graph) 0)) := by
+  let : Unique (Symmetrify preprojectiveA1Quiver) := Equiv.unique
+    ((OrientedQuiver.vertexEquiv _ _).trans
+      (Equiv.ofBijective _ symmetrify_of_obj_bijective)).symm
+  rw [preprojectiveMk_apply, preprojectiveAlgebraEquivA1, AlgEquiv.trans_apply,
+    Ideal.quotientEquivAlgOfEq_mk, AlgEquiv.trans_apply,
+    Ideal.quotientEquivAlgOfEq_mk, AlgEquiv.trans_apply,
+    quotientArrowIdealAlgEquiv_mk, AlgEquiv.funUnique_apply]
+  change trivialCoeff k (Symmetrify preprojectiveA1Quiver) x
+      (default : Symmetrify preprojectiveA1Quiver) = _
+  exact congrArg (trivialCoeff k (Symmetrify preprojectiveA1Quiver) x)
+    (Subsingleton.elim _ _)
 
 /-- The inverse rank-one comparison sends a coefficient to its scalar image. -/
 @[simp]
