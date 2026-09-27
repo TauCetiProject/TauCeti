@@ -13,8 +13,7 @@ public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 Pulling back a finite locally free sheaf along the identity is naturally isomorphic to the
 original sheaf. Pullback along a composite is naturally isomorphic to successive pullback. These
 comparisons are the restrictions of the corresponding comparisons for all modules on a scheme.
-They provide the identity and composition coherence for the sheaf side of base-change
-naturality of the vector-bundle equivalence.
+They are comparison data needed for base-change naturality of the vector-bundle equivalence.
 
 The construction follows the full-subcategory comparisons for invertible sheaves in
 `TauCeti/AlgebraicGeometry/LineBundle/Functoriality.lean`; finite local freeness replaces
@@ -60,6 +59,15 @@ theorem pullbackId_app_hom_hom (X : Scheme.{u}) (E : FiniteLocallyFreeSheaf X) :
   simp only [pullbackId, NatIso.ofComponents_hom_app, ObjectProperty.isoMk_hom,
     Iso.trans_hom, eqToIso.hom, ObjectProperty.homMk_hom, Iso.app_hom]
 
+/-- The inverse identity comparison on underlying modules is Mathlib's inverse comparison. -/
+@[simp]
+theorem pullbackId_inv_app_hom (X : Scheme.{u}) (E : FiniteLocallyFreeSheaf X) :
+    ((pullbackId X).inv.app E).hom =
+      (Scheme.Modules.pullbackId X).inv.app E.obj ≫
+        eqToHom (pullback_obj_obj (𝟙 X) E).symm := by
+  simp only [pullbackId, NatIso.ofComponents_inv_app, ObjectProperty.isoMk_inv,
+    Iso.trans_inv, eqToIso.inv, ObjectProperty.homMk_hom, Iso.app_inv]
+
 private lemma pullbackComp_obj_obj (f : X ⟶ Y) (g : Y ⟶ Z)
     (E : FiniteLocallyFreeSheaf Z) :
     ((pullback g ⋙ pullback f).obj E).obj =
@@ -104,6 +112,20 @@ theorem pullbackComp_app_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z)
         eqToHom (pullback_obj_obj (f ≫ g) E).symm := by
   simp only [pullbackComp, NatIso.ofComponents_hom_app, ObjectProperty.isoMk_hom,
     Iso.trans_hom, eqToIso.hom, ObjectProperty.homMk_hom, Iso.app_hom]
+
+/-- The inverse composition comparison on underlying modules is Mathlib's inverse comparison. -/
+@[simp]
+theorem pullbackComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z)
+    (E : FiniteLocallyFreeSheaf Z) :
+    ((pullbackComp f g).inv.app E).hom =
+      eqToHom (pullback_obj_obj (f ≫ g) E) ≫
+        (Scheme.Modules.pullbackComp f g).inv.app E.obj ≫
+        eqToHom (show (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj E.obj =
+          ((pullback g ⋙ pullback f).obj E).obj by
+            simp only [Functor.comp_obj, pullback_obj_obj]) := by
+  simp only [pullbackComp, NatIso.ofComponents_inv_app, ObjectProperty.isoMk_inv,
+    Iso.trans_inv, eqToIso.inv, ObjectProperty.homMk_hom, Iso.app_inv,
+    Category.assoc]
 
 end FiniteLocallyFreeSheaf
 
