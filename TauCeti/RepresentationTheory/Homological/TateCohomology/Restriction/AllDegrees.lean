@@ -87,7 +87,6 @@ theorem cor_zero (M : Rep.{u} R G) (H : Subgroup G) : cor M H 0 = H0Cor M H := b
 
 /-- In positive degrees, uniform Tate corestriction is ordinary corestriction transported
 through the canonical comparison isomorphisms. -/
-@[simp]
 theorem cor_ofNat_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
     cor M H ((n : ℤ) + 1) =
       (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).hom.app
