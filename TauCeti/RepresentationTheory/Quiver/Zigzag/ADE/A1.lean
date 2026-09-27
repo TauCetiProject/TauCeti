@@ -50,6 +50,7 @@ theorem zigzagAlgebraBasis_A1_vertex_eq_one :
 
 /-- The rank-one zigzag comparison respects the degree pieces: the generator of the dual
 numbers and the volume basis vector both have degree two. -/
+@[simp]
 theorem mem_zigzagAlgebraGrade_A1_iff {n : ℕ}
     {x : zigzagAlgebra k (⊥ : SimpleGraph (Fin 1))} :
     x ∈ zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) n ↔
@@ -66,6 +67,7 @@ theorem mem_zigzagAlgebraGrade_A1_iff {n : ℕ}
       mem_zigzagComponentGrade_of_subsingleton] using hx
 
 /-- Every degree of the one-vertex zigzag algebra other than zero and two vanishes. -/
+@[simp]
 theorem zigzagAlgebraGrade_A1_eq_bot {n : ℕ} (h0 : n ≠ 0) (h2 : n ≠ 2) :
     zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) n = ⊥ := by
   apply eq_bot_iff.mpr
@@ -113,6 +115,7 @@ theorem finrank_zigzagAlgebraGrade_A1_zero :
 
 /-- Every graded part of the one-vertex zigzag algebra outside degrees zero and two
 has dimension zero. -/
+@[simp]
 theorem finrank_zigzagAlgebraGrade_A1_eq_zero {n : ℕ} (h0 : n ≠ 0) (h2 : n ≠ 2) :
     Module.finrank k (zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) n) = 0 := by
   rw [zigzagAlgebraGrade_A1_eq_bot k h0 h2]
@@ -144,8 +147,7 @@ theorem zigzagA1GradedCartanMatrix_apply (i j : Fin 1) :
     zigzagA1GradedCartanMatrix k i j = 1 + X ^ 2 := by
   rw [zigzagA1GradedCartanMatrix, Matrix.of_apply, Finset.sum_range_succ,
     Finset.sum_range_succ, Finset.sum_range_one]
-  simp [finrank_zigzagAlgebraGrade_A1_zero, finrank_zigzagAlgebraGrade_A1_one,
-    finrank_zigzagAlgebraGrade_A1_two]
+  simp [finrank_zigzagAlgebraGrade_A1_zero, finrank_zigzagAlgebraGrade_A1_two]
 
 /-- The `A₁` graded Cartan matrix, written as a one-by-one matrix. -/
 theorem zigzagA1GradedCartanMatrix_eq :
