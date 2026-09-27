@@ -108,12 +108,15 @@ noncomputable def gradedCochainComplexLift.{uLift} (ℳ : ℤ → Submodule R M)
   (ModuleCat.uliftFunctor.{uLift, uM} R).mapHomologicalComplex (ComplexShape.up ℤ) |>.obj
     (gradedCochainComplex ℳ dM hdeg hsq)
 
+/-- The degree-`p` term of the lifted complex is the lifted homogeneous submodule. -/
 @[simp]
 theorem gradedCochainComplexLift_X (p : ℤ) :
     (gradedCochainComplexLift.{uR, uM, uExtra} ℳ dM hdeg hsq).X p =
       ModuleCat.of R (ULift.{uExtra} (ℳ p)) := by
   simp [gradedCochainComplexLift]
 
+/-- The degree-`p` differential of the lifted complex is the lifted restriction of `dM`,
+transported along the identifications of its source and target terms. -/
 @[simp]
 theorem gradedCochainComplexLift_d (p : ℤ) :
     (gradedCochainComplexLift.{uR, uM, uExtra} ℳ dM hdeg hsq).d p (p + 1) =
@@ -199,6 +202,12 @@ theorem gradedCochainComplexMap_f_apply (f : M →ₗ[R] N)
         (hsqN := hsqN) f hf hcomm).f n
           (eqToHom (gradedCochainComplexLift_X.{uR, uM, max uN uExtra} n).symm
             (ULift.up x)))).down.val = f x := by
+  rw [gradedCochainComplexLift_X_proof_eq_rfl,
+    gradedCochainComplexLift_X_proof_eq_rfl]
+  unfold gradedCochainComplexMap
+  dsimp only [CochainComplex.ofHom, ModuleCat.ofHom_apply, LinearMap.comp_apply]
+  -- The two `ULift.moduleEquiv` maps and the restricted linear map evaluate on `x`.
+  change f x = f x
   rfl
 
 /-- The induced cochain map depends only on the underlying linear map. -/
