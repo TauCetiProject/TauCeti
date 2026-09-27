@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import Mathlib.Probability.Distributions.Bernoulli
 import Mathlib.Analysis.Real.Cardinality
@@ -58,7 +57,7 @@ private theorem bernoulliLaw_separated {p q : unitInterval} (hpq : p ≠ q) :
   have hm := eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt
     ((bernoulliLaw p : ProbabilityMeasure ℕ) : Measure ℕ)
     ((bernoulliLaw q : ProbabilityMeasure ℕ) : Measure ℕ)
-    measurable_edist hsep hlt
+    hsep hlt
   have hpm : WassersteinSpace.toProbabilityMeasure (bernoulliLaw p) =
       WassersteinSpace.toProbabilityMeasure (bernoulliLaw q) := Subtype.ext hm
   -- The inclusion into probability measures is opaque, so invoke its characteristic lemma.
