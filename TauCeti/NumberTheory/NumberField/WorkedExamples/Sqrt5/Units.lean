@@ -5,26 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Units.Elimination
+public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.RealPlace
+import TauCeti.NumberTheory.NumberField.Units.Elimination.GoldenRatio
 import TauCeti.NumberTheory.NumberField.Units.Torsion
 
 /-!
 # The fundamental unit and the regulator of `ℚ(√5)`
 
 Let `K` be a number field generated over `ℚ` by an algebraic integer `θ` with
-`minpoly ℤ θ = X² − X − 1`, so that `K = ℚ(√5)`. In any quadratic field, every candidate minimal
-polynomial `X² + mX ± 1` of a unit below `Real.goldenRatio = (1 + √5)/2` has no real root in
-the open interval `(1, Real.goldenRatio)`, which is an elimination certificate in the sense of
-`TauCeti.NumberTheory.NumberField.Units.Elimination`. At the real place `w` of `ℚ(√5)` where `θ`
-has the value `Real.goldenRatio`, the certificate applies: `θ` is a unit, since `θ (θ − 1) = 1`,
-it generates the unit group modulo torsion, the regulator is `Real.log Real.goldenRatio`, and
-the torsion subgroup has order `2`.
+`minpoly ℤ θ = X² − X − 1`, so that `K = ℚ(√5)`. At the real place `w` where `θ` has the value
+`Real.goldenRatio = (1 + √5)/2`, the elimination certificate at the golden ratio of
+`TauCeti.NumberTheory.NumberField.Units.Elimination.GoldenRatio` applies: `θ` is a unit, since
+`θ (θ − 1) = 1`, it generates the unit group modulo torsion, the regulator is
+`Real.log Real.goldenRatio`, and the torsion subgroup has order `2`.
 
 ## Main results
 
-* `TauCeti.NumberField.Sqrt5.unitCandidateEliminationCertificate`: the elimination certificate
-  at `B = Real.goldenRatio` for any quadratic field, by the root test alone.
 * `TauCeti.NumberField.Sqrt5.mul_sub_one_eq_one`: `θ (θ − 1) = 1`, so `θ` is a unit.
 * `TauCeti.NumberField.Sqrt5.closure_sup_torsion_eq_top`: a unit with value `θ` generates the
   units of `ℚ(√5)` modulo torsion.
@@ -47,52 +44,12 @@ namespace TauCeti.NumberField.Sqrt5
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
-/-- **The elimination certificate at the golden ratio.** In a quadratic field, every candidate
-polynomial `X² + mX ± 1` with `|m| ≤ φ + 1` has no real root in `(1, φ)`, where
-`φ = Real.goldenRatio`. -/
-theorem unitCandidateEliminationCertificate (hdeg : Module.finrank ℚ K = 2) :
-    UnitCandidateEliminationCertificate K Real.goldenRatio := by
-  obtain ⟨φ, hφ⟩ : ∃ φ : ℝ, φ = Real.goldenRatio := ⟨_, rfl⟩
-  have hφ2 : φ ^ 2 = φ + 1 := by rw [hφ]; exact Real.goldenRatio_sq
-  have hφl : 1 < φ := by rw [hφ]; exact Real.one_lt_goldenRatio
-  have hφu : φ < 2 := by rw [hφ]; exact Real.goldenRatio_lt_two
-  rw [← hφ, unitCandidateEliminationCertificate_iff]
-  intro g hg
-  rw [mem_unitCandidates_iff, hdeg] at hg
-  obtain ⟨hmonic, hdeg, h0, hk⟩ := hg
-  left
-  rintro x ⟨hx1, hxφ⟩
-  -- The candidate is `X² + mX + c` with `c = ±1` and `|m| ≤ φ + 1`, so `|m| ≤ 2`.
-  have hm := hk 1 one_pos one_lt_two
-  norm_num at hm
-  have hm2 : -3 < g.coeff 1 ∧ g.coeff 1 < 3 := by
-    rw [abs_le] at hm
-    constructor
-    · exact_mod_cast (by linarith : (-3 : ℝ) < g.coeff 1)
-    · exact_mod_cast (by linarith : (g.coeff 1 : ℝ) < 3)
-  have heval : aeval x g = x ^ 2 + g.coeff 1 * x + g.coeff 0 := by
-    rw [aeval_def, eval₂_eq_eval_map, eval_eq_sum_range,
-      natDegree_map_eq_of_injective (algebraMap ℤ ℝ).injective_int, hdeg]
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero, coeff_map, eq_intCast, pow_zero,
-      mul_one, pow_one, zero_add]
-    have h2 : g.coeff 2 = 1 := by rw [← hdeg]; exact hmonic.coeff_natDegree
-    rw [h2, Int.cast_one, one_mul]
-    ring
-  rw [heval]
-  obtain ⟨hm1, hm3⟩ := hm2
-  have hx2 : 1 < x ^ 2 := one_lt_pow₀ hx1 two_ne_zero
-  generalize g.coeff 1 = m at hm1 hm3
-  interval_cases m <;> rcases h0 with h0 | h0 <;> rw [h0] <;> push_cast <;>
-    nlinarith [mul_pos (sub_pos.mpr hxφ) (show (0 : ℝ) < x + φ - 1 by linarith),
-      mul_pos (sub_pos.mpr hx1) (show (0 : ℝ) < 2 - x by linarith),
-      mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)]
-
 omit [NumberField K] in
 /-- An algebraic integer `θ` with `minpoly ℤ θ = X² − X − 1` is a unit: `θ (θ − 1) = 1`. -/
 @[simp]
 theorem mul_sub_one_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1) : θ * (θ - 1) = 1 := by
   have h := minpoly.aeval ℤ θ
-  rw [hmin, map_sub, map_sub, map_pow, aeval_X, map_one] at h
+  simp only [hmin, map_sub, map_pow, aeval_X, map_one] at h
   linear_combination h
 
 /-- **The golden ratio is a fundamental unit of `ℚ(√5)`.** A unit `u` with `(u : 𝓞 K) = θ`
@@ -106,7 +63,7 @@ theorem closure_sup_torsion_eq_top (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   refine UnitCandidateEliminationCertificate.sound ?_ (rank_eq_one hmin hgen)
     (finrank_eq_two hmin hgen ▸ Nat.prime_two) hw h1
   rw [hwu]
-  exact unitCandidateEliminationCertificate (finrank_eq_two hmin hgen)
+  exact unitCandidateEliminationCertificate_goldenRatio (finrank_eq_two hmin hgen)
 
 /-- **The regulator of `ℚ(√5)`** is `Real.log Real.goldenRatio = log ((1 + √5) / 2)`. -/
 theorem regulator_eq_log_goldenRatio (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
