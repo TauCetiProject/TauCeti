@@ -97,6 +97,10 @@ theorem blockSucc_one : blockSucc (1 : Matrix (Fin n) (Fin n) k) = 1 := by
     | last => simp [(Fin.castSucc_lt_last i).ne]
     | cast j => simp [Matrix.one_apply, Fin.castSucc_inj]
 
+/-- Extending a product is the product of the extensions: the last row and column of
+`Matrix.blockSucc M` are those of the identity matrix, so the extra index contributes only its own
+diagonal entry.  This is what makes `Matrix.blockSuccMonoidHom` and hence the block inclusion
+`TauCeti.glBlockSucc` multiplicative. -/
 theorem blockSucc_mul (M N : Matrix (Fin n) (Fin n) k) :
     blockSucc (M * N) = blockSucc M * blockSucc N := by
   ext i j
@@ -125,6 +129,9 @@ theorem blockSuccMonoidHom_apply (M : Matrix (Fin n) (Fin n) k) :
     blockSuccMonoidHom k n M = blockSucc M :=
   (rfl)
 
+/-- Extending a matrix loses no information: `Matrix.blockSucc` is injective, because the
+upper-left block of `Matrix.blockSucc M` is `M`.  Use it to transfer an equation between extended
+matrices back to the original size; `TauCeti.glBlockSucc_injective` is the group-level form. -/
 theorem blockSucc_injective : Function.Injective (blockSucc (k := k) (n := n)) := by
   intro M N h
   ext i j
@@ -191,6 +198,9 @@ theorem coe_glBlockSucc (g : GL (Fin n) k) :
       blockSucc (g : Matrix (Fin n) (Fin n) k) :=
   (rfl)
 
+/-- The block inclusion is injective, so it really embeds `GL (Fin n) k` in `GL (Fin (n + 1)) k`
+and the chain `GL 1 ⊂ GL 2 ⊂ ⋯` is a chain of subgroups.  Use it to identify two invertible
+matrices from the equality of their extensions. -/
 theorem glBlockSucc_injective : Function.Injective (glBlockSucc k n) := by
   intro g h hgh
   refine Units.ext (blockSucc_injective ?_)
