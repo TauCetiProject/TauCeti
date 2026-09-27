@@ -42,10 +42,10 @@ variable {X : Type u} (rels : Set (freeProP p X))
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
 
-/-- A minimal presentation can be replaced by a finite relation
-system exactly when `H²(G, 𝔽_p)` is finite. The new presentation uses the same generators and
-has the same closed normal relation subgroup. -/
-theorem finite_H2_iff_exists_finite_presentation
+/-- A Frattini relation system can be replaced by a finite relation system exactly when
+`H²(G, 𝔽_p)` is finite. The new system uses the same generators and has the same closed normal
+relation subgroup. -/
+theorem finite_H2_iff_exists_finite_relation_system
     (hrels : rels ⊆ proPFrattini p (freeProP p X))
     (e : presentedProP p X rels ≃ₜ* G)
     (htriv : ∀ (g : G) (m : ZMod p), g • m = m) :
@@ -115,11 +115,11 @@ theorem IsProP.finite_H2_iff_exists_finite_minimal_presentation
   constructor
   · intro hf
     obtain ⟨s, -, ⟨e'⟩⟩ :=
-      (presentedProP.finite_H2_iff_exists_finite_presentation rels hrels e htriv).mp hf
+      (presentedProP.finite_H2_iff_exists_finite_relation_system rels hrels e htriv).mp hf
     exact ⟨s, (presentedProP.subset_proPFrattini_iff_card_eq
       (s : Set (freeProP p X)) e' h).mpr hX, ⟨e'⟩⟩
   · rintro ⟨s, hs, ⟨e'⟩⟩
-    exact (presentedProP.finite_H2_iff_exists_finite_presentation
+    exact (presentedProP.finite_H2_iff_exists_finite_relation_system
       (s : Set (freeProP p X)) hs e' htriv).mpr
         ⟨s, rfl, ⟨e'⟩⟩
 
