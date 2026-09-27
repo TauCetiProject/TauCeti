@@ -34,7 +34,8 @@ of a basis index set instead, because the basis is transported from Mathlib's ba
 `Module.Basis.ExteriorAlgebra` of the exterior algebra, indexed by finite subsets.
 
 In dimension one, the even subalgebra has dimension one, so every even Clifford unit is a scalar
-unit. This consequence is recorded alongside the dimension count it uses.
+unit. The scalar-unit result below is proved directly from the Clifford relation, so it holds in
+characteristic two as well.
 
 A second section splits that count in half along Mathlib's `ℤ/2`-grading `evenOdd Q`. Over a field
 the two halves of the grading of the Clifford algebra of a nonzero space are isomorphic for *every*
@@ -89,7 +90,7 @@ separate milestone.
   half of an exterior algebra — where the total count is available over every field, so no
   invertibility of `2` is needed.
 * `CliffordAlgebra.exists_scalar_unit_of_mem_even_of_finrank_eq_one`: in dimension one, every even
-  Clifford unit comes from a unit of the base field.
+  Clifford unit comes from a unit of the base field, including in characteristic two.
 
 ## References
 
@@ -258,24 +259,48 @@ theorem finrank_even [Invertible (2 : K)] [Module.Finite K V] [Nontrivial V] :
   (LinearEquiv.ofEq _ _ (_root_.CliffordAlgebra.even_toSubmodule Q)).finrank_eq.trans
     (finrank_evenOdd Q 0)
 
-/-- In dimension one, every even Clifford unit is a scalar unit of the Clifford algebra. -/
-theorem exists_scalar_unit_of_mem_even_of_finrank_eq_one [Invertible (2 : K)]
+/-- In dimension one, every even Clifford unit is a scalar unit of the Clifford algebra, over any
+field. -/
+theorem exists_scalar_unit_of_mem_even_of_finrank_eq_one
     (hV : Module.finrank K V = 1) (x : (CliffordAlgebra Q)ˣ)
     (hx : (x : CliffordAlgebra Q) ∈ even Q) :
     ∃ a : Kˣ, x = Units.map (algebraMap K (CliffordAlgebra Q)) a := by
-  let _ : FiniteDimensional K V := FiniteDimensional.of_finrank_pos (by rw [hV]; decide)
   let _ : Nontrivial V := Module.nontrivial_of_finrank_pos (by rw [hV]; decide)
-  have hdim : Module.finrank K (even Q) = 1 := by
-    rw [finrank_even Q, hV]
-    norm_num
-  obtain ⟨a, ha⟩ :=
-    (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp hdim).2
-      (⟨(x : CliffordAlgebra Q), hx⟩ : even Q)
-  have hcoe : algebraMap K (CliffordAlgebra Q) a = (x : CliffordAlgebra Q) :=
-    congrArg (fun y : even Q => (y : CliffordAlgebra Q)) ha
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have hpair (m₁ m₂ : V) :
+      ∃ a : K, ι Q m₁ * ι Q m₂ = algebraMap K (CliffordAlgebra Q) a := by
+    obtain ⟨a, rfl⟩ := exists_smul_eq_of_finrank_eq_one hV hv m₁
+    obtain ⟨b, rfl⟩ := exists_smul_eq_of_finrank_eq_one hV hv m₂
+    refine ⟨a * b * Q v, ?_⟩
+    rw [map_smul, map_smul, Algebra.smul_def, Algebra.smul_def]
+    calc
+      _ = (algebraMap K (CliffordAlgebra Q)) a *
+          ((algebraMap K (CliffordAlgebra Q)) b * (ι Q v * ι Q v)) := by
+        rw [mul_assoc (algebraMap K (CliffordAlgebra Q) a),
+          ← mul_assoc (ι Q v) (algebraMap K (CliffordAlgebra Q) b) (ι Q v),
+          ← Algebra.commutes b (ι Q v)]
+        simp only [mul_assoc]
+      _ = _ := by rw [ι_sq_scalar, ← map_mul, ← map_mul, mul_assoc]
+  have hscalar (y : CliffordAlgebra Q) (hy : y ∈ evenOdd Q 0) :
+      ∃ a : K, y = algebraMap K (CliffordAlgebra Q) a := by
+    induction y, hy using even_induction with
+    | algebraMap a => exact ⟨a, rfl⟩
+    | add y z _ _ ihy ihz =>
+      obtain ⟨a, ha⟩ := ihy
+      obtain ⟨b, hb⟩ := ihz
+      exact ⟨a + b, by rw [ha, hb, map_add]⟩
+    | ι_mul_ι_mul m₁ m₂ y _ ih =>
+      obtain ⟨a, ha⟩ := hpair m₁ m₂
+      obtain ⟨b, hb⟩ := ih
+      exact ⟨a * b, by rw [ha, hb, map_mul]⟩
+  obtain ⟨a, ha⟩ := hscalar x hx
+  rcases subsingleton_or_nontrivial (CliffordAlgebra Q) with htriv | hnontriv
+  · have : Subsingleton (CliffordAlgebra Q) := htriv
+    exact ⟨1, Subsingleton.elim _ _⟩
+  have : Nontrivial (CliffordAlgebra Q) := hnontriv
   obtain ⟨b, hb⟩ :=
     (TauCeti.mem_range_iff_exists_units_map_eq
-      (algebraMap K (CliffordAlgebra Q)) x).mp ⟨a, hcoe⟩
+      (algebraMap K (CliffordAlgebra Q)) x).mp ⟨a, ha.symm⟩
   exact ⟨b, hb.symm⟩
 
 end Field

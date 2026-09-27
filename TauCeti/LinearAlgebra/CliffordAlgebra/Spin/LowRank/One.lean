@@ -31,7 +31,6 @@ namespace CliffordAlgebra
 universe u v
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-  [Invertible (2 : K)]
 
 /-- For a one-dimensional quadratic space representing a unit, every even Clifford unit lies in
 Mathlib's Lipschitz group. -/
