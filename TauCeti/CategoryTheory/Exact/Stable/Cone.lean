@@ -190,6 +190,26 @@ noncomputable abbrev coneSequence (f : X ⟶ Y) : ShortComplex C :=
   ShortComplex.mk (hE.coneInclusion f) (hE.coneConnectingMap f)
     (hE.coneInclusion_comp_coneConnectingMap f)
 
+/-- The first object of the cone sequence is its codomain. -/
+@[simp]
+theorem coneSequence_X₁ (f : X ⟶ Y) : (hE.coneSequence f).X₁ = Y := rfl
+
+/-- The middle object of the cone sequence is the cone. -/
+@[simp]
+theorem coneSequence_X₂ (f : X ⟶ Y) : (hE.coneSequence f).X₂ = hE.coneObj f := rfl
+
+/-- The last object of the cone sequence is the chosen suspension. -/
+@[simp]
+theorem coneSequence_X₃ (f : X ⟶ Y) : (hE.coneSequence f).X₃ = hE.suspensionObj X := rfl
+
+/-- The first map of the cone sequence is the cone inclusion. -/
+@[simp]
+theorem coneSequence_f (f : X ⟶ Y) : (hE.coneSequence f).f = hE.coneInclusion f := rfl
+
+/-- The second map of the cone sequence is the cone connecting map. -/
+@[simp]
+theorem coneSequence_g (f : X ⟶ Y) : (hE.coneSequence f).g = hE.coneConnectingMap f := rfl
+
 /-- The cone sequence is a conflation. -/
 theorem conflation_coneSequence (f : X ⟶ Y) : E.Conflation (hE.coneSequence f) := by
   let S : ShortComplex C :=
