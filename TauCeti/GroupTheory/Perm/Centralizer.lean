@@ -33,8 +33,9 @@ action.
 * `Subgroup.card_centralizer_dvd`: on a finite set of letters, the order of that centralizer
   divides the number of letters.
 
-The counting step is Mathlib's `MulAction.selfEquivOrbitsQuotientProd`, which exhibits a set with
-trivial stabilizers as the product of its orbit space with the acting group.
+The counting step is orbit-stabilizer: a set on which a group acts with trivial stabilizers is in
+bijection with the product of its orbit space with the acting group, so the number of letters is
+the number of orbits times the order of the centralizer.
 -/
 
 public section

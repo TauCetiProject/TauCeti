@@ -16,7 +16,9 @@ An `S_n`-cycle type can meet several conjugacy classes of a subgroup `G ≤ S_n`
 so the elements of `G` of a prescribed full cycle type are counted by a sum over a finite index
 set of `G`-classes rather than by a single class size. This file names that index set, for a
 group of permutations of any finite carrier, and identifies the union of those classes with the
-elements of that cycle type.
+elements of that cycle type. A finite group has only finitely many conjugacy classes, so the
+classes of a given cycle type form a `Finset`, and the count over them is a finite sum of class
+sizes.
 
 ## Main results
 
@@ -24,11 +26,6 @@ elements of that cycle type.
   `mu`.
 * `TauCeti.Subgroup.mem_iUnion_classesOfType`: an element of `G` is a member of one of the classes
   of type `mu` exactly when it has full cycle type `mu`.
-
-## References
-
-* `Mathlib/Algebra/Group/ConjFinite.lean`, whose `Fintype` structure on `ConjClasses` is what
-  makes the index set a `Finset`.
 -/
 
 open Equiv
