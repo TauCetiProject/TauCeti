@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Representation.Basic
 public import TauCeti.RepresentationTheory.Quiver.Representation.OfModule
 
 /-!
