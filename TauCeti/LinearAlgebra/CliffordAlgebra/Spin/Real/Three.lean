@@ -75,12 +75,6 @@ theorem coe_realCliffordThreeZeroEvenUnitaryEquivQuaternionUnitary_symm_apply
         CliffordAlgebra.even (realCliffordForm 3 0)) := by
   apply CliffordAlgebra.coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
 
-private theorem realCliffordForm_three_zero_apply (v : Fin 3 → ℝ) :
-    realCliffordForm 3 0 v = v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by
-  rw [realCliffordForm_zero_eq_weightedSumSquares_one,
-    QuadraticMap.weightedSumSquares_apply]
-  simp [Fin.sum_univ_three, pow_two]
-
 private theorem exists_unit_vectors_mapping_to_quaternion
     (q : ℍ[ℝ]) (hq : Quaternion.normSq q = 1) :
     ∃ m n : Fin 3 → ℝ,

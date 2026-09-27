@@ -47,7 +47,8 @@ open scoped Quaternion
 
 namespace TauCeti
 
-private theorem realCliffordForm_three_zero_apply (v : Fin 3 → ℝ) :
+/-- The positive-definite three-dimensional real Clifford form in coordinates. -/
+theorem realCliffordForm_three_zero_apply (v : Fin 3 → ℝ) :
     realCliffordForm 3 0 v = v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by
   rw [realCliffordForm_zero_eq_weightedSumSquares_one,
     QuadraticMap.weightedSumSquares_apply]
