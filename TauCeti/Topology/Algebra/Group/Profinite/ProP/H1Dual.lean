@@ -32,6 +32,14 @@ further identification with the continuous `𝔽_p`-dual of `G ⧸ Φ(G)`
 needs neither profiniteness nor a pro-`p` hypothesis; what is specific to a pro-`p` group is the
 numerical transfer that follows, for which compactness and total disconnectedness are needed.
 
+Here `H¹` is the explicit inhomogeneous group `TauCeti.ContCohomology.H1 G (ZMod p) = Z¹/B¹`.
+Continuous cohomology with the same coefficients is reached through the merged degree-one
+comparison `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology :
+H1 G M ≃+ continuousCohomology 1 (ofDiscreteModule ℤ G M)` for a discrete `G`-module `M`, which
+is additive over `ℤ`; the four results below are stated on the explicit group, because the
+`ZMod p`-module structure whose rank and finiteness they compute is the one
+`TauCeti.instModuleH1` puts there.
+
 For a profinite pro-`p` group, Burnside's basis theorem in cardinal form
 (`TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`) transfers from the
 continuous dual to `H¹`, and this is the content of the transfer: the dimension of `H¹(G, 𝔽_p)`
