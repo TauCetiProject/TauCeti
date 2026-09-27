@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.PositiveSubsystem.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 
 /-!
 # Base change of the positive E7 minuscule subsystem
@@ -31,6 +33,9 @@ base-change together.
   generator maps.
 * `TauCeti.E7Minuscule.positiveRootSubgroupBaseChangeCoordinateMap` and
   `TauCeti.E7Minuscule.positiveWeightTorusBaseChangeCoordinateMap`: their transported maps.
+* `TauCeti.E7Minuscule.positiveRootSubgroupBaseChange` and
+  `TauCeti.E7Minuscule.positiveWeightTorusBaseChange`: the corresponding scheme morphisms over
+  the new base.
 
 ## References
 
@@ -172,15 +177,6 @@ theorem mkQuotient_comp_positiveRootSubgroupBaseChangeCoordinateMap (i : Fin 7) 
     ← (CommHopfAlgCat.baseChangeFunctor (K := A)).map_comp,
     mkQuotient_comp_positiveRootSubgroupIntegralCoordinateMap]
 
-/-- Under the coordinate comparison, the transported positive root-subgroup map is the scalar
-extension of its integral factorization. -/
-@[simp]
-theorem positiveSubsystemBaseChangeIso_hom_comp_positiveRootSubgroupMap (i : Fin 7) :
-    (positiveSubsystemBaseChangeIso A).hom ≫
-        CommHopfAlgCat.baseChangeMap (positiveRootSubgroupIntegralCoordinateMap i) =
-      positiveRootSubgroupBaseChangeCoordinateMap A i := by
-  rfl
-
 /-! ## The positive weight torus -/
 
 /-- The coordinate map of the weight torus factored through the integral positive subsystem. -/
@@ -242,14 +238,68 @@ theorem mkQuotient_comp_positiveWeightTorusBaseChangeCoordinateMap :
     ← (CommHopfAlgCat.baseChangeFunctor (K := A)).map_comp,
     mkQuotient_comp_positiveWeightTorusIntegralCoordinateMap]
 
-/-- Under the coordinate comparison, the transported positive weight-torus map is the scalar
-extension of its integral factorization. -/
-@[simp]
-theorem positiveSubsystemBaseChangeIso_hom_comp_positiveWeightTorusMap :
-    (positiveSubsystemBaseChangeIso A).hom ≫
-        CommHopfAlgCat.baseChangeMap positiveWeightTorusIntegralCoordinateMap =
-      positiveWeightTorusBaseChangeCoordinateMap A := by
-  rfl
+end
+
+/-! ## Scheme morphisms over the new base -/
+
+noncomputable section
+
+-- The current `hopfSpec` bridge requires the base ring and all coordinate rings to inhabit the
+-- same universe. The concrete pinning uses `Fin 7` and `Fin 56`, so its scheme-level packaging is
+-- correspondingly stated in the base universe; the coordinate-level API above remains universe
+-- polymorphic.
+variable (B : Type) [CommRing B]
+
+/-- The positive subsystem after base change, in its transported quotient presentation. -/
+noncomputable abbrev positiveSubsystemBaseChangeGroupScheme :
+    Grp (Over (AlgebraicGeometry.Spec (CommRingCat.of B))) :=
+  CommHopfAlgCat.quotientSpec
+    (CommHopfAlgCat.baseChange (K := B) (GeneralLinear.coordinateHopfAlgebra ℤ 56))
+    (positiveSubsystemBaseChangeIdeal B)
+
+/-- The `i`th transported positive simple-root morphism from the named additive group over `A`.
+Its coordinate map is the transported factorization followed by the canonical identification
+of the scalar extension of `O(𝔾ₐ)` with `O(𝔾ₐ/A)`. -/
+noncomputable def positiveRootSubgroupBaseChange (i : Fin 7) :
+    AdditiveGroup.groupScheme B ⟶ positiveSubsystemBaseChangeGroupScheme B :=
+  eqToHom (AdditiveGroup.groupScheme_def B) ≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
+      (positiveRootSubgroupBaseChangeCoordinateMap B i ≫
+        (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ B).hom).op
+
+/-- The coordinate map underlying the transported positive simple-root scheme morphism is the
+transported factorization, followed by the standard additive-group base-change comparison. -/
+theorem hopfSpec_map_positiveRootSubgroupBaseChangeCoordinateMap_op (i : Fin 7) :
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
+        (positiveRootSubgroupBaseChangeCoordinateMap B i ≫
+          (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ B).hom).op =
+      eqToHom (AdditiveGroup.groupScheme_def B).symm ≫
+        positiveRootSubgroupBaseChange B i := by
+  simp [positiveRootSubgroupBaseChange]
+
+/-- The transported positive weight-torus morphism from the named split torus over `A`. Its
+coordinate map is the transported factorization followed by the canonical diagonalizable-group
+base-change comparison. -/
+noncomputable def positiveWeightTorusBaseChange :
+    SplitTorus.groupScheme B (Fin 7) ⟶ positiveSubsystemBaseChangeGroupScheme B :=
+  eqToHom (DiagonalizableGroup.groupScheme_def B
+      (SplitTorus.characterGroup (Fin 7))) ≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
+      (positiveWeightTorusBaseChangeCoordinateMap B ≫
+        (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso ℤ B
+          (SplitTorus.characterGroup (Fin 7))).hom).op
+
+/-- The coordinate map underlying the transported positive weight-torus scheme morphism is the
+transported factorization, followed by the standard diagonalizable-group base-change comparison. -/
+theorem hopfSpec_map_positiveWeightTorusBaseChangeCoordinateMap_op :
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
+        (positiveWeightTorusBaseChangeCoordinateMap B ≫
+          (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso ℤ B
+            (SplitTorus.characterGroup (Fin 7))).hom).op =
+      eqToHom (DiagonalizableGroup.groupScheme_def B
+          (SplitTorus.characterGroup (Fin 7))).symm ≫
+        positiveWeightTorusBaseChange B := by
+  simp [positiveWeightTorusBaseChange]
 
 end
 
