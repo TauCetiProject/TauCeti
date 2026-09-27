@@ -272,71 +272,6 @@ private theorem minusculeCharacter_injective : Function.Injective minusculeChara
   apply Finsupp.equivFunOnFinite.symm.injective
   exact Multiplicative.ofAdd.injective h
 
-private theorem weightProj_ofWeights_eq_single (a : Fin 27) (v : Fin 27 → k) :
-    let _ : Comodule k (MonoidAlgebra k (Multiplicative (Fin 6 →₀ ℤ))) (Fin 27 → k) :=
-      Comodule.ofWeights (Pi.basisFun k (Fin 27)) minusculeCharacter
-    Comodule.weightProj k (Multiplicative (Fin 6 →₀ ℤ)) (Fin 27 → k)
-        (minusculeCharacter a) v = Pi.single a (v a) := by
-  let _ : Comodule k (MonoidAlgebra k (Multiplicative (Fin 6 →₀ ℤ))) (Fin 27 → k) :=
-    Comodule.ofWeights (Pi.basisFun k (Fin 27)) minusculeCharacter
-  dsimp only
-  have hv : v = ∑ b, v b • (Pi.single b (1 : k) : Fin 27 → k) := by
-    ext b
-    simp [Pi.single_apply]
-  rw [hv]
-  simp only [map_sum]
-  rw [Finset.sum_eq_single a]
-  · rw [map_smul, Comodule.weightProj_of_mem]
-    · ext b
-      simp [Pi.single_apply]
-    · simpa only [Pi.basisFun_apply] using
-        (Comodule.basis_mem_weightSpace_ofWeights
-          (Pi.basisFun k (Fin 27)) minusculeCharacter a)
-  · intro b _ hba
-    rw [map_smul, Comodule.weightProj_of_mem_of_ne]
-    · simp
-    · exact fun hab ↦ hba (minusculeCharacter_injective hab).symm
-    · simpa only [Pi.basisFun_apply] using
-        (Comodule.basis_mem_weightSpace_ofWeights
-          (Pi.basisFun k (Fin 27)) minusculeCharacter b)
-  · simp
-
-/-- Restriction to the weight torus shows that every coordinate component of an invariant
-vector remains in the invariant submodule. -/
-private theorem single_self_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k))
-    {v : Fin 27 → k} (hv : v ∈ N) (a : Fin 27) : Pi.single a (v a) ∈ N := by
-  let _ := standardComodule k
-  let f := (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom
-  let _ : Comodule k (MonoidAlgebra k (Multiplicative (Fin 6 →₀ ℤ))) (Fin 27 → k) :=
-    Comodule.Corestrict f
-  have hvtorus : v ∈ N.corestrict f :=
-    (Subcomodule.mem_corestrict f N v).2 hv
-  have hp := Comodule.weightProj_mem_subcomodule (N.corestrict f)
-    (minusculeCharacter a) hvtorus
-  have hcomodule := torusCorestrict_eq_ofWeights k
-  have hpN :
-      Comodule.weightProj k (Multiplicative (Fin 6 →₀ ℤ)) (Fin 27 → k)
-          (minusculeCharacter a) v ∈ N :=
-    (Subcomodule.mem_corestrict f N _).1 hp
-  have hproj :
-      (let _ : Comodule k (MonoidAlgebra k (Multiplicative (Fin 6 →₀ ℤ)))
-          (Fin 27 → k) := Comodule.Corestrict f;
-        Comodule.weightProj k (Multiplicative (Fin 6 →₀ ℤ)) (Fin 27 → k)
-          (minusculeCharacter a) v) =
-      (let _ : Comodule k (MonoidAlgebra k (Multiplicative (Fin 6 →₀ ℤ)))
-          (Fin 27 → k) :=
-          Comodule.ofWeights (Pi.basisFun k (Fin 27)) minusculeCharacter;
-        Comodule.weightProj k (Multiplicative (Fin 6 →₀ ℤ)) (Fin 27 → k)
-          (minusculeCharacter a) v) :=
-    congrArg (fun c : Comodule k (MonoidAlgebra k (Multiplicative (Fin 6 →₀ ℤ)))
-      (Fin 27 → k) ↦
-        let _ := c;
-        Comodule.weightProj k (Multiplicative (Fin 6 →₀ ℤ)) (Fin 27 → k)
-          (minusculeCharacter a) v) hcomodule
-  rw [hproj, weightProj_ofWeights_eq_single] at hpN
-  exact hpN
-
 private theorem positiveRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
     (ha : DynkinType.e6MinusculeWeight a i = -1) :
     (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
@@ -374,76 +309,17 @@ private theorem single_reflection_mem
     have hsub := N.toSubmodule.sub_mem hact ha
     rwa [negativeRoot_mulVec_single_sub k i a hpos] at hsub
 
-private theorem single_foldl_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k))
-    (l : List (Fin 6)) (a : Fin 27) (ha : Pi.single a 1 ∈ N) :
-    Pi.single (l.foldl (fun b i ↦ DynkinType.e6MinusculeReflection i b) a) 1 ∈ N := by
-  induction l generalizing a with
-  | nil => exact ha
-  | cons i l ih =>
-      exact ih _ (single_reflection_mem k N a i ha)
-
-private theorem single_mem_of_foldl_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k))
-    (l : List (Fin 6)) (a : Fin 27)
-    (ha : Pi.single (l.foldl
-      (fun b i ↦ DynkinType.e6MinusculeReflection i b) a) 1 ∈ N) :
-    Pi.single a 1 ∈ N := by
-  induction l generalizing a with
-  | nil => exact ha
-  | cons i l ih =>
-      have hreflected := ih (DynkinType.e6MinusculeReflection i a) ha
-      have hback := single_reflection_mem k N
-        (DynkinType.e6MinusculeReflection i a) i hreflected
-      simpa using hback
-
-private theorem single_one_mem_of_ne_bot
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k)) (hN : N ≠ ⊥)
-    (a : Fin 27) : Pi.single a 1 ∈ N := by
-  obtain ⟨v, hv, hv0⟩ := N.ne_bot_iff.mp hN
-  obtain ⟨b, hb⟩ := Function.ne_iff.mp hv0
-  have hb0 : v b ≠ 0 := by simpa using hb
-  have hbmem := single_self_mem k N hv b
-  have hseed : Pi.single b 1 ∈ N := by
-    have hscaled := N.toSubmodule.smul_mem (v b)⁻¹ hbmem
-    have heq : (v b)⁻¹ • Pi.single b (v b) = (Pi.single b 1 : Fin 27 → k) := by
-      ext c
-      by_cases hcb : c = b
-      · subst c
-        simp [hb0]
-      · simp [hcb]
-    rwa [heq] at hscaled
-  obtain ⟨l, hl⟩ := DynkinType.exists_e6MinusculeReflections_eq b
-  have hzero : Pi.single (0 : Fin 27) 1 ∈ N := by
-    apply single_mem_of_foldl_mem k N l 0
-    rwa [hl]
-  obtain ⟨m, hm⟩ := DynkinType.exists_e6MinusculeReflections_eq a
-  have := single_foldl_mem k N m 0 hzero
-  rwa [hm] at this
-
 /-- **The standard comodule of the specialized type-`E₆` minuscule carrier is simple over
 every field.** -/
 instance instIsSimpleOrderSubcomodule :
     IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k)) := by
-  refine { exists_pair_ne := ⟨⊥, ⊤, ?_⟩, eq_bot_or_eq_top := ?_ }
-  · intro h
-    have hone : (Pi.single (0 : Fin 27) (1 : k) : Fin 27 → k) ∈
-        (⊥ : Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k)) :=
-      h ▸ Subcomodule.mem_top _
-    rw [Subcomodule.mem_bot] at hone
-    simpa using congrFun hone (0 : Fin 27)
-  · intro N
-    by_cases hN : N = ⊥
-    · exact Or.inl hN
-    · right
-      apply top_unique
-      intro v _
-      have hv : v = ∑ a, v a • Pi.single a 1 := by
-        ext a
-        simp [Pi.single_apply]
-      rw [hv]
-      exact N.toSubmodule.sum_mem fun a _ ↦
-        N.toSubmodule.smul_mem (v a) (single_one_mem_of_ne_bot k N hN a)
+  exact Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights
+    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom minusculeCharacter
+    minusculeCharacter_injective (torusCorestrict_eq_ofWeights k)
+    (fun i a ↦ DynkinType.e6MinusculeReflection i a)
+    (fun i ↦ DynkinType.e6MinusculeReflection_apply_apply i)
+    (fun N a i ↦ single_reflection_mem k N a i) 0
+    DynkinType.exists_e6MinusculeReflections_eq
 
 end Simple
 

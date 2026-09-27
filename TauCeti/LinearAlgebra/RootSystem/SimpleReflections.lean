@@ -29,6 +29,7 @@ while root negation does not change the reflection.
 * `TauCeti.wordProd` multiplies out a word in the simple reflections of a base.
 * `TauCeti.wordProd_reverse` says that reversing a word inverts the element it spells.
 * `TauCeti.exists_wordProd_eq` writes every Weyl-group element as a product of simple reflections.
+* `TauCeti.exists_foldl_eq_of_parent` turns a decreasing parent table into paths from its root.
 * `RootPairing.weylGroup.ofIdx_ne_ofIdx_of_ne` says distinct simple roots give distinct
   simple reflections.
 
@@ -56,6 +57,41 @@ noncomputable def wordProd (b : P.Base) (l : List b.support) : P.weylGroup :=
   (l.map fun i : b.support => RootPairing.weylGroup.ofIdx P (i : ι)).prod
 
 variable {P}
+
+/-- A decreasing parent table gives a word carrying its root to every vertex.
+
+This is the generic traversal used by explicit finite simple-reflection graphs: the parent of
+the vertex `a.succ` occurs earlier in the enumeration, and the recorded edge carries that parent
+to `a.succ`. -/
+theorem exists_foldl_eq_of_parent {n : ℕ} {J : Type*}
+    (step : Fin (n + 1) → J → Fin (n + 1))
+    (parent : Fin n → Fin (n + 1)) (edge : Fin n → J)
+    (hparent : ∀ a, (parent a : ℕ) < (a.succ : ℕ))
+    (hstep : ∀ a, step (parent a) (edge a) = a.succ) (a : Fin (n + 1)) :
+    ∃ l : List J, l.foldl step 0 = a := by
+  have aux : ∀ m, ∀ hm : m < n + 1,
+      ∃ l : List J, l.foldl step 0 = (⟨m, hm⟩ : Fin (n + 1)) := by
+    intro m hm
+    induction m using Nat.strong_induction_on with
+    | h m ih =>
+        by_cases hzero : m = 0
+        · subst m
+          exact ⟨[], rfl⟩
+        · let c : Fin n := ⟨m - 1, by omega⟩
+          have hsucc : c.succ = (⟨m, hm⟩ : Fin (n + 1)) := by
+            apply Fin.ext
+            simp [c]
+            omega
+          obtain ⟨l, hl⟩ := ih (parent c)
+            (by
+              have hlt := hparent c
+              have hval : (c.succ : ℕ) = m := congrArg Fin.val hsucc
+              rwa [hval] at hlt)
+            (parent c).isLt
+          refine ⟨l ++ [edge c], ?_⟩
+          rw [List.foldl_append, hl]
+          simpa only [List.foldl_cons, List.foldl_nil, hstep] using hsucc
+  exact aux a a.isLt
 
 @[simp]
 lemma wordProd_nil (b : P.Base) : wordProd P b [] = 1 :=

@@ -295,46 +295,6 @@ theorem coe_rootSubgroupPoints (k : Fin 6 ⊕ Fin 6) (A : Type v) [CommRing A]
   exact TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints
     _ _ _ _ _ _ _ _ k A u
 
-private theorem nilpotencyClass_rep_rootGenerator_le_two (i : Fin 6 ⊕ Fin 6) :
-    nilpotencyClass
-      (weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (TauCeti.serreRootGenerator weightTable.cartanMatrix i))) ≤ 2 := by
-  exact nilpotencyClass_le_of_pow_eq_zero (weightTable.rep_serreRootGenerator_pow_two i)
-
-private theorem rep_positiveRootGenerator_latticeBasis_eq_sum (i : Fin 6) (s : Fin 27) :
-    weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inl i)))
-        ((𝓑 s : Λ) : Fin 27 → ℚ) =
-      ∑ r, weightTable.raisingMatrix i r s • ((𝓑 r : Λ) : Fin 27 → ℚ) := by
-  rw [weightTable.rep_ι_apply]
-  rw [TauCeti.serreRootGenerator_inl, weightTable.rationalSerreRepresentation_serreE]
-  rw [TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply, Matrix.mulVec_single_one]
-  ext a
-  simp only [Matrix.col_apply, Finset.sum_apply, Pi.smul_apply,
-    TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply, Pi.single_apply]
-  rw [Finset.sum_eq_single a]
-  · simp
-  · intro b _ hba
-    simp [Ne.symm hba]
-  · simp
-
-private theorem rep_negativeRootGenerator_latticeBasis_eq_sum (i : Fin 6) (s : Fin 27) :
-    weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inr i)))
-        ((𝓑 s : Λ) : Fin 27 → ℚ) =
-      ∑ r, weightTable.loweringMatrix i r s • ((𝓑 r : Λ) : Fin 27 → ℚ) := by
-  rw [weightTable.rep_ι_apply]
-  rw [TauCeti.serreRootGenerator_inr, weightTable.rationalSerreRepresentation_serreF]
-  rw [TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply, Matrix.mulVec_single_one]
-  ext a
-  simp only [Matrix.col_apply, Finset.sum_apply, Pi.smul_apply,
-    TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply, Pi.single_apply]
-  rw [Finset.sum_eq_single a]
-  · simp
-  · intro b _ hba
-    simp [Ne.symm hba]
-  · simp
-
 /-- A positive simple-root point has matrix `1 + uEᵢ` in the minuscule basis. -/
 theorem coe_rootSubgroupPoints_inl (i : Fin 6) (A : Type v) [CommRing A]
     (u : Multiplicative A) :
@@ -349,8 +309,9 @@ theorem coe_rootSubgroupPoints_inl (i : Fin 6) (A : Type v) [CommRing A]
       (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
       weightTable.rep_kostantForm_mem_lattice (.inl i)
       (weightTable.isNilpotent_rep_serreRootGenerator (.inl i)) 𝓑
-      (weightTable.raisingMatrix i) (nilpotencyClass_rep_rootGenerator_le_two (.inl i))
-      (rep_positiveRootGenerator_latticeBasis_eq_sum i)
+      (weightTable.raisingMatrix i)
+      (weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inl i))
+      (weightTable.rep_positiveRootGenerator_coordinateLatticeBasis_eq_sum i)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
 
 /-- A negative simple-root point has matrix `1 + uFᵢ` in the minuscule basis. -/
@@ -367,8 +328,9 @@ theorem coe_rootSubgroupPoints_inr (i : Fin 6) (A : Type v) [CommRing A]
       (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
       weightTable.rep_kostantForm_mem_lattice (.inr i)
       (weightTable.isNilpotent_rep_serreRootGenerator (.inr i)) 𝓑
-      (weightTable.loweringMatrix i) (nilpotencyClass_rep_rootGenerator_le_two (.inr i))
-      (rep_negativeRootGenerator_latticeBasis_eq_sum i)
+      (weightTable.loweringMatrix i)
+      (weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inr i))
+      (weightTable.rep_negativeRootGenerator_coordinateLatticeBasis_eq_sum i)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
 
 /-- The split weight torus on matrix-valued points of the type-`E₆` carrier. -/

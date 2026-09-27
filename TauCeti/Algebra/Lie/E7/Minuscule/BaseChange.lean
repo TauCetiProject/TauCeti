@@ -131,8 +131,17 @@ theorem mapPointsFunctor_coordinateMap_app
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A)
         (CommAlgCat.of A B) g := by
-  apply WithConv.ext
-  rfl
+  have h := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+      (baseChangeDefiningIdeal A) (𝟙 _) (CommHopfAlgCat.mkQuotient
+        (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A))
+      (by simp) (CommAlgCat.of A B) g
+  have hid :
+      (CommHopfAlgCat.mapPointsFunctor (𝟙 (coordinateHopfAlgebra A))).app
+        (CommAlgCat.of A B) g = g := by
+    apply WithConv.ext
+    rfl
+  rw [hid] at h
+  simpa only [coordinateMap] using h
 
 end Points
 

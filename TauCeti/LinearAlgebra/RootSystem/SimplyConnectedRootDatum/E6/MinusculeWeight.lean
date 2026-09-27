@@ -224,34 +224,13 @@ private theorem e6MinusculeWeight_succ_eq_reflection_parent (a : Fin 26) :
 finite sequence of simple reflections. -/
 theorem exists_e6MinusculeReflections_eq (a : Fin 27) :
     ∃ l : List (Fin 6), l.foldl (fun b i ↦ e6MinusculeReflection i b) 0 = a := by
-  have aux : ∀ n, ∀ hn : n < 27,
-      ∃ l : List (Fin 6), l.foldl (fun b i ↦ e6MinusculeReflection i b) 0 =
-        (⟨n, hn⟩ : Fin 27) := by
-    intro n hn
-    induction n using Nat.strong_induction_on with
-    | h n ih =>
-        by_cases hzero : n = 0
-        · subst n
-          exact ⟨[], rfl⟩
-        · let c : Fin 26 := ⟨n - 1, by omega⟩
-          have hsucc : c.succ = (⟨n, hn⟩ : Fin 27) := by
-            apply Fin.ext
-            simp [c]
-            omega
-          obtain ⟨l, hl⟩ := ih (e6MinusculeParent c)
-            (by
-              have hlt := e6MinusculeParent_lt_succ c
-              have hval : (c.succ : ℕ) = n := congrArg Fin.val hsucc
-              rw [hval] at hlt
-              exact hlt)
-            (e6MinusculeParent c).isLt
-          refine ⟨l ++ [e6MinusculeParentNode c], ?_⟩
-          rw [List.foldl_append, hl]
-          simp only [List.foldl_cons, List.foldl_nil]
-          apply e6MinusculeWeight_injective
-          rw [← hsucc, e6MinusculeWeight_succ_eq_reflection_parent,
-            e6SimplyConnectedRootDatum_reflection_e6MinusculeWeight]
-  exact aux a a.isLt
+  apply exists_foldl_eq_of_parent
+    (fun b i ↦ e6MinusculeReflection i b) e6MinusculeParent
+    e6MinusculeParentNode e6MinusculeParent_lt_succ
+  intro c
+  apply e6MinusculeWeight_injective
+  rw [e6MinusculeWeight_succ_eq_reflection_parent,
+    e6SimplyConnectedRootDatum_reflection_e6MinusculeWeight]
 
 private theorem e6MinusculeWeight_mem_orbit (a : Fin 27) :
     e6MinusculeWeight a ∈

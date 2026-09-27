@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Rational
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
+public import TauCeti.RingTheory.Nilpotent.Exp
 import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.LinearAlgebra.Matrix.MulVec
 
@@ -35,6 +36,9 @@ coefficients of an operator with integral eigenvalues are what the Kostant form 
 
 * `TauCeti.MinusculeWeightTable.rep_serreRootGenerator_pow_two` and
   `isNilpotent_rep_serreRootGenerator`: the represented root generators are square-zero.
+* `TauCeti.MinusculeWeightTable.rep_positiveRootGenerator_coordinateLatticeBasis_eq_sum` and
+  `rep_negativeRootGenerator_coordinateLatticeBasis_eq_sum`: their matrices in the coordinate
+  lattice basis are the table's integral raising and lowering matrices.
 * `TauCeti.MinusculeWeightTable.isCartanWeightVector_single`: each standard coordinate vector is a
   Cartan weight vector with its weight in the table.
 * `TauCeti.MinusculeWeightTable.isSl2Triple_rep_serreRootGenerator`: the represented positive,
@@ -80,6 +84,27 @@ variable [DecidableEq B]
 
 /-! ## The enveloping-algebra representation -/
 
+omit [DecidableEq ι] in
+/-- An endomorphism represented by an integral matrix has that matrix as its coordinate-lattice
+basis expansion. This is the common linear-algebra step in the root-matrix calculation. -/
+theorem coordinateLatticeBasis_apply_eq_sum_of_apply_eq_mulVec
+    (f : Module.End ℚ (ι → ℚ)) (X : Matrix ι ι ℤ)
+    (hf : ∀ v, f v = X.map (Int.cast : ℤ → ℚ) *ᵥ v) (s : ι) :
+    f ((TauCeti.coordinateLatticeBasis ι s : TauCeti.coordinateLattice ι) : ι → ℚ) =
+      ∑ r, X r s •
+        ((TauCeti.coordinateLatticeBasis ι r : TauCeti.coordinateLattice ι) : ι → ℚ) := by
+  classical
+  rw [hf, TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply,
+    Matrix.mulVec_single_one]
+  ext a
+  simp only [Matrix.col_apply, Matrix.map_apply, Finset.sum_apply, Pi.smul_apply,
+    TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply, Pi.single_apply]
+  rw [Finset.sum_eq_single a]
+  · simp
+  · intro b _ hba
+    simp [Ne.symm hba]
+  · simp
+
 /-- The rational representation extended to the universal enveloping algebra. -/
 noncomputable def rep :
     _root_.UniversalEnvelopingAlgebra ℚ (Matrix.ToLieAlgebra ℚ T.cartanMatrix) →ₐ[ℚ]
@@ -118,6 +143,46 @@ theorem isNilpotent_rep_serreRootGenerator (k : B ⊕ B) :
     IsNilpotent (T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
       (TauCeti.serreRootGenerator T.cartanMatrix k))) :=
   ⟨2, T.rep_serreRootGenerator_pow_two k⟩
+
+/-- The nilpotency class of every represented positive or negative root generator is at most
+two. -/
+theorem nilpotencyClass_rep_serreRootGenerator_le_two (k : B ⊕ B) :
+    nilpotencyClass
+      (T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator T.cartanMatrix k))) ≤ 2 :=
+  nilpotencyClass_le_of_pow_eq_zero (T.rep_serreRootGenerator_pow_two k)
+
+/-- A positive root generator has the table's integral raising matrix in the coordinate lattice
+basis. -/
+theorem rep_positiveRootGenerator_coordinateLatticeBasis_eq_sum (i : B) (s : ι) :
+    T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator T.cartanMatrix (.inl i)))
+        ((TauCeti.coordinateLatticeBasis ι s : TauCeti.coordinateLattice ι) : ι → ℚ) =
+      ∑ r, T.raisingMatrix i r s •
+        ((TauCeti.coordinateLatticeBasis ι r : TauCeti.coordinateLattice ι) : ι → ℚ) := by
+  apply coordinateLatticeBasis_apply_eq_sum_of_apply_eq_mulVec
+  intro v
+  rw [T.rep_ι_apply, TauCeti.serreRootGenerator_inl,
+    T.rationalSerreRepresentation_serreE]
+  congr 1
+  ext a b
+  simp
+
+/-- A negative root generator has the table's integral lowering matrix in the coordinate lattice
+basis. -/
+theorem rep_negativeRootGenerator_coordinateLatticeBasis_eq_sum (i : B) (s : ι) :
+    T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator T.cartanMatrix (.inr i)))
+        ((TauCeti.coordinateLatticeBasis ι s : TauCeti.coordinateLattice ι) : ι → ℚ) =
+      ∑ r, T.loweringMatrix i r s •
+        ((TauCeti.coordinateLatticeBasis ι r : TauCeti.coordinateLattice ι) : ι → ℚ) := by
+  apply coordinateLatticeBasis_apply_eq_sum_of_apply_eq_mulVec
+  intro v
+  rw [T.rep_ι_apply, TauCeti.serreRootGenerator_inr,
+    T.rationalSerreRepresentation_serreF]
+  congr 1
+  ext a b
+  simp
 
 /-- The represented Cartan, positive, and negative Serre generators at a node form an `sl₂`
 triple whenever the weight table contains a weight of nonzero coordinate at that node. -/
