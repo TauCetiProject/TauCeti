@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Cup
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.TrivialInt
 
 /-!
 # The degree-zero case of the Tate isomorphism
@@ -38,8 +39,9 @@ theorem cupClass_trivialTateHZeroOne (F : Formation G) (L : NormalLayer G) (u : 
       (L.tateHIsoH F 2).inv u := by
   rw [cupClass_apply]
   convert TauCeti.TateCohomology.cupTrivialInt_trivialTateHZeroOne
-    (L.rep F) ((L.tateHIsoH F 2).inv u) using 1
-  simp only [TauCeti.TateCohomology.cupTrivialInt_apply]
+    (L.rep F) ((L.tateHIsoH F 2).inv u) using 1 <;>
+    simp only [NormalLayer.TateH, TauCeti.TateCohomology.cupTrivialInt_apply,
+      show (0 : ℤ) + 2 = 2 by omega] <;> rfl
 
 /-- Degree-zero case of Tate's cup-product criterion: if a degree-two class generates
 `H²(U/V, A^V)` and this group has order `[U : V]`, cupping with it is an equivalence from
@@ -67,6 +69,7 @@ theorem cupClass_degree_zero_bijective (F : Formation G) (L : NormalLayer G) (u 
       TauCeti.TateCohomology.cupTrivialInt (L.rep F) ((L.tateHIsoH F 2).inv u) := by
     ext x
     rw [cupClass_apply, TauCeti.TateCohomology.cupTrivialInt_apply]
+    rfl
   rw [heq]
   exact TauCeti.TateCohomology.cupTrivialInt_bijective (L.rep F)
     ((L.tateHIsoH F 2).inv u) hgen' hcard'

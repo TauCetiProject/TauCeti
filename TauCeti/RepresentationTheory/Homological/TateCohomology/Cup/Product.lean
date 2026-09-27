@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.ZeroLeft
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.DimensionShift
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 
 /-!
 # The Tate cup product in all bidegrees
@@ -47,8 +46,6 @@ first factor (`cup_zero_left`), because both satisfy the same rule for the dimen
 
 * `TauCeti.TateCohomology.cup`: the cup product
   `tateCohomology M p →ₗ[k] tateCohomology N q →ₗ[k] tateCohomology (M ⊗ N) r` for `p + q = r`.
-* `TauCeti.TateCohomology.cupTrivialInt`: degree-zero cup product with trivial integral
-  coefficients and a degree-two class, with the left tensor unit removed.
 
 ## Main statements
 
@@ -322,73 +319,5 @@ theorem cup_map_left {M' : Rep k G} (f : M ⟶ M') (p q r : ℤ) (h : p + q = r)
       rw [cupNeg_succ_apply, cupNeg_succ_apply, ih, Units.smul_def, Units.smul_def,
         map_zsmul, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
         tensorDimensionShiftDownIso_inv_naturality]
-
-end TauCeti.TateCohomology
-
-namespace TauCeti.TateCohomology
-
-variable {H : Type} [Group H] [Fintype H]
-
-/-- Cup product with a degree-two class, with trivial integral coefficients in degree zero and
-the left tensor unit removed. -/
-def cupTrivialInt (N : Rep ℤ H) (u : tateCohomology N 2) :
-    tateCohomology (Rep.trivial ℤ H ℤ) 0 →+ tateCohomology N (0 + 2) :=
-  { toFun := fun x => (tateCohomologyFunctor (0 + 2)).map (λ_ N).hom
-      (cup (Rep.trivial ℤ H ℤ) N 0 2 (0 + 2) (by omega) x u)
-    map_zero' := by simp
-    map_add' := by intro x y; simp }
-
-/-- The trivial-integral cup map evaluates by cup product followed by the left unitor. -/
-@[simp]
-theorem cupTrivialInt_apply (N : Rep ℤ H) (u : tateCohomology N 2)
-    (x : tateCohomology (Rep.trivial ℤ H ℤ) 0) :
-    cupTrivialInt N u x = (tateCohomologyFunctor (0 + 2)).map (λ_ N).hom
-      (cup (Rep.trivial ℤ H ℤ) N 0 2 (0 + 2) (by omega) x u) := by
-  rfl
-
-/-- The canonical degree-zero class of `1` acts as the identity under cup product. -/
-theorem cupTrivialInt_trivialTateHZeroOne (N : Rep ℤ H) (u : tateCohomology N 2) :
-    cupTrivialInt N u (trivialTateHZeroOne H) = u := by
-  let one : (Rep.trivial ℤ H ℤ).ρ.invariants := ⟨1, by simp [Representation.invariants]⟩
-  have hunit :
-      Rep.tensorInvariant N one ≫ (β_ N (Rep.trivial ℤ H ℤ)).hom ≫
-        (λ_ N).hom = 𝟙 N :=
-    Rep.tensorInvariant_one_braiding_leftUnitor N
-  have hcup : cup (Rep.trivial ℤ H ℤ) N 0 2 (0 + 2) (by omega) =
-      cup0H (Rep.trivial ℤ H ℤ) N 2 := by
-    convert cup_zero_left (Rep.trivial ℤ H ℤ) N 2 (by omega) using 1 <;> rfl
-  simp only [trivialTateHZeroOne]
-  change (tateCohomologyFunctor (0 + 2)).map (λ_ N).hom
-      (cup (Rep.trivial ℤ H ℤ) N 0 2 (0 + 2) (by omega)
-        (H0π (Rep.trivial ℤ H ℤ) one) u) = u
-  rw [hcup, cup0H_H0π]
-  -- The cup definition stores target degree `0 + 2`; the unitor calculation is in degree `2`.
-  change (tateCohomologyFunctor 2).map (λ_ N).hom
-      ((tateCohomologyFunctor 2).map
-        (Rep.tensorInvariant N one ≫ (β_ N (Rep.trivial ℤ H ℤ)).hom) u) = u
-  rw [← ModuleCat.comp_apply, ← Functor.map_comp, Category.assoc, hunit]
-  simp
-
-/-- Cupping with a generating degree-two class is bijective when the target has the order of
-the finite group. -/
-theorem cupTrivialInt_bijective (N : Rep ℤ H) (u : tateCohomology N 2)
-    (hgen : ∀ y : tateCohomology N 2, ∃ m : ℤ, m • u = y)
-    (hcard : Nat.card (tateCohomology N 2) = Fintype.card H) :
-    Function.Bijective (cupTrivialInt N u) := by
-  have hsurj : Function.Surjective (cupTrivialInt N u) := by
-    intro y
-    obtain ⟨m, hm⟩ := hgen y
-    refine ⟨m • trivialTateHZeroOne H, ?_⟩
-    rw [map_zsmul, cupTrivialInt_trivialTateHZeroOne]
-    exact hm
-  have hsource : Nat.card (tateCohomology (Rep.trivial ℤ H ℤ) 0) = Fintype.card H := by
-    rw [natCard_tateCohomology_zero_trivial_int_eq_card]
-    exact Nat.card_eq_fintype_card
-  have hsource_ne : Nat.card (tateCohomology (Rep.trivial ℤ H ℤ) 0) ≠ 0 := by
-    rw [hsource]
-    exact (Fintype.card_pos : 0 < Fintype.card H).ne'
-  exact (@Nat.bijective_iff_surjective_and_card _ _
-    (Nat.finite_of_card_ne_zero hsource_ne) (cupTrivialInt N u)).2
-      ⟨hsurj, hsource.trans hcard.symm⟩
 
 end TauCeti.TateCohomology
