@@ -68,8 +68,9 @@ ring for the trace-zero subspace.
 The additive and module structures are transported along
 `TauCeti.AlbertAlgebra.addEquivProd`, which packages a Hermitian matrix as the pair of its diagonal
 and its octonion entries; `TauCeti.AlbertAlgebra.linearEquivProd` upgrades it to a linear
-isomorphism over any semiring acting on the coefficients. Both dimension counts use this
-isomorphism with `R` acting on itself.
+isomorphism over any semiring acting on the coefficients. The `27`-dimensional count uses this
+isomorphism with `R` acting on itself; the trace-zero count uses a separate coordinate isomorphism
+that drops the last diagonal entry, which a vanishing trace determines.
 
 The multiplication is deliberately left unexposed: its body does not unfold outside this file, and
 a product is read through the projection `simp` lemmas `TauCeti.AlbertAlgebra.mul_diag` and
