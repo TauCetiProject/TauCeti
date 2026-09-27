@@ -279,6 +279,11 @@ def dimensionShiftUpSESMap {A B : Rep k G} (f : A ⟶ B) :
 theorem dimensionShiftUpSESMap_τ₁ {A B : Rep k G} (f : A ⟶ B) :
     (dimensionShiftUpSESMap f).τ₁ = f := (rfl)
 
+/-- The middle component of the upward sequence morphism. -/
+@[simp]
+theorem dimensionShiftUpSESMap_τ₂ {A B : Rep k G} (f : A ⟶ B) :
+    (dimensionShiftUpSESMap f).τ₂ = coindBotMap f := (rfl)
+
 /-- The last component of the upward sequence morphism. -/
 @[simp]
 theorem dimensionShiftUpSESMap_τ₃ {A B : Rep k G} (f : A ⟶ B) :
@@ -330,6 +335,11 @@ def dimensionShiftDownSESMap {A B : Rep k G} (f : A ⟶ B) :
 @[simp]
 theorem dimensionShiftDownSESMap_τ₁ {A B : Rep k G} (f : A ⟶ B) :
     (dimensionShiftDownSESMap f).τ₁ = dimensionShiftDownMap f := (rfl)
+
+/-- The middle component of the downward sequence morphism. -/
+@[simp]
+theorem dimensionShiftDownSESMap_τ₂ {A B : Rep k G} (f : A ⟶ B) :
+    (dimensionShiftDownSESMap f).τ₂ = indBotMap f := (rfl)
 
 /-- The last component of the downward sequence morphism. -/
 @[simp]

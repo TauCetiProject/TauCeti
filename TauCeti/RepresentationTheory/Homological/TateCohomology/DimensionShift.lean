@@ -222,11 +222,11 @@ theorem tensorDimensionShiftUpIso_hom_naturality_right {B : Rep k G} (f : A ⟶ 
         (tateCohomologyFunctor j).map (M ◁ f) := by
   let φ := dimensionShiftUpSESMap f
   have hφ₁ : ((tensorLeft M).mapShortComplex.map φ).τ₁ = M ◁ f := by
-    change (tensorLeft M).map φ.τ₁ = M ◁ f
+    rw [Functor.mapShortComplex_map_τ₁]
     simp [φ, dimensionShiftUpSESMap_τ₁, tensorLeft, curriedTensor]
   have hφ₃ : ((tensorLeft M).mapShortComplex.map φ).τ₃ =
       M ◁ dimensionShiftUpMap f := by
-    change (tensorLeft M).map φ.τ₃ = M ◁ dimensionShiftUpMap f
+    rw [Functor.mapShortComplex_map_τ₃]
     simp [φ, dimensionShiftUpSESMap_τ₃, tensorLeft, curriedTensor]
   subst j
   rw [tensorDimensionShiftUpIso_hom, tensorDimensionShiftUpIso_hom]
@@ -260,10 +260,10 @@ theorem tensorDimensionShiftDownIso_hom_naturality_right {B : Rep k G} (f : A �
   let φ := dimensionShiftDownSESMap f
   have hφ₁ : ((tensorLeft M).mapShortComplex.map φ).τ₁ =
       M ◁ dimensionShiftDownMap f := by
-    change (tensorLeft M).map φ.τ₁ = M ◁ dimensionShiftDownMap f
+    rw [Functor.mapShortComplex_map_τ₁]
     simp [φ, dimensionShiftDownSESMap_τ₁, tensorLeft, curriedTensor]
   have hφ₃ : ((tensorLeft M).mapShortComplex.map φ).τ₃ = M ◁ f := by
-    change (tensorLeft M).map φ.τ₃ = M ◁ f
+    rw [Functor.mapShortComplex_map_τ₃]
     simp [φ, dimensionShiftDownSESMap_τ₃, tensorLeft, curriedTensor]
   subst j
   rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom]
