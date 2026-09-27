@@ -66,6 +66,20 @@ theorem _root_.QuadraticMap.Equivalent.tmul
     (Q₁.tmul S₁).Equivalent (Q₂.tmul S₂) :=
   Nonempty.map2 QuadraticMap.IsometryEquiv.tmul hQ hS
 
+/-- Scaling the left form scales the tensor product of two quadratic forms. -/
+@[simp]
+theorem _root_.QuadraticForm.smul_tmul
+    {A M₁ M₂ : Type*} [CommRing A] [Algebra R A]
+    [AddCommGroup M₁] [Module R M₁] [Module A M₁]
+    [SMulCommClass R A M₁] [IsScalarTower R A M₁]
+    [AddCommGroup M₂] [Module R M₂]
+    (a : A) (Q₁ : QuadraticForm A M₁) (Q₂ : QuadraticForm R M₂) :
+    QuadraticForm.tmul (a • Q₁) Q₂ = a • QuadraticForm.tmul Q₁ Q₂ := by
+  -- `tmul` is an abbreviation, so expose `tensorDistrib` to apply its linearity.
+  change QuadraticForm.tensorDistrib R A ((a • Q₁) ⊗ₜ[R] Q₂) =
+    a • QuadraticForm.tensorDistrib R A (Q₁ ⊗ₜ[R] Q₂)
+  rw [← TensorProduct.smul_tmul', map_smul]
+
 /-- Tensor product distributes over the orthogonal product of quadratic forms. -/
 def _root_.QuadraticForm.IsometryEquiv.tmulProd
     {A M N P : Type*} [CommRing A] [Algebra R A]
