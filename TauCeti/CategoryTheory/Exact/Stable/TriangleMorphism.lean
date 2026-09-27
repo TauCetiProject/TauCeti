@@ -14,11 +14,8 @@ A commutative square on the first arrow of distinguished stable triangles extend
 morphism of triangles. This is the morphism axiom for the Happel triangulation, proved without
 assuming a pretriangulated structure on the stable category.
 
-The key step is that a square commuting modulo projectives can be made strictly commutative:
-extend its error term across the source inflation using injectivity of the projective through
-which the error factors, and subtract that extension from the middle map. The cokernel property
-then supplies the third map, and naturality of the connecting morphism supplies the last square.
-Finally, transport this construction along the isomorphisms defining distinguished triangles.
+Completion holds both for the standard triangles arising from conflations and for all
+distinguished stable triangles, giving the morphism-of-triangles axiom (TR3).
 
 ## References
 
