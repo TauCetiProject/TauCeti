@@ -46,6 +46,15 @@ noncomputable def stableConflationTriangle (S : ShortComplex C) (hS : E.Conflati
   exact CategoryTheory.Pretriangulated.Triangle.mk (q.map S.f) (q.map S.g)
     (q.map (hE.connectingMap hS) ≫ eqToHom bridge ≫ e.symm.hom.app (q.obj S.X₁))
 
+/-- The stable conflation triangle written with its three explicit arrows. -/
+theorem stableConflationTriangle_eq_mk (S : ShortComplex C) (hS : E.Conflation S) :
+    letI := hE.stableHasShift
+    hE.stableConflationTriangle S hS = CategoryTheory.Pretriangulated.Triangle.mk
+      (E.projectiveStableFunctor.map S.f) (E.projectiveStableFunctor.map S.g)
+      (E.projectiveStableFunctor.map (hE.connectingMap hS) ≫
+        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj S.X₁).symm ≫
+        hE.stableShiftFunctorOneIso.inv.app (E.projectiveStableFunctor.obj S.X₁)) := (rfl)
+
 /-- The first object of the stable conflation triangle. -/
 @[simp]
 theorem stableConflationTriangle_obj₁ (S : ShortComplex C) (hS : E.Conflation S) :

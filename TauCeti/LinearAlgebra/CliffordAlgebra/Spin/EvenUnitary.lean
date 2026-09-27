@@ -447,6 +447,30 @@ theorem coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
 
 end Transport
 
+/-- Forget a Spin element to the same Clifford unit in the even unitary carrier. -/
+def spinGroupToEvenUnitary : spinGroup Q →* evenUnitaryGroup Q :=
+  spinGroup.toUnits.codRestrict (evenUnitaryGroup Q) fun x ↦ ⟨x.2.2, x.2.1.2⟩
+
+/-- The canonical map from Spin to the even unitary carrier does not change the underlying
+Clifford unit. -/
+@[simp]
+theorem coe_spinGroupToEvenUnitary_apply (x : spinGroup Q) :
+    (spinGroupToEvenUnitary Q x : (CliffordAlgebra Q)ˣ) = spinGroup.toUnits x := by
+  apply Units.ext
+  rfl
+
+/-- The canonical map from Spin to the even unitary carrier is injective. -/
+theorem spinGroupToEvenUnitary_injective :
+    Function.Injective (spinGroupToEvenUnitary Q) := fun _ _ h ↦
+  spinGroup.toUnits_injective (congrArg Subtype.val h)
+
+/-- Two Spin elements have the same image in the even unitary carrier exactly when they are
+equal. -/
+@[simp]
+theorem spinGroupToEvenUnitary_inj (x y : spinGroup Q) :
+    spinGroupToEvenUnitary Q x = spinGroupToEvenUnitary Q y ↔ x = y :=
+  (spinGroupToEvenUnitary_injective Q).eq_iff
+
 /-- The Spin units are precisely the Lipschitz units that lie in the even unitary carrier. -/
 @[simp]
 theorem range_spinGroup_toUnits :

@@ -52,6 +52,14 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
   reparametrizations.
+* `TauCeti.Manifold.curveVelocity_eq_mfderiv_snd` and
+  `TauCeti.Manifold.curveVelocity_eq_mfderiv_fst`: the two partial velocities of a two-parameter
+  family `f : 𝕜 → 𝕜 → M` are the differential of the uncurried family in the coordinate
+  directions.
+* `TauCeti.Manifold.variationField`: the variation field `V(t) = ∂F/∂s (0, t)` of a two-parameter
+  family `F : 𝕜 → 𝕜 → M`, the transverse velocity at `s = 0`; it vanishes where the curves near
+  `s = 0` share a point (`TauCeti.Manifold.variationField_eq_zero`) and is the differential of the
+  uncurried family in the first coordinate direction (`TauCeti.Manifold.variationField_eq_mfderiv`).
 * `TauCeti.Manifold.hasDerivWithinAt_extChartAt_comp_curve`: reading the curve in the chart
   centred at the current point differentiates it to the velocity itself, with
   `TauCeti.Manifold.hasDerivAt_extChartAt_comp_curve` its unrestricted case and
@@ -226,6 +234,32 @@ variable
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜} {w : TangentSpace I (γ t)}
 
+section Surface
+
+variable {f : 𝕜 → 𝕜 → M} {u : 𝕜}
+
+/-- **The velocity of a curve of a two-parameter family.** The velocity of the curve `f u` of a
+family `f : 𝕜 → 𝕜 → M` is the differential of the uncurried family in the direction of the
+second parameter. -/
+theorem curveVelocity_eq_mfderiv_snd
+    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) :
+    curveVelocity I (f u) t =
+      mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t) ((0 : 𝕜), (1 : 𝕜)) :=
+  hf.curveVelocity_comp_mfderiv (g := fun r : 𝕜 ↦ (u, r))
+    ((hasDerivAt_const t u).prodMk (hasDerivAt_id t))
+
+/-- **The transverse velocity of a two-parameter family.** The velocity of the curve
+`q ↦ f q t` of a family `f : 𝕜 → 𝕜 → M` is the differential of the uncurried family in the
+direction of the first parameter. -/
+theorem curveVelocity_eq_mfderiv_fst
+    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) :
+    curveVelocity I (fun q ↦ f q t) u =
+      mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t) ((1 : 𝕜), (0 : 𝕜)) :=
+  hf.curveVelocity_comp_mfderiv (g := fun q : 𝕜 ↦ (q, t))
+    ((hasDerivAt_id u).prodMk (hasDerivAt_const u t))
+
+end Surface
+
 /-- The velocity of a reparametrized curve is the velocity of the original curve multiplied by
 the derivative of the reparametrization. -/
 theorem curveVelocityWithin_comp {φ : 𝕜 → 𝕜} {u : Set 𝕜} {c : 𝕜}
@@ -273,6 +307,49 @@ would otherwise keep `simp` from reaching. -/
 @[simp]
 theorem curveVelocity_const (x : M) : curveVelocity I (fun _ : 𝕜 ↦ x) t = 0 := by
   rw [← curveVelocityWithin_univ, curveVelocityWithin_const]
+
+/-! ### The variation field of a two-parameter family -/
+
+section Variation
+
+variable {F : 𝕜 → 𝕜 → M}
+
+variable (I) in
+/-- The **variation field** of a two-parameter family `F : 𝕜 → 𝕜 → M`: the velocity at `s = 0` of
+the transverse curve `s ↦ F s t`, a tangent vector at `F 0 t`.  In the classical notation it is
+`V(t) = ∂F/∂s (0, t)`. -/
+def variationField (F : 𝕜 → 𝕜 → M) (t : 𝕜) : TangentSpace I (F 0 t) :=
+  curveVelocity I (fun s ↦ F s t) 0
+
+/-- The defining formula for the variation field. -/
+theorem variationField_apply (F : 𝕜 → 𝕜 → M) (t : 𝕜) :
+    variationField I F t = curveVelocity I (fun s ↦ F s t) 0 :=
+  (rfl)
+
+/-- The variation field as a function of the curve parameter: the unapplied form of
+`variationField_apply`. -/
+theorem variationField_def (F : 𝕜 → 𝕜 → M) :
+    variationField I F = fun t ↦ curveVelocity I (fun s ↦ F s t) 0 :=
+  (rfl)
+
+/-- At a parameter where the curves of the family near `s = 0` all pass through the same point,
+the variation field vanishes. -/
+@[simp]
+theorem variationField_eq_zero {t : 𝕜} (h : ∀ᶠ s in 𝓝 (0 : 𝕜), F s t = F 0 t) :
+    variationField I F t = 0 := by
+  rw [variationField_apply, curveVelocity_apply,
+    Filter.EventuallyEq.mfderiv_eq (f := fun _ ↦ F 0 t) h, mfderiv_const]
+  exact zero_apply _
+
+/-- The variation field is the differential of the uncurried family in the direction of the
+first parameter. -/
+theorem variationField_eq_mfderiv {t : 𝕜}
+    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ F z.1 z.2) (0, t)) :
+    variationField I F t =
+      mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ F z.1 z.2) (0, t) ((1 : 𝕜), (0 : 𝕜)) := by
+  rw [variationField_apply, curveVelocity_eq_mfderiv_fst hf]
+
+end Variation
 
 /-! ### The velocity lift of a curve -/
 

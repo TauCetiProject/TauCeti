@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Data.Fintype.Perm
-public import Mathlib.GroupTheory.GroupAction.Quotient
-public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Tactic.Group
+public import TauCeti.GroupTheory.Perm.Centralizer
 
 /-!
 # Permutation triples
@@ -115,6 +114,13 @@ def component (t : PermutationTriple n) : Fin 3 → Perm (Fin n) :=
 @[simp] theorem ofTwo_σ1 (σ0 σ1 : Perm (Fin n)) : (ofTwo σ0 σ1).σ1 = σ1 := (rfl)
 
 @[simp] theorem ofTwo_σinf (σ0 σ1 : Perm (Fin n)) : (ofTwo σ0 σ1).σinf = (σ1 * σ0)⁻¹ := (rfl)
+
+/-- The third component of a triple built from its first two is the third entry of a product-one
+triple of permutations, the relation determining it. -/
+theorem ofTwo_σinf_eq_of_product_eq_one (p : Perm (Fin n) × Perm (Fin n) × Perm (Fin n))
+    (h : p.2.2 * p.2.1 * p.1 = 1) : (ofTwo p.1 p.2.1).σinf = p.2.2 := by
+  have h' : p.2.2 * (p.2.1 * p.1) = 1 := by simpa only [mul_assoc] using h
+  rw [ofTwo_σinf, eq_inv_of_mul_eq_one_right h', inv_inv]
 
 variable (t : PermutationTriple n)
 
@@ -505,30 +511,16 @@ theorem automorphismGroup_equivOppositeConvention (t : PermutationTriple n) :
 theorem eq_one_of_mem_automorphismGroup_of_apply_eq
     (ht : MulAction.IsPretransitive t.monodromyGroup (Fin n)) {τ : Perm (Fin n)}
     (hτ : τ ∈ t.automorphismGroup) {i : Fin n} (hi : τ i = i) : τ = 1 := by
-  have hcomm : ∀ g ∈ t.monodromyGroup, g * τ = τ * g :=
-    Subgroup.mem_centralizer_iff.mp
-      (automorphismGroup_eq_centralizer_monodromyGroup (t := t) ▸ hτ)
-  refine Equiv.ext fun j => ?_
-  obtain ⟨g, hg⟩ := ht.exists_smul_eq i j
-  have hgj : (g : Perm (Fin n)) i = j := hg
-  calc τ j = (τ * (g : Perm (Fin n))) i := by rw [Perm.mul_apply, hgj]
-    _ = ((g : Perm (Fin n)) * τ) i := by rw [hcomm _ g.2]
-    _ = j := by rw [Perm.mul_apply, hi, hgj]
-    _ = (1 : Perm (Fin n)) j := by rw [Perm.one_apply]
+  exact Subgroup.eq_one_of_mem_centralizer_of_apply_eq ht
+    (automorphismGroup_eq_centralizer_monodromyGroup (t := t) ▸ hτ) hi
 
 /-- The order of the automorphism group divides the degree when the monodromy action is
 pretransitive. -/
 theorem card_automorphismGroup_dvd
     (ht : MulAction.IsPretransitive t.monodromyGroup (Fin n)) :
     Nat.card t.automorphismGroup ∣ n := by
-  have hfree : ∀ i : Fin n, MulAction.stabilizer t.automorphismGroup i = ⊥ := by
-    intro i
-    refine eq_bot_iff.mpr fun τ hτ => ?_
-    rw [Subgroup.mem_bot, Subtype.ext_iff]
-    exact eq_one_of_mem_automorphismGroup_of_apply_eq ht τ.2 (i := i) hτ
-  have hcard := Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd hfree)
-  rw [Nat.card_prod, Nat.card_eq_fintype_card, Fintype.card_fin] at hcard
-  exact ⟨_, hcard.trans (mul_comm _ _)⟩
+  rw [automorphismGroup_eq_centralizer_monodromyGroup (t := t)]
+  simpa only [Fintype.card_fin] using Subgroup.card_centralizer_dvd t.monodromyGroup ht
 
 /-! ### Images under representations of the monodromy group -/
 

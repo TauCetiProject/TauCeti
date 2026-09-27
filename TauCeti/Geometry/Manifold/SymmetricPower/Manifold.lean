@@ -17,7 +17,7 @@ Its `n`-th symmetric power `Sym α n` carries the elementary-symmetric charted s
 `TauCeti.symOpenPartialHomeomorph`, built from disjoint coordinate patches of `α` around the
 distinct points of a tuple, and the transition between any two of them is analytic on its source
 (`TauCeti.contDiffOn_symOpenPartialHomeomorph_trans`), because the changes of coordinate on `α`
-are (`TauCeti.analyticAt_chartAt_comp_chartAt_symm`). Hence `Sym α n` is an analytic manifold: this
+are (`TauCeti.analyticAt_symm_trans`). Hence `Sym α n` is an analytic manifold: this
 is the complex structure of `Sym^g(Σ)` in Ozsváth–Szabó, *Holomorphic disks and topological
 invariants for closed three-manifolds*
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206)), §2.2, given there by the observation
@@ -60,7 +60,8 @@ theorem isManifold_symChartedSpace :
   simp only [mfld_simps]
   exact contDiffOn_symOpenPartialHomeomorph_trans _ _ V m hm W p hp hVo hVsub hVdisj hWo hWsub
     hWdisj e e' hq hr fun _ _ i j z hz _ =>
-      analyticAt_chartAt_comp_chartAt_symm (hVsub i hz.1) (hWsub j hz.2)
+      analyticAt_symm_trans (IsManifold.chart_mem_maximalAtlas _)
+          (IsManifold.chart_mem_maximalAtlas _) (hVsub i hz.1) (hWsub j hz.2)
 
 end TauCeti
 
