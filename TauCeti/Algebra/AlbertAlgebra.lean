@@ -40,7 +40,8 @@ The coordinate isomorphism works for any semiring acting on coefficients that fo
 commutative monoid. The trace and its kernel need only a semiring, while the symmetrized product
 needs a commutative ring in which `2` is invertible: over `ℤ` the halved symmetric form of the
 split-octonion norm is not integral.
-The two dimension counts use a commutative ring satisfying `StrongRankCondition`.
+The dimension counts ask for `StrongRankCondition`, over a semiring for `H₃(𝕆)` itself and over a
+ring for the trace-zero subspace.
 
 ## Main definitions
 
@@ -190,15 +191,15 @@ def linearEquivProd (S R : Type*) [Semiring S] [AddCommMonoid R] [Module S R] :
     (p : (Fin 3 → R) × (Fin 3 → Octonion R)) :
     (linearEquivProd S R).symm p = ⟨p.1, p.2⟩ := (rfl)
 
-instance [CommRing R] : Module.Free R (AlbertAlgebra R) :=
+instance [Semiring R] : Module.Free R (AlbertAlgebra R) :=
   Module.Free.of_equiv (linearEquivProd R R).symm
 
-instance [CommRing R] : Module.Finite R (AlbertAlgebra R) :=
+instance [Semiring R] : Module.Finite R (AlbertAlgebra R) :=
   Module.Finite.equiv (linearEquivProd R R).symm
 
 /-- **The split Albert algebra is `27`-dimensional**: three scalars on the diagonal and three
 `8`-dimensional octonion entries. -/
-theorem finrank_eq_twentySeven (R : Type*) [CommRing R] [StrongRankCondition R] :
+theorem finrank_eq_twentySeven (R : Type*) [Semiring R] [StrongRankCondition R] :
     Module.finrank R (AlbertAlgebra R) = 27 := by
   rw [(linearEquivProd R R).finrank_eq, Module.finrank_prod, Module.finrank_pi,
     Module.finrank_pi_fintype, Finset.sum_const]
@@ -318,8 +319,8 @@ theorem trace_one : trace (1 : AlbertAlgebra R) = 3 := by
 theorem trace_surjective : Function.Surjective (trace : AlbertAlgebra R →ₗ[R] R) :=
   fun r => ⟨⟨Pi.single 0 r, 0⟩, by simp [Pi.single_apply]⟩
 
-/-- **The trace-zero submodule** `J₀ ⊆ H₃(𝕆)`, the kernel of the trace. Over a commutative
-ring satisfying `StrongRankCondition` it is `26`-dimensional
+/-- **The trace-zero submodule** `J₀ ⊆ H₃(𝕆)`, the kernel of the trace. Over a ring
+satisfying `StrongRankCondition` it is `26`-dimensional
 (`TauCeti.AlbertAlgebra.finrank_traceZero`). When `3` is invertible, it complements the scalar
 matrices; in characteristic `3`, it contains the identity matrix. -/
 def traceZero (R : Type*) [Semiring R] : Submodule R (AlbertAlgebra R) := LinearMap.ker trace
@@ -351,7 +352,7 @@ end Trace
 
 /-- **The trace-zero subspace of the split Albert algebra is `26`-dimensional**: a vanishing trace
 pins the last diagonal entry to the negative of the sum of the other two. -/
-theorem finrank_traceZero (R : Type*) [CommRing R] [StrongRankCondition R] :
+theorem finrank_traceZero (R : Type*) [Ring R] [StrongRankCondition R] :
     Module.finrank R (traceZero R) = 26 := by
   rw [(traceZeroLinearEquivProd R).finrank_eq, Module.finrank_prod, Module.finrank_prod,
     Module.finrank_pi_fintype, Finset.sum_const]
