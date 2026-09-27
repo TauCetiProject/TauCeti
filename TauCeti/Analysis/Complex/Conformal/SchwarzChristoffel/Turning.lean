@@ -56,6 +56,19 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
+/-- A nonzero turning exponent strictly between `-1` and `1` has nonzero sine after
+multiplication by `π`. -/
+theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
+    (hx : x ∈ Ioo (-1 : ℝ) 1) (hx0 : x ≠ 0) :
+    Real.sin (Real.pi * x) ≠ 0 := by
+  have hlow : -Real.pi < Real.pi * x := by
+    nlinarith [mul_lt_mul_of_pos_left hx.1 Real.pi_pos]
+  have hupp : Real.pi * x < Real.pi := by
+    nlinarith [mul_lt_mul_of_pos_left hx.2 Real.pi_pos]
+  intro hsin
+  exact (mul_ne_zero Real.pi_ne_zero hx0)
+    ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
+
 /-- At two adjacent prevertices, a middle exponent in `(-1, 0)` makes the boundary edge angle
 increase strictly by less than `π` from the left-hand edge to the right-hand edge.
 
@@ -219,14 +232,8 @@ theorem affineIndependent_schwarzChristoffelVertex_of_consecutive_of_ne_zero
     omega
   have hsum (i : Fin m) : ∑ t with a t = a i, e t = e i := by
     simp [ha.injective.eq_iff, Finset.filter_eq']
-  have hkSin : Real.sin (Real.pi * e k) ≠ 0 := by
-    have hlow : -Real.pi < Real.pi * e k := by
-      nlinarith [mul_lt_mul_of_pos_left hk.1 Real.pi_pos]
-    have hupp : Real.pi * e k < Real.pi := by
-      nlinarith [mul_lt_mul_of_pos_left hk.2 Real.pi_pos]
-    intro hsin
-    exact (mul_ne_zero Real.pi_ne_zero hk0)
-      ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
+  have hkSin : Real.sin (Real.pi * e k) ≠ 0 :=
+    sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero hk hk0
   exact affineIndependent_schwarzChristoffelVertex_of_adjacent
     a e z₀ j k l hjk' hkl' hfree₁ hfree₂
     (by rw [hsum]; exact hj) (by rw [hsum]; exact hk.1) (by rw [hsum]; exact hkSin)
@@ -293,13 +300,8 @@ theorem affineIndependent_schwarzChristoffelBoundary_left_endpoint (a e : ι →
     · rw [hxsum]
       norm_num
     · exact hp.1
-    · have hlow : -Real.pi < Real.pi * ∑ i with a i = p, e i := by
-        nlinarith [mul_lt_mul_of_pos_left hp.1 Real.pi_pos]
-      have hupp : Real.pi * ∑ i with a i = p, e i < Real.pi := by
-        nlinarith [mul_lt_mul_of_pos_left hp.2 Real.pi_pos]
-      intro hsin
-      exact (mul_ne_zero Real.pi_ne_zero hp.2.ne)
-        ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
+    · exact sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero
+        ⟨hp.1, lt_trans hp.2 (by norm_num)⟩ hp.2.ne
     · exact hq
   have hximage : B x ∈ B '' Iic p := ⟨x, hxp.le, rfl⟩
   rw [schwarzChristoffelBoundary_image_Iic a e z₀ hp.1 ha hS] at hximage
@@ -350,13 +352,8 @@ theorem affineIndependent_schwarzChristoffelBoundary_right_endpoint (a e : ι �
       hqpFree hpxFree
     · exact hq
     · exact hp.1
-    · have hlow : -Real.pi < Real.pi * ∑ i with a i = p, e i := by
-        nlinarith [mul_lt_mul_of_pos_left hp.1 Real.pi_pos]
-      have hupp : Real.pi * ∑ i with a i = p, e i < Real.pi := by
-        nlinarith [mul_lt_mul_of_pos_left hp.2 Real.pi_pos]
-      intro hsin
-      exact (mul_ne_zero Real.pi_ne_zero hp.2.ne)
-        ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
+    · exact sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero
+        ⟨hp.1, lt_trans hp.2 (by norm_num)⟩ hp.2.ne
     · rw [hxsum]
       norm_num
   have hximage : B x ∈ B '' Ici p := ⟨x, hpx.le, rfl⟩
