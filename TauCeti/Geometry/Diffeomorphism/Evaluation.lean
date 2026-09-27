@@ -12,10 +12,9 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 /-!
 # Continuous evaluation of diffeomorphisms
 
-On a compact manifold with locally compact model, the weak Whitney topology makes
-the tautological action of its `C^n` diffeomorphism group continuous in both the diffeomorphism
-and the point. This is the evaluation property used when the group acts on a geometric object or
-when a family of diffeomorphisms is studied through its point orbits.
+On a compact source manifold with locally compact model, the weak Whitney topology makes
+evaluation of `C^n` diffeomorphisms continuous in both the diffeomorphism and the point.
+For self-diffeomorphisms this gives continuity of the tautological action.
 -/
 
 public section
@@ -30,9 +29,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [CompactSpace M] {n : ℕ∞ω} [IsManifold I n M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J n N]
 
 /-- Diffeomorphism evaluation is continuous for the weak Whitney topology. -/
-theorem continuousEval_weakWhitney : ContinuousEval (M ≃ₘ^n⟮I, I⟯ M) M M :=
+theorem continuousEval_weakWhitney : ContinuousEval (M ≃ₘ^n⟮I, J⟯ N) M N :=
   ContinuousEval.of_continuous_forget continuous_toContMDiffMap
 
 scoped[TauCeti.DiffeomorphWeakWhitney] attribute [instance]

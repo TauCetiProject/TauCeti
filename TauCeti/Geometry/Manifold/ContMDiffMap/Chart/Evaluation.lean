@@ -103,10 +103,9 @@ theorem continuous_eval_manifoldWeakWhitney_joint :
     simpa only [hφy, V, mem_preimage,
       iteratedFDerivWithin_zero_apply, Function.comp_apply] using hgy
   have hu := hsub ⟨hgy'.2, ψ.mapsTo hgy'.1⟩
-  -- `hsub` applies `ψ.symm` to a subtype element of its target. Coercing that
-  -- element to the ambient model is definitionally the chart coordinate `ψ (g y)`.
-  change ψ.symm (ψ (g y)) ∈ U at hu
-  rwa [ψ.left_inv hgy'.1] at hu
+  have hu' : ψ.symm (ψ (g y)) ∈ U := by
+    simpa only [mem_preimage, ψ, Subtype.coe_mk] using hu
+  simpa only [mem_preimage, ψ.left_inv hgy'.1] using hu'
 
 /-- Joint evaluation is continuous for the manifold weak Whitney topology. -/
 theorem continuousEval_manifoldWeakWhitney :
