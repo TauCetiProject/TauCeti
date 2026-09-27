@@ -102,7 +102,7 @@ end Construction
 
 variable (k : Type u) [Field k]
 
-private theorem connectedSpace_generatorCoordinateAlgebra [IsAlgClosed k] :
+private theorem connectedSpace_generatorCoordinateAlgebra :
     ∀ j, ConnectedSpace (PrimeSpectrum (generatorCoordinateAlgebra k j)) := by
   intro j
   cases j with
