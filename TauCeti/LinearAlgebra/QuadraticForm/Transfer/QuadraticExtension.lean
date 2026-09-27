@@ -92,7 +92,7 @@ theorem traceTransfer_sq_basisRepr {x : L} {d : K}
 
 /-- The square-root coordinate map is an isometry from the transferred unit line
 to the diagonal form `⟨2, 2d⟩`. -/
-noncomputable def traceTransferSqIsometryEquivWeightedSumSquares_of_sq
+noncomputable def traceTransferSqIsometryEquivWeightedSumSquaresOfSq
     {x : L} {d : K} (hfin : Module.finrank K L = 2)
     (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d) :
     ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).IsometryEquiv
@@ -105,21 +105,21 @@ noncomputable def traceTransferSqIsometryEquivWeightedSumSquares_of_sq
 
 /-- The isometry uses coordinates in the square-root basis. -/
 @[simp]
-theorem traceTransferSqIsometryEquivWeightedSumSquares_of_sq_apply
+theorem traceTransferSqIsometryEquivWeightedSumSquaresOfSq_apply
     {x : L} {d : K} (hfin : Module.finrank K L = 2)
     (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d)
     (z : L) :
-    traceTransferSqIsometryEquivWeightedSumSquares_of_sq hfin hx hx2 z =
+    traceTransferSqIsometryEquivWeightedSumSquaresOfSq hfin hx hx2 z =
       (quadraticSquareRootBasis hx hfin).equivFun z := by
   rfl
 
 /-- The inverse isometry reconstructs an element from its square-root coordinates. -/
 @[simp]
-theorem traceTransferSqIsometryEquivWeightedSumSquares_of_sq_symm_apply
+theorem traceTransferSqIsometryEquivWeightedSumSquaresOfSq_symm_apply
     {x : L} {d : K} (hfin : Module.finrank K L = 2)
     (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d)
     (v : Fin 2 → K) :
-    (traceTransferSqIsometryEquivWeightedSumSquares_of_sq hfin hx hx2).symm v =
+    (traceTransferSqIsometryEquivWeightedSumSquaresOfSq hfin hx hx2).symm v =
       (quadraticSquareRootBasis hx hfin).equivFun.symm v := by
   rfl
 
@@ -130,6 +130,6 @@ theorem equivalent_traceTransfer_sq_weightedSumSquares_of_sq
     (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d) :
     ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Equivalent
       (weightedSumSquares K ![(2 : K), 2 * d]) :=
-  ⟨traceTransferSqIsometryEquivWeightedSumSquares_of_sq hfin hx hx2⟩
+  ⟨traceTransferSqIsometryEquivWeightedSumSquaresOfSq hfin hx hx2⟩
 
 end TauCeti
