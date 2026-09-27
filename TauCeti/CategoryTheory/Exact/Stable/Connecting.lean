@@ -189,7 +189,8 @@ theorem exists_stable_connecting_square {S T : ShortComplex C}
         eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj T.X₁).symm := by
   obtain ⟨a, rfl⟩ := E.projectiveStableFunctor.map_surjective a
   obtain ⟨b, rfl⟩ := E.projectiveStableFunctor.map_surjective b
-  obtain ⟨φ, hφ₁, hφ₂⟩ := hE.exists_shortComplex_hom_of_stable_square hS a b
+  obtain ⟨φ, hφ₁, hφ₂⟩ := E.exists_shortComplex_hom_of_stable_square
+    (fun P => (hE.projective_iff_injective P).1) hS a b
     (by simpa only [Functor.map_comp] using hab)
   refine ⟨E.projectiveStableFunctor.map φ.τ₃, ?_, ?_⟩
   · rw [← hφ₂, ← Functor.map_comp, ← Functor.map_comp, φ.comm₂₃]

@@ -10,7 +10,7 @@ public import TauCeti.CategoryTheory.Exact.Stable.Triangulation
 /-!
 # Completing morphisms of stable triangles
 
-A commutative square on the first two arrows of distinguished stable triangles extends to a
+A commutative square on the first arrow of distinguished stable triangles extends to a
 morphism of triangles. This is the morphism axiom for the Happel triangulation, proved without
 assuming a pretriangulated structure on the stable category.
 
@@ -37,7 +37,7 @@ universe v u
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C] {E : ExactStructure C} (hE : E.IsFrobenius)
 
-/-- A square on the first two arrows of stable conflation triangles extends to a morphism
+/-- A square on the first arrow of stable conflation triangles extends to a morphism
 of triangles. -/
 private theorem complete_stableConflationTriangle_morphism {S T : ShortComplex C}
     (hS : E.Conflation S) (hT : E.Conflation T) :
@@ -70,7 +70,7 @@ private theorem complete_stableConflationTriangle_morphism {S T : ShortComplex C
 
 /-- The morphism axiom for distinguished stable triangles: every commutative square on their
 first arrows extends to a morphism of triangles. No triangulated structure is assumed. -/
-theorem stable_complete_distinguished_triangle_morphism :
+theorem complete_stable_distinguished_triangle_morphism :
     letI := hE.stableHasShift
     ∀ (T₁ T₂ : Triangle E.ProjectiveStableCategory)
       (_ : T₁ ∈ hE.stableDistinguishedTriangles)
