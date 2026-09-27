@@ -24,7 +24,6 @@ the corresponding norm-index theorem supplies the bimultiplicativity used in the
 The convention is `∏_{i<j} (aᵢ,aⱼ)`, as in Lam, *Introduction to Quadratic Forms over Fields*,
 V.3.17, and Serre, *A Course in Arithmetic*, IV §2. The value is `1` in ranks zero and one.
 
-The orthogonal-sum proof is adapted from `RegularFormClass.hasseInvariant_add_mk`.
 -/
 
 public section
@@ -123,7 +122,8 @@ theorem localHasseOfIsUnitTwo_mk_binary (h2 : IsUnit (2 : 𝒪[K])) (a b : Kˣ) 
   simp [Fin.prod_univ_succ]
 
 /-- For diagonal forms, the Hasse sign of an orthogonal sum is the product of the two signs
-times the Hilbert symbol of their discriminant representatives. -/
+times the Hilbert symbol of their discriminant representatives. The proof is adapted from
+`RegularFormClass.hasseInvariant_add_mk`. -/
 theorem localHasseOfIsUnitTwo_add_mk (h2 : IsUnit (2 : 𝒪[K]))
     (p q : RegularFormPresentation K) :
     localHasseOfIsUnitTwo h2 (Quotient.mk (regularFormSetoid K) p +
