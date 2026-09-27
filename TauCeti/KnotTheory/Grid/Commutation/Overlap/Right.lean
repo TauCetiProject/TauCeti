@@ -37,9 +37,12 @@ The two subcases give different decomposition shapes:
   carries the original pentagon's terminal side.
 * `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRightFirst_middle`,
   `..._rectangle_left`, `..._rectangle_right`, `..._rectangle_bottom`, `..._rectangle_top`,
-  `..._pentagon_left`, `..._pentagon_right`, `..._pentagon_bottom`, `..._pentagon_top`
+  `..._pentagon_left`, `..._pentagon_right`, `..._pentagon_bottom`, `..._pentagon_top`,
+  `..._pentagon_toGridRectangle`
   (and the `...Second` analogues): the promoted components in terms of
-  the underlying recut, so consumers never unfold the definitions.
+  the underlying recut, so consumers never unfold the definitions. The
+  `..._pentagon_toGridRectangle` lemmas give the promoted pentagon's underlying
+  rectangle geometry for region and avoidance arguments.
 -/
 
 public section
@@ -219,6 +222,23 @@ theorem recutRightEqRightFirst_pentagon_right
   rw [D.recutRightEqRightFirst_unfold hcommon hone hrectangle hpentagon hfirst]
   exact GridPentagonBetween.ofRightEq_right _ _ _
 
+/-- The rectangle underlying the promoted pentagon of the first promotion is the first
+recut rectangle. This is the promoted pentagon's underlying rectangle geometry, for use in
+region and avoidance arguments. -/
+@[simp]
+theorem recutRightEqRightFirst_pentagon_toGridRectangle
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst).pentagon.toGridRectangle =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).first.toGridRectangle := by
+  rw [D.recutRightEqRightFirst_unfold hcommon hone hrectangle hpentagon hfirst]
+  exact congrArg GridRectangleBetween.toGridRectangle
+    (GridPentagonBetween.ofRightEq_toGridRectangleBetween _ _ _)
+
 /-- Recut a rectangle followed by a pentagon when their unique common side is terminal for
 both, then promote the second new rectangle to a pentagon. This applies when the second recut
 rectangle inherits the original pentagon's terminal side; the turn-row membership is derived
@@ -388,6 +408,23 @@ theorem recutRightEqRightSecond_pentagon_right
       finRotate n a := by
   rw [D.recutRightEqRightSecond_unfold hcommon hone hrectangle hpentagon hsecond]
   exact GridPentagonBetween.ofRightEq_right _ _ _
+
+/-- The rectangle underlying the promoted pentagon of the second promotion is the second
+recut rectangle. This is the promoted pentagon's underlying rectangle geometry, for use in
+region and avoidance arguments. -/
+@[simp]
+theorem recutRightEqRightSecond_pentagon_toGridRectangle
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond).pentagon.toGridRectangle =
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.toGridRectangle := by
+  rw [D.recutRightEqRightSecond_unfold hcommon hone hrectangle hpentagon hsecond]
+  exact congrArg GridRectangleBetween.toGridRectangle
+    (GridPentagonBetween.ofRightEq_toGridRectangleBetween _ _ _)
 
 end GridRectanglePentagonDecomposition
 
