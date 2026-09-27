@@ -97,10 +97,28 @@ def nebentypus : (ZMod N)ˣ →* ℂˣ :=
     a.phi.changeLevel ((dvd_mul_left a.v a.u).trans
       ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd))).toUnitHom
 
+/-- The defining expression for the nebentypus of an Eisenstein index. -/
+theorem nebentypus_def :
+    a.nebentypus =
+      (a.psi.changeLevel ((dvd_mul_right a.u a.v).trans
+          ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd)) *
+        a.phi.changeLevel ((dvd_mul_left a.v a.u).trans
+          ((dvd_mul_left (a.u * a.v) a.t).trans a.level_dvd))).toUnitHom :=
+  by
+    unfold nebentypus
+    congr
+
 /-- The normalized raised character Eisenstein series attached to an index. -/
 def form [NeZero N] (hk : 3 ≤ (k : ℤ)) :
     ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ) :=
   normalizedCharEisensteinSeriesMFRaise a.psi a.phi a.t hk a.level_dvd
+
+/-- The defining expression for the normalized raised series attached to an Eisenstein index. -/
+theorem form_def [NeZero N] (hk : 3 ≤ (k : ℤ)) :
+    a.form hk = normalizedCharEisensteinSeriesMFRaise a.psi a.phi a.t hk a.level_dvd :=
+  by
+    unfold form
+    congr
 
 /-- An indexed Eisenstein series belongs to the character space of its induced nebentypus. -/
 theorem form_mem_modFormCharSpace [NeZero N] (hk : 3 ≤ (k : ℤ)) :
