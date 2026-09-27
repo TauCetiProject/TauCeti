@@ -59,7 +59,8 @@ rectangle inherits the original pentagon's terminal side; the turn-row membershi
 from the common-terminal-side geometry via `turn_mem_recut_first_of_right_eq_right`.
 
 The result is a `GridPentagonRectangleDecomposition` with:
-* `middle`: the middle rectangle of the underlying recut
+* `middle`: the middle grid state of the underlying recut (the intermediate state where
+  the two domains meet)
 * `pentagon`: the first recut rectangle promoted to a pentagon via `GridPentagonBetween.ofRightEq`
 * `rectangle`: the second recut rectangle
 
@@ -100,7 +101,7 @@ private theorem recutRightEqRightFirst_unfold
             hfirst)
         rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).second } := rfl
 
-/-- The middle rectangle of the first promotion is the middle rectangle of the underlying
+/-- The middle grid state of the first promotion is the middle grid state of the underlying
 recut. -/
 @[simp]
 theorem recutRightEqRightFirst_middle
@@ -246,7 +247,8 @@ from the common-terminal-side geometry via `turn_mem_recut_second_of_right_eq_ri
 The result is a rectangle--pentagon decomposition.
 
 The result is a `GridRectanglePentagonDecomposition` with:
-* `middle`: the middle rectangle of the underlying recut
+* `middle`: the middle grid state of the underlying recut (the intermediate state where
+  the two domains meet)
 * `rectangle`: the first recut rectangle
 * `pentagon`: the second recut rectangle promoted to a pentagon via `GridPentagonBetween.ofRightEq`
 
@@ -287,7 +289,7 @@ private theorem recutRightEqRightSecond_unfold
           (D.turn_mem_recut_second_of_right_eq_right hcommon hone hrectangle hpentagon
             hsecond) } := rfl
 
-/-- The middle rectangle of the second promotion is the middle rectangle of the underlying
+/-- The middle grid state of the second promotion is the middle grid state of the underlying
 recut. -/
 @[simp]
 theorem recutRightEqRightSecond_middle
