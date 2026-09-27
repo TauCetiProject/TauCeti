@@ -53,30 +53,36 @@ namespace TauCeti
 universe u v w
 
 variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
-  [FiniteDimensional K L] [Invertible (2 : K)] [Invertible (2 : L)]
+  [FiniteDimensional K L] [Invertible (2 : K)]
 
 private def scharlauTransferClassAux (s : L →ₗ[K] K) (hs : s ≠ 0) :
     RegularFormClass L → RegularFormClass K :=
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   Quotient.lift
-    (fun p ↦ formClass ((presentedForm p).scharlauTransfer s)
-      ((presentedForm p).nondegenerate_scharlauTransfer_iff_of_ne_zero s hs |>.mpr
-        (nondegenerate_presentedForm p)))
-    fun p q h ↦ by
-      apply (formClass_eq_iff _ _ _ _).mpr
-      exact h.scharlauTransfer s
+      (fun p ↦ formClass ((presentedForm p).scharlauTransfer s)
+        ((presentedForm p).nondegenerate_scharlauTransfer_iff_of_ne_zero s hs |>.mpr
+          (nondegenerate_presentedForm p)))
+      fun p q h ↦ by
+        apply (formClass_eq_iff _ _ _ _).mpr
+        exact h.scharlauTransfer s
 
 private theorem scharlauTransferClassAux_mk (s : L →ₗ[K] K) (hs : s ≠ 0)
     (p : RegularFormPresentation L) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     scharlauTransferClassAux s hs (Quotient.mk (regularFormSetoid L) p) =
-      formClass ((presentedForm p).scharlauTransfer s)
-        ((presentedForm p).nondegenerate_scharlauTransfer_iff_of_ne_zero s hs |>.mpr
-          (nondegenerate_presentedForm p)) :=
+        formClass ((presentedForm p).scharlauTransfer s)
+          ((presentedForm p).nondegenerate_scharlauTransfer_iff_of_ne_zero s hs |>.mpr
+            (nondegenerate_presentedForm p)) := by
   rfl
 
 private theorem scharlauTransferClassAux_add (s : L →ₗ[K] K) (hs : s ≠ 0)
     (x y : RegularFormClass L) :
     scharlauTransferClassAux s hs (x + y) =
       scharlauTransferClassAux s hs x + scharlauTransferClassAux s hs y := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   induction x using Quotient.inductionOn with
   | h p =>
     induction y using Quotient.inductionOn with
@@ -91,25 +97,30 @@ private theorem scharlauTransferClassAux_add (s : L →ₗ[K] K) (hs : s ≠ 0)
 `s : L → K` is an additive homomorphism from regular-form classes over `L` to regular-form
 classes over `K`. -/
 def RegularFormClass.scharlauTransfer (s : L →ₗ[K] K) (hs : s ≠ 0) :
-    RegularFormClass L →+ RegularFormClass K where
-  toFun := scharlauTransferClassAux s hs
-  map_zero' := by
-    apply RegularFormClass.rank_eq_zero_iff.mp
-    rw [RegularFormClass.zero_def, scharlauTransferClassAux_mk, rank_formClass]
-    rw [← Module.finrank_mul_finrank K L (Fin 0 → L)]
-    simp
-  map_add' := scharlauTransferClassAux_add s hs
+    RegularFormClass L →+ RegularFormClass K := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  exact
+    { toFun := scharlauTransferClassAux s hs
+      map_zero' := by
+        apply RegularFormClass.rank_eq_zero_iff.mp
+        rw [RegularFormClass.zero_def, scharlauTransferClassAux_mk, rank_formClass]
+        rw [← Module.finrank_mul_finrank K L (Fin 0 → L)]
+        simp
+      map_add' := scharlauTransferClassAux_add s hs }
 
 /-- Scharlau transfer of classes is computed on a diagonal presentation by transferring its
 presented form. -/
 @[simp]
 theorem RegularFormClass.scharlauTransfer_mk (s : L →ₗ[K] K) (hs : s ≠ 0)
     (p : RegularFormPresentation L) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     RegularFormClass.scharlauTransfer s hs (Quotient.mk (regularFormSetoid L) p) =
-      formClass ((presentedForm p).scharlauTransfer s)
-        ((presentedForm p).nondegenerate_scharlauTransfer_iff_of_ne_zero s hs |>.mpr
-          (nondegenerate_presentedForm p)) :=
-  (rfl)
+        formClass ((presentedForm p).scharlauTransfer s)
+          ((presentedForm p).nondegenerate_scharlauTransfer_iff_of_ne_zero s hs |>.mpr
+            (nondegenerate_presentedForm p)) := by
+  rfl
 
 /-- The transfer of the isometry class of a regular form is the isometry class of its transfer.
 This is the class-level form of `QuadraticMap.Equivalent.scharlauTransfer`. -/
@@ -118,10 +129,14 @@ theorem RegularFormClass.scharlauTransfer_formClass {V : Type w} [AddCommGroup V
     [Module L V] [Module K V] [IsScalarTower K L V] [FiniteDimensional L V]
     (s : L →ₗ[K] K) (hs : s ≠ 0) (Q : QuadraticForm L V) (hQ : Q.Nondegenerate) :
     letI : FiniteDimensional K V := FiniteDimensional.trans K L V
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     RegularFormClass.scharlauTransfer s hs (formClass Q hQ) =
       formClass (Q.scharlauTransfer s)
         (Q.nondegenerate_scharlauTransfer_iff_of_ne_zero s hs |>.mpr hQ) := by
   let _ : FiniteDimensional K V := FiniteDimensional.trans K L V
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p hp, RegularFormClass.scharlauTransfer_mk]
   apply (formClass_eq_iff _ _ _ _).mpr
@@ -133,6 +148,8 @@ extension. -/
 theorem RegularFormClass.rank_scharlauTransfer (s : L →ₗ[K] K) (hs : s ≠ 0)
     (x : RegularFormClass L) :
     (RegularFormClass.scharlauTransfer s hs x).rank = Module.finrank K L * x.rank := by
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   induction x using Quotient.inductionOn with
   | h p =>
     rw [RegularFormClass.scharlauTransfer_mk, rank_formClass, RegularFormClass.rank_mk,
@@ -153,18 +170,24 @@ theorem RegularFormClass.scharlauTransfer_id :
     exact QuadraticMap.Equivalent.refl _
 
 variable {E : Type w} [Field E] [Algebra L E] [Algebra K E] [IsScalarTower K L E]
-  [FiniteDimensional L E] [Invertible (2 : E)]
+  [FiniteDimensional L E]
 
 /-- Scharlau transfers compose in a tower of finite field extensions. -/
 @[simp]
 theorem RegularFormClass.scharlauTransfer_comp (s : L →ₗ[K] K) (hs : s ≠ 0)
     (t : E →ₗ[L] L) (ht : t ≠ 0) :
     letI : FiniteDimensional K E := FiniteDimensional.trans K L E
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     (RegularFormClass.scharlauTransfer s hs).comp
         (RegularFormClass.scharlauTransfer t ht) =
       RegularFormClass.scharlauTransfer (s.comp (t.restrictScalars K))
         (s.comp_restrictScalars_ne_zero t hs ht) := by
   let _ : FiniteDimensional K E := FiniteDimensional.trans K L E
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  let _ : Invertible (2 : E) :=
+    (Invertible.map (algebraMap K E) 2).copy 2 (map_ofNat _ _).symm
   ext x
   induction x using Quotient.inductionOn with
   | h p =>
@@ -190,9 +213,13 @@ theorem RegularFormClass.traceTransfer_formClass {V : Type w} [AddCommGroup V]
     [Module L V] [Module K V] [IsScalarTower K L V] [FiniteDimensional L V]
     (Q : QuadraticForm L V) (hQ : Q.Nondegenerate) :
     letI : FiniteDimensional K V := FiniteDimensional.trans K L V
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
     RegularFormClass.traceTransfer K (formClass Q hQ) =
       formClass (Q.traceTransfer K) (Q.nondegenerate_traceTransfer_iff.mpr hQ) := by
   let _ : FiniteDimensional K V := FiniteDimensional.trans K L V
+  let _ : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [RegularFormClass.traceTransfer, RegularFormClass.scharlauTransfer_formClass]
   apply (formClass_eq_iff _ _ _ _).mpr
   rw [QuadraticMap.traceTransfer_eq_scharlauTransfer]
