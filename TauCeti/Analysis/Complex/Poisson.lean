@@ -11,7 +11,9 @@ public import Mathlib.Analysis.Complex.Poisson
 # Similarity invariance of the complex Poisson kernel
 
 The Poisson kernel is unchanged when its center is translated to the origin and its arguments
-are scaled by the inverse of a nonzero real number.
+are multiplied by the inverse of a nonzero complex number. This normalized-coordinate identity
+transports formulas between centered unit disks and translated, rescaled disks, including the
+Green-kernel boundary derivative formula.
 -/
 
 public section
@@ -22,12 +24,12 @@ namespace TauCeti
 
 open Complex
 
-/-- Translating the center of the Poisson kernel to zero and rescaling by a nonzero real number
+/-- Translating the center of the Poisson kernel to zero and multiplying by a nonzero complex number
 does not change its value. -/
-theorem poissonKernel_inv_smul_sub {c a z : ℂ} {R : ℝ} (hR : R ≠ 0) :
-    poissonKernel 0 (R⁻¹ • (a - c)) (R⁻¹ • (z - c)) = poissonKernel c a z := by
-  simp only [poissonKernel_def, sub_zero, sub_sub_sub_cancel_right, ← smul_sub,
-    norm_smul, Real.norm_eq_abs, abs_inv]
+theorem poissonKernel_inv_mul_sub {c a z q : ℂ} (hq : q ≠ 0) :
+    poissonKernel 0 (q⁻¹ * (a - c)) (q⁻¹ * (z - c)) = poissonKernel c a z := by
+  simp only [poissonKernel_def, sub_zero, sub_sub_sub_cancel_right, ← mul_sub, norm_mul,
+    norm_inv]
   field_simp
 
 end TauCeti

@@ -38,16 +38,8 @@ theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz :
     rw [hz] at hsq
     norm_num at hsq
     nlinarith [norm_nonneg (1 - starRingEnd ℂ a * z), norm_nonneg (z - a)]
-  have hza : z - a ≠ 0 := by
-    intro h
-    have : z = a := sub_eq_zero.mp h
-    rw [this] at hz
-    linarith
-  have hca : 1 - starRingEnd ℂ a * z ≠ 0 := by
-    intro h
-    apply hza
-    apply norm_eq_zero.mp
-    rw [← hnorm, h, norm_zero]
+  obtain ⟨hza, hca⟩ :=
+    planarGreenKernel_log_arguments_ne_of_norm_lt_one_of_norm_eq_one ha hz
   have h₁ : HasDerivAt (fun t : ℝ => planarNewtonianKernel (t • z - a))
       ((-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) * ⟪z - a, z⟫_ℝ) 1 := by
     simpa only [one_smul, sub_eq_add_neg, add_comm] using
@@ -122,9 +114,7 @@ theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
     (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
     HasDerivAt (fun t : ℝ => planarGreenKernelDisk c R a (c + t • (z - c)))
       (-(poissonKernel c a z) / (2 * Real.pi)) 1 := by
-  have hz' : ‖R⁻¹ • (z - c)‖ = 1 := by
-    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, hz]
-    exact inv_mul_cancel₀ hR.ne'
+  have hz' := norm_inv_smul_sub_eq_one_of_norm_sub_eq hR hz
   have hfun : (fun t : ℝ => planarGreenKernelDisk c R a (c + t • (z - c))) =
       fun t : ℝ => planarGreenKernel (R⁻¹ • (a - c)) (t • (R⁻¹ • (z - c))) := by
     funext t
@@ -132,7 +122,8 @@ theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
     congr 1
     simp only [add_sub_cancel_left, smul_smul]
     rw [mul_comm R⁻¹ t]
-  rw [hfun, ← poissonKernel_inv_smul_sub hR.ne']
+  rw [hfun, ← poissonKernel_inv_mul_sub (Complex.ofReal_ne_zero.mpr hR.ne')]
+  simp only [← Complex.ofReal_inv, Complex.real_smul]
   exact hasDerivAt_planarGreenKernel_radial (norm_inv_smul_sub_lt_one hR ha) hz'
 
 /-- The spatial derivative of the disk Green kernel on the outward unit normal is the
