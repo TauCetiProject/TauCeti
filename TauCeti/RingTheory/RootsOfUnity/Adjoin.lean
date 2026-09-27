@@ -15,7 +15,9 @@ import TauCeti.RingTheory.PowerBasis
 
 The `n`-th roots of unity in a domain are exactly the powers of a primitive one, so adjoining a
 single primitive `n`-th root of unity already produces a subalgebra containing every `n`-th root
-of unity. For a field extension, the same holds for the generated intermediate field.
+of unity. For a field extension, the same holds for the generated intermediate field. The additive
+retraction from `ℤ[ζ]` to `ℤ` lets cyclotomic coefficients descend to integral coefficients in
+induction arguments.
 
 ## Main results
 
