@@ -81,9 +81,16 @@ theorem isCompletelyReducible_corestrict_iff_of_injective (f : C →ₗc[k] D)
     (hf : Function.Injective f) :
     (letI : Comodule k D V := Comodule.Corestrict f;
       IsCompletelyReducible k D V) ↔ IsCompletelyReducible k C V := by
-  exact isCompletelyReducible_corestrict_iff_of_split f
-    (Coalgebra.linearRetractionOfInjective f hf)
-    (Coalgebra.linearRetractionOfInjective_comp f hf)
+  let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+  let _ : AddCommGroup D := Module.addCommMonoidToAddCommGroup k
+  let r : D →ₗ[k] C := f.toLinearMap.leftInverse
+  have hker : LinearMap.ker f.toLinearMap = ⊥ :=
+    LinearMap.ker_eq_bot_of_injective (f := f.toLinearMap) (by
+      intro x y h
+      exact hf h)
+  have hr : r.comp f.toLinearMap = LinearMap.id :=
+    LinearMap.leftInverse_comp_of_inj hker
+  exact isCompletelyReducible_corestrict_iff_of_split f r hr
 
 /-- Complete reducibility descends along an injective coalgebra morphism. -/
 theorem IsCompletelyReducible.of_corestrict_of_injective (f : C →ₗc[k] D)

@@ -46,34 +46,6 @@ namespace TauCeti
 
 universe u v w x
 
-namespace Coalgebra
-
-variable {k : Type u} [Field k]
-variable {C : Type v} {D : Type w}
-variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
-variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
-
-/-- A chosen linear retraction of an injective coalgebra morphism over a field. -/
-noncomputable def linearRetractionOfInjective (f : C →ₗc[k] D)
-    (_hf : Function.Injective f) : D →ₗ[k] C := by
-  let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
-  let _ : AddCommGroup D := Module.addCommMonoidToAddCommGroup k
-  exact f.toLinearMap.leftInverse
-
-/-- The chosen linear retraction composes with the injective morphism to the identity. -/
-theorem linearRetractionOfInjective_comp (f : C →ₗc[k] D)
-    (hf : Function.Injective f) :
-    (linearRetractionOfInjective f hf).comp f.toLinearMap = LinearMap.id := by
-  let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
-  let _ : AddCommGroup D := Module.addCommMonoidToAddCommGroup k
-  have hker : LinearMap.ker f.toLinearMap = ⊥ :=
-    LinearMap.ker_eq_bot_of_injective (f := f.toLinearMap) (by
-      intro x y h
-      exact hf h)
-  exact LinearMap.leftInverse_comp_of_inj hker
-
-end Coalgebra
-
 namespace Subcomodule
 
 variable {R : Type u} [CommSemiring R]
