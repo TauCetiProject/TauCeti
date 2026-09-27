@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal
+public import TauCeti.RepresentationTheory.Quiver.SemisimpleQuotient
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimpleGraph
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 
@@ -47,7 +48,7 @@ abbrev preprojectiveA1Quiver := OrientedQuiver preprojectiveA1Graph
 instance (i j : preprojectiveA1Quiver) : IsEmpty (i ⟶ j) := by
   constructor
   intro e
-  exact (show preprojectiveA1Graph.Adj _ _ from e.1).elim
+  simpa [preprojectiveA1Graph] using e.1
 
 /-- The doubled `A₁` quiver also has no arrows. -/
 instance (i j : Symmetrify preprojectiveA1Quiver) : IsEmpty (i ⟶ j) := by
@@ -104,10 +105,9 @@ theorem preprojectiveIdeal_A1_eq_bot (k : Type*) [CommRing k] :
 /-- The relation ideal of `A₁` is admissible: in fact, both it and the arrow ideal vanish. -/
 theorem isAdmissibleIdeal_preprojectiveIdeal_A1 (k : Type*) [CommRing k] :
     IsAdmissibleIdeal (preprojectiveIdeal k preprojectiveA1Quiver).asIdeal := by
-  constructor
-  · refine ⟨1, ?_⟩
-    simp [arrowIdeal_preprojectiveA1_eq_bot]
-  · exact preprojectiveIdeal_le_arrowIdeal_sq (k := k) (Q := preprojectiveA1Quiver)
+  simpa only [preprojectiveIdeal_A1_eq_bot] using
+    (isAdmissibleIdeal_bot_of_isAcyclic k _
+      isAcyclic_symmetrify_preprojectiveA1Quiver)
 
 /-- The preprojective algebra of `A₁` is finite-dimensional over every field. -/
 noncomputable instance instFiniteDimensionalPreprojectiveAlgebraA1 (k : Type*) [Field k] :
@@ -139,7 +139,8 @@ theorem card_totalPath_preprojectiveA1 :
   exact Nat.card_unique
 
 /-- The rank-one preprojective algebra has dimension one. -/
-theorem finrank_preprojectiveAlgebra_A1 (k : Type*) [Field k] :
+theorem finrank_preprojectiveAlgebra_A1 (k : Type*) [CommRing k]
+    [StrongRankCondition k] :
     Module.finrank k (preprojectiveAlgebra k preprojectiveA1Quiver) = 1 := by
   have e : preprojectiveAlgebra k preprojectiveA1Quiver ≃ₐ[k]
       pathAlgebra k (Symmetrify preprojectiveA1Quiver) :=
@@ -147,19 +148,21 @@ theorem finrank_preprojectiveAlgebra_A1 (k : Type*) [Field k] :
       (AlgEquiv.quotientBot k _)
   rw [e.toLinearEquiv.finrank_eq, finrank_pathAlgebra, card_totalPath_preprojectiveA1]
 
-/-- The rank-one preprojective algebra is canonically the coefficient field. -/
-noncomputable def preprojectiveAlgebraEquivA1 (k : Type*) [Field k] :
+/-- The rank-one preprojective algebra is canonically the coefficient ring. -/
+noncomputable def preprojectiveAlgebraEquivA1 (k : Type*) [CommRing k] :
     preprojectiveAlgebra k preprojectiveA1Quiver ≃ₐ[k] k :=
-  (AlgEquiv.ofBijective (Algebra.ofId k (preprojectiveAlgebra k preprojectiveA1Quiver))
-    (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp
-      (finrank_preprojectiveAlgebra_A1 k))).symm
+  letI : Unique (Symmetrify preprojectiveA1Quiver) := Equiv.unique
+    ((OrientedQuiver.vertexEquiv _ _).trans
+      (Equiv.ofBijective _ symmetrify_of_obj_bijective)).symm
+  (Ideal.quotientEquivAlgOfEq k (preprojectiveIdeal_A1_eq_bot k)).trans
+    ((Ideal.quotientEquivAlgOfEq k (arrowIdeal_preprojectiveA1_eq_bot k).symm).trans
+      ((quotientArrowIdealAlgEquiv k _).trans (AlgEquiv.funUnique k _ k)))
 
 /-- The inverse rank-one comparison sends a coefficient to its scalar image. -/
 @[simp]
-theorem preprojectiveAlgebraEquivA1_symm_apply (k : Type*) [Field k] (x : k) :
+theorem preprojectiveAlgebraEquivA1_symm_apply (k : Type*) [CommRing k] (x : k) :
     (preprojectiveAlgebraEquivA1 k).symm x =
       algebraMap k (preprojectiveAlgebra k preprojectiveA1Quiver) x := by
-  simp only [preprojectiveAlgebraEquivA1, AlgEquiv.symm_symm]
-  exact (AlgEquiv.ofBijective_apply _ _ x).trans (Algebra.ofId_apply (R := k) (A := _) x)
+  exact (preprojectiveAlgebraEquivA1 k).symm.commutes x
 
 end TauCeti
