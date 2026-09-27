@@ -73,8 +73,8 @@ noncomputable def traceTransferSqIsometryEquivWeightedSumSquares (d : K) :
   rw [← hform]
   exact e.map_app z
 
-/-- The isometry uses the basis representation as its underlying linear equivalence.
-Keep the definitional reduction of `isometryEquivBasisRepr` here. -/
+/-- The isometry's underlying linear equivalence is the coordinate equivalence
+for the basis `(1, ω)`. -/
 private theorem traceTransferSqIsometryEquivWeightedSumSquares_toLinearEquiv (d : K) :
     (traceTransferSqIsometryEquivWeightedSumSquares d).toLinearEquiv =
       (QuadraticAlgebra.basis d 0).equivFun := by
