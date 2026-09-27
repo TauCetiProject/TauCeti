@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocallyFree
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Dual
 
 /-!
 # Internal Hom from a finite free sheaf
