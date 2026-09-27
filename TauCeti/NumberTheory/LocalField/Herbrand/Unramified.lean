@@ -36,19 +36,21 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- The inertia group, which is the zeroth lower ramification group, is trivial in an
 unramified extension. -/
-theorem lowerRamificationGroup_zero_of_isUnramified :
+theorem lowerRamificationGroup_zero_eq_bot_of_isUnramified :
     lowerRamificationGroup K L 0 = ⊥ := by
   rw [lowerRamificationGroup_zero]
   exact IsUnramified.inertia_eq_bot (K := K) (L := L)
 
 /-- All nonnegative lower ramification groups of an unramified extension are trivial. -/
+@[simp]
 theorem lowerRamificationGroup_eq_bot_of_isUnramified {i : ℤ} (hi : 0 ≤ i) :
     lowerRamificationGroup K L i = ⊥ :=
   le_bot_iff.mp ((lowerRamificationGroup_antitone K L hi).trans
-    (lowerRamificationGroup_zero_of_isUnramified K L).le)
+    (lowerRamificationGroup_zero_eq_bot_of_isUnramified K L).le)
 
 /-- The real-indexed lower filtration is trivial at every nonnegative index in an unramified
 extension. -/
+@[simp]
 theorem lowerRamificationGroupReal_eq_bot_of_isUnramified {u : ℝ} (hu : 0 ≤ u) :
     lowerRamificationGroupReal K L u = ⊥ := by
   rw [lowerRamificationGroupReal_def]
@@ -60,20 +62,11 @@ theorem lowerRamificationGroupReal_eq_bot_of_isUnramified {u : ℝ} (hu : 0 ≤ 
 theorem herbrand_of_isUnramified (u : RamificationIndexDomain) : herbrand K L u = u := by
   by_cases hu : (u : ℝ) ≤ 0
   · exact herbrand_of_coe_le_zero K L hu
-  apply Subtype.ext
-  rw [coe_herbrand]
   have hnonneg : 0 ≤ (u : ℝ) := le_of_not_ge hu
-  have hfun : (∫ t in (0 : ℝ)..u,
-      (Nat.card (lowerRamificationGroupReal K L t) : ℝ) /
-        Nat.card (lowerRamificationGroup K L 0)) = ∫ _ in (0 : ℝ)..u, (1 : ℝ) := by
-    apply intervalIntegral.integral_congr_ae
-    exact Filter.Eventually.of_forall fun t ht ↦ by
-      have ht0 : 0 ≤ t := (Set.uIoc_of_le hnonneg ▸ ht).1.le
-      rw [lowerRamificationGroupReal_eq_bot_of_isUnramified K L ht0,
-        lowerRamificationGroup_zero_of_isUnramified K L]
-      simp
-  rw [hfun]
-  simp
+  apply herbrand_eq_self_of_forall_eq K L hnonneg
+  intro t ht0 _
+  rw [lowerRamificationGroupReal_eq_bot_of_isUnramified K L ht0.le,
+    lowerRamificationGroup_zero_eq_bot_of_isUnramified K L]
 
 /-- The inverse Herbrand function of an unramified extension is the identity. -/
 @[simp]
@@ -84,7 +77,8 @@ theorem inverseHerbrand_of_isUnramified (u : RamificationIndexDomain) :
       rw [herbrand_of_isUnramified]
     _ = u := inverseHerbrand_herbrand K L u
 
-/-- Integral Herbrand depth is unchanged in an unramified extension. -/
+/-- The integral inverse Herbrand function `ψℕ_{L/K}` of an unramified extension is the identity:
+`ψℕ_{L/K}(n) = n`. -/
 @[simp]
 theorem psiNat_of_isUnramified (n : ℕ) : psiNat K L n = n := by
   apply Nat.cast_injective (R := ℝ)
@@ -92,6 +86,7 @@ theorem psiNat_of_isUnramified (n : ℕ) : psiNat K L n = n := by
 
 /-- The upper ramification group is trivial at every nonnegative index of an unramified
 extension. -/
+@[simp]
 theorem upperRamificationGroup_eq_bot_of_isUnramified {u : RamificationIndexDomain}
     (hu : 0 ≤ (u : ℝ)) : upperRamificationGroup K L u = ⊥ := by
   rw [upperRamificationGroup_def, inverseHerbrand_of_isUnramified]
