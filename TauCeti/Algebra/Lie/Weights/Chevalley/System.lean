@@ -314,7 +314,6 @@ theorem intStructureConstant_skew
 sends the defining bracket equation `⁅x α, x β⁆ = N • x γ` to
 `⁅x (-α), x (-β)⁆ = -N • x (-γ)`; uniqueness of the integer coefficient identifies the
 constant at `(-α, -β)` as `-N`. -/
-@[simp]
 theorem intStructureConstant_neg_neg
     (α β γ : Weight K H L) (hγ : γ.IsNonZero)
     (hαβ : (γ : H → K) = (α : H → K) + β) :
@@ -473,7 +472,6 @@ theorem intStructureConstant₂_neg_neg {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H
 omit hx in
 /-- Swapping and negating both weights preserves the two-argument constant. This combines
 antisymmetry with negation: `N(-β, -α) = -N(-α, -β) = N(α, β)`. -/
-@[simp]
 theorem intStructureConstant₂_neg_swap {ω : L ≃ₗ⁅K⁆ L} {x : Weight K H L → L}
     (hx : IsChevalleySystem ω x) (α β : Weight K H L) :
     hx.intStructureConstant₂ (-β) (-α) = hx.intStructureConstant₂ α β := by
