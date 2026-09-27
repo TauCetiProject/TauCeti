@@ -73,13 +73,21 @@ noncomputable def traceTransferSqIsometryEquivWeightedSumSquares (d : K) :
   rw [← hform]
   exact e.map_app z
 
+/-- The isometry uses the basis representation as its underlying linear equivalence.
+Keep the definitional reduction of `isometryEquivBasisRepr` here. -/
+private theorem traceTransferSqIsometryEquivWeightedSumSquares_toLinearEquiv (d : K) :
+    (traceTransferSqIsometryEquivWeightedSumSquares d).toLinearEquiv =
+      (QuadraticAlgebra.basis d 0).equivFun := by
+  rfl
+
 /-- The canonical isometry sends an element to its coordinates in `(1, ω)`. -/
 @[simp]
 theorem traceTransferSqIsometryEquivWeightedSumSquares_apply (d : K)
     (z : QuadraticAlgebra K d 0) :
     traceTransferSqIsometryEquivWeightedSumSquares d z =
       (QuadraticAlgebra.basis d 0).equivFun z := by
-  rfl
+  change (traceTransferSqIsometryEquivWeightedSumSquares d).toLinearEquiv z = _
+  rw [traceTransferSqIsometryEquivWeightedSumSquares_toLinearEquiv]
 
 /-- The inverse canonical isometry reconstructs an element from its coordinates. -/
 @[simp]
@@ -87,7 +95,8 @@ theorem traceTransferSqIsometryEquivWeightedSumSquares_symm_apply (d : K)
     (v : Fin 2 → K) :
     (traceTransferSqIsometryEquivWeightedSumSquares d).symm v =
       (QuadraticAlgebra.basis d 0).equivFun.symm v := by
-  rfl
+  change (traceTransferSqIsometryEquivWeightedSumSquares d).toLinearEquiv.symm v = _
+  rw [traceTransferSqIsometryEquivWeightedSumSquares_toLinearEquiv]
 
 /-- The trace transfer of the unit line of a quadratic algebra is equivalent to
 `⟨2, 2d⟩`, including for a split algebra. -/
