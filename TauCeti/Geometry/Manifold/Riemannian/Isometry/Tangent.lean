@@ -83,18 +83,12 @@ theorem mfderivToLinearIsometryEquiv_symm_apply (Φ : RiemannianIsometry I J M N
     (v : TangentSpace J (Φ x)) :
     (Φ.mfderivToLinearIsometryEquiv x).symm v =
       mfderiv J I Φ.symm (Φ x) v := by
-  have hcast : (Φ.mfderivToLinearIsometryEquiv x).symm v =
-      cast (congrArg (TangentSpace I) (Φ.symm_apply_apply x))
-        (mfderiv J I Φ.symm (Φ x) v) := by
-    apply (Φ.mfderivToLinearIsometryEquiv x).injective
-    rw [LinearIsometryEquiv.apply_symm_apply, mfderivToLinearIsometryEquiv_apply]
-    -- Both tangent-space fibres reduce to the model space `E`, so the cast is
-    -- definitionally trivial.
-    change v = mfderiv I J Φ x (mfderiv J I Φ.symm (Φ x) v)
-    rw [coe_symm]
-    exact (Diffeomorph.mfderiv_apply_mfderiv_symm_apply
-      Φ.toDiffeomorph (by simp) x v).symm
-  exact eq_of_heq (eq_cast_iff_heq.mp hcast)
+  apply (Φ.mfderivToLinearIsometryEquiv x).injective
+  rw [LinearIsometryEquiv.apply_symm_apply]
+  erw [mfderivToLinearIsometryEquiv_apply]
+  rw [coe_symm]
+  exact (Diffeomorph.mfderiv_apply_mfderiv_symm_apply
+    Φ.toDiffeomorph (by simp) x v).symm
 
 /-- The differential of the inverse isometry cancels the differential of the isometry. -/
 @[simp]
