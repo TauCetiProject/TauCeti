@@ -28,7 +28,24 @@ open scoped MatrixGroups
 
 namespace Subgroup.CompactifiedQuotient
 
-variable {Δ Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Δ] [DiscreteTopology Γ]
+variable {Δ Γ : Subgroup PSL(2, ℝ)}
+
+/-- A positive integral multiple of a cusp width bounds that width from above. -/
+theorem width_le_of_width_eq_nat_mul (D : Δ.CuspDatum) (E : Γ.CuspDatum)
+    {n : ℕ} (hw : D.width = n * E.width) {A : ℝ} (hD : D.width ≤ A) :
+    E.width ≤ A := by
+  have hn : 0 < n := Nat.pos_of_ne_zero (by
+    intro hn
+    simp only [hn, Nat.cast_zero, zero_mul] at hw
+    exact D.width_pos.ne' hw)
+  calc
+    E.width = 1 * E.width := (one_mul _).symm
+    _ ≤ (n : ℝ) * E.width := mul_le_mul_of_nonneg_right (by exact_mod_cast hn)
+      E.width_pos.le
+    _ = D.width := hw.symm
+    _ ≤ A := hD
+
+variable [DiscreteTopology Δ] [DiscreteTopology Γ]
 
 /-- In cusp charts with common scaling, the map of compactified quotients is the power map
 whose exponent is the ratio of the cusp widths. -/
@@ -38,28 +55,13 @@ theorem cuspChart_compactifiedQuotientMap_eq_pow (h : Δ ≤ Γ)
     {n : ℕ} (hw : D.width = n * E.width)
     {A : ℝ} (hD : D.width ≤ A)
     {x : Δ.CompactifiedQuotient} (hx : x ∈ cuspNhd D A) :
-    cuspChart E (show E.width ≤ A from by
-      have hn : 0 < n := Nat.pos_of_ne_zero (by
-        intro hn
-        simp only [hn, Nat.cast_zero, zero_mul] at hw
-        exact D.width_pos.ne' hw)
-      calc
-        E.width = 1 * E.width := (one_mul _).symm
-        _ ≤ (n : ℝ) * E.width := mul_le_mul_of_nonneg_right (by exact_mod_cast hn)
-          E.width_pos.le
-        _ = D.width := hw.symm
-        _ ≤ A := hD) (compactifiedQuotientMap h x) = (cuspChart D hD x) ^ n := by
+    cuspChart E (width_le_of_width_eq_nat_mul D E hw hD) (compactifiedQuotientMap h x) =
+      (cuspChart D hD x) ^ n := by
   have hn : 0 < n := Nat.pos_of_ne_zero (by
     intro hn
     simp only [hn, Nat.cast_zero, zero_mul] at hw
     exact D.width_pos.ne' hw)
-  have hE : E.width ≤ A := by
-    calc
-      E.width = 1 * E.width := (one_mul _).symm
-      _ ≤ (n : ℝ) * E.width := mul_le_mul_of_nonneg_right (by exact_mod_cast hn)
-        E.width_pos.le
-      _ = D.width := hw.symm
-      _ ≤ A := hD
+  have hE : E.width ≤ A := width_le_of_width_eq_nat_mul D E hw hD
   cases x with
   | ofCusp C =>
       have hC : C = D.cuspOrbit := (ofCusp_mem_cuspNhd_iff D A).mp hx
