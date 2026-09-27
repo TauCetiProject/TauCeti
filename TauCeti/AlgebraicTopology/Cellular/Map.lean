@@ -176,9 +176,8 @@ lemma skeletonPairδ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n 
   have h := (skeletonPair C (n + 1)).singularHomologyδ_naturality R
     (skeletonPairMap f hf (n + 1)) (n + 1) n
   rw [skeletonPairMap_snd] at h
-  change skeletonPairδ C R n ≫
-      SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n =
-    cellularChainGroupMap R f hf (n + 1) ≫ skeletonPairδ C' R n at h
+  -- Expose the cellular wrappers; the lower space of `skeletonPair` is `skeletonObj`.
+  simp only [skeletonPairδ, cellularChainGroupMap, cellularChainGroup, skeletonHomology]
   exact h
 
 /-- Naturality of the quotient map from the homology of a skeleton to its cellular chain
