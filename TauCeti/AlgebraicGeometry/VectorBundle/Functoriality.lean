@@ -120,6 +120,7 @@ theorem pullbackComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z)
     ((pullbackComp f g).inv.app E).hom =
       eqToHom (pullback_obj_obj (f ≫ g) E) ≫
         (Scheme.Modules.pullbackComp f g).inv.app E.obj ≫
+        -- Reconstruct this equality because the comparison lemma above is private.
         eqToHom (show (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj E.obj =
           ((pullback g ⋙ pullback f).obj E).obj by
             simp only [Functor.comp_obj, pullback_obj_obj]) := by
