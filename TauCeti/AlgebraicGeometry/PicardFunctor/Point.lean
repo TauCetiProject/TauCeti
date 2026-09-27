@@ -50,14 +50,12 @@ lemma rigidifiedPicardPoint_eq (T : (Over S)ᵒᵖ) :
         (RigidifiedLineBundle.trivial (baseChangeSection f x₀ hx₀ T.unop)) := (rfl)
 
 /-- Forgetting the distinguished rigidification gives the identity line-bundle class. -/
-@[simp]
 lemma rigidifiedPicardPoint_toLineBundleClass (T : (Over S)ᵒᵖ) :
     RigidifiedLineBundleClass.toLineBundleClass (rigidifiedPicardPoint f x₀ hx₀ T) = 1 := by
-  rw [rigidifiedPicardPoint_eq]
+  rw [rigidifiedPicardPoint_eq, RigidifiedLineBundleClass.toLineBundleClass_mk]
   exact RigidifiedLineBundleClass.toLineBundleClass_trivial
 
 /-- Pullback along a morphism over `S` preserves the distinguished rigidified class. -/
-@[simp]
 lemma rigidifiedPicardPoint_map {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') :
     (rigidifiedPicardFunctor f x₀ hx₀).map φ (rigidifiedPicardPoint f x₀ hx₀ T) =
       rigidifiedPicardPoint f x₀ hx₀ T' := by
