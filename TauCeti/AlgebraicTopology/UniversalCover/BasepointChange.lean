@@ -30,7 +30,7 @@ namespace TauCeti.UniversalCover
 variable {X : Type*} [TopologicalSpace X] {x y : X}
 
 /-- Prepending a fixed path is continuous on the based-path quotient. -/
-theorem continuous_basepointPrepend (γ : Path x y) :
+private theorem continuous_basepointPrepend (γ : Path x y) :
     Continuous (fun e : UniversalCover y =>
       mk e.proj ((Path.Homotopic.Quotient.mk γ).trans e.path)) := by
   rw [(isQuotientMap_ofBasedPath y).continuous_iff]
@@ -54,7 +54,7 @@ theorem continuous_basepointPrepend (γ : Path x y) :
 
 /-- Changing the basepoint along `γ` gives a homeomorphism over `X` that sends the constant path
 at `y` to the class of `γ` at `x`. -/
-@[expose] def basepointChangeHomeomorph (γ : Path x y) :
+def basepointChangeHomeomorph (γ : Path x y) :
     UniversalCover y ≃ₜ UniversalCover x where
   toFun e := mk e.proj ((Path.Homotopic.Quotient.mk γ).trans e.path)
   invFun e := mk e.proj ((Path.Homotopic.Quotient.mk γ.symm).trans e.path)
@@ -74,6 +74,7 @@ at `y` to the class of `γ` at `x`. -/
   continuous_invFun := continuous_basepointPrepend γ.symm
 
 /-- Basepoint change sends the distinguished point to the path class defining the change. -/
+@[simp]
 theorem basepointChangeHomeomorph_apply_basepointLift (γ : Path x y) :
     basepointChangeHomeomorph γ (basepointLift y : UniversalCover y) =
       mk y (Path.Homotopic.Quotient.mk γ) :=
@@ -82,8 +83,8 @@ theorem basepointChangeHomeomorph_apply_basepointLift (γ : Path x y) :
 /-- Basepoint change commutes with the projections to `X`. -/
 @[simp]
 theorem proj_basepointChangeHomeomorph (γ : Path x y) (e : UniversalCover y) :
-    proj (basepointChangeHomeomorph γ e) = proj e :=
-  rfl
+  proj (basepointChangeHomeomorph γ e) = proj e :=
+  by simp [basepointChangeHomeomorph]
 
 /-- Basepoint change prepends `γ` to a represented path class. -/
 @[simp]
@@ -91,7 +92,7 @@ theorem basepointChangeHomeomorph_apply_mk (γ : Path x y) {z : X}
     (q : Path.Homotopic.Quotient y z) :
     basepointChangeHomeomorph γ (mk z q) =
       mk z ((Path.Homotopic.Quotient.mk γ).trans q) := by
-  rfl
+  simp [basepointChangeHomeomorph]
 
 /-- Homotopic paths induce the same basepoint change. -/
 theorem basepointChangeHomeomorph_eq_of_homotopic {γ δ : Path x y}
