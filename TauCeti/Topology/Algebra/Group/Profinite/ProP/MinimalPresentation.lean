@@ -30,6 +30,8 @@ from the presentation, and it is the normalization a Demushkin relator satisfies
   the free pro-`p` group on `X`.
 * `TauCeti.presentedProP.subset_proPFrattini_iff_card_eq`: a presentation of `G` on a finite type
   `X` has its relators in the Frattini subgroup exactly when `Nat.card X = d(G)`.
+* `TauCeti.presentedProP.topologicalClosure_normalClosure_eq_proPFrattini`: the relation subgroup
+  of a minimal presentation of a group with trivial pro-`p` Frattini subgroup is `Φ(F)`.
 * `TauCeti.IsProP.exists_subset_proPFrattini_continuousMulEquiv_presentedProP`: every
   topologically finitely generated pro-`p` group has a minimal presentation on any finite type of
   cardinality `d(G)`.
@@ -75,6 +77,26 @@ theorem subset_proPFrattini_iff_card_eq (e : presentedProP p X rels ≃ₜ* G)
     (h : IsTopologicallyFinitelyGenerated G) :
     rels ⊆ proPFrattini p (freeProP p X) ↔ Nat.card X = topologicalGeneratorRankNat G h := by
   rw [← topologicalGeneratorRankNat_eq_card_iff, topologicalGeneratorRankNat_congr e, eq_comm]
+
+omit [Finite X] [Fact p.Prime] [IsTopologicalGroup G] in
+variable {rels} in
+/-- **The relation subgroup of a minimal presentation of a group with trivial Frattini subgroup
+is the Frattini subgroup of the free group.** For a presentation `G ≅ ⟨X ∣ rels⟩` with relators in
+`Φ(F)`, `F` the free pro-`p` group on `X`, of a topological group `G` with `Φ(G) = 1`, the closed
+normal closure of the relators is `Φ(F)`. -/
+theorem topologicalClosure_normalClosure_eq_proPFrattini
+    (hrels : rels ⊆ proPFrattini p (freeProP p X)) (e : presentedProP p X rels ≃ₜ* G)
+    (hΦ : proPFrattini p G = ⊥) :
+    (Subgroup.normalClosure rels).topologicalClosure = proPFrattini p (freeProP p X) := by
+  refine le_antisymm
+    ((Subgroup.topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).mpr hrels)
+    fun x hx ↦ ?_
+  -- `Φ(F)` maps into `Φ(G) = 1`, so it dies in `⟨X ∣ rels⟩`, hence lies in the relation subgroup.
+  have hmem := (mk p rels : _ →* presentedProP p X rels).map_proPFrattini_le
+    (map_continuous (mk p rels)) (mk_surjective p rels) ⟨x, hx, rfl⟩
+  have hmem' := Subgroup.mem_map_of_mem e.toMulEquiv.toMonoidHom hmem
+  rw [e.map_proPFrattini_eq, hΦ, Subgroup.mem_bot] at hmem'
+  exact (mk_eq_one_iff x).mp (e.injective (by simpa using hmem'))
 
 end presentedProP
 

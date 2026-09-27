@@ -72,6 +72,19 @@ theorem hasFDerivAt_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
   rw [heq, ← hmap]
   exact hlog.const_mul (-(2 * Real.pi)⁻¹ / 2)
 
+/-- The derivative of the planar Newtonian kernel along an affine real curve away from the
+origin. -/
+theorem hasDerivAt_planarNewtonianKernel_affine (b v : ℂ) {t : ℝ}
+    (h : b + t • v ≠ 0) :
+    HasDerivAt (fun s : ℝ => planarNewtonianKernel (b + s • v))
+      ((-(2 * Real.pi)⁻¹ * (‖b + t • v‖ ^ 2)⁻¹) * ⟪b + t • v, v⟫_ℝ) t := by
+  have hf := hasFDerivAt_planarNewtonianKernel h
+  have hcurve : HasDerivAt (fun s : ℝ => b + s • v) v t :=
+    by simpa only [id_eq, one_smul] using
+      ((hasDerivAt_id t).smul_const v).const_add b
+  simpa only [Function.comp_def, smul_apply, smul_eq_mul,
+    innerSL_apply_apply] using hf.comp_hasDerivAt t hcurve
+
 /-- The Fréchet derivative of the planar Newtonian kernel as a continuous linear functional. -/
 theorem fderiv_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
     fderiv ℝ planarNewtonianKernel z =
