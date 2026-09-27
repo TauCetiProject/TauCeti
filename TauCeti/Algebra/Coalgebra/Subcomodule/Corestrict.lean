@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Coalgebra.Equiv
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
