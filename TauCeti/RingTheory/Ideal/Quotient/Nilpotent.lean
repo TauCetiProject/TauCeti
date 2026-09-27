@@ -14,13 +14,17 @@ The quotient of a commutative ring by its nilradical is reduced.
 
 ## Main declarations
 
-* `isReduced_quotient_nilradical`: `A ⧸ nilradical A` is reduced.
+* `TauCeti.isReduced_quotient_nilradical`: `A ⧸ nilradical A` is reduced.
 -/
 
 public section
+
+namespace TauCeti
 
 /-- The quotient of a commutative ring by its nilradical is reduced. -/
 instance isReduced_quotient_nilradical (A : Type*) [CommRing A] :
     IsReduced (A ⧸ nilradical A) := by
   rw [← Ideal.isRadical_iff_quotient_reduced, nilradical]
   exact Ideal.radical_isRadical ⊥
+
+end TauCeti

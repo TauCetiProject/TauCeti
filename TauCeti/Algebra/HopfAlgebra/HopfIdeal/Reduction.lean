@@ -85,8 +85,9 @@ theorem mem_reduction
 /-- The quotient by the reduction Hopf ideal is reduced. -/
 instance isReduced_quotient_reduction
     [IsReduced ((H ⧸ nilradical H) ⊗[R] (H ⧸ nilradical H))] :
-    IsReduced (H ⧸ (reduction R H).toIdeal) :=
-  inferInstanceAs (IsReduced (H ⧸ nilradical H))
+    IsReduced (H ⧸ (reduction R H).toIdeal) := by
+  rw [reduction_toIdeal]
+  infer_instance
 
 /-- The reduction is contained in every Hopf ideal whose quotient is reduced. -/
 theorem reduction_le_of_isReduced_quotient
