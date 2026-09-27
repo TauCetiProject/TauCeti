@@ -41,9 +41,10 @@ over its restriction to `k`.
   field of degree `2` — an imaginary quadratic field — has exactly one complex place.
 * `NumberField.InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr`: Brill's theorem in parity
   form, the number of complex places is even exactly when the discriminant is positive; hence
-  `nrComplexPlaces_eq_zero_of_zero_lt_discr`, `nrComplexPlaces_eq_one_of_discr_lt_zero` and
+  `nrComplexPlaces_eq_zero_of_zero_lt_discr` (degree less than `4`),
+  `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`) and
   `NumberField.IsTotallyReal.of_zero_lt_discr` read the signature off the sign of the
-  discriminant in degree less than `4`.
+  discriminant in low degree.
 * `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
   degree less the real places counts the complex places, for any number field.
 * `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
@@ -190,10 +191,10 @@ theorem InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr (hd : 0 < discr K
   obtain ⟨k, hk⟩ := (InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr K).mpr hd
   omega
 
-/-- **The signature in degree less than `4`, negative discriminant.** Such a number field has
-exactly one complex place. -/
+/-- **The signature in degree less than `6`, negative discriminant.** Such a number field has
+exactly one complex place: the number of complex places is odd and at most `2`. -/
 theorem InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero (hd : discr K < 0)
-    (hK : Module.finrank ℚ K < 4) : nrComplexPlaces K = 1 := by
+    (hK : Module.finrank ℚ K < 6) : nrComplexPlaces K = 1 := by
   have h := card_add_two_mul_card_eq_rank K
   have hodd : Odd (nrComplexPlaces K) := by
     rw [← Nat.not_even_iff_odd, InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr]
