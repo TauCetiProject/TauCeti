@@ -39,7 +39,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
 
 /-- The common-kernel quotient of a finite-type affine group by a family of maps to connected
 affine groups is connected. It is the coordinate ring of the closed subgroup scheme generated
-by the corresponding connected subgroup schemes. -/
+by the images of the corresponding connected affine group schemes. -/
 theorem connectedSpace_commonKernelQuotient
     {H : _root_.CommHopfAlgCat.{v} k} [Algebra.FiniteType k H]
     {ι : Type w} {K : ι → _root_.CommHopfAlgCat.{v} k}
