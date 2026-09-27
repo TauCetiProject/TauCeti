@@ -119,9 +119,10 @@ theorem gnsTranslation_add (g k : G) :
     (hF.posSemidef.kolmogorovIsometry_unique _ hinner _
       (by
         intro a
-        change hF.gnsTranslation g (hF.gnsTranslation k (hF.gnsVector a)) =
-          hF.gnsVector ((g + k) + a)
-        simp [add_assoc])).symm
+        simp only [LinearIsometryEquiv.coe_toLinearIsometry,
+          LinearIsometryEquiv.trans_apply,
+          show hF.posSemidef.kolmogorovFeature a = hF.gnsVector a from rfl,
+          hF.gnsTranslation_gnsVector, add_assoc])).symm
 
 /-- The GNS representation as a homomorphism from the multiplicative copy of `G` to the
 unitary operators on its canonical Hilbert space. -/
@@ -138,6 +139,7 @@ theorem gnsRepresentation_ofAdd (g : G) :
   simp [gnsRepresentation]
 
 /-- The representation translates each GNS vector. -/
+@[simp]
 theorem gnsRepresentation_gnsVector (g a : G) :
     hF.gnsRepresentation (Multiplicative.ofAdd g) (hF.gnsVector a) =
       hF.gnsVector (g + a) :=
@@ -183,8 +185,7 @@ private theorem continuous_gnsTranslation_gnsVector [TopologicalSpace G] [IsTopo
     (hF.continuous_gnsVector hcont).comp (continuous_id.add continuous_const)
 
 /-- The GNS translation representation is strongly continuous: every vector has a continuous
-orbit. This follows from continuity on the dense span of kernel vectors and the fact that every
-translation is an isometry. -/
+orbit. -/
 theorem continuous_gnsTranslation_apply [TopologicalSpace G] [IsTopologicalAddGroup G]
     (hcont : ContinuousAt F 0) (x : hF.gnsSpace) :
     Continuous (fun g : G => hF.gnsTranslation g x) := by
