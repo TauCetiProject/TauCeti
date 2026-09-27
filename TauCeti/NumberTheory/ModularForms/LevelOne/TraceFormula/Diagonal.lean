@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PeriodAction
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.DoubleCoset
 public import TauCeti.RingTheory.Polynomial.Dickson
+public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 public import Mathlib.LinearAlgebra.Trace
 import TauCeti.RingTheory.MvPolynomial.Finrank
 
@@ -31,18 +32,6 @@ open Matrix MvPolynomial MulOpposite MonoidAlgebra
 
 namespace TauCeti
 
-private theorem linearSubst_diagonal_monomial {R : Type*} [CommRing R]
-    (a d : R) (s : Fin 2 →₀ ℕ) :
-    linearSubst (Matrix.diagonal ![a, d]) (monomial s 1) =
-      (a ^ s 0 * d ^ s 1) • monomial s 1 := by
-  rw [linearSubst_eq_aeval, aeval_monomial, monomial_eq]
-  simp only [Fin.sum_univ_two, Matrix.diagonal_apply]
-  rw [s.prod_fintype (fun i k =>
-    (C (if i = 0 then ![a, d] i else 0) * X 0 +
-      C (if i = 1 then ![a, d] i else 0) * X 1) ^ k) (by simp)]
-  rw [s.prod_fintype (fun i k => X i ^ k) (by simp)]
-  simp [Fin.prod_univ_two, smul_eq_C_mul, mul_pow, mul_comm, mul_left_comm, mul_assoc]
-
 private noncomputable def binaryFormMonomialBasis (R : Type*) [CommRing R] (w : ℕ) :
     Module.Basis {s : Fin 2 →₀ ℕ // s.degree = w} R
       (homogeneousSubmodule (Fin 2) R w) :=
@@ -53,16 +42,8 @@ private theorem coe_binaryFormMonomialBasis {R : Type*} [CommRing R] (w : ℕ)
     (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
     ((binaryFormMonomialBasis R w s : homogeneousSubmodule (Fin 2) R w) :
       MvPolynomial (Fin 2) R) = monomial s.1 1 := by
-  let x : restrictSupport R {d : Fin 2 →₀ ℕ | d.degree = w} :=
-    ⟨monomial s.1 1, (monomial_mem_restrictSupport R).2 (Or.inl s.2)⟩
-  have hb : (basisRestrictSupport R {d : Fin 2 →₀ ℕ | d.degree = w}) s = x := by
-    apply (Module.Basis.apply_eq_iff).2
-    ext t
-    -- The restricted monomial basis represents a polynomial by its coefficient function.
-    change (monomial s.1 (1 : R)).coeff t.1 = (Finsupp.single s (1 : R)) t
-    simp [coeff_monomial, Finsupp.single_apply, Subtype.ext_iff]
   simp only [binaryFormMonomialBasis, Module.Basis.map_apply]
-  exact congrArg Subtype.val hb
+  exact coe_basisRestrictSupport_apply {d : Fin 2 →₀ ℕ | d.degree = w} s
 
 private theorem binaryFormRep_diagonal_basis {R : Type*} [CommRing R] (w : ℕ)
     (a d : ℤ) (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
@@ -75,7 +56,7 @@ private theorem binaryFormRep_diagonal_basis {R : Type*} [CommRing R] (w : ℕ)
     ext i j
     fin_cases i <;> fin_cases j <;> simp
   rw [hm]
-  exact linearSubst_diagonal_monomial (a : R) (d : R) s.1
+  exact MvPolynomial.linearSubst_diagonal_monomial (a : R) (d : R) s.1
 
 /-- The trace of diagonal substitution on degree-`w` binary forms is the sum of its monomial
 eigenvalues. This form of the result is useful before identifying the sum with a Dickson value. -/

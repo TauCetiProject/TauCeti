@@ -36,6 +36,22 @@ instance homogeneousSubmodule_moduleFree {σ R : Type*} [CommSemiring R]
   rw [homogeneousSubmodule_eq_finsupp_supported]
   exact Module.Free.of_basis (basisRestrictSupport R {d : σ →₀ ℕ | d.degree = n})
 
+/-- The restricted-support basis vector is the monomial indexed by its support element. -/
+theorem coe_basisRestrictSupport_apply {σ R : Type*} [CommSemiring R]
+    (s : Set (σ →₀ ℕ)) (m : s) :
+    ((basisRestrictSupport R s m : restrictSupport R s) : MvPolynomial σ R) =
+      monomial m.1 1 := by
+  classical
+  let x : restrictSupport R s :=
+    ⟨monomial m.1 1, (monomial_mem_restrictSupport R).2 (Or.inl m.2)⟩
+  have hb : basisRestrictSupport R s m = x := by
+    apply (Module.Basis.apply_eq_iff).2
+    ext t
+    -- Mathlib defines this basis through `supportedEquivFinsupp`; its coordinates are coefficients.
+    change (monomial m.1 (1 : R)).coeff t.1 = (Finsupp.single m (1 : R)) t
+    simp [coeff_monomial, Finsupp.single_apply, Subtype.ext_iff]
+  exact congrArg Subtype.val hb
+
 /-- The dimension of a homogeneous component is the number of exponent vectors of its degree. -/
 theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]
     [StrongRankCondition R] (n : ℕ) :
