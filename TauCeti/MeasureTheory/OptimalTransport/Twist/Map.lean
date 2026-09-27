@@ -15,8 +15,9 @@ public import TauCeti.MeasureTheory.OptimalTransport.Monge
 A dual certificate for a differentiable twisted cost determines a transport map. The contact
 condition makes almost every conditional law a Dirac measure; measurable selection then realizes
 the certified plan as a graph plan. The resulting map attains both the Kantorovich and Monge
-values, and every other Kantorovich-optimal map agrees with it almost everywhere. Its derivative
-is characterized by the contact first-order condition.
+values, and every other Kantorovich-optimal map agrees with it almost everywhere. The source
+derivative of the cost at the selected partner equals the derivative of the potential:
+`fderiv ℝ φ x = fderiv ℝ (fun x' ↦ c (x', T x)) x` almost everywhere.
 
 The cost is jointly measurable to identify the integral of the selected map with the cost of its
 graph plan. The target is standard Borel to select a measurable representative of the conditional
@@ -44,9 +45,9 @@ variable {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A certified optimal plan for a jointly measurable twisted cost is induced by a measurable
 transport map. The map attains the Kantorovich value and is unique up to `μ`-almost everywhere
-equality among maps attaining that value. At almost every source point it is the unique contact
-partner, and its cost derivative equals the derivative of the source potential. -/
-theorem IsDualCertificate.exists_unique_optimal_transportMap
+equality among maps attaining that value. Almost everywhere, the selected pair lies in the
+contact set and `fderiv ℝ φ x = fderiv ℝ (fun x' ↦ c (x', T x)) x`. -/
+theorem IsDualCertificate.exists_optimal_transportMap_unique_ae
     (hc₀ : ∀ z, 0 ≤ c z)
     (h : IsDualCertificate (fun z ↦ ENNReal.ofReal (c z)) π μ ν φ ψ)
     (hcmeas : Measurable c)
