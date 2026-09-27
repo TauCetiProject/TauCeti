@@ -108,6 +108,25 @@ theorem harmonicAt_planarGreenKernelDisk_sub_newtonianKernel {c a z : ℂ} {R : 
   exact (harmonicAt_comp_const_add_smul_iff (x := -(R⁻¹ • c)) hRne).2
     (by simpa only [neg_add_eq_sub, ← smul_sub] using hh)
 
+/-- The Green kernel of a positive-radius disk is differentiable at a boundary point when
+its pole lies inside the disk. -/
+theorem differentiableAt_planarGreenKernelDisk_boundary {c a z : ℂ} {R : ℝ}
+    (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
+    DifferentiableAt ℝ (planarGreenKernelDisk c R a) z := by
+  have hz' : ‖R⁻¹ • (z - c)‖ = 1 := by
+    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, hz]
+    exact inv_mul_cancel₀ hR.ne'
+  have hcoord : DifferentiableAt ℝ (fun w : ℂ => R⁻¹ • (w - c)) z := by
+    fun_prop
+  -- The disk kernel is opaque here, so use its public equation to rewrite the whole function.
+  have hfun : planarGreenKernelDisk c R a =
+      fun w : ℂ => planarGreenKernel (R⁻¹ • (a - c)) (R⁻¹ • (w - c)) :=
+    funext (planarGreenKernelDisk_def c R a)
+  rw [hfun]
+  simpa only [Function.comp_def] using
+    (differentiableAt_planarGreenKernel_boundary
+      (norm_inv_smul_sub_lt_one hR ha) hz').comp z hcoord
+
 end TauCeti
 
 end

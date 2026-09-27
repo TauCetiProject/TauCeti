@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Planar
 public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
+import TauCeti.Analysis.PDE.FundamentalSolution.Gradient
 
 /-!
 # The Green kernel of the planar unit disk
@@ -51,6 +52,43 @@ theorem planarGreenKernel_def (a z : ℂ) :
     planarGreenKernel a z =
       planarNewtonianKernel (z - a) - planarNewtonianKernel (1 - starRingEnd ℂ a * z) := by
   rfl
+
+private theorem differentiableAt_planarGreenKernel {a z : ℂ}
+    (hza : z - a ≠ 0) (hca : 1 - starRingEnd ℂ a * z ≠ 0) :
+    DifferentiableAt ℝ (planarGreenKernel a) z := by
+  have h₁ := (hasFDerivAt_planarNewtonianKernel_sub (sub_ne_zero.mp hza)).differentiableAt
+  have hinner : DifferentiableAt ℝ (fun w : ℂ => 1 - starRingEnd ℂ a * w) z := by
+    fun_prop
+  have h₂ := (hasFDerivAt_planarNewtonianKernel hca).differentiableAt.comp z hinner
+  convert h₁.sub h₂ using 1
+  ext w
+  simp only [planarGreenKernel_def, Pi.sub_apply, Function.comp_def]
+
+/-- At a boundary point of the unit disk, neither logarithmic argument in the planar Green
+kernel vanishes when the pole lies inside the disk. -/
+theorem planarGreenKernel_boundary_ne {a z : ℂ}
+    (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
+    z - a ≠ 0 ∧ 1 - starRingEnd ℂ a * z ≠ 0 := by
+  have hza : z - a ≠ 0 := by
+    intro h
+    have : z = a := sub_eq_zero.mp h
+    rw [this] at hz
+    linarith
+  have hca : 1 - starRingEnd ℂ a * z ≠ 0 := by
+    intro h
+    have heq : starRingEnd ℂ a * z = 1 := (sub_eq_zero.mp h).symm
+    have hnorm : ‖starRingEnd ℂ a * z‖ = 1 := by rw [heq]; simp
+    rw [norm_mul, Complex.norm_conj, hz, mul_one] at hnorm
+    linarith
+  exact ⟨hza, hca⟩
+
+/-- The planar Green kernel is differentiable at a boundary point of the unit disk when its
+pole lies inside the disk. -/
+theorem differentiableAt_planarGreenKernel_boundary {a z : ℂ}
+    (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
+    DifferentiableAt ℝ (planarGreenKernel a) z := by
+  obtain ⟨hza, hca⟩ := planarGreenKernel_boundary_ne ha hz
+  exact differentiableAt_planarGreenKernel hza hca
 
 /-- The reflected logarithmic term in `planarGreenKernel` is harmonic at every point of the
 unit disk when the pole lies in the disk. -/
