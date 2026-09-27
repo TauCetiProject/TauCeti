@@ -189,7 +189,7 @@ theorem exists_sectionsMul_eq (s : Γ((D + E).sheaf, V)) :
   refine sheafι_app_injective _ V ((Scheme.rationalFunctionsEquiv V).injective ?_)
   simp
 
-/-- Division by a local equation gives a linear retraction of section multiplication. -/
+/-- Multiplication by the local equation `g` gives a linear retraction of section multiplication. -/
 def sectionsMulRetraction :
     Γ((D + E).sheaf, V) →ₗ[Γ(X, V)]
       TensorProduct Γ(X, V) Γ(D.sheaf, V) Γ(E.sheaf, V) where
@@ -204,7 +204,7 @@ def sectionsMulRetraction :
     congr 1
     exact sheafι_app_injective D V (by simp)
 
-/-- Division by the local equation retracts multiplication. -/
+/-- Multiplication by the local equation `g` retracts section multiplication. -/
 theorem sectionsMulRetraction_sectionsMul (a : Γ(D.sheaf, V)) (b : Γ(E.sheaf, V)) :
     sectionsMulRetraction hg D (sectionsMul D E V a b) = a ⊗ₜ b := by
   obtain ⟨r, hr⟩ : ∃ r : Γ(X, V), Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) V r =
