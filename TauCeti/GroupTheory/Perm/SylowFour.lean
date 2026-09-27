@@ -39,7 +39,7 @@ theorem wreathTwoToPermFour_injective : Function.Injective wreathTwoToPermFour :
     ⟨fun {a b} h => by
       apply Multiplicative.toAdd.injective
       have h0 := h 0
-      -- The regular additive action determines an element by its value at zero.
+      -- Unfold the `Multiplicative` action as addition to read its value at zero.
       change a.toAdd + (0 : ZMod 2) = b.toAdd + (0 : ZMod 2) at h0
       simpa using h0⟩
   unfold wreathTwoToPermFour
@@ -63,6 +63,7 @@ theorem natCard_range_wreathTwoToPermFour :
   simp [Nat.card_eq_fintype_card, ZMod.card]
 
 /-- The image of `C₂ ≀ S₂` has index three in `S₄`. -/
+@[simp]
 theorem index_range_wreathTwoToPermFour : wreathTwoToPermFour.range.index = 3 := by
   have h := wreathTwoToPermFour.range.index_mul_card
   rw [natCard_range_wreathTwoToPermFour, Nat.card_perm, Nat.card_fin] at h
@@ -93,6 +94,7 @@ theorem coe_wreathTwoSylowFourEquiv (w :
     WreathProduct (Multiplicative (ZMod 2)) (Fin 2)) :
     (wreathTwoSylowFourEquiv w : Perm (Fin 4)) = wreathTwoToPermFour w := by
   unfold wreathTwoSylowFourEquiv
+  -- The subgroup equality identifies the subtype codomain with the action's range.
   cases wreathTwoSylowFour_toSubgroup
   rfl
 
@@ -114,8 +116,13 @@ theorem transitiveGroupLabel_wreathTwoToPermFour :
   rw [Sylow.coe_subgroup_smul, Subgroup.pointwise_smul_def,
     wreathTwoSylowFour_toSubgroup] at h
   refine (transitiveGroupLabel_iff _ _).2 ⟨τ, ?_⟩
-  rw [referenceSubgroup_four_two]
-  simp only [Q, IsPGroup.toSylow_coe, referenceSubgroup_four_two] at h
-  convert h using 1; rfl
+  have hmap :
+      (MulAut.conj τ).toMonoidHom =
+        MulDistribMulAction.toMonoidEnd (MulAut (Perm (Fin 4))) (Perm (Fin 4))
+          (MulAut.conj τ) := by
+    ext σ
+    rfl
+  rw [← hmap] at h
+  simpa only [Q, IsPGroup.toSylow_coe, referenceSubgroup_four_two] using h
 
 end TauCeti
