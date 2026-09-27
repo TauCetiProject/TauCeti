@@ -47,6 +47,8 @@ theorem finite_quotient_dedekindOrder
     Finite (𝓞 K ⧸ (dedekindOrder hθ).toSubmodule) := by
   let t : IntegralPrimitiveElement K := ⟨θ, hgen⟩
   have hle : t.adjoin.toSubmodule ≤ (dedekindOrder hθ).toSubmodule := by
+    -- `toSubmodule` retains the subalgebra's carrier, so the two inclusions
+    -- are definitionally equal.
     change t.adjoin ≤ dedekindOrder hθ
     rw [IntegralPrimitiveElement.adjoin_def]
     apply Algebra.adjoin_le
