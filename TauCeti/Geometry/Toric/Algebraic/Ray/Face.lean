@@ -50,29 +50,6 @@ namespace TauCeti.Toric
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {σ : PointedCone ℝ V}
 
-private theorem finrank_span_face_eq_card_faceOrderIsoSet
-    {C : PointedCone ℝ V} {ι : Type*} [Finite ι] (v : ι → V)
-    (hv : LinearIndependent ℝ v) (hcone : C = PointedCone.hull ℝ (Set.range v))
-    (G : C.Face) :
-    Module.finrank ℝ (Submodule.span ℝ (G.toPointedCone : Set V)) =
-      Nat.card {a : ι // a ∈ PointedCone.faceOrderIsoSet hv hcone G} := by
-  classical
-  let _ : Fintype ι := Fintype.ofFinite ι
-  let e := PointedCone.faceOrderIsoSet hv hcone
-  have hface : G.toPointedCone = PointedCone.hull ℝ (v '' e G) := by
-    simpa only [e, PointedCone.faceOrderIsoSet_apply] using G.eq_hull_image hcone
-  have hrange : Set.range (fun a : {a : ι // a ∈ e G} ↦ v a.1) = v '' e G := by
-    ext x
-    simp [Set.mem_range, Set.mem_image]
-  have hspan : Submodule.span ℝ (G.toPointedCone : Set V) =
-      Submodule.span ℝ (Set.range (fun a : {a : ι // a ∈ e G} ↦ v a.1)) := by
-    rw [hrange, hface]
-    apply le_antisymm
-    · exact Submodule.span_le.mpr (PointedCone.hull_le_span ℝ _)
-    · exact Submodule.span_mono PointedCone.subset_hull
-  rw [hspan, Nat.card_eq_fintype_card]
-  exact finrank_span_eq_card (hv.comp Subtype.val Subtype.val_injective)
-
 private noncomputable def toricRayEquivOfLinearIndependent
     {C : PointedCone ℝ V} {ι : Type*} [Finite ι] (v : ι → V)
     (hv : LinearIndependent ℝ v) (hcone : C = PointedCone.hull ℝ (Set.range v)) :
