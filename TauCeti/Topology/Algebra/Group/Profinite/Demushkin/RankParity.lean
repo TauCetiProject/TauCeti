@@ -1,0 +1,81 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Basic
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+
+/-!
+# Parity of the rank of a Demushkin group
+
+At an odd prime, graded commutativity makes the degree-one cup pairing alternating. A trace
+identifying its one-dimensional target with `𝔽_p` turns it into a nondegenerate alternating
+bilinear form. Consequently a Demushkin group at an odd prime has even rank; in particular it
+cannot have rank one. This is the parity constraint on the odd-prime normal forms.
+
+The trace is only used in the proof: the statement is independent of its choice.
+
+## Main result
+
+* `TauCeti.IsDemushkin.even_demushkinRank_of_ne_two`: the rank is even at an odd prime.
+* `TauCeti.IsDemushkin.demushkinRank_ne_one_of_ne_two`: rank one occurs only at `p = 2`.
+
+## References
+
+* J. P. Labute, *Classification of Demushkin groups*, Canad. J. Math. 19 (1967), 106–132.
+-/
+
+public section
+
+namespace TauCeti
+
+variable {p : ℕ} [Fact p.Prime] {G : Type*} [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- At an odd prime, the rank of a Demushkin group is even. The cup form is alternating and
+nondegenerate after choosing a trace on its one-dimensional target. -/
+theorem IsDemushkin.even_demushkinRank_of_ne_two (hG : IsDemushkin p G) (hp : p ≠ 2) :
+    Even (demushkinRank hG) := by
+  have : Module.Finite (ZMod p) (cohomFp p G 1) := hG.finite_cohomFp_one
+  let τ : cohomFp p G 2 ≃ₗ[ZMod p] ZMod p :=
+    (Module.nonempty_linearEquiv_of_finrank_eq_one hG.finrank_cohomFp_two).some.symm
+  let B : LinearMap.BilinForm (ZMod p) (cohomFp p G 1) :=
+    { toFun := fun a ↦ τ.toLinearMap.comp (cupFp p G a)
+      map_add' := by intros; ext; simp
+      map_smul' := by intros; ext; simp }
+  have hB : B.Nondegenerate := by
+    constructor
+    · intro a ha
+      by_contra hne
+      obtain ⟨b, hb⟩ := hG.cup_separatingLeft a hne
+      exact hb (τ.injective (by simpa [B] using ha b))
+    · intro b hb
+      by_contra hne
+      obtain ⟨a, ha⟩ := hG.cup_separatingRight b hne
+      exact ha (τ.injective (by simpa [B] using hb a))
+  have htwo : (2 : ZMod p) ≠ 0 := by
+    intro h
+    have hdiv : p ∣ 2 := (ZMod.natCast_eq_zero_iff 2 p).mp (by simpa using h)
+    exact hp ((Nat.prime_dvd_prime_iff_eq (Fact.out : p.Prime) Nat.prime_two).mp hdiv)
+  have halt : B.IsAlt := by
+    intro a
+    have hneg : cupFp p G a a = -cupFp p G a a := cupFp_gradedComm p G a a
+    have hzero : cupFp p G a a = 0 := by
+      have hsmul : (2 : ZMod p) • cupFp p G a a = 0 := by
+        rw [two_smul]
+        exact add_eq_zero_iff_eq_neg.mpr hneg
+      exact (smul_eq_zero.mp hsmul).resolve_left htwo
+    simp [B, hzero]
+  rw [← hG.finrank_cohomFp_one]
+  exact halt.even_finrank hB
+
+/-- A Demushkin group at an odd prime cannot have rank one. -/
+theorem IsDemushkin.demushkinRank_ne_one_of_ne_two (hG : IsDemushkin p G) (hp : p ≠ 2) :
+    demushkinRank hG ≠ 1 := by
+  intro h
+  exact Nat.not_even_one (h ▸ hG.even_demushkinRank_of_ne_two hp)
+
+end TauCeti
