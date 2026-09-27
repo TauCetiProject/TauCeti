@@ -29,7 +29,7 @@ instance homogeneousSubmodule_moduleFinite {σ R : Type*} [CommSemiring R] [Fini
     (n : ℕ) : Module.Finite R (homogeneousSubmodule σ R n) :=
   Module.Finite.of_fg (homogeneousSubmodule_fg σ R n)
 
-/-- A homogeneous component in finitely many variables is a free module. -/
+/-- A homogeneous component is a free module, with the monomials of its degree as basis. -/
 instance homogeneousSubmodule_moduleFree {σ R : Type*} [CommSemiring R]
     (n : ℕ) : Module.Free R (homogeneousSubmodule σ R n) := by
   classical
@@ -37,17 +37,14 @@ instance homogeneousSubmodule_moduleFree {σ R : Type*} [CommSemiring R]
   exact Module.Free.of_basis (basisRestrictSupport R {d : σ →₀ ℕ | d.degree = n})
 
 /-- The dimension of a homogeneous component is the number of exponent vectors of its degree. -/
-theorem finrank_homogeneousSubmodule (σ R : Type*) [Finite σ] [CommSemiring R]
+theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]
     [StrongRankCondition R] (n : ℕ) :
     Module.finrank R (homogeneousSubmodule σ R n) =
       Nat.card (↥{d : σ →₀ ℕ | d.degree = n}) := by
   classical
   rw [homogeneousSubmodule_eq_finsupp_supported]
-  have : Fintype (↥{d : σ →₀ ℕ | d.degree = n}) :=
-    Set.Finite.fintype (Finsupp.finite_of_degree_eq n)
-  exact (Module.finrank_eq_card_basis
-    (basisRestrictSupport R {d : σ →₀ ℕ | d.degree = n})).trans
-      (Nat.card_eq_fintype_card (α := ↥{d : σ →₀ ℕ | d.degree = n})).symm
+  exact Module.finrank_eq_nat_card_basis
+    (basisRestrictSupport R {d : σ →₀ ℕ | d.degree = n})
 
 /-- The dimension of a homogeneous component is a multichoose number. -/
 @[simp]
