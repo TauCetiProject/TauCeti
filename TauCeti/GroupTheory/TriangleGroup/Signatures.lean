@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PermutationTriple.Orders
 public import TauCeti.GroupTheory.TriangleGroup.Cyclic
 public import TauCeti.GroupTheory.TriangleGroup.Dihedral
 public import TauCeti.GroupTheory.TriangleGroup.Hyperbolic
@@ -15,11 +16,21 @@ import Mathlib.Tactic.Linarith
 /-!
 # Triangle group signatures: the spherical and Euclidean parameter triples
 
-The *signature* of a permutation triple is the ordered triple `(a, b, c)` of the orders of its three
-monodromies, and `TauCeti.TriangleGroup a b c` is the presented group whose generators are
-constrained by those orders. Signatures are written sorted, `1 ≤ a ≤ b ≤ c`, the usual convention
-for the triangle-group presentation, which is symmetric in the three parameters. The orbifold
-Euler characteristic of a signature is
+A *signature* here is a sorted parameter triple `1 ≤ a ≤ b ≤ c` of the presentation
+`TauCeti.TriangleGroup a b c`, whose generators are constrained by the relations `x ^ a`, `y ^ b`
+and `z ^ c`; the presentation is symmetric in the three parameters, which is why a signature is
+written sorted. The **exact** signature of a permutation triple is a further datum, its order
+triple `t.orderTriple = (a, b, c)`, the `abc` invariant of a three-point cover
+(`TauCeti.PermutationTriple.HasExactOrders`), and the two are not to be conflated. A first
+parameter `1` shows the difference most sharply: no condition on a presentation forbids the
+parameter triple `(1, b, c)`, whereas an exact signature with first order `1` is the repeated form
+`(1, m, m)`, because a monodromy of order one is the identity and the product relation
+`σinf * σ1 * σ0 = 1` then makes the other two inverse. The classification below is a statement
+about parameter triples; a later section records the exact-signature reading, in which the same
+five spherical rows have the cyclic row in the repeated form `(1, m, m)`, and the geometry type
+of a triple with exact orders `(a, b, c)` is the sign of the orbifold characteristic.
+
+The orbifold Euler characteristic of a signature is
 
 `χᵒʳᵇ(a, b, c) = 1/a + 1/b + 1/c - 1 ∈ ℚ`,
 
@@ -59,6 +70,11 @@ established here.
   infinite triangle group.
 * `TauCeti.TriangleGroup.finite_one`, `TauCeti.TriangleGroup.finite_two_two`: the cyclic and
   dihedral spherical signatures give finite triangle groups.
+* `TauCeti.PermutationTriple.geometryType_eq_spherical_iff_orbifoldEulerChar_pos` and its
+  Euclidean and hyperbolic counterparts: the sign of the orbifold characteristic is the geometry
+  type of a triple with exact orders `(a, b, c)`.
+* `TauCeti.PermutationTriple.geometryType_eq_spherical_iff_sphericalRows`: the spherical
+  classification read on exact signatures, where the cyclic row is the repeated form `(1, m, m)`.
 
 ## References
 
@@ -99,9 +115,14 @@ theorem orbifoldEulerChar_neg_iff (a b c : ℕ) :
   simp only [orbifoldEulerChar]
   constructor <;> intro h <;> linarith
 
-/-- A sorted positive signature is spherical when its first parameter is `1`, or its first two
-parameters are `2`, or it is one of the three polyhedral triples `(2, 3, 3)`, `(2, 3, 4)` and
-`(2, 3, 5)`. These are exactly the signatures of positive orbifold Euler characteristic.
+/-- A sorted positive parameter triple is spherical when its first parameter is `1`, or its
+first two parameters are `2`, or it is one of the three polyhedral triples `(2, 3, 3)`,
+`(2, 3, 4)` and `(2, 3, 5)`. These are exactly the signatures of positive orbifold Euler
+characteristic.
+
+The first branch is a statement about presentation parameters, which are only required to divide
+the monodromy orders: among exact signatures it is the repeated form `(1, m, m)`, by
+`TauCeti.PermutationTriple.geometryType_eq_spherical_iff_sphericalRows`.
 
 The body is exposed so that the `Decidable` instance below, and `decide` on a concrete signature,
 can reduce it. -/
@@ -293,10 +314,109 @@ theorem not_isSphericalSignature_of_isEuclideanSignature {a b c : ℕ} (h₁ : 1
   have hzero : orbifoldEulerChar a b c = 0 := (isEuclideanSignature_iff h₁ h₂ h₃).1 he
   linarith
 
+/-! ### Exact signatures -/
+
+namespace PermutationTriple
+
+variable {n a b c : ℕ}
+
+/-- The three component orders of a triple with exact orders `(a, b, c)`, read off its
+order triple. -/
+private theorem orderOf_eq_of_hasExactOrders {t : PermutationTriple n} {a b c : ℕ}
+    (h : t.HasExactOrders a b c) :
+    orderOf t.σ0 = a ∧ orderOf t.σ1 = b ∧ orderOf t.σinf = c := by
+  have h' : t.orderTriple = (a, b, c) := (t.hasExactOrders_iff).mp h
+  have h1 : orderOf t.σ1 = b := (orderTriple_σ1 t).symm.trans (congrArg (fun p => p.2.1) h')
+  have h2 : orderOf t.σinf = c :=
+    (orderTriple_σinf t).symm.trans (congrArg (fun p => p.2.2) h')
+  exact ⟨(orderTriple_σ0 t).symm.trans (congrArg Prod.fst h'), h1, h2⟩
+
+/-- A trivial first monodromy makes the other two inverse, by the product relation
+`σinf * σ1 * σ0 = 1`, so the second and third entries of the order triple agree. -/
+theorem orderOf_σ1_eq_orderOf_σinf_of_σ0_eq_one (t : PermutationTriple n) (h : t.σ0 = 1) :
+    orderOf t.σ1 = orderOf t.σinf := by
+  rw [t.σinf_eq_inv, h, mul_one, orderOf_inv]
+
+/-- **The cyclic row of the spherical table, read on exact signatures.** An exact signature
+`(1, b, c)` is the repeated form `(1, m, m)`, since a first monodromy of order one is the identity
+and the other two are inverse. -/
+theorem b_eq_c_of_hasExactOrders_one {t : PermutationTriple n} {b c : ℕ}
+    (h : t.HasExactOrders 1 b c) : b = c := by
+  obtain ⟨h0, h1, h2⟩ := orderOf_eq_of_hasExactOrders h
+  have key : orderOf t.σ1 = orderOf t.σinf :=
+    t.orderOf_σ1_eq_orderOf_σinf_of_σ0_eq_one (orderOf_eq_one_iff.mp h0)
+  exact h1.symm.trans (key.trans h2)
+
+/-- **The orbifold sign is the geometry type.** A triple with exact orders `(a, b, c)` is
+spherical exactly when the orbifold Euler characteristic of its signature is positive. -/
+theorem geometryType_eq_spherical_iff_orbifoldEulerChar_pos {t : PermutationTriple n}
+    (h : t.HasExactOrders a b c) :
+    t.geometryType = .spherical ↔ 0 < orbifoldEulerChar a b c := by
+  obtain ⟨h0, h1, h2⟩ := orderOf_eq_of_hasExactOrders h
+  rw [geometryType_eq_spherical_iff, orbifoldEulerChar_pos_iff, h0, h1, h2]
+
+/-- A triple with exact orders `(a, b, c)` is Euclidean exactly when the orbifold Euler
+characteristic of its signature vanishes. -/
+theorem geometryType_eq_euclidean_iff_orbifoldEulerChar_eq_zero {t : PermutationTriple n}
+    (h : t.HasExactOrders a b c) :
+    t.geometryType = .euclidean ↔ orbifoldEulerChar a b c = 0 := by
+  obtain ⟨h0, h1, h2⟩ := orderOf_eq_of_hasExactOrders h
+  rw [geometryType_eq_euclidean_iff, orbifoldEulerChar_eq_zero_iff, h0, h1, h2]
+
+/-- A triple with exact orders `(a, b, c)` is hyperbolic exactly when the orbifold Euler
+characteristic of its signature is negative. -/
+theorem geometryType_eq_hyperbolic_iff_orbifoldEulerChar_neg {t : PermutationTriple n}
+    (h : t.HasExactOrders a b c) :
+    t.geometryType = .hyperbolic ↔ orbifoldEulerChar a b c < 0 := by
+  obtain ⟨h0, h1, h2⟩ := orderOf_eq_of_hasExactOrders h
+  rw [geometryType_eq_hyperbolic_iff, orbifoldEulerChar_neg_iff, h0, h1, h2]
+
+/-- **The spherical rows, read on exact signatures.** A triple with exact orders `(a, b, c)`,
+sorted, is spherical exactly when its order triple is one of the five rows of the spherical
+table, and the cyclic row is the repeated form `(1, m, m)` rather than the whole first branch of
+`IsSphericalSignature`. -/
+theorem geometryType_eq_spherical_iff_sphericalRows {t : PermutationTriple n}
+    (h : t.HasExactOrders a b c) (h₁ : 1 ≤ a) (h₂ : a ≤ b) (h₃ : b ≤ c) :
+    t.geometryType = .spherical ↔
+      (a = 1 ∧ b = c) ∨ (a = 2 ∧ b = 2) ∨ (a, b, c) = (2, 3, 3) ∨ (a, b, c) = (2, 3, 4) ∨
+        (a, b, c) = (2, 3, 5) := by
+  have hsign : t.geometryType = .spherical ↔ IsSphericalSignature a b c :=
+    (t.geometryType_eq_spherical_iff_orbifoldEulerChar_pos h).trans
+      (isSphericalSignature_iff h₁ h₂ h₃).symm
+  constructor
+  · intro hs
+    rcases hsign.mp hs with (ha | h' | h' | h' | h')
+    · -- the cyclic branch: exactness forces the two remaining orders to agree
+      rw [ha] at h
+      exact Or.inl ⟨ha, t.b_eq_c_of_hasExactOrders_one h⟩
+    · exact Or.inr (Or.inl h')
+    · obtain ⟨rfl, rfl, rfl⟩ := h'
+      exact Or.inr (Or.inr (Or.inl rfl))
+    · obtain ⟨rfl, rfl, rfl⟩ := h'
+      exact Or.inr (Or.inr (Or.inr (Or.inl rfl)))
+    · obtain ⟨rfl, rfl, rfl⟩ := h'
+      exact Or.inr (Or.inr (Or.inr (Or.inr rfl)))
+  · intro h
+    have hs : IsSphericalSignature a b c := by
+      rcases h with (⟨ha, _⟩ | h' | h' | h' | h')
+      · exact Or.inl ha
+      · exact Or.inr (Or.inl h')
+      · obtain ⟨rfl, rfl, rfl⟩ := h'
+        exact Or.inr (Or.inr (Or.inl rfl))
+      · obtain ⟨rfl, rfl, rfl⟩ := h'
+        exact Or.inr (Or.inr (Or.inr (Or.inl rfl)))
+      · obtain ⟨rfl, rfl, rfl⟩ := h'
+        exact Or.inr (Or.inr (Or.inr (Or.inr rfl)))
+    exact hsign.mpr hs
+
+end PermutationTriple
+
 -- The five spherical rows and the three Euclidean rows, as the classification records them.
 section Examples
 
-theorem isSphericalSignature_one_two_three : IsSphericalSignature 1 2 3 := by decide
+theorem isSphericalSignature_one_two_two : IsSphericalSignature 1 2 2 := by decide
+
+theorem isSphericalSignature_one_five_five : IsSphericalSignature 1 5 5 := by decide
 
 theorem isSphericalSignature_two_two_six : IsSphericalSignature 2 2 6 := by decide
 
