@@ -37,15 +37,30 @@ The isometry is the left unit equivalence of the tensor product. -/
 def _root_.QuadraticMap.rankOneTensorIsometry
     {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a : R) :
     (QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm R R)) Q).IsometryEquiv (a • Q) where
-  toLinearEquiv := TensorProduct.lid R V
+  toLinearEquiv := (QuadraticForm.tensorLId (a • Q)).toLinearEquiv
   map_app' x := by
-    have h : (a • Q).comp (TensorProduct.lid R V).toLinearMap =
-        QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm R R)) Q := by
+    have h : QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm R R)) Q =
+        QuadraticForm.tmul (QuadraticMap.sq : QuadraticForm R R) (a • Q) := by
       apply baseChange_ext
       intro v
       simp [QuadraticForm.tensorDistrib_tmul, QuadraticMap.sq_apply, smul_eq_mul,
         mul_comm]
-    exact congrArg (fun P : QuadraticForm R (R ⊗[R] V) => P x) h
+    rw [h]
+    exact (QuadraticForm.tensorLId (a • Q)).map_app x
+
+/-- The rank-one tensor isometry sends a pure tensor to scalar multiplication. -/
+@[simp]
+theorem _root_.QuadraticMap.rankOneTensorIsometry_tmul
+    {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a r : R) (v : V) :
+    rankOneTensorIsometry Q a (r ⊗ₜ[R] v) = r • v := by
+  exact TensorProduct.lid_tmul v r
+
+/-- The inverse rank-one tensor isometry sends a vector to its unit pure tensor. -/
+@[simp]
+theorem _root_.QuadraticMap.rankOneTensorIsometry_symm_apply
+    {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a : R) (v : V) :
+    (rankOneTensorIsometry Q a).symm v = (1 : R) ⊗ₜ[R] v := by
+  exact TensorProduct.lid_symm_apply v
 
 /-- Tensor product of isometric equivalences of quadratic forms. -/
 def _root_.QuadraticMap.IsometryEquiv.tmul

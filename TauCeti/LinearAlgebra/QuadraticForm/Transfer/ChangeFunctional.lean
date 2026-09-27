@@ -33,13 +33,13 @@ namespace QuadraticMap
 
 section CommRing
 
-variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
+variable {K L V : Type*} [CommSemiring K] [CommRing L] [Algebra K L]
   [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
   [Invertible (2 : L)]
 
 /-- Multiplication of the input of a functional is tensoring with a quadratic line before
-Scharlau transfer. This is an isometry of forms over the smaller field. -/
-theorem scharlauTransfer_comp_mul_equivalent_rankOneTensor
+Scharlau transfer. This is an isometry of forms over the base ring `K`. -/
+theorem equivalent_scharlauTransfer_comp_mul_rankOneTensor
     (Q : QuadraticForm L V) (s : L →ₗ[K] K) (a : L) :
     (Q.scharlauTransfer (s.comp (LinearMap.mul K L a))).Equivalent
       ((QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm L L)) Q).scharlauTransfer s) := by
@@ -61,13 +61,10 @@ theorem exists_unit_scharlauTransfer_equivalent_rankOneTensor [FiniteDimensional
     ∃ a : Lˣ, (Q.scharlauTransfer t).Equivalent
       ((QuadraticForm.tmul ((a : L) • (QuadraticMap.sq : QuadraticForm L L)) Q).scharlauTransfer
         s) := by
-  obtain ⟨a, ha, _⟩ := s.existsUnique_unit_apply_eq_apply_mul t hs ht
+  obtain ⟨a, ha⟩ := Q.exists_unit_scharlauTransfer_eq s t hs ht
   refine ⟨a, ?_⟩
-  have ht' : t = s.comp (LinearMap.mul K L (a : L)) := by
-    ext x
-    simpa using ha x
-  rw [ht']
-  exact scharlauTransfer_comp_mul_equivalent_rankOneTensor Q s a
+  rw [ha]
+  exact ⟨(rankOneTensorIsometry Q a).symm.scharlauTransfer s⟩
 
 end Field
 
