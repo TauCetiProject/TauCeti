@@ -105,6 +105,9 @@ variable (k : Type u) [Field k]
 private theorem connectedSpace_generatorCoordinateAlgebra :
     ∀ j, ConnectedSpace (PrimeSpectrum (generatorCoordinateAlgebra k j)) := by
   intro j
+  -- The two branches are category objects whose carriers are definitionally the additive
+  -- group's symmetric algebra and the torus's monoid algebra. Exposing those carriers lets
+  -- typeclass synthesis find the connected-spectrum instances for the underlying rings.
   cases j with
   | inl i =>
     change ConnectedSpace (PrimeSpectrum (SymmetricAlgebra k k))
