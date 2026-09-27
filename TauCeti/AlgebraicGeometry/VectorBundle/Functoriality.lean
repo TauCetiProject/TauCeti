@@ -52,10 +52,10 @@ def pullbackId (X : Scheme.{u}) : pullback (𝟙 X) ≅ 𝟭 (FiniteLocallyFreeS
 /-- On underlying modules, the identity comparison is Mathlib's pullback identity comparison. -/
 @[simp]
 theorem pullbackId_app_hom_hom (X : Scheme.{u}) (E : FiniteLocallyFreeSheaf X) :
-    (((pullbackId X).app E).hom).hom =
+    ((pullbackId X).hom.app E).hom =
       eqToHom (pullback_obj_obj (𝟙 X) E) ≫
         (Scheme.Modules.pullbackId X).hom.app E.obj := by
-  simp only [pullbackId, NatIso.ofComponents.app, ObjectProperty.isoMk_hom,
+  simp only [pullbackId, NatIso.ofComponents_hom_app, ObjectProperty.isoMk_hom,
     Iso.trans_hom, eqToIso.hom, ObjectProperty.homMk_hom, Iso.app_hom]
 
 private lemma pullbackComp_obj_obj (f : X ⟶ Y) (g : Y ⟶ Z)
@@ -95,11 +95,11 @@ comparison. -/
 @[simp]
 theorem pullbackComp_app_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z)
     (E : FiniteLocallyFreeSheaf Z) :
-    (((pullbackComp f g).app E).hom).hom =
+    ((pullbackComp f g).hom.app E).hom =
       eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj]) ≫
         (Scheme.Modules.pullbackComp f g).hom.app E.obj ≫
         eqToHom (pullback_obj_obj (f ≫ g) E).symm := by
-  simp only [pullbackComp, NatIso.ofComponents.app, ObjectProperty.isoMk_hom,
+  simp only [pullbackComp, NatIso.ofComponents_hom_app, ObjectProperty.isoMk_hom,
     Iso.trans_hom, eqToIso.hom, ObjectProperty.homMk_hom, Iso.app_hom]
 
 end FiniteLocallyFreeSheaf
