@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.CWComplex.Classical.Subcomplex
+public import TauCeti.Topology.CWComplex.Classical.Zero
 public import TauCeti.AlgebraicTopology.Cellular.Chains
 public import TauCeti.AlgebraicTopology.Singular.Empty
 
@@ -38,63 +38,13 @@ namespace TauCeti
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 
-/-- The characteristic point of a zero-cell, regarded as a point of the zero-skeleton. -/
-def zeroCellPoint (i : cell C 0) : skeletonObj C 1 :=
-  ⟨map 0 i ![], closedCell_subset_skeletonLT 0 i (by
-    simpa only [Matrix.zero_empty] using map_zero_mem_closedCell 0 i)⟩
+/-- The zero-skeleton is discrete also through the `TopCat` abbreviation `skeletonObj`. -/
+instance zeroSkeletonObjDiscreteTopology : DiscreteTopology (skeletonObj C 1) :=
+  zeroSkeletonDiscreteTopology C
 
-/-- The zero-cells are in bijection with the points of the zero-skeleton. -/
-def zeroCellEquiv : cell C 0 ≃ ↑(skeletonLT C (1 : ℕ∞)) :=
-  Equiv.ofBijective (zeroCellPoint C) (by
-    constructor
-    · intro i j h
-      exact injective_map_zero C (congrArg Subtype.val h)
-    · rintro ⟨x, hx⟩
-      have hs : (skeletonLT C ((1 : ℕ) : ℕ∞) : Set X) =
-          ⋃ i : cell C 0, closedCell 0 i := by
-        simpa [CWComplex.skeletonLT_zero_eq_empty] using
-          (skeletonLT_union_iUnion_closedCell_eq_skeletonLT_succ (C := C) 0).symm
-      change x ∈ (skeletonLT C ((1 : ℕ) : ℕ∞) : Set X) at hx
-      rw [hs] at hx
-      simp only [Set.mem_iUnion] at hx
-      obtain ⟨i, hi⟩ := hx
-      rw [closedCell_zero_eq_singleton] at hi
-      exact ⟨i, Subtype.ext hi.symm⟩)
-
-@[simp]
-lemma zeroCellEquiv_apply (i : cell C 0) :
-    zeroCellEquiv C i = zeroCellPoint C i := (rfl)
-
-/-- The zero-skeleton has the discrete topology: each of its cells consists of one point. -/
-instance zeroSkeletonDiscreteTopology : DiscreteTopology (skeletonObj C 1) := by
-  let E : CWComplex.Subcomplex C := skeletonLT C ((1 : ℕ) : ℕ∞)
-  have hdegree {n : ℕ} (j : cell (E : Set X) n) : n = 0 := by
-    change E.I n at j
-    have hj : (n : ℕ∞) < ((1 : ℕ) : ℕ∞) := by
-      simpa only [E, skeletonLT_I, Set.mem_ofPred_eq] using j.2
-    exact Nat.lt_one_iff.mp (by exact_mod_cast hj)
-  apply discreteTopology_iff_forall_isClosed.mpr
-  intro A
-  have hsub : Subtype.val '' A ⊆ (E : Set X) := by
-    rintro x ⟨a, -, rfl⟩
-    exact a.2
-  have hc : IsClosed (Subtype.val '' A) :=
-    (CWComplex.closed E (Subtype.val '' A) hsub).2 (by
-      intro n j
-      have hn := hdegree j
-      subst n
-      rw [closedCell_zero_eq_singleton]
-      exact (Set.finite_singleton _).subset Set.inter_subset_right |>.isClosed)
-  have hA : Subtype.val ⁻¹' (Subtype.val '' A) = A :=
-    Set.preimage_image_eq A Subtype.val_injective
-  exact hA ▸ hc.preimage continuous_subtype_val
-
-/-- The stage before the zero-skeleton is empty for an absolute CW complex. -/
-instance : IsEmpty (skeletonObj C 0) :=
-  ⟨fun x ↦ by
-    have hx : (x.1 : X) ∈ (skeletonLT C (0 : ℕ∞) : Set X) := x.2
-    rw [CWComplex.skeletonLT_zero_eq_empty] at hx
-    exact False.elim hx⟩
+/-- The empty preceding skeleton through the `TopCat` abbreviation `skeletonObj`. -/
+instance zeroSkeletonObjPreviousIsEmpty : IsEmpty (skeletonObj C 0) :=
+  zeroSkeletonPreviousIsEmpty C
 
 /-- The degree-zero skeletal pair is isomorphic to the zero-skeleton modulo the empty space. -/
 def skeletonPairZeroIso :
@@ -138,6 +88,28 @@ def cellularChainGroupZeroIso :
     AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
       (skeletonObj C 1) ≪≫
     (Sigma.reindex (zeroCellEquiv C) (fun _ : skeletonObj C 1 ↦ R)).symm
+
+-- The composite iso crosses the singular-homology and skeletal-homology type wrappers.
+set_option backward.isDefEq.respectTransparency false in
+/-- The inverse degree-zero identification sends the generator of a zero-cell to the homology
+class of its characteristic point in the zero-skeleton, then to the skeletal pair. The middle
+inverse is Mathlib's identification of zeroth homology of a discrete space with its point basis. -/
+lemma cellularChainGroupZeroIso_inv_ι (i : cell C 0) :
+    Sigma.ι (fun _ : cell C 0 ↦ R) i ≫ (cellularChainGroupZeroIso C R).inv =
+      Sigma.ι (fun _ : skeletonObj C 1 ↦ R) (zeroCellPoint C i) ≫
+        (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
+          (skeletonObj C 1)).inv ≫ (zeroSkeletonHomologyIso C R).hom := by
+  unfold cellularChainGroupZeroIso
+  simp only [Iso.trans_inv, Iso.symm_inv, Category.assoc]
+  have h := Sigma.ι_reindex_hom (zeroCellEquiv C)
+    (fun _ : skeletonObj C 1 ↦ R) i
+  have hc : Sigma.ι ((fun _ : skeletonObj C 1 ↦ R) ∘ zeroCellEquiv C) i =
+      Sigma.ι (fun _ : cell C 0 ↦ R) i := by rfl
+  rw [hc] at h
+  simpa only [zeroCellEquiv_apply, Category.assoc] using
+    congrArg (fun f : R ⟶ ∐ fun _ : skeletonObj C 1 ↦ R =>
+      f ≫ (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
+        (skeletonObj C 1)).inv ≫ (zeroSkeletonHomologyIso C R).hom) h
 
 end Homology
 
