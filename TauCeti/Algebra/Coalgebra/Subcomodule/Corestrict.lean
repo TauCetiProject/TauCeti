@@ -277,6 +277,26 @@ theorem mem_ofCorestrictOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
   let _ : Comodule k D V := Comodule.Corestrict f
   rw [← mem_toSubmodule, ofCorestrictOfSplit_toSubmodule, mem_toSubmodule]
 
+/-- Corestricting a subcomodule recovered through a linear retraction gives the original. -/
+@[simp]
+theorem corestrict_ofCorestrictOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    (ofCorestrictOfSplit f r hr W).corestrict f = W := by
+  let _ : Comodule k D V := Comodule.Corestrict f
+  ext m
+  simp only [mem_corestrict, mem_ofCorestrictOfSplit]
+
+/-- Recovering a corestricted subcomodule through a linear retraction gives the original. -/
+@[simp]
+theorem ofCorestrictOfSplit_corestrict (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id) (W : Subcomodule k C V) :
+    ofCorestrictOfSplit f r hr (W.corestrict f) = W := by
+  ext m
+  simp only [mem_ofCorestrictOfSplit, mem_corestrict]
+
 /-- The order isomorphism induced by a coalgebra morphism with a linear retraction
 preserves underlying submodules. -/
 def corestrictOrderIsoOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
