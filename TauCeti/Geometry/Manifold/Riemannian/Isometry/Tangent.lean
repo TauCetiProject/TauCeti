@@ -88,6 +88,8 @@ theorem mfderivToLinearIsometryEquiv_symm_apply (Φ : RiemannianIsometry I J M N
         (mfderiv J I Φ.symm (Φ x) v) := by
     apply (Φ.mfderivToLinearIsometryEquiv x).injective
     rw [LinearIsometryEquiv.apply_symm_apply, mfderivToLinearIsometryEquiv_apply]
+    -- Both tangent-space fibres reduce to the model space `E`, so the cast is
+    -- definitionally trivial.
     change v = mfderiv I J Φ x (mfderiv J I Φ.symm (Φ x) v)
     rw [coe_symm]
     exact (Diffeomorph.mfderiv_apply_mfderiv_symm_apply
