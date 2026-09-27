@@ -15,8 +15,9 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `ι → M` consists of the families
 vanishing outside `s` — the `Pi` analogue of `Finsupp.supported`. This file records that
 complementary supports meet in `⊥`. It also records the linear splitting of a dependent product
-along a predicate on the indices, and the determinant of a coordinatewise endomorphism of a finite
-dependent product, which is used in finite-product norm calculations.
+along a predicate on the indices, the linear splitting of a `Fin (n + 1)`-indexed product into its
+initial segment and its last coordinate, and the determinant of a coordinatewise endomorphism of a
+finite dependent product, which is used in finite-product norm calculations.
 
 Mathlib has `Set.disjoint_pi`, but that is about `Set.pi` and characterises disjointness through
 the fibres; it says nothing about the submodules cut out by a support condition.
@@ -27,6 +28,8 @@ the fibres; it says nothing about the submodules cut out by a support condition.
   families vanishing outside them.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
+* `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
+  coordinates and its last one, with `Fin.snoc` as its inverse.
 * `LinearMap.det_pi_of_apply_eq_dependent`: the determinant of a coordinatewise endomorphism of a
   finite dependent product is the product of the determinants on its factors.
 -/
@@ -52,6 +55,33 @@ public theorem disjoint_pi_compl_bot_of_disjoint {ι : Type*} {s t : Set ι} (h 
 end Submodule
 
 namespace LinearEquiv
+
+section FinSnoc
+
+variable (R : Type*) [Semiring R] {n : ℕ} (M : Fin (n + 1) → Type*)
+  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+
+/-- Splits a tuple of length `n + 1` into its initial `n` coordinates and its last one. The inverse
+is `Fin.snoc`, so this is `Fin.snocEquiv` as a `LinearEquiv`, with the initial segment in the first
+factor to match the argument order of `Fin.snoc`. -/
+public def piFinSnoc :
+    ((i : Fin (n + 1)) → M i) ≃ₗ[R] ((i : Fin n) → M i.castSucc) × M (Fin.last n) where
+  toFun v := (Fin.init v, v (Fin.last n))
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun p := Fin.snoc p.1 p.2
+  left_inv v := Fin.snoc_init_self v
+  right_inv p := Prod.ext (by simp) (by simp)
+
+@[simp]
+public theorem piFinSnoc_apply (v : (i : Fin (n + 1)) → M i) :
+    piFinSnoc R M v = (Fin.init v, v (Fin.last n)) := (rfl)
+
+@[simp]
+public theorem piFinSnoc_symm_apply (p : ((i : Fin n) → M i.castSucc) × M (Fin.last n)) :
+    (piFinSnoc R M).symm p = Fin.snoc p.1 p.2 := (rfl)
+
+end FinSnoc
 
 variable (R : Type*) {ι : Type*} [Semiring R] (p : ι → Prop) [DecidablePred p] (M : ι → Type*)
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
