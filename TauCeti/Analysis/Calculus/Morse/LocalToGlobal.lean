@@ -260,52 +260,6 @@ theorem mem_localUnstableSet_iff_negativeGradientFlow
   rw [localUnstableSet_eq_localInvariantSet]
   exact mem_localInvariantSet_Iic_iff_negativeGradientFlow hf h.unstableProjection
 
-/-- Translating the local stable set back to the critical point gives points in the global stable
-set when every confined forward trajectory converges. -/
-theorem image_add_localStableSet_subset_stableSet
-    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
-    (hconv : ∀ y : ℝ → E,
-      IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) →
-      MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (nhds 0)) :
-    (fun z ↦ x + z) '' h.localStableSet r rho ⊆
-      Flow.stableSet (negativeGradientFlow f hf) x := by
-  rw [localStableSet_eq_localInvariantSet]
-  exact image_add_localInvariantSet_Ici_subset_stableSet hf h.stableProjection hconv
-
-/-- Translating the local unstable set back to the critical point gives points in the global
-unstable set when every confined backward trajectory converges. -/
-theorem image_add_localUnstableSet_subset_unstableSet
-    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
-    (hconv : ∀ y : ℝ → E,
-      IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) →
-      MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (nhds 0)) :
-    (fun z ↦ x + z) '' h.localUnstableSet r rho ⊆
-      Flow.unstableSet (negativeGradientFlow f hf) x := by
-  rw [localUnstableSet_eq_localInvariantSet]
-  exact image_add_localInvariantSet_Iic_subset_unstableSet hf h.unstableProjection hconv
-
-/-- A point of the global stable set has a time translate whose displacement belongs to the local
-stable set with positive cutoffs. -/
-theorem exists_negativeGradientFlow_sub_mem_localStableSet_of_mem_stableSet
-    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
-    (hr : 0 < r) (hrho : 0 < rho) {p : E}
-    (hp : p ∈ Flow.stableSet (negativeGradientFlow f hf) x) :
-    ∃ T, negativeGradientFlow f hf T p - x ∈ h.localStableSet r rho := by
-  rw [localStableSet_eq_localInvariantSet]
-  exact exists_negativeGradientFlow_sub_mem_localInvariantSet_Ici_of_mem_stableSet
-    hf h.stableProjection hr hrho hp
-
-/-- A point of the global unstable set has a time translate whose displacement belongs to the
-local unstable set with positive cutoffs. -/
-theorem exists_negativeGradientFlow_sub_mem_localUnstableSet_of_mem_unstableSet
-    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
-    (hr : 0 < r) (hrho : 0 < rho) {p : E}
-    (hp : p ∈ Flow.unstableSet (negativeGradientFlow f hf) x) :
-    ∃ T, negativeGradientFlow f hf T p - x ∈ h.localUnstableSet r rho := by
-  rw [localUnstableSet_eq_localInvariantSet]
-  exact exists_negativeGradientFlow_sub_mem_localInvariantSet_Iic_of_mem_unstableSet
-    hf h.unstableProjection hr hrho hp
-
 /-- A local stable set whose confined trajectories converge generates the whole global stable set
 under the negative-gradient flow. -/
 theorem stableSet_eq_biUnion_orbit_localStableSet
