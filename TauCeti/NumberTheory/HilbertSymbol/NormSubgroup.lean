@@ -109,11 +109,19 @@ theorem finiteIndex_quadraticNormSubgroup (a : R) [(Subgroup.square Rˣ).FiniteI
     (quadraticNormSubgroup a).FiniteIndex :=
   Subgroup.finiteIndex_of_le (square_le_quadraticNormSubgroup a)
 
+/-- A unit equal to `ξ² - a` is a norm from `R[√a]`. -/
+theorem sq_sub_mem_quadraticNormSubgroup (a ξ : R) {x : Rˣ}
+    (hx : (x : R) = ξ ^ 2 - a) : x ∈ quadraticNormSubgroup a := by
+  refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr ⟨⟨ξ, 1⟩, ?_⟩
+  simp only [QuadraticAlgebra.norm_def, mul_one]
+  rw [hx]
+  ring
+
 /-- The element `-a` is the norm of the square-root generator of `R[√a]`. -/
 theorem neg_radicand_mem_quadraticNormSubgroup (a : Rˣ) :
     -a ∈ quadraticNormSubgroup (a : R) := by
-  refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr ⟨⟨0, 1⟩, ?_⟩
-  simp [QuadraticAlgebra.norm_def]
+  apply sq_sub_mem_quadraticNormSubgroup (a : R) 0
+  simp
 
 /-- If `-a` is not a square, the norm `-a` of the square-root generator lies outside the squares,
 so the quadratic norm subgroup has strictly smaller index than the subgroup of squares. -/
