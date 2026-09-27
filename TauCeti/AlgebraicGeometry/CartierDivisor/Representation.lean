@@ -161,6 +161,7 @@ private lemma rationalTrivializationHom_app_mem_sections
   obtain ⟨V, t, hxV⟩ := M.exists_mem_trivialization x
   have : Nonempty V := ⟨⟨x, hxV⟩⟩
   have : Nonempty (W ⊓ V : X.Opens) := ⟨⟨x, hx, hxV⟩⟩
+  have hxWV : x ∈ W ⊓ V := ⟨hx, hxV⟩
   refine ⟨_, isLocalEquationAt_of_rationalUnitClass_eq (rationalUnitClass_inv_eq hD V t) hxV, ?_⟩
   obtain ⟨r, hr⟩ := exists_rationalFunction_eq_mul M e hU t (homOfLE inf_le_right)
     (M.presheaf.map (homOfLE inf_le_left : W ⊓ V ⟶ W).op s)
@@ -168,7 +169,7 @@ private lemma rationalTrivializationHom_app_mem_sections
     ← rationalFunction_map M e hU (homOfLE inf_le_left : W ⊓ V ⟶ W) s, hr, mul_left_comm,
     Units.inv_mul, mul_one,
     ← _root_.AlgebraicGeometry.Scheme.algebraMap_germ_eq_germToFunctionField X
-      (show x ∈ W ⊓ V from ⟨hx, hxV⟩)]
+      hxWV]
   exact RingHom.mem_range_self _ _
 
 /-- If `D` is the class of the inverse of the rational basis function over the domain of every

@@ -360,6 +360,8 @@ theorem tensorProductSheafIso_hom_tmul (U : X.Opens)
       (SheafOfModules.forget X.ringCatSheaf ⋙
         PresheafOfModules.restrictScalars (𝟙 X.ringCatSheaf.obj)).map g) hmap).trans h
   have hU := congrArg (fun f => f.app (op U) (s ⊗ₜ t)) h'
+  -- Unfold the forgetful functor and sheafification unit in `hU` to express their action
+  -- as `Hom.app` on the local sectionwise pure tensor.
   change Scheme.Modules.Hom.app
       ((TauCeti.SheafOfModules.tensorProductIso X.sheaf D.sheaf E.sheaf).inv ≫
         (tensorProductSheafIso D E).hom) U
