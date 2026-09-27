@@ -42,7 +42,8 @@ private theorem finiteDimensional_vertexSimpleModule_obj (i a : E8) :
   let e := (vertexSimpleModuleIso k E8 i).app ((Paths.of E8).obj a)
   exact e.symm.toLinearEquiv.finiteDimensional
 
-private theorem eulerAdmissible (i j : E8) :
+/-- The vertex simples of the oriented `E₈` quiver are Euler-admissible in every pair. -/
+theorem isEulerAdmissible_vertexSimpleModule_vertexSimpleModule (i j : E8) :
     IsEulerAdmissible k (vertexSimpleModule k E8 i) (vertexSimpleModule k E8 j) :=
   isEulerAdmissible_vertexSimpleModule k E8 i (vertexSimpleModule k E8 j)
     (finiteDimensional_vertexSimpleModule_obj k j i)
@@ -52,7 +53,8 @@ private theorem eulerAdmissible (i j : E8) :
 Rows and columns follow `vertexEquiv`; rows are the first argument of the Euler pairing. -/
 noncomputable def extEulerMatrix : Matrix (Fin 8) (Fin 8) ℤ :=
   Matrix.of fun i j ↦
-    extEuler k (eulerAdmissible k (vertexEquiv i) (vertexEquiv j))
+    extEuler k (isEulerAdmissible_vertexSimpleModule_vertexSimpleModule k
+      (vertexEquiv i) (vertexEquiv j))
 
 /-- The categorical Ext-Euler matrix is the combinatorial Euler matrix `I - A`. -/
 theorem extEulerMatrix_eq_eulerForm :
