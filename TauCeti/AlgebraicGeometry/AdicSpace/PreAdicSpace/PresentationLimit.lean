@@ -36,15 +36,12 @@ noncomputable def presentationLimitPreAdicSpace {A : Type u} [CommRing A]
     { carrier := TopCat.of ↥(spa Aplus)
       presheaf := presentationLimitPresheaf P Aplus }
   isLocalRing x := by
-    have e : presentationLimitPresheafInCommRingCat P Aplus =
-        presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
-          forget₂ TopCommRingCat CommRingCat := rfl
+    have e := presentationLimitPresheafInCommRingCat_def P Aplus
     rw [Functor.mapPresheaf_obj_presheaf, ← e]
     exact isLocalRing_stalk_presentationLimitPresheafInCommRingCat hAplus hP x
   valuation x := by
-    have e : presentationLimitPresheafInCommRingCat P Aplus =
-        presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
-          forget₂ TopCommRingCat CommRingCat := rfl
+    have e := presentationLimitPresheafInCommRingCat_def P Aplus
+    -- This transports both the stalk and its local-ring instance in the residue-field type.
     cases e
     exact presentationLimitStalkResidueValuation hAplus hP x
 

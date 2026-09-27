@@ -54,25 +54,21 @@ structure PreAdicSpace where
 
 namespace PreAdicSpace
 
+/-- The underlying topological space of a pre-adic space. -/
+abbrev toTopCat (X : PreAdicSpace.{u}) : TopCat := X.toPresheafedSpace.carrier
+
+/-- Points of a pre-adic space are points of its underlying topological space. -/
+instance : CoeSort PreAdicSpace.{u} (Type u) := ⟨fun X => X.toTopCat⟩
+
 /-- The presheafed space obtained by forgetting the topology on the sections. -/
-noncomputable def toRingPresheafedSpace (X : PreAdicSpace.{u}) :
+noncomputable abbrev toRingPresheafedSpace (X : PreAdicSpace.{u}) :
     AlgebraicGeometry.PresheafedSpace CommRingCat.{u} :=
   (TopCommRingCat.isCompleteSeparated.ι ⋙
     forget₂ TopCommRingCat CommRingCat).mapPresheaf.obj X.toPresheafedSpace
 
-@[simp]
-theorem toRingPresheafedSpace_carrier (X : PreAdicSpace.{u}) :
-    (X.toRingPresheafedSpace : TopCat) = (X.toPresheafedSpace : TopCat) :=
-  (rfl)
-
-@[simp]
-theorem toRingPresheafedSpace_presheaf (X : PreAdicSpace.{u}) :
-    @HEq (X.toRingPresheafedSpace.carrier.Presheaf CommRingCat.{u})
-      X.toRingPresheafedSpace.presheaf
-      (X.toPresheafedSpace.carrier.Presheaf CommRingCat.{u})
-      (X.toPresheafedSpace.presheaf ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
-        forget₂ TopCommRingCat CommRingCat) :=
-  HEq.rfl
+/-- The underlying ring presheaf has local stalks. -/
+instance (X : PreAdicSpace.{u}) (x : X) :
+    IsLocalRing (X.toRingPresheafedSpace.presheaf.stalk x) := X.isLocalRing x
 
 end PreAdicSpace
 
