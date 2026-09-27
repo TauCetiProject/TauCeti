@@ -93,6 +93,11 @@ def trivial (s : T ⟶ Y) : RigidifiedLineBundle s where
 lemma trivial_lineBundle (s : T ⟶ Y) :
     (trivial s).lineBundle.obj = 𝟙_ Y.Modules := rfl
 
+/-- The rigidification of the trivial line bundle is the canonical pullback isomorphism. -/
+@[simp]
+lemma trivial_rigidification (s : T ⟶ Y) :
+    (trivial s).rigidification = Scheme.Modules.pullbackObjUnitIso s := rfl
+
 /-- Isomorphism of rigidified line bundles: an isomorphism of the underlying line bundles whose
 pullback along `s` carries the first trivialization to the second. -/
 def setoid (s : T ⟶ Y) : Setoid (RigidifiedLineBundle s) where
@@ -316,9 +321,9 @@ lemma toLineBundleClass_mk (P : RigidifiedLineBundle s) :
 
 /-- Forgetting the rigidification of the canonical class gives the identity of the Picard
 monoid. -/
-@[simp]
 lemma toLineBundleClass_trivial :
-    LineBundleClass.mk (RigidifiedLineBundle.trivial s).lineBundle = 1 := by
+    toLineBundleClass (mk (RigidifiedLineBundle.trivial s)) = 1 := by
+  rw [toLineBundleClass_mk]
   rw [← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff]
   rw [RigidifiedLineBundle.trivial_lineBundle, InvertibleSheaf.trivial_obj]
   exact ⟨(TauCeti.SheafOfModules.freePUnitIsoUnit Y.ringCatSheaf).symm⟩
