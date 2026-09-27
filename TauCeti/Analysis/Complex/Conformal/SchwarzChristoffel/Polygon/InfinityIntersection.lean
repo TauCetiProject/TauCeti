@@ -58,7 +58,7 @@ theorem schwarzChristoffelPolygon_closingSides_inter
 /-- The finite parts of the two unbounded Schwarz--Christoffel boundary rays
 are disjoint. Their segment closures touch at the value at infinity, which
 neither finite ray attains. -/
-theorem disjoint_schwarzChristoffelBoundary_unbounded_images
+@[simp] theorem disjoint_schwarzChristoffelBoundary_unbounded_images
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, -1 < e k) (hsum : ∑ k, e k = -2) :
     Disjoint
