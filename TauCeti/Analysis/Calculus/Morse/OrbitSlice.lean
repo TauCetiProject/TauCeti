@@ -31,7 +31,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 /-- The quotient map is bijective from an intermediate level of the connecting set onto
 the orbit classes containing connecting points. -/
-theorem IsNegativeGradient.bijOn_quotient_unstableSet_inter_stableSet_level
+theorem IsNegativeGradient.bijOn_quotient_mk_unstableSet_inter_stableSet_level
     (hφ : IsNegativeGradient φ f)
     (hf : ∀ x ∈ unstableSet φ p ∩ stableSet φ q, ∀ t,
       DifferentiableAt ℝ f (φ t x))
