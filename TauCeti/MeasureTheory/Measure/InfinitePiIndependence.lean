@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Independence.InfinitePi
-public import Mathlib.Probability.Independence.Process.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import TauCeti.Probability.Independence.DisjointBlocks
 
@@ -24,23 +23,24 @@ open MeasureTheory ProbabilityTheory
 
 namespace TauCeti.MeasureTheory.Measure
 
-variable {ι α : Type*} [MeasurableSpace α]
+variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 
 /-- Under a product probability law, the restrictions to two disjoint sets of coordinates have
 the product of their marginal laws. -/
 @[simp]
-theorem infinitePi_map_pair_domRestrict (P : ι → ProbabilityMeasure α) {S T : Set ι}
+theorem infinitePi_map_pair_domRestrict (P : ∀ i, Measure (α i))
+    [∀ i, IsProbabilityMeasure (P i)] {S T : Set ι}
     (hST : Disjoint S T) :
-    (Measure.infinitePi fun i : ι => (P i : Measure α)).map
+    (Measure.infinitePi P).map
         (fun x => (S.domRestrict x, T.domRestrict x)) =
-      (Measure.infinitePi fun i : S => (P i : Measure α)).prod
-        (Measure.infinitePi fun i : T => (P i : Measure α)) := by
+      (Measure.infinitePi fun i : S => P i).prod
+        (Measure.infinitePi fun i : T => P i) := by
   classical
-  let ρ : Measure (ι → α) := Measure.infinitePi fun i : ι => (P i : Measure α)
-  have hi : iIndepFun (fun i : ι => fun x : ι → α => x i) ρ :=
-    iIndepFun_infinitePi (X := fun _ : ι => (id : α → α)) fun _ => measurable_id
-  have hind : IndepFun (fun x : ι → α => S.domRestrict x)
-      (fun x : ι → α => T.domRestrict x) ρ := by
+  let ρ : Measure (∀ i, α i) := Measure.infinitePi P
+  have hi : iIndepFun (fun i : ι => fun x : ∀ j, α j => x i) ρ :=
+    iIndepFun_infinitePi (X := fun i : ι => (id : α i → α i)) fun _ => measurable_id
+  have hind : IndepFun (fun x : ∀ i, α i => S.domRestrict x)
+      (fun x : ∀ i, α i => T.domRestrict x) ρ := by
     apply TauCeti.Probability.indepFun_of_measurable_blockSigma
       (hZ := hi.precomp (g := (Subtype.val : ↥(S ∪ T) → ι)) Subtype.val_injective)
       (fun _ _ => measurable_pi_apply _) hST
