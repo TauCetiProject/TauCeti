@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
@@ -12,10 +13,11 @@ public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 /-!
 # Extension of scalars for Spin groups
 
-The canonical map from a Clifford algebra to the Clifford algebra of a scalar extension preserves
-the even part and Clifford conjugation. It therefore restricts to a homomorphism of Spin groups.
-For the canonical lift of an Eichler transvection, this homomorphism sends
-`1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and `1 ⊗ w`.
+Mathlib's `CliffordAlgebra.ofBaseChangeAux` is the canonical map from a Clifford algebra to the
+Clifford algebra of a scalar extension; it preserves the even part and Clifford conjugation, as
+recorded in `TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange`. It therefore restricts to a
+homomorphism of Spin groups. For the canonical lift of an Eichler transvection, this homomorphism
+sends `1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and `1 ⊗ w`.
 
 ## Main results
 
@@ -39,51 +41,23 @@ variable {R : Type u} {A : Type v} {M : Type w}
 variable [CommRing R] [CommRing A] [Algebra R A]
 variable [AddCommGroup M] [Module R M] [Invertible (2 : R)]
 
-/-- The canonical Clifford map for a scalar extension commutes with Clifford conjugation. -/
-@[simp]
-theorem ofBaseChangeAux_star (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
-    ofBaseChangeAux A Q (star x) = star (ofBaseChangeAux A Q x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r =>
-      rw [star_algebraMap, (ofBaseChangeAux A Q).commutes]
-      rw [IsScalarTower.algebraMap_apply R A (CliffordAlgebra (Q.baseChange A)), star_algebraMap]
-  | ι m => simp
-  | add x y hx hy => simp only [star_add, map_add, hx, hy]
-  | mul x y hx hy => simp only [star_mul, map_mul, hx, hy]
-
-/-- The canonical Clifford map for a scalar extension sends even elements to even elements. -/
-theorem ofBaseChangeAux_mem_even (Q : QuadraticForm R M) {x : CliffordAlgebra Q}
-    (hx : x ∈ even Q) : ofBaseChangeAux A Q x ∈ even (Q.baseChange A) := by
-  change x ∈ evenOdd Q 0 at hx
-  change ofBaseChangeAux A Q x ∈ evenOdd (Q.baseChange A) 0
-  induction x, hx using CliffordAlgebra.even_induction with
-  | algebraMap r =>
-      simpa using one_le_evenOdd_zero (Q.baseChange A)
-        (Submodule.mem_one.mpr ⟨algebraMap R A r,
-          by
-            exact (IsScalarTower.algebraMap_apply R A
-              (CliffordAlgebra (Q.baseChange A)) r).symm⟩)
-  | add x y _ _ hx hy => simpa only [map_add] using Submodule.add_mem _ hx hy
-  | ι_mul_ι_mul m n x _ hx =>
-      simpa only [map_mul, ofBaseChangeAux_ι, zero_add] using
-        SetLike.mul_mem_graded
-          (ι_mul_ι_mem_evenOdd_zero (Q.baseChange A) (1 ⊗ₜ[R] m) (1 ⊗ₜ[R] n)) hx
-
 /-- The homomorphism of Spin groups induced by extension of scalars. -/
 def spinGroupBaseChange (Q : QuadraticForm R M) :
     spinGroup Q →* spinGroup (Q.baseChange A) where
   toFun x := ⟨ofBaseChangeAux A Q x, by
     rw [spinGroup.mem_iff, pinGroup.mem_iff]
     refine ⟨⟨?_, ?_⟩, ofBaseChangeAux_mem_even (A := A) Q x.2.2⟩
-    · let y : lipschitzGroup (Q.baseChange A) :=
-          lipschitzGroupBaseChange (A := A) Q
-            ⟨spinGroup.toUnits x, spinGroup.units_mem_lipschitzGroup x.2⟩
-      have hy := lipschitzGroup.coe_mem_iff_mem.mpr y.2
-      simp only [y, coe_lipschitzGroupBaseChange_apply] at hy
-      change ofBaseChangeAux A Q (x : CliffordAlgebra Q) ∈
-        (lipschitzGroup (Q.baseChange A)).toSubmonoid.map
-          (Units.coeHom (CliffordAlgebra (Q.baseChange A))) at hy
-      exact hy
+    · -- `spinGroup.toUnits` leaves the Clifford value untouched, so extending the scalars of
+      -- `x`'s underlying Lipschitz unit produces a Lipschitz unit with value
+      -- `ofBaseChangeAux A Q x`.
+      obtain ⟨y, hy⟩ : ∃ y : lipschitzGroup (Q.baseChange A),
+          ((y : (CliffordAlgebra (Q.baseChange A))ˣ) : CliffordAlgebra (Q.baseChange A)) =
+            ofBaseChangeAux A Q (x : CliffordAlgebra Q) :=
+        ⟨lipschitzGroupBaseChange (A := A) Q
+            ⟨spinGroup.toUnits x, spinGroup.units_mem_lipschitzGroup x.2⟩,
+          coe_lipschitzGroupBaseChange_apply (A := A) Q _⟩
+      rw [← hy]
+      exact lipschitzGroup.coe_mem_iff_mem.mpr y.2
     · rw [Unitary.mem_iff]
       constructor
       · rw [← ofBaseChangeAux_star, ← map_mul, spinGroup.star_mul_self_of_mem x.2,
