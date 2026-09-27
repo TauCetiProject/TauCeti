@@ -21,6 +21,9 @@ The comparison theorems reuse the four-fold splitting criterion in
 definition. In particular, no bimultiplicativity is asserted over an arbitrary field:
 that property needs a local norm-index theorem.
 
+The square-class construction adapts
+`TauCeti.BrauerGroup.quaternionClassOnSquareClasses`.
+
 ## References
 
 * J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1, Proposition 1.
@@ -161,23 +164,14 @@ theorem hilbertSymbolOnSquareClasses_squareClass (a b : Kˣ) :
     hilbertSymbolOnSquareClasses (squareClass a) (squareClass b) = hilbertSymbol a b := by
   unfold hilbertSymbolOnSquareClasses
   apply hilbertSymbol_congr_sq
-  · apply (squareClass_eq_iff_isSquare_mul _ _).mp
-    rw [squareClass_def, ofMul_toMul]
-    exact Quotient.out_eq _
-  · apply (squareClass_eq_iff_isSquare_mul _ _).mp
-    rw [squareClass_def, ofMul_toMul]
-    exact Quotient.out_eq _
-
-private theorem squareClass_toMul_out_hilbert (x : SquareClassGroup K) :
-    squareClass (Additive.toMul (Quotient.out x)) = x := by
-  rw [squareClass_def, ofMul_toMul]
-  exact Quotient.out_eq x
+  · exact (squareClass_eq_iff_isSquare_mul _ _).mp (squareClass_toMul_out _)
+  · exact (squareClass_eq_iff_isSquare_mul _ _).mp (squareClass_toMul_out _)
 
 /-- The square-class Hilbert pairing is trivial on a zero second argument. -/
 @[simp] theorem hilbertSymbolOnSquareClasses_zero_right (x : SquareClassGroup K) :
     hilbertSymbolOnSquareClasses x 0 = 1 := by
   rw [← (squareClass_eq_zero_iff (1 : Kˣ)).mpr IsSquare.one,
-    ← squareClass_toMul_out_hilbert x, hilbertSymbolOnSquareClasses_squareClass]
+    ← squareClass_toMul_out x, hilbertSymbolOnSquareClasses_squareClass]
   exact hilbertSymbol_one_right _
 
 variable [Invertible (2 : K)]
