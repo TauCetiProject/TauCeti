@@ -155,7 +155,7 @@ theorem connectedSpace_derived
   let D := quotient A (derivedDefiningIdeal H)
   -- Identify the raw quotient in the goal with the categorical quotient's carrier.
   change ConnectedSpace (PrimeSpectrum D)
-  exact HopfAlgebra.connectedSpace_of_identityComponentHopfIdeal_eq_bot
+  exact HopfAlgebra.identityComponentHopfIdeal_eq_bot_iff_connectedSpace.mp
     (identityComponentHopfIdeal_quotient_derivedDefiningIdeal_eq_bot H)
 
 /-- The derived subgroup of a connected finite-type affine group over an algebraically closed

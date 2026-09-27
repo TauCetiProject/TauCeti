@@ -253,17 +253,33 @@ theorem mem_identityComponentHopfIdeal
   dsimp only
   rfl
 
-/-- A finite-type affine group's spectrum is connected if its identity-component Hopf ideal
-vanishes. -/
-theorem connectedSpace_of_identityComponentHopfIdeal_eq_bot
-    (h : identityComponentHopfIdeal (k := k) (H := H) = ⊥) :
-    ConnectedSpace (PrimeSpectrum H) := by
-  let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
-  let z := Bialgebra.augmentationPoint k H
-  have hbot : PrimeSpectrum.connectedComponentIdeal z = ⊥ := by
-    rw [← identityComponentHopfIdeal_toIdeal, h, HopfIdeal.bot_toIdeal]
-  let e := (Ideal.quotEquivOfEq hbot).trans (RingEquiv.quotientBot H)
-  exact (PrimeSpectrum.homeomorphOfRingEquiv e).connectedSpace_iff.mp
-    (PrimeSpectrum.connectedSpace_quotient_connectedComponentIdeal z)
+/-- The identity-component Hopf ideal of a finite-type affine group vanishes exactly when its
+spectrum is connected. -/
+theorem identityComponentHopfIdeal_eq_bot_iff_connectedSpace :
+    identityComponentHopfIdeal (k := k) (H := H) = ⊥ ↔
+      ConnectedSpace (PrimeSpectrum H) := by
+  constructor
+  · intro h
+    let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+    let z := Bialgebra.augmentationPoint k H
+    have hbot : PrimeSpectrum.connectedComponentIdeal z = ⊥ := by
+      rw [← identityComponentHopfIdeal_toIdeal, h, HopfIdeal.bot_toIdeal]
+    let e := (Ideal.quotEquivOfEq hbot).trans (RingEquiv.quotientBot H)
+    exact (PrimeSpectrum.homeomorphOfRingEquiv e).connectedSpace_iff.mp
+      (PrimeSpectrum.connectedSpace_quotient_connectedComponentIdeal z)
+  · intro h
+    let _ : ConnectedSpace (PrimeSpectrum H) := h
+    let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+    let _ : LocallyConnectedSpace (PrimeSpectrum H) := inferInstance
+    let z : PrimeSpectrum H := Bialgebra.augmentationPoint k H
+    apply HopfIdeal.ext
+    intro x
+    rw [mem_identityComponentHopfIdeal]
+    -- Identify the augmentation point with its prime-spectrum presentation.
+    change x ∈ PrimeSpectrum.connectedComponentIdeal z ↔ x = 0
+    rw [PrimeSpectrum.mem_connectedComponentIdeal_iff]
+    simp only [PrimeSpectrum.connectedComponentIdempotent_eq_one, sub_self, mul_zero,
+      exists_const]
+    exact ⟨Eq.symm, Eq.symm⟩
 
 end TauCeti.HopfAlgebra
