@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
 public import TauCeti.RingTheory.DedekindDomain.PrimesAbove
+public import TauCeti.RingTheory.Ideal.PrimesOver
 
 /-!
 # The semi-local map `K_v ⊗[K] L → ∏_{w ∣ v} L_w`
@@ -96,6 +97,7 @@ theorem semilocalHom_tmul (a : v.adicCompletion K) (x : L)
 
 variable (L v)
 
+omit [NumberField K] in
 /-- **Weak approximation above `v`.** The diagonal image of `L` is dense in the product of the
 completions of `L` at the places above `v`. -/
 theorem denseRange_algebraMap_pi_liesOver :
