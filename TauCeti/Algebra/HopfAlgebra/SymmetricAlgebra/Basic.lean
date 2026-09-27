@@ -68,7 +68,7 @@ noncomputable instance instHopfAlgebra : HopfAlgebra R (_root_.SymmetricAlgebra 
   .ofAlgHom (antipodeHom R M)
     (by
       ext x
-      simp only [LinearMap.coe_comp, LinearMap.coe_coe, AlgHom.coe_comp, Function.comp_apply,
+      simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp, Function.comp_apply,
         Bialgebra.comulAlgHom_apply, _root_.SymmetricAlgebra.comul_ι, map_add,
         _root_.SymmetricAlgebra.counitAlgHom_eq, Algebra.ofId_apply]
       erw [Algebra.TensorProduct.lift_tmul, Algebra.TensorProduct.lift_tmul]

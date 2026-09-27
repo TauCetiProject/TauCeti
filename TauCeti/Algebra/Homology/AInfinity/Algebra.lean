@@ -419,9 +419,7 @@ theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
   rw [hcons] at hs
   rw [AInfinity.evalNat_suspend, MultilinearMap.evalNat_def, hcons, hexp] at hs
   have hs' : 𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+)
-      (PiTensorProduct.tprod R ![x, y])) = negOnePowCast R p • 𝒜.m 2 ![x, y] := by
-    convert hs using 1
-    congr
+      (PiTensorProduct.tprod R ![x, y])) = negOnePowCast R p • 𝒜.m 2 ![x, y] := hs
   simp only [L, Q, LinearMap.compl₂_apply, LinearMap.compr₂_apply, LinearMap.comp_apply,
     𝒜.grading.koszulTwist_apply_of_mem hx, ← negOnePowCast_eq_intCast, one_mul, map_smul]
   rw [ReducedTensorWords.prepend_ofLetter]

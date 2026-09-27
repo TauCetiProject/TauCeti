@@ -94,10 +94,13 @@ private theorem coe_cocycles₀Iso_hom (X : TopRep R G) (σ : cocycles X 0) :
       (homogeneousCochains X).iCycles 0 σ :=
   congr($(cocycles₀Iso_hom_comp_kerι X) σ)
 
+-- `(d₀kerIso X :)` synthesizes its instances before its type meets that of `ofIso`'s
+-- argument; otherwise the unifier solves them against the `TopModuleCat.of` projections by
+-- unfolding the kernel and the differential (2.5 s).
 /-- In degree zero the cocycles already are the cohomology, so `zeroIso` may be read off on
 cocycles. -/
 private theorem π_comp_zeroIso_hom (X : TopRep R G) :
-    π X 0 ≫ (zeroIso X).hom = (cocycles₀Iso X).hom ≫ (TopModuleCat.ofIso (d₀kerIso X)).hom := by
+    π X 0 ≫ (zeroIso X).hom = (cocycles₀Iso X).hom ≫ (TopModuleCat.ofIso (d₀kerIso X :)).hom := by
   simp [zeroIso]
 
 /-- **The evaluation formula for `zeroIso`.** A homogeneous `0`-cochain of `X` is a `G`-invariant

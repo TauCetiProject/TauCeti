@@ -112,7 +112,7 @@ instance instBialgebra : Bialgebra R U :=
       intro x
       simp only [LieHom.coe_comp, Function.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply,
         _root_.UniversalEnvelopingAlgebra.lift_ι_apply, LieHom.coe_mk, map_add,
-        Algebra.TensorProduct.map_tmul, LieHom.zero_apply, AlgHom.id_apply, map_one,
+        Algebra.TensorProduct.map_tmul, zero_apply, AlgHom.id_apply, map_one,
         TensorProduct.zero_tmul, zero_add]
       rfl)
     (by
@@ -121,7 +121,7 @@ instance instBialgebra : Bialgebra R U :=
       intro x
       simp only [LieHom.coe_comp, Function.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply,
         _root_.UniversalEnvelopingAlgebra.lift_ι_apply, LieHom.coe_mk, map_add,
-        Algebra.TensorProduct.map_tmul, LieHom.zero_apply, AlgHom.id_apply, map_one,
+        Algebra.TensorProduct.map_tmul, zero_apply, AlgHom.id_apply, map_one,
         TensorProduct.tmul_zero, add_zero]
       rfl)
 

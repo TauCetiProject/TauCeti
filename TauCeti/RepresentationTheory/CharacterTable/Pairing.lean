@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 

@@ -93,6 +93,14 @@ lemma quotientSpecι_def (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (mkQuotient H I).op :=
   (rfl)
 
+/-- Transporting a quotient spectrum along an equality of Hopf ideals and then including it into
+the ambient Hopf spectrum gives the original quotient-spectrum inclusion. -/
+theorem eqToHom_comp_quotientSpecι (H : _root_.CommHopfAlgCat.{u} R)
+    {I J : HopfIdeal R H} (h : I = J) :
+    eqToHom (congrArg (quotientSpec H) h) ≫ quotientSpecι H J = quotientSpecι H I := by
+  subst J
+  simp
+
 /-- The underlying scheme morphism of `quotientSpecι` is a closed immersion. Thus the quotient
 Hopf algebra defines a closed subgroup scheme of the affine group scheme represented by `H`. -/
 instance isClosedImmersion_quotientSpecι (H : _root_.CommHopfAlgCat.{u} R)

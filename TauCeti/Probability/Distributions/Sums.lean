@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Exponential.Basic
+public import TauCeti.Probability.Distributions.Gamma.Pi
 public import TauCeti.Probability.Distributions.Gamma.Sum
 public import TauCeti.Probability.Distributions.Geometric.Basic
 public import TauCeti.Probability.Distributions.Laplace
@@ -29,7 +30,10 @@ resulting random variables.
 
 * `TauCeti.Probability.IndepFun.hasLaw_sub_expMeasure` identifies an exponential difference;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_geometricMeasure` identifies a finite geometric sum;
-* `TauCeti.Probability.iIndepFun.hasLaw_sum_expMeasure` identifies a finite exponential sum.
+* `TauCeti.Probability.iIndepFun.hasLaw_sum_expMeasure` identifies a finite exponential sum;
+* `TauCeti.Probability.map_sub_prod_expMeasure`, `TauCeti.Probability.map_sum_pi_geometricMeasure`
+  and `TauCeti.Probability.map_sum_pi_expMeasure` state the same three laws as pushforwards of
+  product measures.
 
 ## References
 
@@ -157,6 +161,43 @@ theorem iIndepFun.hasLaw_sum_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι]
     hr Finset.univ_nonempty (fun i _ => one_pos)
     (fun i _ => by simpa only [expMeasure] using hlaw i)
   simpa only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one] using h
+
+/-! ### Pushforwards of product measures -/
+
+/-- Pushing the product of two exponential laws with common rate `b⁻¹` forward by the difference
+of the coordinates gives the centered Laplace law of scale `b`. -/
+theorem map_sub_prod_expMeasure {b : ℝ} (hb : 0 < b) :
+    ((expMeasure b⁻¹).prod (expMeasure b⁻¹)).map (fun z : ℝ × ℝ ↦ z.1 - z.2) =
+      laplaceMeasure 0 b := by
+  let _ : IsProbabilityMeasure (expMeasure b⁻¹) :=
+    isProbabilityMeasure_expMeasure (inv_pos.mpr hb)
+  have hfst : HasLaw Prod.fst (expMeasure b⁻¹) ((expMeasure b⁻¹).prod (expMeasure b⁻¹)) :=
+    (measurePreserving_fst (μ := expMeasure b⁻¹) (ν := expMeasure b⁻¹)).hasLaw
+  have hsnd : HasLaw Prod.snd (expMeasure b⁻¹) ((expMeasure b⁻¹).prod (expMeasure b⁻¹)) :=
+    (measurePreserving_snd (μ := expMeasure b⁻¹) (ν := expMeasure b⁻¹)).hasLaw
+  have hindep : IndepFun Prod.fst Prod.snd ((expMeasure b⁻¹).prod (expMeasure b⁻¹)) :=
+    (indepFun_iff_hasLaw_prodMk_prod hfst hsnd).2 HasLaw.id
+  exact (IndepFun.hasLaw_sub_expMeasure hindep hb hfst hsnd).map_eq
+
+/-- Pushing a finite product of geometric laws with success probability `p ≠ 0` forward by the sum
+of the coordinates gives the negative-binomial law whose shape is the number of factors. For an
+empty index type both sides are the point mass at zero. -/
+theorem map_sum_pi_geometricMeasure {ι : Type*} [Fintype ι] {p : unitInterval} (hp : p ≠ 0) :
+    (Measure.pi fun _ : ι ↦ geometricMeasure p).map (fun x ↦ ∑ i, x i) =
+      negativeBinomialMeasure (Fintype.card ι) p := by
+  have hindep : iIndepFun (fun (i : ι) (x : ι → ℕ) ↦ x i)
+      (Measure.pi fun _ : ι ↦ geometricMeasure p) :=
+    iIndepFun_pi (X := fun _ ↦ (id : ℕ → ℕ)) fun _ ↦ aemeasurable_id
+  exact (iIndepFun.hasLaw_sum_geometricMeasure hindep hp
+    fun i ↦ (measurePreserving_eval (fun _ : ι ↦ geometricMeasure p) i).hasLaw).map_eq
+
+/-- Pushing a nonempty finite product of exponential laws with common rate `r > 0` forward by the
+sum of the coordinates gives the Gamma (Erlang) law whose shape is the number of factors. -/
+theorem map_sum_pi_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι] {r : ℝ} (hr : 0 < r) :
+    (Measure.pi fun _ : ι ↦ expMeasure r).map (fun x ↦ ∑ i, x i) =
+      gammaMeasure (Fintype.card ι) r := by
+  simpa only [expMeasure, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one] using
+    map_sum_pi_gammaMeasure (a := fun _ : ι ↦ (1 : ℝ)) (fun _ ↦ one_pos) hr
 
 end Probability
 

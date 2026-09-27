@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
+public import TauCeti.CategoryTheory.Limits.Shapes.Products
 
 /-!
 # Singular chains with local coefficients
@@ -177,7 +178,7 @@ def twistedChains : SimplicialObject (ModuleCat.{max v w} R) where
     have hσ : σ = (TopCat.toSSet.obj X).map (𝟙 n) σ := by simp
     rw [Sigma.ι_comp_map', Category.comp_id, vertexTransport_id, eqToHom_map]
     exact Sigma.eqToHom_comp_ι
-      (fun τ : (TopCat.toSSet.obj X).obj n ↦ L.obj (initialVertex τ)) hσ
+      (fun τ : (TopCat.toSSet.obj X).obj n ↦ L.obj (initialVertex τ)) hσ.symm
   map_comp {m n p} α β := by
     refine Sigma.hom_ext _ _ fun σ ↦ ?_
     have hσ : (TopCat.toSSet.obj X).map (α ≫ β) σ =
@@ -187,7 +188,7 @@ def twistedChains : SimplicialObject (ModuleCat.{max v w} R) where
       Category.assoc, eqToHom_map]
     exact congrArg (L.map (vertexTransport (α ≫ β) σ) ≫ ·)
       (Sigma.eqToHom_comp_ι (fun τ : (TopCat.toSSet.obj X).obj p ↦ L.obj (initialVertex τ))
-        hσ).symm
+        hσ.symm).symm
 
 /-- The inclusion into twisted chains of the coefficient module attached to a singular simplex. -/
 def ιTwistedChains (σ : (TopCat.toSSet.obj X).obj n) :
@@ -435,8 +436,8 @@ lemma twistedChainsConstantIso_hom_naturality {M N : ModuleCat.{max v w} R} (φ 
   -- through the component of `φ` at that summand.
   NatTrans.ext (funext fun n ↦ twistedChains_hom_ext _ fun σ ↦
     Eq.trans (ιTwistedChains_twistedChainsCoefficientMap ((constantFunctor X).map φ) n σ)
-      (Sigma.ι_map (f := fun _ : (TopCat.toSSet.obj X).obj n ↦ M)
-        (g := fun _ : (TopCat.toSSet.obj X).obj n ↦ N) (fun _ ↦ φ) σ).symm)
+      (Sigma.ι_map (f := fun _ : (TopCat.toSSet.obj X).obj n ↦ N)
+        (g := fun _ : (TopCat.toSSet.obj X).obj n ↦ M) (fun _ ↦ φ) σ).symm)
 
 variable (X) in
 /-- For a constant local coefficient system, the twisted chain complex is the ordinary singular
@@ -617,6 +618,23 @@ instance mono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
 instance mono_twistedChainComplexMap [Mono f] : Mono (twistedChainComplexMap f L) :=
   HomologicalComplex.mono_of_mono_f _ fun _ ↦ mono_twistedChainsMap_app f L _
 
+/-- The monomorphism of twisted chains induced by a monomorphism of spaces is split in every
+degree: the retraction keeps the summands of the simplices coming from the subspace and kills the
+others.  This is what makes the twisted chain sequence of a pair stay exact after applying a
+contravariant `Hom(-, M)`. -/
+-- The term has type `IsSplitMono (Sigma.map' ((TopCat.toSSet.map f).app k) fun _ ↦ 𝟙 _)`, so, like
+-- `mono_twistedChainsMap_app`, it uses the definitional descriptions of `twistedChainsMap` and of
+-- the coefficient module of each summand of its source.
+instance isSplitMono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
+    IsSplitMono ((twistedChainsMap f L).app k) :=
+  TauCeti.isSplitMono_sigmaMap' (fun σ ↦ L.obj (initialVertex σ)) ((TopCat.toSSet.map f).app k)
+
+/-- A monomorphism of spaces induces a degreewise split monomorphism of twisted chain
+complexes. -/
+instance isSplitMono_twistedChainComplexMap_f [Mono f] (k : ℕ) :
+    IsSplitMono ((twistedChainComplexMap f L).f k) :=
+  isSplitMono_twistedChainsMap_app f L _
+
 end Map
 
 section MapComp
@@ -782,8 +800,8 @@ lemma twistedChainsConstantIso_hom_space_naturality :
           (Functor.whiskerRight (TopCat.toSSet.map f) ((sigmaConst.{v}).obj M)).app n =
       Sigma.ι (fun _ : (TopCat.toSSet.obj Y).obj n ↦ M) ((TopCat.toSSet.map f).app n σ) :=
     (ιTwistedChains_twistedChainsConstantIso_hom_assoc X M n σ _).trans
-      ((Sigma.ι_comp_map' (f := fun _ : (TopCat.toSSet.obj X).obj n ↦ M)
-          (g := fun _ : (TopCat.toSSet.obj Y).obj n ↦ M)
+      ((Sigma.ι_comp_map' (f := fun _ : (TopCat.toSSet.obj Y).obj n ↦ M)
+          (g := fun _ : (TopCat.toSSet.obj X).obj n ↦ M)
           (fun τ ↦ (TopCat.toSSet.map f).app n τ) (fun _ ↦ 𝟙 M) σ).trans
         (Category.id_comp _))
   refine ((ιTwistedChains_twistedChainsMap_assoc f ((constantFunctor Y).obj M) n σ

@@ -123,7 +123,7 @@ theorem isEven_iff_one_mem_euclideanDual :
 theorem isEven_iff_le_singleParityCheckCode :
     IsEven C ↔ C ≤ singleParityCheckCode (ZMod 2) ι := by
   rw [isEven_iff]
-  simp only [SetLike.le_def, mem_singleParityCheckCode]
+  simp only [IsConcreteLE.le_iff, mem_singleParityCheckCode]
   have hsum (x : ι → ZMod 2) : ∑ i, x i = (hammingNorm x : ZMod 2) := by
     simpa [dotProduct] using dotProduct_one_eq_hammingNorm x
   simp only [hsum, ZMod.natCast_eq_zero_iff_even]
@@ -150,15 +150,6 @@ theorem one_mem_of_eq_euclideanDual (hC : C = C.euclideanDual) :
     (1 : ι → ZMod 2) ∈ C := by
   rw [hC]
   exact isEven_iff_one_mem_euclideanDual.mp (isEven_of_le_euclideanDual hC.le)
-
-/-- A self-dual binary code has `2^(n/2)` words, where `n` is its length. -/
-theorem natCard_of_eq_euclideanDual (hC : C = C.euclideanDual) :
-    Nat.card C = 2 ^ (Fintype.card ι / 2) := by
-  have hdim := Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC
-  rw [Module.natCard_eq_pow_finrank (K := ZMod 2)]
-  simp only [Nat.card_eq_fintype_card, ZMod.card]
-  congr 1
-  omega
 
 end BinaryCode
 

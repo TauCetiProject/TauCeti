@@ -4,7 +4,7 @@
 
 # Tau Ceti
 
-Tau Ceti is a repository of formal mathematics, directed by human-written roadmaps,
+Tau Ceti is a repository of formal mathematics with human-directed and human-reviewed roadmaps,
 implemented and maintained by AI contributors, subject to adversarial review.
 
 Tau Ceti is being incubated by the [Lean FRO](https://lean-lang.org/fro/) and the [Mathlib Initiative](https://https://mathlib-initiative.org/)
@@ -26,6 +26,8 @@ we hope that we can efficiently build a reusable library at significant scale. W
 Humans own the roadmap for Tau Ceti, which lives in the
 [TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap) repository (mostly in the form of markdown files, together with a
 small amount of Lean); changes are made via human-reviewed pull requests there.
+Roadmap authors and reviewers can use AI assistance; see the
+[contribution guide](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/CONTRIBUTING.md).
 
 AIs own the code in this repository, initiating pull requests and shepherding them through an
 AI-driven review process.
@@ -51,9 +53,9 @@ roadmaps and undergo review for coherence, reuse, and compatibility with Mathlib
 
 ## Review
 
-Review is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
+Review of implementation PRs is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
 
-When a PR is opened, we first let CI run, including the full Mathlib linter set. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
+When a PR is opened, we first let CI run, including the full Mathlib linter set on the modules the PR changes; a daily run lints the whole library and opens a repair PR if a change broke lint elsewhere. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
 
 PR contributors can push further commits, or respond to review comments, in order to solicit updated reviews.
 
@@ -113,7 +115,7 @@ This will be an evolving process, and community input is welcome.
 To begin with, our plan is to use the "intentions registration" mechanism from [`leanprover-community/intentions`](https://github.com/leanprover-community/intentions),
 and the shared public registry of intentions at [`leanprover-community/project-intentions`](https://github.com/leanprover-community/project-intentions).
 
-We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./tauceti` worker exemplar from [`kim-em/TauCetiWorker`](https://github.com/kim-em/TauCetiWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
+We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./tauceti` worker exemplar from [`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
 
 We're working now on extending this mechanism to respect recorded intentions at the public `project-intentions` registry. Hopefully in future there will also be a federated system of registrations collected from individual downstream projects that Tau Ceti can hook into.
 
@@ -193,11 +195,11 @@ don't collide with others; see [Coordinating work: intentions and claims](https:
 The reviews above can be run one PR at a time, but most contribution here happens through a
 *worker*. A single round picks one piece of work, does it, and stops; `--loop` runs rounds
 repeatedly until you interrupt it. The exemplar is
-[`kim-em/TauCetiWorker`](https://github.com/kim-em/TauCetiWorker). With
+[`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker). With
 [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv tool install git+https://github.com/kim-em/TauCetiWorker.git
+uv tool install git+https://github.com/TauCetiProject/TauCetiWorker
 gh auth login     # the worker acts as this account, and tends its PRs
 tauceti doctor    # checklist of everything it needs
 ```
@@ -208,7 +210,7 @@ credentials for whichever agent you run (Codex or Claude). The `bubble`, `incus`
 `kiro` rows can stay missing unless you want the sandbox or an alternative agent.
 
 By default, agents run with unrestricted host access; see
-[sandboxing with `--bubble`](https://github.com/kim-em/TauCetiWorker/blob/main/docs/sandbox.md)
+[sandboxing with `--bubble`](https://github.com/TauCetiProject/TauCetiWorker/blob/main/docs/sandbox.md)
 for isolation.
 
 Then survey before you act:
@@ -222,13 +224,13 @@ tauceti work --loop
 Run a bare `tauceti work` before ever using `--loop`, so you see one complete round end to end.
 
 Each round prioritizes maintenance and review before new formalization work; see
-[the cascade](https://github.com/kim-em/TauCetiWorker#what-a-round-does).
+[the cascade](https://github.com/TauCetiProject/TauCetiWorker#what-a-round-does).
 `tauceti work --dry-run` shows what a round would pick without acting.
 
 Subscription pacing can be controlled via
-[`--pace`](https://github.com/kim-em/TauCetiWorker#pacing-against-quota).
+[`--pace`](https://github.com/TauCetiProject/TauCetiWorker#pacing-against-quota).
 For running several workers, see
-[the worker documentation](https://github.com/kim-em/TauCetiWorker#persistent-workers).
+[the worker documentation](https://github.com/TauCetiProject/TauCetiWorker#persistent-workers).
 
 ### Only review
 

@@ -63,7 +63,7 @@ is continuous (`Valuation.isContinuous_of_discreteTopology`), and a power of `x`
 `x` does, so `0` is the sole topologically nilpotent element and no witness exists. Discrete `ℚ`
 carrying a `p`-adic valuation is such an `A`, and there `1 < v p⁻¹` refutes the conclusion. -/
 theorem IsContinuous.le_one_of_isPowerBounded {v : Valuation A Γ₀}
-    [MulArchimedean (MonoidWithZeroHom.ValueGroup₀ (.ofClass v))] (hv : v.IsContinuous)
+    [MulArchimedean v.ValueGroup₀] (hv : v.IsContinuous)
     {b : A} (hb : IsTopologicallyNilpotent b) (hb0 : v b ≠ 0) {a : A}
     (ha : IsPowerBounded a) : v a ≤ 1 := by
   by_contra! hgt

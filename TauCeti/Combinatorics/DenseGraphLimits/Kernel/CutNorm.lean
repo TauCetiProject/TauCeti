@@ -229,9 +229,9 @@ theorem cutNorm_le_integral_abs (K : SymmKernel Ω μ) :
 theorem cutNorm_le_toReal_eLpNorm (K : SymmKernel Ω μ) :
     cutNorm μ K ≤ (eLpNorm (fun p : Ω × Ω => K p.1 p.2) 1 (μ.prod μ)).toReal := by
   refine (cutNorm_le_integral_abs μ K).trans (le_of_eq ?_)
-  rw [eLpNorm_one_eq_lintegral_enorm,
-    ← integral_norm_eq_lintegral_enorm (f := fun p : Ω × Ω => K p.1 p.2)
-      K.measurable.aestronglyMeasurable]
+  have hK : AEStronglyMeasurable (fun p : Ω × Ω => K p.1 p.2) (μ.prod μ) :=
+    K.measurable.aestronglyMeasurable
+  rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK]
   simp only [Real.norm_eq_abs]
 
 /-- A pointwise bound on a kernel bounds its cut norm, on a probability carrier.

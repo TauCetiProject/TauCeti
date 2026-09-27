@@ -36,18 +36,12 @@ ordered-monomial theorem for an abelian Lie algebra: the ordering of a monomial 
 information here, since the generators commute, so a monomial is recorded by its exponent
 function `n : κ →₀ ℕ` rather than by a sorted word.
 
-Two ring-theoretic finiteness properties transfer across the comparison with no further Lie theory:
+One ring-theoretic finiteness property transfers across the comparison with no further Lie theory:
 `U(L)` is a **domain** over a domain when `L` is free as a module
-(`TauCeti.UniversalEnvelopingAlgebra.instIsDomain`), being a polynomial algebra, and it is
-**Noetherian** over a Noetherian ring when `L` is finite as a module
-(`TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`), being then a commutative `R`-algebra of
-finite type. Finite type needs no abelianness and so is not proved here: it is
-`TauCeti.UniversalEnvelopingAlgebra.instFiniteType` of
-`TauCeti/Algebra/Lie/UniversalEnveloping/Basic.lean`, which only needs the canonical Lie generators
-to generate `U(L)`. The two instances below are the abelian cases of two general
-Poincaré--Birkhoff--Witt corollaries, which over a field hold for every Lie algebra and every
-finite-dimensional one respectively; the general statements go through the associated graded of the
-PBW filtration and are not proved here, the arguments below using commutativity of `U(L)`
+(`TauCeti.UniversalEnvelopingAlgebra.instIsDomain`), being a polynomial algebra. That instance is
+the abelian case of a general Poincaré--Birkhoff--Witt corollary, which over a field holds for every
+Lie algebra; the general statement goes through the associated graded of the PBW filtration and is
+not proved here, the argument below using commutativity of `U(L)`
 throughout.
 
 The comparison also makes `ι` injective on any abelian `L`
@@ -88,8 +82,6 @@ about a non-abelian `L`.
   `TauCeti.UniversalEnvelopingAlgebra.linearIndependent_ι_basis`.
 * `TauCeti.UniversalEnvelopingAlgebra.instIsDomain`: **`U(L)` is a domain** for an abelian `L` free
   as a module over a domain.
-* `TauCeti.UniversalEnvelopingAlgebra.instIsNoetherianRing`: **`U(L)` is Noetherian** for an abelian
-  `L` finite as a module over a Noetherian ring.
 
 ## References
 
@@ -121,9 +113,9 @@ instance instCommRing : CommRing U :=
   { (inferInstance : Ring U) with
     mul_comm := fun a b ↦ by
       -- the canonical generators commute, their commutator being the image of the bracket
-      have hgen : ∀ x ∈ Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L)),
-          ∀ y ∈ Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L)), x * y = y * x := by
-        rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩
+      have hgen : (Set.range ⇑(_root_.UniversalEnvelopingAlgebra.ι R (L := L))).Pairwise
+          Commute := by
+        rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩ -
         exact commute_of_lie_eq_zero (AlgHom.id R U) (trivial_lie_zero L L x y)
       -- and those generators generate `U(L)` as an `R`-algebra
       have hcomm := _root_.Algebra.isMulCommutative_adjoin R hgen
@@ -168,7 +160,7 @@ private theorem liftSym_ι (x : L) :
 private theorem liftSym_comp_liftι :
     (liftSym R L).comp (liftι R L) = AlgHom.id R (SymmetricAlgebra R L) := by
   ext x
-  simp only [LinearMap.coe_comp, LinearMap.coe_coe, AlgHom.coe_comp, Function.comp_apply,
+  simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp, Function.comp_apply,
     AlgHom.coe_id, id_eq, liftι_ι, liftSym_ι]
 
 private theorem liftSym_liftι (s : SymmetricAlgebra R L) : liftSym R L (liftι R L s) = s :=
@@ -322,7 +314,7 @@ theorem linearIndependent_ι_basis (b : Basis κ R L) :
     (LinearMap.ker_eq_bot_of_injective (ι_injective R L))
   simpa [Function.comp_def] using h
 
-/-! ### Domains and Noetherian rings -/
+/-! ### Domains -/
 
 section Transfer
 
@@ -336,16 +328,6 @@ every Lie algebra over a field; the general statement goes through the associate
 PBW filtration and is not proved here. -/
 instance instIsDomain [IsDomain R] [Module.Free R L] : IsDomain U :=
   (mvPolynomialEquiv R L (Module.Free.chooseBasis R L)).symm.toMulEquiv.isDomain _
-
-/-- **The enveloping algebra of a finite abelian Lie algebra over a Noetherian ring is
-Noetherian**: it is a commutative algebra of finite type over the base ring
-(`TauCeti.UniversalEnvelopingAlgebra.instFiniteType`), so the Hilbert basis theorem applies.
-
-This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` is Noetherian for
-every finite-dimensional Lie algebra over a field; the general statement goes through the
-associated graded of the PBW filtration and is not proved here. -/
-instance instIsNoetherianRing [IsNoetherianRing R] [Module.Finite R L] : IsNoetherianRing U :=
-  Algebra.FiniteType.isNoetherianRing R U
 
 end Transfer
 

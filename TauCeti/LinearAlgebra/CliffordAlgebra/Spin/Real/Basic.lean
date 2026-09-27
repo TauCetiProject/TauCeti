@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 import Mathlib.Analysis.Real.Sqrt
@@ -13,9 +13,8 @@ import Mathlib.Analysis.Real.Sqrt
 /-!
 # Compact real Spin groups
 
-For a positive-definite real quadratic form, every nonzero norm is a square. The spinor norm on
-the orthogonal group therefore agrees with the determinant modulo squares. Its restriction to the
-special orthogonal group is trivial, so the Spin action is surjective.
+For a positive-definite real quadratic form, every norm is a square. The spinor norm on the
+orthogonal group is therefore trivial, so the Spin action is surjective.
 
 This file applies that argument to the positive-definite signature form `realCliffordForm n 0` and
 packages its Spin double cover. Topology, connectedness, and the universal-cover theorem remain
@@ -23,8 +22,8 @@ separate.
 
 ## Main definitions and results
 
-* `CliffordAlgebra.orthogonalSpinorNorm_eq_detSquareClass_of_posDef` identifies the orthogonal
-  spinor norm with the determinant square-class map for a positive-definite real form.
+* `CliffordAlgebra.orthogonalSpinorNorm_eq_one_of_posDef` shows that the orthogonal spinor norm is
+  trivial for a positive-definite real form.
 * `CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_posDef` proves surjectivity for any
   finite-dimensional positive-definite real form.
 * `CliffordAlgebra.realCliffordSpinGroup` names the real Spin groups by signature.
@@ -35,9 +34,7 @@ separate.
 
 ## References
 
-This advances the real Spin-group part of Layer 7 in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`. See H. B. Lawson and
-M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section
@@ -55,12 +52,11 @@ variable {V : Type u} [AddCommGroup V] [Module ℝ V]
 variable [FiniteDimensional ℝ V]
 
 /-- On a finite-dimensional positive-definite real quadratic space, the orthogonal spinor norm is
-the square class of the determinant. -/
-theorem orthogonalSpinorNorm_eq_detSquareClass_of_posDef
+trivial. -/
+theorem orthogonalSpinorNorm_eq_one_of_posDef
     (Q : QuadraticForm ℝ V) (hQ : Q.PosDef) :
-    orthogonalSpinorNorm Q hQ.anisotropic.nondegenerate =
-      QuadraticMap.orthogonalDetSquareClass Q := by
-  exact orthogonalSpinorNorm_eq_detSquareClass_of_isSquare_apply Q hQ.anisotropic.nondegenerate
+    orthogonalSpinorNorm Q hQ.anisotropic.nondegenerate = 1 := by
+  exact orthogonalSpinorNorm_eq_one_of_isSquare_apply Q hQ.anisotropic.nondegenerate
     fun v => Real.isSquare_iff.2 (hQ.nonneg v)
 
 /-- The Spin action of a finite-dimensional positive-definite real quadratic space is onto its

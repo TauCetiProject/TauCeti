@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import Mathlib.Topology.UniformSpace.Real
+public import TauCeti.Topology.Algebra.OrthogonalGroup
 import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
-import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
-import TauCeti.LinearAlgebra.QuadraticForm.Standard
+public import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.WeightedSumSquares
 
 /-!
 # Compactness of positive-definite real special orthogonal groups
@@ -52,100 +52,76 @@ section ClassicalDecEq
 
 attribute [local instance] Classical.decEq
 
-private def matrixSpecialOrthogonalToWeightedSumSquares
+/-- The coordinate equivalence from real special-orthogonal matrices to standard
+determinant-one sum-of-squares isometries is continuous. -/
+theorem continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] :
-    Matrix.specialOrthogonalGroup ι ℝ →
-      specialOrthogonalGroup (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ)) := fun A => by
-  let U : Matrix.orthogonalGroup ι ℝ := ⟨A, A.prop.1⟩
-  let e := Matrix.UnitaryGroup.toLinearEquiv U
-  refine ⟨e, ?_⟩
-  rw [weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
-  apply (TauCeti.toMatrix_mem_specialOrthogonalGroup_iff ℝ ι
-    ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e).mp
-  simpa only [e, Matrix.UnitaryGroup.toLinearEquiv,
-    Matrix.UnitaryGroup.toLin', LinearMap.toMatrix'_toLin'] using A.prop
-
-/-- The underlying linear equivalence acts by matrix-vector multiplication. -/
-private theorem matrixSpecialOrthogonalToWeightedSumSquares_apply
-    (ι : Type u) [Fintype ι]
-    (A : Matrix.specialOrthogonalGroup ι ℝ) (x : ι → ℝ) :
-    ((matrixSpecialOrthogonalToWeightedSumSquares ι A :
-        specialOrthogonalGroup (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))) :
-      (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)) x = Matrix.toLin' (A : Matrix ι ι ℝ) x :=
-  rfl
-
-private theorem matrixSpecialOrthogonalToWeightedSumSquares_surjective
-    (ι : Type u) [Fintype ι] :
-    Function.Surjective (matrixSpecialOrthogonalToWeightedSumSquares ι) := by
-  intro g
-  let A : Matrix.specialOrthogonalGroup ι ℝ :=
-    ⟨LinearMap.toMatrix' (g : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)).toLinearMap, by
-      apply (TauCeti.toMatrix_mem_specialOrthogonalGroup_iff ℝ ι
-        ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) _).mpr
-      simpa only [weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one'] using
-        g.prop⟩
-  refine ⟨A, ?_⟩
-  apply Subtype.ext
-  apply LinearEquiv.ext
-  intro x
-  rw [matrixSpecialOrthogonalToWeightedSumSquares_apply]
-  exact LinearMap.congr_fun (Matrix.toLin'_toMatrix'
-    (g : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)).toLinearMap) x
-
-private theorem specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquares
-    (ι : Type u) [Fintype ι]
-    (A : Matrix.specialOrthogonalGroup ι ℝ) :
-    specialOrthogonalToGeneralLinear (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))
-        (matrixSpecialOrthogonalToWeightedSumSquares ι A) =
-      Unitary.toUnits (⟨A, A.prop.1⟩ : Matrix.orthogonalGroup ι ℝ) := by
-  apply Units.ext
-  ext i j
-  rw [specialOrthogonalToGeneralLinear_apply]
-  simp [matrixSpecialOrthogonalToWeightedSumSquares, Matrix.UnitaryGroup.toLinearEquiv,
-    Matrix.UnitaryGroup.toLin', Matrix.toLin'_apply, Matrix.mulVec]
-
-private theorem continuous_matrixSpecialOrthogonalToWeightedSumSquares
-    (ι : Type u) [Fintype ι] :
-    Continuous (matrixSpecialOrthogonalToWeightedSumSquares ι) := by
+    Continuous (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι) := by
   rw [(isEmbedding_specialOrthogonalToGeneralLinear
     (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))).continuous_iff]
-  have hcomp : specialOrthogonalToGeneralLinear
-      (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ)) ∘
-      matrixSpecialOrthogonalToWeightedSumSquares ι =
-        fun (A : Matrix.specialOrthogonalGroup ι ℝ) =>
-          Unitary.toUnits (⟨A, A.prop.1⟩ : Matrix.orthogonalGroup ι ℝ) := by
-    funext A
-    exact specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalToWeightedSumSquares ι A
-  rw [hcomp]
-  apply Units.continuous_iff.mpr
-  exact ⟨continuous_subtype_val, continuous_subtype_val.matrix_transpose⟩
+  have hc : Continuous (fun (A : Matrix.specialOrthogonalGroup ι ℝ) =>
+      Unitary.toUnits (⟨A, A.prop.1⟩ : Matrix.orthogonalGroup ι ℝ)) := by
+    apply Units.continuous_iff.mpr
+    exact ⟨continuous_subtype_val, continuous_subtype_val.matrix_transpose⟩
+  rw [Function.comp_def]
+  exact hc.congr
+    (g := fun A => specialOrthogonalToGeneralLinear
+      (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))
+        (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A)) fun A =>
+      (specialOrthogonalToGeneralLinear_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι A).symm
+
+/-- The inverse coordinate equivalence from determinant-one sum-of-squares isometries to
+real special-orthogonal matrices is continuous. -/
+theorem continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne_symm
+    (ι : Type u) [Fintype ι] :
+    Continuous (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm :=
+  Continuous.continuous_symm_of_equiv_compact_to_t2
+    (f := (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).toEquiv)
+    (continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι)
 
 /-- The special orthogonal group of the standard real sum-of-squares form is compact. -/
 instance instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] :
     CompactSpace (specialOrthogonalGroup
       (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))) := by
-  exact (matrixSpecialOrthogonalToWeightedSumSquares_surjective ι).compactSpace
-    (continuous_matrixSpecialOrthogonalToWeightedSumSquares ι)
+  exact (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).surjective.compactSpace
+    (continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι)
 
 /-- The special orthogonal group of the positive-definite real Clifford form is compact. -/
 instance instCompactSpaceSpecialOrthogonalGroupRealCliffordForm (n : ℕ) :
-    CompactSpace (specialOrthogonalGroup (realCliffordForm n 0)) := by
+  CompactSpace (specialOrthogonalGroup (realCliffordForm n 0)) := by
   rw [realCliffordForm_zero_eq_weightedSumSquares_one]
   exact instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne (Fin n)
 
 end ClassicalDecEq
 
+/-- Membership in the positive-definite `realCliffordForm n 0` special-orthogonal carrier is matrix
+special-orthogonal membership. -/
+theorem mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff
+    (n : ℕ) (U : Matrix.GeneralLinearGroup (Fin n) ℝ) :
+    U ∈ MonoidHom.range (specialOrthogonalToGeneralLinear (realCliffordForm n 0)) ↔
+      (U : Matrix (Fin n) (Fin n) ℝ) ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ := by
+  rw [realCliffordForm_zero_eq_weightedSumSquares_one]
+  exact mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff (Fin n) U
+
 /-- The real special-orthogonal carrier is closed in its general-linear ambient group. -/
 theorem isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm (n : ℕ) :
-    let _ : DecidableEq (Fin (n + 0)) := Classical.decEq _
-    IsClosed (Set.range (specialOrthogonalToGeneralLinear (realCliffordForm n 0))) := by
-  dsimp
-  have hc : IsCompact (Set.univ : Set (specialOrthogonalGroup (realCliffordForm n 0))) :=
-    isCompact_univ
-  simpa only [Set.image_univ] using
-    (hc.image (isEmbedding_specialOrthogonalToGeneralLinear
-      (realCliffordForm n 0)).continuous).isClosed
+    -- `realCliffordForm n 0` is indexed by `Fin (n + 0)`; retyping it over `Fin n` lets this
+    -- statement use the canonical `Fin n` equality and matrix-topology instances.
+    IsClosed (Set.range (specialOrthogonalToGeneralLinear
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0))) := by
+  have hrange : Set.range (specialOrthogonalToGeneralLinear
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) =
+      {U : Matrix.GeneralLinearGroup (Fin n) ℝ |
+        (U : Matrix (Fin n) (Fin n) ℝ) ∈
+        Matrix.specialOrthogonalGroup (Fin n) ℝ} := by
+    ext U
+    rw [← MonoidHom.coe_range]
+    exact mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff n U
+  rw [hrange]
+  exact (Matrix.isClosed_specialOrthogonalGroup (n := Fin n) (R := ℝ)).preimage
+    (Units.continuous_val : Continuous (fun U : Matrix.GeneralLinearGroup (Fin n) ℝ =>
+      (U : Matrix (Fin n) (Fin n) ℝ)))
 
 end
 

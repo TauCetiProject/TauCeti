@@ -22,6 +22,7 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 ## Main results
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
+* `QuadraticMap.nondegenerate_neg`: negating a quadratic map does not change its nondegeneracy.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
 * `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
   trivial kernel is nondegenerate.
@@ -32,9 +33,11 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 * `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal`: in a regular finite-dimensional
   quadratic space, the orthogonal complement of a regular subspace is regular.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
-* `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic form on a nontrivial module is
+* `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic map on a nontrivial module is
   nonzero.
-* `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a field has a vector of
+* `QuadraticMap.Nondegenerate.polarBilin_ne_zero`: a nonzero vector has nonzero polar functional
+  for a nondegenerate quadratic form.
+* `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a semifield has a vector of
   unit norm.
 * `QuadraticMap.isUnit_apply_smul`: scaling a vector of unit norm by a unit preserves unit norm.
 * `QuadraticMap.Nondegenerate.exists_isUnit`: the same conclusion for a nondegenerate form on a
@@ -79,6 +82,20 @@ theorem radical_neg (Q : QuadraticMap R M P) : (-Q).radical = Q.radical := by
   ext x
   simp only [QuadraticMap.mem_radical_iff', neg_apply, neg_eq_zero, neg_inj]
 
+/-- Negating a quadratic map does not change its nondegeneracy. -/
+@[simp]
+theorem nondegenerate_neg (Q : QuadraticMap R M P) :
+    (-Q).Nondegenerate ↔ Q.Nondegenerate := by
+  have hpolar : (-Q).polarBilin = -Q.polarBilin := by
+    ext x y
+    exact polar_neg Q x y
+  have hker : (-Q).polarBilin.ker = Q.polarBilin.ker := by rw [hpolar, LinearMap.ker_neg]
+  constructor
+  · rintro ⟨h, hrank⟩
+    refine ⟨by simpa only [radical_neg] using h, hker.symm ▸ hrank⟩
+  · rintro ⟨h, hrank⟩
+    refine ⟨by simpa only [radical_neg] using h, hker ▸ hrank⟩
+
 variable {M' : Type*} [AddCommGroup M'] [Module R M']
 
 /-- The radical of an orthogonal product is the product of the two radicals when two is
@@ -104,14 +121,15 @@ theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
   nontriviality R
   simp only [rank_subsingleton', zero_le]
 
-/-- A nonzero quadratic form over a field has a vector of unit norm. -/
-theorem exists_isUnit_of_ne_zero {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+/-- A nonzero quadratic form over a semifield has a vector of unit norm. -/
+theorem exists_isUnit_of_ne_zero {K V : Type*} [Semifield K] [AddCommMonoid V] [Module K V]
     {Q : QuadraticForm K V} (hQ : Q ≠ 0) : ∃ v, IsUnit (Q v) := by
   obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hQ
   exact ⟨v, isUnit_iff_ne_zero.mpr hv⟩
 
 /-- Scaling a vector of unit norm by a unit preserves unit norm. -/
-theorem isUnit_apply_smul {Q : QuadraticForm R M} {c : R} {v : M}
+theorem isUnit_apply_smul {S N : Type*} [CommSemiring S] [AddCommMonoid N] [Module S N]
+    {Q : QuadraticForm S N} {c : S} {v : N}
     (hc : IsUnit c) (hv : IsUnit (Q v)) : IsUnit (Q (c • v)) := by
   rw [QuadraticMap.map_smul]
   simpa [smul_eq_mul, mul_assoc] using (hc.mul (hc.mul hv))
@@ -123,6 +141,12 @@ namespace QuadraticMap.Nondegenerate
 variable {R M M' P : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup M'] [Module R M'] [AddCommGroup P] [Module R P]
 
+/-- The polar functional of a nonzero vector is nonzero for a nondegenerate quadratic form. -/
+theorem polarBilin_ne_zero {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [Invertible (2 : K)] {Q : QuadraticForm K V} {u : V}
+    (hQ : Q.Nondegenerate) (hu : u ≠ 0) : Q.polarBilin u ≠ 0 :=
+  fun h => hu ((nondegenerate_polar_iff.mpr hQ).1 u fun y => by rw [h, LinearMap.zero_apply])
+
 /-- The orthogonal product of two nondegenerate quadratic maps is nondegenerate, when `2` is
 invertible in the coefficient ring. -/
 theorem prod [Invertible (2 : R)] {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
@@ -130,8 +154,8 @@ theorem prod [Invertible (2 : R)] {Q : QuadraticMap R M P} {Q' : QuadraticMap R 
   rw [QuadraticMap.nondegenerate_iff_radical_eq_bot, QuadraticMap.radical_prod,
     hQ.radical_eq_bot, hQ'.radical_eq_bot, Submodule.prod_bot]
 
-/-- A nondegenerate quadratic form on a nontrivial module is nonzero. -/
-theorem ne_zero [Nontrivial M] {Q : QuadraticForm R M} (hQ : Q.Nondegenerate) : Q ≠ 0 := by
+/-- A nondegenerate quadratic map on a nontrivial module is nonzero. -/
+theorem ne_zero [Nontrivial M] {Q : QuadraticMap R M P} (hQ : Q.Nondegenerate) : Q ≠ 0 := by
   intro hzero
   obtain ⟨v, hv⟩ := exists_ne (0 : M)
   apply hv
@@ -193,7 +217,7 @@ theorem exists_orthogonal_anisotropic [NeZero (2 : K)]
   let B : LinearMap.BilinForm K V := Q.polarBilin
   let W : Submodule K V := B.orthogonal (K ∙ y)
   have hB : B.Nondegenerate := (QuadraticMap.nondegenerate_polar_iff (Q := Q)).mpr hQ
-  have hBsymm : B.IsSymm := ⟨fun x y => QuadraticMap.polar_comm Q x y⟩
+  have hBsymm : B.IsSymm := Q.isSymm_polarBilin
   have hByy : B y y ≠ 0 := by
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
       Nat.cast_ofNat] using mul_ne_zero (NeZero.ne (2 : K)) hy
@@ -262,12 +286,9 @@ nondegenerate here. -/
 theorem BilinForm.Nondegenerate.toQuadraticMap [Invertible (2 : R)] {B : LinearMap.BilinForm R M}
     (hB : B.Nondegenerate) (hflip : LinearMap.flip B = B) :
     (BilinMap.toQuadraticMap B).Nondegenerate := by
-  have h2 : IsUnit (2 : R) := isUnit_of_invertible 2
-  obtain ⟨hl, hr⟩ := hB
-  rw [← QuadraticMap.nondegenerate_polar_iff, BilinMap.polarBilin_toQuadraticMap_of_flip hflip]
-  refine ⟨fun x hx => hl x fun y => ?_, fun y hy => hr y fun x => ?_⟩
-  · simpa only [LinearMap.smul_apply, smul_eq_mul, h2.mul_right_eq_zero] using hx y
-  · simpa only [LinearMap.smul_apply, smul_eq_mul, h2.mul_right_eq_zero] using hy x
+  rw [← QuadraticMap.nondegenerate_associated_iff,
+    QuadraticMap.associated_left_inverse' R hflip]
+  exact hB
 
 end LinearMap
 

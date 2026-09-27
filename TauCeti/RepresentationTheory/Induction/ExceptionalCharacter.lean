@@ -355,11 +355,9 @@ characteristic zero in which `|G|` is invertible, `φ ↦ φ*` sends `Irr(H)` in
 by `TauCeti.ClassFunction.indExtend_injective`, and with `Res_H φ* = φ` by
 `TauCeti.ClassFunction.comap_subtype_indExtend`.
 
-The proof is the norm-`1` test.  The extension is a virtual character of norm `1`, hence `±` an
-irreducible character (`TauCeti.exists_eq_irreducibleCharacter_or_neg`); its value at the identity
-is the degree of `φ`, a positive natural number, while the negative alternative would make that
-value the negative of a positive natural number.  Characteristic zero is what rules the negative
-alternative out. -/
+The proof is the norm-`1` test.  The extension is a virtual character of norm `1` whose value at
+the identity is the degree of `φ`, a natural number, so it is an irreducible character
+(`TauCeti.mem_irreducibleCharacters_of_characterPairing_self_eq_one`). -/
 theorem indExtend_mem_irreducibleCharacters (hH : IsTISubgroup H) {φ : ClassFunction k H}
     (hφ : (φ : H → k) ∈ irreducibleCharacters k H) :
     ((indExtend H φ : ClassFunction k G) : G → k) ∈ irreducibleCharacters k G := by
@@ -368,10 +366,9 @@ theorem indExtend_mem_irreducibleCharacters (hH : IsTISubgroup H) {φ : ClassFun
   let : Fintype G := Fintype.ofFinite G
   let : Invertible (Nat.card H : k) := invertibleOfNonzero hk.ne_zero
   obtain ⟨j, hj⟩ := exists_irreducibleCharacter_eq (k := k) hφ
-  -- the degree of `φ`, a positive natural number
+  -- the degree of `φ`, a natural number
   have hdeg : φ.1 1 = (characterDegree k j : k) := by
     rw [← hj, irreducibleCharacter_one]
-  have hpos : 0 < characterDegree k j := characterDegree_pos k j
   -- `φ` has norm `1` and is a virtual character
   have hφclass : φ = ofCharacter (irreducibleRepresentation k j) :=
     Subtype.ext (funext fun x => by
@@ -382,27 +379,14 @@ theorem indExtend_mem_irreducibleCharacters (hH : IsTISubgroup H) {φ : ClassFun
   have hvirt : (φ : H → k) ∈ virtualCharacters k H := by
     rw [← hj]
     exact irreducibleCharacter_mem_virtualCharacters j
-  -- so the extension is a virtual character of norm `1`
+  -- so the extension is a virtual character of norm `1` and of the same degree
   have hstarnorm : characterPairing (indExtend H φ) (indExtend H φ) = 1 := by
     rw [characterPairing_indExtend_indExtend hG hH φ φ, hnorm]
-  obtain ⟨i, hi⟩ := exists_eq_irreducibleCharacter_or_neg
+  have hone : (indExtend H φ).1 1 = (characterDegree k j : k) := by
+    rw [indExtend_apply_one, hdeg]
+  exact mem_irreducibleCharacters_of_characterPairing_self_eq_one
     (indExtend_mem_virtualCharacters hvirt (n := (characterDegree k j : ℤ)) (by simpa using hdeg))
-    hstarnorm
-  rcases hi with hi | hi
-  · rw [hi]
-    exact irreducibleCharacter_mem k i
-  -- the negative alternative would force a sum of two positive naturals to vanish in `k`
-  · exfalso
-    have hone : (indExtend H φ).1 1 = φ.1 1 := indExtend_apply_one φ
-    rw [hdeg] at hone
-    have hval : -(irreducibleCharacter k i (1 : G)) = (characterDegree k j : k) := by
-      rw [← hone, hi]; rfl
-    rw [irreducibleCharacter_one] at hval
-    have hsum : ((characterDegree k i + characterDegree k j : ℕ) : k) = 0 := by
-      push_cast
-      linear_combination -hval
-    rw [Nat.cast_eq_zero] at hsum
-    omega
+    hstarnorm hone
 
 end Irreducible
 

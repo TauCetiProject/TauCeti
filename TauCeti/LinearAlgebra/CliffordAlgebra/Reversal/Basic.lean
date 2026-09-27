@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
-public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
 # Reversal on Clifford subalgebras
 
 This file restricts Clifford reversal to the even subalgebra, records its action on bivectors,
-and develops general reverse-norm identities and comparisons with Clifford conjugation.
+develops its naturality under the standard even-algebra equivalences, and records general
+reverse-norm identities and comparisons with Clifford conjugation.
 -/
 
 public section
@@ -59,11 +59,79 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
   apply Subtype.ext
   simp only [coe_reverseEven_apply, Subalgebra.coe_mul, reverse.map_mul]
 
+/-- Reversal swaps the two vectors in a bilinear generator of the even Clifford algebra. -/
+@[simp] theorem reverseEven_ι (m₁ m₂ : M) :
+    reverseEven Q ((even.ι Q).bilin m₁ m₂) = (even.ι Q).bilin m₂ m₁ := by
+  apply Subtype.ext
+  simp [even.ι]
+
 /-- Reversal restricted to the even subalgebra is an involution. -/
 @[simp] theorem reverseEven_reverseEven (x : ↥(even Q)) :
     reverseEven Q (reverseEven Q x) = x := by
   apply Subtype.ext
   simpa only [coe_reverseEven_apply] using (reverse_reverse (Q := Q) (x : CliffordAlgebra Q))
+
+/-! ### Naturality -/
+
+/-- An isometry-induced equivalence of even Clifford algebras commutes with reversal. -/
+theorem evenEquivOfIsometry_reverseEven {N : Type*} [AddCommGroup N] [Module R N]
+    {P : QuadraticForm R N} (e : Q.IsometryEquiv P) (x : even Q) :
+    evenEquivOfIsometry e (reverseEven Q x) = reverseEven P (evenEquivOfIsometry e x) := by
+  apply Subtype.ext
+  simp only [coe_reverseEven_apply, coe_evenEquivOfIsometry_apply]
+  simp only [equivOfIsometry_apply]
+  rw [reverse_eq_star_of_mem_even x,
+    reverse_eq_star_of_mem_even
+      ⟨map e.toIsometry (x : CliffordAlgebra Q), map_mem_even e.toIsometry x.2⟩]
+  exact map_star e.toIsometry (x : CliffordAlgebra Q)
+
+/-- The even-algebra equivalence associated to negating a form commutes with reversal on the
+bilinear generators of the even Clifford algebra. -/
+private theorem evenEquivEvenNeg_reverseEven_ι (Q : QuadraticForm R M) (m₁ m₂ : M) :
+    evenEquivEvenNeg Q (reverseEven Q ((even.ι Q).bilin m₁ m₂)) =
+      reverseEven (-Q) (evenEquivEvenNeg Q ((even.ι Q).bilin m₁ m₂)) := by
+  rw [reverseEven_ι, evenEquivEvenNeg_apply, evenEquivEvenNeg_apply,
+    evenToNeg_ι, evenToNeg_ι]
+  apply Subtype.ext
+  simp [even.ι]
+
+/-- The even-algebra equivalence associated to negating a form commutes with reversal. -/
+theorem evenEquivEvenNeg_reverseEven (Q : QuadraticForm R M) (x : even Q) :
+    evenEquivEvenNeg Q (reverseEven Q x) =
+      reverseEven (-Q) (evenEquivEvenNeg Q x) := by
+  rcases x with ⟨x, hx⟩
+  induction x, hx using even_induction with
+  | algebraMap r =>
+      -- Dependent even induction exposes the algebra element and its membership proof separately.
+      change evenEquivEvenNeg Q (reverseEven Q (algebraMap R (even Q) r)) =
+        reverseEven (-Q) (evenEquivEvenNeg Q (algebraMap R (even Q) r))
+      simp
+  | add x y hx hy ihx ihy =>
+      -- Repackage the induction variables as elements of the even subalgebra.
+      change evenEquivEvenNeg Q (reverseEven Q (⟨x, hx⟩ + ⟨y, hy⟩)) =
+        reverseEven (-Q) (evenEquivEvenNeg Q (⟨x, hx⟩ + ⟨y, hy⟩))
+      rw [map_add, map_add, map_add, ihx, ihy]
+      exact ((reverseEven (-Q)).map_add _ _).symm
+  | ι_mul_ι_mul m₁ m₂ x hx ih =>
+      -- The induction hypothesis is indexed by the underlying Clifford element.
+      let z : even Q := ⟨x, by change x ∈ evenOdd Q 0; exact hx⟩
+      change evenEquivEvenNeg Q (reverseEven Q ((even.ι Q).bilin m₁ m₂ * z)) =
+        reverseEven (-Q) (evenEquivEvenNeg Q ((even.ι Q).bilin m₁ m₂ * z))
+      rw [reverseEven_mul, map_mul, map_mul, reverseEven_mul, ih,
+        evenEquivEvenNeg_reverseEven_ι]
+
+/-- The inverse of the standard even Clifford equivalence sends reversal to `star`. -/
+theorem equivEven_symm_reverseEven (Q : QuadraticForm R M) (x : even (EquivEven.Q' Q)) :
+    (equivEven Q).symm (reverseEven (EquivEven.Q' Q) x) =
+      star ((equivEven Q).symm x) := by
+  apply (equivEven Q).injective
+  rw [AlgEquiv.apply_symm_apply]
+  apply Subtype.ext
+  rw [coe_reverseEven_apply, equivEven_apply]
+  rw [star_def, coe_toEven_reverse_involute]
+  exact congrArg (fun y : even (EquivEven.Q' Q) =>
+    reverse (y : CliffordAlgebra (EquivEven.Q' Q)))
+      ((equivEven Q).apply_symm_apply x).symm
 
 /-! ### Reverse norms and comparison with Clifford conjugation -/
 

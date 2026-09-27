@@ -100,7 +100,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiReview
-          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
+          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
           path: .tauceti-review
           sparse-checkout: runner
           persist-credentials: false
@@ -201,7 +201,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiReview
-          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
+          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
           path: .tauceti-review
           sparse-checkout: runner
           persist-credentials: false
@@ -243,7 +243,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiReview
-          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
+          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
           path: .tauceti-review
           sparse-checkout: runner
           persist-credentials: false

@@ -18,6 +18,8 @@ of convergence, then its formal logarithmic derivative converges throughout that
 
 The zero-free hypothesis is essential: the radius of the logarithmic derivative is limited by the
 nearest zero of the original series, even when the original series converges farther.
+Quantitatively, if the coefficients of `f - 1` have absolute sum less than one on a circle, the
+file gives an explicit bound for the absolute coefficient sum of `f'/f` there.
 
 ## Main results
 
@@ -25,6 +27,8 @@ nearest zero of the original series, even when the original series converges far
   logarithmic derivative throughout a zero-free convergence disk.
 * `PowerSeries.summable_norm_coeff_logDeriv_mul_pow_of_zeroFree`: absolute convergence of the
   formal logarithmic derivative throughout a zero-free convergence disk.
+* `PowerSeries.tsum_norm_coeff_logDeriv_mul_pow_succ_le`: an explicit bound for the absolute
+  coefficient sum of the formal logarithmic derivative when `f` is close to `1`.
 -/
 
 public section
@@ -230,5 +234,120 @@ theorem summable_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
     Summable fun n : ℕ ↦ coeff n (logDeriv f) * z ^ n :=
   (summable_norm_coeff_logDeriv_mul_pow_of_zeroFree f hf0 hr hne hz).of_norm
 
+/-- One step of the coefficient recurrence, in absolute value: the degree-`m` coefficient of
+`f'/f`, weighted by `r ^ (m + 1)`, is bounded by the matching term of `r f'(r)` plus the earlier
+weighted coefficients against the weighted coefficients of `f - 1`. -/
+private theorem norm_coeff_logDeriv_mul_pow_succ_le (f : ℂ⟦X⟧) (hf0 : constantCoeff f = 1)
+    {r : ℝ} (hr : 0 ≤ r) (m : ℕ) :
+    ‖coeff m (logDeriv f)‖ * r ^ (m + 1) ≤
+      ((m + 1 : ℕ) : ℝ) * ‖coeff (m + 1) f‖ * r ^ (m + 1) +
+        ∑ i ∈ Finset.range m, ‖coeff i (logDeriv f)‖ * r ^ (i + 1) *
+          (‖coeff (m - i) f‖ * r ^ (m - i)) := by
+  have hrec := coeff_logDeriv_recurrence f hf0 m
+  rw [Finset.sum_range_succ, Nat.sub_self, coeff_zero_eq_constantCoeff_apply, hf0,
+    mul_one] at hrec
+  have hcoeff : coeff m (logDeriv f) = (m + 1 : ℂ) * coeff (m + 1) f -
+      ∑ i ∈ Finset.range m, coeff i (logDeriv f) * coeff (m - i) f := by
+    rw [← hrec]
+    ring
+  have hnorm : ‖coeff m (logDeriv f)‖ ≤ ((m + 1 : ℕ) : ℝ) * ‖coeff (m + 1) f‖ +
+      ∑ i ∈ Finset.range m, ‖coeff i (logDeriv f)‖ * ‖coeff (m - i) f‖ := by
+    rw [hcoeff]
+    refine (norm_sub_le _ _).trans (add_le_add (le_of_eq ?_) ?_)
+    · rw [norm_mul]
+      norm_cast
+    · exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (norm_mul _ _).le)
+  calc
+    ‖coeff m (logDeriv f)‖ * r ^ (m + 1) ≤ (((m + 1 : ℕ) : ℝ) * ‖coeff (m + 1) f‖ +
+        ∑ i ∈ Finset.range m, ‖coeff i (logDeriv f)‖ * ‖coeff (m - i) f‖) * r ^ (m + 1) :=
+      mul_le_mul_of_nonneg_right hnorm (pow_nonneg hr _)
+    _ = _ := by
+      rw [add_mul, Finset.sum_mul]
+      congr 1
+      refine Finset.sum_congr rfl fun i hi ↦ ?_
+      -- Split the power between the shifted index and its complementary index.
+      have hindex : m + 1 = (i + 1) + (m - i) := by
+        have hi' := Finset.mem_range.mp hi
+        omega
+      rw [hindex, pow_add]
+      ring
+
+/-- The partial sums of the majorant series of the formal logarithmic derivative are bounded by
+`T / (1 - t)`, where `T = ∑ n |aₙ| rⁿ` and `t = ∑_{n ≥ 1} |aₙ| rⁿ`. -/
+private theorem sum_range_norm_coeff_logDeriv_mul_pow_succ_le (f : ℂ⟦X⟧) (hf0 : constantCoeff f = 1)
+    {r : ℝ} (hr : 0 ≤ r) (hsum : Summable fun n : ℕ ↦ n * ‖coeff n f‖ * r ^ n)
+    (ht : ∑' n : ℕ, ‖coeff (n + 1) f‖ * r ^ (n + 1) < 1) (N : ℕ) :
+    ∑ m ∈ Finset.range N, ‖coeff m (logDeriv f)‖ * r ^ (m + 1) ≤
+      (∑' n : ℕ, n * ‖coeff n f‖ * r ^ n) /
+        (1 - ∑' n : ℕ, ‖coeff (n + 1) f‖ * r ^ (n + 1)) := by
+  set t := ∑' n : ℕ, ‖coeff (n + 1) f‖ * r ^ (n + 1)
+  set u : ℕ → ℝ := fun m ↦ ‖coeff m (logDeriv f)‖ * r ^ (m + 1) with hu
+  set c : ℕ → ℝ := fun j ↦ ‖coeff j f‖ * r ^ j with hc
+  have hsum' : Summable fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ) * ‖coeff (n + 1) f‖ * r ^ (n + 1) :=
+    (summable_nat_add_iff 1).mpr hsum
+  have hc_summable : Summable fun n ↦ c (n + 1) :=
+    hsum'.of_nonneg_of_le (fun n ↦ by positivity) fun n ↦ by
+      rw [hc, mul_assoc]
+      exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast n.succ_pos)
+  -- The first part of each recurrence step is dominated by `T`.
+  have hA : ∑ m ∈ Finset.range N, ((m + 1 : ℕ) : ℝ) * ‖coeff (m + 1) f‖ * r ^ (m + 1) ≤
+      ∑' n : ℕ, n * ‖coeff n f‖ * r ^ n := by
+    rw [hsum.tsum_eq_zero_add, Nat.cast_zero, zero_mul, zero_mul, zero_add]
+    exact hsum'.sum_le_tsum _ fun n _ ↦ by positivity
+  -- The convolution part is at most `t` times the partial sum itself.
+  have hB : ∑ m ∈ Finset.range N, ∑ i ∈ Finset.range m, u i * c (m - i) ≤
+      t * ∑ i ∈ Finset.range N, u i := by
+    simp only [Finset.range_eq_Ico]
+    rw [← Finset.sum_Ico_Ico_comm', Finset.mul_sum]
+    refine Finset.sum_le_sum fun i _ ↦ ?_
+    rw [← Finset.mul_sum, mul_comm t]
+    refine mul_le_mul_of_nonneg_left ?_ (mul_nonneg (norm_nonneg _) (pow_nonneg hr _))
+    rw [Finset.sum_Ico_eq_sum_range]
+    calc
+      ∑ k ∈ Finset.range (N - (i + 1)), c (i + 1 + k - i) =
+          ∑ k ∈ Finset.range (N - (i + 1)), c (k + 1) :=
+        Finset.sum_congr rfl fun k _ ↦ by
+          -- Reindex after removing the outer index `i`.
+          have hindex : i + 1 + k - i = k + 1 := by omega
+          rw [hindex]
+      _ ≤ t := hc_summable.sum_le_tsum _ fun n _ ↦ by positivity
+  have hU : ∑ m ∈ Finset.range N, u m ≤
+      ∑' n : ℕ, n * ‖coeff n f‖ * r ^ n + t * ∑ m ∈ Finset.range N, u m := by
+    calc
+      ∑ m ∈ Finset.range N, u m ≤ ∑ m ∈ Finset.range N,
+          (((m + 1 : ℕ) : ℝ) * ‖coeff (m + 1) f‖ * r ^ (m + 1) +
+            ∑ i ∈ Finset.range m, u i * c (m - i)) :=
+        Finset.sum_le_sum fun m _ ↦ norm_coeff_logDeriv_mul_pow_succ_le f hf0 hr m
+      _ ≤ _ := by
+        rw [Finset.sum_add_distrib]
+        exact add_le_add hA hB
+  rw [le_div_iff₀ (sub_pos.mpr ht)]
+  linarith
+
+/-- Under the hypotheses of `PowerSeries.tsum_norm_coeff_logDeriv_mul_pow_succ_le`, the series
+`∑ m, |[Xᵐ] (f'/f)| r ^ (m + 1)` converges. -/
+theorem summable_norm_coeff_logDeriv_mul_pow_succ (f : ℂ⟦X⟧) (hf0 : constantCoeff f = 1)
+    {r : ℝ} (hr : 0 ≤ r) (hsum : Summable fun n : ℕ ↦ n * ‖coeff n f‖ * r ^ n)
+    (ht : ∑' n : ℕ, ‖coeff (n + 1) f‖ * r ^ (n + 1) < 1) :
+    Summable fun m : ℕ ↦ ‖coeff m (logDeriv f)‖ * r ^ (m + 1) :=
+  summable_of_sum_range_le (fun _ ↦ by positivity)
+    (sum_range_norm_coeff_logDeriv_mul_pow_succ_le f hf0 hr hsum ht)
+
+/-- **A majorant for the coefficients of a formal logarithmic derivative.** Write `aₙ` for the
+coefficients of `f`, where `a₀ = 1`, and let `r ≥ 0`. If
+`T = ∑ n, n |aₙ| rⁿ` converges and `t = ∑_{n ≥ 1} |aₙ| rⁿ < 1`, then
+`∑ m, |[Xᵐ] (f'/f)| r ^ (m + 1) ≤ T / (1 - t)`.
+
+For the majorant `F(X) = ∑ |aₙ| Xⁿ` this reads `∑ m, |[Xᵐ] (X f'/f)| rᵐ ≤ r F'(r) / (2 - F(r))`.
+No zero-freeness hypothesis is needed beyond `t < 1`. For a family, the bound is uniform only
+when `t` is bounded uniformly below `1` and the corresponding values of `T` are controlled. -/
+theorem tsum_norm_coeff_logDeriv_mul_pow_succ_le (f : ℂ⟦X⟧) (hf0 : constantCoeff f = 1)
+    {r : ℝ} (hr : 0 ≤ r) (hsum : Summable fun n : ℕ ↦ n * ‖coeff n f‖ * r ^ n)
+    (ht : ∑' n : ℕ, ‖coeff (n + 1) f‖ * r ^ (n + 1) < 1) :
+    ∑' m : ℕ, ‖coeff m (logDeriv f)‖ * r ^ (m + 1) ≤
+      (∑' n : ℕ, n * ‖coeff n f‖ * r ^ n) /
+        (1 - ∑' n : ℕ, ‖coeff (n + 1) f‖ * r ^ (n + 1)) :=
+  Real.tsum_le_of_sum_range_le (fun _ ↦ by positivity)
+    (sum_range_norm_coeff_logDeriv_mul_pow_succ_le f hf0 hr hsum ht)
 
 end PowerSeries

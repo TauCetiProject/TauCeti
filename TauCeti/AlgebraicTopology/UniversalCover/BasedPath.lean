@@ -797,7 +797,9 @@ public theorem toPath_homotopic_of_joinedIn_pathHomotopyTrivial
       source' := by rw [hF0_eq]; exact heq
       target' := by rw [hF1_eq]; rfl }
   have hL_refl : L.Homotopic (Path.refl v) :=
-    hU_slsc.apply L (Path.refl v) (by rintro _ ⟨t, rfl⟩; exact hF_U t) (by
+    isPathHomotopyTrivial_def.mp hU_slsc L (Path.refl v) (by
+      rintro _ ⟨t, rfl⟩
+      exact hF_U t) (by
       rintro _ ⟨_, rfl⟩; simpa using! hv)
   -- Cast α.toPath to target `v`.
   let α' : Path x₀ v := α.toPath.cast rfl heq.symm

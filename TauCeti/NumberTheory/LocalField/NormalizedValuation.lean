@@ -56,6 +56,7 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
   valuation is the inverse of any surjective `ℤᵐ⁰`-valued valuation compatible with `K`.
 * `TauCeti.normalizedValuation_eq_one_of_isOfFinOrder`: the normalized valuation vanishes on the
   roots of unity of `K`.
+* `TauCeti.normalizedValuation_neg`: negation does not change the normalized valuation.
 * `TauCeti.even_toAdd_normalizedValuation_of_isSquare`: a square has even normalized valuation.
 * `TauCeti.normalizedAbsoluteValue_apply_ne_zero`: the formula `|x|_K = q ^ (-v_K(x))`.
 * `TauCeti.isNonarchimedean_normalizedAbsoluteValue`: the normalized absolute value satisfies the
@@ -121,8 +122,7 @@ def normalizedValuationWithZero : K →*₀ ℤᵐ⁰ :=
       (valuation K).toMonoidWithZeroHom)
 
 private noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
-  (valuation K).map (valueGroupWithZeroIsoInt K).toMonoidWithZeroHom
-    (valueGroupWithZeroIsoInt K).toOrderIso.monotone
+  (valuation K).map (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰)
 
 private theorem intValuation_surjective : Function.Surjective (intValuation (K := K)) := by
   intro z
@@ -189,7 +189,8 @@ theorem _root_.Valuation.normalizedValuationWithZero_eq_inv_of_surjective
     normalizedValuationWithZero K x = (v x)⁻¹ := by
   have h : intValuation (K := K) x = v x :=
     DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective intValuation_surjective hv
-      ((Valuation.isEquiv_map_self_of_strictMono _ (valueGroupWithZeroIsoInt K).strictMono).trans
+      ((Valuation.isEquiv_map_self_of_strictMono _
+          (EquivLike.injective (valueGroupWithZeroIsoInt K))).trans
         (ValuativeRel.isEquiv _ _))) x
   rw [← h]
   simp [normalizedValuationWithZero, intValuation, invMonoidWithZeroHom]
@@ -234,6 +235,13 @@ free, so a unit of finite order has normalized valuation `1`. -/
 theorem normalizedValuation_eq_one_of_isOfFinOrder {x : Kˣ} (hx : IsOfFinOrder x) :
     normalizedValuation K x = 1 :=
   ((normalizedValuation K).isOfFinOrder hx).eq_one'
+
+/-- Negation does not change the normalized valuation: `-1` is a root of unity. -/
+@[simp]
+theorem normalizedValuation_neg (x : Kˣ) :
+    normalizedValuation K (-x) = normalizedValuation K x := by
+  rw [← neg_one_mul, map_mul, normalizedValuation_eq_one_of_isOfFinOrder
+    (isOfFinOrder_iff_pow_eq_one.mpr ⟨2, two_pos, by simp⟩), one_mul]
 
 /-- A square has even normalized valuation. -/
 theorem even_toAdd_normalizedValuation_of_isSquare {a : Kˣ} (ha : IsSquare a) :
@@ -391,7 +399,7 @@ theorem exists_eq_valuation_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducibl
     ∃ n : ℤ, (γ : ValueGroupWithZero K) = valuation K (π : K) ^ n := by
   have huni : (valuation K).IsUniformizer (π : K) :=
     Valuation.isUniformizer_of_maximalIdeal_eq_span (valuation K) hπ.maximalIdeal_eq
-  have hγ : γ ∈ MonoidWithZeroHom.valueGroup (.ofClass (valuation K)) := by
+  have hγ : γ ∈ (valuation K).valueGroup := by
     apply MonoidWithZeroHom.mem_valueGroup
     exact ValuativeRel.valuation_surjective (γ : ValueGroupWithZero K)
   rw [huni.zpowers_eq_valueGroup] at hγ

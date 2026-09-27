@@ -36,13 +36,15 @@ Proposition 2.44.
 
 * `TauCeti.chartRiemannianVolume_apply`: the coordinate integral formula.
 * `TauCeti.chartRiemannianVolume_restrict_source`: a chart volume is supported on its source.
+* `TauCeti.chartRiemannianVolume_finiteAtFilter_nhds`: every point of a chart source has a
+  neighbourhood of finite chart volume.
 * `TauCeti.chartRiemannianVolume_restrict_overlap`: chart volume measures agree on overlaps.
 -/
 
 public section
 
 open Bundle FiberBundle MeasureTheory Riemannian.Tensor Set
-open scoped ENNReal Manifold
+open scoped ENNReal Manifold Topology
 
 noncomputable section
 
@@ -51,19 +53,14 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 /-- The Borel measurable space on the model vector space, used for chart volume. -/
 local instance chartVolumeMeasurableSpaceE : MeasurableSpace E := borel E
 
-/-- The Borel measurable space on the manifold, used for chart volume. -/
-local instance chartVolumeMeasurableSpaceM : MeasurableSpace M := borel M
-
 /-- The model vector space's measurable space is its Borel measurable space. -/
 local instance chartVolumeBorelSpaceE : BorelSpace E := ⟨rfl⟩
-
-/-- The manifold's measurable space is its Borel measurable space. -/
-local instance chartVolumeBorelSpaceM : BorelSpace M := ⟨rfl⟩
 
 /-- The coordinate density in a chart, extended measurably by zero off the chart target. -/
 private structure ChartVolumeDensityData (I : ModelWithCorners ℝ E H) (M : Type*)
@@ -75,27 +72,35 @@ private structure ChartVolumeDensityData (I : ModelWithCorners ℝ E H) (M : Typ
     (fun y ↦ ENNReal.ofReal (chartVolumeDensity (I := I) alpha ((extChartAt I alpha).symm y)))
     (extChartAt I alpha).target
 
+omit [MeasurableSpace M] [BorelSpace M] in
+/-- The chart density of a continuous metric, read in coordinates, is continuous on the chart
+target. -/
+private theorem continuousOn_chartVolumeDensity_extChartAt_symm
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) :
+    ContinuousOn (fun y ↦ chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
+      (extChartAt I α).target := by
+  have : IsManifold I (0 + 1) M := by
+    simpa using (inferInstance : IsManifold I 1 M)
+  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
+    IsContinuousRiemannianBundle.toIsContMDiffZero
+  apply (contMDiffOn_chartVolumeDensity (I := I) (n := 0) α).continuousOn.comp
+    (continuousOn_extChartAt_symm α)
+  intro y hy
+  simpa only [TangentBundle.trivializationAt_baseSet, extChartAt_source,
+    PartialEquiv.symm_target] using (extChartAt I α).symm.map_source hy
+
 private def chartVolumeDensityData
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (alpha : M) :
     ChartVolumeDensityData I M alpha := by
-  letI : IsManifold I (0 + 1) M := by
-    simpa using (inferInstance : IsManifold I 1 M)
-  letI : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
   let target := (extChartAt I alpha).target
   let density := fun y ↦
     ENNReal.ofReal (chartVolumeDensity (I := I) alpha ((extChartAt I alpha).symm y))
   have htarget : MeasurableSet target := by
     simpa only [target, Set.range_domRestrict, PartialEquiv.image_source_eq_target] using
       (measurableEmbedding_extChartAt_restrict (I := I) alpha).measurableSet_range
-  have hdensity : ContinuousOn density target := by
-    apply ENNReal.continuous_ofReal.comp_continuousOn
-    apply (contMDiffOn_chartVolumeDensity (I := I) (n := 0) alpha).continuousOn.comp
-      (continuousOn_extChartAt_symm alpha)
-    intro y hy
-    simpa only [TangentBundle.trivializationAt_baseSet, extChartAt_source,
-      PartialEquiv.symm_target] using
-      (extChartAt I alpha).symm.map_source hy
+  have hdensity : ContinuousOn density target :=
+    ENNReal.continuous_ofReal.comp_continuousOn
+      (continuousOn_chartVolumeDensity_extChartAt_symm alpha)
   classical
   refine
     { toFun := target.piecewise density 0
@@ -147,6 +152,35 @@ theorem chartRiemannianVolume_restrict_source
     (hs.inter (chartAt H α).open_source.measurableSet), chartRiemannianVolume_apply α hs]
   congr 2
   simp only [extChartAt_source, inter_assoc, inter_self]
+
+/-- Every point of a chart source has a neighbourhood of finite chart volume. The chart volume
+need not be locally finite at the frontier of the chart source, where the density may blow up. -/
+theorem chartRiemannianVolume_finiteAtFilter_nhds
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) {x : M}
+    (hx : x ∈ (chartAt H α).source) :
+    (chartRiemannianVolume (I := I) α).FiniteAtFilter (𝓝 x) := by
+  let e := extChartAt I α
+  let g := fun y ↦ chartVolumeDensity (I := I) α (e.symm y)
+  have hxe : x ∈ e.source := by rwa [extChartAt_source]
+  -- Near `e x` in the model, the coordinate density stays below `g (e x) + 1`.
+  have hbound : {y | g y < g (e x) + 1} ∈ 𝓝[range I] (e x) := by
+    rw [← nhdsWithin_extChartAt_target_eq' hxe]
+    exact ((continuousOn_chartVolumeDensity_extChartAt_symm α) (e x)
+      (e.map_source hxe)).eventually_lt_const (lt_add_one _)
+  let t := {y | g y < g (e x) + 1} ∩ Metric.ball (e x) 1
+  have ht : t ∈ 𝓝[range I] (e x) :=
+    Filter.inter_mem hbound (mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds _ one_pos))
+  have hs : e.source ∩ e ⁻¹' t ∈ 𝓝 x :=
+    Filter.inter_mem (extChartAt_source_mem_nhds' hxe)
+      (extChartAt_preimage_mem_nhds_of_mem_nhdsWithin hxe ht)
+  refine ⟨interior (e.source ∩ e ⁻¹' t), interior_mem_nhds.2 hs, ?_⟩
+  rw [chartRiemannianVolume_apply α isOpen_interior.measurableSet]
+  have himage : e '' (interior (e.source ∩ e ⁻¹' t) ∩ e.source) ⊆ t := by
+    rintro _ ⟨z, ⟨hz, -⟩, rfl⟩
+    exact (interior_subset hz).2
+  refine setLIntegral_lt_top_of_le_nnreal ?_ ⟨(g (e x) + 1).toNNReal, fun y hy ↦ ?_⟩
+  · exact ((measure_mono (himage.trans inter_subset_right)).trans_lt measure_ball_lt_top).ne
+  · exact ENNReal.ofReal_le_ofReal (himage hy).1.le
 
 /-- The local Riemannian volume measures supplied by two preferred charts agree on their overlap.
 This is the cocycle condition needed to descend the local coordinate measures to the manifold. -/

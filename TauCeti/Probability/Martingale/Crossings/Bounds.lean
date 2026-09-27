@@ -67,9 +67,12 @@ private lemma lintegral_pos_part_revCEFinite_le
         rw [lintegral_add_right _ measurable_const, lintegral_const]
     _ ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
         gcongr
+        have hmeas : AEStronglyMeasurable (revCEFinite (μ := μ) f 𝔽 N M) μ := by
+          rw [revCEFinite_apply]
+          exact integrable_condExp.aestronglyMeasurable
         have hconv : ∫⁻ ω, ENNReal.ofReal |revCEFinite (μ := μ) f 𝔽 N M ω| ∂μ =
             eLpNorm (revCEFinite (μ := μ) f 𝔽 N M) 1 μ := by
-          rw [eLpNorm_one_eq_lintegral_enorm]
+          rw [eLpNorm_one_eq_lintegral_enorm hmeas]
           congr 1; ext ω
           exact (Real.enorm_eq_ofReal_abs _).symm
         rw [hconv]

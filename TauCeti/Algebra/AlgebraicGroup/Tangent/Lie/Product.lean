@@ -153,8 +153,7 @@ private theorem ofTensorProductComponents_tensorProductComponents
       (Bialgebra.CounitAlgebra R (H₁ ⊗[R] H₂) B)) :
     ofTensorProductComponents (tensorProductComponents d) = d := by
   ext x
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul h₁ h₂ =>
       simp only [ofTensorProductComponents, tensorProductComponents, LieHom.prod_apply,

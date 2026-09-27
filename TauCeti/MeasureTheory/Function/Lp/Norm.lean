@@ -35,10 +35,12 @@ theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alph
     (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
     ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
   obtain ⟨A, hAnorm, hAcoe⟩ : ∃ A : Lp ℝ q m, ‖A‖ = ‖g‖ ∧ ∀ᵐ z ∂m, A z = ‖g z‖ :=
-    ⟨(Lp.memLp g).norm.toLp _, by rw [Lp.norm_toLp, eLpNorm_norm, ← Lp.norm_def],
+    ⟨(Lp.memLp g).norm.toLp _,
+      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable g), ← Lp.norm_def],
       (Lp.memLp g).norm.coeFn_toLp⟩
   obtain ⟨B, hBnorm, hBcoe⟩ : ∃ B : Lp ℝ q m, ‖B‖ = ‖h‖ ∧ ∀ᵐ z ∂m, B z = ‖h z‖ :=
-    ⟨(Lp.memLp h).norm.toLp _, by rw [Lp.norm_toLp, eLpNorm_norm, ← Lp.norm_def],
+    ⟨(Lp.memLp h).norm.toLp _,
+      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable h), ← Lp.norm_def],
       (Lp.memLp h).norm.coeFn_toLp⟩
   calc ‖f‖ ≤ ‖a • A + b • B‖ := by
         refine Lp.norm_le_norm_of_ae_le ?_

@@ -115,12 +115,12 @@ local instance : SymmetricCategory
 /-- The monoidal structure on presheaves of modules on the slice site. -/
 local instance : MonoidalCategory
     (PresheafOfModules.{u} ((ringCatSheaf R).over X).obj) :=
-  PresheafOfModules.monoidalCategory (R := (R.over X).obj)
+  PresheafOfModulesOfCommRing.monoidalCategory (R := (R.over X).obj)
 
 /-- The symmetric structure on presheaves of modules on the slice site. -/
 local instance : SymmetricCategory
     (PresheafOfModules.{u} ((ringCatSheaf R).over X).obj) :=
-  PresheafOfModules.symmetricCategory (R := (R.over X).obj)
+  PresheafOfModulesOfCommRing.symmetricCategory (R := (R.over X).obj)
 
 /-- Restriction of presheaves to the slice is strong monoidal. -/
 local instance overPresheafFunctorMonoidal : (presheafRestriction).Monoidal := by

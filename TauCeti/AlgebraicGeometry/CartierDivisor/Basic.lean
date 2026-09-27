@@ -34,10 +34,9 @@ unit.
 * `Scheme.principalCartierDivisor` sends a nonzero rational function to its principal Cartier
   divisor, the case of the whole space.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Cartier divisors; the
-dictionaries `Cartier ≃ line bundles` and (smooth curve) `Weil ≃ Cartier`". The rational-function
-sheaf was constructed in `TauCeti/AlgebraicGeometry/Modules/RationalFunctions.lean`; the next step
-is to construct `𝒪_X(D)` from a Cartier divisor and prove the Cartier--line-bundle dictionary.
+The rational-function sheaf is constructed in
+`TauCeti/AlgebraicGeometry/Modules/RationalFunctions.lean`; the line bundle `𝒪_X(D)` of a Cartier
+divisor is constructed in `TauCeti/AlgebraicGeometry/CartierDivisor/Sheaf.lean`.
 
 The definition follows the Stacks Project, *Divisors* (Tag 02AR). No formalization is vendored.
 The sheaf quotient is Mathlib's categorical cokernel in the abelian category of sheaves of

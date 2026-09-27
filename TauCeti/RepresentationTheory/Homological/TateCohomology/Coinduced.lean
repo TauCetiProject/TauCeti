@@ -42,7 +42,7 @@ public section
 
 universe u
 
-open CategoryTheory Limits Rep
+open CategoryTheory Limits MonoidalCategory Rep
 
 namespace TauCeti.TateCohomology
 
@@ -182,6 +182,54 @@ theorem map_eq_zero_of_hom_apply_eq_sum {A B : Rep k G} (f : A ⟶ B) (φ : A.V 
     exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g ↦ by simp
   rw [hfac, Functor.map_comp, (isZero_coindBot A.V n).eq_zero_of_src
     ((tateCohomologyFunctor n).map ψ), Limits.comp_zero]
+
+omit X in
+/-- If the identity of `C` is the norm `x ↦ ∑ g, C.ρ g (φ (C.ρ g⁻¹ x))` of a `k`-linear map `φ`,
+then for every representation `M` all Tate cohomology of `M ⊗ C` vanishes: the identity of `M ⊗ C`
+is the norm of `M ⊗ φ`. -/
+theorem isZero_tensor_of_forall_eq_sum {C : Rep k G} (φ : C.V →ₗ[k] C.V)
+    (hφ : ∀ x, x = ∑ g : G, C.ρ g (φ (C.ρ g⁻¹ x))) (M : Rep k G) (n : ℤ) :
+    IsZero (tateCohomology (M ⊗ C) n) := by
+  rw [IsZero.iff_id_eq_zero, ← (tateCohomologyFunctor n).map_id]
+  refine map_eq_zero_of_hom_apply_eq_sum (𝟙 (M ⊗ C)) (LinearMap.lTensor M.V φ) (fun x ↦ ?_) n
+  induction x using TensorProduct.inductionOn with
+  | tmul m c =>
+    rw [Rep.hom_id, Representation.IntertwiningMap.coe_id, id_eq]
+    conv_lhs => rw [hφ c]
+    simp [TensorProduct.tmul_sum, Representation.tprod_apply, ← Module.End.mul_apply, ← map_mul]
+  | add x y hx hy => simp only [map_add, hx, hy, Finset.sum_add_distrib]
+
+/-- For a finite group and any representation `M`, all Tate cohomology of
+`M ⊗ Coind_⊥^G X` vanishes: the identity of `Coind_⊥^G X` is the norm of the projection onto the
+functions supported at `1`. -/
+theorem isZero_tensor_coindBot (M : Rep k G) (n : ℤ) :
+    IsZero (tateCohomology (M ⊗ coindBot k G X) n) := by
+  classical
+  -- `φ` sends a function to the function supported at `1` with the same value there.
+  set φ : (coindBot k G X : Type u) →ₗ[k] coindBot k G X :=
+    (coindBotEquivPi k G X).symm.toLinearMap ∘ₗ LinearMap.single k (fun _ : G ↦ X) 1 ∘ₗ
+      LinearMap.proj 1 ∘ₗ (coindBotEquivPi k G X).toLinearMap with hφ
+  have hφ_coe : ∀ v : coindBot k G X, (φ v).1 = Pi.single 1 (v.1 1) := fun v ↦ by
+    rw [hφ, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply,
+      LinearMap.single_apply, coindBotEquivPi_symm_apply_coe]
+  refine isZero_tensor_of_forall_eq_sum φ (fun f ↦ ?_) M n
+  refine Subtype.ext (funext fun h ↦ ?_)
+  -- The `g`-th summand is the function supported at `g⁻¹` with value `f g⁻¹`.
+  have hval : ∀ g : G, (((coindBot k G X).ρ g) (φ (((coindBot k G X).ρ g⁻¹) f))).1 h =
+      if h * g = 1 then f.1 g⁻¹ else 0 := fun g ↦ by
+    rw [coindBot_ρ_apply_coe, hφ_coe, coindBot_ρ_apply_coe, one_mul, Pi.single_apply]
+  simp only [Submodule.coe_sum, Finset.sum_apply, hval]
+  rw [Finset.sum_eq_single h⁻¹ (fun g _ hg ↦ ite_eq_right fun H ↦ hg (eq_inv_of_mul_eq_one_right H))
+    (fun H ↦ (H (Finset.mem_univ _)).elim)]
+  simp
+
+/-- For a finite group and any representation `M`, all Tate cohomology of `M ⊗ Ind_⊥^G X`
+vanishes. -/
+theorem isZero_tensor_indBot (M : Rep k G) (n : ℤ) :
+    IsZero (tateCohomology (M ⊗ indBot k G X) n) :=
+  (isZero_tensor_coindBot X M n).of_iso
+    ((tateCohomologyFunctor n).mapIso (whiskerLeftIso M (indBotIsoCoindBot X)))
 
 end Fintype
 

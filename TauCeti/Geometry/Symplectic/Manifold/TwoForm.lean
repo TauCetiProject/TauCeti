@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
-public import TauCeti.Geometry.Manifold.TwoForm
+public import TauCeti.Geometry.Manifold.TwoForm.Closed
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex
 
 /-!
@@ -23,19 +23,24 @@ In particular, tameness already forces fiberwise nondegeneracy. The constant con
 that every finite-dimensional symplectic vector space, and especially the standard doubled model,
 gives a non-vacuous manifold-level example.
 
-Closedness is not included: the pinned Mathlib has no exterior derivative of manifold differential
-forms. A symplectic manifold will be a smooth two-form satisfying both the nondegeneracy predicate
-defined here and the separate closedness predicate once that exterior-calculus layer exists.
+Closedness is the separate predicate `TauCeti.SmoothTwoForm.IsClosed` of
+`TauCeti/Geometry/Manifold/TwoForm/Closed.lean`, defined through the exterior derivative of the
+coordinate expressions of the form. A **symplectic form** on a manifold is a smooth two-form which
+is both closed and fiberwise nondegenerate; `TauCeti.SmoothTwoForm.IsSymplectic` bundles the two
+conditions, and a constant symplectic form on a finite-dimensional vector space is the basic
+example.
 
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate`: fiberwise nondegeneracy of a smooth two-form.
+* `TauCeti.SmoothTwoForm.IsSymplectic`: a closed, fiberwise nondegenerate smooth two-form.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt`: the symplectic form on a tangent fiber.
 * `TauCeti.SmoothTwoForm.Tames` and `TauCeti.SmoothTwoForm.Compatible`: the unbundled pointwise
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
   relations characterized fiber by fiber through the linear theory.
-* `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form.
+* `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form, which is
+  symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`).
 
 The definitions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.2.
@@ -81,6 +86,14 @@ lemma isNondegenerate_iff_separatingLeft :
     apply h x v
     intro w
     simpa only [bilinFormAt_apply] using hv w
+
+/-- A smooth two-form is **symplectic** when it is closed and fiberwise nondegenerate. This is the
+manifold-level notion of a symplectic form; a symplectic manifold is a manifold carrying one. -/
+structure IsSymplectic (form : SmoothTwoForm I M) : Prop where
+  /-- A symplectic form is closed. -/
+  isClosed : form.IsClosed
+  /-- A symplectic form is fiberwise nondegenerate. -/
+  isNondegenerate : form.IsNondegenerate
 
 /-- A fiberwise nondegenerate smooth two-form gives a symplectic form on each tangent space. -/
 def IsNondegenerate.symplecticFormAt (h : form.IsNondegenerate) (x : M) :
@@ -213,6 +226,16 @@ lemma isNondegenerate_constSmooth (omegaForm : SymplecticForm V) :
     SmoothTwoForm.const_bilinFormAt _ _ x
   rw [hx]
   exact omegaForm.nondegenerate
+
+/-- A constant smooth symplectic form is closed. -/
+lemma isClosed_constSmooth (omegaForm : SymplecticForm V) : omegaForm.constSmooth.IsClosed :=
+  SmoothTwoForm.isClosed_const _ _
+
+/-- **A symplectic vector space is a symplectic manifold**: a constant smooth symplectic form is
+symplectic. -/
+lemma isSymplectic_constSmooth (omegaForm : SymplecticForm V) :
+    omegaForm.constSmooth.IsSymplectic :=
+  ⟨isClosed_constSmooth omegaForm, isNondegenerate_constSmooth omegaForm⟩
 
 /-- Tameness of a pair of constant smooth structures is exactly tameness of the underlying linear
 pair. -/

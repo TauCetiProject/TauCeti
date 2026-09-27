@@ -7,15 +7,15 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.Trace
-import Mathlib.LinearAlgebra.Matrix.StdBasis
+import Mathlib.Data.Matrix.Basis
 
 /-!
 # Adjugation of two-by-two matrices
 
-This file contains the characteristic-not-two-independent linear algebra used by the Spin(3)
-matrix model: the adjugate is linear in size two, and it is characterized by reversal of products
-and scalar translates of the negative. These results are generic matrix facts and are kept outside
-the Clifford algebra file so downstream matrix users can reuse them directly.
+The adjugate of a two-by-two matrix is linear over any commutative ring, including in
+characteristic two. It is the unique function reversing products for which every matrix plus its
+image is scalar; linearity is not needed for this characterization. These facts identify Clifford
+reversal with adjugation in the two-by-two matrix model of Spin(3).
 -/
 
 public section
@@ -43,139 +43,48 @@ noncomputable def adjugateFinTwoLinearMap :
     adjugateFinTwoLinearMap A = Matrix.adjugate A := by
   simp [adjugateFinTwoLinearMap, adjugate_fin_two_eq_trace_smul_one_sub]
 
-section
-
-private theorem one_sub_single_diag (i j : Fin 2) (hij : i ≠ j) :
-    (1 : Matrix (Fin 2) (Fin 2) K) - Matrix.single i i (1 : K) =
-      Matrix.single j j (1 : K) := by
-  fin_cases i <;> fin_cases j <;> ext a b <;> fin_cases a <;> fin_cases b <;>
-    simp_all [Matrix.single]
-
-private theorem neg_single_offdiag_mul_smul_one_sub_single_diag_entry
-    (r : K) (i j : Fin 2) (hij : i ≠ j) :
-    let E : Matrix (Fin 2) (Fin 2) K := Matrix.single i j 1
-    let D : Matrix (Fin 2) (Fin 2) K := r • 1 - Matrix.single i i 1
-    ((-E) * D) i j = -r := by
-  dsimp
-  rw [neg_mul]
-  rw [Matrix.neg_apply, Matrix.single_mul_apply_same]
-  simp [hij]
-
-/-- An anti-multiplicative linear map with scalar translates sends an off-diagonal unit
+/-- An anti-multiplicative function with scalar translates sends an off-diagonal unit
 to its negative. -/
-private theorem map_single_eq_neg_of_ne
-    (f : Matrix (Fin 2) (Fin 2) K →ₗ[K] Matrix (Fin 2) (Fin 2) K)
+private theorem map_single_eq_neg_of_ne {R : Type*} [NonAssocRing R]
+    (f : Matrix (Fin 2) (Fin 2) R → Matrix (Fin 2) (Fin 2) R)
     (hmul : ∀ A B, f (A * B) = f B * f A)
-    (hscalar : ∀ A, ∃ r : K, A + f A = r • 1)
+    (hscalar : ∀ A, ∃ r : R, A + f A = r • 1)
     (i j : Fin 2) (hij : i ≠ j) :
     f (Matrix.single i j 1) = -(Matrix.single i j 1) := by
-  let E : Matrix (Fin 2) (Fin 2) K := Matrix.single i j 1
-  obtain ⟨r, hr⟩ := hscalar E
-  have hf : f E = r • 1 - E := eq_sub_of_add_eq (by simpa [add_comm] using hr)
-  let F : Matrix (Fin 2) (Fin 2) K := Matrix.single j i 1
-  obtain ⟨s, hs⟩ := hscalar F
-  have hfF : f F = s • 1 - F := eq_sub_of_add_eq (by simpa [add_comm] using hs)
-  have hEF : E * F = Matrix.single i i 1 := by simp [E, F]
+  obtain ⟨r, hr⟩ := hscalar (Matrix.single i j 1)
+  obtain ⟨s, hs⟩ := hscalar (Matrix.single j i 1)
   obtain ⟨t, ht⟩ := hscalar (Matrix.single i i 1)
-  have hfD : f (Matrix.single i i 1) = t • 1 - Matrix.single i i 1 :=
-    eq_sub_of_add_eq (by simpa [add_comm] using ht)
-  have hp := hmul E F
-  rw [hEF, hfD, hfF, hf] at hp
-  have hpji := congr_fun (congr_fun hp j) i
+  have hf := eq_sub_of_add_eq' hr
+  have hg := eq_sub_of_add_eq' hs
+  have hd := eq_sub_of_add_eq' ht
+  have hp := hmul (Matrix.single i j 1) (Matrix.single j i 1)
+  simp only [single_mul_single_same, mul_one] at hp
+  rw [hf, hg, hd] at hp
   have hr0 : r = 0 := by
-    -- The off-diagonal entry of the reversed product is the only surviving matrix-unit
-    -- coefficient; evaluating it isolates the scalar translate `r`.
-    have hpji' : (0 : K) = -r := by
-      let D : Matrix (Fin 2) (Fin 2) K := t • 1 - Matrix.single i i 1
-      let A : Matrix (Fin 2) (Fin 2) K := s • 1 - Matrix.single j i 1
-      let B : Matrix (Fin 2) (Fin 2) K := r • 1 - Matrix.single i j 1
-      have hleft : (D j i : K) = 0 := by
-        simp [D, hij, Ne.symm hij]
-      have hright : ((A * B) j i : K) = -r := by
-        simp [A, B, sub_mul, mul_sub, hij, Ne.symm hij]
-      calc
-        (0 : K) = D j i := hleft.symm
-        _ = ((s • 1 - F) * (r • 1 - E)) j i := by simpa [D] using hpji
-        _ = (A * B) j i := by simp [A, B, E, F]
-        _ = -r := hright
-    exact neg_eq_zero.mp hpji'.symm
-  have hneg : f E = -E := by
-    rw [hf, hr0]
-    simp
-  simpa only [E] using hneg
+    have h := congrArg (fun A => A j i) hp
+    simpa [sub_mul, mul_sub, smul_one_eq_diagonal, hij, Ne.symm hij] using h
+  simp [hf, hr0, smul_one_eq_diagonal]
 
-/-- Such a map exchanges the two diagonal matrix units. -/
-private theorem map_single_self_eq_single_of_ne
-    (f : Matrix (Fin 2) (Fin 2) K →ₗ[K] Matrix (Fin 2) (Fin 2) K)
+/-- An anti-multiplicative function for which every matrix plus its image is scalar
+is adjugation. No additivity or homogeneity assumption is needed. -/
+theorem eq_adjugate_of_antimultiplicative_of_exists_add_eq_smul_one
+    (f : Matrix (Fin 2) (Fin 2) K → Matrix (Fin 2) (Fin 2) K)
     (hmul : ∀ A B, f (A * B) = f B * f A)
     (hscalar : ∀ A, ∃ r : K, A + f A = r • 1)
-    (i j : Fin 2) (hij : i ≠ j) :
-    f (Matrix.single i i 1) = Matrix.single j j 1 := by
-  let D : Matrix (Fin 2) (Fin 2) K := Matrix.single i i 1
-  let E : Matrix (Fin 2) (Fin 2) K := Matrix.single i j 1
-  obtain ⟨r, hr⟩ := hscalar D
-  have hfD : f D = r • 1 - D := eq_sub_of_add_eq (by simpa [add_comm] using hr)
-  have hfE := map_single_eq_neg_of_ne f hmul hscalar i j hij
-  have hDE : D * E = E := by
-    simp [D, E]
-  have hp := hmul D E
-  rw [hDE, hfE, hfD] at hp
-  have hpij := congr_fun (congr_fun hp i) j
-  have hr1 : r = 1 := by
-    have hpij' : (-1 : K) = -r := by
-      have hpij'' := hpij
-      simp only [D] at hpij''
-      rw [neg_single_offdiag_mul_smul_one_sub_single_diag_entry r i j hij] at hpij''
-      calc
-        (-1 : K) = (-(Matrix.single i j (1 : K))) i j := by simp
-        _ = -r := hpij''
-    have hr1' : (1 : K) = r := by simpa using congrArg Neg.neg hpij'
-    exact hr1'.symm
-  rw [hfD, hr1]
-  simpa [D, smul_eq_mul] using one_sub_single_diag i j hij
-
-/-- Such a map agrees with adjugation on every standard matrix unit. -/
-private theorem map_single_eq_adjugate
-    (f : Matrix (Fin 2) (Fin 2) K →ₗ[K] Matrix (Fin 2) (Fin 2) K)
-    (hmul : ∀ A B, f (A * B) = f B * f A)
-    (hscalar : ∀ A, ∃ r : K, A + f A = r • 1) (i j : Fin 2) :
-    f (Matrix.single i j 1) = Matrix.adjugate (Matrix.single i j 1) := by
-  by_cases hij : i = j
-  · subst j
-    fin_cases i
-    · calc
-        f (Matrix.single _ _ 1) = Matrix.single (1 : Fin 2) (1 : Fin 2) 1 := by
-          simpa using
-            map_single_self_eq_single_of_ne f hmul hscalar (0 : Fin 2) (1 : Fin 2) (by decide)
-        _ = Matrix.adjugate (Matrix.single _ _ 1) := by
-          rw [adjugate_fin_two_eq_trace_smul_one_sub]
-          simpa using
-            (one_sub_single_diag (0 : Fin 2) (1 : Fin 2) (by decide)).symm
-    · calc
-        f (Matrix.single _ _ 1) = Matrix.single (0 : Fin 2) (0 : Fin 2) 1 := by
-          simpa using
-            map_single_self_eq_single_of_ne f hmul hscalar (1 : Fin 2) (0 : Fin 2) (by decide)
-        _ = Matrix.adjugate (Matrix.single _ _ 1) := by
-          rw [adjugate_fin_two_eq_trace_smul_one_sub]
-          simpa using
-            (one_sub_single_diag (1 : Fin 2) (0 : Fin 2) (by decide)).symm
-  · rw [map_single_eq_neg_of_ne f hmul hscalar i j hij,
-      adjugate_fin_two_eq_trace_smul_one_sub]
-    simp [hij]
-
-/-- A linear anti-multiplicative map whose scalar translate is the negative is adjugation. -/
-theorem eq_adjugateFinTwoLinearMap_of_antimultiplicative_of_exists_add_eq_smul_one
-    (f : Matrix (Fin 2) (Fin 2) K →ₗ[K] Matrix (Fin 2) (Fin 2) K)
-    (hmul : ∀ A B, f (A * B) = f B * f A)
-    (hscalar : ∀ A, ∃ r : K, A + f A = r • 1) :
-    f = adjugateFinTwoLinearMap := by
-  refine (Matrix.stdBasis K (Fin 2) (Fin 2)).ext ?_
-  rintro ⟨i, j⟩
-  rw [Matrix.stdBasis_eq_single]
-  simpa only [adjugateFinTwoLinearMap_apply] using
-    map_single_eq_adjugate f hmul hscalar i j
-
-end
-
+    (A : Matrix (Fin 2) (Fin 2) K) : f A = adjugate A := by
+  obtain ⟨r, hr⟩ := hscalar A
+  have hf := eq_sub_of_add_eq' hr
+  obtain ⟨s, hs⟩ := hscalar (A * Matrix.single 0 1 1)
+  have hp := hmul A (Matrix.single 0 1 1)
+  rw [map_single_eq_neg_of_ne f hmul hscalar 0 1 (by decide),
+    eq_sub_of_add_eq' hs, hf] at hp
+  have h : -A 0 0 = -r + A 1 1 := by
+    simpa [neg_mul, mul_sub] using congrArg (fun B => B 0 1) hp
+  have hr : r = trace A := by
+    rw [trace_fin_two]
+    apply neg_injective
+    simpa [neg_add, sub_eq_add_neg, add_assoc, add_comm] using
+      (congrArg (· - A 1 1) h).symm
+  rw [hf, hr, adjugate_fin_two_eq_trace_smul_one_sub]
 
 end Matrix

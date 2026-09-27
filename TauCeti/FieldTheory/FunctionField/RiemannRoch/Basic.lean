@@ -118,6 +118,20 @@ theorem mem_riemannRochSpace_iff_neg_le_ord {D : Divisor k F} {f : F} (hf : f �
   rw [P.valuation_eq_exp_neg_ord hf, WithZero.exp_le_exp]
   omega
 
+/-- Membership in `L(nP)` for a single place `P`: a nonzero function lies in `L(nP)` exactly when
+its order at `P` is at least `-n` and it is regular at every other place. -/
+theorem mem_riemannRochSpace_zsmul_ofPoint_iff {P : Place k F} {n : ℤ} {f : F} (hf : f ≠ 0) :
+    f ∈ riemannRochSpace (n • WeilDivisor.ofPoint P) ↔
+      -n ≤ P.ord f ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord f := by
+  rw [mem_riemannRochSpace_iff_neg_le_ord hf]
+  constructor
+  · refine fun h ↦ ⟨by simpa using h P, fun Q hQ ↦ ?_⟩
+    simpa [WeilDivisor.coeff_ofPoint_of_ne hQ] using h Q
+  · rintro ⟨hP, hQ⟩ Q
+    rcases eq_or_ne Q P with rfl | hQP
+    · simpa using hP
+    · simpa [WeilDivisor.coeff_ofPoint_of_ne hQP] using hQ Q hQP
+
 /-- Enlarging a divisor enlarges its Riemann–Roch space (Stichtenoth, Lemma 1.4.8, first
 part). -/
 theorem riemannRochSpace_mono {D E : Divisor k F} (h : D ≤ E) :

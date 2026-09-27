@@ -41,6 +41,7 @@ random path law into column and cell noise.
 
 * `TauCeti.Probability.arrayRowCodingLaw` -- the canonical joint law of the random row law and the
   coded array;
+* `TauCeti.Probability.rowCodingArrayLaw` -- its array marginal;
 * `TauCeti.Probability.ConditionallyIIDWith.jointLaw_arrayRow_eq_arrayRowCodingLaw` -- a row
   directing measure identifies the original coupled law with the canonical coding law;
 * `TauCeti.Probability.SeparatelyExchangeable.map_pairReindex_arrayRowCodingLaw_eq` -- the coupled
@@ -65,6 +66,7 @@ public section
 noncomputable section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -130,6 +132,48 @@ theorem map_snd_arrayRowCodingLaw (π : Measure (ProbabilityMeasure (ℕ → α)
   refine congrArg (Measure.map · _) ?_
   funext q p
   rfl
+
+/-- The array law obtained by drawing a random path measure with law `π`, then using independent
+uniform variables to sample one row from that path measure at each row index. -/
+def rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → α))) : Measure (ℕ × ℕ → α) :=
+  (arrayRowCodingLaw π).map Prod.snd
+
+/-- The row-coding array law is the array marginal of the coupled coding law. -/
+theorem rowCodingArrayLaw_eq_map_snd (π : Measure (ProbabilityMeasure (ℕ → α))) :
+    rowCodingArrayLaw π = (arrayRowCodingLaw π).map Prod.snd := by
+  rw [rowCodingArrayLaw]
+
+/-- The defining pushforward expression for `rowCodingArrayLaw`. -/
+theorem rowCodingArrayLaw_def (π : Measure (ProbabilityMeasure (ℕ → α))) :
+    rowCodingArrayLaw π =
+      (π.prod (Measure.infinitePi fun _ : ℕ ↦ (volume : Measure unitInterval))).map
+        fun q p ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 := by
+  rw [rowCodingArrayLaw, arrayRowCodingLaw_def,
+    Measure.map_map measurable_snd measurable_arrayRowCoding]
+  rfl
+
+/-- A probability law of random path measures gives a probability row-coding array law. -/
+instance instIsProbabilityMeasureRowCodingArrayLaw
+    (π : Measure (ProbabilityMeasure (ℕ → α))) [IsProbabilityMeasure π] :
+    IsProbabilityMeasure (rowCodingArrayLaw π) := by
+  rw [rowCodingArrayLaw_def]
+  infer_instance
+
+/-- The row-coding construction preserves sums of mixing laws. -/
+@[simp]
+theorem rowCodingArrayLaw_add (π₁ π₂ : Measure (ProbabilityMeasure (ℕ → α)))
+    [SFinite π₁] [SFinite π₂] :
+    rowCodingArrayLaw (π₁ + π₂) = rowCodingArrayLaw π₁ + rowCodingArrayLaw π₂ := by
+  rw [rowCodingArrayLaw_def, rowCodingArrayLaw_def, rowCodingArrayLaw_def, Measure.add_prod]
+  exact Measure.map_add _ _ measurable_arrayRowCoding.snd
+
+/-- The row-coding construction preserves nonnegative scalar multiples of mixing laws. -/
+@[simp]
+theorem rowCodingArrayLaw_smul (c : ℝ≥0∞) (π : Measure (ProbabilityMeasure (ℕ → α))) :
+    rowCodingArrayLaw (c • π) = c • rowCodingArrayLaw π := by
+  rw [rowCodingArrayLaw_def, rowCodingArrayLaw_def, Measure.prod_smul_left]
+  exact Measure.map_smul _
+    measurable_arrayRowCoding.snd.aemeasurable
 
 /-- A directing measure for the row process identifies its joint law with the canonical coupled
 row-coding law.  Unlike the array-law-only coding theorem, this keeps the directing measure as a

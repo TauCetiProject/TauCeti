@@ -47,6 +47,12 @@ theorem constructionALattice_eq_integralLattice :
       toZModSubmodule_code_eq_euclideanDual.le := by
   rw [constructionALattice]
 
+/-- The named Golay Construction A lattice inherits the nondegeneracy of Construction A. -/
+instance instIsNondegenerateConstructionALattice : constructionALattice.IsNondegenerate := by
+  rw [constructionALattice_eq_integralLattice]
+  exact ConstructionA.isNondegenerate_integralLattice 2 code.toAddSubgroup
+    toZModSubmodule_code_eq_euclideanDual.le
+
 /-- The Golay Construction A lattice has rank `24`. -/
 theorem finrank_constructionALattice : Module.finrank ℤ constructionALattice = 24 := by
   rw [IntegralLattice.finrank_carrier]

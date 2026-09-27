@@ -18,7 +18,9 @@ prime to `p` and the order of `u` a power of `p`. Their orders are respectively 
 part `ordCompl[p] (orderOf x)` and the projected part `ordProj[p] (orderOf x)`. In the
 group-theoretic literature the two are the `p'`-part and the `p`-part of `x`.
 
-Both factors are powers of `x`, so anything commuting with `x` commutes with both; this is how the
+The `p`-free construction and its order and uniqueness results require only a monoid; the
+complementary `p`-part uses group inverses. Both factors are powers of `x`, so anything commuting
+with `x` commutes with both; this is how the
 factorisation gets used, since it lets a `p`-subgroup be attached to `x` inside the centraliser of
 its `p`-free factor.
 
@@ -29,6 +31,7 @@ its `p`-free factor.
 
 ## Main results
 
+* `TauCeti.pFreePart_mem_powers`: the `p`-free part is a natural power in any monoid.
 * `TauCeti.pFreePart_mul_pPart`: the two factors multiply back to `x`.
 * `TauCeti.commute_pFreePart_pPart`: the two factors commute.
 * `TauCeti.commute_pFreePart`, `TauCeti.commute_pPart`: anything commuting with `x` commutes with
@@ -47,7 +50,11 @@ public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] {p : ℕ} {x : G}
+variable {p : ℕ}
+
+section Monoid
+
+variable {G : Type*} [Monoid G] {x : G}
 
 /-- The exponent cutting out the `p`-free part of an element of order `n`: it is divisible by
 `ordProj[p] n`, and Euler's theorem makes it congruent to `1` modulo `ordCompl[p] n`. -/
@@ -55,67 +62,20 @@ private noncomputable def pFreeExponent (p : ℕ) (x : G) : ℕ :=
   (ordProj[p] (orderOf x)) ^ (ordCompl[p] (orderOf x)).totient
 
 /-- The power of `x` that gives its **`p`-free part** when `p` is prime and `x` has finite order.
-Together with `TauCeti.pPart p x`, it factors `x` into two commuting elements. -/
+In a group, together with `TauCeti.pPart p x`, it factors `x` into two commuting elements. -/
 noncomputable def pFreePart (p : ℕ) (x : G) : G := x ^ pFreeExponent p x
 
-/-- The element complementary to `TauCeti.pFreePart p x` in `x`; when `p` is prime and `x` has
-finite order, it is the **`p`-part** of `x`. -/
-noncomputable def pPart (p : ℕ) (x : G) : G := (pFreePart p x)⁻¹ * x
-
-/-- The `p`-free and `p`-parts of `x` multiply back to `x`. -/
-@[simp]
-theorem pFreePart_mul_pPart (p : ℕ) (x : G) : pFreePart p x * pPart p x = x :=
-  mul_inv_cancel_left _ _
-
-/-- The `p`-free part of `x` is a power of `x`. -/
-theorem pFreePart_mem_zpowers (p : ℕ) (x : G) : pFreePart p x ∈ Subgroup.zpowers x := by
+/-- The `p`-free part of `x` is a natural power of `x`. -/
+theorem pFreePart_mem_powers (p : ℕ) (x : G) : pFreePart p x ∈ Submonoid.powers x := by
   rw [pFreePart]
-  exact pow_mem (Subgroup.mem_zpowers x) _
-
-/-- The `p`-part of `x` is a power of `x`. -/
-theorem pPart_mem_zpowers (p : ℕ) (x : G) : pPart p x ∈ Subgroup.zpowers x :=
-  mul_mem (inv_mem (pFreePart_mem_zpowers p x)) (Subgroup.mem_zpowers x)
-
-/-- The `p`-free and `p`-parts of `x` commute. -/
-theorem commute_pFreePart_pPart (p : ℕ) (x : G) : Commute (pFreePart p x) (pPart p x) := by
-  obtain ⟨a, ha⟩ := pFreePart_mem_zpowers p x
-  obtain ⟨b, hb⟩ := pPart_mem_zpowers p x
-  rw [← ha, ← hb]
-  exact (Commute.refl x).zpow_zpow a b
+  exact pow_mem (Submonoid.mem_powers x) _
 
 /-- An element commuting with `x` commutes with the `p`-free part of `x`. -/
 theorem commute_pFreePart (p : ℕ) {y : G} (h : Commute y x) : Commute y (pFreePart p x) :=
   h.pow_right _
 
-/-- An element commuting with `x` commutes with the `p`-part of `x`. -/
-theorem commute_pPart (p : ℕ) {y : G} (h : Commute y x) : Commute y (pPart p x) := by
-  rw [pPart]
-  exact ((commute_pFreePart p h).inv_right).mul_right h
-
-/-- The reversed product of the `p`-part and `p`-free part of `x` is `x`. -/
-@[simp]
-theorem pPart_mul_pFreePart (p : ℕ) (x : G) : pPart p x * pFreePart p x = x := by
-  rw [← (commute_pFreePart_pPart p x).eq, pFreePart_mul_pPart]
-
 @[simp]
 theorem pFreePart_one (p : ℕ) : pFreePart p (1 : G) = 1 := one_pow _
-
-@[simp]
-theorem pPart_one (p : ℕ) : pPart p (1 : G) = 1 := by rw [pPart, pFreePart_one, inv_one, mul_one]
-
-/-- **Conjugation transports the `p`-free part.**  Both factors are powers of `x` cut out by an
-exponent that only depends on the order of `x`, and conjugation preserves orders. -/
-@[simp]
-theorem pFreePart_conj (p : ℕ) (g x : G) : pFreePart p (g * x * g⁻¹) = g * pFreePart p x * g⁻¹ := by
-  have h : orderOf (g * x * g⁻¹) = orderOf x :=
-    (SemiconjBy.orderOf_eq g (by simp [SemiconjBy])).symm
-  rw [pFreePart, pFreePart, pFreeExponent, pFreeExponent, h, conj_pow]
-
-/-- **Conjugation transports the `p`-part.** -/
-@[simp]
-theorem pPart_conj (p : ℕ) (g x : G) : pPart p (g * x * g⁻¹) = g * pPart p x * g⁻¹ := by
-  rw [pPart, pPart, pFreePart_conj]
-  group
 
 section Order
 
@@ -163,6 +123,101 @@ theorem not_dvd_orderOf_pFreePart : ¬ p ∣ orderOf (pFreePart p x) := by
   rw [orderOf_pFreePart hp hx]
   exact Nat.not_dvd_ordCompl hp hx
 
+omit hx in
+/-- **The factorisation is unique.** A commuting factorisation `x = s * u` in which the order of
+`s` is prime to `p` and the order of `u` is a power of `p` has `s` the `p`-free part of `x`. -/
+theorem eq_pFreePart {s u : G} (hsu : Commute s u) (hmul : s * u = x)
+    (hs : ¬ p ∣ orderOf s) {k : ℕ} (hu : orderOf u = p ^ k) : s = pFreePart p x := by
+  have hs0 : orderOf s ≠ 0 := fun h => hs (by rw [h]; exact dvd_zero p)
+  have hcop : Nat.Coprime (orderOf s) (orderOf u) :=
+    hu ▸ ((Nat.Prime.coprime_iff_not_dvd hp).2 hs).symm.pow_right k
+  have hord : orderOf x = orderOf s * p ^ k := by
+    rw [← hmul, hsu.orderOf_mul_eq_mul_orderOf_of_coprime hcop, hu]
+  have hx : orderOf x ≠ 0 := by
+    rw [hord]; exact Nat.mul_ne_zero hs0 (pow_ne_zero k hp.pos.ne')
+  have hfac : (orderOf x).factorization p = k := by
+    rw [hord, Nat.factorization_mul hs0 (pow_ne_zero k hp.pos.ne'), Finsupp.add_apply,
+      Nat.factorization_eq_zero_of_not_dvd hs, hp.factorization_pow, Finsupp.single_eq_same,
+      zero_add]
+  have hu1 : u ^ pFreeExponent p x = 1 := by
+    refine orderOf_dvd_iff_pow_eq_one.1 ?_
+    rw [hu, ← hfac]
+    exact ordProj_dvd_pFreeExponent hx
+  have hs1 : s ^ pFreeExponent p x = s := by
+    have h1 : 1 ≤ pFreeExponent p x := Nat.one_le_iff_ne_zero.2 pFreeExponent_ne_zero
+    obtain ⟨d, hd⟩ : ∃ d, pFreeExponent p x = d + 1 := ⟨pFreeExponent p x - 1, by omega⟩
+    have hcompl : ordCompl[p] (orderOf x) = orderOf s := by
+      rw [hfac, hord]
+      exact Nat.mul_div_cancel _ (pow_pos hp.pos k)
+    have hsd : s ^ d = 1 := by
+      refine orderOf_dvd_iff_pow_eq_one.1 ?_
+      have hdvd := ordCompl_dvd_pFreeExponent_sub_one hp hx
+      rwa [hcompl, hd, Nat.add_sub_cancel] at hdvd
+    rw [hd, pow_succ, hsd, one_mul]
+  rw [pFreePart, ← hmul, hsu.mul_pow, hmul, hu1, mul_one, hs1]
+
+end Order
+
+end Monoid
+
+variable {G : Type*} [Group G] {x : G}
+
+/-- The element complementary to `TauCeti.pFreePart p x` in `x`; when `p` is prime and `x` has
+finite order, it is the **`p`-part** of `x`. -/
+noncomputable def pPart (p : ℕ) (x : G) : G := (pFreePart p x)⁻¹ * x
+
+/-- The `p`-free and `p`-parts of `x` multiply back to `x`. -/
+@[simp]
+theorem pFreePart_mul_pPart (p : ℕ) (x : G) : pFreePart p x * pPart p x = x :=
+  mul_inv_cancel_left _ _
+
+/-- The `p`-free part of `x` is a power of `x`. -/
+theorem pFreePart_mem_zpowers (p : ℕ) (x : G) : pFreePart p x ∈ Subgroup.zpowers x := by
+  obtain ⟨n, hn⟩ := (Submonoid.mem_powers_iff _ _).1 (pFreePart_mem_powers p x)
+  rw [← hn]
+  exact Subgroup.npow_mem_zpowers x n
+
+/-- The `p`-part of `x` is a power of `x`. -/
+theorem pPart_mem_zpowers (p : ℕ) (x : G) : pPart p x ∈ Subgroup.zpowers x :=
+  mul_mem (inv_mem (pFreePart_mem_zpowers p x)) (Subgroup.mem_zpowers x)
+
+/-- The `p`-free and `p`-parts of `x` commute. -/
+theorem commute_pFreePart_pPart (p : ℕ) (x : G) : Commute (pFreePart p x) (pPart p x) := by
+  rw [pPart, pFreePart]
+  exact (Commute.refl _).inv_right.mul_right ((Commute.refl x).pow_left _)
+
+/-- An element commuting with `x` commutes with the `p`-part of `x`. -/
+theorem commute_pPart (p : ℕ) {y : G} (h : Commute y x) : Commute y (pPart p x) := by
+  rw [pPart]
+  exact ((commute_pFreePart p h).inv_right).mul_right h
+
+/-- The reversed product of the `p`-part and `p`-free part of `x` is `x`. -/
+@[simp]
+theorem pPart_mul_pFreePart (p : ℕ) (x : G) : pPart p x * pFreePart p x = x := by
+  rw [← (commute_pFreePart_pPart p x).eq, pFreePart_mul_pPart]
+
+@[simp]
+theorem pPart_one (p : ℕ) : pPart p (1 : G) = 1 := by rw [pPart, pFreePart_one, inv_one, mul_one]
+
+/-- **Conjugation transports the `p`-free part.**  Both factors are powers of `x` cut out by an
+exponent that only depends on the order of `x`, and conjugation preserves orders. -/
+@[simp]
+theorem pFreePart_conj (p : ℕ) (g x : G) : pFreePart p (g * x * g⁻¹) = g * pFreePart p x * g⁻¹ := by
+  have h : orderOf (g * x * g⁻¹) = orderOf x :=
+    (SemiconjBy.orderOf_eq g (by simp [SemiconjBy])).symm
+  rw [pFreePart, pFreePart, pFreeExponent, pFreeExponent, h, conj_pow]
+
+/-- **Conjugation transports the `p`-part.** -/
+@[simp]
+theorem pPart_conj (p : ℕ) (g x : G) : pPart p (g * x * g⁻¹) = g * pPart p x * g⁻¹ := by
+  rw [pPart, pPart, pFreePart_conj]
+  group
+
+section Order
+
+variable (hp : p.Prime) (hx : orderOf x ≠ 0)
+include hp hx
+
 private theorem pPart_pow_ordProj : pPart p x ^ ordProj[p] (orderOf x) = 1 := by
   have h1 : 1 ≤ pFreeExponent p x := Nat.one_le_iff_ne_zero.2 (pFreeExponent_ne_zero)
   have hsplit : pFreeExponent p x * ordProj[p] (orderOf x)
@@ -195,41 +250,6 @@ theorem orderOf_pPart : orderOf (pPart p x) = ordProj[p] (orderOf x) := by
   refine Nat.eq_of_mul_eq_mul_left (Nat.ordCompl_pos p hx) ?_
   rw [← hmul, mul_comm]
   exact (Nat.ordProj_mul_ordCompl_eq_self (orderOf x) p).symm
-
-omit hx in
-/-- **The factorisation is unique.** A commuting factorisation `x = s * u` in which the order of
-`s` is prime to `p` and the order of `u` is a power of `p` has `s` the `p`-free part of `x`. -/
-theorem eq_pFreePart {s u : G} (hsu : Commute s u) (hmul : s * u = x)
-    (hs : ¬ p ∣ orderOf s) {k : ℕ} (hu : orderOf u = p ^ k) : s = pFreePart p x := by
-  have hs0 : orderOf s ≠ 0 := fun h => hs (by rw [h]; exact dvd_zero p)
-  have hcop : Nat.Coprime (orderOf s) (orderOf u) :=
-    hu ▸ ((Nat.Prime.coprime_iff_not_dvd hp).2 hs).symm.pow_right k
-  have hord : orderOf x = orderOf s * p ^ k := by
-    rw [← hmul, hsu.orderOf_mul_eq_mul_orderOf_of_coprime hcop, hu]
-  have hx : orderOf x ≠ 0 := by
-    rw [hord]; exact Nat.mul_ne_zero hs0 (pow_ne_zero k hp.pos.ne')
-  have hfac : (orderOf x).factorization p = k := by
-    rw [hord, Nat.factorization_mul hs0 (pow_ne_zero k hp.pos.ne'), Finsupp.add_apply,
-      Nat.factorization_eq_zero_of_not_dvd hs, hp.factorization_pow, Finsupp.single_eq_same,
-      zero_add]
-  have hu1 : u ^ pFreeExponent p x = 1 := by
-    refine orderOf_dvd_iff_pow_eq_one.1 ?_
-    rw [hu, ← hfac]
-    exact ordProj_dvd_pFreeExponent hx
-  have hs1 : s ^ pFreeExponent p x = s := by
-    have h1 : 1 ≤ pFreeExponent p x := Nat.one_le_iff_ne_zero.2 pFreeExponent_ne_zero
-    obtain ⟨d, hd⟩ : ∃ d, pFreeExponent p x = d + 1 := ⟨pFreeExponent p x - 1, by omega⟩
-    have hcompl : ordCompl[p] (orderOf x) = orderOf s := by
-      rw [hfac, hord]
-      exact Nat.mul_div_cancel _ (pow_pos hp.pos k)
-    have hsd : s ^ d = 1 := by
-      refine orderOf_dvd_iff_pow_eq_one.1 ?_
-      have hdvd := ordCompl_dvd_pFreeExponent_sub_one hp hx
-      rwa [hcompl, hd, Nat.add_sub_cancel] at hdvd
-    rw [hd, pow_succ, hsd, one_mul]
-  have key : ∀ e : ℕ, u ^ e = 1 → s ^ e = s → x ^ e = s := fun e h1 h2 => by
-    rw [← hmul, hsu.mul_pow, h1, mul_one, h2]
-  rw [pFreePart, key _ hu1 hs1]
 
 omit hx in
 /-- The companion to `TauCeti.eq_pFreePart`: the `p`-power factor of a commuting factorisation is

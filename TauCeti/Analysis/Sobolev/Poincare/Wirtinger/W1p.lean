@@ -145,7 +145,9 @@ private theorem eLpNorm_value_sub_setAverage_le_of_mem_closure (hp : p ≠ ∞) 
         _ ≤ ENNReal.ofReal C * eLpNorm (fderiv ℝ (phi : E → ℝ)) p (mu.restrict U) := hmain
         _ = ENNReal.ofReal C * eLpNorm (W1p.gradient w) p (mu.restrict U) := by
             congr 1
-            refine eLpNorm_congr_norm_ae ?_
+            refine eLpNorm_congr_norm_ae
+              (phi.contDiff.continuous_fderiv (by simp)).aestronglyMeasurable
+              (Lp.aestronglyMeasurable _) ?_
             filter_upwards [hgradU] with x hx
             rw [hx, norm_gradient_eq_norm_fderiv]
     rw [← ofReal_norm, ← ofReal_norm,
@@ -272,7 +274,9 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
       atTop.liminf fun n ↦ eLpNorm (g n) p mu := by
     rw [← eLpNorm_indicator_eq_eLpNorm_restrict Omega.isOpen.measurableSet]
     exact Lp.eLpNorm_lim_le_liminf_eLpNorm hgmeas
-      ((Omega : Set E).indicator fun x ↦ W1p.value u x - b) (ae_of_all _ hptw)
+      ((Omega : Set E).indicator fun x ↦ W1p.value u x - b)
+      ((hsm.sub stronglyMeasurable_const).indicator
+        Omega.isOpen.measurableSet).aestronglyMeasurable (ae_of_all _ hptw)
   have hbound : ∀ᶠ n in atTop, eLpNorm (g n) p mu ≤
       ENNReal.ofReal (K / mu.real (S ∩ V n)) * ‖W1p.gradient u‖ₑ := by
     filter_upwards [hmeasR.eventually (lt_mem_nhds hSRpos)] with n hn

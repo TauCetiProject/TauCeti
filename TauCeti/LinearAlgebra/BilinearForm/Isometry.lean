@@ -198,7 +198,7 @@ private theorem map_isometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M') :
     (isometryGroup B).map (LinearEquiv.autCongr e : _ →* _)
       = isometryGroup (LinearMap.BilinForm.congr e B) := by
   ext g
-  simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_isometryGroup_iff]
+  simp only [Subgroup.mem_map, MonoidHom.coe_ofClass, mem_isometryGroup_iff]
   constructor
   · rintro ⟨a, ha, rfl⟩ x y
     simp only [LinearEquiv.autCongr_apply_apply, LinearMap.BilinForm.congr_apply,
@@ -288,12 +288,10 @@ theorem IsIsometry.baseChange (hf : IsIsometry B f) :
     IsIsometry (LinearMap.BilinForm.baseChange A B) (f.baseChange A) := by
   rw [isIsometry_iff]
   intro x y
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
   | tmul a m =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
       | tmul a' m' => simp [hf.apply m m']
 

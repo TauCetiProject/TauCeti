@@ -30,6 +30,14 @@ theorem isOpenEmbedding_coe_punctured :
     Metric.isOpen_ball.isOpenEmbedding_subtypeVal
   exact h.comp isOpen_compl_singleton.isOpenEmbedding_subtypeVal
 
+/-- Every nonzero point of the open unit disc is a point of the punctured unit disc. -/
+theorem exists_coe_punctured_eq {q : ℂ} (hq : q ≠ 0) (hq1 : ‖q‖ < 1) :
+    ∃ q' : {q : 𝔻 // q ≠ 0}, ((q' : 𝔻) : ℂ) = q :=
+  ⟨⟨_root_.Complex.UnitDisc.mk q hq1, fun h ↦ hq (by
+    have := congrArg ((↑) : 𝔻 → ℂ) h
+    rwa [_root_.Complex.UnitDisc.coe_mk, _root_.Complex.UnitDisc.coe_zero] at this)⟩,
+    _root_.Complex.UnitDisc.coe_mk q hq1⟩
+
 /-- The unit disc has a point other than its origin. -/
 instance instNonemptyPunctured : Nonempty {q : 𝔻 // q ≠ 0} :=
   nonempty_subtype.mpr (exists_ne 0)

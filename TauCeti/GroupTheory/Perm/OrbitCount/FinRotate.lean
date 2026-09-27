@@ -29,7 +29,8 @@ part `n`. -/
 theorem parts_partition_finRotate {n : ℕ} (hn : n ≠ 0) : (finRotate n).partition.parts = {n} := by
   rcases n with _ | _ | n
   · exact absurd rfl hn
-  · decide
+  -- For `n = 1` the rotation is the identity of `Fin 1`, whose only part is its one fixed point.
+  · simp [finRotate_one, ← Equiv.Perm.one_def]
   · rw [parts_partition_of_isCycle isCycle_finRotate, support_finRotate]
     simp
 

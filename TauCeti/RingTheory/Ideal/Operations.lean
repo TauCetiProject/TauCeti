@@ -87,6 +87,10 @@ theorem smul_top_eq_top_of_pi (I : Ideal R) (h : I • (⊤ : Submodule R (∀ i
 
 end Pi
 
+end Ideal
+
+namespace Ideal
+
 section Span
 
 variable {R : Type*} [CommSemiring R] {a : R} {S S' : Set R}

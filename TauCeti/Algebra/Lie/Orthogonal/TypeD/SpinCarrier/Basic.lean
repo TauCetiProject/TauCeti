@@ -554,7 +554,7 @@ theorem weightTorus_conj_rootSubgroup (k : Fin n ⊕ Fin n) (A : Type) [CommRing
 The two identifications the equations below rewrite with,
 `TauCeti.TypeDStd.rootGeneratorWeight_inl_eq_root_simpleIndex` and its lowering counterpart, are
 proved beside the weight they name, in
-`TauCeti/Algebra/Lie/Orthogonal/TypeD/RootGenerators.lean`.
+`TauCeti/Algebra/Lie/Orthogonal/TypeD/Root/Generators.lean`.
 
 None of the equations below is a `simp` lemma. Their right-hand sides name the character through
 `TauCeti.DynkinType.simplyConnectedRootDatum`, which `simp` unfolds at the `D n` branch, so they

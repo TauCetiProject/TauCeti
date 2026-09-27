@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.FirstCohomology
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.Repartition
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
+public import TauCeti.FieldTheory.FunctionField.Differential.Weil
 public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
 public import TauCeti.Topology.KrullDimension
 
@@ -24,7 +25,9 @@ combines the two quotient descriptions:
 
 The right-hand side is finite-dimensional for an algebraic function field. Consequently this gives
 finite-dimensionality of `H¹(X, 𝒪_X(D))` on the
-curves to which the scheme/function-field comparison applies.
+curves to which the scheme/function-field comparison applies. Since the Weil differentials bounded
+by `D` are by definition the linear forms on repartitions vanishing on `A_{k(X)}(D) + k(X)`, it
+also identifies the dual of `H¹(X, 𝒪_X(D))` with the space `Ω(D)` of such differentials.
 
 ## Main declarations
 
@@ -34,6 +37,8 @@ curves to which the scheme/function-field comparison applies.
   class;
 * `SchemeWeilDivisor.repartitionQuotientEquivCohomologyOne` identifies the quotient by the
   divisor filtration and diagonal rational functions with `H¹(X, 𝒪_X(D))`;
+* `SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration` identifies the dual of
+  `H¹(X, 𝒪_X(D))` with the space `Ω(D)` of Weil differentials bounded by `D`;
 * `SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField` deduces
   finite-dimensionality.
 
@@ -265,6 +270,35 @@ lemma repartitionQuotientEquivCohomologyOne_mk
   rw [repartitionQuotientEquivCohomologyOne, LinearEquiv.trans_apply,
     Submodule.quotEquivOfEq_mk]
   exact LinearMap.quotKerEquivOfSurjective_apply_mk _ _ a
+
+/-- **The dual of `H¹(X, 𝒪_X(D))` is the space `Ω(D)` of Weil differentials bounded by `D`.**
+First cohomology is the repartition quotient `A_{k(X)} / (A_{k(X)}(D) + k(X))`, whose linear
+forms are the linear forms on repartitions vanishing on `A_{k(X)}(D) + k(X)`. -/
+def cohomologyOneDualEquivWeilDifferentialFiltration (hF : IsFunctionField k X.functionField)
+    (D : SchemeWeilDivisor X) :
+    Module.Dual k (Scheme.Modules.Cohomology (sheaf D) 1) ≃ₗ[k]
+      weilDifferentialFiltration (equivFunctionFieldDivisor hex hdim D) :=
+  (repartitionQuotientEquivCohomologyOne hex hdim hF D).dualMap.trans <|
+    (Submodule.dualQuotEquivDualAnnihilator _).trans <|
+      LinearEquiv.ofEq _ _ (weilDifferentialFiltration_eq_dualAnnihilator _).symm
+
+/-- The Weil differential attached to a linear form `φ` on `H¹(X, 𝒪_X(D))` evaluates a
+repartition by applying `φ` to its cohomology class. -/
+@[simp]
+lemma cohomologyOneDualEquivWeilDifferentialFiltration_apply_apply
+    (hF : IsFunctionField k X.functionField) (D : SchemeWeilDivisor X)
+    (φ : Module.Dual k (Scheme.Modules.Cohomology (sheaf D) 1))
+    (a : repartitionSpace k X.functionField) :
+    (cohomologyOneDualEquivWeilDifferentialFiltration hex hdim hF D φ :
+        Module.Dual k (repartitionSpace k X.functionField)) a =
+      φ (repartitionToCohomologyOne hex hdim D a) := by
+  rw [cohomologyOneDualEquivWeilDifferentialFiltration, LinearEquiv.trans_apply,
+    LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  -- The left-hand side is `φ` applied to the class of `a` under the repartition-quotient
+  -- equivalence, by `Submodule.dualQuotEquivDualAnnihilator_apply` and
+  -- `LinearEquiv.dualMap_apply`, both of which hold by `rfl`; rewriting with them fails because
+  -- the instances on the quotient are only unfolded at default transparency.
+  exact congrArg φ (repartitionQuotientEquivCohomologyOne_mk hex hdim hF D a)
 
 /-- The first cohomology of a divisor sheaf is finite-dimensional. -/
 theorem finiteDimensional_cohomology_one_sheaf_of_isFunctionField

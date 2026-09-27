@@ -31,6 +31,9 @@ local fields.
 
 * `IsDedekindDomain.HeightOneSpectrum.ramificationIndex_adicCompletion`: the ramification index
   of `L_w / K_v` is `w.asIdeal.ramificationIdx R`.
+* `IsDedekindDomain.HeightOneSpectrum.isTamelyRamified_adicCompletion_iff` and
+  `IsDedekindDomain.HeightOneSpectrum.isWildlyRamified_adicCompletion_iff`: `L_w / K_v` is tamely
+  (wildly) ramified exactly when `w.asIdeal.ramificationIdx R` is nonzero (zero) in `R ⧸ v`.
 * `IsDedekindDomain.HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt`: for `B`
   essentially of finite type over `R`, unramifiedness of `w` over `R` gives unramifiedness of
   `L_w / K_v`.
@@ -80,8 +83,29 @@ theorem ramificationIndex_adicCompletion :
   rw [← Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot]
   refine TauCeti.ramificationIndex_eq_iff.2 fun x ↦ WithZero.coe_injective ?_
   simpa only [WithZero.coe_pow, ← TauCeti.normalizedValuationWithZero_coe,
-    Units.coe_map, MonoidHom.coe_coe] using
+    Units.coe_map, MonoidHom.coe_ofClass] using
       normalizedValuationWithZero_adicCompletion_algebraMap v w (x : v.adicCompletion K)
+
+/-- **Tameness of the completed extension.** The extension of local fields `L_w / K_v` is tamely
+ramified exactly when the ramification index of `w` over `R` is nonzero in the residue field
+`R ⧸ v`. -/
+@[simp]
+theorem isTamelyRamified_adicCompletion_iff :
+    TauCeti.IsTamelyRamified (v.adicCompletion K) (w.adicCompletion L) ↔
+      ((w.asIdeal.ramificationIdx R : ℕ) : R ⧸ v.asIdeal) ≠ 0 := by
+  rw [TauCeti.isTamelyRamified_iff_natCast_ne_zero, ramificationIndex_adicCompletion v w]
+  simpa only [map_natCast] using
+    ((v.residueFieldEquivAdicCompletion (K := K)).map_ne_zero_iff
+      (x := (w.asIdeal.ramificationIdx R : R ⧸ v.asIdeal)))
+
+/-- **Wildness of the completed extension.** The extension of local fields `L_w / K_v` is wildly
+ramified exactly when the ramification index of `w` over `R` vanishes in the residue field
+`R ⧸ v`. -/
+@[simp]
+theorem isWildlyRamified_adicCompletion_iff :
+    TauCeti.IsWildlyRamified (v.adicCompletion K) (w.adicCompletion L) ↔
+      ((w.asIdeal.ramificationIdx R : ℕ) : R ⧸ v.asIdeal) = 0 := by
+  rw [← TauCeti.not_isTamelyRamified_iff, isTamelyRamified_adicCompletion_iff v w, not_ne_iff]
 
 /-- **An unramified place gives an unramified completed extension.** If `B` is essentially of
 finite type over `R` and `w` is unramified over `R`, the extension of local fields `L_w / K_v` is

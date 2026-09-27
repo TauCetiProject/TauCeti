@@ -85,8 +85,13 @@ theorem ofReal_integral_sub_integral_le_wassersteinEDist_one {f : X → ℝ}
           exact ENNReal.ofReal_le_ofReal (le_abs_self _)
       _ ≤ edist x y := by simpa using hf.edist_le_mul x y
   have hdual := hfeas.ofReal_kantorovichDualValue_le_transportCost hμ hν.neg
-  rwa [kantorovichDualValue_def, integral_neg, ← sub_eq_add_neg,
-    ← wassersteinEDist_one_eq_transportCost] at hdual
+  rw [kantorovichDualValue_def, integral_neg, ← sub_eq_add_neg] at hdual
+  -- The identification of `W₁` with the transport cost of `edist` needs a jointly measurable
+  -- ground distance, but the inequality this direction does not: coupling by coupling,
+  -- `∫⁻ edist ≤ eLpNorm edist 1`, with the right-hand side `∞` when `edist` is not measurable.
+  refine le_wassersteinEDist fun π hπ ↦ hdual.trans
+    ((transportCost_le_lintegral hπ _).trans ?_)
+  simpa using lintegral_enorm_le_eLpNorm_one (μ := π) (f := fun z : X × X ↦ edist z.1 z.2)
 
 end WeakDuality
 
@@ -122,7 +127,7 @@ private theorem exists_lipschitzWith_wassersteinEDist_one_le [IsProbabilityMeasu
   refine ⟨f, hf, ?_⟩
   have hcost : wassersteinEDist 1 μ ν
       = transportCost (fun z : X × X ↦ ENNReal.ofReal (dist z.1 z.2)) μ ν := by
-    simp only [wassersteinEDist_one_eq_transportCost, edist_dist]
+    simp only [wassersteinEDist_one_eq_transportCost measurable_edist, edist_dist]
   refine hcost.trans_le (hle.trans (ENNReal.ofReal_le_ofReal ?_))
   have hfc := hf.continuous
   have hφ : ∫ x, φ x ∂μ ≤ ∫ x, f x ∂μ :=

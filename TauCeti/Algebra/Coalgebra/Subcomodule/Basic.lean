@@ -98,7 +98,7 @@ instance : SMulMemClass (Subcomodule R C M) R M where
   smul_mem {N} r {_} hm := N.carrier.smul_mem r hm
 
 instance : PartialOrder (Subcomodule R C M) :=
-  .ofSetLike (Subcomodule R C M) M
+  .ofSetLike (Subcomodule R C M)
 
 /-- The underlying submodule of a subcomodule. -/
 @[expose] def toSubmodule (N : Subcomodule R C M) : Submodule R M :=
@@ -152,7 +152,6 @@ theorem rid_lTensor_coact_mem (N : Subcomodule R C M) (f : C →ₗ[R] R) {m : M
   rw [← hx]
   clear hx hm
   induction x with
-  | zero => simp
   | tmul y c => simpa using N.carrier.smul_mem (f c) y.2
   | add a b ha hb => simpa only [map_add] using add_mem ha hb
 
@@ -321,7 +320,8 @@ source subcomodule belongs to `B`. -/
 theorem map_le_iff {A : Subcomodule R C M} {f : Comodule.Hom R C M N} {B : Subcomodule R C N} :
     A.map f ≤ B ↔ ∀ ⦃m⦄, m ∈ A → f m ∈ B := by
   rw [← toSubmodule_le_toSubmodule, map_toSubmodule, Submodule.map_le_iff_le_comap]
-  simp only [SetLike.le_def, Submodule.mem_comap, mem_toSubmodule, Comodule.Hom.coe_toLinearMap]
+  simp only [IsConcreteLE.le_iff, Submodule.mem_comap, mem_toSubmodule,
+    Comodule.Hom.coe_toLinearMap]
 
 /-- The image construction is monotone in the source subcomodule. -/
 theorem map_mono (f : Comodule.Hom R C M N) {A B : Subcomodule R C M} (hAB : A ≤ B) :

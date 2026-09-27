@@ -99,6 +99,52 @@ theorem div_gcd_ord_dvd_ramificationIdx_of_pow_eq {y : F'} {n : ℕ} {u : F} (hn
   rw [← Int.natCast_dvd_natCast, Int.natCast_div]
   exact hdvd
 
+omit [Algebra k F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
+/-- If `F' = F(y)` with `y ^ n = u` and `n` coprime to `ord_P u`, then some generator `z` of
+`F' / F` has `z ^ n` of order one at `P`. -/
+theorem exists_adjoin_eq_top_pow_eq_ord_eq_one (P : Place k F) {y : F'} {n : ℕ} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hu : u ≠ 0) (hn0 : n ≠ 0)
+    (h : Int.gcd n (P.ord u) = 1) :
+    ∃ z : F', ∃ c : F, F⟮z⟯ = ⊤ ∧ z ^ n = algebraMap F F' c ∧ P.ord c = 1 ∧ z ≠ 0 := by
+  have hy0 : y ≠ 0 := by
+    rintro rfl
+    rw [zero_pow hn0, eq_comm, map_eq_zero] at hy
+    exact hu hy
+  set α := Int.gcdA n (P.ord u)
+  set β := Int.gcdB n (P.ord u)
+  have hab : (n : ℤ) * α + P.ord u * β = 1 := by
+    rw [← Int.gcd_eq_gcd_ab, h, Nat.cast_one]
+  obtain ⟨w, hw0, hw⟩ := P.exists_ne_zero_ord_eq 1
+  have hW0 : algebraMap F F' w ≠ 0 := (_root_.map_ne_zero _).mpr hw0
+  set z := y ^ β * algebraMap F F' w ^ α with hz_def
+  refine ⟨z, u ^ β * w ^ (α * n), ?_, ?_, ?_, mul_ne_zero (zpow_ne_zero _ hy0) (zpow_ne_zero _ hW0)⟩
+  · have hyz : y = (z * algebraMap F F' w ^ (-α)) ^ P.ord u * algebraMap F F' u ^ α := by
+      calc
+        y = y ^ ((n : ℤ) * α + P.ord u * β) := by rw [hab, zpow_one]
+        _ = y ^ (P.ord u * β) * y ^ ((n : ℤ) * α) := by
+          rw [zpow_add₀ hy0]
+          exact mul_comm _ _
+        _ = (z * algebraMap F F' w ^ (-α)) ^ P.ord u * algebraMap F F' u ^ α := by
+          rw [hz_def, zpow_neg, mul_inv_cancel_right₀ (zpow_ne_zero _ hW0), ← hy,
+            ← zpow_natCast, ← zpow_mul, ← zpow_mul, mul_comm β]
+    have hymem : y ∈ F⟮z⟯ := by
+      rw [hyz]
+      exact mul_mem (zpow_mem (mul_mem (IntermediateField.mem_adjoin_simple_self F z)
+        (zpow_mem (IntermediateField.algebraMap_mem _ w) _)) _)
+        (zpow_mem (IntermediateField.algebraMap_mem _ u) _)
+    rw [eq_top_iff, ← hgen, IntermediateField.adjoin_simple_le_iff]
+    exact hymem
+  · calc
+      z ^ n = (y ^ β) ^ n * (algebraMap F F' w ^ α) ^ n := by rw [hz_def, mul_pow]
+      _ = y ^ (β * n) * (algebraMap F F' w) ^ (α * n) := by
+        rw [← zpow_natCast (y ^ β), ← zpow_natCast (algebraMap F F' w ^ α), zpow_mul,
+          zpow_mul]
+      _ = algebraMap F F' u ^ β * (algebraMap F F' w) ^ (α * n) := by
+        rw [mul_comm β, zpow_mul, zpow_natCast, hy]
+      _ = algebraMap F F' (u ^ β * w ^ (α * n)) := by rw [map_mul, map_zpow₀, map_zpow₀]
+  · rw [P.ord_mul (zpow_ne_zero _ hu) (zpow_ne_zero _ hw0), ord_zpow, ord_zpow, hw]
+    linarith
+
 /-- **Total ramification in a radical extension** (Stichtenoth, Proposition 3.7.3(b)): if
 `[F' : F] = n` with `y ^ n = u`, `n ≠ 0`, and `n` is coprime to the order of `u` at the place `P`
 of `F` below `P'`, then `e(P' ∣ P) = n`. -/

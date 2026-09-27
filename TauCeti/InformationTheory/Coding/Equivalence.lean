@@ -140,6 +140,36 @@ theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι →
 
 end Fintype
 
+section DotProduct
+
+variable [Fintype ι] [Fintype κ]
+
+/-- A monomial coordinate change preserves the standard dot product exactly when every
+coordinate multiplier has square one. -/
+theorem dotProduct_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
+    (∀ x y : ι → R, monomialEquiv u e x ⬝ᵥ monomialEquiv u e y = x ⬝ᵥ y) ↔
+      ∀ i, (u i : R) ^ 2 = 1 := by
+  classical
+  have hdot (x y : ι → R) :
+      monomialEquiv u e x ⬝ᵥ monomialEquiv u e y =
+        (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) := by
+    rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, comp_equiv_dotProduct_comp_equiv]
+  constructor
+  · intro h i
+    have hi := h (Pi.single i 1) (Pi.single i 1)
+    rw [hdot] at hi
+    simpa [dotProduct, Pi.single_apply, pow_two] using hi
+  · intro h x y
+    rw [hdot]
+    simp only [dotProduct]
+    apply Finset.sum_congr rfl
+    intro i _
+    calc
+      (u i : R) * x i * ((u i : R) * y i) = (u i : R) ^ 2 * (x i * y i) := by ring
+      _ = x i * y i := by rw [h i]; simp
+
+end DotProduct
+
 end Monomial
 
 /-! ### Signed coordinate transformations -/
@@ -179,13 +209,44 @@ underlying function. -/
 theorem signedEquiv_restrictScalars_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → ℚ) :
     (signedEquiv (R := ℚ) u e).restrictScalars ℤ x = signedEquiv u e x := rfl
 
-/-- A monomial coordinate change over `ZMod m` agrees with a signed coordinate change when its
-coordinate units are reductions of integer units. -/
-theorem monomialEquiv_eq_signedEquiv_of_intUnits {m : ℕ} (u : ι → (ZMod m)ˣ) (e : ι ≃ κ)
-    (v : ι → ℤˣ) (hv : ∀ i, (v i : ZMod m) = u i) :
+/-- A monomial coordinate change agrees with a signed coordinate change when its
+coordinate units are images of integer units. -/
+theorem monomialEquiv_eq_signedEquiv_of_intUnits (u : ι → Rˣ) (e : ι ≃ κ)
+    (v : ι → ℤˣ) (hv : ∀ i, (v i : R) = u i) :
     monomialEquiv u e = signedEquiv v e := by
   ext x j
   rw [monomialEquiv_apply, signedEquiv_apply, hv]
+
+/-- A monomial map over a commutative ring is a signed coordinate change exactly when
+each multiplier is `1` or `-1`. -/
+theorem exists_signed_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
+    (∃ v : ι → ℤˣ, monomialEquiv u e = signedEquiv v e) ↔
+      ∀ i, u i = 1 ∨ u i = -1 := by
+  classical
+  constructor
+  · rintro ⟨v, hv⟩ i
+    have hi : (u i : R) = (v i : R) := by
+      have h := congrArg
+        (fun f : (ι → R) ≃ₗ[R] (κ → R) ↦
+          f (Pi.single i 1) (e i)) hv
+      simpa [monomialEquiv_apply, signedEquiv_apply] using h
+    obtain h | h := Int.units_eq_one_or (v i)
+    · left
+      apply Units.ext
+      simpa [h] using hi
+    · right
+      apply Units.ext
+      simpa [h] using hi
+  · intro hu
+    let v : ι → ℤˣ := fun i ↦ if u i = 1 then 1 else -1
+    have hv (i : ι) : (v i : R) = u i := by
+      obtain h | h := hu i
+      · simp [v, h]
+      · by_cases h1 : u i = 1
+        · simp [v, h1]
+        · simp only [v, h1, ↓reduceIte]
+          simpa using congrArg (fun a : Rˣ ↦ (a : R)) h.symm
+    exact ⟨v, monomialEquiv_eq_signedEquiv_of_intUnits u e v hv⟩
 
 section Fintype
 
@@ -195,25 +256,16 @@ variable [Fintype ι] [Fintype κ]
 @[simp]
 theorem dotProduct_signedEquiv (u : ι → ℤˣ) (e : ι ≃ κ) (x y : ι → R) :
     signedEquiv u e x ⬝ᵥ signedEquiv u e y = x ⬝ᵥ y := by
-  calc
-    signedEquiv u e x ⬝ᵥ signedEquiv u e y =
-        ((fun i ↦ (u i : R) * x i) ∘ e.symm) ⬝ᵥ
-          ((fun i ↦ (u i : R) * y i) ∘ e.symm) := by
-            congr 1
-    _ = (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) :=
-      comp_equiv_dotProduct_comp_equiv _ _ e.symm
-    _ = x ⬝ᵥ y := by
-      simp only [dotProduct]
-      apply Finset.sum_congr rfl
-      intro i _
+  apply (dotProduct_monomialEquiv_iff
+    (fun i ↦ Units.map (Int.castRingHom R) (u i)) e).mpr
+    (by
+      intro i
       have hu : (u i : R) ^ 2 = 1 := by
         calc
           (u i : R) ^ 2 = (((u i : ℤ) ^ 2 : ℤ) : R) := by norm_cast
           _ = 1 := by simp only [← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one,
             Int.cast_one]
-      calc
-        (u i : R) * x i * ((u i : R) * y i) = (u i : R) ^ 2 * (x i * y i) := by ring
-        _ = x i * y i := by rw [hu]; simp
+      simpa using hu) x y
 
 end Fintype
 

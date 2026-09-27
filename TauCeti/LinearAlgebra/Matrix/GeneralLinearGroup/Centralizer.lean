@@ -10,9 +10,9 @@ module
 public import TauCeti.Algebra.Group.Subgroup.Centralizer
 -- `TauCeti.commute_fin_two_iff` is the engine of the centralizer computations below.
 public import TauCeti.LinearAlgebra.Matrix.Commute
--- `ConjClasses.carrier` occurs in the statements below, `TauCeti.ConjClasses.ncard_carrier_mk`
+-- `ConjClasses.carrier` occurs in the statements below, `ConjClasses.ncard_carrier_mk`
 -- is what turns a centralizer order into a class size, and
--- `TauCeti.ConjClasses.ncard_carrier_mk_of_mem_center` is what does it for a central element.
+-- `ConjClasses.ncard_carrier_mk_of_mem_center` is what does it for a central element.
 public import TauCeti.Algebra.Group.Conj
 -- `TauCeti.diagGL` and `TauCeti.diagonalTorus` occur in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
@@ -96,7 +96,7 @@ That every element of `GL₂(𝔽_q)` is conjugate to one of the four normal for
 enumeration of the classes themselves, is not proved here.
 
 The class sizes are read off the centralizer orders by orbit-stabilizer
-(`TauCeti.ConjClasses.ncard_carrier_mk`), together with `TauCeti.natCard_GL_fin_two`, which gives
+(`ConjClasses.ncard_carrier_mk`), together with `TauCeti.natCard_GL_fin_two`, which gives
 `|GL₂(𝔽_q)| = (q - 1)² q (q + 1)`.
 
 ## Main results

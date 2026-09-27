@@ -7,6 +7,8 @@ module
 
 public import Mathlib.NumberTheory.NumberField.AdeleRing
 
+import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
+
 /-!
 # Basic API for ideles
 
@@ -99,5 +101,12 @@ theorem toFiniteIdele_ofFiniteIdele (a : (FiniteAdeleRing R K)ˣ) :
 theorem toFiniteIdele_ofCompletion (w : NumberField.InfinitePlace K) (u : w.Completionˣ) :
     toFiniteIdele R K (ofCompletion R K w u) = 1 :=
   Units.ext (rfl)
+
+/-- The embedding of the units of the completion at an infinite place into the idele group is
+continuous. -/
+@[continuity, fun_prop]
+theorem continuous_ofCompletion (w : NumberField.InfinitePlace K) :
+    Continuous (ofCompletion R K w) :=
+  (AdeleRing.continuous_ofCompletion R K w).units_map _
 
 end NumberField.IdeleGroup

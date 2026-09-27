@@ -124,7 +124,7 @@ theorem forall_apply_eq_smul_of_apply_eq_smul (f : M →ₗ⁅K,L⁆ M) {c : K} 
     (h : f m₀ = c • m₀) (m : M) : f m = c • m := by
   have hmem : ∀ y : M, y ∈ (f - c • (LieModuleHom.id : M →ₗ⁅K,L⁆ M)).ker ↔ f y = c • y := by
     intro y
-    rw [LieModuleHom.mem_ker, LieModuleHom.sub_apply, LieModuleHom.smul_apply,
+    rw [LieModuleHom.mem_ker, sub_apply, smul_apply,
       LieModuleHom.id_apply, sub_eq_zero]
   have htop : (f - c • (LieModuleHom.id : M →ₗ⁅K,L⁆ M)).ker = ⊤ := by
     refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hm₀ ?_

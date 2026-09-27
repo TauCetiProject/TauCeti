@@ -224,16 +224,12 @@ theorem endOfPoint_tensor_of_coact_eq [Comodule R H (V ⊗[R] W)]
         (TensorProduct.AlgebraTensorModule.distribBaseChange R A V W).symm.toLinearMap := by
   apply TensorProduct.AlgebraTensorModule.ext
   intro x y
-  induction x using TensorProduct.induction_on with
-  | zero =>
-      rw [TensorProduct.zero_tmul, map_zero, map_zero]
+  induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ =>
       rw [TensorProduct.add_tmul, map_add, map_add]
       exact congrArg₂ (fun a b ↦ a + b) hx₁ hx₂
   | tmul a v =>
-      induction y using TensorProduct.induction_on with
-      | zero =>
-          rw [TensorProduct.tmul_zero, map_zero, map_zero]
+      induction y using TensorProduct.inductionOn with
       | add y₁ y₂ hy₁ hy₂ =>
           rw [TensorProduct.tmul_add, map_add, map_add]
           exact congrArg₂ (fun p q ↦ p + q) hy₁ hy₂

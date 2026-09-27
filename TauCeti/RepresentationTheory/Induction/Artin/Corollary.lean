@@ -77,8 +77,9 @@ theorem _root_.FDRep.subgroupCharacterSum_eq_card_mul_finrank_invariants
   let _ : Fintype C := Fintype.ofFinite C
   have hcard : (Nat.card C : k) ≠ 0 := (isUnit_of_invertible _).ne_zero
   have hav := FDRep.average_char_eq_finrank_invariants (resFDRep C X)
+  have hsubtype (c : C) : C.subtype c = (c : G) := rfl
+  simp_rw [FDRep.character_actionRes, hsubtype] at hav
   rw [X.subgroupCharacterSum_eq_sum]
-  simp_rw [character_resFDRep] at hav
   calc
     ∑ c : C, X.character (c : G) =
         (Nat.card C : k) * ((Nat.card C : k)⁻¹ * ∑ c : C, X.character (c : G)) := by

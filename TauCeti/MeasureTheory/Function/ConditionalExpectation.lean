@@ -24,6 +24,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   `∫ f ∂μ`.
 - `ae_eq_condExp_of_forall_setIntegral_fiber_eq`: conditional-expectation uniqueness can be
   checked on the fibers of a countable-valued observation.
+- `condExp_ae_eq_of_le_of_le`: if conditioning on a σ-algebra agrees a.e. with conditioning on a
+  coarser one, then so does conditioning on every σ-algebra between them.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -112,17 +114,13 @@ lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
     (h_condExp : ∀ n, μ[Xn n | F] =ᵐ[μ] Y)
     (hL1 : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0)) :
     μ[Xlim | F] =ᵐ[μ] Y := by
-  have hY_meas := integrable_condExp.aestronglyMeasurable.congr (h_condExp 0)
   have h_bound (n : ℕ) : eLpNorm (μ[Xlim | F] - Y) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
     have htri : eLpNorm (μ[Xlim | F] - Y) 1 μ
                 ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ
                   + eLpNorm (μ[Xn n | F] - Y) 1 μ := by
       have : μ[Xlim | F] - Y = (μ[Xlim | F] - μ[Xn n | F]) + (μ[Xn n | F] - Y) := by ring
       rw [this]
-      refine eLpNorm_add_le ?_ ?_ ?_
-      · exact (integrable_condExp.sub integrable_condExp).aestronglyMeasurable
-      · exact integrable_condExp.aestronglyMeasurable.sub hY_meas
-      · norm_num
+      exact eLpNorm_add_le le_rfl
     have hzero : eLpNorm (μ[Xn n | F] - Y) 1 μ = 0 := by
       have h0 : μ[Xn n | F] - Y =ᵐ[μ] 0 := by
         filter_upwards [h_condExp n] with ω hω; simp [hω]
@@ -139,8 +137,7 @@ lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
   have h_norm_zero : eLpNorm (μ[Xlim | F] - Y) 1 μ = 0 :=
     le_antisymm
       (le_of_tendsto_of_tendsto tendsto_const_nhds hL1 (Eventually.of_forall h_bound)) bot_le
-  rw [eLpNorm_eq_zero_iff (integrable_condExp.aestronglyMeasurable.sub hY_meas)
-    one_ne_zero] at h_norm_zero
+  rw [eLpNorm_eq_zero_iff one_ne_zero] at h_norm_zero
   filter_upwards [h_norm_zero] with ω hω
   simp only [Pi.zero_apply] at hω
   exact sub_eq_zero.mp hω
@@ -196,6 +193,19 @@ theorem ae_eq_condExp_of_forall_setIntegral_fiber_eq
   rw [hs, integral_iUnion hmeas hdisj hg.integrableOn,
     integral_iUnion hmeas hdisj hf.integrableOn]
   exact tsum_congr fun i => hfg i.val
+
+/-- **Conditioning on an intermediate σ-algebra.** If conditioning `f` on `m₃` gives a.e. the same
+result as conditioning on the coarser `m₁ ≤ m₃`, then so does conditioning on any `m₂` between
+them. -/
+theorem condExp_ae_eq_of_le_of_le {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {m₁ m₂ m₃ m₀ : MeasurableSpace Ω} {μ : Measure Ω} {f : Ω → E}
+    (h₁₂ : m₁ ≤ m₂) (h₂₃ : m₂ ≤ m₃) (h₃ : m₃ ≤ m₀) [SigmaFinite (μ.trim h₃)]
+    [SigmaFinite (μ.trim (h₂₃.trans h₃))] (h : μ[f | m₃] =ᵐ[μ] μ[f | m₁]) :
+    μ[f | m₂] =ᵐ[μ] μ[f | m₁] := calc
+  μ[f | m₂] =ᵐ[μ] μ[μ[f | m₃] | m₂] := (condExp_condExp_of_le h₂₃ h₃).symm
+  _ =ᵐ[μ] μ[μ[f | m₁] | m₂] := condExp_congr_ae h
+  _ = μ[f | m₁] := condExp_of_stronglyMeasurable (h₂₃.trans h₃)
+    (stronglyMeasurable_condExp.mono h₁₂) integrable_condExp
 
 end MeasureTheory
 

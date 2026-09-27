@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Elementary.Basic
-public import TauCeti.InformationTheory.Coding.MacWilliams
+public import TauCeti.InformationTheory.Coding.MacWilliams.Basic
 
 /-!
 # Weight enumerators of repetition and single-parity-check codes

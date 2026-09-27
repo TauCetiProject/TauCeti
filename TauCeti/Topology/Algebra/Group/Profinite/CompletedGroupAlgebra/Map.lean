@@ -19,7 +19,8 @@ At the level `V` of `R[[Δ]]` it is the map `R[Γ ⧸ f⁻¹(V)] → R[Δ ⧸ V]
 quotients, applied to the level `f⁻¹(V)` of `R[[Γ]]` (`proj_map`); the same description holds
 at every level `U ≤ f⁻¹(V)` of `R[[Γ]]` (`proj_map_of_le`), which is how the levels of a
 composite are compared. The map sends group elements to group elements (`map_of`) and satisfies
-the two functor laws `map_id` and `map_comp`.
+the two functor laws `map_id` and `map_comp`. A topological isomorphism `e : Γ ≃ₜ* Δ` therefore
+induces an isomorphism of `R`-algebras `completedGroupAlgebra.domCongr R e : R[[Γ]] ≃ₐ[R] R[[Δ]]`.
 
 When the open normal quotients of `Γ` are finite, `map` is continuous for the inverse-limit
 topologies (`continuous_map`). When moreover the coefficient ring is compact Hausdorff and `f`
@@ -32,6 +33,8 @@ algebras.
 
 * `TauCeti.completedGroupAlgebra.map R f hf`: the `R`-algebra homomorphism `R[[Γ]] →ₐ[R] R[[Δ]]`
   induced by a continuous homomorphism `f : Γ →* Δ`.
+* `TauCeti.completedGroupAlgebra.domCongr R e`: the `R`-algebra isomorphism `R[[Γ]] ≃ₐ[R] R[[Δ]]`
+  induced by a topological isomorphism `e : Γ ≃ₜ* Δ`.
 
 ## Main results
 
@@ -150,6 +153,36 @@ theorem map_comp {E : Type*} [Group E] [TopologicalSpace E] (g : Δ →* E) (hg 
       proj_map, proj_map, MonoidAlgebra.mapDomain_mapDomain, ← MonoidHom.coe_comp]
     congr 2
     exact (QuotientGroup.map_comp_map _ _ _ f g _ _ h).symm
+
+/-- The `R`-algebra isomorphism `R[[Γ]] ≃ₐ[R] R[[Δ]]` induced by a topological isomorphism
+`e : Γ ≃ₜ* Δ`; its underlying map is `map R e (map_continuous e)`, and its inverse is
+induced by `e.symm`. -/
+noncomputable def domCongr (e : Γ ≃ₜ* Δ) :
+    completedGroupAlgebra R Γ ≃ₐ[R] completedGroupAlgebra R Δ :=
+  AlgEquiv.ofAlgHom (map R (e : Γ →* Δ) (map_continuous e))
+    (map R (e.symm : Δ →* Γ) (map_continuous e.symm))
+    ((map_comp R (e.symm : Δ →* Γ) (map_continuous e.symm) (e : Γ →* Δ)
+      (map_continuous e)).symm.trans <| by
+      convert map_id R using 2
+      exact MonoidHom.ext fun x ↦ by simp)
+    ((map_comp R (e : Γ →* Δ) (map_continuous e) (e.symm : Δ →* Γ)
+      (map_continuous e.symm)).symm.trans <| by
+      convert map_id R using 2
+      exact MonoidHom.ext fun x ↦ by simp)
+
+@[simp]
+theorem coe_domCongr (e : Γ ≃ₜ* Δ) :
+    ⇑(domCongr R e) = map R (e : Γ →* Δ) (map_continuous e) :=
+  (rfl)
+
+@[simp]
+theorem domCongr_symm (e : Γ ≃ₜ* Δ) : (domCongr R e).symm = domCongr R e.symm :=
+  (rfl)
+
+/-- The isomorphism induced by `e` sends the group element `γ` to the group element `e γ`. -/
+@[simp]
+theorem domCongr_of (e : Γ ≃ₜ* Δ) (γ : Γ) : domCongr R e (of R Γ γ) = of R Δ (e γ) :=
+  map_of R (e : Γ →* Δ) (map_continuous e) γ
 
 section TopologicalSpace
 

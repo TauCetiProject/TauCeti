@@ -169,11 +169,9 @@ theorem Contractable.ae_eq_condExp_tailProcess_of_tendsto_integral_abs {μ : Mea
   exact tendstoInMeasure_ae_unique (f := fun m =>
       blockAverage (fun i ω => f (X i ω)) (k m))
     (tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero
-      (fun m => (hA_int m).aestronglyMeasurable) ha_int.aestronglyMeasurable
       (TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub hA_int ha_int
         (by simpa [Real.norm_eq_abs] using ha_lim)))
     (tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero
-      (fun m => (hA_int m).aestronglyMeasurable) integrable_condExp.aestronglyMeasurable
       (TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub hA_int
         integrable_condExp (by
           simpa [Real.norm_eq_abs] using

@@ -17,6 +17,12 @@ quotient is finite, equivalently if and only if its Frattini subgroup is open. T
 topological finite generation into a finiteness condition on the maximal elementary abelian
 quotient, as needed for the finite-dimensional form of the Burnside basis theorem.
 
+Openness of the Frattini subgroup passes to open subgroups: an open subgroup of a compact
+topologically finitely generated group is itself compact and topologically finitely generated, so
+`TauCeti.IsTopologicallyFinitelyGenerated.isOpen_map_subtype_proPFrattini` sees its Frattini
+subgroup as an open subgroup of the ambient group. This is the inductive step that makes the lower
+`p`-series and the Frattini series of such a group consist of open subgroups.
+
 The forward implication holds for any compact topologically finitely generated group:
 there are only finitely many open normal subgroups of index `p`, so their intersection is
 open. For the converse, lift the finite set of all elements of the quotient and apply the
@@ -50,6 +56,16 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_proPFrattini
         U.1.toSubgroup) h)
   rw [proPFrattini_def, Subgroup.coe_iInf]
   exact isOpen_iInter_of_finite fun U ↦ U.1.isOpen
+
+/-- The pro-`p` Frattini subgroup of an open subgroup `U` of a compact topologically finitely
+generated group is open in the ambient group: `U` is again topologically finitely generated and
+compact, so its Frattini subgroup is open in `U`, and `U` is open in the ambient group. -/
+theorem IsTopologicallyFinitelyGenerated.isOpen_map_subtype_proPFrattini
+    (hG : IsTopologicallyFinitelyGenerated G) (p : ℕ) (U : OpenSubgroup G) :
+    IsOpen ((proPFrattini p U.toSubgroup).map U.toSubgroup.subtype : Set G) := by
+  have : CompactSpace U.toSubgroup := isCompact_iff_compactSpace.mp U.isClosed.isCompact
+  rw [Subgroup.coe_map, Subgroup.coe_subtype]
+  exact U.isOpen.isOpenMap_subtype_val _ ((hG.of_openSubgroup U).isOpen_proPFrattini p)
 
 /-- The pro-`p` Frattini quotient of a compact topologically finitely generated group is finite.
 Neither primality of `p` nor the pro-`p` condition on the group is needed in this direction. -/

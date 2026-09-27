@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Iterate
 
 /-!
-# Sink-admissible orderings of the vertices of a quiver
+# Sink- and source-admissible lists of vertices of a quiver
 
 Reflecting a quiver at a sink reverses the arrows meeting that vertex. Composing several such
 reflections calls for a list of vertices that is *sink-admissible*: each entry must be a sink of
@@ -19,9 +19,15 @@ the quiver obtained by reflecting at all the entries preceding it, the iterated 
 `TauCeti.RepresentationTheory.Quiver.Reflection.Iterate`. This file constructs such an ordering
 for every finite acyclic quiver.
 
+Dually, a list is *source-admissible* when each entry is a source after reflecting at its
+predecessors. Reversing an admissible list gives a list admissible for the opposite kind of vertex
+in the quiver obtained after all the reflections.
+
 ## Main definitions
 
 * `TauCeti.Quiver.IsSinkAdmissible`: a list of vertices each of which is a sink of the quiver
+  reflected at its predecessors.
+* `TauCeti.Quiver.IsSourceAdmissible`: a list of vertices each of which is a source of the quiver
   reflected at its predecessors.
 
 ## Main results
@@ -34,6 +40,9 @@ for every finite acyclic quiver.
   vertices, where the last hypothesis — that no arrow leaves the list — is automatic.
 * `TauCeti.Quiver.IsSinkAdmissible.isEmpty_hom_self`: no vertex of a repetition-free
   sink-admissible list carries a loop.
+* `TauCeti.Quiver.IsSinkAdmissible.isSourceAdmissible_reverse` and
+  `TauCeti.Quiver.IsSourceAdmissible.isSinkAdmissible_reverse`: reversing an admissible list gives a
+  list admissible for the opposite kind of vertex in the fully reflected quiver.
 
 ## References
 
@@ -56,35 +65,21 @@ variable {V : Type u}
 
 namespace Quiver
 
-/-! ### Sink-admissible lists -/
+private def IsAdmissibleWith
+    (P : (q : _root_.Quiver.{v} V) → V → Prop) (q : _root_.Quiver.{v} V) (l : List V) : Prop :=
+  ∀ t u : List V, ∀ i : V, l = t ++ i :: u → P (reflectList q t) i
 
-/-- A list of vertices is **sink-admissible** for the quiver structure `q` when each of its
-entries is a sink of the quiver obtained by reflecting `q` at all the entries preceding it. This
-is the hypothesis under which the reflection functors at the successive entries can be composed at
-all; the composite is the Coxeter functor when the list is in addition repetition-free and
-contains every vertex, in which case the reflections carry `q` back to itself by
-`TauCeti.Quiver.reflectList_eq_self`. -/
-def IsSinkAdmissible (q : _root_.Quiver.{v} V) (l : List V) : Prop :=
-  ∀ t u : List V, ∀ i : V, l = t ++ i :: u → @IsSink V (reflectList q t) i
-
-/-- The defining condition for a sink-admissible list. -/
-theorem isSinkAdmissible_def (q : _root_.Quiver.{v} V) (l : List V) :
-    IsSinkAdmissible q l ↔ ∀ t u : List V, ∀ i : V, l = t ++ i :: u →
-      @IsSink V (reflectList q t) i :=
-  (Iff.rfl)
-
-@[simp]
-theorem isSinkAdmissible_nil (q : _root_.Quiver.{v} V) : IsSinkAdmissible q [] := by
-  rw [isSinkAdmissible_def]
+private theorem isAdmissibleWith_nil
+    (P : (q : _root_.Quiver.{v} V) → V → Prop) (q : _root_.Quiver.{v} V) :
+    IsAdmissibleWith P q [] := by
   intro t u i h
   simp at h
 
-/-- A list is sink-admissible exactly when its head is a sink and its tail is sink-admissible for
-the quiver reflected at that head. -/
-@[simp]
-theorem isSinkAdmissible_cons {q : _root_.Quiver.{v} V} {i : V} {l : List V} :
-    IsSinkAdmissible q (i :: l) ↔ @IsSink V q i ∧ IsSinkAdmissible (reflectAt q i) l := by
-  simp only [isSinkAdmissible_def]
+private theorem isAdmissibleWith_cons
+    (P : (q : _root_.Quiver.{v} V) → V → Prop) {q : _root_.Quiver.{v} V}
+    {i : V} {l : List V} :
+    IsAdmissibleWith P q (i :: l) ↔
+      P q i ∧ IsAdmissibleWith P (reflectAt q i) l := by
   constructor
   · intro h
     refine ⟨?_, fun t u j ht ↦ ?_⟩
@@ -100,6 +95,128 @@ theorem isSinkAdmissible_cons {q : _root_.Quiver.{v} V} {i : V} {l : List V} :
     · rw [List.cons_append, List.cons.injEq] at hj
       rw [← hj.1, reflectList_cons]
       exact h t u j hj.2
+
+private theorem isAdmissibleWith_append
+    (P : (q : _root_.Quiver.{v} V) → V → Prop) {q : _root_.Quiver.{v} V}
+    {l₁ l₂ : List V} :
+    IsAdmissibleWith P q (l₁ ++ l₂) ↔
+      IsAdmissibleWith P q l₁ ∧ IsAdmissibleWith P (reflectList q l₁) l₂ := by
+  induction l₁ generalizing q with
+  | nil =>
+      rw [List.nil_append, reflectList_nil]
+      exact (and_iff_right (isAdmissibleWith_nil P q)).symm
+  | cons i l₁ ih =>
+      rw [List.cons_append, isAdmissibleWith_cons, isAdmissibleWith_cons,
+        reflectList_cons, ih, and_assoc]
+
+/-! ### Sink-admissible lists -/
+
+/-- A list of vertices is **sink-admissible** for the quiver structure `q` when each of its
+entries is a sink of the quiver obtained by reflecting `q` at all the entries preceding it. This
+is the hypothesis under which the reflection functors at the successive entries can be composed at
+all; the composite is the Coxeter functor when the list is in addition repetition-free and
+contains every vertex, in which case the reflections carry `q` back to itself by
+`TauCeti.Quiver.reflectList_eq_self`. -/
+def IsSinkAdmissible (q : _root_.Quiver.{v} V) (l : List V) : Prop :=
+  IsAdmissibleWith (fun q i ↦ @IsSink V q i) q l
+
+/-- The defining condition for a sink-admissible list. -/
+theorem isSinkAdmissible_def (q : _root_.Quiver.{v} V) (l : List V) :
+    IsSinkAdmissible q l ↔ ∀ t u : List V, ∀ i : V, l = t ++ i :: u →
+      @IsSink V (reflectList q t) i :=
+  (Iff.rfl)
+
+@[simp]
+theorem isSinkAdmissible_nil (q : _root_.Quiver.{v} V) : IsSinkAdmissible q [] := by
+  exact isAdmissibleWith_nil _ q
+
+/-- A list is sink-admissible exactly when its head is a sink and its tail is sink-admissible for
+the quiver reflected at that head. -/
+@[simp]
+theorem isSinkAdmissible_cons {q : _root_.Quiver.{v} V} {i : V} {l : List V} :
+    IsSinkAdmissible q (i :: l) ↔ @IsSink V q i ∧ IsSinkAdmissible (reflectAt q i) l := by
+  exact isAdmissibleWith_cons _
+
+/-- A concatenation is sink-admissible exactly when its first segment is sink-admissible and its
+second segment is sink-admissible after reflecting along the first. -/
+@[simp]
+theorem isSinkAdmissible_append {q : _root_.Quiver.{v} V} {l₁ l₂ : List V} :
+    IsSinkAdmissible q (l₁ ++ l₂) ↔
+      IsSinkAdmissible q l₁ ∧ IsSinkAdmissible (reflectList q l₁) l₂ := by
+  exact isAdmissibleWith_append _
+
+/-- Appending a final sink to a sink-admissible list preserves sink-admissibility. -/
+theorem IsSinkAdmissible.append_singleton {q : _root_.Quiver.{v} V} {l : List V} {i : V}
+    (hl : IsSinkAdmissible q l) (hi : @IsSink V (reflectList q l) i) :
+    IsSinkAdmissible q (l ++ [i]) := by
+  exact isSinkAdmissible_append.mpr
+    ⟨hl, isSinkAdmissible_cons.mpr ⟨hi, isSinkAdmissible_nil _⟩⟩
+
+/-! ### Source-admissible lists -/
+
+/-- A list of vertices is **source-admissible** when each entry is a source in the quiver obtained
+by reflecting at all preceding entries. -/
+def IsSourceAdmissible (q : _root_.Quiver.{v} V) (l : List V) : Prop :=
+  IsAdmissibleWith (fun q i ↦ @IsSource V q i) q l
+
+/-- The defining condition for a source-admissible list. -/
+theorem isSourceAdmissible_def (q : _root_.Quiver.{v} V) (l : List V) :
+    IsSourceAdmissible q l ↔
+      ∀ t u : List V, ∀ i : V, l = t ++ i :: u → @IsSource V (reflectList q t) i :=
+  (Iff.rfl)
+
+@[simp]
+theorem isSourceAdmissible_nil (q : _root_.Quiver.{v} V) : IsSourceAdmissible q [] := by
+  exact isAdmissibleWith_nil _ q
+
+/-- A list is source-admissible exactly when its head is a source and its tail is
+source-admissible after reflecting at the head. -/
+@[simp]
+theorem isSourceAdmissible_cons {q : _root_.Quiver.{v} V} {i : V} {l : List V} :
+    IsSourceAdmissible q (i :: l) ↔
+      @IsSource V q i ∧ IsSourceAdmissible (reflectAt q i) l := by
+  exact isAdmissibleWith_cons _
+
+/-- A concatenation is source-admissible exactly when its first segment is source-admissible and
+its second segment is source-admissible after reflecting along the first. -/
+@[simp]
+theorem isSourceAdmissible_append {q : _root_.Quiver.{v} V} {l₁ l₂ : List V} :
+    IsSourceAdmissible q (l₁ ++ l₂) ↔
+      IsSourceAdmissible q l₁ ∧ IsSourceAdmissible (reflectList q l₁) l₂ := by
+  exact isAdmissibleWith_append _
+
+/-- Appending a final source to a source-admissible list preserves source-admissibility. -/
+theorem IsSourceAdmissible.append_singleton {q : _root_.Quiver.{v} V} {l : List V} {i : V}
+    (hl : IsSourceAdmissible q l) (hi : @IsSource V (reflectList q l) i) :
+    IsSourceAdmissible q (l ++ [i]) := by
+  exact isSourceAdmissible_append.mpr
+    ⟨hl, isSourceAdmissible_cons.mpr ⟨hi, isSourceAdmissible_nil _⟩⟩
+
+/-- **A reversed sink-admissible list is source-admissible.** After all sink reflections have
+been performed, undoing them in reverse order always reflects at a source. -/
+theorem IsSinkAdmissible.isSourceAdmissible_reverse {q : _root_.Quiver.{v} V} {l : List V}
+    (hl : IsSinkAdmissible q l) : IsSourceAdmissible (reflectList q l) l.reverse := by
+  induction l generalizing q with
+  | nil => simp
+  | cons i l ih =>
+      obtain ⟨hi, hl⟩ := isSinkAdmissible_cons.mp hl
+      rw [reflectList_cons, List.reverse_cons]
+      refine (ih hl).append_singleton ?_
+      rw [reflectList_reverse_reflectList]
+      exact hi.isSource_reflectAt
+
+/-- **A reversed source-admissible list is sink-admissible.** After all source reflections have
+been performed, undoing them in reverse order always reflects at a sink. -/
+theorem IsSourceAdmissible.isSinkAdmissible_reverse {q : _root_.Quiver.{v} V} {l : List V}
+    (hl : IsSourceAdmissible q l) : IsSinkAdmissible (reflectList q l) l.reverse := by
+  induction l generalizing q with
+  | nil => simp
+  | cons i l ih =>
+      obtain ⟨hi, hl⟩ := isSourceAdmissible_cons.mp hl
+      rw [reflectList_cons, List.reverse_cons]
+      refine (ih hl).append_singleton ?_
+      rw [reflectList_reverse_reflectList]
+      exact hi.isSink_reflectAt
 
 /-! ### Recognising a sink-admissible ordering -/
 

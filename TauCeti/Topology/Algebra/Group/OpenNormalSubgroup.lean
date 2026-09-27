@@ -6,22 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Constructions of open normal subgroups
 
 Bundled constructions of `OpenNormalSubgroup` that Mathlib provides for `OpenSubgroup` but not
-for its normal variant: the preimage under a continuous group homomorphism, the trivial subgroup
-of a group with the discrete topology, and the whole group. All are stated for an arbitrary
-topological space structure on a group; no continuity of the group operations is required.
+for its normal variant: the preimage under a continuous group homomorphism, the product of two
+open normal subgroups, the trivial subgroup of a group with the discrete topology, and the whole
+group. All are stated for an arbitrary topological space structure on a group; no continuity of
+the group operations is required.
+
+Two continuity criteria for maps into the discrete quotients by open normal subgroups are recorded
+as well: a map into the quotient by an intersection is continuous when its composites with the two
+quotient maps are, and a map into the quotient by a preimage is continuous when its composite with
+the homomorphism followed by the quotient map is. Separate continuity of multiplication makes
+the relevant quotients discrete; the preimage criterion needs it only on the target group.
 
 ## Main definitions
 
 * `OpenNormalSubgroup.comap`: the preimage of an open normal subgroup under a continuous
   group homomorphism.
+* `OpenNormalSubgroup.prod`: the product of two open normal subgroups, as an open normal subgroup
+  of the product group.
 * `TauCeti.openNormalSubgroupBot`: the trivial subgroup of a group with the discrete
   topology, as an open normal subgroup.
 * `TauCeti.openNormalSubgroupTop`: the whole group, as an open normal subgroup.
+
+## Main results
+
+* `OpenNormalSubgroup.continuous_mk_inf`, `OpenNormalSubgroup.continuous_mk_comap`: continuity of
+  a map into the quotient by an intersection, and by a preimage, of open normal subgroups.
 -/
 
 public section
@@ -29,6 +44,10 @@ public section
 namespace OpenNormalSubgroup
 
 variable {G H : Type*} [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
+
+/-- Open normal subgroups compare through their underlying subgroups. -/
+theorem toSubgroup_le {U V : OpenNormalSubgroup G} : U.toSubgroup ≤ V.toSubgroup ↔ U ≤ V :=
+  Iff.rfl
 
 /-- The preimage of an open normal subgroup under a continuous group homomorphism. -/
 def comap (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) :
@@ -59,6 +78,67 @@ theorem comap_comap {K : Type*} [Group K] [TopologicalSpace K] (U : OpenNormalSu
     (f₂ : H →* K) (hf₂ : Continuous f₂) (f₁ : G →* H) (hf₁ : Continuous f₁) :
     comap (comap U f₂ hf₂) f₁ hf₁ = comap U (f₂.comp f₁) (hf₂.comp hf₁) :=
   (rfl)
+
+/-- The product of two open normal subgroups, as an open normal subgroup of the product group. -/
+def prod (U : OpenNormalSubgroup G) (V : OpenNormalSubgroup H) : OpenNormalSubgroup (G × H) where
+  toOpenSubgroup := U.toOpenSubgroup.prod V.toOpenSubgroup
+  isNormal' := Subgroup.prod_normal U.toSubgroup V.toSubgroup
+
+/-- The product of two open normal subgroups as a set. -/
+@[simp, norm_cast]
+theorem coe_prod (U : OpenNormalSubgroup G) (V : OpenNormalSubgroup H) :
+    (U.prod V : Set (G × H)) = (U : Set G) ×ˢ (V : Set H) :=
+  (rfl)
+
+/-- The underlying subgroup of the product of two open normal subgroups. -/
+@[simp]
+theorem toSubgroup_prod (U : OpenNormalSubgroup G) (V : OpenNormalSubgroup H) :
+    (U.prod V).toSubgroup = U.toSubgroup.prod V.toSubgroup :=
+  (rfl)
+
+/-- Membership in the product of two open normal subgroups. -/
+@[simp]
+theorem mem_prod {U : OpenNormalSubgroup G} {V : OpenNormalSubgroup H} {x : G × H} :
+    x ∈ U.prod V ↔ x.1 ∈ U ∧ x.2 ∈ V :=
+  Iff.rfl
+
+/-- A map into the quotient by the intersection of two open normal subgroups is continuous as
+soon as its composites with the two quotient maps are. -/
+theorem continuous_mk_inf [SeparatelyContinuousMul G] {X : Type*} [TopologicalSpace X]
+    {U V : OpenNormalSubgroup G} {g : X → G}
+    (hU : Continuous fun x ↦ (g x : G ⧸ U.toSubgroup))
+    (hV : Continuous fun x ↦ (g x : G ⧸ V.toSubgroup)) :
+    Continuous fun x ↦ (g x : G ⧸ (U ⊓ V).toSubgroup) := by
+  rw [continuous_discrete_rng]
+  intro d
+  obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective d
+  have : (fun x ↦ (g x : G ⧸ (U ⊓ V).toSubgroup)) ⁻¹' {(y : G ⧸ (U ⊓ V).toSubgroup)} =
+      (fun x ↦ (g x : G ⧸ U.toSubgroup)) ⁻¹' {(y : G ⧸ U.toSubgroup)} ∩
+        (fun x ↦ (g x : G ⧸ V.toSubgroup)) ⁻¹' {(y : G ⧸ V.toSubgroup)} := by
+    ext x
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_inter_iff, QuotientGroup.eq]
+    exact Subgroup.mem_inf
+  rw [this]
+  exact (hU.isOpen_preimage _ (isOpen_discrete _)).inter (hV.isOpen_preimage _ (isOpen_discrete _))
+
+/-- A map into the quotient by the preimage of an open normal subgroup under a continuous
+homomorphism is continuous as soon as its composite with the homomorphism followed by the
+quotient map is. No continuity of the group operations on the source group is required. -/
+theorem continuous_mk_comap [SeparatelyContinuousMul H] {X : Type*} [TopologicalSpace X]
+    (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) {g : X → G}
+    (hg : Continuous fun x ↦ (f (g x) : H ⧸ U.toSubgroup)) :
+    Continuous fun x ↦ (g x : G ⧸ (U.comap f hf).toSubgroup) := by
+  let φ := QuotientGroup.map (U.comap f hf).toSubgroup U.toSubgroup f
+    (toSubgroup_comap U f hf).le
+  have hφ : Function.Injective φ := by
+    intro a b
+    obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective a
+    obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective b
+    simp only [φ, QuotientGroup.map_mk, QuotientGroup.eq, toSubgroup_comap,
+      Subgroup.mem_comap, map_mul, map_inv]
+    exact id
+  exact (IsLocallyConstant.desc _ φ
+    ((IsLocallyConstant.iff_continuous _).2 hg) hφ).continuous
 
 end OpenNormalSubgroup
 

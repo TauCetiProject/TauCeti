@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Quiver.D4.Basic
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # The Euler and Tits forms of the `D₄` quiver
@@ -203,6 +202,74 @@ private theorem card_filter_eq_sum {d : D4 → ℤ}
 
 /-! ### The twelve positive roots -/
 
+/-- **The central coordinate of a root of `D₄` has absolute value at most `2`**: a dimension vector
+of Tits norm one, not necessarily nonnegative, has `|d center| ≤ 2`. -/
+theorem abs_center_le_two_of_titsForm_eq_one {d : D4 → ℤ} (h : titsForm D4 d = 1) :
+    |d center| ≤ 2 := by
+  have hsum : 0 ≤ ∑ i, (2 * d (outer i) - d center) ^ 2 :=
+    Finset.sum_nonneg fun i _ => sq_nonneg _
+  exact abs_le.mpr ⟨by nlinarith [four_mul_titsForm d], by nlinarith [four_mul_titsForm d]⟩
+
+/-- **The positive roots of `D₄` with central coordinate `0`** are the three outer simple roots:
+a nonnegative dimension vector of Tits norm one vanishing at the centre is a root vector with a
+single `1` outside. -/
+theorem exists_eq_rootVector_zero_of_titsForm_eq_one {d : D4 → ℤ} (hd : 0 ≤ d)
+    (h : titsForm D4 d = 1) (hc : d center = 0) :
+    ∃ s : Finset (Fin 3), d = rootVector 0 s ∧ s.card = 1 := by
+  have ht := titsForm_apply d
+  rw [h, hc] at ht
+  -- Each outer coordinate lies between `0` and its square, which is at most `∑ᵢ aᵢ ^ 2 = 1`.
+  have hbin (i : Fin 3) : d (outer i) = 0 ∨ d (outer i) = 1 := by
+    have hsingle := Finset.single_le_sum (f := fun j : Fin 3 => d (outer j) ^ 2)
+      (fun j _ => sq_nonneg _) (Finset.mem_univ i)
+    have := Int.le_self_sq (d (outer i))
+    have := Pi.le_def.mp hd (outer i)
+    simp only [Pi.zero_apply] at this
+    omega
+  have hsq (i : Fin 3) : d (outer i) ^ 2 = d (outer i) := by
+    rcases hbin i with h' | h' <;> rw [h'] <;> ring
+  have hsum : ∑ i, d (outer i) = 1 := by
+    rw [← Finset.sum_congr rfl fun i _ => hsq i]
+    linarith
+  exact ⟨_, hc ▸ eq_rootVector_filter hbin, by exact_mod_cast (card_filter_eq_sum hbin).trans hsum⟩
+
+/-- **The positive roots of `D₄` with central coordinate `1`**: a dimension vector of Tits norm one
+with a `1` at the centre, not necessarily nonnegative, is a root vector, that is, has an arbitrary
+`0/1` pattern outside. -/
+theorem exists_eq_rootVector_one_of_titsForm_eq_one {d : D4 → ℤ} (h : titsForm D4 d = 1)
+    (hc : d center = 1) : ∃ s : Finset (Fin 3), d = rootVector 1 s := by
+  have ht := titsForm_apply d
+  rw [h, hc] at ht
+  -- The Tits norm is `1 + ∑ᵢ (aᵢ ^ 2 - aᵢ)`, a sum of nonnegative integers, so each `aᵢ ^ 2 = aᵢ`.
+  have hz : ∑ i, (d (outer i) ^ 2 - d (outer i)) = 0 := by
+    rw [Finset.sum_sub_distrib]
+    linarith
+  have hbin (i : Fin 3) : d (outer i) = 0 ∨ d (outer i) = 1 := by
+    have hi := (Finset.sum_eq_zero_iff_of_nonneg fun j _ =>
+      sub_nonneg.mpr (Int.le_self_sq (d (outer j)))).mp hz i (Finset.mem_univ i)
+    exact eq_zero_or_one_of_sq_eq_self (sub_eq_zero.mp hi)
+  exact ⟨_, hc ▸ eq_rootVector_filter hbin⟩
+
+/-- **The positive root of `D₄` with central coordinate `2`** is the highest root: a dimension
+vector of Tits norm one with a `2` at the centre, not necessarily nonnegative, has a `1` at every
+outer vertex. -/
+theorem eq_rootVector_two_of_titsForm_eq_one {d : D4 → ℤ} (h : titsForm D4 d = 1)
+    (hc : d center = 2) : d = rootVector 2 Finset.univ := by
+  have ht := titsForm_apply d
+  rw [h, hc] at ht
+  -- The Tits norm is `1 + ∑ᵢ (aᵢ - 1) ^ 2`, so every outer coordinate is `1`.
+  have hz : ∑ i, (d (outer i) - 1) ^ 2 = 0 := by
+    simp only [Fin.sum_univ_three] at ht ⊢
+    linarith
+  funext v
+  cases v with
+  | center => rw [hc, rootVector_center]
+  | outer i =>
+      have hi := (Finset.sum_eq_zero_iff_of_nonneg fun j _ =>
+        sq_nonneg (d (outer j) - 1)).mp hz i (Finset.mem_univ i)
+      simp only [rootVector_outer, Finset.mem_univ, ↓reduceIte]
+      linarith [pow_eq_zero_iff two_ne_zero |>.mp hi]
+
 /-- **The positive roots of the `D₄` Tits form.** A nonnegative dimension vector has Tits norm one
 exactly when it is a root vector of one of three kinds: an outer simple root (`0` at the centre and
 a single outer `1`), a vector with a `1` at the centre and an arbitrary `0/1` pattern outside, or
@@ -210,92 +277,17 @@ the highest root (`2` at the centre and a `1` at every outer vertex). -/
 theorem titsForm_eq_one_iff_of_nonneg {d : D4 → ℤ} (hd : 0 ≤ d) :
     titsForm D4 d = 1 ↔ ∃ (c : ℤ) (s : Finset (Fin 3)),
       d = rootVector c s ∧ ((c = 0 ∧ s.card = 1) ∨ c = 1 ∨ (c = 2 ∧ s = Finset.univ)) := by
-  rw [Pi.le_def] at hd
-  simp only [Pi.zero_apply] at hd
   constructor
   · intro h
-    -- The central coordinate is bounded by the sum-of-squares identity.
-    have h4 := four_mul_titsForm d
-    rw [h] at h4
-    have hsum : 0 ≤ ∑ i, (2 * d (outer i) - d center) ^ 2 :=
-      Finset.sum_nonneg fun i _ => sq_nonneg _
-    have hcsq : d center ^ 2 ≤ 4 := by linarith
-    have hc2 : d center ≤ 2 := by nlinarith [hd center]
-    have ht := titsForm_apply d
-    rw [h] at ht
-    have hcases : d center = 0 ∨ d center = 1 ∨ d center = 2 := by
-      have := hd center
-      omega
-    -- In each case the outer coordinates are forced to be `0` or `1`.
-    have main : ∀ hbin : ∀ i, d (outer i) = 0 ∨ d (outer i) = 1,
-        ∃ (c : ℤ) (s : Finset (Fin 3)), d = rootVector c s ∧ c = d center ∧
-          ((s.card : ℤ) = ∑ i, d (outer i)) :=
-      fun hbin => ⟨d center, _, eq_rootVector_filter hbin, rfl, card_filter_eq_sum hbin⟩
-    rcases hcases with hc | hc | hc
-    · -- `c = 0`: the outer coordinates square-sum to one, so exactly one of them is `1`.
-      rw [hc] at ht
-      have hle : ∀ i : Fin 3, d (outer i) ^ 2 ≤ 1 := by
-        intro i
-        have hsingle := Finset.single_le_sum (f := fun j : Fin 3 => d (outer j) ^ 2)
-          (fun j _ => sq_nonneg _) (Finset.mem_univ i)
-        linarith
-      have hbin : ∀ i : Fin 3, d (outer i) = 0 ∨ d (outer i) = 1 := by
-        intro i
-        have h₀ := hd (outer i)
-        have h₁ : d (outer i) ≤ 1 := by nlinarith [hle i]
-        omega
-      have hsq : ∀ i : Fin 3, d (outer i) ^ 2 = d (outer i) := by
-        intro i
-        rcases hbin i with h' | h' <;> rw [h'] <;> ring
-      have hsumone : ∑ i, d (outer i) = 1 := by
-        rw [← Finset.sum_congr rfl fun i _ => hsq i]
-        linarith
-      obtain ⟨c, s, hds, hcc, hcard⟩ := main hbin
-      refine ⟨c, s, hds, Or.inl ⟨by rw [hcc, hc], ?_⟩⟩
-      have : (s.card : ℤ) = 1 := by rw [hcard, hsumone]
-      exact_mod_cast this
-    · -- `c = 1`: each outer coordinate satisfies `aᵢ ^ 2 = aᵢ`.
-      rw [hc] at ht
-      have hnn : ∀ i : Fin 3, (0 : ℤ) ≤ d (outer i) ^ 2 - d (outer i) := by
-        intro i
-        have h₀ := hd (outer i)
-        rcases eq_or_lt_of_le h₀ with h' | h'
-        · rw [← h']
-          norm_num
-        · have h₁ : 1 ≤ d (outer i) := by omega
-          nlinarith
-      have hz : ∑ i, (d (outer i) ^ 2 - d (outer i)) = 0 := by
-        rw [Finset.sum_sub_distrib]
-        linarith
-      have hbin : ∀ i : Fin 3, d (outer i) = 0 ∨ d (outer i) = 1 := by
-        intro i
-        have hi := (Finset.sum_eq_zero_iff_of_nonneg fun j _ => hnn j).mp hz i (Finset.mem_univ i)
-        have hfac : d (outer i) * (d (outer i) - 1) = 0 := by linear_combination hi
-        rcases mul_eq_zero.mp hfac with h' | h'
-        · exact Or.inl h'
-        · exact Or.inr (by omega)
-      obtain ⟨c, s, hds, hcc, -⟩ := main hbin
-      exact ⟨c, s, hds, Or.inr (Or.inl (by rw [hcc, hc]))⟩
-    · -- `c = 2`: the outer coordinates square-sum to their doubles less three, forcing each to
-      -- be `1`.
-      rw [hc] at ht
-      have hz : ∑ i, (d (outer i) - 1) ^ 2 = 0 := by
-        simp only [Fin.sum_univ_three] at ht ⊢
-        linarith
-      have hone : ∀ i : Fin 3, d (outer i) = 1 := by
-        intro i
-        have hi := (Finset.sum_eq_zero_iff_of_nonneg fun j _ =>
-          sq_nonneg (d (outer j) - 1)).mp hz i (Finset.mem_univ i)
-        have := pow_eq_zero_iff two_ne_zero |>.mp hi
-        omega
-      obtain ⟨c, s, hds, hcc, hcard⟩ := main fun i => Or.inr (hone i)
-      refine ⟨c, s, hds, Or.inr (Or.inr ⟨by rw [hcc, hc], ?_⟩)⟩
-      refine Finset.eq_univ_of_card s ?_
-      have : (s.card : ℤ) = 3 := by
-        rw [hcard]
-        simp [hone]
-      simp only [Fintype.card_fin]
-      exact_mod_cast this
+    have hc0 := Pi.le_def.mp hd center
+    have hc2 := (abs_le.mp (abs_center_le_two_of_titsForm_eq_one h)).2
+    simp only [Pi.zero_apply] at hc0
+    obtain hc | hc | hc : d center = 0 ∨ d center = 1 ∨ d center = 2 := by omega
+    · obtain ⟨s, hds, hs⟩ := exists_eq_rootVector_zero_of_titsForm_eq_one hd h hc
+      exact ⟨0, s, hds, .inl ⟨rfl, hs⟩⟩
+    · obtain ⟨s, hds⟩ := exists_eq_rootVector_one_of_titsForm_eq_one h hc
+      exact ⟨1, s, hds, .inr (.inl rfl)⟩
+    · exact ⟨2, _, eq_rootVector_two_of_titsForm_eq_one h hc, .inr (.inr ⟨rfl, rfl⟩)⟩
   · rintro ⟨c, s, rfl, hcond⟩
     rw [titsForm_rootVector]
     rcases hcond with ⟨rfl, hcard⟩ | rfl | ⟨rfl, rfl⟩

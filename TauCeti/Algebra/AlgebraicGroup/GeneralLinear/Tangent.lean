@@ -370,6 +370,19 @@ def cotangentDualMatrixEquiv :
   Derivation.cotangentLinearEquiv (R := k) (A := coordinateHopfAlgebra k n) (B := k) ≪≫ₗ
     tangentLinearEquivMatrix n
 
+/-- The cotangent-dual matrix equivalence evaluates a functional through the corresponding
+tangent derivation. -/
+-- This is not a simp lemma: the more specific matrix-unit computation should keep its
+-- normal form in proofs about adjoint root spaces.
+theorem cotangentDualMatrixEquiv_apply
+    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
+    cotangentDualMatrixEquiv x =
+      tangentMatrix n
+        ((Derivation.cotangentLinearEquiv (R := k)
+          (A := coordinateHopfAlgebra k n) (B := k)) x) := by
+  simp only [cotangentDualMatrixEquiv, LinearEquiv.trans_apply,
+    tangentLinearEquivMatrix_apply]
+
 /-- Scalar extension of a cotangent-dual tangent vector applies the scalar map entrywise to its
 matrix.  This is the compatibility that lets computations on coefficient-valued derivations be
 read back in the fixed cotangent-dual Lie algebra. -/

@@ -59,8 +59,7 @@ private theorem baseChangeTowerAlgEquiv_counit_comp :
       Bialgebra.counitAlgHom K (K ⊗[L] (L ⊗[k] H)) := by
   apply Algebra.TensorProduct.ext'
   intro s z
-  induction z using _root_.TensorProduct.induction_on with
-  | zero => simp
+  induction z using _root_.TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [_root_.TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
   | tmul l h =>
@@ -79,8 +78,7 @@ private theorem _root_.TensorProduct.baseChangeTowerAlgEquiv_comul_aux
         (s ⊗ₜ[L] _root_.TensorProduct.AlgebraTensorModule.distribBaseChange k L H H
           (l ⊗ₜ[k] x))) =
       _root_.TensorProduct.AlgebraTensorModule.distribBaseChange k K H H ((l • s) ⊗ₜ[k] x) := by
-  induction x using _root_.TensorProduct.induction_on with
-  | zero => simp
+  induction x using _root_.TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [_root_.TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
   | tmul h₁ h₂ => simp
@@ -94,8 +92,7 @@ private theorem baseChangeTowerAlgEquiv_map_comp_comul :
       (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv k L H K).toAlgHom := by
   apply Algebra.TensorProduct.ext'
   intro s z
-  induction z using _root_.TensorProduct.induction_on with
-  | zero => simp
+  induction z using _root_.TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [_root_.TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
   | tmul l h =>
@@ -124,6 +121,15 @@ theorem baseChangeTowerBialgEquiv_tmul (s : K) (l : L) (h : H) :
     baseChangeTowerBialgEquiv k L H K (s ⊗ₜ[L] (l ⊗ₜ[k] h)) = (l • s) ⊗ₜ[k] h := by
   rw [baseChangeTowerBialgEquiv, _root_.BialgEquiv.ofAlgEquiv_apply]
   exact TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_tmul k L H K s l h
+
+/-- On a tensor with unit scalar, the tower comparison extends the intermediate coefficients. -/
+@[simp]
+theorem _root_.TensorProduct.baseChangeTowerBialgEquiv_one_tmul (x : L ⊗[k] H) :
+    baseChangeTowerBialgEquiv k L H K (1 ⊗ₜ[L] x) =
+      Algebra.TensorProduct.map (IsScalarTower.toAlgHom k L K) (AlgHom.id k H) x := by
+  induction x using _root_.TensorProduct.inductionOn with
+  | add x y hx hy => simp only [_root_.TensorProduct.tmul_add, map_add, hx, hy]
+  | tmul a b => simp [Algebra.smul_def]
 
 /-- The inverse tower comparison inserts the unit of the intermediate ring. -/
 @[simp]

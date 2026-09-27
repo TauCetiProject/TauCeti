@@ -35,6 +35,8 @@ API replace them.
   induced by the tangent trivialization at a chart centre and `Module.finBasis`, and its
   identification with that trivialization's local frame.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
+* `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
+  inner product in the basis given by the trivialization.
 * `Riemannian.Tensor.posDef_chartGramMatrix`: positive-definiteness on the base set.
 * `Riemannian.Tensor.chartGramMatrix_det_pos`: strict positivity of its determinant there.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
@@ -117,6 +119,19 @@ def chartGramMatrix (α : M) (x : M) :
 theorem chartGramMatrix_apply (α : M) (x : M) (i j : Fin (Module.finrank ℝ E)) :
     chartGramMatrix (I := I) α x i j =
       inner ℝ (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := (rfl)
+
+/-- On the chart domain, the Gram matrix at `α` is the matrix of the inner product in the basis
+of the tangent space given by the trivialization at `α`. -/
+theorem chartGramMatrix_eq_toMatrix (α : M) {x : M}
+    (hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet) :
+    chartGramMatrix (I := I) α x = LinearMap.BilinForm.toMatrix
+      ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx)
+      (innerₗ (TangentSpace I x)) := by
+  ext i j
+  have hx' : x ∈ (chartAt H α).source := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hx
+  simp only [chartGramMatrix_apply, chartLocalFrame_apply_of_mem_chart_source α hx',
+    LinearMap.BilinForm.toMatrix_apply, innerₗ_apply_apply]
 
 /-- The Gram matrix of the chart-local frame is positive-definite on the tangent-trivialization
 base set. -/

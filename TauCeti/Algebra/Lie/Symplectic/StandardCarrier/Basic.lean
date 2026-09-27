@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.Sl2
-public import Mathlib.LinearAlgebra.Matrix.Cartan
+public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation

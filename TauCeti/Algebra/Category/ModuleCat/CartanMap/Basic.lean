@@ -288,9 +288,9 @@ namespace CategoryTheory.Equivalence
 
 open TauCeti
 
-universe u
+universe u u'
 
-variable {R S : Type u} [Ring R] [Ring S] (e : ModuleCat.{u} S ≌ ModuleCat.{u} R)
+variable {S : Type u} [Ring S] {R : Type u'} [Ring R] (e : ModuleCat.{u} S ≌ ModuleCat.{u'} R)
   [e.functor.Additive]
 
 /-- An exact equivalence of module categories pulling the finitely generated `R`-modules back to
@@ -298,7 +298,7 @@ the finitely generated `S`-modules restricts to a conflation-exact functor betwe
 generated modules. -/
 theorem isConflationExact_finiteModules_congrFullSubcategory_functor
     (hF : (ExactStructure.abelian (ModuleCat.{u} S)).IsConflationExact
-      (ExactStructure.abelian (ModuleCat.{u} R)) e.functor)
+      (ExactStructure.abelian (ModuleCat.{u'} R)) e.functor)
     (h : (ModuleCat.isFG R).inverseImage e.functor = ModuleCat.isFG S) :
     (finiteModulesExactStructure S).IsConflationExact (finiteModulesExactStructure R)
       (e.congrFullSubcategory h).functor :=
@@ -308,7 +308,7 @@ theorem isConflationExact_finiteModules_congrFullSubcategory_functor
 `R`-modules back to the finitely generated `S`-modules restricts to a conflation-exact functor
 between the finitely generated modules. -/
 theorem isConflationExact_finiteModules_congrFullSubcategory_inverse
-    (hG : (ExactStructure.abelian (ModuleCat.{u} R)).IsConflationExact
+    (hG : (ExactStructure.abelian (ModuleCat.{u'} R)).IsConflationExact
       (ExactStructure.abelian (ModuleCat.{u} S)) e.inverse)
     (h : (ModuleCat.isFG R).inverseImage e.functor = ModuleCat.isFG S) :
     (finiteModulesExactStructure R).IsConflationExact (finiteModulesExactStructure S)
@@ -320,7 +320,7 @@ theorem isConflationExact_finiteModules_congrFullSubcategory_inverse
 functor between the finitely generated projective modules. -/
 theorem isConflationExact_finiteProjectiveModules_congrFullSubcategory_functor
     (hF : (ExactStructure.abelian (ModuleCat.{u} S)).IsConflationExact
-      (ExactStructure.abelian (ModuleCat.{u} R)) e.functor)
+      (ExactStructure.abelian (ModuleCat.{u'} R)) e.functor)
     (h : (finiteProjectiveModules R).inverseImage e.functor = finiteProjectiveModules S) :
     (finiteProjectiveModulesExactStructure S).IsConflationExact
       (finiteProjectiveModulesExactStructure R) (e.congrFullSubcategory h).functor :=
@@ -330,7 +330,7 @@ theorem isConflationExact_finiteProjectiveModules_congrFullSubcategory_functor
 projective `R`-modules back to the finitely generated projective `S`-modules restricts to a
 conflation-exact functor between the finitely generated projective modules. -/
 theorem isConflationExact_finiteProjectiveModules_congrFullSubcategory_inverse
-    (hG : (ExactStructure.abelian (ModuleCat.{u} R)).IsConflationExact
+    (hG : (ExactStructure.abelian (ModuleCat.{u'} R)).IsConflationExact
       (ExactStructure.abelian (ModuleCat.{u} S)) e.inverse)
     (h : (finiteProjectiveModules R).inverseImage e.functor = finiteProjectiveModules S) :
     (finiteProjectiveModulesExactStructure R).IsConflationExact

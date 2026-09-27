@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Maximal
+import TauCeti.Geometry.Manifold.IntegralCurve.Flow
 
 /-!
 # The maximal geodesic with prescribed initial data
@@ -34,6 +35,12 @@ to define the Riemannian exponential map by evaluation at time one.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ` specializes uniqueness to
   geodesics defined for all time.
 * `TauCeti.Manifold.maximalGeodesic_smul` is homogeneity in the initial velocity and time.
+* `TauCeti.Manifold.maximalIntegralCurve_geodesicSpray` identifies the maximal integral curve of
+  the geodesic spray with the velocity lift of the maximal geodesic.
+* `TauCeti.Manifold.maximalGeodesic_add` and
+  `TauCeti.Manifold.mem_geodesicInterval_maximalGeodesic_iff` are the flow law: restarting the
+  maximal geodesic at time `t` from the point and velocity it has there translates both the curve
+  and its maximal interval by `t`.
 * `TauCeti.Manifold.alongCurve_curveVelocity_maximalGeodesic_eq_zero` is the geodesic equation for
   the unrestricted velocity of the maximal geodesic on its maximal interval.
 
@@ -231,6 +238,55 @@ time belongs to the corresponding maximal interval. -/
       _ = γ (a * t) := rfl
       _ = maximalGeodesic I M p v (a * t) :=
         (hγ.eqOn_maximalGeodesic hatbc).symm
+
+/-- At every parameter of its maximal interval, the maximal integral curve of the geodesic spray
+through `(p, v)` is the velocity lift of the maximal geodesic. -/
+theorem maximalIntegralCurve_geodesicSpray {p : M} {v : TangentSpace I p} {t : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t =
+      TotalSpace.mk' E (maximalGeodesic I M p v t)
+        (curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) t) := by
+  have hz : IsMIntegralCurveOn
+      (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v)) (geodesicSpray I M)
+      (geodesicInterval I M p v) := by
+    rw [← maximalIntegralCurveInterval_geodesicSpray]
+    exact isMIntegralCurveOn_maximalIntegralCurve
+      (contMDiff_one_geodesicSpray (I := I) (M := M))
+  have hproj : (fun r ↦
+      (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) r).proj) =
+      maximalGeodesic I M p v :=
+    funext fun r ↦ (maximalGeodesic_def p v r).symm
+  rw [eq_curveVelocityLiftWithin_of_isMIntegralCurveOn
+    (isOpen_geodesicInterval.uniqueDiffOn t ht) hz ht, hproj, curveVelocityLiftWithin_apply]
+
+/-- **The flow law for maximal geodesics.**  Restarting the maximal geodesic from `p` with initial
+velocity `v` at a time `t` of its maximal interval, from the point and velocity it has there, and
+running it for time `s` gives its value at time `t + s`, whenever `t + s` also lies in the maximal
+interval. -/
+theorem maximalGeodesic_add {p : M} {v : TangentSpace I p} {t s : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) (hts : t + s ∈ geodesicInterval I M p v) :
+    maximalGeodesic I M p v (t + s) =
+      maximalGeodesic I M (maximalGeodesic I M p v t)
+        (curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) t) s := by
+  rw [← maximalIntegralCurveInterval_geodesicSpray] at ht hts
+  rw [maximalGeodesic_def, maximalIntegralCurve_add
+    (contMDiff_one_geodesicSpray (I := I) (M := M)) ht hts, maximalGeodesic_def,
+    ← maximalIntegralCurve_geodesicSpray
+      ((maximalIntegralCurveInterval_geodesicSpray (I := I) (M := M) p v) ▸ ht)]
+
+/-- **The maximal interval after restarting a maximal geodesic.**  Restarting the maximal geodesic
+from `p` with initial velocity `v` at a time `t` of its maximal interval, from the point and
+velocity it has there, translates the maximal interval by `-t`. -/
+@[simp] theorem mem_geodesicInterval_maximalGeodesic_iff {p : M} {v : TangentSpace I p} {t s : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    s ∈ geodesicInterval I M (maximalGeodesic I M p v t)
+        (curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) t) ↔
+      t + s ∈ geodesicInterval I M p v := by
+  rw [← maximalIntegralCurveInterval_geodesicSpray, ← maximalIntegralCurve_geodesicSpray ht,
+    mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff
+      (contMDiff_one_geodesicSpray (I := I) (M := M))
+      ((maximalIntegralCurveInterval_geodesicSpray (I := I) (M := M) p v).symm ▸ ht),
+    maximalIntegralCurveInterval_geodesicSpray]
 
 /-- The unrestricted covariant acceleration of a maximal geodesic vanishes at every point of its
 maximal interval. -/

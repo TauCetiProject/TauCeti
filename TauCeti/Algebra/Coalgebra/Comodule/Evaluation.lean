@@ -73,8 +73,7 @@ theorem baseChangeEvaluation_endOfPoint_tmul (g : H →ₐ[R] A)
       a * b * g (matrixCoefficient (R := R) (C := H) φ m) := by
   rw [endOfPoint_tmul, matrixCoefficient_def]
   generalize coact (R := R) (C := H) (M := M) m = t
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add s t hs ht => simp [hs, ht, mul_add]
   | tmul n h =>
       simp only [LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, TensorProduct.comm_tmul,
@@ -106,8 +105,7 @@ private theorem baseChangeEvaluation_comm_lTensor (g : H →ₐ[R] A)
         (TensorProduct.comm R (Module.Dual R M) A
           (LinearMap.lTensor (Module.Dual R M) g.toLinearMap t)) (b ⊗ₜ[R] m) =
       b * g (dualTensorHom R M H t m) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add s t hs ht => simp [hs, ht, mul_add]
   | tmul φ h =>
       simp only [LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, TensorProduct.comm_tmul,
@@ -142,12 +140,10 @@ theorem baseChangeEvaluation_dual_endOfPoint (g : WithConv (H →ₐ[R] A))
         (endOfPoint (Module.Dual R M) g.ofConv ξ) z =
       TauCeti.Module.Dual.baseChangeEvaluation (R := R) (M := M) (A := A) ξ
         (endOfPoint M (g⁻¹).ofConv z) := by
-  induction ξ using TensorProduct.induction_on with
-  | zero => simp
+  induction ξ using TensorProduct.inductionOn with
   | add ξ η hξ hη => simp only [map_add, LinearMap.add_apply, hξ, hη]
   | tmul a φ =>
-      induction z using TensorProduct.induction_on with
-      | zero => simp
+      induction z using TensorProduct.inductionOn with
       | add z w hz hw => simp only [map_add, hz, hw]
       | tmul b m =>
           rw [baseChangeEvaluation_dual_endOfPoint_tmul,

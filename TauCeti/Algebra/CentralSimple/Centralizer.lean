@@ -174,8 +174,7 @@ private def centralizerMulLeftEnd (c : Subalgebra.centralizer K (B : Set A)) :
     have key : ∀ r : ↥B ⊗[K] Aᵐᵒᵖ,
         (c : A) * Bimodule.toEnd B.val r x = Bimodule.toEnd B.val r ((c : A) * x) := by
       intro r
-      induction r using TensorProduct.induction_on with
-      | zero => simp
+      induction r using TensorProduct.inductionOn with
       | tmul b a =>
           have hc : (c : A) * (b : A) = (b : A) * (c : A) :=
             ((Subalgebra.mem_centralizer_iff K).1 c.2 (b : A) b.2).symm

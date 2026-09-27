@@ -143,7 +143,7 @@ private theorem weight_eq_of_content_eq (T : BoundedSSYT N μ) {d : Fin N →₀
     (h : ⇑(SemistandardYoungTableau.content T.1) = ⇑(Finsupp.mapDomain Fin.val d)) :
     weight T = d := by
   ext i
-  rw [weight_apply, congrFun h i, Finsupp.mapDomain_apply Fin.val_injective]
+  rw [weight_apply, congrFun h i, Finsupp.mapDomain_apply_of_injective Fin.val_injective]
 
 /-- **The bounded tableaux of a given weight are the tableaux of the corresponding content.**
 Boundedness is not an extra condition on the right-hand side: a letter outside the alphabet would
@@ -263,7 +263,7 @@ theorem mapDomain_rowLenWeight (h : μ.colLen 0 ≤ N) :
     ⇑(Finsupp.mapDomain Fin.val (rowLenWeight N μ)) = μ.rowLen := by
   funext j
   by_cases hj : j < N
-  · exact Finsupp.mapDomain_apply Fin.val_injective _ (⟨j, hj⟩ : Fin N)
+  · exact Finsupp.mapDomain_apply_of_injective Fin.val_injective _ (⟨j, hj⟩ : Fin N)
   · have hzero : μ.rowLen j = 0 := by
       by_contra hne
       exact hj (lt_of_lt_of_le (YoungDiagram.mem_iff_lt_colLen.mp
@@ -386,7 +386,7 @@ noncomputable def partWeight (σ : Type*) [Fintype σ] {n : ℕ} (ν : n.Partiti
 theorem partWeight_apply (ν : n.Partition) (x : σ) :
     partWeight σ ν x = (diagramOf ν).rowLen (Fintype.equivFin σ x) := by
   conv_lhs => rw [partWeight, ← (Fintype.equivFin σ).symm_apply_apply x]
-  rw [Finsupp.mapDomain_apply (Fintype.equivFin σ).symm.injective, rowLenWeight_apply]
+  rw [Finsupp.mapDomain_apply_of_injective (Fintype.equivFin σ).symm.injective, rowLenWeight_apply]
 
 variable (μ ν : n.Partition)
 

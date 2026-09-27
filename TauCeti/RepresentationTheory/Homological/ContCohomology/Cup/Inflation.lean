@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 
 /-!
 # Inflation preserves explicit low-degree cup products

@@ -164,7 +164,7 @@ theorem exists_face_card_eq_of_dimension_eq {n : ℕ}
         intro hbot
         rw [hbot, dimension_bot] at h
         exact (WithBot.natCast_ne_bot 0) h.symm
-      obtain ⟨σ, hσ, -⟩ := SetLike.exists_of_lt (bot_lt_iff_ne_bot.mpr hK)
+      obtain ⟨σ, hσ, -⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hK)
       have hle := le_dimension hσ
       rw [h] at hle
       have hcard : σ.card - 1 ≤ 0 := by exact_mod_cast hle

@@ -177,7 +177,7 @@ theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
     simpa only [← Divisor.dim_def, E, D] using hdimlt
   have hlt : riemannRochSpace E < riemannRochSpace D :=
     Submodule.lt_of_le_of_finrank_lt_finrank (riemannRochSpace_mono hED) hfinranklt
-  obtain ⟨x, hxD, hxE⟩ := SetLike.exists_of_lt hlt
+  obtain ⟨x, hxD, hxE⟩ := IsConcreteLE.exists_of_lt hlt
   have hx0 : x ≠ 0 := fun hx ↦ hxE (hx ▸ Submodule.zero_mem _)
   have hxDord := (mem_riemannRochSpace_iff_neg_le_ord hx0).mp hxD
   have hxnotE : ¬∀ Q : Place k F, -E.coeff Q ≤ Q.ord x := by
@@ -266,15 +266,7 @@ theorem exists_poles_eq_natCast_zsmul_ofPoint_of_two_mul_genus_sub_one_le_sub_on
   obtain ⟨x, hx0, hxP, hxQ⟩ :=
     P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_two_mul_genus_sub_one_le_sub_one_mul_degree
       hF hex hnpos hn
-  refine ⟨Units.mk0 x hx0, WeilDivisor.ext fun Q ↦ ?_⟩
-  rcases eq_or_ne Q P with rfl | hQP
-  · rw [Divisor.coeff_poles, Units.val_mk0, hxP, WeilDivisor.coeff_zsmul,
-      WeilDivisor.coeff_ofPoint_self, mul_one]
-    omega
-  · rw [Divisor.coeff_poles, Units.val_mk0, WeilDivisor.coeff_zsmul,
-      WeilDivisor.coeff_ofPoint_of_ne hQP, mul_zero]
-    have := hxQ Q hQP
-    omega
+  exact ⟨Units.mk0 x hx0, Divisor.poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg hF hxP hxQ⟩
 
 /-- For every place `P` and `n >= 2g`, some function has pole divisor exactly `nP`
 (Stichtenoth, Proposition 1.6.6). -/

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Counting
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Basic
+public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
+public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # Homomorphism densities on graphon space
@@ -19,10 +21,23 @@ In particular every homomorphism density is continuous on graphon space.
 These quotient-stable observables are the coordinates used by graphon separation, compactness, and
 the equivalence between cut-distance convergence and convergence of all homomorphism densities.
 
+The structural identities of homomorphism density descend as well: `t(⊥, ·) = 1`, relabelling
+along an embedding changes nothing, and `t(F₁ ⊕ F₂, ·) = t(F₁, ·) t(F₂, ·)`. So, as bounded
+continuous functions on graphon space, the homomorphism densities form a submonoid. This is the
+shape in which they serve as test functions: by Stone–Weierstrass a point-separating submonoid of
+bounded continuous functions determines finite measures
+(`TauCeti.MeasureTheory.ext_of_forall_mem_submonoid_integral_eq_of_polish`), so wherever the
+densities separate points, the integrals of all `t(F, ·)` determine a finite measure on graphon
+space.
+
 ## Main definitions
 
 * `TauCeti.DenseGraphLimits.homDensityOnSpace` is homomorphism density on the cut-distance
   quotient.
+* `TauCeti.DenseGraphLimits.homDensityBCF` is the same function, bundled as a bounded continuous
+  function.
+* `TauCeti.DenseGraphLimits.homDensitySubmonoid` is the submonoid of bounded continuous functions
+  on graphon space formed by the homomorphism densities of finite graphs.
 
 ## Main results
 
@@ -33,7 +48,13 @@ the equivalence between cut-distance convergence and convergence of all homomorp
   `TauCeti.DenseGraphLimits.homDensityOnSpace_le_one` bound it in `[0, 1]`;
 * `TauCeti.DenseGraphLimits.lipschitzWith_homDensityOnSpace` gives the edge-count Lipschitz bound;
 * `TauCeti.DenseGraphLimits.continuous_homDensityOnSpace` gives continuity on every fixed-carrier
-  graphon space.
+  graphon space;
+* `TauCeti.DenseGraphLimits.homDensityOnSpace_bot`,
+  `TauCeti.DenseGraphLimits.homDensityOnSpace_map_embedding` and
+  `TauCeti.DenseGraphLimits.homDensityOnSpace_sum` are normalization, relabelling invariance and
+  multiplicativity over disjoint unions on graphon space;
+* `TauCeti.DenseGraphLimits.homDensityBCF_mem_homDensitySubmonoid` says the homomorphism density
+  of a graph on any finite vertex type lies in `homDensitySubmonoid`.
 
 ## References
 
@@ -50,6 +71,8 @@ public section
 noncomputable section
 
 open MeasureTheory
+
+open scoped BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -109,6 +132,113 @@ theorem lipschitzWith_homDensityOnSpace (F : SimpleGraph V) [DecidableRel F.Adj]
 theorem continuous_homDensityOnSpace (F : SimpleGraph V) [DecidableRel F.Adj] :
     Continuous (homDensityOnSpace (μ := μ) F) :=
   (lipschitzWith_homDensityOnSpace (μ := μ) F).continuous
+
+section Structural
+
+variable {V₁ V₂ : Type*} [Fintype V₁] [Fintype V₂]
+
+/-- **Normalization on graphon space.** The edgeless graph has homomorphism density `1`. -/
+@[simp]
+theorem homDensityOnSpace_bot (x : GraphonSpace Ω μ) :
+    homDensityOnSpace (⊥ : SimpleGraph V) x = 1 := by
+  obtain ⟨W, rfl⟩ := SeparationQuotient.surjective_mk x
+  rw [homDensityOnSpace_mk, homDensity_bot]
+
+/-- Relabelling a finite graph along an embedding does not change its homomorphism density on
+graphon space. -/
+@[simp]
+theorem homDensityOnSpace_map_embedding [DecidableEq V₂] (F : SimpleGraph V₁)
+    [DecidableRel F.Adj] (f : V₁ ↪ V₂) (x : GraphonSpace Ω μ) :
+    homDensityOnSpace (F.map f) x = homDensityOnSpace F x := by
+  obtain ⟨W, rfl⟩ := SeparationQuotient.surjective_mk x
+  rw [homDensityOnSpace_mk, homDensityOnSpace_mk, homDensity_map_embedding]
+
+/-- **Multiplicativity on graphon space.** `t(F₁ ⊕g F₂, x) = t(F₁, x) · t(F₂, x)`. -/
+@[simp]
+theorem homDensityOnSpace_sum (F₁ : SimpleGraph V₁) [DecidableRel F₁.Adj] (F₂ : SimpleGraph V₂)
+    [DecidableRel F₂.Adj] (x : GraphonSpace Ω μ) :
+    homDensityOnSpace (F₁ ⊕g F₂) x = homDensityOnSpace F₁ x * homDensityOnSpace F₂ x := by
+  obtain ⟨W, rfl⟩ := SeparationQuotient.surjective_mk x
+  rw [homDensityOnSpace_mk, homDensityOnSpace_mk, homDensityOnSpace_mk, homDensity_sum]
+
+end Structural
+
+/-! ### Homomorphism densities as bounded continuous functions -/
+
+section BoundedContinuous
+
+variable {V₁ V₂ : Type*} [Fintype V₁] [Fintype V₂]
+
+/-- The homomorphism density of a finite graph, as a bounded continuous function on graphon
+space. It takes values in `[0, 1]`. -/
+def homDensityBCF (F : SimpleGraph V) [DecidableRel F.Adj] : GraphonSpace Ω μ →ᵇ ℝ :=
+  .mkOfBound ⟨homDensityOnSpace F, continuous_homDensityOnSpace F⟩ 1 fun x y =>
+    Real.dist_le_of_mem_Icc_01 ⟨homDensityOnSpace_nonneg F x, homDensityOnSpace_le_one F x⟩
+      ⟨homDensityOnSpace_nonneg F y, homDensityOnSpace_le_one F y⟩
+
+@[simp]
+theorem homDensityBCF_apply (F : SimpleGraph V) [DecidableRel F.Adj] (x : GraphonSpace Ω μ) :
+    homDensityBCF F x = homDensityOnSpace F x := (rfl)
+
+/-- The edgeless graph has constant homomorphism density `1` as a bounded continuous function. -/
+@[simp]
+theorem homDensityBCF_bot :
+    homDensityBCF (μ := μ) (⊥ : SimpleGraph V) = 1 := by
+  ext x
+  simp
+
+/-- Relabelling along an embedding preserves the bounded continuous homomorphism density. -/
+@[simp]
+theorem homDensityBCF_map_embedding [DecidableEq V₂] (F : SimpleGraph V₁)
+    [DecidableRel F.Adj] (f : V₁ ↪ V₂) :
+    homDensityBCF (μ := μ) (F.map f) = homDensityBCF F := by
+  ext x
+  simp
+
+/-- The homomorphism density of a disjoint union is the product of the homomorphism densities, as
+bounded continuous functions on graphon space. -/
+@[simp]
+theorem homDensityBCF_sum (F₁ : SimpleGraph V₁) [DecidableRel F₁.Adj] (F₂ : SimpleGraph V₂)
+    [DecidableRel F₂.Adj] :
+    homDensityBCF (μ := μ) (F₁ ⊕g F₂) = homDensityBCF F₁ * homDensityBCF F₂ := by
+  ext x
+  simp
+
+/-- Every homomorphism density is that of a graph on some `Fin n`: relabel the vertices along
+`Fintype.equivFin`. -/
+private theorem exists_homDensityBCF_fin_eq (F : SimpleGraph V) [DecidableRel F.Adj] :
+    ∃ (n : ℕ) (F' : SimpleGraph (Fin n)) (_ : DecidableRel F'.Adj),
+      homDensityBCF (μ := μ) F' = homDensityBCF F := by
+  refine ⟨Fintype.card V, F.map (Fintype.equivFin V).toEmbedding, inferInstance, ?_⟩
+  ext x
+  exact homDensityOnSpace_map_embedding F (Fintype.equivFin V).toEmbedding x
+
+/-- **The homomorphism-density submonoid.** The bounded continuous functions on graphon space of
+the form `t(F, ·)` for a finite graph `F`, indexed by graphs on `Fin n`. They are closed under
+products, since `t(F₁, ·) t(F₂, ·) = t(F₁ ⊕g F₂, ·)`, and contain the constant `1 = t(⊥, ·)`.
+`homDensityBCF_mem_homDensitySubmonoid` admits graphs on any finite vertex type. -/
+def homDensitySubmonoid : Submonoid (GraphonSpace Ω μ →ᵇ ℝ) where
+  carrier := {g | ∃ (n : ℕ) (F : SimpleGraph (Fin n)) (_ : DecidableRel F.Adj),
+    homDensityBCF F = g}
+  one_mem' := ⟨0, ⊥, inferInstance, by ext x; simp⟩
+  mul_mem' := by
+    rintro _ _ ⟨n₁, F₁, _, rfl⟩ ⟨n₂, F₂, _, rfl⟩
+    rw [← homDensityBCF_sum]
+    exact exists_homDensityBCF_fin_eq (F₁ ⊕g F₂)
+
+/-- A member of the homomorphism-density submonoid is the density of a graph on some `Fin n`. -/
+theorem mem_homDensitySubmonoid_iff {g : GraphonSpace Ω μ →ᵇ ℝ} :
+    g ∈ homDensitySubmonoid ↔
+      ∃ (n : ℕ) (F : SimpleGraph (Fin n)) (_ : DecidableRel F.Adj), homDensityBCF F = g :=
+  (Iff.rfl)
+
+/-- The homomorphism density of a graph on any finite vertex type lies in the homomorphism-density
+submonoid. -/
+theorem homDensityBCF_mem_homDensitySubmonoid (F : SimpleGraph V) [DecidableRel F.Adj] :
+    homDensityBCF F ∈ homDensitySubmonoid (μ := μ) :=
+  exists_homDensityBCF_fin_eq F
+
+end BoundedContinuous
 
 end DenseGraphLimits
 

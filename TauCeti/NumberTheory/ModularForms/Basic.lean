@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.NumberTheory.ModularForms.Basic
+public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 
 /-!

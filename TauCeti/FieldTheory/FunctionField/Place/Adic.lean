@@ -212,7 +212,8 @@ is the localization of `R` at `p`, this is Mathlib's
 def adicResidueFieldEquiv : (R ⧸ p.asIdeal) ≃ₐ[k] (adic k F p).ResidueField :=
   haveI := p.isMaximal
   AlgEquiv.ofRingEquiv
-    (f := IsLocalization.AtPrime.equivQuotMaximalIdeal p.asIdeal ((adic k F p).integers))
+    (f := (IsLocalization.AtPrime.equivQuotMaximalIdeal p.asIdeal
+      ((adic k F p).integers)).toRingEquiv)
     fun c =>
       (IsLocalization.AtPrime.equivQuotMaximalIdeal_apply_mk p.asIdeal _
         (algebraMap k R c)).trans (adicResidueHom_algebraMap k F p c)

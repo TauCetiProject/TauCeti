@@ -188,14 +188,6 @@ theorem kernelHopfIdeal_weightParabolicLimitCoordinateMap (w : Fin N → ℤ) :
       (weightParabolicLimitCoordinateMap R w) _ _).mpr
     exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
 
-private theorem eqToIso_quotientSpec_hom_comp_quotientSpecι
-    (H : _root_.CommHopfAlgCat.{u} R) {I J : HopfIdeal R H} (hIJ : I = J) :
-    (eqToIso (congrArg (CommHopfAlgCat.quotientSpec H) hIJ)).hom ≫
-        CommHopfAlgCat.quotientSpecι H J =
-      CommHopfAlgCat.quotientSpecι H I := by
-  subst J
-  simp
-
 /-- The scheme-theoretic kernel of the weight-parabolic limit is canonically the represented
 weight-unipotent group scheme. -/
 noncomputable def weightParabolicLimitKernelIso (w : Fin N → ℤ) :
@@ -216,7 +208,7 @@ theorem weightParabolicLimitKernelIso_hom_comp_weightUnipotentToParabolic
   rw [weightParabolicLimitKernelIso, Iso.trans_hom, Category.assoc,
     weightUnipotentInParabolicGroupSchemeIso_hom_comp_weightUnipotentToParabolic,
     CommHopfAlgCat.kernelSpecι_def]
-  exact eqToIso_quotientSpec_hom_comp_quotientSpecι R _
+  exact CommHopfAlgCat.eqToHom_comp_quotientSpecι _
     (kernelHopfIdeal_weightParabolicLimitCoordinateMap R w)
 
 end

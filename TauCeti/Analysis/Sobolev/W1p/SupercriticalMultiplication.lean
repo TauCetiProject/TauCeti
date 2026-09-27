@@ -103,8 +103,8 @@ private theorem W1p.memLp_mul_morreyRepresentative (hp : (finrank ℝ E : ℝ≥
     (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
     MemLp (fun x => W1p.morreyRepresentative u hp x * W1p.morreyRepresentative v hp x)
       (p : ℝ≥0∞) (mu.restrict (⊤ : Opens E)) := by
-  have h := MemLp.mul' (p := ∞) (q := (p : ℝ≥0∞)) (r := (p : ℝ≥0∞))
-    (Lp.memLp (W1p.value v)) (W1p.memLp_top_morreyRepresentative hp u)
+  have h := MemLp.fun_mul (p := ∞) (q := (p : ℝ≥0∞)) (r := (p : ℝ≥0∞))
+    (W1p.memLp_top_morreyRepresentative hp u) (Lp.memLp (W1p.value v))
   refine h.ae_eq ?_
   have hv : W1p.value v =ᵐ[mu.restrict (⊤ : Opens E)]
       W1p.morreyRepresentative v hp := by
@@ -119,9 +119,9 @@ private theorem W1p.memLp_mulGradient_morreyRepresentative
       W1p.morreyRepresentative v hp x • W1p.gradient u x) (p : ℝ≥0∞)
         (mu.restrict (⊤ : Opens E)) := by
   exact (MemLp.smul (p := ∞) (q := (p : ℝ≥0∞)) (r := (p : ℝ≥0∞))
-    (Lp.memLp (W1p.gradient v)) (W1p.memLp_top_morreyRepresentative hp u)).add
+    (W1p.memLp_top_morreyRepresentative hp u) (Lp.memLp (W1p.gradient v))).add
       (MemLp.smul (p := ∞) (q := (p : ℝ≥0∞)) (r := (p : ℝ≥0∞))
-        (Lp.memLp (W1p.gradient u)) (W1p.memLp_top_morreyRepresentative hp v))
+        (W1p.memLp_top_morreyRepresentative hp v) (Lp.memLp (W1p.gradient u)))
 
 private theorem W1p.morreyRepresentative_ofTestFunction
     (hp : (finrank ℝ E : ℝ≥0) < p) (phi : TestFunction (⊤ : Opens E) ℝ ⊤) :
@@ -195,12 +195,14 @@ theorem W1p.hasWeakFDerivOn_mul_morreyRepresentative
     have hm : MemLp (W1p.value v) 1 (mu.restrict (V : Set E)) :=
       ((Lp.memLp (W1p.value v)).mono_measure
         (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hVle))).mono_exponent Fact.out
-    simpa only [eLpNorm_one_eq_lintegral_enorm, lt_top_iff_ne_top] using hm.2
+    rw [← eLpNorm_one_eq_lintegral_enorm hm.aestronglyMeasurable]
+    exact hm.ne
   have hvGrad : ∫⁻ x in (V : Set E), ‖W1p.gradient v x‖ₑ ∂mu ≠ ∞ := by
     have hm : MemLp (W1p.gradient v) 1 (mu.restrict (V : Set E)) :=
       ((Lp.memLp (W1p.gradient v)).mono_measure
         (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hVle))).mono_exponent Fact.out
-    simpa only [eLpNorm_one_eq_lintegral_enorm, lt_top_iff_ne_top] using hm.2
+    rw [← eLpNorm_one_eq_lintegral_enorm hm.aestronglyMeasurable]
+    exact hm.ne
   have hvBound : ∀ x, ‖W1p.morreyRepresentative v hp x‖ₑ ≤
       ‖W1p.morreyEmbedding hp v‖ₑ := W1p.enorm_morreyRepresentative_le_embedding hp v
   -- The Leibniz rule is already available for the smooth factors `phi n`.

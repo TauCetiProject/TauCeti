@@ -43,6 +43,8 @@ homomorphisms between them may live in independent universes.
 
 ## Main results
 
+* `TauCeti.IsProC.of_surjective`, `TauCeti.IsProC.quotient`: the pro-`C` property passes to
+  continuous surjective images and to quotients.
 * `TauCeti.isClosed_proCKernel`: the `C`-kernel is closed, so the completion is profinite again.
 * `TauCeti.exists_openNormalSubgroup_memFinite_le`: an open subgroup containing the `C`-kernel
   contains a member of the defining family.
@@ -115,6 +117,24 @@ variable [Group H] [TopologicalSpace H]
 /-- A group is pro-`C` exactly when its quotients by open normal subgroups lie in `C`. -/
 theorem isProC_iff : IsProC C G ↔ ∀ U : OpenNormalSubgroup G, C.MemFinite (G ⧸ U.toSubgroup) :=
   Iff.rfl
+
+/-- A continuous surjective image of a pro-`C` group is pro-`C`. -/
+theorem IsProC.of_surjective (hG : IsProC C G) (f : G →* H) (hf : Continuous f)
+    (hsurj : Function.Surjective f) : IsProC C H := by
+  intro U
+  let V := OpenNormalSubgroup.comap U f hf
+  let _ : V.toSubgroup.Normal := V.isNormal'
+  have hVU : V.toSubgroup ≤ U.toSubgroup.comap f := by simp [V]
+  refine (hG V).of_surjective (QuotientGroup.map V.toSubgroup U.toSubgroup f hVU) ?_
+  exact QuotientGroup.map_surjective_of_surjective V.toSubgroup U.toSubgroup f
+    ((QuotientGroup.mk'_surjective U.toSubgroup).comp hsurj) hVU
+
+/-- A quotient of a pro-`C` group by a normal subgroup is pro-`C`. No closedness hypothesis is
+needed: closedness controls whether the quotient is Hausdorff, not whether its finite quotients
+lie in `C`. -/
+theorem IsProC.quotient (hG : IsProC C G) (N : Subgroup G) [N.Normal] : IsProC C (G ⧸ N) :=
+  hG.of_surjective (QuotientGroup.mk' N) QuotientGroup.continuous_mk
+    (QuotientGroup.mk'_surjective N)
 
 /-- Membership in the `C`-kernel, unfolded over the defining family. -/
 theorem mem_proCKernel_iff {x : G} :

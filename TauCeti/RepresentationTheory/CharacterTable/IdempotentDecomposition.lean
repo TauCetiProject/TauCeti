@@ -120,11 +120,10 @@ theorem orthogonalIdempotents_primitiveCentralIdempotent :
 
 /-- **The primitive central idempotents of a pairwise inequivalent family are linearly
 independent.** They are orthogonal and nonzero, and that is all the general
-`TauCeti.linearIndependent_of_orthogonalIdempotents` asks for. -/
+`OrthogonalIdempotents.linearIndependent` asks for. -/
 theorem linearIndependent_primitiveCentralIdempotent :
     LinearIndependent k fun i => primitiveCentralIdempotent (ρ i) :=
-  linearIndependent_of_orthogonalIdempotents
-    (orthogonalIdempotents_primitiveCentralIdempotent ρ hind)
+  (orthogonalIdempotents_primitiveCentralIdempotent ρ hind).linearIndependent
     fun i => primitiveCentralIdempotent_ne_zero (ρ i)
 
 /-- **The idempotents of the family are pairwise distinct**, being linearly independent. -/

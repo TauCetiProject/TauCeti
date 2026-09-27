@@ -49,11 +49,16 @@ None of it needs an exactness hypothesis on the constant field.
 * `TauCeti.holomorphyRing_setOf_subset_integers`: **Stichtenoth, Theorem 3.2.6** — a
   `k`-subalgebra of `F` integrally closed in `F` is the holomorphy ring of the set of places at
   which its functions are regular.
+* `TauCeti.restrictScalars_integralClosure_eq_holomorphyRing`: the same theorem for an arbitrary
+  `k`-subalgebra `R` of `F` — the integral closure of `R` in `F` is the holomorphy ring of the set
+  of places at which the functions of `R` are regular.
 * `TauCeti.coe_holomorphyRing_subset_integers_iff`: **Stichtenoth, Corollary 3.2.8** — the
   functions of `𝒪_S` are all regular at `P` exactly when `P ∈ S`, so `S` is recovered from
   `𝒪_S` and the two constructions are mutually inverse.
 * `TauCeti.isFractionRing_holomorphyRing`: `F` is the field of fractions of `𝒪_S` as soon as
   some place lies outside `S`.
+* `TauCeti.exists_pow_mul_mem_holomorphyRing`: a function regular at every place of `S` at which
+  `x⁻¹` is regular, for some `x ∈ 𝒪_S`, is made regular on all of `S` by a power of `x`.
 * `TauCeti.dvd_holomorphyRing_iff_forall_ord_le`: divisibility in `𝒪_S` is the pointwise
   comparison of orders along `S`.
 * `TauCeti.isPrincipalIdealRing_holomorphyRing`: **Stichtenoth, Proposition 3.2.10** — the
@@ -209,6 +214,42 @@ theorem isFractionRing_holomorphyRing (hF : IsFunctionField k F) {S : Set (Place
     · exact mul_comm z y
   exists_of_eq h := ⟨1, by simpa using Subtype.ext h⟩
 
+/-! ### Clearing poles by a power of a function -/
+
+/-- A function regular at every place of `S` at which `x⁻¹` is regular is made regular on all of
+`S` by a sufficiently high power of `x ∈ 𝒪_S`: its poles on `S` are among the finitely many zeros
+of `x`. -/
+theorem exists_pow_mul_mem_holomorphyRing (hF : IsFunctionField k F) {S : Set (Place k F)}
+    {x : F} (hx : x ∈ holomorphyRing S) {z : F}
+    (hz : ∀ P ∈ S, x⁻¹ ∈ P.integers → z ∈ P.integers) :
+    ∃ n : ℕ, x ^ n * z ∈ holomorphyRing S := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · exact ⟨0, by simpa using fun P hP ↦ hz P hP (by simp)⟩
+  rcases eq_or_ne z 0 with rfl | hz0
+  · exact ⟨0, by simp⟩
+  classical
+  have hT : {P : Place k F | P.ord z < 0}.Finite := Place.finite_setOf_ord_neg hF z
+  set n : ℕ := hT.toFinset.sup fun P ↦ (-P.ord z).toNat with hn
+  refine ⟨n, mem_holomorphyRing_iff_forall_ord_nonneg.mpr fun P hP ↦ ?_⟩
+  have hxP : 0 ≤ P.ord x := mem_holomorphyRing_iff_forall_ord_nonneg.mp hx P hP
+  rw [P.ord_mul (pow_ne_zero n hx0) hz0, P.ord_pow]
+  rcases le_or_gt 0 (P.ord z) with hzP | hzP
+  · exact add_nonneg (mul_nonneg (Nat.cast_nonneg n) hxP) hzP
+  -- `P` is a pole of `z`, hence a zero of `x`, and `n` was chosen to absorb it.
+  have hxpos : 0 < P.ord x := by
+    by_contra h
+    have hxinv : x⁻¹ ∈ P.integers := by
+      rw [P.mem_integers_iff_ord_nonneg, P.ord_inv]
+      omega
+    have := P.mem_integers_iff_ord_nonneg.mp (hz P hP hxinv)
+    omega
+  have hle : (-P.ord z).toNat ≤ n :=
+    Finset.le_sup (f := fun P : Place k F ↦ (-P.ord z).toNat) (hT.mem_toFinset.mpr hzP)
+  have h1 : ((-P.ord z).toNat : ℤ) = -P.ord z := Int.toNat_of_nonneg (by omega)
+  have h2 : ((-P.ord z).toNat : ℤ) ≤ n := by exact_mod_cast hle
+  have h3 : (n : ℤ) ≤ n * P.ord x := le_mul_of_one_le_right (Nat.cast_nonneg n) hxpos
+  linarith
+
 /-! ### Integrally closed subrings are holomorphy rings -/
 
 /-- **Stichtenoth, Theorem 3.2.6.**  A `k`-subalgebra of `F` that is integrally closed in `F` is
@@ -232,6 +273,20 @@ theorem holomorphyRing_setOf_subset_integers (hF : IsFunctionField k F) (R : Sub
     rw [Place.integers_ofValuationSubring]
     exact fun x hx ↦ hRV hx
   exact hzV (Place.integers_ofValuationSubring hF hk hV ▸ hz _ hmem)
+
+/-- **Stichtenoth, Theorem 3.2.6**, for an arbitrary `k`-subalgebra: the integral closure of `R`
+in `F` is the holomorphy ring of the set of places at which all the functions of `R` are regular. -/
+theorem restrictScalars_integralClosure_eq_holomorphyRing (hF : IsFunctionField k F)
+    (R : Subalgebra k F) :
+    (integralClosure R F).restrictScalars k =
+      holomorphyRing {P : Place k F | (R : Set F) ⊆ P.integers} := by
+  have : IsIntegrallyClosedIn ↥((integralClosure R F).restrictScalars k) F :=
+    inferInstanceAs (IsIntegrallyClosedIn ↥(integralClosure R F) F)
+  rw [← holomorphyRing_setOf_subset_integers hF ((integralClosure R F).restrictScalars k)]
+  congr 1
+  ext P
+  refine ⟨fun h z hz ↦ h ((integralClosure R F).algebraMap_mem ⟨z, hz⟩), fun h z hz ↦ ?_⟩
+  exact P.mem_integers_of_isIntegral (fun r ↦ h r.2) hz
 
 /-! ### Recovering the set of places -/
 

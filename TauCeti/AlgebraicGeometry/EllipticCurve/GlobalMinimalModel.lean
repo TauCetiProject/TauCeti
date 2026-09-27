@@ -7,6 +7,10 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+-- Proof-only: descent of a change of variables between integral models to `O`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+-- Proof-only: the comparison of two minimal models at one prime.
+import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 
 /-!
 # Global and semi-global minimal Weierstrass equations over a Dedekind domain
@@ -16,9 +20,9 @@ valuation ring `R` at a time. Over the fraction field `K` of a Dedekind domain `
 and its ring of integers being the case that matters — the local rings are the localisations
 `Oᵥ := Localization.AtPrime v.asIdeal` at the height-one primes `v` of `O`, and a **globally
 minimal** equation is one that is minimal at every `v` simultaneously (Silverman, *The Arithmetic
-of Elliptic Curves*, VIII.8). This file defines that predicate and its semi-global relaxation, and
-proves the one theorem the definitions need at once: a globally minimal equation has coefficients
-in `O`.
+of Elliptic Curves*, VIII.8). This file defines that predicate and its semi-global relaxation,
+proves that a globally minimal equation has coefficients in `O`, and describes the changes of
+variables between globally minimal equations: they are exactly those defined over `O`.
 
 ## Main definitions
 
@@ -36,6 +40,11 @@ in `O`.
 * `WeierstrassCurve.IsGlobalMinimal.isIntegral` and
   `WeierstrassCurve.IsSemiGlobalMinimal.isIntegral`: both predicates imply integrality over `O`,
   through Mathlib's `[IsMinimal R W] : IsIntegral R W` at each prime and the descent.
+* `WeierstrassCurve.IsGlobalMinimal.baseChange_smul`: a change of variables defined over `O`
+  carries a globally minimal equation to a globally minimal equation.
+* `WeierstrassCurve.IsGlobalMinimal.exists_baseChange_eq_of_smul_eq`: conversely, a change of
+  variables between two globally minimal equations of an elliptic curve is defined over `O`, its
+  scaling factor being a unit of `O` (Silverman, *AEC*, VIII.8).
 
 The predicates are unexposed. Their interface is the `simp` lemmas `isGlobalMinimal_iff` and
 `isSemiGlobalMinimal_iff` together with the introduction and elimination lemmas
@@ -189,6 +198,44 @@ theorem IsSemiGlobalMinimal.isIntegral {W : WeierstrassCurve K} [W.IsElliptic]
     · exact hv ▸ h₀
     · have := hmin v hv
       infer_instance
+
+/-! ### Changes of variables between globally minimal equations -/
+
+/-- **A change of variables defined over `O` preserves global minimality.** -/
+theorem IsGlobalMinimal.baseChange_smul {W : WeierstrassCurve K} [W.IsElliptic]
+    (h : IsGlobalMinimal O W) (C : VariableChange O) :
+    IsGlobalMinimal O (C.baseChange K • W) := by
+  refine IsGlobalMinimal.of_forall_isMinimal fun v => ?_
+  have := h.isMinimal v
+  have hC := isMinimal_baseChange_smul (Localization.AtPrime v.asIdeal) W
+    (C.baseChange (Localization.AtPrime v.asIdeal))
+  have hmap : (C.baseChange (Localization.AtPrime v.asIdeal)).baseChange K =
+      C.baseChange K :=
+    VariableChange.map_baseChange C
+      (IsScalarTower.toAlgHom O (Localization.AtPrime v.asIdeal) K)
+  rw [hmap] at hC
+  exact hC
+
+/-- **A change of variables between two globally minimal equations of an elliptic curve is defined
+over `O`** (Silverman, *AEC*, VIII.8). Together with `IsGlobalMinimal.baseChange_smul`, this
+characterises the changes of variables between globally minimal equations. -/
+theorem IsGlobalMinimal.exists_baseChange_eq_of_smul_eq {W₁ W₂ : WeierstrassCurve K}
+    [W₁.IsElliptic] [W₂.IsElliptic] (h₁ : IsGlobalMinimal O W₁) (h₂ : IsGlobalMinimal O W₂)
+    (D : VariableChange K) (hD : D • W₁ = W₂) :
+    ∃ C₀ : VariableChange O, C₀.baseChange K = D := by
+  -- Local minimality makes the scaling factor a unit at every height-one prime. Descend that
+  -- unit to `O`, then descend the remaining parameters using the integral models.
+  have := h₁.isIntegral
+  have := h₂.isIntegral
+  have hloc : ∀ v : HeightOneSpectrum O, ∃ u₀ : (Localization.AtPrime v.asIdeal)ˣ,
+      algebraMap (Localization.AtPrime v.asIdeal) K u₀ = D.u := fun v => by
+    have := h₁.isMinimal v
+    have := h₂.isMinimal v
+    exact VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul _ D hD
+  obtain ⟨u₀, hu₀⟩ := HeightOneSpectrum.isUnit_of_forall_isUnit_localizationAtPrime
+    (D.u : K) (Units.ne_zero _) hloc
+  have := (isIntegrallyClosed_iff_isIntegrallyClosedIn K).mp (inferInstance : IsIntegrallyClosed O)
+  exact VariableChange.exists_baseChange_eq_of_smul_eq O D hD u₀ hu₀
 
 end WeierstrassCurve
 

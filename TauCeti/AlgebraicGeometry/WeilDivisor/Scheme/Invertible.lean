@@ -97,28 +97,9 @@ theorem mem_sections_zero_iff {U : X.Opens} (hU : ∀ y ∈ U, coheight y ≤ 1)
 surjective because a rational function without poles is regular. -/
 theorem isIso_unitToSheaf_zero (hX : ∀ y : X, coheight y ≤ 1) :
     IsIso (unitToSheaf (D := (0 : SchemeWeilDivisor X)) WeilDivisor.isEffective_zero) := by
-  have key : ∀ (U : X.Opens) (a : Γ(SheafOfModules.unit X.ringCatSheaf, U)),
-      Scheme.Modules.Hom.app (sheafι (0 : SchemeWeilDivisor X)) U
-          (Scheme.Modules.Hom.app
-            (unitToSheaf (D := (0 : SchemeWeilDivisor X)) WeilDivisor.isEffective_zero) U a) =
-        Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) U a := by
-    intro U a
-    exact congrArg (fun φ ↦ Scheme.Modules.Hom.app φ U a)
-      (unitToSheaf_ι (D := (0 : SchemeWeilDivisor X)) WeilDivisor.isEffective_zero)
-  have h : ∀ U : X.Opens, IsIso (Scheme.Modules.Hom.app
-      (unitToSheaf (D := (0 : SchemeWeilDivisor X)) WeilDivisor.isEffective_zero) U) := by
-    intro U
-    rw [ConcreteCategory.isIso_iff_bijective]
-    constructor
-    · intro a b hab
-      refine Scheme.toRationalFunctions_app_injective U ?_
-      rw [← key U a, ← key U b, hab]
-    · intro t
-      obtain ⟨a, ha⟩ :=
-        (mem_sections_zero_iff (fun y _ ↦ hX y) _).mp
-          (sheafι_app_mem (0 : SchemeWeilDivisor X) U t)
-      exact ⟨a, sheafι_app_injective (0 : SchemeWeilDivisor X) U (by rw [key U a, ha])⟩
-  exact Scheme.Modules.Hom.isIso_iff_isIso_app.mpr h
+  apply isIso_unitToSheaf WeilDivisor.isEffective_zero
+  intro U t ht
+  exact (mem_sections_zero_iff (fun y _ ↦ hX y) t).mp ht
 
 /-- The isomorphism `𝒪_X ≅ 𝒪_X(0)` given by `SchemeWeilDivisor.isIso_unitToSheaf_zero`. -/
 def unitIsoSheafZero (hX : ∀ y : X, coheight y ≤ 1) :

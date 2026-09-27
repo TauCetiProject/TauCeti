@@ -187,7 +187,7 @@ private lemma isNoetherian_and_isClosed_and_residueDegree_ne_zero
 
 omit [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] in
 /-- On a curve, `𝒪_X(0)` is the trivial line bundle `𝒪_X`. -/
-private noncomputable def sheafZeroIsoTrivial (hX : ∀ y : X, coheight y ≤ 1) :
+noncomputable def sheafZeroIsoTrivial (hX : ∀ y : X, coheight y ≤ 1) :
     sheaf (0 : SchemeWeilDivisor X) ≅ (InvertibleSheaf.trivial X).obj :=
   (unitIsoSheafZero hX).symm ≪≫ (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf).symm ≪≫
     eqToIso (InvertibleSheaf.trivial_obj X).symm

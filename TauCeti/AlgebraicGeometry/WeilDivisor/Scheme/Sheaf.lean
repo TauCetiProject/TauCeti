@@ -253,7 +253,7 @@ def sectionMk {D : SchemeWeilDivisor X} {U : X.Opens} (s : Γ(Scheme.rationalFun
 /-- The inclusion `𝒪_X(D) ⟶ 𝒦_X` is injective on sections over every open subset. -/
 lemma sheafι_app_injective (D : SchemeWeilDivisor X) (U : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app (sheafι D) U) :=
-  Subtype.val_injective
+  TauCeti.SheafOfModules.ι_val_app_injective (submodule D) (op U)
 
 /-- The section of `𝒪_X(D)` built from a rational function includes back into `𝒦_X` as that
 rational function. -/
@@ -274,17 +274,12 @@ lemma sheafι_app_mem (D : SchemeWeilDivisor X) (U : X.Opens) (t : Γ(sheaf D, U
 submodule of `Γ(𝒦_X, U)` which defines it. -/
 @[simp]
 lemma range_sheafι_app (D : SchemeWeilDivisor X) (U : X.Opens) :
-    Set.range (Scheme.Modules.Hom.app (sheafι D) U) = sections D U := by
-  ext t
-  exact ⟨fun ⟨s, hs⟩ ↦ hs ▸ sheafι_app_mem D U s, fun ht ↦ ⟨⟨t, ht⟩, rfl⟩⟩
+    Set.range (Scheme.Modules.Hom.app (sheafι D) U) = sections D U :=
+  TauCeti.SheafOfModules.range_ι_val_app (submodule D) (op U)
 
-/-- The canonical inclusion `𝒪_X(D) ⟶ 𝒦_X` is a monomorphism: over every open subset it is the
-inclusion of a submodule, hence injective. -/
-instance (D : SchemeWeilDivisor X) : Mono (sheafι D) := by
-  have : ∀ U : (Opens X)ᵒᵖ,
-      Mono (((Scheme.Modules.toPresheaf X).map (sheafι D)).app U) := fun U ↦
-    ConcreteCategory.mono_of_injective _ (sheafι_app_injective D U.unop)
-  exact (Scheme.Modules.toPresheaf X).mono_of_mono_map (NatTrans.mono_of_mono_app _)
+/-- The canonical inclusion `𝒪_X(D) ⟶ 𝒦_X` is a monomorphism. -/
+instance (D : SchemeWeilDivisor X) : Mono (sheafι D) :=
+  SheafOfModules.Submodule.instMonoι (submodule D)
 
 /-- A morphism to `𝒦_X` whose sections all satisfy the order bound imposed by `D` factors through
 `𝒪_X(D)`. -/
@@ -292,6 +287,18 @@ def sheafLift {M : X.Modules} (D : SchemeWeilDivisor X) (φ : M ⟶ Scheme.ratio
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U) :
     M ⟶ sheaf D :=
   TauCeti.SheafOfModules.liftToSubmodule (submodule D) φ fun U s ↦ hφ U.unop s
+
+/-- A factorization through `𝒪_X(D)` is an isomorphism if its map into rational functions is
+injective on sections and has image exactly the sections of `𝒪_X(D)`. -/
+theorem isIso_sheafLift {M : X.Modules} (D : SchemeWeilDivisor X)
+    (φ : M ⟶ Scheme.rationalFunctions X)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ sections D U)
+    (hinj : ∀ U : X.Opens, Function.Injective (Scheme.Modules.Hom.app φ U))
+    (hsurj : ∀ (U : X.Opens) (s : Γ(Scheme.rationalFunctions X, U)),
+      s ∈ sections D U → ∃ t, Scheme.Modules.Hom.app φ U t = s) :
+    IsIso (sheafLift D φ hφ) := by
+  exact TauCeti.SheafOfModules.isIso_liftToSubmodule _ _ _
+    (fun U ↦ hinj U.unop) (fun U s hs ↦ hsurj U.unop s ((submodule_obj_unop D U) ▸ hs))
 
 /-- `sheafLift` factors `φ` through `𝒪_X(D)`: composing it with the canonical inclusion
 `sheafι D : 𝒪_X(D) ⟶ 𝒦_X` recovers the original morphism `φ`. -/
@@ -392,6 +399,16 @@ def unitToSheaf {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffective D) :
   TauCeti.SheafOfModules.liftToSubmodule (submodule D) (Scheme.toRationalFunctions X)
     fun U a ↦ toRationalFunctions_app_mem_sections hD U.unop a
 
+/-- The canonical map `𝒪_X ⟶ 𝒪_X(D)` is an isomorphism if every section of `𝒪_X(D)` is
+regular. -/
+theorem isIso_unitToSheaf {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffective D)
+    (hsurj : ∀ (U : X.Opens) (s : Γ(Scheme.rationalFunctions X, U)),
+      s ∈ sections D U → ∃ t, Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) U t = s) :
+    IsIso (unitToSheaf hD) := by
+  exact isIso_sheafLift D (Scheme.toRationalFunctions X)
+    (toRationalFunctions_app_mem_sections hD)
+    Scheme.toRationalFunctions_app_injective hsurj
+
 @[simp, reassoc]
 lemma unitToSheaf_ι {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffective D) :
     unitToSheaf hD ≫ sheafι D = Scheme.toRationalFunctions X :=
@@ -467,34 +484,16 @@ def sheafOverMulIsoOfCoeffEq
                 ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField)).over U).val.app V
                   s.val,
               rationalFunctionsMul_over_mem_sections_of_coeffEq (-g) V hinverse s⟩
-          left_inv := by
-            intro s
-            apply Subtype.ext
-            -- Over-site evaluation reduces to evaluation on the source open `V.unop.left`.
-            change (Scheme.Modules.Hom.app
-                (Scheme.rationalFunctionsMul X
-                  ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) V.unop.left ≫
-              Scheme.Modules.Hom.app
-                (Scheme.rationalFunctionsMul X
-                  ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField)) V.unop.left)
-                s.val = s.val
-            rw [← Scheme.Modules.Hom.comp_app, toMul_neg,
-              Scheme.rationalFunctionsMul_comp_inv, Scheme.Modules.Hom.id_app]
-            rfl
-          right_inv := by
-            intro s
-            apply Subtype.ext
-            -- Over-site evaluation reduces to evaluation on the source open `V.unop.left`.
-            change (Scheme.Modules.Hom.app
-                (Scheme.rationalFunctionsMul X
-                  ((Additive.toMul (-g) : X.functionFieldˣ) : X.functionField)) V.unop.left ≫
-              Scheme.Modules.Hom.app
-                (Scheme.rationalFunctionsMul X
-                  ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) V.unop.left)
-                s.val = s.val
-            rw [← Scheme.Modules.Hom.comp_app, toMul_neg,
-              Scheme.rationalFunctionsMul_inv_comp, Scheme.Modules.Hom.id_app]
-            rfl
+          left_inv := fun s ↦ Subtype.ext <| by
+            -- Over-site evaluation reduces to evaluation on the source open `V.unop.left`,
+            -- and `Additive.toMul (-g)` is `(Additive.toMul g)⁻¹` by definition.
+            exact Scheme.rationalFunctionsMul_inv_app_rationalFunctionsMul_app
+              (Additive.toMul g) V.unop.left s.val
+          right_inv := fun s ↦ Subtype.ext <| by
+            -- Over-site evaluation reduces to evaluation on the source open `V.unop.left`,
+            -- and `Additive.toMul (-g)` is `(Additive.toMul g)⁻¹` by definition.
+            exact Scheme.rationalFunctionsMul_app_rationalFunctionsMul_inv_app
+              (Additive.toMul g) V.unop.left s.val
           map_add' := by
             intro s t
             apply Subtype.ext

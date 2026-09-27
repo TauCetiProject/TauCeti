@@ -83,7 +83,7 @@ theorem map_injective_of_isIntegral (L : InvertibleSheaf X) {U V : X.Opens} (i :
         (homOfLE (inf_le_right : Z ≤ W j)) inf_le_right
       have h := congrArg (L.obj.presheaf.map (homOfLE (inf_le_left : Z ≤ V)).op) hab
       simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp] at h ⊢
-      convert h using 1 <;> congr 2
+      exact h
     · apply TopCat.Presheaf.section_ext
         (⟨L.obj.presheaf, L.obj.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
       intro x hx

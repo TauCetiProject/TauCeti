@@ -21,7 +21,8 @@ with a cycle on either side is again a boundary, so composition descends to coho
 
 This file uses Mathlib's canonical homology object for that quotient. It records the concrete
 criterion that two closed degree-zero morphisms determine the same morphism precisely when their
-difference is the differential of a degree-minus-one morphism. The resulting category is naturally
+difference is the differential of a degree-minus-one morphism, and that a chain map between Hom
+complexes acts on homotopy classes through representatives. The resulting category is naturally
 preadditive and linear over the ground ring.
 
 ## Main definitions
@@ -32,6 +33,15 @@ preadditive and linear over the ground ring.
 * TauCeti.dgHomotopyComp: composition of homotopy classes.
 * TauCeti.DGHomotopyCategory: the category with the objects of a DG category and morphisms
   given by DGHomotopyClass.
+
+## Main results
+
+* `TauCeti.dgHomotopyClass_eq_iff`: two cocycles have the same class exactly when their difference
+  is a coboundary.
+* `TauCeti.dgHomotopyClass_eq_homologyπ`: a homotopy class is the image of any lifting cycle under
+  Mathlib's `HomologicalComplex.homologyπ`.
+* `TauCeti.homologyMap_dgHomotopyClass`: a chain map of Hom complexes sends the class of `f` to the
+  class of the image of `f`.
 
 ## References
 
@@ -263,6 +273,65 @@ theorem dgHomotopyClass_eq_zero_iff {X Y : C} {f : DGHom R 0 X Y}
   rw [← dgHomotopyClass_zero R X Y]
   simpa only [sub_zero] using dgHomotopyClass_eq_iff R hf (dgCycles R X Y).zero_mem
 
+/-! ### Comparison with Mathlib's homology projection -/
+
+/- The homotopy class of a closed degree-zero morphism is the image under Mathlib's homology
+projection of an explicit cycle lifting it. -/
+private theorem exists_iCycles_eq_and_dgHomotopyClass_eq {X Y : C} (f : DGHom R 0 X Y)
+    (hf : f ∈ dgCycles R X Y) :
+    ∃ x : (dgHomComplex R X Y).cycles 0, ((dgHomComplex R X Y).iCycles 0).hom x = f ∧
+      dgHomotopyClass R f hf = ((dgHomComplex R X Y).homologyπ 0).hom x := by
+  let K := dgHomComplex R X Y
+  let S := K.sc' (-1) 0 1
+  let e := K.cyclesIsoSc' (-1) 0 1 (by simp) (by simp)
+  let c : S.moduleCatLeftHomologyData.K := ⟨f, hf⟩
+  refine ⟨(S.moduleCatCyclesIso.inv ≫ e.inv).hom c, ?_, ?_⟩
+  · have h : (S.moduleCatCyclesIso.inv ≫ e.inv) ≫ K.iCycles 0 =
+        S.moduleCatLeftHomologyData.i := by
+      rw [Category.assoc, HomologicalComplex.cyclesIsoSc'_inv_iCycles]
+      exact S.moduleCatCyclesIso_inv_iCycles
+    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) c
+  · have h : S.moduleCatLeftHomologyData.π ≫
+        (S.moduleCatHomologyIso.inv ≫ (K.homologyIsoSc' (-1) 0 1 (by simp) (by simp)).inv) =
+        (S.moduleCatCyclesIso.inv ≫ e.inv) ≫ K.homologyπ 0 := by
+      rw [← Category.assoc, ← S.moduleCatCyclesIso_inv_π, Category.assoc, Category.assoc,
+        HomologicalComplex.π_homologyIsoSc'_inv]
+    -- `dgHomotopyClass R f hf` is by definition the left-hand side of `h` applied to `c`.
+    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) c
+
+/-- The homotopy class of a closed degree-zero morphism `f` is the image, under Mathlib's
+projection `HomologicalComplex.homologyπ` from cycles to homology, of any cycle lifting `f`. -/
+theorem dgHomotopyClass_eq_homologyπ {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R X Y)
+    (x : (dgHomComplex R X Y).cycles 0) (hx : ((dgHomComplex R X Y).iCycles 0).hom x = f) :
+    dgHomotopyClass R f hf = ((dgHomComplex R X Y).homologyπ 0).hom x := by
+  obtain ⟨y, hy, hclass⟩ := exists_iCycles_eq_and_dgHomotopyClass_eq R f hf
+  rw [hclass, (ModuleCat.mono_iff_injective ((dgHomComplex R X Y).iCycles 0)).1 inferInstance
+    (hy.trans hx.symm)]
+
+/-- A closed degree-zero morphism stays closed under a chain map of Hom complexes. -/
+theorem map_mem_dgCycles {C' : Type*} [DGCategory R C'] {X Y : C} {X' Y' : C'}
+    (φ : dgHomComplex R X Y ⟶ dgHomComplex R X' Y') {f : DGHom R 0 X Y}
+    (hf : f ∈ dgCycles R X Y) : (φ.f 0).hom f ∈ dgCycles R X' Y' := by
+  obtain ⟨x, hx, _⟩ := exists_iCycles_eq_and_dgHomotopyClass_eq R f hf
+  rw [← hx, ← ModuleCat.comp_apply, ← HomologicalComplex.cyclesMap_i,
+    ModuleCat.comp_apply, mem_dgCycles]
+  unfold dgDifferential
+  rw [← ModuleCat.comp_apply, zero_add, (dgHomComplex R X' Y').iCycles_d 0 1]
+  rfl
+
+/-- The map induced on homotopy classes by a chain map of Hom complexes sends the class of a
+closed degree-zero morphism to the class of its image. -/
+@[simp]
+theorem homologyMap_dgHomotopyClass {C' : Type*} [DGCategory R C'] {X Y : C} {X' Y' : C'}
+    (φ : dgHomComplex R X Y ⟶ dgHomComplex R X' Y') {f : DGHom R 0 X Y}
+    (hf : f ∈ dgCycles R X Y) :
+    (HomologicalComplex.homologyMap φ 0).hom (dgHomotopyClass R f hf) =
+      dgHomotopyClass R ((φ.f 0).hom f) (map_mem_dgCycles R φ hf) := by
+  obtain ⟨x, hx, hclass⟩ := exists_iCycles_eq_and_dgHomotopyClass_eq R f hf
+  rw [hclass, dgHomotopyClass_eq_homologyπ R _ ((HomologicalComplex.cyclesMap φ 0).hom x),
+    ← ModuleCat.comp_apply, HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
+  rw [← hx, ← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply]
+
 /-! ### Composition on homotopy classes -/
 
 /-- Composition of two degree-zero DG morphisms. -/
@@ -477,10 +546,10 @@ structure DGHomotopyCategory (R : Type v) (C : Type u) where
 namespace DGHomotopyCategory
 
 /-- Regard an object of a DG category as an object of its homotopy category. -/
-def of (X : C) : DGHomotopyCategory R C := ⟨X⟩
+@[expose] def of (X : C) : DGHomotopyCategory R C := ⟨X⟩
 
 /-- Regard an object of a DG homotopy category as an object of the underlying DG category. -/
-def underlying (X : DGHomotopyCategory R C) : C := X.obj
+@[expose] def underlying (X : DGHomotopyCategory R C) : C := X.obj
 
 omit [CommRing R] [DGCategory R C] in
 @[simp]
@@ -536,10 +605,28 @@ noncomputable instance : Linear R (DGHomotopyCategory R C) where
   comp_smul X Y Z f r g :=
     (dgHomotopyComp R (underlying R X) (underlying R Y) (underlying R Z) f).map_smul r g
 
+/-- Composition in the homotopy category is the composition `TauCeti.dgHomotopyComp` of homotopy
+classes. -/
+theorem comp_def {X Y Z : DGHomotopyCategory R C} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    f ≫ g = dgHomotopyComp R (underlying R X) (underlying R Y) (underlying R Z) f g :=
+  (rfl)
+
+/-- The identity of the homotopy category is the homotopy class of the DG identity. -/
+theorem id_def (X : DGHomotopyCategory R C) :
+    𝟙 X = dgHomotopyClass R (dgId R (underlying R X))
+      ((mem_dgCycles R).mpr (dgDifferential_dgId R (underlying R X))) :=
+  (rfl)
+
 /-- A closed degree-zero DG morphism, regarded as a morphism in the homotopy category. -/
 def homOf {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
     of R X ⟶ of R Y :=
   dgHomotopyClass R f hf
+
+/-- A closed degree-zero DG morphism, regarded in the homotopy category, is its homotopy
+class. -/
+theorem homOf_def {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
+    homOf R f hf = dgHomotopyClass R f hf :=
+  (rfl)
 
 /-- The zero DG morphism represents the zero morphism in the homotopy category. -/
 @[simp]

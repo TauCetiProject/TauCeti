@@ -27,8 +27,8 @@ exactly when the index is a pole number.  Riemann--Roch computes `ℓ((2g - 1)P)
 
 ## Main definitions
 
-* `TauCeti.Place.IsPoleNumber`: an integer occurring as the order of the unique pole of a
-  function.
+* `TauCeti.Place.IsPoleNumber`: a natural number `n` witnessed by a nonzero function of order
+  `-n` at the place and nonnegative order elsewhere.
 * `TauCeti.Place.IsGap`: an integer which is not a pole number.
 * `TauCeti.Place.gapNumbersUpTo`: the gaps in a prescribed finite interval.
 * `TauCeti.Place.weierstrassGaps`: the finite set of gaps at a place.
@@ -71,6 +71,14 @@ includes `0`: the constant function `1` witnesses that zero is a pole number. -/
 def IsPoleNumber (P : Place k F) (n : ℕ) : Prop :=
   ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x
 
+/-- A pole number is witnessed by a nonzero function of order `-n` at `P` and nonnegative
+order at every other place. -/
+theorem isPoleNumber_iff (P : Place k F) (n : ℕ) :
+    P.IsPoleNumber n ↔
+      ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧
+        ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x :=
+  Iff.rfl
+
 /-- A natural number is a **gap** at `P` if it is not a pole number at `P`. -/
 def IsGap (P : Place k F) (n : ℕ) : Prop :=
   ¬ P.IsPoleNumber n
@@ -90,8 +98,7 @@ theorem isPoleNumber_zero (P : Place k F) : P.IsPoleNumber 0 := by
 theorem not_isGap_zero (P : Place k F) : ¬ P.IsGap 0 := by
   simpa only [isGap_iff_not_isPoleNumber, not_not] using P.isPoleNumber_zero
 
-/-- Pole numbers are closed under addition: multiply functions having their unique poles at the
-same place. -/
+/-- Pole numbers are closed under addition: multiply their witnessing functions. -/
 theorem IsPoleNumber.add {P : Place k F} {m n : ℕ}
     (hm : P.IsPoleNumber m) (hn : P.IsPoleNumber n) : P.IsPoleNumber (m + n) := by
   obtain ⟨x, hx0, hxP, hx⟩ := hm
@@ -133,7 +140,7 @@ theorem isPoleNumber_iff_dim_lt (hF : IsFunctionField k F) (P : Place k F) {n : 
         hxP]
       omega
     have hlt : riemannRochSpace E < riemannRochSpace D :=
-      SetLike.lt_iff_le_and_exists.mpr ⟨riemannRochSpace_mono hED, x, hxD, hxE⟩
+      IsConcreteLE.lt_iff_le_and_exists.mpr ⟨riemannRochSpace_mono hED, x, hxD, hxE⟩
     let _ := finiteDimensional_riemannRochSpace hF D
     simpa only [E, D, Divisor.dim_def] using Submodule.finrank_lt_finrank_of_lt hlt
   · intro hdim

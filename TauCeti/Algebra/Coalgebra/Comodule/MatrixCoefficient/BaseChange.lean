@@ -58,8 +58,7 @@ theorem coefficientMatrix_baseChange (b : Basis ι R M) :
   rw [coefficientMatrix_apply, Matrix.map_apply, coefficientMatrix_apply,
     matrixCoefficient_def, matrixCoefficient_def, Basis.baseChange_apply,
     baseChange_coact, baseChangeCoact_tmul]
-  induction coact (R := R) (C := C) (M := M) (b j) using TensorProduct.induction_on with
-  | zero => simp
+  induction coact (R := R) (C := C) (M := M) (b j) using TensorProduct.inductionOn with
   | add z w hz hw => simp only [map_add, TensorProduct.tmul_add, hz, hw]
   | tmul m c => simp
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Linear
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
 /-!
 # Additivity and linearity of continuous cohomology
@@ -29,10 +30,13 @@ and cup products, need linearity before passing to cohomology.
   `TauCeti.ContinuousCohomology.mapLinearMap` bundle that dependence as an additive homomorphism
   and a linear map.
 * `TauCeti.ContinuousCohomology.continuousCochainsFunctor` is the additive functor of
-  homogeneous cochain complexes, with `continuousCochainsFunctorCompHomologyIso`.
+  homogeneous cochain complexes, with `continuousCochainsFunctorCompHomologyIso`; its action on
+  maps of discrete modules is `cochainsMap_ofDiscreteModulePair_id`.
 * `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_additive` and
   `TauCeti.ContinuousCohomology.continuousCohomologyFunctor_linear` install the corresponding
   functor instances.
+* `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_of_subsingleton`: continuous
+  cohomology vanishes on subsingleton coefficients, a consequence of additivity.
 -/
 
 public section
@@ -212,6 +216,21 @@ noncomputable instance continuousCohomologyFunctor_additive (n : ℕ) :
     (continuousCohomologyFunctor R G n).Additive where
   map_add {_X _Y} {f g} := coeffMap_add R G f g n
 
+variable {R G} in
+/-- Continuous cohomology vanishes on a coefficient representation whose carrier is a
+subsingleton: the identity of such a representation is the zero morphism, and the additive functor
+`continuousCohomologyFunctor` sends it to the zero endomorphism of the cohomology. -/
+theorem subsingleton_continuousCohomology_of_subsingleton (X : TopRep R G) [Subsingleton X]
+    (n : ℕ) : Subsingleton (continuousCohomology n X) := by
+  have hX : (𝟙 X : X ⟶ X) = 0 :=
+    TopRep.hom_ext
+      (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun _ ↦ Subsingleton.elim _ _))
+  have h : (𝟙 (continuousCohomology n X) : _ ⟶ _) = 0 := by
+    rw [← coeffMap_id X n, hX]
+    exact (continuousCohomologyFunctor R G n).map_zero X X
+  exact ⟨fun x y ↦ (congrArg (fun f : continuousCohomology n X ⟶ _ ↦ f.hom x) h).trans
+    (congrArg (fun f : continuousCohomology n X ⟶ _ ↦ f.hom y) h).symm⟩
+
 end Additive
 
 section Linear
@@ -267,13 +286,43 @@ noncomputable def continuousCochainsFunctorCompHomologyIso (n : ℕ) :
 
 end Functor
 
+/-- The cochain map of an equivariant map of discrete modules agrees with the cochain functor
+applied to the corresponding map of topological representations. -/
+theorem cochainsMap_ofDiscreteModulePair_id {M N : Type v} [AddCommGroup M]
+    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [AddCommGroup N]
+    [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N] {f : M →+ N}
+    (hf : ∀ (g : G) (m : M), f (g • m) = g • f m) :
+    cochainsMap (ContinuousMonoidHom.id G)
+        (ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) f.toIntLinearMap hf) =
+      (continuousCochainsFunctor ℤ G).map (ofDiscreteModuleMap f.toIntLinearMap hf) := by
+  rw [continuousCochainsFunctor_map]
+  exact congrArg _ (ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl)
+
 variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- After forgetting topologies, the map `Hⁿ(G, X) ⟶ Hⁿ(H, Y)` of a compatible pair is the map
+induced on the homology of the forgotten homogeneous-cochain complexes by `cochainsMap φ f`,
+conjugated by the identifications `CategoryTheory.ShortComplex.mapHomologyIso` of that homology
+with the underlying modules of continuous cohomology. -/
+theorem forget₂_map_map {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {X : TopRep.{v} R G} {Y : TopRep.{v} R H} (φ : H →ₜ* G) (f : TopRep.res φ X ⟶ Y) (n : ℕ) :
+    (forget₂ (TopModuleCat R) (ModuleCat R)).map (map φ f n) =
+      ((X.homogeneousCochains.sc n).mapHomologyIso
+          (forget₂ (TopModuleCat R) (ModuleCat R))).inv ≫
+        HomologicalComplex.homologyMap
+          (((forget₂ (TopModuleCat R) (ModuleCat R)).mapHomologicalComplex _).map
+            (cochainsMap φ f)) n ≫
+          ((Y.homogeneousCochains.sc n).mapHomologyIso
+            (forget₂ (TopModuleCat R) (ModuleCat R))).hom :=
+  (Iso.eq_inv_comp _).2 (ShortComplex.mapHomologyIso_hom_naturality
+    ((HomologicalComplex.shortComplexFunctor _ _ n).map (cochainsMap φ f))
+    (forget₂ (TopModuleCat R) (ModuleCat R))).symm
 
 /-- After forgetting topologies, the coefficient map `Hⁿ(G, X) ⟶ Hⁿ(G, Y)` is the map induced on
 the homology of the forgotten homogeneous-cochain complexes, conjugated by the identifications
 `CategoryTheory.ShortComplex.mapHomologyIso` of that homology with the underlying modules of
-continuous cohomology. -/
+continuous cohomology. This is `forget₂_map_map` at `φ = id`. -/
 theorem forget₂_map_coeffMap {X Y : TopRep.{v} R G} (f : X ⟶ Y) (n : ℕ) :
     (forget₂ (TopModuleCat R) (ModuleCat R)).map (coeffMap f n) =
       ((X.homogeneousCochains.sc n).mapHomologyIso
@@ -284,9 +333,7 @@ theorem forget₂_map_coeffMap {X Y : TopRep.{v} R G} (f : X ⟶ Y) (n : ℕ) :
           ((Y.homogeneousCochains.sc n).mapHomologyIso
             (forget₂ (TopModuleCat R) (ModuleCat R))).hom := by
   rw [coeffMap_def]
-  exact (Iso.eq_inv_comp _).2 (ShortComplex.mapHomologyIso_hom_naturality
-    ((HomologicalComplex.shortComplexFunctor _ _ n).map ((continuousCochainsFunctor R G).map f))
-    (forget₂ (TopModuleCat R) (ModuleCat R))).symm
+  exact forget₂_map_map (ContinuousMonoidHom.id G) f n
 
 end TauCeti.ContinuousCohomology
 

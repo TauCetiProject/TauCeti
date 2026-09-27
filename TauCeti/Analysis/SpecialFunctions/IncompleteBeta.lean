@@ -95,10 +95,7 @@ theorem regularizedIncompleteBeta_def_of_pos (ha : 0 < a) (hb : 0 < b) (x : ℝ)
     regularizedIncompleteBeta a b x =
       (∫ t in (0 : ℝ)..min 1 (max x 0), t ^ (a - 1) * (1 - t) ^ (b - 1)) / beta a b := by
   rw [regularizedIncompleteBeta]
-  split_ifs with h₁ h₂
-  · exact absurd h₁.1 ha.ne'
-  · rfl
-  · exact absurd ⟨ha, hb⟩ h₂
+  split_ifs <;> simp_all
 
 /-- On the support `[0, 1]` the clamp is invisible: the regularized incomplete beta function is
 the normalized integral of the beta integrand up to `x` itself. This is the form in which the
@@ -114,11 +111,7 @@ theorem regularizedIncompleteBeta_def_of_mem_Icc (ha : 0 < a) (hb : 0 < b)
 @[simp]
 theorem regularizedIncompleteBeta_zero_left (hb : 0 < b) (hx : 0 ≤ x) :
     regularizedIncompleteBeta 0 b x = 1 := by
-  rw [regularizedIncompleteBeta]
-  split_ifs with h₁ h₂
-  · rfl
-  · exact absurd ⟨rfl, hb, hx⟩ h₁
-  · exact absurd ⟨rfl, hb, hx⟩ h₁
+  simp [regularizedIncompleteBeta, hx, hb]
 
 /-- The regularized incomplete beta function vanishes when its first parameter is negative: no
 beta law is attached to such parameters, and the definition takes its default value there. -/
@@ -126,10 +119,7 @@ beta law is attached to such parameters, and the definition takes its default va
 theorem regularizedIncompleteBeta_eq_zero_of_neg_left (ha : a < 0) (b x : ℝ) :
     regularizedIncompleteBeta a b x = 0 := by
   rw [regularizedIncompleteBeta]
-  split_ifs with h₁ h₂
-  · exact absurd h₁.1 ha.ne
-  · exact absurd h₂.1 (not_lt.2 ha.le)
-  · rfl
+  split_ifs <;> simp_all [not_lt.2 ha.le]
 
 /-- The regularized incomplete beta function vanishes when its second parameter is nonpositive.
 Unlike the first parameter, the second admits no exceptional value at `0`: the weak limit of
@@ -138,10 +128,7 @@ Unlike the first parameter, the second admits no exceptional value at `0`: the w
 theorem regularizedIncompleteBeta_eq_zero_of_nonpos_right (hb : b ≤ 0) (a x : ℝ) :
     regularizedIncompleteBeta a b x = 0 := by
   rw [regularizedIncompleteBeta]
-  split_ifs with h₁ h₂
-  · exact absurd h₁.2.1 (not_lt.2 hb)
-  · exact absurd h₂.2 (not_lt.2 hb)
-  · rfl
+  split_ifs <;> simp_all [not_lt.2 hb]
 
 /-- The regularized incomplete beta function vanishes strictly below the support of the beta law,
 for every choice of parameters: the exceptional value `1` at `a = 0` is taken from `0` onwards. -/

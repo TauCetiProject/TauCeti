@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Dual
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Monoidal
-public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # Internal Hom and restriction of sheaves of modules
@@ -19,8 +19,11 @@ that evaluation after restriction agrees with the restriction of evaluation.
 The named comparison packages the slice site's monoidal and closed instances, which must
 otherwise be supplied locally when applying the generic comparison.
 
-This is the comparison map needed to study local duality and internal Homs on a cover.
-It is not asserted to be an isomorphism for arbitrary sheaves of modules.
+The comparison is an isomorphism when its source is a finite free sheaf
+(`SheafOfModules.overIhomComparison_free_isIso`): such a sheaf is its own dual, and restriction,
+being strong monoidal, carries this self-duality to the slice. This is the local input for
+comparing internal Homs and duals of finite locally free sheaves on a cover. The comparison is
+not asserted to be an isomorphism for arbitrary sheaves of modules.
 -/
 
 public section
@@ -62,9 +65,12 @@ def _root_.SheafOfModules.overIhomComparison
   CategoryTheory.Functor.ihomComparison
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M
 
+-- A pre-lemma (`simp↓`, as in #8642): otherwise `Functor.comp_obj`, `Functor.id_obj` and
+-- `SheafOfModules.ihom_obj` rewrite the implicit source and target objects of the comparison's
+-- component first, and the left-hand side no longer matches.
 /-- Evaluation characterizes the internal Hom comparison for restriction: after the monoidal
 tensorator it agrees with restricting the evaluation map. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp↓)]
 theorem _root_.SheafOfModules.overIhomComparison_ev
     (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
     (M.over X) ◁ (M.overIhomComparison R X).natTrans.app N ≫
@@ -76,6 +82,15 @@ theorem _root_.SheafOfModules.overIhomComparison_ev
           ((ihom.ev M).app N) :=
   CategoryTheory.Functor.ihomComparison_ev
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N
+
+/-- Restriction to a slice inverts the internal-Hom comparison out of a finite free sheaf: the
+free sheaf on a finite type is its own dual, and restriction is strong monoidal. -/
+theorem _root_.SheafOfModules.overIhomComparison_free_isIso (I : Type u) [Finite I] :
+    IsIso ((_root_.SheafOfModules.overIhomComparison R X
+      (_root_.SheafOfModules.free (R := ringCatSheaf R) I)).natTrans) :=
+  CategoryTheory.Functor.ihomComparison_isIso_of_exactPairing
+    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+    (_root_.SheafOfModules.free (R := ringCatSheaf R) I) (_root_.SheafOfModules.free I)
 
 end SheafOfModules
 

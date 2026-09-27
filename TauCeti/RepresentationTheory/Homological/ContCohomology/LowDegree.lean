@@ -50,6 +50,9 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
   that the two quotients need, coboundaries being continuous.
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton` and
   `subsingleton_H2_of_subsingleton`: a trivial group has vanishing `H¹` and `H²`.
+* `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton_coefficients` and
+  `subsingleton_H2_of_subsingleton_coefficients`: trivial coefficients have vanishing `H¹` and
+  `H²`.
 * `TauCeti.ContCohomology.H1EquivOfSmulEqSelf`: for a trivial action, `H¹(G, M)` is the group of
   continuous homomorphisms `G →ₜ* Multiplicative M`. This is the statement that makes `H¹` of a
   profinite group computable, and it is false without continuity.
@@ -593,6 +596,44 @@ variable {G : Type u} [Group G] [TopologicalSpace G]
 theorem map_inv_of_mem_Z1 {f : G → M} (hf : f ∈ Z1 G M) (g : G) : g • f g⁻¹ = -f g :=
   groupCohomology.map_inv_of_isCocycle₁ (mem_Z1_iff.1 hf).2 g
 
+/-- **The zero locus of a `1`-cocycle is a subgroup.** The cocycle identity
+`f (g * h) = g • f h + f g` closes it under multiplication, and the inverse formula
+`g • f g⁻¹ = -f g` closes it under inversion. -/
+def zeroLocus {f : G → M} (hf : f ∈ Z1 G M) : Subgroup G where
+  carrier := {g | f g = 0}
+  one_mem' := map_one_of_mem_Z1 hf
+  mul_mem' {g h} hg hh := by
+    simp only [Set.mem_ofPred_eq] at hg hh ⊢
+    rw [(mem_Z1_iff.1 hf).2 g h, hg, hh, smul_zero, add_zero]
+  inv_mem' {g} hg := by
+    simp only [Set.mem_ofPred_eq] at hg ⊢
+    have h := map_inv_of_mem_Z1 hf g
+    rwa [hg, neg_zero, smul_eq_zero_iff_eq] at h
+
+@[simp]
+theorem mem_zeroLocus {f : G → M} (hf : f ∈ Z1 G M) {g : G} : g ∈ zeroLocus hf ↔ f g = 0 :=
+  Iff.rfl
+
+/-- The zero locus of a continuous `1`-cocycle with values in a `T1` module is closed. -/
+theorem isClosed_zeroLocus [T1Space M] {f : G → M} (hf : f ∈ Z1 G M) :
+    IsClosed (zeroLocus hf : Set G) :=
+  isClosed_singleton.preimage (mem_Z1_iff.1 hf).1
+
+/-- **Continuous `1`-cocycles are determined by their values on a topological generating set.**
+Two continuous `1`-cocycles with values in a `T1` module that agree on a set `s` whose generated
+subgroup is dense agree everywhere: their difference is a continuous cocycle whose zero locus is
+a closed subgroup containing `s`. -/
+theorem eq_of_mem_Z1_of_eqOn_of_topologicalClosure_closure_eq_top [IsTopologicalGroup G]
+    [T1Space M] {c₁ c₂ : G → M} (h₁ : c₁ ∈ Z1 G M) (h₂ : c₂ ∈ Z1 G M) {s : Set G}
+    (hs : (Subgroup.closure s).topologicalClosure = ⊤) (h : Set.EqOn c₁ c₂ s) : c₁ = c₂ := by
+  have hsub : c₁ - c₂ ∈ Z1 G M := (Z1 G M).sub_mem h₁ h₂
+  have hle : (Subgroup.closure s).topologicalClosure ≤ zeroLocus hsub :=
+    Subgroup.topologicalClosure_minimal _
+      ((Subgroup.closure_le _).2 fun g hg ↦ (mem_zeroLocus hsub).2 (sub_eq_zero.2 (h hg)))
+      (isClosed_zeroLocus hsub)
+  funext g
+  exact sub_eq_zero.1 ((mem_zeroLocus hsub).1 (hle (hs ▸ Subgroup.mem_top g)))
+
 end Inverse
 
 section Continuity
@@ -827,6 +868,30 @@ instance subsingleton_H2_of_subsingleton [ContinuousMul G] : Subsingleton (H2 G 
     | _ f' => exact H2pi_eq_iff.2 (hB _)
 
 end TrivialGroup
+
+section TrivialCoefficients
+
+variable (G : Type u) [Monoid G] [TopologicalSpace G]
+  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M] [ContinuousSMul G M] [Subsingleton M]
+
+/-- **Trivial coefficients have vanishing `H¹`**: there is only one cochain. -/
+instance subsingleton_H1_of_subsingleton_coefficients : Subsingleton (H1 G M) :=
+  ⟨fun x y => by
+    induction x using QuotientAddGroup.induction_on with
+    | _ f =>
+      induction y using QuotientAddGroup.induction_on with
+      | _ f' => exact congrArg (H1pi G M) (Subsingleton.elim f f')⟩
+
+/-- **Trivial coefficients have vanishing `H²`**: there is only one cochain. -/
+instance subsingleton_H2_of_subsingleton_coefficients [ContinuousMul G] : Subsingleton (H2 G M) :=
+  ⟨fun x y => by
+    induction x using QuotientAddGroup.induction_on with
+    | _ f =>
+      induction y using QuotientAddGroup.induction_on with
+      | _ f' => exact congrArg (H2pi G M) (Subsingleton.elim f f')⟩
+
+end TrivialCoefficients
 
 section TrivialAction
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocallyFree
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
+public import TauCeti.AlgebraicGeometry.Modules.Pullback
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 
 /-!
@@ -23,7 +24,9 @@ vector bundles of finite rank. This file packages them as the full subcategory
 * it is a symmetric monoidal category, with the tensor product and unit `𝒪_X` of `X.Modules`, and
   its inclusion into `X.Modules` is braided monoidal;
 * it is an additive category: it contains the zero sheaf and is closed under direct sums, so it
-  has finite biproducts, computed in `X.Modules`.
+  has finite biproducts, computed in `X.Modules`;
+* it is stable under pullback along an arbitrary morphism of schemes `f : X ⟶ Y`, giving the
+  pullback functor `FiniteLocallyFreeSheaf Y ⥤ FiniteLocallyFreeSheaf X`.
 
 Invertible sheaves are finite locally free, and finite locally free sheaves are finitely
 presented; the corresponding inclusions of full subcategories are fully faithful.
@@ -36,6 +39,8 @@ presented; the corresponding inclusions of full subcategories are fully faithful
   free sheaves in `X.Modules`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.free X I`: the free sheaf on a finite type
   `I`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pullback f`: the pullback of finite locally
+  free sheaves along a morphism of schemes `f`;
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_isFiniteLocallyFree`: finite local freeness is a
   monoidal property of `𝒪_X`-modules;
 * `AlgebraicGeometry.Scheme.Modules.containsZero_isFiniteLocallyFree` and
@@ -133,6 +138,38 @@ def free (I : Type u) [Finite I] : FiniteLocallyFreeSheaf X :=
 lemma free_obj (I : Type u) [Finite I] :
     (free X I).obj = _root_.SheafOfModules.free (R := X.ringCatSheaf) I :=
   (rfl)
+
+variable {X} in
+/-- The pullback of finite locally free sheaves along a morphism of schemes `f : X ⟶ Y`: the
+pullback of a locally free and finitely presented `𝒪_Y`-module is a locally free and finitely
+presented `𝒪_X`-module. -/
+def pullback {Y : Scheme.{u}} (f : X ⟶ Y) : FiniteLocallyFreeSheaf Y ⥤ FiniteLocallyFreeSheaf X :=
+  (Scheme.Modules.isFiniteLocallyFree X).lift
+    ((Scheme.Modules.isFiniteLocallyFree Y).ι ⋙ Scheme.Modules.pullback f)
+    fun E ↦ ⟨Scheme.Modules.isLocallyFree_pullback f E.obj,
+      Scheme.Modules.isFinitePresentation_pullback f E.obj⟩
+
+variable {X} in
+/-- The underlying sheaf of the pullback of a finite locally free sheaf is its pullback as an
+`𝒪_Y`-module. -/
+@[simp]
+lemma pullback_obj_obj {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    ((pullback f).obj E).obj = (Scheme.Modules.pullback f).obj E.obj :=
+  (rfl)
+
+variable {X} in
+/-- Pullback acts on a morphism of finite locally free sheaves by the underlying pullback of
+modules. -/
+@[simp]
+lemma pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : FiniteLocallyFreeSheaf Y}
+    (φ : E ⟶ F) :
+    ((pullback f).map φ).hom =
+      eqToHom (pullback_obj_obj f E) ≫ (Scheme.Modules.pullback f).map φ.hom ≫
+        eqToHom (pullback_obj_obj f F).symm := by
+  cases pullback_obj_obj f E
+  cases pullback_obj_obj f F
+  unfold pullback
+  simp
 
 /-- The fully faithful inclusion of finite locally free sheaves into finitely presented
 sheaves. -/

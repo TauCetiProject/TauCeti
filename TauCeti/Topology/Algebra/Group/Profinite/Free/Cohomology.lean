@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Torsion
+public import TauCeti.Topology.Algebra.GroupAction.TypeTags
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Extension
 public import TauCeti.Topology.Algebra.GroupExtension.Cohomology
@@ -26,12 +28,18 @@ statement takes its canonical form for a finite discrete `p`-primary `F`-module
 (`TauCeti.freeProP.subsingleton_continuousCohomology_two`).
 
 No finiteness of `X` is needed: the universal property of `freeProP p X` holds for every type, and
-the argument uses nothing else about `F`.
+the argument uses nothing else about `F`. The extension dictionary reads its abelian kernel
+multiplicatively, so the vanishing is first stated for a `CommGroup` `M`; an `AddCommGroup` `M` is
+`Additive (Multiplicative M)`, and `TauCeti.freeProP.subsingleton_H2_of_isPPrimaryTorsion` restates
+the vanishing for it, which is the form the `𝔽_p`-valued theory consumes.
 
 ## Main results
 
 * `TauCeti.freeProP.subsingleton_H2`: **`H²(F, M) = 0`** for `F` free pro-`p` and `M` a profinite
   pro-`p` abelian `F`-module.
+* `TauCeti.freeProP.subsingleton_H2_of_isPPrimaryTorsion`: the same for a profinite `p`-primary
+  torsion abelian `F`-module written additively, and `TauCeti.freeProP.subsingleton_H2_zmod` for
+  `𝔽_p` with any continuous action.
 * `TauCeti.freeProP.subsingleton_continuousCohomology_two`: the same in Mathlib's
   `continuousCohomology`, for a finite discrete `p`-primary `F`-module.
 
@@ -45,7 +53,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 open ContCohomology
 
@@ -57,7 +65,7 @@ namespace freeProP
 
 section Cohomology
 
-variable {M : Type u} [CommGroup M] [TopologicalSpace M] [IsTopologicalGroup M] [CompactSpace M]
+variable {M : Type v} [CommGroup M] [TopologicalSpace M] [IsTopologicalGroup M] [CompactSpace M]
   [TotallyDisconnectedSpace M] [MulDistribMulAction (freeProP p X) M]
   [ContinuousSMul (freeProP p X) M]
 
@@ -73,6 +81,31 @@ theorem subsingleton_H2 (hM : IsProP p M) : Subsingleton (H2 (freeProP p X) (Add
     Y.continuous_rightHom hM
 
 end Cohomology
+
+section Additive
+
+variable {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [CompactSpace M] [TotallyDisconnectedSpace M] [DistribMulAction (freeProP p X) M]
+  [ContinuousSMul (freeProP p X) M]
+
+/-- **`H²` of a free pro-`p` group vanishes, additive form.** For `F = freeProP p X` and `M` a
+profinite `p`-primary torsion abelian group, written additively, with a continuous action of `F`,
+the explicit second continuous cohomology group `H²(F, M)` is zero. -/
+theorem subsingleton_H2_of_isPPrimaryTorsion (hM : IsPPrimaryTorsion p M) :
+    Subsingleton (H2 (freeProP p X) M) :=
+  -- `Additive (Multiplicative M)` is `M` with the same instances, so the multiplicative statement
+  -- applies as it stands; `isPPrimaryTorsion_additive_iff` reads the hypothesis the same way.
+  subsingleton_H2 (X := X) (M := Multiplicative M)
+    (IsPGroup.isProP ((isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 hM))
+
+/-- **`H²(F, 𝔽_p) = 0` for a free pro-`p` group `F`**, for every continuous action of `F` on
+`𝔽_p`. -/
+theorem subsingleton_H2_zmod [NeZero p] [DistribMulAction (freeProP p X) (ZMod p)]
+    [ContinuousSMul (freeProP p X) (ZMod p)] : Subsingleton (H2 (freeProP p X) (ZMod p)) :=
+  subsingleton_H2_of_isPPrimaryTorsion (isPPrimaryTorsion_iff.2 fun m ↦
+    ⟨1, by rw [pow_one, nsmul_eq_mul, ZMod.natCast_self, zero_mul]⟩)
+
+end Additive
 
 section Discrete
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Conj
+public import Mathlib.Algebra.Group.ConjFinite
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RepresentationTheory.Character
 
@@ -13,14 +13,15 @@ public import Mathlib.RepresentationTheory.Character
 # Class functions
 
 This file defines functions on a group that are constant on conjugacy classes. It identifies
-their module with the module of functions on `ConjClasses G`, computes its dimension for finite
-groups, pulls class functions back along a group homomorphism, twists them by a power map of the
-group element, inverts the group element, shows that characters of representations are class
-functions, and evaluates a sum over a finite group one conjugacy class at a time.
+their module with the module of functions on `ConjClasses G`, computes its finite rank when there
+are finitely many conjugacy classes, pulls class functions back along a group homomorphism,
+twists them by a power map, inverts the group element, shows that characters of representations
+are class functions, and evaluates a sum over a finite group one conjugacy class at a time.
 
 Inverting the group element, `TauCeti.ClassFunction.invMap`, is the involution that turns the
 character of a representation into the character of its dual
-(`TauCeti.ClassFunction.invMap_ofCharacter`), and over `ℂ` conjugates the values of a character.
+(`TauCeti.ClassFunction.invMap_ofCharacter`). For finite groups, inversion also conjugates the
+values of finite-dimensional complex characters.
 
 The indicator function of a conjugacy class, `TauCeti.ClassFunction.classIndicator`, is the class
 function pulled back from the indicator of a single point of `ConjClasses G`; pairing a class
@@ -28,10 +29,10 @@ function against it is how a class function is read off an expansion in a basis 
 
 These are the indexing foundations for character tables.
 
-This implementation follows the
-[Character Theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and its
-[suggested declarations](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/Suggested.lean).
+The class-function module and its conjugacy-class correspondence are defined over any semiring.
+The finite-rank formula `TauCeti.ClassFunction.finrank_eq_card_conjClasses` assumes
+`StrongRankCondition` on the coefficients; in particular it applies over fields and over `ℤ`.
+The character constructions use Mathlib's `Representation.character` and `FDRep.character`.
 -/
 
 public section
@@ -63,6 +64,10 @@ variable {k : Type u} {G : Type v} [Semiring k] [Group G]
 theorem mem_iff {f : G → k} :
     f ∈ ClassFunction k G ↔ ∀ g h : G, f (h * g * h⁻¹) = f g :=
   Iff.rfl
+
+/-- On a commutative group every function is a class function: conjugation is the identity. -/
+theorem mem_of_isMulCommutative [IsMulCommutative G] (f : G → k) : f ∈ ClassFunction k G :=
+  mem_iff.2 fun g h => by rw [IsMulCommutative.is_comm.comm h g, mul_inv_cancel_right]
 
 /-- Class functions take the same value on conjugate elements. -/
 theorem eq_of_isConj (f : ClassFunction k G) {g h : G} (hgh : IsConj g h) :
@@ -101,6 +106,14 @@ theorem toConjClasses_ofConjClasses (f : ConjClasses G → k) :
     obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
     rw [toConjClasses_mk, ofConjClasses_apply]
 
+/-- Evaluating a class function on conjugacy classes and pulling it back returns the original
+class function. -/
+@[simp]
+theorem ofConjClasses_toConjClasses (f : ClassFunction k G) :
+    ofConjClasses (toConjClasses f) = f := by
+  ext g
+  simp
+
 /-- Pull a class function back along a group homomorphism.  Restriction of a class function to a
 subgroup is the case `φ = S.subtype`. -/
 def comap {H : Type w} [Group H] (φ : H →* G) :
@@ -129,9 +142,8 @@ theorem comap_comp {H : Type w} {J : Type w'} [Group H] [Group J] (φ : H →* G
     comap (k := k) (φ.comp ψ) = (comap ψ).comp (comap φ) :=
   (rfl)
 
-/-- Twist a class function by a power map of the group element, `f ↦ (g ↦ f (g ^ j))`.  This is
-again a class function because a power of a conjugate is the conjugate of that power, and it
-depends linearly on `f`.  The Galois action on character values is by these twists. -/
+/-- The linear power-map twist `f ↦ (g ↦ f (g ^ j))` of a class function. For a finite group,
+powers coprime to its exponent describe the cyclotomic Galois action on character values. -/
 def powMap (j : ℕ) : ClassFunction k G →ₗ[k] ClassFunction k G where
   toFun f := ⟨fun g => f.1 (g ^ j), fun g h => by simpa only [conj_pow] using f.2 (g ^ j) h⟩
   map_add' _ _ := rfl
@@ -157,12 +169,8 @@ theorem powMap_mul (i j : ℕ) :
   ext f g
   simp [pow_mul]
 
-/-- Invert the group element in a class function, `f ↦ (g ↦ f g⁻¹)`.  This is again a class
-function because the inverse of a conjugate is the conjugate of the inverse, and it depends
-linearly on `f`.
-
-This is the twist that `TauCeti.ClassFunction.powMap` cannot express, the exponent `-1` lying
-outside `ℕ`; on characters it is passage to the dual representation. -/
+/-- The linear inversion twist `f ↦ (g ↦ f g⁻¹)` of a class function. On characters of
+finite-dimensional representations, this is passage to the dual representation. -/
 def invMap : ClassFunction k G →ₗ[k] ClassFunction k G where
   toFun f := ⟨fun g => f.1 g⁻¹, fun g h => by
     simpa only [mul_inv_rev, inv_inv, mul_assoc] using f.2 g⁻¹ h⟩
@@ -191,9 +199,7 @@ noncomputable def equivConjClasses : ClassFunction k G ≃ₗ[k] (ConjClasses G 
     ext C
     obtain ⟨x, rfl⟩ := ConjClasses.exists_rep C
     rfl
-  left_inv f := by
-    ext g
-    rfl
+  left_inv := ofConjClasses_toConjClasses
   right_inv := toConjClasses_ofConjClasses
 
 /-- The linear equivalence is given by `toConjClasses`. -/
@@ -222,17 +228,11 @@ noncomputable def classIndicator (x : G) : ClassFunction k G :=
 theorem classIndicator_apply [DecidableEq (ConjClasses G)] (x y : G) :
     (classIndicator (k := k) x).1 y =
       if ConjClasses.mk y = ConjClasses.mk x then 1 else 0 := by
-  rw [classIndicator, ofConjClasses_apply]
-  by_cases h : ConjClasses.mk y = ConjClasses.mk x
-  · rw [ite_eq_left h, Set.indicator_of_mem (Set.mem_singleton_iff.mpr h)]
-  · rw [ite_eq_right h, Set.indicator_of_notMem (fun hm => h (Set.mem_singleton_iff.mp hm))]
+  simp only [classIndicator, ofConjClasses_apply, Set.indicator_apply, Set.mem_singleton_iff]
 
-/-- **Summing a class function one conjugacy class at a time.** The conjugacy classes partition
-the group and a class function is constant on each of them, so each class contributes its size
-times the single value the class function takes there.
-
-This is the substitution that turns a sum over the group, such as the one pairing two characters,
-into a sum over the columns of a character table. -/
+/-- The sum of a class function over a finite group is the sum of its values on conjugacy
+classes, weighted by the sizes of those classes. This converts group sums into sums over the
+columns of a character table. -/
 theorem sum_eq_sum_conjClasses [Fintype G] [Fintype (ConjClasses G)] (f : ClassFunction k G) :
     ∑ g : G, f.1 g = ∑ C : ConjClasses G, (Nat.card C.carrier : k) * toConjClasses f C := by
   classical
@@ -252,9 +252,10 @@ end ClassFunction
 
 namespace ClassFunction
 
-variable {k : Type u} {G : Type v} [DivisionRing k] [Group G]
+variable {k : Type u} {G : Type v} [Semiring k] [StrongRankCondition k] [Group G]
 
-/-- The dimension of the space of class functions is the number of conjugacy classes. -/
+/-- Over a semiring satisfying the strong rank condition, the finite rank of the class-function
+module is the number of conjugacy classes, provided there are finitely many. -/
 theorem finrank_eq_card_conjClasses [Finite (ConjClasses G)] :
     Module.finrank k (ClassFunction k G) = Nat.card (ConjClasses G) := by
   let := Fintype.ofFinite (ConjClasses G)
@@ -278,8 +279,8 @@ theorem ofCharacter_apply {V : Type w} [AddCommGroup V] [Module k V]
     (ρ : Representation k G V) (g : G) : (ofCharacter ρ).1 g = ρ.character g :=
   (rfl)
 
-/-- **Inverting the group element in a character gives the character of the dual
-representation**: `χ_{ρ*}(g) = χ_ρ(g⁻¹)`. -/
+/-- Inverting the group element in a character gives the character of the dual
+representation: `χ_{ρ*}(g) = χ_ρ(g⁻¹)`. -/
 @[simp]
 theorem invMap_ofCharacter {V : Type w} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
     (ρ : Representation k G V) : invMap (ofCharacter ρ) = ofCharacter ρ.dual :=
@@ -288,7 +289,7 @@ theorem invMap_ofCharacter {V : Type w} [AddCommGroup V] [Module k V] [FiniteDim
 
 /-- The character of a finite-dimensional bundled representation is a class function. -/
 noncomputable def ofFDRep (V : FDRep k G) : ClassFunction k G :=
-  ⟨V.character, fun g h => V.char_conj g h⟩
+  ofCharacter V.ρ
 
 /-- The class function of a bundled finite-dimensional representation evaluates to its character. -/
 @[simp]

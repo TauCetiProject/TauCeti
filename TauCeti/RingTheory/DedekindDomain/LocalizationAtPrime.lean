@@ -44,6 +44,8 @@ valuation ring — is the `v`-adic valuation itself. Without that identification
   `v (x) ≤ 1` for `x` in the image of the localisation at `v`;
 * `IsDedekindDomain.HeightOneSpectrum.isInteger_of_forall_isInteger_localizationAtPrime`:
   an element of `K` lying in every `Localization.AtPrime v.asIdeal` lies in `O`;
+* `IsDedekindDomain.HeightOneSpectrum.isUnit_of_forall_isUnit_localizationAtPrime`:
+  a nonzero element of `K` that is a unit in every such localisation is a unit of `O`;
 * `IsDedekindDomain.HeightOneSpectrum.integers_valuation_localizationAtPrime`:
   `Oᵥ` is the ring of integers of the `v`-adic valuation on `K`;
 * `IsDedekindDomain.HeightOneSpectrum.irreducible_algebraMap_localizationAtPrime`:
@@ -97,6 +99,23 @@ theorem isInteger_of_forall_isInteger_localizationAtPrime (x : K)
     (RingHom.mem_range.mp (mem_integers_of_valuation_le_one K x fun v => ?_))
   obtain ⟨r, rfl⟩ := RingHom.mem_rangeS.mp (h v)
   exact v.valuation_algebraMap_le_one_of_isLocalizationAtPrime r
+
+/-- A nonzero element of the fraction field which is the image of a unit in every height-one
+localisation is the image of a unit of the Dedekind domain. The nonzero assumption also covers
+the case where the height-one spectrum is empty. -/
+theorem isUnit_of_forall_isUnit_localizationAtPrime (x : K)
+    (hx : x ≠ 0)
+    (h : ∀ v : HeightOneSpectrum O, ∃ u : (Localization.AtPrime v.asIdeal)ˣ,
+      algebraMap (Localization.AtPrime v.asIdeal) K u = x) :
+    ∃ u : Oˣ, algebraMap O K u = x := by
+  obtain ⟨a, ha⟩ := isInteger_of_forall_isInteger_localizationAtPrime x
+    fun v => let ⟨u, hu⟩ := h v; ⟨u, hu⟩
+  obtain ⟨b, hb⟩ := isInteger_of_forall_isInteger_localizationAtPrime x⁻¹ fun v => by
+    obtain ⟨u, hu⟩ := h v
+    exact ⟨↑u⁻¹, by rw [map_units_inv, hu]⟩
+  have hab : a * b = 1 := IsFractionRing.injective O K (by
+    rw [map_mul, ha, hb, map_one, mul_inv_cancel₀ hx])
+  exact ⟨⟨a, b, hab, by rw [mul_comm, hab]⟩, ha⟩
 
 /-- **The localisation at `v` is the ring of integers of the `v`-adic valuation on `K`.** The
 result packages this identification as `Valuation.Integers`, making its unit and divisibility API

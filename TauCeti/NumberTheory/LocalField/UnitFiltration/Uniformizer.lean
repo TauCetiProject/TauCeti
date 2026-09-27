@@ -64,8 +64,7 @@ theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk (n : ℕ
           (Additive.ofMul (QuotientGroup.mk x))) =
       Submodule.Quotient.mk (unitFiltrationDifference n x) := by
   rw [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer]
-  simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply,
-    MonoidHom.toAdditive_apply_apply, MulEquiv.coe_toMonoidHom, toMul_ofMul,
+  simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     unitFiltrationGradedSuccEquivMaximalIdealGraded_mk]
   exact LinearEquiv.apply_symm_apply _ _
 

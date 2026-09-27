@@ -16,6 +16,9 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.PrincipalSeries.Ba
 -- The Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff`, its predicate
 -- `TauCeti.MackeyDisjoint`, and the Mackey subgroup the predicate is stated on.
 public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+-- Non-public: the permutation-matrix description of the Weyl element is used only to compute
+-- its action on the diagonal coordinates.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Bruhat
 -- Non-public: irreducibility of a line and its passage to `CategoryTheory.Simple` are used only
 -- inside the proof that the two sides of the Mackey condition are simple.
 import TauCeti.RepresentationTheory.Irreducible
@@ -40,12 +43,11 @@ element `w = !![0, 1; 1, 0]`, and Mackey disjointness depends only on the double
 at `w`.
 
 At `w` the two restrictions are again lines, so Schur's lemma
-(`FDRep.finrank_hom_simple_simple`) turns disjointness into non-isomorphism, and characters
-separate them: on the diagonal matrix `diag(a, 1)`, which lies in `B ⊓ wBw⁻¹`, one takes the value
-`α a` and the other the value `β a`, because conjugating by `w` swaps the two diagonal entries.
-Conversely, for `α = β` the Borel character is `α ∘ det` (`TauCeti.GL2Borel.linearChar_self`),
-which conjugation cannot move, so the two restrictions carry the same action and the criterion
-fails.
+(`FDRep.finrank_hom_simple_simple`) turns disjointness into non-isomorphism. More generally, the
+restriction attached to `(α, β)` is isomorphic to the Weyl-conjugated restriction attached to
+`(γ, δ)` exactly when `α = δ` and `β = γ`: the diagonal matrices `diag(a, 1)` and `diag(1, b)`
+recover both equalities, while conjugation by `w` swaps the two diagonal coordinates. Specializing
+to `(γ, δ) = (α, β)` gives the required criterion `α ≠ β`.
 
 ## Main definitions
 
@@ -56,6 +58,8 @@ fails.
 
 * `TauCeti.GL2Borel.inv_weyl_mul_torusHom_mul_weyl`: conjugating a diagonal matrix by the Weyl
   element swaps its two entries.
+* `TauCeti.GL2Borel.nonempty_iso_mackey_weyl_iff`: the two Weyl-cell restrictions are isomorphic
+  exactly when their parameter pairs are swapped.
 * `TauCeti.GL2Borel.mackeyDisjoint_weyl_iff`: the single Mackey condition, at the Weyl element,
   holds exactly when `α ≠ β`.
 * `TauCeti.simple_GL2PrincipalSeries_iff`: **the principal series `Ind_B^{GL₂}(α ⊗ β)` is
@@ -109,15 +113,6 @@ public section
 open CategoryTheory Matrix
 
 namespace TauCeti
-
-/-- **The character of a restriction along a group homomorphism is the character pulled back.**
-This is `TauCeti.character_resFDRep` for an arbitrary homomorphism in place of the inclusion of a
-subgroup; it stays private because the only restrictions it is read on here are the two sides of
-the Mackey condition. -/
-private theorem character_actionRes_obj {k : Type u} {S T : Type v} [Field k] [Group S] [Group T]
-    (f : S →* T) (A : FDRep k T) (x : S) :
-    FDRep.character ((Action.res (FGModuleCat k) f).obj A) x = A.character (f x) :=
-  (rfl)
 
 /-- **A representation on a line is a simple object of `FDRep k G`.** Private packaging of
 `TauCeti.Representation.isIrreducible_of_finrank_eq_one` and
@@ -177,6 +172,23 @@ theorem mackeyToH_mackeyTorusElt (p : Rˣ × Rˣ) :
   Subtype.ext <| by
     rw [coe_mackeyToH_apply, coe_mackeyTorusElt, inv_weyl_mul_torusHom_mul_weyl]
 
+/-- **Mackey conjugation at the Weyl element swaps the diagonal coordinates.** This is the
+coordinate form of the Weyl action on the split torus. It applies to every element of the Mackey
+subgroup; no diagonal-matrix hypothesis is needed, since conjugation by the Weyl element swaps
+the two diagonal entries of an arbitrary matrix. -/
+@[simp]
+theorem diag_mackeyToH (g : (mackeySubgroup (GL2WeylElement R) (GL2Borel R)
+    (GL2Borel R)).subgroupOf (GL2Borel R)) :
+    diag (mackeyToH (GL2WeylElement R) (GL2Borel R) (GL2Borel R) g) =
+      ((diag (g : GL2Borel R)).2, (diag (g : GL2Borel R)).1) := by
+  apply Prod.ext <;> apply Units.ext
+  · simp only [diag_fst_val, diag_snd_val, coe_mackeyToH_apply,
+      gl2WeylElement_eq_permutationGL_swap,
+      coe_permutationGL_inv_mul_mul_permutationGL_apply, Equiv.swap_apply_left]
+  · simp only [diag_snd_val, diag_fst_val, coe_mackeyToH_apply,
+      gl2WeylElement_eq_permutationGL_swap,
+      coe_permutationGL_inv_mul_mul_permutationGL_apply, Equiv.swap_apply_right]
+
 /-- **The determinant does not see the Mackey conjugation.** Conjugation is inner and the
 determinant is a homomorphism into a commutative group, so it is unchanged; this is why the
 boundary character `α ∘ det` gives a reducible principal series. -/
@@ -192,41 +204,51 @@ end CommRing
 
 /-! ### The Mackey condition at the Weyl element -/
 
-section Field
+section CommRing
 
-variable {F : Type} [Field F]
+variable {F : Type*} [CommRing F]
 
-/-- **The two sides of the Mackey condition at the Weyl element are isomorphic exactly when the
-two characters agree.** Both are lines, so an isomorphism is an equality of characters; the
-diagonal matrices `diag(a, 1)` of the Mackey subgroup separate `α` from `β`, while for `α = β` the
-common value `α ∘ det` is conjugation-invariant. -/
-theorem nonempty_iso_mackey_weyl_iff (α β : Fˣ →* ℂˣ) :
+/-- **The two Weyl-cell restrictions are isomorphic exactly when their parameters are swapped.**
+This characterization supplies the Weyl-cell contribution to the principal-series intertwining
+number. -/
+@[simp]
+theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
     Nonempty (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
           (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β) ≅
         (Action.res (FGModuleCat ℂ)
-          (mackeyToH (GL2WeylElement F) (GL2Borel F) (GL2Borel F))).obj (GL2BorelRep F α β))
-      ↔ α = β := by
+          (mackeyToH (GL2WeylElement F) (GL2Borel F) (GL2Borel F))).obj (GL2BorelRep F γ δ))
+      ↔ α = δ ∧ β = γ := by
+  rw [GL2BorelRep_def, GL2BorelRep_def, GL2Borel.linearRep_def,
+    GL2Borel.linearRep_def, ← FDRep.ofLinearCharacter_def,
+    ← FDRep.ofLinearCharacter_def]
+  -- `resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold the
+  -- abbreviation when searching for `FDRep.actionRes_obj_ofLinearCharacter`.
+  change Nonempty
+    ((Action.res (FGModuleCat ℂ)
+          ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
+            (GL2Borel F)).subgroupOf (GL2Borel F)).subtype).obj
+        (FDRep.ofLinearCharacter (linearChar α β)) ≅
+      (Action.res (FGModuleCat ℂ)
+          (mackeyToH (GL2WeylElement F) (GL2Borel F) (GL2Borel F))).obj
+        (FDRep.ofLinearCharacter (linearChar γ δ))) ↔ _
+  rw [FDRep.actionRes_obj_ofLinearCharacter, FDRep.actionRes_obj_ofLinearCharacter,
+    FDRep.nonempty_iso_ofLinearCharacter_iff]
   constructor
-  · rintro ⟨e⟩
-    -- Reading the equality of characters at `diag(a, 1)` gives `α a = β a`.
-    have hchar := FDRep.char_iso e
-    refine MonoidHom.ext fun a => Units.ext ?_
-    have h := congrArg (fun χ => χ (mackeyTorusElt (a, 1))) hchar
-    simpa [character_actionRes_obj] using h
-  · rintro rfl
-    -- The two actions are the same monoid homomorphism, because `α ∘ det` is
-    -- conjugation-invariant.
-    refine ⟨Action.mkIso (Iso.refl _) fun g => ?_⟩
-    have hρ : Action.ρ (GL2BorelRep F α α) (g : GL2Borel F) =
-        Action.ρ (GL2BorelRep F α α)
-          (mackeyToH (GL2WeylElement F) (GL2Borel F) (GL2Borel F) g) := by
-      rw [GL2BorelRep_def]
-      refine FGModuleCat.hom_ext ?_
-      rw [FDRep.hom_hom_action_ρ, FDRep.hom_hom_action_ρ, FDRep.of_ρ']
-      refine LinearMap.ext fun v => ?_
-      rw [linearRep_apply, linearRep_apply, linearChar_self, linearChar_self, det_mackeyToH]
-    simp only [Iso.refl_hom]
-    exact hρ
+  · intro h
+    refine ⟨MonoidHom.ext fun a => ?_, MonoidHom.ext fun b => ?_⟩
+    · simpa using DFunLike.congr_fun h (mackeyTorusElt (a, 1))
+    · simpa using DFunLike.congr_fun h (mackeyTorusElt (1, b))
+  · rintro ⟨rfl, rfl⟩
+    ext g
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, linearChar_apply, linearChar_apply,
+      diag_mackeyToH]
+    simp [mul_comm]
+
+end CommRing
+
+section CommRing
+
+variable {F : Type} [CommRing F]
 
 /-- **The Mackey condition of the principal series, at the Weyl element.** The restrictions of
 `α ⊗ β` and of its `w`-conjugate to `B ⊓ wBw⁻¹` are disjoint exactly when `α ≠ β`. Together with
@@ -244,10 +266,12 @@ theorem mackeyDisjoint_weyl_iff (α β : Fˣ →* ℂˣ) :
     simple_of_finrank_eq_one _ (finrank_GL2BorelRep F α β)
   simp only [mackeyDisjoint_iff_finrank_eq_zero, FDRep.finrank_hom_simple_simple]
   split_ifs with h
-  · simp [(nonempty_iso_mackey_weyl_iff α β).mp h]
-  · exact iff_of_true rfl fun hαβ => h ((nonempty_iso_mackey_weyl_iff α β).mpr hαβ)
+  · exact iff_of_false (fun hFalse => hFalse)
+      (not_ne_iff.mpr ((nonempty_iso_mackey_weyl_iff α β α β).mp h).1)
+  · exact iff_of_true rfl fun hαβ =>
+      h ((nonempty_iso_mackey_weyl_iff α β α β).mpr ⟨hαβ, hαβ.symm⟩)
 
-end Field
+end CommRing
 
 end GL2Borel
 

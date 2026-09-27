@@ -59,10 +59,7 @@ theorem IsNormalDomain.pathELength_escape
     ENNReal.ofReal r ≤ Manifold.pathELength I γ 0 1 := by
   -- Shrink the normal domain to the open ball used for the first exit.
   have hsmall : IsNormalDomain I M p (Metric.ball 0 r) :=
-    h.mono (Metric.ball_subset_closedBall.trans hclosed) Metric.isOpen_ball
-      (Metric.mem_ball_self hr)
-      ((convex_ball (0 : TangentSpace I p) r).starConvex
-        (Metric.mem_ball_self hr))
+    h.ball (Metric.ball_subset_closedBall.trans hclosed) hr
   -- `V` is the open inner image and `K` is its compact closed image.
   set V : Set M := riemannianExp I M p '' Metric.ball 0 r
   set K : Set M := riemannianExp I M p '' Metric.closedBall 0 r
@@ -111,16 +108,17 @@ theorem IsNormalDomain.pathELength_escape
   have hγT_K : γ T ∈ K :=
     hKclosed.mem_of_tendsto htend
       (eventually_nhdsWithin_of_forall fun t ht => hVK (hbefore t ht.1.le ht.2))
-  obtain ⟨z, hz, hzγ⟩ := hγT_K
-  have hznorm : ‖z‖ = r := by
-    have hzle : ‖z‖ ≤ r := mem_closedBall_zero_iff.mp hz
-    rcases lt_or_eq_of_le hzle with hlt | heq
-    · exfalso
-      apply hTA.2
-      exact ⟨z, mem_ball_zero_iff.mpr hlt, hzγ⟩
-    · exact heq
-  have hzU : z ∈ U := hclosed hz
-  have hγT_U : γ T ∈ riemannianExp I M p '' U := hKouter ⟨z, hz, hzγ⟩
+  simp only [K] at hγT_K
+  rw [← Metric.ball_union_sphere, image_union] at hγT_K
+  have hγT_sphere : γ T ∈ riemannianExp I M p '' Metric.sphere 0 r := by
+    rcases hγT_K with hball | hsphere
+    · exact (hTA.2 hball).elim
+    · exact hsphere
+  obtain ⟨z, hz, hzγ⟩ := hγT_sphere
+  have hznorm : ‖z‖ = r := mem_sphere_zero_iff_norm.mp hz
+  have hzU : z ∈ U := hclosed (Metric.sphere_subset_closedBall hz)
+  have hγT_U : γ T ∈ riemannianExp I M p '' U :=
+    hKouter ⟨z, Metric.sphere_subset_closedBall hz, hzγ⟩
   have hγT_eq : γ T = riemannianExp I M p z := hzγ.symm
   have hγprefix : MapsTo γ (Icc 0 T) (riemannianExp I M p '' U) := by
     intro t ht

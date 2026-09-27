@@ -76,9 +76,6 @@ theorem latticeToComplex_apply (x : Lattice) :
 theorem rationalToComplex_apply (x : RationalSpace) :
     rationalToComplex x = ((x.1 : ℂ), (x.2 : ℂ)) := by
   induction x using isBaseChange_latticeToRational.inductionOn with
-  | zero =>
-      rw [LinearMap.map_zero]
-      ext <;> norm_num
   | tmul x =>
       rw [rationalToComplex, Hodge.rationalToComplexMap_apply_ι]
       simp
@@ -139,8 +136,7 @@ private theorem complexificationEquiv_tmul (z : ℂ) (x : RealSpace) :
 private theorem complexificationEquiv_conj (x : ℂ ⊗[ℝ] RealSpace) :
     complexificationEquiv ((Hodge.complexificationConjugation RealSpace).toEquiv x) =
       coordinateConjugation (complexificationEquiv x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy, coordinateConjugation.map_add]
   | tmul z x =>
       rw [Hodge.complexificationConjugation_toEquiv_tmul, complexificationEquiv_tmul,
@@ -150,8 +146,7 @@ private theorem complexificationEquiv_conj (x : ℂ ⊗[ℝ] RealSpace) :
 private theorem complexificationEquiv_J (x : ℂ ⊗[ℝ] RealSpace) :
     complexificationEquiv (realAlmostComplexStructure.toLinearMap.baseChange ℂ x) =
       (LinearEquiv.skewSwap ℂ ℂ ℂ) (complexificationEquiv x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp [complexificationEquiv]
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul z x =>
       rw [LinearMap.baseChange_tmul, complexificationEquiv_tmul, complexificationEquiv_tmul]
@@ -194,25 +189,6 @@ private theorem complexificationEquiv_eigenspace_comap (μ : ℂ) :
       _ = μ • x := hx
       _ = complexificationEquiv (μ • complexificationEquiv.symm x) := by
         rw [map_smul, complexificationEquiv.apply_symm_apply]
-
-private theorem comap_weilOperator (hs : HodgeStructureOn (ℂ ⊗[ℝ] RealSpace)
-    (Hodge.complexificationConjugation RealSpace) 1) :
-    (hs.comap complexificationEquiv.symm complexificationEquiv_conj_symm).weilOperator =
-      complexificationEquiv.toLinearMap ∘ₗ hs.weilOperator ∘ₗ
-        complexificationEquiv.symm.toLinearMap := by
-  symm
-  apply (hs.comap complexificationEquiv.symm complexificationEquiv_conj_symm).weilOperator_unique
-  intro p x hx
-  rw [LinearMap.comp_apply, LinearMap.comp_apply]
-  have hx' : complexificationEquiv.symm x ∈ hs.piece p := by
-    rw [HodgeStructureOn.comap_piece] at hx
-    exact hx
-  calc
-    complexificationEquiv (hs.weilOperator (complexificationEquiv.symm x)) =
-        complexificationEquiv
-          (Complex.I ^ (2 * p - 1) • complexificationEquiv.symm x) :=
-      congrArg complexificationEquiv (hs.weilOperator_apply_of_mem hx')
-    _ = _ := by rw [map_smul, complexificationEquiv.apply_symm_apply]
 
 /-- The standard effective Hodge structure of weight one on `ℤ × ℤ`. Its degree-one
 filtration is the `i`-eigenspace of `J(x, y) = (-y, x)`. -/
@@ -271,7 +247,7 @@ theorem hodgeStructure_piece_eq_bot {p : ℤ} (hpzero : p ≠ 0) (hpone : p ≠ 
 @[simp]
 theorem hodgeStructure_weilOperator :
     hodgeStructure.weilOperator = (LinearEquiv.skewSwap ℂ ℂ ℂ).toLinearMap := by
-  rw [hodgeStructure, comap_weilOperator,
+  rw [hodgeStructure, HodgeStructureOn.weilOperator_comap, LinearEquiv.symm_symm,
     realAlmostComplexStructure.hodgeStructure_weilOperator]
   apply LinearMap.ext
   intro x

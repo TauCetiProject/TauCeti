@@ -49,6 +49,8 @@ element `s` chosen outside `U`.
 
 ## Main statements
 
+* `TauCeti.ContCohomology.evensExtend_mul_hom`, `evensB1_mul_hom` and `evensBs_mul_hom`:
+  the extension by zero and the two Shapiro components are additive in the homomorphism.
 * `TauCeti.ContCohomology.evensB1_mul_of_mem`, `evensB1_mul_of_notMem`, `evensBs_mul_of_mem` and
   `evensBs_mul_of_notMem`: the cocycle law of the pair `(b₁, b_s)` in the permutation module,
   from which everything else follows.
@@ -77,9 +79,12 @@ and `α` alone; that is `TauCeti.ContCohomology.evensGraphCochain_sub_evensGraph
 stated at **every** `s'` outside `U` rather than at a chosen one.
 
 Everything below is stated for a plain subgroup `U` together with the hypotheses `U.index = 2`
-and, where a topology is involved, `IsOpen (U : Set G)`, as the corestriction of this development
-is. No topology at all is needed for the algebraic half: the cocycle laws and the comparison of
-two elements outside `U` are identities of plain functions `G → 𝔽₂`.
+for the cocycle identities and the comparison of two elements outside `U`, and
+`IsOpen (U : Set G)` for continuity. The evaluation of the graph cochain on `U × U` needs neither.
+The continuity statements need only separately continuous multiplication, since the arguments use
+fixed translations and the fact that an open subgroup is closed. No topology at all is needed for
+the algebraic half: the cocycle laws and the comparison of two elements outside `U` are identities
+of plain functions `G → 𝔽₂`.
 
 The `2`-cocycle identity is stated in the form it takes for a trivial action, an equation between
 sums of four values, rather than through `groupCohomology.IsCocycle₂`, whose statement carries a
@@ -143,6 +148,14 @@ theorem evensExtend_of_mem {γ : G} (h : γ ∈ U) :
 theorem evensExtend_of_notMem {γ : G} (h : γ ∉ U) : evensExtend U α γ = 0 :=
   dite_eq_right h
 
+/-- The extension by zero is additive in the homomorphism. -/
+@[simp]
+theorem evensExtend_mul_hom {β : U →* Multiplicative (ZMod 2)} (γ : G) :
+    evensExtend U (α * β) γ = evensExtend U α γ + evensExtend U β γ := by
+  by_cases h : γ ∈ U
+  · simp [evensExtend_of_mem h]
+  · simp [evensExtend_of_notMem h]
+
 /-- The extension by zero is additive on `U`, where it is `α`. It is not additive on `G`: that
 failure is what the Evens norm measures. -/
 @[simp]
@@ -169,7 +182,7 @@ variable (U α)
 
 /-- The extension by zero of a continuous homomorphism on an open subgroup is continuous: `U` is
 clopen and `𝔽₂` is discrete, so the two branches do not have to agree anywhere. -/
-theorem continuous_evensExtend [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensExtend [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensExtend U α) := by
   -- on `U` the extension takes the first branch of its `dite`, so it restricts to `α` there
   have hres : (U : Set G).domRestrict (evensExtend U α) =
@@ -234,6 +247,19 @@ theorem evensB1_of_notMem {γ : G} (h : γ ∉ U) : evensB1 U s α γ = evensExt
 /-- The second Shapiro component is `b_s γ = b₁ (s⁻¹ γ)`. -/
 @[simp]
 theorem evensBs_apply (γ : G) : evensBs U s α γ = evensB1 U s α (s⁻¹ * γ) := (rfl)
+
+/-- The first Shapiro component is additive in the homomorphism. -/
+@[simp]
+theorem evensB1_mul_hom {β : U →* Multiplicative (ZMod 2)} (γ : G) :
+    evensB1 U s (α * β) γ = evensB1 U s α γ + evensB1 U s β γ := by
+  by_cases h : γ ∈ U
+  · simp [evensB1_of_mem h]
+  · simp [evensB1_of_notMem h]
+
+/-- The second Shapiro component is additive in the homomorphism. -/
+theorem evensBs_mul_hom {β : U →* Multiplicative (ZMod 2)} (γ : G) :
+    evensBs U s (α * β) γ = evensBs U s α γ + evensBs U s β γ := by
+  simp
 
 /-- The corestriction cochain is the sum `b₁ + b_s` of the two Shapiro components. -/
 @[simp]
@@ -319,31 +345,25 @@ variable (U s α)
 
 /-- The first Shapiro component of a continuous homomorphism on an open subgroup is continuous:
 `U` is clopen, so the case split is. -/
-theorem continuous_evensB1 [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensB1 [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensB1 U s α) := by
   classical
-  have hclopen : IsClopen {γ : G | γ ∈ U} := ⟨U.isClosed_of_isOpen hopen, hopen⟩
-  have hfr : ∀ γ ∈ frontier {γ : G | γ ∈ U},
-      evensExtend U α γ = evensExtend U α (γ * s) := by
-    intro γ hγ
-    rw [hclopen.frontier_eq] at hγ
-    simp at hγ
-  have hcont : Continuous fun γ : G =>
-      if γ ∈ U then evensExtend U α γ else evensExtend U α (γ * s) :=
-    Continuous.if hfr (continuous_evensExtend U α hopen hα)
-      ((continuous_evensExtend U α hopen hα).comp (continuous_id.mul continuous_const))
-  refine hcont.congr fun γ => ?_
-  by_cases h : γ ∈ U
-  · rw [ite_eq_left h, evensB1_of_mem h]
-  · rw [ite_eq_right h, evensB1_of_notMem h]
+  have hclopen : IsClopen (U : Set G) := ⟨U.isClosed_of_isOpen hopen, hopen⟩
+  have hif : Continuous fun γ => if γ ∈ U then evensExtend U α γ else evensExtend U α (γ * s) :=
+    Continuous.if (by simp [hclopen.frontier_eq])
+      (continuous_evensExtend U α hopen hα)
+      ((continuous_evensExtend U α hopen hα).comp (continuous_mul_const s))
+  refine hif.congr fun γ => ?_
+  split_ifs with hγ
+  exacts [(evensB1_of_mem hγ).symm, (evensB1_of_notMem hγ).symm]
 
 /-- The second Shapiro component is the first one translated, hence continuous. -/
-theorem continuous_evensBs [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensBs [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensBs U s α) :=
-  (continuous_evensB1 U s α hopen hα).comp (continuous_const.mul continuous_id)
+  (continuous_evensB1 U s α hopen hα).comp (continuous_const_mul s⁻¹)
 
 /-- The corestriction cochain of a continuous homomorphism on an open subgroup is continuous. -/
-theorem continuous_evensCorCochain [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensCorCochain [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensCorCochain U s α) :=
   (continuous_evensB1 U s α hopen hα).add (continuous_evensBs U s α hopen hα)
 
@@ -425,30 +445,22 @@ variable (U s α)
 
 /-- The graph cochain of a continuous homomorphism on an open subgroup is continuous: the case
 split is on the clopen set `U × G` and both branches are products of continuous functions. -/
-theorem continuous_evensGraphCochain [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensGraphCochain [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensGraphCochain U s α) := by
   classical
   have hclopen : IsClopen {q : G × G | q.1 ∈ U} :=
     ⟨(U.isClosed_of_isOpen hopen).preimage continuous_fst, hopen.preimage continuous_fst⟩
-  have hfr : ∀ q ∈ frontier {q : G × G | q.1 ∈ U},
-      evensB1 U s α q.1 * evensBs U s α q.2 =
-        evensB1 U s α q.1 * evensB1 U s α q.2 + evensB1 U s α q.2 * evensBs U s α q.2 := by
-    intro q hq
-    rw [hclopen.frontier_eq] at hq
-    simp at hq
   have hb1 : Continuous (evensB1 U s α) := continuous_evensB1 U s α hopen hα
   have hbs : Continuous (evensBs U s α) := continuous_evensBs U s α hopen hα
-  have hcont : Continuous fun q : G × G =>
-      if q.1 ∈ U then evensB1 U s α q.1 * evensBs U s α q.2
-        else evensB1 U s α q.1 * evensB1 U s α q.2 + evensB1 U s α q.2 * evensBs U s α q.2 :=
-    Continuous.if hfr ((hb1.comp continuous_fst).mul (hbs.comp continuous_snd))
+  have hif : Continuous fun q : G × G => if q.1 ∈ U then evensB1 U s α q.1 * evensBs U s α q.2
+      else evensB1 U s α q.1 * evensB1 U s α q.2 + evensB1 U s α q.2 * evensBs U s α q.2 :=
+    Continuous.if (by simp [hclopen.frontier_eq])
+      ((hb1.comp continuous_fst).mul (hbs.comp continuous_snd))
       (((hb1.comp continuous_fst).mul (hb1.comp continuous_snd)).add
         ((hb1.comp continuous_snd).mul (hbs.comp continuous_snd)))
-  refine hcont.congr fun q => ?_
-  obtain ⟨γ, η⟩ := q
-  by_cases h : γ ∈ U
-  · rw [ite_eq_left h, evensGraphCochain_of_mem h]
-  · rw [ite_eq_right h, evensGraphCochain_of_notMem h]
+  refine hif.congr fun ⟨γ, η⟩ => ?_
+  split_ifs with hγ
+  exacts [(evensGraphCochain_of_mem hγ η).symm, (evensGraphCochain_of_notMem hγ η).symm]
 
 end GraphCochain
 
@@ -462,13 +474,14 @@ identity `res_U N^{Ev}(α) = α ⌣ (s · α)`. -/
 
 variable {U : Subgroup G} {s : G} {α : U →* Multiplicative (ZMod 2)}
 
-/-- **The graph cochain restricted to `U`** is the product of `α` with its `s`-conjugate. -/
-theorem evensGraphCochain_apply_of_mem_of_mem (hU : U.index = 2) (hs : s ∉ U) {γ η : G}
+/-- **The graph cochain restricted to `U`** is the product of the extension of `α` with its
+`s`-conjugate. This evaluation formula holds for any subgroup and any `s ∉ U`. -/
+theorem evensGraphCochain_apply_of_mem_of_mem (hs : s ∉ U) {γ η : G}
     (hγ : γ ∈ U) (hη : η ∈ U) :
     evensGraphCochain U s α (γ, η) =
       evensExtend U α γ * evensExtend U α (s⁻¹ * η * s) := by
   have hsη : s⁻¹ * η ∉ U := by
-    simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hη]
+    simpa only [U.mul_mem_cancel_right hη, U.inv_mem_iff] using hs
   rw [evensGraphCochain_of_mem hγ, evensB1_of_mem hγ, evensBs_apply, evensB1_of_notMem hsη]
 
 end Restriction
@@ -561,13 +574,9 @@ theorem evensGraphCochain_sub_evensGraphCochain (hU : U.index = 2) (hs : s ∉ U
       evensExtend_of_notMem hγ, evensExtend_of_notMem hγη]
     ring
   · have hγη : γ * η ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hγ, hη]
-    have hγs : γ * s ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
-    have hsη : s⁻¹ * η ∈ U := by
-      simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hη]
     have hsplit : evensExtend U α (γ * η) = evensB1 U s α γ + evensBs U s α η := by
-      rw [evensB1_of_notMem hγ, evensBs_apply, evensB1_of_mem hsη, ← evensExtend_mul hγs hsη]
-      congr 1
-      group
+      rw [← evensB1_of_mem hγη]
+      exact evensB1_mul_of_notMem hU hs hγ η
     rw [evensGraphCochain_of_notMem hγ, evensGraphCochain_of_notMem hγ,
       evensB1_eq_add_of_notMem hU hs hs' hγ, evensB1_eq_add_of_notMem hU hs hs' hη,
       evensBs_eq_add_of_notMem hU hs hs' hη, evensExtend_of_notMem hγ,

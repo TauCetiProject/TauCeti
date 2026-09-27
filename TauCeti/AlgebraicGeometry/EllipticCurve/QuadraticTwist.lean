@@ -580,7 +580,7 @@ theorem map_quadraticTwistOfTraceNormVariableChange {θ : L} (hθ : θ ∉ Set.r
       VariableChange.map, VariableChange.mul_def,
       negVariableChange_u, negVariableChange_r, negVariableChange_s, negVariableChange_t,
       Units.coe_map, Units.val_mul, Units.val_neg, Units.val_one, Units.val_mk0,
-      MonoidHom.coe_coe, RingHom.coe_coe,
+      MonoidHom.coe_ofClass, RingHom.coe_coe,
       map_neg, map_mul, map_pow, map_sub, map_zero, map_one, map_a₁, map_a₃, baseChange,
       σ.commutes, hσσ] <;>
     ring
@@ -867,7 +867,7 @@ theorem quadraticTwistPointEquiv_map {N : Type*} [Field N] [Algebra K N] [Algebr
       = Affine.Point.map f (E.quadraticTwistPointEquiv L M P) := by
   have hu : (((E.quadraticTwistVariableChange L).baseChange N).u : N)
       = f (((E.quadraticTwistVariableChange L).baseChange M).u : M) := by
-    simp only [VariableChange.baseChange, VariableChange.map, Units.coe_map, MonoidHom.coe_coe]
+    simp only [VariableChange.baseChange, VariableChange.map, Units.coe_map, MonoidHom.coe_ofClass]
     exact (f.commutes _).symm
   have hr : ((E.quadraticTwistVariableChange L).baseChange N).r
       = f ((E.quadraticTwistVariableChange L).baseChange M).r := (f.commutes _).symm

@@ -59,12 +59,10 @@ private theorem extendTangentLinear_tmul
 private def extendTangent (d : Derivation R H (Bialgebra.CounitAlgebra R H K)) :
     Derivation K (K ⊗[R] H) (Bialgebra.CounitAlgebra K (K ⊗[R] H) K) :=
   Derivation.mk' (extendTangentLinear d) fun x y ↦ by
-    induction x using TensorProduct.induction_on with
-    | zero => simp
+    induction x using TensorProduct.inductionOn with
     | add x z hx hz => simp [add_mul, map_add, hx, hz, add_smul, smul_add]; abel
     | tmul a h =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | add y z hy hz => simp [mul_add, map_add, hy, hz, add_smul, smul_add]; abel
       | tmul b j =>
         apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
@@ -122,8 +120,7 @@ private theorem extendTangent_restrictTangent
     (d : Derivation K (K ⊗[R] H) (Bialgebra.CounitAlgebra K (K ⊗[R] H) K)) :
     extendTangent (restrictTangent d) = d := by
   ext x
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul a h =>
     apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
@@ -143,8 +140,7 @@ private def tangentBaseChangeLinearEquiv :
   right_inv := extendTangent_restrictTangent
   map_add' d e := by
     ext x
-    induction x using TensorProduct.induction_on with
-    | zero => simp
+    induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul a h =>
       apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
@@ -153,8 +149,7 @@ private def tangentBaseChangeLinearEquiv :
     ext x
     apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
     simp only [RingHom.id_apply, algEquivSelf_derivation_smul_apply]
-    induction x using TensorProduct.induction_on with
-    | zero => simp only [map_zero, mul_zero]
+    induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, mul_add, hx, hy]
     | tmul b h =>
       simp only [extendTangent_tmul, algEquivSelf_derivation_smul_apply]
@@ -177,8 +172,7 @@ private theorem restrictTangent_lie
   apply (Bialgebra.CounitAlgebra.algEquivSelf R H K).injective
   rw [restrictTangent_apply, Derivation.bracket_apply, Derivation.bracket_apply]
   simp only [map_sub, TensorProduct.comul_tmul, CommSemiring.comul_apply]
-  induction Coalgebra.comul (R := R) h using TensorProduct.induction_on with
-  | zero => simp only [tmul_zero, map_zero, sub_zero]
+  induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
   | add x y hx hy =>
     simpa only [tmul_add, map_add, add_sub_add_comm] using congrArg₂ (· + ·) hx hy
   | tmul x y =>

@@ -23,8 +23,9 @@ Mathlib packages the neighbouring notion, `IsSemiprimaryRing`: the radical is *n
 radical quotient is semisimple. Nilpotence of the radical makes its elements nil, so idempotents
 lift along `R ↠ R ⧸ Ring.jacobson R` by Mathlib's
 `exists_isIdempotentElem_eq_of_ker_isNilpotent`; a semiprimary ring is therefore semiperfect
-(`TauCeti.IsSemiperfectRing.of_isSemiprimaryRing`), and a finite-dimensional algebra over a field,
-being an Artinian ring, is semiprimary and hence semiperfect
+(`TauCeti.IsSemiperfectRing.of_isSemiprimaryRing`), and a ring that is finite-dimensional over a
+division ring acting compatibly with its multiplication — such as a finite-dimensional algebra over
+a field — being an Artinian ring, is semiprimary and hence semiperfect
 (`TauCeti.isSemiperfectRing_of_finiteDimensional`).
 
 Bass' characterization — `R` is semiperfect exactly when every finitely generated `R`-module has a
@@ -40,8 +41,8 @@ stronger form that covers *every* module, is
 ## Main results
 
 * `TauCeti.IsSemiperfectRing.of_isSemiprimaryRing`: a semiprimary ring is semiperfect.
-* `TauCeti.isSemiperfectRing_of_finiteDimensional`: a finite-dimensional algebra over a field is
-  semiperfect.
+* `TauCeti.isSemiperfectRing_of_finiteDimensional`: a ring finite-dimensional over a division ring,
+  such as a finite-dimensional algebra over a field, is semiperfect.
 
 ## References
 
@@ -67,9 +68,7 @@ class IsSemiperfectRing : Prop where
 
 attribute [instance] IsSemiperfectRing.isSemisimpleRing
 
-/-- **A semiprimary ring is semiperfect.** Its radical quotient is semisimple by definition, and
-every element of its radical is nilpotent because the radical is, so idempotents lift along
-`R ↠ R ⧸ Ring.jacobson R` by `exists_isIdempotentElem_eq_of_ker_isNilpotent`. -/
+/-- **A semiprimary ring is semiperfect.** -/
 instance IsSemiperfectRing.of_isSemiprimaryRing [IsSemiprimaryRing R] : IsSemiperfectRing R where
   isSemisimpleRing := inferInstance
   exists_isIdempotentElem_eq e he := by
@@ -77,14 +76,13 @@ instance IsSemiperfectRing.of_isSemiprimaryRing [IsSemiprimaryRing R] : IsSemipe
       (fun x hx => ?_) e (RingHom.mem_range.mpr (Ideal.Quotient.mk_surjective e)) he
     obtain ⟨n, hn⟩ := IsSemiprimaryRing.isNilpotent (R := R)
     rw [Ideal.mk_ker] at hx
-    refine ⟨n, ?_⟩
-    have := Ideal.pow_mem_pow hx n
-    rwa [hn, Ideal.zero_eq_bot, Submodule.mem_bot] at this
+    exact ⟨n, by simpa [hn] using Ideal.pow_mem_pow hx n⟩
 
-/-- **A finite-dimensional algebra is semiperfect.** It is an Artinian ring, hence semiprimary,
-hence semiperfect. -/
-theorem isSemiperfectRing_of_finiteDimensional (k : Type v) [Field k] (A : Type u) [Ring A]
-    [Algebra k A] [FiniteDimensional k A] : IsSemiperfectRing A := by
+/-- **A ring finite-dimensional over a division ring is semiperfect**, for a division ring `k`
+acting on `A` compatibly with its multiplication; for instance, a finite-dimensional algebra over a
+field is semiperfect. -/
+theorem isSemiperfectRing_of_finiteDimensional (k : Type v) [DivisionRing k] (A : Type u) [Ring A]
+    [Module k A] [IsScalarTower k A A] [FiniteDimensional k A] : IsSemiperfectRing A := by
   have : IsArtinianRing A := IsArtinianRing.of_finite k A
   infer_instance
 

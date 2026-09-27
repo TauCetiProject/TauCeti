@@ -255,9 +255,10 @@ theorem invOn_add_lyapunovPerronGraphMap :
     rw [lyapunovPerronGraphMap_map hs hu hα hN hsmall hP,
       ← lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap]
     exact hx
-  · rintro _ ⟨w, rfl⟩
-    rw [map_add, apply_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP, add_zero,
-      ← mul_apply_eq_comp P P, hP.eq]
+  · intro v hv
+    rw [map_add, apply_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP, add_zero]
+    exact (LinearMap.IsIdempotentElem.mem_range_iff
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp (LinearMap.mem_range.mpr hv)
 
 /-- **The Lyapunov--Perron fixed-point set is a graph over the range of `P`.** When `P` is
 idempotent and commutes with `A`, the fixed points of `ξ ↦ lyapunovPerronSolution ξ 0` are exactly

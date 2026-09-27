@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.DisjointSum
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.GroupTheory.Perm.SwapFactors
 import Mathlib.Logic.Equiv.Fin.Rotate
 
@@ -280,9 +281,9 @@ theorem eulerChar_disjointSum (s : PermutationTriple m) (t : PermutationTriple n
 The monodromy of `z ↦ z ^ 3`, and a disjoint union of two trivial covers. -/
 
 example : (ofTwo (finRotate 3) 1).eulerChar = 2 := by
-  have h0 : (finRotate 3).partition.parts = {3} := by decide
-  have h1 : (1 : Perm (Fin 3)).partition.parts = {1, 1, 1} := by decide
-  have hinf : ((1 : Perm (Fin 3)) * finRotate 3)⁻¹.partition.parts = {3} := by decide
+  have h0 : (finRotate 3).partition.parts = {3} := parts_partition_finRotate (by norm_num)
+  have h1 : (1 : Perm (Fin 3)).partition.parts = {1, 1, 1} := by simp
+  have hinf : ((1 : Perm (Fin 3)) * finRotate 3)⁻¹.partition.parts = {3} := by simpa using h0
   rw [eulerChar_def, Perm.orbitCount_eq_card_parts_partition,
     Perm.orbitCount_eq_card_parts_partition, Perm.orbitCount_eq_card_parts_partition,
     ofTwo_σ0, ofTwo_σ1, ofTwo_σinf, h0, h1, hinf]

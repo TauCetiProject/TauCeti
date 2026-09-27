@@ -78,7 +78,8 @@ theorem ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial {ι A : Type*} [
   algebraize [g.toRingHom]
   have : FaithfulSMul (MvPolynomial ι k) A := (faithfulSMul_iff_algebraMap_injective _ _).2 hinj
   rw [ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := MvPolynomial ι k),
-    MvPolynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field, zero_add]
+    MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
+    zero_add]
 
 variable (k) in
 /-- A nontrivial finitely generated algebra over a field has finite Krull dimension. -/
@@ -110,7 +111,7 @@ theorem ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType (K A : Type
       (faithfulSMul_iff_algebraMap_injective _ _).2 hφinj
     rw [ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := K ⊗[k] MvPolynomial (Fin s) k),
       ringKrullDim_eq_of_ringEquiv (MvPolynomial.algebraTensorAlgEquiv k K).toRingEquiv,
-      MvPolynomial.ringKrullDim_of_isNoetherianRing,
+      MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite,
       ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hfin.to_isIntegral]
 
 /-- The Krull dimension of a finitely generated algebra over a field is unchanged by extending

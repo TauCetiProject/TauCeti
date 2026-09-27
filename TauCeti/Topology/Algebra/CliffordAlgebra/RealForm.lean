@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!

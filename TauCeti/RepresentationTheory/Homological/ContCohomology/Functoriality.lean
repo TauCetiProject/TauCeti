@@ -154,7 +154,9 @@ noncomputable def resNatTrans (n : ℕ) :
     continuousCohomologyFunctor R G n ⟶
       TopRep.resFunctor (S.subtype : S →* G) ⋙ continuousCohomologyFunctor R S n where
   app X := res S X n
-  naturality _ _ f := coeffMap_comp_res S f n
+  -- `by apply`: the proof is then checked against the field's type once, instead of three times
+  -- by the structure-instance elaborator (6.0 s to 2.6 s). The elaborated value is unchanged.
+  naturality _ _ f := by apply coeffMap_comp_res S f n
 
 /-- The component at `X` of the restriction natural transformation is restriction `res S X n`. -/
 @[simp]
@@ -211,15 +213,18 @@ theorem coeffMap_comp_infl {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
       -- Ascribed: otherwise an open `max v ?w` universe sends `=` into a slow coercion search.
       -- (This follows the ascription idiom of #8346.)
       (infl N X n ≫ coeffMap f n :) := by
+  -- Ascribed so the chain elaborates before it is unified with the goal; otherwise the goal is
+  -- propagated into both `Eq.trans` and checked repeatedly (0.15 s).
   refine ((_root_.ContinuousCohomology.map_comp (X := TopRep.quotientToInvariants X N)
       (Y := TopRep.quotientToInvariants Y N) (Z := Y) (ContinuousMonoidHom.id (G ⧸ N))
       (ContinuousMonoidHom.quotientMk N) (TopRep.quotientToInvariantsMap f N)
       (TopRep.quotientToInvariantsι Y N) n).symm.trans (Eq.trans ?_
     (_root_.ContinuousCohomology.map_comp (X := TopRep.quotientToInvariants X N) (Y := X) (Z := Y)
       (ContinuousMonoidHom.quotientMk N) (ContinuousMonoidHom.id G)
-      (TopRep.quotientToInvariantsι X N) f n)))
+      (TopRep.quotientToInvariantsι X N) f n)) :)
+  -- Ascribed for the same reason (0.03 s).
   exact map_congr rfl
-    (heq_of_eq (TopRep.quotientToInvariantsMap_comp_quotientToInvariantsι N f)) n
+    (heq_of_eq (TopRep.quotientToInvariantsMap_comp_quotientToInvariantsι N f :)) n
 
 variable (R) in
 /-- Inflation, as a natural transformation of functors on `TopRep R G`; the continuous counterpart
@@ -228,7 +233,8 @@ noncomputable def inflNatTrans (n : ℕ) :
     TopRep.quotientToInvariantsFunctor R G N ⋙ continuousCohomologyFunctor R (G ⧸ N) n ⟶
       continuousCohomologyFunctor R G n where
   app X := infl N X n
-  naturality _ _ f := coeffMap_comp_infl N f n
+  -- `by apply`, as in `resNatTrans` (6.1 s to 2.6 s). The elaborated value is unchanged.
+  naturality _ _ f := by apply coeffMap_comp_infl N f n
 
 /-- The component at `X` of the inflation natural transformation is inflation `infl N X n`. -/
 @[simp]

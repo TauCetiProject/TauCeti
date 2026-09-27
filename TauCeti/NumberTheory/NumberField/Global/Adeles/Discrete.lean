@@ -88,7 +88,7 @@ instance discreteTopology_principalSubgroup :
 subgroup of `𝔸[K]`. -/
 theorem isClosed_principalSubgroup :
     IsClosed (AdeleRing.principalSubgroup (𝓞 K) K : Set 𝔸[K]) :=
-  AddSubgroup.isClosed_of_discrete
+  AddSubgroup.isClosed_of_discreteTopology
 
 /-- The quotient `𝔸[K] / K` of the adele ring of a number field by its diagonal copy of `K` is
 Hausdorff, and indeed regular. -/

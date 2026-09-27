@@ -131,7 +131,7 @@ noncomputable def cocharAddEquiv :
     Additive (Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ) ≃+ (σ → ℤ) :=
   (MulEquiv.toAdditive freeAbelianCharEquiv).trans <|
     (AddEquiv.funAdditive σ (Multiplicative ℤ)).trans <|
-      AddEquiv.piCongrRight fun _ => AddEquiv.toAdditive_toMultiplicative
+      AddEquiv.piCongrRight fun _ => AddEquiv.additiveMultiplicative ℤ
 
 /-- `cocharAddEquiv` agrees coordinatewise with the unbundled `cocharEquiv`. -/
 @[simp]

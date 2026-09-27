@@ -332,7 +332,7 @@ theorem iterateRingEquiv_coe :
       restrictedMvPowerSeriesCompletion (k + m) A →+*
         restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k A))
       = iterateSplitHom k m A := by
-  simp only [iterateRingEquiv, RingEquiv.coe_ringHom_ofRingHom]
+  simp only [iterateRingEquiv, RingEquiv.toRingHom_ofRingHom]
 
 /-- The pointwise form of `TauCeti.Huber.iterateRingEquiv_coe`. -/
 @[simp]
@@ -349,7 +349,7 @@ theorem iterateRingEquiv_symm_coe :
       restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k A) →+*
         restrictedMvPowerSeriesCompletion (k + m) A)
       = iterateJoinHom k m A := by
-  simp only [iterateRingEquiv, RingEquiv.ofRingHom_symm, RingEquiv.coe_ringHom_ofRingHom]
+  simp only [iterateRingEquiv, RingEquiv.ofRingHom_symm, RingEquiv.toRingHom_ofRingHom]
 
 /-- The pointwise form of `TauCeti.Huber.iterateRingEquiv_symm_coe`. -/
 @[simp]

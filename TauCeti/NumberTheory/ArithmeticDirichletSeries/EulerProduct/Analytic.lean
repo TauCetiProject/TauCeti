@@ -83,6 +83,13 @@ theorem one_lt_norm_absNorm_cpow (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
   rw [Complex.norm_natCast_cpow_of_pos (by omega)]
   exact Real.one_lt_rpow (by exact_mod_cast hP) hs
 
+/-- The parameter `N(𝔭) ^ (-s)` strictly decreases in norm as `Re s` increases. -/
+theorem norm_absNorm_cpow_neg_lt (P : HeightOneSpectrum (𝓞 K)) {s t : ℂ} (h : s.re < t.re) :
+    ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-t)‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ := by
+  have hP := NumberField.HeightOneSpectrum.one_lt_absNorm P
+  rw [Complex.norm_natCast_cpow_of_pos (by omega), Complex.norm_natCast_cpow_of_pos (by omega)]
+  exact Real.rpow_lt_rpow_of_exponent_lt (by exact_mod_cast hP) (by simpa using h)
+
 /-- On `Re s > 0`, `N(𝔭) ^ s - 1` is nonzero. -/
 theorem absNorm_cpow_sub_one_ne_zero (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
     (hs : 0 < s.re) : (Ideal.absNorm P.asIdeal : ℂ) ^ s - 1 ≠ 0 := fun h ↦ by
@@ -278,12 +285,7 @@ theorem localPowerSeries_radius_data (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ}
   constructor
   · exact D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ
   · rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
-    apply NNReal.coe_lt_coe.mp
-    simpa only [coe_nnnorm, Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-      (NumberField.HeightOneSpectrum.one_lt_absNorm P))] using
-      (Real.rpow_lt_rpow_of_exponent_lt (by
-        exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P)
-        (by simp; linarith : (-s).re < (-(σ : ℂ)).re))
+    exact P.norm_absNorm_cpow_neg_lt (by simpa using hs)
 
 /-- **Convergence of the finite Euler product.** Where the local Euler factors over a finite set
 `S` of primes are absolutely convergent `LSeries`, so are the norm coefficients of the restriction

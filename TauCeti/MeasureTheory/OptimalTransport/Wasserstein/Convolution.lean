@@ -131,7 +131,7 @@ theorem wassersteinEDist_map_add_right_le_enorm [MeasurableAdd E]
   refine (wassersteinEDist_map_le hd (measurable_add_const a).aemeasurable p).trans ?_
   simp only [edist_eq_enorm_neg_add, neg_add_cancel_left]
   simpa using eLpNorm_le_of_ae_enorm_bound (p := p) (μ := μ) (f := fun _ : E ↦ ‖a‖ₑ)
-    (.of_forall fun _ ↦ le_rfl)
+    aestronglyMeasurable_const (.of_forall fun _ ↦ le_rfl)
 
 end NormedGroup
 
@@ -203,9 +203,9 @@ theorem wassersteinEDist_map_add_right_eq_enorm [MeasurableAdd E]
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   calc ‖a‖ₑ ≤ ∫⁻ z, edist z.1 z.2 ∂π := enorm_le_lintegral_edist_of_isCoupling_map_add_right hπ
     _ = eLpNorm (fun z : E × E ↦ edist z.1 z.2) 1 π := by
-        simp [eLpNorm_one_eq_lintegral_enorm]
+        simp [eLpNorm_one_eq_lintegral_enorm hd.aestronglyMeasurable]
     _ ≤ eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π :=
-        eLpNorm_le_eLpNorm_of_exponent_le hp hd.aestronglyMeasurable
+        eLpNorm_le_eLpNorm_of_exponent_le hp
 
 end Normed
 

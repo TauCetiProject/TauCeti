@@ -102,4 +102,33 @@ theorem schemePointsMulEquiv_symm_apply (g : GLSymplecticFin m A) :
       groupSchemePointMulEquiv m A ((pointsMulEquiv (A := A) R m).symm g) := by
   rfl
 
+private lemma groupSchemePointMulEquiv_comp_inclusion
+    (q : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
+    groupSchemePointMulEquiv m A q ≫ (inclusion R m).hom.hom =
+      GeneralLinear.groupSchemePointMulEquiv (m + m) A
+        ((CommHopfAlgCat.mapPointsFunctor (coordinateMap R m)).app
+          (CommAlgCat.of R A) q) := by
+  rw [inclusion_eq_constantForm,
+    ConstantForm.inclusion_eq_eqToHom_comp_hopfSpec_map]
+  exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+    (R := R) A (GeneralLinear.groupScheme_def R (m + m)) (groupScheme_def R m)
+      (GeneralLinear.groupSchemePointMulEquiv (m + m) A) (groupSchemePointMulEquiv m A)
+      (GeneralLinear.groupSchemePointMulEquiv_apply_left (m + m) A)
+      (groupSchemePointMulEquiv_apply_left m A) (coordinateMap R m) q
+
+/-- Composing a symplectic scheme point with `Sp_(2m) ⟶ GL_(2m)` is the ordinary inclusion
+of its symplectic matrix into the general linear group. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_inclusion
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
+      (groupScheme R m).X) :
+    GeneralLinear.schemePointsMulEquiv (m + m) A (p ≫ (inclusion R m).hom.hom) =
+      (schemePointsMulEquiv m A p : GL (Fin (m + m)) A) := by
+  obtain ⟨q, rfl⟩ := (groupSchemePointMulEquiv m A).surjective p
+  rw [groupSchemePointMulEquiv_comp_inclusion,
+    ConstantForm.mapPointsFunctor_coordinateMap_app,
+    GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv,
+    schemePointsMulEquiv_groupSchemePointMulEquiv]
+  exact pointsMulEquiv_coe R m q
+
 end TauCeti.Symplectic

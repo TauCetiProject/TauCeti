@@ -40,6 +40,8 @@ polarizable pure Hodge structures. See Voisin, *Hodge Theory and Complex Algebra
   rational Hodge substructure.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.substructureInclusion`: its inclusion into the
   ambient object.
+* `TauCeti.Hodge.PolarizableHodgeStructureCat.substructureLift`: the factorization of a morphism
+  through a substructure containing its rational image.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.substructureRetractionOfIsCompl`: the retraction
   supplied by a complementary rational Hodge substructure.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.substructureRetraction`: the retraction supplied by
@@ -179,6 +181,34 @@ theorem isMorphism_codRestrict
     obtain ⟨x, hx, rfl⟩ := hy
     rw [W.hodgeStructure_F, Submodule.mem_comap, ← LinearMap.comp_apply, hcomp]
     exact hf.map_F_le p ⟨x, hx, rfl⟩
+
+/-- A morphism whose rational image lies in a rational Hodge substructure of its target factors
+through that substructure. -/
+noncomputable def substructureLift {X Y : PolarizableHodgeStructureCat.{u} n}
+    (W : RationalHodgeSubstructure Y.isBaseChangeRat Y.hs) (f : X ⟶ Y)
+    (hf : ∀ x, f.hom.toRatLinearMap x ∈ W.WQ) : X ⟶ ofSubstructure Y W :=
+  Hom.ofIsMorphism (f.hom.toRatLinearMap.codRestrict W.WQ hf) <|
+    isMorphism_codRestrict W _ (MixedHodgeStructure.Hom.toLinearMap_def f.hom ▸ Hom.isMorphism f) hf
+
+/-- The rational map of the factorization through a substructure is the corestricted rational
+map. -/
+@[simp]
+theorem substructureLift_toRatLinearMap {X Y : PolarizableHodgeStructureCat.{u} n}
+    (W : RationalHodgeSubstructure Y.isBaseChangeRat Y.hs) (f : X ⟶ Y)
+    (hf : ∀ x, f.hom.toRatLinearMap x ∈ W.WQ) :
+    (substructureLift W f hf).hom.toRatLinearMap = f.hom.toRatLinearMap.codRestrict W.WQ hf := by
+  rw [substructureLift, Hom.ofIsMorphism_toRatLinearMap]
+
+/-- The factorization through a substructure followed by its inclusion is the original
+morphism. -/
+@[reassoc (attr := simp)]
+theorem substructureLift_comp_substructureInclusion {X Y : PolarizableHodgeStructureCat.{u} n}
+    (W : RationalHodgeSubstructure Y.isBaseChangeRat Y.hs) (f : X ⟶ Y)
+    (hf : ∀ x, f.hom.toRatLinearMap x ∈ W.WQ) :
+    substructureLift W f hf ≫ substructureInclusion Y W = f := by
+  apply Hom.ext
+  rw [comp_toRatLinearMap, substructureInclusion_toRatLinearMap, substructureLift_toRatLinearMap]
+  exact LinearMap.subtype_comp_codRestrict _ _ _
 
 /-! ### Retractions along complementary Hodge substructures -/
 

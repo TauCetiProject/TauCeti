@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Invariants
 /-!
 # The explicit low-degree finite-quotient systems
 
-For a topological group `G` acting continuously on a discrete additive group `M`, the explicit
+For a topological group `G` acting on a discrete additive group `M`, the explicit
 cohomology groups in degrees zero, one, and two
 
 ```text
@@ -21,8 +21,8 @@ Hⁱ(G ⧸ U, M^U),  i = 0, 1, 2,
 form a directed system as the open normal subgroup `U` shrinks.  If `V ≤ U`, its transition
 map is the compatible-pair pullback along the quotient homomorphism `G ⧸ V → G ⧸ U` and the
 coefficient inclusion `M^U → M^V`.
-When `G` is compact these discrete quotient groups are finite; the construction itself does not
-require compactness.
+When `G` is compact these discrete quotient groups are finite; the construction itself requires
+neither compactness nor continuity of the action of `G` on `M`.
 
 `TauCeti.finiteQuotientSystem` already packages the corresponding system in Mathlib's discrete
 `groupCohomology`.  The systems here are instead constructed directly with
@@ -73,7 +73,7 @@ universe u v
 
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
+  [DiscreteTopology M] [DistribMulAction G M]
 
 section Transition
 
@@ -94,8 +94,7 @@ def explicitFiniteQuotientTransition0 (U V : OpenNormalSubgroup G) (hVU : V ≤ 
       FixedPoints.addSubgroup V.toSubgroup M)
     (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
 
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
-  [ContinuousSMul G M] in
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] in
 /-- A degree-zero finite-quotient transition does not change the underlying coefficient. -/
 @[simp]
 theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
@@ -106,8 +105,7 @@ theorem coe_explicitFiniteQuotientTransition0 (hVU : V ≤ U)
     (coe_explicitMap0 _ _ _ _ _ m)).trans (coe_fixedPointsInclusion hVU (m :
       FixedPoints.addSubgroup U.toSubgroup M))
 
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
-  [ContinuousSMul G M] in
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] in
 /-- A degree-zero transition is the compatible-pair pullback along the quotient map and the
 inclusion of invariant coefficients. -/
 theorem explicitFiniteQuotientTransition0_eq_explicitMap0 (hVU : V ≤ U) :
@@ -119,8 +117,7 @@ theorem explicitFiniteQuotientTransition0_eq_explicitMap0 (hVU : V ≤ U) :
           FixedPoints.addSubgroup V.toSubgroup M)
         (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) := (rfl)
 
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
-  [ContinuousSMul G M] in
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] in
 /-- The degree-zero transition from a level to itself is the identity. -/
 @[simp]
 theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
@@ -128,8 +125,7 @@ theorem explicitFiniteQuotientTransition0_id (U : OpenNormalSubgroup G) :
   ext m
   exact coe_explicitFiniteQuotientTransition0 G M le_rfl m
 
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
-  [ContinuousSMul G M] in
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] in
 /-- For `W ≤ V ≤ U`, the degree-zero transition from the `U`-level to the `W`-level is the
 composite through the `V`-level. -/
 theorem explicitFiniteQuotientTransition0_comp (U V W : OpenNormalSubgroup G)
@@ -156,7 +152,6 @@ noncomputable def explicitFiniteQuotientTransition1 (U V : OpenNormalSubgroup G)
     continuous_of_discreteTopology
       (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
 
-omit [ContinuousSMul G M] in
 /-- A degree-one finite-quotient transition sends the class of a cocycle to its compatible-pair
 pullback. -/
 @[simp]
@@ -172,7 +167,6 @@ theorem explicitFiniteQuotientTransition1_mk (hVU : V ≤ U)
           (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c) :=
   explicitMap1_mk _ _ _ _ _ _ _ _ c
 
-omit [ContinuousSMul G M] in
 /-- A degree-one finite-quotient transition is the compatible-pair pullback along the quotient
 homomorphism `G ⧸ V → G ⧸ U` and the inclusion of invariant coefficients `M ^ U → M ^ V`. -/
 -- The pullback is ascribed its type because `fixedPointsInclusion` is stated on
@@ -193,7 +187,6 @@ theorem explicitFiniteQuotientTransition1_eq_explicitMap1 (hVU : V ≤ U) :
     exact (explicitFiniteQuotientTransition1_mk G M hVU c).trans
       (explicitMap1_mk _ _ _ _ _ _ _ _ c).symm
 
-omit [ContinuousSMul G M] in
 /-- The transition from an open normal subgroup to itself is the identity. -/
 @[simp]
 theorem explicitFiniteQuotientTransition1_id (U : OpenNormalSubgroup G) :
@@ -214,74 +207,12 @@ theorem explicitFiniteQuotientTransition1_comp (U V W : OpenNormalSubgroup G)
     (hVU : V ≤ U) (hWV : W ≤ V) :
     explicitFiniteQuotientTransition1 G M U W (hWV.trans hVU) =
       (explicitFiniteQuotientTransition1 G M V W hWV).comp
-        (explicitFiniteQuotientTransition1 G M U V hVU) := by
-  rw [explicitFiniteQuotientTransition1, explicitFiniteQuotientTransition1,
-    explicitFiniteQuotientTransition1]
-  have hcomp : ∀ (q : G ⧸ W.toSubgroup)
-      (m : FixedPoints.addSubgroup U.toSubgroup M),
-      (fixedPointsInclusion hWV :
-          FixedPoints.addSubgroup V.toSubgroup M →+
-            FixedPoints.addSubgroup W.toSubgroup M)
-          ((fixedPointsInclusion hVU :
-            FixedPoints.addSubgroup U.toSubgroup M →+
-              FixedPoints.addSubgroup V.toSubgroup M)
-            (continuousFiniteQuotientMap G hVU
-              (continuousFiniteQuotientMap G hWV q) • m)) =
-        q • (fixedPointsInclusion hWV :
-          FixedPoints.addSubgroup V.toSubgroup M →+
-            FixedPoints.addSubgroup W.toSubgroup M)
-          ((fixedPointsInclusion hVU :
-            FixedPoints.addSubgroup U.toSubgroup M →+
-              FixedPoints.addSubgroup V.toSubgroup M) m) := by
-    intro q m
-    rw [fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU]
-    exact fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hWV q
-      ((fixedPointsInclusion hVU :
-        FixedPoints.addSubgroup U.toSubgroup M →+
-          FixedPoints.addSubgroup V.toSubgroup M) m)
-  calc
-    _ = @explicitMap1
-        (G ⧸ U.toSubgroup) inferInstance inferInstance
-        (FixedPoints.addSubgroup U.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M U.toSubgroup)
-        (G ⧸ W.toSubgroup) inferInstance inferInstance
-        (FixedPoints.addSubgroup W.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M W.toSubgroup)
-        ((continuousFiniteQuotientMap G hVU).comp (continuousFiniteQuotientMap G hWV))
-        ((fixedPointsInclusion hWV :
-          FixedPoints.addSubgroup V.toSubgroup M →+
-            FixedPoints.addSubgroup W.toSubgroup M).comp
-          (fixedPointsInclusion hVU :
-            FixedPoints.addSubgroup U.toSubgroup M →+
-              FixedPoints.addSubgroup V.toSubgroup M))
-        (continuous_of_discreteTopology.comp continuous_of_discreteTopology)
-        (fun q m ↦ hcomp q m) := by
-      apply explicitMap1_congr_of_eq
-      · exact (continuousFiniteQuotientMap_comp G hWV hVU).symm
-      · exact (fixedPointsInclusion_comp_fixedPointsInclusion hVU hWV).symm
-    _ = _ := by
-      convert @explicitMap1_comp
-        (G ⧸ U.toSubgroup) inferInstance inferInstance
-        (FixedPoints.addSubgroup U.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M U.toSubgroup)
-        (G ⧸ V.toSubgroup) inferInstance inferInstance
-        (FixedPoints.addSubgroup V.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M V.toSubgroup)
-        (continuousFiniteQuotientMap G hVU)
-        (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
-          FixedPoints.addSubgroup V.toSubgroup M)
-        continuous_of_discreteTopology
-          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
-        (G ⧸ W.toSubgroup) inferInstance inferInstance
-        (FixedPoints.addSubgroup W.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M W.toSubgroup)
-        (continuousFiniteQuotientMap G hWV)
-        (fixedPointsInclusion hWV : FixedPoints.addSubgroup V.toSubgroup M →+
-          FixedPoints.addSubgroup W.toSubgroup M)
-        continuous_of_discreteTopology
-          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hWV)
-        (fun q m ↦ hcomp q m) using 1
-      apply explicitMap1_congr_of_eq <;> rfl
+        (explicitFiniteQuotientTransition1 G M U V hVU) :=
+  (explicitMap1_congr_of_eq (hφeq := (continuousFiniteQuotientMap_comp G hWV hVU).symm)
+    (hfeq := (fixedPointsInclusion_comp_fixedPointsInclusion hVU hWV).symm)).trans
+      (explicitMap1_comp (hcomp := comp_apply_smul _ _ _ _
+        (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
+        (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hWV)) ..)
 
 end Transition
 
@@ -307,8 +238,7 @@ the `V`-level. -/
       (leOfHom f.unop) (leOfHom g.unop)]
     rfl
 
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
-  [ContinuousSMul G M] in
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] in
 /-- The object at `U` of the degree-zero finite-quotient system is `H⁰(G ⧸ U, M^U)`. -/
 @[simp]
 theorem explicitFiniteQuotientSystem0_obj (U : OpenNormalSubgroup G) :
@@ -317,8 +247,7 @@ theorem explicitFiniteQuotientSystem0_obj (U : OpenNormalSubgroup G) :
         (H0 (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :=
   by rfl
 
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M]
-  [ContinuousSMul G M] in
+omit [TopologicalSpace M] [IsTopologicalAddGroup M] [DiscreteTopology M] in
 /-- Every arrow of the degree-zero finite-quotient system is the direct compatible-pair
 transition. -/
 @[simp]
@@ -387,7 +316,6 @@ noncomputable def explicitFiniteQuotientTransition2 (U V : OpenNormalSubgroup G)
     continuous_of_discreteTopology
       (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
 
-omit [ContinuousSMul G M] in
 /-- A degree-two finite-quotient transition sends the class of a cocycle to its compatible-pair
 pullback. -/
 @[simp]
@@ -403,7 +331,6 @@ theorem explicitFiniteQuotientTransition2_mk {U V : OpenNormalSubgroup G} (hVU :
           (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) c) :=
   explicitMap2_mk _ _ _ _ _ _ _ _ c
 
-omit [ContinuousSMul G M] in
 /-- A degree-two finite-quotient transition is the compatible-pair pullback along the quotient
 homomorphism `G ⧸ V → G ⧸ U` and the inclusion of invariant coefficients `M^U → M^V`. -/
 theorem explicitFiniteQuotientTransition2_eq_explicitMap2 {U V : OpenNormalSubgroup G}
@@ -422,7 +349,6 @@ theorem explicitFiniteQuotientTransition2_eq_explicitMap2 {U V : OpenNormalSubgr
     exact (explicitFiniteQuotientTransition2_mk G M hVU c).trans
       (explicitMap2_mk _ _ _ _ _ _ _ _ c).symm
 
-omit [ContinuousSMul G M] in
 /-- The degree-two transition from an open normal subgroup to itself is the identity. -/
 @[simp]
 theorem explicitFiniteQuotientTransition2_id (U : OpenNormalSubgroup G) :
@@ -443,75 +369,10 @@ theorem explicitFiniteQuotientTransition2_comp (U V W : OpenNormalSubgroup G)
     (hVU : V ≤ U) (hWV : W ≤ V) :
     explicitFiniteQuotientTransition2 G M U W (hWV.trans hVU) =
       (explicitFiniteQuotientTransition2 G M V W hWV).comp
-        (explicitFiniteQuotientTransition2 G M U V hVU) := by
-  rw [explicitFiniteQuotientTransition2, explicitFiniteQuotientTransition2,
-    explicitFiniteQuotientTransition2]
-  have hcomp : ∀ (q : G ⧸ W.toSubgroup)
-      (m : FixedPoints.addSubgroup U.toSubgroup M),
-      (fixedPointsInclusion hWV :
-          FixedPoints.addSubgroup V.toSubgroup M →+
-            FixedPoints.addSubgroup W.toSubgroup M)
-          ((fixedPointsInclusion hVU :
-            FixedPoints.addSubgroup U.toSubgroup M →+
-              FixedPoints.addSubgroup V.toSubgroup M)
-            (continuousFiniteQuotientMap G hVU
-              (continuousFiniteQuotientMap G hWV q) • m)) =
-        q • (fixedPointsInclusion hWV :
-          FixedPoints.addSubgroup V.toSubgroup M →+
-            FixedPoints.addSubgroup W.toSubgroup M)
-          ((fixedPointsInclusion hVU :
-            FixedPoints.addSubgroup U.toSubgroup M →+
-              FixedPoints.addSubgroup V.toSubgroup M) m) := by
-    intro q m
-    rw [fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU]
-    exact fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hWV q
-      ((fixedPointsInclusion hVU :
-        FixedPoints.addSubgroup U.toSubgroup M →+
-          FixedPoints.addSubgroup V.toSubgroup M) m)
-  calc
-    _ = @explicitMap2
-        (G ⧸ U.toSubgroup) inferInstance inferInstance
-        (FixedPoints.addSubgroup U.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M U.toSubgroup)
-        (G ⧸ W.toSubgroup) inferInstance inferInstance
-        (FixedPoints.addSubgroup W.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M W.toSubgroup)
-        inferInstance inferInstance
-        ((continuousFiniteQuotientMap G hVU).comp (continuousFiniteQuotientMap G hWV))
-        ((fixedPointsInclusion hWV :
-          FixedPoints.addSubgroup V.toSubgroup M →+
-            FixedPoints.addSubgroup W.toSubgroup M).comp
-          (fixedPointsInclusion hVU :
-            FixedPoints.addSubgroup U.toSubgroup M →+
-              FixedPoints.addSubgroup V.toSubgroup M))
-        (continuous_of_discreteTopology.comp continuous_of_discreteTopology)
-        (fun q m ↦ hcomp q m) := by
-      apply explicitMap2_congr_of_eq
-      · exact (continuousFiniteQuotientMap_comp G hWV hVU).symm
-      · exact (fixedPointsInclusion_comp_fixedPointsInclusion hVU hWV).symm
-    _ = _ := by
-      convert @explicitMap2_comp
-        (G ⧸ U.toSubgroup) inferInstance inferInstance
-        (FixedPoints.addSubgroup U.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M U.toSubgroup)
-        (G ⧸ V.toSubgroup) inferInstance inferInstance
-        (FixedPoints.addSubgroup V.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M V.toSubgroup)
-        inferInstance inferInstance
-        (continuousFiniteQuotientMap G hVU)
-        (fixedPointsInclusion hVU : FixedPoints.addSubgroup U.toSubgroup M →+
-          FixedPoints.addSubgroup V.toSubgroup M)
-        continuous_of_discreteTopology
-          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
-        (G ⧸ W.toSubgroup) inferInstance inferInstance inferInstance
-        (FixedPoints.addSubgroup W.toSubgroup M) inferInstance inferInstance inferInstance
-        inferInstance (continuousSMulQuotientFixedPointsOfContinuousSMul G M W.toSubgroup)
-        (continuousFiniteQuotientMap G hWV)
-        (fixedPointsInclusion hWV : FixedPoints.addSubgroup V.toSubgroup M →+
-          FixedPoints.addSubgroup W.toSubgroup M)
-        continuous_of_discreteTopology
-          (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hWV) using 1
-      apply explicitMap2_congr_of_eq <;> rfl
+        (explicitFiniteQuotientTransition2 G M U V hVU) :=
+  (explicitMap2_congr_of_eq (hφeq := (continuousFiniteQuotientMap_comp G hWV hVU).symm)
+    (hfeq := (fixedPointsInclusion_comp_fixedPointsInclusion hVU hWV).symm)).trans
+      (explicitMap2_comp ..)
 
 /-- The explicit degree-two finite-quotient system of a discrete module. It sends an open normal
 subgroup `U` to `H²(G ⧸ U, M^U)` and an inclusion `V ≤ U` to the direct explicit transition from

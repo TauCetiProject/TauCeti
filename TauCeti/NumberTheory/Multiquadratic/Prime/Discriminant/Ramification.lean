@@ -260,7 +260,7 @@ theorem isUnramifiedIn_of_forall_ramificationIdx_eq_two
   · -- A prime contracting to `⊥` is `⊥`, where there is nothing to ramify.
     have h𝔮 : 𝔮 = ⊥ := by
       by_contra hne
-      exact Ideal.IsIntegral.comap_ne_bot (R := ℤ) hne hbot
+      exact Ideal.IsIntegral.under_ne_bot (R := ℤ) hne hbot
     subst h𝔮
     exact Algebra.isUnramifiedIn_bot
   · have hlies : 𝔮.LiesOver (Ideal.span {(p : ℤ)}) := ⟨hspan.symm⟩

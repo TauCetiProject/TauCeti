@@ -23,6 +23,7 @@ closure when zero is not isolated.
 * `TauCeti.isLocallyClosed_zeroPatternSet`: a zero-pattern stratum with finitely many coordinates
   is locally closed.
 * `TauCeti.closure_zeroPatternSet`: its closure allows additional coordinates to vanish.
+* `TauCeti.zeroPatternSetHomeomorph`: its nonzero coordinates give product coordinates.
 -/
 
 public section
@@ -52,6 +53,99 @@ theorem zeroPatternSet_eq_pi_prod (α β K : Type*) [Zero K] (A : Set α) :
   rw [mem_zeroPatternSet]
   simp only [Set.mem_prod, Set.mem_pi, Set.mem_univ, true_implies, and_true]
   rfl
+
+/-- A zero-pattern stratum is the space of nonzero coordinates outside its zero set, together
+with its unrestricted second factor. This description retains the subspace topology. -/
+noncomputable def zeroPatternSetHomeomorph (α β K : Type*) [Zero K] [TopologicalSpace K]
+    [TopologicalSpace β] (A : Set α) :
+    zeroPatternSet α β K A ≃ₜ (({a : α // a ∉ A} → {z : K // z ≠ 0}) × β) := by
+  classical
+  exact {
+  toFun z :=
+    (fun a ↦ ⟨z.1.1 a.1, by
+      intro hz
+      exact a.2 ((z.2 a.1).mp hz)⟩, z.1.2)
+  invFun w := ⟨(fun a ↦ if ha : a ∈ A then 0 else (w.1 ⟨a, ha⟩).1, w.2), by
+    intro a
+    by_cases ha : a ∈ A
+    · simp [ha]
+    · simp [ha, (w.1 ⟨a, ha⟩).2]⟩
+  left_inv z := by
+    apply Subtype.ext
+    apply Prod.ext
+    · funext a
+      by_cases ha : a ∈ A
+      · simp [ha, (z.2 a).mpr ha]
+      · simp [ha]
+    · rfl
+  right_inv w := by
+    apply Prod.ext
+    · funext a
+      apply Subtype.ext
+      simp [a.2]
+    · rfl
+  continuous_toFun := by
+    apply Continuous.prodMk
+    · apply continuous_pi
+      intro a
+      exact ((continuous_apply a.1).comp
+        (continuous_fst.comp continuous_subtype_val)).subtype_mk _
+    · exact continuous_snd.comp continuous_subtype_val
+  continuous_invFun := by
+    apply Continuous.subtype_mk
+    apply Continuous.prodMk
+    · apply continuous_pi
+      intro a
+      by_cases ha : a ∈ A
+      · simpa [ha] using continuous_const
+      · simp only [dite_eq_right ha]
+        simpa only [Function.comp_def] using
+          (continuous_subtype_val.comp
+            ((continuous_apply (⟨a, ha⟩ : {a : α // a ∉ A})).comp continuous_fst))
+    · exact continuous_snd
+  }
+
+/-- The homeomorphism retains each coordinate outside the prescribed zero set. -/
+@[simp]
+theorem val_zeroPatternSetHomeomorph_fst_apply (α β K : Type*) [Zero K]
+    [TopologicalSpace K] [TopologicalSpace β] (A : Set α)
+    (z : zeroPatternSet α β K A) (a : {a : α // a ∉ A}) :
+    ((zeroPatternSetHomeomorph α β K A z).1 a).1 = z.1.1 a.1 :=
+  by simp [zeroPatternSetHomeomorph]
+
+/-- The unrestricted factor is unchanged by the zero-pattern homeomorphism. -/
+@[simp]
+theorem zeroPatternSetHomeomorph_snd_apply (α β K : Type*) [Zero K]
+    [TopologicalSpace K] [TopologicalSpace β] (A : Set α)
+    (z : zeroPatternSet α β K A) :
+    (zeroPatternSetHomeomorph α β K A z).2 = z.1.2 :=
+  by simp [zeroPatternSetHomeomorph]
+
+/-- The inverse fills the prescribed zero coordinates with zero. -/
+@[simp]
+theorem zeroPatternSetHomeomorph_symm_fst_apply_of_mem (α β K : Type*) [Zero K]
+    [TopologicalSpace K] [TopologicalSpace β] (A : Set α)
+    (w : ({a : α // a ∉ A} → {z : K // z ≠ 0}) × β) (a : α)
+    (ha : a ∈ A) :
+    ((zeroPatternSetHomeomorph α β K A).symm w).1.1 a = 0 := by
+  simp [zeroPatternSetHomeomorph, ha]
+
+/-- Outside the zero set, the inverse restores the retained coordinate. -/
+@[simp]
+theorem zeroPatternSetHomeomorph_symm_fst_apply_of_notMem (α β K : Type*) [Zero K]
+    [TopologicalSpace K] [TopologicalSpace β] (A : Set α)
+    (w : ({a : α // a ∉ A} → {z : K // z ≠ 0}) × β) (a : α)
+    (ha : a ∉ A) :
+    ((zeroPatternSetHomeomorph α β K A).symm w).1.1 a = (w.1 ⟨a, ha⟩).1 := by
+  simp [zeroPatternSetHomeomorph, ha]
+
+/-- The inverse also leaves the unrestricted factor unchanged. -/
+@[simp]
+theorem zeroPatternSetHomeomorph_symm_snd_apply (α β K : Type*) [Zero K]
+    [TopologicalSpace K] [TopologicalSpace β] (A : Set α)
+    (w : ({a : α // a ∉ A} → {z : K // z ≠ 0}) × β) :
+    ((zeroPatternSetHomeomorph α β K A).symm w).1.2 = w.2 :=
+  by simp [zeroPatternSetHomeomorph]
 
 /-- A coordinate stratum with finitely many first coordinates is locally closed. -/
 theorem isLocallyClosed_zeroPatternSet (α β K : Type*) [Finite α] [Zero K]

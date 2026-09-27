@@ -51,9 +51,23 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
+  # The merge queue always builds on Namespace: it is the path every PR must pass through to land,
+  # so it gets the faster machine and never waits for a GitHub slot. Skipping the picker leaves
+  # its answer empty, which `sandboxed-build` reads as Namespace.
+  pick-runner:
+    if: github.event_name != 'merge_group'
+    uses: ./.github/workflows/pick-runner.yml
+    permissions:
+      actions: read
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
   # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
   sandboxed-build:
+    needs: pick-runner
+    if: ${{ !cancelled() }}
     # `container.privileged` is required and documented by Namespace for this case: without it
     # the job container's seccomp profile denies `pivot_root`, and bwrap cannot build its sandbox
     # at all, for root as well as for the job user. The `-with-features` suffix on the machine
@@ -63,9 +77,16 @@ jobs:
     # labels this organisation does not serve is not rejected: it sits queued with an empty
     # runner name until it expires, taking the required builds with it. Before changing these
     # labels, confirm them in the organisation that will run the job.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
-      - namespace-features:container.privileged=true
+    #
+    # The pick-runner job chooses between GitHub and Namespace; see pick-runner.yml. Anything but
+    # an explicit `true` from it, including a picker that failed, was skipped or never ran, means
+    # Namespace. The event check is redundant with the picker's own `if`, and keeps the merge
+    # queue on Namespace should that ever change.
+    runs-on: >-
+      ${{ github.event_name != 'merge_group' && needs.pick-runner.outputs.github == 'true' && 'ubuntu-24.04' || fromJSON('[
+        "nscloud-ubuntu-24.04-amd64-8x16-with-features",
+        "namespace-features:container.privileged=true"
+      ]') }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -88,6 +109,17 @@ jobs:
       # sandbox then stages the fully audited root-package outputs for the isolated publisher.
       STAGE_LAKE_CACHE: ""
     steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          target=1048576
+          if [ "$(cat /proc/sys/vm/max_map_count)" -lt "$target" ]; then
+            sudo -n sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 \
+              || sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 || true
+          fi
+          now="$(cat /proc/sys/vm/max_map_count)"
+          echo "vm.max_map_count=$now"
+          [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       # --- Trusted setup: no PR code runs until the sandboxed build phase ---
       - name: Resolve PR head
         id: pr
@@ -169,6 +201,10 @@ jobs:
       - name: Scope guard — allow TauCeti sources and validated pins
         env:
           GH_TOKEN: "${{ github.token }}"
+          # Attacker-chosen strings: read them from the environment, never interpolate them.
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_USER: ${{ github.event.pull_request.user.login }}
         run: |
           if [ "${{ github.event_name }}" = "merge_group" ]; then
             # The whole batch's combined change set vs the trusted base (every batched PR).
@@ -207,9 +243,28 @@ jobs:
           # not tell that apart from a PR with no pin change at all — so it posted the required
           # bump-guard status green, asserting a validation that had not happened, to the human
           # being asked to merge exactly that kind of PR by hand.
-          if [ -z "$files" ]; then
+          # A lint repair PR starts as an empty commit on `lint-repair/...` opened by the review
+          # bot (lint-full.yml); its first build is the full lint that shows what to repair. Only
+          # that exact shape is exempt from routing an empty diff to a human.
+          repair_pr=0
+          if [ -z "$files" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # A dispatched rebuild (e.g. `gh workflow run pr-build.yml -f pr=N`) carries no PR payload.
+            IFS=$'\t' read -r PR_HEAD_REF PR_HEAD_REPO PR_USER < <(gh api \
+              "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
+              --jq '[.head.ref, .head.repo.full_name, .user.login] | @tsv') || true
+          fi
+          if [ -z "$files" ] \
+              && { [ "${{ github.event_name }}" = "pull_request_target" ] \
+                   || [ "${{ github.event_name }}" = "workflow_dispatch" ]; } \
+              && [ "$PR_HEAD_REPO" = "${{ github.repository }}" ] \
+              && [[ "$PR_HEAD_REF" == lint-repair/* ]] \
+              && [ "$PR_USER" = "tauceti-review-bot[bot]" ]; then
+            repair_pr=1
+            echo "empty lint repair PR from the review bot: building it for its full lint"
+          fi
+          if [ -z "$files" ] && [ "$repair_pr" = 0 ]; then
             echo "INFRA=1" >> "$GITHUB_ENV"; echo "::warning::no files / unable to list — cannot determine scope, routing to human"
-          else
+          elif [ -n "$files" ]; then
             if echo "$files" | grep -vqE '^TauCeti/|^TauCeti\.lean$|^lake-manifest\.json$|^lean-toolchain$|^docbuild/docs/references\.bib$'; then
               if echo "$files" | grep -qE '^lakefile\.(toml|lean)$'; then
                 echo "HUMAN_LAKEFILE=1" >> "$GITHUB_ENV"
@@ -291,10 +346,14 @@ jobs:
           # API or shell failure above cannot be misreported as a green scope decision.
           echo "SCOPE_OK=1" >> "$GITHUB_ENV"
 
-      - name: Diff size guard — additions, deletions, and changed files each ≤ 2000 (trusted GitHub PR totals)
+      - name: Diff size guard — additions, deletions, and changed files each ≤ 2000 (trusted GitHub PR totals; Lake-pin bumps exempt from the line caps)
         # Per-PR cap, enforced when each PR is built on pull_request_target (its entry condition to the
         # queue). A merge_group batch is the sum of already-capped PRs, so we don't re-cap the combined
         # size here. (The scope guard's 300-file compare cap still bounds the batch's file count.)
+        # A PR that moves the Lake pins (BUMP=1, set by the scope guard above) is exempt from the
+        # two line caps: its diff is whatever the upstream Mathlib/Lean changes force, so splitting
+        # it is not possible without an intermediate bump. Such a PR still has to pass the trusted
+        # bump validator before anything builds, and the file cap still applies.
         if: ${{ github.event_name != 'merge_group' }}
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
@@ -311,7 +370,9 @@ jobs:
             echo "::error::could not read the PR's diff totals from the GitHub API (+$adds / -$dels / $files files); failing closed"
             exit 1
           fi
-          if [ "$adds" -gt 2000 ] || [ "$dels" -gt 2000 ] || [ "$files" -gt 2000 ]; then
+          if [ "${BUMP:-0}" = "1" ] && [ "$files" -le 2000 ]; then
+            echo "::notice::PR moves the Lake pins, so the added/removed line caps do not apply"
+          elif [ "$adds" -gt 2000 ] || [ "$dels" -gt 2000 ] || [ "$files" -gt 2000 ]; then
             echo "TOO_LARGE=1" >> "$GITHUB_ENV"
             echo "::error::This PR is too large to review: +$adds / -$dels lines across $files files (cap: 2000 added lines, 2000 removed lines, 2000 files). We cap diff size to keep review manageable — reviewers, AI and human alike, do far better work on small, focused PRs. Please split this into smaller PRs, one topic each. We are open to raising the cap once there is evidence that review is working well at the current size."
             exit 1
@@ -853,6 +914,40 @@ jobs:
           bash gate/scripts/perf/prepare-watchdog-toolchain.sh "$watchdog" "$real_lean"
           echo "WATCHDOG_TOOLCHAIN=$watchdog" >> "$GITHUB_ENV"
 
+      # The environment lint's compiled driver, built on the host from the workflow-pinned
+      # scripts/LintEnvDriver.lean against the pinned Batteries checkout, BEFORE any candidate code
+      # runs: once the candidate's build starts it can rewrite .lake/packages/batteries. It is
+      # mounted read-only into the sandbox, and lint-env.sh refuses to compile it there.
+      - name: Build the trusted environment-lint driver (before any candidate code runs)
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.elan/bin:$PATH"
+          out="$RUNNER_TEMP/lint-env-driver"
+          bash gate/scripts/build-lint-driver.sh pr gate/scripts/LintEnvDriver.lean "$out"
+          echo "LINT_DRIVER_DIR=$out" >> "$GITHUB_ENV"
+
+      # Which modules the environment lint covers: the TauCeti modules this change touches, or the
+      # whole library for `full-lint`-labelled and lint-repair PRs (scripts/lint-scope.sh). Computed
+      # on the host from GitHub metadata only, and mounted read-only into the sandbox.
+      - name: Decide the environment-lint scope
+        if: ${{ env.INFRA != '1' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          NUM: ${{ steps.pr.outputs.num }}
+          # The immutable commits being built: the merge group's base, or the PR's base commit
+          # (a three-dot compare diffs from the merge base), and the exact head.
+          BASE: ${{ github.event_name == 'merge_group' && steps.pr.outputs.base_ref || steps.pr.outputs.base_sha }}
+          HEAD: ${{ steps.pr.outputs.sha }}
+          HEAD_REPO: ${{ steps.pr.outputs.repo }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/lint-scope"
+          bash gate/scripts/lint-scope.sh "$out"
+          echo "LINT_SCOPE_DIR=$out" >> "$GITHUB_ENV"
+
       - name: Build exact candidate under bwrap with workflow-pinned audits, offline
         id: build
         if: ${{ env.INFRA != '1' }}
@@ -886,6 +981,8 @@ jobs:
             --dev /dev --proc /proc --tmpfs /tmp \
             --ro-bind "$HOME/.elan" "$HOME/.elan" \
             --ro-bind "$WATCHDOG_TOOLCHAIN" "$WATCHDOG_TOOLCHAIN" \
+            --ro-bind "$LINT_DRIVER_DIR" "$LINT_DRIVER_DIR" \
+            --ro-bind "$LINT_SCOPE_DIR" "$LINT_SCOPE_DIR" \
             --ro-bind "$PWD/gate" "$PWD/gate" \
             --ro-bind "$PWD/pr" "$PWD/pr" --bind "$PWD/pr/.lake" "$PWD/pr/.lake" \
             --remount-ro / \
@@ -896,6 +993,8 @@ jobs:
             --setenv LAKE_RESTORE_ARTIFACTS "${LAKE_RESTORE_ARTIFACTS:-}" \
             --setenv LAKE_CACHE_DIR "${LAKE_CACHE_DIR:-}" \
             --setenv WATCHDOG_TOOLCHAIN "${WATCHDOG_TOOLCHAIN:-}" \
+            --setenv LINT_DRIVER_EXE "$LINT_DRIVER_DIR/lint-env-driver" \
+            --setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
             --setenv TAUCETI_PROJECT_ROOT "$TAUCETI_PROJECT_ROOT" \
             --setenv TAUCETI_TRUSTED_SCRIPTS "$TAUCETI_TRUSTED_SCRIPTS" \

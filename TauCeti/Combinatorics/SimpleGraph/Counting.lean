@@ -61,9 +61,9 @@ theorem card_injective_hom_eq_sum_map_le (F : SimpleGraph V) (G : SimpleGraph W)
       ∑ f : V ↪ W, if F.map f ≤ G then 1 else 0 := by
   let e : {φ : F →g G // Function.Injective φ} ≃ {f : V ↪ W // F.map f ≤ G} :=
     { toFun := fun φ =>
-        ⟨⟨φ.1, φ.2⟩, (map_le_iff_le_comap _ _ _).2 fun {_ _} hab => φ.1.map_rel hab⟩
+        ⟨⟨φ.1, φ.2⟩, map_le_iff_le_comap.2 fun {_ _} hab => φ.1.map_rel hab⟩
       invFun := fun f =>
-        ⟨⟨f.1, fun {_ _} hab => (map_le_iff_le_comap _ _ _).1 f.2 hab⟩, f.1.injective⟩
+        ⟨⟨f.1, fun {_ _} hab => map_le_iff_le_comap.1 f.2 hab⟩, f.1.injective⟩
       left_inv := by
         intro φ
         apply Subtype.ext

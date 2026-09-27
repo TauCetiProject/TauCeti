@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.Preadditive.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 
@@ -13,7 +14,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 
 This file records the additive-group structure on morphisms of right comodules over a
 coalgebra over a commutative ring, and uses it to make the bundled comodule category
-preadditive.
+preadditive. It also provides the faithful additive forgetful functor to `ModuleCat R`.
 
 The semiring-level files already show that comodule morphisms are closed under zero,
 addition, scalar multiplication, and finite sums. Over a ring, every semimodule is an
@@ -157,6 +158,10 @@ universe u v w
 variable (R : Type u) [CommRing R]
 variable (C : Type v) [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
+/-- A bundled comodule over a ring has an additive group as its underlying module. -/
+instance (M : ComoduleCat.{u, v, w} R C) : AddCommGroup M :=
+  Module.addCommMonoidToAddCommGroup R
+
 /-- Categorical morphisms form an additive commutative group over a commutative ring. -/
 instance homAddCommGroup (M N : ComoduleCat.{u, v, w} R C) : AddCommGroup (M ⟶ N) :=
   inferInstanceAs (AddCommGroup (Comodule.Hom R C M N))
@@ -224,6 +229,24 @@ instance preadditive : Preadditive (ComoduleCat.{u, v, w} R C) where
     let : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
     let : AddCommGroup P := Module.addCommMonoidToAddCommGroup R
     exact Comodule.Hom.add_comp (R := R) (C := C) g h f
+
+variable {R C}
+
+/-- Forget a comodule over a ring to its underlying module. -/
+noncomputable instance : HasForget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R) where
+  forget₂ := forget₂ (ComoduleCat R C) (SemimoduleCat R) ⋙
+    (ModuleCat.equivalenceSemimoduleCat (R := R)).inverse
+
+/-- The underlying linear map of a forgotten comodule morphism. -/
+@[simp]
+theorem forget₂_moduleCat_map {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
+    ((forget₂ (ComoduleCat R C) (ModuleCat R)).map f).hom = f.toLinearMap := rfl
+
+instance : (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Faithful where
+  map_injective h := Comodule.Hom.toLinearMap_injective (congrArg ModuleCat.Hom.hom h)
+
+instance : (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Additive where
+  map_add := rfl
 
 end ComoduleCat
 

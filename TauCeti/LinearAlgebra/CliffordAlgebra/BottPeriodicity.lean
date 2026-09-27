@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.SignSwitch
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import Mathlib.RingTheory.MatrixAlgebra

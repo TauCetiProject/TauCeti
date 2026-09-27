@@ -348,7 +348,7 @@ theorem Path.segment_rung_homotopy {a b c d : X} (U : Set X) (hU : IsPathHomotop
     (hγ : Set.range γ ⊆ U) (hγ' : Set.range γ' ⊆ U)
     (hα_start : Set.range α_start ⊆ U) (hα_end : Set.range α_end ⊆ U) :
     Path.Homotopic (γ.trans α_end) (α_start.trans γ') := by
-  apply hU.apply
+  apply isPathHomotopyTrivial_def.mp hU
   · rw [Path.trans_range]; exact Set.union_subset hγ hα_end
   · rw [Path.trans_range]; exact Set.union_subset hα_start hγ'
 
@@ -436,9 +436,9 @@ private lemma Path.pasteSegmentAuxPath_succ_homotopic {x y y' : X} {n : ℕ}
   apply exact
   simp only [Path.pasteSegmentAuxPath, mk_trans, mk_cast]
   -- Decompose γ|[0, i+1] = γ|[0, i] · γ|[i, i+1] and γ'|[i, last] = γ'|[i, i+1] · γ'|[i+1, last].
-  rw [← Path.Homotopic.Quotient.subpath_trans γ
+  rw [← Path.Homotopic.mk_subpath_trans_mk_subpath γ
     (part.t 0) (part.t i.castSucc) (part.t i.succ)]
-  rw [← Path.Homotopic.Quotient.subpath_trans γ'
+  rw [← Path.Homotopic.mk_subpath_trans_mk_subpath γ'
     (part.t i.castSucc) (part.t i.succ) (part.t (Fin.last n))]
   -- Right-associate everything so the rectangle rewrite fires on the shared suffix.
   simp only [trans_assoc]
@@ -502,7 +502,7 @@ theorem Path.paste_segment_homotopies {x y y' : X} {n : ℕ}
 theorem Path.nullhomotopic_of_range_subset_pathHomotopyTrivial {x : X} (γ : Path x x)
     (U : Set X) (hU : IsPathHomotopyTrivial U) (hγU : Set.range γ ⊆ U) :
     Path.Homotopic γ (Path.refl x) :=
-  hU.apply γ (Path.refl x) hγU <| by
+  isPathHomotopyTrivial_def.mp hU γ (Path.refl x) hγU <| by
     rintro _ ⟨_, rfl⟩
     simpa [γ.source] using hγU ⟨0, rfl⟩
 

@@ -105,6 +105,22 @@ theorem carrierι_def :
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) := by
   rw [carrierι]
 
+/-- The carrier inclusion expressed through its named Hopf-ideal quotient presentation. -/
+theorem carrierι_eq_eqToHom_comp_hopfIdealInclusion :
+    carrierι n =
+      eqToHom (groupScheme_def n) ≫
+        GeneralLinear.hopfIdealInclusion ℤ ((n + 1) + (n + 1)) (definingIdeal n) := by
+  have hgroup : groupScheme_def n =
+      congrArg (CommHopfAlgCat.quotientSpec
+        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))))
+          (definingIdeal_def n).symm :=
+    Subsingleton.elim _ _
+  rw [carrierι_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι_def,
+    GeneralLinear.hopfIdealInclusion_def]
+  rw [hgroup, ← Category.assoc, CommHopfAlgCat.eqToHom_comp_quotientSpecι]
+  · rw [eqToIso.hom]
+  · exact (definingIdeal_def n).symm
+
 /-- The type-`C_(n+1)` carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n).hom.hom.left := by
   rw [carrierι]

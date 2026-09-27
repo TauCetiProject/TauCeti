@@ -10,7 +10,7 @@ import TauCeti.Algebra.Category.Grp.FilteredColimits
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Descent
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Explicit
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
@@ -428,7 +428,7 @@ theorem exists_explicitInfl1_eq (x : H1 G M) :
     obtain ⟨U, hU⟩ := exists_openNormalSubgroup_apply_eq_zero G M z
     exact ⟨U, descendZ1 z fun n => hU (n : G) n.2, explicitInfl1_descendZ1 z _⟩
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] in
+omit [ContinuousSMul G M] [CompactSpace G] [TotallyDisconnectedSpace G] in
 /-- Restricting a cocone leg through a transition map gives the leg one level up. This is the
 naturality of the cocone, read on elements. -/
 private theorem cocone_ι_explicitFiniteQuotientTransition1

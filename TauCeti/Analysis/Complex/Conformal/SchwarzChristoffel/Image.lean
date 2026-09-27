@@ -25,12 +25,12 @@ finite vertices and the vertex at infinity.  For a monotone family of prevertice
 `schwarzChristoffelPolygon`.
 
 This file locates the image `F '' upperHalfPlaneSet` relative to `P`, assuming only that every
-finite prevertex is integrable and that the total exponent is less than `-1`.  No simplicity of
-`P` and no injectivity of `F` is assumed.  The image is open, because `F` has a nonvanishing
-derivative.  It is bounded, and its closure is exactly the image together with `P`: every point
-of `P` is a boundary limit of `F`, and every limit of `F` from the upper half-plane is either an
-interior value, a finite boundary value or the vertex at infinity.  Hence the frontier of the
-image is `P` minus the image.
+finite prevertex is integrable and that the total exponent is less than `-1`. These results do
+not assume simplicity of `P` or injectivity of `F`. The image is open because `F` has a
+nonvanishing derivative. It is bounded, and its closure is exactly the image together with `P`:
+every point of `P` is a boundary limit of `F`. Every limit of `F` from the upper half-plane is
+either an interior value, a finite boundary value or the vertex at infinity. Hence the frontier
+of the image is `P` minus the image.
 
 Two consequences describe the image by the components of the complement of `P`.  The image lies
 in `filledHull P`: it misses the unbounded complementary component.  And a complementary
@@ -43,6 +43,9 @@ The primitive is also proper over the complement of `P`: the points of the upper
 it sends into a closed set avoiding `P` form a compact set.  Near the real axis and near infinity
 the primitive is close to its boundary values, which all lie on `P`.
 
+The continuous extension to the closed upper half-plane and convergence to the vertex at infinity
+are also available separately. They control preimages near a specified boundary value.
+
 ## Main results
 
 * `TauCeti.isOpen_image_schwarzChristoffelPrimitive` -- the primitive maps open subsets of the
@@ -51,6 +54,10 @@ the primitive is close to its boundary values, which all lie on `P`.
   bounded.
 * `TauCeti.closure_image_schwarzChristoffelPrimitive` -- its closure is the image together with
   the compactified boundary path.
+* `TauCeti.continuousOn_extendFrom_schwarzChristoffelPrimitive` -- the extension is continuous on
+  the closed upper half-plane.
+* `TauCeti.exists_forall_dist_schwarzChristoffelPrimitive_le` -- the primitive approaches its
+  vertex at infinity uniformly outside a large ball.
 * `TauCeti.frontier_image_schwarzChristoffelPrimitive` -- its frontier is the part of the
   boundary path outside the image.
 * `TauCeti.image_schwarzChristoffelPrimitive_subset_filledHull` -- the image lies in the filled
@@ -107,7 +114,7 @@ private theorem ofReal_re_eq_of_mem_closure_of_notMem {z : ℂ} (hz : z ∈ clos
 
 /-- The `extendFrom` extension of the primitive to the closed upper half-plane is continuous
 there, under integrability at every finite prevertex. -/
-private theorem continuousOn_extendFrom_schwarzChristoffelPrimitive (a e : ι → ℝ)
+theorem continuousOn_extendFrom_schwarzChristoffelPrimitive (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) :
     ContinuousOn (extendFrom upperHalfPlaneSet (schwarzChristoffelPrimitive a e z₀))
       (closure upperHalfPlaneSet) := by
@@ -142,7 +149,7 @@ private theorem extendFrom_schwarzChristoffelPrimitive_mem (a e : ι → ℝ) (z
 
 /-- Far out in the upper half-plane the primitive stays within any prescribed distance of the
 vertex at infinity. -/
-private theorem exists_forall_dist_schwarzChristoffelPrimitive_le (a e : ι → ℝ)
+theorem exists_forall_dist_schwarzChristoffelPrimitive_le (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hinfty : ∑ i, e i < -1) {ε : ℝ} (hε : 0 < ε) :
     ∃ R, ∀ z ∈ upperHalfPlaneSet, R ≤ ‖z‖ →
       dist (schwarzChristoffelPrimitive a e z₀ z) (schwarzChristoffelVertexAtInfinity a e z₀)

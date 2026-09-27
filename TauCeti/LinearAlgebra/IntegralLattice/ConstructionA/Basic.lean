@@ -198,7 +198,7 @@ theorem lattice_le_dualSubmodule_iff (C : AddSubgroup (ι → ZMod m)) :
     lattice m C ≤ (form m).dualSubmodule (lattice m C) ↔
       AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual := by
   rw [dualSubmodule_lattice, lattice_le_lattice_iff]
-  simp only [SetLike.le_def, Submodule.mem_toAddSubgroup, AddSubgroup.mem_toZModSubmodule]
+  simp only [IsConcreteLE.le_iff, Submodule.mem_toAddSubgroup, AddSubgroup.mem_toZModSubmodule]
 
 /-- Construction A as an integral lattice, under the exact self-orthogonality hypothesis. -/
 def integralLattice (C : AddSubgroup (ι → ZMod m))

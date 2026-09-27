@@ -38,11 +38,11 @@ variable {A : Type*} [CommRing A] [Algebra ℚ A]
 `PowerSeries.logOf f`. When `f` has constant coefficient one, this is characterized by
 `PowerSeries.logDeriv_mul`. -/
 noncomputable def logDeriv (f : A⟦X⟧) : A⟦X⟧ :=
-  d⁄dX A (logOf f)
+  d⁄dX (logOf f)
 
 /-- The formal logarithmic derivative is the derivative of the formal logarithm. -/
 theorem logDeriv_def (f : A⟦X⟧) :
-    logDeriv f = d⁄dX A (logOf f) := by
+    logDeriv f = d⁄dX (logOf f) := by
   rw [logDeriv]
 
 /-- Coefficients of the formal logarithmic derivative are the shifted coefficients of the formal
@@ -54,7 +54,7 @@ theorem coeff_logDeriv (f : A⟦X⟧) (n : ℕ) :
 /-- The formal logarithmic derivative of a power series with constant coefficient one satisfies
 `(log f)' * f = f'`. -/
 theorem logDeriv_mul (f : A⟦X⟧) (hf : constantCoeff f = 1) :
-    logDeriv f * f = d⁄dX A f := by
+    logDeriv f * f = d⁄dX f := by
   have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
   rw [logDeriv, logOf_eq, derivative_subst hsub]
   have hlog := congrArg (substAlgHom hsub)
@@ -67,19 +67,19 @@ theorem logDeriv_mul (f : A⟦X⟧) (hf : constantCoeff f = 1) :
     rw [hone]
     ring
   rw [hadd] at hlog
-  have hderiv : d⁄dX A (f - 1) = d⁄dX A f := by
+  have hderiv : d⁄dX (f - 1) = d⁄dX f := by
     rw [map_sub, derivative_one, sub_zero]
   rw [hderiv]
   calc
-    subst (f - 1) (d⁄dX A (log A)) * d⁄dX A f * f =
-        (subst (f - 1) (d⁄dX A (log A)) * f) * d⁄dX A f := by ring
-    _ = d⁄dX A f := by rw [hlog, one_mul]
+    subst (f - 1) (d⁄dX (log A)) * d⁄dX f * f =
+        (subst (f - 1) (d⁄dX (log A)) * f) * d⁄dX f := by ring
+    _ = d⁄dX f := by rw [hlog, one_mul]
 
 /-- Over a field, the formal logarithmic derivative of a power series with constant coefficient
 one is the quotient `f' / f`. -/
 theorem logDeriv_eq_derivative_mul_inv {k : Type*} [Field k] [Algebra ℚ k]
     (f : k⟦X⟧) (hf : constantCoeff f = 1) :
-    logDeriv f = d⁄dX k f * f⁻¹ := by
+    logDeriv f = d⁄dX f * f⁻¹ := by
   have hunit : IsUnit f := isUnit_iff_constantCoeff.mpr (hf ▸ isUnit_one)
   apply hunit.mul_right_cancel
   rw [logDeriv_mul f hf, mul_assoc, f.inv_mul_cancel (by simp [hf]), mul_one]

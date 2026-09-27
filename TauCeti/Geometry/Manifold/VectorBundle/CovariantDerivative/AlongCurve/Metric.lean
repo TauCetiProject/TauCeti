@@ -103,7 +103,8 @@ private theorem IsMetricCompatible.hasMetricProductRuleWithinAt_pullback
   rw [alongCurveWithin_pullback_curveVelocityWithin cov γ X hu hγ hX,
     alongCurveWithin_pullback_curveVelocityWithin cov γ Y hu hγ hY]
   -- The chain-rule result uses a definitionally equal real normed-space instance.
-  convert hchain using 1 <;> rfl
+  convert hchain using 1
+  rfl
 
 omit [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
 /-- The product rule is symmetric in its fields. -/

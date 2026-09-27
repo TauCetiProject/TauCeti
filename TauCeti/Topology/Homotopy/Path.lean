@@ -217,14 +217,14 @@ theorem isOpen_iff_preimage_mk {x₀ x₁ : X} {S : Set (Path.Homotopic.Quotient
   -- topology (`inferInstanceAs`), so `IsOpen S` unfolds to openness of the `mk`-preimage.
   Iff.rfl
 
-/-- In the path-homotopy quotient, concatenating adjacent subpaths of `p` gives the larger
-subpath from the first endpoint to the last endpoint. -/
-@[simp]
-theorem subpath_trans {x y : X} (p : Path x y) (a b c : unitInterval) :
-    trans (mk (p.subpath a b)) (mk (p.subpath b c)) =
-      mk (p.subpath a c) := by
-  simp only [← mk_trans, eq]
-  exact ⟨Path.Homotopy.subpathTransSubpath p a b c⟩
+/-- The concatenation identity `Path.Homotopic.mk_subpath_trans_mk_subpath` with endpoints
+recast to given points. This cuts a path into pieces with prescribed, named endpoints. -/
+theorem subpath_cast_trans {x y : X} (p : Path x y) (a b c : unitInterval) {x₀ x₁ x₂ : X}
+    (h₀ : x₀ = p a) (h₁ : x₁ = p b) (h₂ : x₂ = p c) :
+    trans (mk ((p.subpath a b).cast h₀ h₁)) (mk ((p.subpath b c).cast h₁ h₂)) =
+      mk ((p.subpath a c).cast h₀ h₂) := by
+  subst h₀ h₁ h₂
+  simp
 
 /-- A degenerate subpath represents the reflexivity class at its endpoint. -/
 theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
@@ -285,6 +285,13 @@ theorem trans_left_cancel {x₀ x₁ x₂ : X} {e : Path x₀ x₁} {γ δ : Pat
   have hδ : (e.symm.trans (e.trans δ)).Homotopic δ :=
     (trans_assoc e.symm e δ).symm.trans (trans_left_of_nullhomotopic (symm_trans e))
   exact hγ.symm.trans (((refl e.symm).hcomp h).trans hδ)
+
+/-- A loop whose conjugate by a path is null-homotopic is itself null-homotopic. This is the
+path-homotopy analogue of `a * b * a⁻¹ = 1 → b = 1`. -/
+theorem of_conj_nullhomotopic {x₀ x₁ : X} {α : Path x₀ x₁} {δ : Path x₁ x₁}
+    (h : ((α.trans δ).trans α.symm).Homotopic (Path.refl x₀)) :
+    δ.Homotopic (Path.refl x₁) :=
+  trans_left_cancel ((of_trans_symm h).trans (trans_refl α).symm)
 
 /-- The image of a based loop under a null-homotopic continuous map is null-homotopic in the
 target: a map homotopic to a constant collapses every loop to the constant loop. -/

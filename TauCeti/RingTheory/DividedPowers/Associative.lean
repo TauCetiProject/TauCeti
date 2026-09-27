@@ -185,6 +185,13 @@ theorem commute_dividedPower_dividedPower {x y : A} (hxy : Commute x y) (m n : �
   simpa only [dividedPower_def] using
     ((hxy.pow_pow m n).smul_left (m.factorial : ℚ)⁻¹).smul_right (n.factorial : ℚ)⁻¹
 
+/-- An element commuting with `y` commutes with every divided power of `y`. This is the case
+`m = 1` of `commute_dividedPower_dividedPower`. -/
+@[simp]
+theorem _root_.Commute.dividedPower_right {x y : A} (hxy : Commute x y) (n : ℕ) :
+    Commute x (dividedPower n y) :=
+  (hxy.pow_right n).smul_right _
+
 /-- The rational coefficient identity behind multiplication of divided powers. -/
 private theorem inv_factorial_mul_inv_factorial (m n : ℕ) :
     (m.factorial : ℚ)⁻¹ * (n.factorial : ℚ)⁻¹ =

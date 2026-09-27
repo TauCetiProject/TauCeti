@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Map
 
 /-!
 # Functoriality of Spin groups
 
 A linear isometry of quadratic spaces induces an algebra homomorphism of their Clifford algebras.
-This file proves that the homomorphism preserves the Spin group and packages the restriction as a
-group homomorphism. Isometry equivalences induce group equivalences, and these maps commute with
-the vector actions. The fixed-complement result specializes this naturality to an orthogonal
-summand.
+Using the induced Lipschitz-group homomorphism, this file proves that the Clifford homomorphism
+preserves the Spin group and packages its restriction as a group homomorphism. Isometry
+equivalences induce group equivalences, and these maps commute with the vector actions. The
+fixed-complement result specializes this naturality to an orthogonal summand.
 
 ## Main results
 
@@ -37,38 +37,6 @@ public section
 
 
 open QuadraticMap
-
-namespace QuadraticMap.Isometry
-
-universe u v w
-
-
-variable {R : Type u} [CommRing R]
-  {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
-  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
-
-/-- Mapping Clifford units along a quadratic isometry preserves the Lipschitz group. -/
-theorem map_mem_lipschitzGroup (f : Q₁ →qᵢ Q₂) {x : (CliffordAlgebra Q₁)ˣ}
-    (hx : x ∈ lipschitzGroup Q₁) :
-    Units.map (CliffordAlgebra.map f).toMonoidHom x ∈ lipschitzGroup Q₂ := by
-  induction hx using Subgroup.closure_induction with
-  | mem x hx =>
-      apply Subgroup.subset_closure
-      obtain ⟨m, hm⟩ := hx
-      -- Express the mapped unit as a Clifford generator in the target closure.
-      change ↑(Units.map (CliffordAlgebra.map f).toMonoidHom x) ∈
-        Set.range (CliffordAlgebra.ι Q₂)
-      refine ⟨f m, ?_⟩
-      change CliffordAlgebra.ι Q₂ (f m) =
-        CliffordAlgebra.map f (x : CliffordAlgebra Q₁)
-      rw [← hm, CliffordAlgebra.map_apply_ι]
-  | one => simp
-  | mul x y _ _ hx hy => simpa using mul_mem hx hy
-  | inv x _ hx => simpa using inv_mem hx
-
-end QuadraticMap.Isometry
-
 
 namespace QuadraticMap.Isometry
 

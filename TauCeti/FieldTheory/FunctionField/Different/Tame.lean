@@ -27,7 +27,8 @@ the two conditions are stated for the centre `𝔓` of `P'` on `𝒪'_P` over th
 discrete valuation ring `𝒪_P`, whose residue ring is the residue field of `P`
 (`TauCeti.Place.center_restrict_asIdeal_eq_maximalIdeal`).  This is the same ideal-theoretic
 reading of the residue extension that `TauCeti.Place.differentExponent_eq_zero_iff` uses for
-unramifiedness.  The theorem behind it is `TauCeti.pow_ramificationIdx_dvd_differentIdeal_iff`.
+unramifiedness.  The theorem behind it is
+`TauCeti.ramificationIdx_le_multiplicity_differentIdeal_iff`.
 
 Stichtenoth assumes a perfect constant field, under which residue extensions are separable and
 tameness is the single condition that the characteristic does not divide `e(P' ∣ P)`.  No such
@@ -146,8 +147,8 @@ theorem ramificationIdx_le_differentExponent_iff :
     rw [centerIntegralClosure_def]
     exact (ramificationIdx_eq_ramificationIdx_center
       (R := ((P'.restrict k F).integers)) k F P' hS).symm
-  rw [isWild_iff, ← pow_dvd_differentIdeal_iff_le_differentExponent, ← hidx]
-  exact pow_ramificationIdx_dvd_differentIdeal_iff _ hpbot _
+  rw [isWild_iff, differentExponent_def, ← hidx]
+  exact ramificationIdx_le_multiplicity_differentIdeal_iff _ hpbot _
 
 /-- **Dedekind's different theorem, second part** (Stichtenoth, Theorem 3.5.1(b)): the different
 exponent of `P'` is exactly one less than its ramification index if and only if `P'` is tame.  It

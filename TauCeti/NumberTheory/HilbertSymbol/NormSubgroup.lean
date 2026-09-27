@@ -110,6 +110,14 @@ theorem neg_radicand_mem_quadraticNormSubgroup (a : Rˣ) :
   refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr ⟨⟨0, 1⟩, ?_⟩
   simp [QuadraticAlgebra.norm_def]
 
+/-- If `-a` is not a square, the norm `-a` of the square-root generator lies outside the squares,
+so the quadratic norm subgroup has strictly smaller index than the subgroup of squares. -/
+theorem quadraticNormSubgroup_index_lt_square_index (a : Rˣ) (ha : ¬IsSquare (-a))
+    [(Subgroup.square Rˣ).FiniteIndex] :
+    (quadraticNormSubgroup (a : R)).index < (Subgroup.square Rˣ).index :=
+  Subgroup.index_strictAnti <| (square_le_quadraticNormSubgroup _).lt_of_ne fun h ↦
+    ha (Subgroup.mem_square.mp (h ▸ neg_radicand_mem_quadraticNormSubgroup a))
+
 /-- Rescaling the radicand by a square does not change the quadratic norm subgroup. -/
 @[simp]
 theorem quadraticNormSubgroup_mul_sq (a : R) (c : Rˣ) :

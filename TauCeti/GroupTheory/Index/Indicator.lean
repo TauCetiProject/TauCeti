@@ -95,7 +95,7 @@ theorem _root_.Subgroup.signIndicator_mul_iff_index_dvd_two (H : Subgroup G) :
     by_cases htop : H = ⊤
     · subst H
       exact ⟨1, by simp⟩
-    · obtain ⟨a, -, ha⟩ := SetLike.exists_of_lt (lt_top_iff_ne_top.mpr htop)
+    · obtain ⟨a, -, ha⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.mpr htop)
       refine ⟨a, fun b ↦ ?_⟩
       by_cases hb : b ∈ H
       · exact Or.inr hb
@@ -164,7 +164,7 @@ theorem _root_.Subgroup.signIndicatorHom_surjective_iff (H : Subgroup G)
     have hxone : (⊤ : Subgroup G).signIndicatorHom hindex x = 1 := by simp
     exact Int.units_ne_iff_eq_neg.mpr (by simp) (hxone.symm.trans hx)
   · intro htop u
-    obtain ⟨a, -, ha⟩ := SetLike.exists_of_lt (lt_top_iff_ne_top.mpr htop)
+    obtain ⟨a, -, ha⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.mpr htop)
     rcases Int.units_eq_one_or u with rfl | rfl
     · exact ⟨1, by simp⟩
     · exact ⟨a, by simp [ha]⟩

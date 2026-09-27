@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
+import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
+
 /-!
 # Determinant-indexed projective matrix modules
 
@@ -21,10 +23,27 @@ group-ring calculations in the Popa--Zagier construction of the trace formula.
 Inverse right multiplication is written as a left action. Its representative formula is
 `A ↦ A * g⁻¹`, so applying `h` and then `g` gives the action of `g * h`.
 
+The right and conjugation actions are also `MulAction` instances, of `PSL(2, ℤ)ᵐᵒᵖ` and of
+`ConjAct PSL(2, ℤ)`. With `open scoped RightActions`, `x <• g`, that is `MulOpposite.op g • x`,
+is Popa--Zagier's product `M · g`, right multiplication by `g` itself; it equals
+`x.rightPSL g⁻¹`. Conjugation `ConjAct.toConjAct g • x` equals `g • x <• g⁻¹`.
+
+For `n ≠ 0` the left action of `PSL(2, ℤ)` is free
+(`TauCeti.TraceFormulaMatrixModule.isCancelSMul`): a matrix of nonzero determinant is cancellable,
+so `g A = ±A` forces `g = ±1` (`TauCeti.TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_smul_eq`).
+Likewise `A g = ±A` forces `g = ±1`
+(`TauCeti.TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_op_smul_eq`), so the right action is
+free (`TauCeti.TraceFormulaMatrixModule.isCancelSMul_mulOpposite`).
+
+Elements of the group ring `k[ℳₙ]` are given by weights on integral matrices:
+`TauCeti.TraceFormulaMatrixModule.ofWeight n w B hw`, over any semiring `k`, gives the class of `A`
+the coefficient `w A + w (-A)` (`TauCeti.TraceFormulaMatrixModule.coeff_ofWeight_mk`), a bound `B`
+on the entries of the determinant-`n` matrices of nonzero weight making the support finite.
+
 ## References
 
-* A. Popa and D. Zagier, *A simple proof of the Eichler--Selberg trace formula*,
-  J. Reine Angew. Math. 762 (2020), 105--122, arXiv:1711.00327, Section 2.
+* A. Popa and D. Zagier, *An elementary proof of the Eichler--Selberg trace formula*,
+  J. Reine Angew. Math. 762 (2020), 105--122, arXiv:1711.00327, Section 1.
 -/
 
 public section
@@ -82,6 +101,13 @@ def TraceFormulaMatrixModule.mk (A : TraceFormulaMatrix n) : TraceFormulaMatrixM
 theorem TraceFormulaMatrixModule.mk_neg (A : TraceFormulaMatrix n) :
     TraceFormulaMatrixModule.mk (-A) = TraceFormulaMatrixModule.mk A :=
   Quotient.sound (Or.inr rfl)
+
+/-- A sign-invariant function of determinant-`n` matrices, descended to `ℳₙ`, takes the class of
+`A` to its value at `A`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.lift_mk {β : Sort*} (f : TraceFormulaMatrix n → β)
+    (h : ∀ A B, A ≈ B → f A = f B) (A : TraceFormulaMatrix n) :
+    Quotient.lift f h (TraceFormulaMatrixModule.mk A) = f A := (rfl)
 
 /-- Two representatives of `ℳₙ` agree exactly when they are equal up to simultaneous sign. -/
 @[simp]
@@ -176,6 +202,25 @@ theorem TraceFormulaMatrixModule.coe_smul (g : SL(2, ℤ))
     (x : TraceFormulaMatrixModule n) : (g : PSL(2, ℤ)) • x = g • x := by
   rw [MulAction.compHom_smul_def, QuotientGroup.lift_mk, Equiv.Perm.smul_def,
     MulAction.toPermHom_apply, MulAction.toPerm_apply]
+
+/-- For `n ≠ 0`, only `±1` in `SL(2, ℤ)` fixes an element of `ℳₙ`. -/
+theorem TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_smul_eq (hn : n ≠ 0) {g : SL(2, ℤ)}
+    {x : TraceFormulaMatrixModule n} (h : g • x = x) : g = 1 ∨ g = -1 := by
+  induction x using TraceFormulaMatrixModule.induction with | h A => ?_
+  -- `A` is cancellable on the right, as its determinant `n` is nonzero
+  have hA := (isRegular_of_isLeftRegular_det (A.2 ▸ IsRegular.of_ne_zero hn).left).right
+  rw [TraceFormulaMatrixModule.smul_mk, TraceFormulaMatrixModule.mk_eq_iff] at h
+  rcases h with h | h <;> [left; right] <;>
+    exact Subtype.ext <| hA <| by simpa [FixedDetMatrices.smul_coe] using congrArg Subtype.val h
+
+/-- For `n ≠ 0`, `PSL(2, ℤ)` acts freely on `ℳₙ`. -/
+theorem TraceFormulaMatrixModule.isCancelSMul (hn : n ≠ 0) :
+    IsCancelSMul PSL(2, ℤ) (TraceFormulaMatrixModule n) := by
+  refine isCancelSMul_iff_eq_one_of_smul_eq.mpr fun g x h ↦ ?_
+  induction g using QuotientGroup.induction_on with | H g => ?_
+  rw [QuotientGroup.eq_one_iff, Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+  exact TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_smul_eq hn
+    ((TraceFormulaMatrixModule.coe_smul g x).symm.trans h)
 
 /-- The right multiplication action on `ℳₙ`, expressed as a left action through inversion. -/
 public def TraceFormulaMatrixModule.right (x : TraceFormulaMatrixModule n) (g : SL(2, ℤ)) :
@@ -435,5 +480,138 @@ theorem TraceFormulaMatrixModule.conjPSLHom_apply (g : PSL(2, ℤ))
     TraceFormulaMatrixModule.conjPSLHom n g x = x.conjPSL g := by
   unfold TraceFormulaMatrixModule.conjPSLHom
   rfl
+
+/-! ### The right and conjugation actions as `MulAction`s -/
+
+open scoped RightActions
+
+/-- Right multiplication makes `ℳₙ` a right `PSL(2, ℤ)`-set. With `open scoped RightActions`,
+`x <• g`, that is `MulOpposite.op g • x`, is Popa--Zagier's product `M · g`: the class of `A * g`
+for a representative `A` of `x`. It is inverse right multiplication by `g⁻¹`, that is
+`x.rightPSL g⁻¹`. -/
+instance TraceFormulaMatrixModule.instMulActionMulOppositePSL (n : ℤ) :
+    MulAction PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) :=
+  MulAction.compHom _ ((TraceFormulaMatrixModule.rightPSLHom n).comp
+    (MulEquiv.inv' PSL(2, ℤ)).symm.toMonoidHom)
+
+/-- Right multiplication by `g` is inverse right multiplication by `g⁻¹`. -/
+theorem TraceFormulaMatrixModule.op_smul_eq_rightPSL_inv (g : PSL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) : x <• g = x.rightPSL g⁻¹ := (rfl)
+
+/-- Right multiplication by a projective class is computed on any representatives: the class of
+`A` times the class of `g` is the class of `A * g`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.op_smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    TraceFormulaMatrixModule.mk A <• (g : PSL(2, ℤ)) =
+      TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g⁻¹ A) := by
+  rw [op_smul_eq_rightPSL_inv, ← QuotientGroup.mk_inv, rightPSL_coe, right_mk]
+
+/-- Right multiplication by the inverse of a projective class is computed on any representatives:
+the class of `A` times the inverse of the class of `g` is the class of `A * g⁻¹`. This is the form
+in which `simp` leaves `x <• g⁻¹`, via `MulOpposite.op_inv`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.inv_op_smul_mk (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    (MulOpposite.op (g : PSL(2, ℤ)))⁻¹ • TraceFormulaMatrixModule.mk A =
+      TraceFormulaMatrixModule.mk (traceFormulaMatrixRight g A) := by
+  simpa using op_smul_mk g⁻¹ A
+
+/-- The class of `A` lies in the right coset of the class of `B` exactly when `A = B g` for some
+`g ∈ SL(2, ℤ)`; the sign ambiguity of the classes is absorbed into `g`. -/
+@[simp low]
+theorem TraceFormulaMatrixModule.mk_mem_orbit_op_mk_iff {A B : TraceFormulaMatrix n} :
+    TraceFormulaMatrixModule.mk A ∈ MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule.mk B) ↔
+      ∃ g : SL(2, ℤ), A.1 = B.1 * (g : Matrix (Fin 2) (Fin 2) ℤ) := by
+  simp only [MulAction.mem_orbit_iff, MulOpposite.exists, QuotientGroup.exists_mk, op_smul_mk,
+    eq_comm (b := mk A), mk_eq_iff]
+  constructor
+  · -- `A = ±B g`, and the sign is absorbed by replacing `g` with `-g`
+    rintro ⟨g, rfl | rfl⟩
+    · exact ⟨g, by simp⟩
+    · exact ⟨-g, by simp⟩
+  · rintro ⟨g, hg⟩
+    exact ⟨g, .inl <| FixedDetMatrices.ext' _ _ <| by simp [hg]⟩
+
+/-- For `n ≠ 0`, only `±1` in `SL(2, ℤ)` fixes an element of `ℳₙ` under right multiplication. -/
+theorem TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_op_smul_eq (hn : n ≠ 0) {g : SL(2, ℤ)}
+    {x : TraceFormulaMatrixModule n} (h : x <• (g : PSL(2, ℤ)) = x) : g = 1 ∨ g = -1 := by
+  induction x using TraceFormulaMatrixModule.induction with | h A => ?_
+  -- `A` is cancellable on the left, as its determinant `n` is nonzero
+  have hA := (isRegular_of_isLeftRegular_det (A.2 ▸ IsRegular.of_ne_zero hn).left).left
+  rw [op_smul_mk, mk_eq_iff] at h
+  rcases h with h | h <;> [left; right] <;>
+    exact Subtype.ext <| hA <| by simpa using congrArg Subtype.val h
+
+/-- For `n ≠ 0`, `PSL(2, ℤ)` acts freely on `ℳₙ` by right multiplication. -/
+theorem TraceFormulaMatrixModule.isCancelSMul_mulOpposite (hn : n ≠ 0) :
+    IsCancelSMul PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) := by
+  simp only [isCancelSMul_iff_eq_one_of_smul_eq, MulOpposite.forall, QuotientGroup.forall_mk,
+    MulOpposite.op_eq_one_iff, QuotientGroup.eq_one_iff,
+    Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+  exact fun _ _ ↦ eq_one_or_eq_neg_one_of_op_smul_eq hn
+
+/-- Left and right multiplication on `ℳₙ` commute. -/
+instance TraceFormulaMatrixModule.instSMulCommClassPSL (n : ℤ) :
+    SMulCommClass PSL(2, ℤ) PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) where
+  smul_comm g _ x := (rightPSL_smul g _ x).symm
+
+/-- Left multiplication by a determinant-one matrix commutes with right multiplication on `ℳₙ`. -/
+instance TraceFormulaMatrixModule.instSMulCommClassSL (n : ℤ) :
+    SMulCommClass SL(2, ℤ) PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) where
+  smul_comm g := smul_comm (g : PSL(2, ℤ))
+
+/-- Conjugation makes `ℳₙ` a `ConjAct PSL(2, ℤ)`-set: `ConjAct.toConjAct g` sends the class of
+`A` to the class of `g * A * g⁻¹`, that is `x` to `g • x <• g⁻¹`. -/
+instance TraceFormulaMatrixModule.instMulActionConjActPSL (n : ℤ) :
+    MulAction (ConjAct PSL(2, ℤ)) (TraceFormulaMatrixModule n) :=
+  MulAction.compHom _ ((TraceFormulaMatrixModule.conjPSLHom n).comp
+    ConjAct.ofConjAct.toMonoidHom)
+
+/-- The conjugation action of `ConjAct PSL(2, ℤ)` is `conjPSL`. -/
+theorem TraceFormulaMatrixModule.toConjAct_smul_eq_conjPSL (g : PSL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) : ConjAct.toConjAct g • x = x.conjPSL g :=
+  TraceFormulaMatrixModule.conjPSLHom_apply g x
+
+/-- Conjugation by `g` is left multiplication by `g` and right multiplication by `g⁻¹`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.toConjAct_smul (g : PSL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
+    ConjAct.toConjAct g • x = g • x <• g⁻¹ := by
+  rw [op_smul_eq_rightPSL_inv, inv_inv]
+  exact toConjAct_smul_eq_conjPSL g x
+
+/-! ### Elements given by weights -/
+
+namespace TraceFormulaMatrixModule
+
+open MonoidAlgebra
+
+variable {k : Type*} [Semiring k] {n : ℤ}
+
+/-- The element of `k[ℳₙ]` in which the class of `A` has coefficient `w A + w (-A)`, for a weight
+`w` on integral matrices that vanishes on every determinant-`n` matrix with an entry larger than
+`B` in absolute value. Its coefficients are given by `coeff_ofWeight_mk`. -/
+noncomputable def ofWeight (n : ℤ) (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B) :
+    k[TraceFormulaMatrixModule n] :=
+  .ofCoeff <| .ofSupportFinite
+    (Quotient.lift (fun A : TraceFormulaMatrix n ↦ w A.1 + w (-A.1))
+      fun _ _ ↦ by rintro (rfl | rfl) <;> simp [add_comm]) <| by
+    -- a class in the support has a representative of nonzero weight
+    refine ((FixedDetMatrices.finite_setOf_abs_le n B).image mk).subset fun x hx ↦ ?_
+    induction x using TraceFormulaMatrixModule.induction with | h A => ?_
+    obtain h | h : w A.1 ≠ 0 ∨ w (-A.1) ≠ 0 := by
+      by_contra! h
+      simp [h] at hx
+    exacts [⟨A, hw A h, rfl⟩, ⟨-A, hw (-A) h, mk_neg A⟩]
+
+/-- The coefficient of the class of `A` in `ofWeight n w B hw` is `w A + w (-A)`. -/
+@[simp]
+theorem coeff_ofWeight_mk (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
+    (A : TraceFormulaMatrix n) :
+    (ofWeight n w B hw).coeff (mk A) = w A.1 + w (-A.1) := by
+  simp [ofWeight, Finsupp.ofSupportFinite_coe]
+
+
+end TraceFormulaMatrixModule
 
 end TauCeti

@@ -87,13 +87,14 @@ private theorem fderivWithin_chart_apply_mpullbackWithin
     (fderivWithin 𝕜 (p ∘ (extChartAt I x).symm) (Set.range I) z)
         (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z) =
       mvfderiv I p ((extChartAt I x).symm z) (U ((extChartAt I x).symm z)) := by
-  rw [← mfderivWithin_eq_fderivWithin]
   -- `TangentSpace I _` is definitionally the model space `E`; no public rewrite lemma exposes the
   -- coordinate composition in the form needed by the chain rule.
-  change (mfderiv[Set.range I] (p ∘ (extChartAt I x).symm) z)
-    ((mfderiv[Set.range I] (extChartAt I x).symm z).inverse
-      (U ((extChartAt I x).symm z))) =
-    (mfderiv% p ((extChartAt I x).symm z)) (U ((extChartAt I x).symm z))
+  suffices h : (mfderiv[Set.range I] (p ∘ (extChartAt I x).symm) z)
+      ((mfderiv[Set.range I] (extChartAt I x).symm z).inverse
+        (U ((extChartAt I x).symm z))) =
+      (mfderiv% p ((extChartAt I x).symm z)) (U ((extChartAt I x).symm z)) by
+    rw [mfderivWithin_eq_fderivWithin] at h
+    exact h
   have hunique : UniqueMDiffAt[Set.range I] z := by
     rw [uniqueMDiffWithinAt_iff_uniqueDiffWithinAt]
     exact I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range x hz)
@@ -250,7 +251,12 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
   change (mfderiv% f x) ((mfderiv[Set.range I]
     (extChartAt I x).symm (extChartAt I x x)) Z) = _
   rw [← hchain_apply]
-  simp only [mfderivWithin_eq_fderivWithin]
+  rw [mfderivWithin_eq_fderivWithin]
+  -- The rewrite leaves `(fromTangentSpace _).symm ∘L fderivWithin … ∘L fromTangentSpace _`,
+  -- typed at the `TangentSpace` instances. Mathlib has no evaluation lemma for
+  -- `NormedSpace.fromTangentSpace` (it is `tangentSpaceCastModel`, the identity up to those
+  -- instances), so no rewrite strips it; the plain `fderivWithin` on `E` is reached by unfolding.
+  change (fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) (extChartAt I x x)) Z = _
   -- Pull the vector fields back and invoke the normed-space bracket identity.
   have hfcoord := contMDiffWithinAt_iff_contDiffWithinAt.mp
     (contMDiffAt_iff_source.mp (hf.of_le hn))

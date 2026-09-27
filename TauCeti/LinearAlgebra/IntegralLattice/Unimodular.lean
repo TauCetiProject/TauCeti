@@ -126,7 +126,8 @@ theorem integralForm_eq_dualPairingEquiv_comp :
   rw [L.integralForm_cast]
   symm
   rw [LinearMap.comp_apply]
-  convert L.dualPairingEquiv_cast (Submodule.inclusion L.le_dualCarrier x) y using 1 <;> rfl
+  convert L.dualPairingEquiv_cast (Submodule.inclusion L.le_dualCarrier x) y using 1
+  rfl
 
 /-- A nondegenerate integral lattice is unimodular exactly when its restricted pairing with the
 module dual is bijective. -/

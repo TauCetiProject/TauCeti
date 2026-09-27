@@ -74,9 +74,8 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
   have hR : eLpNorm f 1 μ = ↑R := (ENNReal.coe_toNNReal hf_Lp_ne_top).symm
   -- Step 1: the liminf of the norms is a.e. finite.
   have hbdd_liminf : ∀ᵐ ω ∂μ, (liminf (fun n => ENorm.enorm (μ[f | 𝔽 n] ω)) atTop) < ⊤ := by
-    refine ae_bdd_liminf_atTop_of_eLpNorm_bdd (R := R) one_ne_zero (fun n => ?_) (fun n => ?_)
-    · exact stronglyMeasurable_condExp.measurable.mono (h_le n) le_rfl
-    · simpa [hR] using hL1_bdd n
+    refine ae_bdd_liminf_atTop_of_eLpNorm_bdd (R := R) one_ne_zero fun n => ?_
+    simpa [hR] using hL1_bdd n
   -- Step 2: finitely many upcrossings a.e. for every rational interval.
   have hupcross : ∀ᵐ ω ∂μ, ∀ a b : ℚ, a < b →
       upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 n]) ω < ⊤ := by
@@ -88,7 +87,7 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
     filter_upwards [hbdd_liminf, hupcross] with ω hω₁ hω₂
     have hω₁' : (liminf (fun n => ENNReal.ofNNReal (nnnorm (μ[f | 𝔽 n] ω))) atTop) < ⊤ := by
       simpa only [enorm_eq_nnnorm] using hω₁
-    exact tendsto_of_uncrossing_lt_top hω₁' hω₂
+    exact tendsto_of_upcrossings_lt_top hω₁' hω₂
   -- Step 4: choose the limit and read off its two properties.
   classical
   let Xlim : Ω → ℝ := fun ω =>

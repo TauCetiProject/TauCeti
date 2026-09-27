@@ -409,7 +409,7 @@ theorem finrank_hom_res_mackeyToH_mul_left_mul_right (A : FDRep k H) (B : FDRep 
       resFDRep ((mackeySubgroup s K H).subgroupOf H) A :=
     Action.mkIso (Action.ρAut A (⟨h₁, hh₁⟩ : H)⁻¹) <|
       res_ρ_comm_ρAut_hom A (⟨h₁, hh₁⟩ : H)⁻¹ _ _ _ fun y => Subtype.ext (by
-        simp only [MonoidHom.coe_coe, Subgroup.coe_subtype, coe_mackeySubgroupOfCongr_apply,
+        simp only [MonoidHom.coe_ofClass, Subgroup.coe_subtype, coe_mackeySubgroupOfCongr_apply,
           Subgroup.coe_mul, Subgroup.coe_inv]
         group)
   -- and on the twisted target, where `h₁` cancels against the representative, by the action
@@ -419,7 +419,7 @@ theorem finrank_hom_res_mackeyToH_mul_left_mul_right (A : FDRep k H) (B : FDRep 
       (Action.res (FGModuleCat k) (mackeyToH s K H)).obj B :=
     Action.mkIso (Action.ρAut B ⟨h₂, hh₂⟩) <|
       res_ρ_comm_ρAut_hom B ⟨h₂, hh₂⟩ _ _ _ fun y => Subtype.ext (by
-        simp only [MonoidHom.coe_coe, coe_mackeyToH_apply, coe_mackeySubgroupOfCongr_apply,
+        simp only [MonoidHom.coe_ofClass, coe_mackeyToH_apply, coe_mackeySubgroupOfCongr_apply,
           Subgroup.coe_mul]
         group)
   rw [← finrank_hom_res_mulEquiv (mackeySubgroupOfCongr hh₁ hh₂ s)]

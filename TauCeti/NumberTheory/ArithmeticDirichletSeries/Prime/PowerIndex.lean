@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 
 /-!
 # Indexing the prime-power ideals by a prime and an exponent
@@ -62,6 +63,11 @@ def idealPrimePowerOf (P : HeightOneSpectrum (𝓞 K)) (k : ℕ) : IdealPrimePow
 theorem coe_idealPrimePowerOf (P : HeightOneSpectrum (𝓞 K)) (k : ℕ) :
     ((P.idealPrimePowerOf k : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = P.asIdeal ^ (k + 1) :=
   (rfl)
+
+/-- The two representations of the positive power `P ^ (e + 1)` as a nonzero ideal agree. -/
+theorem coe_idealPrimePowerOf_eq_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
+    (P.idealPrimePowerOf e : (Ideal (𝓞 K))⁰) = P.primeIdealPow (e + 1) :=
+  Subtype.ext (by simp)
 
 @[simp]
 theorem primePowerBase_idealPrimePowerOf (P : HeightOneSpectrum (𝓞 K)) (k : ℕ) :

@@ -27,6 +27,10 @@ an eigenvector.
 * `HeckeRing.GL2.exists_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew`: the same
   conclusion as proportionality — if one of them is nonzero, the other is a scalar multiple of
   it.
+* `HeckeRing.GL2.exists_eq_smul_of_commute_heckeRingHomCusp_of_mem_cuspFormsNew`: an
+  endomorphism commuting with the good Hecke operators and preserving the new part acts on such a
+  nonzero eigenvector by a scalar, which is `±1` when the endomorphism squares to the identity on
+  it. This is the common step behind the Fricke and Atkin–Lehner signs of a newform.
 * `HeckeRing.GL2.cuspFormsNewEigenspace`: that simultaneous eigenspace, as a submodule, with
   `HeckeRing.GL2.cuspFormsNewEigenspace_def` and
   `HeckeRing.GL2.mem_cuspFormsNewEigenspace_iff`.
@@ -116,6 +120,42 @@ theorem exists_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew
     (qExpansion 1 (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1, ?_⟩
   rw [mul_smul, smul_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew ha hf hg,
     inv_smul_smul₀ ha0]
+
+/-- **A commuting involution acts on a good Hecke eigenvector of the new part by a sign.** Let
+`W` be an endomorphism of `S_k(N, χ)` commuting with the good Hecke operators `Tₚ`, `p ∤ N`, and
+carrying the new part into itself. A nonzero good Hecke eigenvector `f` in the new part on which
+`W` squares to the identity, `W (W f) = f`, satisfies `W f = ε • f` with `ε = 1` or `ε = -1`:
+`W f` is a good eigenvector in the new part with the eigenvalues of `f`, hence a multiple `ε • f`
+by multiplicity one, and `W (W f) = f` forces `ε ^ 2 = 1`. -/
+theorem exists_eq_smul_of_commute_heckeRingHomCusp_of_mem_cuspFormsNew
+    {W : Module.End ℂ (cuspFormCharSpace k χ)}
+    (hW : ∀ p : ℕ, p.Prime → Nat.Coprime p N →
+      Commute W (heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p)))
+    (hWnew : ∀ g : cuspFormCharSpace k χ,
+      (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k →
+        (W g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k)
+    {f : cuspFormCharSpace k χ}
+    (ha : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
+      heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) f = c • f)
+    (hf : (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k)
+    (hf0 : (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ≠ 0) (hWW : W (W f) = f) :
+    ∃ ε : ℂ, (ε = 1 ∨ ε = -1) ∧ W f = ε • f := by
+  -- `W f` has the good Hecke eigenvalues of `f`, and lies in the new part
+  have heig (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N) : ∃ c : ℂ,
+      heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) f = c • f ∧
+        heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) (W f) = c • W f := by
+    obtain ⟨c, hc⟩ := ha p hp hpN
+    refine ⟨c, hc, ?_⟩
+    rw [← Module.End.mul_apply, ← (hW p hp hpN).eq, Module.End.mul_apply, hc, map_smul]
+  -- so multiplicity one makes it a multiple of `f`
+  obtain ⟨ε, hε⟩ := exists_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew heig hf
+    (hWnew f hf) hf0
+  have hε' : W f = ε • f := Subtype.ext hε
+  refine ⟨ε, ?_, hε'⟩
+  -- and `W (W f) = f` forces `ε * ε = 1`
+  have hf0' : f ≠ 0 := fun h0 ↦ hf0 (Submodule.coe_eq_zero.2 h0)
+  rw [hε', map_smul, hε', smul_smul] at hWW
+  exact mul_self_eq_one_iff.1 (smul_left_injective ℂ hf0' (hWW.trans (one_smul ℂ f).symm))
 
 /-! ### Multiplicity one in dimensional form -/
 

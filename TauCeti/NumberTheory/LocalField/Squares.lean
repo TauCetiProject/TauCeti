@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 import TauCeti.Algebra.Group.Units.Basic
+import TauCeti.RingTheory.Finite.ArtinSchreier
 
 /-!
 # Deep units are squares, at the sharp depth
@@ -39,6 +40,11 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 
 * `TauCeti.unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2) + 1) ⊆ (Kˣ)²`.
 * `TauCeti.normalizedValuation_even_of_isSquare`: squares have even normalized valuation.
+* `TauCeti.isSquare_of_eq_one_add_four_mul`: a residue Artin–Schreier condition makes
+  `1 + 4m` a square.
+* `TauCeti.valuation_one_add_four_mul`: in residue characteristic two, `1 + 4m` is a unit.
+* `TauCeti.not_mem_range_of_eq_sq_mul_one_add_four_mul`: a nonsquare of the form
+  `ζ² (1 + 4m)` has residue of `m` outside the Artin–Schreier range.
 * `TauCeti.not_unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2)) ⊄ (Kˣ)²`.
 * `TauCeti.exists_mem_unitFiltration_not_isSquare`: a nonsquare witness in
   `U(K, 2 v_K(2))`.
@@ -67,7 +73,7 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 
 public section
 
-open ValuativeRel IsNonarchimedeanLocalField
+open ValuativeRel IsNonarchimedeanLocalField IsLocalRing
 
 namespace TauCeti
 
@@ -102,6 +108,14 @@ theorem span_four_eq_maximalIdeal_pow (h2 : (2 : K) ≠ 0) :
   rw [← he, ← span_natCast_eq_maximalIdeal_pow K 4 h4]
   norm_num
 
+/-- In characteristic different from two, the valuation of `4` is that of `π ^ (2 v_K(2))`, for
+an irreducible element `π` of `𝒪[K]`. -/
+theorem valuation_four_eq_pow (h2 : (2 : K) ≠ 0) {π : 𝒪[K]} (hπ : Irreducible π) :
+    valuation K (4 : K) = valuation K (π : K) ^ (2 * natCastValuation K 2 h2) := by
+  have h := valuation_natCast_eq_pow hπ 2 h2
+  rw [Nat.cast_ofNat] at h
+  rw [show (4 : K) = 2 * 2 by norm_num, map_mul, pow_mul', sq, h]
+
 /-- Every unit of depth `2 v_K(2) + 1` is a square. This includes dyadic local fields;
 only characteristic two itself is excluded. -/
 theorem unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
@@ -121,18 +135,94 @@ theorem unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
   apply Units.ext
   simpa [pow_two, haU.unit_spec, ← hux] using congrArg (fun z : 𝒪[K] ↦ (z : K)) ha.symm
 
+/-- A unit `w = 1 + 4m` is a square if the residue of `m` lies in the range of
+`t ↦ t² + t`. -/
+theorem isSquare_of_eq_one_add_four_mul (h2 : (2 : K) ≠ 0) {w : Kˣ} {m : 𝒪[K]}
+    (hw : (w : K) = 1 + 4 * m) (hwv : valuation K (w : K) = 1)
+    (hm : residue 𝒪[K] m ∈ Set.range (fun t : 𝓀[K] => t ^ 2 + t)) : IsSquare w := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
+  have hπ1 : valuation K (π : K) < 1 :=
+    Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
+  obtain ⟨t, ht⟩ := hm
+  obtain ⟨s, rfl⟩ := residue_surjective t
+  simp only at ht
+  -- `μ = m - (s² + s)` lies in `𝓂[K]`.
+  have hμ : m - (s ^ 2 + s) ∈ 𝓂[K] := by
+    rw [← residue_eq_zero_iff, map_sub, map_add, map_pow, ht, sub_self]
+  set μ : K := ((m - (s ^ 2 + s) : 𝒪[K]) : K) with hμdef
+  have hμv : valuation K μ ≤ valuation K (π : K) := by
+    have h := (Set.ext_iff.mp (hπ.maximalIdeal_eq_setOfPred_le_v_coe (valuation K)) _).mp hμ
+    simpa [hμdef] using h
+  have h4 := valuation_four_eq_pow h2 hπ
+  have h4μ : valuation K (4 * μ) ≤ valuation K (π : K) ^ (2 * natCastValuation K 2 h2 + 1) := by
+    rw [map_mul, h4, pow_succ]
+    exact mul_le_mul' le_rfl hμv
+  have h4μlt : valuation K (4 * μ) < 1 :=
+    h4μ.trans_lt (pow_lt_one₀ zero_le hπ1 (Nat.succ_ne_zero _))
+  have hid : (w : K) = (1 + 2 * (s : K)) ^ 2 + 4 * μ := by
+    rw [hw, hμdef]
+    push_cast
+    ring
+  -- Hence `1 + 2s` is a unit.
+  have hsv : valuation K ((1 + 2 * (s : K)) ^ 2) = 1 := by
+    rw [show (1 + 2 * (s : K)) ^ 2 = (w : K) - 4 * μ by rw [hid]; ring,
+      Valuation.map_sub_eq_of_lt_left _ (hwv ▸ h4μlt), hwv]
+  have hs0 : 1 + 2 * (s : K) ≠ 0 := by
+    rintro h
+    simp [h] at hsv
+  set σ : Kˣ := Units.mk0 _ hs0 with hσ
+  -- `w / (1 + 2s)²` has depth `2 v_K(2) + 1`, so it is a square by the local square theorem.
+  have hmem : w * (σ ^ 2)⁻¹ ∈ unitFiltration K (2 * natCastValuation K 2 h2 + 1) := by
+    rw [mem_unitFiltration_succ_valuation _ _ π hπ]
+    have hsub : ((w * (σ ^ 2)⁻¹ : Kˣ) : K) - 1 = 4 * μ / (1 + 2 * (s : K)) ^ 2 := by
+      rw [Units.val_mul, Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val, hσ, Units.val_mk0,
+        hid]
+      field_simp
+      ring
+    rw [hsub, map_div₀, hsv, div_one, map_pow]
+    exact h4μ
+  obtain ⟨z, hz⟩ := unitFiltration_le_range_powMonoidHom_two h2 hmem
+  rw [powMonoidHom_apply] at hz
+  refine ⟨z * σ, ?_⟩
+  rw [← sq, mul_pow, hz]
+  group
+
+/-- In residue characteristic two, `4 ∈ 𝓂[K]`, so every `1 + 4n` with `n ∈ 𝒪[K]` is a unit. -/
+@[simp]
+theorem valuation_one_add_four_mul (h2 : (2 : K) ≠ 0) (he : 0 < natCastValuation K 2 h2)
+    (n : 𝒪[K]) : valuation K (1 + 4 * (n : K)) = 1 := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
+  refine (valuation K).map_one_add_of_lt ?_
+  rw [map_mul, valuation_four_eq_pow h2 hπ]
+  calc valuation K (π : K) ^ (2 * natCastValuation K 2 h2) * valuation K (n : K)
+      ≤ valuation K (π : K) ^ (2 * natCastValuation K 2 h2) * 1 :=
+        mul_le_mul' le_rfl ((Valuation.mem_integer_iff _ _).mp n.2)
+    _ < 1 := by
+        rw [mul_one]
+        exact pow_lt_one₀ zero_le (Valuation.integer.v_irreducible_lt_one hπ) (by omega)
+
+/-- In residue characteristic two, if a nonsquare is `ζ² (1 + 4n)` with `n ∈ 𝒪[K]`, the residue of
+`n` lies outside the range of `t ↦ t² + t`. -/
+theorem not_mem_range_of_eq_sq_mul_one_add_four_mul (h2 : (2 : K) ≠ 0)
+    (he : 0 < natCastValuation K 2 h2) {a ζ : Kˣ} {n : 𝒪[K]} (ha : ¬IsSquare a)
+    (hn : (a : K) = (ζ : K) ^ 2 * (1 + 4 * n)) :
+    residue 𝒪[K] n ∉ Set.range (fun t : 𝓀[K] => t ^ 2 + t) := by
+  intro hmem
+  have hval : ((a * (ζ ^ 2)⁻¹ : Kˣ) : K) = 1 + 4 * n := by
+    rw [Units.val_mul, Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val, hn]
+    field_simp
+  have h := isSquare_of_eq_one_add_four_mul h2 hval
+    (hval ▸ valuation_one_add_four_mul h2 he n) hmem
+  exact ha (by simpa using h.mul (IsSquare.sq ζ))
+
 /-- The local square theorem is sharp: not every unit of depth `2 v_K(2)` is a square. In
 residue characteristic two the witness is `1 + 4c` for any `c` whose residue is not of the form
 `t² + t`; for `K = ℚ₂` this says that `5 ∈ 1 + 4ℤ₂` is not a square. In odd residue
 characteristic the depth is zero and the statement is that some unit is not a square. -/
 theorem not_unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     ¬ unitFiltration K (2 * natCastValuation K 2 h2) ≤ (powMonoidHom 2 : Kˣ →* Kˣ).range := by
-  -- The Artin–Schreier map `t ↦ t ^ 2 + t` of the finite residue field identifies `0` and `-1`,
-  -- so it is not surjective.
-  obtain ⟨a, ha⟩ : ∃ a : 𝓀[K], ∀ t, t ^ 2 + t ≠ a := by
-    by_contra! h
-    have hinj := Finite.injective_iff_surjective.mpr h
-    exact one_ne_zero (neg_eq_zero.mp (hinj (a₁ := (-1 : 𝓀[K])) (a₂ := 0) (by ring)))
+  obtain ⟨a, ha_range⟩ := exists_not_mem_range_sq_add_self (𝓀[K])
+  have ha : ∀ t : 𝓀[K], t ^ 2 + t ≠ a := fun t ht => ha_range ⟨t, ht⟩
   obtain ⟨c, rfl⟩ := IsLocalRing.residue_surjective a
   -- `1 + 4c` is a unit: otherwise `2c` would reduce to a solution of `t ^ 2 + t = c`.
   have hu : IsUnit (1 + 4 * c) := by
@@ -165,7 +255,7 @@ theorem not_unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
 squares. -/
 theorem exists_mem_unitFiltration_not_isSquare (h2 : (2 : K) ≠ 0) :
     ∃ u : Kˣ, u ∈ unitFiltration K (2 * natCastValuation K 2 h2) ∧ ¬IsSquare u := by
-  obtain ⟨u, hu, hsq⟩ := SetLike.not_le_iff_exists.mp
+  obtain ⟨u, hu, hsq⟩ := IsConcreteLE.not_le_iff_exists.mp
     (not_unitFiltration_le_range_powMonoidHom_two h2)
   exact ⟨u, hu, by
     simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm]

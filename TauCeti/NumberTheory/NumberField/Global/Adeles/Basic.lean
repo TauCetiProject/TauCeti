@@ -17,7 +17,10 @@ finite adele ring of `R`.  Both are defined as type synonyms, so the Hausdorff p
 underlying products is not found by instance search.  This file records it, so that closedness of
 discrete subgroups and separation of quotients apply to the adele ring.  For the same reason
 `Prod.fst_mul` does not apply to adeles, so the file also records that the infinite component of a
-product of adeles is the product of the infinite components (`NumberField.AdeleRing.fst_mul`).
+product of adeles is the product of the infinite components (`NumberField.AdeleRing.fst_mul`),
+and that the embeddings of a completion at an infinite place into the infinite adele ring and into
+the adele ring are continuous (`NumberField.InfiniteAdeleRing.continuous_ofCompletion`,
+`NumberField.AdeleRing.continuous_ofCompletion`).
 
 It also upgrades Mathlib's ring equivalence between the infinite adele ring and the Minkowski
 mixed space to a homeomorphism.  Each local factor is isometric to `ℝ` or `ℂ`, so the product
@@ -146,10 +149,39 @@ theorem InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace [NumberField 
 instance AdeleRing.instT2Space : T2Space (AdeleRing R K) :=
   inferInstanceAs <| T2Space (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
 
+/-- The infinite component of the diagonal embedding into the adele ring. -/
+@[simp]
+theorem AdeleRing.algebraMap_fst (x : K) :
+    (algebraMap K (AdeleRing R K) x).1 = algebraMap K (InfiniteAdeleRing K) x :=
+  rfl
+
+/-- The finite component of the diagonal embedding into the adele ring. -/
+@[simp]
+theorem AdeleRing.algebraMap_snd (x : K) :
+    (algebraMap K (AdeleRing R K) x).2 =
+      algebraMap K (IsDedekindDomain.FiniteAdeleRing R K) x :=
+  rfl
+
 variable {R K} in
 /-- The infinite component of a product of adeles is the product of their infinite components. -/
 @[simp]
 theorem AdeleRing.fst_mul (a b : AdeleRing R K) : (a * b).1 = a.1 * b.1 :=
   rfl
+
+/-- The embedding of the completion at an infinite place into the infinite adele ring is
+continuous: it is the coordinate inclusion `Pi.mulSingle w`. -/
+@[continuity, fun_prop]
+theorem InfiniteAdeleRing.continuous_ofCompletion (w : InfinitePlace K) :
+    Continuous (InfiniteAdeleRing.ofCompletion w) := by
+  classical
+  exact (continuous_mulSingle w).congr fun x ↦
+    funext fun w' ↦ (InfiniteAdeleRing.ofCompletion_apply w x w').symm
+
+/-- The embedding of the completion at an infinite place into the adele ring is continuous. -/
+@[continuity, fun_prop]
+theorem AdeleRing.continuous_ofCompletion (w : InfinitePlace K) :
+    Continuous (AdeleRing.ofCompletion R K w) :=
+  ((InfiniteAdeleRing.continuous_ofCompletion K w).prodMk continuous_const).congr fun x ↦
+    (AdeleRing.ofCompletion_apply R K w x).symm
 
 end NumberField

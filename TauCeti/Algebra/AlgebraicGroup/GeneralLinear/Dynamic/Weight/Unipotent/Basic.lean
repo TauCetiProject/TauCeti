@@ -164,6 +164,5 @@ theorem quotientPointsHom_weightUnipotentPointsIso_inv_app_apply (w : Fin N → 
       (mapWeightUnipotent_id R w) (mapWeightUnipotent_comp R w)
       (mem_weightUnipotentSubgroup_iff R w) (coe_mapWeightUnipotent_apply R w)
       (CommAlgCat.of R A) g) using 1
-  rfl
 
 end TauCeti.GeneralLinear.Dynamic

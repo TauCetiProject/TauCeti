@@ -22,6 +22,8 @@ This is the general (compositum) case; the base case `n = 1` is `ncard_primesOve
 
 ## Main results
 
+* `NumberField.map_eq_self_of_legendreSym_eq_one`: the decomposition group of a prime above `p`
+  fixes the square root of every quadratic residue mod `p`.
 * `NumberField.ncard_primesOver_multiquadratic_iff`: the multiquadratic prime-splitting
   law — `p` splits completely in `K = ℚ(√d₁, …, √dₙ)` iff every `dᵢ` is a quadratic residue
   mod `p`.
@@ -150,9 +152,11 @@ private theorem map_ne_neg_of_legendreSym_eq_one (d : ℤ) (r : K) (hr : r ^ 2 =
   · exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp (by exact_mod_cast h2))
   · exact hpa' ha
 
-/-- Backward core (pointwise): if `p` is odd and `d` is a quadratic residue mod `p`, then every
-`σ` in the decomposition group of `Q` fixes the generator `r`. -/
-private theorem decompositionGroup_fixes_gen (d : ℤ) (r : K) (hr : r ^ 2 = algebraMap ℤ K d)
+/-- **The decomposition group fixes the square root of a residue.** If `d` is a quadratic residue
+mod the odd prime `p` (with `p ∤ d`), then every `σ` in the decomposition group of a prime `Q`
+above `p` fixes the square root `r` of `d`. Equivalently, an automorphism moving `r` moves every
+prime above `p`. -/
+theorem map_eq_self_of_legendreSym_eq_one (d : ℤ) (r : K) (hr : r ^ 2 = algebraMap ℤ K d)
     {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) (hqr : legendreSym p d = 1)
     (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
     {σ : K ≃ₐ[ℚ] K} (hσ : σ ∈ stabilizer (K ≃ₐ[ℚ] K) Q) : σ r = r := by
@@ -177,7 +181,7 @@ private theorem stabilizer_eq_bot_of_forall_legendreSym_eq_one {ι : Type*} (d :
   -- Each `σ` in the stabilizer fixes every generator `r i`, and these generate `K = ℚ(rᵢ)`,
   -- so `σ = 1` by an adjoin induction.
   have hfix : ∀ i, σ (r i) = r i :=
-    fun i => decompositionGroup_fixes_gen (d i) (r i) (hr i) hodd (hqr i) Q hσ
+    fun i => map_eq_self_of_legendreSym_eq_one (d i) (r i) (hr i) hodd (hqr i) Q hσ
   refine AlgEquiv.ext fun x => ?_
   rw [AlgEquiv.one_apply]
   have hx : x ∈ (⊤ : IntermediateField ℚ K) := IntermediateField.mem_top

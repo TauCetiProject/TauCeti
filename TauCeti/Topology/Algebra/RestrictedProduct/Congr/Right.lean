@@ -25,6 +25,8 @@ project (`ImperialCollegeLondon/FLT`, file
 Mercuri. The continuity results are the two directions of FLT's
 `ContinuousMulEquiv.restrictedProductCongrRight`.
 
+The general statements have additive counterparts, such as `addRestrictedProductCongrRight`.
+
 ## References
 
 * N. Bourbaki, *General Topology*.
@@ -45,6 +47,9 @@ variable [∀ i, Group (G i)]
 
 /-- The multiplicative equivalence of restricted products induced by coordinatewise equivalences
 that eventually carry the reference subgroups bijectively onto one another. -/
+@[to_additive addRestrictedProductCongrRight /-- The additive equivalence of restricted products
+induced by coordinatewise additive equivalences that eventually carry the reference subgroups
+bijectively onto one another. -/]
 def restrictedProductCongrRight {H : ι → Type w} [∀ i, Group (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i ≃* H i)
@@ -66,7 +71,7 @@ def restrictedProductCongrRight {H : ι → Type w} [∀ i, Group (H i)]
     exact map_mul (φ i) (x i) (y i)
 
 /-- The forward change-of-factors equivalence applies the given equivalence in each coordinate. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongrRight_apply]
 theorem restrictedProductCongrRight_apply {H : ι → Type w} [∀ i, Group (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i ≃* H i)
@@ -76,7 +81,7 @@ theorem restrictedProductCongrRight_apply {H : ι → Type w} [∀ i, Group (H i
   rfl
 
 /-- The inverse change-of-factors equivalence applies the inverse equivalence in each coordinate. -/
-@[simp]
+@[to_additive (attr := simp) addRestrictedProductCongrRight_symm_apply]
 theorem restrictedProductCongrRight_symm_apply {H : ι → Type w} [∀ i, Group (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i ≃* H i)
@@ -87,6 +92,7 @@ theorem restrictedProductCongrRight_symm_apply {H : ι → Type w} [∀ i, Group
 
 /-- The forward change-of-factors equivalence is continuous when its coordinate maps are
 continuous. -/
+@[to_additive continuous_addRestrictedProductCongrRight]
 theorem continuous_restrictedProductCongrRight {H : ι → Type w} [∀ i, Group (H i)]
     [∀ i, TopologicalSpace (G i)] [∀ i, TopologicalSpace (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
@@ -101,6 +107,7 @@ theorem continuous_restrictedProductCongrRight {H : ι → Type w} [∀ i, Group
 
 /-- The inverse change-of-factors equivalence is continuous when the inverse coordinate maps are
 continuous. -/
+@[to_additive continuous_addRestrictedProductCongrRight_symm]
 theorem continuous_restrictedProductCongrRight_symm {H : ι → Type w} [∀ i, Group (H i)]
     [∀ i, TopologicalSpace (G i)] [∀ i, TopologicalSpace (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
@@ -117,6 +124,7 @@ theorem continuous_restrictedProductCongrRight_symm {H : ι → Type w} [∀ i, 
 the induced homomorphism of restricted products is surjective exactly when the equivalences are
 eventually bijections of the reference subgroups. So the `Set.BijOn` hypothesis of
 `restrictedProductCongrRight` is not only sufficient but necessary. -/
+@[to_additive addRestrictedProductMap_surjective_iff_eventually_bijOn]
 theorem restrictedProductMap_surjective_iff_eventually_bijOn {H : ι → Type w}
     [∀ i, Group (H i)] (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i ≃* H i)

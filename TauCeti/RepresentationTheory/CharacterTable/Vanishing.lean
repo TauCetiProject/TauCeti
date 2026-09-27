@@ -35,8 +35,9 @@ its own: this is `TauCeti.sum_eq_zero_or_norm_sum_eq_card_of_isIntegral`.
 
 The classical use of the dichotomy is Burnside's `pᵃqᵇ` theorem, which applies it to an element
 whose class has prime-power size. Turning the second alternative `‖χ(g)‖ = χ(1)` into the
-statement that `ρ g` is a scalar — the equality case of the triangle inequality for a sum of roots
-of unity — is a separate step and is not proved here.
+statement that `ρ g` is a scalar is the equality case of the triangle inequality for a sum of roots
+of unity, `Representation.exists_apply_eq_smul_of_norm_char_eq_finrank`; combined with the dichotomy
+it gives `Representation.char_eq_zero_or_exists_apply_eq_smul`, the form of Isaacs' Theorem 3.8.
 
 ## Main statements
 
@@ -46,6 +47,9 @@ of unity — is a separate step and is not proved here.
 * `Representation.char_eq_zero_or_norm_char_eq_finrank` and its bundled form
   `FDRep.char_eq_zero_or_norm_char_eq_finrank`: **Burnside's vanishing theorem**, the dichotomy
   `χ(g) = 0 ∨ ‖χ(g)‖ = χ(1)`.
+* `Representation.char_eq_zero_or_exists_apply_eq_smul` and its bundled form
+  `FDRep.char_eq_zero_or_exists_apply_eq_smul`: the same dichotomy with the second alternative
+  read as `ρ g` being a scalar.
 
 ## References
 
@@ -140,6 +144,18 @@ theorem _root_.Representation.char_eq_zero_or_norm_char_eq_finrank
   · exact Or.inl (hsum.trans h0)
   · exact Or.inr (by rw [hsum, h1, hcard])
 
+/-- **Burnside's vanishing theorem, scalar form** (Isaacs, Theorem 3.8). If the conjugacy class of
+`g` has size coprime to the degree of an irreducible complex representation `ρ`, then either its
+character vanishes at `g`, or `ρ g` is a scalar `μ • 1`, that is, `g` lies in the centre `Z(χ)` of
+the character (Isaacs, Lemma 2.27). -/
+theorem _root_.Representation.char_eq_zero_or_exists_apply_eq_smul
+    (ρ : Representation ℂ G V) [ρ.IsIrreducible] {g : G}
+    (h : (Nat.card (ConjClasses.mk g).carrier).Coprime (finrank ℂ V)) :
+    ρ.character g = 0 ∨ ∃ μ : ℂ, ρ g = μ • 1 :=
+  (ρ.char_eq_zero_or_norm_char_eq_finrank h).imp_right fun h1 =>
+    (ρ.exists_apply_eq_smul_of_norm_char_eq_finrank (isOfFinOrder_of_finite g).orderOf_pos.ne'
+      (pow_orderOf_eq_one g) h1).imp fun _ => And.right
+
 end Complex
 
 section Bundled
@@ -160,6 +176,14 @@ theorem _root_.FDRep.char_eq_zero_or_norm_char_eq_finrank (X : FDRep ℂ G)
     (h : (Nat.card (ConjClasses.mk g).carrier).Coprime (finrank ℂ X)) :
     X.character g = 0 ∨ ‖X.character g‖ = finrank ℂ X :=
   Representation.char_eq_zero_or_norm_char_eq_finrank X.ρ h
+
+/-- **Burnside's vanishing theorem, scalar form**, for a bundled finite-dimensional complex
+representation. -/
+theorem _root_.FDRep.char_eq_zero_or_exists_apply_eq_smul (X : FDRep ℂ G)
+    [_root_.Representation.IsIrreducible X.ρ] {g : G}
+    (h : (Nat.card (ConjClasses.mk g).carrier).Coprime (finrank ℂ X)) :
+    X.character g = 0 ∨ ∃ μ : ℂ, X.ρ g = μ • 1 :=
+  Representation.char_eq_zero_or_exists_apply_eq_smul X.ρ h
 
 end Bundled
 

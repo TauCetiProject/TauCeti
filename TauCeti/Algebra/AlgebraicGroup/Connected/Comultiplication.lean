@@ -91,8 +91,7 @@ private theorem map_tensorSquare_comul_apply
           ((f.comp (Algebra.TensorProduct.includeRight
             (R := k) (A := B) (B := B))).comp q)).ofConv x := by
   rw [AlgHom.convMul_apply]
-  induction Coalgebra.comul (R := k) x using TensorProduct.induction_on with
-  | zero => simp
+  induction Coalgebra.comul (R := k) x using TensorProduct.inductionOn with
   | add x y hx hy => simp [hx, hy]
   | tmul x y =>
       rw [Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.lift_tmul]

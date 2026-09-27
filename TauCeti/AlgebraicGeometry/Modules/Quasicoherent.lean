@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Dual
+public import TauCeti.AlgebraicGeometry.Modules.Pullback
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Subcategory
 
 /-!
@@ -18,12 +19,17 @@ Finite free sheaves give the basic dualizable objects in the quasicoherent categ
 sheaf on a finite type is self-dual there, with evaluation and coevaluation inherited from the
 corresponding exact pairing in `X.Modules`.
 
+Quasi-coherence is stable under pullback along an arbitrary morphism of schemes, so pullback of
+modules restricts to quasicoherent sheaves.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf X`: quasicoherent sheaves on `X`;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.free`: the finite free quasicoherent sheaf;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.exactPairingFree`: finite free quasicoherent
-  sheaves are self-dual.
+  sheaves are self-dual;
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pullback f`: the pullback of quasicoherent
+  sheaves along a morphism of schemes `f`.
 -/
 
 public section
@@ -127,6 +133,36 @@ theorem coevaluation_free_hom (I : Type u) [Finite I] :
     (η_ (free X I) (free X I)).hom =
       η_ (free X I).obj (free X I).obj :=
   ObjectProperty.exactPairingFullSubcategory_coevaluation_hom _ _
+
+variable {X} in
+/-- The pullback of quasicoherent sheaves along a morphism of schemes `f : X ⟶ Y`. -/
+def pullback {Y : Scheme.{u}} (f : X ⟶ Y) : QuasicoherentSheaf Y ⥤ QuasicoherentSheaf X :=
+  (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf).lift
+    ((_root_.SheafOfModules.isQuasicoherent Y.ringCatSheaf).ι ⋙ Scheme.Modules.pullback f)
+    fun E ↦ Scheme.Modules.isQuasicoherent_pullback f E.obj
+
+variable {X} in
+/-- The underlying sheaf of the pullback of a quasicoherent sheaf is its pullback as an
+`𝒪_Y`-module. -/
+@[simp]
+lemma pullback_obj_obj {Y : Scheme.{u}} (f : X ⟶ Y) (E : QuasicoherentSheaf Y) :
+    ((pullback f).obj E).obj = (Scheme.Modules.pullback f).obj E.obj :=
+  (rfl)
+
+variable {X} in
+/-- Pullback acts on a morphism of quasicoherent sheaves by the underlying pullback of
+modules. -/
+@[simp]
+lemma pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : QuasicoherentSheaf Y} (φ : E ⟶ F) :
+    ((pullback f).map φ).hom =
+      eqToHom (pullback_obj_obj f E) ≫ (Scheme.Modules.pullback f).map φ.hom ≫
+        eqToHom (pullback_obj_obj f F).symm := by
+  cases pullback_obj_obj f E
+  cases pullback_obj_obj f F
+  -- `simp` cannot remove the identities here: after `cases` the composite mixes morphisms of
+  -- `X.Modules` and of `SheafOfModules X.ringCatSheaf`, which `simp` does not identify. The
+  -- remaining equation is the defining equation of the lifted functor `pullback f` on morphisms.
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 end QuasicoherentSheaf
 

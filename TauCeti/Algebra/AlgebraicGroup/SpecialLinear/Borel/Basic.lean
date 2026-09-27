@@ -6,6 +6,8 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel
+public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Borel
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation

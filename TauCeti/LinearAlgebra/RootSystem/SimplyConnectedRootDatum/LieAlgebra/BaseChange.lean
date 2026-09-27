@@ -312,10 +312,8 @@ private noncomputable def lieAlgebraBaseChangeIncl :
   __ := LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap
   map_lie' {x y} := by
     induction x with
-    | zero => simp
     | tmul a x =>
       induction y with
-      | zero => simp
       | tmul b y => simp [LieAlgebra.ExtendScalars.bracket_tmul]
       | add y z hy hz =>
         simp only [lie_add]
@@ -371,7 +369,6 @@ private theorem lieAlgebraBaseChangeHom_range :
   apply le_antisymm
   · rintro _ ⟨x, rfl⟩
     induction x with
-    | zero => simp
     | tmul a x =>
       simpa [lieAlgebraBaseChangeHom, lieAlgebraBaseChangeIncl] using
         (t.lieAlgebraBaseChange ht K).smul_mem a

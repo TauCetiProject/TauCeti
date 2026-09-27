@@ -98,7 +98,6 @@ private theorem equivFinsuppOfBasisRight_map_apply
       g (TensorProduct.equivFinsuppOfBasisRight (centerBasis (k := k) (H := H)) z i) := by
   classical
   induction z with
-  | zero => simp
   | tmul x y =>
       simp only [Algebra.TensorProduct.map_tmul,
         TensorProduct.equivFinsuppOfBasisRight_apply_tmul_apply, AlgHom.id_apply, map_smul]

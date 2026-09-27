@@ -128,6 +128,24 @@ theorem pointwiseQuotientPresheafProjection_ulift_app_apply
       ULift.up (((pointwiseQuotientPresheafProjection H I hI).app A) x.down) :=
   rfl
 
+/-- The pointwise quotient projection, transported along the presentation
+`pointwiseQuotientPresheafGrp_def`, is the group-object map of the group-valued projection. -/
+theorem pointwiseQuotientPresheafGrpProjection_comp_eqToHom
+    (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) (hI : I.IsNormal) :
+    pointwiseQuotientPresheafGrpProjection H I hI ≫
+        eqToHom (pointwiseQuotientPresheafGrp_def H I hI) =
+      groupFunctorGrpMap (Functor.whiskerRight (pointwiseQuotientPresheafProjection H I hI)
+        GrpCat.uliftFunctor.{u + 1, u}) := by
+  -- `Grp.forget` computes the underlying morphism of an `eqToHom` of group objects.
+  have e : (eqToHom (pointwiseQuotientPresheafGrp_def H I hI)).hom.hom =
+      eqToHom (congrArg (fun Z : Grp _ ↦ Z.X) (pointwiseQuotientPresheafGrp_def H I hI)) :=
+    eqToHom_map (Grp.forget (((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ ⥤ Type (u + 1)))
+      (pointwiseQuotientPresheafGrp_def H I hI)
+  apply Grp.hom_ext
+  rw [Grp.comp_hom_hom, e, pointwiseQuotientPresheafGrpProjection_hom_hom, Category.assoc,
+    Category.assoc, eqToHom_trans]
+  rfl
+
 /-- The fppf quotient sheaf associated to a normal Hopf ideal, as a group object in type-valued
 fppf sheaves.
 
@@ -181,6 +199,25 @@ theorem fppfQuotientProjection_hom
           (pointwiseQuotientPresheafGrpProjection H I hI).hom.hom ≫
             eqToHom (fppfQuotientSheaf_X_eq H I hI).symm := by
   rw [fppfQuotientProjection.eq_1]
+  rfl
+
+/-- The fppf quotient projection, transported along the presentation `fppfQuotientSheaf_def`, is
+the sheafification of the pointwise quotient projection as a group-object morphism. -/
+theorem fppfQuotientProjection_comp_eqToHom
+    (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) (hI : I.IsNormal) :
+    let F := presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))
+    let _ : F.Monoidal := Functor.Monoidal.ofChosenFiniteProducts F
+    fppfQuotientProjection H I hI ≫ eqToHom (fppfQuotientSheaf_def H I hI) =
+      F.mapGrp.map (pointwiseQuotientPresheafGrpProjection H I hI) := by
+  intro F _
+  -- `Grp.forget` computes the underlying morphism of an `eqToHom` of group objects.
+  have e : (eqToHom (fppfQuotientSheaf_def H I hI)).hom.hom =
+      eqToHom (congrArg (fun Z : Grp _ ↦ Z.X) (fppfQuotientSheaf_def H I hI)) :=
+    eqToHom_map (Grp.forget (Sheaf (CommAlgCat.fppfTopology R) (Type (u + 1))))
+      (fppfQuotientSheaf_def H I hI)
+  apply Grp.hom_ext
+  rw [Grp.comp_hom_hom, e, fppfQuotientProjection_hom, Category.assoc, Category.assoc,
+    eqToHom_trans]
   rfl
 
 /-- Maps from the fppf quotient sheaf to a group object in fppf sheaves are naturally equivalent

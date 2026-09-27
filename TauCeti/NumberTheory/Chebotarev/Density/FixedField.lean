@@ -100,19 +100,7 @@ theorem hasDirichletDensity_frobeniusPrimeSet_of_fixedField (C : ConjClasses (L 
       (ConjClasses.mk sigma.toFixedFieldAlgEquiv)).HasDirichletDensity (1 / orderOf sigma)) :
     (frobeniusPrimeSet K L C).HasDirichletDensity
       (Nat.card C.carrier / Nat.card (L ≃ₐ[K] L)) := by
-  have hord : (orderOf sigma : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (orderOf_pos sigma).ne'
-  have hcard : (Nat.card (L ≃ₐ[K] L) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hmul : ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ) *
-      ((Nat.card C.carrier * orderOf sigma : ℕ) : ℝ) = Nat.card (L ≃ₐ[K] L) := by
-    rw [← Nat.cast_mul, Nat.div_mul_cancel (C.card_carrier_mul_orderOf_dvd sigma hsigma)]
-  have hc : ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr (C.card_div_card_carrier_mul_orderOf_pos sigma hsigma).ne'
-  have hval : (1 / orderOf sigma : ℝ) /
-      ((Nat.card (L ≃ₐ[K] L) / (Nat.card C.carrier * orderOf sigma) : ℕ) : ℝ) =
-      (Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L) := by
-    rw [div_div, div_eq_div_iff (mul_ne_zero hord hc) hcard, one_mul, ← hmul]
-    push_cast
-    ring
-  exact hval ▸ (hasDirichletDensity_frobeniusPrimeSet_fixedField_iff C sigma hsigma).mp h
+  exact C.one_div_orderOf_div_card_div_card_carrier_mul_orderOf (K := ℝ) sigma hsigma ▸
+    (hasDirichletDensity_frobeniusPrimeSet_fixedField_iff C sigma hsigma).mp h
 
 end NumberField.Chebotarev

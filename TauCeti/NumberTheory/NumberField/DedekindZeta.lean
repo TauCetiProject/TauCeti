@@ -42,6 +42,8 @@ Galois extension, whose bad primes are the ramified ones.
 
 ## Main results
 
+* `TauCeti.setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re`: the closed half-plane
+  `Re s ≥ 1` lies in the half-plane of continuation.
 * `TauCeti.isBigO_card_idealsLE_sub`: the number of nonzero integral ideals of norm at most `x` is
   `ρ x + O(x ^ (1 - 1 / [K : ℚ]))`.
 * `TauCeti.exists_differentiableOn_eq_dedekindZeta_sub`: `ζ_K(s) - ρ / (s - 1)` extends
@@ -63,6 +65,13 @@ open Asymptotics Filter IsDedekindDomain NumberField TauCeti.GlobalNumberFields
 open scoped nonZeroDivisors
 
 namespace TauCeti
+
+/-- The closed half-plane `Re s ≥ 1` lies in the half-plane of the Dedekind zeta continuation. -/
+theorem setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re
+    (K : Type*) [Field K] [NumberField K] :
+    {s : ℂ | 1 ≤ s.re} ⊆ {s : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} :=
+  fun _ hs ↦
+    (sub_lt_self (1 : ℝ) (one_div_pos.mpr (Nat.cast_pos.mpr Module.finrank_pos))).trans_le hs
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -145,7 +154,7 @@ theorem exists_differentiableOn_eq_dedekindZeta_sub : ∃ G : ℂ → ℂ,
     LSeriesSummable.smul _ (LSeriesSummable_one_iff.mpr hs)
   have hs0 : s ≠ 1 := fun h ↦ by simp [h] at hs
   have hrs : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re :=
-    (sub_lt_self _ (one_div_pos.mpr (Nat.cast_pos.mpr Module.finrank_pos))).trans hs
+    setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs.le
   dsimp only
   rw [← LSeries_eq_mul_integral f hr hrs (hf ▸ hsζ.sub hs1) hO, ← hf, LSeries_sub hsζ hs1,
     LSeries_smul, LSeries_one_eq_riemannZeta hs, riemannZeta_eq_inv_sub_add hs0,

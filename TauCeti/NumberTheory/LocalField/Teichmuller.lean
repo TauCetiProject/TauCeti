@@ -94,14 +94,14 @@ theorem coe_teichmuller_apply (a : 𝓀[K]ˣ) :
   have hsection (b : 𝓀[K]ˣ) :
       residue 𝒪[K] ((Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K]) b : 𝒪[K]ˣ) : 𝒪[K]) =
         (b : 𝓀[K]) := by
-    rw [Units.coe_map, MonoidHom.coe_coe]
+    rw [Units.coe_map, MonoidHom.coe_ofClass]
     exact residue_teichmullerLift K b
   have h : Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K]) a =
       TauCeti.teichmuller 𝒪[K] a :=
     congrArg (fun f : 𝓀[K]ˣ →* 𝒪[K]ˣ ↦ f a)
       (TauCeti.eq_teichmuller 𝒪[K]
         (Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K])) hsection)
-  rw [← h, Units.coe_map, MonoidHom.coe_coe]
+  rw [← h, Units.coe_map, MonoidHom.coe_ofClass]
 
 /-- An element of `𝒪[K]` is `teichmullerLift K a` exactly when it reduces to `a` and is
 fixed by the `q`-th power map. -/
@@ -150,10 +150,10 @@ to the representative of its residue-field image. -/
 theorem _root_.AlgEquiv.smul_teichmullerLift (σ : L ≃ₐ[K] L) (a : 𝓀[L]) :
     σ • teichmullerLift L a =
       teichmullerLift L (σ • a) := by
-  rw [← AlgEquiv.integerRingAlgEquiv_apply]
+  rw [← AlgEquiv.integerRingEquiv_apply]
   apply (eq_teichmullerLift_iff L).2
   constructor
-  · rw [AlgEquiv.integerRingAlgEquiv_apply,
+  · rw [AlgEquiv.integerRingEquiv_apply,
       IsLocalRing.ResidueField.residue_smul, residue_teichmullerLift]
   · rw [← map_pow, teichmullerLift_pow_natCard]
 

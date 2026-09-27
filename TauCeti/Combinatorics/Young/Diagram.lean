@@ -16,9 +16,9 @@ public import Mathlib.Data.Multiset.Sort
 # Counting the cells of a Young diagram by rows
 
 Mathlib's `YoungDiagram.rowLens` records the lengths of the rows of a Young diagram.  This file
-counts the cells of a diagram row by row: the row lengths sum to the number of cells, and the
-first `k` row lengths sum to the number of cells lying in the first `k` rows, whether those
-lengths are summed as `∑ i ∈ Finset.range k, μ.rowLen i` or as `(μ.rowLens.take k).sum`.  Since
+counts the cells of a diagram row by row: the first `k` row lengths sum to the number of cells
+lying in the first `k` rows, whether those lengths are summed as
+`∑ i ∈ Finset.range k, μ.rowLen i` or as `(μ.rowLens.take k).sum`.  Since
 the rows exhaust the cells, the row lengths also determine the diagram
 (`YoungDiagram.rowLen_injective`).  Cutting the same count column by column,
 `YoungDiagram.card_filter_fst_lt_filter_snd_eq` counts the cells of the first `k` rows
@@ -46,13 +46,6 @@ by `YoungDiagram.mem_iff_of_colLen_le_one` and counted by
 public section
 
 namespace YoungDiagram
-
-/-- Transposing a Young diagram preserves its number of cells. -/
-@[simp]
-theorem card_transpose (μ : YoungDiagram) : μ.transpose.card = μ.card := by
-  apply Finset.card_equiv (Equiv.prodComm ℕ ℕ)
-  intro c
-  simp
 
 private theorem sum_list_range (f : ℕ → ℕ) (n : ℕ) :
     ((List.range n).map f).sum = ∑ i ∈ Finset.range n, f i := by
@@ -126,7 +119,7 @@ theorem sum_range_rowLen_eq_card_filter_fst (μ : YoungDiagram) (k : ℕ) :
       aesop
 
 /-- The cells of a Young diagram, counted over any range of rows that contains all of them.  This
-is `YoungDiagram.sum_rowLens` with the range of summation chosen by hand instead of being
+is `YoungDiagram.sum_rowLens_eq_card` with the range of summation chosen by hand instead of being
 the exact number of rows `μ.colLen 0`. -/
 theorem card_eq_sum_range_rowLen (μ : _root_.YoungDiagram) {N : ℕ} (hN : μ.colLen 0 ≤ N) :
     μ.card = ∑ i ∈ Finset.range N, μ.rowLen i := by
@@ -194,11 +187,6 @@ theorem sum_take_rowLens_eq_card_filter_fst (μ : YoungDiagram) (k : ℕ) :
   refine Finset.sum_subset hsub fun i hi hi' => ?_
   exact rowLen_eq_zero_of_colLen_le
     (by simpa [lt_min_iff, Finset.mem_range.mp hi] using Finset.mem_range.not.mp hi')
-
-/-- The sum of the row lengths of a Young diagram is its number of cells. -/
-@[simp]
-theorem sum_rowLens (μ : YoungDiagram) : μ.rowLens.sum = μ.card := by
-  rw [_root_.YoungDiagram.rowLens, sum_list_range, ← card_eq_sum_range_rowLen μ le_rfl]
 
 /-- The cells of a Young diagram lying in a fixed column and in one of the first `k` rows are the
 top `min k (colLen j)` cells of that column. -/

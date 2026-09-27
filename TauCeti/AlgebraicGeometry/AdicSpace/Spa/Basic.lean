@@ -5,8 +5,8 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.RingTheory.Valuation.Integral
 public import TauCeti.AlgebraicGeometry.AdicSpace.Cont.Basic
+import TauCeti.RingTheory.Valuation.Integral.Basic
 import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
@@ -120,22 +120,14 @@ theorem spa_antitone : Antitone (spa (A := A)) := fun _ _ hle ↦ by
 
 /-- Replacing a subring by its integral closure does not change the sub-unit valuation locus. -/
 @[simp]
-theorem spa_integralClosure (R : Subring A) :
-    spa (integralClosure R A).toSubring = spa R := by
+theorem spa_integralClosure (R : Subring A) : spa (integralClosure R A).toSubring = spa R := by
   ext v
-  rw [mem_spa_iff, mem_spa_iff]
-  refine and_congr_right fun _ ↦ ⟨fun h r hr ↦ ?_, fun h x hx ↦ ?_⟩
-  · exact h r (algebraMap_mem (integralClosure R A) ⟨r, hr⟩)
-  · let φ : R →+* v.valuation.integer :=
-      R.subtype.codRestrict v.valuation.integer fun r ↦ by
-        rw [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff]
-        exact h r r.2
-    rw [Subalgebra.mem_toSubring, mem_integralClosure_iff] at hx
-    have hint : IsIntegral v.valuation.integer x :=
-      hx.map_of_comp_eq φ (RingHom.id A) (by ext r; rfl)
-    have hxint := (Valuation.integer.integers v.valuation).mem_of_integral hint
-    rw [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff] at hxint
-    exact hxint
+  -- being sub-unit at `v` is membership of the valuation ring, which
+  -- `Valuation.integer.isIntegrallyClosedIn` makes integrally closed in `A`
+  have key (y : A) : v.toValuativeRel.vle y 1 ↔ y ∈ v.valuation.integer := by
+    rw [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff]
+  simp only [mem_spa_iff, key, ← IsConcreteLE.le_iff]
+  exact and_congr_right fun _ ↦ Subring.integralClosure_subring_le_iff
 
 /-- Replacing a subring by its topological closure does not change the adic spectrum: every point
 of `Spa (A, A⁺)` is already sub-unit on the closure of `A⁺`. This is the topological counterpart of

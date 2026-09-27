@@ -37,6 +37,8 @@ away from `i`, in which case `M` is `Sᵢ`.
   `M` vanishes away from `i`.
 * `TauCeti.outgoingMap_injective_or_forall_subsingleton`: hence the map collecting the arrows out
   of a source is injective, unless the representation is concentrated there.
+* `TauCeti.outgoingMap_injective_of_vertexPreReflection_nonneg`: nonnegativity of the reflected
+  dimension vector forces that outgoing map to be injective.
 * `TauCeti.outgoingMap_injective_of_indecomposable`: **the map collecting the arrows out of a
   source is injective for every indecomposable representation not isomorphic to the vertex simple
   there.**
@@ -141,6 +143,29 @@ theorem outgoingMap_injective_or_forall_subsingleton (hi : IsSource i) (hM : Ind
 
 end General
 
+/-! ### Injectivity from a nonnegative reflected dimension vector -/
+
+section Nonnegative
+
+variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
+variable {M : QuiverRep.{u, v, w, max v w x} k Q} {i : Q}
+variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
+
+/-- **A nonnegative reflected dimension vector forces the outgoing map to be injective.** For an
+indecomposable representation `M` and a source `i`, if the dimension vector of `M` reflected at
+`i` is nonnegative, then the outgoing map of `M` at `i` is injective. -/
+theorem outgoingMap_injective_of_vertexPreReflection_nonneg [DecidableEq Q]
+    (hi : IsSource i) (hM : Indecomposable M)
+    (h : 0 ≤ vertexPreReflection Q i fun j ↦ (dimVector M j : ℤ)) :
+    Function.Injective (outgoingMap M i) := by
+  rcases outgoingMap_injective_or_forall_subsingleton hi hM with hinj | hsub
+  · exact hinj
+  · rw [dimVector_eq_single_of_forall_subsingleton hi.path_self_eq_nil hM hsub,
+      vertexPreReflection_single_self Q hi.isEmpty_hom_self] at h
+    exact (by simpa using Pi.le_def.mp h i : False).elim
+
+end Nonnegative
+
 /-! ### The vertex simple as the exceptional case -/
 
 section VertexSimple
@@ -182,10 +207,9 @@ theorem dimVector_sourceReflectRep_of_indecomposable [DecidableEq Q] (hi : IsSou
 
 /-- **A representation whose dimension vector the simple reflection keeps nonnegative is not the
 vertex simple.** The dimension vector of `Sᵢ` is the simple dimension vector `αᵢ`, which the
-reflection at a loopless vertex `i` negates. This is the form in which the reflection induction
-rebuilding an indecomposable from a vertex simple checks the exceptional case above: what such an
-induction carries along is the nonnegativity of the successive dimension vectors, not a
-comparison with `Sᵢ`. -/
+reflection at a loopless vertex `i` negates. This universe-aligned comparison with `Sᵢ` complements
+`TauCeti.outgoingMap_injective_of_vertexPreReflection_nonneg`, the general-universe injectivity
+result used by the reflection induction. -/
 theorem not_nonempty_iso_simpleRep_of_vertexPreReflection_nonneg [DecidableEq Q]
     (hloop : IsEmpty (i ⟶ i)) (h : 0 ≤ vertexPreReflection Q i fun j ↦ (dimVector M j : ℤ)) :
     ¬ Nonempty (M ≅ simpleRep k Q i) := by

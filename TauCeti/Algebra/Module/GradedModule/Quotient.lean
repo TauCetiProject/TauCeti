@@ -26,15 +26,24 @@ In both cases the homogeneous projections are those of `M`, transported along th
 the quotient map respectively.  Combining the two gives the grading of a subquotient, such as the
 cohomology `ker d ⧸ im d` of a differential of degree one.
 
+The kernel of a homogeneous linear map is homogeneous
+(`TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker`), so it inherits a grading in the same way.
+The map may be linear over a larger ring `S` than the ring `R` of the grading, as for a
+differential over a polynomial ring whose variables move the degree; the kernel is then an
+`S`-module graded by `R`-submodules.
+
 ## Main definitions
 
 * `TauCeti.InternalGrading.submodule`: the grading of a homogeneous submodule.
+* `TauCeti.InternalGrading.ker`: the grading of the kernel of a homogeneous linear map.
 * `TauCeti.InternalGrading.quotient`: the grading of the quotient by a homogeneous submodule.
 
 ## Main results
 
 * `TauCeti.InternalGrading.coe_decompose_submodule`: homogeneous projection in a homogeneous
   submodule is homogeneous projection in the ambient module.
+* `TauCeti.InternalGrading.mem_ker_piece`: an element of the kernel of a homogeneous map is
+  homogeneous exactly when it is homogeneous in the source.
 * `TauCeti.InternalGrading.decompose_quotient_mk`: homogeneous projection commutes with the
   quotient map.
 * `TauCeti.InternalGrading.isHomogeneous_mkQ`: the quotient map has degree zero.
@@ -83,6 +92,39 @@ theorem isHomogeneous_subtype :
   LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using hx
 
 end Submodule
+
+section Ker
+
+variable {S N : Type*} [Semiring R] [Semiring S] [SMul R S]
+  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+  (G : InternalGrading R M) {H : InternalGrading R N} {f : M →ₗ[S] N} {r : ℤ}
+  (hf : LinearMap.IsHomogeneous f G.piece H.piece r)
+
+include hf in
+/-- The internal grading of the kernel of a homogeneous linear map: its degree-`p` piece consists
+of the elements of the kernel lying in the degree-`p` piece of `M`. -/
+noncomputable def ker : InternalGrading R (_root_.LinearMap.ker f) where
+  piece p := (G.piece p).comap ((_root_.LinearMap.ker f).subtype.restrictScalars R)
+  isInternal := DirectSum.isInternal_comap G.piece _ _ Subtype.val_injective
+    (fun _ _ ↦ Iff.rfl) fun p z ↦ ⟨⟨_, hf.isHomogeneous_ker p z.2⟩, rfl⟩
+
+/-- An element of the kernel of `f` is homogeneous of degree `p` exactly when it is homogeneous of
+degree `p` in `M`. -/
+@[simp]
+theorem mem_ker_piece {p : ℤ} {z : _root_.LinearMap.ker f} :
+    z ∈ (G.ker hf).piece p ↔ (z : M) ∈ G.piece p :=
+  Iff.rfl
+
+/-- Homogeneous projection in the kernel of `f` is homogeneous projection in `M`. -/
+@[simp]
+theorem coe_decompose_ker (p : ℤ) (z : _root_.LinearMap.ker f) :
+    ((decompose (G.ker hf).piece z p : _root_.LinearMap.ker f) : M) =
+      decompose G.piece (z : M) p :=
+  DirectSum.map_decompose_restrict G.piece (G.ker hf).piece
+    ((_root_.LinearMap.ker f).subtype.restrictScalars R) (fun _ _ ↦ Iff.rfl) p z
+
+end Ker
 
 section Quotient
 

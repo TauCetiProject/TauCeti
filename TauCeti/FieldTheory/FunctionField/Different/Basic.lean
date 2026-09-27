@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.Different
+public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 
 /-!
@@ -222,9 +222,7 @@ theorem differentExponent_def : differentExponent k F P' =
 theorem pow_dvd_differentIdeal_iff_le_differentExponent {n : ℕ} :
     (centerIntegralClosure k F P').asIdeal ^ n ∣ differentIdeal ((P'.restrict k F).integers)
         (integralClosure ((P'.restrict k F).integers) F') ↔ n ≤ differentExponent k F P' :=
-  (FiniteMultiplicity.of_prime_left
-    (Ideal.prime_of_isPrime (centerIntegralClosure k F P').ne_bot
-      (centerIntegralClosure k F P').isPrime) differentIdeal_ne_bot).pow_dvd_iff_le_multiplicity
+  pow_dvd_differentIdeal_iff_le_multiplicity _ (centerIntegralClosure k F P').ne_bot
 
 /-- **Dedekind's different theorem, first part** (Stichtenoth, Theorem 3.5.1(a)): the different
 exponent of a place is at least one less than its ramification index.  It is stated as
@@ -235,24 +233,17 @@ hypothesis beyond separability of `F' / F`, and in particular none on the residu
 theorem ramificationIdx_le_differentExponent_add_one :
     ramificationIdx F P' ≤ differentExponent k F P' + 1 := by
   have hS := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  set 𝔭 := (P'.restrict k F).center
-    (algebraMap_mem_integers_restrict (R := ((P'.restrict k F).integers)) k F P' hS)
-  set 𝔓 := centerIntegralClosure k F P' with h𝔓
-  have hlies : 𝔓.asIdeal.LiesOver 𝔭.asIdeal :=
-    center_liesOver (R := ((P'.restrict k F).integers)) k F P' hS
-  have hmax : 𝔭.asIdeal.IsMaximal := 𝔭.isPrime.isMaximal 𝔭.ne_bot
+  have hpbot : IsLocalRing.maximalIdeal ((P'.restrict k F).integers) ≠ ⊥ :=
+    IsDiscreteValuationRing.not_a_field _
   -- the ramification index of `P'` over `P` is the ramification index of the centres
-  have hidx : Ideal.ramificationIdx' (S := (integralClosure ((P'.restrict k F).integers) F'))
-      𝔭.asIdeal 𝔓.asIdeal = ramificationIdx F P' := by
-    rw [Ideal.ramificationIdx'_eq_ramificationIdx 𝔭.asIdeal 𝔓.asIdeal 𝔭.ne_bot,
-      ramificationIdx_eq_ramificationIdx_center (R := ((P'.restrict k F).integers)) k F P' hS,
-      h𝔓, centerIntegralClosure_def]
-  -- Mathlib's `𝔓^(e-1) ∣ 𝔡` for the extension of Dedekind domains `𝒪_P ⊆ 𝒪'_P`
-  have hdvd : 𝔓.asIdeal ^ (ramificationIdx F P' - 1) ∣ differentIdeal
-      ((P'.restrict k F).integers) (integralClosure ((P'.restrict k F).integers) F') :=
-    pow_sub_one_dvd_differentIdeal _ 𝔓.asIdeal _ 𝔭.ne_bot
-      (Ideal.dvd_iff_le.mpr (hidx ▸ Ideal.le_pow_ramificationIdx'))
-  have := (pow_dvd_differentIdeal_iff_le_differentExponent k F P').mp hdvd
+  have hidx : (centerIntegralClosure k F P').asIdeal.ramificationIdx
+      ((P'.restrict k F).integers) = ramificationIdx F P' := by
+    rw [centerIntegralClosure_def]
+    exact (ramificationIdx_eq_ramificationIdx_center
+      (R := ((P'.restrict k F).integers)) k F P' hS).symm
+  have := ramificationIdx_sub_one_le_multiplicity_differentIdeal _ hpbot
+    (centerIntegralClosure k F P').asIdeal
+  rw [differentExponent_def, ← hidx]
   have hpos := ramificationIdx_pos F P'
   omega
 

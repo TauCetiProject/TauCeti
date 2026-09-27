@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
+public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 
 /-!
 # Hilbert 90 for infinite Galois extensions
@@ -20,7 +23,8 @@ H¹(Gal(L/K), Lˣ) = 0.
 ```
 
 Specialised to a separable closure this is Hilbert 90 for the absolute Galois group,
-`H¹(G_K, (Kˢ)ˣ) = 0`, which is what makes the Kummer map `Kˣ → H¹(G_K, μₙ)` surjective.
+`H¹(G_K, (Kˢ)ˣ) = 0`, which is what makes the Kummer map `Kˣ → H¹(G_K, μₙ)` surjective for
+`n` positive and invertible in `K`.
 
 The proof passes to finite layers. An open normal subgroup `U` of `Gal(L/K)` has a fixed field `F`
 that is finite Galois over `K`; the infinite Galois correspondence identifies `Gal(L/K) ⧸ U` with
@@ -37,6 +41,7 @@ multiplicative `1`-cocycle `Gal(F/K) → Fˣ`, which is a coboundary by Noether'
   `Gal(L/K) ⧸ U` with coefficients `(Lˣ)^U`.
 * `TauCeti.subsingleton_H1_additive_units`: `H¹(Gal(L/K), Lˣ) = 0` for any Galois `L/K`.
 * `TauCeti.subsingleton_H1_unitsCoeff`: `H¹(G_K, (Kˢ)ˣ) = 0`.
+* `TauCeti.hilbert90`: the preceding vanishing for Mathlib's canonical continuous cohomology.
 
 ## References
 
@@ -48,6 +53,7 @@ public section
 namespace TauCeti
 
 open ContCohomology groupCohomology
+open CategoryTheory
 
 section FiniteLevel
 
@@ -129,5 +135,21 @@ variable (K : Type*) [Field K]
 instance subsingleton_H1_unitsCoeff :
     Subsingleton (H1 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
   subsingleton_H1_additive_units
+
+/-- **Hilbert 90 for the absolute Galois group**, stated for Mathlib's canonical continuous
+cohomology: `H¹(G_K, (Kˢ)ˣ) = 0` (NSW (6.2.1)). This is the form in which the vanishing feeds
+the canonical all-degree theory, where it makes the Kummer map `Kˣ → H¹(G_K, μₙ)` surjective for
+`n` positive and invertible in `K`. -/
+theorem hilbert90 :
+    Limits.IsZero (continuousCohomology 1
+      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) := by
+  let h : Subsingleton (DiscreteH1 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
+    (discreteH1Equiv (AbsoluteGaloisGroup K) (UnitsCoeff K)).toEquiv.subsingleton_congr.mpr
+      inferInstance
+  rw [← (explicitH1IsoContinuousCohomology
+    (AbsoluteGaloisGroup K) (UnitsCoeff K)).isZero_iff]
+  rw [Limits.IsZero.iff_id_eq_zero]
+  ext x
+  exact h.elim _ _
 
 end TauCeti

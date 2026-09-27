@@ -212,6 +212,19 @@ theorem simple_mem_parabolic_of_isReduced {J : Set B} :
     · exact hsa
     · exact ih hredω hωmem i hi
 
+/-- Every element `v ≠ 1` of `cs.parabolic J` has a right descent `i` with `i ∈ J`. This refines
+`CoxeterSystem.exists_rightDescent_of_ne_one`, which gives no control over the index. -/
+theorem exists_rightDescent_mem_of_mem_parabolic_of_ne_one {J : Set B} {v : W}
+    (hv : v ∈ cs.parabolic J) (hv₁ : v ≠ 1) : ∃ i ∈ J, cs.IsRightDescent v i := by
+  obtain ⟨ω, hred, hωJ, rfl⟩ := cs.exists_isReduced_wordProd_eq_of_mem_parabolic hv
+  obtain rfl | ⟨ω', i, rfl⟩ := List.eq_nil_or_concat' ω
+  · exact absurd cs.wordProd_nil hv₁
+  -- the last letter `i` of a reduced word is a right descent: deleting it shortens the word
+  refine ⟨i, hωJ i (by simp), ?_⟩
+  rw [IsRightDescent, hred.eq, cs.wordProd_append, cs.wordProd_singleton,
+    cs.simple_mul_simple_cancel_right, List.length_append, List.length_singleton]
+  exact Nat.lt_succ_of_le (cs.length_wordProd_le ω')
+
 /-! ### Minimal coset representatives -/
 
 /-- `u` is a **minimal coset representative** for the standard parabolic subgroup of `J` when it
@@ -229,116 +242,86 @@ theorem exists_isMinimalCosetRep (J : Set B) (w : W) :
   rw [hv₀, mul_assoc]
   exact Nat.find_le ⟨v₀ * v, mul_mem hv₀mem hv, rfl⟩
 
+/-- Let `u` be a minimal coset representative for `cs.parabolic J`, and let `v ∈ cs.parabolic J`
+satisfy `ℓ (u * v) = ℓ u + ℓ v`. If `s i ∈ cs.parabolic J` and `i` is not a right descent of `v`,
+then `i` is not a right descent of `u * v`. -/
+private theorem not_isRightDescent_mul_of_isMinimalCosetRep_aux {J : Set B} {u : W}
+    (hu : cs.IsMinimalCosetRep J u) {v : W} (hv : v ∈ cs.parabolic J) (huv : ℓ (u * v) = ℓ u + ℓ v)
+    {i : B} (hi : s i ∈ cs.parabolic J) (hvi : ¬ cs.IsRightDescent v i) :
+    ¬ cs.IsRightDescent (u * v) i := by
+  intro hdesc
+  obtain ⟨α, hαred, rfl⟩ := cs.exists_isReduced u
+  obtain ⟨ω, hωred, rfl⟩ := cs.exists_isReduced v
+  rw [← cs.wordProd_append] at huv hdesc
+  -- `IsReduced` is by definition a length equation; Mathlib has no introduction lemma for it.
+  have hcat : cs.IsReduced (α ++ ω) :=
+    show ℓ (π (α ++ ω)) = (α ++ ω).length by rw [huv, hαred.eq, hωred.eq, List.length_append]
+  obtain ⟨k, hk, hke, -⟩ := cs.exchangeCondition_right hcat hdesc
+  rw [List.length_append] at hk
+  rcases Nat.lt_or_ge k α.length with hkα | hkα
+  · -- Deleting a letter of `α` gives a shorter element of the coset of `π α`.
+    rw [List.eraseIdx_append_of_lt_length hkα, cs.wordProd_append, cs.wordProd_append] at hke
+    have hmin := hu _ (mul_mem (mul_mem hv hi) (inv_mem hv))
+    rw [← mul_assoc, ← mul_assoc, hke, mul_inv_cancel_right, hαred.eq] at hmin
+    have := cs.length_wordProd_le (α.eraseIdx k)
+    have := List.length_eraseIdx_add_one hkα
+    omega
+  · -- Deleting a letter of `ω` gives a word for `π ω * s i` shorter than `ℓ (π ω) + 1`.
+    rw [List.eraseIdx_append_of_length_le hkα, cs.wordProd_append, cs.wordProd_append,
+      mul_assoc] at hke
+    have hle := cs.length_wordProd_le (ω.eraseIdx (k - α.length))
+    rw [← mul_left_cancel hke, cs.not_isRightDescent_iff.mp hvi, hωred.eq] at hle
+    have := List.length_eraseIdx_add_one (by omega : k - α.length < ω.length)
+    omega
+
 /-- **Lengths add across a minimal coset representative.** If `u` has minimal length in
 `u · cs.parabolic J` and `v` lies in that parabolic subgroup, then `ℓ (u * v) = ℓ u + ℓ v`. -/
 theorem length_mul_of_isMinimalCosetRep {J : Set B} {u : W} (hu : cs.IsMinimalCosetRep J u)
     {v : W} (hv : v ∈ cs.parabolic J) : ℓ (u * v) = ℓ u + ℓ v := by
-  suffices H : ∀ n : ℕ, ∀ v ∈ cs.parabolic J, ℓ v ≤ n → ℓ (u * v) = ℓ u + ℓ v from
-    H (ℓ v) v hv le_rfl
-  intro n
-  induction n with
-  | zero =>
-    intro v _ hlen
-    rw [cs.length_eq_zero_iff.mp (Nat.le_zero.mp hlen)]
-    simp
+  obtain ⟨n, hn⟩ : ∃ n, ℓ v = n := ⟨_, rfl⟩
+  induction n generalizing v with
+  | zero => simp [cs.length_eq_zero_iff.mp hn]
   | succ n ih =>
-    intro v hv hlen
-    rcases Nat.lt_or_ge (ℓ v) (n + 1) with hlt | hge
-    · exact ih v hv (by omega)
-    have hvn : ℓ v = n + 1 := by omega
-    obtain ⟨ω, hred, hωJ, rfl⟩ := cs.exists_isReduced_wordProd_eq_of_mem_parabolic hv
-    have hωlen : ω.length = n + 1 := hred.eq.symm.trans hvn
-    obtain ⟨ω', j, rfl⟩ : ∃ ω' j, ω = ω' ++ [j] := by
-      rcases List.eq_nil_or_concat ω with rfl | ⟨L, b, rfl⟩
-      · simp at hωlen
-      · exact ⟨L, b, by simp⟩
-    have hω'len : ω'.length = n := by simpa using hωlen
-    have hjJ : j ∈ J := hωJ j (by simp)
-    have hω'J : ∀ i ∈ ω', i ∈ J := fun i hi => hωJ i (by simp [hi])
-    have hsplit : π (ω' ++ [j]) = π ω' * s j := by
-      rw [cs.wordProd_append, cs.wordProd_singleton]
-    have hv' : π ω' ∈ cs.parabolic J := cs.wordProd_mem_parabolic hω'J
-    have hω'red : cs.IsReduced ω' := by simpa using hred.take ω'.length
-    have hω'length : ℓ (π ω') = n := by rw [hω'red.eq, hω'len]
-    have hIH : ℓ (u * π ω') = ℓ u + n := by rw [ih (π ω') hv' (by omega), hω'length]
-    rw [hvn, hsplit, ← mul_assoc]
-    rcases cs.length_mul_simple (u * π ω') j with h1 | h1
-    · omega
-    exfalso
-    obtain ⟨α, hαred, hαu⟩ := cs.exists_isReduced u
-    have hαlen : α.length = ℓ u := by rw [hαu, hαred.eq]
-    have hprod : π (α ++ ω') = u * π ω' := by rw [cs.wordProd_append, ← hαu]
-    -- `IsReduced` is by definition a length equation; Mathlib has no introduction lemma for it.
-    have hcat : cs.IsReduced (α ++ ω') :=
-      show ℓ (π (α ++ ω')) = (α ++ ω').length from by
-        rw [hprod, hIH, List.length_append, hαlen, hω'len]
-    have hdesc : cs.IsRightDescent (π (α ++ ω')) j :=
-      cs.isRightDescent_iff.mpr (by rw [hprod]; omega)
-    obtain ⟨k, hk, hke, -⟩ := cs.exchangeCondition_right hcat hdesc
-    rw [List.length_append, hαlen, hω'len] at hk
-    have key : u * π ω' * s j = π ((α ++ ω').eraseIdx k) := by rw [← hprod]; exact hke
-    rcases Nat.lt_or_ge k α.length with hkα | hkα
-    · -- Deleting a letter of `α` produces a shorter representative of the same coset.
-      have h2 : π ((α ++ ω').eraseIdx k) = π (α.eraseIdx k) * π ω' := by
-        rw [List.eraseIdx_append_of_lt_length hkα, cs.wordProd_append]
-      have heq : u * (π ω' * s j * (π ω')⁻¹) = π (α.eraseIdx k) := by
-        rw [← mul_assoc, ← mul_assoc, key, h2, mul_assoc, mul_inv_cancel, mul_one]
-      have hz : π ω' * s j * (π ω')⁻¹ ∈ cs.parabolic J :=
-        mul_mem (mul_mem hv' (cs.simple_mem_parabolic hjJ)) (inv_mem hv')
-      have hmin := hu _ hz
-      rw [heq] at hmin
-      have hshort := cs.length_wordProd_le (α.eraseIdx k)
-      have hlen1 := List.length_eraseIdx_add_one hkα
-      omega
-    · -- Deleting a letter of `ω'` contradicts reducedness on the parabolic side.
-      have h2 : π ((α ++ ω').eraseIdx k) = u * π (ω'.eraseIdx (k - α.length)) := by
-        rw [List.eraseIdx_append_of_length_le hkα, cs.wordProd_append, ← hαu]
-      have h3 : π ω' * s j = π (ω'.eraseIdx (k - α.length)) :=
-        mul_left_cancel (a := u) (by rw [← mul_assoc, key, h2])
-      have hklt : k - α.length < ω'.length := by omega
-      have hle := cs.length_wordProd_le (ω'.eraseIdx (k - α.length))
-      rw [← h3] at hle
-      have hfull : ℓ (π ω' * s j) = n + 1 := by rw [← hsplit]; exact hvn
-      have hlen1 := List.length_eraseIdx_add_one hklt
-      omega
+    -- peel off a right descent `j ∈ J` of `v`; the claim for `v * s j` is the inductive hypothesis
+    obtain ⟨j, hj, hdesc⟩ := cs.exists_rightDescent_mem_of_mem_parabolic_of_ne_one hv fun h => by
+      simp [h] at hn
+    have hlen := cs.isRightDescent_iff.mp hdesc
+    have hvj : v * s j ∈ cs.parabolic J := mul_mem hv (cs.simple_mem_parabolic hj)
+    have hIH := ih hvj (by omega)
+    have h := cs.not_isRightDescent_iff.mp <|
+      cs.not_isRightDescent_mul_of_isMinimalCosetRep_aux hu hvj hIH (cs.simple_mem_parabolic hj)
+        (cs.isRightDescent_iff_not_isRightDescent_mul.mp hdesc)
+    rw [hIH, ← mul_assoc, cs.simple_mul_simple_cancel_right] at h
+    omega
+
+/-- Let `u` be a minimal coset representative for `cs.parabolic J` and let `v ∈ cs.parabolic J`.
+If `s i ∈ cs.parabolic J` and `i` is not a right descent of `v`, then `i` is not a right descent
+of `u * v`. See [Björner–Brenti, *Combinatorics of Coxeter Groups*, §2.4] and
+[Humphreys, *Reflection Groups and Coxeter Groups*, §1.10]. -/
+theorem not_isRightDescent_mul_of_isMinimalCosetRep {J : Set B} {u : W}
+    (hu : cs.IsMinimalCosetRep J u) {v : W} (hv : v ∈ cs.parabolic J) {i : B}
+    (hi : s i ∈ cs.parabolic J) (hvi : ¬ cs.IsRightDescent v i) :
+    ¬ cs.IsRightDescent (u * v) i :=
+  cs.not_isRightDescent_mul_of_isMinimalCosetRep_aux hu hv
+    (cs.length_mul_of_isMinimalCosetRep hu hv) hi hvi
 
 /-- Minimality in the coset is the absence of right descents inside `J`. -/
 @[simp]
 theorem isMinimalCosetRep_iff {J : Set B} {u : W} :
     cs.IsMinimalCosetRep J u ↔ ∀ i ∈ J, ¬ cs.IsRightDescent u i := by
-  refine ⟨fun hu i hi hdesc => ?_, fun hu => ?_⟩
-  · have hle := hu _ (cs.simple_mem_parabolic hi)
-    have := cs.isRightDescent_iff.mp hdesc
-    omega
-  obtain ⟨v₀, hv₀mem, hmin⟩ := cs.exists_isMinimalCosetRep J u
-  have hsplit : ℓ u = ℓ (u * v₀) + ℓ v₀⁻¹ := by
-    have h := cs.length_mul_of_isMinimalCosetRep hmin (inv_mem hv₀mem)
-    rwa [mul_assoc, mul_inv_cancel, mul_one] at h
-  by_cases hy : v₀⁻¹ = 1
-  · have hv0 : v₀ = 1 := by simpa using congrArg Inv.inv hy
-    rwa [hv0, mul_one] at hmin
-  exfalso
-  obtain ⟨ω, hred, hωJ, hprod⟩ :=
-    cs.exists_isReduced_wordProd_eq_of_mem_parabolic (inv_mem hv₀mem)
-  obtain ⟨ω', i, rfl⟩ : ∃ ω' i, ω = ω' ++ [i] := by
-    rcases List.eq_nil_or_concat ω with rfl | ⟨L, b, rfl⟩
-    · rw [cs.wordProd_nil] at hprod
-      exact absurd hprod.symm hy
-    · exact ⟨L, b, by simp⟩
-  have hiJ : i ∈ J := hωJ i (by simp)
-  have hω'mem : π ω' ∈ cs.parabolic J :=
-    cs.wordProd_mem_parabolic fun a ha => hωJ a (by simp [ha])
-  have hcat : π ω' * s i = v₀⁻¹ := by
-    rw [← hprod, cs.wordProd_append, cs.wordProd_singleton]
-  have hlen : ℓ v₀⁻¹ = ω'.length + 1 := by rw [← hprod, hred.eq]; simp
-  have hω'red : cs.IsReduced ω' := by simpa using hred.take ω'.length
-  have hlast : v₀⁻¹ * s i = π ω' := by
-    rw [← hcat, mul_assoc, cs.simple_mul_simple_self, mul_one]
-  have heq : u * s i = u * v₀ * π ω' := by
-    rw [← hlast, ← mul_assoc, mul_assoc u v₀ v₀⁻¹, mul_inv_cancel, mul_one]
-  have hfact : ℓ (u * s i) = ℓ (u * v₀) + ω'.length := by
-    rw [heq, cs.length_mul_of_isMinimalCosetRep hmin hω'mem, hω'red.eq]
-  exact hu i hiJ (cs.isRightDescent_iff.mpr (by omega))
+  refine ⟨fun hu i hi hdesc => (hu _ (cs.simple_mem_parabolic hi)).not_gt ?_, fun hu => ?_⟩
+  · rwa [IsRightDescent] at hdesc
+  -- write `u = m * y` with `m` minimal in the coset and `y` in the parabolic subgroup
+  obtain ⟨v₀, hv₀, hmin⟩ := cs.exists_isMinimalCosetRep J u
+  obtain ⟨m, y, hy, hm, rfl⟩ : ∃ m y, y ∈ cs.parabolic J ∧ cs.IsMinimalCosetRep J m ∧ u = m * y :=
+    ⟨u * v₀, v₀⁻¹, inv_mem hv₀, hmin, (mul_inv_cancel_right u v₀).symm⟩
+  rcases eq_or_ne y 1 with rfl | hy₁
+  · rwa [mul_one]
+  -- a right descent `i ∈ J` of `y ≠ 1` is then a right descent of `m * y`, since lengths add
+  obtain ⟨i, hiJ, hdesc⟩ := cs.exists_rightDescent_mem_of_mem_parabolic_of_ne_one hy hy₁
+  refine absurd (cs.isRightDescent_iff.mpr ?_) (hu i hiJ)
+  rw [mul_assoc, cs.length_mul_of_isMinimalCosetRep hm (mul_mem hy (cs.simple_mem_parabolic hiJ)),
+    cs.length_mul_of_isMinimalCosetRep hm hy, ← cs.isRightDescent_iff.mp hdesc, add_assoc]
 
 /-- **Every element of `W` factors uniquely as a minimal coset representative times an element of
 the standard parabolic subgroup.** The two lengths then add, by

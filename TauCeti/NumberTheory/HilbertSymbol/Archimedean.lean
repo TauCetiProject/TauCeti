@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 

@@ -67,28 +67,15 @@ theorem orderAt_eq_of_rationalUnitClass_eq (U : X.Opens) [Nonempty U]
     (hfg : Scheme.rationalUnitClass X U f = Scheme.rationalUnitClass X U g)
     (x : CodimensionOnePoint X) (hx : (x : X) ∈ U) :
     orderAt x f = orderAt x g := by
-  have hsections :
-      ((Scheme.toCartierDivisorSheaf X).hom.app (op U)).hom
-          ((Scheme.rationalUnitSectionsEquiv X U).symm f) =
-        ((Scheme.toCartierDivisorSheaf X).hom.app (op U)).hom
-          ((Scheme.rationalUnitSectionsEquiv X U).symm g) := by
-    simpa only [Scheme.rationalUnitClass_apply] using hfg
-  obtain ⟨r, hr⟩ := (Scheme.toCartierDivisorSheaf_app_eq_iff X _ _).mp hsections
-  have hr' : Additive.ofMul (Scheme.regularUnitToFunctionField X U (Additive.toMul r)) =
-      f - g := by
-    calc
-      _ = Scheme.rationalUnitSectionsEquiv X U
-          (((Scheme.toRationalUnitSheaf X).hom.app (op U)).hom r) := by
-        rw [← ofMul_toMul r]
-        exact (Scheme.rationalUnitSectionsEquiv_toRationalUnitSheaf_app X U
-          (Additive.toMul r)).symm
-      _ = Scheme.rationalUnitSectionsEquiv X U
-          ((Scheme.rationalUnitSectionsEquiv X U).symm f -
-            (Scheme.rationalUnitSectionsEquiv X U).symm g) := congrArg _ hr
-      _ = f - g := by simp
+  obtain ⟨r, hr⟩ := (Scheme.rationalUnitClass_eq_rationalUnitClass_iff X U
+    (Additive.toMul f) (Additive.toMul g)).mp hfg
+  have hr' : Additive.ofMul (Scheme.regularUnitToFunctionField X U r) = f - g := by
+    rw [eq_sub_iff_add_eq]
+    apply Additive.toMul.injective
+    rw [toMul_add, toMul_ofMul, hr]
   have hzero : orderAt x (f - g) = 0 := by
     rw [← hr']
-    exact orderAt_regularUnitToFunctionField U (Additive.toMul r) x hx
+    exact orderAt_regularUnitToFunctionField U r x hx
   rw [map_sub] at hzero
   omega
 
@@ -120,17 +107,9 @@ theorem existsUnique_orderAt (D : CartierDivisor X) (x : CodimensionOnePoint X) 
   let _ : Nonempty V := hVne
   let _ : Nonempty (U ⊓ V : X.Opens) := ⟨⟨x, hxU, hxV⟩⟩
   have heq : rationalUnitClass X (U ⊓ V : X.Opens) g =
-      rationalUnitClass X (U ⊓ V : X.Opens) h := by
-    calc
-      _ = (rationalUnitClass X U g) |_ (U ⊓ V : X.Opens) :=
-        (rationalUnitClass_restrict (X := X) (U := U) (V := U ⊓ V) inf_le_left g).symm
-      _ = (D |_ U) |_ (U ⊓ V : X.Opens) := congrArg (fun E ↦ E |_ _) hDg.symm
-      _ = D |_ (U ⊓ V : X.Opens) := TopCat.Presheaf.restrict_restrict _ _ _
-      _ = (D |_ V) |_ (U ⊓ V : X.Opens) :=
-        (TopCat.Presheaf.restrict_restrict _ _ _).symm
-      _ = (rationalUnitClass X V h) |_ (U ⊓ V : X.Opens) :=
-        congrArg (fun E ↦ E |_ _) hDh
-      _ = _ := rationalUnitClass_restrict (X := X) (U := V) (V := U ⊓ V) inf_le_right h
+      rationalUnitClass X (U ⊓ V : X.Opens) h :=
+    (rationalUnitClass_eq_of_le (f := Additive.toMul g) inf_le_left hDg.symm).trans
+      (rationalUnitClass_eq_of_le (f := Additive.toMul h) inf_le_right hDh.symm).symm
   rw [hn]
   exact (SchemeWeilDivisor.orderAt_eq_of_rationalUnitClass_eq _ g h heq x
     ⟨hxU, hxV⟩).symm
@@ -186,14 +165,10 @@ theorem orderAt_add (D E : CartierDivisor X) (x : CodimensionOnePoint X) :
       _ = (D |_ (U ⊓ V : X.Opens)) + (E |_ (U ⊓ V : X.Opens)) :=
         map_add ((cartierDivisorSheaf X).obj.map
           (homOfLE (le_top : (U ⊓ V : X.Opens) ≤ ⊤)).op).hom D E
-      _ = (rationalUnitClass X U f') |_ (U ⊓ V : X.Opens) +
-          (rationalUnitClass X V g') |_ (U ⊓ V : X.Opens) := by
-        rw [← hDf, ← hEg, TopCat.Presheaf.restrict_restrict,
-          TopCat.Presheaf.restrict_restrict]
       _ = rationalUnitClass X (U ⊓ V : X.Opens) f' +
-          rationalUnitClass X (U ⊓ V : X.Opens) g' := by
-        rw [rationalUnitClass_restrict (X := X) (U := U) (V := U ⊓ V) inf_le_left,
-          rationalUnitClass_restrict (X := X) (U := V) (V := U ⊓ V) inf_le_right]
+          rationalUnitClass X (U ⊓ V : X.Opens) g' := congrArg₂ (· + ·)
+        (rationalUnitClass_eq_of_le (f := Additive.toMul f') inf_le_left hDf.symm).symm
+        (rationalUnitClass_eq_of_le (f := Additive.toMul g') inf_le_right hEg.symm).symm
       _ = _ := (map_add (rationalUnitClass X (U ⊓ V : X.Opens)) f' g').symm
   have hxUV : (x : X) ∈ (U ⊓ V : X.Opens) := ⟨hxU, hxV⟩
   calc

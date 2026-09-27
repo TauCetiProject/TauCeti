@@ -70,15 +70,10 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 /-! ### The two `Lᵖ` components -/
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- The gradient of a smooth function is the Riesz representative of its Fréchet derivative, hence
-continuous.  This is what makes the product below measurable. -/
-theorem ContDiff.continuous_gradient (hpsi : ContDiff ℝ ∞ psi) : Continuous (∇ psi) := by
-  have heq : ∇ psi = fun x => (InnerProductSpace.toDual ℝ E).symm (fderiv ℝ psi x) := by
-    funext x
-    exact (hasFDerivAt_iff_hasGradientAt.1
-      ((hpsi.differentiable (by simp)) x).hasFDerivAt).gradient
-  rw [heq]
-  exact (InnerProductSpace.toDual ℝ E).symm.continuous.comp (hpsi.continuous_fderiv (by simp))
+/-- The gradient of a smooth function is continuous.  This is what makes the product below
+measurable. -/
+theorem ContDiff.continuous_gradient (hpsi : ContDiff ℝ ∞ psi) : Continuous (∇ psi) :=
+  (hpsi.gradient_right (m := ∞) (by simp)).continuous
 
 omit [FiniteDimensional ℝ E] in
 /-- The value component `ψ u` of the product is `Lᵖ`, because `ψ` is bounded. -/

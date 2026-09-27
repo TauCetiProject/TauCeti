@@ -195,9 +195,10 @@ theorem flat_quotient_laurentRelationIdeal
     (weightedRestrictedSubring_one_weight (k := 1) (A := UniformSpace.Completion S)))
     (fun x ↦ subringCongr_one_weight_weightedC x)
   -- it carries the relation ideal to the ideal of Lemma 8.31
-  have hmap : Ideal.span {algebraMap (UniformSpace.Completion S)
-        (restrictedMvPowerSeriesSubring 1 (UniformSpace.Completion S))
-        ((divBy t s : S) : UniformSpace.Completion S) - restrictedX 0}
+  have hmap : Ideal.span
+        {algebraMap (UniformSpace.Completion S)
+          (restrictedMvPowerSeriesSubring 1 (UniformSpace.Completion S))
+          ((divBy t s : S) : UniformSpace.Completion S) - restrictedX 0}
       = (laurentRelationIdeal P T s t S hden).map (RingEquiv.subringCongr
         (weightedRestrictedSubring_one_weight (k := 1)
           (A := UniformSpace.Completion S)) : _ →+* _) := by
@@ -825,24 +826,6 @@ end StructureMap
 section Refinement
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-
--- Over a Tate ring the localisation `A⟨T/s⟩` is Tate, because the image of a pseudouniformiser of
--- `A` is one.
-private theorem isTateRing_completion_locTopology_of_isTateRing [IsTateRing A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
-    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    letI := isHuberRing_locUniformSpace P T s S hden
-    IsTateRing (UniformSpace.Completion S) := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-  exact { toIsHuberRing := isHuberRing_completion_locTopology P T s S hden
-          exists_isPseudoUniformizer :=
-            ⟨_, hϖ.map (continuous_toCompletionLoc P T s S hden)⟩ }
 
 /-- **Wedhorn's Proposition 8.30 for a refinement, asking everything of `A⟨T/s⟩`.** The restriction
 map `A⟨T/s⟩ → A⟨T''/s''⟩` of a refinement is flat as soon as `B = A⟨T/s⟩` is Tate and strongly

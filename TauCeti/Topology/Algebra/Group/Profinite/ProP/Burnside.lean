@@ -10,7 +10,7 @@ import Mathlib.Order.Atoms.Finite
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 
 /-!
 # Burnside generation for pro-`p` groups
@@ -25,12 +25,19 @@ proper closed subgroup `H` of a profinite pro-`p` group, first choose an open no
 for which `H ⊔ U` is still proper. The image of `H` in the finite `p`-group `G/U` lies in a
 maximal subgroup. Its pullback is an open normal subgroup of index `p` containing `H`.
 
+As a consequence, a **Frattini cover** `φ : G → H` of a pro-`p` group `G`, that is a continuous
+homomorphism whose kernel lies in the Frattini subgroup, is a topological isomorphism as soon as it
+has a continuous homomorphic section `s`: the range of `s` is closed and generates `G` together
+with the Frattini subgroup, so `s` is surjective and is a two-sided inverse of `φ`.
+
 ## Main results
 
 * `IsProP.eq_top_of_forall_not_le_openNormalSubgroup_index_eq`: the index-`p` detection
   criterion for closed subgroups.
 * `IsProP.eq_top_of_sup_proPFrattini_eq_top`: the Frattini subgroup consists of
   non-generators.
+* `IsProP.continuousMulEquivOfLeftInverse`: a Frattini cover with a continuous homomorphic
+  section is a topological isomorphism, with the section as inverse.
 * `topologicallyGenerates_iff_frattiniQuotient`: a set generates topologically if and only if
   its image generates the Frattini quotient topologically.
 
@@ -43,7 +50,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 variable {p : ℕ} [hp : Fact p.Prime]
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
@@ -146,5 +153,57 @@ theorem topologicallyGenerates_iff_frattiniQuotient (hG : IsProP p G) (s : Set G
       rw [QuotientGroup.comap_map_mk', Subgroup.comap_top] at hcomap
       simpa [sup_comm] using hcomap
     exact hG.eq_top_of_sup_proPFrattini_eq_top hKclosed hsup
+
+/-! ### Frattini covers with a continuous homomorphic section -/
+
+namespace IsProP
+
+variable {H : Type v} [Group H] [TopologicalSpace H]
+
+/-- A continuous homomorphic section of a Frattini cover of a pro-`p` group is surjective, since
+its range is a closed subgroup generating the group together with the Frattini subgroup. -/
+theorem surjective_of_leftInverse_of_ker_le_proPFrattini (hG : IsProP p G) {φ : G →ₜ* H}
+    {s : H →ₜ* G} (hs : Function.LeftInverse φ s) (hker : φ.toMonoidHom.ker ≤ proPFrattini p G) :
+    Function.Surjective s := by
+  suffices h : s.toMonoidHom.range = ⊤ by simpa using MonoidHom.range_eq_top.mp h
+  apply hG.eq_top_of_sup_proPFrattini_eq_top
+  · rw [MonoidHom.coe_range]
+    exact hs.isClosed_range φ.continuous s.continuous
+  · refine top_unique fun x _ ↦ ?_
+    have hmem : (s (φ x))⁻¹ * x ∈ φ.toMonoidHom.ker := by
+      simp [MonoidHom.mem_ker, hs (φ x)]
+    have hx := Subgroup.mul_mem_sup
+      (MonoidHom.mem_range.mpr ⟨φ x, rfl⟩ : s (φ x) ∈ s.toMonoidHom.range) (hker hmem)
+    rwa [mul_inv_cancel_left] at hx
+
+/-- **A Frattini cover with a continuous homomorphic section is an isomorphism.** A continuous
+homomorphism `φ : G → H` out of a pro-`p` group `G`, whose kernel lies in the Frattini subgroup
+`Φ(G)` and which has a continuous homomorphic section `s`, is a topological isomorphism whose
+inverse is `s`. -/
+noncomputable def continuousMulEquivOfLeftInverse (hG : IsProP p G) (φ : G →ₜ* H) (s : H →ₜ* G)
+    (hs : Function.LeftInverse φ s) (hker : φ.toMonoidHom.ker ≤ proPFrattini p G) : G ≃ₜ* H where
+  toFun := φ
+  invFun := s
+  left_inv x := by
+    obtain ⟨y, rfl⟩ := hG.surjective_of_leftInverse_of_ker_le_proPFrattini hs hker x
+    exact congrArg s (hs y)
+  right_inv := hs
+  map_mul' := map_mul φ
+  continuous_toFun := φ.continuous
+  continuous_invFun := s.continuous
+
+@[simp]
+theorem continuousMulEquivOfLeftInverse_apply (hG : IsProP p G) (φ : G →ₜ* H) (s : H →ₜ* G)
+    (hs : Function.LeftInverse φ s) (hker : φ.toMonoidHom.ker ≤ proPFrattini p G) (x : G) :
+    hG.continuousMulEquivOfLeftInverse φ s hs hker x = φ x :=
+  (rfl)
+
+@[simp]
+theorem continuousMulEquivOfLeftInverse_symm_apply (hG : IsProP p G) (φ : G →ₜ* H) (s : H →ₜ* G)
+    (hs : Function.LeftInverse φ s) (hker : φ.toMonoidHom.ker ≤ proPFrattini p G) (y : H) :
+    (hG.continuousMulEquivOfLeftInverse φ s hs hker).symm y = s y :=
+  (rfl)
+
+end IsProP
 
 end TauCeti

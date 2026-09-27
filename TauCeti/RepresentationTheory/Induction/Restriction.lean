@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
+public import TauCeti.RepresentationTheory.FDRep
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Rep.Res
 
@@ -95,13 +96,13 @@ restriction along the inverse isomorphism.  This is the `Rep` analogue of Mathli
 The body is sealed; `resFunctorEquiv_functor` and `resFunctorEquiv_inverse` are the interface
 identifying its two functors with restriction. -/
 def resFunctorEquiv (e : H ≃* K) : Rep k K ≌ Rep k H :=
-  -- Mathlib's `MulEquiv.coe_monoidHom_comp_coe_monoidHom_symm` and its mirror, restated for
+  -- Mathlib's `MulEquiv.toMonoidHom_comp_toMonoidHom_symm` and its mirror, restated for
   -- `MulEquiv.toMonoidHom`: the coercion in those lemmas is `toMonoidHom` definitionally but not
   -- syntactically, so `rw` needs this form.
   have comp_symm : e.toMonoidHom.comp e.symm.toMonoidHom = MonoidHom.id K :=
-    MulEquiv.coe_monoidHom_comp_coe_monoidHom_symm e
+    MulEquiv.toMonoidHom_comp_toMonoidHom_symm e
   have symm_comp : e.symm.toMonoidHom.comp e.toMonoidHom = MonoidHom.id H :=
-    MulEquiv.coe_monoidHom_symm_comp_coe_monoidHom e
+    MulEquiv.toMonoidHom_symm_comp_toMonoidHom e
   CategoryTheory.Equivalence.mk (Rep.resFunctor e.toMonoidHom) (Rep.resFunctor e.symm.toMonoidHom)
     (eqToIso (by rw [← resFunctor_comp, comp_symm, resFunctor_id]))
     (eqToIso (by rw [← resFunctor_comp, symm_comp, resFunctor_id]))
@@ -230,12 +231,6 @@ section Character
 
 variable [Field k]
 
-/-- The character of a restriction is the restriction of the character. -/
-@[simp]
-theorem character_resFDRep (S : Subgroup G) (B : FDRep k G) (s : S) :
-    (resFDRep S B).character s = B.character (s : G) :=
-  rfl
-
 /-- Pulling the class function of a representation back along the inclusion of a subgroup gives
 the class function of the restricted representation: `ClassFunction.comap S.subtype` is
 restriction of class functions. -/
@@ -243,7 +238,10 @@ restriction of class functions. -/
 theorem ClassFunction.comap_subtype_ofFDRep (S : Subgroup G) (B : FDRep k G) :
     ClassFunction.comap S.subtype (ClassFunction.ofFDRep B) =
       ClassFunction.ofFDRep (resFDRep S B) :=
-  Subtype.ext (funext fun _ => by simp)
+  Subtype.ext (funext fun s => by
+    rw [ClassFunction.comap_apply, ClassFunction.ofFDRep_apply,
+      ClassFunction.ofFDRep_apply]
+    exact (FDRep.character_actionRes B S.subtype s).symm)
 
 end Character
 

@@ -23,10 +23,12 @@ Mathlib's `ShortComplex.homologyIsoCokernelLift` is the analogous statement for 
 `cokernel`, which says nothing about which topology that object carries; the point of the
 isomorphism below is that the topology is the quotient topology on a cokernel.
 
-Two consequences are recorded. The first is that the homology really is a quotient of the cycles:
-`ShortComplex.homologyπ_surjective` and `ShortComplex.homologyπ_eq_zero_iff` describe the class map
-elementwise, neither of which follows from `ShortComplex.homologyπ` being an epimorphism, since an
-epimorphism of topological modules need not be surjective.
+Two consequences are recorded. The first is that the cycles really are a submodule of the middle
+term and the homology really is a quotient of the cycles: `ShortComplex.iCycles_injective`,
+`ShortComplex.homologyπ_surjective` and `ShortComplex.homologyπ_eq_zero_iff` describe the cycle
+inclusion and the class map elementwise. The surjectivity does not follow from
+`ShortComplex.homologyπ` being an epimorphism, since an epimorphism of topological modules need
+not be surjective.
 
 The second is that homology in `TopModuleCat R` inherits discreteness: a short
 complex whose middle term is discrete has discrete cycles and discrete homology, and likewise
@@ -113,6 +115,13 @@ theorem homologyπ_eq_zero_iff {x : S.cycles} :
   rw [h, TopModuleCat.hom_cokerπ, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
   exact LinearMap.mem_range
 
+/-- The inclusion of the cycles of a short complex of topological modules into its middle term is
+injective: two cycles with the same underlying element of the middle term are equal, so equalities
+between cycles can be checked after applying `S.iCycles`. -/
+theorem iCycles_injective : Function.Injective S.iCycles.hom :=
+  ConcreteCategory.injective_of_mono_of_preservesPullback
+    ((forget₂ (TopModuleCat R) TopCat).map S.iCycles)
+
 /-- The cycles of a short complex of topological modules with discrete middle term are discrete. -/
 theorem discreteTopology_cycles [DiscreteTopology S.X₂] : DiscreteTopology S.cycles :=
   -- the point of the kernel fork is `TopModuleCat.ker S.g` by definition, but not syntactically,
@@ -145,6 +154,11 @@ theorem homologyπ_eq_zero_iff [K.HasHomology n] {m : ι} (hm : c.prev n = m)
     {x : K.cycles n} : K.homologyπ n x = 0 ↔ x ∈ Set.range (K.toCycles m n).hom := by
   subst hm
   exact ShortComplex.homologyπ_eq_zero_iff (K.sc n)
+
+/-- The inclusion of the degree-`n` cycles of a homological complex of topological modules into
+its degree-`n` term is injective. -/
+theorem iCycles_injective : Function.Injective (K.iCycles n).hom :=
+  ShortComplex.iCycles_injective (K.sc n)
 
 /-- A homological complex of topological modules that is discrete in degree `n` has discrete
 cycles in degree `n`. -/

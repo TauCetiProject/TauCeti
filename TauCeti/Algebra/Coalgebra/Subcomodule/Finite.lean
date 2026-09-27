@@ -68,8 +68,7 @@ private theorem coeff_rTensor_coact
         ((Comodule.coact (R := R) (C := C) (M := M)).rTensor C x) i =
       Comodule.coact (R := R) (C := C) (M := M)
         (TensorProduct.equivFinsuppOfBasisRight b x i) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul m c => simp
   | add x y hx hy => simp [hx, hy]
 
@@ -80,8 +79,7 @@ private theorem coeff_assoc_symm_tmul {ι : Type*} [DecidableEq ι] (b : Module.
         ((TensorProduct.assoc R M C C).symm (m ⊗ₜ[R] x)) i =
       m ⊗ₜ[R]
         TensorProduct.rid R C ((b.coord i).lTensor C x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | tmul c d => simp
   | add x y hx hy =>
       simp only [TensorProduct.tmul_add, map_add, Finsupp.add_apply, hx, hy]

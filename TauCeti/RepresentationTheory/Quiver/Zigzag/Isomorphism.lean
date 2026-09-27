@@ -38,6 +38,8 @@ what the transport lemmas below say, one constructor at a time.
   `TauCeti.DoubledQuiver.pathAlgebraEquiv_ofArrow` and
   `TauCeti.DoubledQuiver.pathAlgebraEquiv_backtrackElem`: the relabelling on the three families of
   elements the zigzag relations are written in.
+* `TauCeti.DoubledQuiver.pathAlgebraEquiv_mem_grade_iff`: the relabelling preserves path length,
+  hence the path-length grading.
 * `TauCeti.isQuadraticZigzagRelator_pathAlgebraEquiv` and
   `TauCeti.isZigzagRelator_pathAlgebraEquiv`: **the relators are matched**.
 * `TauCeti.nonisolatedZigzagQuotientEquiv_zigzagMk`: the induced isomorphism of quotients sends the
@@ -143,6 +145,25 @@ theorem pathAlgebraEquiv_symm (e : G ≃g H) :
   rw [pathAlgebraEquiv, PathAlgebra.mapAlgEquiv_symm, pathAlgebraEquiv,
     PathAlgebra.mapAlgEquiv_congr k rfl hsymm _ _ (map_toHom_comp_symm_toHom e.symm)
       (map_symm_toHom_comp_toHom e.symm)]
+
+/-- The relabelling carries a homogeneous element to a homogeneous element of the same degree. -/
+private theorem pathAlgebraEquiv_mem_grade (e : G ≃g H) {n : ℕ}
+    {x : pathAlgebra k (DoubledQuiver G)} (hx : x ∈ PathAlgebra.grade k (DoubledQuiver G) n) :
+    pathAlgebraEquiv k e x ∈ PathAlgebra.grade k (DoubledQuiver H) n := by
+  rw [← PathAlgebra.gradeBy_const_one] at hx ⊢
+  rw [pathAlgebraEquiv, PathAlgebra.mapAlgEquiv_apply]
+  exact PathAlgebra.mapAlgHom_mem_gradeBy k _ _ (fun _ => 1) hx
+
+/-- **The relabelling preserves the path-length grading**: it carries each path to a path of the
+same length. -/
+@[simp]
+theorem pathAlgebraEquiv_mem_grade_iff (e : G ≃g H) {n : ℕ}
+    {x : pathAlgebra k (DoubledQuiver G)} :
+    pathAlgebraEquiv k e x ∈ PathAlgebra.grade k (DoubledQuiver H) n ↔
+      x ∈ PathAlgebra.grade k (DoubledQuiver G) n := by
+  refine ⟨fun hx => ?_, pathAlgebraEquiv_mem_grade k e⟩
+  have h := pathAlgebraEquiv_mem_grade k e.symm hx
+  rwa [← pathAlgebraEquiv_symm, AlgEquiv.symm_apply_apply] at h
 
 end DoubledQuiver
 

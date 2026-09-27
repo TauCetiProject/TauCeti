@@ -25,9 +25,12 @@ different source and target regroupings. The multiplicity-free `RCLike` version 
 `TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`; the assembled complex statement is
 `TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`.
 
-Thus the blockwise coordinate-change expression used by elementary-symmetric charts is analytic
-at every represented tuple. This supplies the transition-map calculation needed to assemble a
-holomorphic atlas for symmetric powers. For background on the symmetric-power setting, see
+Thus the blockwise coordinate-change expression used by elementary-symmetric charts sharing one
+block partition is analytic at every represented tuple. The transition between charts with
+arbitrary block partitions is proved directly from the filtered root sums of
+`TauCeti.Sym.analyticAt_sum_map_filter_coeffEquiv_symm` in
+`TauCeti/Geometry/Manifold/SymmetricPower/Transition.lean`. For background on the symmetric-power
+setting, see
 Ozsváth--Szabó, [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2.2. The
 blockwise analytic statement and proof in this file are developed here, rather than attributed to
 that section.

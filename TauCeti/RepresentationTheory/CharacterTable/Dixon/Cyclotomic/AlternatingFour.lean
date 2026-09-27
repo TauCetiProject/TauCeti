@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Alternating
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Alternating.Four
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Solver
 

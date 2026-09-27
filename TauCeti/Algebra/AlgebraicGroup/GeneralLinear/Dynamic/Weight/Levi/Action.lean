@@ -225,8 +225,8 @@ theorem representedWeightLeviConjugation_apply (w : Fin N → ℤ)
             (weightLeviInParabolicHopfIdeal R w)
             (isNormal_weightUnipotentInParabolicHopfIdeal R w)).toMulAutHom (op A) z g)) := by
   unfold representedWeightLeviConjugation
-  simp only [MulEquiv.toMonoidHom_eq_coe, MulEquiv.coe_monoidHom_trans,
-    MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply,
+  simp only [MulEquiv.toMonoidHom_eq_coe, MulEquiv.toMonoidHom_trans,
+    MonoidHom.coe_comp, MonoidHom.coe_ofClass, Function.comp_apply,
     MulEquiv.symm_apply_apply, MulAut.congr_apply, MulEquiv.trans_apply,
     MulEquiv.symm_trans_apply, GrpObj.Action.toMulAutHom_apply,
     EmbeddingLike.apply_eq_iff_eq]

@@ -90,18 +90,9 @@ theorem chartVolumeDensity_changeFrame (α β : M) {x : M}
         chartVolumeDensity (I := I) β x := by
   let bα := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hα
   let bβ := (trivializationAt E (TangentSpace I) β).basisAt (Module.finBasis ℝ E) hβ
-  have hgram (γ : M) (hγ : x ∈ (trivializationAt E (TangentSpace I) γ).baseSet) :
-      chartGramMatrix (I := I) γ x = LinearMap.BilinForm.toMatrix
-        ((trivializationAt E (TangentSpace I) γ).basisAt (Module.finBasis ℝ E) hγ)
-        (innerₗ (TangentSpace I x)) := by
-    ext i j
-    have hx : x ∈ (chartAt H γ).source := by
-      simpa only [TangentBundle.trivializationAt_baseSet] using hγ
-    simp only [chartGramMatrix_apply, chartLocalFrame_apply_of_mem_chart_source γ hx,
-      LinearMap.BilinForm.toMatrix_apply, innerₗ_apply_apply]
   have hdet : (chartGramMatrix (I := I) α x).det =
       (bβ.toMatrix bα).det ^ 2 * (chartGramMatrix (I := I) β x).det := by
-    rw [hgram α hα, hgram β hβ,
+    rw [chartGramMatrix_eq_toMatrix α hα, chartGramMatrix_eq_toMatrix β hβ,
       ← LinearMap.BilinForm.toMatrix_mul_basis_toMatrix bβ bα (innerₗ (TangentSpace I x))]
     simp only [Matrix.det_mul, Matrix.det_transpose]
     ring

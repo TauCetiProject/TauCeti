@@ -95,7 +95,8 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
     refine ⟨N, fun n hn ↦ ?_⟩
     have hliminf : eLpNorm (f n - fLim) 1 (μ.prod μ) ≤
         atTop.liminf fun m ↦ eLpNorm (f n - fSub m) 1 (μ.prod μ) := by
-      refine Lp.eLpNorm_lim_le_liminf_eLpNorm (fun m ↦ (hf n).sub (hfSub m)) (f n - fLim) ?_
+      refine Lp.eLpNorm_lim_le_liminf_eLpNorm (fun m ↦ (hf n).sub (hfSub m)) (f n - fLim)
+        ((hf n).sub hfLimMeas.aestronglyMeasurable) ?_
       refine hfLim.mono fun z hz ↦ ?_
       simpa only [Pi.sub_apply] using tendsto_const_nhds.sub hz
     refine hliminf.trans ((liminf_le_of_frequently_le' ?_).trans (hN N le_rfl))
@@ -161,7 +162,7 @@ theorem cutDist_le_eLpNorm_one_toReal (U W : Graphon Ω μ) :
         1 (μ.prod μ) := (lpNorm_one_eq_integral_norm hmeas).symm
     _ = (eLpNorm
         ((fun z : Ω × Ω ↦ U z.1 z.2) - fun z : Ω × Ω ↦ W z.1 z.2)
-        1 (μ.prod μ)).toReal := (toReal_eLpNorm hmeas).symm)
+        1 (μ.prod μ)).toReal := toReal_eLpNorm.symm)
 
 /-- A graphon sequence with an `L¹` Cauchy modulus tending to zero converges in cut distance to a
 strict graphon. This is the cut-distance consequence of

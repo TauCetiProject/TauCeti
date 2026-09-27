@@ -26,8 +26,12 @@ The statement records only a topological group isomorphism, not a `ℤ_[p]`-line
 for the canonical `p`-adic exponentiation `TauCeti.IsProP.module`. (Every continuous
 homomorphism between abelian pro-`p` groups commutes with `p`-adic exponentiation,
 `TauCeti.IsProP.map_padicPow`, so no information is lost, but no linear equivalence is packaged
-here.) The rank `r` and the exponents `e i` are the invariants of `A`; their uniqueness is not
-proved here. Nor is the identification of `T` with the torsion subgroup of `A`.
+here.) The rank `r` and the exponents `e i`, up to reindexing, are invariants of `A`.
+The identification of `T` with the torsion subgroup and the uniqueness results are proved in
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.Torsion`. In particular,
+`TauCeti.exists_equiv_exponents_of_continuousMulEquiv_pi_padicInt_prod_pi_zmod` compares the
+exponents in any two decompositions with positive exponents; its algebraic input is
+`ZMod.exists_equiv_exponents_of_pi_pow_addEquiv`.
 
 ## Main result
 

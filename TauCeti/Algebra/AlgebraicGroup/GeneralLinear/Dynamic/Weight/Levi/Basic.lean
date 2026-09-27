@@ -153,6 +153,5 @@ theorem quotientPointsHom_weightLeviPointsIso_inv_app_apply (w : Fin N → ℤ)
       (mapWeightLevi_id R w) (mapWeightLevi_comp R w)
       (mem_weightLeviSubgroup_iff R w) (coe_mapWeightLevi_apply R w)
       (CommAlgCat.of R A) g) using 1
-  rfl
 
 end TauCeti.GeneralLinear.Dynamic

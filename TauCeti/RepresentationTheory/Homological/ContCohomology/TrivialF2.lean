@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.ZMod
+public import TauCeti.GroupTheory.GroupAction.FixedPoints
 public import TauCeti.RepresentationTheory.Continuous.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
@@ -28,6 +29,8 @@ trivial coefficient object for that subgroup.
   universe.
 * `TauCeti.trivialF2ResMap`: restriction on continuous cohomology with trivial `𝔽₂`
   coefficients.
+* `TauCeti.trivialF2QuotientEquivFixedPoints`: trivial `𝔽₂` coefficients on a quotient `G ⧸ N`,
+  identified with the `N`-fixed points of the ambient trivial `𝔽₂` coefficients.
 
 ## Main results
 
@@ -39,6 +42,9 @@ trivial coefficient object for that subgroup.
 * `TauCeti.ofDiscreteModule_trivialF2`: the coefficient dictionary recovers `trivialF2`.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
 * `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
+* `TauCeti.trivialF2QuotientEquivFixedPoints_smul`: that identification is equivariant for the
+  `G ⧸ N`-actions, with `TauCeti.trivialF2Equiv_apply_trivialF2QuotientEquivFixedPoints` its
+  value rule.
 -/
 
 public section
@@ -166,5 +172,50 @@ theorem trivialF2ResMap_def (S : Subgroup G) (n : ℕ) :
   (rfl)
 
 end Group
+
+section Quotient
+
+variable {G : Type u} [Group G] (N : Subgroup G) [N.Normal]
+
+attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
+
+/-- Trivial `𝔽₂` coefficients on `G / N` are additively equivalent to the `N`-fixed points of
+the ambient trivial coefficients. -/
+noncomputable def trivialF2QuotientEquivFixedPoints :
+    (trivialF2 (G ⧸ N)).V ≃+ FixedPoints.addSubgroup N (trivialF2 G).V where
+  toFun x := ⟨(trivialF2Equiv G).symm (trivialF2Equiv (G ⧸ N) x), by
+    rw [FixedPoints.mem_addSubgroup]
+    intro n
+    simp only [Subgroup.smul_def, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]⟩
+  invFun x := (trivialF2Equiv (G ⧸ N)).symm (trivialF2Equiv G x.1)
+  left_inv x := by simp
+  right_inv x := by ext; simp
+  map_add' x y := by
+    apply Subtype.ext
+    apply (trivialF2Equiv G).injective
+    simp
+
+/-- The coefficient equivalence does not change the underlying `ZMod 2` value. -/
+@[simp]
+theorem trivialF2Equiv_apply_trivialF2QuotientEquivFixedPoints
+    (x : (trivialF2 (G ⧸ N)).V) :
+    trivialF2Equiv G (trivialF2QuotientEquivFixedPoints N x : (trivialF2 G).V) =
+      trivialF2Equiv (G ⧸ N) x := by
+  simp [trivialF2QuotientEquivFixedPoints]
+
+/-- The coefficient equivalence is equivariant for the quotient actions. -/
+theorem trivialF2QuotientEquivFixedPoints_smul (q : G ⧸ N)
+    (x : (trivialF2 (G ⧸ N)).V) :
+    trivialF2QuotientEquivFixedPoints N (q • x) =
+      q • trivialF2QuotientEquivFixedPoints N x := by
+  apply Subtype.ext
+  induction q using QuotientGroup.induction_on with
+  | H g =>
+    apply (trivialF2Equiv G).injective
+    rw [coe_quotient_smul_fixedPoints_addSubgroup,
+      coe_smul_fixedPoints_addSubgroup]
+    simp
+
+end Quotient
 
 end TauCeti

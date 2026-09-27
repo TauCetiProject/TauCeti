@@ -47,7 +47,7 @@ variable {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
 /-- **Wedhorn Remark 7.11(2).** A vertical generization of a continuous valuation by a proper
 convex subgroup of its value group is again continuous. -/
 theorem IsContinuous.coarsenByUnits_restrict [IsTopologicalRing A] [IsHuberRing A]
-    {v : Valuation A Γ₀} (hv : v.IsContinuous) {H : ConvexSubgroup (ValueGroup₀ (.ofClass v))ˣ}
+    {v : Valuation A Γ₀} (hv : v.IsContinuous) {H : ConvexSubgroup (v.ValueGroup₀)ˣ}
     (hH : H ≠ ⊤) : (v.restrict.coarsenByUnits H).IsContinuous := by
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   obtain ⟨s, hs⟩ := P.fg_idealOfDefinition

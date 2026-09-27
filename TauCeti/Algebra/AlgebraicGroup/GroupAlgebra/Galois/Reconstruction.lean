@@ -103,7 +103,7 @@ private theorem characterEvaluationEquiv_characterInvariantsAlgHom (a : H) :
       1 ⊗ₜ[k] a := by
   rw [characterInvariantsAlgHom_val, BialgEquiv.apply_symm_apply]
 
-variable [FiniteDimensional k L] [IsGalois k L]
+variable [IsGalois k L]
 
 private theorem characterInvariantsAlgHom_bijective :
     Function.Bijective (characterInvariantsAlgHom k L H hspan) := by
@@ -125,6 +125,8 @@ private theorem characterInvariantsAlgHom_bijective :
     obtain ⟨a, ha⟩ := (tensorProduct_forall_map_eq_self_iff_exists_one_tmul_eq _).mp hx
     refine ⟨a, Subtype.ext ?_⟩
     rw [characterInvariantsAlgHom_val, ha, BialgEquiv.symm_apply_apply]
+
+variable [FiniteDimensional k L]
 
 private theorem characterInvariantsAlgHom_counit :
     (Bialgebra.counitAlgHom k (groupAlgebraInvariants ρ)).comp
@@ -149,8 +151,7 @@ private theorem characterInvariantsAlgHom_comul :
   have ht (t : H ⊗[k] H) :
       E (groupAlgebraInvariantsTensorEquiv ρ (Algebra.TensorProduct.map f f t) : D ⊗[L] D) =
         TensorProduct.AlgebraTensorModule.distribBaseChange k L H H (1 ⊗ₜ[k] t) := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, AddMemClass.coe_add, hx, hy, TensorProduct.tmul_add]
     | tmul a b =>
         simp only [Algebra.TensorProduct.map_tmul, groupAlgebraInvariantsTensorEquiv_tmul,
@@ -170,8 +171,7 @@ private theorem characterInvariantsAlgHom_comul :
       (congrArg (Coalgebra.comul (R := L))
         (characterEvaluationEquiv_characterInvariantsAlgHom k L H hspan a))
   rw [hE, TensorProduct.comul_tmul, CommSemiring.comul_apply]
-  induction Coalgebra.comul (R := k) a using TensorProduct.induction_on with
-  | zero => simp
+  induction Coalgebra.comul (R := k) a using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   | tmul x y => simp
 

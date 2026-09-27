@@ -231,6 +231,22 @@ theorem mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc [DiscreteTopology Γ
     (Set.smul_mem_smul_set hz) hgz
   exact fun h => hstab (mem_stabilizer_iff.mpr h)
 
+/-- **High horodiscs lie in the free locus.** For a discrete `Γ`, a point of a horodisc of height at
+least the width has trivial stabilizer: an element fixing it lies in the cusp stabilizer, whose
+nontrivial elements are translations in the scaling coordinate and fix no point. -/
+theorem stabilizer_eq_bot_of_mem_horodisc [DiscreteTopology Γ] {A : ℝ} (hA : D.width ≤ A) {z : ℍ}
+    (hz : z ∈ horodisc D A) : stabilizer Γ z = ⊥ := by
+  rw [eq_bot_iff]
+  intro g hg
+  rw [mem_stabilizer_iff] at hg
+  obtain ⟨n, rfl⟩ := D.mem_stabilizer_iff.mp
+    (mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc D hA hz (by rwa [hg]))
+  have h := scaling_smul_generator_zpow D n z
+  rw [hg] at h
+  have h' := congrArg UpperHalfPlane.re h
+  simp [D.width_pos.ne'] at h'
+  simp [h']
+
 /-- **Precise invariance of high horodiscs, disjointness form.** Two elements of `Γ` carrying a
 horodisc of height at least the width to sets that meet differ by an element of the cusp
 stabilizer. -/

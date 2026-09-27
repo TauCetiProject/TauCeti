@@ -47,6 +47,8 @@ products omit the ramified primes, such as the trivial Galois-character series, 
   `ζ_K(s) * ∏ 𝔭 ∈ S, (1 - N(𝔭) ^ (-s))` on `Re s > 1`.
 * `TauCeti.prod_one_sub_absNorm_cpow_neg_ne_zero`: the correction factor has no zero on
   `Re s > 0`.
+* `TauCeti.dedekindZeta_residue_mul_prod_one_sub_absNorm_cpow_neg_one_ne_zero`: the corrected
+  residue at `s = 1` is nonzero.
 * `TauCeti.tendsto_sub_one_mul_LSeries_ofBadPrimes`: the normalized right-hand limit at `s = 1`.
 * `TauCeti.logDeriv_LSeries_ofBadPrimes`: the logarithmic derivative on `Re s > 1`, and
   `TauCeti.differentiableOn_sum_log_absNorm_div_cpow_sub_one`: the correction term in it is
@@ -175,6 +177,15 @@ theorem prod_one_sub_absNorm_cpow_neg_ne_zero (S : Finset (HeightOneSpectrum (�
   refine Finset.prod_ne_zero_iff.mpr fun P _ h ↦ P.absNorm_cpow_sub_one_ne_zero hs ?_
   rw [Complex.cpow_neg, sub_eq_zero, eq_comm, inv_eq_one] at h
   rw [h, sub_self]
+
+/-- The residue of the Dedekind zeta function remains nonzero after deleting finitely many
+Euler factors at `s = 1`. -/
+theorem dedekindZeta_residue_mul_prod_one_sub_absNorm_cpow_neg_one_ne_zero
+    (S : Finset (HeightOneSpectrum (𝓞 K))) :
+    (NumberField.dedekindZeta_residue K : ℂ) *
+      ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ)) ≠ 0 :=
+  mul_ne_zero (by exact_mod_cast (NumberField.dedekindZeta_residue_pos K).ne')
+    (prod_one_sub_absNorm_cpow_neg_ne_zero S (by simp))
 
 /-- **The Dedekind zeta function with the Euler factors at `S` deleted.** For a finite set `S` of
 primes and `Re s > 1`, the `L`-series of the indicator of the ideals prime to `S` is

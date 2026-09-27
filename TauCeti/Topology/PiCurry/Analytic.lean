@@ -25,9 +25,7 @@ open Topology
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Finite ι] {m : ι → ℕ} {n : ℕ}
-
-attribute [local instance] Fintype.ofFinite
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : ℕ}
 
 /-- Regrouping a finite family of tuples is analytic. -/
 theorem analyticAt_piSigmaConstHomeomorph

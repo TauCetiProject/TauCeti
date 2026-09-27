@@ -24,6 +24,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
+* `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
 -/
 
 public section
@@ -94,6 +95,17 @@ theorem negOnePowCast_smul_eq_zero_iff [AddMonoid A] [DistribMulAction R A] (e :
   rw [← negOnePowCast_smul_negOnePowCast_smul (R := R) e a, h, smul_zero]
 
 end NegOnePowCast
+
+section NegOnePowSMul
+
+variable {A : Type uA} [AddGroup A]
+
+/-- The sign `(-1) ^ e`, acting through the units of `ℤ`, acts as an involution. -/
+@[simp]
+theorem negOnePow_smul_negOnePow_smul (e : ℤ) (a : A) : e.negOnePow • e.negOnePow • a = a := by
+  rw [smul_smul, Int.units_mul_self, one_smul]
+
+end NegOnePowSMul
 
 section CommRing
 

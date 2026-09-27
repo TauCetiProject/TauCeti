@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Spin.Polarization.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.SepClosed
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import Mathlib.LinearAlgebra.QuadraticForm.Dual
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import Mathlib.RingTheory.Finiteness.Prod
@@ -266,6 +267,26 @@ private theorem modelLineCoordinate_injective (n : ℕ) :
   (remainderCoordinate_injective (K := K) n).comp
     (modelLineEquivRemainder (K := K) n).injective
 
+private theorem isotropic_modelW (n : ℕ) (x : modelW (K := K) n) : splitModelForm K n x = 0 := by
+  simp [(mem_modelW_iff n x.1).1 x.2]
+
+private theorem isotropic_modelW' (n : ℕ) (y : modelW' (K := K) n) : splitModelForm K n y = 0 := by
+  simp [(mem_modelW'_iff n y.1).1 y.2]
+
+private theorem modelPairing_separatingLeft (n : ℕ) (x : modelW (K := K) n)
+    (hx : ∀ y : modelW' (K := K) n, QuadraticMap.polar (splitModelForm K n) x y = 0) : x = 0 :=
+  have := Module.Projective.of_equiv (modelWEquivHalf (K := K) n).symm
+  (Module.forall_dual_apply_eq_zero_iff K x).1 <| (modelPairingEquiv n).surjective.forall.2
+    fun y ↦ (modelPairingEquiv_apply n y x).trans (hx y)
+
+private theorem modelLine_orthogonal_modelW (n : ℕ) (z : modelLine (K := K) n)
+    (x : modelW (K := K) n) : QuadraticMap.polar (splitModelForm K n) z x = 0 := by
+  simp [(mem_modelLine_iff n z.1).1 z.2, (mem_modelW_iff n x.1).1 x.2]
+
+private theorem modelLine_orthogonal_modelW' (n : ℕ) (z : modelLine (K := K) n)
+    (y : modelW' (K := K) n) : QuadraticMap.polar (splitModelForm K n) z y = 0 := by
+  simp [(mem_modelLine_iff n z.1).1 z.2, (mem_modelW'_iff n y.1).1 y.2]
+
 private noncomputable def modelData (n : ℕ) :
     SpinPolarizationData (splitModelForm K n) where
   W := modelW (K := K) n
@@ -273,135 +294,44 @@ private noncomputable def modelData (n : ℕ) :
   line := modelLine (K := K) n
   decompositionEquiv := modelDecompositionEquiv (K := K) n
   decompositionEquiv_apply := modelDecompositionEquiv_apply (K := K) n
-  isotropic_W x := by
-    rcases x with ⟨⟨⟨f, u⟩, z⟩, hx⟩
-    rw [mem_modelW_iff] at hx
-    simp only at hx
-    rcases hx with ⟨rfl, rfl⟩
-    simp
-  isotropic_W' y := by
-    rcases y with ⟨⟨⟨f, u⟩, z⟩, hy⟩
-    rw [mem_modelW'_iff] at hy
-    simp only at hy
-    rcases hy with ⟨rfl, rfl⟩
-    simp
+  isotropic_W := isotropic_modelW (K := K) n
+  isotropic_W' := isotropic_modelW' (K := K) n
   pairingEquiv := modelPairingEquiv (K := K) n
   pairingEquiv_apply := modelPairingEquiv_apply (K := K) n
-  pairing_separatingLeft x hx := by
-    apply (modelWEquivHalf (K := K) n).injective
-    apply (Module.forall_dual_apply_eq_zero_iff K (modelWEquivHalf (K := K) n x)).1
-    intro f
-    let y := (modelW'EquivDual (K := K) n).symm f
-    calc
-      f (modelWEquivHalf (K := K) n x) =
-          modelPairingEquiv (K := K) n y x := by
-            simp [y, modelPairingEquiv]
-      _ = QuadraticMap.polar (splitModelForm K n) x y :=
-        modelPairingEquiv_apply (K := K) n y x
-      _ = 0 := hx y
+  pairing_separatingLeft := modelPairing_separatingLeft (K := K) n
   lineCoordinate := modelLineCoordinate (K := K) n
   lineCoordinate_injective := modelLineCoordinate_injective (K := K) n
   lineCoordinate_sq := modelLineCoordinate_sq (K := K) n
-  line_orthogonal_W z x := by
-    rcases z with ⟨⟨p, z⟩, hz⟩
-    rcases x with ⟨⟨⟨f, u⟩, w⟩, hx⟩
-    rw [mem_modelLine_iff] at hz
-    rw [mem_modelW_iff] at hx
-    simp only at hz hx
-    subst p
-    rcases hx with ⟨rfl, rfl⟩
-    simp
-  line_orthogonal_W' z y := by
-    rcases z with ⟨⟨p, z⟩, hz⟩
-    rcases y with ⟨⟨⟨f, u⟩, w⟩, hy⟩
-    rw [mem_modelLine_iff] at hz
-    rw [mem_modelW'_iff] at hy
-    simp only at hz hy
-    subst p
-    rcases hy with ⟨rfl, rfl⟩
-    simp
+  line_orthogonal_W := modelLine_orthogonal_modelW (K := K) n
+  line_orthogonal_W' := modelLine_orthogonal_modelW' (K := K) n
 
 private noncomputable def pullback {V V' : Type*} [AddCommGroup V] [Module K V]
     [AddCommGroup V'] [Module K V'] {Q : QuadraticForm K V} {Q' : QuadraticForm K V'}
-    (e : Q.IsometryEquiv Q') (P : SpinPolarizationData Q') : SpinPolarizationData Q := by
-  have hpolar (x y : V) : QuadraticMap.polar Q x y = QuadraticMap.polar Q' (e x) (e y) := by
-    simp only [QuadraticMap.polar]
-    rw [← e.map_app (x + y), ← e.map_app x, ← e.map_app y, map_add]
-  let W := P.W.comap e.toLinearEquiv.toLinearMap
-  let W' := P.W'.comap e.toLinearEquiv.toLinearMap
-  let line := P.line.comap e.toLinearEquiv.toLinearMap
-  have hRange (S : Submodule K V') : S ≤ LinearMap.range e.toLinearEquiv.toLinearMap := by
-    intro x _
-    exact ⟨e.toLinearEquiv.symm x, e.toLinearEquiv.apply_symm_apply x⟩
-  let eW : W ≃ₗ[K] P.W :=
-    Submodule.comap_equiv_self_of_inj_of_le e.toLinearEquiv.injective (hRange P.W)
-  let eW' : W' ≃ₗ[K] P.W' :=
-    Submodule.comap_equiv_self_of_inj_of_le e.toLinearEquiv.injective (hRange P.W')
-  let eLine : line ≃ₗ[K] P.line :=
-    Submodule.comap_equiv_self_of_inj_of_le e.toLinearEquiv.injective (hRange P.line)
-  have eW_apply (x : W) : (eW x : V') = e x := by
-    exact congrArg Subtype.val
-      (Submodule.comap_equiv_self_of_inj_of_le_apply e.toLinearEquiv.injective (hRange P.W) x)
-  have eW'_apply (x : W') : (eW' x : V') = e x := by
-    exact congrArg Subtype.val
-      (Submodule.comap_equiv_self_of_inj_of_le_apply e.toLinearEquiv.injective (hRange P.W') x)
-  have eLine_apply (x : line) : (eLine x : V') = e x := by
-    exact congrArg Subtype.val
-      (Submodule.comap_equiv_self_of_inj_of_le_apply e.toLinearEquiv.injective (hRange P.line) x)
-  let decomp : ((W × W') × line) ≃ₗ[K] V :=
-    ((eW.prodCongr eW').prodCongr eLine).trans <| P.decompositionEquiv.trans e.toLinearEquiv.symm
-  refine
-    { W := W
-      W' := W'
-      line := line
-      decompositionEquiv := decomp
-      decompositionEquiv_apply := ?_
-      isotropic_W := ?_
-      isotropic_W' := ?_
-      pairingEquiv := eW'.trans <| P.pairingEquiv.trans eW.dualMap
-      pairingEquiv_apply := ?_
-      pairing_separatingLeft := ?_
-      lineCoordinate := P.lineCoordinate.comp eLine.toLinearMap
-      lineCoordinate_injective := P.lineCoordinate_injective.comp eLine.injective
-      lineCoordinate_sq := ?_
-      line_orthogonal_W := ?_
-      line_orthogonal_W' := ?_ }
-  · intro x
-    apply e.toLinearEquiv.injective
-    simp [decomp, P.decompositionEquiv_apply, eW_apply, eW'_apply, eLine_apply, map_add]
-  · intro x
-    rw [← e.map_app]
-    exact P.isotropic_W (eW x)
-  · intro y
-    rw [← e.map_app]
-    exact P.isotropic_W' (eW' y)
-  · intro y x
-    rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.dualMap_apply,
-      P.pairingEquiv_apply]
-    exact (hpolar x y).symm
-  · intro x hx
-    apply eW.injective
-    rw [map_zero]
-    apply P.pairing_separatingLeft (eW x)
-    intro y
-    have hy : (y : V') = e (eW'.symm y : V) := by
-      rw [← eW'_apply]
-      exact congrArg Subtype.val (eW'.apply_symm_apply y).symm
-    calc
-      QuadraticMap.polar Q' (eW x) y =
-          QuadraticMap.polar Q' (e x) (e (eW'.symm y)) := by
-            rw [eW_apply, hy]
-      _ = QuadraticMap.polar Q x (eW'.symm y) := (hpolar _ _).symm
-      _ = 0 := hx _
-  · intro z
-    rw [LinearMap.comp_apply, P.lineCoordinate_sq, ← e.map_app]
-    exact congrArg Q' (eLine_apply z)
-  · intro z x
-    rw [hpolar]
-    exact P.line_orthogonal_W (eLine z) (eW x)
-  · intro z y
-    rw [hpolar]
-    exact P.line_orthogonal_W' (eLine z) (eW' y)
+    (e : Q.IsometryEquiv Q') (P : SpinPolarizationData Q') : SpinPolarizationData Q :=
+  let eS (S : Submodule K V') : S.comap e.toLinearEquiv.toLinearMap ≃ₗ[K] S :=
+    Submodule.comap_equiv_self_of_inj_of_le e.toLinearEquiv.injective (by simp)
+  have he (S : Submodule K V') (x) : (eS S x : V') = e x := by simp [eS]
+  { W := P.W.comap e.toLinearEquiv.toLinearMap
+    W' := P.W'.comap e.toLinearEquiv.toLinearMap
+    line := P.line.comap e.toLinearEquiv.toLinearMap
+    decompositionEquiv := (((eS P.W).prodCongr (eS P.W')).prodCongr (eS P.line)).trans <|
+      P.decompositionEquiv.trans e.toLinearEquiv.symm
+    decompositionEquiv_apply x := e.toLinearEquiv.injective <| by simp [he]
+    isotropic_W x := by rw [← e.map_app, ← he P.W, P.isotropic_W]
+    isotropic_W' y := by rw [← e.map_app, ← he P.W', P.isotropic_W']
+    pairingEquiv := (eS P.W').trans <| P.pairingEquiv.trans (eS P.W).dualMap
+    pairingEquiv_apply y x := by
+      simp only [LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, P.pairingEquiv_apply, he,
+        e.polar_apply]
+    pairing_separatingLeft x hx := (eS P.W).map_eq_zero_iff.mp <| P.pairing_separatingLeft _ <|
+      (eS P.W').surjective.forall.mpr fun y ↦ by rw [he, he, e.polar_apply, hx]
+    lineCoordinate := P.lineCoordinate.comp (eS P.line).toLinearMap
+    lineCoordinate_injective := P.lineCoordinate_injective.comp (eS P.line).injective
+    lineCoordinate_sq z := by
+      rw [LinearMap.comp_apply, LinearEquiv.coe_coe, P.lineCoordinate_sq, he, e.map_app]
+    line_orthogonal_W z x := by rw [← e.polar_apply, ← he P.line, ← he P.W, P.line_orthogonal_W]
+    line_orthogonal_W' z y := by
+      rw [← e.polar_apply, ← he P.line, ← he P.W', P.line_orthogonal_W'] }
 
 private theorem finrank_splitModel {R : Type*} [CommRing R] [Nontrivial R] (n : ℕ) :
     Module.finrank R (SplitModel R n) = n := by

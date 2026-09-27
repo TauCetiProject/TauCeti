@@ -90,6 +90,9 @@ continuous.
   exactness of the five-term sequence at `H¹(N, M) ^ (G ⧸ N)` and at `H²(G ⧸ N, M ^ N)`. Together
   with `TauCeti.ContCohomology.explicitInfl1_injective` and
   `TauCeti.ContCohomology.explicitInfResConj_exact` this is exactness at every node.
+* `TauCeti.ContCohomology.transgression_injective_iff` and
+  `TauCeti.ContCohomology.transgression_surjective_iff`: the transgression is injective exactly
+  when restriction to `N` vanishes, and surjective exactly when inflation to `H²(G, M)` vanishes.
 
 ## Implementation notes
 
@@ -852,6 +855,20 @@ theorem fiveTerm_exact_H2Q (hN : IsClosed (N : Set G)) :
     coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup,
     IsTransgressionLift.coe_cocycle_apply_mk, hd1, smul_neg]
   abel
+
+/-- **Injectivity of the transgression.** By exactness of the five-term sequence at
+`H¹(N, M) ^ (G ⧸ N)`, the transgression is injective exactly when restriction
+`H¹(G, M) → H¹(N, M) ^ (G ⧸ N)` is zero. -/
+theorem transgression_injective_iff (hN : IsClosed (N : Set G)) :
+    Function.Injective (transgression G M N hN) ↔ explicitResConj1 G M N = 0 := by
+  rw [← AddMonoidHom.ker_eq_bot_iff, ← fiveTerm_exact_H1N, AddMonoidHom.range_eq_bot_iff]
+
+/-- **Surjectivity of the transgression.** By exactness of the five-term sequence at
+`H²(G ⧸ N, M ^ N)`, the transgression is surjective exactly when inflation
+`H²(G ⧸ N, M ^ N) → H²(G, M)` is zero, for instance when `H²(G, M)` vanishes. -/
+theorem transgression_surjective_iff (hN : IsClosed (N : Set G)) :
+    Function.Surjective (transgression G M N hN) ↔ explicitInfl2 G M N = 0 := by
+  rw [← AddMonoidHom.range_eq_top, fiveTerm_exact_H2Q, AddMonoidHom.ker_eq_top_iff]
 
 end Transgression
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
+import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
@@ -46,6 +47,8 @@ extension, in particular to the completions of a number field.
   class.
 * `QuadraticForm.formClass_baseChange`: the class of an extended form is the extension of its
   class.
+* `QuadraticForm.discr_formClass_baseChange_eq_zero`: a form acquires square discriminant over a
+  field containing a square root of its discriminant.
 * `TauCeti.RegularFormClass.discr_baseChange`: the discriminant commutes with scalar extension.
 -/
 
@@ -113,7 +116,7 @@ theorem RegularFormPresentation.baseChange_baseChange (p : RegularFormPresentati
   refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
   rw [RegularFormPresentation.baseChange_apply, RegularFormPresentation.baseChange_apply,
     RegularFormPresentation.baseChange_apply]
-  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe,
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
     IsScalarTower.algebraMap_apply K L M]
   -- Both sides now read the weight of `p` at the same index, identified once through the two
   -- ranks of the iterated extension and once through the rank of the composite extension.
@@ -216,7 +219,7 @@ def presentedFormBaseChange (p : RegularFormPresentation K) :
       QuadraticMap.weightedSumSquares L fun i ↦ algebraMap K L (p.2 i : K) := by
     simp only [RegularFormPresentation.baseChange, presentedForm_eq_weightedSumSquares,
       QuadraticMap.weightedSumSquares, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_coe, Units.smul_def]
+      MonoidHom.coe_ofClass, Units.smul_def]
     -- The two sums are indexed by `Fin (RegularFormPresentation.baseChange L p).1` and by
     -- `Fin p.1`, which are the same type once the mapped presentation is unfolded.
     rfl
@@ -385,5 +388,15 @@ theorem formClass_baseChange (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerat
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p hp, RegularFormClass.baseChange_mk,
     formClass_mk _ _ _ ((hp.baseChange L).trans ⟨presentedFormBaseChange p⟩)]
+
+/-- If the discriminant of a regular form is the class of `d`, then the form has square
+discriminant after scalar extension to a field containing a square root of `d`. -/
+theorem discr_formClass_baseChange_eq_zero (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    {d : Kˣ} (hd : RegularFormClass.discr (formClass Q hQ) = squareClass d) {s : L}
+    (hs : s * s = algebraMap K L d) :
+    RegularFormClass.discr (formClass (Q.baseChange L) (Nondegenerate.baseChange hQ)) = 0 := by
+  rw [formClass_baseChange Q hQ, RegularFormClass.discr_baseChange, hd,
+    RingHom.squareClassMap_apply, squareClass_eq_zero_iff]
+  exact isSquare_units_val_iff.mp ⟨s, by simpa using hs.symm⟩
 
 end QuadraticForm

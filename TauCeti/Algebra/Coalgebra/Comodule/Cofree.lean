@@ -85,8 +85,7 @@ private theorem counit_lTensor_comp_assoc_symm :
       = (TensorProduct.assoc R M C R).symm.toLinearMap ∘ₗ
           LinearMap.lTensor M ((Coalgebra.counit (R := R) (A := C)).lTensor C) := by
   refine TensorProduct.ext' fun m x => ?_
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
   | tmul a b => simp
 
@@ -96,8 +95,7 @@ private theorem comul_lTensor_comp_assoc_symm :
       = (TensorProduct.assoc R M C (C ⊗[R] C)).symm.toLinearMap ∘ₗ
           LinearMap.lTensor M ((Coalgebra.comul (R := R) (A := C)).lTensor C) := by
   refine TensorProduct.ext' fun m x => ?_
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
   | tmul a b => simp
 
@@ -111,13 +109,11 @@ private theorem assoc_comp_cofreeCoact_rTensor_comp_cofreeCoact :
             Coalgebra.comul.rTensor C ∘ₗ Coalgebra.comul) := by
   refine TensorProduct.ext' fun m c => ?_
   simp only [comp_apply, cofreeCoact_tmul, LinearEquiv.coe_coe, lTensor_tmul]
-  induction Coalgebra.comul (R := R) (A := C) c using TensorProduct.induction_on with
-  | zero => simp
+  induction Coalgebra.comul (R := R) (A := C) c using TensorProduct.inductionOn with
   | add x y hx hy => simp only [tmul_add, map_add, hx, hy]
   | tmul a b =>
     simp only [assoc_symm_tmul, rTensor_tmul, cofreeCoact_tmul]
-    induction Coalgebra.comul (R := R) (A := C) a using TensorProduct.induction_on with
-    | zero => simp
+    induction Coalgebra.comul (R := R) (A := C) a using TensorProduct.inductionOn with
     | add x y hx hy => simp only [tmul_add, map_add, add_tmul, hx, hy]
     | tmul p q => simp [assoc_symm_tmul, assoc_tmul]
 
@@ -177,8 +173,7 @@ noncomputable def cofreeMap (f : M →ₗ[R] N) :
         refine TensorProduct.ext' fun m c => ?_
         simp only [cofree_coact_eq_cofreeCoact, LinearMap.comp_apply, cofreeCoact_tmul,
           LinearMap.rTensor_tmul]
-        induction Coalgebra.comul (R := R) (A := C) c using TensorProduct.induction_on with
-        | zero => simp
+        induction Coalgebra.comul (R := R) (A := C) c using TensorProduct.inductionOn with
         | add x y hx hy => simp only [tmul_add, map_add, hx, hy]
         | tmul a b => simp [assoc_symm_tmul, rTensor_tmul] }
 
@@ -256,8 +251,7 @@ theorem cofreeLift_apply [Comodule R C P] (g : P →ₗ[R] M) (p : P) :
 private theorem counit_lTensor_rTensor (g : P →ₗ[R] M) (z : P ⊗[R] C) :
     (Coalgebra.counit (R := R) (A := C)).lTensor M (g.rTensor C z)
       = g.rTensor R ((Coalgebra.counit (R := R) (A := C)).lTensor P z) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add a b ha hb => simp only [map_add, ha, hb]
   | tmul p c => simp
 
@@ -267,8 +261,7 @@ private theorem counit_rTensor_assoc_symm (m : M) (y : C ⊗[R] C) :
         ((TensorProduct.assoc R M C C).symm (m ⊗ₜ y))
       = (TensorProduct.assoc R M R C).symm
           (m ⊗ₜ (Coalgebra.counit (R := R) (A := C)).rTensor C y) := by
-  induction y using TensorProduct.induction_on with
-  | zero => simp
+  induction y using TensorProduct.inductionOn with
   | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
   | tmul a b => simp
 
@@ -277,8 +270,7 @@ and then the right unitor retracts the cofree coaction. This is the right-counit
 transported to `M ⊗[R] C`, and underlies the cofree adjunction. -/
 private theorem cofree_retract (z : M ⊗[R] C) : (TensorProduct.rid R M).toLinearMap.rTensor C
         (((Coalgebra.counit (R := R) (A := C)).lTensor M).rTensor C (cofreeCoact R C M z)) = z := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add a b ha hb => simp only [map_add, ha, hb]
   | tmul m c =>
     simp only [cofreeCoact_tmul, counit_rTensor_assoc_symm m (Coalgebra.comul c),

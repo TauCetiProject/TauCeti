@@ -30,11 +30,15 @@ their contribution is `o(x)`.
   function, regrouped by absolute norm.
 * `NumberField.Chebotarev.frobeniusPsi` and `NumberField.Chebotarev.frobeniusTheta`: the weighted
   prime-power and prime summatory functions.
+* `NumberField.Chebotarev.frobeniusPrimeCount`: the number of primes of norm at most `x`
+  whose arithmetic Frobenius class is `C`, with `NumberField.Chebotarev.natCast_frobeniusPrimeCount`
+  identifying it with the generic count of `frobeniusPrimeSet`.
 
 ## Main results
 
 * `NumberField.Chebotarev.frobeniusPsi_eq_sum_range`: `frobeniusPsi` is the inclusive partial sum
   of `frobeniusVonMangoldtCoeff`.
+* `NumberField.Chebotarev.frobeniusPsi_eq_sum_Icc`: the same sum indexed from `1`.
 * `NumberField.Chebotarev.frobeniusPsi_sub_frobeniusTheta_eq_primePowerSummatory`: their
   difference is exactly the contribution from exponents at least two.
 * `NumberField.Chebotarev.frobeniusPsi_sub_frobeniusTheta_le`: that difference is bounded by
@@ -160,6 +164,33 @@ variable (K L) in
 noncomputable def frobeniusTheta (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) : ℝ :=
   primeTheta K (frobeniusPrimeSet K L C) x
 
+variable (K L) in
+open Classical in
+/-- The number of primes of `K` of norm at most `x` whose arithmetic Frobenius in `L/K`
+belongs to `C`. Only primes unramified in `L` are counted. -/
+noncomputable def frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) : ℕ :=
+  ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card
+
+/-- The Frobenius prime count is the cardinality of the primes in the class below the cutoff. -/
+theorem frobeniusPrimeCount_eq_card (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+    frobeniusPrimeCount K L C x =
+      Nat.card {𝔭 : HeightOneSpectrum (𝓞 K) //
+        𝔭 ∈ frobeniusPrimeSet K L C ∧ (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x} := by
+  classical
+  -- Unfold the count and view the subtype as the coercion of its defining set, so
+  -- `Nat.card_coe_set_eq` converts its cardinality to a set cardinality.
+  change ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card =
+    Nat.card (↥{𝔭 : HeightOneSpectrum (𝓞 K) |
+      𝔭 ∈ frobeniusPrimeSet K L C ∧ (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x})
+  rw [Nat.card_coe_set_eq]
+  have hset : {𝔭 : HeightOneSpectrum (𝓞 K) |
+      𝔭 ∈ frobeniusPrimeSet K L C ∧ (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x} =
+      ↑((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)) := by
+    ext 𝔭
+    simp only [Set.mem_ofPred_eq, Finset.mem_coe, Finset.mem_filter, mem_normLE]
+    tauto
+  rw [hset, Set.ncard_coe_finset]
+
 /-- `frobeniusPsi` as an explicit sum over the inclusive prime-power carrier. -/
 theorem frobeniusPsi_apply (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
     frobeniusPsi K L C x =
@@ -172,6 +203,19 @@ theorem frobeniusTheta_apply (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
       ∑ 𝔭 ∈ primesLE K x, (frobeniusPrimeSet K L C).indicator
         (fun v ↦ Real.log (Ideal.absNorm v.asIdeal : ℝ)) 𝔭 := by
   rw [frobeniusTheta, primeTheta_apply]
+
+/-- The Frobenius `ϑ` function is the generic logarithmically weighted prime count of its
+Frobenius prime set. -/
+theorem frobeniusTheta_def (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+    frobeniusTheta K L C x = primeTheta K (frobeniusPrimeSet K L C) x := by
+  rw [frobeniusTheta]
+
+/-- The Frobenius prime count is the generic count of its prime set. -/
+theorem natCast_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+    (frobeniusPrimeCount K L C x : ℝ) = primeCount K (frobeniusPrimeSet K L C) x := by
+  classical
+  simpa only [frobeniusPrimeCount] using
+    (primeCount_eq_card (frobeniusPrimeSet K L C) x).symm
 
 /-- The Frobenius `ψ` function is nonnegative. -/
 theorem frobeniusPsi_nonneg (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
@@ -318,6 +362,15 @@ theorem frobeniusPsi_eq_sum_range (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
       (fun _ hI ↦ frobeniusVonMangoldtWeight_eq_zero_of_not_isPrimePow C hI),
     idealSummatory_eq_sum_range_normFiber]
   exact Finset.sum_congr rfl fun n _ ↦ (frobeniusVonMangoldtCoeff_apply C n).symm
+
+/-- Frobenius `ψ` is the sum of its von Mangoldt coefficients indexed from `1`. -/
+theorem frobeniusPsi_eq_sum_Icc (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+    frobeniusPsi K L C x =
+      ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, frobeniusVonMangoldtCoeff K L C n := by
+  rw [frobeniusPsi_eq_sum_range, Nat.range_succ_eq_Icc_zero,
+    ← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le ⌊x⌋₊), Finset.sum_insert (by simp),
+    frobeniusVonMangoldtCoeff_eq_zero_of_not_isPrimePow _ not_isPrimePow_zero, zero_add]
+  simp only [zero_add]
 
 /-- The gap between the Frobenius `ψ` and `ϑ` functions is exactly the sum of the higher
 prime-power weight over the `C`-fibre. -/

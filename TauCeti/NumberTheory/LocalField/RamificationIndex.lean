@@ -35,6 +35,8 @@ filtration.
 
 * `TauCeti.ramificationIndex`: the ramification index `e(L/K)` of an extension of
   nonarchimedean local fields.
+* `TauCeti.IsTamelyRamified`, `TauCeti.IsWildlyRamified`: the residue characteristic does not
+  divide, respectively divides, the ramification index.
 
 ## Main results
 
@@ -51,14 +53,16 @@ filtration.
 * `TauCeti.ramificationIndex_eq_ramificationIdx`: the intrinsic ramification index agrees with
   `Ideal.ramificationIdx` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_tower`: multiplicativity `e(M/K) = e(L/K) · e(M/L)` in a tower.
+* `TauCeti.isTamelyRamified_iff_natCast_ne_zero`: `L/K` is tamely ramified exactly when `e(L/K)`
+  is nonzero in the residue field of `K`.
 
 ## Implementation notes
 
 The definition only uses the algebra map and the two normalized valuations, so it does not carry
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
-`ramificationIndex_def`, every public theorem about it assumes compatibility, which makes the
-restricted valuation trivial on the units of `𝒪[K]` and hence a power of `v_K`. Finiteness of
-`L/K` is used by no statement in this file.
+`ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
+about it assumes compatibility, which makes the restricted valuation trivial on the units of
+`𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
 
 ## References
 
@@ -121,6 +125,46 @@ private theorem natCast_ramificationIndex_eq {m : ℤ} (hm : 0 ≤ m)
     apply Multiplicative.toAdd.injective
     simp
 
+section Tame
+
+variable (K L)
+
+/-- An extension of nonarchimedean local fields is **tamely ramified** when the residue
+characteristic does not divide its ramification index. For a general valued field tameness also
+asks for a separable residue extension; that condition is automatic here, the residue fields of
+nonarchimedean local fields being finite. -/
+def IsTamelyRamified : Prop :=
+  ¬ ringChar 𝓀[K] ∣ ramificationIndex K L
+
+/-- An extension of nonarchimedean local fields is **wildly ramified** when the residue
+characteristic divides its ramification index. -/
+def IsWildlyRamified : Prop :=
+  ringChar 𝓀[K] ∣ ramificationIndex K L
+
+/-- The defining condition of tame ramification. -/
+theorem isTamelyRamified_iff :
+    IsTamelyRamified K L ↔ ¬ ringChar 𝓀[K] ∣ ramificationIndex K L := Iff.rfl
+
+/-- The defining condition of wild ramification. -/
+theorem isWildlyRamified_iff :
+    IsWildlyRamified K L ↔ ringChar 𝓀[K] ∣ ramificationIndex K L := Iff.rfl
+
+/-- An extension is wildly ramified exactly when it is not tamely ramified. -/
+@[simp]
+theorem not_isTamelyRamified_iff : ¬ IsTamelyRamified K L ↔ IsWildlyRamified K L := not_not
+
+/-- An extension is tamely ramified exactly when it is not wildly ramified. -/
+@[simp]
+theorem not_isWildlyRamified_iff : ¬ IsWildlyRamified K L ↔ IsTamelyRamified K L := Iff.rfl
+
+/-- An extension is tamely ramified exactly when its ramification index is nonzero in the
+residue field of `K`. -/
+theorem isTamelyRamified_iff_natCast_ne_zero :
+    IsTamelyRamified K L ↔ (ramificationIndex K L : 𝓀[K]) ≠ 0 :=
+  (ringChar.spec 𝓀[K] _).not.symm
+
+end Tame
+
 variable [ValuativeExtension K L]
 
 /-- The normalized valuation of `L` vanishes on the image of `x : Kˣ` exactly when the normalized
@@ -130,7 +174,7 @@ theorem normalizedValuation_algebraMap_eq_one_iff (x : Kˣ) :
     normalizedValuation L (Units.map (algebraMap K L : K →* L) x) = 1 ↔
       normalizedValuation K x = 1 := by
   rw [normalizedValuation_eq_one_iff, normalizedValuation_eq_one_iff, Units.coe_map,
-    MonoidHom.coe_coe, ← ValuativeExtension.mapValueGroupWithZero_valuation,
+    MonoidHom.coe_ofClass, ← ValuativeExtension.mapValueGroupWithZero_valuation,
     ← map_one (ValuativeExtension.mapValueGroupWithZero K L)]
   exact ValuativeExtension.mapValueGroupWithZero_strictMono.injective.eq_iff
 
@@ -145,7 +189,7 @@ private theorem exists_normalizedValuation_algebraMap_eq_zpow :
   refine ⟨(φ πu).toAdd, lt_of_le_of_ne ?_ ?_, ?_⟩
   · -- `π` is integral in `K`, so its image is integral in `L`.
     have hmem : ((Units.map (algebraMap K L : K →* L) πu : Lˣ) : L) ∈ 𝒪[L] := by
-      rw [Valuation.mem_integer_iff, Units.coe_map, MonoidHom.coe_coe,
+      rw [Valuation.mem_integer_iff, Units.coe_map, MonoidHom.coe_ofClass,
         ← ValuativeExtension.mapValueGroupWithZero_valuation,
         ← map_one (ValuativeExtension.mapValueGroupWithZero K L),
         ValuativeExtension.mapValueGroupWithZero_strictMono.le_iff_le]
@@ -207,7 +251,7 @@ theorem normalizedValuationWithZero_algebraMap (x : K) :
       (Units.map (algebraMap K L : K →* L) (Units.mk0 x hx))
     have hK := normalizedValuationWithZero_coe (Units.mk0 x hx)
     have h := normalizedValuation_algebraMap (L := L) (Units.mk0 x hx)
-    simp only [Units.coe_map, MonoidHom.coe_coe, Units.val_mk0] at hL hK h
+    simp only [Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0] at hL hK h
     rw [hL, hK, h, WithZero.coe_pow]
 
 /-- The ramification index is the only natural number `n` with `v_L(x) = n · v_K(x)` for all
@@ -245,7 +289,7 @@ theorem valuation_algebraMap_irreducible {πK : 𝒪[K]} (hπK : Irreducible πK
     (Units.map (algebraMap K L : K →* L) (Units.mk0 (πK : K) hK))
   have h₂ := valueGroupWithZeroIsoInt_valuation (Units.mk0 (πL : L) hL)
   have h₀ := normalizedValuation_algebraMap_irreducible (L := L) hπK
-  simp only [Units.coe_map, MonoidHom.coe_coe, Units.val_mk0,
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, Units.val_mk0,
     normalizedValuation_irreducible hπL, toAdd_ofAdd] at h₀ h₁ h₂
   rw [h₀, toAdd_ofAdd] at h₁
   rw [h₁, map_pow, h₂, ← WithZero.exp_nsmul]

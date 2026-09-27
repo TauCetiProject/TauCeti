@@ -147,7 +147,7 @@ theorem evensConj1_eq_explicitConj1 (hU : U.index = 2) (hUo : IsOpen (U : Set G)
     simp only [cocyclesMap1_coe, cochainsMap1_apply, ContinuousMonoidHom.coe_subgroupSubtype,
       Subgroup.subtype_apply, AddMonoidHom.id_apply, coe_cocyclesCor1,
       cochainsCor1_indexTwoTransversal_apply_coe hU hs, AddSubgroup.coe_add, Pi.add_apply,
-      DistribSMul.toAddMonoidHom_apply, MonoidHom.coe_coe,
+      DistribSMul.toAddMonoidHom_apply, MonoidHom.coe_ofClass,
       Subgroup.inverseConjugationHom_apply]
     exact add_comm _ _
 

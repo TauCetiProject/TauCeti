@@ -34,8 +34,12 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.toPartialDiffeomorph`: the exponential map and logarithm as a
   partial diffeomorphism between a normal domain and its normal neighbourhood.
 * `TauCeti.Manifold.exists_isNormalDomain_ball`: balls of small enough radius are normal domains.
+* `TauCeti.Manifold.IsNormalDomain.ball`: a tangent ball contained in a normal domain is
+  itself a normal domain.
 * `TauCeti.Manifold.isCompact_riemannianExp_image_closedBall`: a closed tangent ball in the
   exponential domain has compact exponential image.
+* `TauCeti.Manifold.isCompact_riemannianExp_image_sphere`: a tangent sphere in the exponential
+  domain has compact exponential image.
 * `TauCeti.Manifold.exists_isNormalDomain_ball_with_isCompact_riemannianExp_image_closedBall`:
   a smaller closed tangent ball inside a larger normal ball has compact exponential image.
 * `TauCeti.Manifold.IsNormalDomain.isOpen_image`: a normal neighbourhood is open.
@@ -95,7 +99,7 @@ structure IsNormalDomain (p : M) (U : Set (TangentSpace I p)) : Prop where
 
 namespace IsNormalDomain
 
-variable {p : M} {U V : Set (TangentSpace I p)} {v : TangentSpace I p} {t : ℝ}
+variable {p : M} {U V : Set (TangentSpace I p)} {r : ℝ} {v : TangentSpace I p} {t : ℝ}
 
 omit [I.Boundaryless] in
 /-- An open star-shaped neighbourhood of the origin inside a normal domain is a normal domain. -/
@@ -108,6 +112,13 @@ theorem mono (h : IsNormalDomain I M p U) (hVU : V ⊆ U) (hV : IsOpen V)
   subset_expDomain := hVU.trans h.subset_expDomain
   injOn := h.injOn.mono hVU
   isLocalDiffeomorphOn w := h.isLocalDiffeomorphOn ⟨w, hVU w.2⟩
+
+omit [I.Boundaryless] in
+/-- A tangent ball contained in a normal domain is itself a normal domain. -/
+theorem ball (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) (hr : 0 < r) :
+    IsNormalDomain I M p (Metric.ball 0 r) :=
+  h.mono hU Metric.isOpen_ball (Metric.mem_ball_self hr)
+    ((convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr))
 
 omit [I.Boundaryless] in
 /-- A normal neighbourhood is open. -/
@@ -174,6 +185,13 @@ theorem isCompact_riemannianExp_image_closedBall [T2Space (TangentBundle I M)]
     (p : M) {r : ℝ} (hr : Metric.closedBall 0 r ⊆ expDomain I M p) :
     IsCompact (riemannianExp I M p '' Metric.closedBall 0 r) := by
   apply (isCompact_closedBall (0 : TangentSpace I p) r).image_of_continuousOn
+  exact (continuousOn_riemannianExp (I := I) (M := M) p).mono hr
+
+/-- The exponential image of a tangent sphere contained in the exponential domain is compact. -/
+theorem isCompact_riemannianExp_image_sphere [T2Space (TangentBundle I M)]
+    (p : M) {r : ℝ} (hr : Metric.sphere 0 r ⊆ expDomain I M p) :
+    IsCompact (riemannianExp I M p '' Metric.sphere 0 r) := by
+  apply (isCompact_sphere (0 : TangentSpace I p) r).image_of_continuousOn
   exact (continuousOn_riemannianExp (I := I) (M := M) p).mono hr
 
 /-- **Normal balls can be chosen compactly contained in a larger normal ball.** More precisely,
@@ -259,7 +277,7 @@ theorem contMDiffOn_riemannianLog (h : IsNormalDomain I M p U) :
     hloc.localInverse.open_source.mem_nhds hloc.localInverse_mem_source
   have hpre : hloc.localInverse ⁻¹' U ∈ 𝓝 (riemannianExp I M p w) :=
     hloc.continuousAt_localInverse.preimage_mem_nhds (by rw [hinv]; exact h.isOpen.mem_nhds hw)
-  refine hloc.localInverse_contMDiffAt.congr_of_eventuallyEq ?_
+  refine hloc.contMDiffAt_localInverse.congr_of_eventuallyEq ?_
   filter_upwards [hsource, hpre] with z hz hzU
   have hzexp : riemannianExp I M p (hloc.localInverse z) = z := hloc.localInverse_right_inv hz
   have hlog := h.riemannianLog_riemannianExp hzU

@@ -321,6 +321,21 @@ theorem coe_trivializationGeneratorRationalUnit (M : X.Modules) {U V : X.Opens}
       rationalFunction M e hU V (trivializationGenerator M t) :=
   IsUnit.unit_spec _
 
+/-- On a nonempty open subset `W` of the domain of a rank-one trivialization `t`, the rational
+function of a section is a regular multiple of the rational function of the basis section of
+`t`. -/
+theorem exists_rationalFunction_eq_mul (M : X.Modules) {U V W : X.Opens}
+    (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
+    (hU : Dense (U : Set X)) [Nonempty V] [Nonempty W]
+    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) (i : W ⟶ V)
+    (s : Γ(M, W)) :
+    ∃ r : Γ(X, W), rationalFunction M e hU W s =
+      X.germToFunctionField W r * (trivializationGeneratorRationalUnit M e hU t : _) := by
+  have hs : rationalFunction M e hU W s ∈ Set.range (rationalFunction M e hU W) := ⟨s, rfl⟩
+  rw [range_rationalFunction M e hU t i] at hs
+  obtain ⟨r, hr⟩ := hs
+  exact ⟨r, by rw [hr, rationalFunction_map, coe_trivializationGeneratorRationalUnit]⟩
+
 /-- On a nonempty open subset `W` of the domains `V₁`, `V₂` of two rank-one trivializations, the
 rational functions represented by their restricted basis sections differ by a regular unit on
 `W`, namely the transition unit of `existsUnique_map_trivializationGenerator_eq_smul`. This is the

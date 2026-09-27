@@ -83,7 +83,7 @@ variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 preserves the sign of every permutation. -/
 theorem map_permCongrHom_le_alternatingGroup_iff (e : α ≃ β) (G : Subgroup (Perm α)) :
     G.map e.permCongrHom.toMonoidHom ≤ alternatingGroup β ↔ G ≤ alternatingGroup α := by
-  simp [SetLike.le_def, Equiv.Perm.mem_alternatingGroup,
+  simp [IsConcreteLE.le_iff, Equiv.Perm.mem_alternatingGroup,
     Equiv.permCongrHom_coe, Equiv.Perm.sign_permCongr]
 
 end Equiv

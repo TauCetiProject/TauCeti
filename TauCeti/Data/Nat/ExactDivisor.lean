@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finset.SymmDiff
 public import Mathlib.Data.Nat.Factorization.Basic
+import Mathlib.Data.Nat.GCD.BigOperators
 
 /-!
 # Exact divisors of a natural number
@@ -63,6 +64,8 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
   prime-power generation of the family, bundled as
   `TauCeti.Nat.ExactDivisor.primeFactorsEquiv`.
 * `TauCeti.Nat.isExactDivisor_primePow`: the maximal prime powers `p ^ v_p(N)` are exact divisors.
+* `TauCeti.Nat.coprime_primePow_prodPrimePow`: `p ^ v_p(N)` is prime to `∏ q ∈ s, q ^ v_q(N)` for
+  `p ∉ s`.
 -/
 
 public section
@@ -268,6 +271,17 @@ def prodPrimePow (N : ℕ) (s : Finset ℕ) : ℕ := ∏ p ∈ s, p ^ N.factoriz
 
 variable {s : Finset ℕ}
 
+/-- The empty set cuts out the exact divisor `1`. -/
+@[simp]
+theorem prodPrimePow_empty : prodPrimePow N ∅ = 1 := Finset.prod_empty
+
+/-- **Adjoining a prime multiplies by its maximal power**: `∏ p ∈ insert q s, p ^ v_p(N)` is
+`q ^ v_q(N)` times the product over `s`, for `q ∉ s`. -/
+@[simp]
+theorem prodPrimePow_insert {q : ℕ} (hq : q ∉ s) :
+    prodPrimePow N (insert q s) = q ^ N.factorization q * prodPrimePow N s :=
+  Finset.prod_insert hq
+
 /-- **The exponents of `∏ p ∈ s, p ^ v_p(N)`:** the full exponent of `N` at the primes of `s`,
 and `0` elsewhere. -/
 theorem factorization_prodPrimePow (hs : s ⊆ N.primeFactors) (q : ℕ) :
@@ -320,6 +334,22 @@ them (`TauCeti.Nat.IsExactDivisor.prodPrimePow_primeFactors`). -/
 theorem isExactDivisor_primePow {p : ℕ} : IsExactDivisor (p ^ N.factorization p) N := by
   have := isExactDivisor_prodPrimePow (N := N) (s := {p})
   rwa [prodPrimePow, Finset.prod_singleton] at this
+
+/-- **A maximal prime power is prime to the product over the other primes**: `p ^ v_p(N)` is
+coprime to `∏ q ∈ s, q ^ v_q(N)` for `p ∉ s`. -/
+theorem coprime_primePow_prodPrimePow {p : ℕ} (hps : p ∉ s) :
+    Nat.Coprime (p ^ N.factorization p) (prodPrimePow N s) := by
+  rw [prodPrimePow]
+  refine Nat.Coprime.prod_right fun q hq ↦ ?_
+  -- a factor with exponent `0` is `1`; otherwise both bases are prime factors of `N`, distinct
+  -- since `p ∉ s`
+  rcases eq_or_ne (N.factorization p) 0 with hp | hp
+  · rw [hp, pow_zero]; exact Nat.coprime_one_left _
+  rcases eq_or_ne (N.factorization q) 0 with hq0 | hq0
+  · rw [hq0, pow_zero]; exact Nat.coprime_one_right _
+  rw [← Finsupp.mem_support_iff, Nat.support_factorization] at hp hq0
+  exact Nat.coprime_pow_primes _ _ (Nat.prime_of_mem_primeFactors hp)
+    (Nat.prime_of_mem_primeFactors hq0) (ne_of_mem_of_not_mem hq hps).symm
 
 /-- An exact divisor of `N` only involves primes of `N`. -/
 theorem IsExactDivisor.primeFactors_subset (h : IsExactDivisor Q N) :
