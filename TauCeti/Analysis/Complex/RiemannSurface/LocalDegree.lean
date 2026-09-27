@@ -17,8 +17,9 @@ as `w` ranges over the values close to `f z₀`; it is the analytic form of the 
 nonconstant holomorphic function maps a small disc onto a disc around the image of its centre,
 counted with multiplicity. This file transports that count to a map `f : X → Y` between Riemann
 surfaces, where the count is read as a sum of `TauCeti.RiemannSurface.localMultiplicity` over a
-fibre of `f` restricted to a chart neighbourhood of the point. It is the local normal form
-`z ↦ z ^ m` of a nonconstant holomorphic map, obtained as a count rather than as a conjugacy.
+fibre of `f` restricted to a chart neighbourhood of the point. It is the counting consequence of
+the local normal form `z ↦ z ^ m` of a nonconstant holomorphic map, obtained as a count rather
+than as a conjugacy.
 
 Two ingredients are transported from `TauCeti.Analysis.Complex.Conformal.LocalDegree` and
 `TauCeti.Analysis.Analytic.IsolatedZeros`. In charts `e` at `x` and `e'` at `f x` the
@@ -156,7 +157,7 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
     (hne : ¬ EventuallyConst f (𝓝 x)) :
     ∃ U ∈ 𝓝 x, ∃ V ∈ 𝓝 (f x),
       f ⁻¹' {f x} ∩ U = {x} ∧
-      ∀ y' ∈ V, y' ≠ f x →
+      ∀ y' ∈ V,
         (f ⁻¹' {y'} ∩ U) ≠ ∅ ∧
         (f ⁻¹' {y'} ∩ U).Finite ∧
         (∑ᶠ x' ∈ f ⁻¹' {y'} ∩ U, localMultiplicity f x') = localMultiplicity f x := by
@@ -225,11 +226,11 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
   have hU : e.symm '' Metric.ball (e x) r ∈ 𝓝 x :=
     (e.isOpen_image_symm_of_subset_target Metric.isOpen_ball
       fun z hz => (hcoord z hz).2).mem_nhds ⟨e x, Metric.mem_ball_self hr, e.left_inv hx⟩
-  refine ⟨e.symm '' Metric.ball (e x) r, hU,
-    (e' : Y → ℂ) ⁻¹' Metric.ball (e' (f x)) δ ∩ e'.source, ?_, ?_, ?_⟩
-  · refine inter_mem ?_ (e'.open_source.mem_nhds hfx)
+  have hV : (e' : Y → ℂ) ⁻¹' Metric.ball (e' (f x)) δ ∩ e'.source ∈ 𝓝 (f x) := by
+    refine inter_mem ?_ (e'.open_source.mem_nhds hfx)
     exact (e'.continuousAt hfx).preimage_mem_nhds (Metric.ball_mem_nhds (e' (f x)) hδ)
-  · ext b
+  have hcenter : f ⁻¹' {f x} ∩ e.symm '' Metric.ball (e x) r = {x} := by
+    ext b
     constructor
     · rintro ⟨hbf, hbU⟩
       have hbf' : f b = f x := by simpa using Set.mem_preimage.1 hbf
@@ -244,7 +245,20 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
         simp
       · rw [hb]
         exact (Set.mem_image e.symm _ _).2 ⟨e x, Metric.mem_ball_self hr, e.left_inv hx⟩
-  · intro y' hy' hy'ne
+  refine ⟨e.symm '' Metric.ball (e x) r, hU,
+    (e' : Y → ℂ) ⁻¹' Metric.ball (e' (f x)) δ ∩ e'.source, hV, hcenter, ?_⟩
+  intro y' hy'
+  by_cases hcentral : y' = f x
+  · -- The central fibre inside the chart neighbourhood is the singleton `{x}`.
+    subst hcentral
+    refine ⟨?_, ?_, ?_⟩
+    · rw [hcenter]
+      exact Set.singleton_ne_empty x
+    · rw [hcenter]
+      exact Set.finite_singleton x
+    · rw [hcenter, finsum_mem_eq_finite_toFinset_sum _ (Set.finite_singleton x)]
+      simp
+  · have hy'ne : y' ≠ f x := hcentral
     obtain ⟨hwy, hy'dom⟩ := hy'
     have hw : dist (e' y') (e' (f x)) < δ := Metric.mem_ball.1 (Set.mem_preimage.1 hwy)
     have hne' : e' (f x) ≠ e' y' := by
@@ -341,8 +355,9 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
         = localMultiplicity f x := by
       rw [← hsum, hm]
       exact hcount (e' y') (by simpa only [dist_eq_norm] using hw)
-    refine ⟨?_, ?_, hsum2.trans hcount'⟩
-    · -- The count is positive, so the chart ball carries a point of the fibre of `y'`.
+    refine ⟨?_, hbij.finite_iff_finite.mpr hSbF, hsum2.trans hcount'⟩
+    · -- The count is positive, so `Sb` is nonempty, and the surjectivity of `hbij` exhibits a
+      -- point of the fibre of `y'` inside the chart ball.
       have hpos : 0 < localMultiplicity f x := (localMultiplicity_pos_iff hf).mpr hne
       have hSbne : Sb.Nonempty := by
         by_contra hc
@@ -352,39 +367,28 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
         rw [hzero] at hcount'
         exact hpos.ne' hcount'.symm
       obtain ⟨z, hz⟩ := hSbne
-      obtain ⟨hzball, hzf⟩ := hSbin z hz
-      have hsrcz : e.symm z ∈ e.source := hsrc z (Metric.ball_subset_closedBall hzball)
-      have hfz : f (e.symm z) ∈ e'.source := hfimg z (Metric.ball_subset_closedBall hzball)
-      refine Set.nonempty_iff_ne_empty.1 ⟨e.symm z, ?_⟩
-      refine ⟨?_, (Set.mem_image e.symm _ _).2 ⟨z, hzball, rfl⟩⟩
-      rw [Set.mem_preimage]
-      exact e'.injOn hfz hy'dom hzf
-    · -- The fibre in the chart ball lies in the image of the finite set `Sb`.
-      refine ((Finset.finite_toSet Sb).image e.symm).subset fun x' hx' => ?_
-      obtain ⟨hxf, hx'U⟩ := hx'
-      obtain ⟨w, hw, rfl⟩ := (Set.mem_image e.symm _ _).1 hx'U
-      have hzball : w ∈ Metric.closedBall (e x) r := Metric.ball_subset_closedBall hw
-      have hfz : f (e.symm w) ∈ e'.source := hfimg w hzball
-      exact (Set.mem_image e.symm _ _).2 ⟨w, Finset.mem_coe.2 (Finset.mem_filter.2
-        ⟨hZfin.mem_toFinset.2 ⟨hzball, congrArg e' hxf⟩, hw⟩), rfl⟩
+      obtain ⟨x', hx', -⟩ :
+          ∃ x' ∈ f ⁻¹' {y'} ∩ e.symm '' Metric.ball (e x) r, e x' = z :=
+        hbij.2.2 (Finset.mem_coe.2 hz)
+      exact Set.nonempty_iff_ne_empty.1 ⟨x', hx'⟩
 
 /-- **The local fibre count.** Let `f : X → Y` be differentiable at every point of a neighbourhood
 of `x` and not constant near `x`. There are neighbourhoods `U` of `x` and `V` of `f x` such that
-`x` is the only preimage of `f x` inside `U`, and for every `y' ∈ V` different from `f x` the
-fibre of `y'` meets `U`, is finite there, and the sum of the local multiplicities over it is
-exactly `localMultiplicity f x`.
+`x` is the only preimage of `f x` inside `U`, and for every `y' ∈ V` the fibre of `y'` meets `U`,
+is finite there, and the sum of the local multiplicities over it is exactly
+`localMultiplicity f x`.
 
-This is the local normal form `z ↦ z ^ m` of a nonconstant holomorphic map, read as a count: the
-multiplicity of `f` at `x` is the number of preimages of a nearby value, counted with
-multiplicities. The two neighbourhoods are obtained in the preferred charts `chartAt ℂ x` and
-`chartAt ℂ (f x)`. -/
+This is the counting consequence of the local normal form `z ↦ z ^ m` of a nonconstant
+holomorphic map, read without choosing a conjugacy: the multiplicity of `f` at `x` is the number
+of preimages of a nearby value, counted with multiplicities. The two neighbourhoods are obtained
+in the preferred charts `chartAt ℂ x` and `chartAt ℂ (f x)`. -/
 theorem exists_nhds_localMultiplicity_fiber_sum
     [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
     (hDiff : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
     (hne : ¬ EventuallyConst f (𝓝 x)) :
     ∃ U ∈ 𝓝 x, ∃ V ∈ 𝓝 (f x),
       f ⁻¹' {f x} ∩ U = {x} ∧
-      ∀ y' ∈ V, y' ≠ f x →
+      ∀ y' ∈ V,
         (f ⁻¹' {y'} ∩ U) ≠ ∅ ∧
         (f ⁻¹' {y'} ∩ U).Finite ∧
         (∑ᶠ x' ∈ f ⁻¹' {y'} ∩ U, localMultiplicity f x') = localMultiplicity f x :=
