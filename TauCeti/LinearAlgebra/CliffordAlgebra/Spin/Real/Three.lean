@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Three
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.Algebra.Quaternion.NormForm
-import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 
@@ -156,6 +154,7 @@ private theorem real_spin_three_to_even_unitary_surjective :
   apply Units.ext
   rw [CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
   dsimp only [s]
+  -- Normalize the nested Spin and unit coercions before using the reflection-pair formula.
   change ((CliffordAlgebra.spinReflectionPair (realCliffordForm 3 0) m n hm hn :
     spinGroup (realCliffordForm 3 0)) : CliffordAlgebra (realCliffordForm 3 0)) = _
   rw [CliffordAlgebra.coe_spinReflectionPair]
@@ -255,7 +254,7 @@ theorem coe_realSpinThreeEquivQuaternionUnitary_symm_apply (q : unitary ℍ[ℝ]
 
 /-- The oriented pure-quaternion model of the vector space underlying `Cl(3,0)`. The signs are
 fixed by the ordered volume element `e₀e₁e₂` under the chosen even-algebra equivalence. -/
-@[expose] noncomputable def realCliffordThreeZeroPureQuaternionEquiv :
+noncomputable def realCliffordThreeZeroPureQuaternionEquiv :
     (realCliffordForm 3 0).IsometryEquiv
       (QuaternionAlgebra.pureNormForm (-1 : ℝ) (-1 : ℝ)) where
   toFun v := ⟨⟨0, -v 1, v 0, -v 2⟩, by simp⟩
@@ -263,7 +262,8 @@ fixed by the ordered volume element `e₀e₁e₂` under the chosen even-algebra
   left_inv v := by ext i; fin_cases i <;> simp
   right_inv q := by
     apply Subtype.ext
-    ext <;> simp [show (q : ℍ[ℝ]).re = 0 from q.2]
+    have hre : (q : ℍ[ℝ]).re = 0 := q.2
+    ext <;> simp [hre]
   map_add' _ _ := by apply Subtype.ext; ext <;> simp <;> abel
   map_smul' _ _ := by apply Subtype.ext; ext <;> simp
   map_app' v := by
@@ -276,14 +276,14 @@ fixed by the ordered volume element `e₀e₁e₂` under the chosen even-algebra
 @[simp]
 theorem coe_realCliffordThreeZeroPureQuaternionEquiv_apply (v : Fin 3 → ℝ) :
     (realCliffordThreeZeroPureQuaternionEquiv v : ℍ[ℝ]) =
-      ⟨0, -v 1, v 0, -v 2⟩ := rfl
+      ⟨0, -v 1, v 0, -v 2⟩ := (rfl)
 
 /-- The vector coordinates recovered from a pure Hamilton quaternion. -/
 @[simp]
 theorem realCliffordThreeZeroPureQuaternionEquiv_symm_apply
     (q : LinearMap.ker (QuaternionAlgebra.reₗ (-1 : ℝ) (0 : ℝ) (-1 : ℝ))) :
     realCliffordThreeZeroPureQuaternionEquiv.symm q =
-      ![(q : ℍ[ℝ]).imJ, -(q : ℍ[ℝ]).imI, -(q : ℍ[ℝ]).imK] := rfl
+      ![(q : ℍ[ℝ]).imJ, -(q : ℍ[ℝ]).imI, -(q : ℍ[ℝ]).imK] := (rfl)
 
 private abbrev Q3 := realCliffordForm 3 0
 
@@ -332,68 +332,49 @@ private theorem map_vectorEven3 (v : Fin 3 → ℝ) :
   simp only [vectorEven3, coe_realCliffordThreeZeroPureQuaternionEquiv_apply]
   ext <;> simp [e3, Pi.basisFun_apply]
 
-private theorem coe_vectorEven3 (v : Fin 3 → ℝ) :
-    (vectorEven3 v : CliffordAlgebra Q3) =
-      CliffordAlgebra.ι Q3 v * volume3 := by
-  let b := Pi.basisFun ℝ (Fin 3)
-  suffices h :
-      (CliffordAlgebra.even Q3).toSubmodule.subtype.comp vectorEven3 =
-        (LinearMap.mulRight ℝ volume3).comp (CliffordAlgebra.ι Q3) by
-    exact LinearMap.congr_fun h v
-  have h01 : Q3.IsOrtho (e3 0) (e3 1) := by
-    rw [QuadraticMap.isOrtho_def]
-    simp [realCliffordForm_three_zero_apply, e3, Pi.basisFun_apply]
-  have h02 : Q3.IsOrtho (e3 0) (e3 2) := by
-    rw [QuadraticMap.isOrtho_def]
-    simp [realCliffordForm_three_zero_apply, e3, Pi.basisFun_apply]
-  have h12 : Q3.IsOrtho (e3 1) (e3 2) := by
-    rw [QuadraticMap.isOrtho_def]
-    simp [realCliffordForm_three_zero_apply, e3, Pi.basisFun_apply]
-  have hs0 : CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 0) = 1 := by
-    rw [CliffordAlgebra.ι_sq_scalar]
-    simp [e3, Pi.basisFun_apply]
-  have hs1 : CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 1) = 1 := by
-    rw [CliffordAlgebra.ι_sq_scalar]
-    simp [e3, Pi.basisFun_apply]
-  have hs2 : CliffordAlgebra.ι Q3 (e3 2) * CliffordAlgebra.ι Q3 (e3 2) = 1 := by
-    rw [CliffordAlgebra.ι_sq_scalar]
-    simp [e3, Pi.basisFun_apply]
-  have h10 := CliffordAlgebra.ι_mul_ι_comm_of_isOrtho h01.symm
-  have h20 := CliffordAlgebra.ι_mul_ι_comm_of_isOrtho h02.symm
-  have h21 := CliffordAlgebra.ι_mul_ι_comm_of_isOrtho h12.symm
-  have hv0 : vectorEven3 (e3 0) =
-      (CliffordAlgebra.even.ι Q3).bilin (e3 1) (e3 2) := by
-    apply Subtype.ext
+private theorem e3_isOrtho {i j : Fin 3} (hij : i ≠ j) :
+    Q3.IsOrtho (e3 i) (e3 j) := by
+  fin_cases i <;> fin_cases j <;>
+    simp_all [QuadraticMap.isOrtho_def, realCliffordForm_three_zero_apply,
+      e3, Pi.basisFun_apply]
+
+private theorem iota_e3_sq (i : Fin 3) :
+    CliffordAlgebra.ι Q3 (e3 i) * CliffordAlgebra.ι Q3 (e3 i) = 1 := by
+  rw [CliffordAlgebra.ι_sq_scalar]
+  fin_cases i <;> simp [Q3, e3, Pi.basisFun_apply]
+
+private theorem vectorEven3_e3 (i : Fin 3) :
+    vectorEven3 (e3 i) =
+      ![(CliffordAlgebra.even.ι Q3).bilin (e3 1) (e3 2),
+        (CliffordAlgebra.even.ι Q3).bilin (e3 2) (e3 0),
+        (CliffordAlgebra.even.ι Q3).bilin (e3 0) (e3 1)] i := by
+  fin_cases i <;> apply Subtype.ext <;>
     simp [vectorEven3, CliffordAlgebra.even.ι, e3, Pi.basisFun_apply]
-  have hv1 : vectorEven3 (e3 1) =
-      (CliffordAlgebra.even.ι Q3).bilin (e3 2) (e3 0) := by
-    apply Subtype.ext
-    simp [vectorEven3, CliffordAlgebra.even.ι, e3, Pi.basisFun_apply]
-  have hv2 : vectorEven3 (e3 2) =
-      (CliffordAlgebra.even.ι Q3).bilin (e3 0) (e3 1) := by
-    apply Subtype.ext
-    simp [vectorEven3, CliffordAlgebra.even.ι, e3, Pi.basisFun_apply]
-  apply b.ext
-  intro i
+
+private theorem volume3_eq :
+    volume3 =
+      CliffordAlgebra.ι Q3 (e3 0) *
+        (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)) := by
+  simp [volume3, basisList3]
+
+private theorem coe_vectorEven3_e3 (i : Fin 3) :
+    (vectorEven3 (e3 i) : CliffordAlgebra Q3) =
+      CliffordAlgebra.ι Q3 (e3 i) * volume3 := by
+  have h10 := CliffordAlgebra.ι_mul_ι_comm_of_isOrtho
+    (e3_isOrtho (i := 0) (j := 1) (by decide)).symm
+  have h20 := CliffordAlgebra.ι_mul_ι_comm_of_isOrtho
+    (e3_isOrtho (i := 0) (j := 2) (by decide)).symm
+  have h21 := CliffordAlgebra.ι_mul_ι_comm_of_isOrtho
+    (e3_isOrtho (i := 1) (j := 2) (by decide)).symm
+  rw [vectorEven3_e3, volume3_eq]
+  -- Expanding the indexed basis value leaves the three standard Clifford calculations below.
   fin_cases i
-  · rw [LinearMap.comp_apply, LinearMap.comp_apply]
-    change (vectorEven3 (e3 0) : CliffordAlgebra Q3) =
-      CliffordAlgebra.ι Q3 (e3 0) * volume3
-    rw [hv0]
-    simp only [CliffordAlgebra.even.ι, volume3, basisList3, List.map_cons,
-      List.map_nil, List.prod_cons, List.prod_nil, mul_one]
-    change CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2) =
+  · change CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2) =
       CliffordAlgebra.ι Q3 (e3 0) *
         (CliffordAlgebra.ι Q3 (e3 0) *
           (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)))
-    rw [← mul_assoc, hs0, one_mul]
-  · rw [LinearMap.comp_apply, LinearMap.comp_apply]
-    change (vectorEven3 (e3 1) : CliffordAlgebra Q3) =
-      CliffordAlgebra.ι Q3 (e3 1) * volume3
-    rw [hv1]
-    simp only [CliffordAlgebra.even.ι, volume3, basisList3, List.map_cons,
-      List.map_nil, List.prod_cons, List.prod_nil, mul_one]
-    change CliffordAlgebra.ι Q3 (e3 2) * CliffordAlgebra.ι Q3 (e3 0) =
+    rw [← mul_assoc, iota_e3_sq, one_mul]
+  · change CliffordAlgebra.ι Q3 (e3 2) * CliffordAlgebra.ι Q3 (e3 0) =
       CliffordAlgebra.ι Q3 (e3 1) *
         (CliffordAlgebra.ι Q3 (e3 0) *
           (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)))
@@ -409,7 +390,7 @@ private theorem coe_vectorEven3 (v : Fin 3 → ℝ) :
                 (1 * CliffordAlgebra.ι Q3 (e3 2)) := by rw [one_mul]
           _ = CliffordAlgebra.ι Q3 (e3 0) *
                 ((CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 1)) *
-                  CliffordAlgebra.ι Q3 (e3 2)) := by rw [hs1]
+                  CliffordAlgebra.ι Q3 (e3 2)) := by rw [iota_e3_sq]
           _ = (CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 1)) *
                 (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)) := by
             noncomm_ring
@@ -420,13 +401,7 @@ private theorem coe_vectorEven3 (v : Fin 3 → ℝ) :
           (CliffordAlgebra.ι Q3 (e3 0) *
             (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2))) := by
         noncomm_ring
-  · rw [LinearMap.comp_apply, LinearMap.comp_apply]
-    change (vectorEven3 (e3 2) : CliffordAlgebra Q3) =
-      CliffordAlgebra.ι Q3 (e3 2) * volume3
-    rw [hv2]
-    simp only [CliffordAlgebra.even.ι, volume3, basisList3, List.map_cons,
-      List.map_nil, List.prod_cons, List.prod_nil, mul_one]
-    change CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 1) =
+  · change CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 1) =
       CliffordAlgebra.ι Q3 (e3 2) *
         (CliffordAlgebra.ι Q3 (e3 0) *
           (CliffordAlgebra.ι Q3 (e3 1) * CliffordAlgebra.ι Q3 (e3 2)))
@@ -454,7 +429,22 @@ private theorem coe_vectorEven3 (v : Fin 3 → ℝ) :
             (CliffordAlgebra.ι Q3 (e3 2) * CliffordAlgebra.ι Q3 (e3 2))) := by
         noncomm_ring
       _ = CliffordAlgebra.ι Q3 (e3 0) * CliffordAlgebra.ι Q3 (e3 1) := by
-        rw [hs2, mul_one]
+        rw [iota_e3_sq, mul_one]
+
+private theorem coe_vectorEven3 (v : Fin 3 → ℝ) :
+    (vectorEven3 v : CliffordAlgebra Q3) =
+      CliffordAlgebra.ι Q3 v * volume3 := by
+  -- Both sides are linear in `v`; the indexed basis lemma packages all coordinate calculations.
+  suffices h :
+      (CliffordAlgebra.even Q3).toSubmodule.subtype.comp vectorEven3 =
+        (LinearMap.mulRight ℝ volume3).comp (CliffordAlgebra.ι Q3) by
+    exact LinearMap.congr_fun h v
+  apply (Pi.basisFun ℝ (Fin 3)).ext
+  intro i
+  simp only [LinearMap.comp_apply]
+  change (vectorEven3 (e3 i) : CliffordAlgebra Q3) =
+    CliffordAlgebra.ι Q3 (e3 i) * volume3
+  exact coe_vectorEven3_e3 i
 
 private theorem vectorEven3_spin_action (s : spinGroup Q3) (v : Fin 3 → ℝ) :
     vectorEven3 (s • v) =
@@ -472,6 +462,7 @@ private theorem vectorEven3_spin_action (s : spinGroup Q3) (v : Fin 3 → ℝ) :
     CliffordAlgebra.coe_reverseEven_apply,
     CliffordAlgebra.coe_evenUnitaryGroupEvenPart]
   rw [CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
+  -- Normalize subtype and unit coercions to an equality in the ambient Clifford algebra.
   change (s : CliffordAlgebra Q3) * CliffordAlgebra.ι Q3 v *
       star (s : CliffordAlgebra Q3) * volume3 =
     (s : CliffordAlgebra Q3) * (CliffordAlgebra.ι Q3 v * volume3) *
@@ -481,10 +472,6 @@ private theorem vectorEven3_spin_action (s : spinGroup Q3) (v : Fin 3 → ℝ) :
   have hcomm : volume3 * star (s : CliffordAlgebra Q3) =
       star (s : CliffordAlgebra Q3) * volume3 :=
     (Subalgebra.mem_center_iff.mp volume3_mem_center _).symm
-  change (s : CliffordAlgebra Q3) * CliffordAlgebra.ι Q3 v *
-      star (s : CliffordAlgebra Q3) * volume3 =
-    (s : CliffordAlgebra Q3) * (CliffordAlgebra.ι Q3 v * volume3) *
-      star (s : CliffordAlgebra Q3)
   calc
     (s : CliffordAlgebra Q3) * CliffordAlgebra.ι Q3 v *
           star (s : CliffordAlgebra Q3) * volume3 =

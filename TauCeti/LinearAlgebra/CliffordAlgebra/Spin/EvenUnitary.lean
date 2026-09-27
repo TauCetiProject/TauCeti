@@ -464,6 +464,13 @@ theorem spinGroupToEvenUnitary_injective :
     Function.Injective (spinGroupToEvenUnitary Q) := fun _ _ h ↦
   spinGroup.toUnits_injective (congrArg Subtype.val h)
 
+/-- Two Spin elements have the same image in the even unitary carrier exactly when they are
+equal. -/
+@[simp]
+theorem spinGroupToEvenUnitary_inj (x y : spinGroup Q) :
+    spinGroupToEvenUnitary Q x = spinGroupToEvenUnitary Q y ↔ x = y :=
+  (spinGroupToEvenUnitary_injective Q).eq_iff
+
 /-- The Spin units are precisely the Lipschitz units that lie in the even unitary carrier. -/
 @[simp]
 theorem range_spinGroup_toUnits :
