@@ -196,7 +196,8 @@ theorem wassersteinEDist_top_le_iff (μ ν : Measure X) [IsFiniteMeasure μ]
 /-- On a space whose distinct points are at least `r` apart, two measures at
 `W_∞` distance strictly less than `r` agree. Indeed, an optimal coupling cannot move
 mass between distinct points. This also applies when the distance is infinite. -/
-theorem eq_of_wassersteinEDist_top_lt_of_pairwise (μ ν : Measure X) [IsFiniteMeasure μ]
+theorem eq_of_wassersteinEDist_top_lt_of_pairwise_edist_ge (μ ν : Measure X)
+    [IsFiniteMeasure μ]
     (hcoup : ∃ π, IsCoupling π μ ν) {r : ℝ≥0∞}
     (hsep : Pairwise fun x y : X ↦ r ≤ edist x y)
     (h : wassersteinEDist ∞ μ ν < r) : μ = ν := by

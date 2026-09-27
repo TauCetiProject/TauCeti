@@ -19,8 +19,9 @@ uncountable family whose distinct members are at least unit distance apart in `W
 coupling that moves mass less than one unit almost everywhere must be diagonal, and therefore
 has equal marginals. Thus `P_∞(ℕ)` contains uncountably many disjoint open balls.
 
-The separation argument uses `TauCeti.eq_of_wassersteinEDist_top_lt_of_pairwise`, which applies
-to any uniformly separated metric space. This example explains why the finite-exponent
+The separation argument uses
+`TauCeti.eq_of_wassersteinEDist_top_lt_of_pairwise_edist_ge`, which applies to any
+uniformly separated metric space. This example explains why the finite-exponent
 separability and Borel-space arguments cannot simply be used at exponent `∞`.
 -/
 
@@ -54,7 +55,7 @@ private theorem bernoulliLaw_separated {p q : unitInterval} (hpq : p ≠ q) :
     intro x y hxy
     rw [edist_dist]
     simpa using ENNReal.ofReal_le_ofReal (Nat.pairwise_one_le_dist hxy)
-  have hm := eq_of_wassersteinEDist_top_lt_of_pairwise
+  have hm := eq_of_wassersteinEDist_top_lt_of_pairwise_edist_ge
     ((bernoulliLaw p : ProbabilityMeasure ℕ) : Measure ℕ)
     ((bernoulliLaw q : ProbabilityMeasure ℕ) : Measure ℕ)
     ⟨_, isCoupling_prod _ _⟩ hsep hlt
@@ -81,22 +82,10 @@ theorem WassersteinSpace.not_separableSpace_top_nat :
     fun p ↦ Metric.eball (bernoulliLaw p) ((1 / 2 : ℝ≥0) : ℝ≥0∞)
   have hdisj : Pairwise (Function.onFun Disjoint U) := by
     intro p q hpq
-    apply Set.disjoint_left.mpr
-    intro x hx hy
-    have hpx : edist (bernoulliLaw p) x < ((1 / 2 : ℝ≥0) : ℝ≥0∞) := by
-      simpa only [U, Metric.mem_eball, edist_comm] using hx
-    have hxq : edist x (bernoulliLaw q) < ((1 / 2 : ℝ≥0) : ℝ≥0∞) := by
-      simpa only [U, Metric.mem_eball] using hy
-    have hlt : edist (bernoulliLaw p) (bernoulliLaw q) < 1 := by
-      calc
-        edist (bernoulliLaw p) (bernoulliLaw q) ≤
-            edist (bernoulliLaw p) x + edist x (bernoulliLaw q) := edist_triangle _ _ _
-        _ < ((1 / 2 : ℝ≥0) : ℝ≥0∞) + ((1 / 2 : ℝ≥0) : ℝ≥0∞) :=
-          ENNReal.add_lt_add hpx hxq
-        _ = 1 := by
-          rw [← ENNReal.coe_add]
-          norm_num
-    exact (not_lt_of_ge (bernoulliLaw_separated hpq)) hlt
+    apply Metric.eball_disjoint
+    convert bernoulliLaw_separated hpq using 1
+    rw [← ENNReal.coe_add]
+    norm_num
   have hcount : Countable unitInterval :=
     hdisj.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_eball)
       (fun p ↦ ⟨bernoulliLaw p, Metric.mem_eball_self (by norm_num)⟩)
