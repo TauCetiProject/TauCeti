@@ -193,6 +193,8 @@ theorem associated_scharlauTransfer [Invertible (2 : K)]
   let : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [associated_apply, associated_apply]
+  -- Refold the expanded differences as `polar` while retaining the `Module.End`
+  -- scalar actions, so `invOf_smul_eq_iff` can cancel the inverse of two over `K`.
   change
     ⅟(2 : Module.End K K) • QuadraticMap.polar (Q.scharlauTransfer s) x y =
       s (⅟(2 : Module.End L L) • QuadraticMap.polar Q x y)

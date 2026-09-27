@@ -150,6 +150,8 @@ theorem IsometryEquiv.scharlauTransferTmulBaseChange_symm_apply
       v ⊗ₜ[L] (1 ⊗ₜ[K] w) := by
   let : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  -- `IsometryEquiv.symm` is definitionally the inverse of its underlying linear
+  -- equivalence; expose the restricted cancellation equivalence so its inverse lemma applies.
   change
     ((TensorProduct.AlgebraTensorModule.cancelBaseChange K L L V W).restrictScalars K).symm
         (v ⊗ₜ[K] w) = _
