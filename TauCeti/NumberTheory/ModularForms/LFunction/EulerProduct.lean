@@ -20,7 +20,8 @@ there.
 
 This gives the Euler product for the coefficient L-series and, through the width-one
 normalization, for Mathlib's `ModularForm.L`. It applies to newforms equipped with a full
-eigenform structure from their bad-prime eigenrelations.
+eigenform structure from their bad-prime eigenrelations. It supplies the analytic prerequisite
+for the Layer 7 newform Euler product; the newform-to-full-eigenform upgrade is separate.
 
 ## References
 
