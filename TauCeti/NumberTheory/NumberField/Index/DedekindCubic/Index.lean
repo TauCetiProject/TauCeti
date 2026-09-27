@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Index.DedekindCubic.Order
-public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.NumberTheory.NumberField.Index.Basic
 import Mathlib.Tactic.ComputeDegree
 
@@ -33,14 +32,14 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 /-- The `Nat.card` of the quotient by Dedekind's order, which is zero if the quotient is infinite.
 When `θ` generates `K`, this is a finite, positive index in the full ring of integers. -/
-def dedekindOrderIndex (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) : ℕ :=
-  (dedekindOrder (dedekindCubic_relation hmin)).toSubmodule.cardQuot
+def dedekindOrderIndex (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : ℕ :=
+  (dedekindOrder hθ).toSubmodule.cardQuot
 
 /-- The index is the cardinality of the additive quotient by Dedekind's order. -/
 theorem dedekindOrderIndex_def
-    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
-    dedekindOrderIndex hmin =
-      Nat.card (𝓞 K ⧸ (dedekindOrder (dedekindCubic_relation hmin)).toSubmodule) :=
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindOrderIndex hθ =
+      Nat.card (𝓞 K ⧸ (dedekindOrder hθ).toSubmodule) :=
   Submodule.cardQuot_apply _
 
 /-- Dedekind's cubic order has finite index in the full ring of integers when `θ` generates `K`. -/
@@ -63,16 +62,16 @@ theorem finite_quotient_dedekindOrder
 /-- The index of Dedekind's cubic order is positive when `θ` generates `K`. -/
 theorem dedekindOrderIndex_pos
     (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : 0 < dedekindOrderIndex hmin := by
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    0 < dedekindOrderIndex (dedekindCubic_relation hmin) := by
   let _ := finite_quotient_dedekindOrder hmin hgen
   rw [dedekindOrderIndex_def]
   exact Nat.card_pos
 
 /-- Dedekind's cubic order has index one exactly when it is the full ring of integers. -/
 @[simp] theorem dedekindOrderIndex_eq_one_iff
-    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
-    dedekindOrderIndex hmin = 1 ↔
-      dedekindOrder (dedekindCubic_relation hmin) = ⊤ := by
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindOrderIndex hθ = 1 ↔ dedekindOrder hθ = ⊤ := by
   rw [dedekindOrderIndex, Submodule.cardQuot_eq_one_iff, Algebra.toSubmodule_eq_top]
 
 end TauCeti.NumberField
