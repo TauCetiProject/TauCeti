@@ -43,7 +43,7 @@ theorem dedekindOrderIndex_def
       Nat.card (𝓞 K ⧸ (dedekindOrder (dedekindCubic_relation hmin)).toSubmodule) :=
   Submodule.cardQuot_apply _
 
-/-- Dedekind's cubic order has finite index in the full ring of integers. -/
+/-- Dedekind's cubic order has finite index in the full ring of integers when `θ` generates `K`. -/
 theorem finite_quotient_dedekindOrder
     (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
@@ -60,7 +60,7 @@ theorem finite_quotient_dedekindOrder
   symm
   compute_degree <;> norm_num
 
-/-- The index of Dedekind's cubic order is positive. -/
+/-- The index of Dedekind's cubic order is positive when `θ` generates `K`. -/
 theorem dedekindOrderIndex_pos
     (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : 0 < dedekindOrderIndex hmin := by
