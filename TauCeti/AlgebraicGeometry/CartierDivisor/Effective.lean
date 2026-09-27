@@ -78,13 +78,6 @@ theorem IsEffective.add {D E : CartierDivisor X} (hD : D.IsEffective) (hE : E.Is
   refine ⟨f * g, hf.mul hg, ?_⟩
   exact Subring.mul_mem _ hfr hgr
 
-/-- A natural multiple of an effective Cartier divisor is effective. -/
-theorem IsEffective.nsmul {D : CartierDivisor X} (hD : D.IsEffective) (n : ℕ) :
-    (n • D).IsEffective := by
-  induction n with
-  | zero => simp
-  | succ n ih => simpa only [succ_nsmul] using ih.add hD
-
 /-- Effective Cartier divisors form an additive submonoid. -/
 def effectiveSubmonoid (X : Scheme.{u}) [IsIntegral X] : AddSubmonoid (CartierDivisor X) where
   carrier := {D | D.IsEffective}
@@ -102,22 +95,9 @@ theorem isEffective_iff_one_mem_sections {D : CartierDivisor X} :
     D.IsEffective ↔
       Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) ⊤
         (1 : Γ(X, (⊤ : X.Opens))) ∈ D.sections ⊤ := by
-  constructor
-  · intro h
-    rw [mem_sections]
-    intro x _ f hf
-    have : Nonempty (⊤ : X.Opens) := ⟨⟨x, by simp⟩⟩
-    simpa only [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, map_one, mul_one]
-      using h x f hf
-  · intro h
-    apply isEffective_iff_exists.mpr
-    intro x
-    obtain ⟨f, hf⟩ := D.exists_isLocalEquationAt x
-    refine ⟨f, hf, ?_⟩
-    have : Nonempty (⊤ : X.Opens) := ⟨⟨x, by simp⟩⟩
-    have hmem := (mem_sections.mp h) x (by simp) f hf
-    simpa only [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, map_one, mul_one]
-      using hmem
+  rw [isEffective_iff_exists, mem_sections_iff_exists]
+  simp only [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, map_one, mul_one]
+  simp
 
 /-- A Cartier divisor is effective exactly when the regular functions are sections of
 `𝒪_X(D)` under the canonical inclusion into rational functions. -/
@@ -185,22 +165,12 @@ on the whole scheme. -/
 theorem isEffective_principalCartierDivisor_iff (f : X.functionFieldˣ) :
     (principalCartierDivisor X f).IsEffective ↔
       ∃ a : Γ(X, (⊤ : X.Opens)), X.germToFunctionField ⊤ a = (f : X.functionField) := by
-  constructor
-  · intro h
-    have : Nonempty (⊤ : X.Opens) :=
-      ⟨⟨Classical.choice (inferInstanceAs (Nonempty X)), by simp⟩⟩
-    apply Scheme.exists_germToFunctionField_eq_of_forall_mem_range
-    intro x _
-    exact h x f (isLocalEquationAt_principalCartierDivisor x f)
-  · rintro ⟨a, ha⟩
-    apply isEffective_iff_exists.mpr
-    intro x
-    refine ⟨f, isLocalEquationAt_principalCartierDivisor x f, ?_⟩
-    have : Nonempty (⊤ : X.Opens) :=
-      ⟨⟨x, by simp⟩⟩
-    rw [← ha, ← _root_.AlgebraicGeometry.Scheme.algebraMap_germ_eq_germToFunctionField X
-      (by simp : x ∈ (⊤ : X.Opens)) a]
-    exact RingHom.mem_range_self _ _
+  have : Nonempty (⊤ : X.Opens) :=
+    ⟨⟨Classical.choice (inferInstanceAs (Nonempty X)), by simp⟩⟩
+  rw [isEffective_iff_one_mem_sections,
+    mem_sections_iff_of_rationalUnitClass_eq le_rfl
+      (principalCartierDivisor_restrict X f ⊤).symm]
+  simp only [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, map_one, mul_one]
 
 end Scheme.CartierDivisor
 
