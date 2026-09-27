@@ -125,28 +125,6 @@ theorem eq_centeredNegativeGradientFlow_of_isIntegralCurveOn
   rw [eq_flowOfLipschitz_of_isIntegralCurveOn hv hy hst, hy0,
     flowOfLipschitz_centeredNegativeGradient_apply]
 
-/-- A centred negative-gradient trajectory on `[0, ∞)` is the corresponding translated orbit of
-the global negative-gradient flow. -/
-theorem eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Ici
-    (hf : LipschitzWith K (∇ f)) {x z : E} {y : ℝ → E}
-    (hy : IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0))
-    (hy0 : y 0 = z) {t : ℝ} (ht : 0 ≤ t) :
-    y t = negativeGradientFlow f hf t (x + z) - x :=
-  eq_centeredNegativeGradientFlow_of_isIntegralCurveOn hf hy hy0 <| by
-    rw [uIcc_of_le ht]
-    exact Icc_subset_Ici_self
-
-/-- A centred negative-gradient trajectory on `(-∞, 0]` is the corresponding translated orbit of
-the global negative-gradient flow. -/
-theorem eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Iic
-    (hf : LipschitzWith K (∇ f)) {x z : E} {y : ℝ → E}
-    (hy : IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0))
-    (hy0 : y 0 = z) {t : ℝ} (ht : t ≤ 0) :
-    y t = negativeGradientFlow f hf t (x + z) - x :=
-  eq_centeredNegativeGradientFlow_of_isIntegralCurveOn hf hy hy0 <| by
-    rw [uIcc_of_ge ht]
-    exact Icc_subset_Iic_self
-
 /-- **Independence of the Lipschitz bound.** Two Lipschitz witnesses for `∇ f`, with possibly
 different constants, produce the same negative gradient flow. -/
 theorem negativeGradientFlow_congr (f : E → ℝ) {K' : ℝ≥0} (hf : LipschitzWith K (∇ f))

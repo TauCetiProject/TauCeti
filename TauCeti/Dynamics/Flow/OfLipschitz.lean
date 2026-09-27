@@ -109,24 +109,6 @@ theorem eq_flowOfLipschitz_of_isIntegralCurveOn (hv : LipschitzWith K v) {γ : �
       (fun s _ ↦ (hη s).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) hinit
     exact heq ⟨le_rfl, ht⟩
 
-/-- **Forward half-line uniqueness.** An integral curve on `[0, ∞)` agrees there with the orbit
-of the globally Lipschitz flow through its value at zero. -/
-theorem eq_flowOfLipschitz_of_isIntegralCurveOn_Ici (hv : LipschitzWith K v) {γ : ℝ → E}
-    (hγ : IsIntegralCurveOn γ (fun _ y ↦ v y) (Ici 0)) {t : ℝ} (ht : 0 ≤ t) :
-    γ t = flowOfLipschitz v hv t (γ 0) :=
-  eq_flowOfLipschitz_of_isIntegralCurveOn hv hγ <| by
-    rw [uIcc_of_le ht]
-    exact Icc_subset_Ici_self
-
-/-- **Backward half-line uniqueness.** An integral curve on `(-∞, 0]` agrees there with the orbit
-of the globally Lipschitz flow through its value at zero. -/
-theorem eq_flowOfLipschitz_of_isIntegralCurveOn_Iic (hv : LipschitzWith K v) {γ : ℝ → E}
-    (hγ : IsIntegralCurveOn γ (fun _ y ↦ v y) (Iic 0)) {t : ℝ} (ht : t ≤ 0) :
-    γ t = flowOfLipschitz v hv t (γ 0) :=
-  eq_flowOfLipschitz_of_isIntegralCurveOn hv hγ <| by
-    rw [uIcc_of_ge ht]
-    exact Icc_subset_Iic_self
-
 /-- **The rest points of the flow are the zeros of the vector field.** -/
 theorem forall_flowOfLipschitz_eq_self_iff (hv : LipschitzWith K v) (x : E) :
     (∀ t, flowOfLipschitz v hv t x = x) ↔ v x = 0 := by
