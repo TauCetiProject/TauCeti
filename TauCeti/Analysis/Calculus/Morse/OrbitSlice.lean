@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.LevelSlice
-public import Mathlib.GroupTheory.GroupAction.Defs
 
 /-!
 # Connecting orbits and intermediate level sets
@@ -25,14 +24,16 @@ public section
 
 open Set Topology
 
-namespace Flow
+namespace TauCeti
+
+open _root_.Flow
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {φ : _root_.Flow ℝ E} {f : E → ℝ} {p q : E}
 
 /-- The quotient map is bijective from an intermediate level of the connecting set onto
 the orbit classes containing connecting points. -/
-theorem IsNegativeGradient.bijOn_quotient_connecting_level
+theorem IsNegativeGradient.bijOn_quotient_unstableSet_inter_stableSet_level
     (hφ : IsNegativeGradient φ f)
     (hf : ∀ x ∈ unstableSet φ p ∩ stableSet φ q, ∀ t,
       DifferentiableAt ℝ f (φ t x))
@@ -51,8 +52,9 @@ theorem IsNegativeGradient.bijOn_quotient_connecting_level
   · intro x hx
     exact ⟨x, hx.1, rfl⟩
   · intro x hx y hy hxy
-    obtain ⟨t, ht'⟩ := Quotient.exact hxy
-    have ht : φ t y = x := ht'
+    have horbit : x ∈ φ.orbit y :=
+      (@AddAction.orbitRel_apply ℝ E _ φ.toAddAction).mp (Quotient.exact hxy)
+    obtain ⟨t, ht⟩ := φ.mem_orbit_iff.mp horbit
     have hstrict := hφ.orbit_strictAnti_of_mem_unstableSet_inter_stableSet
       (hf y hy.1) hpq hy.1
     have hzero : t = 0 := hstrict.injective (by
@@ -64,6 +66,8 @@ theorem IsNegativeGradient.bijOn_quotient_connecting_level
       (hf x hx) hfp hfq hx hc
     refine ⟨φ t x, ⟨⟨(isInvariant_unstableSet φ p t hx.1),
       (isInvariant_stableSet φ q t hx.2)⟩, ht⟩, ?_⟩
-    exact Quotient.sound ⟨t, rfl⟩
+    apply Quotient.sound
+    apply (@AddAction.orbitRel_apply ℝ E _ φ.toAddAction).mpr
+    exact φ.mem_orbit x t
 
-end Flow
+end TauCeti
