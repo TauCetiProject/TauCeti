@@ -55,7 +55,7 @@ structure PreAdicSpace where
 namespace PreAdicSpace
 
 /-- The presheafed space obtained by forgetting the topology on the sections. -/
-@[expose] noncomputable def toRingPresheafedSpace (X : PreAdicSpace.{u}) :
+noncomputable def toRingPresheafedSpace (X : PreAdicSpace.{u}) :
     AlgebraicGeometry.PresheafedSpace CommRingCat.{u} :=
   (TopCommRingCat.isCompleteSeparated.ι ⋙
     forget₂ TopCommRingCat CommRingCat).mapPresheaf.obj X.toPresheafedSpace
@@ -63,13 +63,16 @@ namespace PreAdicSpace
 @[simp]
 theorem toRingPresheafedSpace_carrier (X : PreAdicSpace.{u}) :
     (X.toRingPresheafedSpace : TopCat) = (X.toPresheafedSpace : TopCat) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem toRingPresheafedSpace_presheaf (X : PreAdicSpace.{u}) :
-    X.toRingPresheafedSpace.presheaf = X.toPresheafedSpace.presheaf ⋙
-      TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat :=
-  rfl
+    @HEq (X.toRingPresheafedSpace.carrier.Presheaf CommRingCat.{u})
+      X.toRingPresheafedSpace.presheaf
+      (X.toPresheafedSpace.carrier.Presheaf CommRingCat.{u})
+      (X.toPresheafedSpace.presheaf ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
+        forget₂ TopCommRingCat CommRingCat) :=
+  HEq.rfl
 
 end PreAdicSpace
 

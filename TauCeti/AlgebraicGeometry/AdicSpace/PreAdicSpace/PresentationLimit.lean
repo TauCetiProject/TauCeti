@@ -27,7 +27,7 @@ universe u
 
 /-- The pre-adic space of an adic spectrum with the completed rational-localisation presheaf.
 The valuation at a point is induced on the residue field of its local stalk. -/
-@[expose] noncomputable def presentationLimitPreAdicSpace {A : Type u} [CommRing A]
+noncomputable def presentationLimitPreAdicSpace {A : Type u} [CommRing A]
     [TopologicalSpace A]
     [IsTopologicalRing A] (P : PairOfDefinition A) (Aplus : Subring A)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
@@ -56,7 +56,7 @@ theorem presentationLimitPreAdicSpace_carrier {A : Type u} [CommRing A] [Topolog
     (hP : P.ringOfDefinition ≤ Aplus) :
     ((presentationLimitPreAdicSpace P Aplus hAplus hP).toPresheafedSpace : TopCat) =
       TopCat.of ↥(spa Aplus) :=
-  rfl
+  (rfl)
 
 /-- The sections of this pre-adic space form the presentation-limit presheaf. -/
 @[simp]
@@ -91,7 +91,8 @@ theorem presentationLimitPreAdicSpace_valuation {A : Type u} [CommRing A]
     [TopologicalSpace A] [IsTopologicalRing A] (P : PairOfDefinition A) (Aplus : Subring A)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     (hP : P.ringOfDefinition ≤ Aplus) (x : spa Aplus) :
-    HEq ((presentationLimitPreAdicSpace P Aplus hAplus hP).valuation x)
+    HEq ((presentationLimitPreAdicSpace P Aplus hAplus hP).valuation
+      ((presentationLimitPreAdicSpace_carrier P Aplus hAplus hP).symm ▸ x))
       (presentationLimitStalkResidueValuation hAplus hP x) :=
   HEq.rfl
 
