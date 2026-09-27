@@ -79,13 +79,13 @@ theorem schurPolyBasis_repr_frobeniusCharacteristic (d : ℕ) (h : n ≤ d)
   let e := partitionEquivSchurIndex n d h
   have hμ : e μ.1 = μ := Subtype.ext rfl
   conv_lhs => rw [← hμ]
-  change (schurPolyBasis (Fin d) ℂ n).repr
-    ((spechtCharacterBasis n).equiv (schurPolyBasis (Fin d) ℂ n) e f) (e μ.1) = _
+  rw [frobeniusCharacteristic]
   have hrepr := Module.Basis.repr_reindex_apply (schurPolyBasis (Fin d) ℂ n)
     ((spechtCharacterBasis n).equiv (schurPolyBasis (Fin d) ℂ n) e f) e.symm μ.1
   simp only [Equiv.symm_symm] at hrepr
   rw [← hrepr]
-  simp only [Module.Basis.equiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  rw [← Module.Basis.map_equiv (spechtCharacterBasis n) (schurPolyBasis (Fin d) ℂ n) e]
+  simp only [Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
   exact spechtCharacterBasis_repr f μ.1
 
 /-- The Schur coefficient of a class function under the Frobenius characteristic is its
