@@ -31,7 +31,8 @@ namespace TauCeti
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- At a finite place where two and every diagonal coefficient are units, every pairwise Hilbert
-symbol, and hence their product, equals one. -/
+symbol, and hence their product, equals one. The pairwise simp lemma already proves this
+conclusion, so `simpNF` rejects a redundant `@[simp]` attribute here. -/
 theorem diagonalHasse_eq_one_of_valuation_eq_one {n : ℕ} (a : Fin n → Kˣ)
     (v : HeightOneSpectrum (𝓞 K)) (h2 : v.valuation K 2 = 1)
     (ha : ∀ i, v.valuation K (a i) = 1) :
