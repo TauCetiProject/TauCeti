@@ -62,7 +62,9 @@ theorem coe_closedFixingSubgroup (s : Set M) :
 @[simp]
 theorem mem_closedFixingSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
     f ∈ closedFixingSubgroup (I := I) (n := n) s ↔ ∀ x ∈ s, f x = x := by
-  change f ∈ fixingSubgroup (I := I) (n := n) s ↔ ∀ x ∈ s, f x = x
+  change f ∈ (closedFixingSubgroup (I := I) (n := n) s : Subgroup _) ↔
+    ∀ x ∈ s, f x = x
+  rw [coe_closedFixingSubgroup]
   exact mem_fixingSubgroup_iff
 
 end Diffeomorph
