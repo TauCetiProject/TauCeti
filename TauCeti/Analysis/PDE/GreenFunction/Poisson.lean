@@ -50,16 +50,16 @@ theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz :
     rw [← hnorm, h, norm_zero]
   have h₁ : HasDerivAt (fun t : ℝ => planarNewtonianKernel (t • z - a))
       ((-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) * ⟪z - a, z⟫_ℝ) 1 := by
-    simpa only [sub_eq_add_neg, add_comm] using
-      hasDerivAt_planarNewtonianKernel_affine (-a) z (by simpa only [add_comm,
-        ← sub_eq_add_neg] using hza)
+    simpa only [one_smul, sub_eq_add_neg, add_comm] using
+      hasDerivAt_planarNewtonianKernel_affine (-a) z (t := 1)
+        (by simpa only [one_smul, add_comm, ← sub_eq_add_neg] using hza)
   have h₂ : HasDerivAt
       (fun t : ℝ => planarNewtonianKernel (1 + t • (-(starRingEnd ℂ a * z))))
       ((-(2 * Real.pi)⁻¹ * (‖1 - starRingEnd ℂ a * z‖ ^ 2)⁻¹) *
         ⟪1 - starRingEnd ℂ a * z, -(starRingEnd ℂ a * z)⟫_ℝ) 1 := by
-    simpa only [sub_eq_add_neg] using
-      hasDerivAt_planarNewtonianKernel_affine 1 (-(starRingEnd ℂ a * z))
-        (by simpa only [← sub_eq_add_neg] using hca)
+    simpa only [one_smul, sub_eq_add_neg] using
+      hasDerivAt_planarNewtonianKernel_affine 1 (-(starRingEnd ℂ a * z)) (t := 1)
+        (by simpa only [one_smul, ← sub_eq_add_neg] using hca)
   have harg (t : ℝ) : 1 - starRingEnd ℂ a * (t • z) =
       1 + t • (-(starRingEnd ℂ a * z)) := by
     rw [mul_smul_comm, smul_neg]
