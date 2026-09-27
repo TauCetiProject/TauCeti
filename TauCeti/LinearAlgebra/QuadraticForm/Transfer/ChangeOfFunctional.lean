@@ -29,37 +29,6 @@ public section
 
 open scoped TensorProduct
 
-namespace QuadraticForm
-
-variable {R M : Type*} [CommRing R] [Invertible (2 : R)]
-  [AddCommGroup M] [Module R M]
-
-/-- The tensor product of the quadratic line `⟨a⟩` with `Q` is isometric to `a • Q`.
-The underlying linear equivalence is the canonical left unitor. -/
-def tensorLIdSMul (a : R) (Q : QuadraticForm R M) :
-    (QuadraticForm.tmul (a • QuadraticMap.sq (R := R)) Q).IsometryEquiv (a • Q) where
-  toLinearEquiv := TensorProduct.lid R M
-  map_app' x := by
-    calc
-      (a • Q) (TensorProduct.lid R M x) = a • Q (TensorProduct.lid R M x) := by
-        rw [smul_apply]
-      _ = a • QuadraticForm.tmul (QuadraticMap.sq (R := R)) Q x := by
-        rw [tmul_tensorLId_apply]
-      _ = QuadraticForm.tmul (a • QuadraticMap.sq (R := R)) Q x := by
-        rw [QuadraticForm.smul_tmul, smul_apply]
-
-/-- The isometry from `⟨a⟩ ⊗ Q` to `a • Q` acts by the canonical left unitor. -/
-@[simp]
-theorem tensorLIdSMul_apply (a : R) (Q : QuadraticForm R M) (x : R ⊗[R] M) :
-    tensorLIdSMul a Q x = TensorProduct.lid R M x := (rfl)
-
-/-- The inverse isometry sends a vector to the pure tensor with left factor `1`. -/
-@[simp]
-theorem tensorLIdSMul_symm_apply (a : R) (Q : QuadraticForm R M) (x : M) :
-    (tensorLIdSMul a Q).symm x = 1 ⊗ₜ[R] x := (rfl)
-
-end QuadraticForm
-
 namespace QuadraticMap
 
 variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
@@ -73,15 +42,29 @@ be the unique unit relating them. -/
 def IsometryEquiv.scharlauTransferCompMul (Q : QuadraticForm L V)
     (s : L →ₗ[K] K) (a : L) :
     (Q.scharlauTransfer (s.comp (LinearMap.mul K L a))).IsometryEquiv
-      ((QuadraticForm.tmul (a • QuadraticMap.sq (R := L)) Q).scharlauTransfer s) where
-  toLinearEquiv := (TensorProduct.lid L V).symm.restrictScalars K
-  map_app' v := by
-    simp [QuadraticForm.tensorDistrib_tmul, smul_eq_mul]
+      ((QuadraticForm.tmul (a • QuadraticMap.sq (R := L)) Q).scharlauTransfer s) :=
+  let e := (QuadraticForm.tensorLIdSMul a Q).symm.scharlauTransfer s
+  { toLinearEquiv := e.toLinearEquiv
+    map_app' := fun v => by
+      rw [scharlauTransfer_comp_mul]
+      exact e.map_app v }
 
 /-- The change-of-functional isometry sends `v` to `1 ⊗ v`. -/
 @[simp]
 theorem IsometryEquiv.scharlauTransferCompMul_apply (Q : QuadraticForm L V)
     (s : L →ₗ[K] K) (a : L) (v : V) :
-    IsometryEquiv.scharlauTransferCompMul Q s a v = 1 ⊗ₜ[L] v := (rfl)
+    IsometryEquiv.scharlauTransferCompMul Q s a v = 1 ⊗ₜ[L] v := by
+  change (QuadraticForm.tensorLIdSMul a Q).symm.scharlauTransfer s v = _
+  simp
+
+/-- The inverse change-of-functional isometry acts by the canonical left unitor. -/
+@[simp]
+theorem IsometryEquiv.scharlauTransferCompMul_symm_apply (Q : QuadraticForm L V)
+    (s : L →ₗ[K] K) (a : L) (x : L ⊗[L] V) :
+    (IsometryEquiv.scharlauTransferCompMul Q s a).symm x = TensorProduct.lid L V x := by
+  rw [IsometryEquiv.symm_apply_eq]
+  rw [IsometryEquiv.scharlauTransferCompMul_apply]
+  simpa only [TensorProduct.lid_symm_apply] using
+    (TensorProduct.lid L V).symm_apply_apply x |>.symm
 
 end QuadraticMap

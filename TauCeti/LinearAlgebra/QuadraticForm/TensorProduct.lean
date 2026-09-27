@@ -19,6 +19,7 @@ forms. It complements Mathlib's tensor product of quadratic-form isometries.
 
 * `QuadraticMap.IsometryEquiv.tmul`: the tensor product of two isometric equivalences.
 * `QuadraticMap.Equivalent.tmul`: tensor products preserve equivalence of quadratic forms.
+* `QuadraticForm.tensorLIdSMul`: the tensor product of `⟨a⟩` with `Q` is isometric to `a • Q`.
 * `QuadraticForm.IsometryEquiv.tmulProd`: tensor product distributes over orthogonal product.
 -/
 
@@ -79,6 +80,36 @@ theorem _root_.QuadraticForm.smul_tmul
   change QuadraticForm.tensorDistrib R A ((a • Q₁) ⊗ₜ[R] Q₂) =
     a • QuadraticForm.tensorDistrib R A (Q₁ ⊗ₜ[R] Q₂)
   rw [← TensorProduct.smul_tmul', map_smul]
+
+/-- The tensor product of the quadratic line `⟨a⟩` with `Q` is isometric to `a • Q`.
+The underlying linear equivalence is the canonical left unitor. -/
+def _root_.QuadraticForm.tensorLIdSMul
+    {M : Type*} [AddCommGroup M] [Module R M]
+    (a : R) (Q : QuadraticForm R M) :
+    (QuadraticForm.tmul (a • QuadraticMap.sq (R := R)) Q).IsometryEquiv (a • Q) where
+  toLinearEquiv := TensorProduct.lid R M
+  map_app' x := by
+    calc
+      (a • Q) (TensorProduct.lid R M x) = a • Q (TensorProduct.lid R M x) := by
+        rw [smul_apply]
+      _ = a • QuadraticForm.tmul (QuadraticMap.sq (R := R)) Q x := by
+        rw [QuadraticForm.tmul_tensorLId_apply]
+      _ = QuadraticForm.tmul (a • QuadraticMap.sq (R := R)) Q x := by
+        rw [QuadraticForm.smul_tmul, smul_apply]
+
+/-- The isometry from `⟨a⟩ ⊗ Q` to `a • Q` acts by the canonical left unitor. -/
+@[simp]
+theorem _root_.QuadraticForm.tensorLIdSMul_apply
+    {M : Type*} [AddCommGroup M] [Module R M]
+    (a : R) (Q : QuadraticForm R M) (x : R ⊗[R] M) :
+    QuadraticForm.tensorLIdSMul a Q x = TensorProduct.lid R M x := (rfl)
+
+/-- The inverse isometry sends a vector to the pure tensor with left factor `1`. -/
+@[simp]
+theorem _root_.QuadraticForm.tensorLIdSMul_symm_apply
+    {M : Type*} [AddCommGroup M] [Module R M]
+    (a : R) (Q : QuadraticForm R M) (x : M) :
+    (QuadraticForm.tensorLIdSMul a Q).symm x = 1 ⊗ₜ[R] x := (rfl)
 
 /-- Tensor product distributes over the orthogonal product of quadratic forms. -/
 def _root_.QuadraticForm.IsometryEquiv.tmulProd
