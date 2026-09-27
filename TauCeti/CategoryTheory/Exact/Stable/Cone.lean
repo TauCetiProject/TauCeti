@@ -51,6 +51,8 @@ conflation `X ⟶ Y ⟶ Z`, the cone of `f` is an extension of `Z` by the projec
 * `TauCeti.ExactStructure.IsFrobenius.coneInclusion`: the map `Y ⟶ cone f`.
 * `TauCeti.ExactStructure.IsFrobenius.coneInjectiveMap`: the map `I(X) ⟶ cone f`.
 * `TauCeti.ExactStructure.IsFrobenius.coneConnectingMap`: the map `cone f ⟶ ΣX`.
+* `TauCeti.ExactStructure.IsFrobenius.coneSequence`: the conflation
+  `Y ⟶ cone(f) ⟶ ΣX`.
 * `TauCeti.ExactStructure.IsFrobenius.coneMap`: the map of cones induced by a commutative
   square.
 * `TauCeti.ExactStructure.IsFrobenius.coneComparison`: the map from the cone of the first map of
@@ -65,6 +67,8 @@ conflation `X ⟶ Y ⟶ Z`, the cone of `f` is an extension of `Z` by the projec
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_coneInflation`: in the stable
   category, the inflation of the cone conflation is `f` followed by the isomorphism
   `Y ≅ I(X) ⊞ Y`.
+* `TauCeti.ExactStructure.IsFrobenius.conflation_coneSequence`: the cone sequence is the cobase
+  change of the chosen suspension conflation.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_comp_coneInclusion`,
   `TauCeti.ExactStructure.IsFrobenius.coneInclusion_comp_coneConnectingMap` and
   `projectiveStableFunctor_map_coneConnectingMap_comp_cokernelMap`:
@@ -179,6 +183,38 @@ theorem coneInjectiveMap_comp_coneConnectingMap (f : X ⟶ Y) :
 theorem coneInclusion_comp_coneConnectingMap (f : X ⟶ Y) :
     hE.coneInclusion f ≫ hE.coneConnectingMap f = 0 :=
   (hE.isPushout_cone f).inr_desc _ _ _
+
+/-- The cone sequence `Y ⟶ cone(f) ⟶ ΣX`. It is the cobase change of the chosen suspension
+presentation of `X` along `-f`. -/
+noncomputable abbrev coneSequence (f : X ⟶ Y) : ShortComplex C :=
+  ShortComplex.mk (hE.coneInclusion f) (hE.coneConnectingMap f)
+    (hE.coneInclusion_comp_coneConnectingMap f)
+
+/-- The cone sequence is a conflation. -/
+theorem conflation_coneSequence (f : X ⟶ Y) : E.Conflation (hE.coneSequence f) := by
+  let S : ShortComplex C :=
+    ShortComplex.mk (hE.suspensionInflation X) (hE.suspensionDeflation X)
+      (hE.suspensionPresentation X).zero
+  let sq := hE.isPushout_cone f
+  have hπ : cobaseChangeπ S sq = hE.coneConnectingMap f := by
+    apply sq.hom_ext
+    · have h := inl_cobaseChangeπ S sq
+      change hE.coneInjectiveMap f ≫ cobaseChangeπ S sq = hE.suspensionDeflation X at h
+      exact h.trans (hE.coneInjectiveMap_comp_coneConnectingMap f).symm
+    · have h := inr_cobaseChangeπ S sq
+      change hE.coneInclusion f ≫ cobaseChangeπ S sq = 0 at h
+      exact h.trans (hE.coneInclusion_comp_coneConnectingMap f).symm
+  have hchange : cobaseChange S sq = hE.coneSequence f := by
+    rw [cobaseChange_def]
+    let Z := {g : hE.coneObj f ⟶ hE.suspensionObj X // hE.coneInclusion f ≫ g = 0}
+    have hz :
+        (⟨cobaseChangeπ S sq, inr_cobaseChangeπ S sq⟩ : Z) =
+          ⟨hE.coneConnectingMap f, hE.coneInclusion_comp_coneConnectingMap f⟩ :=
+      Subtype.ext hπ
+    simpa only [S, coneSequence] using congrArg
+      (fun z : Z => ShortComplex.mk (hE.coneInclusion f) z.1 z.2) hz
+  rw [← hchange]
+  exact E.conflation_cobaseChange (hE.suspensionPresentation X).conflation sq
 
 section Stable
 
