@@ -197,13 +197,26 @@ theorem cohomFpMap_def (φ : H →ₜ* G) (n : ℕ) :
 theorem cohomFpMap_subgroupSubtype (S : Subgroup G) (n : ℕ) :
     cohomFpMap p (ContinuousMonoidHom.subgroupSubtype S) n =
       trivialFpResMap p G S n := by
-  rw [trivialFpResMap_def, TauCeti.ContinuousCohomology.res_def]
-  unfold cohomFpMap
-  change _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
-      (𝟙 _) n =
-    _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
-      (𝟙 _) n ≫ 𝟙 _
-  simp
+  have hmap : eqToHom (res_trivialFp_hom p (ContinuousMonoidHom.subgroupSubtype S)) =
+      𝟙 (trivialFp p S) := eqToHom_refl _ _
+  have hres : eqToHom (congrArg (continuousCohomology n) (res_trivialFp p G S)) =
+      𝟙 (cohomFp p S n) := eqToHom_refl _ _
+  calc
+    cohomFpMap p (ContinuousMonoidHom.subgroupSubtype S) n =
+        _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
+          (𝟙 (trivialFp p S)) n := by
+      rw [cohomFpMap_def, hmap]
+    _ = _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
+          (𝟙 (TopRep.res (S.subtype : S →* G) (trivialFp p G))) n ≫
+          𝟙 (cohomFp p S n) := by
+      -- The monoid hom of `subgroupSubtype` is definitionally `S.subtype`.
+      change _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
+          (𝟙 _) n =
+        _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
+          (𝟙 _) n ≫ 𝟙 _
+      simp
+    _ = trivialFpResMap p G S n := by
+      rw [trivialFpResMap_def, TauCeti.ContinuousCohomology.res_def, hres]
 
 /-- The identity homomorphism induces the identity on cohomology. -/
 @[simp]
@@ -219,8 +232,13 @@ theorem res_trivialFp_hom_comp (φ : H →ₜ* G) (ψ : K →ₜ* H) :
     (TopRep.resFunctor (ψ : K →* H)).map (eqToHom (res_trivialFp_hom p φ)) ≫
       eqToHom (res_trivialFp_hom p ψ) =
         eqToHom (res_trivialFp_hom p (φ.comp ψ)) := by
-  ext x
-  rfl
+  have hφ : eqToHom (res_trivialFp_hom p φ) = 𝟙 (trivialFp p H) :=
+    eqToHom_refl _ _
+  have hψ : eqToHom (res_trivialFp_hom p ψ) = 𝟙 (trivialFp p K) :=
+    eqToHom_refl _ _
+  have hcomp : eqToHom (res_trivialFp_hom p (φ.comp ψ)) = 𝟙 (trivialFp p K) :=
+    eqToHom_refl _ _
+  simpa only [hφ, hψ, hcomp, Functor.map_id, Category.id_comp]
 
 /-- Cohomology maps with trivial coefficients compose contravariantly. -/
 @[simp]
