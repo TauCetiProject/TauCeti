@@ -59,7 +59,7 @@ theorem heisenberg_reindex
   apply Finset.sum_congr rfl
   intro j hj
   -- For term j, we have k = j+1 in the LHS
-  -- LHS scalar: u^(j+1) * ((j+1) * (j+1-1)!) ; RHS scalar: u^(j+1) * (j+1)!
+  -- LHS scalar: u^(j+1) * ((j+1) * (j+1-1)!); RHS scalar: u^(j+1) * (j+1)!
   -- Need: (j+1) * j! = (j+1)!
   have h1 : (j + 1 - 1) = j := Nat.add_sub_cancel j 1
   have hcoeff : ((j + 1) * Nat.factorial j : ℕ) = Nat.factorial (j + 1) :=
