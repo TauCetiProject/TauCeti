@@ -39,7 +39,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Evaluation of a `C^n` map is continuous jointly in the map and the source point for the
 manifold weak Whitney topology, provided the source model is locally compact. -/
-theorem continuous_eval_manifoldWeakWhitney_joint :
+theorem continuous_eval_manifoldWeakWhitney :
     Continuous (fun p : C^n⟮I, M; J, N⟯ × M ↦ p.1 p.2) := by
   rw [continuous_def]
   intro U hU
@@ -110,7 +110,7 @@ theorem continuous_eval_manifoldWeakWhitney_joint :
 /-- Joint evaluation is continuous for the manifold weak Whitney topology. -/
 theorem continuousEval_manifoldWeakWhitney :
     ContinuousEval C^n⟮I, M; J, N⟯ M N :=
-  ⟨continuous_eval_manifoldWeakWhitney_joint⟩
+  ⟨continuous_eval_manifoldWeakWhitney⟩
 
 scoped[TauCeti.ManifoldWeakWhitney] attribute [instance]
   ContMDiffMap.continuousEval_manifoldWeakWhitney
