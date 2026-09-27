@@ -11,8 +11,9 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Integral unit values of a quadratic norm form
 
-For a unit radicand over a local ring, an integral value `x² - a y²` that is a unit has a
-unit coordinate. Dividing by that coordinate gives one of two normal forms,
+Over a local ring, an integral value `x² - a y²` that is a unit has a unit coordinate.
+If the second coordinate is used, the radicand is also a unit. Dividing by that coordinate
+gives one of two normal forms,
 `u² (1 - a t²)` or `-a u² (1 - a t²)`. This is the integral part of the local norm
 calculation used to compute the quadratic norm index in residue characteristic two.
 
@@ -30,27 +31,27 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R] [IsLocalRing R]
 
-/-- An integral unit value of `x² - a y²` has a unit coordinate. -/
+/-- An integral unit value of `x² - a y²` has a unit coordinate; if the second coordinate
+is used, the radicand is also a unit. -/
 theorem isUnit_or_isUnit_of_isUnit_sq_sub_mul_sq {a x y : R}
-    (h : IsUnit (x ^ 2 - a * y ^ 2)) : IsUnit x ∨ IsUnit y := by
+    (h : IsUnit (x ^ 2 - a * y ^ 2)) : IsUnit x ∨ (IsUnit a ∧ IsUnit y) := by
   have h' : IsUnit (x ^ 2 + -(a * y ^ 2)) := by simpa only [sub_eq_add_neg] using h
   rcases IsLocalRing.isUnit_or_isUnit_of_isUnit_add h' with hx | hy
   · exact Or.inl ((isUnit_pow_iff (by decide : 2 ≠ 0)).mp hx)
   · have hay : IsUnit (a * y ^ 2) := by simpa using hy
-    exact Or.inr ((isUnit_pow_iff (by decide : 2 ≠ 0)).mp
-      (isUnit_of_mul_isUnit_right hay))
+    exact Or.inr ⟨isUnit_of_mul_isUnit_left hay,
+      (isUnit_pow_iff (by decide : 2 ≠ 0)).mp (isUnit_of_mul_isUnit_right hay)⟩
 
-/-- An integral unit is represented by the quadratic norm form of a unit radicand exactly
+/-- An integral unit is represented by the quadratic norm form exactly
 when it has one of the two unit normal forms `u² (1 - a t²)` and
 `-a u² (1 - a t²)`. -/
-theorem exists_integral_norm_iff_unit_normal_form {a b : R} (ha : IsUnit a)
-    (hb : IsUnit b) :
+theorem exists_integral_norm_iff_unit_normal_form {a b : R} (hb : IsUnit b) :
     (∃ x y : R, b = x ^ 2 - a * y ^ 2) ↔
       (∃ (u : Rˣ) (t : R), b = (u : R) ^ 2 * (1 - a * t ^ 2)) ∨
         (∃ (u : Rˣ) (t : R), b = -a * (u : R) ^ 2 * (1 - a * t ^ 2)) := by
   constructor
   · rintro ⟨x, y, h⟩
-    rcases isUnit_or_isUnit_of_isUnit_sq_sub_mul_sq (h ▸ hb) with hx | hy
+    rcases isUnit_or_isUnit_of_isUnit_sq_sub_mul_sq (h ▸ hb) with hx | ⟨ha, hy⟩
     · obtain ⟨u, rfl⟩ := hx
       refine Or.inl ⟨u, (u⁻¹ : Rˣ) * y, ?_⟩
       have hu : (u : R) * (u⁻¹ : Rˣ) = 1 := by simp
