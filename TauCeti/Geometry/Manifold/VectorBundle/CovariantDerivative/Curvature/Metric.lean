@@ -138,7 +138,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- A connection has constant-curvature tensor `κ` when
 `R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)` at every point. -/
-@[expose] def IsConstantCurvatureTensor
+def IsConstantCurvatureTensor
     (g : RiemannianMetric (fun x : M ↦ TangentSpace I x))
     (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
     (hcov : CovariantDerivative.ContMDiffCovariantDerivative cov ∞) (κ : ℝ) : Prop :=
@@ -146,6 +146,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   letI := hcov
     ∀ (x : M) (w u v : TangentSpace I x),
     cov.curvatureTensor x w u v = κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u)
+
+omit [T2Space (TangentBundle I M)] in
+/-- The pointwise curvature equation carried by `h`. -/
+theorem IsConstantCurvatureTensor.curvatureTensor_eq
+    (g : RiemannianMetric (fun x : M ↦ TangentSpace I x))
+    (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
+    (hcov : CovariantDerivative.ContMDiffCovariantDerivative cov ∞) (κ : ℝ)
+    (h : g.IsConstantCurvatureTensor cov hcov κ)
+    (x : M) (w u v : TangentSpace I x) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g⟩
+    letI := hcov
+    cov.curvatureTensor x w u v = κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) := by
+  simpa only [IsConstantCurvatureTensor] using h x w u v
 
 end Bundle.RiemannianMetric
 
@@ -157,11 +170,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsManifold I ∞ M] [T2Space (TangentBundle I M)]
 
 /-- The Levi-Civita connection of `g` has constant curvature `κ`. -/
-@[expose] def IsConstantCurvatureTensor
+def IsConstantCurvatureTensor
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ) : Prop :=
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) := inferInstance
   g.toRiemannianMetric.IsConstantCurvatureTensor
     (CovariantDerivative.leviCivitaConnection I M) inferInstance κ
+
+omit [T2Space (TangentBundle I M)] in
+/-- The pointwise curvature equation carried by the smooth metric predicate `h`. -/
+theorem IsConstantCurvatureTensor.curvatureTensor_eq
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ)
+    (h : g.IsConstantCurvatureTensor κ) (x : M) (w u v : TangentSpace I x) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x w u v =
+      κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  have h' := h
+  change g.toRiemannianMetric.IsConstantCurvatureTensor
+    (CovariantDerivative.leviCivitaConnection I M) inferInstance κ at h'
+  exact Bundle.RiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq
+    g.toRiemannianMetric (CovariantDerivative.leviCivitaConnection I M) inferInstance κ h' x w u v
 
 end Bundle.ContMDiffRiemannianMetric

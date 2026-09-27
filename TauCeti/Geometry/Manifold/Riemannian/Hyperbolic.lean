@@ -71,10 +71,8 @@ theorem curvatureTensor_eq (g : HyperbolicMetric (I := I) (M := M))
       (-1 : ℝ) • (inner ℝ u v • w - inner ℝ w v • u) := by
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨g.metric.toRiemannianMetric⟩
-  have h := g.curvature
-  exact (show ∀ (x : M) (w u v : TangentSpace I x),
-      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x w u v =
-        (-1 : ℝ) • (inner ℝ u v • w - inner ℝ w v • u) from h) x w u v
+  exact Bundle.ContMDiffRiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq
+    g.metric (-1) g.curvature x w u v
 
 end HyperbolicMetric
 
@@ -82,7 +80,6 @@ omit [T2Space (TangentBundle I M)] in
 /-- An `IsHyperbolic` witness has scalar curvature
 `n (n - 1) (-1)` in real tangent-space dimension `n`. -/
 theorem IsHyperbolic.exists_scalarCurvature_eq
-    [T2Space M]
     (h : IsHyperbolic (I := I) (M := M)) :
     ∃ g : HyperbolicMetric (I := I) (M := M),
       ∀ (x : M),
