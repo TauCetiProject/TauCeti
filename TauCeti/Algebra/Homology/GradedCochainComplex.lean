@@ -142,7 +142,7 @@ private theorem gradedCochainComplexLift_X_proof_eq_rfl (p : ℤ) :
   Subsingleton.elim _ _
 
 /-- The differential of the lifted complex acts by the original differential on homogeneous
-elements. This is not a simp lemma because the structural differential lemma is already simp. -/
+elements. -/
 theorem gradedCochainComplexLift_d_apply (p : ℤ) (x : ℳ p) :
     (eqToHom (gradedCochainComplexLift_X.{uR, uM, uExtra} (hdeg := hdeg)
       (hsq := hsq) (p + 1))
@@ -257,8 +257,7 @@ theorem gradedCochainComplexMap_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P)
     (hcommg : ∀ p (x : 𝒩 p), dP (g x) = g (dN x)) :
     gradedCochainComplexMap.{uR, uM, max uN uExtra, uP} (hdeg := hdeg) (hsq := hsq)
       (hdegN := hdegP) (hsqN := hsqP) (g.comp f)
-        (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
-          simpa only [LinearMap.comp_apply, add_zero] using hg.map_mem (hf.map_mem hx))
+        (by simpa using hg.comp hf)
         (fun p x ↦ by
           have hfx : f x ∈ 𝒩 p := by
             simpa only [add_zero] using hf.map_mem x.2
@@ -278,7 +277,9 @@ theorem gradedCochainComplexMap_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P)
     apply ULift.ext
     apply Subtype.ext
     simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp]
-    -- After extensionality, the lifted maps act by `g (f x)` on each homogeneous term.
+    -- `gradedCochainComplexMap` uses `CochainComplex.ofHom` on lifted restricted maps.
+    -- After extensionality, `ModuleCat.ofHom` and `ULift` evaluate definitionally;
+    -- this is the component formula recorded by `gradedCochainComplexMap_f_apply`.
     change g (f x.val) = g (f x.val)
     rfl
 
