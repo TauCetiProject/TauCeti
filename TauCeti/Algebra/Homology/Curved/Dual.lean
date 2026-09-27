@@ -97,18 +97,12 @@ theorem negDualMap_comp_dualMap {M N : FGModuleCat.{u} R} [Module.Projective R M
 `f ≫ g = w • 𝟙`, the composite of the transpose of `g` with the negated transpose of `f` is
 multiplication by `-w` on the dual. This is the other of the two differential equations of a
 dual of curvature `-w`, the one in which the minus sign sits on the right-hand factor of the
-composite. -/
+composite. It is `FGModuleCat.negDualMap_comp_dualMap` read the other way round, since negating
+either factor of a composite negates the composite. -/
 theorem dualMap_negDualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
     [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
     (FGModuleCat.dualMap R g ≫ (-FGModuleCat.dualMap R f)) = -w • 𝟙 (FGModuleCat.dual R M) := by
-  calc FGModuleCat.dualMap R g ≫ (-FGModuleCat.dualMap R f)
-      = -(FGModuleCat.dualMap R g ≫ FGModuleCat.dualMap R f) := by simp only [comp_neg]
-    _ = -FGModuleCat.dualMap R (f ≫ g) := by
-      rw [FGModuleCat.dualMap_comp (f := f) (g := g)]
-    _ = -FGModuleCat.dualMap R (w • 𝟙 M) := by rw [h]
-    _ = -(w • FGModuleCat.dualMap R (𝟙 M)) := by rw [FGModuleCat.dualMap_smul]
-    _ = -(w • 𝟙 (FGModuleCat.dual R M)) := by rw [FGModuleCat.dualMap_id]
-    _ = -w • 𝟙 (FGModuleCat.dual R M) := by rw [neg_smul]
+  rw [Preadditive.comp_neg, ← Preadditive.neg_comp, negDualMap_comp_dualMap (R := R) w f g h]
 
 /-- The same computation one dual further: the composite of the two negated double transposes of
 a curved pair of maps is multiplication by the original `w` on the double dual. This is the
