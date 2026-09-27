@@ -39,7 +39,7 @@ theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz :
     norm_num at hsq
     nlinarith [norm_nonneg (1 - starRingEnd ℂ a * z), norm_nonneg (z - a)]
   obtain ⟨hza, hca⟩ :=
-    planarGreenKernel_log_arguments_ne_of_norm_lt_one_of_norm_eq_one ha hz
+    sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one ha hz
   have h₁ : HasDerivAt (fun t : ℝ => planarNewtonianKernel (t • z - a))
       ((-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) * ⟪z - a, z⟫_ℝ) 1 := by
     simpa only [one_smul, sub_eq_add_neg, add_comm] using

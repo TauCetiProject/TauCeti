@@ -66,31 +66,13 @@ theorem differentiableAt_planarGreenKernel {a z : ℂ}
   ext w
   simp only [planarGreenKernel_def, Pi.sub_apply, Function.comp_def]
 
-/-- At a boundary point of the unit disk, neither logarithmic argument in the planar Green
-kernel vanishes when the pole lies inside the disk. -/
-theorem planarGreenKernel_log_arguments_ne_of_norm_lt_one_of_norm_eq_one {a z : ℂ}
-    (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
-    z - a ≠ 0 ∧ 1 - starRingEnd ℂ a * z ≠ 0 := by
-  have hza : z - a ≠ 0 := by
-    intro h
-    have : z = a := sub_eq_zero.mp h
-    rw [this] at hz
-    linarith
-  have hca : 1 - starRingEnd ℂ a * z ≠ 0 := by
-    intro h
-    have heq : starRingEnd ℂ a * z = 1 := (sub_eq_zero.mp h).symm
-    have hnorm : ‖starRingEnd ℂ a * z‖ = 1 := by rw [heq]; simp
-    rw [norm_mul, Complex.norm_conj, hz, mul_one] at hnorm
-    linarith
-  exact ⟨hza, hca⟩
-
 /-- The planar Green kernel is differentiable at a boundary point of the unit disk when its
 pole lies inside the disk. -/
 theorem differentiableAt_planarGreenKernel_boundary {a z : ℂ}
     (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
     DifferentiableAt ℝ (planarGreenKernel a) z := by
   obtain ⟨hza, hca⟩ :=
-    planarGreenKernel_log_arguments_ne_of_norm_lt_one_of_norm_eq_one ha hz
+    sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one ha hz
   exact differentiableAt_planarGreenKernel hza hca
 
 /-- The reflected logarithmic term in `planarGreenKernel` is harmonic at every point of the
