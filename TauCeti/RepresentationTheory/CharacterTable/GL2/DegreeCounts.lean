@@ -75,9 +75,8 @@ private theorem gl2AddChar_ne_one [Finite F] : gl2AddChar F ≠ 1 := by
   have h := Classical.choose_spec ((AddChar.exists_apply_ne_zero (α := F) (a := 1)).2 one_ne_zero)
   intro hpsi
   apply h
-  change gl2AddChar F 1 = 1
-  rw [hpsi]
-  rfl
+  unfold gl2AddChar at hpsi
+  simpa using congrArg (fun psi : AddChar F ℂ => psi 1) hpsi
 
 variable [Fintype F] (E : Type*) [Field E] [Algebra F E]
   (hE : Module.finrank F E = 2) {psi : AddChar F ℂ} (hpsi : psi ≠ 1)
