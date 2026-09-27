@@ -35,7 +35,7 @@ variable {R : Type u} [CommRing R] (M : ModuleCat.{u} R)
 
 /-- A finite projective module is dualizable, with internal Hom into the tensor unit as a
 canonical left dual. -/
-noncomputable instance _root_.ModuleCat.hasLeftDual_of_finite_projective
+noncomputable instance _root_.ModuleCat.hasLeftDualOfFiniteProjective
     [Module.Finite R M] [Module.Projective R M] : HasLeftDual M := by
   have h : IsIso ((dualTensorIhom M).app M) :=
     (ModuleCat.isIso_dualTensorIhom_app_iff M M).2 dualTensorHom_bijective
