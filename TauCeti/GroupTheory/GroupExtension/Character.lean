@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.Cohomology
+public import TauCeti.GroupTheory.GroupAction.Character
 public import Mathlib.GroupTheory.Abelianization.Defs
 
 /-!
@@ -13,7 +14,9 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 
 Pushing a factor set forward along an invariant character of its kernel gives a
 second-cohomology class. This is the character transgression, with the convention
-that it sends `χ` to the class of `χ ∘ α`.
+that it sends `χ` to the class of `χ ∘ α`. It is bundled as an additive homomorphism
+from the additive type tag of the pointwise group of equivariant characters, so its
+kernel and range are available as additive subgroups.
 
 The class vanishes exactly when the character extends to the whole extension.
 Consequently, if the kernel lies in the commutator subgroup, transgression is
@@ -39,96 +42,76 @@ variable {G M A : Type} [Group G] [CommGroup M] [CommGroup A]
   (α : FactorSet G M) (hA : ∀ (g : G) (a : A), g • a = a)
 
 /-- Character transgression sends an equivariant kernel character `χ` to the class of
-`χ ∘ α`. For a trivial coefficient action, its kernel consists of the characters
+`χ ∘ α`, as an additive homomorphism on the pointwise character group.
+For a trivial coefficient action, its kernel consists of the characters
 extending to the whole factor-set extension. -/
-noncomputable def characterTransgression (χ : M →*[G] A) :
-    H2 (Rep.ofMulDistribMulAction G A) :=
-  (α.map χ).cohomologyClass
-
-theorem characterTransgression_apply (χ : M →*[G] A) :
-    α.characterTransgression χ = (α.map χ).cohomologyClass :=
-  (rfl)
-
-/-- The trivial kernel character has zero transgression. -/
-@[simp]
-theorem characterTransgression_one :
-    α.characterTransgression
-      { (1 : M →* A) with
-        toFun := (1 : M →* A)
-        map_smul' := fun _ _ ↦ (smul_one _).symm } = 0 := by
-  rw [characterTransgression_apply]
-  have h : α.map
-      { (1 : M →* A) with
-        toFun := (1 : M →* A)
-        map_smul' := fun _ _ ↦ (smul_one _).symm } = trivial G A := by
-    ext p
-    simp only [map_apply, trivial_apply]
+noncomputable def characterTransgression :
+    Additive (equivariantCharacterSubgroup G M A) →+ H2 (Rep.ofMulDistribMulAction G A) where
+  toFun χ := (α.map (equivariantCharacterEquiv G M A χ.toMul)).cohomologyClass
+  map_zero' := by
+    have h : α.map (equivariantCharacterEquiv G M A 1) = trivial G A := by
+      ext p
+      simp [map_apply]
+    rw [toMul_zero, h, cohomologyClass_trivial]
+  map_add' χ χ' := by
+    simp only [cohomologyClass_def, ← map_add]
+    congr 1
+    apply cocycles₂_ext
+    intro g h
+    simp only [coe_toCocycles₂, map_apply]
+    -- Mathlib's custom `FunLike` coercion for `cocycles₂` has no addition-application lemma.
+    -- Expose pointwise addition in `Additive A`; `Submodule.coe_add` does not match that coercion.
+    change Additive.ofMul (equivariantCharacterEquiv G M A (χ + χ').toMul (α (g, h))) =
+      (α.map (equivariantCharacterEquiv G M A χ.toMul)).toCocycles₂ (g, h) +
+      (α.map (equivariantCharacterEquiv G M A χ'.toMul)).toCocycles₂ (g, h)
+    simp only [coe_toCocycles₂, map_apply, equivariantCharacterEquiv_apply, toMul_add,
+      Subgroup.coe_mul, MonoidHom.mul_apply, ofMul_mul]
     rfl
-  rw [h, cohomologyClass_trivial]
 
-/-- Pointwise products of kernel characters transgress to sums of cohomology classes. -/
 @[simp]
-theorem characterTransgression_mul (χ χ' : M →*[G] A) :
-    α.characterTransgression
-      { χ.toMonoidHom * χ'.toMonoidHom with
-        toFun := χ.toMonoidHom * χ'.toMonoidHom
-        map_smul' := fun g a ↦ by
-          change χ (g • a) * χ' (g • a) = g • (χ a * χ' a)
-          rw [map_smul, map_smul, smul_mul'] } =
-      α.characterTransgression χ + α.characterTransgression χ' := by
-  simp only [characterTransgression_apply, cohomologyClass_def, ← map_add]
-  congr 1
-  apply cocycles₂_ext
-  intro g h
-  simp only [coe_toCocycles₂, map_apply]
-  change Additive.ofMul (χ (α (g, h)) * χ' (α (g, h))) =
-    (α.map χ).toCocycles₂ (g, h) + (α.map χ').toCocycles₂ (g, h)
-  simp only [coe_toCocycles₂, map_apply, ofMul_mul]
-  rfl
+theorem characterTransgression_apply (χ : Additive (equivariantCharacterSubgroup G M A)) :
+    α.characterTransgression χ =
+      (α.map (equivariantCharacterEquiv G M A χ.toMul)).cohomologyClass :=
+  (rfl)
 
 include hA
 
 /-- An invariant kernel character has trivial transgression exactly when it extends
 to a character of the factor-set extension. -/
-theorem characterTransgression_eq_zero_iff (χ : M →*[G] A) :
+theorem characterTransgression_eq_zero_iff (χ : Additive (equivariantCharacterSubgroup G M A)) :
     α.characterTransgression χ = 0 ↔
-      ∃ ψ : α.Extension →* A, ψ.comp (inl α) = χ.toMonoidHom := by
+      ∃ ψ : α.Extension →* A, ψ.comp (inl α) = χ.toMul.val := by
   rw [characterTransgression_apply, cohomologyClass_eq_zero_iff]
   constructor
   · rintro ⟨c, hc⟩
+    simp only [map_apply, equivariantCharacterEquiv_apply] at hc
     have hc1 : c 1 = 1 := by simpa [hA] using hc 1 1
-    refine ⟨{ toFun x := χ x.left * c x.right
+    refine ⟨{ toFun x := χ.toMul.val x.left * c x.right
               map_one' := by simp [hc1]
               map_mul' x y := ?_ }, ?_⟩
-    · simp only [Extension.mul_left, Extension.mul_right, map_mul, map_smul, hA]
-      rw [← map_apply, ← hc, hA]
+    · simp only [Extension.mul_left, Extension.mul_right, map_mul,
+        (mem_equivariantCharacterSubgroup G M A _).mp χ.toMul.property, hA]
+      rw [← hc, hA]
       simp [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm]
     · ext a
       simp [hc1]
   · rintro ⟨ψ, hψ⟩
     refine ⟨fun g ↦ ψ (α.canonicalSection g), fun g h ↦ ?_⟩
-    have heq : ∀ a, ψ (inl α a) = χ a := DFunLike.congr_fun hψ
+    have heq : ∀ a, ψ (inl α a) = χ.toMul.val a := DFunLike.congr_fun hψ
     have key := congrArg ψ (α.canonicalSection_mul g h)
     simp only [map_mul, heq] at key
-    rw [hA, map_apply]
+    rw [hA, map_apply, equivariantCharacterEquiv_apply]
     rw [div_mul_eq_mul_div, mul_comm, div_eq_iff_eq_mul]
     exact key
 
 /-- Two invariant kernel characters have the same transgression exactly when their
 quotient extends to the whole extension. -/
-theorem characterTransgression_eq_iff (χ χ' : M →*[G] A) :
+theorem characterTransgression_eq_iff (χ χ' : Additive (equivariantCharacterSubgroup G M A)) :
     α.characterTransgression χ = α.characterTransgression χ' ↔
       ∃ ψ : α.Extension →* A,
-        ψ.comp (inl α) = χ.toMonoidHom / χ'.toMonoidHom := by
-  let δ : M →*[G] A :=
-    { χ.toMonoidHom / χ'.toMonoidHom with
-      map_smul' g a := by simp [map_smul, hA] }
-  have hδ_apply (a : M) : δ a = χ a / χ' a := rfl
-  rw [← α.characterTransgression_eq_zero_iff hA δ,
-    characterTransgression_apply, characterTransgression_apply, characterTransgression_apply,
-    cohomologyClass_eq_zero_iff,
-    cohomologyClass_eq_iff]
-  simp only [IsMulCoboundary₂, map_apply, hδ_apply]
+        ψ.comp (inl α) = χ.toMul.val / χ'.toMul.val := by
+  rw [← sub_eq_zero, ← map_sub, α.characterTransgression_eq_zero_iff hA]
+  rfl
 
 /-- For a stem extension, different invariant characters of the kernel give different
 second-cohomology classes. No finiteness or divisibility assumption is needed. -/
@@ -137,10 +120,12 @@ theorem characterTransgression_injective_of_range_inl_le_commutator
     Function.Injective (α.characterTransgression (A := A)) := by
   intro χ χ' heq
   obtain ⟨ψ, hψ⟩ := (α.characterTransgression_eq_iff hA χ χ').1 heq
+  apply Additive.toMul.injective
+  apply Subtype.ext
   ext a
   have hmem := Abelianization.commutator_subset_ker ψ (hstem ⟨a, rfl⟩)
   have hval := DFunLike.congr_fun hψ a
-  have hdiv : χ a / χ' a = 1 := hval.symm.trans hmem
+  have hdiv : χ.toMul.val a / χ'.toMul.val a = 1 := hval.symm.trans hmem
   exact div_eq_one.mp hdiv
 
 end TauCeti.FactorSet
