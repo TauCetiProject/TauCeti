@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Index.DedekindCubic.Order
 import TauCeti.NumberTheory.NumberField.Index.Basic
-import Mathlib.Tactic.ComputeDegree
 
 /-!
 # The index of Dedekind's cubic order
@@ -44,27 +43,26 @@ theorem dedekindOrderIndex_def
 
 /-- Dedekind's cubic order has finite index in the full ring of integers when `θ` generates `K`. -/
 theorem finite_quotient_dedekindOrder
-    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    Finite (𝓞 K ⧸ (dedekindOrder (dedekindCubic_relation hmin)).toSubmodule) := by
-  apply Submodule.finiteQuotientOfFreeOfRankEq
-  -- `toSubmodule` and the subalgebra have the same carrier, hence the same subtype module.
-  change Module.finrank ℤ (dedekindOrder (dedekindCubic_relation hmin)) =
-    Module.finrank ℤ (𝓞 K)
+    Finite (𝓞 K ⧸ (dedekindOrder hθ).toSubmodule) := by
   let t : IntegralPrimitiveElement K := ⟨θ, hgen⟩
-  rw [Module.finrank_eq_card_basis (dedekindOrderBasis hmin),
-    ← t.finrank_adjoin, IntegralPrimitiveElement.adjoin_def,
-    (Algebra.adjoin.powerBasis' θ.isIntegral).finrank,
-    Algebra.adjoin.powerBasis'_dim, hmin]
-  symm
-  compute_degree <;> norm_num
+  have hle : t.adjoin.toSubmodule ≤ (dedekindOrder hθ).toSubmodule := by
+    change t.adjoin ≤ dedekindOrder hθ
+    rw [IntegralPrimitiveElement.adjoin_def]
+    apply Algebra.adjoin_le
+    intro x hx
+    have hx' : x = θ := by simpa [t] using hx
+    rw [hx']
+    exact (mem_dedekindOrder_iff hθ θ).2 ⟨0, 1, 0, by simp⟩
+  exact Finite.of_surjective (Submodule.factor hle) (Submodule.factor_surjective hle)
 
 /-- The index of Dedekind's cubic order is positive when `θ` generates `K`. -/
 theorem dedekindOrderIndex_pos
-    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
+    (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    0 < dedekindOrderIndex (dedekindCubic_relation hmin) := by
-  let _ := finite_quotient_dedekindOrder hmin hgen
+    0 < dedekindOrderIndex hθ := by
+  let _ := finite_quotient_dedekindOrder hθ hgen
   rw [dedekindOrderIndex_def]
   exact Nat.card_pos
 
