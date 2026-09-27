@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 
 /-!
-# Scalar extension of endomorphisms of finitely generated modules
+# Scalar extension of module endomorphisms
 
 Extension of scalars carries multiplication by a scalar to multiplication by its image.
 This transports the curvature equations of a matrix factorization when its components are

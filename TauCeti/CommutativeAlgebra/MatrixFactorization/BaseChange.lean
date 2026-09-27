@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
 public import TauCeti.Algebra.Homology.Periodic.Duplex
-public import TauCeti.Algebra.Category.FGModuleCat.ChangeOfRings
+public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 
 /-!
 # Reducing matrix factorizations to two-periodic complexes
@@ -192,20 +192,6 @@ original components with the target ring. -/
       map_id := by intro X; apply CurvedDuplex.hom_ext <;> rfl
       map_comp := by intro X Y Z g h; apply CurvedDuplex.hom_ext <;> rfl }
 
-/-- The even component of square-zero base change is the underlying component of finite-projective
-base change. -/
-theorem baseChangeToCurvedDuplex_obj_X₀_eq_baseChangeFunctor (f : S →+* T) (hw : f w = 0)
-    (X : MatrixFactorization S w) :
-    ((baseChangeToCurvedDuplex f hw).obj X).X₀ = ((baseChangeFunctor f).obj X).obj.X₀.obj := by
-  rfl
-
-/-- The odd component of square-zero base change is the underlying component of finite-projective
-base change. -/
-theorem baseChangeToCurvedDuplex_obj_X₁_eq_baseChangeFunctor (f : S →+* T) (hw : f w = 0)
-    (X : MatrixFactorization S w) :
-    ((baseChangeToCurvedDuplex f hw).obj X).X₁ = ((baseChangeFunctor f).obj X).obj.X₁.obj := by
-  rfl
-
 /-- The even object of the square-zero duplex is the scalar extension of the original even
 module. -/
 @[simp] theorem baseChangeToCurvedDuplex_obj_X₀ (f : S →+* T) (hw : f w = 0)
@@ -248,78 +234,6 @@ module. -/
     ((baseChangeToCurvedDuplex f hw).map g).f₁ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₁) := rfl
-
-/-- The even component remains projective under arbitrary scalar extension. -/
-theorem projective_baseChangeFunctor_X₀ (f : S →+* T)
-    (X : MatrixFactorization S w) :
-    Module.Projective T ((baseChangeFunctor f).obj X).obj.X₀.obj := by
-  let _ : Algebra S T := f.toAlgebra
-  rw [baseChangeFunctor_obj_X₀]
-  -- Mathlib's projectivity instance is for `TensorProduct`; `extendScalars.obj` is
-  -- definitionally that tensor product after installing the algebra structure from `f`.
-  change Module.Projective T (TensorProduct S T X.obj.X₀)
-  infer_instance
-
-/-- The odd component remains projective under arbitrary scalar extension. -/
-theorem projective_baseChangeFunctor_X₁ (f : S →+* T)
-    (X : MatrixFactorization S w) :
-    Module.Projective T ((baseChangeFunctor f).obj X).obj.X₁.obj := by
-  let _ : Algebra S T := f.toAlgebra
-  rw [baseChangeFunctor_obj_X₁]
-  -- The odd scalar extension is definitionally a tensor product, where Mathlib provides
-  -- the projectivity instance.
-  change Module.Projective T (TensorProduct S T X.obj.X₁)
-  infer_instance
-
-/-- The even component remains finitely generated under arbitrary scalar extension. -/
-theorem finite_baseChangeFunctor_X₀ (f : S →+* T)
-    (X : MatrixFactorization S w) :
-    Module.Finite T ((baseChangeFunctor f).obj X).obj.X₀.obj := by
-  let _ : Algebra S T := f.toAlgebra
-  rw [baseChangeFunctor_obj_X₀]
-  -- Mathlib's finite-generation instance is for `TensorProduct`; `extendScalars.obj`
-  -- reduces to that tensor product under the algebra structure induced by `f`.
-  change Module.Finite T (TensorProduct S T X.obj.X₀)
-  infer_instance
-
-/-- The odd component remains finitely generated under arbitrary scalar extension. -/
-theorem finite_baseChangeFunctor_X₁ (f : S →+* T)
-    (X : MatrixFactorization S w) :
-    Module.Finite T ((baseChangeFunctor f).obj X).obj.X₁.obj := by
-  let _ : Algebra S T := f.toAlgebra
-  rw [baseChangeFunctor_obj_X₁]
-  -- The odd scalar extension is definitionally a tensor product, where Mathlib provides
-  -- the finite-generation instance.
-  change Module.Finite T (TensorProduct S T X.obj.X₁)
-  infer_instance
-
-/-- Base change keeps the even component projective over the target ring. -/
-theorem projective_baseChangeToCurvedDuplex_X₀ (f : S →+* T) (hw : f w = 0)
-    (X : MatrixFactorization S w) :
-    Module.Projective T ((baseChangeToCurvedDuplex f hw).obj X).X₀ := by
-  rw [baseChangeToCurvedDuplex_obj_X₀_eq_baseChangeFunctor]
-  exact projective_baseChangeFunctor_X₀ f X
-
-/-- Base change keeps the odd component projective over the target ring. -/
-theorem projective_baseChangeToCurvedDuplex_X₁ (f : S →+* T) (hw : f w = 0)
-    (X : MatrixFactorization S w) :
-    Module.Projective T ((baseChangeToCurvedDuplex f hw).obj X).X₁ := by
-  rw [baseChangeToCurvedDuplex_obj_X₁_eq_baseChangeFunctor]
-  exact projective_baseChangeFunctor_X₁ f X
-
-/-- Base change keeps the even component finitely generated over the target ring. -/
-theorem finite_baseChangeToCurvedDuplex_X₀ (f : S →+* T) (hw : f w = 0)
-    (X : MatrixFactorization S w) :
-    Module.Finite T ((baseChangeToCurvedDuplex f hw).obj X).X₀ := by
-  rw [baseChangeToCurvedDuplex_obj_X₀_eq_baseChangeFunctor]
-  exact finite_baseChangeFunctor_X₀ f X
-
-/-- Base change keeps the odd component finitely generated over the target ring. -/
-theorem finite_baseChangeToCurvedDuplex_X₁ (f : S →+* T) (hw : f w = 0)
-    (X : MatrixFactorization S w) :
-    Module.Finite T ((baseChangeToCurvedDuplex f hw).obj X).X₁ := by
-  rw [baseChangeToCurvedDuplex_obj_X₁_eq_baseChangeFunctor]
-  exact finite_baseChangeFunctor_X₁ f X
 
 /-- Extension of scalars is additive on closed even maps of matrix factorizations. -/
 instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
