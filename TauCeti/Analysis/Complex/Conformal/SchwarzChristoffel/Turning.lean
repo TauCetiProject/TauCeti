@@ -14,7 +14,8 @@ import Mathlib.Analysis.Convex.Between
 The direction of a Schwarz--Christoffel boundary edge is
 `exp (schwarzChristoffelEdgeAngle a e p * I)`.  When two consecutive edge intervals meet at a
 prevertex `q`, their angle difference is `-π` times the total exponent at `q`.  Thus an exponent in
-`(-1, 0)` makes the boundary turn strictly through an angle less than `π`.
+`(-1, 0)` makes the boundary turn strictly through an angle less than `π`. More generally, any
+nonzero exponent in `(-1, 1)` gives a noncollinear corner, including an inward turn.
 
 This file combines that angle calculation with the straight-edge description of
 `SchwarzChristoffel.ClosedEdge`.  The main result says that the boundary values at three
@@ -27,7 +28,7 @@ for proving that a Schwarz--Christoffel boundary chain is a simple polygon.
 * `TauCeti.schwarzChristoffelEdgeAngle_mem_Ioo_of_adjacent` -- the right-hand edge direction at a
   convex prevertex lies strictly between the left-hand direction and its half-turn.
 * `TauCeti.affineIndependent_schwarzChristoffelBoundary_of_adjacent` -- three consecutive boundary
-  values around a convex prevertex are affinely independent.
+  values around a nonflat convex or reentrant prevertex are affinely independent.
 * `TauCeti.affineIndependent_schwarzChristoffelVertex_of_adjacent` -- the corresponding indexed
   prevertex statement.
 * `TauCeti.affineIndependent_schwarzChristoffelBoundary_left_endpoint` and
@@ -66,19 +67,20 @@ theorem schwarzChristoffelEdgeAngle_mem_Ioo_of_adjacent (a e : ι → ℝ) {p q 
     schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent a e hpq ha
   constructor <;> nlinarith [Real.pi_pos, hq.1, hq.2]
 
-/-- Three consecutive Schwarz--Christoffel boundary values around a prevertex of total exponent
-in `(-1, 0)` are affinely independent.
+/-- Three consecutive Schwarz--Christoffel boundary values around a non-flat prevertex of total
+exponent in `(-1, 1)` are affinely independent.
 
 The hypotheses ask that the open intervals `(p, q)` and `(q, r)` contain no prevertex with
 nonzero exponent, that the endpoint exponent sums at `p` and `r` exceed `-1`, and that the middle
-exponent sum lies in `(-1, 0)`.  The conclusion says the three boundary values are not collinear,
-so `schwarzChristoffelBoundary a e z₀ q` is a genuine corner of the boundary chain. -/
+exponent sum lies in `(-1, 1) \ {0}`. The three boundary values are therefore not collinear, so
+`schwarzChristoffelBoundary a e z₀ q` is a genuine corner of the boundary chain. -/
 theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {p q r : ℝ} (hpq : p < q) (hqr : q < r)
     (hpqFree : ∀ i, e i ≠ 0 → a i ∉ Ioo p q)
     (hqrFree : ∀ i, e i ≠ 0 → a i ∉ Ioo q r)
     (hp : -1 < ∑ i with a i = p, e i)
-    (hq : ∑ i with a i = q, e i ∈ Ioo (-1 : ℝ) 0)
+    (hq : ∑ i with a i = q, e i ∈ Ioo (-1 : ℝ) 1)
+    (hq0 : ∑ i with a i = q, e i ≠ 0)
     (hr : -1 < ∑ i with a i = r, e i) :
     AffineIndependent ℝ ![schwarzChristoffelBoundary a e z₀ p,
       schwarzChristoffelBoundary a e z₀ q,
@@ -86,8 +88,9 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
   let B := schwarzChristoffelBoundary a e z₀
   let up := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
   let uq := Complex.exp (schwarzChristoffelEdgeAngle a e q * Complex.I)
-  have hangle := schwarzChristoffelEdgeAngle_mem_Ioo_of_adjacent a e hpq hpqFree hq
-  have hdet : 0 < (conj up * uq).im := by
+  have hangle := schwarzChristoffelEdgeAngle_sub_eq_pi_mul_exponent_sum_of_adjacent
+    a e hpq hpqFree
+  have hdet : (conj up * uq).im ≠ 0 := by
     have hexp :
         conj (schwarzChristoffelEdgeAngle a e p * Complex.I) +
             schwarzChristoffelEdgeAngle a e q * Complex.I =
@@ -97,9 +100,16 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
       ring
     dsimp only [up, uq]
     rw [← Complex.exp_conj, ← Complex.exp_add, hexp]
-    simpa only [← Complex.ofReal_sub, Complex.exp_ofReal_mul_I_im] using
-      Real.sin_pos_of_pos_of_lt_pi (sub_pos.mpr hangle.1)
-        (sub_lt_iff_lt_add.mpr (by simpa [add_comm] using hangle.2))
+    rw [← Complex.ofReal_sub, Complex.exp_ofReal_mul_I_im]
+    have hdelta : schwarzChristoffelEdgeAngle a e q - schwarzChristoffelEdgeAngle a e p =
+        -(Real.pi * ∑ i with a i = q, e i) := by linarith [hangle]
+    rw [hdelta, Real.sin_neg]
+    simp only [neg_ne_zero]
+    rcases lt_or_gt_of_ne hq0 with hneg | hpos
+    · exact (Real.sin_neg_of_neg_of_neg_pi_lt
+        (mul_neg_of_pos_of_neg Real.pi_pos hneg) (by nlinarith [hq.1, Real.pi_pos])).ne
+    · exact (Real.sin_pos_of_pos_of_lt_pi
+        (mul_pos Real.pi_pos hpos) (by nlinarith [hq.2, Real.pi_pos])).ne'
   have hdir : LinearIndependent ℝ ![up, uq] := by
     rw [linearIndependent_fin2]
     constructor
@@ -117,7 +127,7 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
           rw [← Complex.ofReal_pow, Complex.ofReal_im]
         rw [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, hpowim]
         ring
-      linarith
+      exact hdet him
   have hpqEq : B q - B p = (‖B q - B p‖ : ℂ) * up := by
     exact schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hpqFree hp hq.1
       ⟨hpq.le, le_rfl⟩ ⟨le_rfl, hpq.le⟩ hpq.le
@@ -163,13 +173,14 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
   exact hscaled
 
 /-- Three indexed Schwarz--Christoffel vertices at consecutive ordered prevertices are affinely
-independent when the total exponent at the middle prevertex lies in `(-1, 0)`. -/
+independent when the total exponent at the middle prevertex lies in `(-1, 1) \ {0}`. -/
 theorem affineIndependent_schwarzChristoffelVertex_of_adjacent (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (j k l : ι) (hjk : a j < a k) (hkl : a k < a l)
     (hjkFree : ∀ i, e i ≠ 0 → a i ∉ Ioo (a j) (a k))
     (hklFree : ∀ i, e i ≠ 0 → a i ∉ Ioo (a k) (a l))
     (hj : -1 < ∑ i with a i = a j, e i)
-    (hk : ∑ i with a i = a k, e i ∈ Ioo (-1 : ℝ) 0)
+    (hk : ∑ i with a i = a k, e i ∈ Ioo (-1 : ℝ) 1)
+    (hk0 : ∑ i with a i = a k, e i ≠ 0)
     (hl : -1 < ∑ i with a i = a l, e i) :
     AffineIndependent ℝ ![schwarzChristoffelVertex a e z₀ j,
       schwarzChristoffelVertex a e z₀ k, schwarzChristoffelVertex a e z₀ l] := by
@@ -177,7 +188,7 @@ theorem affineIndependent_schwarzChristoffelVertex_of_adjacent (a e : ι → ℝ
     schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk.1,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ l hl] using
     affineIndependent_schwarzChristoffelBoundary_of_adjacent a e z₀ hjk hkl hjkFree hklFree
-      hj hk hl
+      hj hk hk0 hl
 
 /-! ### Corners beside the vertex at infinity -/
 
@@ -214,7 +225,8 @@ theorem affineIndependent_schwarzChristoffelBoundary_left_endpoint (a e : ι →
       hxpFree hpqFree
     · rw [hxsum]
       norm_num
-    · exact hp
+    · exact ⟨hp.1, lt_trans hp.2 (by norm_num)⟩
+    · exact hp.2.ne
     · exact hq
   have hximage : B x ∈ B '' Iic p := ⟨x, hxp.le, rfl⟩
   rw [schwarzChristoffelBoundary_image_Iic a e z₀ hp.1 ha hS] at hximage
@@ -264,7 +276,8 @@ theorem affineIndependent_schwarzChristoffelBoundary_right_endpoint (a e : ι �
     apply affineIndependent_schwarzChristoffelBoundary_of_adjacent a e z₀ hqp hpx
       hqpFree hpxFree
     · exact hq
-    · exact hp
+    · exact ⟨hp.1, lt_trans hp.2 (by norm_num)⟩
+    · exact hp.2.ne
     · rw [hxsum]
       norm_num
   have hximage : B x ∈ B '' Ici p := ⟨x, hpx.le, rfl⟩

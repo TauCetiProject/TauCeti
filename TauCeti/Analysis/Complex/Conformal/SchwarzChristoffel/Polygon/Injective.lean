@@ -74,7 +74,8 @@ private lemma eq_of_boundary_eq_of_mem_bounded_intervals
       i.castSucc i.succ j.succ (ha i.castSucc_lt_succ)
       (by rw [hmid]; exact ha j.castSucc_lt_succ)
       (hfree i) (by rw [hmid]; exact hfree j)
-      (hfinite _).1 (hfinite _) (hfinite _).1
+      (hfinite _).1 ⟨(hfinite _).1, lt_trans (hfinite _).2 (by norm_num)⟩
+      (hfinite _).2.ne (hfinite _).1
     -- Reindex the two displacement vectors based at the middle vertex.
     rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
       ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))] at haff
