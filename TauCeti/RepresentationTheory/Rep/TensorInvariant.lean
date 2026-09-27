@@ -100,3 +100,28 @@ theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
   simp [_root_.Rep.hom_braiding]
 
 end TauCeti.Rep
+
+namespace Rep
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- Tensoring with the invariant `1` of the trivial representation, then braiding and applying
+the left unitor, is the identity. -/
+theorem tensorInvariant_one_braiding_leftUnitor (M : Rep k G) :
+    tensorInvariant M (⟨1, by simp [Representation.invariants]⟩ :
+      (Rep.trivial k G k).ρ.invariants) ≫
+      (β_ M (Rep.trivial k G k)).hom ≫ (λ_ M).hom = 𝟙 M := by
+  ext x
+  have ht := tensorInvariant_hom_apply M
+    (⟨1, by simp [Representation.invariants]⟩ : (Rep.trivial k G k).ρ.invariants) x
+  simp only [Rep.hom_comp, tensor_V, tensor_ρ, hom_hom_leftUnitor, hom_braiding,
+    Representation.IntertwiningMap.comp_toLinearMap,
+    Representation.TensorProduct.toLinearMap_lid,
+    Representation.TensorProduct.toLinearMap_comm, LinearEquiv.comp_coe,
+    TensorProduct.comm_trans_lid, LinearMap.coe_comp, LinearEquiv.coe_coe,
+    Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply,
+    Rep.hom_id, Representation.IntertwiningMap.toLinearMap_id, LinearMap.id_coe, id_eq]
+  rw [ht]
+  simp
+
+end Rep
