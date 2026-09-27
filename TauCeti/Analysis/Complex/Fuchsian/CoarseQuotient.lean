@@ -61,6 +61,18 @@ open scoped ComplexConjugate ContDiff Manifold MatrixGroups
 
 namespace Subgroup
 
+/-- A common positive radius gives elliptic quotient charts for two properly discontinuous
+actions. -/
+theorem exists_pos_isOpenEmbedding_stabilizerBallQuotientToQuotient_pair
+    (Δ Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
+    [ProperlyDiscontinuousSMul Δ ℍ] [ProperlyDiscontinuousSMul Γ ℍ] :
+    ∃ ε : ℝ, 0 < ε ∧
+      IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε) ∧
+      IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε) := by
+  exact (eventually_mem_nhdsWithin.and
+    ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Δ z).and
+      (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z))).exists
+
 variable (Γ : Subgroup PSL(2, ℝ)) [ProperlyDiscontinuousSMul Γ ℍ]
 
 /-- For a properly discontinuous action there is a positive radius whose local orbit space embeds

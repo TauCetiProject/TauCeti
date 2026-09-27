@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.CoarseQuotient
-public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.GroupTheory.GroupAction.Stabilizer
 import Mathlib.GroupTheory.Index
 
 /-!
@@ -68,12 +68,15 @@ def ellipticRamificationIndex (_h : Δ ≤ Γ) (z : ℍ) : ℕ :=
 theorem ellipticRamificationIndex_smul (h : Δ ≤ Γ) (g : Δ) (z : ℍ) :
     ellipticRamificationIndex h (g • z) = ellipticRamificationIndex h z := by
   let gΓ : Γ := ⟨g.1, h g.2⟩
-  unfold ellipticRamificationIndex
-  change (ambientStabilizer Δ (g • z)).relIndex
-      (ambientStabilizer Γ (gΓ • z)) =
-    (ambientStabilizer Δ z).relIndex (ambientStabilizer Γ z)
-  rw [ambientStabilizer_smul Δ g z, ambientStabilizer_smul Γ gΓ z]
-  exact Subgroup.relIndex_pointwise_smul (MulAut.conj (g : PSL(2, ℝ))) _ _
+  have hgΓ : gΓ • z = g • z := rfl
+  calc
+    ellipticRamificationIndex h (g • z) =
+        (ambientStabilizer Δ (g • z)).relIndex
+          (ambientStabilizer Γ (gΓ • z)) := by rw [hgΓ]; rfl
+    _ = (ambientStabilizer Δ z).relIndex (ambientStabilizer Γ z) := by
+      rw [ambientStabilizer_smul Δ g z, ambientStabilizer_smul Γ gΓ z]
+      exact Subgroup.relIndex_pointwise_smul (MulAut.conj (g : PSL(2, ℝ))) _ _
+    _ = ellipticRamificationIndex h z := rfl
 
 /-- Ramification is trivial exactly when the two ambient point stabilizers agree. -/
 @[simp]
@@ -177,17 +180,5 @@ theorem stabilizerBallQuotientChart_map_of_le_symm (h : Δ ≤ Γ) (z : ℍ)
   rw [stabilizerBallQuotientChart_symm_pow hε hΔ hw']
   simpa [stabilizerBallQuotientChart_mk hε hΔ hτ, τ] using
     stabilizerBallQuotientChart_map_of_le h z τ hε hΔ hΓ hτ
-
-/-- A common positive radius gives elliptic quotient charts for two properly discontinuous
-actions. -/
-theorem exists_pos_isOpenEmbedding_stabilizerBallQuotientToQuotient_pair
-    (Δ Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
-    [ProperlyDiscontinuousSMul Δ ℍ] [ProperlyDiscontinuousSMul Γ ℍ] :
-    ∃ ε : ℝ, 0 < ε ∧
-      IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε) ∧
-      IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε) := by
-  exact (eventually_mem_nhdsWithin.and
-    ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Δ z).and
-      (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z))).exists
 
 end Subgroup
