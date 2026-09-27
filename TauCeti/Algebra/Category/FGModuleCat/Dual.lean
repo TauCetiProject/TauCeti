@@ -25,10 +25,10 @@ packages the algebraic dual as a contravariant operation on the objects and morp
 `FGModuleCat R`, so that constructions which dualize, such as the duality for matrix
 factorizations, are written once at the module level.
 
-The same packaging carries the crossed-transpose calculations that dualizing a curved pair of
-maps needs: `negDualMap_comp_dualMap` and `dualMap_negDualMap`, the two placements of the single
-minus sign between the crossed transposes, and `negDualMap_dualMap_comp_negDualMap_dualMap`, the
-same computation one dual further.
+The operations this file contributes are those of the category of finitely generated projective
+modules alone; the crossed-transpose calculations that dualizing a *curved pair* of maps needs are
+curvature equations, and they are proved in `TauCeti.Algebra.Homology.Curved.Dual` beside the duals
+whose differential equations they are.
 
 ## Main definitions
 
@@ -45,19 +45,14 @@ below describe them.
 * `FGModuleCat.dualMap_hom`: the underlying module map of a transpose is the dual map of the
   underlying module map, the component form of `FGModuleCat.dualMap`.
 * `FGModuleCat.dualMap_id`, `FGModuleCat.dualMap_comp`, `FGModuleCat.dualMap_smul`,
-  `FGModuleCat.dualMap_neg`: transposing is contravariant and compatible with the `R`-linear
-  structure.
+  `FGModuleCat.dualMap_neg`, `FGModuleCat.dualMap_zero`, `FGModuleCat.dualMap_add`: transposing is
+  contravariant and compatible with the additive and `R`-linear structure on morphisms.
 * `FGModuleCat.dualEvalIso`, `FGModuleCat.dualEvalIso_hom`, `FGModuleCat.dualEvalIso_inv`: a
   double dual is canonically isomorphic to the original module, and the underlying module maps of
   that isomorphism and its inverse are the two halves of the evaluation pairing.
 * `FGModuleCat.dualMap_dualMap_dualEvalIso`: the double transpose of a morphism is the original
   morphism, conjugated by the evaluation isomorphisms. This is the fact that makes double duals an
   equivalence.
-* `FGModuleCat.negDualMap_comp_dualMap`, `FGModuleCat.dualMap_negDualMap`: the composite of the
-  crossed transposes of a curved pair of maps, with the single minus sign on either of them, is
-  multiplication by `-w` on the dual.
-* `FGModuleCat.negDualMap_dualMap_comp_negDualMap_dualMap`: the same computation one dual
-  further, for the two negated double transposes, which is the original curvature again.
 -/
 
 public section
@@ -98,6 +93,11 @@ private theorem smul_hom_apply (a : R) {M N : FGModuleCat.{u} R} (f : M ⟶ N) :
 
 private theorem neg_hom_apply {M N : FGModuleCat.{u} R} (f : M ⟶ N) :
     (-f).hom.hom = -f.hom.hom := rfl
+
+private theorem zero_hom_apply {M N : FGModuleCat.{u} R} : (0 : M ⟶ N).hom.hom = 0 := rfl
+
+private theorem add_hom_apply {M N : FGModuleCat.{u} R} (f g : M ⟶ N) :
+    (f + g).hom.hom = f.hom.hom + g.hom.hom := rfl
 
 /-- Dualization is contravariant on morphisms: the transpose of the identity is the
 identity. -/
@@ -152,60 +152,24 @@ negated morphism is the negation of the transpose. -/
   rw [neg_hom_apply, FGModuleCat.dualMap_hom, neg_hom_apply, FGModuleCat.dualMap_hom]
   simp
 
--- The crossed-transpose calculations below are the curvature equations of a dual and of a
--- double dual, for the same reason the transposing laws above are here: they are statements
--- about morphisms of `FGModuleCat` alone.
+/-- Transposing is compatible with the additive structure on morphisms: the transpose of the
+zero morphism is the zero morphism. -/
+@[simp] theorem dualMap_zero {M N : FGModuleCat.{u} R} [Module.Projective R M]
+    [Module.Projective R N] : FGModuleCat.dualMap (R := R) (0 : M ⟶ N) = 0 := by
+  apply FGModuleCat.hom_ext
+  simp only [FGModuleCat.dualMap_hom, zero_hom_apply]
+  ext φ x
+  simp
 
-/-- For a curved pair of maps `f` and `g` with `f ≫ g = w • 𝟙`, the composite of the negated
-transpose of `g` with the transpose of `f` is multiplication by `-w` on the dual. This is one of
-the two differential equations of a dual of curvature `-w`, the one in which the minus sign sits
-on the left-hand factor of the composite; `FGModuleCat.dualMap_negDualMap` is the same
-calculation with the minus sign on the right-hand factor. -/
-theorem negDualMap_comp_dualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
-    [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap R g) ≫ FGModuleCat.dualMap R f) = -w • 𝟙 (FGModuleCat.dual R M) := by
-  calc (-FGModuleCat.dualMap R g) ≫ FGModuleCat.dualMap R f
-      = -(FGModuleCat.dualMap R g ≫ FGModuleCat.dualMap R f) := by simp only [neg_comp]
-    _ = -FGModuleCat.dualMap R (f ≫ g) := by
-      rw [FGModuleCat.dualMap_comp (f := f) (g := g)]
-    _ = -FGModuleCat.dualMap R (w • 𝟙 M) := by rw [h]
-    _ = -(w • FGModuleCat.dualMap R (𝟙 M)) := by rw [FGModuleCat.dualMap_smul]
-    _ = -(w • 𝟙 (FGModuleCat.dual R M)) := by rw [FGModuleCat.dualMap_id]
-    _ = -w • 𝟙 (FGModuleCat.dual R M) := by rw [neg_smul]
-
-/-- The other placement of the minus sign: for a curved pair of maps `f` and `g` with
-`f ≫ g = w • 𝟙`, the composite of the transpose of `g` with the negated transpose of `f` is
-multiplication by `-w` on the dual. This is the other of the two differential equations of a
-dual of curvature `-w`, the one in which the minus sign sits on the right-hand factor of the
-composite. It is `FGModuleCat.negDualMap_comp_dualMap` read the other way round, since negating
-either factor of a composite negates the composite. -/
-theorem dualMap_negDualMap {M N : FGModuleCat.{u} R} [Module.Projective R M]
-    [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M) (h : f ≫ g = w • 𝟙 M) :
-    (FGModuleCat.dualMap R g ≫ (-FGModuleCat.dualMap R f)) = -w • 𝟙 (FGModuleCat.dual R M) := by
-  rw [Preadditive.comp_neg, ← Preadditive.neg_comp, negDualMap_comp_dualMap (R := R) w f g h]
-
-/-- The same computation one dual further: the composite of the two negated double transposes of
-a curved pair of maps is multiplication by the original `w` on the double dual. This is the
-computation behind the two differential equations of a double dual, and the reason a double dual
-has the same curvature as its source. -/
-theorem negDualMap_dualMap_comp_negDualMap_dualMap {M N : FGModuleCat.{u} R}
-    [Module.Projective R M] [Module.Projective R N] (w : R) (f : M ⟶ N) (g : N ⟶ M)
-    (h : f ≫ g = w • 𝟙 M) :
-    ((-FGModuleCat.dualMap R (FGModuleCat.dualMap R f)) ≫
-      (-FGModuleCat.dualMap R (FGModuleCat.dualMap R g)))
-      = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
-  calc (-FGModuleCat.dualMap R (FGModuleCat.dualMap R f)) ≫
-        (-FGModuleCat.dualMap R (FGModuleCat.dualMap R g))
-      = FGModuleCat.dualMap R (FGModuleCat.dualMap R f) ≫
-          FGModuleCat.dualMap R (FGModuleCat.dualMap R g) := by
-            rw [Preadditive.neg_comp_neg]
-    _ = FGModuleCat.dualMap R (FGModuleCat.dualMap R (f ≫ g)) := by
-      rw [← FGModuleCat.dualMap_comp, ← FGModuleCat.dualMap_comp]
-    _ = FGModuleCat.dualMap R (FGModuleCat.dualMap R (w • 𝟙 M)) := by rw [h]
-    _ = w • FGModuleCat.dualMap R (FGModuleCat.dualMap R (𝟙 M)) := by
-      simp only [FGModuleCat.dualMap_smul]
-    _ = w • 𝟙 (FGModuleCat.dual R (FGModuleCat.dual R M)) := by
-      rw [FGModuleCat.dualMap_id, FGModuleCat.dualMap_id]
+/-- Transposing is compatible with the additive structure on morphisms: the transpose of a sum of
+morphisms is the sum of the transposes. -/
+@[simp] theorem dualMap_add {M N : FGModuleCat.{u} R} [Module.Projective R M]
+    [Module.Projective R N] (f g : M ⟶ N) :
+    FGModuleCat.dualMap (R := R) (f + g) = FGModuleCat.dualMap R f + FGModuleCat.dualMap R g := by
+  apply FGModuleCat.hom_ext
+  simp only [FGModuleCat.dualMap_hom, add_hom_apply]
+  ext φ x
+  simp
 
 /-- The double transpose of a morphism is the morphism itself, up to the evaluation isomorphisms:
 a double dual is not just isomorphic to the original module, the isomorphism intertwines the

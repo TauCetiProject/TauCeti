@@ -44,10 +44,12 @@ lands back at the potential `w` and at an isomorphic factorization.
 
 * `MatrixFactorization.dualMap_f₀`, `MatrixFactorization.dualMap_f₁`: the components of a dual
   morphism.
-* `MatrixFactorization.dualMap_id`, `MatrixFactorization.dualMap_comp`: the dual of a morphism
-  reverses identity and composition, which is what makes duality contravariant.
+* `MatrixFactorization.dualMap_id`, `MatrixFactorization.dualMap_comp`,
+  `MatrixFactorization.dualMap_zero`, `MatrixFactorization.dualMap_add`: the dual of a morphism
+  reverses identity and composition and is additive, which is what makes duality contravariant.
 * `MatrixFactorization.dualFunctor_obj`, `MatrixFactorization.dualFunctor_map`: the object and
-  morphism maps of the contravariant duality functor.
+  morphism maps of the contravariant duality functor, and the instance saying that it is an
+  additive functor.
 * `MatrixFactorization.doubleDualIso`, `MatrixFactorization.doubleDualIso_f₀`,
   `MatrixFactorization.doubleDualIso_f₁`, `MatrixFactorization.doubleDualIso_inv_f₀`,
   `MatrixFactorization.doubleDualIso_inv_f₁`: a double dual is isomorphic to the original
@@ -140,6 +142,18 @@ duals in the opposite order. -/
     dualMap (f ≫ g) = dualMap g ≫ dualMap f :=
   InducedCategory.hom_ext (CurvedDuplex.dualMap_comp _ _)
 
+/-- Dualization is contravariant on morphisms and additive: the dual of the zero morphism of a
+matrix factorization is the zero morphism of its dual. -/
+@[simp] theorem dualMap_zero (X Y : MatrixFactorization S w) :
+    dualMap (0 : X ⟶ Y) = 0 :=
+  InducedCategory.hom_ext (CurvedDuplex.dualMap_zero _ _)
+
+/-- Dualization is contravariant on morphisms and additive: the dual of a sum of morphisms of
+matrix factorizations is the sum of the duals. -/
+@[simp] theorem dualMap_add {X Y : MatrixFactorization S w} (f g : X ⟶ Y) :
+    dualMap (f + g) = dualMap f + dualMap g :=
+  InducedCategory.hom_ext (CurvedDuplex.dualMap_add _ _)
+
 /-- **Duality of matrix factorizations is contravariant**: a morphism of matrix factorizations of
 `w` dualizes to a morphism of matrix factorizations of `-w` from the dual of its target to the
 dual of its source, and duality reverses identity and composition. The morphism map is
@@ -169,6 +183,15 @@ matrix factorizations the morphism map is stated at. -/
         ≫ eqToHom (dualFunctor_obj (S := S) (w := w) Y).symm := by
   unfold dualFunctor
   rfl
+
+/-- Duality of matrix factorizations is an **additive functor**, as the transpose of a linear
+map is: the morphism map of the contravariant duality functor `MatrixFactorization.dualFunctor`
+preserves addition, by `MatrixFactorization.dualMap_add`, and so is a morphism of abelian groups,
+which also sends the zero morphism to the zero morphism. -/
+instance : (MatrixFactorization.dualFunctor (S := S) (w := w)).Additive where
+  map_add := by
+    intro _ _ f g
+    exact MatrixFactorization.dualMap_add f.unop g.unop
 
 /-- The double dual of a matrix factorization is a matrix factorization of the *same* potential
 `w`: each of its differentials is the negated double transpose of the corresponding differential
