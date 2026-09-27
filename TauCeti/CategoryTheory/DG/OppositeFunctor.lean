@@ -36,7 +36,6 @@ variable {R : Type v} [CommRing R] {C : Type u₁} {D : Type u₂}
 
 /-- The opposite DG functor acts on a homogeneous morphism by the original functor's
 degreewise map, with its source and target reversed. -/
-@[simp]
 theorem dgMap_op {X Y : C} (n : ℤ) (f : DGHom R n Y X) :
     F.op.dgMap n (X := Opposite.op X) (Y := Opposite.op Y) f = F.dgMap n f := by
   simp only [dgMap_apply, op_map]
