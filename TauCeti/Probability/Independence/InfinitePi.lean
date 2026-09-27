@@ -25,7 +25,7 @@ namespace TauCeti.MeasureTheory.Measure
 variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 
 /-- Restrictions to disjoint coordinate sets are independent under a product probability law. -/
-theorem infinitePi_indepFun_domRestrict (P : ∀ i, Measure (α i))
+theorem indepFun_domRestrict_infinitePi (P : ∀ i, Measure (α i))
     [∀ i, IsProbabilityMeasure (P i)] {S T : Set ι}
     (hST : Disjoint S T) :
     IndepFun (fun x : ∀ i, α i => S.domRestrict x)
@@ -52,7 +52,7 @@ theorem infinitePi_map_pair_domRestrict (P : ∀ i, Measure (α i))
         (fun x => (S.domRestrict x, T.domRestrict x)) =
       (Measure.infinitePi fun i : S => P i).prod
         (Measure.infinitePi fun i : T => P i) := by
-  have hind := infinitePi_indepFun_domRestrict P hST
+  have hind := indepFun_domRestrict_infinitePi P hST
   have hprod := hind.map_prod_eq_prod_map_map
     (Set.measurable_restrict S).aemeasurable (Set.measurable_restrict T).aemeasurable
   simpa only [Measure.infinitePi_map_restrict'] using hprod
