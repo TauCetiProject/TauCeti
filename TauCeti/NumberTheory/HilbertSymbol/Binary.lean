@@ -15,9 +15,7 @@ Isometric regular binary diagonal forms have the same norm-equation Hilbert symb
 binary-step input for descending the pairwise product of Hilbert symbols along a diagonal chain,
 and hence for defining the local Hasse invariant on isometry classes.
 
-The assertion holds over any field in which two is invertible. It uses the Layer 3 binary
-quaternion lemma and item 2's comparison of Hilbert symbols with quaternion algebras, without
-local bimultiplicativity or local classification.
+The assertion holds over any field in which two is invertible.
 
 ## References
 
