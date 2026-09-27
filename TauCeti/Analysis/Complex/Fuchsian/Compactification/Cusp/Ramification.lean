@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Map
-public import TauCeti.Analysis.Complex.Fuchsian.Compactification.CuspChart
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Chart
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.WidthRatio
 
 /-!
@@ -36,9 +36,22 @@ theorem cuspChart_compactifiedQuotientMap_eq_pow (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling)
     {n : ℕ} (hn : 0 < n) (hw : D.width = n * E.width)
-    {A : ℝ} (hD : D.width ≤ A) (hE : E.width ≤ A)
+    {A : ℝ} (hD : D.width ≤ A)
     {x : Δ.CompactifiedQuotient} (hx : x ∈ cuspNhd D A) :
-    cuspChart E hE (compactifiedQuotientMap h x) = (cuspChart D hD x) ^ n := by
+    cuspChart E (show E.width ≤ A from by
+      calc
+        E.width = 1 * E.width := (one_mul _).symm
+        _ ≤ (n : ℝ) * E.width := mul_le_mul_of_nonneg_right (by exact_mod_cast hn)
+          E.width_pos.le
+        _ = D.width := hw.symm
+        _ ≤ A := hD) (compactifiedQuotientMap h x) = (cuspChart D hD x) ^ n := by
+  have hE : E.width ≤ A := by
+    calc
+      E.width = 1 * E.width := (one_mul _).symm
+      _ ≤ (n : ℝ) * E.width := mul_le_mul_of_nonneg_right (by exact_mod_cast hn)
+        E.width_pos.le
+      _ = D.width := hw.symm
+      _ ≤ A := hD
   cases x with
   | ofCusp C =>
       have hC : C = D.cuspOrbit := (ofCusp_mem_cuspNhd_iff D A).mp hx
@@ -53,17 +66,5 @@ theorem cuspChart_compactifiedQuotientMap_eq_pow (h : Δ ≤ Γ)
       rw [compactifiedQuotientMap_ofQuotient, TauCeti.Setoid.map_of_le_mk,
         cuspChart_ofQuotient_mk E hE hzE, cuspChart_ofQuotient_mk D hD hz]
       exact (coordinate_pow_eq D E hn.ne' hσ hw z).symm
-
-/-- The local power exponent exists for every subgroup inclusion at a common cusp and scaling. -/
-theorem exists_cuspChart_compactifiedQuotientMap_eq_pow (h : Δ ≤ Γ)
-    (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling) :
-    ∃ n : ℕ, 0 < n ∧ D.width = n * E.width ∧
-      ∀ {A : ℝ} (hD : D.width ≤ A) (hE : E.width ≤ A)
-        {x : Δ.CompactifiedQuotient}, x ∈ cuspNhd D A →
-          cuspChart E hE (compactifiedQuotientMap h x) = (cuspChart D hD x) ^ n := by
-  obtain ⟨n, hn, hw⟩ := exists_width_eq_nat_mul h D E hc hσ
-  exact ⟨n, hn, hw, fun {_} hD hE {_} hx ↦
-    cuspChart_compactifiedQuotientMap_eq_pow h D E hc hσ hn hw hD hE hx⟩
 
 end Subgroup.CompactifiedQuotient
