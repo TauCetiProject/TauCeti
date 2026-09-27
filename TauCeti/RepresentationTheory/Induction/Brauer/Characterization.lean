@@ -40,19 +40,17 @@ it.  That is exactly the generality of
 separates this statement from the ideal property
 `TauCeti.ClassFunction.mul_mem_indVirtualCharacters` it refines.
 
-Nothing about elementary subgroups is used in the argument, so the criterion is proved first for an
-arbitrary family `P` of subgroups from which `1` is induced
+Nothing about elementary subgroups is used in the argument, so the criterion is proved for an
+arbitrary family `P` of subgroups from which `1` is induced, alongside the ideal property in
+`TauCeti.RepresentationTheory.Induction.Ideal`
 (`TauCeti.ClassFunction.mem_indVirtualCharacters_iff_forall_comp_subtype`), and gives at once the
 sharper conclusion that `f` is a `ℤ`-combination of characters *induced from members of the family*.
-Brauer's theorem is then the specialization to `P = IsElementary`.  For the cyclic subgroups the
+Brauer's theorem is that criterion specialized to `P = IsElementary`.  For the cyclic subgroups the
 hypothesis `1 ∈ V_G` fails — Artin's induction theorem is only rational — so no such criterion
-holds there, and the elementary subgroups are the smallest family the roadmap asks for.
+holds there, and the elementary subgroups are the smallest family for which one is available.
 
 ## Main statements
 
-* `TauCeti.ClassFunction.mem_indVirtualCharacters_of_forall_comp_subtype` and
-  `TauCeti.ClassFunction.mem_indVirtualCharacters_iff_forall_comp_subtype`: the criterion for an
-  arbitrary family of subgroups inducing the constant function `1`.
 * `TauCeti.ClassFunction.one_mem_indVirtualCharacters_isElementary`: Brauer's induction theorem in
   the form the criterion consumes, that `1` is induced from the elementary subgroups.
 * `TauCeti.ClassFunction.mem_virtualCharacters_iff_forall_comp_subtype_isElementary`: **Brauer's
@@ -81,9 +79,6 @@ are phrased in.
 
 ## References
 
-This is the "Brauer's characterization of characters" item of Layer 6 in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Part II,
   Section 11.1, Theorem 21.
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Theorem 8.4(a).
@@ -97,39 +92,7 @@ universe u v
 
 namespace ClassFunction
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] {P : Subgroup G → Prop}
-
-/-! ### The criterion for an arbitrary family of subgroups -/
-
-/-- **A class function restricting to virtual characters along a family that induces `1` is induced
-from that family.**  Multiplying `1 = ∑ᵢ Ind_{Sᵢ} ψᵢ` by `f` and moving `f` inside each induction
-by the projection formula leaves inducing functions `(Res_{Sᵢ} f) · ψᵢ` that are virtual characters
-of `Sᵢ`, so `f` itself is a sum of virtual characters induced from the family.
-
-The hypothesis `h1` is precisely an induction theorem for the family
-(`TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_iff`); Brauer's induction theorem
-supplies it for the elementary subgroups. -/
-theorem mem_indVirtualCharacters_of_forall_comp_subtype
-    (h1 : (1 : G → k) ∈ indVirtualCharacters k G P) {f : G → k} (hf : f ∈ ClassFunction k G)
-    (hres : ∀ S : Subgroup G, P S → (fun s : S => f s) ∈ virtualCharacters k S) :
-    f ∈ indVirtualCharacters k G P := by
-  simpa using mul_mem_indVirtualCharacters_of_forall_comp_subtype hf hres h1
-
-/-- **The local-to-global criterion for a family of subgroups inducing `1`.**  For such a family a
-class function is induced from it exactly when all of its restrictions to its members are virtual
-characters.  The forward direction needs no hypothesis on the family: an induced virtual character
-is a virtual character, and restriction preserves those. -/
-theorem mem_indVirtualCharacters_iff_forall_comp_subtype
-    (h1 : (1 : G → k) ∈ indVirtualCharacters k G P) {f : G → k} (hf : f ∈ ClassFunction k G) :
-    f ∈ indVirtualCharacters k G P ↔
-      ∀ S : Subgroup G, P S → (fun s : S => f s) ∈ virtualCharacters k S :=
-  ⟨fun h S _ =>
-      comp_subtype_mem_virtualCharacters S (indVirtualCharacters_le_virtualCharacters h),
-    mem_indVirtualCharacters_of_forall_comp_subtype h1 hf⟩
-
-/-! ### Brauer's characterization -/
-
-variable [CharZero k] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [CharZero k] [IsAlgClosed k]
 
 /-- **The constant function `1` is induced from the elementary subgroups.**  This is Brauer's
 induction theorem `TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_isElementary`

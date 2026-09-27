@@ -26,9 +26,14 @@ the closure of the virtual characters of a subgroup under restriction and under 
 proof uses the multiplier `f` only through its restrictions to the family, so it is stated in that
 generality as `TauCeti.ClassFunction.mul_mem_indVirtualCharacters_of_forall_comp_subtype`: `V_G` is
 an ideal already for the possibly larger ring of class functions restricting to virtual characters
-on the family.  That is the form Brauer's characterization of characters consumes, in
-`TauCeti.RepresentationTheory.Induction.Brauer.Characterization`, where the multiplier is the class
-function whose virtual-character property is being established.
+on the family.  With that
+generality the local-to-global criterion
+`TauCeti.ClassFunction.mem_indVirtualCharacters_iff_forall_comp_subtype` follows at once: once `1`
+is induced from the family, a class function is induced from the family exactly when all of its
+restrictions to its members are virtual characters.  Brauer's
+characterization of characters, in
+`TauCeti.RepresentationTheory.Induction.Brauer.Characterization`, is that criterion for the
+elementary subgroups.
 
 The family-general induction map is also bundled here as
 `TauCeti.ClassFunction.indVirtualCharacterDirectSumAddHom`, the homomorphism
@@ -74,6 +79,9 @@ induced virtual characters with coefficients in a ring such as `ℤ[ζ]`. The co
 * `TauCeti.ClassFunction.mul_mem_indVirtualCharacters_of_forall_comp_subtype`: the ideal property
   for a multiplier constrained only along the family, and
   `TauCeti.ClassFunction.mul_mem_indVirtualCharacters`: the ideal property.
+* `TauCeti.ClassFunction.mem_indVirtualCharacters_of_forall_comp_subtype` and
+  `TauCeti.ClassFunction.mem_indVirtualCharacters_iff_forall_comp_subtype`: the local-to-global
+  criterion for a family from which the constant function `1` is induced.
 * `TauCeti.ClassFunction.mul_mem_span_indVirtualCharacters`: the corresponding ideal property for
   spans over a subring of the coefficient field.
 * `TauCeti.ClassFunction.nsmul_mem_indVirtualCharacters_of_nsmul_one_mem`: propagation of a
@@ -298,6 +306,34 @@ theorem mul_mem_indVirtualCharacters {f u : G → k} (hf : f ∈ virtualCharacte
     (hu : u ∈ indVirtualCharacters k G P) : f * u ∈ indVirtualCharacters k G P :=
   mul_mem_indVirtualCharacters_of_forall_comp_subtype (virtualCharacters_le_classFunction hf)
     (fun S _ => comp_subtype_mem_virtualCharacters S hf) hu
+
+/-! ### The local-to-global criterion for a family inducing `1` -/
+
+/-- **A class function restricting to virtual characters along a family that induces `1` is induced
+from that family.**  Multiplying `1 = ∑ᵢ Ind_{Sᵢ} ψᵢ` by `f` and moving `f` inside each induction
+by the projection formula leaves inducing functions `(Res_{Sᵢ} f) · ψᵢ` that are virtual characters
+of `Sᵢ`, so `f` itself is a sum of virtual characters induced from the family.
+
+The hypothesis `h1` is precisely an induction theorem for the family
+(`TauCeti.ClassFunction.indVirtualCharacters_eq_virtualCharacters_iff`); Brauer's induction theorem
+supplies it for the elementary subgroups. -/
+theorem mem_indVirtualCharacters_of_forall_comp_subtype
+    (h1 : (1 : G → k) ∈ indVirtualCharacters k G P) {f : G → k} (hf : f ∈ ClassFunction k G)
+    (hres : ∀ S : Subgroup G, P S → (fun s : S => f s) ∈ virtualCharacters k S) :
+    f ∈ indVirtualCharacters k G P := by
+  simpa using mul_mem_indVirtualCharacters_of_forall_comp_subtype hf hres h1
+
+/-- **The local-to-global criterion for a family of subgroups inducing `1`.**  For such a family a
+class function is induced from it exactly when all of its restrictions to its members are virtual
+characters.  The forward direction needs no hypothesis on the family: an induced virtual character
+is a virtual character, and restriction preserves those. -/
+theorem mem_indVirtualCharacters_iff_forall_comp_subtype
+    (h1 : (1 : G → k) ∈ indVirtualCharacters k G P) {f : G → k} (hf : f ∈ ClassFunction k G) :
+    f ∈ indVirtualCharacters k G P ↔
+      ∀ S : Subgroup G, P S → (fun s : S => f s) ∈ virtualCharacters k S :=
+  ⟨fun h S _ =>
+      comp_subtype_mem_virtualCharacters S (indVirtualCharacters_le_virtualCharacters h),
+    mem_indVirtualCharacters_of_forall_comp_subtype h1 hf⟩
 
 /-- Multiplying an `A`-linear combination of virtual characters by an `A`-linear combination of
 virtual characters induced from a family of subgroups remains in the induced span. -/
