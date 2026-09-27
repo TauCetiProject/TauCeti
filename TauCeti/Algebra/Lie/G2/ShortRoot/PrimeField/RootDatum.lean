@@ -8,18 +8,18 @@ module
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PointsFunctor
 
 /-!
-# Root-datum pinning of the prime-field short-root type-G2 carrier
+# Simple-root weights of the prime-field short-root type-G2 carrier
 
 `TauCeti.G2ShortRoot.PrimeField.groupScheme` is the type-`G₂` carrier over `𝔽₃` generated
 by the reductions of the four numbered simple root subgroups and the rank-two weight torus.  The
-carrier's matrix-valued pinning equation is initially expressed through
+carrier's matrix-valued torus-conjugation equation is initially expressed through
 `DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2`, the Cartan-row character attached to a
 signed simple-root index.
 
 This file rewrites the scheme-point and matrix-point equations against
-`DynkinType.G2.simplyConnectedRootDatum`, certifying that the actual characteristic-three carrier
-used for the Ree construction has the same Bourbaki numbering and character lattice as the uniform
-simply connected type-`G₂` datum.  The corresponding integral equations live in
+`DynkinType.G2.simplyConnectedRootDatum`, identifying the carrier's generator weights with the
+named positive and negative simple roots in Bourbaki numbering.  The corresponding integral
+equations live in
 `TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.RootDatum`; the results here concern the
 separately generated carrier over `𝔽₃`, whose defining ideal can be strictly larger than the
 reduction of the integral defining ideal.
@@ -29,7 +29,7 @@ pinned group scheme is asserted.
 
 ## Main results
 
-* `TauCeti.G2ShortRoot.PrimeField.weightTorus_conj_rootSubgroup`: the pinning equation on
+* `TauCeti.G2ShortRoot.PrimeField.weightTorus_conj_rootSubgroup`: the torus-conjugation equation on
   scheme-valued points of the prime-field carrier.
 * `TauCeti.G2ShortRoot.PrimeField.weightTorus_conj_rootSubgroup_root_simpleIndex` and its
   negative-root counterpart: the scheme-point equations against the named root datum.
@@ -119,7 +119,7 @@ theorem weightTorus_conj_rootSubgroup_neg_root_simpleIndex (ht : G2.Valid) (i : 
 
 /-! ## The named equations on matrix-valued points -/
 
-/-- **The prime-field pinning equation at a named positive simple root, on matrix-valued
+/-- **The prime-field torus-conjugation equation at a named positive simple root, on matrix-valued
 points.** The root character is the corresponding root of the uniform simply connected type-`G₂`
 datum. -/
 theorem weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex
@@ -139,7 +139,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex
   rw [← hroot]
   exact weightTorusPoints_conj_rootSubgroupPoints (.inl i) A s u
 
-/-- **The prime-field pinning equation at a named negative simple root, on matrix-valued
+/-- **The prime-field torus-conjugation equation at a named negative simple root, on matrix-valued
 points.** The root character is the negative of the corresponding root of the uniform simply
 connected type-`G₂` datum. -/
 theorem weightTorusPoints_conj_rootSubgroupPoints_neg_root_simpleIndex

@@ -609,9 +609,9 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Typ
   simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_weightTorusPoints,
     coe_rootSubgroupPoints] using hint
 
-/-- **The pinning equation on scheme-valued points of the carrier**: conjugation by a point of
-the weight torus rescales the parameter of each numbered simple root subgroup by the corresponding
-type-`G₂` root character. -/
+/-- **The torus-conjugation equation on scheme-valued points of the carrier**: conjugation by a
+point of the weight torus rescales the parameter of each numbered simple root subgroup by the
+corresponding type-`G₂` root character. -/
 @[simp]
 theorem weightTorus_conj_rootSubgroup (k : Fin 2 ⊕ Fin 2)
     (A : Type) [CommRing A] [Algebra (ZMod 3) A]
