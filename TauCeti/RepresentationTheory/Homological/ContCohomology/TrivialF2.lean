@@ -39,7 +39,9 @@ trivial coefficient object for that subgroup.
 * `TauCeti.trivialF2_ρ_apply_apply`: every monoid element acts trivially.
 * `TauCeti.trivialF2Pairing`: multiplication in `𝔽₂` as a biadditive pairing on the lifted
   carrier, with `TauCeti.trivialF2Pairing_smul_smul` its equivariance.
-* `TauCeti.ofDiscreteModule_trivialF2`: the coefficient dictionary recovers `trivialF2`.
+* `TauCeti.ofDiscreteModule_trivialF2`: the coefficient dictionary recovers `trivialF2`, with
+  `TauCeti.eqToHom_ofDiscreteModule_trivialF2_apply` and
+  `TauCeti.eqToHom_ofDiscreteModule_trivialF2_symm_apply` its carrier-level reading.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
 * `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
 * `TauCeti.trivialF2QuotientEquivFixedPoints_smul`: that identification is equivariant for the
@@ -106,6 +108,26 @@ trivial `𝔽₂` coefficients. -/
 theorem ofDiscreteModule_trivialF2 :
     ofDiscreteModule ℤ G (trivialF2 G).V = trivialF2 G :=
   ofDiscreteModule_eq_self (trivialF2 G)
+
+/-- **The transported identity of `TauCeti.ofDiscreteModule_trivialF2` acts as the identity on
+carriers**: `TauCeti.eqToHom (ofDiscreteModule_trivialF2 G)` is the morphism
+`TauCeti.eqToIso (ofDiscreteModule_trivialF2 G)` read by `TauCeti.eqToIso.hom`, so it is the
+identity on the carrier of `trivialF2 G`. -/
+@[simp]
+theorem eqToHom_ofDiscreteModule_trivialF2_apply (x : (trivialF2 G).V) :
+    (CategoryTheory.eqToHom (ofDiscreteModule_trivialF2 G)) x = x := by
+  rw [CategoryTheory.eqToHom]
+  rfl
+
+/-- **The transported inverse of `TauCeti.ofDiscreteModule_trivialF2` acts as the identity on
+carriers**: `TauCeti.eqToHom (ofDiscreteModule_trivialF2 G).symm` is the inverse morphism
+`TauCeti.eqToIso (ofDiscreteModule_trivialF2 G)` read by `TauCeti.eqToIso.inv`, so it too is the
+identity on the carrier of `trivialF2 G`. -/
+@[simp]
+theorem eqToHom_ofDiscreteModule_trivialF2_symm_apply (x : (trivialF2 G).V) :
+    (CategoryTheory.eqToHom (ofDiscreteModule_trivialF2 G).symm) x = x := by
+  rw [CategoryTheory.eqToHom]
+  rfl
 
 /-- Every monoid element acts trivially on `trivialF2 G`.
 

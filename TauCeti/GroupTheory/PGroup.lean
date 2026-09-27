@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Data.Nat.Factorization.Basic
+import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Nilpotent
 public import Mathlib.GroupTheory.PGroup
 
@@ -34,6 +35,7 @@ that a homomorphism into a pro-`p` group kills their intersection.
   `p`-group.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
   to `p` trivially.
+* `IsPGroup.smul_zmod_eq_self`: a `p`-group acts trivially on the additive group `ZMod p`.
 * `TauCeti.exists_isPGroup_quotient_notMem_of_pow_pow_eq_one`: in a finite commutative
   group, an element of `p`-power order survives in some `p`-group quotient.
 * `IsPGroup.index_eq_prime_of_isCoatom`: a maximal subgroup of a finite `p`-group has index
@@ -94,6 +96,24 @@ theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G
   refine hC ((?_ : p ∣ orderOf g).trans ?_)
   · simpa [Subgroup.orderOf_mk] using hQ.dvd_orderOf (g := (⟨g, hgQ⟩ : Q)) (by simpa using hg1)
   · simpa [Subgroup.orderOf_mk] using orderOf_dvd_natCard (⟨g, hg⟩ : C)
+
+/-- A `p`-group acts trivially on the additive group `ZMod p`, for `p` prime: every additive
+action of `g` on `ZMod p` is multiplication by `g • 1`, an element fixed by the `p`-th power map,
+and `g` has `p`-power order. -/
+theorem _root_.IsPGroup.smul_zmod_eq_self [Fact p.Prime] (hG : IsPGroup p G)
+    [DistribMulAction G (ZMod p)] (g : G) (m : ZMod p) : g • m = m := by
+  have hlin : ∀ (g : G) (m : ZMod p), g • m = g • (1 : ZMod p) * m := fun g m ↦
+    calc g • m = g • (m.val • (1 : ZMod p)) := by rw [nsmul_one, ZMod.natCast_zmod_val]
+      _ = m.val • (g • (1 : ZMod p)) := smul_comm _ _ _
+      _ = g • (1 : ZMod p) * m := by rw [nsmul_eq_mul, ZMod.natCast_zmod_val, mul_comm]
+  have hpow : ∀ n : ℕ, g ^ n • (1 : ZMod p) = (g • (1 : ZMod p)) ^ n := fun n ↦ by
+    induction n with
+    | zero => rw [pow_zero, one_smul, pow_zero]
+    | succ n ih => rw [pow_succ, mul_smul, hlin (g ^ n), ih, pow_succ]
+  obtain ⟨k, hk⟩ := hG g
+  have hu := hpow (p ^ k)
+  rw [hk, one_smul, ZMod.pow_card_pow] at hu
+  rw [hlin, ← hu, one_mul]
 
 open scoped IsMulCommutative in
 /-- In a finite commutative group, a nontrivial element of `p`-power order survives in some

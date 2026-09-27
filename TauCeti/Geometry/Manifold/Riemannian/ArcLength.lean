@@ -28,8 +28,12 @@ inverse function theorem supplies a `C¹` inverse `ψ`; the chain rule then give
 values, monotonicity, and invariance of `Manifold.pathELength`, making the result usable without
 unfolding its construction.
 
-## Main result
+## Main results
 
+* `ContMDiffOn.continuousOn_norm_curveVelocityWithin`: the speed of a `C¹` curve is continuous on
+  a parameter set with unique derivatives.
+* `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
+  `C¹` curve over a compact interval is the integral of its speed.
 * `TauCeti.Manifold.exists_unit_speed_reparametrization`: a regular `C¹` curve has a `C¹`,
   unit-speed reparametrization on the interval from zero to its length.
 
@@ -57,6 +61,42 @@ variable
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+/-! ### Length as the integral of speed -/
+
+/-- The Riemannian speed of a `C¹` curve, read within a parameter set with unique derivatives, is
+continuous on that set. -/
+theorem _root_.ContMDiffOn.continuousOn_norm_curveVelocityWithin {γ : ℝ → M} {s : Set ℝ}
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) (hs : UniqueMDiffOn 𝓘(ℝ, ℝ) s) :
+    ContinuousOn (fun t ↦ ‖curveVelocityWithin I γ s t‖) s := by
+  have hlift : ContinuousOn
+      (fun t ↦ (TotalSpace.mk' E (γ t) (curveVelocityWithin I γ s t) : TangentBundle I M)) s :=
+    (ContMDiffOn.continuousOn_curveVelocityLiftWithin hγ hs).congr fun t _ ↦
+      (curveVelocityLiftWithin_apply (I := I) γ s t).symm
+  exact (TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn hlift
+
+/-- The Riemannian length of a `C¹` curve over a compact interval inside its parameter set is the
+integral of its speed. -/
+theorem _root_.ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin
+    {γ : ℝ → M} {s : Set ℝ}
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) (hs : UniqueMDiffOn 𝓘(ℝ, ℝ) s)
+    {a b : ℝ} (hab : a ≤ b) (hsub : Icc a b ⊆ s) :
+    Manifold.pathELength I γ a b =
+      ENNReal.ofReal (∫ t in a..b, ‖curveVelocityWithin I γ s t‖) := by
+  have hcont : ContinuousOn (fun t ↦ ‖curveVelocityWithin I γ s t‖) (Icc a b) :=
+    (hγ.continuousOn_norm_curveVelocityWithin hs).mono hsub
+  have hint : IntegrableOn (fun t ↦ ‖curveVelocityWithin I γ s t‖) (Ioo a b) :=
+    (hcont.integrableOn_compact isCompact_Icc).mono_set Ioo_subset_Icc_self
+  rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
+    ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun _ ↦ norm_nonneg _),
+    Manifold.pathELength_eq_lintegral_mfderiv_Ioo]
+  refine setLIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
+  have hmem : s ∈ 𝓝 t := mem_nhds_iff.2 ⟨Ioo a b, Ioo_subset_Icc_self.trans hsub, isOpen_Ioo, ht⟩
+  rw [ofReal_norm, curveVelocityWithin_of_mem_nhds hmem, curveVelocity_apply]
+  -- both sides are the Riemannian norm at `γ t`; they differ only in how the fibre is presented
+  rfl
+
+/-! ### Unit-speed reparametrization -/
 
 /-- **Arc-length reparametrization of a regular curve.** Let `γ` be `C¹` on an open set `J`
 containing `[a, b]`, with nonzero velocity along `[a, b]`. There is an increasing `C¹` function

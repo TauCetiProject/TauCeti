@@ -559,6 +559,31 @@ theorem reducedInclusion_of (n : {n : ℕ // 0 < n}) (z : TensorPower R n.1 M) :
     reducedInclusion R M (ReducedTensorWords.of R M n z) = of R M n.1 z := by
   rw [reducedInclusion, ReducedTensorWords.toModule_of]
 
+/-- The included reduced word has precisely its positive-length components. -/
+@[simp] theorem component_reducedInclusion (k : ℕ) (w : ReducedTensorWords R M) :
+    component R M k (reducedInclusion R M w) =
+      if hk : 0 < k then ReducedTensorWords.component R M ⟨k, hk⟩ w else 0 := by
+  suffices h : component R M k ∘ₗ reducedInclusion R M =
+      if hk : 0 < k then ReducedTensorWords.component R M ⟨k, hk⟩ else 0 by
+    have hw := LinearMap.congr_fun h w
+    by_cases hk : 0 < k <;> simpa [hk] using hw
+  apply ReducedTensorWords.linearMap_ext R M
+  intro n z
+  rw [LinearMap.comp_apply, reducedInclusion_of]
+  by_cases hk : 0 < k
+  · simp only [dite_eq_left hk]
+    by_cases hkn : k = n.1
+    · subst k
+      simp [component_of, ReducedTensorWords.component_of]
+    · have hne : (⟨k, hk⟩ : {n : ℕ // 0 < n}) ≠ n := by
+        intro h
+        exact hkn (congrArg Subtype.val h)
+      rw [component_of_of_ne R M (Ne.symm hkn),
+        ReducedTensorWords.component_of_of_ne R M (Ne.symm hne)]
+  · have hk0 : k = 0 := by omega
+    subst k
+    simp [component_of_of_ne R M n.2.ne']
+
 /-- The retraction of `TauCeti.TensorWords.reducedInclusion` that deletes the empty word. -/
 noncomputable def reducedProjection : TensorWords R M →ₗ[R] ReducedTensorWords R M :=
   DirectSum.toModule R ℕ _ fun n ↦
@@ -580,6 +605,32 @@ theorem reducedProjection_of_zero (z : TensorPower R 0 M) :
 @[simp]
 theorem reducedProjection_one : reducedProjection R M (1 : TensorWords R M) = 0 := by
   rw [one_eq_of_zero, reducedProjection_of_zero]
+
+/-- Deleting the empty word preserves each positive-length component. -/
+@[simp]
+theorem component_reducedProjection (p : {n : ℕ // 0 < n}) (w : TensorWords R M) :
+    ReducedTensorWords.component R M p (reducedProjection R M w) =
+      component R M p.1 w := by
+  suffices h : ReducedTensorWords.component R M p ∘ₗ reducedProjection R M =
+      component R M p.1 by
+    exact LinearMap.congr_fun h w
+  apply linearMap_ext R M
+  intro n z
+  rw [LinearMap.comp_apply]
+  by_cases hn : 0 < n
+  · rw [reducedProjection_of_of_pos R M hn]
+    by_cases h : (⟨n, hn⟩ : {n : ℕ // 0 < n}) = p
+    · cases h
+      rw [ReducedTensorWords.component_of, component_of]
+    · have hnp : n ≠ p.1 := by
+        intro he
+        exact h (Subtype.ext he)
+      rw [ReducedTensorWords.component_of_of_ne R M h,
+        component_of_of_ne R M hnp]
+  · have hn0 : n = 0 := by omega
+    subst n
+    rw [reducedProjection_of_zero, map_zero,
+      component_of_of_ne R M p.2.ne]
 
 /-- The projection is a retraction of the inclusion. -/
 @[simp]

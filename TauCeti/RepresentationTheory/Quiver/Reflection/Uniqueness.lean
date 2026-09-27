@@ -21,7 +21,8 @@ Together with `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`, which says 
 vector of an indecomposable is a positive root of the Tits form, this is the injective half of the
 Gabriel correspondence: `M ↦ dim M` is an injection from the isomorphism classes of
 finite-dimensional indecomposables into the positive roots. Its surjectivity, that every positive
-root is realized, is not proved here.
+root is realized, is `TauCeti.exists_indecomposable_dimVector_eq` in
+`TauCeti.RepresentationTheory.Quiver.Reflection.Existence`.
 
 ## The argument
 

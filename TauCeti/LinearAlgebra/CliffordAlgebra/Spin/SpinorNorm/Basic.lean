@@ -14,6 +14,7 @@ import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.LinearAlgebra.CliffordAlgebra.CartanDieudonne
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 
 /-!
 # The spinor norm
@@ -133,20 +134,12 @@ theorem orthogonalSpinorNorm_eq_one_of_isSquare_apply
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (hsq : ∀ v [Invertible (Q v)], IsSquare (Q v)) :
     orthogonalSpinorNorm Q hQ = 1 := by
-  have hker : MonoidHom.ker (orthogonalSpinorNorm Q hQ) = ⊤ :=
-    QuadraticMap.subgroup_eq_top_of_reflection_mem Q hQ
-      (MonoidHom.ker (orthogonalSpinorNorm Q hQ)) fun v _ => by
-        rw [MonoidHom.mem_ker, orthogonalSpinorNorm_reflectionOrthogonal]
-        have hsquareUnit : IsSquare (unitOfInvertible (Q v)) := by
-          apply isSquare_units_val_iff.mp
-          simpa only [val_unitOfInvertible] using hsq v
-        simpa using hsquareUnit
-  apply MonoidHom.ext
-  intro g
-  rw [MonoidHom.one_apply]
-  apply MonoidHom.mem_ker.mp
-  rw [hker]
-  exact Subgroup.mem_top g
+  refine QuadraticMap.orthogonalGroup_hom_ext Q hQ fun v _ ↦ ?_
+  rw [orthogonalSpinorNorm_reflectionOrthogonal, MonoidHom.one_apply]
+  have hsquareUnit : IsSquare (unitOfInvertible (Q v)) := by
+    apply isSquare_units_val_iff.mp
+    simpa only [val_unitOfInvertible] using hsq v
+  simpa using hsquareUnit
 
 /-- The spinor norm on `SO(Q)`, obtained by restricting the orthogonal spinor norm. -/
 noncomputable def spinorNorm (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
