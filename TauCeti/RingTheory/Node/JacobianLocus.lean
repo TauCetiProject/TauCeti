@@ -32,7 +32,6 @@ variable {R : Type*} [CommRing R] (a : R)
 def jacobianIdeal : Ideal (NodeAlgebra R a) := Ideal.span {coord a 0, coord a 1}
 
 /-- The Jacobian ideal is the first Fitting ideal of the relative differentials. -/
-@[simp]
 theorem fittingIdeal_differential_one_eq_jacobianIdeal :
     fittingIdeal (NodeAlgebra R a) Ω[NodeAlgebra R a⁄R] 1 = jacobianIdeal a :=
   fittingIdeal_differential_one a
