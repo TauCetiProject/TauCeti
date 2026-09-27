@@ -34,7 +34,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 abbrev preprojectiveA1Graph : SimpleGraph (Fin 1) := ⊥
 
 /-- The one-vertex graph is the Bourbaki-numbered `A₁` Dynkin diagram. -/
-theorem preprojectiveA1Graph_eq_dynkin :
+theorem preprojectiveA1Graph_eq_diagramGraph_cartanMatrix :
     preprojectiveA1Graph = diagramGraph (DynkinType.A 1).cartanMatrix := by
   ext i j
   fin_cases i; fin_cases j
@@ -154,20 +154,11 @@ theorem preprojectiveAlgebraEquivA1_preprojectiveMk (k : Type*) [CommRing k]
   let : Unique (Symmetrify preprojectiveA1Quiver) := Equiv.unique
     ((OrientedQuiver.vertexEquiv _ _).trans
       (Equiv.ofBijective _ symmetrify_of_obj_bijective)).symm
-  rw [preprojectiveMk_apply, preprojectiveAlgebraEquivA1, AlgEquiv.trans_apply,
-    Ideal.quotientEquivAlgOfEq_mk, AlgEquiv.trans_apply,
-    Ideal.quotientEquivAlgOfEq_mk, AlgEquiv.trans_apply,
-    quotientArrowIdealAlgEquiv_mk, AlgEquiv.funUnique_apply]
-  change trivialCoeff k (Symmetrify preprojectiveA1Quiver) x
-      (default : Symmetrify preprojectiveA1Quiver) = _
-  exact congrArg (trivialCoeff k (Symmetrify preprojectiveA1Quiver) x)
-    (Subsingleton.elim _ _)
-
-/-- The inverse rank-one comparison sends a coefficient to its scalar image. -/
-@[simp]
-theorem preprojectiveAlgebraEquivA1_symm_apply (k : Type*) [CommRing k] (x : k) :
-    (preprojectiveAlgebraEquivA1 k).symm x =
-      algebraMap k (preprojectiveAlgebra k preprojectiveA1Quiver) x := by
-  exact (preprojectiveAlgebraEquivA1 k).symm.commutes x
+  have hv : (default : Symmetrify preprojectiveA1Quiver) =
+      Symmetrify.of.obj (OrientedQuiver.vertex preprojectiveA1Graph
+        (Orientation.ofLinearOrder preprojectiveA1Graph) 0) := Subsingleton.elim _ _
+  simp only [preprojectiveMk_apply, preprojectiveAlgebraEquivA1, AlgEquiv.trans_apply,
+    Ideal.quotientEquivAlgOfEq_mk, quotientArrowIdealAlgEquiv_mk,
+    AlgEquiv.funUnique_apply, Equiv.funUnique, Equiv.piUnique_apply, hv]
 
 end TauCeti
