@@ -21,6 +21,9 @@ a sum of such contractions over suitably chosen points can.
 
 * `TopRep.d_sum_apply_add_sum_d_apply`: evaluation at finitely many points, summed, contracts the
   coinduced resolution up to the number of points.
+* `TopRep.homogeneousCochains.d_one_apply`: the differential of a homogeneous one-cochain,
+  evaluated, is `(d a) g₀ g₁ g₂ = a g₁ g₂ - (a g₀ g₂ - a g₀ g₁)`; so a one-cocycle satisfies
+  `a g₀ g₂ = a g₀ g₁ + a g₁ g₂` (`TopRep.homogeneousCochains.apply_eq_add_of_d_eq_zero`).
 -/
 
 public section
@@ -41,5 +44,33 @@ theorem d_sum_apply_add_sum_d_apply {ι : Type*} [Fintype ι] (σ : ι → G) (m
         Fintype.card ι • F := by
   rw [map_sum, ← Finset.sum_add_distrib]
   simp [hom_d_succ, ContIntertwiningMap.sub_apply]
+
+variable {X}
+
+/-- The homogeneous differential of a one-cochain, evaluated:
+`(d a) g₀ g₁ g₂ = a g₁ g₂ - (a g₀ g₂ - a g₀ g₁)`. -/
+-- Not a `simp` lemma: `simp` rewrites the differential `(homogeneousCochains X).d 1 (1 + 1)` on
+-- the left-hand side through `CategoryTheory.Functor.mapHomologicalComplex_obj_d` and
+-- `CochainComplex.of_d`, so the statement is not in `simp`-normal form; use it with `rw` or
+-- `simp only`.
+theorem homogeneousCochains.d_one_apply (a : (homogeneousCochains X).X 1) (g₀ g₁ g₂ : G) :
+    ((((homogeneousCochains X).d 1 (1 + 1)).hom a).val : C(G, C(G, C(G, X.V)))) g₀ g₁ g₂ =
+      a.val g₁ g₂ - (a.val g₀ g₂ - a.val g₀ g₁) := by
+  rw [homogeneousCochains.d_apply]
+  simp only [hom_d_succ, d_zero, hom_ofHom, ContIntertwiningMap.sub_apply,
+    ContRepresentation.coind₁ι_toFun, ContRepresentation.coind₁Map_toFun, ContinuousMap.sub_apply,
+    ContinuousMap.const_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk]
+
+/-- A homogeneous one-cocycle satisfies `a g₀ g₂ = a g₀ g₁ + a g₁ g₂`. -/
+theorem homogeneousCochains.apply_eq_add_of_d_eq_zero {a : (homogeneousCochains X).X 1}
+    (ha : ((homogeneousCochains X).d 1 (1 + 1)).hom a = 0) (g₀ g₁ g₂ : G) :
+    a.val g₀ g₂ = a.val g₀ g₁ + a.val g₁ g₂ := by
+  have h := congrArg (fun z : (homogeneousCochains X).X (1 + 1) ↦
+    (z.val : C(G, C(G, C(G, X.V)))) g₀ g₁ g₂) ha
+  rw [homogeneousCochains.d_one_apply] at h
+  -- the right-hand side is the zero cochain, evaluated
+  change _ = (0 : X.V) at h
+  rw [sub_sub_eq_add_sub, sub_eq_zero] at h
+  rw [← h, add_comm]
 
 end TopRep

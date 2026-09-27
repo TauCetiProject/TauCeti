@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.Analytic.Order
 
 /-!
-# The analytic order of products and power-compositions
+# The analytic order of products, power maps and derivatives
 
-Two extensions of Mathlib's `analyticOrderAt` calculus: the order is additive over finite
-products, and composing with `q ↦ q ^ N` at `0` multiplies the order by `N`. The finiteness a
-zero count also needs is `TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
+Extensions of Mathlib's `analyticOrderAt` calculus: the order is additive over finite products,
+composing with `q ↦ q ^ N` at `0` multiplies the order by `N`, the power map `w ↦ w ^ m` recentred
+at `0` has order `m` there for `m ≠ 0`, and the recentred function `f · - f x` has order `1` at
+`x` exactly when `deriv f x ≠ 0`. The finiteness a zero count also needs is
+`TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
 ## Main declarations
@@ -20,6 +22,11 @@ zero count also needs is `TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, pr
 * `TauCeti.analyticOrderAt_prod`: the order of `∏ i ∈ s, F i` is `∑ i ∈ s`, of the orders.
 * `TauCeti.analyticOrderAt_comp_pow_zero`: the order of `q ↦ f (q ^ N)` at `0` is `N` times
   the order of `f` at `0`.
+* `TauCeti.analyticOrderAt_pow_sub_zero_pow`: the order of `w ↦ w ^ m - 0 ^ m` at `0` is `m`
+  for `m ≠ 0`.
+* `AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero`: `f · - f x` has order `1` at `x`
+  exactly when `deriv f x ≠ 0`, the `iff` form of Mathlib's
+  `AnalyticAt.analyticOrderAt_sub_eq_one_of_deriv_ne_zero`.
 
 ## References
 
@@ -58,6 +65,22 @@ lemma analyticOrderAt_comp_pow_zero {E : Type*} [NormedAddCommGroup E] [NormedSp
   rw [show (fun q : 𝕜 ↦ f (q ^ N)) = f ∘ g from rfl,
     AnalyticAt.analyticOrderAt_comp (hzero.symm ▸ hf) (analyticAt_id.pow N), hzero, h_sub_eq,
     analyticOrderAt_pow analyticAt_id, analyticOrderAt_id]
+  simp
+
+/-- The power map `w ↦ w ^ m`, recentred at `0`, has analytic order `m` at `0` when `m ≠ 0`. -/
+theorem analyticOrderAt_pow_sub_zero_pow {m : ℕ} (hm : m ≠ 0) :
+    analyticOrderAt (fun w : 𝕜 ↦ w ^ m - 0 ^ m) 0 = m := by
+  have hpow : (fun w : 𝕜 ↦ w ^ m - 0 ^ m) = (· - 0) ^ m := funext fun w ↦ by simp [zero_pow hm]
+  rw [hpow, analyticOrderAt_centeredMonomial]
+
+/-- A function analytic at `x` has a simple zero of `f · - f x` at `x` exactly when its
+derivative at `x` does not vanish: the `iff` form of Mathlib's
+`AnalyticAt.analyticOrderAt_sub_eq_one_of_deriv_ne_zero`. -/
+theorem _root_.AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] [CharZero 𝕜] {f : 𝕜 → E} {x : 𝕜}
+    (hf : AnalyticAt 𝕜 f x) :
+    analyticOrderAt (f · - f x) x = 1 ↔ deriv f x ≠ 0 := by
+  rw [← hf.analyticOrderAt_deriv_add_one, ← hf.deriv.analyticOrderAt_eq_zero]
   simp
 
 end TauCeti

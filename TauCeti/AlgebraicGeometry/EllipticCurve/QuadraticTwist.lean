@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisDescent
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
+public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.RingTheory.Norm.Quadratic
 -- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic

@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.End.FiniteOrder
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 public import Mathlib.RepresentationTheory.Character
-public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.RingTheory.RootsOfUnity.Adjoin
 
 /-!
 # The arithmetic of character values
@@ -195,11 +195,8 @@ unity and `g ^ n = 1`, then `ρ.character g` lies in the subring `ℤ[ζ]` of `�
 theorem char_mem_adjoin_of_isPrimitiveRoot (ρ : Representation ℂ G V) {g : G} {ζ : ℂ} {n : ℕ}
     [NeZero n] (hζ : IsPrimitiveRoot ζ n) (hg : g ^ n = 1) :
     ρ.character g ∈ Algebra.adjoin ℤ ({ζ} : Set ℂ) := by
-  have hmem : ζ ∈ Algebra.adjoin ℤ ({ζ} : Set ℂ) := Algebra.subset_adjoin rfl
   have hA : ∀ μ : ℂ, μ ^ n = 1 → μ ∈ (Algebra.adjoin ℤ ({ζ} : Set ℂ)).toSubring := by
-    intro μ hμ
-    obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one hμ
-    exact Subalgebra.mem_toSubring.2 (Subalgebra.pow_mem _ hmem i)
+    exact fun _ hμ ↦ Subalgebra.mem_toSubring.mpr (hζ.mem_algebraAdjoin_of_pow_eq_one hμ)
   exact Subalgebra.mem_toSubring.1 (Representation.char_mem_of_forall_pow_eq_one_mem ρ hg hA)
 
 /-- Over `ℂ` a character value at an element of finite order is bounded in absolute value by the

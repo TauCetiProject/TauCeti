@@ -56,6 +56,7 @@ subgroup.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
 * `FDRep.character_actionRes`: restricting an action along a monoid homomorphism pulls back its
   character.
+* `FDRep.character_of`: bundling a representation with `FDRep.of` does not change its character.
 * `FDRep.character_ρ`: the character of the carried representation is the character of the
   object.
 * `FDRep.forget₂_additive`: forgetting is an additive functor, and `FDRep.forget₂_obj_tensor`:
@@ -148,6 +149,13 @@ that object. -/
 @[simp]
 theorem character_ρ {k : Type u} {G : Type v} [Field k] [Monoid G] (A : FDRep k G) (g : G) :
     Representation.character A.ρ g = A.character g :=
+  rfl
+
+/-- Bundling a finite-dimensional representation with `FDRep.of` does not change its character. -/
+@[simp]
+theorem character_of {k : Type u} {G : Type v} {V : Type u} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [FiniteDimensional k V] (rho : Representation k G V) :
+    (FDRep.of rho).character = rho.character :=
   rfl
 
 /-- Rebundling the representation carried by an object of `FDRep R G` returns that object. -/

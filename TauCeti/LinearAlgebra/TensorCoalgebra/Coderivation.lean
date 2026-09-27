@@ -307,9 +307,7 @@ theorem eq_of_letter_comp_eq_of_twist
         rw [happly₁, happly₂, ← hw]
         exact rTensor_add_lTensor_rTensor_congr _ ih w
   refine LinearMap.ext fun z ↦ ?_
-  have hz : z ∈ ⨆ n : ℕ, filtration R M n := by rw [iSup_filtration_eq_top]; trivial
-  obtain ⟨n, hn⟩ :=
-    (Submodule.mem_iSup_of_directed _ (filtration_monotone R M).directed_le).1 hz
+  obtain ⟨n, hn⟩ := exists_mem_filtration R M z
   exact key n z hn
 
 /-- A coderivation of the reduced tensor coalgebra is determined by its Taylor components, that is

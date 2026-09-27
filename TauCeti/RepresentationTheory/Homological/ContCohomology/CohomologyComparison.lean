@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CocycleComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.RestrictScalars
 
 /-!
 # The explicit model against the canonical object, in degrees one and two
@@ -43,6 +44,10 @@ is why the discrete synonyms exist.
   `explicitH2AddEquivContinuousCohomology`: the comparisons as additive equivalences.
 * `TauCeti.ContCohomology.explicitH1IsoContinuousCohomology` and
   `explicitH2IsoContinuousCohomology`: the comparisons as isomorphisms in `TopModuleCat ℤ`.
+* `TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete` and
+  `TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete`: the comparisons for the carrier of a
+  discrete smooth representation over any scalars, obtained from the `ℤ`-comparisons by restricting
+  scalars.
 
 ## Main results
 
@@ -403,5 +408,41 @@ theorem explicitH2IsoContinuousCohomology_inv_apply
   rw [explicitH2AddEquivContinuousCohomology_symm_apply]
 
 end Compact
+
+section OfDiscrete
+
+/-! ### Discrete smooth representations over any scalars
+
+Forgetting the scalars does not change continuous cohomology
+(`TauCeti.ContCohomology.restrictScalarsIntIso`), and the underlying additive representation of a
+discrete `X : TopRep k G` is the canonical object attached to its carrier `X.V`
+(`TauCeti.ContCohomology.ofDiscreteModule_eq_restrictScalarsInt_obj`), so the `ℤ`-comparisons above
+identify the explicit `H¹` and `H²` of `X.V` with `continuousCohomology 1 X` and
+`continuousCohomology 2 X`. -/
+
+variable {G} {k : Type*} [Ring k] [TopologicalSpace k] (X : TopRep k G) [DiscreteTopology X.V]
+
+attribute [local instance] TopRep.distribMulAction
+
+variable [ContinuousSMul G X.V]
+
+/-- The explicit `H¹` of the carrier of a discrete smooth representation `X` over any scalars, with
+the action read off from `X`, is Mathlib's `continuousCohomology 1 X`. -/
+noncomputable def _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete :
+    H1 G X.V ≃+ continuousCohomology 1 X :=
+  (explicitH1AddEquivContinuousCohomology G X.V).trans
+    (eqToIso (congrArg (continuousCohomology 1) (ofDiscreteModule_eq_restrictScalarsInt_obj X)) ≪≫
+      restrictScalarsIntIso X 1).toContinuousLinearEquiv.toAddEquiv
+
+/-- The explicit `H²` of the carrier of a discrete smooth representation `X` over any scalars, with
+the action read off from `X`, is Mathlib's `continuousCohomology 2 X`. -/
+noncomputable def _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete
+    [LocallyCompactSpace G] :
+    H2 G X.V ≃+ continuousCohomology 2 X :=
+  (explicitH2AddEquivContinuousCohomology G X.V).trans
+    (eqToIso (congrArg (continuousCohomology 2) (ofDiscreteModule_eq_restrictScalarsInt_obj X)) ≪≫
+      restrictScalarsIntIso X 2).toContinuousLinearEquiv.toAddEquiv
+
+end OfDiscrete
 
 end TauCeti.ContCohomology
