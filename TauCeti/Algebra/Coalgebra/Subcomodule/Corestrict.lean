@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
-public import TauCeti.Data.Fin.Basic
+import TauCeti.Data.List.Involutive
 
 /-!
 # Corestriction of subcomodules

@@ -200,11 +200,11 @@ private theorem rootSubgroupPoints_mulVec_mem
   exact points_mulVec_mem k N (rootSubgroupPoints i k (Multiplicative.ofAdd 1)) hw
 
 /-- The character of the weight torus corresponding to a minuscule-basis index. -/
-private noncomputable abbrev minusculeCharacter (a : Fin 27) :
+noncomputable abbrev minusculeCharacter (a : Fin 27) :
     Multiplicative (Fin 6 →₀ ℤ) :=
   Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (DynkinType.e6MinusculeWeight a))
 
-private theorem torusCorestrict_eq_ofWeights :
+theorem torusCorestrict_eq_ofWeights :
     let _ := standardComodule k
     Comodule.Corestrict (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom =
       Comodule.ofWeights (Pi.basisFun k (Fin 27)) minusculeCharacter := by
