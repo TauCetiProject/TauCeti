@@ -87,6 +87,15 @@ theorem isEulerAdmissible_vertexSimpleModule (i : Q)
         IsExtBoundedBy S.X₃ Y 2).isExtBounded⟩
   exact h₃.of_iso (vertexSimpleModuleResolutionX₃Iso k i) (Iso.refl Y)
 
+/-- Vertex-simple modules are Euler-admissible in every pair when the source vertex has
+finitely many outgoing arrows. -/
+theorem isEulerAdmissible_vertexSimpleModule_vertexSimpleModule (i j : Q)
+    [Finite ((a : Q) × (i ⟶ a))] :
+    IsEulerAdmissible k (vertexSimpleModule k Q i) (vertexSimpleModule k Q j) :=
+  isEulerAdmissible_vertexSimpleModule k Q i (vertexSimpleModule k Q j)
+    (finiteDimensional_vertexSimpleModule_obj k Q j i)
+    (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k Q j a)
+
 private theorem finrank_hom_vertexSimpleModuleResolution_X₁ (i : Q)
     [Fintype ((j : Q) × (i ⟶ j))]
     (Y : ModuleCat (pathAlgebra k Q))

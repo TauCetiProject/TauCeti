@@ -32,28 +32,11 @@ open scoped _root_.Matrix
 
 variable (k : Type) [Field k]
 
-private theorem finiteDimensional_vertexSimpleModule_obj (i a : E8) :
-    FiniteDimensional k
-      (((quiverRepFunctor k E8).obj (vertexSimpleModule k E8 i)).obj ((Paths.of E8).obj a)) := by
-  have hs : FiniteDimensional k ((simpleRep k E8 i).obj ((Paths.of E8).obj a)) := by
-    -- `Paths.of` sends a vertex to the same object; expose that object for typeclass synthesis.
-    change FiniteDimensional k ((simpleRep k E8 i).obj a)
-    infer_instance
-  let e := (vertexSimpleModuleIso k E8 i).app ((Paths.of E8).obj a)
-  exact e.symm.toLinearEquiv.finiteDimensional
-
-/-- The vertex simples of the oriented `E₈` quiver are Euler-admissible in every pair. -/
-theorem isEulerAdmissible_vertexSimpleModule_vertexSimpleModule (i j : E8) :
-    IsEulerAdmissible k (vertexSimpleModule k E8 i) (vertexSimpleModule k E8 j) :=
-  isEulerAdmissible_vertexSimpleModule k E8 i (vertexSimpleModule k E8 j)
-    (finiteDimensional_vertexSimpleModule_obj k j i)
-    (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k j a)
-
 /-- The matrix of Ext-Euler values between the eight vertex simples of the oriented `E₈` quiver.
 Rows and columns follow `vertexEquiv`; rows are the first argument of the Euler pairing. -/
 noncomputable def extEulerMatrix : Matrix (Fin 8) (Fin 8) ℤ :=
   Matrix.of fun i j ↦
-    extEuler k (isEulerAdmissible_vertexSimpleModule_vertexSimpleModule k
+    extEuler k (isEulerAdmissible_vertexSimpleModule_vertexSimpleModule k E8
       (vertexEquiv i) (vertexEquiv j))
 
 /-- The categorical Ext-Euler matrix is the combinatorial Euler matrix `I - A`. -/
@@ -65,8 +48,8 @@ theorem extEulerMatrix_eq_eulerForm :
     LinearMap.BilinForm.toMatrix_apply, Pi.basisFun_apply, Pi.basisFun_apply]
   have h := extEuler_vertexSimpleModule_eq_eulerForm k E8 (vertexEquiv i)
     (vertexSimpleModule k E8 (vertexEquiv j))
-    (finiteDimensional_vertexSimpleModule_obj k (vertexEquiv j) (vertexEquiv i))
-    (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k (vertexEquiv j) a)
+    (finiteDimensional_vertexSimpleModule_obj k E8 (vertexEquiv j) (vertexEquiv i))
+    (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k E8 (vertexEquiv j) a)
   rw [h]
   simp only [dimVector_eq_of_iso (vertexSimpleModuleIso k E8 (vertexEquiv i)),
     dimVector_eq_of_iso (vertexSimpleModuleIso k E8 (vertexEquiv j)), dimVector_simpleRep]
