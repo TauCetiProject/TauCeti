@@ -21,27 +21,29 @@ hypothesis: it holds for every `n` and every continuous action.
 
 When the action is trivial, a continuous `1`-cocycle is a continuous character, so
 `TauCeti.ContCohomology.H1EquivOfSmulEqSelf` identifies `H¹(G, ZMod n)` additively with the
-continuous character group, and `TauCeti.h1EquivContinuousZModDual` upgrades that to the
-isomorphism of `ZMod n`-vector spaces with the continuous `ZMod n`-dual
-`TauCeti.continuousZModDual n G` that the module structure makes meaningful. The two application
-lemmas `TauCeti.h1EquivContinuousZModDual_mk` and `TauCeti.h1EquivContinuousZModDual_symm_apply`
-compute the isomorphism in both directions, so the identification is usable without unfolding it.
+continuous character group, and `TauCeti.h1EquivContinuousZModDual` upgrades that to an
+isomorphism of `ZMod n`-modules with the continuous `ZMod n`-dual
+`TauCeti.continuousZModDual n G` that the module structure makes meaningful. The modulus `n` is
+arbitrary, so this is a statement about modules; when `n` is prime, `ZMod n` is a field and the
+statement is one about vector spaces. The two application lemmas
+`TauCeti.h1EquivContinuousZModDual_apply_mk` and
+`TauCeti.h1EquivContinuousZModDual_symm_apply` compute the isomorphism in both directions, so the
+identification is usable without unfolding it.
 
-This is the coefficient-level input to the `H¹` interpretation of Layer 5 of the human-authored
-roadmap at `TauCetiRoadmap/ProfiniteProPGroups/README.md`, which needs it for a prime `p` and a
-pro-`p` group: the pro-`p` consequence, the identification of `H¹(G, 𝔽_p)` with the continuous
-`𝔽_p`-dual of the Frattini quotient and the transfer of Burnside's basis theorem, is in
-`TauCeti.Topology.Algebra.Group.Profinite.ProP.H1Dual`.
+Taking `n` to be a prime `p` and `G` a pro-`p` group makes this the coefficient-level input to the
+`H¹` interpretation of such a group: the pro-`p` consequence, the identification of `H¹(G, 𝔽_p)`
+with the continuous `𝔽_p`-dual of the Frattini quotient and the transfer of Burnside's basis
+theorem, is in `TauCeti.Topology.Algebra.Group.Profinite.ProP.H1Dual`.
 
 ## Main definitions
 
 * `TauCeti.instModuleH1`: `H¹(G, ZMod n)` is a `ZMod n`-module, for any continuous action.
 * `TauCeti.h1EquivContinuousZModDual`: for a trivial action, `H¹(G, ZMod n)` is the continuous
-  `ZMod n`-dual `TauCeti.continuousZModDual n G` of `G`, as `ZMod n`-vector spaces.
+  `ZMod n`-dual `TauCeti.continuousZModDual n G` of `G`, as `ZMod n`-modules.
 
 ## Main results
 
-* `TauCeti.h1EquivContinuousZModDual_mk`: the class of a continuous `1`-cocycle is sent to the
+* `TauCeti.h1EquivContinuousZModDual_apply_mk`: the class of a continuous `1`-cocycle is sent to the
   character it defines.
 * `TauCeti.h1EquivContinuousZModDual_symm_apply`: a continuous character is sent to the class of
   the `1`-cocycle it defines.
@@ -99,7 +101,7 @@ include htriv
 
 /-- **`H¹(G, ZMod n)` is the continuous `ZMod n`-dual of `G`.** A class of `H¹(G, ZMod n)` is
 sent to the continuous homomorphism `G → Multiplicative ZMod n` that its cocycle defines, which
-for trivial coefficients is that cocycle itself, as an isomorphism of `ZMod n`-vector spaces. -/
+for trivial coefficients is that cocycle itself, as an isomorphism of `ZMod n`-modules. -/
 noncomputable def h1EquivContinuousZModDual :
     H1 G (ZMod n) ≃ₗ[ZMod n] continuousZModDual n G :=
   (H1EquivOfSmulEqSelf htriv).toLinearEquiv (ZMod.map_smul (H1EquivOfSmulEqSelf htriv))
@@ -107,7 +109,7 @@ noncomputable def h1EquivContinuousZModDual :
 /-- The image of a class of `H¹(G, ZMod n)` is the character its cocycle defines: evaluated at `g`
 it is the cocycle's value at `g`, read in the multiplicative encoding of `ZMod n`. -/
 @[simp]
-theorem h1EquivContinuousZModDual_mk (f : Z1 G (ZMod n)) (g : G) :
+theorem h1EquivContinuousZModDual_apply_mk (f : Z1 G (ZMod n)) (g : G) :
     Additive.toMul (h1EquivContinuousZModDual htriv (f : H1 G (ZMod n))) g
       = Multiplicative.ofAdd ((f : G → ZMod n) g) := by
   simp [h1EquivContinuousZModDual]

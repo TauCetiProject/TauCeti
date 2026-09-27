@@ -28,8 +28,8 @@ What is specific to the pro-`p` case is the next step. Every continuous `𝔽_p`
 `G` kills the pro-`p` Frattini subgroup, so composing the above with precomposition along the
 projection to the Frattini quotient gives the further identification with the continuous
 `𝔽_p`-dual of `G ⧸ Φ(G)` (`TauCeti.h1EquivFrattiniQuotientDual`), whose application lemmas
-`TauCeti.h1EquivFrattiniQuotientDual_mk` and `TauCeti.h1EquivFrattiniQuotientDual_symm_apply`
-compute it in both directions.
+`TauCeti.h1EquivFrattiniQuotientDual_apply_mk` and
+`TauCeti.h1EquivFrattiniQuotientDual_symm_apply` compute it in both directions.
 
 Burnside's basis theorem in cardinal form
 (`TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`) transfers from the
@@ -48,8 +48,9 @@ rank.
 
 ## Main results
 
-* `TauCeti.h1EquivFrattiniQuotientDual_mk` and `TauCeti.h1EquivFrattiniQuotientDual_symm_apply`:
-  the identification in both directions, evaluated on the Frattini quotient.
+* `TauCeti.h1EquivFrattiniQuotientDual_apply_mk` and
+  `TauCeti.h1EquivFrattiniQuotientDual_symm_apply`: the identification in both directions, evaluated
+  on the Frattini quotient.
 * `TauCeti.IsProP.rank_H1_eq_topologicalGeneratorRank`: the dimension of `H¹(G, 𝔽_p)` over
   `𝔽_p` is the topological generator rank of `G`, as an identity of cardinals.
 * `TauCeti.IsProP.finrank_H1_eq_topologicalGeneratorRankNat`: the natural-number form of the
@@ -100,7 +101,7 @@ noncomputable def h1EquivFrattiniQuotientDual :
 /-- The image of a class of `H¹(G, 𝔽_p)` is the character its cocycle defines on the Frattini
 quotient: evaluated on the class of `g` it is the cocycle's value at `g`. -/
 @[simp]
-theorem h1EquivFrattiniQuotientDual_mk (f : Z1 G (ZMod p)) (g : G) :
+theorem h1EquivFrattiniQuotientDual_apply_mk (f : Z1 G (ZMod p)) (g : G) :
     Additive.toMul (h1EquivFrattiniQuotientDual htriv (f : H1 G (ZMod p)))
       (g : G ⧸ proPFrattini p G) = Multiplicative.ofAdd ((f : G → ZMod p) g) := by
   simp [h1EquivFrattiniQuotientDual]
