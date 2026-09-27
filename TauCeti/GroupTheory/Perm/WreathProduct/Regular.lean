@@ -33,24 +33,21 @@ universe u v
 
 variable (D : Type u) (Q : Type v) [Group D] [Group Q]
 
-/-- The regular representation acts by left multiplication. -/
+/-- Restricting `MulAction.toPermHom` to its image leaves its action on points unchanged. -/
 @[simp]
-theorem Equiv.Perm.subgroupOfMulAction_apply (q x : Q) :
-    ((Equiv.Perm.subgroupOfMulAction Q Q q : (MulAction.toPermHom Q Q).range) :
-      Equiv.Perm Q) x = q * x :=
-  by
-    -- The image-restricted equivalence has the same action as `toPermHom`.
-    simpa only [smul_eq_mul] using
-      (show ((Equiv.Perm.subgroupOfMulAction Q Q q : (MulAction.toPermHom Q Q).range) :
-        Equiv.Perm Q) x = q • x from rfl)
+theorem subgroupOfMulAction_apply (G H : Type*) [Group G] [MulAction G H]
+    [FaithfulSMul G H] (g : G) (x : H) :
+    ((Equiv.Perm.subgroupOfMulAction G H g : (MulAction.toPermHom G H).range) :
+      Equiv.Perm H) x = g • x := rfl
 
-/-- The inverse of the regular representation acts by inverse left multiplication. -/
+/-- The inverse of Cayley's equivalence acts by the inverse group element. -/
 @[simp]
-theorem Equiv.Perm.subgroupOfMulAction_inv_apply (q x : Q) :
-    (((Equiv.Perm.subgroupOfMulAction Q Q q : (MulAction.toPermHom Q Q).range) :
-      Equiv.Perm Q)⁻¹) x = q⁻¹ * x := by
+theorem subgroupOfMulAction_inv_apply (G H : Type*) [Group G] [MulAction G H]
+    [FaithfulSMul G H] (g : G) (x : H) :
+    (((Equiv.Perm.subgroupOfMulAction G H g : (MulAction.toPermHom G H).range) :
+      Equiv.Perm H)⁻¹) x = g⁻¹ • x := by
   simpa only [map_inv, Subgroup.coe_inv] using
-    Equiv.Perm.subgroupOfMulAction_apply Q q⁻¹ x
+    subgroupOfMulAction_apply G H g⁻¹ x
 
 /-- Mathlib's regular wreath product is the permutation wreath product whose top group
 is the left regular image of `Q`. The isomorphism preserves each base coordinate. -/
@@ -65,7 +62,7 @@ noncomputable def regularWreathProductEquiv :
     · funext x
       simp only [PermSubgroupWreathProduct.mul_left, RegularWreathProduct.mul_left,
         Pi.mul_apply]
-      rw [Equiv.Perm.subgroupOfMulAction_inv_apply]
+      rw [subgroupOfMulAction_inv_apply, smul_eq_mul]
     · exact (Equiv.Perm.subgroupOfMulAction Q Q).map_mul a.right b.right
 
 /-- The comparison preserves the base function pointwise. -/
