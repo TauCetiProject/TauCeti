@@ -79,7 +79,6 @@ theorem zigzagAlgebraGrade_A1_eq_bot {n : ℕ} (h0 : n ≠ 0) (h2 : n ≠ 2) :
   exact h'
 
 /-- The degree-one part of the one-vertex zigzag algebra is zero. -/
-@[simp]
 theorem zigzagAlgebraGrade_A1_one_eq_bot :
     zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) 1 = ⊥ :=
   zigzagAlgebraGrade_A1_eq_bot k (by decide) (by decide)
@@ -122,7 +121,6 @@ theorem finrank_zigzagAlgebraGrade_A1_eq_zero {n : ℕ} (h0 : n ≠ 0) (h2 : n �
   simp
 
 /-- The degree-one part of the one-vertex zigzag algebra vanishes. -/
-@[simp]
 theorem finrank_zigzagAlgebraGrade_A1_one :
     Module.finrank k (zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) 1) = 0 :=
   finrank_zigzagAlgebraGrade_A1_eq_zero k (by decide) (by decide)
