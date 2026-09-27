@@ -119,6 +119,7 @@ theorem gnsTranslation_add (g k : G) :
     (hF.posSemidef.kolmogorovIsometry_unique _ hinner _
       (by
         intro a
+        -- Uniqueness uses the Kolmogorov feature map, which `gnsVector` wraps definitionally.
         simp only [LinearIsometryEquiv.coe_toLinearIsometry,
           LinearIsometryEquiv.trans_apply,
           show hF.posSemidef.kolmogorovFeature a = hF.gnsVector a from rfl,
