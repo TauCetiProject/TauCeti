@@ -159,6 +159,7 @@ theorem mapDGHomotopyCategory_app
 
 /-- A component of the induced transformation vanishes exactly when the corresponding closed
 degree-zero DG morphism is a boundary. -/
+-- This remains outside `simp`: `mapDGHomotopyCategory_app` already reduces its left side.
 theorem mapDGHomotopyCategory_app_eq_zero_iff
     {F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
     (α : DGNatTrans F G)

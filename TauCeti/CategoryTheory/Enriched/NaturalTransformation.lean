@@ -225,6 +225,7 @@ noncomputable def unitComp {F G H : EnrichedFunctor V C' D'}
       aX aY bX bY hα hγ
 
 /-- A component of the composite at the monoidal unit. -/
+-- This remains outside `simp`: it would make `unitComp_app_homOf` fail `simpNF`.
 theorem unitComp_app {F G H : EnrichedFunctor V C' D'}
     (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G)
     (γ : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) G H) (X : C') :
