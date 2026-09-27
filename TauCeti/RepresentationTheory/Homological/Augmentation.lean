@@ -171,4 +171,13 @@ theorem singleSub_one (a : k) : singleSub k G a (1 : G) = 0 := by
   apply augmentationι_injective k G
   rw [ι_singleSub, sub_self, map_zero]
 
+/-- The coefficients of an element of the augmentation ideal sum to zero after inclusion in the
+group ring. -/
+theorem sum_coeff_augmentationι [Fintype G] (x : augmentationIdeal k G) :
+    ∑ g : G, ((augmentationι k G).hom x).coeff g = 0 := by
+  have h : (augmentation k G).hom ((augmentationι k G).hom x) = 0 := by
+    rw [← ConcreteCategory.comp_apply, augmentationι_comp_augmentation]
+    rfl
+  simpa [augmentation, leftRegularHom, MonoidAlgebra.lift_apply, Finsupp.sum_fintype] using h
+
 end TauCeti.AugmentationIdeal
