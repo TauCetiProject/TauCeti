@@ -80,6 +80,7 @@ theorem range_smul_coe_sphere {c : ℝ} (hc : 0 < c) :
 
 /-- Two points of a sphere of nonzero radius centered at zero in a real seminormed space
 lie on the same line exactly when they are equal or antipodal. -/
+@[simp]
 theorem coe_mem_span_singleton_iff {r : ℝ} (hr : r ≠ 0) {x p : Metric.sphere (0 : E) r} :
     (x : E) ∈ ℝ ∙ (p : E) ↔ x = p ∨ x = -p := by
   refine ⟨fun h => ?_, ?_⟩

@@ -52,7 +52,7 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 `p`. -/
 private lemma mem_compl_iff_notMem_span (p : sphere (0 : E) 1) {x : sphere (0 : E) 1} :
     x ∈ ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1)) ↔ (x : E) ∉ ℝ ∙ (p : E) := by
-  simp [coe_mem_span_singleton_iff one_ne_zero, not_or]
+  simp [not_or]
 
 end Seminormed
 
