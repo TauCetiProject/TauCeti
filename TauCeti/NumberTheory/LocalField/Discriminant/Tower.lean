@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
-public import TauCeti.NumberTheory.LocalField.Different.Tower
+import TauCeti.NumberTheory.LocalField.Different.Tower
 
 /-!
 # Discriminant exponents in towers of local fields
