@@ -31,17 +31,15 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
-/-- The cardinality of the quotient by Dedekind's order. The generator hypothesis makes this a
-finite, positive index in the full ring of integers. -/
-def dedekindOrderIndex (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
-    (_hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : ℕ :=
+/-- The `Nat.card` of the quotient by Dedekind's order, which is zero if the quotient is infinite.
+When `θ` generates `K`, this is a finite, positive index in the full ring of integers. -/
+def dedekindOrderIndex (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) : ℕ :=
   (dedekindOrder (dedekindCubic_relation hmin)).toSubmodule.cardQuot
 
 /-- The index is the cardinality of the additive quotient by Dedekind's order. -/
 theorem dedekindOrderIndex_def
-    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    dedekindOrderIndex hmin hgen =
+    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+    dedekindOrderIndex hmin =
       Nat.card (𝓞 K ⧸ (dedekindOrder (dedekindCubic_relation hmin)).toSubmodule) :=
   Submodule.cardQuot_apply _
 
@@ -65,16 +63,15 @@ theorem finite_quotient_dedekindOrder
 /-- The index of Dedekind's cubic order is positive. -/
 theorem dedekindOrderIndex_pos
     (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : 0 < dedekindOrderIndex hmin hgen := by
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : 0 < dedekindOrderIndex hmin := by
   let _ := finite_quotient_dedekindOrder hmin hgen
   rw [dedekindOrderIndex_def]
   exact Nat.card_pos
 
 /-- Dedekind's cubic order has index one exactly when it is the full ring of integers. -/
 @[simp] theorem dedekindOrderIndex_eq_one_iff
-    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    dedekindOrderIndex hmin hgen = 1 ↔
+    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8) :
+    dedekindOrderIndex hmin = 1 ↔
       dedekindOrder (dedekindCubic_relation hmin) = ⊤ := by
   rw [dedekindOrderIndex, Submodule.cardQuot_eq_one_iff, Algebra.toSubmodule_eq_top]
 
