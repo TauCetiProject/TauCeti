@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Compactification.CuspChart
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Chart
 public import TauCeti.Analysis.Complex.Fuchsian.CoarseQuotient
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Extension
 import Mathlib.Analysis.Complex.RemovableSingularity

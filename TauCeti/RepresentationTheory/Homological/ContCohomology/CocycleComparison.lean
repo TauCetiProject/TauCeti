@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CochainComparison
 
 /-!
@@ -14,7 +15,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.CochainCom
 Mathlib's homogeneous complex. Their forward formulas are `g • c (g⁻¹ * h)` and
 `g • c (g⁻¹ * h, h⁻¹ * k)`; their inverses evaluate at `(1, g)` and `(1, g, g * h)`. Each
 comparison identifies the explicit coboundaries with canonical boundaries, providing the
-cycle-level input to the comparison of cohomology classes.
+cycle-level input to the comparison of cohomology classes. In degree zero every element of
+`H⁰(G, M) = M^G` is a cocycle already, and `cocycle0` is its homogeneous form `g ↦ g • m`, a cycle
+of the homogeneous complex.
 
 This is an additive equivalence, with no assertion about the pointwise topology on explicit
 cocycles. Degree one holds for every topological group, while degree two assumes local compactness
@@ -37,6 +40,40 @@ universe u
 variable (G M : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
+
+/-! ### Degree zero -/
+
+/-- **The homogeneous `0`-cocycle of an invariant element**: `g ↦ g • m`, which is the constant
+cochain `m` since `m` is invariant. -/
+noncomputable def cocycle0 (m : H0 G M) :
+    _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G M) 0 :=
+  (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).cyclesMkOfEq (cochainEquiv0 G M m) 1
+    (CochainComplex.next ℕ 0) (by
+      rw [d_cochainEquiv0]
+      have h : (⟨d0 G M (m : M), mem_C1_iff.mpr (continuous_d0_apply (m : M))⟩ : C1 G M) = 0 :=
+        Subtype.ext (funext fun g ↦ by simp [d0_apply, m.2 g])
+      rw [h, map_zero])
+
+/-- The inclusion of the homogeneous `0`-cocycle `cocycle0 m` is the cochain `g ↦ g • m`, read
+through the short complex in degree zero as `iCycles_cocycleEquiv1` and `iCycles_cocycleEquiv2` do
+in degrees one and two. -/
+@[simp]
+theorem sc_iCycles_cocycle0 (m : H0 G M) :
+    ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).sc 0).iCycles.hom (cocycle0 G M m) =
+      cochainEquiv0 G M m :=
+  HomologicalComplex.iCycles_cyclesMkOfEq _ _ _ _ _
+
+/-- The underlying homogeneous cochain of `cocycle0 m` is `g ↦ g • m`, stated on the inclusion of
+the homogeneous complex itself. -/
+-- Not a `simp` lemma: `simp` rewrites the implicit carrier `(homogeneousCochains _).X 0` on the
+-- left-hand side through `CategoryTheory.Functor.mapHomologicalComplex_obj_X`, so the statement
+-- is not in `simp`-normal form; `sc_iCycles_cocycle0` is the `simp` spelling. This one is for
+-- `rw`: `HomologicalComplex.iCycles` is not unfolded to the short-complex inclusion by `rw`, so
+-- goals produced by `HomologicalComplex.iCycles_injective` are rewritten with this form.
+theorem iCycles_cocycle0 (m : H0 G M) :
+    (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).iCycles 0 (cocycle0 G M m) =
+      cochainEquiv0 G M m :=
+  HomologicalComplex.iCycles_cyclesMkOfEq _ _ _ _ _
 
 /-! ### Degree one -/
 

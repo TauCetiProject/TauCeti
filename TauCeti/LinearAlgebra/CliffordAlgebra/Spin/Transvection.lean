@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.Transvection
+public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Basic
 
 /-!
 # Spin lifts of Eichler transvections

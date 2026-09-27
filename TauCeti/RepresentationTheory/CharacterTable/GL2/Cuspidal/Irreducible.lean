@@ -7,6 +7,10 @@ module
 
 -- `TauCeti.GL2CuspidalVirtualCharacter` and its four values are the subject of this file.
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.Cuspidal.Basic
+public import TauCeti.RepresentationTheory.Simple.Basic
+public import Mathlib.NumberTheory.LegendreSymbol.Complex
+-- Non-public: bundling a representation with `FDRep.of` preserves its character.
+import TauCeti.RepresentationTheory.FDRep
 -- Non-public: Frobenius reciprocity for class functions turns each pairing with an induced
 -- character into a sum over the inducing subgroup.
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
@@ -65,6 +69,8 @@ the sign is fixed by the degree `q - 1`, a natural number
 * `TauCeti.characterPairing_GL2CuspidalVirtualCharacter_self`: for `θ^q ≠ θ` it has norm `1`.
 * `TauCeti.GL2CuspidalVirtualCharacter_mem_irreducibleCharacters`: **for `θ^q ≠ θ` the cuspidal
   virtual character is an irreducible character of `GL₂(F)`.**
+* `TauCeti.GL2Cuspidal`: the corresponding irreducible representation, using Mathlib's canonical
+  primitive additive character internally.
 
 ## Implementation notes
 
@@ -75,6 +81,8 @@ classically in its proof.
 
 ## References
 
+* C. J. Bushnell and G. Henniart, *The Local Langlands Conjecture for `GL(2)`*,
+  Springer (2006), §6, for the induced-character difference construction and its irreducibility.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`*, Springer (2011), Chapter 6.
 * I. Piatetski-Shapiro, *Complex Representations of `GL(2, K)` for Finite Fields `K`*,
   Contemporary Mathematics 16, AMS (1983), §5.
@@ -292,5 +300,81 @@ theorem GL2CuspidalVirtualCharacter_mem_irreducibleCharacters {θ : Eˣ →* ℂ
     (GL2CuspidalVirtualCharacter_mem_virtualCharacters hE θ ψ)
     (characterPairing_GL2CuspidalVirtualCharacter_self hE hθ hψ) (n := Fintype.card F - 1) ?_
   rw [GL2CuspidalVirtualCharacter_apply_one, Nat.cast_sub Fintype.card_pos, Nat.cast_one]
+
+private theorem exists_gl2Cuspidal (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ)
+    (hpsi : psi ≠ 1) (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
+    ∃ (n : ℕ) (rho : Representation ℂ (GL (Fin 2) F) (Fin n → ℂ)),
+      rho.IsIrreducible ∧
+        rho.character = (GL2CuspidalVirtualCharacter F E hE theta psi).1 :=
+  mem_irreducibleCharacters_iff.mp
+    (GL2CuspidalVirtualCharacter_mem_irreducibleCharacters hE htheta hpsi)
+
+private noncomputable def gl2CuspidalDimension (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ)
+    (hpsi : psi ≠ 1) (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) : ℕ :=
+  (exists_gl2Cuspidal hE theta psi hpsi htheta).choose
+
+private noncomputable def gl2CuspidalRepresentation (theta : Eˣ →* ℂˣ)
+    (psi : AddChar F ℂ) (hpsi : psi ≠ 1)
+    (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
+    Representation ℂ (GL (Fin 2) F) (Fin (gl2CuspidalDimension hE theta psi hpsi htheta) → ℂ) :=
+  (exists_gl2Cuspidal hE theta psi hpsi htheta).choose_spec.choose
+
+private theorem gl2CuspidalRepresentation_spec (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ)
+    (hpsi : psi ≠ 1) (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
+    (gl2CuspidalRepresentation hE theta psi hpsi htheta).IsIrreducible ∧
+      (gl2CuspidalRepresentation hE theta psi hpsi htheta).character =
+        (GL2CuspidalVirtualCharacter F E hE theta psi).1 :=
+  (exists_gl2Cuspidal hE theta psi hpsi htheta).choose_spec.choose_spec
+
+/-- **The cuspidal representation of `GL₂(𝔽_q)` attached to a general-position character
+`θ : Eˣ → ℂˣ`.** The auxiliary additive character is Mathlib's canonical primitive complex
+character of `F`, so it does not appear in the public cuspidal datum. -/
+noncomputable def GL2Cuspidal (theta : Eˣ →* ℂˣ)
+    (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) : FDRep ℂ (GL (Fin 2) F) :=
+  FDRep.of (gl2CuspidalRepresentation hE theta
+    (AddChar.FiniteField.primitiveChar_to_Complex F)
+    (by
+      have hprimitive := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F
+      simpa only [AddChar.mulShift_one] using hprimitive (one_ne_zero : (1 : F) ≠ 0)) htheta)
+
+/-- The character of `TauCeti.GL2Cuspidal` is the cuspidal virtual character from which it was
+constructed. -/
+@[simp]
+theorem character_GL2Cuspidal (theta : Eˣ →* ℂˣ)
+    (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
+    (GL2Cuspidal hE theta htheta).character =
+      (GL2CuspidalVirtualCharacter F E hE theta
+        (AddChar.FiniteField.primitiveChar_to_Complex F)).1 := by
+  rw [GL2Cuspidal, FDRep.character_of]
+  exact (gl2CuspidalRepresentation_spec hE theta
+    (AddChar.FiniteField.primitiveChar_to_Complex F)
+    (by
+      have hprimitive := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F
+      simpa only [AddChar.mulShift_one] using hprimitive (one_ne_zero : (1 : F) ≠ 0)) htheta).2
+
+/-- The cuspidal representation has degree `q - 1`. -/
+@[simp]
+theorem finrank_GL2Cuspidal (theta : Eˣ →* ℂˣ)
+    (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
+    Module.finrank ℂ (GL2Cuspidal hE theta htheta) = Fintype.card F - 1 := by
+  have hchar := congrFun (character_GL2Cuspidal hE theta htheta)
+    (1 : GL (Fin 2) F)
+  rw [FDRep.char_one, GL2CuspidalVirtualCharacter_apply_one] at hchar
+  apply Nat.cast_injective (R := ℂ)
+  push_cast [Fintype.one_lt_card.le]
+  exact hchar
+
+/-- The cuspidal representation attached to a general-position character is simple. -/
+theorem simple_GL2Cuspidal (theta : Eˣ →* ℂˣ)
+    (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
+    CategoryTheory.Simple (GL2Cuspidal hE theta htheta) := by
+  let _ : Representation.IsIrreducible (GL2Cuspidal hE theta htheta).ρ := by
+    rw [GL2Cuspidal, FDRep.of_ρ']
+    exact (gl2CuspidalRepresentation_spec hE theta
+      (AddChar.FiniteField.primitiveChar_to_Complex F)
+      (by
+        have hprimitive := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F
+        simpa only [AddChar.mulShift_one] using hprimitive (one_ne_zero : (1 : F) ≠ 0)) htheta).1
+  exact FDRep.simple_of_isIrreducible _
 
 end TauCeti

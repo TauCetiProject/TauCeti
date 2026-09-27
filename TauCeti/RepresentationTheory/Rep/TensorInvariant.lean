@@ -100,3 +100,27 @@ theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
   simp [_root_.Rep.hom_braiding]
 
 end TauCeti.Rep
+
+namespace Rep
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- Tensoring with the invariant `1` of the trivial representation, then braiding and applying
+the left unitor, is the identity. -/
+@[simp]
+theorem tensorInvariant_one_braiding_leftUnitor (M : Rep k G) :
+    tensorInvariant M (⟨1, by simp [Representation.invariants]⟩ :
+      (Rep.trivial k G k).ρ.invariants) ≫
+      (β_ M (Rep.trivial k G k)).hom ≫ (λ_ M).hom = 𝟙 M := by
+  have h : tensorInvariant M (⟨1, by simp [Representation.invariants]⟩ :
+      (Rep.trivial k G k).ρ.invariants) = (ρ_ M).inv := by
+    ext x
+    rw [Rep.hom_inv_rightUnitor]
+    exact tensorInvariant_hom_apply M _ x
+  rw [h]
+  -- `braiding_leftUnitor` is stated for the monoidal unit. Mathlib's `Rep` monoidal instance
+  -- defines that unit as `Rep.trivial k G k`; `change` checks precisely this definitional equality.
+  change (ρ_ M).inv ≫ (β_ M (𝟙_ (Rep k G))).hom ≫ (λ_ M).hom = 𝟙 M
+  rw [braiding_leftUnitor, Iso.inv_hom_id]
+
+end Rep

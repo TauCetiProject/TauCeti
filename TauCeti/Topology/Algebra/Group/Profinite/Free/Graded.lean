@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Span
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
+import Mathlib.FieldTheory.Finiteness
 
 /-!
 # The degree-one graded piece of a free pro-`p` group
@@ -43,7 +44,8 @@ not additive.
 ## Main results
 
 * `TauCeti.freeProP.linearIndependent_degreeOneFamily_of`: the family is linearly independent.
-* `TauCeti.freeProP.finrank_gradedPiece_one`: `dim gr_1(F) = #X + (#X choose 2)`.
+* `TauCeti.freeProP.finrank_gradedPiece_one`: `dim gr_1(F) = #X + (#X choose 2)`;
+  `TauCeti.freeProP.natCard_gradedPiece_one`: so `gr_1(F)` has `p ^ (#X + (#X choose 2))` elements.
 * `TauCeti.gradedBracket_freeProP_two_ne_zero`: the bracket of the two generator classes of
   `freeProP 2 (Fin 2)` is nonzero.
 * `TauCeti.gradedPow_freeProP_two_not_additive`: the `2`-power operator is not additive in degree
@@ -274,6 +276,19 @@ theorem finrank_gradedPiece_one [Fintype X] :
       Fintype.card X + (Fintype.card X).choose 2 := by
   rw [Module.finrank_eq_card_basis (degreeOneBasis p X), Fintype.card_sum, Fintype.card_subtype,
     Fintype.card_product_filter_lt]
+
+omit [LinearOrder X] in
+/-- The degree-one graded piece of the free pro-`p` group on a finite type `X` has
+`p ^ (#X + (#X choose 2))` elements. -/
+@[simp]
+theorem natCard_gradedPiece_one :
+    Nat.card (gradedPiece p (freeProP p X) 1) = p ^ (Nat.card X + (Nat.card X).choose 2) := by
+  have := Fintype.ofFinite X
+  -- The degree-one basis is indexed through a linear order on `X`; any one will do.
+  let _ := LinearOrder.lift' (Fintype.equivFin X) (Fintype.equivFin X).injective
+  have := (isTopologicallyFinitelyGenerated_freeProP p X).finite_gradedPiece (Fact.out : p.Prime) 1
+  rw [Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod, finrank_gradedPiece_one,
+    Nat.card_eq_fintype_card]
 
 end freeProP
 
