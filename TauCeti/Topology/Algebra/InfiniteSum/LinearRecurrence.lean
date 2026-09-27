@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
-public import Mathlib.Topology.Algebra.InfiniteSum.NatInt
+import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -17,8 +17,8 @@ satisfies the identity:
 
 `(1 - D + S) * σ = d 0 + (d 1 - D * d 0)`.
 
-Only continuity of addition, negation, and left multiplication by constants is required;
-multiplication need not be associative.
+A Hausdorff topological additive group with continuous left multiplication by constants
+suffices; multiplication need not be associative.
 
 In an associative ring, this corresponds to evaluating the characteristic polynomial at `1`
 in the formal generating-function identity
