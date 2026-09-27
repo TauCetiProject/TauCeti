@@ -34,8 +34,6 @@ turning multiplication by `q` into multiplication by `ε`.
 ## Main results
 
 * `TauCeti.LaurentSpecialization.mk_smul`: a Laurent scalar acts on `N_ε` by its value at `ε`.
-* `TauCeti.map_smul_eq_laurentEval_smul`: an `R`-linear map turning `q`
-  into `ε` turns every Laurent scalar into its value at `ε`.
 * `TauCeti.LaurentSpecialization.lift_mk` and `TauCeti.LaurentSpecialization.hom_ext`: the
   universal property.
 -/
