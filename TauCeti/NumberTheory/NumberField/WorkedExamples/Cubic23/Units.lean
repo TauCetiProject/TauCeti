@@ -59,8 +59,15 @@ theorem sq_sub_mul_eq_neg_one (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1) :
     _ = -1 := hh
 
 omit [NumberField K] in
+/-- The element `θ² - θ` is a unit. -/
+theorem isUnit_sq_sub (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1) : IsUnit (θ ^ 2 - θ) := by
+  refine isUnit_iff_exists_inv.mpr ⟨-θ, ?_⟩
+  simp only [mul_neg, sq_sub_mul_eq_neg_one hmin, neg_neg]
+
+omit [NumberField K] in
 /-- The unit `θ² - θ` satisfies its cubic equation `u³ - u - 1 = 0`. -/
-theorem sq_sub_cubic (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1) :
+@[simp]
+theorem sq_sub_pow_three_sub_self_sub_one (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1) :
     (θ ^ 2 - θ) ^ 3 - (θ ^ 2 - θ) - 1 = 0 := by
   have h := minpoly.aeval ℤ θ
   simp only [hmin, map_add, map_sub, map_pow, aeval_X, map_one] at h
@@ -84,8 +91,9 @@ theorem unit_value_eq (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
     w u = w.embedding_of_isReal hw θ ^ 2 - w.embedding_of_isReal hw θ := by
   let φ := w.embedding_of_isReal hw
   have hθneg := realEmbedding_apply_lt_zero hmin φ
+  have hθ_sub_one_neg : φ θ - 1 < 0 := by linarith
   have hu_pos : 0 < φ θ ^ 2 - φ θ := by
-    nlinarith [mul_pos_of_neg_of_neg hθneg (show φ θ - 1 < 0 by linarith)]
+    nlinarith [mul_pos_of_neg_of_neg hθneg hθ_sub_one_neg]
   rw [hu, ← norm_embedding_of_isReal hw, Real.norm_eq_abs]
   simpa only [map_sub, map_pow] using abs_of_pos hu_pos
 
@@ -102,8 +110,9 @@ theorem unit_value_mem_Ioo (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
   have hθgt : -1 < φ θ := by
     by_contra h
     have hle : φ θ ≤ -1 := le_of_not_gt h
+    have hθ_nonpos : φ θ ≤ 0 := hθneg.le
     nlinarith [sq_nonneg (φ θ + 1), mul_nonpos_of_nonpos_of_nonneg
-      (show φ θ ≤ 0 by linarith) (sq_nonneg (φ θ + 1))]
+      hθ_nonpos (sq_nonneg (φ θ + 1))]
   have hθ_lower : (-4 / 5 : ℝ) < φ θ := by
     by_contra h
     have hle : φ θ ≤ -4 / 5 := le_of_not_gt h
@@ -134,13 +143,14 @@ theorem unit_value_mem_Ioo (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
   exact hval ▸ ⟨hlo, hhi⟩
 
 /-- At a real place, the value of `θ² - θ` is a root of `X³ - X - 1`. -/
-theorem unit_value_cubic (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
+theorem unit_value_pow_three_sub_self_sub_one
+    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 + 1)
     {w : InfinitePlace K} (hw : w.IsReal) {u : (𝓞 K)ˣ} (hu : (u : 𝓞 K) = θ ^ 2 - θ) :
     (w u) ^ 3 - w u - 1 = 0 := by
   let φ := w.embedding_of_isReal hw
   let ψ : 𝓞 K →+* ℝ := φ.comp (algebraMap (𝓞 K) K)
   have hval := unit_value_eq hmin hw hu
-  have hc := congrArg ψ (sq_sub_cubic hmin)
+  have hc := congrArg ψ (sq_sub_pow_three_sub_self_sub_one hmin)
   simp only [map_sub, map_pow, map_one, map_zero] at hc
   rw [hval]
   exact hc
@@ -153,7 +163,8 @@ private theorem no_cubic_candidate_const_one_root (a b : ℤ)
   have hx4 : x < 4 / 3 := hxB.trans hB
   have hx0 : 0 < x := zero_lt_one.trans hx1
   have h1 := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)
-  have h6 := mul_pos h1 (show 0 < x + 1 by linarith)
+  have hx_add_one_pos : 0 < x + 1 := by linarith
+  have h6 := mul_pos h1 hx_add_one_pos
   -- The root equation squeezes `a*x + b` into `(-8/3, -2)`.  For each of the seven
   -- possible integral values of `a`, this leaves at most one value of `b`.
   have hupper : x ^ 3 - 8 / 3 * x + 1 < 0 := by
@@ -164,7 +175,8 @@ private theorem no_cubic_candidate_const_one_root (a b : ℤ)
     by_contra h
     have hs : -2 ≤ (a : ℝ) * x + b := le_of_not_gt h
     have hp := mul_le_mul_of_nonneg_left hs hx0.le
-    have hfac := mul_pos (sub_pos.mpr hx1) (show 0 < x ^ 2 + x - 1 by nlinarith)
+    have hquadratic_pos : 0 < x ^ 2 + x - 1 := by nlinarith
+    have hfac := mul_pos (sub_pos.mpr hx1) hquadratic_pos
     nlinarith
   have hslo : -8 / 3 < (a : ℝ) * x + b := by
     by_contra h
@@ -267,7 +279,8 @@ private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
     have hbi : b = 1 := by omega
     subst b
     norm_num at hroot
-    nlinarith [mul_pos (sub_pos.mpr hx1) (show 0 < x ^ 2 + 1 by nlinarith)]
+    have hquadratic_pos : 0 < x ^ 2 + 1 := by nlinarith
+    nlinarith [mul_pos (sub_pos.mpr hx1) hquadratic_pos]
   · have hbl' : (-1 : ℤ) < b := by exact_mod_cast hrlo
     have hbu' : b < (0 : ℤ) := by exact_mod_cast hrhi
     omega
@@ -321,14 +334,18 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
   norm_num at ha hb
   have ha4 : -4 < g.coeff 2 ∧ g.coeff 2 < 4 := by
     rw [abs_le] at ha
+    have ha_lower_real : (-4 : ℝ) < g.coeff 2 := by linarith [hB.2, ha.1]
+    have ha_upper_real : (g.coeff 2 : ℝ) < 4 := by linarith [hB.2, ha.2]
     constructor
-    · exact_mod_cast (show (-4 : ℝ) < g.coeff 2 by linarith [hB.2, ha.1])
-    · exact_mod_cast (show (g.coeff 2 : ℝ) < 4 by linarith [hB.2, ha.2])
+    · exact_mod_cast ha_lower_real
+    · exact_mod_cast ha_upper_real
   have hb4 : -4 < g.coeff 1 ∧ g.coeff 1 < 4 := by
     rw [abs_le] at hb
+    have hb_lower_real : (-4 : ℝ) < g.coeff 1 := by linarith [hB.2, hb.1]
+    have hb_upper_real : (g.coeff 1 : ℝ) < 4 := by linarith [hB.2, hb.2]
     constructor
-    · exact_mod_cast (show (-4 : ℝ) < g.coeff 1 by linarith [hB.2, hb.1])
-    · exact_mod_cast (show (g.coeff 1 : ℝ) < 4 by linarith [hB.2, hb.2])
+    · exact_mod_cast hb_lower_real
+    · exact_mod_cast hb_upper_real
   have h3 : g.coeff 3 = 1 := by rw [← hdeg]; exact hmonic.coeff_natDegree
   have heval (x : ℝ) : aeval x g = x ^ 3 + g.coeff 2 * x ^ 2 + g.coeff 1 * x + g.coeff 0 := by
     rw [aeval_eq_sum_range, hdeg]
@@ -344,7 +361,7 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
     rw [heval] at hxroot
     rcases cubic_candidate_coefficients_of_root (g.coeff 2) (g.coeff 1) (g.coeff 0)
       haL haU hbL hbU h0
-      (unit_value_cubic hmin hw hu) hB.2 hx1 hxB hxroot with
+      (unit_value_pow_three_sub_self_sub_one hmin hw hu) hB.2 hx1 hxB hxroot with
       hc | hc
     · intro n hn
       rw [Polynomial.discr_of_degree_eq_three hdegree, h3, hc.1, hc.2.1, hc.2.2]

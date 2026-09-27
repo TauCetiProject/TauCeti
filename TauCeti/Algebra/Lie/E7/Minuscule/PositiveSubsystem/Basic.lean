@@ -248,6 +248,17 @@ noncomputable def positiveRootSubgroup (i : Fin 7) :
     positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1)
     (inl_mem_positiveSimpleRoots i) ≫ eqToHom positiveSubsystemGroupScheme_def.symm
 
+/-- The positive simple-root subgroup is the corresponding generic Kostant subsystem map,
+transported to the named positive carrier. -/
+theorem positiveRootSubgroup_def (i : Fin 7) :
+    positiveRootSubgroup i =
+      TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToTorusSubsystem rootGen cartanGen rep
+          lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
+          positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1)
+          (inl_mem_positiveSimpleRoots i) ≫
+        eqToHom positiveSubsystemGroupScheme_def.symm := by
+  rw [positiveRootSubgroup]
+
 /-- Factoring a positive root subgroup through the positive subsystem and including it into the
 full carrier recovers the named root subgroup. -/
 @[simp]
@@ -279,6 +290,16 @@ noncomputable def positiveWeightTorus :
     lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
     positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1) ≫
       eqToHom positiveSubsystemGroupScheme_def.symm
+
+/-- The positive weight torus is the generic Kostant subsystem torus map, transported to the
+named positive carrier. -/
+theorem positiveWeightTorus_def :
+    positiveWeightTorus =
+      TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToTorusSubsystem rootGen cartanGen rep
+          lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
+          positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1) ≫
+        eqToHom positiveSubsystemGroupScheme_def.symm := by
+  rw [positiveWeightTorus]
 
 /-- Factoring the weight torus through the positive subsystem and including it into the full
 carrier recovers the named weight torus. -/
