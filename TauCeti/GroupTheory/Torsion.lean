@@ -57,6 +57,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 * `TauCeti.IsPPrimaryTorsion.of_injective`, `TauCeti.IsPPrimaryTorsion.of_surjective`: the
   condition passes to subgroups and to quotients.
 * `TauCeti.IsPPrimaryTorsion.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
+* `TauCeti.IsPPrimaryTorsion.exists_pow_smul_eq_zero`: a finite `p`-primary torsion group is
+  annihilated by one power of `p`.
 -/
 
 public section
@@ -217,6 +219,16 @@ every `m`. -/
 theorem isAddTorsion (h : IsPPrimaryTorsion p M) (hp : p ≠ 0) : IsAddTorsion M := fun m ↦ by
   obtain ⟨k, hk⟩ := isPPrimaryTorsion_iff.1 h m
   exact isOfFinAddOrder_iff_nsmul_eq_zero.2 ⟨p ^ k, pow_pos (Nat.pos_of_ne_zero hp) k, hk⟩
+
+/-- A finite `p`-primary torsion group is annihilated by one power of `p`. -/
+theorem exists_pow_smul_eq_zero [Finite M] (h : IsPPrimaryTorsion p M) :
+    ∃ k : ℕ, ∀ m : M, p ^ k • m = 0 := by
+  classical
+  have : Fintype M := Fintype.ofFinite M
+  choose k hk using isPPrimaryTorsion_iff.1 h
+  refine ⟨Finset.univ.sup k, fun m ↦ ?_⟩
+  obtain ⟨c, hc⟩ := pow_dvd_pow p (Finset.le_sup (f := k) (Finset.mem_univ m))
+  rw [hc, mul_comm (p ^ k m) c, mul_smul, hk, smul_zero]
 
 end IsPPrimaryTorsion
 
