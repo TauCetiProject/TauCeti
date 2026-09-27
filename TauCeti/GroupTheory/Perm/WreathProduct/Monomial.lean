@@ -17,6 +17,8 @@ coordinate at `x` is the transversal word `t(x)⁻¹ g t(g⁻¹ • x)`. The coc
 gives the homomorphism, and both the coset-indexed and finite-coordinate forms are injective.
 The public maps are `TauCeti.monomialHom` and `TauCeti.monomialFinHom`, with `U` as their
 first explicit argument.
+This is Layer 13, milestone 2 of the Profinite Cohomology roadmap, using the Layer 6
+transversal word and the wreath product from milestone 1.
 Continuity for an open subgroup is proved in
 `TauCeti.Topology.Algebra.Group.WreathProduct.Monomial`.
 
