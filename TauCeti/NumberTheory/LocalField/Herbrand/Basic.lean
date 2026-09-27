@@ -95,11 +95,6 @@ open MeasureTheory Set intervalIntegral
 
 namespace TauCeti.LocalFieldsRamification
 
-/-- The interval `[-1, ∞)`, the domain of the Herbrand function and of its inverse. The lower
-ramification groups are indexed by real numbers `u ≥ -1`, and `G_u` is the whole automorphism
-group for `u ≤ -1`. -/
-abbrev RamificationIndexDomain : Set ℝ := Ici (-1 : ℝ)
-
 /-- A natural number lies in the domain `[-1, ∞)` of the Herbrand function. -/
 private theorem natCast_mem_ramificationIndexDomain (n : ℕ) :
     (n : ℝ) ∈ RamificationIndexDomain :=
