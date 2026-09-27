@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.OddDefect
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Valuation
 
 import TauCeti.NumberTheory.LocalField.SquareClass
 import TauCeti.NumberTheory.LocalField.Squares
