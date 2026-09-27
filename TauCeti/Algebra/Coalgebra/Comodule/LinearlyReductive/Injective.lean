@@ -47,13 +47,10 @@ theorem IsCompletelyReducible.of_corestrict_of_injective (f : C →ₗc[k] D)
     (h : letI : Comodule k D V := Comodule.Corestrict f
       IsCompletelyReducible k D V) (hf : Function.Injective f) :
     IsCompletelyReducible k C V := by
-  apply IsCompletelyReducible.of_exists_isCompl
-  intro W
   let _ : Comodule k D V := Comodule.Corestrict f
-  obtain ⟨Q, hQ⟩ := h.exists_isCompl (W.corestrict f)
-  exact ⟨Subcomodule.ofCorestrictOfInjective f hf Q, by
-    simpa only [Subcomodule.corestrict_toSubmodule,
-      Subcomodule.ofCorestrictOfInjective_toSubmodule] using hQ⟩
+  exact isCompletelyReducible_of_orderIso k
+    (Subcomodule.corestrictOrderIsoOfInjective f hf).symm (OrderIso.refl _)
+    (fun A ↦ by simp) h
 
 end Comodule
 
