@@ -32,9 +32,11 @@ This is the object behind the Clifford-theory extension obstruction: `V` extends
 representation of its inertia group only if this projective representation linearizes, and
 `TauCeti.IsProjectiveRep.cohomologyClass` turns the factor set into a Schur-multiplier class.
 What is *not* done here is the descent of that class to the quotient `inertia V / N`, where the
-roadmap's Clifford obstruction lives; the ingredient this file supplies for it is
-`TauCeti.exists_units_inertiaTwist_coe_eq_smul`, which says that on `N` itself the chosen twist
-is a scalar multiple of `ρ`, so the projective action of `inertia V` is trivial on `N`.
+roadmap's Clifford obstruction lives; that descent is a separate construction, and nothing below
+asserts it.  The ingredient this file supplies towards it is
+`TauCeti.exists_units_inertiaTwist_coe_eq_smul`, which says that on `N` itself the chosen twist is
+a scalar multiple of `ρ`, so the restriction of the projective action to `N` is the
+projectivization of `ρ` rather than an independent datum.
 
 ## Implementation notes
 
@@ -52,9 +54,10 @@ The intertwining relation is stated with Mathlib's `MulAut.conjNormal`, matching
 `TauCeti.conjNormalFDRep_ρ`, and `TauCeti.inertiaTwist_apply_conj_mk` restates it with the
 conjugate written in the ambient group.
 
-Once `Nontrivial V` is known — it is, because `V` is simple — the units of `k` act faithfully on
-`V`, which is what lets `TauCeti.IsProjectiveRep.of_map_one_mul_apply` derive the cocycle identity
-of the factor set from associativity of composition rather than by a direct computation.
+Once `Nontrivial V` is known — it is, because `V` is simple — Mathlib's instances make the scalar
+action on `V` faithful, which is what lets `TauCeti.IsProjectiveRep.of_map_one_mul_apply` derive
+the cocycle identity of the factor set from associativity of composition rather than by a direct
+computation.
 
 ## Main definitions
 
@@ -114,20 +117,6 @@ private theorem exists_eq_smul_id_of_comm (ρ : Representation k H W) [ρ.IsIrre
   simpa using (congrArg (fun q : Representation.IntertwiningMap ρ ρ => q w) hc).symm
 
 end Schur
-
-section Faithful
-
-variable {k W : Type*} [Field k] [AddCommGroup W] [Module k W]
-
-/-- A nonzero vector space carries a faithful scalar action.  This is what makes the factor set
-below unique, through the induced `FaithfulSMul kˣ W`. -/
-private theorem faithfulSMul_of_nontrivial [Nontrivial W] : FaithfulSMul k W := by
-  refine ⟨fun {a b} h => ?_⟩
-  obtain ⟨w, hw⟩ := exists_ne (0 : W)
-  have hab : (a - b) • w = 0 := by rw [sub_smul, h w, sub_self]
-  exact sub_eq_zero.mp ((smul_eq_zero.mp hab).resolve_right hw)
-
-end Faithful
 
 variable {k G : Type u} [Field k] [Group G] {N : Subgroup G} [hN : N.Normal] (V : FDRep k N)
 
@@ -268,7 +257,6 @@ theorem inertiaFactorSet_eq (g h : inertia V) (c : kˣ)
     c = inertiaFactorSet V g h := by
   have hnt : Nontrivial V :=
     Representation.IsIrreducible.nontrivial (FDRep.isIrreducible_of_simple V)
-  have : FaithfulSMul k V := faithfulSMul_of_nontrivial
   refine FaithfulSMul.eq_of_smul_eq_smul (α := V) fun v => ?_
   obtain ⟨w, rfl⟩ := (inertiaTwist V (g * h)).surjective v
   have hw := (hc w).symm.trans (inertiaTwist_mul_apply V g h w)
@@ -281,7 +269,6 @@ theorem isProjectiveRep_inertiaTwist :
     IsProjectiveRep (inertiaTwist V) (inertiaFactorSet V) := by
   have hnt : Nontrivial V :=
     Representation.IsIrreducible.nontrivial (FDRep.isIrreducible_of_simple V)
-  have : FaithfulSMul k V := faithfulSMul_of_nontrivial
   exact IsProjectiveRep.of_map_one_mul_apply (by rw [inertiaTwist_one]; rfl)
     (inertiaTwist_mul_apply V)
 
@@ -291,9 +278,10 @@ theorem isFactorSet_inertiaFactorSet : IsFactorSet (inertiaFactorSet V) :=
 
 /-- **On the normal subgroup the twist is the representation itself, up to a scalar.** The
 conjugation by an element of `N` is inner, so `ρ n` already obeys the intertwining relation there,
-and Schur's lemma compares it with the chosen twist.  This is why the projective action of the
-inertia group is trivial on `N`, and hence the reason the obstruction class is expected to live on
-the quotient `inertia V / N`. -/
+and Schur's lemma compares it with the chosen twist.  So the restriction of the projective action
+of `inertia V` to `N` is the projectivization of `ρ` itself — in general not trivial — rather than
+an independent datum.  Whether the factor set descends to the quotient `inertia V / N`, where the
+obstruction class is expected to live, is a separate question, not settled here. -/
 theorem exists_units_inertiaTwist_coe_eq_smul (n : N) :
     ∃ c : kˣ, ∀ v : V,
       inertiaTwist V ⟨(n : G), le_inertia V n.2⟩ v = (c : k) • V.ρ n v := by
