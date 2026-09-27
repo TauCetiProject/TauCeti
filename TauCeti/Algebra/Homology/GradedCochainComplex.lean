@@ -114,6 +114,43 @@ theorem gradedCochainComplexLift_X (p : ℤ) :
       ModuleCat.of R (ULift.{uExtra} (ℳ p)) := by
   simp [gradedCochainComplexLift]
 
+@[simp]
+theorem gradedCochainComplexLift_d (p : ℤ) :
+    (gradedCochainComplexLift.{uR, uM, uExtra} ℳ dM hdeg hsq).d p (p + 1) =
+      eqToHom (gradedCochainComplexLift_X.{uR, uM, uExtra}
+        (hdeg := hdeg) (hsq := hsq) p) ≫
+        ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap.comp
+          ((dM.restrict (p := ℳ p) (q := ℳ (p + 1))
+            fun _ hx ↦ hdeg.map_mem hx).comp ULift.moduleEquiv.toLinearMap)) ≫
+        eqToHom (gradedCochainComplexLift_X.{uR, uM, uExtra}
+          (hdeg := hdeg) (hsq := hsq) (p + 1)).symm := by
+  have hp : gradedCochainComplexLift_X.{uR, uM, uExtra}
+      (hdeg := hdeg) (hsq := hsq) p = rfl := Subsingleton.elim _ _
+  have hp1 : gradedCochainComplexLift_X.{uR, uM, uExtra}
+      (hdeg := hdeg) (hsq := hsq) (p + 1) = rfl := Subsingleton.elim _ _
+  rw [hp, hp1]
+  unfold gradedCochainComplexLift gradedCochainComplex
+  dsimp only [Functor.mapHomologicalComplex]
+  simp only [CochainComplex.of_d]
+  rfl
+
+private theorem gradedCochainComplexLift_X_proof_eq_rfl (p : ℤ) :
+    gradedCochainComplexLift_X.{uR, uM, uExtra} (hdeg := hdeg) (hsq := hsq) p = rfl :=
+  Subsingleton.elim _ _
+
+/-- The differential of the lifted complex acts by the original differential on homogeneous
+elements. This is not a simp lemma because the structural differential lemma is already simp. -/
+theorem gradedCochainComplexLift_d_apply (p : ℤ) (x : ℳ p) :
+    (eqToHom (gradedCochainComplexLift_X.{uR, uM, uExtra} (hdeg := hdeg)
+      (hsq := hsq) (p + 1))
+        ((gradedCochainComplexLift.{uR, uM, uExtra} ℳ dM hdeg hsq).d p (p + 1)
+          (eqToHom (gradedCochainComplexLift_X.{uR, uM, uExtra} (hdeg := hdeg)
+            (hsq := hsq) p).symm (ULift.up x)))).down.val = dM x := by
+  rw [gradedCochainComplexLift_d]
+  rw [gradedCochainComplexLift_X_proof_eq_rfl,
+    gradedCochainComplexLift_X_proof_eq_rfl]
+  rfl
+
 universe uN uP
 
 variable {N : Type uN} [AddCommGroup N] [Module R N]
@@ -130,6 +167,8 @@ noncomputable def gradedCochainComplexMap (f : M →ₗ[R] N)
     gradedCochainComplexLift.{uR, uM, max uN uExtra} ℳ dM hdeg hsq ⟶
       gradedCochainComplexLift.{uR, uN, max uM uExtra} 𝒩 dN hdegN hsqN :=
   CochainComplex.ofHom (fun n ↦ by
+    -- The lifted terms reduce to `ModuleCat.of` on `ULift` by the object formula of
+    -- `ModuleCat.uliftFunctor`; this lets `ofHom` use the explicit lifted linear map.
     change ModuleCat.of R (ULift.{max uN uExtra} (ℳ n)) ⟶
       ModuleCat.of R (ULift.{max uM uExtra} (𝒩 n))
     exact ModuleCat.ofHom <|
@@ -143,8 +182,10 @@ noncomputable def gradedCochainComplexMap (f : M →ₗ[R] N)
     apply Subtype.ext
     dsimp [gradedCochainComplexLift, gradedCochainComplex, ModuleCat.hom_comp,
       LinearMap.comp_apply]
+    -- The argument is an element of the lifted homogeneous submodule.
     change ULift.{max uN uExtra} (ℳ i) at x
     simp only [CochainComplex.of_d]
+    -- Unwrap the two `ULift` values and the restricted maps to apply `hcomm`.
     change dN (f x.down.val) = f (dM x.down.val)
     exact hcomm i x.down)
 
@@ -182,7 +223,17 @@ theorem gradedCochainComplexMap_id :
         𝟙 (gradedCochainComplexLift.{uR, uM, max uM uExtra} ℳ dM hdeg hsq) := by
   apply HomologicalComplex.hom_ext
   intro n
-  rfl
+  apply ModuleCat.hom_ext
+  apply LinearMap.ext
+  intro x
+  cases x with
+  | up x =>
+    apply ULift.ext
+    apply Subtype.ext
+    exact gradedCochainComplexMap_f_apply.{uR, uM, max uM uExtra, uM}
+      (hdeg := hdeg) (hsq := hsq)
+      (hdegN := hdeg) (hsqN := hsq) (LinearMap.id : M →ₗ[R] M)
+      (LinearMap.isHomogeneous_id ℳ) (fun _ _ ↦ rfl) n x
 
 variable {P : Type uP} [AddCommGroup P] [Module R P]
   {𝒦 : ℤ → Submodule R P} {dP : P →ₗ[R] P}
@@ -210,6 +261,16 @@ theorem gradedCochainComplexMap_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P)
           (hdegN := hdegP) (hsqN := hsqP) g hg hcommg := by
   apply HomologicalComplex.hom_ext
   intro n
-  rfl
+  apply ModuleCat.hom_ext
+  apply LinearMap.ext
+  intro x
+  cases x with
+  | up x =>
+    apply ULift.ext
+    apply Subtype.ext
+    simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp]
+    -- After extensionality, the lifted maps act by `g (f x)` on each homogeneous term.
+    change g (f x.val) = g (f x.val)
+    rfl
 
 end TauCeti
