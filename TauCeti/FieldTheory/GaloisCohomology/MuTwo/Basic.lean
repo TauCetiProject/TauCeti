@@ -566,17 +566,15 @@ private theorem kummerCohomMap_explicitH1 (x : H1 (AbsoluteGaloisGroup K) (Kumme
       (ContinuousMonoidHom.id _) (kummerCoeffEquiv K).toAddMonoidHom
       (fun g m ↦ kummerCoeffEquiv_equivariant K g m) x]
   refine congrArg _ ?_
-  induction x using QuotientAddGroup.induction_on with
-  | H c =>
-    -- Both sides push the cocycle forward along the same additive homomorphism; the coefficient
-    -- equivalence only repackages it as an equivariant map.
-    exact (explicitMap1_mk (AbsoluteGaloisGroup K) (KummerCoeff K 2) (AbsoluteGaloisGroup K)
-      (trivialF2 (AbsoluteGaloisGroup K)).V (ContinuousMonoidHom.id _)
-      (kummerCoeffEquiv K).toAddMonoidHom continuous_of_discreteTopology
-      (fun g m ↦ kummerCoeffEquiv_equivariant K g m) c).trans
-      (explicitCoeff1Equiv_mk (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
+  -- The coefficient equivalence is the coefficient map of its forward equivariant homomorphism,
+  -- and a coefficient map is the compatible-pair pullback along the identity of the group, which
+  -- is what the left-hand side names directly.
+  exact ((explicitCoeff1Equiv_apply (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
         continuous_of_discreteTopology continuous_of_discreteTopology
-        (kummerCoeffEquiv_equivariant K) c).symm
+        (kummerCoeffEquiv_equivariant K) x).trans
+      (DFunLike.congr_fun (explicitCoeff1_eq_explicitMap1 (AbsoluteGaloisGroup K)
+        (KummerCoeff K 2) { (kummerCoeffEquiv K).toAddMonoidHom with
+          map_smul' := kummerCoeffEquiv_equivariant K } continuous_of_discreteTopology) x)).symm
 
 /-- **The mod-two Kummer class is the explicit mod-two cocycle class of any square root.**
 If `α² = a`, the class `TauCeti.kummerCocycleModTwoClass` of the `𝔽₂`-valued cocycle
