@@ -46,11 +46,8 @@ noncomputable def WittRing.equivZModTwoOfIsSepClosed : WittRing K ≃+* ZMod 2 :
     intro x y h
     apply sub_eq_zero.mp
     apply WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed
-    simpa only [map_sub, sub_eq_zero] using h, by
-    intro z
-    fin_cases z
-    · exact ⟨0, map_zero _⟩
-    · exact ⟨1, map_one _⟩⟩
+    simpa only [map_sub, sub_eq_zero] using h,
+    ZMod.ringHom_surjective WittRing.dimMod2⟩
 
 @[simp]
 theorem WittRing.equivZModTwoOfIsSepClosed_apply (x : WittRing K) :

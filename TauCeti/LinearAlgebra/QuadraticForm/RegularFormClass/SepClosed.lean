@@ -36,7 +36,6 @@ theorem RegularFormClass.rank_injective_of_isSepClosed :
   | _ p =>
     induction y using Quotient.inductionOn with
     | _ q =>
-      have h' : p.1 = q.1 := by simpa only [RegularFormClass.rank_mk] using h
       have hp := (presentedForm p).equivalent_weightedSumSquares_of_isSepClosed
         ((QuadraticMap.nondegenerate_associated_iff (Q := presentedForm p)).2
           (nondegenerate_presentedForm p)).1
@@ -45,7 +44,7 @@ theorem RegularFormClass.rank_injective_of_isSepClosed :
           (nondegenerate_presentedForm q)).1
       rcases p with ⟨n, w⟩
       rcases q with ⟨m, v⟩
-      change n = m at h'
+      have h' : n = m := by simpa only [RegularFormClass.rank_mk] using h
       subst m
       apply RegularFormClass.mk_eq_mk_iff.mpr
       exact hp.trans hq.symm
