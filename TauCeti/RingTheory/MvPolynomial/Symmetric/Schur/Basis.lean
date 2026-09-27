@@ -107,6 +107,12 @@ theorem partitionEquivSchurIndex_apply (n d : ℕ) (h : n ≤ d) (μ : n.Partiti
     (partitionEquivSchurIndex n d h μ).1 = μ := by
   simp [partitionEquivSchurIndex]
 
+/-- The inverse reindexing from the Schur basis returns the underlying partition. -/
+@[simp]
+theorem partitionEquivSchurIndex_symm_apply (n d : ℕ) (h : n ≤ d)
+    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin d)}) :
+    (partitionEquivSchurIndex n d h).symm μ = μ.1 := (rfl)
+
 section CommSemiring
 
 variable {σ : Type*} {R : Type*} [CommSemiring R] {n : ℕ}
