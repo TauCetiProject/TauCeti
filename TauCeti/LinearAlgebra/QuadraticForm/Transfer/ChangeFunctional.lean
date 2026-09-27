@@ -78,22 +78,6 @@ end QuadraticForm
 
 namespace QuadraticMap
 
-section CommRing
-
-variable {K L V : Type*} [CommSemiring K] [CommRing L] [Algebra K L]
-  [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
-  [Invertible (2 : L)]
-
-/-- Multiplication of the input of a functional is tensoring with a quadratic line before
-Scharlau transfer. This is an isometry of forms over the base ring `K`. -/
-theorem equivalent_scharlauTransfer_comp_mul_rankOneTensor
-    (Q : QuadraticForm L V) (s : L →ₗ[K] K) (a : L) :
-    (Q.scharlauTransfer (s.comp (LinearMap.mul K L a))).Equivalent
-      ((QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm L L)) Q).scharlauTransfer s) :=
-  ⟨QuadraticForm.scharlauTransferCompMul Q s a⟩
-
-end CommRing
-
 section Field
 
 variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
