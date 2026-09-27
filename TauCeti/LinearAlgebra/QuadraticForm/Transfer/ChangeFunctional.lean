@@ -24,8 +24,6 @@ public section
 
 namespace TauCeti
 
-namespace QuadraticForm
-
 section CommRing
 
 variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
@@ -82,7 +80,5 @@ theorem exists_unit_scharlauTransfer_changeFunctional (Q : QuadraticForm L V)
   exact ⟨scharlauTransferChangeFunctional Q s (a : L)⟩
 
 end Field
-
-end QuadraticForm
 
 end TauCeti
