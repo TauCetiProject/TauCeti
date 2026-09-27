@@ -27,7 +27,9 @@ so sending `0` to `0` already determines it.
 
 Crossed with the universe lift of `TauCeti.trivialF2Equiv` and read in the category
 `TopRep ℤ G_K`, this is the isomorphism of coefficient objects
-`TauCeti.kummerCoeffIsoTrivialF2`, the only coefficient transport used at `n = 2`. Nothing here is
+`TauCeti.kummerCoeffIsoTrivialF2`, the only coefficient transport used at `n = 2`; it targets the
+`ofDiscreteModule` image of `trivialF2 G_K`, which is that object by
+`TauCeti.ofDiscreteModule_trivialF2`, so that its application on carriers reduces. Nothing here is
 specific to local fields: the action on `μ₂` is trivial over every field, and the hypothesis
 `[Invertible (2 : K)]` is what makes `1` and `-1` distinct, so that `μ₂` has two elements and the
 dictionary with `ZMod 2` exists at all. Over a field of characteristic `2` the second roots of
@@ -35,12 +37,16 @@ unity are the single element `1 = -1`, which `ZMod 2` is not.
 
 ## Main definitions
 
-* `TauCeti.mu2NegOne`: the nontrivial element of `μ₂`, that is `-1` read as a `2`nd root of unity.
+* `TauCeti.mu2NegOne`: the element of `μ₂` represented by `-1`, that is `-1` read as a `2`nd root
+  of unity; it is the nontrivial element of `μ₂` when `[Invertible (2 : K)]` holds.
 * `TauCeti.mu2EquivZMod2`: the value dictionary `μ₂ ≃+ ZMod 2`.
 * `TauCeti.kummerCoeffEquiv`: the same dictionary, crossed with the universe lift, as an additive
   equivalence of the coefficient carriers `KummerCoeff K 2 ≃+ (trivialF2 G_K).V`.
 * `TauCeti.kummerCoeffIsoTrivialF2`: the isomorphism of coefficient objects
-  `ofDiscreteModule ℤ G_K (KummerCoeff K 2) ≅ trivialF2 G_K`.
+  `ofDiscreteModule ℤ G_K (KummerCoeff K 2) ≅ ofDiscreteModule ℤ G_K (trivialF2 G_K).V`, whose
+  target is `trivialF2 G_K` itself by `TauCeti.ofDiscreteModule_trivialF2`, and whose application
+  rules `TauCeti.kummerCoeffIsoTrivialF2_hom_apply` and
+  `TauCeti.kummerCoeffIsoTrivialF2_inv_apply` are the value dictionary and its inverse.
 * `TauCeti.kummerClass`: the Kummer class `(a) ∈ H¹(G_K, 𝔽₂)` of a unit, read in the
   `trivialF2 G_K` carrier.
 
@@ -55,7 +61,9 @@ unity are the single element `1 = -1`, which `ZMod 2` is not.
 * `TauCeti.mu2_smul_eq_self`: the Galois action on `μ₂` is trivial.
 * `TauCeti.mu2EquivZMod2_equivariant`: the value dictionary is fixed by `G_K`, which is what makes
   it a morphism of coefficient objects.
-* `TauCeti.kummerClass_eq_zero_of_square`: the Kummer class of a square vanishes.
+* `TauCeti.kummerClass_eq_zero_iff_square`: the Kummer class of a unit of `Kˣ` vanishes exactly
+  at the squares in `Kˣ`, and `TauCeti.kummerClass_eq_zero_of_square` is the direction of it that a
+  square satisfies.
 -/
 
 public section
@@ -74,13 +82,15 @@ variable {K : Type u} [Field K]
 
 /-! ### The elements of `μ₂` -/
 
-/-- The nontrivial element of `μ₂`, that is `-1` read as a `2`nd root of unity in a separable
-closure of the base field. -/
+/-- The element of `μ₂` represented by `-1`, that is `-1` read as a `2`nd root of unity in a
+separable closure of the base field. It is the nontrivial element of `μ₂` when `2` is invertible in
+`K` (`TauCeti.mu2NegOne_ne_zero`); in characteristic two `-1 = 1`, and then it is the element `0`
+of `μ₂`. -/
 noncomputable def mu2NegOne : KummerCoeff K 2 :=
   Additive.ofMul (rootsOfUnity.mkOfPowEq (-1 : (SeparableClosure K)) (by simp))
 
-/-- The underlying unit of `TauCeti.mu2NegOne` is `-1`, so `mu2NegOne` is the second root of
-unity of a separable closure that is not the first. -/
+/-- The underlying unit of `TauCeti.mu2NegOne` is `-1`, so `mu2NegOne` is exactly `-1` read
+as a `2`nd root of unity in a separable closure of the base field. -/
 @[simp]
 theorem toMul_mu2NegOne : mu2NegOne.toMul.1 = (-1 : (SeparableClosure K)ˣ) :=
   Units.ext (by simp [mu2NegOne])
@@ -138,6 +148,7 @@ is what makes the Kummer coefficients at `n = 2` isomorphic to the trivial `F₂
 object, whereas the action on `μₙ` for `n > 2` is not trivial in general. It is a statement about
 a field in any characteristic: the hypothesis `[Invertible (2 : K)]` is what tells the two roots
 apart, not what triviality of the action needs. -/
+@[simp]
 theorem mu2_smul_eq_self (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 2) :
     g • x = x := by
   refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
@@ -236,11 +247,16 @@ private theorem kummerCoeffEquiv_equivariant (g : AbsoluteGaloisGroup K) (x : Ku
   simp only [kummerCoeffEquiv_apply, mu2EquivZMod2_equivariant,
     TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
 
+/-- The coefficient dictionary read as a morphism of coefficient objects: the additive
+equivalence `TauCeti.kummerCoeffEquiv` is `G_K`-equivariant, because the Galois action on `μ₂` is
+trivial (`TauCeti.kummerCoeffEquiv_equivariant`) and the action on `TauCeti.trivialF2` is trivial
+as well. -/
 private noncomputable def kummerCoeffToTrivialF2 :
     ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2) ⟶
       ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V :=
   ofDiscreteModuleMap (kummerCoeffEquiv K).toIntLinearEquiv (kummerCoeffEquiv_equivariant K)
 
+/-- The inverse coefficient dictionary, as a morphism of coefficient objects. -/
 private noncomputable def kummerCoeffFromTrivialF2 :
     ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V ⟶
       ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2) :=
@@ -259,35 +275,90 @@ private theorem kummerCoeffFromTrivialF2_apply (b : (trivialF2 (AbsoluteGaloisGr
 /-- **The Kummer coefficients at `n = 2` and the trivial `𝔽₂` coefficient object are the same
 coefficient object.** The isomorphism is the value dictionary of `TauCeti.mu2EquivZMod2`, crossed
 with the universe lift of `TauCeti.trivialF2Equiv`, and it is a morphism of coefficient objects
-because the Galois action on `μ₂` is trivial (`TauCeti.mu2_smul_eq_self`). This is the
-only coefficient transport used at `n = 2`. -/
+because the Galois action on `μ₂` is trivial (`TauCeti.mu2_smul_eq_self`). The target is the
+`TauCeti.ofDiscreteModule` image of `TauCeti.trivialF2 G_K`, which is that object itself by
+`TauCeti.ofDiscreteModule_trivialF2`; stating it that way is what makes the two application rules
+below reduce, and `TauCeti.kummerClass` reads it into
+`continuousCohomology 1 (trivialF2 G_K)`. This is the only coefficient transport used at `n = 2`. -/
 noncomputable def kummerCoeffIsoTrivialF2 :
     ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2) ≅
-      trivialF2 (AbsoluteGaloisGroup K) := by
-  rw [← ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)]
-  exact
-    { hom := kummerCoeffToTrivialF2 K
-      inv := kummerCoeffFromTrivialF2 K
-      -- Both round trips rewrap the *same* additive equivalence, so each is an identity of
-      -- additive equivalences. The goal of an inverse law is stated through the `hom`/`inv` fields
-      -- of the isomorphism, as a `TopRep.Hom` composite, and no stable rewrite reaches the
-      -- carrier-level goal: `TopRep.comp_apply` is stated on carriers, and the carrier of
-      -- `TauCeti.ofDiscreteModule` is not syntactically the module. `change` is what exposes the
-      -- composite, after which the two application rules above and the inverse rule of `AddEquiv`
-      -- finish the goal.
-      hom_inv_id := by
-        refine TopRep.hom_ext (DFunLike.ext _ _ fun (m : KummerCoeff K 2) => ?_)
-        change (kummerCoeffFromTrivialF2 K) ((kummerCoeffToTrivialF2 K) m) = m
-        rw [kummerCoeffToTrivialF2_apply, kummerCoeffFromTrivialF2_apply,
-          AddEquiv.symm_apply_apply]
-      inv_hom_id := by
-        refine TopRep.hom_ext
-          (DFunLike.ext _ _ fun (b : (trivialF2 (AbsoluteGaloisGroup K)).V) => ?_)
-        change (kummerCoeffToTrivialF2 K) ((kummerCoeffFromTrivialF2 K) b) = b
-        rw [kummerCoeffFromTrivialF2_apply, kummerCoeffToTrivialF2_apply,
-          AddEquiv.apply_symm_apply] }
+      ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V :=
+  { hom := kummerCoeffToTrivialF2 K
+    inv := kummerCoeffFromTrivialF2 K
+    -- Both round trips rewrap the *same* additive equivalence, so each is an identity of
+    -- additive equivalences. The goal of an inverse law is the corresponding `TopRep.Hom`
+    -- composite read at a carrier, and no stable rewrite reaches the carrier-level goal:
+    -- `TopRep.comp_apply` is stated on carriers, and the carrier of `TauCeti.ofDiscreteModule` is
+    -- not syntactically the module. `change` is what exposes the composite, after which the two
+    -- application rules above and the inverse rule of `AddEquiv` finish the goal.
+    hom_inv_id := by
+      refine TopRep.hom_ext (DFunLike.ext _ _ fun (m : KummerCoeff K 2) => ?_)
+      change (kummerCoeffFromTrivialF2 K) ((kummerCoeffToTrivialF2 K) m) = m
+      rw [kummerCoeffToTrivialF2_apply, kummerCoeffFromTrivialF2_apply,
+        AddEquiv.symm_apply_apply]
+    inv_hom_id := by
+      refine TopRep.hom_ext
+        (DFunLike.ext _ _ fun (b : (trivialF2 (AbsoluteGaloisGroup K)).V) => ?_)
+      change (kummerCoeffToTrivialF2 K) ((kummerCoeffFromTrivialF2 K) b) = b
+      rw [kummerCoeffFromTrivialF2_apply, kummerCoeffToTrivialF2_apply,
+        AddEquiv.apply_symm_apply] }
+
+/-- **The isomorphism reads on carriers as the value dictionary.** -/
+@[simp]
+theorem kummerCoeffIsoTrivialF2_hom_apply (x : KummerCoeff K 2) :
+    (kummerCoeffIsoTrivialF2 K).hom x = kummerCoeffEquiv K x :=
+  kummerCoeffToTrivialF2_apply (K := K) x
+
+/-- **The inverse isomorphism reads on carriers as the inverse value dictionary.** -/
+@[simp]
+theorem kummerCoeffIsoTrivialF2_inv_apply (b : (trivialF2 (AbsoluteGaloisGroup K)).V) :
+    (kummerCoeffIsoTrivialF2 K).inv b = (kummerCoeffEquiv K).symm b :=
+  kummerCoeffFromTrivialF2_apply (K := K) b
+
 
 /-! ### The Kummer class of a unit -/
+
+/-- The coefficient isomorphism `TauCeti.kummerCoeffIsoTrivialF2` read against the trivial `𝔽₂`
+object itself, through `TauCeti.ofDiscreteModule_trivialF2`. -/
+private noncomputable def kummerCohomIso :
+    ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2) ≅
+      trivialF2 (AbsoluteGaloisGroup K) :=
+  (kummerCoeffIsoTrivialF2 K).trans
+    (eqToIso (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)))
+
+/-- The degree-one map on continuous cohomology induced by the coefficient isomorphism
+`TauCeti.kummerCoeffIsoTrivialF2`. -/
+private noncomputable def kummerCohomMap :
+    continuousCohomology 1 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2)) ⟶
+      continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
+  ContinuousCohomology.coeffMap (kummerCohomIso K).hom 1
+
+/-- The degree-one map induced by the inverse coefficient isomorphism. -/
+private noncomputable def kummerCohomMapInv :
+    continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) ⟶
+      continuousCohomology 1 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :=
+  ContinuousCohomology.coeffMap (kummerCohomIso K).inv 1
+
+/-- The two degree-one coefficient maps are inverse: the inverse law of the coefficient
+isomorphism, read through `TauCeti.ContinuousCohomology.coeffMap_comp` and
+`TauCeti.ContinuousCohomology.coeffMap_id`. -/
+private theorem kummerCohomMap_comp :
+    kummerCohomMap K ≫ kummerCohomMapInv K = 𝟙 _ := by
+  rw [kummerCohomMap, kummerCohomMapInv, ← ContinuousCohomology.coeffMap_comp,
+    kummerCohomIso, CategoryTheory.Iso.hom_inv_id, ContinuousCohomology.coeffMap_id]
+
+/-- **The degree-one map induced by the coefficient isomorphism is injective.** Its composite
+with the map induced by the inverse isomorphism is the identity (`TauCeti.kummerCohomMap_comp`), so
+a class in its kernel is zero. -/
+private theorem kummerCohomMap_injective : Function.Injective (kummerCohomMap K).hom := by
+  intro x y hxy
+  have hx : (kummerCohomMapInv K).hom ((kummerCohomMap K).hom x) = x := by
+    have h := CategoryTheory.ConcreteCategory.congr_hom (kummerCohomMap_comp K) x
+    simpa only [CategoryTheory.comp_apply, CategoryTheory.id_apply] using h
+  have hy : (kummerCohomMapInv K).hom ((kummerCohomMap K).hom y) = y := by
+    have h := CategoryTheory.ConcreteCategory.congr_hom (kummerCohomMap_comp K) y
+    simpa only [CategoryTheory.comp_apply, CategoryTheory.id_apply] using h
+  rw [← hx, ← hy, hxy]
 
 variable {K}
 
@@ -296,26 +367,57 @@ variable {K}
 `TauCeti.kummerCoeffIsoTrivialF2`. -/
 noncomputable def kummerClass (a : Kˣ) :
     continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
-  (ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).hom 1).hom
+  (kummerCohomMap K).hom
     (Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a))
 
 variable (K)
 
-/-- **The Kummer class of a square vanishes.** A member of `Subgroup.square Kˣ` is a square, hence
-a two-th power, so `TauCeti.kummerMap_eq_one_iff` at `n = 2` makes the Kummer map trivial on it, and
-the degree-one comparison `TauCeti.explicitIso_kummerMap` carries that to the Kummer class. -/
-theorem kummerClass_eq_zero_of_square {a : Kˣ} (ha : a ∈ Subgroup.square Kˣ) :
-    kummerClass a = 0 := by
-  obtain ⟨r, hr⟩ := Subgroup.mem_square.mp ha
-  have hone : kummerMap K 2 (isUnit_of_invertible (2 : K)) a = 1 :=
-    (kummerMap_eq_one_iff (isUnit_of_invertible (2 : K)) a).mpr
-      ⟨r, by rw [hr, pow_two]⟩
-  have hzero : Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a)
-      = 0 := by
-    rw [explicitIso_kummerMap K 2 (isUnit_of_invertible (2 : K)) a, hone]
+/-- **The Kummer class of a unit vanishes exactly at the squares in `Kˣ`.** For a square,
+`TauCeti.kummerMap_eq_one_iff` at `n = 2` makes the Kummer map trivial on it, and the degree-one
+comparison `TauCeti.explicitIso_kummerMap` carries that to the Kummer class. Conversely, the
+degree-one map induced by `TauCeti.kummerCoeffIsoTrivialF2` is injective, because its composite
+with the map induced by the inverse isomorphism is the identity, so a vanishing Kummer class is a
+vanishing Kummer map, which `TauCeti.kummerMap_eq_one_iff` again reads as a square. -/
+theorem kummerClass_eq_zero_iff_square {a : Kˣ} :
+    kummerClass a = 0 ↔ a ∈ Subgroup.square Kˣ := by
+  constructor
+  · intro hz
+    -- The Kummer class is the canonical Kummer map read through the degree-one map induced by
+    -- the coefficient isomorphism, so injectivity of that map reads `hz` back on the Kummer map.
+    have hzero : (kummerCohomMap K).hom
+        (Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a)) = 0 :=
+      hz
+    have hz' : Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a)
+        = 0 :=
+      (kummerCohomMap_injective K) (hzero.trans (show (kummerCohomMap K).hom 0 = 0 by simp).symm)
+    have hz'' : Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) a) = 0 := by
+      -- The degree-one comparison sends the explicit Kummer map to the canonical one, and the
+      -- comparison is an additive equivalence, so it is injective.
+      have h0 := (explicitIso_kummerMap K 2 (isUnit_of_invertible (2 : K)) a).symm.trans hz'
+      refine (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+        (KummerCoeff K 2)).injective
+          (a₁ := Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) a)) (a₂ := 0) ?_
+      rw [h0, map_zero]
+    have hone : kummerMap K 2 (isUnit_of_invertible (2 : K)) a = 1 :=
+      toAdd_eq_zero.mp hz''
+    obtain ⟨r, hr⟩ := (kummerMap_eq_one_iff (isUnit_of_invertible (2 : K)) a).mp hone
+    exact Subgroup.mem_square.mpr ⟨r, by rw [← hr, pow_two]⟩
+  · intro ha
+    obtain ⟨r, hr⟩ := Subgroup.mem_square.mp ha
+    have hone : kummerMap K 2 (isUnit_of_invertible (2 : K)) a = 1 :=
+      (kummerMap_eq_one_iff (isUnit_of_invertible (2 : K)) a).mpr
+        ⟨r, by rw [hr, pow_two]⟩
+    have hzero : Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a)
+        = 0 := by
+      rw [explicitIso_kummerMap K 2 (isUnit_of_invertible (2 : K)) a, hone]
+      simp
+    rw [kummerClass, hzero]
     simp
-  rw [kummerClass, hzero]
-  simp
 
+/-- **The Kummer class of a square vanishes**: the direction of
+`TauCeti.kummerClass_eq_zero_iff_square` that the rest of the project needs at `n = 2`. -/
+theorem kummerClass_eq_zero_of_square {a : Kˣ} (ha : a ∈ Subgroup.square Kˣ) :
+    kummerClass a = 0 :=
+  (kummerClass_eq_zero_iff_square (K := K) (a := a)).mpr ha
 
 end TauCeti
