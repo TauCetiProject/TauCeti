@@ -12,27 +12,27 @@ public import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
 # The archimedean Hilbert symbol
 
 The archimedean symbol is the norm-equation Hilbert symbol read over the completion at an infinite
-place.  Tau Ceti already computes the symbol over `ℝ` and over algebraically closed fields; what is
-added here is that computation for *global* units at the *places of a number field*, and the
-real-place half of the sign prescription.
+place.  This module records that symbol for *global* units at the *places of a number field*, the
+square criterion for a global unit at a real place, and the real-place half of the sign
+prescription.
 
 At a real place the symbol of two elements is `-1` exactly when both are negative there, and `1`
 exactly when one of them is positive there.  A product of such symbols over a prescribed set of
 real places is therefore a product of signs, and the bimultiplicativity it needs is that of
 `TauCeti.hilbertSymbol_real_mul_left` and `TauCeti.hilbertSymbol_real_mul_right`, in
-`TauCeti.NumberTheory.HilbertSymbol.Archimedean`: each of them is a `[simp]` lemma, so `simp`
-expands a product of global units inside the localized symbol without a localized restatement.
+`TauCeti.NumberTheory.HilbertSymbol.Archimedean`; both are `[simp]`, so `simp` expands a
+product of global units inside the localized symbol.
 At a complex place the symbol is `1` for the same reason the
 archimedean classification of a form is by rank alone: every element of `ℂˣ` is a square, so
 `TauCeti.hilbertSymbol_eq_one_of_isAlgClosed`, in
 `TauCeti.NumberTheory.HilbertSymbol.IsAlgClosed`, already settles the complex places of a number
 field and the real places alone decide such a product.
 
-The file also records the real-place half of the sign prescription of O'Meara 71:19.  Given a
+The real-place half of the sign prescription of O'Meara 71:19 is recorded as well.  Given a
 prescribed element `b` that is a nonsquare at a real place,
 `exists_hilbertSymbol_eq_neg_one_atRealPlace` turns it into a local non-norm, which is what a
 sign-prescription argument needs at each place of its set; a field unit negative at every real
-place, which weak approximation supplies, is such a `b`.
+place is such a `b`.
 
 ## Main results
 
@@ -132,10 +132,8 @@ theorem isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a 
 omit [NumberField K] in
 /-- A global unit is a nonsquare at a real place exactly when it is negative there.
 
-This is deliberately not annotated `@[simp]`: `simp` already rewrites
-`IsSquare (unitAtRealPlace w a)` through the parallel `isSquare_unitAtRealPlace_iff`, so the
-negation is available without a second tag, whose left-hand side would not be in simp normal
-form. -/
+The negation is already available to `simp` through the parallel
+`isSquare_unitAtRealPlace_iff`, so this statement carries no `[simp]` tag of its own. -/
 theorem not_isSquare_unitAtRealPlace_iff (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) :
     ¬IsSquare (unitAtRealPlace w a) ↔ embedding_of_isReal w.2 (a : K) < 0 := by
   rw [not_congr (isSquare_unitAtRealPlace_iff w a), not_lt, lt_iff_le_and_ne]
