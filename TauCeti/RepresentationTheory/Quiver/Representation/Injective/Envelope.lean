@@ -21,20 +21,16 @@ the image of `Sᵢ` is only the functional reading the constant coefficient; it 
 subobject. Acyclicity of the whole quiver is a sufficient uniform hypothesis, but cycles away from
 `i` play no role.
 
-The proof uses the universal property of `Iᵢ`. Under the local hypothesis, `(Iᵢ)ᵢ` is a line,
-spanned by the image of the generator of `(Sᵢ)ᵢ`. If `g : Iᵢ ⟶ X` is monic on `Sᵢ`, its
-component at `i` is therefore injective. The functional on `(Iᵢ)ᵢ` that evaluates at the trivial
-path extends across that component; the universal property turns the extension into a retraction
-`X ⟶ Iᵢ`. Thus `g` is a split monomorphism, which is the strong form of essentiality.
+The result gives the strong form of essentiality: a morphism out of `Iᵢ` which remains monic on
+`Sᵢ` is a split monomorphism. Consequently, the general essential-monomorphism API identifies
+`Iᵢ` as the minimal injective object containing `Sᵢ` and makes it unique up to isomorphism under
+`Sᵢ`.
 
 ## Main results
 
 * `TauCeti.isSplitMono_of_mono_simpleRepToIndecInjRep_comp`: a map out of `Iᵢ` which is monic on
   `Sᵢ` is a split monomorphism.
 * `TauCeti.isEssentialMono_simpleRepToIndecInjRep`: `Sᵢ ↪ Iᵢ` is an essential monomorphism.
-* `TauCeti.exists_simpleRepToIndecInjRep_comp_eq_and_isSplitMono`: `Iᵢ` is minimal among
-  injective objects containing `Sᵢ`.
-* `TauCeti.exists_iso_indecInjRep`: the injective envelope of `Sᵢ` is unique.
 
 ## References
 
@@ -123,14 +119,6 @@ theorem isSplitMono_of_mono_simpleRepToIndecInjRep_comp {i : Q}
   rw [indecInjRepHomEquiv_comp, LinearEquiv.apply_symm_apply]
   exact hφ
 
-/-- A morphism out of `Iᵢ` which is monic on `Sᵢ` is a monomorphism. This is the
-injective-envelope property of `Sᵢ ↪ Iᵢ`. -/
-theorem mono_of_mono_simpleRepToIndecInjRep_comp {i : Q}
-    (h : ∀ p : Quiver.Path i i, p = Quiver.Path.nil) {X : QuiverRep k Q}
-    (g : indecInjRep k Q i ⟶ X) (hg : Mono (simpleRepToIndecInjRep k i ≫ g)) : Mono g := by
-  have hsplit := isSplitMono_of_mono_simpleRepToIndecInjRep_comp k h g hg
-  infer_instance
-
 /-- **The vertex injective is the injective envelope of the vertex simple.** If the trivial path
 is the only path `i → i`, the canonical embedding `Sᵢ ↪ Iᵢ` is an essential monomorphism;
 together with `TauCeti.injective_indecInjRep`, this characterizes `Iᵢ` as the injective envelope.
@@ -139,22 +127,8 @@ theorem isEssentialMono_simpleRepToIndecInjRep {i : Q}
     (h : ∀ p : Quiver.Path i i, p = Quiver.Path.nil) :
     IsEssentialMono (simpleRepToIndecInjRep k i) where
   mono := inferInstance
-  mono_of_comp_mono g hg := mono_of_mono_simpleRepToIndecInjRep_comp k h g hg
-
-/-- **Minimality of the vertex injective.** Every embedding of `Sᵢ` into an injective
-representation receives `Iᵢ` by a split monomorphism under `Sᵢ`. -/
-theorem exists_simpleRepToIndecInjRep_comp_eq_and_isSplitMono {i : Q}
-    (h : ∀ p : Quiver.Path i i, p = Quiver.Path.nil)
-    {X : QuiverRep k Q} [Injective X] (f : simpleRep k Q i ⟶ X) (hf : Mono f) :
-    ∃ g : indecInjRep k Q i ⟶ X, simpleRepToIndecInjRep k i ≫ g = f ∧ IsSplitMono g :=
-  (isEssentialMono_simpleRepToIndecInjRep k h).exists_comp_eq_and_isSplitMono hf
-
-/-- **The injective envelope of `Sᵢ` is `Iᵢ`, uniquely.** Every essential embedding of the
-vertex simple into an injective representation is isomorphic to `Sᵢ ↪ Iᵢ` by an isomorphism
-under `Sᵢ`. -/
-theorem exists_iso_indecInjRep {i : Q} (h : ∀ p : Quiver.Path i i, p = Quiver.Path.nil)
-    {X : QuiverRep k Q} [Injective X] {ι : simpleRep k Q i ⟶ X} (hι : IsEssentialMono ι) :
-    ∃ e : indecInjRep k Q i ≅ X, simpleRepToIndecInjRep k i ≫ e.hom = ι :=
-  (isEssentialMono_simpleRepToIndecInjRep k h).exists_iso hι
+  mono_of_comp_mono g hg := by
+    have := isSplitMono_of_mono_simpleRepToIndecInjRep_comp k h g hg
+    infer_instance
 
 end TauCeti
