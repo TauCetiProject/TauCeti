@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
+public import TauCeti.LinearAlgebra.CliffordAlgebra.LowRank.One
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 
 /-!
@@ -37,7 +37,7 @@ Mathlib's Lipschitz group. -/
 theorem mem_lipschitzGroup_of_mem_even_of_finrank_eq_one (Q : QuadraticForm K V)
     (hQ : ∃ v, IsUnit (Q v)) (hV : Module.finrank K V = 1) (x : (CliffordAlgebra Q)ˣ)
     (hx : (x : CliffordAlgebra Q) ∈ even Q) : x ∈ lipschitzGroup Q := by
-  obtain ⟨a, rfl⟩ := exists_scalar_unit_of_mem_even_of_finrank_eq_one Q hV x hx
+  obtain ⟨a, rfl⟩ := exists_eq_unitsMap_algebraMap_of_mem_even_of_finrank_eq_one Q hV x hx
   exact unitsMap_algebraMap_mem_lipschitzGroup hQ a
 
 /-- For a one-dimensional quadratic space representing a unit, the even unitary carrier lies in
