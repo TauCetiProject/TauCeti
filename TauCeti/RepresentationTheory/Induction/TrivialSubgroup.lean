@@ -195,11 +195,8 @@ theorem coindBotUnit_naturality (f : A ⟶ B) :
         (CategoryTheory.comp_apply f (coindBotUnit B) x)).symm
 
 /-- Coinduction on the underlying module, viewed as an endofunctor of representations. -/
-@[expose] def coindBotRepFunctor : Rep k G ⥤ Rep k G where
-  obj A := coindBot k G A.V
-  map f := coindBotMap f
-  map_id A := coindBotMap_id A
-  map_comp f g := coindBotMap_comp f g
+@[expose] def coindBotRepFunctor : Rep k G ⥤ Rep k G :=
+  (forget₂ (Rep k G) (ModuleCat k)) ⋙ coindBotFunctor k G
 
 /-- The coinduction endofunctor acts on objects by coinduction of underlying modules. -/
 @[simp] theorem coindBotRepFunctor_obj (A : Rep k G) :
@@ -207,7 +204,8 @@ theorem coindBotUnit_naturality (f : A ⟶ B) :
 
 /-- The coinduction endofunctor acts on morphisms by `coindBotMap`. -/
 @[simp] theorem coindBotRepFunctor_map (f : A ⟶ B) :
-    (coindBotRepFunctor (k := k) (G := G)).map f = coindBotMap f := rfl
+    (coindBotRepFunctor (k := k) (G := G)).map f = coindBotMap f := by
+  simp [coindBotRepFunctor, coindBotMap]
 
 /-- The canonical embedding into coinduction, as a natural transformation. -/
 @[expose] def coindBotUnitNatTrans : 𝟭 (Rep k G) ⟶ coindBotRepFunctor (k := k) (G := G) where
@@ -351,11 +349,8 @@ theorem indBotCounit_naturality (f : A ⟶ B) :
     _ = _ := (CategoryTheory.comp_apply (indBotCounit A) f _).symm
 
 /-- Induction on the underlying module, viewed as an endofunctor of representations. -/
-@[expose] def indBotRepFunctor : Rep k G ⥤ Rep k G where
-  obj A := indBot k G A.V
-  map f := indBotMap f
-  map_id A := indBotMap_id A
-  map_comp f g := indBotMap_comp f g
+@[expose] def indBotRepFunctor : Rep k G ⥤ Rep k G :=
+  (forget₂ (Rep k G) (ModuleCat k)) ⋙ indBotFunctor k G
 
 /-- The induction endofunctor acts on objects by induction of underlying modules. -/
 @[simp] theorem indBotRepFunctor_obj (A : Rep k G) :
@@ -363,7 +358,10 @@ theorem indBotCounit_naturality (f : A ⟶ B) :
 
 /-- The induction endofunctor acts on morphisms by `indBotMap`. -/
 @[simp] theorem indBotRepFunctor_map (f : A ⟶ B) :
-    (indBotRepFunctor (k := k) (G := G)).map f = indBotMap f := rfl
+    (indBotRepFunctor (k := k) (G := G)).map f = indBotMap f := by
+  -- `indBotMap` transports across `indBotFunctor_obj`; the underlying maps agree directly.
+  apply Rep.hom_ext
+  rfl
 
 /-- The canonical projection from induction, as a natural transformation. -/
 @[expose] def indBotCounitNatTrans : indBotRepFunctor (k := k) (G := G) ⟶ 𝟭 (Rep k G) where

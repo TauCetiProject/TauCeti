@@ -400,7 +400,9 @@ theorem dimensionShiftDownSESMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) 
   app A := dimensionShiftUpπ A
   naturality := by
     intro A B f
-    exact (dimensionShiftUpπ_naturality f).symm
+    simpa only [coindBotRepFunctor_obj, dimensionShiftUpFunctor_obj,
+      coindBotRepFunctor_map, dimensionShiftUpFunctor_map] using
+      (dimensionShiftUpπ_naturality f).symm
 
 /-- The component of the upward projection is the cokernel projection. -/
 @[simp] theorem dimensionShiftUpπNatTrans_app (A : Rep k G) :
@@ -444,7 +446,9 @@ theorem dimensionShiftDownSESMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) 
   app A := dimensionShiftDownι A
   naturality := by
     intro A B f
-    exact dimensionShiftDownι_naturality f
+    simpa only [dimensionShiftDownFunctor_obj, indBotRepFunctor_obj,
+      dimensionShiftDownFunctor_map, indBotRepFunctor_map] using
+      dimensionShiftDownι_naturality f
 
 /-- The component of the downward inclusion is the kernel inclusion. -/
 @[simp] theorem dimensionShiftDownιNatTrans_app (A : Rep k G) :
