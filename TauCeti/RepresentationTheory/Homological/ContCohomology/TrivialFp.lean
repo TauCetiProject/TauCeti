@@ -192,6 +192,19 @@ theorem cohomFpMap_def (φ : H →ₜ* G) (n : ℕ) :
       ContinuousCohomology.map φ (eqToHom (res_trivialFp_hom p φ)) n :=
   (rfl)
 
+/-- The general cohomology map along a subgroup inclusion is the named restriction map. -/
+@[simp]
+theorem cohomFpMap_subgroupSubtype (S : Subgroup G) (n : ℕ) :
+    cohomFpMap p (ContinuousMonoidHom.subgroupSubtype S) n =
+      trivialFpResMap p G S n := by
+  rw [trivialFpResMap_def, TauCeti.ContinuousCohomology.res_def]
+  unfold cohomFpMap
+  change _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
+      (𝟙 _) n =
+    _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
+      (𝟙 _) n ≫ 𝟙 _
+  simp
+
 /-- The identity homomorphism induces the identity on cohomology. -/
 @[simp]
 theorem cohomFpMap_id (n : ℕ) :
@@ -200,13 +213,23 @@ theorem cohomFpMap_id (n : ℕ) :
       𝟙 (trivialFp p G) := eqToHom_refl _ _
   simpa only [cohomFpMap, h] using (ContinuousCohomology.map_id (trivialFp p G) n)
 
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] [IsTopologicalGroup K] in
+/-- The transports of trivial coefficients compose along continuous group homomorphisms. -/
+theorem res_trivialFp_hom_comp (φ : H →ₜ* G) (ψ : K →ₜ* H) :
+    (TopRep.resFunctor (ψ : K →* H)).map (eqToHom (res_trivialFp_hom p φ)) ≫
+      eqToHom (res_trivialFp_hom p ψ) =
+        eqToHom (res_trivialFp_hom p (φ.comp ψ)) := by
+  ext x
+  rfl
+
 /-- Cohomology maps with trivial coefficients compose contravariantly. -/
 @[simp]
 theorem cohomFpMap_comp (φ : H →ₜ* G) (ψ : K →ₜ* H) (n : ℕ) :
     cohomFpMap p (φ.comp ψ) n = cohomFpMap p φ n ≫ cohomFpMap p ψ n := by
   unfold cohomFpMap
   rw [← ContinuousCohomology.map_comp]
-  congr 1
+  exact ContinuousCohomology.map_congr rfl
+    (heq_of_eq (res_trivialFp_hom_comp p φ ψ).symm) n
 
 /-- The cohomology map induced by a topological group isomorphism is a linear equivalence,
 with the inverse induced by the inverse group isomorphism. -/
