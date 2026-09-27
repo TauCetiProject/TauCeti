@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Three
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
-public import TauCeti.Algebra.Quaternion.NormForm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 
@@ -31,8 +30,6 @@ three-dimensional specialization and closes the remaining Lipschitz condition.
   contained in the Lipschitz group.
 * `TauCeti.realSpinThreeEquivQuaternionUnitary` identifies the compact real Spin group with the
   unit Hamilton quaternions.
-* `TauCeti.realCliffordThreeZeroPureQuaternionEquiv` identifies its vector space with the pure
-  Hamilton quaternions, preserving the quadratic norm.
 * `TauCeti.realSpinThreeEquivQuaternionUnitary_action` identifies the vector action with
   quaternion conjugation.
 
@@ -251,39 +248,6 @@ theorem coe_realSpinThreeEquivQuaternionUnitary_symm_apply (q : unitary ℍ[ℝ]
           CliffordAlgebra.even (realCliffordForm 3 0)) := by
       simpa only [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
         CliffordAlgebra.coe_spinGroupToEvenUnitary_apply] using h
-
-/-- The oriented pure-quaternion model of the vector space underlying `Cl(3,0)`. The signs are
-fixed by the ordered volume element `e₀e₁e₂` under the chosen even-algebra equivalence. -/
-noncomputable def realCliffordThreeZeroPureQuaternionEquiv :
-    (realCliffordForm 3 0).IsometryEquiv
-      (QuaternionAlgebra.pureNormForm (-1 : ℝ) (-1 : ℝ)) where
-  toFun v := ⟨⟨0, -v 1, v 0, -v 2⟩, by simp⟩
-  invFun q := ![(q : ℍ[ℝ]).imJ, -(q : ℍ[ℝ]).imI, -(q : ℍ[ℝ]).imK]
-  left_inv v := by ext i; fin_cases i <;> simp
-  right_inv q := by
-    apply Subtype.ext
-    have hre : (q : ℍ[ℝ]).re = 0 := q.2
-    ext <;> simp [hre]
-  map_add' _ _ := by apply Subtype.ext; ext <;> simp <;> abel
-  map_smul' _ _ := by apply Subtype.ext; ext <;> simp
-  map_app' v := by
-    rw [QuaternionAlgebra.pureNormForm_apply_coordinates,
-      realCliffordForm_three_zero_apply]
-    simp
-    ring
-
-/-- The pure-quaternion coordinates of a vector in the compact real three-dimensional model. -/
-@[simp]
-theorem coe_realCliffordThreeZeroPureQuaternionEquiv_apply (v : Fin 3 → ℝ) :
-    (realCliffordThreeZeroPureQuaternionEquiv v : ℍ[ℝ]) =
-      ⟨0, -v 1, v 0, -v 2⟩ := (rfl)
-
-/-- The vector coordinates recovered from a pure Hamilton quaternion. -/
-@[simp]
-theorem realCliffordThreeZeroPureQuaternionEquiv_symm_apply
-    (q : LinearMap.ker (QuaternionAlgebra.reₗ (-1 : ℝ) (0 : ℝ) (-1 : ℝ))) :
-    realCliffordThreeZeroPureQuaternionEquiv.symm q =
-      ![(q : ℍ[ℝ]).imJ, -(q : ℍ[ℝ]).imI, -(q : ℍ[ℝ]).imK] := (rfl)
 
 private abbrev Q3 := realCliffordForm 3 0
 
