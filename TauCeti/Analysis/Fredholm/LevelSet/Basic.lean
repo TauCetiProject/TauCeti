@@ -22,10 +22,9 @@ operator**. This file shows that the level set is, near `a`, homeomorphic to an 
 local model, when the index is a fixed `n` along the whole level set, as a `ChartedSpace`
 structure on `{x | f x = c}` modelled on `Fin n → 𝕜`.
 
-This is the local half of the "a moduli space is the zero set of a Fredholm section, and at a
-regular point it is a manifold of dimension the index" package that Lane F0 of the analytic
-Heegaard Floer roadmap asks for (McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
-Appendix A.3). The linear half of that lane is already available:
+This is the local half of the standard "a moduli space is the zero set of a Fredholm section, and
+at a regular point it is a manifold of dimension the index" package (McDuff--Salamon,
+*J-holomorphic Curves and Symplectic Topology*, Appendix A.3). The linear half is already available:
 `ContinuousLinearMap.IsFredholm` provides the
 finite-dimensional, topologically complemented kernel, and
 `ContinuousLinearMap.index_of_surjective` identifies its dimension with the index. What is

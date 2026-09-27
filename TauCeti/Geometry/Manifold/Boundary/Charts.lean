@@ -15,10 +15,10 @@ public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 Mathlib carries the boundary `I.boundary M` of a manifold with boundary only as a *set*: there is
 no manifold structure on it, so nothing can be glued along it. This file supplies that structure in
-the basic case, the one Layer 1 of the geometric-topology roadmap pins down first: `M` is a `C^k`
-manifold, `k ≠ 0`, modeled on the `(n + 1)`-dimensional Euclidean half-space `𝓡∂ (n + 1)`, and its
-boundary becomes a boundaryless `C^k` manifold modeled on `EuclideanSpace ℝ (Fin n)`, one dimension
-lower, whose inclusion into `M` is a `C^k` closed embedding.
+the basic Euclidean half-space case: `M` is a `C^k` manifold, `k ≠ 0`, modeled on the `(n + 1)`-
+dimensional Euclidean half-space `𝓡∂ (n + 1)`, and its boundary becomes a boundaryless `C^k`
+manifold modeled on `EuclideanSpace ℝ (Fin n)`, one dimension lower, whose inclusion into `M` is a
+`C^k` closed embedding.
 
 The boundary atlas consists of charts induced by the preferred ambient charts. Each preferred
 ambient chart carries a boundary point to a point of the half-space whose zeroth coordinate
