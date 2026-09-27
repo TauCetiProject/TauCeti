@@ -85,6 +85,8 @@ theorem mul_left (a b : WreathProduct D ι) (i : ι) :
 theorem inv_left (a : WreathProduct D ι) (i : ι) :
     (a⁻¹).left i = (a.left (a.right i))⁻¹ := by
   rw [SemidirectProduct.inv_left]
+  -- The action is defined by precomposition with the inverse permutation; reduce that
+  -- action and the pointwise inverse to coordinate evaluation.
   change (a.left⁻¹) ((a.right⁻¹)⁻¹ i) = (a.left (a.right i))⁻¹
   simp
 
