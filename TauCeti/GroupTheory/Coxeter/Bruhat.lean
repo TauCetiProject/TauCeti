@@ -26,10 +26,8 @@ them, has a subword spelling `u`.
 
 The **subword property** identifies this graph-theoretic order with the classical reduced-word
 description: `u ≤ w` exactly when a reduced word for `w` has a subword spelling `u`. The converse
-direction is proved from a right-multiplication lifting property. Its only delicate local case is a
-Bruhat edge whose lower endpoint is lengthened and whose upper endpoint is shortened by the same
-simple reflection; the already established necessary subword direction shows that a cover in this
-configuration is the collapsed side of the usual Bruhat diamond.
+direction follows from the right-multiplication lifting property, which controls how Bruhat
+comparisons change when both endpoints are multiplied by the same simple reflection.
 
 ## Main definitions
 
@@ -336,12 +334,8 @@ theorem bruhatStep_mul_simple_of_isRightDescent (i : B) (hw : cs.IsRightDescent 
 
 /-- The local exceptional case in the lifting property. If a Bruhat edge is lengthened at its
 lower endpoint and shortened at its upper endpoint by the same simple reflection, then either the
-right-multiplied endpoints still form an edge or the original edge is a cover and the Bruhat
-diamond collapses.
-
-In the cover case, apply the necessary subword property to a reduced word for the upper endpoint
-ending in `i`. A reduced subword of codimension one spelling the lower endpoint cannot retain that
-last letter, since `i` is not a descent there, so it is the entire preceding word. -/
+lower endpoint is the right-multiplied upper endpoint or the right-multiplied endpoints still form
+an edge. -/
 private theorem BruhatStep.eq_mul_simple_or_mul_simple (h : cs.BruhatStep u w) (i : B)
     (hu : ¬cs.IsRightDescent u i) (hw : cs.IsRightDescent w i) :
     u = w * cs.simple i ∨ cs.BruhatStep (u * cs.simple i) (w * cs.simple i) := by
@@ -380,9 +374,9 @@ private theorem BruhatStep.eq_mul_simple_or_mul_simple (h : cs.BruhatStep u w) (
     have hlen : σ₁.length + 1 = ℓ u := by simpa using hσlen
     omega
 
-/-- The two right-multiplication forms of the lifting property, proved simultaneously along a
-Bruhat chain. At a right descent of the upper endpoint, multiplying the lower endpoint remains
-below it; at a right ascent, multiplying both endpoints preserves the order. -/
+/-- The two right-multiplication forms of the lifting property. At a right descent of the upper
+endpoint, multiplying the lower endpoint remains below it; at a right ascent, multiplying both
+endpoints preserves the order. -/
 private theorem BruhatLE.mul_simple_lifting (h : cs.BruhatLE u w) (i : B) :
     (cs.IsRightDescent w i → cs.BruhatLE (u * cs.simple i) w) ∧
       (¬cs.IsRightDescent w i → cs.BruhatLE (u * cs.simple i) (w * cs.simple i)) := by
