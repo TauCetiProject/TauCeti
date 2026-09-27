@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PermutationTriple.Primitivity.Defs
 public import TauCeti.Combinatorics.PermutationTriple.Decidable
-public import Mathlib.GroupTheory.GroupAction.Primitive
 
 /-!
 # Deciding primitivity of a permutation triple
@@ -31,9 +31,6 @@ open scoped Pointwise
 
 variable {n : ℕ} (t : PermutationTriple n)
 
-/-- The monodromy action of a permutation triple is primitive. -/
-@[expose] def IsPrimitive : Prop := IsPreprimitive t.monodromyGroup (Fin n)
-
 /-- Decide whether a set of sheets is a block by testing every monodromy permutation. -/
 @[expose] def isBlockBool (B : Finset (Fin n)) : Bool :=
   decide (∀ g ∈ t.monodromyFinset, g • B = B ∨ Disjoint (g • B) B)
@@ -54,15 +51,15 @@ variable {n : ℕ} (t : PermutationTriple n)
 
 /-- Decide primitivity by checking transitivity and every subset of the sheets for a
 nontrivial block. -/
-@[expose] def isPreprimitiveBool : Bool :=
+@[expose] def isPrimitiveBool : Bool :=
   decide ((∀ i, t.monodromyOrbitFinset i = Finset.univ) ∧
     ∀ B : Finset (Fin n), t.isBlockBool B = true →
     B.card ≤ 1 ∨ B = Finset.univ)
 
 /-- The finite primitivity test agrees with primitivity of the triple. -/
-@[simp] theorem isPreprimitiveBool_eq_true_iff :
-    t.isPreprimitiveBool = true ↔ t.IsPrimitive := by
-  rw [IsPrimitive, isPreprimitiveBool, decide_eq_true_eq]
+@[simp] theorem isPrimitiveBool_eq_true_iff :
+    t.isPrimitiveBool = true ↔ t.IsPrimitive := by
+  rw [t.isPrimitive_iff, isPrimitiveBool, decide_eq_true_eq]
   constructor
   · rintro ⟨htrans, hblocks⟩
     have htrans' : IsPretransitive t.monodromyGroup (Fin n) := by
@@ -94,7 +91,7 @@ nontrivial block. -/
 
 /-- Primitivity of the monodromy action is decidable by the finite block test. -/
 instance : Decidable t.IsPrimitive :=
-  decidable_of_iff _ t.isPreprimitiveBool_eq_true_iff
+  decidable_of_iff _ t.isPrimitiveBool_eq_true_iff
 
 end PermutationTriple
 
