@@ -83,14 +83,15 @@ def pullbackComp (f : X ⟶ Y) (g : Y ⟶ Z) :
       pullback_map_hom, Functor.map_comp, Category.assoc, ObjectProperty.homMk_hom,
       eqToHom_trans_assoc, eqToHom_refl, eqToHom_map, eqToHom_trans,
       Category.id_comp]
-    -- The outer transports are shared; regroup inside them to apply module-pullback naturality.
-    conv_lhs =>
-      enter [2]
-      rw [← Category.assoc]
+    -- Regroup the composites so module-pullback naturality applies inside the transports.
     have h := (Scheme.Modules.pullbackComp f g).hom.naturality φ.hom
     simp only [Functor.comp_map] at h
-    rw [h]
-    simp only [Category.assoc])
+    calc
+      _ = eqToHom (pullbackComp_obj_obj f g E) ≫
+          ((Scheme.Modules.pullback f).map ((Scheme.Modules.pullback g).map φ.hom) ≫
+            (Scheme.Modules.pullbackComp f g).hom.app F.obj) ≫
+          eqToHom (pullback_obj_obj (f ≫ g) F).symm := by simp only [Category.assoc]
+      _ = _ := by rw [h]; simp only [Category.assoc])
 
 /-- On underlying modules, the composition comparison is Mathlib's pullback composition
 comparison. -/
