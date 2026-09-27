@@ -159,11 +159,8 @@ theorem measureReal_Ioc_betaMeasure (hα : 0 < α) (hβ : 0 < β) {y : ℝ} (hyx
     (betaMeasure α β).real (Ioc y x) =
       regularizedIncompleteBeta α β x - regularizedIncompleteBeta α β y := by
   have hp : IsProbabilityMeasure (betaMeasure α β) := isProbabilityMeasureBeta hα hβ
-  have hunion : (betaMeasure α β).real (Iic y) + (betaMeasure α β).real (Ioc y x) =
-      (betaMeasure α β).real (Iic x) := by
-    rw [← measureReal_union (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc, Iic_union_Ioc_eq_Iic hyx]
-  rw [measureReal_Iic_betaMeasure hα hβ x, measureReal_Iic_betaMeasure hα hβ y] at hunion
-  linarith
+  rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hyx) measurableSet_Iic,
+    measureReal_Iic_betaMeasure hα hβ x, measureReal_Iic_betaMeasure hα hβ y]
 
 /-- The upper tail of a beta law is `1 - I_x(α, β)`. -/
 @[simp]

@@ -143,11 +143,8 @@ theorem measureReal_Ioc_gammaMeasure (ha : 0 < a) (hr : 0 < r) {y : ℝ} (hyx : 
     (gammaMeasure a r).real (Ioc y x) =
       regularizedGamma a (r * x) - regularizedGamma a (r * y) := by
   have hp : IsProbabilityMeasure (gammaMeasure a r) := isProbabilityMeasure_gammaMeasure ha hr
-  have hunion : (gammaMeasure a r).real (Iic y) + (gammaMeasure a r).real (Ioc y x) =
-      (gammaMeasure a r).real (Iic x) := by
-    rw [← measureReal_union (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc, Iic_union_Ioc_eq_Iic hyx]
-  rw [measureReal_Iic_gammaMeasure ha hr x, measureReal_Iic_gammaMeasure ha hr y] at hunion
-  linarith
+  rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hyx) measurableSet_Iic,
+    measureReal_Iic_gammaMeasure ha hr x, measureReal_Iic_gammaMeasure ha hr y]
 
 /-- The upper tail of a gamma law is `1 - P(a, r * x)`. -/
 @[simp]
