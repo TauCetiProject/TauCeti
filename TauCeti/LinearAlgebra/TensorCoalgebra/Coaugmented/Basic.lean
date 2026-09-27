@@ -581,6 +581,32 @@ theorem reducedProjection_of_zero (z : TensorPower R 0 M) :
 theorem reducedProjection_one : reducedProjection R M (1 : TensorWords R M) = 0 := by
   rw [one_eq_of_zero, reducedProjection_of_zero]
 
+/-- Deleting the empty word preserves each positive-length component. -/
+@[simp]
+theorem component_reducedProjection (p : {n : ℕ // 0 < n}) (w : TensorWords R M) :
+    ReducedTensorWords.component R M p (reducedProjection R M w) =
+      component R M p.1 w := by
+  suffices h : ReducedTensorWords.component R M p ∘ₗ reducedProjection R M =
+      component R M p.1 by
+    exact LinearMap.congr_fun h w
+  apply linearMap_ext R M
+  intro n z
+  rw [LinearMap.comp_apply]
+  by_cases hn : 0 < n
+  · rw [reducedProjection_of_of_pos R M hn]
+    by_cases h : (⟨n, hn⟩ : {n : ℕ // 0 < n}) = p
+    · cases h
+      rw [ReducedTensorWords.component_of, component_of]
+    · have hnp : n ≠ p.1 := by
+        intro he
+        exact h (Subtype.ext he)
+      rw [ReducedTensorWords.component_of_of_ne R M h,
+        component_of_of_ne R M hnp]
+  · have hn0 : n = 0 := by omega
+    subst n
+    rw [reducedProjection_of_zero, map_zero,
+      component_of_of_ne R M p.2.ne]
+
 /-- The projection is a retraction of the inclusion. -/
 @[simp]
 theorem reducedProjection_comp_reducedInclusion :
