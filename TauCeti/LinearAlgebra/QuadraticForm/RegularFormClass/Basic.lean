@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
@@ -216,7 +217,7 @@ theorem RegularFormClass.rank_mk (p : RegularFormPresentation K) :
 
 /-- The orthogonal sum of two diagonal presentations, obtained by concatenating the two weight
 tuples. -/
-@[expose] def RegularFormPresentation.append (p q : RegularFormPresentation K) :
+def RegularFormPresentation.append (p q : RegularFormPresentation K) :
     RegularFormPresentation K :=
   ⟨p.1 + q.1, Fin.append p.2 q.2⟩
 
@@ -251,6 +252,16 @@ theorem RegularFormPresentation.prod_append (p q : RegularFormPresentation K) :
   simp only [RegularFormPresentation.append_apply_castAdd,
     RegularFormPresentation.append_apply_natAdd] at h
   exact h
+
+/-- The pair product on concatenated presentations splits into the two internal products and
+the cross product. -/
+theorem RegularFormPresentation.prod_prod_Ioi_append {M : Type*} [CommMonoid M]
+    (f : Kˣ → Kˣ → M) (p q : RegularFormPresentation K) :
+    (∏ i, ∏ j ∈ Finset.Ioi i, f ((p.append q).2 i) ((p.append q).2 j)) =
+      (∏ i, ∏ j ∈ Finset.Ioi i, f (p.2 i) (p.2 j)) *
+        (∏ i, ∏ j ∈ Finset.Ioi i, f (q.2 i) (q.2 j)) *
+        ∏ i, ∏ j, f (p.2 i) (q.2 j) :=
+  TauCeti.prod_prod_Ioi_append f p.2 q.2
 
 /-- The value of an orthogonal product on the two halves of a concatenated coordinate vector. -/
 private theorem prod_apply_split {m n : ℕ} (w : Fin m → Kˣ) (v : Fin n → Kˣ)
