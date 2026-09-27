@@ -73,7 +73,9 @@ provide the basic examples of smooth discrete objects used by coefficient constr
 * `TauCeti.ofDiscreteModuleHomAddEquiv`: morphisms between objects in the image are exactly the
   `G`-equivariant `R`-linear maps.
 * `TauCeti.ofDiscreteModulePair_eq_of_hom_apply`: the compatible pair is the only morphism with its
-  underlying map, which is how statements phrased with it are specialised.
+  underlying map, which is how statements phrased with it are specialised;
+  `TauCeti.ofDiscreteModulePair_heq_of_hom_apply` is its heterogeneous form, for group
+  homomorphisms that agree only propositionally.
 * `TauCeti.res_ofDiscreteModule`: the dictionary commutes with restriction to a subgroup, on the
   nose.
 * `TauCeti.isSmoothDiscrete_of_ρ_apply_eq_self`: a discrete object with trivial action is smooth
@@ -534,6 +536,18 @@ lemma ofDiscreteModulePair_eq_of_hom_apply (φ : H →* G) (f : M →ₗ[R] N)
     (hψ : ∀ m : M, ψ.hom m = f m) :
     ofDiscreteModulePair φ f hf = ψ := by
   ext (m : M); exact (hψ m).symm
+
+/-- The heterogeneous form of `TauCeti.ofDiscreteModulePair_eq_of_hom_apply`: a morphism
+`TopRep.res ψ (ofDiscreteModule R G M) ⟶ ofDiscreteModule R H N` whose underlying function is `f`
+is heterogeneously equal to the compatible pair along any `φ = ψ`. This compares compatible pairs
+whose group homomorphisms agree only propositionally, so that their hom-types differ. -/
+lemma ofDiscreteModulePair_heq_of_hom_apply {φ ψ : H →* G} (hφ : φ = ψ) (f : M →ₗ[R] N)
+    (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (g : TopRep.res ψ (ofDiscreteModule R G M) ⟶ ofDiscreteModule R H N)
+    (hg : ∀ m : M, g.hom m = f m) :
+    ofDiscreteModulePair φ f hf ≍ g := by
+  subst hφ
+  exact heq_of_eq (ofDiscreteModulePair_eq_of_hom_apply φ f hf g hg)
 
 end DictionaryPair
 

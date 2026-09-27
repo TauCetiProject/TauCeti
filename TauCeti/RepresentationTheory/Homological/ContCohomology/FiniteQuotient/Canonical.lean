@@ -28,7 +28,8 @@ is deliberately separate from the construction here, which needs neither compact
 disconnectedness.
 
 Nothing below assumes that the quotients `G ⧸ U` are finite, and none of them need be: for an open
-normal subgroup `U` the quotient `G ⧸ U` is discrete, and it is finite exactly when `G` is compact.
+normal subgroup `U` the quotient `G ⧸ U` is discrete, so it is finite when `G` is compact, but
+without compactness it may be finite or infinite.
 The declarations nevertheless carry `finiteQuotient` in their names, after the tower of quotients
 they are indexed by and in step with the explicit low-degree systems of `FiniteQuotient.Explicit`,
 which are built under these same hypotheses.
@@ -88,22 +89,6 @@ section Transition
 
 variable {U V W : OpenNormalSubgroup G}
 
-/-- Compatible-pair morphisms with equal group maps and equal underlying coefficient maps are
-heterogeneously equal. -/
-private theorem ofDiscreteModulePair_heq_of_eq
-    {H K : Type u} [Group H] [Monoid K]
-    {A : Type u} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
-    [DistribMulAction H A]
-    {B : Type u} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
-    [DistribMulAction K B]
-    {φ ψ : K →* H} (hφ : φ = ψ) (f : A →ₗ[ℤ] B)
-    (hf : ∀ (k : K) (a : A), f (φ k • a) = k • f a)
-    (g : TopRep.res ψ (ofDiscreteModule ℤ H A) ⟶ ofDiscreteModule ℤ K B)
-    (hg : ∀ a : A, (dsimp% only (g.hom a)) = f a) :
-    ofDiscreteModulePair (G := H) (H := K) φ f hf ≍ g := by
-  subst hφ
-  exact heq_of_eq (ofDiscreteModulePair_eq_of_hom_apply (G := H) (H := K) φ f _ g fun a ↦ hg a)
-
 /-- The coefficient morphism in the canonical transition from the `U`-level to the `V`-level, for
 `V ≤ U`. Its underlying map is the inclusion `M^U → M^V`. -/
 def continuousFiniteQuotientPair (hVU : V ≤ U) :
@@ -141,7 +126,7 @@ private theorem continuousFiniteQuotientPair_refl (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientPair G M (le_refl U) ≍
       𝟙 (ofDiscreteModule ℤ (G ⧸ U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M)) := by
-  apply ofDiscreteModulePair_heq_of_eq
+  apply ofDiscreteModulePair_heq_of_hom_apply
     (congrArg ContinuousMonoidHom.toMonoidHom (continuousFiniteQuotientMap_refl G U))
   intro m
   exact (DFunLike.congr_fun (fixedPointsInclusion_self M U.toSubgroup) m).symm
@@ -153,7 +138,7 @@ private theorem continuousFiniteQuotientPair_comp (hWV : W ≤ V) (hVU : V ≤ U
         G ⧸ W.toSubgroup →* G ⧸ V.toSubgroup)).map
           (continuousFiniteQuotientPair G M hVU) ≫
         continuousFiniteQuotientPair G M hWV := by
-  apply ofDiscreteModulePair_heq_of_eq
+  apply ofDiscreteModulePair_heq_of_hom_apply
     (congrArg ContinuousMonoidHom.toMonoidHom
       (continuousFiniteQuotientMap_comp G hWV hVU).symm)
   intro m
@@ -303,7 +288,7 @@ theorem continuousFiniteQuotientTransition_comp_comparisonApp (hVU : V ≤ U) (n
     ← _root_.ContinuousCohomology.map_comp]
   refine TauCeti.ContinuousCohomology.map_congr
     (continuousFiniteQuotientMap_comp_quotientMk G hVU) ?_ n
-  refine (ofDiscreteModulePair_heq_of_eq
+  refine (ofDiscreteModulePair_heq_of_hom_apply
     (congrArg ContinuousMonoidHom.toMonoidHom
       (continuousFiniteQuotientMap_comp_quotientMk G hVU)).symm _ _ _ ?_).symm
   intro m
