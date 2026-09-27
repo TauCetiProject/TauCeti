@@ -156,7 +156,8 @@ theorem SeparatelyExchangeable.condIndepFun_domRestrict_subblock_compl_of_finite
       ha (haF (a p.1) ⟨(a p.1, b p.2), hc, rfl⟩).symm
     have hp2 : p.2 = b p.2 :=
       hb (hbG (b p.2) ⟨(a p.1, b p.2), hc, rfl⟩).symm
-    exact Prod.ext hp1 hp2 ▸ hc
+    have hpEq : p = (a p.1, b p.2) := Prod.ext hp1 hp2
+    exact hpEq ▸ hc
 
 end TauCeti.Probability
 
