@@ -11,11 +11,8 @@ public import Mathlib.Algebra.Group.Monoid
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Data.Nat.Factorial.Basic
 import Mathlib.Algebra.Algebra.Basic
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.FieldSimp
 public import Mathlib.LinearAlgebra.Matrix.Defs
 public import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
 # Heisenberg Reindexing Lemma
@@ -30,6 +27,8 @@ which yields the Chevalley commutator [x_α(u), x_β(v)] = x_{α+β}(N(α,β)uv)
 -/
 
 public section
+
+namespace TauCeti
 
 open Finset
 
@@ -92,3 +91,5 @@ theorem heisenberg_reindex
     rw [hcoeff]
     rw [mul_one_div]
   rw [heq]
+
+end TauCeti
