@@ -45,7 +45,7 @@ variable {n : ℕ}
 vector: it has at most `n` nonzero parts. -/
 private def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
     n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
-  toFun μ := ⟨μ, (Nat.Partition.card_parts_le μ).trans (by simpa using h)⟩
+  toFun μ := ⟨μ, (partition_card_parts_le μ).trans (by simpa using h)⟩
   invFun μ := μ.1
   left_inv _ := rfl
   right_inv _ := Subtype.ext rfl

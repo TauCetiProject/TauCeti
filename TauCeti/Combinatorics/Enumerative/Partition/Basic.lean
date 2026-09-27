@@ -32,10 +32,8 @@ theorem parts_equivCast {m l : ℕ} (h : m = l) (p : m.Partition) :
     (Equiv.cast (congrArg Nat.Partition h) p).parts = p.parts := by
   subst h; rfl
 
-namespace Nat.Partition
-
 /-- The number of parts of a partition is at most the number it partitions. -/
-theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
+theorem partition_card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
   have aux : ∀ s : Multiset ℕ, (∀ x ∈ s, 0 < x) → s.card ≤ s.sum := by
     intro s
     induction s using Multiset.induction_on with
@@ -48,6 +46,8 @@ theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
       simp only [Multiset.card_cons, Multiset.sum_cons]
       omega
   exact (aux μ.parts (fun x hx => μ.parts_pos hx)).trans_eq μ.parts_sum
+
+namespace Nat.Partition
 
 /-- The partition `(1ⁿ)` of `n` into `n` parts, each equal to `1`.
 
