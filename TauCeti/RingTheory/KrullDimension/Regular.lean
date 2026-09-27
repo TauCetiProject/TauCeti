@@ -40,28 +40,24 @@ theorem
     (by rwa [hann]) ((Module.annihilator R R).ringJacobson_le_jacobson hx)
 
 /-- **A general hyperplane section of a two-dimensional local domain is a curve of dimension one.**
-In a Noetherian local domain `(R, 𝔪)` of Krull dimension two, a nonzero element `f ∈ 𝔪`
-lies outside the only minimal prime of `R` and in the Jacobson radical `𝔪`, so
-`ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrimes_of_mem_jacobson`
-drops the dimension by one. In particular a parameter `f ∈ 𝔪 \ 𝔪²` of a regular local ring,
-which is nonzero, does so; for a regular local ring this is the local form of the fact that a
-Cartier divisor on a regular surface is cut out by a single equation. -/
-theorem ringKrullDim_quot_span_singleton_eq_one {R : Type*} [CommRing R] [IsNoetherianRing R]
+In a Noetherian local domain `(R, 𝔪)` of Krull dimension two, a nonzero element `f ∈ 𝔪` is a
+non-zero-divisor, and `ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim` drops the
+dimension by one along a non-zero-divisor of the maximal ideal. In particular a parameter
+`f ∈ 𝔪 \ 𝔪²` of a regular local ring, which is nonzero, does so; for a regular local ring this is
+the local form of the fact that a Cartier divisor on a regular surface is cut out by a single
+equation. -/
+theorem ringKrullDim_quotient_span_singleton_eq_one {R : Type*} [CommRing R] [IsNoetherianRing R]
     [IsLocalRing R] [IsDomain R] (hd : ringKrullDim R = 2) {f : R} (hf : f ∈ maximalIdeal R)
     (hf0 : f ≠ 0) : ringKrullDim (R ⧸ span {f}) = 1 := by
-  -- a nonzero divisor lowers the dimension by one, and the element `f` in particular lies in
-  -- the Jacobson radical of the local ring `R`, being in its maximal ideal by `hf`
-  have hkey :=
-   ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrimes_of_mem_jacobson
-      (x := f)
-      (by
-        -- the only minimal prime of the domain `R` is `0`, which does not contain `f` as `f ≠ 0`
-        rw [IsDomain.minimalPrimes_eq_singleton_bot R]
-        intro p hp
-        simp only [Set.mem_singleton_iff] at hp
-        rw [hp]
-        exact hf0)
-      (by rwa [IsLocalRing.ringJacobson_eq_maximalIdeal R])
+  -- a nonzero divisor lowers the dimension by one, and in the domain `R` the nonzero element `f`
+  -- is a nonzero divisor, while `hf` places it in the maximal ideal of the local ring `R`
+  have hfnd : f ∈ nonZeroDivisors R :=
+    mem_nonZeroDivisors_iff.mpr
+      ⟨fun y hy => (mul_eq_zero.mp hy).resolve_left hf0,
+       fun y hy => (mul_eq_zero.mp hy).resolve_right hf0⟩
+  have hkey : ringKrullDim (R ⧸ span {f}) + 1 = ringKrullDim R :=
+    ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim
+      (Module.Flat.isSMulRegular_of_nonZeroDivisors hfnd) hf
   rw [hd, ← Nat.cast_two, Nat.cast_succ, ENat.WithBot.add_one_cancel] at hkey
   exact hkey
 

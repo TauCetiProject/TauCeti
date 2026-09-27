@@ -54,7 +54,7 @@ applies to the quotients appearing here without any further appeal to defeq.
   radical of `I` is the maximal ideal of a noetherian local ring.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
-* `TauCeti.length_quot_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
+* `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
 -/
 
 public section
@@ -264,7 +264,7 @@ variable {A : Type*} [CommRing A] [IsLocalRing A]
 /-- The length of a quotient by the maximal ideal of a local ring is one, the quotient being the
 residue field. -/
 @[simp]
-theorem length_quot_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdeal A) = 1 := by
+theorem length_quotient_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdeal A) = 1 := by
   rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
     (S := A ⧸ maximalIdeal A) Ideal.Quotient.mk_surjective]
   let _ := Ideal.Quotient.field (maximalIdeal A)
