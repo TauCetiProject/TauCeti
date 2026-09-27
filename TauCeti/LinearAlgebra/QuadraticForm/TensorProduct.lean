@@ -19,9 +19,8 @@ forms. It complements Mathlib's tensor product of quadratic-form isometries.
 
 * `QuadraticMap.IsometryEquiv.tmul`: the tensor product of two isometric equivalences.
 * `QuadraticMap.Equivalent.tmul`: tensor products preserve equivalence of quadratic forms.
+* `QuadraticMap.rankOneTensorIsometry`: tensoring with `a • sq` scales the other form by `a`.
 * `QuadraticForm.IsometryEquiv.tmulProd`: tensor product distributes over orthogonal product.
-* `TauCeti.tensorLIdSmul`: the tensor product of a scaled line and a form isometric to the
-  scaled form.
 -/
 
 public section
@@ -33,36 +32,39 @@ open QuadraticMap
 
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 
-/-- The tensor product of `⟨a⟩` with `Q` is isometric to `a • Q` by the left unit map. -/
-@[expose, simps toLinearEquiv]
-def tensorLIdSmul {V : Type*} [AddCommGroup V] [Module R V]
-    (Q : QuadraticForm R V) (a : R) :
-    (QuadraticForm.tmul
-      (a • (QuadraticMap.sq (R := R) (A := R) : QuadraticForm R R)) Q).IsometryEquiv
-      (a • Q) where
-  toLinearEquiv := TensorProduct.lid R V
+/-- Tensoring a form with the quadratic line `a • sq` is isometric to scaling by `a`.
+The isometry is the left unit equivalence of the tensor product. -/
+def _root_.QuadraticMap.rankOneTensorIsometry
+    {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a : R) :
+    (QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm R R)) Q).IsometryEquiv (a • Q) where
+  toLinearEquiv := (QuadraticForm.tensorLId (a • Q)).toLinearEquiv
   map_app' x := by
-    have h : QuadraticForm.tmul (a • (QuadraticMap.sq (R := R) (A := R) : QuadraticForm R R)) Q =
-        QuadraticForm.tmul (QuadraticMap.sq (R := R) (A := R) : QuadraticForm R R)
-          (a • Q) := by
-      apply _root_.baseChange_ext
+    have h : QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm R R)) Q =
+        QuadraticForm.tmul (QuadraticMap.sq : QuadraticForm R R) (a • Q) := by
+      apply baseChange_ext
       intro v
-      simp [QuadraticForm.tmul, mul_comm]
-    -- The isometry goal unfolds the quadratic-form wrapper around `map_app'`.
-    change (a • Q) (TensorProduct.lid R V x) = _
-    simpa only [h] using QuadraticForm.tmul_tensorLId_apply (a • Q) x
+      simp [QuadraticForm.tensorDistrib_tmul, QuadraticMap.sq_apply, smul_eq_mul,
+        mul_comm]
+    rw [h]
+    exact (QuadraticForm.tensorLId (a • Q)).map_app x
 
+/-- The rank-one tensor isometry sends a pure tensor to scalar multiplication. -/
 @[simp]
-theorem tensorLIdSmul_apply {V : Type*} [AddCommGroup V] [Module R V]
-    (Q : QuadraticForm R V) (a : R) (x : R ⊗[R] V) :
-    tensorLIdSmul Q a x = TensorProduct.lid R V x :=
-  rfl
+theorem _root_.QuadraticMap.rankOneTensorIsometry_tmul
+    {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a r : R) (v : V) :
+    rankOneTensorIsometry Q a (r ⊗ₜ[R] v) = r • v := by
+  have h : rankOneTensorIsometry Q a (r ⊗ₜ[R] v) =
+      (QuadraticForm.tensorLId (a • Q)) (r ⊗ₜ[R] v) := rfl
+  rw [h, QuadraticForm.tensorLId_apply, TensorProduct.lid_tmul]
 
+/-- The inverse rank-one tensor isometry sends a vector to its unit pure tensor. -/
 @[simp]
-theorem tensorLIdSmul_symm_apply {V : Type*} [AddCommGroup V] [Module R V]
-    (Q : QuadraticForm R V) (a : R) (x : V) :
-    (tensorLIdSmul Q a).symm x = (TensorProduct.lid R V).symm x :=
-  rfl
+theorem _root_.QuadraticMap.rankOneTensorIsometry_symm_apply
+    {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a : R) (v : V) :
+    (rankOneTensorIsometry Q a).symm v = (1 : R) ⊗ₜ[R] v := by
+  have h : (rankOneTensorIsometry Q a).symm v =
+      (QuadraticForm.tensorLId (a • Q)).symm v := rfl
+  rw [h, QuadraticForm.tensorLId_symm_apply, TensorProduct.lid_symm_apply]
 
 /-- Tensor product of isometric equivalences of quadratic forms. -/
 def _root_.QuadraticMap.IsometryEquiv.tmul
