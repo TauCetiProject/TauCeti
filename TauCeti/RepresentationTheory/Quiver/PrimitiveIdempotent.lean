@@ -20,29 +20,27 @@ orthogonal idempotents. Read through
 the primitive-idempotent decomposition of `1 = ∑ᵥ eᵥ`
 (`TauCeti.PathAlgebra.completeOrthogonalIdempotents_vertexIdempotent`).
 
-No hypothesis is placed on the paths at `v`: oriented cycles through `v` are allowed, and so is a
-loop at `v`, where `kQ` is the polynomial ring `k[X]` and the statement is that `k[X]` has no
-idempotent other than `0` and `1`.
+No hypothesis is placed on the paths at `v`: oriented cycles through `v` are allowed. For the
+quiver with a single vertex and a single loop at it, where `kQ` is the polynomial ring `k[X]`
+(`TauCeti.PathAlgebra.oneLoopAlgEquiv`) and the one vertex idempotent is `1`, the statement is that
+`k[X]` has no idempotent other than `0` and `1`.
 
-## The proof
+What replaces that hypothesis is the length filtration of the path algebra (`TauCeti.pathSpan`),
+which is where the two coordinate facts this file rests on come from. Reading the coordinate on the
+trivial path at `v` is a multiplicative map `kQ → k` (`TauCeti.pathAlgebraBasis_repr_mul_nil`),
+because a concatenation is that trivial path only when both its factors are; and the arrow ideal —
+the first step of the filtration, the elements whose coordinates on the trivial paths all vanish —
+contains no nonzero idempotent
+(`TauCeti.eq_zero_of_isIdempotentElem_of_mem_pathSpan_one`). Among the trivial paths, only the one
+at `v` can carry a nonzero coordinate of an element of the corner `eᵥ kQ eᵥ`, a vertex idempotent
+on the left confining the coordinates to the paths ending at `v`
+(`TauCeti.pathAlgebraBasis_repr_vertexIdempotent_mul_eq_zero`). So the trivial-path coordinates of
+the two summands of a decomposition of `eᵥ` decompose `1` in `k`, and the summand whose coordinate
+primitivity of `1` kills lies in the arrow ideal, hence is zero.
 
-Both summands `f₁`, `f₂` of a decomposition of `eᵥ` lie in the corner `eᵥ kQ eᵥ`, and the whole
-argument is about their coordinates on the *trivial* paths.
-
-* Only the trivial path at `v` can carry a coordinate of either: a vertex idempotent on the left
-  confines the coordinates to the paths ending at `v`
-  (`TauCeti.pathAlgebraBasis_repr_vertexIdempotent_mul_eq_zero`).
-* Those two coordinates `c₁`, `c₂` decompose `1` in `k`, because concatenation adds lengths, so
-  reading the coordinate on a trivial path is multiplicative
-  (`TauCeti.pathAlgebraBasis_repr_mul_nil`). Primitivity of `1` in `k` therefore kills one of
-  them.
-* A summand whose coordinates on the trivial paths all vanish lies in the arrow ideal, and an
-  idempotent there is zero (`TauCeti.eq_zero_of_isIdempotentElem_of_mem_pathSpan_one`): its powers
-  climb the length filtration, while its support is a finite set of paths of bounded length.
-
-The middle step is where the earlier, acyclic-at-`v` argument used to compute the corner outright
-as a copy of `k` (`TauCeti.vertexIdempotent_mul_mul_vertexIdempotent`); the length filtration
-replaces that computation and needs nothing of the kind.
+The acyclic-at-`v` form of the theorem instead computed the corner `eᵥ kQ eᵥ` outright as a copy of
+`k` (`TauCeti.vertexIdempotent_mul_mul_vertexIdempotent`), which is where the path hypothesis was
+needed; that computation plays no part here.
 
 ## Main results
 

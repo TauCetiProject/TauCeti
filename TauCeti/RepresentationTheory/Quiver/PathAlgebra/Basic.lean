@@ -63,7 +63,8 @@ idempotents `e`, so left multiplication by `α` carries the `i`-component of a l
 * `TauCeti.pathAlgebraBasis_repr_vertexIdempotent_mul_eq_zero`: multiplying by `eᵥ` on the left
   leaves a coordinate only on the paths ending at `v`.
 * `TauCeti.pathAlgebraBasis_repr_mul_nil`: the coordinate on the trivial path at `v` is
-  multiplicative, a product of paths being trivial only when both factors are.
+  multiplicative, a product of paths being that trivial path only when both factors are
+  (`TauCeti.Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some`).
 * `TauCeti.PathAlgebra.adjoin_vertexIdempotents_union_arrows`: the vertex idempotents and arrows
   generate the path algebra.
 
@@ -178,6 +179,25 @@ theorem fst_of_mul?_eq_some {x y z : TotalPath Q} (h : mul? x y = some z) : z.1 
     rfl
   · rw [mul?_eq_none hda] at h
     exact absurd h.symm (Option.some_ne_none z)
+
+/-- **A concatenation is the trivial path at `v` exactly when both its factors are.** Lengths add
+under `mul?`, so both factors have length zero, and the concatenation starts where its later factor
+does, so that common endpoint is `v`. -/
+theorem eq_nil_iff_of_mul?_eq_some {v : Q} {x y z : TotalPath Q} (h : mul? x y = some z) :
+    z = ⟨v, v, _root_.Quiver.Path.nil⟩ ↔
+      x = ⟨v, v, _root_.Quiver.Path.nil⟩ ∧ y = ⟨v, v, _root_.Quiver.Path.nil⟩ := by
+  have hcomp : y.2.1 = x.1 := by
+    by_contra hne
+    rw [mul?_eq_none hne] at h
+    exact absurd h.symm (Option.some_ne_none z)
+  simp only [eq_nil_iff, fst_of_mul?_eq_some h, length_eq_add_of_mul?_eq_some h]
+  constructor
+  · rintro ⟨hy, hlen⟩
+    refine ⟨⟨?_, by omega⟩, hy, by omega⟩
+    rw [← hcomp, ← y.2.2.eq_of_length_zero (show y.2.2.length = 0 by omega)]
+    exact hy
+  · rintro ⟨⟨-, hx⟩, hy, hy'⟩
+    exact ⟨hy, by omega⟩
 
 /-- The trivial path at the target of `x` is a left unit for `x`. -/
 @[simp]
@@ -816,6 +836,7 @@ open PathAlgebra in
 /-- **A vertex idempotent on the left confines the coordinates to the paths ending at its
 vertex.** Multiplying by `eᵥ` annihilates every basis path that does not end at `v`, so a path
 with a different target carries no coordinate of `eᵥ f`. -/
+@[simp]
 theorem pathAlgebraBasis_repr_vertexIdempotent_mul_eq_zero (v : Q) (f : pathAlgebra k Q)
     {x : Quiver.TotalPath Q} (hx : x.2.1 ≠ v) :
     (pathAlgebraBasis k Q).repr (vertexIdempotent k v * f) x = 0 := by
@@ -834,8 +855,9 @@ theorem pathAlgebraBasis_repr_vertexIdempotent_mul_eq_zero (v : Q) (f : pathAlge
 open PathAlgebra in
 /-- **The coordinate on a trivial path is multiplicative.** Concatenation adds lengths, so a
 product of basis paths is the trivial path at `v` only when both factors are that same trivial
-path; the coordinate of `f * g` on it is therefore the product of the coordinates of `f` and of
-`g` on it. -/
+path (`TauCeti.Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some`); the coordinate of `f * g` on it is
+therefore the product of the coordinates of `f` and of `g` on it. -/
+@[simp]
 theorem pathAlgebraBasis_repr_mul_nil (v : Q) (f g : pathAlgebra k Q) :
     (pathAlgebraBasis k Q).repr (f * g) ⟨v, v, _root_.Quiver.Path.nil⟩
       = (pathAlgebraBasis k Q).repr f ⟨v, v, _root_.Quiver.Path.nil⟩
@@ -853,41 +875,25 @@ theorem pathAlgebraBasis_repr_mul_nil (v : Q) (f g : pathAlgebra k Q) :
       rw [single_mul_single, pathAlgebraBasis_repr_single, pathAlgebraBasis_repr_single]
       cases hxy : x.mul? y with
       | none =>
+        -- The factors cannot both be the trivial path at `v`, or they would be composable.
+        have hb : ¬(x = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q) ∧
+            y = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q)) := by
+          rintro ⟨rfl, rfl⟩
+          exact Quiver.TotalPath.mul?_eq_none_iff.1 hxy rfl
         rw [Option.elim_none, map_zero, Finsupp.zero_apply]
-        by_cases hxv : x = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q)
-        · by_cases hyv : y = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q)
-          · exact absurd (by rw [hxv, hyv]) (Quiver.TotalPath.mul?_eq_none_iff.mp hxy)
-          · rw [Finsupp.single_eq_of_ne' hyv, mul_zero]
-        · rw [Finsupp.single_eq_of_ne' hxv, zero_mul]
+        rcases not_and_or.1 hb with hx | hy
+        · rw [Finsupp.single_eq_of_ne' hx, zero_mul]
+        · rw [Finsupp.single_eq_of_ne' hy, mul_zero]
       | some z =>
-        have hlen := Quiver.TotalPath.length_eq_add_of_mul?_eq_some hxy
-        have hfst := Quiver.TotalPath.fst_of_mul?_eq_some hxy
+        -- The concatenation is the trivial path at `v` exactly when both factors are.
+        have hz := Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some (v := v) hxy
         rw [Option.elim_some, pathAlgebraBasis_repr_single]
-        by_cases hyv : y = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q)
-        · by_cases hxv : x = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q)
-          · subst hxv
-            subst hyv
-            rw [Quiver.TotalPath.mul?_mk] at hxy
-            obtain rfl : (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q) = z :=
-              Option.some.inj hxy
-            rw [Finsupp.single_eq_same, Finsupp.single_eq_same, Finsupp.single_eq_same]
-          · have hy₂ : y.2.1 = x.1 := by
-              by_contra hne
-              rw [Quiver.TotalPath.mul?_eq_none hne] at hxy
-              simp at hxy
-            have hyl : y.2.2.length = 0 := by rw [hyv]; rfl
-            have hzv : z ≠ (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q) := by
-              intro hz
-              have hz₂ : z.2.2.length = 0 := (Quiver.TotalPath.eq_nil_iff.mp hz).2
-              refine hxv (Quiver.TotalPath.eq_nil_iff.mpr ⟨?_, by omega⟩)
-              rw [← hy₂, hyv]
-            rw [Finsupp.single_eq_of_ne' hzv, Finsupp.single_eq_of_ne' hxv, zero_mul]
-        · have hzv : z ≠ (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q) := by
-            intro hz
-            obtain ⟨hz₁, hz₂⟩ := Quiver.TotalPath.eq_nil_iff.mp hz
-            refine hyv (Quiver.TotalPath.eq_nil_iff.mpr ⟨?_, by omega⟩)
-            rw [← hfst, hz₁]
-          rw [Finsupp.single_eq_of_ne' hzv, Finsupp.single_eq_of_ne' hyv, mul_zero]
+        by_cases hzv : z = (⟨v, v, _root_.Quiver.Path.nil⟩ : Quiver.TotalPath Q)
+        · obtain ⟨hx, hy⟩ := hz.1 hzv
+          rw [hzv, hx, hy, Finsupp.single_eq_same, Finsupp.single_eq_same, Finsupp.single_eq_same]
+        · rcases not_and_or.1 (mt hz.2 hzv) with hx | hy
+          · rw [Finsupp.single_eq_of_ne' hzv, Finsupp.single_eq_of_ne' hx, zero_mul]
+          · rw [Finsupp.single_eq_of_ne' hzv, Finsupp.single_eq_of_ne' hy, mul_zero]
 
 end Basis
 
