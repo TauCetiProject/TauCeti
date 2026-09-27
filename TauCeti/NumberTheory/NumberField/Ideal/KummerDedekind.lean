@@ -89,7 +89,8 @@ theorem map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (θ : 𝓞 K)
     exact h
 
 /-- At a prime where the reduction of `minpoly ℤ θ` is squarefree, the splitting type is its
-multiset of factor degrees. The index hypothesis permits the Kummer–Dedekind correspondence. -/
+multiset of factor degrees. The conductor-exponent hypothesis permits the Kummer–Dedekind
+correspondence. -/
 theorem map_inertiaDeg_primesOver_eq_factorDegrees (θ : 𝓞 K) {p : ℕ} [Fact p.Prime]
     (hp : ¬ p ∣ exponent θ)
     (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))) :

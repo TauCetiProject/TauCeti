@@ -7,7 +7,6 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.NumberTheory.NumberField.Index.Exponent
-public import TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.NumberTheory.NumberField.Minpoly
 
@@ -20,8 +19,7 @@ stabilizer of `β` in `Gal(M/ℚ)`, and `β` is an integral primitive element of
 minimal polynomial over `ℤ` as `θ` (`rootIntegralPrimitiveElement`). This file records the
 arithmetic of `ℚ(β)` at a prime `p` modulo which `minpoly ℤ θ` is squarefree: `p` does not divide
 the conductor exponent of `β`, so the Kummer–Dedekind theorem applies in `ℚ(β)`, and the primes
-of `ℚ(β)` above `p` are unramified over `ℤ`. Their residue degrees follow from the generic
-Kummer–Dedekind theorem in `Ideal/KummerDedekind.lean`.
+of `ℚ(β)` above `p` are unramified over `ℤ`.
 
 These are the local facts about the root fields of a polynomial that a computation of a
 splitting type consumes; they involve no hypothesis that `θ` generates `K`, since every root

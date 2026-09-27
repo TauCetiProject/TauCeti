@@ -51,6 +51,7 @@ local instance : (span {(59 : ℤ)} : Ideal ℤ).IsMaximal :=
   Int.ideal_span_isMaximal_of_prime 59
 
 /-- The defining cubic is irreducible modulo `2`; its only factor degree is `3`. -/
+@[simp]
 theorem factorDegrees_two : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees 2 = {3} := by
   rw [factorDegrees_eq_singleton_iff]
   constructor
@@ -60,6 +61,7 @@ theorem factorDegrees_two : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees 2 = {3} :
     compute_degree!
 
 /-- The defining cubic is irreducible modulo `3`; its only factor degree is `3`. -/
+@[simp]
 theorem factorDegrees_three : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees 3 = {3} := by
   have hirr : Irreducible (X ^ 3 - X ^ 2 + 1 : (ZMod 3)[X]) := by
     apply irreducible_of_degree_le_three_of_not_isRoot
@@ -78,7 +80,8 @@ theorem factorDegrees_three : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees 3 = {3}
   · rw [monic_polynomial.natDegree_map]
     compute_degree!
 
-/-- Modulo `5`, the cubic factors as `(X - 2)(X² + X + 2)`. -/
+/-- Modulo `5`, the defining cubic has factor degrees `1` and `2`. -/
+@[simp]
 theorem factorDegrees_five : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees 5 = {1, 2} := by
   have hquad : Irreducible (X ^ 2 + X + C 2 : (ZMod 5)[X]) := by
     apply irreducible_of_degree_le_three_of_not_isRoot
@@ -112,7 +115,8 @@ theorem factorDegrees_five : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees 5 = {1, 
   have hdeg : (X ^ 2 + X + C 2 : (ZMod 5)[X]).natDegree = 2 := by compute_degree!
   rw [hdeg]
 
-/-- Modulo `7`, the cubic factors as `(X - 4)(X² + 3X + 5)`. -/
+/-- Modulo `7`, the defining cubic has factor degrees `1` and `2`. -/
+@[simp]
 theorem factorDegrees_seven : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees 7 = {1, 2} := by
   have hquad : Irreducible (X ^ 2 + C 3 * X + C 5 : (ZMod 7)[X]) := by
     apply irreducible_of_degree_le_three_of_not_isRoot
@@ -146,7 +150,8 @@ theorem factorDegrees_seven : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees 7 = {1,
   have hdeg : (X ^ 2 + C 3 * X + C 5 : (ZMod 7)[X]).natDegree = 2 := by compute_degree!
   rw [hdeg]
 
-/-- Modulo `59`, the cubic has the three distinct roots `7`, `9`, and `44`. -/
+/-- Modulo `59`, the defining cubic has three factors of degree `1`. -/
+@[simp]
 theorem factorDegrees_fifty_nine :
     (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees 59 = {1, 1, 1} := by
   have hirr : ∀ q ∈ ({X - C 7, X - C 9, X - C 44} : Multiset (ZMod 59)[X]),
@@ -194,7 +199,7 @@ private theorem inertiaDegrees_eq_factorDegrees (p : ℕ) [Fact p.Prime]
 
 /-- Every rational prime other than `23` is unramified in the cubic field of discriminant
 `−23`; in particular every prime ideal above it has ramification index one. -/
-theorem ramificationIdx_eq_one_of_ne_twenty_three (p : ℕ) [Fact p.Prime]
+theorem ramificationIdx_eq_one_of_not_dvd_neg_twenty_three (p : ℕ) [Fact p.Prime]
     (hp : ¬ (p : ℤ) ∣ (-23 : ℤ)) (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] : Q.ramificationIdx ℤ = 1 := by
   have hur : Algebra.IsUnramifiedIn (𝓞 K) (span {(p : ℤ)}) :=
