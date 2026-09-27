@@ -5,8 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+-- Not a `public import`: `continuous_clm_apply` is used only inside the proof of
+-- `TauCeti.ContRepresentation.continuous_subrepresentation_of_finiteDimensional`, and re-exporting
+-- the finite-dimensional normed-space instances from this widely imported file slows unrelated
+-- `LocallyCompactSpace` instance searches downstream to the point of timing out.
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Restricting a continuous representation to an invariant submodule
@@ -31,6 +37,9 @@ action operator, the continuous counterpart of Mathlib's `Representation.subrepr
   submodule a subrepresentation carries has that subrepresentation's own representation underneath.
 * `TauCeti.ContRepresentation.continuous_subrepresentation`: the restriction of a continuous
   representation to an invariant submodule is again continuous.
+* `TauCeti.ContRepresentation.continuous_subrepresentation_of_finiteDimensional`: on a
+  finite-dimensional invariant submodule, strong continuity of the ambient representation already
+  makes the restriction continuous for the operator norm.
 -/
 
 public section
@@ -134,6 +143,31 @@ theorem continuous_subrepresentation (hπ : Continuous π) :
   exact (ContinuousLinearMap.precomp V W.subtypeL).continuous.comp hπ
 
 end Continuity
+
+section FiniteDimensionalContinuity
+
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
+  [TopologicalSpace G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  {π : ContRepresentation 𝕜 G V} {W : Submodule 𝕜 V} {hW : ∀ g, ∀ v ∈ W, π g v ∈ W}
+
+/-- **A finite-dimensional invariant submodule carries a continuous subrepresentation as soon as
+the ambient representation is strongly continuous.** On a finite-dimensional space continuity for
+the operator norm may be checked one vector at a time (`continuous_clm_apply`), and on a vector of
+the submodule the restricted action is the ambient action.
+
+This is the continuity hypothesis in the form the representations of a compact group on `L²(G)`
+supply it: `g ↦ π g` is not continuous for the operator norm on all of `L²(G)`, only each orbit map
+`g ↦ π g f` is, and the operator-norm continuity appears after restricting to a
+finite-dimensional invariant subspace. -/
+theorem continuous_subrepresentation_of_finiteDimensional [FiniteDimensional 𝕜 W]
+    (hπ : ∀ v : V, Continuous fun g => π g v) :
+    Continuous (subrepresentation π W hW) := by
+  rw [continuous_clm_apply]
+  intro v
+  rw [Topology.IsInducing.subtypeVal.continuous_iff]
+  simpa only [Function.comp_def, coe_subrepresentation_apply] using hπ (v : V)
+
+end FiniteDimensionalContinuity
 
 end ContRepresentation
 

@@ -80,6 +80,26 @@ open MeasureTheory
 
 namespace TauCeti
 
+section Translation
+
+variable {G : Type*} [TopologicalSpace G] [Mul G] [ContinuousMul G]
+
+-- Private: these are the two curried continuity facts that the strong continuity of translation on
+-- `Lp` consumes, named once so that the `ContinuousMap.curry` term is not repeated at each of the
+-- three uses below. They are general facts about a topological monoid, so they are kept local to
+-- this file rather than added as public `ContinuousMap` API from a compact-group file.
+/-- **The family of right multiplications is continuous** as a family of continuous self-maps of
+`G`, because `(g, x) ↦ x * g` curries. -/
+private theorem continuous_mulRight : Continuous (ContinuousMap.mulRight : G → C(G, G)) :=
+  (ContinuousMap.curry ⟨fun p : G × G => p.2 * p.1, continuous_snd.mul continuous_fst⟩).continuous
+
+/-- **The family of left multiplications is continuous** as a family of continuous self-maps of `G`,
+because `(g, x) ↦ g * x` curries. -/
+private theorem continuous_mulLeft : Continuous (ContinuousMap.mulLeft : G → C(G, G)) :=
+  (ContinuousMap.curry ⟨fun p : G × G => p.1 * p.2, continuous_fst.mul continuous_snd⟩).continuous
+
+end Translation
+
 section CompactGroup
 
 variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -149,10 +169,8 @@ to the family of right multiplications, which depends continuously on the multip
 `(g, x) ↦ x * g` curries. -/
 theorem continuous_rightRegularLp_apply (f : Lp 𝕜 2 (haarProb G)) :
     Continuous fun g : G => rightRegularLp 𝕜 G g f := by
-  have hg : Continuous fun g : G => ContinuousMap.mulRight (X := G) g :=
-    (ContinuousMap.curry ⟨fun p : G × G => p.2 * p.1, continuous_snd.mul continuous_fst⟩).continuous
   simp only [rightRegularLp_apply]
-  exact continuous_const.compMeasurePreservingLp hg _ (by simp)
+  exact continuous_const.compMeasurePreservingLp continuous_mulRight _ (by simp)
 
 /-! ### The left regular representation -/
 
@@ -170,7 +188,7 @@ noncomputable def leftRegularLp : ContRepresentation 𝕜 G (Lp 𝕜 2 (haarProb
         (measurePreserving_mul_left (haarProb G) g⁻¹)).toContinuousLinearMap
       map_one' := ContinuousLinearMap.ext fun x =>
         (Lp.compMeasurePreserving_congr_fun (g := id) _ (.id _)
-            (funext fun y => by rw [inv_one, one_mul, id]) x).trans
+            (Filter.EventuallyEq.of_eq (funext fun y => by rw [inv_one, one_mul, id])) x).trans
           (Lp.compMeasurePreserving_id_apply x)
       map_mul' g h := ContinuousLinearMap.ext fun x => by
         have hfun : (fun y : G => (g * h)⁻¹ * y)
@@ -179,7 +197,8 @@ noncomputable def leftRegularLp : ContRepresentation 𝕜 G (Lp 𝕜 2 (haarProb
         simp only [mul_apply_eq_comp]
         refine (Lp.compMeasurePreserving_congr_fun _
           ((measurePreserving_mul_left (haarProb G) h⁻¹).comp
-            (measurePreserving_mul_left (haarProb G) g⁻¹)) hfun x).trans ?_
+            (measurePreserving_mul_left (haarProb G) g⁻¹))
+              (Filter.EventuallyEq.of_eq hfun) x).trans ?_
         exact Lp.compMeasurePreserving_comp_apply x (measurePreserving_mul_left (haarProb G) h⁻¹)
           (measurePreserving_mul_left (haarProb G) g⁻¹) }
 
@@ -219,12 +238,9 @@ continuous. The family of left multiplications by `g⁻¹` depends continuously 
 `(g, x) ↦ g * x` curries and inversion is continuous. -/
 theorem continuous_leftRegularLp_apply (f : Lp 𝕜 2 (haarProb G)) :
     Continuous fun g : G => leftRegularLp 𝕜 G g f := by
-  have hg : Continuous fun g : G => ContinuousMap.mulLeft (X := G) g⁻¹ :=
-    (ContinuousMap.curry
-      ⟨fun p : G × G => p.1 * p.2, continuous_fst.mul continuous_snd⟩).continuous.comp
-        continuous_inv
   simp only [leftRegularLp_apply]
-  exact continuous_const.compMeasurePreservingLp hg _ (by simp)
+  exact continuous_const.compMeasurePreservingLp (continuous_mulLeft.comp continuous_inv) _
+    (by simp)
 
 /-! ### The two-sided regular representation -/
 
@@ -244,7 +260,7 @@ theorem commute_leftRegularLp_rightRegularLp (g h : G) :
       (measurePreserving_mul_left (haarProb G) g⁻¹),
     ← Lp.compMeasurePreserving_comp_apply f (measurePreserving_mul_left (haarProb G) g⁻¹)
       (measurePreserving_mul_right (haarProb G) h)]
-  exact Lp.compMeasurePreserving_congr_fun _ _ hfun f
+  exact Lp.compMeasurePreserving_congr_fun _ _ (Filter.EventuallyEq.of_eq hfun) f
 
 variable (𝕜 G) in
 /-- **The two-sided regular representation** of a compact group: `G × G` acts on `L²(G)` by
@@ -316,12 +332,8 @@ theorem continuous_biregularLp_apply (f : Lp 𝕜 2 (haarProb G)) :
     Continuous fun a : G × G => biregularLp 𝕜 G a f := by
   have hf : Continuous fun a : G × G => leftRegularLp 𝕜 G a.1 f :=
     (continuous_leftRegularLp_apply f).comp continuous_fst
-  have hg : Continuous fun a : G × G => ContinuousMap.mulRight (X := G) a.2 :=
-    (ContinuousMap.curry
-      ⟨fun p : G × G => p.2 * p.1, continuous_snd.mul continuous_fst⟩).continuous.comp
-        continuous_snd
   simp only [biregularLp_apply, rightRegularLp_apply]
-  exact hf.compMeasurePreservingLp hg _ (by simp)
+  exact hf.compMeasurePreservingLp (continuous_mulRight.comp continuous_snd) _ (by simp)
 
 end CompactGroup
 

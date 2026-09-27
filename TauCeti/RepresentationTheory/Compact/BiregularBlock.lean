@@ -121,17 +121,14 @@ theorem isUnitary_peterWeylBlockBiregular (model : IrrepModel 𝕜 G) :
   (isUnitary_biregularLp 𝕜 G).subrepresentation _
 
 /-- **The block representation is continuous** for the operator norm.  The block is
-finite-dimensional (`TauCeti.finiteDimensional_peterWeylBlock`), so continuity may be checked one
-vector at a time; on a vector it is the strong continuity of two-sided translation
-(`TauCeti.continuous_biregularLp_apply`).  This is what lets a block be fed to the parts of the
-library that consume a continuous representation. -/
+finite-dimensional (`TauCeti.finiteDimensional_peterWeylBlock`) and two-sided translation is
+strongly continuous (`TauCeti.continuous_biregularLp_apply`), which is exactly what
+`TauCeti.ContRepresentation.continuous_subrepresentation_of_finiteDimensional` consumes.  This is
+what lets a block be fed to the parts of the library that consume a continuous representation. -/
 theorem continuous_peterWeylBlockBiregular (model : IrrepModel 𝕜 G) :
-    Continuous (peterWeylBlockBiregular model) := by
-  rw [continuous_clm_apply]
-  intro f
-  rw [Topology.IsInducing.subtypeVal.continuous_iff]
-  simpa only [Function.comp_def, coe_peterWeylBlockBiregular_apply] using
-    continuous_biregularLp_apply (f : Lp 𝕜 2 (haarProb G))
+    Continuous (peterWeylBlockBiregular model) :=
+  ContRepresentation.continuous_subrepresentation_of_finiteDimensional
+    continuous_biregularLp_apply
 
 end CompactGroup
 
