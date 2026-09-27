@@ -89,7 +89,6 @@ private theorem character_degree_eq_of_mem_cuspidal {chi : GL (Fin 2) F → ℂ}
 include E hE hpsi
 
 /-- The degree-one irreducible characters of `GL₂(F)` are exactly the linear characters. -/
-@[simp]
 theorem irreducibleCharacters_GL2_degree_one_eq_range (hq : 3 ≤ Fintype.card F) :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 1} =
       Set.range fun alpha : Fˣ →* ℂˣ => (GL2Linear F alpha).character := by
@@ -111,7 +110,6 @@ theorem irreducibleCharacters_GL2_degree_one_eq_range (hq : 3 ≤ Fintype.card F
     exact ⟨Or.inl (Or.inl (Or.inl hlin)), character_degree_eq_of_mem_linear F hlin⟩
 
 /-- The irreducible characters of `GL₂(F)` of degree `q` are exactly the Steinberg twists. -/
-@[simp]
 theorem irreducibleCharacters_GL2_degree_card_eq_range :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = Fintype.card F} =
       Set.range fun alpha : Fˣ →* ℂˣ => (GL2SteinbergTwist F alpha).character := by
@@ -135,7 +133,6 @@ theorem irreducibleCharacters_GL2_degree_card_eq_range :
 
 /-- The irreducible characters of `GL₂(F)` of degree `q + 1` are exactly the principal-series
 characters. -/
-@[simp]
 theorem irreducibleCharacters_GL2_degree_card_add_one_eq_image :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = Fintype.card F + 1} =
       (fun p : (Fˣ →* ℂˣ) × (Fˣ →* ℂˣ) =>
@@ -160,7 +157,6 @@ theorem irreducibleCharacters_GL2_degree_card_add_one_eq_image :
 
 /-- The irreducible characters of `GL₂(F)` of degree `q - 1` are exactly the cuspidal
 characters. -/
-@[simp]
 theorem irreducibleCharacters_GL2_degree_card_sub_one_eq_image (hq : 3 ≤ Fintype.card F) :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) |
       chi 1 = ((Fintype.card F - 1 : ℕ) : ℂ)} =
@@ -184,7 +180,6 @@ theorem irreducibleCharacters_GL2_degree_card_sub_one_eq_image (hq : 3 ≤ Finty
     exact ⟨Or.inr hcuspidal, character_degree_eq_of_mem_cuspidal F E hE hcuspidal⟩
 
 /-- There are `q - 1` irreducible characters of `GL₂(F)` of degree one. -/
-@[simp]
 theorem ncard_irreducibleCharacters_GL2_degree_one (hq : 3 ≤ Fintype.card F) :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 1}.ncard =
       Fintype.card F - 1 := by
@@ -192,7 +187,6 @@ theorem ncard_irreducibleCharacters_GL2_degree_one (hq : 3 ≤ Fintype.card F) :
     ncard_range_character_GL2Linear]
 
 /-- There are `q - 1` irreducible characters of `GL₂(F)` of degree `q`. -/
-@[simp]
 theorem ncard_irreducibleCharacters_GL2_degree_card :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) |
       chi 1 = Fintype.card F}.ncard = Fintype.card F - 1 := by
@@ -200,7 +194,6 @@ theorem ncard_irreducibleCharacters_GL2_degree_card :
     ncard_range_character_GL2SteinbergTwist]
 
 /-- There are `(q - 1)(q - 2)/2` irreducible characters of `GL₂(F)` of degree `q + 1`. -/
-@[simp]
 theorem ncard_irreducibleCharacters_GL2_degree_card_add_one :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) |
       chi 1 = Fintype.card F + 1}.ncard =
@@ -209,7 +202,6 @@ theorem ncard_irreducibleCharacters_GL2_degree_card_add_one :
     ncard_image_character_GL2PrincipalSeries]
 
 /-- There are `q(q - 1)/2` irreducible characters of `GL₂(F)` of degree `q - 1`. -/
-@[simp]
 theorem ncard_irreducibleCharacters_GL2_degree_card_sub_one (hq : 3 ≤ Fintype.card F) :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) |
       chi 1 = ((Fintype.card F - 1 : ℕ) : ℂ)}.ncard =
