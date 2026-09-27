@@ -159,6 +159,7 @@ def coindBotMap (f : A ⟶ B) : coindBot k G A.V ⟶ coindBot k G B.V :=
 /-- Coinduction sends the identity coefficient map to the identity. -/
 @[simp]
 theorem coindBotMap_id (A : Rep k G) : coindBotMap (𝟙 A) = 𝟙 _ := by
+  -- The identity representation morphism induces the identity in `ModuleCat`.
   change (coindBotFunctor k G).map (𝟙 _) = 𝟙 _
   simp
 
@@ -166,10 +167,12 @@ theorem coindBotMap_id (A : Rep k G) : coindBotMap (𝟙 A) = 𝟙 _ := by
 @[simp]
 theorem coindBotMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) :
     coindBotMap (f ≫ g) = coindBotMap f ≫ coindBotMap g := by
-  simp [coindBotMap, Functor.map_comp]
+  simp [coindBotMap, Rep.hom_comp, ModuleCat.ofHom_comp, Functor.map_comp]
+  -- The bridge lemmas leave the same functor map on both sides.
   rfl
 
 /-- The orbit-map embedding into coinduction is natural in the representation. -/
+@[reassoc (attr := simp)]
 theorem coindBotUnit_naturality (f : A ⟶ B) :
     coindBotUnit A ≫ coindBotMap f = f ≫ coindBotUnit B := by
   ext x g
@@ -288,6 +291,7 @@ theorem indBotMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) :
   simp [indBotMap, Functor.map_comp]
 
 /-- The projection from induction onto the representation is natural. -/
+@[reassoc (attr := simp)]
 theorem indBotCounit_naturality (f : A ⟶ B) :
     indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f := by
   apply Rep.hom_ext

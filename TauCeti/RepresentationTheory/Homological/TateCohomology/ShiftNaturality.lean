@@ -8,12 +8,12 @@ module
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.DimensionShift
 
 /-!
-# Naturality of Tate dimension shifting in the coefficients
+# Naturality of Tate dimension shifting
 
 The canonical connecting isomorphisms for the upward and downward dimension shifts commute
-with morphisms of coefficient representations. The same holds after tensoring each short exact
-sequence on the left. These squares transport coefficient maps through dimension shifting in
-the Tate cup product.
+with morphisms of coefficient representations. After tensoring each short exact sequence
+on the left, they are natural in both the tensoring and coefficient representations. These squares
+transport coefficient maps through dimension shifting in the Tate cup product.
 
 They follow from naturality of the connecting homomorphism and the morphisms of the canonical
 dimension-shifting sequences. See Milne, *Class Field Theory*, Chapter II, §1.
@@ -26,6 +26,52 @@ universe u
 open CategoryTheory Limits MonoidalCategory Rep
 
 namespace TauCeti.TateCohomology
+
+section TensoringVariable
+
+variable {k G : Type u} [CommRing k] [Group G] [Fintype G] (A M : Rep k G)
+
+variable {M} in
+/-- The tensored upward dimension shift is natural in the tensoring representation. -/
+theorem tensorDimensionShiftUpIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+    (hij : i + 1 = j) :
+    (tateCohomologyFunctor i).map (f ▷ dimensionShiftUp A) ≫
+        (tensorDimensionShiftUpIso A M' i j hij).hom =
+      (tensorDimensionShiftUpIso A M i j hij).hom ≫ (tateCohomologyFunctor j).map (f ▷ A) := by
+  rw [tensorDimensionShiftUpIso_hom, tensorDimensionShiftUpIso_hom]
+  exact (HomologicalComplex.HomologySequence.δ_naturality
+    ((tateComplexFunctor k G).mapShortComplex.map
+      ((ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
+        (coindBotUnit_comp_dimensionShiftUpπ A)).mapNatTrans ((curriedTensor (Rep k G)).map f)))
+    _ _ i j hij).symm
+
+variable {M} in
+/-- The tensored downward dimension shift is natural in the tensoring representation. -/
+theorem tensorDimensionShiftDownIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+    (hij : i + 1 = j) :
+    (tateCohomologyFunctor i).map (f ▷ A) ≫ (tensorDimensionShiftDownIso A M' i j hij).hom =
+      (tensorDimensionShiftDownIso A M i j hij).hom ≫
+        (tateCohomologyFunctor j).map (f ▷ dimensionShiftDown A) := by
+  rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom]
+  exact (HomologicalComplex.HomologySequence.δ_naturality
+    ((tateComplexFunctor k G).mapShortComplex.map
+      ((ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
+        (dimensionShiftDownι_comp_indBotCounit A)).mapNatTrans ((curriedTensor (Rep k G)).map f)))
+    _ _ i j hij).symm
+
+variable {M} in
+/-- The inverse of the tensored downward dimension shift is natural in the tensoring
+representation. -/
+theorem tensorDimensionShiftDownIso_inv_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+    (hij : i + 1 = j) :
+    (tateCohomologyFunctor j).map (f ▷ dimensionShiftDown A) ≫
+        (tensorDimensionShiftDownIso A M' i j hij).inv =
+      (tensorDimensionShiftDownIso A M i j hij).inv ≫ (tateCohomologyFunctor i).map (f ▷ A) := by
+  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality,
+    Iso.inv_hom_id_assoc]
+
+
+end TensoringVariable
 
 variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
   {A B : Rep k G} (f : A ⟶ B) (n : ℤ)

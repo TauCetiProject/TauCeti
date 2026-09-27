@@ -166,44 +166,6 @@ theorem tensorDimensionShiftDownIso_hom (i j : ℤ) (hij : i + 1 = j) :
         (by simpa only [dimensionShiftDownSES_def] using
           dimensionShiftDownSES_tensorLeft_shortExact A M)).δ i j hij := (rfl)
 
-variable {M} in
-/-- The tensored upward dimension shift is natural in the tensoring representation. -/
-theorem tensorDimensionShiftUpIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
-    (hij : i + 1 = j) :
-    (tateCohomologyFunctor i).map (f ▷ dimensionShiftUp A) ≫
-        (tensorDimensionShiftUpIso A M' i j hij).hom =
-      (tensorDimensionShiftUpIso A M i j hij).hom ≫ (tateCohomologyFunctor j).map (f ▷ A) := by
-  rw [tensorDimensionShiftUpIso_hom, tensorDimensionShiftUpIso_hom]
-  exact (HomologicalComplex.HomologySequence.δ_naturality
-    ((tateComplexFunctor k G).mapShortComplex.map
-      ((ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
-        (coindBotUnit_comp_dimensionShiftUpπ A)).mapNatTrans ((curriedTensor (Rep k G)).map f)))
-    _ _ i j hij).symm
-
-variable {M} in
-/-- The tensored downward dimension shift is natural in the tensoring representation. -/
-theorem tensorDimensionShiftDownIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
-    (hij : i + 1 = j) :
-    (tateCohomologyFunctor i).map (f ▷ A) ≫ (tensorDimensionShiftDownIso A M' i j hij).hom =
-      (tensorDimensionShiftDownIso A M i j hij).hom ≫
-        (tateCohomologyFunctor j).map (f ▷ dimensionShiftDown A) := by
-  rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom]
-  exact (HomologicalComplex.HomologySequence.δ_naturality
-    ((tateComplexFunctor k G).mapShortComplex.map
-      ((ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
-        (dimensionShiftDownι_comp_indBotCounit A)).mapNatTrans ((curriedTensor (Rep k G)).map f)))
-    _ _ i j hij).symm
-
-variable {M} in
-/-- The inverse of the tensored downward dimension shift is natural in the tensoring
-representation. -/
-theorem tensorDimensionShiftDownIso_inv_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
-    (hij : i + 1 = j) :
-    (tateCohomologyFunctor j).map (f ▷ dimensionShiftDown A) ≫
-        (tensorDimensionShiftDownIso A M' i j hij).inv =
-      (tensorDimensionShiftDownIso A M i j hij).inv ≫ (tateCohomologyFunctor i).map (f ▷ A) := by
-  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality,
-    Iso.inv_hom_id_assoc]
 
 end Tensor
 

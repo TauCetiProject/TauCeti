@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.ZeroLeft
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.DimensionShift
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.ShiftNaturality
 
 /-!
 # The Tate cup product in all bidegrees
