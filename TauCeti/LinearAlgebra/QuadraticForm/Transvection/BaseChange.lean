@@ -31,8 +31,9 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   [AddCommGroup M] [Module R M] [Invertible (2 : R)]
   (Q : QuadraticForm R M) {u w : M}
 
-/-- Base change carries `E_{u,w}` to `E_{1 ⊗ u,1 ⊗ w}`. This holds over commutative rings;
-neither nondegeneracy nor finite dimensionality is needed. -/
+/-- Base change carries `E_{u,w}` to `E_{1 ⊗ u,1 ⊗ w}` over commutative rings in which `2` is
+invertible; neither nondegeneracy nor finite dimensionality is needed. -/
+@[simp]
 theorem transvection_baseChange (hu : Q u = 0) (huw : polar Q u w = 0) :
     LinearEquiv.baseChange R A M M (transvection Q hu huw) =
       transvection (Q.baseChange A) (u := 1 ⊗ₜ[R] u) (w := 1 ⊗ₜ[R] w)
@@ -49,6 +50,7 @@ theorem transvection_baseChange (hu : Q u = 0) (huw : polar Q u w = 0) :
 
 /-- The special-orthogonal base-change homomorphism carries the class of an Eichler
 transvection to the class of the base-changed transvection. -/
+@[simp]
 theorem specialOrthogonalGroupBaseChange_transvection [Module.Free R M] [Module.Finite R M]
     (hu : Q u = 0)
     (huw : polar Q u w = 0) :
