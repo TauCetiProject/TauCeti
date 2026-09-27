@@ -41,23 +41,14 @@ universe u v w t
 
 variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
 
-/-- Pointwise finite-dimensionality as an object property of the representation category. -/
-def finiteDimensionalQuiverRepresentations :
-    ObjectProperty (QuiverRep.{u, v, w, t} k Q) := IsFinDim k Q
-
-@[simp]
-theorem finiteDimensionalQuiverRepresentations_iff
-    (M : QuiverRep.{u, v, w, t} k Q) :
-    finiteDimensionalQuiverRepresentations k Q M ↔ IsFinDim k Q M := Iff.rfl
-
-instance : (finiteDimensionalQuiverRepresentations.{u, v, w, t} k Q).IsClosedUnderIsomorphisms
+instance : ObjectProperty.IsClosedUnderIsomorphisms (IsFinDim.{u, v, w, t} k Q)
     where
   of_iso := fun e h => h.of_iso e
 
-instance : (finiteDimensionalQuiverRepresentations.{u, v, w, t} k Q).ContainsZero where
+instance : ObjectProperty.ContainsZero (IsFinDim.{u, v, w, t} k Q) where
   exists_zero := by
     refine ⟨0, isZero_zero _, ?_⟩
-    rw [finiteDimensionalQuiverRepresentations_iff, isFinDim_iff]
+    rw [isFinDim_iff]
     intro i
     have hi : IsZero ((0 : QuiverRep.{u, v, w, t} k Q).obj i) := Functor.zero_obj i
     let : Subsingleton ((0 : QuiverRep.{u, v, w, t} k Q).obj i) :=
@@ -67,9 +58,9 @@ instance : (finiteDimensionalQuiverRepresentations.{u, v, w, t} k Q).ContainsZer
 /-- Pointwise finite-dimensional representations are closed under extensions. -/
 theorem isExtensionClosed_finiteDimensionalQuiverRepresentations :
     (ExactStructure.abelian (QuiverRep.{u, v, w, t} k Q)).IsExtensionClosed
-      (finiteDimensionalQuiverRepresentations k Q) := by
+      (IsFinDim k Q) := by
   refine ⟨fun {S} hS h₁ h₃ => ?_⟩
-  rw [finiteDimensionalQuiverRepresentations_iff, isFinDim_iff] at h₁ h₃ ⊢
+  rw [isFinDim_iff] at h₁ h₃ ⊢
   intro i
   let E := (evaluation (Paths Q) (ModuleCat k)).obj i
   have hSi : (S.map E).ShortExact :=
@@ -82,21 +73,21 @@ theorem isExtensionClosed_finiteDimensionalQuiverRepresentations :
       hSi.moduleCat_surjective_g
   exact hfin
 
-instance : (finiteDimensionalQuiverRepresentations.{u, v, w, t} k Q).IsClosedUnderBinaryProducts :=
+instance : ObjectProperty.IsClosedUnderBinaryProducts (IsFinDim.{u, v, w, t} k Q) :=
   (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q).isClosedUnderBinaryProducts
 
 /-- The exact structure on pointwise finite-dimensional quiver representations. -/
 noncomputable def finiteDimensionalQuiverRepresentationsExactStructure :
-    ExactStructure (finiteDimensionalQuiverRepresentations.{u, v, w, t} k Q).FullSubcategory :=
+    ExactStructure (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :=
   (ExactStructure.abelian _).fullSubcategory _
     (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q)
 
 /-- Conflations of finite-dimensional quiver representations are exactly their short exact
 sequences in the ambient functor category. -/
 theorem finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff
-    (S : ShortComplex (finiteDimensionalQuiverRepresentations.{u, v, w, t} k Q).FullSubcategory) :
+    (S : ShortComplex (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q))) :
     (finiteDimensionalQuiverRepresentationsExactStructure k Q).Conflation S ↔
-      (S.map (finiteDimensionalQuiverRepresentations k Q).ι).ShortExact :=
+      (S.map (ObjectProperty.ι (IsFinDim k Q))).ShortExact :=
   (ExactStructure.fullSubcategory_conflation_iff
     (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q) S).trans
     (ExactStructure.abelian_conflation _)
@@ -104,7 +95,7 @@ theorem finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff
 section GrothendieckGroup
 
 variable [EssentiallySmall.{t}
-  (finiteDimensionalQuiverRepresentations.{u, v, w, t} k Q).FullSubcategory]
+  (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q))]
 
 private noncomputable def quiverDimensionVectorInvariant :
     ExactK0.AdditiveInvariant
@@ -113,14 +104,14 @@ private noncomputable def quiverDimensionVectorInvariant :
   map_iso {_ _} e := by
     funext i
     exact congrArg (fun n : ℕ ↦ (n : ℤ))
-      (congrFun (dimVector_eq_of_iso ((finiteDimensionalQuiverRepresentations k Q).ι.mapIso e)) i)
+      (congrFun (dimVector_eq_of_iso ((ObjectProperty.ι (IsFinDim k Q)).mapIso e)) i)
   map_conflation {S} hS := by
     have hs := (finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff k Q S).mp hS
     have h₁ : ∀ i : Q, FiniteDimensional k
-        ((S.map (finiteDimensionalQuiverRepresentations k Q).ι).X₁.obj ((Paths.of Q).obj i)) :=
+        ((S.map (ObjectProperty.ι (IsFinDim k Q))).X₁.obj ((Paths.of Q).obj i)) :=
       fun i ↦ by simpa using (isFinDim_iff.mp S.X₁.property) ((Paths.of Q).obj i)
     have h₃ : ∀ i : Q, FiniteDimensional k
-        ((S.map (finiteDimensionalQuiverRepresentations k Q).ι).X₃.obj ((Paths.of Q).obj i)) :=
+        ((S.map (ObjectProperty.ι (IsFinDim k Q))).X₃.obj ((Paths.of Q).obj i)) :=
       fun i ↦ by simpa using (isFinDim_iff.mp S.X₃.property) ((Paths.of Q).obj i)
     have hdim := dimVector_add_of_shortExact hs h₁ h₃
     funext i
@@ -135,7 +126,7 @@ noncomputable def quiverDimensionVector :
 /-- The Grothendieck-group dimension map sends an object class to its dimension vector. -/
 @[simp]
 theorem quiverDimensionVector_of
-    (M : (finiteDimensionalQuiverRepresentations.{u, v, w, t} k Q).FullSubcategory) :
+    (M : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :
     quiverDimensionVector k Q (ExactK0.of M) = fun i ↦ (dimVector M.1 i : ℤ) :=
   ExactK0.lift_of (quiverDimensionVectorInvariant k Q) M
 
@@ -155,7 +146,7 @@ noncomputable def quiverEulerPairing :
 of their dimension vectors. -/
 @[simp]
 theorem quiverEulerPairing_of_of
-    (M N : (finiteDimensionalQuiverRepresentations.{u, v, w, t} k Q).FullSubcategory) :
+    (M N : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :
     quiverEulerPairing k Q (ExactK0.of M) (ExactK0.of N) =
       eulerForm Q (fun i ↦ (dimVector M.1 i : ℤ))
         (fun i ↦ (dimVector N.1 i : ℤ)) := by
