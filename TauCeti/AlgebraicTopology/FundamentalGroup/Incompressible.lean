@@ -60,6 +60,23 @@ theorem fundamentalGroup_injective (h : IsIncompressible f) (s : S) :
     Function.Injective (FundamentalGroup.map f s) :=
   h.2 s
 
+/-- The composition of incompressible maps is incompressible. -/
+theorem comp {T : Type*} [TopologicalSpace T] {g : C(M, T)}
+    (hg : IsIncompressible g) (hf : IsIncompressible f) :
+    IsIncompressible (g.comp f) := by
+  refine ⟨hg.isEmbedding.comp hf.isEmbedding, fun s => ?_⟩
+  intro γ₁ γ₂ hγ
+  apply hf.fundamentalGroup_injective s
+  apply hg.fundamentalGroup_injective (f s)
+  have hcomp (γ : FundamentalGroup S s) :
+      FundamentalGroup.map (g.comp f) s γ =
+        FundamentalGroup.map g (f s) (FundamentalGroup.map f s γ) := by
+    change Path.Homotopic.Quotient.map γ (g.comp f) =
+      Path.Homotopic.Quotient.map (Path.Homotopic.Quotient.map γ f) g
+    exact Path.Homotopic.Quotient.map_comp
+  rw [hcomp γ₁, hcomp γ₂] at hγ
+  exact hγ
+
 end IsIncompressible
 
 /-- A continuous left inverse makes an embedding incompressible. -/
