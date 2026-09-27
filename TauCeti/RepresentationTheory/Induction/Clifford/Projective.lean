@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.Induction.Inertia
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Basic
+public import TauCeti.RepresentationTheory.Schur
 
 /-!
 # The projective representation of the inertia group on an irreducible of a normal subgroup
@@ -30,34 +31,20 @@ in the sense of `TauCeti.IsProjectiveRep`.
 
 This is the object behind the Clifford-theory extension obstruction: `V` extends to an ordinary
 representation of its inertia group only if this projective representation linearizes, and
-`TauCeti.IsProjectiveRep.cohomologyClass` turns the factor set into a Schur-multiplier class.
-What is *not* done here is the descent of that class to the quotient `inertia V / N`, where the
-roadmap's Clifford obstruction lives; that descent is a separate construction, and nothing below
-asserts it.  The ingredient this file supplies towards it is
-`TauCeti.exists_units_inertiaTwist_coe_eq_smul`, which says that on `N` itself the chosen twist is
-a scalar multiple of `ρ`, so the restriction of the projective action to `N` is the
-projectivization of `ρ` rather than an independent datum.
+`TauCeti.IsProjectiveRep.cohomologyClass` turns the factor set into a Schur-multiplier class.  The
+obstruction itself is a class of the quotient `inertia V / N`, and what ties the projective action
+built here to that quotient is `TauCeti.exists_units_inertiaTwist_coe_eq_smul`: on `N` itself the
+chosen twist is a scalar multiple of `ρ`, so the restriction of the projective action to `N` is the
+projectivization of `ρ` — in general not trivial — rather than an independent datum.
 
-## Implementation notes
-
-The twist is chosen with `Classical.choice` out of `TauCeti.mem_inertia_iff`, read through
-`TauCeti.nonempty_fdRepIso_iff` so that the categorical isomorphism becomes a
-`Representation.Equiv` and therefore an honest `V ≃ₗ[k] V`.  Normalization at `1` is forced by
-hand, because no choice of isomorphisms can be expected to hit the identity there: the raw choice
-at `g` is composed with the inverse of the raw choice at `1`, which is `N`-equivariant because
-conjugating by `1` does nothing.  Normalization is load-bearing, since `TauCeti.IsFactorSet` asks
-for `α 1 g = α g 1 = 1`.  Neither the choice nor the intertwining relation needs `V` simple, so
-the twist and its defining relation are stated for an arbitrary `V`; simplicity enters only with
-Schur's lemma.
+The normalization `T 1 = 1` is part of the data rather than a convenience: `TauCeti.IsFactorSet`
+asks for `α 1 g = α g 1 = 1`, which holds only for a normalized family of twists.  Neither the
+twist nor its intertwining relation needs `V` simple, so both are stated for an arbitrary
+`V : FDRep k N`; simplicity and algebraic closedness enter with Schur's lemma.
 
 The intertwining relation is stated with Mathlib's `MulAut.conjNormal`, matching
 `TauCeti.conjNormalFDRep_ρ`, and `TauCeti.inertiaTwist_apply_conj_mk` restates it with the
 conjugate written in the ambient group.
-
-Once `Nontrivial V` is known — it is, because `V` is simple — Mathlib's instances make the scalar
-action on `V` faithful, which is what lets `TauCeti.IsProjectiveRep.of_map_one_mul_apply` derive
-the cocycle identity of the factor set from associativity of composition rather than by a direct
-computation.
 
 ## Main definitions
 
@@ -80,9 +67,6 @@ computation.
 
 ## References
 
-This builds the projective-representation input to the Clifford-theory obstruction of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`.
-
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Chapter 11.
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Chapter 3.
 
@@ -99,31 +83,15 @@ namespace TauCeti
 
 universe u
 
-section Schur
-
-variable {k H W : Type*} [Field k] [IsAlgClosed k] [Monoid H] [AddCommGroup W] [Module k W]
-
-/-- Schur's lemma on the underlying module: an endomorphism commuting with an irreducible
-finite-dimensional action over an algebraically closed field is a scalar.  This is Mathlib's
-`Representation.IsIrreducible.algebraMap_intertwiningMap_bijective_of_isAlgClosed`, read as a
-statement about the underlying linear map. -/
-private theorem exists_eq_smul_id_of_comm (ρ : Representation k H W) [ρ.IsIrreducible]
-    [FiniteDimensional k W] (f : W →ₗ[k] W) (hf : ∀ (h : H) (w : W), f (ρ h w) = ρ h (f w)) :
-    ∃ c : k, f = c • LinearMap.id := by
-  obtain ⟨c, hc⟩ :=
-    (Representation.IsIrreducible.algebraMap_intertwiningMap_bijective_of_isAlgClosed
-      (ρ := ρ)).2 (f.intertwiningMap_of_isIntertwiningMap ρ ρ hf)
-  refine ⟨c, LinearMap.ext fun w => ?_⟩
-  simpa using (congrArg (fun q : Representation.IntertwiningMap ρ ρ => q w) hc).symm
-
-end Schur
-
 variable {k G : Type u} [Field k] [Group G] {N : Subgroup G} [hN : N.Normal] (V : FDRep k N)
 
 /-- An arbitrary choice of isomorphism `{}^g V ≅ V` for `g` in the inertia group, read as a linear
 automorphism of `V`.  Conjugation leaves the underlying module alone, so the isomorphism really is
 an automorphism of `V`.  This raw choice is unnormalized; `TauCeti.inertiaTwist` corrects it at
 `1`. -/
+-- The choice is made with `Classical.choice` out of `mem_inertia_iff`, read through
+-- `nonempty_fdRepIso_iff` so that the categorical isomorphism becomes a `Representation.Equiv`
+-- and hence a linear automorphism of `V`.
 private noncomputable def rawInertiaTwist (g : inertia V) : V ≃ₗ[k] V :=
   (nonempty_fdRepIso_iff.mp (mem_inertia_iff.mp g.2)).some.toLinearEquiv
 
@@ -135,10 +103,10 @@ private theorem rawInertiaTwist_apply_conj (g : inertia V) (n : N) (v : V) :
 
 /-- **The chosen intertwiner of `{}^g V` with `V`**, for `g` in the inertia group of
 `V : FDRep k N`, normalized to be the identity at `1`.  Conjugation leaves the underlying module
-alone, so the isomorphism is a linear automorphism of `V`.  Normalization is arranged by composing
-an arbitrary choice with the inverse of the choice made at `1`, which is itself `N`-equivariant.
-Once `V` is simple the twist is determined by this choice up to a scalar
-(`TauCeti.exists_units_eq_smul_inertiaTwist`). -/
+alone, so the isomorphism is a linear automorphism of `V`.  Once `V` is simple the twist is
+determined by this choice up to a scalar (`TauCeti.exists_units_eq_smul_inertiaTwist`). -/
+-- Normalization is arranged by composing an arbitrary choice at `g` with the inverse of the
+-- arbitrary choice at `1`, which is `N`-equivariant by `rawInertiaTwist_one_symm_apply`.
 noncomputable def inertiaTwist (g : inertia V) : V ≃ₗ[k] V :=
   (rawInertiaTwist V g).trans (rawInertiaTwist V 1).symm
 
@@ -197,7 +165,8 @@ theorem exists_units_eq_smul_inertiaTwist (g : inertia V) (f : V →ₗ[k] V) (h
     simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe, hsymm n v]
     exact hf n ((inertiaTwist V g).symm v)
   obtain ⟨c, hc⟩ :=
-    exists_eq_smul_id_of_comm V.ρ (f ∘ₗ ((inertiaTwist V g).symm : V →ₗ[k] V)) hcomm
+    Representation.IsIrreducible.exists_eq_smul_id_of_comm V.ρ
+      (f ∘ₗ ((inertiaTwist V g).symm : V →ₗ[k] V)) hcomm
   have hcv : ∀ v : V, f v = c • inertiaTwist V g v := fun v => by
     have := congrArg (fun q : V →ₗ[k] V => q (inertiaTwist V g v)) hc
     simpa using this
@@ -206,8 +175,11 @@ theorem exists_units_eq_smul_inertiaTwist (g : inertia V) (f : V →ₗ[k] V) (h
     exact hf0 (LinearMap.ext fun v => by simpa using hcv v)
   exact ⟨Units.mk0 c hc0, fun v => by simpa using hcv v⟩
 
-/-- **The twist is multiplicative up to a unit scalar.** Both `T g ∘ T h` and `T (g * h)` obey the
-intertwining relation at `g * h`, so Schur's lemma compares them. -/
+/-- **The twist is multiplicative up to a unit scalar.** The comparing units are the factor set
+`TauCeti.inertiaFactorSet` below, whose class in the Schur multiplier is the Clifford-theory
+obstruction. -/
+-- Both `T g ∘ T h` and `T (g * h)` obey the intertwining relation at `g * h`, so Schur's lemma
+-- compares them.
 theorem exists_units_inertiaTwist_mul (g h : inertia V) :
     ∃ c : kˣ, ∀ v : V,
       inertiaTwist V g (inertiaTwist V h v) = (c : k) • inertiaTwist V (g * h) v := by
@@ -244,6 +216,7 @@ noncomputable def inertiaFactorSet (g h : inertia V) : kˣ :=
   (exists_units_inertiaTwist_mul V g h).choose
 
 /-- The defining property of `TauCeti.inertiaFactorSet`. -/
+@[simp]
 theorem inertiaTwist_mul_apply (g h : inertia V) (v : V) :
     inertiaTwist V g (inertiaTwist V h v)
       = (inertiaFactorSet V g h : k) • inertiaTwist V (g * h) v :=
@@ -267,6 +240,9 @@ representation of `inertia V` with factor set `TauCeti.inertiaFactorSet V`; this
 action Clifford theory attaches to an irreducible of a normal subgroup. -/
 theorem isProjectiveRep_inertiaTwist :
     IsProjectiveRep (inertiaTwist V) (inertiaFactorSet V) := by
+  -- `Nontrivial V` makes the scalar action on `V` faithful, which is what lets
+  -- `IsProjectiveRep.of_map_one_mul_apply` derive the cocycle identity of the factor set from
+  -- associativity of composition rather than by a direct computation.
   have hnt : Nontrivial V :=
     Representation.IsIrreducible.nontrivial (FDRep.isIrreducible_of_simple V)
   exact IsProjectiveRep.of_map_one_mul_apply (by rw [inertiaTwist_one]; rfl)
@@ -276,12 +252,11 @@ theorem isProjectiveRep_inertiaTwist :
 theorem isFactorSet_inertiaFactorSet : IsFactorSet (inertiaFactorSet V) :=
   (isProjectiveRep_inertiaTwist V).isFactorSet
 
-/-- **On the normal subgroup the twist is the representation itself, up to a scalar.** The
-conjugation by an element of `N` is inner, so `ρ n` already obeys the intertwining relation there,
-and Schur's lemma compares it with the chosen twist.  So the restriction of the projective action
-of `inertia V` to `N` is the projectivization of `ρ` itself — in general not trivial — rather than
-an independent datum.  Whether the factor set descends to the quotient `inertia V / N`, where the
-obstruction class is expected to live, is a separate question, not settled here. -/
+/-- **On the normal subgroup the twist is the representation itself, up to a scalar.** So the
+restriction of the projective action of `inertia V` to `N` is the projectivization of `ρ` itself —
+in general not trivial — rather than an independent datum. -/
+-- Conjugation by an element of `N` is inner, so `ρ n` already obeys the intertwining relation at
+-- `n`, and Schur's lemma compares it with the chosen twist.
 theorem exists_units_inertiaTwist_coe_eq_smul (n : N) :
     ∃ c : kˣ, ∀ v : V,
       inertiaTwist V ⟨(n : G), le_inertia V n.2⟩ v = (c : k) • V.ρ n v := by
