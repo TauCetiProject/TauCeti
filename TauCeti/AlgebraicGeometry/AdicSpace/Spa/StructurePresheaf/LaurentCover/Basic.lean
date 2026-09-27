@@ -328,8 +328,33 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
     simp [q, hnum]
   let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
-  have hsurj := laurentCover_surjective P f (Localization.Away (1 : A))
-    (Localization.Away f) (Localization.Away (1 * f)) (p false).hasDenominatorPower
+  let _ := locUniformSpace P (p true).num (p true).den _ (p true).hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P (p true).num (p true).den _
+    (p true).hasDenominatorPower
+  let _ := locUniformSpace P (p false).num (p false).den _ (p false).hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P (p false).num (p false).den _
+    (p false).hasDenominatorPower
+  let ringDifference :
+      UniformSpace.Completion (Localization.Away (p true).den) ×
+        UniformSpace.Completion (Localization.Away (p false).den) →
+          UniformSpace.Completion (Localization.Away q.den) := fun x ↦
+    restrictionRingHom P (p true).num (p true).den _ (p true).hasDenominatorPower
+        q.num q.den _ q.hasDenominatorPower f rfl hT₁ x.1 -
+      restrictionRingHom P (p false).num (p false).den _ (p false).hasDenominatorPower
+        q.num q.den _ q.hasDenominatorPower 1 (mul_comm 1 f) hT₂ x.2
+  have hsurj : Function.Surjective ringDifference :=
+    laurentCover_surjective P f (Localization.Away (1 : A))
+      (Localization.Away f) (Localization.Away (1 * f)) (p false).hasDenominatorPower
+  -- The map in `laurentCover_surjective` is the pointwise difference of the two
+  -- restriction maps used below.
+  have ringDifference_apply (u : UniformSpace.Completion (Localization.Away (p true).den))
+      (v : UniformSpace.Completion (Localization.Away (p false).den)) :
+      ringDifference (u, v) =
+        restrictionRingHom P (p true).num (p true).den _ (p true).hasDenominatorPower
+          q.num q.den _ q.hasDenominatorPower f rfl hT₁ u -
+        restrictionRingHom P (p false).num (p false).den _ (p false).hasDenominatorPower
+          q.num q.den _ q.hasDenominatorPower 1 (mul_comm 1 f) hT₂ v := by
+    rfl
   -- Transport the ring-level theorem through the rational-section isomorphisms.
   have hqSurj : Function.Surjective fun (x :
       presentationLimit (P := P) Aplus (spaBasicOpen Aplus (p true).num (p true).den) ×
@@ -402,8 +427,7 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
                 (hU false) x₂)
       _ = _ := by
         rw [hx₁, hx₂]
-        dsimp [p, q, laurentPresentation, laurentOverlapPresentation]
-        convert huv using 1; rfl
+        exact (ringDifference_apply u v).symm.trans huv
   -- Return from the explicit rational presentation to the literal intersection.
   intro z
   obtain ⟨⟨x₁, x₂⟩, hx⟩ := hqSurj ((presentationLimitMap hEq.le).hom.1 z)
