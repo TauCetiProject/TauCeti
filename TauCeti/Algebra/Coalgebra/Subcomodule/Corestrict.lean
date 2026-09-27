@@ -297,18 +297,6 @@ def corestrictOrderIsoOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
     map_rel_iff' := by
       rfl }
 
-/-- The inverse order correspondence for a split corestriction preserves carriers. -/
-@[simp]
-theorem corestrictOrderIsoOfSplit_symm_toSubmodule (f : C →ₗc[k] D)
-    (r : D →ₗ[k] C) (hr : r.comp f.toLinearMap = LinearMap.id)
-    (W : letI : Comodule k D V := Comodule.Corestrict f
-      Subcomodule k D V) :
-    letI : Comodule k D V := Comodule.Corestrict f
-    ((corestrictOrderIsoOfSplit f r hr).symm W).toSubmodule = W.toSubmodule := by
-  let _ : Comodule k D V := Comodule.Corestrict f
-  change (ofCorestrictOfSplit f r hr W).toSubmodule = W.toSubmodule
-  rfl
-
 /-- The forward map of the split-corestriction order isomorphism is corestriction. -/
 @[simp]
 theorem corestrictOrderIsoOfSplit_apply (f : C →ₗc[k] D) (r : D →ₗ[k] C)
