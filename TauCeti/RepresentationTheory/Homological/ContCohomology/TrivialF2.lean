@@ -238,11 +238,29 @@ theorem trivialF2Map_subgroupSubtype (G : Type u) [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] (S : Subgroup G) (n : ℕ) :
     trivialF2Map (ContinuousMonoidHom.subgroupSubtype S) n =
       trivialF2ResMap G S n := by
+  have hsubtype :
+      ((ContinuousMonoidHom.subgroupSubtype S : S →ₜ* G) : S →* G) = S.subtype := rfl
+  have hcoeff :
+      TopRep.res ((ContinuousMonoidHom.subgroupSubtype S : S →ₜ* G) : S →* G)
+        (trivialF2 G) = trivialF2 S := by
+    rw [hsubtype]
+    exact res_trivialF2 G S
   have hmap : eqToHom
       (res_trivialF2_hom (ContinuousMonoidHom.subgroupSubtype S)) =
       𝟙 (trivialF2 S) := eqToHom_refl _ _
   have hres : eqToHom (congrArg (continuousCohomology n) (res_trivialF2 G S)) =
       𝟙 (continuousCohomology n (trivialF2 S)) := eqToHom_refl _ _
+  have hcomparison :
+      _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
+        (𝟙 (trivialF2 S)) n =
+      _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
+        (𝟙 (TopRep.res (S.subtype : S →* G) (trivialF2 G))) n := by
+    have hmaps : HEq (𝟙 (trivialF2 S))
+        (𝟙 (TopRep.res (S.subtype : S →* G) (trivialF2 G))) := by
+      rw [hsubtype] at hcoeff
+      cases hcoeff
+      rfl
+    exact TauCeti.ContinuousCohomology.map_congr rfl hmaps n
   calc
     trivialF2Map (ContinuousMonoidHom.subgroupSubtype S) n =
         _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
@@ -250,14 +268,8 @@ theorem trivialF2Map_subgroupSubtype (G : Type u) [Group G] [TopologicalSpace G]
       rw [trivialF2Map_def, hmap]
     _ = _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
           (𝟙 (TopRep.res (S.subtype : S →* G) (trivialF2 G))) n ≫
-          𝟙 (continuousCohomology n (trivialF2 S)) := by
-      -- The two restriction homomorphisms and the transported coefficient objects agree
-      -- definitionally; this exposes the identity morphism on the target.
-      change _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
-          (𝟙 _) n =
-        _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
-          (𝟙 _) n ≫ 𝟙 _
-      simp
+          𝟙 (continuousCohomology n (trivialF2 S)) :=
+      hcomparison.trans (Category.comp_id _).symm
     _ = trivialF2ResMap G S n := by
       rw [trivialF2ResMap_def, TauCeti.ContinuousCohomology.res_def, hres]
 
