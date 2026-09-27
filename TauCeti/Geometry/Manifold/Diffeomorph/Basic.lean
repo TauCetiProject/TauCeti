@@ -55,6 +55,29 @@ theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
   rw [hss, h.symm_apply_apply] at hh
   exact hh
 
+/-- Applying the tangent map of a diffeomorphism and then that of its inverse returns the
+original tangent vector. -/
+@[simp]
+theorem tangentMap_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (z : TangentBundle I M) :
+    tangentMap J I h.symm (tangentMap I J h z) = z := by
+  rw [← tangentMap_comp_at z ((h.symm.mdifferentiable hn) (h z.1))
+    ((h.mdifferentiable hn) z.1)]
+  have hinv : (h.symm : N → M) ∘ h = id := funext h.symm_apply_apply
+  rw [hinv]
+  exact congrFun tangentMap_id z
+
+/-- Applying the tangent map of the inverse of a diffeomorphism and then that of the
+diffeomorphism returns the original tangent vector. -/
+@[simp]
+theorem tangentMap_apply_symm (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (z : TangentBundle J N) :
+    tangentMap I J h (tangentMap J I h.symm z) = z := by
+  have hss : h.symm.symm = h := Diffeomorph.ext fun _ ↦ rfl
+  have hh := tangentMap_symm_apply h.symm hn z
+  rw [hss] at hh
+  exact hh
+
 /-- Postcomposition with a diffeomorphism preserves differentiability at a point. -/
 theorem mdifferentiableAt_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
