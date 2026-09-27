@@ -97,6 +97,8 @@ theorem trace_binaryFormRep_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
 
 namespace TraceFormulaMatrixModule
 
+-- These action formulas are not simp lemmas: `binaryFormAction_mk` and `periodAction_single`
+-- simplify their left-hand sides first, so `simpNF` rejects either attribute here.
 /-- The projective diagonal class has the same Dickson trace on even-degree binary forms. -/
 theorem trace_binaryFormAction_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
     {n : ℤ} (w : ℕ) (hw : Even w) (a d : ℤ) (h : a * d = n) :
