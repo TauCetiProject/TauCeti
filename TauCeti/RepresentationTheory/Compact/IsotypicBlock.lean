@@ -84,22 +84,22 @@ skeleton enters exactly where density is claimed.
 
 Every statement in this file is a statement about Hilbert spaces, their subspaces, their isometries
 and their bounded operators. The blocks are called *isotypic* because the `π`-block is spanned by
-the matrix coefficients of `π` alone; that it is the `π`-isotypic component of a `G`-action, and
-that the decomposition of `L²(G)` is one of unitary `G × G`-representations under left and right
-translation, are statements about group actions and are **not** proved here. What is proved about
-the action is that each block is stable under both translations
-(`TauCeti.compMeasurePreserving_mulLeft_mem_peterWeylBlock` and
+the matrix coefficients of `π` alone; that it is the `π`-isotypic component of a `G`-action is a
+statement about group actions and is **not** proved here. What is proved about the action is that
+each block is stable under both translations
+(`TauCeti.leftRegularLp_mem_peterWeylBlock` and
 `TauCeti.rightRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
 model to matrix coefficients of the same model
 (`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
-`TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`). Equivariance of the identification of a
+`TauCeti.ContRepresentation.matrixCoeff_comp_mulRight`); that the decomposition of `L²(G)` is one of
+unitary `G × G`-representations under two-sided translation is assembled from those two stabilities
+in `TauCeti.RepresentationTheory.Compact.BiregularBlock`. Equivariance of the identification of a
 block with `End(V_π)` is not proved either, and what it needs is a `G × G`-action on each side:
-bi-translation `((g, h) · f) x = f (g⁻¹ * x * h)` on `L²(G)`, of which only the right factor is in
-the library (`TauCeti.rightRegularLp`), and `(g, h) · A = π g ∘ A ∘ π h⁻¹` on `End(V_π)`, together
-with the proof that the identification intertwines them. No `G × G`-action is defined in the
-library, and `TauCeti.endEquivPeterWeylBlock` is built from the canonical basis of the model, so
-nothing is claimed here about its equivariance. The character averaging operator
-`TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
+bi-translation `((g, h) · f) x = f (g⁻¹ * x * h)` on `L²(G)`, which is `TauCeti.biregularLp`, and
+`(g, h) · A = π g ∘ A ∘ π h⁻¹` on `End(V_π)`, which is nowhere defined, together with the proof that
+the identification intertwines them. `TauCeti.endEquivPeterWeylBlock` is built from the canonical
+basis of the model, so nothing is claimed here about its equivariance. The character averaging
+operator `TauCeti.peterWeylBlockAveraging` *is* built here, but not as an instance of
 `TauCeti.ContRepresentation.isotypicProjector`: that projector is built from
 `TauCeti.ContRepresentation.integratedOperator` for a *finite-dimensional* carrier and a
 norm-continuous representation, while `L²(G)` is in general infinite-dimensional and its regular
@@ -136,9 +136,8 @@ available.
   chosen.
 * `TauCeti.toLp_star_character_mem_peterWeylBlock`: the conjugate character of a model lies in its
   own block, spanning the trace direction of it.
-* `TauCeti.rightRegularLp_mem_peterWeylBlock` and
-  `TauCeti.compMeasurePreserving_mulLeft_mem_peterWeylBlock`: **each block is stable under right
-  and left translation**.
+* `TauCeti.rightRegularLp_mem_peterWeylBlock` and `TauCeti.leftRegularLp_mem_peterWeylBlock`:
+  **each block is stable under right and left translation**.
 * `TauCeti.isOrtho_peterWeylBlock`, `TauCeti.orthogonalFamily_peterWeylBlock`: **the blocks of
   inequivalent models are orthogonal**, so the blocks of a family of pairwise inequivalent models
   form an orthogonal family of subspaces, and `TauCeti.iSupIndep_peterWeylBlock` that they are
@@ -333,43 +332,24 @@ theorem rightRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (g : G)
   | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
   | smul c x _ hx => simpa using Submodule.smul_mem _ c hx
 
-/-- **Each block is stable under left translation**: left translating a matrix coefficient of a
-unitary model moves the inverse translation onto its second vector
+/-- **Each block is stable under left translation**, that is, under the left regular representation
+`TauCeti.leftRegularLp` of `G` on `L²(G)`: left translating a matrix coefficient of a unitary model
+moves the inverse translation onto its second vector
 (`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft`), so the translate is again a matrix
-coefficient of the same model.
-
-Left translation is spelled as Mathlib's precomposition operator
-`MeasureTheory.Lp.compMeasurePreserving`, which is also what `TauCeti.rightRegularLp_apply` unfolds
-right translation to; the left regular representation of `G` on `L²(G)` is not in the library. -/
-theorem compMeasurePreserving_mulLeft_mem_peterWeylBlock (model : IrrepModel 𝕜 G)
-    (g : G) {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
-    Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g) f ∈
-      peterWeylBlock model := by
+coefficient of the same model. -/
+theorem leftRegularLp_mem_peterWeylBlock (model : IrrepModel 𝕜 G) (g : G)
+    {f : Lp 𝕜 2 (haarProb G)} (hf : f ∈ peterWeylBlock model) :
+    leftRegularLp 𝕜 G g f ∈ peterWeylBlock model := by
   induction hf using Submodule.span_induction with
   | mem x hx =>
     obtain ⟨v, w, rfl⟩ := hx
-    have htranslate : Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g)
-        (ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v w) =
-        ContRepresentation.matrixCoeffLp model.rep model.continuous_rep v
-          (model.rep g⁻¹ w) := by
-      rw [ContRepresentation.matrixCoeffLp_def, ContRepresentation.matrixCoeffLp_def,
-        ← ContRepresentation.matrixCoeff_comp_mulLeft model.continuous_rep
-          model.isUnitary v w g]
-      exact Lp.compMeasurePreserving_toLp 𝕜 _ (ContinuousMap.mulLeft g)
-        (measurePreserving_mul_left (haarProb G) g)
-    rw [htranslate]
+    rw [ContRepresentation.matrixCoeffLp_def, leftRegularLp_toLp,
+      ContRepresentation.matrixCoeff_comp_mulLeft model.continuous_rep model.isUnitary, inv_inv,
+      ← ContRepresentation.matrixCoeffLp_def]
     exact matrixCoeffLp_mem_peterWeylBlock model _ _
   | zero => simp
   | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
-  | smul c x _ hx =>
-    -- `Lp.compMeasurePreserving` is bundled as an `AddMonoidHom`, so its `𝕜`-linearity comes from
-    -- the linear-map form of the same precomposition.
-    have hsmul : Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g)
-        (c • x) =
-        c • Lp.compMeasurePreserving (g * ·) (measurePreserving_mul_left (haarProb G) g) x :=
-      (Lp.compMeasurePreservingₗ 𝕜 (g * ·) (measurePreserving_mul_left (haarProb G) g)).map_smul c x
-    rw [hsmul]
-    exact Submodule.smul_mem _ c hx
+  | smul c x _ hx => simpa using Submodule.smul_mem _ c hx
 
 /-! ### A block is a copy of the endomorphism algebra of its model
 
