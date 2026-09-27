@@ -28,6 +28,31 @@ namespace TauCeti
 
 open Complex InnerProductSpace
 
+/-- The boundary inner-product identity used in the radial derivative of the planar Green
+kernel. -/
+private theorem planarGreenKernel_boundary_inner_sub {a z : ℂ} (hz : ‖z‖ = 1) :
+    ⟪z - a, z⟫_ℝ -
+      ⟪1 - starRingEnd ℂ a * z, -(starRingEnd ℂ a * z)⟫_ℝ =
+      1 - ‖a‖ ^ 2 := by
+  have hzsq : z.re ^ 2 + z.im ^ 2 = 1 := by
+    have h : ‖z‖ ^ 2 = 1 := by rw [hz]; norm_num
+    rw [Complex.sq_norm, normSq_apply] at h
+    nlinarith
+  have hcore :
+      (z.re * (z.re + (-a).re) + z.im * (z.im + (-a).im)) -
+        ((-(starRingEnd ℂ a * z)).re *
+          ((-(starRingEnd ℂ a * z)).re + (1 : ℂ).re) +
+          (-(starRingEnd ℂ a * z)).im *
+            ((-(starRingEnd ℂ a * z)).im + (1 : ℂ).im)) =
+        1 - ‖a‖ ^ 2 := by
+    rw [Complex.sq_norm, normSq_apply]
+    simp only [neg_re, neg_im, conj_re, conj_im, mul_re, mul_im, one_re, one_im,
+      add_zero]
+    nlinarith [hzsq]
+  simp only [Complex.inner, Complex.mul_re, Complex.conj_re, Complex.conj_im,
+    sub_re, sub_im, neg_re, neg_im, one_re, one_im] at hcore ⊢
+  nlinarith [hcore]
+
 /-- On the boundary of the unit disk, the outward radial derivative of the Green kernel
 with pole `a` is the negative of the Poisson kernel divided by `2π`. -/
 theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
@@ -63,31 +88,9 @@ theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz :
     rw [planarGreenKernel_def]
     rw [harg]
   rw [heq]
-  have hzsq : z.re ^ 2 + z.im ^ 2 = 1 := by
-    have h : ‖z‖ ^ 2 = 1 := by rw [hz]; norm_num
-    rw [Complex.sq_norm, normSq_apply] at h
-    nlinarith
-  have hcore :
-      (z.re * (z.re + (-a).re) + z.im * (z.im + (-a).im)) -
-        ((-(starRingEnd ℂ a * z)).re *
-          ((-(starRingEnd ℂ a * z)).re + (1 : ℂ).re) +
-          (-(starRingEnd ℂ a * z)).im *
-            ((-(starRingEnd ℂ a * z)).im + (1 : ℂ).im)) =
-        1 - ‖a‖ ^ 2 := by
-    rw [Complex.sq_norm, normSq_apply]
-    simp only [neg_re, neg_im, conj_re, conj_im, mul_re, mul_im, one_re, one_im,
-      add_zero]
-    nlinarith [hzsq]
-  have hinnercore :
-      ⟪z - a, z⟫_ℝ -
-        ⟪1 - starRingEnd ℂ a * z, -(starRingEnd ℂ a * z)⟫_ℝ =
-        1 - ‖a‖ ^ 2 := by
-    simp only [Complex.inner, Complex.mul_re, Complex.conj_re, Complex.conj_im,
-      sub_re, sub_im, neg_re, neg_im, one_re, one_im] at hcore ⊢
-    nlinarith [hcore]
   convert h₁.sub h₂ using 1
   · simp only [poissonKernel_def, sub_zero, hz, one_pow]
-    rw [hnorm, ← hinnercore]
+    rw [hnorm, ← planarGreenKernel_boundary_inner_sub hz]
     ring
 
 /-- The spatial derivative of the unit-disk Green kernel on the outward unit normal equals
