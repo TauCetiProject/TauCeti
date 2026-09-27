@@ -41,7 +41,6 @@ def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
 def integralPoints : Set (W.baseChange ℚ).toAffine.Point :=
   {P | ∃ x y : ℤ, ∃ h : W.toAffine.Equation x y, P = W.pointOfIntegralSolution x y h}
 
-@[simp]
 theorem mem_integralPoints_iff (P : (W.baseChange ℚ).toAffine.Point) :
     P ∈ W.integralPoints ↔
       ∃ x y : ℤ, ∃ h : W.toAffine.Equation x y, P = W.pointOfIntegralSolution x y h :=
