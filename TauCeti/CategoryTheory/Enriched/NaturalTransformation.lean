@@ -226,7 +226,6 @@ noncomputable def unitComp {F G H : EnrichedFunctor V C' D'}
       aX aY bX bY hα hγ
 
 /-- A component of the composite at the monoidal unit. -/
-@[simp]
 theorem unitComp_app {F G H : EnrichedFunctor V C' D'}
     (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G)
     (γ : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) G H) (X : C') :
@@ -247,11 +246,11 @@ theorem unitComp_app_homOf {F G H : EnrichedFunctor V C' D'}
 
 end GradedNatTrans
 
-namespace EnrichedFunctor
+namespace GradedNatTrans
 
 /-- Identity graded natural transformation at the monoidal unit. -/
 @[expose]
-noncomputable def unitGradedId (F : EnrichedFunctor V C' D') :
+noncomputable def unitId (F : EnrichedFunctor V C' D') :
     GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F F where
   app X := eId V (F.obj X)
   naturality X Y := by
@@ -277,12 +276,12 @@ noncomputable def unitGradedId (F : EnrichedFunctor V C' D') :
 
 /-- A component of the identity at the monoidal unit. -/
 @[simp]
-theorem unitGradedId_app (F : EnrichedFunctor V C' D') (X : C') :
-    (unitGradedId F).app X = eId V (F.obj X) := by
-  unfold unitGradedId
+theorem unitId_app (F : EnrichedFunctor V C' D') (X : C') :
+    (unitId F).app X = eId V (F.obj X) := by
+  unfold unitId
   rfl
 
-end EnrichedFunctor
+end GradedNatTrans
 
 end GradedBridge
 
