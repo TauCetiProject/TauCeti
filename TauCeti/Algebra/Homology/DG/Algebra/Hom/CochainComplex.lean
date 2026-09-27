@@ -27,9 +27,10 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u
+universe uR uA uB uC uExtra
 
-variable {R A B C : Type u} [CommRing R] [Ring A] [Ring B] [Ring C]
+variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
+  [CommRing R] [Ring A] [Ring B] [Ring C]
   [Algebra R A] [Algebra R B] [Algebra R C]
   {𝒜 : ℤ → Submodule R A} {ℬ : ℤ → Submodule R B} {𝒞 : ℤ → Submodule R C}
   [GradedAlgebra 𝒜] [GradedAlgebra ℬ] [GradedAlgebra 𝒞]
@@ -47,15 +48,18 @@ private theorem toLinearMap_isHomogeneous (f : DGAlgHom hA hB) :
 
 /-- A DG algebra morphism, viewed as a map of the underlying cochain complexes. -/
 noncomputable def toCochainMap (f : DGAlgHom hA hB) :
-    hA.toCochainComplex ⟶ hB.toCochainComplex :=
+    hA.toCochainComplex.{uR, uA, max uB uExtra} ⟶
+      hB.toCochainComplex.{uR, uB, max uA uExtra} :=
   gradedCochainComplexMap f.toGradedAlgHom.toAlgHom.toLinearMap
     f.toLinearMap_isHomogeneous (fun _ x ↦ by simp)
 
 /-- The cochain map acts on homogeneous elements by the DG algebra morphism. -/
 @[simp]
 theorem toCochainMap_f_apply (f : DGAlgHom hA hB) (n : ℤ) (x : 𝒜 n) :
-    (eqToHom (gradedCochainComplex_X n)
-      ((f.toCochainMap.f n) (eqToHom (gradedCochainComplex_X n).symm x)) : B) = f x := by
+    (eqToHom (gradedCochainComplexLift_X.{uR, uB, max uA uExtra} n)
+      ((f.toCochainMap.f n)
+        (eqToHom (gradedCochainComplexLift_X.{uR, uA, max uB uExtra} n).symm
+          (ULift.up x)))).down.val = f x := by
   simpa [toCochainMap, AlgHom.toLinearMap_apply] using
     gradedCochainComplexMap_f_apply (hdeg := LinearMap.isHomogeneous_def.mpr
       fun _ _ ha ↦ hA.map_mem ha) (hsq := fun _ y ↦ hA.sq_zero y)
@@ -85,7 +89,9 @@ theorem toCochainMap_id (hA : IsDGAlgebra 𝒜 dA) :
 /-- Composition of DG algebra morphisms induces composition of cochain maps. -/
 @[simp]
 theorem toCochainMap_comp (g : DGAlgHom hB hC) (f : DGAlgHom hA hB) :
-    (g.comp f).toCochainMap = f.toCochainMap ≫ g.toCochainMap := by
+    (g.comp f).toCochainMap.{uR, uA, uC, max uB uExtra} =
+      f.toCochainMap.{uR, uA, uB, max uC uExtra} ≫
+        g.toCochainMap.{uR, uB, uC, max uA uExtra} := by
   have hlin : (g.comp f).toGradedAlgHom.toAlgHom.toLinearMap =
       g.toGradedAlgHom.toAlgHom.toLinearMap.comp
         f.toGradedAlgHom.toAlgHom.toLinearMap := by
@@ -103,11 +109,11 @@ theorem toCochainMap_comp (g : DGAlgHom hB hC) (f : DGAlgHom hA hB) :
         f.toGradedAlgHom.toAlgHom.toLinearMap) (dA x) := by
     simp
   calc
-    (g.comp f).toCochainMap = gradedCochainComplexMap
+    (g.comp f).toCochainMap.{uR, uA, uC, max uB uExtra} = gradedCochainComplexMap
         (g.toGradedAlgHom.toAlgHom.toLinearMap.comp
           f.toGradedAlgHom.toAlgHom.toLinearMap) hgf hcommgf := by
         exact gradedCochainComplexMap_congr hlin _ _ _ _
-    _ = f.toCochainMap ≫ g.toCochainMap :=
+    _ = f.toCochainMap.{uR, uA, uB, max uC uExtra} ≫ g.toCochainMap.{uR, uB, uC, max uA uExtra} :=
       gradedCochainComplexMap_comp _ _ _ _ _ _
 
 end DGAlgHom

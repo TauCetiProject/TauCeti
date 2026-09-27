@@ -27,17 +27,18 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u
+universe uR uA uExtra
 
-variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {dA : A →ₗ[R] A}
 
 namespace IsDGAlgebra
 
-/-- The cochain complex underlying a DG algebra, with degree-`n` term `𝒜 n`. -/
+/-- The cochain complex underlying a DG algebra, with degree-`n` term `ULift (𝒜 n)`.
+The lift lets complexes of DG algebras in different carrier universes share a module category. -/
 noncomputable abbrev toCochainComplex (h : IsDGAlgebra 𝒜 dA) :
-    CochainComplex (ModuleCat.{u} R) ℤ :=
-  gradedCochainComplex 𝒜 dA
+    CochainComplex (ModuleCat.{max uA uExtra} R) ℤ :=
+  gradedCochainComplexLift.{uR, uA, uExtra} 𝒜 dA
     (LinearMap.isHomogeneous_def.mpr fun _ _ ha ↦ h.map_mem ha)
     fun _ x ↦ h.sq_zero x
 
