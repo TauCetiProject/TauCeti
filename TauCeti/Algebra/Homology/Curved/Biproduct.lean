@@ -32,7 +32,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C]
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
 /-- The componentwise direct sum of two curved duplexes with the same curvature. -/
--- Its components occur in the types of the projection and lift formulas.
+-- The component types of the public morphism formulas require the constructor to be exposed.
 @[expose] noncomputable def biprod (X Y : CurvedDuplex C w₀) : CurvedDuplex C w₀ where
   X₀ := X.X₀ ⊞ Y.X₀
   X₁ := X.X₁ ⊞ Y.X₁
@@ -119,6 +119,90 @@ theorem biprod_hom_ext {Z X Y : CurvedDuplex C w₀} {f g : Z ⟶ biprod X Y}
     · simpa [biprodFst] using congrArg Hom.f₁ h₀
     · simpa [biprodSnd] using congrArg Hom.f₁ h₁
 
+/-- Inclusion of the first curved duplex into the componentwise direct sum. -/
+noncomputable def biprodInl (X Y : CurvedDuplex C w₀) : X ⟶ biprod X Y where
+  f₀ := CategoryTheory.Limits.biprod.inl
+  f₁ := CategoryTheory.Limits.biprod.inl
+  comm₀ := by simp [biprod]
+  comm₁ := by simp [biprod]
+
+/-- Inclusion of the second curved duplex into the componentwise direct sum. -/
+noncomputable def biprodInr (X Y : CurvedDuplex C w₀) : Y ⟶ biprod X Y where
+  f₀ := CategoryTheory.Limits.biprod.inr
+  f₁ := CategoryTheory.Limits.biprod.inr
+  comm₀ := by simp [biprod]
+  comm₁ := by simp [biprod]
+
+/-- Maps out of both summands induce a map out of their direct sum. -/
+noncomputable def biprodDesc {X Y Z : CurvedDuplex C w₀}
+    (f : X ⟶ Z) (g : Y ⟶ Z) : biprod X Y ⟶ Z where
+  f₀ := CategoryTheory.Limits.biprod.desc f.f₀ g.f₀
+  f₁ := CategoryTheory.Limits.biprod.desc f.f₁ g.f₁
+  comm₀ := by
+    apply CategoryTheory.Limits.biprod.hom_ext' <;>
+      simp [biprod, f.comm₀, g.comm₀]
+  comm₁ := by
+    apply CategoryTheory.Limits.biprod.hom_ext' <;>
+      simp [biprod, f.comm₁, g.comm₁]
+
+@[simp] theorem biprodInl_f₀ (X Y : CurvedDuplex C w₀) :
+    (biprodInl X Y).f₀ = CategoryTheory.Limits.biprod.inl := by simp only [biprodInl]; rfl
+
+@[simp] theorem biprodInl_f₁ (X Y : CurvedDuplex C w₀) :
+    (biprodInl X Y).f₁ = CategoryTheory.Limits.biprod.inl := by simp only [biprodInl]; rfl
+
+@[simp] theorem biprodInr_f₀ (X Y : CurvedDuplex C w₀) :
+    (biprodInr X Y).f₀ = CategoryTheory.Limits.biprod.inr := by simp only [biprodInr]; rfl
+
+@[simp] theorem biprodInr_f₁ (X Y : CurvedDuplex C w₀) :
+    (biprodInr X Y).f₁ = CategoryTheory.Limits.biprod.inr := by simp only [biprodInr]; rfl
+
+@[simp] theorem biprodDesc_f₀ {X Y Z : CurvedDuplex C w₀} (f : X ⟶ Z) (g : Y ⟶ Z) :
+    (biprodDesc f g).f₀ = CategoryTheory.Limits.biprod.desc f.f₀ g.f₀ := by
+  simp only [biprodDesc]
+  rfl
+
+@[simp] theorem biprodDesc_f₁ {X Y Z : CurvedDuplex C w₀} (f : X ⟶ Z) (g : Y ⟶ Z) :
+    (biprodDesc f g).f₁ = CategoryTheory.Limits.biprod.desc f.f₁ g.f₁ := by
+  simp only [biprodDesc]
+  rfl
+
+@[simp] theorem biprodInl_desc {X Y Z : CurvedDuplex C w₀} (f : X ⟶ Z) (g : Y ⟶ Z) :
+    biprodInl X Y ≫ biprodDesc f g = f := by
+  ext <;> simp
+
+@[simp] theorem biprodInr_desc {X Y Z : CurvedDuplex C w₀} (f : X ⟶ Z) (g : Y ⟶ Z) :
+    biprodInr X Y ≫ biprodDesc f g = g := by
+  ext <;> simp
+
+@[simp] theorem biprodInl_fst (X Y : CurvedDuplex C w₀) :
+    biprodInl X Y ≫ biprodFst X Y = 𝟙 X := by
+  ext <;> simp
+
+@[simp] theorem biprodInl_snd (X Y : CurvedDuplex C w₀) :
+    biprodInl X Y ≫ biprodSnd X Y = 0 := by
+  ext <;> simp
+
+@[simp] theorem biprodInr_fst (X Y : CurvedDuplex C w₀) :
+    biprodInr X Y ≫ biprodFst X Y = 0 := by
+  ext <;> simp
+
+@[simp] theorem biprodInr_snd (X Y : CurvedDuplex C w₀) :
+    biprodInr X Y ≫ biprodSnd X Y = 𝟙 Y := by
+  ext <;> simp
+
+/-- Maps from a direct sum are determined by their restrictions to both summands. -/
+theorem biprod_hom_ext' {X Y Z : CurvedDuplex C w₀} {f g : biprod X Y ⟶ Z}
+    (h₀ : biprodInl X Y ≫ f = biprodInl X Y ≫ g)
+    (h₁ : biprodInr X Y ≫ f = biprodInr X Y ≫ g) : f = g := by
+  apply hom_ext
+  · apply CategoryTheory.Limits.biprod.hom_ext'
+    · simpa using congrArg Hom.f₀ h₀
+    · simpa using congrArg Hom.f₀ h₁
+  · apply CategoryTheory.Limits.biprod.hom_ext'
+    · simpa using congrArg Hom.f₁ h₀
+    · simpa using congrArg Hom.f₁ h₁
+
 /-- Curved duplexes have componentwise binary products. -/
 instance hasBinaryProduct (X Y : CurvedDuplex C w₀) : HasBinaryProduct X Y :=
   HasLimit.mk ⟨BinaryFan.mk (biprodFst X Y) (biprodSnd X Y),
@@ -177,6 +261,10 @@ noncomputable def zero : CurvedDuplex C w₀ where
 @[simp] theorem zero_X₀ : (zero (C := C) (w₀ := w₀)).X₀ = 0 := (rfl)
 
 @[simp] theorem zero_X₁ : (zero (C := C) (w₀ := w₀)).X₁ = 0 := (rfl)
+
+@[simp] theorem zero_d₀ : (zero (C := C) (w₀ := w₀)).d₀ = 0 := (rfl)
+
+@[simp] theorem zero_d₁ : (zero (C := C) (w₀ := w₀)).d₁ = 0 := (rfl)
 
 /-- The zero curved duplex is both initial and terminal. -/
 theorem isZero_zero : IsZero (zero (C := C) (w₀ := w₀)) :=

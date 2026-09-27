@@ -36,7 +36,7 @@ variable {S : Type u} [CommRing S] {w : S}
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
 /-- The componentwise direct sum of two finite-projective matrix factorizations. -/
--- Its components occur in the types of the projection and lift formulas.
+-- The component types of the public morphism formulas require the constructor to be exposed.
 @[expose] noncomputable def biprod (X Y : MatrixFactorization S w) : MatrixFactorization S w :=
   ofCurvedDuplex (CurvedDuplex.biprod X.obj Y.obj)
     (FGModuleCat.projective_biprod S X.obj.X₀ Y.obj.X₀)
@@ -115,6 +115,84 @@ theorem biprod_hom_ext {Z X Y : MatrixFactorization S w} {f g : Z ⟶ biprod X Y
   · exact congrArg (·.hom) h₀
   · exact congrArg (·.hom) h₁
 
+/-- Inclusion of the first matrix factorization into the componentwise direct sum. -/
+noncomputable def biprodInl (X Y : MatrixFactorization S w) : X ⟶ biprod X Y :=
+  ⟨CurvedDuplex.biprodInl X.obj Y.obj⟩
+
+/-- Inclusion of the second matrix factorization into the componentwise direct sum. -/
+noncomputable def biprodInr (X Y : MatrixFactorization S w) : Y ⟶ biprod X Y :=
+  ⟨CurvedDuplex.biprodInr X.obj Y.obj⟩
+
+/-- Maps out of both summands induce a map out of their direct sum. -/
+noncomputable def biprodDesc {X Y Z : MatrixFactorization S w}
+    (f : X ⟶ Z) (g : Y ⟶ Z) : biprod X Y ⟶ Z :=
+  ⟨CurvedDuplex.biprodDesc f.hom g.hom⟩
+
+@[simp] theorem biprodInl_hom_f₀ (X Y : MatrixFactorization S w) :
+    (biprodInl X Y).hom.f₀ = CategoryTheory.Limits.biprod.inl := by
+  simpa only [biprodInl, biprod_obj] using CurvedDuplex.biprodInl_f₀ X.obj Y.obj
+
+@[simp] theorem biprodInl_hom_f₁ (X Y : MatrixFactorization S w) :
+    (biprodInl X Y).hom.f₁ = CategoryTheory.Limits.biprod.inl := by
+  simpa only [biprodInl, biprod_obj] using CurvedDuplex.biprodInl_f₁ X.obj Y.obj
+
+@[simp] theorem biprodInr_hom_f₀ (X Y : MatrixFactorization S w) :
+    (biprodInr X Y).hom.f₀ = CategoryTheory.Limits.biprod.inr := by
+  simpa only [biprodInr, biprod_obj] using CurvedDuplex.biprodInr_f₀ X.obj Y.obj
+
+@[simp] theorem biprodInr_hom_f₁ (X Y : MatrixFactorization S w) :
+    (biprodInr X Y).hom.f₁ = CategoryTheory.Limits.biprod.inr := by
+  simpa only [biprodInr, biprod_obj] using CurvedDuplex.biprodInr_f₁ X.obj Y.obj
+
+@[simp] theorem biprodDesc_hom_f₀ {X Y Z : MatrixFactorization S w}
+    (f : X ⟶ Z) (g : Y ⟶ Z) :
+    (biprodDesc f g).hom.f₀ = CategoryTheory.Limits.biprod.desc f.hom.f₀ g.hom.f₀ := by
+  simpa only [biprodDesc, biprod_obj] using CurvedDuplex.biprodDesc_f₀ f.hom g.hom
+
+@[simp] theorem biprodDesc_hom_f₁ {X Y Z : MatrixFactorization S w}
+    (f : X ⟶ Z) (g : Y ⟶ Z) :
+    (biprodDesc f g).hom.f₁ = CategoryTheory.Limits.biprod.desc f.hom.f₁ g.hom.f₁ := by
+  simpa only [biprodDesc, biprod_obj] using CurvedDuplex.biprodDesc_f₁ f.hom g.hom
+
+@[simp] theorem biprodInl_desc {X Y Z : MatrixFactorization S w}
+    (f : X ⟶ Z) (g : Y ⟶ Z) : biprodInl X Y ≫ biprodDesc f g = f := by
+  apply ObjectProperty.hom_ext
+  exact CurvedDuplex.biprodInl_desc f.hom g.hom
+
+@[simp] theorem biprodInr_desc {X Y Z : MatrixFactorization S w}
+    (f : X ⟶ Z) (g : Y ⟶ Z) : biprodInr X Y ≫ biprodDesc f g = g := by
+  apply ObjectProperty.hom_ext
+  exact CurvedDuplex.biprodInr_desc f.hom g.hom
+
+@[simp] theorem biprodInl_fst (X Y : MatrixFactorization S w) :
+    biprodInl X Y ≫ biprodFst X Y = 𝟙 X := by
+  apply ObjectProperty.hom_ext
+  exact CurvedDuplex.biprodInl_fst X.obj Y.obj
+
+@[simp] theorem biprodInl_snd (X Y : MatrixFactorization S w) :
+    biprodInl X Y ≫ biprodSnd X Y = 0 := by
+  apply ObjectProperty.hom_ext
+  exact CurvedDuplex.biprodInl_snd X.obj Y.obj
+
+@[simp] theorem biprodInr_fst (X Y : MatrixFactorization S w) :
+    biprodInr X Y ≫ biprodFst X Y = 0 := by
+  apply ObjectProperty.hom_ext
+  exact CurvedDuplex.biprodInr_fst X.obj Y.obj
+
+@[simp] theorem biprodInr_snd (X Y : MatrixFactorization S w) :
+    biprodInr X Y ≫ biprodSnd X Y = 𝟙 Y := by
+  apply ObjectProperty.hom_ext
+  exact CurvedDuplex.biprodInr_snd X.obj Y.obj
+
+/-- Maps from a direct sum are determined by their restrictions to both summands. -/
+theorem biprod_hom_ext' {X Y Z : MatrixFactorization S w} {f g : biprod X Y ⟶ Z}
+    (h₀ : biprodInl X Y ≫ f = biprodInl X Y ≫ g)
+    (h₁ : biprodInr X Y ≫ f = biprodInr X Y ≫ g) : f = g := by
+  apply ObjectProperty.hom_ext
+  apply CurvedDuplex.biprod_hom_ext'
+  · exact congrArg (·.hom) h₀
+  · exact congrArg (·.hom) h₁
+
 /-- Finite-projective matrix factorizations have componentwise binary products. -/
 instance hasBinaryProduct (X Y : MatrixFactorization S w) : HasBinaryProduct X Y :=
   HasLimit.mk ⟨BinaryFan.mk (biprodFst X Y) (biprodSnd X Y),
@@ -135,6 +213,7 @@ instance hasBinaryBiproducts : HasBinaryBiproducts (MatrixFactorization S w) :=
 /-- The zero matrix factorization has the zero module in both parities. -/
 noncomputable def zero : MatrixFactorization S w :=
   let P := FGModuleCat.of S PUnit
+  -- The carrier of `FGModuleCat.of S PUnit` is definitionally `PUnit`.
   let hP : IsZero P := FGModuleCat.isZero_of_subsingleton P (by
     change Subsingleton PUnit
     infer_instance)
@@ -157,6 +236,7 @@ noncomputable def zero : MatrixFactorization S w :=
 
 /-- The zero matrix factorization is both initial and terminal. -/
 theorem isZero_zero : IsZero (zero (S := S) (w := w)) := by
+  -- The carrier of `FGModuleCat.of S PUnit` is definitionally `PUnit`.
   have hP : IsZero (FGModuleCat.of S PUnit) :=
     FGModuleCat.isZero_of_subsingleton _ (by change Subsingleton PUnit; infer_instance)
   apply IsZero.of_full_of_faithful_of_isZero (inclusion (S := S) (w := w))

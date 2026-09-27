@@ -11,8 +11,8 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 # Zero finitely generated modules
 
 A finitely generated module with subsingleton carrier is a zero object of the category of
-finitely generated modules. This follows from the corresponding `ModuleCat` criterion through
-the full and faithful inclusion.
+finitely generated modules. This criterion supplies the zero components of finite-projective
+matrix factorizations.
 -/
 
 public section
