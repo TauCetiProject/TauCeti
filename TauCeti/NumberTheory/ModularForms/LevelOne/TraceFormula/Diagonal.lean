@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PeriodAction
-public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.DoubleCoset
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 public import TauCeti.RingTheory.Polynomial.Dickson
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 public import Mathlib.LinearAlgebra.Trace
@@ -56,7 +56,10 @@ private theorem binaryFormRep_diagonal_basis {R : Type*} [CommRing R] (w : ℕ)
     ext i j
     fin_cases i <;> fin_cases j <;> simp
   rw [hm]
-  exact MvPolynomial.linearSubst_diagonal_monomial (a : R) (d : R) s.1
+  rw [MvPolynomial.linearSubst_diagonal_monomial]
+  rw [s.1.prod_fintype (fun i k => (![(a : R), (d : R)] : Fin 2 → R) i ^ k)
+    (by simp)]
+  simp [Fin.prod_univ_two]
 
 /-- The trace of diagonal substitution on degree-`w` binary forms is the sum of its monomial
 eigenvalues. This form of the result is useful before identifying the sum with a Dickson value. -/
@@ -81,7 +84,7 @@ private theorem trace_binaryFormRep_diagonal_eq_sum {R : Type*} [CommRing R]
 
 /-- The trace of a diagonal determinant matrix on binary forms is the Eichler–Selberg weight
 polynomial evaluated at its trace and determinant. -/
-theorem trace_binaryFormRep_diagonal_eq_dickson {R : Type*} [CommRing R]
+theorem trace_binaryFormRep_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
     (w : ℕ) (a d : ℤ) :
     LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
         (binaryFormRep R w (op (Matrix.diagonal ![a, d]))) =
@@ -107,7 +110,7 @@ theorem trace_binaryFormRep_diagonal_eq_dickson {R : Type*} [CommRing R]
 namespace TraceFormulaMatrixModule
 
 /-- The projective diagonal class has the same Dickson trace on even-degree binary forms. -/
-theorem trace_binaryFormAction_diagonal_eq_dickson {R : Type*} [CommRing R]
+theorem trace_binaryFormAction_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
     {n : ℤ} (w : ℕ) (hw : Even w) (a d : ℤ) (h : a * d = n) :
     LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
         (binaryFormAction (R := R) hw (mk (TraceFormulaMatrix.diagonal a d h))) =
@@ -117,17 +120,17 @@ theorem trace_binaryFormAction_diagonal_eq_dickson {R : Type*} [CommRing R]
     ext i j
     fin_cases i <;> fin_cases j <;> simp
   rw [binaryFormAction_mk, TraceFormulaMatrix.val_diagonal, hm,
-    trace_binaryFormRep_diagonal_eq_dickson, ← h]
+    trace_binaryFormRep_diagonal_eq_dickson_eval, ← h]
 
 /-- A diagonal basis element of the determinant-matrix module contributes its coefficient
 times the Dickson trace to the ambient binary-form space. -/
-theorem trace_periodAction_single_diagonal_eq_dickson {R : Type*} [CommRing R]
+theorem trace_periodAction_single_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
     {n : ℤ} (w : ℕ) (hw : Even w) (a d : ℤ) (h : a * d = n) (c : R) :
     LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
         (periodAction (R := R) hw (single (mk (TraceFormulaMatrix.diagonal a d h)) c)) =
       c * (Polynomial.dickson 2 (n : R) w).eval ((a + d : ℤ) : R) := by
   rw [periodAction_single, map_smul, smul_eq_mul,
-    trace_binaryFormAction_diagonal_eq_dickson w hw a d h]
+    trace_binaryFormAction_diagonal_eq_dickson_eval w hw a d h]
 
 end TraceFormulaMatrixModule
 

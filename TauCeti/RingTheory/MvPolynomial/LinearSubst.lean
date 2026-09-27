@@ -73,18 +73,23 @@ theorem linearSubst_X (M : Matrix σ σ R) (i : σ) :
     linearSubst M (X i) = ∑ j, C (M i j) * X j :=
   aeval_X _ _
 
-/-- A diagonal change of variables scales a binary monomial by its two eigenvalues. -/
-theorem linearSubst_diagonal_monomial {R : Type*} [CommSemiring R]
-    (a d : R) (s : Fin 2 →₀ ℕ) :
-    linearSubst (Matrix.diagonal ![a, d]) (monomial s 1) =
-      (a ^ s 0 * d ^ s 1) • monomial s 1 := by
+/-- A diagonal change of variables scales a monomial by the product of its eigenvalues. -/
+@[simp]
+theorem linearSubst_diagonal_monomial [DecidableEq σ] (v : σ → R) (s : σ →₀ ℕ) :
+    linearSubst (Matrix.diagonal v) (monomial s 1) =
+      (s.prod fun i k => v i ^ k) • monomial s 1 := by
+  have h (i : σ) : (∑ j, C ((Matrix.diagonal v) i j) * X j) = C (v i) * X i := by
+    classical
+    have hs : (∑ j, C ((Matrix.diagonal v) i j) * X j) =
+        C ((Matrix.diagonal v) i i) * X i := by
+      apply Finset.sum_eq_single i
+      · intro j _ hji
+        simp [Ne.symm hji]
+      · simp
+    simpa [Matrix.diagonal_apply] using hs
   rw [linearSubst_eq_aeval, aeval_monomial, monomial_eq]
-  simp only [Fin.sum_univ_two, Matrix.diagonal_apply]
-  rw [s.prod_fintype (fun i k =>
-    (C (if i = 0 then ![a, d] i else 0) * X 0 +
-      C (if i = 1 then ![a, d] i else 0) * X 1) ^ k) (by simp)]
-  rw [s.prod_fintype (fun i k => X i ^ k) (by simp)]
-  simp [Fin.prod_univ_two, smul_eq_C_mul, mul_pow, mul_comm, mul_left_comm, mul_assoc]
+  simp only [h, map_one, one_mul, mul_pow, Finsupp.prod, smul_eq_C_mul,
+    Finset.prod_mul_distrib, map_prod, map_pow]
 
 /-- Evaluating `linearSubst M p` at `x` is evaluating `p` at `M *ᵥ x`. -/
 theorem aeval_linearSubst {S : Type*} [CommSemiring S] [Algebra R S] (M : Matrix σ σ R)
