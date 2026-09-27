@@ -21,7 +21,7 @@ noncomputable section
 
 open scoped IntermediateField
 
-namespace TauCeti
+namespace TauCeti.IntermediateField
 
 universe u v
 
@@ -38,37 +38,31 @@ theorem finrank_sup_eq_finrank_of_linearDisjoint
       Module.finrank C (IntermediateField.extendScalars hCB) := by
   let : FiniteDimensional k A := hA
   let : Algebra.IsAlgebraic k A := Algebra.IsAlgebraic.of_finite k A
-  have hBC' : A.LinearDisjoint C := h.of_le_right hCB
-  have hAB : Module.finrank B (IntermediateField.extendScalars (le_sup_right : B ≤ A ⊔ B)) =
-      Module.finrank k A := by
-    have heq : IntermediateField.extendScalars (le_sup_right : B ≤ A ⊔ B) =
-        IntermediateField.adjoin B (A : Set L) := by
+  have baseChangeDegree (D : IntermediateField k L) (hAD : A.LinearDisjoint D) :
+      Module.finrank D (IntermediateField.extendScalars (le_sup_right : D ≤ A ⊔ D)) =
+        Module.finrank k A := by
+    have heq : IntermediateField.extendScalars (le_sup_right : D ≤ A ⊔ D) =
+        IntermediateField.adjoin D (A : Set L) := by
       apply IntermediateField.restrictScalars_injective k
       rw [IntermediateField.extendScalars_restrictScalars,
         IntermediateField.restrictScalars_adjoin_eq_sup, sup_comm,
         IntermediateField.adjoin_self]
     rw [heq]
-    exact congrArg Cardinal.toNat h.adjoin_rank_eq_rank_left_of_isAlgebraic_left
-  have hAC : Module.finrank C (IntermediateField.extendScalars (le_sup_right : C ≤ A ⊔ C)) =
-      Module.finrank k A := by
-    have heq : IntermediateField.extendScalars (le_sup_right : C ≤ A ⊔ C) =
-        IntermediateField.adjoin C (A : Set L) := by
-      apply IntermediateField.restrictScalars_injective k
-      rw [IntermediateField.extendScalars_restrictScalars,
-        IntermediateField.restrictScalars_adjoin_eq_sup, sup_comm,
-        IntermediateField.adjoin_self]
-    rw [heq]
-    exact congrArg Cardinal.toNat hBC'.adjoin_rank_eq_rank_left_of_isAlgebraic_left
+    exact congrArg Cardinal.toNat hAD.adjoin_rank_eq_rank_left_of_isAlgebraic_left
+  have hAB := baseChangeDegree B h
+  have hAC := baseChangeDegree C (h.of_le_right hCB)
   let : Algebra C B := (IntermediateField.inclusion hCB).toRingHom.toAlgebra
   let : Algebra B ↥(A ⊔ B) :=
     (IntermediateField.inclusion (le_sup_right : B ≤ A ⊔ B)).toRingHom.toAlgebra
   let : Algebra C ↥(A ⊔ B) :=
     (IntermediateField.inclusion (hCB.trans le_sup_right)).toRingHom.toAlgebra
+  -- All three algebra maps are inclusions of intermediate fields into the same ambient field.
   let : IsScalarTower C B ↥(A ⊔ B) := .of_algebraMap_eq fun _ ↦ rfl
   let : Algebra C ↥(A ⊔ C) :=
     (IntermediateField.inclusion (le_sup_right : C ≤ A ⊔ C)).toRingHom.toAlgebra
   let : Algebra ↥(A ⊔ C) ↥(A ⊔ B) :=
     (IntermediateField.inclusion (sup_le_sup_left hCB A)).toRingHom.toAlgebra
+  -- The composite inclusion agrees definitionally with the direct inclusion.
   let : IsScalarTower C ↥(A ⊔ C) ↥(A ⊔ B) := .of_algebraMap_eq fun _ ↦ rfl
   let : Module.Free ↥(A ⊔ C) ↥(A ⊔ B) := Module.Free.of_divisionRing _ _
   have hmulB := Module.finrank_mul_finrank C B ↥(A ⊔ B)
@@ -87,4 +81,4 @@ theorem finrank_sup_eq_finrank_of_linearDisjoint
   have := (mul_left_cancel₀ hpos.ne' heq).symm
   exact this
 
-end TauCeti
+end TauCeti.IntermediateField
