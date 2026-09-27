@@ -72,9 +72,9 @@ theorem natCard_unitFiltration_one_quotient (n : ℕ) :
   exact relIndex_unitFiltration_succ_one n
 
 /-- Every finite-level quotient `U(K,1) / U(K,n+1)` is a `p`-group when `p` is the residue
-characteristic. -/
-theorem isPGroup_unitFiltration_one_quotient (p n : ℕ) [Fact p.Prime]
-    (hp : ringChar 𝓀[K] = p) :
+characteristic. No primality hypothesis is needed: the residue field is finite, so its
+characteristic is automatically prime. -/
+theorem isPGroup_unitFiltration_one_quotient (p n : ℕ) (hp : ringChar 𝓀[K] = p) :
     IsPGroup p (unitFiltration K 1 ⧸
       (unitFiltration K (n + 1)).subgroupOf (unitFiltration K 1)) := by
   let _ : CharP 𝓀[K] p := ringChar.of_eq hp
@@ -97,9 +97,10 @@ private theorem exists_unitFiltration_subgroupOf_le
 
 /-- **The principal units of a nonarchimedean local field are pro-`p`.** Here `p` is the
 characteristic of the residue field. Equivalently, every continuous finite quotient of
-`U(K,1)` is a `p`-group. -/
-theorem unitFiltration_one_isProP (p : ℕ) [Fact p.Prime]
-    (hp : ringChar 𝓀[K] = p) : IsProP p (unitFiltration K 1) := by
+`U(K,1)` is a `p`-group. Primality of `p` need not be assumed: it follows from `hp`, since
+the residue field is finite. -/
+theorem unitFiltration_one_isProP (p : ℕ) (hp : ringChar 𝓀[K] = p) :
+    IsProP p (unitFiltration K 1) := by
   rw [isProP_iff]
   intro U
   obtain ⟨n, hn⟩ := exists_unitFiltration_subgroupOf_le U
