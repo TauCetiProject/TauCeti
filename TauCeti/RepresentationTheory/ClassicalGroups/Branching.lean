@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.BlockSucc
+public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 
 /-!
@@ -21,18 +22,16 @@ upper-left block and fixes the last basis vector, so restricting the standard re
 as `TauCeti.stdRepBlockSuccEquiv`, and records the resulting character identity
 `TauCeti.char_stdRep_glBlockSucc`.
 
-This is the first instance of the branching rule `GL n ↓ GL (n-1)`.  The standard representation is
-the irreducible of highest weight `(1, 0, …, 0)`, the two sequences interlacing that weight are
-`(1, 0, …, 0)` and `(0, …, 0)`, and those are the highest weights of the standard and the trivial
-representation of the smaller group; so the decomposition below is multiplicity-free, as the
-branching rule predicts.  The decomposition of a general `V_λ` needs the highest-weight
-classification and is not proved here.  What is proved here is the case of the first fundamental
-weight, together with the restriction formula `TauCeti.stdRep_glBlockSucc_apply` that any such
-computation starts from.
+This is the branching problem `GL (n + 1) ↓ GL n` for the standard representation: the restriction
+of the standard representation splits off a trivial summand and leaves the standard representation
+of the smaller group.  The corresponding decomposition of the other irreducible representations
+needs the highest-weight classification and is not proved here; what is proved here is the
+restriction formula `TauCeti.stdRep_glBlockSucc_apply` that any such computation starts from,
+together with this one splitting.
 
-The splitting is written against `Fin.snoc` and `Fin.init`: a vector of `Fin (n + 1) → k` is its
-first `n` coordinates together with its last, and that linear isomorphism is what carries the
-restricted representation onto `Representation.prod`.
+The splitting is `LinearEquiv.piFinSnoc`: a vector of `Fin (n + 1) → k` is its first `n`
+coordinates together with its last, and that linear isomorphism is what carries the restricted
+representation onto `Representation.prod`.
 
 ## Main definitions
 
@@ -46,11 +45,6 @@ restricted representation onto `Representation.prod`.
 * `TauCeti.char_stdRep_glBlockSucc`: the character of the restriction is the character of the
   standard representation plus one.
 * `TauCeti.stdRep_comp_glBlockSucc_injective`: the restriction is still faithful.
-
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 6, "`GLₙ ↓ GLₙ₋₁`".
 -/
 
 public section
@@ -67,22 +61,6 @@ section CommRing
 
 variable [CommRing k]
 
-/-- A vector of length `n + 1` split into its first `n` coordinates and its last one.  This is the
-linear isomorphism along which the restricted standard representation becomes a product, so it is
-the underlying linear equivalence of `TauCeti.stdRepBlockSuccEquiv` and is kept private;
-`TauCeti.stdRepBlockSuccEquiv_apply` records its formula. -/
-private def initLastLinearEquiv : (Fin (n + 1) → k) ≃ₗ[k] (Fin n → k) × k where
-  toFun v := (Fin.init v, v (Fin.last n))
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  invFun p := Fin.snoc p.1 p.2
-  left_inv v := Fin.snoc_init_self v
-  right_inv p := Prod.ext (by simp) (by simp)
-
-private theorem initLastLinearEquiv_apply (v : Fin (n + 1) → k) :
-    initLastLinearEquiv k n v = (Fin.init v, v (Fin.last n)) :=
-  (rfl)
-
 /-- **The standard action, restricted along the block inclusion**: `g` multiplies the first `n`
 coordinates and the last one is fixed. -/
 theorem stdRep_glBlockSucc_apply (g : GL (Fin n) k) (v : Fin (n + 1) → k) :
@@ -93,21 +71,24 @@ theorem stdRep_glBlockSucc_apply (g : GL (Fin n) k) (v : Fin (n + 1) → k) :
 /-- **Branching of the standard representation of `GL (Fin (n + 1)) k` to `GL (Fin n) k`.**  The
 restriction along the block inclusion is the standard representation of the smaller group plus a
 trivial summand, carried by the splitting of a vector into its first `n` coordinates and its last
-one.  This is the multiplicity-free branching `GL (n + 1) ↓ GL n` for the first fundamental weight:
-the two dominant weights interlacing `(1, 0, …, 0)` are `(1, 0, …, 0)` and `(0, …, 0)`. -/
+one. -/
 noncomputable def stdRepBlockSuccEquiv :
     Representation.Equiv
       ((stdRep k (n + 1)).comp (glBlockSucc k n) :
         Representation k (GL (Fin n) k) (Fin (n + 1) → k))
       ((stdRep k n).prod (Representation.trivial k (GL (Fin n) k) k)) :=
-  Representation.Equiv.mk (initLastLinearEquiv k n) fun g => LinearMap.ext fun v =>
-    Prod.ext (by simp [initLastLinearEquiv_apply, blockSucc_mulVec])
-      (by simp [initLastLinearEquiv_apply, blockSucc_mulVec])
+  Representation.Equiv.mk (LinearEquiv.piFinSnoc k fun _ => k) fun g => LinearMap.ext fun v =>
+    Prod.ext (by simp [blockSucc_mulVec]) (by simp [blockSucc_mulVec])
 
 @[simp]
 theorem stdRepBlockSuccEquiv_apply (v : Fin (n + 1) → k) :
     stdRepBlockSuccEquiv k n v = (Fin.init v, v (Fin.last n)) :=
-  (rfl)
+  LinearEquiv.piFinSnoc_apply k (fun _ => k) v
+
+@[simp]
+theorem stdRepBlockSuccEquiv_symm_apply (p : (Fin n → k) × k) :
+    (stdRepBlockSuccEquiv k n).symm p = Fin.snoc p.1 p.2 :=
+  LinearEquiv.piFinSnoc_symm_apply k (fun _ => k) p
 
 /-- The standard representation stays faithful after restriction along the block inclusion, both
 maps being injective. -/
