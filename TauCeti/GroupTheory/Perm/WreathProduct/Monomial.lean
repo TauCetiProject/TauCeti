@@ -15,8 +15,8 @@ A transversal for `U ≤ G` embeds `G` in the permutation wreath product with ba
 and coordinates indexed by `G ⧸ U`. Its permutation part is left translation on cosets; its
 coordinate at `x` is the transversal word `t(x)⁻¹ g t(g⁻¹ • x)`. The cocycle law for that word
 gives the homomorphism, and both the coset-indexed and finite-coordinate forms are injective.
-The public maps are `TauCeti.monomialHom` and `TauCeti.monomialFinHom`, with `U` as their
-first explicit argument.
+The public maps are called as `TauCeti.monomialHom U t ht` and
+`TauCeti.monomialFinHom U t ht`.
 Continuity for an open subgroup is proved in
 `TauCeti.Topology.Algebra.Group.WreathProduct.Monomial`.
 
