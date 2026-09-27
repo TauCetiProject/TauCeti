@@ -797,7 +797,7 @@ theorem map_quadraticTwistVariableChange_baseChange {σ : M ≃ₐ[K] M}
     ← VariableChange.baseChange,
     ← negVariableChange_map, hb]
 
-variable [E.IsElliptic] [DecidableEq M]
+variable [DecidableEq M]
 
 variable (L) in
 /-- **The isomorphism `Eᴸ(M) ≅ E(M)` on `M`-points**, for any field `M` in a tower `K ⊆ L ⊆ M`:
