@@ -53,7 +53,10 @@ theorem cupTrivialInt_trivialTateHZeroOne (N : Rep ℤ H) {q : ℤ}
   have hcup : cup (Rep.trivial ℤ H ℤ) N 0 q q (by omega) =
       cup0H (Rep.trivial ℤ H ℤ) N q := by
     convert cup_zero_left (Rep.trivial ℤ H ℤ) N q (by omega) using 1
-  rw [trivialTateHZeroOne_def, cupTrivialInt_apply, hcup, cup0H_H0π]
+  have hone : trivialTateHZeroOne H = H0π (Rep.trivial ℤ H ℤ) one := by
+    apply (H0LinearEquivTrivialIntZModCard H).injective
+    simp [H0LinearEquivTrivialIntZModCard_H0π, one]
+  rw [hone, cupTrivialInt_apply, hcup, cup0H_H0π]
   rw [← ModuleCat.comp_apply, ← Functor.map_comp, Category.assoc, hunit]
   simp
 
