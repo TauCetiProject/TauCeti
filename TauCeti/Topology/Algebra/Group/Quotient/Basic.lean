@@ -26,7 +26,7 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 
 ## Main results
 
-* `QuotientGroup.continuous_inv_smul`: inverse translation of a fixed coset is continuous
+* `TauCeti.QuotientGroup.continuous_inv_smul`: inverse translation of a fixed coset is continuous
   when the subgroup is open, without continuous inversion on `G`.
 * `QuotientGroup.instDiscreteTopology`: the quotient of a discrete group by any subgroup is
   discrete.

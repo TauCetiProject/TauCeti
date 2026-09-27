@@ -17,6 +17,8 @@ For an open subgroup the transversal-dependent monomial homomorphism is continuo
 coordinate topology of the permutation wreath product when multiplication on the source is
 separately continuous. The finite-coordinate form is continuous after relabeling the cosets by
 `Fin U.index`.
+The public continuous maps are `TauCeti.monomialContinuousHom` and
+`TauCeti.monomialFinContinuousHom`, with `U` as their first explicit argument.
 -/
 
 public section
