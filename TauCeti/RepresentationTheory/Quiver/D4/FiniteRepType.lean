@@ -53,9 +53,9 @@ theorem isFiniteRepType_d4 (k : Type u) [Field k] :
 
 /-- **The `D₄` quiver has exactly twelve finite-dimensional indecomposable representations up
 to isomorphism**, one for each positive root of its Tits form. -/
-theorem card_skeleton_indecomposable_d4 (k : Type (max 1 x)) [Field k] :
+theorem card_skeleton_indecomposable_d4 (k : Type u) [Field k] :
     Nat.card (Skeleton (ObjectProperty.FullSubcategory
-      (fun M : QuiverRep.{max 1 x, 0, 1, max 1 x} k Quiver.D4 ↦
+      (fun M : QuiverRep.{u, 0, 1, max u 1 x} k Quiver.D4 ↦
         IsFinDim k Quiver.D4 M ∧ Indecomposable M))) = 12 :=
   (card_skeleton_indecomposable_eq_card_positiveRoots
     Quiver.D4.titsForm_posDef).trans Quiver.D4.card_positiveRoots

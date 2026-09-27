@@ -47,9 +47,9 @@ namespace TauCeti
 
 open CategoryTheory
 
-universe v w x
+universe u v w x
 
-variable {k : Type (max v w x)} {V : Type v} [Field k] [Quiver.{w} V]
+variable {k : Type u} {V : Type v} [Field k] [Quiver.{w} V]
   [Fintype V] [∀ a b : V, Fintype (a ⟶ b)]
 
 /-- **The dimension-vector embedding is onto the positive roots.** Every nonnegative integral
@@ -57,12 +57,12 @@ vector of Tits norm one is realized by a finite-dimensional indecomposable repre
 class maps back to that vector. -/
 theorem isoClassDimVectorEmbedding_surjective (hpd : (titsForm V).PosDef) :
     Function.Surjective
-      (isoClassDimVectorEmbedding.{max v w x, v, w, x} (k := k) hpd) := by
+      (isoClassDimVectorEmbedding.{u, v, w, max u x} (k := k) hpd) := by
   rintro ⟨d, hd, hroot⟩
   obtain ⟨M, hM, hfd, hdim⟩ :=
     exists_indecomposable_dimVector_eq k V hpd hd hroot
   let X : Skeleton (ObjectProperty.FullSubcategory
-      (fun N : QuiverRep.{max v w x, v, w, max v w x} k V ↦
+      (fun N : QuiverRep.{u, v, w, max u v w x} k V ↦
         IsFinDim k V N ∧ Indecomposable N)) :=
     toSkeleton ⟨M, hfd, hM⟩
   refine ⟨X, Subtype.ext ?_⟩
@@ -74,7 +74,7 @@ equivalence from the isomorphism classes of finite-dimensional indecomposable re
 the nonnegative integral vectors of Tits norm one. -/
 noncomputable def gabrielIndecomposableEquivPositiveRoot (hpd : (titsForm V).PosDef) :
     Skeleton (ObjectProperty.FullSubcategory
-        (fun M : QuiverRep.{max v w x, v, w, max v w x} k V ↦
+        (fun M : QuiverRep.{u, v, w, max u v w x} k V ↦
           IsFinDim k V M ∧ Indecomposable M)) ≃
       {d : V → ℤ // 0 ≤ d ∧ titsForm V d = 1} :=
   (isoClassDimVectorEmbedding hpd).equivOfSurjective
@@ -84,17 +84,18 @@ noncomputable def gabrielIndecomposableEquivPositiveRoot (hpd : (titsForm V).Pos
 @[simp]
 theorem gabrielIndecomposableEquivPositiveRoot_apply (hpd : (titsForm V).PosDef)
     (X : Skeleton (ObjectProperty.FullSubcategory
-      (fun M : QuiverRep.{max v w x, v, w, max v w x} k V ↦
+      (fun M : QuiverRep.{u, v, w, max u v w x} k V ↦
         IsFinDim k V M ∧ Indecomposable M))) :
-    ((gabrielIndecomposableEquivPositiveRoot.{v, w, x} (k := k) hpd X :
-      {d : V → ℤ // 0 ≤ d ∧ titsForm V d = 1}) : V → ℤ) = isoClassDimVector X :=
-  coe_isoClassDimVectorEmbedding_apply hpd X
+    ((gabrielIndecomposableEquivPositiveRoot.{u, v, w, x} (k := k) hpd X :
+      {d : V → ℤ // 0 ≤ d ∧ titsForm V d = 1}) : V → ℤ) =
+        isoClassDimVector.{u, v, w, max u x} X :=
+  coe_isoClassDimVectorEmbedding_apply.{u, v, w, max u x} hpd X
 
 /-- **A positive definite quiver has as many indecomposable isomorphism classes as positive
 roots.** -/
 theorem card_skeleton_indecomposable_eq_card_positiveRoots (hpd : (titsForm V).PosDef) :
     Nat.card (Skeleton (ObjectProperty.FullSubcategory
-        (fun M : QuiverRep.{max v w x, v, w, max v w x} k V ↦
+        (fun M : QuiverRep.{u, v, w, max u v w x} k V ↦
           IsFinDim k V M ∧ Indecomposable M))) =
       Nat.card {d : V → ℤ // 0 ≤ d ∧ titsForm V d = 1} :=
   Nat.card_congr (gabrielIndecomposableEquivPositiveRoot hpd)
