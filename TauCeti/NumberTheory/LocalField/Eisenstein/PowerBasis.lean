@@ -25,7 +25,7 @@ combination in the resulting power basis is the minimum of its term valuations.
 * `TauCeti.inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top` and
   `TauCeti.ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top` record its characteristic
   total-ramification consequences.
-* `TauCeti.associated_minpoly_of_eisenstein_isRoot` identifies an Eisenstein polynomial
+* `TauCeti.Polynomial.associated_minpoly_of_eisenstein_isRoot` identifies an Eisenstein polynomial
   with the minimal polynomial of an integral root up to a unit.
 * `TauCeti.addVal_sum_eisenstein_powerBasis` computes the additive valuation of a linear
   combination of powers of an Eisenstein integral generator.
@@ -45,11 +45,15 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
 
+namespace Polynomial
+
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 /-- The minimal polynomial of an integral root is associated to any Eisenstein polynomial
 having that root. -/
 theorem associated_minpoly_of_eisenstein_isRoot [Algebra K L] [ValuativeExtension K L]
-    [Module.Finite K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
-    (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ) :
+    (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
+    (ξ : 𝒪[L]) (hξ : IsIntegral 𝒪[K] ξ)
+    (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ) :
     Associated (minpoly 𝒪[K] ξ) f := by
   have hdeg : 0 < f.natDegree := by
     by_contra h
@@ -69,11 +73,12 @@ theorem associated_minpoly_of_eisenstein_isRoot [Algebra K L] [ValuativeExtensio
     exact (Polynomial.C_dvd_iff_dvd_coeff r f).mp hr f.natDegree
   have hfirr : Irreducible f :=
     hf.irreducible (maximalIdeal.isMaximal 𝒪[K]).isPrime hprim hdeg
-  have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
   have haeval : Polynomial.aeval ξ f = 0 := by
     simpa [Polynomial.IsRoot, Polynomial.aeval_def] using hroot
-  exact (minpoly.irreducible hint).associated_of_dvd hfirr
-    (minpoly.isIntegrallyClosed_dvd hint haeval)
+  exact (minpoly.irreducible hξ).associated_of_dvd hfirr
+    (minpoly.isIntegrallyClosed_dvd hξ haeval)
+
+end Polynomial
 
 private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension K L]
     [Module.Finite K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
@@ -83,7 +88,7 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
       Associated (minpoly 𝒪[K] ξ) f := by
   have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
   have hassoc : Associated (minpoly 𝒪[K] ξ) f :=
-    associated_minpoly_of_eisenstein_isRoot f hf ξ hroot
+    Polynomial.associated_minpoly_of_eisenstein_isRoot f hf ξ hint hroot
   have hnatDegree : (minpoly 𝒪[K] ξ).natDegree = f.natDegree :=
     Polynomial.natDegree_eq_of_degree_eq (Polynomial.degree_eq_degree_of_associated hassoc)
   have hdeg : 0 < f.natDegree := hnatDegree ▸ minpoly.natDegree_pos hint
