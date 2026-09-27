@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Disk
-public import Mathlib.Analysis.Complex.Poisson
+public import TauCeti.Analysis.Complex.Poisson
 import TauCeti.Analysis.PDE.FundamentalSolution.Gradient
 
 /-!
@@ -27,20 +27,6 @@ noncomputable section
 namespace TauCeti
 
 open Complex InnerProductSpace
-
-private theorem hasDerivAt_planarNewtonianKernel_affine (b v : ℂ) (h : b + v ≠ 0) :
-    HasDerivAt (fun t : ℝ => planarNewtonianKernel (b + t • v))
-      ((-(2 * Real.pi)⁻¹ * (‖b + v‖ ^ 2)⁻¹) * ⟪b + v, v⟫_ℝ) 1 := by
-  have hf := hasFDerivAt_planarNewtonianKernel h
-  have hf' : HasFDerivAt planarNewtonianKernel
-      ((-(2 * Real.pi)⁻¹ * (‖b + v‖ ^ 2)⁻¹) • innerSL ℝ (b + v))
-      (b + (1 : ℝ) • v) := by
-    simpa only [one_smul] using hf
-  have hcurve : HasDerivAt (fun t : ℝ => b + t • v) v 1 :=
-    by simpa only [id_eq, one_smul] using
-      ((hasDerivAt_id (1 : ℝ)).smul_const v).const_add b
-  simpa only [Function.comp_def, one_smul, smul_apply, smul_eq_mul,
-    innerSL_apply_apply] using hf'.comp_hasDerivAt 1 hcurve
 
 /-- On the boundary of the unit disk, the outward radial derivative of the Green kernel
 with pole `a` is the negative of the Poisson kernel divided by `2π`. -/
@@ -112,14 +98,6 @@ theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz :
     rw [hnorm, ← hinnercore]
     ring
 
-/-- The outward radial derivative of the unit-disk Green kernel, as an ordinary real
-derivative. -/
-@[simp] theorem deriv_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
-    deriv (fun t : ℝ => planarGreenKernel a ((t : ℂ) * z)) 1 =
-      -(poissonKernel 0 a z) / (2 * Real.pi) := by
-  simpa only [Complex.real_smul] using
-    (hasDerivAt_planarGreenKernel_radial ha hz).deriv
-
 /-- The spatial derivative of the unit-disk Green kernel on the outward unit normal equals
 the negative Poisson kernel divided by `2π`. -/
 @[simp] theorem fderiv_planarGreenKernel_normal {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
@@ -133,7 +111,7 @@ the negative Poisson kernel divided by `2π`. -/
     simpa using ((hasDerivAt_id (1 : ℝ)).smul_const z).deriv
   have hradial : deriv (fun t : ℝ => planarGreenKernel a (t • z)) 1 =
       -(poissonKernel 0 a z) / (2 * Real.pi) := by
-    simpa only [Complex.real_smul] using deriv_planarGreenKernel_radial ha hz
+    exact (hasDerivAt_planarGreenKernel_radial ha hz).deriv
   simpa only [Function.comp_def, one_smul, hcurve_deriv, hradial] using hd.symm
 
 /-- On the boundary of any positive-radius disk, the derivative of the Green kernel along
@@ -147,12 +125,6 @@ theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
   have hz' : ‖R⁻¹ • (z - c)‖ = 1 := by
     rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, hz]
     exact inv_mul_cancel₀ hR.ne'
-  have hP : poissonKernel 0 (R⁻¹ • (a - c)) (R⁻¹ • (z - c)) =
-      poissonKernel c a z := by
-    have hRne : R ≠ 0 := hR.ne'
-    simp only [poissonKernel_def, sub_zero, sub_sub_sub_cancel_right, ← smul_sub,
-      norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR]
-    field_simp
   have hfun : (fun t : ℝ => planarGreenKernelDisk c R a (c + t • (z - c))) =
       fun t : ℝ => planarGreenKernel (R⁻¹ • (a - c)) (t • (R⁻¹ • (z - c))) := by
     funext t
@@ -160,16 +132,8 @@ theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
     congr 1
     simp only [add_sub_cancel_left, smul_smul]
     rw [mul_comm R⁻¹ t]
-  rw [hfun, ← hP]
+  rw [hfun, ← poissonKernel_inv_smul_sub hR.ne']
   exact hasDerivAt_planarGreenKernel_radial (norm_inv_smul_sub_lt_one hR ha) hz'
-
-/-- The radial derivative of the disk Green kernel in terms of the Poisson kernel. -/
-@[simp] theorem deriv_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
-    (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
-    deriv (fun t : ℝ => planarGreenKernelDisk c R a (c + (t : ℂ) * (z - c))) 1 =
-      -(poissonKernel c a z) / (2 * Real.pi) := by
-  simpa only [Complex.real_smul] using
-    (hasDerivAt_planarGreenKernelDisk_radial hR ha hz).deriv
 
 /-- The spatial derivative of the disk Green kernel on the outward unit normal is the
 negative Poisson kernel divided by `2πR`. -/
@@ -190,7 +154,7 @@ negative Poisson kernel divided by `2πR`. -/
   have hradial_deriv :
       deriv (fun t : ℝ => planarGreenKernelDisk c R a (c + t • (z - c))) 1 =
         -(poissonKernel c a z) / (2 * Real.pi) := by
-    simpa only [Complex.real_smul] using deriv_planarGreenKernelDisk_radial hR ha hz
+    exact (hasDerivAt_planarGreenKernelDisk_radial hR ha hz).deriv
   have hradial : (fderiv ℝ (planarGreenKernelDisk c R a) z) (z - c) =
       -(poissonKernel c a z) / (2 * Real.pi) := by
     simpa only [Function.comp_def, hcz, hcurve_deriv, hradial_deriv] using hd.symm

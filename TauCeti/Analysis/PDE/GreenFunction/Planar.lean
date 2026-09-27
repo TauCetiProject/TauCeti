@@ -53,7 +53,9 @@ theorem planarGreenKernel_def (a z : ℂ) :
       planarNewtonianKernel (z - a) - planarNewtonianKernel (1 - starRingEnd ℂ a * z) := by
   rfl
 
-private theorem differentiableAt_planarGreenKernel {a z : ℂ}
+/-- The planar Green kernel is differentiable wherever neither of its logarithmic arguments
+vanishes. -/
+theorem differentiableAt_planarGreenKernel {a z : ℂ}
     (hza : z - a ≠ 0) (hca : 1 - starRingEnd ℂ a * z ≠ 0) :
     DifferentiableAt ℝ (planarGreenKernel a) z := by
   have h₁ := (hasFDerivAt_planarNewtonianKernel_sub (sub_ne_zero.mp hza)).differentiableAt
