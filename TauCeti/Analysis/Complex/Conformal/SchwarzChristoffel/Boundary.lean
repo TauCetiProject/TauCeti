@@ -62,6 +62,18 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
+/-- No prevertex lies strictly between two consecutive values of a monotone family. -/
+theorem not_mem_Ioo_prevertices_succ {n : ℕ} (a : Fin (n + 1) → ℝ)
+    (ha : Monotone a) (i : Fin n) (k : Fin (n + 1)) :
+    a k ∉ Ioo (a i.castSucc) (a i.succ) := by
+  intro hk
+  by_cases hki : k ≤ i.castSucc
+  · exact (not_lt_of_ge (ha hki)) hk.1
+  · have hik : i.succ ≤ k := by
+      simp only [Fin.le_iff_val_le_val, Fin.val_succ, Fin.val_castSucc] at hki ⊢
+      omega
+    exact (not_lt_of_ge (ha hik)) hk.2
+
 /-- The **boundary value of the Schwarz--Christoffel map** at a real point: the value at that
 point of Mathlib's `extendFrom` extension of the normalized primitive from the upper half-plane.
 The extension is total, so this is a limit of the primitive only where such a limit exists; that

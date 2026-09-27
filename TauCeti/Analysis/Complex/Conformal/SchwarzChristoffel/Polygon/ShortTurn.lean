@@ -64,14 +64,8 @@ theorem schwarzChristoffelVertex_succ_sub_eq_norm_mul (a e : Fin (n + 1) → ℝ
           schwarzChristoffelVertex a e z₀ i.castSucc‖ : ℂ) *
         Complex.exp (schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) := by
   have hai : a i.castSucc < a i.succ := ha i.castSucc_lt_succ
-  have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) := by
-    intro k _ hk
-    have hik : i.castSucc < k := (ha.lt_iff_lt).mp hk.1
-    have hki : k < i.succ := (ha.lt_iff_lt).mp hk.2
-    have hik' := Fin.lt_def.mp hik
-    have hki' := Fin.lt_def.mp hki
-    simp only [Fin.val_castSucc, Fin.val_succ] at hik' hki'
-    omega
+  have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) :=
+    fun k _ ↦ not_mem_Ioo_prevertices_succ a ha.monotone i k
   simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀ i.castSucc hfinite_left,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ hfinite_right] using
     schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hfree hfinite_left hfinite_right
