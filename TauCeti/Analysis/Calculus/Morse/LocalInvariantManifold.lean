@@ -144,6 +144,19 @@ theorem mem_localUnstableSet {h : IsNondegenerateCriticalPoint f x} {r rho : ℝ
         MapsTo y (Iic 0) (closedBall 0 r)) ∧ ‖h.unstableProjection z‖ ≤ rho :=
   Iff.rfl
 
+/-- The local stable set is the forward local invariant set cut out by the stable projection. -/
+theorem localStableSet_eq_localInvariantSet (h : IsNondegenerateCriticalPoint f x) (r rho : ℝ) :
+    h.localStableSet r rho = localInvariantSet f x (Ici 0) h.stableProjection r rho := by
+  ext z
+  rw [mem_localStableSet, mem_localInvariantSet]
+
+/-- The local unstable set is the backward local invariant set cut out by the unstable
+projection. -/
+theorem localUnstableSet_eq_localInvariantSet (h : IsNondegenerateCriticalPoint f x) (r rho : ℝ) :
+    h.localUnstableSet r rho = localInvariantSet f x (Iic 0) h.unstableProjection r rho := by
+  ext z
+  rw [mem_localUnstableSet, mem_localInvariantSet]
+
 /-- The nonlinear remainder of the centred negative-gradient field fixes the origin. -/
 private theorem negativeGradientRemainder_centered_zero (h : IsNondegenerateCriticalPoint f x) :
     (fun z ↦ negativeGradientRemainder f x (x + z)) 0 = 0 := by

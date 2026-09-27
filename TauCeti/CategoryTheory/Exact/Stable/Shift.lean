@@ -30,9 +30,13 @@ it is a definition and not an instance; statements about it install it with
   suspension.
 * `TauCeti.ExactStructure.IsFrobenius.stableShiftFunctorNegOneIso`: its shift by `-1` is the
   stable loop functor.
+* `TauCeti.ExactStructure.IsFrobenius.stableSuspensionObjIsoShift`: the chosen suspension object
+  represents the shift by `1`.
 
 ## Main results
 
+* `TauCeti.ExactStructure.IsFrobenius.stableSuspensionObjIsoShift_hom_naturality`: the comparison
+  from chosen suspension objects to the shift is natural.
 * `TauCeti.ExactStructure.IsFrobenius.stableShiftFunctor_additive`: every shift functor of the
   stable category is additive.
 
@@ -76,6 +80,55 @@ noncomputable def stableShiftFunctorNegOneIso :
     letI := hE.stableHasShift
     shiftFunctor E.ProjectiveStableCategory (-1 : ℤ) ≅ hE.enoughProjectives.stableLoop :=
   hE.stableSuspension.asEquivalence.shiftFunctorNegOneIso hE.stableLoopCompStableSuspensionIso
+
+/-- The chosen suspension object representing `X⟦1⟧` is isomorphic to the shift of `X` in the
+stable category. -/
+noncomputable def stableSuspensionObjIsoShift (X : C) :
+    letI := hE.stableHasShift
+    E.projectiveStableFunctor.obj (hE.suspensionObj X) ≅
+      (E.projectiveStableFunctor.obj X)⟦(1 : ℤ)⟧ := by
+  letI := hE.stableHasShift
+  exact
+    { hom := eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X).symm ≫
+        hE.stableShiftFunctorOneIso.inv.app (E.projectiveStableFunctor.obj X)
+      inv := hE.stableShiftFunctorOneIso.hom.app (E.projectiveStableFunctor.obj X) ≫
+        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X)
+      hom_inv_id := by simp
+      inv_hom_id := by simp }
+
+/-- The forward map from the chosen suspension object to the shift. -/
+@[simp]
+theorem stableSuspensionObjIsoShift_hom (X : C) :
+    letI := hE.stableHasShift
+    (hE.stableSuspensionObjIsoShift X).hom =
+      eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X).symm ≫
+        hE.stableShiftFunctorOneIso.inv.app (E.projectiveStableFunctor.obj X) := (rfl)
+
+/-- The inverse map from the shift to the chosen suspension object. -/
+@[simp]
+theorem stableSuspensionObjIsoShift_inv (X : C) :
+    letI := hE.stableHasShift
+    (hE.stableSuspensionObjIsoShift X).inv =
+      hE.stableShiftFunctorOneIso.hom.app (E.projectiveStableFunctor.obj X) ≫
+        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X) := (rfl)
+
+/-- The comparison from a chosen suspension object to the shift is natural in morphisms of the
+exact category. -/
+@[reassoc]
+theorem stableSuspensionObjIsoShift_hom_naturality {X Y : C} (f : X ⟶ Y) :
+    letI := hE.stableHasShift
+    E.projectiveStableFunctor.map
+          ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f) ≫
+        (hE.stableSuspensionObjIsoShift Y).hom =
+      (hE.stableSuspensionObjIsoShift X).hom ≫
+        (E.projectiveStableFunctor.map f)⟦(1 : ℤ)⟧' := by
+  let _ := hE.stableHasShift
+  rw [← cancel_epi
+    (eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X))]
+  simpa only [stableSuspensionObjIsoShift_hom, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    hE.stableSuspension_map_projectiveStableFunctor_map] using
+      hE.stableShiftFunctorOneIso.inv.naturality (E.projectiveStableFunctor.map f)
 
 /-- Every shift functor on the stable category of a Frobenius exact structure is additive. -/
 theorem stableShiftFunctor_additive (n : ℤ) :

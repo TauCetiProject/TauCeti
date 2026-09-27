@@ -6,17 +6,22 @@ Authors: Claude
 module
 
 public import Mathlib.Topology.Separation.Connected
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Iso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Acyclic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro
 
 /-!
-# Acyclicity of `Coind_1^G` and dimension shifting in low degrees
+# Acyclicity of `Coind_1^G` and dimension shifting
 
 For a profinite group `G`, the coinduced module `Coind_1^G A` of the trivial subgroup, which is the
 group of all locally constant maps `G → A` (`TauCeti.mem_coind_bot_iff`), has vanishing
-continuous cohomology in degrees one and two. This is Shapiro's lemma at `U = ⊥`: the trivial
-subgroup of a totally disconnected group is closed, and a trivial group has no cohomology in
-positive degrees.
+explicit continuous cohomology in degrees one and two. This is Shapiro's lemma at `U = ⊥`: the
+trivial subgroup of a totally disconnected group is closed, and a trivial group has no cohomology
+in positive degrees. In every positive degree, and for any compact `G`, the canonical continuous
+cohomology of `Coind_1^G A` vanishes by
+`TauCeti.ContCohomology.subsingleton_continuousCohomology_discreteCoind_bot`.
 
 Every discrete `G`-module `M` embeds into this acyclic module by its orbit maps,
 
@@ -38,6 +43,16 @@ sequence of discrete modules whose middle term has vanishing `H¹` and `H²`
 (`TauCeti.ContCohomology.DiscreteShortExact.explicitDelta1_bijective_of_subsingleton`, in
 `TauCeti/RepresentationTheory/Homological/ContCohomology/LongExact.lean`).
 
+In every positive degree the same short exact sequence, fed to the long exact sequence of Mathlib's
+canonical continuous cohomology and to the all-degree acyclicity of `Coind_1^G M`, gives
+
+```text
+Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)   (i ≥ 1)
+```
+
+for every compact group `G` (`TauCeti.ContCohomology.dimensionShiftIso`), inverse to the
+connecting map, which is an isomorphism (`TauCeti.ContCohomology.isIso_coindBotShortExact_delta`).
+
 ## Main definitions
 
 * `TauCeti.ContCohomology.coindBotEmbedding`: the orbit-map embedding `M → Coind_1^G M`.
@@ -48,12 +63,17 @@ sequence of discrete modules whose middle term has vanishing `H¹` and `H²`
   connecting map `δ¹`.
 * `TauCeti.ContCohomology.explicitDimensionShift0`: the cokernel of
   `H⁰(G, Coind_1^G M) → H⁰(G, Coind_1^G M ⧸ M)` is `H¹(G, M)`, through `δ⁰`.
+* `TauCeti.ContCohomology.dimensionShiftIso`: **dimension shifting in every positive degree**,
+  `Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)` for `i ≥ 1` and the canonical continuous cohomology,
+  inverse to the connecting map.
 
 ## Main statements
 
 * `TauCeti.ContCohomology.subsingleton_H1_discreteCoind_bot` and
   `subsingleton_H2_discreteCoind_bot`: **acyclicity of `Coind_1^G A`** in degrees one and two,
   for profinite `G`.
+* `TauCeti.ContCohomology.isIso_coindBotShortExact_delta`: the connecting map
+  `Hⁱ(G, Coind_1^G M ⧸ M) ⟶ Hⁱ⁺¹(G, M)` is an isomorphism for `i ≥ 1`, for compact `G`.
 
 ## Implementation notes
 
@@ -278,5 +298,59 @@ theorem explicitDimensionShift0_mk (x : H0 G (DimensionShiftQuotient G M)) :
     QuotientAddGroup.kerLift_mk]
 
 end DimensionShift
+
+/-! ### Dimension shifting in every degree -/
+
+section DimensionShiftAll
+
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+
+open CategoryTheory Limits
+
+/-- **The connecting map of the dimension-shifting sequence is an isomorphism in every positive
+degree**: `δ : Hⁱ(G, Coind_1^G M ⧸ M) ⟶ Hⁱ⁺¹(G, M)` for `i ≥ 1` and a compact group `G`, because
+`Coind_1^G M` is acyclic in degrees `i` and `i + 1`. -/
+theorem isIso_coindBotShortExact_delta (i : ℕ) (hi : 0 < i) :
+    IsIso ((coindBotShortExact G M).delta i) := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hi.ne'
+  -- the middle term of the forgotten cochain sequence has zero homology in positive degrees
+  have hzero (m : ℕ) : IsZero (((coindBotShortExact G M).continuousCochainsShortExact.map
+      ((forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).mapHomologicalComplex _)).X₂.homology (m + 1)) :=
+    ((forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map_isZero (TopModuleCat.isZero_of_subsingleton
+      (continuousCohomology (m + 1) (ofDiscreteModule ℤ G (DiscreteCoind G ⊥ M))))).of_iso
+      (((coindBotShortExact G M).continuousCochainsShortExact.X₂.sc (m + 1)).mapHomologyIso
+        (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)))
+  have : IsIso ((forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map
+      ((coindBotShortExact G M).delta (n + 1))) := by
+    rw [(coindBotShortExact G M).forget₂_map_delta]
+    -- the objects of the composite match the ends of the two `mapHomologyIso`s only after
+    -- unfolding, which instance resolution does not do, so the instances are given by hand
+    exact IsIso.comp_isIso' (Iso.isIso_inv _) (IsIso.comp_isIso'
+      ((coindBotShortExact G M).continuousCochainsShortExact_shortExact.isIso_δ (n + 1) (n + 1 + 1)
+        rfl (hzero n) (hzero (n + 1))) (Iso.isIso_hom _))
+  exact TopModuleCat.isIso_of_isIso_forget₂_map _
+
+/-- **Dimension shifting in every positive degree**, `Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)` for
+`i ≥ 1` and a compact group `G`, as an isomorphism of Mathlib's canonical continuous cohomology. Its
+inverse is the connecting map of `TauCeti.ContCohomology.coindBotShortExact`
+(`dimensionShiftIso_inv`), an isomorphism by `isIso_coindBotShortExact_delta`. The analogous
+statement on the explicit low-degree model, for a profinite `G` and in the direction of the
+connecting map, is `TauCeti.ContCohomology.explicitDimensionShift1 :
+H¹(G, Coind_1^G M ⧸ M) ≃+ H²(G, M)`. -/
+noncomputable def dimensionShiftIso (i : ℕ) (hi : 0 < i) :
+    continuousCohomology (i + 1) (ofDiscreteModule ℤ G M) ≅
+      continuousCohomology i (ofDiscreteModule ℤ G (DimensionShiftQuotient G M)) :=
+  (@asIso _ _ _ _ ((coindBotShortExact G M).delta i)
+    (isIso_coindBotShortExact_delta G M i hi)).symm
+
+/-- The inverse of the dimension-shifting isomorphism is the connecting map. -/
+@[simp]
+theorem dimensionShiftIso_inv (i : ℕ) (hi : 0 < i) :
+    (dimensionShiftIso G M i hi).inv = (coindBotShortExact G M).delta i := by
+  rw [dimensionShiftIso, Iso.symm_inv, asIso_hom]
+
+end DimensionShiftAll
 
 end TauCeti.ContCohomology

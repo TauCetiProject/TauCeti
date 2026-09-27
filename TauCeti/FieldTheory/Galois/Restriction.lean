@@ -15,6 +15,10 @@ Mathlib's `AlgEquiv.restrictNormalHom` restricts automorphisms of `K/F` to a nor
 `f : M →ₐ[F] K` instead, which is convenient when `M` is an intermediate field sitting inside `K`
 through a map other than the algebra map (for example an `IntermediateField.inclusion`).
 
+In an abstract scalar tower with a normal intermediate field, restriction to the intermediate
+field is the identity precisely when the automorphism fixes it pointwise; its kernel is the image
+of restriction of scalars.
+
 ## Main definitions and results
 
 * `AlgHom.restrictNormalHom`: restriction `Gal(K/F) →* Gal(M/F)` along `f : M →ₐ[F] K`.
@@ -22,6 +26,10 @@ through a map other than the algebra map (for example an `IntermediateField.incl
   intertwined with `σ` by `f`.
 * `AlgHom.restrictNormalHom_toAlgHom`: for the algebra map of a scalar tower this is
   `AlgEquiv.restrictNormalHom`.
+* `AlgEquiv.restrictNormal_eq_one_iff_algebraMap`: restriction is trivial precisely when the
+  automorphism fixes the intermediate field pointwise.
+* `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one`: the restriction kernel is
+  the image of restriction of scalars.
 -/
 
 public section
@@ -69,3 +77,47 @@ theorem _root_.AlgHom.restrictNormalHom_toAlgHom [Algebra M K] [IsScalarTower F 
 end RestrictAlong
 
 end TauCeti
+
+/-! ### Restriction to an intermediate field in a tower -/
+
+section Tower
+
+variable (K L : Type*) [Field K] [Field L] [Algebra K L] [Normal K L]
+  (M : Type*) [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
+
+/-- **`σ` restricts to the identity on `L` exactly when it fixes `L` pointwise.** Mathlib's
+`AlgEquiv.restrictNormal_eq_one_iff` says this for an `IntermediateField`, while
+`AlgEquiv.restrictNormal` itself is already stated for an abstract algebra `L`, so only the
+characterisation needs transporting to a tower `K ⊆ L ⊆ M`. -/
+theorem AlgEquiv.restrictNormal_eq_one_iff_algebraMap (σ : M ≃ₐ[K] M) :
+    σ.restrictNormal L = 1 ↔ ∀ x : L, σ (algebraMap L M x) = algebraMap L M x := by
+  constructor
+  · intro h x
+    rw [← AlgEquiv.restrictNormal_commutes σ L x, h, AlgEquiv.one_apply]
+  · intro h
+    ext x
+    have hx := AlgEquiv.restrictNormal_commutes σ L x
+    rw [h x] at hx
+    exact (algebraMap L M).injective hx
+
+/-- Restriction as a group homomorphism agrees with restriction of an automorphism. -/
+theorem AlgEquiv.restrictNormalHom_apply_eq_restrictNormal (σ : M ≃ₐ[K] M) :
+    (AlgEquiv.restrictNormalHom L) σ = σ.restrictNormal L :=
+  rfl
+
+/-- An automorphism of `M/K` comes from an automorphism of `M/L` exactly when its restriction to
+`L` is the identity. -/
+theorem AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one
+    (σ : M ≃ₐ[K] M) :
+    σ ∈ (AlgEquiv.restrictScalarsHom (S := L) K).range ↔ σ.restrictNormal L = 1 := by
+  constructor
+  · rintro ⟨τ, rfl⟩
+    apply (AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M _).2
+    intro x
+    exact τ.commutes x
+  · intro h
+    let τ : M ≃ₐ[L] M := AlgEquiv.ofRingEquiv (f := σ.toRingEquiv)
+      ((AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M σ).1 h)
+    exact ⟨τ, AlgEquiv.ext fun x ↦ by simp [τ]⟩
+
+end Tower

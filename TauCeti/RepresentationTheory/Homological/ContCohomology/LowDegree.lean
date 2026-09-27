@@ -53,6 +53,8 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton_coefficients` and
   `subsingleton_H2_of_subsingleton_coefficients`: trivial coefficients have vanishing `H¹` and
   `H²`.
+* `TauCeti.ContCohomology.nsmul_H2_eq_zero`: `H²(G, M)` is killed by whatever kills the
+  coefficients `M`.
 * `TauCeti.ContCohomology.H1EquivOfSmulEqSelf`: for a trivial action, `H¹(G, M)` is the group of
   continuous homomorphisms `G →ₜ* Multiplicative M`. This is the statement that makes `H¹` of a
   profinite group computable, and it is false without continuity.
@@ -829,6 +831,15 @@ omit hcontMul hcontSmul in
 theorem H2pi_eq_iff {f f' : Z2 G M} :
     (f : H2 G M) = (f' : H2 G M) ↔ (f : G × G → M) - f' ∈ B2 G M := by
   rw [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_sub]
+
+/-- **`H²` inherits the exponent of its coefficients.** If `n` kills the coefficient module `M`,
+then it kills every class in `H²(G, M)`: a continuous `2`-cocycle with values in `M` is killed
+pointwise, hence so is its class. -/
+theorem nsmul_H2_eq_zero {n : ℕ} (h : ∀ m : M, n • m = 0) (x : H2 G M) : n • x = 0 := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    have hc : n • c = 0 := Subtype.ext (funext fun _ ↦ by simp [h])
+    rw [← QuotientAddGroup.mk_nsmul, hc, QuotientAddGroup.mk_zero]
 
 end CohomologyDegree2
 

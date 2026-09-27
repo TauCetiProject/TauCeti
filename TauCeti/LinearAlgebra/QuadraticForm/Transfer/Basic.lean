@@ -181,6 +181,33 @@ theorem polar_scharlauTransfer (Q : QuadraticForm L V) (s : L →ₗ[K] K) (x y 
     QuadraticMap.polar (Q.scharlauTransfer s) x y = s (QuadraticMap.polar Q x y) :=
   s.compQuadraticMap_polar Q x y
 
+/-- The associated bilinear form of a Scharlau transfer is obtained by applying the
+functional to the associated bilinear form. -/
+@[simp]
+theorem associated_scharlauTransfer [Invertible (2 : K)]
+    (Q : QuadraticForm L V) (s : L →ₗ[K] K) (x y : V) :
+    associated (Q.scharlauTransfer s) x y =
+      letI : Invertible (2 : L) :=
+        (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+      s (associated Q x y) := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  rw [associated_apply, associated_apply]
+  -- Refold the expanded differences as `polar` while retaining the `Module.End`
+  -- scalar actions, so `invOf_smul_eq_iff` can cancel the inverse of two over `K`.
+  change
+    ⅟(2 : Module.End K K) • QuadraticMap.polar (Q.scharlauTransfer s) x y =
+      s (⅟(2 : Module.End L L) • QuadraticMap.polar Q x y)
+  rw [polar_scharlauTransfer]
+  rw [invOf_smul_eq_iff]
+  have h (z : L) :
+      (2 : Module.End K K) (s ((⅟(2 : Module.End L L)) z)) = s z := by
+    rw [Module.End.ofNat_apply (R := K), ← map_nsmul]
+    apply congrArg s
+    rw [← Module.End.ofNat_apply (R := L) 2, ← Module.End.mul_apply,
+      mul_invOf_self, Module.End.one_apply]
+  exact (h (QuadraticMap.polar Q x y)).symm
+
 /-- A Frobenius functional preserves the radical when two is invertible. -/
 @[simp]
 theorem radical_scharlauTransfer [Invertible (2 : K)]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Cocycle
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Basic
 
 /-!
 # The prescription property for free pro-`p` groups
