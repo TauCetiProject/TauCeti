@@ -37,7 +37,8 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-noncomputable local instance : Fintype 𝓀[K] := Fintype.ofFinite _
+/-- The residue field is finite for the quadratic character calculation. -/
+noncomputable local instance instFintypeResidueField : Fintype 𝓀[K] := Fintype.ofFinite _
 
 open Classical in
 /-- The symbol of a unit and a uniformizer is positive exactly when the unit has square residue.
