@@ -78,10 +78,9 @@ def skeletonMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
         (Continuous.subtype_mk continuous_subtype_val (fun x ↦
           (skeletonLT C (n : ℕ∞)).subset_complex x.2)))⟩
 
-/-- On points, the skeletal map is the restriction of the original map.
-
-This is a rewrite lemma: tagging it `simp` fails Mathlib's `simpNF` linter because the
-subtype coercion on the left is simplified before this lemma can apply. -/
+/-- On points, the skeletal map is the restriction of the original map. -/
+-- The subtype coercion on the left simplifies before this lemma can apply, so it is not a
+-- simp lemma (Mathlib's simpNF linter rejects the attribute).
 lemma skeletonMap_apply (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ)
     (x : skeletonObj C n) :
     (((skeletonMap f hf n) x : skeletonObj C' n) : Y) =
@@ -151,6 +150,14 @@ variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 def cellularChainGroupMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
     cellularChainGroup C R n ⟶ cellularChainGroup C' R n :=
   TopPair.singularHomologyMap (skeletonPairMap f hf n) R n
+
+/-- The cellular chain group map is the relative homology map of the skeletal pair map. -/
+@[simp]
+lemma cellularChainGroupMap_eq (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
+    cellularChainGroupMap R f hf n =
+      TopPair.singularHomologyMap (skeletonPairMap f hf n) R n := by
+  unfold cellularChainGroupMap
+  rfl
 
 /-- The identity cellular map induces the identity on each cellular chain group. -/
 @[simp]
