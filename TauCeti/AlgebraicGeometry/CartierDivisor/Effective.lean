@@ -125,7 +125,7 @@ def regularToSheaf (D : CartierDivisor X) (hD : D.IsEffective) :
 
 /-- The inclusion `𝒪_X ⟶ 𝒪_X(D)` of an effective Cartier divisor agrees with the usual
 inclusion after embedding both sheaves in rational functions. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem regularToSheaf_ι (D : CartierDivisor X) (hD : D.IsEffective) :
     D.regularToSheaf hD ≫ D.sheafι = Scheme.toRationalFunctions X :=
   D.sheafLift_ι _ _
