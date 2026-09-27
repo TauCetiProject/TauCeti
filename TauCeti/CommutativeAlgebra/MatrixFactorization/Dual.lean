@@ -25,8 +25,9 @@ Duality is **contravariant**: a morphism `f : X ⟶ Y` of matrix factorizations 
 morphism `dualHom f : Yᵛ ⟶ Xᵛ`, whose two components are the transposes of the components of
 `f`, and whose commutativity conditions are the commutativity conditions of `f` with the two
 differentials exchanged. The two are packaged together as the contravariant functor
-`MatrixFactorization.dualOp` from the opposite category of matrix factorizations of `w` to the
-category of matrix factorizations of `-w`, so duality is available through the category API.
+`MatrixFactorization.dualFunctor` from the opposite category of matrix factorizations of `w` to
+the category of matrix factorizations of `-w`, so duality is available through the category
+API.
 The object-level double dual is also here, and is isomorphic to the original: dualizing twice
 lands back at the potential `w` and at an isomorphic factorization.
 
@@ -34,7 +35,7 @@ lands back at the potential `w` and at an isomorphic factorization.
 
 * `MatrixFactorization.dual`: the dual of a matrix factorization of `w`, of potential `-w`.
 * `MatrixFactorization.dualHom`: the dual of a morphism, contravariantly.
-* `MatrixFactorization.dualOp`: duality as the contravariant functor
+* `MatrixFactorization.dualFunctor`: duality as the contravariant functor
   `(MatrixFactorization S w)ᵒᵖ ⥤ MatrixFactorization S (-w)`.
 * `MatrixFactorization.doubleDual`, `MatrixFactorization.doubleDualIso`: the double dual, of the
   original potential, and its isomorphism with the original factorization.
@@ -45,12 +46,14 @@ lands back at the potential `w` and at an isomorphic factorization.
   morphism.
 * `MatrixFactorization.dualHom_id`, `MatrixFactorization.dualHom_comp`: the dual of a morphism
   reverses identity and composition, which is what makes duality contravariant.
-* `MatrixFactorization.dualOp_obj`, `MatrixFactorization.dualOp_map`: the object and morphism
-  maps of the contravariant duality functor.
+* `MatrixFactorization.dualFunctor_obj`, `MatrixFactorization.dualFunctor_map`: the object and
+  morphism maps of the contravariant duality functor.
 * `MatrixFactorization.doubleDualIso`, `MatrixFactorization.doubleDualIso_f₀`,
-  `MatrixFactorization.doubleDualIso_f₁`: a double dual is isomorphic to the original
+  `MatrixFactorization.doubleDualIso_f₁`, `MatrixFactorization.doubleDualIso_inv_f₀`,
+  `MatrixFactorization.doubleDualIso_inv_f₁`: a double dual is isomorphic to the original
   matrix factorization, by the evaluation pairing with the single minus sign on the even
-  component, and its two components are the evaluation isomorphisms.
+  component, and its two components and the two components of its inverse are the evaluation
+  isomorphisms.
 
 ## References
 
@@ -129,17 +132,17 @@ dual of its source, and duality reverses identity and composition. The morphism 
 `MatrixFactorization.dualHom_comp`, so the dual is available through the category API rather than
 only as a pair of separate functions. -/
 @[expose, implicit_reducible]
-def dualOp : (MatrixFactorization S w)ᵒᵖ ⥤ MatrixFactorization S (-w) where
+def dualFunctor : (MatrixFactorization S w)ᵒᵖ ⥤ MatrixFactorization S (-w) where
   obj X := MatrixFactorization.dual (S := S) (w := w) X.unop
   map f := MatrixFactorization.dualHom f.unop
   map_id X := MatrixFactorization.dualHom_id X.unop
   map_comp f g := MatrixFactorization.dualHom_comp g.unop f.unop
 
-@[simp] theorem dualOp_obj (X : (MatrixFactorization S w)ᵒᵖ) :
-    (dualOp (S := S) (w := w)).obj X = MatrixFactorization.dual (S := S) (w := w) X.unop := rfl
+@[simp] theorem dualFunctor_obj (X : (MatrixFactorization S w)ᵒᵖ) :
+    (dualFunctor (S := S) (w := w)).obj X = MatrixFactorization.dual (S := S) (w := w) X.unop := rfl
 
-theorem dualOp_map {X Y : (MatrixFactorization S w)ᵒᵖ} (f : X ⟶ Y) :
-    (dualOp (S := S) (w := w)).map f = MatrixFactorization.dualHom f.unop := rfl
+@[simp] theorem dualFunctor_map {X Y : (MatrixFactorization S w)ᵒᵖ} (f : X ⟶ Y) :
+    (dualFunctor (S := S) (w := w)).map f = MatrixFactorization.dualHom f.unop := rfl
 
 /-- The double dual of a matrix factorization is a matrix factorization of the *same* potential: the
 two minus signs contributed by the two duals cancel, so it is a factorization of `w` and not of
@@ -186,6 +189,18 @@ theorem doubleDualIso_inv_hom (X : MatrixFactorization S w) :
 @[simp] theorem doubleDualIso_f₁ (X : MatrixFactorization S w) :
     (X.doubleDualIso).hom.hom.f₁ = (FGModuleCat.dualEvalIso S X.obj.X₁).hom :=
   by rw [doubleDualIso_hom_hom, CurvedDuplex.doubleDualIso_f₁]
+
+/-- The even component of the inverse of the double dual isomorphism is the negated inverse
+evaluation isomorphism. -/
+@[simp] theorem doubleDualIso_inv_f₀ (X : MatrixFactorization S w) :
+    (X.doubleDualIso).inv.hom.f₀ = -(FGModuleCat.dualEvalIso S X.obj.X₀).inv :=
+  by rw [doubleDualIso_inv_hom, CurvedDuplex.doubleDualIso_inv_f₀]
+
+/-- The odd component of the inverse of the double dual isomorphism is the inverse evaluation
+isomorphism. -/
+@[simp] theorem doubleDualIso_inv_f₁ (X : MatrixFactorization S w) :
+    (X.doubleDualIso).inv.hom.f₁ = (FGModuleCat.dualEvalIso S X.obj.X₁).inv :=
+  by rw [doubleDualIso_inv_hom, CurvedDuplex.doubleDualIso_inv_f₁]
 
 end MatrixFactorization
 
