@@ -17,9 +17,6 @@ such a unit norm times an integer power of `-a`. This reduces the norm-index cal
 for a radicand of valuation one to the unit values of a binary quadratic form, including
 in residue characteristic two.
 
-The valuation calculation uses the different parities of the valuations of `x²` and `a y²`.
-It needs no restriction on the residue characteristic.
-
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §63A.
