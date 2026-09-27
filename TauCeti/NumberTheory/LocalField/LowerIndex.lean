@@ -36,17 +36,6 @@ theorem, the compatibility of the upper numbering with quotients, is derived.
 * `TauCeti.LocalFieldsRamification.ramificationIndex_mul_lowerIndex_eq_sum`: for
   `σ' : Gal(L/K)`, `e(M/L) · i(σ') = ∑_{σ|_L = σ'} i(σ)`, the sum over the fibre of restriction.
 
-## Implementation notes
-
-Following Serre, the proof chooses generators `x` of `𝒪[M]` and `y` of `𝒪[L]` over `𝒪[K]`
-(local monogenicity), so that `i(σ) = v_M(σ x - x)` and `e(M/L) · i(σ|_L) = v_M(σ y - y)`, and
-shows that `σ y - y` and `∏_{τ ∈ H} (x - σ τ x)` divide each other. The product is the
-characteristic polynomial `f = ∏_{τ ∈ H} (X - τ x)` of `x` under `H`, transformed by `σ` and
-evaluated at `x`. On the one hand the coefficients of `f` lie in `𝒪[L]`, so `σ` moves each of
-them by a multiple of `σ y - y`, and `f(x) = 0`. On the other hand, writing `y = g(x)` with `g`
-over `𝒪[K]`, the polynomial `g - y` vanishes on the orbit `H x`, so `f` divides it; applying `σ`
-and evaluating at `x` exhibits `y - σ y` as a multiple of `(σ f)(x)`.
-
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §1, Proposition 3.
@@ -154,11 +143,11 @@ theorem ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum [IsGalois L M]
     ← AddValuation.map_prod, ← eval_smul_charpoly]
   exact key
 
+open scoped Classical in
 /-- **Serre's quotient formula for the lower index**. For an intermediate field `L` of `M/K`
 normal over `K` and `σ' : Gal(L/K)`, `e(M/L) · i_{L/K}(σ') = ∑_{σ|_L = σ'} i_{M/K}(σ)`, the sum
 running over the automorphisms of `M/K` restricting to `σ'`. -/
-theorem ramificationIndex_mul_lowerIndex_eq_sum (σ' : L ≃ₐ[K] L)
-    [DecidablePred fun σ : M ≃ₐ[K] M => σ.restrictNormal L = σ'] :
+theorem ramificationIndex_mul_lowerIndex_eq_sum (σ' : L ≃ₐ[K] L) :
     (ramificationIndex L M : ℕ∞) * lowerIndex 𝒪[L] σ' =
       ∑ σ : M ≃ₐ[K] M with σ.restrictNormal L = σ', lowerIndex 𝒪[M] σ := by
   have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
@@ -166,7 +155,7 @@ theorem ramificationIndex_mul_lowerIndex_eq_sum (σ' : L ≃ₐ[K] L)
   have hmul (ρ₁ ρ₂ : M ≃ₐ[K] M) :
       (ρ₁ * ρ₂).restrictNormal L = ρ₁.restrictNormal L * ρ₂.restrictNormal L :=
     map_mul (AlgEquiv.restrictNormalHom (F := K) (K₁ := M) L) ρ₁ ρ₂
-  -- Rewriting only the left side preserves the decidability instance of the fibre sum.
+  -- Rewrite only the left side to leave the fibre sum unchanged.
   conv_lhs => rw [AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M,
     ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum]
   refine Finset.sum_nbij (fun τ ↦ σ₀ * τ.restrictScalars K) (fun τ _ ↦ ?_) (fun τ₁ _ τ₂ _ h ↦ ?_)

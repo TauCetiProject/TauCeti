@@ -16,8 +16,8 @@ Mathlib's `AlgEquiv.restrictNormalHom` restricts automorphisms of `K/F` to a nor
 through a map other than the algebra map (for example an `IntermediateField.inclusion`).
 
 In an abstract scalar tower with a normal intermediate field, restriction to the intermediate
-field is the identity precisely when the automorphism fixes it pointwise; its kernel is the range
-of extension of scalars.
+field is the identity precisely when the automorphism fixes it pointwise; its kernel is the image
+of restriction of scalars.
 
 ## Main definitions and results
 
@@ -29,7 +29,7 @@ of extension of scalars.
 * `AlgEquiv.restrictNormal_eq_one_iff_algebraMap`: restriction is trivial precisely when the
   automorphism fixes the intermediate field pointwise.
 * `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one`: the restriction kernel is
-  the image of scalar extension.
+  the image of restriction of scalars.
 -/
 
 public section
