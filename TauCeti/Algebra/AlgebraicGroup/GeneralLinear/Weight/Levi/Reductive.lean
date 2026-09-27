@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.UnipotentRadical
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 
 /-!
