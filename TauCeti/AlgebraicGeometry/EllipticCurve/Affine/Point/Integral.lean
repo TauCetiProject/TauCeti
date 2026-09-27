@@ -72,6 +72,16 @@ theorem neg_mem_integralPoints {P : (W.baseChange ℚ).toAffine.Point}
   congr 1
   simp [y', Affine.negY, WeierstrassCurve.baseChange]
 
+/-- Negation preserves and reflects integrality of affine points. -/
+@[simp]
+theorem neg_mem_integralPoints_iff {P : (W.baseChange ℚ).toAffine.Point} :
+    -P ∈ W.integralPoints ↔ P ∈ W.integralPoints := by
+  constructor
+  · intro hP
+    have h := W.neg_mem_integralPoints hP
+    simpa only [neg_neg] using h
+  · exact W.neg_mem_integralPoints
+
 /-- A bound for the ordinate of an integral point with a fixed abscissa. -/
 def integralOrdinateBound (x : ℤ) : ℕ :=
   (|W.a₁ * x + W.a₃| +
@@ -128,6 +138,7 @@ def boundedIntegralSolutions (B : ℕ) : Finset (ℤ × ℤ) :=
 
 omit [(W.baseChange ℚ).IsElliptic] in
 /-- The search contains exactly the integral solutions with bounded abscissa. -/
+@[simp]
 theorem mem_boundedIntegralSolutions_iff (B : ℕ) (p : ℤ × ℤ) :
     p ∈ W.boundedIntegralSolutions B ↔
       W.toAffine.Equation p.1 p.2 ∧ -(B : ℤ) ≤ p.1 ∧ p.1 ≤ B := by
@@ -152,6 +163,7 @@ def boundedIntegralPoints (B : ℕ) : Finset (W.baseChange ℚ).toAffine.Point :
     W.pointOfIntegralSolution p.1.1 p.1.2 ((W.mem_boundedIntegralSolutions_iff B p.1).mp p.2).1
 
 /-- Membership in the finite search result is exactly integrality and the abscissa bound. -/
+@[simp]
 theorem mem_boundedIntegralPoints_iff (B : ℕ) (P : (W.baseChange ℚ).toAffine.Point) :
     P ∈ W.boundedIntegralPoints B ↔
       ∃ x y : ℤ, ∃ h : W.toAffine.Equation x y,
