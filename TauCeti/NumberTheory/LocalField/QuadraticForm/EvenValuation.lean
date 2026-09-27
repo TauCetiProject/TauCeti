@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.NormIndex
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Index
 
 import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.NumberTheory.LocalField.SquareClass
