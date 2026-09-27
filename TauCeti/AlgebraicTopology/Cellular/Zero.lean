@@ -89,8 +89,6 @@ def cellularChainGroupZeroIso :
       (skeletonObj C 1) ≪≫
     (Sigma.reindex (zeroCellEquiv C) (fun _ : skeletonObj C 1 ↦ R)).symm
 
--- The composite iso crosses the singular-homology and skeletal-homology type wrappers.
-set_option backward.isDefEq.respectTransparency false in
 /-- The inverse degree-zero identification sends the generator of a zero-cell to the homology
 class of its characteristic point in the zero-skeleton, then to the skeletal pair. The middle
 inverse is Mathlib's identification of zeroth homology of a discrete space with its point basis. -/
@@ -99,8 +97,24 @@ lemma cellularChainGroupZeroIso_inv_ι (i : cell C 0) :
       Sigma.ι (fun _ : skeletonObj C 1 ↦ R) (zeroCellPoint C i) ≫
         (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
           (skeletonObj C 1)).inv ≫ (zeroSkeletonHomologyIso C R).hom := by
-  unfold cellularChainGroupZeroIso
-  simp only [Iso.trans_inv, Iso.symm_inv, Category.assoc]
+  have hcomp : (cellularChainGroupZeroIso C R).inv =
+      (Sigma.reindex (zeroCellEquiv C) (fun _ : skeletonObj C 1 ↦ R)).hom ≫
+        (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
+          (skeletonObj C 1)).inv ≫ (zeroSkeletonHomologyIso C R).hom := by
+    simp only [cellularChainGroupZeroIso, Iso.trans_inv, Iso.symm_inv]
+    have h := Iso.trans_inv
+      (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
+        (skeletonObj C 1))
+      (Sigma.reindex (zeroCellEquiv C) (fun _ : skeletonObj C 1 ↦ R)).symm
+    calc
+      _ = (((Sigma.reindex (zeroCellEquiv C)
+            (fun _ : skeletonObj C 1 ↦ R)).symm).inv ≫
+          (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
+            (skeletonObj C 1)).inv) ≫ (zeroSkeletonHomologyIso C R).hom :=
+        congrArg (fun f => f ≫ (zeroSkeletonHomologyIso C R).hom) h
+      _ = _ := by
+        exact Category.assoc _ _ _
+  rw [hcomp]
   have h := Sigma.ι_reindex_hom (zeroCellEquiv C)
     (fun _ : skeletonObj C 1 ↦ R) i
   have hc : Sigma.ι ((fun _ : skeletonObj C 1 ↦ R) ∘ zeroCellEquiv C) i =
