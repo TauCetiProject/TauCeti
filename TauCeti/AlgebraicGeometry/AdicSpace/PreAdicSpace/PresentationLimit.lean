@@ -81,10 +81,9 @@ theorem presentationLimitPreAdicSpace_ringPresheaf {A : Type u} [CommRing A]
       ((presentationLimitPreAdicSpace P Aplus hAplus hP).toPresheafedSpace.presheaf ⋙
         TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat)
       ((TopCat.of ↥(spa Aplus)).Presheaf CommRingCat.{u})
-      (presentationLimitPresheafInCommRingCat P Aplus) :=
-  by
-    rw [presentationLimitPresheafInCommRingCat_def]
-    exact HEq.rfl
+      (presentationLimitPresheaf P Aplus ⋙
+        TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat) :=
+  HEq.rfl
 
 /-- The valuation of a presentation-limit pre-adic space is the stalk residue valuation. -/
 @[simp]
