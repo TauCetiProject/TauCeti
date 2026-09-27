@@ -34,7 +34,7 @@ Bracketing against a diagonal matrix rescales a matrix unit,
 `⁅diagonal d, Eₚq c⁆ = Eₚq ((dₚ - d_q) c)` (`TauCeti.lie_single_of_mem_diagonalCartan`, from the
 diagonal Cartan subalgebra file), which extracts `Eₚq` from any diagonal element separating the
 indices `p` and `q`. Bracketing twice against `Eⱼᵢ` annihilates everything except one entry,
-`(ad Eⱼᵢ)² x = Eⱼᵢ (-2 xᵢⱼ)` (`TauCeti.lie_single_lie_single_self`), which extracts `Eⱼᵢ` from any
+`(ad Eⱼᵢ)² x = Eⱼᵢ (-2 xᵢⱼ)` (`TauCeti.lie_single_lie_single_of_ne`), which extracts `Eⱼᵢ` from any
 element with a nonzero `(i, j)` entry. A non-central matrix is either non-diagonal, and then the
 second bracket applies, or diagonal with two distinct entries, and then the first does. Once one
 off-diagonal matrix unit lies in the ideal, so does the difference of diagonal units
@@ -44,8 +44,6 @@ bracket again, all the remaining units.
 
 ## Main results
 
-* `TauCeti.lie_single_self_sub_single_self_single` and `TauCeti.lie_single_lie_single_self`: the
-  bracket computations that produce matrix units inside a Lie ideal.
 * `TauCeti.slIdeal_le_of_notMem_center`: **a Lie ideal of `gl n K` containing a non-central matrix
   contains `sl n K`**; equivalently `TauCeti.slIdeal_le_or_le_center`, every Lie ideal of `gl n K`
   either contains `sl n K` or consists of scalar matrices.
@@ -130,7 +128,7 @@ theorem single_mem_of_apply_ne_zero (htwo : (2 : K) ≠ 0) {x : Matrix n n K} (h
   have hne : -(2 * x i j) ≠ 0 := neg_ne_zero.mpr (mul_ne_zero htwo hxij)
   have hmem : single j i (-(2 * x i j)) ∈ I := by
     have h := I.lie_mem (x := single j i (1 : K)) (I.lie_mem (x := single j i (1 : K)) hx)
-    rwa [lie_single_lie_single_self hij] at h
+    rwa [lie_single_lie_single_of_ne hij] at h
   have hscal : ((-(2 * x i j))⁻¹ * c) * (-(2 * x i j)) = c := by
     rw [mul_comm ((-(2 * x i j))⁻¹) c, mul_assoc, inv_mul_cancel₀ hne, mul_one]
   have h := SMulMemClass.smul_mem ((-(2 * x i j))⁻¹ * c) hmem
@@ -360,10 +358,11 @@ theorem hasTrivialRadical_sl (htwo : (2 : K) ≠ 0)
   have hf : f.IsIdealMorphism := slIncl_isIdealMorphism K n hn J
   have hsolv : LieAlgebra.IsSolvable f.idealRange := by
     let _ : LieAlgebra.IsSolvable J := hJ
-    have : LieAlgebra.IsSolvable (f.idealRange : LieSubalgebra K (Matrix n n K)) := by
-      rw [hf.eq]
-      infer_instance
-    exact this
+    -- The Lie structure of a Lie ideal is by definition that of its underlying subalgebra
+    -- (`LieIdeal.lieAlgebra`), so solvability transfers along `hf.eq : f.idealRange = f.range`.
+    change LieAlgebra.IsSolvable (f.idealRange : LieSubalgebra K (Matrix n n K))
+    rw [hf.eq]
+    infer_instance
   have hcenter : f ⟨x, hx⟩ ∈ LieAlgebra.center K (Matrix n n K) := by
     rw [← radical_matrix_eq_center htwo]
     exact (LieIdeal.solvable_iff_le_radical K _ f.idealRange).mp hsolv
