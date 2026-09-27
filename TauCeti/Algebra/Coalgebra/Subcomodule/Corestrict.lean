@@ -50,6 +50,34 @@ namespace TauCeti
 
 universe u v w x
 
+namespace Coalgebra
+
+variable {k : Type u} [Field k]
+variable {C : Type v} {D : Type w}
+variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
+variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
+
+/-- A chosen linear retraction of an injective coalgebra morphism over a field. -/
+noncomputable def linearRetractionOfInjective (f : C →ₗc[k] D)
+    (_hf : Function.Injective f) : D →ₗ[k] C := by
+  let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+  let _ : AddCommGroup D := Module.addCommMonoidToAddCommGroup k
+  exact f.toLinearMap.leftInverse
+
+/-- The chosen linear retraction composes with the injective morphism to the identity. -/
+theorem linearRetractionOfInjective_comp (f : C →ₗc[k] D)
+    (hf : Function.Injective f) :
+    (linearRetractionOfInjective f hf).comp f.toLinearMap = LinearMap.id := by
+  let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+  let _ : AddCommGroup D := Module.addCommMonoidToAddCommGroup k
+  have hker : LinearMap.ker f.toLinearMap = ⊥ :=
+    LinearMap.ker_eq_bot_of_injective (f := f.toLinearMap) (by
+      intro x y h
+      exact hf h)
+  exact LinearMap.leftInverse_comp_of_inj hker
+
+end Coalgebra
+
 namespace Subcomodule
 
 variable {R : Type u} [CommSemiring R]
@@ -354,17 +382,8 @@ noncomputable def ofCorestrictOfInjective (f : C →ₗc[k] D)
     (hf : Function.Injective f)
     (W : letI : Comodule k D V := Comodule.Corestrict f
       Subcomodule k D V) : Subcomodule k C V := by
-  let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
-  let _ : AddCommGroup D := Module.addCommMonoidToAddCommGroup k
-  let l : C →ₗ[k] D := f.toLinearMap
-  have hker : LinearMap.ker l = ⊥ :=
-    LinearMap.ker_eq_bot_of_injective (f := l) (by
-      intro x y h
-      exact hf h)
-  let r : D →ₗ[k] C := l.leftInverse
-  have hr : r.comp f.toLinearMap = LinearMap.id :=
-    LinearMap.leftInverse_comp_of_inj hker
-  exact ofCorestrictOfSplit f r hr W
+  exact ofCorestrictOfSplit f (Coalgebra.linearRetractionOfInjective f hf)
+    (Coalgebra.linearRetractionOfInjective_comp f hf) W
 
 /-- Recovering an invariant subspace from an injective corestriction preserves its
 underlying submodule. -/
@@ -415,14 +434,9 @@ comodule, preserving their underlying submodules. -/
 noncomputable def corestrictOrderIsoOfInjective (f : C →ₗc[k] D)
     (hf : Function.Injective f) :
     letI : Comodule k D V := Comodule.Corestrict f
-    Subcomodule k C V ≃o Subcomodule k D V :=
-  letI : Comodule k D V := Comodule.Corestrict f
-  { toFun := fun W ↦ W.corestrict f
-    invFun := ofCorestrictOfInjective f hf
-    left_inv := ofCorestrictOfInjective_corestrict f hf
-    right_inv := corestrict_ofCorestrictOfInjective f hf
-    map_rel_iff' := by
-      rfl }
+    Subcomodule k C V ≃o Subcomodule k D V := by
+  exact corestrictOrderIsoOfSplit f (Coalgebra.linearRetractionOfInjective f hf)
+    (Coalgebra.linearRetractionOfInjective_comp f hf)
 
 /-- The forward map of the injective-corestriction order isomorphism is corestriction. -/
 @[simp]
@@ -431,8 +445,7 @@ theorem corestrictOrderIsoOfInjective_apply (f : C →ₗc[k] D)
     corestrictOrderIsoOfInjective f hf W = W.corestrict f :=
   by
     let _ : Comodule k D V := Comodule.Corestrict f
-    ext m
-    rfl
+    exact corestrictOrderIsoOfSplit_apply f _ _ W
 
 /-- The inverse map of the injective-corestriction order isomorphism recovers the original
 subcomodule. -/
@@ -442,11 +455,9 @@ theorem corestrictOrderIsoOfInjective_symm_apply (f : C →ₗc[k] D)
     (W : letI : Comodule k D V := Comodule.Corestrict f
       Subcomodule k D V) :
     letI : Comodule k D V := Comodule.Corestrict f
-    (corestrictOrderIsoOfInjective f hf).symm W = ofCorestrictOfInjective f hf W :=
-  by
-    let _ : Comodule k D V := Comodule.Corestrict f
-    ext m
-    rfl
+    (corestrictOrderIsoOfInjective f hf).symm W = ofCorestrictOfInjective f hf W := by
+  let _ : Comodule k D V := Comodule.Corestrict f
+  exact corestrictOrderIsoOfSplit_symm_apply f _ _ W
 
 end Injective
 

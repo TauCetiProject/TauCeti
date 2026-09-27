@@ -81,14 +81,9 @@ theorem isCompletelyReducible_corestrict_iff_of_injective (f : C →ₗc[k] D)
     (hf : Function.Injective f) :
     (letI : Comodule k D V := Comodule.Corestrict f;
       IsCompletelyReducible k D V) ↔ IsCompletelyReducible k C V := by
-  let _ : Comodule k D V := Comodule.Corestrict f
-  constructor
-  · exact isCompletelyReducible_of_orderIso k
-      (Subcomodule.corestrictOrderIsoOfInjective f hf).symm (OrderIso.refl _)
-      (fun A ↦ by simp)
-  · exact isCompletelyReducible_of_orderIso k
-      (Subcomodule.corestrictOrderIsoOfInjective f hf) (OrderIso.refl _)
-      (fun A ↦ by simp)
+  exact isCompletelyReducible_corestrict_iff_of_split f
+    (Coalgebra.linearRetractionOfInjective f hf)
+    (Coalgebra.linearRetractionOfInjective_comp f hf)
 
 /-- Complete reducibility descends along an injective coalgebra morphism. -/
 theorem IsCompletelyReducible.of_corestrict_of_injective (f : C →ₗc[k] D)
