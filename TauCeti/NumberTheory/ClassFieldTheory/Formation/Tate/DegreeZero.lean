@@ -31,6 +31,8 @@ variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Compa
 
 /-- In degree zero, cup product with `u` sends the canonical trivial-coefficient class of `1`
 to `u` in Tate degree two. This fixes the orientation of the degree-zero Tate isomorphism. -/
+-- Keep this as a named rewrite: `cupClass_apply` is already a simp rule and simpNF rejects
+-- marking this theorem simp because that rule expands its left-hand side first.
 theorem cupClass_trivialTateHZeroOne (F : Formation G) (L : NormalLayer G) (u : L.H F 2) :
     cupClass F L u 0 (TauCeti.TateCohomology.trivialTateHZeroOne L.Gal) =
       (L.tateHIsoH F 2).inv u := by
