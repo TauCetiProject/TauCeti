@@ -23,6 +23,7 @@ The underlying function is Mathlib's `tangentMap`; no parallel tangent-map API i
 
 * `Diffeomorph.tangent`: the tangent lift of a smooth diffeomorphism.
 * `Diffeomorph.tangent_symm`: taking a tangent lift commutes with inversion.
+* `Diffeomorph.tangent_refl`: the tangent lift of the identity is the identity.
 * `Diffeomorph.tangent_trans`: taking a tangent lift commutes with composition.
 * `Diffeomorph.tangent_curveVelocityLift`: tangent lifts carry the velocity lift of a
   differentiable curve to the velocity lift of its image.
@@ -48,6 +49,28 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace Diffeomorph
 
+omit [IsManifold I ∞ M] [IsManifold J ∞ N] in
+/-- Applying the tangent map of a diffeomorphism and then that of its inverse returns the
+original tangent vector. -/
+private theorem tangentMap_symm_apply (h : M ≃ₘ⟮I, J⟯ N) (z : TangentBundle I M) :
+    tangentMap J I h.symm (tangentMap I J h z) = z := by
+  rw [← tangentMap_comp_at z ((h.symm.mdifferentiable (by simp)) (h z.1))
+    ((h.mdifferentiable (by simp)) z.1)]
+  have hinv : (h.symm : N → M) ∘ h = id := funext h.symm_apply_apply
+  rw [hinv]
+  exact congrFun tangentMap_id z
+
+omit [IsManifold I ∞ M] [IsManifold J ∞ N] in
+/-- Applying the tangent map of the inverse of a diffeomorphism and then that of the
+diffeomorphism returns the original tangent vector. -/
+private theorem tangentMap_apply_symm (h : M ≃ₘ⟮I, J⟯ N) (z : TangentBundle J N) :
+    tangentMap I J h (tangentMap J I h.symm z) = z := by
+  rw [← tangentMap_comp_at z ((h.mdifferentiable (by simp)) (h.symm z.1))
+    ((h.symm.mdifferentiable (by simp)) z.1)]
+  have hinv : (h : M → N) ∘ h.symm = id := funext h.apply_symm_apply
+  rw [hinv]
+  exact congrFun tangentMap_id z
+
 /-- The tangent lift of a smooth diffeomorphism. Its value at `(x, v)` is
 `(h x, mfderiv I J h x v)`, and its inverse is the tangent lift of `h.symm`. -/
 protected def tangent (h : M ≃ₘ⟮I, J⟯ N) :
@@ -55,32 +78,15 @@ protected def tangent (h : M ≃ₘ⟮I, J⟯ N) :
   toEquiv :=
     { toFun := tangentMap I J h
       invFun := tangentMap J I h.symm
-      left_inv := fun z ↦ by
-        have hcomp := tangentMap_comp (h.symm.mdifferentiable (by simp))
-          (h.mdifferentiable (by simp))
-        have hinv : (h.symm : N → M) ∘ h = id := funext h.symm_apply_apply
-        rw [hinv, tangentMap_id] at hcomp
-        exact (congrFun hcomp z).symm
-      right_inv := fun z ↦ by
-        have hcomp := tangentMap_comp (h.mdifferentiable (by simp))
-          (h.symm.mdifferentiable (by simp))
-        have hinv : (h : M → N) ∘ h.symm = id := funext h.apply_symm_apply
-        rw [hinv, tangentMap_id] at hcomp
-        exact (congrFun hcomp z).symm }
+      left_inv := tangentMap_symm_apply h
+      right_inv := tangentMap_apply_symm h }
   contMDiff_toFun := h.contMDiff.contMDiff_tangentMap (by simp)
   contMDiff_invFun := h.symm.contMDiff.contMDiff_tangentMap (by simp)
 
-/-- The tangent lift is Mathlib's bundled tangent map. -/
+/-- The underlying function of the tangent lift is Mathlib's `tangentMap`. -/
 @[simp]
 theorem coe_tangent (h : M ≃ₘ⟮I, J⟯ N) :
     ⇑h.tangent = tangentMap I J h := by
-  rw [Diffeomorph.tangent]
-  rfl
-
-/-- The tangent lift maps `(x, v)` to `(h x, mfderiv I J h x v)`. -/
-@[simp]
-theorem tangent_apply (h : M ≃ₘ⟮I, J⟯ N) (z : TangentBundle I M) :
-    h.tangent z = TotalSpace.mk' F (h z.1) (mfderiv I J h z.1 z.2) := by
   rw [Diffeomorph.tangent]
   rfl
 
@@ -88,9 +94,12 @@ theorem tangent_apply (h : M ≃ₘ⟮I, J⟯ N) (z : TangentBundle I M) :
 @[simp]
 theorem tangent_symm (h : M ≃ₘ⟮I, J⟯ N) :
     h.tangent.symm = h.symm.tangent := by
-  apply Diffeomorph.toEquiv_injective
-  rw [Diffeomorph.symm, Diffeomorph.tangent, Diffeomorph.tangent]
-  rfl
+  apply Diffeomorph.ext
+  intro z
+  apply h.tangent.injective
+  change h.tangent (h.tangent.symm z) = h.tangent (h.symm.tangent z)
+  rw [h.tangent.apply_symm_apply, coe_tangent, coe_tangent]
+  exact (tangentMap_apply_symm h z).symm
 
 /-- The tangent lift of the identity diffeomorphism is the identity diffeomorphism of the tangent
 bundle. -/
@@ -108,8 +117,9 @@ theorem tangent_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
     (h.trans g).tangent = h.tangent.trans g.tangent := by
   apply Diffeomorph.ext
   intro z
-  have hcomp := tangentMap_comp (g.mdifferentiable (by simp)) (h.mdifferentiable (by simp))
-  simpa only [coe_tangent, coe_trans, Function.comp_apply] using congrFun hcomp z
+  simpa only [coe_tangent, coe_trans, Function.comp_apply] using
+    tangentMap_comp_at z ((g.mdifferentiable (by simp)) (h z.1))
+      ((h.mdifferentiable (by simp)) z.1)
 
 /-- A tangent lift carries the velocity lift of a differentiable curve to the velocity lift of
 the image curve. This is the bundled tangent-map form of the chain rule. -/
@@ -117,14 +127,9 @@ theorem tangent_curveVelocityLift (h : M ≃ₘ⟮I, J⟯ N) {γ : 𝕜 → M} {
     (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t) :
     h.tangent (TauCeti.Manifold.curveVelocityLift I γ t) =
       TauCeti.Manifold.curveVelocityLift J (h ∘ γ) t := by
-  rw [tangent_apply, TauCeti.Manifold.curveVelocityLift_apply,
-    TauCeti.Manifold.curveVelocityLift_apply]
-  apply TotalSpace.ext
-  · rfl
-  · apply heq_of_eq
-    rw [TauCeti.Manifold.curveVelocity_apply, TauCeti.Manifold.curveVelocity_apply]
-    rw [mfderiv_comp t ((h.mdifferentiable (by simp)) (γ t)) hγ]
-    rfl
+  rw [coe_tangent]
+  exact TauCeti.Manifold.tangentMap_curveVelocityLift
+    ((h.mdifferentiable (by simp)) (γ t)) hγ
 
 end Diffeomorph
 
