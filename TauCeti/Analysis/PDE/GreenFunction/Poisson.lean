@@ -163,7 +163,7 @@ theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
 negative Poisson kernel divided by `2πR`. -/
 @[simp] theorem fderiv_planarGreenKernelDisk_normal {c a z : ℂ} {R : ℝ}
     (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
-    (fderiv ℝ (planarGreenKernelDisk c R a) z) (R⁻¹ • (z - c)) =
+    (fderiv ℝ (planarGreenKernelDisk c R a) z) ((R : ℂ)⁻¹ * (z - c)) =
       -(poissonKernel c a z) / (2 * Real.pi * R) := by
   have hdiff := differentiableAt_planarGreenKernelDisk_boundary hR ha hz
   have hcz : c + (1 : ℝ) • (z - c) = z := by
@@ -182,7 +182,7 @@ negative Poisson kernel divided by `2πR`. -/
   have hradial : (fderiv ℝ (planarGreenKernelDisk c R a) z) (z - c) =
       -(poissonKernel c a z) / (2 * Real.pi) := by
     simpa only [Function.comp_def, hcz, hcurve_deriv, hradial_deriv] using hd.symm
-  rw [map_smul, smul_eq_mul, hradial]
+  rw [← Complex.ofReal_inv, ← Complex.real_smul, map_smul, smul_eq_mul, hradial]
   simp only [div_eq_mul_inv, mul_inv_rev]
   ring
 
