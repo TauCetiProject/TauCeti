@@ -17,8 +17,9 @@ degree of a principal Cartier divisor is zero, so principal translation preserve
 
 On a Noetherian integral curve with discrete valuation rings at codimension-one points, the
 Weil--Cartier equivalence preserves degree and restricts to an equivalence of degree-zero
-divisors. The comparison of their divisor sheaves identifies this degree with the
-Euler-characteristic degree of the associated line bundle.
+divisors. When the curve is proper over a field and the first cohomology of its structure
+sheaf is finite dimensional, the comparison of their divisor sheaves identifies this degree
+with the Euler-characteristic degree of the associated line bundle.
 
 ## References
 
