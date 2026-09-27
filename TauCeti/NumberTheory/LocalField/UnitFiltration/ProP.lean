@@ -75,10 +75,9 @@ private theorem exists_unitFiltration_subgroupOf_le (m : ℕ)
 /-- Every positive-depth unit-filtration subgroup `U(K,m+1)` of a nonarchimedean local field is
 pro-`p`, where `p` is the characteristic of the residue field. Equivalently, every continuous
 finite quotient of `U(K,m+1)` is a `p`-group. Primality of `p` need not be assumed: it follows
-from `hp`, since the residue field is finite. -/
-theorem isProP_unitFiltration_succ (p : ℕ) (hp : ringChar 𝓀[K] = p) (m : ℕ) :
+from `CharP 𝓀[K] p`, since the residue field is finite. -/
+theorem isProP_unitFiltration_succ (p : ℕ) [CharP 𝓀[K] p] (m : ℕ) :
     IsProP p (unitFiltration K (m + 1)) := by
-  have _ : CharP 𝓀[K] p := ringChar.of_eq hp
   rw [isProP_iff]
   intro U
   obtain ⟨n, hn⟩ := exists_unitFiltration_subgroupOf_le m U
@@ -90,6 +89,7 @@ characteristic of the residue field. Equivalently, every continuous finite quoti
 `U(K,1)` is a `p`-group. This is the depth-one case of `isProP_unitFiltration_succ`. -/
 theorem unitFiltration_one_isProP (p : ℕ) (hp : ringChar 𝓀[K] = p) :
     IsProP p (unitFiltration K 1) :=
-  isProP_unitFiltration_succ p hp 0
+  have _ : CharP 𝓀[K] p := ringChar.of_eq hp
+  isProP_unitFiltration_succ p 0
 
 end TauCeti

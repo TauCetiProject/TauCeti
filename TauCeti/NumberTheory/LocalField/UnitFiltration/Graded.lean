@@ -300,16 +300,17 @@ theorem relIndex_unitFiltration_add_succ_succ (m n : ℕ) :
         _ = (Nat.card 𝓀[K]) ^ (n + 1) := by
           rw [relIndex_unitFiltration_succ_succ, ih, pow_succ']
 
-/-- Every inclusion `U(K,m+n+1) ≤ U(K,m+1)` has finite relative index. -/
-noncomputable instance unitFiltration_add_succ_isFiniteRelIndex_succ (m n : ℕ) :
-    (unitFiltration K (m + n + 1)).IsFiniteRelIndex (unitFiltration K (m + 1)) := by
-  rw [Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero, relIndex_unitFiltration_add_succ_succ]
-  exact pow_ne_zero n Nat.card_pos.ne'
-
-/-- Every `U(K,n+1)` has finite relative index in the principal units `U(K,1)`. -/
-noncomputable instance unitFiltration_succ_isFiniteRelIndex_one (n : ℕ) :
-    (unitFiltration K (n + 1)).IsFiniteRelIndex (unitFiltration K 1) := by
-  simpa only [Nat.zero_add] using unitFiltration_add_succ_isFiniteRelIndex_succ (K := K) 0 n
+/-- Every `U(K,m)` has finite relative index in each positive-depth subgroup `U(K,n+1)`: the
+index is `1` when `m ≤ n + 1`, and a power of `#𝓀[K]` otherwise. -/
+noncomputable instance unitFiltration_isFiniteRelIndex_succ (m n : ℕ) :
+    (unitFiltration K m).IsFiniteRelIndex (unitFiltration K (n + 1)) := by
+  rw [Subgroup.isFiniteRelIndex_iff_relIndex_ne_zero]
+  rcases le_or_gt m (n + 1) with h | h
+  · rw [Subgroup.relIndex_eq_one.mpr (unitFiltration_antitone h)]
+    exact one_ne_zero
+  · obtain ⟨k, rfl⟩ : ∃ k, m = n + k + 1 := ⟨m - n - 1, by omega⟩
+    rw [relIndex_unitFiltration_add_succ_succ]
+    exact pow_ne_zero k Nat.card_pos.ne'
 
 /-- The positive-depth finite-level quotient `U(K,m+1) / U(K,m+n+1)` has `q ^ n` elements,
 where `q = #𝓀[K]`. -/
