@@ -38,13 +38,17 @@ sits *inside* the derived ideal and the two are not complementary.
 
 ## Main results
 
+* `TauCeti.lie_single_self_sub_single_self_single` and `TauCeti.lie_single_lie_single_of_ne`: over
+  any ring, `⁅Eₚₚ - E_qq, Eₚq c⁆ = Eₚq (2c)` for `p ≠ q`, and `(ad Eⱼᵢ)² x = Eⱼᵢ (-2 xᵢⱼ)` for
+  `i ≠ j`; these produce matrix units inside a Lie ideal of `gl n R`.
 * `TauCeti.mem_of_trace_eq_zero_of_single_mem`: a submodule of `gl n R` containing the off-diagonal
   matrix units and the differences of the diagonal ones contains every trace-zero matrix. This is
   the spanning core shared by the derived-ideal computation below and by the ideal-generation
   argument of `TauCeti/Algebra/Lie/GeneralLinear/Radical.lean`.
 * `TauCeti.mem_center_matrix_iff`: an element of `gl n R` is central exactly when it is a scalar
-  matrix; `TauCeti.one_mem_center_matrix` records that the identity is central, and
-  `TauCeti.center_matrix_toSubmodule_eq_span_one` records the centre as the span of `1`.
+  matrix; `TauCeti.one_mem_center_matrix` records that the identity is central,
+  `TauCeti.center_matrix_toSubmodule_eq_span_one` records the centre as the span of `1`, and
+  `TauCeti.center_matrix_eq_top` records that `gl n R` is abelian when `n` has at most one element.
 * `TauCeti.derivedSeries_one_eq_slIdeal`: the derived ideal of `gl n R` is `TauCeti.slIdeal R n`, so
   by `TauCeti.mem_slIdeal_iff` it consists of the trace-zero matrices, and
   `TauCeti.derivedSeries_one_toLieSubalgebra_eq_sl` reads this as `LieAlgebra.SpecialLinear.sl n R`.
@@ -72,10 +76,8 @@ Mathlib does not register `LieRing.ofAssociativeRing` as a global instance, so, 
 
 ## References
 
-This implements the concrete `gl n` half of the opening "structure of reductive Lie algebras"
-target of Layer 9 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: *"Concretely
-for `gl_n`: the centre is the scalar matrices, the derived ideal is `sl n`"*, together with the
-direct-sum statement into which the reductivity criterion quoted there splits.
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Springer GTM 9 (1972),
+  Section 1.2 (the classical linear Lie algebras).
 -/
 
 public section
@@ -190,6 +192,23 @@ theorem lie_single_single_eq_sub (i j : n) (c : R) :
   rw [LieRing.of_associative_ring_bracket, single_mul_single_same, single_mul_single_same, mul_one,
     one_mul]
 
+/-- A difference of diagonal matrix units doubles the matrix unit between them. -/
+theorem lie_single_self_sub_single_self_single {p q : n} (hpq : p ≠ q) (c : R) :
+    ⁅single p p (1 : R) - single q q (1 : R), single p q c⁆ = single p q (2 * c) := by
+  simp [sub_lie, lie_single_single, hpq.symm, two_mul, single_add]
+
+/-- Bracketing twice against an off-diagonal matrix unit isolates the transposed entry. -/
+theorem lie_single_lie_single_of_ne {i j : n} (hij : i ≠ j) (x : Matrix n n R) :
+    ⁅single j i (1 : R), ⁅single j i (1 : R), x⁆⁆ = single j i (-(2 * x i j)) := by
+  have hsq : single j i (1 : R) * single j i (1 : R) = 0 := by
+    rw [single_mul_single_of_ne (h := hij)]
+  have hmid : single j i (1 : R) * x * single j i (1 : R) = single j i (x i j) := by
+    simp [single_mul_mul_single]
+  simp only [LieRing.of_associative_ring_bracket, mul_sub, sub_mul, ← mul_assoc,
+    hsq, zero_mul, hmid, zero_sub]
+  rw [mul_assoc x, hsq]
+  simp [two_mul, single_add, single_neg, sub_eq_add_neg]
+
 end Ring
 
 variable [CommRing R]
@@ -212,6 +231,16 @@ theorem mem_center_matrix_iff {A : Matrix n n R} :
     exact ⟨r, by rw [Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]⟩
   · rintro ⟨r, rfl⟩
     exact ⟨r, by rw [Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]⟩
+
+/-- With at most one index, every matrix is central. -/
+@[simp]
+theorem center_matrix_eq_top [Subsingleton n] : LieAlgebra.center R (Matrix n n R) = ⊤ := by
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  rw [LieModule.mem_maxTrivSubmodule]
+  intro y
+  ext i j
+  have hi : ∀ k : n, k = i := fun _ ↦ Subsingleton.elim _ _
+  simp [LieRing.of_associative_ring_bracket, Matrix.mul_apply, hi, mul_comm]
 
 variable (R n) in
 /-- The identity matrix is central in `gl n R`. -/

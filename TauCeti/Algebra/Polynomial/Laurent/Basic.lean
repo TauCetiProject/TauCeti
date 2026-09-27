@@ -42,11 +42,8 @@ monoid, and that automorphism is what a shift-compatible invariant is compared a
   `LaurentPolynomial.eval₂`.
 * `TauCeti.laurentPolynomialC_smul`: a constant Laurent polynomial acts by integer scalar
   multiplication.
-
-## References
-
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 6, which fixes `ℤ[q,q⁻¹]`,
-  represented by `LaurentPolynomial ℤ`, as the coefficient ring of the graded theory.
+* `TauCeti.map_smul_eq_laurentEval_smul`: a linear map turning `T` into a unit turns every
+  Laurent scalar into its value at that unit.
 -/
 
 public section
@@ -135,6 +132,41 @@ theorem laurentEval_eq_eval₂ {S : Type*} [CommSemiring S] [Algebra R S] (u : S
   | C_mul_T n a => simp
 
 end Eval
+
+section ScalarCompatibility
+
+variable {R : Type*} [CommSemiring R] {N : Type*} [AddCommMonoid N]
+  [Module R[T;T⁻¹] N] [Module R N] [IsScalarTower R R[T;T⁻¹] N]
+  {A : Type*} [AddCommMonoid A] [Module R A]
+
+/-- **Scalar compatibility with the specialization at `ε`.**  An `R`-linear map turning
+multiplication by `q` into multiplication by `ε` turns every Laurent scalar into its value at `ε`.
+This holds for modules over any commutative semiring. -/
+theorem map_smul_eq_laurentEval_smul (ε : Rˣ) (f : N →ₗ[R] A)
+    (hf : ∀ x, f ((T 1 : R[T;T⁻¹]) • x) = (ε : R) • f x) (p : R[T;T⁻¹]) (x : N) :
+    f (p • x) = laurentEval ε p • f x := by
+  have hinv : ∀ x, f ((T (-1) : R[T;T⁻¹]) • x) = ((ε⁻¹ : Rˣ) : R) • f x := fun x => by
+    have hx := hf ((T (-1) : R[T;T⁻¹]) • x)
+    rw [smul_smul, ← T_add, add_neg_cancel, T_zero, one_smul] at hx
+    rw [hx, smul_smul, Units.inv_mul, one_smul]
+  have hT : ∀ (n : ℤ) (x : N), f ((T n : R[T;T⁻¹]) • x) = ((ε ^ n : Rˣ) : R) • f x := by
+    intro n
+    induction n using Int.induction_on with
+    | zero => simp
+    | succ k ih =>
+        intro x
+        rw [T_add, mul_smul, ih, hf, smul_smul, zpow_add_one, Units.val_mul]
+    | pred k ih =>
+        intro x
+        rw [sub_eq_add_neg, T_add, mul_smul, ih, hinv, smul_smul, zpow_add,
+          zpow_neg_one, Units.val_mul]
+  induction p using LaurentPolynomial.induction_on' with
+  | add p q hp hq => simp [add_smul, hp, hq]
+  | C_mul_T n a =>
+      rw [mul_smul, C_eq_algebraMap, algebraMap_smul]
+      simp [hT, mul_smul]
+
+end ScalarCompatibility
 
 section TAut
 
