@@ -55,17 +55,6 @@ universe u v w
 variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
   [FiniteDimensional K L] [Invertible (2 : K)] [Invertible (2 : L)]
 
-private theorem regularFormClass_eq_zero_of_rank_eq_zero {F : Type*} [Field F]
-    {x : RegularFormClass F} (hx : x.rank = 0) : x = 0 := by
-  induction x using Quotient.inductionOn with
-  | h p =>
-    rw [RegularFormClass.rank_mk] at hx
-    rw [RegularFormClass.zero_def]
-    apply congrArg (Quotient.mk (regularFormSetoid F))
-    apply RegularFormPresentation.ext hx
-    intro i
-    exact (Fin.cast hx i).elim0
-
 private def scharlauTransferClassAux (s : L →ₗ[K] K) (hs : s ≠ 0) :
     RegularFormClass L → RegularFormClass K :=
   Quotient.lift
@@ -105,7 +94,7 @@ def RegularFormClass.scharlauTransfer (s : L →ₗ[K] K) (hs : s ≠ 0) :
     RegularFormClass L →+ RegularFormClass K where
   toFun := scharlauTransferClassAux s hs
   map_zero' := by
-    apply regularFormClass_eq_zero_of_rank_eq_zero
+    apply RegularFormClass.rank_eq_zero_iff.mp
     rw [RegularFormClass.zero_def, scharlauTransferClassAux_mk, rank_formClass]
     rw [← Module.finrank_mul_finrank K L (Fin 0 → L)]
     simp

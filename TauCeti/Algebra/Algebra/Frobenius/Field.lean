@@ -91,8 +91,8 @@ theorem _root_.LinearMap.comp_restrictScalars_ne_zero (s : L →ₗ[K] K) (t : E
     surjective_of_nonzero_of_finrank_eq_one (Module.finrank_self L) ht
   intro hcomp
   apply hs
-  ext y
-  obtain ⟨x, rfl⟩ := ht_surjective y
-  exact LinearMap.congr_fun hcomp x
+  apply LinearMap.coe_injective
+  apply ht_surjective.injective_comp_right
+  exact funext fun x ↦ LinearMap.congr_fun hcomp x
 
 end TauCeti
