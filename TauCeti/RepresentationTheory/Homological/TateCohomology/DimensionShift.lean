@@ -32,6 +32,8 @@ product transports its result once, at the end, to the requested target degree.
 Each isomorphism below has Mathlib's connecting homomorphism `TateCohomology.δ` as its forward
 map. Thus its naturality in a morphism of the short exact sequences is the existing theorem
 `TateCohomology.δ_naturality`; no choices of abstract isomorphisms enter the construction.
+The naturality statements here apply both to a shift and to its tensor with a fixed
+representation, so they transport cup products along coefficient maps.
 
 The unrestricted constructions adapt `δUpIsoTate` and `δDownIsoTate` from
 `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in `kbuzzard/ClassFieldTheory`, commit
@@ -100,6 +102,55 @@ theorem dimensionShiftDownIso_hom :
         (by simpa only [dimensionShiftDownSES_def] using
           dimensionShiftDownSES_shortExact A) n := (rfl)
 
+variable {A} in
+/-- Upward dimension shifting commutes with a morphism of coefficient representations. -/
+theorem dimensionShiftUpIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
+    (tateCohomologyFunctor n).map (dimensionShiftUpMap f) ≫
+        (dimensionShiftUpIso B n).hom =
+      (dimensionShiftUpIso A n).hom ≫ (tateCohomologyFunctor (n + 1)).map f := by
+  let φ : ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
+        (coindBotUnit_comp_dimensionShiftUpπ A) ⟶
+      ShortComplex.mk (coindBotUnit B) (dimensionShiftUpπ B)
+        (coindBotUnit_comp_dimensionShiftUpπ B) :=
+    { τ₁ := f
+      τ₂ := coindBotMap f
+      τ₃ := dimensionShiftUpMap f
+      comm₁₂ := coindBotUnit_naturality f
+      comm₂₃ := (dimensionShiftUpπ_naturality f).symm }
+  rw [dimensionShiftUpIso_hom, dimensionShiftUpIso_hom]
+  exact (HomologicalComplex.HomologySequence.δ_naturality
+    ((tateComplexFunctor k G).mapShortComplex.map φ)
+    _ _ n (n + 1) rfl).symm
+
+variable {A} in
+/-- The inverse upward shift commutes with a coefficient morphism. -/
+theorem dimensionShiftUpIso_inv_naturality {B : Rep k G} (f : A ⟶ B) :
+    (tateCohomologyFunctor (n + 1)).map f ≫ (dimensionShiftUpIso B n).inv =
+      (dimensionShiftUpIso A n).inv ≫
+        (tateCohomologyFunctor n).map (dimensionShiftUpMap f) := by
+  rw [Iso.comp_inv_eq, Category.assoc, dimensionShiftUpIso_hom_naturality,
+    Iso.inv_hom_id_assoc]
+
+variable {A} in
+/-- Downward dimension shifting commutes with a morphism of coefficient representations. -/
+theorem dimensionShiftDownIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
+    (tateCohomologyFunctor n).map f ≫ (dimensionShiftDownIso B n).hom =
+      (dimensionShiftDownIso A n).hom ≫
+        (tateCohomologyFunctor (n + 1)).map (dimensionShiftDownMap f) := by
+  let φ : ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
+        (dimensionShiftDownι_comp_indBotCounit A) ⟶
+      ShortComplex.mk (dimensionShiftDownι B) (indBotCounit B)
+        (dimensionShiftDownι_comp_indBotCounit B) :=
+    { τ₁ := dimensionShiftDownMap f
+      τ₂ := indBotMap f
+      τ₃ := f
+      comm₁₂ := dimensionShiftDownι_naturality f
+      comm₂₃ := indBotCounit_naturality f }
+  rw [dimensionShiftDownIso_hom, dimensionShiftDownIso_hom]
+  exact (HomologicalComplex.HomologySequence.δ_naturality
+    ((tateComplexFunctor k G).mapShortComplex.map φ)
+    _ _ n (n + 1) rfl).symm
+
 /-- Vanishing in degree `n` of an upward shift is vanishing in degree `n + 1` of the original
 module. -/
 @[simp]
@@ -165,6 +216,63 @@ theorem tensorDimensionShiftDownIso_hom (i j : ℤ) (hij : i + 1 = j) :
           (dimensionShiftDownι_comp_indBotCounit A)).map (tensorLeft M))
         (by simpa only [dimensionShiftDownSES_def] using
           dimensionShiftDownSES_tensorLeft_shortExact A M)).δ i j hij := (rfl)
+
+variable {A} in
+/-- The tensored upward dimension shift is natural in its shifting representation. -/
+theorem tensorDimensionShiftUpIso_hom_naturality_right {B : Rep k G} (f : A ⟶ B)
+    (i j : ℤ) (hij : i + 1 = j) :
+    (tateCohomologyFunctor i).map (M ◁ dimensionShiftUpMap f) ≫
+        (tensorDimensionShiftUpIso B M i j hij).hom =
+      (tensorDimensionShiftUpIso A M i j hij).hom ≫
+        (tateCohomologyFunctor j).map (M ◁ f) := by
+  let φ : ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
+        (coindBotUnit_comp_dimensionShiftUpπ A) ⟶
+      ShortComplex.mk (coindBotUnit B) (dimensionShiftUpπ B)
+        (coindBotUnit_comp_dimensionShiftUpπ B) :=
+    { τ₁ := f
+      τ₂ := coindBotMap f
+      τ₃ := dimensionShiftUpMap f
+      comm₁₂ := coindBotUnit_naturality f
+      comm₂₃ := (dimensionShiftUpπ_naturality f).symm }
+  rw [tensorDimensionShiftUpIso_hom, tensorDimensionShiftUpIso_hom]
+  exact (HomologicalComplex.HomologySequence.δ_naturality
+    ((tateComplexFunctor k G).mapShortComplex.map
+      ((tensorLeft M).mapShortComplex.map φ))
+    _ _ i j hij).symm
+
+variable {A} in
+/-- The tensored downward dimension shift is natural in its shifting representation. -/
+theorem tensorDimensionShiftDownIso_hom_naturality_right {B : Rep k G} (f : A ⟶ B)
+    (i j : ℤ) (hij : i + 1 = j) :
+    (tateCohomologyFunctor i).map (M ◁ f) ≫
+        (tensorDimensionShiftDownIso B M i j hij).hom =
+      (tensorDimensionShiftDownIso A M i j hij).hom ≫
+        (tateCohomologyFunctor j).map (M ◁ dimensionShiftDownMap f) := by
+  let φ : ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
+        (dimensionShiftDownι_comp_indBotCounit A) ⟶
+      ShortComplex.mk (dimensionShiftDownι B) (indBotCounit B)
+        (dimensionShiftDownι_comp_indBotCounit B) :=
+    { τ₁ := dimensionShiftDownMap f
+      τ₂ := indBotMap f
+      τ₃ := f
+      comm₁₂ := dimensionShiftDownι_naturality f
+      comm₂₃ := indBotCounit_naturality f }
+  rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom]
+  exact (HomologicalComplex.HomologySequence.δ_naturality
+    ((tateComplexFunctor k G).mapShortComplex.map
+      ((tensorLeft M).mapShortComplex.map φ))
+    _ _ i j hij).symm
+
+variable {A} in
+/-- The inverse tensored downward shift is natural in its shifting representation. -/
+theorem tensorDimensionShiftDownIso_inv_naturality_right {B : Rep k G} (f : A ⟶ B)
+    (i j : ℤ) (hij : i + 1 = j) :
+    (tateCohomologyFunctor j).map (M ◁ dimensionShiftDownMap f) ≫
+        (tensorDimensionShiftDownIso B M i j hij).inv =
+      (tensorDimensionShiftDownIso A M i j hij).inv ≫
+        (tateCohomologyFunctor i).map (M ◁ f) := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    tensorDimensionShiftDownIso_hom_naturality_right, Iso.inv_hom_id_assoc]
 
 variable {M} in
 /-- The tensored upward dimension shift is natural in the tensoring representation. -/
