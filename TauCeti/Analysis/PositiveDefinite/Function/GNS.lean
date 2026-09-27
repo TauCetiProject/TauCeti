@@ -1,0 +1,229 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.PositiveDefinite.AddGroup
+public import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+
+/-!
+# The GNS translation representation of a positive-definite function
+
+A positive-definite function on an additive commutative group has a canonical Hilbert space,
+obtained from its translation-invariant positive-definite kernel. Translation of the kernel
+vectors extends uniquely to a unitary operator. These operators form a group representation,
+and the original function is a matrix coefficient of its vector at zero.
+
+This is the representation-theoretic input to Bochner's theorem on locally compact abelian
+groups: the spectral measure of the commuting translations represents the function.
+
+## References
+
+* W. Rudin, *Fourier Analysis on Groups* (1962), Chapter 1.
+-/
+
+public section
+
+noncomputable section
+
+open InnerProductSpace Filter
+
+namespace TauCeti
+
+namespace IsPositiveDefiniteSub
+
+variable {G : Type*} [AddCommGroup G] {F : G → ℂ} (hF : IsPositiveDefiniteSub F)
+
+/-- The canonical Hilbert space of the translation-invariant kernel `K(a,b) = F(a-b)`. -/
+abbrev gnsSpace := Matrix.PosSemidef.KolmogorovSpace hF.posSemidef
+
+/-- The vector in the GNS space corresponding to a group element. -/
+def gnsVector (a : G) : hF.gnsSpace := hF.posSemidef.kolmogorovFeature a
+
+/-- The inner product of two GNS vectors is the original positive-definite kernel. -/
+@[simp]
+theorem inner_gnsVector (a b : G) : ⟪hF.gnsVector a, hF.gnsVector b⟫_ℂ = F (a - b) :=
+  hF.posSemidef.inner_kolmogorovFeature a b
+
+/-- Squared distances between GNS vectors are controlled by the real part of the function. -/
+theorem norm_gnsVector_sub_sq (a b : G) :
+    ‖hF.gnsVector a - hF.gnsVector b‖ ^ 2 =
+      2 * ((F 0).re - (F (a - b)).re) := by
+  rw [gnsVector, gnsVector, Matrix.PosSemidef.norm_kolmogorovFeature_sub_sq]
+  simp only [sub_self]
+  -- The generic Kolmogorov formula uses `RCLike.re`; here the scalar field is `ℂ`.
+  change (F 0).re - 2 * (F (a - b)).re + (F 0).re =
+    2 * ((F 0).re - (F (a - b)).re)
+  ring
+
+/-- The GNS vectors span a dense subspace. -/
+theorem gnsVector_dense :
+    (Submodule.span ℂ (Set.range hF.gnsVector)).topologicalClosure = ⊤ :=
+  hF.posSemidef.kolmogorovFeature_dense
+
+private theorem translated_gnsVector_dense (g : G) :
+    (Submodule.span ℂ (Set.range fun a : G => hF.gnsVector (g + a))).topologicalClosure = ⊤ := by
+  have hrange : Set.range (fun a : G => hF.gnsVector (g + a)) = Set.range hF.gnsVector := by
+    ext x
+    constructor
+    · rintro ⟨a, rfl⟩
+      exact ⟨g + a, rfl⟩
+    · rintro ⟨a, rfl⟩
+      exact ⟨-g + a, by simp⟩
+  rw [hrange]
+  exact hF.gnsVector_dense
+
+/-- Translation by `g` is a unitary operator on the canonical GNS Hilbert space. Its action on
+the dense family of kernel vectors is `v(a) ↦ v(g+a)`. -/
+def gnsTranslation (g : G) : hF.gnsSpace ≃ₗᵢ[ℂ] hF.gnsSpace :=
+  hF.posSemidef.kolmogorovEquiv (fun a => hF.gnsVector (g + a))
+    (by
+      intro a b
+      simp only [hF.inner_gnsVector, add_sub_add_left_eq_sub])
+    (hF.translated_gnsVector_dense g)
+
+/-- Translation acts on the canonical GNS vectors by addition. -/
+@[simp]
+theorem gnsTranslation_gnsVector (g a : G) :
+    hF.gnsTranslation g (hF.gnsVector a) = hF.gnsVector (g + a) :=
+  hF.posSemidef.kolmogorovEquiv_apply _ _ _ a
+
+/-- The translation at zero is the identity operator. -/
+@[simp]
+theorem gnsTranslation_zero : hF.gnsTranslation 0 = LinearIsometryEquiv.refl ℂ hF.gnsSpace := by
+  apply LinearIsometryEquiv.toLinearIsometry_injective
+  apply LinearIsometry.toContinuousLinearMap_injective
+  have hdense : Dense (Submodule.span ℂ (Set.range hF.gnsVector) : Set hF.gnsSpace) :=
+    Submodule.dense_iff_topologicalClosure_eq_top.mpr hF.gnsVector_dense
+  apply ContinuousLinearMap.ext_on hdense
+  rintro _ ⟨b, rfl⟩
+  simp
+
+/-- GNS translations compose according to the group law. -/
+theorem gnsTranslation_add (g k : G) :
+    hF.gnsTranslation (g + k) = (hF.gnsTranslation k).trans (hF.gnsTranslation g) := by
+  apply LinearIsometryEquiv.toLinearIsometry_injective
+  apply LinearIsometry.toContinuousLinearMap_injective
+  have hdense : Dense (Submodule.span ℂ (Set.range hF.gnsVector) : Set hF.gnsSpace) :=
+    Submodule.dense_iff_topologicalClosure_eq_top.mpr hF.gnsVector_dense
+  apply ContinuousLinearMap.ext_on hdense
+  rintro _ ⟨b, rfl⟩
+  simp [add_assoc]
+
+/-- The GNS representation as a homomorphism from the multiplicative copy of `G` to the
+unitary operators on its canonical Hilbert space. -/
+def gnsRepresentation : Multiplicative G →* (hF.gnsSpace ≃ₗᵢ[ℂ] hF.gnsSpace) :=
+  MonoidHom.mk' (fun g => hF.gnsTranslation (Multiplicative.toAdd g)) (by
+    intro g k
+    rw [toAdd_mul, LinearIsometryEquiv.mul_def]
+    exact hF.gnsTranslation_add (Multiplicative.toAdd g) (Multiplicative.toAdd k))
+
+/-- The representation translates each GNS vector. -/
+@[simp]
+theorem gnsRepresentation_gnsVector (g a : G) :
+    hF.gnsRepresentation (Multiplicative.ofAdd g) (hF.gnsVector a) =
+      hF.gnsVector (g + a) :=
+  hF.gnsTranslation_gnsVector g a
+
+/-- A positive-definite function is a matrix coefficient of its canonical unitary
+representation. -/
+theorem eq_inner_gnsRepresentation (g : G) :
+    F g = ⟪hF.gnsRepresentation (Multiplicative.ofAdd g) (hF.gnsVector 0),
+      hF.gnsVector 0⟫_ℂ := by
+  simp
+
+/-- Continuity of a positive-definite function makes its canonical feature map continuous.
+This is the regularity needed before the translation representation can be treated as a strongly
+continuous representation. -/
+theorem continuous_gnsVector [TopologicalSpace G] [IsTopologicalAddGroup G]
+    (hcont : Continuous F) : Continuous hF.gnsVector := by
+  rw [continuous_iff_continuousAt]
+  intro a
+  have hrhs : ContinuousAt (fun b : G =>
+      2 * ((F 0).re - (F (b - a)).re)) a := by
+    fun_prop
+  have hsq : Tendsto (fun b : G => ‖hF.gnsVector b - hF.gnsVector a‖ ^ 2)
+      (nhds a) (nhds 0) := by
+    simp only [hF.norm_gnsVector_sub_sq]
+    simpa using hrhs.tendsto
+  have hsqrt : Tendsto (fun b : G => ‖hF.gnsVector b - hF.gnsVector a‖)
+      (nhds a) (nhds 0) := by
+    have := Real.continuous_sqrt.continuousAt.tendsto.comp hsq
+    simpa [Function.comp_def, Real.sqrt_sq_eq_abs] using this
+  exact tendsto_iff_norm_sub_tendsto_zero.mpr hsqrt
+
+private theorem continuous_gnsTranslation_gnsVector [TopologicalSpace G] [IsTopologicalAddGroup G]
+    (hcont : Continuous F) (a : G) :
+    Continuous (fun g : G => hF.gnsTranslation g (hF.gnsVector a)) := by
+  simpa [Function.comp_def] using
+    (hF.continuous_gnsVector hcont).comp (continuous_id.add continuous_const)
+
+/-- The GNS translation representation is strongly continuous: every vector has a continuous
+orbit. This follows from continuity on the dense span of kernel vectors and the fact that every
+translation is an isometry. -/
+theorem continuous_gnsTranslation_apply [TopologicalSpace G] [IsTopologicalAddGroup G]
+    (hcont : Continuous F) (x : hF.gnsSpace) :
+    Continuous (fun g : G => hF.gnsTranslation g x) := by
+  have hdense : Dense (Submodule.span ℂ (Set.range hF.gnsVector) : Set hF.gnsSpace) :=
+    Submodule.dense_iff_topologicalClosure_eq_top.mpr hF.gnsVector_dense
+  have hspan : ∀ y ∈ Submodule.span ℂ (Set.range hF.gnsVector),
+      Continuous (fun g : G => hF.gnsTranslation g y) := by
+    intro y hy
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      rcases hy with ⟨a, rfl⟩
+      exact hF.continuous_gnsTranslation_gnsVector hcont a
+    | zero => simpa using (continuous_const : Continuous fun _ : G => (0 : hF.gnsSpace))
+    | add y z _ _ hy hz =>
+      have heq : (fun g : G => hF.gnsTranslation g (y + z)) =
+          (fun g => hF.gnsTranslation g y) + (fun g => hF.gnsTranslation g z) := by
+        funext g
+        simp
+      rw [heq]
+      exact hy.add hz
+    | smul c y _ hy =>
+      have heq : (fun g : G => hF.gnsTranslation g (c • y)) =
+          c • (fun g => hF.gnsTranslation g y) := by
+        funext g
+        simp
+      rw [heq]
+      exact hy.const_smul c
+  rw [continuous_iff_continuousAt]
+  intro g
+  apply Metric.tendsto_nhds.mpr
+  intro ε hε
+  obtain ⟨y, hy, hxy⟩ := hdense.exists_dist_lt x (show 0 < ε / 4 by positivity)
+  have hylimit : ∀ᶠ b : G in nhds g,
+      dist (hF.gnsTranslation b y) (hF.gnsTranslation g y) < ε / 2 :=
+    Metric.tendsto_nhds.mp ((hspan y hy).continuousAt (x := g))
+      (ε / 2) (show 0 < ε / 2 by positivity)
+  filter_upwards [hylimit] with b hb
+  have hleft : dist (hF.gnsTranslation b x) (hF.gnsTranslation b y) = dist x y :=
+    (hF.gnsTranslation b).isometry.dist_eq x y
+  have hright : dist (hF.gnsTranslation g y) (hF.gnsTranslation g x) = dist x y := by
+    rw [(hF.gnsTranslation g).isometry.dist_eq, dist_comm]
+  calc
+    dist (hF.gnsTranslation b x) (hF.gnsTranslation g x)
+        ≤ dist (hF.gnsTranslation b x) (hF.gnsTranslation b y) +
+            dist (hF.gnsTranslation b y) (hF.gnsTranslation g x) := dist_triangle _ _ _
+    _ ≤ dist (hF.gnsTranslation b x) (hF.gnsTranslation b y) +
+          (dist (hF.gnsTranslation b y) (hF.gnsTranslation g y) +
+            dist (hF.gnsTranslation g y) (hF.gnsTranslation g x)) := by
+          gcongr
+          exact dist_triangle _ _ _
+    _ < ε := by rw [hleft, hright]; linarith
+
+/-- The canonical unitary representation has continuous orbits. -/
+theorem continuous_gnsRepresentation_apply [TopologicalSpace G] [IsTopologicalAddGroup G]
+    (hcont : Continuous F) (x : hF.gnsSpace) :
+    Continuous (fun g : G => hF.gnsRepresentation (Multiplicative.ofAdd g) x) :=
+  hF.continuous_gnsTranslation_apply hcont x
+
+end IsPositiveDefiniteSub
+
+end TauCeti
+
+end
