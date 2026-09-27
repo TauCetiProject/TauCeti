@@ -287,12 +287,6 @@ private theorem quaternionClass_congr_squareClass_right {a b c : Kˣ}
 noncomputable def quaternionClassOnSquareClasses (x y : SquareClassGroup K) : BrauerGroup K :=
   quaternionClass (Additive.toMul (Quotient.out x)) (Additive.toMul (Quotient.out y))
 
-omit [Invertible (2 : K)] in
-private theorem squareClass_toMul_out (x : SquareClassGroup K) :
-    squareClass (Additive.toMul (Quotient.out x)) = x := by
-  rw [squareClass_def, ofMul_toMul]
-  exact Quotient.out_eq x
-
 /-- The square-class pairing agrees with the quaternion symbol on representatives. -/
 @[simp]
 theorem quaternionClassOnSquareClasses_squareClass (a b : Kˣ) :
