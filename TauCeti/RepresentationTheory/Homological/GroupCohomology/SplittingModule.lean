@@ -148,7 +148,6 @@ theorem splittingModule_ρ_apply (g : G) (x : splittingModule A u) :
   (rfl)
 
 /-- The inclusion `A → A(u)` into the second factor of the splitting module. -/
-@[expose]
 def splittingModuleIncl : A ⟶ splittingModule A u :=
   ofHom ⟨LinearMap.inr k (augmentationIdeal k G) A, fun g ↦ by
     ext a <;> simp⟩
@@ -159,7 +158,6 @@ theorem splittingModuleIncl_apply (a : A) : splittingModuleIncl A u a = (0, a) :
   (rfl)
 
 /-- The projection `A(u) → I_G` from the splitting module to the augmentation ideal. -/
-@[expose]
 def splittingModuleProj : splittingModule A u ⟶ augmentationIdeal k G :=
   ofHom ⟨LinearMap.fst k (augmentationIdeal k G) A, fun _ ↦ rfl⟩
 
@@ -170,7 +168,6 @@ theorem splittingModuleProj_apply (x : splittingModule A u) :
   (rfl)
 
 /-- The short complex `A → A(u) → I_G` associated to the splitting module. -/
-@[expose]
 def splittingModuleSES : ShortComplex (Rep k G) :=
   { X₁ := A
     X₂ := splittingModule A u
@@ -179,12 +176,34 @@ def splittingModuleSES : ShortComplex (Rep k G) :=
     g := splittingModuleProj A u
     zero := by ext; rfl }
 
+/-- The left object of the splitting-module sequence is the original representation. -/
+@[simp]
+theorem splittingModuleSES_X₁ : (splittingModuleSES A u).X₁ = A := (rfl)
+
+/-- The middle object of the splitting-module sequence is the splitting module. -/
+@[simp]
+theorem splittingModuleSES_X₂ : (splittingModuleSES A u).X₂ = splittingModule A u := (rfl)
+
+/-- The right object of the splitting-module sequence is the augmentation ideal. -/
+@[simp]
+theorem splittingModuleSES_X₃ :
+    (splittingModuleSES A u).X₃ = augmentationIdeal k G := (rfl)
+
+/-- The first map of the splitting-module sequence is the inclusion into the second factor. -/
+@[simp]
+theorem splittingModuleSES_f :
+    HEq (splittingModuleSES A u).f (splittingModuleIncl A u) := (HEq.rfl)
+
+/-- The second map of the splitting-module sequence is projection onto the first factor. -/
+@[simp]
+theorem splittingModuleSES_g :
+    HEq (splittingModuleSES A u).g (splittingModuleProj A u) := (HEq.rfl)
+
 /-- The splitting-module sequence `0 → A → A(u) → I_G → 0` is short exact. -/
 theorem splittingModuleSES_shortExact : (splittingModuleSES A u).ShortExact := by
   refine
     { exact := by
-        -- `Rep.exact_iff_function_exact` exposes the underlying functions, but `ShortComplex.f`
-        -- and `.g` have no projection lemmas that identify them with `inr` and `fst`.
+        -- Normalize the opaque short complex before exposing its underlying functions.
         change
           (ShortComplex.mk (splittingModuleIncl A u) (splittingModuleProj A u)
             (by ext; rfl)).Exact
