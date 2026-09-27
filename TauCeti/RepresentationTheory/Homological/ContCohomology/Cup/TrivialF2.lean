@@ -47,15 +47,17 @@ over `ℤ`. It is the generic discrete-module pairing `TauCeti.ofDiscreteModuleP
 cup. -/
 noncomputable def trivialF2TopPairing :
     TopPairing (trivialF2 G) (trivialF2 G) (trivialF2 G) :=
-  ofDiscreteModule_trivialF2 G ▸
-    ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G)
+  cast (congrArg (fun X ↦ TopPairing X X X) (ofDiscreteModule_trivialF2 G))
+    (ofDiscreteModulePairing (trivialF2Pairing G) (trivialF2Pairing_smul_smul G))
 
 /-- The coefficient pairing multiplies the underlying values in `ZMod 2`. -/
 @[simp]
 theorem trivialF2TopPairing_bil_apply (x y : (trivialF2 G).V) :
     (trivialF2TopPairing G).bil x y =
       (trivialF2Equiv G).symm (trivialF2Equiv G x * trivialF2Equiv G y) := by
-  rw [trivialF2TopPairing, TopPairing.bil_transport, eqToHom_ofDiscreteModule_trivialF2_symm_apply,
+  rw [trivialF2TopPairing, TopPairing.bil_transport _ (ofDiscreteModule_trivialF2 G)
+      (ofDiscreteModule_trivialF2 G) (ofDiscreteModule_trivialF2 G),
+    eqToHom_ofDiscreteModule_trivialF2_symm_apply,
     eqToHom_ofDiscreteModule_trivialF2_symm_apply, ofDiscreteModulePairing_bil_apply,
     eqToHom_ofDiscreteModule_trivialF2_apply, trivialF2Pairing_apply]
 
