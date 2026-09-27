@@ -298,18 +298,6 @@ end GradedBridge
 
 namespace DGNatTrans
 
-/-- DG natural transformations agree when their components agree. -/
-@[ext]
-theorem ext {F G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
-    {α β : DGNatTrans F G} (h : ∀ X, α.app X = β.app X) : α = β := by
-  cases α with
-  | mk a ha =>
-    cases β with
-    | mk b hb =>
-      congr 1
-      funext X
-      exact h X
-
 /-- The identity DG natural transformation. -/
 @[expose]
 noncomputable def id (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
@@ -335,20 +323,20 @@ noncomputable instance : Category (DGFunctor R C D) where
   comp α β := DGNatTrans.comp α β
   id_comp := by
     intro F G α
-    apply DGNatTrans.ext
-    intro X
+    apply GradedNatTrans.ext
+    funext X
     simp [DGNatTrans.comp, DGNatTrans.id, unitGradedNatTransComp, unitGradedNatTransId, eHomEquiv]
     rfl
   comp_id := by
     intro F G α
-    apply DGNatTrans.ext
-    intro X
+    apply GradedNatTrans.ext
+    funext X
     simp [DGNatTrans.comp, DGNatTrans.id, unitGradedNatTransComp, unitGradedNatTransId, eHomEquiv]
     rfl
   assoc := by
     intro F G H I α β γ
-    apply DGNatTrans.ext
-    intro X
+    apply GradedNatTrans.ext
+    funext X
     simp only [DGNatTrans.comp, unitGradedNatTransComp, eHomEquiv]
     change (ForgetEnrichment.homOf _ (α.app X) ≫
         ForgetEnrichment.homOf _ (β.app X)) ≫
@@ -415,8 +403,9 @@ theorem mapDGHomotopyCategoryNatTrans_app_eq_zero_iff
         (ForgetEnrichment.homOf (C := D) (CochainComplex (ModuleCat.{v} R) ℤ)
           (α.app X)) ∈
           TauCeti.dgBoundaries R (F.obj X) (G.obj X) := by
-  rw [mapDGHomotopyCategoryNatTrans_app]
-  exact TauCeti.DGHomotopyCategory.homOf_eq_zero_iff R _
+  unfold mapDGHomotopyCategoryNatTrans
+  dsimp only [TauCeti.DGHomotopyCategory.underlying_of]
+  exact TauCeti.dgClosedToHomotopy_map_eq_zero_iff (C := D) R _
 
 /-- Passing the identity DG transformation to `H⁰` gives the identity transformation. -/
 @[simp]
