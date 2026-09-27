@@ -48,9 +48,6 @@ the length-one projective resolutions of the two vertex simples.
 
 See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras
 I*, Chapter III, Sections 2--3.
-
-This implements the “The quiver `1 ⟶ 2`” worked example in
-`TauCetiRoadmap/GrothendieckEulerForms/README.md`.
 -/
 
 public section
@@ -70,6 +67,12 @@ variable {A : Type v} [Unique A]
 rows and indecomposable projectives in the columns. -/
 def cartanMatrixA2 : Matrix (Fin 2) (Fin 2) ℤ := !![1, 0; 1, 1]
 
+/-- The entries of the `A₂` Cartan matrix. -/
+@[simp]
+theorem cartanMatrixA2_apply (i j : Fin 2) :
+    cartanMatrixA2 i j = !![1, 0; 1, 1] i j := by
+  rw [cartanMatrixA2]
+
 /-- The columns of the `A₂` Cartan matrix are the dimension vectors of its indecomposable
 projectives. In particular, they are `P₁ = (1, 1)` and `P₂ = (0, 1)`. -/
 theorem projectiveDimensionMatrix_eq_cartanMatrixA2 (k : Type u) [Field k] :
@@ -80,25 +83,23 @@ theorem projectiveDimensionMatrix_eq_cartanMatrixA2 (k : Type u) [Field k] :
   rw [dimVector_indecProjRep]
   fin_cases i <;> fin_cases j <;> simp [cartanMatrixA2]
 
-omit [Unique A] in
-/-- The dimension vector of the source simple is `(1, 0)` in source-first coordinates. -/
-theorem dimVector_simpleRep_src_sourceFirst (k : Type u) [Field k] :
-    (fun i : Fin 2 ↦ dimVector (simpleRep k (Kronecker A) src) (![src, tgt] i)) = ![1, 0] := by
-  rw [dimVector_simpleRep]
-  funext i
-  fin_cases i <;> simp
-
-omit [Unique A] in
-/-- The dimension vector of the target simple is `(0, 1)` in source-first coordinates. -/
-theorem dimVector_simpleRep_tgt_sourceFirst (k : Type u) [Field k] :
-    (fun i : Fin 2 ↦ dimVector (simpleRep k (Kronecker A) tgt) (![src, tgt] i)) = ![0, 1] := by
-  rw [dimVector_simpleRep]
-  funext i
-  fin_cases i <;> simp
+/-- An entry of the projective dimension matrix is the corresponding Cartan matrix entry. -/
+@[simp]
+theorem projectiveDimensionMatrix_apply (k : Type u) [Field k] (i j : Fin 2) :
+    (Module.finrank k ((indecProjRep k (Kronecker A) (![src, tgt] j)).obj
+      ((CategoryTheory.Paths.of (Kronecker A)).obj (![src, tgt] i))) : ℤ) = cartanMatrixA2 i j := by
+  simpa only [dimVector_apply] using
+    congrFun (congrFun (projectiveDimensionMatrix_eq_cartanMatrixA2 k) i) j
 
 /-- The Ringel Euler matrix `[1, -1; 0, 1]` of the quiver `1 ⟶ 2`, with vertices ordered source
 first. -/
 def eulerMatrixA2 : Matrix (Fin 2) (Fin 2) ℤ := !![1, -1; 0, 1]
+
+/-- The entries of the `A₂` Ringel Euler matrix. -/
+@[simp]
+theorem eulerMatrixA2_apply (i j : Fin 2) :
+    eulerMatrixA2 i j = !![1, -1; 0, 1] i j := by
+  rw [eulerMatrixA2]
 
 /-- The Ringel Euler matrix of `1 ⟶ 2` is `[1, -1; 0, 1]` in source-first coordinates. -/
 theorem submatrix_toMatrix_eulerForm_eq_eulerMatrixA2 :
@@ -162,8 +163,19 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
       (k := k) (Q := Kronecker A) sj a)]
   rw [hdim si, hdim sj]
   dsimp [si, sj]
-  fin_cases i <;> fin_cases j <;> rw [eulerForm_apply] <;>
-    simp [eulerMatrixA2, Fintype.card_unique]
+  simpa only [Matrix.submatrix_apply, LinearMap.BilinForm.toMatrix_apply, Pi.basisFun_apply] using
+    congrFun (congrFun submatrix_toMatrix_eulerForm_eq_eulerMatrixA2 i) j
+
+/-- An Ext-Euler pairing of vertex simples is the corresponding Ringel Euler matrix entry. -/
+@[simp]
+theorem extEulerMatrix_A2_apply (k : Type v) [Field k] (i j : Fin 2) :
+    extEuler k (isEulerAdmissible_vertexSimpleModule k (Kronecker A) (![src, tgt] i)
+      (vertexSimpleModule k (Kronecker A) (![src, tgt] j))
+      (finiteDimensional_vertexSimpleModule_obj (k := k) (Q := Kronecker A)
+        (![src, tgt] j) (![src, tgt] i))
+      (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj
+        (k := k) (Q := Kronecker A) (![src, tgt] j) a)) = eulerMatrixA2 i j := by
+  exact congrFun (congrFun (extEulerMatrix_A2_eq k) i) j
 
 end Quiver.Kronecker
 
