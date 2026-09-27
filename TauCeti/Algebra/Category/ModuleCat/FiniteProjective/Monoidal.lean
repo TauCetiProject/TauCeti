@@ -120,10 +120,22 @@ theorem evalIso_naturality {M N : (finiteProjectiveModules R).FullSubcategory} (
   rfl
 
 /-- Double-dual evaluation as a natural isomorphism on finite projective modules. -/
-noncomputable def evalNatIso :
+@[expose] noncomputable def evalNatIso :
     𝟭 (finiteProjectiveModules R).FullSubcategory ≅
       (dualFunctor R).rightOp ⋙ dualFunctor R :=
   NatIso.ofComponents (evalIso R) fun f => evalIso_naturality R f
+
+/-- The forward component of `evalNatIso` is double-dual evaluation. -/
+@[simp]
+theorem evalNatIso_hom_app (M : (finiteProjectiveModules R).FullSubcategory) :
+    (evalNatIso R).hom.app M = (evalIso R M).hom :=
+  rfl
+
+/-- The inverse component of `evalNatIso` is inverse double-dual evaluation. -/
+@[simp]
+theorem evalNatIso_inv_app (M : (finiteProjectiveModules R).FullSubcategory) :
+    (evalNatIso R).inv.app M = (evalIso R M).inv :=
+  rfl
 
 end FiniteProjectiveModules
 
