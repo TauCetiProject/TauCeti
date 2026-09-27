@@ -293,9 +293,7 @@ theorem IsProP.finrank_continuousZModDual_eq_topologicalGeneratorRankNat (hG : I
     ← topologicalGeneratorRankNat_eq_topologicalGeneratorRank hfg, Cardinal.toNat_natCast]
 
 /-- **Finiteness of the continuous `𝔽_p`-dual of a profinite pro-`p` group.** The dual is
-finite-dimensional exactly when the group is topologically finitely generated: one direction
-bounds the dual by a finite topological generating set (`TauCeti.finite_continuousZModDual`), the
-other is Burnside's basis theorem read as a finiteness statement. -/
+finite-dimensional over `𝔽_p` exactly when the group is topologically finitely generated. -/
 theorem IsProP.finite_continuousZModDual_iff (hG : IsProP p G) :
     Module.Finite (ZMod p) (continuousZModDual p G) ↔ IsTopologicallyFinitelyGenerated G := by
   rw [← Module.rank_lt_aleph0_iff, ← hG.topologicalGeneratorRank_eq_rank_continuousZModDual,
