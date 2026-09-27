@@ -27,7 +27,7 @@ open scoped NumberField
 
 namespace TauCeti.NumberField
 
-variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
+variable {K : Type*} [Field K] [CharZero K] {θ : 𝓞 K}
 
 /-- The index of Dedekind's order in the full ring of integers. -/
 def dedekindOrderIndex (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : ℕ :=
@@ -39,6 +39,10 @@ theorem dedekindOrderIndex_def
     dedekindOrderIndex hθ =
       Nat.card (𝓞 K ⧸ (dedekindOrder hθ).toSubmodule) :=
   Submodule.cardQuot_apply _
+
+section NumberField
+
+variable [NumberField K]
 
 /-- Dedekind's cubic order has finite index in the full ring of integers when `θ` generates `K`. -/
 theorem finite_quotient_dedekindOrder
@@ -66,6 +70,8 @@ theorem dedekindOrderIndex_pos
   let _ := finite_quotient_dedekindOrder hθ hgen
   rw [dedekindOrderIndex_def]
   exact Nat.card_pos
+
+end NumberField
 
 /-- Dedekind's cubic order has index one exactly when it is the full ring of integers. -/
 @[simp] theorem dedekindOrderIndex_eq_one_iff
