@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Map
-public import TauCeti.Analysis.Complex.Fuchsian.Cusp.FiniteIndex
 
 /-!
 # Fibres over cusps in compactified Fuchsian quotient maps
