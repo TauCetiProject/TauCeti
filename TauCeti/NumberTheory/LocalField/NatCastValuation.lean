@@ -47,7 +47,8 @@ characteristic is the absolute ramification index of `K`.
   is identically zero.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
   `q ^ (-natCastValuation K n hn)`.
-* `TauCeti.addVal_natCast`: the same valuation in the discrete-valuation-ring convention.
+* `TauCeti.IsDiscreteValuationRing.addVal_natCast`: the same valuation in the
+  discrete-valuation-ring convention.
 
 ## References
 
@@ -225,11 +226,13 @@ theorem span_natCast_eq_maximalIdeal_pow (n : ℕ) (hn : (n : K) ≠ 0) :
   rw [← hu', Ideal.span_singleton_mul_left_unit u.isUnit, hπ.maximalIdeal_eq,
     Ideal.span_singleton_pow]
 
+namespace IsDiscreteValuationRing
+
 variable (K) in
 /-- The additive valuation of a nonzero natural-number cast in the integer ring agrees with
 `natCastValuation` of its image in the field. -/
 @[simp] theorem addVal_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
-    IsDiscreteValuationRing.addVal 𝒪[K] (n : 𝒪[K]) =
+    _root_.IsDiscreteValuationRing.addVal 𝒪[K] (n : 𝒪[K]) =
       (natCastValuation K n hn : ℕ∞) := by
   have hn' : (n : 𝒪[K]) ≠ 0 := fun h => hn (by
     simpa only [Subring.coe_natCast, Subring.coe_zero] using
@@ -238,6 +241,8 @@ variable (K) in
     span_natCast_eq_maximalIdeal_pow K n hn,
     multiplicity_pow_self_of_prime
       (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field 𝒪[K]) inferInstance)]
+
+end IsDiscreteValuationRing
 
 /-- The multiplicative valuation of a nonzero natural-number cast is the corresponding power of
 the valuation of any uniformizer. -/
