@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Field.Basic
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Linarith
 
 /-!
 # The numerical triangle bound in Hurwitz's automorphism theorem
