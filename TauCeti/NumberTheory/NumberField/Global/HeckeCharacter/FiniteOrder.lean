@@ -32,6 +32,8 @@ L-functions of finite-order characters.
   exactly when it is the pullback of a ray class character of some modulus.
 * `HeckeCharacter.isFiniteOrder_iff_isOpen_ker`: a Hecke character has finite order exactly when
   its kernel is open.
+* `HeckeCharacter.rayClassCharacterAt`: the unique ray class character representing a Hecke
+  character at a specified modulus.
 
 ## References
 
@@ -49,6 +51,8 @@ namespace TauCeti.GlobalNumberFields
 variable {K : Type*} [Field K] [NumberField K]
 
 namespace HeckeCharacter
+
+variable {𝔪 𝔫 : Modulus K}
 
 /-- A finite-order Hecke character has open kernel, and is therefore locally constant. -/
 theorem isOpen_ker_of_isFiniteOrder {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder) :
@@ -87,6 +91,57 @@ theorem isFiniteOrder_iff_isOpen_ker (χ : HeckeCharacter K) :
   refine ⟨isOpen_ker_of_isFiniteOrder, fun h ↦ ?_⟩
   obtain ⟨𝔪, η, rfl⟩ := exists_ofRayClassCharacter_eq_of_isOpen_ker h
   exact isFiniteOrder_ofRayClassCharacter η
+
+/-- The unique ray class character of `𝔪` whose pullback is `χ`, given that `χ` comes from
+`RayClassGroup 𝔪`. -/
+noncomputable def rayClassCharacterAt (χ : HeckeCharacter K) (𝔪 : Modulus K)
+    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) : RayClassCharacter 𝔪 :=
+  hχ.choose
+
+/-- Pulling the representing ray class character back to the idele class group recovers the
+original Hecke character. -/
+@[simp]
+theorem ofRayClassCharacter_rayClassCharacterAt (χ : HeckeCharacter K) (𝔪 : Modulus K)
+    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) :
+    ofRayClassCharacter 𝔪 (rayClassCharacterAt χ 𝔪 hχ) = χ :=
+  hχ.choose_spec
+
+/-- The representing ray class character is characterized by its pullback to the idele class
+group. -/
+theorem rayClassCharacterAt_eq_iff {χ : HeckeCharacter K}
+    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) {η : RayClassCharacter 𝔪} :
+    rayClassCharacterAt χ 𝔪 hχ = η ↔ ofRayClassCharacter 𝔪 η = χ := by
+  constructor
+  · rintro rfl
+    exact ofRayClassCharacter_rayClassCharacterAt χ 𝔪 hχ
+  · intro hη
+    exact (ofRayClassCharacter_injective 𝔪) <|
+      (ofRayClassCharacter_rayClassCharacterAt χ 𝔪 hχ).trans hη.symm
+
+/-- Extracting the representative of a Hecke character already presented by a ray class character
+returns that character. -/
+@[simp]
+theorem rayClassCharacterAt_ofRayClassCharacter (η : RayClassCharacter 𝔪) :
+    rayClassCharacterAt (ofRayClassCharacter 𝔪 η) 𝔪 ⟨η, rfl⟩ = η :=
+  (rayClassCharacterAt_eq_iff ⟨η, rfl⟩).mpr rfl
+
+/-- On increasing the modulus, the representative of a Hecke character is obtained by inducing
+its representative at the smaller modulus. -/
+theorem rayClassCharacterAt_of_dvd (h : 𝔪 ∣ 𝔫) (χ : HeckeCharacter K)
+    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) :
+    rayClassCharacterAt χ 𝔫 (range_ofRayClassCharacter_le h hχ) =
+      RayClassCharacter.induced h (rayClassCharacterAt χ 𝔪 hχ) := by
+  rw [rayClassCharacterAt_eq_iff, ofRayClassCharacter_induced,
+    ofRayClassCharacter_rayClassCharacterAt]
+
+/-- At a fixed modulus, the representative of a product is the product of the representatives. -/
+theorem rayClassCharacterAt_mul {χ ψ : HeckeCharacter K}
+    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range)
+    (hψ : ψ ∈ (ofRayClassCharacter 𝔪).range) :
+    rayClassCharacterAt (χ * ψ) 𝔪 (mul_mem hχ hψ) =
+      rayClassCharacterAt χ 𝔪 hχ * rayClassCharacterAt ψ 𝔪 hψ := by
+  rw [rayClassCharacterAt_eq_iff, map_mul,
+    ofRayClassCharacter_rayClassCharacterAt, ofRayClassCharacter_rayClassCharacterAt]
 
 end HeckeCharacter
 

@@ -34,6 +34,7 @@ without repeatedly transporting across the definitional equality of trivial repr
 ## Main results
 
 * `TauCeti.trivialFp_ρ_apply_apply`: the action is trivial.
+* `TauCeti.continuousSMul_trivialFp`: the derived action on the carrier is continuous.
 * `TauCeti.res_trivialFp`: restriction preserves trivial coefficients on the nose.
 
 ## References
@@ -117,6 +118,12 @@ theorem res_trivialFp (S : Subgroup G) :
 open CategoryTheory _root_.ContinuousCohomology
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
+
+attribute [local instance] TopRep.distribMulAction in
+/-- The derived action of `G` on the carrier of `trivialFp p G` is continuous, the carrier being
+discrete and the action trivial. -/
+theorem continuousSMul_trivialFp : ContinuousSMul G (trivialFp p G).V :=
+  (isSmoothDiscrete_iff_continuousSMul _).1 (isSmoothDiscrete_trivialFp p G)
 
 /-- Continuous cohomology with trivial `ZMod p` coefficients. -/
 noncomputable abbrev cohomFp (n : ℕ) := continuousCohomology n (trivialFp p G)
