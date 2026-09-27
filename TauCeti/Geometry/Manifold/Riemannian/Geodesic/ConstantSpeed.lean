@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 
@@ -23,6 +24,8 @@ directly with `curveVelocity`.
 * `TauCeti.Manifold.IsGeodesicCurveOn.inner_curveVelocityWithin_self_eq`: squared speed is constant
   on a preconnected parameter set.
 * `TauCeti.Manifold.IsGeodesicCurveOn.norm_curveVelocityWithin_eq`: speed is constant there.
+* `TauCeti.Manifold.IsGeodesicCurveOn.energy_eq`: the energy of a geodesic segment is
+  `(b - a) ‖γ'(a)‖² / 2`.
 * `TauCeti.Manifold.IsGeodesicCurve.inner_curveVelocity_self_eq`: an all-time geodesic has the
   same squared speed at any two parameters.
 * `TauCeti.Manifold.IsGeodesicCurve.norm_curveVelocity_eq`: an all-time geodesic has the same
@@ -102,6 +105,30 @@ theorem IsGeodesicCurveOn.norm_curveVelocityWithin_eq
     ‖curveVelocityWithin I γ s a‖ = ‖curveVelocityWithin I γ s b‖ := by
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
     h.inner_curveVelocityWithin_self_eq hconn ha hb]
+
+/-- **The energy of a geodesic segment.** A geodesic has constant speed, so its energy between
+`a` and `b` is `(b - a) ‖γ'(a)‖² / 2`. -/
+theorem IsGeodesicCurveOn.energy_eq (h : IsGeodesicCurveOn I γ s)
+    (hs : IsOpen s) {a b : ℝ} (hsub : uIcc a b ⊆ s) :
+    energy I γ a b = (b - a) * ‖curveVelocity I γ a‖ ^ 2 / 2 := by
+  -- constant speed is a statement about a preconnected parameter set: pass to the connected
+  -- component of `s` containing the segment, which is open and still contains `[a, b]`
+  have hs'o : IsOpen (connectedComponentIn s a) := hs.connectedComponentIn
+  have hsub' : uIcc a b ⊆ connectedComponentIn s a :=
+    isPreconnected_uIcc.subset_connectedComponentIn left_mem_uIcc hsub
+  have h' : IsGeodesicCurveOn I γ (connectedComponentIn s a) :=
+    h.mono hs'o.uniqueDiffOn (connectedComponentIn_subset s a)
+  have ha : a ∈ connectedComponentIn s a := hsub' left_mem_uIcc
+  have key : EqOn (fun t ↦ ‖curveVelocity I γ t‖ ^ 2) (fun _ ↦ ‖curveVelocity I γ a‖ ^ 2)
+      (uIcc a b) := by
+    intro t ht
+    have ht' : t ∈ connectedComponentIn s a := hsub' ht
+    simp only
+    rw [← curveVelocityWithin_of_mem_nhds (hs'o.mem_nhds ht'),
+      ← curveVelocityWithin_of_mem_nhds (hs'o.mem_nhds ha),
+      h'.norm_curveVelocityWithin_eq isPreconnected_connectedComponentIn ht' ha]
+  rw [energy_def, intervalIntegral.integral_congr key, intervalIntegral.integral_const,
+    smul_eq_mul]
 
 /-- An all-time geodesic has the same squared speed, expressed using the unrestricted
 `curveVelocity`, at every two parameters. -/

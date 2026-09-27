@@ -55,10 +55,6 @@ group. -/
 theorem ker_residueField_toAlgAut :
     (MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L]).ker =
       𝓂[L].inertia (L ≃ₐ[K] L) := by
-  let _ : SMulCommClass (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] :=
-    ⟨fun σ x y => by
-      simpa only [AlgEquiv.integerRingEquiv_apply] using
-        (map_smul σ.integerRingEquiv x y)⟩
   ext σ
   let σ' : MulAction.stabilizer (L ≃ₐ[K] L) 𝓂[L] := ⟨σ, by
     rw [MulAction.mem_stabilizer_iff, Ideal.pointwise_smul_eq_comap]
