@@ -32,7 +32,6 @@ open MvPolynomial
 variable {R ι : Type*} [Semiring R] [DecidableEq R] [Fintype ι]
 
 /-- The zero code has just its zero word, of weight zero. -/
-@[simp]
 theorem weightEnumerator_bot :
     ((⊥ : Submodule R (ι → R)) : Set (ι → R)).weightEnumerator =
       (X 0 : MvPolynomial (Fin 2) ℤ) ^ Fintype.card ι := by
