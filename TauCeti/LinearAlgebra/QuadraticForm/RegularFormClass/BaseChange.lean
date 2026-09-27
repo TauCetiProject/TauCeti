@@ -371,6 +371,22 @@ theorem RegularFormClass.baseChangeHom_apply (x : RegularFormClass K) :
     RegularFormClass.baseChangeHom x = RegularFormClass.baseChange L x := by
   rfl
 
+/-- Scalar extension to the same field is the identity ring homomorphism on form classes. -/
+@[simp]
+theorem RegularFormClass.baseChangeHom_self :
+    RegularFormClass.baseChangeHom (K := K) (L := K) = RingHom.id _ := by
+  ext x
+  simp
+
+/-- Scalar extension through a tower composes as ring homomorphisms on form classes. -/
+@[simp]
+theorem RegularFormClass.baseChangeHom_comp [Invertible (2 : M)] :
+    (RegularFormClass.baseChangeHom (K := L) (L := M)).comp
+      (RegularFormClass.baseChangeHom (K := K) (L := L)) =
+        RegularFormClass.baseChangeHom (K := K) (L := M) := by
+  ext x
+  simp
+
 /-! ### Scalar extension of the discriminant -/
 
 variable {V : Type w} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
