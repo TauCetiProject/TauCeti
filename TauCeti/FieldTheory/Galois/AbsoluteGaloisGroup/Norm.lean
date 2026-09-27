@@ -9,7 +9,6 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.FieldTheory.Normal.Embeddings
-public import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # The norm of a finite subextension as a product over the absolute Galois group
@@ -22,8 +21,9 @@ Let `K` be a field, `Kˢ` a separable closure, `L/K` a finite extension and `σ 
 G_K ⧸ Gal(Kˢ/σ(L)) ≃ (L →ₐ[K] Kˢ),    g ↦ g ∘ σ,
 ```
 
-and under that identification the classical formula "the norm is the product of the conjugates"
-becomes a product over a system `t` of coset representatives:
+which is `TauCeti.FieldTheory.fixingSubgroupQuotientEquivAlgHom` for the normal extension
+`Kˢ / K`. Under that identification the classical formula "the norm is the product of the
+conjugates" becomes a product over a system `t` of coset representatives:
 
 ```text
 algebraMap K Kˢ (N_{L/K} b) = ∏ u : G_K ⧸ Gal(Kˢ/σ(L)), t u (σ b).
@@ -36,12 +36,7 @@ sum `x ↦ ∑ u, t u • x` over a transversal is the standard degree-zero core
 Separability of `L/K` is not assumed. An embedding of `L` into a separable closure of `K` forces
 it by Mathlib's `Algebra.IsSeparable.of_algHom`. Finiteness of `L/K` is used twice: it bounds the
 index of `Gal(Kˢ/σ(L))` by `[L : K]`, so that the coset space is a finite index set, and it is the
-hypothesis of Mathlib's product formula for the norm.
-
-## Main definitions
-
-* `TauCeti.fixingSubgroupQuotientEquivAlgHom`: the bijection between the cosets of
-  `Gal(Kˢ/σ(L))` and the `K`-embeddings of `L` into `Kˢ`.
+hypothesis of Mathlib's product formula for the norm, `Algebra.norm_eq_prod_embeddings`.
 
 ## Main results
 
@@ -67,47 +62,13 @@ variable (K : Type*) [Field K] (L : Type*) [Field L] [Algebra K L]
 
 include σ
 
-/-! ### The cosets of the subgroup cut out by `σ` -/
-
-private theorem stabilizer_algHom_eq_fixingSubgroup :
-    MulAction.stabilizer (AbsoluteGaloisGroup K) σ = σ.fieldRange.fixingSubgroup := by
-  ext g
-  rw [MulAction.mem_stabilizer_iff, IntermediateField.mem_fixingSubgroup_iff]
-  constructor
-  · rintro h _ ⟨x, rfl⟩
-    exact AlgEquiv.apply_of_smul_eq h x
-  · intro h
-    ext x
-    exact congrArg Subtype.val (h (σ x) ⟨x, rfl⟩)
-
-/-- **The cosets of `Gal(Kˢ/σ(L))` are the `K`-embeddings of `L` into `Kˢ`**, the coset of
-`g` corresponding to `g ∘ σ`. Composed with `galoisSubgroup_index` it is the statement that a
-finite separable extension of degree `d` has exactly `d` embeddings into a separable closure. -/
-def fixingSubgroupQuotientEquivAlgHom :
-    AbsoluteGaloisGroup K ⧸ σ.fieldRange.fixingSubgroup ≃ (L →ₐ[K] SeparableClosure K) :=
-  (Subgroup.quotientEquivOfEq (stabilizer_algHom_eq_fixingSubgroup K L σ).symm).trans
-    (quotientStabilizerEquiv (AbsoluteGaloisGroup K) σ)
-
-/-- `fixingSubgroupQuotientEquivAlgHom` sends the coset of `g` to `g ∘ σ`. -/
-@[simp]
-theorem fixingSubgroupQuotientEquivAlgHom_mk (g : AbsoluteGaloisGroup K) :
-    fixingSubgroupQuotientEquivAlgHom K L σ (QuotientGroup.mk g) = g.toAlgHom.comp σ :=
-  by
-    rw [fixingSubgroupQuotientEquivAlgHom, Equiv.trans_apply,
-      Subgroup.quotientEquivOfEq_mk, quotientStabilizerEquiv_mk,
-      AlgEquiv.smul_algHom_def]
-
 variable [FiniteDimensional K L]
-
-/-! ### The norm as a product of conjugates -/
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
 /-- **The norm of `L/K` is the product of the conjugates of `σ`** (NSW, Ch. I §5): for any system
 `t` of representatives of the cosets of `Gal(Kˢ/σ(L))`, the image of `N_{L/K} b` in `Kˢ`
-is `∏ u, t u (σ b)`. The cosets index the `K`-embeddings of `L` into `Kˢ` through
-`fixingSubgroupQuotientEquivAlgHom`, and `L/K` is separable, so Mathlib's
-`Algebra.norm_eq_prod_embeddings` computes the product. -/
+is `∏ u, t u (σ b)`. -/
 theorem algebraMap_norm_eq_prod_transversal
     (t : AbsoluteGaloisGroup K ⧸ σ.fieldRange.fixingSubgroup → AbsoluteGaloisGroup K)
     (ht : ∀ u, (QuotientGroup.mk (t u) :
@@ -120,16 +81,13 @@ theorem algebraMap_norm_eq_prod_transversal
   refine (algebraMap (SeparableClosure K) (AlgebraicClosure K)).injective ?_
   rw [map_prod, ← IsScalarTower.algebraMap_apply K (SeparableClosure K) (AlgebraicClosure K),
     Algebra.norm_eq_prod_embeddings (K := K) (L := L) (E := AlgebraicClosure K) b]
-  refine (Fintype.prod_equiv ((fixingSubgroupQuotientEquivAlgHom K L σ).trans
-    (IntermediateField.algHomEquivAlgHomOfSplits (AlgebraicClosure K)
-      (separableClosure K (AlgebraicClosure K)) hsplits)) _ _ fun u => ?_).symm
-  have hu : fixingSubgroupQuotientEquivAlgHom K L σ u = (t u).toAlgHom.comp σ := by
+  refine (Fintype.prod_equiv ((FieldTheory.fixingSubgroupQuotientEquivAlgHom σ).trans
+    (Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits (AlgebraicClosure K) (SeparableClosure K)
+      hsplits)) _ _ fun u => ?_).symm
+  have hu : FieldTheory.fixingSubgroupQuotientEquivAlgHom σ u = (t u).toAlgHom.comp σ := by
     conv_lhs => rw [← ht u]
-    rw [fixingSubgroupQuotientEquivAlgHom_mk]
-  rw [Equiv.trans_apply, hu, IntermediateField.algHomEquivAlgHomOfSplits_apply_apply,
-    AlgHom.comp_apply]
-  -- `SeparableClosure K` is by definition `separableClosure K (AlgebraicClosure K)`, and only
-  -- that abbreviation separates the two sides.
-  rfl
+    rw [FieldTheory.fixingSubgroupQuotientEquivAlgHom_mk]
+  rw [Equiv.trans_apply, hu, Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits_apply_apply,
+    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
 
 end TauCeti

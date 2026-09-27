@@ -50,7 +50,7 @@ module. Separability of `L/K` is a consequence of the existence of `σ` and is n
 
 * `TauCeti.galoisSubgroup_index`: the index of `galoisSubgroup K L σ` in `G_K` is `[L : K]`, so
   the subgroup fixing `σ(L)` has finite index
-  (`TauCeti.fixingSubgroup_fieldRange_finiteIndex`).
+  (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`).
 * `TauCeti.galoisSubgroupEquiv_apply_separableClosureRingEquiv`: the isomorphism intertwines the
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
 
@@ -106,7 +106,7 @@ theorem galoisSubgroup_index : (galoisSubgroup K L σ).toSubgroup.index = Module
 /-- **The subgroup of `G_K` fixing `σ(L)` has finite index**, namely `[L : K]`. This is what
 discharges the finite-index hypothesis of corestriction and of the other operations of Galois
 cohomology indexed by a subgroup of `G_K`. -/
-instance fixingSubgroup_fieldRange_finiteIndex :
+instance finiteIndex_fixingSubgroup_fieldRange :
     (σ.fieldRange.fixingSubgroup : Subgroup (AbsoluteGaloisGroup K)).FiniteIndex :=
   ⟨by rw [← galoisSubgroup_toSubgroup, galoisSubgroup_index]; exact Module.finrank_pos.ne'⟩
 
