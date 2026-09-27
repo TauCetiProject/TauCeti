@@ -583,7 +583,7 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
 /-- The tangent map of an open submanifold's inclusion identifies its tangent vectors with
 ambient tangent vectors through `tangentSpaceOpenEquiv`. -/
 @[simp]
-theorem tangentMap_subtype_val [IsManifold I 1 M] {U : Opens M}
+theorem tangentMap_subtype_val {U : Opens M}
     (p : TangentBundle I U) :
     tangentMap I I (Subtype.val : U → M) p =
       ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.2⟩ := by
