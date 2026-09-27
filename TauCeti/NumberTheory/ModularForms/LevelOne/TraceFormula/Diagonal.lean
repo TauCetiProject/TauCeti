@@ -98,7 +98,6 @@ theorem trace_binaryFormRep_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
 namespace TraceFormulaMatrixModule
 
 /-- The projective diagonal class has the same Dickson trace on even-degree binary forms. -/
-@[simp]
 theorem trace_binaryFormAction_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
     {n : ℤ} (w : ℕ) (hw : Even w) (a d : ℤ) (h : a * d = n) :
     LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
@@ -113,7 +112,6 @@ theorem trace_binaryFormAction_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
 
 /-- A diagonal basis element of the determinant-matrix module contributes its coefficient
 times the Dickson trace to the ambient binary-form space. -/
-@[simp]
 theorem trace_periodAction_single_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
     {n : ℤ} (w : ℕ) (hw : Even w) (a d : ℤ) (h : a * d = n) (c : R) :
     LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
