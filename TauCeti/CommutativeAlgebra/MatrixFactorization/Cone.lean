@@ -36,12 +36,26 @@ variable {X Y : MatrixFactorization S w}
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
 /-- The mapping cone of a morphism of finite-projective matrix factorizations. -/
+-- The cone object is exposed because its components occur in the types of the
+-- inclusion, projection, and componentwise cone-map API below.
 @[expose] noncomputable def cone (f : X ⟶ Y) : MatrixFactorization S w :=
   ofCurvedDuplex (CurvedDuplex.cone f.hom)
     (FGModuleCat.projective_biprod S X.obj.X₁ Y.obj.X₀)
     (FGModuleCat.projective_biprod S X.obj.X₀ Y.obj.X₁)
 
 @[simp] theorem cone_obj (f : X ⟶ Y) : (cone f).obj = CurvedDuplex.cone f.hom := rfl
+
+@[simp] theorem cone_obj_X₀ (f : X ⟶ Y) :
+    (cone f).obj.X₀ = (X.obj.X₁ ⊞ Y.obj.X₀) := rfl
+
+@[simp] theorem cone_obj_X₁ (f : X ⟶ Y) :
+    (cone f).obj.X₁ = (X.obj.X₀ ⊞ Y.obj.X₁) := rfl
+
+@[simp] theorem cone_obj_d₀ (f : X ⟶ Y) :
+    (cone f).obj.d₀ = CurvedDuplex.coneD₀ f.hom := rfl
+
+@[simp] theorem cone_obj_d₁ (f : X ⟶ Y) :
+    (cone f).obj.d₁ = CurvedDuplex.coneD₁ f.hom := rfl
 
 /-- The canonical inclusion of the codomain into the cone. -/
 @[expose] noncomputable def coneInclusion (f : X ⟶ Y) : Y ⟶ cone f :=
@@ -57,6 +71,24 @@ attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
 @[simp] theorem coneProjection_hom (f : X ⟶ Y) :
     (coneProjection f).hom = CurvedDuplex.coneProjection f.hom := rfl
+
+@[simp] theorem coneInclusion_hom_f₀ (f : X ⟶ Y) :
+    (coneInclusion f).hom.f₀ = biprod.inr := by
+  simpa only [coneInclusion_hom, cone_obj] using CurvedDuplex.coneInclusion_f₀ f.hom
+
+@[simp] theorem coneInclusion_hom_f₁ (f : X ⟶ Y) :
+    (coneInclusion f).hom.f₁ = biprod.inr := by
+  simpa only [coneInclusion_hom, cone_obj] using CurvedDuplex.coneInclusion_f₁ f.hom
+
+@[simp] theorem coneProjection_hom_f₀ (f : X ⟶ Y) :
+    (coneProjection f).hom.f₀ = biprod.fst := by
+  simpa only [coneProjection_hom, cone_obj, parityShift_obj] using
+    CurvedDuplex.coneProjection_f₀ f.hom
+
+@[simp] theorem coneProjection_hom_f₁ (f : X ⟶ Y) :
+    (coneProjection f).hom.f₁ = biprod.fst := by
+  simpa only [coneProjection_hom, cone_obj, parityShift_obj] using
+    CurvedDuplex.coneProjection_f₁ f.hom
 
 /-- Parity shift commutes with mapping cones, with a sign on the codomain summand. -/
 noncomputable def coneParityShiftIso (f : X ⟶ Y) :
@@ -82,7 +114,7 @@ noncomputable def coneParityShiftIso (f : X ⟶ Y) :
   CurvedDuplex.coneParityShiftIso_inv_f₁ f.hom
 
 /-- The inclusion followed by the projection is zero. -/
-@[reassoc (attr := simp)] theorem coneInclusion_comp_coneProjection (f : X ⟶ Y) :
+@[reassoc (attr := simp), simp] theorem coneInclusion_comp_coneProjection (f : X ⟶ Y) :
     coneInclusion f ≫ coneProjection f = 0 := by
   ext <;> simp
 
@@ -112,6 +144,18 @@ variable {X' Y' : MatrixFactorization S w}
     (coneMap f g a b h).hom =
       CurvedDuplex.coneMap f.hom g.hom a.hom b.hom
         (by simpa using congrArg (·.hom) h) := rfl
+
+@[simp] theorem coneMap_hom_f₀ (f : X ⟶ Y) (g : X' ⟶ Y')
+    (a : X ⟶ X') (b : Y ⟶ Y') (h : f ≫ b = a ≫ g) :
+    (coneMap f g a b h).hom.f₀ = biprod.map a.hom.f₁ b.hom.f₀ := by
+  simpa only [coneMap_hom, cone_obj] using
+    CurvedDuplex.coneMap_f₀ f.hom g.hom a.hom b.hom (by simpa using congrArg (·.hom) h)
+
+@[simp] theorem coneMap_hom_f₁ (f : X ⟶ Y) (g : X' ⟶ Y')
+    (a : X ⟶ X') (b : Y ⟶ Y') (h : f ≫ b = a ≫ g) :
+    (coneMap f g a b h).hom.f₁ = biprod.map a.hom.f₀ b.hom.f₁ := by
+  simpa only [coneMap_hom, cone_obj] using
+    CurvedDuplex.coneMap_f₁ f.hom g.hom a.hom b.hom (by simpa using congrArg (·.hom) h)
 
 /-- The identity square induces the identity on the cone. -/
 @[simp] theorem coneMap_id (f : X ⟶ Y) :
@@ -149,7 +193,7 @@ instance isIso_coneMap (f : X ⟶ Y) (g : X' ⟶ Y')
     (by simpa using congrArg (·.hom) h)
 
 /-- Cone maps commute with the inclusions of their codomains. -/
-@[reassoc (attr := simp)] theorem coneInclusion_comp_coneMap
+@[reassoc (attr := simp), simp] theorem coneInclusion_comp_coneMap
     (f : X ⟶ Y) (g : X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
     (h : f ≫ b = a ≫ g) :
     coneInclusion f ≫ coneMap f g a b h = b ≫ coneInclusion g := by
@@ -160,7 +204,7 @@ instance isIso_coneMap (f : X ⟶ Y) (g : X' ⟶ Y')
     f.hom g.hom a.hom b.hom (by simpa using congrArg (·.hom) h)
 
 /-- Cone maps commute with the projections to the shifted domains. -/
-@[reassoc (attr := simp)] theorem coneMap_comp_coneProjection
+@[reassoc (attr := simp), simp] theorem coneMap_comp_coneProjection
     (f : X ⟶ Y) (g : X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
     (h : f ≫ b = a ≫ g) :
     coneMap f g a b h ≫ coneProjection g =
