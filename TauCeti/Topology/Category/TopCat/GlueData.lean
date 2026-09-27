@@ -25,14 +25,24 @@ namespace TopCat.GlueData
 
 variable (D : TopCat.GlueData)
 
+/-- The images of the charts cover the glued space. -/
+theorem iUnion_range_ι : ⋃ i, range (D.toGlueData.ι i) = univ :=
+  iUnion_eq_univ_iff.2 fun x ↦ D.ι_jointly_surjective x
+
+/-- A chart is homeomorphic to its image in the glued space. -/
+noncomputable def ιHomeomorph (i : D.J) :
+    D.U i ≃ₜ range (D.toGlueData.ι i) :=
+  (D.ι_isOpenEmbedding i).isEmbedding.toHomeomorph
+
 /-- A glued space with countably many second-countable charts is second countable. -/
 instance secondCountableTopology [Countable D.J]
     [∀ i, SecondCountableTopology (D.U i)] : SecondCountableTopology D.toGlueData.glued := by
   let U : D.J → Set D.toGlueData.glued := fun i ↦ range (D.toGlueData.ι i)
   have hU (i : D.J) : IsOpen (U i) := (D.ι_isOpenEmbedding i).isOpen_range
-  have hcover : ⋃ i, U i = univ := iUnion_eq_univ_iff.2 fun x ↦ D.ι_jointly_surjective x
+  have hcover : ⋃ i, U i = univ := D.iUnion_range_ι
+  -- This local instance supplies the chart hypothesis of the cover lemma.
   let hCount : ∀ i : D.J, SecondCountableTopology (U i) := fun i ↦
-    (D.ι_isOpenEmbedding i).isEmbedding.toHomeomorph.symm.isEmbedding.secondCountableTopology
+    (D.ιHomeomorph i).symm.secondCountableTopology
   exact TopologicalSpace.secondCountableTopology_of_countable_cover hU hcover
 
 /-- A glued space with locally compact charts is locally compact. -/
@@ -40,9 +50,10 @@ instance locallyCompactSpace [∀ i, LocallyCompactSpace (D.U i)] :
     LocallyCompactSpace D.toGlueData.glued := by
   let U : D.J → Set D.toGlueData.glued := fun i ↦ range (D.toGlueData.ι i)
   have hU (i : D.J) : IsOpen (U i) := (D.ι_isOpenEmbedding i).isOpen_range
-  have hcover : ⋃ i, U i = univ := iUnion_eq_univ_iff.2 fun x ↦ D.ι_jointly_surjective x
+  have hcover : ⋃ i, U i = univ := D.iUnion_range_ι
+  -- This local instance supplies the chart hypothesis of the cover lemma.
   let hCompact : ∀ i : D.J, LocallyCompactSpace (U i) := fun i ↦
-    (D.ι_isOpenEmbedding i).isEmbedding.toHomeomorph.symm.isOpenEmbedding.locallyCompactSpace
+    (D.ιHomeomorph i).symm.isOpenEmbedding.locallyCompactSpace
   exact TauCeti.locallyCompactSpace_of_isOpen_cover hU hcover
 
 end TopCat.GlueData
