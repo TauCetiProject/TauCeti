@@ -392,7 +392,13 @@ local instance : ContinuousSMul (AbsoluteGaloisGroup K)
     (trivialF2 (AbsoluteGaloisGroup K)).V :=
   (isSmoothDiscrete_trivialF2 (AbsoluteGaloisGroup K)).continuousSMul
 
-local instance : DecidableEq (SeparableClosure K)ˣ := Classical.decEq _
+/-- Equality of units of a separable closure is decidable, classically. This is what lets the
+value formula `TauCeti.kummerCocycleModTwo_apply` be stated with an `if`; it carries no
+mathematical content and is local to this file. -/
+-- Named rather than anonymous: Lean's generated name for the anonymous form carries an underscore
+-- (`instDecidableEqUnitsSeparableClosure_tauCeti`), which the `defsWithUnderscore` linter rejects.
+local instance instDecidableEqUnitsSeparableClosure : DecidableEq (SeparableClosure K)ˣ :=
+  Classical.decEq _
 
 /-- **The `𝔽₂`-valued Kummer cocycle of a chosen square root.** If `α² = a`, this is
 the ratio cocycle `g ↦ g • α / α`, transported from `μ₂` to the trivial `𝔽₂` coefficient
