@@ -50,44 +50,33 @@ private theorem hasDerivAt_log_norm_real_smul_add (z w : ℂ) (h : z + w ≠ 0) 
   rw [hfun]
   convert hlog.div_const 2 using 1 <;> simp [Complex.sq_norm]; ring
 
-private theorem differentiableAt_log_norm {z : ℂ} (hz : z ≠ 0) :
-    DifferentiableAt ℝ (fun w : ℂ => Real.log ‖w‖) z := by
-  have hs : DifferentiableAt ℝ (fun w : ℂ => ‖w‖ ^ 2) z :=
-    ((hasFDerivAt_id z).norm_sq).differentiableAt
-  have hlog : DifferentiableAt ℝ (fun w : ℂ => Real.log (‖w‖ ^ 2)) z :=
-    hs.log (pow_ne_zero 2 (norm_ne_zero_iff.mpr hz))
-  have hfun : (fun w : ℂ => Real.log ‖w‖) =
-      fun w : ℂ => Real.log (‖w‖ ^ 2) / 2 := by
-    funext w
-    rw [Real.log_pow]
-    ring
-  rw [hfun]
-  convert hlog.const_mul ((2 : ℝ)⁻¹) using 1
-  ext w
-  ring
-
 private theorem differentiableAt_planarGreenKernel {a z : ℂ}
     (hza : z - a ≠ 0) (hca : 1 - starRingEnd ℂ a * z ≠ 0) :
     DifferentiableAt ℝ (planarGreenKernel a) z := by
   have hinner1 : DifferentiableAt ℝ (fun w : ℂ => w - a) z := by
     fun_prop
   have h₁ : DifferentiableAt ℝ (fun w : ℂ => Real.log ‖w - a‖) z :=
-    by simpa only [Function.comp_def] using
-      (differentiableAt_log_norm hza).comp z hinner1
+    by simpa only [Function.comp_def, id_eq] using
+      (((differentiableAt_id : DifferentiableAt ℝ (id : ℂ → ℂ) (z - a)).norm ℂ hza).log
+        (norm_ne_zero_iff.mpr hza)).comp z hinner1
   have hinner : DifferentiableAt ℝ (fun w : ℂ => 1 - starRingEnd ℂ a * w) z := by
     fun_prop
   have h₂ : DifferentiableAt ℝ
       (fun w : ℂ => Real.log ‖1 - starRingEnd ℂ a * w‖) z :=
-    by simpa only [Function.comp_def] using
-      (differentiableAt_log_norm hca).comp z hinner
+    by simpa only [Function.comp_def, id_eq] using
+      (((differentiableAt_id : DifferentiableAt ℝ (id : ℂ → ℂ)
+        (1 - starRingEnd ℂ a * z)).norm ℂ hca).log
+        (norm_ne_zero_iff.mpr hca)).comp z hinner
   convert (h₁.const_mul (-(2 * Real.pi)⁻¹)).sub
     (h₂.const_mul (-(2 * Real.pi)⁻¹)) using 1
   ext w
   simp only [planarGreenKernel_def, planarNewtonianKernel_def, Pi.sub_apply]
 
-private theorem differentiableAt_planarGreenKernel_boundary {a z : ℂ}
+/-- At a boundary point of the unit disk, neither logarithmic argument in the planar Green
+kernel vanishes when the pole lies inside the disk. -/
+private theorem planarGreenKernel_boundary_ne {a z : ℂ}
     (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
-    DifferentiableAt ℝ (planarGreenKernel a) z := by
+    z - a ≠ 0 ∧ 1 - starRingEnd ℂ a * z ≠ 0 := by
   have hza : z - a ≠ 0 := by
     intro h
     have : z = a := sub_eq_zero.mp h
@@ -99,26 +88,22 @@ private theorem differentiableAt_planarGreenKernel_boundary {a z : ℂ}
     have hnorm : ‖starRingEnd ℂ a * z‖ = 1 := by rw [heq]; simp
     rw [norm_mul, Complex.norm_conj, hz, mul_one] at hnorm
     linarith
+  exact ⟨hza, hca⟩
+
+/-- The planar Green kernel is differentiable at a boundary point of the unit disk when its
+pole lies inside the disk. -/
+theorem differentiableAt_planarGreenKernel_boundary {a z : ℂ}
+    (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
+    DifferentiableAt ℝ (planarGreenKernel a) z := by
+  obtain ⟨hza, hca⟩ := planarGreenKernel_boundary_ne ha hz
   exact differentiableAt_planarGreenKernel hza hca
 
-/-- On the boundary of the unit disk, the negative outward radial derivative of the Green
-kernel with pole `a` is the Poisson kernel divided by `2π`. -/
+/-- On the boundary of the unit disk, the outward radial derivative of the Green kernel
+with pole `a` is the negative of the Poisson kernel divided by `2π`. -/
 theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
     HasDerivAt (fun t : ℝ => planarGreenKernel a (t • z))
       (-(poissonKernel 0 a z) / (2 * Real.pi)) 1 := by
-  have hza : z - a ≠ 0 := by
-    intro h
-    have : z = a := sub_eq_zero.mp h
-    rw [this] at hz
-    linarith
-  have hca : 1 - starRingEnd ℂ a * z ≠ 0 := by
-    intro h
-    have heq : starRingEnd ℂ a * z = 1 := (sub_eq_zero.mp h).symm
-    have hnorm : ‖starRingEnd ℂ a * z‖ = 1 := by
-      rw [heq]
-      simp
-    rw [norm_mul, Complex.norm_conj, hz, mul_one] at hnorm
-    linarith
+  obtain ⟨hza, hca⟩ := planarGreenKernel_boundary_ne ha hz
   have h₁ := hasDerivAt_log_norm_real_smul_add z (-a)
     (by simpa only [sub_eq_add_neg] using hza)
   have h₂ := hasDerivAt_log_norm_real_smul_add
@@ -194,9 +179,9 @@ theorem fderiv_planarGreenKernel_normal {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖
     simpa only [Complex.real_smul] using deriv_planarGreenKernel_radial ha hz
   simpa only [Function.comp_def, one_smul, hcurve_deriv, hradial] using hd.symm
 
-/-- On the boundary of any positive-radius disk, the negative derivative of the Green kernel
-along the radius from the center to the boundary point is Mathlib's Poisson kernel divided by
-`2π`. The derivative uses the dimensionless radial parameter `t`; the unit outward normal
+/-- On the boundary of any positive-radius disk, the derivative of the Green kernel along
+the radius from the center to the boundary point is the negative of Mathlib's Poisson kernel
+divided by `2π`. The derivative uses the dimensionless radial parameter `t`; the unit outward normal
 derivative is obtained by dividing by the disk radius. -/
 theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
     (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
@@ -229,24 +214,32 @@ theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
   simpa only [Complex.real_smul] using
     (hasDerivAt_planarGreenKernelDisk_radial hR ha hz).deriv
 
+/-- The Green kernel of a positive-radius disk is differentiable at a boundary point when
+its pole lies inside the disk. -/
+theorem differentiableAt_planarGreenKernelDisk_boundary {c a z : ℂ} {R : ℝ}
+    (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
+    DifferentiableAt ℝ (planarGreenKernelDisk c R a) z := by
+  have hz' : ‖R⁻¹ • (z - c)‖ = 1 := by
+    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, hz]
+    exact inv_mul_cancel₀ hR.ne'
+  have hcoord : DifferentiableAt ℝ (fun w : ℂ => R⁻¹ • (w - c)) z := by
+    fun_prop
+  -- The disk kernel is opaque here, so use its public equation to rewrite the whole function.
+  have hfun : planarGreenKernelDisk c R a =
+      fun w : ℂ => planarGreenKernel (R⁻¹ • (a - c)) (R⁻¹ • (w - c)) :=
+    funext (planarGreenKernelDisk_def c R a)
+  rw [hfun]
+  simpa only [Function.comp_def] using
+    (differentiableAt_planarGreenKernel_boundary
+      (norm_inv_smul_sub_lt_one hR ha) hz').comp z hcoord
+
 /-- The spatial derivative of the disk Green kernel on the outward unit normal is the
 negative Poisson kernel divided by `2πR`. -/
 theorem fderiv_planarGreenKernelDisk_normal {c a z : ℂ} {R : ℝ}
     (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
     (fderiv ℝ (planarGreenKernelDisk c R a) z) (R⁻¹ • (z - c)) =
       -(poissonKernel c a z) / (2 * Real.pi * R) := by
-  have hz' : ‖R⁻¹ • (z - c)‖ = 1 := by
-    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, hz]
-    exact inv_mul_cancel₀ hR.ne'
-  have hcoord : DifferentiableAt ℝ (fun w : ℂ => R⁻¹ • (w - c)) z := by
-    fun_prop
-  have hdiff : DifferentiableAt ℝ (planarGreenKernelDisk c R a) z := by
-    rw [show planarGreenKernelDisk c R a =
-      (fun w : ℂ => planarGreenKernel (R⁻¹ • (a - c)) (R⁻¹ • (w - c))) from
-        funext fun w => planarGreenKernelDisk_def c R a w]
-    simpa only [Function.comp_def] using
-      (differentiableAt_planarGreenKernel_boundary
-        (norm_inv_smul_sub_lt_one hR ha) hz').comp z hcoord
+  have hdiff := differentiableAt_planarGreenKernelDisk_boundary hR ha hz
   have hcz : c + (1 : ℝ) • (z - c) = z := by
     simp only [one_smul]
     abel
