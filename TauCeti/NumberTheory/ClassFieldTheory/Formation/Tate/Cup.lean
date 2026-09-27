@@ -43,7 +43,6 @@ def cupClass (F : Formation G) (L : NormalLayer G) (u : L.H F 2) (r : ℤ) :
 
 /-- The map `cupClass` evaluates by taking the Tate cup product with the degree-two image of
 `u`, then applying the left unitor to the coefficient representation. -/
-@[simp]
 theorem cupClass_apply (F : Formation G) (L : NormalLayer G) (u : L.H F 2) (r : ℤ)
     (x : L.TrivialTateH r) :
     cupClass F L u r x =

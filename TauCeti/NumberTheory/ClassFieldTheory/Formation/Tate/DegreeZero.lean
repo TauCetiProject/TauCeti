@@ -30,18 +30,25 @@ namespace TauCeti.ClassFieldTheory
 variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G]
 
+/-- At degree zero, the class-formation cup map is the generic cup map with trivial integral
+coefficients. The target degrees `0 + 2` and `2` agree by normalization. -/
+theorem cupClass_degree_zero_eq_cupTrivialInt (F : Formation G) (L : NormalLayer G)
+    (u : L.H F 2) :
+    cupClass F L u 0 =
+      TauCeti.TateCohomology.cupTrivialInt (L.rep F) ((L.tateHIsoH F 2).inv u) := by
+  ext x
+  rw [cupClass_apply, TauCeti.TateCohomology.cupTrivialInt_apply]
+  rfl
+
 /-- In degree zero, cup product with `u` sends the canonical trivial-coefficient class of `1`
 to `u` in Tate degree two. This fixes the orientation of the degree-zero Tate isomorphism. -/
--- Keep this as a named rewrite: `cupClass_apply` is already a simp rule and simpNF rejects
--- marking this theorem simp because that rule expands its left-hand side first.
+@[simp]
 theorem cupClass_trivialTateHZeroOne (F : Formation G) (L : NormalLayer G) (u : L.H F 2) :
     cupClass F L u 0 (TauCeti.TateCohomology.trivialTateHZeroOne L.Gal) =
       (L.tateHIsoH F 2).inv u := by
-  rw [cupClass_apply]
-  convert TauCeti.TateCohomology.cupTrivialInt_trivialTateHZeroOne
-    (L.rep F) ((L.tateHIsoH F 2).inv u) using 1 <;>
-    simp only [NormalLayer.TateH, TauCeti.TateCohomology.cupTrivialInt_apply,
-      show (0 : ℤ) + 2 = 2 by omega] <;> rfl
+  rw [cupClass_degree_zero_eq_cupTrivialInt]
+  exact TauCeti.TateCohomology.cupTrivialInt_trivialTateHZeroOne
+    (L.rep F) ((L.tateHIsoH F 2).inv u)
 
 /-- Degree-zero case of Tate's cup-product criterion: if a degree-two class generates
 `H²(U/V, A^V)` and this group has order `[U : V]`, cupping with it is an equivalence from
@@ -65,12 +72,7 @@ theorem cupClass_degree_zero_bijective (F : Formation G) (L : NormalLayer G) (u 
       _ = L.degree := hcardH
       _ = Nat.card L.Gal := L.degree_eq_natCard_gal
       _ = Fintype.card L.Gal := Nat.card_eq_fintype_card
-  have heq : cupClass F L u 0 =
-      TauCeti.TateCohomology.cupTrivialInt (L.rep F) ((L.tateHIsoH F 2).inv u) := by
-    ext x
-    rw [cupClass_apply, TauCeti.TateCohomology.cupTrivialInt_apply]
-    rfl
-  rw [heq]
+  rw [cupClass_degree_zero_eq_cupTrivialInt]
   exact TauCeti.TateCohomology.cupTrivialInt_bijective (L.rep F)
     ((L.tateHIsoH F 2).inv u) hgen' hcard'
 

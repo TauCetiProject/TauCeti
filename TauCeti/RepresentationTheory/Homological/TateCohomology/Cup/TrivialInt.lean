@@ -34,7 +34,6 @@ def cupTrivialInt (N : Rep ℤ H) {q : ℤ} (u : tateCohomology N q) :
     map_add' := by intro x y; simp }
 
 /-- The trivial-integral cup map evaluates by cup product followed by the left unitor. -/
-@[simp]
 theorem cupTrivialInt_apply (N : Rep ℤ H) {q : ℤ} (u : tateCohomology N q)
     (x : tateCohomology (Rep.trivial ℤ H ℤ) 0) :
     cupTrivialInt N u x = (tateCohomologyFunctor q).map (λ_ N).hom
@@ -42,6 +41,7 @@ theorem cupTrivialInt_apply (N : Rep ℤ H) {q : ℤ} (u : tateCohomology N q)
   rfl
 
 /-- The canonical degree-zero class of `1` acts as the identity under cup product. -/
+@[simp]
 theorem cupTrivialInt_trivialTateHZeroOne (N : Rep ℤ H) {q : ℤ}
     (u : tateCohomology N q) :
     cupTrivialInt N u (trivialTateHZeroOne H) = u := by
