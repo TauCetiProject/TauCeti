@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -52,6 +53,8 @@ identification.
   the tangent space of an open submanifold and the ambient tangent space.
 * `TauCeti.Manifold.mfderiv_subtype_val`: the differential of the inclusion is the canonical
   tangent-space equivalence.
+* `TauCeti.Manifold.t2Space_tangentBundle_open`: Hausdorffness of the tangent bundle passes to
+  an open submanifold.
 * `TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq`: near a point, the
   inverse tangent-bundle trivializations agree through this equivalence.
 -/
@@ -572,6 +575,27 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
     fderivWithin_id
       (I.uniqueDiffOn.uniqueDiffWithinAt hxRange)]
   rfl
+
+/-- The tangent bundle of an open submanifold is Hausdorff when the ambient tangent bundle is.
+The tangent map of the inclusion is continuous and injective on every fibre. -/
+theorem t2Space_tangentBundle_open [IsManifold I 1 M]
+    [T2Space (TangentBundle I M)] (U : Opens M) : T2Space (TangentBundle I U) := by
+  apply T2Space.of_injective_continuous
+    (f := tangentMap I I (Subtype.val : U → M))
+  · intro a b hab
+    cases a with
+    | mk x v =>
+      cases b with
+      | mk y w =>
+        have hxy : x = y := Subtype.val_injective (congrArg TotalSpace.proj hab)
+        subst y
+        simp only [tangentMap, mfderiv_subtype_val] at hab
+        have hmap : (tangentSpaceOpenEquiv (I := I) x) v =
+            (tangentSpaceOpenEquiv (I := I) x) w :=
+          eq_of_heq (TotalSpace.ext_iff.mp hab).2
+        exact congrArg (TotalSpace.mk x) ((tangentSpaceOpenEquiv (I := I) x).injective hmap)
+  · have hc : ContMDiff I I 1 (Subtype.val : U → M) := contMDiff_subtype_val
+    exact hc.continuous_tangentMap (by norm_num)
 
 /-- Near a point of an open submanifold, its inverse tangent-bundle trivialization agrees with the
 ambient inverse trivialization under the canonical tangent-space identification. -/
