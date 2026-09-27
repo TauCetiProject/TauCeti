@@ -55,12 +55,14 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 
 This is the presheaf whose stalks are the ring colimits used in the locally ringed-space
 structure. The topology is forgotten only after taking the limits that define sections. -/
-noncomputable def presentationLimitPresheafInCommRingCat (P : PairOfDefinition A)
+@[expose] noncomputable def presentationLimitPresheafInCommRingCat (P : PairOfDefinition A)
     (Aplus : Subring A) : (TopCat.of ↥(spa Aplus)).Presheaf CommRingCat.{v} :=
   presentationLimitPresheaf P Aplus ⋙
     TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat
 
-private theorem presentationLimitPresheafInCommRingCat_def (P : PairOfDefinition A)
+/-- Forgetting the topology on the presentation-limit presheaf is composition with the
+forgetful functors from complete separated topological rings to commutative rings. -/
+theorem presentationLimitPresheafInCommRingCat_def (P : PairOfDefinition A)
     (Aplus : Subring A) :
     presentationLimitPresheafInCommRingCat P Aplus = presentationLimitPresheaf P Aplus ⋙
       TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat :=
