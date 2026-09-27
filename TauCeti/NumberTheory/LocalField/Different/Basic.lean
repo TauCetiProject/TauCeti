@@ -7,8 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Unramified
 public import TauCeti.RingTheory.DedekindDomain.Different
-import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
-import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # The different exponent of an extension of local fields
@@ -43,8 +41,6 @@ finite, so the residue extension is always separable and tameness is a condition
 * `TauCeti.pow_dvd_differentIdeal_iff_le_differentExponent`: the characteristic property,
   `𝓂[L] ^ n ∣ 𝔡(L/K) ↔ n ≤ d(L/K)`.
 * `TauCeti.differentIdeal_eq_maximalIdeal_pow`: `𝔡(L/K) = 𝓂[L] ^ d(L/K)`.
-* `TauCeti.natCast_differentExponent_eq_addVal_aeval_derivative_minpoly`: the exponent of a
-  monogenic extension is the valuation of its minimal polynomial's derivative at the generator.
 * `TauCeti.ramificationIndex_sub_one_le_differentExponent`: `e - 1 ≤ d(L/K)`.
 * `TauCeti.ramificationIndex_le_differentExponent_iff`: `e ≤ d(L/K)` exactly in the wild case.
 * `TauCeti.differentExponent_eq_ramificationIndex_sub_one_iff`: `d(L/K) = e - 1` exactly in the
@@ -102,22 +98,6 @@ theorem differentExponent_def :
     differentExponent K L = multiplicity 𝓂[L] (differentIdeal 𝒪[K] 𝒪[L]) := (rfl)
 
 variable [Algebra.IsSeparable K L]
-
-/-- For an integral generator `x`, the different exponent is the additive valuation of the
-derivative of its minimal polynomial at `x`. -/
-theorem natCast_differentExponent_eq_addVal_aeval_derivative_minpoly [Module.Finite K L]
-    {x : 𝒪[L]}
-    (hx : Algebra.adjoin 𝒪[K] {x} = ⊤) :
-    (differentExponent K L : ℕ∞) =
-      IsDiscreteValuationRing.addVal 𝒪[L]
-        (Polynomial.aeval x (Polynomial.derivative (minpoly 𝒪[K] x))) := by
-  have hdifferent := differentIdeal_eq_span_aeval_derivative_minpoly 𝒪[K] K L 𝒪[L] x hx
-  have hderiv0 : Polynomial.aeval x (Polynomial.derivative (minpoly 𝒪[K] x)) ≠ 0 := by
-    intro h
-    exact differentIdeal_ne_bot (A := 𝒪[K]) (B := 𝒪[L])
-      (by rw [hdifferent, h, Ideal.span_singleton_eq_bot])
-  rw [differentExponent_def, hdifferent,
-    ← TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton hderiv0]
 
 /-- **The characteristic property of the different exponent**: the `n`-th power of the maximal
 ideal of `𝒪[L]` divides the different ideal exactly when `n ≤ d(L/K)`. -/
