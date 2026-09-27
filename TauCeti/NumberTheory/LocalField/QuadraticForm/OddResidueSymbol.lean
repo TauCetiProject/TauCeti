@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
 public import TauCeti.NumberTheory.LocalField.SquareClass
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup
-import TauCeti.NumberTheory.LocalField.NatCastValuation
+import TauCeti.NumberTheory.LocalField.QuadraticForm.OddValuation
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.Algebra.Group.Units.Basic
 
@@ -41,11 +41,11 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 noncomputable local instance instFintypeResidueField : Fintype 𝓀[K] := Fintype.ofFinite _
 
 open Classical in
-/-- The symbol of a unit and a uniformizer is positive exactly when the unit has square residue.
-This is the unit–uniformizer entry of the Hilbert-symbol table in odd residue characteristic. -/
-theorem hilbertSymbol_unit_uniformizer_eq_ite (h2 : IsUnit (2 : 𝒪[K]))
-    (u : 𝒪[K]ˣ) {π : Kˣ} (hπ : IsUniformizer K π) :
-    hilbertSymbol (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) π =
+/-- The symbol of a unit and an element of odd valuation is positive exactly when the unit has
+square residue, in odd residue characteristic. -/
+theorem hilbertSymbol_unit_oddValuation_eq_ite (h2 : IsUnit (2 : 𝒪[K]))
+    (u : 𝒪[K]ˣ) {b : Kˣ} (hb : Odd (normalizedValuation K b).toAdd) :
+    hilbertSymbol (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) b =
       if IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) then 1 else -1 := by
   classical
   have : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
@@ -55,7 +55,7 @@ theorem hilbertSymbol_unit_uniformizer_eq_ite (h2 : IsUnit (2 : 𝒪[K]))
     isSquare_unitsMap_subtype_iff h2 u
   by_cases hu : IsSquare uK
   · simp only [(hsq.mp hu), ↓reduceIte]
-    exact hilbertSymbol_eq_one_of_isSquare_left hu π
+    exact hilbertSymbol_eq_one_of_isSquare_left hu b
   · obtain ⟨Δ, hΔsq, hΔval, hΔ⟩ := exists_unramified_class (two_ne_zero_of_isUnit_two h2)
     have hΔeven : Even (normalizedValuation K Δ).toAdd := by
       rw [hΔval]
@@ -65,14 +65,35 @@ theorem hilbertSymbol_unit_uniformizer_eq_ite (h2 : IsUnit (2 : 𝒪[K]))
       exact ⟨0, by simp⟩
     have husq : IsSquare (uK * Δ) :=
       (isSquare_or_isSquare_mul_of_isUnit_two h2 hΔeven hΔsq huval).resolve_left hu
-    have hπodd : ¬ Even (normalizedValuation K π).toAdd := by
-      rw [(isUniformizer_def π).mp hπ, toAdd_ofAdd]
-      exact Int.not_even_one
-    have hsym : hilbertSymbol uK π = -1 := by
-      rw [hilbertSymbol_congr_sq uK Δ π π husq ⟨π, rfl⟩,
-        hilbertSymbol_unramified hΔ π]
-      simp [hπodd]
+    have hsym : hilbertSymbol uK b = -1 := by
+      rw [hilbertSymbol_congr_sq uK Δ b b husq ⟨b, rfl⟩]
+      exact (hilbertSymbol_comm Δ b).trans
+        (hilbertSymbol_eq_neg_one_of_unramified_class_of_odd
+          (two_ne_zero_of_isUnit_two h2) hΔ hb)
     simpa only [(hsq.not.mp hu), ↓reduceIte] using hsym
+
+open Classical in
+/-- The unit–odd-valuation symbol equals the quadratic residue character of the reduced unit. -/
+theorem hilbertSymbol_unit_oddValuation_eq_quadraticChar (h2 : IsUnit (2 : 𝒪[K]))
+    (u : 𝒪[K]ˣ) {b : Kˣ} (hb : Odd (normalizedValuation K b).toAdd) :
+    ((hilbertSymbol (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) b : ℤˣ) : ℤ) =
+      quadraticChar 𝓀[K] ((Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u : 𝓀[K]ˣ) : 𝓀[K]) := by
+  classical
+  rw [hilbertSymbol_unit_oddValuation_eq_ite h2 u hb]
+  simp only [quadraticChar_apply, quadraticCharFun, Units.ne_zero, ↓reduceIte]
+  simp only [← isSquare_units_val_iff]
+  split_ifs <;> simp
+
+open Classical in
+/-- The symbol of a unit and a uniformizer is positive exactly when the unit has square residue.
+This is the unit–uniformizer entry of the Hilbert-symbol table in odd residue characteristic. -/
+theorem hilbertSymbol_unit_uniformizer_eq_ite (h2 : IsUnit (2 : 𝒪[K]))
+    (u : 𝒪[K]ˣ) {π : Kˣ} (hπ : IsUniformizer K π) :
+    hilbertSymbol (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) π =
+      if IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) then 1 else -1 := by
+  apply hilbertSymbol_unit_oddValuation_eq_ite h2 u
+  rw [(isUniformizer_def π).mp hπ, toAdd_ofAdd]
+  exact odd_one
 
 open Classical in
 /-- The unit–uniformizer symbol equals the quadratic residue character of the reduced unit. -/
@@ -80,10 +101,8 @@ theorem hilbertSymbol_unit_uniformizer_eq_quadraticChar (h2 : IsUnit (2 : 𝒪[K
     (u : 𝒪[K]ˣ) {π : Kˣ} (hπ : IsUniformizer K π) :
     ((hilbertSymbol (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) π : ℤˣ) : ℤ) =
       quadraticChar 𝓀[K] ((Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u : 𝓀[K]ˣ) : 𝓀[K]) := by
-  classical
-  rw [hilbertSymbol_unit_uniformizer_eq_ite h2 u hπ]
-  simp only [quadraticChar_apply, quadraticCharFun, Units.ne_zero, ↓reduceIte]
-  simp only [← isSquare_units_val_iff]
-  split_ifs <;> simp
+  apply hilbertSymbol_unit_oddValuation_eq_quadraticChar h2 u
+  rw [(isUniformizer_def π).mp hπ, toAdd_ofAdd]
+  exact odd_one
 
 end TauCeti
