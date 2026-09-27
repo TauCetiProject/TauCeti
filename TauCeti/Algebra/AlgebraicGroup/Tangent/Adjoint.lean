@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Basic
 public import Mathlib.RepresentationTheory.Basic
+import TauCeti.Algebra.DualNumber.Convolution
 
 /-!
 # The adjoint action on the tangent space
@@ -33,6 +34,8 @@ computation appears; inverses come from the group of points.
 * `Derivation.adDerivation`: the conjugate of a tangent vector by a point.
 * `Derivation.toConv_coe_adDerivation`: that conjugate as the convolution product
   `g ⋆ d ⋆ g⁻¹`, the form the algebraic manipulations use.
+* `Derivation.snd_conjugate_tangentPoint`: conjugation on dual-number tangent points
+  induces the adjoint action on their infinitesimal coefficients.
 * `Derivation.adRepresentation`: the adjoint action, as a representation of
   the convolution group of points on the tangent space.
 
@@ -207,5 +210,49 @@ lemma adRepresentation_apply (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra 
   -- definitional unfolding once, explicitly.
   change adDerivation B g d = _
   rfl
+
+open TrivSqZeroExt in
+/-- Conjugating a tangent point by a constant dual-number point induces the adjoint
+action on its infinitesimal coefficient. -/
+@[simp↓]
+theorem snd_conjugate_tangentPoint
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B))
+    (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra R A B)) (a : A) :
+    snd (((AlgHom.mapValue
+        (inlAlgHom R (Bialgebra.CounitAlgebra R A B)
+          (Bialgebra.CounitAlgebra R A B)) g) *
+      (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val *
+      (AlgHom.mapValue
+        (inlAlgHom R (Bialgebra.CounitAlgebra R A B)
+          (Bialgebra.CounitAlgebra R A B)) g)⁻¹).ofConv a) =
+      Derivation.adDerivation B g d a := by
+  let C := Bialgebra.CounitAlgebra R A B
+  let q := AlgHom.mapValue (H := A) (inlAlgHom R C C)
+  let p := (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val
+  let F := (fstHom R C C).toLinearMap
+  let S := (sndHom C C).restrictScalars R
+  have hF (g : WithConv (A →ₐ[R] C)) :
+      F ∘ₗ (q g).ofConv.toLinearMap = g.ofConv.toLinearMap := by
+    ext x
+    simp [F, q, AlgHom.mapValue_apply]
+  have hS (g : WithConv (A →ₐ[R] C)) :
+      S ∘ₗ (q g).ofConv.toLinearMap = 0 := by
+    ext x
+    simp [S, q, AlgHom.mapValue_apply]
+  have hp : S ∘ₗ p.ofConv.toLinearMap = d.toLinearMap := by
+    ext x
+    exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
+  have hc : S ∘ₗ (q g * p * q g⁻¹).ofConv.toLinearMap =
+      (Derivation.adDerivation B g d).toLinearMap := by
+    rw [← ofConv_toConv ((q g * p * q g⁻¹).ofConv.toLinearMap),
+      AlgHom.toLinearMap_convMul, AlgHom.toLinearMap_convMul]
+    dsimp only [S]
+    rw [WithConv.snd_comp_convMul, WithConv.snd_comp_convMul]
+    rw [hS, hS, hp, hF, hF]
+    simp only [toConv_zero, mul_zero, zero_mul, add_zero, zero_add, toConv_ofConv,
+      Derivation.coe_adDerivation_linearMap]
+  have ha := LinearMap.congr_fun hc a
+  simpa only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, sndHom_apply,
+    AlgHom.toLinearMap_apply, Derivation.coeFn_coe, S, q, p, map_inv] using ha
 
 end Derivation
