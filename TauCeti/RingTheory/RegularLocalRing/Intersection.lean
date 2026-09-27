@@ -52,8 +52,8 @@ more generally for the intersection multiplicities of Cartier divisors on a regu
   a product of equations, which is additivity over a union of curves;
 * `TauCeti.length_quot_span_pair_comm`: that multiplicity is symmetric in the two equations, which
   transports the additivity above to the first equation;
-* `TauCeti.length_quot_span_pair_eq_one_of_eq_maximalIdeal`: two equations generating the maximal
-  ideal meet transversally, with intersection multiplicity one.
+* `TauCeti.length_quot_span_pair_eq_one_of_eq_maximalIdeal`: the quotient of a local ring by two
+  equations generating its maximal ideal is the residue field, of length one.
 
 Taking `f` and `g` to be the equations of the two branches of the local model `R[x, y] ⧸ (xy - πⁿ)`
 of a node, the length computed here is the thickness of the node, and the product additivity
@@ -146,8 +146,12 @@ theorem length_quot_span_pair_eq_zero_iff (f g : R) :
   rw [← ord_eq_length_quot_span_pair f g, Ring.ord, Module.length_eq_zero_iff,
     Submodule.Quotient.subsingleton_iff, Ideal.span_singleton_eq_top]
 
-/-- **Two equations generating the maximal ideal of a local ring meet transversally**, with local
-intersection multiplicity one: they generate the residue field, whose length is one. -/
+/-- **The length of the quotient of a local ring by two equations generating its maximal ideal is
+one.** Two elements of a local ring `(R, 𝔪)` that generate `𝔪` give the residue field `R ⧸ 𝔪` as
+the quotient, whose length over `R` is one by `TauCeti.length_quot_maximalIdeal_eq_one`. That is
+the algebraic conclusion, stated here for an arbitrary local ring: the transversality reading of
+it, that two curves on a regular surface meet with local intersection multiplicity one, needs in
+addition the two-dimensional regular local ring of this file's introduction. -/
 theorem length_quot_span_pair_eq_one_of_eq_maximalIdeal [IsLocalRing R] (f g : R)
     (h : Ideal.span {f, g} = maximalIdeal R) :
     Module.length R (R ⧸ Ideal.span {f, g}) = 1 := by
@@ -262,9 +266,11 @@ cutting out a curve, and let `g` and `h` be two further equations. Then the curv
 meets the curve `f = 0` with multiplicity the sum of the multiplicities of the two factors, by
 `TauCeti.length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors`: the image of `h` on the discrete
 valuation ring `R ⧸ (f)` is a non-zero-divisor. No hypothesis is placed on `h`, and the case where
-its image there is zero, that is `h ∈ (f)`, is included: the image of `g * h` is then zero as well,
-and all three lengths are the length of the curve `f = 0` over itself, which is infinite, as
-`TauCeti.ringKrullDim_quot_span_singleton_eq_one` makes that curve a discrete valuation ring. A unit
+its image there is zero, that is `h ∈ (f)`, is included: the images of `h` and of `g * h` are both
+zero, so `R ⧸ (f, h)` and `R ⧸ (f, g * h)` are the curve `f = 0` itself, of infinite length, as
+`TauCeti.ringKrullDim_quot_span_singleton_eq_one` makes that curve a discrete valuation ring; the
+length of the remaining summand `R ⧸ (f, g)` is arbitrary, finite or infinite, and its sum with an
+infinite length is again infinite, which is the asserted additivity. A unit
 `f` is a degenerate case of its own, making `(f, x)` the unit ideal for every `x`. Applying this to
 a product of the equations of distinct irreducible components of a curve gives additivity of the
 intersection number over a union of curves, which is the bilinearity of intersection numbers. -/
@@ -290,8 +296,9 @@ theorem length_quot_span_pair_mul_eq_add (hd : ringKrullDim R = 2) {f g h : R}
       IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr
         (ringKrullDim_quot_span_singleton_eq_one hd hf hf0)
     by_cases hh : h ∈ Ideal.span {f}
-    · -- the image of `h` on the curve `f = 0` is zero, so the image of `g * h` is zero as well
-      -- and all three orders of vanishing on that curve are its own infinite length
+    · -- the image of `h` on the curve `f = 0` is zero, so the image of `g * h` is zero as well,
+      -- and those two quotients are then that curve itself, of infinite length, while the remaining
+      -- summand is arbitrary and stays absorbed by an infinite length
       have hinf : Module.length (R ⧸ Ideal.span {f}) (R ⧸ Ideal.span {f}) = ⊤ := by
         by_contra hne
         obtain ⟨hNoe, hArt⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp
