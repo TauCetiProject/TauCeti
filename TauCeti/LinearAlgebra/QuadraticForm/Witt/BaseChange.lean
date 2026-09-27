@@ -264,7 +264,7 @@ theorem WittGrothendieckRing.baseChange_baseChange_apply (x : WittGrothendieckRi
 
 /-- Scalar extension through a tower composes as Witt-Grothendieck ring homomorphisms. -/
 @[simp]
-theorem WittGrothendieckRing.baseChange_baseChange :
+theorem WittGrothendieckRing.baseChange_comp :
     (WittGrothendieckRing.baseChange (K := L) (L := M)).comp
       (WittGrothendieckRing.baseChange (K := K) (L := L)) =
         WittGrothendieckRing.baseChange (K := K) (L := M) := by
@@ -281,7 +281,7 @@ theorem WittRing.baseChange_baseChange_apply (x : WittRing K) :
 
 /-- Scalar extension through a tower composes as Witt ring homomorphisms. -/
 @[simp]
-theorem WittRing.baseChange_baseChange :
+theorem WittRing.baseChange_comp :
     (WittRing.baseChange (K := L) (L := M)).comp
       (WittRing.baseChange (K := K) (L := L)) =
         WittRing.baseChange (K := K) (L := M) := by
