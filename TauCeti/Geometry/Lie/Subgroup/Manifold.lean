@@ -41,8 +41,9 @@ section TransitionFormula
 variable {G F F' : Type*} [Group G] [TopologicalSpace G]
   [TopologicalSpace F] [TopologicalSpace F'] [Zero F'] [ContinuousConstSMul G G]
 
-/-- The transition from the preferred chart at `g` to the preferred chart at `h` is ambient
-translation by `h⁻¹ * g`, restricted to the zero transverse slice. -/
+/-- The transition from the preferred chart at `g` to the preferred chart at `h` is the
+tangential coordinate of ambient translation by `h⁻¹ * g`, restricted to the zero transverse
+slice. -/
 theorem preferredSliceChart_transition_apply (K : Subgroup G)
     (e : OpenPartialHomeomorph G (F × F'))
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
@@ -64,29 +65,29 @@ end TransitionFormula
 
 section SmoothAtlas
 
-variable {E H G F F' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E H G F F' : Type*} {n : ℕ∞ω} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup F'] [NormedSpace ℝ F']
-  [ContMDiffMul I ∞ G]
+  [ContMDiffMul I n G]
 
 /-- Transitions between preferred subgroup slice charts are smooth when the ambient slice chart
 and its inverse are smooth. -/
 theorem contDiffOn_preferredSliceChart_transition
     (K : Subgroup G) (e : OpenPartialHomeomorph G (F × F'))
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
-    (he' : ContMDiffOn I 𝓘(ℝ, F × F') ∞ e e.source)
-    (he_symm : ContMDiffOn 𝓘(ℝ, F × F') I ∞ e.symm e.target)
+    (he' : ContMDiffOn I 𝓘(ℝ, F × F') n e e.source)
+    (he_symm : ContMDiffOn 𝓘(ℝ, F × F') I n e.symm e.target)
     (g h : K) :
-    let _ : ContinuousMul G := continuousMul_of_contMDiffMul I ∞
-    ContDiffOn ℝ ∞
+    let _ : ContinuousMul G := continuousMul_of_contMDiffMul I n
+    ContDiffOn ℝ n
       ((preferredSliceChart K e he g).symm.trans
         (preferredSliceChart K e he h))
       ((preferredSliceChart K e he g).symm.trans
         (preferredSliceChart K e he h)).source := by
   dsimp only
-  let _ : ContinuousMul G := continuousMul_of_contMDiffMul I ∞
+  let _ : ContinuousMul G := continuousMul_of_contMDiffMul I n
   intro y hy
   rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hy
   have hytarget : (y, (0 : F')) ∈ e.target := by
@@ -100,29 +101,29 @@ theorem contDiffOn_preferredSliceChart_transition
         Homeomorph.smul_symm_apply, smul_eq_mul] using hy.2
     rw [coe_preferredSliceChart_symm_apply K e he g hytarget] at hdsource
     exact hdsource
-  have hzero : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ, F × F') ∞
+  have hzero : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ, F × F') n
       (fun z : F => (z, (0 : F'))) :=
     (contDiff_prodMk_left (0 : F')).contMDiff
-  have hinv : ContMDiffAt 𝓘(ℝ, F × F') I ∞ e.symm (y, 0) :=
+  have hinv : ContMDiffAt 𝓘(ℝ, F × F') I n e.symm (y, 0) :=
     he_symm.contMDiffAt (e.open_target.mem_nhds hytarget)
-  have hleft : ContMDiffAt I I ∞
+  have hleft : ContMDiffAt I I n
       (fun x : G => (h : G)⁻¹ * ((g : G) * x)) (e.symm (y, 0)) :=
     contMDiff_mul_left.contMDiffAt.comp _ contMDiff_mul_left.contMDiffAt
-  have hforward : ContMDiffAt I 𝓘(ℝ, F × F') ∞ e
+  have hforward : ContMDiffAt I 𝓘(ℝ, F × F') n e
       ((h : G)⁻¹ * ((g : G) * e.symm (y, 0))) :=
     he'.contMDiffAt (e.open_source.mem_nhds hzsource)
-  have hinv0 : ContMDiffAt 𝓘(ℝ, F) I ∞
+  have hinv0 : ContMDiffAt 𝓘(ℝ, F) I n
       (e.symm ∘ fun z : F => (z, (0 : F'))) y :=
     hinv.comp y hzero.contMDiffAt
-  have htranslated : ContMDiffAt 𝓘(ℝ, F) I ∞
+  have htranslated : ContMDiffAt 𝓘(ℝ, F) I n
       ((fun x : G => (h : G)⁻¹ * ((g : G) * x)) ∘
         (e.symm ∘ fun z : F => (z, (0 : F')))) y :=
     hleft.comp y hinv0
-  have hecoord : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ, F × F') ∞
+  have hecoord : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ, F × F') n
       (e ∘ ((fun x : G => (h : G)⁻¹ * ((g : G) * x)) ∘
         (e.symm ∘ fun z : F => (z, (0 : F'))))) y :=
     hforward.comp y htranslated
-  have hsmooth : ContDiffAt ℝ ∞
+  have hsmooth : ContDiffAt ℝ n
       (fun z : F => (e ((h : G)⁻¹ * ((g : G) * e.symm (z, 0)))).1) y := by
     convert hecoord.contDiffAt.fst using 1
     ext z
@@ -136,15 +137,15 @@ theorem isManifold_chartedSpaceOfIsSliceChart
     (K : Subgroup G) (e : OpenPartialHomeomorph G (F × F'))
     (he : TauCeti.IsSliceChart e ((univ : Set F) ×ˢ ({0} : Set F')) (K : Set G))
     (h1 : (1 : G) ∈ e.source)
-    (he' : ContMDiffOn I 𝓘(ℝ, F × F') ∞ e e.source)
-    (he_symm : ContMDiffOn 𝓘(ℝ, F × F') I ∞ e.symm e.target) :
-    let _ : ContinuousMul G := continuousMul_of_contMDiffMul I ∞
+    (he' : ContMDiffOn I 𝓘(ℝ, F × F') n e e.source)
+    (he_symm : ContMDiffOn 𝓘(ℝ, F × F') I n e.symm e.target) :
+    let _ : ContinuousMul G := continuousMul_of_contMDiffMul I n
     let _ : ChartedSpace F K := chartedSpaceOfIsSliceChart K e he h1
-    IsManifold 𝓘(ℝ, F) ∞ K := by
+    IsManifold 𝓘(ℝ, F) n K := by
   dsimp only
-  let _ : ContinuousMul G := continuousMul_of_contMDiffMul I ∞
+  let _ : ContinuousMul G := continuousMul_of_contMDiffMul I n
   let _ : ChartedSpace F K := chartedSpaceOfIsSliceChart K e he h1
-  refine isManifold_of_contDiffOn 𝓘(ℝ, F) ∞ K ?_
+  refine isManifold_of_contDiffOn 𝓘(ℝ, F) n K ?_
   rw [chartedSpaceOfIsSliceChart_atlas]
   rintro _ _ ⟨g, rfl⟩ ⟨h, rfl⟩
   simpa only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm,
