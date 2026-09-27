@@ -18,8 +18,9 @@ Mathlib defines `Module.length R M` as the Krull dimension of the lattice of sub
 proves that it is additive in short exact sequences. This file adds the facts about it that a
 length-counting argument needs but Mathlib does not yet have: monotonicity in the submodule
 quotiented by, additivity along a filtration, the length of an image, the fact that finitely
-generated submodules already see the whole length, the length of `I ⧸ aI` for an ideal `I`, and
-the length of `R ⧸ 𝔪` for a local ring.
+generated submodules already see the whole length, the length of `I ⧸ aI` for an ideal `I`, the
+length of `R ⧸ 𝔪` for a local ring, and the finite length of a quotient of a noetherian
+local ring by a maximal-primary ideal.
 
 The finite-generation reduction is the load-bearing one. `Module.length` is a supremum over
 strictly increasing chains, and any *finite* chain — in particular any one witnessing a finite
@@ -49,6 +50,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_lsmul_le_of_forall_fg`: the finite-generation reduction for `M ⧸ aM`.
 * `TauCeti.isFiniteLength_quotient_of_nonZeroDivisor_mem`: `A ⧸ I` has finite length when `I`
   contains a non-zero-divisor.
+* `TauCeti.isFiniteLength_quotient_of_radical_eq_maximalIdeal`: `A ⧸ I` has finite length when the
+  radical of `I` is the maximal ideal of a noetherian local ring.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
 * `TauCeti.length_quot_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
@@ -268,5 +271,49 @@ theorem length_quot_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdeal A)
   exact instIsSimpleModule _
 
 end LocalRing
+
+section NoetherianLocalRing
+
+open _root_.IsLocalRing
+
+variable {A : Type*} [CommRing A] [IsNoetherianRing A] [IsLocalRing A]
+
+/-- **A quotient by a maximal-primary ideal has finite length.** Let `(A, 𝔪)` be a noetherian
+local ring and let `I` be an ideal whose radical is `𝔪`, so that `I` is maximal-primary. Then
+`A ⧸ I` is a noetherian local ring, its maximal ideal is the image of `𝔪`, and
+`𝔪 ⁿ ≤ I` for some power `𝔪 ⁿ` of `𝔪`, so that maximal ideal is nilpotent.
+A noetherian local ring with nilpotent maximal ideal is Artinian, and `A ⧸ I` is then both
+noetherian and Artinian as an `A`-module, which is finite length. -/
+theorem isFiniteLength_quotient_of_radical_eq_maximalIdeal (I : Ideal A)
+    (hI : I.radical = maximalIdeal A) : IsFiniteLength A (A ⧸ I) := by
+  -- the quotient by `I` is a noetherian local ring
+  have hne : I ≠ ⊤ := by
+    rintro htop
+    have hone : (1 : A) ∈ I := htop ▸ Submodule.mem_top
+    exact (IsLocalRing.notMem_maximalIdeal (R := A)).mpr isUnit_one
+      (hI.symm ▸ Ideal.le_radical hone)
+  let _ : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hne
+  let _ : IsLocalRing (A ⧸ I) :=
+    IsLocalRing.of_surjective' (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
+  -- a power of the maximal ideal lies in `I`, so its image is nilpotent
+  obtain ⟨n, hn⟩ : ∃ n, maximalIdeal A ^ n ≤ I :=
+    Ideal.exists_pow_le_of_le_radical_of_fg (by rw [hI])
+      (maximalIdeal A).fg_of_isNoetherianRing
+  have hnil : IsNilpotent (maximalIdeal (A ⧸ I)) := by
+    have hmap : (maximalIdeal A).map (Ideal.Quotient.mk I) = maximalIdeal (A ⧸ I) :=
+      IsLocalRing.map_maximalIdeal_of_surjective (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
+    rw [← hmap]
+    refine ⟨n, ?_⟩
+    rw [← Ideal.map_pow]
+    exact (Ideal.map_eq_bot_iff_le_ker (Ideal.Quotient.mk I)).mpr
+      (hn.trans (le_of_eq Ideal.mk_ker.symm))
+  -- noetherian and Artinian over `A`, hence of finite length
+  rw [isFiniteLength_iff_isNoetherian_isArtinian]
+  let _ : IsArtinianRing (A ⧸ I) :=
+    isArtinianRing_iff_isNilpotent_maximalIdeal (A ⧸ I) |>.mpr hnil
+  exact ⟨inferInstance,
+    isArtinian_of_surjective_algebraMap (Ideal.Quotient.mk_surjective (I := I))⟩
+
+end NoetherianLocalRing
 
 end TauCeti
