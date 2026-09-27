@@ -151,11 +151,9 @@ noncomputable def presentationLimitStalkResidueValuation (x : spa Aplus) :
 
 /-- **The stalk valuation factors through the residue field**: pulled back along the residue map,
 `presentationLimitStalkResidueValuation` is the stalk valuation at `x`. -/
-@[simp]
 theorem comap_residue_presentationLimitStalkResidueValuation (x : spa Aplus) :
     letI := isLocalRing_stalk_presentationLimitPresheafInCommRingCat hAplus hP x
-    comap (IsLocalRing.residue ((presentationLimitPresheaf P Aplus ⋙
-        TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).stalk x))
+    comap (IsLocalRing.residue ((presentationLimitPresheafInCommRingCat P Aplus).stalk x))
         (presentationLimitStalkResidueValuation hAplus hP x) =
       presentationLimitStalkValuation hAplus hP x :=
   -- `IsLocalRing.residue` is by definition `Ideal.Quotient.mk` (see `IsLocalRing.residue_def`)
