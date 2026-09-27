@@ -70,28 +70,108 @@ variable (A : Type v) [CommRing A]
 
 /-! ## The transported positive carrier -/
 
-/-- The generic Kostant torus-subsystem base-change ideal specialized to the positive simple roots
-of the Geck data. -/
-abbrev geckTorusPositiveBaseChangeIdeal :
+/-- The scalar extension of the integral positive Geck defining ideal. -/
+def geckTorusPositiveBaseChangeIdeal :
     HopfIdeal A
       (CommHopfAlgCat.baseChange (K := A)
         (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))) :=
-  kostantTorusSubsystemBaseChangeIdeal
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-    (t.geckCoordinateLattice ht).toAddSubgroup
-    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A
+  CommHopfAlgCat.baseChangeHopfIdeal (t.geckTorusPositiveDefiningIdeal ht)
 
-/-- The positive Geck base-change ideal is the specialization of the generic subsystem ideal. -/
-theorem geckTorusPositiveBaseChangeIdeal_def :
+private theorem geckTorusPositiveBaseChangeIdeal_eq_kostant :
     t.geckTorusPositiveBaseChangeIdeal ht A =
       kostantTorusSubsystemBaseChangeIdeal
         (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
         (t.geckCoordinateLattice ht).toAddSubgroup
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-        (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A := rfl
+        (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A := by
+  unfold geckTorusPositiveBaseChangeIdeal
+  rw [kostantTorusSubsystemBaseChangeIdeal_def,
+    t.geckTorusPositiveDefiningIdeal_def ht]
+
+private def geckTorusPositiveBaseChangeCoordinateTransportIso :
+    CommHopfAlgCat.quotient
+        (CommHopfAlgCat.baseChange (K := A)
+          (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+        (t.geckTorusPositiveBaseChangeIdeal ht A) ≅
+      CommHopfAlgCat.quotient
+        (CommHopfAlgCat.baseChange (K := A)
+          (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+        (kostantTorusSubsystemBaseChangeIdeal
+          (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+          (t.geckCoordinateLattice ht).toAddSubgroup
+          (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+          (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A) :=
+  eqToIso (congrArg
+    (CommHopfAlgCat.quotient
+      (CommHopfAlgCat.baseChange (K := A)
+        (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))))
+    (t.geckTorusPositiveBaseChangeIdeal_eq_kostant ht A))
+
+private theorem mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateTransportIso_hom :
+    CommHopfAlgCat.mkQuotient
+          (CommHopfAlgCat.baseChange (K := A)
+            (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+          (t.geckTorusPositiveBaseChangeIdeal ht A) ≫
+        (t.geckTorusPositiveBaseChangeCoordinateTransportIso ht A).hom =
+      CommHopfAlgCat.mkQuotient
+        (CommHopfAlgCat.baseChange (K := A)
+          (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+        (kostantTorusSubsystemBaseChangeIdeal
+          (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+          (t.geckCoordinateLattice ht).toAddSubgroup
+          (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+          (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A) := by
+  rw [geckTorusPositiveBaseChangeCoordinateTransportIso]
+  exact CommHopfAlgCat.mkQuotient_comp_eqToHom
+    (t.geckTorusPositiveBaseChangeIdeal_eq_kostant ht A).symm
+
+private theorem mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateTransportIso_inv :
+    CommHopfAlgCat.mkQuotient
+          (CommHopfAlgCat.baseChange (K := A)
+            (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+          (kostantTorusSubsystemBaseChangeIdeal
+            (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+            (t.geckCoordinateLattice ht).toAddSubgroup
+            (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+            (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+            (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A) ≫
+        (t.geckTorusPositiveBaseChangeCoordinateTransportIso ht A).inv =
+      CommHopfAlgCat.mkQuotient
+        (CommHopfAlgCat.baseChange (K := A)
+          (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+        (t.geckTorusPositiveBaseChangeIdeal ht A) := by
+  rw [geckTorusPositiveBaseChangeCoordinateTransportIso]
+  exact CommHopfAlgCat.mkQuotient_comp_eqToHom
+    (t.geckTorusPositiveBaseChangeIdeal_eq_kostant ht A)
+
+/-- The positive Geck base-change ideal is the scalar extension of the named integral ideal. -/
+theorem geckTorusPositiveBaseChangeIdeal_def :
+    t.geckTorusPositiveBaseChangeIdeal ht A =
+      CommHopfAlgCat.baseChangeHopfIdeal (t.geckTorusPositiveDefiningIdeal ht) := by
+  rw [t.geckTorusPositiveBaseChangeIdeal_eq_kostant ht A,
+    kostantTorusSubsystemBaseChangeIdeal_def,
+    t.geckTorusPositiveDefiningIdeal_def ht]
+
+private def geckTorusPositiveIntegralCoordinateTransportIso :
+    CommHopfAlgCat.baseChange (K := A)
+        (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+          (kostantTorusSubsystemDefiningIdeal
+            (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+            (t.geckCoordinateLattice ht).toAddSubgroup
+            (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+            (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+            (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1))) ≅
+      CommHopfAlgCat.baseChange (K := A)
+        (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+          (t.geckTorusPositiveDefiningIdeal ht)) :=
+  (CommHopfAlgCat.baseChangeFunctor (K := A)).mapIso
+    (eqToIso (congrArg
+      (CommHopfAlgCat.quotient
+        (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+      (t.geckTorusPositiveDefiningIdeal_def ht).symm))
 
 /-- The coordinate algebra of the transported positive carrier is canonically the base change of
 the integral positive coordinate algebra. -/
@@ -102,18 +182,15 @@ def geckTorusPositiveBaseChangeCoordinateIso :
         (t.geckTorusPositiveBaseChangeIdeal ht A) ≅
       CommHopfAlgCat.baseChange (K := A)
         (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
-          (kostantTorusSubsystemDefiningIdeal
-            (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-            (t.geckCoordinateLattice ht).toAddSubgroup
-            (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-            (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-            (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1))) :=
-  kostantTorusSubsystemBaseChangeIso
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-    (t.geckCoordinateLattice ht).toAddSubgroup
-    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A
+          (t.geckTorusPositiveDefiningIdeal ht)) :=
+  t.geckTorusPositiveBaseChangeCoordinateTransportIso ht A ≪≫
+    kostantTorusSubsystemBaseChangeIso
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+      (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A ≪≫
+    t.geckTorusPositiveIntegralCoordinateTransportIso ht A
 
 /-- The positive-carrier base-change comparison is compatible with the integral quotient map. -/
 @[simp]
@@ -125,18 +202,19 @@ theorem mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateIso_hom :
         (t.geckTorusPositiveBaseChangeCoordinateIso ht A).hom =
       CommHopfAlgCat.baseChangeMap
         (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
-          (kostantTorusSubsystemDefiningIdeal
-            (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-            (t.geckCoordinateLattice ht).toAddSubgroup
-            (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-            (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-            (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1))) :=
-  mkQuotient_comp_kostantTorusSubsystemBaseChangeIso_hom
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-    (t.geckCoordinateLattice ht).toAddSubgroup
-    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A
+          (t.geckTorusPositiveDefiningIdeal ht)) := by
+  rw [geckTorusPositiveBaseChangeCoordinateIso, Iso.trans_hom, Iso.trans_hom,
+    ← Category.assoc,
+    mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateTransportIso_hom,
+    ← Category.assoc,
+    mkQuotient_comp_kostantTorusSubsystemBaseChangeIso_hom,
+    geckTorusPositiveIntegralCoordinateTransportIso]
+  change _ ≫ CommHopfAlgCat.baseChangeMap (eqToHom (congrArg
+      (CommHopfAlgCat.quotient
+        (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+      (t.geckTorusPositiveDefiningIdeal_def ht).symm)) = _
+  rw [← (CommHopfAlgCat.baseChangeFunctor (K := A)).map_comp,
+    CommHopfAlgCat.mkQuotient_comp_eqToHom (t.geckTorusPositiveDefiningIdeal_def ht)]
 
 /-! ## The transported generators -/
 
@@ -148,13 +226,14 @@ def geckRootSubgroupToTorusPositiveBaseChangeCoordinateMap (i : Fin t.rank) :
           (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
         (t.geckTorusPositiveBaseChangeIdeal ht A) ⟶
       CommHopfAlgCat.baseChange (K := A) (AdditiveGroup.coordinateHopfAlgebra ℤ) :=
-  kostantRootSubgroupTorusSubsystemBaseChangeCoordinateMap
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-    (t.geckCoordinateLattice ht).toAddSubgroup
-    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun j => t.isNilpotent_geckRepresentation_rootGenerator ht j.1) A
-    (Set.mem_range_self i)
+  (t.geckTorusPositiveBaseChangeCoordinateTransportIso ht A).hom ≫
+    kostantRootSubgroupTorusSubsystemBaseChangeCoordinateMap
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+      (fun j => t.isNilpotent_geckRepresentation_rootGenerator ht j.1) A
+      (Set.mem_range_self i)
 
 /-- The specialized quotient map followed by a positive-root map is the scalar extension of the
 corresponding ambient integral root-subgroup coordinate map. -/
@@ -172,14 +251,10 @@ theorem mkQuotient_comp_geckRootSubgroupToTorusPositiveBaseChangeCoordinateMap
           (t.geckCoordinateLattice ht).toAddSubgroup
           (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht) (.inl i)
           (t.isNilpotent_geckRepresentation_rootGenerator ht (.inl i))
-          (t.geckCoordinateBasisFin ht)) :=
-  mkQuotient_comp_kostantRootSubgroupTorusSubsystemBaseChangeCoordinateMap
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-    (t.geckCoordinateLattice ht).toAddSubgroup
-    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun j => t.isNilpotent_geckRepresentation_rootGenerator ht j.1) A
-    (Set.mem_range_self i)
+          (t.geckCoordinateBasisFin ht)) := by
+  rw [geckRootSubgroupToTorusPositiveBaseChangeCoordinateMap, ← Category.assoc,
+    mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateTransportIso_hom,
+    mkQuotient_comp_kostantRootSubgroupTorusSubsystemBaseChangeCoordinateMap]
 
 /-- The represented weight-torus coordinate map after base change, specialized from the generic
 Kostant subsystem map. -/
@@ -191,12 +266,13 @@ def geckWeightTorusToTorusPositiveBaseChangeCoordinateMap :
       CommHopfAlgCat.baseChange (K := A)
         (DiagonalizableGroup.coordinateRing ℤ
           (SplitTorus.characterGroup (Fin t.rank))).obj :=
-  kostantWeightTorusTorusSubsystemBaseChangeCoordinateMap
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-    (t.geckCoordinateLattice ht).toAddSubgroup
-    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A
+  (t.geckTorusPositiveBaseChangeCoordinateTransportIso ht A).hom ≫
+    kostantWeightTorusTorusSubsystemBaseChangeCoordinateMap
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+      (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A
 
 /-- The specialized quotient map followed by the weight-torus map is the scalar extension of the
 ambient integral weight-torus coordinate map. -/
@@ -208,13 +284,10 @@ theorem mkQuotient_comp_geckWeightTorusToTorusPositiveBaseChangeCoordinateMap :
           (t.geckTorusPositiveBaseChangeIdeal ht A) ≫
         t.geckWeightTorusToTorusPositiveBaseChangeCoordinateMap ht A =
       CommHopfAlgCat.baseChangeMap
-        (GeneralLinear.weightTorusCoordinateMap (t.geckWeightFin ht)) :=
-  mkQuotient_comp_kostantWeightTorusTorusSubsystemBaseChangeCoordinateMap
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-    (t.geckCoordinateLattice ht).toAddSubgroup
-    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
-    (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1) A
+        (GeneralLinear.weightTorusCoordinateMap (t.geckWeightFin ht)) := by
+  rw [geckWeightTorusToTorusPositiveBaseChangeCoordinateMap, ← Category.assoc,
+    mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateTransportIso_hom,
+    mkQuotient_comp_kostantWeightTorusTorusSubsystemBaseChangeCoordinateMap]
 
 /-! ## Inclusion from the canonical full carrier -/
 
@@ -240,7 +313,54 @@ def geckTorusPositiveBaseChangeInclusionCoordinateMap :
       (t.geckCoordinateLattice ht).toAddSubgroup
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A
-      (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl)
+      (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl) ≫
+    (t.geckTorusPositiveBaseChangeCoordinateTransportIso ht A).inv
+
+/-- The quotient presentation of the canonical full carrier followed by the positive-carrier
+inclusion is the quotient presentation of the transported positive carrier. -/
+@[simp]
+theorem mkQuotient_comp_geckTorusPositiveBaseChangeInclusionCoordinateMap :
+    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht))
+          (t.geckBaseChangeDefiningIdeal ht A) ≫
+        t.geckTorusPositiveBaseChangeInclusionCoordinateMap ht A =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ A (t.geckDim ht)).inv ≫
+        CommHopfAlgCat.mkQuotient
+          (CommHopfAlgCat.baseChange (K := A)
+            (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+          (t.geckTorusPositiveBaseChangeIdeal ht A) := by
+  rw [geckTorusPositiveBaseChangeInclusionCoordinateMap, ← Category.assoc,
+    t.mkQuotient_comp_geckBaseChangeCoordinateIso_hom ht A]
+  simp only [Category.assoc]
+  slice_lhs 2 3 =>
+    rw [← mkQuotient_comp_kostantToralBaseChangeIso_hom, Category.assoc,
+      Iso.hom_inv_id, Category.comp_id]
+  slice_lhs 2 3 =>
+    rw [mkQuotient_comp_kostantTorusSubsystemBaseChangeInclusionCoordinateMap]
+  slice_lhs 2 3 =>
+    rw [mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateTransportIso_inv]
+
+/-- The coordinate morphism representing the base-changed positive-carrier inclusion is
+surjective. -/
+theorem geckTorusPositiveBaseChangeInclusionCoordinateMap_surjective :
+    Function.Surjective
+      (t.geckTorusPositiveBaseChangeInclusionCoordinateMap ht A).hom :=
+  (ConcreteCategory.bijective_of_isIso
+      (t.geckTorusPositiveBaseChangeCoordinateTransportIso ht A).inv).2.comp
+    ((kostantTorusSubsystemBaseChangeInclusionCoordinateMap_surjective
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A
+        (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl)).comp
+      ((ConcreteCategory.bijective_of_isIso
+          (kostantToralBaseChangeIso
+            (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+            (t.geckCoordinateLattice ht).toAddSubgroup
+            (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+            (t.isNilpotent_geckRepresentation_rootGenerator ht)
+            (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A).inv).2.comp
+        (ConcreteCategory.bijective_of_isIso
+          (t.geckBaseChangeCoordinateIso ht A).hom).2))
 
 /-- The base-changed inclusion intertwines each transported positive simple-root map with the
 canonical full-carrier map after identifying the scalar-tensor additive coordinate algebra with
@@ -255,6 +375,7 @@ theorem geckTorusPositiveBaseChangeInclusionCoordinateMap_comp_root
       t.geckRootSubgroupToBaseChangeCoordinateMap ht A (.inl i) := by
   rw [geckTorusPositiveBaseChangeInclusionCoordinateMap,
     geckRootSubgroupToTorusPositiveBaseChangeCoordinateMap]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
   slice_lhs 3 4 =>
     rw [kostantTorusSubsystemBaseChangeInclusionCoordinateMap_comp_root]
   slice_lhs 2 3 =>
@@ -274,6 +395,7 @@ theorem geckTorusPositiveBaseChangeInclusionCoordinateMap_comp_weightTorus :
       t.geckWeightTorusToBaseChangeCoordinateMap ht A := by
   rw [geckTorusPositiveBaseChangeInclusionCoordinateMap,
     geckWeightTorusToTorusPositiveBaseChangeCoordinateMap]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
   slice_lhs 3 4 =>
     rw [kostantTorusSubsystemBaseChangeInclusionCoordinateMap_comp_weightTorus]
   slice_lhs 2 3 =>
