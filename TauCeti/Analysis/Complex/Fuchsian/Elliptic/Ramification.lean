@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.CoarseQuotient
+public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer
 
 /-!
@@ -74,8 +74,7 @@ theorem ellipticRamificationIndex_smul (h : Δ ≤ Γ) (g : Δ) (z : ℍ) :
     ellipticRamificationIndex h (g • z) = ellipticRamificationIndex h z := by
   let gΓ : Γ := ⟨g.1, h g.2⟩
   have hgΓ : gΓ • z = g • z := by
-    change (gΓ : PSL(2, ℝ)) • z = (g : PSL(2, ℝ)) • z
-    simp only [gΓ]
+    simp only [Subgroup.smul_def, gΓ]
   calc
     ellipticRamificationIndex h (g • z) =
         (ambientStabilizer Δ (g • z)).relIndex
