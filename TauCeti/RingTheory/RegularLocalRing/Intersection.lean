@@ -50,6 +50,8 @@ more generally for the intersection multiplicities of Cartier divisors on a regu
 * `TauCeti.length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors` and
   `TauCeti.length_quot_span_pair_mul_eq_add`: the local intersection multiplicity is additive over
   a product of equations, which is additivity over a union of curves;
+* `TauCeti.length_quot_span_pair_comm`: that multiplicity is symmetric in the two equations, which
+  transports the additivity above to the first equation;
 * `TauCeti.length_quot_span_pair_eq_one_of_eq_maximalIdeal`: two equations generating the maximal
   ideal meet transversally, with intersection multiplicity one.
 
@@ -75,7 +77,7 @@ order of vanishing. Two supporting results live with the general infrastructure 
 `TauCeti.length_quot_maximalIdeal_eq_one`, in `TauCeti/RingTheory/Length.lean`, and
 `TauCeti.ringKrullDim_quot_span_singleton_eq_one`, in
 `TauCeti/RingTheory/KrullDimension/Regular.lean`, which cuts a two-dimensional local domain down
-to a curve of dimension one by an element of `𝔪 \ 𝔪²`.
+to a curve of dimension one by a nonzero element of `𝔪`.
 
 ## References
 
@@ -120,6 +122,16 @@ theorem ord_eq_length_quot_span_pair (f g : R) :
     Ideal.map_span, Set.image_singleton,
     Module.length_eq_of_surjective (R := R ⧸ Ideal.span {f}) Ideal.Quotient.mk_surjective]
   rfl
+
+/-- **The local intersection multiplicity of two equations is symmetric in them.** The two
+equations generate the same ideal in either order, so the length of the quotient by them, the local
+intersection multiplicity of the two curves, does not depend on the order. Together with
+`TauCeti.length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors` this transports additivity over a
+product of equations from the second equation to the first. -/
+theorem length_quot_span_pair_comm (f g : R) :
+    Module.length R (R ⧸ Ideal.span {f, g}) = Module.length R (R ⧸ Ideal.span {g, f}) := by
+  refine congrArg (fun I : Ideal R => Module.length R (R ⧸ I)) ?_
+  rw [Ideal.span_insert f ({g} : Set R), Ideal.span_insert g ({f} : Set R), sup_comm]
 
 /-- **The length of the quotient by two equations vanishes exactly when the second equation is
 a unit along the first.** In an arbitrary commutative ring, the length of `R ⧸ (f, g)` vanishes
@@ -225,7 +237,7 @@ theorem isFiniteLength_quot_span_pair (hd : ringKrullDim R = 2) {f g : R}
     IsRegularLocalRing.quotient_span_singleton hf hf2
   let _ : IsDiscreteValuationRing (R ⧸ Ideal.span {f}) :=
     IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr
-      (ringKrullDim_quot_span_singleton_eq_one hd hf hf2)
+      (ringKrullDim_quot_span_singleton_eq_one hd hf (by rintro rfl; exact hf2 (zero_mem _)))
   refine Module.length_ne_top_iff.mp ?_
   rw [← ord_eq_length_quot_span_pair f g]
   -- the image of `g` in the discrete valuation ring `R ⧸ (f)` is a non-zero-divisor, being nonzero
@@ -245,30 +257,74 @@ theorem exists_nat_length_quot_span_pair (hd : ringKrullDim R = 2) {f g : R}
   exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
 
 /-- **The local intersection multiplicity on a regular surface is additive over a product of
-equations.** If `f ∉ 𝔪²` in a two-dimensional regular local ring, so that `f` is a parameter, and
-`h` is not a multiple of `f`, which is also what forces `f ∈ 𝔪`, then the curve `g * h = 0` meets
-the curve `f = 0` with multiplicity equal to the sum of the multiplicities of the two factors, by
-`TauCeti.length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors`: the image of `h` on the
-discrete valuation ring `R ⧸ (f)` is a non-zero-divisor. Applying this to a product of the
-equations of distinct irreducible components of a curve gives additivity of the intersection
-number over a union of curves, which is the bilinearity of intersection numbers. -/
+equations.** Let `f ∉ 𝔪²` in a two-dimensional regular local ring, so that `f` is a parameter
+cutting out a curve, and let `g` and `h` be two further equations. Then the curve `g * h = 0`
+meets the curve `f = 0` with multiplicity the sum of the multiplicities of the two factors, by
+`TauCeti.length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors`: the image of `h` on the discrete
+valuation ring `R ⧸ (f)` is a non-zero-divisor. No hypothesis is placed on `h`, and the case where
+its image there is zero, that is `h ∈ (f)`, is included: the image of `g * h` is then zero as well,
+and all three lengths are the length of the curve `f = 0` over itself, which is infinite, as
+`TauCeti.ringKrullDim_quot_span_singleton_eq_one` makes that curve a discrete valuation ring. A unit
+`f` is a degenerate case of its own, making `(f, x)` the unit ideal for every `x`. Applying this to
+a product of the equations of distinct irreducible components of a curve gives additivity of the
+intersection number over a union of curves, which is the bilinearity of intersection numbers. -/
 theorem length_quot_span_pair_mul_eq_add (hd : ringKrullDim R = 2) {f g h : R}
-    (hf2 : f ∉ maximalIdeal R ^ 2) (hh : h ∉ Ideal.span {f}) :
+    (hf2 : f ∉ maximalIdeal R ^ 2) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
       = Module.length R (R ⧸ Ideal.span {f, g}) + Module.length R (R ⧸ Ideal.span {f, h}) := by
-  -- `h ∉ (f)` rules out a unit `f`, so `f` lies in the maximal ideal and is a parameter
-  have hf : f ∈ maximalIdeal R := by
-    rintro hfu
-    exact hh (by rw [Ideal.span_singleton_eq_top.mpr hfu]; exact Submodule.mem_top)
-  -- the curve `f = 0` is a discrete valuation ring, so a domain, in which the nonzero image of `h`
-  -- is a non-zero-divisor
-  let _ : IsRegularLocalRing (R ⧸ Ideal.span {f}) :=
-    IsRegularLocalRing.quotient_span_singleton hf hf2
-  let _ : IsDiscreteValuationRing (R ⧸ Ideal.span {f}) :=
-    IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr
-      (ringKrullDim_quot_span_singleton_eq_one hd hf hf2)
-  exact length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors
-    (mem_nonZeroDivisors_of_ne_zero (fun hzero => hh ((Submodule.Quotient.mk_eq_zero _).mp hzero)))
+  by_cases hfu : IsUnit f
+  · -- a unit `f` makes `(f, x)` the unit ideal for every `x`, so all three quotients are the zero
+    -- ring and all three lengths are zero
+    have htop (x : R) : Ideal.span {f, x} = ⊤ := by
+      rw [Ideal.span_insert f ({x} : Set R), Ideal.span_singleton_eq_top.mpr hfu]
+      exact top_sup_eq _
+    let _ : Subsingleton (R ⧸ (⊤ : Ideal R)) := Submodule.Quotient.subsingleton_iff.mpr rfl
+    simp [htop (g * h), htop g, htop h, Module.length_eq_zero]
+  · -- `f` is then a nonunit of the local ring `R`, hence in its maximal ideal and, being outside
+    -- the square of it, a parameter cutting out a curve that is a discrete valuation ring
+    have hf : f ∈ maximalIdeal R := (IsLocalRing.mem_maximalIdeal f).mp hfu
+    have hf0 : f ≠ 0 := by rintro rfl; exact hf2 (zero_mem _)
+    let _ : IsRegularLocalRing (R ⧸ Ideal.span {f}) :=
+      IsRegularLocalRing.quotient_span_singleton hf hf2
+    let _ : IsDiscreteValuationRing (R ⧸ Ideal.span {f}) :=
+      IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr
+        (ringKrullDim_quot_span_singleton_eq_one hd hf hf0)
+    by_cases hh : h ∈ Ideal.span {f}
+    · -- the image of `h` on the curve `f = 0` is zero, so the image of `g * h` is zero as well
+      -- and all three orders of vanishing on that curve are its own infinite length
+      have hinf : Module.length (R ⧸ Ideal.span {f}) (R ⧸ Ideal.span {f}) = ⊤ := by
+        by_contra hne
+        obtain ⟨hNoe, hArt⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp
+          (Module.length_ne_top_iff.mp hne)
+        let _ : IsNoetherian (R ⧸ Ideal.span {f}) (R ⧸ Ideal.span {f}) := hNoe
+        let _ : IsArtinian (R ⧸ Ideal.span {f}) (R ⧸ Ideal.span {f}) := hArt
+        refine absurd (ENat.eq_top_iff_forall_ge.mpr fun n => ?_) hne
+        -- a discrete valuation ring has finite length over itself modulo a power of its maximal
+        -- ideal, and the powers are nonzero, so its length is unbounded
+        obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (R ⧸ Ideal.span {f})
+        have hpow : (maximalIdeal (R ⧸ Ideal.span {f}) : Submodule (R ⧸ Ideal.span {f})
+            (R ⧸ Ideal.span {f})) ^ (n + 1) ≠ ⊥ := by
+          intro hbot
+          have hmem : (ϖ : R ⧸ Ideal.span {f}) ^ (n + 1)
+              ∈ maximalIdeal (R ⧸ Ideal.span {f}) ^ (n + 1) := by
+            rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
+            exact Submodule.mem_span_singleton_self _
+          rw [hbot, Submodule.mem_bot] at hmem
+          exact pow_ne_zero (n + 1) hϖ.ne_zero hmem
+        have hlt := Submodule.length_quotient_lt
+          (maximalIdeal (R ⧸ Ideal.span {f}) ^ (n + 1)) hpow
+        rw [IsDiscreteValuationRing.length_quotient_pow_maximalIdeal] at hlt
+        exact (Nat.cast_le.mpr (Nat.le_succ n)).trans hlt.le
+      have hmk : Ideal.Quotient.mk (Ideal.span {f}) h = 0 :=
+        (Submodule.Quotient.mk_eq_zero _).mpr hh
+      rw [← ord_eq_length_quot_span_pair f (g * h), ← ord_eq_length_quot_span_pair f g,
+        ← ord_eq_length_quot_span_pair f h, map_mul, hmk, mul_zero, Ring.ord_zero, hinf]
+      simp
+    · -- the image of `h` in the discrete valuation ring `R ⧸ (f)` is a non-zero-divisor, being
+      -- nonzero
+      apply length_quot_span_pair_mul_eq_add_of_mem_nonZeroDivisors
+      refine mem_nonZeroDivisors_of_ne_zero fun hzero => ?_
+      exact hh ((Submodule.Quotient.mk_eq_zero _).mp hzero)
 
 end Surface
 
