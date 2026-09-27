@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Diffeomorph
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 
@@ -133,6 +133,21 @@ protected def symm (Φ : RiemannianIsometry I J M N) :
       Diffeomorph.mfderiv_apply_mfderiv_symm_apply Φ.toDiffeomorph
         (by simp) x w] at h
     exact h.symm
+
+/-- The underlying diffeomorphism of the inverse Riemannian isometry is the inverse of the
+underlying diffeomorphism. -/
+@[simp]
+theorem symm_toDiffeomorph (Φ : RiemannianIsometry I J M N) :
+    Φ.symm.toDiffeomorph = Diffeomorph.symm Φ.toDiffeomorph := by
+  apply Diffeomorph.ext
+  intro y
+  rfl
+
+/-- The inverse Riemannian isometry has the same underlying function as the inverse of its
+underlying diffeomorphism. -/
+theorem coe_symm (Φ : RiemannianIsometry I J M N) :
+    ⇑Φ.symm = ⇑(Diffeomorph.symm Φ.toDiffeomorph) := by
+  rw [← coe_toDiffeomorph, symm_toDiffeomorph]
 
 @[simp]
 theorem symm_apply_apply (Φ : RiemannianIsometry I J M N)

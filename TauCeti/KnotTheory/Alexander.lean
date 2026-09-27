@@ -199,6 +199,17 @@ theorem enlargeColumn_apply_inr_one_inr_one (V : Matrix ι ι R) (ξ : ι → R)
     enlargeColumn V ξ (Sum.inr 1) (Sum.inr 1) = 0 := by
   simp [enlargeColumn]
 
+/-- Ring homomorphisms commute with column enlargement. -/
+@[simp]
+theorem map_enlargeColumn {S : Type*} [CommRing S] (f : R →+* S) (V : Matrix ι ι R)
+    (xi : ι → R) :
+    (enlargeColumn V xi).map f = enlargeColumn (V.map f) (f ∘ xi) := by
+  ext (i | i) (j | j)
+  · simp
+  · fin_cases j <;> simp [Function.comp_apply]
+  · fin_cases i <;> simp
+  · fin_cases i <;> fin_cases j <;> simp
+
 /-- The row enlargement of a Seifert matrix by a vector `η`, the transpose of the column
 enlargement, that is the block matrix
 
@@ -267,6 +278,47 @@ theorem enlargeRow_apply_inr_one_inr_zero (V : Matrix ι ι R) (η : ι → R) :
 theorem enlargeRow_apply_inr_one_inr_one (V : Matrix ι ι R) (η : ι → R) :
     enlargeRow V η (Sum.inr 1) (Sum.inr 1) = 0 := by
   simp [enlargeRow]
+
+/-- Ring homomorphisms commute with row enlargement. -/
+@[simp]
+theorem map_enlargeRow {S : Type*} [CommRing S] (f : R →+* S) (V : Matrix ι ι R)
+    (eta : ι → R) :
+    (enlargeRow V eta).map f = enlargeRow (V.map f) (f ∘ eta) := by
+  rw [enlargeRow_def, enlargeRow_def, transpose_map, map_enlargeColumn, transpose_map]
+
+/-- A column enlargement, reindexed onto the canonical finite type of the enlarged size. -/
+def enlargeColumnFin {n : ℕ} (V : Matrix (Fin n) (Fin n) R) (xi : Fin n → R) :
+    Matrix (Fin (n + 2)) (Fin (n + 2)) R :=
+  (enlargeColumn V xi).submatrix finSumFinEquiv.symm finSumFinEquiv.symm
+
+/-- The defining formula for a canonically reindexed column enlargement. -/
+theorem enlargeColumnFin_def {n : ℕ} (V : Matrix (Fin n) (Fin n) R) (xi : Fin n → R) :
+    enlargeColumnFin V xi =
+      (enlargeColumn V xi).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := (rfl)
+
+/-- A row enlargement, reindexed onto the canonical finite type of the enlarged size. -/
+def enlargeRowFin {n : ℕ} (V : Matrix (Fin n) (Fin n) R) (eta : Fin n → R) :
+    Matrix (Fin (n + 2)) (Fin (n + 2)) R :=
+  (enlargeRow V eta).submatrix finSumFinEquiv.symm finSumFinEquiv.symm
+
+/-- The defining formula for a canonically reindexed row enlargement. -/
+theorem enlargeRowFin_def {n : ℕ} (V : Matrix (Fin n) (Fin n) R) (eta : Fin n → R) :
+    enlargeRowFin V eta =
+      (enlargeRow V eta).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := (rfl)
+
+/-- Ring homomorphisms commute with canonically reindexed column enlargement. -/
+@[simp]
+theorem map_enlargeColumnFin {S : Type*} [CommRing S] {n : ℕ} (f : R →+* S)
+    (V : Matrix (Fin n) (Fin n) R) (xi : Fin n → R) :
+    (enlargeColumnFin V xi).map f = enlargeColumnFin (V.map f) (f ∘ xi) := by
+  rw [enlargeColumnFin_def, enlargeColumnFin_def, ← submatrix_map, map_enlargeColumn]
+
+/-- Ring homomorphisms commute with canonically reindexed row enlargement. -/
+@[simp]
+theorem map_enlargeRowFin {S : Type*} [CommRing S] {n : ℕ} (f : R →+* S)
+    (V : Matrix (Fin n) (Fin n) R) (eta : Fin n → R) :
+    (enlargeRowFin V eta).map f = enlargeRowFin (V.map f) (f ∘ eta) := by
+  rw [enlargeRowFin_def, enlargeRowFin_def, ← submatrix_map, map_enlargeRow]
 
 /-- The Alexander matrix of a column enlargement, in blocks. The bottom-right block is the only
 new content: it is invertible with determinant `T`, which is where the extra factor of `T` in
