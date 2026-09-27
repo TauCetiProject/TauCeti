@@ -305,7 +305,7 @@ theorem cup_map_left {M' : Rep k G} (f : M ⟶ M') (p q r : ℤ) (h : p + q = r)
     | succ n ih =>
       rw [cupNonneg_succ_apply, cupNonneg_succ_apply, ih, Units.smul_def, Units.smul_def,
         map_zsmul, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-        tensorDimensionShiftUpIso_hom_naturality]
+        tensorDimensionShiftUpIso_hom_naturality_left]
   · obtain ⟨n, rfl⟩ := Int.eq_negSucc_of_lt_zero hq
     obtain rfl : r = p - (n + 1 : ℕ) := by rw [Int.negSucc_eq] at h; omega
     rw [cup_negSucc, cup_negSucc]
@@ -314,10 +314,10 @@ theorem cup_map_left {M' : Rep k G} (f : M ⟶ M') (p q r : ℤ) (h : p + q = r)
     | zero =>
       rw [cupNeg_zero_apply, cupNeg_zero_apply, cupH0_map_left, Units.smul_def, Units.smul_def,
         map_zsmul, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-        tensorDimensionShiftDownIso_inv_naturality]
+        tensorDimensionShiftDownIso_inv_naturality_left]
     | succ n ih =>
       rw [cupNeg_succ_apply, cupNeg_succ_apply, ih, Units.smul_def, Units.smul_def,
         map_zsmul, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-        tensorDimensionShiftDownIso_inv_naturality]
+        tensorDimensionShiftDownIso_inv_naturality_left]
 
 end TauCeti.TateCohomology

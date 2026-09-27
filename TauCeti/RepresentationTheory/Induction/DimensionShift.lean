@@ -40,6 +40,9 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
   properties. The definitions are opaque, so consumers construct maps through these properties.
 * `Rep.dimensionShiftUpMap`, `Rep.dimensionShiftDownMap`: the maps on both shifts induced by a
   morphism of coefficient representations.
+* `Rep.dimensionShiftUpFunctor`, `Rep.dimensionShiftDownFunctor`: the bundled coefficient actions.
+* `Rep.dimensionShiftUpSESFunctor`, `Rep.dimensionShiftDownSESFunctor`: the short exact sequences
+  as functors of the coefficient representation.
 
 ## Main statements
 
@@ -53,6 +56,8 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
 * `Rep.dimensionShiftUpSESMap`, `Rep.dimensionShiftDownSESMap`: morphisms of the two short exact
   sequences; their commuting squares identify the induced maps on kernels and cokernels.
   Each induced map and sequence map preserves identities and compositions.
+* `Rep.dimensionShiftUpπNatTrans`, `Rep.dimensionShiftDownιNatTrans`: the structural projection
+  and inclusion as natural transformations.
 
 ## References
 
@@ -371,5 +376,95 @@ theorem dimensionShiftDownSESMap_id (A : Rep k G) :
 theorem dimensionShiftDownSESMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) :
     dimensionShiftDownSESMap (f ≫ g) = dimensionShiftDownSESMap f ≫ dimensionShiftDownSESMap g := by
   apply ShortComplex.Hom.ext <;> simp
+
+/-! ### Bundled coefficient functoriality -/
+
+/-- The upward dimension shift as an endofunctor on representations. -/
+@[expose] def dimensionShiftUpFunctor : Rep k G ⥤ Rep k G where
+  obj := dimensionShiftUp
+  map := fun f => dimensionShiftUpMap f
+  map_id := dimensionShiftUpMap_id
+  map_comp := fun f g => dimensionShiftUpMap_comp f g
+
+/-- The upward shift functor evaluates to the upward shift. -/
+@[simp] theorem dimensionShiftUpFunctor_obj (A : Rep k G) :
+    (dimensionShiftUpFunctor (k := k) (G := G)).obj A = dimensionShiftUp A := rfl
+
+/-- The upward shift functor acts on morphisms by `dimensionShiftUpMap`. -/
+@[simp] theorem dimensionShiftUpFunctor_map (f : A ⟶ B) :
+    (dimensionShiftUpFunctor (k := k) (G := G)).map f = dimensionShiftUpMap f := rfl
+
+/-- The projection from coinduction to the upward shift, natural in coefficients. -/
+@[expose] def dimensionShiftUpπNatTrans : coindBotRepFunctor (k := k) (G := G) ⟶
+    dimensionShiftUpFunctor (k := k) (G := G) where
+  app A := dimensionShiftUpπ A
+  naturality := by
+    intro A B f
+    exact (dimensionShiftUpπ_naturality f).symm
+
+/-- The component of the upward projection is the cokernel projection. -/
+@[simp] theorem dimensionShiftUpπNatTrans_app (A : Rep k G) :
+    (dimensionShiftUpπNatTrans (k := k) (G := G)).app A = dimensionShiftUpπ A := rfl
+
+/-- The upward short exact sequence as a functor of coefficient representations. -/
+@[expose] def dimensionShiftUpSESFunctor : Rep k G ⥤ ShortComplex (Rep k G) where
+  obj A := ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
+    (coindBotUnit_comp_dimensionShiftUpπ A)
+  map := fun f => dimensionShiftUpSESMap f
+  map_id := dimensionShiftUpSESMap_id
+  map_comp := fun f g => dimensionShiftUpSESMap_comp f g
+
+/-- The upward sequence functor evaluates to the upward short exact sequence. -/
+@[simp] theorem dimensionShiftUpSESFunctor_obj (A : Rep k G) :
+    (dimensionShiftUpSESFunctor (k := k) (G := G)).obj A = dimensionShiftUpSES A :=
+  (dimensionShiftUpSES_def A).symm
+
+/-- The upward sequence functor acts on morphisms by `dimensionShiftUpSESMap`. -/
+@[simp] theorem dimensionShiftUpSESFunctor_map (f : A ⟶ B) :
+    (dimensionShiftUpSESFunctor (k := k) (G := G)).map f = dimensionShiftUpSESMap f := rfl
+
+/-- The downward dimension shift as an endofunctor on representations. -/
+@[expose] def dimensionShiftDownFunctor : Rep k G ⥤ Rep k G where
+  obj := dimensionShiftDown
+  map := fun f => dimensionShiftDownMap f
+  map_id := dimensionShiftDownMap_id
+  map_comp := fun f g => dimensionShiftDownMap_comp f g
+
+/-- The downward shift functor evaluates to the downward shift. -/
+@[simp] theorem dimensionShiftDownFunctor_obj (A : Rep k G) :
+    (dimensionShiftDownFunctor (k := k) (G := G)).obj A = dimensionShiftDown A := rfl
+
+/-- The downward shift functor acts on morphisms by `dimensionShiftDownMap`. -/
+@[simp] theorem dimensionShiftDownFunctor_map (f : A ⟶ B) :
+    (dimensionShiftDownFunctor (k := k) (G := G)).map f = dimensionShiftDownMap f := rfl
+
+/-- The inclusion of the downward shift into induction, natural in coefficients. -/
+@[expose] def dimensionShiftDownιNatTrans : dimensionShiftDownFunctor (k := k) (G := G) ⟶
+    indBotRepFunctor (k := k) (G := G) where
+  app A := dimensionShiftDownι A
+  naturality := by
+    intro A B f
+    exact dimensionShiftDownι_naturality f
+
+/-- The component of the downward inclusion is the kernel inclusion. -/
+@[simp] theorem dimensionShiftDownιNatTrans_app (A : Rep k G) :
+    (dimensionShiftDownιNatTrans (k := k) (G := G)).app A = dimensionShiftDownι A := rfl
+
+/-- The downward short exact sequence as a functor of coefficient representations. -/
+@[expose] def dimensionShiftDownSESFunctor : Rep k G ⥤ ShortComplex (Rep k G) where
+  obj A := ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
+    (dimensionShiftDownι_comp_indBotCounit A)
+  map := fun f => dimensionShiftDownSESMap f
+  map_id := dimensionShiftDownSESMap_id
+  map_comp := fun f g => dimensionShiftDownSESMap_comp f g
+
+/-- The downward sequence functor evaluates to the downward short exact sequence. -/
+@[simp] theorem dimensionShiftDownSESFunctor_obj (A : Rep k G) :
+    (dimensionShiftDownSESFunctor (k := k) (G := G)).obj A = dimensionShiftDownSES A :=
+  (dimensionShiftDownSES_def A).symm
+
+/-- The downward sequence functor acts on morphisms by `dimensionShiftDownSESMap`. -/
+@[simp] theorem dimensionShiftDownSESFunctor_map (f : A ⟶ B) :
+    (dimensionShiftDownSESFunctor (k := k) (G := G)).map f = dimensionShiftDownSESMap f := rfl
 
 end Rep

@@ -38,9 +38,13 @@ The constructions follow `ClassFieldTheory/Cohomology/IndCoind/Finite.lean` and
 * `Rep.coindBot`, `Rep.coindBotFunctor`: coinduction from the trivial subgroup.
 * `Rep.coindBotUnit`: the monomorphism `A ⟶ coindBot k G A.V`.
 * `Rep.coindBotMap`: the map on coinduction induced by a representation morphism.
+* `Rep.coindBotRepFunctor`, `Rep.coindBotUnitNatTrans`: coinduction on representations and its
+  canonical embedding as a natural transformation.
 * `Rep.indBot`, `Rep.indBotFunctor`: induction from the trivial subgroup.
 * `Rep.indBotCounit`: the epimorphism `indBot k G A.V ⟶ A`.
 * `Rep.indBotMap`: the map on induction induced by a representation morphism.
+* `Rep.indBotRepFunctor`, `Rep.indBotCounitNatTrans`: induction on representations and its
+  canonical projection as a natural transformation.
 * `Rep.coindBotEquivPi`, `Rep.indBotEquivFinsupp`: the underlying modules as functions `G → X`
   and finitely supported functions `G →₀ X`.
 * `Rep.indBotIsoCoindBot`: for a finite group, `indBot k G X ≅ coindBot k G X`.
@@ -190,6 +194,34 @@ theorem coindBotUnit_naturality (f : A ⟶ B) :
       exact (congrArg (fun z : coindBot k G B.V => z.1 g)
         (CategoryTheory.comp_apply f (coindBotUnit B) x)).symm
 
+/-- Coinduction on the underlying module, viewed as an endofunctor of representations. -/
+@[expose] def coindBotRepFunctor : Rep k G ⥤ Rep k G where
+  obj A := coindBot k G A.V
+  map f := coindBotMap f
+  map_id A := coindBotMap_id A
+  map_comp f g := coindBotMap_comp f g
+
+/-- The coinduction endofunctor acts on objects by coinduction of underlying modules. -/
+@[simp] theorem coindBotRepFunctor_obj (A : Rep k G) :
+    (coindBotRepFunctor (k := k) (G := G)).obj A = coindBot k G A.V := rfl
+
+/-- The coinduction endofunctor acts on morphisms by `coindBotMap`. -/
+@[simp] theorem coindBotRepFunctor_map (f : A ⟶ B) :
+    (coindBotRepFunctor (k := k) (G := G)).map f = coindBotMap f := rfl
+
+/-- The canonical embedding into coinduction, as a natural transformation. -/
+@[expose] def coindBotUnitNatTrans : 𝟭 (Rep k G) ⟶ coindBotRepFunctor (k := k) (G := G) where
+  app A := coindBotUnit A
+  naturality := by
+    intro A B f
+    -- Unfold the identity and coinduction functor maps to the existing naturality square.
+    change f ≫ coindBotUnit B = coindBotUnit A ≫ coindBotMap f
+    exact (coindBotUnit_naturality f).symm
+
+/-- The component of the coinduction unit at `A` is its canonical embedding. -/
+@[simp] theorem coindBotUnitNatTrans_app (A : Rep k G) :
+    (coindBotUnitNatTrans (k := k) (G := G)).app A = coindBotUnit A := rfl
+
 variable (k G) in
 /-- The underlying module of the representation coinduced from the trivial subgroup is the module
 of all functions `G → X`. -/
@@ -317,6 +349,34 @@ theorem indBotCounit_naturality (f : A ⟶ B) :
           (Representation.trivial k (⊥ : Subgroup G) A.V) g x)) := by
       rw [indBotCounit_hom_mk]
     _ = _ := (CategoryTheory.comp_apply (indBotCounit A) f _).symm
+
+/-- Induction on the underlying module, viewed as an endofunctor of representations. -/
+@[expose] def indBotRepFunctor : Rep k G ⥤ Rep k G where
+  obj A := indBot k G A.V
+  map f := indBotMap f
+  map_id A := indBotMap_id A
+  map_comp f g := indBotMap_comp f g
+
+/-- The induction endofunctor acts on objects by induction of underlying modules. -/
+@[simp] theorem indBotRepFunctor_obj (A : Rep k G) :
+    (indBotRepFunctor (k := k) (G := G)).obj A = indBot k G A.V := rfl
+
+/-- The induction endofunctor acts on morphisms by `indBotMap`. -/
+@[simp] theorem indBotRepFunctor_map (f : A ⟶ B) :
+    (indBotRepFunctor (k := k) (G := G)).map f = indBotMap f := rfl
+
+/-- The canonical projection from induction, as a natural transformation. -/
+@[expose] def indBotCounitNatTrans : indBotRepFunctor (k := k) (G := G) ⟶ 𝟭 (Rep k G) where
+  app A := indBotCounit A
+  naturality := by
+    intro A B f
+    -- Unfold the induction and identity functor maps to the existing naturality square.
+    change indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f
+    exact indBotCounit_naturality f
+
+/-- The component of the induction counit at `A` is its canonical projection. -/
+@[simp] theorem indBotCounitNatTrans_app (A : Rep k G) :
+    (indBotCounitNatTrans (k := k) (G := G)).app A = indBotCounit A := rfl
 
 variable (k G) in
 /-- The underlying module of the representation induced from the trivial subgroup is the module

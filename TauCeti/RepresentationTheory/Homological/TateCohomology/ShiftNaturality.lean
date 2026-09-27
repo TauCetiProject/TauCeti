@@ -33,7 +33,7 @@ variable {k G : Type u} [CommRing k] [Group G] [Fintype G] (A M : Rep k G)
 
 variable {M} in
 /-- The tensored upward dimension shift is natural in the tensoring representation. -/
-theorem tensorDimensionShiftUpIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+theorem tensorDimensionShiftUpIso_hom_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map (f ▷ dimensionShiftUp A) ≫
         (tensorDimensionShiftUpIso A M' i j hij).hom =
@@ -45,9 +45,19 @@ theorem tensorDimensionShiftUpIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (
         (coindBotUnit_comp_dimensionShiftUpπ A)).mapNatTrans ((curriedTensor (Rep k G)).map f)))
     _ _ i j hij).symm
 
+/-- The inverse tensored upward dimension shift is natural in the tensoring representation. -/
+theorem tensorDimensionShiftUpIso_inv_naturality_left {M' : Rep k G} (f : M ⟶ M')
+    (i j : ℤ) (hij : i + 1 = j) :
+    (tateCohomologyFunctor j).map (f ▷ A) ≫
+        (tensorDimensionShiftUpIso A M' i j hij).inv =
+      (tensorDimensionShiftUpIso A M i j hij).inv ≫
+        (tateCohomologyFunctor i).map (f ▷ dimensionShiftUp A) := by
+  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftUpIso_hom_naturality_left,
+    Iso.inv_hom_id_assoc]
+
 variable {M} in
 /-- The tensored downward dimension shift is natural in the tensoring representation. -/
-theorem tensorDimensionShiftDownIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+theorem tensorDimensionShiftDownIso_hom_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map (f ▷ A) ≫ (tensorDimensionShiftDownIso A M' i j hij).hom =
       (tensorDimensionShiftDownIso A M i j hij).hom ≫
@@ -62,12 +72,12 @@ theorem tensorDimensionShiftDownIso_hom_naturality {M' : Rep k G} (f : M ⟶ M')
 variable {M} in
 /-- The inverse of the tensored downward dimension shift is natural in the tensoring
 representation. -/
-theorem tensorDimensionShiftDownIso_inv_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+theorem tensorDimensionShiftDownIso_inv_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor j).map (f ▷ dimensionShiftDown A) ≫
         (tensorDimensionShiftDownIso A M' i j hij).inv =
       (tensorDimensionShiftDownIso A M i j hij).inv ≫ (tateCohomologyFunctor i).map (f ▷ A) := by
-  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality,
+  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality_left,
     Iso.inv_hom_id_assoc]
 
 
@@ -116,11 +126,19 @@ theorem dimensionShiftDownIso_hom_naturality :
   simpa only [Rep.dimensionShiftDownSESMap_τ₁, Rep.dimensionShiftDownSESMap_τ₃] using
     (_root_.TateCohomology.δ_naturality hA hB (Rep.dimensionShiftDownSESMap f) n).symm
 
+/-- The inverse downward connecting isomorphism is natural in the coefficient representation. -/
+theorem dimensionShiftDownIso_inv_naturality :
+    (tateCohomologyFunctor (n + 1)).map (Rep.dimensionShiftDownMap f) ≫
+        (dimensionShiftDownIso B n).inv =
+      (dimensionShiftDownIso A n).inv ≫ (tateCohomologyFunctor n).map f := by
+  rw [Iso.comp_inv_eq, Category.assoc, dimensionShiftDownIso_hom_naturality,
+    Iso.inv_hom_id_assoc]
+
 variable (M : Rep k G)
 
 /-- The connecting isomorphism for the upward shift remains natural after tensoring on the
 left by a fixed representation. -/
-theorem tensorDimensionShiftUpIso_hom_naturality_coefficient (i j : ℤ) (hij : i + 1 = j) :
+theorem tensorDimensionShiftUpIso_hom_naturality_right (i j : ℤ) (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map ((tensorLeft M).map (Rep.dimensionShiftUpMap f)) ≫
         (tensorDimensionShiftUpIso B M i j hij).hom =
       (tensorDimensionShiftUpIso A M i j hij).hom ≫
@@ -140,9 +158,19 @@ theorem tensorDimensionShiftUpIso_hom_naturality_coefficient (i j : ℤ) (hij : 
     (_root_.TateCohomology.δ_naturality hA hB
       ((tensorLeft M).mapShortComplex.map (Rep.dimensionShiftUpSESMap f)) i).symm
 
+/-- The inverse tensored upward connecting isomorphism is natural in the coefficient
+representation. -/
+theorem tensorDimensionShiftUpIso_inv_naturality_right (i j : ℤ) (hij : i + 1 = j) :
+    (tateCohomologyFunctor j).map ((tensorLeft M).map f) ≫
+        (tensorDimensionShiftUpIso B M i j hij).inv =
+      (tensorDimensionShiftUpIso A M i j hij).inv ≫
+        (tateCohomologyFunctor i).map ((tensorLeft M).map (Rep.dimensionShiftUpMap f)) := by
+  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftUpIso_hom_naturality_right,
+    Iso.inv_hom_id_assoc]
+
 /-- The connecting isomorphism for the downward shift remains natural after tensoring on the
 left by a fixed representation. -/
-theorem tensorDimensionShiftDownIso_hom_naturality_coefficient (i j : ℤ) (hij : i + 1 = j) :
+theorem tensorDimensionShiftDownIso_hom_naturality_right (i j : ℤ) (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map ((tensorLeft M).map f) ≫
         (tensorDimensionShiftDownIso B M i j hij).hom =
       (tensorDimensionShiftDownIso A M i j hij).hom ≫
@@ -164,12 +192,12 @@ theorem tensorDimensionShiftDownIso_hom_naturality_coefficient (i j : ℤ) (hij 
 
 /-- The inverse tensored downward connecting isomorphism is natural in the shifted
 coefficient representation. -/
-theorem tensorDimensionShiftDownIso_inv_naturality_coefficient (i j : ℤ) (hij : i + 1 = j) :
+theorem tensorDimensionShiftDownIso_inv_naturality_right (i j : ℤ) (hij : i + 1 = j) :
     (tateCohomologyFunctor j).map ((tensorLeft M).map (Rep.dimensionShiftDownMap f)) ≫
         (tensorDimensionShiftDownIso B M i j hij).inv =
       (tensorDimensionShiftDownIso A M i j hij).inv ≫
         (tateCohomologyFunctor i).map ((tensorLeft M).map f) := by
-  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality_coefficient,
+  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality_right,
     Iso.inv_hom_id_assoc]
 
 end TauCeti.TateCohomology
