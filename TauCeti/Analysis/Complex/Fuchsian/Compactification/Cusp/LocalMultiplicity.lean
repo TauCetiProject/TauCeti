@@ -36,9 +36,11 @@ variable [DiscreteTopology Δ] [DiscreteTopology Γ]
 quotients is holomorphic. -/
 theorem mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling)
+    (hσ : D.scaling = E.scaling)
     {A : ℝ} (hD : D.width ≤ A) {x : Δ.CompactifiedQuotient} (hx : x ∈ cuspNhd D A) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (compactifiedQuotientMap h) x := by
+  have hc : D.cusp = E.cusp := (MulAction.injective D.scaling)
+    (D.scaling_smul_cusp.trans (hσ.symm ▸ E.scaling_smul_cusp).symm)
   let n := widthIndex h D E hc hσ
   have hn : 0 < n := widthIndex_pos h D E hc hσ
   have hw : D.width = n * E.width := width_eq_widthIndex_mul h D E hc hσ
@@ -69,9 +71,14 @@ theorem mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd (h : Δ ≤ Γ)
 positive integer by which the compatible normalized cusp width changes. -/
 theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling) :
+    (hσ : D.scaling = E.scaling) :
+    let hc : D.cusp = E.cusp := (MulAction.injective D.scaling)
+      (D.scaling_smul_cusp.trans (hσ.symm ▸ E.scaling_smul_cusp).symm)
     localMultiplicity (compactifiedQuotientMap h) (ofCusp D.cuspOrbit) =
       widthIndex h D E hc hσ := by
+  dsimp only
+  have hc : D.cusp = E.cusp := (MulAction.injective D.scaling)
+    (D.scaling_smul_cusp.trans (hσ.symm ▸ E.scaling_smul_cusp).symm)
   let n := widthIndex h D E hc hσ
   have hn : 0 < n := widthIndex_pos h D E hc hσ
   have hw : D.width = n * E.width := width_eq_widthIndex_mul h D E hc hσ
@@ -97,7 +104,7 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex (h : Δ �
   have hf : ∀ᶠ y in 𝓝 x,
       MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (compactifiedQuotientMap h) y := by
     filter_upwards [(isOpen_cuspNhd D D.width).mem_nhds hxNhd] with y hy
-    exact mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd h D E hc hσ hD hy
+    exact mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd h D E hσ hD hy
   rw [localMultiplicity_eq_analyticOrderNatAt he he' hxe hfxe hf]
   have hex : e x = 0 := by simp [e, x]
   have hefx : e' (compactifiedQuotientMap h x) = 0 := by simp [e', hfx]
@@ -113,7 +120,7 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex (h : Δ �
   calc
     analyticOrderNatAt (fun z ↦ e' (compactifiedQuotientMap h (e.symm z)) - 0) 0 =
         analyticOrderNatAt (fun z : ℂ ↦ z ^ n - 0 ^ n) 0 := by
-      exact congrArg ENat.toNat (analyticOrderAt_congr heq)
+      rw [analyticOrderNatAt, analyticOrderNatAt, analyticOrderAt_congr heq]
     _ = localMultiplicity (fun z : ℂ ↦ z ^ n) 0 := by
       rw [localMultiplicity_eq_analyticOrderNatAt_sub]
     _ = n := localMultiplicity_pow_zero n
