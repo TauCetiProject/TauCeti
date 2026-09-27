@@ -70,25 +70,20 @@ private lemma eq_of_boundary_eq_of_mem_bounded_intervals
   -- Adjacent sides meet only at their common, noncollinear corner.
   by_cases hadj : i.val + 1 = j.val
   · have hmid : i.succ = j.castSucc := Fin.ext hadj
-    have haff := affineIndependent_schwarzChristoffelVertex_of_adjacent a e z₀
-      i.castSucc i.succ j.succ (ha i.castSucc_lt_succ)
-      (by rw [hmid]; exact ha j.castSucc_lt_succ)
-      (hfree i) (by rw [hmid]; exact hfree j)
-      (hfinite _).1 ⟨(hfinite _).1, lt_trans (hfinite _).2 (by norm_num)⟩
-      (hfinite _).2.ne (hfinite _).1
-    -- Reindex the two displacement vectors based at the middle vertex.
-    rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
-      ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))] at haff
-    have hlin : LinearIndependent ℝ
-        ![schwarzChristoffelVertex a e z₀ i.castSucc - schwarzChristoffelVertex a e z₀ i.succ,
-          schwarzChristoffelVertex a e z₀ j.succ - schwarzChristoffelVertex a e z₀ i.succ] := by
-      convert! haff using 1
-      ext k
-      fin_cases k <;> simp [finSuccAboveEquiv_apply]
+    have hsegments := schwarzChristoffelVertex_adjacent_segments_inter_eq a e z₀ ha
+      (j := i.castSucc) (k := i.succ) (l := j.succ)
+      (by simp only [Fin.val_castSucc, Fin.val_succ])
+      (by simp only [Fin.val_succ]; omega)
+      (he i.castSucc).1
+      ⟨(he i.succ).1, lt_trans (he i.succ).2 (by norm_num)⟩
+      (he i.succ).2.ne (he j.succ).1
     have heq : schwarzChristoffelBoundary a e z₀ x =
         schwarzChristoffelVertex a e z₀ i.succ := by
-      apply segment_inter_subset_endpoint_of_linearIndependent_sub ℝ hlin
-      exact ⟨by rwa [segment_symm], by simpa [hxy, hmid] using hymem⟩
+      have hmem : schwarzChristoffelBoundary a e z₀ x ∈
+          ({schwarzChristoffelVertex a e z₀ i.succ} : Set ℂ) := by
+        rw [← hsegments]
+        exact ⟨hxmem, by simpa [hxy, hmid] using hymem⟩
+      simpa using hmem
     rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _
       (hfinite _).1] at heq
     have hx' := hinterval i hx ⟨(ha i.castSucc_lt_succ).le, le_rfl⟩ heq
