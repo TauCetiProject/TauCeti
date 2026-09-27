@@ -25,13 +25,15 @@ manifold structures and intersected to form Morse trajectory spaces.
 
 ## Main declarations
 
-* `IsNondegenerateCriticalPoint.stableSet_eq_iUnion_orbit_localStableSet`: a local stable set
-  whose confined trajectories converge generates the global stable set under the flow.
-* `IsNondegenerateCriticalPoint.unstableSet_eq_iUnion_orbit_localUnstableSet`: the backward-time
-  counterpart.
-* `IsNondegenerateCriticalPoint.exists_stableSet_eq_iUnion_orbit_lipschitzGraph` and
-  `IsNondegenerateCriticalPoint.exists_unstableSet_eq_iUnion_orbit_lipschitzGraph`: choose the
-  disks from the local Lyapunov--Perron graph theorem.
+* `mem_localInvariantSet_Ici_iff_negativeGradientFlow` and
+  `mem_localInvariantSet_Iic_iff_negativeGradientFlow`: characterize local invariant sets using
+  the global flow.
+* `stableSet_eq_biUnion_orbit_localInvariantSet_Ici`: a convergent forward local invariant set
+  generates the global stable set under the flow.
+* `unstableSet_eq_biUnion_orbit_localInvariantSet_Iic`: the backward-time counterpart.
+* `IsNondegenerateCriticalPoint.stableSet_eq_biUnion_orbit_localStableSet` and
+  `IsNondegenerateCriticalPoint.unstableSet_eq_biUnion_orbit_localUnstableSet`: the corresponding
+  statements for the local Lyapunov--Perron sets.
 
 ## References
 
@@ -48,67 +50,233 @@ noncomputable section
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f : E → ℝ} {x : E} {K : ℝ≥0}
+
+/-- Membership in a forward local invariant set can be witnessed by the global negative-gradient
+orbit: the orbit stays in the chosen ball for nonnegative time and its initial projection obeys
+the cutoff. -/
+theorem mem_localInvariantSet_Ici_iff_negativeGradientFlow (hf : LipschitzWith K (∇ f))
+    (Q : E →L[ℝ] E) {r rho : ℝ} {z : E} :
+    z ∈ localInvariantSet f x (Ici 0) Q r rho ↔
+      (∀ t, 0 ≤ t → negativeGradientFlow f hf t (x + z) - x ∈ closedBall 0 r) ∧
+        ‖Q z‖ ≤ rho := by
+  constructor
+  · rw [mem_localInvariantSet]
+    rintro ⟨⟨y, hy, hy0, hmaps⟩, hQ⟩
+    refine ⟨fun t ht ↦ ?_, hQ⟩
+    rw [← eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Ici hf hy hy0 ht]
+    exact hmaps ht
+  · rintro ⟨hball, hQ⟩
+    rw [mem_localInvariantSet]
+    refine ⟨⟨fun t ↦ negativeGradientFlow f hf t (x + z) - x,
+      (isIntegralCurve_centeredNegativeGradientFlow hf x z).isIntegralCurveOn _, ?_, ?_⟩, hQ⟩
+    · simp only [_root_.Flow.map_zero_apply, add_sub_cancel_left]
+    · exact fun t ht ↦ hball t ht
+
+/-- Membership in a backward local invariant set can be witnessed by the global negative-gradient
+orbit, with the confinement condition imposed at nonpositive times. -/
+theorem mem_localInvariantSet_Iic_iff_negativeGradientFlow (hf : LipschitzWith K (∇ f))
+    (Q : E →L[ℝ] E) {r rho : ℝ} {z : E} :
+    z ∈ localInvariantSet f x (Iic 0) Q r rho ↔
+      (∀ t, t ≤ 0 → negativeGradientFlow f hf t (x + z) - x ∈ closedBall 0 r) ∧
+        ‖Q z‖ ≤ rho := by
+  constructor
+  · rw [mem_localInvariantSet]
+    rintro ⟨⟨y, hy, hy0, hmaps⟩, hQ⟩
+    refine ⟨fun t ht ↦ ?_, hQ⟩
+    rw [← eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Iic hf hy hy0 ht]
+    exact hmaps ht
+  · rintro ⟨hball, hQ⟩
+    rw [mem_localInvariantSet]
+    refine ⟨⟨fun t ↦ negativeGradientFlow f hf t (x + z) - x,
+      (isIntegralCurve_centeredNegativeGradientFlow hf x z).isIntegralCurveOn _, ?_, ?_⟩, hQ⟩
+    · simp only [_root_.Flow.map_zero_apply, add_sub_cancel_left]
+    · exact fun t ht ↦ hball t ht
+
+/-- Translating a forward local invariant set back to the base point gives points in the global
+stable set, provided every trajectory confined to the chosen ball converges. -/
+theorem image_add_localInvariantSet_Ici_subset_stableSet
+    (hf : LipschitzWith K (∇ f)) (Q : E →L[ℝ] E) {r rho : ℝ}
+    (hconv : ∀ y : ℝ → E,
+      IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) →
+      MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (nhds 0)) :
+    (fun z ↦ x + z) '' localInvariantSet f x (Ici 0) Q r rho ⊆
+      Flow.stableSet (negativeGradientFlow f hf) x := by
+  rintro _ ⟨z, hz, rfl⟩
+  rw [Flow.mem_stableSet, ← tendsto_sub_nhds_zero_iff]
+  exact hconv _ ((isIntegralCurve_centeredNegativeGradientFlow hf x z).isIntegralCurveOn (Ici 0))
+    fun t ht ↦ ((mem_localInvariantSet_Ici_iff_negativeGradientFlow hf Q).1 hz).1 t ht
+
+/-- Translating a backward local invariant set back to the base point gives points in the global
+unstable set, provided every trajectory confined to the chosen ball converges backward. -/
+theorem image_add_localInvariantSet_Iic_subset_unstableSet
+    (hf : LipschitzWith K (∇ f)) (Q : E →L[ℝ] E) {r rho : ℝ}
+    (hconv : ∀ y : ℝ → E,
+      IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) →
+      MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (nhds 0)) :
+    (fun z ↦ x + z) '' localInvariantSet f x (Iic 0) Q r rho ⊆
+      Flow.unstableSet (negativeGradientFlow f hf) x := by
+  rintro _ ⟨z, hz, rfl⟩
+  rw [Flow.mem_unstableSet, ← tendsto_sub_nhds_zero_iff]
+  exact hconv _ ((isIntegralCurve_centeredNegativeGradientFlow hf x z).isIntegralCurveOn (Iic 0))
+    fun t ht ↦ ((mem_localInvariantSet_Iic_iff_negativeGradientFlow hf Q).1 hz).1 t ht
+
+/-- Every point in the global stable set has a time translate whose displacement belongs to a
+given forward local invariant set with positive cutoffs. -/
+theorem exists_negativeGradientFlow_sub_mem_localInvariantSet_Ici_of_mem_stableSet
+    (hf : LipschitzWith K (∇ f)) (Q : E →L[ℝ] E) {r rho : ℝ}
+    (hr : 0 < r) (hrho : 0 < rho) {p : E}
+    (hp : p ∈ Flow.stableSet (negativeGradientFlow f hf) x) :
+    ∃ T, negativeGradientFlow f hf T p - x ∈ localInvariantSet f x (Ici 0) Q r rho := by
+  let φ := negativeGradientFlow f hf
+  have hp' : Tendsto (fun t ↦ φ t p) atTop (nhds x) := by
+    simpa only [φ] using Flow.mem_stableSet.mp hp
+  have hcentered : Tendsto (fun t ↦ φ t p - x) atTop (nhds 0) :=
+    tendsto_sub_nhds_zero_iff.mpr hp'
+  have hball : ∀ᶠ t in atTop, φ t p - x ∈ closedBall 0 r :=
+    hcentered.eventually (closedBall_mem_nhds 0 hr)
+  have hproj : Tendsto (fun t ↦ Q (φ t p - x)) atTop (nhds 0) :=
+    (Q.continuous.tendsto' 0 0 (map_zero Q)).comp hcentered
+  have hprojBall : ∀ᶠ t in atTop, Q (φ t p - x) ∈ closedBall 0 rho :=
+    hproj.eventually (closedBall_mem_nhds 0 hrho)
+  obtain ⟨T, hT⟩ := eventually_atTop.1 (hball.and hprojBall)
+  refine ⟨T, (mem_localInvariantSet_Ici_iff_negativeGradientFlow hf Q).2 ⟨?_, ?_⟩⟩
+  · intro s hs
+    have hxz : x + (φ T p - x) = φ T p := by abel
+    simpa only [φ, hxz, ← _root_.Flow.map_add, add_comm s T] using
+      (hT (T + s) (le_add_of_nonneg_right hs)).1
+  · simpa only [mem_closedBall, dist_zero_right] using (hT T le_rfl).2
+
+/-- Every point in the global unstable set has a time translate whose displacement belongs to a
+given backward local invariant set with positive cutoffs. -/
+theorem exists_negativeGradientFlow_sub_mem_localInvariantSet_Iic_of_mem_unstableSet
+    (hf : LipschitzWith K (∇ f)) (Q : E →L[ℝ] E) {r rho : ℝ}
+    (hr : 0 < r) (hrho : 0 < rho) {p : E}
+    (hp : p ∈ Flow.unstableSet (negativeGradientFlow f hf) x) :
+    ∃ T, negativeGradientFlow f hf T p - x ∈ localInvariantSet f x (Iic 0) Q r rho := by
+  let φ := negativeGradientFlow f hf
+  have hp' : Tendsto (fun t ↦ φ t p) atBot (nhds x) := by
+    simpa only [φ] using Flow.mem_unstableSet.mp hp
+  have hcentered : Tendsto (fun t ↦ φ t p - x) atBot (nhds 0) :=
+    tendsto_sub_nhds_zero_iff.mpr hp'
+  have hball : ∀ᶠ t in atBot, φ t p - x ∈ closedBall 0 r :=
+    hcentered.eventually (closedBall_mem_nhds 0 hr)
+  have hproj : Tendsto (fun t ↦ Q (φ t p - x)) atBot (nhds 0) :=
+    (Q.continuous.tendsto' 0 0 (map_zero Q)).comp hcentered
+  have hprojBall : ∀ᶠ t in atBot, Q (φ t p - x) ∈ closedBall 0 rho :=
+    hproj.eventually (closedBall_mem_nhds 0 hrho)
+  obtain ⟨T, hT⟩ := eventually_atBot.1 (hball.and hprojBall)
+  refine ⟨T, (mem_localInvariantSet_Iic_iff_negativeGradientFlow hf Q).2 ⟨?_, ?_⟩⟩
+  · intro s hs
+    have hxz : x + (φ T p - x) = φ T p := by abel
+    simpa only [φ, hxz, ← _root_.Flow.map_add, add_comm s T] using
+      (hT (T + s) (add_le_of_nonpos_right hs)).1
+  · simpa only [mem_closedBall, dist_zero_right] using (hT T le_rfl).2
+
+omit [InnerProductSpace ℝ E] [CompleteSpace E] in
+private theorem mem_orbit_add_apply_sub (φ : _root_.Flow ℝ E) (x p : E) (T : ℝ) :
+    p ∈ φ.orbit (x + (φ T p - x)) := by
+  rw [_root_.Flow.mem_orbit_iff]
+  refine ⟨-T, ?_⟩
+  have hxz : x + (φ T p - x) = φ T p := by abel
+  rw [hxz, ← φ.map_add]
+  simp
+
+/-- A forward local invariant set whose confined trajectories converge generates the whole global
+stable set under the negative-gradient flow. -/
+theorem stableSet_eq_biUnion_orbit_localInvariantSet_Ici
+    (hf : LipschitzWith K (∇ f)) (Q : E →L[ℝ] E) {r rho : ℝ}
+    (hr : 0 < r) (hrho : 0 < rho)
+    (hconv : ∀ y : ℝ → E,
+      IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) →
+      MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (nhds 0)) :
+    Flow.stableSet (negativeGradientFlow f hf) x =
+      ⋃ z ∈ localInvariantSet f x (Ici 0) Q r rho,
+        (negativeGradientFlow f hf).orbit (x + z) := by
+  let φ := negativeGradientFlow f hf
+  apply Subset.antisymm
+  · intro p hp
+    obtain ⟨T, hT⟩ :=
+      exists_negativeGradientFlow_sub_mem_localInvariantSet_Ici_of_mem_stableSet
+        hf Q hr hrho hp
+    refine mem_iUnion.2 ⟨φ T p - x, mem_iUnion.2 ⟨?_, ?_⟩⟩
+    · simpa only [φ] using hT
+    · exact mem_orbit_add_apply_sub φ x p T
+  · intro p hp
+    obtain ⟨z, hp⟩ := mem_iUnion.1 hp
+    obtain ⟨hz, hp⟩ := mem_iUnion.1 hp
+    rw [_root_.Flow.mem_orbit_iff] at hp
+    obtain ⟨t, rfl⟩ := hp
+    exact Flow.isInvariant_stableSet φ x t
+      (image_add_localInvariantSet_Ici_subset_stableSet hf Q hconv ⟨z, hz, rfl⟩)
+
+/-- A backward local invariant set whose confined trajectories converge generates the whole global
+unstable set under the negative-gradient flow. -/
+theorem unstableSet_eq_biUnion_orbit_localInvariantSet_Iic
+    (hf : LipschitzWith K (∇ f)) (Q : E →L[ℝ] E) {r rho : ℝ}
+    (hr : 0 < r) (hrho : 0 < rho)
+    (hconv : ∀ y : ℝ → E,
+      IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) →
+      MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (nhds 0)) :
+    Flow.unstableSet (negativeGradientFlow f hf) x =
+      ⋃ z ∈ localInvariantSet f x (Iic 0) Q r rho,
+        (negativeGradientFlow f hf).orbit (x + z) := by
+  let φ := negativeGradientFlow f hf
+  apply Subset.antisymm
+  · intro p hp
+    obtain ⟨T, hT⟩ :=
+      exists_negativeGradientFlow_sub_mem_localInvariantSet_Iic_of_mem_unstableSet
+        hf Q hr hrho hp
+    refine mem_iUnion.2 ⟨φ T p - x, mem_iUnion.2 ⟨?_, ?_⟩⟩
+    · simpa only [φ] using hT
+    · exact mem_orbit_add_apply_sub φ x p T
+  · intro p hp
+    obtain ⟨z, hp⟩ := mem_iUnion.1 hp
+    obtain ⟨hz, hp⟩ := mem_iUnion.1 hp
+    rw [_root_.Flow.mem_orbit_iff] at hp
+    obtain ⟨t, rfl⟩ := hp
+    exact Flow.isInvariant_unstableSet φ x t
+      (image_add_localInvariantSet_Iic_subset_unstableSet hf Q hconv ⟨z, hz, rfl⟩)
+
+variable [FiniteDimensional ℝ E]
 
 namespace IsNondegenerateCriticalPoint
 
-private theorem lipschitzWith_centeredNegativeGradient (hf : LipschitzWith K (∇ f)) :
-    LipschitzWith K (fun z ↦ (-∇ f) (x + z)) := by
-  intro z w
-  simpa only [edist_dist, dist_add_left] using hf.neg (x + z) (x + w)
+private theorem localStableSet_eq_localInvariantSet (h : IsNondegenerateCriticalPoint f x)
+    (r rho : ℝ) :
+    h.localStableSet r rho = localInvariantSet f x (Ici 0) h.stableProjection r rho := by
+  ext z
+  rw [mem_localStableSet, mem_localInvariantSet]
 
-private theorem isIntegralCurve_centeredNegativeGradientFlow (hf : LipschitzWith K (∇ f))
-    (z : E) :
-    IsIntegralCurve
-      (fun t ↦ negativeGradientFlow f hf t (x + z) - x)
-      (fun _ w ↦ (-∇ f) (x + w)) := by
-  intro t
-  have ht := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve (x + z) t
-  have harg : x + (negativeGradientFlow f hf t (x + z) - x) =
-      negativeGradientFlow f hf t (x + z) := by abel
-  simpa only [harg, Pi.neg_apply] using ht.sub_const x
+private theorem localUnstableSet_eq_localInvariantSet (h : IsNondegenerateCriticalPoint f x)
+    (r rho : ℝ) :
+    h.localUnstableSet r rho = localInvariantSet f x (Iic 0) h.unstableProjection r rho := by
+  ext z
+  rw [mem_localUnstableSet, mem_localInvariantSet]
 
-private theorem eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Ici
-    (hf : LipschitzWith K (∇ f)) {z : E} {y : ℝ → E}
-    (hy : IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0))
-    (hy0 : y 0 = z) {t : ℝ} (ht : 0 ≤ t) :
-    y t = negativeGradientFlow f hf t (x + z) - x := by
-  let γ : ℝ → E := fun s ↦ negativeGradientFlow f hf s (x + z) - x
-  have hγ : IsIntegralCurve γ (fun _ w ↦ (-∇ f) (x + w)) :=
-    isIntegralCurve_centeredNegativeGradientFlow hf z
-  have hinit : y 0 = γ 0 := by
-    simp only [γ, hy0, _root_.Flow.map_zero_apply, add_sub_cancel_left]
-  have heq := ODE_solution_unique (a := 0) (b := t)
-      (v := fun _ w ↦ (-∇ f) (x + w))
-      (fun _ ↦ lipschitzWith_centeredNegativeGradient hf)
-      (hy.continuousOn.mono fun _ hs ↦ hs.1)
-      (fun s hs ↦ (hy s (by exact hs.1)).mono fun u hu ↦ le_trans hs.1 hu)
-      (hγ.continuous.continuousOn)
-      (fun s _ ↦ (hγ s).hasDerivWithinAt) hinit
-  exact heq ⟨ht, le_rfl⟩
+/-- Membership in the local stable set is equivalent to confinement of the global
+negative-gradient orbit together with the stable-projection cutoff. -/
+theorem mem_localStableSet_iff_negativeGradientFlow
+    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ} {z : E} :
+    z ∈ h.localStableSet r rho ↔
+      (∀ t, 0 ≤ t → negativeGradientFlow f hf t (x + z) - x ∈ closedBall 0 r) ∧
+        ‖h.stableProjection z‖ ≤ rho := by
+  rw [localStableSet_eq_localInvariantSet]
+  exact mem_localInvariantSet_Ici_iff_negativeGradientFlow hf h.stableProjection
 
-private theorem eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Iic
-    (hf : LipschitzWith K (∇ f)) {z : E} {y : ℝ → E}
-    (hy : IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0))
-    (hy0 : y 0 = z) {t : ℝ} (ht : t ≤ 0) :
-    y t = negativeGradientFlow f hf t (x + z) - x := by
-  let γ : ℝ → E := fun s ↦ negativeGradientFlow f hf s (x + z) - x
-  have hγ : IsIntegralCurve γ (fun _ w ↦ (-∇ f) (x + w)) :=
-    isIntegralCurve_centeredNegativeGradientFlow hf z
-  have hinit : y 0 = γ 0 := by
-    simp only [γ, hy0, _root_.Flow.map_zero_apply, add_sub_cancel_left]
-  have heq := ODE_solution_unique_of_mem_Icc_left (a := t) (b := 0)
-      (v := fun _ w ↦ (-∇ f) (x + w)) (s := fun _ ↦ univ)
-      (K := K) (fun _ _ ↦ (lipschitzWith_centeredNegativeGradient hf).lipschitzOnWith)
-      (hy.continuousOn.mono fun _ hs ↦ hs.2)
-      (fun s hs ↦ (hy s (by exact hs.2)).mono fun u hu ↦ le_trans hu hs.2)
-      (fun _ _ ↦ mem_univ _) (hγ.continuous.continuousOn)
-      (fun s _ ↦ (hγ s).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) hinit
-  exact heq ⟨le_rfl, ht⟩
+/-- Membership in the local unstable set is equivalent to confinement of the global
+negative-gradient orbit together with the unstable-projection cutoff. -/
+theorem mem_localUnstableSet_iff_negativeGradientFlow
+    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ} {z : E} :
+    z ∈ h.localUnstableSet r rho ↔
+      (∀ t, t ≤ 0 → negativeGradientFlow f hf t (x + z) - x ∈ closedBall 0 r) ∧
+        ‖h.unstableProjection z‖ ≤ rho := by
+  rw [localUnstableSet_eq_localInvariantSet]
+  exact mem_localInvariantSet_Iic_iff_negativeGradientFlow hf h.unstableProjection
 
-/-- Translating a local stable set back to the critical point gives points in the global stable
-set, provided every trajectory confined to the chosen ball converges to the critical point. -/
+/-- Translating the local stable set back to the critical point gives points in the global stable
+set when every confined forward trajectory converges. -/
 theorem image_add_localStableSet_subset_stableSet
     (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
     (hconv : ∀ y : ℝ → E,
@@ -116,17 +284,11 @@ theorem image_add_localStableSet_subset_stableSet
       MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (nhds 0)) :
     (fun z ↦ x + z) '' h.localStableSet r rho ⊆
       Flow.stableSet (negativeGradientFlow f hf) x := by
-  rintro _ ⟨z, hz, rfl⟩
-  rw [Flow.mem_stableSet, ← tendsto_sub_nhds_zero_iff]
-  rw [mem_localStableSet] at hz
-  obtain ⟨⟨y, hy, hy0, hmaps⟩, -⟩ := hz
-  apply (hconv y hy hmaps).congr'
-  filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-  exact eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Ici (x := x) hf hy hy0 ht
+  rw [localStableSet_eq_localInvariantSet]
+  exact image_add_localInvariantSet_Ici_subset_stableSet hf h.stableProjection hconv
 
-/-- Translating a local unstable set back to the critical point gives points in the global
-unstable set, provided every trajectory confined to the chosen ball converges backward to the
-critical point. -/
+/-- Translating the local unstable set back to the critical point gives points in the global
+unstable set when every confined backward trajectory converges. -/
 theorem image_add_localUnstableSet_subset_unstableSet
     (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
     (hconv : ∀ y : ℝ → E,
@@ -134,18 +296,34 @@ theorem image_add_localUnstableSet_subset_unstableSet
       MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (nhds 0)) :
     (fun z ↦ x + z) '' h.localUnstableSet r rho ⊆
       Flow.unstableSet (negativeGradientFlow f hf) x := by
-  rintro _ ⟨z, hz, rfl⟩
-  rw [Flow.mem_unstableSet, ← tendsto_sub_nhds_zero_iff]
-  rw [mem_localUnstableSet] at hz
-  obtain ⟨⟨y, hy, hy0, hmaps⟩, -⟩ := hz
-  apply (hconv y hy hmaps).congr'
-  filter_upwards [eventually_le_atBot (0 : ℝ)] with t ht
-  exact eq_centeredNegativeGradientFlow_of_isIntegralCurveOn_Iic (x := x) hf hy hy0 ht
+  rw [localUnstableSet_eq_localInvariantSet]
+  exact image_add_localInvariantSet_Iic_subset_unstableSet hf h.unstableProjection hconv
 
-/-- A local stable set whose confined trajectories converge generates the whole global stable
-set under the negative-gradient flow. Every globally convergent orbit eventually enters the local
-set, while uniqueness shows that every point of the local set is globally convergent. -/
-theorem stableSet_eq_iUnion_orbit_localStableSet
+/-- A point of the global stable set has a time translate whose displacement belongs to the local
+stable set with positive cutoffs. -/
+theorem exists_negativeGradientFlow_sub_mem_localStableSet_of_mem_stableSet
+    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
+    (hr : 0 < r) (hrho : 0 < rho) {p : E}
+    (hp : p ∈ Flow.stableSet (negativeGradientFlow f hf) x) :
+    ∃ T, negativeGradientFlow f hf T p - x ∈ h.localStableSet r rho := by
+  rw [localStableSet_eq_localInvariantSet]
+  exact exists_negativeGradientFlow_sub_mem_localInvariantSet_Ici_of_mem_stableSet
+    hf h.stableProjection hr hrho hp
+
+/-- A point of the global unstable set has a time translate whose displacement belongs to the
+local unstable set with positive cutoffs. -/
+theorem exists_negativeGradientFlow_sub_mem_localUnstableSet_of_mem_unstableSet
+    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
+    (hr : 0 < r) (hrho : 0 < rho) {p : E}
+    (hp : p ∈ Flow.unstableSet (negativeGradientFlow f hf) x) :
+    ∃ T, negativeGradientFlow f hf T p - x ∈ h.localUnstableSet r rho := by
+  rw [localUnstableSet_eq_localInvariantSet]
+  exact exists_negativeGradientFlow_sub_mem_localInvariantSet_Iic_of_mem_unstableSet
+    hf h.unstableProjection hr hrho hp
+
+/-- A local stable set whose confined trajectories converge generates the whole global stable set
+under the negative-gradient flow. -/
+theorem stableSet_eq_biUnion_orbit_localStableSet
     (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
     (hr : 0 < r) (hrho : 0 < rho)
     (hconv : ∀ y : ℝ → E,
@@ -153,58 +331,13 @@ theorem stableSet_eq_iUnion_orbit_localStableSet
       MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (nhds 0)) :
     Flow.stableSet (negativeGradientFlow f hf) x =
       ⋃ z ∈ h.localStableSet r rho, (negativeGradientFlow f hf).orbit (x + z) := by
-  let φ := negativeGradientFlow f hf
-  apply Subset.antisymm
-  · intro p hp
-    have hp' : Tendsto (fun t ↦ φ t p) atTop (nhds x) := by
-      simpa only [φ] using Flow.mem_stableSet.mp hp
-    -- A convergent orbit eventually satisfies both bounds defining the local stable set.
-    have hcentered : Tendsto (fun t ↦ φ t p - x) atTop (nhds 0) :=
-      tendsto_sub_nhds_zero_iff.mpr hp'
-    have hball : ∀ᶠ t in atTop, φ t p - x ∈ closedBall 0 r :=
-      hcentered.eventually (closedBall_mem_nhds 0 hr)
-    have hproj : Tendsto (fun t ↦ h.stableProjection (φ t p - x)) atTop (nhds 0) := by
-      have hpmap := h.stableProjection.continuous.continuousAt.tendsto.comp hcentered
-      rw [map_zero] at hpmap
-      have hcomp : (fun t ↦ h.stableProjection (φ t p - x)) =
-          (h.stableProjection : E → E) ∘ fun t ↦ φ t p - x := rfl
-      rw [hcomp]
-      exact hpmap
-    have hprojBall : ∀ᶠ t in atTop, h.stableProjection (φ t p - x) ∈ closedBall 0 rho :=
-      hproj.eventually (closedBall_mem_nhds 0 hrho)
-    obtain ⟨T, hT⟩ := (eventually_atTop.1 (hball.and hprojBall))
-    let z := φ T p - x
-    -- The orbit shifted by `T` is the confined trajectory witnessing local membership.
-    have hz : z ∈ h.localStableSet r rho := by
-      rw [mem_localStableSet]
-      refine ⟨⟨fun s ↦ φ s (φ T p) - x, ?_, ?_, ?_⟩, ?_⟩
-      · have hxz : x + (φ T p - x) = φ T p := by abel
-        simpa only [φ, hxz] using
-          (isIntegralCurve_centeredNegativeGradientFlow (x := x) hf
-            (φ T p - x)).isIntegralCurveOn
-            (Ici 0)
-      · simp only [_root_.Flow.map_zero_apply, z]
-      · intro s hs
-        simpa only [φ, ← _root_.Flow.map_add, add_comm s T] using
-          (hT (T + s) (le_add_of_nonneg_right hs)).1
-      · simpa only [z, mem_closedBall, dist_zero_right] using (hT T le_rfl).2
-    refine mem_iUnion.2 ⟨z, mem_iUnion.2 ⟨hz, ?_⟩⟩
-    rw [_root_.Flow.mem_orbit_iff]
-    refine ⟨-T, ?_⟩
-    have hxz : x + z = φ T p := by dsimp only [z]; abel
-    rw [hxz, ← (negativeGradientFlow f hf).map_add]
-    simp
-  · intro p hp
-    obtain ⟨z, hp⟩ := mem_iUnion.1 hp
-    obtain ⟨hz, hp⟩ := mem_iUnion.1 hp
-    rw [_root_.Flow.mem_orbit_iff] at hp
-    obtain ⟨t, rfl⟩ := hp
-    exact Flow.isInvariant_stableSet φ x t
-      (h.image_add_localStableSet_subset_stableSet hf hconv ⟨z, hz, rfl⟩)
+  rw [localStableSet_eq_localInvariantSet]
+  exact stableSet_eq_biUnion_orbit_localInvariantSet_Ici
+    hf h.stableProjection hr hrho hconv
 
-/-- A local unstable set whose confined trajectories converge backward generates the whole
-global unstable set under the negative-gradient flow. -/
-theorem unstableSet_eq_iUnion_orbit_localUnstableSet
+/-- A local unstable set whose confined trajectories converge backward generates the whole global
+unstable set under the negative-gradient flow. -/
+theorem unstableSet_eq_biUnion_orbit_localUnstableSet
     (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) {r rho : ℝ}
     (hr : 0 < r) (hrho : 0 < rho)
     (hconv : ∀ y : ℝ → E,
@@ -212,90 +345,9 @@ theorem unstableSet_eq_iUnion_orbit_localUnstableSet
       MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (nhds 0)) :
     Flow.unstableSet (negativeGradientFlow f hf) x =
       ⋃ z ∈ h.localUnstableSet r rho, (negativeGradientFlow f hf).orbit (x + z) := by
-  let φ := negativeGradientFlow f hf
-  apply Subset.antisymm
-  · intro p hp
-    have hp' : Tendsto (fun t ↦ φ t p) atBot (nhds x) := by
-      simpa only [φ] using Flow.mem_unstableSet.mp hp
-    -- A backward-convergent orbit eventually satisfies both local unstable-set bounds.
-    have hcentered : Tendsto (fun t ↦ φ t p - x) atBot (nhds 0) :=
-      tendsto_sub_nhds_zero_iff.mpr hp'
-    have hball : ∀ᶠ t in atBot, φ t p - x ∈ closedBall 0 r :=
-      hcentered.eventually (closedBall_mem_nhds 0 hr)
-    have hproj : Tendsto (fun t ↦ h.unstableProjection (φ t p - x)) atBot (nhds 0) := by
-      have hpmap := h.unstableProjection.continuous.continuousAt.tendsto.comp hcentered
-      rw [map_zero] at hpmap
-      have hcomp : (fun t ↦ h.unstableProjection (φ t p - x)) =
-          (h.unstableProjection : E → E) ∘ fun t ↦ φ t p - x := rfl
-      rw [hcomp]
-      exact hpmap
-    have hprojBall : ∀ᶠ t in atBot, h.unstableProjection (φ t p - x) ∈ closedBall 0 rho :=
-      hproj.eventually (closedBall_mem_nhds 0 hrho)
-    obtain ⟨T, hT⟩ := (eventually_atBot.1 (hball.and hprojBall))
-    let z := φ T p - x
-    -- The orbit shifted by `T` is the confined backward trajectory witnessing membership.
-    have hz : z ∈ h.localUnstableSet r rho := by
-      rw [mem_localUnstableSet]
-      refine ⟨⟨fun s ↦ φ s (φ T p) - x, ?_, ?_, ?_⟩, ?_⟩
-      · have hxz : x + (φ T p - x) = φ T p := by abel
-        simpa only [φ, hxz] using
-          (isIntegralCurve_centeredNegativeGradientFlow (x := x) hf
-            (φ T p - x)).isIntegralCurveOn
-            (Iic 0)
-      · simp only [_root_.Flow.map_zero_apply, z]
-      · intro s hs
-        simpa only [φ, ← _root_.Flow.map_add, add_comm s T] using
-          (hT (T + s) (add_le_of_nonpos_right hs)).1
-      · simpa only [z, mem_closedBall, dist_zero_right] using (hT T le_rfl).2
-    refine mem_iUnion.2 ⟨z, mem_iUnion.2 ⟨hz, ?_⟩⟩
-    rw [_root_.Flow.mem_orbit_iff]
-    refine ⟨-T, ?_⟩
-    have hxz : x + z = φ T p := by dsimp only [z]; abel
-    rw [hxz, ← (negativeGradientFlow f hf).map_add]
-    simp
-  · intro p hp
-    obtain ⟨z, hp⟩ := mem_iUnion.1 hp
-    obtain ⟨hz, hp⟩ := mem_iUnion.1 hp
-    rw [_root_.Flow.mem_orbit_iff] at hp
-    obtain ⟨t, rfl⟩ := hp
-    exact Flow.isInvariant_unstableSet φ x t
-      (h.image_add_localUnstableSet_subset_unstableSet hf hconv ⟨z, hz, rfl⟩)
-
-/-- The global stable set is generated by the flow orbits through a local Lipschitz graph tangent
-to the stable Hessian subspace. -/
-theorem exists_stableSet_eq_iUnion_orbit_lipschitzGraph
-    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) (C : ℝ≥0) (hC : 0 < C) :
-    ∃ r > 0, ∃ rho > 0, ∃ g : E → E,
-      LipschitzWith C g ∧ g 0 = 0 ∧
-      HasFDerivAt g (0 : E →L[ℝ] E) 0 ∧
-      (∀ v, h.stableProjection (g v) = 0) ∧
-      (∀ v, g (h.stableProjection v) = g v) ∧
-      h.localStableSet r rho =
-        (fun v ↦ v + g v) '' ((h.contDiffAt.stableLinearSubspace : Set E) ∩ closedBall 0 rho) ∧
-      Flow.stableSet (negativeGradientFlow f hf) x =
-        ⋃ z ∈ h.localStableSet r rho, (negativeGradientFlow f hf).orbit (x + z) := by
-  obtain ⟨r, hr, rho, hrho, g, hg, hg0, hgd, hgker, hgmap, hgraph, hconv⟩ :=
-    h.exists_localStableSet_eq_lipschitzGraph C hC
-  refine ⟨r, hr, rho, hrho, g, hg, hg0, hgd, hgker, hgmap, hgraph, ?_⟩
-  exact h.stableSet_eq_iUnion_orbit_localStableSet hf hr hrho hconv
-
-/-- The global unstable set is generated by the flow orbits through a local Lipschitz graph tangent
-to the unstable Hessian subspace. -/
-theorem exists_unstableSet_eq_iUnion_orbit_lipschitzGraph
-    (h : IsNondegenerateCriticalPoint f x) (hf : LipschitzWith K (∇ f)) (C : ℝ≥0) (hC : 0 < C) :
-    ∃ r > 0, ∃ rho > 0, ∃ g : E → E,
-      LipschitzWith C g ∧ g 0 = 0 ∧
-      HasFDerivAt g (0 : E →L[ℝ] E) 0 ∧
-      (∀ v, h.unstableProjection (g v) = 0) ∧
-      (∀ v, g (h.unstableProjection v) = g v) ∧
-      h.localUnstableSet r rho =
-        (fun v ↦ v + g v) '' ((h.contDiffAt.unstableLinearSubspace : Set E) ∩ closedBall 0 rho) ∧
-      Flow.unstableSet (negativeGradientFlow f hf) x =
-        ⋃ z ∈ h.localUnstableSet r rho, (negativeGradientFlow f hf).orbit (x + z) := by
-  obtain ⟨r, hr, rho, hrho, g, hg, hg0, hgd, hgker, hgmap, hgraph, hconv⟩ :=
-    h.exists_localUnstableSet_eq_lipschitzGraph C hC
-  refine ⟨r, hr, rho, hrho, g, hg, hg0, hgd, hgker, hgmap, hgraph, ?_⟩
-  exact h.unstableSet_eq_iUnion_orbit_localUnstableSet hf hr hrho hconv
+  rw [localUnstableSet_eq_localInvariantSet]
+  exact unstableSet_eq_biUnion_orbit_localInvariantSet_Iic
+    hf h.unstableProjection hr hrho hconv
 
 end IsNondegenerateCriticalPoint
 

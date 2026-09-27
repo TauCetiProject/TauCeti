@@ -26,6 +26,9 @@ the initial condition, and the joint continuity required by `Flow` is
 * `TauCeti.hasDerivAt_flowOfLipschitz` and `TauCeti.isIntegralCurve_flowOfLipschitz`: its
   orbits solve the differential equation.
 * `TauCeti.eq_flowOfLipschitz`: every global solution is an orbit of the flow.
+* `TauCeti.eq_flowOfLipschitz_of_isIntegralCurveOn_Ici` and
+  `TauCeti.eq_flowOfLipschitz_of_isIntegralCurveOn_Iic`: the corresponding uniqueness statements
+  for solutions on a forward or backward half-line.
 * `TauCeti.flowOfLipschitz_congr`: it does not depend on the chosen Lipschitz bound.
 * `TauCeti.forall_flowOfLipschitz_eq_self_iff`: the rest points of the flow are the zeros of the
   vector field.
@@ -37,7 +40,7 @@ the initial condition, and the joint continuity required by `Flow` is
 
 public section
 
-open Filter Topology
+open Filter Set Topology
 open scoped NNReal
 
 namespace TauCeti
@@ -78,6 +81,36 @@ theorem isIntegralCurve_flowOfLipschitz (hv : LipschitzWith K v) (x : E) :
 theorem eq_flowOfLipschitz (hv : LipschitzWith K v) {γ : ℝ → E}
     (hγ : ∀ t, HasDerivAt γ (v (γ t)) t) (t : ℝ) : γ t = flowOfLipschitz v hv t (γ 0) :=
   congrFun (ODE.eq_globalSolution v hv hγ) t
+
+/-- **Forward half-line uniqueness.** An integral curve on `[0, ∞)` agrees there with the orbit
+of the globally Lipschitz flow through its value at zero. -/
+theorem eq_flowOfLipschitz_of_isIntegralCurveOn_Ici (hv : LipschitzWith K v) {γ : ℝ → E}
+    (hγ : IsIntegralCurveOn γ (fun _ y ↦ v y) (Ici 0)) {t : ℝ} (ht : 0 ≤ t) :
+    γ t = flowOfLipschitz v hv t (γ 0) := by
+  let η : ℝ → E := fun s ↦ flowOfLipschitz v hv s (γ 0)
+  have hη : IsIntegralCurve η (fun _ y ↦ v y) := isIntegralCurve_flowOfLipschitz hv (γ 0)
+  have hinit : γ 0 = η 0 := by simp only [η, _root_.Flow.map_zero_apply]
+  have heq := ODE_solution_unique (a := 0) (b := t) (v := fun _ y ↦ v y)
+    (fun _ ↦ hv) (hγ.continuousOn.mono fun _ hs ↦ hs.1)
+    (fun s hs ↦ (hγ s hs.1).mono fun u hu ↦ le_trans hs.1 hu)
+    hη.continuous.continuousOn (fun s _ ↦ (hη s).hasDerivWithinAt) hinit
+  exact heq ⟨ht, le_rfl⟩
+
+/-- **Backward half-line uniqueness.** An integral curve on `(-∞, 0]` agrees there with the orbit
+of the globally Lipschitz flow through its value at zero. -/
+theorem eq_flowOfLipschitz_of_isIntegralCurveOn_Iic (hv : LipschitzWith K v) {γ : ℝ → E}
+    (hγ : IsIntegralCurveOn γ (fun _ y ↦ v y) (Iic 0)) {t : ℝ} (ht : t ≤ 0) :
+    γ t = flowOfLipschitz v hv t (γ 0) := by
+  let η : ℝ → E := fun s ↦ flowOfLipschitz v hv s (γ 0)
+  have hη : IsIntegralCurve η (fun _ y ↦ v y) := isIntegralCurve_flowOfLipschitz hv (γ 0)
+  have hinit : γ 0 = η 0 := by simp only [η, _root_.Flow.map_zero_apply]
+  have heq := ODE_solution_unique_of_mem_Icc_left (a := t) (b := 0)
+    (v := fun _ y ↦ v y) (s := fun _ ↦ univ) (K := K)
+    (fun _ _ ↦ hv.lipschitzOnWith) (hγ.continuousOn.mono fun _ hs ↦ hs.2)
+    (fun s hs ↦ (hγ s hs.2).mono fun u hu ↦ le_trans hu hs.2)
+    (fun _ _ ↦ mem_univ _) hη.continuous.continuousOn
+    (fun s _ ↦ (hη s).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) hinit
+  exact heq ⟨le_rfl, ht⟩
 
 /-- **The rest points of the flow are the zeros of the vector field.** -/
 theorem forall_flowOfLipschitz_eq_self_iff (hv : LipschitzWith K v) (x : E) :
