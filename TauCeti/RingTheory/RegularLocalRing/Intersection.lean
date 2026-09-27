@@ -77,12 +77,11 @@ ideal of the local ring `R`, a domain by primality of `(f)`, and of dimension on
 `TauCeti.ringKrullDim_quotient_span_singleton_eq_one` along the non-zero-divisor `f`. The image of
 `g` in it is a nonzero element of its maximal ideal, so the ideal it generates has the maximal
 ideal of the curve in its radical; an ideal of `R` that contains the kernel of the quotient map is
-determined by its image there, by `TauCeti.Ideal.eq_of_map_eq_of_le_ker` in
-`TauCeti.RingTheory.Ideal.Maps`, so that equality pulls back to the radical of `(f, g)` being
-`𝔪`. The parameter case is that same prime statement of `TauCeti.RingTheory.Intersection`
-specialised to a parameter, whose principal ideal is prime by
-`TauCeti.span_singleton_isPrime_of_notMem_sq`. The infinite length of the curve over itself, which
-absorbs the remaining summand in the additivity statement, is
+determined by its image there, by `Ideal.map_eq_iff_sup_ker_eq_of_surjective` applied to that
+quotient map, so that equality pulls back to the radical of `(f, g)` being `𝔪`. The parameter case
+is that same prime statement of `TauCeti.RingTheory.Intersection` specialised to a parameter, whose
+principal ideal is prime by `TauCeti.span_singleton_isPrime_of_notMem_sq`. The infinite length of
+the curve over itself, which absorbs the remaining summand in the additivity statement, is
 `TauCeti.length_self_eq_top_of_ringKrullDim_pos` in `TauCeti.RingTheory.Length`.
 
 ## References

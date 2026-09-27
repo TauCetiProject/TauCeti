@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.KrullDimension.LocalRing
-public import TauCeti.RingTheory.Ideal.Maps
 public import TauCeti.RingTheory.KrullDimension.Regular
 public import TauCeti.RingTheory.Length
 
@@ -104,7 +103,8 @@ noetherian local ring, lying in `𝔪` as a prime `(f)` is a proper ideal, leave
 Krull dimension one, and a nonzero element of the maximal ideal of a one-dimensional local domain
 has that maximal ideal in the radical of the ideal it generates. The two ideals are finally
 compared through the quotient by `(f)`, both containing the kernel of that quotient map, by
-`TauCeti.Ideal.eq_of_map_eq_of_le_ker` in `TauCeti.RingTheory.Ideal.Maps`.
+`Ideal.map_eq_iff_sup_ker_eq_of_surjective`, which compares the two suprema with the kernel, each
+of which is then the ideal itself.
 
 ## References
 
@@ -378,10 +378,24 @@ theorem radical_span_pair_eq_maximalIdeal_of_prime (hd : ringKrullDim R = 2) {f 
       (by rw [Ideal.mk_ker]; exact hle'), hmap, hA,
       map_maximalIdeal_of_surjective (f := Ideal.Quotient.mk (Ideal.span {f}))
         Ideal.Quotient.mk_surjective]
-  -- both ideals contain the kernel `(f)` of the quotient map, so their images determine them
-  exact Ideal.eq_of_map_eq_of_le_ker (Ideal.Quotient.mk (Ideal.span {f}))
-    Ideal.Quotient.mk_surjective hrad (by rw [Ideal.mk_ker]; exact hle'.trans Ideal.le_radical)
-    (by rw [Ideal.mk_ker]; exact (Ideal.span_singleton_le_iff_mem (I := maximalIdeal R)).mpr hfm)
+  -- both ideals contain the kernel `(f)` of the quotient map, so their images determine them:
+  -- `Ideal.map_eq_iff_sup_ker_eq_of_surjective` compares the two suprema with that kernel, and
+  -- each of the two suprema is the ideal itself
+  have hk : RingHom.ker (Ideal.Quotient.mk (Ideal.span {f})) ≤ (Ideal.span {f, g}).radical := by
+    rw [Ideal.mk_ker]
+    exact hle'.trans Ideal.le_radical
+  have hm : RingHom.ker (Ideal.Quotient.mk (Ideal.span {f})) ≤ maximalIdeal R := by
+    rw [Ideal.mk_ker]
+    exact (Ideal.span_singleton_le_iff_mem (I := maximalIdeal R)).mpr hfm
+  have h1 : (Ideal.span {f, g}).radical
+      = (Ideal.span {f, g}).radical ⊔ RingHom.ker (Ideal.Quotient.mk (Ideal.span {f})) :=
+    (sup_eq_left.mpr hk).symm
+  have h2 : maximalIdeal R
+      = maximalIdeal R ⊔ RingHom.ker (Ideal.Quotient.mk (Ideal.span {f})) :=
+    (sup_eq_left.mpr hm).symm
+  rw [h1, h2]
+  exact (Ideal.map_eq_iff_sup_ker_eq_of_surjective (Ideal.Quotient.mk (Ideal.span {f}))
+    Ideal.Quotient.mk_surjective).mp hrad
 
 /-- **A proper intersection with an irreducible first equation in a two-dimensional noetherian
 local ring has finite local intersection multiplicity.** This is the finiteness of
