@@ -175,6 +175,7 @@ theorem singleSub_one (a : k) : singleSub k G a (1 : G) = 0 := by
 
 /-- The coefficients of an element of the augmentation ideal sum to zero after inclusion in the
 group ring. -/
+@[simp]
 theorem sum_coeff_augmentationι (x : augmentationIdeal k G) :
     ((augmentationι k G).hom x).coeff.sum (fun _ a ↦ a) = 0 := by
   have h : (augmentation k G).hom ((augmentationι k G).hom x) = 0 := by

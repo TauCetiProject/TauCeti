@@ -39,8 +39,8 @@ It is adapted to Mathlib's `Rep` and low-degree cohomology API from
 
 * `Rep.splittingModuleSES_shortExact`, `Rep.splittingModuleSES_res_shortExact`: the
   splitting-module sequence is short exact, also after restriction.
-* `Rep.map_splittingModuleIncl_eq_zero`: the defining class maps to zero in the splitting
-  module's second cohomology.
+* `Rep.map_splittingModuleIncl_res_eq_zero`: after restriction along any group homomorphism, the
+  defining class maps to zero in the splitting module's second cohomology.
 -/
 
 public noncomputable section
@@ -116,8 +116,7 @@ theorem splittingTwist_mul (g₁ g₂ : G) (x : augmentationIdeal k G) :
   exact Finsupp.sum_congr fun _ _ ↦ rfl
 
 /-- The **splitting module** `A(u)` of a class `u ∈ H²(G, A)`. Its underlying module is
-`I_G × A`; the action is twisted by a chosen cocycle representing `u`. -/
-@[expose]
+linearly equivalent to `I_G × A`; the action is twisted by a chosen cocycle representing `u`. -/
 def splittingModule : Rep k G :=
   Rep.of
     { toFun g :=
@@ -139,12 +138,28 @@ def splittingModule : Rep k G :=
         · simp
         · simp [splittingTwist_mul, add_assoc] }
 
-/-- The action on the splitting module, in terms of the chosen cocycle representative. -/
+/-- The underlying linear equivalence from the splitting module to `I_G × A`. -/
+def splittingModuleEquiv : splittingModule A u ≃ₗ[k] augmentationIdeal k G × A :=
+  LinearEquiv.refl k (augmentationIdeal k G × A)
+
+/-- Construct an element of the splitting module from its augmentation-ideal and coefficient
+coordinates. -/
+def splittingModuleMk (x : augmentationIdeal k G) (a : A) : splittingModule A u :=
+  (splittingModuleEquiv A u).symm (x, a)
+
+/-- The coordinates of an element constructed by `splittingModuleMk`. -/
 @[simp]
-theorem splittingModule_ρ_apply (g : G) (x : splittingModule A u) :
-    (splittingModule A u).ρ g x =
-      ((augmentationIdeal k G).ρ g x.1,
-        A.ρ g x.2 + splittingTwist A u g x.1) :=
+theorem splittingModuleEquiv_mk (x : augmentationIdeal k G) (a : A) :
+    splittingModuleEquiv A u (splittingModuleMk A u x a) = (x, a) := by
+  simp [splittingModuleMk]
+
+/-- The action on the splitting module, transported to `I_G × A`. -/
+@[simp]
+theorem splittingModuleEquiv_ρ_apply (g : G) (x : splittingModule A u) :
+    splittingModuleEquiv A u ((splittingModule A u).ρ g x) =
+      ((augmentationIdeal k G).ρ g (splittingModuleEquiv A u x).1,
+        A.ρ g (splittingModuleEquiv A u x).2 +
+          splittingTwist A u g (splittingModuleEquiv A u x).1) :=
   (rfl)
 
 /-- The inclusion `A → A(u)` into the second factor of the splitting module. -/
@@ -152,19 +167,20 @@ def splittingModuleIncl : A ⟶ splittingModule A u :=
   ofHom ⟨LinearMap.inr k (augmentationIdeal k G) A, fun g ↦ by
     ext a <;> simp⟩
 
-/-- The inclusion into the splitting module sends `a` to `(0,a)`. -/
+/-- Under `splittingModuleEquiv`, the inclusion sends `a` to `(0, a)`. -/
 @[simp]
-theorem splittingModuleIncl_apply (a : A) : splittingModuleIncl A u a = (0, a) :=
+theorem splittingModuleEquiv_incl_apply (a : A) :
+    splittingModuleEquiv A u (splittingModuleIncl A u a) = (0, a) :=
   (rfl)
 
 /-- The projection `A(u) → I_G` from the splitting module to the augmentation ideal. -/
 def splittingModuleProj : splittingModule A u ⟶ augmentationIdeal k G :=
   ofHom ⟨LinearMap.fst k (augmentationIdeal k G) A, fun _ ↦ rfl⟩
 
-/-- The projection from the splitting module returns its first coordinate. -/
+/-- The projection from the splitting module returns the first transported coordinate. -/
 @[simp]
 theorem splittingModuleProj_apply (x : splittingModule A u) :
-    splittingModuleProj A u x = x.1 :=
+    splittingModuleProj A u x = (splittingModuleEquiv A u x).1 :=
   (rfl)
 
 /-- The short complex `A → A(u) → I_G` associated to the splitting module. -/
@@ -221,8 +237,8 @@ theorem splittingModuleSES_res_shortExact {H : Type*} [Monoid H] (f : H →* G) 
 /-- The one-cochain `g ↦ ([g]-[1], g • c(1,1))` in the splitting module. Its coboundary is
 the image of the chosen representative `c` of `u`. -/
 def splittingModuleCochain (g : G) : splittingModule A u :=
-  (TauCeti.AugmentationIdeal.singleSub k G 1 g,
-    A.ρ g (h2Representative A u (1, 1)))
+  splittingModuleMk A u (TauCeti.AugmentationIdeal.singleSub k G 1 g)
+    (A.ρ g (h2Representative A u (1, 1)))
 
 /-- The coboundary of `splittingModuleCochain` is the image of the chosen cocycle representative
 under the inclusion `A → A(u)`. -/
@@ -230,19 +246,9 @@ theorem splittingModuleCochain_coboundary (g h : G) :
     (splittingModule A u).ρ g (splittingModuleCochain A u h) -
         splittingModuleCochain A u (g * h) + splittingModuleCochain A u g =
       splittingModuleIncl A u (h2Representative A u (g, h)) := by
-  rw [splittingModule_ρ_apply, splittingModuleCochain, splittingModuleCochain,
-    splittingModuleCochain, splittingModuleIncl_apply]
-  -- Addition and subtraction on the exposed `Rep.of` carrier have no exported projection
-  -- rewrite lemmas, so normalize the carrier once before applying the `Prod` interface.
-  change
-    (((((augmentationIdeal k G).ρ g) (TauCeti.AugmentationIdeal.singleSub k G 1 h),
-          A.ρ g (A.ρ h (h2Representative A u (1, 1))) +
-            splittingTwist A u g (TauCeti.AugmentationIdeal.singleSub k G 1 h)) -
-        (TauCeti.AugmentationIdeal.singleSub k G 1 (g * h),
-          A.ρ (g * h) (h2Representative A u (1, 1))) +
-        (TauCeti.AugmentationIdeal.singleSub k G 1 g,
-          A.ρ g (h2Representative A u (1, 1)))) :
-      augmentationIdeal k G × A) = (0, h2Representative A u (g, h))
+  apply (splittingModuleEquiv A u).injective
+  simp only [map_add, map_sub, splittingModuleEquiv_ρ_apply, splittingModuleCochain,
+    splittingModuleEquiv_mk, splittingModuleEquiv_incl_apply]
   apply Prod.ext
   · rw [Prod.fst_add, Prod.fst_sub, TauCeti.AugmentationIdeal.ρ_singleSub]
     abel_nf
@@ -260,33 +266,44 @@ theorem splittingModuleCochain_coboundary (g h : G) :
           (h2Representative A u).2 g 1 1
     simp [hone]
 
-/-- The chosen representative of `u` becomes a coboundary after mapping it into the splitting
-module. -/
-theorem h2Representative_mem_coboundaries :
+/-- The composite of the chosen representative of `u` with the splitting-module inclusion is a
+coboundary. -/
+theorem splittingModuleIncl_comp_h2Representative_mem_coboundaries :
     (splittingModuleIncl A u) ∘ (h2Representative A u) ∈
       groupCohomology.coboundaries₂ (splittingModule A u) := by
   refine ⟨splittingModuleCochain A u, ?_⟩
   ext g
   exact splittingModuleCochain_coboundary A u g.1 g.2
 
-/-- The defining class `u` maps to zero in `H²(G, A(u))`. -/
+/-- After restriction along any group homomorphism, the defining class `u` maps to zero in the
+second cohomology of the restricted splitting module. -/
 @[simp]
-theorem map_splittingModuleIncl_eq_zero :
-    groupCohomology.map (MonoidHom.id G) (splittingModuleIncl A u) 2 u = 0 := by
+theorem map_splittingModuleIncl_res_eq_zero {H : Type u} [Group H] (f : H →* G) :
+    groupCohomology.map f ((resFunctor f).map (splittingModuleIncl A u)) 2 u = 0 := by
   calc
-    _ = groupCohomology.map (MonoidHom.id G) (splittingModuleIncl A u) 2
+    _ = groupCohomology.map f ((resFunctor f).map (splittingModuleIncl A u)) 2
         (groupCohomology.H2π A (h2Representative A u)) := by
       rw [H2π_h2Representative]
-    _ = groupCohomology.H2π (splittingModule A u)
-        (groupCohomology.mapCocycles₂ (MonoidHom.id G) (splittingModuleIncl A u)
+    _ = groupCohomology.H2π (res f (splittingModule A u))
+        (groupCohomology.mapCocycles₂ f ((resFunctor f).map (splittingModuleIncl A u))
           (h2Representative A u)) := by
       rw [← ModuleCat.comp_apply, groupCohomology.H2π_comp_map, ModuleCat.comp_apply]
     _ = 0 := by
       rw [groupCohomology.H2π_eq_zero_iff]
-      -- `mapCocycles₂` at the identity group homomorphism is definitionally postcomposition by
-      -- the coefficient morphism; there is no separate application lemma for this wrapper.
-      change (splittingModuleIncl A u) ∘ (h2Representative A u) ∈
-        groupCohomology.coboundaries₂ (splittingModule A u)
-      exact h2Representative_mem_coboundaries A u
+      refine ⟨fun g ↦ splittingModuleCochain A u (f g), ?_⟩
+      ext g
+      change
+        (splittingModule A u).ρ (f g.1) (splittingModuleCochain A u (f g.2)) -
+            splittingModuleCochain A u (f (g.1 * g.2)) +
+              splittingModuleCochain A u (f g.1) =
+          splittingModuleIncl A u (h2Representative A u (f g.1, f g.2))
+      rw [map_mul]
+      exact splittingModuleCochain_coboundary A u (f g.1) (f g.2)
+
+/-- The defining class `u` maps to zero in `H²(G, A(u))`. -/
+@[simp]
+theorem map_splittingModuleIncl_eq_zero :
+    groupCohomology.map (MonoidHom.id G) (splittingModuleIncl A u) 2 u = 0 := by
+  exact map_splittingModuleIncl_res_eq_zero A u (MonoidHom.id G)
 
 end Rep
