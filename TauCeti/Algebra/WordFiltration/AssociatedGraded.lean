@@ -27,8 +27,6 @@ Its graded-algebra packaging adapts the pattern in Mathlib's
 
 ## Main definitions
 
-* `TauCeti.Algebra.wordFiltration.previousRestricted f k`: the preceding filtration step viewed
-  inside the degree-`k` step.
 * `TauCeti.Algebra.wordFiltration.GradedPiece f k`: the degree-`k` successive quotient.
 * `TauCeti.Algebra.wordFiltration.AssociatedGraded f`: the direct sum
   `⨁ k, GradedPiece f k` of the homogeneous pieces.
