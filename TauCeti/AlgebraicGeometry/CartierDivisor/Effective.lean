@@ -138,26 +138,32 @@ theorem isEffective_iff_toRationalFunctions_mem_sections {D : CartierDivisor X} 
 /-- An effective Cartier divisor has the canonical inclusion `𝒪_X ⟶ 𝒪_X(D)`.
 Its composite with `𝒪_X(D) ⟶ 𝒦_X` is the usual inclusion of regular functions into rational
 functions. -/
-def regularToSheaf (D : CartierDivisor X) (hD : D.IsEffective) :
+def unitToSheaf (D : CartierDivisor X) (hD : D.IsEffective) :
     SheafOfModules.unit X.ringCatSheaf ⟶ D.sheaf :=
   D.sheafLift (Scheme.toRationalFunctions X)
     (isEffective_iff_toRationalFunctions_mem_sections.mp hD)
 
 /-- The inclusion `𝒪_X ⟶ 𝒪_X(D)` of an effective Cartier divisor agrees with the usual
 inclusion after embedding both sheaves in rational functions. -/
-@[simp]
-theorem regularToSheaf_ι (D : CartierDivisor X) (hD : D.IsEffective) :
-    D.regularToSheaf hD ≫ D.sheafι = Scheme.toRationalFunctions X :=
+@[simp, reassoc]
+theorem unitToSheaf_ι (D : CartierDivisor X) (hD : D.IsEffective) :
+    D.unitToSheaf hD ≫ D.sheafι = Scheme.toRationalFunctions X :=
   D.sheafLift_ι _ _
+
+/-- The canonical map from regular functions to the sheaf of an effective Cartier divisor
+is a monomorphism. -/
+instance (D : CartierDivisor X) (hD : D.IsEffective) : Mono (D.unitToSheaf hD) := by
+  exact @mono_of_mono_fac _ _ _ _ _ _ _ _
+    (Scheme.instMonoModulesToRationalFunctions (X := X)) (D.unitToSheaf_ι hD)
 
 /-- Effectivity is equivalent to the existence of a map `𝒪_X ⟶ 𝒪_X(D)` whose composite
 with the inclusion into rational functions is the usual inclusion of regular functions. -/
-theorem isEffective_iff_exists_regularToSheaf {D : CartierDivisor X} :
+theorem isEffective_iff_exists_unitToSheaf {D : CartierDivisor X} :
     D.IsEffective ↔ ∃ φ : SheafOfModules.unit X.ringCatSheaf ⟶ D.sheaf,
       φ ≫ D.sheafι = Scheme.toRationalFunctions X := by
   constructor
   · intro hD
-    exact ⟨D.regularToSheaf hD, D.regularToSheaf_ι hD⟩
+    exact ⟨D.unitToSheaf hD, D.unitToSheaf_ι hD⟩
   · rintro ⟨φ, hφ⟩
     apply isEffective_iff_toRationalFunctions_mem_sections.mpr
     intro U s
@@ -167,12 +173,12 @@ theorem isEffective_iff_exists_regularToSheaf {D : CartierDivisor X} :
 
 /-- The map from regular functions to `𝒪_X(D)` is determined by its composite with the
 inclusion into rational functions. -/
-theorem eq_regularToSheaf (D : CartierDivisor X) (hD : D.IsEffective)
+theorem eq_unitToSheaf (D : CartierDivisor X) (hD : D.IsEffective)
     (φ : SheafOfModules.unit X.ringCatSheaf ⟶ D.sheaf)
     (hφ : φ ≫ D.sheafι = Scheme.toRationalFunctions X) :
-    φ = D.regularToSheaf hD := by
+    φ = D.unitToSheaf hD := by
   apply (cancel_mono D.sheafι).mp
-  exact hφ.trans (D.regularToSheaf_ι hD).symm
+  exact hφ.trans (D.unitToSheaf_ι hD).symm
 
 /-- A principal Cartier divisor is effective exactly when its rational equation is regular
 on the whole scheme. -/
