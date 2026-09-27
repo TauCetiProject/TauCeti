@@ -85,38 +85,6 @@ theorem hilbertSymbol_mul_left (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
   -- the first-argument law is the second-argument law read through the symmetry of the symbol
   simp only [hilbertSymbol_comm _ a, hilbertSymbol_mul_right h2]
 
-/-- The square-class Hilbert pairing is additive in its first argument in odd residue
-characteristic. -/
-@[simp] theorem hilbertSymbolOnSquareClasses_add_left (h2 : IsUnit (2 : 𝒪[K]))
-    (x y z : SquareClassGroup K) :
-    hilbertSymbolOnSquareClasses (x + y) z =
-      hilbertSymbolOnSquareClasses x z * hilbertSymbolOnSquareClasses y z := by
-  let : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
-  let a := Additive.toMul (Quotient.out x)
-  let b := Additive.toMul (Quotient.out y)
-  let c := Additive.toMul (Quotient.out z)
-  have hx : squareClass a = x := by
-    rw [squareClass_def, ofMul_toMul]
-    exact Quotient.out_eq x
-  have hy : squareClass b = y := by
-    rw [squareClass_def, ofMul_toMul]
-    exact Quotient.out_eq y
-  have hz : squareClass c = z := by
-    rw [squareClass_def, ofMul_toMul]
-    exact Quotient.out_eq z
-  rw [← hx, ← hy, ← hz, ← squareClass_mul]
-  simp only [hilbertSymbolOnSquareClasses_squareClass, hilbertSymbol_mul_left h2]
-
-/-- The square-class Hilbert pairing is additive in its second argument in odd residue
-characteristic. -/
-@[simp] theorem hilbertSymbolOnSquareClasses_add_right (h2 : IsUnit (2 : 𝒪[K]))
-    (x y z : SquareClassGroup K) :
-    hilbertSymbolOnSquareClasses x (y + z) =
-      hilbertSymbolOnSquareClasses x y * hilbertSymbolOnSquareClasses x z := by
-  let : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
-  rw [hilbertSymbolOnSquareClasses_comm, hilbertSymbolOnSquareClasses_add_left h2,
-    hilbertSymbolOnSquareClasses_comm y, hilbertSymbolOnSquareClasses_comm z]
-
 /-- **Nondegeneracy of the local Hilbert symbol.** Away from residue characteristic two, for every
 nonsquare `a` there is a `b ∈ Kˣ` with `(a, b)_K = -1`. It is the field-level consequence of
 the norm index theorem, `TauCeti.exists_hilbertSymbol_eq_neg_one_of_index_eq_two`, and so needs
