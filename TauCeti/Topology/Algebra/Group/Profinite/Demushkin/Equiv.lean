@@ -18,6 +18,8 @@ The maps on cohomology use the identity on trivial `ZMod p` coefficients.
 
 * `TauCeti.IsDemushkin.of_equiv`: transport the Demushkin property along a topological
   group isomorphism.
+* `TauCeti.isDemushkin_congr`: the Demushkin property is invariant under a topological
+  group isomorphism.
 -/
 
 public section
@@ -68,5 +70,9 @@ theorem IsDemushkin.of_equiv (hG : IsDemushkin p G) (e : G ≃ₜ* H) :
     refine ⟨e₁ a₀, ?_⟩
     rw [← e₁.apply_symm_apply b, hcup]
     exact e₂.map_ne_zero_iff.mpr ha₀
+
+/-- A topological group isomorphism preserves the Demushkin property in both directions. -/
+theorem isDemushkin_congr (e : G ≃ₜ* H) : IsDemushkin p G ↔ IsDemushkin p H :=
+  ⟨fun h => IsDemushkin.of_equiv p h e, fun h => IsDemushkin.of_equiv p h e.symm⟩
 
 end TauCeti

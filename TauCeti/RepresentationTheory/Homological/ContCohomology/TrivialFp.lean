@@ -166,6 +166,7 @@ variable (p : ℕ) {G H K : Type u} [Group G] [TopologicalSpace G] [IsTopologica
 
 omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
 /-- Restriction along a continuous group homomorphism preserves trivial coefficients. -/
+@[simp]
 theorem res_trivialFp_hom (φ : H →ₜ* G) :
     TopRep.res (φ : H →* G) (trivialFp p G) = trivialFp p H :=
   res_trivial (ZMod p) G (ULift.{u} (ZMod p)) φ.toMonoidHom
@@ -200,6 +201,7 @@ theorem cohomFpMap_id (n : ℕ) :
   simpa only [cohomFpMap, h] using (ContinuousCohomology.map_id (trivialFp p G) n)
 
 /-- Cohomology maps with trivial coefficients compose contravariantly. -/
+@[simp]
 theorem cohomFpMap_comp (φ : H →ₜ* G) (ψ : K →ₜ* H) (n : ℕ) :
     cohomFpMap p (φ.comp ψ) n = cohomFpMap p φ n ≫ cohomFpMap p ψ n := by
   unfold cohomFpMap
