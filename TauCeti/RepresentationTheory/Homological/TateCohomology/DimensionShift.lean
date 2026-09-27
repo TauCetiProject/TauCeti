@@ -108,17 +108,10 @@ theorem dimensionShiftUpIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
     (tateCohomologyFunctor n).map (dimensionShiftUpMap f) ≫
         (dimensionShiftUpIso B n).hom =
       (dimensionShiftUpIso A n).hom ≫ (tateCohomologyFunctor (n + 1)).map f := by
-  let φ : ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
-        (coindBotUnit_comp_dimensionShiftUpπ A) ⟶
-      ShortComplex.mk (coindBotUnit B) (dimensionShiftUpπ B)
-        (coindBotUnit_comp_dimensionShiftUpπ B) :=
-    { τ₁ := f
-      τ₂ := coindBotMap f
-      τ₃ := dimensionShiftUpMap f
-      comm₁₂ := coindBotUnit_naturality f
-      comm₂₃ := (dimensionShiftUpπ_naturality f).symm }
+  let φ := dimensionShiftUpSESMap f
   rw [dimensionShiftUpIso_hom, dimensionShiftUpIso_hom]
-  exact (_root_.TateCohomology.δ_naturality
+  simpa only [φ, dimensionShiftUpSESMap_τ₁, dimensionShiftUpSESMap_τ₃] using
+    (_root_.TateCohomology.δ_naturality
     (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact A)
     (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact B) φ n).symm
 
@@ -137,19 +130,21 @@ theorem dimensionShiftDownIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
     (tateCohomologyFunctor n).map f ≫ (dimensionShiftDownIso B n).hom =
       (dimensionShiftDownIso A n).hom ≫
         (tateCohomologyFunctor (n + 1)).map (dimensionShiftDownMap f) := by
-  let φ : ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
-        (dimensionShiftDownι_comp_indBotCounit A) ⟶
-      ShortComplex.mk (dimensionShiftDownι B) (indBotCounit B)
-        (dimensionShiftDownι_comp_indBotCounit B) :=
-    { τ₁ := dimensionShiftDownMap f
-      τ₂ := indBotMap f
-      τ₃ := f
-      comm₁₂ := dimensionShiftDownι_naturality f
-      comm₂₃ := indBotCounit_naturality f }
+  let φ := dimensionShiftDownSESMap f
   rw [dimensionShiftDownIso_hom, dimensionShiftDownIso_hom]
-  exact (_root_.TateCohomology.δ_naturality
+  simpa only [φ, dimensionShiftDownSESMap_τ₁, dimensionShiftDownSESMap_τ₃] using
+    (_root_.TateCohomology.δ_naturality
     (by simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact A)
     (by simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact B) φ n).symm
+
+variable {A} in
+/-- The inverse downward shift commutes with a coefficient morphism. -/
+theorem dimensionShiftDownIso_inv_naturality {B : Rep k G} (f : A ⟶ B) :
+    (tateCohomologyFunctor (n + 1)).map (dimensionShiftDownMap f) ≫
+        (dimensionShiftDownIso B n).inv =
+      (dimensionShiftDownIso A n).inv ≫ (tateCohomologyFunctor n).map f := by
+  rw [Iso.comp_inv_eq, Category.assoc, dimensionShiftDownIso_hom_naturality,
+    Iso.inv_hom_id_assoc]
 
 /-- Vanishing in degree `n` of an upward shift is vanishing in degree `n + 1` of the original
 module. -/
@@ -225,23 +220,34 @@ theorem tensorDimensionShiftUpIso_hom_naturality_right {B : Rep k G} (f : A ⟶ 
         (tensorDimensionShiftUpIso B M i j hij).hom =
       (tensorDimensionShiftUpIso A M i j hij).hom ≫
         (tateCohomologyFunctor j).map (M ◁ f) := by
-  let φ : ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
-        (coindBotUnit_comp_dimensionShiftUpπ A) ⟶
-      ShortComplex.mk (coindBotUnit B) (dimensionShiftUpπ B)
-        (coindBotUnit_comp_dimensionShiftUpπ B) :=
-    { τ₁ := f
-      τ₂ := coindBotMap f
-      τ₃ := dimensionShiftUpMap f
-      comm₁₂ := coindBotUnit_naturality f
-      comm₂₃ := (dimensionShiftUpπ_naturality f).symm }
+  let φ := dimensionShiftUpSESMap f
+  have hφ₁ : ((tensorLeft M).mapShortComplex.map φ).τ₁ = M ◁ f := by
+    change (tensorLeft M).map φ.τ₁ = M ◁ f
+    simp [φ, dimensionShiftUpSESMap_τ₁, tensorLeft, curriedTensor]
+  have hφ₃ : ((tensorLeft M).mapShortComplex.map φ).τ₃ =
+      M ◁ dimensionShiftUpMap f := by
+    change (tensorLeft M).map φ.τ₃ = M ◁ dimensionShiftUpMap f
+    simp [φ, dimensionShiftUpSESMap_τ₃, tensorLeft, curriedTensor]
   subst j
   rw [tensorDimensionShiftUpIso_hom, tensorDimensionShiftUpIso_hom]
-  exact (_root_.TateCohomology.δ_naturality
+  simpa only [hφ₁, hφ₃] using
+    (_root_.TateCohomology.δ_naturality
     (by simpa only [dimensionShiftUpSES_def, Functor.mapShortComplex_obj] using
       dimensionShiftUpSES_tensorLeft_shortExact A M)
     (by simpa only [dimensionShiftUpSES_def, Functor.mapShortComplex_obj] using
       dimensionShiftUpSES_tensorLeft_shortExact B M)
     ((tensorLeft M).mapShortComplex.map φ) i).symm
+
+variable {A} in
+/-- The inverse tensored upward shift is natural in its shifting representation. -/
+theorem tensorDimensionShiftUpIso_inv_naturality_right {B : Rep k G} (f : A ⟶ B)
+    (i j : ℤ) (hij : i + 1 = j) :
+    (tateCohomologyFunctor j).map (M ◁ f) ≫
+        (tensorDimensionShiftUpIso B M i j hij).inv =
+      (tensorDimensionShiftUpIso A M i j hij).inv ≫
+        (tateCohomologyFunctor i).map (M ◁ dimensionShiftUpMap f) := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    tensorDimensionShiftUpIso_hom_naturality_right, Iso.inv_hom_id_assoc]
 
 variable {A} in
 /-- The tensored downward dimension shift is natural in its shifting representation. -/
@@ -251,18 +257,18 @@ theorem tensorDimensionShiftDownIso_hom_naturality_right {B : Rep k G} (f : A �
         (tensorDimensionShiftDownIso B M i j hij).hom =
       (tensorDimensionShiftDownIso A M i j hij).hom ≫
         (tateCohomologyFunctor j).map (M ◁ dimensionShiftDownMap f) := by
-  let φ : ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
-        (dimensionShiftDownι_comp_indBotCounit A) ⟶
-      ShortComplex.mk (dimensionShiftDownι B) (indBotCounit B)
-        (dimensionShiftDownι_comp_indBotCounit B) :=
-    { τ₁ := dimensionShiftDownMap f
-      τ₂ := indBotMap f
-      τ₃ := f
-      comm₁₂ := dimensionShiftDownι_naturality f
-      comm₂₃ := indBotCounit_naturality f }
+  let φ := dimensionShiftDownSESMap f
+  have hφ₁ : ((tensorLeft M).mapShortComplex.map φ).τ₁ =
+      M ◁ dimensionShiftDownMap f := by
+    change (tensorLeft M).map φ.τ₁ = M ◁ dimensionShiftDownMap f
+    simp [φ, dimensionShiftDownSESMap_τ₁, tensorLeft, curriedTensor]
+  have hφ₃ : ((tensorLeft M).mapShortComplex.map φ).τ₃ = M ◁ f := by
+    change (tensorLeft M).map φ.τ₃ = M ◁ f
+    simp [φ, dimensionShiftDownSESMap_τ₃, tensorLeft, curriedTensor]
   subst j
   rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom]
-  exact (_root_.TateCohomology.δ_naturality
+  simpa only [hφ₁, hφ₃] using
+    (_root_.TateCohomology.δ_naturality
     (by simpa only [dimensionShiftDownSES_def, Functor.mapShortComplex_obj] using
       dimensionShiftDownSES_tensorLeft_shortExact A M)
     (by simpa only [dimensionShiftDownSES_def, Functor.mapShortComplex_obj] using
@@ -293,6 +299,17 @@ theorem tensorDimensionShiftUpIso_hom_naturality_left {M' : Rep k G} (f : M ⟶ 
       ((ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
         (coindBotUnit_comp_dimensionShiftUpπ A)).mapNatTrans ((curriedTensor (Rep k G)).map f)))
     _ _ i j hij).symm
+
+variable {M} in
+/-- The inverse tensored upward shift is natural in the tensoring representation. -/
+theorem tensorDimensionShiftUpIso_inv_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+    (hij : i + 1 = j) :
+    (tateCohomologyFunctor j).map (f ▷ A) ≫
+        (tensorDimensionShiftUpIso A M' i j hij).inv =
+      (tensorDimensionShiftUpIso A M i j hij).inv ≫
+        (tateCohomologyFunctor i).map (f ▷ dimensionShiftUp A) := by
+  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftUpIso_hom_naturality_left,
+    Iso.inv_hom_id_assoc]
 
 variable {M} in
 /-- The tensored downward dimension shift is natural in the tensoring representation. -/
