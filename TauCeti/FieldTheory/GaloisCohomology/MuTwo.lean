@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 
@@ -68,7 +69,7 @@ the class of `a` to `(a)`.
   it a morphism of coefficient objects.
 * `TauCeti.kummerClass_eq_zero_iff_square`: the Kummer class of a unit of `Kˣ` vanishes exactly
   at the squares in `Kˣ`.
-* `TauCeti.kummerSquareClassEquiv_kummerClass`: a square class is sent to the Kummer class of
+* `TauCeti.kummerSquareClassEquiv_squareClass`: a square class is sent to the Kummer class of
   any of its representatives.
 -/
 
@@ -403,41 +404,51 @@ theorem kummerClass_eq_zero_iff_square {a : Kˣ} :
 
 /-! ### The Kummer isomorphism on square classes -/
 
-/-- The additive form of the Kummer map at `n = 2`: the Kummer class of a unit, read as an element
-of the explicit `H¹(G_K, μ₂)`. -/
-private noncomputable def kummerMapAdd2 :
-    Additive Kˣ →+ H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2) :=
-  (kummerMap K 2 (isUnit_of_invertible (2 : K))).toAdditiveLeft
+/-- **The literal square-class quotient is the power-class quotient at `n = 2`**: the subgroup of
+`n`th powers is at `n = 2` the subgroup of squares, so `TauCeti.MultiplicativeSquareClassGroup K`,
+the literal quotient `Kˣ ⨿ (Kˣ)²`, is the quotient `TauCeti.powerClassQuotient Kˣ 2` that
+`TauCeti.kummerIso` is stated on. The two subgroups are compared through their two descriptions of
+their elements, the squares and the `n`th powers at `n = 2` (`TauCeti.mem_powerSubgroup_iff`). -/
+private noncomputable def squareClassQuotientEquiv :
+    MultiplicativeSquareClassGroup K ≃* powerClassQuotient Kˣ 2 :=
+  QuotientGroup.quotientMulEquivOfEq (by
+    -- The two subgroups are identified through the two descriptions of their elements, the
+    -- squares and the `n`th powers at `n = 2` (`TauCeti.mem_powerSubgroup_iff`).
+    ext g
+    rw [Subgroup.mem_square, mem_powerSubgroup_iff]
+    constructor
+    · rintro ⟨r, rfl⟩
+      exact ⟨r, by rw [pow_two]⟩
+    · rintro ⟨r, hr⟩
+      exact ⟨r, by rw [← hr, pow_two]⟩)
 
-/-- **The Kummer map at `n = 2` kills exactly the squares.** The kernel of the multiplicative
-Kummer map is the power subgroup `(Kˣ)²` (`TauCeti.ker_kummerMap`), and the power subgroup at
-`n = 2` is the subgroup of squares `Subgroup.square Kˣ`. -/
-private theorem kummerMapAdd2_ker :
-    (kummerMapAdd2 K).ker = (Subgroup.square Kˣ).toAddSubgroup := by
-  ext c
-  rw [AddMonoidHom.mem_ker, kummerMapAdd2, MonoidHom.coe_toAdditiveLeft, Function.comp_apply,
-    Function.comp_apply, toAdd_eq_zero, ← MonoidHom.mem_ker, ker_kummerMap,
-    mem_powerSubgroup_iff, Additive.mem_toAddSubgroup, Subgroup.mem_square]
-  constructor <;> rintro ⟨h, h2⟩ <;> exact ⟨h, by simpa only [pow_two] using h2.symm⟩
-
-/-- **Every class of the explicit `H¹(G_K, μ₂)` is a Kummer class at `n = 2`**, by Hilbert 90: the
-additive Kummer map at `n = 2` is onto. -/
-private theorem kummerMapAdd2_surjective : Function.Surjective ⇑(kummerMapAdd2 K) := by
-  intro y
-  obtain ⟨a, ha⟩ := kummerMap_surjective (isUnit_of_invertible (2 : K))
-    (Multiplicative.ofAdd y)
-  refine ⟨Additive.ofMul a, ?_⟩
-  rw [kummerMapAdd2, MonoidHom.coe_toAdditiveLeft, Function.comp_apply, Function.comp_apply,
-    toMul_ofMul, ha]
-  rfl
-
-/-- **The Kummer isomorphism on square classes**, into the explicit `H¹(G_K, μ₂)`: the Kummer map
-descends to the square classes, because its kernel is the subgroup of squares, and it is onto, so
-the descent is an equivalence. -/
+/-- **The Kummer isomorphism on square classes**, into the explicit `H¹(G_K, μ₂)`: the generic
+Kummer isomorphism `TauCeti.kummerIso` at `n = 2`, whose domain is `Kˣ ⨿ (Kˣ)ⁿ`, read on the
+square-class group `TauCeti.SquareClassGroup K` through the two identifications
+`TauCeti.multiplicativeSquareClassEquiv` and `TauCeti.squareClassQuotientEquiv` above. -/
 private noncomputable def kummerSquareClassEquivH1 :
     SquareClassGroup K ≃+ H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2) :=
-  QuotientAddGroup.liftEquiv ((Subgroup.square Kˣ).toAddSubgroup)
-    (φ := kummerMapAdd2 K) (kummerMapAdd2_surjective K) (kummerMapAdd2_ker K).symm
+  (AddEquiv.additiveMultiplicative (G := SquareClassGroup K)).symm.trans
+    (MulEquiv.toAdditiveLeft
+      ((multiplicativeSquareClassEquiv (K := K)).symm.trans
+        ((squareClassQuotientEquiv K).trans (kummerIso K 2 (isUnit_of_invertible (2 : K))))))
+
+/-- **The Kummer isomorphism on square classes sends the square class of `a` to the Kummer class
+`(a)`**: the isomorphism read on a representative `a`, which is the only statement about it needed
+downstream. -/
+private theorem kummerSquareClassEquivH1_squareClass (a : Kˣ) :
+    kummerSquareClassEquivH1 K (squareClass a)
+      = Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) a) := by
+  -- The equivalence is read off one identification at a time: the additive presentation of the
+  -- square-class group, the literal quotient, and then the Kummer isomorphism on a representative
+  -- `a` (`TauCeti.kummerIso_mk`). The two `AddEquiv.additiveMultiplicative` steps only remove the
+  -- generated additive and multiplicative type tags.
+  rw [kummerSquareClassEquivH1, AddEquiv.trans_apply, AddEquiv.additiveMultiplicative_symm_apply,
+    AddEquiv.toMultiplicativeRight_symm_apply_apply, squareClassQuotientEquiv, toMul_ofMul,
+    MulEquiv.trans_apply, MulEquiv.trans_apply,
+    ← multiplicativeSquareClassEquiv_mk a,
+    MulEquiv.symm_apply_apply (multiplicativeSquareClassEquiv (K := K)),
+    QuotientGroup.quotientMulEquivOfEq_mk, kummerIso_mk K 2 (isUnit_of_invertible (2 : K)) a]
 
 /-- The degree-one map induced by the coefficient isomorphism is a bijection, being the underlying
 continuous linear map of the equivalence of coefficient objects it is read off. -/
@@ -475,11 +486,9 @@ variable {K}
 
 /-- The Kummer isomorphism on square classes sends the square class of `a` to the Kummer class
 `(a)`, which is the statement that identifies its two sides. -/
-theorem kummerSquareClassEquiv_kummerClass (a : Kˣ) :
+theorem kummerSquareClassEquiv_squareClass (a : Kˣ) :
     kummerSquareClassEquiv K (squareClass a) = kummerClass a := by
-  rw [kummerSquareClassEquiv, AddEquiv.trans_apply, kummerSquareClassEquivH1, squareClass_def,
-    QuotientAddGroup.liftEquiv_coe, kummerMapAdd2, MonoidHom.coe_toAdditiveLeft,
-    Function.comp_apply, Function.comp_apply, toMul_ofMul, AddEquiv.trans_apply,
-    kummerCohomAddEquiv_apply, kummerClass, ← explicitIso_kummerMap]
+  rw [kummerSquareClassEquiv, AddEquiv.trans_apply, kummerSquareClassEquivH1_squareClass,
+    AddEquiv.trans_apply, kummerCohomAddEquiv_apply, kummerClass, ← explicitIso_kummerMap]
 
 end TauCeti
