@@ -253,4 +253,17 @@ theorem mem_identityComponentHopfIdeal
   dsimp only
   rfl
 
+/-- A finite-type affine group's spectrum is connected if its identity-component Hopf ideal
+vanishes. -/
+theorem connectedSpace_of_identityComponentHopfIdeal_eq_bot
+    (h : identityComponentHopfIdeal (k := k) (H := H) = ⊥) :
+    ConnectedSpace (PrimeSpectrum H) := by
+  let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+  let z := Bialgebra.augmentationPoint k H
+  have hbot : PrimeSpectrum.connectedComponentIdeal z = ⊥ := by
+    rw [← identityComponentHopfIdeal_toIdeal, h, HopfIdeal.bot_toIdeal]
+  let e := (Ideal.quotEquivOfEq hbot).trans (RingEquiv.quotientBot H)
+  exact (PrimeSpectrum.homeomorphOfRingEquiv e).connectedSpace_iff.mp
+    (PrimeSpectrum.connectedSpace_quotient_connectedComponentIdeal z)
+
 end TauCeti.HopfAlgebra
