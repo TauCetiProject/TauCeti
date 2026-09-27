@@ -57,6 +57,7 @@ variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
 
 /-- **Frobenius reciprocity on regular-form classes.** Transfer of a class over `L` multiplied
 by a scalar-extended class from `K` is the transfer multiplied by the original base class. -/
+@[simp]
 theorem RegularFormClass.scharlauTransfer_mul_baseChange (s : L →ₗ[K] K) (hs : s ≠ 0)
     (x : RegularFormClass L) (y : RegularFormClass K) :
     RegularFormClass.scharlauTransfer s hs (x * y.baseChange L) =
@@ -83,6 +84,7 @@ theorem RegularFormClass.scharlauTransfer_mul_baseChange (s : L →ₗ[K] K) (hs
 
 /-- Transfer of a hyperbolic plane over `L` is a sum of `[L : K]` hyperbolic planes over `K`.
 This is the hyperbolic-preservation statement that makes transfer descend to Witt rings. -/
+@[simp]
 theorem RegularFormClass.scharlauTransfer_hyperbolicClass (s : L →ₗ[K] K) (hs : s ≠ 0) :
     RegularFormClass.scharlauTransfer s hs (hyperbolicClass L) =
       Module.finrank K L • hyperbolicClass K := by
@@ -121,6 +123,8 @@ theorem WittGrothendieckRing.scharlauTransfer_toWittGrothendieck (s : L →ₗ[K
       toWittGrothendieck (RegularFormClass.scharlauTransfer s hs x) := by
   apply (WittGrothendieckRing.equivGrothendieck (K := K)).injective
   rw [WittGrothendieckRing.scharlauTransfer, AddMonoidHom.comp_apply]
+  -- Unfold the two Grothendieck equivalences so that `lift_apply_of` exposes the
+  -- representative `x`; their additive coercions have no separate compatibility lemma.
   change
     (WittGrothendieckRing.equivGrothendieck (K := K))
         ((WittGrothendieckRing.equivGrothendieck (K := K)).symm
@@ -152,6 +156,7 @@ private def WittRing.scharlauTransferDescentData (s : L →ₗ[K] K) (hs : s ≠
         (WittGrothendieckRing.scharlauTransfer s hs), fun x hx ↦ by
       rw [AddMonoidHom.mem_ker] at hx ⊢
       rw [AddMonoidHom.comp_apply]
+      -- `RingHom.toAddMonoidHom` has the same underlying function as the ring homomorphism.
       change WittRing.mk (WittGrothendieckRing.scharlauTransfer s hs x) = 0
       apply WittRing.mk_eq_zero_iff_mem.mpr
       apply WittGrothendieckRing.scharlauTransfer_mem_hyperbolicIdeal s hs
@@ -198,6 +203,7 @@ theorem WittRing.scharlauTransfer_wittClass (s : L →ₗ[K] K) (hs : s ≠ 0)
 
 /-- **Projection formula for Scharlau transfer on Witt rings.** Multiplication by a class from
 the base field may be moved across transfer after scalar extension. -/
+@[simp]
 theorem WittRing.scharlauTransfer_baseChange_mul (s : L →ₗ[K] K) (hs : s ≠ 0)
     (a : WittRing K) (x : WittRing L) :
     WittRing.scharlauTransfer s hs (WittRing.baseChange (L := L) a * x) =
@@ -221,6 +227,7 @@ def WittRing.scharlauTransferLinear (s : L →ₗ[K] K) (hs : s ≠ 0) :
   refine
     { __ := WittRing.scharlauTransfer s hs
       map_smul' := fun a x ↦ ?_ }
+  -- The scalar action supplied by `Module.compHom` is multiplication after `baseChange`.
   change WittRing.scharlauTransfer s hs (WittRing.baseChange (L := L) a * x) = _
   exact WittRing.scharlauTransfer_baseChange_mul s hs a x
 
