@@ -109,11 +109,13 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
         -(Real.pi * ∑ i with a i = q, e i) := by linarith [hangle]
     rw [hdelta, Real.sin_neg]
     simp only [neg_ne_zero]
-    rcases lt_or_gt_of_ne hq0 with hneg | hpos
-    · exact (Real.sin_neg_of_neg_of_neg_pi_lt
-        (mul_neg_of_pos_of_neg Real.pi_pos hneg) (by nlinarith [hq.1, Real.pi_pos])).ne
-    · exact (Real.sin_pos_of_pos_of_lt_pi
-        (mul_pos Real.pi_pos hpos) (by nlinarith [hq.2, Real.pi_pos])).ne'
+    have hlow : -Real.pi < Real.pi * ∑ i with a i = q, e i := by
+      nlinarith [mul_lt_mul_of_pos_left hq.1 Real.pi_pos]
+    have hupp : Real.pi * ∑ i with a i = q, e i < Real.pi := by
+      nlinarith [mul_lt_mul_of_pos_left hq.2 Real.pi_pos]
+    intro hsin
+    exact (mul_ne_zero Real.pi_ne_zero hq0)
+      ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
   have hdir : LinearIndependent ℝ ![up, uq] := by
     rw [linearIndependent_fin2]
     constructor
