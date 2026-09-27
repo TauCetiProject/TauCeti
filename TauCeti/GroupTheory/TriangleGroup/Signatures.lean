@@ -45,16 +45,16 @@ analysis on the reciprocal sum. The spherical parameters are those with a first 
 those with a repeated `2`, and the three polyhedral triples `(2, 3, 3)`, `(2, 3, 4)` and
 `(2, 3, 5)`; among exact signatures the first row is the reduced form `(1, m, m)`, so the exact
 spherical list is the five rows `(1, m, m)`, `(2, 2, m)`, `(2, 3, 3)`, `(2, 3, 4)` and `(2, 3, 5)`.
-The Euclidean signatures are `(3, 3, 3)`, `(2, 4, 4)` and `(2, 3, 6)`, all three of which are
-exact already. The classification is what the trichotomy amounts to for finiteness: a signature
+The Euclidean signatures are `(3, 3, 3)`, `(2, 4, 4)` and `(2, 3, 6)`, the same three triples in
+both readings. The classification is what the trichotomy amounts to for finiteness: a signature
 outside the spherical parameters gives an infinite group, while the cyclic and dihedral rows give
 finite groups, of order `Nat.gcd b c` and `2m` by `natCard_one` and `natCard_two_two`, so in
 particular the signatures `(1, m, m)` and `(2, 2, m)` have orders `m` and `2m`. The three
-polyhedral rows are the remaining finite cases; the orders the spherical table records for them as
-`2 / χᵒʳᵇ` are not established here. That formula is a statement about the exact rows, where
-`2 / χᵒʳᵇ(1, m, m) = m` and `2 / χᵒʳᵇ(2, 2, m) = 2m` are the orders just proved, while an
-unreduced parameter triple `(1, b, c)` has order `Nat.gcd b c`, which is `2 / χᵒʳᵇ(1, b, c)` only
-when `b = c`.
+polyhedral rows are the remaining cases, and neither their finiteness nor the orders the spherical
+table records for them as `2 / χᵒʳᵇ` is established here. That formula is a statement about the
+exact rows, where `2 / χᵒʳᵇ(1, m, m) = m` and `2 / χᵒʳᵇ(2, 2, m) = 2m` are the orders just proved,
+while an unreduced parameter triple `(1, b, c)` has order `Nat.gcd b c`, which is
+`2 / χᵒʳᵇ(1, b, c)` only when `b = c`.
 
 ## Main definitions
 
@@ -180,8 +180,8 @@ instance (a b c : ℕ) : Decidable (IsSphericalParameterSignature a b c) := by
   infer_instance
 
 /-- A triple is a **Euclidean signature** when it is one of the three triples whose reciprocal
-sum is one: `(3, 3, 3)`, `(2, 4, 4)` and `(2, 3, 6)`. All three are sorted, positive and exact, so
-this predicate needs no ordering conjunct of its own, unlike `TauCeti.IsSphericalSignature`, whose
+sum is one: `(3, 3, 3)`, `(2, 4, 4)` and `(2, 3, 6)`. All three are sorted and positive, so this
+predicate needs no ordering conjunct of its own, unlike `TauCeti.IsSphericalSignature`, whose
 first two rows have a free entry. The body is exposed so that the `Decidable` instance below, and
 `decide` on a concrete signature, can reduce it. -/
 @[expose]
