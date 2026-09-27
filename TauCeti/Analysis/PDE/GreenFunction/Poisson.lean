@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Disk
 public import Mathlib.Analysis.Complex.Poisson
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.PDE.FundamentalSolution.Gradient
 
 /-!
 # The Poisson kernel as a boundary derivative of the planar Green kernel
@@ -26,51 +26,18 @@ noncomputable section
 
 namespace TauCeti
 
-open Complex
-
-/-- The logarithmic norm of a real affine line in `ℂ` has the expected derivative away from
-the zero of the line. -/
-private theorem hasDerivAt_log_norm_real_smul_add (z w : ℂ) (h : z + w ≠ 0) :
-    HasDerivAt (fun t : ℝ => Real.log ‖t • z + w‖)
-      ((z.re * (z.re + w.re) + z.im * (z.im + w.im)) / ‖z + w‖ ^ 2) 1 := by
-  have hsq : HasDerivAt (fun t : ℝ => ‖t • z + w‖ ^ 2)
-      (2 * (z.re * (z.re + w.re) + z.im * (z.im + w.im))) 1 := by
-    convert (((hasDerivAt_id (1 : ℝ)).smul_const z).const_add w).norm_sq using 1
-    · ext t
-      simp only [id_eq, add_comm]
-    · simp only [id_eq, one_smul, Complex.inner, Complex.mul_re, Complex.conj_re,
-        Complex.conj_im, add_re, add_im]
-      ring
-  have hlog := (Real.hasDerivAt_log (by simpa using h)).comp 1 hsq
-  have hfun : (fun t : ℝ => Real.log ‖t • z + w‖) =
-      fun t : ℝ => (Real.log (‖t • z + w‖ ^ 2)) / 2 := by
-    funext t
-    rw [Real.log_pow]
-    ring
-  rw [hfun]
-  convert hlog.div_const 2 using 1 <;> simp [Complex.sq_norm]; ring
+open Complex InnerProductSpace
 
 private theorem differentiableAt_planarGreenKernel {a z : ℂ}
     (hza : z - a ≠ 0) (hca : 1 - starRingEnd ℂ a * z ≠ 0) :
     DifferentiableAt ℝ (planarGreenKernel a) z := by
-  have hinner1 : DifferentiableAt ℝ (fun w : ℂ => w - a) z := by
-    fun_prop
-  have h₁ : DifferentiableAt ℝ (fun w : ℂ => Real.log ‖w - a‖) z :=
-    by simpa only [Function.comp_def, id_eq] using
-      (((differentiableAt_id : DifferentiableAt ℝ (id : ℂ → ℂ) (z - a)).norm ℂ hza).log
-        (norm_ne_zero_iff.mpr hza)).comp z hinner1
+  have h₁ := (hasFDerivAt_planarNewtonianKernel_sub (sub_ne_zero.mp hza)).differentiableAt
   have hinner : DifferentiableAt ℝ (fun w : ℂ => 1 - starRingEnd ℂ a * w) z := by
     fun_prop
-  have h₂ : DifferentiableAt ℝ
-      (fun w : ℂ => Real.log ‖1 - starRingEnd ℂ a * w‖) z :=
-    by simpa only [Function.comp_def, id_eq] using
-      (((differentiableAt_id : DifferentiableAt ℝ (id : ℂ → ℂ)
-        (1 - starRingEnd ℂ a * z)).norm ℂ hca).log
-        (norm_ne_zero_iff.mpr hca)).comp z hinner
-  convert (h₁.const_mul (-(2 * Real.pi)⁻¹)).sub
-    (h₂.const_mul (-(2 * Real.pi)⁻¹)) using 1
+  have h₂ := (hasFDerivAt_planarNewtonianKernel hca).differentiableAt.comp z hinner
+  convert h₁.sub h₂ using 1
   ext w
-  simp only [planarGreenKernel_def, planarNewtonianKernel_def, Pi.sub_apply]
+  simp only [planarGreenKernel_def, Pi.sub_apply, Function.comp_def]
 
 /-- At a boundary point of the unit disk, neither logarithmic argument in the planar Green
 kernel vanishes when the pole lies inside the disk. -/
@@ -104,21 +71,39 @@ theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz :
     HasDerivAt (fun t : ℝ => planarGreenKernel a (t • z))
       (-(poissonKernel 0 a z) / (2 * Real.pi)) 1 := by
   obtain ⟨hza, hca⟩ := planarGreenKernel_boundary_ne ha hz
-  have h₁ := hasDerivAt_log_norm_real_smul_add z (-a)
-    (by simpa only [sub_eq_add_neg] using hza)
-  have h₂ := hasDerivAt_log_norm_real_smul_add
-    (-(starRingEnd ℂ a * z)) 1 (by simpa only [neg_add_eq_sub] using hca)
+  have hf₁ := hasFDerivAt_planarNewtonianKernel_sub (sub_ne_zero.mp hza)
+  have h₁ : HasDerivAt (fun t : ℝ => planarNewtonianKernel (t • z - a))
+      ((-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) * ⟪z - a, z⟫_ℝ) 1 := by
+    have hf : HasFDerivAt (fun w : ℂ => planarNewtonianKernel (w - a))
+        ((-(2 * Real.pi)⁻¹ * (‖z - a‖ ^ 2)⁻¹) • innerSL ℝ (z - a))
+        ((fun t : ℝ => t • z) 1) := by simpa only [one_smul] using hf₁
+    simpa only [Function.comp_def, id_eq, one_smul, smul_apply, smul_eq_mul,
+      innerSL_apply_apply] using
+      hf.comp_hasDerivAt 1 ((hasDerivAt_id (1 : ℝ)).smul_const z)
+  have hf₂ := hasFDerivAt_planarNewtonianKernel hca
+  have h₂ : HasDerivAt
+      (fun t : ℝ => planarNewtonianKernel (1 + t • (-(starRingEnd ℂ a * z))))
+      ((-(2 * Real.pi)⁻¹ * (‖1 - starRingEnd ℂ a * z‖ ^ 2)⁻¹) *
+        ⟪1 - starRingEnd ℂ a * z, -(starRingEnd ℂ a * z)⟫_ℝ) 1 := by
+    have hf : HasFDerivAt planarNewtonianKernel
+        ((-(2 * Real.pi)⁻¹ * (‖1 - starRingEnd ℂ a * z‖ ^ 2)⁻¹) •
+          innerSL ℝ (1 - starRingEnd ℂ a * z))
+        ((fun t : ℝ => 1 + t • (-(starRingEnd ℂ a * z))) 1) := by
+      simpa only [one_smul, ← sub_eq_add_neg] using hf₂
+    simpa only [Function.comp_def, id_eq, one_smul, smul_apply, smul_eq_mul,
+      innerSL_apply_apply] using
+      hf.comp_hasDerivAt 1
+        (((hasDerivAt_id (1 : ℝ)).smul_const (-(starRingEnd ℂ a * z))).const_add 1)
   have harg (t : ℝ) : 1 - starRingEnd ℂ a * (t • z) =
-      t • (-(starRingEnd ℂ a * z)) + 1 := by
+      1 + t • (-(starRingEnd ℂ a * z)) := by
     rw [mul_smul_comm, smul_neg]
     abel
   have heq : (fun t : ℝ => planarGreenKernel a (t • z)) =
-      fun t : ℝ => -(2 * Real.pi)⁻¹ * Real.log ‖t • z + -a‖ -
-        (-(2 * Real.pi)⁻¹ * Real.log ‖t • (-(starRingEnd ℂ a * z)) + 1‖) := by
+      fun t : ℝ => planarNewtonianKernel (t • z - a) -
+        planarNewtonianKernel (1 + t • (-(starRingEnd ℂ a * z))) := by
     funext t
-    rw [planarGreenKernel_def, planarNewtonianKernel_def, planarNewtonianKernel_def]
+    rw [planarGreenKernel_def]
     rw [harg]
-    simp only [sub_eq_add_neg]
   rw [heq]
   have hmul : z * starRingEnd ℂ z = 1 := by
     rw [Complex.mul_conj, Complex.normSq_eq_norm_sq, hz]
@@ -149,10 +134,16 @@ theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz :
     simp only [neg_re, neg_im, conj_re, conj_im, mul_re, mul_im, one_re, one_im,
       add_zero]
     nlinarith [hzsq]
-  convert ((h₁.const_mul (-(2 * Real.pi)⁻¹)).sub
-    (h₂.const_mul (-(2 * Real.pi)⁻¹))) using 1
+  have hinnercore :
+      ⟪z - a, z⟫_ℝ -
+        ⟪1 - starRingEnd ℂ a * z, -(starRingEnd ℂ a * z)⟫_ℝ =
+        1 - ‖a‖ ^ 2 := by
+    simp only [Complex.inner, Complex.mul_re, Complex.conj_re, Complex.conj_im,
+      sub_re, sub_im, neg_re, neg_im, one_re, one_im] at hcore ⊢
+    nlinarith [hcore]
+  convert h₁.sub h₂ using 1
   · simp only [poissonKernel_def, sub_zero, hz, one_pow]
-    rw [← sub_eq_add_neg z a, neg_add_eq_sub, hnorm, ← hcore]
+    rw [hnorm, ← hinnercore]
     ring
 
 /-- The outward radial derivative of the unit-disk Green kernel, as an ordinary real
