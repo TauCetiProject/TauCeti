@@ -47,15 +47,18 @@ def basepointChangeHomeomorph (γ : Path x y) : UniversalCover y ≃ₜ Universa
 /-- Basepoint change sends the distinguished point to the path class defining the change. -/
 @[simp]
 theorem basepointChangeHomeomorph_basepointLift (γ : Path x y) :
-    basepointChangeHomeomorph γ (basepointLift y : UniversalCover y) =
+    basepointChangeHomeomorph γ (mk y (Path.Homotopic.Quotient.refl y)) =
       mk y (Path.Homotopic.Quotient.mk γ) := by
   have : LocallyPathConnectedSpace (UniversalCover x) :=
     (isCoveringMap x).isLocalHomeomorph.locallyPathConnectedSpace
   have : LocallyPathConnectedSpace (UniversalCover y) :=
     (isCoveringMap y).isLocalHomeomorph.locallyPathConnectedSpace
-  exact (IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace
-    (f₀ := mk y (Path.Homotopic.Quotient.mk γ))
-    (isCoveringMap y) (isCoveringMap x) (proj_basepointLift y) (by rfl)).choose_spec.1
+  have h : basepointChangeHomeomorph γ (basepointLift y : UniversalCover y) =
+      mk y (Path.Homotopic.Quotient.mk γ) := by
+    exact (IsCoveringMap.exists_homeomorph_comp_eq_of_simplyConnectedSpace
+      (f₀ := mk y (Path.Homotopic.Quotient.mk γ))
+      (isCoveringMap y) (isCoveringMap x) (proj_basepointLift y) (by rfl)).choose_spec.1
+  simpa only [basepointLift_coe] using h
 
 /-- Basepoint change commutes with the projections to `X`. -/
 theorem proj_basepointChangeHomeomorph (γ : Path x y) (e : UniversalCover y) :
@@ -85,9 +88,13 @@ theorem eq_basepointChangeHomeomorph (γ : Path x y) (f : C(UniversalCover y, Un
   have hcomp : proj ∘ f = proj ∘ basepointChangeHomeomorph γ := by
     funext e
     exact (hf e).trans (proj_basepointChangeHomeomorph γ e).symm
+  have hbase : (basepointChangeHomeomorph γ) (basepointLift y : UniversalCover y) =
+      mk y (Path.Homotopic.Quotient.mk γ) := by
+    rw [basepointLift_coe]
+    exact basepointChangeHomeomorph_basepointLift γ
   exact congrFun ((isCoveringMap x).eq_of_comp_eq f.continuous
     (basepointChangeHomeomorph γ).continuous hcomp (basepointLift y)
-    (hf₀.trans (basepointChangeHomeomorph_basepointLift γ).symm))
+    (hf₀.trans hbase.symm))
 
 /-- Changing the basepoint along a constant path is the identity. -/
 @[simp]
