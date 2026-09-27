@@ -142,7 +142,7 @@ namespace TauCeti
 open Set
 
 /-- No value of a monotone `Fin` family lies strictly between consecutive entries. -/
-theorem not_mem_Ioo_castSucc_succ {n : ℕ} (a : Fin (n + 1) → ℝ)
+theorem not_mem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin (n + 1) → β)
     (ha : Monotone a) (i : Fin n) (k : Fin (n + 1)) :
     a k ∉ Set.Ioo (a i.castSucc) (a i.succ) := by
   intro hk
@@ -155,8 +155,9 @@ theorem not_mem_Ioo_castSucc_succ {n : ℕ} (a : Fin (n + 1) → ℝ)
 
 /-- A point between the first and last values of a monotone `Fin` family lies between
 consecutive values. -/
-theorem exists_mem_Icc_castSucc_succ {n : ℕ} (a : Fin (n + 1) → ℝ) (ha : Monotone a)
-    (hn : n ≠ 0) {x : ℝ} (hx : x ∈ Set.Icc (a 0) (a (Fin.last n))) :
+theorem exists_mem_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
+    (a : Fin (n + 1) → β) (ha : Monotone a)
+    (hn : n ≠ 0) {x : β} (hx : x ∈ Set.Icc (a 0) (a (Fin.last n))) :
     ∃ i : Fin n, x ∈ Set.Icc (a i.castSucc) (a i.succ) := by
   rcases hx.1.eq_or_lt with h | h
   · refine ⟨⟨0, Nat.pos_of_ne_zero hn⟩, ?_⟩
