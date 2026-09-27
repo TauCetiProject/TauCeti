@@ -18,8 +18,7 @@ square of the product. This is the completed reduced coalgebra used by continuou
 coderivations.
 
 The length-completion convention follows J.-L. Loday and B. Vallette, *Algebraic Operads*,
-Chapters 9--10. The associativity of cutting uses Mathlib's `TensorPower.mulEquiv` and the
-coaugmented completed coproduct.
+Chapters 9--10. Reduced deconcatenation is coassociative in each triple of positive lengths.
 -/
 
 public section
