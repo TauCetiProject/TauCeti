@@ -35,13 +35,22 @@ variable (D : Type u) (Q : Type v) [Group D] [Group Q]
 
 /-- The regular representation acts by left multiplication. -/
 @[simp]
-theorem regularPerm_apply (q x : Q) :
+theorem Equiv.Perm.subgroupOfMulAction_apply (q x : Q) :
     ((Equiv.Perm.subgroupOfMulAction Q Q q : (MulAction.toPermHom Q Q).range) :
       Equiv.Perm Q) x = q * x :=
   by
-    -- Both coercions in the image-restricted representation preserve its underlying action.
-    change q • x = q * x
-    exact smul_eq_mul q x
+    -- The image-restricted equivalence has the same action as `toPermHom`.
+    simpa only [smul_eq_mul] using
+      (show ((Equiv.Perm.subgroupOfMulAction Q Q q : (MulAction.toPermHom Q Q).range) :
+        Equiv.Perm Q) x = q • x from rfl)
+
+/-- The inverse of the regular representation acts by inverse left multiplication. -/
+@[simp]
+theorem Equiv.Perm.subgroupOfMulAction_inv_apply (q x : Q) :
+    (((Equiv.Perm.subgroupOfMulAction Q Q q : (MulAction.toPermHom Q Q).range) :
+      Equiv.Perm Q)⁻¹) x = q⁻¹ * x := by
+  simpa only [map_inv, Subgroup.coe_inv] using
+    Equiv.Perm.subgroupOfMulAction_apply Q q⁻¹ x
 
 /-- Mathlib's regular wreath product is the permutation wreath product whose top group
 is the left regular image of `Q`. The isomorphism preserves each base coordinate. -/
@@ -56,13 +65,7 @@ noncomputable def regularWreathProductEquiv :
     · funext x
       simp only [PermSubgroupWreathProduct.mul_left, RegularWreathProduct.mul_left,
         Pi.mul_apply]
-      have h := regularPerm_apply Q a.right⁻¹ x
-      rw [map_inv] at h
-      -- The inverse permutation acts through the inverse equivalence.
-      change a.left x * b.left (a.right⁻¹ * x) =
-        a.left x * b.left
-          (((Equiv.Perm.subgroupOfMulAction Q Q a.right : Equiv.Perm Q)⁻¹) x)
-      exact congrArg (fun y => a.left x * b.left y) h.symm
+      rw [Equiv.Perm.subgroupOfMulAction_inv_apply]
     · exact (Equiv.Perm.subgroupOfMulAction Q Q).map_mul a.right b.right
 
 /-- The comparison preserves the base function pointwise. -/
@@ -76,6 +79,21 @@ theorem regularWreathProductEquiv_left (w : D ≀ᵣ Q) (x : Q) :
 theorem regularWreathProductEquiv_right (w : D ≀ᵣ Q) :
     (regularWreathProductEquiv D Q w).right =
       Equiv.Perm.subgroupOfMulAction Q Q w.right :=
+  by simp [regularWreathProductEquiv]
+
+/-- The inverse comparison preserves the base function pointwise. -/
+@[simp]
+theorem regularWreathProductEquiv_symm_left
+    (w : PermSubgroupWreathProduct D Q (MulAction.toPermHom Q Q).range) (x : Q) :
+    ((regularWreathProductEquiv D Q).symm w).left x = w.left x :=
+  by simp [regularWreathProductEquiv]
+
+/-- The inverse comparison recovers the top coordinate through the regular representation. -/
+@[simp]
+theorem regularWreathProductEquiv_symm_right
+    (w : PermSubgroupWreathProduct D Q (MulAction.toPermHom Q Q).range) :
+    ((regularWreathProductEquiv D Q).symm w).right =
+      (Equiv.Perm.subgroupOfMulAction Q Q).symm w.right :=
   by simp [regularWreathProductEquiv]
 
 /-- The base-group inclusion corresponds to the semidirect-product base inclusion. -/
