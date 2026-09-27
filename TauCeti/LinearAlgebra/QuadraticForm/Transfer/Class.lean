@@ -34,8 +34,6 @@ about a transferred form be stated without choosing a diagonalization.
   field extension.
 * `TauCeti.RegularFormClass.scharlauTransfer_id`: transfer along the identity is the identity.
 * `TauCeti.RegularFormClass.scharlauTransfer_comp`: transfers compose in a tower.
-* `TauCeti.RegularFormClass.traceTransfer_eq_scharlauTransfer`: trace transfer is Scharlau
-  transfer along the algebra trace.
 * `TauCeti.RegularFormClass.traceTransfer_formClass`: trace transfer agrees with the form-level
   trace transfer.
 
@@ -209,12 +207,6 @@ separable field extension. -/
 def RegularFormClass.traceTransfer : RegularFormClass L →+ RegularFormClass K :=
   RegularFormClass.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L)
 
-/-- Trace transfer is Scharlau transfer along the algebra trace. -/
-theorem RegularFormClass.traceTransfer_eq_scharlauTransfer :
-    RegularFormClass.traceTransfer K =
-      RegularFormClass.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L) := by
-  rw [RegularFormClass.traceTransfer]
-
 /-- Trace transfer of the class of a regular form is the class of its form-level trace transfer. -/
 @[simp]
 theorem RegularFormClass.traceTransfer_formClass {V : Type w} [AddCommGroup V]
@@ -228,8 +220,7 @@ theorem RegularFormClass.traceTransfer_formClass {V : Type w} [AddCommGroup V]
   let _ : FiniteDimensional K V := FiniteDimensional.trans K L V
   let _ : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  rw [RegularFormClass.traceTransfer_eq_scharlauTransfer,
-    RegularFormClass.scharlauTransfer_formClass]
+  rw [RegularFormClass.traceTransfer, RegularFormClass.scharlauTransfer_formClass]
   apply (formClass_eq_iff _ _ _ _).mpr
   rw [QuadraticMap.traceTransfer_eq_scharlauTransfer]
 
@@ -237,7 +228,6 @@ theorem RegularFormClass.traceTransfer_formClass {V : Type w} [AddCommGroup V]
 @[simp]
 theorem RegularFormClass.rank_traceTransfer (x : RegularFormClass L) :
     (RegularFormClass.traceTransfer K x).rank = Module.finrank K L * x.rank := by
-  rw [RegularFormClass.traceTransfer_eq_scharlauTransfer,
-    RegularFormClass.rank_scharlauTransfer]
+  rw [RegularFormClass.traceTransfer, RegularFormClass.rank_scharlauTransfer]
 
 end TauCeti
