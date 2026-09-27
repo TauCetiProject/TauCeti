@@ -32,8 +32,8 @@ namespace Subgroup.CompactifiedQuotient
 variable {Δ Γ : Subgroup PSL(2, ℝ)}
 variable [DiscreteTopology Δ] [DiscreteTopology Γ]
 
-/-- On a cusp neighbourhood defined by compatible normalized cusp data, the map of compactified
-quotients is holomorphic. -/
+/-- On a cusp neighbourhood defined by normalized cusp data with the same scaling, the map of
+compactified quotients is holomorphic. -/
 theorem mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hσ : D.scaling = E.scaling)
@@ -66,8 +66,8 @@ theorem mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd (h : Δ ≤ Γ)
   simpa [e, e', n, comp_apply, e.right_inv hz] using
     (cuspChart_compactifiedQuotientMap_eq_pow_widthIndex h D E hc hσ hD hz')
 
-/-- The local multiplicity at an adjoined cusp of a compactified quotient map is the canonical
-positive integer by which the compatible normalized cusp width changes. -/
+/-- For normalized cusp data with the same scaling, the local multiplicity at an adjoined cusp of
+a compactified quotient map is the canonical positive integer by which the cusp width changes. -/
 theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hσ : D.scaling = E.scaling) :
