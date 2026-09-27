@@ -18,7 +18,7 @@ For a finite field extension, every pair of nonzero functionals differs in this 
 
 This change-of-functional formula controls the dependence on the functional when transfer is
 descended to Witt classes.
-The explicit isometry `QuadraticForm.scharlauTransferChangeFunctional` identifies the
+The explicit isometry `TauCeti.QuadraticForm.scharlauTransferChangeFunctional` identifies the
 underlying linear equivalence as the inverse tensor left unit map.
 
 ## References
@@ -72,7 +72,7 @@ end Field
 
 end QuadraticMap
 
-namespace QuadraticForm
+namespace TauCeti.QuadraticForm
 
 variable {K L V : Type*} [CommSemiring K] [CommRing L] [Algebra K L]
   [Invertible (2 : L)] [AddCommGroup V] [Module L V]
@@ -106,4 +106,4 @@ theorem scharlauTransferChangeFunctional_symm_apply (Q : QuadraticForm L V)
   apply (scharlauTransferChangeFunctional Q s a).injective
   simp
 
-end QuadraticForm
+end TauCeti.QuadraticForm
