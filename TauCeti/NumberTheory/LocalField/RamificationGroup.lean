@@ -27,6 +27,7 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   ramification group of `L/K`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal K L u`: the same filtration indexed
   by `u : ℝ` through the ceiling.
+* `TauCeti.LocalFieldsRamification.LowerJump K L u`: a strict break of the lower filtration.
 * `TauCeti.LocalFieldsRamification.largestLowerJump K L`: for a nontrivial Galois group, the
   largest index `t` with `G_t ≠ 1`; it is `-1` by convention when the Galois group is trivial.
 
@@ -50,6 +51,9 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   indexing is constant on each interval `(i - 1, i]`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_bot_iff`: for a nontrivial
   Galois group, `G_u = 1` exactly for real `u` past the largest jump.
+* `TauCeti.LocalFieldsRamification.lowerJump_eq_intCast`: every lower break has an integer index.
+* `TauCeti.LocalFieldsRamification.lowerJump_intCast_iff`: an integer is a lower break exactly
+  when the adjacent lower groups differ.
 * `TauCeti.LocalFieldsRamification.map_restrictScalarsHom_lowerRamificationGroup`: for a tower
   `L/K'/K`, the filtration of `H = Gal(L/K')` is `H ∩ G_i`.
 
@@ -64,6 +68,11 @@ noncomputable section
 open ValuativeRel
 
 namespace TauCeti.LocalFieldsRamification
+
+/-- The interval `[-1, ∞)`, the domain of the Herbrand function and of its inverse. The lower
+ramification groups are indexed by real numbers `u ≥ -1`, and `G_u` is the whole automorphism
+group for `u ≤ -1`. -/
+abbrev RamificationIndexDomain : Set ℝ := Set.Ici (-1 : ℝ)
 
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -240,6 +249,66 @@ theorem lowerRamificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ}
 /-- The real-indexed lower filtration is decreasing. -/
 theorem lowerRamificationGroupReal_antitone : Antitone (lowerRamificationGroupReal K L) :=
   TauCeti.IsLocalRing.ramificationGroupReal_antitone _ _
+
+/-! ### Breaks of the lower filtration -/
+
+/-- A lower break: the ramification group at `u` is strictly larger than the group at every
+later index. Since lower numbering uses ceilings, its breaks occur at integers. -/
+def LowerJump (u : RamificationIndexDomain) : Prop :=
+  ∀ v : RamificationIndexDomain, u < v →
+    lowerRamificationGroupReal K L v < lowerRamificationGroupReal K L u
+
+/-- A lower break is a strict drop of the lower ramification group at every later index. -/
+theorem lowerJump_iff (u : RamificationIndexDomain) :
+    LowerJump K L u ↔ ∀ v : RamificationIndexDomain, u < v →
+      lowerRamificationGroupReal K L v < lowerRamificationGroupReal K L u := Iff.rfl
+
+/-- Every lower break occurs at an integer index. -/
+theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u) :
+    ∃ i : ℤ, ∃ hi : (-1 : ℝ) ≤ (i : ℝ), u = ⟨i, hi⟩ := by
+  let i := ⌈(u : ℝ)⌉
+  have hu : (u : ℝ) ≤ (i : ℝ) := Int.le_ceil _
+  have hi : (-1 : ℝ) ≤ (i : ℝ) := u.property.trans hu
+  refine ⟨i, hi, ?_⟩
+  rcases eq_or_lt_of_le hu with heq | hlt
+  · exact Subtype.ext heq
+  · have hstrict := (lowerJump_iff K L u).mp h ⟨(i : ℝ), hi⟩
+      (Subtype.mk_lt_mk.mpr hlt)
+    have hsame : lowerRamificationGroupReal K L (i : ℝ) =
+        lowerRamificationGroupReal K L (u : ℝ) := by
+      simp only [lowerRamificationGroupReal_def, Int.ceil_intCast]
+      rfl
+    rw [hsame] at hstrict
+    exact False.elim ((lt_irrefl _) hstrict)
+
+/-- At an integer `i ≥ -1`, a lower break is exactly a strict decrease from `G_i` to
+`G_{i+1}`. -/
+@[simp]
+theorem lowerJump_intCast_iff {i : ℤ} (hi : (-1 : ℝ) ≤ (i : ℝ)) :
+    LowerJump K L ⟨i, hi⟩ ↔
+      lowerRamificationGroup K L (i + 1) < lowerRamificationGroup K L i := by
+  constructor
+  · intro h
+    have hi' : (-1 : ℝ) ≤ ((i + 1 : ℤ) : ℝ) := by
+      have h : (i : ℝ) ≤ ((i + 1 : ℤ) : ℝ) := by push_cast; linarith
+      exact hi.trans h
+    have hsucc : (⟨(i : ℝ), hi⟩ : RamificationIndexDomain) < ⟨(i + 1 : ℤ), hi'⟩ := by
+      apply Subtype.mk_lt_mk.mpr
+      exact_mod_cast (by omega : i < i + 1)
+    simpa only [lowerRamificationGroupReal_intCast] using
+      (lowerJump_iff K L _).mp h ⟨(i + 1 : ℤ), hi'⟩ hsucc
+  · intro h
+    apply (lowerJump_iff K L _).mpr
+    intro v hiv
+    have hreal : (i : ℝ) < (v : ℝ) := hiv
+    have hceil : i + 1 ≤ ⌈(v : ℝ)⌉ := by
+      have hlt : i < ⌈(v : ℝ)⌉ := (Int.lt_ceil).2 hreal
+      omega
+    have hle : lowerRamificationGroupReal K L v ≤
+        lowerRamificationGroup K L (i + 1) := by
+      rw [lowerRamificationGroupReal_def]
+      exact lowerRamificationGroup_antitone K L hceil
+    simpa only [Subtype.coe_mk, lowerRamificationGroupReal_intCast] using lt_of_le_of_lt hle h
 
 variable {K L} in
 /-- For a nontrivial automorphism group, `G_u` is trivial exactly for real `u` past the largest
