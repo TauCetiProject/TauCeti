@@ -172,6 +172,34 @@ theorem projectiveStableFunctor_map_connectingMap_naturality {T : ShortComplex C
       g_comp_connectingMap_assoc, InjectivePresentation.p_comp_cokernelMap, Category.assoc,
       Category.assoc]
 
+/-- A stable commutative square between conflations extends across both the cokernel arrows
+and the connecting arrows. -/
+theorem exists_stable_connecting_square {S T : ShortComplex C}
+    (hS : E.Conflation S) (hT : E.Conflation T)
+    (a : E.projectiveStableFunctor.obj S.X₁ ⟶ E.projectiveStableFunctor.obj T.X₁)
+    (b : E.projectiveStableFunctor.obj S.X₂ ⟶ E.projectiveStableFunctor.obj T.X₂)
+    (hab : E.projectiveStableFunctor.map S.f ≫ b =
+      a ≫ E.projectiveStableFunctor.map T.f) :
+    ∃ c : E.projectiveStableFunctor.obj S.X₃ ⟶ E.projectiveStableFunctor.obj T.X₃,
+      E.projectiveStableFunctor.map S.g ≫ c = b ≫ E.projectiveStableFunctor.map T.g ∧
+      (E.projectiveStableFunctor.map (hE.connectingMap hS) ≫
+        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj S.X₁).symm) ≫
+          hE.stableSuspension.map a =
+      c ≫ E.projectiveStableFunctor.map (hE.connectingMap hT) ≫
+        eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj T.X₁).symm := by
+  obtain ⟨a, rfl⟩ := E.projectiveStableFunctor.map_surjective a
+  obtain ⟨b, rfl⟩ := E.projectiveStableFunctor.map_surjective b
+  obtain ⟨φ, hφ₁, hφ₂⟩ := E.exists_shortComplex_hom_of_stable_square
+    (fun P => (hE.projective_iff_injective P).1) hS a b
+    (by simpa only [Functor.map_comp] using hab)
+  refine ⟨E.projectiveStableFunctor.map φ.τ₃, ?_, ?_⟩
+  · rw [← hφ₂, ← Functor.map_comp, ← Functor.map_comp, φ.comm₂₃]
+  · have hδ := hE.projectiveStableFunctor_map_connectingMap_naturality hS hT φ
+    rw [hφ₁, Functor.map_comp, Functor.map_comp] at hδ
+    simp only [stableSuspension_map_projectiveStableFunctor_map, Category.assoc,
+      eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    rw [← reassoc_of% hδ]
+
 /-- For the chosen suspension presentation `X ⟶ I(X) ⟶ ΣX` itself, the connecting map is the
 identity of `ΣX` in the stable category. -/
 @[simp]

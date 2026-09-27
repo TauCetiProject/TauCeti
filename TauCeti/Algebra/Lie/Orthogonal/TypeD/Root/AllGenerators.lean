@@ -33,6 +33,9 @@ previously defined Bourbaki-numbered raising and lowering generators.
 * `TauCeti.TypeDStd.differenceRootGenerator`: a generator of weight `εᵢ - εⱼ`.
 * `TauCeti.TypeDStd.sumRootGenerator`: a generator of weight `εᵢ + εⱼ`.
 * `TauCeti.TypeDStd.negSumRootGenerator`: a generator of weight `-εᵢ - εⱼ`.
+* `TauCeti.TypeDStd.lie_differenceRootGenerator_differenceRootGenerator` and
+  `TauCeti.TypeDStd.lie_differenceRootGenerator_sumRootGenerator`: bracket identities for
+  consecutive standard root generators.
 * `TauCeti.TypeDStd.differenceRootGenerator_mem_rootSpace` and the two sum-root analogues:
   membership in the corresponding root spaces.
 * The chain and fork comparison theorems at the end of the file identify these vectors with the
@@ -224,6 +227,48 @@ theorem negSumRootGenerator_ne_zero [Nontrivial K] (i j : ι) (hij : i ≠ j) :
   intro h
   have hentry := congrFun (congrFun (congrArg Subtype.val h) (.inr i)) (.inl j)
   simp [negSumRootMatrix, Matrix.fromBlocks, hij] at hentry
+
+/-! ## Brackets of standard root generators -/
+
+/-- Bracketing two consecutive difference-root vectors concatenates their coordinate intervals.
+
+Only the endpoints must be distinct; the identity remains valid when the intermediate coordinate
+coincides with either endpoint. -/
+@[simp]
+theorem lie_differenceRootGenerator_differenceRootGenerator (i j k : ι) (hik : i ≠ k) :
+    ⁅differenceRootGenerator (K := K) i j, differenceRootGenerator (K := K) j k⁆ =
+      differenceRootGenerator (K := K) i k := by
+  apply Subtype.ext
+  rw [LieSubalgebra.coe_bracket, val_differenceRootGenerator,
+    val_differenceRootGenerator, val_differenceRootGenerator]
+  -- Rewriting removes the subtype coercions but leaves the ambient bracket only definitionally
+  -- visible; expose the matrix equality so the block formulas can rewrite it.
+  change ⁅differenceRootMatrix (K := K) i j, differenceRootMatrix j k⁆ =
+    differenceRootMatrix i k
+  rw [LieRing.of_associative_ring_bracket, differenceRootMatrix_def,
+    differenceRootMatrix_def, differenceRootMatrix_def,
+    Matrix.fromBlocks_multiply, Matrix.fromBlocks_multiply]
+  ext (a | a) (b | b) <;>
+    simp [Matrix.fromBlocks, Matrix.transpose_single, Matrix.single_apply, hik, hik.symm]
+
+/-- Bracketing a difference-root vector with a consecutive sum-root vector moves the latter's
+first coordinate. The condition prevents the sum-root vector on the left from degenerating. -/
+@[simp]
+theorem lie_differenceRootGenerator_sumRootGenerator (i j k : ι) (hjk : j ≠ k) :
+    ⁅differenceRootGenerator (K := K) i j, sumRootGenerator (K := K) j k⁆ =
+      sumRootGenerator (K := K) i k := by
+  apply Subtype.ext
+  rw [LieSubalgebra.coe_bracket, val_differenceRootGenerator,
+    val_sumRootGenerator, val_sumRootGenerator]
+  -- As in the difference-root case, the rewritten subtype bracket is only definitionally the
+  -- following ambient matrix bracket; state that boundary before expanding the blocks.
+  change ⁅differenceRootMatrix (K := K) i j, sumRootMatrix j k⁆ = sumRootMatrix i k
+  rw [LieRing.of_associative_ring_bracket, differenceRootMatrix_def,
+    sumRootMatrix_def, sumRootMatrix_def,
+    Matrix.fromBlocks_multiply, Matrix.fromBlocks_multiply]
+  ext (a | a) (b | b) <;>
+    simp [Matrix.fromBlocks, Matrix.transpose_single, Matrix.single_apply,
+      Matrix.mul_sub, Matrix.sub_mul, hjk, hjk.symm]
 
 /-! ## Root-space membership -/
 
