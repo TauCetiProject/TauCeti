@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Basic
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
-import Mathlib.Analysis.Normed.Ring.Finite
 
 /-!
 # Ideal weights of ray class characters
@@ -175,21 +174,19 @@ theorem toMultiplicativeIdealWeight_injective :
 /-- A ray class character gives a unitary ideal weight, extended by zero at bad primes. -/
 noncomputable def toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
     TauCeti.UnitaryIdealWeight K :=
-  ⟨χ.toMultiplicativeIdealWeight, fun 𝔭 h𝔭 ↦ by
-    have hgood : Ideal.IsPrimeTo 𝔭.asIdeal 𝔪.support :=
-      Ideal.isPrimeTo_asIdeal_iff.mpr (by simpa [badPrimes_toMultiplicativeIdealWeight] using h𝔭)
-    rw [toMultiplicativeIdealWeight_apply_of_isPrimeTo χ hgood]
-    rw [onIdeals_apply]
-    exact ((Units.coeHom ℂ).isOfFinOrder (χ.isOfFinOrder (isOfFinOrder_of_finite (idealClass 𝔪
-      (⟨𝔭.asIdeal, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
-        (Ideal.isPrimeTo_iff.mp hgood)⟩ :
-        integralIdealsPrimeTo 𝔪))))).norm_eq_one⟩
+  TauCeti.UnitaryIdealWeight.ofPowEqOne χ.toMultiplicativeIdealWeight
+    (n := Nat.card (RayClassGroup 𝔪)) Nat.card_pos.ne' (fun 𝔭 h𝔭 ↦ by
+      have hgood : Ideal.IsPrimeTo 𝔭.asIdeal 𝔪.support :=
+        Ideal.isPrimeTo_asIdeal_iff.mpr (by simpa [badPrimes_toMultiplicativeIdealWeight] using h𝔭)
+      rw [toMultiplicativeIdealWeight_apply_of_isPrimeTo χ hgood]
+      rw [onIdeals_apply, ← Units.val_pow_eq_pow_val, ← map_pow, pow_card_eq_one',
+        map_one, Units.val_one])
 
 /-- The underlying multiplicative weight of the unitary extension. -/
 @[simp]
 theorem val_toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
     χ.toUnitaryIdealWeight.1 = χ.toMultiplicativeIdealWeight := by
-  rfl
+  simp [toUnitaryIdealWeight]
 
 /-- The unitary extension respects pointwise multiplication of characters. -/
 @[simp]
