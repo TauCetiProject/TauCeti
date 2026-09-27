@@ -37,8 +37,10 @@ The constructions follow `ClassFieldTheory/Cohomology/IndCoind/Finite.lean` and
 
 * `Rep.coindBot`, `Rep.coindBotFunctor`: coinduction from the trivial subgroup.
 * `Rep.coindBotUnit`: the monomorphism `A ⟶ coindBot k G A.V`.
+* `Rep.coindBotMap`: the map on coinduction induced by a representation morphism.
 * `Rep.indBot`, `Rep.indBotFunctor`: induction from the trivial subgroup.
 * `Rep.indBotCounit`: the epimorphism `indBot k G A.V ⟶ A`.
+* `Rep.indBotMap`: the map on induction induced by a representation morphism.
 * `Rep.coindBotEquivPi`, `Rep.indBotEquivFinsupp`: the underlying modules as functions `G → X`
   and finitely supported functions `G →₀ X`.
 * `Rep.indBotIsoCoindBot`: for a finite group, `indBot k G X ≅ coindBot k G X`.
@@ -148,6 +150,43 @@ instance coindBotUnit_mono (A : Rep k G) : Mono (coindBotUnit A) :=
       rw [← coindBotUnit_hom_apply_coe, ← coindBotUnit_hom_apply_coe, h]
     simpa using h1
 
+variable {A B : Rep k G}
+
+/-- The coinduction map induced by a morphism of representations on the underlying modules. -/
+def coindBotMap (f : A ⟶ B) : coindBot k G A.V ⟶ coindBot k G B.V :=
+  (coindBotFunctor k G).map (ModuleCat.ofHom f.hom)
+
+/-- Coinduction sends the identity coefficient map to the identity. -/
+@[simp]
+theorem coindBotMap_id (A : Rep k G) : coindBotMap (𝟙 A) = 𝟙 _ := by
+  change (coindBotFunctor k G).map (𝟙 _) = 𝟙 _
+  simp
+
+/-- Coinduction preserves composition of coefficient maps. -/
+@[simp]
+theorem coindBotMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) :
+    coindBotMap (f ≫ g) = coindBotMap f ≫ coindBotMap g := by
+  simp [coindBotMap, Functor.map_comp]
+  rfl
+
+/-- The orbit-map embedding into coinduction is natural in the representation. -/
+theorem coindBotUnit_naturality (f : A ⟶ B) :
+    coindBotUnit A ≫ coindBotMap f = f ≫ coindBotUnit B := by
+  ext x g
+  calc
+    _ = ((coindBotMap f).hom ((coindBotUnit A).hom x)).1 g := by
+      exact congrArg (fun z : coindBot k G B.V => z.1 g)
+        (CategoryTheory.comp_apply (coindBotUnit A) (coindBotMap f) x)
+    _ = f.hom (A.ρ g x) := by
+      -- The coinduction functor acts pointwise; make the underlying function visible.
+      change f.hom (((coindBotUnit A).hom x).1 g) = f.hom (A.ρ g x)
+      rw [coindBotUnit_hom_apply_coe]
+    _ = B.ρ g (f.hom x) := Rep.hom_comm_apply f g x
+    _ = ((coindBotUnit B).hom (f.hom x)).1 g := by rw [coindBotUnit_hom_apply_coe]
+    _ = _ := by
+      exact (congrArg (fun z : coindBot k G B.V => z.1 g)
+        (CategoryTheory.comp_apply f (coindBotUnit B) x)).symm
+
 variable (k G) in
 /-- The underlying module of the representation coinduced from the trivial subgroup is the module
 of all functions `G → X`. -/
@@ -228,6 +267,52 @@ theorem indBotCounit_hom_mk (A : Rep k G) (g : G) (a : A) :
 instance indBotCounit_epi (A : Rep k G) : Epi (indBotCounit A) :=
   (epi_iff_surjective _).2 fun a ↦ ⟨IndV.mk _ _ 1 a, by rw [indBotCounit_hom_mk, inv_one, map_one,
     Module.End.one_apply]⟩
+
+variable {A B : Rep k G}
+
+/-- The induction map induced by a morphism on the underlying coefficient modules. -/
+def indBotMap (f : A ⟶ B) : indBot k G A.V ⟶ indBot k G B.V := by
+  rw [← indBotFunctor_obj (X := ModuleCat.of k A.V),
+    ← indBotFunctor_obj (X := ModuleCat.of k B.V)]
+  exact (indBotFunctor k G).map (ModuleCat.ofHom f.hom)
+
+/-- Induction sends the identity coefficient map to the identity. -/
+@[simp]
+theorem indBotMap_id (A : Rep k G) : indBotMap (𝟙 A) = 𝟙 _ := by
+  simp [indBotMap]
+
+/-- Induction preserves composition of coefficient maps. -/
+@[simp]
+theorem indBotMap_comp (f : A ⟶ B) {C : Rep k G} (g : B ⟶ C) :
+    indBotMap (f ≫ g) = indBotMap f ≫ indBotMap g := by
+  simp [indBotMap, Functor.map_comp]
+
+/-- The projection from induction onto the representation is natural. -/
+theorem indBotCounit_naturality (f : A ⟶ B) :
+    indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  apply Representation.IndV.hom_ext
+  intro g
+  apply LinearMap.ext
+  intro x
+  calc
+    _ = (indBotCounit B).hom ((indBotMap f).hom
+        (Representation.IndV.mk (⊥ : Subgroup G).subtype
+          (Representation.trivial k (⊥ : Subgroup G) A.V) g x)) :=
+      CategoryTheory.comp_apply (indBotMap f) (indBotCounit B) _
+    _ = B.ρ g⁻¹ (f.hom x) := by
+      -- The transported functor map evaluates on induced generators pointwise.
+      change (indBotCounit B).hom
+        (Representation.IndV.mk (⊥ : Subgroup G).subtype
+          (Representation.trivial k (⊥ : Subgroup G) B.V) g (f.hom x)) = _
+      rw [indBotCounit_hom_mk]
+    _ = f.hom (A.ρ g⁻¹ x) := (Rep.hom_comm_apply f g⁻¹ x).symm
+    _ = f.hom ((indBotCounit A).hom
+        (Representation.IndV.mk (⊥ : Subgroup G).subtype
+          (Representation.trivial k (⊥ : Subgroup G) A.V) g x)) := by
+      rw [indBotCounit_hom_mk]
+    _ = _ := (CategoryTheory.comp_apply (indBotCounit A) f _).symm
 
 variable (k G) in
 /-- The underlying module of the representation induced from the trivial subgroup is the module

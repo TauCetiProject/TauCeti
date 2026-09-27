@@ -74,11 +74,12 @@ variable (M : Rep k G)
 
 /-- The connecting isomorphism for the upward shift remains natural after tensoring on the
 left by a fixed representation. -/
-theorem tensorDimensionShiftUpIso_hom_naturality_coeff :
-    (tateCohomologyFunctor n).map ((tensorLeft M).map (Rep.dimensionShiftUpMap f)) ≫
-        (tensorDimensionShiftUpIso B M n (n + 1) rfl).hom =
-      (tensorDimensionShiftUpIso A M n (n + 1) rfl).hom ≫
-        (tateCohomologyFunctor (n + 1)).map ((tensorLeft M).map f) := by
+theorem tensorDimensionShiftUpIso_hom_naturality_coefficient (i j : ℤ) (hij : i + 1 = j) :
+    (tateCohomologyFunctor i).map ((tensorLeft M).map (Rep.dimensionShiftUpMap f)) ≫
+        (tensorDimensionShiftUpIso B M i j hij).hom =
+      (tensorDimensionShiftUpIso A M i j hij).hom ≫
+        (tateCohomologyFunctor j).map ((tensorLeft M).map f) := by
+  subst j
   rw [tensorDimensionShiftUpIso_hom, tensorDimensionShiftUpIso_hom]
   have hA : ((ShortComplex.mk (Rep.coindBotUnit A) (Rep.dimensionShiftUpπ A)
       (Rep.coindBotUnit_comp_dimensionShiftUpπ A)).map (tensorLeft M)).ShortExact := by
@@ -91,15 +92,16 @@ theorem tensorDimensionShiftUpIso_hom_naturality_coeff :
   simpa only [Functor.mapShortComplex_map_τ₁, Functor.mapShortComplex_map_τ₃,
     Rep.dimensionShiftUpSESMap_τ₁, Rep.dimensionShiftUpSESMap_τ₃] using
     (_root_.TateCohomology.δ_naturality hA hB
-      ((tensorLeft M).mapShortComplex.map (Rep.dimensionShiftUpSESMap f)) n).symm
+      ((tensorLeft M).mapShortComplex.map (Rep.dimensionShiftUpSESMap f)) i).symm
 
 /-- The connecting isomorphism for the downward shift remains natural after tensoring on the
 left by a fixed representation. -/
-theorem tensorDimensionShiftDownIso_hom_naturality_coeff :
-    (tateCohomologyFunctor n).map ((tensorLeft M).map f) ≫
-        (tensorDimensionShiftDownIso B M n (n + 1) rfl).hom =
-      (tensorDimensionShiftDownIso A M n (n + 1) rfl).hom ≫
-        (tateCohomologyFunctor (n + 1)).map ((tensorLeft M).map (Rep.dimensionShiftDownMap f)) := by
+theorem tensorDimensionShiftDownIso_hom_naturality_coefficient (i j : ℤ) (hij : i + 1 = j) :
+    (tateCohomologyFunctor i).map ((tensorLeft M).map f) ≫
+        (tensorDimensionShiftDownIso B M i j hij).hom =
+      (tensorDimensionShiftDownIso A M i j hij).hom ≫
+        (tateCohomologyFunctor j).map ((tensorLeft M).map (Rep.dimensionShiftDownMap f)) := by
+  subst j
   rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom]
   have hA : ((ShortComplex.mk (Rep.dimensionShiftDownι A) (Rep.indBotCounit A)
       (Rep.dimensionShiftDownι_comp_indBotCounit A)).map (tensorLeft M)).ShortExact := by
@@ -112,16 +114,16 @@ theorem tensorDimensionShiftDownIso_hom_naturality_coeff :
   simpa only [Functor.mapShortComplex_map_τ₁, Functor.mapShortComplex_map_τ₃,
     Rep.dimensionShiftDownSESMap_τ₁, Rep.dimensionShiftDownSESMap_τ₃] using
     (_root_.TateCohomology.δ_naturality hA hB
-      ((tensorLeft M).mapShortComplex.map (Rep.dimensionShiftDownSESMap f)) n).symm
+      ((tensorLeft M).mapShortComplex.map (Rep.dimensionShiftDownSESMap f)) i).symm
 
 /-- The inverse tensored downward connecting isomorphism is natural in the shifted
 coefficient representation. -/
-theorem tensorDimensionShiftDownIso_inv_naturality_coeff :
-    (tateCohomologyFunctor (n + 1)).map ((tensorLeft M).map (Rep.dimensionShiftDownMap f)) ≫
-        (tensorDimensionShiftDownIso B M n (n + 1) rfl).inv =
-      (tensorDimensionShiftDownIso A M n (n + 1) rfl).inv ≫
-        (tateCohomologyFunctor n).map ((tensorLeft M).map f) := by
-  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality_coeff,
+theorem tensorDimensionShiftDownIso_inv_naturality_coefficient (i j : ℤ) (hij : i + 1 = j) :
+    (tateCohomologyFunctor j).map ((tensorLeft M).map (Rep.dimensionShiftDownMap f)) ≫
+        (tensorDimensionShiftDownIso B M i j hij).inv =
+      (tensorDimensionShiftDownIso A M i j hij).inv ≫
+        (tateCohomologyFunctor i).map ((tensorLeft M).map f) := by
+  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality_coefficient,
     Iso.inv_hom_id_assoc]
 
 end TauCeti.TateCohomology
