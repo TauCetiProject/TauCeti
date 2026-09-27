@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.E6.Minuscule.PositiveSubsystem.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
+public import TauCeti.AlgebraicGeometry.AffineGroupScheme.BaseChange.Coordinate
 
 /-!
 # Base change of the positive E6 minuscule subsystem
@@ -24,23 +25,20 @@ base-change together.
 
 ## Main definitions
 
-* `TauCeti.E6Minuscule.positiveSubsystemBaseChangeIdeal`: the transported positive-subsystem
-  defining ideal.
-* `TauCeti.E6Minuscule.positiveSubsystemBaseChangeIso`: the coordinate comparison with scalar
-  extension of the integral positive subsystem.
 * `TauCeti.E6Minuscule.positiveRootSubgroupIntegralCoordinateMap` and
   `TauCeti.E6Minuscule.positiveWeightTorusIntegralCoordinateMap`: the integral factored
   generator maps.
-* `TauCeti.E6Minuscule.positiveRootSubgroupBaseChangeCoordinateMap` and
-  `TauCeti.E6Minuscule.positiveWeightTorusBaseChangeCoordinateMap`: their transported maps.
+* `TauCeti.E6Minuscule.positiveSubsystemBaseChangeGroupScheme`: the scheme-theoretic base change
+  of the integral positive subsystem.
+* `TauCeti.E6Minuscule.positiveSubsystemBaseChangePresentationIso`: its identification with the
+  generic transported quotient presentation.
 * `TauCeti.E6Minuscule.positiveRootSubgroupBaseChange` and
-  `TauCeti.E6Minuscule.positiveWeightTorusBaseChange`: the corresponding scheme morphisms over
-  the new base.
+  `TauCeti.E6Minuscule.positiveWeightTorusBaseChange`: the base changes of the integral pinning
+  morphisms.
 
 ## References
 
-* The type-`E₇` base-change construction in `TauCeti.Algebra.Lie.E7.Minuscule.PositiveSubsystem`,
-  introduced in [TauCetiProject/TauCeti#9438](https://github.com/TauCetiProject/TauCeti/pull/9438),
+* The type-`E₇` base-change construction in `TauCeti.Algebra.Lie.E7.Minuscule.PositiveSubsystem`
   for the interface specialized here.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4.
 * B. Conrad, *Reductive Group Schemes*, §1.
@@ -84,41 +82,6 @@ theorem positiveSubsystemCoordinateHopfAlgebra_eq :
         positiveSubsystemDefiningIdeal := by
   rw [positiveSubsystemDefiningIdeal_def]
 
-/-- The scalar extension to `A` of the defining ideal of the integral positive subsystem. -/
-noncomputable def positiveSubsystemBaseChangeIdeal :
-    HopfIdeal A
-      (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ 27)) :=
-  kostantTorusSubsystemBaseChangeIdeal rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
-    weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight positiveSimpleRoots
-    (fun i => weightTable.isNilpotent_rep_serreRootGenerator i.1) A
-
-/-- Quotienting by the transported positive-subsystem ideal agrees with scalar extension of its
-integral coordinate Hopf algebra. -/
-noncomputable def positiveSubsystemBaseChangeIso :
-    CommHopfAlgCat.quotient
-        (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ 27))
-        (positiveSubsystemBaseChangeIdeal A) ≅
-      CommHopfAlgCat.baseChange (K := A) positiveSubsystemCoordinateHopfAlgebra :=
-  kostantTorusSubsystemBaseChangeIso rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
-    weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight positiveSimpleRoots
-    (fun i => weightTable.isNilpotent_rep_serreRootGenerator i.1) A
-
-/-- The positive-subsystem base-change comparison respects the ambient quotient presentation. -/
-@[simp]
-theorem mkQuotient_comp_positiveSubsystemBaseChangeIso_hom :
-    CommHopfAlgCat.mkQuotient
-          (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ 27))
-          (positiveSubsystemBaseChangeIdeal A) ≫
-        (positiveSubsystemBaseChangeIso A).hom =
-      CommHopfAlgCat.baseChangeMap
-        (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ 27)
-          (kostantTorusSubsystemDefiningIdeal rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
-            weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight positiveSimpleRoots
-            (fun i => weightTable.isNilpotent_rep_serreRootGenerator i.1))) :=
-  mkQuotient_comp_kostantTorusSubsystemBaseChangeIso_hom rootGen cartanGen weightTable.rep
-    (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight
-    positiveSimpleRoots (fun i => weightTable.isNilpotent_rep_serreRootGenerator i.1) A
-
 /-! ## Positive simple-root subgroups -/
 
 /-- The coordinate map of the `i`th positive simple-root subgroup factored through the integral
@@ -157,32 +120,6 @@ theorem hopfSpec_map_positiveRootSubgroupIntegralCoordinateMap_op (i : Fin 6) :
     kostantRootSubgroupToTorusSubsystem_def]
   simp
 
-/-- The coordinate map of the `i`th positive simple-root subgroup after base change to `A`. -/
-noncomputable def positiveRootSubgroupBaseChangeCoordinateMap (i : Fin 6) :
-    CommHopfAlgCat.quotient
-        (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ 27))
-        (positiveSubsystemBaseChangeIdeal A) ⟶
-      CommHopfAlgCat.baseChange (K := A) (AdditiveGroup.coordinateHopfAlgebra ℤ) :=
-  (positiveSubsystemBaseChangeIso A).hom ≫
-    CommHopfAlgCat.baseChangeMap (positiveRootSubgroupIntegralCoordinateMap i)
-
-/-- The transported positive root-subgroup factorization recovers the scalar extension of its
-ambient integral coordinate map. -/
-@[simp]
-theorem mkQuotient_comp_positiveRootSubgroupBaseChangeCoordinateMap (i : Fin 6) :
-    CommHopfAlgCat.mkQuotient
-          (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ 27))
-          (positiveSubsystemBaseChangeIdeal A) ≫
-        positiveRootSubgroupBaseChangeCoordinateMap A i =
-      CommHopfAlgCat.baseChangeMap
-        (kostantRootSubgroupCoordinateMap rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
-          weightTable.rep_kostantForm_mem_lattice (.inl i)
-          (weightTable.isNilpotent_rep_serreRootGenerator (.inl i)) 𝒷) := by
-  rw [positiveRootSubgroupBaseChangeCoordinateMap, ← Category.assoc,
-    mkQuotient_comp_positiveSubsystemBaseChangeIso_hom,
-    ← (CommHopfAlgCat.baseChangeFunctor (K := A)).map_comp,
-    mkQuotient_comp_positiveRootSubgroupIntegralCoordinateMap]
-
 /-! ## The positive weight torus -/
 
 /-- The coordinate map of the weight torus factored through the integral positive subsystem. -/
@@ -219,31 +156,6 @@ theorem hopfSpec_map_positiveWeightTorusIntegralCoordinateMap_op :
     kostantWeightTorusToTorusSubsystem_def]
   simp
 
-/-- The coordinate map of the positive subsystem's weight torus after base change to `A`. -/
-noncomputable def positiveWeightTorusBaseChangeCoordinateMap :
-    CommHopfAlgCat.quotient
-        (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ 27))
-        (positiveSubsystemBaseChangeIdeal A) ⟶
-      CommHopfAlgCat.baseChange (K := A)
-        (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup (Fin 6))).obj :=
-  (positiveSubsystemBaseChangeIso A).hom ≫
-    CommHopfAlgCat.baseChangeMap positiveWeightTorusIntegralCoordinateMap
-
-/-- The transported positive weight-torus factorization recovers the scalar extension of its
-ambient integral coordinate map. -/
-@[simp]
-theorem mkQuotient_comp_positiveWeightTorusBaseChangeCoordinateMap :
-    CommHopfAlgCat.mkQuotient
-          (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ 27))
-          (positiveSubsystemBaseChangeIdeal A) ≫
-        positiveWeightTorusBaseChangeCoordinateMap A =
-      CommHopfAlgCat.baseChangeMap
-        (GeneralLinear.weightTorusCoordinateMap weightTable.weight) := by
-  rw [positiveWeightTorusBaseChangeCoordinateMap, ← Category.assoc,
-    mkQuotient_comp_positiveSubsystemBaseChangeIso_hom,
-    ← (CommHopfAlgCat.baseChangeFunctor (K := A)).map_comp,
-    mkQuotient_comp_positiveWeightTorusIntegralCoordinateMap]
-
 end
 
 /-! ## Scheme morphisms over the new base -/
@@ -256,56 +168,168 @@ noncomputable section
 -- polymorphic.
 variable (B : Type) [CommRing B]
 
-/-- The positive subsystem after base change, in its transported quotient presentation. -/
+local notation "rootGen" => TauCeti.serreRootGenerator weightTable.cartanMatrix
+local notation "cartanGen" => TauCeti.serreH ℚ weightTable.cartanMatrix
+local notation "Λ" => TauCeti.coordinateLattice (Fin 27)
+local notation "𝒷" => TauCeti.coordinateLatticeBasis (Fin 27)
+
+/-- The scheme-theoretic base change of the integral positive subsystem to `B`. -/
 noncomputable abbrev positiveSubsystemBaseChangeGroupScheme :
+    Grp (Over (AlgebraicGeometry.Spec (CommRingCat.of B))) :=
+  (Over.pullback (AlgebraicGeometry.Spec.map
+    (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.obj positiveSubsystemGroupScheme
+
+/-- The generic transported quotient presentation of the positive subsystem over `B`. -/
+noncomputable abbrev positiveSubsystemBaseChangePresentation :
     Grp (Over (AlgebraicGeometry.Spec (CommRingCat.of B))) :=
   CommHopfAlgCat.quotientSpec
     (CommHopfAlgCat.baseChange (K := B) (GeneralLinear.coordinateHopfAlgebra ℤ 27))
-    (positiveSubsystemBaseChangeIdeal B)
+    (kostantTorusSubsystemBaseChangeIdeal rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
+      weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight positiveSimpleRoots
+      (fun i => weightTable.isNilpotent_rep_serreRootGenerator i.1) B)
 
-/-- The `i`th transported positive simple-root morphism from the named additive group over `B`.
-Its coordinate map is the transported factorization followed by the canonical identification
-of the scalar extension of `O(𝔾ₐ)` with `O(𝔾ₐ/B)`. -/
+/-- The scheme-theoretic base change of the positive subsystem is represented by the generic
+transported quotient presentation. -/
+noncomputable def positiveSubsystemBaseChangePresentationIso :
+    positiveSubsystemBaseChangeGroupScheme B ≅ positiveSubsystemBaseChangePresentation B :=
+  (Over.pullback (AlgebraicGeometry.Spec.map
+      (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.mapIso
+      (eqToIso positiveSubsystemGroupScheme_def) ≪≫
+    AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso positiveSubsystemCoordinateHopfAlgebra ≪≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).mapIso
+      (kostantTorusSubsystemBaseChangeIso rootGen cartanGen weightTable.rep (Λ).toAddSubgroup
+        weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight positiveSimpleRoots
+        (fun i => weightTable.isNilpotent_rep_serreRootGenerator i.1) B).op
+
+/-- The canonical comparison from the scheme-theoretic base change of the integral additive group
+to the additive group constructed over `B`. -/
+noncomputable def positiveRootSubgroupDomainBaseChangeIso :
+    (Over.pullback (AlgebraicGeometry.Spec.map
+        (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.obj
+        (AdditiveGroup.groupScheme ℤ) ≅ AdditiveGroup.groupScheme B :=
+  (Over.pullback (AlgebraicGeometry.Spec.map
+      (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.mapIso
+      (eqToIso (AdditiveGroup.groupScheme_def ℤ)) ≪≫
+    AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso (AdditiveGroup.coordinateHopfAlgebra ℤ) ≪≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).mapIso
+      (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ B).symm.op ≪≫
+    eqToIso (AdditiveGroup.groupScheme_def B).symm
+
+/-- The canonical comparison from the scheme-theoretic base change of the integral split torus
+to the split torus constructed over `B`. -/
+noncomputable def positiveWeightTorusDomainBaseChangeIso :
+    (Over.pullback (AlgebraicGeometry.Spec.map
+        (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.obj
+        (SplitTorus.groupScheme ℤ (Fin 6)) ≅ SplitTorus.groupScheme B (Fin 6) :=
+  (Over.pullback (AlgebraicGeometry.Spec.map
+      (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.mapIso
+      (eqToIso (DiagonalizableGroup.groupScheme_def ℤ
+        (SplitTorus.characterGroup (Fin 6)))) ≪≫
+    AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso
+      (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup (Fin 6))).obj ≪≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).mapIso
+      (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso ℤ B
+        (SplitTorus.characterGroup (Fin 6))).symm.op ≪≫
+    eqToIso (DiagonalizableGroup.groupScheme_def B
+      (SplitTorus.characterGroup (Fin 6))).symm
+
+/-- The `i`th positive simple-root morphism after scheme-theoretic base change to `B`. -/
 noncomputable def positiveRootSubgroupBaseChange (i : Fin 6) :
     AdditiveGroup.groupScheme B ⟶ positiveSubsystemBaseChangeGroupScheme B :=
-  eqToHom (AdditiveGroup.groupScheme_def B) ≫
-    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
-      (positiveRootSubgroupBaseChangeCoordinateMap B i ≫
-        (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ B).hom).op
+  (positiveRootSubgroupDomainBaseChangeIso B).inv ≫
+    (Over.pullback (AlgebraicGeometry.Spec.map
+      (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.map (positiveRootSubgroup i)
 
-/-- The coordinate map underlying the transported positive simple-root scheme morphism is the
-transported factorization, followed by the standard additive-group base-change comparison. -/
-theorem hopfSpec_map_positiveRootSubgroupBaseChangeCoordinateMap_op (i : Fin 6) :
-    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
-        (positiveRootSubgroupBaseChangeCoordinateMap B i ≫
-          (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ B).hom).op =
-      eqToHom (AdditiveGroup.groupScheme_def B).symm ≫
-        positiveRootSubgroupBaseChange B i := by
-  simp [positiveRootSubgroupBaseChange]
+/-- The quotient-presentation comparison identifies the scheme-theoretic base change of the
+`i`th positive simple-root morphism with scalar extension of its integral coordinate map. -/
+theorem positiveRootSubgroupBaseChange_comp_presentationIso (i : Fin 6) :
+    (positiveRootSubgroupDomainBaseChangeIso B).hom ≫
+      positiveRootSubgroupBaseChange B i ≫
+        (positiveSubsystemBaseChangePresentationIso B).hom =
+      (Over.pullback (AlgebraicGeometry.Spec.map
+          (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.map
+          (eqToHom (AdditiveGroup.groupScheme_def ℤ)) ≫
+        (AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso
+          (R := ℤ) (S := B) (AdditiveGroup.coordinateHopfAlgebra ℤ)).hom ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
+          ((kostantTorusSubsystemBaseChangeIso rootGen cartanGen weightTable.rep
+            (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝒷
+            weightTable.weight positiveSimpleRoots
+            (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1) B).hom ≫
+          CommHopfAlgCat.baseChangeMap
+            (kostantRootSubgroupTorusSubsystemCoordinateMap rootGen cartanGen weightTable.rep
+              (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight
+              positiveSimpleRoots
+              (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1)
+              (inl_mem_positiveSimpleRoots i))).op := by
+  simp [positiveRootSubgroupBaseChange, positiveSubsystemBaseChangePresentationIso,
+    positiveRootSubgroup_def, kostantRootSubgroupToTorusSubsystem_def]
+  have h := congrArg (fun f =>
+      (Over.pullback (AlgebraicGeometry.Spec.map
+        (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.map
+          (eqToHom (AdditiveGroup.groupScheme_def ℤ)) ≫ f ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
+          (kostantTorusSubsystemBaseChangeIso rootGen cartanGen weightTable.rep
+            (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝒷
+            weightTable.weight positiveSimpleRoots
+            (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1) B).hom.op)
+    (AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_hom_naturality
+      (R := ℤ) (S := B)
+      (kostantRootSubgroupTorusSubsystemCoordinateMap rootGen cartanGen weightTable.rep
+        (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight
+        positiveSimpleRoots (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1)
+        (inl_mem_positiveSimpleRoots i)))
+  simpa using h
 
-/-- The transported positive weight-torus morphism from the named split torus over `B`. Its
-coordinate map is the transported factorization followed by the canonical diagonalizable-group
-base-change comparison. -/
+/-- The positive weight-torus morphism after scheme-theoretic base change to `B`. -/
 noncomputable def positiveWeightTorusBaseChange :
     SplitTorus.groupScheme B (Fin 6) ⟶ positiveSubsystemBaseChangeGroupScheme B :=
-  eqToHom (DiagonalizableGroup.groupScheme_def B
-      (SplitTorus.characterGroup (Fin 6))) ≫
-    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
-      (positiveWeightTorusBaseChangeCoordinateMap B ≫
-        (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso ℤ B
-          (SplitTorus.characterGroup (Fin 6))).hom).op
+  (positiveWeightTorusDomainBaseChangeIso B).inv ≫
+    (Over.pullback (AlgebraicGeometry.Spec.map
+      (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.map positiveWeightTorus
 
-/-- The coordinate map underlying the transported positive weight-torus scheme morphism is the
-transported factorization, followed by the standard diagonalizable-group base-change comparison. -/
-theorem hopfSpec_map_positiveWeightTorusBaseChangeCoordinateMap_op :
-    (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
-        (positiveWeightTorusBaseChangeCoordinateMap B ≫
-          (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso ℤ B
-            (SplitTorus.characterGroup (Fin 6))).hom).op =
-      eqToHom (DiagonalizableGroup.groupScheme_def B
-          (SplitTorus.characterGroup (Fin 6))).symm ≫
-        positiveWeightTorusBaseChange B := by
-  simp [positiveWeightTorusBaseChange]
+/-- Under the quotient-presentation comparison, the base-changed positive weight torus is the
+generic transported factorization. -/
+theorem positiveWeightTorusBaseChange_comp_presentationIso :
+    (positiveWeightTorusDomainBaseChangeIso B).hom ≫
+      positiveWeightTorusBaseChange B ≫
+        (positiveSubsystemBaseChangePresentationIso B).hom =
+      (Over.pullback (AlgebraicGeometry.Spec.map
+          (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.map
+          (eqToHom (DiagonalizableGroup.groupScheme_def ℤ
+            (SplitTorus.characterGroup (Fin 6)))) ≫
+        (AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso
+          (R := ℤ) (S := B)
+          (DiagonalizableGroup.coordinateRing ℤ
+            (SplitTorus.characterGroup (Fin 6))).obj).hom ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
+          ((kostantTorusSubsystemBaseChangeIso rootGen cartanGen weightTable.rep
+            (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝒷
+            weightTable.weight positiveSimpleRoots
+            (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1) B).hom ≫
+          CommHopfAlgCat.baseChangeMap
+            (kostantWeightTorusTorusSubsystemCoordinateMap rootGen cartanGen weightTable.rep
+              (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight
+              positiveSimpleRoots
+              (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1))).op := by
+  simp [positiveWeightTorusBaseChange, positiveSubsystemBaseChangePresentationIso,
+    positiveWeightTorus_def, kostantWeightTorusToTorusSubsystem_def]
+  have h := congrArg (fun f =>
+      (Over.pullback (AlgebraicGeometry.Spec.map
+        (CommRingCat.ofHom (algebraMap ℤ B)))).mapGrp.map
+          (eqToHom (DiagonalizableGroup.groupScheme_def ℤ
+            (SplitTorus.characterGroup (Fin 6)))) ≫ f ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of B)).map
+          (kostantTorusSubsystemBaseChangeIso rootGen cartanGen weightTable.rep
+            (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝒷
+            weightTable.weight positiveSimpleRoots
+            (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1) B).hom.op)
+    (AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_hom_naturality
+      (R := ℤ) (S := B)
+      (kostantWeightTorusTorusSubsystemCoordinateMap rootGen cartanGen weightTable.rep
+        (Λ).toAddSubgroup weightTable.rep_kostantForm_mem_lattice 𝒷 weightTable.weight
+        positiveSimpleRoots (fun k => weightTable.isNilpotent_rep_serreRootGenerator k.1)))
+  simpa using h
 
 end
 
