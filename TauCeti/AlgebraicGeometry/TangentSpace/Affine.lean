@@ -88,15 +88,6 @@ noncomputable def kernelResidueFieldAlgEquiv :
     ((IsLocalization.AtPrime.equivQuotMaximalIdeal (RingHom.ker (f : H →+* k))
       ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))).restrictScalars k)
 
-/-- The residue-field equivalence agrees with the canonical algebra map from the ground field. -/
-@[simp]
-theorem kernelResidueFieldAlgEquiv_apply (r : k) :
-    kernelResidueFieldAlgEquiv f r =
-      algebraMap k
-        (IsLocalRing.ResidueField
-          ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))) r :=
-  (kernelResidueFieldAlgEquiv f).commutes r
-
 /-- The cotangent space of an augmentation kernel is canonically the Zariski cotangent space of
 the affine spectrum at the corresponding point.
 

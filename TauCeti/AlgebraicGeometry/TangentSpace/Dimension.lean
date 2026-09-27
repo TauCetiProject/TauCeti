@@ -44,8 +44,9 @@ theorem finrank_kernelCotangent_eq_finrank_residueFieldCotangent :
   have h := lift_rank_eq_of_equiv_equiv (kernelResidueFieldAlgEquiv f).toRingEquiv
     (kernelCotangentLinearEquivZariski f).toAddEquiv
     (kernelResidueFieldAlgEquiv f).bijective (fun r x ↦ by
+      have hr : kernelResidueFieldAlgEquiv f r = _ := (kernelResidueFieldAlgEquiv f).commutes r
       simpa only [AlgEquiv.coe_toRingEquiv, LinearEquiv.coe_toAddEquiv,
-        LinearEquiv.coe_addEquiv_apply, kernelResidueFieldAlgEquiv_apply,
+        LinearEquiv.coe_addEquiv_apply, hr,
         IsScalarTower.algebraMap_smul] using (kernelCotangentLinearEquivZariski f).map_smul r x)
   simpa only [Cardinal.toNat_lift, Module.finrank] using congrArg Cardinal.toNat h
 
