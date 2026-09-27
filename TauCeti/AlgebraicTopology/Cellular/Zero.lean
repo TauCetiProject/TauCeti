@@ -92,7 +92,7 @@ def cellularChainGroupZeroIso :
 /-- The inverse degree-zero identification sends the generator of a zero-cell to the homology
 class of its characteristic point in the zero-skeleton, then to the skeletal pair. The middle
 inverse is Mathlib's identification of zeroth homology of a discrete space with its point basis. -/
-lemma cellularChainGroupZeroIso_inv_ι (i : cell C 0) :
+@[simp] lemma cellularChainGroupZeroIso_inv_ι (i : cell C 0) :
     Sigma.ι (fun _ : cell C 0 ↦ R) i ≫ (cellularChainGroupZeroIso C R).inv =
       Sigma.ι (fun _ : skeletonObj C 1 ↦ R) (zeroCellPoint C i) ≫
         (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace A R
