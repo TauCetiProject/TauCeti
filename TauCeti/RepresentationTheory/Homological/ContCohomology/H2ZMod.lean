@@ -11,13 +11,14 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 /-!
 # `H²(G, M)` as a `ZMod n`-module
 
-Scalars from `ZMod n` kill a `ZMod n`-module, so `n` kills the coefficients of `H²(G, M)`, hence
-`H²(G, M)` itself (`TauCeti.ContCohomology.nsmul_H2_eq_zero`), which makes it a `ZMod n`-module in
-turn (`TauCeti.ContCohomology.instModuleZModH2`). The coefficients are left general, so that the
-instance also covers coefficients such as the invariants `M ^ N` carried by the cohomology of a
-quotient group, and `M = ZMod n` itself is the case that makes `H²(G, ZMod n)` a `ZMod n`-module,
-and for `n` a prime `p` an `𝔽_p`-vector space, so that `Module.rank`, `Module.finrank` and
-`Module.Finite` apply to it. For a pro-`p` group `G` that dimension is the relation rank of `G`.
+Multiplication by `n` is zero on any `ZMod n`-module, so `n` kills the coefficients of
+`H²(G, M)`, hence `H²(G, M)` itself (`TauCeti.ContCohomology.nsmul_H2_eq_zero`), which makes it a
+`ZMod n`-module in turn (`TauCeti.ContCohomology.instModuleZModH2`). The coefficients are left
+general, so that the instance also covers coefficients such as the invariants `M ^ N` carried by
+the cohomology of a quotient group, and `M = ZMod n` itself is the case that makes
+`H²(G, ZMod n)` a `ZMod n`-module, and for `n` a prime `p` an `𝔽_p`-vector space, so that
+`Module.rank`, `Module.finrank` and `Module.Finite` apply to it. For a pro-`p` group `G` that
+dimension is the relation rank of `G`.
 
 The module structure is the canonical one: `Module (ZMod n) A` is a subsingleton on an abelian
 group `A` (`ZMod.instSubsingletonModule`), so it agrees with every other way of producing one,
