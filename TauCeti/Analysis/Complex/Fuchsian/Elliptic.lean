@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Fuchsian.Stabilizer
 public import TauCeti.Analysis.Complex.RootsOfUnity.Descent
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Elliptic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
@@ -22,6 +23,9 @@ an open partial homeomorphism from `Γ \ ℍ` to `ℂ` sending the orbit of a po
 `discCoordinate z τ ^ m` (`Subgroup.stabilizerBallQuotientChart_mk`). On the free locus `m = 1` and
 the chart is the disc coordinate pushed forward along the orbit projection; at an elliptic point it
 is the cyclic quotient model `u ↦ u ^ m`.
+
+For an inclusion of projective subgroups, charts at the same point with a common radius express
+the induced map on orbit quotients as a power map of degree the elliptic ramification index.
 
 Near a point `τ` whose orbit lies in the source of the chart at `z`, the chart composed with the
 orbit projection is `discCoordinate z (g • ·) ^ m` for a group element `g` moving `τ` into the
@@ -249,5 +253,91 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
           (mem_ball_zero_iff.1 hw₀)]))).differentiableWithinAt
   rw [hdesc]
   exact (differentiableOn_descendPow hs_open hFd hinv).mono hsub
+
+variable {Δ Γ : Subgroup PSL(2, ℝ)} (h : Δ ≤ Γ) (z : ℍ)
+
+/-- Two properly discontinuous actions admit a common positive chart radius at `z`. -/
+theorem exists_common_elliptic_chart_radius
+    [ProperlyDiscontinuousSMul Δ ℍ] [ProperlyDiscontinuousSMul Γ ℍ] :
+    ∃ ε : ℝ, 0 < ε ∧
+      IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε) ∧
+      IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε) :=
+  (eventually_mem_nhdsWithin.and
+    ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Δ z).and
+      (eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z))).exists
+
+/-- In elliptic charts centered at the same upper-half-plane point, the quotient map induced
+by `Δ ≤ Γ` is locally `u ↦ u ^ e`, where `e` is the ratio of stabilizer orders. -/
+private theorem stabilizerBallQuotientChart_map_ofQuotient
+    [Finite (stabilizer Γ z)]
+    {εΔ εΓ : ℝ} (hεΔ : 0 < εΔ) (hεΓ : 0 < εΓ)
+    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z εΔ))
+    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z εΓ))
+    {τ : ℍ} (hτΔ : dist τ z < εΔ) (hτΓ : dist τ z < εΓ) :
+    let : Finite (stabilizer Δ z) :=
+      Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+    stabilizerBallQuotientChart hεΓ hopenΓ
+      (Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h)
+        (Quotient.mk _ τ)) =
+      (stabilizerBallQuotientChart hεΔ hopenΔ (Quotient.mk _ τ)) ^
+        ellipticRamificationIndex h z := by
+  dsimp only
+  let : Finite (stabilizer Δ z) :=
+    Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+  rw [TauCeti.Setoid.map_of_le_mk,
+    stabilizerBallQuotientChart_mk hεΓ hopenΓ hτΓ,
+    stabilizerBallQuotientChart_mk hεΔ hopenΔ hτΔ,
+    ← pow_mul, card_stabilizer_mul_ellipticRamificationIndex h z]
+
+/-- The map of orbit quotients sends the source of a chart centered at `z` into the
+corresponding chart source for the larger group, when both use the same radius. -/
+theorem map_mem_stabilizerBallQuotientChart_source
+    [Finite (stabilizer Γ z)]
+    {ε : ℝ} (hε : 0 < ε)
+    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
+    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    {q : orbitRel.Quotient Δ ℍ} :
+    let : Finite (stabilizer Δ z) :=
+      Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+    q ∈ (stabilizerBallQuotientChart hε hopenΔ).source →
+    Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q ∈
+      (stabilizerBallQuotientChart hε hopenΓ).source := by
+  dsimp only
+  let : Finite (stabilizer Δ z) :=
+    Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+  intro hq
+  induction q using Quotient.inductionOn' with
+  | h τ =>
+      obtain ⟨g, hg⟩ := (mem_stabilizerBallQuotientChart_source_iff hε hopenΔ).1 hq
+      rw [TauCeti.Setoid.map_of_le_mk]
+      exact (mem_stabilizerBallQuotientChart_source_iff hε hopenΓ).2
+        ⟨⟨g.1, h g.2⟩, hg⟩
+
+/-- On the entire source of a common elliptic chart, the quotient map is the power map
+of degree equal to the elliptic ramification index. -/
+theorem stabilizerBallQuotientChart_map_eq_pow_ellipticRamificationIndex
+    [Finite (stabilizer Γ z)]
+    {ε : ℝ} (hε : 0 < ε)
+    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
+    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    {q : orbitRel.Quotient Δ ℍ} :
+    let : Finite (stabilizer Δ z) :=
+      Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+    q ∈ (stabilizerBallQuotientChart hε hopenΔ).source →
+    stabilizerBallQuotientChart hε hopenΓ
+      (Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q) =
+      (stabilizerBallQuotientChart hε hopenΔ q) ^ ellipticRamificationIndex h z := by
+  dsimp only
+  let : Finite (stabilizer Δ z) :=
+    Finite.of_injective (stabilizerInclusion h z) (stabilizerInclusion_injective h z)
+  intro hq
+  induction q using Quotient.inductionOn' with
+  | h τ =>
+      obtain ⟨g, hg⟩ := (mem_stabilizerBallQuotientChart_source_iff hε hopenΔ).1 hq
+      have heq : (Quotient.mk _ (g • τ) : orbitRel.Quotient Δ ℍ) = Quotient.mk _ τ :=
+        Quotient.sound (orbitRel_apply.mpr (mem_orbit τ g))
+      simpa only [heq] using
+        (stabilizerBallQuotientChart_map_ofQuotient
+          h z hε hε hopenΔ hopenΓ hg hg)
 
 end Subgroup
