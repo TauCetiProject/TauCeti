@@ -35,7 +35,9 @@ without repeatedly transporting across the definitional equality of trivial repr
 
 * `TauCeti.trivialFp_ρ_apply_apply`: the action is trivial.
 * `TauCeti.continuousSMul_trivialFp`: the derived action on the carrier is continuous.
-* `TauCeti.res_trivialFp`: restriction preserves trivial coefficients on the nose.
+* `TauCeti.res_trivialFp`: restriction preserves trivial coefficients on the nose;
+  `TauCeti.trivialFpEquiv_eqToHom_res_trivialFp`: the transport along this equality is the identity
+  on the underlying values.
 
 ## References
 
@@ -116,6 +118,16 @@ theorem res_trivialFp (S : Subgroup G) :
   res_trivial (ZMod p) G (ULift.{u} (ZMod p)) S.subtype
 
 open CategoryTheory _root_.ContinuousCohomology
+
+/-- Transport along `res_trivialFp` is the identity on the underlying values: the restricted
+coefficient object and `trivialFp p S` have the same lifted carrier, and `trivialFpEquiv` reads
+off the same value on both sides. -/
+@[simp]
+theorem trivialFpEquiv_eqToHom_res_trivialFp (S : Subgroup G)
+    (x : (TopRep.res (S.subtype : S →* G) (trivialFp p G)).V) :
+    trivialFpEquiv p S (eqToHom (res_trivialFp p G S) x) = trivialFpEquiv p G x :=
+  -- `res_trivialFp` holds by `rfl` here, so the transport is the identity map.
+  (rfl)
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
 
