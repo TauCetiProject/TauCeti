@@ -50,7 +50,6 @@ end NormalLayer
 
 /-- In degree zero, cup product with `u` sends the canonical trivial-coefficient class of `1`
 to `u` in Tate degree two. This fixes the orientation of the degree-zero Tate isomorphism. -/
-@[simp]
 theorem cupClass_trivialTateHZeroOne (F : Formation G) (L : NormalLayer G) (u : L.H F 2) :
     cupClass F L u 0 L.trivialTateHZeroOne = (L.tateHIsoH F 2).inv u := by
   let one : (Rep.trivial ℤ L.Gal ℤ).ρ.invariants := ⟨1, by simp [Representation.invariants]⟩
