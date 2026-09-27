@@ -122,7 +122,7 @@ theorem SeparatelyExchangeable.condIndepFun_visibleBlock_compl
     (hS.mono Set.subset_union_left) (hT.mono Set.subset_union_left) (hI.prod hJ)
     Set.Subset.rfl (Set.prod_mono Set.subset_union_right Set.subset_union_right)
   rw [condIndepFun_iff_condIndep] at hlocal ⊢
-  exact condIndep_of_condIndep_of_le_conditioning
+  exact condIndep_of_condIndep_of_le_of_le
     (Set.measurable_restrict _).comap_le (Set.measurable_restrict _).comap_le
     (Set.measurable_restrict _).comap_le hlocal hRH hHC
 

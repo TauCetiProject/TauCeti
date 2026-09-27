@@ -25,7 +25,7 @@ the generic contraction-independence identity that feeds them:
   `mH`-measurable `H`).
 * `condExp_indicator_sup_eq_of_condIndep` — the converse projection: from `CondIndep mG mF mH`,
   conditioning an `mH`-measurable indicator on the join `mF ⊔ mG` collapses to conditioning on `mG`.
-* `condIndep_of_condIndep_of_le_conditioning` — weak union: conditional independence persists
+* `condIndep_of_condIndep_of_le_of_le` — weak union: conditional independence persists
   when the conditioning σ-algebra is enlarged by information from one side.
 * `condExp_indicator_eq_of_law_eq_of_comap_le` — Kallenberg's contraction-independence identity
   (Lemma 1.3): if the pair laws agree, `(X, W) =ᵈ (X, W')`, and `σ(W) ≤ σ(W')`, then conditioning
@@ -260,7 +260,7 @@ side.** If `mF` and `mH` are conditionally independent given `mG`, and
 This is the weak-union property of conditional independence, in the nested form most useful for
 random fields: one may reveal additional information from the `mH` side without creating a
 dependence on `mF`. -/
-theorem condIndep_of_condIndep_of_le_conditioning {Ω : Type*} {mΩ : MeasurableSpace Ω}
+theorem condIndep_of_condIndep_of_le_of_le {Ω : Type*} {mΩ : MeasurableSpace Ω}
     [StandardBorelSpace Ω] {μ : @Measure Ω mΩ} [IsFiniteMeasure μ]
     {mF mG mG' mH : MeasurableSpace Ω} (hmF : mF ≤ mΩ) (hmG : mG ≤ mΩ)
     (hmH : mH ≤ mΩ) (h : CondIndep mG mF mH hmG μ) (hGG' : mG ≤ mG')
