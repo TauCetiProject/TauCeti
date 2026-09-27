@@ -230,24 +230,8 @@ theorem hasseInvariant_add_mk (p q : RegularFormPresentation K) :
     toFun := fun a => quaternionClass a b
     map_one' := quaternionClass_one_left b
     map_mul' := fun a c => quaternionClass_mul_left a c b }
-  have happend : p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := by
-    let hfst := RegularFormPresentation.fst_append p q
-    have hw : (p.append q).2 ∘ Fin.cast hfst.symm = Fin.append p.2 q.2 := by
-      funext i
-      refine Fin.addCases ?_ ?_ i
-      · intro k
-        simpa only [Function.comp_apply, Fin.append_left] using
-          RegularFormPresentation.append_apply_castAdd p q k
-      · intro k
-        simpa only [Function.comp_apply, Fin.append_right] using
-          RegularFormPresentation.append_apply_natAdd p q k
-    apply RegularFormPresentation.ext hfst
-    intro i
-    let j := Fin.cast hfst i
-    have hi : i = Fin.cast hfst.symm j := Fin.ext rfl
-    rw [hi]
-    exact congrFun hw j
-  rw [mk_add_mk, happend, hasseInvariant_mk, hasseInvariant_mk, hasseInvariant_mk]
+  rw [mk_add_mk, RegularFormPresentation.append_eq, hasseInvariant_mk, hasseInvariant_mk,
+    hasseInvariant_mk]
   rw [prod_prod_Ioi_append]
   congr 1
   calc
