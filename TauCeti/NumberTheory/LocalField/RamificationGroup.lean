@@ -34,7 +34,9 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
 ## Main results
 
 * `TauCeti.LocalFieldsRamification.mem_lowerRamificationGroup_iff`: the defining congruence
-  `σ • x ≡ x mod 𝔪 ^ (i + 1)` on `𝒪[L]`.
+  `σ • x ≡ x mod 𝔪 ^ (i + 1)` on `𝒪[L]`, and
+  `TauCeti.LocalFieldsRamification.mem_lowerRamificationGroup_iff_le_lowerIndex`: its reading
+  `i + 1 ≤ i(σ)` on Serre's lower index `TauCeti.IsLocalRing.lowerIndex`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_top_of_le_neg_one`,
   `TauCeti.LocalFieldsRamification.lowerRamificationGroup_zero` and
   `TauCeti.LocalFieldsRamification.lowerRamificationGroup_antitone`: the filtration is `⊤` below
@@ -96,6 +98,13 @@ theorem mem_lowerRamificationGroup_iff {i : ℤ} {σ : L ≃ₐ[K] L} :
     σ ∈ lowerRamificationGroup K L i ↔
       ∀ x : 𝒪[L], σ • x - x ∈ IsLocalRing.maximalIdeal 𝒪[L] ^ (i + 1).toNat := by
   rw [lowerRamificationGroup_def, TauCeti.IsLocalRing.mem_ramificationGroup_iff]
+
+/-- The lower ramification groups are the superlevel sets of Serre's lower index
+`i(σ) = min_{x ∈ 𝒪[L]} v_L(σ x - x)`: `σ ∈ G_i` exactly when `i + 1 ≤ i(σ)`. -/
+theorem mem_lowerRamificationGroup_iff_le_lowerIndex {i : ℤ} {σ : L ≃ₐ[K] L} :
+    σ ∈ lowerRamificationGroup K L i ↔
+      ((i + 1).toNat : ℕ∞) ≤ TauCeti.IsLocalRing.lowerIndex 𝒪[L] σ := by
+  rw [lowerRamificationGroup_def, TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_lowerIndex]
 
 /-- Below the index `0` the lower filtration is the whole Galois group. -/
 theorem lowerRamificationGroup_eq_top_of_le_neg_one {i : ℤ} (hi : i ≤ -1) :
@@ -335,6 +344,15 @@ section Tower
 variable (K' : Type*) [Field K'] [ValuativeRel K'] [TopologicalSpace K']
   [IsNonarchimedeanLocalField K'] [Algebra K K'] [Algebra K' L] [IsScalarTower K K' L]
   [ValuativeExtension K' L] [Module.Finite K' L]
+
+variable {K L K'} in
+/-- Restricting scalars leaves Serre's lower index unchanged. -/
+@[simp]
+theorem lowerIndex_restrictScalars (σ : L ≃ₐ[K'] L) :
+    TauCeti.IsLocalRing.lowerIndex 𝒪[L] (σ.restrictScalars K) =
+      TauCeti.IsLocalRing.lowerIndex 𝒪[L] σ := by
+  simp only [TauCeti.IsLocalRing.lowerIndex_def,
+    AlgEquiv.restrictScalars_smul_integerRing]
 
 /-- An automorphism of `L/K'` lies in the `i`-th lower ramification group of `L/K'` exactly when
 it lies in that of `L/K` after restricting scalars. -/

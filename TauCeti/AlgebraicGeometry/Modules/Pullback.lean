@@ -35,8 +35,8 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
-  `pullbackObjUnitIso_id` and `pullbackObjUnitIso_comp` comparing it with the identity and
-  composition isomorphisms of pullback;
+  `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp`, and `pullbackObjUnitIso_congr` comparing it
+  with identity, composition, and equality of scheme morphisms;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso` identifies these two restricted
   pullbacks;
 * `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
@@ -225,6 +225,15 @@ lemma pullbackObjUnitIso_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
   rw [pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom,
     pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom]
   exact (Category.assoc _ _ _).trans (unitToPushforwardObjUnit_comp f g)
+
+/-- The canonical identification of a pulled-back structure sheaf is unchanged when the
+scheme morphism is replaced by an equal morphism. -/
+lemma pullbackObjUnitIso_congr {f g : X ⟶ Y} (hf : f = g) :
+    (pullbackCongr hf).hom.app (𝟙_ Y.Modules) ≫ (pullbackObjUnitIso g).hom =
+      (pullbackObjUnitIso f).hom := by
+  subst g
+  simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
+    Category.id_comp]
 
 end Unit
 

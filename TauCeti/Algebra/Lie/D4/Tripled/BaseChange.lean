@@ -33,6 +33,8 @@ group scheme of type `D₄`.
 ## Main declarations
 
 * `TauCeti.D4Tripled.baseChangeDefiningIdeal`: the transported defining ideal in `O(GL₂₄/A)`.
+* `TauCeti.D4Tripled.coordinateHopfAlgebra` and `TauCeti.D4Tripled.coordinateMap`: the
+  specialized coordinate Hopf algebra and its quotient map from `O(GL₂₄/A)`.
 * `TauCeti.D4Tripled.baseChangeCoordinateIso`: its quotient is the scalar extension of the
   integral carrier coordinate Hopf algebra.
 * `TauCeti.D4Tripled.baseChangePointsMulEquiv`: the points of that quotient in a commutative
@@ -101,6 +103,51 @@ noncomputable def baseChangeDefiningIdeal :
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight A
+
+/-- The coordinate Hopf algebra of the tripled type-`D₄` carrier after base change to `A`. -/
+public noncomputable abbrev coordinateHopfAlgebra :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A 24)
+    (baseChangeDefiningIdeal A)
+
+/-- The quotient coordinate morphism `O(GL₂₄) ⟶ O(carrier)`, representing the closed
+immersion of the specialized tripled type-`D₄` carrier into `GL₂₄`. -/
+public noncomputable def coordinateMap :
+    GeneralLinear.coordinateHopfAlgebra A 24 ⟶ coordinateHopfAlgebra A :=
+  CommHopfAlgCat.mkQuotient _ _
+
+/-- The specialized carrier coordinate morphism is surjective. -/
+theorem coordinateMap_surjective : Function.Surjective (coordinateMap A).hom := by
+  unfold coordinateMap
+  exact CommHopfAlgCat.mkQuotient_surjective
+    (GeneralLinear.coordinateHopfAlgebra A 24) (baseChangeDefiningIdeal A)
+
+/-- The kernel of the specialized carrier coordinate morphism is its transported defining
+ideal. -/
+@[simp]
+theorem coordinateMap_ker :
+    RingHom.ker (coordinateMap A).hom =
+      (baseChangeDefiningIdeal A).toIdeal := by
+  unfold coordinateMap
+  exact CommHopfAlgCat.mkQuotient_ker
+    (GeneralLinear.coordinateHopfAlgebra A 24) (baseChangeDefiningIdeal A)
+
+section Points
+
+variable {B : Type w} [CommRing B] [Algebra A B]
+
+/-- Mapping a carrier point along the coordinate morphism gives the corresponding quotient
+point of the ambient general linear group. -/
+@[simp]
+theorem mapPointsFunctor_coordinateMap_app
+    (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra A) (CommAlgCat.of A B)) :
+    (CommHopfAlgCat.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
+      CommHopfAlgCat.quotientPointsHom
+        (GeneralLinear.coordinateHopfAlgebra A 24) (baseChangeDefiningIdeal A)
+        (CommAlgCat.of A B) g := by
+  apply WithConv.ext
+  rfl
+
+end Points
 
 /-- Membership in the transported defining ideal is membership of the corresponding element in the
 base change of the named integral defining ideal. -/
