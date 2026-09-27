@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
@@ -15,6 +16,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.Pointwise
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
 /-!
 # The ramification filtration of a group acting on a local ring
@@ -63,7 +65,12 @@ integer indexing that Herbrand theory uses.
   alone; `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_singleton_eq_top` is the
   monogenic case, where a single generator decides it.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_addVal`: over a discrete valuation ring the
-  defining condition is the valuation inequality `v (σ x - x) ≥ i + 1`.
+  defining condition is the valuation inequality `v (σ x - x) ≥ i + 1`;
+  `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top`
+  tests it at a single generator.
+* `TauCeti.IsLocalRing.sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one`:
+  **Hilbert's counting identity** `∑_{σ ≠ 1} v (σ ξ - ξ) = ∑_{i ≥ 0} (#G_i - 1)` for a generator
+  `ξ` of a discrete valuation ring under a faithful action of a finite group.
 
 ## References
 
@@ -307,6 +314,71 @@ theorem mem_ramificationGroup_iff_le_addVal {i : ℤ} {σ : G} :
       ∀ x : S, ((i + 1).toNat : ℕ∞) ≤ IsDiscreteValuationRing.addVal S (σ • x - x) := by
   simp only [mem_ramificationGroup_iff,
     TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+
+variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
+
+/-- When the discrete valuation ring `S` is generated over a base `R` fixed by `G` by a single
+element `ξ`, membership in `G_n` for `n : ℕ` is the single inequality `v (σ • ξ - ξ) ≥ n + 1`. -/
+theorem mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top {ξ : S}
+    (hξ : Algebra.adjoin R {ξ} = ⊤) {n : ℕ} {σ : G} :
+    σ ∈ ramificationGroup G S n ↔
+      ((n + 1 : ℕ) : ℕ∞) ≤ IsDiscreteValuationRing.addVal S (σ • ξ - ξ) := by
+  have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
+  rw [mem_ramificationGroup_iff_of_adjoin_singleton_eq_top hξ, h,
+    TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+
+open Finset in
+/-- **Hilbert's counting identity.** Let a finite group `G` act faithfully on a discrete valuation
+ring `S` generated over a base `R` fixed by `G` by a single element `ξ`. Then the sum over the
+nontrivial `σ ∈ G` of the valuations `v (σ • ξ - ξ)` is `∑_{i ≥ 0} (#G_i - 1)`, where `G_i` is
+the `i`-th ramification group: each `σ ≠ 1` lies in exactly `v (σ • ξ - ξ)` of the groups
+`G_0, G_1, …`, and the sum is finite because the filtration is eventually trivial. -/
+theorem sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one [Fintype G] [DecidableEq G]
+    [FaithfulSMul G S] {ξ : S} (hξ : Algebra.adjoin R {ξ} = ⊤) :
+    ∑ σ ∈ (univ : Finset G).erase 1, IsDiscreteValuationRing.addVal S (σ • ξ - ξ) =
+      ((∑ᶠ i : ℕ, (Nat.card (ramificationGroup G S i) - 1) : ℕ) : ℕ∞) := by
+  classical
+  -- The filtration vanishes from some natural index `N` on.
+  obtain ⟨N, hN⟩ : ∃ N : ℕ, ∀ i : ℕ, N ≤ i → ramificationGroup G S i = ⊥ := by
+    obtain ⟨N₀, hN₀⟩ := exists_forall_ramificationGroup_eq_bot G S
+    exact ⟨N₀.toNat, fun i hi ↦ hN₀ i (by omega)⟩
+  -- For `σ ≠ 1`, the valuation `v (σ • ξ - ξ)` counts the indices `i < N` with `σ ∈ G_i`.
+  have hval : ∀ σ ∈ univ.erase (1 : G), IsDiscreteValuationRing.addVal S (σ • ξ - ξ) =
+      (((range N).filter fun i : ℕ ↦ σ ∈ ramificationGroup G S i).card : ℕ∞) := by
+    intro σ hσ
+    have hσ1 : σ ≠ 1 := ne_of_mem_erase hσ
+    obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 <|
+      IsDiscreteValuationRing.addVal_eq_top_iff.not.2 <| sub_ne_zero.2 fun h ↦
+        hσ1 (eq_one_of_smul_eq_of_adjoin_singleton_eq_top hξ h)
+    have hnN : n ≤ N := by
+      by_contra hlt
+      have hmem : σ ∈ ramificationGroup G S N := by
+        rw [mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top hξ, ← hn]
+        exact_mod_cast (by omega : N + 1 ≤ n)
+      rw [hN N le_rfl, Subgroup.mem_bot] at hmem
+      exact hσ1 hmem
+    have hfilter : ((range N).filter fun i : ℕ ↦ σ ∈ ramificationGroup G S i) = range n := by
+      ext i
+      simp only [mem_filter, mem_range,
+        mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top hξ, ← hn,
+        Nat.cast_le]
+      omega
+    rw [hfilter, card_range, hn]
+  rw [sum_congr rfl hval, ← Nat.cast_sum]
+  congr 1
+  -- Double counting: `∑_{σ ≠ 1} #{i < N | σ ∈ G_i} = ∑_{i < N} #{σ ≠ 1 | σ ∈ G_i}`.
+  have hdc := sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow
+    (fun (σ : G) (i : ℕ) ↦ σ ∈ ramificationGroup G S i) (s := univ.erase 1) (t := range N)
+  simp only [bipartiteAbove, bipartiteBelow] at hdc
+  rw [hdc, finsum_eq_sum_of_support_subset (s := range N)]
+  · refine sum_congr rfl fun i _ ↦ ?_
+    rw [filter_erase, card_erase_of_mem (mem_filter.2 ⟨mem_univ _, one_mem _⟩),
+      Nat.card_eq_fintype_card, Fintype.card_subtype]
+  · intro i hi
+    by_contra h
+    rw [coe_range, Set.mem_Iio, not_lt] at h
+    rw [Function.mem_support, hN i h, Subgroup.card_bot] at hi
+    exact hi rfl
 
 end DiscreteValuationRing
 
