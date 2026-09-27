@@ -3,14 +3,18 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
+module
 
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.Data.Nat.Factorial.Basic
 import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.FieldSimp
-import Mathlib.LinearAlgebra.Matrix.Defs
-import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.LinearAlgebra.Matrix.Defs
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
@@ -24,6 +28,8 @@ This is the technical core for the Heisenberg conjugation formula:
   exp(uX) * (vY) * exp(-uX) = vY + uv[X,Y]
 which yields the Chevalley commutator [x_α(u), x_β(v)] = x_{α+β}(N(α,β)uv).
 -/
+
+public section
 
 open Finset
 
