@@ -82,7 +82,7 @@ noncomputable def gabrielIndecomposableEquivPositiveRoot (hpd : (titsForm V).Pos
 
 /-- Gabriel's correspondence sends an indecomposable class to its dimension vector. -/
 @[simp]
-theorem gabrielIndecomposableEquivPositiveRoot_apply (hpd : (titsForm V).PosDef)
+theorem coe_gabrielIndecomposableEquivPositiveRoot_apply (hpd : (titsForm V).PosDef)
     (X : Skeleton (ObjectProperty.FullSubcategory
       (fun M : QuiverRep.{u, v, w, max u v w x} k V ↦
         IsFinDim k V M ∧ Indecomposable M))) :
