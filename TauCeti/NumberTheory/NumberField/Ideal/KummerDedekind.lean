@@ -38,6 +38,8 @@ generator is automatically odd, since `X² + X + c` is separable over `𝔽₂`.
   residue degrees is the multiset of degrees of those distinct factors.
 * `RingOfIntegers.map_inertiaDeg_primesOver_eq_factorDegrees`: when the reduction is squarefree,
   the same multiset is the factor-degree multiset with multiplicity.
+* `TauCeti.NumberField.inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod`: the
+  Kummer–Dedekind bijection preserves residue degree pointwise.
 * `NumberField.card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add`: the reduction mod `2` of
   `X² - X + c` has `if 2 ∣ c then 2 else 1` monic irreducible factors.
 * `NumberField.ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add`: for a generator with minimal
@@ -55,6 +57,22 @@ public section
 
 open Ideal Polynomial RingOfIntegers UniqueFactorizationMonoid
 open scoped NumberField
+
+namespace TauCeti.NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
+
+/-- **The Kummer–Dedekind bijection preserves degree.** The residue degree of a prime above
+`p` equals the degree of its corresponding monic irreducible factor modulo `p`. -/
+theorem inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod {θ : 𝓞 K}
+    (hp : ¬ p ∣ exponent θ) (Q : (span {(p : ℤ)}).primesOver (𝓞 K)) :
+    (Q : Ideal (𝓞 K)).inertiaDeg ℤ =
+      (NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hp Q : (ZMod p)[X]).natDegree := by
+  have h := NumberField.Ideal.inertiaDeg_primesOverSpanEquivMonicFactorsMod_symm_apply' hp
+    (NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hp Q).2
+  rwa [Subtype.coe_eta, Equiv.symm_apply_apply] at h
+
+end TauCeti.NumberField
 
 namespace RingOfIntegers
 
@@ -85,10 +103,7 @@ theorem map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (θ : 𝓞 K)
   · intro q hq
     exact ⟨e.symm ⟨q, hq⟩, Finset.mem_univ _, by rw [e.apply_symm_apply]⟩
   · intro Q _
-    have h := NumberField.Ideal.inertiaDeg_primesOverSpanEquivMonicFactorsMod_symm_apply' hp
-      (e Q).2
-    rw [e.symm_apply_apply] at h
-    exact h
+    exact TauCeti.NumberField.inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod hp Q
 
 /-- At a prime where the reduction of `minpoly ℤ θ` is squarefree, the splitting type is its
 multiset of factor degrees. The conductor-exponent hypothesis permits the Kummer–Dedekind
