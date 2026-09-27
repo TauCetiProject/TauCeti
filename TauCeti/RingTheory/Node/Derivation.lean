@@ -73,9 +73,8 @@ def DerivationValues : Submodule (NodeAlgebra R a) ((Fin 2) → M) :=
       map_add' := by intro u v; simp [smul_add, add_assoc, add_left_comm, add_comm]
       map_smul' := by
         intro c u
-        change coord a 1 • (c • u 0) + coord a 0 • (c • u 1) =
-          c • (coord a 1 • u 0 + coord a 0 • u 1)
-        rw [smul_add, smul_comm c (coord a 1), smul_comm c (coord a 0)] }
+        simp only [Pi.smul_apply, smul_add, RingHom.id_apply]
+        rw [smul_comm (coord a 1) c, smul_comm (coord a 0) c] }
       : ((Fin 2) → M) →ₗ[NodeAlgebra R a] M)
 
 omit [Module R M] [IsScalarTower R (NodeAlgebra R a) M] in
@@ -186,7 +185,7 @@ private def derivationOfValues (u : DerivationValues (M := M) a) :
 
 private lemma derivationOfValues_coord (u : DerivationValues (M := M) a) (i : Fin 2) :
     derivationOfValues a u (coord a i) = u.1 i := by
-  rw [show coord a i = mk a (X i) from (mk_X a i).symm]
+  rw [← mk_X a i]
   -- Evaluate the chosen representative and then use independence of the choice.
   change polynomialDerivation a u (liftRep a (mk a (X i))) = u.1 i
   rw [polynomialDerivation_liftRep]
