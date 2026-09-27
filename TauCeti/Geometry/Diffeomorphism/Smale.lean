@@ -16,11 +16,9 @@ self-diffeomorphisms of the round three-sphere is already continuous for the wea
 topology.  This file records the sharp Smale conjecture: that this particular inclusion, rather
 than merely some homotopy equivalence between the two spaces, is itself a homotopy equivalence.
 
-The proposition is intentionally stated without a proof.  It is the formal shape of Hatcher's
-theorem and is the endpoint that the geometric-topology roadmap needs in order to compare the
-homotopy type of `Diff (S³)` with that of `O(4)`.  Continuity of the displayed map is supplied by
-`TauCeti.continuous_orthogonalToDiffSphere`; the remaining content is the existence of a homotopy
-inverse.
+The proposition is the formal shape of Hatcher's theorem.  It records the canonical map whose
+homotopy inverse compares the homotopy type of `Diff (S³)` with that of `O(4)`.  Continuity of the
+displayed map is supplied by `TauCeti.continuous_orthogonalToDiffSphere`.
 
 ## Main definitions
 
@@ -52,20 +50,39 @@ def SmaleConjecture : Prop :=
       Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) =
       fun A ↦ orthogonalToDiffSphere 3 ∞ A
 
-/-- Smale's conjecture is stable under taking the product of two copies of the spaces. -/
-theorem smaleConjecture_prod (h : SmaleConjecture) :
-    ∃ e : ContinuousMap.HomotopyEquiv
-        (Matrix.orthogonalGroup (Fin 4) ℝ × Matrix.orthogonalGroup (Fin 4) ℝ)
-        (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞ ×
-          Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞),
-      (e.toFun : Matrix.orthogonalGroup (Fin 4) ℝ × Matrix.orthogonalGroup (Fin 4) ℝ →
-        Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞ ×
-          Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) =
-        fun p ↦ (orthogonalToDiffSphere 3 ∞ p.1, orthogonalToDiffSphere 3 ∞ p.2) := by
-  rcases h with ⟨e, he⟩
-  refine ⟨e.prodCongr e, ?_⟩
-  funext p
-  simp only [ContinuousMap.HomotopyEquiv.prodCongr, ContinuousMap.prodMap_apply, he]
+/-- An introduction/elimination form for `SmaleConjecture`. -/
+theorem smaleConjecture_iff :
+    SmaleConjecture ↔
+      ∃ e : ContinuousMap.HomotopyEquiv (Matrix.orthogonalGroup (Fin 4) ℝ)
+          (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞),
+        (e.toFun : Matrix.orthogonalGroup (Fin 4) ℝ →
+            Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) =
+          fun A ↦ orthogonalToDiffSphere 3 ∞ A := by
   rfl
+
+/-- The canonical inclusion, packaged as a continuous map for homotopy constructions. -/
+noncomputable def continuousOrthogonalToDiffSphere :
+    ContinuousMap (Matrix.orthogonalGroup (Fin 4) ℝ)
+      (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) :=
+  ⟨orthogonalToDiffSphere 3 ∞, continuous_orthogonalToDiffSphere 3 ∞⟩
+
+/-- Smale's conjecture supplies a continuous homotopy inverse for the canonical inclusion. -/
+theorem smaleConjecture_homotopyInverse (h : SmaleConjecture) :
+    ∃ g : ContinuousMap
+        (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞)
+        (Matrix.orthogonalGroup (Fin 4) ℝ),
+      (g.comp continuousOrthogonalToDiffSphere).Homotopic (ContinuousMap.id _) ∧
+        (continuousOrthogonalToDiffSphere.comp g).Homotopic (ContinuousMap.id _) := by
+  rcases h with ⟨e, he⟩
+  have hf : e.toFun = continuousOrthogonalToDiffSphere := by
+    apply ContinuousMap.ext
+    intro A
+    change e.toFun A = orthogonalToDiffSphere 3 ∞ A
+    exact congrFun he A
+  refine ⟨e.invFun, ?_, ?_⟩
+  · rw [← hf]
+    exact e.left_inv
+  · rw [← hf]
+    exact e.right_inv
 
 end TauCeti
