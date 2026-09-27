@@ -53,16 +53,18 @@ def _root_.QuadraticMap.rankOneTensorIsometry
 theorem _root_.QuadraticMap.rankOneTensorIsometry_tmul
     {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a r : R) (v : V) :
     rankOneTensorIsometry Q a (r ⊗ₜ[R] v) = r • v := by
-  change (QuadraticForm.tensorLId (a • Q)) (r ⊗ₜ[R] v) = r • v
-  simp only [QuadraticForm.tensorLId_apply, TensorProduct.lid_tmul]
+  have h : rankOneTensorIsometry Q a (r ⊗ₜ[R] v) =
+      (QuadraticForm.tensorLId (a • Q)) (r ⊗ₜ[R] v) := rfl
+  rw [h, QuadraticForm.tensorLId_apply, TensorProduct.lid_tmul]
 
 /-- The inverse rank-one tensor isometry sends a vector to its unit pure tensor. -/
 @[simp]
 theorem _root_.QuadraticMap.rankOneTensorIsometry_symm_apply
     {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a : R) (v : V) :
     (rankOneTensorIsometry Q a).symm v = (1 : R) ⊗ₜ[R] v := by
-  change (QuadraticForm.tensorLId (a • Q)).symm v = (1 : R) ⊗ₜ[R] v
-  simp only [QuadraticForm.tensorLId_symm_apply, TensorProduct.lid_symm_apply]
+  have h : (rankOneTensorIsometry Q a).symm v =
+      (QuadraticForm.tensorLId (a • Q)).symm v := rfl
+  rw [h, QuadraticForm.tensorLId_symm_apply, TensorProduct.lid_symm_apply]
 
 /-- Tensor product of isometric equivalences of quadratic forms. -/
 def _root_.QuadraticMap.IsometryEquiv.tmul
