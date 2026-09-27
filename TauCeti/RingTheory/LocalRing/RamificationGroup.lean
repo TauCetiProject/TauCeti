@@ -324,7 +324,7 @@ theorem mem_ramificationGroup_iff_le_addVal {i : ℤ} {σ : G} :
 variable (S) in
 /-- Serre's **lower index** `i_G(σ)` of an element `σ` acting on a discrete valuation ring `S`:
 the least valuation `v (σ x - x)` over all `x : S`, with value `⊤` when `σ` acts trivially.
-It is the function whose level sets are cut out by the ramification filtration:
+Its superlevel sets are the ramification groups:
 `σ ∈ G_i ↔ i + 1 ≤ i_G(σ)`. -/
 noncomputable def lowerIndex (σ : G) : ℕ∞ :=
   ⨅ x : S, IsDiscreteValuationRing.addVal S (σ • x - x)
@@ -344,7 +344,7 @@ theorem lowerIndex_le_addVal (σ : G) (x : S) :
     lowerIndex S σ ≤ IsDiscreteValuationRing.addVal S (σ • x - x) :=
   iInf_le _ x
 
-/-- The ramification groups are the level sets of the lower index: `σ ∈ G_i` exactly when
+/-- The ramification groups are the superlevel sets of the lower index: `σ ∈ G_i` exactly when
 `i + 1 ≤ i_G(σ)`. -/
 theorem mem_ramificationGroup_iff_le_lowerIndex {i : ℤ} {σ : G} :
     σ ∈ ramificationGroup G S i ↔ ((i + 1).toNat : ℕ∞) ≤ lowerIndex S σ := by
@@ -429,8 +429,8 @@ theorem mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top {
     σ ∈ ramificationGroup G S n ↔
       ((n + 1 : ℕ) : ℕ∞) ≤ IsDiscreteValuationRing.addVal S (σ • ξ - ξ) := by
   have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
-  rw [mem_ramificationGroup_iff_of_adjoin_singleton_eq_top hξ, h,
-    TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+  rw [mem_ramificationGroup_iff_le_lowerIndex,
+    lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hξ, h]
 
 open Finset in
 /-- **Hilbert's counting identity.** Let a finite group `G` act faithfully on a discrete valuation

@@ -136,6 +136,7 @@ theorem restrictScalars_smul_integerRing {K' : Type*} [Field K'] [ValuativeRel K
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 /-- For a subextension `K'` of `L/K` normal over `K`, an automorphism of `L/K` acts on the image of
 the ring of integers of `K'` through its restriction to `K'`. -/
+@[simp]
 theorem smul_algebraMap_integerRing {K' : Type*} [Field K'] [ValuativeRel K']
     [Algebra K K'] [Algebra K' L]
     [IsScalarTower K K' L] [ValuativeExtension K K'] [ValuativeExtension K' L]

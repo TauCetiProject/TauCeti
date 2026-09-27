@@ -77,7 +77,7 @@ variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
 theorem smul_left_injective_of_adjoin_singleton_eq_top [FaithfulSMul G S] {ξ : S}
     (hξ : Algebra.adjoin R {ξ} = ⊤) : Function.Injective fun σ : G ↦ σ • ξ := by
   intro σ τ h
-  change σ • ξ = τ • ξ at h
+  beta_reduce at h
   apply (inv_mul_eq_one).1
   apply eq_one_of_smul_eq_of_adjoin_singleton_eq_top hξ
   rw [mul_smul, ← h, inv_smul_smul]

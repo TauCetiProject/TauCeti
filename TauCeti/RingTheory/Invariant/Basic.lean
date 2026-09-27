@@ -20,8 +20,10 @@ intermediate ring with a product of displacements of a generator of the top ring
 
 ## Main results
 
-* `MulSemiringAction.charpoly_dvd`: if `g ↦ g • b` is injective and `f` vanishes at every
+* `TauCeti.MulSemiringAction.charpoly_dvd`: if `g ↦ g • b` is injective and `f` vanishes at every
   `g • b`, then `charpoly G b ∣ f`.
+* `TauCeti.MulSemiringAction.eval_smul_charpoly`: the evaluation of a transformed
+  characteristic polynomial is the product of the corresponding displacements.
 -/
 
 public section
@@ -30,11 +32,27 @@ open Polynomial
 
 namespace TauCeti
 
+namespace MulSemiringAction
+
+variable {G H B : Type*} [Group G] [Group H] [Fintype H] [CommRing B]
+  [MulSemiringAction G B] [MulSemiringAction H B]
+
+/-- Evaluating a transformed characteristic polynomial gives a product of displacements,
+when the action of `H` is the restriction of the action of `G` along a group homomorphism. -/
+theorem eval_smul_charpoly (φ : H →* G) (hφ : ∀ (τ : H) (b : B), φ τ • b = τ • b)
+    (σ : G) (b : B) :
+    (σ • _root_.MulSemiringAction.charpoly H b).eval b =
+      ∏ τ : H, (b - (σ * φ τ) • b) := by
+  simp [_root_.MulSemiringAction.charpoly_eq, Finset.smul_prod', eval_prod,
+    mul_smul, smul_sub, smul_C, hφ]
+
+end MulSemiringAction
+
 variable {G B : Type*} [Group G] [Fintype G] [CommRing B] [IsDomain B] [MulSemiringAction G B]
 
 /-- The characteristic polynomial of a point with pairwise distinct translates divides every
 polynomial vanishing on its orbit. -/
-theorem _root_.MulSemiringAction.charpoly_dvd {b : B}
+theorem MulSemiringAction.charpoly_dvd {b : B}
     (hb : Function.Injective fun g : G ↦ g • b) {f : B[X]}
     (hf : ∀ g : G, f.eval (g • b) = 0) : MulSemiringAction.charpoly G b ∣ f := by
   classical

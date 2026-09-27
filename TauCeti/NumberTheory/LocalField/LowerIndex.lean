@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.Basic
+public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
@@ -31,7 +31,7 @@ theorem, the compatibility of the upper numbering with quotients, is derived.
 
 ## Main results
 
-* `TauCeti.LocalFieldsRamification.ramificationIndex_mul_lowerIndex_restrictNormal`: for
+* `TauCeti.LocalFieldsRamification.ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum`: for
   `σ : Gal(M/K)`, `e(M/L) · i(σ|_L) = ∑_{τ ∈ Gal(M/L)} i(σ τ)`, the sum over the coset `σ H`.
 * `TauCeti.LocalFieldsRamification.ramificationIndex_mul_lowerIndex_eq_sum`: for
   `σ' : Gal(L/K)`, `e(M/L) · i(σ') = ∑_{σ|_L = σ'} i(σ)`, the sum over the fibre of restriction.
@@ -76,7 +76,9 @@ omit [TopologicalSpace M] [IsNonarchimedeanLocalField M] [ValuativeExtension K L
 private theorem eval_smul_charpoly (σ : M ≃ₐ[K] M) (x : 𝒪[M]) :
     (σ • MulSemiringAction.charpoly (M ≃ₐ[L] M) x).eval x =
       ∏ τ : M ≃ₐ[L] M, (x - (σ * τ.restrictScalars K) • x) := by
-  simp [MulSemiringAction.charpoly_eq, Finset.smul_prod', eval_prod, mul_smul, smul_sub, smul_C]
+  simpa only [AlgEquiv.restrictScalarsHom_apply] using
+    (MulSemiringAction.eval_smul_charpoly (AlgEquiv.restrictScalarsHom (S := L) K)
+      (fun τ b ↦ AlgEquiv.restrictScalars_smul_integerRing (K := K) τ b) σ x)
 
 omit [IsGalois K M] in
 /-- The displacement `σ y - y` of a generator `y` of `𝒪[L]` divides `(σ f)(x)`, where `f` is
@@ -120,29 +122,37 @@ private theorem eval_smul_charpoly_dvd_sub_smul {x : 𝒪[M]} (hx : Algebra.adjo
         (AlgEquiv.restrictScalars_injective (R := K) (S := L) (A := M))
   obtain ⟨h, hh⟩ := MulSemiringAction.charpoly_dvd hinj hg
   have hσg : σ • g = q.map (algebraMap 𝒪[K] 𝒪[M]) - C (σ • algebraMap 𝒪[L] 𝒪[M] y) := by
+    have hmap : (MulSemiringAction.toRingHom (M ≃ₐ[K] M) 𝒪[M] σ).comp
+        (algebraMap 𝒪[K] 𝒪[M]) = algebraMap 𝒪[K] 𝒪[M] :=
+      RingHom.ext fun r ↦ smul_algebraMap σ r
     rw [smul_sub, smul_C, smul_eq_map, Polynomial.map_map]
-    congr 2
-    exact RingHom.ext fun r ↦ smul_algebraMap σ r
+    rw [hmap]
   refine ⟨(σ • h).eval x, ?_⟩
   rw [← eval_mul, ← smul_mul', ← hh, hσg, eval_sub, eval_C, eval_map_algebraMap, hq]
 
+omit [IsGalois K M] in
 /-- **Serre's quotient formula for the lower index**, over a coset. For an intermediate field
 `L` of `M/K` normal over `K` and `σ : Gal(M/K)`,
 `e(M/L) · i_{L/K}(σ|_L) = ∑_{τ ∈ Gal(M/L)} i_{M/K}(σ τ)`. -/
-theorem ramificationIndex_mul_lowerIndex_restrictNormal (σ : M ≃ₐ[K] M) :
+theorem ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum [IsGalois L M]
+    (σ : M ≃ₐ[K] M) :
     (ramificationIndex L M : ℕ∞) * lowerIndex 𝒪[L] (σ.restrictNormal L) =
       ∑ τ : M ≃ₐ[L] M, lowerIndex 𝒪[M] (σ * τ.restrictScalars K) := by
-  have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
   obtain ⟨x, hx⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := 𝒪[K]) (S := 𝒪[M])
   obtain ⟨y, hy⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := 𝒪[K]) (S := 𝒪[L])
+  have key : IsDiscreteValuationRing.addVal 𝒪[M]
+      (σ • algebraMap 𝒪[L] 𝒪[M] y - algebraMap 𝒪[L] 𝒪[M] y) =
+      IsDiscreteValuationRing.addVal 𝒪[M]
+        ((σ • MulSemiringAction.charpoly (M ≃ₐ[L] M) x).eval x) :=
+    (IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2 <| associated_of_dvd_dvd
+      (smul_sub_dvd_eval_smul_charpoly hy σ x)
+      (dvd_sub_comm.1 (eval_smul_charpoly_dvd_sub_smul hx y σ))
   simp_rw [lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hy,
     lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hx, ← nsmul_eq_mul,
     ← addVal_algebraMap, map_sub,
     ← AlgEquiv.smul_algebraMap_integerRing, AddValuation.map_sub_swap _ _ x,
     ← AddValuation.map_prod, ← eval_smul_charpoly]
-  exact (IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2 <| associated_of_dvd_dvd
-    (smul_sub_dvd_eval_smul_charpoly hy σ x)
-    (dvd_sub_comm.1 (eval_smul_charpoly_dvd_sub_smul hx y σ))
+  exact key
 
 /-- **Serre's quotient formula for the lower index**. For an intermediate field `L` of `M/K`
 normal over `K` and `σ' : Gal(L/K)`, `e(M/L) · i_{L/K}(σ') = ∑_{σ|_L = σ'} i_{M/K}(σ)`, the sum
@@ -151,13 +161,14 @@ theorem ramificationIndex_mul_lowerIndex_eq_sum (σ' : L ≃ₐ[K] L)
     [DecidablePred fun σ : M ≃ₐ[K] M => σ.restrictNormal L = σ'] :
     (ramificationIndex L M : ℕ∞) * lowerIndex 𝒪[L] σ' =
       ∑ σ : M ≃ₐ[K] M with σ.restrictNormal L = σ', lowerIndex 𝒪[M] σ := by
+  have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
   obtain ⟨σ₀, rfl⟩ := AlgEquiv.restrictNormalHom_surjective (F := K) (K₁ := L) (E := M) σ'
   have hmul (ρ₁ ρ₂ : M ≃ₐ[K] M) :
       (ρ₁ * ρ₂).restrictNormal L = ρ₁.restrictNormal L * ρ₂.restrictNormal L :=
     map_mul (AlgEquiv.restrictNormalHom (F := K) (K₁ := M) L) ρ₁ ρ₂
   -- Rewriting only the left side preserves the decidability instance of the fibre sum.
   conv_lhs => rw [AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M,
-    ramificationIndex_mul_lowerIndex_restrictNormal]
+    ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum]
   refine Finset.sum_nbij (fun τ ↦ σ₀ * τ.restrictScalars K) (fun τ _ ↦ ?_) (fun τ₁ _ τ₂ _ h ↦ ?_)
     (fun σ hσ ↦ ?_) fun _ _ ↦ rfl
   · rw [Finset.mem_filter, hmul,
@@ -173,9 +184,9 @@ theorem ramificationIndex_mul_lowerIndex_eq_sum (σ' : L ≃ₐ[K] L)
       (AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one K L M (σ₀⁻¹ * σ)).2 hσ'
     have hτ' : τ.restrictScalars K = σ₀⁻¹ * σ := by
       simpa only [AlgEquiv.restrictScalarsHom_apply] using hτ
-    exact ⟨τ, Finset.mem_coe.2 (Finset.mem_univ _), by
-      simpa only using (calc
-        σ₀ * τ.restrictScalars K = σ₀ * (σ₀⁻¹ * σ) := congrArg (σ₀ * ·) hτ'
-        _ = σ := by group)⟩
+    exact ⟨τ, Finset.mem_univ _, by
+      -- Expose the function supplied to `sum_nbij` before rewriting its value.
+      change σ₀ * τ.restrictScalars K = σ
+      rw [hτ', mul_inv_cancel_left]⟩
 
 end TauCeti.LocalFieldsRamification

@@ -20,15 +20,6 @@ cases; `WeierstrassCurve.quadraticTwistPointEquiv_map_eq_quadraticCharacter_smul
 intended consumer. Mathlib's `quadraticChar` is a different object — the Legendre symbol of a
 finite field, not a character of a Galois group.
 
-The file closes with lemmas that are **not** about quadratic extensions. In a tower `K ⊆ L ⊆ M`
-with `L/K` normal, `AlgEquiv.restrictNormal_eq_one_iff_algebraMap` says that an automorphism of
-`M` restricts to the identity on `L` exactly when it fixes `L` pointwise. Mathlib states this for
-an `IntermediateField` (`AlgEquiv.restrictNormal_eq_one_iff`) while `AlgEquiv.restrictNormal`
-itself is already given for an abstract algebra, so only the characterisation needed
-transporting; it is a bridge to Mathlib rather than ported material, and it asks for
-`[Normal K L]` alone. The other lemmas identify `restrictNormalHom` with restriction and its
-kernel with the range of `restrictScalarsHom`.
-
 Mathlib already supplies the surrounding structure: `Algebra.IsQuadraticExtension` makes `L/K`
 finite and normal (`Algebra.IsQuadraticExtension.normal`), hence Galois with separability
 (`Algebra.IsQuadraticExtension.isGalois`); `IsGalois.card_aut_eq_finrank` counts the
@@ -132,49 +123,6 @@ theorem quadraticCharacter_eq_neg_one_of_ne_one {σ : L ≃ₐ[K] L} (hσ : σ �
 
 end Algebra.IsQuadraticExtension
 
-/-! ### Restriction to an intermediate field in a tower -/
-
-section Tower
-
-variable (K L : Type*) [Field K] [Field L] [Algebra K L] [Normal K L]
-  (M : Type*) [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
-
-/-- **`σ` restricts to the identity on `L` exactly when it fixes `L` pointwise.** Mathlib's
-`AlgEquiv.restrictNormal_eq_one_iff` says this for an `IntermediateField`, while
-`AlgEquiv.restrictNormal` itself is already stated for an abstract algebra `L`, so only the
-characterisation needs transporting to a tower `K ⊆ L ⊆ M`. -/
-theorem AlgEquiv.restrictNormal_eq_one_iff_algebraMap (σ : M ≃ₐ[K] M) :
-    σ.restrictNormal L = 1 ↔ ∀ x : L, σ (algebraMap L M x) = algebraMap L M x := by
-  constructor
-  · intro h x
-    rw [← AlgEquiv.restrictNormal_commutes σ L x, h, AlgEquiv.one_apply]
-  · intro h
-    ext x
-    have hx := AlgEquiv.restrictNormal_commutes σ L x
-    rw [h x] at hx
-    exact (algebraMap L M).injective hx
-
-/-- Restriction as a group homomorphism agrees with restriction of an automorphism. -/
-theorem AlgEquiv.restrictNormalHom_apply_eq_restrictNormal (σ : M ≃ₐ[K] M) :
-    (AlgEquiv.restrictNormalHom L) σ = σ.restrictNormal L :=
-  rfl
-
-/-- An automorphism of `M/K` comes from an automorphism of `M/L` exactly when its restriction to
-`L` is the identity. -/
-theorem AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one
-    (σ : M ≃ₐ[K] M) :
-    σ ∈ (AlgEquiv.restrictScalarsHom (S := L) K).range ↔ σ.restrictNormal L = 1 := by
-  constructor
-  · rintro ⟨τ, rfl⟩
-    apply (AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M _).2
-    intro x
-    exact τ.commutes x
-  · intro h
-    let τ : M ≃ₐ[L] M := AlgEquiv.ofRingEquiv (f := σ.toRingEquiv)
-      ((AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M σ).1 h)
-    exact ⟨τ, AlgEquiv.ext fun x ↦ by simp [τ]⟩
-
-end Tower
 
 
 end

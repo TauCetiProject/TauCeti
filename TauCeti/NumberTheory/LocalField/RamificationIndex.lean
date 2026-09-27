@@ -50,8 +50,7 @@ filtration.
   `TauCeti.valuation_algebraMap_irreducible`: a uniformizer of `K` has normalized valuation `e`
   in `L`, that is, its valuation is the `e`-th power of that of a uniformizer of `L`.
 * `TauCeti.map_maximalIdeal_eq_maximalIdeal_pow`: the maximal ideal of `𝒪[K]` generates
-  `𝓂[L] ^ e(L/K)`, and `TauCeti.addVal_algebraMap` is the corresponding identity
-  `v_L(x) = e · v_K(x)` for the additive valuations of the rings of integers.
+  `𝓂[L] ^ e(L/K)`.
 * `TauCeti.ramificationIndex_eq_ramificationIdx`: the intrinsic ramification index agrees with
   `Ideal.ramificationIdx` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_tower`: multiplicativity `e(M/K) = e(L/K) · e(M/L)` in a tower.
@@ -297,18 +296,6 @@ theorem valuation_algebraMap_irreducible {πK : 𝒪[K]} (hπK : Irreducible πK
   rw [h₁, map_pow, h₂, ← WithZero.exp_nsmul]
   simp
 
-/-- An irreducible element of `𝒪[K]` maps to an associate of the ramification-index power of
-an irreducible element of `𝒪[L]`. -/
-theorem associated_algebraMap_irreducible_pow {π : 𝒪[K]} (hπ : Irreducible π)
-    {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) :
-    Associated (algebraMap 𝒪[K] 𝒪[L] π) (ϖ ^ ramificationIndex K L) := by
-  have hv : valuation L ((algebraMap 𝒪[K] 𝒪[L] π : 𝒪[L]) : L) =
-      valuation L ((ϖ ^ ramificationIndex K L : 𝒪[L]) : L) := by
-    push_cast
-    rw [valuation_algebraMap_irreducible hπ hϖ, map_pow]
-  have hint := Valuation.integer.integers (valuation L)
-  exact associated_of_dvd_dvd (hint.dvd_iff_le.2 hv.ge) (hint.dvd_iff_le.2 hv.le)
-
 /-- The additive valuation on the integer ring scales under the algebra map by the ramification
 index. -/
 @[simp]
@@ -363,7 +350,13 @@ theorem map_maximalIdeal_eq_maximalIdeal_pow :
     𝓂[K].map (algebraMap 𝒪[K] 𝒪[L]) = 𝓂[L] ^ ramificationIndex K L := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  have hass := associated_algebraMap_irreducible_pow hπ hϖ
+  have hv : valuation L ((algebraMap 𝒪[K] 𝒪[L] π : 𝒪[L]) : L) =
+      valuation L ((ϖ ^ ramificationIndex K L : 𝒪[L]) : L) := by
+    push_cast
+    rw [valuation_algebraMap_irreducible hπ hϖ, map_pow]
+  have hint := Valuation.integer.integers (valuation L)
+  have hass : Associated (algebraMap 𝒪[K] 𝒪[L] π) (ϖ ^ ramificationIndex K L) :=
+    associated_of_dvd_dvd (hint.dvd_iff_le.2 hv.ge) (hint.dvd_iff_le.2 hv.le)
   rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer π).1 hπ,
     (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.map_span,
     Set.image_singleton, Ideal.span_singleton_pow, Ideal.span_singleton_eq_span_singleton]

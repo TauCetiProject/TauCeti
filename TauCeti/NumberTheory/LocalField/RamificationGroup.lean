@@ -90,7 +90,7 @@ theorem mem_lowerRamificationGroup_iff {i : ℤ} {σ : L ≃ₐ[K] L} :
       ∀ x : 𝒪[L], σ • x - x ∈ IsLocalRing.maximalIdeal 𝒪[L] ^ (i + 1).toNat := by
   rw [lowerRamificationGroup_def, TauCeti.IsLocalRing.mem_ramificationGroup_iff]
 
-/-- The lower ramification groups are the level sets of Serre's lower index
+/-- The lower ramification groups are the superlevel sets of Serre's lower index
 `i(σ) = min_{x ∈ 𝒪[L]} v_L(σ x - x)`: `σ ∈ G_i` exactly when `i + 1 ≤ i(σ)`. -/
 theorem mem_lowerRamificationGroup_iff_le_lowerIndex {i : ℤ} {σ : L ≃ₐ[K] L} :
     σ ∈ lowerRamificationGroup K L i ↔
