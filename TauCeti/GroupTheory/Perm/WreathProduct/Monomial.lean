@@ -65,8 +65,7 @@ def monomialHom (t : G ⧸ U → G)
     (monomialHom U t ht g).right x = g • x := by
   simp [monomialHom]
 
-/-- A subgroup transversal gives a faithful monomial representation: the permutation part
-locates the coset of `g`, and one coordinate recovers `g` from its transversal word. -/
+/-- The monomial homomorphism associated to a subgroup transversal is injective. -/
 theorem monomialHom_injective (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     Function.Injective (monomialHom U t ht) := by

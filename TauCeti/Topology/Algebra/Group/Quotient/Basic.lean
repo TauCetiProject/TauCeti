@@ -41,6 +41,23 @@ namespace TauCeti
 
 namespace QuotientGroup
 
+variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
+
+/-- Inverse translation of a fixed left coset is continuous when the subgroup is open,
+without assuming continuous inversion on `G`. -/
+theorem continuous_inv_smul (U : Subgroup G) (hU : IsOpen (U : Set G)) (u : G ⧸ U) :
+    Continuous (fun γ : G => γ⁻¹ • u) := by
+  have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
+  rw [continuous_discrete_rng]
+  intro v
+  have h : (fun γ : G => γ⁻¹ • u) ⁻¹' {v} =
+      (fun γ : G => γ • v) ⁻¹' {u} := by
+    ext γ
+    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using
+      (inv_smul_eq_iff (g := γ) (a := u) (b := v)).trans eq_comm
+  rw [h]
+  exact (isOpen_discrete _).preimage (continuous_id.smul continuous_const)
+
 section Discrete
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
