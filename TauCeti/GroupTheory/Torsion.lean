@@ -194,6 +194,11 @@ theorem isPPrimaryTorsion_additive_iff {M : Type*} [CommGroup M] :
     IsPPrimaryTorsion p (Additive M) ↔ IsPGroup p M := by
   simp [isPPrimaryTorsion_iff, IsPGroup, Additive.forall, ← ofMul_pow]
 
+/-- A group of order `p ^ k` is `p`-primary torsion: the additive form of `IsPGroup.of_card`. -/
+theorem isPPrimaryTorsion_of_natCard_eq_pow {k : ℕ} (h : Nat.card M = p ^ k) :
+    IsPPrimaryTorsion p M :=
+  (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).2 (IsPGroup.of_card h)
+
 namespace IsPPrimaryTorsion
 
 variable {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
