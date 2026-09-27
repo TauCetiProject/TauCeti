@@ -41,8 +41,9 @@ theorem addVal_sum_eq_iInf_of_ne {ι : Type*} [Fintype ι]
       rw [Finset.mem_sdiff, Finset.mem_singleton] at hi
       have hai : a i ≠ 0 := (Finset.mem_filter.mp hi.1).2
       have hle : addVal R (a j) ≤ addVal R (a i) := hjmin i hi.1
-      exact (show addVal R (a j) < addVal R (a i) from
-        lt_of_le_of_ne hle (h i j hi.2 hai haj).symm).dual
+      have hlt' : addVal R (a j) < addVal R (a i) :=
+        lt_of_le_of_ne hle (h i j hi.2 hai haj).symm
+      exact hlt'.dual
     have hsum := (addVal R).toValuation.map_sum_eq_of_lt hj hlt
     have hsum' : (∑ i ∈ s, a i) = ∑ i, a i := by
       simp only [s, Finset.sum_filter]
