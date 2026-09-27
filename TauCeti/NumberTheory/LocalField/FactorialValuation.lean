@@ -28,9 +28,9 @@ valuation, with a margin that grows linearly in `n`.
 ## Main results
 
 * `TauCeti.sub_one_mul_natCastValuation_factorial`: Legendre's formula after base change.
-* `TauCeti.sub_one_mul_natCastValuation_factorial_lt`: the strict factorial estimate.
-* `TauCeti.natCastValuation_factorial_lt_mul_of_absoluteRamificationIndex_lt`: the estimate at
-  a depth in the exponential's convergence range.
+* `TauCeti.sub_one_mul_natCastValuation_factorial_lt_of_ne_zero`: the strict factorial estimate.
+* `TauCeti.natCastValuation_factorial_lt_mul_of_absoluteRamificationIndex_lt_of_ne_zero`: the
+  estimate at a depth in the exponential's convergence range.
 
 ## References
 
@@ -65,7 +65,7 @@ theorem sub_one_mul_natCastValuation_factorial (n : ℕ) :
 
 /-- The normalized valuation of `n !` satisfies the strict Legendre bound after base change to a
 finite extension of `ℚ_[p]`. -/
-theorem sub_one_mul_natCastValuation_factorial_lt {n : ℕ} (hn : n ≠ 0) :
+theorem sub_one_mul_natCastValuation_factorial_lt_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
     (p - 1) * natCastValuation K n.factorial
         (by
           simpa only [map_natCast] using
@@ -81,7 +81,7 @@ theorem sub_one_mul_natCastValuation_factorial_lt {n : ℕ} (hn : n ≠ 0) :
 
 /-- At every depth `i` in the exponential convergence range `(p - 1) * i > e`, the valuation of
 `n !` is strictly smaller than `n * i` for positive `n`. -/
-theorem natCastValuation_factorial_lt_mul_of_absoluteRamificationIndex_lt
+theorem natCastValuation_factorial_lt_mul_of_absoluteRamificationIndex_lt_of_ne_zero
     {i n : ℕ} (hi : absoluteRamificationIndex K p < (p - 1) * i) (hn : n ≠ 0) :
     natCastValuation K n.factorial
         (by
@@ -99,7 +99,7 @@ theorem natCastValuation_factorial_lt_mul_of_absoluteRamificationIndex_lt
                 (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n) :
                   (n.factorial : ℚ_[p]) ≠ 0))
         < absoluteRamificationIndex K p * n :=
-      sub_one_mul_natCastValuation_factorial_lt K p hn
+      sub_one_mul_natCastValuation_factorial_lt_of_ne_zero K p hn
     _ < ((p - 1) * i) * n := Nat.mul_lt_mul_of_pos_right hi (Nat.pos_of_ne_zero hn)
     _ = (p - 1) * (n * i) := by ac_rfl
 
