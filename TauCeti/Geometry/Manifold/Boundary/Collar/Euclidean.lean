@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Global
+public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Basic
 
 /-!
@@ -35,63 +36,29 @@ open scoped Manifold
 
 namespace TauCeti.EuclideanHalfSpace
 
-private noncomputable def depthSourceHomeomorph :
-    Ico (0 : ℝ) 1 ≃ₜ {z : Icc (0 : ℝ) 1 // z ∈ (IccLeftChart 0 1).source} := by
-  letI : Fact ((0 : ℝ) < 1) := ⟨by norm_num⟩
-  let e := IccLeftChart 0 1
-  exact
-    { toFun := fun t ↦
-        ⟨⟨t, ⟨t.2.1, t.2.2.le⟩⟩, by
-          -- The source of `IccLeftChart` is the open part `z < 1` of `Icc 0 1`.
-          change (t : ℝ) < 1
-          exact t.2.2⟩
-      invFun := fun z ↦
-        ⟨z.1, ⟨z.1.2.1, by
-          -- Unfolding the chart source exposes its defining strict inequality.
-          change (z.1 : ℝ) < 1
-          exact z.2⟩⟩
-      left_inv := by
-        intro t
-        rfl
-      right_inv := by
-        intro z
-        rfl
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
-
 private noncomputable def depthEmbedding : Ico (0 : ℝ) 1 → EuclideanHalfSpace 1 := by
-  letI : Fact ((0 : ℝ) < 1) := ⟨by norm_num⟩
-  let e := IccLeftChart 0 1
-  exact e.source.domRestrict e ∘ depthSourceHomeomorph
+  exact (fun t : ↥(normalIio 1) ↦ (t : EuclideanHalfSpace 1)) ∘
+    (homeomorphNormalIio 1).symm
 
 private theorem depthEmbedding_isOpenEmbedding : IsOpenEmbedding depthEmbedding := by
-  let e := IccLeftChart 0 1
-  exact e.isOpenEmbedding_restrict.comp depthSourceHomeomorph.isOpenEmbedding
+  exact (isOpen_normalIio 1).isOpenEmbedding_subtypeVal.comp
+    (homeomorphNormalIio 1).symm.isOpenEmbedding
 
 private theorem depthEmbedding_apply (t : Ico (0 : ℝ) 1) :
     (depthEmbedding t).1 0 = t := by
-  let _ : Fact ((0 : ℝ) < 1) := ⟨by norm_num⟩
-  let e := IccLeftChart 0 1
-  change (e (⟨⟨t, ⟨t.2.1, t.2.2.le⟩⟩, _⟩ :
-    {z : Icc (0 : ℝ) 1 // z ∈ e.source})).1 0 = t
-  rw [IccLeftChart_apply]
-  simp only [sub_zero]
+  change ((homeomorphNormalIio 1).symm t).1.1 0 = (t : ℝ)
+  rw [← coe_homeomorphNormalIio]
+  exact congrArg (fun s : Ico (0 : ℝ) 1 ↦ (s : ℝ))
+    ((homeomorphNormalIio 1).apply_symm_apply t)
 
 private theorem depthEmbedding_apply_zero :
     depthEmbedding (0 : Ico (0 : ℝ) 1) = (0 : EuclideanHalfSpace 1) := by
-  -- `depthEmbedding` is a composition through the chart source subtype; expose that subtype
-  -- before evaluating the chart at the zero normal coordinate.
-  change IccLeftChart 0 1
-    (⟨(⟨(0 : ℝ), ⟨by norm_num, by norm_num⟩⟩ : Icc (0 : ℝ) 1),
-      by change (0 : ℝ) < 1; norm_num⟩ :
-      {z : Icc (0 : ℝ) 1 // z ∈ (IccLeftChart 0 1).source}) = _
-  apply Subtype.ext
-  ext i
-  rw [Subsingleton.elim i 0]
-  rw [IccLeftChart_apply]
-  simp only [sub_zero]
-  rw [PiLp.toLp_apply]
-  rfl
+  change ((homeomorphNormalIio 1).symm (0 : Ico (0 : ℝ) 1)).1 = 0
+  apply (eq_zero_iff).2
+  rw [← coe_homeomorphNormalIio]
+  have h := congrArg (fun r : Ico (0 : ℝ) 1 ↦ (r : ℝ))
+    ((homeomorphNormalIio 1).apply_symm_apply (0 : Ico (0 : ℝ) 1))
+  exact h
 
 /-- The explicit collar map of the standard half-space boundary. -/
 noncomputable def boundaryCollar (n : ℕ) :
@@ -128,14 +95,6 @@ theorem isCollar_boundaryParam (n : ℕ) :
   refine ⟨?_, boundaryCollar_apply_zero n⟩
   apply (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).toHomeomorph.isOpenEmbedding.comp
   exact IsOpenEmbedding.id.prodMap depthEmbedding_isOpenEmbedding
-
-/-- Restricting the model collar to an open boundary piece gives the local collar data used by
-local-to-global constructions. -/
-theorem isCollar_boundaryParam_restrict {U : Set (EuclideanSpace ℝ (Fin n))}
-    (hU : IsOpen U) :
-    IsCollar (EuclideanHalfSpace.boundaryParam n ∘ ((↑) : U → EuclideanSpace ℝ (Fin n)))
-      (boundaryCollar n ∘ Prod.map ((↑) : U → EuclideanSpace ℝ (Fin n)) id) :=
-  (isCollar_boundaryParam n).restrict hU
 
 /-- The standard half-space boundary parametrization admits a collar. -/
 theorem isCollared_boundaryParam (n : ℕ) :
