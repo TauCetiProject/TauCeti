@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Adjoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent
-import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
 
 /-!
 # The adjoint action of the special linear group
@@ -19,12 +18,14 @@ holds over every commutative coefficient algebra, including nonreduced ones.
 
 ## Main declarations
 
-* `TauCeti.SpecialLinear.tangentMatrix_adDerivation`: identifies the adjoint action
+* `TauCeti.SpecialLinear.counitPointsMulEquiv`: reads counit-valued points as determinant-one
+  matrices.
+* `TauCeti.SpecialLinear.tangentMatrix_adDerivation_coe`: identifies the adjoint action
   on `Lie(SLₙ)` with conjugation by its image in `GLₙ`.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §10 and §14.
+* J. S. Milne, *Algebraic Groups* (2017), §10.d (the adjoint representation), cf. 10.24.
 -/
 
 public section
@@ -36,46 +37,56 @@ open WithConv
 variable {R : Type*} [CommRing R] {B : Type*} [CommRing B] [Algebra R B]
 variable (n : ℕ)
 
+/-- The determinant-one matrix of a point of `SLₙ` valued in its counit algebra. -/
+noncomputable def counitPointsMulEquiv :
+    WithConv (coordinateHopfAlgebra R n →ₐ[R]
+        Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B) ≃*
+      Matrix.SpecialLinearGroup (Fin n) B :=
+  (Bialgebra.CounitAlgebra.pointsMulEquiv R (coordinateHopfAlgebra R n) B).trans
+    (pointsMulEquiv (R := R) (A := B) n)
+
+/-- The image in `GLₙ` of a counit-valued `SLₙ` point is its canonical inclusion. -/
+theorem toGL_counitPointsMulEquiv
+    (g : WithConv (coordinateHopfAlgebra R n →ₐ[R]
+      Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
+    Matrix.SpecialLinearGroup.toGL (counitPointsMulEquiv n g) =
+      GeneralLinear.counitPointsMulEquiv n
+        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
+          (GeneralLinear.coordinateHopfAlgebra R n) B) (coordinateMap R n).hom g) := by
+  rw [counitPointsMulEquiv, MulEquiv.trans_apply]
+  rw [GeneralLinear.counitPointsMulEquiv_eq_pointsMulEquiv]
+  rw [← pointsMulEquiv_toGL (R := R) (A := B) n]
+  rw [CommHopfAlgCat.quotientPointsHom_apply]
+  congr 1
+  ext x
+  simp only [AlgHom.mapValue_apply, WithConv.ofConv_toConv, AlgHom.comp_apply,
+    Bialgebra.CounitAlgebra.pointsMulEquiv_apply]
+  change _ = Bialgebra.CounitAlgebra.algEquivSelf R
+    (GeneralLinear.coordinateHopfAlgebra R n) B
+      (AlgHom.mapDomain (coordinateMap R n).hom g x)
+  rw [AlgHom.mapDomain_apply_apply, Bialgebra.CounitAlgebra.algEquivSelf_apply]
+  rw [CommHopfAlgCat.hom_mkQuotient]
+  exact (Bialgebra.CounitAlgebra.algEquivSelf_apply
+    (R := R) (A := GeneralLinear.coordinateHopfAlgebra R n) (B := B)
+      (g.ofConv ((coordinateMap R n).hom x))).symm
+
 /-- The adjoint action of `SLₙ` on its tangent Lie algebra is conjugation on trace-zero
 matrices by the ambient `GLₙ` point. This holds for every commutative coefficient algebra. -/
 @[simp]
-theorem tangentMatrix_adDerivation
+theorem tangentMatrix_adDerivation_coe
     (g : WithConv (coordinateHopfAlgebra R n →ₐ[R]
       Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B))
     (d : Derivation R (coordinateHopfAlgebra R n)
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
     (tangentMatrix n (Derivation.adDerivation B g d) : Matrix (Fin n) (Fin n) B) =
-      (GeneralLinear.counitPointsMulEquiv n
-        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
-          (GeneralLinear.coordinateHopfAlgebra R n) B) (coordinateMap R n).hom g) :
-        Matrix (Fin n) (Fin n) B) *
+      (counitPointsMulEquiv n g : Matrix (Fin n) (Fin n) B) *
       (tangentMatrix n d : Matrix (Fin n) (Fin n) B) *
-      ((GeneralLinear.counitPointsMulEquiv n
-        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
-          (GeneralLinear.coordinateHopfAlgebra R n) B) (coordinateMap R n).hom g))⁻¹ :
-        Matrix.GeneralLinearGroup (Fin n) B) := by
-  let φ : GeneralLinear.coordinateHopfAlgebra R n →ₐc[R] coordinateHopfAlgebra R n :=
-    (coordinateMap R n).hom
-  let g' : WithConv (GeneralLinear.coordinateHopfAlgebra R n →ₐ[R]
-      Bialgebra.CounitAlgebra R (GeneralLinear.coordinateHopfAlgebra R n) B) :=
-    AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
-      (GeneralLinear.coordinateHopfAlgebra R n) B) φ g
-  have hquot (e : Derivation R (coordinateHopfAlgebra R n)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
-      HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) e =
-        derivationComp φ e := by
-    apply Derivation.ext
-    intro x
-    rw [HopfIdeal.quotientLieHom_apply_apply, derivationComp_apply]
-    simp only [Bialgebra.CounitAlgebra.algEquivSelf_apply]
-    exact congrArg e (coordinateMap_apply (R := R) (n := n) x).symm
-  have hdiff : HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n)
-      (Derivation.adDerivation B g d) =
-      Derivation.adDerivation B g'
-        (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) d) := by
-    rw [hquot, hquot]
-    exact derivationComp_adDerivation φ g d
-  rw [tangentMatrix_apply_coe, hdiff, GeneralLinear.tangentMatrix_adDerivation]
-  rw [← tangentMatrix_apply_coe n d]
+      ((counitPointsMulEquiv n g)⁻¹ : Matrix.SpecialLinearGroup (Fin n) B) := by
+  rw [tangentMatrix_apply_coe, HopfIdeal.quotientLieHom_adDerivation,
+    GeneralLinear.tangentMatrix_adDerivation, ← tangentMatrix_apply_coe n d]
+  have hgl := (toGL_counitPointsMulEquiv n g).symm
+  simp only [coordinateMap, CommHopfAlgCat.hom_mkQuotient] at hgl
+  rw [hgl]
+  rfl
 
 end TauCeti.SpecialLinear
