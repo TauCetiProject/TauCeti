@@ -35,7 +35,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- The joint law of the directing measure and two disjoint restrictions is the mixture of the
 products of their conditional laws. Both restrictions may be infinite. -/
-theorem ConditionallyIIDWith.jointLaw_domRestrict_pair [IsFiniteMeasure μ]
+theorem ConditionallyIIDWith.jointLaw_pair_domRestrict [IsFiniteMeasure μ]
     (h : ConditionallyIIDWith μ X ν) {S T : Set ℕ} (hST : Disjoint S T) :
     μ.map (fun ω => (ν ω,
       (S.domRestrict (fun i => X i ω), T.domRestrict (fun i => X i ω)))) =
