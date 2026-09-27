@@ -587,6 +587,14 @@ section Corestriction
 
 variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
 
+/-- **A natural number invertible in an extension is invertible in the base field**: both
+statements say that `n` is nonzero, and `algebraMap K L` carries `n` to `n` and `0` to `0`. This
+is the direction the hypotheses of corestriction travel in, `IsUnit.map (algebraMap K L)` being
+the direction restriction uses. -/
+theorem isUnit_natCast_of_isUnit_natCast (hn : IsUnit (n : L)) : IsUnit (n : K) :=
+  isUnit_iff_ne_zero.2 fun h =>
+    hn.ne_zero (by rw [← map_natCast (algebraMap K L), h, map_zero])
+
 /-- **The Kummer coefficients of `L` as Kummer coefficients of `K`**, along a `K`-embedding
 `σ : L →ₐ[K] Kˢ`: the chosen identification `separableClosureRingEquiv K L σ : Lˢ ≃+* Kˢ` read on
 the `n`th roots of unity. It inverts `TauCeti.kummerCoeffMap`
@@ -735,14 +743,15 @@ theorem toAdd_kummerCor (y : Multiplicative (H1 (AbsoluteGaloisGroup L) (KummerC
 Kummer class of `b ∈ Lˣ` to the Kummer class of its norm `N_{L/K} b ∈ Kˣ`. The connecting map of
 the Kummer sequence commutes with corestriction, and in degree zero corestriction is the norm. -/
 @[simp↓]
-theorem kummerCor_kummerMap (hn : IsUnit (n : K)) (b : Lˣ) :
-    kummerCor K n L σ (kummerMap L n (by simpa using hn.map (algebraMap K L)) b) =
-      kummerMap K n hn (Units.map (Algebra.norm K : L →* K) b) := by
-  have hnL : IsUnit (n : L) := by simpa using hn.map (algebraMap K L)
+theorem kummerCor_kummerMap (hn : IsUnit (n : L)) (b : Lˣ) :
+    kummerCor K n L σ (kummerMap L n hn b) =
+      kummerMap K n (isUnit_natCast_of_isUnit_natCast K n L hn)
+        (Units.map (Algebra.norm K : L →* K) b) := by
+  have hnK : IsUnit (n : K) := isUnit_natCast_of_isUnit_natCast K n L hn
   refine Multiplicative.toAdd.injective ?_
   rw [toAdd_kummerCor, kummerMap_apply, kummerMap_apply, toAdd_ofAdd, toAdd_ofAdd,
-    (kummerShortExact L n hnL).explicitDelta0_naturality
-      ((kummerShortExact K n hn).restrict σ.fieldRange.fixingSubgroup)
+    (kummerShortExact L n hn).explicitDelta0_naturality
+      ((kummerShortExact K n hnK).restrict σ.fieldRange.fixingSubgroup)
       ((absoluteGaloisGroupEquivFixingSubgroup K L σ).symm :
         ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L)
       (kummerCoeffMapSymm K n L σ) (unitsCoeffMap K L σ) (unitsCoeffMap K L σ)
@@ -757,7 +766,7 @@ theorem kummerCor_kummerMap (hn : IsUnit (n : K)) (b : Lˣ) :
       (by
         refine Additive.toMul.injective (Units.ext ?_)
         simp [separableClosureRingEquiv_algebraMap]),
-    (kummerShortExact K n hn).explicitCor_delta0 σ.fieldRange.fixingSubgroup
+    (kummerShortExact K n hnK).explicitCor_delta0 σ.fieldRange.fixingSubgroup
       (isOpen_fixingSubgroup_fieldRange K L σ),
     explicitCor0_embeddedUnitsInvariants]
 
@@ -766,9 +775,10 @@ theorem kummerCor_kummerMap (hn : IsUnit (n : K)) (b : Lˣ) :
 corresponds under the Kummer isomorphisms to the map of power classes
 `Lˣ ⧸ (Lˣ)ⁿ → Kˣ ⧸ (Kˣ)ⁿ` induced by the norm `N_{L/K}`. -/
 @[simp↓]
-theorem kummerIso_norm (hn : IsUnit (n : K)) (x : powerClassQuotient Lˣ n) :
-    kummerCor K n L σ (kummerIso L n (by simpa using hn.map (algebraMap K L)) x) =
-      kummerIso K n hn (powerClassMap n (Units.map (Algebra.norm K : L →* K)) x) := by
+theorem kummerIso_norm (hn : IsUnit (n : L)) (x : powerClassQuotient Lˣ n) :
+    kummerCor K n L σ (kummerIso L n hn x) =
+      kummerIso K n (isUnit_natCast_of_isUnit_natCast K n L hn)
+        (powerClassMap n (Units.map (Algebra.norm K : L →* K)) x) := by
   induction x using QuotientGroup.induction_on with
   | H b => rw [kummerIso_mk, powerClassMap_mk, kummerIso_mk, kummerCor_kummerMap]
 
