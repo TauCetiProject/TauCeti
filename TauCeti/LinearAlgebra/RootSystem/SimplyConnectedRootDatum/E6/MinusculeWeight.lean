@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
@@ -236,38 +237,19 @@ private theorem e6MinusculeWeight_mem_orbit (a : Fin 27) :
     e6MinusculeWeight a ∈
       MulAction.orbit e6SimplyConnectedRootDatum.weylGroup
         (Pi.single 0 1 : Fin 6 → ℤ) := by
-  have aux : ∀ n, ∀ hn : n < 27, e6MinusculeWeight ⟨n, hn⟩ ∈
-      MulAction.orbit e6SimplyConnectedRootDatum.weylGroup
-        (Pi.single 0 1 : Fin 6 → ℤ) := by
-    intro n hn
-    induction n using Nat.strong_induction_on with
-    | h n ih =>
-        by_cases hzero : n = 0
-        · subst n
-          -- The proof that the dependent index lies in `Fin 27` is definitionally irrelevant;
-          -- expose the zero index so the public highest-weight lemma applies.
-          change e6MinusculeWeight 0 ∈
-            MulAction.orbit e6SimplyConnectedRootDatum.weylGroup
-              (Pi.single 0 1 : Fin 6 → ℤ)
-          rw [e6MinusculeWeight_zero]
-          exact MulAction.mem_orbit_self _
-        · let a : Fin 26 := ⟨n - 1, by omega⟩
-          have hasucc : a.succ = (⟨n, hn⟩ : Fin 27) := by
-            apply Fin.ext
-            simp [a]
-            omega
-          have hparent : (e6MinusculeParent a : ℕ) < n := by
-            have h := e6MinusculeParent_lt_succ a
-            -- `hasucc` is an equality of `Fin` values; applying `Fin.val` exposes exactly the
-            -- natural-number endpoint in `h` without changing either index.
-            rw [show (a.succ : ℕ) = n from congrArg Fin.val hasucc] at h
-            exact h
-          rw [← hasucc, e6MinusculeWeight_succ_eq_reflection_parent]
-          exact MulAction.mem_orbit_of_mem_orbit
-            (RootPairing.weylGroup.ofIdx e6SimplyConnectedRootDatum
-              (e6SimpleIndex (e6MinusculeParentNode a)))
-            (ih (e6MinusculeParent a) hparent (e6MinusculeParent a).isLt)
-  exact aux a a.isLt
+  obtain ⟨l, hl⟩ := exists_e6MinusculeReflections_eq a
+  rw [← hl]
+  clear a hl
+  induction l using List.reverseRecOn with
+  | nil =>
+      rw [List.foldl_nil, e6MinusculeWeight_zero]
+      exact MulAction.mem_orbit_self _
+  | append_singleton l i ih =>
+      rw [List.foldl_append]
+      simp only [List.foldl_cons, List.foldl_nil]
+      rw [← e6SimplyConnectedRootDatum_reflection_e6MinusculeWeight]
+      exact MulAction.mem_orbit_of_mem_orbit
+        (RootPairing.weylGroup.ofIdx e6SimplyConnectedRootDatum (e6SimpleIndex i)) ih
 
 /-- **The explicit table is exactly the Weyl orbit of the first fundamental weight `ϖ₁`.** -/
 theorem range_e6MinusculeWeight :

@@ -311,7 +311,7 @@ theorem coe_rootSubgroupPoints_inl (i : Fin 6) (A : Type v) [CommRing A]
       (weightTable.isNilpotent_rep_serreRootGenerator (.inl i)) 𝓑
       (weightTable.raisingMatrix i)
       (weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inl i))
-      (weightTable.rep_positiveRootGenerator_coordinateLatticeBasis_eq_sum i)
+      (weightTable.rep_serreRootGenerator_inl_coordinateLatticeBasis_eq_sum i)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
 
 /-- A negative simple-root point has matrix `1 + uFᵢ` in the minuscule basis. -/
@@ -330,7 +330,7 @@ theorem coe_rootSubgroupPoints_inr (i : Fin 6) (A : Type v) [CommRing A]
       (weightTable.isNilpotent_rep_serreRootGenerator (.inr i)) 𝓑
       (weightTable.loweringMatrix i)
       (weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inr i))
-      (weightTable.rep_negativeRootGenerator_coordinateLatticeBasis_eq_sum i)
+      (weightTable.rep_serreRootGenerator_inr_coordinateLatticeBasis_eq_sum i)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
 
 /-- The split weight torus on matrix-valued points of the type-`E₆` carrier. -/

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+public import TauCeti.Data.Fin.Basic
 
 /-!
 # Corestriction of subcomodules
@@ -30,6 +31,8 @@ coalgebras must preserve the invariant subspaces of their comodules.
   by a coalgebra equivalence.
 * `TauCeti.Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights`: distinct one-dimensional
   weights connected by subcomodule-preserving involutions give a simple comodule.
+* `TauCeti.Subcomodule.single_smul_mem_of_corestrict_eq_ofWeights`: restriction to distinct
+  one-dimensional weights extracts each scaled coordinate vector of a subcomodule vector.
 * `TauCeti.Subcomodule.map_id_coact_coe_eq_tmul_one`: a vector of a subcomodule fixed by the
   corestricted coaction is fixed by the corestricted coaction of the ambient comodule.
 
@@ -200,6 +203,36 @@ variable {H : Type v} [AddCommGroup H] [Module k H] [Coalgebra k H]
 variable {G : Type w} {I : Type x} [Finite I] [DecidableEq I]
 variable [Comodule k H (I → k)]
 
+/-- Restriction to distinct one-dimensional weights extracts every scaled coordinate vector of a
+vector in a subcomodule. -/
+theorem single_smul_mem_of_corestrict_eq_ofWeights
+    (f : H →ₗc[k] MonoidAlgebra k G) (wt : I → G) (hwt : Function.Injective wt)
+    (hcomodule :
+      Comodule.Corestrict f = Comodule.ofWeights (Pi.basisFun k I) wt)
+    (N : Subcomodule k H (I → k)) {v : I → k} (hv : v ∈ N) (a : I) :
+    v a • Pi.single a 1 ∈ N := by
+  let _ : Comodule k (MonoidAlgebra k G) (I → k) := Comodule.Corestrict f
+  have hvweight : v ∈ N.corestrict f :=
+    (mem_corestrict f N v).2 hv
+  have hp := Comodule.weightProj_mem_subcomodule (N.corestrict f) (wt a) hvweight
+  have hpN :
+      Comodule.weightProj k G (I → k) (wt a) v ∈ N :=
+    (mem_corestrict f N _).1 hp
+  have hproj :
+      (let _ : Comodule k (MonoidAlgebra k G) (I → k) := Comodule.Corestrict f;
+        Comodule.weightProj k G (I → k) (wt a) v) =
+      (let _ : Comodule k (MonoidAlgebra k G) (I → k) :=
+          Comodule.ofWeights (Pi.basisFun k I) wt;
+        Comodule.weightProj k G (I → k) (wt a) v) :=
+    -- `weightProj` is selected through the comodule instance, so transport that instance
+    -- explicitly across `hcomodule` before using its closed formula for `ofWeights`.
+    congrArg (fun c : Comodule k (MonoidAlgebra k G) (I → k) ↦
+      let _ := c;
+      Comodule.weightProj k G (I → k) (wt a) v) hcomodule
+  rw [hproj, Comodule.weightProj_ofWeights_eq (Pi.basisFun k I) wt hwt] at hpN
+  simpa only [Pi.basisFun_repr, Finsupp.single_eq_same, Pi.basisFun_apply,
+    Pi.single_smul', smul_eq_mul, mul_one] using hpN
+
 /-- **A comodule with distinct one-dimensional weights and a connected weight graph is
 simple.** The graph edges are supplied as involutions of the basis indices which preserve
 membership of basis vectors in every subcomodule. This isolates the type-independent argument
@@ -207,9 +240,7 @@ used for minuscule standard comodules: restriction to the torus extracts a coord
 connected root moves propagate that coordinate basis vector to the whole basis. -/
 theorem isSimpleOrder_of_corestrict_eq_ofWeights
     (f : H →ₗc[k] MonoidAlgebra k G) (wt : I → G) (hwt : Function.Injective wt)
-    (hcomodule :
-      let _ := Fintype.ofFinite I
-      Comodule.Corestrict f = Comodule.ofWeights (Pi.basisFun k I) wt)
+    (hcomodule : Comodule.Corestrict f = Comodule.ofWeights (Pi.basisFun k I) wt)
     {J : Type*} (reflect : J → I → I)
     (hinvolutive : ∀ j, Function.Involutive (reflect j))
     (hreflect : ∀ (N : Subcomodule k H (I → k)) a j,
@@ -219,46 +250,6 @@ theorem isSimpleOrder_of_corestrict_eq_ofWeights
     IsSimpleOrder (Subcomodule k H (I → k)) := by
   classical
   let _ := Fintype.ofFinite I
-  have single_self_mem (N : Subcomodule k H (I → k))
-      {v : I → k} (hv : v ∈ N) (a : I) : Pi.single a (v a) ∈ N := by
-    let _ : Comodule k (MonoidAlgebra k G) (I → k) := Comodule.Corestrict f
-    have hvweight : v ∈ N.corestrict f :=
-      (mem_corestrict f N v).2 hv
-    have hp := Comodule.weightProj_mem_subcomodule (N.corestrict f) (wt a) hvweight
-    have hpN :
-        Comodule.weightProj k G (I → k) (wt a) v ∈ N :=
-      (mem_corestrict f N _).1 hp
-    have hproj :
-        (let _ : Comodule k (MonoidAlgebra k G) (I → k) := Comodule.Corestrict f;
-          Comodule.weightProj k G (I → k) (wt a) v) =
-        (let _ : Comodule k (MonoidAlgebra k G) (I → k) :=
-            Comodule.ofWeights (Pi.basisFun k I) wt;
-          Comodule.weightProj k G (I → k) (wt a) v) :=
-      congrArg (fun c : Comodule k (MonoidAlgebra k G) (I → k) ↦
-        let _ := c;
-        Comodule.weightProj k G (I → k) (wt a) v) hcomodule
-    rw [hproj, Comodule.weightProj_ofWeights_eq (Pi.basisFun k I) wt hwt] at hpN
-    have hpN' : v a • Pi.single a 1 ∈ N := by
-      simpa only [Pi.basisFun_repr, Finsupp.single_eq_same, Pi.basisFun_apply] using hpN
-    have heq : v a • Pi.single a 1 = (Pi.single a (v a) : I → k) := by
-      ext b
-      simp [Pi.single_apply]
-    rwa [heq] at hpN'
-  have single_foldl_mem (N : Subcomodule k H (I → k))
-      (l : List J) (a : I) (ha : Pi.single a 1 ∈ N) :
-      Pi.single (l.foldl (fun b j ↦ reflect j b) a) 1 ∈ N := by
-    induction l generalizing a with
-    | nil => exact ha
-    | cons j l ih => exact ih _ (hreflect N a j ha)
-  have single_mem_of_foldl_mem (N : Subcomodule k H (I → k))
-      (l : List J) (a : I)
-      (ha : Pi.single (l.foldl (fun b j ↦ reflect j b) a) 1 ∈ N) :
-      Pi.single a 1 ∈ N := by
-    induction l generalizing a with
-    | nil => exact ha
-    | cons j l ih =>
-        have hnext := ih (reflect j a) ha
-        simpa only [hinvolutive j a] using hreflect N (reflect j a) j hnext
   refine { exists_pair_ne := ⟨⊥, ⊤, ?_⟩, eq_bot_or_eq_top := ?_ }
   · intro h
     have hone : (Pi.single base (1 : k) : I → k) ∈
@@ -272,22 +263,23 @@ theorem isSimpleOrder_of_corestrict_eq_ofWeights
       obtain ⟨v, hv, hv0⟩ := N.ne_bot_iff.mp hN
       obtain ⟨b, hb⟩ := Function.ne_iff.mp hv0
       have hb0 : v b ≠ 0 := by simpa using hb
-      have hbmem := single_self_mem N hv b
+      have hbmem := single_smul_mem_of_corestrict_eq_ofWeights f wt hwt hcomodule N hv b
       have hseed : Pi.single b 1 ∈ N := by
         have hscaled := N.toSubmodule.smul_mem (v b)⁻¹ hbmem
-        have heq : (v b)⁻¹ • Pi.single b (v b) = (Pi.single b 1 : I → k) := by
-          ext c
-          by_cases hcb : c = b <;> simp [hcb, hb0]
-        rwa [heq] at hscaled
+        change Pi.single b 1 ∈ N.toSubmodule
+        simpa only [inv_smul_smul₀ hb0] using hscaled
       obtain ⟨l, hl⟩ := hconnected b
       have hbase : Pi.single base 1 ∈ N := by
-        apply single_mem_of_foldl_mem N l base
+        apply (predicate_foldl_iff_of_involutive
+          (fun a ↦ Pi.single a 1 ∈ N) reflect hinvolutive (hreflect N) l base).mp
         rwa [hl]
       apply top_unique
       intro v _
       rw [← (Pi.basisFun k I).sum_repr v]
       exact N.toSubmodule.sum_mem fun a _ ↦ N.toSubmodule.smul_mem _ (by
-        have ha := single_foldl_mem N (hconnected a).choose base hbase
+        have ha := (predicate_foldl_iff_of_involutive
+          (fun a ↦ Pi.single a 1 ∈ N) reflect hinvolutive (hreflect N)
+          (hconnected a).choose base).mpr hbase
         rw [(hconnected a).choose_spec] at ha
         rw [Subcomodule.mem_toSubmodule]
         simpa only [Pi.basisFun_apply] using ha)

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.AdmissibleLattice
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MinusculeWeightTable
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
@@ -346,7 +345,7 @@ private theorem rep_positiveRootGenerator_latticeBasis_eq_sum (i : Fin 7) (s : F
       ∑ r, raisingMatrix i r s • ((latticeBasis r : lattice) : Fin 56 → ℚ) := by
   simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis,
     Pi.basisFun_apply] using
-    (MinusculeWeightTable.coordinateLatticeBasis_apply_eq_sum_of_apply_eq_mulVec
+    (TauCeti.apply_coordinateLatticeBasis_eq_sum_of_forall_apply_eq_mulVec (Fin 56)
       (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inl i))))
       (raisingMatrix i) (by
@@ -364,7 +363,7 @@ private theorem rep_negativeRootGenerator_latticeBasis_eq_sum (i : Fin 7) (s : F
       ∑ r, loweringMatrix i r s • ((latticeBasis r : lattice) : Fin 56 → ℚ) := by
   simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis,
     Pi.basisFun_apply] using
-    (MinusculeWeightTable.coordinateLatticeBasis_apply_eq_sum_of_apply_eq_mulVec
+    (TauCeti.apply_coordinateLatticeBasis_eq_sum_of_forall_apply_eq_mulVec (Fin 56)
       (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inr i))))
       (loweringMatrix i) (by

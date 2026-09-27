@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E7.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced

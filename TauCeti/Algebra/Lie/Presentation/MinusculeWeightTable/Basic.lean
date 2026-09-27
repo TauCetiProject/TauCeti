@@ -434,6 +434,34 @@ theorem loweringMatrix_apply (i : B) (a b : ι) :
   simp only [raisingPEquiv, PEquiv.symm]
   simp [loweringTarget, eq_comm]
 
+/-- A raising matrix over any commutative ring sends a coordinate vector to the reflected
+coordinate vector exactly at a raising edge, and otherwise to zero. -/
+theorem raisingMatrix_map_mulVec_single [Fintype ι] {R : Type*} [CommRing R]
+    (i : B) (a : ι) :
+    (T.raisingMatrix i).map (Int.cast : ℤ → R) *ᵥ Pi.single a 1 =
+      if T.weight a i = -1 then Pi.single (T.reflection i a) 1 else 0 := by
+  rw [Matrix.mulVec_single_one]
+  ext b
+  by_cases h : T.weight a i = -1
+  · simp only [h, ite_true]
+    rw [Pi.single_apply]
+    simp [Matrix.col_apply, h]
+  · simp [Matrix.col_apply, h]
+
+/-- A lowering matrix over any commutative ring sends a coordinate vector to the reflected
+coordinate vector exactly at a lowering edge, and otherwise to zero. -/
+theorem loweringMatrix_map_mulVec_single [Fintype ι] {R : Type*} [CommRing R]
+    (i : B) (a : ι) :
+    (T.loweringMatrix i).map (Int.cast : ℤ → R) *ᵥ Pi.single a 1 =
+      if T.weight a i = 1 then Pi.single (T.reflection i a) 1 else 0 := by
+  rw [Matrix.mulVec_single_one]
+  ext b
+  by_cases h : T.weight a i = 1
+  · simp only [h, ite_true]
+    rw [Pi.single_apply]
+    simp [Matrix.col_apply, h]
+  · simp [Matrix.col_apply, h]
+
 /-- The entry formula for a simple Cartan generator matrix. -/
 @[simp]
 theorem cartanGeneratorMatrix_apply (i : B) (a b : ι) :
