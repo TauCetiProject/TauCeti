@@ -41,7 +41,7 @@ ideal. Over a field all these flatness conditions are automatic.
 * J. S. Milne, *Algebraic Groups* (2017), §5.a and §10.20.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§16--17.
 * The tensor-kernel identity is `Algebra.TensorProduct.lTensor_ker_of_flat` from
-  `TauCeti.RingTheory.Flat.TensorProduct`, using Mathlib's `Module.Flat.lTensor_exact`.
+  `TauCeti.RingTheory.Flat.TensorProduct`, using Mathlib's `Module.Flat.ker_lTensor_eq`.
 
 Applied to multiplication from the semidirect product of two normal closed subgroups, the lifted
 action is simultaneous ambient conjugation and the image is their normal product.

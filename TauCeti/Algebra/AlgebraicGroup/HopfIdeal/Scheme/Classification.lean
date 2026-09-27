@@ -153,8 +153,7 @@ private theorem quotientSubobject_ker_eq_mk
       _root_.CommHopfAlgCat.ofIsoSelf K
   have hq : mkQuotient H I ≫ qIso.hom = f := by
     ext x
-    exact (HopfIdeal.kerLiftBialgEquiv_apply f.hom hf _).trans
-      (HopfIdeal.kerLiftBialgHom_mk f.hom hf x)
+    exact HopfIdeal.kerLiftBialgHom_mk f.hom hf x
   have hqInv : f ≫ qIso.inv = mkQuotient H I := by
     rw [← hq]
     simp

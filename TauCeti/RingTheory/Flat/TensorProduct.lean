@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Flat.Equalizer
 
 /-!
 # Kernels and injectivity of tensor products of algebra maps under flatness
@@ -55,13 +55,8 @@ by its image under the right tensor inclusion. -/
 theorem lTensor_ker_of_flat (f : B →ₐ[R] C) :
     RingHom.ker (map (AlgHom.id R A) f) =
       (RingHom.ker f).map (includeRight : B →ₐ[R] A ⊗[R] B) := by
-  rw [← Submodule.restrictScalars_inj R]
-  -- The algebra map and its underlying linear tensor map have the same kernel.
-  have hker : (RingHom.ker (map (AlgHom.id R A) f)).restrictScalars R =
-      LinearMap.ker (LinearMap.lTensor A f.toLinearMap) := rfl
-  rw [hker, Ideal.map_includeRight_eq,
-    (Module.Flat.lTensor_exact A f.toLinearMap.exact_subtype_ker_map).linearMap_ker_eq]
-  rfl
+  rw [← Submodule.restrictScalars_inj R, Ideal.map_includeRight_eq]
+  exact Module.Flat.ker_lTensor_eq (S := R) (M := A) f.toLinearMap
 
 end Ring
 
