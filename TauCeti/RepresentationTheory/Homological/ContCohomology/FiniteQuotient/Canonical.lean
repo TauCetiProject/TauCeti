@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Comparison
 
 /-!
@@ -67,10 +65,6 @@ The comparison legs are *defined* as the existing all-degree inflation map
 `TauCeti.ofDiscreteModuleQuotient`, rather than rebuilt from a compatible pair;
 `TauCeti.ContCohomology.coeffMap_ofDiscreteModuleQuotient_comp_infl` supplies the compatible-pair
 presentation, which is what `continuousFiniteQuotientComparisonApp_eq_map` records.
-
-`TauCeti.ContCohomology.continuousFiniteQuotientMap_comp_quotientMk` stays in this file rather than
-beside the other `continuousFiniteQuotientMap` lemmas of `FiniteQuotient.Basic`: that module does
-not reach `ContinuousMonoidHom.quotientMk`, which the statement needs.
 -/
 
 public section
@@ -234,15 +228,6 @@ section Cocone
 
 variable {U V : OpenNormalSubgroup G}
 
-/-- The quotient homomorphism `G → G ⧸ U` factors through every deeper quotient: for `V ≤ U` it is
-the transition map `G ⧸ V → G ⧸ U` after `G → G ⧸ V`. -/
-@[simp]
-theorem continuousFiniteQuotientMap_comp_quotientMk (hVU : V ≤ U) :
-    (continuousFiniteQuotientMap G hVU).comp (ContinuousMonoidHom.quotientMk V.toSubgroup) =
-      ContinuousMonoidHom.quotientMk U.toSubgroup := by
-  ext g
-  simp
-
 /-- The comparison map from the `U`-level into `Hⁿ(G, M)`: the coefficient dictionary
 `TauCeti.ofDiscreteModuleQuotient`, which reads `M^U` as the canonical `U`-invariants of `M`,
 followed by canonical inflation along `G → G ⧸ U`. -/
@@ -252,17 +237,6 @@ noncomputable def continuousFiniteQuotientComparisonApp (U : OpenNormalSubgroup 
       continuousCohomology n (ofDiscreteModule ℤ G M) :=
   TauCeti.ContinuousCohomology.coeffMap (ofDiscreteModuleQuotient G M U.toSubgroup) n ≫
     TauCeti.ContinuousCohomology.infl U.toSubgroup (ofDiscreteModule ℤ G M) n
-
-omit [IsTopologicalGroup G] in
-/-- The comparison coefficient pair — the quotient homomorphism `G → G ⧸ U` together with the
-inclusion `M^U ↪ M` — is that inclusion on underlying elements. -/
-private theorem ofDiscreteModulePair_quotientMk_subtype_hom_apply (U : OpenNormalSubgroup G)
-    (m : FixedPoints.addSubgroup U.toSubgroup M) :
-    (dsimp% only ((ofDiscreteModulePair
-        (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
-        (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
-        (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m)).hom m)) = (m : M) :=
-  ofDiscreteModulePair_hom_apply _ _ _ m
 
 /-- **The characteristic equation of the comparison map**: in every degree it is the
 compatible-pair pullback along the quotient homomorphism `G → G ⧸ U` and the inclusion
@@ -299,8 +273,10 @@ theorem continuousFiniteQuotientTransition_comp_comparisonApp (hVU : V ≤ U) (n
       (fun g m ↦ subtype_quotientMk_smul G M V.toSubgroup g m)).hom
       ((continuousFiniteQuotientPair G M hVU).hom m) = (m : M)
   rw [continuousFiniteQuotientPair_hom_apply (G := G) (M := M) hVU m,
-    ofDiscreteModulePair_quotientMk_subtype_hom_apply (G := G) (M := M) V
-      (fixedPointsInclusion hVU m)]
+    ofDiscreteModulePair_hom_apply
+      (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
+      (FixedPoints.addSubgroup V.toSubgroup M).subtype.toIntLinearMap
+      (fun g m ↦ subtype_quotientMk_smul G M V.toSubgroup g m) (fixedPointsInclusion hVU m)]
   exact coe_fixedPointsInclusion hVU m
 
 /-- The inflation-and-inclusion comparison maps from every level into `Hⁿ(G, M)`, assembled as a
