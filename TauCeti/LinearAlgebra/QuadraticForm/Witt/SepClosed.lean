@@ -42,11 +42,9 @@ theorem WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed {x : WittRing K}
 
 /-- Dimension modulo two is an isomorphism for the Witt ring of a separably closed field. -/
 noncomputable def WittRing.equivZModTwoOfIsSepClosed : WittRing K ≃+* ZMod 2 :=
-  RingEquiv.ofBijective WittRing.dimMod2 ⟨by
-    intro x y h
-    apply sub_eq_zero.mp
-    apply WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed
-    simpa only [map_sub, sub_eq_zero] using h,
+  RingEquiv.ofBijective WittRing.dimMod2 ⟨
+    (injective_iff_map_eq_zero WittRing.dimMod2).2
+      (fun _ => WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed),
     ZMod.ringHom_surjective WittRing.dimMod2⟩
 
 @[simp]
