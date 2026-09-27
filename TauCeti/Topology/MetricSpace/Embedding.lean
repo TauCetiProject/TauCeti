@@ -8,10 +8,10 @@ module
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
-# Local images of open sets under embeddings
+# Local images of open sets under inducing maps
 
-An open neighborhood in the source of an embedding agrees, near the image of each of its
-points, with the full range of the embedding.
+An open neighborhood in the source of an inducing map agrees, near the image of each of its
+points, with the full range of the map.
 -/
 
 public section
@@ -22,14 +22,14 @@ namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [PseudoMetricSpace Y]
 
-/-- Near the image of a point in an open set, the range of an embedding agrees with the image
+/-- Near the image of a point in an open set, the range of an inducing map agrees with the image
 of that open set. -/
-theorem exists_ball_inter_range_eq_ball_inter_image_of_isEmbedding
-    (f : X → Y) (hf : Topology.IsEmbedding f) {s : Set X} (hs : IsOpen s)
+theorem exists_ball_inter_range_eq_ball_inter_image_of_isInducing
+    (f : X → Y) (hf : Topology.IsInducing f) {s : Set X} (hs : IsOpen s)
     {x : X} (hx : x ∈ s) :
     ∃ ε : ℝ, 0 < ε ∧
       Metric.ball (f x) ε ∩ range f = Metric.ball (f x) ε ∩ f '' s := by
-  obtain ⟨u, hu, hsu⟩ := hf.isInducing.image_eq_isOpen_inter_range hs
+  obtain ⟨u, hu, hsu⟩ := hf.image_eq_isOpen_inter_range hs
   have hxu : f x ∈ u := by
     have h : f x ∈ f '' s := ⟨x, hx, rfl⟩
     rw [hsu] at h

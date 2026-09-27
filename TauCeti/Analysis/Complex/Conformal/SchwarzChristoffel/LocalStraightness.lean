@@ -59,8 +59,8 @@ theorem exists_ball_inter_range_schwarzChristoffelCompactifiedBoundary_eq_ball_i
     continuous_schwarzChristoffelCompactifiedBoundary a e z₀ hfinite hinfty
   have hxT : (x : OnePoint ℝ) ∈ T := ⟨x, hx, rfl⟩
   obtain ⟨ε, hε, hball_range⟩ :=
-    exists_ball_inter_range_eq_ball_inter_image_of_isEmbedding
-      Γ (hΓcont.isClosedEmbedding hinj).isEmbedding hTopen hxT
+    exists_ball_inter_range_eq_ball_inter_image_of_isInducing
+      Γ (hΓcont.isClosedEmbedding hinj).isEmbedding.isInducing hTopen hxT
   have hxΓ : Γ (x : OnePoint ℝ) = schwarzChristoffelBoundary a e z₀ x := by
     simp only [Γ, schwarzChristoffelCompactifiedBoundary_coe]
   rw [hxΓ] at hball_range
