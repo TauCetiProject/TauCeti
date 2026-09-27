@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import TauCeti.NumberTheory.NumberField.Units.Elimination
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.RealPlace
 import TauCeti.NumberTheory.NumberField.Units.Torsion
@@ -14,17 +13,18 @@ import TauCeti.NumberTheory.NumberField.Units.Torsion
 # The fundamental unit and the regulator of `ℚ(√5)`
 
 Let `K` be a number field generated over `ℚ` by an algebraic integer `θ` with
-`minpoly ℤ θ = X² − X − 1`, so that `K = ℚ(√5)`. At the real place `w` where `θ` has the value
-`Real.goldenRatio = (1 + √5)/2`, every candidate minimal polynomial `X² + mX ± 1` of a
-competing unit has no real root in the open interval `(1, Real.goldenRatio)`. The elimination
-certificate of `TauCeti.NumberTheory.NumberField.Units.Elimination` therefore applies: `θ` is a
-unit, since `θ (θ − 1) = 1`, it generates the unit group modulo torsion, the regulator is
-`Real.log Real.goldenRatio`, and the torsion subgroup has order `2`.
+`minpoly ℤ θ = X² − X − 1`, so that `K = ℚ(√5)`. In any quadratic field, every candidate minimal
+polynomial `X² + mX ± 1` of a unit below `Real.goldenRatio = (1 + √5)/2` has no real root in
+the open interval `(1, Real.goldenRatio)`, which is an elimination certificate in the sense of
+`TauCeti.NumberTheory.NumberField.Units.Elimination`. At the real place `w` of `ℚ(√5)` where `θ`
+has the value `Real.goldenRatio`, the certificate applies: `θ` is a unit, since `θ (θ − 1) = 1`,
+it generates the unit group modulo torsion, the regulator is `Real.log Real.goldenRatio`, and
+the torsion subgroup has order `2`.
 
 ## Main results
 
 * `TauCeti.NumberField.Sqrt5.unitCandidateEliminationCertificate`: the elimination certificate
-  at `B = Real.goldenRatio`, by the root test alone.
+  at `B = Real.goldenRatio` for any quadratic field, by the root test alone.
 * `TauCeti.NumberField.Sqrt5.mul_sub_one_eq_one`: `θ (θ − 1) = 1`, so `θ` is a unit.
 * `TauCeti.NumberField.Sqrt5.closure_sup_torsion_eq_top`: a unit with value `θ` generates the
   units of `ℚ(√5)` modulo torsion.
@@ -47,10 +47,10 @@ namespace TauCeti.NumberField.Sqrt5
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
-/-- **The elimination certificate for `ℚ(√5)`.** Every candidate polynomial `X² + mX ± 1` with
-`|m| ≤ φ + 1` has no real root in `(1, φ)`, where `φ = Real.goldenRatio`. -/
-theorem unitCandidateEliminationCertificate (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+/-- **The elimination certificate at the golden ratio.** In a quadratic field, every candidate
+polynomial `X² + mX ± 1` with `|m| ≤ φ + 1` has no real root in `(1, φ)`, where
+`φ = Real.goldenRatio`. -/
+theorem unitCandidateEliminationCertificate (hdeg : Module.finrank ℚ K = 2) :
     UnitCandidateEliminationCertificate K Real.goldenRatio := by
   obtain ⟨φ, hφ⟩ : ∃ φ : ℝ, φ = Real.goldenRatio := ⟨_, rfl⟩
   have hφ2 : φ ^ 2 = φ + 1 := by rw [hφ]; exact Real.goldenRatio_sq
@@ -58,7 +58,7 @@ theorem unitCandidateEliminationCertificate (hmin : minpoly ℤ θ = X ^ 2 - X -
   have hφu : φ < 2 := by rw [hφ]; exact Real.goldenRatio_lt_two
   rw [← hφ, unitCandidateEliminationCertificate_iff]
   intro g hg
-  rw [mem_unitCandidates_iff, finrank_eq_two hmin hgen] at hg
+  rw [mem_unitCandidates_iff, hdeg] at hg
   obtain ⟨hmonic, hdeg, h0, hk⟩ := hg
   left
   rintro x ⟨hx1, hxφ⟩
@@ -88,7 +88,8 @@ theorem unitCandidateEliminationCertificate (hmin : minpoly ℤ θ = X ^ 2 - X -
       mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)]
 
 omit [NumberField K] in
-/-- The generator `θ` of `ℚ(√5)` is a unit: `θ (θ − 1) = 1`. -/
+/-- An algebraic integer `θ` with `minpoly ℤ θ = X² − X − 1` is a unit: `θ (θ − 1) = 1`. -/
+@[simp]
 theorem mul_sub_one_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1) : θ * (θ - 1) = 1 := by
   have h := minpoly.aeval ℤ θ
   rw [hmin, map_sub, map_sub, map_pow, aeval_X, map_one] at h
@@ -105,7 +106,7 @@ theorem closure_sup_torsion_eq_top (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   refine UnitCandidateEliminationCertificate.sound ?_ (rank_eq_one hmin hgen)
     (finrank_eq_two hmin hgen ▸ Nat.prime_two) hw h1
   rw [hwu]
-  exact unitCandidateEliminationCertificate hmin hgen
+  exact unitCandidateEliminationCertificate (finrank_eq_two hmin hgen)
 
 /-- **The regulator of `ℚ(√5)`** is `Real.log Real.goldenRatio = log ((1 + √5) / 2)`. -/
 theorem regulator_eq_log_goldenRatio (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
@@ -119,7 +120,7 @@ theorem regulator_eq_log_goldenRatio (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   rw [regulator_eq_mult_log_of_rank_eq_one (rank_eq_one hmin hgen) u
     (closure_sup_torsion_eq_top hmin hgen hu) w h1, hwu, hw.mult_eq_one, Nat.cast_one, one_mul]
 
-/-- The torsion subgroup of the units of `ℚ(√5)` is `{±1}`, of order `2`. -/
+/-- The torsion subgroup of the units of `ℚ(√5)` has order `2`. -/
 theorem torsionOrder_eq_two (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : torsionOrder K = 2 := by
   obtain ⟨w, hw, -⟩ := exists_isReal_and_apply_eq_goldenRatio hmin hgen
