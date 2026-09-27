@@ -26,10 +26,8 @@ open Polynomial
 
 variable {K : Type*} [Field K] [DecidableEq K]
 
-namespace Polynomial
-
 /-- The last entry of a nonempty Sturm sequence divides both input polynomials. -/
-theorem getLast?_sturmSeq_dvd (p q s : K[X])
+theorem getLast?_sturmSeq_dvd {p q s : K[X]}
     (hs : (sturmSeq p q).getLast? = some s) : s ∣ p ∧ s ∣ q := by
   induction p, q using sturmSeq.induct with
   | case1 q =>
@@ -51,15 +49,13 @@ theorem getLast?_sturmSeq_dvd (p q s : K[X])
         exact ⟨by simpa using (EuclideanDomain.dvd_mod_iff hq').mp hr, hq'⟩
 
 /-- The final nonzero remainder is associated to the gcd of the input polynomials. -/
-theorem getLast?_sturmSeq_associated_gcd (p q s : K[X])
+theorem getLast?_sturmSeq_associated_gcd {p q s : K[X]}
     (hs : (sturmSeq p q).getLast? = some s) : Associated s (gcd p q) := by
-  obtain ⟨hsp, hsq⟩ := getLast?_sturmSeq_dvd p q s hs
+  obtain ⟨hsp, hsq⟩ := getLast?_sturmSeq_dvd hs
   have hmem : s ∈ sturmSeq p q := by
     exact List.mem_of_mem_getLast? (by rw [hs]; exact Option.mem_some_self s)
   exact gcd_greatest_associated hsp hsq
     (fun _ hep heq => dvd_of_mem_sturmSeq hep heq hmem)
-
-end Polynomial
 
 /-- For a nonzero first polynomial, the Sturm sequence has a final entry associated to its gcd
 with the second polynomial. -/
@@ -69,7 +65,7 @@ theorem exists_getLast?_sturmSeq_associated_gcd {p q : K[X]} (hp : p ≠ 0) :
   let s := (sturmSeq p q).getLast hne
   have hs : (sturmSeq p q).getLast? = some s :=
     List.getLast?_eq_getLast_of_ne_nil hne
-  exact ⟨s, hs, Polynomial.getLast?_sturmSeq_associated_gcd p q s hs⟩
+  exact ⟨s, hs, getLast?_sturmSeq_associated_gcd hs⟩
 
 end TauCeti
 
