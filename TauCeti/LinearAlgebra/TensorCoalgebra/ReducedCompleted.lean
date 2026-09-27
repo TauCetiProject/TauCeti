@@ -273,7 +273,7 @@ noncomputable def truncate (n : ℕ) : CompletedReducedTensorWords R M →ₗ[R]
   · rfl
 
 /-- Truncation evaluated at a positive length keeps that coordinate below its cutoff. -/
-@[simp] theorem truncate_apply (n : ℕ) (x : CompletedReducedTensorWords R M)
+theorem truncate_apply (n : ℕ) (x : CompletedReducedTensorWords R M)
     (k : {k : ℕ // 0 < k}) :
     truncate R M n x k = if k.1 < n then x k else 0 := by
   rw [ReducedTensorWords.apply_eq_component, truncate_component]
