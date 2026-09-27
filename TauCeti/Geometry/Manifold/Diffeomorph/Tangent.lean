@@ -43,33 +43,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 G H''}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
-  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K 1 P]
 
 namespace Diffeomorph
-
-omit [IsManifold I ∞ M] [IsManifold J ∞ N] in
-/-- Applying the tangent map of a diffeomorphism and then that of its inverse returns the
-original tangent vector. -/
-private theorem tangentMap_symm_apply (h : M ≃ₘ⟮I, J⟯ N) (z : TangentBundle I M) :
-    tangentMap J I h.symm (tangentMap I J h z) = z := by
-  rw [← tangentMap_comp_at z ((h.symm.mdifferentiable (by simp)) (h z.1))
-    ((h.mdifferentiable (by simp)) z.1)]
-  have hinv : (h.symm : N → M) ∘ h = id := funext h.symm_apply_apply
-  rw [hinv]
-  exact congrFun tangentMap_id z
-
-omit [IsManifold I ∞ M] [IsManifold J ∞ N] in
-/-- Applying the tangent map of the inverse of a diffeomorphism and then that of the
-diffeomorphism returns the original tangent vector. -/
-private theorem tangentMap_apply_symm (h : M ≃ₘ⟮I, J⟯ N) (z : TangentBundle J N) :
-    tangentMap I J h (tangentMap J I h.symm z) = z := by
-  rw [← tangentMap_comp_at z ((h.mdifferentiable (by simp)) (h.symm z.1))
-    ((h.symm.mdifferentiable (by simp)) z.1)]
-  have hinv : (h : M → N) ∘ h.symm = id := funext h.apply_symm_apply
-  rw [hinv]
-  exact congrFun tangentMap_id z
 
 /-- The tangent lift of a smooth diffeomorphism. Its value at `(x, v)` is
 `(h x, mfderiv I J h x v)`, and its inverse is the tangent lift of `h.symm`. -/
@@ -78,8 +56,8 @@ protected def tangent (h : M ≃ₘ⟮I, J⟯ N) :
   toEquiv :=
     { toFun := tangentMap I J h
       invFun := tangentMap J I h.symm
-      left_inv := tangentMap_symm_apply h
-      right_inv := tangentMap_apply_symm h }
+      left_inv := tangentMap_symm_apply h (by simp)
+      right_inv := tangentMap_apply_symm h (by simp) }
   contMDiff_toFun := h.contMDiff.contMDiff_tangentMap (by simp)
   contMDiff_invFun := h.symm.contMDiff.contMDiff_tangentMap (by simp)
 
@@ -93,13 +71,8 @@ theorem coe_tangent (h : M ≃ₘ⟮I, J⟯ N) :
 /-- The inverse of a tangent lift is the tangent lift of the inverse diffeomorphism. -/
 @[simp]
 theorem tangent_symm (h : M ≃ₘ⟮I, J⟯ N) :
-    h.tangent.symm = h.symm.tangent := by
-  apply Diffeomorph.ext
-  intro z
-  apply h.tangent.injective
-  change h.tangent (h.tangent.symm z) = h.tangent (h.symm.tangent z)
-  rw [h.tangent.apply_symm_apply, coe_tangent, coe_tangent]
-  exact (tangentMap_apply_symm h z).symm
+    h.tangent.symm = h.symm.tangent :=
+  Diffeomorph.ext fun _ ↦ rfl
 
 /-- The tangent lift of the identity diffeomorphism is the identity diffeomorphism of the tangent
 bundle. -/
