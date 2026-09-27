@@ -155,14 +155,8 @@ theorem connectedSpace_derived
   let D := quotient A (derivedDefiningIdeal H)
   -- Identify the raw quotient in the goal with the categorical quotient's carrier.
   change ConnectedSpace (PrimeSpectrum D)
-  let _ : IsNoetherianRing D := Algebra.FiniteType.isNoetherianRing k D
-  let z := Bialgebra.augmentationPoint k D
-  have hbot : PrimeSpectrum.connectedComponentIdeal z = ⊥ := by
-    rw [← HopfAlgebra.identityComponentHopfIdeal_toIdeal,
-      identityComponentHopfIdeal_quotient_derivedDefiningIdeal_eq_bot, HopfIdeal.bot_toIdeal]
-  let e := (Ideal.quotEquivOfEq hbot).trans (RingEquiv.quotientBot D)
-  exact (PrimeSpectrum.homeomorphOfRingEquiv e).connectedSpace_iff.mp
-    (PrimeSpectrum.connectedSpace_quotient_connectedComponentIdeal z)
+  exact HopfAlgebra.identityComponentHopfIdeal_eq_bot_iff_connectedSpace.mp
+    (identityComponentHopfIdeal_quotient_derivedDefiningIdeal_eq_bot H)
 
 /-- The derived subgroup of a connected finite-type affine group over an algebraically closed
 field is geometrically connected. -/

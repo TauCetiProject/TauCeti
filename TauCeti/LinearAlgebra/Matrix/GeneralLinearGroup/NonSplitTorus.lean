@@ -36,7 +36,7 @@ import Mathlib.Algebra.GroupWithZero.Units.Fintype
 Let `E/F` be a field extension of degree `2`. Choosing an `F`-basis of `E` presents multiplication
 by an element of `E` as a `2 × 2` matrix over `F`, and multiplication by a *nonzero* element as an
 element of `GL (Fin 2) F`. The image of `Eˣ` is the **non-split torus**
-`TauCeti.GL2NonSplitTorus F E hE`, an abelian subgroup of `GL₂(F)` of order `q² - 1` when `F` has
+`TauCeti.GL2NonSplitTorus F E`, an abelian subgroup of `GL₂(F)` of order `q² - 1` when `F` has
 `q` elements. It is the torus the cuspidal (discrete series) representations of `GL₂(𝔽_q)` are
 parametrized by: a character of `Eˣ` in general position determines one of them through the
 Deligne–Lusztig construction, which is *not* ordinary induction (the induced representation
@@ -108,17 +108,17 @@ variable (F E) in
 /-- A chosen `F`-basis of a degree-`2` extension `E/F`, indexed by `Fin 2`. The non-split torus is
 the image of `Eˣ` under the matrix representation in this basis; another choice of basis conjugates
 it. -/
-noncomputable def nonSplitTorusBasis (hE : Module.finrank F E = 2) :
+noncomputable def nonSplitTorusBasis [Algebra.IsQuadraticExtension F E] :
     Module.Basis (Fin 2) F E :=
-  have := Module.finite_of_finrank_eq_succ (n := 1) hE
-  Module.finBasisOfFinrankEq F E hE
+  have h2 := Algebra.IsQuadraticExtension.finrank_eq_two F E
+  Module.finBasisOfFinrankEq F E h2
 
 variable (F E) in
 /-- **The embedding of the non-split torus**: a nonzero element of a degree-`2` extension `E/F`
 acts on `E` by multiplication, hence, in the basis `TauCeti.nonSplitTorusBasis`, as an element of
 `GL (Fin 2) F`. -/
-noncomputable def GL2NonSplitTorusHom (hE : Module.finrank F E = 2) : Eˣ →* GL (Fin 2) F :=
-  unitsLeftMulMatrix (nonSplitTorusBasis F E hE)
+noncomputable def GL2NonSplitTorusHom [Algebra.IsQuadraticExtension F E] : Eˣ →* GL (Fin 2) F :=
+  unitsLeftMulMatrix (nonSplitTorusBasis F E)
 
 variable (F E) in
 /-- **The non-split (elliptic) torus** of `GL₂(F)` attached to a degree-`2` extension `E/F`: the
@@ -126,83 +126,83 @@ image of `Eˣ` under multiplication on `E`, read in the basis `TauCeti.nonSplitT
 torus in the algebraic-group sense when `E/F` is separable, in particular whenever `F` is finite;
 for a purely inseparable `E/F` it is the same subgroup, still non-split in the sense proved below,
 but not an algebraic torus (see the module docstring). -/
-noncomputable def GL2NonSplitTorus (hE : Module.finrank F E = 2) : Subgroup (GL (Fin 2) F) :=
-  (GL2NonSplitTorusHom F E hE).range
+noncomputable def GL2NonSplitTorus [Algebra.IsQuadraticExtension F E] : Subgroup (GL (Fin 2) F) :=
+  (GL2NonSplitTorusHom F E).range
 
 namespace GL2NonSplitTorus
 
-variable (hE : Module.finrank F E = 2)
+variable [Algebra.IsQuadraticExtension F E]
 
 /-- Membership in the non-split torus: a matrix lies in it exactly when it is left multiplication
 by a unit of `E`. -/
 theorem mem_iff {g : GL (Fin 2) F} :
-    g ∈ GL2NonSplitTorus F E hE ↔ ∃ x : Eˣ, GL2NonSplitTorusHom F E hE x = g :=
+    g ∈ GL2NonSplitTorus F E ↔ ∃ x : Eˣ, GL2NonSplitTorusHom F E x = g :=
   MonoidHom.mem_range
 
-/-- The matrix underlying `GL2NonSplitTorusHom F E hE x` is multiplication by `x` in the basis
+/-- The matrix underlying `GL2NonSplitTorusHom F E x` is multiplication by `x` in the basis
 `TauCeti.nonSplitTorusBasis`. -/
 @[simp, grind =]
 theorem coe_gl2NonSplitTorusHom (x : Eˣ) :
-    (GL2NonSplitTorusHom F E hE x : Matrix (Fin 2) (Fin 2) F) =
-      Algebra.leftMulMatrix (nonSplitTorusBasis F E hE) (x : E) :=
-  coe_unitsLeftMulMatrix (nonSplitTorusBasis F E hE) x
+    (GL2NonSplitTorusHom F E x : Matrix (Fin 2) (Fin 2) F) =
+      Algebra.leftMulMatrix (nonSplitTorusBasis F E) (x : E) :=
+  coe_unitsLeftMulMatrix (nonSplitTorusBasis F E) x
 
 /-- Distinct elements of `Eˣ` give distinct matrices. -/
-theorem gl2NonSplitTorusHom_injective : Function.Injective (GL2NonSplitTorusHom F E hE) :=
+theorem gl2NonSplitTorusHom_injective : Function.Injective (GL2NonSplitTorusHom F E) :=
   unitsLeftMulMatrix_injective _
 
 /-- **The non-split torus is a copy of `Eˣ`**: the embedding `TauCeti.GL2NonSplitTorusHom` is
 injective, so it corestricts to a multiplicative equivalence from `Eˣ` onto the torus. This is what
 transports a character of `Eˣ` to a character of the torus. -/
-noncomputable def unitsEquiv : Eˣ ≃* GL2NonSplitTorus F E hE :=
-  MonoidHom.ofInjective (gl2NonSplitTorusHom_injective hE)
+noncomputable def unitsEquiv : Eˣ ≃* GL2NonSplitTorus F E :=
+  MonoidHom.ofInjective gl2NonSplitTorusHom_injective
 
 /-- `TauCeti.GL2NonSplitTorus.unitsEquiv` is `TauCeti.GL2NonSplitTorusHom` on the nose. -/
 @[simp, grind =]
 theorem coe_unitsEquiv_apply (x : Eˣ) :
-    (unitsEquiv hE x : GL (Fin 2) F) = GL2NonSplitTorusHom F E hE x :=
+    ((unitsEquiv x : GL2NonSplitTorus F E) : GL (Fin 2) F) = GL2NonSplitTorusHom F E x :=
   (rfl)
 
 /-- The torus is abelian: it is the image of the commutative group `Eˣ`. -/
-instance : IsMulCommutative (GL2NonSplitTorus F E hE) :=
-  Subgroup.range_isMulCommutative (GL2NonSplitTorusHom F E hE)
+instance : IsMulCommutative (GL2NonSplitTorus F E) :=
+  Subgroup.range_isMulCommutative (GL2NonSplitTorusHom F E)
 
 /-- The determinant of a torus element is the norm of the field element it comes from. -/
 theorem val_det_gl2NonSplitTorusHom (x : Eˣ) :
-    (Matrix.GeneralLinearGroup.det (GL2NonSplitTorusHom F E hE x) : F) = Algebra.norm F (x : E) :=
+    (Matrix.GeneralLinearGroup.det (GL2NonSplitTorusHom F E x) : F) = Algebra.norm F (x : E) :=
   val_det_unitsLeftMulMatrix _ x
 
 /-- The trace of a torus element is the trace of the field element it comes from. -/
 theorem trace_gl2NonSplitTorusHom (x : Eˣ) :
-    Matrix.trace (GL2NonSplitTorusHom F E hE x : Matrix (Fin 2) (Fin 2) F) =
+    Matrix.trace (GL2NonSplitTorusHom F E x : Matrix (Fin 2) (Fin 2) F) =
       Algebra.trace F E (x : E) :=
   trace_unitsLeftMulMatrix _ x
 
 /-- **The determinant of a non-split-torus element is its field norm, as an equality of units.** -/
 @[simp]
 theorem det_gl2NonSplitTorusHom (x : Eˣ) :
-    Matrix.GeneralLinearGroup.det (GL2NonSplitTorusHom F E hE x) = Algebra.normUnits F x := by
+    Matrix.GeneralLinearGroup.det (GL2NonSplitTorusHom F E x) = Algebra.normUnits F x := by
   apply Units.ext
   rw [Algebra.coe_normUnits]
-  exact val_det_gl2NonSplitTorusHom hE x
+  exact val_det_gl2NonSplitTorusHom x
 
 /-- A unit of `F` is sent to the corresponding scalar matrix. -/
 @[simp, grind =]
 theorem gl2NonSplitTorusHom_map_algebraMap (a : Fˣ) :
-    GL2NonSplitTorusHom F E hE (Units.map (algebraMap F E : F →* E) a) =
+    GL2NonSplitTorusHom F E (Units.map (algebraMap F E : F →* E) a) =
       Matrix.GeneralLinearGroup.scalar (Fin 2) a :=
   unitsLeftMulMatrix_map_algebraMap _ a
 
 /-- The scalar matrices lie in the non-split torus: it contains the centre of `GL₂(F)`. -/
 theorem scalar_mem (a : Fˣ) :
-    Matrix.GeneralLinearGroup.scalar (Fin 2) a ∈ GL2NonSplitTorus F E hE :=
-  ⟨_, gl2NonSplitTorusHom_map_algebraMap hE a⟩
+    Matrix.GeneralLinearGroup.scalar (Fin 2) a ∈ GL2NonSplitTorus F E :=
+  ⟨_, gl2NonSplitTorusHom_map_algebraMap a⟩
 
 /-- A scalar matrix, read back through `TauCeti.GL2NonSplitTorus.unitsEquiv`, is the unit of `F`
 it came from, pushed into `E`. -/
 @[simp]
 theorem unitsEquiv_symm_scalar (a : Fˣ) :
-    (unitsEquiv hE).symm ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, scalar_mem hE a⟩ =
+    (unitsEquiv).symm ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, scalar_mem a⟩ =
       Units.map (algebraMap F E : F →* E) a := by
   rw [MulEquiv.symm_apply_eq]
   exact Subtype.ext (by rw [coe_unitsEquiv_apply, gl2NonSplitTorusHom_map_algebraMap])
@@ -210,19 +210,19 @@ theorem unitsEquiv_symm_scalar (a : Fˣ) :
 /-- **The order of the non-split torus**: it has one element for each nonzero element of `E`, so
 over a field with `q` elements it has `q² - 1` of them. (Over an infinite `F` both sides are `0`,
 the `Nat.card` of an infinite type.) -/
-theorem natCard_eq : Nat.card (GL2NonSplitTorus F E hE) = Nat.card F ^ 2 - 1 := by
-  have := Module.finite_of_finrank_eq_succ (n := 1) hE
-  rw [← Nat.card_congr (unitsEquiv hE).toEquiv, Nat.card_units,
-    Module.natCard_eq_pow_finrank (K := F) (V := E), hE]
+theorem natCard_eq : Nat.card (GL2NonSplitTorus F E) = Nat.card F ^ 2 - 1 := by
+  have h2 := Algebra.IsQuadraticExtension.finrank_eq_two F E
+  rw [← Nat.card_congr unitsEquiv.toEquiv, Nat.card_units,
+    Module.natCard_eq_pow_finrank (K := F) (V := E), h2]
 
 /-- **The index of the non-split torus**: over a field with `q` elements the torus has `q² - 1`
 elements inside a group of order `(q² - 1) q (q - 1)`, so its index is `q (q - 1)`. It is the
 number of summands in a class function induced from the torus, and hence the dimension of a
 representation induced from a character of `Eˣ`. -/
-theorem index_eq [Finite F] : (GL2NonSplitTorus F E hE).index =
+theorem index_eq [Finite F] : (GL2NonSplitTorus F E).index =
     Nat.card F * (Nat.card F - 1) := by
   let _ := Fintype.ofFinite F
-  refine index_eq_of_natCard_eq_mul ?_ (natCard_eq hE) ?_
+  refine index_eq_of_natCard_eq_mul ?_ natCard_eq ?_
   · rw [Nat.card_eq_fintype_card]
     have := Fintype.one_lt_card (α := F)
     have := Nat.le_self_pow two_ne_zero (Fintype.card F)
@@ -234,21 +234,20 @@ theorem index_eq [Finite F] : (GL2NonSplitTorus F E hE).index =
 regular, which is what makes its centralizer computable. -/
 theorem notMem_range_scalar_gl2NonSplitTorusHom {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    (GL2NonSplitTorusHom F E hE x : Matrix (Fin 2) (Fin 2) F) ∉
+    (GL2NonSplitTorusHom F E x : Matrix (Fin 2) (Fin 2) F) ∉
       Set.range (Matrix.scalar (Fin 2)) := by
   rintro ⟨c, hc⟩
-  refine hx ⟨c, Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E hE) ?_⟩
-  rw [leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom hE]
+  refine hx ⟨c, Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E) ?_⟩
+  rw [leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
   exact hc
 
 /-- The key computation behind non-splitness: for `x : E` outside `F`, the matrix of multiplication
 by `x` has no eigenvalue `a : F`. -/
 theorem det_sub_algebraMap_ne_zero {x : E} (hx : x ∉ Set.range (algebraMap F E)) (a : F) :
-    (Algebra.leftMulMatrix (nonSplitTorusBasis F E hE) x -
+    (Algebra.leftMulMatrix (nonSplitTorusBasis F E) x -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det ≠ 0 := by
-  have := Module.finite_of_finrank_eq_succ (n := 1) hE
   have hxa : x - algebraMap F E a ≠ 0 := fun h => hx ⟨a, (sub_eq_zero.mp h).symm⟩
-  rw [← (Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)).commutes a, ← map_sub,
+  rw [← (Algebra.leftMulMatrix (nonSplitTorusBasis F E)).commutes a, ← map_sub,
     ← Algebra.norm_eq_matrix_det]
   exact Algebra.norm_ne_zero_iff.mpr hxa
 
@@ -260,22 +259,21 @@ theorem conj_notMem_of_det_sub_algebraMap_eq_zero {g : GL (Fin 2) F}
     (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) {a : F}
     (ha : ((g : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0) (x : GL (Fin 2) F) :
-    x⁻¹ * g * x ∉ GL2NonSplitTorus F E hE := by
-  have : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
+    x⁻¹ * g * x ∉ GL2NonSplitTorus F E := by
   intro hmem
-  obtain ⟨v, hv⟩ := (mem_iff hE).mp hmem
+  obtain ⟨v, hv⟩ := mem_iff.mp hmem
   -- the conjugated matrix is multiplication by `v`
   have hmat : ((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) =
-      Algebra.leftMulMatrix (nonSplitTorusBasis F E hE) (v : E) := by
-    rw [← coe_gl2NonSplitTorusHom hE, hv]
+      Algebra.leftMulMatrix (nonSplitTorusBasis F E) (v : E) := by
+    rw [← coe_gl2NonSplitTorusHom, hv]
   -- conjugation does not change the determinant of `g - a`
   have hdet : (((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0 := by
     rw [Matrix.GeneralLinearGroup.det_sub_algebraMap_conj, ha]
   -- so the norm of `v - a` vanishes, forcing `v` into `F`
   have hnorm : Algebra.norm F ((v : E) - algebraMap F E a) = 0 := by
-    rw [Algebra.norm_eq_matrix_det (nonSplitTorusBasis F E hE), map_sub,
-      (Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)).commutes, ← hmat, hdet]
+    rw [Algebra.norm_eq_matrix_det (nonSplitTorusBasis F E), map_sub,
+      (Algebra.leftMulMatrix (nonSplitTorusBasis F E)).commutes, ← hmat, hdet]
   have hvF : (v : E) = algebraMap F E a := sub_eq_zero.mp (Algebra.norm_eq_zero_iff.mp hnorm)
   -- the conjugate is then a central scalar matrix, so `g` is scalar
   obtain ⟨b, rfl⟩ := (mem_range_iff_exists_units_map_eq (algebraMap F E) v).mp ⟨a, hvF.symm⟩
@@ -292,21 +290,20 @@ corresponding matrix is upper triangular. Equivalently, that matrix has no eigen
 over a finite field is what makes its conjugacy class elliptic. -/
 theorem conj_notMem_gl2Borel {x : Eˣ} (hx : (x : E) ∉ Set.range (algebraMap F E))
     (g : GL (Fin 2) F) :
-    g * GL2NonSplitTorusHom F E hE x * g⁻¹ ∉ GL2Borel F := fun hmem => by
+    g * GL2NonSplitTorusHom F E x * g⁻¹ ∉ GL2Borel F := fun hmem => by
   obtain ⟨a, ha⟩ := GL2Borel.exists_det_sub_algebraMap_eq_zero hmem
   rw [coe_gl2NonSplitTorusHom] at ha
-  exact det_sub_algebraMap_ne_zero hE hx a ha
+  exact det_sub_algebraMap_ne_zero hx a ha
 
 /-- **The non-split torus is not conjugate into the Borel subgroup**: it contains an element no
 conjugate of which is upper triangular. This is exactly what distinguishes it from the split torus
 of diagonal matrices, which lies in the Borel subgroup outright, and it is why the cuspidal
 representations attached to it are absent from every principal series. -/
 theorem exists_forall_conj_notMem_gl2Borel :
-    ∃ u ∈ GL2NonSplitTorus F E hE, ∀ g : GL (Fin 2) F, g * u * g⁻¹ ∉ GL2Borel F := by
-  have : Algebra.IsQuadraticExtension F E := ⟨hE⟩
+    ∃ u ∈ GL2NonSplitTorus F E, ∀ g : GL (Fin 2) F, g * u * g⁻¹ ∉ GL2Borel F := by
   obtain ⟨x, hx⟩ := Algebra.IsQuadraticExtension.exists_notMem_range_algebraMap F E
   have hx0 : x ≠ 0 := fun h => hx ⟨0, by rw [map_zero, h]⟩
-  exact ⟨GL2NonSplitTorusHom F E hE (Units.mk0 x hx0), ⟨_, rfl⟩, conj_notMem_gl2Borel hE hx⟩
+  exact ⟨GL2NonSplitTorusHom F E (Units.mk0 x hx0), ⟨_, rfl⟩, conj_notMem_gl2Borel hx⟩
 
 end GL2NonSplitTorus
 
