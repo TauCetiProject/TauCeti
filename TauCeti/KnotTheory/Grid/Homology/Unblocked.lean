@@ -39,6 +39,8 @@ respects, such as the Alexander grading, descends to this quotient.
 ## Main definitions
 
 * `TauCeti.GridDiagram.unblockedHomology`: the unblocked grid homology `GH⁻`.
+* `TauCeti.GridDiagram.unblockedHomologyBaseModule`: the coefficient-ring action obtained by
+  restricting the polynomial action.
 * `TauCeti.GridDiagram.unblockedHomologyIso`: `GH⁻` is `ker ∂⁻ ⧸ im ∂⁻`.
 * `TauCeti.GridDiagram.unblockedHomologyClass`: the class in `GH⁻` of a cycle.
 * `TauCeti.GridDiagram.IsKnot.unblockedHomologyModule`: the `R[U]`-module structure on the
@@ -58,6 +60,8 @@ respects, such as the Alexander grading, descends to this quotient.
 * `TauCeti.GridDiagram.IsKnot.aeval_smul_unblockedHomology` and
   `TauCeti.GridDiagram.IsKnot.X_smul_unblockedHomology`: the action of `R[U]` on `GH⁻` of a knot
   grid.
+* `TauCeti.GridDiagram.IsKnot.isScalarTower_unblockedHomology`: the coefficient action agrees
+  with the `R[U]`-module structure.
 
 ## References
 
@@ -80,6 +84,16 @@ variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
 the polynomial ring `R[V₀, …, V_{n-1}]`. -/
 noncomputable abbrev unblockedHomology : ModuleCat (MvPolynomial (Fin n) R) :=
   (G.unblockedComplex R).homology ()
+
+/-- Restriction of the polynomial action on grid homology along the coefficient embedding. -/
+noncomputable instance unblockedHomologyBaseModule : Module R (G.unblockedHomology R) :=
+  Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial (Fin n) R)
+
+/-- The coefficient action on grid homology agrees with the polynomial action through the
+coefficient embedding. -/
+instance unblockedHomologyBaseScalarTower :
+    IsScalarTower R (MvPolynomial (Fin n) R) (G.unblockedHomology R) :=
+  IsScalarTower.of_compHom R (MvPolynomial (Fin n) R) _
 
 variable {G R}
 
@@ -234,6 +248,19 @@ theorem X_smul_unblockedHomology (hG : G.IsKnot) (c : Fin n) (x : G.unblockedHom
     letI := unblockedHomologyModule R hG
     (Polynomial.X : Polynomial R) • x = (MvPolynomial.X c : MvPolynomial (Fin n) R) • x := by
   simpa using aeval_smul_unblockedHomology hG (MvPolynomial.X c) x
+
+/-- The coefficient action on knot grid homology agrees with the constant polynomials in the
+`R[U]`-module structure. -/
+theorem isScalarTower_unblockedHomology (hG : G.IsKnot) :
+    letI := hG.unblockedHomologyModule R
+    IsScalarTower R (Polynomial R) (G.unblockedHomology R) := by
+  let _ := hG.unblockedHomologyModule R
+  apply IsScalarTower.of_algebraMap_smul
+  intro r y
+  have h := hG.aeval_smul_unblockedHomology (MvPolynomial.C r) y
+  have hbase : r • y = (MvPolynomial.C r : MvPolynomial (Fin n) R) • y :=
+    IsScalarTower.algebraMap_smul (MvPolynomial (Fin n) R) r y
+  simpa only [MvPolynomial.aeval_C, hbase] using h
 
 end IsKnot
 

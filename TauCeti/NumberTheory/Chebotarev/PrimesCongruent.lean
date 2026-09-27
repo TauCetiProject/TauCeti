@@ -22,6 +22,8 @@ For a cyclotomic extension of `ℚ` of nonzero level `n` with `n % 4 ≠ 2`, the
 holds at every prime: primes dividing the level ramify and their residues are not units.
 The restriction excludes levels twice an odd number, where `2` is unramified. In particular,
 the four Frobenius fibres of `ℚ(ζ₅)` are precisely the four invertible residue classes modulo five.
+At every nonzero level the symmetric difference is finite, which suffices to transfer density
+from Frobenius fibres to arithmetic progressions.
 
 ## References
 
@@ -91,5 +93,25 @@ theorem frobeniusPrimeSet_galEquivZMod_symm_eq_setOf_natCast_absNorm_eq (hn : n 
       (zeta_spec n ℚ F).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
       ZMod.unitsMap_self, MonoidHom.id_apply, MulEquiv.apply_symm_apply]
     simp only [Set.mem_ofPred_eq, eq_comm]
+
+/-- At every nonzero level, the cyclotomic Frobenius fibre differs from its arithmetic
+progression at only finitely many primes. This includes levels congruent to two modulo four,
+where the prime above two can lie in the Frobenius fibre without lying in the progression. -/
+theorem finite_symmDiff_frobeniusPrimeSet_galEquivZMod_symm (a : (ZMod n)ˣ) :
+    (symmDiff
+      (frobeniusPrimeSet ℚ F (ConjClasses.mk ((Rat.galEquivZMod n F).symm a)))
+      {𝔭 : HeightOneSpectrum (𝓞 ℚ) | (Ideal.absNorm 𝔭.asIdeal : ZMod n) = a}).Finite := by
+  have hn : Ideal.span {(n : 𝓞 ℚ)} ≠ ⊥ := by
+    simpa using (NeZero.ne (n : 𝓞 ℚ))
+  refine (Ideal.finite_factors hn).subset fun 𝔭 h𝔭 ↦ ?_
+  rw [Set.mem_ofPred_eq, Ideal.dvd_span_singleton]
+  by_contra hm
+  have hiff := mem_frobeniusPrimeSet_mk_iff_autToPow_eq_absNorm
+    (zeta_spec n ℚ F) ((Rat.galEquivZMod n F).symm a) hm
+  rw [(zeta_spec n ℚ F).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
+    ZMod.unitsMap_self, MonoidHom.id_apply, MulEquiv.apply_symm_apply] at hiff
+  rcases h𝔭 with ⟨hmem, hnot⟩ | ⟨hmem, hnot⟩
+  · exact hnot (hiff.mp hmem).symm
+  · exact hnot (hiff.mpr hmem.symm)
 
 end NumberField.Chebotarev

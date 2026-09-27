@@ -12,10 +12,14 @@ public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 # Mollification of weakly differentiable functions
 
 This file proves the identity at the heart of mollification in Sobolev spaces. If `u'` is the
-weak derivative of `u` in the direction `v` on the whole space and `rho` is smooth with compact
+weak derivative of `u` in the direction `v` on an open domain and `rho` is smooth with compact
 support, then
 
-`D_v (u * rho) = u' * rho`.
+`D_v (u * rho) = u' * rho`
+
+at every point `x` for which `x - tsupport rho` lies in the domain. The convolved function
+is assumed locally integrable on the whole space; zero extensions of domain `Lᵖ` functions
+satisfy this assumption. No weak derivative identity outside the domain is required.
 
 Mathlib supplies the complementary classical fact: differentiating a convolution moves the
 derivative onto its smooth right factor. The weak integration-by-parts identity then moves that
@@ -23,13 +27,14 @@ derivative back from `rho` to `u`. The result is stated for functions with value
 real Banach space and for any sigma-finite additive Haar measure on a real normed space.
 
 This is the analytic step needed to show that mollifying a weak Sobolev function produces a
-smooth function with the expected derivatives. Together with localization by the cutoff product
-rule, it is the core input to Meyers--Serrin density, Lane A.2 of the PDE roadmap.
+smooth function with the expected derivatives. This local identity applies successively to the
+derivative fields of a Sobolev function, and is the analytic input to local smooth approximation
+and Meyers--Serrin density.
 
 ## Main declaration
 
 * `TauCeti.HasWeakLineDerivOn.hasLineDerivAt_convolution_right`: convolution by a smooth,
-  compactly supported scalar kernel turns a whole-space weak directional derivative into the
+  compactly supported scalar kernel turns a local weak directional derivative into the
   corresponding classical directional derivative.
 * `TauCeti.HasWeakFDerivOn.hasFDerivAt_convolution_right`: the Fréchet form, identifying the
   derivative with the convolution of the weak derivative field.
@@ -51,7 +56,7 @@ open scoped ContDiff Convolution Distributions
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {mu : Measure E} [mu.IsAddHaarMeasure] [SFinite mu]
+  {mu : Measure E} [mu.IsAddHaarMeasure] [SFinite mu] {Omega : Opens E}
 
 omit [MeasurableSpace E] [BorelSpace E] in
 private theorem contDiff_const_sub (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho) (x : E) :
@@ -63,6 +68,15 @@ private theorem hasCompactSupport_const_sub (rho : E → ℝ)
     (hrho : HasCompactSupport rho) (x : E) :
     HasCompactSupport fun t ↦ rho (x - t) :=
   hrho.comp_homeomorph (Homeomorph.subLeft x)
+
+omit [MeasurableSpace E] [NormedSpace ℝ E] [BorelSpace E] in
+private theorem tsupport_const_sub_subset (rho : E → ℝ) (x : E)
+    (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
+    tsupport (fun t ↦ rho (x - t)) ⊆ Omega := by
+  intro t ht
+  have ht' : x - t ∈ tsupport rho :=
+    tsupport_comp_subset_preimage rho (continuous_const.sub continuous_id) ht
+  exact (sub_sub_cancel x t) ▸ hx (x - t) ht'
 
 omit [MeasurableSpace E] [BorelSpace E] in
 private theorem lineDeriv_const_sub (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho)
@@ -80,29 +94,29 @@ private theorem lineDeriv_const_sub (rho : E → ℝ) (hrho : ContDiff ℝ ∞ r
     (hcomp.hasLineDerivAt v).lineDeriv
 
 /-- **A weak derivative commutes with convolution by a smooth compactly supported kernel.**
-If `u'` is the weak derivative of `u` in the direction `v` on the whole space, then the
-convolution of `u` with `rho` has classical directional derivative the convolution of `u'`
-with the same kernel. -/
+If `u'` is the weak derivative of `u` in the direction `v` on `Omega`, then the
+convolution has the convolved weak derivative at points whose translated kernel support
+is contained in `Omega`. -/
 theorem HasWeakLineDerivOn.hasLineDerivAt_convolution_right {u u' : E → F} {v : E}
-    (h : HasWeakLineDerivOn mu ⊤ u u' v) (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho)
-    (hrho_cpt : HasCompactSupport rho) (x : E) :
+    (h : HasWeakLineDerivOn mu Omega u u' v) (hu : LocallyIntegrable u mu)
+    (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho)
+    (hrho_cpt : HasCompactSupport rho) (x : E)
+    (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     HasLineDerivAt ℝ
       (u ⋆[(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip, mu] rho)
       ((u' ⋆[(ContinuousLinearMap.lsmul ℝ ℝ :
         ℝ →L[ℝ] F →L[ℝ] F).flip, mu] rho) x) x v := by
-  let rhoTest : 𝓓((⊤ : Opens E), ℝ) :=
+  let rhoTest : 𝓓(Omega, ℝ) :=
     ⟨fun t ↦ rho (x - t), contDiff_const_sub rho hrho x,
-      hasCompactSupport_const_sub rho hrho_cpt x, subset_univ _⟩
+      hasCompactSupport_const_sub rho hrho_cpt x, tsupport_const_sub_subset rho x hx⟩
   have hweak := h.integral_lineDeriv_smul_eq_neg_integral_smul rhoTest
-  dsimp only [rhoTest] at hweak
+  simp only [rhoTest, TestFunction.coe_mk] at hweak
   have hconv :
       ∫ t, fderiv ℝ rho (x - t) v • u t ∂mu =
         ∫ t, rho (x - t) • u' t ∂mu := by
-    simpa only [TestFunction.coe_mk, lineDeriv_const_sub rho hrho x, neg_smul, integral_neg,
+    simpa only [lineDeriv_const_sub rho hrho x, neg_smul, integral_neg,
       neg_inj]
       using hweak
-  have hu : LocallyIntegrable u mu :=
-    locallyIntegrableOn_univ.mp h.locallyIntegrableOn
   convert
     (hrho_cpt.hasFDerivAt_convolution_right
       (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip hu
@@ -117,33 +131,35 @@ theorem HasWeakLineDerivOn.hasLineDerivAt_convolution_right {u u' : E → F} {v 
 /-- The directional derivative of a convolution with a smooth compactly supported kernel is the
 convolution of the weak directional derivative with that kernel. -/
 theorem HasWeakLineDerivOn.lineDeriv_convolution_right {u u' : E → F} {v : E}
-    (h : HasWeakLineDerivOn mu ⊤ u u' v) (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho)
-    (hrho_cpt : HasCompactSupport rho) (x : E) :
+    (h : HasWeakLineDerivOn mu Omega u u' v) (hu : LocallyIntegrable u mu)
+    (rho : E → ℝ) (hrho : ContDiff ℝ ∞ rho)
+    (hrho_cpt : HasCompactSupport rho) (x : E)
+    (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     lineDeriv ℝ
       (u ⋆[(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip, mu] rho) x v =
       (u' ⋆[(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip, mu] rho) x :=
-  (h.hasLineDerivAt_convolution_right rho hrho hrho_cpt x).lineDeriv
+  (h.hasLineDerivAt_convolution_right hu rho hrho hrho_cpt x hx).lineDeriv
 
 /-- **The Fréchet derivative of a mollification is the mollification of the weak derivative.**
-If `U` is a locally integrable weak derivative field of `u` on the whole space, convolution by a
-smooth compactly supported scalar kernel gives a classically differentiable function whose
-derivative is `U` convolved with that kernel. -/
+If `U` is a weak derivative field of `u` on `Omega`, convolution by a smooth compactly
+supported scalar kernel has derivative `U` convolved with that kernel wherever the
+translated kernel support lies in `Omega`. Both fields are locally integrable globally. -/
 theorem HasWeakFDerivOn.hasFDerivAt_convolution_right {u : E → F} {U : E → E →L[ℝ] F}
-    (h : HasWeakFDerivOn mu ⊤ u U) (hU : LocallyIntegrable U mu) (rho : E → ℝ)
-    (hrho : ContDiff ℝ ∞ rho) (hrho_cpt : HasCompactSupport rho) (x : E) :
+    (h : HasWeakFDerivOn mu Omega u U) (hu : LocallyIntegrable u mu)
+    (hU : LocallyIntegrable U mu) (rho : E → ℝ)
+    (hrho : ContDiff ℝ ∞ rho) (hrho_cpt : HasCompactSupport rho) (x : E)
+    (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     HasFDerivAt
       (u ⋆[(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip, mu] rho)
       ((U ⋆[(ContinuousLinearMap.lsmul ℝ ℝ :
         ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F).flip, mu] rho) x) x := by
-  have hu : LocallyIntegrable u mu :=
-    locallyIntegrableOn_univ.mp h.locallyIntegrableOn
   have hd := hrho_cpt.hasFDerivAt_convolution_right
     (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip hu
     (hrho.of_le (by simp)) x
   apply hd.congr_fderiv
   apply ContinuousLinearMap.ext
   intro v
-  have hline := (h.hasWeakLineDerivOn v).hasLineDerivAt_convolution_right rho hrho hrho_cpt x
+  have hline := (h.hasWeakLineDerivOn v).hasLineDerivAt_convolution_right hu rho hrho hrho_cpt x hx
   have hderiv :
       ((u ⋆[(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip.precompR E,
         mu] fderiv ℝ rho) x) v =
@@ -170,12 +186,14 @@ theorem HasWeakFDerivOn.hasFDerivAt_convolution_right {u : E → F} {U : E → E
 /-- The Fréchet derivative of a convolution with a smooth compactly supported kernel is the
 convolution of the weak Fréchet derivative field with that kernel. -/
 theorem HasWeakFDerivOn.fderiv_convolution_right {u : E → F} {U : E → E →L[ℝ] F}
-    (h : HasWeakFDerivOn mu ⊤ u U) (hU : LocallyIntegrable U mu) (rho : E → ℝ)
-    (hrho : ContDiff ℝ ∞ rho) (hrho_cpt : HasCompactSupport rho) (x : E) :
+    (h : HasWeakFDerivOn mu Omega u U) (hu : LocallyIntegrable u mu)
+    (hU : LocallyIntegrable U mu) (rho : E → ℝ)
+    (hrho : ContDiff ℝ ∞ rho) (hrho_cpt : HasCompactSupport rho) (x : E)
+    (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     fderiv ℝ
       (u ⋆[(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip, mu] rho) x =
       (U ⋆[(ContinuousLinearMap.lsmul ℝ ℝ :
         ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F).flip, mu] rho) x :=
-  (h.hasFDerivAt_convolution_right hU rho hrho hrho_cpt x).fderiv
+  (h.hasFDerivAt_convolution_right hu hU rho hrho hrho_cpt x hx).fderiv
 
 end TauCeti

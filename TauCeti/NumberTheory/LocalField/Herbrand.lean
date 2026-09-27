@@ -32,6 +32,12 @@ continuous bijection of `[-1, ∞)` onto itself. This file packages it as an ord
 written `ψ_{L/K}`. Keeping the domain in the type means that no statement concerns a value
 below `-1`.
 
+Although `φ` may take non-integral values at integers, `ψ` maps natural numbers to natural numbers.
+The resulting **integral inverse Herbrand function** `psiNat K L : ℕ → ℕ`, written `ψℕ_{L/K}`, is
+the form in which Herbrand values serve as depths of the unit filtration, for instance when
+`N_{L/K}(U(L, ψℕ(i)))` is compared with `U(K, i)`. It is characterized arithmetically by
+`ψℕ(n) = m ↔ #G_1 + ⋯ + #G_m = n · #G_0`.
+
 The **upper numbering** of the ramification groups is `G^v = G_{ψ(v)}`, so that
 `G^{φ(u)} = G_u`. Its point is the compatibility with quotients, `(G/H)^v = G^v H / H` for `H`
 normal, which the lower numbering lacks; that theorem is not proved here.
@@ -47,6 +53,8 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
   automorphism of `[-1, ∞)`.
 * `TauCeti.LocalFieldsRamification.herbrand`, `TauCeti.LocalFieldsRamification.inverseHerbrand`:
   its forward map `φ_{L/K}` and its inverse `ψ_{L/K}`.
+* `TauCeti.LocalFieldsRamification.psiNat`: the inverse Herbrand function at natural numbers,
+  `ψℕ_{L/K} : ℕ → ℕ`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup`: the upper-numbering ramification
   group `G^v = G_{ψ(v)}`.
 
@@ -63,6 +71,14 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
 * `TauCeti.LocalFieldsRamification.herbrand_slope_anti_adjacent`: `φ` is concave.
 * `TauCeti.LocalFieldsRamification.continuous_herbrand`,
   `TauCeti.LocalFieldsRamification.herbrand_strictMono` and their counterparts for `ψ`.
+* `TauCeti.LocalFieldsRamification.coe_psiNat`: `ψℕ(n) = ψ(n)` for `n : ℕ`, and
+  `TauCeti.LocalFieldsRamification.psiNat_eq_iff`: `ψℕ(n) = m ↔ #G_1 + ⋯ + #G_m = n · #G_0`.
+* `TauCeti.LocalFieldsRamification.psiNat_strictMono`,
+  `TauCeti.LocalFieldsRamification.self_le_psiNat`: `ψℕ` is strictly increasing and `n ≤ ψℕ(n)`.
+* `TauCeti.LocalFieldsRamification.psiNat_eq_self_iff`,
+  `TauCeti.LocalFieldsRamification.psiNat_eq_add_card_mul_sub`: `ψℕ(v) = v` exactly when
+  `G_v = G_0`, and `ψℕ(v) = t + #G_0 (v - t)` for `v ≥ t` when the filtration is
+  constant through `t` and trivial afterward.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_herbrand`: `G^{φ(u)} = G_u`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_antitone`: the upper filtration
   decreases, and each `G^v` is normal.
@@ -83,6 +99,11 @@ namespace TauCeti.LocalFieldsRamification
 ramification groups are indexed by real numbers `u ≥ -1`, and `G_u` is the whole automorphism
 group for `u ≤ -1`. -/
 abbrev RamificationIndexDomain : Set ℝ := Ici (-1 : ℝ)
+
+/-- A natural number lies in the domain `[-1, ∞)` of the Herbrand function. -/
+private theorem natCast_mem_ramificationIndexDomain (n : ℕ) :
+    (n : ℝ) ∈ RamificationIndexDomain :=
+  le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)
 
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -396,5 +417,175 @@ instance instNormalUpperRamificationGroup (v : RamificationIndexDomain) :
     (upperRamificationGroup K L v).Normal := by
   rw [upperRamificationGroup_def]
   infer_instance
+
+/-! ### Herbrand values at natural numbers
+
+The Herbrand function may take non-integral values at integers, but its inverse does not:
+`ψ(n)` is a natural number for every natural number `n`, because `#G_{m+1}` divides `#G_i` for
+`i ≤ m + 1`.
+This section packages these values as `psiNat K L : ℕ → ℕ`. -/
+
+private theorem inverseHerbrand_natCast_nonneg (n : ℕ) :
+    (0 : ℝ) ≤ inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ := by
+  have hle : (⟨(0 : ℕ), natCast_mem_ramificationIndexDomain 0⟩ : RamificationIndexDomain) ≤
+      ⟨n, natCast_mem_ramificationIndexDomain n⟩ :=
+    Subtype.mk_le_mk.2 (Nat.cast_le.2 n.zero_le)
+  have h := (inverseHerbrand_strictMono K L).monotone hle
+  rw [inverseHerbrand_of_coe_le_zero K L (by simp)] at h
+  simpa using Subtype.coe_le_coe.2 h
+
+/-- The inverse Herbrand value at a natural number equals its natural floor. -/
+private theorem inverseHerbrand_natCast_eq_floor (n : ℕ) :
+    (inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ : ℝ) =
+      ⌊(inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ : ℝ)⌋₊ := by
+  set u : ℝ := (inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ : ℝ)
+  set m := ⌊u⌋₊
+  have hu : 0 ≤ u := inverseHerbrand_natCast_nonneg K L n
+  have hm₁ : (m : ℝ) ≤ u := Nat.floor_le hu
+  have hm₂ : u < m + 1 := Nat.lt_floor_add_one u
+  -- The finite-sum formula at `u = ψ(n)`, with `φ(u) = n` and denominators cleared.
+  have hφ := coe_herbrand_of_mem_Icc K L m hm₁ hm₂.le
+  rw [herbrand_inverseHerbrand, Subtype.coe_mk,
+    eq_div_iff (by exact_mod_cast Nat.card_pos.ne')] at hφ
+  set g : ℤ → ℕ := fun i ↦ Nat.card (lowerRamificationGroup K L i)
+  -- `hφ` restated through the abbreviation `g`.
+  have hφ' : (n : ℝ) * g 0 = ∑ i ∈ Finset.Icc 1 m, (g i : ℝ) + (u - m) * g (m + 1 : ℕ) := hφ
+  -- `#G_{m+1}` divides `n #G_0 - (#G_1 + ⋯ + #G_m)`.
+  have hdvd : ∀ i : ℤ, i ≤ (m + 1 : ℕ) → g (m + 1 : ℕ) ∣ g i := fun i hi ↦
+    Subgroup.card_dvd_of_le (lowerRamificationGroup_antitone K L hi)
+  have h₁ : g (m + 1 : ℕ) ∣ n * g 0 := dvd_mul_of_dvd_right (hdvd 0 (by omega)) _
+  have h₂ : g (m + 1 : ℕ) ∣ ∑ i ∈ Finset.Icc 1 m, g i := Finset.dvd_sum fun i hi ↦
+    hdvd i (by have := (Finset.mem_Icc.1 hi).2; omega)
+  obtain ⟨c, hc⟩ := (Int.natCast_dvd_natCast.2 h₁).sub (Int.natCast_dvd_natCast.2 h₂)
+  have hcR : (n : ℝ) * g 0 - ∑ i ∈ Finset.Icc 1 m, (g i : ℝ) = g (m + 1 : ℕ) * c := by
+    exact_mod_cast hc
+  -- Hence `u - m` is an integer `c` with `0 ≤ c < 1`.
+  have hcu : u - m = c := mul_right_cancel₀ (by exact_mod_cast Nat.card_pos.ne') <|
+    (by rw [← hcR]; linarith : (u - m) * g (m + 1 : ℕ) = g (m + 1 : ℕ) * c).trans (mul_comm _ _)
+  have hc0 : 0 ≤ c := by exact_mod_cast (hcu ▸ sub_nonneg.2 hm₁ : (0 : ℝ) ≤ c)
+  have hc1 : c < 1 := by exact_mod_cast (hcu ▸ by linarith : (c : ℝ) < 1)
+  have hc_zero : c = 0 := by omega
+  rw [hc_zero, Int.cast_zero, sub_eq_zero] at hcu
+  exact hcu
+
+/-- The **integral inverse Herbrand function** `ψℕ_{L/K} : ℕ → ℕ`: the value `ψ_{L/K}(n)` of the
+inverse Herbrand function at a natural number `n`, which is itself a natural number
+(`coe_psiNat`). These are the unit depths at which the norm of `L/K` is compared with the unit
+filtration of `K`. -/
+def psiNat (n : ℕ) : ℕ :=
+  ⌊(inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ : ℝ)⌋₊
+
+/-- The integral inverse Herbrand function computes the inverse Herbrand function:
+`ψℕ_{L/K}(n) = ψ_{L/K}(n)`. -/
+@[simp]
+theorem coe_psiNat (n : ℕ) :
+    (psiNat K L n : ℝ) =
+      (inverseHerbrand K L
+        ⟨(n : ℝ), le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)⟩ : ℝ) :=
+  (inverseHerbrand_natCast_eq_floor K L n).symm
+
+/-- `ψℕ_{L/K}(n) = m` exactly when `#G_1 + ⋯ + #G_m = n · #G_0`, that is when `φ_{L/K}(m) = n`. -/
+theorem psiNat_eq_iff {n m : ℕ} :
+    psiNat K L n = m ↔
+      ∑ i ∈ Finset.Icc 1 m, Nat.card (lowerRamificationGroup K L i) =
+        n * Nat.card (lowerRamificationGroup K L 0) := by
+  have h0 : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
+    exact_mod_cast Nat.card_pos.ne'
+  have hinv : psiNat K L n = m ↔
+      inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ =
+        ⟨m, natCast_mem_ramificationIndexDomain m⟩ := by
+    rw [← Nat.cast_inj (R := ℝ), coe_psiNat]
+    constructor
+    · intro h
+      exact Subtype.ext h
+    · intro h
+      exact congrArg (fun x : RamificationIndexDomain ↦ (x : ℝ)) h
+  have hφ : inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ =
+        ⟨m, natCast_mem_ramificationIndexDomain m⟩ ↔
+      herbrand K L ⟨m, natCast_mem_ramificationIndexDomain m⟩ =
+        ⟨n, natCast_mem_ramificationIndexDomain n⟩ := by
+    rw [← herbrandOrderIso_symm_apply, OrderIso.symm_apply_eq, herbrandOrderIso_apply, eq_comm]
+  calc
+    psiNat K L n = m ↔
+        inverseHerbrand K L ⟨n, natCast_mem_ramificationIndexDomain n⟩ =
+          ⟨m, natCast_mem_ramificationIndexDomain m⟩ := hinv
+    _ ↔ herbrand K L ⟨m, natCast_mem_ramificationIndexDomain m⟩ =
+          ⟨n, natCast_mem_ramificationIndexDomain n⟩ := hφ
+    _ ↔ ∑ i ∈ Finset.Icc 1 m, Nat.card (lowerRamificationGroup K L i) =
+          n * Nat.card (lowerRamificationGroup K L 0) := by
+      rw [Subtype.ext_iff, coe_herbrand_of_coe_eq_natCast K L m rfl,
+        Subtype.coe_mk, div_eq_iff h0]
+      norm_cast
+
+/-- `ψℕ_{L/K}(0) = 0`. -/
+@[simp]
+theorem psiNat_zero : psiNat K L 0 = 0 :=
+  (psiNat_eq_iff K L).2 (by simp)
+
+/-- The integral inverse Herbrand function is strictly increasing. -/
+theorem psiNat_strictMono : StrictMono (psiNat K L) := fun a b h ↦ by
+  have hlt : (⟨(a : ℝ), natCast_mem_ramificationIndexDomain a⟩ : RamificationIndexDomain) <
+      ⟨(b : ℝ), natCast_mem_ramificationIndexDomain b⟩ :=
+    Subtype.mk_lt_mk.2 (by exact_mod_cast h)
+  have := inverseHerbrand_strictMono K L hlt
+  exact_mod_cast (coe_psiNat K L a).trans_lt
+    ((Subtype.coe_lt_coe.2 this).trans_eq (coe_psiNat K L b).symm)
+
+/-- `n ≤ ψℕ_{L/K}(n)`: the inverse Herbrand function never lowers a unit depth. -/
+theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
+  exact (psiNat_strictMono K L).id_le n
+
+/-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration is constant
+through `v`. -/
+@[simp]
+theorem psiNat_eq_self_iff {v : ℕ} :
+    psiNat K L v = v ↔ lowerRamificationGroup K L v = lowerRamificationGroup K L 0 := by
+  have hle : ∀ i : ℕ, lowerRamificationGroup K L i ≤ lowerRamificationGroup K L 0 := fun i ↦
+    lowerRamificationGroup_antitone K L (Int.natCast_nonneg i)
+  rw [psiNat_eq_iff]
+  constructor
+  · intro h
+    rcases v with _ | k
+    · simp
+    -- `#G_1 + ⋯ + #G_k ≤ k #G_0`, so `#G_{k+1} ≥ #G_0`.
+    have hk := Finset.sum_le_card_nsmul (Finset.Icc 1 k)
+      (fun i : ℕ ↦ Nat.card (lowerRamificationGroup K L i)) _
+      fun i _ ↦ Subgroup.card_le_of_le (hle i)
+    rw [Finset.sum_Icc_succ_top (by omega)] at h
+    simp only [Nat.card_Icc, Nat.add_sub_cancel, smul_eq_mul] at hk
+    exact Subgroup.eq_of_le_of_card_ge (hle _) (by rw [add_mul, one_mul] at h; omega)
+  · intro hv
+    calc ∑ i ∈ Finset.Icc 1 v, Nat.card (lowerRamificationGroup K L i)
+        = ∑ _i ∈ Finset.Icc 1 v, Nat.card (lowerRamificationGroup K L 0) := by
+          refine Finset.sum_congr rfl fun i hi ↦ ?_
+          have hi : (i : ℤ) ≤ v := by have := (Finset.mem_Icc.1 hi).2; omega
+          rw [le_antisymm (hle i) (hv.symm.le.trans (lowerRamificationGroup_antitone K L hi))]
+      _ = v * Nat.card (lowerRamificationGroup K L 0) := by simp
+
+/-- If the lower filtration is constant through `t` and trivial after `t`, that is `G_t = G_0`
+and `G_{t+1} = 1`, then `ψℕ_{L/K}(v) = t + #G_0 · (v - t)` for every `v ≥ t`. For a totally
+ramified cyclic extension of prime degree `ℓ` with jump `t`, this is
+`ψℕ(v) = t + ℓ (v - t)`. -/
+theorem psiNat_eq_add_card_mul_sub {t v : ℕ}
+    (ht : lowerRamificationGroup K L t = lowerRamificationGroup K L 0)
+    (ht' : lowerRamificationGroup K L (t + 1 : ℕ) = ⊥) (hv : t ≤ v) :
+    psiNat K L v = t + Nat.card (lowerRamificationGroup K L 0) * (v - t) := by
+  set g₀ := Nat.card (lowerRamificationGroup K L 0)
+  -- `#G_1 + ⋯ + #G_m = t #G_0 + (m - t)` for `m ≥ t`.
+  have hsum : ∀ m, t ≤ m →
+      ∑ i ∈ Finset.Icc 1 m, Nat.card (lowerRamificationGroup K L i) = t * g₀ + (m - t) := by
+    intro m hm
+    induction m, hm using Nat.le_induction with
+    | base =>
+      rw [(psiNat_eq_iff K L).1 ((psiNat_eq_self_iff K L).2 ht), Nat.sub_self, add_zero]
+    | succ m hm ih =>
+      have hbot : lowerRamificationGroup K L (m + 1 : ℕ) = ⊥ := le_bot_iff.1 <|
+        (lowerRamificationGroup_antitone K L (by push_cast; omega)).trans ht'.le
+      rw [Finset.sum_Icc_succ_top (by omega), ih, hbot, Subgroup.card_bot]
+      omega
+  refine (psiNat_eq_iff K L).2 ((hsum _ (by omega)).trans ?_)
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hv
+  simp only [Nat.add_sub_cancel_left]
+  ring
 
 end TauCeti.LocalFieldsRamification

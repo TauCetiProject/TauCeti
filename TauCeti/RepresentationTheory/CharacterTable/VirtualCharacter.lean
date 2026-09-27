@@ -57,7 +57,8 @@ work — a virtual character of norm `1` is, up to sign, an irreducible characte
   character pairing is integer-valued on the lattice**, computed by the dot product of the integer
   coefficients.
 * `TauCeti.exists_eq_irreducibleCharacter_or_neg`: **a virtual character of norm `1` is `±` an
-  irreducible character**.
+  irreducible character**, and `TauCeti.mem_irreducibleCharacters_of_characterPairing_self_eq_one`
+  fixes the sign when its degree is a natural number.
 * `TauCeti.natCard_nsmul_mem_span_irreducibleCharacters`: **`|G|` times a class function with
   values in a subring `A` containing the character values is an `A`-combination of the irreducible
   characters**.
@@ -472,6 +473,25 @@ theorem exists_eq_irreducibleCharacter_or_neg {f : ClassFunction k G}
   rcases Int.eq_one_or_neg_one_of_mul_eq_one hone with h | h
   · exact Or.inl (by rw [hval, h]; simp)
   · exact Or.inr (by rw [hval, h]; simp)
+
+/-- **A virtual character of norm `1` whose degree is a natural number is an irreducible
+character.** By `TauCeti.exists_eq_irreducibleCharacter_or_neg` it is `±χ`, and `-χ` is excluded:
+its degree `-χ(1)` is negative, so it is not the image of a natural number. -/
+theorem mem_irreducibleCharacters_of_characterPairing_self_eq_one {f : ClassFunction k G}
+    (hf : (f : G → k) ∈ virtualCharacters k G)
+    (hnorm : ClassFunction.characterPairing f f = 1) {n : ℕ} (hn : (f : G → k) 1 = n) :
+    (f : G → k) ∈ irreducibleCharacters k G := by
+  obtain ⟨i, hi | hi⟩ := exists_eq_irreducibleCharacter_or_neg hf hnorm
+  · exact hi ▸ irreducibleCharacter_mem k i
+  · -- the negative alternative would force a sum of a positive and a natural number to vanish
+    exfalso
+    rw [hi, Pi.neg_apply, irreducibleCharacter_one] at hn
+    have hsum : ((characterDegree k i + n : ℕ) : k) = 0 := by
+      push_cast
+      linear_combination -hn
+    have := characterDegree_pos k i
+    rw [Nat.cast_eq_zero] at hsum
+    omega
 
 end Norm
 
