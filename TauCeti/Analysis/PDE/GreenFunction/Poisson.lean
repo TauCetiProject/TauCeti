@@ -173,9 +173,10 @@ theorem hasDerivAt_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz :
 /-- The outward radial derivative of the unit-disk Green kernel, as an ordinary real
 derivative. -/
 @[simp] theorem deriv_planarGreenKernel_radial {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ = 1) :
-    deriv (fun t : ℝ => planarGreenKernel a (t • z)) 1 =
-      -(poissonKernel 0 a z) / (2 * Real.pi) :=
-  (hasDerivAt_planarGreenKernel_radial ha hz).deriv
+    deriv (fun t : ℝ => planarGreenKernel a ((t : ℂ) * z)) 1 =
+      -(poissonKernel 0 a z) / (2 * Real.pi) := by
+  simpa only [Complex.real_smul] using
+    (hasDerivAt_planarGreenKernel_radial ha hz).deriv
 
 /-- The spatial derivative of the unit-disk Green kernel on the outward unit normal equals
 the negative Poisson kernel divided by `2π`. -/
@@ -188,8 +189,10 @@ theorem fderiv_planarGreenKernel_normal {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖
     (l := planarGreenKernel a) 1 (by simpa only [one_smul] using hdiff) hcurve
   have hcurve_deriv : deriv (fun t : ℝ => t • z) 1 = z := by
     simpa using ((hasDerivAt_id (1 : ℝ)).smul_const z).deriv
-  simpa only [Function.comp_def, one_smul, hcurve_deriv,
-    deriv_planarGreenKernel_radial ha hz] using hd.symm
+  have hradial : deriv (fun t : ℝ => planarGreenKernel a (t • z)) 1 =
+      -(poissonKernel 0 a z) / (2 * Real.pi) := by
+    simpa only [Complex.real_smul] using deriv_planarGreenKernel_radial ha hz
+  simpa only [Function.comp_def, one_smul, hcurve_deriv, hradial] using hd.symm
 
 /-- On the boundary of any positive-radius disk, the negative derivative of the Green kernel
 along the radius from the center to the boundary point is Mathlib's Poisson kernel divided by
@@ -221,9 +224,10 @@ theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
 /-- The radial derivative of the disk Green kernel in terms of the Poisson kernel. -/
 @[simp] theorem deriv_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
     (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
-    deriv (fun t : ℝ => planarGreenKernelDisk c R a (c + t • (z - c))) 1 =
-      -(poissonKernel c a z) / (2 * Real.pi) :=
-  (hasDerivAt_planarGreenKernelDisk_radial hR ha hz).deriv
+    deriv (fun t : ℝ => planarGreenKernelDisk c R a (c + (t : ℂ) * (z - c))) 1 =
+      -(poissonKernel c a z) / (2 * Real.pi) := by
+  simpa only [Complex.real_smul] using
+    (hasDerivAt_planarGreenKernelDisk_radial hR ha hz).deriv
 
 /-- The spatial derivative of the disk Green kernel on the outward unit normal is the
 negative Poisson kernel divided by `2πR`. -/
@@ -252,10 +256,13 @@ theorem fderiv_planarGreenKernelDisk_normal {c a z : ℂ} {R : ℝ}
     (by simpa only [hcz] using hdiff) hcurve
   have hcurve_deriv : deriv (fun t : ℝ => c + t • (z - c)) 1 = z - c := by
     simpa using (((hasDerivAt_id (1 : ℝ)).smul_const (z - c)).const_add c).deriv
+  have hradial_deriv :
+      deriv (fun t : ℝ => planarGreenKernelDisk c R a (c + t • (z - c))) 1 =
+        -(poissonKernel c a z) / (2 * Real.pi) := by
+    simpa only [Complex.real_smul] using deriv_planarGreenKernelDisk_radial hR ha hz
   have hradial : (fderiv ℝ (planarGreenKernelDisk c R a) z) (z - c) =
       -(poissonKernel c a z) / (2 * Real.pi) := by
-    simpa only [Function.comp_def, hcz, hcurve_deriv,
-      deriv_planarGreenKernelDisk_radial hR ha hz] using hd.symm
+    simpa only [Function.comp_def, hcz, hcurve_deriv, hradial_deriv] using hd.symm
   rw [map_smul, smul_eq_mul, hradial]
   simp only [div_eq_mul_inv, mul_inv_rev]
   ring
