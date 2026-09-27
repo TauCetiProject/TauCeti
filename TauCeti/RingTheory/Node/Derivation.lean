@@ -33,7 +33,7 @@ namespace TauCeti.NodeAlgebra
 open MvPolynomial
 
 variable {R : Type*} [CommRing R] (a : R)
-variable {M : Type*} [AddCommGroup M] [Module (NodeAlgebra R a) M]
+variable {M : Type*} [AddCommMonoid M] [Module (NodeAlgebra R a) M]
   [Module R M] [IsScalarTower R (NodeAlgebra R a) M]
 
 private abbrev polynomialRing := MvPolynomial (Fin 2) R
@@ -103,6 +103,7 @@ private def polynomialDerivation (u : DerivationValues (M := M) a) :
 
 private lemma polynomialDerivation_relation (u : DerivationValues (M := M) a) :
     polynomialDerivation a u (X 0 * X 1 - C a) = 0 := by
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup (NodeAlgebra R a)
   let _ := polynomialModule (M := M) a
   have hu : coord a 1 • u.1 0 + coord a 0 • u.1 1 = 0 :=
     (mem_derivationValues_iff a u.1).mp u.2
@@ -138,6 +139,7 @@ private lemma mk_liftRep (b : NodeAlgebra R a) : mk a (liftRep a b) = b :=
 private lemma polynomialDerivation_liftRep (u : DerivationValues (M := M) a)
     (p : polynomialRing (R := R)) :
     polynomialDerivation a u (liftRep a (mk a p)) = polynomialDerivation a u p := by
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup (NodeAlgebra R a)
   let _ := polynomialModule (M := M) a
   apply sub_eq_zero.mp
   rw [← map_sub]
