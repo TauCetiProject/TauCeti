@@ -292,12 +292,15 @@ theorem map_splittingModuleIncl_res_eq_zero {H : Type u} [Group H] (f : H →* G
       rw [groupCohomology.H2π_eq_zero_iff]
       refine ⟨fun g ↦ splittingModuleCochain A u (f g), ?_⟩
       ext g
-      change
-        (splittingModule A u).ρ (f g.1) (splittingModuleCochain A u (f g.2)) -
-            splittingModuleCochain A u (f (g.1 * g.2)) +
-              splittingModuleCochain A u (f g.1) =
-          splittingModuleIncl A u (h2Representative A u (f g.1, f g.2))
-      rw [map_mul]
+      -- Isolate the definitional transports through restriction and `mapCocycles₂`.
+      have resAction_apply :
+          (res f (splittingModule A u)).ρ g.1 (splittingModuleCochain A u (f g.2)) =
+            (splittingModule A u).ρ (f g.1) (splittingModuleCochain A u (f g.2)) := rfl
+      have mapCocycles₂_apply :
+          groupCohomology.mapCocycles₂ f ((resFunctor f).map (splittingModuleIncl A u))
+              (h2Representative A u) g =
+            splittingModuleIncl A u (h2Representative A u (f g.1, f g.2)) := rfl
+      rw [groupCohomology.d₁₂_hom_apply, resAction_apply, mapCocycles₂_apply, map_mul]
       exact splittingModuleCochain_coboundary A u (f g.1) (f g.2)
 
 /-- The defining class `u` maps to zero in `H²(G, A(u))`. -/
