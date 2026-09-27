@@ -32,7 +32,7 @@ continuous bijection of `[-1, ∞)` onto itself. This file packages it as an ord
 written `ψ_{L/K}`. Keeping the domain in the type means that no statement concerns a value
 below `-1`.
 
-Although `φ` takes non-integral values at integers, `ψ` maps natural numbers to natural numbers.
+Although `φ` may take non-integral values at integers, `ψ` maps natural numbers to natural numbers.
 The resulting **integral inverse Herbrand function** `psiNat K L : ℕ → ℕ`, written `ψℕ_{L/K}`, is
 the form in which Herbrand values serve as depths of the unit filtration, for instance when
 `N_{L/K}(U(L, ψℕ(i)))` is compared with `U(K, i)`. It is characterized arithmetically by
@@ -419,8 +419,9 @@ instance instNormalUpperRamificationGroup (v : RamificationIndexDomain) :
 
 /-! ### Herbrand values at natural numbers
 
-The Herbrand function takes non-integral values at integers, but its inverse does not: `ψ(n)` is a
-natural number for every natural number `n`, because `#G_{m+1}` divides `#G_i` for `i ≤ m + 1`.
+The Herbrand function may take non-integral values at integers, but its inverse does not:
+`ψ(n)` is a natural number for every natural number `n`, because `#G_{m+1}` divides `#G_i` for
+`i ≤ m + 1`.
 This section packages these values as `psiNat K L : ℕ → ℕ`. -/
 
 private theorem inverseHerbrand_natCast_nonneg (n : ℕ) :
@@ -532,8 +533,8 @@ theorem psiNat_strictMono : StrictMono (psiNat K L) := fun a b h ↦ by
 theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
   exact (psiNat_strictMono K L).id_le n
 
-/-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration has no jump in
-`[0, v)`. -/
+/-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration is constant
+through `v`. -/
 theorem psiNat_eq_self_iff {v : ℕ} :
     psiNat K L v = v ↔ lowerRamificationGroup K L v = lowerRamificationGroup K L 0 := by
   have hle : ∀ i : ℕ, lowerRamificationGroup K L i ≤ lowerRamificationGroup K L 0 := fun i ↦
