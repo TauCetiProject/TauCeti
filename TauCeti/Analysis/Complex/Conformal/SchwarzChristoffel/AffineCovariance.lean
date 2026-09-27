@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
 public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import Mathlib.Algebra.Order.Positive.Field
 
 /-!
 # Affine covariance of the Schwarz--Christoffel map
@@ -234,8 +233,14 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_affine_prevertice
   let φ : ℂ → ℂ := fun z ↦ (c : ℂ) * z + (d : ℂ)
   let ψ : UpperHalfPlane → UpperHalfPlane := fun z ↦
     d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z)
+  have hc_unit : IsUnit (⟨c, hc⟩ : {x : ℝ // 0 < x}) := by
+    refine ⟨Units.mk ⟨c, hc⟩ ⟨c⁻¹, inv_pos.mpr hc⟩ ?_ ?_, rfl⟩
+    · ext
+      exact mul_inv_cancel₀ hc.ne'
+    · ext
+      exact inv_mul_cancel₀ hc.ne'
   have hψ : Function.Bijective ψ :=
-    (AddAction.bijective d).comp (MulAction.bijective (⟨c, hc⟩ : {x : ℝ // 0 < x}))
+    (AddAction.bijective d).comp hc_unit.smul_bijective
   have hsemiconj : Function.Semiconj UpperHalfPlane.coe ψ φ := by
     intro z
     simp only [ψ, φ, UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_pos_real_smul,
