@@ -12,7 +12,7 @@ public import TauCeti.Topology.Algebra.InfiniteSum.IntegralCoefficients
 # Evaluating divisor-sum series
 
 The integral divisor-sum series converges at a parameter of norm less than one in a complete
-non-archimedean field. Its value is the sum of its evaluated coefficients.
+non-archimedean normed ring. Its value is the sum of its evaluated coefficients.
 -/
 
 public section
@@ -22,21 +22,21 @@ open scoped ArithmeticFunction.sigma
 
 namespace TauCeti
 
-variable {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
+variable {K : Type*} [NormedRing K] [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K]
 
 /-- The divisor-sum series `s_k(q) = ∑ σ_k(n) q^n` converges for `‖q‖ < 1`. -/
 theorem summable_divisorSumSeries (k : ℕ) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ (((σ k n : ℕ) : ℤ) : K) * q ^ n) :=
   summable_intCast_mul_pow (fun n : ℕ ↦ ((σ k n : ℕ) : ℤ)) hq
 
-/-- Evaluation of the integral divisor-sum series in a complete non-archimedean field. Its
+/-- Evaluation of the integral divisor-sum series in a complete non-archimedean normed ring. Its
 convergence for `‖q‖ < 1` is `summable_divisorSumSeries`. -/
 noncomputable def divisorSumAt (k : ℕ) (q : K) (_hq : ‖q‖ < 1) : K :=
   ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n
 
-omit [CompleteSpace K] [IsUltrametricDist K] in
+omit [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K] in
 /-- The value of a divisor-sum series is its defining sum. -/
-theorem divisorSumAt_apply (k : ℕ) (q : K) (hq : ‖q‖ < 1) :
+theorem divisorSumAt_def (k : ℕ) (q : K) (hq : ‖q‖ < 1) :
     divisorSumAt k q hq = ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n := by
   simp only [divisorSumAt]
 

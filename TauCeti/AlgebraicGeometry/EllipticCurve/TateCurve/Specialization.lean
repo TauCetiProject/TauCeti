@@ -38,29 +38,27 @@ namespace TauCeti
 variable {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
 /-- The analytic fourth Tate coefficient, obtained from the integral formal series. -/
-noncomputable def tateCurveA4 (q : K) (_hq : ‖q‖ < 1) : K :=
-  ∑' n : ℕ, ((PowerSeries.coeff n tateCurve.a₄ : ℤ) : K) * q ^ n
+noncomputable def tateCurveA4 (q : K) (hq : ‖q‖ < 1) : K :=
+  evalIntSeries q hq tateCurve.a₄
 
 /-- The analytic sixth Tate coefficient, obtained from integral coefficients before reducing to
 the residue characteristic of the field. -/
-noncomputable def tateCurveA6 (q : K) (_hq : ‖q‖ < 1) : K :=
-  ∑' n : ℕ, ((PowerSeries.coeff n tateCurve.a₆ : ℤ) : K) * q ^ n
+noncomputable def tateCurveA6 (q : K) (hq : ‖q‖ < 1) : K :=
+  evalIntSeries q hq tateCurve.a₆
 
-omit [CompleteSpace K] [IsUltrametricDist K] in
 /-- The sixth Tate coefficient is the sum of its evaluated integral coefficients. -/
-theorem tateCurveA6_apply (q : K) (hq : ‖q‖ < 1) :
+theorem tateCurveA6_def (q : K) (hq : ‖q‖ < 1) :
     tateCurveA6 q hq =
       ∑' n : ℕ, ((PowerSeries.coeff n tateCurve.a₆ : ℤ) : K) * q ^ n := by
-  simp only [tateCurveA6]
+  simp only [tateCurveA6, evalIntSeries_apply]
 
-omit [CompleteSpace K] [IsUltrametricDist K] in
 /-- The fourth coefficient equals `-5 s₃(q)`. -/
 theorem tateCurveA4_eq (q : K) (hq : ‖q‖ < 1) :
     tateCurveA4 q hq = -5 * divisorSumAt 3 q hq := by
-  simp_rw [tateCurveA4, coeff_tateCurve_a₄, Int.cast_mul, Int.cast_neg, Int.cast_ofNat,
-    neg_mul, mul_assoc]
+  simp_rw [tateCurveA4, evalIntSeries_apply, coeff_tateCurve_a₄, Int.cast_mul, Int.cast_neg,
+    Int.cast_ofNat, neg_mul, mul_assoc]
   rw [tsum_neg, tsum_mul_left]
-  simp only [divisorSumAt_apply]
+  simp only [divisorSumAt_def]
 
 /-- The integral identity `12 a₆(q) = -(5 s₃(q) + 7 s₅(q))` holds in every complete
 non-archimedean field, even when `12 = 0` there. -/
@@ -70,12 +68,12 @@ theorem twelve_mul_tateCurveA6 {q : K} (hq : ‖q‖ < 1) :
       -(5 * (((σ 3 n : ℕ) : ℤ) : K) + 7 * (((σ 5 n : ℕ) : ℤ) : K)) := by
     have h := congrArg (fun z : ℤ ↦ (z : K)) (twelve_mul_coeff_tateCurve_a₆ n)
     simpa only [Int.cast_mul, Int.cast_neg, Int.cast_add, Int.cast_ofNat] using h
-  rw [tateCurveA6, ← tsum_mul_left]
+  rw [tateCurveA6_def, ← tsum_mul_left]
   simp_rw [← mul_assoc, hcoeff, neg_mul, add_mul]
   simp_rw [mul_assoc]
   rw [tsum_neg, (summable_divisorSumSeries 3 hq |>.mul_left 5).tsum_add
     (summable_divisorSumSeries 5 hq |>.mul_left 7)]
-  simp only [← tsum_mul_left, divisorSumAt_apply]
+  simp only [← tsum_mul_left, divisorSumAt_def]
 
 /-- The Tate equation obtained by evaluating the integral formal curve at a nonzero parameter of
 norm less than one. The unit parameter will also support its integer powers in uniformisation. -/
@@ -97,12 +95,12 @@ noncomputable def tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) : WeierstrassCu
 /-- The analytic fourth coefficient is the evaluation of the formal fourth coefficient. -/
 @[simp] theorem tateCurveAt_a₄ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     (tateCurveAt q hq).a₄ = tateCurveA4 (q : K) hq := by
-  simp only [tateCurveAt, WeierstrassCurve.map, tateCurveA4, evalIntSeries_apply]
+  simp only [tateCurveAt, WeierstrassCurve.map, tateCurveA4]
 
 /-- The analytic sixth coefficient is the evaluation of the formal sixth coefficient. -/
 @[simp] theorem tateCurveAt_a₆ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     (tateCurveAt q hq).a₆ = tateCurveA6 (q : K) hq := by
-  simp only [tateCurveAt, WeierstrassCurve.map, tateCurveA6, evalIntSeries_apply]
+  simp only [tateCurveAt, WeierstrassCurve.map, tateCurveA6]
 
 /-- The discriminant of the specialized Tate equation is nonzero. -/
 theorem isUnit_tateCurveAt_Δ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
