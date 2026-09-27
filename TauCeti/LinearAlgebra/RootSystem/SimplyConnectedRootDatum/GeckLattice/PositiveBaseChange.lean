@@ -209,6 +209,7 @@ theorem mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateIso_hom :
     ← Category.assoc,
     mkQuotient_comp_kostantTorusSubsystemBaseChangeIso_hom,
     geckTorusPositiveIntegralCoordinateTransportIso]
+  -- `baseChangeMap` is the map field of the `baseChangeFunctor` abbreviation.
   change _ ≫ CommHopfAlgCat.baseChangeMap (eqToHom (congrArg
       (CommHopfAlgCat.quotient
         (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
@@ -256,6 +257,34 @@ theorem mkQuotient_comp_geckRootSubgroupToTorusPositiveBaseChangeCoordinateMap
     mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateTransportIso_hom,
     mkQuotient_comp_kostantRootSubgroupTorusSubsystemBaseChangeCoordinateMap]
 
+/-- The positive-carrier comparison identifies a transported positive-root map with the scalar
+extension of its integral factorization through the positive carrier. -/
+@[simp]
+theorem geckTorusPositiveBaseChangeCoordinateIso_hom_comp_root
+    (i : Fin t.rank) :
+    (t.geckTorusPositiveBaseChangeCoordinateIso ht A).hom ≫
+        CommHopfAlgCat.baseChangeMap
+          ((eqToIso (congrArg
+              (CommHopfAlgCat.quotient
+                (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+              (t.geckTorusPositiveDefiningIdeal_def ht))).hom ≫
+            kostantRootSubgroupTorusSubsystemCoordinateMap
+              (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+              (t.geckCoordinateLattice ht).toAddSubgroup
+              (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+              (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+              (fun j => t.isNilpotent_geckRepresentation_rootGenerator ht j.1)
+              (Set.mem_range_self i)) =
+      t.geckRootSubgroupToTorusPositiveBaseChangeCoordinateMap ht A i := by
+  apply CommHopfAlgCat.mkQuotient_hom_ext
+  rw [← Category.assoc, mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateIso_hom,
+    ← (CommHopfAlgCat.baseChangeFunctor (K := A)).map_comp,
+    ← Category.assoc, eqToIso.hom,
+    CommHopfAlgCat.mkQuotient_comp_eqToHom
+      (t.geckTorusPositiveDefiningIdeal_def ht).symm,
+    mkQuotient_comp_kostantRootSubgroupTorusSubsystemCoordinateMap,
+    mkQuotient_comp_geckRootSubgroupToTorusPositiveBaseChangeCoordinateMap]
+
 /-- The represented weight-torus coordinate map after base change, specialized from the generic
 Kostant subsystem map. -/
 def geckWeightTorusToTorusPositiveBaseChangeCoordinateMap :
@@ -288,6 +317,32 @@ theorem mkQuotient_comp_geckWeightTorusToTorusPositiveBaseChangeCoordinateMap :
   rw [geckWeightTorusToTorusPositiveBaseChangeCoordinateMap, ← Category.assoc,
     mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateTransportIso_hom,
     mkQuotient_comp_kostantWeightTorusTorusSubsystemBaseChangeCoordinateMap]
+
+/-- The positive-carrier comparison identifies the transported weight-torus map with the scalar
+extension of its integral factorization through the positive carrier. -/
+@[simp]
+theorem geckTorusPositiveBaseChangeCoordinateIso_hom_comp_weightTorus :
+    (t.geckTorusPositiveBaseChangeCoordinateIso ht A).hom ≫
+        CommHopfAlgCat.baseChangeMap
+          ((eqToIso (congrArg
+              (CommHopfAlgCat.quotient
+                (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)))
+              (t.geckTorusPositiveDefiningIdeal_def ht))).hom ≫
+            kostantWeightTorusTorusSubsystemCoordinateMap
+              (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+              (t.geckCoordinateLattice ht).toAddSubgroup
+              (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+              (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (Set.range Sum.inl)
+              (fun i => t.isNilpotent_geckRepresentation_rootGenerator ht i.1)) =
+      t.geckWeightTorusToTorusPositiveBaseChangeCoordinateMap ht A := by
+  apply CommHopfAlgCat.mkQuotient_hom_ext
+  rw [← Category.assoc, mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateIso_hom,
+    ← (CommHopfAlgCat.baseChangeFunctor (K := A)).map_comp,
+    ← Category.assoc, eqToIso.hom,
+    CommHopfAlgCat.mkQuotient_comp_eqToHom
+      (t.geckTorusPositiveDefiningIdeal_def ht).symm,
+    mkQuotient_comp_kostantWeightTorusTorusSubsystemCoordinateMap,
+    mkQuotient_comp_geckWeightTorusToTorusPositiveBaseChangeCoordinateMap]
 
 /-! ## Inclusion from the canonical full carrier -/
 
