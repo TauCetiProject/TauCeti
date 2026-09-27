@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Completeness
-public import TauCeti.RepresentationTheory.Symmetric.Specht.Complex
+public import TauCeti.RepresentationTheory.Symmetric.Specht.Basis
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
@@ -21,7 +20,6 @@ Its cycle-type formula in the power-sum basis requires Young's rule and is a sep
 
 ## Main definitions
 
-* `TauCeti.spechtCharacterBasis`: the Specht characters form a basis of class functions.
 * `TauCeti.frobeniusCharacteristic`: the basis-preserving linear equivalence to symmetric
   homogeneous polynomials.
 
@@ -29,6 +27,8 @@ Its cycle-type formula in the power-sum basis requires Young's rule and is a sep
 
 * `TauCeti.frobeniusCharacteristic_spechtCharacter`: the image of the character of `S^μ` is
   the Schur polynomial `s_μ`.
+* `TauCeti.schurPolyBasis_repr_frobeniusCharacteristic`: each Schur coordinate is the pairing
+  with the corresponding Specht character.
 
 ## References
 
@@ -39,60 +39,13 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory
-
 variable {n : ℕ}
-
-private noncomputable instance : Invertible ((Nat.card (Equiv.Perm (Fin n)) : ℂ)) :=
-  invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
-
-private instance : ∀ μ : n.Partition,
-    Representation.IsIrreducible (spechtModuleℂ μ).ρ := fun μ =>
-  (FDRep.simple_iff_isIrreducible (spechtModuleℂ μ)).mp inferInstance
-
-private theorem spechtRepresentation_pairwise :
-    Pairwise fun μ ν : n.Partition =>
-      IsEmpty (Representation.Equiv (spechtModuleℂ μ).ρ (spechtModuleℂ ν).ρ) := by
-  intro μ ν hne
-  rw [← not_nonempty_iff]
-  intro h
-  exact hne ((spechtModuleℂ_iso_iff μ ν).mp (nonempty_fdRepIso_iff.mpr h))
-
-/-- The complex Specht characters give every class function on `Sₙ` a unique expansion. -/
-noncomputable def spechtCharacterBasis (n : ℕ) :
-    Module.Basis (n.Partition) ℂ (ClassFunction ℂ (Equiv.Perm (Fin n))) := by
-  have hcard : Nat.card (n.Partition) = Nat.card (ConjClasses (Equiv.Perm (Fin n))) :=
-    Nat.card_congr (partitionEquivConjClasses n)
-  exact ClassFunction.basisOfIrreducibleCharacters
-    (fun μ => (spechtModuleℂ μ).ρ) spechtRepresentation_pairwise hcard
-
-/-- The `μ`-th vector in the class-function basis is the character of the complex Specht
-module `S^μ`. -/
-@[simp]
-theorem spechtCharacterBasis_apply (μ : n.Partition) :
-    spechtCharacterBasis n μ = ClassFunction.ofCharacter (spechtModuleℂ μ).ρ := by
-  unfold spechtCharacterBasis
-  exact ClassFunction.basisOfIrreducibleCharacters_apply _ _ _ μ
-
-private theorem partition_parts_card_le (μ : n.Partition) : μ.parts.card ≤ n := by
-  have aux : ∀ s : Multiset ℕ, (∀ x ∈ s, 0 < x) → s.card ≤ s.sum := by
-    intro s
-    induction s using Multiset.induction_on with
-    | empty => simp
-    | @cons x s ih =>
-      intro hs
-      have hx : 1 ≤ x := hs x (by simp)
-      have hs' : ∀ y ∈ s, 0 < y := fun y hy => hs y (by simp [hy])
-      have hsum := ih hs'
-      simp only [Multiset.card_cons, Multiset.sum_cons]
-      omega
-  exact (aux μ.parts (fun x hx => μ.parts_pos hx)).trans_eq μ.parts_sum
 
 /-- When the alphabet has at least `n` letters, every partition of `n` indexes a Schur basis
 vector: it has at most `n` nonzero parts. -/
 private def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
     n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
-  toFun μ := ⟨μ, (partition_parts_card_le μ).trans (by simpa using h)⟩
+  toFun μ := ⟨μ, (Nat.Partition.card_parts_le μ).trans (by simpa using h)⟩
   invFun μ := μ.1
   left_inv _ := rfl
   right_inv _ := Subtype.ext rfl
@@ -116,6 +69,26 @@ theorem frobeniusCharacteristic_spechtCharacter (d : ℕ) (h : n ≤ d)
   rw [← spechtCharacterBasis_apply, frobeniusCharacteristic, Module.Basis.equiv_apply]
   exact coe_schurPolyBasis (partitionEquivSchurIndex n d h μ)
 
+/-- The Schur coordinate of a Frobenius characteristic is the pairing with the corresponding
+Specht character. -/
+@[simp]
+theorem schurPolyBasis_repr_frobeniusCharacteristic (d : ℕ) (h : n ≤ d)
+    (f : ClassFunction ℂ (Equiv.Perm (Fin n)))
+    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin d)}) :
+    (schurPolyBasis (Fin d) ℂ n).repr (frobeniusCharacteristic n d h f) μ =
+      ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ.1).ρ) f := by
+  let e := partitionEquivSchurIndex n d h
+  have hμ : e μ.1 = μ := Subtype.ext rfl
+  conv_lhs => rw [← hμ]
+  change (schurPolyBasis (Fin d) ℂ n).repr
+    ((spechtCharacterBasis n).equiv (schurPolyBasis (Fin d) ℂ n) e f) (e μ.1) = _
+  have hrepr := Module.Basis.repr_reindex_apply (schurPolyBasis (Fin d) ℂ n)
+    ((spechtCharacterBasis n).equiv (schurPolyBasis (Fin d) ℂ n) e f) e.symm μ.1
+  simp only [Equiv.symm_symm] at hrepr
+  rw [← hrepr]
+  simp only [Module.Basis.equiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  exact spechtCharacterBasis_repr f μ.1
+
 /-- The Schur coefficient of a class function under the Frobenius characteristic is its
 character pairing with the corresponding Specht character. This gives an explicit formula for
 the map on arbitrary class functions. -/
@@ -126,11 +99,7 @@ theorem frobeniusCharacteristic_apply (d : ℕ) (h : n ≤ d)
       ∑ μ : n.Partition,
         ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ).ρ) f •
           schurPoly (Fin d) ℂ μ := by
-  have hcard : Nat.card (n.Partition) = Nat.card (ConjClasses (Equiv.Perm (Fin n))) :=
-    Nat.card_congr (partitionEquivConjClasses n)
-  have hexp := ClassFunction.sum_characterPairing_smul_ofCharacter
-    (fun μ : n.Partition => (spechtModuleℂ μ).ρ) spechtRepresentation_pairwise hcard f
-  conv_lhs => rw [← hexp]
-  simp [frobeniusCharacteristic_spechtCharacter]
+  conv_lhs => rw [← (spechtCharacterBasis n).sum_repr f]
+  simp [spechtCharacterBasis_repr, frobeniusCharacteristic_spechtCharacter]
 
 end TauCeti

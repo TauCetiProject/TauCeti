@@ -34,6 +34,21 @@ theorem parts_equivCast {m l : ℕ} (h : m = l) (p : m.Partition) :
 
 namespace Nat.Partition
 
+/-- The number of parts of a partition is at most the number it partitions. -/
+theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
+  have aux : ∀ s : Multiset ℕ, (∀ x ∈ s, 0 < x) → s.card ≤ s.sum := by
+    intro s
+    induction s using Multiset.induction_on with
+    | empty => simp
+    | @cons x s ih =>
+      intro hs
+      have hx : 1 ≤ x := hs x (by simp)
+      have hs' : ∀ y ∈ s, 0 < y := fun y hy => hs y (by simp [hy])
+      have hsum := ih hs'
+      simp only [Multiset.card_cons, Multiset.sum_cons]
+      omega
+  exact (aux μ.parts (fun x hx => μ.parts_pos hx)).trans_eq μ.parts_sum
+
 /-- The partition `(1ⁿ)` of `n` into `n` parts, each equal to `1`.
 
 This is the finest partition of `n`, opposite to Mathlib's coarsest `Nat.Partition.indiscrete n`,
