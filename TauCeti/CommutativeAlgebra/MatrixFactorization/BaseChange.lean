@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
 public import TauCeti.Algebra.Homology.Periodic.Duplex
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.Algebra.Category.FGModuleCat.ChangeOfRings
 
 /-!
 # Reducing matrix factorizations to two-periodic complexes
@@ -34,20 +34,6 @@ open CategoryTheory
 open scoped ChangeOfRings
 
 variable {S T : Type u} [CommRing S] [CommRing T] {w : S}
-
-/-- Scalar extension sends multiplication by the potential to multiplication by its image. -/
-theorem scalarExtension_map_curvature (f : S →+* T)
-    (M : FGModuleCat.{u} S) :
-    (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S) ⋙ ModuleCat.extendScalars f).map
-      (w • 𝟙 M) = f w • 𝟙 _ := by
-  apply ModuleCat.ExtendScalars.hom_ext
-  intro m
-  let _ : Algebra S T := f.toAlgebra
-  -- The category map hides the tensor-product representative, so expose it here.
-  change (1 : T) ⊗ₜ[S,f] (w • m) = (f w) • ((1 : T) ⊗ₜ[S,f] m)
-  rw [← TensorProduct.smul_tmul]
-  change (f w * 1 : T) ⊗ₜ[S,f] m = (f w * 1 : T) ⊗ₜ[S,f] m
-  rfl
 
 /-- Extension of scalars carries a finite-projective matrix factorization of `w` to one of
 `f w`, without requiring the potential to vanish. -/
@@ -77,12 +63,12 @@ theorem scalarExtension_map_curvature (f : S →+* T)
       apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       -- Forget the finite-generation wrapper to use the scalar-extension equation.
       change F.map (w • 𝟙 X.obj.X₀) = f w • 𝟙 (F.obj X.obj.X₀)
-      exact (scalarExtension_map_curvature f X.obj.X₀)
+      exact (FGModuleCat.extendScalars_map_smul_id f X.obj.X₀)
     · rw [← Functor.map_comp, X.obj.d₁_comp_d₀]
       apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       -- Forget the finite-generation wrapper on the odd component as well.
       change F.map (w • 𝟙 X.obj.X₁) = f w • 𝟙 (F.obj X.obj.X₁)
-      exact (scalarExtension_map_curvature f X.obj.X₁)
+      exact (FGModuleCat.extendScalars_map_smul_id f X.obj.X₁)
     · let _ : Algebra S T := f.toAlgebra
       -- The scalar-extended component is the tensor product in Mathlib's projective instance.
       change Module.Projective T (TensorProduct S T X.obj.X₀)
@@ -150,6 +136,7 @@ instance baseChangeFunctor_additive (f : S →+* T) :
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       apply ModuleCat.ExtendScalars.hom_ext
       intro m
+      -- Unfold the composite functor and extended maps at a pure tensor to use `tmul_add`.
       change (1 : T) ⊗ₜ[S,f] (g.hom.f₀ m + h.hom.f₀ m) =
         (1 : T) ⊗ₜ[S,f] (g.hom.f₀ m) + (1 : T) ⊗ₜ[S,f] (h.hom.f₀ m)
       let _ : Algebra S T := f.toAlgebra
@@ -157,6 +144,7 @@ instance baseChangeFunctor_additive (f : S →+* T) :
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       apply ModuleCat.ExtendScalars.hom_ext
       intro m
+      -- The odd component unfolds to the same pure-tensor identity.
       change (1 : T) ⊗ₜ[S,f] (g.hom.f₁ m + h.hom.f₁ m) =
         (1 : T) ⊗ₜ[S,f] (g.hom.f₁ m) + (1 : T) ⊗ₜ[S,f] (h.hom.f₁ m)
       let _ : Algebra S T := f.toAlgebra
@@ -175,9 +163,11 @@ original components with the target ring. -/
           d₀ := F.map X.d₀
           d₁ := F.map X.d₁
           d₀_comp_d₁ := by
+            -- Unfold the composite functor to expose the mapped differential composite.
             change F.map (X.d₀ ≫ X.d₁) = (0 : T) • 𝟙 _
             simp [X.d₀_comp_d₁, hw]
           d₁_comp_d₀ := by
+            -- The odd composite has the same definitional reduction.
             change F.map (X.d₁ ≫ X.d₀) = (0 : T) • 𝟙 _
             simp [X.d₁_comp_d₀, hw] }
       map := fun g =>
