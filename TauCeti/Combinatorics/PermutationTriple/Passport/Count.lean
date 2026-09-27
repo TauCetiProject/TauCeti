@@ -11,18 +11,23 @@ public import TauCeti.Combinatorics.PermutationTriple.Passport.Normalizer
 # The generating triples of a passport
 
 A passport records a reference monodromy subgroup `P.G` together with the three ordered full cycle
-types of the generating triples it contains. The number of isomorphism classes in the passport is
-the number of `P.G`-generating triples of `S_n` with those cycle data, counted up to the action of
-the normalizer of `P.G`. This file names that finite set of generating triples and gives its
-cardinality.
+types of the generating triples it contains. For a passport of nonzero degree whose reference
+subgroup is pretransitive — the first two conjuncts of `TauCeti.PassportSpec.IsAdmissible` — the
+number of isomorphism classes in the passport is the number of `P.G`-generating triples of `S_n`
+with those cycle data, counted up to the action of the normalizer of `P.G`, which is
+`TauCeti.PassportSpec.passportSize_eq_card_generatingTripleOrbits`; the count itself, that of the
+generating triples before the normalizer action, needs no such hypothesis. This file names that
+finite set of generating triples and gives its cardinality.
 
 ## The classes of a cycle type
 
 One `S_n`-cycle type can meet several `G`-classes, and can meet none, so a count of the members of
 `G` with a prescribed cycle type is a sum over `G`-classes rather than a single class size. That
-index set is `TauCeti.Subgroup.classesOfType`, in `TauCeti/GroupTheory/Perm/ConjClass.lean`, for
-a group of permutations in general; `TauCeti.Subgroup.mem_iUnion_classesOfType` there identifies
-the union of those classes with the elements of the group of that cycle type.
+index set is `TauCeti.Subgroup.classesOfFullCycleType`, in
+`TauCeti/GroupTheory/Perm/ConjClass.lean`, for a group of permutations in general;
+`TauCeti.Subgroup.mem_iUnionClassesOfFullCycleType` there identifies the union of those classes,
+the set `TauCeti.Subgroup.iUnionClassesOfFullCycleType`, with the elements of the group of that
+cycle type.
 
 ## The generating triples of a passport
 
@@ -30,7 +35,7 @@ the union of those classes with the elements of the group of that cycle type.
 first two entries generate `P.G` and whose three cycle types are those of `P`: the generating
 triples of the passport, as triples of permutations. The product-one relation makes the third
 entry a function of the first two
-(`TauCeti.PermutationTriple.ofTwo_σinf_of_productOne`), so
+(`TauCeti.PermutationTriple.ofTwo_σinf_eq_of_product_eq_one`), so
 `TauCeti.PassportSpec.generatingTriplesEquiv` is the elimination rule identifying that finite set
 with `TauCeti.PassportSpec.GeneratingTriple`, the two maps being computed by
 `TauCeti.PassportSpec.generatingTriplesEquiv_apply` and
@@ -121,7 +126,7 @@ noncomputable def generatingTriplesEquiv (P : PassportSpec n) :
         ← Equiv.Perm.fullCycleType_def]
       exact h1
     · rw [PermutationTriple.cycleData_σinf,
-        PermutationTriple.ofTwo_σinf_of_productOne q.1 hprod,
+        PermutationTriple.ofTwo_σinf_eq_of_product_eq_one q.1 hprod,
         ← Equiv.Perm.fullCycleType_def]
       exact hinf⟩
   refine { toFun := toF, invFun := invF, left_inv := ?_, right_inv := ?_ }
@@ -136,7 +141,7 @@ noncomputable def generatingTriplesEquiv (P : PassportSpec n) :
     apply Subtype.ext
     dsimp only [invF, toF]
     rw [PermutationTriple.ofTwo_σ0, PermutationTriple.ofTwo_σ1,
-      PermutationTriple.ofTwo_σinf_of_productOne q.1 h']
+      PermutationTriple.ofTwo_σinf_eq_of_product_eq_one q.1 h']
 
 /-- The triple of permutations that `TauCeti.PassportSpec.generatingTriplesEquiv` attaches to a
 generating triple of `P` is the triple of its three components. -/

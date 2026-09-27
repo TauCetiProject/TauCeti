@@ -117,7 +117,7 @@ def component (t : PermutationTriple n) : Fin 3 → Perm (Fin n) :=
 
 /-- The third component of a triple built from its first two is the third entry of a product-one
 triple of permutations, the relation determining it. -/
-theorem ofTwo_σinf_of_productOne (p : Perm (Fin n) × Perm (Fin n) × Perm (Fin n))
+theorem ofTwo_σinf_eq_of_product_eq_one (p : Perm (Fin n) × Perm (Fin n) × Perm (Fin n))
     (h : p.2.2 * p.2.1 * p.1 = 1) : (ofTwo p.1 p.2.1).σinf = p.2.2 := by
   have h' : p.2.2 * (p.2.1 * p.1) = 1 := by simpa only [mul_assoc] using h
   rw [ofTwo_σinf, eq_inv_of_mul_eq_one_right h', inv_inv]
