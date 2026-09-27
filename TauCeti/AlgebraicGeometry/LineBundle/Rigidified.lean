@@ -90,7 +90,7 @@ def trivial (s : T ⟶ Y) : RigidifiedLineBundle s where
 
 /-- The underlying sheaf of the canonical rigidified line bundle is the structure sheaf. -/
 @[simp]
-lemma trivial_lineBundle (s : T ⟶ Y) :
+lemma trivial_lineBundle_obj (s : T ⟶ Y) :
     (trivial s).lineBundle.obj = 𝟙_ Y.Modules := rfl
 
 /-- The rigidification of the trivial line bundle is the canonical pullback isomorphism. -/
@@ -325,7 +325,7 @@ lemma toLineBundleClass_trivial :
     toLineBundleClass (mk (RigidifiedLineBundle.trivial s)) = 1 := by
   rw [toLineBundleClass_mk]
   rw [← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff]
-  rw [RigidifiedLineBundle.trivial_lineBundle, InvertibleSheaf.trivial_obj]
+  rw [RigidifiedLineBundle.trivial_lineBundle_obj, InvertibleSheaf.trivial_obj]
   exact ⟨(TauCeti.SheafOfModules.freePUnitIsoUnit Y.ringCatSheaf).symm⟩
 
 /-- Forgetting the trivialization commutes with pullback. -/
