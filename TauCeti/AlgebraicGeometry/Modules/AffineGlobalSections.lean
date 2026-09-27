@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.Algebra.Category.ModuleCat.EpiMono
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 
 /-!
 # Global sections of quasicoherent modules on an affine scheme
@@ -14,6 +15,10 @@ public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 Mathlib's `AlgebraicGeometry.tildeEquiv` identifies quasicoherent modules on `Spec R` with
 `R`-modules. Consequently an epimorphism between quasicoherent modules is surjective on global
 sections, even when the epimorphism is taken in the category of all sheaves of modules.
+
+Consequently, global sections preserve short exact sequences whose middle and right terms are
+quasicoherent. This is the affine exactness step used in Serre's affine acyclicity theorem; see
+Hartshorne, *Algebraic Geometry*, Chapter III, Theorem 3.5.
 -/
 
 public section
@@ -51,9 +56,31 @@ theorem surjective_globalSections_of_epi_of_isQuasicoherent
     Functor.map_epi _ g
   have hmap : (tildeEquiv (R := R)).inverse.map g =
       (moduleSpecΓFunctor (R := R)).map f := by
-    rfl
+    -- `tildeEquiv_inverse` identifies the inverse with inclusion followed by global sections.
+    change (moduleSpecΓFunctor (R := R)).map g.hom = _
+    have hg_hom : g.hom = f := by
+      change (ObjectProperty.homMk (X := F) (Y := G) f).hom = f
+      exact ObjectProperty.homMk_hom (X := F) (Y := G) f
+    rw [hg_hom]
   rw [hmap] at hΓ
   exact (ModuleCat.epi_iff_surjective _).mp hΓ
+
+/-- Taking global sections preserves a short exact sequence whose middle and right terms are
+quasicoherent sheaves on `Spec R`. The exactness hypothesis is in the ambient category of sheaves
+of modules. -/
+theorem shortExact_map_moduleSpecΓFunctor_of_isQuasicoherent
+    {S : ShortComplex (Spec R).Modules} (hS : S.ShortExact)
+    [S.X₂.IsQuasicoherent] [S.X₃.IsQuasicoherent] :
+    (S.map (moduleSpecΓFunctor (R := R))).ShortExact := by
+  have : (moduleSpecΓFunctor (R := R)).Additive :=
+    (moduleSpecΓFunctor (R := R)).additive_of_preserves_binary_products
+  have h := (Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono
+    (moduleSpecΓFunctor (R := R))).mp inferInstance S hS
+  have : Epi S.g := hS.epi_g
+  have hΓ : Epi ((moduleSpecΓFunctor (R := R)).map S.g) :=
+    (ModuleCat.epi_iff_surjective _).mpr
+      (surjective_globalSections_of_epi_of_isQuasicoherent S.g)
+  exact { exact := h.1, mono_f := h.2, epi_g := hΓ }
 
 end AlgebraicGeometry
 
