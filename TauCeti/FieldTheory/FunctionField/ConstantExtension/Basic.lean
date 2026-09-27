@@ -15,9 +15,7 @@ When a finite extension of constants is adjoined to an algebraic function field,
 the compositum is again an algebraic function field over the enlarged constant field.  This
 gives the function-field structure needed to discuss its places, divisors, and genus.
 
-The argument uses a finite generating set for the extension of constants to prove that the
-compositum is finite over the original function field.  Separability and exactness of the
-original constant field are not needed here.
+Separability and exactness of the original constant field are not needed here.
 
 ## Reference
 
