@@ -24,9 +24,7 @@ public section
 
 open Set Topology
 
-namespace TauCeti
-
-open _root_.Flow
+namespace Flow
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {φ : _root_.Flow ℝ E} {f : E → ℝ} {p q : E}
@@ -66,8 +64,6 @@ theorem IsNegativeGradient.bijOn_quotient_unstableSet_inter_stableSet_level
       (hf x hx) hfp hfq hx hc
     refine ⟨φ t x, ⟨⟨(isInvariant_unstableSet φ p t hx.1),
       (isInvariant_stableSet φ q t hx.2)⟩, ht⟩, ?_⟩
-    apply Quotient.sound
-    apply (@AddAction.orbitRel_apply ℝ E _ φ.toAddAction).mpr
-    exact φ.mem_orbit x t
+    exact (@AddAction.orbitRel.Quotient.quotient_vadd_eq ℝ E _ φ.toAddAction t x)
 
-end TauCeti
+end Flow
