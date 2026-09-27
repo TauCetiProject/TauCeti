@@ -100,6 +100,7 @@ theorem cor_pos_comp_isoGroupCohomology_hom (M : Rep.{u} R G) (H : Subgroup G) (
         (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).hom.app M =
       (_root_.TateCohomology.isoGroupCohomology (G := H) (n + 1)).hom.app
           (Rep.res H.subtype M) ≫ groupCohomology.corestriction H M (n + 1) := by
+  -- The recursor reduces at `Int.ofNat (n + 1)`; normalize the casted sum to that index first.
   simpa only [Int.natCast_add, Int.cast_ofNat_Int] using
     (show cor M H ((n + 1 : ℕ) : ℤ) ≫
         (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).hom.app M =
