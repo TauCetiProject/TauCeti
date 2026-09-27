@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Block
-public import TauCeti.Combinatorics.Enumerative.Partition.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Monomial
 
@@ -96,7 +95,10 @@ open Finset MvPolynomial
 vector. -/
 def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
     n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
-  toFun μ := ⟨μ, (partition_card_parts_le μ).trans (by simpa using h)⟩
+  toFun μ := ⟨μ, by
+    have hcard := μ.parts.card_nsmul_le_sum (a := 1) (fun x hx => μ.parts_pos hx)
+    have hparts : μ.parts.card ≤ n := by simpa [μ.parts_sum] using hcard
+    exact hparts.trans (by simpa using h)⟩
   invFun μ := μ.1
   left_inv _ := rfl
   right_inv _ := Subtype.ext rfl
