@@ -24,34 +24,56 @@ import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 In even dimension the Clifford algebra of a polarized quadratic space is the endomorphism algebra
 of its spinor module, so its centre is the base field
 (`TauCeti.SpinPolarizationData.isCentral_cliffordAlgebra`). In **odd** dimension that fails, and
-this file measures by how much: the centre is a **rank-two** subalgebra, spanned by `1` and the
-**volume element** `ω = ι Q v₁ ⋯ ι Q vₙ` of an orthogonal basis.
+this file measures by how much: for a nondegenerate quadratic form over a field of characteristic
+not two the centre is a **rank-two** subalgebra, spanned by `1` and the **volume element**
+`ω = ι Q v₁ ⋯ ι Q vₙ` of an anisotropic orthogonal basis. Nothing of the field beyond
+characteristic not two, and no polarization, is assumed: a `TauCeti.SpinPolarizationData` appears
+only inside the proofs, where it is available after base change to a separable closure.
 
-One inclusion is already general Clifford-algebra theory: the volume element of an orthogonal
-spanning list of odd length is central
-(`CliffordAlgebra.prod_map_ι_mem_center_of_odd_length`). The other is where the Fock model comes
-in, after the `ℤ/2`-grading has split the problem in two: the even and the odd part of a central
-element are each central (`CliffordAlgebra.mem_center_of_mem_evenOdd_of_add_mem_center`), so it is
-enough to describe the central elements of each parity.
+Rank two is the sharp obstruction to the even-dimensional picture, and one section records it as
+such: the odd-dimensional Clifford algebra is **not** central over `F`
+(`CliffordAlgebra.not_isCentral_of_odd_finrank`), since the centre of a central algebra is
+one-dimensional instead (`TauCeti.finrank_center_of_isCentral`).
+
+## The two bounds on the rank
+
+Two is a lower bound with no polarization in sight: the volume element of an orthogonal spanning
+list of odd length is central (`CliffordAlgebra.prod_map_ι_mem_center_of_odd_length`) and, the
+basis being anisotropic, a unit; so `1` and `ω` lie in the two complementary halves of the
+`ℤ/2`-grading, are therefore independent, and span two dimensions of the centre.
+
+Two is an upper bound by descent from a separable closure `L`, where
+`TauCeti.SpinPolarizationData.ofNondegenerate` does build a polarization:
+`QuadraticForm.Nondegenerate.baseChange` keeps `Q.baseChange L` nondegenerate,
+`Module.finrank_baseChange` keeps the dimension odd, and the base change to `L` of the centre
+embeds `L`-linearly in the centre of `L ⊗[F] CliffordAlgebra Q ≃ₐ[L] CliffordAlgebra (Q.baseChange
+L)` (Mathlib's `CliffordAlgebra.equivBaseChange`), so a centre of rank three or more over `F` would
+force one over `L`.
+
+Over `L` the count is the Fock model's, and the `ℤ/2`-grading splits the work in two: the even and
+the odd part of a central element are each central
+(`CliffordAlgebra.mem_center_of_mem_evenOdd_of_add_mem_center`), so it is enough to describe the
+central elements of each parity.
 
 * A **central even** element is a scalar. The odd structure theorem
   `TauCeti.SpinPolarizationData.evenCliffordEquivEnd` identifies `even Q` with
-  `Module.End F (⋀·W)`, whose centre is `F`, so `even Q` is a central algebra over `F`
-  (`TauCeti.SpinPolarizationData.isCentral_even`). This is where odd dimension enters: in even
-  dimension `even Q` is a *product* of two endomorphism algebras and has a two-dimensional centre
-  instead.
+  `Module.End F (⋀·W)`, whose centre is `F`, so `even Q` is a central algebra over `F`. This is
+  where odd dimension enters: in even dimension `even Q` is a *product* of two endomorphism
+  algebras and has a two-dimensional centre instead.
 * A **central odd** element is a multiple of `ω`. Multiplying by `ω` turns it into a central even
   element, hence into a scalar, and `ω * ω = c` with `c ≠ 0` lets that be divided back out.
 
-The two halves together are
-`TauCeti.SpinPolarizationData.center_toSubmodule_eq_span_prod_map_ι`, and the rank-two count it
-yields, `TauCeti.SpinPolarizationData.finrank_center_eq_two`, no longer mentions the orthogonal
-basis: `1` and `ω` are independent because they are nonzero and of opposite parity.
+## From the rank back to the span
 
-Rank two is the sharp obstruction to the even-dimensional picture, and one section records it
-as such: the odd-dimensional Clifford algebra is **not** central over `F`
-(`TauCeti.SpinPolarizationData.not_isCentral_cliffordAlgebra`), since the centre of a central
-algebra is one-dimensional instead (`TauCeti.finrank_center_of_isCentral`).
+The count is sharp enough to recover the span description over the base field, with no polarization
+left: the span of `1` and `ω` sits inside the centre and both are two-dimensional, so they are
+equal (`CliffordAlgebra.center_toSubmodule_eq_span_prod_map_ι`). The two conclusions that the
+polarized argument reached directly follow in turn — a central element of even parity is a scalar
+(`CliffordAlgebra.exists_algebraMap_of_mem_even_of_mem_center`), since the odd coordinate of an even
+element vanishes, and `even Q` is itself central over `F` (`CliffordAlgebra.isCentral_even`), since
+every odd element is `ω` times an even one.
+
+## Which rank-two algebra
 
 Which rank-two algebra the centre is turns only on the scalar
 `ω * ω = (-1) ^ (n.choose 2) ∏ᵢ Q vᵢ` (`CliffordAlgebra.prod_map_ι_sq_scalar`), and under a
@@ -59,42 +81,27 @@ polarization that scalar is always a square: with `n = 2 * m + 1`, the hyperboli
 `m` copies of `⟨1, -1⟩` and so contributes `(-1) ^ m` modulo squares, the orthogonal remainder
 contributes a square because `TauCeti.SpinPolarizationData.lineCoordinate_sq` makes its form the
 square of a coordinate, and the sign `(-1) ^ (n.choose 2) = (-1) ^ m` cancels the first of these
-against the second. A polarized odd
-form is split in this sense and its centre is `F × F`, which over a separably closed field is what
-the two-block splitting
+against the second. A polarized odd form is split in this sense and its centre is `F × F`, which
+over a separably closed field is what the two-block splitting
 `CliffordAlgebra.nonempty_algEquiv_matrix_prod_of_finrank_eq_two_mul_add_one` reads off. A quadratic
-field *extension* arises only for an odd form admitting no polarization at all — an anisotropic one,
-say: `⟨1, 1, 1⟩` over `ℚ` has `ω * ω = -1`, so its centre is `ℚ[X] / (X ^ 2 + 1)`. Either way only
-the rank is claimed here, never a decomposition.
-
-A polarization is a hypothesis for the descriptions of the centre rather than a conclusion, exactly
-as in `TauCeti/RepresentationTheory/Spin/OddStructure.lean`: over a general field a nondegenerate
-form need not be split, and `TauCeti.SpinPolarizationData.ofNondegenerate` builds a polarization
-only over a separably closed field. The *rank* alone needs no polarization:
-`CliffordAlgebra.finrank_center_eq_two_of_odd_finrank` counts the centre of every nondegenerate odd
-form over every field of characteristic not two. Two is a lower bound over any such field, `1` and
-`ω` being independent there already, and it is an upper bound by descent from a separable closure
-`L`, where a polarization does exist: the base change to `L` of the centre embeds in the centre of
-`CliffordAlgebra (Q.baseChange L)`, so a centre of rank three or more over `F` would force one over
-`L`.
+field *extension* arises only for an odd form admitting no polarization at all, `⟨1, 1, 1⟩` over `ℚ`
+for instance: there `ω * ω = -1`, so the centre is `ℚ[X] / (X ^ 2 + 1)`. Either way only the rank
+is claimed here, never a decomposition.
 
 ## Main results
 
-* `TauCeti.SpinPolarizationData.isCentral_even`: in odd dimension the even Clifford subalgebra is
+* `CliffordAlgebra.finrank_center_eq_two_of_odd_finrank`: the centre has dimension two.
+* `CliffordAlgebra.center_toSubmodule_eq_span_prod_map_ι`: the centre is spanned by `1` and the
+  volume element of an orthogonal spanning list, and
+  `CliffordAlgebra.exists_mem_evenOdd_one_center_toSubmodule_eq_span` discharges the choice of that
+  list.
+* `CliffordAlgebra.center_eq_adjoin_prod_map_ι`: the same statement as an equality of subalgebras,
+  the centre being the quadratic algebra `F[ω]`.
+* `CliffordAlgebra.exists_algebraMap_of_mem_even_of_mem_center`: a central element of even parity
+  is a scalar, and `CliffordAlgebra.isCentral_even`: the even subalgebra is central over the base
+  field.
+* `CliffordAlgebra.not_isCentral_of_odd_finrank`: an odd-dimensional Clifford algebra is not
   central over the base field.
-* `TauCeti.SpinPolarizationData.exists_algebraMap_of_mem_even_of_mem_center`: a central element of
-  even parity is a scalar.
-* `TauCeti.SpinPolarizationData.center_toSubmodule_eq_span_prod_map_ι`: the centre is spanned by
-  `1` and the volume element of an orthogonal spanning list, and
-  `TauCeti.SpinPolarizationData.exists_mem_evenOdd_one_center_toSubmodule_eq_span` discharges the
-  choice of that list.
-* `TauCeti.SpinPolarizationData.center_eq_adjoin_prod_map_ι`: the same statement as an equality of
-  subalgebras, the centre being the quadratic algebra `F[ω]`.
-* `TauCeti.SpinPolarizationData.finrank_center_eq_two` and
-  `CliffordAlgebra.finrank_center_eq_two_of_odd_finrank`: the centre has dimension two, the latter
-  for every nondegenerate odd form over a field of characteristic not two.
-* `TauCeti.SpinPolarizationData.not_isCentral_cliffordAlgebra`: an odd-dimensional Clifford algebra
-  is not central over the base field.
 
 ## References
 
@@ -185,25 +192,24 @@ private theorem finrank_span_one_eq_two {ω : CliffordAlgebra Q} (hωodd : ω �
 
 include P hodd
 
-/-! ### Central elements of even parity are scalars -/
+/-! ### The Fock-model count, for a polarized form
 
-/-- **The even subalgebra of an odd-dimensional Clifford algebra is central over the base field.**
-This is the odd-dimensional analogue of
-`TauCeti.SpinPolarizationData.isCentral_cliffordAlgebra`, one grade down, and it is false in even
-dimension: there `even Q` is the product of the two half-spin endomorphism algebras
-(`TauCeti.SpinPolarizationData.evenCliffordEquivProdEnd`), with a two-dimensional centre. -/
-theorem isCentral_even : Algebra.IsCentral F ↥(even Q) :=
+Everything in this section assumes a polarization, which is what makes the Fock model available.
+It is the engine of the rank count below and nothing more: the statements it proves reappear over
+an arbitrary field, with no polarization, in the `CliffordAlgebra` namespace. -/
+
+/-- The even subalgebra of a polarized odd-dimensional quadratic space is central over the base
+field: the odd structure theorem identifies it with an endomorphism algebra. -/
+private theorem isCentral_even : Algebra.IsCentral F ↥(even Q) :=
   Algebra.IsCentral.of_algEquiv F _ _ (P.evenCliffordEquivEnd hodd).symm
 
-/-- **A central element of even parity is a scalar**, in odd dimension. This is the even half of
-`TauCeti.SpinPolarizationData.center_toSubmodule_eq_span_prod_map_ι`: in even parity a central
-element contributes nothing beyond the scalars. -/
-theorem exists_algebraMap_of_mem_even_of_mem_center {x : CliffordAlgebra Q} (hx : x ∈ even Q)
-    (hxc : x ∈ Subalgebra.center F (CliffordAlgebra Q)) :
+/-- A central element of even parity is a scalar: commuting with all of `CliffordAlgebra Q`
+restricts to commuting with all of `even Q`, whose centre `isCentral_even` identifies with the base
+field. -/
+private theorem exists_algebraMap_of_mem_even_of_mem_center {x : CliffordAlgebra Q}
+    (hx : x ∈ even Q) (hxc : x ∈ Subalgebra.center F (CliffordAlgebra Q)) :
     ∃ a : F, x = algebraMap F (CliffordAlgebra Q) a := by
-  have := P.isCentral_even hodd
-  -- Commuting with all of `CliffordAlgebra Q` restricts to commuting with all of `even Q`, whose
-  -- centre `isCentral_even` identifies with the base field.
+  have := isCentral_even P hodd
   have hmem : (⟨x, hx⟩ : ↥(even Q)) ∈ Subalgebra.center F ↥(even Q) := by
     rw [Subalgebra.mem_center_iff]
     intro b
@@ -211,13 +217,9 @@ theorem exists_algebraMap_of_mem_even_of_mem_center {x : CliffordAlgebra Q} (hx 
   obtain ⟨a, ha⟩ := (Algebra.IsCentral.mem_center_iff F).1 hmem
   exact ⟨a, by simpa using congrArg (fun y : ↥(even Q) => (y : CliffordAlgebra Q)) ha⟩
 
-/-! ### The centre is spanned by `1` and the volume element -/
-
-/-- **The centre of an odd-dimensional Clifford algebra is spanned by `1` and the volume element.**
-For a polarized quadratic space of odd dimension over a field of characteristic not two, and a list
-`l` of pairwise orthogonal vectors spanning `V` whose length is `finrank F V`, the centre of
-`CliffordAlgebra Q` is the span of `1` and `ω = ι Q v₁ ⋯ ι Q vₙ`. -/
-theorem center_toSubmodule_eq_span_prod_map_ι {l : List V} (hl : l.Pairwise Q.IsOrtho)
+/-- The centre of a polarized odd-dimensional Clifford algebra is spanned by `1` and the volume
+element of an orthogonal spanning list. -/
+private theorem center_toSubmodule_eq_span_prod_map_ι {l : List V} (hl : l.Pairwise Q.IsOrtho)
     (hlen : l.length = finrank F V) (hspan : Submodule.span F {x : V | x ∈ l} = ⊤) :
     Subalgebra.toSubmodule (Subalgebra.center F (CliffordAlgebra Q)) =
       Submodule.span F {1, (l.map (ι Q)).prod} := by
@@ -241,14 +243,14 @@ theorem center_toSubmodule_eq_span_prod_map_ι {l : List V} (hl : l.Pairwise Q.I
         x ∈ evenOdd Q 0 ⊔ evenOdd Q 1)
     obtain ⟨hx₀, hx₁⟩ := mem_center_of_mem_evenOdd_of_add_mem_center h₀ h₁ hx
     -- The even part is a scalar.
-    obtain ⟨a, ha⟩ := P.exists_algebraMap_of_mem_even_of_mem_center hodd
+    obtain ⟨a, ha⟩ := exists_algebraMap_of_mem_even_of_mem_center P hodd
       (by rwa [← Subalgebra.mem_toSubmodule, even_toSubmodule]) hx₀
     -- Multiplying the odd part by `ω` makes it even and central, hence a scalar.
     have hmul : x₁ * ω ∈ even Q := by
       rw [← Subalgebra.mem_toSubmodule, even_toSubmodule]
       have h := SetLike.mul_mem_graded h₁ hωodd
       rwa [CharTwo.add_self_eq_zero] at h
-    obtain ⟨b, hb⟩ := P.exists_algebraMap_of_mem_even_of_mem_center hodd hmul
+    obtain ⟨b, hb⟩ := exists_algebraMap_of_mem_even_of_mem_center P hodd hmul
       (Subalgebra.mul_mem _ hx₁ hωcentre)
     have hkey : algebraMap F (CliffordAlgebra Q) c * x₁ =
         algebraMap F (CliffordAlgebra Q) b * ω := by
@@ -266,83 +268,22 @@ theorem center_toSubmodule_eq_span_prod_map_ι {l : List V} (hl : l.Pairwise Q.I
     · exact Subalgebra.one_mem _
     · exact hωcentre
 
-/-- **The centre of an odd-dimensional Clifford algebra is the subalgebra generated by the volume
-element.** The subalgebra form of
-`TauCeti.SpinPolarizationData.center_toSubmodule_eq_span_prod_map_ι`, the centre being the quadratic
-algebra `F[ω]` over `F`.
-
-Which quadratic algebra it is is already settled by the polarization: `ω * ω` is the scalar
-`(-1) ^ (n.choose 2) ∏ᵢ Q vᵢ` (`CliffordAlgebra.prod_map_ι_sq_scalar`), a polarized odd form is
-split, and so that scalar is a square and `F[ω]` is `F × F`. A quadratic field extension can occur
-only for an odd form carrying no polarization; see the module docstring. -/
-theorem center_eq_adjoin_prod_map_ι {l : List V} (hl : l.Pairwise Q.IsOrtho)
-    (hlen : l.length = finrank F V) (hspan : Submodule.span F {x : V | x ∈ l} = ⊤) :
-    Subalgebra.center F (CliffordAlgebra Q) = Algebra.adjoin F {(l.map (ι Q)).prod} := by
-  -- Since `ω * ω` is a scalar, the span of `1` and `ω` is already closed under multiplication, so
-  -- the span description of the centre suffices.
-  refine le_antisymm (fun x hx => ?_) (Algebra.adjoin_le (Set.singleton_subset_iff.mpr
-    (prod_map_ι_mem_center_of_odd_length hl (hlen ▸ hodd) hspan)))
-  have hmem : x ∈ Submodule.span F {(1 : CliffordAlgebra Q), (l.map (ι Q)).prod} := by
-    rw [← P.center_toSubmodule_eq_span_prod_map_ι hodd hl hlen hspan]
-    exact hx
-  have hle : Submodule.span F {(1 : CliffordAlgebra Q), (l.map (ι Q)).prod} ≤
-      Subalgebra.toSubmodule (Algebra.adjoin F {(l.map (ι Q)).prod}) := by
-    rw [Submodule.span_le]
-    rintro y (rfl | rfl)
-    · exact Subalgebra.one_mem _
-    · exact Algebra.self_mem_adjoin_singleton F _
-  exact hle hmem
-
-/-! ### The centre has dimension two -/
-
-/-- **The centre of an odd-dimensional Clifford algebra is spanned by `1` and a nonzero odd
-element.** This is `TauCeti.SpinPolarizationData.center_toSubmodule_eq_span_prod_map_ι` with the
-choice of orthogonal basis discharged. It is the form of the statement that the dimension count
-`TauCeti.SpinPolarizationData.finrank_center_eq_two` consumes, a nonzero element of odd parity being
-automatically independent of `1`. -/
-theorem exists_mem_evenOdd_one_center_toSubmodule_eq_span :
-    ∃ ω : CliffordAlgebra Q, ω ∈ evenOdd Q 1 ∧ ω ≠ 0 ∧
-      Subalgebra.toSubmodule (Subalgebra.center F (CliffordAlgebra Q)) =
-        Submodule.span F {1, ω} := by
+/-- The centre of a polarized odd-dimensional Clifford algebra has dimension two: it is the span of
+`1` and the volume element of an anisotropic orthogonal basis, which is a unit and of odd parity,
+hence independent of `1`. -/
+private theorem finrank_center_eq_two :
+    finrank F ↥(Subalgebra.center F (CliffordAlgebra Q)) = 2 := by
   have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
   have _ : Nontrivial (CliffordAlgebra Q) := (equivExterior Q).symm.injective.nontrivial
-  -- The witness is the volume element of an anisotropic orthogonal basis, which is a unit.
   obtain ⟨l, hl, hlen, hspan, hQl⟩ :=
     (P.nondegenerate ((isUnit_of_invertible (2 : F)).isSMulRegular F)).exists_list_pairwise_isOrtho
-  refine ⟨(l.map (ι Q)).prod,
-    prod_map_ι_mem_evenOdd_one_of_odd_length (hlen ▸ hodd), ?_,
-    P.center_toSubmodule_eq_span_prod_map_ι hodd hl hlen hspan⟩
-  intro hzero
-  exact zero_ne_one (isUnit_zero_iff.mp
+  have hω0 : (l.map (ι Q)).prod ≠ 0 := fun hzero => zero_ne_one (isUnit_zero_iff.mp
     (hzero ▸ isUnit_prod_map_ι (isUnit_iff_ne_zero.mpr (prod_map_ne_zero_of_forall hQl))))
-
-/-- **The centre of an odd-dimensional Clifford algebra has dimension two over the base field.**
-Unlike `TauCeti.SpinPolarizationData.center_toSubmodule_eq_span_prod_map_ι`, this statement
-mentions neither a choice of orthogonal basis nor the volume element, and it is the form in which
-the departure from the even-dimensional case is measured. -/
-theorem finrank_center_eq_two :
-    finrank F ↥(Subalgebra.center F (CliffordAlgebra Q)) = 2 := by
-  obtain ⟨ω, hωodd, hω0, hspan⟩ := P.exists_mem_evenOdd_one_center_toSubmodule_eq_span hodd
   have hfin : finrank F
       ↥(Subalgebra.toSubmodule (Subalgebra.center F (CliffordAlgebra Q))) = 2 := by
-    rw [hspan]
-    exact finrank_span_one_eq_two hωodd hω0
+    rw [center_toSubmodule_eq_span_prod_map_ι P hodd hl hlen hspan]
+    exact finrank_span_one_eq_two (prod_map_ι_mem_evenOdd_one_of_odd_length (hlen ▸ hodd)) hω0
   exact hfin
-
-/-! ### The odd-dimensional Clifford algebra is not central -/
-
-/-- **An odd-dimensional Clifford algebra is not central over the base field.** This is the sharp
-contrast with the even-dimensional
-`TauCeti.SpinPolarizationData.isCentral_cliffordAlgebra`, and the reason the odd-dimensional
-structure theorem produces a *product* of two matrix algebras rather than a single one. -/
-theorem not_isCentral_cliffordAlgebra : ¬ Algebra.IsCentral F (CliffordAlgebra Q) := by
-  intro _
-  have _ : Nontrivial (CliffordAlgebra Q) := by
-    have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
-    exact (equivExterior Q).symm.injective.nontrivial
-  have h : 2 = 1 :=
-    (P.finrank_center_eq_two hodd).symm.trans (finrank_center_of_isCentral F (CliffordAlgebra Q))
-  omega
 
 end TauCeti.SpinPolarizationData
 
@@ -353,7 +294,7 @@ open TauCeti
 variable {F : Type u} [Field F] [NeZero (2 : F)]
   {V : Type v} [AddCommGroup V] [Module F V] [FiniteDimensional F V] {Q : QuadraticForm F V}
 
-/-! ### The centre over an arbitrary field -/
+/-! ### The centre has dimension two -/
 
 section Extension
 
@@ -371,7 +312,8 @@ private theorem finrank_center_le_two_of_isSepClosed {L : Type u} [Field L] [Alg
   have hoddL : Odd (finrank L (L ⊗[F] V)) :=
     (Module.finrank_baseChange (R := L) (S := F) (M' := V)) ▸ hodd
   have h : finrank L ↥(Subalgebra.center L (CliffordAlgebra (Q.baseChange L))) = 2 :=
-    (SpinPolarizationData.ofNondegenerate (Q.baseChange L) hQL).finrank_center_eq_two hoddL
+    SpinPolarizationData.finrank_center_eq_two
+      (SpinPolarizationData.ofNondegenerate (Q.baseChange L) hQL) hoddL
   have h2 : finrank L ↥(Subalgebra.center L (L ⊗[F] CliffordAlgebra Q)) = 2 := by
     rw [← h]
     exact ((centerCongr (equivBaseChange L Q)).toLinearEquiv.finrank_eq).symm
@@ -433,14 +375,15 @@ private theorem two_le_finrank_center (hQ : Q.Nondegenerate) (hodd : Odd (finran
         Submodule.finrank_mono hle
 
 /-- **The centre of an odd-dimensional Clifford algebra is two-dimensional**, over any field of
-characteristic not two and for a nondegenerate form. This is the field-level form of
-`TauCeti.SpinPolarizationData.finrank_center_eq_two`, which additionally identifies the centre as
-the span of `1` and a volume element but needs a polarization to do so.
+characteristic not two and for a nondegenerate form. Two is a lower bound because `1` and the
+volume element of an anisotropic orthogonal basis are independent, and an upper bound by descent
+from a separable closure, where a polarization makes the Fock model available.
 
 Which rank-two algebra the centre is depends on the field: over a separably closed field, where
 `CliffordAlgebra.nonempty_algEquiv_matrix_prod_of_finrank_eq_two_mul_add_one` reads it off as the
 two blocks of the odd structure theorem, it is `F × F`, while for a form whose volume element has
-a non-square square — an anisotropic form, say — it is a quadratic field extension. -/
+a non-square square — `⟨1, 1, 1⟩` over `ℚ`, where `ω * ω = -1` — it is a quadratic field
+extension. -/
 theorem finrank_center_eq_two_of_odd_finrank (hQ : Q.Nondegenerate)
     (hodd : Odd (finrank F V)) :
     finrank F ↥(Subalgebra.center F (CliffordAlgebra Q)) = 2 := by
@@ -453,5 +396,179 @@ theorem finrank_center_eq_two_of_odd_finrank (hQ : Q.Nondegenerate)
   have _ : NeZero (2 : SeparableClosure F) := ⟨h2⟩
   exact le_antisymm (finrank_center_le_two_of_isSepClosed (L := SeparableClosure F) hQ hodd)
     (two_le_finrank_center hQ hodd)
+
+/-! ### The centre is spanned by `1` and the volume element -/
+
+/-- **The centre of an odd-dimensional Clifford algebra is spanned by `1` and the volume element.**
+For a nondegenerate quadratic form of odd dimension over a field of characteristic not two, and a
+list `l` of pairwise orthogonal vectors spanning `V` whose length is `finrank F V`, the centre of
+`CliffordAlgebra Q` is the span of `1` and `ω = ι Q v₁ ⋯ ι Q vₙ`. -/
+theorem center_toSubmodule_eq_span_prod_map_ι (hQ : Q.Nondegenerate) (hodd : Odd (finrank F V))
+    {l : List V} (hl : l.Pairwise Q.IsOrtho) (hlen : l.length = finrank F V)
+    (hspan : Submodule.span F {x : V | x ∈ l} = ⊤) :
+    Subalgebra.toSubmodule (Subalgebra.center F (CliffordAlgebra Q)) =
+      Submodule.span F {1, (l.map (ι Q)).prod} := by
+  have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
+  have _ : Nontrivial (CliffordAlgebra Q) := (equivExterior Q).symm.injective.nontrivial
+  have hQl : ∀ v ∈ l, Q v ≠ 0 :=
+    SpinPolarizationData.apply_ne_zero_of_pairwise_isOrtho hQ hl hlen hspan
+  have hω0 : (l.map (ι Q)).prod ≠ 0 := fun hzero => zero_ne_one (isUnit_zero_iff.mp
+    (hzero ▸ isUnit_prod_map_ι
+      (isUnit_iff_ne_zero.mpr (SpinPolarizationData.prod_map_ne_zero_of_forall hQl))))
+  have hle : Submodule.span F {(1 : CliffordAlgebra Q), (l.map (ι Q)).prod} ≤
+      Subalgebra.toSubmodule (Subalgebra.center F (CliffordAlgebra Q)) := by
+    rw [Submodule.span_le]
+    rintro y (rfl | rfl)
+    · exact Subalgebra.one_mem _
+    · exact prod_map_ι_mem_center_of_odd_length hl (hlen ▸ hodd) hspan
+  -- Both submodules are two-dimensional — the span because `1` and `ω` have opposite parity, the
+  -- centre by the rank count — so the inclusion is an equality.
+  refine (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
+  rw [SpinPolarizationData.finrank_span_one_eq_two
+    (prod_map_ι_mem_evenOdd_one_of_odd_length (hlen ▸ hodd)) hω0]
+  exact (finrank_center_eq_two_of_odd_finrank hQ hodd).symm
+
+/-- **The centre of an odd-dimensional Clifford algebra is the subalgebra generated by the volume
+element.** The subalgebra form of `CliffordAlgebra.center_toSubmodule_eq_span_prod_map_ι`, the
+centre being the quadratic algebra `F[ω]` over `F`.
+
+Which quadratic algebra it is depends on the field; see the module docstring. -/
+theorem center_eq_adjoin_prod_map_ι (hQ : Q.Nondegenerate) (hodd : Odd (finrank F V))
+    {l : List V} (hl : l.Pairwise Q.IsOrtho) (hlen : l.length = finrank F V)
+    (hspan : Submodule.span F {x : V | x ∈ l} = ⊤) :
+    Subalgebra.center F (CliffordAlgebra Q) = Algebra.adjoin F {(l.map (ι Q)).prod} := by
+  -- Since `ω * ω` is a scalar, the span of `1` and `ω` is already closed under multiplication, so
+  -- the span description of the centre suffices.
+  refine le_antisymm (fun x hx => ?_) (Algebra.adjoin_le (Set.singleton_subset_iff.mpr
+    (prod_map_ι_mem_center_of_odd_length hl (hlen ▸ hodd) hspan)))
+  have hmem : x ∈ Submodule.span F {(1 : CliffordAlgebra Q), (l.map (ι Q)).prod} := by
+    rw [← center_toSubmodule_eq_span_prod_map_ι hQ hodd hl hlen hspan]
+    exact hx
+  have hle : Submodule.span F {(1 : CliffordAlgebra Q), (l.map (ι Q)).prod} ≤
+      Subalgebra.toSubmodule (Algebra.adjoin F {(l.map (ι Q)).prod}) := by
+    rw [Submodule.span_le]
+    rintro y (rfl | rfl)
+    · exact Subalgebra.one_mem _
+    · exact Algebra.self_mem_adjoin_singleton F _
+  exact hle hmem
+
+/-- **The centre of an odd-dimensional Clifford algebra is spanned by `1` and a nonzero odd
+element.** This is `CliffordAlgebra.center_toSubmodule_eq_span_prod_map_ι` with the choice of
+orthogonal basis discharged: the witness is the volume element of an anisotropic orthogonal basis,
+which is a unit. It is the form of the statement that the two conclusions below consume. -/
+theorem exists_mem_evenOdd_one_center_toSubmodule_eq_span (hQ : Q.Nondegenerate)
+    (hodd : Odd (finrank F V)) :
+    ∃ ω : CliffordAlgebra Q, ω ∈ evenOdd Q 1 ∧ ω ≠ 0 ∧
+      Subalgebra.toSubmodule (Subalgebra.center F (CliffordAlgebra Q)) =
+        Submodule.span F {1, ω} := by
+  have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
+  have _ : Nontrivial (CliffordAlgebra Q) := (equivExterior Q).symm.injective.nontrivial
+  obtain ⟨l, hl, hlen, hspan, hQl⟩ := hQ.exists_list_pairwise_isOrtho
+  refine ⟨(l.map (ι Q)).prod,
+    prod_map_ι_mem_evenOdd_one_of_odd_length (hlen ▸ hodd), ?_,
+    center_toSubmodule_eq_span_prod_map_ι hQ hodd hl hlen hspan⟩
+  intro hzero
+  exact zero_ne_one (isUnit_zero_iff.mp
+    (hzero ▸ isUnit_prod_map_ι
+      (isUnit_iff_ne_zero.mpr (SpinPolarizationData.prod_map_ne_zero_of_forall hQl))))
+
+/-! ### Central elements of even parity are scalars -/
+
+/-- **A central element of even parity is a scalar**, in odd dimension. In the span description of
+the centre an even element has no room for a multiple of the odd volume element, so only the scalar
+coordinate survives. -/
+theorem exists_algebraMap_of_mem_even_of_mem_center (hQ : Q.Nondegenerate)
+    (hodd : Odd (finrank F V)) {x : CliffordAlgebra Q} (hx : x ∈ even Q)
+    (hxc : x ∈ Subalgebra.center F (CliffordAlgebra Q)) :
+    ∃ a : F, x = algebraMap F (CliffordAlgebra Q) a := by
+  obtain ⟨ω, hωodd, hω0, hspan⟩ := exists_mem_evenOdd_one_center_toSubmodule_eq_span hQ hodd
+  have hmem : x ∈ Submodule.span F {(1 : CliffordAlgebra Q), ω} := by
+    rw [← hspan, Subalgebra.mem_toSubmodule]
+    exact hxc
+  obtain ⟨a, b, hab⟩ := Submodule.mem_span_pair.mp hmem
+  have hx0 : x ∈ evenOdd Q 0 := by rwa [← Subalgebra.mem_toSubmodule, even_toSubmodule] at hx
+  -- The odd coordinate lies in both halves of the grading, hence vanishes.
+  have hbω : b • ω = 0 := by
+    have h1 : a • (1 : CliffordAlgebra Q) ∈ evenOdd Q 0 :=
+      Submodule.smul_mem _ _ (one_le_evenOdd_zero Q (Submodule.mem_one.mpr ⟨1, by simp⟩))
+    have heq : b • ω = x - a • (1 : CliffordAlgebra Q) := by rw [← hab]; abel
+    have hboth : b • ω ∈ evenOdd Q 0 ⊓ evenOdd Q 1 :=
+      ⟨by rw [heq]; exact Submodule.sub_mem _ hx0 h1, Submodule.smul_mem _ _ hωodd⟩
+    rwa [(evenOdd_isCompl (Q := Q)).inf_eq_bot, Submodule.mem_bot] at hboth
+  exact ⟨a, by rw [← hab, hbω, add_zero, Algebra.algebraMap_eq_smul_one]⟩
+
+/-- **The even subalgebra of an odd-dimensional Clifford algebra is central over the base field.**
+This is the odd-dimensional analogue of
+`TauCeti.SpinPolarizationData.isCentral_cliffordAlgebra`, one grade down, and it is false in even
+dimension: there `even Q` is the product of the two half-spin endomorphism algebras
+(`TauCeti.SpinPolarizationData.evenCliffordEquivProdEnd`), with a two-dimensional centre. -/
+theorem isCentral_even (hQ : Q.Nondegenerate) (hodd : Odd (finrank F V)) :
+    Algebra.IsCentral F ↥(even Q) := by
+  have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
+  obtain ⟨l, hl, hlen, hspan, hQl⟩ := hQ.exists_list_pairwise_isOrtho
+  have hωodd : (l.map (ι Q)).prod ∈ evenOdd Q 1 :=
+    prod_map_ι_mem_evenOdd_one_of_odd_length (hlen ▸ hodd)
+  have hωc : (l.map (ι Q)).prod ∈ Subalgebra.center F (CliffordAlgebra Q) :=
+    prod_map_ι_mem_center_of_odd_length hl (hlen ▸ hodd) hspan
+  have hsq : (l.map (ι Q)).prod * (l.map (ι Q)).prod = algebraMap F (CliffordAlgebra Q)
+      ((-1 : F) ^ l.length.choose 2 * (l.map Q).prod) := prod_map_ι_sq_scalar hl
+  have hc : (-1 : F) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 :=
+    mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
+      (SpinPolarizationData.prod_map_ne_zero_of_forall hQl)
+  set ω : CliffordAlgebra Q := (l.map (ι Q)).prod
+  set c : F := (-1 : F) ^ l.length.choose 2 * (l.map Q).prod
+  refine ⟨fun z hz => ?_⟩
+  have heven : ∀ w ∈ even Q, w * (z : CliffordAlgebra Q) = (z : CliffordAlgebra Q) * w := by
+    intro w hw
+    exact congrArg Subtype.val (Subalgebra.mem_center_iff.mp hz ⟨w, hw⟩)
+  -- `z` commutes with `even Q` by assumption and with the central `ω`. Every odd element becomes
+  -- even after multiplication by `ω`, and `ω * ω` is an invertible scalar, so `z` commutes with
+  -- the odd part too and is central in all of `CliffordAlgebra Q`.
+  have hzc : (z : CliffordAlgebra Q) ∈ Subalgebra.center F (CliffordAlgebra Q) := by
+    rw [Subalgebra.mem_center_iff]
+    intro y
+    obtain ⟨y₀, h₀, y₁, h₁, rfl⟩ := Submodule.mem_sup.1
+      (((evenOdd_isCompl (Q := Q)).sup_eq_top).ge Submodule.mem_top :
+        y ∈ evenOdd Q 0 ⊔ evenOdd Q 1)
+    have h0 : y₀ * (z : CliffordAlgebra Q) = (z : CliffordAlgebra Q) * y₀ :=
+      heven y₀ (by rwa [← Subalgebra.mem_toSubmodule, even_toSubmodule])
+    have h1 : y₁ * (z : CliffordAlgebra Q) = (z : CliffordAlgebra Q) * y₁ := by
+      have hmul : y₁ * ω ∈ even Q := by
+        rw [← Subalgebra.mem_toSubmodule, even_toSubmodule]
+        have h := SetLike.mul_mem_graded h₁ hωodd
+        rwa [CharTwo.add_self_eq_zero] at h
+      have hcomm := heven _ hmul
+      have hzω := Subalgebra.mem_center_iff.mp hωc (z : CliffordAlgebra Q)
+      have key : y₁ * (z : CliffordAlgebra Q) * (ω * ω) =
+          (z : CliffordAlgebra Q) * y₁ * (ω * ω) := by
+        rw [← mul_assoc (y₁ * (z : CliffordAlgebra Q)), mul_assoc y₁ (z : CliffordAlgebra Q),
+          hzω, ← mul_assoc y₁, hcomm, ← mul_assoc (z : CliffordAlgebra Q) y₁,
+          mul_assoc ((z : CliffordAlgebra Q) * y₁)]
+      have hsmul : c • (y₁ * (z : CliffordAlgebra Q)) = c • ((z : CliffordAlgebra Q) * y₁) := by
+        rw [Algebra.smul_def, Algebra.smul_def, Algebra.commutes, Algebra.commutes, ← hsq]
+        exact key
+      calc y₁ * (z : CliffordAlgebra Q) = c⁻¹ • c • (y₁ * (z : CliffordAlgebra Q)) :=
+            (inv_smul_smul₀ hc _).symm
+        _ = c⁻¹ • c • ((z : CliffordAlgebra Q) * y₁) := by rw [hsmul]
+        _ = (z : CliffordAlgebra Q) * y₁ := inv_smul_smul₀ hc _
+    rw [add_mul, mul_add, h0, h1]
+  obtain ⟨a, ha⟩ := exists_algebraMap_of_mem_even_of_mem_center hQ hodd z.2 hzc
+  rw [Algebra.mem_bot]
+  exact ⟨a, Subtype.ext ha.symm⟩
+
+/-! ### The odd-dimensional Clifford algebra is not central -/
+
+/-- **An odd-dimensional Clifford algebra is not central over the base field.** This is the sharp
+contrast with the even-dimensional
+`TauCeti.SpinPolarizationData.isCentral_cliffordAlgebra`, and the reason the odd-dimensional
+structure theorem produces a *product* of two matrix algebras rather than a single one. -/
+theorem not_isCentral_of_odd_finrank (hQ : Q.Nondegenerate) (hodd : Odd (finrank F V)) :
+    ¬ Algebra.IsCentral F (CliffordAlgebra Q) := by
+  intro _
+  have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
+  have _ : Nontrivial (CliffordAlgebra Q) := (equivExterior Q).symm.injective.nontrivial
+  have h : 2 = 1 := (finrank_center_eq_two_of_odd_finrank hQ hodd).symm.trans
+    (finrank_center_of_isCentral F (CliffordAlgebra Q))
+  omega
 
 end CliffordAlgebra
