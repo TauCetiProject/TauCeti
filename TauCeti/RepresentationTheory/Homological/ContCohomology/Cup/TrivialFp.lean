@@ -79,11 +79,6 @@ theorem cupFp_π (a b : cocycles (trivialFp p G) 1) :
         π (trivialFp p G) 2 ((fpPairing p G).cupCocycles 1 1 a b) := by
   exact (fpPairing p G).cup_π 1 1 a b
 
-/-- The cup product is zero when its left argument is zero. -/
-@[simp]
-theorem cupFp_zero_left (b : cohomFp p G 1) : cupFp p G 0 b = 0 :=
-  by simp [cupFp]
-
 /-- The cup product is zero when its right argument is zero. -/
 @[simp]
 theorem cupFp_zero_right (a : cohomFp p G 1) : cupFp p G a 0 = 0 :=
