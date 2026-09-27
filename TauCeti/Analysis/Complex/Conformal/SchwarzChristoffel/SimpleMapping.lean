@@ -41,9 +41,9 @@ theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary
       (connectedComponentIn (range (schwarzChristoffelCompactifiedBoundary a e z₀))ᶜ
         (schwarzChristoffelPrimitive a e z₀ z₀)) := by
   let F := schwarzChristoffelPrimitive a e z₀
-  obtain ⟨p, q, x, ha, hx⟩ := exists_schwarzChristoffel_prevertex_free_interval a e
+  obtain ⟨p, q, x, ha, hx⟩ := exists_schwarzChristoffel_prevertex_free_interval a
   obtain ⟨U, hUopen, hxU, G, hGF, hGinj, _, _⟩ :=
-    exists_injOn_schwarzChristoffelPrimitive_continuation a e z₀ ha hx
+    exists_injOn_schwarzChristoffelPrimitive_continuation a e z₀ (fun i _ => ha i) hx
   obtain ⟨ε, hε, hnear⟩ :=
     exists_ball_preimage_schwarzChristoffelPrimitive_subset_of_boundary_injective
       a e z₀ hfinite hinfty hinj x hUopen hxU

@@ -47,13 +47,13 @@ theorem image_schwarzChristoffelPrimitive_eq_filledHull_sdiff
     schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet =
       filledHull (range (schwarzChristoffelCompactifiedBoundary a e z₀)) \
         range (schwarzChristoffelCompactifiedBoundary a e z₀) := by
-  obtain ⟨p, q, x, ha, hx⟩ := exists_schwarzChristoffel_prevertex_free_interval a e
+  obtain ⟨p, q, x, ha, hx⟩ := exists_schwarzChristoffel_prevertex_free_interval a
   let B := schwarzChristoffelBoundary a e z₀
   let C := range (schwarzChristoffelCompactifiedBoundary a e z₀)
-  -- Pick a regular edge beyond every prevertex with nonzero exponent. Simplicity makes
+  -- Pick a regular edge beyond every prevertex. Simplicity makes
   -- this part of the compactified boundary locally the only boundary arc.
   obtain ⟨ε, hε, hlocal⟩ := schwarzChristoffelCompactifiedBoundary_locally_openSegment
-    a e z₀ ha hfinite hinfty hinj hx
+    a e z₀ (fun i _ => ha i) hfinite hinfty hinj hx
   have hpq : B p ≠ B q := by
     intro heq
     have h : (p : OnePoint ℝ) = (q : OnePoint ℝ) :=
@@ -61,7 +61,7 @@ theorem image_schwarzChristoffelPrimitive_eq_filledHull_sdiff
     have : p = q := by simpa using h
     exact (ne_of_lt (hx.1.trans hx.2)) this
   have hwseg : B x ∈ openSegment ℝ (B p) (B q) := by
-    rw [← schwarzChristoffelBoundary_image_Ioo a e z₀ (hx.1.trans hx.2) ha
+    rw [← schwarzChristoffelBoundary_image_Ioo a e z₀ (hx.1.trans hx.2) (fun i _ => ha i)
       (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite p)
       (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite q)]
     exact ⟨x, hx, rfl⟩
