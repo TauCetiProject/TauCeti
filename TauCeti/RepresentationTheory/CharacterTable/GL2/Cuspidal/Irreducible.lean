@@ -12,8 +12,6 @@ public import Mathlib.NumberTheory.LegendreSymbol.Complex
 -- Non-public: Frobenius reciprocity for class functions turns each pairing with an induced
 -- character into a sum over the inducing subgroup.
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
--- Non-public: the canonical primitive complex additive character is nontrivial.
-import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 -- Non-public: the `q`-power map fixes the units coming from `F`.
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 -- Non-public: lifting a unit of `E` lying in `F` to a unit of `F`.
@@ -326,6 +324,11 @@ private theorem gl2CuspidalRepresentation_spec (theta : Eˣ →* ℂˣ) (psi : A
         (GL2CuspidalVirtualCharacter F E hE theta psi).1 :=
   (exists_gl2Cuspidal hE theta psi hpsi htheta).choose_spec.choose_spec
 
+private theorem character_fdRepOf {G : Type*} {V : Type} [Monoid G] [AddCommGroup V]
+    [Module ℂ V] [FiniteDimensional ℂ V] (rho : Representation ℂ G V) :
+    (FDRep.of rho).character = rho.character := by
+  rfl
+
 /-- **The cuspidal representation of `GL₂(𝔽_q)` attached to a general-position character
 `θ : Eˣ → ℂˣ`.** The auxiliary additive character is Mathlib's canonical primitive complex
 character of `F`, so it does not appear in the public cuspidal datum. -/
@@ -333,7 +336,9 @@ noncomputable def GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) : FDRep ℂ (GL (Fin 2) F) :=
   FDRep.of (gl2CuspidalRepresentation hE theta
     (AddChar.FiniteField.primitiveChar_to_Complex F)
-    (AddChar.FiniteField.primitiveChar_to_Complex_ne_one F) htheta)
+    (by
+      have hprimitive := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F
+      simpa only [AddChar.mulShift_one] using hprimitive (one_ne_zero : (1 : F) ≠ 0)) htheta)
 
 /-- The character of `TauCeti.GL2Cuspidal` is the cuspidal virtual character from which it was
 constructed. -/
@@ -343,9 +348,12 @@ theorem character_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (GL2Cuspidal hE theta htheta).character =
       (GL2CuspidalVirtualCharacter F E hE theta
         (AddChar.FiniteField.primitiveChar_to_Complex F)).1 := by
+  rw [GL2Cuspidal, character_fdRepOf]
   exact (gl2CuspidalRepresentation_spec hE theta
     (AddChar.FiniteField.primitiveChar_to_Complex F)
-    (AddChar.FiniteField.primitiveChar_to_Complex_ne_one F) htheta).2
+    (by
+      have hprimitive := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F
+      simpa only [AddChar.mulShift_one] using hprimitive (one_ne_zero : (1 : F) ≠ 0)) htheta).2
 
 /-- The cuspidal representation has degree `q - 1`. -/
 @[simp]
@@ -359,12 +367,6 @@ theorem finrank_GL2Cuspidal (theta : Eˣ →* ℂˣ)
   push_cast [Fintype.one_lt_card.le]
   exact hchar
 
-/-- The character of the cuspidal representation has value `q - 1` at the identity. -/
-theorem character_one_GL2Cuspidal (theta : Eˣ →* ℂˣ)
-    (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
-    (GL2Cuspidal hE theta htheta).character 1 = (Fintype.card F : ℂ) - 1 := by
-  rw [character_GL2Cuspidal, GL2CuspidalVirtualCharacter_apply_one]
-
 /-- The cuspidal representation attached to a general-position character is simple. -/
 theorem simple_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
@@ -373,7 +375,9 @@ theorem simple_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     rw [GL2Cuspidal, FDRep.of_ρ']
     exact (gl2CuspidalRepresentation_spec hE theta
       (AddChar.FiniteField.primitiveChar_to_Complex F)
-      (AddChar.FiniteField.primitiveChar_to_Complex_ne_one F) htheta).1
+      (by
+        have hprimitive := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F
+        simpa only [AddChar.mulShift_one] using hprimitive (one_ne_zero : (1 : F) ≠ 0)) htheta).1
   exact FDRep.simple_of_isIrreducible _
 
 end TauCeti
