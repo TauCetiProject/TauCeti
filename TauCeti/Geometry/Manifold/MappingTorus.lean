@@ -139,13 +139,6 @@ structure MappingTorusPresentation (M : Type u) [TopologicalSpace M] where
 def FibersOverCircle (M : Type u) [TopologicalSpace M] : Prop :=
   Nonempty (MappingTorusPresentation M)
 
-private def homeomorph_trans_mappingTorus {M N : Type u} [TopologicalSpace M]
-    [TopologicalSpace N] (τ : TopologicalSpace F) (φ : @Homeomorph F F τ τ)
-    (h : M ≃ₜ N)
-    (e : @Homeomorph N (@MappingTorus F τ φ) _ instTopologicalSpaceQuotient) :
-    @Homeomorph M (@MappingTorus F τ φ) _ instTopologicalSpaceQuotient :=
-  @Homeomorph.trans M N (@MappingTorus F τ φ) _ _ instTopologicalSpaceQuotient h e
-
 /-- The mapping torus has its canonical presentation. -/
 def MappingTorus.presentation [Nonempty F] (φ : F ≃ₜ F) :
     MappingTorusPresentation (MappingTorus φ) where
@@ -163,7 +156,8 @@ theorem FibersOverCircle.ofHomeomorph {M N : Type u} [TopologicalSpace M] [Topol
     (h : M ≃ₜ N) (hN : FibersOverCircle N) : FibersOverCircle M := by
   obtain ⟨p⟩ := hN
   obtain ⟨e⟩ := p.equivalence
+  let _ := p.fiberTopology
   exact ⟨{ p with equivalence :=
-    ⟨@homeomorph_trans_mappingTorus p.Fiber _ _ _ _ p.fiberTopology p.monodromy h e⟩ }⟩
+    ⟨h.trans e⟩ }⟩
 
 end TauCeti
