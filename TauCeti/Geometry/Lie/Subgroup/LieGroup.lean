@@ -18,9 +18,9 @@ from an ambient Lie group are smooth for the slice-chart manifold structure.
 
 ## Main results
 
-* `Subgroup.contMDiff_subtype_val_chartedSpaceOfIsSliceChart` proves that the subgroup inclusion is
+* `Subgroup.contMDiff_subtypeVal_chartedSpaceOfIsSliceChart` proves that the subgroup inclusion is
   smooth.
-* `Subgroup.contMDiff_iff_comp_subtype_val_chartedSpaceOfIsSliceChart` characterizes smooth maps
+* `Subgroup.contMDiff_iff_comp_subtypeVal_chartedSpaceOfIsSliceChart` characterizes smooth maps
   into the subgroup by their composites with the inclusion.
 * `Subgroup.contMDiffMul_chartedSpaceOfIsSliceChart` makes inherited multiplication smooth.
 * `Subgroup.lieGroup_chartedSpaceOfIsSliceChart` equips the charted subgroup with the inherited
@@ -29,7 +29,7 @@ from an ambient Lie group are smooth for the slice-chart manifold structure.
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition (2013), Theorem 20.12.
-* H. Hilgert and K.-H. Neeb, *Structure and Geometry of Lie Groups* (2012), Section 9.1.
+* J. Hilgert and K.-H. Neeb, *Structure and Geometry of Lie Groups* (2012), Section 9.1.
 -/
 
 public section
@@ -60,7 +60,7 @@ variable [ContMDiffMul I n G]
 include he_symm in
 /-- The inclusion of a subgroup carrying its slice-chart manifold structure into the ambient
 smooth group is smooth. -/
-theorem contMDiff_subtype_val_chartedSpaceOfIsSliceChart :
+theorem contMDiff_subtypeVal_chartedSpaceOfIsSliceChart :
     let _ : ContinuousMul G := continuousMul_of_contMDiffMul I n
     let _ : ChartedSpace F K := chartedSpaceOfIsSliceChart K e he h1
     ContMDiff 𝓘(ℝ, F) I n (fun x : K ↦ (x : G)) := by
@@ -104,7 +104,7 @@ variable {E₀ H₀ M : Type*} [NormedAddCommGroup E₀] [NormedSpace ℝ E₀]
 
 /-- A map into a subgroup with its slice-chart manifold structure is smooth exactly when its
 composite with the inclusion into the ambient smooth group is smooth. -/
-theorem contMDiff_iff_comp_subtype_val_chartedSpaceOfIsSliceChart (f : M → K) :
+theorem contMDiff_iff_comp_subtypeVal_chartedSpaceOfIsSliceChart (f : M → K) :
     let _ : ContinuousMul G := continuousMul_of_contMDiffMul I n
     let _ : ChartedSpace F K := chartedSpaceOfIsSliceChart K e he h1
     let _ : IsManifold 𝓘(ℝ, F) n K :=
@@ -118,7 +118,7 @@ theorem contMDiff_iff_comp_subtype_val_chartedSpaceOfIsSliceChart (f : M → K) 
     isManifold_chartedSpaceOfIsSliceChart K e he h1 he' he_symm
   constructor
   · intro hf
-    exact (contMDiff_subtype_val_chartedSpaceOfIsSliceChart K e he h1 he_symm).comp hf
+    exact (contMDiff_subtypeVal_chartedSpaceOfIsSliceChart K e he h1 he_symm).comp hf
   · intro hf
     have hf_cont : Continuous f := by
       simpa only [Function.comp_apply] using hf.continuous.subtype_mk fun x ↦ (f x).property
@@ -154,11 +154,11 @@ theorem contMDiffMul_chartedSpaceOfIsSliceChart :
   let _ : IsManifold 𝓘(ℝ, F) n K :=
     isManifold_chartedSpaceOfIsSliceChart K e he h1 he' he_symm
   constructor
-  apply (contMDiff_iff_comp_subtype_val_chartedSpaceOfIsSliceChart
+  apply (contMDiff_iff_comp_subtypeVal_chartedSpaceOfIsSliceChart
     K e he h1 he' he_symm _).2
-  apply (((contMDiff_subtype_val_chartedSpaceOfIsSliceChart K e he h1 he_symm).comp
+  apply (((contMDiff_subtypeVal_chartedSpaceOfIsSliceChart K e he h1 he_symm).comp
     contMDiff_fst).mul
-      ((contMDiff_subtype_val_chartedSpaceOfIsSliceChart K e he h1 he_symm).comp
+      ((contMDiff_subtypeVal_chartedSpaceOfIsSliceChart K e he h1 he_symm).comp
         contMDiff_snd)).congr
   intro p
   simp only [Function.comp_apply, Pi.mul_apply, Subgroup.coe_mul]
@@ -185,10 +185,10 @@ theorem lieGroup_chartedSpaceOfIsSliceChart :
   let _ : ContMDiffMul 𝓘(ℝ, F) n K :=
     contMDiffMul_chartedSpaceOfIsSliceChart K e he h1 he' he_symm
   constructor
-  apply (contMDiff_iff_comp_subtype_val_chartedSpaceOfIsSliceChart
+  apply (contMDiff_iff_comp_subtypeVal_chartedSpaceOfIsSliceChart
     K e he h1 he' he_symm _).2
   apply ((contMDiff_inv I n).comp
-    (contMDiff_subtype_val_chartedSpaceOfIsSliceChart K e he h1 he_symm)).congr
+    (contMDiff_subtypeVal_chartedSpaceOfIsSliceChart K e he h1 he_symm)).congr
   intro x
   simp only [Function.comp_apply, Subgroup.coe_inv]
 
