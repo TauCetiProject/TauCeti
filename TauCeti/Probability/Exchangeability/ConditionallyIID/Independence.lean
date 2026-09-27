@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegration
-public import TauCeti.MeasureTheory.Measure.InfinitePiIndependence
+import TauCeti.MeasureTheory.Measure.InfinitePiIndependence
 import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
@@ -84,6 +84,6 @@ theorem ConditionallyIIDWith.jointLaw_domRestrict_pair [IsFiniteMeasure μ]
                     ((Set.measurable_restrict S).prodMk (Set.measurable_restrict T))).symm
             _ = _ := by
               rw [Measure.map_id,
-                TauCeti.MeasureTheory.infinitePi_map_pair_domRestrict (fun _ => P) hST]
+                TauCeti.MeasureTheory.Measure.infinitePi_map_pair_domRestrict (fun _ => P) hST]
 
 end TauCeti.Probability
