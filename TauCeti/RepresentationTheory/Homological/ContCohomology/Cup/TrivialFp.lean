@@ -34,7 +34,9 @@ open _root_.ContinuousCohomology
 
 universe u
 
-variable (p : ℕ) (G : Type u) [Group G]
+section Monoid
+
+variable (p : ℕ) (G : Type u) [Monoid G]
 
 /-- Multiplication of trivial `𝔽_p` coefficients, as a continuous equivariant bilinear pairing. -/
 noncomputable def fpPairing :
@@ -48,7 +50,7 @@ noncomputable def fpPairing :
 
 /-- The coefficient pairing is multiplication in `𝔽_p`, under the universe lift. -/
 @[simp]
-theorem fpPairing_bil (x y : (trivialFp p G).V) :
+theorem fpPairing_bil_apply (x y : (trivialFp p G).V) :
     (fpPairing p G).bil x y =
       (trivialFpEquiv p G).symm (trivialFpEquiv p G x * trivialFpEquiv p G y) :=
   by simp [fpPairing]
@@ -56,13 +58,13 @@ theorem fpPairing_bil (x y : (trivialFp p G).V) :
 /-- Multiplication on the trivial coefficient representation is symmetric. -/
 theorem fpPairing_bil_comm (x y : (trivialFp p G).V) :
     (fpPairing p G).bil x y = (fpPairing p G).bil y x := by
-  simp only [fpPairing_bil, mul_comm]
+  simp only [fpPairing_bil_apply, mul_comm]
 
-/-- The coefficient pairing sends the two lifted units to the lifted unit. -/
-theorem fpPairing_bil_one_one :
-    (fpPairing p G).bil ((trivialFpEquiv p G).symm 1)
-      ((trivialFpEquiv p G).symm 1) = (trivialFpEquiv p G).symm 1 := by
-  simp
+end Monoid
+
+section Group
+
+variable (p : ℕ) (G : Type u) [Group G]
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
 
@@ -77,11 +79,8 @@ theorem cupFp_π (a b : cocycles (trivialFp p G) 1) :
     cupFp p G (π (trivialFp p G) 1 a)
       (π (trivialFp p G) 1 b) =
         π (trivialFp p G) 2 ((fpPairing p G).cupCocycles 1 1 a b) := by
-  exact (fpPairing p G).cup_π 1 1 a b
+  simpa [cupFp] using (fpPairing p G).cup_π 1 1 a b
 
-/-- The cup product is zero when its right argument is zero. -/
-@[simp]
-theorem cupFp_zero_right (a : cohomFp p G 1) : cupFp p G a 0 = 0 :=
-  map_zero (cupFp p G a)
+end Group
 
 end TauCeti
