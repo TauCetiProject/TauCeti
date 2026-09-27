@@ -29,11 +29,11 @@ refinement `S_k(N, χ)ⁿᵉʷ = S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)` of Layer 
 which additionally needs the diamond operators to be Petersson-unitary and is carried out in
 `TauCeti/NumberTheory/ModularForms/Newforms/Nebentypus.lean`.
 
-The old subspace is likewise stable under the Hecke operators at primes `p` coprime to the level
+The old subspace is likewise stable under the Hecke operators `Tₚ` at every prime `p`
 (`TauCeti.heckeTCuspNat_mem_cuspFormsOld`, in
 `TauCeti/NumberTheory/ModularForms/Newforms/HeckeStability.lean`), for the Hecke action
-`TauCeti.HeckeRing.GL2.heckeTCuspNat` on cusp forms. The corresponding stability of the *new*
-subspace is still missing.
+`HeckeRing.GL2.heckeTCuspNat` on cusp forms. The same file proves the stability of the *new*
+subspace at primes coprime to the level.
 
 ## Main definitions
 

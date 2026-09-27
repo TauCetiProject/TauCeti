@@ -43,13 +43,13 @@ and its four values on the conjugacy classes of `GL₂(F)` are
 * `-(θ(u) + θ(u^q))` at the elliptic class of `u : Eˣ` outside `F`.
 
 Classically, for `θ` in general position -- that is, `θ^q ≠ θ` -- these are the character values of
-the cuspidal (discrete series) representation attached to `θ`.  That identification is not made
-here, and neither the construction of the representation nor the norm computation showing the
-difference to be `±` an irreducible character is carried out: what is established below is that the
-difference is a virtual character (`TauCeti.GL2CuspidalVirtualCharacter_mem_virtualCharacters`)
+the cuspidal (discrete series) representation attached to `θ`.  What is established below is that
+the difference is a virtual character (`TauCeti.GL2CuspidalVirtualCharacter_mem_virtualCharacters`)
 with those four values and degree `q - 1`, together with the two symmetries the classical
 parametrization rests on and the fact that the orbit `{θ, θ^q}` is the exact fibre of the
-construction.
+construction.  The norm computation showing that, for `θ^q ≠ θ` and `ψ` nontrivial, it is an
+irreducible character is `TauCeti.GL2CuspidalVirtualCharacter_mem_irreducibleCharacters`, in
+`TauCeti/RepresentationTheory/CharacterTable/GL2/Cuspidal/Irreducible.lean`.
 
 ## The two symmetries
 
@@ -128,8 +128,9 @@ variable (F : Type*) [Field F] [Fintype F] (E : Type*) [Field E] [Algebra F E]
 /-- **The cuspidal virtual character of `GL₂(𝔽_q)`** attached to a character `θ` of `Eˣ` and an
 additive character `ψ` of `F`: the character induced from the scalar--unipotent subgroup by
 `(a, t) ↦ θ(a) ψ(t)`, less the character induced from the non-split torus by `θ`.  For `ψ`
-nontrivial and `θ` in general position it is, classically, the character of the cuspidal
-representation attached to `θ`; that identification is not proved here. -/
+nontrivial and `θ` in general position it is the character of an irreducible representation,
+classically identified with the cuspidal representation attached to `θ`
+(`TauCeti.GL2CuspidalVirtualCharacter_mem_irreducibleCharacters`). -/
 noncomputable def GL2CuspidalVirtualCharacter (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
     ClassFunction ℂ (GL (Fin 2) F) :=
   ClassFunction.ofFDRep
@@ -329,9 +330,9 @@ theorem eq_or_eq_comp_powMonoidHom_of_GL2CuspidalVirtualCharacter_eq {θ θ' : E
 
 /-- **The orbit `{θ, θ^q}` is the exact fibre of the cuspidal virtual character**: two cuspidal
 virtual characters built from nontrivial additive characters agree exactly when their inducing
-characters of `Eˣ` lie in the same orbit. Classically it is this indexing that the construction
-of the discrete series rests on; that these virtual characters *are* the characters of the
-cuspidal representations is not established here. -/
+characters of `Eˣ` lie in the same orbit. It is this indexing that the construction of the
+discrete series rests on: for `θ^q ≠ θ` these virtual characters are irreducible characters
+(`TauCeti.GL2CuspidalVirtualCharacter_mem_irreducibleCharacters`). -/
 @[simp]
 theorem GL2CuspidalVirtualCharacter_eq_iff (θ θ' : Eˣ →* ℂˣ) {ψ ψ' : AddChar F ℂ}
     (hψ : ψ ≠ 1) (hψ' : ψ' ≠ 1) :

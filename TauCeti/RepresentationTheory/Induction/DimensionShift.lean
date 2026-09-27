@@ -138,7 +138,8 @@ theorem dimensionShiftUpSES_tensorLeft_shortExact (A M : Rep k G) :
       (coindBotUnit A).hom := fun a ↦ by
     rw [LinearMap.comp_apply, LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply,
       coindBotUnit_hom_apply_coe, map_one, Module.End.one_apply]
-  exact shortExact_map_tensorLeft_of_leftInverse (dimensionShiftUpSES_shortExact A) M _ hr
+  have : Epi (dimensionShiftUpSES A).g := (dimensionShiftUpSES_shortExact A).epi_g
+  exact shortExact_map_tensorLeft_of_leftInverse (dimensionShiftUpSES_shortExact A).exact M _ hr
 
 /-! ### The downward dimension shift -/
 
@@ -213,6 +214,7 @@ theorem dimensionShiftDownSES_tensorLeft_shortExact (A M : Rep k G) :
   have hs : Function.RightInverse (Representation.IndV.mk (⊥ : Subgroup G).subtype
       (Representation.trivial k (⊥ : Subgroup G) A.V) 1) (indBotCounit A).hom := fun a ↦ by
     rw [indBotCounit_hom_mk, inv_one, map_one, Module.End.one_apply]
-  exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A) M _ hs
+  have : Mono (dimensionShiftDownSES A).f := (dimensionShiftDownSES_shortExact A).mono_f
+  exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A).exact M _ hs
 
 end Rep

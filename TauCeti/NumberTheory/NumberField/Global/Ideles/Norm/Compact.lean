@@ -56,7 +56,7 @@ private lemma ringEquiv_mixedSpace_mul_unitEmbedding (z : IdeleGroup (𝓞 K) K)
     IdeleGroup.coe_unitEmbedding, AdeleRing.fst_mul, mul_comm]
   refine congrArg _ (congrArg (· * _) (funext fun w ↦ ?_))
   rw [AdeleRing.algebraMap_fst_apply, InfiniteAdeleRing.algebraMap_apply, Units.coe_map,
-    MonoidHom.coe_coe]
+    MonoidHom.coe_ofClass]
 
 /-- There is a compact set of ideles meeting the orbit under the global units of every idele of
 norm one whose finite part is an everywhere-integral unit. -/

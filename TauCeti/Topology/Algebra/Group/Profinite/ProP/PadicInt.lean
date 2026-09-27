@@ -226,11 +226,11 @@ theorem topologicalClosure_closure_singleton_eq_range_padicPowHom (hP : IsProP p
   -- lies in every closed subgroup containing `a`.
   refine le_antisymm (Subgroup.topologicalClosure_minimal _ ?_ ?_) ?_
   · rw [Subgroup.closure_le, Set.singleton_subset_iff, SetLike.mem_coe, MonoidHom.mem_range]
-    exact ⟨Multiplicative.ofAdd 1, by rw [MonoidHom.coe_coe, hP.padicPowHom_ofAdd_one]⟩
-  · rw [MonoidHom.coe_range, MonoidHom.coe_coe]
+    exact ⟨Multiplicative.ofAdd 1, by rw [MonoidHom.coe_ofClass, hP.padicPowHom_ofAdd_one]⟩
+  · rw [MonoidHom.coe_range, MonoidHom.coe_ofClass]
     exact (isCompact_range (map_continuous (hP.padicPowHom a))).isClosed
   · rintro _ ⟨l, rfl⟩
-    rw [MonoidHom.coe_coe, hP.padicPowHom_apply]
+    rw [MonoidHom.coe_ofClass, hP.padicPowHom_apply]
     have ha : a ∈ (Subgroup.closure ({a} : Set P)).topologicalClosure :=
       Subgroup.le_topologicalClosure _ (Subgroup.subset_closure (Set.mem_singleton a))
     exact hP.padicPow_mem (Subgroup.isClosed_topologicalClosure _) ha l.toAdd
@@ -241,7 +241,7 @@ theorem mem_topologicalClosure_closure_singleton_iff (hP : IsProP p P) {a x : P}
     x ∈ (Subgroup.closure ({a} : Set P)).topologicalClosure ↔
       ∃ l : ℤ_[p], hP.padicPow a l = x := by
   rw [hP.topologicalClosure_closure_singleton_eq_range_padicPowHom, MonoidHom.mem_range,
-    MonoidHom.coe_coe]
+    MonoidHom.coe_ofClass]
   exact ⟨fun ⟨l, hl⟩ ↦ ⟨l.toAdd, by rwa [hP.padicPowHom_apply] at hl⟩,
     fun ⟨l, hl⟩ ↦ ⟨Multiplicative.ofAdd l, by rwa [hP.padicPowHom_apply, toAdd_ofAdd]⟩⟩
 

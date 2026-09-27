@@ -111,7 +111,7 @@ theorem _root_.ContinuousMonoidHom.ker_le_proPFrattini_of_forall_exists_comp_eq 
   rw [proPFrattini_eq_iInf_ker]
   refine le_iInf fun ψ x hx ↦ ?_
   obtain ⟨χ, rfl⟩ := h ψ
-  rw [MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe] at hx ⊢
+  rw [MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass] at hx ⊢
   rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, hx, map_one]
 
 /-- Precomposition with the Frattini quotient projection identifies continuous homomorphisms

@@ -34,14 +34,22 @@ places the class in Mathlib's canonical continuous cohomology.
   ambient group. It represents the class of `α` to which the restriction, corestriction and cup
   products of the ambient group apply.
 * `TauCeti.ContCohomology.evensGraphCocycle`: the lifted continuous graph `2`-cocycle.
+* `TauCeti.ContCohomology.explicitGraphClass`: the choice-free class of the graph cocycle in the
+  explicit inhomogeneous model `H²`, which carries the explicit restriction, corestriction, cup
+  and inflation operations.
 * `TauCeti.ContCohomology.evensGraphCochainClass`: its canonical continuous-cohomology class for
   a specified `s ∉ U`.
 * `TauCeti.ContCohomology.graphClass`: the choice-free graph class.
 
-## Main result
+## Main results
 
+* `TauCeti.ContCohomology.evensGraphCocycle_class_eq`: in explicit `H²`, the graph cocycles
+  attached to two elements outside `U` have the same class. This is the choice-independence
+  fact behind both `graphClass` and `explicitGraphClass`.
 * `TauCeti.ContCohomology.graphClass_eq_cochainClass`: `graphClass` is the class of the graph
   cochain for every element outside `U`.
+* `TauCeti.ContCohomology.graphClass_eq_explicitGraphClass`: the canonical class is the image of
+  the explicit one under the degree-two comparison.
 
 ## References
 
@@ -155,6 +163,50 @@ theorem coe_evensGraphCocycle (U : OpenSubgroup G) (s : G)
       fun p => (trivialF2Equiv G).symm (evensGraphCochain U.toSubgroup s α p) :=
   (rfl)
 
+/-- **The class of the graph cocycle does not depend on the element chosen outside `U`.** The two
+cochain formulas differ by the explicit continuous coboundary computed in
+`TauCeti.ContCohomology.evensGraphCochain_sub_evensGraphCochain`. -/
+theorem evensGraphCocycle_class_eq (U : OpenSubgroup G) (s s' : G)
+    (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hU : U.toSubgroup.index = 2)
+    (hs : s ∉ U) (hs' : s' ∉ U) (hα : Continuous α) :
+    (evensGraphCocycle U s' α hU hs' hα : H2 G (trivialF2 G).V) =
+      (evensGraphCocycle U s α hU hs hα : H2 G (trivialF2 G).V) := by
+  rw [H2pi_eq_iff]
+  refine mem_B2_iff'.2 ⟨fun g => (trivialF2Equiv G).symm
+      (evensExtend U.toSubgroup α (s⁻¹ * s') * evensExtend U.toSubgroup α g), ?_, ?_⟩
+  · exact (continuous_of_discreteTopology : Continuous (trivialF2Equiv G).symm).comp
+      ((continuous_of_discreteTopology : Continuous (fun x : ZMod 2 =>
+        evensExtend U.toSubgroup α (s⁻¹ * s') * x)).comp
+          (continuous_evensExtend U.toSubgroup α U.isOpen' hα))
+  · intro g h
+    apply (trivialF2Equiv G).injective
+    simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply, map_sub, map_add,
+      AddEquiv.apply_symm_apply, coe_evensGraphCocycle, Pi.sub_apply]
+    exact (evensGraphCochain_sub_evensGraphCochain hU hs hs' g h).symm
+
+/-- The choice-free class of the two-point graph cocycle in the explicit inhomogeneous model
+`H²(G, 𝔽₂)`.
+
+An element outside `U` is chosen only in the body. The theorem
+`explicitGraphClass_eq_evensGraphCocycle` identifies the result with the graph cocycle formed from
+every possible such element, so no choice occurs in the public interface. Unlike `graphClass`,
+this class lives in the model that carries the explicit low-degree restriction, corestriction, cup
+and inflation operations; `graphClass_eq_explicitGraphClass` compares the two. -/
+noncomputable def explicitGraphClass (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
+    (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) :
+    H2 G (trivialF2 G).V :=
+  (evensGraphCocycle U (graphElement U hU) α hU (graphElement_not_mem U hU) hα :
+    H2 G (trivialF2 G).V)
+
+/-- The choice-free explicit graph class is represented by the graph cocycle formed using every
+element outside `U`. -/
+theorem explicitGraphClass_eq_evensGraphCocycle (U : OpenSubgroup G)
+    (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
+    (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) :
+    explicitGraphClass U hU α hα =
+      (evensGraphCocycle U s α hU hs hα : H2 G (trivialF2 G).V) :=
+  evensGraphCocycle_class_eq U s (graphElement U hU) α hU hs (graphElement_not_mem U hU) hα
+
 /-- The canonical continuous-cohomology class of the graph cochain attached to a specified
 element `s ∉ U`.
 
@@ -190,24 +242,9 @@ private theorem evensGraphCochainClass_eq [LocallyCompactSpace G] (U : OpenSubgr
     (hU : U.toSubgroup.index = 2) (hs : s ∉ U) (hs' : s' ∉ U) (hα : Continuous α) :
     evensGraphCochainClass U s' α hU hs' hα =
       evensGraphCochainClass U s α hU hs hα := by
-  have hcocycle :
-      (evensGraphCocycle U s' α hU hs' hα : H2 G (trivialF2 G).V) =
-        (evensGraphCocycle U s α hU hs hα : H2 G (trivialF2 G).V) := by
-    rw [H2pi_eq_iff]
-    refine mem_B2_iff'.2 ⟨fun g => (trivialF2Equiv G).symm
-        (evensExtend U.toSubgroup α (s⁻¹ * s') * evensExtend U.toSubgroup α g), ?_, ?_⟩
-    · exact (continuous_of_discreteTopology : Continuous (trivialF2Equiv G).symm).comp
-        ((continuous_of_discreteTopology : Continuous (fun x : ZMod 2 =>
-          evensExtend U.toSubgroup α (s⁻¹ * s') * x)).comp
-            (continuous_evensExtend U.toSubgroup α U.isOpen' hα))
-    · intro g h
-      apply (trivialF2Equiv G).injective
-      simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply, map_sub, map_add,
-        AddEquiv.apply_symm_apply, coe_evensGraphCocycle, Pi.sub_apply]
-      exact (evensGraphCochain_sub_evensGraphCochain hU hs hs' g h).symm
   rw [evensGraphCochainClass_def, evensGraphCochainClass_def]
-  apply congrArg _
-  exact congrArg (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V) hcocycle
+  exact congrArg _ (congrArg (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V)
+    (evensGraphCocycle_class_eq U s s' α hU hs hs' hα))
 
 /-- The choice-free class of the two-point graph cocycle at an index-two open subgroup.
 
@@ -228,6 +265,20 @@ theorem graphClass_eq_cochainClass [LocallyCompactSpace G] (U : OpenSubgroup G)
   unfold graphClass
   exact evensGraphCochainClass_eq U s (graphElement U hU) α hU hs
     (graphElement_not_mem U hU) hα
+
+/-- The canonical graph class is the image of the choice-free explicit graph class under the
+degree-two comparison. -/
+theorem graphClass_eq_explicitGraphClass [LocallyCompactSpace G] (U : OpenSubgroup G)
+    (hU : U.toSubgroup.index = 2) (α : U.toSubgroup →* Multiplicative (ZMod 2))
+    (hα : Continuous α) :
+    graphClass U hU α hα =
+      (eqToHom (congrArg (continuousCohomology 2)
+        (ofDiscreteModule_trivialF2 G))).hom
+        (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V
+          (explicitGraphClass U hU α hα)) := by
+  rw [graphClass_eq_cochainClass U hU (graphElement U hU) (graphElement_not_mem U hU) α hα,
+    evensGraphCochainClass_def, explicitGraphClass_eq_evensGraphCocycle U hU (graphElement U hU)
+      (graphElement_not_mem U hU) α hα]
 
 end GraphClass
 

@@ -200,7 +200,7 @@ private theorem exists_vle_one_mul_of_characteristicSubgroup_eq_top {v : Spv A}
   obtain ⟨d, _, hd⟩ := hasFullCharacteristicGroup_iff.mp
     (hasFullCharacteristicGroup_iff_characteristicSubgroup_eq_top.mpr htop) _
     (inv_pos.mpr (zero_lt_iff.mpr hrs))
-  have hone : (1 : ValueGroup₀ (.ofClass w)) ≤ w.restrict (d * s) := by
+  have hone : (1 : w.ValueGroup₀) ≤ w.restrict (d * s) := by
     rw [map_mul]
     have h := mul_le_mul_left hd (w.restrict s)
     rwa [inv_mul_cancel₀ hrs] at h
@@ -251,7 +251,7 @@ private theorem exists_basicOpenFinset_of_forall_cofinalValue {v : Spv A} (S : F
   set w := v.valuation with hw
   have hs0' : w s ≠ 0 := fun h ↦
     hs0 ((valuation_le_iff v s 0).mp (by rw [← hw]; simp [h]))
-  have hrs : (0 : ValueGroup₀ (.ofClass w)) < w.restrict s :=
+  have hrs : (0 : w.ValueGroup₀) < w.restrict s :=
     zero_lt_iff.mpr fun h ↦ hs0' (w.restrict_eq_zero_iff.mp h)
   have key : ∀ σ ∈ S, ∃ n : ℕ, w.restrict σ ^ n < w.restrict s := fun σ hσ ↦
     cofinalValue_iff.mp (hcof σ hσ) _ hrs

@@ -49,6 +49,8 @@ three reductions are prescribed modulo `2`, `3` and `5`.
   image.
 * `TauCeti.exists_isCycle_mem_range_galActionHom_of_irreducible_map`: an irreducible reduction
   exhibits a cycle moving every root.
+* `TauCeti.not_irreducible_map_of_even_natDegree_of_range_le_alternatingGroup`: an even-degree
+  polynomial whose Galois image consists of even permutations has no irreducible reduction.
 * `TauCeti.exists_isSwap_mem_range_galActionHom`: a reduction with one quadratic factor and odd
   other factors exhibits a transposition.
 * `TauCeti.exists_isThreeCycle_mem_range_galActionHom`: a reduction whose only nonlinear factor
@@ -125,6 +127,31 @@ theorem exists_isCycle_mem_range_galActionHom_of_irreducible_map (hf : f.Monic)
   refine ⟨σ, hσG, hcyc, Finset.eq_univ_of_card _ ?_⟩
   rw [hsupp, ← Nat.card_eq_fintype_card,
     natCard_rootSet_complex_eq_natDegree fun h => hp (h ▸ dvd_zero _)]
+
+/-- If a monic integral polynomial has even degree at least two and its Galois action on the
+complex roots consists of even permutations, then its reduction modulo any prime is reducible.
+An irreducible reduction would exhibit a cycle through all the roots, which is odd in even
+degree. -/
+theorem not_irreducible_map_of_even_natDegree_of_range_le_alternatingGroup (hf : f.Monic)
+    (hdeg : 2 ≤ f.natDegree) (heven : Even f.natDegree)
+    (hA : (Gal.galActionHom (f.map (Int.castRingHom ℚ)) ℂ).range ≤
+      alternatingGroup ((f.map (Int.castRingHom ℚ)).rootSet ℂ))
+    (p : ℕ) [Fact p.Prime] :
+    ¬ Irreducible (f.map (Int.castRingHom (ZMod p))) := by
+  intro hirr
+  obtain ⟨σ, hσG, hcyc, hsupp⟩ :=
+    exists_isCycle_mem_range_galActionHom_of_irreducible_map hf hdeg p hirr
+  have hp : ¬ (p : ℤ) ∣ f.discr :=
+    (hf.separable_map_zmod_iff_not_dvd_discr p).mp
+      (PerfectField.separable_of_irreducible hirr)
+  have hcard : Fintype.card ((f.map (Int.castRingHom ℚ)).rootSet ℂ) = f.natDegree := by
+    rw [← Nat.card_eq_fintype_card]
+    exact natCard_rootSet_complex_eq_natDegree (fun h => hp (h ▸ dvd_zero _))
+  have hsign : Equiv.Perm.sign σ = -1 := by
+    rw [hcyc.sign, hsupp, Finset.card_univ, hcard, heven.neg_one_pow]
+  have hsign' : Equiv.Perm.sign σ = 1 :=
+    Equiv.Perm.mem_alternatingGroup.mp (hA hσG)
+  exact (show (-1 : ℤˣ) ≠ 1 by decide) (hsign.symm.trans hsign')
 
 open scoped Classical in
 /-- **A single quadratic factor exhibits a transposition.** Let `f` be a monic integral

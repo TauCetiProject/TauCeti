@@ -57,8 +57,8 @@ theorem ker_residueField_toAlgAut :
       𝓂[L].inertia (L ≃ₐ[K] L) := by
   let _ : SMulCommClass (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] :=
     ⟨fun σ x y => by
-      simpa only [AlgEquiv.integerRingAlgEquiv_apply] using
-        (map_smul σ.integerRingAlgEquiv x y)⟩
+      simpa only [AlgEquiv.integerRingEquiv_apply] using
+        (map_smul σ.integerRingEquiv x y)⟩
   ext σ
   let σ' : MulAction.stabilizer (L ≃ₐ[K] L) 𝓂[L] := ⟨σ, by
     rw [MulAction.mem_stabilizer_iff, Ideal.pointwise_smul_eq_comap]
@@ -185,18 +185,18 @@ theorem valuation_frobeniusAlgEquiv_sub_pow [IsUnramified K L] (y : 𝒪[L]) :
     valuation L (frobeniusAlgEquiv (K := K) (L := L) (y : L) -
       (y : L) ^ Nat.card 𝓀[K]) < 1 := by
   let z : 𝒪[L] :=
-    (frobeniusAlgEquiv (K := K) (L := L)).integerRingAlgEquiv y -
+    (frobeniusAlgEquiv (K := K) (L := L)).integerRingEquiv y -
       y ^ Nat.card 𝓀[K]
   have hres :
       IsLocalRing.residue 𝒪[L]
-          ((frobeniusAlgEquiv (K := K) (L := L)).integerRingAlgEquiv y) =
+          ((frobeniusAlgEquiv (K := K) (L := L)).integerRingEquiv y) =
         (IsLocalRing.residue 𝒪[L] y) ^ Nat.card 𝓀[K] := by
     calc
       IsLocalRing.residue 𝒪[L]
-          ((frobeniusAlgEquiv (K := K) (L := L)).integerRingAlgEquiv y) =
+          ((frobeniusAlgEquiv (K := K) (L := L)).integerRingEquiv y) =
           (frobeniusAlgEquiv (K := K) (L := L)).residueFieldEquiv
             (IsLocalRing.residue 𝒪[L] y) := by
-              rw [AlgEquiv.residueFieldEquiv_apply, AlgEquiv.integerRingAlgEquiv_apply,
+              rw [AlgEquiv.residueFieldEquiv_apply, AlgEquiv.integerRingEquiv_apply,
                 IsLocalRing.ResidueField.residue_smul]
       _ = residueFieldAutEquiv (frobeniusAlgEquiv (K := K) (L := L))
           (IsLocalRing.residue 𝒪[L] y) := by
@@ -215,9 +215,9 @@ theorem valuation_frobeniusAlgEquiv_sub_pow [IsUnramified K L] (y : 𝒪[L]) :
   dsimp only [z] at hv
   -- Coercing the integral congruence to `L` exposes the field-valued statement.
   change valuation L
-    ((((frobeniusAlgEquiv (K := K) (L := L)).integerRingAlgEquiv y : 𝒪[L]) : L) -
+    ((((frobeniusAlgEquiv (K := K) (L := L)).integerRingEquiv y : 𝒪[L]) : L) -
       (y : L) ^ Nat.card 𝓀[K]) < 1 at hv
-  rw [AlgEquiv.integerRingAlgEquiv_apply, AlgEquiv.coe_smul_integerRing] at hv
+  rw [AlgEquiv.integerRingEquiv_apply, AlgEquiv.coe_smul_integerRing] at hv
   exact hv
 
 /-- An automorphism satisfying the characteristic Frobenius congruence is Frobenius. -/

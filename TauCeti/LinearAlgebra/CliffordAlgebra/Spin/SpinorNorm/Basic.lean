@@ -182,23 +182,19 @@ private theorem exists_spinToSpecialOrthogonal_eq_of_spinorNorm_eq_one [Nontrivi
       rw [← orthogonalSpinorNorm_lipschitzToOrthogonal Q hQ, hx,
         ← spinorNorm_apply, hg]
     simpa using hsquareClass
-  obtain ⟨a, ha⟩ := hsquare
+  have hxeven : ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
+    rw [← even_toSubmodule, Subalgebra.mem_toSubmodule]
+    exact mem_even_of_det_lipschitzToOrthogonal_eq_one Q x (by
+      rw [hx]
+      exact _root_.QuadraticMap.orthogonalDet_specialOrthogonalToOrthogonal g)
   have hv : ∃ v, IsUnit (Q v) := hQ.exists_isUnit
-  let y : lipschitzGroup Q := scalarUnits Q hv a⁻¹ * x
-  have hynorm : cliffordNorm Q y = 1 := by
-    dsimp only [y]
-    rw [map_mul, cliffordNorm_scalarUnits, ha]
-    simp
+  obtain ⟨a, hyspin⟩ :=
+    (exists_scalarUnits_mul_mem_spinGroup_iff hv x).2 ⟨hxeven, hsquare⟩
+  let y : lipschitzGroup Q := scalarUnits Q hv a * x
   have hyact : lipschitzToOrthogonal Q y =
       _root_.QuadraticMap.specialOrthogonalToOrthogonal Q g := by
     dsimp only [y]
     rw [map_mul, lipschitzToOrthogonal_scalarUnits, hx, one_mul]
-  have hyeven : ((y : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q :=
-    mem_even_of_det_lipschitzToOrthogonal_eq_one Q y (by
-      rw [hyact]
-      exact _root_.QuadraticMap.orthogonalDet_specialOrthogonalToOrthogonal g)
-  have hyspin : ((y : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ spinGroup Q :=
-    (mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one y).2 ⟨hyeven, hynorm⟩
   let s : spinGroup Q := ⟨((y : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q), hyspin⟩
   refine ⟨s, ?_⟩
   have hsl : pinToLipschitz Q (spinToPin Q s) = y := by

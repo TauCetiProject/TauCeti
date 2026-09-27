@@ -153,7 +153,7 @@ theorem relNorm_eq_of_forall_inertiaDeg_eq_one {p : Ideal A} [p.IsMaximal] (hp :
   have key := (Finset.sum_eq_sum_iff_of_le fun Q hQ ↦
     Nat.mul_le_mul_right _ (hs_pos Q (Set.mem_toFinset.mp hQ))).mp (hsum₂.trans hsum₁.symm) P
     (Set.mem_toFinset.mpr hP)
-  rw [hs P hP, ← Nat.eq_of_mul_eq_mul_right (ramificationIdx_pos P A) key, pow_one]
+  rw [hs P hP, ← Nat.eq_of_mul_eq_mul_right (ramificationIdx_pos A P) key, pow_one]
 
 end Ideal
 

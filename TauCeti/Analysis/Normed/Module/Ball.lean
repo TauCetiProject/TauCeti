@@ -77,4 +77,16 @@ theorem range_smul_coe_sphere {c : ℝ} (hc : 0 < c) :
 
 end Range
 
+section Normalization
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A point inside a ball of positive radius has normalized coordinate in the unit ball. -/
+theorem norm_inv_smul_sub_lt_one {c z : E} {R : ℝ} (hR : 0 < R)
+    (hz : ‖z - c‖ < R) : ‖R⁻¹ • (z - c)‖ < 1 := by
+  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR]
+  exact (inv_mul_lt_iff₀ hR).2 (by simpa using hz)
+
+end Normalization
+
 end TauCeti

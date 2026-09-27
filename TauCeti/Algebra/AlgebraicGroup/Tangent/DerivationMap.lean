@@ -60,7 +60,7 @@ private noncomputable def counitAlgebraCongr (φ : A' →ₐc[R] A)
     (f := (Bialgebra.CounitAlgebra.algEquivSelf R A B).toRingEquiv.trans
       (Bialgebra.CounitAlgebra.algEquivSelf R A' B).symm.toRingEquiv) (by
     intro a
-    simp only [RingEquiv.trans_apply, AlgEquiv.coe_ringEquiv,
+    simp only [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
       Bialgebra.CounitAlgebra.algEquivSelf_apply]
     rw [hmap a, Bialgebra.CounitAlgebra.algebraMap_apply R A B,
       Bialgebra.CounitAlgebra.algebraMap_apply R A' B,
@@ -123,7 +123,7 @@ private lemma derivationCompAux_apply (φ : A' →ₐc[R] A)
   simp only [derivationCompAux, counitAlgebraCongr, Derivation.linearEquiv_coe_comp,
     LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
     AlgEquiv.toLinearMap_apply, AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply,
-    AlgEquiv.coe_ringEquiv, Bialgebra.CounitAlgebra.algEquivSelf_apply]
+    AlgEquiv.coe_toRingEquiv, Bialgebra.CounitAlgebra.algEquivSelf_apply]
   -- The remaining transport erases at this value, and the precomposition is
   -- definitional in Mathlib's `compAlgebraMap`.
   exact (Bialgebra.CounitAlgebra.algEquivSelf_symm_apply R A' B _).trans rfl

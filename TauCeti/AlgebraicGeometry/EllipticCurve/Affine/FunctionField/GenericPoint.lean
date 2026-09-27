@@ -299,7 +299,7 @@ theorem map_genericPoint_injective [W.IsElliptic] {Ω : Type*} [Field Ω] [Algeb
     refine CoordinateRing.algHom_ext ?_ ?_
     · simpa [genericX_def] using hx
     · simpa [genericY_def] using hy
-  refine AlgHom.coe_ringHom_injective
+  refine AlgHom.toRingHom_injective
     (IsFractionRing.ringHom_ext (A := W.CoordinateRing) fun a ↦ ?_)
   exact congrArg (fun f : W.CoordinateRing →ₐ[F] Ω ↦ f a) key
 

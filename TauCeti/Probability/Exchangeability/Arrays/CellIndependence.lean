@@ -5,14 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.Block
-public import Mathlib.Probability.Independence.Conditional
--- Non-public: Kallenberg's contraction-independence identity, the drop-information criterion for
--- conditional independence and conditioning on an intermediate σ-algebra are used only inside the
--- proof.
-import TauCeti.Probability.Independence.Conditional
-import TauCeti.MeasureTheory.Function.ConditionalExpectation
-import TauCeti.Data.Set.Infinite
+public import TauCeti.Probability.Exchangeability.Arrays.Block.Independence
 
 /-!
 # Local conditional independence of the entries of a separately exchangeable array
@@ -72,59 +65,12 @@ theorem SeparatelyExchangeable.condIndepFun_apply_domRestrict_compl
     (hT : T.Infinite) {c : ℕ × ℕ} (hc₁ : c.1 ∈ S) (hc₂ : c.2 ∈ T) :
     (fun x : ℕ × ℕ → α ↦ x c) ⟂ᵢ[(S ×ˢ T \ {c}).domRestrict, Set.measurable_restrict _; ρ]
       ({c}ᶜ : Set (ℕ × ℕ)).domRestrict := by
-  obtain ⟨a, ha, hac, haS⟩ := hS.exists_injective_into_apply_eq_of_mem hc₁
-  obtain ⟨b, hb, hbc, hbT⟩ := hT.exists_injective_into_apply_eq_of_mem hc₂
-  set R : Set (ℕ × ℕ) := S ×ˢ T \ {c}
-  set D : Set (ℕ × ℕ) := {c}ᶜ
-  set rR : (ℕ × ℕ → α) → R → α := R.domRestrict
-  set rD : (ℕ × ℕ → α) → D → α := D.domRestrict
-  have hRD : R ⊆ D := Set.sdiff_subset_compl _ _
-  -- Reindexing both axes along `a` and `b` preserves the law and fixes the entry at `c`.
-  let F : (ℕ × ℕ → α) → ℕ × ℕ → α := fun x p ↦ x (a p.1, b p.2)
-  have hF : Measurable F := measurable_blockReadOff a b
-  have hlaw : ρ.map F = ρ := by
-    simpa only [arrayBlock_apply, Measure.map_id'] using
-      hρ.map_arrayBlock_eq (fun p ↦ (measurable_pi_apply p).aemeasurable) ha hb
-  have hFc : ∀ x, F x c = x c := fun x ↦ by simp only [F, hac, hbc]
-  -- Off `c`, the reindexing lands in the rectangle minus its corner.
-  have hmem : ∀ q : D, (a q.1.1, b q.1.2) ∈ R := by
-    rintro ⟨q, hq⟩
-    refine ⟨⟨haS _, hbT _⟩, fun h ↦ hq ?_⟩
-    rw [Set.mem_singleton_iff, Prod.ext_iff] at h ⊢
-    exact ⟨ha (h.1.trans hac.symm), hb (h.2.trans hbc.symm)⟩
-  let G : (R → α) → D → α := fun y q ↦ y ⟨_, hmem q⟩
-  have hG : Measurable G := Measurable.of_eval fun q ↦ measurable_pi_apply _
-  -- The rest of the array, read after reindexing, is a function of the rest of the rectangle.
-  let W : (ℕ × ℕ → α) → D → α := fun x ↦ rD (F x)
-  have hW : W = G ∘ rR := rfl
-  have hWR : MeasurableSpace.comap W inferInstance ≤
-      MeasurableSpace.comap rR inferInstance := by
-    rw [hW, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono hG.comap_le
-  have hRD' : MeasurableSpace.comap rR inferInstance ≤
-      MeasurableSpace.comap rD (inferInstance : MeasurableSpace (D → α)) := by
-    have hcomp : rR = Set.domRestrict₂ (π := fun _ ↦ α) hRD ∘ rD := by
-      simpa only [rR, rD] using (Set.domRestrict₂_comp_domRestrict hRD).symm
-    rw [hcomp, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hRD).comap_le
-  have hpair : ρ.map (fun x ↦ (x c, W x)) = ρ.map fun x ↦ (x c, rD x) := by
-    have hcomp : (fun x ↦ (x c, W x)) = (fun x ↦ (x c, rD x)) ∘ F := by
-      funext x
-      simp only [Function.comp_apply, hFc, W]
-    rw [hcomp, ← Measure.map_map (by fun_prop) hF, hlaw]
-  rw [condIndepFun_iff_condIndep]
-  refine CondIndep.symm ?_
-  refine condIndep_of_indicator_condExp_eq (Set.measurable_restrict D).comap_le
-    (Set.measurable_restrict R).comap_le (measurable_pi_apply c).comap_le ?_
-  rintro _ ⟨A, hA, rfl⟩
-  rw [sup_eq_left.mpr hRD']
-  -- Conditioning on the rest of the array is conditioning on the reindexed read-off, which the
-  -- rest of the rectangle refines.
-  have hcontr := condExp_indicator_eq_of_law_eq_of_comap_le (fun x : ℕ × ℕ → α ↦ x c) W
-    rD (measurable_pi_apply c) (hW ▸ hG.comp (Set.measurable_restrict R))
-    (Set.measurable_restrict D) hpair (hWR.trans hRD') hA
-  exact hcontr.trans (TauCeti.MeasureTheory.condExp_ae_eq_of_le_of_le hWR hRD'
-    (Set.measurable_restrict D).comap_le hcontr).symm
+  have h := SeparatelyExchangeable.condIndepFun_domRestrict_compl_of_finite hρ hS hT
+    (Set.finite_singleton c) (Set.singleton_subset_iff.mpr ⟨hc₁, hc₂⟩)
+  have heval : Measurable (fun z : ({c} : Set (ℕ × ℕ)) → α ↦ z ⟨c, by simp⟩) :=
+    measurable_pi_apply _
+  have h' := h.comp heval measurable_id
+  simpa [Function.comp_def, Set.domRestrict] using h'
 
 end Probability
 

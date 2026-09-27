@@ -116,7 +116,7 @@ theorem RegularFormPresentation.baseChange_baseChange (p : RegularFormPresentati
   refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
   rw [RegularFormPresentation.baseChange_apply, RegularFormPresentation.baseChange_apply,
     RegularFormPresentation.baseChange_apply]
-  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe,
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
     IsScalarTower.algebraMap_apply K L M]
   -- Both sides now read the weight of `p` at the same index, identified once through the two
   -- ranks of the iterated extension and once through the rank of the composite extension.
@@ -219,7 +219,7 @@ def presentedFormBaseChange (p : RegularFormPresentation K) :
       QuadraticMap.weightedSumSquares L fun i ↦ algebraMap K L (p.2 i : K) := by
     simp only [RegularFormPresentation.baseChange, presentedForm_eq_weightedSumSquares,
       QuadraticMap.weightedSumSquares, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_coe, Units.smul_def]
+      MonoidHom.coe_ofClass, Units.smul_def]
     -- The two sums are indexed by `Fin (RegularFormPresentation.baseChange L p).1` and by
     -- `Fin p.1`, which are the same type once the mapped presentation is unfolded.
     rfl

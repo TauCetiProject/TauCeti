@@ -105,7 +105,7 @@ def comapMk'OpenNormalOrderIso (N : Subgroup G) [N.Normal] :
       (OpenNormalSubgroup.toSubgroup_comap _ _ _).trans <|
         (QuotientGroup.comap_map_mk' N U.1.toSubgroup).trans (sup_eq_right.mpr U.2)
     map_rel_iff' {U V} := by
-      simp only [Equiv.coe_fn_mk, Subtype.mk_le_mk, SetLike.le_def,
+      simp only [Equiv.coe_fn_mk, Subtype.mk_le_mk, IsConcreteLE.le_iff,
         OpenNormalSubgroup.mem_comap]
       refine ⟨fun h x hx => ?_, fun h _ hg => h hg⟩
       obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective N x

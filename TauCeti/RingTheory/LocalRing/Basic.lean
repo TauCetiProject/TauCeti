@@ -5,21 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Two
 public import Mathlib.RingTheory.LocalRing.Basic
 
 /-!
 # Local rings that are not commutative
 
-Mathlib develops local rings mostly over a commutative base. This file records the two facts about
-a possibly noncommutative local ring that the Krull-Schmidt theorem needs of the endomorphism ring
-of an indecomposable module: it has no idempotents besides `0` and `1` (splitting `1 = a + (1 - a)`
-makes one of the two summands a unit, and an idempotent unit is `1`), and locality transfers along a
-ring equivalence.
+This file records basic facts about possibly noncommutative local rings. Their only idempotents
+are `0` and `1`, and locality transfers along a ring equivalence; these facts apply to endomorphism
+rings in the Krull-Schmidt theorem. In characteristic two the idempotent criterion identifies the
+zeros of the Artin–Schreier map `t ↦ t² + t`, without a finiteness assumption.
 
 ## Main results
 
 * `TauCeti.IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem`: an idempotent of a local ring is `0`
   or `1`.
+* `TauCeti.IsLocalRing.sq_add_self_eq_zero_iff`: in characteristic two, `t² + t = 0` exactly
+  when `t = 0` or `t = 1`.
 * `TauCeti.IsLocalRing.of_ringEquiv`: a semiring equivalent to a local semiring is local.
 -/
 
@@ -40,6 +42,15 @@ theorem IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem {R : Type*} [Ring R] [
     have hidem : IsIdempotentElem (1 - a) := IsIdempotentElem.one_sub ha
     have hone : (1 : R) - a = 1 := hu.mul_left_cancel (by rw [hidem, mul_one])
     exact sub_eq_self.mp hone
+
+/-- Over a local ring of characteristic two, the zeros of `t ↦ t² + t` are `0` and `1`. -/
+@[simp]
+theorem IsLocalRing.sq_add_self_eq_zero_iff {R : Type*} [Ring R] [IsLocalRing R] [CharP R 2]
+    (t : R) : t ^ 2 + t = 0 ↔ t = 0 ∨ t = 1 := by
+  rw [CharTwo.add_eq_zero, pow_two]
+  constructor
+  · exact IsLocalRing.eq_zero_or_eq_one_of_isIdempotentElem
+  · rintro (rfl | rfl) <;> simp
 
 /-- A semiring equivalent to a local semiring is local. Mathlib's `RingEquiv.isLocalRing` asks the
 source to be commutative, since it goes through `IsLocalRing.of_surjective`; transporting the

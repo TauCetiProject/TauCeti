@@ -62,7 +62,7 @@ theorem map_monomialAut_code_lt_semilinearAut_code :
     (monomialAut (code ω)).map
         (MulAction.toPermHom ((Fin 6 → F) ≃ₗ[F] (Fin 6 → F)) (Fin 6 → F)) <
       semilinearAut (code ω) :=
-  SetLike.lt_iff_le_and_exists.mpr ⟨map_monomialAut_le_semilinearAut,
+  IsConcreteLE.lt_iff_le_and_exists.mpr ⟨map_monomialAut_le_semilinearAut,
     _, semilinearMonomialEquiv_frobeniusEquiv_conjugatePerm_mem_semilinearAut hω,
     semilinearMonomialEquiv_frobeniusEquiv_conjugatePerm_not_mem_map_monomialAut hω⟩
 

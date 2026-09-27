@@ -166,7 +166,7 @@ theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff :
     multiplicity P (differentIdeal A B) = P.ramificationIdx A - 1 ↔
       Algebra.IsSeparable (A ⧸ p) (B ⧸ P) ∧ ((P.ramificationIdx A : ℕ) : A ⧸ p) ≠ 0 := by
   have hle := ramificationIdx_sub_one_le_multiplicity_differentIdeal A hp P
-  have hpos := Ideal.ramificationIdx_pos P A
+  have hpos := Ideal.ramificationIdx_pos A P
   rw [← not_not (a := Algebra.IsSeparable (A ⧸ p) (B ⧸ P)), ne_eq, ← not_or,
     ← ramificationIdx_le_multiplicity_differentIdeal_iff A hp P]
   omega

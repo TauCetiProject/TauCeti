@@ -379,7 +379,7 @@ theorem explicitMap1_congr_of_eq
       rw [explicitMap1_mk, explicitMap1_mk]
       apply congrArg (fun z : Z1 H N => (z : H1 H N))
       ext h
-      simp only [cocyclesMap1_coe, cochainsMap1_apply, MonoidHom.coe_coe]
+      simp only [cocyclesMap1_coe, cochainsMap1_apply, MonoidHom.coe_ofClass]
       rw [hφeq, hfeq]
 
 /-- Pullback by the identity compatible pair is the identity on explicit `H¹`. -/

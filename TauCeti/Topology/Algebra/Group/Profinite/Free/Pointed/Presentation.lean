@@ -128,7 +128,7 @@ theorem presentation_surjective_iff :
       (freeProCPointed.topologicalClosure_closure_range_of_eq_top (finiteGroupClassP.{u} p) _)
       (f := (hG.presentation s : freeProPInsertOne p s →* G)) (hG.presentation s).continuous
       hsurj.denseRange
-    rwa [← Set.range_comp, MonoidHom.coe_coe, presentation_comp_of, Subtype.range_coe,
+    rwa [← Set.range_comp, MonoidHom.coe_ofClass, presentation_comp_of, Subtype.range_coe,
       Subgroup.closure_insert_one] at h
   · intro hgen
     refine freeProCPointed.lift_surjective _ _ _ ?_

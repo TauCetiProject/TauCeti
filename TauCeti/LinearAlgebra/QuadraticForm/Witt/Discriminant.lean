@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Cotangent
-public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Pfister
+public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Pfister.Basic
 
 /-!
 # The signed discriminant on the Witt ring and `I/I² ≅ Kˣ/(Kˣ)²`

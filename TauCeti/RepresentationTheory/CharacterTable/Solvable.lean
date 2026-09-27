@@ -143,7 +143,7 @@ theorem not_isSimpleGroup_of_card_carrier_eq_prime_pow {g : G} {p k : ℕ} (hp :
     rw [hcard, finrank_fin_fun]; exact (hp.coprime_iff_not_dvd.2 hpdvd).pow_left k).resolve_left
     (by rwa [character_irreducibleRepresentation])
   rcases hsimple.eq_bot_or_eq_top_of_normal
-    (MonoidHom.ker (irreducibleRepresentation ℂ i)) inferInstance with hker | hker
+    (MonoidHom.ker (irreducibleRepresentation ℂ i)) with hker | hker
   · -- the representation is faithful, so a scalar value makes `g` central
     refine hgcenter (Subgroup.mem_center_iff.2 fun h => (MonoidHom.ker_eq_bot_iff _).1 hker ?_)
     rw [map_mul, map_mul, hμ, mul_smul_comm, smul_mul_assoc, mul_one, one_mul]
@@ -177,7 +177,7 @@ private theorem isSolvable_of_isSimpleGroup {G : Type u} [Group G] [Finite G] [I
       have hgc : g ∈ Subgroup.center G := Subgroup.centralizer_eq_top_iff_subset.1
         (Subgroup.index_eq_one.1 (hk.trans (pow_zero p))) (Set.mem_singleton g)
       have := Subgroup.center_eq_top_iff.1 <| (Subgroup.Normal.eq_bot_or_eq_top
-        inferInstance).resolve_left fun h => hg1 (Subgroup.mem_bot.1 (h ▸ hgc))
+        (Subgroup.center G)).resolve_left fun h => hg1 (Subgroup.mem_bot.1 (h ▸ hgc))
       exact inferInstance
     · exact absurd ‹IsSimpleGroup G› (not_isSimpleGroup_of_card_carrier_eq_prime_pow hp hk0
         ((ConjClasses.card_carrier_mk g).trans hk))

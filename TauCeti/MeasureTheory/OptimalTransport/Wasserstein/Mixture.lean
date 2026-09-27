@@ -20,8 +20,9 @@ For a probability vector `a` this is the mixture bound for `W_p`. It is the tran
 convexity of `TauCeti.transportCost_smul` and `TauCeti.transportCost_sum_le` read through the
 bridge `TauCeti.wassersteinEDist_rpow_eq_transportCost` for the cost `edist ^ p`.
 
-The weights are only required to be finite and need not sum to `1`; the laws are arbitrary
-measures, and neither measurability of the ground distance nor `1 ≤ p` is used. The exponent is
+The weights are only required to be finite and need not sum to `1`, and the laws are arbitrary
+measures. The ground distance must be jointly measurable, since the transport cost is computed
+through it, but `1 ≤ p` is not used. The exponent is
 finite: at `p = ∞` the power `p.toReal` is `0`, and the corresponding estimate instead bounds
 the distance of the mixtures by the largest distance of a pair with positive weight, which is a
 different statement not proved here.

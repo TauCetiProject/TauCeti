@@ -135,7 +135,7 @@ theorem Subgroup.congrOfMapEq_trans (e : G ≃* H) {A : Subgroup G} {B : Subgrou
     (h' : B.map (f : H →* K) = C) :
     (Subgroup.congrOfMapEq e h).trans (Subgroup.congrOfMapEq f h') =
       Subgroup.congrOfMapEq (e.trans f)
-        (by rw [MulEquiv.coe_monoidHom_trans, ← _root_.Subgroup.map_map, h, h']) :=
+        (by rw [MulEquiv.toMonoidHom_trans, ← _root_.Subgroup.map_map, h, h']) :=
   MulEquiv.ext fun _ => Subtype.ext (by simp)
 
 /-- Restricting an isomorphism to subgroups commutes with the inclusions of the subgroups. This is
@@ -343,7 +343,7 @@ theorem _root_.Subgroup.map_conj_map_conj (R : Subgroup G) (g h : G) :
     (R.map (MulAut.conj g).toMonoidHom).map (MulAut.conj h).toMonoidHom =
       R.map (MulAut.conj (h * g)).toMonoidHom := by
   simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
-    ← MulEquiv.coe_monoidHom_trans, ← MulAut.mul_def, ← map_mul]
+    ← MulEquiv.toMonoidHom_trans, ← MulAut.mul_def, ← map_mul]
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.

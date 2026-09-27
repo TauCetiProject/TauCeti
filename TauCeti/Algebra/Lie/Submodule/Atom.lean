@@ -128,7 +128,7 @@ theorem isIrreducible_quotient_iff_isCoatom {N : LieSubmodule R L M} :
     obtain ⟨x, rfl⟩ := LieSubmodule.Quotient.surjective_mk' N q
     rw [Ne, LieSubmodule.Quotient.mk_eq_zero] at hq
     refine ⟨fun htop ↦ hq (htop ▸ LieSubmodule.mem_top x), fun P hP ↦ ?_⟩
-    obtain ⟨y, hyP, hyN⟩ := SetLike.exists_of_lt hP
+    obtain ⟨y, hyP, hyN⟩ := IsConcreteLE.exists_of_lt hP
     have hmap : P.map (LieSubmodule.Quotient.mk' N) = ⊤ := by
       refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hyN ?_
       have hmem : LieSubmodule.Quotient.mk' N y ∈ P.map (LieSubmodule.Quotient.mk' N) :=

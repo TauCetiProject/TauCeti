@@ -130,7 +130,7 @@ theorem relabelColumnsRenameEquiv_apply (κ : Equiv.Perm (Fin n)) (c : GridChain
       rename κ (c (y.relabelColumns κ.symm)) := by
   rw [LinearEquiv.coe_coe, relabelColumnsRenameEquiv, LinearEquiv.trans_apply,
     relabelColumnsEquiv_apply, Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply,
-    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv, renameEquiv_apply]
+    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv, renameEquiv_apply]
 
 /-- Relabeling and renaming send a generator with coefficient `a` to the relabeled generator with
 the renamed coefficient. -/
@@ -141,7 +141,7 @@ theorem relabelColumnsRenameEquiv_single (κ : Equiv.Perm (Fin n)) (x : GridStat
       Finsupp.single (x.relabelColumns κ) (rename κ a) := by
   rw [LinearEquiv.coe_coe, relabelColumnsRenameEquiv, LinearEquiv.trans_apply,
     Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_single, relabelColumnsEquiv_single,
-    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv, renameEquiv_apply]
+    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv, renameEquiv_apply]
 
 /-- The inverse equivalence relabels columns and coefficient variables by the inverse
 permutation. -/
@@ -152,7 +152,7 @@ theorem relabelColumnsRenameEquiv_symm_apply (κ : Equiv.Perm (Fin n))
       rename κ.symm (c (y.relabelColumns κ)) := by
   rw [relabelColumnsRenameEquiv, LinearEquiv.symm_trans_apply, Finsupp.mapRange.linearEquiv_symm,
     Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply, relabelColumnsEquiv_symm_apply,
-    LinearEquiv.symm_apply_eq, RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv,
+    LinearEquiv.symm_apply_eq, RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv,
     renameEquiv_apply, rename_rename, Equiv.self_comp_symm, rename_id_apply]
 
 end GridChain

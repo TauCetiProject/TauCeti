@@ -11,8 +11,9 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 /-!
 # Evaluation of Pontryagin characters
 
-Evaluation at a fixed group element is continuous on the Pontryagin dual. Its complex-valued
-form is integrable against every finite measure.
+Evaluation at a fixed monoid element is continuous on the Pontryagin dual. Its complex-valued
+form is integrable against every finite measure. These lemmas supply the integrands for
+Fourier–Stieltjes transforms, and apply to arbitrary monoids with a topology.
 -/
 
 public section
@@ -21,27 +22,23 @@ open MeasureTheory
 
 namespace TauCeti.PontryaginDual
 
-variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
+variable {G : Type*} [Monoid G] [TopologicalSpace G]
 
-/-- Evaluating a Pontryagin character at a fixed additive group element is continuous. -/
-theorem continuous_eval_ofAdd (g : G) :
-    Continuous (fun χ : _root_.PontryaginDual (Multiplicative G) =>
-      (χ (Multiplicative.ofAdd g) : ℂ)) := by
-  have h : Continuous (fun χ : (Multiplicative G →ₜ* Circle) =>
-      (χ (Multiplicative.ofAdd g) : Circle)) :=
-    continuous_eval_const (Multiplicative.ofAdd g)
-  exact (LipschitzWith.subtype_val (Submonoid.unitSphere ℂ).carrier).continuous.comp h
+/-- Complex-valued evaluation of a Pontryagin character at a fixed monoid element is continuous. -/
+@[fun_prop]
+theorem continuous_coe_eval_const (g : G) :
+    Continuous (fun χ : _root_.PontryaginDual G => (χ g : ℂ)) :=
+  continuous_subtype_val.comp (continuous_eval_const (F := G →ₜ* Circle) g)
 
-variable [MeasurableSpace (_root_.PontryaginDual (Multiplicative G))]
-  [OpensMeasurableSpace (_root_.PontryaginDual (Multiplicative G))]
+variable [MeasurableSpace (_root_.PontryaginDual G)]
+  [OpensMeasurableSpace (_root_.PontryaginDual G)]
 
-/-- Evaluation of a Pontryagin character is integrable against a finite measure. -/
-theorem integrable_eval_ofAdd
-    {μ : Measure (_root_.PontryaginDual (Multiplicative G))} [IsFiniteMeasure μ] (g : G) :
-    Integrable (fun χ : _root_.PontryaginDual (Multiplicative G) =>
-      (χ (Multiplicative.ofAdd g) : ℂ)) μ :=
+/-- Complex-valued evaluation of a Pontryagin character is integrable against a finite measure. -/
+theorem integrable_coe_eval
+    {μ : Measure (_root_.PontryaginDual G)} [IsFiniteMeasure μ] (g : G) :
+    Integrable (fun χ : _root_.PontryaginDual G => (χ g : ℂ)) μ :=
   (integrable_const (1 : ℝ)).mono'
-    (continuous_eval_ofAdd g).aestronglyMeasurable
+    (continuous_coe_eval_const g).aestronglyMeasurable
     (.of_forall fun χ => by simp)
 
 end TauCeti.PontryaginDual

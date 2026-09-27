@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 

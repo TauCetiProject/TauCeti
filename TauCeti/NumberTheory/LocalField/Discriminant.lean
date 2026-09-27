@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Different.Basic
+public import TauCeti.NumberTheory.LocalField.Different.AlgEquiv
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.RingTheory.DedekindDomain.Discriminant.Basic
 
@@ -45,6 +46,8 @@ unramified criterion and the bound `f(L/K) · (e(L/K) - 1) ≤ δ(L/K)`.
 ## Main results
 
 * `TauCeti.discriminantIdeal_def`, `TauCeti.discriminantExponent_def`: the defining formulas.
+* `TauCeti.discriminantIdeal_eq_of_algEquiv` and `TauCeti.discriminantExponent_eq_of_algEquiv`:
+  invariance under equivalence of finite extensions over the base field.
 * `TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent`: the product formula
   `δ(L/K) = f(L/K) · d(L/K)`.
 * `TauCeti.discriminantIdeal_eq_maximalIdeal_pow`: `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`.
@@ -231,5 +234,28 @@ theorem discriminantIdeal_eq_top_iff : discriminantIdeal K L = ⊤ ↔ IsUnramif
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, pow_zero, Ideal.one_eq_top]⟩
   by_contra hd
   exact (maximalIdeal.isMaximal 𝒪[K]).ne_top (eq_top_mono (Ideal.pow_le_self hd) h)
+
+section AlgEquiv
+
+variable (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
+  [IsNonarchimedeanLocalField M] [Algebra K M] [ValuativeExtension K M]
+  [Module.Finite K L] [Module.Finite K M]
+
+/-- The discriminant ideal is unchanged by an equivalence of extensions over the base field. -/
+theorem discriminantIdeal_eq_of_algEquiv (e : L ≃ₐ[K] M) :
+    discriminantIdeal K L = discriminantIdeal K M := by
+  rw [discriminantIdeal_def, discriminantIdeal_def,
+    ← differentIdeal_map_integerRingEquiv K L M e, Ideal.relNorm_map_algEquiv]
+
+/-- The local discriminant exponent is invariant under equivalence of finite extensions. -/
+theorem discriminantExponent_eq_of_algEquiv (e : L ≃ₐ[K] M) :
+    discriminantExponent K L =
+      (let _ : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable e
+       discriminantExponent K M) := by
+  have : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable e
+  rw [discriminantExponent_def, discriminantExponent_def,
+    discriminantIdeal_eq_of_algEquiv K L M e]
+
+end AlgEquiv
 
 end TauCeti

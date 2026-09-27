@@ -206,7 +206,7 @@ theorem commute_commutatorElement_of_inv_mul_mul_mem_zpowers {g x y : G}
 into that subgroup lands back inside it. -/
 private theorem map_conj_closure_le {g : G} (h : ∀ y ∈ Y, g * y * g⁻¹ ∈ closure Y) :
     (closure Y).map (MulAut.conj g) ≤ closure Y := by
-  rw [MonoidHom.map_closure, MonoidHom.coe_coe, closure_le]
+  rw [MonoidHom.map_closure, MonoidHom.coe_ofClass, closure_le]
   rintro - ⟨y, hy, rfl⟩
   exact h y hy
 
@@ -228,7 +228,7 @@ theorem closure_le_normalizer_closure
   rw [SetLike.mem_coe, mem_normalizer_iff_map_conj_eq]
   refine le_antisymm hle fun y hy => ⟨x⁻¹ * y * x, ?_, ?_⟩
   · simpa using hle' ⟨y, hy, rfl⟩
-  · rw [MonoidHom.coe_coe, MulAut.conj_apply]
+  · rw [MonoidHom.coe_ofClass, MulAut.conj_apply]
     group
 
 /-- Commutators of generators control the commutator subgroup, provided the target subgroup is

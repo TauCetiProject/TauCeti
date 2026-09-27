@@ -137,7 +137,7 @@ private theorem mem_range_lsmul_two_iff (a : Additive G) :
   -- `elementaryTwoQuotientMk g = ModN.mkQ 2 (ofMul g)` is the quotient map of `ofMul g`, so it
   -- vanishes iff `ofMul g` lies in the doubling subgroup `range (lsmul ℤ _ 2)`.
   rw [elementaryTwoQuotientMk, elementaryTwoQuotientMkAdd, ModN.mkQ]
-  simp only [AddMonoidHom.coe_coe, Submodule.mkQ_apply]
+  simp only [AddMonoidHom.coe_ofClass, Submodule.mkQ_apply]
   rw [Submodule.Quotient.mk_eq_zero]
   exact mem_range_lsmul_two_iff (Additive.ofMul g)
 

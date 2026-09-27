@@ -21,7 +21,9 @@ It compares its weighted logarithm with the regulator times the subgroup index, 
 
 In rank one, the norm of a unit's logarithmic embedding equals its weighted absolute logarithm
 at any infinite place. This identifies norm comparisons with logarithm comparisons at a chosen
-place.
+place. The product formula over the two infinite places also forces a unit expanding at one of
+them to contract at the other, which controls the remaining conjugates of a unit bounded at a
+chosen place.
 
 ## References
 
@@ -119,6 +121,41 @@ theorem norm_logEmbedding_eq_mult_abs_log (hr : rank K = 1) (u : (𝓞 K)ˣ)
       mult_abs_log_eq_index_mul_regulator hr u w'
     _ = w.mult * |Real.log (w u)| :=
       (mult_abs_log_eq_index_mul_regulator hr u w).symm
+
+/-- In unit rank one, a unit whose absolute value exceeds one at an infinite place has absolute
+value less than one at the other infinite place. -/
+theorem lt_one_of_rank_eq_one_of_ne_of_one_lt (hr : rank K = 1) {w w' : InfinitePlace K}
+    (hne : w' ≠ w)
+    {v : (𝓞 K)ˣ} (hv : 1 < w v) : w' v < 1 := by
+  classical
+  have hcard : Fintype.card (InfinitePlace K) = 2 := by
+    unfold rank at hr
+    omega
+  have huniv : (Finset.univ : Finset (InfinitePlace K)) = {w', w} :=
+    (Finset.eq_univ_of_card _ (by rw [Finset.card_pair hne, hcard])).symm
+  have h := sum_mult_mul_log v
+  rw [huniv, Finset.sum_pair hne] at h
+  have hm : (0 : ℝ) < w.mult := by exact_mod_cast mult_pos
+  have hm' : (0 : ℝ) < w'.mult := by exact_mod_cast mult_pos
+  have hlog : Real.log (w' v) < 0 := by
+    have := Real.log_pos hv
+    nlinarith
+  exact (Real.log_neg_iff (Units.pos_at_place v w')).mp hlog
+
+open scoped Classical in
+/-- In unit rank one, a positive real value of a unit in `(1, B]` bounds the norm of its
+logarithmic embedding by `log B`. -/
+theorem norm_logEmbedding_le_log_of_interval (hr : rank K = 1)
+    {w : InfinitePlace K} (hw : w.IsReal) (v : (𝓞 K)ˣ) {B : ℝ}
+    (hlo : 1 < w.embedding_of_isReal hw (v : K))
+    (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
+    ‖logEmbedding K (Additive.ofMul v)‖ ≤ Real.log B := by
+  have hval : w v = w.embedding_of_isReal hw (v : K) := by
+    rw [← InfinitePlace.norm_embedding_of_isReal hw, Real.norm_eq_abs,
+      abs_of_pos (lt_trans zero_lt_one hlo)]
+  rw [norm_logEmbedding_eq_mult_abs_log hr v w, hw.mult_eq_one, Nat.cast_one, one_mul,
+    abs_of_pos (Real.log_pos (hval ▸ hlo))]
+  exact Real.log_le_log (hval ▸ lt_trans zero_lt_one hlo) (hval ▸ hhi)
 
 open scoped Classical in
 /-- At a place where `u` has absolute value greater than one, comparing log-embedding norms

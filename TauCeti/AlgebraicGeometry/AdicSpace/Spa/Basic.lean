@@ -126,7 +126,7 @@ theorem spa_integralClosure (R : Subring A) : spa (integralClosure R A).toSubrin
   -- `Valuation.integer.isIntegrallyClosedIn` makes integrally closed in `A`
   have key (y : A) : v.toValuativeRel.vle y 1 ↔ y ∈ v.valuation.integer := by
     rw [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff]
-  simp only [mem_spa_iff, key, ← SetLike.le_def]
+  simp only [mem_spa_iff, key, ← IsConcreteLE.le_iff]
   exact and_congr_right fun _ ↦ Subring.integralClosure_subring_le_iff
 
 /-- Replacing a subring by its topological closure does not change the adic spectrum: every point

@@ -419,7 +419,7 @@ def unitsCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
 theorem unitsMap_mem_primeToSubgroup (𝔪 : Modulus K) (u : (𝓞 K)ˣ) :
     Units.map (algebraMap (𝓞 K) K).toMonoidHom u ∈ primeToSubgroup 𝔪 := by
   refine mem_primeToSubgroup.mpr fun v _ ↦ ?_
-  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, valuation_of_algebraMap]
+  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, valuation_of_algebraMap]
   refine intValuation_eq_one_iff.mpr fun hu ↦ v.isPrime.ne_top ?_
   exact Ideal.eq_top_of_isUnit_mem _ hu u.isUnit
 
@@ -467,7 +467,7 @@ positive integer units.** -/
   ext u
   rw [mem_unitsCongruenceSubgroup, isCongrOne_narrowModulus_iff,
     mem_totallyPositiveIntegerUnits]
-  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
 /-! ### Ideals prime to a modulus -/
 

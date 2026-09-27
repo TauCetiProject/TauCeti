@@ -182,4 +182,15 @@ theorem isProjective_of_hasPGroupSolutions {p : ℕ} (hG : HasPGroupSolutions p 
   obtain ⟨φ, hφ, _⟩ := exists_continuous_lift_of_compatible_levelSolutions α hα f β hβ
   exact ⟨φ, hφ⟩
 
+universe u'
+
+omit [IsTopologicalGroup G] in
+/-- Projectivity is invariant under topological group isomorphism. -/
+theorem IsProjective.of_equiv {p : ℕ} (hG : IsProjective.{u, v, w} p G) {H : Type u'} [Group H]
+    [TopologicalSpace H] (e : G ≃ₜ* H) : IsProjective.{u', v, w} p H := by
+  intro A _ _ _ _ _ B _ _ _ _ hA α hα f
+  obtain ⟨φ, hφ⟩ := hG A B hA α hα (f.comp (e : G →ₜ* H))
+  refine ⟨φ.comp (e.symm : H →ₜ* G), ContinuousMonoidHom.ext fun h ↦ ?_⟩
+  simpa using DFunLike.congr_fun hφ (e.symm h)
+
 end TauCeti

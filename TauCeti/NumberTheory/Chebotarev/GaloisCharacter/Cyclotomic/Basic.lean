@@ -113,12 +113,8 @@ theorem isUnramifiedAt_of_notMem_cyclotomicModulus_support {K : Type*} [Field K]
     [IsCyclotomicExtension {m} K F]
     {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ (cyclotomicModulus K m).support) (Q : Ideal (𝓞 F))
     [Q.IsPrime] [Q.LiesOver v.asIdeal] : Algebra.IsUnramifiedAt (𝓞 K) Q := by
-  rw [mem_cyclotomicModulus_support_iff] at hv
-  by_contra hQ
-  -- a ramified `Q` divides the different, which contains `m`
-  refine hv ((Ideal.mem_of_liesOver Q v.asIdeal _).mpr ?_)
-  simpa using Ideal.le_of_dvd (dvd_differentIdeal_iff.mpr hQ)
-    (IsCyclotomicExtension.natCast_mem_differentIdeal K F m)
+  exact IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem F m
+    (mem_cyclotomicModulus_support_iff.not.mp hv) Q
 
 variable {K : Type*} [Field K] [NumberField K] (F : Type*) [Field F] [NumberField F]
   [Algebra K F] (m : ℕ) [NeZero m] [IsCyclotomicExtension {m} K F] [IsGalois K F]

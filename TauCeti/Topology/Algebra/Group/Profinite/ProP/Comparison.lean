@@ -81,7 +81,7 @@ theorem exists_continuous_surjective (C : PLowerCentralSeriesComparison p G H S)
       (x (k + 1)) = x k := by
     intro k
     ext g
-    simpa only [x, MonoidHom.comp_apply, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe,
+    simpa only [x, MonoidHom.comp_apply, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
       QuotientGroup.mk'_apply,
       QuotientGroup.mapOfLE_mk, hs k] using
       C.commutes k (s (k + 1)) (g : G ⧸ pLowerCentralSeries p G (k + 1))
@@ -100,8 +100,8 @@ theorem exists_continuous_surjective (C : PLowerCentralSeriesComparison p G H S)
     have hcomp : (QuotientGroup.mk' U.toSubgroup).comp φ =
         (QuotientGroup.mapOfLE hk).comp (x k) := by
       ext g
-      simp only [x, MonoidHom.comp_apply, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_coe,
-        QuotientGroup.mk'_apply]
+      simp only [x, MonoidHom.comp_apply, ContinuousMonoidHom.coe_toMonoidHom,
+        MonoidHom.coe_ofClass, QuotientGroup.mk'_apply]
       rw [← hφk k g, QuotientGroup.mapOfLE_mk]
     rw [hcomp]
     exact (QuotientGroup.mapOfLE_surjective hk).comp

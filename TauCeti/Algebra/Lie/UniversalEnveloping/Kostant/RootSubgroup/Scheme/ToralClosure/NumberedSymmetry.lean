@@ -548,38 +548,6 @@ theorem map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix (A : Type v) 
 
 open scoped CategoryTheory.MonObj
 
-/-- The toral closure is represented by its quotient coordinate Hopf algebra. -/
-private theorem kostantToralGroupScheme_eq_hopfSpec :
-    kostantToralGroupScheme e h ρ M hM hnil b wt =
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op
-        (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
-          (kostantToralDefiningIdeal e h ρ M hM hnil b wt))) :=
-  (rfl)
-
-/-- Algebra-valued points of the toral closure, transported to scheme-valued points. -/
-private noncomputable def kostantToralSchemePointMulEquiv (A : Type) [CommRing A] :
-    WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
-        (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A) ≃*
-      ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
-        (kostantToralGroupScheme e h ρ M hM hnil b wt).X) :=
-  CommHopfAlgCat.mapMulEquivOfPresentation _ A
-    (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
-
-private theorem kostantToralSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
-    (q : WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
-      (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A)) :
-    (kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A q).left =
-      Spec.map (CommRingCat.ofHom (q.ofConv :
-        CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
-          (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →+* A)) ≫
-        eqToHom (congrArg (fun K : Grp (Over (Spec (CommRingCat.of ℤ))) => K.X.left)
-          (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)).symm := by
-  simpa only [kostantToralSchemePointMulEquiv] using
-    CommHopfAlgCat.mapMulEquivOfPresentation_apply_left _ A
-      (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
-      (congrArg (fun K : Grp (Over (Spec (CommRingCat.of ℤ))) => K.X.left)
-        (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)) q
-
 include hθe hσ hbasis hwt in
 /-- Composing a scheme-valued point with the toral symmetry precomposes its algebra point with the
 quotient coordinate automorphism. -/

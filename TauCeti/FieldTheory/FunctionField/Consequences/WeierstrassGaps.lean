@@ -140,7 +140,7 @@ theorem isPoleNumber_iff_dim_lt (hF : IsFunctionField k F) (P : Place k F) {n : 
         hxP]
       omega
     have hlt : riemannRochSpace E < riemannRochSpace D :=
-      SetLike.lt_iff_le_and_exists.mpr ⟨riemannRochSpace_mono hED, x, hxD, hxE⟩
+      IsConcreteLE.lt_iff_le_and_exists.mpr ⟨riemannRochSpace_mono hED, x, hxD, hxE⟩
     let _ := finiteDimensional_riemannRochSpace hF D
     simpa only [E, D, Divisor.dim_def] using Submodule.finrank_lt_finrank_of_lt hlt
   · intro hdim

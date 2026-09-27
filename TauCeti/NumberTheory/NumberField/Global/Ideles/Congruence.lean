@@ -354,7 +354,7 @@ theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ}
           v.adicCompletion K) - 1) = v.valuation K ((x : K) - 1) := by
     intro v
     rw [HeightOneSpectrum.ideleFiniteCoord_unitEmbedding, Units.coe_map]
-    simp only [MonoidHom.coe_coe, RingHom.toMonoidHom_eq_coe]
+    simp only [MonoidHom.coe_ofClass, RingHom.toMonoidHom_eq_coe]
     rw [← map_one (algebraMap K (v.adicCompletion K)), ← map_sub]
     simp only [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
       Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']

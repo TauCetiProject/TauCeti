@@ -76,7 +76,8 @@ theorem toPowerSeries_single (m : M) (φ : PowerSeries A) :
       PowerSeries.mapAlgHom (singleOneAlgHom : A →ₐ[R] MonoidAlgebra A M) φ *
         PowerSeries.C (single m (1 : A)) := by
   simp only [toPowerSeries, coe_liftNCAlgHom, liftNC_single, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply, of_apply, AddMonoidHom.coe_coe]
+    MonoidHom.coe_comp, MonoidHom.coe_ofClass, Function.comp_apply, of_apply,
+    AddMonoidHom.coe_ofClass]
 
 /-- The characteristic property of `toPowerSeries`: the coefficient at `m` of the coefficient of
 `Xⁿ` of the image is the coefficient of `Xⁿ` of the coefficient at `m`. -/

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import Mathlib.Tactic.NormNum.IsSquare
 import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 
@@ -18,6 +20,21 @@ is represented. A pair of reflections in vectors of norms `a` and `1` therefore 
 one and spinor norm the square class of `a`. This proves that the spinor norm on the special
 orthogonal group is surjective, over any field. In particular it supplies the isotropic binary
 case of the local spinor-norm calculation.
+
+Since the image of `Spin` in the special orthogonal group is the kernel of the spinor norm, an
+isotropic space has `Spin → SO` surjective on `K`-points exactly when every unit of `K` is a
+square. Over `ℚ` this fails already for the hyperbolic plane: although the kernel of the Spin
+action is `{±1}`, the map on rational points is not onto.
+
+## Main results
+
+* `CliffordAlgebra.spinorNorm_surjective_of_not_anisotropic` and
+  `CliffordAlgebra.orthogonalSpinorNorm_surjective_of_not_anisotropic`: the spinor norm of an
+  isotropic space is surjective on `SO(Q)` and on `O(Q)`.
+* `CliffordAlgebra.spinToSpecialOrthogonal_surjective_iff_of_not_anisotropic`: for an isotropic
+  space, the Spin action on `SO(Q)` is surjective exactly when every unit is a square.
+* `CliffordAlgebra.not_surjective_spinToSpecialOrthogonal_hyperbolicPlane_rat`: the Spin action
+  of the rational hyperbolic plane is not surjective.
 
 ## References
 
@@ -75,5 +92,34 @@ theorem orthogonalSpinorNorm_surjective_of_not_anisotropic (Q : QuadraticForm K 
   intro b
   obtain ⟨g, hg⟩ := spinorNorm_surjective_of_not_anisotropic Q hQ hiso b
   exact ⟨specialOrthogonalToOrthogonal Q g, by simpa using hg⟩
+
+/-- For a nondegenerate isotropic quadratic space, the Spin action on the special orthogonal
+group is surjective exactly when every unit of `K` is a square. A nonsquare unit `a` is the
+spinor norm of some proper isometry, and that isometry has no Spin preimage. -/
+theorem spinToSpecialOrthogonal_surjective_iff_of_not_anisotropic (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (hiso : ¬ Q.Anisotropic) :
+    Function.Surjective (spinToSpecialOrthogonal Q) ↔ ∀ a : Kˣ, IsSquare a := by
+  constructor
+  · intro hsurj a
+    obtain ⟨g, hg⟩ := spinorNorm_surjective_of_not_anisotropic Q hQ hiso (squareClassHom a)
+    obtain ⟨s, rfl⟩ := hsurj g
+    rw [spinorNorm_spinToSpecialOrthogonal, eq_comm] at hg
+    simpa using hg
+  · intro hsq
+    exact spinToSpecialOrthogonal_surjective_of_isSquare_apply Q hQ fun v _ ↦ by
+      simpa using (hsq (unitOfInvertible (Q v))).map (Units.coeHom K)
+
+/-- The Spin action on the special orthogonal group of the rational hyperbolic plane is not
+surjective on rational points. -/
+theorem not_surjective_spinToSpecialOrthogonal_hyperbolicPlane_rat :
+    ¬ Function.Surjective (spinToSpecialOrthogonal (hyperbolicPlane ℚ)) := by
+  have hiso : ¬ (hyperbolicPlane ℚ).Anisotropic := fun h ↦ by
+    have h0 := h ![1, 1] (by simp)
+    simpa using congr_fun h0 0
+  rw [spinToSpecialOrthogonal_surjective_iff_of_not_anisotropic _ nondegenerate_hyperbolicPlane
+    hiso]
+  intro h
+  have h2 : ¬ IsSquare (2 : ℚ) := by norm_num
+  exact h2 (by simpa using (h (Units.mk0 2 two_ne_zero)).map (Units.coeHom ℚ))
 
 end CliffordAlgebra

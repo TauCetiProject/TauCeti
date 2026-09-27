@@ -133,13 +133,13 @@ structure AddGeneratingFamily (S : Type*) [AddCommMonoid S] (r : ℕ) where
 /-- A monoid with a finite generating family is finitely generated. -/
 theorem AddGeneratingFamily.fg (g : AddGeneratingFamily S r) : AddMonoid.FG S := by
   classical
-  exact ⟨⟨Finset.univ.image g.toFun, by simpa using g.spans⟩⟩
+  exact AddMonoid.isAddFG_iff.2 ⟨Finset.univ.image g.toFun, by simpa using g.spans⟩
 
 /-- Conversely, a finitely generated additive monoid carries a finite generating family, so the
 constructions below apply to every finitely generated additive monoid. -/
 theorem exists_addGeneratingFamily (S : Type*) [AddCommMonoid S] [AddMonoid.FG S] :
     ∃ r, Nonempty (AddGeneratingFamily S r) := by
-  obtain ⟨T, hT⟩ := AddMonoid.FG.fg_top (M := S)
+  obtain ⟨T, hT⟩ := AddMonoid.exists_of_isAddFG S
   refine ⟨T.card, ⟨⟨((↑) : {x // x ∈ T} → S) ∘ T.equivFin.symm, ?_⟩⟩⟩
   rw [T.equivFin.symm.surjective.range_comp]
   simpa using hT

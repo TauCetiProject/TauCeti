@@ -76,14 +76,14 @@ is `w (sⁿ * a) * (w s)⁻ⁿ`, and `extendValuation_apply` says so at every su
 noncomputable def extendValuation (P : PairOfDefinition A) (w : Valuation P.ringOfDefinition Γ₀)
     {s : A} (hs : s ∈ P.ringOfDefinition) (hnil : IsTopologicallyNilpotent s)
     (hw : w ⟨s, hs⟩ ≠ 0) : Valuation A Γ₀ :=
-  w.extendOfPowMulMem hs (P.exists_pow_mul_mem hnil) hw
+  w.extendOfPowMulMem hs (Commute.all s) (P.exists_pow_mul_mem hnil) hw
 
 /-- **The defining formula**, at every exponent that carries `a` into the ring of definition. -/
 theorem extendValuation_apply (P : PairOfDefinition A) (w : Valuation P.ringOfDefinition Γ₀)
     {s : A} (hs : s ∈ P.ringOfDefinition) (hnil : IsTopologicallyNilpotent s)
     (hw : w ⟨s, hs⟩ ≠ 0) (a : A) {n : ℕ} (hn : s ^ n * a ∈ P.ringOfDefinition) :
     P.extendValuation w hs hnil hw a = w ⟨s ^ n * a, hn⟩ * (w ⟨s, hs⟩)⁻¹ ^ n :=
-  w.extendOfPowMulMem_apply hs _ hw a hn
+  w.extendOfPowMulMem_apply hs (Commute.all s) _ hw a hn
 
 /-- **The extension restricts to `w`** on the ring of definition. -/
 @[simp]
@@ -91,7 +91,7 @@ theorem extendValuation_coe (P : PairOfDefinition A) (w : Valuation P.ringOfDefi
     {s : A} (hs : s ∈ P.ringOfDefinition) (hnil : IsTopologicallyNilpotent s)
     (hw : w ⟨s, hs⟩ ≠ 0) (a : P.ringOfDefinition) :
     P.extendValuation w hs hnil hw (a : A) = w a :=
-  w.extendOfPowMulMem_coe hs _ hw a
+  w.extendOfPowMulMem_coe hs (Commute.all s) _ hw a
 
 /-- **The extension is the only one**: a valuation of `A` restricting to `w` on the ring of
 definition is `P.extendValuation`. -/
@@ -100,6 +100,6 @@ theorem eq_extendValuation (P : PairOfDefinition A) (w : Valuation P.ringOfDefin
     (hw : w ⟨s, hs⟩ ≠ 0) (v : Valuation A Γ₀)
     (hv : ∀ a : P.ringOfDefinition, v (a : A) = w a) :
     v = P.extendValuation w hs hnil hw :=
-  w.eq_extendOfPowMulMem hs _ hw v hv
+  w.eq_extendOfPowMulMem hs (Commute.all s) _ hw v hv
 
 end TauCeti.Huber.PairOfDefinition

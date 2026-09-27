@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Disjoint
+public import TauCeti.KnotTheory.Grid.Commutation.Disjoint.Basic
 
 /-!
 # Pairing rectangle--pentagon and pentagon--rectangle decompositions

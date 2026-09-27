@@ -77,6 +77,12 @@ open ContCohomology Subgroup
 
 universe u v w
 
+-- For prime `p`, `AddCommGroup (ZMod p)` is also derivable from `[IsSimpleAddGroup (ZMod p)]
+-- [AddGroup.IsNilpotent (ZMod p)]`; that structure is not reducibly the ring one, so the
+-- `DistribMulAction` hypotheses below would not match what the cohomology API expects.
+-- Preferring the ring path locally keeps a single additive structure on `ZMod p`.
+attribute [local instance 2000] Ring.toAddCommGroup
+
 variable {p : ℕ} [Fact p.Prime]
 
 section Quotient

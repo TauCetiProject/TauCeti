@@ -167,7 +167,7 @@ theorem ramificationIdx_eq_one :
   rwa [← ramificationIdxIn_eq_ramificationIdx (P.under 𝓞E) P (inertia Gal(L/K) P),
     ramificationIdxIn_eq A K L P E 𝓞E (p := P.under A),
     ramificationIdxIn_eq_ramificationIdx (P.under A) P Gal(L/K),
-    right_eq_mul₀ <| (ramificationIdx_pos P A).ne'] at this
+    right_eq_mul₀ <| (ramificationIdx_pos A P).ne'] at this
 
 include K L E P in
 /-- Let `E` be the inertia field of `P` in `L/K`. Then the inertia degree of `P.under 𝓞E` over `p`

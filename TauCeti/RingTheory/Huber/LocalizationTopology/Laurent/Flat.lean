@@ -195,9 +195,10 @@ theorem flat_quotient_laurentRelationIdeal
     (weightedRestrictedSubring_one_weight (k := 1) (A := UniformSpace.Completion S)))
     (fun x ↦ subringCongr_one_weight_weightedC x)
   -- it carries the relation ideal to the ideal of Lemma 8.31
-  have hmap : Ideal.span {algebraMap (UniformSpace.Completion S)
-        (restrictedMvPowerSeriesSubring 1 (UniformSpace.Completion S))
-        ((divBy t s : S) : UniformSpace.Completion S) - restrictedX 0}
+  have hmap : Ideal.span
+        {algebraMap (UniformSpace.Completion S)
+          (restrictedMvPowerSeriesSubring 1 (UniformSpace.Completion S))
+          ((divBy t s : S) : UniformSpace.Completion S) - restrictedX 0}
       = (laurentRelationIdeal P T s t S hden).map (RingEquiv.subringCongr
         (weightedRestrictedSubring_one_weight (k := 1)
           (A := UniformSpace.Completion S)) : _ →+* _) := by

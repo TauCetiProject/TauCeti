@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # The logarithmic integral
@@ -34,6 +35,8 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
 * `TauCeti.Real.logIntegral_isEquivalent_div_log` — `Li x ~ x / log x` at infinity, with the
   quotient form `TauCeti.Real.tendsto_logIntegral_mul_log_div_atTop`.
+* `TauCeti.Real.tendsto_div_div_log_of_isLittleO_logIntegral` — an `o (x / log x)` error
+  relative to `δ Li x` gives `f x / (x / log x) → δ`.
 * `TauCeti.Real.isLittleO_integral_div_mul_log_sq` — for `f` interval integrable above `2` and of
   at most linear growth, `∫ t in 2..x, f t / (t * log t ^ 2)` is `o (x / log x)`.
 
@@ -297,6 +300,16 @@ theorem isLittleO_const_div_log (c : ℝ) :
     (fun _ : ℝ ↦ c) =o[atTop] fun x : ℝ ↦ x / Real.log x :=
   isLittleO_const_left.mpr <| Or.inr <|
     (tendsto_abs_atTop_atTop.comp tendsto_div_log_atTop).congr fun _ ↦ (Real.norm_eq_abs _).symm
+
+/-- An error of `o (x / log x)` relative to `δ Li x` gives the ratio limit `f x / (x / log x) → δ`,
+since `Li x ~ x / log x`. -/
+theorem tendsto_div_div_log_of_isLittleO_logIntegral {f : ℝ → ℝ} {δ : ℝ}
+    (h : (fun x ↦ f x - δ * logIntegral x) =o[atTop] fun x : ℝ ↦ x / Real.log x) :
+    Tendsto (fun x : ℝ ↦ f x / (x / Real.log x)) atTop (𝓝 δ) := by
+  have h' : (fun x ↦ f x - δ * (x / Real.log x)) =o[atTop] fun x : ℝ ↦ x / Real.log x :=
+    (h.add (logIntegral_isEquivalent_div_log.isLittleO.const_mul_left δ)).congr_left
+      fun x ↦ by simp only [Pi.sub_apply]; ring
+  exact (isLittleO_sub_mul_iff_tendsto_div (tendsto_div_log_atTop.eventually_ne_atTop 0)).mp h'
 
 /-- `∫ t in 2..x, (log t ^ 2)⁻¹` is `o (x / log x)`; this is
 `TauCeti.Real.tendsto_integral_inv_log_sq_mul_log_div_atTop` read as an `IsLittleO`. -/

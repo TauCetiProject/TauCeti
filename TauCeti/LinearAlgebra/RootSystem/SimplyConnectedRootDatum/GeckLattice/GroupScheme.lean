@@ -51,6 +51,8 @@ statement is asserted.
 
 * `TauCeti.DynkinType.geckDefiningIdeal` and `TauCeti.DynkinType.geckGroupScheme`: the defining
   Hopf ideal and the resulting affine group scheme over `ℤ`.
+* `TauCeti.DynkinType.geckCoordinateHopfAlgebra`: the coordinate Hopf algebra representing the
+  carrier.
 * `TauCeti.DynkinType.geckGroupSchemeι`: its closed immersion into `GLₙ`.
 * `TauCeti.DynkinType.geckRootSubgroup` and `TauCeti.DynkinType.geckWeightTorus`: the root subgroup
   and weight-torus morphisms into the carrier.
@@ -122,8 +124,12 @@ variable (t : DynkinType) (ht : t.Valid)
 
 /-- **The defining Hopf ideal of the Geck carrier of a valid Dynkin type**: the largest Hopf
 ideal of the coordinate algebra of `GLₙ` killed by every numbered Kostant root subgroup and by the
-weight torus of the Geck lattice. -/
-def geckDefiningIdeal :
+weight torus of the Geck lattice.
+
+This is an abbreviation because the presented quotient-coordinate API is indexed by the ideal
+itself; definitional transparency lets that API specialize to the pinned Kostant ideal without
+transporting every point and coordinate morphism across an equality of ideals. -/
+abbrev geckDefiningIdeal :
     HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
@@ -167,6 +173,33 @@ theorem geckGroupScheme_def :
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.isNilpotent_geckRepresentation_rootGenerator ht)
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) := (rfl)
+
+/-- The coordinate Hopf algebra of the Geck carrier.
+
+This is a type abbreviation so the quotient-coordinate point API recognizes the representing
+quotient without transports across an equality of bundled Hopf algebras. -/
+abbrev geckCoordinateHopfAlgebra : _root_.CommHopfAlgCat ℤ :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+    (t.geckDefiningIdeal ht)
+
+/-- The coordinate Hopf algebra is the quotient by the Geck defining ideal. -/
+theorem geckCoordinateHopfAlgebra_def :
+    t.geckCoordinateHopfAlgebra ht =
+      CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+        (t.geckDefiningIdeal ht) :=
+  (rfl)
+
+/-- The Geck carrier is the Hopf spectrum of its coordinate Hopf algebra. -/
+theorem geckGroupScheme_eq_hopfSpec :
+    t.geckGroupScheme ht =
+      (hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op (t.geckCoordinateHopfAlgebra ht)) :=
+  (rfl)
+
+/-- The underlying scheme of the Geck carrier is the spectrum of its coordinate ring. -/
+theorem geckGroupScheme_X_left :
+    (t.geckGroupScheme ht).X.left = Spec (CommRingCat.of (t.geckCoordinateHopfAlgebra ht)) :=
+  congrArg (fun G : Grp (Over (Spec (CommRingCat.of ℤ))) ↦ G.X.left)
+    (t.geckGroupScheme_eq_hopfSpec ht)
 
 /-- The Geck carrier is a closed subgroup scheme of `GLₙ`. -/
 def geckGroupSchemeι :

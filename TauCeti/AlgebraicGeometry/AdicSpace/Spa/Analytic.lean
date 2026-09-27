@@ -149,11 +149,11 @@ theorem IsAnalyticPoint.exists_coarsenByUnits_mem_spaAnalytic [IsHuberRing A]
     {v : Spv A} (hana : IsAnalyticPoint v) (Aplus : Subring A)
     (hAplus : Aplus ≤ powerBoundedSubring A) (hcont : v.IsContinuous) :
     ∃ H : TauCeti.ConvexSubgroup
-        (MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ,
+        (v.valuation.ValueGroup₀)ˣ,
       Nontrivial
-          ((MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ ⧸ H.toSubgroup) ∧
+          ((v.valuation.ValueGroup₀)ˣ ⧸ H.toSubgroup) ∧
         MulArchimedean
-          ((MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ ⧸ H.toSubgroup) ∧
+          ((v.valuation.ValueGroup₀)ˣ ⧸ H.toSubgroup) ∧
         ofValuation (v.valuation.restrict.coarsenByUnits H) ∈ spaAnalytic Aplus ∧
         (ofValuation (v.valuation.restrict.coarsenByUnits H)).supp = v.supp := by
   obtain ⟨H, hHnontrivial, hHarch⟩ := Valuation.isMicrobial_iff.mp (hana.isMicrobial hcont)
@@ -180,8 +180,8 @@ theorem IsAnalyticPoint.exists_coarsenByUnits_mem_spaAnalytic [IsHuberRing A]
     rw [← hsupp, supp_ofValuation, Valuation.mem_supp_iff]
     exact hwb0
   let _ : MulArchimedean
-      ((MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ ⧸ H.toSubgroup) := hHarch
-  let _ : MulArchimedean (MonoidWithZeroHom.ValueGroup₀ (.ofClass w)) :=
+      ((v.valuation.ValueGroup₀)ˣ ⧸ H.toSubgroup) := hHarch
+  let _ : MulArchimedean (w.ValueGroup₀) :=
     MulArchimedean.comap MonoidWithZeroHom.ValueGroup₀.embedding.toMonoidHom
       MonoidWithZeroHom.ValueGroup₀.embedding_strictMono
   refine ⟨H, hHnontrivial, hHarch, ?_, hsupp⟩
@@ -238,7 +238,7 @@ theorem spaAnalytic_eq_biUnion_rationalSubset_of_span_eq_extendedIdealOfDefiniti
     obtain ⟨a, haI, haSupp⟩ :=
       (isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp P v).mp
         ((mem_spaAnalytic_iff Aplus v).mp hv).2
-    have ha0 : (MonoidWithZeroHom.ofClass v.valuation) a ≠ 0 := by
+    have ha0 : v.valuation a ≠ 0 := by
       intro ha0
       apply haSupp
       rw [v.supp_eq_valuation_supp, v.valuation.mem_supp_iff]

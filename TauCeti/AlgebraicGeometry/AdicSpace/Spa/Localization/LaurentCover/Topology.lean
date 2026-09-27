@@ -232,7 +232,7 @@ theorem isOpenQuotientMap_laurentCover
     funext x
     simp only [d, AddMonoidHom.sub_apply, AddMonoidHom.comp_apply, AddMonoidHom.coe_fst,
       AddMonoidHom.coe_snd, RingHom.toAddMonoidHom_eq_coe,
-      AddMonoidHom.coe_coe, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+      AddMonoidHom.coe_ofClass, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
       LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.fst_apply, LinearMap.snd_apply,
       AlgHom.toLinearMap_apply]
   have hsurj : Function.Surjective d := by

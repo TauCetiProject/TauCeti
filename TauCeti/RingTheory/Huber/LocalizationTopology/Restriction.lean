@@ -501,7 +501,7 @@ theorem restrictionRingHomOfSubset_coe_divBy (t : A) :
       rw [hφdef, ← RingHom.comp_apply, restrictionRingHomOfSubset_comp_toCompletionLoc]
   -- `Units.map φ` carries the unit upstairs to the unit downstairs, hence their inverses too
   have hunit : Units.map (φ : _ →* _) hu.unit = hu'.unit :=
-    Units.ext (by simp only [Units.coe_map, MonoidHom.coe_coe, IsUnit.unit_spec, hcomp s])
+    Units.ext (by simp only [Units.coe_map, MonoidHom.coe_ofClass, IsUnit.unit_spec, hcomp s])
   have hinv : φ (↑hu.unit⁻¹) = ↑hu'.unit⁻¹ := by
     rw [← hunit]
     exact (Units.coe_map_inv _ _).symm

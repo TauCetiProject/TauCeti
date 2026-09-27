@@ -96,7 +96,7 @@ noncomputable def laurentSpecialize
       refine LinearMap.mem_ker.mpr (LinearMap.ext fun y => ?_)
       rw [LinearMap.zero_apply, laurentEvalForm_apply, LinearMap.map_smulₛₗ₂, smul_eq_mul,
         map_mul]
-      simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_ringEquiv]
+      simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
       rw [laurentEval_invert, ← hε, inv_inv, RingHom.mem_ker.mp hp, zero_mul])
     (fun z hz => by
       rw [Submodule.restrictScalars_mem] at hz
