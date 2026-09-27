@@ -36,10 +36,6 @@ noncomputable def traceTransferSqIsometryEquivWeightedSumSquares (d : K) :
       (A := QuadraticAlgebra K d 0)).traceTransfer K).IsometryEquiv
       (weightedSumSquares K ![(2 : K), 2 * d]) := by
   let b : Module.Basis (Fin 2) K (QuadraticAlgebra K d 0) := QuadraticAlgebra.basis d 0
-  have hω : (QuadraticAlgebra.omega : QuadraticAlgebra K d 0) ^ 2 =
-      algebraMap K (QuadraticAlgebra K d 0) d := by
-    simpa [Algebra.smul_def] using
-      (QuadraticAlgebra.omega_pow_two_eq_add (R := K) (a := d) (b := 0))
   have hform :
       ((QuadraticMap.sq (R := QuadraticAlgebra K d 0)
         (A := QuadraticAlgebra K d 0)).traceTransfer K).basisRepr b =
@@ -47,25 +43,11 @@ noncomputable def traceTransferSqIsometryEquivWeightedSumSquares (d : K) :
     ext v
     rw [QuadraticMap.basisRepr, QuadraticMap.comp_apply,
       QuadraticMap.traceTransfer_apply]
-    have hrepr : b.equivFun.symm v =
-        algebraMap K (QuadraticAlgebra K d 0) (v 0) +
-          algebraMap K (QuadraticAlgebra K d 0) (v 1) * QuadraticAlgebra.omega := by
-      rw [b.equivFun_symm_apply]
-      simp [Fin.sum_univ_two, b, Algebra.smul_def]
     simp only [QuadraticMap.sq_apply, LinearEquiv.coe_coe]
-    rw [hrepr, ← pow_two]
-    -- Expand the square in coordinates so the explicit quadratic-algebra trace can simplify it.
-    rw [show (algebraMap K (QuadraticAlgebra K d 0) (v 0) +
-          algebraMap K (QuadraticAlgebra K d 0) (v 1) * QuadraticAlgebra.omega) ^ 2 =
-        algebraMap K (QuadraticAlgebra K d 0) ((v 0) ^ 2 + d * (v 1) ^ 2) +
-          (algebraMap K (QuadraticAlgebra K d 0) (2 * (v 0) * (v 1))) *
-            QuadraticAlgebra.omega by
-      simp only [map_add, map_pow, map_mul]
-      rw [← hω, map_ofNat]
-      ring]
+    rw [show b.equivFun.symm v = (QuadraticAlgebra.linearEquivTuple d 0).symm v by rfl,
+      QuadraticAlgebra.linearEquivTuple_symm_apply]
     rw [QuadraticAlgebra.algebraTrace_eq_trace]
     simp [QuadraticAlgebra.trace_def, weightedSumSquares_apply, Fin.sum_univ_two]
-    simp only [← map_pow, QuadraticAlgebra.algebraMap_re]
     ring
   let e := ((QuadraticMap.sq (R := QuadraticAlgebra K d 0)
     (A := QuadraticAlgebra K d 0)).traceTransfer K).isometryEquivBasisRepr b
@@ -86,8 +68,8 @@ theorem traceTransferSqIsometryEquivWeightedSumSquares_apply (d : K)
     (z : QuadraticAlgebra K d 0) :
     traceTransferSqIsometryEquivWeightedSumSquares d z =
       (QuadraticAlgebra.basis d 0).equivFun z := by
-  change (traceTransferSqIsometryEquivWeightedSumSquares d).toLinearEquiv z = _
-  rw [traceTransferSqIsometryEquivWeightedSumSquares_toLinearEquiv]
+  simpa only [IsometryEquiv.coe_toLinearEquiv] using
+    LinearEquiv.congr_fun (traceTransferSqIsometryEquivWeightedSumSquares_toLinearEquiv d) z
 
 /-- The inverse canonical isometry reconstructs an element from its coordinates. -/
 @[simp]
@@ -95,8 +77,10 @@ theorem traceTransferSqIsometryEquivWeightedSumSquares_symm_apply (d : K)
     (v : Fin 2 → K) :
     (traceTransferSqIsometryEquivWeightedSumSquares d).symm v =
       (QuadraticAlgebra.basis d 0).equivFun.symm v := by
-  change (traceTransferSqIsometryEquivWeightedSumSquares d).toLinearEquiv.symm v = _
-  rw [traceTransferSqIsometryEquivWeightedSumSquares_toLinearEquiv]
+  simpa only [IsometryEquiv.coe_symm_toLinearEquiv, IsometryEquiv.coe_toLinearEquiv] using
+    LinearEquiv.congr_fun
+      (congrArg LinearEquiv.symm
+        (traceTransferSqIsometryEquivWeightedSumSquares_toLinearEquiv d)) v
 
 /-- The trace transfer of the unit line of a quadratic algebra is equivalent to
 `⟨2, 2d⟩`, including for a split algebra. -/
