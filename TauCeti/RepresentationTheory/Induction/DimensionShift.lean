@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -38,6 +38,8 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
   `Ind_⊥^G A ⟶ A` and its short complex.
 * `Rep.dimensionShiftUpπIsCokernel`, `Rep.dimensionShiftDownιIsKernel`: their universal
   properties. The definitions are opaque, so consumers construct maps through these properties.
+* `Rep.dimensionShiftUpMap`, `Rep.dimensionShiftDownMap`: the maps on both shifts induced by a
+  morphism of coefficient representations.
 
 ## Main statements
 
@@ -48,6 +50,8 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
   restriction and after tensoring on the left with any representation.
 * `Rep.dimensionShiftDownSES_shortExact`, `Rep.dimensionShiftDownSES_res_shortExact`,
   `Rep.dimensionShiftDownSES_tensorLeft_shortExact`: the same for the downward sequence.
+* `Rep.dimensionShiftUpSESMap`, `Rep.dimensionShiftDownSESMap`: morphisms of the two short exact
+  sequences; their commuting squares identify the induced maps on kernels and cokernels.
 
 ## References
 
@@ -216,5 +220,145 @@ theorem dimensionShiftDownSES_tensorLeft_shortExact (A M : Rep k G) :
     rw [indBotCounit_hom_mk, inv_one, map_one, Module.End.one_apply]
   have : Mono (dimensionShiftDownSES A).f := (dimensionShiftDownSES_shortExact A).mono_f
   exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A).exact M _ hs
+
+/-! ### Naturality of the dimension-shifting sequences -/
+
+variable {A B : Rep k G}
+
+/-- The coinduction map induced by a morphism of representations on the underlying modules. -/
+def coindBotMap (f : A ⟶ B) : coindBot k G A.V ⟶ coindBot k G B.V :=
+  (coindBotFunctor k G).map (ModuleCat.ofHom f.hom)
+
+/-- The orbit-map embedding into coinduction is natural in the representation. -/
+theorem coindBotUnit_naturality (f : A ⟶ B) :
+    coindBotUnit A ≫ coindBotMap f = f ≫ coindBotUnit B := by
+  ext x g
+  calc
+    _ = ((coindBotMap f).hom ((coindBotUnit A).hom x)).1 g := by
+      exact congrArg (fun z : coindBot k G B.V => z.1 g)
+        (CategoryTheory.comp_apply (coindBotUnit A) (coindBotMap f) x)
+    _ = f.hom (A.ρ g x) := by
+      -- The coinduction functor acts pointwise; make the underlying function visible.
+      change f.hom (((coindBotUnit A).hom x).1 g) = f.hom (A.ρ g x)
+      rw [coindBotUnit_hom_apply_coe]
+    _ = B.ρ g (f.hom x) := Rep.hom_comm_apply f g x
+    _ = ((coindBotUnit B).hom (f.hom x)).1 g := by rw [coindBotUnit_hom_apply_coe]
+    _ = _ := by
+      exact (congrArg (fun z : coindBot k G B.V => z.1 g)
+        (CategoryTheory.comp_apply f (coindBotUnit B) x)).symm
+
+/-- The morphism on the upward dimension shift induced by a representation morphism. -/
+def dimensionShiftUpMap (f : A ⟶ B) : dimensionShiftUp A ⟶ dimensionShiftUp B :=
+  cokernel.map (coindBotUnit A) (coindBotUnit B) f (coindBotMap f)
+    (coindBotUnit_naturality f)
+
+/-- The upward shift map commutes with the quotient from coinduction. -/
+@[reassoc (attr := simp)]
+theorem dimensionShiftUpπ_naturality (f : A ⟶ B) :
+    dimensionShiftUpπ A ≫ dimensionShiftUpMap f =
+      coindBotMap f ≫ dimensionShiftUpπ B := by
+  unfold dimensionShiftUpπ dimensionShiftUpMap cokernel.map
+  exact cokernel.π_desc _ _ _
+
+/-- A morphism of representations acts on the upward dimension-shifting short exact sequence. -/
+def dimensionShiftUpSESMap (f : A ⟶ B) :
+    ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
+        (coindBotUnit_comp_dimensionShiftUpπ A) ⟶
+      ShortComplex.mk (coindBotUnit B) (dimensionShiftUpπ B)
+        (coindBotUnit_comp_dimensionShiftUpπ B) :=
+  { τ₁ := f
+    τ₂ := coindBotMap f
+    τ₃ := dimensionShiftUpMap f
+    comm₁₂ := (coindBotUnit_naturality f).symm
+    comm₂₃ := (dimensionShiftUpπ_naturality f).symm }
+
+/-- The first component of the upward sequence map is the original morphism. -/
+@[simp]
+theorem dimensionShiftUpSESMap_τ₁ (f : A ⟶ B) :
+    (dimensionShiftUpSESMap f).τ₁ = f := by
+  simp [dimensionShiftUpSESMap]
+
+/-- The middle component of the upward sequence map is the coinduction map. -/
+@[simp]
+theorem dimensionShiftUpSESMap_τ₂ (f : A ⟶ B) :
+    (dimensionShiftUpSESMap f).τ₂ = coindBotMap f := by simp [dimensionShiftUpSESMap]
+
+/-- The last component of the upward sequence map is the induced shift morphism. -/
+@[simp]
+theorem dimensionShiftUpSESMap_τ₃ (f : A ⟶ B) :
+    (dimensionShiftUpSESMap f).τ₃ = dimensionShiftUpMap f := by simp [dimensionShiftUpSESMap]
+
+/-- The induction map induced by a morphism on the underlying coefficient modules. -/
+def indBotMap (f : A ⟶ B) : indBot k G A.V ⟶ indBot k G B.V := by
+  rw [← indBotFunctor_obj (X := ModuleCat.of k A.V),
+    ← indBotFunctor_obj (X := ModuleCat.of k B.V)]
+  exact (indBotFunctor k G).map (ModuleCat.ofHom f.hom)
+
+/-- The projection from induction onto the representation is natural. -/
+theorem indBotCounit_naturality (f : A ⟶ B) :
+    indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  apply Representation.IndV.hom_ext
+  intro g
+  apply LinearMap.ext
+  intro x
+  calc
+    _ = (indBotCounit B).hom ((indBotMap f).hom
+        (Representation.IndV.mk (⊥ : Subgroup G).subtype
+          (Representation.trivial k (⊥ : Subgroup G) A.V) g x)) :=
+      CategoryTheory.comp_apply (indBotMap f) (indBotCounit B) _
+    _ = B.ρ g⁻¹ (f.hom x) := by
+      -- The transported functor map evaluates on induced generators pointwise.
+      change (indBotCounit B).hom
+        (Representation.IndV.mk (⊥ : Subgroup G).subtype
+          (Representation.trivial k (⊥ : Subgroup G) B.V) g (f.hom x)) = _
+      rw [indBotCounit_hom_mk]
+    _ = f.hom (A.ρ g⁻¹ x) := (Rep.hom_comm_apply f g⁻¹ x).symm
+    _ = f.hom ((indBotCounit A).hom
+        (Representation.IndV.mk (⊥ : Subgroup G).subtype
+          (Representation.trivial k (⊥ : Subgroup G) A.V) g x)) := by
+      rw [indBotCounit_hom_mk]
+    _ = _ := (CategoryTheory.comp_apply (indBotCounit A) f _).symm
+
+/-- The morphism on the downward dimension shift induced by a representation morphism. -/
+def dimensionShiftDownMap (f : A ⟶ B) : dimensionShiftDown A ⟶ dimensionShiftDown B :=
+  kernel.map (indBotCounit A) (indBotCounit B) (indBotMap f) f
+    (indBotCounit_naturality f).symm
+
+/-- The downward shift map commutes with inclusion into induction. -/
+@[reassoc (attr := simp)]
+theorem dimensionShiftDownι_naturality (f : A ⟶ B) :
+    dimensionShiftDownMap f ≫ dimensionShiftDownι B =
+      dimensionShiftDownι A ≫ indBotMap f := by
+  unfold dimensionShiftDownMap dimensionShiftDownι
+  exact kernel.lift_ι _ _ _
+
+/-- A morphism acts on the downward dimension-shifting short exact sequence. -/
+def dimensionShiftDownSESMap (f : A ⟶ B) :
+    ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
+        (dimensionShiftDownι_comp_indBotCounit A) ⟶
+      ShortComplex.mk (dimensionShiftDownι B) (indBotCounit B)
+        (dimensionShiftDownι_comp_indBotCounit B) :=
+  { τ₁ := dimensionShiftDownMap f
+    τ₂ := indBotMap f
+    τ₃ := f
+    comm₁₂ := dimensionShiftDownι_naturality f
+    comm₂₃ := indBotCounit_naturality f }
+
+/-- The first component of the downward sequence map is the induced shift morphism. -/
+@[simp]
+theorem dimensionShiftDownSESMap_τ₁ (f : A ⟶ B) :
+    (dimensionShiftDownSESMap f).τ₁ = dimensionShiftDownMap f := by simp [dimensionShiftDownSESMap]
+
+/-- The middle component of the downward sequence map is the induction map. -/
+@[simp]
+theorem dimensionShiftDownSESMap_τ₂ (f : A ⟶ B) :
+    (dimensionShiftDownSESMap f).τ₂ = indBotMap f := by simp [dimensionShiftDownSESMap]
+
+/-- The last component of the downward sequence map is the original morphism. -/
+@[simp]
+theorem dimensionShiftDownSESMap_τ₃ (f : A ⟶ B) :
+    (dimensionShiftDownSESMap f).τ₃ = f := by simp [dimensionShiftDownSESMap]
 
 end Rep
