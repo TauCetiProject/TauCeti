@@ -88,10 +88,8 @@ theorem toUnitaryIdealWeightAt_of_dvd (h : 𝔪 ∣ 𝔫) (χ : HeckeCharacter K
     (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) :
     toUnitaryIdealWeightAt χ 𝔫 (range_ofRayClassCharacter_le h hχ) =
       (toUnitaryIdealWeightAt χ 𝔪 hχ).restrict 𝔫.support 𝔫.support.finite_toSet := by
-  change (rayClassCharacterAt χ 𝔫 (range_ofRayClassCharacter_le h hχ)).toUnitaryIdealWeight =
-    (rayClassCharacterAt χ 𝔪 hχ).toUnitaryIdealWeight.restrict
-      𝔫.support 𝔫.support.finite_toSet
-  rw [rayClassCharacterAt_of_dvd (𝔪 := 𝔪) (𝔫 := 𝔫) h χ hχ,
+  rw [toUnitaryIdealWeightAt, toUnitaryIdealWeightAt,
+    rayClassCharacterAt_of_dvd (𝔪 := 𝔪) (𝔫 := 𝔫) h χ hχ,
     RayClassCharacter.toUnitaryIdealWeight_induced]
 
 end HeckeCharacter
