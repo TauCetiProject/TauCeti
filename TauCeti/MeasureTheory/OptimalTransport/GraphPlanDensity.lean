@@ -82,10 +82,11 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
   let : IsProbabilityMeasure (graphPlan T μ) :=
     (isCoupling_graphPlan hT.hasLaw).isProbabilityMeasure
   have hleft : wassersteinEDist 1 π (π.map F) ≤ ENNReal.ofReal r :=
-    wassersteinEDist_map_le_of_edist_le π hF hdist
+    wassersteinEDist_map_le_of_edist_le π hF.aemeasurable (Filter.Eventually.of_forall hdist)
   have hright : wassersteinEDist 1 (graphPlan T μ) ((graphPlan T μ).map F) ≤
       ENNReal.ofReal r :=
-    wassersteinEDist_map_le_of_edist_le (graphPlan T μ) hF hdist
+    wassersteinEDist_map_le_of_edist_le (graphPlan T μ) hF.aemeasurable
+      (Filter.Eventually.of_forall hdist)
   have hrbound : ENNReal.ofReal r < ENNReal.ofReal (ε / 4) * ENNReal.ofReal (ε / 4) := by
     rw [← ENNReal.ofReal_mul (by positivity : 0 ≤ ε / 4)]
     exact (ENNReal.ofReal_lt_ofReal_iff (by positivity : 0 < ε / 4 * (ε / 4))).2
