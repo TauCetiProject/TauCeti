@@ -59,6 +59,8 @@ theorem scharlauTransferCompMul_apply (Q : QuadraticForm L V)
     (s : L →ₗ[K] K) (a : L) (v : V) :
     scharlauTransferCompMul Q s a v = 1 ⊗ₜ[L] v := by
   unfold scharlauTransferCompMul
+  -- The definition rebuilds the transferred rank-one isometry only to replace its source form
+  -- along `scharlauTransfer_comp_mul`; its underlying linear equivalence is copied unchanged.
   change ((QuadraticMap.rankOneTensorIsometry Q a).symm.scharlauTransfer s) v = _
   rw [QuadraticMap.IsometryEquiv.scharlauTransfer_apply,
     QuadraticMap.rankOneTensorIsometry_symm_apply]
