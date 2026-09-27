@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Map
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 
 /-!
@@ -40,29 +40,10 @@ variable [CommRing R] [CommRing A] [Algebra R A]
 variable [AddCommGroup M] [Module R M] [Invertible (2 : R)]
 variable (Q : QuadraticForm R M)
 
-private theorem ofBaseChangeAux_mem_lipschitzGroup {x : (CliffordAlgebra Q)ˣ}
-    (hx : x ∈ lipschitzGroup Q) :
-    Units.map (ofBaseChangeAux A Q).toMonoidHom x ∈ lipschitzGroup (Q.baseChange A) := by
-  induction hx using Subgroup.closure_induction with
-  | mem x hgen =>
-      apply Subgroup.subset_closure
-      obtain ⟨m, hm⟩ := hgen
-      -- Expose the generating set of the closure in order to provide the scalar-extended vector.
-      change ↑(Units.map (ofBaseChangeAux A Q).toMonoidHom x) ∈
-        Set.range (ι (Q.baseChange A))
-      refine ⟨1 ⊗ₜ m, ?_⟩
-      change ι (Q.baseChange A) (1 ⊗ₜ m) = ofBaseChangeAux A Q (x : CliffordAlgebra Q)
-      rw [← hm, ofBaseChangeAux_ι]
-  | one => simp
-  | mul x y _ _ hx hy => simpa using mul_mem hx hy
-  | inv x _ hx => simpa using inv_mem hx
-
 /-- The homomorphism of Lipschitz groups induced by extension of scalars. -/
-def lipschitzGroupBaseChange : lipschitzGroup Q →* lipschitzGroup (Q.baseChange A) where
-  toFun x := ⟨Units.map (ofBaseChangeAux A Q).toMonoidHom x.1,
-    ofBaseChangeAux_mem_lipschitzGroup Q x.2⟩
-  map_one' := by simp
-  map_mul' x y := by simp
+def lipschitzGroupBaseChange : lipschitzGroup Q →* lipschitzGroup (Q.baseChange A) :=
+  lipschitzGroupMapOf (ofBaseChangeAux A Q).toRingHom (fun m ↦ 1 ⊗ₜ m)
+    (ofBaseChangeAux_ι A Q)
 
 /-- The Clifford value of a scalar-extended Lipschitz element is obtained from the canonical
 Clifford map. -/
@@ -71,26 +52,20 @@ theorem coe_lipschitzGroupBaseChange_apply (x : lipschitzGroup Q) :
     (((lipschitzGroupBaseChange (A := A) Q x : lipschitzGroup (Q.baseChange A)) :
       (CliffordAlgebra (Q.baseChange A))ˣ) : CliffordAlgebra (Q.baseChange A)) =
       ofBaseChangeAux A Q (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) :
-        CliffordAlgebra Q) := by
-  rw [lipschitzGroupBaseChange]
-  -- Expose the underlying unit map after removing the codomain restriction.
-  change ↑(Units.map (ofBaseChangeAux A Q).toMonoidHom
-    (x : (CliffordAlgebra Q)ˣ)) =
-      ofBaseChangeAux A Q (((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
-  exact Units.coe_map (ofBaseChangeAux A Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ)
+        CliffordAlgebra Q) :=
+  coe_lipschitzGroupMapOf_apply (ofBaseChangeAux A Q).toRingHom (fun m ↦ 1 ⊗ₜ m)
+    (ofBaseChangeAux_ι A Q) x
 
-private theorem lipschitzGroupBaseChange_inv_coe (x : lipschitzGroup Q) :
+/-- Extending the inverse of a Lipschitz unit agrees with taking the inverse after extension. -/
+@[simp]
+theorem lipschitzGroupBaseChange_inv_coe (x : lipschitzGroup Q) :
     ofBaseChangeAux A Q
         ((((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) =
       ((((lipschitzGroupBaseChange (A := A) Q x : lipschitzGroup (Q.baseChange A)) :
           (CliffordAlgebra (Q.baseChange A))ˣ)⁻¹ :
-        (CliffordAlgebra (Q.baseChange A))ˣ) : CliffordAlgebra (Q.baseChange A)) := by
-  calc
-    _ = (((lipschitzGroupBaseChange (A := A) Q (x⁻¹) :
-        lipschitzGroup (Q.baseChange A)) : (CliffordAlgebra (Q.baseChange A))ˣ) :
-          CliffordAlgebra (Q.baseChange A)) :=
-      (coe_lipschitzGroupBaseChange_apply (A := A) Q (x⁻¹)).symm
-    _ = _ := by simp
+        (CliffordAlgebra (Q.baseChange A))ˣ) : CliffordAlgebra (Q.baseChange A)) :=
+  lipschitzGroupMapOf_inv_coe (ofBaseChangeAux A Q).toRingHom (fun m ↦ 1 ⊗ₜ m)
+    (ofBaseChangeAux_ι A Q) x
 
 /-- On a pure tensor, the scalar-extended Lipschitz action is the extension of the original
 action. -/
