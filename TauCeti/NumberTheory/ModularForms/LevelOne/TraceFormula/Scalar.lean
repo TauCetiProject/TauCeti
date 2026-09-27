@@ -47,17 +47,11 @@ theorem coeff_popaZagierElement_scalar {k : Type*} [DivisionRing k] [CharZero k]
     (a : ℤ) (ha : a ≠ 0) :
     (popaZagierElement k (a ^ 2)).coeff
       (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm)) = 1 / 6 := by
-  rcases lt_or_gt_of_ne ha with h | h
-  · rw [coeff_popaZagierElement_mk]
-    simp [PopaZagier.weight, PopaZagier.weight₁,
-      PopaZagier.weight₂, PopaZagier.weight₃, PopaZagier.weight₄,
-      PopaZagier.chainWeight₃, h.le, h, not_le.mpr h]
-    norm_num
-  · rw [coeff_popaZagierElement_mk_of_pos _ (Or.inr ⟨by simp, by simpa using h⟩)]
-    simp [PopaZagier.weight, PopaZagier.weight₁,
-      PopaZagier.weight₂, PopaZagier.weight₃, PopaZagier.weight₄,
-      PopaZagier.chainWeight₃, h, not_le.mpr h]
-    norm_num
+  rw [coeff_popaZagierElement_mk]
+  rcases lt_or_gt_of_ne ha with h | h <;>
+    simp [PopaZagier.weight, PopaZagier.weight₁, PopaZagier.weight₂,
+      PopaZagier.weight₃, PopaZagier.weight₄, PopaZagier.chainWeight₃,
+      h.le, h, not_le.mpr h] <;> norm_num
 
 /-- A scalar matrix acts on degree-`w` binary forms by `aʷ`. -/
 theorem binaryFormAction_scalar {R : Type*} [CommRing R] (w : ℕ) (hw : Even w) (a : ℤ) :
@@ -66,26 +60,28 @@ theorem binaryFormAction_scalar {R : Type*} [CommRing R] (w : ℕ) (hw : Even w)
   simpa only [binaryFormAction_mk, TraceFormulaMatrix.val_diagonal] using
     (binaryFormRep_op_scalar (R := R) (w := w) a)
 
-private theorem weighted_scalar_trace (w : ℕ) (hw : Even w) (a : ℤ) (ha : a ≠ 0) :
-    (popaZagierElement ℚ (a ^ 2)).coeff
+private theorem weighted_scalar_trace {k : Type*} [Field k] [CharZero k]
+    (w : ℕ) (hw : Even w) (a : ℤ) (ha : a ≠ 0) :
+    (popaZagierElement k (a ^ 2)).coeff
         (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm)) *
-        LinearMap.trace ℚ (homogeneousSubmodule (Fin 2) ℚ w)
-          (binaryFormAction (R := ℚ) hw
+        LinearMap.trace k (homogeneousSubmodule (Fin 2) k w)
+          (binaryFormAction (R := k) hw
             (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm))) =
-      (w + 1 : ℕ) * (a : ℚ) ^ w / 6 := by
+      (w + 1 : ℕ) * (a : k) ^ w / 6 := by
   rw [coeff_popaZagierElement_scalar a ha, binaryFormAction_scalar w hw a]
   simp only [map_smul, LinearMap.trace_one, finrank_homogeneousSubmodule_fin_two, smul_eq_mul]
   ring
 
 /-- The scalar-class summand of Popa–Zagier's element contributes `(w + 1) aʷ / 6` to the
 trace of its action on all binary forms of degree `w`. -/
-theorem trace_periodAction_single_scalar (w : ℕ) (hw : Even w) (a : ℤ) (ha : a ≠ 0) :
-    LinearMap.trace ℚ (homogeneousSubmodule (Fin 2) ℚ w)
-        (periodAction (R := ℚ) hw
+theorem trace_periodAction_single_scalar {k : Type*} [Field k] [CharZero k]
+    (w : ℕ) (hw : Even w) (a : ℤ) (ha : a ≠ 0) :
+    LinearMap.trace k (homogeneousSubmodule (Fin 2) k w)
+        (periodAction (R := k) hw
           (single (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm))
-            ((popaZagierElement ℚ (a ^ 2)).coeff
+            ((popaZagierElement k (a ^ 2)).coeff
               (mk (TraceFormulaMatrix.diagonal a a (pow_two a).symm))))) =
-      (w + 1 : ℕ) * (a : ℚ) ^ w / 6 := by
+      (w + 1 : ℕ) * (a : k) ^ w / 6 := by
   rw [periodAction_single, map_smul, smul_eq_mul]
   exact weighted_scalar_trace w hw a ha
 

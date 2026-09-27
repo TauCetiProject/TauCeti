@@ -42,25 +42,30 @@ theorem finrank_homogeneousSubmodule (σ R : Type*) [Finite σ] [CommSemiring R]
     (basisRestrictSupport R {d : σ →₀ ℕ | d.degree = n})).trans
       (Nat.card_eq_fintype_card (α := ↥{d : σ →₀ ℕ | d.degree = n})).symm
 
-/-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
-theorem finrank_homogeneousSubmodule_fin_two (R : Type*) [CommSemiring R]
-    [StrongRankCondition R] (w : ℕ) :
-    Module.finrank R (homogeneousSubmodule (Fin 2) R w) = w + 1 := by
+/-- The dimension of a homogeneous component is a multichoose number. -/
+@[simp]
+theorem finrank_homogeneousSubmodule_eq_multichoose (σ R : Type*) [Fintype σ]
+    [CommSemiring R] [StrongRankCondition R] (n : ℕ) :
+    Module.finrank R (homogeneousSubmodule σ R n) = (Fintype.card σ).multichoose n := by
   classical
   rw [finrank_homogeneousSubmodule]
-  let e : (↥{d : Fin 2 →₀ ℕ | d.degree = w}) ≃
-      (Finset.univ.finsuppAntidiag w : Finset (Fin 2 →₀ ℕ)) :=
+  let e : (↥{d : σ →₀ ℕ | d.degree = n}) ≃
+      (Finset.univ.finsuppAntidiag n : Finset (σ →₀ ℕ)) :=
     Equiv.subtypeEquiv (Equiv.refl _) (fun d => by
-      rw [Finset.mem_finsuppAntidiag]
-      simp only [Finset.subset_univ, and_true]
-      change d.degree = w ↔ (∑ i : Fin 2, d i) = w
-      rw [Finsupp.degree_eq_sum])
+      simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum])
   calc
-    Nat.card (↥{d : Fin 2 →₀ ℕ | d.degree = w}) =
-        Nat.card (Finset.univ.finsuppAntidiag w : Finset (Fin 2 →₀ ℕ)) := Nat.card_congr e
-    _ = w + 1 := by
+    Nat.card (↥{d : σ →₀ ℕ | d.degree = n}) =
+        Nat.card (Finset.univ.finsuppAntidiag n : Finset (σ →₀ ℕ)) := Nat.card_congr e
+    _ = (Fintype.card σ).multichoose n := by
       rw [Nat.card_eq_fintype_card, Fintype.card_coe,
         Finset.card_finsuppAntidiag_nat_eq_multichoose]
       simp
+
+/-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
+@[simp]
+theorem finrank_homogeneousSubmodule_fin_two (R : Type*) [CommSemiring R]
+    [StrongRankCondition R] (w : ℕ) :
+    Module.finrank R (homogeneousSubmodule (Fin 2) R w) = w + 1 := by
+  rw [finrank_homogeneousSubmodule_eq_multichoose, Fintype.card_fin, Nat.multichoose_two]
 
 end TauCeti
