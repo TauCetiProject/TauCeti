@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.SmoothCircle
+public import TauCeti.KnotTheory.SmoothCircle.Basic
 public import TauCeti.Order.Disjoint
 
 /-!

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.SmoothCircle
+public import TauCeti.KnotTheory.SmoothCircle.Basic
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
