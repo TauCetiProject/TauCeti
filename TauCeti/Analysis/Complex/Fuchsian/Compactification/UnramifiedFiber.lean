@@ -27,44 +27,6 @@ namespace Subgroup
 
 variable {Δ Γ : Subgroup PSL(2, ℝ)}
 
-/-- Over an interior point, the compactified fibre is the corresponding fibre of the map
-on ordinary orbit spaces. -/
-def compactifiedFiberEquivOrbitFiber (h : Δ ≤ Γ) (p : orbitRel.Quotient Γ ℍ) :
-    {q : orbitRel.Quotient Δ ℍ //
-      Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q = p} ≃
-    {y : Δ.CompactifiedQuotient //
-      compactifiedQuotientMap h y = .ofQuotient p} where
-  toFun q := ⟨CompactifiedQuotient.ofQuotient q.1, by
-    simpa only [compactifiedQuotientMap_ofQuotient] using
-      congrArg CompactifiedQuotient.ofQuotient q.2
-  ⟩
-  invFun y := by
-    obtain ⟨y, hy⟩ := y
-    cases y with
-    | ofQuotient p =>
-        simp only [compactifiedQuotientMap_ofQuotient] at hy
-        exact ⟨p, CompactifiedQuotient.ofQuotient.inj hy⟩
-    | ofCusp C =>
-        simp only [compactifiedQuotientMap_ofCusp] at hy
-        cases hy
-  left_inv q := by cases q; rfl
-  right_inv y := by
-    obtain ⟨y, hy⟩ := y
-    cases y with
-    | ofQuotient p => rfl
-    | ofCusp C =>
-        simp only [compactifiedQuotientMap_ofCusp] at hy
-        cases hy
-
-/-- The interior-fibre equivalence inserts an ordinary orbit into the compactification. -/
-@[simp]
-theorem compactifiedFiberEquivOrbitFiber_apply (h : Δ ≤ Γ)
-    (p : orbitRel.Quotient Γ ℍ)
-    (q : {q : orbitRel.Quotient Δ ℍ //
-      Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q = p}) :
-    (compactifiedFiberEquivOrbitFiber h p q).1 = .ofQuotient q.1 :=
-  (rfl)
-
 /-- The fibre of the compactified quotient map over a free interior point has cardinality
 `[Γ : Δ]`. -/
 theorem card_fiber_compactifiedQuotientMap_of_stabilizer_eq_bot (h : Δ ≤ Γ)
@@ -72,7 +34,9 @@ theorem card_fiber_compactifiedQuotientMap_of_stabilizer_eq_bot (h : Δ ≤ Γ)
     Nat.card {y : Δ.CompactifiedQuotient //
       compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)} =
       (Δ.subgroupOf Γ).index := by
-  rw [← Nat.card_congr (compactifiedFiberEquivOrbitFiber h (Quotient.mk'' z))]
-  exact TauCeti.card_fiber_orbitRel_map_of_stabilizer_eq_bot h z hz
+  rw [← Nat.card_congr (orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z))]
+  apply TauCeti.card_fiber_orbitRel_map_of_stabilizer_le_normalCore h z
+  rw [hz]
+  exact bot_le
 
 end Subgroup
