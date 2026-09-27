@@ -56,9 +56,11 @@ identification.
 * `TauCeti.Manifold.tangentMap_subtype_val`: the tangent map of the inclusion under this
   equivalence.
 * `TauCeti.Manifold.instT2SpaceTangentBundleModelSpace`: a model space has a Hausdorff tangent
-  bundle when its base is Hausdorff.
+  bundle.
 * `TauCeti.Manifold.instT2SpaceTangentBundleOpen`: Hausdorffness of the tangent bundle passes to
   an open submanifold.
+  Both Hausdorffness theorems are instances in the `TauCeti` scope; use `open scoped TauCeti`
+  to supply the standing `T2Space (TangentBundle I M)` hypothesis of the geodesic API.
 * `TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq`: near a point, the
   inverse tangent-bundle trivializations agree through this equivalence.
 -/
@@ -587,14 +589,12 @@ theorem tangentMap_subtype_val {U : Opens M}
     (p : TangentBundle I U) :
     tangentMap I I (Subtype.val : U → M) p =
       ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.2⟩ := by
-  apply TotalSpace.ext
-  · exact tangentMap_proj
-  · rw [tangentMap_snd, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
-    rfl
+  simp only [tangentMap, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
 
-/-- The tangent bundle of a model space is Hausdorff when the model space is. -/
-theorem instT2SpaceTangentBundleModelSpace [T2Space H] :
+/-- The tangent bundle of a model space is Hausdorff. -/
+theorem instT2SpaceTangentBundleModelSpace :
     T2Space (TangentBundle I H) := by
+  let _ : T2Space H := I.isClosedEmbedding.toIsEmbedding.t2Space
   let _ : T2Space (ModelProd H E) := Prod.t2Space
   exact (tangentBundleModelSpaceHomeomorph I).symm.t2Space
 
@@ -615,8 +615,8 @@ theorem instT2SpaceTangentBundleOpen [IsManifold I 1 M]
         subst y
         simp only [tangentMap_subtype_val] at hab
         have hmap : (tangentSpaceOpenEquiv (I := I) x) v =
-            (tangentSpaceOpenEquiv (I := I) x) w :=
-          eq_of_heq (TotalSpace.ext_iff.mp hab).2
+            (tangentSpaceOpenEquiv (I := I) x) w := by
+          simpa only [TotalSpace.mk_inj] using hab
         exact congrArg (TotalSpace.mk x) ((tangentSpaceOpenEquiv (I := I) x).injective hmap)
   · have hc : ContMDiff I I 1 (Subtype.val : U → M) := contMDiff_subtype_val
     exact hc.continuous_tangentMap (by norm_num)

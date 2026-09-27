@@ -31,14 +31,6 @@ noncomputable section
 
 namespace TauCeti.RealOpenUnitBall
 
-/-- The restricted Euclidean Riemannian metric on the real open unit ball. -/
-local instance : RiemannianBundle
-    (fun x : realOpenUnitBall ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
-  Manifold.instRiemannianBundleOpen realOpenUnitBall
-
-local instance : IsRiemannianManifold 𝓘(ℝ, ℝ) realOpenUnitBall :=
-  isRiemannianManifold
-
 /-- The open unit ball is not geodesically complete at any point: an initial velocity there
 has a maximal geodesic that cannot be extended to all real times. -/
 theorem not_isGeodesicallyCompleteAt (p : realOpenUnitBall) :
@@ -52,12 +44,8 @@ theorem not_isGeodesicallyCompleteAt (p : realOpenUnitBall) :
 theorem exists_one_notMem_geodesicInterval (p : realOpenUnitBall) :
     ∃ v : TangentSpace 𝓘(ℝ, ℝ) p,
       (1 : ℝ) ∉ Manifold.geodesicInterval 𝓘(ℝ, ℝ) realOpenUnitBall p v := by
-  have h : Manifold.expDomain 𝓘(ℝ, ℝ) realOpenUnitBall p ≠ univ := by
-    intro hu
-    exact not_isGeodesicallyCompleteAt p
-      ((Manifold.expDomain_eq_univ_iff (I := 𝓘(ℝ, ℝ))).1 hu)
-  obtain ⟨v, hv⟩ := (Set.ne_univ_iff_exists_notMem _).mp h
-  exact ⟨v, (Manifold.mem_expDomain_iff (I := 𝓘(ℝ, ℝ))).not.mp hv⟩
+  exact (Manifold.not_isGeodesicallyCompleteAt_iff_exists_one_notMem_geodesicInterval
+    (I := 𝓘(ℝ, ℝ)) (M := realOpenUnitBall)).mp (not_isGeodesicallyCompleteAt p)
 
 end TauCeti.RealOpenUnitBall
 
