@@ -73,9 +73,10 @@ theorem aeval_weightEnumerator_singleParityCheckCode :
     have heq : T (singleParityCheckCode F ι : Set (ι → F)).weightEnumerator =
         q ^ (Fintype.card ι - 1) *
           (repetitionCode F ι : Set (ι → F)).weightEnumerator := by
-      have hq : (Nat.card F : MvPolynomial (Fin 2) ℤ) ≠ 0 := by
+      have hq : q ≠ 0 := by
+        dsimp [q]
         exact_mod_cast (Nat.card_pos (α := F)).ne'
-      apply mul_left_cancel₀ (show q ≠ 0 from hq)
+      apply mul_left_cancel₀ hq
       calc
         _ = q ^ Fintype.card ι *
             (repetitionCode F ι : Set (ι → F)).weightEnumerator := htrans
