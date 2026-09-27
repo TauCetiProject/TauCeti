@@ -30,8 +30,6 @@ step needed before the signature can be attached to a geometric knot presentatio
 
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 8,
   Theorem 8.9.
-
-This advances the Tristram--Levine signature target in Layer 6 of the GeometricTopology roadmap.
 -/
 
 public section
@@ -46,6 +44,9 @@ namespace IsMove
 theorem tristramLevineSignature_eq {V W : IntegralSquareMatrix} (h : IsMove V W) (omega : ℂ) :
     tristramLevineSignature (W.2.map ((↑) : ℤ → ℝ)) omega =
       tristramLevineSignature (V.2.map ((↑) : ℤ → ℝ)) omega := by
+  -- Dependent elimination leaves the endpoints as sigma projections and elaborates the integer
+  -- cast as a function. The `change` steps expose the constructor matrices and ascribe that cast
+  -- as a ring homomorphism, after which the generic map and reindexing lemmas apply directly.
   cases h with
   | congr V P hP =>
       have hPReal : IsUnit (P.map (Int.castRingHom ℝ)).det :=
@@ -58,13 +59,13 @@ theorem tristramLevineSignature_eq {V W : IntegralSquareMatrix} (h : IsMove V W)
       change tristramLevineSignature ((enlargeColumnFin V xi).map (Int.castRingHom ℝ)) omega =
         tristramLevineSignature (V.map (Int.castRingHom ℝ)) omega
       rw [map_enlargeColumnFin]
-      rw [enlargeColumnFin_eq, tristramLevineSignature_submatrix_equiv_self,
+      rw [enlargeColumnFin, tristramLevineSignature_submatrix_equiv_self,
         tristramLevineSignature_enlargeColumn]
   | enlargeRow V eta =>
       change tristramLevineSignature ((enlargeRowFin V eta).map (Int.castRingHom ℝ)) omega =
         tristramLevineSignature (V.map (Int.castRingHom ℝ)) omega
       rw [map_enlargeRowFin]
-      rw [enlargeRowFin_eq, tristramLevineSignature_submatrix_equiv_self,
+      rw [enlargeRowFin, tristramLevineSignature_submatrix_equiv_self,
         tristramLevineSignature_enlargeRow]
 
 end IsMove
@@ -75,11 +76,11 @@ namespace SEquivalent
 theorem tristramLevineSignature_eq {V W : IntegralSquareMatrix} (h : SEquivalent V W) (omega : ℂ) :
     tristramLevineSignature (V.2.map ((↑) : ℤ → ℝ)) omega =
       tristramLevineSignature (W.2.map ((↑) : ℤ → ℝ)) omega := by
-  refine SEquivalent.induction
-    (motive := fun V W ↦ tristramLevineSignature (V.2.map ((↑) : ℤ → ℝ)) omega =
-      tristramLevineSignature (W.2.map ((↑) : ℤ → ℝ)) omega)
-    (fun hmove ↦ (hmove.tristramLevineSignature_eq omega).symm) (fun _ ↦ rfl)
-    (fun _ ih ↦ ih.symm) (fun _ _ ihUV ihVW ↦ ihUV.trans ihVW) h
+  induction h with
+  | rel _ _ hmove => exact (hmove.tristramLevineSignature_eq omega).symm
+  | refl => rfl
+  | symm _ _ _ ih => exact ih.symm
+  | trans _ _ _ _ _ ihUV ihVW => exact ihUV.trans ihVW
 
 end SEquivalent
 

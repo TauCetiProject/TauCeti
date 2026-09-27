@@ -199,6 +199,17 @@ theorem enlargeColumn_apply_inr_one_inr_one (V : Matrix ι ι R) (ξ : ι → R)
     enlargeColumn V ξ (Sum.inr 1) (Sum.inr 1) = 0 := by
   simp [enlargeColumn]
 
+/-- Ring homomorphisms commute with column enlargement. -/
+@[simp]
+theorem map_enlargeColumn {S : Type*} [CommRing S] (f : R →+* S) (V : Matrix ι ι R)
+    (xi : ι → R) :
+    (enlargeColumn V xi).map f = enlargeColumn (V.map f) (f ∘ xi) := by
+  ext (i | i) (j | j)
+  · simp
+  · fin_cases j <;> simp [Function.comp_apply]
+  · fin_cases i <;> simp
+  · fin_cases i <;> fin_cases j <;> simp
+
 /-- The row enlargement of a Seifert matrix by a vector `η`, the transpose of the column
 enlargement, that is the block matrix
 
@@ -267,6 +278,13 @@ theorem enlargeRow_apply_inr_one_inr_zero (V : Matrix ι ι R) (η : ι → R) :
 theorem enlargeRow_apply_inr_one_inr_one (V : Matrix ι ι R) (η : ι → R) :
     enlargeRow V η (Sum.inr 1) (Sum.inr 1) = 0 := by
   simp [enlargeRow]
+
+/-- Ring homomorphisms commute with row enlargement. -/
+@[simp]
+theorem map_enlargeRow {S : Type*} [CommRing S] (f : R →+* S) (V : Matrix ι ι R)
+    (eta : ι → R) :
+    (enlargeRow V eta).map f = enlargeRow (V.map f) (f ∘ eta) := by
+  rw [enlargeRow_def, enlargeRow_def, transpose_map, map_enlargeColumn, transpose_map]
 
 /-- The Alexander matrix of a column enlargement, in blocks. The bottom-right block is the only
 new content: it is invertible with determinant `T`, which is where the extra factor of `T` in
