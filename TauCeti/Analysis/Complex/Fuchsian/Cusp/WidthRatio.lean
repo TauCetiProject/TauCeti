@@ -61,9 +61,13 @@ theorem exists_width_eq_nat_mul (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspD
 /-- The larger group's q-coordinate is the `n`-th power of the smaller group's coordinate
 when their normalized widths differ by the factor `n`. -/
 theorem coordinate_pow_eq (D : Δ.CuspDatum) (E : Γ.CuspDatum) {n : ℕ}
-    (hn : n ≠ 0) (hσ : D.scaling = E.scaling)
+    (hσ : D.scaling = E.scaling)
     (hw : D.width = n * E.width) (z : ℍ) :
     coordinate D z ^ n = coordinate E z := by
+  have hn : n ≠ 0 := by
+    intro hn
+    simp only [hn, Nat.cast_zero, zero_mul] at hw
+    exact D.width_pos.ne' hw
   rw [coordinate_apply, coordinate_apply, hσ, hw]
   exact TauCeti.Periodic.qParam_nat_mul_pow hn _
 

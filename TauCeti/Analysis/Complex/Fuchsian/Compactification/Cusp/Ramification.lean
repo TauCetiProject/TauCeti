@@ -35,16 +35,24 @@ whose exponent is the ratio of the cusp widths. -/
 theorem cuspChart_compactifiedQuotientMap_eq_pow (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling)
-    {n : ℕ} (hn : 0 < n) (hw : D.width = n * E.width)
+    {n : ℕ} (hw : D.width = n * E.width)
     {A : ℝ} (hD : D.width ≤ A)
     {x : Δ.CompactifiedQuotient} (hx : x ∈ cuspNhd D A) :
     cuspChart E (show E.width ≤ A from by
+      have hn : 0 < n := Nat.pos_of_ne_zero (by
+        intro hn
+        simp only [hn, Nat.cast_zero, zero_mul] at hw
+        exact D.width_pos.ne' hw)
       calc
         E.width = 1 * E.width := (one_mul _).symm
         _ ≤ (n : ℝ) * E.width := mul_le_mul_of_nonneg_right (by exact_mod_cast hn)
           E.width_pos.le
         _ = D.width := hw.symm
         _ ≤ A := hD) (compactifiedQuotientMap h x) = (cuspChart D hD x) ^ n := by
+  have hn : 0 < n := Nat.pos_of_ne_zero (by
+    intro hn
+    simp only [hn, Nat.cast_zero, zero_mul] at hw
+    exact D.width_pos.ne' hw)
   have hE : E.width ≤ A := by
     calc
       E.width = 1 * E.width := (one_mul _).symm
@@ -65,6 +73,6 @@ theorem cuspChart_compactifiedQuotientMap_eq_pow (h : Δ ≤ Γ)
         simpa only [mem_horodisc, ← hσ] using hz
       rw [compactifiedQuotientMap_ofQuotient, TauCeti.Setoid.map_of_le_mk,
         cuspChart_ofQuotient_mk E hE hzE, cuspChart_ofQuotient_mk D hD hz]
-      exact (coordinate_pow_eq D E hn.ne' hσ hw z).symm
+      exact (coordinate_pow_eq D E hσ hw z).symm
 
 end Subgroup.CompactifiedQuotient
