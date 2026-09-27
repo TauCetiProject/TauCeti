@@ -205,7 +205,13 @@ theorem _root_.Homeomorph.measurePreserving_riemannianVolume [LindelofSpace M] [
       Φ.injective.injOn (inter_subset_left.trans inter_subset_right)
       (fun x hx ↦ hx.2) (fun x _ ↦ hΦ x) (fun x _ ↦ hinner x)]
 
+end Measure
+
 namespace RiemannianIsometry
+
+variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
 
 /-- A Riemannian isometry preserves the Riemannian volume measure.
 
@@ -222,7 +228,5 @@ theorem measurePreserving_riemannianVolume [LindelofSpace M] [LindelofSpace N]
   exact Φ.inner_mfderiv x v w
 
 end RiemannianIsometry
-
-end Measure
 
 end TauCeti
