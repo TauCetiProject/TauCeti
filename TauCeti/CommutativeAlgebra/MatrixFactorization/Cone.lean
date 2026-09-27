@@ -43,7 +43,7 @@ attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
     (FGModuleCat.projective_biprod S X.obj.X₁ Y.obj.X₀)
     (FGModuleCat.projective_biprod S X.obj.X₀ Y.obj.X₁)
 
-@[simp] theorem cone_obj (f : X ⟶ Y) : (cone f).obj = CurvedDuplex.cone f.hom := rfl
+theorem cone_obj (f : X ⟶ Y) : (cone f).obj = CurvedDuplex.cone f.hom := rfl
 
 @[simp] theorem cone_obj_X₀ (f : X ⟶ Y) :
     (cone f).obj.X₀ = (X.obj.X₁ ⊞ Y.obj.X₀) := rfl
@@ -66,10 +66,10 @@ attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
     cone f ⟶ (parityShift (S := S) (w := w)).obj X :=
   ⟨CurvedDuplex.coneProjection f.hom⟩
 
-@[simp] theorem coneInclusion_hom (f : X ⟶ Y) :
+theorem coneInclusion_hom (f : X ⟶ Y) :
     (coneInclusion f).hom = CurvedDuplex.coneInclusion f.hom := rfl
 
-@[simp] theorem coneProjection_hom (f : X ⟶ Y) :
+theorem coneProjection_hom (f : X ⟶ Y) :
     (coneProjection f).hom = CurvedDuplex.coneProjection f.hom := rfl
 
 @[simp] theorem coneInclusion_hom_f₀ (f : X ⟶ Y) :
@@ -116,14 +116,15 @@ noncomputable def coneParityShiftIso (f : X ⟶ Y) :
 /-- The inclusion followed by the projection is zero. -/
 @[reassoc (attr := simp), simp] theorem coneInclusion_comp_coneProjection (f : X ⟶ Y) :
     coneInclusion f ≫ coneProjection f = 0 := by
-  ext <;> simp
+  ext <;> simp [cone_obj, coneInclusion_hom, coneProjection_hom]
 
 /-- The composite from the domain to its cone is null-homotopic. -/
 theorem comp_coneInclusion_mem_nullHomotopic (f : X ⟶ Y) :
     f ≫ coneInclusion f ∈ (nullHomotopic (S := S) (w := w)).hom X (cone f) := by
   rw [mem_nullHomotopic_iff]
   exact ⟨_, _, by
-    simpa using (CurvedDuplex.comp_coneInclusion f.hom).symm⟩
+    simpa [cone_obj, coneInclusion_hom] using
+      (CurvedDuplex.comp_coneInclusion f.hom).symm⟩
 
 /-- The composite from the domain to its cone vanishes in the homotopy category. -/
 @[simp] theorem quotientFunctor_map_comp_coneInclusion (f : X ⟶ Y) :
@@ -139,7 +140,7 @@ variable {X' Y' : MatrixFactorization S w}
     (a : X ⟶ X') (b : Y ⟶ Y') (h : f ≫ b = a ≫ g) : cone f ⟶ cone g :=
   ⟨CurvedDuplex.coneMap f.hom g.hom a.hom b.hom (by simpa using congrArg (·.hom) h)⟩
 
-@[simp] theorem coneMap_hom (f : X ⟶ Y) (g : X' ⟶ Y')
+theorem coneMap_hom (f : X ⟶ Y) (g : X' ⟶ Y')
     (a : X ⟶ X') (b : Y ⟶ Y') (h : f ≫ b = a ≫ g) :
     (coneMap f g a b h).hom =
       CurvedDuplex.coneMap f.hom g.hom a.hom b.hom
@@ -221,6 +222,6 @@ theorem isZero_quotientFunctor_obj_cone_isIso (f : X ⟶ Y) [IsIso f] :
   have : IsIso f.hom := (inclusion (S := S) (w := w)).map_isIso f
   rw [MorphismIdeal.isZero_quotientFunctor_obj_iff, mem_nullHomotopic_iff]
   exact ⟨_, _, by
-    simpa using CurvedDuplex.nullHomotopicMap_cone_isIso f.hom⟩
+    simpa [cone_obj] using CurvedDuplex.nullHomotopicMap_cone_isIso f.hom⟩
 
 end TauCeti.MatrixFactorization
