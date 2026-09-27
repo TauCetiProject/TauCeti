@@ -202,28 +202,32 @@ instance [SMul S R] : SMul S (Octonion R) :=
 along an injection into `R × R × (Fin 3 → R) × (Fin 3 → R)`: a transport would have to name that
 injection and its injectivity proof in an instance body, and an instance body may mention only
 public declarations, so the helper would have to be part of the public API. -/
-instance [AddCommGroup R] : AddCommGroup (Octonion R) where
+instance [AddCommMonoid R] : AddCommMonoid (Octonion R) where
   add_assoc _ _ _ := by ext <;> simp [add_assoc]
   zero_add _ := by ext <;> simp
   add_zero _ := by ext <;> simp
-  neg_add_cancel _ := by ext <;> simp
-  sub_eq_add_neg _ _ := by ext <;> simp [sub_eq_add_neg]
   add_comm _ _ := by ext <;> simp [add_comm]
   nsmul n x := n • x
   nsmul_zero _ := by ext <;> simp
   nsmul_succ _ _ := by ext <;> simp [succ_nsmul]
+
+instance [AddCommGroup R] : AddCommGroup (Octonion R) where
+  __ := (inferInstance : AddCommMonoid (Octonion R))
+  neg_add_cancel _ := by ext <;> simp
+  sub_eq_add_neg _ _ := by ext <;> simp [sub_eq_add_neg]
   zsmul n x := n • x
   zsmul_zero' _ := by ext <;> simp
   zsmul_succ' _ _ := by ext <;> simp [add_zsmul]
   zsmul_neg' _ _ := by ext <;> simp [add_zsmul, succ_nsmul]
 
-instance [Monoid S] [AddCommGroup R] [DistribMulAction S R] : DistribMulAction S (Octonion R) where
+instance [Monoid S] [AddCommMonoid R] [DistribMulAction S R] :
+    DistribMulAction S (Octonion R) where
   one_smul _ := by ext <;> simp
   mul_smul _ _ _ := by ext <;> simp [mul_smul]
   smul_zero _ := by ext <;> simp
   smul_add _ _ _ := by ext <;> simp
 
-instance [Semiring S] [AddCommGroup R] [Module S R] : Module S (Octonion R) where
+instance [Semiring S] [AddCommMonoid R] [Module S R] : Module S (Octonion R) where
   add_smul _ _ _ := by ext <;> simp [add_smul]
   zero_smul _ := by ext <;> simp
 

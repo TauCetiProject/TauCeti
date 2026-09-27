@@ -37,8 +37,8 @@ three diagonal idempotents form a complete orthogonal frame. The **Jordan identi
 it is what makes `H₃(𝕆)` an exceptional Jordan algebra rather than merely a commutative one.
 
 The coordinate isomorphism works for any semiring acting on coefficients that form an additive
-commutative group. The trace and its kernel need only a ring, while the symmetrized product needs a
-commutative ring in which `2` is invertible: over `ℤ` the halved symmetric form of the
+commutative monoid. The trace and its kernel need only a semiring, while the symmetrized product
+needs a commutative ring in which `2` is invertible: over `ℤ` the halved symmetric form of the
 split-octonion norm is not integral.
 The two dimension counts use a commutative ring satisfying `StrongRankCondition`.
 
@@ -160,14 +160,17 @@ def addEquivProd (R : Type*) [Add R] :
 @[simp] theorem addEquivProd_symm_apply [Add R] (p : (Fin 3 → R) × (Fin 3 → Octonion R)) :
     (addEquivProd R).symm p = ⟨p.1, p.2⟩ := (rfl)
 
+instance [AddCommMonoid R] : AddCommMonoid (AlbertAlgebra R) := by
+  apply (addEquivProd R).injective.addCommMonoid <;> intros <;> simp
+
 instance [AddCommGroup R] : AddCommGroup (AlbertAlgebra R) := by
   apply (addEquivProd R).injective.addCommGroup <;> intros <;> simp
 
-instance [Monoid S] [AddCommGroup R] [DistribMulAction S R] :
+instance [Monoid S] [AddCommMonoid R] [DistribMulAction S R] :
     DistribMulAction S (AlbertAlgebra R) :=
   (addEquivProd R).injective.distribMulAction (addEquivProd R).toAddMonoidHom fun _ _ => by simp
 
-instance [Semiring S] [AddCommGroup R] [Module S R] : Module S (AlbertAlgebra R) :=
+instance [Semiring S] [AddCommMonoid R] [Module S R] : Module S (AlbertAlgebra R) :=
   (addEquivProd R).injective.module _ (addEquivProd R).toAddMonoidHom fun _ _ => by simp
 
 instance [AddCommGroup R] [One R] : AddCommGroupWithOne (AlbertAlgebra R) where
@@ -176,14 +179,14 @@ instance [AddCommGroup R] [One R] : AddCommGroupWithOne (AlbertAlgebra R) where
 
 /-- The components of a Hermitian matrix, as a linear isomorphism with the pair of its scalar
 diagonal and its octonion entries, over any semiring acting on the coefficients. -/
-def linearEquivProd (S R : Type*) [Semiring S] [AddCommGroup R] [Module S R] :
+def linearEquivProd (S R : Type*) [Semiring S] [AddCommMonoid R] [Module S R] :
     AlbertAlgebra R ≃ₗ[S] (Fin 3 → R) × (Fin 3 → Octonion R) :=
   { addEquivProd R with map_smul' := fun _ _ => rfl }
 
-@[simp] theorem linearEquivProd_apply [Semiring S] [AddCommGroup R] [Module S R]
+@[simp] theorem linearEquivProd_apply [Semiring S] [AddCommMonoid R] [Module S R]
     (A : AlbertAlgebra R) : linearEquivProd S R A = (A.diag, A.offDiag) := (rfl)
 
-@[simp] theorem linearEquivProd_symm_apply [Semiring S] [AddCommGroup R] [Module S R]
+@[simp] theorem linearEquivProd_symm_apply [Semiring S] [AddCommMonoid R] [Module S R]
     (p : (Fin 3 → R) × (Fin 3 → Octonion R)) :
     (linearEquivProd S R).symm p = ⟨p.1, p.2⟩ := (rfl)
 
@@ -296,7 +299,7 @@ end Product
 
 section Trace
 
-variable [Ring R]
+variable [Semiring R]
 
 /-- **The trace** of a Hermitian octonion matrix: the sum of its three scalar diagonal entries. -/
 def trace : AlbertAlgebra R →ₗ[R] R where
@@ -319,7 +322,7 @@ theorem trace_surjective : Function.Surjective (trace : AlbertAlgebra R →ₗ[R
 ring satisfying `StrongRankCondition` it is `26`-dimensional
 (`TauCeti.AlbertAlgebra.finrank_traceZero`). When `3` is invertible, it complements the scalar
 matrices; in characteristic `3`, it contains the identity matrix. -/
-def traceZero (R : Type*) [Ring R] : Submodule R (AlbertAlgebra R) := LinearMap.ker trace
+def traceZero (R : Type*) [Semiring R] : Submodule R (AlbertAlgebra R) := LinearMap.ker trace
 
 @[simp] theorem mem_traceZero {A : AlbertAlgebra R} : A ∈ traceZero R ↔ trace A = 0 :=
   LinearMap.mem_ker
@@ -380,7 +383,7 @@ otherwise. -/
     · simp [h]
 
 /-- The diagonal idempotents add up to the identity matrix. -/
-@[simp] theorem sum_diagIdempotent [AddCommGroupWithOne R] : ∑ i, diagIdempotent R i = 1 := by
+@[simp] theorem sum_diagIdempotent [AddCommMonoid R] [One R] : ∑ i, diagIdempotent R i = 1 := by
   apply (addEquivProd R).injective
   simp [map_sum, ← prod_mk_sum, Finset.univ_sum_single]
   rfl
@@ -388,7 +391,7 @@ otherwise. -/
 /-- Each diagonal idempotent has trace `1`, so the frame accounts for the whole trace of the
 identity. Not a `simp` lemma: `TauCeti.AlbertAlgebra.trace_apply` already takes its left-hand side
 apart, and `simp` proves it outright. -/
-theorem trace_diagIdempotent [Ring R] (i : Fin 3) : trace (diagIdempotent R i) = 1 := by
+theorem trace_diagIdempotent [Semiring R] (i : Fin 3) : trace (diagIdempotent R i) = 1 := by
   simp [Pi.single_apply]
 
 end AlbertAlgebra
