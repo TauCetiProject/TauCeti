@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.NumberField.Index.DedekindCubic.Basic
 public import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly
+import Mathlib.RingTheory.Localization.Finiteness
+import Mathlib.RingTheory.Localization.NormTrace
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 
@@ -22,7 +24,9 @@ the full ring of integers and to the computation of its primes above `2`.
 
 The construction follows Neukirch, *Algebraic Number Theory*, III §2, Exercise 1.
 The discriminant calculation uses Mathlib's `Algebra.discr_of_matrix_vecMul`
-and the power-basis discriminant comparison.
+and the power-basis discriminant comparison. Mathlib's
+`Algebra.discr_localizationLocalization` identifies this rational calculation
+with the discriminant of the integral basis of the order.
 -/
 
 public section
@@ -95,9 +99,7 @@ end Order
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
-/-- The discriminant of the displayed basis of Dedekind's order is `−503`.
-This does not assume that the order is the full ring of integers. -/
-theorem discr_dedekindOrder
+private theorem discr_dedekindOrder_vector
     (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     Algebra.discr ℚ ![1, (θ : K), (dedekindBeta (dedekindCubic_relation hmin) : K)] =
@@ -139,7 +141,7 @@ theorem linearIndependent_dedekindOrder
       ![1, (θ : K), (dedekindBeta (dedekindCubic_relation hmin) : K)] := by
     by_contra h
     have hz := Algebra.discr_zero_of_not_linearIndependent ℚ h
-    rw [discr_dedekindOrder hmin hgen] at hz
+    rw [discr_dedekindOrder_vector hmin hgen] at hz
     norm_num at hz
   have hcomp : (IsScalarTower.toAlgHom ℤ (𝓞 K) K).toLinearMap ∘
       ![1, θ, dedekindBeta (dedekindCubic_relation hmin)] =
@@ -167,5 +169,53 @@ def dedekindOrderBasis
   simp only [dedekindOrderBasis, Basis.map_apply, LinearEquiv.trans_apply,
     Subalgebra.toSubmoduleEquiv, Basis.span_apply]
   exact LinearEquiv.coe_ofEq_apply _ _
+
+/-- The integral basis of Dedekind's order has discriminant `−503`.
+This does not assume that the order is the full ring of integers. -/
+theorem discr_dedekindOrder
+    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
+    Algebra.discr ℤ (dedekindOrderBasis hmin hgen) = -503 := by
+  let O := dedekindOrder (dedekindCubic_relation hmin)
+  let f : O →ₐ[ℤ] K := (IsScalarTower.toAlgHom ℤ (𝓞 K) K).comp O.val
+  let : Algebra O K := f.toAlgebra
+  have : IsScalarTower ℤ O K := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
+  -- Inverting nonzero integers recovers `K`, since the order contains its generator.
+  have : IsLocalization (Algebra.algebraMapSubmonoid O (nonZeroDivisors ℤ)) K := by
+    rw [isLocalization_iff]
+    refine ⟨?_, ?_, ?_⟩
+    · rintro ⟨_, n, hn, rfl⟩
+      simpa only [IsScalarTower.algebraMap_apply ℤ O K] using
+        (isUnit_iff_ne_zero.mpr (Int.cast_ne_zero.mpr (nonZeroDivisors.ne_zero hn)))
+    · intro x
+      obtain ⟨n, hn⟩ := multiple_mem_adjoin_of_mem_localization_adjoin
+        (nonZeroDivisors ℤ) ℚ {(θ : K)} x (hgen ▸ Algebra.mem_top)
+      have hle : Algebra.adjoin ℤ {(θ : K)} ≤ f.range := by
+        refine Algebra.adjoin_le ?_
+        rintro _ rfl
+        exact ⟨⟨θ, Algebra.subset_adjoin (by simp)⟩, rfl⟩
+      obtain ⟨y, hy⟩ := hle hn
+      refine ⟨⟨y, ⟨algebraMap ℤ O n, Algebra.mem_algebraMapSubmonoid_of_mem n⟩⟩, ?_⟩
+      -- The range witness uses the ring-hom coercion of the local algebra map.
+      change f y = n • x at hy
+      change x * ((n : ℤ) : K) = f y
+      simpa only [Submonoid.smul_def, Algebra.smul_def, algebraMap_int_eq, Int.coe_castRingHom,
+        mul_comm] using hy.symm
+    · intro x y h
+      exact ⟨1, by simpa using Subtype.ext (RingOfIntegers.coe_injective h)⟩
+  have hvec : ⇑((dedekindOrderBasis hmin hgen).localizationLocalization
+      ℚ (nonZeroDivisors ℤ) K) =
+      ![1, (θ : K), (dedekindBeta (dedekindCubic_relation hmin) : K)] := by
+    ext i
+    rw [Basis.localizationLocalization_apply]
+    -- The local algebra structure is the composite of the two inclusions.
+    change ((dedekindOrderBasis hmin hgen i : 𝓞 K) : K) = _
+    rw [coe_dedekindOrderBasis]
+    fin_cases i <;> rfl
+  have h := Algebra.discr_localizationLocalization ℤ (nonZeroDivisors ℤ) K (Rₘ := ℚ)
+    (dedekindOrderBasis hmin hgen)
+  rw [hvec, discr_dedekindOrder_vector hmin hgen] at h
+  simp only [algebraMap_int_eq, Int.coe_castRingHom] at h
+  exact_mod_cast h.symm
 
 end TauCeti.NumberField
