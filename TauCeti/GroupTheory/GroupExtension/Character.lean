@@ -8,6 +8,9 @@ module
 public import TauCeti.GroupTheory.GroupExtension.Cohomology
 public import TauCeti.GroupTheory.GroupAction.Character
 public import Mathlib.GroupTheory.Abelianization.Defs
+import Mathlib.GroupTheory.Abelianization.Finite
+import Mathlib.GroupTheory.FiniteAbelian.Duality
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
 # Characters of factor-set extensions
@@ -21,10 +24,11 @@ kernel and range are available as additive subgroups.
 The class vanishes exactly when the character extends to the whole extension.
 Consequently, if the kernel lies in the commutator subgroup, transgression is
 injective. Conversely, when characters into the coefficient group separate the kernel's
-image in the abelianization, injectivity forces the kernel into the commutator subgroup. Thus in
-characteristic zero the injectivity of transgression detects exactly the stem extensions.
-These are the character-theoretic criteria used to identify the kernel of a representation
-group with the dual of the factor-set class group.
+image in the abelianization, injectivity forces the kernel into the commutator subgroup. In
+particular, for finite extensions over an algebraically closed field of characteristic zero,
+the injectivity of transgression detects exactly the stem extensions. These are the
+character-theoretic criteria used to identify the kernel of a representation group with the
+dual of the factor-set class group.
 
 The coefficient group may be any commutative group with trivial action; the action
 on the kernel need not be trivial, provided its characters are equivariant.
@@ -170,6 +174,26 @@ theorem characterTransgression_injective_iff_range_inl_le_commutator_of_separate
       η.toMul.val a) hχ
     simpa [χ] using this
   exact hψ haone
+
+variable {k : Type} [Field k] [IsAlgClosed k]
+
+local instance : MulDistribMulAction G kˣ :=
+  MulDistribMulAction.compHom kˣ (1 : G →* MulAut kˣ)
+
+omit hA in
+/-- Over an algebraically closed field of characteristic zero, character transgression is
+injective exactly for finite stem factor-set extensions. -/
+theorem characterTransgression_injective_iff_range_inl_le_commutator_of_isAlgClosed
+    [CharZero k] (α : FactorSet G M) [Finite α.Extension] :
+    Function.Injective (α.characterTransgression (A := kˣ)) ↔
+      (inl α).range ≤ commutator α.Extension := by
+  let _ : NeZero ((Monoid.exponent (Abelianization α.Extension) : ℕ) : k) :=
+    ⟨Nat.cast_ne_zero.mpr (Monoid.exponent_ne_zero_of_finite)⟩
+  apply characterTransgression_injective_iff_range_inl_le_commutator_of_separates α
+    (fun _ _ ↦ rfl)
+  intro a hx
+  exact CommGroup.exists_apply_ne_one_of_hasEnoughRootsOfUnity
+    (Abelianization α.Extension) k hx
 
 end StemCriterion
 
