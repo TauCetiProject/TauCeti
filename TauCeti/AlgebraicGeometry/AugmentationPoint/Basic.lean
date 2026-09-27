@@ -24,6 +24,13 @@ public section
 
 open AlgebraicGeometry IsLocalRing
 
+/-- The kernel of an augmentation to a field is a maximal ideal, even when the algebra is
+not commutative. -/
+instance AlgHom.kernelIsMaximal {k H : Type*} [Field k] [Ring H] [Algebra k H]
+    (f : H →ₐ[k] k) : (RingHom.ker (f : H →+* k)).IsMaximal :=
+  RingHom.ker_isMaximal_of_surjective (f : H →+* k)
+    (fun r ↦ ⟨algebraMap k H r, f.commutes r⟩)
+
 namespace TauCeti.AlgHom
 
 universe u v w

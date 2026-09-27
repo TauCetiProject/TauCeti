@@ -41,11 +41,12 @@ theorem finrank_kernelCotangent_eq_finrank_residueFieldCotangent :
         (ResidueField ((Spec (CommRingCat.of A)).presheaf.stalk (kernelPoint f)))
         (IsLocalRing.CotangentSpace
           ((Spec (CommRingCat.of A)).presheaf.stalk (kernelPoint f))) := by
-  have h := lift_rank_eq_of_equiv_equiv (kernelResidueFieldRingEquiv f)
+  have h := lift_rank_eq_of_equiv_equiv (kernelResidueFieldAlgEquiv f).toRingEquiv
     (kernelCotangentLinearEquivZariski f).toAddEquiv
-    (kernelResidueFieldRingEquiv f).bijective (fun r x ↦
-      ((kernelCotangentLinearEquivZariski f).map_smul r x).trans
-        (kernelCotangentLinearEquivZariski_smul f r x))
+    (kernelResidueFieldAlgEquiv f).bijective (fun r x ↦ by
+      simpa only [AlgEquiv.coe_toRingEquiv, LinearEquiv.coe_toAddEquiv,
+        LinearEquiv.coe_addEquiv_apply, kernelResidueFieldAlgEquiv_apply,
+        IsScalarTower.algebraMap_smul] using (kernelCotangentLinearEquivZariski f).map_smul r x)
   simpa only [Cardinal.toNat_lift, Module.finrank] using congrArg Cardinal.toNat h
 
 /-- At a rational point with Noetherian local ring, local dimension is bounded by the
