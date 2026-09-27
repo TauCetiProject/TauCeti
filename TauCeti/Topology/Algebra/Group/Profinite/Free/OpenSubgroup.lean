@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Cohomology
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.Basic
 
 /-!
 # The generator rank of an open subgroup of a free pro-`p` group

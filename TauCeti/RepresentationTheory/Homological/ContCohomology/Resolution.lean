@@ -12,13 +12,18 @@ public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
 
 Mathlib computes the continuous cohomology of a topological representation `X` from the coinduced
 resolution `TopRep.resolutionX X n`, the iterated function space `C(G, C(G, …, C(G, X)))`, whose
-differential `TopRep.d` is defined recursively by `d (m + 1) F x = F - d m (F x)`. So evaluation at
-any point `x : G` contracts the resolution, `d m (F x) + (d (m + 1) F) x = F`. This contraction is
-not `G`-equivariant, so it does not descend to the invariants, which are the homogeneous cochains;
-a sum of such contractions over suitably chosen points can.
+differential `TopRep.d` is defined recursively by `d (n + 1) F x = F - d n (F x)`. This file
+records the pointwise formulas that the recursion gives for the action and for the differential on
+a successor level, and their consequence that evaluation at any point `x : G` contracts the
+resolution: `d n (F x) + (d (n + 1) F) x = F`, summed over finitely many points. Evaluation at a
+point is not `G`-equivariant, so the contraction does not descend to the invariants, which are the
+homogeneous cochains; it is nevertheless what drives the acyclicity of coinduced modules, and a sum
+of such contractions over suitably chosen points can descend.
 
 ## Main results
 
+* `TopRep.resolutionX_succ_ρ_apply_apply` and `TopRep.hom_d_succ_apply_apply`: the action and
+  the differential on a successor level of the resolution, at a point.
 * `TopRep.d_sum_apply_add_sum_d_apply`: evaluation at finitely many points, summed, contracts the
   coinduced resolution up to the number of points.
 * `TopRep.homogeneousCochains.d_one_apply`: the differential of a homogeneous one-cochain,
@@ -32,6 +37,20 @@ namespace TopRep
 
 variable {k G : Type*} [Ring k] [TopologicalSpace k] [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] (X : TopRep k G)
+
+/-- The action on a successor level of the coinduced resolution, at a point:
+`(g • F) x = g • F (g⁻¹ * x)`. -/
+@[simp]
+theorem resolutionX_succ_ρ_apply_apply (n : ℕ) (g : G) (F : (resolutionX X (n + 1)).V) (x : G) :
+    ((resolutionX X (n + 1)).ρ g F) x = (resolutionX X n).ρ g (F (g⁻¹ * x)) :=
+  ContRepresentation.coind₁_apply_apply (resolutionX X n).ρ g F x
+
+/-- The successor differential of the coinduced resolution, at a point:
+`(d (n + 1) F) x = F - d n (F x)`. -/
+@[simp]
+theorem hom_d_succ_apply_apply (n : ℕ) (F : (resolutionX X (n + 1)).V) (x : G) :
+    ((d X (n + 1)).hom F) x = F - (d X n).hom (F x) :=
+  (rfl)
 
 /-- **Summed evaluations contract the coinduced resolution up to a multiple.** For an element
 `F : C(G, Xₘ)` of the degree `m + 1` term of the coinduced resolution and finitely many points
