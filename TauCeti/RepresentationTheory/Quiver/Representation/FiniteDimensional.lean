@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+public import TauCeti.CategoryTheory.Exact.ExtensionClosed
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import TauCeti.RepresentationTheory.Quiver.Representation.Basic
 
 /-!
@@ -13,7 +16,8 @@ public import TauCeti.RepresentationTheory.Quiver.Representation.Basic
 
 A representation of a quiver is **pointwise finite-dimensional** when the vector space it puts at
 every vertex is finite-dimensional. This file defines that property, `TauCeti.IsFinDim`, and proves
-that it transports along an isomorphism of representations.
+that it transports along an isomorphism of representations. It also equips the full subcategory
+of pointwise finite-dimensional representations with its induced exact structure.
 
 ## Main definitions
 
@@ -68,5 +72,67 @@ theorem IsFinDim.of_iso {M N : QuiverRep.{u, v, w, t} k Q} (h : IsFinDim k Q M) 
   intro v
   have := h v
   exact (e.app v).toLinearEquiv.finiteDimensional
+
+section ExactStructure
+
+variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
+
+open CategoryTheory.Limits CategoryTheory.ObjectProperty
+open scoped ZeroObject
+
+instance : ObjectProperty.IsClosedUnderIsomorphisms (IsFinDim.{u, v, w, t} k Q)
+    where
+  of_iso := fun e h => h.of_iso e
+
+instance : ObjectProperty.ContainsZero (IsFinDim.{u, v, w, t} k Q) where
+  exists_zero := by
+    refine ⟨0, isZero_zero _, ?_⟩
+    rw [isFinDim_iff]
+    intro i
+    have hi : IsZero ((0 : QuiverRep.{u, v, w, t} k Q).obj i) := Functor.zero_obj i
+    let : Subsingleton ((0 : QuiverRep.{u, v, w, t} k Q).obj i) :=
+      ModuleCat.subsingleton_of_isZero hi
+    infer_instance
+
+/-- Pointwise finite-dimensional representations are closed under extensions. -/
+theorem isExtensionClosed_finiteDimensionalQuiverRepresentations :
+    (ExactStructure.abelian (QuiverRep.{u, v, w, t} k Q)).IsExtensionClosed
+      (IsFinDim k Q) := by
+  refine ⟨fun {S} hS h₁ h₃ => ?_⟩
+  rw [isFinDim_iff] at h₁ h₃ ⊢
+  intro i
+  let E := (evaluation (Paths Q) (ModuleCat k)).obj i
+  have hSi : (S.map E).ShortExact :=
+    ((ExactStructure.abelian_conflation _).mp hS).map_of_exact E
+  have : Module.Finite k (S.map E).X₁ := by
+    simpa only [ShortComplex.map_X₁, E, evaluation_obj_obj] using h₁ i
+  have : Module.Finite k (S.map E).X₃ := by
+    simpa only [ShortComplex.map_X₃, E, evaluation_obj_obj] using h₃ i
+  have hfin : Module.Finite k (S.map E).X₂ :=
+    Module.Finite.of_exact
+      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hSi.exact)
+      hSi.moduleCat_surjective_g
+  simpa only [ShortComplex.map_X₂, E, evaluation_obj_obj] using hfin
+
+instance : ObjectProperty.IsClosedUnderBinaryProducts (IsFinDim.{u, v, w, t} k Q) :=
+  (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q).isClosedUnderBinaryProducts
+
+/-- The exact structure on pointwise finite-dimensional quiver representations. -/
+noncomputable def finiteDimensionalQuiverRepresentationsExactStructure :
+    ExactStructure (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :=
+  (ExactStructure.abelian _).fullSubcategory _
+    (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q)
+
+/-- Conflations of finite-dimensional quiver representations are exactly their short exact
+sequences in the ambient functor category. -/
+theorem finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff
+    (S : ShortComplex (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q))) :
+    (finiteDimensionalQuiverRepresentationsExactStructure k Q).Conflation S ↔
+      (S.map (ObjectProperty.ι (IsFinDim k Q))).ShortExact :=
+  (ExactStructure.fullSubcategory_conflation_iff
+    (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q) S).trans
+    (ExactStructure.abelian_conflation _)
+
+end ExactStructure
 
 end TauCeti

@@ -9,8 +9,6 @@ public import TauCeti.CategoryTheory.GrothendieckGroup.Exact
 public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 
 /-!
@@ -41,57 +39,6 @@ universe u v w t
 
 variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
 
-instance : ObjectProperty.IsClosedUnderIsomorphisms (IsFinDim.{u, v, w, t} k Q)
-    where
-  of_iso := fun e h => h.of_iso e
-
-instance : ObjectProperty.ContainsZero (IsFinDim.{u, v, w, t} k Q) where
-  exists_zero := by
-    refine ⟨0, isZero_zero _, ?_⟩
-    rw [isFinDim_iff]
-    intro i
-    have hi : IsZero ((0 : QuiverRep.{u, v, w, t} k Q).obj i) := Functor.zero_obj i
-    let : Subsingleton ((0 : QuiverRep.{u, v, w, t} k Q).obj i) :=
-      ModuleCat.subsingleton_of_isZero hi
-    infer_instance
-
-/-- Pointwise finite-dimensional representations are closed under extensions. -/
-theorem isExtensionClosed_finiteDimensionalQuiverRepresentations :
-    (ExactStructure.abelian (QuiverRep.{u, v, w, t} k Q)).IsExtensionClosed
-      (IsFinDim k Q) := by
-  refine ⟨fun {S} hS h₁ h₃ => ?_⟩
-  rw [isFinDim_iff] at h₁ h₃ ⊢
-  intro i
-  let E := (evaluation (Paths Q) (ModuleCat k)).obj i
-  have hSi : (S.map E).ShortExact :=
-    ((ExactStructure.abelian_conflation _).mp hS).map_of_exact E
-  have : Module.Finite k (S.map E).X₁ := h₁ i
-  have : Module.Finite k (S.map E).X₃ := h₃ i
-  have hfin : Module.Finite k (S.map E).X₂ :=
-    Module.Finite.of_exact
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hSi.exact)
-      hSi.moduleCat_surjective_g
-  exact hfin
-
-instance : ObjectProperty.IsClosedUnderBinaryProducts (IsFinDim.{u, v, w, t} k Q) :=
-  (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q).isClosedUnderBinaryProducts
-
-/-- The exact structure on pointwise finite-dimensional quiver representations. -/
-noncomputable def finiteDimensionalQuiverRepresentationsExactStructure :
-    ExactStructure (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :=
-  (ExactStructure.abelian _).fullSubcategory _
-    (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q)
-
-/-- Conflations of finite-dimensional quiver representations are exactly their short exact
-sequences in the ambient functor category. -/
-theorem finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff
-    (S : ShortComplex (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q))) :
-    (finiteDimensionalQuiverRepresentationsExactStructure k Q).Conflation S ↔
-      (S.map (ObjectProperty.ι (IsFinDim k Q))).ShortExact :=
-  (ExactStructure.fullSubcategory_conflation_iff
-    (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q) S).trans
-    (ExactStructure.abelian_conflation _)
-
 section GrothendieckGroup
 
 variable [EssentiallySmall.{t}
@@ -109,13 +56,19 @@ private noncomputable def quiverDimensionVectorInvariant :
     have hs := (finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff k Q S).mp hS
     have h₁ : ∀ i : Q, FiniteDimensional k
         ((S.map (ObjectProperty.ι (IsFinDim k Q))).X₁.obj ((Paths.of Q).obj i)) :=
-      fun i ↦ by simpa using (isFinDim_iff.mp S.X₁.property) ((Paths.of Q).obj i)
+      fun i ↦ by
+        simpa only [ShortComplex.map_X₁, ObjectProperty.ι_obj] using
+          (isFinDim_iff.mp S.X₁.property) ((Paths.of Q).obj i)
     have h₃ : ∀ i : Q, FiniteDimensional k
         ((S.map (ObjectProperty.ι (IsFinDim k Q))).X₃.obj ((Paths.of Q).obj i)) :=
-      fun i ↦ by simpa using (isFinDim_iff.mp S.X₃.property) ((Paths.of Q).obj i)
+      fun i ↦ by
+        simpa only [ShortComplex.map_X₃, ObjectProperty.ι_obj] using
+          (isFinDim_iff.mp S.X₃.property) ((Paths.of Q).obj i)
     have hdim := dimVector_add_of_shortExact hs h₁ h₃
     funext i
-    exact congrArg (fun n : ℕ ↦ (n : ℤ)) (congrFun hdim i)
+    simpa only [Pi.add_apply, Nat.cast_add, ShortComplex.map_X₁,
+      ShortComplex.map_X₂, ShortComplex.map_X₃, ObjectProperty.ι_obj] using
+      congrArg (fun n : ℕ ↦ (n : ℤ)) (congrFun hdim i)
 
 /-- The dimension vector as an additive map from the exact Grothendieck group of pointwise
 finite-dimensional quiver representations to the integral vertex lattice. -/
