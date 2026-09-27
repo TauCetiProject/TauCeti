@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.AlmostSplit.Sequence
-public import TauCeti.CategoryTheory.IrreducibleMorphism
+public import TauCeti.CategoryTheory.AlmostSplit.Basic
 
 /-!
 # Irreducible maps in almost-split sequences
