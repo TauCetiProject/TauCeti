@@ -197,11 +197,9 @@ theorem slIdeal_le_of_notMem_center (htwo : (2 : K) ≠ 0) {x : Matrix n n K} (h
     (hx : x ∉ LieAlgebra.center K (Matrix n n K)) : slIdeal K n ≤ I := by
   by_cases hoff : ∀ i j : n, i ≠ j → x i j = 0
   · -- `x` is diagonal, and not a scalar, so two of its diagonal entries differ.
-    have hxd : (diagonal fun k => x k k) ∈ I := by
-      have hx' : x = diagonal fun k ↦ x k k :=
-        (Matrix.IsDiag.diagonal_diag fun _ _ hij ↦ hoff _ _ hij).symm
-      rw [← hx']
-      exact hxI
+    have hx' : x = diagonal fun k ↦ x k k :=
+      (Matrix.IsDiag.diagonal_diag fun _ _ hij ↦ hoff _ _ hij).symm
+    have hxd : (diagonal fun k => x k k) ∈ I := hx' ▸ hxI
     obtain ⟨p, q, hpq⟩ : ∃ p q : n, x p p ≠ x q q := by
       by_contra hcon
       have hall : ∀ p q : n, x p p = x q q := by simpa using hcon
@@ -211,10 +209,8 @@ theorem slIdeal_le_of_notMem_center (htwo : (2 : K) ≠ 0) {x : Matrix n n K} (h
         exact ⟨0, by rw [Subsingleton.elim x 0, zero_smul]⟩
       · obtain ⟨k⟩ := hne
         refine ⟨x k k, ?_⟩
-        ext i j
-        rcases eq_or_ne i j with rfl | hij
-        · simp [hall i k]
-        · rw [hoff i j hij, Matrix.smul_apply, Matrix.one_apply_ne hij, smul_zero]
+        rw [Matrix.smul_one_eq_diagonal]
+        exact hx'.trans (congrArg diagonal (funext fun i ↦ hall i k))
     exact slIdeal_le_of_single_mem I htwo (fun h => hpq (by rw [h]))
       (single_mem_of_diagonal_mem I hxd hpq 1)
   · obtain ⟨i, j, hij, hxij⟩ : ∃ i j : n, i ≠ j ∧ x i j ≠ 0 := by simpa using hoff
