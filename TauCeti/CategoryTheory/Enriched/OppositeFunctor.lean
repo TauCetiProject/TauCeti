@@ -18,6 +18,10 @@ This applies in particular to differential graded functors: the braiding of coch
 supplies the Koszul sign in opposite composition, and the same chain maps define the opposite
 functor. The construction is useful when a left action is expressed as a right action of an
 opposite differential graded category.
+
+## References
+
+* `Mathlib.CategoryTheory.Enriched.Opposite`, for the opposite enriched category.
 -/
 
 @[expose] public section
@@ -38,20 +42,18 @@ def op (F : EnrichedFunctor V C D) : EnrichedFunctor V Cᵒᵖ Dᵒᵖ where
   map X Y := F.map Y.unop X.unop
   map_id X := F.map_id X.unop
   map_comp X Y Z := by
-    dsimp [eComp_op_eq]
-    rw [Category.assoc, F.map_comp]
-    rw [← Category.assoc, ← braiding_naturality]
-    simp only [Category.assoc]
+    rw [eComp_op_eq, Category.assoc, F.map_comp, tensorHom_eComp_op_eq]
+    rfl
 
 /-- The opposite functor acts on objects by applying the original functor. -/
 @[simp]
-theorem op_obj (F : EnrichedFunctor V C D) (X : C) :
-    F.op.obj (Opposite.op X) = Opposite.op (F.obj X) := rfl
+theorem op_obj (F : EnrichedFunctor V C D) (X : Cᵒᵖ) :
+    F.op.obj X = Opposite.op (F.obj X.unop) := rfl
 
 /-- The opposite functor uses the original map on the reversed Hom object. -/
 @[simp]
-theorem op_map (F : EnrichedFunctor V C D) (X Y : C) :
-    F.op.map (Opposite.op X) (Opposite.op Y) = F.map Y X := rfl
+theorem op_map (F : EnrichedFunctor V C D) (X Y : Cᵒᵖ) :
+    F.op.map X Y = F.map Y.unop X.unop := rfl
 
 /-- Taking opposites sends the identity enriched functor to the identity. -/
 @[simp]
