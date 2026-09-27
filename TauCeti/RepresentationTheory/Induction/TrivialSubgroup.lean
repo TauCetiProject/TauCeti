@@ -149,6 +149,10 @@ instance coindBotUnit_mono (A : Rep k G) : Mono (coindBotUnit A) :=
       rw [← coindBotUnit_hom_apply_coe, ← coindBotUnit_hom_apply_coe, h]
     simpa using h1
 
+/-- Coinduction on the underlying module, viewed as an endofunctor of representations. -/
+@[expose] def coindBotRepFunctor : Rep k G ⥤ Rep k G :=
+  (forget₂ (Rep k G) (ModuleCat k)) ⋙ coindBotFunctor k G
+
 /-- The map of coinduced representations associated to a morphism of representations. -/
 def coindBotMap {A B : Rep k G} (f : A ⟶ B) :
     coindBot k G A.V ⟶ coindBot k G B.V :=
@@ -157,15 +161,17 @@ def coindBotMap {A B : Rep k G} (f : A ⟶ B) :
 /-- The map induced by an identity morphism is the identity. -/
 @[simp]
 theorem coindBotMap_id (A : Rep k G) : coindBotMap (𝟙 A) = 𝟙 _ := by
-  simp [coindBotMap]
-  rfl
+  change (coindBotRepFunctor (k := k) (G := G)).map (𝟙 A) = 𝟙 _
+  exact (coindBotRepFunctor (k := k) (G := G)).map_id A
 
 /-- The map induced by a composite is the composite of the induced maps. -/
 @[simp]
 theorem coindBotMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
     coindBotMap (f ≫ g) = coindBotMap f ≫ coindBotMap g := by
-  simp [coindBotMap]
-  rfl
+  change (coindBotRepFunctor (k := k) (G := G)).map (f ≫ g) =
+    (coindBotRepFunctor (k := k) (G := G)).map f ≫
+      (coindBotRepFunctor (k := k) (G := G)).map g
+  exact Functor.map_comp _ _ _
 
 /-- The coinduced map acts pointwise by the underlying map. -/
 @[simp]
@@ -189,10 +195,6 @@ theorem coindBotUnit_naturality {A B : Rep k G} (f : A ⟶ B) :
   exact (Rep.hom_comm_apply f g a).symm
 
 variable {A B : Rep k G}
-
-/-- Coinduction on the underlying module, viewed as an endofunctor of representations. -/
-@[expose] def coindBotRepFunctor : Rep k G ⥤ Rep k G :=
-  (forget₂ (Rep k G) (ModuleCat k)) ⋙ coindBotFunctor k G
 
 /-- The coinduction endofunctor acts on objects by coinduction of underlying modules. -/
 @[simp] theorem coindBotRepFunctor_obj (A : Rep k G) :
