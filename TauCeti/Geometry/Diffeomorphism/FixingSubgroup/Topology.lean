@@ -58,4 +58,11 @@ theorem coe_closedFixingSubgroup (s : Set M) :
     (closedFixingSubgroup (I := I) (n := n) s : Subgroup (M ≃ₘ^n⟮I, I⟯ M)) =
       fixingSubgroup (I := I) (n := n) s := (rfl)
 
+/-- Membership in the closed fixing subgroup is pointwise fixedness on `s`. -/
+@[simp]
+theorem mem_closedFixingSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
+    f ∈ closedFixingSubgroup (I := I) (n := n) s ↔ ∀ x ∈ s, f x = x := by
+  change f ∈ fixingSubgroup (I := I) (n := n) s ↔ ∀ x ∈ s, f x = x
+  exact mem_fixingSubgroup_iff
+
 end Diffeomorph
