@@ -87,7 +87,6 @@ theorem toCochainMap_id (hA : IsDGAlgebra 𝒜 dA) :
     _ = 𝟙 hA.toCochainComplex := gradedCochainComplexMap_id
 
 /-- Composition of DG algebra morphisms induces composition of cochain maps. -/
-@[simp]
 theorem toCochainMap_comp (g : DGAlgHom hB hC) (f : DGAlgHom hA hB) :
     (g.comp f).toCochainMap.{uR, uA, uC, max uB uExtra} =
       f.toCochainMap.{uR, uA, uB, max uC uExtra} ≫
