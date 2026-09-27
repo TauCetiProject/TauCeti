@@ -22,6 +22,8 @@ Lam, *Introduction to Quadratic Forms over Fields*, Chapter VII, §1.
 
 public section
 
+namespace TauCeti
+
 namespace QuadraticForm
 
 section CommRing
@@ -31,7 +33,7 @@ variable {K L V : Type*} [CommRing K] [CommRing L] [Algebra K L]
   [Module K V] [IsScalarTower K L V]
 
 /-- The tensor product of `⟨a⟩` with `Q` is isometric to `a • Q` by the left unit map. -/
-def tensorLId_smul (Q : QuadraticForm L V) (a : L) :
+def tensorLIdSmul (Q : QuadraticForm L V) (a : L) :
     (QuadraticForm.tmul
       (a • (QuadraticMap.sq (R := L) (A := L) : QuadraticForm L L)) Q).IsometryEquiv
       (a • Q) := by
@@ -46,13 +48,13 @@ def tensorLId_smul (Q : QuadraticForm L V) (a : L) :
 
 /-- Changing the functional by `x ↦ s (a * x)` tensors the form with `⟨a⟩`.
 No nonzeroness or finite-dimensionality is needed for this isometry. -/
-def scharlauTransfer_changeFunctional (Q : QuadraticForm L V)
+def scharlauTransferChangeFunctional (Q : QuadraticForm L V)
     (s : L →ₗ[K] K) (a : L) :
     (Q.scharlauTransfer (s.comp (LinearMap.mul K L a))).IsometryEquiv
       ((QuadraticForm.tmul
         (a • (QuadraticMap.sq (R := L) (A := L) : QuadraticForm L L)) Q).scharlauTransfer s) := by
   rw [QuadraticMap.scharlauTransfer_comp_mul]
-  exact ((tensorLId_smul Q a).scharlauTransfer s).symm
+  exact ((tensorLIdSmul Q a).scharlauTransfer s).symm
 
 end CommRing
 
@@ -77,8 +79,10 @@ theorem exists_unit_scharlauTransfer_changeFunctional (Q : QuadraticForm L V)
     ext x
     simpa using ha x
   rw [h]
-  exact ⟨scharlauTransfer_changeFunctional Q s (a : L)⟩
+  exact ⟨scharlauTransferChangeFunctional Q s (a : L)⟩
 
 end Field
 
 end QuadraticForm
+
+end TauCeti
