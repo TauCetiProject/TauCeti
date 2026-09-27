@@ -404,13 +404,10 @@ def lieModuleHomEquiv
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun g :=
-    { toFun := g
-      map_add' := g.map_add
-      map_smul' := fun r m => by
-        have h : (algebraMap R U r) • m = r • m :=
-          algebraMap_smul _ r m
-        rw [← h, map_smul, algebraMap_smul, RingHom.id_apply]
-      map_lie' := fun {x m} => by rw [← hM, map_smul, hN] }
+    { toLinearMap := g.restrictScalars R
+      map_lie' := fun {x m} => by
+        simp only [LinearMap.toFun_eq_coe, LinearMap.coe_restrictScalars]
+        rw [← hM, map_smul, hN] }
   left_inv _ := rfl
   right_inv _ := rfl
 
