@@ -22,7 +22,7 @@ the transpose of the original composite and the single minus sign turns `w` into
 projective modules, and the crossed transposes are exactly the convention used there.
 
 Duality is **contravariant**: a morphism `f : X ⟶ Y` of matrix factorizations dualizes to a
-morphism `dualHom f : Yᵛ ⟶ Xᵛ`, whose two components are the transposes of the components of
+morphism `dualMap f : Yᵛ ⟶ Xᵛ`, whose two components are the transposes of the components of
 `f`, and whose commutativity conditions are the commutativity conditions of `f` with the two
 differentials exchanged. The two are packaged together as the contravariant functor
 `MatrixFactorization.dualFunctor` from the opposite category of matrix factorizations of `w` to
@@ -34,7 +34,7 @@ lands back at the potential `w` and at an isomorphic factorization.
 ## Main definitions
 
 * `MatrixFactorization.dual`: the dual of a matrix factorization of `w`, of potential `-w`.
-* `MatrixFactorization.dualHom`: the dual of a morphism, contravariantly.
+* `MatrixFactorization.dualMap`: the dual of a morphism, contravariantly.
 * `MatrixFactorization.dualFunctor`: duality as the contravariant functor
   `(MatrixFactorization S w)ᵒᵖ ⥤ MatrixFactorization S (-w)`.
 * `MatrixFactorization.doubleDual`, `MatrixFactorization.doubleDualIso`: the double dual, of the
@@ -42,9 +42,9 @@ lands back at the potential `w` and at an isomorphic factorization.
 
 ## Main results
 
-* `MatrixFactorization.dualHom_f₀`, `MatrixFactorization.dualHom_f₁`: the components of a dual
+* `MatrixFactorization.dualMap_f₀`, `MatrixFactorization.dualMap_f₁`: the components of a dual
   morphism.
-* `MatrixFactorization.dualHom_id`, `MatrixFactorization.dualHom_comp`: the dual of a morphism
+* `MatrixFactorization.dualMap_id`, `MatrixFactorization.dualMap_comp`: the dual of a morphism
   reverses identity and composition, which is what makes duality contravariant.
 * `MatrixFactorization.dualFunctor_obj`, `MatrixFactorization.dualFunctor_map`: the object and
   morphism maps of the contravariant duality functor.
@@ -94,55 +94,64 @@ abbrev dual (X : MatrixFactorization S w) : MatrixFactorization S (-w) :=
     (dual (S := S) (w := w) X).obj.X₁ = FGModuleCat.dual S X.obj.X₁ := rfl
 
 @[simp] theorem dual_obj_d₀ (X : MatrixFactorization S w) :
-    (dual (S := S) (w := w) X).obj.d₀ = FGModuleCat.dualHom S X.obj.d₁ := rfl
+    (dual (S := S) (w := w) X).obj.d₀ = FGModuleCat.dualMap S X.obj.d₁ := rfl
 
 @[simp] theorem dual_obj_d₁ (X : MatrixFactorization S w) :
-    (dual (S := S) (w := w) X).obj.d₁ = -FGModuleCat.dualHom S X.obj.d₀ := rfl
+    (dual (S := S) (w := w) X).obj.d₁ = -FGModuleCat.dualMap S X.obj.d₀ := rfl
 
 /-- The dual of a morphism of matrix factorizations is a morphism from the dual of the target to
 the dual of the source, with transposed components. -/
-def dualHom {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+def dualMap {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
     dual (S := S) (w := w) Y ⟶ dual (S := S) (w := w) X :=
-  InducedCategory.homMk (CurvedDuplex.dualHom f.hom)
+  InducedCategory.homMk (CurvedDuplex.dualMap f.hom)
 
 /-- The underlying curved-duplex morphism of a dual morphism of matrix factorizations. -/
-theorem dualHom_hom {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
-    (dualHom f).hom = CurvedDuplex.dualHom f.hom := (rfl)
+theorem dualMap_hom {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+    (dualMap f).hom = CurvedDuplex.dualMap f.hom := (rfl)
 
-@[simp] theorem dualHom_f₀ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
-    (dualHom f).hom.f₀ = FGModuleCat.dualHom S f.hom.f₀ :=
-  by rw [dualHom_hom, CurvedDuplex.dualHom_hom, CurvedDuplex.homMk_f₀]
+@[simp] theorem dualMap_f₀ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+    (dualMap f).hom.f₀ = FGModuleCat.dualMap S f.hom.f₀ := by
+  rw [dualMap_hom, CurvedDuplex.dualMap_f₀]
 
-@[simp] theorem dualHom_f₁ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
-    (dualHom f).hom.f₁ = FGModuleCat.dualHom S f.hom.f₁ :=
-    by rw [dualHom_hom, CurvedDuplex.dualHom_hom, CurvedDuplex.homMk_f₁]
+@[simp] theorem dualMap_f₁ {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+    (dualMap f).hom.f₁ = FGModuleCat.dualMap S f.hom.f₁ := by
+  rw [dualMap_hom, CurvedDuplex.dualMap_f₁]
 
-@[simp] theorem dualHom_id (X : MatrixFactorization S w) :
-    dualHom (𝟙 X) = 𝟙 (dual (S := S) (w := w) X) :=
-  InducedCategory.hom_ext (CurvedDuplex.dualHom_id _)
+@[simp] theorem dualMap_id (X : MatrixFactorization S w) :
+    dualMap (𝟙 X) = 𝟙 (dual (S := S) (w := w) X) :=
+  InducedCategory.hom_ext (CurvedDuplex.dualMap_id _)
 
-@[simp] theorem dualHom_comp {X Y Z : MatrixFactorization S w} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    dualHom (f ≫ g) = dualHom g ≫ dualHom f :=
-  InducedCategory.hom_ext (CurvedDuplex.dualHom_comp _ _)
+@[simp] theorem dualMap_comp {X Y Z : MatrixFactorization S w} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    dualMap (f ≫ g) = dualMap g ≫ dualMap f :=
+  InducedCategory.hom_ext (CurvedDuplex.dualMap_comp _ _)
 
 /-- **Duality of matrix factorizations is contravariant**: a morphism of matrix factorizations of
 `w` dualizes to a morphism of matrix factorizations of `-w` from the dual of its target to the
 dual of its source, and duality reverses identity and composition. The morphism map is
-`MatrixFactorization.dualHom` and the two functor laws are `MatrixFactorization.dualHom_id` and
-`MatrixFactorization.dualHom_comp`, so the dual is available through the category API rather than
+`MatrixFactorization.dualMap` and the two functor laws are `MatrixFactorization.dualMap_id` and
+`MatrixFactorization.dualMap_comp`, so the dual is available through the category API rather than
 only as a pair of separate functions. -/
-@[expose, implicit_reducible]
 def dualFunctor : (MatrixFactorization S w)ᵒᵖ ⥤ MatrixFactorization S (-w) where
   obj X := MatrixFactorization.dual (S := S) (w := w) X.unop
-  map f := MatrixFactorization.dualHom f.unop
-  map_id X := MatrixFactorization.dualHom_id X.unop
-  map_comp f g := MatrixFactorization.dualHom_comp g.unop f.unop
+  map f := MatrixFactorization.dualMap f.unop
+  map_id X := MatrixFactorization.dualMap_id X.unop
+  map_comp f g := MatrixFactorization.dualMap_comp g.unop f.unop
 
 @[simp] theorem dualFunctor_obj (X : (MatrixFactorization S w)ᵒᵖ) :
-    (dualFunctor (S := S) (w := w)).obj X = MatrixFactorization.dual (S := S) (w := w) X.unop := rfl
+    (dualFunctor (S := S) (w := w)).obj X = MatrixFactorization.dual (S := S) (w := w) X.unop := by
+  unfold dualFunctor
+  rfl
 
+/-- The morphism part of `dualFunctor` is the transpose `MatrixFactorization.dualMap`, along the
+two canonical identifications that its object part exhibits. The form is the one of the finite
+convolution dual in `FiniteLocallyFreeBicommutativeHopfAlgCat.dualFunctor_map`, so that the
+definition of the functor itself can stay opaque. -/
 @[simp] theorem dualFunctor_map {X Y : (MatrixFactorization S w)ᵒᵖ} (f : X ⟶ Y) :
-    (dualFunctor (S := S) (w := w)).map f = MatrixFactorization.dualHom f.unop := rfl
+    (dualFunctor (S := S) (w := w)).map f =
+      eqToHom (dualFunctor_obj (S := S) (w := w) X) ≫ MatrixFactorization.dualMap f.unop
+        ≫ eqToHom (dualFunctor_obj (S := S) (w := w) Y).symm := by
+  unfold dualFunctor
+  rfl
 
 /-- The double dual of a matrix factorization is a matrix factorization of the *same* potential: the
 two minus signs contributed by the two duals cancel, so it is a factorization of `w` and not of
@@ -163,11 +172,11 @@ abbrev doubleDual (X : MatrixFactorization S w) : MatrixFactorization S w :=
 
 @[simp] theorem doubleDual_obj_d₀ (X : MatrixFactorization S w) :
     (doubleDual (S := S) (w := w) X).obj.d₀ =
-      -FGModuleCat.dualHom S (FGModuleCat.dualHom S X.obj.d₀) := rfl
+      -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.obj.d₀) := rfl
 
 @[simp] theorem doubleDual_obj_d₁ (X : MatrixFactorization S w) :
     (doubleDual (S := S) (w := w) X).obj.d₁ =
-      -FGModuleCat.dualHom S (FGModuleCat.dualHom S X.obj.d₁) := rfl
+      -FGModuleCat.dualMap S (FGModuleCat.dualMap S X.obj.d₁) := rfl
 
 /-- A double dual of a matrix factorization is isomorphic to the original, by the evaluation
 pairing with the single minus sign on the even component. -/
