@@ -131,22 +131,27 @@ theorem orbifoldEulerChar_neg_iff (a b c : ℕ) :
   simp only [orbifoldEulerChar]
   constructor <;> intro h <;> linarith
 
-/-- A triple is a **spherical signature** when it is one of the five rows of the spherical table
-`(1, m, m)`, `(2, 2, m)`, `(2, 3, 3)`, `(2, 3, 4)` and `(2, 3, 5)`, the exact signatures of
-positive orbifold Euler characteristic. The cyclic row is the reduced form `(1, m, m)`: the group
-`TriangleGroup 1 b c` is cyclic of order `Nat.gcd b c`, and it is exactness, not the presentation,
-that forces `b = c`, by `TauCeti.PermutationTriple.b_eq_c_of_hasExactOrders_one`. Every row is
-sorted and positive, so unlike `TauCeti.IsSphericalParameterSignature` this predicate needs no
-ordering conjunct of its own. A triple of exact orders `(a, b, c)`, sorted, is spherical exactly
-when it is a row, by
+/-- A sorted positive triple is a **spherical signature** when it is one of the five rows of the
+spherical table `(1, m, m)`, `(2, 2, m)`, `(2, 3, 3)`, `(2, 3, 4)` and `(2, 3, 5)`, the exact
+signatures of positive orbifold Euler characteristic. The cyclic row is the reduced form
+`(1, m, m)`: the group `TriangleGroup 1 b c` is cyclic of order `Nat.gcd b c`, and it is exactness,
+not the presentation, that forces `b = c`, by
+`TauCeti.PermutationTriple.b_eq_c_of_hasExactOrders_one`. A triple of exact orders `(a, b, c)`,
+sorted, is spherical exactly when it is a row, by
 `TauCeti.PermutationTriple.geometryType_eq_spherical_iff_isSphericalSignature`.
+
+Two of the five rows have a free entry, so the ordering conjuncts are stated here rather than left
+implicit: without them the degenerate triples `(1, 0, 0)` and `(2, 2, 0)` would pass as signatures,
+although neither is a signature and their orbifold Euler characteristics are `0`, not positive.
+`TauCeti.IsEuclideanSignature` needs no conjuncts of its own, all three of its rows being concrete.
 
 The body is exposed so that the `Decidable` instance below, and `decide` on a concrete signature,
 can reduce it. -/
 @[expose]
 def IsSphericalSignature (a b c : ℕ) : Prop :=
-  (a = 1 ∧ b = c) ∨ (a = 2 ∧ b = 2) ∨ (a, b, c) = (2, 3, 3) ∨ (a, b, c) = (2, 3, 4) ∨
-    (a, b, c) = (2, 3, 5)
+  1 ≤ a ∧ a ≤ b ∧ b ≤ c ∧
+    ((a = 1 ∧ b = c) ∨ (a = 2 ∧ b = 2) ∨ (a, b, c) = (2, 3, 3) ∨ (a, b, c) = (2, 3, 4) ∨
+      (a, b, c) = (2, 3, 5))
 
 instance (a b c : ℕ) : Decidable (IsSphericalSignature a b c) := by
   simp only [IsSphericalSignature]
@@ -176,9 +181,9 @@ instance (a b c : ℕ) : Decidable (IsSphericalParameterSignature a b c) := by
 
 /-- A triple is a **Euclidean signature** when it is one of the three triples whose reciprocal
 sum is one: `(3, 3, 3)`, `(2, 4, 4)` and `(2, 3, 6)`. All three are sorted, positive and exact, so
-this predicate needs no ordering conjunct of its own, unlike
-`TauCeti.IsSphericalParameterSignature`. The body is exposed so that the `Decidable` instance
-below, and `decide` on a concrete signature, can reduce it. -/
+this predicate needs no ordering conjunct of its own, unlike `TauCeti.IsSphericalSignature`, whose
+first two rows have a free entry. The body is exposed so that the `Decidable` instance below, and
+`decide` on a concrete signature, can reduce it. -/
 @[expose]
 def IsEuclideanSignature (a b c : ℕ) : Prop :=
   (a, b, c) = (3, 3, 3) ∨ (a, b, c) = (2, 4, 4) ∨ (a, b, c) = (2, 3, 6)
@@ -335,6 +340,20 @@ theorem isEuclideanSignature_iff {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ : a ≤ b)
       subst hc3
       decide
 
+/-- A row of the spherical table is a row of the parameter list: the reduced cyclic row `(1, m, m)`
+is one of the triples whose first parameter is `1`, the other four rows are rows of both. -/
+private theorem row_isParameterRow {a b c : ℕ}
+    (h : (a = 1 ∧ b = c) ∨ (a = 2 ∧ b = 2) ∨ (a, b, c) = (2, 3, 3) ∨ (a, b, c) = (2, 3, 4) ∨
+      (a, b, c) = (2, 3, 5)) :
+    a = 1 ∨ (a = 2 ∧ b = 2) ∨ (a, b, c) = (2, 3, 3) ∨ (a, b, c) = (2, 3, 4) ∨
+      (a, b, c) = (2, 3, 5) := by
+  rcases h with ⟨ha, -⟩ | h' | h' | h' | h'
+  · exact Or.inl ha
+  · exact Or.inr (Or.inl h')
+  · exact Or.inr (Or.inr (Or.inl h'))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl h')))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr h')))
+
 /-- Every sorted positive signature is spherical, Euclidean or hyperbolic. -/
 theorem signature_trichotomy {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ : a ≤ b) (h₃ : b ≤ c) :
     IsSphericalParameterSignature a b c ∨ IsEuclideanSignature a b c ∨
@@ -406,27 +425,16 @@ theorem geometryType_eq_spherical_iff_isSphericalSignature {t : PermutationTripl
     rcases hsign.mp hs with ⟨-, -, -, ha | h' | h' | h' | h'⟩
     · -- the cyclic branch: exactness forces the two remaining orders to agree
       rw [ha] at h
-      exact Or.inl ⟨ha, b_eq_c_of_hasExactOrders_one t h⟩
-    · exact Or.inr (Or.inl h')
+      exact ⟨h₁, h₂, h₃, Or.inl ⟨ha, b_eq_c_of_hasExactOrders_one t h⟩⟩
+    · exact ⟨h₁, h₂, h₃, Or.inr (Or.inl h')⟩
     · obtain ⟨rfl, rfl, rfl⟩ := h'
-      exact Or.inr (Or.inr (Or.inl rfl))
+      exact ⟨h₁, h₂, h₃, Or.inr (Or.inr (Or.inl rfl))⟩
     · obtain ⟨rfl, rfl, rfl⟩ := h'
-      exact Or.inr (Or.inr (Or.inr (Or.inl rfl)))
+      exact ⟨h₁, h₂, h₃, Or.inr (Or.inr (Or.inr (Or.inl rfl)))⟩
     · obtain ⟨rfl, rfl, rfl⟩ := h'
-      exact Or.inr (Or.inr (Or.inr (Or.inr rfl)))
-  · intro h
-    have hs : IsSphericalParameterSignature a b c := by
-      refine ⟨h₁, h₂, h₃, ?_⟩
-      rcases h with (⟨ha, _⟩ | h' | h' | h' | h')
-      · exact Or.inl ha
-      · exact Or.inr (Or.inl h')
-      · obtain ⟨rfl, rfl, rfl⟩ := h'
-        exact Or.inr (Or.inr (Or.inl rfl))
-      · obtain ⟨rfl, rfl, rfl⟩ := h'
-        exact Or.inr (Or.inr (Or.inr (Or.inl rfl)))
-      · obtain ⟨rfl, rfl, rfl⟩ := h'
-        exact Or.inr (Or.inr (Or.inr (Or.inr rfl)))
-    exact hsign.mpr hs
+      exact ⟨h₁, h₂, h₃, Or.inr (Or.inr (Or.inr (Or.inr rfl)))⟩
+  · rintro ⟨-, -, -, hrows⟩
+    exact hsign.mpr ⟨h₁, h₂, h₃, row_isParameterRow hrows⟩
 
 end PermutationTriple
 
