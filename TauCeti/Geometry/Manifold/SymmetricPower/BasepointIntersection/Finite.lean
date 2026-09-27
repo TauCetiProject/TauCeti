@@ -39,7 +39,10 @@ namespace TauCeti
 variable {α : Type*} [TopologicalSpace α] [T2Space α] [ChartedSpace ℂ α] {n : ℕ}
 variable {f : ℂ → Sym α n} {U K : Set ℂ} {s : Sym α n}
 
-private theorem exists_basepointDivisor_chart_equation (z : α)
+/-- A fixed symmetric chart gives an analytic scalar equation for the basepoint divisor
+along a curve. If the curve meets and leaves the divisor in `U`, the equation has a
+zero and a nonzero value there. -/
+theorem exists_basepointDivisor_chart_equation (z : α)
     (hchart : ∀ t ∈ U, f t ∈ (symChartAt (K := ℂ) s).source)
     (ha : AnalyticOnNhd ℂ (fun t => symChartAt (K := ℂ) s (f t)) U)
     (houtside : ∃ t ∈ U, f t ∉ Sym.basepointDivisor z)
@@ -98,16 +101,18 @@ theorem finite_basepointDivisor_intersections_in_chart (z : α)
     rw [hempty]
     exact finite_empty
 
-/-- If an analytic curve stays in one symmetric chart over a connected open domain and is not
+/-- If an analytic curve stays in one symmetric chart over a connected domain and is not
 contained in the basepoint divisor, each intersection has a finite, positive order of vanishing.
-The local equation is valid throughout a neighborhood of the intersection. In particular, the
-infinite-order case of `basepointDivisor_intersection_order` cannot occur under these hypotheses. -/
-theorem exists_basepointDivisor_intersection_order_ne_zero_ne_top_in_chart (z : α)
-    (hUopen : IsOpen U) (hU : IsPreconnected U)
+The domain is a neighborhood of the intersection, where the local equation is valid.
+In particular, the infinite-order case of `basepointDivisor_intersection_order` cannot occur
+under these hypotheses. -/
+theorem basepointDivisor_intersection_order_ne_top_in_chart (z : α)
+    (hU : IsPreconnected U)
     (hchart : ∀ t ∈ U, f t ∈ (symChartAt (K := ℂ) s).source)
     (ha : AnalyticOnNhd ℂ (fun t => symChartAt (K := ℂ) s (f t)) U)
     (houtside : ∃ t ∈ U, f t ∉ Sym.basepointDivisor z)
-    (w : ℂ) (hwU : w ∈ U) (hwD : f w ∈ Sym.basepointDivisor z) :
+    (w : ℂ) (hwU : w ∈ U) (hUnhds : U ∈ 𝓝 w)
+    (hwD : f w ∈ Sym.basepointDivisor z) :
     ∃ (ℓ : (Fin n → ℂ) →L[ℂ] ℂ) (b : ℂ) (g : ℂ → ℂ),
       ℓ ≠ 0 ∧ g = (fun t => ℓ (symChartAt (K := ℂ) s (f t)) - b) ∧
       AnalyticAt ℂ g w ∧ g w = 0 ∧
@@ -124,7 +129,7 @@ theorem exists_basepointDivisor_intersection_order_ne_zero_ne_top_in_chart (z : 
   have hpositive : analyticOrderAt g w ≠ 0 :=
     analyticOrderAt_ne_zero.mpr ⟨hg w hwU, hgw⟩
   refine ⟨ℓ, b, g, hℓne, hgformula, hg w hwU, hgw, ?_, hpositive, hfinite⟩
-  filter_upwards [hUopen.mem_nhds hwU] with t htU
+  filter_upwards [hUnhds] with t htU
   exact hzero t htU
 
 end TauCeti
