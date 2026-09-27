@@ -44,7 +44,7 @@ theorem cupClass_trivialTateHZeroOne (F : Formation G) (L : NormalLayer G) (u : 
       TauCeti.TateCohomology.cup0H (Rep.trivial ℤ L.Gal ℤ) (L.rep F) 2 := by
     convert TauCeti.TateCohomology.cup_zero_left
       (Rep.trivial ℤ L.Gal ℤ) (L.rep F) 2 (by omega) using 1 <;> rfl
-  rw [TauCeti.TateCohomology.trivialTateHZeroOne_eq_H0π]
+  simp only [TauCeti.TateCohomology.trivialTateHZeroOne]
   rw [cupClass_apply]
   rw [hcup]
   rw [TauCeti.TateCohomology.cup0H_H0π]

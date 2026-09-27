@@ -536,14 +536,9 @@ theorem H0LinearEquivTrivialIntZModCard_H0π (x : (Rep.trivial ℤ H ℤ).ρ.inv
   rfl
 
 /-- The class of `1 ∈ ℤ` in degree-zero Tate cohomology with trivial integral coefficients. -/
+@[expose]
 def trivialTateHZeroOne : tateCohomology (Rep.trivial ℤ H ℤ) 0 :=
   H0π (Rep.trivial ℤ H ℤ) ⟨1, by simp [Representation.invariants]⟩
-
-/-- The canonical degree-zero class is represented by the invariant `1`. -/
-theorem trivialTateHZeroOne_eq_H0π :
-    trivialTateHZeroOne H =
-      H0π (Rep.trivial ℤ H ℤ) ⟨1, by simp [Representation.invariants]⟩ := by
-  simp [trivialTateHZeroOne]
 
 /-- The class of `1` corresponds to `1` modulo the order of the group. -/
 @[simp]

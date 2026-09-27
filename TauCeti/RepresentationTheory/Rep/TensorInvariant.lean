@@ -118,6 +118,8 @@ theorem tensorInvariant_one_braiding_leftUnitor (M : Rep k G) :
     rw [Rep.hom_inv_rightUnitor]
     exact tensorInvariant_hom_apply M _ x
   rw [h]
+  -- `braiding_leftUnitor` is stated for the monoidal unit. Mathlib's `Rep` monoidal instance
+  -- defines that unit as `Rep.trivial k G k`; `change` checks precisely this definitional equality.
   change (ρ_ M).inv ≫ (β_ M (𝟙_ (Rep k G))).hom ≫ (λ_ M).hom = 𝟙 M
   rw [braiding_leftUnitor, Iso.inv_hom_id]
 
