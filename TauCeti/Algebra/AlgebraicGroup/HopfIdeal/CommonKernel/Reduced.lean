@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Reduction
+import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Reduction
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.RingTheory.FiniteType.Tensor.Product
 
