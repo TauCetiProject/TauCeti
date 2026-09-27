@@ -146,6 +146,7 @@ theorem basis_mem_weightSpace_ofWeights (b : Module.Basis η R M) (wt : η → G
 
 /-- In a basis with pairwise distinct weights, projection to the weight of a basis vector
 extracts exactly that basis coordinate. -/
+@[simp]
 theorem weightProj_ofWeights_eq [Finite η] (b : Module.Basis η R M) (wt : η → G)
     (hwt : Function.Injective wt) (x : η) (m : M) :
     letI : Comodule R (MonoidAlgebra R G) M := ofWeights b wt

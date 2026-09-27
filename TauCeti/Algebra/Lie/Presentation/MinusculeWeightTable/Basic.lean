@@ -436,6 +436,7 @@ theorem loweringMatrix_apply (i : B) (a b : ι) :
 
 /-- A raising matrix over any commutative ring sends a coordinate vector to the reflected
 coordinate vector exactly at a raising edge, and otherwise to zero. -/
+@[simp]
 theorem raisingMatrix_map_mulVec_single [Fintype ι] {R : Type*} [CommRing R]
     (i : B) (a : ι) :
     (T.raisingMatrix i).map (Int.cast : ℤ → R) *ᵥ Pi.single a 1 =
@@ -450,6 +451,7 @@ theorem raisingMatrix_map_mulVec_single [Fintype ι] {R : Type*} [CommRing R]
 
 /-- A lowering matrix over any commutative ring sends a coordinate vector to the reflected
 coordinate vector exactly at a lowering edge, and otherwise to zero. -/
+@[simp]
 theorem loweringMatrix_map_mulVec_single [Fintype ι] {R : Type*} [CommRing R]
     (i : B) (a : ι) :
     (T.loweringMatrix i).map (Int.cast : ℤ → R) *ᵥ Pi.single a 1 =
