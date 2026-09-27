@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
+public import TauCeti.Probability.Exchangeability.MixedIID.Basic
 -- Public: `blockLaw_congr`, which is index-generic, gives the family predicate its congruence.
 public import TauCeti.Probability.Exchangeability.Congr
 import TauCeti.Probability.Exchangeability.Contractability
@@ -17,8 +17,8 @@ import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 This file extends the sequence-level symmetry predicates to families indexed by an arbitrary type.
 An `ExchangeableFamily` has the same law along any two finite injective selections of indices.
-The existing `ConditionallyIIDWith` and `ConditionallyIID` predicates are already index-generic;
-this file relates them to exchangeable families.
+The existing `MixedIIDWith` and `MixedIID` predicates are already index-generic; this file relates
+them to exchangeable families.
 
 ## Main results
 
@@ -27,9 +27,6 @@ this file relates them to exchangeable families.
 * `MixedIIDWith.exchangeableFamily` and `MixedIID.exchangeableFamily` give the easy implication
   from the mixture identity to exchangeability: along any two injective selections the block law is
   the same mixture of product measures.
-* `ConditionallyIIDWith.exchangeableFamily` and `ConditionallyIID.exchangeableFamily` give the same
-  implication for the conditional predicate, factored through the mixture one rather than proved
-  again from the joint disintegration.
 * `ExchangeableFamily.comp_injective` reindexes a family along an injection; the corresponding
   conditional i.i.d. lemmas are in `ConditionallyIID.Basic`.
 * `ExchangeableFamily.congr` transports the predicate across a coordinatewise a.e. change of
@@ -99,20 +96,6 @@ theorem MixedIIDWith.exchangeableFamily
 theorem MixedIID.exchangeableFamily {μ : Measure Ω} {X : ι → Ω → α} (h : MixedIID μ X) :
     ExchangeableFamily μ X :=
   let ⟨_, hν⟩ := h.exists_mixingRepresentative
-  hν.exchangeableFamily
-
-/-- A conditionally i.i.d. family with a named directing measure is exchangeable: project to the
-mixture identity, which already forces the block laws to agree. -/
-theorem ConditionallyIIDWith.exchangeableFamily
-    {μ : Measure Ω} {X : ι → Ω → α} {ν : Ω → ProbabilityMeasure α}
-    (h : ConditionallyIIDWith μ X ν) : ExchangeableFamily μ X :=
-  (mixedIIDWith_of_conditionallyIIDWith h).exchangeableFamily
-
-/-- A conditionally i.i.d. family is exchangeable. -/
-theorem ConditionallyIID.exchangeableFamily
-    {μ : Measure Ω} {X : ι → Ω → α} (h : ConditionallyIID μ X) :
-    ExchangeableFamily μ X :=
-  let ⟨_, hν⟩ := h.exists_directing
   hν.exchangeableFamily
 
 /-- Exchangeability is preserved by reindexing a family along an injection. -/

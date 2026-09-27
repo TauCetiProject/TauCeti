@@ -22,7 +22,19 @@ graph-cocycle class for the image of `U` to the graph-cocycle class for `U`.
 The coefficient object used by explicit inflation is the fixed-point subgroup of the ambient
 trivial `𝔽₂` module. It is identified with the trivial `𝔽₂` module constructed directly on
 `G / N` by `TauCeti.trivialF2QuotientEquivFixedPoints`, whose forward map is used before
-inflation in the class-level statement.
+inflation in the class-level statements.
+
+Transporting the choice-free `TauCeti.ContCohomology.explicitGraphClass` of `U / N` along that
+identification gives `TauCeti.ContCohomology.explicitGraphClassFixedPoints`, the class on `G / N`
+in the coefficients explicit inflation expects. Inflation carries it to the choice-free graph class
+of the pulled-back character, so the inflation identity mentions no coset representative.
+
+## Main definitions
+
+* `TauCeti.ContCohomology.evensGraphCocycleFixedPoints`: the quotient graph cocycle for a chosen
+  element outside `U`, with fixed-point coefficients.
+* `TauCeti.ContCohomology.explicitGraphClassFixedPoints`: the choice-free class of the quotient
+  graph cocycle, with fixed-point coefficients.
 
 ## Main results
 
@@ -30,6 +42,11 @@ inflation in the class-level statement.
   quotient map.
 * `TauCeti.ContCohomology.explicitInfl2_evensGraphCocycle`: inflation of the quotient
   graph-cocycle class is the ambient graph-cocycle class.
+* `TauCeti.ContCohomology.explicitGraphClassFixedPoints_eq_evensGraphCocycleFixedPoints`: the
+  choice-free quotient class is represented by the quotient graph cocycle formed from every element
+  outside `U`.
+* `TauCeti.ContCohomology.explicitInfl2_explicitGraphClassFixedPoints`: inflation of the
+  choice-free quotient graph class is the choice-free ambient graph class.
 
 ## References
 
@@ -199,6 +216,54 @@ theorem explicitInfl2_evensGraphCocycle (U : OpenSubgroup G) (hNU : N ≤ U)
   simp only [ContinuousMonoidHom.quotientMk_apply, coe_evensGraphCocycle,
     trivialF2Equiv_apply_trivialF2QuotientEquivFixedPoints, AddEquiv.apply_symm_apply]
   exact (evensGraphCochain_quotient U hNU s α g h).symm
+
+/-- The choice-free class on `G / N` of the graph cocycle of the open subgroup `U / N`, with its
+values transported to the fixed-point coefficient object expected by explicit inflation.
+
+This is the argument to which `explicitInfl2_explicitGraphClassFixedPoints` applies inflation. The
+theorem `explicitGraphClassFixedPoints_eq_evensGraphCocycleFixedPoints` identifies it with
+`evensGraphCocycleFixedPoints` for every element outside `U`, so no choice occurs in the public
+interface. -/
+noncomputable def explicitGraphClassFixedPoints (U : OpenSubgroup G) (hNU : N ≤ U)
+    (hU : U.toSubgroup.index = 2)
+    (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2))
+    (hα : Continuous α) : H2 (G ⧸ N) (FixedPoints.addSubgroup N (trivialF2 G).V) :=
+  explicitMap2 (G ⧸ N) (trivialF2 (G ⧸ N)).V (G ⧸ N)
+      (FixedPoints.addSubgroup N (trivialF2 G).V) (ContinuousMonoidHom.id (G ⧸ N))
+      (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
+      (fun q x => by simpa using trivialF2QuotientEquivFixedPoints_smul N q x)
+    (explicitGraphClass (quotientOpenSubgroup N U)
+      ((quotientOpenSubgroup_index N U hNU).trans hU) α hα)
+
+/-- The choice-free fixed-point-valued quotient graph class is represented by the quotient graph
+cocycle formed using every element outside `U`. -/
+theorem explicitGraphClassFixedPoints_eq_evensGraphCocycleFixedPoints (U : OpenSubgroup G)
+    (hNU : N ≤ U) (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
+    (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2))
+    (hα : Continuous α) :
+    explicitGraphClassFixedPoints U hNU hU α hα =
+      (evensGraphCocycleFixedPoints U hNU hU s hs α hα :
+        H2 (G ⧸ N) (FixedPoints.addSubgroup N (trivialF2 G).V)) := by
+  rw [explicitGraphClassFixedPoints, explicitGraphClass_eq_evensGraphCocycle
+    (quotientOpenSubgroup N U) ((quotientOpenSubgroup_index N U hNU).trans hU) (s : G ⧸ N)
+    (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) α hα, explicitMap2_mk,
+    evensGraphCocycleFixedPoints]
+
+/-- **Inflation of the index-two Evens graph class.** For a normal subgroup `N ≤ U`, inflation of
+the choice-free graph class of `U / N`, transported to the fixed-point coefficients by
+`explicitGraphClassFixedPoints`, is the choice-free graph class of the character pulled back to
+`U`. Neither side mentions an element outside `U`. -/
+theorem explicitInfl2_explicitGraphClassFixedPoints (U : OpenSubgroup G) (hNU : N ≤ U)
+    (hU : U.toSubgroup.index = 2)
+    (α : (quotientOpenSubgroup N U).toSubgroup →* Multiplicative (ZMod 2))
+    (hα : Continuous α) :
+    explicitInfl2 G (trivialF2 G).V N (explicitGraphClassFixedPoints U hNU hU α hα) =
+      explicitGraphClass U hU (evensInflatedHom U α) (continuous_evensInflatedHom U hα) := by
+  obtain ⟨s, hs, -⟩ := Subgroup.index_eq_two_iff_exists_notMem_and.mp hU
+  rw [explicitGraphClassFixedPoints_eq_evensGraphCocycleFixedPoints U hNU hU s hs α hα,
+    explicitInfl2_evensGraphCocycle U hNU hU s hs α hα]
+  exact (explicitGraphClass_eq_evensGraphCocycle U hU s hs (evensInflatedHom U α)
+    (continuous_evensInflatedHom U hα)).symm
 
 end GraphClass
 

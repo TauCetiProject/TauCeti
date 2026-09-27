@@ -78,7 +78,7 @@ theorem totalPath_eq_or [Unique A] (x : Quiver.TotalPath (Kronecker A)) :
 the Kronecker quiver `• ⇉ •` itself this is `4`. -/
 theorem finrank_pathAlgebra (k : Type w) [DivisionRing k] [Fintype A] :
     Module.finrank k (pathAlgebra k (Kronecker A)) = Fintype.card A + 2 := by
-  rw [TauCeti.finrank_pathAlgebra k (Kronecker A), card_totalPath]
+  rw [TauCeti.finrank_pathAlgebra k (Kronecker A), Nat.card_eq_fintype_card, card_totalPath]
 
 /-- The path algebra of the Kronecker quiver is four-dimensional: two trivial paths and two
 arrows. -/

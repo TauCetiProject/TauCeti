@@ -288,6 +288,14 @@ theorem trivializationCoordinate_map_trivializationGenerator (M : X.Modules) {V 
     exact h.symm
   rw [h', map_one, LinearEquiv.apply_symm_apply]
 
+/-- The basis section of a rank-one trivialization has coordinate one. -/
+@[simp]
+theorem trivializationCoordinate_trivializationGenerator (M : X.Modules) {V : X.Opens}
+    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V) :
+    trivializationCoordinate M t (𝟙 V) (trivializationGenerator M t) = 1 := by
+  have h := trivializationCoordinate_map_trivializationGenerator M t (𝟙 V)
+  rwa [op_id, M.presheaf.map_id, ConcreteCategory.id_apply] at h
+
 /-- A section is its coordinate times the restricted basis section of a rank-one
 trivialization. -/
 theorem eq_trivializationCoordinate_smul_map_trivializationGenerator (M : X.Modules)

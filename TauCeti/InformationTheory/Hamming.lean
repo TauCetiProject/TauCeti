@@ -5,16 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Card
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.Pi
 
 /-!
-# Hamming data under coordinate decompositions and reindexing
+# Hamming support, and Hamming data under coordinate decompositions and reindexing
 
-This file records that Hamming weight and distance on a function whose domain is a disjoint union
-split as sums over the two coordinate types. Weight also splits over a retained coordinate set
-and its complement. These identities let constructions assembled from
-independent coordinate blocks reduce their Hamming data to the data of the blocks.
+This file builds on `hammingNorm`, `hammingDist`, and `hammingDist_eq_hammingNorm` from
+`Mathlib.InformationTheory.Hamming`.
+
+The Hamming support of a word `x : ι → A` is `Function.support x`, the set of its nonzero
+coordinates, and its Hamming weight is the number of elements of that support. The first part of
+this file relates `Function.support`, its finset version, `hammingNorm` and `hammingDist`: the
+distance from `x` to `y` is the weight of `y - x`, and the weight of a sum is governed by
+
+```text
+wt(x + y) + #(supp x ∩ supp y) + #(supp x \ supp (x + y)) = wt x + wt y,
+```
+
+where the last set consists of the coordinates at which `y` cancels `x`. It follows that weight is
+subadditive and is additive on words with disjoint supports. Scaling coordinatewise by `c`
+intersects the support with `supp c`.
+
+The file also records that Hamming weight and distance on a function whose domain is a disjoint
+union split as sums over the two coordinate types. Weight also splits over a retained coordinate
+set and its complement. These identities let constructions assembled from independent coordinate
+blocks reduce their Hamming data to the data of the blocks.
 
 It also proves that Hamming distance and Hamming weight are invariant under relabelling a finite
 coordinate type along an equivalence, and evaluates a product over the coordinates of a word which
@@ -25,6 +42,124 @@ factor over the coordinates.
 public section
 
 namespace TauCeti
+
+/-! ### Hamming support -/
+
+section Support
+
+open Function
+
+variable {ι A : Type*}
+
+section Zero
+
+variable [Fintype ι] [Zero A] [DecidableEq A]
+
+/-- The Hamming weight of a word is the number of elements of its support. -/
+theorem hammingNorm_eq_ncard_support (x : ι → A) : hammingNorm x = (support x).ncard := by
+  rw [hammingNorm, ← Set.ncard_coe_finset, Finset.coe_filter_univ]
+  rfl
+
+/-- The Hamming weight of a word is the cardinality of its support, viewed as a finset. -/
+theorem hammingNorm_eq_card_toFinset_support (x : ι → A) [Fintype (support x)] :
+    hammingNorm x = (support x).toFinset.card := by
+  rw [hammingNorm_eq_ncard_support, Set.ncard_eq_toFinset_card']
+
+/-- A word whose support is contained in the support of another word has at most its weight. -/
+theorem hammingNorm_le_hammingNorm_of_support_subset {B : Type*} [Zero B] [DecidableEq B]
+    {x : ι → A} {y : ι → B} (h : support x ⊆ support y) : hammingNorm x ≤ hammingNorm y := by
+  simpa only [hammingNorm_eq_ncard_support] using Set.ncard_le_ncard h
+
+/-- Two words with the same support have the same Hamming weight. -/
+theorem hammingNorm_eq_hammingNorm_of_support_eq {B : Type*} [Zero B] [DecidableEq B]
+    {x : ι → A} {y : ι → B} (h : support x = support y) : hammingNorm x = hammingNorm y := by
+  simp only [hammingNorm_eq_ncard_support, h]
+
+end Zero
+
+/-- The Hamming distance between two words is the number of coordinates at which they differ. -/
+theorem hammingDist_eq_ncard_setOf_ne {β : ι → Type*} [Fintype ι] [∀ i, DecidableEq (β i)]
+    (x y : ∀ i, β i) : hammingDist x y = {i | x i ≠ y i}.ncard := by
+  rw [hammingDist, ← Set.ncard_coe_finset, Finset.coe_filter_univ]
+
+/-- Negation preserves Hamming weight. -/
+@[simp]
+theorem hammingNorm_neg {β : ι → Type*} [Fintype ι] [∀ i, SubtractionMonoid (β i)]
+    [∀ i, DecidableEq (β i)] (x : ∀ i, β i) : hammingNorm (-x) = hammingNorm x :=
+  hammingNorm_comp (fun _ ↦ Neg.neg) (fun _ ↦ neg_injective) (fun _ ↦ neg_zero)
+
+section AddGroup
+
+variable {β : ι → Type*} [Fintype ι] [∀ i, AddGroup (β i)] [∀ i, DecidableEq (β i)]
+
+/-- The Hamming distance from `x` to `y` is the Hamming weight of `x - y`. -/
+theorem hammingDist_eq_hammingNorm_sub (x y : ∀ i, β i) :
+    hammingDist x y = hammingNorm (x - y) := by
+  simp_rw [hammingDist, hammingNorm, Pi.sub_apply, ne_eq, sub_eq_zero]
+
+/-- The Hamming distance from `x` to `y` is the Hamming weight of `y - x`. -/
+theorem hammingDist_eq_hammingNorm_sub' (x y : ∀ i, β i) :
+    hammingDist x y = hammingNorm (y - x) := by
+  rw [hammingDist_comm, hammingDist_eq_hammingNorm_sub]
+
+end AddGroup
+
+/-- The Hamming distance from `x` to `y` is the number of elements of the support of `y - x`. -/
+theorem hammingDist_eq_ncard_support_sub [Fintype ι] [AddGroup A] [DecidableEq A]
+    (x y : ι → A) : hammingDist x y = (support (y - x)).ncard := by
+  rw [hammingDist_eq_hammingNorm_sub', hammingNorm_eq_ncard_support]
+
+section AddZeroClass
+
+variable [Fintype ι] [AddZeroClass A] [DecidableEq A]
+
+/-- The **weight of a sum**. Coordinates in the support of both words are counted twice on the
+right, and the coordinates at which `y` cancels `x` are lost from the support of `x + y`. -/
+theorem hammingNorm_add_add_ncard_inter_add_ncard_sdiff (x y : ι → A) :
+    hammingNorm (x + y) + (support x ∩ support y).ncard + (support x \ support (x + y)).ncard =
+      hammingNorm x + hammingNorm y := by
+  -- Every coordinate in the support of `x` or `y` either survives in `x + y` or is a coordinate
+  -- at which `y` cancels `x`, and these two cases are disjoint.
+  have hunion : support (x + y) ∪ (support x \ support (x + y)) = support x ∪ support y := by
+    ext i
+    by_cases hx : x i = 0 <;> simp [hx]
+  have hdisj := Set.ncard_union_eq (Set.disjoint_sdiff_right (s := support (x + y))
+    (t := support x))
+  rw [hunion] at hdisj
+  have hinter := Set.ncard_union_add_ncard_inter (support x) (support y)
+  simp only [hammingNorm_eq_ncard_support]
+  omega
+
+/-- Hamming weight is subadditive. -/
+theorem hammingNorm_add_le (x y : ι → A) :
+    hammingNorm (x + y) ≤ hammingNorm x + hammingNorm y := by
+  have := hammingNorm_add_add_ncard_inter_add_ncard_sdiff x y
+  omega
+
+/-- Words with disjoint supports have additive Hamming weight. -/
+theorem hammingNorm_add_of_disjoint {x y : ι → A} (h : Disjoint (support x) (support y)) :
+    hammingNorm (x + y) = hammingNorm x + hammingNorm y := by
+  have hdiff : support x \ support (x + y) = ∅ := by
+    refine Set.sdiff_eq_empty.mpr fun i hi ↦ ?_
+    have hy : y i = 0 := Function.notMem_support.mp (Set.disjoint_left.mp h hi)
+    simpa [hy] using hi
+  have := hammingNorm_add_add_ncard_inter_add_ncard_sdiff x y
+  rw [h.inter_eq, hdiff, Set.ncard_empty] at this
+  omega
+
+end AddZeroClass
+
+/-- The weight of a coordinatewise scaling `c • x` is the number of coordinates at which both
+`c` and `x` are nonzero. -/
+theorem hammingNorm_smul_eq_ncard_inter [Fintype ι] {R : Type*} [Semiring R] [IsCancelMulZero R]
+    [AddCommMonoid A] [Module R A] [Module.IsTorsionFree R A] [DecidableEq A] (c : ι → R)
+    (x : ι → A) : hammingNorm (c • x) = (support c ∩ support x).ncard := by
+  rw [hammingNorm_eq_ncard_support]
+  congr 1
+  ext i
+  simp
+
+end Support
 
 variable {ι κ : Type*} {β : ι ⊕ κ → Type*}
 

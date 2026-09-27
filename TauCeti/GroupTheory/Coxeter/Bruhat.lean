@@ -24,13 +24,10 @@ reduced word for `w` is in
 particular a word for `w`, this says that *every* reduced word for `w`, not merely some one of
 them, has a subword spelling `u`.
 
-The converse — that a subword of a reduced word for `w` spells an element `≤ w` — is the other
-half of the subword property, and is outside the scope of this file. So `cs.BruhatLE` is not
-identified here with the classical reduced-word description ("`u ≤ w` when *some* reduced word for
-`w` has a subword spelling `u`"), nor, with it, is that description shown to be well defined —
-independent of the chosen reduced word. In the direction of the converse this file has the
-one-letter case, `CoxeterSystem.bruhatLE_wordProd_eraseIdx`: deleting a single letter of a reduced
-word does move down the Bruhat order.
+The **subword property** identifies this graph-theoretic order with the classical reduced-word
+description: `u ≤ w` exactly when a reduced word for `w` has a subword spelling `u`. The converse
+direction follows from the right-multiplication lifting property, which controls how Bruhat
+comparisons change when both endpoints are multiplied by the same simple reflection.
 
 ## Main definitions
 
@@ -51,9 +48,13 @@ word does move down the Bruhat order.
 * `CoxeterSystem.BruhatLE.exists_sublist_wordProd_eq` and
   `CoxeterSystem.BruhatLE.exists_sublist_wordProd_eq_length_eq`: **an element below `w` is spelled
   by a sublist of every word spelling `w`**, and by a *reduced* such sublist. This is the
-  necessary direction of the subword property; the converse is not proved here.
+  necessary direction of the subword property.
 * `CoxeterSystem.bruhatLE_wordProd_eraseIdx`: deleting one letter of a reduced word moves down the
   order.
+* `CoxeterSystem.bruhatLE_wordProd_of_sublist`: every subword of a reduced word spells an element
+  below the product of the whole word.
+* `CoxeterSystem.bruhatLE_iff_exists_sublist_wordProd_eq`: the full subword characterization of
+  Bruhat order.
 
 ## References
 
@@ -303,5 +304,152 @@ theorem bruhatLE_wordProd_eraseIdx {ω : List B} (hω : cs.IsReduced ω) {j : �
   have h₂ := List.length_eraseIdx_add_one hj
   rw [hω.eq]
   omega
+
+/-! ### The lifting property and the subword characterization -/
+
+section
+
+variable {cs}
+
+/-- Right multiplication by a simple reflection preserves a Bruhat edge when it lengthens both
+endpoints. -/
+theorem BruhatStep.mul_simple_of_not_isRightDescent (h : cs.BruhatStep u w) (i : B)
+    (hu : ¬cs.IsRightDescent u i) (hw : ¬cs.IsRightDescent w i) :
+    cs.BruhatStep (u * cs.simple i) (w * cs.simple i) := by
+  obtain ⟨t, ht, rfl, hlt⟩ := h
+  refine ⟨t, ht, by rw [mul_assoc], ?_⟩
+  rw [cs.not_isRightDescent_iff] at hu hw
+  omega
+
+/-- A right descent gives the downward Bruhat edge obtained by multiplying by that simple
+reflection. -/
+theorem bruhatStep_mul_simple_of_isRightDescent (i : B) (hw : cs.IsRightDescent w i) :
+    cs.BruhatStep (w * cs.simple i) w := by
+  have hlt : ℓ (w * cs.simple i) < ℓ w := by
+    rw [cs.isRightDescent_iff] at hw
+    omega
+  simpa only [mul_assoc, cs.simple_mul_simple_self, mul_one] using
+    cs.bruhatStep_mul_simple (w := w * cs.simple i) i (by
+      simpa only [mul_assoc, cs.simple_mul_simple_self, mul_one] using hlt)
+
+/-- The local exceptional case in the lifting property. If a Bruhat edge is lengthened at its
+lower endpoint and shortened at its upper endpoint by the same simple reflection, then either the
+lower endpoint is the right-multiplied upper endpoint or the right-multiplied endpoints still form
+an edge. -/
+private theorem BruhatStep.eq_mul_simple_or_mul_simple (h : cs.BruhatStep u w) (i : B)
+    (hu : ¬cs.IsRightDescent u i) (hw : cs.IsRightDescent w i) :
+    u = w * cs.simple i ∨ cs.BruhatStep (u * cs.simple i) (w * cs.simple i) := by
+  have huw := h.bruhatLE
+  obtain ⟨t, ht, hwu, hlt⟩ := h
+  have huLen : ℓ (u * cs.simple i) = ℓ u + 1 := cs.not_isRightDescent_iff.mp hu
+  have hwLen : ℓ (w * cs.simple i) + 1 = ℓ w := cs.isRightDescent_iff.mp hw
+  by_cases hmul : ℓ (u * cs.simple i) < ℓ (w * cs.simple i)
+  · exact Or.inr ⟨t, ht, by rw [hwu, mul_assoc], hmul⟩
+  left
+  have hne : ℓ (w * cs.simple i) ≠ ℓ (u * cs.simple i) := by
+    rw [hwu, mul_assoc]
+    exact ht.length_mul_right_ne (u * cs.simple i)
+  have hshort : ℓ (w * cs.simple i) = ℓ u := by omega
+  obtain ⟨α, hαred, hαprod⟩ := cs.exists_isReduced (w * cs.simple i)
+  have hwordProd : π (α ++ [i]) = w := by
+    rw [cs.wordProd_append, cs.wordProd_singleton, ← hαprod]
+    rw [mul_assoc, cs.simple_mul_simple_self, mul_one]
+  obtain ⟨σ, hσsub, hσprod, hσlen⟩ :=
+    huw.exists_sublist_wordProd_eq_length_eq (α ++ [i]) hwordProd
+  obtain ⟨σ₁, σ₂, rfl, hσ₁, hσ₂⟩ := List.sublist_append_iff.mp hσsub
+  rcases List.sublist_singleton.mp hσ₂ with rfl | rfl
+  · have hlen : σ₁.length = α.length := by
+      have hσ₁len : σ₁.length = ℓ u := by simpa using hσlen
+      have hαlen : α.length = ℓ u := by rw [← hαred.eq, ← hαprod, hshort]
+      exact hσ₁len.trans hαlen.symm
+    have : σ₁ = α := hσ₁.eq_of_length hlen
+    subst σ₁
+    have hprod : π α = u := by simpa using hσprod
+    exact hprod.symm.trans hαprod.symm
+  · have hle := cs.length_wordProd_le σ₁
+    have hprod : π σ₁ = u * cs.simple i := by
+      rw [← hσprod, cs.wordProd_append, cs.wordProd_singleton]
+      rw [mul_assoc, cs.simple_mul_simple_self, mul_one]
+    rw [hprod, huLen] at hle
+    have hlen : σ₁.length + 1 = ℓ u := by simpa using hσlen
+    omega
+
+/-- The two right-multiplication forms of the lifting property. At a right descent of the upper
+endpoint, multiplying the lower endpoint remains below it; at a right ascent, multiplying both
+endpoints preserves the order. -/
+private theorem BruhatLE.mul_simple_lifting (h : cs.BruhatLE u w) (i : B) :
+    (cs.IsRightDescent w i → cs.BruhatLE (u * cs.simple i) w) ∧
+      (¬cs.IsRightDescent w i → cs.BruhatLE (u * cs.simple i) (w * cs.simple i)) := by
+  induction h with
+  | refl =>
+      constructor
+      · intro hw
+        exact (cs.bruhatStep_mul_simple_of_isRightDescent i hw).bruhatLE
+      · exact fun _ => cs.bruhatLE_refl _
+  | @tail v w h hs ih =>
+      constructor
+      · intro hw
+        by_cases hv : cs.IsRightDescent v i
+        · exact (ih.1 hv).tail hs
+        · rcases hs.eq_mul_simple_or_mul_simple i hv hw with hvw | hmul
+          · have huv := ih.2 hv
+            rw [hvw, mul_assoc, cs.simple_mul_simple_self, mul_one] at huv
+            exact huv
+          · exact ((ih.2 hv).tail hmul).tail
+              (cs.bruhatStep_mul_simple_of_isRightDescent i hw)
+      · intro hw
+        by_cases hv : cs.IsRightDescent v i
+        · exact ((ih.1 hv).tail hs).tail
+              (cs.bruhatStep_mul_simple i (cs.not_isRightDescent_iff.mp hw ▸ Nat.lt_succ_self _))
+        · exact (ih.2 hv).tail (hs.mul_simple_of_not_isRightDescent i hv hw)
+
+/-- At a right descent of the upper endpoint, right multiplication of the lower endpoint by the
+same simple reflection remains below the original upper endpoint. -/
+theorem BruhatLE.mul_simple_of_isRightDescent (h : cs.BruhatLE u w) (i : B)
+    (hw : cs.IsRightDescent w i) : cs.BruhatLE (u * cs.simple i) w :=
+  (h.mul_simple_lifting i).1 hw
+
+/-- At a right ascent of the upper endpoint, right multiplication of both endpoints by the same
+simple reflection preserves Bruhat order. -/
+theorem BruhatLE.mul_simple_of_not_isRightDescent (h : cs.BruhatLE u w) (i : B)
+    (hw : ¬cs.IsRightDescent w i) : cs.BruhatLE (u * cs.simple i) (w * cs.simple i) :=
+  (h.mul_simple_lifting i).2 hw
+
+end
+
+/-- **Every subword of a reduced word spells an element below the product of that word.** The
+subword itself need not be reduced. This is the converse of
+`CoxeterSystem.BruhatLE.exists_sublist_wordProd_eq`. -/
+theorem bruhatLE_wordProd_of_sublist {σ ω : List B} (hω : cs.IsReduced ω)
+    (hσω : σ.Sublist ω) : cs.BruhatLE (π σ) (π ω) := by
+  induction ω using List.reverseRecOn generalizing σ with
+  | nil =>
+      have : σ = [] := List.eq_nil_of_sublist_nil hσω
+      subst σ
+      exact cs.bruhatLE_refl _
+  | append_singleton ω i ih =>
+      obtain ⟨σ₁, σ₂, rfl, hσ₁, hσ₂⟩ := List.sublist_append_iff.mp hσω
+      have hωred : cs.IsReduced ω := by
+        simpa using hω.take ω.length
+      have htop : ¬cs.IsRightDescent (π ω) i := by
+        rw [cs.not_isRightDescent_iff, hωred.eq]
+        rw [CoxeterSystem.IsReduced, cs.wordProd_append, cs.wordProd_singleton,
+          List.length_append, List.length_singleton] at hω
+        exact hω
+      rcases List.sublist_singleton.mp hσ₂ with rfl | rfl
+      · simpa only [List.append_nil, cs.wordProd_append, cs.wordProd_singleton] using
+          (ih hωred hσ₁).tail (cs.bruhatStep_mul_simple i
+            (cs.not_isRightDescent_iff.mp htop ▸ Nat.lt_succ_self _))
+      · simpa only [cs.wordProd_append, cs.wordProd_singleton] using
+          (ih hωred hσ₁).mul_simple_of_not_isRightDescent i htop
+
+/-- **The subword characterization of Bruhat order for a fixed reduced word.** An element is below
+the product of `ω` exactly when some subword of `ω` spells it. -/
+theorem bruhatLE_iff_exists_sublist_wordProd_eq {u : W} {ω : List B} (hω : cs.IsReduced ω) :
+    cs.BruhatLE u (π ω) ↔ ∃ σ : List B, σ.Sublist ω ∧ π σ = u := by
+  constructor
+  · exact fun h => h.exists_sublist_wordProd_eq ω rfl
+  · rintro ⟨σ, hσ, rfl⟩
+    exact cs.bruhatLE_wordProd_of_sublist hω hσ
 
 end CoxeterSystem

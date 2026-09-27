@@ -26,10 +26,15 @@ cohomological form). Its right-hand side carries the conjugate of `[β]`, not `[
 `α + β` of two homomorphisms to `𝔽₂` is the pointwise product `α * β` of homomorphisms to
 `Multiplicative (ZMod 2)`, and that is how it is written in the statement.
 
-## Main result
+The identity holds verbatim for the choice-free class `TauCeti.ContCohomology.explicitGraphClass`,
+since the graph cocycle for any `s ∉ U` represents it.
+
+## Main results
 
 * `TauCeti.ContCohomology.evensGraphCocycle_polarization`: the polarization identity above, in
   explicit `H²(G, 𝔽₂)`.
+* `TauCeti.ContCohomology.explicitGraphClass_polarization`: the same identity for the choice-free
+  graph class, with no representative on either side.
 
 ## References
 
@@ -250,6 +255,33 @@ theorem evensGraphCocycle_polarization (U : OpenSubgroup G) (hU : U.toSubgroup.i
       Subgroup.mk_smul, map_sum]
     simp only [← evensExtend_of_mem]
     exact (evensGraphCochain_polarization hU hs γ η).symm
+
+/-- **Polarization of the index-two Evens graph class.** The failure of additivity of the
+choice-free graph class `TauCeti.ContCohomology.explicitGraphClass`,
+`[ν_{α + β}] - [ν_α] - [ν_β]`, is the degree-two corestriction of the `(1,1)` cup product of `[α]`
+with the choice-free conjugate of `[β]`. The sum `α + β` is written `α * β`, the pointwise product
+in `Multiplicative (ZMod 2)`. Unlike `evensGraphCocycle_polarization`, no side mentions a
+representative. -/
+theorem explicitGraphClass_polarization (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
+    (α β : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α)
+    (hβ : Continuous β) :
+    letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
+    explicitGraphClass U hU (α * β) (hα.mul hβ) - explicitGraphClass U hU α hα -
+        explicitGraphClass U hU β hβ =
+      explicitCor2 G (trivialF2 G).V U.toSubgroup U.isOpen'
+        (explicitCup11 U.toSubgroup (trivialF2 G).V (trivialF2 G).V (trivialF2 G).V
+          (trivialF2Pairing G) continuous_of_discreteTopology
+          (fun u m n => trivialF2Pairing_smul_smul G (u : G) m n)
+          (evensHomCocycleAmbient U.toSubgroup α hα : H1 U.toSubgroup (trivialF2 G).V)
+          (evensConj1 G (trivialF2 G).V U.toSubgroup hU U.isOpen'
+            (evensHomCocycleAmbient U.toSubgroup β hβ :
+              H1 U.toSubgroup (trivialF2 G).V))) := by
+  let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
+  obtain ⟨s, hs, -⟩ := Subgroup.index_eq_two_iff_exists_notMem_and.mp hU
+  rw [explicitGraphClass_eq_evensGraphCocycle U hU s hs (α * β) (hα.mul hβ),
+    explicitGraphClass_eq_evensGraphCocycle U hU s hs α hα,
+    explicitGraphClass_eq_evensGraphCocycle U hU s hs β hβ,
+    evensGraphCocycle_polarization U hU hs α β hα hβ]
 
 end Class
 

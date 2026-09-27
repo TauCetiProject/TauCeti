@@ -9,6 +9,8 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import Mathlib.Data.Fin.SuccPredOrder
+public import Mathlib.Order.SuccPred.IntervalSucc
 
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Group.Fin.Basic
@@ -44,6 +46,10 @@ range, so the value is a `dite` rather than a plain application.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
   `b - j`, or vanishes when there is no such index.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
+* `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
+  consecutive entries.
+* `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
+  between the first and last values of a monotone `Fin` family.
 -/
 
 public section
@@ -163,6 +169,38 @@ theorem exists_foldl_eq_of_parent {n : ℕ} {J : Type*}
           rw [List.foldl_append, hl]
           simpa only [List.foldl_cons, List.foldl_nil, hstep] using hsucc
   exact aux a a.isLt
+
+open Set
+
+/-- No value of a monotone `Fin` family lies strictly between consecutive entries. -/
+theorem not_mem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin (n + 1) → β)
+    (ha : Monotone a) (i : Fin n) (k : Fin (n + 1)) :
+    a k ∉ Set.Ioo (a i.castSucc) (a i.succ) := by
+  intro hk
+  by_cases hki : k ≤ i.castSucc
+  · exact (not_lt_of_ge (ha hki)) hk.1
+  · have hik : i.succ ≤ k := by
+      simp only [Fin.le_iff_val_le_val, Fin.val_succ, Fin.val_castSucc] at hki ⊢
+      omega
+    exact (not_lt_of_ge (ha hik)) hk.2
+
+/-- A point between the first and last values of a monotone `Fin` family lies between
+consecutive values. -/
+theorem exists_mem_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
+    (a : Fin (n + 1) → β) (ha : Monotone a)
+    (hn : n ≠ 0) {x : β} (hx : x ∈ Set.Icc (a 0) (a (Fin.last n))) :
+    ∃ i : Fin n, x ∈ Set.Icc (a i.castSucc) (a i.succ) := by
+  rcases hx.1.eq_or_lt with h | h
+  · refine ⟨⟨0, Nat.pos_of_ne_zero hn⟩, ?_⟩
+    rw [← h]
+    exact ⟨le_rfl, ha (Fin.zero_le _)⟩
+  · have hx' : x ∈ ⋃ j ∈ Ico 0 (Fin.last n), Ioc (a j) (a (Order.succ j)) := by
+      rw [ha.biUnion_Ico_Ioc_map_succ]
+      exact ⟨h, hx.2⟩
+    simp only [mem_iUnion, mem_Ico] at hx'
+    obtain ⟨j, ⟨-, hj⟩, hxj⟩ := hx'
+    obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.mpr hj.ne
+    exact ⟨i, Ioc_subset_Icc_self (by simpa only [Fin.orderSucc_castSucc] using hxj)⟩
 
 /-- **Adding one twice in `Fin n` never returns to the same element** when `3 ≤ n`. -/
 theorem add_one_add_one_ne_self {n : ℕ} [NeZero n] (hn : 3 ≤ n) (i : Fin n) :

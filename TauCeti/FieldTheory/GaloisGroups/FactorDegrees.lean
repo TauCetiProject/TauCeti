@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.FactorDegrees
-import Mathlib.Algebra.Polynomial.SpecificDegree
-import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
+import TauCeti.Algebra.Polynomial.SpecificDegree
 
 import Mathlib.Algebra.CharP.Two
 import Mathlib.FieldTheory.Finite.Basic
@@ -138,42 +137,15 @@ theorem _root_.Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five :
       have hc : q.coeff 2 = 1 := by simpa [hdeg'] using hq.coeff_natDegree
       rw [hc]
       simp [a, b]
-    -- Divide explicitly by that quadratic; the displayed polynomial is the linear remainder.
-    let quotient : (ZMod 5)[X] :=
-      X ^ 3 - C a * X ^ 2 + C (a ^ 2 - b) * X + C (-a ^ 3 + 2 * a * b)
-    let remainder : (ZMod 5)[X] :=
-      C (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 - 1) * X + C (a ^ 3 * b - 2 * a * b ^ 2 - 1)
-    have hdivision : (X ^ 5 - X - 1 : (ZMod 5)[X]) = q * quotient + remainder := by
-      rw [hqeq]
-      simp only [quotient, remainder]
-      simp only [map_add, map_sub, map_mul, map_pow, map_neg, map_one, map_ofNat]
-      ring
-    -- Divisibility forces the degree-at-most-one remainder to vanish.
-    have hrem : q ∣ remainder := by
-      rw [hdivision] at hdvd
-      obtain ⟨c, hc⟩ := hdvd
-      refine ⟨c - quotient, ?_⟩
-      rw [mul_sub, ← hc]
-      ring
-    have hremdeg : remainder.natDegree ≤ 1 := by
-      simp only [remainder]
-      compute_degree
-    have hremzero : remainder = 0 := by
-      by_contra hr
-      exact (hq.not_dvd_of_natDegree_lt hr (by omega)) hrem
-    -- Its two coefficients give equations with no solution among the 25 pairs in `ZMod 5`.
-    have ha : a ^ 4 - 3 * a ^ 2 * b + b ^ 2 - 1 = 0 := by
-      simpa only [remainder, Polynomial.coeff_add, Polynomial.coeff_C_mul_X,
-        Polynomial.coeff_C, one_ne_zero, Polynomial.coeff_zero, ite_true, ite_false, add_zero]
-        using congrArg (fun g : (ZMod 5)[X] ↦ g.coeff 1) hremzero
-    have hb : a ^ 3 * b - 2 * a * b ^ 2 - 1 = 0 := by
-      simpa only [remainder, Polynomial.coeff_add, Polynomial.coeff_C_mul_X,
-        Polynomial.coeff_C, zero_ne_one, Polynomial.coeff_zero, ite_true, ite_false, zero_add]
-        using congrArg (fun g : (ZMod 5)[X] ↦ g.coeff 0) hremzero
-    simp only [a, b] at ha hb
-    generalize q.coeff 1 = a' at ha hb
-    generalize q.coeff 0 = b' at ha hb
-    fin_cases a' <;> fin_cases b' <;> revert ha hb <;> decide
+    have hdvd' : X ^ 2 + C a * X + C b ∣
+        X ^ 5 + C (-1 : ZMod 5) * X + C (-1 : ZMod 5) := by
+      simpa only [hqeq, C_neg, C_1, neg_one_mul, sub_eq_add_neg] using hdvd
+    rw [X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff] at hdvd'
+    -- None of the 25 coefficient pairs in `ZMod 5` satisfies both equations.
+    have hno : ∀ a b : ZMod 5,
+        ¬ (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + -1 = 0 ∧
+          a ^ 3 * b - 2 * a * b ^ 2 + -1 = 0) := by decide
+    exact hno a b hdvd'
 
 /-- The polynomial `X ^ 5 - X - 1` is irreducible modulo `5`, so its sole factor degree is `5`. -/
 theorem _root_.Polynomial.factorDegrees_X_pow_five_sub_X_sub_one_five :

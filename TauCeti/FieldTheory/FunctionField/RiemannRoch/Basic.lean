@@ -367,6 +367,21 @@ theorem Divisor.dim_zero (hF : IsFunctionField k F) :
   rw [Divisor.dim_def, riemannRochSpace_zero hF, Subalgebra.finrank_toSubmodule]
   rfl
 
+/-- If `k'` is the exact field of constants of a function field `F / k`, then `ℓ(0)` is the
+degree of `k' / k`. -/
+theorem Divisor.dim_zero_eq_finrank_of_isIntegrallyClosedIn {k' : Type*} [Field k']
+    [Algebra k k'] [Algebra k' F] [IsScalarTower k k' F]
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F)
+    (hex : IsIntegrallyClosedIn k' F) :
+    Divisor.dim (0 : Divisor k F) = Module.finrank k k' := by
+  rw [Divisor.dim_zero hF, hF.algebraicClosure_eq_restrictScalars_bot hF' hex]
+  -- Restricting scalars preserves the underlying `k`-module of the bottom field.
+  calc
+    Module.finrank k ((⊥ : IntermediateField k' F).restrictScalars k) =
+        Module.finrank k (⊥ : IntermediateField k' F) := by rfl
+    _ = Module.finrank k k' :=
+      ((IntermediateField.botEquiv k' F).toLinearEquiv.restrictScalars k).finrank_eq
+
 /-- `L(0) = algebraicClosure k F` is finite-dimensional: the constants form a finite extension of
 `k` (Stichtenoth, Corollary 1.1.16). -/
 theorem finiteDimensional_riemannRochSpace_zero (hF : IsFunctionField k F) :

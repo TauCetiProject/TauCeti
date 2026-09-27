@@ -34,52 +34,64 @@ are of this kind.
 
 public section
 
-universe u
+universe u v w
 
 open CategoryTheory MonoidalCategory
 
 namespace Rep
 
-variable {k G : Type u} [CommRing k] [Monoid G]
+variable {k : Type u} {G : Type v} [Monoid G]
+
+section Ring
+
+variable [Ring k]
 
 /-- A short complex of representations is exact if and only if the underlying linear maps form an
 exact pair. -/
-theorem exact_iff_function_exact (S : ShortComplex (Rep k G)) :
+theorem exact_iff_function_exact (S : ShortComplex (Rep.{w} k G)) :
     S.Exact ↔ Function.Exact S.f.hom S.g.hom := by
-  rw [← ShortComplex.exact_map_iff_of_faithful S (forget₂ (Rep k G) (ModuleCat k)),
+  rw [← ShortComplex.exact_map_iff_of_faithful S (forget₂ (Rep.{w} k G) (ModuleCat.{w} k)),
     ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
   rfl
 
-/-- Tensoring on the left with `M` preserves a short exact sequence of representations as soon as
-the tensored first map stays injective: exactness and the surjectivity of the last map come from
+end Ring
+
+variable [CommRing k]
+
+/-- Tensoring on the left with `M` sends an exact sequence ending in an epimorphism to a
+short exact sequence when the tensored first map is injective: exactness and surjectivity come from
 right exactness of the tensor product. -/
-theorem shortExact_map_tensorLeft_of_injective {S : ShortComplex (Rep k G)} (hS : S.ShortExact)
+theorem shortExact_map_tensorLeft_of_injective {S : ShortComplex (Rep.{u} k G)}
+    (hS : S.Exact) [Epi S.g]
     (M : Rep k G) (hf : Function.Injective (LinearMap.lTensor M.V S.f.hom.toLinearMap)) :
     (S.map (tensorLeft M)).ShortExact where
   exact := (exact_iff_function_exact _).2 <| lTensor_exact M.V
-    ((exact_iff_function_exact S).1 hS.exact) ((epi_iff_surjective S.g).1 hS.epi_g)
+    ((exact_iff_function_exact S).1 hS) ((epi_iff_surjective S.g).1 inferInstance)
   mono_f := (mono_iff_injective _).2 hf
   epi_g := (epi_iff_surjective _).2 <|
-    LinearMap.lTensor_surjective M.V ((epi_iff_surjective S.g).1 hS.epi_g)
+    LinearMap.lTensor_surjective M.V ((epi_iff_surjective S.g).1 inferInstance)
 
-/-- Tensoring on the left with `M` preserves a short exact sequence of representations whose first
-map has a `k`-linear retraction. -/
-theorem shortExact_map_tensorLeft_of_leftInverse {S : ShortComplex (Rep k G)} (hS : S.ShortExact)
+/-- Tensoring on the left with `M` sends an exact sequence ending in an epimorphism to a
+short exact sequence if the first map has a `k`-linear retraction. -/
+theorem shortExact_map_tensorLeft_of_leftInverse {S : ShortComplex (Rep.{u} k G)}
+    (hS : S.Exact) [Epi S.g]
     (M : Rep k G) (r : S.X₂.V →ₗ[k] S.X₁.V) (hr : Function.LeftInverse r S.f.hom) :
     (S.map (tensorLeft M)).ShortExact := by
   refine shortExact_map_tensorLeft_of_injective hS M
     (Function.LeftInverse.injective (g := LinearMap.lTensor M.V r) fun x ↦ ?_)
   have h : r ∘ₗ S.f.hom.toLinearMap = LinearMap.id := LinearMap.ext hr
-  rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, h, LinearMap.lTensor_id, LinearMap.id_apply]
+  simp only [← LinearMap.lTensor_comp_apply, h, LinearMap.lTensor_id, LinearMap.id_apply]
 
-/-- Tensoring on the left with `M` preserves a short exact sequence of representations whose last
-map has a `k`-linear section. -/
-theorem shortExact_map_tensorLeft_of_rightInverse {S : ShortComplex (Rep k G)} (hS : S.ShortExact)
+/-- Tensoring on the left with `M` sends an exact sequence starting in a monomorphism to a
+short exact sequence if the last map has a `k`-linear section. -/
+theorem shortExact_map_tensorLeft_of_rightInverse {S : ShortComplex (Rep.{u} k G)}
+    (hS : S.Exact) [Mono S.f]
     (M : Rep k G) (s : S.X₃.V →ₗ[k] S.X₂.V) (hs : Function.RightInverse s S.g.hom) :
     (S.map (tensorLeft M)).ShortExact := by
+  have : Epi S.g := (epi_iff_surjective S.g).2 hs.surjective
   have h : S.g.hom.toLinearMap ∘ₗ s = LinearMap.id := LinearMap.ext hs
-  have tfae := ((exact_iff_function_exact S).1 hS.exact).split_tfae
-    ((mono_iff_injective S.f).1 hS.mono_f) ((epi_iff_surjective S.g).1 hS.epi_g)
+  have tfae := ((exact_iff_function_exact S).1 hS).split_tfae
+    ((mono_iff_injective S.f).1 inferInstance) ((epi_iff_surjective S.g).1 inferInstance)
   have key : (∃ l, S.g.hom.toLinearMap ∘ₗ l = LinearMap.id) ↔
       ∃ l, l ∘ₗ S.f.hom.toLinearMap = LinearMap.id := tfae.out 1 2
   obtain ⟨r, hr⟩ := key.1 ⟨s, h⟩

@@ -29,6 +29,7 @@ is how a graph on an infinite label set is read as a finite sample.
   window;
 * `SimpleGraph.comap_eq_iff_inf_map_top` — prescribing a pullback is prescribing that
   intersection;
+* `SimpleGraph.map_sup` — pushing forward along any map commutes with joins;
 * `SimpleGraph.restrictFin_adj` — two labels are joined in a window exactly when they are joined
   in the graph.
 -/
@@ -56,6 +57,20 @@ graph with the window seen by the embedding. -/
 theorem comap_eq_iff_inf_map_top (f : V ↪ W) (G : SimpleGraph W) (H : SimpleGraph V) :
     G.comap ⇑f = H ↔ G ⊓ (⊤ : SimpleGraph V).map ⇑f = H.map ⇑f := by
   rw [← (map_injective f).eq_iff, map_comap_eq_inf_map_top]
+
+/-- Pushing a graph forward along any map commutes with joins: an edge of the image of `G ⊔ H`
+is the image of an edge of `G` or of an edge of `H`. -/
+@[simp]
+theorem map_sup (f : V → W) (G H : SimpleGraph V) : (G ⊔ H).map f = G.map f ⊔ H.map f := by
+  ext u v
+  simp only [map_adj', sup_adj]
+  constructor
+  · rintro ⟨hne, a, b, hab | hab, ha, hb⟩
+    · exact Or.inl ⟨hne, a, b, hab, ha, hb⟩
+    · exact Or.inr ⟨hne, a, b, hab, ha, hb⟩
+  · rintro (⟨hne, a, b, hab, ha, hb⟩ | ⟨hne, a, b, hab, ha, hb⟩)
+    · exact ⟨hne, a, b, Or.inl hab, ha, hb⟩
+    · exact ⟨hne, a, b, Or.inr hab, ha, hb⟩
 
 /-- The window of a graph on `ℕ` spanned by the first `n` labels. -/
 def restrictFin (G : SimpleGraph ℕ) (n : ℕ) : SimpleGraph (Fin n) :=

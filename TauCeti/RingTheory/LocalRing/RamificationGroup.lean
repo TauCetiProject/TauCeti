@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
@@ -15,6 +16,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.Pointwise
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
 /-!
 # The ramification filtration of a group acting on a local ring
@@ -40,6 +42,8 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroupReal G S u`: the same family reindexed by a real number
   through `⌈·⌉`, the convention under which the step function is constant on `(i - 1, i]`.
 * `TauCeti.IsLocalRing.RamificationGroupGraded G S i`: the successive quotient `G_i / G_{i+1}`.
+* `TauCeti.IsLocalRing.lowerIndex S σ`: over a discrete valuation ring, Serre's lower index
+  `i_G(σ) = min_x v (σ x - x)` in `ℕ∞`.
 
 ## Main results
 
@@ -63,7 +67,16 @@ integer indexing that Herbrand theory uses.
   alone; `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_singleton_eq_top` is the
   monogenic case, where a single generator decides it.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_addVal`: over a discrete valuation ring the
-  defining condition is the valuation inequality `v (σ x - x) ≥ i + 1`.
+  defining condition is the valuation inequality `v (σ x - x) ≥ i + 1`;
+  `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_lowerIndex` reads it as `i + 1 ≤ i_G(σ)`.
+* `TauCeti.IsLocalRing.lowerIndex_eq_top_iff`: for a faithful action only the identity has lower
+  index `⊤`, and `TauCeti.IsLocalRing.lowerIndex_eq_addVal_of_adjoin_singleton_eq_top` computes
+  the lower index at a single generator.
+* `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top`
+  tests membership in `G_n` at a single generator.
+* `TauCeti.IsLocalRing.sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one`:
+  **Hilbert's counting identity** `∑_{σ ≠ 1} v (σ ξ - ξ) = ∑_{i ≥ 0} (#G_i - 1)` for a generator
+  `ξ` of a discrete valuation ring under a faithful action of a finite group.
 
 ## References
 
@@ -307,6 +320,170 @@ theorem mem_ramificationGroup_iff_le_addVal {i : ℤ} {σ : G} :
       ∀ x : S, ((i + 1).toNat : ℕ∞) ≤ IsDiscreteValuationRing.addVal S (σ • x - x) := by
   simp only [mem_ramificationGroup_iff,
     TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+
+variable (S) in
+/-- Serre's **lower index** `i_G(σ)` of an element `σ` acting on a discrete valuation ring `S`:
+the least valuation `v (σ x - x)` over all `x : S`, with value `⊤` when `σ` acts trivially.
+Its superlevel sets are the ramification groups:
+`σ ∈ G_i ↔ i + 1 ≤ i_G(σ)`. -/
+noncomputable def lowerIndex (σ : G) : ℕ∞ :=
+  ⨅ x : S, IsDiscreteValuationRing.addVal S (σ • x - x)
+
+/-- The lower index is the infimum of the valuations of all displacements. -/
+theorem lowerIndex_def (σ : G) :
+    lowerIndex S σ = ⨅ x : S, IsDiscreteValuationRing.addVal S (σ • x - x) :=
+  (rfl)
+
+/-- A lower bound for the lower index is a lower bound for every `v (σ x - x)`. -/
+theorem le_lowerIndex_iff {n : ℕ∞} {σ : G} :
+    n ≤ lowerIndex S σ ↔ ∀ x : S, n ≤ IsDiscreteValuationRing.addVal S (σ • x - x) :=
+  le_iInf_iff
+
+/-- The lower index is at most the valuation `v (σ x - x)` at any `x`. -/
+theorem lowerIndex_le_addVal (σ : G) (x : S) :
+    lowerIndex S σ ≤ IsDiscreteValuationRing.addVal S (σ • x - x) :=
+  iInf_le _ x
+
+/-- The ramification groups are the superlevel sets of the lower index: `σ ∈ G_i` exactly when
+`i + 1 ≤ i_G(σ)`. -/
+theorem mem_ramificationGroup_iff_le_lowerIndex {i : ℤ} {σ : G} :
+    σ ∈ ramificationGroup G S i ↔ ((i + 1).toNat : ℕ∞) ≤ lowerIndex S σ := by
+  rw [mem_ramificationGroup_iff_le_addVal, le_lowerIndex_iff]
+
+/-- A natural number bounds the lower index exactly when the automorphism belongs to the
+corresponding ramification group. -/
+theorem natCast_le_lowerIndex_iff_mem_ramificationGroup {n : ℕ} {σ : G} :
+    (n : ℕ∞) ≤ lowerIndex S σ ↔ σ ∈ ramificationGroup G S ((n : ℤ) - 1) := by
+  rw [mem_ramificationGroup_iff_le_lowerIndex]
+  norm_num
+
+/-- The lower index is unchanged by inversion. -/
+@[simp]
+theorem lowerIndex_inv (σ : G) : lowerIndex S σ⁻¹ = lowerIndex S σ := by
+  apply ENat.eq_of_forall_natCast_le_iff
+  intro n
+  rw [natCast_le_lowerIndex_iff_mem_ramificationGroup,
+    natCast_le_lowerIndex_iff_mem_ramificationGroup]
+  exact ⟨fun h ↦ by
+    simpa only [inv_inv] using (ramificationGroup G S ((n : ℤ) - 1)).inv_mem h,
+    fun h ↦ (ramificationGroup G S ((n : ℤ) - 1)).inv_mem h⟩
+
+/-- The lower index is constant on conjugacy classes. -/
+@[simp]
+theorem lowerIndex_conj (σ τ : G) :
+    lowerIndex S (σ * τ * σ⁻¹) = lowerIndex S τ := by
+  apply ENat.eq_of_forall_natCast_le_iff
+  intro n
+  rw [natCast_le_lowerIndex_iff_mem_ramificationGroup,
+    natCast_le_lowerIndex_iff_mem_ramificationGroup]
+  exact ⟨fun h ↦ by
+    have h' := (inferInstance : (ramificationGroup G S ((n : ℤ) - 1)).Normal).conj_mem
+      _ h σ⁻¹
+    convert h' using 1; group,
+    fun h ↦ (inferInstance : (ramificationGroup G S ((n : ℤ) - 1)).Normal).conj_mem _ h σ⟩
+
+/-- The lower index of a product is at least the minimum of the two lower indices. -/
+theorem min_le_lowerIndex_mul (σ τ : G) :
+    min (lowerIndex S σ) (lowerIndex S τ) ≤ lowerIndex S (σ * τ) := by
+  apply ENat.forall_natCast_le_iff_le.mp
+  intro n hn
+  rw [natCast_le_lowerIndex_iff_mem_ramificationGroup]
+  exact (ramificationGroup G S ((n : ℤ) - 1)).mul_mem
+    (natCast_le_lowerIndex_iff_mem_ramificationGroup (n := n) (σ := σ) |>.mp
+      (le_trans hn (min_le_left ..)))
+    (natCast_le_lowerIndex_iff_mem_ramificationGroup (n := n) (σ := τ) |>.mp
+      (le_trans hn (min_le_right ..)))
+
+variable (S) in
+/-- The identity has lower index `⊤`. -/
+@[simp]
+theorem lowerIndex_one : lowerIndex S (1 : G) = ⊤ := by
+  simp [lowerIndex]
+
+/-- For a faithful action, only the identity has lower index `⊤`. -/
+@[simp]
+theorem lowerIndex_eq_top_iff [FaithfulSMul G S] {σ : G} : lowerIndex S σ = ⊤ ↔ σ = 1 := by
+  refine ⟨fun h ↦ FaithfulSMul.eq_of_smul_eq_smul (α := S) fun x ↦ ?_, ?_⟩
+  · have hx := le_lowerIndex_iff.1 h.ge x
+    rw [top_le_iff, IsDiscreteValuationRing.addVal_eq_top_iff, sub_eq_zero] at hx
+    rw [hx, one_smul]
+  · rintro rfl
+    exact lowerIndex_one S
+
+/-- When `S` is generated over a base ring `R` fixed by `G` by a single element `ξ`, the lower
+index is read at `ξ` alone: `i_G(σ) = v (σ ξ - ξ)`. This recovers Serre's monogenic
+computation formula. -/
+theorem lowerIndex_eq_addVal_of_adjoin_singleton_eq_top {R : Type*} [CommSemiring R]
+    [Algebra R S] [SMulCommClass G R S] {ξ : S} (hξ : Algebra.adjoin R {ξ} = ⊤) (σ : G) :
+    lowerIndex S σ = IsDiscreteValuationRing.addVal S (σ • ξ - ξ) := by
+  refine (lowerIndex_le_addVal σ ξ).antisymm (le_lowerIndex_iff.2 fun x ↦ ?_)
+  exact IsDiscreteValuationRing.addVal_le_iff_dvd.2
+    (TauCeti.smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top hξ σ x)
+
+variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
+
+/-- When the discrete valuation ring `S` is generated over a base `R` fixed by `G` by a single
+element `ξ`, membership in `G_n` for `n : ℕ` is the single inequality `v (σ • ξ - ξ) ≥ n + 1`. -/
+theorem mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top {ξ : S}
+    (hξ : Algebra.adjoin R {ξ} = ⊤) {n : ℕ} {σ : G} :
+    σ ∈ ramificationGroup G S n ↔
+      ((n + 1 : ℕ) : ℕ∞) ≤ IsDiscreteValuationRing.addVal S (σ • ξ - ξ) := by
+  have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
+  rw [mem_ramificationGroup_iff_le_lowerIndex,
+    lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hξ, h]
+
+open Finset in
+/-- **Hilbert's counting identity.** Let a finite group `G` act faithfully on a discrete valuation
+ring `S` generated over a base `R` fixed by `G` by a single element `ξ`. Then the sum over the
+nontrivial `σ ∈ G` of the valuations `v (σ • ξ - ξ)` is `∑_{i ≥ 0} (#G_i - 1)`, where `G_i` is
+the `i`-th ramification group: each `σ ≠ 1` lies in exactly `v (σ • ξ - ξ)` of the groups
+`G_0, G_1, …`, and the sum is finite because the filtration is eventually trivial. -/
+theorem sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one [Fintype G] [DecidableEq G]
+    [FaithfulSMul G S] {ξ : S} (hξ : Algebra.adjoin R {ξ} = ⊤) :
+    ∑ σ ∈ (univ : Finset G).erase 1, IsDiscreteValuationRing.addVal S (σ • ξ - ξ) =
+      ((∑ᶠ i : ℕ, (Nat.card (ramificationGroup G S i) - 1) : ℕ) : ℕ∞) := by
+  classical
+  -- The filtration vanishes from some natural index `N` on.
+  obtain ⟨N, hN⟩ : ∃ N : ℕ, ∀ i : ℕ, N ≤ i → ramificationGroup G S i = ⊥ := by
+    obtain ⟨N₀, hN₀⟩ := exists_forall_ramificationGroup_eq_bot G S
+    exact ⟨N₀.toNat, fun i hi ↦ hN₀ i (by omega)⟩
+  -- For `σ ≠ 1`, the valuation `v (σ • ξ - ξ)` counts the indices `i < N` with `σ ∈ G_i`.
+  have hval : ∀ σ ∈ univ.erase (1 : G), IsDiscreteValuationRing.addVal S (σ • ξ - ξ) =
+      (((range N).filter fun i : ℕ ↦ σ ∈ ramificationGroup G S i).card : ℕ∞) := by
+    intro σ hσ
+    have hσ1 : σ ≠ 1 := ne_of_mem_erase hσ
+    obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 <|
+      IsDiscreteValuationRing.addVal_eq_top_iff.not.2 <| sub_ne_zero.2 fun h ↦
+        hσ1 (eq_one_of_smul_eq_of_adjoin_singleton_eq_top hξ h)
+    have hnN : n ≤ N := by
+      by_contra hlt
+      have hmem : σ ∈ ramificationGroup G S N := by
+        rw [mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top hξ, ← hn]
+        exact_mod_cast (by omega : N + 1 ≤ n)
+      rw [hN N le_rfl, Subgroup.mem_bot] at hmem
+      exact hσ1 hmem
+    have hfilter : ((range N).filter fun i : ℕ ↦ σ ∈ ramificationGroup G S i) = range n := by
+      ext i
+      simp only [mem_filter, mem_range,
+        mem_ramificationGroup_natCast_iff_le_addVal_of_adjoin_singleton_eq_top hξ, ← hn,
+        Nat.cast_le]
+      omega
+    rw [hfilter, card_range, hn]
+  rw [sum_congr rfl hval, ← Nat.cast_sum]
+  congr 1
+  -- Double counting: `∑_{σ ≠ 1} #{i < N | σ ∈ G_i} = ∑_{i < N} #{σ ≠ 1 | σ ∈ G_i}`.
+  have hdc := sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow
+    (fun (σ : G) (i : ℕ) ↦ σ ∈ ramificationGroup G S i) (s := univ.erase 1) (t := range N)
+  simp only [bipartiteAbove, bipartiteBelow] at hdc
+  rw [hdc, finsum_eq_sum_of_support_subset (s := range N)]
+  · refine sum_congr rfl fun i _ ↦ ?_
+    rw [filter_erase, card_erase_of_mem (mem_filter.2 ⟨mem_univ _, one_mem _⟩),
+      Nat.card_eq_fintype_card, Fintype.card_subtype]
+  · intro i hi
+    by_contra h
+    rw [coe_range, Set.mem_Iio, not_lt] at h
+    rw [Function.mem_support, hN i h, Subgroup.card_bot] at hi
+    exact hi rfl
 
 end DiscreteValuationRing
 

@@ -72,8 +72,9 @@ theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_add
   funext g
   unfold FiniteMeasure.pontryaginMeasureTransform
   rw [FiniteMeasure.toMeasure_add,
-    integral_add_measure (PontryaginDual.integrable_eval_ofAdd (μ := μ.toMeasure) g)
-      (PontryaginDual.integrable_eval_ofAdd (μ := ν.toMeasure) g)]
+    integral_add_measure
+      (PontryaginDual.integrable_coe_eval (μ := μ.toMeasure) (Multiplicative.ofAdd g))
+      (PontryaginDual.integrable_coe_eval (μ := ν.toMeasure) (Multiplicative.ofAdd g))]
   rfl
 
 /-- The transform of a point mass is its character. -/
@@ -85,6 +86,7 @@ theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_dirac
         (PontryaginDual (Multiplicative G))) g =
       (χ (Multiplicative.ofAdd g) : ℂ) := by
   simp [FiniteMeasure.pontryaginMeasureTransform,
-    integral_dirac' _ _ (PontryaginDual.continuous_eval_ofAdd g).stronglyMeasurable]
+    integral_dirac' _ _
+      (PontryaginDual.continuous_coe_eval_const (Multiplicative.ofAdd g)).stronglyMeasurable]
 
 end TauCeti

@@ -25,10 +25,15 @@ equals conjugation by every element outside `U`. The class of `α` is represente
 `TauCeti.ContCohomology.evensHomCocycleAmbient` with the lifted trivial `𝔽₂` coefficients of the
 ambient group.
 
-## Main result
+The same formula holds for the choice-free class `TauCeti.ContCohomology.explicitGraphClass`, of
+which the graph cocycle for a chosen `s ∉ U` is a representative.
+
+## Main results
 
 * `TauCeti.ContCohomology.explicitRes2_evensGraphCocycle`: in explicit cohomology, the restriction
   of the graph-cocycle class for a chosen `s ∉ U` is the cup product with the conjugate class.
+* `TauCeti.ContCohomology.explicitRes2_explicitGraphClass`: the same identity for the choice-free
+  graph class, with no representative on either side.
 
 ## References
 
@@ -81,5 +86,24 @@ theorem explicitRes2_evensGraphCocycle (U : OpenSubgroup G) (hU : U.toSubgroup.i
     AddEquiv.apply_symm_apply]
   rw [evensGraphCochain_apply_of_mem_of_mem hs γ.2 η.2, evensExtend_of_mem γ.2,
     evensExtend_of_mem hconj]
+
+/-- **Restriction of the index-two Evens graph class.** Restriction of the choice-free graph class
+`TauCeti.ContCohomology.explicitGraphClass` is the `(1,1)` cup product of the class of `α` with its
+choice-free conjugate. Both sides lie in explicit `H²(U, 𝔽₂)`; unlike
+`explicitRes2_evensGraphCocycle`, neither mentions a representative. -/
+theorem explicitRes2_explicitGraphClass (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
+    (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) :
+    letI : U.toSubgroup.FiniteIndex := ⟨by omega⟩
+    explicitRes2 G (trivialF2 G).V U.toSubgroup (explicitGraphClass U hU α hα) =
+      explicitCup11 U.toSubgroup (trivialF2 G).V (trivialF2 G).V (trivialF2 G).V
+        (trivialF2Pairing G) continuous_of_discreteTopology
+        (fun u m n => trivialF2Pairing_smul_smul G (u : G) m n)
+        (evensHomCocycleAmbient U.toSubgroup α hα : H1 U.toSubgroup (trivialF2 G).V)
+        (evensConj1 G (trivialF2 G).V U.toSubgroup hU U.isOpen'
+          (evensHomCocycleAmbient U.toSubgroup α hα : H1 U.toSubgroup (trivialF2 G).V)) := by
+  let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
+  obtain ⟨s, hs, -⟩ := Subgroup.index_eq_two_iff_exists_notMem_and.mp hU
+  rw [explicitGraphClass_eq_evensGraphCocycle U hU s hs α hα,
+    explicitRes2_evensGraphCocycle U hU hs α hα]
 
 end TauCeti.ContCohomology

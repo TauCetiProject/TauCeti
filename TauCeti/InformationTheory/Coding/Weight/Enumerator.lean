@@ -22,12 +22,13 @@ For a set of words `C` on a finite coordinate type `ι` of size `n`, the *weight
 which for finite `C` equals the sum over codewords `∑_{c ∈ C} X^(n - wt c) Y^(wt c)`. It is
 a homogeneous polynomial of degree `n` with integer coefficients, with the variables `0, 1` of
 `MvPolynomial (Fin 2) ℤ` playing the roles of `X, Y`. Its one-variable specialization at `X = 1`
-is the *weight polynomial* `∑_w A_w(C) Y^w`.
+is the *weight polynomial* `∑_w A_w(C) Y^w`, of degree at most `n`.
 
 These invariants carry the Hamming data of a finite code in the form used by the MacWilliams
 identity `#C · W_{C⊥}(X, Y) = W_C(X + (q - 1) Y, X - Y)`: they are unchanged by monomial
-equivalence and recover the cardinality and minimum distance of a finite additive code, and the
-homogeneous weight enumerator is multiplicative under direct sums.
+equivalence and recover the cardinality and minimum distance of a finite additive code. Both
+enumerators are multiplicative under direct sums, so the weight distribution of a direct sum is
+the convolution of the weight distributions of its summands.
 
 ## Main definitions
 
@@ -46,8 +47,9 @@ homogeneous weight enumerator is multiplicative under direct sums.
   code is its least positive weight with nonzero multiplicity.
 * `TauCeti.IsMonomialEquivalent.weightEnumerator_eq`: monomially equivalent codes have the same
   weight enumerator.
-* `Submodule.weightEnumerator_directSum`: the weight enumerator of a direct sum is the product of
-  the weight enumerators.
+* `Submodule.weightEnumerator_directSum`, `Submodule.weightPolynomial_directSum`: the weight
+  enumerators of a direct sum are the products of the weight enumerators of the summands.
+* `Submodule.weightDistribution_directSum`: `A_w(C ⊕ D) = ∑_{i + j = w} A_i(C) A_j(D)`.
 
 ## References
 
@@ -225,6 +227,12 @@ theorem eval_one_weightPolynomial (hC : C.Finite) :
     C.weightPolynomial.eval 1 = Nat.card C := by
   simp [weightPolynomial_def, Polynomial.eval_finsetSum, ← sum_weightDistribution hC]
 
+/-- The one-variable weight enumerator has degree at most the length. -/
+theorem natDegree_weightPolynomial_le (C : Set (∀ i, β i)) :
+    C.weightPolynomial.natDegree ≤ Fintype.card ι :=
+  Polynomial.natDegree_sum_le_of_forall_le _ _ fun _ hw ↦
+    (Polynomial.natDegree_monomial_le _).trans (mem_range_succ_iff.mp hw)
+
 /-! ### Recovering the minimum distance -/
 
 /-- The minimum distance of a finite additive code is the least positive weight occurring in
@@ -303,6 +311,13 @@ theorem weightEnumerator_singleton {ι : Type*} {β : ι → Type*} [Fintype ι]
       X 0 ^ (Fintype.card ι - hammingNorm x) * X 1 ^ hammingNorm x := by
   rw [Set.weightEnumerator_eq_sum (Set.finite_singleton _)]
   simp
+
+/-- The zero code has just its zero word, of weight zero. -/
+theorem weightEnumerator_bot {ι R : Type*} [Fintype ι] [Semiring R] [DecidableEq R] :
+    ((⊥ : Submodule R (ι → R)) : Set (ι → R)).weightEnumerator =
+      (X 0 : MvPolynomial (Fin 2) ℤ) ^ Fintype.card ι := by
+  simp only [Submodule.bot_coe, weightEnumerator_singleton, hammingNorm_zero,
+    Nat.sub_zero, pow_zero, mul_one]
 
 variable {ι R : Type*} [Fintype ι] [Zero R] [DecidableEq R]
 
@@ -428,5 +443,23 @@ theorem weightEnumerator_directSum (C : Submodule R (ι → R)) (D : Submodule R
     omega
   rw [LinearEquiv.coe_toEquiv, hammingNorm_directSumEquivProd_symm, Fintype.card_sum, hsub]
   ring
+
+/-- The one-variable weight enumerator of a direct sum of codes is the product of their
+one-variable weight enumerators. -/
+theorem weightPolynomial_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R)) :
+    (directSum C D : Set (ι ⊕ κ → R)).weightPolynomial =
+      (C : Set (ι → R)).weightPolynomial * (D : Set (κ → R)).weightPolynomial := by
+  simp only [← Set.aeval_weightEnumerator, weightEnumerator_directSum, map_mul]
+
+/-- The weight distribution of a direct sum of codes is the convolution of their weight
+distributions: `A_w(C ⊕ D) = ∑_{i + j = w} A_i(C) A_j(D)`. -/
+theorem weightDistribution_directSum (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
+    (w : ℕ) :
+    (directSum C D : Set (ι ⊕ κ → R)).weightDistribution w =
+      ∑ p ∈ Finset.antidiagonal w,
+        (C : Set (ι → R)).weightDistribution p.1 * (D : Set (κ → R)).weightDistribution p.2 := by
+  have h := congrArg (Polynomial.coeff · w) (weightPolynomial_directSum C D)
+  simp only [Set.coeff_weightPolynomial, Polynomial.coeff_mul] at h
+  exact_mod_cast h
 
 end Submodule

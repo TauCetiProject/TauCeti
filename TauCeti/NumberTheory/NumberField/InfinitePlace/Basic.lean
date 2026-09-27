@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
+public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 import Mathlib.Analysis.Complex.Order
+import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 
 /-!
 # Totally real and totally complex fields at infinite places
@@ -37,6 +39,12 @@ over its restriction to `k`.
   unramified at all infinite places of any extension.
 * `NumberField.InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two`: a totally complex
   field of degree `2` — an imaginary quadratic field — has exactly one complex place.
+* `NumberField.InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr`: Brill's theorem in parity
+  form, the number of complex places is even exactly when the discriminant is positive; hence
+  `nrComplexPlaces_eq_zero_of_zero_lt_discr` (degree less than `4`),
+  `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`) and
+  `NumberField.IsTotallyReal.of_zero_lt_discr` read the signature off the sign of the
+  discriminant in low degree.
 * `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
   degree less the real places counts the complex places, for any number field.
 * `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
@@ -156,6 +164,48 @@ theorem InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces :
     (Module.finrank ℚ K - nrRealPlaces K) / 2 = nrComplexPlaces K := by
   have key := card_add_two_mul_card_eq_rank K
   omega
+
+variable (K) in
+/-- **Brill's theorem, parity form.** The number of complex places is even exactly when the
+discriminant is positive. -/
+theorem InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr :
+    Even (nrComplexPlaces K) ↔ 0 < discr K := by
+  have hs := sign_discr K
+  constructor
+  · intro h
+    rw [h.neg_one_pow] at hs
+    rcases lt_trichotomy (discr K) 0 with hlt | heq | hgt
+    · rw [Int.sign_eq_neg_one_of_neg hlt] at hs
+      norm_num at hs
+    · exact absurd heq (discr_ne_zero K)
+    · exact hgt
+  · intro h
+    rw [Int.sign_eq_one_of_pos h] at hs
+    exact (neg_one_pow_eq_one_iff_even (by decide)).mp hs.symm
+
+/-- **The signature in degree less than `4`, positive discriminant.** Such a number field has no
+complex place. -/
+theorem InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr (hd : 0 < discr K)
+    (hK : Module.finrank ℚ K < 4) : nrComplexPlaces K = 0 := by
+  have h := card_add_two_mul_card_eq_rank K
+  obtain ⟨k, hk⟩ := (InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr K).mpr hd
+  omega
+
+/-- **The signature in degree less than `6`, negative discriminant.** Such a number field has
+exactly one complex place: the number of complex places is odd and at most `2`. -/
+theorem InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero (hd : discr K < 0)
+    (hK : Module.finrank ℚ K < 6) : nrComplexPlaces K = 1 := by
+  have h := card_add_two_mul_card_eq_rank K
+  have hodd : Odd (nrComplexPlaces K) := by
+    rw [← Nat.not_even_iff_odd, InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr]
+    exact not_lt.mpr hd.le
+  obtain ⟨k, hk⟩ := hodd
+  omega
+
+/-- A number field of degree less than `4` with positive discriminant is totally real. -/
+theorem IsTotallyReal.of_zero_lt_discr (hd : 0 < discr K) (hK : Module.finrank ℚ K < 4) :
+    IsTotallyReal K :=
+  nrComplexPlaces_eq_zero_iff.mp (InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr hd hK)
 
 omit [NumberField K] in
 /-- The real embedding of the restriction of a real place `w` along `f` is the real embedding of

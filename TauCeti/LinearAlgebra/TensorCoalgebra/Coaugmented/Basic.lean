@@ -115,6 +115,14 @@ theorem linearMap_ext {N : Type uN} [AddCommMonoid N] [Module R N]
 noncomputable def component (n : ℕ) : TensorWords R M →ₗ[R] TensorPower R n M :=
   DirectSum.component R ℕ (fun n ↦ TensorPower R n M) n
 
+/-- Applying the length projection reads the corresponding coordinate.
+
+The specialized projection rules for included words take precedence. -/
+@[simp low]
+theorem component_apply (n : ℕ) (x : TensorWords R M) :
+    component R M n x = x n :=
+  (DirectSum.apply_eq_component R x n).symm
+
 /-- The component of an included tensor power at its own length is that tensor power. -/
 @[simp]
 theorem component_of (n : ℕ) (x : TensorPower R n M) :
@@ -141,11 +149,16 @@ theorem toModule_of {N : Type uN} [AddCommMonoid N] [Module R N]
 noncomputable def counit : TensorWords R M →ₗ[R] R :=
   (TensorPower.algebraMap₀ (R := R) (M := M)).symm.toLinearMap ∘ₗ component R M 0
 
+/-- The counit evaluates the length-zero component using the scalar identification. -/
+theorem counit_apply (x : TensorWords R M) :
+    counit R M x = (TensorPower.algebraMap₀ (R := R) (M := M)).symm (component R M 0 x) :=
+  (rfl)
+
 /-- On the empty length the counit is the canonical identification with the ground ring. -/
 @[simp]
 theorem counit_of_zero (z : TensorPower R 0 M) :
     counit R M (of R M 0 z) = (TensorPower.algebraMap₀ (R := R) (M := M)).symm z := by
-  simp [counit]
+  simp only [counit, LinearMap.comp_apply, LinearEquiv.coe_coe, component_of]
 
 /-- The counit annihilates every word of positive length. -/
 @[simp]
@@ -221,6 +234,51 @@ noncomputable def deconcatenation :
 theorem deconcatenation_of (n : ℕ) (x : TensorPower R n M) :
     deconcatenation R M (of R M n x) = deconcatenationComponent R M n x := by
   simp [deconcatenation, of]
+
+/-- Each bidegree of deconcatenation splits the component of the total length. -/
+theorem map_component_comp_deconcatenation (p q : ℕ) :
+    TensorProduct.map (component R M p) (component R M q) ∘ₗ
+      deconcatenation R M =
+    (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap ∘ₗ
+      component R M (p + q) := by
+  classical
+  apply linearMap_ext
+  intro n x
+  simp only [LinearMap.comp_apply, deconcatenation_of,
+    deconcatenationComponent_tprod, map_sum, TensorProduct.map_tmul]
+  by_cases hn : n = p + q
+  · subst n
+    rw [component_of]
+    rw [Finset.sum_eq_single ⟨p, by omega⟩]
+    · simp only [component_of]
+      have hq {m : ℕ} (hm : m = q) (z : TensorPower R m M) :
+          component R M q (of R M m z) = TensorPower.cast R M hm z := by
+        subst m
+        simp only [component_of, TensorPower.cast_refl, LinearEquiv.refl_apply]
+      rw [hq (Nat.add_sub_cancel_left p q), TensorPower.cast_tprod]
+      apply TensorPower.mulEquiv.injective
+      rw [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, ← TensorPower.gMul_def,
+        TensorPower.tprod_mul_tprod]
+      congr 1
+      funext i
+      refine Fin.addCases ?_ ?_ i
+      · intro j
+        rw [Fin.append_left]
+        congr 1
+      · intro j
+        rw [Fin.append_right]
+        exact congrArg x (Fin.ext (by simp))
+    · intro i _ hi
+      have hp : i.val ≠ p := fun h ↦ hi (Fin.ext h)
+      rw [component_of_of_ne R M hp, TensorProduct.zero_tmul]
+    · simp
+  · rw [component_of_of_ne R M hn, map_zero]
+    apply Finset.sum_eq_zero
+    intro i _
+    by_cases hp : i.val = p
+    · have hq : n - i.val ≠ q := by have := i.isLt; omega
+      rw [component_of_of_ne R M hq, TensorProduct.tmul_zero]
+    · rw [component_of_of_ne R M hp, TensorProduct.zero_tmul]
 
 section Subword
 
@@ -501,6 +559,31 @@ theorem reducedInclusion_of (n : {n : ℕ // 0 < n}) (z : TensorPower R n.1 M) :
     reducedInclusion R M (ReducedTensorWords.of R M n z) = of R M n.1 z := by
   rw [reducedInclusion, ReducedTensorWords.toModule_of]
 
+/-- The included reduced word has precisely its positive-length components. -/
+@[simp] theorem component_reducedInclusion (k : ℕ) (w : ReducedTensorWords R M) :
+    component R M k (reducedInclusion R M w) =
+      if hk : 0 < k then ReducedTensorWords.component R M ⟨k, hk⟩ w else 0 := by
+  suffices h : component R M k ∘ₗ reducedInclusion R M =
+      if hk : 0 < k then ReducedTensorWords.component R M ⟨k, hk⟩ else 0 by
+    have hw := LinearMap.congr_fun h w
+    by_cases hk : 0 < k <;> simpa [hk] using hw
+  apply ReducedTensorWords.linearMap_ext R M
+  intro n z
+  rw [LinearMap.comp_apply, reducedInclusion_of]
+  by_cases hk : 0 < k
+  · simp only [dite_eq_left hk]
+    by_cases hkn : k = n.1
+    · subst k
+      simp [component_of, ReducedTensorWords.component_of]
+    · have hne : (⟨k, hk⟩ : {n : ℕ // 0 < n}) ≠ n := by
+        intro h
+        exact hkn (congrArg Subtype.val h)
+      rw [component_of_of_ne R M (Ne.symm hkn),
+        ReducedTensorWords.component_of_of_ne R M (Ne.symm hne)]
+  · have hk0 : k = 0 := by omega
+    subst k
+    simp [component_of_of_ne R M n.2.ne']
+
 /-- The retraction of `TauCeti.TensorWords.reducedInclusion` that deletes the empty word. -/
 noncomputable def reducedProjection : TensorWords R M →ₗ[R] ReducedTensorWords R M :=
   DirectSum.toModule R ℕ _ fun n ↦
@@ -522,6 +605,32 @@ theorem reducedProjection_of_zero (z : TensorPower R 0 M) :
 @[simp]
 theorem reducedProjection_one : reducedProjection R M (1 : TensorWords R M) = 0 := by
   rw [one_eq_of_zero, reducedProjection_of_zero]
+
+/-- Deleting the empty word preserves each positive-length component. -/
+@[simp]
+theorem component_reducedProjection (p : {n : ℕ // 0 < n}) (w : TensorWords R M) :
+    ReducedTensorWords.component R M p (reducedProjection R M w) =
+      component R M p.1 w := by
+  suffices h : ReducedTensorWords.component R M p ∘ₗ reducedProjection R M =
+      component R M p.1 by
+    exact LinearMap.congr_fun h w
+  apply linearMap_ext R M
+  intro n z
+  rw [LinearMap.comp_apply]
+  by_cases hn : 0 < n
+  · rw [reducedProjection_of_of_pos R M hn]
+    by_cases h : (⟨n, hn⟩ : {n : ℕ // 0 < n}) = p
+    · cases h
+      rw [ReducedTensorWords.component_of, component_of]
+    · have hnp : n ≠ p.1 := by
+        intro he
+        exact h (Subtype.ext he)
+      rw [ReducedTensorWords.component_of_of_ne R M h,
+        component_of_of_ne R M hnp]
+  · have hn0 : n = 0 := by omega
+    subst n
+    rw [reducedProjection_of_zero, map_zero,
+      component_of_of_ne R M p.2.ne]
 
 /-- The projection is a retraction of the inclusion. -/
 @[simp]
