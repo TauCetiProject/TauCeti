@@ -147,11 +147,13 @@ to `x - a`. -/
 theorem levelSetChart_apply (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
     (hker : f'.ker.ClosedComplemented) (ha : f a = c) (z : ↥{x | f x = c}) :
     levelSetChart hf hf' hker ha z = Classical.choose hker (z.1 - a) := by
-  rw [show levelSetChart hf hf' hker ha z =
-      (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker z.1).2 by
-    unfold levelSetChart
-    apply OpenPartialHomeomorph.subtypeCoord_apply]
-  exact congrArg Prod.snd (hf.implicitToOpenPartialHomeomorphOfComplemented_apply hf' hker z.1)
+  calc
+    levelSetChart hf hf' hker ha z =
+        (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker z.1).2 := by
+      unfold levelSetChart
+      apply OpenPartialHomeomorph.subtypeCoord_apply
+    _ = Classical.choose hker (z.1 - a) :=
+      congrArg Prod.snd (hf.implicitToOpenPartialHomeomorphOfComplemented_apply hf' hker z.1)
 
 /-- On its target, the inverse of the chart of a level set is the implicit function of `f` at the
 constant value `c`: the inverse of Mathlib's implicit-function homeomorphism, read on the slice
