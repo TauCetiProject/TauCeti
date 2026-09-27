@@ -10,11 +10,13 @@ public import Mathlib.Topology.Bases
 public import TauCeti.Topology.Compactness.LocallyCompact
 
 /-!
-# Countability and local compactness of glued spaces
+# Separation, countability, and local compactness of glued spaces
 
 A space obtained by gluing open charts is second countable when the chart family is countable
 and every chart is second countable. It is locally compact when every chart is locally compact.
-These results apply to gluing data without any separation assumption on the glued space.
+It is Hausdorff exactly when the gluing relation between each pair of charts is closed in their
+product. The latter criterion isolates the mathematical separation argument needed in applications:
+for example, toric charts must prove that their monomial overlap relation is closed.
 -/
 
 public section
@@ -24,6 +26,55 @@ open CategoryTheory Set Topology
 namespace TopCat.GlueData
 
 variable (D : TopCat.GlueData)
+
+/-- The relation between the `i`-th and `j`-th charts: two points are related when the gluing
+identifies their images. -/
+def chartRel (i j : D.J) : Set (D.U i × D.U j) :=
+  {p | D.Rel ⟨i, p.1⟩ ⟨j, p.2⟩}
+
+/-- Membership in the relation between two charts is equivalent to equality of their images in
+the glued space. -/
+@[simp]
+theorem mem_chartRel_iff (i j : D.J) (x : D.U i) (y : D.U j) :
+    (x, y) ∈ D.chartRel i j ↔ D.toGlueData.ι i x = D.toGlueData.ι j y :=
+  (D.ι_eq_iff_rel i j x y).symm
+
+/-- The space obtained by gluing open charts is Hausdorff exactly when the gluing relation between
+every pair of charts is closed in the product of those charts. -/
+theorem t2Space_glued_iff_isClosed_chartRel :
+    T2Space D.toGlueData.glued ↔ ∀ i j, IsClosed (D.chartRel i j) := by
+  constructor
+  · intro h i j
+    let _ := h
+    have hcontinuous : Continuous fun p : D.U i × D.U j ↦
+        (D.toGlueData.ι i p.1, D.toGlueData.ι j p.2) :=
+      (D.toGlueData.ι i).hom.continuous_toFun.comp continuous_fst |>.prodMk
+        ((D.toGlueData.ι j).hom.continuous_toFun.comp continuous_snd)
+    have heq : D.chartRel i j =
+        (fun p : D.U i × D.U j ↦
+          (D.toGlueData.ι i p.1, D.toGlueData.ι j p.2)) ⁻¹' Set.diagonal _ := by
+      ext p
+      rw [Set.mem_preimage, Set.mem_diagonal_iff]
+      exact D.mem_chartRel_iff i j p.1 p.2
+    rw [heq]
+    exact isClosed_diagonal.preimage hcontinuous
+  · intro h
+    rw [t2Space_iff]
+    intro x y hxy
+    obtain ⟨i, a, rfl⟩ := D.ι_jointly_surjective x
+    obtain ⟨j, b, rfl⟩ := D.ι_jointly_surjective y
+    have hab : (a, b) ∈ (D.chartRel i j)ᶜ := by
+      simpa only [Set.mem_compl_iff, D.mem_chartRel_iff] using hxy
+    obtain ⟨u, v, hu, hv, ha, hb, huv⟩ :=
+      isOpen_prod_iff.mp (h i j).isOpen_compl a b hab
+    refine ⟨D.toGlueData.ι i '' u, D.toGlueData.ι j '' v,
+      D.open_image_open i ⟨u, hu⟩, D.open_image_open j ⟨v, hv⟩,
+      ⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩, ?_⟩
+    rw [Set.disjoint_left]
+    rintro z ⟨a', ha', rfl⟩ ⟨b', hb', hab'⟩
+    have hrel : (a', b') ∈ D.chartRel i j :=
+      (D.mem_chartRel_iff i j a' b').2 hab'.symm
+    exact (huv ⟨ha', hb'⟩) hrel
 
 /-- A glued space with countably many second-countable charts is second countable. -/
 instance secondCountableTopology [Countable D.J]
