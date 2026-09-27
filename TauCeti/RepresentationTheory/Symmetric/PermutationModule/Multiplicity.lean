@@ -22,15 +22,8 @@ part of Young's rule:
 * it vanishes unless the shape of `lam` dominates `μ`;
 * it is one when `μ` is the shape of `lam`.
 
-The off-diagonal statement is the dimension form of James's dominance lemma, already available as
-`TauCeti.intertwiningMap_eq_zero_of_not_dominates`.  The diagonal statement needs more than the
-inclusion `S^lam ↪ M^lam`: every intertwiner into `M^lam` is a scalar multiple of that inclusion.
-For a tableau `t`, the column antisymmetrizer sends the whole permutation module onto the line
-spanned by the polytabloid `e_t`.  Moving it across an intertwiner therefore shows that the
-intertwiner sends `e_t` to a scalar multiple of itself, and the orbit of `e_t` spans the Specht
-module.
-
-These two results give the diagonal and the zero region of the Kostka multiplicity matrix.
+These results describe the diagonal and the zero region of the Kostka multiplicity matrix.  In
+particular, they supply the unitriangular part of the multiplicity statement in Young's rule.
 
 ## Main definitions
 
@@ -76,9 +69,9 @@ theorem spechtMultiplicity_def (lam : YoungDiagram) (μ : lam.card.Partition) :
       (Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
         (permutationModule μ).ρ) := (rfl)
 
-/-- **The Specht multiplicity vanishes outside the dominance cone.**  If `lam` does not dominate
-`μ`, James's dominance lemma makes every intertwiner `S^lam → M^μ` zero, so their vector space has
-dimension zero. -/
+/-- **The Specht multiplicity vanishes outside the dominance cone.**  This is the zero region of
+the unitriangular multiplicity matrix in Young's rule. -/
+@[simp]
 theorem spechtMultiplicity_eq_zero_of_not_dominates (μ : lam.card.Partition)
     (h : ¬Dominates (shapePartition lam) μ) : spechtMultiplicity lam μ = 0 := by
   have : Subsingleton
@@ -96,11 +89,8 @@ theorem dominates_of_spechtMultiplicity_ne_zero (μ : lam.card.Partition)
 
 /-! ### The diagonal intertwiner space -/
 
-/-- Every intertwiner `S^lam → M^lam` is a scalar multiple of the canonical inclusion.
-
-The column antisymmetrizer `b_t` has one-dimensional range on `M^lam`, spanned by the
-polytabloid `e_t`.  A preimage of `e_t` already lies in `S^lam`, so equivariance forces an
-intertwiner to preserve that line.  The orbit of `e_t` spans `S^lam`, which determines the map. -/
+/-- Every intertwiner `S^lam → M^lam` is a scalar multiple of the canonical inclusion.  This
+characterizes the diagonal intertwiner space and yields the diagonal case of Young's rule. -/
 private theorem exists_intertwiningMap_eq_smul_subtype
     (f : Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
       (permutationModule (shapePartition lam)).ρ) :
