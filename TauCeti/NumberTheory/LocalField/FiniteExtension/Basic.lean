@@ -58,6 +58,8 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
 * `TauCeti.finiteExtensionNormedFieldTopology_eq`: any valuative topology for such a relation is
   the norm topology.
 * `AlgEquiv.valuation_eq`: `K`-algebra automorphisms of `M` preserve the valuation.
+* `AlgHom.valuativeExtension`: a `K`-algebra map from `M` to a field whose valuative relation
+  extends that of `K` makes that field a valuative extension of `M`.
 * `Valuation.Integers.isIntegral_iff_valuation_le_one`: for any valuative relation on `M`
   extending that of `K`, an element of `M` is integral over a ring of integers of `K` exactly when
   its valuation is at most `1`.
@@ -362,6 +364,22 @@ theorem _root_.AlgEquiv.valuation_eq [ValuativeRel M] [ValuativeExtension K M] (
   have h : ‖σ x‖ = ‖x‖ := (spectralNorm_eq_of_equiv σ x).symm
   exact le_antisymm ((finiteExtensionNormedField_norm_le_norm_iff hw _ _).1 h.le)
     ((finiteExtensionNormedField_norm_le_norm_iff hw _ _).1 h.ge)
+
+/-- **Embeddings respect the extended valuations.** A `K`-algebra map `ι : M →ₐ[K] N` from a
+finite extension `M` of a nonarchimedean local field `K` to a field `N`, for valuative relations
+on `M` and on `N` both extending that of `K`, makes `N` a valuative extension of `M` through
+`ι.toAlgebra`: the valuation of `N` pulled back along `ι` extends the valuation class of `K`, so by
+uniqueness it is the valuation of `M`. -/
+theorem _root_.AlgHom.valuativeExtension {N : Type*} [Field N] [ValuativeRel N] [Algebra K N]
+    [ValuativeExtension K N] [ValuativeRel M] [ValuativeExtension K M] (ι : M →ₐ[K] N) :
+    letI := ι.toAlgebra
+    ValuativeExtension M N := by
+  let _ := ι.toAlgebra
+  have hN := ValuativeRel.isEquiv ((valuation N).comap (algebraMap K N)) (valuation K)
+  rw [← ι.comp_algebraMap, Valuation.comap_comp] at hN
+  have h := finiteExtensionValuation_isEquiv hN
+    (ValuativeRel.isEquiv ((valuation M).comap (algebraMap K M)) (valuation K))
+  exact ⟨fun a b ↦ (valuation N).vle_iff_le.trans ((h a b).trans (valuation M).vle_iff_le.symm)⟩
 
 end Uniqueness
 
