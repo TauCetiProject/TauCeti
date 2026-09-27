@@ -93,8 +93,10 @@ namespace CompactifiedQuotient
 same boundary point and height, when the cusp data use the same scaling. -/
 theorem image_compactifiedQuotientMap_cuspNhd_subset_cuspNhd
     (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : E.cusp = D.cusp) (hσ : E.scaling = D.scaling) (A : ℝ) :
+    (hσ : E.scaling = D.scaling) (A : ℝ) :
     compactifiedQuotientMap h '' cuspNhd D A ⊆ cuspNhd E A := by
+  have hc : E.cusp = D.cusp := (MulAction.injective D.scaling)
+    ((hσ ▸ E.scaling_smul_cusp).trans D.scaling_smul_cusp.symm)
   rintro _ ⟨x, hx, rfl⟩
   cases x with
   | ofQuotient p =>
@@ -121,7 +123,7 @@ theorem continuousAt_compactifiedQuotientMap_ofCusp [DiscreteTopology Γ]
   refine (nhds_basis_cuspNhd E 0).tendsto_right_iff.mpr fun A _ ↦ ?_
   exact Filter.mem_of_superset (cuspNhd_mem_nhds D A)
     (image_subset_iff.mp (image_compactifiedQuotientMap_cuspNhd_subset_cuspNhd
-      h D E hc hσ A))
+      h D E hσ A))
 
 /-- The compactified orbit map induced by an inclusion of discrete projective subgroups is
 continuous, including at the added cusp points. -/
