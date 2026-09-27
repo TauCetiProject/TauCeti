@@ -32,25 +32,12 @@ open Matrix MvPolynomial MulOpposite MonoidAlgebra
 
 namespace TauCeti
 
-private noncomputable def binaryFormMonomialBasis (R : Type*) [CommRing R] (w : ℕ) :
-    Module.Basis {s : Fin 2 →₀ ℕ // s.degree = w} R
-      (homogeneousSubmodule (Fin 2) R w) :=
-  (basisRestrictSupport R {s : Fin 2 →₀ ℕ | s.degree = w}).map
-    (LinearEquiv.ofEq _ _ (homogeneousSubmodule_eq_finsupp_supported (Fin 2) R w).symm)
-
-private theorem coe_binaryFormMonomialBasis {R : Type*} [CommRing R] (w : ℕ)
-    (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
-    ((binaryFormMonomialBasis R w s : homogeneousSubmodule (Fin 2) R w) :
-      MvPolynomial (Fin 2) R) = monomial s.1 1 := by
-  simp only [binaryFormMonomialBasis, Module.Basis.map_apply]
-  exact coe_basisRestrictSupport_apply {d : Fin 2 →₀ ℕ | d.degree = w} s
-
 private theorem binaryFormRep_diagonal_basis {R : Type*} [CommRing R] (w : ℕ)
     (a d : ℤ) (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
-    binaryFormRep R w (op (Matrix.diagonal ![a, d])) (binaryFormMonomialBasis R w s) =
-      ((a : R) ^ s.1 0 * (d : R) ^ s.1 1) • binaryFormMonomialBasis R w s := by
+    binaryFormRep R w (op (Matrix.diagonal ![a, d])) (homogeneousMonomialBasis (R := R) w s) =
+      ((a : R) ^ s.1 0 * (d : R) ^ s.1 1) • homogeneousMonomialBasis (R := R) w s := by
   apply Subtype.ext
-  simp only [coe_binaryFormRep_apply, coe_binaryFormMonomialBasis, Submodule.coe_smul]
+  simp only [coe_binaryFormRep_apply, coe_homogeneousMonomialBasis, Submodule.coe_smul]
   have hm : (Matrix.diagonal ![a, d]).map (Int.cast : ℤ → R) =
       Matrix.diagonal ![(a : R), (d : R)] := by
     ext i j
@@ -74,7 +61,7 @@ private theorem trace_binaryFormRep_diagonal_eq_sum {R : Type*} [CommRing R]
     Fintype.ofFinset (p := {s : Fin 2 →₀ ℕ | s.degree = w})
       ((Finset.univ : Finset (Fin 2)).finsuppAntidiag w) (fun s => by
         simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum])
-  rw [LinearMap.trace_eq_matrix_trace R (binaryFormMonomialBasis R w), Matrix.trace]
+  rw [LinearMap.trace_eq_matrix_trace R (homogeneousMonomialBasis (R := R) w), Matrix.trace]
   simp only [Matrix.diag_apply, LinearMap.toMatrix_apply, binaryFormRep_diagonal_basis,
     map_smul, Finsupp.smul_apply, Module.Basis.repr_self, Finsupp.single_eq_same,
     smul_eq_mul, mul_one]
@@ -84,6 +71,7 @@ private theorem trace_binaryFormRep_diagonal_eq_sum {R : Type*} [CommRing R]
 
 /-- The trace of a diagonal determinant matrix on binary forms is the Eichler–Selberg weight
 polynomial evaluated at its trace and determinant. -/
+@[simp]
 theorem trace_binaryFormRep_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
     (w : ℕ) (a d : ℤ) :
     LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
@@ -110,6 +98,7 @@ theorem trace_binaryFormRep_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
 namespace TraceFormulaMatrixModule
 
 /-- The projective diagonal class has the same Dickson trace on even-degree binary forms. -/
+@[simp]
 theorem trace_binaryFormAction_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
     {n : ℤ} (w : ℕ) (hw : Even w) (a d : ℤ) (h : a * d = n) :
     LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
@@ -124,6 +113,7 @@ theorem trace_binaryFormAction_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
 
 /-- A diagonal basis element of the determinant-matrix module contributes its coefficient
 times the Dickson trace to the ambient binary-form space. -/
+@[simp]
 theorem trace_periodAction_single_diagonal_eq_dickson_eval {R : Type*} [CommRing R]
     {n : ℤ} (w : ℕ) (hw : Even w) (a d : ℤ) (h : a * d = n) (c : R) :
     LinearMap.trace R (homogeneousSubmodule (Fin 2) R w)
