@@ -31,13 +31,13 @@ theorem summable_divisorSumSeries (k : ℕ) {q : K} (hq : ‖q‖ < 1) :
 
 /-- Evaluation of the integral divisor-sum series in a complete non-archimedean normed ring. Its
 convergence for `‖q‖ < 1` is `summable_divisorSumSeries`. -/
-noncomputable def divisorSumAt (k : ℕ) (q : K) (_hq : ‖q‖ < 1) : K :=
+noncomputable def divisorSumAt (k : ℕ) (q : K) : K :=
   ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n
 
 omit [NormOneClass K] [CompleteSpace K] [IsUltrametricDist K] in
 /-- The value of a divisor-sum series is its defining sum. -/
-theorem divisorSumAt_def (k : ℕ) (q : K) (hq : ‖q‖ < 1) :
-    divisorSumAt k q hq = ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n := by
+theorem divisorSumAt_def (k : ℕ) (q : K) :
+    divisorSumAt k q = ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n := by
   simp only [divisorSumAt]
 
 end TauCeti

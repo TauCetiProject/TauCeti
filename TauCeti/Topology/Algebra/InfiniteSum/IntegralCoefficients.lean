@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
