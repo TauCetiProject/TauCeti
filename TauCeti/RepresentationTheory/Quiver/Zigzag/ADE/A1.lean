@@ -48,30 +48,6 @@ theorem zigzagAlgebraBasis_A1_vertex_eq_one :
   rw [zigzagComponentAlgebraEquivULiftDualNumber_zigzagComponentBasis_inl]
   rfl
 
-private noncomputable def dualNumberGradeZeroEquiv : dualNumberGrade k 0 ≃ₗ[k] k where
-  toFun x := x.1.fst
-  invFun r := ⟨TrivSqZeroExt.inl r, inl_mem_dualNumberGrade_zero k r⟩
-  left_inv x := by
-    apply Subtype.ext
-    apply TrivSqZeroExt.ext
-    · simp
-    · simp [(mem_dualNumberGrade_zero (R := k)).mp x.2]
-  right_inv r := by simp
-  map_add' x y := by simp
-  map_smul' r x := by simp
-
-private noncomputable def dualNumberGradeTwoEquiv : dualNumberGrade k 2 ≃ₗ[k] k where
-  toFun x := x.1.snd
-  invFun r := ⟨TrivSqZeroExt.inr r, inr_mem_dualNumberGrade_two k r⟩
-  left_inv x := by
-    apply Subtype.ext
-    apply TrivSqZeroExt.ext
-    · simp [(mem_dualNumberGrade_two (R := k)).mp x.2]
-    · simp
-  right_inv r := by simp
-  map_add' x y := by simp
-  map_smul' r x := by simp
-
 /-- The rank-one zigzag comparison respects the degree pieces: the generator of the dual
 numbers and the volume basis vector both have degree two. -/
 theorem mem_zigzagAlgebraGrade_A1_iff {n : ℕ}
@@ -89,16 +65,22 @@ theorem mem_zigzagAlgebraGrade_A1_iff {n : ℕ}
     simpa only [zigzagAlgebraEquivA1_apply,
       mem_zigzagComponentGrade_of_subsingleton] using hx
 
-/-- The degree-one part of the one-vertex zigzag algebra is zero. -/
-theorem zigzagAlgebraGrade_A1_one_eq_bot :
-    zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) 1 = ⊥ := by
+/-- Every degree of the one-vertex zigzag algebra other than zero and two vanishes. -/
+theorem zigzagAlgebraGrade_A1_eq_bot {n : ℕ} (h0 : n ≠ 0) (h2 : n ≠ 2) :
+    zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) n = ⊥ := by
   apply eq_bot_iff.mpr
   intro x hx
   apply (zigzagAlgebraEquivA1 k).injective
   rw [map_zero]
-  have h' := (mem_zigzagAlgebraGrade_A1_iff k (n := 1)).mp hx
-  rw [dualNumberGrade_eq_bot k (by decide) (by decide)] at h'
+  have h' := (mem_zigzagAlgebraGrade_A1_iff k (n := n)).mp hx
+  rw [dualNumberGrade_eq_bot k h0 h2] at h'
   exact h'
+
+/-- The degree-one part of the one-vertex zigzag algebra is zero. -/
+@[simp]
+theorem zigzagAlgebraGrade_A1_one_eq_bot :
+    zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) 1 = ⊥ :=
+  zigzagAlgebraGrade_A1_eq_bot k (by decide) (by decide)
 
 end Ring
 
@@ -112,11 +94,13 @@ theorem finrank_zigzagAlgebraGrade_A1 (n : ℕ) :
     Module.finrank k (zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) n) =
       Module.finrank k (dualNumberGrade k n) := by
   let e := (zigzagAlgebraEquivA1 k).toLinearEquiv
+  have he (y : zigzagAlgebra k (⊥ : SimpleGraph (Fin 1))) :
+      e y = zigzagAlgebraEquivA1 k y := rfl
   have h : (zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) n).map e.toLinearMap =
       dualNumberGrade k n := by
     ext x
     rw [Submodule.mem_map_equiv]
-    simpa only [show zigzagAlgebraEquivA1 k (e.symm x) = x from e.apply_symm_apply x]
+    simpa only [← he (e.symm x), e.apply_symm_apply]
       using (mem_zigzagAlgebraGrade_A1_iff k (n := n) (x := e.symm x))
   rw [← LinearEquiv.finrank_map_eq e (zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) n), h]
 
@@ -127,12 +111,18 @@ theorem finrank_zigzagAlgebraGrade_A1_zero :
   rw [finrank_zigzagAlgebraGrade_A1, (dualNumberGradeZeroEquiv k).finrank_eq]
   simp
 
+/-- Every graded part of the one-vertex zigzag algebra outside degrees zero and two
+has dimension zero. -/
+theorem finrank_zigzagAlgebraGrade_A1_eq_zero {n : ℕ} (h0 : n ≠ 0) (h2 : n ≠ 2) :
+    Module.finrank k (zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) n) = 0 := by
+  rw [zigzagAlgebraGrade_A1_eq_bot k h0 h2]
+  simp
+
 /-- The degree-one part of the one-vertex zigzag algebra vanishes. -/
 @[simp]
 theorem finrank_zigzagAlgebraGrade_A1_one :
-    Module.finrank k (zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) 1) = 0 := by
-  rw [zigzagAlgebraGrade_A1_one_eq_bot]
-  simp
+    Module.finrank k (zigzagAlgebraGrade k (⊥ : SimpleGraph (Fin 1)) 1) = 0 :=
+  finrank_zigzagAlgebraGrade_A1_eq_zero k (by decide) (by decide)
 
 /-- The degree-two part of the one-vertex zigzag algebra has dimension one. -/
 @[simp]
