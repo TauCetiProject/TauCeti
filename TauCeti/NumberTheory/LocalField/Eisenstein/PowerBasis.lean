@@ -25,6 +25,8 @@ combination in the resulting power basis is the minimum of its term valuations.
 * `TauCeti.inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top` and
   `TauCeti.ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top` record its characteristic
   total-ramification consequences.
+* `TauCeti.minpoly_eq_of_eisenstein_adjoin_eq_top` identifies a monic Eisenstein polynomial
+  with the minimal polynomial of its integral generator.
 * `TauCeti.addVal_sum_eisenstein_powerBasis` computes the additive valuation of a linear
   combination of powers of an Eisenstein integral generator.
 
@@ -47,7 +49,8 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
     [Module.Finite K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
     (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) :
-    Irreducible ξ ∧ inertiaDegree K L = 1 ∧ ramificationIndex K L = f.natDegree := by
+    Irreducible ξ ∧ inertiaDegree K L = 1 ∧ ramificationIndex K L = f.natDegree ∧
+      Associated (minpoly 𝒪[K] ξ) f := by
   have hdeg : 0 < f.natDegree := by
     by_contra h
     have hdeg0 : f.natDegree = 0 := Nat.eq_zero_of_not_pos h
@@ -123,7 +126,7 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
     have hef := ramificationIndex_mul_inertiaDegree (K := K) (L := L)
     rw [hf_one, mul_one, ← finrank_integerRing K L, PowerBasis.finrank pb, hpbdim] at hef
     exact hef
-  exact ⟨hξirr, hf_one, he_degree⟩
+  exact ⟨hξirr, hf_one, he_degree, hassoc⟩
 
 /-- An integral generator satisfying an Eisenstein polynomial is a uniformizer of the extension
 integer ring. -/
@@ -148,7 +151,16 @@ theorem ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top [Algebra K L]
     (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
     (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) : ramificationIndex K L = f.natDegree :=
-  (eisenstein_adjoin_eq_top_data f hf ξ hroot hgen).2.2
+  (eisenstein_adjoin_eq_top_data f hf ξ hroot hgen).2.2.1
+
+/-- A monic Eisenstein polynomial of an integral generator is its minimal polynomial. -/
+theorem minpoly_eq_of_eisenstein_adjoin_eq_top [Algebra K L] [ValuativeExtension K L]
+    [Module.Finite K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
+    (hmonic : f.Monic) (ξ : 𝒪[L])
+    (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
+    (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) : minpoly 𝒪[K] ξ = f :=
+  Polynomial.eq_of_monic_of_associated (minpoly.monic (IsIntegral.of_finite 𝒪[K] ξ))
+    hmonic (eisenstein_adjoin_eq_top_data f hf ξ hroot hgen).2.2.2
 
 /-- The additive valuation of a linear combination in an Eisenstein power basis is the least
 of its term valuations. -/
