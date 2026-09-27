@@ -114,7 +114,7 @@ private theorem finrank_hom_vertexSimpleModuleResolution_X₁ (i : Q)
 
 /-- The Ext-Euler value of a vertex simple is its vertex coordinate minus the
 dimensions at the heads of all arrows leaving that vertex. -/
-@[simp] theorem extEuler_vertexSimpleModule (i : Q)
+theorem extEuler_vertexSimpleModule (i : Q)
     [Fintype ((j : Q) × (i ⟶ j))] (Y : ModuleCat (pathAlgebra k Q))
     (hYi : FiniteDimensional k
       (((quiverRepFunctor k Q).obj Y).obj ((Paths.of Q).obj i)))
