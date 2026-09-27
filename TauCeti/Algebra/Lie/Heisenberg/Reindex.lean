@@ -30,9 +30,7 @@ open Finset
 /-- Factorial successor in R: ((k+1)! : R) = (k+1) * (k! : R). -/
 private theorem factorial_succ_cast {R : Type*} [Semiring R] (k : ℕ) :
     ((Nat.factorial (k + 1) : ℕ) : R) = ((k + 1 : ℕ) : R) * ((Nat.factorial k : ℕ) : R) := by
-  rw [Nat.factorial_succ]
-  push_cast
-  ring
+  rw [Nat.factorial_succ, Nat.cast_mul]
 
 variable {R : Type*} [Field R] [CharZero R]
 
