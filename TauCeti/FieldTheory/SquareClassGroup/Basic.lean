@@ -60,6 +60,13 @@ theorem squareClass_def (u : Kˣ) :
     squareClass u = QuotientAddGroup.mk (Additive.ofMul u) :=
   (rfl)
 
+/-- The unit underlying a quotient representative has the original square class. -/
+@[simp]
+theorem squareClass_toMul_out (x : SquareClassGroup K) :
+    squareClass (Additive.toMul (Quotient.out x)) = x := by
+  rw [squareClass_def, ofMul_toMul]
+  exact Quotient.out_eq x
+
 /-- The square-class quotient map, written multiplicatively between the unit group and the
 multiplicative form of the additive square-class group. -/
 def squareClassHom : Kˣ →* Multiplicative (SquareClassGroup K) :=

@@ -26,7 +26,8 @@ on the target. It also records the pointwise characterization of finite-order co
 homomorphisms and the open kernel of a finite-order continuous character into complex units.
 Kernels of continuous homomorphisms into a discrete monoid are closed, so on a
 compact group the common kernel of a family of them is approximated from outside by the common
-kernels of its finite subfamilies.
+kernels of its finite subfamilies, and the range of a continuous homomorphism out of a compact
+group into a Hausdorff group is a closed subgroup.
 -/
 
 public section
@@ -96,6 +97,14 @@ theorem exists_finset_iInter_ker_subset [CompactSpace G] {H : Type*}
       exact (isClosed_discrete {1}).preimage (φ j).continuous)
     (Set.disjoint_left.mpr fun x hx hmem ↦ hx (h hmem))
   exact ⟨F, fun x hx ↦ not_not.mp fun hxU ↦ Set.disjoint_left.mp hF hxU hx⟩
+
+/-- The range of a continuous homomorphism out of a compact group into a Hausdorff group is a
+closed subgroup. -/
+theorem _root_.MonoidHom.isClosed_range_of_continuous [CompactSpace G] {H : Type*} [Group H]
+    [TopologicalSpace H] [T2Space H] {f : G →* H} (hf : Continuous f) :
+    IsClosed (f.range : Set H) := by
+  rw [MonoidHom.coe_range]
+  exact (isCompact_range hf).isClosed
 
 namespace ContinuousMonoidHom
 
