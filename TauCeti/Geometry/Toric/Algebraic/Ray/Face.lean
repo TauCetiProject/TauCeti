@@ -92,6 +92,34 @@ theorem faceOrderIso_apply (F : σ.Face) :
     (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ.toIsToricCone ρ))]
   exact Submodule.span_le.2 (Set.singleton_subset_iff.2 h)
 
+/-- The real dimension of a face of a regular cone is the number of rays it contains. -/
+theorem finrank_span_face_eq_card_rays (F : σ.Face) :
+    Module.finrank ℝ (Submodule.span ℝ (F.toPointedCone : Set V)) =
+      Nat.card {ρ : ToricRay σ // ρ ∈ hσ.faceOrderIso hi F} := by
+  let _ : Finite (ToricRay σ) := ToricRay.finite_of_fg hσ.fg
+  classical
+  let _ : Fintype (ToricRay σ) := Fintype.ofFinite _
+  let v : {ρ : ToricRay σ // ρ ∈ hσ.faceOrderIso hi F} → V :=
+    fun ρ ↦ i (primitiveGenerator hi hσ.toIsToricCone ρ.1)
+  have hface : F.toPointedCone = PointedCone.hull ℝ (Set.range v) := by
+    have h := hσ.faceOrderIso_symm_apply_toPointedCone hi (hσ.faceOrderIso hi F)
+    rw [OrderIso.symm_apply_apply] at h
+    rw [h]
+    congr 1
+    ext x
+    simp [v, Set.mem_range, Set.mem_image]
+  have hspan : Submodule.span ℝ (F.toPointedCone : Set V) =
+      Submodule.span ℝ (Set.range v) := by
+    apply le_antisymm
+    · rw [hface]
+      exact Submodule.span_le.mpr (PointedCone.hull_le_span ℝ (Set.range v))
+    · apply Submodule.span_mono
+      rw [hface]
+      exact PointedCone.subset_hull
+  rw [hspan, Nat.card_eq_fintype_card]
+  exact finrank_span_eq_card
+    ((hσ.linearIndependent_primitiveGenerator hi).comp Subtype.val Subtype.val_injective)
+
 end IsRegularCone
 
 end TauCeti.Toric
