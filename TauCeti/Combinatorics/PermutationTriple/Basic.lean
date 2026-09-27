@@ -485,6 +485,17 @@ theorem automorphismGroup_eq_centralizer_monodromyGroup :
     t.automorphismGroup = Subgroup.centralizer (t.monodromyGroup : Set (Perm (Fin n))) := by
   rw [automorphismGroup_eq_centralizer, monodromyGroup, Subgroup.centralizer_closure]
 
+/-- The stabilizer of a triple under the normalizer of its monodromy group is the
+centralizer of that group, regarded as a subgroup of the normalizer. -/
+@[simp]
+theorem stabilizer_normalizer_eq_centralizer_subgroupOf :
+    MulAction.stabilizer
+        (Subgroup.normalizer (t.monodromyGroup : Set (Perm (Fin n)))) t =
+      (Subgroup.centralizer (t.monodromyGroup : Set (Perm (Fin n)))).subgroupOf
+        (Subgroup.normalizer (t.monodromyGroup : Set (Perm (Fin n)))) := by
+  rw [← t.automorphismGroup_eq_centralizer_monodromyGroup]
+  exact (MulAction.stabilizer_subgroupOf _ t).symm
+
 /-- Relabeling the sheets conjugates the automorphism group. -/
 theorem automorphismGroup_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
     (τ • t).automorphismGroup = t.automorphismGroup.map (MulAut.conj τ).toMonoidHom :=

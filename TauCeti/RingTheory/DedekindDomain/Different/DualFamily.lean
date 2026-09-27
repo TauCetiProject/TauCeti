@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Finiteness.Projective
-public import TauCeti.RingTheory.Localization.IntegerMultiple
+public import TauCeti.RingTheory.Localization.Finiteness
 
 /-!
 # Trace-dual families of a projective extension
@@ -75,8 +75,14 @@ theorem exists_trace_mul_algebraMap_eq (f : B →ₗ[A] A) :
   have hg : Set.EqOn g₁ g₂ (Set.range b') := by
     rintro _ ⟨i, rfl⟩
     simp [g₁, g₂, φ, hb']
-  obtain ⟨a, ha, hax⟩ := IsLocalization.exists_smul_mem_span_basis A⁰ b b' hb'
-    (IsIntegralClosure.algebraMap_injective B A L) x
+  have hspan : (IsScalarTower.toAlgHom A B L).toLinearMap x ∈
+      Submodule.span K ((IsScalarTower.toAlgHom A B L).toLinearMap '' Set.range b') := by
+    simpa only [← Set.range_comp, Function.comp_def, AlgHom.toLinearMap_apply,
+      IsScalarTower.toAlgHom_apply, hb'] using
+      b.mem_span (algebraMap B L x)
+  obtain ⟨a, ha, hax⟩ :=
+    (IsScalarTower.toAlgHom A B L).toLinearMap.exists_smul_mem_span_of_apply_mem_span_image
+      (IsIntegralClosure.algebraMap_injective B A L) A⁰ (Set.range b') x hspan
   have h := LinearMap.eqOn_span' hg hax
   simp only [map_smul] at h
   rw [← algebraMap_smul K, ← algebraMap_smul K a (g₂ x)] at h
