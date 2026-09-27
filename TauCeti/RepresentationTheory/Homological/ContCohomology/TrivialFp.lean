@@ -57,7 +57,12 @@ variable (p : ℕ) (G : Type u) [Monoid G]
 
 /-- Trivial `ZMod p` coefficients as an object of `TopRep (ZMod p) G` in the universe of `G`.
 
-The universe lift is forced by Mathlib's continuous-cohomology resolution. -/
+The universe lift is forced by Mathlib's continuous-cohomology resolution.
+
+The body is exposed so that the carrier, the action, and hence the cochain spaces of
+this coefficient object reduce definitionally, which is how the degree-one comparison
+between its continuous cohomology and the inhomogeneous `H1` of the carrier is built. -/
+@[expose]
 noncomputable def trivialFp : TopRep (ZMod p) G :=
   TopRep.of (ContRepresentation.trivial (ZMod p) G (ULift.{u} (ZMod p)))
 
