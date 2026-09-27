@@ -54,10 +54,7 @@ private theorem bernoulliLaw_separated {p q : unitInterval} (hpq : p ≠ q) :
     intro x y hxy
     rw [edist_dist]
     simpa using ENNReal.ofReal_le_ofReal (Nat.pairwise_one_le_dist hxy)
-  have hm := eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt
-    ((bernoulliLaw p : ProbabilityMeasure ℕ) : Measure ℕ)
-    ((bernoulliLaw q : ProbabilityMeasure ℕ) : Measure ℕ)
-    hsep hlt
+  have hm := eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt hsep hlt
   have hpm : WassersteinSpace.toProbabilityMeasure (bernoulliLaw p) =
       WassersteinSpace.toProbabilityMeasure (bernoulliLaw q) := Subtype.ext hm
   -- The inclusion into probability measures is opaque, so invoke its characteristic lemma.

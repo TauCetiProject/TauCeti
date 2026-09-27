@@ -203,7 +203,7 @@ theorem wassersteinEDist_lt_iff :
 `W_∞` distance strictly less than `r` agree. A coupling below the strict bound cannot move
 mass between distinct points. This also applies when the distance is infinite. -/
 theorem eq_of_pairwise_edist_ge_of_wassersteinEDist_top_lt
-    {Y : Type*} [MeasurableSpace Y] [EDist Y] (μ ν : Measure Y) {r : ℝ≥0∞}
+    {Y : Type*} [MeasurableSpace Y] [EDist Y] {μ ν : Measure Y} {r : ℝ≥0∞}
     (hsep : Pairwise fun x y : Y ↦ r ≤ edist x y)
     (h : wassersteinEDist ∞ μ ν < r) : μ = ν := by
   obtain ⟨π, hπ, hπd⟩ := wassersteinEDist_lt_iff.mp h
