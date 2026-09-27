@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
-# Quotients of topological groups by normal subgroups
+# Quotients of topological groups by subgroups
 
-Generic facts about the quotient of a topological group by a normal subgroup, phrased for the
-unbundled classes `[Group G] [TopologicalSpace G] [IsTopologicalGroup G]`: neither compactness
-nor total disconnectedness is needed, so the results apply in particular to profinite groups.
+Generic facts about quotients by subgroups of topological groups. Most results use
+`[IsTopologicalGroup G]`; inverse translation on an open coset quotient needs only
+`[SeparatelyContinuousMul G]`. Neither compactness nor total disconnectedness is needed.
 
 ## Main definitions
 
@@ -25,6 +26,8 @@ nor total disconnectedness is needed, so the results apply in particular to prof
 
 ## Main results
 
+* `QuotientGroup.continuous_inv_smul`: inverse translation of a fixed coset is continuous
+  when the subgroup is open, without continuous inversion on `G`.
 * `QuotientGroup.instDiscreteTopology`: the quotient of a discrete group by any subgroup is
   discrete.
 * `QuotientGroup.isClopen_image_mk`: the image of an open subgroup of `G` under the
@@ -41,7 +44,7 @@ namespace TauCeti
 
 namespace QuotientGroup
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 /-- Inverse translation of a fixed left coset is continuous when the subgroup is open,
 without assuming continuous inversion on `G`. -/
@@ -56,7 +59,11 @@ theorem continuous_inv_smul (U : Subgroup G) (hU : IsOpen (U : Set G)) (u : G �
     simpa only [Set.mem_preimage, Set.mem_singleton_iff] using
       (inv_smul_eq_iff (g := γ) (a := u) (b := v)).trans eq_comm
   rw [h]
-  exact (isOpen_discrete _).preimage (continuous_id.smul continuous_const)
+  have horbit : Continuous (fun γ : G => γ • v) := by
+    convert QuotientGroup.continuous_mk.comp (continuous_mul_const v.out) using 1
+    ext γ
+    exact (MulAction.Quotient.mk_smul_out U γ v).symm
+  exact (isOpen_discrete _).preimage horbit
 
 section Discrete
 

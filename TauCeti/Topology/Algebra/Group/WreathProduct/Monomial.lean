@@ -14,8 +14,9 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 # Continuity of the monomial homomorphism
 
 For an open subgroup the transversal-dependent monomial homomorphism is continuous in the
-coordinate topology of the permutation wreath product. The finite-coordinate form is continuous
-after relabeling the cosets by `Fin U.index`.
+coordinate topology of the permutation wreath product when multiplication on the source is
+separately continuous. The finite-coordinate form is continuous after relabeling the cosets by
+`Fin U.index`.
 -/
 
 public section
@@ -27,7 +28,7 @@ universe u
 variable {G : Type u} [Group G] (U : Subgroup G)
 
 /-- The monomial homomorphism is continuous when `U` is open. -/
-theorem continuous_monomialHom [TopologicalSpace G] [ContinuousMul G]
+theorem continuous_monomialHom [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     Continuous (monomialHom U t ht) := by
@@ -41,19 +42,21 @@ theorem continuous_monomialHom [TopologicalSpace G] [ContinuousMul G]
       apply Subtype.ext
       exact (monomialHom_left U t ht g x).symm
   · intro x
-    have h : Continuous (fun g : G => g • x) :=
-      continuous_id.smul continuous_const
+    have h : Continuous (fun g : G => g • x) := by
+      convert QuotientGroup.continuous_mk.comp (continuous_mul_const x.out) using 1
+      ext g
+      exact (MulAction.Quotient.mk_smul_out U g x).symm
     exact h.congr fun g => (monomialHom_right U t ht g x).symm
 
 /-- The continuous monomial homomorphism for an open subgroup and a chosen transversal. -/
-def monomialContinuousHom [TopologicalSpace G] [ContinuousMul G]
+def monomialContinuousHom [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     G →ₜ* WreathProduct U (G ⧸ U) :=
   ⟨monomialHom U t ht, continuous_monomialHom U hU t ht⟩
 
 /-- The continuous monomial homomorphism has the same underlying homomorphism. -/
-@[simp] theorem monomialContinuousHom_apply [TopologicalSpace G] [ContinuousMul G]
+@[simp] theorem monomialContinuousHom_apply [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) :
     monomialContinuousHom U hU t ht g = monomialHom U t ht g := by
@@ -64,7 +67,7 @@ section FiniteIndex
 variable [U.FiniteIndex]
 
 /-- The finite-coordinate monomial homomorphism is continuous for an open subgroup. -/
-theorem continuous_monomialFinHom [TopologicalSpace G] [ContinuousMul G]
+theorem continuous_monomialFinHom [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     Continuous (monomialFinHom U t ht) := by
@@ -75,7 +78,7 @@ theorem continuous_monomialFinHom [TopologicalSpace G] [ContinuousMul G]
   exact h.congr fun g => (monomialFinHom_apply U t ht g).symm
 
 /-- The finite-coordinate continuous monomial homomorphism for an open subgroup. -/
-noncomputable def monomialFinContinuousHom [TopologicalSpace G] [ContinuousMul G]
+noncomputable def monomialFinContinuousHom [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     G →ₜ* WreathProduct U (Fin U.index) :=
@@ -83,7 +86,7 @@ noncomputable def monomialFinContinuousHom [TopologicalSpace G] [ContinuousMul G
 
 /-- The finite-coordinate continuous map has the finite-coordinate monomial homomorphism as
 its underlying map. -/
-@[simp] theorem monomialFinContinuousHom_apply [TopologicalSpace G] [ContinuousMul G]
+@[simp] theorem monomialFinContinuousHom_apply [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) :
     monomialFinContinuousHom U hU t ht g = monomialFinHom U t ht g := by
