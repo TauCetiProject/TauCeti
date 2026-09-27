@@ -327,7 +327,10 @@ theorem of_forall_isCompletelyReducible
     IsLinearlyReductive.{u, v, w} k C :=
   h
 
-/-- Apply linear reductivity to a finite-dimensional comodule in the same carrier universe. -/
+/-- Apply linear reductivity to a finite-dimensional comodule in the same carrier universe.
+
+The defining predicate is opaque outside this module, so this accessor exposes its application
+to a comodule without changing the universe of the hypothesis. -/
 theorem isCompletelyReducible_sameUniverse
     (h : IsLinearlyReductive.{u, v, w} k C)
     (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V] :
