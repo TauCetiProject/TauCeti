@@ -36,6 +36,27 @@ universe u v w x
 
 namespace Comodule
 
+variable {k : Type u} [CommSemiring k]
+variable {C : Type v} {D : Type w}
+variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
+variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
+variable {V : Type x} [AddCommMonoid V] [Module k V] [Comodule k C V]
+
+/-- Complete reducibility descends along a coalgebra morphism with a linear retraction. -/
+theorem IsCompletelyReducible.of_corestrict_of_split (f : C →ₗc[k] D)
+    (r : D →ₗ[k] C) (hr : r.comp f.toLinearMap = LinearMap.id)
+    (h : letI : Comodule k D V := Comodule.Corestrict f
+      IsCompletelyReducible k D V) :
+    IsCompletelyReducible k C V := by
+  let _ : Comodule k D V := Comodule.Corestrict f
+  exact isCompletelyReducible_of_orderIso k
+    (Subcomodule.corestrictOrderIsoOfSplit f r hr).symm (OrderIso.refl _)
+    (fun A ↦ by simp) h
+
+end Comodule
+
+namespace Comodule
+
 variable {k : Type u} [Field k]
 variable {C : Type v} {D : Type w}
 variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
@@ -47,10 +68,17 @@ theorem IsCompletelyReducible.of_corestrict_of_injective (f : C →ₗc[k] D)
     (h : letI : Comodule k D V := Comodule.Corestrict f
       IsCompletelyReducible k D V) (hf : Function.Injective f) :
     IsCompletelyReducible k C V := by
-  let _ : Comodule k D V := Comodule.Corestrict f
-  exact isCompletelyReducible_of_orderIso k
-    (Subcomodule.corestrictOrderIsoOfInjective f hf).symm (OrderIso.refl _)
-    (fun A ↦ by simp) h
+  let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+  let _ : AddCommGroup D := Module.addCommMonoidToAddCommGroup k
+  let l : C →ₗ[k] D := f.toLinearMap
+  have hker : LinearMap.ker l = ⊥ :=
+    LinearMap.ker_eq_bot_of_injective (f := l) (by
+      intro x y hxy
+      exact hf hxy)
+  let r : D →ₗ[k] C := l.leftInverse
+  have hr : r.comp f.toLinearMap = LinearMap.id :=
+    LinearMap.leftInverse_comp_of_inj hker
+  exact IsCompletelyReducible.of_corestrict_of_split f r hr h
 
 end Comodule
 
