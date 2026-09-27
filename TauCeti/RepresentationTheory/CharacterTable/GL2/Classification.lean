@@ -130,35 +130,35 @@ theorem character_GL2SteinbergTwist_ne_character_GL2PrincipalSeries (α β γ : 
   norm_cast at this
   omega
 
-variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- A linear character is not a cuspidal character: at the Jordan block they take the values `1`
 and `-1`. -/
 theorem character_GL2Linear_ne_GL2CuspidalVirtualCharacter (α : Fˣ →* ℂˣ) (θ : Eˣ →* ℂˣ)
     {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
-    (GL2Linear F α).character ≠ (GL2CuspidalVirtualCharacter F E hE θ ψ).1 := by
+    (GL2Linear F α).character ≠ (GL2CuspidalVirtualCharacter F E θ ψ).1 := by
   intro h
   have := congrFun h (jordanGL (1 : Fˣ) (1 : F))
   rw [character_GL2Linear_jordanGL,
-    GL2CuspidalVirtualCharacter_apply_jordanGL hE θ hψ 1 one_ne_zero] at this
+    GL2CuspidalVirtualCharacter_apply_jordanGL θ hψ 1 one_ne_zero] at this
   norm_num at this
 
 /-- A Steinberg twist is not a cuspidal character: at the Jordan block they take the values `0`
 and `-1`. -/
 theorem character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter (α : Fˣ →* ℂˣ)
     (θ : Eˣ →* ℂˣ) {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
-    (GL2SteinbergTwist F α).character ≠ (GL2CuspidalVirtualCharacter F E hE θ ψ).1 := by
+    (GL2SteinbergTwist F α).character ≠ (GL2CuspidalVirtualCharacter F E θ ψ).1 := by
   intro h
   have := congrFun h (jordanGL (1 : Fˣ) (1 : F))
   rw [character_GL2SteinbergTwist_jordanGL α 1 one_ne_zero,
-    GL2CuspidalVirtualCharacter_apply_jordanGL hE θ hψ 1 one_ne_zero] at this
+    GL2CuspidalVirtualCharacter_apply_jordanGL θ hψ 1 one_ne_zero] at this
   norm_num at this
 
 /-- A principal-series character is not a cuspidal character: their degrees are `q + 1` and
 `q - 1`. -/
 theorem character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter (α β : Fˣ →* ℂˣ)
     (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
-    (GL2PrincipalSeries F α β).character ≠ (GL2CuspidalVirtualCharacter F E hE θ ψ).1 := by
+    (GL2PrincipalSeries F α β).character ≠ (GL2CuspidalVirtualCharacter F E θ ψ).1 := by
   intro h
   have := congrFun h 1
   rw [character_one_GL2PrincipalSeries, GL2CuspidalVirtualCharacter_apply_one] at this
@@ -268,7 +268,7 @@ end Count
 section Classification
 
 variable (F : Type) [Field F] [Fintype F] (E : Type*) [Field E] [Algebra F E]
-  (hE : Module.finrank F E = 2)
+  [Algebra.IsQuadraticExtension F E]
 
 open Classical in
 /-- Two cuspidal parameters giving the same character lie in one orbit `{θ, θ^q}`, so each fibre
@@ -276,14 +276,14 @@ of `θ ↦ χ_θ` has at most two elements. -/
 private theorem card_filter_GL2CuspidalVirtualCharacter_le {ψ : AddChar F ℂ} (hψ : ψ ≠ 1)
     (s : Finset (Eˣ →* ℂˣ))
     {f : GL (Fin 2) F → ℂ}
-    (hf : f ∈ s.image fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE θ ψ).1) :
-    (s.filter fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE θ ψ).1 = f).card ≤ 2 := by
+    (hf : f ∈ s.image fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) :
+    (s.filter fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1 = f).card ≤ 2 := by
   obtain ⟨θ₀, -, rfl⟩ := Finset.mem_image.mp hf
   refine (Finset.card_le_card ?_).trans
     (Finset.card_le_two (a := θ₀) (b := θ₀.comp (powMonoidHom (Fintype.card F))))
   intro θ hθ
   obtain ⟨-, hθ⟩ := Finset.mem_filter.mp hθ
-  rcases (GL2CuspidalVirtualCharacter_eq_iff hE θ₀ θ hψ hψ).mp (Subtype.ext hθ).symm with h | h
+  rcases (GL2CuspidalVirtualCharacter_eq_iff θ₀ θ hψ hψ).mp (Subtype.ext hθ).symm with h | h
   · exact Finset.mem_insert.mpr (Or.inl h)
   · exact Finset.mem_insert.mpr (Or.inr (Finset.mem_singleton.mpr h))
 
@@ -293,10 +293,9 @@ private theorem card_filter_GL2CuspidalVirtualCharacter_le {ψ : AddChar F ℂ} 
 private theorem le_two_mul_ncard_image_GL2CuspidalVirtualCharacter {ψ : AddChar F ℂ}
     (hψ : ψ ≠ 1) :
     Fintype.card F ^ 2 - 1 ≤
-      2 * ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE θ ψ).1) ''
+      2 * ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
         {θ | θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}).ncard + (Fintype.card F - 1) := by
   classical
-  have : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
   have : Finite E := Module.finite_of_finite F
   set sC : Finset (Eˣ →* ℂˣ) :=
     Finset.univ.filter fun θ : Eˣ →* ℂˣ => ¬ θ.comp (powMonoidHom (Fintype.card F)) = θ with hsC
@@ -305,14 +304,15 @@ private theorem le_two_mul_ncard_image_GL2CuspidalVirtualCharacter {ψ : AddChar
     simp [hsC]
   rw [hs, ← Finset.coe_image, Set.ncard_coe_finset]
   have hcardC : sC.card ≤ 2 * (sC.image fun θ : Eˣ →* ℂˣ =>
-      (GL2CuspidalVirtualCharacter F E hE θ ψ).1).card :=
+      (GL2CuspidalVirtualCharacter F E θ ψ).1).card :=
     Finset.card_le_mul_card_image _ 2 fun f hf =>
-      card_filter_GL2CuspidalVirtualCharacter_le F E hE hψ sC hf
+      card_filter_GL2CuspidalVirtualCharacter_le F E hψ sC hf
   -- the character group of `Eˣ` has `q² - 1` elements
   have hsC' : (Finset.univ.filter fun θ : Eˣ →* ℂˣ =>
       θ.comp (powMonoidHom (Fintype.card F)) = θ).card + sC.card = Fintype.card F ^ 2 - 1 := by
     rw [hsC, Finset.card_filter_add_card_filter_not, Finset.card_univ, ← Nat.card_eq_fintype_card,
-      FiniteField.natCard_monoidHom_units, Module.natCard_eq_pow_finrank (K := F), hE,
+      FiniteField.natCard_monoidHom_units, Module.natCard_eq_pow_finrank (K := F),
+      Algebra.IsQuadraticExtension.finrank_eq_two F E,
       Nat.card_eq_fintype_card]
   -- at most `q - 1` of them are fixed by `θ ↦ θ^q`
   have hfix : (Finset.univ.filter fun θ : Eˣ →* ℂˣ =>
@@ -349,15 +349,14 @@ private theorem ncard_union_eq_add {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
         Set.range (fun α : Fˣ →* ℂˣ => (GL2SteinbergTwist F α).character) ∪
         (fun p : (Fˣ →* ℂˣ) × (Fˣ →* ℂˣ) => (GL2PrincipalSeries F p.1 p.2).character) ''
           {p | p.1 ≠ p.2} ∪
-        (fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE θ ψ).1) ''
+        (fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
           {θ | θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}).ncard =
       (Set.range fun α : Fˣ →* ℂˣ => (GL2Linear F α).character).ncard +
         (Set.range fun α : Fˣ →* ℂˣ => (GL2SteinbergTwist F α).character).ncard +
         ((fun p : (Fˣ →* ℂˣ) × (Fˣ →* ℂˣ) => (GL2PrincipalSeries F p.1 p.2).character) ''
           {p | p.1 ≠ p.2}).ncard +
-        ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE θ ψ).1) ''
+        ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
           {θ | θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}).ncard := by
-  have : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
   have : Finite E := Module.finite_of_finite F
   have hAB : Disjoint (Set.range fun α : Fˣ →* ℂˣ => (GL2Linear F α).character)
       (Set.range fun α : Fˣ →* ℂˣ => (GL2SteinbergTwist F α).character) := by
@@ -376,13 +375,13 @@ private theorem ncard_union_eq_add {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
       Set.range (fun α : Fˣ →* ℂˣ => (GL2SteinbergTwist F α).character) ∪
       (fun p : (Fˣ →* ℂˣ) × (Fˣ →* ℂˣ) => (GL2PrincipalSeries F p.1 p.2).character) ''
         {p | p.1 ≠ p.2})
-      ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE θ ψ).1) ''
+      ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
         {θ | θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}) := by
     rw [Set.disjoint_left]
     rintro f ((⟨α, rfl⟩ | ⟨α, rfl⟩) | ⟨p, -, rfl⟩) ⟨θ, -, hθ⟩
-    · exact character_GL2Linear_ne_GL2CuspidalVirtualCharacter hE α θ hψ hθ.symm
-    · exact character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter hE α θ hψ hθ.symm
-    · exact character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter hE p.1 p.2 θ ψ hθ.symm
+    · exact character_GL2Linear_ne_GL2CuspidalVirtualCharacter α θ hψ hθ.symm
+    · exact character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter α θ hψ hθ.symm
+    · exact character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter p.1 p.2 θ ψ hθ.symm
   rw [Set.ncard_union_eq hABPC, Set.ncard_union_eq hABP, Set.ncard_union_eq hAB]
 
 /-- **The irreducible characters of `GL₂(𝔽_q)`.** For a finite field `F` with `q` elements, a
@@ -399,9 +398,8 @@ theorem irreducibleCharacters_GL2_eq_union {ψ : AddChar F ℂ} (hψ : ψ ≠ 1)
         Set.range (fun α : Fˣ →* ℂˣ => (GL2SteinbergTwist F α).character) ∪
         (fun p : (Fˣ →* ℂˣ) × (Fˣ →* ℂˣ) => (GL2PrincipalSeries F p.1 p.2).character) ''
           {p | p.1 ≠ p.2} ∪
-        (fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE θ ψ).1) ''
+        (fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
           {θ | θ.comp (powMonoidHom (Fintype.card F)) ≠ θ} := by
-  have : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
   have : Finite E := Module.finite_of_finite F
   let : Invertible (Nat.card (GL (Fin 2) F) : ℂ) :=
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
@@ -412,12 +410,12 @@ theorem irreducibleCharacters_GL2_eq_union {ψ : AddChar F ℂ} (hψ : ψ ≠ 1)
     · exact character_GL2Linear_mem_irreducibleCharacters α
     · exact character_GL2SteinbergTwist_mem_irreducibleCharacters F α
     · exact character_GL2PrincipalSeries_mem_irreducibleCharacters F hp
-    · exact GL2CuspidalVirtualCharacter_mem_irreducibleCharacters hE hθ hψ
+    · exact GL2CuspidalVirtualCharacter_mem_irreducibleCharacters hθ hψ
   · -- the four families together have at least `q² - 1` members
     rw [← Nat.card_coe_set_eq, card_irreducibleCharacters, card_conjClasses_GL2,
-      Nat.card_eq_fintype_card, ncard_union_eq_add F E hE hψ, ncard_range_character_GL2Linear,
+      Nat.card_eq_fintype_card, ncard_union_eq_add F E hψ, ncard_range_character_GL2Linear,
       ncard_range_character_GL2SteinbergTwist, ncard_image_character_GL2PrincipalSeries]
-    have hC := le_two_mul_ncard_image_GL2CuspidalVirtualCharacter F E hE hψ
+    have hC := le_two_mul_ncard_image_GL2CuspidalVirtualCharacter F E hψ
     -- the arithmetic: `2 (q - 1) + ½ (q - 1) (q - 2) + ½ q (q - 1) = q² - 1`
     have := count_arith (Fintype.one_lt_card (α := F))
     omega
@@ -427,12 +425,12 @@ the characters `θ` of `Eˣ` with `θ^q ≠ θ`: the other three families accoun
 `2 (q - 1) + ½ (q - 1) (q - 2)` of the `q² - 1` irreducible characters. -/
 @[simp]
 theorem ncard_image_GL2CuspidalVirtualCharacter {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
-    ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE θ ψ).1) ''
+    ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
       {θ | θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}).ncard =
       Fintype.card F * (Fintype.card F - 1) / 2 := by
-  have h := congrArg Set.ncard (irreducibleCharacters_GL2_eq_union F E hE hψ)
+  have h := congrArg Set.ncard (irreducibleCharacters_GL2_eq_union F E hψ)
   rw [← Nat.card_coe_set_eq, card_irreducibleCharacters, card_conjClasses_GL2,
-    Nat.card_eq_fintype_card, ncard_union_eq_add F E hE hψ, ncard_range_character_GL2Linear,
+    Nat.card_eq_fintype_card, ncard_union_eq_add F E hψ, ncard_range_character_GL2Linear,
     ncard_range_character_GL2SteinbergTwist, ncard_image_character_GL2PrincipalSeries] at h
   -- the arithmetic: `q² - 1 - 2 (q - 1) - ½ (q - 1) (q - 2) = ½ q (q - 1)`
   have := (count_arith (Fintype.one_lt_card (α := F))).1
