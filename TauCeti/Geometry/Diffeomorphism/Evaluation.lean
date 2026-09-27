@@ -38,12 +38,6 @@ theorem continuousEval_weakWhitney : ContinuousEval (M ≃ₘ^n⟮I, I⟯ M) M M
 scoped[TauCeti.DiffeomorphWeakWhitney] attribute [instance]
   Diffeomorph.continuousEval_weakWhitney
 
-/-- Evaluation is jointly continuous in a diffeomorphism and a point for the weak Whitney
-topology on the diffeomorphism group. -/
-theorem continuous_eval :
-    Continuous (fun p : (M ≃ₘ^n⟮I, I⟯ M) × M ↦ p.1 p.2) :=
-  ContinuousEval.continuous_eval
-
 /-- The natural action of `Diff(M)` on `M` is continuous jointly in the diffeomorphism and
 the point. -/
 instance applyContinuousSMul : ContinuousSMul (M ≃ₘ^n⟮I, I⟯ M) M :=
