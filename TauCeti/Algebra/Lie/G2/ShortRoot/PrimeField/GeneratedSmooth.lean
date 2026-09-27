@@ -147,7 +147,7 @@ end Construction
 
 variable (k : Type u) [Field k] [Algebra (ZMod 3) k]
 
-private theorem isReduced_baseChangeGeneratorCodomain [IsAlgClosed k] :
+private theorem isReduced_baseChangeGeneratorCodomain :
     ∀ j, IsReduced (baseChangeGeneratorCodomain k j) := by
   rintro (j | u)
   · let e := AdditiveGroup.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k
