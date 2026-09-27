@@ -15,8 +15,8 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 
 An embedding of a surface in a 3-manifold is incompressible when it is injective on the
 fundamental group.  This file records the dimension-independent topological core of that
-condition.  The later Haken API can impose the compact, connected, boundaryless surface and
-3-manifold hypotheses without duplicating the induced-map argument.
+condition.  The embedding and π₁-injectivity conditions are stated independently of surface and
+manifold hypotheses so that this API can be reused in their presence.
 
 The main predicate `IsIncompressible` combines a topological embedding with injectivity of the
 fundamental-group map at every basepoint.  A continuous retraction supplies both properties, and
@@ -39,6 +39,13 @@ map on fundamental groups at every basepoint.  The separate embedding conjunct i
 π₁-injectivity alone does not prevent a map from identifying points. -/
 def IsIncompressible (f : C(S, M)) : Prop :=
   IsEmbedding f ∧ ∀ s : S, Function.Injective (FundamentalGroup.map f s)
+
+/-- The defining embedding and fundamental-group injectivity conditions for an incompressible
+map. -/
+theorem isIncompressible_iff {f : C(S, M)} :
+    IsIncompressible f ↔
+      IsEmbedding f ∧ ∀ s : S, Function.Injective (FundamentalGroup.map f s) :=
+  Iff.rfl
 
 namespace IsIncompressible
 
