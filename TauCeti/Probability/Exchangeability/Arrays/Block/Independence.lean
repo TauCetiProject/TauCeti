@@ -54,8 +54,7 @@ a proper sub-block of `C` says the same for a part of the hidden block, with a r
 allowed to hide more of the hidden block than that part needs.
 
 `C` is the only set that has to be finite: `B` needs no finiteness hypothesis of its own, since
-`B ⊆ C`. The finiteness of `C` is what lets each axis of the rectangle be reindexed by an
-injection fixing every coordinate used by `C`, and that reindexing is what carries the argument. -/
+`B ⊆ C`. -/
 theorem SeparatelyExchangeable.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) {S T : Set ℕ} (hS : S.Infinite)
     (hT : T.Infinite) {B C : Set (ℕ × ℕ)} (hC : C.Finite) (hBsub : B ⊆ C)

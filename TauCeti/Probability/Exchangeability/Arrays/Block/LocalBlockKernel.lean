@@ -39,19 +39,20 @@ hidden block and the sub-block that is read off are one and the same.
 This is what Aldous's proof of the representation `X i j = f (U, Uᵢ, Vⱼ, Uᵢⱼ)` of separately
 exchangeable arrays asks for. Split both axes into a hidden and a visible part, and take `S` and
 `T` to be the hidden rows and columns together with the visible row `i` and visible column `j` in
-play. The reservoir `S ×ˢ T \ C` is then the hidden block together with the hidden parts of row
-`i` and of column `j`, and the visible entries of `C` are generated from it while every entry
-outside the hidden block is carried along unchanged. The cell variables `Uᵢⱼ` of the representation
-are the randomizations of these conditional laws, which is why the coding statement is stated for a
-whole block at once.
+play. The reservoir `S ×ˢ T \ C` is then the background block of hidden rows against hidden
+columns together with the hidden parts of row `i` and of column `j`, and the visible sub-block `B`
+of the hidden block is generated from it while every entry outside the hidden block is carried
+along unchanged; the remainder `C \ B` of the hidden block is omitted. The cell variables `Uᵢⱼ` of
+the representation are the randomizations of these conditional laws, which is why the coding
+statement is stated for a whole block at once.
 
 ## Main results
 
 In the namespace `TauCeti.Probability.SeparatelyExchangeable`:
 
-* `condDistrib_subblock_outsideHiddenBlock_ae_eq_local`: the conditional law of `B` given the
+* `condDistrib_subblock_rest_ae_eq_local`: the conditional law of `B` given the
   reservoir and the entries outside the hidden block is the kernel given the reservoir;
-* `jointLaw_subblock_outsideHiddenBlock_eq_compProd_local`: the joint law of the reservoir, the
+* `jointLaw_subblock_rest_eq_compProd_local`: the joint law of the reservoir, the
   entries outside the hidden block and `B` factors through that kernel;
 * `exists_local_subblock_coding`: one fresh uniform variable generates `B` from the reservoir,
   with the joint law of the reservoir, the entries outside the hidden block and `B` intact.
@@ -78,7 +79,7 @@ variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 sub-block of the hidden block is the law given the reservoir alone.** The equality is almost
 everywhere for the joint law of the two observations, the reservoir and the complement of the
 hidden block; the ungenerated remainder of the hidden block is not observed. -/
-theorem SeparatelyExchangeable.condDistrib_subblock_outsideHiddenBlock_ae_eq_local
+theorem SeparatelyExchangeable.condDistrib_subblock_rest_ae_eq_local
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p)
     {S T : Set ℕ} (hS : S.Infinite) (hT : T.Infinite)
     {B C : Set (ℕ × ℕ)} (hC : C.Finite) (hBsub : B ⊆ C) (hCsub : C ⊆ S ×ˢ T) :
@@ -101,7 +102,7 @@ theorem SeparatelyExchangeable.condDistrib_subblock_outsideHiddenBlock_ae_eq_loc
 
 /-- **The joint law of the reservoir, the entries outside the hidden block and a sub-block of
 the hidden block factors through the conditional kernel given the reservoir.** -/
-theorem SeparatelyExchangeable.jointLaw_subblock_outsideHiddenBlock_eq_compProd_local
+theorem SeparatelyExchangeable.jointLaw_subblock_rest_eq_compProd_local
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p)
     {S T : Set ℕ} (hS : S.Infinite) (hT : T.Infinite)
     {B C : Set (ℕ × ℕ)} (hC : C.Finite) (hBsub : B ⊆ C) (hCsub : C ⊆ S ×ˢ T) :
@@ -118,7 +119,7 @@ theorem SeparatelyExchangeable.jointLaw_subblock_outsideHiddenBlock_eq_compProd_
   have hf : AEMeasurable (fun x : ℕ × ℕ → α ↦ B.domRestrict x) ρ :=
     (Measurable.of_eval fun c ↦ measurable_pi_apply c.1).aemeasurable
   exact (condDistrib_ae_eq_iff_measure_eq_compProd hk hf _).mp
-    (hρ.condDistrib_subblock_outsideHiddenBlock_ae_eq_local hS hT hC hBsub hCsub)
+    (hρ.condDistrib_subblock_rest_ae_eq_local hS hT hC hBsub hCsub)
 
 /-- **One fresh uniform variable can generate a sub-block of the hidden block while preserving
 its joint law with every entry outside the hidden block.** The coding function uses only the
@@ -151,7 +152,7 @@ theorem SeparatelyExchangeable.exists_local_subblock_coding
   rw [map_prod_volume_eq_compProd_of_map_volume (κ.prodMkRight _)
     (fun q : (↥(S ×ˢ T \ C) → α) × (↥(Cᶜ : Set (ℕ × ℕ)) → α) ↦ f q.1)
     hf' hmap']
-  exact (hρ.jointLaw_subblock_outsideHiddenBlock_eq_compProd_local hS hT hC hBsub hCsub).symm
+  exact (hρ.jointLaw_subblock_rest_eq_compProd_local hS hT hC hBsub hCsub).symm
 
 end TauCeti.Probability
 
