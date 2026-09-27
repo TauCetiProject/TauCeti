@@ -63,12 +63,12 @@ variable {S T : Type u} [CommRing S] [CommRing T] {w : S}
       apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       -- Forget the finite-generation wrapper to use the scalar-extension equation.
       change F.map (w • 𝟙 X.obj.X₀) = f w • 𝟙 (F.obj X.obj.X₀)
-      exact (FGModuleCat.extendScalars_map_smul_id f X.obj.X₀)
+      exact (ModuleCat.extendScalars_map_smul_id f X.obj.X₀.obj)
     · rw [← Functor.map_comp, X.obj.d₁_comp_d₀]
       apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
       -- Forget the finite-generation wrapper on the odd component as well.
       change F.map (w • 𝟙 X.obj.X₁) = f w • 𝟙 (F.obj X.obj.X₁)
-      exact (FGModuleCat.extendScalars_map_smul_id f X.obj.X₁)
+      exact (ModuleCat.extendScalars_map_smul_id f X.obj.X₁.obj)
     · let _ : Algebra S T := f.toAlgebra
       -- The scalar-extended component is the tensor product in Mathlib's projective instance.
       change Module.Projective T (TensorProduct S T X.obj.X₀)
@@ -88,30 +88,40 @@ variable {S T : Type u} [CommRing S] [CommRing T] {w : S}
   · apply ObjectProperty.hom_ext
     apply CurvedDuplex.hom_ext <;> simp
 
+/-- The even object of the scalar-extended factorization is the scalar extension of the
+original even module. -/
 @[simp] theorem baseChangeFunctor_obj_X₀ (f : S →+* T) (X : MatrixFactorization S w) :
     ((baseChangeFunctor f).obj X).obj.X₀.obj =
       (ModuleCat.extendScalars f).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₀) := by
   rfl
 
+/-- The odd object of the scalar-extended factorization is the scalar extension of the
+original odd module. -/
 @[simp] theorem baseChangeFunctor_obj_X₁ (f : S →+* T) (X : MatrixFactorization S w) :
     ((baseChangeFunctor f).obj X).obj.X₁.obj =
       (ModuleCat.extendScalars f).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₁) := by
   rfl
 
+/-- The even-to-odd differential of the scalar-extended factorization is the scalar
+extension of `d₀`. -/
 @[simp] theorem baseChangeFunctor_obj_d₀ (f : S →+* T) (X : MatrixFactorization S w) :
     (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
         ((baseChangeFunctor f).obj X).obj.d₀ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₀) := rfl
 
+/-- The odd-to-even differential of the scalar-extended factorization is the scalar
+extension of `d₁`. -/
 @[simp] theorem baseChangeFunctor_obj_d₁ (f : S →+* T) (X : MatrixFactorization S w) :
     (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
         ((baseChangeFunctor f).obj X).obj.d₁ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₁) := rfl
 
+/-- The even component of a map in the scalar-extended factorization is the scalar
+extension of `f₀`. -/
 @[simp] theorem baseChangeFunctor_map_f₀ (f : S →+* T)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
     (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
@@ -119,6 +129,8 @@ variable {S T : Type u} [CommRing S] [CommRing T] {w : S}
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₀) := rfl
 
+/-- The odd component of a map in the scalar-extended factorization is the scalar extension
+of `f₁`. -/
 @[simp] theorem baseChangeFunctor_map_f₁ (f : S →+* T)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
     (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
@@ -194,81 +206,112 @@ theorem baseChangeToCurvedDuplex_obj_X₁_eq_baseChangeFunctor (f : S →+* T) (
     ((baseChangeToCurvedDuplex f hw).obj X).X₁ = ((baseChangeFunctor f).obj X).obj.X₁.obj := by
   rfl
 
+/-- The even object of the square-zero duplex is the scalar extension of the original even
+module. -/
 @[simp] theorem baseChangeToCurvedDuplex_obj_X₀ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     ((baseChangeToCurvedDuplex f hw).obj X).X₀ =
       (ModuleCat.extendScalars f).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₀) := rfl
 
+/-- The odd object of the square-zero duplex is the scalar extension of the original odd module. -/
 @[simp] theorem baseChangeToCurvedDuplex_obj_X₁ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     ((baseChangeToCurvedDuplex f hw).obj X).X₁ =
       (ModuleCat.extendScalars f).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₁) := rfl
 
+/-- The even-to-odd differential of the square-zero duplex is the scalar extension of `d₀`. -/
 @[simp] theorem baseChangeToCurvedDuplex_obj_d₀ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     ((baseChangeToCurvedDuplex f hw).obj X).d₀ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₀) := rfl
 
+/-- The odd-to-even differential of the square-zero duplex is the scalar extension of `d₁`. -/
 @[simp] theorem baseChangeToCurvedDuplex_obj_d₁ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     ((baseChangeToCurvedDuplex f hw).obj X).d₁ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₁) := rfl
 
+/-- The even component of a map in the square-zero duplex is the scalar extension of `f₀`. -/
 @[simp] theorem baseChangeToCurvedDuplex_map_f₀ (f : S →+* T) (hw : f w = 0)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
     ((baseChangeToCurvedDuplex f hw).map g).f₀ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₀) := rfl
 
+/-- The odd component of a map in the square-zero duplex is the scalar extension of `f₁`. -/
 @[simp] theorem baseChangeToCurvedDuplex_map_f₁ (f : S →+* T) (hw : f w = 0)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
     ((baseChangeToCurvedDuplex f hw).map g).f₁ =
       (ModuleCat.extendScalars f).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₁) := rfl
 
+/-- The even component remains projective under arbitrary scalar extension. -/
+theorem projective_baseChangeFunctor_X₀ (f : S →+* T)
+    (X : MatrixFactorization S w) :
+    Module.Projective T ((baseChangeFunctor f).obj X).obj.X₀.obj := by
+  let _ : Algebra S T := f.toAlgebra
+  rw [baseChangeFunctor_obj_X₀]
+  change Module.Projective T (TensorProduct S T X.obj.X₀)
+  infer_instance
+
+/-- The odd component remains projective under arbitrary scalar extension. -/
+theorem projective_baseChangeFunctor_X₁ (f : S →+* T)
+    (X : MatrixFactorization S w) :
+    Module.Projective T ((baseChangeFunctor f).obj X).obj.X₁.obj := by
+  let _ : Algebra S T := f.toAlgebra
+  rw [baseChangeFunctor_obj_X₁]
+  change Module.Projective T (TensorProduct S T X.obj.X₁)
+  infer_instance
+
+/-- The even component remains finitely generated under arbitrary scalar extension. -/
+theorem finite_baseChangeFunctor_X₀ (f : S →+* T)
+    (X : MatrixFactorization S w) :
+    Module.Finite T ((baseChangeFunctor f).obj X).obj.X₀.obj := by
+  let _ : Algebra S T := f.toAlgebra
+  rw [baseChangeFunctor_obj_X₀]
+  change Module.Finite T (TensorProduct S T X.obj.X₀)
+  infer_instance
+
+/-- The odd component remains finitely generated under arbitrary scalar extension. -/
+theorem finite_baseChangeFunctor_X₁ (f : S →+* T)
+    (X : MatrixFactorization S w) :
+    Module.Finite T ((baseChangeFunctor f).obj X).obj.X₁.obj := by
+  let _ : Algebra S T := f.toAlgebra
+  rw [baseChangeFunctor_obj_X₁]
+  change Module.Finite T (TensorProduct S T X.obj.X₁)
+  infer_instance
+
 /-- Base change keeps the even component projective over the target ring. -/
 theorem projective_baseChangeToCurvedDuplex_X₀ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     Module.Projective T ((baseChangeToCurvedDuplex f hw).obj X).X₀ := by
-  let _ : Algebra S T := f.toAlgebra
-  rw [baseChangeToCurvedDuplex_obj_X₀]
-  -- The extension-of-scalars object is the tensor product used by Mathlib's instance.
-  change Module.Projective T (TensorProduct S T X.obj.X₀)
-  infer_instance
+  rw [baseChangeToCurvedDuplex_obj_X₀_eq_baseChangeFunctor]
+  exact projective_baseChangeFunctor_X₀ f X
 
 /-- Base change keeps the odd component projective over the target ring. -/
 theorem projective_baseChangeToCurvedDuplex_X₁ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     Module.Projective T ((baseChangeToCurvedDuplex f hw).obj X).X₁ := by
-  let _ : Algebra S T := f.toAlgebra
-  rw [baseChangeToCurvedDuplex_obj_X₁]
-  -- The extension-of-scalars object is the tensor product used by Mathlib's instance.
-  change Module.Projective T (TensorProduct S T X.obj.X₁)
-  infer_instance
+  rw [baseChangeToCurvedDuplex_obj_X₁_eq_baseChangeFunctor]
+  exact projective_baseChangeFunctor_X₁ f X
 
 /-- Base change keeps the even component finitely generated over the target ring. -/
 theorem finite_baseChangeToCurvedDuplex_X₀ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     Module.Finite T ((baseChangeToCurvedDuplex f hw).obj X).X₀ := by
-  let _ : Algebra S T := f.toAlgebra
-  rw [baseChangeToCurvedDuplex_obj_X₀]
-  -- The extension-of-scalars object is the tensor product in `Module.Finite.base_change`.
-  change Module.Finite T (TensorProduct S T X.obj.X₀)
-  infer_instance
+  rw [baseChangeToCurvedDuplex_obj_X₀_eq_baseChangeFunctor]
+  exact finite_baseChangeFunctor_X₀ f X
 
 /-- Base change keeps the odd component finitely generated over the target ring. -/
 theorem finite_baseChangeToCurvedDuplex_X₁ (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     Module.Finite T ((baseChangeToCurvedDuplex f hw).obj X).X₁ := by
-  let _ : Algebra S T := f.toAlgebra
-  rw [baseChangeToCurvedDuplex_obj_X₁]
-  -- The extension-of-scalars object is the tensor product in `Module.Finite.base_change`.
-  change Module.Finite T (TensorProduct S T X.obj.X₁)
-  infer_instance
+  rw [baseChangeToCurvedDuplex_obj_X₁_eq_baseChangeFunctor]
+  exact finite_baseChangeFunctor_X₁ f X
 
 /-- Extension of scalars is additive on closed even maps of matrix factorizations. -/
 instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
@@ -321,28 +364,35 @@ that kills its potential. -/
       (ComplexShape.up (ZMod 2)) :=
   baseChangeToCurvedDuplex f hw ⋙ CurvedDuplex.toPeriodicComplex (ModuleCat.{u} T) T
 
+/-- The zero component of the two-periodic complex is the even component of the square-zero
+duplex. -/
 @[simp] theorem toPeriodicComplex_obj_X_zero (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     ((toPeriodicComplex f hw).obj X).X 0 = ((baseChangeToCurvedDuplex f hw).obj X).X₀ := by
   simp [toPeriodicComplex]
 
+/-- The one component of the two-periodic complex is the odd component of the square-zero duplex. -/
 @[simp] theorem toPeriodicComplex_obj_X_one (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     ((toPeriodicComplex f hw).obj X).X 1 = ((baseChangeToCurvedDuplex f hw).obj X).X₁ := by
   simp [toPeriodicComplex]
 
+/-- The differential from zero to one is the even differential of the square-zero duplex. -/
 @[simp] theorem toPeriodicComplex_obj_d_zero_one (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     ((toPeriodicComplex f hw).obj X).d 0 1 = ((baseChangeToCurvedDuplex f hw).obj X).d₀ := rfl
 
+/-- The differential from one to zero is the odd differential of the square-zero duplex. -/
 @[simp] theorem toPeriodicComplex_obj_d_one_zero (f : S →+* T) (hw : f w = 0)
     (X : MatrixFactorization S w) :
     ((toPeriodicComplex f hw).obj X).d 1 0 = ((baseChangeToCurvedDuplex f hw).obj X).d₁ := rfl
 
+/-- The zero component of a periodic map is the even component of the duplex map. -/
 @[simp] theorem toPeriodicComplex_map_f_zero (f : S →+* T) (hw : f w = 0)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
     ((toPeriodicComplex f hw).map g).f 0 = ((baseChangeToCurvedDuplex f hw).map g).f₀ := rfl
 
+/-- The one component of a periodic map is the odd component of the duplex map. -/
 @[simp] theorem toPeriodicComplex_map_f_one (f : S →+* T) (hw : f w = 0)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
     ((toPeriodicComplex f hw).map g).f 1 = ((baseChangeToCurvedDuplex f hw).map g).f₁ := rfl
@@ -359,32 +409,44 @@ instance toPeriodicComplex_additive (f : S →+* T) (hw : f w = 0) :
   toPeriodicComplex (Ideal.Quotient.mk (Ideal.span {w}))
     (Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self w))
 
+/-- The even object of the hypersurface quotient complex is the scalar extension of the
+original even module. -/
 @[simp] theorem quotientPeriodicComplex_obj_X_zero (X : MatrixFactorization S w) :
     ((quotientPeriodicComplex (S := S) (w := w)).obj X).X 0 =
       (ModuleCat.extendScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₀) := rfl
 
+/-- The odd object of the hypersurface quotient complex is the scalar extension of the
+original odd module. -/
 @[simp] theorem quotientPeriodicComplex_obj_X_one (X : MatrixFactorization S w) :
     ((quotientPeriodicComplex (S := S) (w := w)).obj X).X 1 =
       (ModuleCat.extendScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₁) := rfl
 
+/-- The zero-to-one differential of the hypersurface quotient complex is the scalar
+extension of `d₀`. -/
 @[simp] theorem quotientPeriodicComplex_obj_d_zero_one (X : MatrixFactorization S w) :
     ((quotientPeriodicComplex (S := S) (w := w)).obj X).d 0 1 =
       (ModuleCat.extendScalars (Ideal.Quotient.mk (Ideal.span {w}))).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₀) := rfl
 
+/-- The one-to-zero differential of the hypersurface quotient complex is the scalar
+extension of `d₁`. -/
 @[simp] theorem quotientPeriodicComplex_obj_d_one_zero (X : MatrixFactorization S w) :
     ((quotientPeriodicComplex (S := S) (w := w)).obj X).d 1 0 =
       (ModuleCat.extendScalars (Ideal.Quotient.mk (Ideal.span {w}))).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₁) := rfl
 
+/-- The zero component of a map in the hypersurface quotient complex is the scalar
+extension of `f₀`. -/
 @[simp] theorem quotientPeriodicComplex_map_f_zero
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
     ((quotientPeriodicComplex (S := S) (w := w)).map g).f 0 =
       (ModuleCat.extendScalars (Ideal.Quotient.mk (Ideal.span {w}))).map
         ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₀) := rfl
 
+/-- The one component of a map in the hypersurface quotient complex is the scalar extension
+of `f₁`. -/
 @[simp] theorem quotientPeriodicComplex_map_f_one
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
     ((quotientPeriodicComplex (S := S) (w := w)).map g).f 1 =
