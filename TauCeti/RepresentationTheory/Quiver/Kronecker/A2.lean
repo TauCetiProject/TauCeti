@@ -115,6 +115,7 @@ theorem submatrix_toMatrix_eulerForm_eq_eulerMatrixA2 :
 omit A [Unique A] in
 /-- The transposed Cartan matrix times the Euler matrix is the identity. This is the first half of
 the integral identity `E = C⁻ᵀ`. -/
+@[simp]
 theorem cartanMatrixA2_transpose_mul_eulerMatrixA2 :
     cartanMatrixA2ᵀ * eulerMatrixA2 = 1 := by
   decide
@@ -122,12 +123,14 @@ theorem cartanMatrixA2_transpose_mul_eulerMatrixA2 :
 omit A [Unique A] in
 /-- The Euler matrix times the transposed Cartan matrix is the identity. Together with
 `cartanMatrixA2_transpose_mul_eulerMatrixA2`, this proves `E = C⁻ᵀ` over `ℤ`. -/
+@[simp]
 theorem eulerMatrixA2_mul_cartanMatrixA2_transpose :
     eulerMatrixA2 * cartanMatrixA2ᵀ = 1 := by
   decide
 
 omit A [Unique A] in
 /-- The symmetrized Euler matrix of `1 ⟶ 2` is the type `A₂` Cartan matrix. -/
+@[simp]
 theorem eulerMatrixA2_add_transpose :
     eulerMatrixA2 + eulerMatrixA2ᵀ = CartanMatrix.A 2 := by
   rw [CartanMatrix.A_two]
