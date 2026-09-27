@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Normed.Module.Connected
-public import TauCeti.Analysis.Analytic.IsolatedZeros
-public import TauCeti.Analysis.Complex.Conformal.LocalDegree
+import TauCeti.Analysis.Analytic.IsolatedZeros
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 
 /-!
@@ -146,17 +145,10 @@ private theorem exists_radius_of_notEventuallyConst
   · exact hzne (hall'' (hdist3 z hz) (by simp only [F, hcon]))
   · exact hA₁ (hdist1 z hz)
 
-/-- **The local fibre count.** Let `f : X → Y` be differentiable at every point of a neighbourhood
-of `x` and not constant near `x`, and let `e` and `e'` be charts of the maximal atlases at `x`
-and `f x`. There are neighbourhoods `U` of `x` and `V` of `f x` such that `x` is the only preimage
-of `f x` inside `U`, and for every `y' ∈ V` different from `f x` the fibre of `y'` meets `U`, is
-finite there, and the sum of the local multiplicities over it is exactly
-`localMultiplicity f x`.
-
-This is the local normal form `z ↦ z ^ m` of a nonconstant holomorphic map, read as a count: the
-multiplicity of `f` at `x` is the number of preimages of a nearby value, counted with
-multiplicities. -/
-theorem exists_nhds_localMultiplicity_fiber_sum
+/-- The chart form of `TauCeti.RiemannSurface.exists_nhds_localMultiplicity_fiber_sum`, read in
+arbitrary charts `e` at `x` and `e'` at `f x` of the maximal atlases. The public statement
+instantiates them with the preferred charts. -/
+private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
     [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
     (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 Y)
     (hx : x ∈ e.source) (hfx : f x ∈ e'.source)
@@ -314,12 +306,14 @@ theorem exists_nhds_localMultiplicity_fiber_sum
       · intro x' hx'
         obtain ⟨hxf, hx'U⟩ := hx'
         obtain ⟨w, hw, rfl⟩ := (Set.mem_image e.symm _ _).1 hx'U
-        change e (e.symm w) ∈ ↑Sb
-        rw [e.right_inv ((hcoord w hw).2)]
-        refine Finset.mem_coe.2 (Finset.mem_filter.2
+        -- The preimage of `x'` is the chart coordinate `w`, so it is enough to exhibit `w` in
+        -- `Sb` explicitly and to read back the chart equation `e (e.symm w) = w` there.
+        have hwSb : w ∈ ↑Sb := Finset.mem_coe.2 (Finset.mem_filter.2
           ⟨hZfin.mem_toFinset.2
             ⟨Metric.ball_subset_closedBall (Metric.mem_ball.2 hw), congrArg e' hxf⟩,
             Metric.mem_ball.2 hw⟩)
+        simp only [e.right_inv ((hcoord w hw).2)]
+        exact hwSb
       · obtain ⟨w, hw, rfl⟩ := (Set.mem_image e.symm _ _).1 hx'.2
         exact hsrc w (Metric.ball_subset_closedBall hw)
       · intro z hz
@@ -373,6 +367,33 @@ theorem exists_nhds_localMultiplicity_fiber_sum
       have hfz : f (e.symm w) ∈ e'.source := hfimg w hzball
       exact (Set.mem_image e.symm _ _).2 ⟨w, Finset.mem_coe.2 (Finset.mem_filter.2
         ⟨hZfin.mem_toFinset.2 ⟨hzball, congrArg e' hxf⟩, hw⟩), rfl⟩
+
+/-- **The local fibre count.** Let `f : X → Y` be differentiable at every point of a neighbourhood
+of `x` and not constant near `x`. There are neighbourhoods `U` of `x` and `V` of `f x` such that
+`x` is the only preimage of `f x` inside `U`, and for every `y' ∈ V` different from `f x` the
+fibre of `y'` meets `U`, is finite there, and the sum of the local multiplicities over it is
+exactly `localMultiplicity f x`.
+
+This is the local normal form `z ↦ z ^ m` of a nonconstant holomorphic map, read as a count: the
+multiplicity of `f` at `x` is the number of preimages of a nearby value, counted with
+multiplicities. The two neighbourhoods are obtained in the preferred charts `chartAt ℂ x` and
+`chartAt ℂ (f x)`. -/
+theorem exists_nhds_localMultiplicity_fiber_sum
+    [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+    (hDiff : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hne : ¬ EventuallyConst f (𝓝 x)) :
+    ∃ U ∈ 𝓝 x, ∃ V ∈ 𝓝 (f x),
+      f ⁻¹' {f x} ∩ U = {x} ∧
+      ∀ y' ∈ V, y' ≠ f x →
+        (f ⁻¹' {y'} ∩ U) ≠ ∅ ∧
+        (f ⁻¹' {y'} ∩ U).Finite ∧
+        (∑ᶠ x' ∈ f ⁻¹' {y'} ∩ U, localMultiplicity f x') = localMultiplicity f x :=
+  exists_nhds_localMultiplicity_fiber_sum_of_charts
+    (X := X) (Y := Y) (f := f) (x := x) (e := chartAt ℂ x) (e' := chartAt ℂ (f x))
+    (he := chart_mem_maximalAtlas x) (he' := chart_mem_maximalAtlas (f x))
+    (hx := mem_chart_source ℂ x) (hfx := mem_chart_source ℂ (f x))
+    (hDiff := ⟨{y | MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y}, hDiff, fun _ hy => hy⟩)
+    (hne := hne)
 
 end TauCeti.RiemannSurface
 
