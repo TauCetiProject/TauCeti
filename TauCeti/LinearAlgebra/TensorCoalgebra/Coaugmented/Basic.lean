@@ -559,6 +559,31 @@ theorem reducedInclusion_of (n : {n : ℕ // 0 < n}) (z : TensorPower R n.1 M) :
     reducedInclusion R M (ReducedTensorWords.of R M n z) = of R M n.1 z := by
   rw [reducedInclusion, ReducedTensorWords.toModule_of]
 
+/-- The included reduced word has precisely its positive-length components. -/
+@[simp] theorem component_reducedInclusion (k : ℕ) (w : ReducedTensorWords R M) :
+    component R M k (reducedInclusion R M w) =
+      if hk : 0 < k then ReducedTensorWords.component R M ⟨k, hk⟩ w else 0 := by
+  suffices h : component R M k ∘ₗ reducedInclusion R M =
+      if hk : 0 < k then ReducedTensorWords.component R M ⟨k, hk⟩ else 0 by
+    have hw := LinearMap.congr_fun h w
+    by_cases hk : 0 < k <;> simpa [hk] using hw
+  apply ReducedTensorWords.linearMap_ext R M
+  intro n z
+  rw [LinearMap.comp_apply, reducedInclusion_of]
+  by_cases hk : 0 < k
+  · simp only [dite_eq_left hk]
+    by_cases hkn : k = n.1
+    · subst k
+      simp [component_of, ReducedTensorWords.component_of]
+    · have hne : (⟨k, hk⟩ : {n : ℕ // 0 < n}) ≠ n := by
+        intro h
+        exact hkn (congrArg Subtype.val h)
+      rw [component_of_of_ne R M (Ne.symm hkn),
+        ReducedTensorWords.component_of_of_ne R M (Ne.symm hne)]
+  · have hk0 : k = 0 := by omega
+    subst k
+    simp [component_of_of_ne R M n.2.ne']
+
 /-- The retraction of `TauCeti.TensorWords.reducedInclusion` that deletes the empty word. -/
 noncomputable def reducedProjection : TensorWords R M →ₗ[R] ReducedTensorWords R M :=
   DirectSum.toModule R ℕ _ fun n ↦

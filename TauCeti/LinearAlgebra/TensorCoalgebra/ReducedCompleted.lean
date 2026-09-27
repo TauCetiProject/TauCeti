@@ -70,9 +70,31 @@ noncomputable def ofCompleted : CompletedTensorWords R M →ₗ[R]
   funext n
   exact toCompleted_pos R M x n
 
+/-- A completed word with zero empty component is recovered from its positive-length part. -/
+theorem toCompleted_ofCompleted (x : CompletedTensorWords R M) (hx : x 0 = 0) :
+    toCompleted R M (ofCompleted R M x) = x := by
+  funext n
+  by_cases hn : 0 < n
+  · exact (toCompleted_pos R M (ofCompleted R M x) ⟨n, hn⟩).trans
+      (ofCompleted_apply R M x ⟨n, hn⟩)
+  · have hn0 : n = 0 := by omega
+    subst n
+    simpa only [toCompleted_zero] using hx.symm
+
 /-- The positive-length product embeds linearly into the coaugmented completed words. -/
 theorem toCompleted_injective : Function.Injective (toCompleted R M) :=
   Function.LeftInverse.injective (g := ofCompleted R M) (ofCompleted_toCompleted R M)
+
+/-- The image of the reduced completion consists of completed words with zero empty component. -/
+theorem range_toCompleted : LinearMap.range (toCompleted R M) =
+    LinearMap.ker (LinearMap.proj (R := R) (i := 0) :
+      CompletedTensorWords R M →ₗ[R] TensorPower R 0 M) := by
+  ext x
+  constructor
+  · rintro ⟨y, rfl⟩
+    exact toCompleted_zero R M y
+  · intro hx
+    exact ⟨ofCompleted R M x, toCompleted_ofCompleted R M x hx⟩
 
 /-- Include a finite reduced word in its length completion. -/
 noncomputable def ofFinite : ReducedTensorWords R M →ₗ[R]
@@ -211,18 +233,17 @@ noncomputable def filtration (n : ℕ) : Submodule R (CompletedReducedTensorWord
 
 /-- The reduced length filtration is decreasing. -/
 theorem filtration_antitone : Antitone (filtration R M) := by
-  intro n m h x hx
-  rw [mem_filtration] at hx ⊢
-  exact fun k hk ↦ hx k (lt_of_lt_of_le hk h)
+  intro n m h
+  exact Submodule.comap_mono (CompletedTensorWords.filtration_antitone R M h)
 
 /-- The reduced length filtration is separated. -/
 @[simp] theorem iInf_filtration_eq_bot : ⨅ n, filtration R M n = ⊥ := by
+  simp only [filtration]
+  rw [← Submodule.comap_iInf, CompletedTensorWords.iInf_filtration_eq_bot]
   apply eq_bot_iff.mpr
   intro x hx
-  have hx' : ∀ n, x ∈ filtration R M n := by simpa only [Submodule.mem_iInf] using hx
-  ext k
-  exact (mem_filtration R M x (k.1 + 1)).mp (hx' (k.1 + 1)) k
-    (Nat.lt_succ_self k.1)
+  apply toCompleted_injective R M
+  simpa only [Submodule.mem_comap, Submodule.mem_bot, map_zero] using hx
 
 /-- Deconcatenation of a word filtered in degree `n` vanishes in total length below `n`. -/
 theorem deconcatenation_eq_zero_of_mem_filtration
@@ -252,57 +273,94 @@ noncomputable def truncate (n : ℕ) : CompletedReducedTensorWords R M →ₗ[R]
   · rfl
 
 /-- Truncation evaluated at a positive length keeps that coordinate below its cutoff. -/
-theorem truncate_apply (n : ℕ) (x : CompletedReducedTensorWords R M)
+@[simp] theorem truncate_apply (n : ℕ) (x : CompletedReducedTensorWords R M)
     (k : {k : ℕ // 0 < k}) :
     truncate R M n x k = if k.1 < n then x k else 0 := by
   rw [ReducedTensorWords.apply_eq_component, truncate_component]
 
+private theorem completed_truncate_toCompleted (n : ℕ)
+    (x : CompletedReducedTensorWords R M) :
+    CompletedTensorWords.truncate R M n (toCompleted R M x) =
+      TensorWords.reducedInclusion R M (truncate R M n x) := by
+  ext k
+  rw [CompletedTensorWords.truncate_apply]
+  by_cases hk : 0 < k
+  · rw [← TensorWords.component_apply R M,
+      TensorWords.component_reducedInclusion R M k, dite_eq_left hk,
+      truncate_component]
+    have hpos := toCompleted_pos R M x ⟨k, hk⟩
+    exact congrArg (fun z ↦ if k < n then z else 0) hpos
+  · have hk0 : k = 0 := by omega
+    subst k
+    rw [← TensorWords.component_apply R M,
+      TensorWords.component_reducedInclusion R M 0]
+    simp only [toCompleted_zero, ite_self, dite_eq_right (by omega)]
+
 /-- The length filtration is the kernel of finite truncation. -/
 theorem filtration_eq_ker_truncate (n : ℕ) :
     filtration R M n = LinearMap.ker (truncate R M n) := by
+  rw [filtration, CompletedTensorWords.filtration_eq_ker_truncate]
   ext x
-  rw [mem_filtration, LinearMap.mem_ker]
+  simp only [Submodule.mem_comap, LinearMap.mem_ker]
   constructor
   · intro hx
-    ext k
-    rw [truncate_apply]
-    by_cases hk : k.1 < n
-    · simp [hk, hx k hk]
-    · simp [hk]
-  · intro hx k hk
-    have h := congrArg (fun w : ReducedTensorWords R M ↦ w k) hx
-    simpa only [truncate_apply, ite_eq_left hk, DFinsupp.zero_apply] using h
+    apply TensorWords.reducedInclusion_injective R M
+    simpa only [completed_truncate_toCompleted, map_zero] using hx
+  · intro hx
+    rw [completed_truncate_toCompleted, hx, map_zero]
 
 /-- Truncating a finite truncation again retains the shorter prefix. -/
 @[simp] theorem truncate_truncate (n m : ℕ) (x : CompletedReducedTensorWords R M) :
     truncate R M n (ofFinite R M (truncate R M m x)) =
       truncate R M (min n m) x := by
-  ext k
-  simp only [truncate_apply, ofFinite_apply, lt_min_iff]
-  split_ifs <;> simp_all
+  apply TensorWords.reducedInclusion_injective R M
+  calc
+    _ = CompletedTensorWords.truncate R M n
+          (toCompleted R M (ofFinite R M (truncate R M m x))) :=
+        (completed_truncate_toCompleted R M n _).symm
+    _ = CompletedTensorWords.truncate R M n
+          (CompletedTensorWords.truncate R M m (toCompleted R M x)) := by
+        rw [toCompleted_ofFinite, DFinsupp.coeFnLinearMap_apply,
+          completed_truncate_toCompleted]
+    _ = CompletedTensorWords.truncate R M (min n m) (toCompleted R M x) :=
+        CompletedTensorWords.truncate_truncate R M n m _
+    _ = _ := completed_truncate_toCompleted R M (min n m) x
 
 /-- The reduced completion is complete for its length filtration: a compatible sequence
 of finite positive-length truncations determines exactly one completed reduced word. -/
 theorem existsUnique_of_compatible_truncations (x : ℕ → ReducedTensorWords R M)
     (hx : ∀ n m, n ≤ m → truncate R M n (ofFinite R M (x m)) = x n) :
     ∃! y : CompletedReducedTensorWords R M, ∀ n, truncate R M n y = x n := by
-  let y : CompletedReducedTensorWords R M := fun k ↦ x (k.1 + 1) k
-  have hy : ∀ n, truncate R M n y = x n := by
-    intro n
-    ext k
-    rw [truncate_apply]
-    by_cases hk : k.1 < n
-    · rw [ite_eq_left hk]
-      have h := congrArg (fun w : ReducedTensorWords R M ↦ w k)
-        (hx (k.1 + 1) n (by omega))
-      simpa only [truncate_apply, ofFinite_apply, Nat.lt_succ_self, ite_true] using h.symm
-    · rw [ite_eq_right hk]
-      have h := congrArg (fun w : ReducedTensorWords R M ↦ w k) (hx n n le_rfl)
-      simpa only [truncate_apply, ofFinite_apply, ite_eq_right hk] using h
-  refine ⟨y, hy, fun z hz ↦ ?_⟩
-  funext k
-  have h := congrArg (fun w : ReducedTensorWords R M ↦ w k) (hz (k.1 + 1))
-  simpa only [truncate_apply, Nat.lt_succ_self, ite_true] using h
+  have hcompat : ∀ n m, n ≤ m →
+      CompletedTensorWords.truncate R M n (TensorWords.reducedInclusion R M (x m)) =
+        TensorWords.reducedInclusion R M (x n) := by
+    intro n m hnm
+    have h := completed_truncate_toCompleted R M n (ofFinite R M (x m))
+    rw [toCompleted_ofFinite, hx n m hnm] at h
+    exact h
+  obtain ⟨y, hy, hunique⟩ :=
+    CompletedTensorWords.existsUnique_of_compatible_truncations R M
+      (fun n ↦ TensorWords.reducedInclusion R M (x n)) hcompat
+  have hy0 : y 0 = 0 := by
+    have hzero : (TensorWords.reducedInclusion R M (x 1)) 0 = 0 := by
+      rw [← TensorWords.component_apply R M,
+        TensorWords.component_reducedInclusion R M 0]
+      simp
+    have h := congrArg (fun w : TensorWords R M ↦ w 0) (hy 1)
+    simpa only [CompletedTensorWords.truncate_apply, Nat.zero_lt_one, ite_true,
+      hzero] using h
+  refine ⟨ofCompleted R M y, ?_, ?_⟩
+  · intro n
+    apply TensorWords.reducedInclusion_injective R M
+    rw [← completed_truncate_toCompleted, toCompleted_ofCompleted R M y hy0, hy n]
+  · intro z hz
+    have hz' : ∀ n, CompletedTensorWords.truncate R M n (toCompleted R M z) =
+        TensorWords.reducedInclusion R M (x n) := by
+      intro n
+      rw [completed_truncate_toCompleted, hz n]
+    have h := hunique (toCompleted R M z) hz'
+    exact (ofCompleted_toCompleted R M z).symm.trans
+      (congrArg (ofCompleted R M) h)
 
 end CompletedReducedTensorWords
 end TauCeti
