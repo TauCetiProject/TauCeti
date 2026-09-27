@@ -100,27 +100,18 @@ noncomputable def stabilizerOrbitQuotientEquivOrbitRelMapFiber {H K : Subgroup G
       {q : orbitRel.Quotient H X //
         Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := X) h) q =
           Quotient.mk'' x} := by
-  let f : orbitRel.Quotient (stabilizer K x) (K ⧸ H.subgroupOf K) →
-      {q : orbitRel.Quotient H X //
-        Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := X) h) q =
-          Quotient.mk'' x} :=
-    fun q ↦ Quotient.liftOn' q (cosetToOrbitRelMapFiber h x) fun a b hab ↦ by
-      apply Subtype.ext
-      exact (orbitOfCosetTranslate_eq_iff h x a b).mpr
-        (orbitRel_apply.mp hab)
-  refine Equiv.ofBijective f ⟨?_, ?_⟩
-  · intro a b hab
-    induction a using Quotient.inductionOn' with
-    | h a =>
-      induction b using Quotient.inductionOn' with
-      | h b =>
-        apply Quotient.sound'
-        apply orbitRel_apply.mpr
-        apply (orbitOfCosetTranslate_eq_iff h x a b).mp
-        exact congrArg Subtype.val hab
-  · intro q
-    obtain ⟨c, rfl⟩ := cosetToOrbitRelMapFiber_surjective h x q
-    exact ⟨Quotient.mk'' c, rfl⟩
+  refine (Quotient.congrRight fun a b ↦ ?_).trans
+    (Setoid.quotientKerEquivOfSurjective (cosetToOrbitRelMapFiber h x)
+      (cosetToOrbitRelMapFiber_surjective h x))
+  rw [orbitRel_apply, ← orbitOfCosetTranslate_eq_iff h x]
+  change orbitOfCosetTranslate x a = orbitOfCosetTranslate x b ↔
+    cosetToOrbitRelMapFiber h x a = cosetToOrbitRelMapFiber h x b
+  constructor
+  · intro hab
+    apply Subtype.ext
+    simpa only [cosetToOrbitRelMapFiber_apply] using hab
+  · intro hab
+    simpa only [cosetToOrbitRelMapFiber_apply] using congrArg Subtype.val hab
 
 /-- The stabilizer-orbit equivalence sends the orbit of a coset to the smaller-subgroup
 orbit of the corresponding inverse translate. -/
@@ -129,7 +120,9 @@ theorem stabilizerOrbitQuotientEquivOrbitRelMapFiber_mk {H K : Subgroup G}
     (h : H ≤ K) (x : X) (q : K ⧸ H.subgroupOf K) :
     (stabilizerOrbitQuotientEquivOrbitRelMapFiber h x (Quotient.mk'' q)).1 =
       orbitOfCosetTranslate x q :=
-  (rfl)
+  by
+    change (cosetToOrbitRelMapFiber h x q).1 = orbitOfCosetTranslate x q
+    exact cosetToOrbitRelMapFiber_apply h x q
 
 /-- The cardinality of an orbit-map fibre is the number of stabilizer-orbits on the
 subgroup coset space. Several cosets can lie in one stabilizer orbit and hence determine
