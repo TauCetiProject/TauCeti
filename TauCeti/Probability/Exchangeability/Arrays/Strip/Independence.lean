@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 public import Mathlib.Probability.Independence.Conditional
-import TauCeti.Probability.Independence.Conditional
-import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import TauCeti.Probability.Exchangeability.Arrays.Block.Independence
 import TauCeti.Data.Set.Infinite
 import Mathlib.Probability.Independence.Process.Basic
 
@@ -64,49 +63,7 @@ private theorem SeparatelyExchangeable.condIndepFun_strip_of_reindexing
       measurable_pi_apply (⟨p.1.1, ⟨p.1, p.2, rfl⟩⟩ : C)) measurable_id
   -- Fix the observed coordinates while moving the other strip into the conditioning block.
   obtain ⟨a, b, ha, hb, hfix, hinto⟩ := hreindex C hC hCU
-  let H : (ℕ × ℕ → α) → ℕ × ℕ → α := fun x p ↦ x (a p.1, b p.2)
-  have hH : Measurable H := measurable_blockReadOff a b
-  have hlaw : ρ.map H = ρ := by
-    simpa only [Measure.map_id'] using
-      hρ.map_arrayBlock_eq (fun p ↦ (measurable_pi_apply p).aemeasurable) ha hb
-  have hfixed : ∀ x, C.domRestrict (H x) = C.domRestrict x := by
-    intro x
-    funext c
-    simp only [Set.domRestrict_apply, H, hfix c.1 c.2]
-  let K : (R → α) → D → α := fun y q ↦ y ⟨(a q.1.1, b q.1.2), hinto q.1 q.2⟩
-  have hK : Measurable K := Measurable.of_eval fun _ ↦ measurable_pi_apply _
-  let W : (ℕ × ℕ → α) → D → α := K ∘ R.domRestrict
-  have hW_eq : W = fun x ↦ D.domRestrict (H x) := by
-    funext x q
-    simp only [W, K, Function.comp_apply, Set.domRestrict_apply, H]
-  have hW : Measurable W := hK.comp (Set.measurable_restrict R)
-  have hWR : MeasurableSpace.comap W inferInstance ≤
-      MeasurableSpace.comap (R.domRestrict (π := fun _ ↦ α)) inferInstance := by
-    rw [← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono hK.comap_le
-  have hRD' : MeasurableSpace.comap (R.domRestrict (π := fun _ ↦ α)) inferInstance ≤
-      MeasurableSpace.comap (D.domRestrict (π := fun _ ↦ α))
-        (inferInstance : MeasurableSpace (D → α)) := by
-    rw [← Set.domRestrict₂_comp_domRestrict hRD, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hRD).comap_le
-  have hpair : ρ.map (fun x ↦ (C.domRestrict x, W x)) =
-      ρ.map (fun x ↦ (C.domRestrict x, D.domRestrict x)) := by
-    have hcomp : (fun x ↦ (C.domRestrict x, W x)) =
-        (fun x ↦ (C.domRestrict x, D.domRestrict x)) ∘ H := by
-      funext x
-      exact Prod.ext (hfixed x).symm (congrFun hW_eq x)
-    rw [hcomp, ← Measure.map_map (by fun_prop) hH, hlaw]
-  -- Contract the unchanged joint law, then pass to the intermediate conditioning block.
-  rw [condIndepFun_iff_condIndep]
-  refine CondIndep.symm ?_
-  refine condIndep_of_indicator_condExp_eq (Set.measurable_restrict D).comap_le
-    (Set.measurable_restrict R).comap_le (Set.measurable_restrict C).comap_le ?_
-  rintro _ ⟨A, hA, rfl⟩
-  rw [sup_eq_left.mpr hRD']
-  have hcontr := condExp_indicator_eq_of_law_eq_of_comap_le C.domRestrict W D.domRestrict
-    (Set.measurable_restrict C) hW (Set.measurable_restrict D) hpair (hWR.trans hRD') hA
-  exact hcontr.trans (TauCeti.MeasureTheory.condExp_ae_eq_of_le_of_le hWR hRD'
-    (Set.measurable_restrict D).comap_le hcontr).symm
+  exact hρ.condIndepFun_domRestrict_of_reindexing C R D hRD a b ha hb hfix hinto
 
 /-- The row strips along `T` and the column strips along `S` are conditionally independent given
 the entire intersection block whenever at least one of `S` and `T` is infinite. -/
