@@ -134,12 +134,13 @@ theorem mem_incident {v : G.Vertex} {h : G.HalfEdge} :
 theorem valence_def (v : G.Vertex) : G.valence v = (G.incident v).card := by rfl
 
 /-- Every half-edge meets exactly one vertex, so the valences sum to the number of half-edges,
-which is twice the number of edges. -/
+which is twice the number of edges. Stated after unfolding `valence` (see `valence_def`), as
+the simp normal form. -/
 @[simp]
-theorem sum_valence : ∑ v, G.valence v = 2 * Fintype.card G.Edge := by
+theorem sum_valence : ∑ v, (G.incident v).card = 2 * Fintype.card G.Edge := by
   classical
-  have : ∑ v, G.valence v = Finset.univ.card (α := G.HalfEdge) := by
-    simp only [valence, incident]
+  have : ∑ v, (G.incident v).card = Finset.univ.card (α := G.HalfEdge) := by
+    simp only [incident]
     rw [← Finset.card_biUnion]
     · congr 1
       ext h
