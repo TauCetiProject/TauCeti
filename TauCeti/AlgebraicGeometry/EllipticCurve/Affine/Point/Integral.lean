@@ -41,16 +41,20 @@ def pointOfIntegralSolution (x y : ℤ) (h : W.toAffine.Equation x y) :
 def integralPoints : Set (W.baseChange ℚ).toAffine.Point :=
   {P | ∃ x y : ℤ, ∃ h : W.toAffine.Equation x y, P = W.pointOfIntegralSolution x y h}
 
+/-- A rational affine point is integral exactly when it comes from an integer solution of the
+Weierstrass equation. -/
 theorem mem_integralPoints_iff (P : (W.baseChange ℚ).toAffine.Point) :
     P ∈ W.integralPoints ↔
       ∃ x y : ℤ, ∃ h : W.toAffine.Equation x y, P = W.pointOfIntegralSolution x y h :=
   Iff.rfl
 
 /-- Every integral solution gives an integral point. -/
+@[simp]
 theorem pointOfIntegralSolution_mem (x y : ℤ) (h : W.toAffine.Equation x y) :
     W.pointOfIntegralSolution x y h ∈ W.integralPoints :=
   ⟨x, y, h, rfl⟩
 
+/-- The point at infinity, denoted by `0`, is not an affine integral point. -/
 @[simp]
 theorem zero_not_mem_integralPoints :
     (0 : (W.baseChange ℚ).toAffine.Point) ∉ W.integralPoints := by
@@ -82,16 +86,16 @@ theorem neg_mem_integralPoints_iff {P : (W.baseChange ℚ).toAffine.Point} :
     simpa only [neg_neg] using h
   · exact W.neg_mem_integralPoints
 
-/-- A bound for the ordinate of an integral point with a fixed abscissa. -/
-def integralOrdinateBound (x : ℤ) : ℕ :=
+/-- A bound for the `yCoord` of an integral point with a fixed `xCoord`. -/
+def integralYCoordBound (x : ℤ) : ℕ :=
   (|W.a₁ * x + W.a₃| +
     |x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆| + 1).toNat
 
 omit [(W.baseChange ℚ).IsElliptic] in
-/-- The quadratic Weierstrass equation bounds the ordinate by its linear and constant
-coefficients. This makes a search bounded only in the abscissa finite. -/
-theorem abs_ordinate_le_integralOrdinateBound {x y : ℤ}
-    (h : W.toAffine.Equation x y) : |y| ≤ W.integralOrdinateBound x := by
+/-- The quadratic Weierstrass equation bounds the absolute `yCoord` by its linear and constant
+coefficients. This makes a search bounded only in `xCoord` finite. -/
+theorem abs_yCoord_le_integralYCoordBound {x y : ℤ}
+    (h : W.toAffine.Equation x y) : |y| ≤ W.integralYCoordBound x := by
   let b : ℤ := W.a₁ * x + W.a₃
   let c : ℤ := x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆
   have heq : y ^ 2 + b * y = c := by
@@ -131,7 +135,7 @@ theorem abs_ordinate_le_integralOrdinateBound {x y : ℤ}
 computable finite search: the ordinate bound makes each inner interval finite. -/
 def boundedIntegralSolutions (B : ℕ) : Finset (ℤ × ℤ) :=
   ((Finset.Icc (-(B : ℤ)) B).biUnion fun x =>
-    (Finset.Icc (-(W.integralOrdinateBound x : ℤ)) (W.integralOrdinateBound x)).image
+    (Finset.Icc (-(W.integralYCoordBound x : ℤ)) (W.integralYCoordBound x)).image
       fun y => (x, y)).filter
     (fun p => p.2 ^ 2 + W.a₁ * p.1 * p.2 + W.a₃ * p.2 =
       p.1 ^ 3 + W.a₂ * p.1 ^ 2 + W.a₄ * p.1 + W.a₆)
@@ -150,9 +154,9 @@ theorem mem_boundedIntegralSolutions_iff (B : ℕ) (p : ℤ × ℤ) :
     rcases hxy with rfl
     exact ⟨(W.toAffine.equation_iff _ _).2 heq, hx.1, hx.2⟩
   · rintro ⟨heq, hx₁, hx₂⟩
-    have hy := W.abs_ordinate_le_integralOrdinateBound heq
-    have hy' : -(W.integralOrdinateBound p.1 : ℤ) ≤ p.2 ∧
-        p.2 ≤ W.integralOrdinateBound p.1 := abs_le.mp hy
+    have hy := W.abs_yCoord_le_integralYCoordBound heq
+    have hy' : -(W.integralYCoordBound p.1 : ℤ) ≤ p.2 ∧
+        p.2 ≤ W.integralYCoordBound p.1 := abs_le.mp hy
     exact ⟨⟨p.1, ⟨hx₁, hx₂⟩, p.2, hy', rfl⟩,
       (W.toAffine.equation_iff _ _).1 heq⟩
 
