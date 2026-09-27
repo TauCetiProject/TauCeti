@@ -210,15 +210,6 @@ theorem quiverEulerPairing_apply
       eulerForm Q (quiverDimensionVector k Q x) (quiverDimensionVector k Q y) := by
   simp [quiverEulerPairing]
 
-/-- On classes of finite-dimensional representations, the transported pairing is the Euler form
-of their dimension vectors. -/
-theorem quiverEulerPairing_of_of
-    (M N : ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :
-    quiverEulerPairing k Q (ExactK0.of M) (ExactK0.of N) =
-      eulerForm Q (fun i ↦ (dimVector M.1 i : ℤ))
-        (fun i ↦ (dimVector N.1 i : ℤ)) := by
-  simp [quiverEulerPairing]
-
 end FiniteQuiver
 
 end GrothendieckGroup
