@@ -66,10 +66,12 @@ coefficients.
   both directions, the class of a continuous `1`-cocycle being sent to the canonical cohomology
   class of the cocycle it defines, and a canonical cohomology class being sent back to the class
   of the continuous `1`-cocycle it carries.
-* `TauCeti.ContCohomology.cohomFpCocycleEquiv1_apply`, `TauCeti.h1CoeffEquiv_apply_mk` and
-  `TauCeti.h1CoeffEquiv_symm_apply`: the same formulas for the cocycle comparison and the
-  coefficient transport, so that both directions of the comparison are computed by `simp` without
-  unfolding.
+* `TauCeti.h1CoeffEquiv_apply_mk` and `TauCeti.h1CoeffEquiv_symm_apply`: the same formulas for the
+  coefficient transport, so that both directions of that transport are computed by `simp` without
+  unfolding. `TauCeti.ContCohomology.cohomFpCocycleEquiv1_apply` is the forward value formula of
+  the cocycle comparison; it is applied by name rather than by `simp`, because its left-hand side
+  mentions the carrier of a canonical `1`-cocycle and so is not in simp normal form (see its
+  docstring).
 
 ## References
 
@@ -302,8 +304,16 @@ theorem cohomFpCocycleEquiv1_symm_apply
   simp
 
 /-- The forward one-cocycle comparison is the homogeneous form of the cocycle, curried: at `g` and
-`h` it is the value of `c` at `g⁻¹ * h`, the action on the lifted carrier being trivial. -/
-@[simp]
+`h` it is the value of `c` at `g⁻¹ * h`, the action on the lifted carrier being trivial.
+
+Deliberately not `@[simp]`: the left-hand side is not in simp normal form. Applying a canonical
+`1`-cocycle of `TauCeti.trivialFp n G` to a point mentions the carrier
+`↑ ((TauCeti.trivialFp n G).resolutionX 1)`, which `simp` rewrites — through
+`CategoryTheory.Functor.mapHomologicalComplex_obj_X`, which is how `TopRep.homogeneousCochains`
+unfolds — to `C(G, ↑ ((TauCeti.trivialFp n G).resolutionX 0))`, so the linter `simpNF` rejects the
+attribute. The value is still computed without unfolding the comparison, by applying this theorem
+by name; the inverse direction, whose left-hand side is an inhomogeneous cocycle and so mentions no
+canonical cochain carrier, is `TauCeti.ContCohomology.cohomFpCocycleEquiv1_symm_apply`. -/
 theorem cohomFpCocycleEquiv1_apply (c : Z1 G (ULift.{u} (ZMod n))) (g h : G) :
     ((TopRep.homogeneousCochains (trivialFp n G)).iCycles 1
       (cohomFpCocycleEquiv1 n G c)).val g h = c.val (g⁻¹ * h) := by
