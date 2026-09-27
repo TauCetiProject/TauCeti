@@ -166,7 +166,6 @@ variable {P : Type uM} [AddCommGroup P] [Module R P]
   {hsqP : ∀ p (x : 𝒦 p), dP (dP x) = 0}
 
 /-- Cochain maps assembled from graded linear maps preserve composition. -/
-@[simp]
 theorem gradedCochainComplexMap_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P)
     (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
     (hg : LinearMap.IsHomogeneous g 𝒩 𝒦 0)
