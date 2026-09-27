@@ -42,8 +42,9 @@ noncomputable def traceTransferSqIsometryEquivWeightedSumSquares (d : K) :
         weightedSumSquares K ![(2 : K), 2 * d] := by
     ext v
     rw [QuadraticMap.basisRepr, QuadraticMap.comp_apply,
-      QuadraticMap.traceTransfer_apply]
-    simp only [QuadraticMap.sq_apply, LinearEquiv.coe_coe]
+      QuadraticMap.traceTransfer_sq, LinearMap.BilinMap.toQuadraticMap_apply,
+      Algebra.traceForm_apply]
+    simp only [LinearEquiv.coe_coe]
     have hb : b.equivFun = QuadraticAlgebra.linearEquivTuple d 0 := by
       simp only [b, QuadraticAlgebra.basis, Module.Basis.equivFun_ofEquivFun]
     rw [hb, QuadraticAlgebra.linearEquivTuple_symm_apply]
