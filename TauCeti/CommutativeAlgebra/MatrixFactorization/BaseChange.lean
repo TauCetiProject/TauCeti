@@ -276,20 +276,36 @@ instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
   map_add := by
     intro X Y g h
     apply CurvedDuplex.hom_ext
-    · apply ModuleCat.ExtendScalars.hom_ext
-      intro m
-      -- The tensor representative exposes the additivity of each component map.
-      change (1 : T) ⊗ₜ[S,f] (g.hom.f₀ m + h.hom.f₀ m) =
-        (1 : T) ⊗ₜ[S,f] (g.hom.f₀ m) + (1 : T) ⊗ₜ[S,f] (h.hom.f₀ m)
-      let _ : Algebra S T := f.toAlgebra
-      exact TensorProduct.tmul_add _ _ _
-    · apply ModuleCat.ExtendScalars.hom_ext
-      intro m
-      -- The odd component is additive for the same tensor-product reason.
-      change (1 : T) ⊗ₜ[S,f] (g.hom.f₁ m + h.hom.f₁ m) =
-        (1 : T) ⊗ₜ[S,f] (g.hom.f₁ m) + (1 : T) ⊗ₜ[S,f] (h.hom.f₁ m)
-      let _ : Algebra S T := f.toAlgebra
-      exact TensorProduct.tmul_add _ _ _
+    · change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+          (((baseChangeFunctor f).map (g + h)).hom.f₀) =
+        (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+          (((baseChangeFunctor f).map g).hom.f₀) +
+        (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+          (((baseChangeFunctor f).map h).hom.f₀)
+      have h₀ := congrArg
+        (fun k : (baseChangeFunctor f).obj X ⟶ (baseChangeFunctor f).obj Y =>
+          (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map k.hom.f₀)
+        ((baseChangeFunctor f).map_add (f := g) (g := h))
+      refine h₀.trans ?_
+      change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+          (((baseChangeFunctor f).map g).hom.f₀ +
+            ((baseChangeFunctor f).map h).hom.f₀) = _
+      rw [Functor.map_add]
+    · change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+          (((baseChangeFunctor f).map (g + h)).hom.f₁) =
+        (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+          (((baseChangeFunctor f).map g).hom.f₁) +
+        (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+          (((baseChangeFunctor f).map h).hom.f₁)
+      have h₁ := congrArg
+        (fun k : (baseChangeFunctor f).obj X ⟶ (baseChangeFunctor f).obj Y =>
+          (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map k.hom.f₁)
+        ((baseChangeFunctor f).map_add (f := g) (g := h))
+      refine h₁.trans ?_
+      change (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map
+          (((baseChangeFunctor f).map g).hom.f₁ +
+            ((baseChangeFunctor f).map h).hom.f₁) = _
+      rw [Functor.map_add]
 
 /-- The two-periodic complex obtained by reducing a matrix factorization along a ring map
 that kills its potential. -/

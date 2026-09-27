@@ -12,18 +12,20 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 # Scalar extension of endomorphisms of finitely generated modules
 
 Extension of scalars carries multiplication by a scalar to multiplication by its image.
+This transports the curvature equations of a matrix factorization when its components are
+extended along a ring map, so the resulting factorization has the image potential.
 -/
 
 public section
 
-universe u
+universe u v
 
 namespace TauCeti.FGModuleCat
 
 open CategoryTheory
 open scoped ChangeOfRings
 
-variable {S T : Type u} [CommRing S] [CommRing T] {w : S}
+variable {S : Type u} {T : Type v} [CommRing S] [CommRing T] {w : S}
 
 /-- Scalar extension sends multiplication by a scalar to multiplication by its image. -/
 theorem extendScalars_map_smul_id (f : S →+* T) (M : _root_.FGModuleCat.{u} S) :
