@@ -46,6 +46,7 @@ def UpperJump (u : RamificationIndexDomain) : Prop :=
     upperRamificationGroup K L v < upperRamificationGroup K L u
 
 /-- The Herbrand function takes lower breaks precisely to upper breaks. -/
+@[simp]
 theorem upperJump_herbrand_iff (u : RamificationIndexDomain) :
     UpperJump K L (herbrand K L u) ↔ LowerJump K L u := by
   constructor
@@ -59,15 +60,10 @@ theorem upperJump_herbrand_iff (u : RamificationIndexDomain) :
     simpa only [upperRamificationGroup_def, inverseHerbrand_herbrand] using
       h (inverseHerbrand K L v) h'
 
-/-- An index is an upper break exactly when its inverse Herbrand value is a lower break. -/
-theorem upperJump_iff_lowerJump_inverseHerbrand (v : RamificationIndexDomain) :
-    UpperJump K L v ↔ LowerJump K L (inverseHerbrand K L v) := by
-  simpa only [herbrand_inverseHerbrand] using
-    upperJump_herbrand_iff K L (inverseHerbrand K L v)
-
 omit [IsGalois K L] in
 /-- At an integer `i ≥ -1`, a lower break is exactly a strict decrease from `G_i` to
 `G_{i+1}`. -/
+@[simp]
 theorem lowerJump_intCast_iff {i : ℤ} (hi : (-1 : ℝ) ≤ (i : ℝ)) :
     LowerJump K L ⟨i, hi⟩ ↔
       lowerRamificationGroup K L (i + 1) < lowerRamificationGroup K L i := by
@@ -91,12 +87,5 @@ theorem lowerJump_intCast_iff {i : ℤ} (hi : (-1 : ℝ) ≤ (i : ℝ)) :
       rw [lowerRamificationGroupReal_def]
       exact lowerRamificationGroup_antitone K L hceil
     simpa only [Subtype.coe_mk, lowerRamificationGroupReal_intCast] using lt_of_le_of_lt hle h
-
-/-- The upper break at the Herbrand image of an integer is detected by the adjacent lower
-ramification groups. -/
-theorem upperJump_herbrand_intCast_iff {i : ℤ} (hi : (-1 : ℝ) ≤ (i : ℝ)) :
-    UpperJump K L (herbrand K L ⟨i, hi⟩) ↔
-      lowerRamificationGroup K L (i + 1) < lowerRamificationGroup K L i := by
-  rw [upperJump_herbrand_iff, lowerJump_intCast_iff K L hi]
 
 end TauCeti.LocalFieldsRamification
