@@ -36,7 +36,7 @@ variable {ι : Type*} [Fintype ι]
 
 /-- The ternary `A₂` coordinate alphabet is the discriminant quadratic module of the
 orthogonal power of the `A₂` root lattice. -/
-noncomputable def typeA2RootPowerDiscriminantIsometry :
+noncomputable def typeA2CoordinatePowerDiscriminantQuadraticIsometry :
     FiniteQuadraticModule.Isometry
       ((typeAStandardQuadraticModule 2).coordinatePower ι)
       (((typeARootLattice 2).coordinatePower ι).discriminantQuadraticModule
@@ -45,41 +45,55 @@ noncomputable def typeA2RootPowerDiscriminantIsometry :
 
 /-- Transport a ternary additive code into the discriminant group of the orthogonal power
 of `A₂`. -/
-noncomputable def codeInTypeA2RootPowerDiscriminant (C : AdditiveCode (ZMod 3) ι) :
+noncomputable def codeInTypeA2CoordinatePowerDiscriminant (C : AdditiveCode (ZMod 3) ι) :
     AddSubgroup ((typeARootLattice 2).coordinatePower ι).DiscriminantGroup :=
-  C.map (typeA2RootPowerDiscriminantIsometry (ι := ι)).toAddEquiv.toAddMonoidHom
+  C.map (typeA2CoordinatePowerDiscriminantQuadraticIsometry (ι := ι)).toAddEquiv.toAddMonoidHom
 
-/-- Membership in the transported code is detected by the inverse root-power isometry. -/
+/-- Membership in the transported code is detected by the inverse coordinate-power isometry. -/
 @[simp]
-theorem mem_codeInTypeA2RootPowerDiscriminant_iff
+theorem mem_codeInTypeA2CoordinatePowerDiscriminant_iff
     (C : AdditiveCode (ZMod 3) ι)
     (x : ((typeARootLattice 2).coordinatePower ι).DiscriminantGroup) :
-    x ∈ codeInTypeA2RootPowerDiscriminant C ↔
-      (typeA2RootPowerDiscriminantIsometry (ι := ι)).toAddEquiv.symm x ∈ C :=
+    x ∈ codeInTypeA2CoordinatePowerDiscriminant C ↔
+      (typeA2CoordinatePowerDiscriminantQuadraticIsometry (ι := ι)).toAddEquiv.symm x ∈ C :=
   AddSubgroup.mem_map_equiv
-    (f := (typeA2RootPowerDiscriminantIsometry (ι := ι)).toAddEquiv)
+    (f := (typeA2CoordinatePowerDiscriminantQuadraticIsometry (ι := ι)).toAddEquiv)
 
-/-- A ternary code is a quadratic Lagrangian in the actual root-power discriminant group
+/-- Transport to the `A₂` coordinate-power discriminant group preserves and reflects
+quadratic isotropy. -/
+@[simp]
+theorem isIsotropic_codeInTypeA2CoordinatePowerDiscriminant_iff
+    (C : AdditiveCode (ZMod 3) ι) :
+    (((typeARootLattice 2).coordinatePower ι).discriminantQuadraticModule
+      ((isEven_typeARootLattice 2).coordinatePower ι)).IsIsotropic
+        (codeInTypeA2CoordinatePowerDiscriminant C) ↔
+      ((typeAStandardQuadraticModule 2).coordinatePower ι).IsIsotropic C := by
+  rw [codeInTypeA2CoordinatePowerDiscriminant]
+  exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff _
+    (typeA2CoordinatePowerDiscriminantQuadraticIsometry (ι := ι)) C
+
+/-- A ternary code is a quadratic Lagrangian in the actual coordinate-power discriminant group
 exactly when it is one in the ternary coordinate alphabet. -/
-theorem isLagrangian_codeInTypeA2RootPowerDiscriminant_iff
+@[simp]
+theorem isLagrangian_codeInTypeA2CoordinatePowerDiscriminant_iff
     (C : AdditiveCode (ZMod 3) ι) :
     (((typeARootLattice 2).coordinatePower ι).discriminantQuadraticModule
       ((isEven_typeARootLattice 2).coordinatePower ι)).IsLagrangian
-        (codeInTypeA2RootPowerDiscriminant C) ↔
+        (codeInTypeA2CoordinatePowerDiscriminant C) ↔
       ((typeAStandardQuadraticModule 2).coordinatePower ι).IsLagrangian C := by
-  rw [codeInTypeA2RootPowerDiscriminant]
+  rw [codeInTypeA2CoordinatePowerDiscriminant]
   exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff _
-    (typeA2RootPowerDiscriminantIsometry (ι := ι)) C
+    (typeA2CoordinatePowerDiscriminantQuadraticIsometry (ι := ι)) C
 
 namespace Tetracode
 
 /-- The tetracode gives a quadratic Lagrangian in the discriminant group of four
 orthogonal copies of the `A₂` root lattice. -/
-theorem isLagrangian_rootPowerDiscriminant :
+theorem isLagrangian_coordinatePowerDiscriminant :
     (((typeARootLattice 2).coordinatePower (Fin 4)).discriminantQuadraticModule
       ((isEven_typeARootLattice 2).coordinatePower (Fin 4))).IsLagrangian
-        (codeInTypeA2RootPowerDiscriminant tetracode.toAddSubgroup) := by
-  rw [isLagrangian_codeInTypeA2RootPowerDiscriminant_iff]
+        (codeInTypeA2CoordinatePowerDiscriminant tetracode.toAddSubgroup) := by
+  rw [isLagrangian_codeInTypeA2CoordinatePowerDiscriminant_iff]
   exact isLagrangian_typeA2
 
 end Tetracode
@@ -88,11 +102,11 @@ namespace TernaryGolay
 
 /-- The extended ternary Golay code gives a quadratic Lagrangian in the discriminant
 group of twelve orthogonal copies of the `A₂` root lattice. -/
-theorem isLagrangian_rootPowerDiscriminant :
+theorem isLagrangian_coordinatePowerDiscriminant :
     (((typeARootLattice 2).coordinatePower (Fin 12)).discriminantQuadraticModule
       ((isEven_typeARootLattice 2).coordinatePower (Fin 12))).IsLagrangian
-        (codeInTypeA2RootPowerDiscriminant code.toAddSubgroup) := by
-  rw [isLagrangian_codeInTypeA2RootPowerDiscriminant_iff]
+        (codeInTypeA2CoordinatePowerDiscriminant code.toAddSubgroup) := by
+  rw [isLagrangian_codeInTypeA2CoordinatePowerDiscriminant_iff]
   exact isLagrangian_typeA2
 
 end TernaryGolay
@@ -101,7 +115,8 @@ variable {F : Type*} [Field F] [Finite F]
 
 /-- The quaternary `D₄` coordinate alphabet is the discriminant quadratic module of the
 orthogonal power of the `D₄` root lattice. The root fixes the assignment of spinor classes. -/
-noncomputable def typeD4RootPowerDiscriminantIsometry (hF : Nat.card F = 4) {ω : F}
+noncomputable def typeD4CoordinatePowerDiscriminantQuadraticIsometry
+    (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) :
     FiniteQuadraticModule.Isometry
       ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι)
@@ -111,45 +126,62 @@ noncomputable def typeD4RootPowerDiscriminantIsometry (hF : Nat.card F = 4) {ω 
 
 /-- Transport a quaternary additive code into the discriminant group of an orthogonal
 power of the `D₄` root lattice. -/
-noncomputable def codeInTypeD4RootPowerDiscriminant (hF : Nat.card F = 4) {ω : F}
+noncomputable def codeInTypeD4CoordinatePowerDiscriminant (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) (C : AdditiveCode F ι) :
     AddSubgroup ((checkerboardLattice 4).coordinatePower ι).DiscriminantGroup :=
-  C.map (typeD4RootPowerDiscriminantIsometry (ι := ι) hF hω).toAddEquiv.toAddMonoidHom
+  C.map
+    (typeD4CoordinatePowerDiscriminantQuadraticIsometry (ι := ι) hF hω).toAddEquiv.toAddMonoidHom
 
 /-- Membership in the transported quaternary code is detected by the inverse
-root-power isometry. -/
+coordinate-power isometry. -/
 @[simp]
-theorem mem_codeInTypeD4RootPowerDiscriminant_iff (hF : Nat.card F = 4) {ω : F}
+theorem mem_codeInTypeD4CoordinatePowerDiscriminant_iff (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) (C : AdditiveCode F ι)
     (x : ((checkerboardLattice 4).coordinatePower ι).DiscriminantGroup) :
-    x ∈ codeInTypeD4RootPowerDiscriminant hF hω C ↔
-      (typeD4RootPowerDiscriminantIsometry (ι := ι) hF hω).toAddEquiv.symm x ∈ C :=
+    x ∈ codeInTypeD4CoordinatePowerDiscriminant hF hω C ↔
+      (typeD4CoordinatePowerDiscriminantQuadraticIsometry (ι := ι) hF hω).toAddEquiv.symm x ∈ C :=
   AddSubgroup.mem_map_equiv
-    (f := (typeD4RootPowerDiscriminantIsometry (ι := ι) hF hω).toAddEquiv)
+    (f := (typeD4CoordinatePowerDiscriminantQuadraticIsometry (ι := ι) hF hω).toAddEquiv)
 
-/-- A quaternary code is a quadratic Lagrangian in the actual `D₄` root-power discriminant
+/-- Transport to the `D₄` coordinate-power discriminant group preserves and reflects
+quadratic isotropy. -/
+@[simp]
+theorem isIsotropic_codeInTypeD4CoordinatePowerDiscriminant_iff
+    (hF : Nat.card F = 4) {ω : F}
+    (hω : ω ^ 2 + ω + 1 = 0) (C : AdditiveCode F ι) :
+    (((checkerboardLattice 4).coordinatePower ι).discriminantQuadraticModule
+      ((isEven_checkerboardLattice 4).coordinatePower ι)).IsIsotropic
+        (codeInTypeD4CoordinatePowerDiscriminant hF hω C) ↔
+      ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsIsotropic C := by
+  rw [codeInTypeD4CoordinatePowerDiscriminant]
+  exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff _
+    (typeD4CoordinatePowerDiscriminantQuadraticIsometry (ι := ι) hF hω) C
+
+/-- A quaternary code is a quadratic Lagrangian in the actual `D₄` coordinate-power discriminant
 group exactly when it is one in the quaternary coordinate alphabet. -/
-theorem isLagrangian_codeInTypeD4RootPowerDiscriminant_iff (hF : Nat.card F = 4) {ω : F}
+@[simp]
+theorem isLagrangian_codeInTypeD4CoordinatePowerDiscriminant_iff
+    (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) (C : AdditiveCode F ι) :
     (((checkerboardLattice 4).coordinatePower ι).discriminantQuadraticModule
       ((isEven_checkerboardLattice 4).coordinatePower ι)).IsLagrangian
-        (codeInTypeD4RootPowerDiscriminant hF hω C) ↔
+        (codeInTypeD4CoordinatePowerDiscriminant hF hω C) ↔
       ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsLagrangian C := by
-  rw [codeInTypeD4RootPowerDiscriminant]
+  rw [codeInTypeD4CoordinatePowerDiscriminant]
   exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff _
-    (typeD4RootPowerDiscriminantIsometry (ι := ι) hF hω) C
+    (typeD4CoordinatePowerDiscriminantQuadraticIsometry (ι := ι) hF hω) C
 
 namespace Hexacode
 
 /-- The hexacode gives a quadratic Lagrangian in the discriminant group of six
 orthogonal copies of the `D₄` root lattice. The root used for the coordinate isometry
 may differ from the root used to define the code. -/
-theorem isLagrangian_rootPowerDiscriminant (hF : Nat.card F = 4) {ω ω' : F}
+theorem isLagrangian_coordinatePowerDiscriminant (hF : Nat.card F = 4) {ω ω' : F}
     (hω : ω ^ 2 + ω + 1 = 0) (hω' : ω' ^ 2 + ω' + 1 = 0) :
     (((checkerboardLattice 4).coordinatePower (Fin 6)).discriminantQuadraticModule
       ((isEven_checkerboardLattice 4).coordinatePower (Fin 6))).IsLagrangian
-        (codeInTypeD4RootPowerDiscriminant hF hω' (code ω).toAddSubgroup) := by
-  rw [isLagrangian_codeInTypeD4RootPowerDiscriminant_iff]
+        (codeInTypeD4CoordinatePowerDiscriminant hF hω' (code ω).toAddSubgroup) := by
+  rw [isLagrangian_codeInTypeD4CoordinatePowerDiscriminant_iff]
   exact isLagrangian_typeD4 hF hω
 
 end Hexacode
