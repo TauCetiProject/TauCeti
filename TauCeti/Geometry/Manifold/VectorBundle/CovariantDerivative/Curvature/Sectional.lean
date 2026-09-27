@@ -73,6 +73,7 @@ def sectionalCurvature (_hcov : CovariantDerivative.IsMetricCompatible
   inner ℝ (curvature x u v v) u / (Matrix.gram ℝ ![u, v]).det
 
 /-- The defining quotient for sectional curvature. -/
+@[simp]
 theorem sectionalCurvature_apply (hcov : CovariantDerivative.IsMetricCompatible
     (V := fun x : M ↦ TangentSpace I x) cov) (x : M)
     (u v : TangentSpace I x) :
