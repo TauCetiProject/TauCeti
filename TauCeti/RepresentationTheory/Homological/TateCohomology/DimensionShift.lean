@@ -104,6 +104,7 @@ theorem dimensionShiftDownIso_hom :
 
 variable {A} in
 /-- Upward dimension shifting commutes with a morphism of coefficient representations. -/
+@[reassoc]
 theorem dimensionShiftUpIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
     (tateCohomologyFunctor n).map (dimensionShiftUpMap f) ≫
         (dimensionShiftUpIso B n).hom =
@@ -117,6 +118,7 @@ theorem dimensionShiftUpIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
 
 variable {A} in
 /-- The inverse upward shift commutes with a coefficient morphism. -/
+@[reassoc]
 theorem dimensionShiftUpIso_inv_naturality {B : Rep k G} (f : A ⟶ B) :
     (tateCohomologyFunctor (n + 1)).map f ≫ (dimensionShiftUpIso B n).inv =
       (dimensionShiftUpIso A n).inv ≫
@@ -126,6 +128,7 @@ theorem dimensionShiftUpIso_inv_naturality {B : Rep k G} (f : A ⟶ B) :
 
 variable {A} in
 /-- Downward dimension shifting commutes with a morphism of coefficient representations. -/
+@[reassoc]
 theorem dimensionShiftDownIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
     (tateCohomologyFunctor n).map f ≫ (dimensionShiftDownIso B n).hom =
       (dimensionShiftDownIso A n).hom ≫
@@ -139,6 +142,7 @@ theorem dimensionShiftDownIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
 
 variable {A} in
 /-- The inverse downward shift commutes with a coefficient morphism. -/
+@[reassoc]
 theorem dimensionShiftDownIso_inv_naturality {B : Rep k G} (f : A ⟶ B) :
     (tateCohomologyFunctor (n + 1)).map (dimensionShiftDownMap f) ≫
         (dimensionShiftDownIso B n).inv =
@@ -214,6 +218,7 @@ theorem tensorDimensionShiftDownIso_hom (i j : ℤ) (hij : i + 1 = j) :
 
 variable {A} in
 /-- The tensored upward dimension shift is natural in its shifting representation. -/
+@[reassoc]
 theorem tensorDimensionShiftUpIso_hom_naturality_right {B : Rep k G} (f : A ⟶ B)
     (i j : ℤ) (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map (M ◁ dimensionShiftUpMap f) ≫
@@ -240,6 +245,7 @@ theorem tensorDimensionShiftUpIso_hom_naturality_right {B : Rep k G} (f : A ⟶ 
 
 variable {A} in
 /-- The inverse tensored upward shift is natural in its shifting representation. -/
+@[reassoc]
 theorem tensorDimensionShiftUpIso_inv_naturality_right {B : Rep k G} (f : A ⟶ B)
     (i j : ℤ) (hij : i + 1 = j) :
     (tateCohomologyFunctor j).map (M ◁ f) ≫
@@ -251,6 +257,7 @@ theorem tensorDimensionShiftUpIso_inv_naturality_right {B : Rep k G} (f : A ⟶ 
 
 variable {A} in
 /-- The tensored downward dimension shift is natural in its shifting representation. -/
+@[reassoc]
 theorem tensorDimensionShiftDownIso_hom_naturality_right {B : Rep k G} (f : A ⟶ B)
     (i j : ℤ) (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map (M ◁ f) ≫
@@ -277,6 +284,7 @@ theorem tensorDimensionShiftDownIso_hom_naturality_right {B : Rep k G} (f : A �
 
 variable {A} in
 /-- The inverse tensored downward shift is natural in its shifting representation. -/
+@[reassoc]
 theorem tensorDimensionShiftDownIso_inv_naturality_right {B : Rep k G} (f : A ⟶ B)
     (i j : ℤ) (hij : i + 1 = j) :
     (tateCohomologyFunctor j).map (M ◁ dimensionShiftDownMap f) ≫
@@ -288,6 +296,7 @@ theorem tensorDimensionShiftDownIso_inv_naturality_right {B : Rep k G} (f : A �
 
 variable {M} in
 /-- The tensored upward dimension shift is natural in the tensoring representation. -/
+@[reassoc]
 theorem tensorDimensionShiftUpIso_hom_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map (f ▷ dimensionShiftUp A) ≫
@@ -302,6 +311,7 @@ theorem tensorDimensionShiftUpIso_hom_naturality_left {M' : Rep k G} (f : M ⟶ 
 
 variable {M} in
 /-- The inverse tensored upward shift is natural in the tensoring representation. -/
+@[reassoc]
 theorem tensorDimensionShiftUpIso_inv_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor j).map (f ▷ A) ≫
@@ -313,6 +323,7 @@ theorem tensorDimensionShiftUpIso_inv_naturality_left {M' : Rep k G} (f : M ⟶ 
 
 variable {M} in
 /-- The tensored downward dimension shift is natural in the tensoring representation. -/
+@[reassoc]
 theorem tensorDimensionShiftDownIso_hom_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map (f ▷ A) ≫ (tensorDimensionShiftDownIso A M' i j hij).hom =
@@ -328,6 +339,7 @@ theorem tensorDimensionShiftDownIso_hom_naturality_left {M' : Rep k G} (f : M �
 variable {M} in
 /-- The inverse of the tensored downward dimension shift is natural in the tensoring
 representation. -/
+@[reassoc]
 theorem tensorDimensionShiftDownIso_inv_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor j).map (f ▷ dimensionShiftDown A) ≫

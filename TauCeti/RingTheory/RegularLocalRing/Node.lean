@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
 public import TauCeti.RingTheory.LocalRing.Polynomial
-public import TauCeti.RingTheory.Node
+public import TauCeti.RingTheory.Node.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!

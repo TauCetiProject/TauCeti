@@ -64,6 +64,10 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
   commutators `⁅H, G⁆`.
 * `TauCeti.normal_of_pLowerCentralStep_le_of_le`: a subgroup between `pLowerCentralStep p R` and
   `R` is normal.
+* `TauCeti.instIsMulCommutativeQuotientPLowerCentralStep`,
+  `TauCeti.exponent_quotient_pLowerCentralStep_subgroupOf_dvd`,
+  `TauCeti.isPGroup_quotient_pLowerCentralStep_subgroupOf`: `N ⧸ Nᵖ[N, G]` is commutative and
+  killed by `p`.
 * `TauCeti.mk_conjNormal_eq`: conjugation by `G` acts trivially on `N ⧸ Nᵖ[N, G]`.
 * `TauCeti.pLowerCentralStep_subgroupOf_le_ker_iff`: a homomorphism on a closed normal subgroup
   `R` with closed kernel kills `pLowerCentralStep p R` exactly when it kills `p`-th powers and is
@@ -283,14 +287,30 @@ theorem isClosed_pLowerCentralStep_subgroupOf (N : Subgroup G) :
     IsClosed ((pLowerCentralStep p N).subgroupOf N : Set N) :=
   (isClosed_pLowerCentralStep N).preimage continuous_subtype_val
 
-/-- `N ⧸ Nᵖ[N, G]` is an abstract `p`-group: the `p`-th power of every element is `1`, since the
-`p`-th powers of the elements of `N` lie in `pLowerCentralStep p N`. -/
+/-- `N ⧸ Nᵖ[N, G]` is commutative: the commutators `⁅N, G⁆` lie in `pLowerCentralStep p N`. -/
+instance instIsMulCommutativeQuotientPLowerCentralStep (N : Subgroup G) [N.Normal] :
+    IsMulCommutative (N ⧸ (pLowerCentralStep p N).subgroupOf N) where
+  is_comm.comm a b := by
+    obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective a
+    obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective b
+    refine (QuotientGroup.commute_mk_iff.mpr (mem_subgroupOf.mpr ?_)).eq
+    rw [← coe_subtype, map_commutatorElement]
+    exact commutator_mem_pLowerCentralStep x.2 y
+
+/-- `N ⧸ Nᵖ[N, G]` has exponent dividing `p`: the `p`-th powers of the elements of `N` lie in
+`pLowerCentralStep p N`. -/
+theorem exponent_quotient_pLowerCentralStep_subgroupOf_dvd (N : Subgroup G) [N.Normal] :
+    Monoid.exponent (N ⧸ (pLowerCentralStep p N).subgroupOf N) ∣ p :=
+  Monoid.exponent_dvd_iff_forall_pow_eq_one.mpr fun q ↦ by
+    obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective q
+    rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, mem_subgroupOf, coe_pow]
+    exact pow_mem_pLowerCentralStep n.2
+
+/-- `N ⧸ Nᵖ[N, G]` is an abstract `p`-group, since its exponent divides `p`. -/
 theorem isPGroup_quotient_pLowerCentralStep_subgroupOf (N : Subgroup G) [N.Normal] :
-    IsPGroup p (N ⧸ (pLowerCentralStep p N).subgroupOf N) := fun q ↦ by
-  obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective q
-  refine ⟨1, ?_⟩
-  rw [pow_one, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, mem_subgroupOf, coe_pow]
-  exact pow_mem_pLowerCentralStep n.2
+    IsPGroup p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
+  IsPGroup.of_exponent_dvd_pow (n := 1)
+    (by rw [pow_one]; exact exponent_quotient_pLowerCentralStep_subgroupOf_dvd N)
 
 /-- **Conjugation acts trivially on `N ⧸ Nᵖ[N, G]`.** For a normal subgroup `N`, the class of the
 conjugate `g n g⁻¹` in the quotient of `N` by `pLowerCentralStep p N` is the class of `n`. -/

@@ -47,6 +47,12 @@ correspondence is the one describing `A∞` morphisms through their components `
   by its Taylor components.
 * `TauCeti.ReducedTensorWords.coalgHom_comp_letter`: the letterwise map of a linear map is the
   coalgebra morphism whose only nonzero Taylor component is that map in arity one.
+* `TauCeti.ReducedTensorWords.IsCoalgHom.mem_filtration`: a coalgebra morphism does not increase
+  tensor length.
+* `TauCeti.ReducedTensorWords.IsCoalgHom.bijective_of_letter_comp_comp_ofLetter_bijective`: a
+  coalgebra morphism with bijective arity-one component is bijective, and
+  `TauCeti.ReducedTensorWords.IsCoalgHom.linearEquiv_symm`: the inverse of a bijective coalgebra
+  morphism is a coalgebra morphism.
 
 ## References
 
@@ -257,9 +263,7 @@ theorem IsCoalgHom.eq_of_letter_comp_eq
             rw [ih _ u.2, ih _ v.2]
         | add u v hu hv => simp only [map_add, hu, hv]
   refine LinearMap.ext fun z ↦ ?_
-  have hz : z ∈ ⨆ n : ℕ, filtration R M n := by rw [iSup_filtration_eq_top]; trivial
-  obtain ⟨n, hn⟩ :=
-    (Submodule.mem_iSup_of_directed _ (filtration_monotone R M).directed_le).1 hz
+  obtain ⟨n, hn⟩ := exists_mem_filtration R M z
   exact key n z hn
 
 /-- A coalgebra morphism is the Taylor expansion of its own Taylor components. -/
@@ -318,6 +322,259 @@ theorem coalgHom_comp_letter (g : M →ₗ[R] N) :
   rw [(isCoalgHom_map g).eq_coalgHom, letter_comp_map]
 
 end CoalgHom
+
+/-! ### The length filtration and bijectivity
+
+A coalgebra morphism of reduced tensor coalgebras never increases tensor length, and it is
+bijective as soon as its arity-one Taylor component is.  The proof reduces, by correcting with the
+letterwise inverse of that component, to a coalgebra endomorphism fixing every single letter; such
+an endomorphism differs from the identity by a map lowering the length filtration, hence is
+bijective by induction along the filtration. -/
+
+section Filtration
+
+variable {R : Type uR} {M : Type uM} {N : Type uN} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- The Taylor expansion of `f` does not increase tensor length: it sends a block of `b` letters
+into the words of length at most `b`. -/
+theorem coalgHom_subword_mem_filtration (f : ReducedTensorWords R M →ₗ[R] N) {n : ℕ}
+    (x : Fin n → M) (a b : ℕ) : coalgHom R f (subword R x a b) ∈ filtration R N b := by
+  induction b using Nat.strong_induction_on generalizing a with
+  | _ b ih =>
+    rcases Nat.eq_zero_or_pos b with rfl | hb
+    · rw [subword_length_zero, map_zero]
+      exact Submodule.zero_mem _
+    rw [coalgHom_subword]
+    refine Submodule.add_mem _ (filtration_monotone R N hb (ofLetter_mem_filtration R N _))
+      (Submodule.sum_mem _ fun d hd ↦ ?_)
+    rw [Finset.mem_range] at hd
+    rcases Nat.eq_zero_or_pos d with rfl | hd0
+    · simp only [subword_length_zero, map_zero, LinearMap.zero_apply]
+      exact Submodule.zero_mem _
+    · exact filtration_monotone R N (by omega)
+        (prepend_mem_filtration R N _ (ih (b - d) (by omega) (a + d)))
+
+/-- The Taylor expansion of `f` preserves the conilpotence filtration. -/
+theorem coalgHom_mem_filtration (f : ReducedTensorWords R M →ₗ[R] N) {n : ℕ}
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) :
+    coalgHom R f z ∈ filtration R N n := by
+  have h : filtration R M n ≤ (filtration R N n).comap (coalgHom R f) := by
+    rw [filtration_le_iff]
+    rintro k hk _ ⟨x, rfl⟩
+    simp only [Submodule.mem_comap]
+    induction x using PiTensorProduct.induction_on with
+    | smul_tprod r y =>
+        rw [map_smul, map_smul, of_tprod_eq_subword R k.2]
+        exact Submodule.smul_mem _ _
+          (filtration_monotone R N hk (coalgHom_subword_mem_filtration f y 0 k.1))
+    | add u v hu hv =>
+        rw [map_add, map_add]
+        exact Submodule.add_mem _ hu hv
+  exact h hz
+
+/-- A coalgebra morphism preserves the conilpotence filtration. -/
+theorem IsCoalgHom.mem_filtration {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
+    (hF : IsCoalgHom R F) {n : ℕ} {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) :
+    F z ∈ filtration R N n := by
+  rw [hF.eq_coalgHom]
+  exact coalgHom_mem_filtration _ hz
+
+/-- A coalgebra morphism sends a single letter to the single letter given by its arity-one Taylor
+component. -/
+theorem IsCoalgHom.apply_ofLetter {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
+    (hF : IsCoalgHom R F) (a : M) :
+    F (ofLetter R M a) = ofLetter R N (letter R N (F (ofLetter R M a))) := by
+  nth_rw 1 [hF.eq_coalgHom]
+  rw [coalgHom_ofLetter, LinearMap.comp_apply]
+
+/-- The inverse of a linear equivalence of reduced tensor coalgebras which is a coalgebra morphism
+is again a coalgebra morphism. -/
+theorem IsCoalgHom.linearEquiv_symm {e : ReducedTensorWords R M ≃ₗ[R] ReducedTensorWords R N}
+    (he : IsCoalgHom R e.toLinearMap) : IsCoalgHom R e.symm.toLinearMap := by
+  rw [isCoalgHom_iff]
+  refine LinearMap.ext fun w ↦ ?_
+  have h := he.deconcatenation_apply (e.symm w)
+  rw [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at h
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, h,
+    ← LinearMap.comp_apply (TensorProduct.map _ _),
+    ← TensorProduct.map_comp, LinearEquiv.symm_comp, TensorProduct.map_id, LinearMap.id_apply]
+
+/-- The arity-one Taylor component of a linear equivalence of reduced tensor coalgebras which is a
+coalgebra morphism is bijective, with inverse the arity-one component of the inverse. -/
+theorem IsCoalgHom.letter_comp_comp_ofLetter_bijective
+    {e : ReducedTensorWords R M ≃ₗ[R] ReducedTensorWords R N} (he : IsCoalgHom R e.toLinearMap) :
+    Function.Bijective (letter R N ∘ₗ e.toLinearMap ∘ₗ ofLetter R M) := by
+  refine Function.bijective_iff_has_inverse.2
+    ⟨letter R M ∘ₗ e.symm.toLinearMap ∘ₗ ofLetter R N, fun a ↦ ?_, fun b ↦ ?_⟩
+  · simp only [LinearMap.comp_apply]
+    rw [← he.apply_ofLetter, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      LinearEquiv.symm_apply_apply, letter_ofLetter]
+  · simp only [LinearMap.comp_apply]
+    rw [← he.linearEquiv_symm.apply_ofLetter, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      LinearEquiv.apply_symm_apply, letter_ofLetter]
+
+/-- Correcting a coalgebra morphism with bijective arity-one component by the letterwise inverse
+of that component yields a coalgebra endomorphism fixing every single letter. -/
+theorem IsCoalgHom.map_symm_comp_comp_ofLetter
+    {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} (hF : IsCoalgHom R F)
+    (hf : Function.Bijective (letter R N ∘ₗ F ∘ₗ ofLetter R M)) :
+    (ReducedTensorWords.map (R := R) (LinearEquiv.ofBijective _ hf).symm.toLinearMap ∘ₗ F) ∘ₗ
+        ofLetter R M = ofLetter R M := by
+  refine LinearMap.ext fun a ↦ ?_
+  simp only [LinearMap.comp_apply]
+  rw [hF.apply_ofLetter, map_ofLetter, LinearEquiv.coe_coe]
+  exact congrArg (ofLetter R M) ((LinearEquiv.ofBijective _ hf).symm_apply_apply a)
+
+end Filtration
+
+section Unipotent
+
+variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- A coalgebra endomorphism of the reduced tensor coalgebra fixing every single letter moves a
+block of `b` letters by a word of length at most `b - 1`. -/
+theorem IsCoalgHom.sub_subword_mem_filtration
+    {G : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} (hG : IsCoalgHom R G)
+    (h₁ : G ∘ₗ ofLetter R M = ofLetter R M) {l : ℕ} (x : Fin l → M) (a b : ℕ) :
+    G (subword R x a b) - subword R x a b ∈ filtration R M (b - 1) := by
+  -- Expand `G` as the Taylor expansion of its components: the summand cutting off the first
+  -- letter reproduces the block up to a shorter correction, handled by induction on the length,
+  -- and every other summand is shorter than the block.
+  have hf₁ : ∀ y : M, (letter R M ∘ₗ G) (ofLetter R M y) = y := fun y ↦ by
+    rw [LinearMap.comp_apply, ← LinearMap.comp_apply G, h₁, letter_ofLetter]
+  induction b using Nat.strong_induction_on generalizing a with
+  | _ b ih =>
+    rcases Nat.eq_zero_or_pos b with rfl | hb
+    · rw [subword_length_zero, map_zero, sub_self]
+      exact Submodule.zero_mem _
+    by_cases hab : a + b ≤ l
+    swap
+    · rw [subword_eq_zero_of_lt_add R x (by omega), map_zero, sub_self]
+      exact Submodule.zero_mem _
+    have ha : a < l := by omega
+    obtain rfl | hb2 : b = 1 ∨ 2 ≤ b := by omega
+    · rw [subword_one R M x ha, ← LinearMap.comp_apply, h₁, sub_self]
+      exact Submodule.zero_mem _
+    -- The summand collapsing the whole block to a letter.
+    have hL : ofLetter R M ((letter R M ∘ₗ G) (subword R x a b)) ∈ filtration R M (b - 1) :=
+      filtration_monotone R M (by omega) (ofLetter_mem_filtration R M _)
+    -- The correction in the summand cutting off the first letter, by induction.
+    have hP : prepend R M (x ⟨a, ha⟩)
+        (G (subword R x (a + 1) (b - 1)) - subword R x (a + 1) (b - 1)) ∈
+          filtration R M (b - 1) := by
+      have h := prepend_mem_filtration R M (x ⟨a, ha⟩) (ih (b - 1) (by omega) (a + 1))
+      rwa [Nat.sub_add_cancel (by omega)] at h
+    -- The summands cutting off at least two letters are shorter than the block.
+    have hS : ∑ d ∈ (Finset.range b).erase 1,
+        prepend R M ((letter R M ∘ₗ G) (subword R x a d)) (G (subword R x (a + d) (b - d))) ∈
+          filtration R M (b - 1) := by
+      refine Submodule.sum_mem _ fun d hd ↦ ?_
+      rw [Finset.mem_erase, Finset.mem_range] at hd
+      rcases Nat.eq_zero_or_pos d with rfl | hd0
+      · simp only [subword_length_zero, map_zero, LinearMap.zero_apply]
+        exact Submodule.zero_mem _
+      · exact filtration_monotone R M (by omega) (prepend_mem_filtration R M _
+          (hG.mem_filtration (subword_mem_filtration R M x (a + d) le_rfl)))
+    have hsplit : G (subword R x (a + 1) (b - 1)) = subword R x (a + 1) (b - 1) +
+        (G (subword R x (a + 1) (b - 1)) - subword R x (a + 1) (b - 1)) :=
+      (add_sub_cancel _ _).symm
+    nth_rw 1 [hG.eq_coalgHom]
+    rw [coalgHom_subword, ← hG.eq_coalgHom,
+      ← Finset.add_sum_erase (Finset.range b) _ (Finset.mem_range.2 (by omega : 1 < b)),
+      subword_one R M x ha, hf₁, hsplit, map_add, prepend_subword x ha (by omega),
+      Nat.sub_add_cancel (by omega : 1 ≤ b)]
+    have hcalc : ∀ L P S w : ReducedTensorWords R M, L + (w + P + S) - w = L + P + S := by
+      intros
+      abel
+    rw [hcalc]
+    exact Submodule.add_mem _ (Submodule.add_mem _ hL hP) hS
+
+/-- A coalgebra endomorphism of the reduced tensor coalgebra fixing every single letter moves a
+word of length at most `n + 1` by a word of length at most `n`: it is the identity plus a map
+lowering the length filtration. -/
+theorem IsCoalgHom.sub_mem_filtration {G : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
+    (hG : IsCoalgHom R G) (h₁ : G ∘ₗ ofLetter R M = ofLetter R M) {n : ℕ}
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M (n + 1)) :
+    G z - z ∈ filtration R M n := by
+  have h : filtration R M (n + 1) ≤ (filtration R M n).comap (G - LinearMap.id) := by
+    rw [filtration_le_iff]
+    rintro k hk _ ⟨x, rfl⟩
+    simp only [Submodule.mem_comap]
+    induction x using PiTensorProduct.induction_on with
+    | smul_tprod r y =>
+        rw [map_smul, map_smul, LinearMap.sub_apply, LinearMap.id_apply, of_tprod_eq_subword R k.2]
+        exact Submodule.smul_mem _ _
+          (filtration_monotone R M (by omega) (hG.sub_subword_mem_filtration h₁ y 0 k.1))
+    | add u v hu hv =>
+        rw [map_add, map_add]
+        exact Submodule.add_mem _ hu hv
+  simpa only [Submodule.mem_comap, LinearMap.sub_apply, LinearMap.id_apply] using h hz
+
+/-- A coalgebra endomorphism of the reduced tensor coalgebra fixing every single letter is
+bijective. -/
+theorem IsCoalgHom.bijective_of_comp_ofLetter_eq
+    {G : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} (hG : IsCoalgHom R G)
+    (h₁ : G ∘ₗ ofLetter R M = ofLetter R M) : Function.Bijective G := by
+  constructor
+  · refine (injective_iff_map_eq_zero G).2 fun z hz ↦ ?_
+    obtain ⟨n, hn⟩ := exists_mem_filtration R M z
+    induction n generalizing z with
+    | zero =>
+        rw [filtration_zero] at hn
+        exact (Submodule.mem_bot R).1 hn
+    | succ n ih =>
+        refine ih z hz ?_
+        have h := hG.sub_mem_filtration h₁ hn
+        rwa [hz, zero_sub, Submodule.neg_mem_iff] at h
+  · have key : ∀ n : ℕ, filtration R M n ≤ LinearMap.range G := by
+      intro n
+      induction n with
+      | zero =>
+          rw [filtration_zero]
+          exact bot_le
+      | succ n ih =>
+          intro w hw
+          obtain ⟨u, hu⟩ := ih (hG.sub_mem_filtration h₁ hw)
+          exact ⟨w - u, by rw [map_sub, hu, sub_sub_cancel]⟩
+    intro w
+    obtain ⟨n, hn⟩ := exists_mem_filtration R M w
+    exact key n hn
+
+/-- A coalgebra endomorphism of the reduced tensor coalgebra fixing every single letter maps every
+submodule it preserves onto itself. -/
+theorem IsCoalgHom.map_eq_of_map_le
+    {G : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} (hG : IsCoalgHom R G)
+    (h₁ : G ∘ₗ ofLetter R M = ofLetter R M) {p : Submodule R (ReducedTensorWords R M)}
+    (hp : p.map G ≤ p) : p.map G = p := by
+  refine le_antisymm hp fun w hw ↦ ?_
+  obtain ⟨n, hn⟩ := exists_mem_filtration R M w
+  induction n generalizing w with
+  | zero =>
+      rw [filtration_zero] at hn
+      rw [(Submodule.mem_bot R).1 hn]
+      exact Submodule.zero_mem _
+  | succ n ih =>
+      have hGw : G w - w ∈ p := Submodule.sub_mem _ (hp ⟨w, hw, rfl⟩) hw
+      obtain ⟨u, hu, hGu⟩ := ih (G w - w) hGw (hG.sub_mem_filtration h₁ hn)
+      exact ⟨w - u, Submodule.sub_mem _ hw hu, by rw [map_sub, hGu, sub_sub_cancel]⟩
+
+/-- A coalgebra morphism of reduced tensor coalgebras whose arity-one Taylor component is
+bijective is bijective. -/
+theorem IsCoalgHom.bijective_of_letter_comp_comp_ofLetter_bijective
+    {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} (hF : IsCoalgHom R F)
+    (hf : Function.Bijective (letter R N ∘ₗ F ∘ₗ ofLetter R M)) :
+    Function.Bijective F := by
+  set e := LinearEquiv.ofBijective _ hf
+  have hFeq : F = ReducedTensorWords.map (R := R) e.toLinearMap ∘ₗ
+      (ReducedTensorWords.map (R := R) e.symm.toLinearMap ∘ₗ F) := by
+    rw [← LinearMap.comp_assoc, ← map_comp, LinearEquiv.comp_symm, map_id, LinearMap.id_comp]
+  rw [hFeq]
+  exact (map_bijective R e).comp
+    (((isCoalgHom_map _).comp hF).bijective_of_comp_ofLetter_eq (hF.map_symm_comp_comp_ofLetter hf))
+
+end Unipotent
 
 end ReducedTensorWords
 
