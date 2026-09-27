@@ -32,7 +32,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- At a finite place where two and every diagonal coefficient are units, every pairwise Hilbert
 symbol, and hence their product, equals one. -/
-theorem diagonalHasse_eq_one_of_valuation_eq_one {n : ℕ} (a : Fin n → Kˣ)
+@[simp] theorem diagonalHasse_eq_one_of_valuation_eq_one {n : ℕ} (a : Fin n → Kˣ)
     (v : HeightOneSpectrum (𝓞 K)) (h2 : v.valuation K 2 = 1)
     (ha : ∀ i, v.valuation K (a i) = 1) :
     ∏ ij ∈ univ.filter (fun ij : Fin n × Fin n => ij.1 < ij.2),
@@ -43,7 +43,7 @@ theorem diagonalHasse_eq_one_of_valuation_eq_one {n : ℕ} (a : Fin n → Kˣ)
 
 /-- The pairwise Hasse product of a global diagonal form is one outside the dyadic places and
 the primes supporting its coefficients. -/
-theorem diagonalHasse_eq_one_of_not_mem_exceptional {n : ℕ} (a : Fin n → Kˣ)
+@[simp] theorem diagonalHasse_eq_one_of_not_mem_exceptional {n : ℕ} (a : Fin n → Kˣ)
     {v : HeightOneSpectrum (𝓞 K)}
     (hv : v ∉ {v | v.valuation K 2 ≠ 1} ∪
       ⋃ i : Fin n, {v | v.valuation K (a i) ≠ 1}) :
@@ -75,7 +75,7 @@ theorem finite_setOf_diagonalHasse_ne_one {n : ℕ} (a : Fin n → Kˣ) :
 
 /-- A regular global quadratic form admits one diagonalization whose pairwise local Hasse
 products have finite support, with an explicit finite exceptional set of places. -/
-theorem exists_diagonalization_finiteHasse_support
+theorem exists_diagonalization_diagonalHasse_finite_support
     {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     ∃ p : RegularFormPresentation K, Q.Equivalent (presentedForm p) ∧
