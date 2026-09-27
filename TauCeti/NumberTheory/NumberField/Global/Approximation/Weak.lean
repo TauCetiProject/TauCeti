@@ -372,4 +372,15 @@ theorem exists_fieldUnit_valuation_eq_and_signHom_eq
     exact hxf v hv
   rw [Valuation.map_eq_of_sub_lt (v.valuation K) hlt, hp v]
 
+/-- **A field unit which is negative at every real place.**
+
+Being negative at a real place is exactly being a nonsquare there, so this supplies, in a single
+element of `Kˣ`, the datum `b` that a sign prescription reads off at the real places of its
+prescribed set.  Signs are not the only datum a prescription can impose on a field unit —
+`exists_fieldUnit_valuation_eq_and_signHom_eq` prescribes finite-place valuations as well — but
+they are the one datum that a single element of `Kˣ` realizes at every real place at once. -/
+theorem exists_fieldUnit_negative_at :
+    ∃ x : Kˣ, ∀ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.2 (x : K) < 0 :=
+  ⟨-1, fun _ => by simp⟩
+
 end TauCeti.GlobalNumberFields

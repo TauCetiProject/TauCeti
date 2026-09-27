@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Basic
 public import TauCeti.NumberTheory.NumberField.Index.Basic
+public import TauCeti.NumberTheory.NumberField.IntrinsicLabel
 public import TauCeti.NumberTheory.NumberField.Monogenic
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
@@ -24,6 +25,8 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 * the discriminant of `X² − X − 1` is `5`, so the index formula
   `discr (minpoly ℤ θ) = index θ ^ 2 · discr K` forces `index θ = 1`: `𝓞 K = ℤ[θ]`, `K` is
   monogenic and `discr K = 5`;
+* the discriminant is positive, so both infinite places are real: the signature is `(2, 0)` and
+  the intrinsic label prefix is `2.2.5`;
 * `2` is inert: there is a single prime above `2` since `5 ≡ 5 (mod 8)`, and `2` does not ramify
   since it does not divide the discriminant, so that prime has residue degree `2` and is the
   ideal `2 𝓞 K` itself.
@@ -32,6 +35,9 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 
 * `TauCeti.NumberField.Sqrt5.discr_eq_five`: `discr K = 5`.
 * `TauCeti.NumberField.Sqrt5.adjoin_eq_top`: `𝓞 K = ℤ[θ]`, and `isMonogenic`.
+* `TauCeti.NumberField.Sqrt5.isTotallyReal`, `nrComplexPlaces_eq_zero`, `nrRealPlaces_eq_two`:
+  the field is totally real, of signature `(2, 0)`; `hasLMFDBIntrinsicLabel`: the intrinsic
+  label prefix is `2.2.5`.
 * `TauCeti.NumberField.Sqrt5.ncard_primesOver_two_eq_one`,
   `TauCeti.NumberField.Sqrt5.ramificationIdx_eq_one_of_mem_primesOver_two`,
   `TauCeti.NumberField.Sqrt5.inertiaDeg_eq_two_of_mem_primesOver_two`,
@@ -46,7 +52,7 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 
 public section
 
-open Polynomial NumberField TauCeti.NumberField
+open Polynomial NumberField NumberField.InfinitePlace TauCeti.NumberField
 open scoped NumberField
 
 namespace TauCeti.NumberField.Sqrt5
@@ -86,6 +92,31 @@ theorem discr_eq_five (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   have hd := IntegralPrimitiveElement.discr_minpoly_eq_index_sq_mul_discr ⟨θ, hgen⟩
   rw [hmin, discr_X_sq_sub_X_sub_one, index_eq_one hmin hgen] at hd
   simpa using hd.symm
+
+/-- `ℚ(√5)` is totally real: its discriminant `5` is positive. -/
+theorem isTotallyReal (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : IsTotallyReal K :=
+  IsTotallyReal.of_zero_lt_discr (by rw [discr_eq_five hmin hgen]; norm_num)
+    (by rw [finrank_eq_two hmin hgen]; norm_num)
+
+/-- `ℚ(√5)` has no complex place. -/
+theorem nrComplexPlaces_eq_zero (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : nrComplexPlaces K = 0 :=
+  nrComplexPlaces_eq_zero_iff.mpr (isTotallyReal hmin hgen)
+
+/-- `ℚ(√5)` has two real places: its signature is `(2, 0)`. -/
+theorem nrRealPlaces_eq_two (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : nrRealPlaces K = 2 := by
+  have := isTotallyReal hmin hgen
+  rw [← IsTotallyReal.finrank, finrank_eq_two hmin hgen]
+
+/-- The intrinsic label prefix of `ℚ(√5)` is `2.2.5`. -/
+theorem hasLMFDBIntrinsicLabel (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : HasLMFDBIntrinsicLabel K 2 2 5 := by
+  rw [hasLMFDBIntrinsicLabel_iff]
+  refine ⟨finrank_eq_two hmin hgen, nrRealPlaces_eq_two hmin hgen, ?_⟩
+  rw [discr_eq_five hmin hgen]
+  norm_num
 
 /-- There is a single prime of `𝓞 K` above `2`, since `5 ≡ 5 (mod 8)`. -/
 theorem ncard_primesOver_two_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)

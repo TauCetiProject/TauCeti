@@ -86,16 +86,11 @@ theorem discr_eq_neg_twenty_three : discr K = -23 := by
   rw [hmin, discr_polynomial, index_eq_one hmin hgen] at hd
   simpa using hd.symm
 
-/-- There is exactly one complex infinite place. -/
-theorem nrComplexPlaces_eq_one : nrComplexPlaces K = 1 := by
-  have hr := card_add_two_mul_card_eq_rank K
-  rw [finrank_eq_three hmin hgen] at hr
-  have hs := sign_discr K
-  rw [discr_eq_neg_twenty_three hmin hgen, Int.sign_eq_neg_one_of_neg (by decide)] at hs
-  have hc : nrComplexPlaces K ≤ 1 := by omega
-  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with h | h
-  · norm_num [h] at hs
-  · exact h
+/-- There is exactly one complex infinite place: the discriminant `−23` is negative. -/
+theorem nrComplexPlaces_eq_one : nrComplexPlaces K = 1 :=
+  InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero
+    (by rw [discr_eq_neg_twenty_three hmin hgen]; decide)
+    (by rw [finrank_eq_three hmin hgen]; decide)
 
 /-- There is exactly one real infinite place. -/
 theorem nrRealPlaces_eq_one : nrRealPlaces K = 1 := by

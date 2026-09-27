@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections

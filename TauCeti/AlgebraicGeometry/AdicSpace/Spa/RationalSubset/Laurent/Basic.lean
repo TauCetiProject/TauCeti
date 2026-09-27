@@ -48,7 +48,8 @@ What part (ii) calls units are units of the coordinate ring `𝒪_X(V)`. Here th
 pointwise form, as elements vanishing at no point of `V`; their invertibility in `𝒪_X(V)` is not
 proved here. Nor is the algebraic half of Lemma 8.34, Čech acyclicity of Laurent covers and its
 transfer along refinements. The two-piece Laurent cover `{|f| ≤ 1}, {|f| ≥ 1}`, with its
-coordinate rings, is treated in `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover`.
+coordinate rings, is treated in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic`.
 
 ## Main definitions
 
