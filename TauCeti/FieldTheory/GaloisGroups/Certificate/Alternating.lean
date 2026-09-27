@@ -21,9 +21,6 @@ certificate, proving that its Galois group over `ℚ` has label `5T4`.
 
 The main results are `TauCeti.QuinticCertificate.check_X_pow_five_add_twenty_mul_X_sub_sixteen`
 and `TauCeti.hasGaloisLabel_X_pow_five_add_twenty_mul_X_sub_sixteen`.
-The proof uses the existing certificate soundness theorem `TauCeti.QuinticCertificate.check_sound`.
-The quadratic-factor exclusion follows the division argument in
-`Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five`.
 -/
 
 public section
@@ -82,7 +79,9 @@ theorem irreducible_X_pow_five_add_twenty_mul_X_sub_sixteen_zmod_three :
       have h := eq_quadratic_of_degree_le_two (degree_le_of_natDegree_le hq2.le)
       have hc : q.coeff 2 = 1 := by simpa [hq2] using hq.coeff_natDegree
       simpa [hc] using h
-    -- A monic quadratic divisor would force both coefficients of this remainder to vanish.
+    -- Following the division argument in
+    -- `Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five`, a monic quadratic
+    -- divisor would force both coefficients of this remainder to vanish.
     let a := q.coeff 1
     let b := q.coeff 0
     let quotient : (ZMod 3)[X] :=
@@ -125,8 +124,7 @@ theorem irreducible_X_pow_five_add_twenty_mul_X_sub_sixteen_zmod_three :
 
 local instance : Fact (Nat.Prime 7) := ⟨by decide⟩
 
-/-- Modulo `7`, the alternating quintic factors as
-`(X - 2)(X - 3)(X³ + 5X² + 5X + 2)`, with the cubic irreducible. -/
+/-- The reduction of `X⁵ + 20X - 16` modulo `7` has factor degrees `{1, 1, 3}`. -/
 @[simp] theorem factorDegrees_X_pow_five_add_twenty_mul_X_sub_sixteen_seven :
     (X ^ 5 + 20 * X - 16 : ℤ[X]).factorDegrees 7 = {1, 1, 3} := by
   have hirr : Irreducible (X ^ 3 + 5 * X ^ 2 + 5 * X + 2 : (ZMod 7)[X]) := by
@@ -178,11 +176,11 @@ and the square root `32000` of its discriminant. -/
     discr_X_pow_five_add_twenty_mul_X_sub_sixteen,
     HasFactorDegrees.mk hgood7 factorDegrees_X_pow_five_add_twenty_mul_X_sub_sixteen_seven⟩
 
-/-- **`X⁵ + 20X - 16` has Galois label `5T4`.** This follows from its alternating-route
-certificate. -/
+/-- **`X⁵ + 20X - 16` has Galois label `5T4`.** -/
 theorem hasGaloisLabel_X_pow_five_add_twenty_mul_X_sub_sixteen :
     HasGaloisLabel ((X ^ 5 + 20 * X - 16 : ℤ[X]).map (Int.castRingHom ℚ))
       (⟨3, by simp⟩ : TransitiveGroupIndex 5) := by
+  -- Apply the certificate soundness theorem `TauCeti.QuinticCertificate.check_sound`.
   have h := QuinticCertificate.check_sound (by monicity! :
     (X ^ 5 + 20 * X - 16 : ℤ[X]).Monic)
     QuinticCertificate.check_X_pow_five_add_twenty_mul_X_sub_sixteen
