@@ -21,10 +21,6 @@ where `P` is a continuous projection of `E` onto `ker T`. When `ker T` is finite
 for a Fredholm operator, `P x` lies in a finite-dimensional space, and over a proper normed field,
 such as `ℝ` or `ℂ`, the finite-rank projection `P` is a compact operator.
 
-The proof is one application of the open mapping theorem, in the packaged form
-`ContinuousLinearMap.antilipschitz_of_injective_of_isClosed_range`: on a topological complement
-`X₁` of the kernel, `T` is injective with closed range, so it is bounded below there.
-
 ## Main declarations
 
 * `ContinuousLinearMap.exists_norm_le_mul_norm_of_mem`: a closed-range operator is bounded below
@@ -56,11 +52,7 @@ variable {X₁ : Submodule 𝕜 E}
 variable [CompleteSpace E] [CompleteSpace F]
 
 /-- **A closed-range operator is bounded below off its kernel.** On any topological complement
-`X₁` of `ker T` there is a constant `C > 0` with `‖x‖ ≤ C * ‖T x‖` for every `x ∈ X₁`.
-
-This is `ContinuousLinearMap.antilipschitz_of_injective_of_isClosed_range` applied to the
-restriction of `T` to `X₁`, which is injective because `X₁` meets the kernel trivially, and has
-closed range because that range is the range of `T`. -/
+`X₁` of `ker T` there is a constant `C > 0` with `‖x‖ ≤ C * ‖T x‖` for every `x ∈ X₁`. -/
 theorem exists_norm_le_mul_norm_of_mem (T : E →L[𝕜] F)
     (hclosed : IsClosed (T.range : Set F)) (h : IsTopCompl (T.ker) X₁) :
     ∃ C > 0, ∀ x ∈ X₁, ‖x‖ ≤ C * ‖T x‖ := by
@@ -74,6 +66,7 @@ theorem exists_norm_le_mul_norm_of_mem (T : E →L[𝕜] F)
   have hclosed_restrict : IsClosed (Set.range (T ∘L X₁.subtypeL)) := by
     have hc : IsClosed ((T ∘L X₁.subtypeL).range : Set F) := hrange.symm ▸ hclosed
     simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using hc
+  -- The open mapping theorem, applied to the restriction of `T` to `X₁`.
   obtain ⟨K, hK⟩ :=
     (T ∘L X₁.subtypeL).antilipschitz_of_injective_of_isClosed_range hinj hclosed_restrict
   refine ⟨K + 1, by positivity, fun x hx => ?_⟩
