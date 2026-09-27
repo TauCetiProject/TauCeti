@@ -30,7 +30,6 @@ namespace TauCeti.ModularForm
 /-- The normalized modular invariant `j = E₄³ / Δ` on the upper half-plane. -/
 def j (z : ℍ) : ℂ := E₄ z ^ 3 / discriminant z
 
-@[simp]
 theorem j_apply (z : ℍ) : j z = E₄ z ^ 3 / discriminant z := by rfl
 
 /-- The modular invariant is holomorphic on the upper half-plane. -/
@@ -39,7 +38,8 @@ theorem j_mdifferentiable : MDiff j := by
 
 /-- The weight factors cancel, so `j` is invariant under `SL₂(ℤ)`. -/
 @[simp]
-theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
+theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
+    j ((map (Int.castRingHom ℝ) γ) • z) = j z := by
   have hγ : mapGL ℝ γ ∈ (𝒮ℒ : Subgroup (GL (Fin 2) ℝ)) := ⟨γ, rfl⟩
   have hE : (⇑(E₄.pow 3) ∣[(12 : ℤ)] (mapGL ℝ γ)) = ⇑(E₄.pow 3) := by
     simpa using SlashInvariantForm.slash_action_eqn (E₄.pow 3) _ hγ
@@ -56,7 +56,12 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
   have hpow (w : ℍ) : (E₄.pow 3) w = E₄ w ^ 3 := by
     exact congrFun (ModularForm.coe_pow E₄ 3) w
   have hz := congrFun h z
-  simpa [SL_slash_apply, j, hpow] using hz
+  have hinv : j (γ • z) = j z := by
+    simpa [SL_slash_apply, j, hpow] using hz
+  have hmap (g : SL(2, ℝ)) : map (RingHom.id ℝ) g = g := by
+    ext i k
+    rfl
+  simpa [ModularGroup.sl_moeb, MulAction.compHom_smul_def, mapGL, hmap] using hinv
 
 /-- The identity `j - 1728 = E₆² / Δ`. -/
 theorem j_sub_1728 (z : ℍ) : j z - 1728 = E₆ z ^ 2 / discriminant z := by
