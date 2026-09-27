@@ -118,12 +118,6 @@ theorem isQuasiFullyFaithful_op_iff
   · intro hF X Y
     exact hF Y.unop X.unop
 
-/-- A quasi-fully faithful DG functor remains quasi-fully faithful on opposite DG categories. -/
-theorem IsQuasiFullyFaithful.op
-    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
-    (hF : F.IsQuasiFullyFaithful) : F.op.IsQuasiFullyFaithful :=
-  (isQuasiFullyFaithful_op_iff F).2 hF
-
 /-- A DG functor is a quasi-equivalence when it is a quasi-isomorphism on all Hom complexes
 and every target object is isomorphic in `H⁰` to an object in its image. -/
 def IsQuasiEquivalence
