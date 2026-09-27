@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
+public import TauCeti.Geometry.Manifold.Diffeomorph.Tangent
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
@@ -43,7 +44,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [IsManifold J ∞ N] [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
 
 /-- The differential of a smooth Riemannian isometry at a point, as a linear isometric
-equivalence of tangent spaces. -/
+equivalence of tangent spaces. Its underlying linear equivalence is Mathlib's
+`Diffeomorph.mfderivToContinuousLinearEquiv`. -/
 def mfderivToLinearIsometryEquiv (Φ : RiemannianIsometry I J M N) (x : M) :
     TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace J (Φ x) where
   toLinearEquiv := (Φ.toDiffeomorph.mfderivToContinuousLinearEquiv (by simp) x).toLinearEquiv
