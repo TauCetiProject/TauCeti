@@ -34,11 +34,6 @@ category of representations is a functor category, with no ambient module to be 
 over an infinite vertex set the two conditions genuinely differ. Over a finite quiver they agree,
 and that is the setting the theory is meant for.
 
-## References
-
-This implements the `IsFinDim` part of the "finite representation type" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`; the property itself is
-finite-dimensionality of representations, and is used well before that layer's theory.
 -/
 
 public section
@@ -80,10 +75,12 @@ variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
 open CategoryTheory.Limits CategoryTheory.ObjectProperty
 open scoped ZeroObject
 
+/-- Isomorphism closure makes pointwise finite-dimensionality a replete object property. -/
 instance : ObjectProperty.IsClosedUnderIsomorphisms (IsFinDim.{u, v, w, t} k Q)
     where
   of_iso := fun e h => h.of_iso e
 
+/-- The zero representation belongs to the finite-dimensional full subcategory. -/
 instance : ObjectProperty.ContainsZero (IsFinDim.{u, v, w, t} k Q) where
   exists_zero := by
     refine ⟨0, isZero_zero _, ?_⟩
@@ -114,6 +111,8 @@ theorem isExtensionClosed_finiteDimensionalQuiverRepresentations :
       hSi.moduleCat_surjective_g
   simpa only [ShortComplex.map_X₂, E, evaluation_obj_obj] using hfin
 
+/-- Binary products keep the finite-dimensional full subcategory additive, as required by its
+induced exact structure. -/
 instance : ObjectProperty.IsClosedUnderBinaryProducts (IsFinDim.{u, v, w, t} k Q) :=
   (isExtensionClosed_finiteDimensionalQuiverRepresentations k Q).isClosedUnderBinaryProducts
 
@@ -125,6 +124,7 @@ noncomputable def finiteDimensionalQuiverRepresentationsExactStructure :
 
 /-- Conflations of finite-dimensional quiver representations are exactly their short exact
 sequences in the ambient functor category. -/
+@[simp]
 theorem finiteDimensionalQuiverRepresentationsExactStructure_conflation_iff
     (S : ShortComplex (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q))) :
     (finiteDimensionalQuiverRepresentationsExactStructure k Q).Conflation S ↔

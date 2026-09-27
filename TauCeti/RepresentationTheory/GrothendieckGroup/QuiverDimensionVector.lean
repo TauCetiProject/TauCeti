@@ -95,6 +95,14 @@ noncomputable def quiverEulerPairing :
   (eulerForm Q).comp (quiverDimensionVector k Q).toIntLinearMap
     (quiverDimensionVector k Q).toIntLinearMap
 
+/-- The transported pairing evaluates by applying the Ringel form to the two dimension vectors. -/
+@[simp]
+theorem quiverEulerPairing_apply
+    (x y : ExactK0 (finiteDimensionalQuiverRepresentationsExactStructure k Q)) :
+    quiverEulerPairing k Q x y =
+      eulerForm Q (quiverDimensionVector k Q x) (quiverDimensionVector k Q y) := by
+  simp [quiverEulerPairing]
+
 /-- On classes of finite-dimensional representations, the transported pairing is the Euler form
 of their dimension vectors. -/
 @[simp]
