@@ -252,6 +252,28 @@ theorem finrank_even [Invertible (2 : K)] [Module.Finite K V] [Nontrivial V] :
   (LinearEquiv.ofEq _ _ (_root_.CliffordAlgebra.even_toSubmodule Q)).finrank_eq.trans
     (finrank_evenOdd Q 0)
 
+/-- In dimension one, every even Clifford unit is a scalar unit of the Clifford algebra. -/
+theorem exists_scalar_unit_of_mem_even_of_finrank_eq_one [Invertible (2 : K)]
+    [FiniteDimensional K V] (hV : Module.finrank K V = 1) (x : (CliffordAlgebra Q)ˣ)
+    (hx : (x : CliffordAlgebra Q) ∈ even Q) :
+    ∃ a : Kˣ, x = Units.map (algebraMap K (CliffordAlgebra Q)) a := by
+  let _ : Nontrivial V := Module.nontrivial_of_finrank_pos (by rw [hV]; decide)
+  have hdim : Module.finrank K (even Q) = 1 := by
+    rw [finrank_even Q, hV]
+    norm_num
+  obtain ⟨a, ha⟩ :=
+    (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp hdim).2
+      (⟨(x : CliffordAlgebra Q), hx⟩ : even Q)
+  have hcoe : algebraMap K (CliffordAlgebra Q) a = (x : CliffordAlgebra Q) :=
+    congrArg (fun y : even Q => (y : CliffordAlgebra Q)) ha
+  have ha0 : a ≠ 0 := by
+    intro hzero
+    apply x.ne_zero
+    simpa [hzero] using hcoe.symm
+  let au : Kˣ := (Ne.isUnit ha0).unit
+  refine ⟨au, Units.ext ?_⟩
+  simpa [au] using hcoe.symm
+
 end Field
 
 end CliffordAlgebra
