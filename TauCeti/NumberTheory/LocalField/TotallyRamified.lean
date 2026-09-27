@@ -38,13 +38,14 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
-/-- A local-field extension is totally ramified when its ramification index equals its degree. -/
-def IsTotallyRamified (K L : Type*) [Field K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-    [IsNonarchimedeanLocalField L] [Algebra K L] : Prop :=
+/-- A compatible extension of nonarchimedean local fields is totally ramified when its
+ramification index equals its degree. Such an extension is finite by
+`finite_of_valuativeExtension`. -/
+def IsTotallyRamified (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] : Prop :=
   ramificationIndex K L = Module.finrank K L
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [ValuativeExtension K L] in
 /-- The defining condition for total ramification. -/
 theorem isTotallyRamified_def :
     IsTotallyRamified K L ↔ ramificationIndex K L = Module.finrank K L := Iff.rfl
