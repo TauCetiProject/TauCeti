@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+-- The equivalence instance is needed for `quiverRepFunctor` to preserve short exact sequences.
 public import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
