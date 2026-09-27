@@ -44,7 +44,7 @@ def zeroCellPoint (i : cell C 0) : skeletonObj C 1 :=
     simpa only [Matrix.zero_empty] using map_zero_mem_closedCell 0 i)⟩
 
 /-- The zero-cells are in bijection with the points of the zero-skeleton. -/
-def zeroCellEquiv : cell C 0 ≃ skeletonObj C 1 :=
+def zeroCellEquiv : cell C 0 ≃ ↑(skeletonLT C (1 : ℕ∞)) :=
   Equiv.ofBijective (zeroCellPoint C) (by
     constructor
     · intro i j h
@@ -54,6 +54,7 @@ def zeroCellEquiv : cell C 0 ≃ skeletonObj C 1 :=
           ⋃ i : cell C 0, closedCell 0 i := by
         simpa [CWComplex.skeletonLT_zero_eq_empty] using
           (skeletonLT_union_iUnion_closedCell_eq_skeletonLT_succ (C := C) 0).symm
+      change x ∈ (skeletonLT C ((1 : ℕ) : ℕ∞) : Set X) at hx
       rw [hs] at hx
       simp only [Set.mem_iUnion] at hx
       obtain ⟨i, hi⟩ := hx
