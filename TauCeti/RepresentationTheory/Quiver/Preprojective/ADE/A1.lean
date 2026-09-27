@@ -99,16 +99,18 @@ noncomputable instance instFiniteDimensionalPreprojectiveAlgebraA1 (k : Type*) [
     FiniteDimensional k (preprojectiveAlgebra k preprojectiveA1Quiver) :=
   (isAdmissibleIdeal_preprojectiveIdeal_A1 k).finiteDimensional_quotient
 
+private noncomputable def vertices : Fin 1 ≃ Symmetrify preprojectiveA1Quiver :=
+  (OrientedQuiver.vertexEquiv _ _).trans
+    (Equiv.ofBijective _ symmetrify_of_obj_bijective)
+
 /-- The doubled `A₁` quiver has exactly one path, its vertex path. -/
 theorem card_totalPath_preprojectiveA1 :
     Nat.card (Quiver.TotalPath (Symmetrify preprojectiveA1Quiver)) = 1 := by
   let v : Symmetrify preprojectiveA1Quiver :=
     Symmetrify.of.obj (OrientedQuiver.vertex preprojectiveA1Graph
       (Orientation.ofLinearOrder preprojectiveA1Graph) 0)
-  let e : Fin 1 ≃ Symmetrify preprojectiveA1Quiver :=
-    (OrientedQuiver.vertexEquiv _ _).trans
-      (Equiv.ofBijective _ symmetrify_of_obj_bijective)
-  let : Subsingleton (Symmetrify preprojectiveA1Quiver) := Equiv.subsingleton.symm e
+  let : Subsingleton (Symmetrify preprojectiveA1Quiver) :=
+    Equiv.subsingleton.symm vertices
   have hvertex (x : Symmetrify preprojectiveA1Quiver) : x = v :=
     Subsingleton.elim _ _
   have hpath (x : Quiver.TotalPath (Symmetrify preprojectiveA1Quiver)) :
@@ -136,9 +138,7 @@ theorem finrank_preprojectiveAlgebra_A1 (k : Type*) [CommRing k]
 /-- The rank-one preprojective algebra is canonically the coefficient ring. -/
 noncomputable def preprojectiveAlgebraEquivA1 (k : Type*) [CommRing k] :
     preprojectiveAlgebra k preprojectiveA1Quiver ≃ₐ[k] k :=
-  letI : Unique (Symmetrify preprojectiveA1Quiver) := Equiv.unique
-    ((OrientedQuiver.vertexEquiv _ _).trans
-      (Equiv.ofBijective _ symmetrify_of_obj_bijective)).symm
+  letI : Unique (Symmetrify preprojectiveA1Quiver) := Equiv.unique vertices.symm
   (Ideal.quotientEquivAlgOfEq k (preprojectiveIdeal_A1_eq_bot k)).trans
     ((Ideal.quotientEquivAlgOfEq k (arrowIdeal_preprojectiveA1_eq_bot k).symm).trans
       ((quotientArrowIdealAlgEquiv k _).trans (AlgEquiv.funUnique k _ k)))
@@ -151,9 +151,7 @@ theorem preprojectiveAlgebraEquivA1_preprojectiveMk (k : Type*) [CommRing k]
       trivialCoeff k (Symmetrify preprojectiveA1Quiver) x
         (Symmetrify.of.obj (OrientedQuiver.vertex preprojectiveA1Graph
           (Orientation.ofLinearOrder preprojectiveA1Graph) 0)) := by
-  let : Unique (Symmetrify preprojectiveA1Quiver) := Equiv.unique
-    ((OrientedQuiver.vertexEquiv _ _).trans
-      (Equiv.ofBijective _ symmetrify_of_obj_bijective)).symm
+  let : Unique (Symmetrify preprojectiveA1Quiver) := Equiv.unique vertices.symm
   have hv : (default : Symmetrify preprojectiveA1Quiver) =
       Symmetrify.of.obj (OrientedQuiver.vertex preprojectiveA1Graph
         (Orientation.ofLinearOrder preprojectiveA1Graph) 0) := Subsingleton.elim _ _
