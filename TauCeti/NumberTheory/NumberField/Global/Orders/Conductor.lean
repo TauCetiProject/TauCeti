@@ -54,6 +54,7 @@ def conductor (O : NumberFieldOrder K) : Ideal (𝓞 K) where
 
 /-- An algebraic integer is in the conductor exactly when all of its multiples by algebraic
 integers lie in the order. -/
+@[simp]
 theorem mem_conductor_iff (O : NumberFieldOrder K) (x : 𝓞 K) :
     x ∈ O.conductor ↔ ∀ y : 𝓞 K, (x : K) * (y : K) ∈ O.toSubalgebra := Iff.rfl
 
