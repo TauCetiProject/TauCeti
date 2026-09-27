@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SheetCount
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.RegularEdge
+import TauCeti.Order.Interval.Finite
 
 /-!
 # The Schwarz--Christoffel map of a simple polygon
@@ -41,7 +42,7 @@ theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary
       (connectedComponentIn (range (schwarzChristoffelCompactifiedBoundary a e z₀))ᶜ
         (schwarzChristoffelPrimitive a e z₀ z₀)) := by
   let F := schwarzChristoffelPrimitive a e z₀
-  obtain ⟨p, q, x, ha, hx⟩ := exists_schwarzChristoffel_prevertex_free_interval a
+  obtain ⟨p, q, x, ha, hx⟩ := exists_Ioo_disjoint_range_of_finite a
   obtain ⟨U, hUopen, hxU, G, hGF, hGinj, _, _⟩ :=
     exists_injOn_schwarzChristoffelPrimitive_continuation a e z₀ (fun i _ => ha i) hx
   obtain ⟨ε, hε, hnear⟩ :=

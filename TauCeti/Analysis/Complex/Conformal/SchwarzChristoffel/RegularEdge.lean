@@ -31,22 +31,6 @@ open Complex Filter Set Topology UpperHalfPlane
 namespace TauCeti
 
 variable {ι : Type*}
-
-/-- There is a real interval beyond all prevertices, with a point in its interior. -/
-theorem exists_schwarzChristoffel_prevertex_free_interval [Finite ι] (a : ι → ℝ) :
-    ∃ p q x : ℝ, (∀ i, a i ∉ Ioo p q) ∧ x ∈ Ioo p q := by
-  obtain ⟨S, hbound⟩ := Finite.exists_le a
-  let p := S + 1
-  let x := p + 1
-  let q := p + 2
-  have ha : ∀ i, a i ∉ Ioo p q := by
-    intro i hi
-    have := hbound i
-    dsimp [p] at hi
-    exact (not_lt.mpr (by linarith : a i ≤ S + 1)) hi.1
-  have hx : x ∈ Ioo p q := by dsimp [x, q]; constructor <;> linarith
-  exact ⟨p, q, x, ha, hx⟩
-
 variable [Fintype ι]
 
 /-- At a point of a prevertex-free boundary interval, the Schwarz--Christoffel primitive has a

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SimpleMapping
-import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.RegularEdge
+import TauCeti.Order.Interval.Finite
 import TauCeti.Analysis.Complex.PlaneSeparation.LocalSeparation
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LocallyStraight
 import TauCeti.Algebra.BigOperators.Finset.Fiber
@@ -47,7 +47,7 @@ theorem image_schwarzChristoffelPrimitive_eq_filledHull_sdiff
     schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet =
       filledHull (range (schwarzChristoffelCompactifiedBoundary a e z₀)) \
         range (schwarzChristoffelCompactifiedBoundary a e z₀) := by
-  obtain ⟨p, q, x, ha, hx⟩ := exists_schwarzChristoffel_prevertex_free_interval a
+  obtain ⟨p, q, x, ha, hx⟩ := exists_Ioo_disjoint_range_of_finite a
   let B := schwarzChristoffelBoundary a e z₀
   let C := range (schwarzChristoffelCompactifiedBoundary a e z₀)
   -- Pick a regular edge beyond every prevertex. Simplicity makes
