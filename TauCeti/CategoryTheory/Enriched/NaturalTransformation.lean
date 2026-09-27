@@ -138,7 +138,6 @@ private theorem unitGradedNaturality
 namespace GradedNatTrans
 
 /-- Forget enrichment of a graded natural transformation at the monoidal unit. -/
-@[expose]
 noncomputable def toOrdinary
     {F G : EnrichedFunctor V C' D'}
     (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G) :
@@ -175,7 +174,8 @@ theorem toOrdinary_app
 end GradedNatTrans
 
 omit [BraidedCategory V] in
-private theorem composeNaturalSquares
+/-- Two enriched whiskering squares compose along their ordinary components. -/
+theorem composeNaturalSquares
     {E : Type u₂} [Category E] [EnrichedOrdinaryCategory V E]
     {FX GX HX FY GY HY : E} {M : V}
     (fMap : M ⟶ FX ⟶[V] FY) (gMap : M ⟶ GX ⟶[V] GY)
@@ -201,7 +201,6 @@ private theorem composeNaturalSquares
 namespace GradedNatTrans
 
 /-- Composition of graded natural transformations at the monoidal unit. -/
-@[expose]
 noncomputable def unitComp {F G H : EnrichedFunctor V C' D'}
     (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G)
     (γ : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) G H) :
@@ -249,7 +248,6 @@ end GradedNatTrans
 namespace GradedNatTrans
 
 /-- Identity graded natural transformation at the monoidal unit. -/
-@[expose]
 noncomputable def unitId (F : EnrichedFunctor V C' D') :
     GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F F where
   app X := eId V (F.obj X)

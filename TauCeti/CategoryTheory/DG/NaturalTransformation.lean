@@ -125,6 +125,7 @@ noncomputable def mapDGHomotopyCategory
     obtain ⟨g, hg, rfl⟩ := TauCeti.exists_dgHomotopyClass_eq R f
     have h := congrArg (fun q => (TauCeti.dgClosedToHomotopy (C := D) R).map q)
       ((GradedNatTrans.toOrdinary α).naturality (TauCeti.dgClosedHomOf R g hg))
+    simp only [GradedNatTrans.toOrdinary_app] at h
     rw [Functor.map_comp, Functor.map_comp] at h
     have hmap (J : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) :
         (TauCeti.dgClosedToHomotopy (C := D) R).map
@@ -178,7 +179,7 @@ theorem mapDGHomotopyCategory_id
     mapDGHomotopyCategory (DGNatTrans.id F) = 𝟙 F.mapDGHomotopyCategory := by
   ext X
   rcases X with ⟨X⟩
-  simp only [mapDGHomotopyCategory, NatTrans.id_app]
+  simp only [mapDGHomotopyCategory, NatTrans.id_app, DGNatTrans.id_app]
   -- The identity component is the enriched identity after forgetting enrichment.
   exact (TauCeti.dgClosedToHomotopy (C := D) R).map_id _
 
@@ -191,7 +192,7 @@ theorem mapDGHomotopyCategory_comp
       mapDGHomotopyCategory α ≫ mapDGHomotopyCategory β := by
   ext X
   rcases X with ⟨X⟩
-  simp only [mapDGHomotopyCategory, NatTrans.comp_app]
+  simp only [mapDGHomotopyCategory, NatTrans.comp_app, DGNatTrans.comp_app]
   -- The composite's unit-graded component is ordinary composition under `homOf`.
   exact (TauCeti.dgClosedToHomotopy (C := D) R).map_comp _ _
 
