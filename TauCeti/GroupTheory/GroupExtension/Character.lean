@@ -111,7 +111,7 @@ theorem characterTransgression_eq_iff (χ χ' : Additive (equivariantCharacterSu
       ∃ ψ : α.Extension →* A,
         ψ.comp (inl α) = χ.toMul.val / χ'.toMul.val := by
   rw [← sub_eq_zero, ← map_sub, α.characterTransgression_eq_zero_iff hA]
-  rfl
+  rw [toMul_sub, Subgroup.coe_div]
 
 /-- For a stem extension, different invariant characters of the kernel give different
 second-cohomology classes. No finiteness or divisibility assumption is needed. -/
