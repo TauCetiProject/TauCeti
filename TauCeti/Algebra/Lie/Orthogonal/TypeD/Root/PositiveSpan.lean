@@ -48,12 +48,15 @@ variable {K ι : Type*} [CommRing K] [Fintype ι] [DecidableEq ι]
 
 Only the endpoints must be distinct; the identity remains valid when the intermediate coordinate
 coincides with either endpoint. -/
+@[simp]
 theorem lie_differenceRootGenerator_differenceRootGenerator (i j k : ι) (hik : i ≠ k) :
     ⁅differenceRootGenerator (K := K) i j, differenceRootGenerator (K := K) j k⁆ =
       differenceRootGenerator (K := K) i k := by
   apply Subtype.ext
   rw [LieSubalgebra.coe_bracket, val_differenceRootGenerator,
     val_differenceRootGenerator, val_differenceRootGenerator]
+  -- Rewriting removes the subtype coercions but leaves the ambient bracket only definitionally
+  -- visible; expose the matrix equality so the block formulas can rewrite it.
   change ⁅differenceRootMatrix (K := K) i j, differenceRootMatrix j k⁆ =
     differenceRootMatrix i k
   rw [LieRing.of_associative_ring_bracket, differenceRootMatrix_def,
@@ -64,12 +67,15 @@ theorem lie_differenceRootGenerator_differenceRootGenerator (i j k : ι) (hik : 
 
 /-- Bracketing a difference-root vector with a consecutive sum-root vector moves the latter's
 first coordinate. The condition prevents the sum-root vector on the left from degenerating. -/
+@[simp]
 theorem lie_differenceRootGenerator_sumRootGenerator (i j k : ι) (hjk : j ≠ k) :
     ⁅differenceRootGenerator (K := K) i j, sumRootGenerator (K := K) j k⁆ =
       sumRootGenerator (K := K) i k := by
   apply Subtype.ext
   rw [LieSubalgebra.coe_bracket, val_differenceRootGenerator,
     val_sumRootGenerator, val_sumRootGenerator]
+  -- As in the difference-root case, the rewritten subtype bracket is only definitionally the
+  -- following ambient matrix bracket; state that boundary before expanding the blocks.
   change ⁅differenceRootMatrix (K := K) i j, sumRootMatrix j k⁆ = sumRootMatrix i k
   rw [LieRing.of_associative_ring_bracket, differenceRootMatrix_def,
     sumRootMatrix_def, sumRootMatrix_def,
@@ -117,9 +123,9 @@ theorem differenceRootGenerator_mem_positiveSimpleRootMatrixLieSpan
     exact rootGenerator_inl_mem_positiveSimpleRootMatrixLieSpan n hn i
   · have hi : (i : ℕ) + 1 < n := by omega
     let k := chainNext n i hi
+    have hsucc : (i : ℕ) + 1 < (j : ℕ) := by omega
     have hkj : k < j := by
-      simpa [k, Fin.lt_def] using
-        (show (i : ℕ) + 1 < (j : ℕ) by omega)
+      simpa [k, Fin.lt_def] using hsucc
     have hi_mem : differenceRootGenerator (K := K) i k ∈
         positiveSimpleRootMatrixLieSpan n hn := by
       rw [differenceRootGenerator_chain_eq_rootGenerator n hn i hi]
