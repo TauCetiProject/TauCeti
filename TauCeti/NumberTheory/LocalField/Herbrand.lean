@@ -537,6 +537,7 @@ theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
 
 /-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration is constant
 through `v`. -/
+@[simp]
 theorem psiNat_eq_self_iff {v : ℕ} :
     psiNat K L v = v ↔ lowerRamificationGroup K L v = lowerRamificationGroup K L 0 := by
   have hle : ∀ i : ℕ, lowerRamificationGroup K L i ≤ lowerRamificationGroup K L 0 := fun i ↦
