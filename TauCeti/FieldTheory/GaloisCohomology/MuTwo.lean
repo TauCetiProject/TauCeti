@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
-public import TauCeti.FieldTheory.SquareClassGroup.Basic
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
@@ -67,6 +66,8 @@ the class of `a` to `(a)`.
 * `TauCeti.mu2_smul_eq_self`: the Galois action on `μ₂` is trivial.
 * `TauCeti.mu2EquivZMod2_equivariant`: the value dictionary is fixed by `G_K`, which is what makes
   it a morphism of coefficient objects.
+* `TauCeti.kummerClass_one` and `TauCeti.kummerClass_mul`: the Kummer class of a unit is a
+  homomorphism from `Kˣ` into `H¹(G_K, 𝔽₂)` written additively.
 * `TauCeti.kummerClass_eq_zero_iff_square`: the Kummer class of a unit of `Kˣ` vanishes exactly
   at the squares in `Kˣ`.
 * `TauCeti.kummerSquareClassEquiv_squareClass`: a square class is sent to the Kummer class of
@@ -345,13 +346,23 @@ private noncomputable def kummerCohomMap :
   (ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 1).mapIso
     (kummerCoeffIsoTrivialF2 K) |>.hom
 
-/-- **The degree-one map induced by the coefficient isomorphism is injective**: it is the
-underlying continuous linear map of the isomorphism that
+/-- **The coefficient isomorphism read on degree-one continuous cohomology, as an equivalence of
+additive groups**: the equivalence of additive groups that
 `TauCeti.ContinuousCohomology.continuousCohomologyFunctor` assigns to
-`TauCeti.kummerCoeffIsoTrivialF2`, so it is the application of a linear equivalence. -/
-private theorem kummerCohomMap_injective : Function.Injective (kummerCohomMap K).hom :=
+`TauCeti.kummerCoeffIsoTrivialF2`, read off the image isomorphism's own equivalence API rather
+than reassembled from the bijectivity of the morphism `TauCeti.kummerCohomMap`. -/
+private noncomputable def kummerCohomAddEquiv :
+    continuousCohomology 1 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2)) ≃+
+      continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
   (ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 1).mapIso
-    (kummerCoeffIsoTrivialF2 K) |>.toContinuousLinearEquiv.injective
+    (kummerCoeffIsoTrivialF2 K) |>.toContinuousLinearEquiv.toAddEquiv
+
+/-- The degree-one coefficient isomorphism applies as the degree-one map it is read off. -/
+@[simp]
+private theorem kummerCohomAddEquiv_apply
+    (y : continuousCohomology 1 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2))) :
+    kummerCohomAddEquiv K y = (kummerCohomMap K).hom y :=
+  rfl
 
 variable {K}
 
@@ -365,19 +376,37 @@ noncomputable def kummerClass (a : Kˣ) :
 
 variable (K)
 
+/-- **The Kummer class of `1` is the neutral element**: `TauCeti.kummerClass` is a homomorphism
+from `Kˣ` into `H¹(G_K, 𝔽₂)` written additively, paired with the multiplication law
+`TauCeti.kummerClass_mul`. -/
+@[simp]
+theorem kummerClass_one : kummerClass (1 : Kˣ) = 0 := by
+  simp [kummerClass]
+
+/-- **The Kummer class of a product is the sum of the two Kummer classes**: the
+multiplicative-to-additive law of the Kummer class, its identity law being
+`TauCeti.kummerClass_one`. -/
+@[simp]
+theorem kummerClass_mul (a b : Kˣ) :
+    kummerClass (a * b) = kummerClass a + kummerClass b := by
+  simp [kummerClass]
+
 /-- **The Kummer class of a unit vanishes exactly at the squares in `Kˣ`.** -/
+@[simp]
 theorem kummerClass_eq_zero_iff_square {a : Kˣ} :
     kummerClass a = 0 ↔ a ∈ Subgroup.square Kˣ := by
   constructor
   · intro hz
     -- `kummerClass` is the canonical Kummer map read through the degree-one coefficient map, so
-    -- injectivity of that map reads `hz` back as a vanishing canonical Kummer map.
+    -- injectivity of that map, read off `TauCeti.kummerCohomAddEquiv`, reads `hz` back as a
+    -- vanishing canonical Kummer map.
     have hzero : (kummerCohomMap K).hom
         (Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a)) = 0 :=
       by simpa only [kummerClass] using hz
     have hz' : Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a)
         = 0 :=
-      (kummerCohomMap_injective K) <| by simpa only [map_zero] using hzero
+      (kummerCohomAddEquiv K).injective <|
+        by simpa only [kummerCohomAddEquiv_apply, map_zero] using hzero
     have hz'' : Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) a) = 0 := by
       -- The degree-one comparison sends the explicit Kummer map to the canonical one, and the
       -- comparison is an additive equivalence, so it is injective.
@@ -406,7 +435,7 @@ theorem kummerClass_eq_zero_iff_square {a : Kˣ} :
 
 /-- **The literal square-class quotient is the power-class quotient at `n = 2`**: the subgroup of
 `n`th powers is at `n = 2` the subgroup of squares, so `TauCeti.MultiplicativeSquareClassGroup K`,
-the literal quotient `Kˣ ⨿ (Kˣ)²`, is the quotient `TauCeti.powerClassQuotient Kˣ 2` that
+the literal quotient `Kˣ ⧸ (Kˣ)²`, is the quotient `TauCeti.powerClassQuotient Kˣ 2` that
 `TauCeti.kummerIso` is stated on. The two subgroups are compared through their two descriptions of
 their elements, the squares and the `n`th powers at `n = 2` (`TauCeti.mem_powerSubgroup_iff`). -/
 private noncomputable def squareClassQuotientEquiv :
@@ -422,8 +451,29 @@ private noncomputable def squareClassQuotientEquiv :
     · rintro ⟨r, hr⟩
       exact ⟨r, by rw [← hr, pow_two]⟩)
 
+omit [Invertible (2 : K)] in
+/-- The literal square-class quotient is the identity on representatives: the application rule of
+`TauCeti.squareClassQuotientEquiv` on the class of a unit, which is how `TauCeti.kummerIso` is
+read on a representative. -/
+@[simp]
+private theorem squareClassQuotientEquiv_mk (a : Kˣ) :
+    squareClassQuotientEquiv K (QuotientGroup.mk a) = QuotientGroup.mk a :=
+  QuotientGroup.quotientMulEquivOfEq_mk _ a
+
+omit [Invertible (2 : K)] in
+/-- The canonical equivalence reads the square class of `a` back to the class of `a` in
+`TauCeti.MultiplicativeSquareClassGroup K`: the application rule of
+`TauCeti.multiplicativeSquareClassEquiv` on its own value, in the direction that leaves the additive
+square-class group for the literal quotient. -/
+@[simp]
+private theorem multiplicativeSquareClassEquiv_symm_mk (a : Kˣ) :
+    (multiplicativeSquareClassEquiv (K := K)).symm (Multiplicative.ofAdd (squareClass a))
+      = QuotientGroup.mk a := by
+  rw [← multiplicativeSquareClassEquiv_mk a]
+  exact MulEquiv.symm_apply_apply _ _
+
 /-- **The Kummer isomorphism on square classes**, into the explicit `H¹(G_K, μ₂)`: the generic
-Kummer isomorphism `TauCeti.kummerIso` at `n = 2`, whose domain is `Kˣ ⨿ (Kˣ)ⁿ`, read on the
+Kummer isomorphism `TauCeti.kummerIso` at `n = 2`, whose domain is `Kˣ ⧸ (Kˣ)ⁿ`, read on the
 square-class group `TauCeti.SquareClassGroup K` through the two identifications
 `TauCeti.multiplicativeSquareClassEquiv` and `TauCeti.squareClassQuotientEquiv` above. -/
 private noncomputable def kummerSquareClassEquivH1 :
@@ -436,41 +486,17 @@ private noncomputable def kummerSquareClassEquivH1 :
 /-- **The Kummer isomorphism on square classes sends the square class of `a` to the Kummer class
 `(a)`**: the isomorphism read on a representative `a`, which is the only statement about it needed
 downstream. -/
+@[simp]
 private theorem kummerSquareClassEquivH1_squareClass (a : Kˣ) :
     kummerSquareClassEquivH1 K (squareClass a)
       = Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) a) := by
-  -- The equivalence is read off one identification at a time: the additive presentation of the
-  -- square-class group, the literal quotient, and then the Kummer isomorphism on a representative
-  -- `a` (`TauCeti.kummerIso_mk`). The two `AddEquiv.additiveMultiplicative` steps only remove the
-  -- generated additive and multiplicative type tags.
-  rw [kummerSquareClassEquivH1, AddEquiv.trans_apply, AddEquiv.additiveMultiplicative_symm_apply,
-    AddEquiv.toMultiplicativeRight_symm_apply_apply, squareClassQuotientEquiv, toMul_ofMul,
-    MulEquiv.trans_apply, MulEquiv.trans_apply,
-    ← multiplicativeSquareClassEquiv_mk a,
-    MulEquiv.symm_apply_apply (multiplicativeSquareClassEquiv (K := K)),
-    QuotientGroup.quotientMulEquivOfEq_mk, kummerIso_mk K 2 (isUnit_of_invertible (2 : K)) a]
-
-/-- The degree-one map induced by the coefficient isomorphism is a bijection, being the underlying
-continuous linear map of the equivalence of coefficient objects it is read off. -/
-private theorem kummerCohomMap_bijective : Function.Bijective ⇑(kummerCohomMap K) :=
-  ⟨(ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 1).mapIso
-      (kummerCoeffIsoTrivialF2 K) |>.toContinuousLinearEquiv.injective,
-    (ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 1).mapIso
-      (kummerCoeffIsoTrivialF2 K) |>.toContinuousLinearEquiv.toEquiv.surjective⟩
-
-/-- The coefficient isomorphism read on degree-one continuous cohomology, as an equivalence of
-additive groups. -/
-private noncomputable def kummerCohomAddEquiv :
-    continuousCohomology 1 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2)) ≃+
-      continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
-  AddEquiv.ofBijective (kummerCohomMap K).hom
-    ⟨kummerCohomMap_injective K, (kummerCohomMap_bijective K).surjective⟩
-
-/-- The degree-one coefficient isomorphism applies as the degree-one map it is read off. -/
-private theorem kummerCohomAddEquiv_apply
-    (y : continuousCohomology 1 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2))) :
-    kummerCohomAddEquiv K y = (kummerCohomMap K).hom y :=
-  rfl
+  -- Every layer of the composite is read off its application rule: the additive presentation of
+  -- the square-class group, the canonical equivalence, the literal quotient, and the Kummer
+  -- isomorphism on a representative `a` (`TauCeti.kummerIso_apply` and
+  -- `TauCeti.kummerClassMap_mk`). The single named rewrite is the rule that removes the generated
+  -- additive and multiplicative type tags.
+  simp [kummerSquareClassEquivH1, AddEquiv.toMultiplicativeRight_symm_apply_apply,
+    multiplicativeSquareClassEquiv_symm_mk, squareClassQuotientEquiv_mk]
 
 /-- **The Kummer isomorphism on the square classes** `Kˣ ⧸ (Kˣ)² ≃+ H¹(G_K, 𝔽₂)`: the square class
 of a unit `a` is sent to the Kummer class `(a)`. The square-class side is the square-class group
@@ -486,9 +512,13 @@ variable {K}
 
 /-- The Kummer isomorphism on square classes sends the square class of `a` to the Kummer class
 `(a)`, which is the statement that identifies its two sides. -/
+@[simp]
 theorem kummerSquareClassEquiv_squareClass (a : Kˣ) :
     kummerSquareClassEquiv K (squareClass a) = kummerClass a := by
-  rw [kummerSquareClassEquiv, AddEquiv.trans_apply, kummerSquareClassEquivH1_squareClass,
-    AddEquiv.trans_apply, kummerCohomAddEquiv_apply, kummerClass, ← explicitIso_kummerMap]
+  -- Both sides are the same composite read on the same input: the explicit `H¹` isomorphism on the
+  -- square class of `a` (`TauCeti.kummerSquareClassEquivH1_squareClass`), the degree-one
+  -- coefficient map, and the canonical Kummer class of `a`, which
+  -- `TauCeti.explicitIso_kummerMap` reads as the explicit one.
+  simp [kummerSquareClassEquiv, kummerClass, explicitIso_kummerMap]
 
 end TauCeti
