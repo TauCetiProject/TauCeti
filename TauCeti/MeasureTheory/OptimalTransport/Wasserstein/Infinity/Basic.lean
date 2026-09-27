@@ -193,4 +193,21 @@ theorem wassersteinEDist_top_le_iff (μ ν : Measure X) [IsFiniteMeasure μ]
     rw [eLpNorm_exponent_top measurable_edist.aestronglyMeasurable]
     exact eLpNormEssSup_le_of_ae_enorm_bound (by simpa only [enorm_eq_self] using hbound)
 
+/-- On a space whose distinct points are at least `r` apart, two measures at
+`W_∞` distance strictly less than `r` agree. Indeed, an optimal coupling cannot move
+mass between distinct points. This also applies when the distance is infinite. -/
+theorem eq_of_wassersteinEDist_top_lt_of_pairwise (μ ν : Measure X) [IsFiniteMeasure μ]
+    (hcoup : ∃ π, IsCoupling π μ ν) {r : ℝ≥0∞}
+    (hsep : Pairwise fun x y : X ↦ r ≤ edist x y)
+    (h : wassersteinEDist ∞ μ ν < r) : μ = ν := by
+  obtain ⟨π, hπ, hπd⟩ := (wassersteinEDist_top_le_iff μ ν hcoup
+    (r := wassersteinEDist ∞ μ ν)).mp le_rfl
+  have hae : (fun z : X × X ↦ z.1) =ᵐ[π] (fun z ↦ z.2) := hπd.mono fun z hz ↦ by
+    by_contra hne
+    exact (not_lt_of_ge (hsep hne)) (hz.trans_lt h)
+  calc
+    μ = π.fst := hπ.fst_eq.symm
+    _ = π.snd := Measure.map_congr hae
+    _ = ν := hπ.snd_eq
+
 end TauCeti
