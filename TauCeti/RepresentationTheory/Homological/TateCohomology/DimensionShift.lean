@@ -118,9 +118,9 @@ theorem dimensionShiftUpIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
       comm₁₂ := coindBotUnit_naturality f
       comm₂₃ := (dimensionShiftUpπ_naturality f).symm }
   rw [dimensionShiftUpIso_hom, dimensionShiftUpIso_hom]
-  exact (HomologicalComplex.HomologySequence.δ_naturality
-    ((tateComplexFunctor k G).mapShortComplex.map φ)
-    _ _ n (n + 1) rfl).symm
+  exact (_root_.TateCohomology.δ_naturality
+    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact A)
+    (by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact B) φ n).symm
 
 variable {A} in
 /-- The inverse upward shift commutes with a coefficient morphism. -/
@@ -147,9 +147,9 @@ theorem dimensionShiftDownIso_hom_naturality {B : Rep k G} (f : A ⟶ B) :
       comm₁₂ := dimensionShiftDownι_naturality f
       comm₂₃ := indBotCounit_naturality f }
   rw [dimensionShiftDownIso_hom, dimensionShiftDownIso_hom]
-  exact (HomologicalComplex.HomologySequence.δ_naturality
-    ((tateComplexFunctor k G).mapShortComplex.map φ)
-    _ _ n (n + 1) rfl).symm
+  exact (_root_.TateCohomology.δ_naturality
+    (by simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact A)
+    (by simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact B) φ n).symm
 
 /-- Vanishing in degree `n` of an upward shift is vanishing in degree `n + 1` of the original
 module. -/
@@ -234,11 +234,14 @@ theorem tensorDimensionShiftUpIso_hom_naturality_right {B : Rep k G} (f : A ⟶ 
       τ₃ := dimensionShiftUpMap f
       comm₁₂ := coindBotUnit_naturality f
       comm₂₃ := (dimensionShiftUpπ_naturality f).symm }
+  subst j
   rw [tensorDimensionShiftUpIso_hom, tensorDimensionShiftUpIso_hom]
-  exact (HomologicalComplex.HomologySequence.δ_naturality
-    ((tateComplexFunctor k G).mapShortComplex.map
-      ((tensorLeft M).mapShortComplex.map φ))
-    _ _ i j hij).symm
+  exact (_root_.TateCohomology.δ_naturality
+    (by simpa only [dimensionShiftUpSES_def, Functor.mapShortComplex_obj] using
+      dimensionShiftUpSES_tensorLeft_shortExact A M)
+    (by simpa only [dimensionShiftUpSES_def, Functor.mapShortComplex_obj] using
+      dimensionShiftUpSES_tensorLeft_shortExact B M)
+    ((tensorLeft M).mapShortComplex.map φ) i).symm
 
 variable {A} in
 /-- The tensored downward dimension shift is natural in its shifting representation. -/
@@ -257,11 +260,14 @@ theorem tensorDimensionShiftDownIso_hom_naturality_right {B : Rep k G} (f : A �
       τ₃ := f
       comm₁₂ := dimensionShiftDownι_naturality f
       comm₂₃ := indBotCounit_naturality f }
+  subst j
   rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom]
-  exact (HomologicalComplex.HomologySequence.δ_naturality
-    ((tateComplexFunctor k G).mapShortComplex.map
-      ((tensorLeft M).mapShortComplex.map φ))
-    _ _ i j hij).symm
+  exact (_root_.TateCohomology.δ_naturality
+    (by simpa only [dimensionShiftDownSES_def, Functor.mapShortComplex_obj] using
+      dimensionShiftDownSES_tensorLeft_shortExact A M)
+    (by simpa only [dimensionShiftDownSES_def, Functor.mapShortComplex_obj] using
+      dimensionShiftDownSES_tensorLeft_shortExact B M)
+    ((tensorLeft M).mapShortComplex.map φ) i).symm
 
 variable {A} in
 /-- The inverse tensored downward shift is natural in its shifting representation. -/
@@ -276,7 +282,7 @@ theorem tensorDimensionShiftDownIso_inv_naturality_right {B : Rep k G} (f : A �
 
 variable {M} in
 /-- The tensored upward dimension shift is natural in the tensoring representation. -/
-theorem tensorDimensionShiftUpIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+theorem tensorDimensionShiftUpIso_hom_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map (f ▷ dimensionShiftUp A) ≫
         (tensorDimensionShiftUpIso A M' i j hij).hom =
@@ -290,7 +296,7 @@ theorem tensorDimensionShiftUpIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (
 
 variable {M} in
 /-- The tensored downward dimension shift is natural in the tensoring representation. -/
-theorem tensorDimensionShiftDownIso_hom_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+theorem tensorDimensionShiftDownIso_hom_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor i).map (f ▷ A) ≫ (tensorDimensionShiftDownIso A M' i j hij).hom =
       (tensorDimensionShiftDownIso A M i j hij).hom ≫
@@ -305,12 +311,12 @@ theorem tensorDimensionShiftDownIso_hom_naturality {M' : Rep k G} (f : M ⟶ M')
 variable {M} in
 /-- The inverse of the tensored downward dimension shift is natural in the tensoring
 representation. -/
-theorem tensorDimensionShiftDownIso_inv_naturality {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
+theorem tensorDimensionShiftDownIso_inv_naturality_left {M' : Rep k G} (f : M ⟶ M') (i j : ℤ)
     (hij : i + 1 = j) :
     (tateCohomologyFunctor j).map (f ▷ dimensionShiftDown A) ≫
         (tensorDimensionShiftDownIso A M' i j hij).inv =
       (tensorDimensionShiftDownIso A M i j hij).inv ≫ (tateCohomologyFunctor i).map (f ▷ A) := by
-  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality,
+  rw [Iso.comp_inv_eq, Category.assoc, tensorDimensionShiftDownIso_hom_naturality_left,
     Iso.inv_hom_id_assoc]
 
 end Tensor

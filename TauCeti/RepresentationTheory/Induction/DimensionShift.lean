@@ -223,69 +223,6 @@ theorem dimensionShiftDownSES_tensorLeft_shortExact (A M : Rep k G) :
 
 /-! ### Functoriality of the dimension-shifting sequences -/
 
-/-- The map of coinduced representations associated to a morphism of representations. -/
-def coindBotMap {A B : Rep k G} (f : A ⟶ B) :
-    coindBot k G A.V ⟶ coindBot k G B.V :=
-  (coindBotFunctor k G).map ((forget₂ (Rep k G) (ModuleCat k)).map f)
-
-/-- The coinduced map acts pointwise by the underlying map. -/
-@[simp]
-theorem coindBotMap_hom_apply_coe {A B : Rep k G} (f : A ⟶ B)
-    (x : coindBot k G A.V) (g : G) :
-    ((coindBotMap f).hom x).1 g = f.hom (x.1 g) :=
-  coindBotFunctor_map_hom_apply_coe ((forget₂ (Rep k G) (ModuleCat k)).map f) x g
-
-/-- The map of induced representations associated to a morphism of representations. -/
-def indBotMap {A B : Rep k G} (f : A ⟶ B) :
-    (indBotFunctor k G).obj (ModuleCat.of k A.V) ⟶
-      (indBotFunctor k G).obj (ModuleCat.of k B.V) :=
-  (indBotFunctor k G).map ((forget₂ (Rep k G) (ModuleCat k)).map f)
-
-/-- The induced map applies the underlying map to every generator. -/
-theorem indBotMap_hom_mk {A B : Rep k G} (f : A ⟶ B) (g : G) (a : A) :
-    (indBotMap f).hom
-        (Representation.IndV.mk (⊥ : Subgroup G).subtype
-          (Representation.trivial k (⊥ : Subgroup G) A.V) g a) =
-      Representation.IndV.mk (⊥ : Subgroup G).subtype
-        (Representation.trivial k (⊥ : Subgroup G) B.V) g
-        (f.hom a) :=
-  indBotFunctor_map_hom_mk ((forget₂ (Rep k G) (ModuleCat k)).map f) g a
-
-/-- The embedding into a coinduced representation is natural in the representation. -/
-@[reassoc]
-theorem coindBotUnit_naturality {A B : Rep k G} (f : A ⟶ B) :
-    f ≫ coindBotUnit B = coindBotUnit A ≫ coindBotMap f := by
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  ext a g
-  -- Evaluate the two composites as maps into the coinduced function space.
-  change ((coindBotUnit B).hom (f.hom a)).1 g =
-    ((coindBotMap f).hom ((coindBotUnit A).hom a)).1 g
-  rw [coindBotUnit_hom_apply_coe, coindBotMap_hom_apply_coe,
-    coindBotUnit_hom_apply_coe]
-  exact (Rep.hom_comm_apply f g a).symm
-
-/-- The projection from an induced representation is natural in the representation. -/
-@[reassoc]
-theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
-    indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f := by
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply Representation.IndV.hom_ext (⊥ : Subgroup G).subtype
-    (Representation.trivial k (⊥ : Subgroup G) A.V)
-  intro g
-  apply LinearMap.ext
-  intro a
-  -- Evaluate both composites on the generators of the induced representation.
-  change (indBotCounit B).hom ((indBotMap f).hom
-      (Representation.IndV.mk (⊥ : Subgroup G).subtype
-        (Representation.trivial k (⊥ : Subgroup G) A.V) g a)) =
-    f.hom ((indBotCounit A).hom
-      (Representation.IndV.mk (⊥ : Subgroup G).subtype
-        (Representation.trivial k (⊥ : Subgroup G) A.V) g a))
-  rw [indBotMap_hom_mk, indBotCounit_hom_mk, indBotCounit_hom_mk]
-  exact (Rep.hom_comm_apply f g⁻¹ a).symm
-
 /-- The morphism induced on the upward dimension shift by a representation morphism. -/
 def dimensionShiftUpMap {A B : Rep k G} (f : A ⟶ B) :
     dimensionShiftUp A ⟶ dimensionShiftUp B :=
@@ -299,6 +236,30 @@ theorem dimensionShiftUpπ_naturality {A B : Rep k G} (f : A ⟶ B) :
       coindBotMap f ≫ dimensionShiftUpπ B := by
   exact cokernel.π_desc _ _ _
 
+/-- The upward shift map preserves identity morphisms. -/
+@[simp]
+theorem dimensionShiftUpMap_id (A : Rep k G) : dimensionShiftUpMap (𝟙 A) = 𝟙 _ := by
+  simp [dimensionShiftUpMap, dimensionShiftUp]
+
+/-- The upward shift map preserves composition. -/
+@[simp]
+theorem dimensionShiftUpMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
+    dimensionShiftUpMap (f ≫ g) = dimensionShiftUpMap f ≫ dimensionShiftUpMap g := by
+  apply (cancel_epi (dimensionShiftUpπ A)).mp
+  calc
+    dimensionShiftUpπ A ≫ dimensionShiftUpMap (f ≫ g) =
+        coindBotMap (f ≫ g) ≫ dimensionShiftUpπ C :=
+      dimensionShiftUpπ_naturality (f ≫ g)
+    _ = (coindBotMap f ≫ coindBotMap g) ≫ dimensionShiftUpπ C := by
+      rw [coindBotMap_comp]
+    _ = coindBotMap f ≫ (coindBotMap g ≫ dimensionShiftUpπ C) :=
+      Category.assoc _ _ _
+    _ = coindBotMap f ≫ (dimensionShiftUpπ B ≫ dimensionShiftUpMap g) := by
+      rw [dimensionShiftUpπ_naturality g]
+    _ = (coindBotMap f ≫ dimensionShiftUpπ B) ≫ dimensionShiftUpMap g :=
+      (Category.assoc _ _ _).symm
+    _ = (dimensionShiftUpπ A ≫ dimensionShiftUpMap f) ≫ dimensionShiftUpMap g := by
+      rw [dimensionShiftUpπ_naturality f]
 
 /-- The morphism induced on the downward dimension shift by a representation morphism. -/
 def dimensionShiftDownMap {A B : Rep k G} (f : A ⟶ B) :
@@ -312,5 +273,20 @@ theorem dimensionShiftDownι_naturality {A B : Rep k G} (f : A ⟶ B) :
     dimensionShiftDownMap f ≫ dimensionShiftDownι B =
       dimensionShiftDownι A ≫ indBotMap f := by
   exact kernel.lift_ι _ _ _
+
+/-- The downward shift map preserves identity morphisms. -/
+@[simp]
+theorem dimensionShiftDownMap_id (A : Rep k G) : dimensionShiftDownMap (𝟙 A) = 𝟙 _ := by
+  simp only [dimensionShiftDownMap, dimensionShiftDown, indBotMap_id]
+  change kernel.map (indBotCounit A) (indBotCounit A)
+    (𝟙 (indBot k G A.V)) (𝟙 A) _ = 𝟙 _
+  exact kernel.map_id (indBotCounit A) (𝟙 A) (by simp)
+
+/-- The downward shift map preserves composition. -/
+@[simp]
+theorem dimensionShiftDownMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
+    dimensionShiftDownMap (f ≫ g) = dimensionShiftDownMap f ≫ dimensionShiftDownMap g := by
+  apply (cancel_mono (dimensionShiftDownι C)).mp
+  simp [dimensionShiftDownMap, dimensionShiftDownι, dimensionShiftDown, kernel.map, indBotMap_comp]
 
 end Rep

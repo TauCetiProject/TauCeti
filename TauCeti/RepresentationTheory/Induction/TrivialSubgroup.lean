@@ -36,6 +36,7 @@ The constructions follow `ClassFieldTheory/Cohomology/IndCoind/Finite.lean` and
 ## Main definitions
 
 * `Rep.coindBot`, `Rep.coindBotFunctor`: coinduction from the trivial subgroup.
+* `Rep.coindBotMap`, `Rep.indBotMap`: maps induced by morphisms of representations.
 * `Rep.coindBotUnit`: the monomorphism `A ⟶ coindBot k G A.V`.
 * `Rep.indBot`, `Rep.indBotFunctor`: induction from the trivial subgroup.
 * `Rep.indBotCounit`: the epimorphism `indBot k G A.V ⟶ A`.
@@ -60,7 +61,7 @@ public noncomputable section
 
 universe u
 
-open CategoryTheory Representation
+open CategoryTheory Representation MonoidalCategory
 
 namespace Rep
 
@@ -148,6 +149,45 @@ instance coindBotUnit_mono (A : Rep k G) : Mono (coindBotUnit A) :=
       rw [← coindBotUnit_hom_apply_coe, ← coindBotUnit_hom_apply_coe, h]
     simpa using h1
 
+/-- The map of coinduced representations associated to a morphism of representations. -/
+def coindBotMap {A B : Rep k G} (f : A ⟶ B) :
+    coindBot k G A.V ⟶ coindBot k G B.V :=
+  (coindBotFunctor k G).map ((forget₂ (Rep k G) (ModuleCat k)).map f)
+
+/-- The map induced by an identity morphism is the identity. -/
+@[simp]
+theorem coindBotMap_id (A : Rep k G) : coindBotMap (𝟙 A) = 𝟙 _ := by
+  simp [coindBotMap]
+  rfl
+
+/-- The map induced by a composite is the composite of the induced maps. -/
+@[simp]
+theorem coindBotMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
+    coindBotMap (f ≫ g) = coindBotMap f ≫ coindBotMap g := by
+  simp [coindBotMap]
+  rfl
+
+/-- The coinduced map acts pointwise by the underlying map. -/
+@[simp]
+theorem coindBotMap_hom_apply_coe {A B : Rep k G} (f : A ⟶ B)
+    (x : coindBot k G A.V) (g : G) :
+    ((coindBotMap f).hom x).1 g = f.hom (x.1 g) :=
+  coindBotFunctor_map_hom_apply_coe ((forget₂ (Rep k G) (ModuleCat k)).map f) x g
+
+/-- The embedding into a coinduced representation is natural in the representation. -/
+@[reassoc]
+theorem coindBotUnit_naturality {A B : Rep k G} (f : A ⟶ B) :
+    f ≫ coindBotUnit B = coindBotUnit A ≫ coindBotMap f := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  ext a g
+  -- Evaluate the two composites as maps into the coinduced function space.
+  change ((coindBotUnit B).hom (f.hom a)).1 g =
+    ((coindBotMap f).hom ((coindBotUnit A).hom a)).1 g
+  rw [coindBotUnit_hom_apply_coe, coindBotMap_hom_apply_coe,
+    coindBotUnit_hom_apply_coe]
+  exact (Rep.hom_comm_apply f g a).symm
+
 variable (k G) in
 /-- The underlying module of the representation coinduced from the trivial subgroup is the module
 of all functions `G → X`. -/
@@ -228,6 +268,55 @@ theorem indBotCounit_hom_mk (A : Rep k G) (g : G) (a : A) :
 instance indBotCounit_epi (A : Rep k G) : Epi (indBotCounit A) :=
   (epi_iff_surjective _).2 fun a ↦ ⟨IndV.mk _ _ 1 a, by rw [indBotCounit_hom_mk, inv_one, map_one,
     Module.End.one_apply]⟩
+
+/-- The map of induced representations associated to a morphism of representations. -/
+def indBotMap {A B : Rep k G} (f : A ⟶ B) :
+    indBot k G A.V ⟶ indBot k G B.V :=
+  eqToHom (indBotFunctor_obj (ModuleCat.of k A.V)).symm ≫
+    (indBotFunctor k G).map ((forget₂ (Rep k G) (ModuleCat k)).map f) ≫
+      eqToHom (indBotFunctor_obj (ModuleCat.of k B.V))
+
+/-- The map induced by an identity morphism is the identity. -/
+@[simp]
+theorem indBotMap_id (A : Rep k G) : indBotMap (𝟙 A) = 𝟙 _ := by
+  simp [indBotMap]
+
+/-- The map induced by a composite is the composite of the induced maps. -/
+@[simp]
+theorem indBotMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
+    indBotMap (f ≫ g) = indBotMap f ≫ indBotMap g := by
+  simp [indBotMap]
+
+/-- The induced map applies the underlying map to every generator. -/
+theorem indBotMap_hom_mk {A B : Rep k G} (f : A ⟶ B) (g : G) (a : A) :
+    (indBotMap f).hom
+        (Representation.IndV.mk (⊥ : Subgroup G).subtype
+          (Representation.trivial k (⊥ : Subgroup G) A.V) g a) =
+      Representation.IndV.mk (⊥ : Subgroup G).subtype
+        (Representation.trivial k (⊥ : Subgroup G) B.V) g
+        (f.hom a) :=
+  indBotFunctor_map_hom_mk ((forget₂ (Rep k G) (ModuleCat k)).map f) g a
+
+/-- The projection from an induced representation is natural in the representation. -/
+@[reassoc]
+theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
+    indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  apply Representation.IndV.hom_ext (⊥ : Subgroup G).subtype
+    (Representation.trivial k (⊥ : Subgroup G) A.V)
+  intro g
+  apply LinearMap.ext
+  intro a
+  -- Evaluate both composites on the generators of the induced representation.
+  change (indBotCounit B).hom ((indBotMap f).hom
+      (Representation.IndV.mk (⊥ : Subgroup G).subtype
+        (Representation.trivial k (⊥ : Subgroup G) A.V) g a)) =
+    f.hom ((indBotCounit A).hom
+      (Representation.IndV.mk (⊥ : Subgroup G).subtype
+        (Representation.trivial k (⊥ : Subgroup G) A.V) g a))
+  rw [indBotMap_hom_mk, indBotCounit_hom_mk, indBotCounit_hom_mk]
+  exact (Rep.hom_comm_apply f g⁻¹ a).symm
 
 variable (k G) in
 /-- The underlying module of the representation induced from the trivial subgroup is the module
