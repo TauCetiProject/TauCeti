@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
@@ -121,3 +123,40 @@ theorem IsMetricCompatible.inner_curvatureTensor_eq_neg
   exact hcov.inner_curvatureOperator_eq_neg (n := ∞) (by simp) hX hY hσ hτ x
 
 end CovariantDerivative
+
+namespace Bundle.RiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [MetricSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [T2Space (TangentBundle I M)]
+
+/-- A connection has constant-curvature tensor `κ` when
+`R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)` at every point. -/
+@[expose] def IsConstantCurvatureTensor
+    (g : RiemannianMetric (fun x : M ↦ TangentSpace I x))
+    (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
+    (hcov : CovariantDerivative.ContMDiffCovariantDerivative cov ∞) (κ : ℝ) : Prop :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g⟩
+  letI := hcov
+  ∀ (x : M) (w u v : TangentSpace I x),
+    cov.curvatureTensor x w u v = κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u)
+
+end Bundle.RiemannianMetric
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [MetricSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [T2Space (TangentBundle I M)]
+
+/-- The Levi-Civita connection of `g` has constant curvature `κ`. -/
+@[expose] def IsConstantCurvatureTensorMetric
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (κ : ℝ) : Prop :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  letI : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) := inferInstance
+  g.toRiemannianMetric.IsConstantCurvatureTensor
+    (CovariantDerivative.leviCivitaConnection I M) inferInstance κ
+
+end Bundle.ContMDiffRiemannianMetric
