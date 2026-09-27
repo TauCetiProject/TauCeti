@@ -91,6 +91,16 @@ noncomputable def normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n �
     TangentSpace J (f x) →L[𝕜] f.NormalSpace x hn :=
   (f.tangentRange x hn).mkQL
 
+/-- The continuous normal-class map gives the normal space its quotient topology. -/
+theorem isQuotientMap_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    Topology.IsQuotientMap (f.normalClassL x hn) :=
+  (f.tangentRange x hn).isQuotientMap_mkQL
+
+/-- The continuous normal-class map is an open quotient map. -/
+theorem isOpenQuotientMap_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    IsOpenQuotientMap (f.normalClassL x hn) :=
+  (f.tangentRange x hn).isOpenQuotientMap_mkQL
+
 /-- The continuous normal-class map has `normalClass` as its underlying linear map. -/
 @[simp]
 theorem normalClassL_toLinearMap (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
