@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Compact.Convolution
 public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
 public import TauCeti.RepresentationTheory.Continuous.Representative
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The finite-dimensional representations carried by convolution eigenspaces
@@ -142,20 +141,17 @@ theorem isUnitary_convolutionEigenspaceRepresentation (k : C(G, 𝕜)) (μ : �
   (isUnitary_rightRegularLp 𝕜 G).subrepresentation _
 
 /-- **The eigenspace representation at a nonzero eigenvalue is continuous.** The eigenspace is
-finite-dimensional, so continuity for the operator norm may be checked one vector at a time; on a
-vector it is the strong continuity of the right regular representation.
+finite-dimensional and the right regular representation is strongly continuous, which is what
+`TauCeti.ContRepresentation.continuous_subrepresentation_of_finiteDimensional` consumes.
 
 Together with `TauCeti.finiteDimensional_eigenspace_convolutionOperator` this is the statement
 that a nonzero eigenspace of a convolution operator carries a finite-dimensional continuous
 representation of `G`. -/
 theorem continuous_convolutionEigenspaceRepresentation (k : C(G, 𝕜)) {μ : 𝕜} (hμ : μ ≠ 0) :
-    Continuous (convolutionEigenspaceRepresentation k μ) := by
+    Continuous (convolutionEigenspaceRepresentation k μ) :=
   have := finiteDimensional_eigenspace_convolutionOperator k hμ
-  rw [continuous_clm_apply]
-  intro f
-  rw [Topology.IsInducing.subtypeVal.continuous_iff]
-  simpa only [Function.comp_def, coe_convolutionEigenspaceRepresentation_apply] using
-    continuous_rightRegularLp_apply (f : Lp 𝕜 2 (haarProb G))
+  ContRepresentation.continuous_subrepresentation_of_finiteDimensional
+    continuous_rightRegularLp_apply
 
 /-! ### The eigenvectors are representative functions -/
 
