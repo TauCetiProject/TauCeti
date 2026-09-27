@@ -87,6 +87,12 @@ theorem norm_inv_smul_sub_lt_one {c z : E} {R : ℝ} (hR : 0 < R)
   rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR]
   exact (inv_mul_lt_iff₀ hR).2 (by simpa using hz)
 
+/-- A boundary point of a ball of positive radius has unit norm in normalized coordinates. -/
+theorem norm_inv_smul_sub_eq_one_of_norm_sub_eq {c z : E} {R : ℝ}
+    (hR : 0 < R) (hz : ‖z - c‖ = R) : ‖R⁻¹ • (z - c)‖ = 1 := by
+  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, hz]
+  exact inv_mul_cancel₀ hR.ne'
+
 end Normalization
 
 end TauCeti
