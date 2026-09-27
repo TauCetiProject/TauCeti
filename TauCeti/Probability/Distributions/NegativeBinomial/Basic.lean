@@ -29,7 +29,8 @@ and the additivity of the shape parameter under convolution.
 
 * `negativeBinomialMeasure_singleton` and `negativeBinomialMeasure_real_singleton` compute the
   native masses;
-* `negativeBinomialMeasure_zero` and `negativeBinomialMeasure_one` identify the two Dirac boundary
+* `negativeBinomialMeasure_zero` and
+  `negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one` identify the two Dirac boundary
   laws;
 * `negativeBinomialMeasure_singleton_ne_zero_iff` characterizes their exact support, including the
   shape-zero and success-probability-one boundary laws;
@@ -150,7 +151,7 @@ theorem negativeBinomialWeightReal_eq_coeff (hr : 0 < r) (k : ℕ) :
 
 /-- At success probability one, the negative-binomial law is concentrated at zero. -/
 @[simp]
-theorem negativeBinomialMeasure_one {r : ℝ} (hr : 0 ≤ r) :
+theorem negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one {r : ℝ} (hr : 0 ≤ r) :
     negativeBinomialMeasure r 1 = Measure.dirac 0 := by
   rcases hr.eq_or_lt with rfl | hr
   · exact negativeBinomialMeasure_zero zero_lt_one le_rfl
