@@ -17,8 +17,8 @@ even Clifford unit is a scalar unit. When the form represents a unit, scalar uni
 Mathlib's Lipschitz group, so the even unitary carrier and the Spin carrier coincide in this
 dimension.
 
-This is the first low-rank case of the comparison between `spinGroup` and the unitary group of
-the even Clifford algebra. The zero-dimensional case is different: its Lipschitz group is trivial.
+The rank-one equality identifies `spinGroup` with the unitary group of the even Clifford algebra
+inside Clifford units. The zero-dimensional case is different: its Lipschitz group is trivial.
 
 The scalar description follows the standard Clifford algebra calculation; see H. B. Lawson and
 M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §2.
@@ -31,7 +31,7 @@ namespace CliffordAlgebra
 universe u v
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] [Invertible (2 : K)]
+  [Invertible (2 : K)]
 
 /-- For a one-dimensional quadratic space representing a unit, every even Clifford unit lies in
 Mathlib's Lipschitz group. -/
@@ -52,6 +52,7 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_one (Q : QuadraticForm 
 
 /-- For a one-dimensional quadratic space representing a unit, the Spin group fills the even
 unitary carrier inside Clifford units. -/
+-- Not `@[simp]`: `range_spinGroup_toUnits` already simplifies the left-hand side.
 theorem range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_eq_one
     (Q : QuadraticForm K V) (hQ : ∃ v, IsUnit (Q v))
     (hV : Module.finrank K V = 1) :
