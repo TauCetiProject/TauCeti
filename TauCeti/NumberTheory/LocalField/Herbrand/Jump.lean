@@ -38,22 +38,29 @@ def UpperJump (u : RamificationIndexDomain) : Prop :=
   ∀ v : RamificationIndexDomain, u < v →
     upperRamificationGroup K L v < upperRamificationGroup K L u
 
+/-- An upper break is a strict drop of the upper ramification group at every later index. -/
+theorem upperJump_iff (u : RamificationIndexDomain) :
+    UpperJump K L u ↔ ∀ v : RamificationIndexDomain, u < v →
+      upperRamificationGroup K L v < upperRamificationGroup K L u := Iff.rfl
+
 /-- The Herbrand function takes lower breaks precisely to upper breaks. -/
 @[simp]
 theorem upperJump_herbrand_iff (u : RamificationIndexDomain) :
     UpperJump K L (herbrand K L u) ↔ LowerJump K L u := by
   constructor
   · intro h
-    unfold LowerJump
+    apply (lowerJump_iff K L u).mpr
     intro v huv
-    have h' := h (herbrand K L v) ((herbrand_strictMono K L) huv)
+    have h' := (upperJump_iff K L _).mp h (herbrand K L v)
+      ((herbrand_strictMono K L) huv)
     simpa only [upperRamificationGroup_herbrand] using h'
-  · intro h v huv
-    unfold LowerJump at h
+  · intro h
+    apply (upperJump_iff K L _).mpr
+    intro v huv
     have h' : u < inverseHerbrand K L v := by
       have hv := (inverseHerbrand_strictMono K L) huv
       rwa [inverseHerbrand_herbrand] at hv
     simpa only [upperRamificationGroup_def, inverseHerbrand_herbrand] using
-      h (inverseHerbrand K L v) h'
+      (lowerJump_iff K L u).mp h (inverseHerbrand K L v) h'
 
 end TauCeti.LocalFieldsRamification

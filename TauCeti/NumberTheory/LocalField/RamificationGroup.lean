@@ -254,9 +254,14 @@ theorem lowerRamificationGroupReal_antitone : Antitone (lowerRamificationGroupRe
 
 /-- A lower break: the ramification group at `u` is strictly larger than the group at every
 later index. Since lower numbering uses ceilings, its breaks occur at integers. -/
-@[expose] def LowerJump (u : RamificationIndexDomain) : Prop :=
+def LowerJump (u : RamificationIndexDomain) : Prop :=
   ∀ v : RamificationIndexDomain, u < v →
     lowerRamificationGroupReal K L v < lowerRamificationGroupReal K L u
+
+/-- A lower break is a strict drop of the lower ramification group at every later index. -/
+theorem lowerJump_iff (u : RamificationIndexDomain) :
+    LowerJump K L u ↔ ∀ v : RamificationIndexDomain, u < v →
+      lowerRamificationGroupReal K L v < lowerRamificationGroupReal K L u := Iff.rfl
 
 /-- Every lower break occurs at an integer index. -/
 theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u) :
@@ -267,7 +272,8 @@ theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u)
   refine ⟨i, hi, ?_⟩
   rcases eq_or_lt_of_le hu with heq | hlt
   · exact Subtype.ext heq
-  · have hstrict := h ⟨(i : ℝ), hi⟩ (Subtype.mk_lt_mk.mpr hlt)
+  · have hstrict := (lowerJump_iff K L u).mp h ⟨(i : ℝ), hi⟩
+      (Subtype.mk_lt_mk.mpr hlt)
     have hsame : lowerRamificationGroupReal K L (i : ℝ) =
         lowerRamificationGroupReal K L (u : ℝ) := by
       simp only [lowerRamificationGroupReal_def, Int.ceil_intCast]
@@ -289,9 +295,11 @@ theorem lowerJump_intCast_iff {i : ℤ} (hi : (-1 : ℝ) ≤ (i : ℝ)) :
     have hsucc : (⟨(i : ℝ), hi⟩ : RamificationIndexDomain) < ⟨(i + 1 : ℤ), hi'⟩ := by
       apply Subtype.mk_lt_mk.mpr
       exact_mod_cast (by omega : i < i + 1)
-    simpa only [LowerJump, lowerRamificationGroupReal_intCast] using
-      h ⟨(i + 1 : ℤ), hi'⟩ hsucc
-  · intro h v hiv
+    simpa only [lowerRamificationGroupReal_intCast] using
+      (lowerJump_iff K L _).mp h ⟨(i + 1 : ℤ), hi'⟩ hsucc
+  · intro h
+    apply (lowerJump_iff K L _).mpr
+    intro v hiv
     have hreal : (i : ℝ) < (v : ℝ) := hiv
     have hceil : i + 1 ≤ ⌈(v : ℝ)⌉ := by
       have hlt : i < ⌈(v : ℝ)⌉ := (Int.lt_ceil).2 hreal
