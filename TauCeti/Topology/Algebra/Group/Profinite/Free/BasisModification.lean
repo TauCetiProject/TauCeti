@@ -270,12 +270,16 @@ noncomputable def basisModificationTail (ρ : gradedPiece p (freeProP p X) 1) (j
   span (ZMod p) (Set.range fun i : {i : X // (degreeOneBasis p X).repr ρ (Sum.inl i) = 0} ↦
     gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of (i : X))))
 
+/-- An iterated power `π^j ξ_i` belongs to `T_j(ρ)` when its coefficient `c_i` in `ρ`
+vanishes. -/
 theorem gradedPowIter_mem_basisModificationTail {ρ : gradedPiece p (freeProP p X) 1} {i : X}
     (hi : (degreeOneBasis p X).repr ρ (Sum.inl i) = 0) (j : ℕ) :
     gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) ∈
       basisModificationTail p X ρ j :=
   subset_span ⟨⟨i, hi⟩, rfl⟩
 
+/-- A submodule contains `T_j(ρ)` if and only if it contains every generator `π^j ξ_i`
+whose coefficient `c_i` in `ρ` vanishes. -/
 @[simp]
 theorem basisModificationTail_le_iff {ρ : gradedPiece p (freeProP p X) 1} {j : ℕ}
     {W : Submodule (ZMod p) (gradedPiece p (freeProP p X) j)} :
