@@ -55,8 +55,7 @@ def skeletonMap (n : ℕ) : skeletonObj C n ⟶ skeletonObj C' n :=
 
 @[simp]
 lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
-    ((show ContinuousMap (skeletonLT C (n : ℕ∞)) (skeletonLT C' (n : ℕ∞))
-      from (skeletonMap C C' hf n).hom) x).1 =
+    ((skeletonMap C C' hf n).hom x).1 =
       (f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1 := (rfl)
 
 /-- Restriction of a cellular map commutes with the inclusions of consecutive skeleta. -/
