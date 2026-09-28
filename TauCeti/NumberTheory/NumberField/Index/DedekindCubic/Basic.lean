@@ -48,11 +48,9 @@ theorem dedekindCubic_finrank_eq_three [NumberField K]
     (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     Module.finrank ℚ K = 3 := by
-  let b : PowerBasis ℚ K :=
-    PowerBasis.ofAdjoinEqTop' (IsIntegral.of_finite ℚ (θ : K)) hgen
-  rw [b.finrank]
-  change (minpoly ℚ (θ : K)).natDegree = 3
-  rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.isIntegral_coe,
+  rw [(PowerBasis.ofAdjoinEqTop' (IsIntegral.of_finite ℚ (θ : K)) hgen).finrank,
+    PowerBasis.ofAdjoinEqTop'_dim,
+    minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.isIntegral_coe,
     _root_.NumberField.RingOfIntegers.minpoly_coe,
     (minpoly.monic θ.isIntegral).natDegree_map, hmin]
   compute_degree <;> norm_num
