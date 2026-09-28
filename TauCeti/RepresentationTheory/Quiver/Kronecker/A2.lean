@@ -162,7 +162,8 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
   · simpa only [hij, ↓reduceIte] using h
   · simpa only [hij, ↓reduceIte] using h
 
-/-- An Ext-Euler pairing of vertex simples is the corresponding Ringel Euler matrix entry. -/
+/-- The delta-minus-arrow-count formula for two vertices of `1 ⟶ 2` gives the corresponding
+Ringel Euler matrix entry. -/
 @[simp]
 theorem extEulerMatrix_A2_apply (k : Type v) [Field k] (i j : Fin 2) :
     (if (![src, tgt] i : Kronecker A) = ![src, tgt] j then 1 else 0) -
