@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.Bilinear
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.Topology.Algebra.Algebra
 
 /-!
 # The algebra of bounded Hölder functions
@@ -17,7 +18,8 @@ one. Completeness is inherited from `HolderSpace`, so Banach algebra valued func
 give a Banach algebra. Commutativity and the normalization `‖1‖ = 1` are inherited when available;
 the latter requires a nonempty domain.
 
-The inclusion into bounded continuous functions and evaluation at a point are algebra homomorphisms.
+Constants, inclusion into bounded continuous functions, and evaluation are continuous algebra
+homomorphisms of operator norm at most one, with equality on nontrivial values and nonempty domains.
 This makes coefficient multiplication available within the Hölder spaces used in elliptic estimates.
 -/
 
@@ -131,19 +133,14 @@ instance : NormedRing (HolderSpace α X A) where
   __ := (inferInstance : Ring (HolderSpace α X A))
   __ := (inferInstance : NonUnitalNormedRing (HolderSpace α X A))
 
-/-- Constant functions as a ring homomorphism into the Hölder algebra. -/
-def constRingHom : A →+* HolderSpace α X A where
-  toFun := const
-  map_zero' := const_zero
-  map_one' := rfl
-  map_add' := const_add
-  map_mul' := const_mul
-
-@[simp]
-theorem constRingHom_apply (a : A) : constRingHom (α := α) (X := X) a = const a := (rfl)
-
 instance : Algebra ℝ (HolderSpace α X A) where
-  algebraMap := constRingHom.comp (algebraMap ℝ A)
+  algebraMap := RingHom.comp
+    { toFun := const
+      map_zero' := const_zero
+      map_one' := rfl
+      map_add' := const_add
+      map_mul' := const_mul }
+    (algebraMap ℝ A)
   commutes' c f := ext fun x ↦ by
     simpa using Algebra.commutes (R := ℝ) (A := A) c (f x)
   smul_def' c f := toBoundedContinuousFunction_injective (by
@@ -163,30 +160,105 @@ instance [Nonempty X] [NormOneClass A] : NormOneClass (HolderSpace α X A) where
     have h : (1 : HolderSpace α X A) = const 1 := rfl
     rw [h, norm_const, norm_one]
 
-/-- Forgetting the Hölder seminorm preserves all algebra operations. -/
-def toBoundedContinuousFunctionAlgHom : HolderSpace α X A →ₐ[ℝ] (X →ᵇ A) where
+/-- The continuous algebra homomorphism assigning a constant Hölder function to each value. -/
+def constA : A →A[ℝ] HolderSpace α X A where
+  toFun := const
+  map_zero' := const_zero
+  map_one' := rfl
+  map_add' := const_add
+  map_mul' := const_mul
+  commutes' c := by ext x; simp
+  cont := constL.continuous.congr constL_apply
+
+@[simp]
+theorem constA_apply (a : A) : constA (α := α) (X := X) a = const a := (rfl)
+
+/-- The constant map has operator norm at most one. -/
+theorem norm_constA_le_one :
+    ‖(constA (α := α) (X := X) (A := A)).toContinuousLinearMap‖ ≤ 1 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+  intro a
+  simpa using norm_const_le (α := α) (X := X) a
+
+/-- On a nonempty domain with nontrivial values, the constant map has operator norm one. -/
+@[simp]
+theorem norm_constA [Nonempty X] [Nontrivial A] :
+    ‖(constA (α := α) (X := X) (A := A)).toContinuousLinearMap‖ = 1 := by
+  refine le_antisymm norm_constA_le_one ?_
+  have h := (constA (α := α) (X := X) (A := A)).toContinuousLinearMap.le_opNorm (1 : A)
+  simpa only [ContinuousAlgHom.coe_toContinuousLinearMap, constA_apply, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr one_ne_zero)] using h
+
+/-- The continuous algebra homomorphism forgetting the Hölder seminorm. -/
+def toBoundedContinuousFunctionA : HolderSpace α X A →A[ℝ] (X →ᵇ A) where
   toFun := toBoundedContinuousFunction
   map_zero' := toBoundedContinuousFunction_zero
   map_one' := toBoundedContinuousFunction_one
   map_add' := toBoundedContinuousFunction_add
   map_mul' := toBoundedContinuousFunction_mul
   commutes' c := by ext x; simp [Algebra.algebraMap_eq_smul_one]
+  cont := toBoundedContinuousFunctionCLM.continuous.congr toBoundedContinuousFunctionCLM_apply
 
 @[simp]
-theorem toBoundedContinuousFunctionAlgHom_apply (f : HolderSpace α X A) :
-    toBoundedContinuousFunctionAlgHom f = f.toBoundedContinuousFunction := (rfl)
+theorem toBoundedContinuousFunctionA_apply (f : HolderSpace α X A) :
+    toBoundedContinuousFunctionA f = f.toBoundedContinuousFunction := (rfl)
 
-/-- Evaluation at a point is an algebra homomorphism. -/
-def evalAlgHom (x : X) : HolderSpace α X A →ₐ[ℝ] A where
+/-- The inclusion into bounded continuous functions has operator norm at most one. -/
+theorem norm_toBoundedContinuousFunctionA_le_one :
+    ‖(toBoundedContinuousFunctionA (α := α) (X := X) (A := A)).toContinuousLinearMap‖ ≤ 1 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+  intro f
+  simpa using f.norm_toBoundedContinuousFunction_le
+
+/-- On a nonempty domain with nontrivial values, the inclusion has operator norm one. -/
+@[simp]
+theorem norm_toBoundedContinuousFunctionA [Nonempty X] [Nontrivial A] :
+    ‖(toBoundedContinuousFunctionA (α := α) (X := X) (A := A)).toContinuousLinearMap‖ = 1 := by
+  refine le_antisymm norm_toBoundedContinuousFunctionA_le_one ?_
+  have h :=
+    (toBoundedContinuousFunctionA (α := α) (X := X) (A := A)).toContinuousLinearMap.le_opNorm
+      (const 1)
+  simpa only [ContinuousAlgHom.coe_toContinuousLinearMap, toBoundedContinuousFunctionA_apply,
+    toBoundedContinuousFunction_const, BoundedContinuousFunction.norm_const_eq, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr one_ne_zero)] using h
+
+/-- Evaluation at a point as a continuous algebra homomorphism. -/
+def evalA (x : X) : HolderSpace α X A →A[ℝ] A where
   toFun f := f x
   map_zero' := zero_apply x
   map_one' := one_apply x
   map_add' f g := add_apply f g x
   map_mul' f g := mul_apply f g x
   commutes' c := algebraMap_apply c x
+  cont := ((BoundedContinuousFunction.evalCLM ℝ x).continuous.comp
+    toBoundedContinuousFunctionCLM.continuous).congr fun f ↦ by simp
 
 @[simp]
-theorem evalAlgHom_apply (x : X) (f : HolderSpace α X A) : evalAlgHom x f = f x := (rfl)
+theorem evalA_apply (x : X) (f : HolderSpace α X A) : evalA x f = f x := (rfl)
+
+/-- Evaluation has operator norm at most one. -/
+theorem norm_evalA_le_one (x : X) :
+    ‖(evalA (α := α) (A := A) x).toContinuousLinearMap‖ ≤ 1 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+  intro f
+  simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
+    f.norm_toBoundedContinuousFunction_le
+
+/-- With nontrivial values, evaluation has operator norm one. -/
+@[simp]
+theorem norm_evalA [Nontrivial A] (x : X) :
+    ‖(evalA (α := α) (A := A) x).toContinuousLinearMap‖ = 1 := by
+  let : Nonempty X := ⟨x⟩
+  refine le_antisymm (norm_evalA_le_one x) ?_
+  have h := (evalA (α := α) (A := A) x).toContinuousLinearMap.le_opNorm (const 1)
+  simpa only [ContinuousAlgHom.coe_toContinuousLinearMap, evalA_apply, const_apply, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr one_ne_zero)] using h
+
+@[simp]
+theorem evalA_comp_constA (x : X) :
+    (evalA (α := α) (A := A) x).comp constA = ContinuousAlgHom.id ℝ A := by
+  ext a
+  simp
 
 end Unital
 
