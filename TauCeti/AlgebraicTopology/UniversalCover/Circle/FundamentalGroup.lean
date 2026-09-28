@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
 public import TauCeti.Topology.Circle.AddCircle
+public import TauCeti.Topology.Circle.Degree
 
 /-!
 # Fundamental groups of additive and complex circles
@@ -55,6 +56,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
 * `Circle.expLoop` and `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `t ↦ exp(2πit)`,
   going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
+* `Circle.fundamentalGroupMulEquiv_fromPath`: at the basepoint `1`, the class of a loop is sent to
+  its degree `Circle.degree`, computed from angle lifts.
 
 ## References
 
@@ -364,6 +367,53 @@ theorem fundamentalGroupMulEquiv_expLoop :
     exact ht
   rw [hlift]
   simp
+
+/-- **The isomorphism `π₁(S¹) ≃* ℤ` is the degree.** At the basepoint `1`, the class of a loop is
+sent to its degree `Circle.degree`, the number of full turns of any continuous angle lift. -/
+theorem fundamentalGroupMulEquiv_fromPath (γ : Path (1 : Circle) 1) :
+    fundamentalGroupMulEquiv 1 (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
+      Multiplicative.ofAdd (degree γ) := by
+  have map_conj (e : FundamentalGroup Circle 1 ≃* Multiplicative ℤ)
+      (a x : FundamentalGroup Circle 1) : e (a * x * a⁻¹) = e x := by
+    simp only [map_mul, map_inv]
+    rw [mul_comm (e a) (e x)]
+    simp
+  rw [fundamentalGroupMulEquiv_def, MulEquiv.trans_apply,
+    FundamentalGroup.fundamentalGroupMulEquivOfPathConnected,
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj, MulAut.conj_apply,
+    map_conj, MulEquiv.trans_apply, AddCircle.fundamentalGroupMulEquivZero_apply_eq_iff]
+  obtain ⟨θ, hθ, hθ0⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap 0 (by simp)
+  have hθγ (t : unitInterval) : exp (θ t) = γ t := congr_fun hθ t
+  have hdeg := sub_eq_degree_mul γ θ.continuous hθγ
+  rw [hθ0, sub_zero] at hdeg
+  have hlift : (AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy
+      ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+        (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
+          (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne'))
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))) ⟨0, by simp⟩ =
+      ⟨θ 1, by
+        rw [Set.mem_preimage, Set.mem_singleton_iff, hdeg, AddCircle.coe_eq_zero_iff]
+        exact ⟨degree γ, by simp [zsmul_eq_mul]⟩⟩ := by
+    refine (AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy_eq_of_map_eq
+      (Path.Homotopic.Quotient.mk
+        { toFun := θ
+          continuous_toFun := θ.continuous
+          source' := hθ0
+          target' := rfl }) ?_
+    rw [TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
+      ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_map,
+      ← Path.Homotopic.Quotient.mk_cast]
+    congr 1
+    ext t
+    have ht : ((θ t : ℝ) : AddCircle (2 * Real.pi)) =
+        (AddCircle.homeomorphCircle Real.two_pi_pos.ne').symm (γ t) := by
+      rw [Homeomorph.eq_symm_apply, AddCircle.homeomorphCircle_apply,
+        AddCircle.toCircle_apply_mk, ← hθγ t]
+      congr 1
+      field_simp
+    exact ht
+  rw [hlift]
+  simp [hdeg, zsmul_eq_mul]
 
 end Circle
 
