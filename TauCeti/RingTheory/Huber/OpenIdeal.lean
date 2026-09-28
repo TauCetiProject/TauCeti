@@ -314,7 +314,7 @@ theorem IsTateRing.map_eq_top_of_isOpen [IsTateRing A] {B : Type*} [CommRing B]
 theorem IsTateRing.isOpen_map_of_isOpen [IsTateRing A] {B : Type*} [CommRing B]
     [TopologicalSpace B] (f : A →+* B) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
     IsOpen (Ideal.map f J : Set B) := by
-  rw [IsTateRing.map_eq_top_of_isOpen f hJ]
+  rw [IsTateRing.map_eq_top_of_isOpen f hJ, Submodule.top_coe]
   exact isOpen_univ
 
 /-- In a Tate ring, an ideal is open if and only if it is the whole ring `⊤`. -/

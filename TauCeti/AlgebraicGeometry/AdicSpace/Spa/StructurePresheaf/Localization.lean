@@ -112,8 +112,7 @@ private theorem isOpen_span_locPresentation_num {p : Presentation P}
   have hρ : toCompletionLoc P T s S hden =
       UniformSpace.Completion.coeRingHom.comp (algebraMap A S) :=
     RingHom.ext (toCompletionLoc_apply P T s S hden)
-  have hopen := isOpen_map_algebraMap_locTopology P T s S hden hp
-  rw [← locUniformSpace_toTopologicalSpace P T s S hden] at hopen
+  have hopen := isOpen_map_algebraMap_locUniformSpace P T s S hden hp
   rw [coe_locPresentation_num, ← Ideal.map_span, hρ, ← Ideal.map_map]
   exact isOpen_map_coeRingHom hopen
 

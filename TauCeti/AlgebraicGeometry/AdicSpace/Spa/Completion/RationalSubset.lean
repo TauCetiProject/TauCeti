@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Completion.Homeomorph
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
 
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.MorphismSpectral
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 import TauCeti.RingTheory.Huber.Completion
 
 /-!

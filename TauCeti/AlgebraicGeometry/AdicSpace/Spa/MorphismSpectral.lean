@@ -26,8 +26,6 @@ criterion does not require the underlying ring map to be open or surjective.
 
 ## Main results
 
-* `spaComap_preimage_mem_spaRationalFamily`: preimages of rational opens are rational when
-  images of open ideals are open.
 * `spaComap_preimage_mem_spaRationalFamily_of_isOpen_map_extendedIdealOfDefinition`: the
   rational-preimage result under the ideal-of-definition criterion.
 * `spaComap_preimage_mem_spaRationalFamily_of_isTateRing`: the rational-preimage result for a
@@ -36,6 +34,8 @@ criterion does not require the underlying ring map to be open or surjective.
 * `isSpectralMap_spaComap_of_isOpen_map_extendedIdealOfDefinition`: it suffices to test one
   extended ideal of definition.
 * `isSpectralMap_spaComap_of_isTateRing`: every morphism from a Tate Huber pair is spectral.
+
+The unbundled rational-preimage criterion is in `Spa/RationalSubset/Basis.lean`.
 
 ## References
 
@@ -48,27 +48,6 @@ criterion does not require the underlying ring map to be open or surjective.
 
 public section
 
-namespace TauCeti.ValuationSpectrum
-
-variable {A B : Type*} [CommRing A] [TopologicalSpace A]
-  [CommRing B] [TopologicalSpace B]
-
-open scoped Classical in
-/-- Rational opens pull back to rational opens when images of open ideals are open. -/
-theorem spaComap_preimage_mem_spaRationalFamily (φ : A →+* B) (hφ : Continuous φ)
-    (Aplus : Subring A) (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
-    (hopen : ∀ J : Ideal A, IsOpen (J : Set A) → IsOpen (Ideal.map φ J : Set B))
-    {U : Set (spa Aplus)} (hU : U ∈ spaRationalFamily Aplus) :
-    spaComap φ hφ Aplus Bplus hplus ⁻¹' U ∈ spaRationalFamily Bplus := by
-  obtain ⟨V, s, hV, rfl⟩ := mem_spaRationalFamily_iff.mp hU
-  rw [spaComap_preimage_rationalSubset]
-  exact mem_spaRationalFamily_iff.mpr
-    ⟨V.image φ, φ s, by
-      rw [Finset.coe_image, ← Ideal.map_span]
-      exact hopen _ hV, rfl⟩
-
-end TauCeti.ValuationSpectrum
-
 namespace TauCeti.Huber.Pair.Hom
 
 open TauCeti.ValuationSpectrum
@@ -79,7 +58,6 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [IsHuberRing A] [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   {S : Pair A} {T : Pair B}
 
-open scoped Classical in
 /-- Under the openness hypothesis, the preimage of a rational open under a Huber-pair morphism
 is again rational. -/
 theorem spaComap_preimage_mem_spaRationalFamily (f : Hom S T)

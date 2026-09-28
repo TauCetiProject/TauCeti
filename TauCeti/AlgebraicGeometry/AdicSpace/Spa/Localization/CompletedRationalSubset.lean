@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.RationalSubset
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.MorphismSpectral
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 
 /-!
 # Rational subsets of the completed rational localization
@@ -93,8 +93,7 @@ theorem spaComapLoc_preimage_mem_spaRationalFamily (P : PairOfDefinition A) (Apl
   have hlocOpen : ∀ J : Ideal A, IsOpen (J : Set A) →
       IsOpen (Ideal.map (algebraMap A S) J : Set S) := by
     intro J hJ
-    have hopen := isOpen_map_algebraMap_locTopology P T s S hden hJ
-    rwa [← locUniformSpace_toTopologicalSpace P T s S hden] at hopen
+    exact isOpen_map_algebraMap_locUniformSpace P T s S hden hJ
   rw [spaComapLoc_eq_comp P Aplus T s S hden hcont
       (algebraMap_mem_integralClosure_adjoin_plus Aplus T s S) Completion.continuous_coeRingHom
       fun _ hx ↦ coeRingHom_mem_completedPlusSubring P Aplus T s S hden hx,
