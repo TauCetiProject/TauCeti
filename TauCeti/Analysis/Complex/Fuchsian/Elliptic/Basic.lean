@@ -253,7 +253,9 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
 /-- **The elliptic chart at the orbit of `z` does not depend on the invariant disc.** The charts
 at the orbit of `z` built from the invariant discs of radii `ε` and `ε'`, both positive, apply at
 every point of the source of the transition to the point itself, so the two charts define the
-same local complex structure on the coarse quotient. -/
+same local complex structure on the coarse quotient. Being the characteristic computation rule for
+that independence, it is recorded as a simp lemma. -/
+@[simp]
 theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε' : 0 < ε')
     (hopen' : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε')) {u : ℂ}
     (hu : u ∈ ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
