@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Algebra.Homology.SquareZero
+public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.LinearAlgebra.Finsupp.LSum
 public import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
@@ -67,15 +69,6 @@ variable {R σ ι κ : Type*} [CommRing R]
 
 section Coefficients
 
-/-- A linear map between free modules is determined by its matrix coefficients: the `j`-th
-coordinate of `f z` is `∑ i, z i * (f (Finsupp.single i 1)) j`. -/
-private theorem apply_eq_sum {A : Type*} [CommSemiring A] (f : (ι →₀ A) →ₗ[A] (κ →₀ A))
-    (z : ι →₀ A) (j : κ) : f z j = z.sum fun i a ↦ a * f (Finsupp.single i 1) j := by
-  conv_lhs => rw [← z.sum_single]
-  rw [map_finsuppSum, Finsupp.sum_apply]
-  refine Finsupp.sum_congr fun i _ ↦ ?_
-  rw [← smul_single_one, map_smul, Finsupp.smul_apply, smul_eq_mul]
-
 variable {f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
   {f₀ : (ι →₀ R) →ₗ[R] (κ →₀ R)}
 
@@ -94,7 +87,7 @@ private theorem reduction_single_apply
 /-- `f` maps `J ^ k • (ι →₀ S)` into `J ^ k • (κ →₀ S)`, for `J` the ideal of the variables. -/
 private theorem apply_mem_pow_idealOfVars {k : ℕ} {z : ι →₀ MvPolynomial σ R}
     (hz : ∀ i, z i ∈ idealOfVars σ R ^ k) (j : κ) : f z j ∈ idealOfVars σ R ^ k := by
-  rw [apply_eq_sum]
+  rw [apply_apply_eq_finsuppSum_mul]
   exact Submodule.finsuppSum_mem _ _ _ _ fun i _ ↦ Ideal.mul_mem_right _ _ (hz i)
 
 /-- On `J ^ k • (ι →₀ S)`, the coefficients of `f` in total degree `k` are computed by the
@@ -105,8 +98,8 @@ private theorem coeff_apply_of_mem_pow_idealOfVars
     {k : ℕ} {z : ι →₀ MvPolynomial σ R} (hz : ∀ i, z i ∈ idealOfVars σ R ^ k)
     {e : σ →₀ ℕ} (he : degree e = k) (j : κ) :
     (f z j).coeff e = f₀ (z.mapRange (lcoeff R e) (map_zero _)) j := by
-  rw [apply_eq_sum, apply_eq_sum, Finsupp.sum_mapRange_index (by simp), Finsupp.sum,
-    Finsupp.sum, coeff_sum]
+  rw [apply_apply_eq_finsuppSum_mul, apply_apply_eq_finsuppSum_mul,
+    Finsupp.sum_mapRange_index (by simp), Finsupp.sum, Finsupp.sum, coeff_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [coeff_mul_of_mem_pow_idealOfVars _ (hz i) _ he.le, reduction_single_apply hf₀, one_mul,
     lcoeff_apply]
@@ -117,16 +110,6 @@ section Exactness
 
 variable {d : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (ι →₀ MvPolynomial σ R)}
   {d₀ : (ι →₀ R) →ₗ[R] (ι →₀ R)} {w : σ → ℤ} {g : ι → ℤ} {r : ℤ}
-
-/-- A monomial all of whose variables have negative degree has degree at most minus its total
-degree. -/
-private theorem weight_le_neg_degree (hw : ∀ v, w v < 0) (e : σ →₀ ℕ) :
-    weight w e ≤ -((degree e : ℕ) : ℤ) := by
-  rw [weight_apply, degree_apply, Finsupp.sum, Nat.cast_sum, ← Finset.sum_neg_distrib]
-  refine Finset.sum_le_sum fun v _ ↦ ?_
-  rw [nsmul_eq_mul]
-  have := hw v
-  nlinarith [(e v).cast_nonneg (α := ℤ)]
 
 /-- A chain all of whose terms `V ^ e • single i a` have degree `g i + weight w e` at least `a`. -/
 private def DegreeGE (w : σ → ℤ) (g : ι → ℤ) (a : ℤ) (z : ι →₀ MvPolynomial σ R) : Prop :=
@@ -146,7 +129,7 @@ private theorem DegreeGE.apply
     {z : ι →₀ MvPolynomial σ R} (hz : DegreeGE w g a z) : DegreeGE w g (a + r) (d z) := by
   classical
   intro j e he
-  rw [apply_eq_sum, Finsupp.sum, coeff_sum] at he
+  rw [apply_apply_eq_finsuppSum_mul, Finsupp.sum, coeff_sum] at he
   obtain ⟨i, -, hi⟩ := Finset.exists_ne_zero_of_sum_ne_zero he
   rw [coeff_mul] at hi
   obtain ⟨⟨b, c⟩, hbc, hi⟩ := Finset.exists_ne_zero_of_sum_ne_zero hi
@@ -163,7 +146,8 @@ private theorem DegreeGE.eq_zero (hw : ∀ v, w v < 0) {G : ℤ} (hG : ∀ i, g 
   ext i e
   by_contra he
   have h1 := hz i e he
-  have h2 := weight_le_neg_degree hw e
+  have h2 := weight_le_degree_nsmul (fun v ↦ Int.le_sub_one_of_lt (hw v)) e
+  rw [zero_sub, nsmul_eq_mul, mul_neg_one] at h2
   have h3 : k ≤ degree e := (mem_pow_idealOfVars_iff k _).mp (hzk i) e
     (MvPolynomial.mem_support_iff.mpr he)
   have h4 := hG i
