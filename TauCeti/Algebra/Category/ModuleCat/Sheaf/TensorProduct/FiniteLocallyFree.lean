@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Constructions.Over.Products
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Dual
 
 /-!
 # Internal Hom from a finite free sheaf
@@ -93,34 +92,8 @@ theorem isFiniteLocallyFree_ihom_chart
   exact (isFiniteLocallyFree ((ringCatSheaf R).over (q.X i))).prop_of_iso
     (asIso ((MonoidalClosed.pre e.hom).app N)).symm hfree
 
-omit [HasBinaryProducts C] [HasWeakSheafify J AddCommGrpCat.{u}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{u}] [HasSheafify J AddCommGrpCat.{u}] in
-/-- A finite locally free source admits finite free charts on each of which internal Hom into
-a finite locally free target is finite locally free. -/
-theorem exists_ihom_finiteLocallyFree_charts
-    [∀ X, (J.over X).HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-    (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
-    (hM : isFiniteLocallyFree (ringCatSheaf R) M) :
-    ∃ q : M.LocalGeneratorsData.{u}, q.IsLocallyFreeData ∧ q.IsFiniteType ∧
-      ∀ (i : q.I)
-        (N : _root_.SheafOfModules.{u} ((ringCatSheaf R).over (q.X i)))
-        (_ : isFiniteLocallyFree ((ringCatSheaf R).over (q.X i)) N),
-        letI : MonoidalCategory (_root_.SheafOfModules.{u} ((ringCatSheaf R).over (q.X i))) :=
-          monoidalCategory (R.over (q.X i))
-        letI : MonoidalClosed (_root_.SheafOfModules.{u} ((ringCatSheaf R).over (q.X i))) :=
-          monoidalClosed (R.over (q.X i))
-        isFiniteLocallyFree ((ringCatSheaf R).over (q.X i))
-          ((ihom (M.over (q.X i))).obj N) := by
-  obtain ⟨q, hq, hqfin⟩ :=
-    (isFiniteLocallyFree_iff_exists_isLocallyFreeData_isFiniteType M).mp hM
-  refine ⟨q, hq, hqfin, ?_⟩
-  have : q.IsLocallyFreeData := hq
-  have : q.IsFiniteType := hqfin
-  intro i N hN
-  exact isFiniteLocallyFree_ihom_chart M q i N hN
-
 /-- Internal Hom out of a finite free sheaf as an endofunctor of finite locally free sheaves. -/
-def internalHomFree (I : Type u) [Finite I] :
+def ihomFree (I : Type u) [Finite I] :
     (isFiniteLocallyFree (ringCatSheaf R)).FullSubcategory ⥤
       (isFiniteLocallyFree (ringCatSheaf R)).FullSubcategory :=
   (isFiniteLocallyFree (ringCatSheaf R)).lift
@@ -129,20 +102,20 @@ def internalHomFree (I : Type u) [Finite I] :
 
 /-- The underlying sheaf of the finite free internal Hom is the ordinary internal Hom. -/
 @[simp]
-theorem internalHomFree_obj_obj (I : Type u) [Finite I]
+theorem ihomFree_obj_obj (I : Type u) [Finite I]
     (N : (isFiniteLocallyFree (ringCatSheaf R)).FullSubcategory) :
-    ((internalHomFree I).obj N).obj = (ihom (free I)).obj N.obj :=
+    ((ihomFree I).obj N).obj = (ihom (free I)).obj N.obj :=
   (rfl)
 
 /-- On morphisms, the finite free internal Hom is the ordinary internal Hom map. -/
 @[simp]
-theorem internalHomFree_map_hom (I : Type u) [Finite I]
+theorem ihomFree_map_hom (I : Type u) [Finite I]
     {M N : (isFiniteLocallyFree (ringCatSheaf R)).FullSubcategory} (f : M ⟶ N) :
-    ((internalHomFree I).map f).hom =
-      eqToHom (internalHomFree_obj_obj I M) ≫ (ihom (free I)).map f.hom ≫
-        eqToHom (internalHomFree_obj_obj I N).symm := by
-  cases internalHomFree_obj_obj I M
-  cases internalHomFree_obj_obj I N
+    ((ihomFree I).map f).hom =
+      eqToHom (ihomFree_obj_obj I M) ≫ (ihom (free I)).map f.hom ≫
+        eqToHom (ihomFree_obj_obj I N).symm := by
+  cases ihomFree_obj_obj I M
+  cases ihomFree_obj_obj I N
   rfl
 
 end
