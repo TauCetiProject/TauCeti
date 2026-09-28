@@ -39,8 +39,9 @@ representatives and `bᵢ` over a spanning family of the binary forms, span `�
 
 * `TauCeti.ModularSymbols.divisorRep R`: the permutation representation of `SL(2, ℤ)` on the
   `R`-divisors `R[ℙ¹(ℚ)]` on the cusps.
+* `TauCeti.ModularSymbols.degree R`: the degree `∑ nₓ[x] ↦ ∑ nₓ` of a cusp divisor.
 * `TauCeti.ModularSymbols.degreeZero R`: the degree-zero divisors `Div⁰(ℙ¹(ℚ))`, the augmentation
-  submodule of the cusp divisors.
+  submodule of the cusp divisors, equal to the kernel of the degree (`degreeZero_eq_ker_degree`).
 * `TauCeti.ModularSymbols.degreeZeroRep R`: the representation of `SL(2, ℤ)` on `Div⁰(ℙ¹(ℚ))`.
 * `TauCeti.ModularSymbols.binaryFormSLRep R w`: the left action `P ↦ P ∣ γ⁻¹` of `SL(2, ℤ)` on
   binary forms of degree `w`.
@@ -84,10 +85,28 @@ section Semiring
 
 variable [Semiring R]
 
+/-- The degree `∑ nₓ[x] ↦ ∑ nₓ` of an `R`-divisor on the cusps, the coefficient sum. -/
+noncomputable def degree : R[OnePoint ℚ] →ₗ[R] R :=
+  (MonoidAlgebra.basis (OnePoint ℚ) R).sumCoords
+
 /-- The degree-zero divisors `Div⁰(ℙ¹(ℚ))` on the cusps: the augmentation submodule of the
-`R`-divisors `R[ℙ¹(ℚ)]`, that is, the kernel of the degree map `∑ nₓ[x] ↦ ∑ nₓ`. -/
-noncomputable abbrev degreeZero : Submodule R R[OnePoint ℚ] :=
+`R`-divisors `R[ℙ¹(ℚ)]`, that is, the kernel of the degree map `TauCeti.ModularSymbols.degree`
+(see `TauCeti.ModularSymbols.degreeZero_eq_ker_degree`). -/
+@[expose] noncomputable def degreeZero : Submodule R R[OnePoint ℚ] :=
   (augmentationSubrepresentation R (GL (Fin 2) ℚ) (OnePoint ℚ)).toSubmodule
+
+variable {R} in
+@[simp]
+theorem degree_single (x : OnePoint ℚ) (r : R) : degree R (single x r) = r := by
+  simp [degree]
+
+theorem degreeZero_eq_ker_degree : degreeZero R = LinearMap.ker (degree R) :=
+  toSubmodule_augmentationSubrepresentation R _ _
+
+variable {R} in
+@[simp]
+theorem mem_degreeZero_iff {D : R[OnePoint ℚ]} : D ∈ degreeZero R ↔ degree R D = 0 := by
+  rw [degreeZero_eq_ker_degree, LinearMap.mem_ker]
 
 /-- The permutation representation of `SL(2, ℤ)` on the `R`-divisors `R[ℙ¹(ℚ)]` on the cusps
 `ℙ¹(ℚ) = OnePoint ℚ`, through the Möbius action of `GL(2, ℚ)`. -/
