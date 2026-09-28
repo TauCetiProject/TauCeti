@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Center.Basic
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Reduction
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Reduction
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 
 /-!
