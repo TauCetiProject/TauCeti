@@ -118,11 +118,6 @@ lemma sigmaOpenCellMap_bijective : Function.Bijective (sigmaOpenCellMap (C := C)
     obtain ⟨i, y, hy, rfl⟩ := mem_iUnion.1 hx
     exact ⟨⟨i, ⟨y, hy⟩⟩, rfl⟩
 
-/-- The assembled characteristic map applies the characteristic map of the chosen cell. -/
-@[simp]
-lemma sigmaOpenCellMap_apply (p : Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1)) :
-    (sigmaOpenCellMap n p : X) = map n p.1 p.2 := rfl
-
 /-- The assembled characteristic map of the `n`-cells is continuous. -/
 lemma continuous_sigmaOpenCellMap : Continuous (sigmaOpenCellMap (C := C) n) :=
   continuous_sigma fun i ↦ Continuous.subtype_mk
@@ -244,5 +239,15 @@ noncomputable def iUnionOpenCellHomeomorph :
 @[simp]
 lemma iUnionOpenCellHomeomorph_apply (p : Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1)) :
     (iUnionOpenCellHomeomorph n p : X) = map n p.1 p.2 := rfl
+
+/-- **The inverse of the homeomorphism onto the union of the open `n`-cells.**  A point lying in
+the open cell `i` comes from the summand indexed by `i`, with coordinate its image under the
+inverse characteristic map of that cell.  This is not a `simp` lemma: the cell `i` is determined
+by `x` only through the hypothesis, so `simp` could never instantiate it. -/
+lemma iUnionOpenCellHomeomorph_symm_apply {i : cell C n}
+    {x : (⋃ k : cell C n, openCell (C := C) n k : Set X)} (hx : (x : X) ∈ openCell (C := C) n i) :
+    (iUnionOpenCellHomeomorph n).symm x = ⟨i, ⟨(map n i).symm x, map_symm_mem_ball n hx⟩⟩ := by
+  rw [Homeomorph.symm_apply_eq]
+  exact Subtype.ext (map_map_symm n hx).symm
 
 end TauCeti
