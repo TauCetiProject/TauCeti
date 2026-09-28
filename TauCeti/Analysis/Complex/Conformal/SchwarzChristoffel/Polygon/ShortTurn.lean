@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Turning
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
 import TauCeti.Data.Fin.Basic
 
@@ -67,11 +68,14 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacen
   have hfree (k : Fin n) :
       ∀ l, e l ≠ 0 → a l ∉ Ioo (a k.castSucc) (a k.succ) :=
     fun l _ ↦ not_mem_Ioo_castSucc_succ a ha k l
+  have hcornerSin : Real.sin (Real.pi * ∑ l with a l = a i.succ, e l) ≠ 0 :=
+    sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero
+      ⟨hcorner.1, lt_trans hcorner.2 (by norm_num)⟩ hcorner.2.ne
   have haff := affineIndependent_schwarzChristoffelVertex_of_adjacent a e z₀
     i.castSucc i.succ j.succ hi
     (by rw [hmid]; exact hj)
     (hfree i) (by rw [hmid]; exact hfree j)
-    hleft hcorner hright
+    hleft hcorner.1 hcornerSin hright
   rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
     ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))] at haff
   have hlin : LinearIndependent ℝ

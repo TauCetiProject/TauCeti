@@ -133,7 +133,8 @@ theorem maslovPhase_ne_zero {L' : Submodule ℝ E}
     hL.maslovPhase hL' ≠ 0 :=
   norm_ne_zero_iff.1 (by simp)
 
-private theorem maslovPhase_congr {L₁ L₂ : Submodule ℝ E}
+/-- Rewrites the second subspace of a Maslov phase along an equality of subspaces. -/
+theorem maslovPhase_congr {L₁ L₂ : Submodule ℝ E}
     (hL₁ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₁)
     (hL₂ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₂)
     (h : L₁ = L₂) : hL.maslovPhase hL₁ = hL.maslovPhase hL₂ := by

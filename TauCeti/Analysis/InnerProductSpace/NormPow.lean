@@ -22,6 +22,7 @@ chain-rule argument while replacing the global exponent hypothesis with the loca
 
 ## Main declarations
 
+* `norm_rpow_eq_norm_sq_rpow`: a real power of the norm as a power of the squared norm.
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `laplacian_norm_rpow_of_ne`: the radial Laplacian formula
@@ -38,6 +39,14 @@ open Filter InnerProductSpace Laplacian Topology
 open scoped RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+omit [InnerProductSpace ℝ E] in
+/-- A real power of the norm, written as a power of the squared norm. -/
+theorem norm_rpow_eq_norm_sq_rpow (x : E) (p : ℝ) : ‖x‖ ^ p = (‖x‖ ^ 2) ^ (p / 2) := by
+  rw [← Real.rpow_natCast_mul (norm_nonneg x)]
+  congr 1
+  push_cast
+  ring
 
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` is
 `p ‖x‖ ^ (p - 2) ⟨x, ·⟩`.  Unlike Mathlib's `hasFDerivAt_norm_rpow`, this local form

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
+public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Finiteness
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
 
 /-!
@@ -15,6 +16,7 @@ An integral lattice is unimodular when its carrier is equal to its dual carrier.
 nondegenerate lattice this file identifies that condition with each of the standard criteria: the
 discriminant group is trivial, its cardinality is one, the Gram determinant is a unit, the
 discriminant is one, and the restricted integral pairing is a linear equivalence.
+Unimodularity also forces nondegeneracy of the rational form.
 
 The cardinality of the discriminant group is also computed as the absolute value of the Gram
 determinant.  The proof uses Mathlib's determinant/index formula for a full-rank submodule rather
@@ -61,6 +63,13 @@ def IsUnimodular (L : IntegralLattice V) : Prop :=
 theorem isUnimodular_def (L : IntegralLattice V) :
     L.IsUnimodular ↔ L.carrier = L.dualCarrier :=
   Iff.rfl
+
+/-- A unimodular integral lattice has a nondegenerate rational form. -/
+theorem IsUnimodular.nondegenerate {L : IntegralLattice V}
+    (hL : L.IsUnimodular) : L.form.Nondegenerate := by
+  apply L.isLattice_dualCarrier_iff_nondegenerate.mp
+  rw [L.isUnimodular_def] at hL
+  simpa only [← hL] using (inferInstance : L.carrier.IsLattice ℚ)
 
 /-- Unimodularity is equivalent to every vector in the dual carrier already belonging to the
 original carrier. -/
