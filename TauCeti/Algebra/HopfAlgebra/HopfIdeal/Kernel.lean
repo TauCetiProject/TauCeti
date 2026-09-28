@@ -254,30 +254,31 @@ theorem ker_mkBialgHom (I : HopfIdeal R H)
 
 end Flat
 
+private theorem kerOfSurjective_toIdeal_le (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    (kerOfSurjective f hf).toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom :=
+  (kerOfSurjective_toIdeal f hf).le
+
 /-- The bialgebra morphism induced from a surjective morphism on the quotient by its
 Hopf-ideal kernel. -/
 noncomputable def kerLiftBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     H ⧸ (kerOfSurjective f hf).toIdeal →ₐc[R] K :=
-  Bialgebra.Quotient.liftBialgHom (kerOfSurjective f hf).toIdeal f (by
-    intro x hx
-    simpa [kerOfSurjective_toIdeal] using hx)
+  Bialgebra.Quotient.liftBialgHom (kerOfSurjective f hf).toIdeal f
+    (kerOfSurjective_toIdeal_le f hf)
 
 /-- The kernel quotient lift evaluates on quotient classes as the original morphism. -/
 @[simp]
 theorem kerLiftBialgHom_mk (f : H →ₐc[R] K) (hf : Function.Surjective f) (h : H) :
     kerLiftBialgHom f hf (Ideal.Quotient.mk (kerOfSurjective f hf).toIdeal h) = f h :=
-  Bialgebra.Quotient.liftBialgHom_mk (kerOfSurjective f hf).toIdeal f (by
-    intro x hx
-    simpa [kerOfSurjective_toIdeal] using hx) h
+  Bialgebra.Quotient.liftBialgHom_mk (kerOfSurjective f hf).toIdeal f
+    (kerOfSurjective_toIdeal_le f hf) h
 
 /-- The kernel quotient lift composed with the quotient map is the original morphism. -/
 @[simp]
 theorem kerLiftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     (kerLiftBialgHom f hf).comp
         (Bialgebra.Quotient.mkBialgHom (kerOfSurjective f hf).toIdeal) = f :=
-  Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom (kerOfSurjective f hf).toIdeal f (by
-    intro x hx
-    simpa [kerOfSurjective_toIdeal] using hx)
+  Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom (kerOfSurjective f hf).toIdeal f
+    (kerOfSurjective_toIdeal_le f hf)
 
 /-- The quotient by the Hopf-ideal kernel of a surjective morphism maps bijectively to the
 codomain. -/
@@ -327,8 +328,9 @@ theorem kerOfSurjective_mkBialgHom (I : HopfIdeal R H) :
     kerOfSurjective (Bialgebra.Quotient.mkBialgHom I.toIdeal)
       Ideal.Quotient.mk_surjective = I := by
   ext x
-  -- The quotient map's surjectivity proof is stated for the underlying ring homomorphism.
-  -- Expose membership to avoid matching that proof through the bialgebra coercion.
+  -- `rw [mem_kerOfSurjective]` fails with an application type mismatch under implicit transparency
+  -- because `Ideal.Quotient.mk_surjective` is typed for `Ideal.Quotient.mk` rather than
+  -- `Bialgebra.Quotient.mkBialgHom`; `change` exposes the membership condition directly.
   change Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal x = 0 ↔ x ∈ I
   rw [Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
 

@@ -372,12 +372,8 @@ base-changed quotient morphism. -/
 theorem quotientBaseChangeIso_hom_apply (J : HopfIdeal k H) (y : baseChange (K := K) H) :
     (quotientBaseChangeIso (K := K) J).hom
         (Ideal.Quotient.mk (baseChangeHopfIdeal (K := K) J).toIdeal y) =
-      (baseChangeMap (K := K) (mkQuotient H J)).hom y := by
-  have hy : (quotientBaseChangeIso (K := K) J).hom
-      (Ideal.Quotient.mkₐ K (baseChangeHopfIdeal (K := K) J).toIdeal y) =
-        (baseChangeMap (K := K) (mkQuotient H J)).hom y :=
-    (HopfIdeal.kerLiftBialgEquiv_apply _ _ _).trans (HopfIdeal.kerLiftBialgHom_mk _ _ y)
-  rwa [Ideal.Quotient.mkₐ_eq_mk] at hy
+      (baseChangeMap (K := K) (mkQuotient H J)).hom y :=
+  (HopfIdeal.kerLiftBialgEquiv_apply _ _ _).trans (HopfIdeal.kerLiftBialgHom_mk _ _ y)
 
 /-- The identification of the base-changed quotient is compatible with the quotient morphisms:
 quotienting `K ⊗[k] H` by `J_K` and then identifying is base-changing `H ⟶ H ⧸ J`. -/

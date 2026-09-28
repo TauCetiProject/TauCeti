@@ -153,6 +153,8 @@ private theorem quotientSubobject_ker_eq_mk
       _root_.CommHopfAlgCat.ofIsoSelf K
   have hq : mkQuotient H I ≫ qIso.hom = f := by
     ext x
+    rw [CategoryTheory.comp_apply, mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk]
+    simp only [qIso, Iso.trans_hom, CommHopfAlgCat.ofIsoSelf_hom, CommHopfAlgCat.isoMk_hom]
     exact (HopfIdeal.kerLiftBialgEquiv_apply f.hom hf _).trans
       (HopfIdeal.kerLiftBialgHom_mk f.hom hf x)
   have hqInv : f ≫ qIso.inv = mkQuotient H I := by
