@@ -12,11 +12,9 @@ public import TauCeti.RepresentationTheory.Quiver.Kronecker.AlmostSplit
 # The irreducible maps of the `A₂` Auslander--Reiten sequence
 
 The inclusion `S₂ ⟶ P₁` and projection `P₁ ⟶ S₁` in the almost-split sequence of the
-one-arrow quiver are irreducible. The arrow acts invertibly on the two lines of `P₁`, so an
-endomorphism of `P₁` fixing either end map is the identity. Thus both maps are minimal, and
-the general criterion for minimal almost-split maps applies. They supply the two displayed
-arrows in the three-vertex Auslander--Reiten mesh of `A₂`; this file does not construct the
-Auslander--Reiten quiver or count all of its arrows.
+one-arrow quiver are irreducible. They supply the two displayed arrows in the three-vertex
+Auslander--Reiten mesh of `A₂`. The results apply the general criteria for minimal almost-split
+maps; this file does not construct the Auslander--Reiten quiver or count all of its arrows.
 
 See Assem, Simson and Skowroński, *Elements of the Representation Theory of Associative
 Algebras I*, IV.1, for this mesh and its irreducible maps.
@@ -80,13 +78,15 @@ private theorem end_eq_id_of_kroneckerARSequence_g_comp
 /-- The inclusion `S₂ ⟶ P₁` in the `A₂` almost-split sequence is irreducible. -/
 theorem isIrreducibleMorphism_kroneckerARSequence_f :
     IsIrreducibleMorphism (kroneckerARSequence k A).f := by
-  exact (isLeftAlmostSplit_kroneckerARSequence_f k A).isIrreducibleMorphism_of_minimal
+  have hf := isLeftAlmostSplit_kroneckerARSequence_f k A
+  exact hf.isIrreducibleMorphism_of_minimal hf.not_isSplitEpi
     (fun u hu => by rw [end_eq_id_of_comp_kroneckerARSequence_f u hu]; infer_instance)
 
 /-- The projection `P₁ ⟶ S₁` in the `A₂` almost-split sequence is irreducible. -/
 theorem isIrreducibleMorphism_kroneckerARSequence_g :
     IsIrreducibleMorphism (kroneckerARSequence k A).g := by
-  exact (isRightAlmostSplit_kroneckerARSequence_g k A).isIrreducibleMorphism_of_minimal
+  have hg := isRightAlmostSplit_kroneckerARSequence_g k A
+  exact hg.isIrreducibleMorphism_of_minimal hg.not_isSplitMono
     (fun u hu => by rw [end_eq_id_of_kroneckerARSequence_g_comp u hu]; infer_instance)
 
 end TauCeti
