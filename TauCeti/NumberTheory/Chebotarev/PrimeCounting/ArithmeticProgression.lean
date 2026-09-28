@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PowerIndex
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 public import TauCeti.NumberTheory.Chebotarev.PrimesCongruent
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 import TauCeti.NumberTheory.Chebotarev.CyclotomicRamification
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
@@ -33,8 +32,6 @@ unpowered Frobenius class would put the second term in the fibre of `g`.
 
 ## Main results
 
-* `NumberField.Chebotarev.frobeniusVonMangoldtCoeff_rat_natGenerator_pow`: over `ℚ`, the
-  coefficient at `p ^ (k + 1)` is the powered Frobenius weight of `𝔭 ^ (k + 1)`.
 * `NumberField.Chebotarev.idealPrimePowerOf_mem_frobeniusPrimePowerSet_galEquivZMod_symm_iff`:
   away from the level, `𝔭 ^ (k + 1)` lies in the cyclotomic fibre tagged by `a` exactly when
   `N(𝔭) ^ (k + 1) ≡ a (mod n)`.
@@ -59,17 +56,6 @@ open IsDedekindDomain IsCyclotomicExtension TauCeti
 open scoped NumberField ArithmeticFunction.vonMangoldt IsMulCommutative
 
 namespace NumberField.Chebotarev
-
-/-- Over `ℚ`, the Frobenius von Mangoldt coefficient at `p ^ (k + 1)`, for `p` the rational prime
-below `𝔭`, is the powered Frobenius weight of `𝔭 ^ (k + 1)`, the only ideal of that norm. -/
-@[simp]
-theorem frobeniusVonMangoldtCoeff_rat_natGenerator_pow {L : Type*} [Field L] [NumberField L]
-    [IsGalois ℚ L] (C : ConjClasses (L ≃ₐ[ℚ] L)) (𝔭 : HeightOneSpectrum (𝓞 ℚ)) (k : ℕ) :
-    frobeniusVonMangoldtCoeff ℚ L C (Rat.HeightOneSpectrum.natGenerator 𝔭 ^ (k + 1)) =
-      frobeniusPrimePowerWeight ℚ L C (𝔭.idealPrimePowerOf k) := by
-  rw [← Rat.HeightOneSpectrum.absNorm_asIdeal, ← map_pow, frobeniusVonMangoldtCoeff_apply,
-    ← HeightOneSpectrum.coe_idealPrimePowerOf, normFiber_rat_absNorm, Finset.sum_singleton,
-    frobeniusVonMangoldtWeight_idealPrimePower]
 
 variable (F : Type*) [Field F] [NumberField F] (n : ℕ) [NeZero n]
   [IsCyclotomicExtension {n} ℚ F] [IsGalois ℚ F]
