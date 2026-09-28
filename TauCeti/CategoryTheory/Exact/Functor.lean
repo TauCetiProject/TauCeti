@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Abelian
+public import TauCeti.CategoryTheory.Exact.Opposite
 public import TauCeti.CategoryTheory.Exact.Split
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.CategoryTheory.Abelian.ShortExact
@@ -33,6 +34,7 @@ finite-colimit exactness.
   admissible morphisms.
 * `TauCeti.ExactStructure.IsConflationExact.id`, `.comp`, and `.of_iso`: identity, composition,
   and natural-isomorphism invariance.
+* `TauCeti.ExactStructure.IsConflationExact.op`: opposite-category duality.
 * `TauCeti.ExactStructure.ReflectsConflations`: a functor detects the distinguished
   conflations, with the corresponding composition and natural-isomorphism API.
 * `TauCeti.ExactStructure.essSurj_of_lift_conflation`: a functor along which every conflation
@@ -119,6 +121,16 @@ theorem of_iso [F.Additive] [G.Additive] (hF : E.IsConflationExact E' F) (e : F 
 theorem iff_of_iso [F.Additive] [G.Additive] (e : F ≅ G) :
     E.IsConflationExact E' F ↔ E.IsConflationExact E' G :=
   ⟨fun hF ↦ hF.of_iso e, fun hG ↦ hG.of_iso e.symm⟩
+
+/-- Passing to opposite categories preserves conflation-exactness. -/
+theorem op [F.Additive] (hF : E.IsConflationExact E' F) :
+    E.op.IsConflationExact E'.op F.op where
+  map_conflation {S} hS := by
+    have h := hF.map_conflation ((E.op_conflation S).mp hS)
+    exact (E'.op_conflation (S.map F.op)).mpr (by
+      convert h using 1
+      cases S
+      rfl)
 
 end IsConflationExact
 
