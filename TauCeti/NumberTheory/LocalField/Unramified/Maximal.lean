@@ -131,14 +131,13 @@ for `f ≠ 0`, where `q` is the cardinality of the residue field of `K`. -/
 theorem maximalUnramifiedExtension_eq_adjoin :
     maximalUnramifiedExtension K Ω =
       adjoin K {x : Ω | ∃ f ≠ 0, x ^ Nat.card 𝓀[K] ^ f = x} := by
-  refine le_antisymm (iSup_le fun f ↦ unramifiedExtension_le_iff.2 fun x hx ↦ subset_adjoin _ _ ?_)
-    (adjoin_le_iff.2 fun x ⟨f, hf, hx⟩ ↦ unramifiedExtension_le_maximalUnramifiedExtension K Ω f
-      (rootSet_subset_unramifiedExtension K Ω f ?_))
-  · rw [Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero] at hx
-    -- `X^{q^0} − X` is zero, so it has no roots.
-    refine ⟨f, fun hf ↦ hx.1 (by simp [hf]), hx.2⟩
-  · rw [Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero]
-    exact ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, hx⟩
+  simp only [maximalUnramifiedExtension, unramifiedExtension, ← adjoin_iUnion]
+  congr 1
+  ext x
+  simp only [Set.mem_iUnion, Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero]
+  -- `X^{q^0} − X` is zero, so it has no roots.
+  exact ⟨fun ⟨f, hne, hx⟩ ↦ ⟨f, fun hf ↦ hne (by simp [hf]), hx⟩,
+    fun ⟨f, hf, hx⟩ ↦ ⟨f, FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, hx⟩⟩
 
 /-- The maximal unramified extension is Galois over `K`, as a union of Galois extensions. -/
 instance isGalois_maximalUnramifiedExtension : IsGalois K (maximalUnramifiedExtension K Ω) := by
@@ -159,10 +158,7 @@ private theorem algHom_ext_unramifiedExtension {f : ℕ} {A : Type*} [Field A] [
     {φ ψ : unramifiedExtension K Ω f →ₐ[K] A}
     (h : ∀ x : unramifiedExtension K Ω f, (x : Ω) ^ Nat.card 𝓀[K] ^ f = x → φ x = ψ x) :
     φ = ψ := by
-  have hS : unramifiedExtension K Ω f = adjoin K ((X ^ Nat.card 𝓀[K] ^ f - X : K[X]).rootSet Ω) :=
-    le_antisymm (unramifiedExtension_le_iff.2 (subset_adjoin _ _))
-      (adjoin_le_iff.2 (rootSet_subset_unramifiedExtension K Ω f))
-  refine algHom_ext_of_eq_adjoin K hS fun x hx ↦ h _ ?_
+  refine algHom_ext_of_eq_adjoin K rfl fun x hx ↦ h _ ?_
   rw [Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero] at hx
   exact hx.2
 
