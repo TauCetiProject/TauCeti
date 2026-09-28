@@ -103,7 +103,7 @@ theorem evenDifferential_eq_zero_iff (f : EvenCochain X Y) :
   simp [Prod.ext_iff, sub_eq_zero]
 
 /-- A closed even map gives a cycle in the Hom complex. -/
-theorem evenDifferential_hom (f : X ⟶ Y) :
+theorem evenDifferential_eq_zero (f : X ⟶ Y) :
     evenDifferential X Y (f.f₀, f.f₁) = 0 := by
   exact (evenDifferential_eq_zero_iff X Y _).2 ⟨f.comm₀, f.comm₁⟩
 
@@ -111,7 +111,7 @@ theorem evenDifferential_hom (f : X ⟶ Y) :
 def homEquivCycles : (X ⟶ Y) ≃ₗ[R] (evenDifferential X Y).ker where
   toFun f := ⟨(f.f₀, f.f₁), by
     rw [LinearMap.mem_ker]
-    exact evenDifferential_hom X Y f⟩
+    exact evenDifferential_eq_zero X Y f⟩
   invFun f :=
     { f₀ := f.1.1
       f₁ := f.1.2
@@ -128,8 +128,16 @@ def homEquivCycles : (X ⟶ Y) ≃ₗ[R] (evenDifferential X Y).ker where
     (homEquivCycles X Y f).1 = (f.f₀, f.f₁) := by
   simp [homEquivCycles]
 
+@[simp] theorem homEquivCycles_symm_f₀ (z : (evenDifferential X Y).ker) :
+    ((homEquivCycles X Y).symm z).f₀ = z.1.1 := by
+  simp [homEquivCycles]
+
+@[simp] theorem homEquivCycles_symm_f₁ (z : (evenDifferential X Y).ker) :
+    ((homEquivCycles X Y).symm z).f₁ = z.1.2 := by
+  simp [homEquivCycles]
+
 /-- An odd boundary is the pair of components of the null-homotopic map it defines. -/
-theorem oddDifferential_eq_nullHomotopicMap (h : OddCochain X Y) :
+theorem oddDifferential_eq_nullHomotopicMap_components (h : OddCochain X Y) :
     oddDifferential X Y h =
       ((nullHomotopicMap h.1 h.2).f₀, (nullHomotopicMap h.1 h.2).f₁) := by
   simp
@@ -141,13 +149,13 @@ theorem mem_nullHomotopic_iff_exists_oddDifferential (f : X ⟶ Y) :
   rw [mem_nullHomotopic_iff]
   constructor
   · rintro ⟨h₀, h₁, rfl⟩
-    exact ⟨(h₀, h₁), oddDifferential_eq_nullHomotopicMap X Y _⟩
+    exact ⟨(h₀, h₁), oddDifferential_eq_nullHomotopicMap_components X Y _⟩
   · rintro ⟨h, hh⟩
     refine ⟨h.1, h.2, ?_⟩
     have hpair :
         ((nullHomotopicMap h.1 h.2).f₀, (nullHomotopicMap h.1 h.2).f₁) =
           (f.f₀, f.f₁) :=
-      (oddDifferential_eq_nullHomotopicMap X Y h).symm.trans hh
+      (oddDifferential_eq_nullHomotopicMap_components X Y h).symm.trans hh
     ext
     · exact congrArg Prod.fst hpair
     · exact congrArg Prod.snd hpair
