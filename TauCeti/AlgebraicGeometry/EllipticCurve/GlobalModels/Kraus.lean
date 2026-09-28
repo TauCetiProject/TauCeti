@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
 import Mathlib.RingTheory.LocalRing.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
 # Kraus's criterion: which pairs of invariants come from an integral equation
@@ -123,35 +123,12 @@ structure KrausLocalCondition : Prop where
 
 variable {R c₄ c₆}
 
-/-- `6` is a unit exactly when `2` and `3` both are, which is how the two witness fields of
-`KrausLocalCondition` see a hypothesis on `6`. -/
-private theorem isUnit_six_iff : IsUnit (6 : R) ↔ IsUnit (2 : R) ∧ IsUnit (3 : R) := by
-  have h : (6 : R) = 2 * 3 := by norm_num
-  rw [h]
-  exact ⟨fun hu ↦ ⟨isUnit_of_mul_isUnit_left hu, isUnit_of_mul_isUnit_right hu⟩,
-    fun h23 ↦ h23.1.mul h23.2⟩
-
-/-- A change of variables with `u = 1` leaves `c₄` alone, and base change carries that along. -/
-private theorem baseChange_smul_c₄ {C : VariableChange R} (hu : C.u = 1)
-    (V : WeierstrassCurve R) : ((C • V)⁄K).c₄ = (V⁄K).c₄ := by
-  rw [baseChange, baseChange, map_c₄, map_c₄, variableChange_c₄, hu]
-  simp
-
-/-- A change of variables with `u = 1` leaves `c₆` alone, and base change carries that along. -/
-private theorem baseChange_smul_c₆ {C : VariableChange R} (hu : C.u = 1)
-    (V : WeierstrassCurve R) : ((C • V)⁄K).c₆ = (V⁄K).c₆ := by
-  rw [baseChange, baseChange, map_c₆, map_c₆, variableChange_c₆, hu]
-  simp
-
 /-- **Where `6` is a unit the canonical equation is already integral.** Its two coefficients are
 `-c₄/48` and `-c₆/864`, and `48` and `864` are units as soon as `6` is. -/
 theorem isIntegral_ofCInvariants (h6 : IsUnit (6 : R)) (h₄ : ∃ x : R, algebraMap R K x = c₄)
     (h₆ : ∃ x : R, algebraMap R K x = c₆) : (ofCInvariants c₄ c₆).IsIntegral R := by
-  obtain ⟨h2, h3⟩ := isUnit_six_iff.mp h6
-  have h48 : (48 : R) = 2 ^ 4 * 3 := by norm_num
-  have h864 : (864 : R) = 2 ^ 5 * 3 ^ 3 := by norm_num
-  obtain ⟨u₄, hu₄⟩ : IsUnit (48 : R) := by rw [h48]; exact (h2.pow 4).mul h3
-  obtain ⟨u₆, hu₆⟩ : IsUnit (864 : R) := by rw [h864]; exact (h2.pow 5).mul (h3.pow 3)
+  obtain ⟨u₄, hu₄⟩ : IsUnit (48 : R) := isUnit_of_dvd_unit ⟨27, by norm_num⟩ (h6.pow 4)
+  obtain ⟨u₆, hu₆⟩ : IsUnit (864 : R) := isUnit_of_dvd_unit ⟨9, by norm_num⟩ (h6.pow 5)
   obtain ⟨x₄, hx₄⟩ := h₄
   obtain ⟨x₆, hx₆⟩ := h₆
   refine isIntegral_of_exists_lift R ⟨0, by simp⟩ ⟨0, by simp⟩ ⟨0, by simp⟩
@@ -165,7 +142,8 @@ canonical equation is then already integral and both witness fields are vacuous.
 theorem krausLocalCondition_of_isUnit_six (h6 : IsUnit (6 : R))
     (h₄ : ∃ x : R, algebraMap R K x = c₄) (h₆ : ∃ x : R, algebraMap R K x = c₆)
     (hΔ : (ofCInvariants c₄ c₆).Δ ≠ 0) : KrausLocalCondition R c₄ c₆ := by
-  obtain ⟨h2, h3⟩ := isUnit_six_iff.mp h6
+  have h2 : IsUnit (2 : R) := isUnit_of_dvd_unit ⟨3, by norm_num⟩ h6
+  have h3 : IsUnit (3 : R) := isUnit_of_dvd_unit ⟨2, by norm_num⟩ h6
   have := isIntegral_ofCInvariants h6 h₄ h₆
   exact ⟨h₄, h₆, Δ_integral_of_isIntegral R _, hΔ, fun h ↦ absurd h2 h, fun h ↦ absurd h3 h⟩
 
@@ -235,7 +213,9 @@ theorem krausLocalCondition_iff_exists_integralModel [IsLocalRing R] :
     by_cases h2 : IsUnit (2 : R)
     · by_cases h3 : IsUnit (3 : R)
       · refine ⟨ofCInvariants c₄ c₆, ?_, by simp, by simp, h.Δ_ne_zero⟩
-        exact isIntegral_ofCInvariants (isUnit_six_iff.mpr ⟨h2, h3⟩) h.exists_c₄ h.exists_c₆
+        have h6 : IsUnit (6 : R) := by
+          rw [show (6 : R) = 2 * 3 by norm_num]; exact h2.mul h3
+        exact isIntegral_ofCInvariants h6 h.exists_c₄ h.exists_c₆
       · obtain ⟨b₂, hb₂⟩ := (hasKrausThreeWitness_iff _ _ _).mp (h.hasKrausThreeWitness h3)
         exact exists_integralModel_of_isIntegral_smul hb₂ h.Δ_ne_zero
     · obtain ⟨a₁, a₃, ha⟩ := (hasKrausTwoWitness_iff _ _ _).mp (h.hasKrausTwoWitness h2)
@@ -256,7 +236,7 @@ theorem krausLocalCondition_iff_exists_integralModel [IsLocalRing R] :
         rw [← mul_assoc, mul_invOf_self, one_mul]
       refine hasKrausTwoWitness_of_baseChange
         ((⟨1, -(⅟(3 : R) * V.a₂), 0, 0⟩ : VariableChange R) • V) ?_
-        (baseChange_smul_c₄ rfl V) (baseChange_smul_c₆ rfl V)
+        (baseChange_smul_c₄ K rfl V) (baseChange_smul_c₆ K rfl V)
       simp [variableChange_a₂, mul_neg, hcancel]
     · intro h3
       have hsum : IsUnit ((3 : R) + -2) := by norm_num
@@ -266,6 +246,6 @@ theorem krausLocalCondition_iff_exists_integralModel [IsLocalRing R] :
       have := h2.invertible
       exact hasKrausThreeWitness_of_baseChange (V.toCharNeTwoNF • V)
         (a₁_of_isCharNeTwoNF _) (a₃_of_isCharNeTwoNF _)
-        (baseChange_smul_c₄ rfl V) (baseChange_smul_c₆ rfl V)
+        (baseChange_smul_c₄ K rfl V) (baseChange_smul_c₆ K rfl V)
 
 end TauCeti
