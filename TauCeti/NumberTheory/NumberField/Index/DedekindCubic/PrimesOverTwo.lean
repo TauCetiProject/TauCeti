@@ -249,30 +249,34 @@ def dedekindPrimeThreeQuotEquiv :
 
 /-- Reduction modulo `(2, θ, β)` sends `a + bθ + cβ` to `a`. -/
 @[simp] theorem dedekindPrimeOneQuotEquiv_mk (a b c : ℤ) :
-    dedekindPrimeOneQuotEquiv hmin hgen
-        (Ideal.Quotient.mk _ (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin))) = a := by
-  rw [dedekindPrimeOneQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
-    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_apply, residueLinearMap_apply]
+    a + b * dedekindPrimeOneQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) +
+        c * dedekindPrimeOneQuotEquiv hmin hgen
+          (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) =
+      (a : ZMod 2) := by
+  simp only [dedekindPrimeOneQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta, residueHom_beta]
   push_cast
   ring
 
 /-- Reduction modulo `(2, θ, β - 1)` sends `a + bθ + cβ` to `a + c`. -/
 @[simp] theorem dedekindPrimeTwoQuotEquiv_mk (a b c : ℤ) :
-    dedekindPrimeTwoQuotEquiv hmin hgen
-        (Ideal.Quotient.mk _ (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin))) =
+    a + b * dedekindPrimeTwoQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) +
+        c * dedekindPrimeTwoQuotEquiv hmin hgen
+          (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) =
       ((a + c : ℤ) : ZMod 2) := by
-  rw [dedekindPrimeTwoQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
-    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_apply, residueLinearMap_apply]
+  simp only [dedekindPrimeTwoQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta, residueHom_beta]
   push_cast
   ring
 
 /-- Reduction modulo `(2, θ - 1, β - 1)` sends `a + bθ + cβ` to `a + b + c`. -/
 @[simp] theorem dedekindPrimeThreeQuotEquiv_mk (a b c : ℤ) :
-    dedekindPrimeThreeQuotEquiv hmin hgen
-        (Ideal.Quotient.mk _ (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin))) =
+    a + b * dedekindPrimeThreeQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) +
+        c * dedekindPrimeThreeQuotEquiv hmin hgen
+          (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) =
       ((a + b + c : ℤ) : ZMod 2) := by
-  rw [dedekindPrimeThreeQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
-    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_apply, residueLinearMap_apply]
+  simp only [dedekindPrimeThreeQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta, residueHom_beta]
   push_cast
   ring
 
