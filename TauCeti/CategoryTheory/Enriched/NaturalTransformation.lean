@@ -28,6 +28,10 @@ section GradedBridge
 variable {V : Type v} [Category.{w} V] [MonoidalCategory V] [BraidedCategory V]
 variable {C' : Type u₁} {D' : Type u₂} [EnrichedCategory V C'] [EnrichedCategory V D']
 
+/-- Graded natural transformations whose degree is the monoidal unit. -/
+abbrev UnitGradedNatTrans (F G : EnrichedFunctor V C' D') :=
+  GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G
+
 /-- Graded naturality at the monoidal unit is equivalent to the ordinary whiskering square.
 The two sides differ by precomposition with the left unitor and the unit braiding. -/
 private theorem unitNatSquare_iff
@@ -135,12 +139,12 @@ private theorem unitGradedNaturality
     _ = _ := by simpa only [Category.assoc] using
       (congrArg (fun q => q ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) hR.symm)
 
-namespace CategoryTheory.GradedNatTrans
+namespace UnitGradedNatTrans
 
 /-- Forget enrichment of a graded natural transformation at the monoidal unit. -/
 noncomputable def toOrdinary
     {F G : EnrichedFunctor V C' D'}
-    (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G) :
+    (α : UnitGradedNatTrans F G) :
     F.forget ⟶ G.forget where
   app X := α.app (ForgetEnrichment.to V X)
   naturality := by
@@ -165,13 +169,13 @@ noncomputable def toOrdinary
 @[simp]
 theorem toOrdinary_app
     {F G : EnrichedFunctor V C' D'}
-    (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G) (X : C') :
+    (α : UnitGradedNatTrans F G) (X : C') :
     (toOrdinary α).app (ForgetEnrichment.of V X) =
       ForgetEnrichment.homOf V (α.app X) := by
   unfold toOrdinary
   rfl
 
-end CategoryTheory.GradedNatTrans
+end UnitGradedNatTrans
 
 omit [BraidedCategory V] in
 /-- Two enriched whiskering squares compose along their ordinary components. -/
@@ -198,13 +202,13 @@ theorem composeNaturalSquares
     _ = _ := by simpa only [Category.assoc] using
       (congrArg (fun q => q ≫ eHomWhiskerRight V aX HY) hb)
 
-namespace CategoryTheory.GradedNatTrans
+namespace UnitGradedNatTrans
 
 /-- Composition of graded natural transformations at the monoidal unit. -/
 noncomputable def unitComp {F G H : EnrichedFunctor V C' D'}
-    (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G)
-    (γ : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) G H) :
-    GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F H where
+    (α : UnitGradedNatTrans F G)
+    (γ : UnitGradedNatTrans G H) :
+    UnitGradedNatTrans F H where
   app X := eHomEquiv V
     (ForgetEnrichment.homOf V (α.app X) ≫ ForgetEnrichment.homOf V (γ.app X))
   naturality X Y := by
@@ -227,8 +231,8 @@ noncomputable def unitComp {F G H : EnrichedFunctor V C' D'}
 /-- A component of the composite at the monoidal unit. -/
 -- This remains outside `simp`: it would make `unitComp_app_homOf` fail `simpNF`.
 theorem unitComp_app {F G H : EnrichedFunctor V C' D'}
-    (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G)
-    (γ : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) G H) (X : C') :
+    (α : UnitGradedNatTrans F G)
+    (γ : UnitGradedNatTrans G H) (X : C') :
     (unitComp α γ).app X = eHomEquiv V
       (ForgetEnrichment.homOf V (α.app X) ≫ ForgetEnrichment.homOf V (γ.app X)) := by
   unfold unitComp
@@ -237,18 +241,19 @@ theorem unitComp_app {F G H : EnrichedFunctor V C' D'}
 /-- The ordinary component of a composite is the composite of ordinary components. -/
 @[simp]
 theorem unitComp_app_homOf {F G H : EnrichedFunctor V C' D'}
-    (α : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G)
-    (γ : GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) G H) (X : C') :
+    (α : UnitGradedNatTrans F G)
+    (γ : UnitGradedNatTrans G H) (X : C') :
     ForgetEnrichment.homOf V ((unitComp α γ).app X) =
       ForgetEnrichment.homOf V (α.app X) ≫ ForgetEnrichment.homOf V (γ.app X) := by
   rw [unitComp_app]
   rfl
 
-end CategoryTheory.GradedNatTrans
+end UnitGradedNatTrans
+
+namespace UnitGradedNatTrans
 
 /-- Identity graded natural transformation at the monoidal unit. -/
-noncomputable def unitGradedNatTransId (F : EnrichedFunctor V C' D') :
-    GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F F where
+noncomputable def id (F : EnrichedFunctor V C' D') : UnitGradedNatTrans F F where
   app X := eId V (F.obj X)
   naturality X Y := by
     dsimp [Center.ofBraided, Center.ofBraidedObj]
@@ -273,10 +278,12 @@ noncomputable def unitGradedNatTransId (F : EnrichedFunctor V C' D') :
 
 /-- A component of the identity at the monoidal unit. -/
 @[simp]
-theorem unitGradedNatTransId_app (F : EnrichedFunctor V C' D') (X : C') :
-    (unitGradedNatTransId F).app X = eId V (F.obj X) := by
-  unfold unitGradedNatTransId
+theorem id_app (F : EnrichedFunctor V C' D') (X : C') :
+    (id F).app X = eId V (F.obj X) := by
+  unfold id
   rfl
+
+end UnitGradedNatTrans
 
 end GradedBridge
 
