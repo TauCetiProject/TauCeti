@@ -20,7 +20,7 @@ operator is a linear isometry. This is the whole-space symmetry needed to averag
 Sobolev functions against smooth kernels in the density argument.
 
 The construction follows the weak-derivative graph defining `W^{k,p}`. The first stage uses
-`TauCeti.Sobolev1JetLp.translateLp_mem_w1pSubmodule`; later stages use
+`TauCeti.W1p.translate`; later stages use
 `TauCeti.HasWeakFDerivOn.translateLp` to translate the preceding stage and its highest weak
 derivative together. See Evans, *Partial Differential Equations*, §5.3.1.
 -/
@@ -42,41 +42,25 @@ local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
   rw [Opens.coe_top, Measure.restrict_univ]
   infer_instance
 
-/-- Translation of a first-order Sobolev function, obtained by translating its whole
-value-gradient jet. -/
+/-- Translation of a first-order Sobolev function on the whole space. -/
 private def translateOne (h : E) (u : Wkp mu ⊤ p 1) : Wkp mu ⊤ p 1 :=
-  ⟨(mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h u.1,
-    Sobolev1JetLp.translateLp_mem_w1pSubmodule h u.2⟩
+  W1p.translate (h := h) (fun _ _ => by simp) u
 
 private theorem value_translateOne (h : E) (u : Wkp mu ⊤ p 1) :
     value 1 (translateOne h u) =
       (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (value 1 u) := by
   rw [value_one, value_one]
   apply Lp.ext
-  let nu := mu.restrict ((⊤ : Opens E) : Set E)
-  have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
-    (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
-  filter_upwards [W1p.value_apply_ae (translateOne h u),
-    hq.eventually (W1p.value_apply_ae u), Measure.coeFn_translateLp (mu := nu) h u.1,
-    Measure.coeFn_translateLp (mu := nu) h (W1p.value u)]
-    with x hvT hvU hjet hval
-  simpa only [Function.comp_apply] using
-    hvT.trans ((congrArg WithLp.fst hjet).trans (hvU.symm.trans hval.symm))
+  exact (W1p.value_translate_ae (h := h) (fun _ _ => by simp) u).trans
+    (Measure.coeFn_translateLp h (W1p.value u)).symm
 
 private theorem iteratedGradient_translateOne (h : E) (u : Wkp mu ⊤ p 1) :
     iteratedGradient 0 (translateOne h u) =
       (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (iteratedGradient 0 u) := by
   rw [iteratedGradient_zero, iteratedGradient_zero]
   apply Lp.ext
-  let nu := mu.restrict ((⊤ : Opens E) : Set E)
-  have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
-    (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
-  filter_upwards [W1p.gradient_apply_ae (translateOne h u),
-    hq.eventually (W1p.gradient_apply_ae u), Measure.coeFn_translateLp (mu := nu) h u.1,
-    Measure.coeFn_translateLp (mu := nu) h (W1p.gradient u)]
-    with x hgT hgU hjet hgrad
-  simpa only [Function.comp_apply] using
-    hgT.trans ((congrArg WithLp.snd hjet).trans (hgU.symm.trans hgrad.symm))
+  exact (W1p.gradient_translate_ae (h := h) (fun _ _ => by simp) u).trans
+    (Measure.coeFn_translateLp h (W1p.gradient u)).symm
 
 /-- A translated positive-order Sobolev function, with equations for its value and highest
 weak derivative. These equations control the recursive construction. -/
@@ -133,12 +117,7 @@ theorem value_translate (h : E) : ∀ (k : ℕ) (u : Wkp mu ⊤ p k),
 the source and target domains are both the whole space. -/
 theorem translate_one_eq_W1p_translate (h : E) (u : Wkp mu ⊤ p 1) :
     translate h 1 u = W1p.translate (h := h) (fun _ _ => by simp) u := by
-  let ht : MapsTo (· + h) (⊤ : Opens E) ⊤ := fun _ _ => by simp
-  apply W1p.ext_value
-  rw [← value_one (translate h 1 u), value_translate h 1 u, value_one u]
-  apply Lp.ext
-  exact (Measure.coeFn_translateLp (mu := mu.restrict ((⊤ : Opens E) : Set E)) h
-    (W1p.value u)).trans (W1p.value_translate_ae ht u).symm
+  simp only [translate, translated, translateOne]
 
 /-- The highest weak derivative of a translated Sobolev function is the translated highest
 weak derivative. -/
@@ -190,16 +169,33 @@ theorem norm_translate (h : E) : ∀ (k : ℕ) (u : Wkp mu ⊤ p k),
   | 0, u => by
       exact (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h |>.norm_map u
   | 1, u => by
+      let v : Wkp mu ⊤ p 1 :=
+        ⟨(mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h u.1,
+          Sobolev1JetLp.translateLp_mem_w1pSubmodule h u.2⟩
+      have heq : translateOne h u = v := by
+        apply W1p.ext_value
+        rw [← value_one (translateOne h u), value_translateOne, value_one u,
+          W1p.value_coe v]
+        apply Lp.ext
+        rw [W1p.value_coe u]
+        let nu := mu.restrict ((⊤ : Opens E) : Set E)
+        have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
+          (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
+        filter_upwards [Sobolev1JetLp.value_apply_ae (nu.translateLp p h u.1),
+          Measure.coeFn_translateLp (mu := nu) h u.1,
+          hq.eventually (Sobolev1JetLp.value_apply_ae u.1),
+          Measure.coeFn_translateLp (mu := nu) h (W1p.value u)]
+          with x hv hjet hu hval
+        rw [W1p.value_coe] at hval
+        simpa only [v, Function.comp_apply] using
+          (hv.trans ((congrArg WithLp.fst hjet).trans (hu.symm.trans hval.symm))).symm
+      change ‖translateOne h u‖ = ‖u‖
+      rw [heq]
       exact (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h |>.norm_map u.1
   | k + 2, u => by
-      have hgraph (v : Wkp mu ⊤ p (k + 2)) :
-          ‖v‖ ^ 2 = ‖lowerOrder (k + 1) v‖ ^ 2 +
-            ‖iteratedGradient (k + 1) v‖ ^ 2 := by
-        simpa only [lowerOrder_succ, iteratedGradient_succ] using
-          WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
-            (sobolevStage (mu := mu) (Omega := ⊤) (p := p) k).iteratedGradientL v
-      have hv := hgraph (translate h (k + 2) u)
-      have hu := hgraph u
+      have hv := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
+        (translate h (k + 2) u)
+      have hu := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
       rw [lowerOrder_translate, iteratedGradient_translate,
         norm_translate h (k + 1) (lowerOrder (k + 1) u),
         LinearIsometryEquiv.norm_map] at hv
@@ -212,18 +208,14 @@ def translateLI (h : E) (k : ℕ) : Wkp mu ⊤ p k →ₗᵢ[ℝ] Wkp mu ⊤ p k
   map_add' := by
     intro u v
     apply ext k
-    have hadd (x y : Wkp mu ⊤ p k) : value k (x + y) = value k x + value k y := by
-      simpa only [← valueL_apply] using (valueL k).map_add x y
-    rw [value_translate, hadd u v, map_add,
-      hadd (translate h k u) (translate h k v),
+    rw [value_translate, value_add, map_add,
+      value_add,
       value_translate h k u, value_translate h k v]
   map_smul' := by
     intro c u
     apply ext k
-    have hsmul (x : Wkp mu ⊤ p k) : value k (c • x) = c • value k x := by
-      simpa only [← valueL_apply] using (valueL k).map_smul c x
-    rw [value_translate, hsmul u, map_smul, RingHom.id_apply,
-      hsmul (translate h k u), value_translate h k u]
+    rw [value_translate, value_smul, map_smul, RingHom.id_apply,
+      value_smul, value_translate h k u]
   norm_map' := norm_translate h k
 
 @[simp]
