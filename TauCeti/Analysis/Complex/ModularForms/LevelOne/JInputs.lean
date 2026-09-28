@@ -60,8 +60,7 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
   have hinv : j (γ • z) = j z := by
     simpa [SL_slash_apply, j, hpow] using hz
   have hAction : (map (Int.castRingHom ℝ) γ) • z = γ • z := by
-    rw [ModularGroup.sl_moeb]
-    change (mapGL ℝ (map (Int.castRingHom ℝ) γ)) • z = (mapGL ℝ γ) • z
+    rw [MulAction.compHom_smul_def, MulAction.compHom_smul_def]
     have hMap : mapGL ℝ (map (Int.castRingHom ℝ) γ) = mapGL ℝ γ := by
       ext i j
       simp [mapGL_coe_matrix]
