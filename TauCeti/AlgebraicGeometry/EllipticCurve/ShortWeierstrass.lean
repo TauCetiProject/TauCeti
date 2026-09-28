@@ -25,9 +25,16 @@ which needs `CommRing`, so at `Zero R` generality it is unavailable and `simp` c
 reduce a projection of the opaque constructor. Every other fact about `shortCurve` — the `b`- and
 `c`-invariants, `Δ` and `j` — is inherited through the instance rather than restated.
 
+A second construction sits on top of it over a field in which `2` and `3` are invertible: the
+short equation `WeierstrassCurve.ofCInvariants c₄ c₆` with prescribed `c`-invariants. A pair
+`(c₄, c₆)` and a Weierstrass equation carrying it determine each other up to a change of variables
+with `u = 1`, and this is the canonical representative of the pair.
+
 ## Main definitions
 
 * `WeierstrassCurve.shortCurve`: the curve `y² = x³ + Ax + B`, over any `Zero`.
+* `WeierstrassCurve.ofCInvariants`: the curve `y² = x³ - (c₄/48)x - c₆/864`, whose `c`-invariants
+  are `c₄` and `c₆`.
 
 ## Main results
 
@@ -49,6 +56,14 @@ reduce a projection of the opaque constructor. Every other fact about `shortCurv
   scalings are the only changes of variables between short equations
   (`WeierstrassCurve.variableChange_a₄_of_isShortNF`), so this is the whole coefficient freedom
   of a short equation.
+* `WeierstrassCurve.ofCInvariants_c₄`, `WeierstrassCurve.ofCInvariants_c₆` and
+  `WeierstrassCurve.ofCInvariants_Δ`: its invariants are `c₄`, `c₆` and `(c₄³ - c₆²)/1728`.
+* `WeierstrassCurve.smul_ofCInvariants`: every Weierstrass equation is the
+  `(b₂/12, a₁/2, a₃/2)`-transform of the canonical equation with its own `c`-invariants. The
+  scaling factor is `1`, so a pair of `c`-invariants pins an equation down to that one change of
+  variables.
+* `WeierstrassCurve.Δ_eq_of_c₄_eq_of_c₆_eq`: two equations with the same `c`-invariants have the
+  same discriminant.
 
 The classical discriminant `-16(4A³ + 27B²)` is *not* restated: it is Mathlib's `Δ_of_isShortNF`,
 which the instance below makes applicable and the coefficient lemmas reduce.
@@ -149,5 +164,96 @@ about an arbitrary `[W.IsShortNF]` reaches the explicit `y² = x³ + Ax + B` sha
     (⟨u, 0, 0, 0⟩ : VariableChange R) • shortCurve A B =
       shortCurve (u⁻¹ ^ 4 * A) (u⁻¹ ^ 6 * B) := by
   ext <;> simp [variableChange_def]
+
+section CInvariants
+
+variable {K : Type*} [Field K]
+
+/-- **The Weierstrass equation with prescribed `c`-invariants**, `y² = x³ - (c₄/48)x - c₆/864`.
+Over a field in which `2` and `3` are invertible its `c`-invariants are exactly `c₄` and `c₆`
+(`ofCInvariants_c₄` and `ofCInvariants_c₆`), and every equation with those invariants is obtained
+from it by a change of variables with `u = 1` (`smul_ofCInvariants`). It is therefore the
+canonical representative of a pair of invariants, and the equation whose integrality over a
+subring decides whether that pair is realised by an equation with coefficients in the subring. -/
+def ofCInvariants (c₄ c₆ : K) : WeierstrassCurve K :=
+  shortCurve (-c₄ / 48) (-c₆ / 864)
+
+lemma ofCInvariants_eq_shortCurve (c₄ c₆ : K) :
+    ofCInvariants c₄ c₆ = shortCurve (-c₄ / 48) (-c₆ / 864) := (rfl)
+
+-- No `IsShortNF` instance is registered for `ofCInvariants`: it would put Mathlib's `@[simp]`
+-- lemma `c₄_of_isCharNeTwoNF` in competition with `ofCInvariants_c₄` below, and `simp` would
+-- expand `(ofCInvariants c₄ c₆).c₄` back into coefficients instead of returning `c₄`.
+-- `ofCInvariants_eq_shortCurve` hands the instance over on demand.
+
+@[simp] lemma ofCInvariants_a₁ (c₄ c₆ : K) : (ofCInvariants c₄ c₆).a₁ = 0 := (rfl)
+
+@[simp] lemma ofCInvariants_a₂ (c₄ c₆ : K) : (ofCInvariants c₄ c₆).a₂ = 0 := (rfl)
+
+@[simp] lemma ofCInvariants_a₃ (c₄ c₆ : K) : (ofCInvariants c₄ c₆).a₃ = 0 := (rfl)
+
+@[simp] lemma ofCInvariants_a₄ (c₄ c₆ : K) : (ofCInvariants c₄ c₆).a₄ = -c₄ / 48 := (rfl)
+
+@[simp] lemma ofCInvariants_a₆ (c₄ c₆ : K) : (ofCInvariants c₄ c₆).a₆ = -c₆ / 864 := (rfl)
+
+variable [Invertible (2 : K)] [Invertible (3 : K)]
+
+/-- A product of powers of `2` and `3` is nonzero in a field where both are invertible: the side
+condition that every denominator below presents to `field_simp`. -/
+private theorem ne_zero_of_eq_two_pow_mul_three_pow {x : K} {m n : ℕ} (hx : x = 2 ^ m * 3 ^ n) :
+    x ≠ 0 :=
+  hx ▸ mul_ne_zero (pow_ne_zero m (Invertible.ne_zero (2 : K)))
+    (pow_ne_zero n (Invertible.ne_zero (3 : K)))
+
+variable (c₄ c₆ : K)
+
+/-- The `c₄` of the canonical equation with prescribed `c`-invariants is the prescribed one. -/
+@[simp] lemma ofCInvariants_c₄ : (ofCInvariants c₄ c₆).c₄ = c₄ := by
+  have h48 : (48 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 4) (n := 1) (by norm_num)
+  rw [ofCInvariants_eq_shortCurve, c₄_of_isShortNF, shortCurve_a₄]
+  field_simp
+
+/-- The `c₆` of the canonical equation with prescribed `c`-invariants is the prescribed one. -/
+@[simp] lemma ofCInvariants_c₆ : (ofCInvariants c₄ c₆).c₆ = c₆ := by
+  have h864 : (864 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 5) (n := 3) (by norm_num)
+  rw [ofCInvariants_eq_shortCurve, c₆_of_isShortNF, shortCurve_a₆]
+  field_simp
+
+/-- **Every Weierstrass equation is a translate of the canonical equation with its own
+`c`-invariants.** The change of variables is forced: it has `u = 1` because the two equations
+already share `c₄` and `c₆`, and `(r, s, t) = (b₂/12, a₁/2, a₃/2)` is the only triple returning
+the coefficients `a₁`, `a₂`, `a₃` of `W` from the vanishing ones of `ofCInvariants`.
+
+Mathlib's `WeierstrassCurve.toShortNF` makes the opposite move, carrying `W` to *a* short
+equation, also with scaling factor `1`. This lemma is that move inverted and written out, which
+is what a statement phrased on the pair `(c₄, c₆)` rather than on a curve in hand needs. -/
+@[simp] lemma smul_ofCInvariants (W : WeierstrassCurve K) :
+    (⟨1, W.b₂ / 12, W.a₁ / 2, W.a₃ / 2⟩ : VariableChange K) • ofCInvariants W.c₄ W.c₆ = W := by
+  have h2 : (2 : K) ≠ 0 := Invertible.ne_zero 2
+  have h12 : (12 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 2) (n := 1) (by norm_num)
+  have h48 : (48 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 4) (n := 1) (by norm_num)
+  have h864 : (864 : K) ≠ 0 := ne_zero_of_eq_two_pow_mul_three_pow (m := 5) (n := 3) (by norm_num)
+  ext <;>
+    simp only [variableChange_def, ofCInvariants_eq_shortCurve, shortCurve_a₁, shortCurve_a₂,
+      shortCurve_a₃, shortCurve_a₄, shortCurve_a₆, c₄, c₆, b₂, b₄, b₆, inv_one, Units.val_one,
+      one_pow, one_mul] <;>
+    field_simp <;>
+    ring
+
+/-- **The discriminant is determined by the `c`-invariants**: it is `(c₄³ - c₆²)/1728`, by
+`WeierstrassCurve.c_relation` and the invertibility of `1728`. -/
+lemma Δ_eq_of_c₄_eq_of_c₆_eq {W W' : WeierstrassCurve K} (h₄ : W.c₄ = W'.c₄) (h₆ : W.c₆ = W'.c₆) :
+    W.Δ = W'.Δ :=
+  mul_left_cancel₀
+    (ne_zero_of_eq_two_pow_mul_three_pow (x := (1728 : K)) (m := 6) (n := 3) (by norm_num))
+    (by rw [c_relation, c_relation, h₄, h₆])
+
+/-- The discriminant attached to a pair of `c`-invariants, `(c₄³ - c₆²)/1728`. -/
+@[simp] lemma ofCInvariants_Δ : (ofCInvariants c₄ c₆).Δ = (c₄ ^ 3 - c₆ ^ 2) / 1728 := by
+  have h1728 : (1728 : K) ≠ 0 :=
+    ne_zero_of_eq_two_pow_mul_three_pow (m := 6) (n := 3) (by norm_num)
+  rw [eq_div_iff h1728, mul_comm, c_relation, ofCInvariants_c₄, ofCInvariants_c₆]
+
+end CInvariants
 
 end WeierstrassCurve
