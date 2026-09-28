@@ -121,8 +121,7 @@ theorem submodulesBasis_pow_smul_topology_eq_of_ringOfDefinition
     (hfg₀ : M₀.FG) (hfg₁ : M₁.FG) :
     (P.submodulesBasis_pow_smul hs hsP M₀ hspan₀).topology =
       (Q.submodulesBasis_pow_smul ht htQ M₁ hspan₁).topology := by
-  have hsQ : ∀ᶠ m in atTop, s ^ m ∈ Q.ringOfDefinition :=
-    hs.isTopologicallyNilpotent (Q.isOpen_ringOfDefinition.mem_nhds Q.ringOfDefinition.zero_mem)
+  have hsQ := hs.eventually_pow_mem_ringOfDefinition Q
   obtain ⟨m, huQ, hm⟩ := (hsQ.and (eventually_gt_atTop 0)).exists
   have hu : IsPseudoUniformizer (s ^ m) := by
     refine isPseudoUniformizer_iff.mpr ⟨hs.isUnit.pow m, ?_⟩
