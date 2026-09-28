@@ -39,6 +39,6 @@ theorem galoisSubgroup_conj [FiniteDimensional K L]
       (galoisSubgroup K L τ).toSubgroup =
         (galoisSubgroup K L σ).toSubgroup.map (MulAut.conj g).toMonoidHom := by
   simpa only [galoisSubgroup_toSubgroup] using
-    FieldTheory.fixingSubgroup_fieldRange_conj σ τ
+    AlgHom.fixingSubgroup_fieldRange_conj σ τ
 
 end TauCeti
