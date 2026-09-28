@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Endomorphism
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
 
 /-!
@@ -29,31 +29,33 @@ namespace QuadraticMap
 
 open scoped Topology
 
-variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [TopologicalSpace V] [IsModuleTopology K V]
-  [TopologicalSpace (Module.End K V)] [IsModuleTopology K (Module.End K V)]
-  [Invertible (2 : K)]
+variable {R M : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [T2Space R]
+  [AddCommGroup M] [Module R M] [Module.Finite R M]
+  [TopologicalSpace M] [IsModuleTopology R M]
+  [TopologicalSpace (Module.End R M)] [IsModuleTopology R (Module.End R M)]
+  [Invertible (2 : R)]
 
 /-- The endomorphisms preserving a quadratic form are a closed subset of the endomorphism space.
 This assertion does not require nondegeneracy. -/
-theorem isClosed_setOf_quadraticForm_preserving (Q : QuadraticForm K V) :
-    IsClosed {f : Module.End K V | ∀ x : V, Q (f x) = Q x} := by
-  let : ContinuousAdd V := IsModuleTopology.toContinuousAdd K V
-  have h (x : V) : IsClosed {f : Module.End K V | Q (f x) = Q x} := by
-    have hev : Continuous (fun f : Module.End K V => f x) :=
+theorem isClosed_setOfPred_forall_map_app (Q : QuadraticForm R M) :
+    IsClosed {f : Module.End R M | ∀ x : M, Q (f x) = Q x} := by
+  let : ContinuousAdd M := IsModuleTopology.toContinuousAdd R M
+  have h (x : M) : IsClosed {f : Module.End R M | Q (f x) = Q x} := by
+    have hev : Continuous (fun f : Module.End R M => f x) :=
       IsModuleTopology.continuous_of_linearMap ((LinearMap.applyₗ :
-        V →ₗ[K] Module.End K V →ₗ[K] V) x)
+        M →ₗ[R] Module.End R M →ₗ[R] M) x)
     exact isClosed_eq (Q.continuous.comp hev) continuous_const
   simpa only [Set.ofPred_forall] using isClosed_iInter h
 
-/-- The orthogonal group of a nondegenerate finite-dimensional quadratic form is closed in the
-endomorphism space, through its underlying linear maps. -/
+variable [IsDomain R] [Module.Free R M]
+
+/-- The orthogonal group of a nondegenerate quadratic form on a finite free module is closed in
+the endomorphism space, through its underlying linear maps. -/
 theorem isClosed_range_orthogonalGroup_toLinearMap
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    IsClosed (Set.range (fun g : orthogonalGroup Q => (g : V ≃ₗ[K] V).toLinearMap)) := by
-  rw [range_orthogonalGroup_toLinearMap Q hQ]
-  exact isClosed_setOf_quadraticForm_preserving Q
+    (Q : QuadraticForm R M) (hQ : Q.Nondegenerate) :
+    IsClosed (Set.range (fun g : orthogonalGroup Q => (g : M ≃ₗ[R] M).toLinearMap)) := by
+  rw [range_orthogonalGroup_toLinearMap Q ((QuadraticMap.nondegenerate_polar_iff).mpr hQ).1]
+  exact isClosed_setOfPred_forall_map_app Q
 
 end QuadraticMap
 

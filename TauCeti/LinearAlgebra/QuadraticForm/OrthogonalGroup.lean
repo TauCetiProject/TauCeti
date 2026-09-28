@@ -1023,6 +1023,53 @@ theorem index_specialOrthogonalWithin [Nontrivial V] (hQ : Q.Nondegenerate) :
 
 end DetField
 
+section Endomorphism
+
+variable {R : Type u} {M : Type v} [CommRing R] [IsDomain R] [AddCommGroup M]
+  [Module R M] [Module.Free R M] [Module.Finite R M]
+
+/-- An endomorphism preserving a quadratic form with left-separating polar form is bijective on a
+finite free module over a domain. -/
+theorem bijective_of_forall_map_app {Q : QuadraticForm R M}
+    (hQ : Q.polarBilin.SeparatingLeft) {f : Module.End R M}
+    (hf : ∀ x, Q (f x) = Q x) : Function.Bijective f := by
+  have hpolar (x y : M) : Q.polarBilin (f x) (f y) = Q.polarBilin x y := by
+    have hp := (⟨f, hf⟩ : Q →qᵢ Q).polar_apply x y
+    change polar Q (f x) (f y) = polar Q x y at hp
+    exact hp
+  exact (BilinForm.isIsometry_iff.mpr hpolar).bijective hQ
+
+/-- A form-preserving endomorphism of a finite free module over a domain lifts to an orthogonal
+automorphism when the polar form is left-separating. -/
+theorem exists_orthogonalGroup_toLinearMap_eq {Q : QuadraticForm R M}
+    (hQ : Q.polarBilin.SeparatingLeft) {f : Module.End R M}
+    (hf : ∀ x, Q (f x) = Q x) :
+    ∃ g : orthogonalGroup Q, (g : M ≃ₗ[R] M).toLinearMap = f := by
+  have hpolar (x y : M) : Q.polarBilin (f x) (f y) = Q.polarBilin x y := by
+    have hp := (⟨f, hf⟩ : Q →qᵢ Q).polar_apply x y
+    change polar Q (f x) (f y) = polar Q x y at hp
+    exact hp
+  let hI : BilinForm.IsIsometry Q.polarBilin f := BilinForm.isIsometry_iff.mpr hpolar
+  refine ⟨⟨hI.toIsometryGroup hQ, ?_⟩, ?_⟩
+  · exact mem_orthogonalGroup_iff.mpr fun x => by
+      simpa only [BilinForm.IsIsometry.toIsometryGroup_apply] using hf x
+  · exact BilinForm.IsIsometry.coe_toIsometryGroup hQ hI
+
+/-- An endomorphism of a finite free module over a domain preserves a quadratic form with
+left-separating polar form exactly when it underlies an orthogonal automorphism. -/
+theorem range_orthogonalGroup_toLinearMap (Q : QuadraticForm R M)
+    (hQ : Q.polarBilin.SeparatingLeft) :
+    Set.range (fun g : orthogonalGroup Q => (g : M ≃ₗ[R] M).toLinearMap) =
+      {f : Module.End R M | ∀ x : M, Q (f x) = Q x} := by
+  ext f
+  constructor
+  · rintro ⟨g, rfl⟩ x
+    exact mem_orthogonalGroup_iff.mp g.2 x
+  · intro hf
+    exact exists_orthogonalGroup_toLinearMap_eq hQ hf
+
+end Endomorphism
+
 end QuadraticMap
 
 end TauCeti
