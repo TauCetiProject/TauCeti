@@ -60,6 +60,23 @@ universe u w
 
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
+open Classical in
+/-- The index of a product of two vertex--dart--volume basis elements, or
+`none` when the table gives zero. The left factor is traversed second. -/
+@[expose]
+noncomputable def zigzagBasisMul : ZigzagBasisIndex G → ZigzagBasisIndex G →
+    Option (ZigzagBasisIndex G)
+  | .inl i, .inl j => if i = j then some (.inl i) else none
+  | .inl i, .inr (.inl d) => if i = d.snd then some (.inr (.inl d)) else none
+  | .inl i, .inr (.inr j) => if i = j then some (.inr (.inr j)) else none
+  | .inr (.inl d), .inl i => if i = d.fst then some (.inr (.inl d)) else none
+  | .inr (.inl d), .inr (.inl e) =>
+      if e = d.symm then some (.inr (.inr d.snd)) else none
+  | .inr (.inl _), .inr (.inr _) => none
+  | .inr (.inr i), .inl j => if i = j then some (.inr (.inr i)) else none
+  | .inr (.inr _), .inr (.inl _) => none
+  | .inr (.inr _), .inr (.inr _) => none
+
 /-- The volume class of a vertex with no neighbour is zero: it carries no backtrack. This is the
 form of `TauCeti.zigzagVolume_eq_zero_of_isIsolated` that the case splits below produce. -/
 private theorem zigzagVolume_eq_zero_of_not_exists_adj {i : V} (h : ¬∃ j, G.Adj i j) :
