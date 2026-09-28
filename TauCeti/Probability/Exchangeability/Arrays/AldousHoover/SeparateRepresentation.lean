@@ -10,7 +10,6 @@ import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.CommonCoding
 import TauCeti.Probability.Exchangeability.Arrays.Strip.VertexCoding
 import TauCeti.Probability.Independence.InfinitePi
-import TauCeti.Probability.Kernel.Randomization
 import TauCeti.Probability.ProductMeasure
 
 /-!
