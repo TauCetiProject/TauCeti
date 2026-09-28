@@ -11,9 +11,10 @@ public import TauCeti.FieldTheory.FunctionField.ConstantField
 /-!
 # Finite extensions of the constant field
 
-A finite extension of constants yields a finite compositum over the original field.
-The function-field theorem for arbitrary algebraic extensions of constants is in
-`ConstantExtension.Algebraic`.
+A finite extension of constants yields a finite compositum over the original field, and a
+separable extension of constants produces a separable compositum.  Exactness of the original
+constant field is needed for neither.  The function-field theorem for arbitrary algebraic
+extensions of constants is in `ConstantExtension.Algebraic`.
 
 Under the hypotheses that make constant field extensions well behaved — the original constant
 field `k` is exact in `F` and `k' / k` is separable — the compositum acquires no new separable
@@ -29,6 +30,8 @@ the element `y - t ^ (1/p) * x` of `F · k'` is a `p`-th root of `u`, and `u ^ (
 
 * `TauCeti.finiteDimensional_of_constantCompositum_eq_top`: a compositum with finite constants
   is finite over the original field.
+* `TauCeti.isSeparable_of_constantCompositum_eq_top`: the compositum of a separable constant
+  field extension is separable over the original field.
 * `TauCeti.separableClosure_eq_bot_of_constantCompositum_eq_top`: for a separable constant field
   extension of an exact constant field, `k'` is separably closed in `F · k'`.
 * `TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top`: for a separable constant field
@@ -73,6 +76,18 @@ theorem finiteDimensional_of_constantCompositum_eq_top [FiniteDimensional k k']
   have := IntermediateField.finiteDimensional_adjoin hi
   rw [htop] at this
   exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
+
+/-- A separable extension of the constant field produces a separable compositum over the
+original field. -/
+theorem isSeparable_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
+    (hcomp : constantCompositum F k' F' = ⊤) : Algebra.IsSeparable F F' := by
+  rw [← IntermediateField.isSeparable_top]
+  rw [← hcomp, constantCompositum_def,
+    IntermediateField.isSeparable_adjoin_iff_isSeparable]
+  rintro y ⟨c, rfl⟩
+  exact IsSeparable.tower_top F <|
+    (Algebra.IsSeparable.isSeparable k c).map (IsScalarTower.toAlgHom k k' F')
+      (algebraMap k' F').injective
 
 /-! ### The constant field of the compositum -/
 

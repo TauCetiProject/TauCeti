@@ -122,7 +122,7 @@ theorem squareClass_eq_representative_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) 
     exact hu0 (by simpa using hh)
   -- These four distinct classes exhaust the square-class group, whose order is four.
   have : (Subgroup.square Kˣ).FiniteIndex := by
-    rw [square_eq_powMonoidHom_two_range]
+    rw [square_eq_range_powMonoidHom]
     exact finiteIndex_range_powMonoidHom_of_isUnit h2
   have : Finite (SquareClassGroup K) :=
     finite_multiplicativeSquareClassGroup_iff.mp
@@ -130,7 +130,7 @@ theorem squareClass_eq_representative_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) 
   let _ := Fintype.ofFinite (SquareClassGroup K)
   have hcard : Fintype.card (SquareClassGroup K) = 4 := by
     rw [← Nat.card_eq_fintype_card, ← natCard_multiplicativeSquareClassGroup]
-    simpa only [MultiplicativeSquareClassGroup, square_eq_powMonoidHom_two_range] using
+    simpa only [MultiplicativeSquareClassGroup, square_eq_range_powMonoidHom] using
       card_squareClasses_of_isUnit (K := K) h2
   let s : Finset (SquareClassGroup K) :=
     {0, squareClass uK, squareClass π, squareClass (uK * π)}

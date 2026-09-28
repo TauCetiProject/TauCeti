@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.LinearAlgebra.PiTensorProduct.GeneralLinear
 public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
@@ -26,6 +27,9 @@ infinite field.
 * `TauCeti.commute_permTensorAction_tensorPowerRep` proves that the general-linear and
   symmetric-group actions commute, and `TauCeti.commute_permTensorActionAlgHom_tensorPowerRep`
   extends that to the whole group algebra `k[S_d]`.
+* `TauCeti.tensorPowerPermIntertwiningMap` packages `g^{⊗d}` as an intertwining map of the
+  symmetric-group action, and `TauCeti.tensorPowerIntertwiningRep` is the resulting action of
+  `GL n k` on the `S_d`-intertwining maps into the tensor power, by composition.
 * `TauCeti.toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const` identifies the
   image of `k[GLₙ]` with the span of all diagonal tensor operators over an infinite field.
 
@@ -78,6 +82,47 @@ theorem commute_permTensorActionAlgHom_tensorPowerRep
     permTensorAction_def]
   exact PiTensorProduct.commute_reindexRepresentation_asAlgebraHom_map k (Fin n → k) (Fin d) a
     (stdRep k n g)
+
+/-- The operator `g^{⊗d}` on `(kⁿ)^{⊗d}` as an intertwining map of the symmetric-group action:
+the diagonal action of `GL n k` commutes with permuting the tensor factors. -/
+noncomputable def tensorPowerPermIntertwiningMap (g : GL (Fin n) k) :
+    Representation.IntertwiningMap (permTensorAction k n d) (permTensorAction k n d) where
+  toLinearMap := tensorPowerRep k n d g
+  isIntertwining' σ := (commute_permTensorAction_tensorPowerRep k n d σ g).eq.symm
+
+@[simp]
+theorem tensorPowerPermIntertwiningMap_apply (g : GL (Fin n) k) (x : ⨂[k]^d (Fin n → k)) :
+    tensorPowerPermIntertwiningMap k n d g x = tensorPowerRep k n d g x :=
+  (rfl)
+
+variable {k n d} in
+/-- The representation of `GL n k` on the `S_d`-intertwining maps from `ρ` into `(kⁿ)^{⊗d}`, by
+composition with `g^{⊗d}`. In a split semisimple setting, when `ρ` is irreducible, this is the
+multiplicity space of `ρ` in the tensor power, with its residual action of the general linear
+group. -/
+noncomputable def tensorPowerIntertwiningRep {W : Type*} [AddCommGroup W] [Module k W]
+    (ρ : Representation k (Equiv.Perm (Fin d)) W) :
+    Representation k (GL (Fin n) k)
+      (Representation.IntertwiningMap ρ (permTensorAction k n d)) where
+  toFun g := Representation.IntertwiningMap.llcomp ρ _ _ (tensorPowerPermIntertwiningMap k n d g)
+  map_one' := by
+    ext f x
+    simp only [← Representation.IntertwiningMap.comp_def,
+      Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.comp_apply,
+      tensorPowerPermIntertwiningMap_apply, map_one, Module.End.one_apply]
+  map_mul' g h := by
+    ext f x
+    simp only [← Representation.IntertwiningMap.comp_def,
+      Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.comp_apply,
+      tensorPowerPermIntertwiningMap_apply, map_mul, Module.End.mul_apply]
+
+variable {k n d} in
+@[simp]
+theorem tensorPowerIntertwiningRep_apply_apply {W : Type*} [AddCommGroup W] [Module k W]
+    (ρ : Representation k (Equiv.Perm (Fin d)) W) (g : GL (Fin n) k)
+    (f : Representation.IntertwiningMap ρ (permTensorAction k n d)) (w : W) :
+    tensorPowerIntertwiningRep ρ g f w = tensorPowerRep k n d g (f w) :=
+  (rfl)
 
 end CommRing
 
