@@ -32,12 +32,13 @@ namespace PassportSpec
 
 variable {n : ℕ} (P : PassportSpec n)
 
-/-- Counting generating triples orbit by orbit: the number of passport classes times the
+/-- Counting generating triples orbit by orbit: the number of normalizer orbits times the
 normalizer order equals the number of generating triples times the centralizer order. -/
-theorem passportSize_mul_card_normalizer_eq_card_generatingTriple_mul_card_centralizer
-    (hn : n ≠ 0)
-    (hG : IsPretransitive P.G (Fin n)) :
-    P.passportSize * Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) =
+theorem
+  card_generatingTripleOrbits_mul_card_normalizer_eq_card_generatingTriple_mul_card_centralizer :
+    Nat.card (orbitRel.Quotient
+        (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple) *
+      Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) =
       Nat.card P.GeneratingTriple *
         Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin n)))) := by
   classical
@@ -56,7 +57,7 @@ theorem passportSize_mul_card_normalizer_eq_card_generatingTriple_mul_card_centr
         Nat.card_congr (selfEquivSigmaOrbits N P.GeneratingTriple)
       _ = ∑ ω : Ω, Nat.card (orbit N ω.out) := by
         simp only [Nat.card_eq_fintype_card, Fintype.card_sigma]
-  rw [P.passportSize_eq_card_generatingTripleOrbits hn hG, hsum]
+  rw [hsum]
   simp only [Nat.card_eq_fintype_card] at *
   rw [Finset.sum_mul]
   -- Expose the local names for the normalizer and centralizer so the pointwise formula matches.
@@ -65,37 +66,29 @@ theorem passportSize_mul_card_normalizer_eq_card_generatingTriple_mul_card_centr
   simp only [horbit, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   simp
 
+/-- Counting generating triples orbit by orbit: the number of passport classes times the
+normalizer order equals the number of generating triples times the centralizer order. -/
+theorem passportSize_mul_card_normalizer_eq_card_generatingTriple_mul_card_centralizer
+    (hn : n ≠ 0)
+    (hG : IsPretransitive P.G (Fin n)) :
+    P.passportSize * Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) =
+      Nat.card P.GeneratingTriple *
+        Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin n)))) := by
+  rw [P.passportSize_eq_card_generatingTripleOrbits hn hG]
+  exact
+    P.card_generatingTripleOrbits_mul_card_normalizer_eq_card_generatingTriple_mul_card_centralizer
+
 /-- The normalizer order divides the product of the generating-triple count and the
 centralizer order. -/
 theorem card_normalizer_dvd_card_generatingTriple_mul_card_centralizer :
     Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) ∣
       Nat.card P.GeneratingTriple *
         Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin n)))) := by
-  classical
-  let N := Subgroup.normalizer (P.G : Set (Perm (Fin n)))
-  let C := Subgroup.centralizer (P.G : Set (Perm (Fin n)))
-  let Ω := orbitRel.Quotient N P.GeneratingTriple
-  let _ : Fintype Ω := Fintype.ofFinite Ω
-  let _ : Fintype P.GeneratingTriple := Fintype.ofFinite P.GeneratingTriple
-  have horbit (ω : Ω) : Nat.card (orbit N ω.out) * Nat.card C = Nat.card N :=
-    P.card_orbit_generatingTriple_mul_card_centralizer_eq_card_normalizer ω.out
-  have hsum : Nat.card P.GeneratingTriple =
-      ∑ ω : Ω, Nat.card (orbit N ω.out) := by
-    calc
-      Nat.card P.GeneratingTriple =
-          Nat.card (Σ ω : Ω, orbit N ω.out) :=
-        Nat.card_congr (selfEquivSigmaOrbits N P.GeneratingTriple)
-      _ = ∑ ω : Ω, Nat.card (orbit N ω.out) := by
-        simp only [Nat.card_eq_fintype_card, Fintype.card_sigma]
-  refine ⟨Nat.card Ω, ?_⟩
-  calc
-    Nat.card P.GeneratingTriple * Nat.card C =
-        ∑ ω : Ω, Nat.card (orbit N ω.out) * Nat.card C := by
-      rw [hsum, Finset.sum_mul]
-    _ = Nat.card N * Nat.card Ω := by
-      simp only [horbit, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_comm]
-      simp only [Nat.card_eq_fintype_card]
-      norm_cast
+  refine ⟨Nat.card (orbitRel.Quotient
+    (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple), ?_⟩
+  have h :=
+    P.card_generatingTripleOrbits_mul_card_normalizer_eq_card_generatingTriple_mul_card_centralizer
+  simpa only [mul_comm] using h.symm
 
 /-- The exact passport-size formula: generating triples are divided into equal normalizer
 orbits, each having normalizer order divided by centralizer order elements. -/
