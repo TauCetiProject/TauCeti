@@ -17,7 +17,8 @@ is the cyclic group of order `Nat.gcd m n` when that gcd is positive. When `m = 
 infinite cyclic. In particular, taking `n = m` identifies `TriangleGroup 1 m m` with the cyclic
 group of order `m`. A positive gcd makes the group finite for arbitrary parameters
 (`TauCeti.TriangleGroup.finite_one`); under the signature condition `1 ≤ m ≤ n` this is the cyclic
-row of the spherical triangle-group classification, whose order is then `m`.
+row of the spherical triangle-group classification, where the order of the sorted parameter row
+`(1, m, n)` is `Nat.gcd m n`, and the order of the reduced exact row `(1, m, m)` is `m`.
 
 The equivalence is stated with the usual Mathlib multiplicative tag on `ZMod (Nat.gcd m n)`;
 it is a group because the additive group `ZMod (Nat.gcd m n)` is being reinterpreted
@@ -106,8 +107,8 @@ theorem natCard_one_self_self (m : ℕ) : Nat.card (TriangleGroup 1 m m) = m := 
 /-- For arbitrary parameters `m` and `n`, a positive `Nat.gcd m n` makes the triangle group
 `TriangleGroup 1 m n` finite, of order `Nat.gcd m n`. The parameters are unrestricted here, so this
 is a finiteness statement about any pair `(m, n)`; under the signature condition `1 ≤ m ≤ n` it is
-the cyclic row of the spherical classification, where `Nat.gcd m n` is the order `m` of the reduced
-row `(1, m, m)`. -/
+the cyclic row of the spherical classification, where the order of the sorted parameter row
+`(1, m, n)` is `Nat.gcd m n`, and the order of the reduced exact row `(1, m, m)` is `m`. -/
 theorem finite_one {m n : ℕ} (h : 0 < Nat.gcd m n) : Finite (TriangleGroup 1 m n) := by
   have hcard : 0 < Nat.card (TriangleGroup 1 m n) := by simpa only [natCard_one] using h
   exact Nat.card_pos_iff.mp hcard |>.2

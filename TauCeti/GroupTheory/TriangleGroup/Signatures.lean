@@ -63,13 +63,21 @@ while an unreduced parameter triple `(1, b, c)` has order `Nat.gcd b c`, which i
   on presentation parameters, where the cyclic row is every sorted triple with first parameter `1`,
   and the Euclidean rows, which are the same in both readings.
 
+None of the three predicates exposes its body. Each carries a `Decidable` instance, so `decide`
+works on a concrete signature, and a public characteristic lemma
+`TauCeti.isSphericalSignature_rows_iff`, `TauCeti.isSphericalParameterSignature_rows_iff` or
+`TauCeti.isEuclideanSignature_rows_iff`, which is how a signature is read.
+
 ## Main results
 
-* `TauCeti.orbifoldEulerChar`: the orbifold Euler characteristic `1/a + 1/b + 1/c - 1`, whose
-  defining formula `orbifoldEulerChar a b c = (a : ℚ)⁻¹ + (b : ℚ)⁻¹ + (c : ℚ)⁻¹ - 1` is `rfl` and
-  so is reached with `simp only [orbifoldEulerChar]` or `rw [orbifoldEulerChar]`.
+* `TauCeti.orbifoldEulerChar` and `TauCeti.orbifoldEulerChar_def`: the orbifold Euler
+  characteristic `1/a + 1/b + 1/c - 1`, whose unexposed definition is given its value by the `simp`
+  equation `orbifoldEulerChar a b c = (a : ℚ)⁻¹ + (b : ℚ)⁻¹ + (c : ℚ)⁻¹ - 1`. That equation is the
+  single simplification level of the orbifold characteristic, and the sign is read off the formula
+  it exposes.
 * `TauCeti.orbifoldEulerChar_pos_iff`, `TauCeti.orbifoldEulerChar_eq_zero_iff`,
-  `TauCeti.orbifoldEulerChar_neg_iff`: the sign of the orbifold Euler characteristic.
+  `TauCeti.orbifoldEulerChar_neg_iff`: the sign of the orbifold Euler characteristic, as
+  characterisations of the reciprocal sum against `TauCeti.orbifoldEulerChar_def`.
 * `TauCeti.isSphericalSignature_rows_iff`, `TauCeti.isSphericalParameterSignature_rows_iff`,
   `TauCeti.isEuclideanSignature_rows_iff`: the rows of each classified list, as simp lemmas.
 * `TauCeti.isSphericalParameterSignature_iff`, `TauCeti.isEuclideanSignature_iff`: the
@@ -104,30 +112,42 @@ public section
 namespace TauCeti
 
 /-- The orbifold Euler characteristic `χᵒʳᵇ(a, b, c) = 1/a + 1/b + 1/c - 1` of the signature
-`(a, b, c)`, as an element of `ℚ`. Its defining formula, `1/a + 1/b + 1/c - 1`, is the normal form
-the three sign characterisations below are read against, and the orders the spherical table records
-as `2 / χᵒʳᵇ` are read off it; simplification exposes it through `orbifoldEulerChar` itself. -/
+`(a, b, c)`, as an element of `ℚ`. The definition is kept unexposed, and its value is given by the
+`@[simp]` equation `TauCeti.orbifoldEulerChar_def`; the three sign characterisations below and the
+orders the spherical table records as `2 / χᵒʳᵇ` are both read off that formula. -/
 def orbifoldEulerChar (a b c : ℕ) : ℚ :=
   (a : ℚ)⁻¹ + (b : ℚ)⁻¹ + (c : ℚ)⁻¹ - 1
 
-/-- A signature has positive orbifold Euler characteristic exactly when its reciprocal sum is
-greater than one. -/
+/-- The defining formula of `TauCeti.orbifoldEulerChar`, as a `simp` lemma. It is the only
+simplification rule for the orbifold Euler characteristic: simplification reduces
+`orbifoldEulerChar a b c` to `1/a + 1/b + 1/c - 1`, and the sign is then read off that expression.
+This is why the three sign characterisations below carry no `simp` attribute of their own: as `simp`
+lemmas they would be duplicates of this equation. -/
 @[simp]
+theorem orbifoldEulerChar_def (a b c : ℕ) :
+    orbifoldEulerChar a b c = (a : ℚ)⁻¹ + (b : ℚ)⁻¹ + (c : ℚ)⁻¹ - 1 :=
+  -- The parentheses matter: a bare `rfl` in an exported theorem would demand that
+  -- `orbifoldEulerChar` be `@[expose]`, which would defeat the point of this equation.
+  (rfl)
+
+/-- A signature has positive orbifold Euler characteristic exactly when its reciprocal sum is
+greater than one. This is a characterisation rather than a simplification rule:
+`TauCeti.orbifoldEulerChar_def` already simplifies `orbifoldEulerChar` to its reciprocal-sum
+formula, and `simp` then proves this equivalence on its own. -/
 theorem orbifoldEulerChar_pos_iff (a b c : ℕ) :
     0 < orbifoldEulerChar a b c ↔ 1 < (a : ℚ)⁻¹ + (b : ℚ)⁻¹ + (c : ℚ)⁻¹ := by
   simp only [orbifoldEulerChar]
   constructor <;> intro h <;> linarith
 
-/-- A signature has zero orbifold Euler characteristic exactly when its reciprocal sum is one. -/
-@[simp]
+/-- A signature has zero orbifold Euler characteristic exactly when its reciprocal sum is one. It
+carries no `simp` attribute, as `TauCeti.orbifoldEulerChar_pos_iff` does. -/
 theorem orbifoldEulerChar_eq_zero_iff (a b c : ℕ) :
     orbifoldEulerChar a b c = 0 ↔ (a : ℚ)⁻¹ + (b : ℚ)⁻¹ + (c : ℚ)⁻¹ = 1 := by
   simp only [orbifoldEulerChar]
   constructor <;> intro h <;> linarith
 
 /-- A signature has negative orbifold Euler characteristic exactly when its reciprocal sum is less
-than one. -/
-@[simp]
+than one. It carries no `simp` attribute, as `TauCeti.orbifoldEulerChar_pos_iff` does. -/
 theorem orbifoldEulerChar_neg_iff (a b c : ℕ) :
     orbifoldEulerChar a b c < 0 ↔ (a : ℚ)⁻¹ + (b : ℚ)⁻¹ + (c : ℚ)⁻¹ < 1 := by
   simp only [orbifoldEulerChar]
@@ -147,17 +167,12 @@ implicit: without them the degenerate triples `(1, 0, 0)` and `(2, 2, 0)` would 
 although neither is a signature and their orbifold Euler characteristics are `0`, not positive.
 `TauCeti.IsEuclideanSignature` needs no conjuncts of its own, all three of its rows being concrete.
 
-The body is exposed so that the `Decidable` instance below, and `decide` on a concrete signature,
-can reduce it. -/
-@[expose]
+The body is not exposed: the `Decidable` instance below is built from the characteristic formula,
+and a signature is read through the same formula. -/
 def IsSphericalSignature (a b c : ℕ) : Prop :=
   1 ≤ a ∧ a ≤ b ∧ b ≤ c ∧
     ((a = 1 ∧ b = c) ∨ (a = 2 ∧ b = 2) ∨ (a, b, c) = (2, 3, 3) ∨ (a, b, c) = (2, 3, 4) ∨
       (a, b, c) = (2, 3, 5))
-
-instance (a b c : ℕ) : Decidable (IsSphericalSignature a b c) := by
-  simp only [IsSphericalSignature]
-  infer_instance
 
 /-- The rows of the spherical table, as the characteristic formula of
 `TauCeti.IsSphericalSignature`. -/
@@ -167,6 +182,10 @@ theorem isSphericalSignature_rows_iff (a b c : ℕ) :
       1 ≤ a ∧ a ≤ b ∧ b ≤ c ∧
         ((a = 1 ∧ b = c) ∨ (a = 2 ∧ b = 2) ∨ (a, b, c) = (2, 3, 3) ∨ (a, b, c) = (2, 3, 4) ∨
           (a, b, c) = (2, 3, 5)) := Iff.rfl
+
+instance (a b c : ℕ) : Decidable (IsSphericalSignature a b c) := by
+  rw [isSphericalSignature_rows_iff]
+  infer_instance
 
 /-- A **spherical parameter signature** is a sorted positive parameter triple whose first parameter
 is `1`, or whose first two parameters are `2`, or which is one of the three polyhedral triples
@@ -178,17 +197,12 @@ required to divide the presentation parameters: among exact signatures it is the
 reduced form `(1, m, m)`, by
 `TauCeti.PermutationTriple.geometryType_eq_spherical_iff_isSphericalSignature`.
 
-The body is exposed so that the `Decidable` instance below, and `decide` on a concrete signature,
-can reduce it. -/
-@[expose]
+The body is not exposed: the `Decidable` instance below is built from the characteristic formula,
+and a signature is read through the same formula. -/
 def IsSphericalParameterSignature (a b c : ℕ) : Prop :=
   1 ≤ a ∧ a ≤ b ∧ b ≤ c ∧
     (a = 1 ∨ (a = 2 ∧ b = 2) ∨ (a, b, c) = (2, 3, 3) ∨ (a, b, c) = (2, 3, 4) ∨
       (a, b, c) = (2, 3, 5))
-
-instance (a b c : ℕ) : Decidable (IsSphericalParameterSignature a b c) := by
-  simp only [IsSphericalParameterSignature]
-  infer_instance
 
 /-- The rows of the spherical table, as the characteristic formula of
 `TauCeti.IsSphericalParameterSignature`, whose cyclic row is every sorted triple with first
@@ -200,18 +214,17 @@ theorem isSphericalParameterSignature_rows_iff (a b c : ℕ) :
         (a = 1 ∨ (a = 2 ∧ b = 2) ∨ (a, b, c) = (2, 3, 3) ∨ (a, b, c) = (2, 3, 4) ∨
           (a, b, c) = (2, 3, 5)) := Iff.rfl
 
+instance (a b c : ℕ) : Decidable (IsSphericalParameterSignature a b c) := by
+  rw [isSphericalParameterSignature_rows_iff]
+  infer_instance
+
 /-- A triple is a **Euclidean signature** when it is one of the three triples whose reciprocal
 sum is one: `(3, 3, 3)`, `(2, 4, 4)` and `(2, 3, 6)`. All three are sorted and positive, so this
 predicate needs no ordering conjunct of its own, unlike `TauCeti.IsSphericalSignature`, whose
-first two rows have a free entry. The body is exposed so that the `Decidable` instance below, and
-`decide` on a concrete signature, can reduce it. -/
-@[expose]
+first two rows have a free entry. The body is not exposed: the `Decidable` instance below is built
+from the characteristic formula, and a signature is read through the same formula. -/
 def IsEuclideanSignature (a b c : ℕ) : Prop :=
   (a, b, c) = (3, 3, 3) ∨ (a, b, c) = (2, 4, 4) ∨ (a, b, c) = (2, 3, 6)
-
-instance (a b c : ℕ) : Decidable (IsEuclideanSignature a b c) := by
-  simp only [IsEuclideanSignature]
-  infer_instance
 
 /-- The three Euclidean rows, as the characteristic formula of
 `TauCeti.IsEuclideanSignature`. -/
@@ -219,6 +232,10 @@ instance (a b c : ℕ) : Decidable (IsEuclideanSignature a b c) := by
 theorem isEuclideanSignature_rows_iff (a b c : ℕ) :
     IsEuclideanSignature a b c ↔
       (a, b, c) = (3, 3, 3) ∨ (a, b, c) = (2, 4, 4) ∨ (a, b, c) = (2, 3, 6) := Iff.rfl
+
+instance (a b c : ℕ) : Decidable (IsEuclideanSignature a b c) := by
+  rw [isEuclideanSignature_rows_iff]
+  infer_instance
 
 /-- A row of the spherical table is a row of the parameter list: the reduced cyclic row `(1, m, m)`
 is one of the triples whose first parameter is `1`, and the other four rows are rows of both. -/
