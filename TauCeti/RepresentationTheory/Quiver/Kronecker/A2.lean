@@ -162,20 +162,6 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
   · simpa only [hij, ↓reduceIte] using h
   · simpa only [hij, ↓reduceIte] using h
 
-/-- The delta-minus-arrow-count formula for two vertices of `1 ⟶ 2` gives the corresponding
-Ringel Euler matrix entry. -/
-@[simp]
-theorem sub_arrow_card_eq_eulerMatrixA2 (k : Type v) [Field k] (i j : Fin 2) :
-    (if (![src, tgt] i : Kronecker A) = ![src, tgt] j then 1 else 0) -
-      (Fintype.card ((![src, tgt] i : Kronecker A) ⟶ ![src, tgt] j) : ℤ) =
-        eulerMatrixA2 i j := by
-  let _ : Fintype A := Unique.fintype
-  have h := congrFun (congrFun (extEulerMatrix_A2_eq (A := A) k) i) j
-  simp only [extEuler_vertexSimpleModule_vertexSimpleModule] at h
-  by_cases hij : (![src, tgt] i : Kronecker A) = ![src, tgt] j
-  · simpa only [hij, ↓reduceIte] using h
-  · simpa only [hij, ↓reduceIte] using h
-
 end Quiver.Kronecker
 
 end TauCeti
