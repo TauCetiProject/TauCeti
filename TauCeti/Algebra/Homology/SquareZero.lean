@@ -147,7 +147,6 @@ theorem homologyMap_id (hd : d ∘ₗ d = 0) :
 variable {P : Type*} [AddCommGroup P] [Module S P] {q : P →ₗ[S] P}
 
 /-- The map on homology induced by a composite is the composite of the induced maps. -/
-@[simp]
 theorem homologyMap_comp (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0)
     (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₗ d = e ∘ₗ f)
     (hg : g ∘ₗ e = q ∘ₗ g) :
