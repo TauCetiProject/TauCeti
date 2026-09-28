@@ -6,27 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FreeModule.PID
-public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.Projection
-public import Mathlib.RingTheory.PrincipalIdealDomain
-public import Mathlib.Algebra.EuclideanDomain.Int
 
 /-!
-# Primitive submodules of finite free abelian groups
+# Primitive submodules over principal ideal domains
 
-A submodule of a finitely generated torsion-free abelian group is primitive when its quotient
-has no torsion.
-Such a submodule is exactly a direct summand. Consequently an injective homomorphism of
-finite free abelian groups is primitive precisely when its image has a complement. This
-criterion lets primitive lattice embeddings be handled through an actual direct-sum
-decomposition of their underlying integral modules.
-
-The forward implication uses that a finitely generated torsion-free module over `ℤ` is free,
-and that free modules are projective. The latter splits the quotient map.
+A submodule of a torsion-free module over a principal ideal domain is primitive when its
+quotient has no torsion. When the quotient is finitely generated, such a submodule is exactly
+a direct summand. In particular, an injective homomorphism of finite free abelian groups is
+primitive precisely when its image has a complement.
 
 ## Main results
 
-* `Submodule.exists_isCompl_iff_quotient_torsionFree`: the direct-summand criterion.
+* `Submodule.exists_isCompl_iff_isTorsionFree_quotient`: the direct-summand criterion.
 
 ## References
 
@@ -41,25 +33,26 @@ universe u
 
 namespace Submodule
 
-variable {M : Type u} [AddCommGroup M] [Module.Finite ℤ M]
-  [Module.IsTorsionFree ℤ M]
+variable {R : Type*} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R]
+  {M : Type u} [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M]
 
-/-- A submodule of a finitely generated torsion-free abelian group has torsion-free quotient
-if and only if it admits a complementary submodule. -/
-theorem _root_.Submodule.exists_isCompl_iff_quotient_torsionFree (S : Submodule ℤ M) :
-    (∃ T : Submodule ℤ M, IsCompl S T) ↔ Module.IsTorsionFree ℤ (M ⧸ S) := by
+/-- A submodule of a torsion-free module over a PID with finitely generated quotient has
+torsion-free quotient if and only if it admits a complementary submodule. -/
+theorem _root_.Submodule.exists_isCompl_iff_isTorsionFree_quotient
+    (S : Submodule R M) [Module.Finite R (M ⧸ S)] :
+    (∃ T : Submodule R M, IsCompl S T) ↔ Module.IsTorsionFree R (M ⧸ S) := by
   constructor
   · rintro ⟨T, hT⟩
-    have : Module.IsTorsionFree ℤ T :=
+    have : Module.IsTorsionFree R T :=
       T.subtype_injective.moduleIsTorsionFree T.subtype (fun _ _ => map_smul T.subtype _ _)
     exact ((S.quotientEquivOfIsCompl T hT).injective).moduleIsTorsionFree
       (S.quotientEquivOfIsCompl T hT).toLinearMap (fun _ _ => map_smul _ _ _)
   · intro h
-    have : Module.IsTorsionFree ℤ (M ⧸ S) := h
-    have : Module.Free ℤ (M ⧸ S) := Module.free_of_finite_type_torsion_free'
+    have : Module.IsTorsionFree R (M ⧸ S) := h
+    have : Module.Free R (M ⧸ S) := Module.free_of_finite_type_torsion_free'
     obtain ⟨g, hg⟩ := S.mkQ.exists_rightInverse_of_surjective
       (LinearMap.range_eq_top.mpr S.mkQ_surjective)
-    let e : M →ₗ[ℤ] M := LinearMap.id - g.comp S.mkQ
+    let e : M →ₗ[R] M := LinearMap.id - g.comp S.mkQ
     have he : ∀ x, e x ∈ S := by
       intro x
       rw [← S.ker_mkQ, LinearMap.mem_ker]
@@ -68,7 +61,7 @@ theorem _root_.Submodule.exists_isCompl_iff_quotient_torsionFree (S : Submodule 
           LinearMap.congr_fun hg (S.mkQ x)
       simp only [e, LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
         map_sub, hx, sub_self]
-    let p : M →ₗ[ℤ] S := e.codRestrict S he
+    let p : M →ₗ[R] S := e.codRestrict S he
     have hp : ∀ x : S, p x = x := by
       intro x
       apply Subtype.ext
