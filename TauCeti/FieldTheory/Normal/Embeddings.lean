@@ -7,13 +7,18 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.Algebra.GroupAction.AlgHom
+public import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Embeddings into a normal extension, and the action on them
 
 For fields `L` and `M` over a base `F`, the group `M ≃ₐ[F] M` acts on the embeddings
 `L →ₐ[F] M` by postcomposition (`TauCeti/Algebra/GroupAction/AlgHom.lean`). This file records
-the three facts that make that action a dictionary for the subfields of `L`.
+the facts that make that action a dictionary for the subfields of `L`.
+
+*Stabilizers.* The automorphisms fixing an embedding `φ` are exactly those fixing its image
+`φ(L)` pointwise. Together with transitivity this identifies the coset space of
+`Gal(M / φ(L))` with the set of all embeddings, the coset of `g` corresponding to `g ∘ φ`.
 
 *Transitivity.* When `M / F` is normal, any two embeddings lie in the same orbit, because an
 isomorphism between two embedded images extends to `M`. This asserts nothing about existence:
@@ -32,6 +37,10 @@ separability the count drops, and without normality the minimal polynomials need
 * `AlgHom.liftNormal_equivFieldRange_apply`: lifting the isomorphism between two embedded
   images carries one embedding to the other. This isolates the field-range bookkeeping.
 * `AlgEquiv.isPretransitiveAlgHom`: over a normal `M / F`, any two embeddings lie in one orbit.
+* `TauCeti.FieldTheory.stabilizer_algHom_eq_fixingSubgroup`: the stabilizer of an embedding `φ`
+  is the subgroup fixing `φ(L)`.
+* `TauCeti.FieldTheory.fixingSubgroupQuotientEquivAlgHom`: over a normal `M / F`, the cosets of
+  that subgroup are the embeddings of `L` into `M`.
 * `TauCeti.FieldTheory.eq_one_of_forall_smul_eq`: if the embedded images generate `M`, an
   automorphism fixing every embedding is the identity.
 * `TauCeti.FieldTheory.faithfulSMul_of_normalClosure_eq_top`: equivalently, the action is
@@ -119,6 +128,35 @@ theorem faithfulSMul_of_normalClosure_eq_top
     (hgen : IntermediateField.normalClosure F L M = ⊤) :
     FaithfulSMul (M ≃ₐ[F] M) (L →ₐ[F] M) :=
   faithfulSMul_iff.2 fun _ h => eq_one_of_forall_smul_eq hgen h
+
+/-- **The stabilizer of an embedding is the subgroup fixing its image**: an automorphism of `M`
+fixes `φ` under postcomposition exactly when it fixes `φ(L)` pointwise. No hypothesis on `M / F`
+is needed. -/
+theorem stabilizer_algHom_eq_fixingSubgroup (φ : L →ₐ[F] M) :
+    MulAction.stabilizer (M ≃ₐ[F] M) φ = φ.fieldRange.fixingSubgroup := by
+  ext g
+  rw [MulAction.mem_stabilizer_iff, IntermediateField.mem_fixingSubgroup_iff]
+  constructor
+  · rintro h _ ⟨x, rfl⟩
+    exact AlgEquiv.apply_of_smul_eq h x
+  · intro h
+    ext x
+    rw [AlgEquiv.smul_algHom_apply]
+    exact h (φ x) ⟨x, rfl⟩
+
+/-- **The cosets of `Gal(M / φ(L))` are the embeddings of `L` into `M`** for a normal `M / F`,
+the coset of `g` corresponding to `g ∘ φ`. -/
+noncomputable def fixingSubgroupQuotientEquivAlgHom [Normal F M] (φ : L →ₐ[F] M) :
+    (M ≃ₐ[F] M) ⧸ φ.fieldRange.fixingSubgroup ≃ (L →ₐ[F] M) :=
+  (Subgroup.quotientEquivOfEq (stabilizer_algHom_eq_fixingSubgroup φ).symm).trans
+    (TauCeti.quotientStabilizerEquiv (M ≃ₐ[F] M) φ)
+
+/-- `fixingSubgroupQuotientEquivAlgHom` sends the coset of `g` to `g ∘ φ`. -/
+@[simp]
+theorem fixingSubgroupQuotientEquivAlgHom_mk [Normal F M] (φ : L →ₐ[F] M) (g : M ≃ₐ[F] M) :
+    fixingSubgroupQuotientEquivAlgHom φ (QuotientGroup.mk g) = g.toAlgHom.comp φ := by
+  rw [fixingSubgroupQuotientEquivAlgHom, Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+    TauCeti.quotientStabilizerEquiv_mk, AlgEquiv.smul_algHom_def]
 
 end TauCeti.FieldTheory
 

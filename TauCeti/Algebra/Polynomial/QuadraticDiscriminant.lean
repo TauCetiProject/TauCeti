@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.FieldTheory.Perfect
+import TauCeti.Algebra.QuadraticDiscriminant
 
 import Mathlib.Algebra.Polynomial.SpecificDegree
+import Mathlib.Tactic
 
 /-!
 # Separability and splitting criteria for quadratic polynomials
@@ -19,6 +21,10 @@ those facts back as statements about the *polynomial* `C a * X ^ 2 + C b * X + C
 statement mentions the discriminant it uses Mathlib's `discrim` rather than its expansion, so
 that Mathlib's discriminant API applies to it directly; the two criteria phrased by a root or by
 an Artin-Schreier condition mention no discriminant at all.
+
+Over an ordered commutative ring, `TauCeti.quadratic_pos_iff_of_discrim_neg` and
+`TauCeti.quadratic_neg_iff_of_discrim_neg` identify the sign of a quadratic with negative
+discriminant from its leading coefficient.
 
 Over a field, with `a ≠ 0`:
 
@@ -219,5 +225,54 @@ theorem card_rootSet_quadratic_of_discrim_eq_zero {k : Type*} [Field k] {a b c :
   omega
 
 end Polynomial
+
+namespace TauCeti
+
+open _root_.Polynomial
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- A quadratic with negative discriminant is positive at every argument exactly when its
+leading coefficient is positive. -/
+theorem quadratic_pos_iff_of_discrim_neg {a b c : R} (hd : discrim a b c < 0) (x : R) :
+    0 < (C a * X ^ 2 + C b * X + C c).eval x ↔ 0 < a := by
+  simp only [eval_add, eval_mul, eval_pow, eval_C, eval_X]
+  have ha0 : a ≠ 0 := by
+    intro ha
+    subst a
+    simp only [discrim, zero_mul, mul_zero, sub_zero] at hd
+    nlinarith [sq_nonneg b]
+  have hsq : ∀ s : R, discrim a b c ≠ s ^ 2 := by
+    intro s hs
+    exact (not_le.mpr hd) (by rw [hs]; exact sq_nonneg s)
+  have hne : a * x ^ 2 + b * x + c ≠ 0 := by
+    simpa only [sq] using quadratic_ne_zero_of_discrim_ne_sq hsq x
+  constructor
+  · intro hx
+    rcases lt_or_gt_of_ne ha0 with ha | ha
+    · have hnonneg := nonneg_of_discrim_le_zero (a := -a) (b := -b) (c := -c)
+        (by simpa only [neg_pos] using ha)
+        (by simpa only [discrim_neg] using hd.le) x 1
+      simp only [one_pow, mul_one] at hnonneg
+      nlinarith
+    · exact ha
+  · intro ha
+    have hnonneg := nonneg_of_discrim_le_zero ha hd.le x 1
+    simp only [one_pow, mul_one] at hnonneg
+    exact lt_of_le_of_ne hnonneg (Ne.symm hne)
+
+/-- With negative discriminant, a quadratic is negative everywhere exactly when its
+leading coefficient is negative. -/
+theorem quadratic_neg_iff_of_discrim_neg {a b c : R} (hd : discrim a b c < 0) (x : R) :
+    (C a * X ^ 2 + C b * X + C c).eval x < 0 ↔ a < 0 := by
+  have h := quadratic_pos_iff_of_discrim_neg (a := -a) (b := -b) (c := -c)
+    (by simpa only [discrim_neg] using hd) x
+  have heq : (C (-a) * X ^ 2 + C (-b) * X + C (-c)).eval x =
+      -(C a * X ^ 2 + C b * X + C c).eval x := by
+    simp only [eval_add, eval_mul, eval_pow, eval_C, eval_X]
+    ring
+  simpa only [heq, neg_pos] using h
+
+end TauCeti
 
 end

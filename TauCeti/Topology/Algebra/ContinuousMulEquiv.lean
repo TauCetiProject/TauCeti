@@ -13,11 +13,12 @@ public import Mathlib.Algebra.Group.Equiv.TypeTags
 # Topological isomorphisms between multiplicative type tags of products
 
 The multiplicative type tag of a product of additive topological groups is topologically
-isomorphic to the product of the multiplicative type tags, and when `T` has a unique element,
-`Multiplicative (M × T)` is topologically isomorphic to `Multiplicative M`. These are
-`MulEquiv.prodMultiplicative` and `AddEquiv.prodUnique` between the multiplicative type tags,
-upgraded to `ContinuousMulEquiv`s: the first transports properties of topological groups, such as
-being pro-`p`, between the two shapes of a product, and the second collapses a product
+isomorphic to the product of the multiplicative type tags, both for binary products and for
+dependent products, and when `T` has a unique element, `Multiplicative (M × T)` is topologically
+isomorphic to `Multiplicative M`. These are `MulEquiv.prodMultiplicative`,
+`MulEquiv.piMultiplicative` and `AddEquiv.prodUnique` between the multiplicative type tags,
+upgraded to `ContinuousMulEquiv`s: the first two transport properties of topological groups, such
+as being pro-`p`, between the two shapes of a product, and the last collapses a product
 decomposition of a topological group whose second factor turns out to be trivial.
 
 ## Main definitions
@@ -25,6 +26,9 @@ decomposition of a topological group whose second factor turns out to be trivial
 * `TauCeti.ContinuousMulEquiv.prodMultiplicative`: the topological isomorphism
   `Multiplicative (M × N) ≃ₜ* Multiplicative M × Multiplicative N`, with its evaluation lemmas
   `prodMultiplicative_apply` and `prodMultiplicative_symm_apply`.
+* `TauCeti.ContinuousMulEquiv.piMultiplicative`: the topological isomorphism
+  `Multiplicative (∀ i, K i) ≃ₜ* ∀ i, Multiplicative (K i)`, with its evaluation lemmas
+  `piMultiplicative_apply` and `piMultiplicative_symm_apply`.
 * `TauCeti.ContinuousMulEquiv.multiplicativeProdUnique`: the topological isomorphism
   `Multiplicative (M × T) ≃ₜ* Multiplicative M` for `[Unique T]`, with its evaluation lemmas
   `multiplicativeProdUnique_apply` and `multiplicativeProdUnique_symm_apply`.
@@ -63,6 +67,33 @@ theorem ContinuousMulEquiv.prodMultiplicative_symm_apply (x : Multiplicative M �
   (rfl)
 
 end Prod
+
+section Pi
+
+variable {ι : Type*} (K : ι → Type*) [∀ i, Add (K i)] [∀ i, TopologicalSpace (K i)]
+
+/-- The multiplicative type tag of a dependent product is the product of the multiplicative type
+tags, as a topological isomorphism. This is `MulEquiv.piMultiplicative` as a
+`ContinuousMulEquiv`. -/
+def ContinuousMulEquiv.piMultiplicative :
+    Multiplicative (∀ i, K i) ≃ₜ* ∀ i, Multiplicative (K i) where
+  toMulEquiv := MulEquiv.piMultiplicative K
+  continuous_toFun :=
+    continuous_pi fun i ↦ continuous_ofAdd.comp ((continuous_apply i).comp continuous_toAdd)
+  continuous_invFun :=
+    continuous_ofAdd.comp (continuous_pi fun i ↦ continuous_toAdd.comp (continuous_apply i))
+
+@[simp]
+theorem ContinuousMulEquiv.piMultiplicative_apply (x : Multiplicative (∀ i, K i)) (i : ι) :
+    ContinuousMulEquiv.piMultiplicative K x i = ofAdd (x.toAdd i) :=
+  (rfl)
+
+@[simp]
+theorem ContinuousMulEquiv.piMultiplicative_symm_apply (x : ∀ i, Multiplicative (K i)) :
+    (ContinuousMulEquiv.piMultiplicative K).symm x = ofAdd fun i ↦ (x i).toAdd :=
+  (rfl)
+
+end Pi
 
 section Unique
 
