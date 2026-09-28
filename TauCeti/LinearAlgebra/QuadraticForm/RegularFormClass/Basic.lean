@@ -241,6 +241,7 @@ theorem RegularFormPresentation.append_apply_natAdd (p q : RegularFormPresentati
       (Fin.cast (RegularFormPresentation.fst_append p q).symm (Fin.natAdd p.1 j)) = q.2 j := by
   simp [RegularFormPresentation.append]
 
+-- `append` is opaque to importing modules; this equation lets them rewrite a full presentation.
 /-- Appending presentations concatenates their weight tuples. -/
 theorem RegularFormPresentation.append_def (p q : RegularFormPresentation K) :
     p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := by
