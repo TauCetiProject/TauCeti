@@ -225,13 +225,17 @@ theorem fullCycleType_frob_eq_factorDegrees_of_not_dvd_neg_twenty_three
         (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees p := by
   have hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))) :=
     squarefree_reduction_of_not_dvd_neg_twenty_three hmin p hp
-  have hnodup : (UniqueFactorizationMonoid.normalizedFactors
-      ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))).Nodup :=
-    (UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors
-      ((minpoly.monic θ.isIntegral).map _).ne_zero).mp hsq
-  rw [NumberField.fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactorsMod
-    hsq Q hσ, RingOfIntegers.monicFactorsMod, Multiset.toFinset_val, hnodup.dedup,
-    ← Polynomial.factorDegrees_def, hmin]
+  have hminQ : minpoly ℚ (θ : K) = (minpoly ℤ θ).map (Int.castRingHom ℚ) := by
+    rw [← NumberField.RingOfIntegers.minpoly_coe,
+      minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.isIntegral_coe, algebraMap_int_eq]
+  have key : ∀ (g : ℚ[X]) [Fact ((g.map (algebraMap ℚ M)).Splits)],
+      g = (minpoly ℤ θ).map (Int.castRingHom ℚ) →
+        (Polynomial.Gal.galActionHom g M (Polynomial.Gal.restrict g M σ)).fullCycleType =
+          (minpoly ℤ θ).factorDegrees p := by
+    rintro g _ rfl
+    exact NumberField.fullCycleType_galActionHom_restrict_eq_factorDegrees
+      (minpoly.monic θ.isIntegral) hsq Q hσ
+  rw [key _ hminQ, hmin]
 
 omit hgen in
 open scoped Classical in
