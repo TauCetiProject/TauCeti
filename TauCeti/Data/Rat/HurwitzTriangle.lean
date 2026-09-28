@@ -9,16 +9,14 @@ public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.Linarith
 
 /-!
-# The numerical triangle bound in Hurwitz's automorphism theorem
+# The sharp reciprocal bound for hyperbolic triples
 
-Three branch points of a tame quotient of a function field have ramification indices
-`a, b, c ≥ 2`. When the quotient has genus zero and the covering field has genus at least two,
-Riemann–Hurwitz forces `1/a + 1/b + 1/c < 1`. The least positive value of the orbifold
-deficit `1 - 1/a - 1/b - 1/c` is `1/42`, attained at `(2, 3, 7)`. This is the numerical
-part of the sharp `84(g - 1)` bound for finite automorphism groups.
+For natural numbers `a, b, c ≥ 2` with `1/a + 1/b + 1/c < 1`, the deficit
+`1 - 1/a - 1/b - 1/c` is at least `1/42`, attained at `(2, 3, 7)`. Applied to
+ramification indices, this is the numerical part of Hurwitz's sharp `84(g - 1)`
+bound for finite automorphism groups.
 
-The result is stated for arbitrary orders of the three indices, so a caller need not
-choose an ordering of its branch points.
+The result is stated for arbitrary orders of the three indices.
 
 ## Reference
 
@@ -108,7 +106,7 @@ private theorem one_div_forty_two_le_hyperbolic_triangle_ordered
       norm_num at hhyper
       linarith
 
-/-- The sharp numerical bound for a hyperbolic triangle of ramification indices.
+/-- The sharp numerical bound for a hyperbolic triple of natural numbers.
 The equality case is realized by the indices `(2, 3, 7)`. -/
 theorem one_div_forty_two_le_hyperbolic_triangle
     {a b c : ℕ} (ha : 2 ≤ a) (hb : 2 ≤ b) (hc : 2 ≤ c)
