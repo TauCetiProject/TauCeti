@@ -26,8 +26,8 @@ variable (p : ℕ) [Fact p.Prime] (K : Type*) [Field K]
 /-- The `p`-adic cyclotomic character on the absolute Galois group of `K`. -/
 noncomputable def localCyclotomicCharacter :
     Field.absoluteGaloisGroup K →* ℤ_[p]ˣ :=
-  MonoidHom.mk' (fun σ => cyclotomicCharacter (AlgebraicClosure K) p σ.toRingEquiv)
-    (fun _σ _τ => map_mul (cyclotomicCharacter (AlgebraicClosure K) p) _ _)
+  (cyclotomicCharacter (AlgebraicClosure K) p).comp
+    (MulSemiringAction.toRingAut Gal(AlgebraicClosure K/K) (AlgebraicClosure K))
 
 /-- The local character is Mathlib's cyclotomic character evaluated on the underlying
 ring automorphism. -/
@@ -41,14 +41,6 @@ theorem localCyclotomicCharacter_apply (σ : Field.absoluteGaloisGroup K) :
 Galois group and the `p`-adic topology on the units. -/
 theorem localCyclotomicCharacter_continuous :
     Continuous (localCyclotomicCharacter p K) := by
-  have h : Continuous (fun σ : Field.absoluteGaloisGroup K =>
-      cyclotomicCharacter (AlgebraicClosure K) p σ.toRingEquiv) :=
-    cyclotomicCharacter.continuous p K (AlgebraicClosure K)
-  have heq : (localCyclotomicCharacter p K : _ → _) =
-      (fun σ => cyclotomicCharacter (AlgebraicClosure K) p σ.toRingEquiv) := by
-    funext σ
-    exact localCyclotomicCharacter_apply p K σ
-  rw [heq]
-  exact h
+  exact cyclotomicCharacter.continuous p K (AlgebraicClosure K)
 
 end TauCeti
