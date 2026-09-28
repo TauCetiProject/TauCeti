@@ -328,14 +328,12 @@ private theorem monodromy_homeomorphMulEquivOfEq_fromPath (γ : Path (1 : Circle
       AddCircle.homeomorphCircle_symm_one]
   refine congrArg Subtype.val ((AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy_eq_of_map_eq
     (ey := ⟨a, ha⟩) (Path.Homotopic.Quotient.mk θ) ?_)
-  rw [TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
-    ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_map,
-    ← Path.Homotopic.Quotient.mk_cast]
-  congr 1
-  ext t
-  -- `Path.cast` does not change the underlying function. It is unfolded by `exact` rather than
-  -- by `Path.cast_coe`, because the endpoint proofs supplied by `monodromy_eq_of_map_eq` are
-  -- fibre memberships, which `simp` cannot see as the endpoint equations `Path.cast` expects.
+  rw [TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_fromPath, ← Path.Homotopic.Quotient.mk_map]
+  -- Casting a path class casts its representative, and `Path.cast` does not change the
+  -- underlying function. Both are unfolded definitionally rather than by `mk_cast` and
+  -- `Path.cast_coe`, because the endpoint proofs supplied by `monodromy_eq_of_map_eq` are fibre
+  -- memberships, which `rw` and `simp` cannot see as the endpoint equations `cast` expects.
+  refine congrArg Path.Homotopic.Quotient.mk (Path.ext (funext fun t => ?_))
   have ht : ((θ t : ℝ) : AddCircle (2 * Real.pi)) =
       (AddCircle.homeomorphCircle Real.two_pi_pos.ne').symm (γ t) := by
     rw [hcoe, hθ]
@@ -366,8 +364,7 @@ theorem fundamentalGroupMulEquiv_fromPath {x : Circle} (γ : Path x x) :
   -- degree.
   rw [fundamentalGroupMulEquiv_def, MulEquiv.trans_apply,
     FundamentalGroup.fundamentalGroupMulEquivOfPathConnected,
-    FundamentalGroup.fundamentalGroupMulEquivOfPath_apply, ← Path.Homotopic.Quotient.mk_trans,
-    ← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_trans,
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_fromPath,
     homeomorphMulEquivOfEq_trans_fundamentalGroupMulEquivZero_fromPath, degree_symm_trans_trans]
 
 /-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/

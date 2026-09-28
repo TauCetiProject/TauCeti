@@ -36,6 +36,8 @@ rules, subgroup, and normalizer-quotient bookkeeping built on it.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_apply` and
   `FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply`: basepoint change as conjugation
   by the path in the path quotient.
+* `FundamentalGroup.fundamentalGroupMulEquivOfPath_fromPath`: the same formula for the class of
+  a loop given as a path.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_trans`: basepoint change along a concatenated
   path is the composite of the basepoint changes.
 * `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change along a loop is
@@ -121,6 +123,16 @@ lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply
   change α.conj g = γq.symm.trans (g.trans γq)
   rw [CategoryTheory.Iso.conj_apply]
   rfl
+
+/-- On the class of a loop `g`, basepoint change along `γ` is the class of the loop
+`γ⁻¹ ⬝ g ⬝ γ`. This is `FundamentalGroup.fundamentalGroupMulEquivOfPath_apply` for a loop given
+as a path. -/
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_fromPath
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X} (γ : Path x₀ x₁) (g : Path x₀ x₀) :
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ
+        (_root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk g)) =
+      _root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (γ.symm.trans (g.trans γ))) :=
+  _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_apply γ _
 
 open CategoryTheory in
 /-- Basepoint change along a concatenated path is basepoint change along each piece in turn. -/
