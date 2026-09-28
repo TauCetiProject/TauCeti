@@ -16,9 +16,7 @@ intermediate field. Consequently its relative Frobenius in the extension over th
 an automorphism is the identity. This excludes the relative fibre of every nonidentity
 automorphism, including a generator of a cyclic Galois group.
 
-This is the split-completely case of the cyclic-generator fixed-field fibre test in
-`TauCetiRoadmap/Chebotarev/README.md`, Layer 8.2. See J. Neukirch,
-*Algebraic Number Theory*, Chapter VII, §13.
+See J. Neukirch, *Algebraic Number Theory*, Chapter VII, §13.
 -/
 
 public section
