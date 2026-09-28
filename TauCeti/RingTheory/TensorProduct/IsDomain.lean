@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
-public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 
 /-!
