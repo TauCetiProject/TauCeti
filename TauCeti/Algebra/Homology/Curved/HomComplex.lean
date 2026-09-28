@@ -104,8 +104,9 @@ theorem evenDifferential_eq_zero_iff (f : EvenCochain X Y) :
 
 /-- A closed even map gives a cycle in the Hom complex. -/
 @[simp] theorem evenDifferential_eq_zero (f : X ⟶ Y) :
-    evenDifferential X Y (f.f₀, f.f₁) = 0 := by
-  exact (evenDifferential_eq_zero_iff X Y _).2 ⟨f.comm₀, f.comm₁⟩
+    (f.f₀ ≫ Y.d₀ - X.d₀ ≫ f.f₁, f.f₁ ≫ Y.d₁ - X.d₁ ≫ f.f₀) = 0 := by
+  simpa only [evenDifferential_apply] using
+    (evenDifferential_eq_zero_iff X Y (f.f₀, f.f₁)).2 ⟨f.comm₀, f.comm₁⟩
 
 /-- Degree-zero cycles in the Hom complex are precisely closed even maps of duplexes. -/
 def homEquivCycles : (X ⟶ Y) ≃ₗ[R] (evenDifferential X Y).ker where
