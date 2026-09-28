@@ -35,13 +35,6 @@ replaced grid line lies strictly inside the original rectangle's column arc: the
 spans the original pentagon's whole column arc but starts at the original rectangle's initial
 row, and the extra row of squares it then covers comes out of the original rectangle.
 
-What remains is the `O`-monomial weight of the promoted pentagon, which the pairing transports
-alongside the `X`-avoidance: a pentagon weight is a correction of the weight of its underlying
-rectangle, and
-`TauCeti.GridRectanglePentagonDecomposition.OMonomial_mul_OMonomial_recutLeftEqLeft` gives only
-the identity for the two underlying rectangles. The common-terminal-side orientation is likewise
-not treated here, though its branch data is already recorded in `Overlap/Basic.lean`.
-
 ## Main results
 
 * `TauCeti.GridRectanglePentagonDecomposition.pentagon_toGridRectangle_recutLeftEqLeft`: the
@@ -56,13 +49,10 @@ not treated here, though its branch data is already recorded in `Overlap/Basic.l
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.5, "Invariance over
-𝔽₂. Grid moves = commutation + (de)stabilization": the pairing of the two contributions in
-the chain-map equation of a column commutation is that of
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1 (arXiv:math/0910.0078).
-The recut hexagon is cut the other way, and the pentagon of the new pairing must be one of the
-empty pentagons carrying no `X`-marking that the pentagon map of
-`TauCeti.KnotTheory.Grid.Commutation.Pentagon` counts.
+The pairing of the two contributions in the chain-map equation of a column commutation is that of
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1. The recut hexagon is
+cut the other way, and the pentagon of the new pairing must be one of the empty pentagons carrying
+no `X`-marking that the pentagon map of `TauCeti.KnotTheory.Grid.Commutation.Pentagon` counts.
 -/
 
 public section
@@ -105,6 +95,7 @@ private theorem isRecutOfLeftEqLeft_branch
 
 /-- The underlying toroidal rectangle of the promoted pentagon is that of the recut's first
 rectangle. -/
+@[simp]
 theorem pentagon_toGridRectangle_recutLeftEqLeft
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
@@ -130,7 +121,6 @@ private theorem pentagon_bottom_eq_rectangle_top
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left) :
     D.pentagon.bottom = D.rectangle.top := by
-  show D.pentagon.toGridRectangleBetween.bottom = D.rectangle.top
   rw [GridRectangleBetween.bottom_def, ← hcommon, D.rectangle.map_left,
     ← GridRectangleBetween.top_def]
 
@@ -138,7 +128,6 @@ private theorem pentagon_bottom_eq_rectangle_top
 private theorem pentagon_top_eq (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left) (hne : finRotate n a ≠ D.rectangle.right) :
     D.pentagon.top = x (finRotate n a) := by
-  show D.pentagon.toGridRectangleBetween.top = x (finRotate n a)
   rw [GridRectangleBetween.top_def, D.pentagon.right_eq]
   exact D.rectangle.map_of_ne _ (D.finRotate_ne_rectangle_left hcommon) hne
 
@@ -186,6 +175,7 @@ theorem pentagon_left_bottom_recutLeftEqLeft
 
 /-- The top row of the promoted pentagon is the top row of the original pentagon, in either recut
 branch. -/
+@[simp]
 theorem pentagon_top_recutLeftEqLeft
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
@@ -279,7 +269,9 @@ private theorem mem_coveredSquares_pentagon_of_branch2
         exact hspan hcolumn
       · have hsplit : p.2 ∈ Grid.cIco D.pentagon.bottom D.pentagon.top ∨
             p.2 ∈ Grid.cIco D.rectangle.bottom D.pentagon.bottom :=
-          Grid.mem_cIco_or_mem_cIco h.2.2
+          Finset.mem_union.mp
+            (Grid.cIco_subset_cIco_union_cIco (t := D.rectangle.bottom)
+              (w := D.pentagon.bottom) (u := D.pentagon.top) h.2.2)
         rcases hsplit with hfirst | hsecond
         · exact (hrow hfirst).elim
         · rw [D.pentagon_bottom_eq_rectangle_top hcommon] at hsecond
@@ -290,7 +282,9 @@ private theorem mem_coveredSquares_pentagon_of_branch2
   · rw [hPbottom] at h
     have hsplit : p.2 ∈ Grid.cIco D.pentagon.bottom s ∨
           p.2 ∈ Grid.cIco D.rectangle.bottom D.pentagon.bottom :=
-      Grid.mem_cIco_or_mem_cIco h.2
+      Finset.mem_union.mp
+        (Grid.cIco_subset_cIco_union_cIco (t := D.rectangle.bottom)
+          (w := D.pentagon.bottom) (u := s) h.2)
     rcases hsplit with hfirst | hsecond
     · exact Finset.mem_union.mpr (Or.inl
         ((GridPentagonBetween.mem_coveredSquares D.pentagon p).2 (Or.inr (Or.inr ⟨h.1, hfirst⟩))))
@@ -307,9 +301,10 @@ theorem coveredSquares_pentagon_subset_recutLeftEqLeft
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
-    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) {p : Fin n × Fin n}
-    (hp : p ∈ (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).pentagon.coveredSquares) :
-    p ∈ D.pentagon.coveredSquares ∪ D.rectangle.toGridRectangle.coveredSquares := by
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).pentagon.coveredSquares ⊆
+      D.pentagon.coveredSquares ∪ D.rectangle.toGridRectangle.coveredSquares := by
+  intro p hp
   rcases D.isRecutOfLeftEqLeft_branch hone hrectangle hpentagon hcommon with
     ⟨hcol, hleft⟩ | ⟨hcol, hleft⟩
   · exact Finset.mem_union.mpr (Or.inl
@@ -326,15 +321,9 @@ theorem disjoint_coveredSquares_XSet_pentagon_recutLeftEqLeft
     (hX : Disjoint D.pentagon.coveredSquares G.XSet)
     (hrectX : Disjoint D.rectangle.toGridRectangle.coveredSquares G.XSet) :
     Disjoint (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).pentagon.coveredSquares
-      G.XSet := by
-  rw [Finset.disjoint_left]
-  intro p hp hXp
-  have hsub := D.coveredSquares_pentagon_subset_recutLeftEqLeft
-    hcommon hone hrectangle hpentagon hp
-  rw [Finset.mem_union] at hsub
-  rcases hsub with h | h
-  · exact (Finset.disjoint_left.mp hX) h hXp
-  · exact (Finset.disjoint_left.mp hrectX) h hXp
+      G.XSet :=
+  (Finset.disjoint_union_left.mpr ⟨hX, hrectX⟩).mono_left
+    (D.coveredSquares_pentagon_subset_recutLeftEqLeft hcommon hone hrectangle hpentagon)
 
 end GridRectanglePentagonDecomposition
 
