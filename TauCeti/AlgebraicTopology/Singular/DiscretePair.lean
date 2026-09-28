@@ -40,47 +40,47 @@ private instance : TotallyDisconnectedSpace P.snd :=
   P.isEmbedding_map.isTotallyDisconnected_range.mp
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)
 
-/-- The homology map of a nonempty subspace inclusion into a totally disconnected space is a
-split monomorphism. -/
+/-- The homology map of a subspace inclusion into a totally disconnected space is a split
+monomorphism. -/
 noncomputable def splitMonoSingularHomologyMapOfTotallyDisconnectedSpace
-    [Nonempty P.snd] (n : ℕ) :
+    (n : ℕ) :
     SplitMono (SSet.homologyMap (TopCat.toSSet.map P.map) R n) := by
-  let r : TopCat.toSSet.obj P.fst ⟶ TopCat.toSSet.obj P.snd :=
-    (TopCat.toSSetIsoConst P.fst).hom ≫
-      (Functor.const SimplexCategoryᵒᵖ).map
-        (ConcreteCategory.ofHom ⟨Function.invFun P.map.hom⟩) ≫
-      (TopCat.toSSetIsoConst P.snd).inv
-  have hr : TopCat.toSSet.map P.map ≫ r = 𝟙 _ := by
-    ext n x
-    simp only [r, TopCat.toSSetIsoConst, NatTrans.comp_app]
-    apply (P.snd.toSSetObjEquiv n).injective
-    ext y
-    change Function.invFun P.map.hom
-      (P.map.hom ((P.snd.toSSetObjEquiv n x) (Classical.arbitrary _))) =
-        (P.snd.toSSetObjEquiv n x) y
-    rw [Function.leftInverse_invFun P.isEmbedding_map.injective]
-    exact TotallyDisconnectedSpace.eq_of_continuous _
-      (P.snd.toSSetObjEquiv n x).continuous _ _
-  have hmap :
-      SSet.homologyMap (TopCat.toSSet.map P.map) R n ≫
-        SSet.homologyMap r R n = 𝟙 _ := by
-    rw [← SSet.homologyMap_comp, hr]
-    simp
-  exact ⟨_, hmap⟩
+  by_cases h : Nonempty P.snd
+  · let := h
+    let r : TopCat.toSSet.obj P.fst ⟶ TopCat.toSSet.obj P.snd :=
+      (TopCat.toSSetIsoConst P.fst).hom ≫
+        (Functor.const SimplexCategoryᵒᵖ).map
+          (ConcreteCategory.ofHom ⟨Function.invFun P.map.hom⟩) ≫
+        (TopCat.toSSetIsoConst P.snd).inv
+    have hr : TopCat.toSSet.map P.map ≫ r = 𝟙 _ := by
+      ext n x
+      simp only [r, TopCat.toSSetIsoConst, NatTrans.comp_app]
+      apply (P.snd.toSSetObjEquiv n).injective
+      ext y
+      change Function.invFun P.map.hom
+        (P.map.hom ((P.snd.toSSetObjEquiv n x) (Classical.arbitrary _))) =
+          (P.snd.toSSetObjEquiv n x) y
+      rw [Function.leftInverse_invFun P.isEmbedding_map.injective]
+      exact TotallyDisconnectedSpace.eq_of_continuous _
+        (P.snd.toSSetObjEquiv n x).continuous _ _
+    have hmap :
+        SSet.homologyMap (TopCat.toSSet.map P.map) R n ≫
+          SSet.homologyMap r R n = 𝟙 _ := by
+      rw [← SSet.homologyMap_comp, hr]
+      simp
+    exact ⟨_, hmap⟩
+  · let : IsEmpty P.snd := not_nonempty_iff.mp h
+    let : (TopCat.toSSet.obj P.snd).HasDimensionLT 0 :=
+      TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty P
+    have hzero : IsZero ((TopCat.toSSet.obj P.snd).homology R n) :=
+      SSet.isZero_homology_of_hasDimensionLT _ R n 0
+    exact ⟨0, hzero.eq_of_src _ _⟩
 
 /-- Inclusion of a subspace of a totally disconnected space is injective on zeroth singular
 homology. -/
 lemma mono_singularHomologyMap_zero_of_totallyDisconnectedSpace :
-    Mono (SSet.homologyMap (TopCat.toSSet.map P.map) R 0) := by
-  by_cases h : Nonempty P.snd
-  · let := h
-    exact (splitMonoSingularHomologyMapOfTotallyDisconnectedSpace P R 0).mono
-  · let : IsEmpty P.snd := not_nonempty_iff.mp h
-    let : (TopCat.toSSet.obj P.snd).HasDimensionLT 0 :=
-      TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty P
-    have hzero : IsZero ((TopCat.toSSet.obj P.snd).homology R 0) := by
-      exact SSet.isZero_homology_of_hasDimensionLT _ R 0 0
-    exact ⟨fun _ _ _ ↦ hzero.eq_of_tgt _ _⟩
+    Mono (SSet.homologyMap (TopCat.toSSet.map P.map) R 0) :=
+  (splitMonoSingularHomologyMapOfTotallyDisconnectedSpace P R 0).mono
 
 /-- Relative singular homology of a totally disconnected pair vanishes in positive degree. -/
 theorem isZero_singularHomology_of_totallyDisconnectedSpace {n : ℕ} (hn : n ≠ 0) :
