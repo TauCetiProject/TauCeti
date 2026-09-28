@@ -72,18 +72,28 @@ def mk (φ : F ≃ₜ F) (x : F) (t : ℝ) : MappingTorus φ :=
   @Quotient.mk'' (F × ℝ)
     (@AddAction.orbitRel ℤ (F × ℝ) inferInstance (MappingTorus.action φ)) (x, t)
 
+/-- Every mapping-torus point is represented by a point of the cylinder. -/
+theorem mk_surjective (φ : F ≃ₜ F) :
+    Function.Surjective (fun p : F × ℝ ↦ mk φ p.1 p.2) := by
+  intro q
+  induction q using Quotient.inductionOn' with
+  | _ p => exact ⟨p, rfl⟩
+
+/-- The quotient identifies (φ ^ n) x at height t + n with x at height t. -/
 @[simp]
 theorem mk_vadd (φ : F ≃ₜ F) (n : ℤ) (x : F) (t : ℝ) :
     mk φ ((φ ^ n) x) (t + n) = mk φ x t := by
   let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
-  change Quotient.mk'' ((φ ^ n) x, t + n) = Quotient.mk'' (x, t)
+  unfold mk
   apply Quotient.sound
   exact AddAction.orbitRel_apply.mpr ⟨n, rfl⟩
 
+/-- Two cylinder points represent the same mapping-torus point exactly when they differ
+by an integer translate in the monodromy orbit and the corresponding height translate. -/
 theorem mk_eq_iff (φ : F ≃ₜ F) {x y : F} {t s : ℝ} :
     mk φ x t = mk φ y s ↔ ∃ n : ℤ, (φ ^ n) y = x ∧ s + n = t := by
   let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
-  change (Quotient.mk'' (x, t) : MappingTorus φ) = Quotient.mk'' (y, s) ↔ _
+  unfold mk
   rw [Quotient.eq, AddAction.orbitRel_apply, AddAction.mem_orbit_iff]
   constructor
   · rintro ⟨n, hn⟩
