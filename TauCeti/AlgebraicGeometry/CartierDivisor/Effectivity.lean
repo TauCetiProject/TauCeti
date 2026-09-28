@@ -49,6 +49,7 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
 /-- On a Noetherian integral scheme of dimension at most one, regular in codimension one, a
 Cartier divisor is effective if and only if every coefficient of its associated Weil divisor is
 nonnegative. -/
+@[simp]
 theorem isEffective_iff_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (D : CartierDivisor X) :
     D.IsEffective ↔ WeilDivisor.IsEffective D.toWeilDivisor := by
