@@ -147,15 +147,14 @@ theorem basis_mem_weightSpace_ofWeights (b : Module.Basis η R M) (wt : η → G
 /-- In a basis with pairwise distinct weights, projection to the weight of a basis vector
 extracts exactly that basis coordinate. -/
 @[simp]
-theorem weightProj_ofWeights_eq [Finite η] (b : Module.Basis η R M) (wt : η → G)
+theorem weightProj_ofWeights_eq (b : Module.Basis η R M) (wt : η → G)
     (hwt : Function.Injective wt) (x : η) (m : M) :
     letI : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
     weightProj R G M (wt x) m = (b.repr m x) • b x := by
   classical
-  let _ := Fintype.ofFinite η
   let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
-  conv_lhs => rw [← b.sum_repr m]
-  rw [map_sum, Finset.sum_eq_single x]
+  conv_lhs => rw [← b.linearCombination_repr m]
+  rw [Finsupp.linearCombination_apply, map_finsuppSum, Finsupp.sum, Finset.sum_eq_single x]
   · rw [map_smul, weightProj_of_mem]
     exact basis_mem_weightSpace_ofWeights b wt x
   · intro y _ hyx
@@ -163,7 +162,9 @@ theorem weightProj_ofWeights_eq [Finite η] (b : Module.Basis η R M) (wt : η �
     · simp
     · exact fun h ↦ hyx (hwt h).symm
     · exact basis_mem_weightSpace_ofWeights b wt y
-  · simp
+  · intro hx
+    have hx' : b.repr m x = 0 := by simpa [Finsupp.mem_support_iff] using hx
+    rw [hx', zero_smul, map_zero]
 
 /-- The coefficient matrix of `ofWeights` is the diagonal matrix of the characters. -/
 theorem coefficientMatrix_ofWeights [DecidableEq η] (b : Module.Basis η R M) (wt : η → G) :
