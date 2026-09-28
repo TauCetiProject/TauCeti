@@ -22,6 +22,8 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
 ## Main result
 
+* `TauCeti.mlieBracket_eq_lieBracket`: on a normed space, the manifold Lie bracket is the Lie
+  bracket of vector fields on that space.
 * `TauCeti.mlieBracket_const_model_space`: constant model-space vector fields have zero
   manifold Lie bracket.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
@@ -76,6 +78,13 @@ theorem mlieBracket_const_model_space (a b x : F) :
   -- The tangent space of the model manifold is definitionally its model vector space.
   change (0 : F) - 0 = 0
   simp
+
+/-- On a normed space, the manifold Lie bracket of two vector fields is their Lie bracket as maps
+of the space. -/
+theorem mlieBracket_eq_lieBracket {V W : ∀ y : F, TangentSpace 𝓘(𝕜, F) y} :
+    VectorField.mlieBracket 𝓘(𝕜, F) V W = VectorField.lieBracket 𝕜 V W := by
+  rw [← VectorField.mlieBracketWithin_univ, VectorField.mlieBracketWithin_eq_lieBracketWithin]
+  exact VectorField.lieBracketWithin_univ
 
 end TauCeti
 
