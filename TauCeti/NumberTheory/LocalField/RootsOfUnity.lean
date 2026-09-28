@@ -52,16 +52,17 @@ theorem pPowerRootsOfUnity_eq_iSup_rootsOfUnity :
 /-- The order of the `p`-power roots of unity, with finiteness made explicit. In local-field
 applications the witness is `finite_pPowerRootsOfUnity`. -/
 noncomputable def localRootOfUnityOrder (h : Finite (pPowerRootsOfUnity p K)) : ℕ :=
-  letI := h
-  Nat.card (pPowerRootsOfUnity p K)
+  @Fintype.card _ (@Fintype.ofFinite _ h)
 
 /-- The local root-of-unity order is the cardinality of the finite primary component. -/
 theorem localRootOfUnityOrder_def (h : Finite (pPowerRootsOfUnity p K)) :
-    localRootOfUnityOrder p K h = Nat.card (pPowerRootsOfUnity p K) := (rfl)
+    localRootOfUnityOrder p K h = Nat.card (pPowerRootsOfUnity p K) := by
+  exact (@Nat.card_eq_fintype_card _ (@Fintype.ofFinite _ h)).symm
 
 /-- The order of a finite `p`-power root group is positive. -/
 theorem localRootOfUnityOrder_pos (h : Finite (pPowerRootsOfUnity p K)) :
     0 < localRootOfUnityOrder p K h := by
+  rw [localRootOfUnityOrder_def]
   let _ := h
   exact Nat.card_pos
 
@@ -154,6 +155,7 @@ omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- The order of the `p`-power roots of unity is a power of `p`. -/
 theorem localRootOfUnityOrder_isPow (h : Finite (pPowerRootsOfUnity p K)) :
     ∃ n : ℕ, localRootOfUnityOrder p K h = p ^ n := by
+  rw [localRootOfUnityOrder_def]
   let _ := h
   exact IsPGroup.iff_card.mp CommGroup.primaryComponent.isPGroup
 
@@ -169,6 +171,7 @@ theorem pPowerRootsOfUnity_eq_rootsOfUnity_order
   constructor
   · intro hx
     rw [mem_rootsOfUnity]
+    rw [localRootOfUnityOrder_def]
     exact congrArg Subtype.val (pow_card_eq_one' (x := (⟨x, hx⟩ : pPowerRootsOfUnity p K)))
   · intro hx
     apply (mem_pPowerRootsOfUnity_iff p K x).mpr
@@ -194,14 +197,14 @@ theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder (hpK : (p : K) ≠ 0)
         orderOf (⟨u, hmem⟩ : pPowerRootsOfUnity p K) = orderOf u :=
           (Subgroup.orderOf_coe _).symm
         _ = p ^ n := hu.eq_orderOf.symm
-    simpa only [localRootOfUnityOrder, hord] using
+    simpa only [localRootOfUnityOrder_def, hord] using
       (orderOf_dvd_natCard (⟨u, hmem⟩ : pPowerRootsOfUnity p K))
   · intro hdvd
     let _ := isCyclic_pPowerRootsOfUnity hpK
     obtain ⟨g, hg⟩ := IsCyclic.exists_ofOrder_eq_natCard
       (α := pPowerRootsOfUnity p K)
     have hdiv : p ^ n ∣ orderOf g := by
-      simpa only [hg, localRootOfUnityOrder] using hdvd
+      simpa only [hg, localRootOfUnityOrder_def] using hdvd
     have hg0 : orderOf g ≠ 0 := by
       rw [hg]
       exact Nat.ne_of_gt Nat.card_pos
