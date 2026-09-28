@@ -69,11 +69,14 @@ In the namespace `TauCeti`:
   through the closed point is positive;
 * `exists_nat_length_quotient_span_pair`: in a noetherian local ring, two equations generating an
   `𝔪`-primary ideal give a finite length, which is a natural number;
-* `length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors` and
-  `length_quotient_span_pair_mul_eq_add`: that length is additive over a product of equations,
-  which is additivity over a union of curves, whenever the image of the second factor is a
-  non-zero-divisor on the first curve, and in particular for an irreducible first curve; no
-  condition is placed on the two further equations, so the three lengths may be infinite;
+* `length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors`: that length is additive over a
+  product of equations, which is additivity over a union of curves, whenever the image of the
+  second factor is a non-zero-divisor on the first curve; no condition is placed on the two
+  further equations, so the three lengths may be infinite;
+* `length_quotient_span_pair_mul_eq_add`: the same additivity for an irreducible first curve, that
+  is, a prime `(f)`, where it is enough that the second factor `h` lie outside `(f)`, so that its
+  image there is a nonzero element of the domain `R ⧸ (f)` and hence a non-zero-divisor; the three
+  lengths may be infinite here as well;
 * `length_quotient_span_pair_comm`: that length is symmetric in the two equations, which
   transports the additivity above to the first equation;
 * `radical_span_pair_eq_maximalIdeal_of_prime`, `isFiniteLength_quotient_span_pair_of_prime` and
