@@ -44,6 +44,7 @@ noncomputable instance analyticAffineChartMulAction (σ : Φ.cones) :
 
 /-- The map between affine charts associated to a face inclusion is equivariant for the
 coordinate-free complex torus. -/
+-- `analyticAffineChartDiagram_map` simplifies the left side, so this is an explicit rewrite rule.
 theorem analyticAffineChartDiagram_map_smul {τ σ : Φ.cones} (f : τ ⟶ σ)
     (t : ComplexTorus N) (x : (Φ.analyticAffineChartDiagram hΦ).obj τ) :
     (Φ.analyticAffineChartDiagram hΦ).map f (t • x) =
