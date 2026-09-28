@@ -15,6 +15,7 @@ public import TauCeti.Analysis.Semigroups.Generator.Neg
 public import TauCeti.Analysis.Semigroups.Generator.Similarity
 public import TauCeti.Analysis.Semigroups.Generator.ExponentialShift
 public import TauCeti.Analysis.Semigroups.Generator.IteratedDomain
+public import TauCeti.Analysis.Semigroups.Generator.SmoothVectors
 
 /-!
 # Infinitesimal generators of strongly continuous semigroups
