@@ -272,8 +272,8 @@ private theorem d_cochainEquiv1_eq_zero_iff (c : C1 G ((trivialFp n G).V)) :
 `1`-cocycles of `TauCeti.trivialFp n G`, as an additive equivalence.** The forward formula is the
 homogeneous form `g • c (g⁻¹ * h)` of the cocycle, curried; the inverse evaluates the canonical
 cocycle at `(1, g)`. This is the degree-one `ZMod n`-linear part of the comparison: the
-coefficients of `TauCeti.cohomFp` lie in `ZMod n`, so the `ℤ`-valued comparison of
-`TauCeti.ContCohomology.CocycleComparison` does not apply to them. -/
+coefficients of `TauCeti.cohomFp` lie in `ZMod n`, so the `ℤ`-valued
+`TauCeti.ContCohomology.cocycleEquiv1` does not apply to them. -/
 noncomputable def cohomFpCocycleEquiv1 :
     Z1 G ((trivialFp n G).V) ≃+ _root_.ContinuousCohomology.cocycles (trivialFp n G) 1 :=
   -- Ascribed: typed on its own, the cochain meets the kernel's carrier in one cheap check.
