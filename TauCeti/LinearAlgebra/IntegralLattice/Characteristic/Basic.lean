@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Data.ZMod.Basic
-public import TauCeti.LinearAlgebra.IntegralLattice.OrthogonalSum
+public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 
 /-!
 # Characteristic vectors of integral lattices
