@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
-public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Invariants
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Units
 
@@ -38,6 +37,7 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 /-- **The residue of `ζ_{ℚ(√5)}` at `s = 1`** is `2 log((1 + √5)/2) / √5`: the class number
 formula `2^{r₁} (2π)^{r₂} h R / (w √|D|)` with `(r₁, r₂) = (2, 0)`, `h = 1`, `R = log φ`,
 `w = 2` and `D = 5`. -/
+@[simp]
 theorem dedekindZeta_residue_eq (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     dedekindZeta_residue K = 2 * Real.log Real.goldenRatio / Real.sqrt 5 := by
