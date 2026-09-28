@@ -39,27 +39,33 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
 /-- A compatible extension of nonarchimedean local fields is totally ramified when its
-residue degree is one. Equivalently, its ramification index equals its degree. Such an
+ramification index equals its degree. Equivalently, its residue degree is one. Such an
 extension is finite by `finite_of_valuativeExtension`. -/
 def IsTotallyRamified (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
     [IsNonarchimedeanLocalField K]
     [Field L] [ValuativeRel L] [TopologicalSpace L]
     [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] : Prop :=
-  inertiaDegree K L = 1
+  ramificationIndex K L = Module.finrank K L
 
 /-- Total ramification is equivalent to the ramification index equaling the degree. -/
 theorem isTotallyRamified_def :
-    IsTotallyRamified K L ↔ ramificationIndex K L = Module.finrank K L := by
-  constructor
-  · intro h
-    rw [← ramificationIndex_mul_inertiaDegree, show inertiaDegree K L = 1 from h, mul_one]
-  · intro h
-    rw [← ramificationIndex_mul_inertiaDegree] at h
-    exact Nat.eq_of_mul_eq_mul_left ramificationIndex_pos (by simpa using h.symm)
+    IsTotallyRamified K L ↔ ramificationIndex K L = Module.finrank K L := Iff.rfl
+
+/-- The ramification index of a totally ramified extension equals its degree. -/
+@[simp]
+theorem IsTotallyRamified.ramificationIndex_eq_finrank (h : IsTotallyRamified K L) :
+    ramificationIndex K L = Module.finrank K L := h
 
 /-- A finite local-field extension is totally ramified exactly when its residue degree is one. -/
 theorem isTotallyRamified_iff_inertiaDegree_eq_one :
-    IsTotallyRamified K L ↔ inertiaDegree K L = 1 := Iff.rfl
+    IsTotallyRamified K L ↔ inertiaDegree K L = 1 := by
+  constructor
+  · intro h
+    change ramificationIndex K L = Module.finrank K L at h
+    rw [← ramificationIndex_mul_inertiaDegree] at h
+    exact Nat.eq_of_mul_eq_mul_left ramificationIndex_pos (by simpa using h.symm)
+  · intro h
+    rw [isTotallyRamified_def, ← ramificationIndex_mul_inertiaDegree, h, mul_one]
 
 /-- The residue degree of a totally ramified extension is one. -/
 @[simp]
@@ -76,7 +82,8 @@ variable (K L) (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
 /-- A tower is totally ramified exactly when both of its steps are totally ramified. -/
 theorem isTotallyRamified_tower_iff :
     IsTotallyRamified K M ↔ IsTotallyRamified K L ∧ IsTotallyRamified L M := by
-  simp only [IsTotallyRamified, inertiaDegree_tower (K := K) (L := L) M, mul_eq_one]
+  simp only [isTotallyRamified_iff_inertiaDegree_eq_one,
+    inertiaDegree_tower (K := K) (L := L) M, mul_eq_one]
 
 /-- Total ramification is transitive in a tower. -/
 theorem IsTotallyRamified.trans (hKL : IsTotallyRamified K L)
