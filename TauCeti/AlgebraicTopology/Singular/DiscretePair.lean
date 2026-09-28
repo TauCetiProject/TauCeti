@@ -9,13 +9,13 @@ public import TauCeti.AlgebraicTopology.Singular.Empty
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Nondegenerate
 
 /-!
-# Relative singular homology of discrete pairs
+# Relative singular homology of totally disconnected pairs
 
-For a pair whose ambient space is discrete, relative singular homology vanishes in positive
-degrees. The map on zeroth homology induced by the subspace inclusion is injective because a
-nonempty subspace of a discrete space is a retract; the empty case follows from its zero
-homology. Together with the existing exact sequence of a pair, this isolates the degree-zero
-quotient as the only nonzero relative homology.
+For a pair whose ambient space is totally disconnected, relative singular homology vanishes in
+positive degrees. The map on zeroth homology induced by the subspace inclusion is injective:
+when the subspace is nonempty, its singular simplicial set is a retract of the ambient singular
+simplicial set; the empty case follows from its zero homology. Together with the existing exact
+sequence of a pair, this isolates the degree-zero quotient as the only nonzero relative homology.
 
 The computation uses Andrew Yang's calculation of singular homology of totally disconnected
 spaces in Mathlib, Joël Riou's dimension bound for simplicial-set homology there, and the
@@ -33,34 +33,48 @@ universe w v u
 
 namespace TopPair
 
-variable (P : TopPair.{w}) [DiscreteTopology P.fst]
+variable (P : TopPair.{w}) [TotallyDisconnectedSpace P.fst]
   {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 
-private instance : DiscreteTopology P.snd :=
-  P.isEmbedding_map.discreteTopology
+private instance : TotallyDisconnectedSpace P.snd :=
+  P.isEmbedding_map.isTotallyDisconnected_range.mp
+    (isTotallyDisconnected_of_totallyDisconnectedSpace _)
 
-/-- The map from the homology of a subspace of a discrete space to the homology of the ambient
-space is a split monomorphism when the subspace is nonempty. -/
-noncomputable def splitMonoSingularHomologyMapOfDiscrete [Nonempty P.snd] (n : ℕ) :
+/-- The homology map of a nonempty subspace inclusion into a totally disconnected space is a
+split monomorphism. -/
+noncomputable def splitMonoSingularHomologyMapOfTotallyDisconnectedSpace
+    [Nonempty P.snd] (n : ℕ) :
     SplitMono (SSet.homologyMap (TopCat.toSSet.map P.map) R n) := by
-  let r : P.fst ⟶ P.snd := TopCat.ofHom
-    ⟨Function.invFun P.map.hom, continuous_of_discreteTopology⟩
-  have hr : P.map ≫ r = 𝟙 P.snd := by
-    ext x
-    exact Function.leftInverse_invFun P.isEmbedding_map.injective x
+  let r : TopCat.toSSet.obj P.fst ⟶ TopCat.toSSet.obj P.snd :=
+    (TopCat.toSSetIsoConst P.fst).hom ≫
+      (Functor.const SimplexCategoryᵒᵖ).map
+        (ConcreteCategory.ofHom ⟨Function.invFun P.map.hom⟩) ≫
+      (TopCat.toSSetIsoConst P.snd).inv
+  have hr : TopCat.toSSet.map P.map ≫ r = 𝟙 _ := by
+    ext n x
+    simp only [r, TopCat.toSSetIsoConst, NatTrans.comp_app]
+    apply (P.snd.toSSetObjEquiv n).injective
+    ext y
+    change Function.invFun P.map.hom
+      (P.map.hom ((P.snd.toSSetObjEquiv n x) (Classical.arbitrary _))) =
+        (P.snd.toSSetObjEquiv n x) y
+    rw [Function.leftInverse_invFun P.isEmbedding_map.injective]
+    exact TotallyDisconnectedSpace.eq_of_continuous _
+      (P.snd.toSSetObjEquiv n x).continuous _ _
   have hmap :
       SSet.homologyMap (TopCat.toSSet.map P.map) R n ≫
-        SSet.homologyMap (TopCat.toSSet.map r) R n = 𝟙 _ := by
-    rw [← SSet.homologyMap_comp, ← TopCat.toSSet.map_comp, hr]
+        SSet.homologyMap r R n = 𝟙 _ := by
+    rw [← SSet.homologyMap_comp, hr]
     simp
   exact ⟨_, hmap⟩
 
-/-- Inclusion of a subspace of a discrete space is injective on zeroth singular homology. -/
-lemma mono_singularHomologyMap_zero_of_discrete :
+/-- Inclusion of a subspace of a totally disconnected space is injective on zeroth singular
+homology. -/
+lemma mono_singularHomologyMap_zero_of_totallyDisconnectedSpace :
     Mono (SSet.homologyMap (TopCat.toSSet.map P.map) R 0) := by
   by_cases h : Nonempty P.snd
   · let := h
-    exact (splitMonoSingularHomologyMapOfDiscrete P R 0).mono
+    exact (splitMonoSingularHomologyMapOfTotallyDisconnectedSpace P R 0).mono
   · let : IsEmpty P.snd := not_nonempty_iff.mp h
     let : (TopCat.toSSet.obj P.snd).HasDimensionLT 0 :=
       TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty P
@@ -68,8 +82,8 @@ lemma mono_singularHomologyMap_zero_of_discrete :
       exact SSet.isZero_homology_of_hasDimensionLT _ R 0 0
     exact ⟨fun _ _ _ ↦ hzero.eq_of_tgt _ _⟩
 
-/-- Relative singular homology of a discrete pair vanishes in positive degree. -/
-theorem isZero_singularHomology_of_discrete {n : ℕ} (hn : n ≠ 0) :
+/-- Relative singular homology of a totally disconnected pair vanishes in positive degree. -/
+theorem isZero_singularHomology_of_totallyDisconnectedSpace {n : ℕ} (hn : n ≠ 0) :
     IsZero (P.singularHomology R n) := by
   cases n with
   | zero => exact (hn rfl).elim
@@ -80,7 +94,7 @@ theorem isZero_singularHomology_of_discrete {n : ℕ} (hn : n ≠ 0) :
     have hmono : Mono (SSet.homologyMap (toSSetPair.obj P).hom R k) := by
       rw [toSSetPair_obj_hom]
       cases k with
-      | zero => exact mono_singularHomologyMap_zero_of_discrete P R
+      | zero => exact mono_singularHomologyMap_zero_of_totallyDisconnectedSpace P R
       | succ j =>
         have hA : IsZero ((TopCat.toSSet.obj P.snd).homology R (j + 1)) :=
           AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace
