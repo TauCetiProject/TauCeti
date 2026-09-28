@@ -218,8 +218,11 @@ theorem maslovIndex_rotation {L₀ : Submodule ℝ E}
     simp [A]
   have key := (rotation hL₀).sub_eq_maslovIndex_mul_pi hL₀ A
     (fun t => by
-      rw [rotation_apply, hA]
-      rfl)
+      have hlsmul : LinearMap.lsmul ℂ E (Complex.exp ((π * t : ℝ) * Complex.I)) =
+          Complex.exp ((π * t : ℝ) * Complex.I) • LinearMap.id := by
+        ext x
+        simp
+      rw [rotation_apply, hA, hlsmul])
     (φ := fun t => finrank ℂ E * (π * t)) (by fun_prop) (fun t => by
       rw [hA, LinearMap.det_smul, LinearMap.det_id, mul_one, norm_pow,
         Complex.norm_exp_ofReal_mul_I]
