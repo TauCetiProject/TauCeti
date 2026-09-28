@@ -135,14 +135,11 @@ theorem cupFp_map {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGrou
     apply (trivialFpEquiv p H).injective
     simp only [trivialFpEquiv_eqToHom_res_trivialFp_hom p φ,
       fpPairing_bil_apply, LinearEquiv.apply_symm_apply]
-  simp only [cohomFpMap_def, cupFp_def]
-  -- `TauCeti.trivialFp` exposes its body, so the universe of the carrier
-  -- `↑(trivialFp p G)` is fixed here rather than left as a metavariable. A `using` term would
-  -- then be matched against `TauCeti.TopPairing.cup_map` before that metavariable is assigned, and
-  -- the match fails; refining first lets the conclusion determine it, and the resulting goal is
-  -- `hpair`.
-  refine (fpPairing p G).cup_map (fpPairing p H) φ _ _ _ ?_ 1 1 a b
-  exact hpair
+  simpa only [cohomFpMap_def, cupFp_def, one_add_one_eq_two] using
+    (fpPairing p G).cup_map (fpPairing p H) φ
+      (eqToHom (res_trivialFp_hom p φ))
+      (eqToHom (res_trivialFp_hom p φ))
+      (eqToHom (res_trivialFp_hom p φ)) hpair 1 1 a b
 
 /-- **Restriction preserves the cup product with trivial `ZMod p` coefficients**:
 `res (a ⌣ b) = res a ⌣ res b` for the named restriction `trivialFpResMap`. -/

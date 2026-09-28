@@ -168,7 +168,13 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-- The action of the coefficient object on its own carrier is continuous, being the trivial one. -/
 local instance : ContinuousSMul G (trivialFp p G).V where
-  continuous_smul := ⟨fun _s hs => hs.preimage continuous_snd⟩
+  -- The action of the coefficient object is trivial, so the action map is the second projection.
+  continuous_smul := by
+    have htriv :
+        (fun q : G × (trivialFp p G).V => q.1 • q.2) = (fun q : G × (trivialFp p G).V => q.2) :=
+      funext fun q => smul_trivialFp_V p G q.1 q.2
+    rw [htriv]
+    exact ⟨fun _s hs => hs.preimage continuous_snd⟩
 
 /-- The trivial action of `G` on `ZMod p`, the action the coefficients of `TauCeti.cohomFp` carry by
 construction, so that the `H¹(G, 𝔽_p)` appearing in the statement below is the one of those

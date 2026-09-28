@@ -116,7 +116,13 @@ trivial one, being independent of `G`. `TauCeti.continuousSMul_trivialFp` is the
 statement; this instance is the trivial-action proof, which needs no `IsTopologicalGroup`
 hypothesis, so the theorems below can omit it. -/
 local instance : ContinuousSMul G (trivialFp n G).V where
-  continuous_smul := ⟨fun _s hs => hs.preimage continuous_snd⟩
+  -- The action of the coefficient object is trivial, so the action map is the second projection.
+  continuous_smul := by
+    have htriv :
+        (fun p : G × (trivialFp n G).V => p.1 • p.2) = (fun p : G × (trivialFp n G).V => p.2) :=
+      funext fun p => smul_trivialFp_V n G p.1 p.2
+    rw [htriv]
+    exact ⟨fun _s hs => hs.preimage continuous_snd⟩
 
 /-- A homogeneous zero-cochain of the coefficient object is determined by its value at the
 identity: it is a constant, and the action is trivial. -/
@@ -146,17 +152,22 @@ private noncomputable def cochainEquiv0 : ((trivialFp n G).V) ≃+
     ext h
     -- As above, normalize the coinduction evaluation before simplifying.
     change (SMul.smul g : (trivialFp n G).V → (trivialFp n G).V) m = m
-    rfl⟩
+    exact smul_trivialFp_V n G g m⟩
   invFun c := c.val 1
   left_inv m := rfl
   right_inv c := by
     apply Subtype.ext
     ext g
-    exact smul_canonical0 n G c g
+    -- The coinduction of the constant cochain evaluates to the value itself.
+    simp only [ContinuousMap.coe_mk]
+    -- The action is trivial, so the equivariance of the canonical zero-cochain is constancy.
+    exact (smul_trivialFp_V n G g _).symm.trans (smul_canonical0 n G c g)
   map_add' m m' := by
     apply Subtype.ext
     ext g
-    exact smul_add g m m'
+    -- The sum of the two constant cochains is the constant cochain of the sum, pointwise.
+    simp only [ContinuousMap.coe_mk]
+    rfl
 
 /-- `cochainEquiv0` sends `m` to the constant zero-cochain of the coefficient object. -/
 @[simp]
@@ -178,7 +189,9 @@ private noncomputable def cochainEquiv1 : C1 G ((trivialFp n G).V) ≃+
     -- equivariance of `homogeneous1`.
     change (SMul.smul g : (trivialFp n G).V → (trivialFp n G).V)
       (homogeneous1 (M := (trivialFp n G).V) c.val (g⁻¹ * h) (g⁻¹ * k)) = homogeneous1 c.val h k
-    exact homogeneous1_smul c.val g⁻¹ h k⟩
+    -- The action is trivial, so equivariance of the homogeneous form is invariance.
+    exact (smul_trivialFp_V n G g _).trans
+      ((homogeneous1_smul c.val g⁻¹ h k).trans (smul_trivialFp_V n G g⁻¹ _))⟩
 
   invFun c := ⟨c.val 1, mem_C1_iff.mpr (c.val 1).continuous⟩
   left_inv c := by
@@ -440,7 +453,13 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 /-- The action of the coefficient object on its own carrier is continuous, being the trivial
 one. -/
 local instance : ContinuousSMul G (trivialFp n G).V where
-  continuous_smul := ⟨fun _s hs => hs.preimage continuous_snd⟩
+  -- The action of the coefficient object is trivial, so the action map is the second projection.
+  continuous_smul := by
+    have htriv :
+        (fun p : G × (trivialFp n G).V => p.1 • p.2) = (fun p : G × (trivialFp n G).V => p.2) :=
+      funext fun p => smul_trivialFp_V n G p.1 p.2
+    rw [htriv]
+    exact ⟨fun _s hs => hs.preimage continuous_snd⟩
 
 /-- **Transport of `H¹(G, ZMod n)` to the carrier of `TauCeti.trivialFp n G`, which is the
 universe lift of `ZMod n`.** The coefficient object of `TauCeti.cohomFp` is built on the universe
@@ -451,7 +470,7 @@ noncomputable def h1CoeffEquiv (htriv : ∀ (g : G) (m : ZMod n), g • m = m) :
     H1 G (ZMod n) ≃+ H1 G ((trivialFp n G).V) :=
   ContCohomology.explicitCoeff1Equiv (G := G) (M := ZMod n) (N := (trivialFp n G).V)
     (trivialFpEquiv n G).symm.toAddEquiv continuous_of_discreteTopology
-    continuous_of_discreteTopology (fun g m => by rw [htriv g m]; rfl)
+    continuous_of_discreteTopology (fun g m => by rw [htriv g m, smul_trivialFp_V])
 
 omit [IsTopologicalGroup G] in
 /-- **The coefficient transport is postcomposition with the cocycle.** A class of
@@ -466,14 +485,14 @@ theorem h1CoeffEquiv_apply_mk (htriv : ∀ (g : G) (m : ZMod n), g • m = m)
     h1CoeffEquiv htriv (c : H1 G (ZMod n)) =
       ContCohomology.explicitCoeff1 G (ZMod n)
         ({ (trivialFpEquiv n G).symm.toAddEquiv.toAddMonoidHom with
-            map_smul' := fun g m => by rw [htriv g m]; rfl } :
+            map_smul' := fun g m => by rw [htriv g m, smul_trivialFp_V] } :
           ZMod n →+[G] (trivialFp n G).V)
         continuous_of_discreteTopology (c : H1 G (ZMod n)) := by
   unfold h1CoeffEquiv
   exact ContCohomology.explicitCoeff1Equiv_apply (G := G) (M := ZMod n)
     (N := (trivialFp n G).V) (trivialFpEquiv n G).symm.toAddEquiv
     continuous_of_discreteTopology continuous_of_discreteTopology
-    (fun g m => by rw [htriv g m]; rfl) (c : H1 G (ZMod n))
+    (fun g m => by rw [htriv g m, smul_trivialFp_V]) (c : H1 G (ZMod n))
 
 /-- **The inverse coefficient transport reads the values back into `ZMod n`.** A class of the
 lifted `H¹` is sent to the class of the `1`-cocycle obtained by postcomposition with
@@ -490,8 +509,7 @@ theorem h1CoeffEquiv_symm_apply
         ({ toFun := trivialFpEquiv n G
            map_zero' := (trivialFpEquiv n G).toAddMonoidHom.map_zero'
            map_add' := (trivialFpEquiv n G).toAddMonoidHom.map_add'
-           map_smul' := fun g m =>
-             by rw [TopRep.distribMulAction_smul, trivialFp_ρ_apply_apply, htriv] } :
+           map_smul' := fun g m => by rw [smul_trivialFp_V, htriv] } :
           (trivialFp n G).V →+[G] ZMod n)
         continuous_of_discreteTopology ((cohomFpCocycleEquiv1 n G).symm c :
           H1 G ((trivialFp n G).V)) := by
@@ -499,7 +517,7 @@ theorem h1CoeffEquiv_symm_apply
     ContCohomology.explicitCoeff1Equiv_symm_apply (G := G) (M := ZMod n)
       (N := (trivialFp n G).V) (trivialFpEquiv n G).symm.toAddEquiv
       continuous_of_discreteTopology continuous_of_discreteTopology
-      (fun g m => by rw [htriv g m]; rfl)
+      (fun g m => by rw [htriv g m, smul_trivialFp_V])
       ((cohomFpCocycleEquiv1 n G).symm c : H1 G ((trivialFp n G).V))]
   refine congrArg (fun f : (trivialFp n G).V →+[G] ZMod n =>
     ContCohomology.explicitCoeff1 G ((trivialFp n G).V) f continuous_of_discreteTopology
@@ -567,7 +585,13 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 /-- The action of the coefficient object on its own carrier is continuous, being the trivial
 one. -/
 local instance : ContinuousSMul G (trivialFp n G).V where
-  continuous_smul := ⟨fun _s hs => hs.preimage continuous_snd⟩
+  -- The action of the coefficient object is trivial, so the action map is the second projection.
+  continuous_smul := by
+    have htriv :
+        (fun p : G × (trivialFp n G).V => p.1 • p.2) = (fun p : G × (trivialFp n G).V => p.2) :=
+      funext fun p => smul_trivialFp_V n G p.1 p.2
+    rw [htriv]
+    exact ⟨fun _s hs => hs.preimage continuous_snd⟩
 
 /-- The trivial action of `G` on `ZMod n`, the action the coefficients of `TauCeti.cohomFp` carry
 by construction. With this action in place the explicit `H¹(G, ZMod n)` of
@@ -617,13 +641,13 @@ theorem cohomFpEquivContinuousZModDual_apply
     { toFun := trivialFpEquiv n G
       map_zero' := (trivialFpEquiv n G).toAddMonoidHom.map_zero'
       map_add' := (trivialFpEquiv n G).toAddMonoidHom.map_add'
-      map_smul' := fun _ _ => rfl }
+      map_smul' := fun g m => by rw [smul_trivialFp_V]; rfl }
   have hpoint (c : _root_.ContinuousCohomology.cocycles (trivialFp n G) 1) (g : G) :
       (cocyclesMap1 G (trivialFp n G) G (ZMod n) (ContinuousMonoidHom.id G) f _ _
         ((cohomFpCocycleEquiv1 n G).symm c) : G → ZMod n) g
         = f (((cohomFpCocycleEquiv1 n G).symm c : G → (trivialFp n G).V) g) :=
     ContCohomology.cocyclesMap1_apply G (trivialFp n G) G (ZMod n) (ContinuousMonoidHom.id G)
-      f continuous_of_discreteTopology (fun _ _ => rfl) _ g
+      f continuous_of_discreteTopology (fun g m => by rw [smul_trivialFp_V]; rfl) _ g
   dsimp only [f] at hpoint
   rw [hpoint]
   -- The canonical cocycle of a class is the homogeneous form of the cocycle the class carries.
