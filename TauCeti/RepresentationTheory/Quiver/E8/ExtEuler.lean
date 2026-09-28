@@ -41,27 +41,6 @@ noncomputable def extEulerMatrix : Matrix (Fin 8) (Fin 8) ℤ :=
       (finiteDimensional_vertexSimpleModule_obj k E8 (vertexEquiv j) (vertexEquiv i))
       (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k E8 (vertexEquiv j) a))
 
-/-- The categorical Ext-Euler matrix is the combinatorial Euler matrix `I - A`. -/
-theorem extEulerMatrix_eq_eulerForm :
-    extEulerMatrix k =
-      ((eulerForm E8).toMatrix (Pi.basisFun ℤ E8)).submatrix vertexEquiv vertexEquiv := by
-  ext i j
-  rw [extEulerMatrix, Matrix.of_apply, Matrix.submatrix_apply,
-    LinearMap.BilinForm.toMatrix_apply, Pi.basisFun_apply, Pi.basisFun_apply]
-  have h := extEuler_vertexSimpleModule_eq_eulerForm k E8 (vertexEquiv i)
-    (vertexSimpleModule k E8 (vertexEquiv j))
-    (finiteDimensional_vertexSimpleModule_obj k E8 (vertexEquiv j) (vertexEquiv i))
-    (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k E8 (vertexEquiv j) a)
-  rw [h]
-  simp only [dimVector_eq_of_iso (vertexSimpleModuleIso k E8 (vertexEquiv i)),
-    dimVector_eq_of_iso (vertexSimpleModuleIso k E8 (vertexEquiv j)), dimVector_simpleRep]
-  have hcast (b : E8) :
-      (fun a : E8 ↦ ((Pi.single b 1 : E8 → ℕ) a : ℤ)) =
-        (Pi.single b 1 : E8 → ℤ) := by
-    funext a
-    by_cases h : a = b <;> simp [h]
-  rw [hcast (vertexEquiv i), hcast (vertexEquiv j)]
-
 /-- An Ext-Euler matrix entry is the Kronecker delta minus the number of arrows between
 the two numbered vertices. -/
 @[simp]
@@ -71,6 +50,15 @@ theorem extEulerMatrix_apply (i j : Fin 8) :
   rw [extEulerMatrix, Matrix.of_apply,
     extEuler_vertexSimpleModule_vertexSimpleModule]
   simp only [vertexEquiv.injective.eq_iff]
+
+/-- The categorical Ext-Euler matrix is the combinatorial Euler matrix `I - A`. -/
+theorem extEulerMatrix_eq_eulerForm :
+    extEulerMatrix k =
+      ((eulerForm E8).toMatrix (Pi.basisFun ℤ E8)).submatrix vertexEquiv vertexEquiv := by
+  ext i j
+  simp only [extEulerMatrix_apply, Matrix.submatrix_apply,
+    LinearMap.BilinForm.toMatrix_apply, Pi.basisFun_apply, eulerForm_single_single,
+    vertexEquiv.injective.eq_iff]
 
 /-- In the numbered simple basis, the categorical Ext-Euler matrix is the explicit upper
 triangular `E₈` Euler matrix. -/
@@ -93,7 +81,7 @@ theorem extEulerMatrix_add_transpose :
   rw [extEulerMatrix_eq_eulerForm, submatrix_toMatrix_eulerForm_add_transpose]
 
 /-- The symmetrized categorical Ext-Euler matrix is positive definite over `ℚ`. -/
-theorem extEulerMatrix_add_transpose_posDef :
+theorem posDef_map_intCast_extEulerMatrix_add_transpose :
     ((extEulerMatrix k + (extEulerMatrix k)ᵀ).map (Int.cast : ℤ → ℚ)).PosDef := by
   rw [extEulerMatrix_add_transpose]
   exact posDef_map_intCast_cartanMatrix_E8

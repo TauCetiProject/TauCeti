@@ -189,24 +189,27 @@ open scoped Classical in
 /-- The Ext-Euler value between vertex simples is the Kronecker delta minus the number of
 arrows from the first vertex to the second. -/
 @[simp]
-theorem extEuler_vertexSimpleModule_vertexSimpleModule [∀ a b : Q, Fintype (a ⟶ b)]
-    (i j : Q) :
+theorem extEuler_vertexSimpleModule_vertexSimpleModule (i j : Q)
+    [Finite ((a : Q) × (i ⟶ a))] [Fintype (i ⟶ j)] :
     extEuler k (isEulerAdmissible_vertexSimpleModule k Q i (vertexSimpleModule k Q j)
       (finiteDimensional_vertexSimpleModule_obj k Q j i)
       (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k Q j a)) =
       (if i = j then 1 else 0) - (Fintype.card (i ⟶ j) : ℤ) := by
   classical
-  have : Fintype Q := Fintype.ofFinite Q
-  rw [extEuler_vertexSimpleModule_eq_eulerForm k Q i (vertexSimpleModule k Q j)
+  let _ : Fintype ((a : Q) × (i ⟶ a)) := Fintype.ofFinite _
+  rw [extEuler_vertexSimpleModule k Q i (vertexSimpleModule k Q j)
     (finiteDimensional_vertexSimpleModule_obj k Q j i)
     (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k Q j a)]
-  simp only [dimVector_eq_of_iso (vertexSimpleModuleIso k Q i),
-    dimVector_eq_of_iso (vertexSimpleModuleIso k Q j), dimVector_simpleRep]
-  have hcast (b : Q) :
-      (fun a : Q ↦ ((Pi.single b 1 : Q → ℕ) a : ℤ)) =
-        (Pi.single b 1 : Q → ℤ) := by
-    funext a
-    by_cases h : a = b <;> simp [h]
-  rw [hcast i, hcast j, eulerForm_single_single]
+  simp only [dimVector_eq_of_iso (vertexSimpleModuleIso k Q j), dimVector_simpleRep]
+  simp only [Pi.single_apply]
+  simp only [Nat.cast_ite, Nat.cast_one, CharP.cast_eq_zero, Finset.sum_boole,
+    sub_right_inj, Nat.cast_inj]
+  let e : {x : (a : Q) × (i ⟶ a) // x.1 = j} ≃ (i ⟶ j) := {
+    toFun := fun ⟨⟨a, f⟩, h⟩ ↦ by cases h; exact f
+    invFun := fun f ↦ ⟨⟨j, f⟩, rfl⟩
+    left_inv := by intro ⟨⟨a, f⟩, h⟩; cases h; rfl
+    right_inv := by intro f; rfl
+  }
+  simpa only [Fintype.card_subtype] using Fintype.card_congr e
 
 end TauCeti

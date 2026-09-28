@@ -152,22 +152,15 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
   ext i j
   let si : Kronecker A := ![src, tgt] i
   let sj : Kronecker A := ![src, tgt] j
-  have hdim (s : Kronecker A) :
-      (fun a ↦
-        (dimVector ((quiverRepFunctor k (Kronecker A)).obj
-          (vertexSimpleModule k (Kronecker A) s)) a : ℤ)) = Pi.single s 1 := by
-    rw [dimVector_eq_of_iso (vertexSimpleModuleIso k (Kronecker A) s), dimVector_simpleRep]
-    funext a
-    simp [Pi.single_apply]
-  rw [extEuler_vertexSimpleModule_eq_eulerForm k (Kronecker A) si
-    (vertexSimpleModule k (Kronecker A) sj)
-    (finiteDimensional_vertexSimpleModule_obj (k := k) (Q := Kronecker A) sj si)
-    (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj
-      (k := k) (Q := Kronecker A) sj a)]
-  rw [hdim si, hdim sj]
+  rw [extEuler_vertexSimpleModule_vertexSimpleModule k (Kronecker A) si sj]
   dsimp [si, sj]
-  simpa only [Matrix.submatrix_apply, LinearMap.BilinForm.toMatrix_apply, Pi.basisFun_apply] using
-    congrFun (congrFun submatrix_toMatrix_eulerForm_eq_eulerMatrixA2 i) j
+  have h := congrFun
+    (congrFun (submatrix_toMatrix_eulerForm_eq_eulerMatrixA2 (A := A)) i) j
+  simp only [Matrix.submatrix_apply, LinearMap.BilinForm.toMatrix_apply,
+    Pi.basisFun_apply, eulerForm_single_single] at h
+  by_cases hij : (![src, tgt] i : Kronecker A) = ![src, tgt] j
+  · simpa only [hij, ↓reduceIte] using h
+  · simpa only [hij, ↓reduceIte] using h
 
 /-- An Ext-Euler pairing of vertex simples is the corresponding Ringel Euler matrix entry. -/
 @[simp]
