@@ -43,6 +43,8 @@ side, and conversely.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.
 * `TauCeti.isTotallyRamified_iff_inertiaDegree_eq_one`: total ramification is equivalent to
   residue degree one; `TauCeti.IsTotallyRamified.inertiaDegree_eq_one` is the forward direction.
+* `TauCeti.isTotallyRamified_iff_surjective_algebraMap_residueField`: total ramification is
+  equivalent to surjectivity of the residue-field map.
 * `TauCeti.inertiaDegree_tower`: multiplicativity `f(M/K) = f(L/K) · f(M/L)` in a tower.
 * `TauCeti.natCard_residueField`: `#𝓀[L] = #𝓀[K] ^ f(L/K)`.
 
@@ -128,6 +130,14 @@ theorem isTotallyRamified_iff_inertiaDegree_eq_one :
 theorem IsTotallyRamified.inertiaDegree_eq_one (h : IsTotallyRamified K L) :
     inertiaDegree K L = 1 :=
   (isTotallyRamified_iff_inertiaDegree_eq_one K L).mp h
+
+variable (K L) in
+/-- A finite extension of nonarchimedean local fields is totally ramified if and only if every
+residue class of `L` comes from `K`. -/
+theorem isTotallyRamified_iff_surjective_algebraMap_residueField :
+    IsTotallyRamified K L ↔ Function.Surjective (algebraMap 𝓀[K] 𝓀[L]) := by
+  rw [isTotallyRamified_iff_inertiaDegree_eq_one, inertiaDegree_def,
+    ← Subalgebra.bot_eq_top_iff_finrank_eq_one, Algebra.surjective_algebraMap_iff, eq_comm]
 
 variable (K L) in
 /-- **Multiplicativity of the residue degree in a tower** `M/L/K`: `f(M/K) = f(L/K) · f(M/L)`.

@@ -57,6 +57,8 @@ filtration.
 * `TauCeti.ramificationIndex_tower`: multiplicativity `e(M/K) = e(L/K) · e(M/L)` in a tower.
 * `TauCeti.isTamelyRamified_iff_natCast_ne_zero`: `L/K` is tamely ramified exactly when `e(L/K)`
   is nonzero in the residue field of `K`.
+* `TauCeti.isTamelyRamified_iff_isUnit_natCast`: `L/K` is tamely ramified exactly when `e(L/K)`
+  is a unit in `𝒪[L]`.
 
 ## Implementation notes
 
@@ -407,5 +409,14 @@ theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [Topologi
     ext
     simp [← IsScalarTower.algebraMap_apply]
   rw [hx, normalizedValuation_algebraMap, normalizedValuation_algebraMap, pow_mul]
+
+variable (K L) in
+/-- An extension is tamely ramified exactly when its ramification index is a unit in the integer
+ring `𝒪[L]`, the form in which tameness enters Hensel-type arguments in `L`. -/
+theorem isTamelyRamified_iff_isUnit_natCast :
+    IsTamelyRamified K L ↔ IsUnit (ramificationIndex K L : 𝒪[L]) := by
+  rw [isTamelyRamified_iff_natCast_ne_zero, ← IsLocalRing.notMem_maximalIdeal,
+    ← IsLocalRing.residue_eq_zero_iff, map_natCast, ← map_natCast (algebraMap 𝓀[K] 𝓀[L]),
+    ne_eq, map_eq_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
 
 end TauCeti
