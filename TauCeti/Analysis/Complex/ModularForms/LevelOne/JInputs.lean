@@ -27,9 +27,10 @@ in the coordinate of `ℂ`, as the analytic order of the composite with `ofCompl
 ## Implementation notes
 
 The vanishing comes from the stabilizers: `S` fixes `i` and `S * T` fixes `ρ`, with automorphy
-factors `iᵏ` and `(ρ + 1)ᵏ` in weight `k`, so a level-one form vanishes at `i` unless `4 ∣ k`
-and at `ρ` unless `6 ∣ k`; in particular `E₆` vanishes at `i` and `E₄` at `ρ`.  That the zeros are
-simple comes from Ramanujan's formulas `D E₄ = (E₂ E₄ - E₆) / 3` and `D E₆ = (E₂ E₆ - E₄²) / 2`
+factors `iᵏ` and `(ρ + 1)ᵏ` in weight `k`, so a form invariant under `S` vanishes at `i` unless
+`4 ∣ k`, and one invariant under `S * T` vanishes at `ρ` unless `6 ∣ k`; in particular `E₆`
+vanishes at `i` and `E₄` at `ρ`.  That the zeros are simple comes from Ramanujan's formulas
+`D E₄ = (E₂ E₄ - E₆) / 3` and `D E₆ = (E₂ E₆ - E₄²) / 2`
 (Mathlib's `Derivative.normalizedDerivOfComplex_E₄` and `Derivative.normalizedDerivOfComplex_E₆`):
 at a zero of `E₄` the derivative is `-E₆ / 3`, and at a zero of `E₆` it is `-E₄² / 2`, neither
 of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
@@ -39,8 +40,8 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 * `TauCeti.ModularForm.j`, `TauCeti.ModularForm.j_smul`, `TauCeti.ModularForm.j_sub_1728`: the
   invariant, its modular invariance, and the identity `j - 1728 = E₆² / Δ`.
 * `TauCeti.ModularForm.apply_I_eq_zero_of_not_dvd`,
-  `TauCeti.ModularForm.apply_ρ_eq_zero_of_not_dvd`: a level-one form of weight `k` vanishes at
-  `i` unless `4 ∣ k`, and at `ρ` unless `6 ∣ k`.
+  `TauCeti.ModularForm.apply_ρ_eq_zero_of_not_dvd`: a form of weight `k` for a group containing
+  `S` vanishes at `i` unless `4 ∣ k`, and for a group containing `S * T` at `ρ` unless `6 ∣ k`.
 * `TauCeti.ModularForm.E₄_ρ`, `TauCeti.ModularForm.E₆_I`: the elliptic zeros of `E₄` and `E₆`.
 * `TauCeti.ModularForm.j_ρ`, `TauCeti.ModularForm.j_I`: `j ρ = 0` and `j i = 1728`.
 * `TauCeti.ModularForm.analyticOrderAt_j_comp_ofComplex_ρ`: `j` vanishes to order `3` at `ρ`.
@@ -129,42 +130,49 @@ theorem j_eq_1728_iff (z : ℍ) : j z = 1728 ↔ E₆ z = 0 := by
 
 open ModularGroup
 
-/-- A level-one form of weight `k` vanishes at the elliptic point `i` unless `4 ∣ k`. -/
-theorem apply_I_eq_zero_of_not_dvd {F : Type*} [FunLike F ℍ ℂ] {k : ℤ}
-    [SlashInvariantFormClass F 𝒮ℒ k] (f : F) (hk : ¬ (4 : ℤ) ∣ k) : f I = 0 := by
-  have hS : mapGL ℝ S • I = I := by
+/-- The automorphy factor of `S` at its fixed point `i` is `i`. -/
+private lemma denom_S_I : denom (mapGL ℝ S) I = Complex.I := by
+  simp [denom, coe_S, mapGL_coe_matrix]
+
+/-- The automorphy factor of `S * T` at its fixed point `ρ` is `ρ + 1`. -/
+private lemma denom_S_mul_T_ρ : denom (mapGL ℝ (S * T)) ρ = ρ + 1 := by
+  simp [denom, coe_S, coe_T, mapGL_coe_matrix, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- A form of weight `k` for a group containing `S` vanishes at the elliptic point `i` unless
+`4 ∣ k`. -/
+theorem apply_I_eq_zero_of_not_dvd {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)}
+    [Γ.HasDetOne] {k : ℤ} [SlashInvariantFormClass F Γ k] (hS : mapGL ℝ S ∈ Γ) (f : F)
+    (hk : ¬ (4 : ℤ) ∣ k) : f I = 0 := by
+  have hSI : mapGL ℝ S • I = I := by
     rw [← MulAction.compHom_smul_def]
     exact stabilizer_I.mpr (by simp)
-  have h := SlashInvariantForm.slash_action_eqn' (Γ := 𝒮ℒ) f
-    (MonoidHom.mem_range.mpr ⟨S, rfl⟩) I
-  rw [hS] at h
-  replace h : Complex.I ^ k * f I = f I := by simpa [coe_S, mapGL_coe_matrix] using h.symm
+  have h := SlashInvariantForm.slash_action_eqn'' f hS I
+  rw [hSI, denom_S_I] at h
   by_contra hf
-  exact hk ((Complex.isPrimitiveRoot_I.zpow_eq_one_iff_dvd k).mp ((mul_eq_right₀ hf).mp h))
+  exact hk ((Complex.isPrimitiveRoot_I.zpow_eq_one_iff_dvd k).mp ((mul_eq_right₀ hf).mp h.symm))
 
-/-- A level-one form of weight `k` vanishes at the elliptic point `ρ` unless `6 ∣ k`. -/
-theorem apply_ρ_eq_zero_of_not_dvd {F : Type*} [FunLike F ℍ ℂ] {k : ℤ}
-    [SlashInvariantFormClass F 𝒮ℒ k] (f : F) (hk : ¬ (6 : ℤ) ∣ k) : f ρ = 0 := by
-  have hST : mapGL ℝ (S * T) • ρ = ρ := by
+/-- A form of weight `k` for a group containing `S * T` vanishes at the elliptic point `ρ`
+unless `6 ∣ k`. -/
+theorem apply_ρ_eq_zero_of_not_dvd {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)}
+    [Γ.HasDetOne] {k : ℤ} [SlashInvariantFormClass F Γ k] (hST : mapGL ℝ (S * T) ∈ Γ)
+    (f : F) (hk : ¬ (6 : ℤ) ∣ k) : f ρ = 0 := by
+  have hSTρ : mapGL ℝ (S * T) • ρ = ρ := by
     rw [← MulAction.compHom_smul_def]
     exact stabilizer_ρ.mpr (by simp)
-  have h := SlashInvariantForm.slash_action_eqn' (Γ := 𝒮ℒ) f
-    (MonoidHom.mem_range.mpr ⟨S * T, rfl⟩) ρ
-  rw [hST] at h
-  replace h : ((ρ : ℂ) + 1) ^ k * f ρ = f ρ := by
-    simpa [coe_S, coe_T, mapGL_coe_matrix, Matrix.mul_apply, Fin.sum_univ_two] using h.symm
+  have h := SlashInvariantForm.slash_action_eqn'' f hST ρ
+  rw [hSTρ, denom_S_mul_T_ρ] at h
   by_contra hf
-  exact hk ((isPrimitiveRoot_ρ_add_one.zpow_eq_one_iff_dvd k).mp ((mul_eq_right₀ hf).mp h))
+  exact hk ((isPrimitiveRoot_ρ_add_one.zpow_eq_one_iff_dvd k).mp ((mul_eq_right₀ hf).mp h.symm))
 
 /-- `E₄` vanishes at `ρ`. -/
 @[simp]
 theorem E₄_ρ : E₄ ρ = 0 :=
-  apply_ρ_eq_zero_of_not_dvd E₄ (by decide)
+  apply_ρ_eq_zero_of_not_dvd (Γ := 𝒮ℒ) ⟨S * T, rfl⟩ E₄ (by decide)
 
 /-- `E₆` vanishes at `i`. -/
 @[simp]
 theorem E₆_I : E₆ I = 0 :=
-  apply_I_eq_zero_of_not_dvd E₆ (by decide)
+  apply_I_eq_zero_of_not_dvd (Γ := 𝒮ℒ) ⟨S, rfl⟩ E₆ (by decide)
 
 /-- `E₆` does not vanish at `ρ`. -/
 theorem E₆_ρ_ne_zero : E₆ ρ ≠ 0 := by
