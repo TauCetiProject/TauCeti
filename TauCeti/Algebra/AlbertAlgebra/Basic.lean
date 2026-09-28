@@ -421,6 +421,25 @@ def offDiagSingle [Zero R] (j : Fin 3) (a : Octonion R) : AlbertAlgebra R := ⟨
 @[simp] theorem offDiagSingle_offDiag [Zero R] (j : Fin 3) (a : Octonion R) :
     (offDiagSingle j a).offDiag = Pi.single j a := (rfl)
 
+@[simp] theorem offDiagSingle_zero [Zero R] (j : Fin 3) :
+    offDiagSingle j (0 : Octonion R) = 0 :=
+  AlbertAlgebra.ext (rfl) (Pi.single_zero j)
+
+@[simp] theorem offDiagSingle_add [AddCommMonoid R] (j : Fin 3) (a b : Octonion R) :
+    offDiagSingle j (a + b) = offDiagSingle j a + offDiagSingle j b :=
+  AlbertAlgebra.ext (add_zero (0 : Fin 3 → R)).symm
+    (Pi.single_add (f := fun _ : Fin 3 => Octonion R) j a b)
+
+@[simp] theorem offDiagSingle_neg [AddCommGroup R] (j : Fin 3) (a : Octonion R) :
+    offDiagSingle j (-a) = -offDiagSingle j a :=
+  AlbertAlgebra.ext (neg_zero (G := Fin 3 → R)).symm
+    (Pi.single_neg (f := fun _ : Fin 3 => Octonion R) j a)
+
+@[simp] theorem offDiagSingle_smul [Monoid S] [AddCommMonoid R] [DistribMulAction S R] (s : S)
+    (j : Fin 3) (a : Octonion R) : offDiagSingle j (s • a) = s • offDiagSingle j a :=
+  AlbertAlgebra.ext (smul_zero (A := Fin 3 → R) s).symm
+    (Pi.single_smul (f := fun _ : Fin 3 => Octonion R) j s a)
+
 /-- **The Peirce relation between the diagonal frame and the off-diagonal slots**: the `j`-th slot
 sits in position `(j + 1, j + 2)`, so `Eⱼ` — whose only entry is in position `(j, j)` — annihilates
 it, while the two other idempotents halve it. -/

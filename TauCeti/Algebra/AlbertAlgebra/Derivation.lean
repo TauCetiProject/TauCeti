@@ -14,9 +14,10 @@ import TauCeti.Data.Fin.Basic
 /-!
 # Derivations of the split Albert algebra
 
-`F₄` is the derivation algebra of the split Albert algebra `J = H₃(𝕆)`, and its `26`-dimensional
-fundamental representation is supposed to be the trace-zero subspace `J₀`. Neither statement can be
-made until one knows that a derivation of `J` lands in `J₀`; that is what this file proves.
+`F₄` is the derivation algebra of the split Albert algebra `J = H₃(𝕆)`, and over a field its
+`26`-dimensional fundamental representation is supposed to be the trace-zero subspace `J₀`. Neither
+statement can be made until one knows that a derivation of `J` lands in `J₀`; that is what this file
+proves.
 
 The argument is the Peirce calculus of the diagonal frame `E₀, E₁, E₂` of
 `TauCeti/Algebra/AlbertAlgebra/Basic.lean`, and it needs no Jordan identity — which is just as well,
@@ -40,15 +41,18 @@ Peirce relation.
   two give `W_{j+1} + W_{j+2} = 0`, so the three entries sum to zero.
 
 So `D` maps all of `J` into the trace-zero subspace, that subspace is a Lie submodule
-(`TauCeti.AlbertAlgebra.traceZeroLieSubmodule`) — this is the candidate `26`-dimensional
-fundamental representation — and, when scalar multiplication by `3` on `J` is regular, `Der J` acts
-faithfully on it: a derivation kills `1`, so it sends the trace-zero element `3 • A - (tr A) • 1` to
-`3 • D A`, and regularity cancels that `3`.
+(`TauCeti.AlbertAlgebra.traceZeroLieSubmodule`) — this is the candidate fundamental representation,
+of dimension `26` over a base satisfying `StrongRankCondition`
+(`TauCeti.AlbertAlgebra.finrank_traceZeroLieSubmodule`) — and, when scalar multiplication by `3`
+on `J` is regular, `Der J` acts faithfully on it: a derivation kills `1`, so it sends the trace-zero
+element `3 • A - (tr A) • 1` to `3 • D A`, and regularity cancels that `3`.
 
 ## Main definitions
 
 * `TauCeti.AlbertAlgebra.traceZeroLieSubmodule`: the trace-zero subspace `J₀` as a Lie submodule of
-  `J` over `Der J`, so that `J₀` is a representation of `Der J`.
+  `J` over `Der J`, so that `J₀` is a representation of `Der J`, with
+  `TauCeti.AlbertAlgebra.finrank_traceZeroLieSubmodule` its dimension `26` over a base satisfying
+  `StrongRankCondition`.
 
 ## Main results
 
@@ -217,8 +221,9 @@ end Derivation
 /-! ### The trace-zero subspace as a representation of the derivation algebra -/
 
 /-- **The trace-zero subspace `J₀` as a Lie submodule of `H₃(𝕆)` over `Der H₃(𝕆)`**, so that `J₀` is
-a representation of the derivation algebra. This is the candidate `26`-dimensional fundamental
-representation of `F₄`; its dimension is `TauCeti.AlbertAlgebra.finrank_traceZero`. -/
+a representation of the derivation algebra. This is the candidate fundamental representation of
+`F₄`; over a base satisfying `StrongRankCondition` its dimension is `26`
+(`TauCeti.AlbertAlgebra.finrank_traceZeroLieSubmodule`). -/
 def traceZeroLieSubmodule (R : Type*) [CommRing R] [Invertible (2 : R)] :
     LieSubmodule R (derivationLieAlgebra R (AlbertAlgebra R)) (AlbertAlgebra R) where
   __ := traceZero R
@@ -231,8 +236,17 @@ theorem toSubmodule_traceZeroLieSubmodule (R : Type*) [CommRing R] [Invertible (
 
 @[simp]
 theorem mem_traceZeroLieSubmodule [CommRing R] [Invertible (2 : R)] {A : AlbertAlgebra R} :
-    A ∈ traceZeroLieSubmodule R ↔ trace A = 0 :=
-  mem_traceZero
+    A ∈ traceZeroLieSubmodule R ↔ trace A = 0 := by
+  rw [← LieSubmodule.mem_toSubmodule, toSubmodule_traceZeroLieSubmodule, mem_traceZero]
+
+/-- **The trace-zero subspace is `26`-dimensional**, over a base satisfying `StrongRankCondition`.
+The carrier of `TauCeti.AlbertAlgebra.traceZeroLieSubmodule` is the submodule
+`TauCeti.AlbertAlgebra.traceZero` itself — `TauCeti.AlbertAlgebra.toSubmodule_traceZeroLieSubmodule`
+holds by `rfl` — so this is `TauCeti.AlbertAlgebra.finrank_traceZero` read along that
+identification. -/
+theorem finrank_traceZeroLieSubmodule (R : Type*) [CommRing R] [Invertible (2 : R)]
+    [StrongRankCondition R] : Module.finrank R (traceZeroLieSubmodule R) = 26 :=
+  finrank_traceZero R
 
 section Faithful
 
