@@ -41,7 +41,8 @@ Peirce relation.
 So `D` maps all of `J` into the trace-zero subspace, that subspace is a Lie submodule
 (`TauCeti.AlbertAlgebra.traceZeroLieSubmodule`) — this is the candidate `26`-dimensional
 fundamental representation — and, when scalar multiplication by `3` on `J` is regular, `Der J` acts
-faithfully on it, since `J = R · 1 ⊕ J₀` there and a derivation kills `1`.
+faithfully on it: a derivation kills `1`, so it sends the trace-zero element `3 • A - (tr A) • 1` to
+`3 • D A`, and regularity cancels that `3`.
 
 ## Main definitions
 
@@ -73,9 +74,8 @@ symmetrized product already carries; the base is a field nowhere. The faithfulne
 for the exact hypothesis its proof uses, `IsSMulRegular (AlbertAlgebra R) (3 : R)`, which is not a
 class; the instance form of it therefore asks for the two classes
 `[NoZeroSMulDivisors R (AlbertAlgebra R)]` and `[NeZero (3 : R)]`, which imply it but are strictly
-stronger. Some such hypothesis is necessary: in characteristic `3` the identity matrix has trace
-`3 = 0`, so `J₀` contains `1` and the argument that `J₀` complements the scalar matrices breaks
-down.
+stronger. Some such hypothesis is necessary for this argument: in characteristic `3` the trace-zero
+element `3 • A - (tr A) • 1` degenerates to `-(tr A) • 1`, which retains no information about `A`.
 
 `TauCeti.AlbertAlgebra.offDiagSingle` is placed here rather than beside
 `TauCeti.AlbertAlgebra.diagIdempotent`: its only purpose is to state the Peirce relation and the
