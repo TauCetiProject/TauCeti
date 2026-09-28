@@ -11,7 +11,8 @@ import Mathlib.Analysis.SpecialFunctions.Arcosh
 /-!
 # Trigonometric bounds for triangle angles
 
-The sine of `π / x` is positive for real `x > 1`. For angles `α, β > 0` and `γ ≥ 0` with
+The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonzero for nonzero
+`x ∈ (-1, 1)`. For angles `α, β > 0` and `γ ≥ 0` with
 `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
 second hyperbolic law of cosines it is the hyperbolic cosine of the side opposite `γ` in a
 hyperbolic triangle with angles `α`, `β`, `γ`. These supply the positive sine factors and the
@@ -23,6 +24,18 @@ public section
 open Real
 
 namespace TauCeti
+
+/-- If `x` is nonzero and strictly between `-1` and `1`, then `sin (π * x)` is nonzero. -/
+theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
+    (hx : x ∈ Set.Ioo (-1 : ℝ) 1) (hx0 : x ≠ 0) :
+    sin (π * x) ≠ 0 := by
+  have hlow : -π < π * x := by
+    nlinarith [mul_lt_mul_of_pos_left hx.1 pi_pos]
+  have hupp : π * x < π := by
+    nlinarith [mul_lt_mul_of_pos_left hx.2 pi_pos]
+  intro hsin
+  exact (mul_ne_zero pi_ne_zero hx0)
+    ((sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
 
 /-- For a real denominator greater than one, the sine of `π / x` is positive. -/
 theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) :=

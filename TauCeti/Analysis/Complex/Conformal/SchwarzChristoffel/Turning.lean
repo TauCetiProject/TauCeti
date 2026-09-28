@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.Convex.Between
 
 /-!
@@ -55,19 +56,6 @@ open scoped ComplexConjugate
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
-
-/-- A nonzero turning exponent strictly between `-1` and `1` has nonzero sine after
-multiplication by `π`. -/
-theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
-    (hx : x ∈ Ioo (-1 : ℝ) 1) (hx0 : x ≠ 0) :
-    Real.sin (Real.pi * x) ≠ 0 := by
-  have hlow : -Real.pi < Real.pi * x := by
-    nlinarith [mul_lt_mul_of_pos_left hx.1 Real.pi_pos]
-  have hupp : Real.pi * x < Real.pi := by
-    nlinarith [mul_lt_mul_of_pos_left hx.2 Real.pi_pos]
-  intro hsin
-  exact (mul_ne_zero Real.pi_ne_zero hx0)
-    ((Real.sin_eq_zero_iff_of_lt_of_lt hlow hupp).mp hsin)
 
 /-- At two adjacent prevertices, a middle exponent in `(-1, 0)` makes the boundary edge angle
 increase strictly by less than `π` from the left-hand edge to the right-hand edge.
