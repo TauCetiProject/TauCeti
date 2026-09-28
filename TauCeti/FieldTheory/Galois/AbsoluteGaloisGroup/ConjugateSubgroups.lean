@@ -26,18 +26,16 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
-variable (K : Type u) [Field K] (L : Type u) [Field L] [Algebra K L]
-  [FiniteDimensional K L]
+variable (K : Type u) [Field K] (L : Type v) [Field L] [Algebra K L]
 
-/-- The open subgroups of `G_K` fixing two embedded copies of a finite extension `L/K`
-are conjugate. The conjugating automorphism extends the natural `K`-algebra isomorphism
-between the two copies of `L`. -/
-theorem galoisSubgroup_conj (σ τ : L →ₐ[K] SeparableClosure K) :
+/-- The subgroups of `G_K` fixing the images of two embeddings of `L` into `Kˢ` are
+conjugate, without a finiteness assumption on `L/K`. -/
+theorem fixingSubgroup_fieldRange_conj (σ τ : L →ₐ[K] SeparableClosure K) :
     ∃ g : AbsoluteGaloisGroup K,
-      (galoisSubgroup K L τ).toSubgroup =
-        (galoisSubgroup K L σ).toSubgroup.map (MulAut.conj g).toMonoidHom := by
+      τ.fieldRange.fixingSubgroup =
+        σ.fieldRange.fixingSubgroup.map (MulAut.conj g).toMonoidHom := by
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (AbsoluteGaloisGroup K) σ τ
   have hcomp : g.toAlgHom.comp σ = τ := by
     simpa only [AlgEquiv.smul_algHom_def] using hg
@@ -47,8 +45,17 @@ theorem galoisSubgroup_conj (σ τ : L →ₐ[K] SeparableClosure K) :
         AlgHom.map_fieldRange σ g.toAlgHom
       _ = τ.fieldRange := by rw [hcomp]
   refine ⟨g, ?_⟩
-  rw [galoisSubgroup_toSubgroup, galoisSubgroup_toSubgroup, ← hfield,
-    IsGalois.map_fixingSubgroup]
-  rfl
+  rw [← hfield, IsGalois.map_fixingSubgroup]
+  exact Subgroup.pointwise_smul_def σ.fieldRange.fixingSubgroup
+
+/-- The open subgroups of `G_K` fixing two embedded copies of a finite extension `L/K`
+are conjugate. The conjugating automorphism extends the natural `K`-algebra isomorphism
+between the two copies of `L`. -/
+theorem galoisSubgroup_conj [FiniteDimensional K L]
+    (σ τ : L →ₐ[K] SeparableClosure K) :
+    ∃ g : AbsoluteGaloisGroup K,
+      (galoisSubgroup K L τ).toSubgroup =
+        (galoisSubgroup K L σ).toSubgroup.map (MulAut.conj g).toMonoidHom := by
+  simpa only [galoisSubgroup_toSubgroup] using fixingSubgroup_fieldRange_conj K L σ τ
 
 end TauCeti
