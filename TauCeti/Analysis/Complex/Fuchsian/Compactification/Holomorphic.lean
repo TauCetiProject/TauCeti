@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Index
-public import TauCeti.Analysis.Complex.Fuchsian.Compactification.EllipticRamification
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Elliptic.Ramification
 
 /-!
 # Holomorphy of a compactified quotient map
