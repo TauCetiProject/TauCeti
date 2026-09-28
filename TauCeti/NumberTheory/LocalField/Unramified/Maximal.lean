@@ -76,6 +76,12 @@ finite extensions of `K` inside `Ω`. -/
 def maximalUnramifiedExtension : IntermediateField K Ω :=
   ⨆ f : ℕ, unramifiedExtension K Ω f
 
+/-- The maximal unramified extension is the union of the unramified extensions of all degrees. -/
+theorem maximalUnramifiedExtension_def :
+    maximalUnramifiedExtension K Ω = ⨆ f : ℕ, unramifiedExtension K Ω f :=
+  -- `(rfl)`, not `rfl`: keep the body opaque while exporting this equation across modules.
+  (rfl)
+
 /-- The unramified extension of each degree lies in the maximal unramified extension. -/
 theorem unramifiedExtension_le_maximalUnramifiedExtension (f : ℕ) :
     unramifiedExtension K Ω f ≤ maximalUnramifiedExtension K Ω :=
@@ -131,7 +137,7 @@ for `f ≠ 0`, where `q` is the cardinality of the residue field of `K`. -/
 theorem maximalUnramifiedExtension_eq_adjoin :
     maximalUnramifiedExtension K Ω =
       adjoin K {x : Ω | ∃ f ≠ 0, x ^ Nat.card 𝓀[K] ^ f = x} := by
-  simp only [maximalUnramifiedExtension, unramifiedExtension_def, ← adjoin_iUnion]
+  simp only [maximalUnramifiedExtension_def, unramifiedExtension_def, ← adjoin_iUnion]
   congr 1
   ext x
   simp only [Set.mem_iUnion, Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero]
@@ -141,7 +147,7 @@ theorem maximalUnramifiedExtension_eq_adjoin :
 
 /-- The maximal unramified extension is Galois over `K`, as a union of Galois extensions. -/
 instance isGalois_maximalUnramifiedExtension : IsGalois K (maximalUnramifiedExtension K Ω) := by
-  rw [maximalUnramifiedExtension]
+  rw [maximalUnramifiedExtension_def]
   exact ⟨⟩
 
 variable {K Ω} in
