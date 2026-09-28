@@ -227,7 +227,7 @@ theorem isCompl_span_singleton_orthogonal_of_isUnit
     intro y z
     obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp y.property
     obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp z.property
-    change B (y : M) (z : M) = B (z : M) (y : M)
+    simp only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply]
     rw [← ha, ← hb]
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
     ring
