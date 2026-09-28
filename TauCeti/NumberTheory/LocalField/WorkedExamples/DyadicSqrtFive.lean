@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.KummerPolynomial
-public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.NumberTheory.LocalField.Unramified.Criterion
+import TauCeti.RingTheory.Norm.Quadratic
 
 /-!
 # The unramified quadratic extension `ℚ_2(√5)`
@@ -204,28 +204,26 @@ theorem frobeniusAlgEquiv_sqrtFive :
 theorem exists_eq_add_mul_sqrtFive (y : DyadicSqrtFive) :
     ∃ a b : ℚ_[2], y = algebraMap ℚ_[2] DyadicSqrtFive a +
       algebraMap ℚ_[2] DyadicSqrtFive b * sqrtFive := by
-  have hgen : powerBasis.gen = sqrtFive := AdjoinRoot.powerBasis_gen _
-  obtain ⟨f, hf, rfl⟩ := powerBasis.exists_eq_aeval y
-  rw [powerBasis, AdjoinRoot.powerBasis_dim, natDegree_X_pow_sub_C] at hf
-  refine ⟨f.coeff 0, f.coeff 1, ?_⟩
-  conv_lhs => rw [eq_X_add_C_of_natDegree_le_one (Nat.le_of_lt_succ hf)]
-  simp [hgen, add_comm]
+  -- `√5` lies outside `ℚ_2`, since Frobenius moves it.
+  have hθ : sqrtFive ∉ Set.range (algebraMap ℚ_[2] DyadicSqrtFive) := by
+    rintro ⟨c, hc⟩
+    have h := congrArg (frobeniusAlgEquiv (K := ℚ_[2]) (L := DyadicSqrtFive)) hc
+    rw [AlgEquiv.commutes, hc, frobeniusAlgEquiv_sqrtFive, self_eq_neg] at h
+    simpa [h] using sqrtFive_sq
+  obtain ⟨b, a, rfl⟩ :=
+    Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul ℚ_[2] DyadicSqrtFive hθ y
+  exact ⟨a, b, rfl⟩
 
 /-- **The norm form of `ℚ_2(√5)/ℚ_2`.** The norm of `a + b√5` is `a² − 5b²`. -/
 @[simp]
 theorem norm_add_mul_sqrtFive (a b : ℚ_[2]) :
     Algebra.norm ℚ_[2] (algebraMap ℚ_[2] DyadicSqrtFive a +
       algebraMap ℚ_[2] DyadicSqrtFive b * sqrtFive) = a ^ 2 - 5 * b ^ 2 := by
-  classical
-  -- The Galois group is `{1, σ}` for the Frobenius `σ : √5 ↦ −√5`, so the norm is `y σ(y)`.
-  have huniv : (Finset.univ : Finset Gal(DyadicSqrtFive/ℚ_[2])) =
-      {1, frobeniusAlgEquiv (K := ℚ_[2]) (L := DyadicSqrtFive)} := by
-    refine (Finset.eq_of_subset_of_card_le (Finset.subset_univ _) ?_).symm
-    rw [Finset.card_univ, ← Nat.card_eq_fintype_card, IsGalois.card_aut_eq_finrank,
-      finrank_eq_two, Finset.card_pair frobeniusAlgEquiv_ne_one.symm]
+  -- The norm is `y σ(y)` for the Frobenius `σ : √5 ↦ −√5`.
   apply (algebraMap ℚ_[2] DyadicSqrtFive).injective
-  rw [Algebra.norm_eq_prod_automorphisms, huniv, Finset.prod_pair frobeniusAlgEquiv_ne_one.symm]
-  simp only [AlgEquiv.one_apply, map_add, map_mul, AlgEquiv.commutes,
+  rw [Algebra.IsQuadraticExtension.algebraMap_norm_eq_mul ℚ_[2] DyadicSqrtFive
+    frobeniusAlgEquiv_ne_one]
+  simp only [map_add, map_mul, AlgEquiv.commutes,
     frobeniusAlgEquiv_sqrtFive, map_sub, map_pow, map_ofNat]
   linear_combination (-(algebraMap ℚ_[2] DyadicSqrtFive b) ^ 2) * sqrtFive_sq
 
@@ -236,10 +234,13 @@ theorem mem_normGroup_iff_even_valuation {x : ℚ_[2]ˣ} :
   rw [mem_normGroup_iff_dvd_normalizedValuation, inertiaDegree_eq_two,
     Padic.toAdd_normalizedValuation_eq_valuation, Nat.cast_two, even_iff_two_dvd]
 
-/-- **The norm equation of `ℚ_2(√5)/ℚ_2`.** For nonzero `x : ℚ_2`, the equation `a² − 5b² = x`
-has a solution in `ℚ_2` exactly when the `2`-adic valuation of `x` is even. -/
-theorem exists_sq_sub_five_mul_sq_eq_iff {x : ℚ_[2]} (hx : x ≠ 0) :
+/-- **The norm equation of `ℚ_2(√5)/ℚ_2`.** For `x : ℚ_2`, the equation `a² − 5b² = x` has a
+solution in `ℚ_2` exactly when the `2`-adic valuation of `x` is even. For `x = 0` both sides hold
+trivially, the valuation of `0` being `0`. -/
+theorem exists_sq_sub_five_mul_sq_eq_iff {x : ℚ_[2]} :
     (∃ a b : ℚ_[2], a ^ 2 - 5 * b ^ 2 = x) ↔ Even x.valuation := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · exact iff_of_true ⟨0, 0, by ring⟩ (by simp)
   rw [← Units.val_mk0 hx, ← mem_normGroup_iff_even_valuation, mem_normGroup_iff]
   constructor
   · rintro ⟨a, b, hab⟩
@@ -256,14 +257,14 @@ theorem exists_sq_sub_five_mul_sq_eq_iff {x : ℚ_[2]} (hx : x ≠ 0) :
 /-- **A solvable norm equation.** `3` is a norm from `ℚ_2(√5)`: the equation `a² − 5b² = 3` has a
 solution in `ℚ_2`, because `3` has even valuation `0`. -/
 theorem exists_sq_sub_five_mul_sq_eq_three : ∃ a b : ℚ_[2], a ^ 2 - 5 * b ^ 2 = 3 := by
-  rw [exists_sq_sub_five_mul_sq_eq_iff three_ne_zero, Padic.valuation_ofNat,
+  rw [exists_sq_sub_five_mul_sq_eq_iff, Padic.valuation_ofNat,
     padicValNat.eq_zero_of_not_dvd (by norm_num)]
   simp
 
 /-- **An unsolvable norm equation.** `2` is not a norm from `ℚ_2(√5)`: the equation
 `a² − 5b² = 2` has no solution in `ℚ_2`, because `2` has odd valuation. -/
 theorem not_exists_sq_sub_five_mul_sq_eq_two : ¬∃ a b : ℚ_[2], a ^ 2 - 5 * b ^ 2 = 2 := by
-  rw [exists_sq_sub_five_mul_sq_eq_iff two_ne_zero, Padic.valuation_ofNat, padicValNat_self]
+  rw [exists_sq_sub_five_mul_sq_eq_iff, Padic.valuation_ofNat, padicValNat_self]
   exact Int.not_even_one
 
 end DyadicSqrtFive
