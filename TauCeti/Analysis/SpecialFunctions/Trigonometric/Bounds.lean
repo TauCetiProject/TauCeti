@@ -9,10 +9,12 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Arcosh
 
 /-!
-# Trigonometric bounds for triangle angles
+# Trigonometric bounds and nonvanishing criteria
 
 The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonzero for nonzero
-`x ∈ (-1, 1)`. For angles `α, β > 0` and `γ ≥ 0` with
+`x ∈ (-1, 1)`, a criterion used to detect nonflat Schwarz–Christoffel turns.
+
+For angles `α, β > 0` and `γ ≥ 0` with
 `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
 second hyperbolic law of cosines it is the hyperbolic cosine of the side opposite `γ` in a
 hyperbolic triangle with angles `α`, `β`, `γ`. These supply the positive sine factors and the
