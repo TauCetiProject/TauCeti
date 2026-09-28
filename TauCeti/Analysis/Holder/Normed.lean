@@ -79,6 +79,20 @@ theorem toBoundedContinuousFunction_ofBoundedContinuousFunction (f : X →ᵇ Y)
 theorem toBoundedContinuousFunction_apply (f : HolderSpace α X Y) (x : X) :
     f.toBoundedContinuousFunction x = f x := (rfl)
 
+@[simp]
+theorem coe_toBoundedContinuousFunction (f : HolderSpace α X Y) :
+    (f.toBoundedContinuousFunction : X → Y) = f := by
+  funext x
+  exact toBoundedContinuousFunction_apply f x
+
+@[simp]
+theorem ofBoundedContinuousFunction_apply (f : X →ᵇ Y) (hf : MemHolder α (f : X → Y))
+    (x : X) : ofBoundedContinuousFunction f hf x = f x := (rfl)
+
+/-- Every element of the bounded Hölder space is continuous, including at exponent zero. -/
+theorem continuous (f : HolderSpace α X Y) : Continuous (f : X → Y) := by
+  simpa using f.toBoundedContinuousFunction.continuous
+
 /-- A Hölder-space element satisfies the global Hölder condition. -/
 theorem memHolder (f : HolderSpace α X Y) :
     MemHolder α (f.toBoundedContinuousFunction : X → Y) :=
@@ -132,6 +146,15 @@ instance : SMul ℤ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.1⟩⟩
 
 @[simp] theorem toBoundedContinuousFunction_zsmul (n : ℤ) (f : HolderSpace α X Y) :
     (n • f).toBoundedContinuousFunction = n • f.toBoundedContinuousFunction := (rfl)
+
+@[simp]
+theorem zero_apply (x : X) : (0 : HolderSpace α X Y) x = 0 := (rfl)
+
+@[simp]
+theorem add_apply (f g : HolderSpace α X Y) (x : X) : (f + g) x = f x + g x := (rfl)
+
+@[simp]
+theorem smul_apply (c : ℝ) (f : HolderSpace α X Y) (x : X) : (c • f) x = c • f x := (rfl)
 
 /-- The underlying bounded continuous function determines a Hölder-space element. -/
 theorem toBoundedContinuousFunction_injective :
@@ -328,6 +351,63 @@ noncomputable instance instCompleteSpace [CompleteSpace Y] : CompleteSpace (Hold
 theorem nnHolderNorm_le (f : HolderSpace α X Y) :
     (nnHolderNorm α (f.toBoundedContinuousFunction : X → Y) : ℝ) ≤ ‖f‖ :=
   nnHolderNorm_le_holderNorm f.toBoundedContinuousFunction
+
+/-- A constant function as an element of the bounded Hölder space. -/
+def const (c : Y) : HolderSpace α X Y :=
+  ofBoundedContinuousFunction (BoundedContinuousFunction.const X c) memHolder_const
+
+@[simp]
+theorem toBoundedContinuousFunction_const (c : Y) :
+    (const (α := α) (X := X) c).toBoundedContinuousFunction =
+      BoundedContinuousFunction.const X c := (rfl)
+
+@[simp]
+theorem const_apply (c : Y) (x : X) : const (α := α) c x = c := (rfl)
+
+/-- The Hölder norm of a constant is at most the norm of its value, even on an empty domain. -/
+theorem norm_const_le (c : Y) : ‖const (α := α) (X := X) c‖ ≤ ‖c‖ := by
+  rw [norm_def, toBoundedContinuousFunction_const]
+  have h : nnHolderNorm α ((BoundedContinuousFunction.const X c) : X → Y) = 0 :=
+    nnHolderNorm_const X α c
+  rw [h, NNReal.coe_zero, add_zero]
+  exact BoundedContinuousFunction.norm_const_le c
+
+/-- On a nonempty domain, constant functions have exactly the norm of their value. -/
+theorem norm_const [Nonempty X] (c : Y) : ‖const (α := α) (X := X) c‖ = ‖c‖ := by
+  refine le_antisymm (norm_const_le c) ?_
+  obtain ⟨x⟩ := ‹Nonempty X›
+  exact ((const (α := α) c).toBoundedContinuousFunction.norm_coe_le_norm x).trans
+    (const c).norm_toBoundedContinuousFunction_le
+
+@[simp]
+theorem const_zero : const (α := α) (X := X) (0 : Y) = 0 := by
+  apply toBoundedContinuousFunction_injective
+  ext x
+  simp
+
+@[simp]
+theorem const_add (c d : Y) :
+    const (α := α) (X := X) (c + d) = const c + const d := by
+  apply toBoundedContinuousFunction_injective
+  ext x
+  simp
+
+@[simp]
+theorem const_smul (c : ℝ) (d : Y) :
+    const (α := α) (X := X) (c • d) = c • const d := by
+  apply toBoundedContinuousFunction_injective
+  ext x
+  simp
+
+/-- The continuous linear map assigning a constant bounded Hölder function to each value. -/
+def constL : Y →L[ℝ] HolderSpace α X Y :=
+  LinearMap.mkContinuous
+    { toFun := const
+      map_add' := const_add
+      map_smul' := const_smul } 1 fun c ↦ by simpa using norm_const_le (α := α) (X := X) c
+
+@[simp]
+theorem constL_apply (c : Y) : constL (α := α) (X := X) c = const c := (rfl)
 
 end HolderSpace
 
