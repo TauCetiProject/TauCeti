@@ -36,6 +36,22 @@ noncomputable def affineEquiv (X : Scheme.{u}) [IsAffine X] :
     QuasicoherentSheaf X ≌ ModuleCat Γ(X, ⊤) :=
   (equivOfIso X.isoSpec).symm.trans (tildeEquiv (R := Γ(X, ⊤))).symm
 
+/-- The forward functor of the affine equivalence is pullback to the spectrum followed by
+global sections. -/
+@[simp]
+theorem affineEquiv_functor (X : Scheme.{u}) [IsAffine X] :
+    (affineEquiv X).functor =
+      pullback X.isoSpec.inv ⋙ (tildeEquiv (R := Γ(X, ⊤))).inverse := by
+  simp [affineEquiv]
+
+/-- The inverse functor of the affine equivalence is tilde followed by pullback to the
+affine scheme. -/
+@[simp]
+theorem affineEquiv_inverse (X : Scheme.{u}) [IsAffine X] :
+    (affineEquiv X).inverse =
+      (tildeEquiv (R := Γ(X, ⊤))).functor ⋙ pullback X.isoSpec.hom := by
+  simp [affineEquiv]
+
 /-- Quasi-coherent modules on an affine scheme form an abelian category. -/
 noncomputable instance (X : Scheme.{u}) [IsAffine X] : Abelian (QuasicoherentSheaf X) := by
   let e := affineEquiv X
