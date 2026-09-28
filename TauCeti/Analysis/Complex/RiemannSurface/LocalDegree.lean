@@ -21,19 +21,15 @@ fibre of `f` restricted to a chart neighbourhood of the point. It is the countin
 the local normal form `z ↦ z ^ m` of a nonconstant holomorphic map, obtained as a count rather
 than as a conjugacy.
 
-Two ingredients are transported from `TauCeti.Analysis.Complex.Conformal.LocalDegree` and
-`TauCeti.Analysis.Analytic.IsolatedZeros`. In charts `e` at `x` and `e'` at `f x` the
-representative `F = e' ∘ f ∘ e.symm` is analytic at `e x`, and the local multiplicity of `f` at
-`x` is the order of vanishing of `F - F (e x)` there, by
-`TauCeti.RiemannSurface.localMultiplicity_eq_analyticOrderNatAt`; re-applying that identity at
-each `x'` in the chart ball shows that the summand of the planar count at `z` is
-`localMultiplicity f (e.symm z)`. The zeros of `F - w` inside a closed disc are finite by
-`TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, and reindexing the count along `e.symm` turns
-it into a sum over the fibre of `y' = e'.symm w` inside the chart neighbourhood. Nonconstancy of
-`f` near `x` enters as the hypothesis `¬ EventuallyConst f (𝓝 x)`, which by
-`TauCeti.RiemannSurface.localMultiplicity_pos_iff` says that the count is positive; it also makes
-`e x` an isolated zero of the recentred representative `F - F (e x)`, so that
-`TauCeti.localDegree` applies to it.
+The ingredients are the planar count `TauCeti.localDegree` of
+`TauCeti.Analysis.Complex.Conformal.LocalDegree`, the isolated zero principle of
+`TauCeti.Analysis.Analytic.IsolatedZeros` in the finiteness form
+`TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, and the chart description
+`TauCeti.RiemannSurface.localMultiplicity_eq_analyticOrderNatAt` of
+`TauCeti.RiemannSurface.localMultiplicity`. Nonconstancy of `f` near `x` is spelled
+`¬ EventuallyConst f (𝓝 x)`, which by `TauCeti.RiemannSurface.localMultiplicity_pos_iff` says
+that the local multiplicity of `f` at `x` is positive, so the count below is a positive
+integer.
 
 ## Main declarations
 
@@ -157,6 +153,16 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
         (f ⁻¹' {y'} ∩ U).Finite ∧
         (∑ᶠ x' ∈ f ⁻¹' {y'} ∩ U, localMultiplicity f x') = localMultiplicity f x := by
   classical
+  -- Transport of the planar count `TauCeti.localDegree` to Riemann surfaces. In charts `e` at `x`
+  -- and `e'` at `f x` the representative `F = e' ∘ f ∘ e.symm` is analytic at `e x`, and the
+  -- local multiplicity of `f` at `x` is the order of vanishing of `F - F (e x)` there
+  -- (`localMultiplicity_eq_analyticOrderNatAt`); applying the same identity at each `x'` of the
+  -- chart ball makes the summand of the planar count at `z` equal to
+  -- `localMultiplicity f (e.symm z)`. The zeros of `F - w` in a closed disc are finite
+  -- (`finite_setOf_mem_and_eq_zero_of_isCompact`), and reindexing the count along `e.symm` turns
+  -- it into a sum over the fibre of `y' = e'.symm w` inside the chart neighbourhood. Finally
+  -- `¬ EventuallyConst f (𝓝 x)` says the count is positive by `localMultiplicity_pos_iff`, so
+  -- each such fibre is nonempty.
   -- The neighbourhood on which `f` is differentiable, taken open.
   obtain ⟨Ω₀, hΩ₀mem, hΩ₀⟩ := hDiff
   have hΩopen : IsOpen (interior Ω₀) := isOpen_interior
@@ -375,8 +381,7 @@ is finite there, and the sum of the local multiplicities over it is exactly
 
 This is the counting consequence of the local normal form `z ↦ z ^ m` of a nonconstant
 holomorphic map, read without choosing a conjugacy: the multiplicity of `f` at `x` is the number
-of preimages of a nearby value, counted with multiplicities. The two neighbourhoods are obtained
-in the preferred charts `chartAt ℂ x` and `chartAt ℂ (f x)`. -/
+of preimages of a nearby value, counted with multiplicities. -/
 theorem exists_nhds_localMultiplicity_fiber_sum
     [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
     (hDiff : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
