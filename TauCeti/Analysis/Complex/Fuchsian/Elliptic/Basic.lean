@@ -254,12 +254,13 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
 at the orbit of `z` built from the invariant discs of radii `ε` and `ε'`, `ε ≤ ε'`, have the
 identity as their transition map, so the two charts define the same local complex structure on
 the coarse quotient. -/
-theorem stabilizerBallQuotientChart_trans_eq_id {ε' : ℝ} (hε' : 0 < ε') (hε'' : ε ≤ ε')
+theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε'' : ε ≤ ε')
     (hopen' : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε')) {u : ℂ}
     (hu : u ∈ ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
-      stabilizerBallQuotientChart hε' hopen').source) :
+      stabilizerBallQuotientChart (lt_of_lt_of_le hε hε'') hopen').source) :
     ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
-      stabilizerBallQuotientChart hε' hopen') u = u := by
+      stabilizerBallQuotientChart (lt_of_lt_of_le hε hε'') hopen') u = u := by
+  have hε' : 0 < ε' := lt_of_lt_of_le hε hε''
   -- The target of the chart at the orbit of `z` is the `m`-th power of the Euclidean disc of
   -- radius `Real.tanh (ε / 2)`, `m = Nat.card (stabilizer Γ z)`, and the inverse chart sends
   -- `w ^ m` to the orbit of the point of disc coordinate `w`, which the chart for the invariant
