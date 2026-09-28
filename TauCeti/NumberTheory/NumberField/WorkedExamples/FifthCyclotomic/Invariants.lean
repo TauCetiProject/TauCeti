@@ -115,11 +115,11 @@ theorem five_mem_ramifiedPrimes : 5 ∈ ramifiedPrimes K := by
   have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
   exact IsCyclotomicExtension.Rat.ncard_primesOver_of_prime 5 K
 
-variable {K} {ζ : K} (hζ : IsPrimitiveRoot ζ 5) (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
-  [𝔭.LiesOver (span {(5 : ℤ)})]
+variable {K} (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(5 : ℤ)})]
 
-/-- The prime of `𝓞 K` above `5` is `(ζ₅ − 1)`. -/
-theorem eq_span_zeta_sub_one : 𝔭 = span {hζ.toInteger - 1} := by
+/-- The prime of `𝓞 K` above `5` is `(ζ₅ − 1)`, for any primitive fifth root of unity `ζ₅`. -/
+theorem eq_span_zeta_sub_one {ζ : K} (hζ : IsPrimitiveRoot ζ 5) :
+    𝔭 = span {hζ.toInteger - 1} := by
   have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
   exact IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver' 5 K hζ 𝔭
 
@@ -137,15 +137,16 @@ theorem eq_span_zeta_sub_one : 𝔭 = span {hζ.toInteger - 1} := by
 theorem map_span_five_eq_pow_four :
     (span {(5 : ℤ)}).map (algebraMap ℤ (𝓞 K)) = 𝔭 ^ 4 := by
   have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
-  have hζ := IsCyclotomicExtension.zeta_spec 5 ℚ K
+  -- the canonical primitive fifth root of unity of the cyclotomic extension
+  have hzeta := IsCyclotomicExtension.zeta_spec 5 ℚ K
   have hK : IsCyclotomicExtension {5 ^ (0 + 1)} ℚ K := by
     rw [zero_add, pow_one]
     infer_instance
-  have hζ' : IsPrimitiveRoot (IsCyclotomicExtension.zeta 5 ℚ K) (5 ^ (0 + 1)) := by
+  have hzeta' : IsPrimitiveRoot (IsCyclotomicExtension.zeta 5 ℚ K) (5 ^ (0 + 1)) := by
     rw [zero_add, pow_one]
-    exact hζ
-  have h := IsCyclotomicExtension.Rat.map_eq_span_zeta_sub_one_pow 5 0 hζ'
+    exact hzeta
+  have h := IsCyclotomicExtension.Rat.map_eq_span_zeta_sub_one_pow 5 0 hzeta'
   rw [Nat.cast_ofNat] at h
-  rw [eq_span_zeta_sub_one hζ 𝔭, h, finrank_eq_four K]
+  rw [eq_span_zeta_sub_one 𝔭 hzeta, h, finrank_eq_four K]
 
 end TauCeti.NumberField.FifthCyclotomic
