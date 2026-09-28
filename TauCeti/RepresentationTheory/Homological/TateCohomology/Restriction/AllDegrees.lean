@@ -114,7 +114,7 @@ theorem cor_negSucc_succ (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
 
 /-- In positive degrees, Tate corestriction agrees with ordinary cohomological corestriction
 through the canonical comparison. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem cor_pos_comp_isoGroupCohomology_hom (M : Rep.{u} R G) (H : Subgroup G) (n : ℕ) :
     cor M H ((n : ℤ) + 1) ≫
         (_root_.TateCohomology.isoGroupCohomology (G := G) (n + 1)).hom.app M =
