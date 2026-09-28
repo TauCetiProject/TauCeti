@@ -23,6 +23,8 @@ under that weaker hypothesis, which is the one a.e.-measurable interfaces such a
 * `Measure.map_dirac_of_aemeasurable` — the Dirac pushforward formula for a map that is
   only a.e. measurable.
 * `Measure.dirac_eq_dirac_of_inseparable` — inseparable points have equal Borel Dirac measures.
+* `TauCeti.measure_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are supported at
+  the same point.
 -/
 
 public section
@@ -53,3 +55,37 @@ theorem dirac_eq_dirac_of_inseparable [TopologicalSpace X] [BorelSpace X]
   exact fun _ hs ↦ hxy.mem_measurableSet_iff hs
 
 end Measure
+
+namespace TauCeti
+
+/-- If a sum of measures is a Dirac mass, both summands are multiples of that Dirac mass. -/
+theorem measure_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
+    [MeasurableSingletonClass X] {μ ν : Measure X} {x : X}
+    (h : μ + ν = Measure.dirac x) :
+    μ = μ {x} • Measure.dirac x ∧ ν = ν {x} • Measure.dirac x := by
+  have hcomp : μ {x}ᶜ + ν {x}ᶜ = 0 := by
+    have h' := congrArg (fun η : Measure X => η {x}ᶜ) h
+    simpa [Measure.add_apply, Measure.dirac_apply' _ (measurableSet_singleton x).compl] using h'
+  have hμ : μ {x}ᶜ = 0 := by
+    apply le_antisymm _ zero_le
+    calc
+      μ {x}ᶜ ≤ μ {x}ᶜ + ν {x}ᶜ := le_add_of_nonneg_right zero_le
+      _ = 0 := hcomp
+  have hν : ν {x}ᶜ = 0 := by
+    apply le_antisymm _ zero_le
+    calc
+      ν {x}ᶜ ≤ μ {x}ᶜ + ν {x}ᶜ := le_add_of_nonneg_left zero_le
+      _ = 0 := hcomp
+  constructor
+  · calc
+      μ = μ.restrict {x} + μ.restrict {x}ᶜ :=
+        (Measure.restrict_add_restrict_compl (measurableSet_singleton x)).symm
+      _ = μ {x} • Measure.dirac x := by
+        rw [Measure.restrict_eq_zero.mpr hμ, add_zero, Measure.restrict_singleton]
+  · calc
+      ν = ν.restrict {x} + ν.restrict {x}ᶜ :=
+        (Measure.restrict_add_restrict_compl (measurableSet_singleton x)).symm
+      _ = ν {x} • Measure.dirac x := by
+        rw [Measure.restrict_eq_zero.mpr hν, add_zero, Measure.restrict_singleton]
+
+end TauCeti
