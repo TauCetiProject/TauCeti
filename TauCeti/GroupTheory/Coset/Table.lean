@@ -139,7 +139,9 @@ theorem trace_cons (t : Fin m) (u : List (Fin m)) (i : Fin k) :
 
 /-! ### Soundness -/
 
-variable {G α : Type*} [Group G] [MulAction G α] (g : Fin m → G) (a : α)
+section Monoid
+
+variable {G α : Type*} [Monoid G] [MulAction G α] (g : Fin m → G) (a : α)
 
 /-- The point of a `G`-set named by the index `i` of the table: the base point `a` moved by the
 word `T.word i` in the generators `g`. -/
@@ -212,6 +214,12 @@ theorem smul_point {rels stab : List (List (Fin m))} {cert : List (Fin k × List
     decide_eq_true_eq, List.mem_finRange, forall_const] at hT
   exact sound_foldl hrels hstab cert _ hT.1 sound_treeEdges _ (hT.2 t i)
 
+end Monoid
+
+section Group
+
+variable {T} {G α : Type*} [Group G] [MulAction G α] {g : Fin m → G} {a : α}
+
 /-- If the generators `g` generate `G`, the points named by a certified coset table contain the
 whole orbit of the base point `a`. -/
 theorem smul_mem_range_point {rels stab : List (List (Fin m))}
@@ -267,6 +275,8 @@ theorem finiteIndex {H : Subgroup G} {rels stab : List (List (Fin m))}
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) : H.FiniteIndex :=
   have : Finite (G ⧸ H) := Finite.of_surjective _ (surjective_point hg hT hrels hstab)
   H.finiteIndex_of_finite_quotient
+
+end Group
 
 end CosetTable
 
