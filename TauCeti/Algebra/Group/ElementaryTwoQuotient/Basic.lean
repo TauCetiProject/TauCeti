@@ -366,7 +366,7 @@ theorem card_elementaryTwoQuotient_eq_index_square :
 kernel. -/
 theorem card_elementaryTwoQuotient_eq_card_twoTorsion [(powMonoidHom 2 : G →* G).ker.FiniteIndex] :
     Nat.card (ElementaryTwoQuotient G) = Nat.card {g : G // g ^ 2 = 1} := by
-  rw [card_elementaryTwoQuotient_eq_index_square, square_eq_powMonoidHom_two_range,
+  rw [card_elementaryTwoQuotient_eq_index_square, square_eq_range_powMonoidHom,
     Subgroup.index_range]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun g => by simp [MonoidHom.mem_ker])
 
@@ -404,7 +404,7 @@ is the odd-order half of the 2-rank computation — the even case genuinely need
 (a cyclic factor); this half holds for any commutative group. -/
 theorem card_elementaryTwoQuotient_of_odd_card (h : Odd (Nat.card G)) :
     Nat.card (ElementaryTwoQuotient G) = 1 := by
-  rw [card_elementaryTwoQuotient_eq_index_square, square_eq_powMonoidHom_two_range]
+  rw [card_elementaryTwoQuotient_eq_index_square, square_eq_range_powMonoidHom]
   have hbij : Function.Surjective (powMonoidHom 2 : G →* G) :=
     (Nat.Coprime.pow_left_bijective (Nat.coprime_two_right.mpr h)).surjective
   rw [MonoidHom.range_eq_top.mpr hbij, Subgroup.index_top]

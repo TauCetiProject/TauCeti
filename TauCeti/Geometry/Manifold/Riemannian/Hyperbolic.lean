@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
 
 /-!
 # Hyperbolic metrics
@@ -74,6 +75,21 @@ theorem curvatureTensor_eq (g : HyperbolicMetric (I := I) (M := M))
   exact Bundle.ContMDiffRiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq
     g.metric (-1) g.curvature x w u v
 
+omit [T2Space (TangentBundle I M)] in
+/-- A hyperbolic metric has constant sectional curvature `-1`. -/
+theorem hasConstantSectionalCurvature (g : HyperbolicMetric (I := I) (M := M)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨g.metric.toRiemannianMetric⟩
+    (CovariantDerivative.leviCivitaConnection I M).HasConstantSectionalCurvature
+      (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) (-1) := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨g.metric.toRiemannianMetric⟩
+  apply CovariantDerivative.hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub
+    (CovariantDerivative.leviCivitaConnection I M)
+    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) (-1)
+  intro x w u v
+  exact g.curvatureTensor_eq x w u v
+
 end HyperbolicMetric
 
 omit [T2Space (TangentBundle I M)] in
@@ -95,5 +111,17 @@ theorem IsHyperbolic.exists_scalarCurvature_eq
   apply CovariantDerivative.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub
   intro w u v
   exact g.curvatureTensor_eq x w u v
+
+omit [T2Space (TangentBundle I M)] in
+/-- An `IsHyperbolic` witness has constant sectional curvature `-1`. -/
+theorem IsHyperbolic.exists_hasConstantSectionalCurvature
+    (h : IsHyperbolic (I := I) (M := M)) :
+    ∃ g : HyperbolicMetric (I := I) (M := M),
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.metric.toRiemannianMetric⟩
+      (CovariantDerivative.leviCivitaConnection I M).HasConstantSectionalCurvature
+        (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) (-1) := by
+  rcases h with ⟨g⟩
+  exact ⟨g, g.hasConstantSectionalCurvature⟩
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.RootDatum
-public import TauCeti.GroupTheory.Perm.WreathProduct
+public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
