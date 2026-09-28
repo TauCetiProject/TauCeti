@@ -18,10 +18,8 @@ derivatives at the origin. More generally, membership in `D(Aⁿ)` gives `Cⁿ` 
 The semigroup preserves smooth vectors, and the generator maps them to smooth vectors.
 
 These facts connect the iterated-domain construction to regularity of the abstract Cauchy
-problem. For the roadmap's smooth-vector density target, the orbit characterization can
-identify time-smoothed approximants as members of `smoothVectors` once their orbits are shown
-to be smooth. The separate density theorem for each `D(Aⁿ)` does not by itself imply density
-of their intersection.
+problem. The orbit characterization can identify time-smoothed approximants as members of
+`smoothVectors` once their orbits are shown to be smooth.
 
 ## References
 
