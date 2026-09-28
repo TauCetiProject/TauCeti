@@ -134,6 +134,7 @@ theorem homologyMap_mk (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ 
       Submodule.Quotient.mk ⟨f z, map_mem_ker_of_comp_eq (d := d) (e := e) f hf z.2⟩ :=
   (rfl)
 
+variable (d) in
 /-- The identity chain map induces the identity map on homology. -/
 @[simp]
 theorem homologyMap_id (hd : d ∘ₗ d = 0) :
@@ -144,6 +145,7 @@ theorem homologyMap_id (hd : d ∘ₗ d = 0) :
   rw [homologyπ_apply, homologyMap_mk]
   rfl
 
+variable (d e) in
 /-- The zero chain map induces the zero map on homology. -/
 @[simp]
 theorem homologyMap_zero (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) :

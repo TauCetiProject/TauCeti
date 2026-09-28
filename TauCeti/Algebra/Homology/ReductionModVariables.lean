@@ -146,7 +146,7 @@ private theorem DegreeGE.eq_zero (hw : ∀ v, w v < 0) {G : ℤ} (hG : ∀ i, g 
   ext i e
   by_contra he
   have h1 := hz i e he
-  have h2 := weight_le_degree_nsmul (fun v ↦ Int.le_sub_one_of_lt (hw v)) e
+  have h2 := weight_le_degree_nsmul e fun v ↦ Int.le_sub_one_of_lt (hw v)
   rw [zero_sub, nsmul_eq_mul, mul_neg_one] at h2
   have h3 : k ≤ degree e := (mem_pow_idealOfVars_iff k _).mp (hzk i) e
     (MvPolynomial.mem_support_iff.mpr he)
@@ -298,8 +298,8 @@ variable {μ : Type*}
 /-- If `f₀` and `g₀` are the reductions of `f` and `g` modulo the variables, then `g₀ ∘ f₀` is the
 reduction of `g ∘ f`. -/
 theorem comp_apply_mapRange_constantCoeff
-    {f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
-    {g : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (μ →₀ MvPolynomial σ R)}
+    (g : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (μ →₀ MvPolynomial σ R))
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R))
     {f₀ : (ι →₀ R) →ₗ[R] (κ →₀ R)} {g₀ : (κ →₀ R) →ₗ[R] (μ →₀ R)}
     (hf₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
       (f x).mapRange constantCoeff (map_zero _))
@@ -311,9 +311,8 @@ theorem comp_apply_mapRange_constantCoeff
 
 /-- A reduction modulo the variables is determined by the map it reduces: reductions `f₀` of `f`
 and `f₀'` of `f'` agree when `f = f'`. -/
-theorem eq_of_mapRange_constantCoeff
+theorem eq_of_mapRange_constantCoeff (f₀ f₀' : (ι →₀ R) →ₗ[R] (κ →₀ R))
     {f f' : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
-    {f₀ f₀' : (ι →₀ R) →ₗ[R] (κ →₀ R)}
     (hf₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
       (f x).mapRange constantCoeff (map_zero _))
     (hf₀' : ∀ x, f₀' (x.mapRange constantCoeff (map_zero _)) =
@@ -393,10 +392,12 @@ theorem homologyMap_bijective_of_mapRange_constantCoeff
       (f x).mapRange constantCoeff (map_zero _))
     (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f)
     (h : Function.Bijective (homologyMap f₀
-      (eq_of_mapRange_constantCoeff (comp_apply_mapRange_constantCoeff hdd₀ hdd₀) (by simp) hd)
-      (eq_of_mapRange_constantCoeff (comp_apply_mapRange_constantCoeff hee₀ hee₀) (by simp) he)
-      (eq_of_mapRange_constantCoeff (comp_apply_mapRange_constantCoeff hdd₀ hff₀)
-        (comp_apply_mapRange_constantCoeff hff₀ hee₀) hf))) :
+      (eq_of_mapRange_constantCoeff _ _
+        (comp_apply_mapRange_constantCoeff d d hdd₀ hdd₀) (by simp) hd)
+      (eq_of_mapRange_constantCoeff _ _
+        (comp_apply_mapRange_constantCoeff e e hee₀ hee₀) (by simp) he)
+      (eq_of_mapRange_constantCoeff _ _ (comp_apply_mapRange_constantCoeff f d hdd₀ hff₀)
+        (comp_apply_mapRange_constantCoeff e f hff₀ hee₀) hf))) :
     Function.Bijective (homologyMap f hd he hf) := by
   rw [← ker_le_range_mappingCone_iff, ← ker_le_range_sumMappingCone_iff]
   rw [← ker_le_range_mappingCone_iff, ← ker_le_range_sumMappingCone_iff] at h
