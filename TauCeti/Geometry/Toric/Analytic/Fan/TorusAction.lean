@@ -52,10 +52,10 @@ theorem analyticAffineChartDiagram_map_smul {τ σ : Φ.cones} (f : τ ⟶ σ)
     (Φ.analyticAffineChartDiagram hΦ).map f (t • x) =
       t • (Φ.analyticAffineChartDiagram hΦ).map f x := by
   rw [analyticAffineChartDiagram_map_apply, analyticAffineChartDiagram_map_apply]
-  have h := faceAffinePointMap_smul Φ.lattice
+  rw [← faceAffinePointMap_def Φ.lattice
+    (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))]
+  exact faceAffinePointMap_smul Φ.lattice
     (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) t x
-  rw [faceAffinePointMap_def] at h
-  exact h
 
 /-- Equal representatives in two affine charts remain equal after torus translation. -/
 private theorem analyticAffineChartι_smul_eq_of_eq {σ τ : Φ.cones}
