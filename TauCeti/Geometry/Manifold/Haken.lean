@@ -14,8 +14,8 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 This file packages the manifold hypotheses used for the Haken condition in dimension three.
 `IsClosedConnectedSurface` records a compact, connected, boundaryless 2-manifold, while
 `IsClosedConnectedThreeManifold` records the analogous hypotheses in dimension three.  The
-relation `IsHakenSurfaceEmbedding` then combines both conditions with Tau Ceti's
-dimension-independent `IsIncompressible` predicate.  The later Haken predicate can use this
+relation `IsClosedIncompressibleSurfaceEmbedding` then combines both conditions with Tau Ceti's
+dimension-independent `IsIncompressible` predicate.  A later Haken predicate can use this
 relation for a chosen surface embedding without repeating either manifold package.
 
 The product-slice witness is the basic example: a continuous retraction onto the first factor
@@ -29,14 +29,15 @@ Chapter II.
 * `TauCeti.IsClosedConnectedSurface`: a compact, connected, Hausdorff, second-countable,
   boundaryless 2-manifold.
 * `TauCeti.IsClosedConnectedThreeManifold`: the analogous 3-manifold predicate.
-* `TauCeti.IsHakenSurfaceEmbedding`: a closed connected surface embedded incompressibly in a closed
-  connected 3-manifold.
+* `TauCeti.IsClosedIncompressibleSurfaceEmbedding`: a closed connected surface embedded
+  incompressibly in a closed connected 3-manifold.
 
 ## Main results
 
-* `TauCeti.isHakenSurfaceEmbedding_iff` exposes the three defining conditions.
-* `TauCeti.isHakenSurfaceEmbedding_of_leftInverse` and
-  `TauCeti.isHakenSurfaceEmbedding_prodMk` provide reusable incompressible-surface witnesses.
+* `TauCeti.isClosedIncompressibleSurfaceEmbedding_iff` exposes the three defining conditions.
+* `TauCeti.isClosedIncompressibleSurfaceEmbedding_of_leftInverse` and
+  `TauCeti.isClosedIncompressibleSurfaceEmbedding_prodMk` provide reusable incompressible-surface
+  witnesses.
 -/
 
 public section
@@ -105,33 +106,35 @@ theorem isClosedConnectedThreeManifold_of_classes
 variable [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
   [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
 
-/-- A **Haken embedding** exhibits a closed connected surface as an incompressible surface in a
-closed connected 3-manifold. Keeping the map as data lets later statements name the particular
-surface rather than hiding it behind an existential. -/
-def IsHakenSurfaceEmbedding (f : C(S, M)) : Prop :=
+/-- A **closed incompressible surface embedding** exhibits a closed connected surface as an
+incompressible surface in a closed connected 3-manifold. Keeping the map as data lets later
+statements name the particular surface rather than hiding it behind an existential. This is not
+the Haken predicate: Haken-ness is a separate property of a 3-manifold asserting the existence of
+an appropriate incompressible surface. -/
+def IsClosedIncompressibleSurfaceEmbedding (f : C(S, M)) : Prop :=
   IsClosedConnectedSurface S ∧ IsClosedConnectedThreeManifold M ∧ IsIncompressible f
 
 /-- The defining closed-surface, closed-ambient, and incompressibility conditions of
-`IsHakenSurfaceEmbedding`. -/
+`IsClosedIncompressibleSurfaceEmbedding`. -/
 @[simp]
-theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
-    IsHakenSurfaceEmbedding f ↔ IsClosedConnectedSurface S ∧
+theorem isClosedIncompressibleSurfaceEmbedding_iff {f : C(S, M)} :
+    IsClosedIncompressibleSurfaceEmbedding f ↔ IsClosedConnectedSurface S ∧
       IsClosedConnectedThreeManifold M ∧ IsIncompressible f :=
   Iff.rfl
 
-/-- A continuous left inverse gives a Haken embedding of a closed surface. -/
-theorem isHakenSurfaceEmbedding_of_leftInverse {f : C(S, M)} {r : C(M, S)}
+/-- A continuous left inverse gives a closed incompressible surface embedding. -/
+theorem isClosedIncompressibleSurfaceEmbedding_of_leftInverse {f : C(S, M)} {r : C(M, S)}
     (hS : IsClosedConnectedSurface S) (hM : IsClosedConnectedThreeManifold M)
     (h : r.comp f = ContinuousMap.id S) :
-    IsHakenSurfaceEmbedding f :=
+    IsClosedIncompressibleSurfaceEmbedding f :=
   ⟨hS, hM, isIncompressible_of_leftInverse h⟩
 
-/-- A product-slice inclusion is Haken whenever its source and ambient product carry the required
-closed manifold structures. -/
-theorem isHakenSurfaceEmbedding_prodMk {Y : Type*} [TopologicalSpace Y]
+/-- A product-slice inclusion is a closed incompressible surface embedding whenever its source and
+ambient product carry the required closed manifold structures. -/
+theorem isClosedIncompressibleSurfaceEmbedding_prodMk {Y : Type*} [TopologicalSpace Y]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) (S × Y)]
     (hS : IsClosedConnectedSurface S) (hM : IsClosedConnectedThreeManifold (S × Y)) (y₀ : Y) :
-    IsHakenSurfaceEmbedding (ContinuousMap.prodMk (ContinuousMap.id S)
+    IsClosedIncompressibleSurfaceEmbedding (ContinuousMap.prodMk (ContinuousMap.id S)
       (ContinuousMap.const S y₀)) :=
   ⟨hS, hM, isIncompressible_prodMk y₀⟩
 
