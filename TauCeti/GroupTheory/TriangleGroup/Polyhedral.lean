@@ -437,8 +437,9 @@ noncomputable def equivTetrahedral : TriangleGroup 2 3 3 ≃* alternatingGroup (
 
 @[simp]
 theorem coe_equivTetrahedral_apply (g : TriangleGroup 2 3 3) :
-    (equivTetrahedral g : Perm (Fin 4)) = tetrahedralRep g :=
-  (rfl)
+    (equivTetrahedral g : Perm (Fin 4)) = tetrahedralRep g := by
+  simp only [equivTetrahedral, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
+    MulEquiv.ofBijective_apply, MonoidHom.coe_rangeRestrict]
 
 /-- The spherical signature `(2, 3, 4)` is the symmetric group `S₄`: the octahedral
 representation is an isomorphism. -/
@@ -451,8 +452,9 @@ noncomputable def equivOctahedral : TriangleGroup 2 3 4 ≃* Perm (Fin 4) :=
 
 @[simp]
 theorem equivOctahedral_apply (g : TriangleGroup 2 3 4) :
-    equivOctahedral g = octahedralRep g :=
-  (rfl)
+    equivOctahedral g = octahedralRep g := by
+  simp only [equivOctahedral, MulEquiv.trans_apply, Subgroup.topEquiv_apply,
+    MulEquiv.subgroupCongr_apply, MulEquiv.ofBijective_apply, MonoidHom.coe_rangeRestrict]
 
 /-- The spherical signature `(2, 3, 5)` is the alternating group `A₅`: the icosahedral
 representation is an isomorphism onto its image. -/
@@ -465,8 +467,9 @@ noncomputable def equivIcosahedral : TriangleGroup 2 3 5 ≃* alternatingGroup (
 
 @[simp]
 theorem coe_equivIcosahedral_apply (g : TriangleGroup 2 3 5) :
-    (equivIcosahedral g : Perm (Fin 5)) = icosahedralRep g :=
-  (rfl)
+    (equivIcosahedral g : Perm (Fin 5)) = icosahedralRep g := by
+  simp only [equivIcosahedral, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
+    MulEquiv.ofBijective_apply, MonoidHom.coe_rangeRestrict]
 
 end TriangleGroup
 
