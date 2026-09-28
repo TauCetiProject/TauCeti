@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.IntegerRing
-public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
+import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 
 /-!
 # Integral generators of finite local-field extensions
