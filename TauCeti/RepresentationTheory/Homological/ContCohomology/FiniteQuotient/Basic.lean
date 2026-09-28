@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.Topology.Algebra.Category.ProfiniteGrp.Limits
 public import TauCeti.GroupTheory.QuotientGroup.Map
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
 /-!
 # The finite-quotient system of a group cohomology tower
@@ -174,6 +175,15 @@ theorem continuousFiniteQuotientMap_comp (hWV : W ≤ V) (hVU : V ≤ U) :
       continuousFiniteQuotientMap G (hWV.trans hVU) := by
   ext q
   exact DFunLike.congr_fun (QuotientGroup.mapOfLE_comp hWV hVU) q
+
+/-- The quotient homomorphism `G → G ⧸ U` factors through every deeper quotient: for `V ≤ U` it is
+the transition map `G ⧸ V → G ⧸ U` after `G → G ⧸ V`. -/
+@[simp]
+theorem continuousFiniteQuotientMap_comp_quotientMk (hVU : V ≤ U) :
+    (continuousFiniteQuotientMap G hVU).comp (ContinuousMonoidHom.quotientMk V.toSubgroup) =
+      ContinuousMonoidHom.quotientMk U.toSubgroup := by
+  ext g
+  simp
 
 end ContCohomology
 
