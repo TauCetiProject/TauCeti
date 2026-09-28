@@ -336,7 +336,7 @@ private noncomputable def stableConflationTriangleIsoRotateLoopBaseChange :
 omit sq in
 /-- Every standard triangle of a conflation is isomorphic to the rotation of the standard
 triangle of another conflation. -/
-theorem exists_stableConflationTriangle_iso_rotate :
+private theorem exists_stableConflationTriangle_iso_rotate :
     letI := hE.stableHasShift
     ∃ (S' : ShortComplex C) (hS' : E.Conflation S'),
       Nonempty (hE.stableConflationTriangle S hS ≅
