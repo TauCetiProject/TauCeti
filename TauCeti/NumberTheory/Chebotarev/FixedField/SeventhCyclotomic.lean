@@ -65,7 +65,7 @@ theorem isArithFrobAt_frobeniusThreeSeven
     IsArithFrobAt (𝓞 ℚ) (frobeniusThreeSeven (L := L)) Q := by
   have hm := seven_not_mem_of_absNorm_three 𝔭 h𝔭
   apply (TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_absNorm 𝔭 hm Q _).2
-  rw [galEquivZMod_frobeniusThreeSeven, h𝔭, Nat.cast_ofNat]
+  simp [h𝔭]
 
 /-- At a prime above three, the prime below it in the quadratic fixed field has residue degree
 two over `ℚ`. -/

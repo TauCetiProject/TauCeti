@@ -46,12 +46,6 @@ theorem autToPow_frobeniusThreeSeven :
     ZMod.unitsMap_self, MonoidHom.id_apply]
   simp only [frobeniusThreeSeven, MulEquiv.apply_symm_apply, Units.val_mk0]
 
-/-- The cyclotomic character of the exponent-three automorphism. -/
-@[simp]
-theorem galEquivZMod_frobeniusThreeSeven :
-    ((Rat.galEquivZMod 7 L (frobeniusThreeSeven (L := L)) : (ZMod 7)ˣ) : ZMod 7) = 3 := by
-  simp only [frobeniusThreeSeven, MulEquiv.apply_symm_apply, Units.val_mk0]
-
 /-- The cyclotomic automorphism with exponent three modulo seven has order six. -/
 @[simp]
 theorem orderOf_frobeniusThreeSeven : orderOf (frobeniusThreeSeven (L := L)) = 6 := by
