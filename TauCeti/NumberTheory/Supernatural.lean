@@ -197,6 +197,10 @@ theorem primePower_apply_of_ne {p q : Nat.Primes} (h : q ≠ p) (n : ℕ∞) :
 theorem primePower_zero (p : Nat.Primes) : primePower p 0 = 1 :=
   Pi.single_zero p
 
+/-- A prime power determines its exponent: `p ^ m = p ^ n` forces `m = n`. -/
+theorem primePower_injective (p : Nat.Primes) : Function.Injective (primePower p) :=
+  Pi.single_injective (M := fun _ : Nat.Primes ↦ ℕ∞) p
+
 /-- A prime power with a sum of exponents is the product of the two prime powers. -/
 @[simp]
 theorem primePower_add (p : Nat.Primes) (m n : ℕ∞) :

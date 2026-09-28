@@ -50,11 +50,6 @@ universe u
 variable {k : Type u} [Field k]
 variable (H : FiniteTypeCommHopfAlgCat.{u, u} k)
 
-/-- The center coordinate algebra modulo its nilradical is reduced. -/
-local instance : IsReduced ((CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj) ⧸
-    nilradical (CommHopfAlgCat.centerCoordinateHopfAlgebra H.obj)) :=
-  (Ideal.isRadical_iff_quotient_reduced _).mp (Ideal.radical_isRadical ⊥)
-
 /-- Assuming that the tensor square of the reduced center coordinate algebra is reduced, a
 finite-type affine group's center is finite when its reduced center is finite. -/
 theorem moduleFinite_centerCoordinate_of_reducedCenter

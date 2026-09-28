@@ -142,6 +142,17 @@ theorem flip_bil (y : Y.V) (x : X.V) : P.flip.bil y x = P.bil x y := (rfl)
 @[simp]
 theorem flip_flip : P.flip.flip = P := (rfl)
 
+/-- **Transport of a coefficient pairing along equalities of coefficient objects**, read on
+carriers: the pairing cast along `X = X'`, `Y = Y'` and `Z = Z'` is the original one conjugated by
+the transports of the carriers. -/
+theorem bil_transport (Q : TopPairing X Y Z) {X' Y' Z' : TopRep.{w} R G} (hX : X = X')
+    (hY : Y = Y') (hZ : Z = Z') (x : X'.V) (y : Y'.V) :
+    (cast (congr (congrArg₂ TopPairing hX hY) hZ) Q).bil x y =
+      eqToHom hZ (Q.bil (eqToHom hX.symm x) (eqToHom hY.symm y)) := by
+  -- With the equalities substituted, all three transports are `eqToHom rfl`, the identity.
+  subst hX hY hZ
+  rfl
+
 end TopPairing
 
 variable {M N P : Type w} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]

@@ -35,7 +35,7 @@ origin, and its radial projection is a homotopy of loops on the sphere. Also `Λ
 A finite family of proper subspaces of `E` cannot cover `E`
 (`Submodule.exists_forall_notMem_of_forall_ne_top`), and the spans of two vectors are proper
 exactly because the rank exceeds two, so the projected loop omits a point of the sphere. Loops
-omitting a point are null-homotopic by `TauCeti.homotopic_refl_of_notMem_range`.
+omitting a point are null-homotopic by `Path.homotopic_refl_of_notMem_range`.
 
 Rank two is genuinely the boundary: the circle is not simply connected.
 
@@ -402,7 +402,7 @@ theorem exists_homotopic_notMem_range (h : 2 < Module.rank ℝ E)
     rintro ⟨u, t⟩
     exact segment_ne_zero_of_norm_sub_lt (hγnorm t) (hLclose t) u
   have hsquare : γ.Homotopic γ' :=
-    homotopic_of_segment_ne_zero γ γ' (nodeInterp N node) hcontL
+    γ.homotopic_of_segment_ne_zero γ' (nodeInterp N node) hcontL
       (fun t => coe_normalizeToSphere_apply (nodeInterp N node) hcontL hLne t) hL0 hL1 hGne
   -- The comparison loop lives in finitely many planes, which cannot cover `E`.
   have hVne : ∀ m : Fin (N + 1),
@@ -437,7 +437,7 @@ theorem simplyConnectedSpace_sphere (h : 2 < Module.rank ℝ E) :
       (isPathConnected_sphere (Cardinal.one_lt_two.trans h) 0 zero_le_one)
   refine simply_connected_iff_loops_nullhomotopic.mpr ⟨hpc, fun x γ => ?_⟩
   obtain ⟨γ', hγγ', p, hp⟩ := exists_homotopic_notMem_range h γ
-  exact hγγ'.trans (homotopic_refl_of_notMem_range γ' hp)
+  exact hγγ'.trans (γ'.homotopic_refl_of_notMem_range hp)
 
 /-- **The `n`-sphere is simply connected for `2 ≤ n`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace {n : ℕ} (hn : 2 ≤ n) :
