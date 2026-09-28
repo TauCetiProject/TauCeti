@@ -45,21 +45,11 @@ theorem sum_rectanglePentagonWeight_eq_sum_pentagonRectangleWeight_iff_overlap
         ∑ D ∈ (G.pentagonRectangleDecompositions C x z).filter
           (fun D => ¬ D.HasDisjointSides), G.pentagonRectangleWeight C R D := by
   classical
-  let lhsDisjoint := ∑ D ∈ (G.rectanglePentagonDecompositions C x z).filter
-    (fun D => D.HasDisjointSides), G.rectanglePentagonWeight C R D
-  let rhsDisjoint := ∑ D ∈ (G.pentagonRectangleDecompositions C x z).filter
-    (fun D => D.HasDisjointSides), G.pentagonRectangleWeight C R D
-  have hdisjoint : lhsDisjoint = rhsDisjoint :=
-    G.sum_rectanglePentagonWeight_disjoint_eq_sum_pentagonRectangleWeight_disjoint C R x z
-  have hlhs := Finset.sum_filter_add_sum_filter_not
-    (G.rectanglePentagonDecompositions C x z) (fun D => D.HasDisjointSides)
-    (fun D => G.rectanglePentagonWeight C R D)
-  have hrhs := Finset.sum_filter_add_sum_filter_not
-    (G.pentagonRectangleDecompositions C x z) (fun D => D.HasDisjointSides)
-    (fun D => G.pentagonRectangleWeight C R D)
-  change lhsDisjoint + _ = _ at hlhs
-  change rhsDisjoint + _ = _ at hrhs
-  rw [← hlhs, ← hrhs, hdisjoint]
+  rw [← Finset.sum_filter_add_sum_filter_not
+      (G.rectanglePentagonDecompositions C x z) (fun D => D.HasDisjointSides),
+    ← Finset.sum_filter_add_sum_filter_not
+      (G.pentagonRectangleDecompositions C x z) (fun D => D.HasDisjointSides),
+    G.sum_rectanglePentagonWeight_disjoint_eq_sum_pentagonRectangleWeight_disjoint C R x z]
   exact add_left_cancel_iff
 
 open Classical in
