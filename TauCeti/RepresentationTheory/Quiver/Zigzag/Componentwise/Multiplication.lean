@@ -139,16 +139,6 @@ theorem zigzagBasisMul_component (C : G.ConnectedComponent)
   all_goals simp [SimpleGraph.Dart.ext_iff, Prod.ext_iff]
 
 omit [Finite V] in
-private theorem component_vertices_ne {C D : G.ConnectedComponent} (h : C ≠ D)
-    (i : C) (j : D) : (i : V) ≠ j := by
-  intro hij
-  apply h
-  calc
-    C = G.connectedComponentMk i.val := i.property.symm
-    _ = G.connectedComponentMk j.val := congrArg (G.connectedComponentMk) hij
-    _ = D := j.property
-
-omit [Finite V] in
 /-- Basis indices from distinct components have zero product. -/
 @[simp]
 theorem zigzagBasisMul_eq_none_of_ne_component {C D : G.ConnectedComponent} (h : C ≠ D)
@@ -156,9 +146,18 @@ theorem zigzagBasisMul_eq_none_of_ne_component {C D : G.ConnectedComponent} (h :
     zigzagBasisMul G (zigzagComponentBasisIndexEquiv G ⟨C, b⟩)
       (zigzagComponentBasisIndexEquiv G ⟨D, c⟩) = none := by
   classical
+  have hne (i : C) (j : D) : (i : V) ≠ j := by
+    intro hij
+    have hi : (i : V) ∈ C.supp :=
+      (SimpleGraph.ConnectedComponent.mem_supp_iff C i.val).2 i.property
+    have hj : (j : V) ∈ D.supp :=
+      (SimpleGraph.ConnectedComponent.mem_supp_iff D j.val).2 j.property
+    rw [hij] at hi
+    exact (Set.disjoint_left.mp
+      (SimpleGraph.pairwise_disjoint_supp_connectedComponent G h)) hi hj
   rcases b with i | d | i <;> rcases c with j | e | j
   all_goals simp [SimpleGraph.Dart.ext_iff, Prod.ext_iff,
-    component_vertices_ne G h, Ne.symm (component_vertices_ne G h _ _)]
+    hne, Ne.symm (hne _ _)]
 
 /-- The complete multiplication table of the public zigzag algebra. Every
 product of vertex, dart and volume basis vectors is either another basis

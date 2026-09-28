@@ -61,8 +61,10 @@ universe u w
 variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 open Classical in
-/-- The index of a product of two vertex--dart--volume basis elements, or
-`none` when the table gives zero. The left factor is traversed second. -/
+/-- The product index for the vertex--dart--volume basis of the public componentwise
+zigzag algebra. `none` denotes a zero product in that algebra. In the nonisolated
+relation quotient, a returned volume index at an isolated vertex still denotes
+the zero junk value. The left factor is traversed second. -/
 noncomputable def zigzagBasisMul : ZigzagBasisIndex G → ZigzagBasisIndex G →
     Option (ZigzagBasisIndex G)
   | .inl i, .inl j => if i = j then some (.inl i) else none
