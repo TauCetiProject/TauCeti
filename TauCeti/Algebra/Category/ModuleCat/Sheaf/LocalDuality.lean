@@ -45,10 +45,12 @@ variable {C : Type u} [SmallCategory C]
 
 variable [HasPullbacks C]
 
+/-- The monoidal structure on sheaves of modules over the restriction of `R` to `X`. -/
 local instance localMonoidalCategory (X : C) : MonoidalCategory
     (_root_.SheafOfModules.{u} ((ringCatSheaf R).over X)) :=
   monoidalCategory (R.over X)
 
+/-- The closed monoidal structure on sheaves of modules over the restriction of `R` to `X`. -/
 local instance localMonoidalClosed (X : C) : MonoidalClosed
     (_root_.SheafOfModules.{u} ((ringCatSheaf R).over X)) :=
   monoidalClosed (R.over X)
