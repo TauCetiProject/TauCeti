@@ -89,8 +89,10 @@ theorem stabilizerOrbitRelQuotientEquivCompactifiedFiber_mk (h : Δ ≤ Γ) (z :
   simp [stabilizerOrbitRelQuotientEquivCompactifiedFiber]
 
 /-- The cardinality of a compactified interior fibre is the number of stabilizer-orbits on
-the subgroup coset space. In particular, this counts elliptic fibres without treating the
-quotient map as a covering at a ramified point. -/
+the subgroup coset space. No discreteness or ramification hypothesis is required. In geometric
+applications satisfying the relevant hypotheses, where `z` is an elliptic fixed point of a
+discrete `Γ`, this counts the ramified fibre without treating the quotient map as a covering
+there. -/
 theorem card_fiber_compactifiedQuotientMap_eq_card_stabilizerOrbitRelQuotient
     (h : Δ ≤ Γ) (z : ℍ) :
     Nat.card {y : Δ.CompactifiedQuotient //
