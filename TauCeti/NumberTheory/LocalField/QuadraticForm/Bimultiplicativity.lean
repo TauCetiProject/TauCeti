@@ -86,6 +86,7 @@ theorem hilbertSymbol_mul_left (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
   simp only [hilbertSymbol_comm _ a, hilbertSymbol_mul_right h2]
 
 /-- The Hilbert symbol is multiplicative on integer powers of its second argument. -/
+@[simp]
 theorem hilbertSymbol_zpow_right (h2 : IsUnit (2 : 𝒪[K]))
     (a b : Kˣ) (n : ℤ) :
     hilbertSymbol a (b ^ n) = hilbertSymbol a b ^ n := by
@@ -96,6 +97,7 @@ theorem hilbertSymbol_zpow_right (h2 : IsUnit (2 : 𝒪[K]))
   exact map_zpow f b n
 
 /-- The Hilbert symbol is multiplicative on integer powers of its first argument. -/
+@[simp]
 theorem hilbertSymbol_zpow_left (h2 : IsUnit (2 : 𝒪[K]))
     (a b : Kˣ) (n : ℤ) :
     hilbertSymbol (a ^ n) b = hilbertSymbol a b ^ n := by

@@ -156,6 +156,7 @@ theorem oddResidueSign_int (u : 𝒪[K]ˣ) :
       (isSquare_units_val_iff.not.mpr hs)).symm
 
 /-- The residue sign is multiplicative on integral units. -/
+@[simp]
 theorem oddResidueSign_mul (u v : 𝒪[K]ˣ) :
     oddResidueSign (u * v) = oddResidueSign u * oddResidueSign v := by
   classical
@@ -169,6 +170,7 @@ theorem oddResidueSign_mul (u v : 𝒪[K]ˣ) :
   simp [oddResidueSign]
 
 /-- The residue sign of an inverse is the inverse sign. -/
+@[simp]
 theorem oddResidueSign_inv (u : 𝒪[K]ˣ) :
     oddResidueSign u⁻¹ = (oddResidueSign u)⁻¹ := by
   have h := oddResidueSign_mul u u⁻¹
@@ -176,6 +178,7 @@ theorem oddResidueSign_inv (u : 𝒪[K]ˣ) :
   exact eq_inv_of_mul_eq_one_right h.symm
 
 /-- The residue sign of an integer power is the corresponding power of the sign. -/
+@[simp]
 theorem oddResidueSign_zpow (u : 𝒪[K]ˣ) (n : ℤ) :
     oddResidueSign (u ^ n) = oddResidueSign u ^ n := by
   let f : 𝒪[K]ˣ →* ℤˣ :=
