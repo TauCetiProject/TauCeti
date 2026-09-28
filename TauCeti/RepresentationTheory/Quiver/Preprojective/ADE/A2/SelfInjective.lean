@@ -116,11 +116,7 @@ theorem preprojectiveA2FrobeniusPairing_basis (i j : Fin 4) :
       (preprojectiveA2Basis k j) =
         if j = preprojectiveA2RightDualIndex i then 1 else 0 := by
   rw [preprojectiveA2FrobeniusPairing_apply, preprojectiveA2Basis_mul]
-  fin_cases i <;> fin_cases j <;>
-    simp only [preprojectiveA2BasisMul, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
-      Fin.isValue, Option.elim_some, Option.elim_none]
-  all_goals simp only [map_zero, preprojectiveA2FrobeniusFunctional_basis]
-  all_goals simp
+  fin_cases i <;> fin_cases j <;> simp
 
 /-- **The `A₂` Frobenius pairing is perfect.** Its Gram matrix is a permutation matrix, so no
 scalar needs to be inverted and a commutative base ring suffices. -/

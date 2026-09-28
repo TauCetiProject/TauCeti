@@ -170,27 +170,17 @@ theorem preprojectiveA2DoubledVertexEquiv_one :
     OrientedQuiver.vertexEquiv_apply]
   rfl
 
-/-- The inverse vertex equivalence sends the underlying doubled vertex zero to zero. This is the
-normal form obtained from `TauCeti.symmetrify_of_obj`. -/
-@[simp]
+/-- The inverse vertex equivalence sends the doubled vertex zero to zero. Not a simp lemma: simp
+rewrites the left side with Mathlib's `Quiver.Symmetrify.of_obj`. -/
 theorem preprojectiveA2DoubledVertexEquiv_symm_zero :
-    preprojectiveA2DoubledVertexEquiv.symm
-      (show Symmetrify preprojectiveA2Quiver from preprojectiveA2VertexZero) = 0 := by
-  have h := congrArg preprojectiveA2DoubledVertexEquiv.symm
-    preprojectiveA2DoubledVertexEquiv_zero
-  rw [preprojectiveA2DoubledVertexEquiv.symm_apply_apply, symmetrify_of_obj] at h
-  exact h.symm
+    preprojectiveA2DoubledVertexEquiv.symm (Symmetrify.of.obj preprojectiveA2VertexZero) = 0 :=
+  (Equiv.symm_apply_eq _).2 preprojectiveA2DoubledVertexEquiv_zero.symm
 
-/-- The inverse vertex equivalence sends the underlying doubled vertex one to one. This is the
-normal form obtained from `TauCeti.symmetrify_of_obj`. -/
-@[simp]
+/-- The inverse vertex equivalence sends the doubled vertex one to one. Not a simp lemma, for the
+same reason as `TauCeti.preprojectiveA2DoubledVertexEquiv_symm_zero`. -/
 theorem preprojectiveA2DoubledVertexEquiv_symm_one :
-    preprojectiveA2DoubledVertexEquiv.symm
-      (show Symmetrify preprojectiveA2Quiver from preprojectiveA2VertexOne) = 1 := by
-  have h := congrArg preprojectiveA2DoubledVertexEquiv.symm
-    preprojectiveA2DoubledVertexEquiv_one
-  rw [preprojectiveA2DoubledVertexEquiv.symm_apply_apply, symmetrify_of_obj] at h
-  exact h.symm
+    preprojectiveA2DoubledVertexEquiv.symm (Symmetrify.of.obj preprojectiveA2VertexOne) = 1 :=
+  (Equiv.symm_apply_eq _).2 preprojectiveA2DoubledVertexEquiv_one.symm
 
 /-- Every vertex of the doubled `A₂` quiver is one of its two named vertices. -/
 theorem preprojectiveA2DoubledVertex_cases (i : Symmetrify preprojectiveA2Quiver) :
@@ -394,7 +384,9 @@ private theorem a2ShortPath_injective : Function.Injective a2ShortPath := by
     (fun x : ShortPath (Symmetrify preprojectiveA2Quiver) 2 =>
       2 * x.1.2.2.length + (preprojectiveA2DoubledVertexEquiv.symm x.1.1).val) h
   fin_cases i <;> fin_cases j <;>
-    simp [a2ShortPath] at hc ⊢
+    simp only [a2ShortPath, preprojectiveA2DoubledVertexEquiv_symm_zero,
+      preprojectiveA2DoubledVertexEquiv_symm_one] at hc <;>
+    simp at hc ⊢
 
 private theorem a2ShortPath_surjective : Function.Surjective a2ShortPath := by
   rintro ⟨⟨i, j, p⟩, hp⟩
@@ -485,7 +477,7 @@ theorem preprojectiveMk_A2_ofPath_eq_zero_of_two_le
 
 /-- The partial multiplication operation on indices of `TauCeti.preprojectiveA2Basis`; `none`
 means that the product is zero. -/
-@[expose] def preprojectiveA2BasisMul : Fin 4 → Fin 4 → Option (Fin 4)
+def preprojectiveA2BasisMul : Fin 4 → Fin 4 → Option (Fin 4)
   | 0, 0 => some 0
   | 0, 3 => some 3
   | 1, 1 => some 1
@@ -494,7 +486,15 @@ means that the product is zero. -/
   | 3, 1 => some 3
   | _, _ => none
 
+/-- The partial multiplication table evaluated on the sixteen pairs of basis indices. -/
+@[simp]
+theorem preprojectiveA2BasisMul_apply (i j : Fin 4) :
+    preprojectiveA2BasisMul i j = ![![some 0, none, none, some 3], ![none, some 1, some 2, none],
+      ![some 2, none, none, none], ![none, some 3, none, none]] i j := by
+  fin_cases i <;> fin_cases j <;> rfl
+
 /-- The multiplication table of `TauCeti.preprojectiveA2Basis`. -/
+@[simp]
 theorem preprojectiveA2Basis_mul (i j : Fin 4) :
     preprojectiveA2Basis k i * preprojectiveA2Basis k j =
       (preprojectiveA2BasisMul i j).elim 0 (preprojectiveA2Basis k) := by
