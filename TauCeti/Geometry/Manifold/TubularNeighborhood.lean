@@ -77,7 +77,7 @@ variable {f : B → N} {U : Set (TotalSpace F E)} {toFun : U → N}
 
 The continuity hypothesis records the vector-bundle topology needed by the
 radial contraction; `hzero` supplies the embedding of the zero section. -/
-theorem zeroSectionData
+theorem isTubularNeighborhood_zeroSection
     (hzero : IsEmbedding (zeroSection F E))
     (hradial : Continuous (fun p : Icc (0 : ℝ) 1 × TotalSpace F E =>
       (⟨p.2.proj, (p.1 : ℝ) • p.2.2⟩ : TotalSpace F E))) :
