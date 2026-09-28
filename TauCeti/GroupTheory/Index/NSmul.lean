@@ -30,6 +30,9 @@ as a `ℤ`-module: `AddSubgroup.index_range_nsmul` gives `n ^ finrank ℤ M`. Th
   is unchanged on passing to a finite-index subgroup", and only the cross-multiplied form is
   asserted: nothing here forces `G[n]` finite or the indices nonzero, and `Nat.card` and
   `AddSubgroup.index` are both `0` on infinite arguments, so neither ratio need be defined.
+  `Subgroup.index_range_powMonoidHom_mul_card_ker` is its multiplicative counterpart, and
+  `Subgroup.index_range_powMonoidHom_eq_card_ker_mul_of_injective` solves the identity when the
+  power map on `U` is injective.
 * `AddEquiv.map_ker_nsmulAddMonoidHom` and `AddEquiv.index_range_nsmulAddMonoidHom`: an additive
   equivalence carries `G[n]` to `H[n]` and preserves the index of `n • G`. These are the kernel
   counterparts of Mathlib's `AddEquiv.map_range_nsmulAddMonoidHom`.
@@ -171,6 +174,39 @@ theorem index_range_nsmul_mul_card_ker (U : AddSubgroup G) [U.FiniteIndex] (n : 
     _ = Nat.card φG.ker * φU.range.index := mul_comm _ _
 
 end AddSubgroup
+
+namespace Subgroup
+
+variable {G : Type*} [CommGroup G]
+
+/-- **The power-map index/kernel ratio is unchanged on passing to a finite-index subgroup.**
+For a subgroup `U` of finite index in a commutative group `G`,
+`(G : Gⁿ) * #U[n] = #G[n] * (U : Uⁿ)`.
+
+This is the multiplicative counterpart of
+`AddSubgroup.index_range_nsmul_mul_card_ker`. The cross-multiplied statement remains valid even
+when a kernel is infinite, in which case its `Nat.card` is `0`. -/
+theorem index_range_powMonoidHom_mul_card_ker (U : Subgroup G) [U.FiniteIndex] (n : ℕ) :
+    (powMonoidHom n : G →* G).range.index *
+        Nat.card (powMonoidHom n : U →* U).ker =
+      Nat.card (powMonoidHom n : G →* G).ker *
+        (powMonoidHom n : U →* U).range.index := by
+  let _ : U.toAddSubgroup.FiniteIndex := finiteIndex_toAddSubgroup_iff.mpr inferInstance
+  exact AddSubgroup.index_range_nsmul_mul_card_ker U.toAddSubgroup n
+
+/-- If the `n`-th power map is injective on a finite-index subgroup `U`, then the index of the
+`n`-th powers in the ambient commutative group is the size of the ambient `n`-torsion subgroup
+times the index of the `n`-th powers in `U`. -/
+theorem index_range_powMonoidHom_eq_card_ker_mul_of_injective (U : Subgroup G) [U.FiniteIndex]
+    (n : ℕ) (hinj : Function.Injective (powMonoidHom n : U →* U)) :
+    (powMonoidHom n : G →* G).range.index =
+      Nat.card (powMonoidHom n : G →* G).ker *
+        (powMonoidHom n : U →* U).range.index := by
+  have h := index_range_powMonoidHom_mul_card_ker U n
+  rw [(MonoidHom.ker_eq_bot_iff _).mpr hinj] at h
+  simpa using h
+
+end Subgroup
 
 namespace AddEquiv
 
