@@ -191,8 +191,12 @@ theorem index_range_powMonoidHom_mul_card_ker (U : Subgroup G) [U.FiniteIndex] (
         Nat.card (powMonoidHom n : U →* U).ker =
       Nat.card (powMonoidHom n : G →* G).ker *
         (powMonoidHom n : U →* U).range.index := by
+  -- Apply the additive identity to `U.toAddSubgroup : AddSubgroup (Additive G)`. The transport is
+  -- definitional by design of the `Additive` type synonym: `nsmulAddMonoidHom n` on `Additive G`
+  -- is `MonoidHom.toAdditive (powMonoidHom n)`, and Mathlib's `MonoidHom.coe_toAdditive_range`,
+  -- `MonoidHom.coe_toAdditive_ker` and `Subgroup.index_toAddSubgroup` all hold by `rfl`.
   let _ : U.toAddSubgroup.FiniteIndex := finiteIndex_toAddSubgroup_iff.mpr inferInstance
-  exact AddSubgroup.index_range_nsmul_mul_card_ker U.toAddSubgroup n
+  exact AddSubgroup.index_range_nsmul_mul_card_ker (G := Additive G) U.toAddSubgroup n
 
 /-- If the `n`-th power map is injective on a finite-index subgroup `U`, then the index of the
 `n`-th powers in the ambient commutative group is the size of the ambient `n`-torsion subgroup
