@@ -37,7 +37,7 @@ different exponent vanish.
 
 * `TauCeti.Place.differentExponent_eq_zero_of_constantCompositum_eq_top`: every different
   exponent of the constant extension vanishes.
-* `TauCeti.Place.isUnramifiedAt_constantCompositum_eq_top`: each corresponding local model is
+* `TauCeti.Place.isUnramifiedAt_of_constantCompositum_eq_top`: each corresponding local model is
   unramified.
 * `TauCeti.Place.ramificationIdx_eq_one_of_constantCompositum_eq_top`: every place has
   ramification index one.
@@ -110,7 +110,7 @@ theorem differentExponent_eq_zero_of_constantCompositum_eq_top
 /-- The local model of a finite separable constant extension is unramified at every place.
 
 As for the different exponent, the ambient instances for `F' / F` are installed from `hcomp`. -/
-theorem isUnramifiedAt_constantCompositum_eq_top
+theorem isUnramifiedAt_of_constantCompositum_eq_top
     [FiniteDimensional k k'] [Algebra.IsSeparable k k']
     (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
     letI := finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
