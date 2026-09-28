@@ -66,11 +66,6 @@ values of `T` at the roots of `f`. -/
 def tschirnhausPolynomial (f T : R[X]) : R[X] :=
   (f.map (C : R →+* R[X])).resultant (C X - T.map C)
 
-/-- Mapping the coefficients commutes with adjoining a variable. -/
-theorem map_mapRingHom_map_C (p : R[X]) (φ : R →+* S) :
-    (p.map (C : R →+* R[X])).map (mapRingHom φ) = (p.map φ).map (C : S →+* S[X]) := by
-  rw [map_map, map_map, mapRingHom_comp_C]
-
 /-- The polynomial `X - T(Y)`, read in `Y`, has degree at most that of `T`. -/
 private theorem natDegree_C_X_sub_map_C_le (T : R[X]) {k : ℕ} (hT : T.natDegree ≤ k) :
     (C X - T.map (C : R →+* R[X])).natDegree ≤ k :=
@@ -90,13 +85,17 @@ transform reads the coefficients of `f` and `T`, and `Polynomial.map` commutes w
 theorem Monic.map_tschirnhausPolynomial (hf : f.Monic) (T : R[X]) (φ : R →+* S) :
     (f.tschirnhausPolynomial T).map φ = (f.map φ).tschirnhausPolynomial (T.map φ) := by
   nontriviality S
+  -- mapping the coefficients commutes with adjoining a variable
+  have hC : ∀ p : R[X], (p.map (C : R →+* R[X])).map (mapRingHom φ) =
+      (p.map φ).map (C : S →+* S[X]) := fun p ↦ by
+    rw [map_map, map_map, mapRingHom_comp_C]
   rw [hf.tschirnhausPolynomial_eq_resultant T le_rfl,
     (hf.map φ).tschirnhausPolynomial_eq_resultant (T.map φ) (natDegree_map_le (f := φ) (p := T)),
     hf.natDegree_map φ]
   have h : (C X - T.map (C : R →+* R[X])).map (mapRingHom φ) =
       C X - (T.map φ).map (C : S →+* S[X]) := by
-    rw [Polynomial.map_sub, map_C, map_mapRingHom_map_C, coe_mapRingHom, map_X]
-  rw [← map_mapRingHom_map_C, ← h, resultant_map_map, coe_mapRingHom]
+    rw [Polynomial.map_sub, map_C, hC, coe_mapRingHom, map_X]
+  rw [← hC, ← h, resultant_map_map, coe_mapRingHom]
 
 /-- **The product formula for the Tschirnhaus transform.** Over a domain in which `f` splits, the
 transform of a monic `f` is the product of `X - T(α)` over the roots `α` of `f`, counted with
