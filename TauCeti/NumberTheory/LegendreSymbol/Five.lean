@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
+import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.IntervalCases
-import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Basic
 
 /-!
 # The Legendre symbol `(5 | p)`
 
-Since `5 ≡ 1 (mod 4)`, the odd prime discriminant `5*` is `5`, so quadratic reciprocity in its
-prime-discriminant form gives `(5 | p) = 1 ↔ (p | 5) = 1` for every odd prime `p`, and the
-nonzero squares modulo `5` are `1` and `4`. Hence `5` is a nonzero square modulo an odd
+Since `5 ≡ 1 (mod 4)`, quadratic reciprocity gives `(5 | p) = (p | 5)` for every odd prime `p`,
+and the nonzero squares modulo `5` are `1` and `4`. Hence `5` is a nonzero square modulo an odd
 prime `p` exactly when `p ≡ ±1 (mod 5)`; at `p = 5` the symbol is `0`.
 
 ## Main results
@@ -52,10 +51,9 @@ theorem legendreSym_five_eq_one_iff {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) :
       ((ZMod.intCast_zmod_eq_zero_iff_dvd 5 5).mpr (by norm_num))]
     norm_num
   have hF : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
-  -- Reciprocity for the prime discriminant `5* = 5`: `(5 | p) = 1 ↔ (p | 5) = 1`.
-  have hrec := Multiquadratic.legendreSym_oddPrimeDiscriminant_eq_one_iff (p := 5) (q := p)
-    (by norm_num) hodd
-  rw [Multiquadratic.oddPrimeDiscriminant_of_mod_four_eq_one (by norm_num), Nat.cast_ofNat] at hrec
+  -- Quadratic reciprocity for `5 ≡ 1 (mod 4)`: `(5 | p) = (p | 5)`.
+  have hrec := legendreSym.quadratic_reciprocity_one_mod_four (p := 5) (q := p) (by norm_num) hodd
+  push_cast at hrec
   have hr0 : p % 5 ≠ 0 := by
     intro h
     rcases (Fact.out : p.Prime).eq_one_or_self_of_dvd 5 (Nat.dvd_of_mod_eq_zero h) with h1 | h1
