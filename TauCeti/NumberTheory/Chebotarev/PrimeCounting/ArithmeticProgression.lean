@@ -132,8 +132,9 @@ theorem frobeniusVonMangoldtCoeff_galEquivZMod_symm_of_coprime (a : (ZMod n)ˣ) 
   split_ifs with ha
   · rw [frobeniusPrimePowerWeight_of_mem
       ((idealPrimePowerOf_mem_frobeniusPrimePowerSet_galEquivZMod_symm_iff F n hn a k).mpr ha),
-      primePowerWeight_def, HeightOneSpectrum.primePowerBase_idealPrimePowerOf,
-      Rat.HeightOneSpectrum.absNorm_asIdeal]
+      primePowerWeight_eq_vonMangoldt_re, IdealArithmeticFunction.vonMangoldt_apply_of_eq_prime_pow
+      (Ideal.prime_of_isPrime 𝔭.ne_bot 𝔭.isPrime) k.succ_pos (𝔭.coe_idealPrimePowerOf k).symm,
+      Complex.ofReal_re, Rat.HeightOneSpectrum.absNorm_asIdeal]
   · exact frobeniusPrimePowerWeight_of_notMem fun hmem ↦ ha
       ((idealPrimePowerOf_mem_frobeniusPrimePowerSet_galEquivZMod_symm_iff F n hn a k).mp hmem)
 

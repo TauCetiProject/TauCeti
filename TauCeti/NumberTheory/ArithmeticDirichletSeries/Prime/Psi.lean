@@ -105,11 +105,6 @@ primes themselves, so its summatory function is Chebyshev's `ψ` rather than `ψ
 noncomputable def primePowerWeight (A : IdealPrimePower K) : ℝ :=
   Real.log (Ideal.absNorm (primePowerBase A).asIdeal)
 
-/-- The standard logarithmic prime-power weight of `𝔭 ^ k` is `log N(𝔭)`. -/
-theorem primePowerWeight_def (A : IdealPrimePower K) :
-    primePowerWeight A = Real.log (Ideal.absNorm (primePowerBase A).asIdeal) :=
-  (rfl)
-
 /-- The standard logarithmic prime-power weight is the real part of the ideal von Mangoldt
 function of Layer 2, restricted to the prime powers. -/
 theorem primePowerWeight_eq_vonMangoldt_re (A : IdealPrimePower K) :
