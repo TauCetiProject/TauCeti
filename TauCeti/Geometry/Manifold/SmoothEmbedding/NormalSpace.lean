@@ -126,6 +126,14 @@ theorem normalClassL_toLinearMap (f : SmoothEmbedding I J n M N) (x : M) (hn : n
   simp only [normalClassL, normalClass, Submodule.toLinearMap_mkQL]
   rfl
 
+/-- The continuous normal-class map agrees pointwise with the linear normal-class map. -/
+@[simp]
+theorem normalClassL_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    (v : TangentSpace J (f x)) :
+    f.normalClassL x hn v = f.normalClass x hn v := by
+  exact congrArg (fun h : TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn => h v)
+    (f.normalClassL_toLinearMap x hn)
+
 /-- A continuous linear map vanishing on tangent vectors descends continuously to normal
 classes. -/
 noncomputable def normalLiftL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
@@ -146,12 +154,11 @@ theorem normalLiftL_comp_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (h
     (g : TangentSpace J (f x) →L[𝕜] V)
     (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) :
     (f.normalLiftL x hn g hg).comp (f.normalClassL x hn) = g := by
-  ext v
-  let hker : f.tangentRange x hn ≤ g.ker := by
-    intro w hw
-    exact (LinearMap.mem_ker).2 (hg w hw)
-  change (f.tangentRange x hn).liftQL g hker ((f.tangentRange x hn).mkQL v) = g v
-  simp [Submodule.mkQL_apply, Submodule.liftQL_apply]
+  apply ContinuousLinearMap.coe_injective
+  rw [ContinuousLinearMap.toLinearMap_comp]
+  simp only [normalLiftL, normalClassL, Submodule.toLinearMap_liftQL,
+    Submodule.toLinearMap_mkQL]
+  exact (f.tangentRange x hn).liftQ_mkQ g.toLinearMap _
 
 /-- Every normal vector has an ambient tangent representative. -/
 theorem normalClass_surjective (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
@@ -205,6 +212,17 @@ theorem normalLiftL_toLinearMap (f : SmoothEmbedding I J n M N) (x : M) (hn : n 
       f.normalLift x hn g.toLinearMap (fun v hv => hg v hv) := by
   simp only [normalLiftL, normalLift, Submodule.toLinearMap_liftQL]
   rfl
+
+/-- The continuous normal lift agrees pointwise with the linear normal lift. -/
+@[simp]
+theorem normalLiftL_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
+    (g : TangentSpace J (f x) →L[𝕜] V)
+    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) (v : f.NormalSpace x hn) :
+    f.normalLiftL x hn g hg v =
+      f.normalLift x hn g.toLinearMap (fun w hw => hg w hw) v := by
+  exact congrArg (fun h : f.NormalSpace x hn →ₗ[𝕜] V => h v)
+    (f.normalLiftL_toLinearMap x hn g hg)
 
 /-- Composing the quotient lift with the normal-class map recovers the original linear map. -/
 @[simp]
