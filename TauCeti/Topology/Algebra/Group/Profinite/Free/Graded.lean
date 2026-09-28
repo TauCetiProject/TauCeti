@@ -75,32 +75,15 @@ universe u
 /-! ### The detecting groups
 
 The lower `p`-series of a finite discrete group is its abstract lower `p`-central series, so the
-computations below are transported from
-`Subgroup.top_pLowerCentralSeries_eq_range_powMonoidHom` and
-`TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot` along a group isomorphism, which
-lets the detecting groups live in any universe. -/
+computations below are transported from `TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot`
+along a group isomorphism, which lets the detecting groups live in any universe. The cyclic
+detecting groups `ℤ/pⁿ` are handled in the same way by
+`MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow` and
+`MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`. -/
 
 section Detecting
 
-variable {p : ℕ}
-
-/-- **The cyclic group `ℤ/pⁿ` has `p`-class at most `n`**: its lower `p`-series consists of the
-subgroups of `p ^ k`-th powers, and the `p ^ n`-th powers are trivial. -/
-theorem top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot (n : ℕ) :
-    (⊤ : Subgroup (Multiplicative (ZMod (p ^ n)))).pLowerCentralSeries p n = ⊥ := by
-  rw [Subgroup.top_pLowerCentralSeries_eq_range_powMonoidHom, MonoidHom.range_eq_bot_iff]
-  refine MonoidHom.ext fun x ↦ ?_
-  rw [powMonoidHom_apply, MonoidHom.one_apply, ← ofAdd_toAdd x, ← ofAdd_nsmul, nsmul_eq_mul,
-    ZMod.natCast_self, zero_mul, ofAdd_zero]
-
-variable {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H]
-
-/-- A discrete group isomorphic to `ℤ/pⁿ` has `p`-class at most `n`. -/
-theorem _root_.MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow {n : ℕ}
-    (e : H ≃* Multiplicative (ZMod (p ^ n))) : pLowerCentralSeries p H n = ⊥ := by
-  rw [← Subgroup.map_eq_bot_iff_of_injective (f := e.toMonoidHom) _ e.injective,
-    e.map_pLowerCentralSeries_eq_of_discreteTopology, pLowerCentralSeries_eq_of_discreteTopology,
-    top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot]
+variable {p : ℕ} {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H]
 
 /-- A discrete group isomorphic to the Heisenberg group over `ZMod p` has `p`-class at most two. -/
 theorem _root_.MulEquiv.pLowerCentralSeries_two_eq_bot_heisenbergGroup
@@ -123,24 +106,6 @@ theorem _root_.MulEquiv.gradedPow_gradedMkZero_eq_zero_heisenbergGroup
   exact one_mem _
 
 variable [Fact p.Prime]
-
-/-- The `p ^ n`-th power of the generator of `ℤ/pⁿ⁺¹` is nontrivial. -/
-theorem ofAdd_one_pow_pow_ne_one (n : ℕ) :
-    (Multiplicative.ofAdd (1 : ZMod (p ^ (n + 1)))) ^ p ^ n ≠ 1 := by
-  have hp : p.Prime := Fact.out
-  rw [← ofAdd_nsmul, ne_eq, ofAdd_eq_one, nsmul_one, ZMod.natCast_eq_zero_iff,
-    Nat.pow_dvd_pow_iff_le_right hp.one_lt]
-  omega
-
-/-- In a discrete group isomorphic to `ℤ/pⁿ⁺¹`, the iterated `p`-power class `π^n` of the
-generator is nonzero in `gr_n`. -/
-theorem _root_.MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow {n : ℕ}
-    (e : H ≃* Multiplicative (ZMod (p ^ (n + 1)))) :
-    gradedPowIter p H n (gradedMkZero p H (e.symm (Multiplicative.ofAdd 1))) ≠ 0 := by
-  rw [gradedPowIter_gradedMkZero, ne_eq, gradedMk_eq_zero_iff, Subgroup.coe_mk,
-    e.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow, Subgroup.mem_bot, ← map_pow,
-    e.symm.map_eq_one_iff]
-  exact ofAdd_one_pow_pow_ne_one n
 
 /-- In a discrete group isomorphic to the Heisenberg group over `𝔽_p`, the bracket of the classes
 of the two standard generators `(1, 0, 0)` and `(0, 1, 0)` is nonzero. -/

@@ -63,6 +63,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   `π [x, y] = [π x, y] = [x, π y]` away from degree zero.
 * `TauCeti.gradedMap_gradedBracket`, `TauCeti.gradedMap_gradedPow`: naturality of the bracket and
   of `π`.
+* `MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`: in a discrete group
+  isomorphic to `ℤ/pⁿ⁺¹`, `π^n` of the class of the generator is nonzero.
 
 ## References
 
@@ -934,6 +936,17 @@ theorem gradedMap_gradedPowIter {H : Type u} [Group H] [TopologicalSpace H] [IsT
   induction j with
   | zero => rw [gradedPowIter_zero, gradedPowIter_zero]
   | succ j ih => rw [gradedPowIter_succ, gradedPowIter_succ, gradedMap_gradedPow, ih]
+
+variable [Fact p.Prime] {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H] in
+/-- In a discrete group isomorphic to `ℤ/pⁿ⁺¹`, the iterated `p`-power class `π^n` of the
+generator is nonzero in `gr_n`. -/
+theorem _root_.MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow {n : ℕ}
+    (e : H ≃* Multiplicative (ZMod (p ^ (n + 1)))) :
+    gradedPowIter p H n (gradedMkZero p H (e.symm (Multiplicative.ofAdd 1))) ≠ 0 := by
+  rw [gradedPowIter_gradedMkZero, ne_eq, gradedMk_eq_zero_iff, Subgroup.coe_mk,
+    e.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow, Subgroup.mem_bot, ← map_pow,
+    e.symm.map_eq_one_iff]
+  exact ofAdd_one_pow_pow_ne_one n
 
 end PowIter
 
