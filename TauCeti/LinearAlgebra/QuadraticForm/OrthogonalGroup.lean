@@ -529,6 +529,8 @@ section Coordinate
 variable {R : Type u} [CommSemiring R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
 
+-- Mathlib's `Matrix.GeneralLinearGroup.toLin` requires `CommRing`; this coordinate equivalence
+-- also works over a commutative semiring, as needed by the full orthogonal group API below.
 private def coordinateToLin :
     Matrix.GeneralLinearGroup n R ≃* LinearMap.GeneralLinearGroup R (n → R) :=
   Units.mapEquiv Matrix.toLinAlgEquiv'.toMulEquiv
