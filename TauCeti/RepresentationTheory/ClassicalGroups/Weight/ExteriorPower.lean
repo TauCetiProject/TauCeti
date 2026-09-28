@@ -157,7 +157,7 @@ theorem basis_mem_weightSpace_extPowerRep (s : Set.powersetCard (Fin n) d) :
 basis consists of weight vectors. -/
 theorem iSup_weightSpace_extPowerRep_eq_top :
     ⨆ l : Fin n → ℤ, weightSpace (extPowerRep k n d) l = ⊤ :=
-  iSup_weightSpace_eq_top_of_basis ((Pi.basisFun k (Fin n)).exteriorPower d)
+  ((Pi.basisFun k (Fin n)).exteriorPower d).iSup_weightSpace_eq_top
     basis_mem_weightSpace_extPowerRep
 
 end CommRing
@@ -167,9 +167,9 @@ end CommRing
 Here the coefficients must separate weights, in the sense that `l ↦ weightChar k l` is injective;
 `TauCeti.weightChar_injective` supplies that over an infinite field. -/
 
-section Domain
+section IsCancelMulZero
 
-variable {k : Type u} [CommRing k] [IsDomain k] {n d : ℕ}
+variable {k : Type u} [CommRing k] [IsCancelMulZero k] {n d : ℕ}
 
 /-- The indicator of the index of a basis vector of `⋀ᵈ(kⁿ)` determines that index. -/
 theorem weightOfSubset_coe_injective :
@@ -185,7 +185,7 @@ theorem weightSpace_extPowerRep_eq_span
     (s : Set.powersetCard (Fin n) d) :
     weightSpace (extPowerRep k n d) (weightOfSubset (s : Finset (Fin n))) =
       Submodule.span k {(Pi.basisFun k (Fin n)).exteriorPower d s} :=
-  weightSpace_eq_span_of_basis ((Pi.basisFun k (Fin n)).exteriorPower d)
+  ((Pi.basisFun k (Fin n)).exteriorPower d).weightSpace_eq_span
     basis_mem_weightSpace_extPowerRep hchar weightOfSubset_coe_injective s
 
 /-- **Only the indicators are weights** of an exterior power of the standard representation. -/
@@ -193,19 +193,19 @@ theorem weightSpace_extPowerRep_eq_bot
     (hchar : Function.Injective (weightChar k (κ := Fin n))) {l : Fin n → ℤ}
     (hl : ∀ s : Set.powersetCard (Fin n) d, l ≠ weightOfSubset (s : Finset (Fin n))) :
     weightSpace (extPowerRep k n d) l = ⊥ :=
-  weightSpace_eq_bot_of_basis ((Pi.basisFun k (Fin n)).exteriorPower d)
+  ((Pi.basisFun k (Fin n)).exteriorPower d).weightSpace_eq_bot
     basis_mem_weightSpace_extPowerRep hchar hl
 
 /-- **The weights of `⋀ᵈ(kⁿ)` are exactly the indicators of the `d`-element subsets of
 `Fin n`**, of which there are `n.choose d`. -/
-theorem weightSpace_extPowerRep_ne_bot_iff
+theorem weightSpace_extPowerRep_ne_bot_iff [Nontrivial k]
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace (extPowerRep k n d) l ≠ ⊥ ↔
       ∃ s : Set.powersetCard (Fin n) d, l = weightOfSubset (s : Finset (Fin n)) :=
-  weightSpace_ne_bot_iff_of_basis ((Pi.basisFun k (Fin n)).exteriorPower d)
+  ((Pi.basisFun k (Fin n)).exteriorPower d).weightSpace_ne_bot_iff
     basis_mem_weightSpace_extPowerRep hchar l
 
-end Domain
+end IsCancelMulZero
 
 section Field
 
@@ -216,7 +216,7 @@ spaces.** -/
 theorem isInternal_weightSpace_extPowerRep
     (hchar : Function.Injective (weightChar k (κ := Fin n))) :
     DirectSum.IsInternal fun l : Fin n → ℤ => weightSpace (extPowerRep k n d) l :=
-  isInternal_weightSpace_of_basis ((Pi.basisFun k (Fin n)).exteriorPower d)
+  ((Pi.basisFun k (Fin n)).exteriorPower d).isInternal_weightSpace
     basis_mem_weightSpace_extPowerRep hchar
 
 /-- **Every weight of `⋀ᵈ(kⁿ)` has multiplicity one.** -/
@@ -225,7 +225,7 @@ theorem finrank_weightSpace_extPowerRep
     (s : Set.powersetCard (Fin n) d) :
     Module.finrank k (weightSpace (extPowerRep k n d)
       (weightOfSubset (s : Finset (Fin n)))) = 1 :=
-  finrank_weightSpace_eq_one_of_basis ((Pi.basisFun k (Fin n)).exteriorPower d)
+  ((Pi.basisFun k (Fin n)).exteriorPower d).finrank_weightSpace_eq_one
     basis_mem_weightSpace_extPowerRep hchar weightOfSubset_coe_injective s
 
 end Field

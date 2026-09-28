@@ -122,7 +122,7 @@ theorem weightOfMultiset_nonneg {n : ℕ} (s : Multiset (Fin n)) (i : Fin n) :
 /-- **A multiset is recovered from its weight**, a multiset over `Fin n` being determined by its
 multiplicities. -/
 theorem weightOfMultiset_injective {n : ℕ} : Function.Injective (weightOfMultiset (n := n)) :=
-  fun _ _ h => Multiset.ext.mpr fun i => Nat.cast_injective (congrFun h i)
+  fun _ _ h => Multiset.count_injective (funext fun i => Nat.cast_injective (congrFun h i))
 
 /-- The weight of a multiset has total degree its cardinality: the weights of `Symᵈ(kⁿ)` all lie
 in degree `d`. -/
@@ -197,7 +197,7 @@ theorem basis_mem_weightSpace_symPowerRep (s : Sym (Fin n) d) :
 symmetric-power basis consists of weight vectors. -/
 theorem iSup_weightSpace_symPowerRep_eq_top :
     ⨆ l : Fin n → ℤ, weightSpace (symPowerRep k n d) l = ⊤ :=
-  iSup_weightSpace_eq_top_of_basis ((Pi.basisFun k (Fin n)).symmetricPower d)
+  ((Pi.basisFun k (Fin n)).symmetricPower d).iSup_weightSpace_eq_top
     basis_mem_weightSpace_symPowerRep
 
 end CommRing
@@ -207,9 +207,9 @@ end CommRing
 Here the coefficients must separate weights, in the sense that `l ↦ weightChar k l` is injective;
 `TauCeti.weightChar_injective` supplies that over an infinite field. -/
 
-section Domain
+section IsCancelMulZero
 
-variable {k : Type} [CommRing k] [IsDomain k] {n d : ℕ}
+variable {k : Type} [CommRing k] [IsCancelMulZero k] {n d : ℕ}
 
 /-- The multiplicity vector of the index of a basis vector of `Symᵈ(kⁿ)` determines that index. -/
 theorem weightOfMultiset_coe_injective :
@@ -224,7 +224,7 @@ theorem weightSpace_symPowerRep_eq_span
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (s : Sym (Fin n) d) :
     weightSpace (symPowerRep k n d) (weightOfMultiset (s : Multiset (Fin n))) =
       Submodule.span k {(Pi.basisFun k (Fin n)).symmetricPower d s} :=
-  weightSpace_eq_span_of_basis ((Pi.basisFun k (Fin n)).symmetricPower d)
+  ((Pi.basisFun k (Fin n)).symmetricPower d).weightSpace_eq_span
     basis_mem_weightSpace_symPowerRep hchar weightOfMultiset_coe_injective s
 
 /-- **Only the multiplicity vectors are weights** of a symmetric power of the standard
@@ -233,29 +233,29 @@ theorem weightSpace_symPowerRep_eq_bot
     (hchar : Function.Injective (weightChar k (κ := Fin n))) {l : Fin n → ℤ}
     (hl : ∀ s : Sym (Fin n) d, l ≠ weightOfMultiset (s : Multiset (Fin n))) :
     weightSpace (symPowerRep k n d) l = ⊥ :=
-  weightSpace_eq_bot_of_basis ((Pi.basisFun k (Fin n)).symmetricPower d)
+  ((Pi.basisFun k (Fin n)).symmetricPower d).weightSpace_eq_bot
     basis_mem_weightSpace_symPowerRep hchar hl
 
 /-- **The weights of `Symᵈ(kⁿ)` are exactly the multiplicity vectors of the unordered `d`-tuples
 over `Fin n`.** -/
-theorem weightSpace_symPowerRep_ne_bot_iff
+theorem weightSpace_symPowerRep_ne_bot_iff [Nontrivial k]
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace (symPowerRep k n d) l ≠ ⊥ ↔
       ∃ s : Sym (Fin n) d, l = weightOfMultiset (s : Multiset (Fin n)) :=
-  weightSpace_ne_bot_iff_of_basis ((Pi.basisFun k (Fin n)).symmetricPower d)
+  ((Pi.basisFun k (Fin n)).symmetricPower d).weightSpace_ne_bot_iff
     basis_mem_weightSpace_symPowerRep hchar l
 
 /-- **The weights of `Symᵈ(kⁿ)` are the exponent vectors of the degree-`d` monomials in `n`
 variables**: the nonnegative integer vectors of total degree `d`.  This is the weight-space
 refinement of `TauCeti.char_symPowerRep_diagonal`, which sums those monomials into the complete
 homogeneous symmetric polynomial. -/
-theorem weightSpace_symPowerRep_ne_bot_iff_nonneg_sum_eq
+theorem weightSpace_symPowerRep_ne_bot_iff_nonneg_sum_eq [Nontrivial k]
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace (symPowerRep k n d) l ≠ ⊥ ↔ (∀ i, 0 ≤ l i) ∧ ∑ i, l i = d := by
   rw [weightSpace_symPowerRep_ne_bot_iff hchar l, ← exists_sym_weightOfMultiset_eq_iff l]
   exact ⟨fun ⟨s, hs⟩ => ⟨s, hs.symm⟩, fun ⟨s, hs⟩ => ⟨s, hs.symm⟩⟩
 
-end Domain
+end IsCancelMulZero
 
 section Field
 
@@ -266,7 +266,7 @@ spaces.** -/
 theorem isInternal_weightSpace_symPowerRep
     (hchar : Function.Injective (weightChar k (κ := Fin n))) :
     DirectSum.IsInternal fun l : Fin n → ℤ => weightSpace (symPowerRep k n d) l :=
-  isInternal_weightSpace_of_basis ((Pi.basisFun k (Fin n)).symmetricPower d)
+  ((Pi.basisFun k (Fin n)).symmetricPower d).isInternal_weightSpace
     basis_mem_weightSpace_symPowerRep hchar
 
 /-- **Every weight of `Symᵈ(kⁿ)` has multiplicity one.** -/
@@ -274,7 +274,7 @@ theorem finrank_weightSpace_symPowerRep
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (s : Sym (Fin n) d) :
     Module.finrank k (weightSpace (symPowerRep k n d)
       (weightOfMultiset (s : Multiset (Fin n)))) = 1 :=
-  finrank_weightSpace_eq_one_of_basis ((Pi.basisFun k (Fin n)).symmetricPower d)
+  ((Pi.basisFun k (Fin n)).symmetricPower d).finrank_weightSpace_eq_one
     basis_mem_weightSpace_symPowerRep hchar weightOfMultiset_coe_injective s
 
 end Field
