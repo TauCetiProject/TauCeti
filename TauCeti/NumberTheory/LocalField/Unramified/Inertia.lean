@@ -50,6 +50,9 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
 * `TauCeti.isClosed_inertiaSubgroup`, `TauCeti.inertiaSubgroup_normal`: `I_K` is closed and normal.
 * `TauCeti.restrictMaximalUnramifiedHom_surjective`, `TauCeti.ker_restrictMaximalUnramifiedHom`:
   restriction `G_K → Gal(K^{ur}/K)` is surjective with kernel `I_K`.
+* `TauCeti.unramifiedDegree_surjective`, `TauCeti.continuous_unramifiedDegree`,
+  `TauCeti.ker_unramifiedDegree`: the quotient map `G_K → G_K ⧸ I_K` is a continuous surjection
+  with kernel `I_K`.
 * `TauCeti.inertiaSubgroup_le_fixingSubgroup_iff`: a finite separable subextension is unramified
   exactly when `I_K` fixes it.
 * `TauCeti.isArithFrobeniusLift_iff`, `TauCeti.exists_isArithFrobeniusLift`,
@@ -165,6 +168,25 @@ abbrev unramifiedQuotient := Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K
 /-- The canonical quotient map from the absolute Galois group to its unramified quotient. -/
 def unramifiedDegree : Field.absoluteGaloisGroup K →* unramifiedQuotient K :=
   QuotientGroup.mk' (inertiaSubgroup K)
+
+/-- The unramified degree map `G_K → G_K ⧸ I_K` is surjective. -/
+theorem unramifiedDegree_surjective : Function.Surjective (unramifiedDegree K) :=
+  QuotientGroup.mk'_surjective _
+
+/-- The unramified degree map `G_K → G_K ⧸ I_K` is continuous. -/
+theorem continuous_unramifiedDegree : Continuous (unramifiedDegree K) :=
+  continuous_quot_mk
+
+/-- The kernel of the unramified degree map is the inertia subgroup. -/
+theorem ker_unramifiedDegree : (unramifiedDegree K).ker = inertiaSubgroup K :=
+  QuotientGroup.ker_mk' _
+
+variable {K} in
+/-- The unramified degree of `σ` is trivial exactly when `σ` lies in the inertia subgroup. -/
+@[simp]
+theorem unramifiedDegree_eq_one_iff {σ : Field.absoluteGaloisGroup K} :
+    unramifiedDegree K σ = 1 ↔ σ ∈ inertiaSubgroup K :=
+  QuotientGroup.eq_one_iff σ
 
 /-- **The unramified quotient** of the absolute Galois group: restriction to the maximal unramified
 extension induces an isomorphism of topological groups `G_K ⧸ I_K ≃ₜ* Gal(K^{ur}/K)`. -/
