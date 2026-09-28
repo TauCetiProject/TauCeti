@@ -276,6 +276,7 @@ theorem gradedPowIter_mem_basisModificationTail {ρ : gradedPiece p (freeProP p 
       basisModificationTail p X ρ j :=
   subset_span ⟨⟨i, hi⟩, rfl⟩
 
+@[simp]
 theorem basisModificationTail_le_iff {ρ : gradedPiece p (freeProP p X) 1} {j : ℕ}
     {W : Submodule (ZMod p) (gradedPiece p (freeProP p X) j)} :
     basisModificationTail p X ρ j ≤ W ↔ ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0 →
