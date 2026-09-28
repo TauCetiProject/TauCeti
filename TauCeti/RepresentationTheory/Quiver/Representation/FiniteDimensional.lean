@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
+public import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
+public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
-public import TauCeti.RepresentationTheory.Quiver.Representation.OfModule
+public import Mathlib.LinearAlgebra.DirectSum.Finite
 
 /-!
 # Finite-dimensional quiver representations
@@ -16,8 +18,8 @@ public import TauCeti.RepresentationTheory.Quiver.Representation.OfModule
 A representation of a quiver is **pointwise finite-dimensional** when the vector space it puts at
 every vertex is finite-dimensional. This file defines that property, `TauCeti.IsFinDim`, proves
 that it transports along an isomorphism, equips its full subcategory with an exact structure,
-and shows that a path algebra module finite-dimensional over the base field gives such a
-representation.
+proves essential smallness for a finite vertex set, and shows that a path algebra module
+finite-dimensional over the base field gives such a representation.
 
 ## Main definitions
 
@@ -26,6 +28,7 @@ representation.
 ## Main results
 
 * `TauCeti.IsFinDim.of_iso`: pointwise finite-dimensionality transports along an isomorphism.
+* The full subcategory of `IsFinDim` representations is essentially small for finite `Q`.
 * `TauCeti.isFinDim_quiverRepFunctor_obj`: finite-dimensionality passes from a module to its
   associated representation.
 
@@ -140,6 +143,32 @@ theorem pointwiseFiniteDimensionalQuiverRepresentationsExactStructure_conflation
 end ExactStructure
 
 variable (k Q) [Finite Q]
+
+private theorem finite_asModule_of_isFinDim [DecidableEq Q]
+    (M : QuiverRep.{u, v, w, t} k Q) (hM : IsFinDim k Q M) :
+    Module.Finite (pathAlgebra k Q) (QuiverRep.asModule k Q M) := by
+  let h (i : Q) : Module.Finite k (QuiverRep.vertexSpace k Q M i) :=
+    hM ((Paths.of Q).obj i)
+  let hsum : Module.Finite k (DirectSum Q (QuiverRep.vertexSpace k Q M)) := inferInstance
+  let hmodule : Module.Finite k (QuiverRep.asModule k Q M) :=
+    Module.Finite.equiv (QuiverRep.asModuleEquiv k Q M).symm
+  exact Module.Finite.of_restrictScalars_finite k _ _
+
+/-- Pointwise finite-dimensional representations of a finite quiver form an essentially small
+category, via their finitely generated modules over the path algebra. -/
+instance : EssentiallySmall.{max (max u v) w}
+    (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) := by
+  classical
+  apply essentiallySmall_of_fully_faithful
+    ((ModuleCat.isFG (pathAlgebra k Q)).lift
+      ((ObjectProperty.ι (IsFinDim k Q)) ⋙ (quiverRepEquivalence k Q).functor) (fun M => by
+        let hmodule : Module.Finite (pathAlgebra k Q) (QuiverRep.asModule k Q M.1) :=
+          finite_asModule_of_isFinDim k Q M.1 M.property
+        let hshrink : Module.Finite (pathAlgebra k Q)
+            (QuiverRep.asModuleShrink k Q M.1) :=
+          Module.Finite.equiv (QuiverRep.asModuleShrinkEquiv k Q M.1).symm
+        exact Module.Finite.equiv
+          ((quiverRepEquivalenceFunctorObjShrinkIso k Q M.1).toLinearEquiv.symm)))
 
 /-- A path algebra module finite-dimensional over the base field gives a representation with
 finite-dimensional vertex spaces. -/
