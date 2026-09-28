@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Basic
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
 # The Banach space of global Hölder functions
@@ -27,6 +28,9 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace`: bounded continuous globally `α`-Hölder functions.
 * `TauCeti.HolderSpace.instNormedAddCommGroup`: the supremum-plus-Hölder normed group structure.
 * `TauCeti.HolderSpace.instCompleteSpace`: completeness when the codomain is complete.
+* `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
+  `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
+  evaluation, and inclusion, with operator-norm bounds.
 
 ## References
 
@@ -251,6 +255,25 @@ theorem norm_toBoundedContinuousFunctionCLM_le_one :
     ‖toBoundedContinuousFunctionCLM (α := α) (X := X) (Y := Y)‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
+/-- Evaluation at a point as a continuous linear map on the Hölder space. -/
+def evalCLM (x : X) : HolderSpace α X Y →L[ℝ] Y :=
+  (BoundedContinuousFunction.evalCLM ℝ x).comp toBoundedContinuousFunctionCLM
+
+/-- Evaluation factors through the inclusion into bounded continuous functions. -/
+theorem evalCLM_def (x : X) : evalCLM (α := α) (Y := Y) x =
+    (BoundedContinuousFunction.evalCLM ℝ x).comp toBoundedContinuousFunctionCLM := (rfl)
+
+@[simp]
+theorem evalCLM_apply (x : X) (f : HolderSpace α X Y) : evalCLM x f = f x := by
+  simp [evalCLM_def]
+
+/-- Evaluation has operator norm at most one. -/
+theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+  intro f
+  simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
+    f.norm_toBoundedContinuousFunction_le
+
 private theorem holderWith_sub_of_tendsto_of_norm_sub_le {u : ℕ → HolderSpace α X Y}
     {F : X →ᵇ Y} (hF : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction) atTop (𝓝 F))
     (N : ℕ) (C : ℝ≥0) (hbound : ∀ n ≥ N, ‖u n - u N‖ ≤ C) :
@@ -408,6 +431,47 @@ def constL : Y →L[ℝ] HolderSpace α X Y :=
 
 @[simp]
 theorem constL_apply (c : Y) : constL (α := α) (X := X) c = const c := (rfl)
+
+/-- The constant map has operator norm at most one, including on an empty domain. -/
+theorem norm_constL_le_one : ‖constL (α := α) (X := X) (Y := Y)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- On a nonempty domain with nontrivial values, the constant map has operator norm one. -/
+@[simp]
+theorem norm_constL [Nonempty X] [Nontrivial Y] :
+    ‖constL (α := α) (X := X) (Y := Y)‖ = 1 := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
+  refine le_antisymm norm_constL_le_one ?_
+  have h := (constL (α := α) (X := X)).le_opNorm y
+  simpa only [constL_apply, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+
+/-- On a nonempty domain with nontrivial values, the inclusion has operator norm one. -/
+@[simp]
+theorem norm_toBoundedContinuousFunctionCLM [Nonempty X] [Nontrivial Y] :
+    ‖toBoundedContinuousFunctionCLM (α := α) (X := X) (Y := Y)‖ = 1 := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
+  refine le_antisymm norm_toBoundedContinuousFunctionCLM_le_one ?_
+  have h := (toBoundedContinuousFunctionCLM (α := α) (X := X)).le_opNorm (const y)
+  simpa only [toBoundedContinuousFunctionCLM_apply, toBoundedContinuousFunction_const,
+    BoundedContinuousFunction.norm_const_eq, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+
+/-- With nontrivial values, evaluation has operator norm one. -/
+@[simp]
+theorem norm_evalCLM [Nontrivial Y] (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ = 1 := by
+  let : Nonempty X := ⟨x⟩
+  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
+  refine le_antisymm (norm_evalCLM_le_one x) ?_
+  have h := (evalCLM (α := α) x).le_opNorm (const y)
+  simpa only [evalCLM_apply, const_apply, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+
+@[simp]
+theorem evalCLM_comp_constL (x : X) :
+    (evalCLM (α := α) (Y := Y) x).comp constL = ContinuousLinearMap.id ℝ Y := by
+  ext y
+  simp
 
 end HolderSpace
 

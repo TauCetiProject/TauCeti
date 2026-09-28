@@ -173,21 +173,22 @@ def constA : A →A[ℝ] HolderSpace α X A where
 @[simp]
 theorem constA_apply (a : A) : constA (α := α) (X := X) a = const a := (rfl)
 
+@[simp]
+theorem toContinuousLinearMap_constA :
+    (constA (α := α) (X := X) (A := A)).toContinuousLinearMap = constL := by
+  ext a x
+  simp
+
 /-- The constant map has operator norm at most one. -/
 theorem norm_constA_le_one :
     ‖(constA (α := α) (X := X) (A := A)).toContinuousLinearMap‖ ≤ 1 := by
-  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-  intro a
-  simpa using norm_const_le (α := α) (X := X) a
+  simpa only [toContinuousLinearMap_constA] using
+    norm_constL_le_one (α := α) (X := X) (Y := A)
 
 /-- On a nonempty domain with nontrivial values, the constant map has operator norm one. -/
-@[simp]
 theorem norm_constA [Nonempty X] [Nontrivial A] :
     ‖(constA (α := α) (X := X) (A := A)).toContinuousLinearMap‖ = 1 := by
-  refine le_antisymm norm_constA_le_one ?_
-  have h := (constA (α := α) (X := X) (A := A)).toContinuousLinearMap.le_opNorm (1 : A)
-  simpa only [ContinuousAlgHom.coe_toContinuousLinearMap, constA_apply, norm_const,
-    le_mul_iff_one_le_left (norm_pos_iff.mpr one_ne_zero)] using h
+  simp
 
 /-- The continuous algebra homomorphism forgetting the Hölder seminorm. -/
 def toBoundedContinuousFunctionA : HolderSpace α X A →A[ℝ] (X →ᵇ A) where
@@ -203,24 +204,23 @@ def toBoundedContinuousFunctionA : HolderSpace α X A →A[ℝ] (X →ᵇ A) whe
 theorem toBoundedContinuousFunctionA_apply (f : HolderSpace α X A) :
     toBoundedContinuousFunctionA f = f.toBoundedContinuousFunction := (rfl)
 
+@[simp]
+theorem toContinuousLinearMap_toBoundedContinuousFunctionA :
+    (toBoundedContinuousFunctionA (α := α) (X := X) (A := A)).toContinuousLinearMap =
+      toBoundedContinuousFunctionCLM := by
+  ext f x
+  simp
+
 /-- The inclusion into bounded continuous functions has operator norm at most one. -/
 theorem norm_toBoundedContinuousFunctionA_le_one :
     ‖(toBoundedContinuousFunctionA (α := α) (X := X) (A := A)).toContinuousLinearMap‖ ≤ 1 := by
-  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-  intro f
-  simpa using f.norm_toBoundedContinuousFunction_le
+  simpa only [toContinuousLinearMap_toBoundedContinuousFunctionA] using
+    norm_toBoundedContinuousFunctionCLM_le_one (α := α) (X := X) (Y := A)
 
 /-- On a nonempty domain with nontrivial values, the inclusion has operator norm one. -/
-@[simp]
 theorem norm_toBoundedContinuousFunctionA [Nonempty X] [Nontrivial A] :
     ‖(toBoundedContinuousFunctionA (α := α) (X := X) (A := A)).toContinuousLinearMap‖ = 1 := by
-  refine le_antisymm norm_toBoundedContinuousFunctionA_le_one ?_
-  have h :=
-    (toBoundedContinuousFunctionA (α := α) (X := X) (A := A)).toContinuousLinearMap.le_opNorm
-      (const 1)
-  simpa only [ContinuousAlgHom.coe_toContinuousLinearMap, toBoundedContinuousFunctionA_apply,
-    toBoundedContinuousFunction_const, BoundedContinuousFunction.norm_const_eq, norm_const,
-    le_mul_iff_one_le_left (norm_pos_iff.mpr one_ne_zero)] using h
+  simp
 
 /-- Evaluation at a point as a continuous algebra homomorphism. -/
 def evalA (x : X) : HolderSpace α X A →A[ℝ] A where
@@ -230,29 +230,26 @@ def evalA (x : X) : HolderSpace α X A →A[ℝ] A where
   map_add' f g := add_apply f g x
   map_mul' f g := mul_apply f g x
   commutes' c := algebraMap_apply c x
-  cont := ((BoundedContinuousFunction.evalCLM ℝ x).continuous.comp
-    toBoundedContinuousFunctionCLM.continuous).congr fun f ↦ by simp
+  cont := (evalCLM x).continuous.congr (evalCLM_apply x)
 
 @[simp]
 theorem evalA_apply (x : X) (f : HolderSpace α X A) : evalA x f = f x := (rfl)
 
+@[simp]
+theorem toContinuousLinearMap_evalA (x : X) :
+    (evalA (α := α) (A := A) x).toContinuousLinearMap = evalCLM x := by
+  ext f
+  simp
+
 /-- Evaluation has operator norm at most one. -/
 theorem norm_evalA_le_one (x : X) :
     ‖(evalA (α := α) (A := A) x).toContinuousLinearMap‖ ≤ 1 := by
-  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-  intro f
-  simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
-    f.norm_toBoundedContinuousFunction_le
+  simpa only [toContinuousLinearMap_evalA] using norm_evalCLM_le_one (α := α) (Y := A) x
 
 /-- With nontrivial values, evaluation has operator norm one. -/
-@[simp]
 theorem norm_evalA [Nontrivial A] (x : X) :
     ‖(evalA (α := α) (A := A) x).toContinuousLinearMap‖ = 1 := by
-  let : Nonempty X := ⟨x⟩
-  refine le_antisymm (norm_evalA_le_one x) ?_
-  have h := (evalA (α := α) (A := A) x).toContinuousLinearMap.le_opNorm (const 1)
-  simpa only [ContinuousAlgHom.coe_toContinuousLinearMap, evalA_apply, const_apply, norm_const,
-    le_mul_iff_one_le_left (norm_pos_iff.mpr one_ne_zero)] using h
+  simp
 
 @[simp]
 theorem evalA_comp_constA (x : X) :
