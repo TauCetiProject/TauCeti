@@ -91,11 +91,6 @@ theorem basepointChangeHomeomorph_eq_of_homotopic {γ δ : Path x y}
     Quotient.sound h
   rw [hq]
 
-/-- The inverse basepoint change also commutes with projection. -/
-theorem proj_basepointChangeHomeomorph_symm (γ : Path x y) (e : UniversalCover x) :
-    proj ((basepointChangeHomeomorph γ).symm e) = proj e := by
-  rw [← proj_basepointChangeHomeomorph γ, Homeomorph.apply_symm_apply]
-
 /-- Reversing the path reverses the basepoint-change homeomorphism. -/
 @[simp]
 theorem basepointChangeHomeomorph_symm (γ : Path x y) :

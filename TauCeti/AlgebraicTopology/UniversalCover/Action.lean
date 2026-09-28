@@ -106,9 +106,7 @@ instance : ContinuousConstSMul (FundamentalGroup X x₀) (UniversalCover x₀) w
     have h : (fun e : UniversalCover x₀ => g • e) =
         (fun e => mk e.proj ((Path.Homotopic.Quotient.mk γ).trans e.path)) := by
       funext ⟨z, q⟩
-      change mk z (g⁻¹.toPath.trans q) =
-        mk z ((Path.Homotopic.Quotient.mk γ).trans q)
-      rw [← hγ']
+      rw [smul_mk, ← hγ']
     rw [h]
     exact continuous_prepend γ
 
