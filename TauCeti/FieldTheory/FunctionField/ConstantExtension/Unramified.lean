@@ -18,12 +18,13 @@ Let `k' / k` be finite and separable and suppose that `F'` is the compositum `F 
 
 These are the local inputs to the comparison of the divisor theories of `F / k` and `F' / k'`.
 Vanishing different exponents say that the different divisor of `F' / F` is zero, and
-`e(P' | P) = 1` says that no place of `F` ramifies in `F'`, so a place of `F` is the sum of the
-places of `F'` above it with no multiplicities, leaving the residue degrees as the only local
-data to track.  The genus, divisor-degree and Riemann–Roch comparisons of Stichtenoth,
-Section III.6 consume these local facts, but do not follow from them alone: they also need the
-constant field of `F'`, the comparison of degrees normalised over `k` with those normalised over
-`k'`, and base change for the Riemann–Roch spaces `L(D)`, none of which is proved here.
+`e(P' | P) = 1` says that no place of `F` ramifies in `F'`, so the conorm of the point divisor of
+a place of `F` is the sum of the point divisors of the places of `F'` above it with no
+multiplicities, leaving the residue degrees as the only local data to track.  The genus,
+divisor-degree and Riemann–Roch comparisons of Stichtenoth, Section III.6 consume these local
+facts, but do not follow from them alone: they also need the constant field of `F'`, the
+comparison of degrees normalised over `k` with those normalised over `k'`, and base change for
+the Riemann–Roch spaces `L(D)`, none of which is proved here.
 
 Separability is inherited by scalar extension, which is
 `TauCeti.isSeparable_of_constantCompositum_eq_top`. For unramifiedness, choose a primitive element
