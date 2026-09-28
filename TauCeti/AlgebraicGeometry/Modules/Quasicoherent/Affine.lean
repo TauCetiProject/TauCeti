@@ -29,7 +29,7 @@ namespace AlgebraicGeometry
 universe u
 
 /-- Quasi-coherent modules on an affine scheme form an abelian category. -/
-noncomputable instance (R : CommRingCat.{u}) :
+noncomputable instance instAbelianAffineQuasicoherent (R : CommRingCat.{u}) :
     Abelian (SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).FullSubcategory := by
   letI : Limits.HasFiniteProducts
       (SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).FullSubcategory :=
