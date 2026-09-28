@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Brauer.Generator
+public import TauCeti.Combinatorics.Brauer.Compose
 
 /-!
 # The propagating number of a Brauer diagram
@@ -42,36 +42,28 @@ divides the identity diagram exactly when it is a permutation diagram
   is `k` exactly for the permutation diagrams, and
   `TauCeti.BrauerDiagram.propagatingNumber_eq_zero_iff`: it is `0` exactly for the diagrams built
   out of caps and cups alone.
-* `TauCeti.BrauerDiagram.propagatingNumber_capCup`: a cap-cup diagram propagates `k - 2` strands,
-  so the invariant is not constant.
 * `TauCeti.BrauerDiagram.propagatingNumber_composeDiagram_le_left` and
   `TauCeti.BrauerDiagram.propagatingNumber_composeDiagram_le_right`: **stacking cannot raise the
   propagating number.**
-* `TauCeti.BrauerDiagram.propagatingNumber_composeDiagram_le_of_le_left` and
-  `TauCeti.BrauerDiagram.propagatingNumber_composeDiagram_le_of_le_right`: the diagrams of
-  propagating number at most `t` absorb stacking on either side.
 * `TauCeti.BrauerDiagram.composeDiagram_eq_permToBrauer_iff` and
   `TauCeti.BrauerDiagram.exists_composeDiagram_right_eq_permToBrauer_one_iff`: **the diagrams
   dividing a permutation diagram are exactly the permutation diagrams.**
 
 ## Implementation notes
 
-The propagating number is *defined* as the number of bottom endpoints of through strands and
-*proved* equal to the number of top endpoints
-(`TauCeti.BrauerDiagram.propagatingNumber_eq_card_topThrough`); it is a genuine invariant of the
-diagram rather than an abbreviation for one of the two counts, and the two composition bounds are
-proved one from each description. Stacking is left as `TauCeti.composeDiagram` rather than being
-packaged as a multiplication: the loop-weighted multiplication of the Brauer algebra, not the bare
-stacking, is the operation the roadmap asks to be made into an algebra.
+The propagating number is defined as the number of bottom endpoints of the through strands, that
+is as the cardinality of `TauCeti.BrauerDiagram.bottomThrough`, and
+`TauCeti.BrauerDiagram.propagatingNumber_eq_card_topThrough` proves it equal to the number of top
+endpoints.
+
+Stacking is left as `TauCeti.composeDiagram` rather than being packaged as a multiplication: the
+multiplication of the Brauer algebra weights the stacking by the number of loops closed up in the
+middle, which the bounds below do not need.
 
 ## References
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, the diagram-API build items ("the edge-type predicates `isThrough`/`isCap`/`isCup`", "the
-  permutation-diagram inclusion `permToBrauer` (the `k!` no-arcs matchings)", "the composition
-  `composeDiagram D₁ D₂`") and the cell theory of `B_k(δ)` named in its semisimplicity item.
 -/
 
 public section
@@ -89,8 +81,7 @@ def propagatingNumber (D : BrauerDiagram k) : ℕ := D.bottomThrough.card
 variable (D : BrauerDiagram k)
 
 /-- The propagating number counts the bottom endpoints of the through strands. -/
-theorem propagatingNumber_eq_card_bottomThrough :
-    D.propagatingNumber = D.bottomThrough.card := (rfl)
+theorem propagatingNumber_def : D.propagatingNumber = D.bottomThrough.card := (rfl)
 
 /-- The propagating number counts the top endpoints of the through strands just as well: following
 an arc through matches the two sets of endpoints. -/
@@ -101,8 +92,7 @@ theorem propagatingNumber_eq_card_topThrough : D.propagatingNumber = D.topThroug
 number of bottom points. -/
 theorem propagatingNumber_add_card_bottomCap :
     D.propagatingNumber + D.bottomCap.card = k := by
-  rw [propagatingNumber_eq_card_bottomThrough, bottomCap_eq_compl,
-    Finset.card_add_card_compl, Fintype.card_fin]
+  rw [propagatingNumber_def, bottomCap_eq_compl, Finset.card_add_card_compl, Fintype.card_fin]
 
 /-- A diagram on `k` strands has at most `k` through strands. -/
 theorem propagatingNumber_le : D.propagatingNumber ≤ k := by
@@ -121,8 +111,7 @@ theorem even_sub_propagatingNumber : Even (k - D.propagatingNumber) := by
 @[simp]
 theorem propagatingNumber_relabel (σ τ : Equiv.Perm (Fin k)) :
     (D.relabel σ τ).propagatingNumber = D.propagatingNumber := by
-  rw [propagatingNumber_eq_card_bottomThrough, propagatingNumber_eq_card_bottomThrough,
-    card_bottomThrough_relabel]
+  rw [propagatingNumber_def, propagatingNumber_def, card_bottomThrough_relabel]
 
 /-- **A diagram has full propagating number exactly when all its arcs go through.** -/
 theorem propagatingNumber_eq_iff_forall_isThrough :
@@ -157,22 +146,13 @@ theorem propagatingNumber_eq_zero_iff : D.propagatingNumber = 0 ↔ ∀ x, ¬D.I
     have htop : D.topThrough = ∅ := by
       rw [← Finset.card_eq_zero, ← D.propagatingNumber_eq_card_topThrough, h]
     have hbot : D.bottomThrough = ∅ := by
-      rw [← Finset.card_eq_zero, ← D.propagatingNumber_eq_card_bottomThrough, h]
+      rw [← Finset.card_eq_zero, ← D.propagatingNumber_def, h]
     rcases x with i | j
     · exact fun hx => (Finset.eq_empty_iff_forall_notMem.mp hbot i) ((mem_bottomThrough _).mpr hx)
     · exact fun hx => (Finset.eq_empty_iff_forall_notMem.mp htop j) ((mem_topThrough _).mpr hx)
   · intro h
-    rw [propagatingNumber_eq_card_bottomThrough, Finset.card_eq_zero,
-      Finset.eq_empty_iff_forall_notMem]
+    rw [propagatingNumber_def, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
     exact fun i hi => h _ ((mem_bottomThrough _).mp hi)
-
-/-- **A cap-cup diagram loses exactly the two strands it bends**, so its propagating number is
-`k - 2`. -/
-theorem propagatingNumber_capCup {a b : Fin k} (hab : a ≠ b) :
-    (capCup a b).propagatingNumber = k - 2 := by
-  have hsum := (capCup a b).propagatingNumber_add_card_bottomCap
-  rw [bottomCap_capCup hab, Finset.card_pair hab] at hsum
-  omega
 
 /-! ### Stacking cannot raise the propagating number -/
 
@@ -190,40 +170,6 @@ stacking cannot raise the propagating number. -/
 theorem propagatingNumber_composeDiagram_le_right :
     (composeDiagram D₁ D₂).propagatingNumber ≤ D₂.propagatingNumber :=
   Finset.card_le_card (bottomThrough_composeDiagram_subset D₁ D₂)
-
-/-- The propagating number of a composite is at most that of either factor. -/
-theorem propagatingNumber_composeDiagram_le_min :
-    (composeDiagram D₁ D₂).propagatingNumber ≤
-      min D₁.propagatingNumber D₂.propagatingNumber :=
-  le_min (propagatingNumber_composeDiagram_le_left D₁ D₂)
-    (propagatingNumber_composeDiagram_le_right D₁ D₂)
-
-/-- **The diagrams of propagating number at most `t` absorb stacking from below.** -/
-theorem propagatingNumber_composeDiagram_le_of_le_left {t : ℕ} (h : D₁.propagatingNumber ≤ t) :
-    (composeDiagram D₁ D₂).propagatingNumber ≤ t :=
-  (propagatingNumber_composeDiagram_le_left D₁ D₂).trans h
-
-/-- **The diagrams of propagating number at most `t` absorb stacking from above.** -/
-theorem propagatingNumber_composeDiagram_le_of_le_right {t : ℕ} (h : D₂.propagatingNumber ≤ t) :
-    (composeDiagram D₁ D₂).propagatingNumber ≤ t :=
-  (propagatingNumber_composeDiagram_le_right D₁ D₂).trans h
-
-/-- Stacking a permutation diagram on top only relabels the top boundary, so it leaves the
-propagating number alone.
-
-This and its companion below are not `simp` lemmas: `simp` already rewrites the stacking to a
-relabelling by `TauCeti.composeDiagram_permToBrauer_left` and then discards the relabelling by
-`TauCeti.BrauerDiagram.propagatingNumber_relabel`, so tagging them would leave their left-hand
-sides out of simp-normal form. -/
-theorem propagatingNumber_composeDiagram_permToBrauer_left (σ : Equiv.Perm (Fin k)) :
-    (composeDiagram (permToBrauer σ) D).propagatingNumber = D.propagatingNumber := by
-  rw [composeDiagram_permToBrauer_left, propagatingNumber_relabel]
-
-/-- Stacking a permutation diagram underneath only relabels the bottom boundary, so it leaves the
-propagating number alone. -/
-theorem propagatingNumber_composeDiagram_permToBrauer_right (τ : Equiv.Perm (Fin k)) :
-    (composeDiagram D (permToBrauer τ)).propagatingNumber = D.propagatingNumber := by
-  rw [composeDiagram_permToBrauer_right, propagatingNumber_relabel]
 
 /-! ### The diagrams dividing a permutation diagram -/
 
@@ -280,11 +226,8 @@ theorem exists_composeDiagram_left_eq_permToBrauer_one_iff :
   rintro ⟨σ, rfl⟩
   exact ⟨permToBrauer σ⁻¹, by rw [composeDiagram_permToBrauer, inv_mul_cancel]⟩
 
--- On two strands the cap-cup diagram propagates nothing, while the identity propagates both
--- strands; in particular the two bounds above are attained.
-example : (capCup (0 : Fin 2) 1).propagatingNumber = 0 := by
-  rw [propagatingNumber_capCup (by decide)]
-
+-- On two strands the identity diagram propagates both strands, so the bound
+-- `propagatingNumber_le` is attained.
 example : (permToBrauer (1 : Equiv.Perm (Fin 2))).propagatingNumber = 2 :=
   propagatingNumber_permToBrauer 1
 
