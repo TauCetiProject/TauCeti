@@ -24,6 +24,8 @@ quadratic field-norm computation).
 generator the `θ`-coefficient is nonzero, so any two generators differ by `θ' = b + aθ` with
 `a ≠ 0` and a statement proved for one transfers to every other.
 `TauCeti.linearIndependent_one_of_notMem_range_algebraMap` is the linear-algebra step behind them.
+`TauCeti.quadraticExtensionBasis` makes `(1, x)` a basis for any non-scalar `x` in a
+degree-two algebra over a field, with evaluation lemmas for its two basis vectors.
 
 None asks for a field on `L`: each theorem needs only a semiring, with the ring structure required
 by linear independence obtained locally through `Algebra.semiringToRing`. Non-scalar existence is
@@ -35,7 +37,8 @@ algebras such as `K × K` and `K[X]/(X²)`.
 
 These are used by the extension quadratic twist in
 `TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist.lean` and by the quadratic field-norm
-computation in `TauCeti/NumberTheory/NumberField/Quadratic/Norm.lean`.
+computation in `TauCeti/NumberTheory/NumberField/Quadratic/Norm.lean`. The shared basis also
+supplies explicit coordinates for quadratic-extension trace transfer.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/LinearAlgebra/Dimension/IsQuadraticExtension.lean` at commit
