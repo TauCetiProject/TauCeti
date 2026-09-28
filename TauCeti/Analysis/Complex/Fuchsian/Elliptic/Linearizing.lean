@@ -5,45 +5,67 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Group
+public import Mathlib.Analysis.Complex.OpenMapping
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Basic
-public import TauCeti.Analysis.Complex.UnitDisc.Basic
 
 /-!
-# Linearizing coordinates at a point of finite stabilizer
+# Local linearizing coordinates at a point of finite stabilizer
 
 Let `Γ ≤ PSL(2, ℝ)` and let `z` be a point of the upper half-plane whose stabilizer has finite
-order `m`. A **linearizing coordinate** at `z` is a biholomorphism of the upper half-plane onto
-the open unit disc which carries `z` to the centre of the disc and the stabilizer of `z` to the
-rotation action of the `m`-th roots of unity, `m = Nat.card (stabilizer Γ z)`. In such a
-coordinate the local quotient by the stabilizer of `z` is the power map `u ↦ u ^ m`.
+order `m`. A **local linearizing coordinate** at `z` is a biholomorphic coordinate on the
+invariant hyperbolic disc of radius `ε` about `z` which sends `z` to the centre and in which the
+stabilizer of `z` acts by rotations: it is a biholomorphic reparametrization `ψ` of the
+Euclidean disc of radius `tanh (ε / 2)`, the image of the invariant disc in the disc coordinate
+centred at `z`, fixing `0` and intertwining the rotation action of the `m`-th roots of unity with
+the stabilizer action (`Subgroup.LinearizingCoordinate`).
 
-The disc coordinate `UpperHalfPlane.discCoordinate` centred at `z` is such a coordinate, and so is
-each of its rotations by a unit complex number. The biholomorphic disc coordinates fixing the
-origin are exactly the rotations, so *every* linearizing coordinate is the disc coordinate composed
-with a rotation (`Subgroup.LinearizingCoordinate.exists_rotatedDiscCoordinate`). The local
-quotient data a linearizing coordinate carries — the `m`-th power of the coordinate — is therefore
-determined up to a scalar of modulus one: it is the elliptic chart of
-`Subgroup.stabilizerBallQuotientChart` up to such a scalar, it has the same modulus as the `m`-th
-power of the disc coordinate, and its level sets are exactly the orbits of the stabilizer of `z`,
-so it descends to the coarse orbit quotient. The rotation by which a stabilizer element acts is
-likewise independent of the linearizing coordinate
-(`Subgroup.LinearizingCoordinate.smul_eq_rotation`).
+A local linearizing coordinate is genuinely *local*: its image is its own open set
+`Subgroup.LinearizingCoordinate.image`, which is not required to be the whole unit disc, and
+the equivariant biholomorphic reparametrizations of a disc are not all rotations. In particular
+`w ↦ w (1 + a w ^ m)` is such a reparametrization for small `a`, and the transition between two
+local linearizing coordinates is in general a non-trivial automorphism of the quotient.
+
+What is independent of the choice of the local linearizing coordinate is the **local quotient
+coordinate** `Subgroup.LinearizingCoordinate.quotientCoordinate`, the `m`-th power of the
+coordinate. It is constant on the orbits of the stabilizer
+(`Subgroup.LinearizingCoordinate.quotientCoordinate_smul`), its level sets are exactly those
+orbits (`Subgroup.LinearizingCoordinate.quotientCoordinate_eq_iff`), so it is a coordinate on
+the quotient of the invariant disc by the stabilizer of `z`; and the quotient coordinates of two
+local linearizing coordinates are related by a map that is holomorphic with holomorphic inverse
+between the open sets of quotient-coordinate values — a biholomorphic transition
+(`Subgroup.LinearizingCoordinate.exists_quotientCoordinate_trans`) — obtained by descending the
+change of coordinate through `u ↦ u ^ m` with `TauCeti.differentiableOn_descendPow`. Since the
+rotation by which an element of the stabilizer acts is `Subgroup.stabilizerRotation`, the same
+rotation appears in every local linearizing coordinate
+(`Subgroup.LinearizingCoordinate.coordinate_smul`).
+
+The two coordinates available by construction are the disc coordinate centred at `z` and its
+rotation by a root of unity (`Subgroup.LinearizingCoordinate.discCoordinate`,
+`Subgroup.LinearizingCoordinate.rotation`); for the disc coordinate the quotient coordinate is
+`discCoordinate z τ ^ m`, the coordinate of `Subgroup.stabilizerBallQuotientHomeomorph` and
+`Subgroup.stabilizerBallQuotientChart`, and a rotation leaves it unchanged
+(`Subgroup.LinearizingCoordinate.quotientCoordinate_rotation`). Independence from the choice of
+the invariant disc is `Subgroup.stabilizerBallQuotientChart_trans_eq_id`.
 
 ## Main declarations
 
-* `Subgroup.LinearizingCoordinate`: a biholomorphism of the upper half-plane onto the disc
-  linearizing the stabilizer of `z`.
-* `Subgroup.linearizingCoordinateDiscCoordinate` and `Subgroup.rotationLinearizingCoordinate`:
-  the disc coordinate, and its rotations by unit complex numbers.
-* `Subgroup.LinearizingCoordinate.exists_rotatedDiscCoordinate`: every linearizing coordinate is a
-  rotation of the disc coordinate.
-* `Subgroup.LinearizingCoordinate.quotientCoordinate`: the local quotient coordinate, with
-  `…_eq_smul_discCoordinate`, `…_eq_smul_stabilizerBallQuotientChart`, `…_norm`, `…_smul` and
-  `…_eq_iff`.
-* `Subgroup.LinearizingCoordinate.smul_eq_iff` and
-  `Subgroup.LinearizingCoordinate.smul_eq_rotation`: the rotation attached to a stabilizer
-  element does not depend on the linearizing coordinate.
+* `Subgroup.LinearizingCoordinate`: a local biholomorphic coordinate linearizing the stabilizer
+  of `z` on the invariant disc of radius `ε`.
+* `Subgroup.LinearizingCoordinate.coordinate`, `…_smul`, `…_injective`: the coordinate of a point
+  of the invariant disc and the action of the stabilizer on it.
+* `Subgroup.LinearizingCoordinate.image`, `…_image_isOpen`, `…_mem_image_iff`: the open image of
+  the reparametrization, the set of coordinate values.
+* `Subgroup.LinearizingCoordinate.transFun`, `…_transFun_transFun` and
+  `Subgroup.LinearizingCoordinate.differentiableOn_transFun`: the biholomorphic change of local
+  linearizing coordinate between two local linearizing coordinates.
+* `Subgroup.LinearizingCoordinate.quotientCoordinate` with `…_smul` and `…_eq_iff`, and
+  `Subgroup.LinearizingCoordinate.quotientImage` with `…_isOpen` and `…_mem_quotientImage_iff`:
+  the local quotient coordinate, its invariance, its level sets, and the open set of its values.
+* `Subgroup.LinearizingCoordinate.exists_quotientCoordinate_trans`: the biholomorphic
+  transition between the quotient coordinates of two local linearizing coordinates.
+* `Subgroup.LinearizingCoordinate.discCoordinate` and `…_rotation`: the two reparametrizations
+  available by construction, with `…_quotientCoordinate` and `…_quotientCoordinate_rotation`
+  computing their quotient coordinates.
 
 ## References
 
@@ -53,286 +75,600 @@ likewise independent of the linearizing coordinate
 
 public noncomputable section
 
-open Filter Matrix.ProjectiveSpecialLinearGroup Metric MulAction Set Topology UpperHalfPlane
+open Filter Metric MulAction Set Topology UpperHalfPlane
 
-open scoped Complex.UnitDisc ComplexConjugate MatrixGroups
+open scoped ComplexConjugate MatrixGroups
 
 namespace Subgroup
 
-variable {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} [Finite (stabilizer Γ z)]
+variable {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} {ε : ℝ} [Finite (stabilizer Γ z)]
 
-/-- **The inverse of the disc coordinate centred at `z` sends the centre of the disc to `z`.** -/
-private theorem discCoordinateHomeomorph_symm_zero (z : ℍ) :
-    (discCoordinateHomeomorph z).symm 0 = z := by
-  refine UpperHalfPlane.ext ?_
-  rw [coe_discCoordinateHomeomorph_symm_apply]
-  norm_num
+/-- **A local linearizing coordinate** at `z` on the invariant hyperbolic disc of radius `ε`: a
+biholomorphic reparametrization `toFun` of the Euclidean disc of radius `Real.tanh (ε / 2)`, the
+image of the invariant disc in the disc coordinate centred at `z`, which fixes `0` and
+intertwines the rotation action of the `Nat.card (stabilizer Γ z)`-th roots of unity with the
+stabilizer action. The coordinate of a point `τ` of the invariant disc is then
+`Subgroup.LinearizingCoordinate.coordinate ψ τ = toFun (discCoordinate z τ)`, a biholomorphic
+coordinate in which the stabilizer acts by its rotation
+`Subgroup.stabilizerRotation`, so the quotient by the stabilizer is the power map `u ↦ u ^ m`,
+`m = Nat.card (stabilizer Γ z)`.
 
-/-- The rotation of the open unit disc by a unit complex number, as a homeomorphism of the
-disc. -/
-private noncomputable def circleRotation (u : Circle) : 𝔻 ≃ₜ 𝔻 where
-  toFun w := u • w
-  invFun w := u⁻¹ • w
-  left_inv w := by
-    ext
-    simp
-  right_inv w := by
-    ext
-    simp
-  continuous_toFun := TauCeti.continuous_circle_smul_unitDisc u
-  continuous_invFun := TauCeti.continuous_circle_smul_unitDisc u⁻¹
-
-/-- The disc coordinate centred at `z`, rotated by the unit complex number `u`. -/
-private noncomputable def rotatedDiscCoordinate (u : Circle) (z : ℍ) : ℍ ≃ₜ 𝔻 :=
-  (discCoordinateHomeomorph z).trans (circleRotation u)
-
-/-- The disc coordinate centred at `z` sends `z` to the centre of the disc. -/
-private theorem discCoordinateHomeomorph_map_zero (z : ℍ) :
-    discCoordinateHomeomorph z z = 0 := by
-  ext
-  rw [coe_discCoordinateHomeomorph_apply, discCoordinate_self, Complex.UnitDisc.coe_zero]
-
-/-- The change of disc coordinate of a rotated disc coordinate is the rotation by `u` of the
-disc. -/
-private theorem rotatedDiscCoordinate_changeOfDiscCoordinate (u : Circle) (z : ℍ) :
-    ((Homeomorph.trans (discCoordinateHomeomorph z).symm
-      (rotatedDiscCoordinate u z)).toEquiv) = (MulAction.toPerm u : Equiv.Perm 𝔻) := by
-  refine Equiv.ext fun w => ?_
-  change Homeomorph.trans (discCoordinateHomeomorph z) (circleRotation u)
-    ((discCoordinateHomeomorph z).symm w) = (MulAction.toPerm u) w
-  rw [Homeomorph.trans_apply, Homeomorph.apply_symm_apply, circleRotation]
-  rfl
-
-/-- The change of disc coordinate of the disc coordinate is the identity. -/
-private theorem discCoordinate_changeOfDiscCoordinate (z : ℍ) :
-    ((Homeomorph.trans (discCoordinateHomeomorph z).symm
-      (discCoordinateHomeomorph z)).toEquiv) = (Equiv.refl 𝔻 : Equiv.Perm 𝔻) := by
-  refine Equiv.ext fun w => ?_
-  change discCoordinateHomeomorph z ((discCoordinateHomeomorph z).symm w) = w
-  rw [Homeomorph.apply_symm_apply]
-
-/-- A rotated disc coordinate is the rotation by `u` of the disc coordinate. -/
-private theorem rotatedDiscCoordinate_apply (u : Circle) (z τ : ℍ) :
-    (rotatedDiscCoordinate u z τ : 𝔻) = u • ((discCoordinateHomeomorph z) τ) := by rfl
-
-/-- A rotated disc coordinate sends the centre of the disc to the centre of the disc. -/
-private theorem rotatedDiscCoordinate_map_zero (u : Circle) (z : ℍ) :
-    rotatedDiscCoordinate u z z = 0 := by
-  refine Complex.UnitDisc.coe_injective ?_
-  have happly : (rotatedDiscCoordinate u z z : 𝔻) = u • ((discCoordinateHomeomorph z) z) := by rfl
-  rw [happly, Complex.UnitDisc.coe_circle_smul, coe_discCoordinateHomeomorph_apply,
-    discCoordinate_self, Complex.UnitDisc.coe_zero, mul_zero]
-
-/-- A **linearizing coordinate** at `z`: a homeomorphism of the upper half-plane onto the open
-unit disc which carries `z` to the centre of the disc and the stabilizer of `z` to the rotation
-action of the `Nat.card (stabilizer Γ z)`-th roots of unity, and whose change of disc coordinate
-from the disc coordinate is a biholomorphic disc coordinate. In such a coordinate the local
-quotient by the stabilizer of `z` is the power map `u ↦ u ^ Nat.card (stabilizer Γ z)`.
-
-Biholomorphy of the change of disc coordinate is a field, phrased as a membership in
-`TauCeti.unitDiscAut` — the automorphism group of the disc, whose membership criterion
-`TauCeti.mem_unitDiscAut` is the one available outside the file of the definition. Two
-coordinates of this kind are available: the disc coordinate itself, whose change of disc
-coordinate is the identity, and its rotations, whose change of disc coordinate is the
-corresponding rotation of the disc. -/
-structure LinearizingCoordinate (Γ : Subgroup PSL(2, ℝ)) (z : ℍ)
+The image `image` of the reparametrization is only required to be open, not to be the whole
+Euclidean disc: local linearizing coordinates are not all rotations of the disc coordinate, the
+equivariant biholomorphic reparametrizations of a disc being an infinite-dimensional family.
+Biholomorphy is phrased through the two ambient functions `toFun` and `invFun` and their
+holomorphy on the disc and on the image, so that the change of coordinate between two local
+linearizing coordinates is seen to be holomorphic without any bookkeeping on subtypes; the
+holomorphy of the inverse is not implied by the holomorphy of the reparametrization. -/
+structure LinearizingCoordinate (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (ε : ℝ)
     [Finite (stabilizer Γ z)] where
-  /-- the coordinate, a homeomorphism of the upper half-plane onto the open unit disc -/
-  toEquiv : ℍ ≃ₜ 𝔻
-  /-- the coordinate sends the fixed point to the centre of the disc -/
-  map_zero : toEquiv z = 0
-  /-- the stabilizer of `z` acts in the coordinate by its derivative at `z` -/
-  smul : ∀ q : stabilizer Γ z, ∀ τ : ℍ,
-    (toEquiv (q • τ) : ℂ) = stabilizerDeriv Γ z q * (toEquiv τ : ℂ)
-  /-- the change of disc coordinate, from the disc coordinate to the coordinate, is a
-  biholomorphic disc coordinate -/
-  holomorphy : (Homeomorph.trans (discCoordinateHomeomorph z).symm toEquiv).toEquiv ∈
-    TauCeti.unitDiscAut
+  /-- the reparametrization of the disc coordinate -/
+  toFun : ℂ → ℂ
+  /-- the inverse reparametrization, on the image of `toFun` -/
+  invFun : ℂ → ℂ
+  /-- the image of the reparametrization -/
+  image : Set ℂ
+  /-- the image is the image of the disc of the invariant disc; it is open, by
+  `Subgroup.LinearizingCoordinate.image_isOpen` -/
+  image_eq : image = toFun '' Metric.ball 0 (Real.tanh (ε / 2))
+  /-- the reparametrization is holomorphic on the disc of the invariant disc -/
+  differentiable : DifferentiableOn ℂ toFun (Metric.ball 0 (Real.tanh (ε / 2)))
+  /-- the inverse reparametrization is holomorphic on the image -/
+  differentiable_inv : DifferentiableOn ℂ invFun image
+  /-- the two functions are inverse on the disc of the invariant disc -/
+  left_inv : ∀ w : ℂ, w ∈ Metric.ball 0 (Real.tanh (ε / 2)) → invFun (toFun w) = w
+  /-- the two functions are inverse on the image -/
+  right_inv : ∀ w ∈ image, toFun (invFun w) = w
+  /-- the reparametrization fixes the centre -/
+  zero : toFun 0 = 0
+  /-- the reparametrization intertwines the rotation action with the stabilizer action -/
+  smul : ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ, ∀ w : ℂ,
+    w ∈ Metric.ball 0 (Real.tanh (ε / 2)) → toFun (ζ • w) = ζ • toFun w
 
-/-- The **disc coordinate** centred at `z` is a linearizing coordinate of the stabilizer of `z`:
-it is the Cayley map `τ ↦ (τ - z) / (τ - conj z)`, it sends `z` to `0`, each element of the
-stabilizer of `z` acts in it by its derivative at `z`
-(`UpperHalfPlane.discCoordinate_stabilizer_smul`), and its change of disc coordinate is the
-identity. -/
-def linearizingCoordinateDiscCoordinate : Γ.LinearizingCoordinate z where
-  toEquiv := discCoordinateHomeomorph z
-  map_zero := discCoordinateHomeomorph_map_zero z
-  smul := by
-    simpa only [coe_discCoordinateHomeomorph_apply] using discCoordinate_stabilizer_smul Γ z
-  holomorphy := by
-    rw [discCoordinate_changeOfDiscCoordinate]
-    exact Subgroup.one_mem _
+/-- The radius of the disc of the invariant hyperbolic disc of radius `ε` about `z` is
+positive. -/
+private theorem radius_pos (hε : 0 < ε) : 0 < Real.tanh (ε / 2) := by
+  rw [← Real.tanh_zero]
+  exact Real.tanh_strictMono (by linarith)
 
-/-- **Rotating the disc coordinate.** For a unit complex number `u` the coordinate
-`τ ↦ u • (discCoordinate z τ)` is again a linearizing coordinate of the stabilizer of `z`: it
-acts the same way on the stabilizer, and its change of disc coordinate is the rotation of the
-disc by `u`, a biholomorphic disc coordinate
-(`TauCeti.unitDiscStandardAutomorphismEquiv_zero_mem_unitDiscRotation`). -/
-def rotationLinearizingCoordinate (u : Circle) : Γ.LinearizingCoordinate z where
-  toEquiv := rotatedDiscCoordinate u z
-  map_zero := rotatedDiscCoordinate_map_zero u z
-  smul := by
-    intro q τ
-    rw [rotatedDiscCoordinate_apply u z (q • τ), rotatedDiscCoordinate_apply u z τ,
-      Complex.UnitDisc.coe_circle_smul, Complex.UnitDisc.coe_circle_smul,
-      coe_discCoordinateHomeomorph_apply, coe_discCoordinateHomeomorph_apply,
-      discCoordinate_stabilizer_smul]
-    ring
-  holomorphy := by
-    rw [rotatedDiscCoordinate_changeOfDiscCoordinate,
-      ← TauCeti.unitDiscStandardAutomorphismEquiv_zero u]
-    exact TauCeti.unitDiscStandardAutomorphismEquiv_mem_unitDiscAut u 0
+/-- The modulus of a real number, viewed in `ℂ`, is its absolute value. -/
+private theorem norm_real (r : ℝ) : ‖(r : ℂ)‖ = |r| := by simp
+
+/-- The radius of the disc of the invariant disc, viewed in `ℂ`, has modulus equal to itself. -/
+private theorem norm_tanh (hε : 0 < ε) : ‖(Real.tanh (ε / 2) : ℂ)‖ = Real.tanh (ε / 2) :=
+  (norm_real _).trans (abs_of_pos (radius_pos hε))
+
+omit [Finite (stabilizer Γ z)] in
+/-- The disc coordinate of a point of the invariant disc lies in the disc of the invariant
+disc, the domain of a reparametrization. -/
+private theorem mem_ball_discCoordinate (τ : stabilizerBall Γ z ε) :
+    discCoordinate z (τ : ℍ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
+  have hball : (τ : ℍ) ∈ Metric.ball z ε := Metric.mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
+  rw [mem_ball_zero_iff]
+  exact (mem_ball_iff_norm_discCoordinate_lt (z := z) (τ := (τ : ℍ)) (ε := ε)).mp hball
+
+/-- The centre lies in the disc of the invariant disc. -/
+private theorem mem_ball_zero (hε : 0 < ε) : (0 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
+  rw [mem_ball_zero_iff]
+  simpa using radius_pos hε
+
+/-- The modulus of a root of unity of nonzero order, viewed in `ℂ`, is one. -/
+private theorem norm_rootsOfUnity {m : ℕ} [NeZero m] (ζ : rootsOfUnity m ℂ) :
+    ‖((ζ : ℂˣ) : ℂ)‖ = 1 :=
+  Complex.norm_eq_one_of_mem_rootsOfUnity ζ.2
+
+/-- A rotation of a point of the disc of the invariant disc lies in it. -/
+private theorem mem_ball_smul (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) {w : ℂ}
+    (hw : w ∈ Metric.ball 0 (Real.tanh (ε / 2))) :
+    ζ • w ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
+  rw [mem_ball_zero_iff] at hw ⊢
+  rw [rootsOfUnity.smul_eq_mul, norm_mul, norm_rootsOfUnity, one_mul]
+  exact hw
+
+/-- Half the radius of the disc of the invariant disc lies in it. -/
+private theorem mem_ball_radius_div_two (hε : 0 < ε) :
+    (Real.tanh (ε / 2) / 2 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
+  rw [mem_ball_zero_iff, Complex.norm_div, Complex.norm_ofNat, norm_tanh hε]
+  linarith [radius_pos hε]
+
+/-- The reparametrization of a local linearizing coordinate is injective on the disc of the
+invariant disc. -/
+theorem LinearizingCoordinate.injOn_ball (ψ : Γ.LinearizingCoordinate z ε) :
+    Set.InjOn ψ.toFun (Metric.ball 0 (Real.tanh (ε / 2))) := by
+  rintro u hu v hv huv
+  have hu' := ψ.left_inv u hu
+  have hv' := ψ.left_inv v hv
+  rw [huv] at hu'
+  exact hu'.symm.trans hv'
+
+/-- The inverse reparametrization of a local linearizing coordinate takes a point of the image
+back into the disc of the invariant disc. -/
+theorem LinearizingCoordinate.mem_ball_invFun (ψ : Γ.LinearizingCoordinate z ε)
+    {u : ℂ} (hu : u ∈ ψ.image) : ψ.invFun u ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
+  rw [ψ.image_eq, Set.mem_image] at hu
+  obtain ⟨w, hw, rfl⟩ := hu
+  rw [ψ.left_inv w hw]
+  exact hw
+
+/-- **The coordinate of a point of the invariant disc in a local linearizing coordinate**: the
+reparametrized disc coordinate, a biholomorphic coordinate on the invariant hyperbolic disc of
+radius `ε` about `z` centred at `z` in which the stabilizer of `z` acts by its rotation
+`Subgroup.stabilizerRotation`
+(`Subgroup.LinearizingCoordinate.coordinate_smul`). -/
+def LinearizingCoordinate.coordinate (ψ : Γ.LinearizingCoordinate z ε)
+    (τ : stabilizerBall Γ z ε) : ℂ := ψ.toFun (discCoordinate z (τ : ℍ))
+
+/-- A point of the invariant disc has coordinate `0` in a local linearizing coordinate exactly
+when it is the centre: the coordinate is centred at the centre. -/
+theorem LinearizingCoordinate.coordinate_eq_zero_iff (hε : 0 < ε)
+    (ψ : Γ.LinearizingCoordinate z ε) (τ : stabilizerBall Γ z ε) :
+    coordinate ψ τ = 0 ↔ (τ : ℍ) = z := by
+  constructor
+  · intro h
+    have h' : ψ.toFun (discCoordinate z (τ : ℍ)) = ψ.toFun 0 := by
+      have h'' : ψ.toFun (discCoordinate z (τ : ℍ)) = 0 := h
+      rw [h'', ψ.zero]
+    have hinj : discCoordinate z (τ : ℍ) = 0 :=
+      ψ.injOn_ball (mem_ball_discCoordinate τ) (mem_ball_zero hε) h'
+    exact discCoordinate_eq_zero_iff.mp hinj
+  · intro hτ
+    have hmem : (z : ℍ) ∈ (stabilizerBall Γ z ε : Set ℍ) :=
+      (mem_stabilizerBall Γ z ε).2 (by rw [dist_self]; exact hε)
+    have hτ' : τ = ⟨z, hmem⟩ := Subtype.ext hτ
+    rw [hτ']
+    simp only [coordinate, discCoordinate_self]
+    exact ψ.zero
+
+/-- The coordinate of a local linearizing coordinate is injective on the invariant disc. -/
+theorem LinearizingCoordinate.coordinate_injective (ψ : Γ.LinearizingCoordinate z ε) :
+    Function.Injective (coordinate ψ) :=
+  fun _ _ h => Subtype.ext (discCoordinate_injective z
+    (ψ.injOn_ball (mem_ball_discCoordinate _) (mem_ball_discCoordinate _) h))
+
+/-- **The stabilizer of `z` acts in the coordinate of a local linearizing coordinate by its
+rotation.** The rotation does not depend on the local linearizing coordinate: it is
+`Subgroup.stabilizerRotation Γ z q`, the derivative of `q` at `z`. -/
+theorem LinearizingCoordinate.coordinate_smul (ψ : Γ.LinearizingCoordinate z ε)
+    (q : stabilizer Γ z) (τ : stabilizerBall Γ z ε) :
+    coordinate ψ (q • τ) = ((stabilizerRotation Γ z q : ℂˣ) : ℂ) * coordinate ψ τ := by
+  have hcoord : discCoordinate z ((q • τ : stabilizerBall Γ z ε) : ℍ)
+      = ((stabilizerRotation Γ z q : ℂˣ) : ℂ) * discCoordinate z (τ : ℍ) := by
+    rw [SubMulAction.val_smul, discCoordinate_smul_eq_rotation_smul, rootsOfUnity.smul_eq_mul,
+      coe_stabilizerRotation]
+  have hsmul : ψ.toFun (((stabilizerRotation Γ z q) • (discCoordinate z (τ : ℍ))) : ℂ)
+      = stabilizerRotation Γ z q • ψ.toFun (discCoordinate z (τ : ℍ)) :=
+    ψ.smul (stabilizerRotation Γ z q) (discCoordinate z (τ : ℍ)) (mem_ball_discCoordinate τ)
+  simp only [coordinate]
+  rw [hcoord]
+  calc ψ.toFun (((stabilizerRotation Γ z q) • (discCoordinate z (τ : ℍ))) : ℂ)
+      = stabilizerRotation Γ z q • ψ.toFun (discCoordinate z (τ : ℍ)) := hsmul
+    _ = ((stabilizerRotation Γ z q : ℂˣ) : ℂ) * ψ.toFun (discCoordinate z (τ : ℍ)) :=
+      rootsOfUnity.smul_eq_mul (stabilizerRotation Γ z q) (ψ.toFun (discCoordinate z (τ : ℍ)))
+    _ = ((stabilizerRotation Γ z q : ℂˣ) : ℂ) * coordinate ψ τ := rfl
+
+/-- **A point is a coordinate value of a local linearizing coordinate** exactly when it lies in
+the image of the reparametrization. -/
+theorem LinearizingCoordinate.mem_image_iff (ψ : Γ.LinearizingCoordinate z ε) (u : ℂ) :
+    u ∈ ψ.image ↔ ∃ τ : stabilizerBall Γ z ε, u = coordinate ψ τ := by
+  constructor
+  · intro hu
+    rw [ψ.image_eq, Set.mem_image] at hu
+    obtain ⟨w, hw, hwu⟩ := hu
+    have hmem : w ∈ discCoordinate z '' Metric.ball z ε := by
+      rw [UpperHalfPlane.image_discCoordinate_ball]
+      exact hw
+    obtain ⟨τ, hτ, hdt⟩ := (Set.mem_image (discCoordinate z) (Metric.ball z ε) w).mp hmem
+    refine ⟨⟨τ, (mem_stabilizerBall Γ z ε).2 hτ⟩, ?_⟩
+    simp only [coordinate]
+    rw [hdt]
+    exact hwu.symm
+  · rintro ⟨τ, rfl⟩
+    rw [ψ.image_eq, Set.mem_image]
+    exact ⟨discCoordinate z (τ : ℍ), mem_ball_discCoordinate τ, rfl⟩
+
+/-- **The image of a local linearizing coordinate is open**, being the image of a disc of
+positive radius under a holomorphic reparametrization which is not constant there. -/
+theorem LinearizingCoordinate.image_isOpen (hε : 0 < ε) (ψ : Γ.LinearizingCoordinate z ε) :
+    IsOpen ψ.image := by
+  have hball : (0 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := mem_ball_zero hε
+  have hhalf : (Real.tanh (ε / 2) / 2 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) :=
+    mem_ball_radius_div_two hε
+  have hpre : IsPreconnected (Metric.ball (0 : ℂ) (Real.tanh (ε / 2))) :=
+    (convex_ball (0 : ℂ) (Real.tanh (ε / 2))).isPreconnected
+  rcases (ψ.differentiable.analyticOnNhd Metric.isOpen_ball).is_constant_or_isOpen hpre with
+    ⟨w, hw⟩ | hopen
+  · -- the reparametrization is not constant on the disc, by its inverse at two points of it
+    have e0 : ψ.invFun w = 0 := by
+      have e := ψ.left_inv 0 hball
+      rw [hw 0 hball] at e
+      exact e
+    have e1 : ψ.invFun w = (Real.tanh (ε / 2) / 2 : ℂ) := by
+      have e := ψ.left_inv (Real.tanh (ε / 2) / 2) hhalf
+      rw [hw _ hhalf] at e
+      exact e
+    have hzero : (Real.tanh (ε / 2) / 2 : ℂ) = 0 := e1.symm.trans e0
+    have hnorm := congrArg (fun w : ℂ => ‖w‖) hzero
+    rw [norm_zero, Complex.norm_div, Complex.norm_ofNat, norm_tanh hε] at hnorm
+    linarith [radius_pos hε]
+  · rw [ψ.image_eq]
+    exact hopen _ subset_rfl Metric.isOpen_ball
+
+/-- **The local quotient coordinate** in a local linearizing coordinate: the
+`Nat.card (stabilizer Γ z)`-th power of the coordinate, the model of the quotient of the
+invariant disc by the stabilizer of `z`, `m = Nat.card (stabilizer Γ z)`. Its level sets are the
+orbits of that stabilizer (`Subgroup.LinearizingCoordinate.quotientCoordinate_eq_iff`), so it is a
+coordinate on that quotient, and it is independent of the local linearizing coordinate up to the
+biholomorphic transition of
+`Subgroup.LinearizingCoordinate.exists_quotientCoordinate_trans`. -/
+def LinearizingCoordinate.quotientCoordinate (ψ : Γ.LinearizingCoordinate z ε)
+    (τ : stabilizerBall Γ z ε) : ℂ := coordinate ψ τ ^ Nat.card (stabilizer Γ z)
+
+/-- The local quotient coordinate is constant on the orbits of the stabilizer of `z`, since the
+stabilizer acts by a `Nat.card (stabilizer Γ z)`-th root of unity. -/
+theorem LinearizingCoordinate.quotientCoordinate_smul (ψ : Γ.LinearizingCoordinate z ε)
+    (q : stabilizer Γ z) (τ : stabilizerBall Γ z ε) :
+    quotientCoordinate ψ (q • τ) = quotientCoordinate ψ τ := by
+  rw [quotientCoordinate, quotientCoordinate, coordinate_smul, ← rootsOfUnity.smul_eq_mul,
+    rootsOfUnity.smul_pow]
+
+/-- **The orbits of the stabilizer of `z` on the invariant disc are the orbits of the roots of
+unity in the coordinate of a local linearizing coordinate**: the reparametrization of the disc
+coordinate does not change which points lie in the same orbit, so the orbit relation of the
+stabilizer of `z` on the invariant disc does not depend on the local linearizing coordinate. The
+roots of unity act on `ℂ` by multiplication, as on the disc
+`Subgroup.stabilizerBallHomeomorph_smul`. -/
+theorem LinearizingCoordinate.orbitRel_iff (ψ : Γ.LinearizingCoordinate z ε)
+    (τ σ : stabilizerBall Γ z ε) :
+    orbitRel (stabilizer Γ z) (stabilizerBall Γ z ε) τ σ ↔
+      orbitRel (rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) ℂ
+        (coordinate ψ τ) (coordinate ψ σ) := by
+  rw [orbitRel_apply, orbitRel_apply, mem_orbit_iff, mem_orbit_iff]
+  constructor
+  · rintro ⟨q, hq⟩
+    refine ⟨stabilizerRotation Γ z q, ?_⟩
+    calc stabilizerRotation Γ z q • (coordinate ψ σ : ℂ)
+        = ((stabilizerRotation Γ z q : ℂˣ) : ℂ) * coordinate ψ σ :=
+          (rootsOfUnity.smul_eq_mul _ _).symm
+      _ = coordinate ψ (q • σ) := (coordinate_smul ψ q σ).symm
+      _ = coordinate ψ τ := congrArg (coordinate ψ) hq
+  · rintro ⟨ζ, hζ⟩
+    let q := (stabilizerRotationEquiv Γ z).symm ζ
+    have hq : stabilizerRotation Γ z q = ζ := by
+      rw [← coe_stabilizerRotationEquiv]
+      exact (stabilizerRotationEquiv Γ z).apply_symm_apply ζ
+    simp only [coordinate] at hζ
+    have h1 : coordinate ψ (q • σ) = stabilizerRotation Γ z q • (coordinate ψ σ : ℂ) := by
+      rw [coordinate_smul, rootsOfUnity.smul_eq_mul]
+    rw [hq] at h1
+    refine ⟨q, Subtype.ext ?_⟩
+    exact congrArg (fun p : stabilizerBall Γ z ε => (p : ℍ)) (coordinate_injective ψ (h1.trans hζ))
+
+/-- The local quotient coordinate is a complete invariant of the orbits of the stabilizer of `z`
+on the invariant disc: two points of the invariant disc have the same local quotient coordinate
+exactly when a single element of the stabilizer carries one to the other, that is, when they lie
+in the same orbit of the stabilizer of `z`. Hence the local quotient coordinate is a coordinate on
+the quotient of the invariant disc by that stabilizer, which the disc coordinate identifies with
+the coordinate of the chart `Subgroup.stabilizerBallQuotientChart` on the coarse orbit quotient
+`Γ \ ℍ`
+(`Subgroup.LinearizingCoordinate.quotientCoordinate_discCoordinate`). -/
+theorem LinearizingCoordinate.quotientCoordinate_eq_iff (ψ : Γ.LinearizingCoordinate z ε)
+    (τ σ : stabilizerBall Γ z ε) :
+    quotientCoordinate ψ τ = quotientCoordinate ψ σ ↔
+      orbitRel (stabilizer Γ z) (stabilizerBall Γ z ε) τ σ := by
+  rw [quotientCoordinate, quotientCoordinate, ψ.orbitRel_iff,
+    TauCeti.orbitRel_rootsOfUnity_apply (NeZero.ne _)]
+
+/-- **The set of quotient-coordinate values of a local linearizing coordinate**: the
+`Nat.card (stabilizer Γ z)`-th powers of the coordinate values, which is the image of the `m`-th
+power, `m = Nat.card (stabilizer Γ z)`, of the image `Subgroup.LinearizingCoordinate.image` of
+the reparametrization, and is an open set by
+`Subgroup.LinearizingCoordinate.quotientImage_isOpen`. -/
+def LinearizingCoordinate.quotientImage (ψ : Γ.LinearizingCoordinate z ε) : Set ℂ :=
+  (· ^ Nat.card (stabilizer Γ z)) '' ψ.image
+
+/-- **A point is a quotient-coordinate value of a local linearizing coordinate** exactly when it
+is the `Nat.card (stabilizer Γ z)`-th power of a coordinate value. -/
+@[simp]
+theorem LinearizingCoordinate.mem_quotientImage_iff (ψ : Γ.LinearizingCoordinate z ε) (w : ℂ) :
+    w ∈ ψ.quotientImage ↔ ∃ τ : stabilizerBall Γ z ε, w = quotientCoordinate ψ τ := by
+  constructor
+  · intro hw
+    rw [quotientImage, Set.mem_image] at hw
+    obtain ⟨u, hu, hw⟩ := hw
+    obtain ⟨τ, rfl⟩ := (ψ.mem_image_iff u).mp hu
+    refine ⟨τ, ?_⟩
+    simpa only [quotientCoordinate] using hw.symm
+  · rintro ⟨τ, rfl⟩
+    rw [quotientImage, Set.mem_image]
+    exact ⟨coordinate ψ τ, (ψ.mem_image_iff (coordinate ψ τ)).mpr ⟨τ, rfl⟩, rfl⟩
+
+/-- **The set of quotient-coordinate values of a local linearizing coordinate is open**: it is the
+image of the open image of the reparametrization under the power map `u ↦ u ^ m`, which is an open
+map, being a non-constant holomorphic map (`Complex.isOpenQuotientMap_pow`). -/
+theorem LinearizingCoordinate.quotientImage_isOpen (hε : 0 < ε)
+    (ψ : Γ.LinearizingCoordinate z ε) : IsOpen ψ.quotientImage := by
+  rw [quotientImage]
+  exact (Complex.isOpenQuotientMap_pow (Nat.card (stabilizer Γ z))).isOpenMap _
+    (ψ.image_isOpen hε)
+
+/-- **The change of local linearizing coordinate** between two local linearizing coordinates on
+the invariant disc: the reparametrization `ψ'` pulled back by the inverse reparametrization `ψ`.
+On the image `Subgroup.LinearizingCoordinate.image` of `ψ` it is a biholomorphism onto the image
+of `ψ'` intertwining the rotation action
+(`Subgroup.LinearizingCoordinate.transFun_smul`), the inverse being the change of coordinate in
+the other direction
+(`Subgroup.LinearizingCoordinate.transFun_transFun`). -/
+def LinearizingCoordinate.transFun (ψ ψ' : Γ.LinearizingCoordinate z ε) : ℂ → ℂ :=
+  fun u => ψ'.toFun (ψ.invFun u)
+
+/-- The change of local linearizing coordinate takes the image of the reparametrization to the
+image of the reparametrization. -/
+@[simp]
+theorem LinearizingCoordinate.transFun_mem_image (ψ ψ' : Γ.LinearizingCoordinate z ε)
+    {u : ℂ} (hu : u ∈ ψ.image) : transFun ψ ψ' u ∈ ψ'.image := by
+  rw [ψ'.image_eq, Set.mem_image]
+  exact ⟨ψ.invFun u, ψ.mem_ball_invFun hu, rfl⟩
+
+/-- **The inverse reparametrization of a local linearizing coordinate intertwines the rotation
+action with the stabilizer action**, on the image of the reparametrization. -/
+theorem LinearizingCoordinate.invFun_smul (ψ : Γ.LinearizingCoordinate z ε) {u : ℂ}
+    (hu : u ∈ ψ.image) (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) :
+    ψ.invFun (ζ • u) = ζ • ψ.invFun u := by
+  have hw := ψ.mem_ball_invFun hu
+  have hwu : ψ.toFun (ζ • ψ.invFun u) = ζ • u := by
+    rw [ψ.smul ζ _ hw, ψ.right_inv u hu]
+  calc ψ.invFun (ζ • u) = ψ.invFun (ψ.toFun (ζ • ψ.invFun u)) := by rw [hwu]
+    _ = ζ • ψ.invFun u := ψ.left_inv (ζ • ψ.invFun u) (mem_ball_smul ζ hw)
+
+/-- The change of local linearizing coordinate intertwines the rotation action, being the pullback
+of an equivariant reparametrization by an equivariant inverse. -/
+theorem LinearizingCoordinate.transFun_smul (ψ ψ' : Γ.LinearizingCoordinate z ε) {u : ℂ}
+    (hu : u ∈ ψ.image) (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) :
+    transFun ψ ψ' (ζ • u) = ζ • transFun ψ ψ' u := by
+  simp only [transFun]
+  have hkey : ψ.invFun (ζ • u) = ζ • ψ.invFun u := ψ.invFun_smul hu ζ
+  exact (congrArg ψ'.toFun hkey).trans (ψ'.smul ζ _ (ψ.mem_ball_invFun hu))
+
+/-- The changes of local linearizing coordinate in the two directions are inverse: the change of
+coordinate is a biholomorphism of the images of the reparametrizations. -/
+theorem LinearizingCoordinate.transFun_transFun (ψ ψ' : Γ.LinearizingCoordinate z ε)
+    {u : ℂ} (hu : u ∈ ψ.image) : transFun ψ' ψ (transFun ψ ψ' u) = u := by
+  simp only [transFun]
+  rw [ψ'.left_inv _ (ψ.mem_ball_invFun hu), ψ.right_inv u hu]
+
+/-- The change of local linearizing coordinate is holomorphic on the image of the reparametrization,
+being the composition of the inverse reparametrization, holomorphic there, with the
+reparametrization, holomorphic on the disc of the invariant disc. -/
+theorem LinearizingCoordinate.differentiableOn_transFun (ψ ψ' : Γ.LinearizingCoordinate z ε) :
+    DifferentiableOn ℂ (transFun ψ ψ') ψ.image :=
+  ψ'.differentiable.comp ψ.differentiable_inv (fun _ hu => ψ.mem_ball_invFun hu)
+
+/-- **The transition of the local quotient coordinates** of two local linearizing coordinates: the
+descent through `u ↦ u ^ m`, `m = Nat.card (stabilizer Γ z)`, of the `m`-th power of the change of
+local linearizing coordinate `Subgroup.LinearizingCoordinate.transFun`. It takes the quotient
+coordinate of a point of the invariant disc in the first local linearizing coordinate to its
+quotient coordinate in the second
+(`Subgroup.LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinate`), and it is
+holomorphic on the set of quotient-coordinate values
+(`Subgroup.LinearizingCoordinate.differentiableOn_quotientCoordinateTrans`). -/
+def LinearizingCoordinate.quotientCoordinateTrans (ψ ψ' : Γ.LinearizingCoordinate z ε) : ℂ → ℂ :=
+  TauCeti.descendPow (Nat.card (stabilizer Γ z))
+    fun u : ℂ ↦ (transFun ψ ψ' u) ^ Nat.card (stabilizer Γ z)
+
+/-- The transition of the local quotient coordinates in the other direction. -/
+def LinearizingCoordinate.quotientCoordinateTransSymm (ψ ψ' : Γ.LinearizingCoordinate z ε) :
+    ℂ → ℂ := quotientCoordinateTrans ψ' ψ
+
+/-- The transition of the local quotient coordinates is holomorphic on the set of
+quotient-coordinate values of the first local linearizing coordinate: it is the descent of the
+`m`-th power of a holomorphic function invariant under the rotations, by
+`TauCeti.differentiableOn_descendPow`. -/
+theorem LinearizingCoordinate.differentiableOn_quotientCoordinateTrans (hε : 0 < ε)
+    (ψ ψ' : Γ.LinearizingCoordinate z ε) :
+    DifferentiableOn ℂ (quotientCoordinateTrans ψ ψ') ψ.quotientImage := by
+  refine TauCeti.differentiableOn_descendPow (ψ.image_isOpen hε) ?_ ?_
+  · exact (differentiableOn_transFun ψ ψ').pow _
+  · intro u hu ζ
+    rw [transFun_smul ψ ψ' hu ζ, rootsOfUnity.smul_pow]
+
+/-- The transition of the local quotient coordinates in the other direction is holomorphic on the
+set of quotient-coordinate values of the second local linearizing coordinate. -/
+theorem LinearizingCoordinate.differentiableOn_quotientCoordinateTransSymm (hε : 0 < ε)
+    (ψ ψ' : Γ.LinearizingCoordinate z ε) :
+    DifferentiableOn ℂ (quotientCoordinateTransSymm ψ ψ') ψ'.quotientImage :=
+  differentiableOn_quotientCoordinateTrans hε ψ' ψ
+
+/-- **The transition of the local quotient coordinates takes a quotient coordinate to a quotient
+coordinate**, so it relates the local quotient coordinates of the two local linearizing
+coordinates. -/
+@[simp]
+theorem LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinate
+    (ψ ψ' : Γ.LinearizingCoordinate z ε) (τ : stabilizerBall Γ z ε) :
+    quotientCoordinateTrans ψ ψ' (quotientCoordinate ψ τ) = quotientCoordinate ψ' τ := by
+  have hζ : ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ,
+      (transFun ψ ψ' (ζ • (coordinate ψ τ : ℂ))) ^ Nat.card (stabilizer Γ z)
+        = (transFun ψ ψ' (coordinate ψ τ : ℂ)) ^ Nat.card (stabilizer Γ z) := by
+    intro ζ
+    rw [transFun_smul ψ ψ' ((ψ.mem_image_iff (coordinate ψ τ)).mpr ⟨τ, rfl⟩) ζ,
+      rootsOfUnity.smul_pow]
+  rw [quotientCoordinate, quotientCoordinateTrans, TauCeti.descendPow_pow hζ]
+  simp only [transFun, coordinate, quotientCoordinate]
+  rw [ψ.left_inv _ (mem_ball_discCoordinate τ)]
+
+/-- The transition of the local quotient coordinates in the other direction takes a quotient
+coordinate in the second local linearizing coordinate back to the quotient coordinate in the
+first. -/
+@[simp]
+theorem LinearizingCoordinate.quotientCoordinateTransSymm_quotientCoordinate
+    (ψ ψ' : Γ.LinearizingCoordinate z ε) (τ : stabilizerBall Γ z ε) :
+    quotientCoordinateTransSymm ψ ψ' (quotientCoordinate ψ' τ) = quotientCoordinate ψ τ := by
+  simpa only [quotientCoordinateTransSymm] using
+    quotientCoordinateTrans_quotientCoordinate ψ' ψ τ
+
+/-- **The transitions of the local quotient coordinates in the two directions are inverse** on the
+set of quotient-coordinate values, so the transition is a biholomorphic change of the local
+quotient coordinate. -/
+theorem LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinateTransSymm
+    (ψ ψ' : Γ.LinearizingCoordinate z ε) {w : ℂ} (hw : w ∈ ψ.quotientImage) :
+    quotientCoordinateTransSymm ψ ψ' (quotientCoordinateTrans ψ ψ' w) = w := by
+  obtain ⟨u, hu, rfl⟩ := hw
+  have hf : ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ,
+      (transFun ψ ψ' (ζ • (u : ℂ))) ^ Nat.card (stabilizer Γ z)
+        = (transFun ψ ψ' (u : ℂ)) ^ Nat.card (stabilizer Γ z) := by
+    intro ζ
+    rw [transFun_smul ψ ψ' hu ζ, rootsOfUnity.smul_pow]
+  have hfu : transFun ψ ψ' (u : ℂ) ∈ ψ'.image := transFun_mem_image ψ ψ' hu
+  have hg : ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ,
+      (transFun ψ' ψ (ζ • transFun ψ ψ' (u : ℂ))) ^ Nat.card (stabilizer Γ z)
+        = (transFun ψ' ψ (transFun ψ ψ' (u : ℂ))) ^ Nat.card (stabilizer Γ z) := by
+    intro ζ
+    rw [transFun_smul ψ' ψ hfu ζ, rootsOfUnity.smul_pow]
+  simp only [quotientCoordinateTransSymm, quotientCoordinateTrans]
+  rw [TauCeti.descendPow_pow hf, TauCeti.descendPow_pow hg, transFun_transFun ψ ψ' hu]
+
+/-- The transitions of the local quotient coordinates in the two directions are inverse in the
+other direction as well. -/
+theorem LinearizingCoordinate.quotientCoordinateTransSymm_quotientCoordinateTrans
+    (ψ ψ' : Γ.LinearizingCoordinate z ε) {w : ℂ} (hw : w ∈ ψ'.quotientImage) :
+    quotientCoordinateTrans ψ ψ' (quotientCoordinateTransSymm ψ ψ' w) = w := by
+  simpa only [quotientCoordinateTransSymm] using
+    quotientCoordinateTrans_quotientCoordinateTransSymm ψ' ψ hw
+
+/-- **The local quotient coordinates of two local linearizing coordinates are related by a
+biholomorphic transition.** The local quotient coordinate of a local linearizing coordinate
+`Subgroup.LinearizingCoordinate.quotientCoordinate` is a holomorphic function on the invariant
+disc of radius `ε`, constant on the orbits of the stabilizer of `z`
+(`Subgroup.LinearizingCoordinate.quotientCoordinate_smul`), with those orbits as its level sets
+(`Subgroup.LinearizingCoordinate.quotientCoordinate_eq_iff`). Its values range over the open set
+`Subgroup.LinearizingCoordinate.quotientImage` of quotient-coordinate values, and the quotient
+coordinates of two local linearizing coordinates differ by a biholomorphic change of those open
+sets: a holomorphic map `T` between the two open sets of quotient-coordinate values with a
+holomorphic inverse `T'`, taking the quotient coordinate of a point of the invariant disc in the
+first local linearizing coordinate to its quotient coordinate in the second. The transition is
+`Subgroup.LinearizingCoordinate.quotientCoordinateTrans`, the descent of the change of local
+linearizing coordinate `Subgroup.LinearizingCoordinate.transFun` through `u ↦ u ^ m`. -/
+theorem exists_quotientCoordinate_trans (hε : 0 < ε) (ψ ψ' : Γ.LinearizingCoordinate z ε) :
+    ∃ T T' : ℂ → ℂ,
+      IsOpen ψ.quotientImage ∧ IsOpen ψ'.quotientImage ∧
+      DifferentiableOn ℂ T ψ.quotientImage ∧
+      DifferentiableOn ℂ T' ψ'.quotientImage ∧
+      (∀ τ : stabilizerBall Γ z ε, T (ψ.quotientCoordinate τ) = ψ'.quotientCoordinate τ) ∧
+      (∀ τ : stabilizerBall Γ z ε, T' (ψ'.quotientCoordinate τ) = ψ.quotientCoordinate τ) ∧
+      (∀ w ∈ ψ.quotientImage, (T' ∘ T) w = w) ∧
+      (∀ w ∈ ψ'.quotientImage, (T ∘ T') w = w) :=
+  ⟨LinearizingCoordinate.quotientCoordinateTrans ψ ψ',
+    LinearizingCoordinate.quotientCoordinateTransSymm ψ ψ',
+    LinearizingCoordinate.quotientImage_isOpen hε ψ,
+    LinearizingCoordinate.quotientImage_isOpen hε ψ',
+    LinearizingCoordinate.differentiableOn_quotientCoordinateTrans hε ψ ψ',
+    LinearizingCoordinate.differentiableOn_quotientCoordinateTransSymm hε ψ ψ',
+    fun _ => LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinate ψ ψ' _,
+    fun _ => LinearizingCoordinate.quotientCoordinateTransSymm_quotientCoordinate ψ ψ' _,
+    fun _ hw =>
+      LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinateTransSymm ψ ψ' hw,
+    fun _ hw =>
+      LinearizingCoordinate.quotientCoordinateTransSymm_quotientCoordinateTrans ψ ψ' hw⟩
+
+/-- **The disc coordinate centred at `z` is a local linearizing coordinate**: the identity
+reparametrization, whose coordinate is the disc coordinate
+`Subgroup.LinearizingCoordinate.coordinate` and whose quotient coordinate is
+`discCoordinate z τ ^ Nat.card (stabilizer Γ z)`, the coordinate of
+`Subgroup.stabilizerBallQuotientHomeomorph` and of the chart
+`Subgroup.stabilizerBallQuotientChart`
+(`Subgroup.LinearizingCoordinate.quotientCoordinate_discCoordinate`). -/
+def LinearizingCoordinate.discCoordinate : Γ.LinearizingCoordinate z ε where
+  toFun u := u
+  invFun u := u
+  image := Metric.ball 0 (Real.tanh (ε / 2))
+  image_eq := by
+    have h : (fun u => u) '' Metric.ball 0 (Real.tanh (ε / 2))
+        = (id : ℂ → ℂ) '' Metric.ball 0 (Real.tanh (ε / 2)) := rfl
+    rw [h, Set.image_id]
+  differentiable := differentiable_id.differentiableOn
+  differentiable_inv := differentiable_id.differentiableOn
+  left_inv := fun _ _ => rfl
+  right_inv := fun _ _ => rfl
+  zero := rfl
+  smul := fun _ _ _ => rfl
 
 @[simp]
-theorem rotationLinearizingCoordinate_apply (u : Circle) (τ : ℍ) :
-    ((rotationLinearizingCoordinate (Γ := Γ) (z := z) u).toEquiv τ : ℂ) =
-      (u : ℂ) * discCoordinate z τ := by
-  simp only [rotationLinearizingCoordinate, rotatedDiscCoordinate_apply,
-    Complex.UnitDisc.coe_circle_smul, coe_discCoordinateHomeomorph_apply]
+theorem LinearizingCoordinate.coordinate_discCoordinate (τ : stabilizerBall Γ z ε) :
+    coordinate (Γ := Γ) (z := z) (ε := ε) discCoordinate τ = UpperHalfPlane.discCoordinate z τ := by
+  rfl
 
-/-- **A linearizing coordinate is a rotation of the disc coordinate.** The change of disc
-coordinate from the disc coordinate to a linearizing coordinate is a biholomorphic disc
-coordinate fixing the origin, and the biholomorphic disc coordinates fixing the origin are
-exactly the rotations (`TauCeti.mem_unitDiscRotation_iff`): so a linearizing coordinate is the
-disc coordinate followed by a rotation, and the local quotient data it carries is determined up
-to a scalar of modulus one. -/
-theorem LinearizingCoordinate.exists_rotatedDiscCoordinate (φ : Γ.LinearizingCoordinate z) :
-    ∃ u : Circle, ∀ τ : ℍ, (φ.toEquiv τ : ℂ) = (u : ℂ) * discCoordinate z τ := by
-  -- The change of disc coordinate is a biholomorphic disc coordinate which sends the centre of
-  -- the disc, the image of `z` in the disc coordinate, to the centre of the disc, the image of `z`
-  -- in `φ`.
-  have hzero : ((Homeomorph.trans (discCoordinateHomeomorph z).symm φ.toEquiv).toEquiv) 0 = 0 := by
-    have happly : (((Homeomorph.trans (discCoordinateHomeomorph z).symm φ.toEquiv).toEquiv 0
-        : 𝔻)) = φ.toEquiv ((discCoordinateHomeomorph z).symm 0) := by rfl
-    rw [happly, discCoordinateHomeomorph_symm_zero z, φ.map_zero]
-  have hrot : ((Homeomorph.trans (discCoordinateHomeomorph z).symm φ.toEquiv).toEquiv) ∈
-      TauCeti.unitDiscRotation :=
-    TauCeti.mem_unitDiscRotation_iff.2 ⟨φ.holomorphy, hzero⟩
-  rw [TauCeti.unitDiscRotation_eq_range] at hrot
-  obtain ⟨u, hu⟩ := MonoidHom.mem_range.1 hrot
-  refine ⟨u, fun τ => ?_⟩
-  -- The change of disc coordinate is the rotation by `u`, read off at the disc coordinate of `τ`.
-  have hrotate : (((Homeomorph.trans (discCoordinateHomeomorph z).symm φ.toEquiv).toEquiv
-      (discCoordinateHomeomorph z τ) : 𝔻)) = u • ((discCoordinateHomeomorph z) τ) := by
-    rw [← hu]
-    rfl
-  have hcomp : (((Homeomorph.trans (discCoordinateHomeomorph z).symm φ.toEquiv).toEquiv
-      (discCoordinateHomeomorph z τ) : 𝔻)) = φ.toEquiv τ := by
-    have hround : (((Homeomorph.trans (discCoordinateHomeomorph z).symm φ.toEquiv).toEquiv
-        (discCoordinateHomeomorph z τ) : 𝔻)) =
-        φ.toEquiv ((discCoordinateHomeomorph z).symm (discCoordinateHomeomorph z τ)) := by rfl
-    rw [hround, (discCoordinateHomeomorph z).symm_apply_apply]
-  rw [← hcomp, hrotate, Complex.UnitDisc.coe_circle_smul, coe_discCoordinateHomeomorph_apply]
+@[simp]
+theorem LinearizingCoordinate.quotientCoordinate_discCoordinate (τ : stabilizerBall Γ z ε) :
+    quotientCoordinate (Γ := Γ) (z := z) (ε := ε) discCoordinate τ
+      = UpperHalfPlane.discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
+  simp only [quotientCoordinate, coordinate, LinearizingCoordinate.discCoordinate]
 
-/-- The **local quotient coordinate** at `z` read in the linearizing coordinate `φ`: the
-`Nat.card (stabilizer Γ z)`-th power of the coordinate, the model of the quotient by the
-stabilizer of `z`. Its level sets are exactly the orbits of that stabilizer
-(`Subgroup.LinearizingCoordinate.quotientCoordinate_eq_iff`). -/
-def LinearizingCoordinate.quotientCoordinate (φ : Γ.LinearizingCoordinate z) (τ : ℍ) : ℂ :=
-  (φ.toEquiv τ : ℂ) ^ Nat.card (stabilizer Γ z)
+/-- **A rotation of the disc coordinate is a local linearizing coordinate**: the reparametrization
+of the disc of the invariant disc by a root of unity of order `Nat.card (stabilizer Γ z)`, whose
+coordinate is the disc coordinate multiplied by that root of unity
+(`Subgroup.LinearizingCoordinate.coordinate_rotation`). The quotient coordinate of a rotation is
+the quotient coordinate of the disc coordinate itself
+(`Subgroup.LinearizingCoordinate.quotientCoordinate_rotation`), the rotation being an `m`-th root
+of unity. -/
+def LinearizingCoordinate.rotation (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) :
+    Γ.LinearizingCoordinate z ε where
+  toFun u := ζ • u
+  invFun u := ζ⁻¹ • u
+  image := Metric.ball 0 (Real.tanh (ε / 2))
+  image_eq := by
+    have heq : (fun u : ℂ => ζ • u) '' Metric.ball 0 (Real.tanh (ε / 2))
+        = Metric.ball 0 (Real.tanh (ε / 2)) := by
+      rw [Set.ext_iff]
+      intro w
+      constructor
+      · rintro ⟨u, hu, rfl⟩
+        change (ζ • u : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2))
+        rw [mem_ball_zero_iff, rootsOfUnity.smul_eq_mul, norm_mul, norm_rootsOfUnity, one_mul]
+        rw [mem_ball_zero_iff] at hu
+        exact hu
+      · intro hw
+        refine ⟨ζ⁻¹ • w, mem_ball_smul (ζ := ζ⁻¹) hw, ?_⟩
+        change ζ • ((ζ⁻¹ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) • w : ℂ) = w
+        have h : ζ • ((ζ⁻¹ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) • w : ℂ)
+            = (ζ * ζ⁻¹) • w := smul_smul ..
+        rw [h, mul_inv_cancel, one_smul]
+    exact heq.symm
+  differentiable := by
+    have key : (fun u : ℂ => ζ • u) = fun u : ℂ => ((ζ : ℂˣ) : ℂ) * u := by
+      funext u
+      rw [rootsOfUnity.smul_eq_mul]
+    rw [key]
+    exact ((differentiable_const (c := ((ζ : ℂˣ) : ℂ))).mul differentiable_id).differentiableOn
+  differentiable_inv := by
+    have key : (fun u : ℂ => ζ⁻¹ • u) = fun u : ℂ => ((ζ : ℂˣ)⁻¹ : ℂ) * u := by
+      funext u
+      simp [rootsOfUnity.smul_eq_mul]
+    rw [key]
+    exact ((differentiable_const (c := ((ζ : ℂˣ)⁻¹ : ℂ))).mul differentiable_id).differentiableOn
+  left_inv := by
+    intro w hw
+    rw [show ζ⁻¹ • (ζ • w : ℂ) = (ζ⁻¹ * ζ) • w from smul_smul .., inv_mul_cancel, one_smul]
+  right_inv := by
+    intro w hw
+    rw [show ζ • ((ζ⁻¹ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) • w : ℂ) = (ζ * ζ⁻¹) • w from
+      smul_smul .., mul_inv_cancel, one_smul]
+  zero := by simp only [smul_zero]
+  smul := by
+    intro η w hw
+    simp only [rootsOfUnity.smul_eq_mul, mul_left_comm, mul_comm]
 
-/-- **The change-of-coordinate law for the local quotient coordinate.** The local quotient
-coordinate of a linearizing coordinate is the `m`-th power of the disc coordinate multiplied by a
-scalar of modulus one, `m = Nat.card (stabilizer Γ z)`: it is determined up to a scalar of
-modulus one. -/
-theorem LinearizingCoordinate.quotientCoordinate_eq_smul_discCoordinate
-    (φ : Γ.LinearizingCoordinate z) (τ : ℍ) :
-    ∃ u : Circle, quotientCoordinate φ τ =
-      (u : ℂ) ^ Nat.card (stabilizer Γ z) * discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
-  obtain ⟨u, hu⟩ := exists_rotatedDiscCoordinate φ
-  refine ⟨u, ?_⟩
-  rw [quotientCoordinate, hu τ]
-  ring
+@[simp]
+theorem LinearizingCoordinate.coordinate_rotation
+    (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) (τ : stabilizerBall Γ z ε) :
+    coordinate (Γ := Γ) (z := z) (ε := ε) (rotation ζ) τ
+      = ζ • UpperHalfPlane.discCoordinate z (τ : ℍ) := by
+  rfl
 
-/-- The local quotient coordinate of a linearizing coordinate is the elliptic chart of
-`Subgroup.stabilizerBallQuotientChart` multiplied by a scalar of modulus one, so the local complex
-structure of the coarse quotient does not depend on the linearizing coordinate. -/
-theorem LinearizingCoordinate.quotientCoordinate_eq_smul_stabilizerBallQuotientChart
-    (φ : Γ.LinearizingCoordinate z) {ε : ℝ} (hε : 0 < ε)
-    (hopen : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε)) {τ : ℍ}
-    (hτ : dist τ z < ε) :
-    ∃ u : Circle, quotientCoordinate φ τ =
-      (u : ℂ) ^ Nat.card (stabilizer Γ z) *
-        stabilizerBallQuotientChart hε hopen (Quotient.mk _ τ) := by
-  obtain ⟨u, huτ⟩ := quotientCoordinate_eq_smul_discCoordinate φ τ
-  exact ⟨u, by rw [huτ, stabilizerBallQuotientChart_mk hε hopen hτ]⟩
-
-/-- The modulus of the local quotient coordinate is intrinsic: it is the modulus of the `m`-th
-power of the disc coordinate, `m = Nat.card (stabilizer Γ z)`, whatever the linearizing
-coordinate. -/
-theorem LinearizingCoordinate.norm_quotientCoordinate (φ : Γ.LinearizingCoordinate z) (τ : ℍ) :
-    ‖quotientCoordinate φ τ‖ = ‖discCoordinate z τ ^ Nat.card (stabilizer Γ z)‖ := by
-  obtain ⟨u, hu⟩ := quotientCoordinate_eq_smul_discCoordinate φ τ
-  rw [hu, norm_mul, norm_pow, Circle.norm_coe, one_pow, one_mul]
-
-/-- The local quotient coordinate is constant on the orbits of the stabilizer of `z`, since every
-element of that stabilizer acts by an `Nat.card (stabilizer Γ z)`-th root of unity. -/
-theorem LinearizingCoordinate.quotientCoordinate_smul (φ : Γ.LinearizingCoordinate z)
-    (q : stabilizer Γ z) (τ : ℍ) : quotientCoordinate φ (q • τ) = quotientCoordinate φ τ := by
-  have hpow : stabilizerDeriv Γ z q ^ Nat.card (stabilizer Γ z) = 1 := by
-    have h1 := congrArg (stabilizerDeriv Γ z)
-      (pow_card_eq_one' : (q : stabilizer Γ z) ^ Nat.card (stabilizer Γ z) = 1)
-    rwa [map_pow, map_one] at h1
-  rw [quotientCoordinate, quotientCoordinate, φ.smul q τ, mul_pow, hpow, one_mul]
-
-/-- **The local quotient coordinate of a linearizing coordinate is a complete invariant of the
-orbits of the stabilizer of `z`.** Two points have the same local quotient coordinate exactly when
-a single element of the stabilizer of `z` carries one to the other, so it descends to the coarse
-orbit quotient; by `Subgroup.mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow` this is the
-usual criterion of the cyclic quotient model `u ↦ u ^ m`. -/
-theorem LinearizingCoordinate.quotientCoordinate_eq_iff (φ : Γ.LinearizingCoordinate z)
-    (τ σ : ℍ) :
-    quotientCoordinate φ τ = quotientCoordinate φ σ ↔ τ ∈ orbit (stabilizer Γ z) σ := by
-  obtain ⟨u, hu⟩ := exists_rotatedDiscCoordinate φ
-  rw [quotientCoordinate, quotientCoordinate, hu τ, hu σ, mul_pow, mul_pow]
-  have hu0 : (u : ℂ) ^ Nat.card (stabilizer Γ z) ≠ 0 :=
-    pow_ne_zero _ (Circle.coe_ne_zero u)
-  constructor
-  · intro h
-    exact (mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow Γ z).mpr (mul_left_cancel₀ hu0 h)
-  · intro h
-    exact congrArg (fun w : ℂ => (u : ℂ) ^ Nat.card (stabilizer Γ z) * w)
-      ((mem_orbit_stabilizer_iff_discCoordinate_pow_eq_pow Γ z).mp h)
-
-/-- **The rotation attached to a stabilizer element does not depend on the linearizing
-coordinate.** If the `Nat.card (stabilizer Γ z)`-th root of unity by which the element `q` of the
-stabilizer of `z` acts in the coordinate `φ` is `ζ`, then `ζ` is the derivative of `q` at `z` —
-the image of `q` under the rotation character `Subgroup.stabilizerRotation`. This is read off at
-a point whose `φ`-coordinate is nonzero, where the equation can be cancelled. -/
-theorem LinearizingCoordinate.smul_eq_iff (φ : Γ.LinearizingCoordinate z) (q : stabilizer Γ z)
-    (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) :
-    (∀ τ : ℍ, (φ.toEquiv (q • τ) : ℂ) = ((ζ : ℂˣ) : ℂ) * (φ.toEquiv τ : ℂ)) ↔
-      ((ζ : ℂˣ) : ℂ) = stabilizerDeriv Γ z q := by
-  constructor
-  · intro h
-    -- Read the relation off at a point of nonzero coordinate: the point of disc coordinate `1 / 2`.
-    set w : 𝔻 := ⟨(1 / 2 : ℂ), by norm_num⟩ with hw
-    set τ := (discCoordinateHomeomorph z).symm w with hτ
-    have hτdisc : discCoordinate z τ = 1 / 2 := by
-      rw [hτ, ← coe_discCoordinateHomeomorph_apply, Homeomorph.apply_symm_apply]
-      exact congrArg (fun v : 𝔻 => (v : ℂ)) hw
-    have hτne : τ ≠ z := by
-      intro hEq
-      rw [hEq, discCoordinate_self] at hτdisc
-      norm_num at hτdisc
-    have hφτ : (φ.toEquiv τ : ℂ) ≠ 0 := by
-      intro h0
-      exact hτne (φ.toEquiv.injective (Complex.UnitDisc.coe_injective
-        (by rw [h0, φ.map_zero, Complex.UnitDisc.coe_zero])))
-    exact mul_right_cancel₀ hφτ ((h τ).symm.trans (φ.smul q τ))
-  · intro h τ
-    rw [h]
-    exact φ.smul q τ
-
-/-- **A linearizing coordinate linearizes the stabilizer action by the canonical rotations.**
-Together with `Subgroup.discCoordinate_smul_eq_rotation_smul` this says that the rotation by
-which `q` acts on the disc is the rotation attached to `q` by `Subgroup.stabilizerRotation`,
-whichever linearizing coordinate one uses. -/
-theorem LinearizingCoordinate.smul_eq_rotation (φ : Γ.LinearizingCoordinate z)
-    (q : stabilizer Γ z) :
-    ∀ τ : ℍ, (φ.toEquiv (q • τ) : ℂ) =
-      ((stabilizerRotation Γ z q : ℂˣ) : ℂ) * (φ.toEquiv τ : ℂ) := by
-  refine (smul_eq_iff φ q (stabilizerRotation Γ z q)).2 ?_
-  rw [coe_stabilizerRotation]
+@[simp]
+theorem LinearizingCoordinate.quotientCoordinate_rotation
+    (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) (τ : stabilizerBall Γ z ε) :
+    quotientCoordinate (Γ := Γ) (z := z) (ε := ε) (rotation ζ) τ
+      = UpperHalfPlane.discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
+  have hcoord := coordinate_rotation (Γ := Γ) (z := z) (ε := ε) ζ τ
+  simp only [quotientCoordinate, hcoord, rootsOfUnity.smul_pow]
 
 end Subgroup
