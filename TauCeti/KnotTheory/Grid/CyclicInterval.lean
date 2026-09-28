@@ -773,6 +773,21 @@ theorem cIco_subset_of_mem_cIoo {a b r : Fin n}
   rw [← hunion]
   exact Finset.mem_union.mpr (Or.inr hx)
 
+/-- Moving the initial endpoint of a half-open cyclic interval splits it into the interval
+from the new initial endpoint and the interval between the two initial endpoints: a point of
+`cIco t u` lies in `cIco w u` or in `cIco t w`. -/
+theorem mem_cIco_or_mem_cIco {x t w u : Fin n} (h : x ∈ cIco t u) :
+    x ∈ cIco w u ∨ x ∈ cIco t w := by
+  by_cases htu : t = u
+  · rw [htu] at h
+    simp at h
+  by_cases hwu : w = u
+  · exact Or.inr (by rw [hwu]; exact h)
+  by_cases htw : t = w
+  · exact Or.inl (by rw [← htw]; exact h)
+  simp only [mem_cIco] at h ⊢
+  split_ifs at h ⊢ <;> omega
+
 /-- Interval nesting: a point in `cIco A B` with `B` strictly inside `cIco A C` lies in
 `cIco A C`. This is the `cIco`-membership version of `cIco_subset_of_mem_cIoo`. -/
 theorem mem_cIco_of_mem_cIco_of_mem_cIoo {A B C s : Fin n}
