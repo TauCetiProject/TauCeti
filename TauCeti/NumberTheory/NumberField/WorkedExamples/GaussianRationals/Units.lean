@@ -42,7 +42,10 @@ theorem isPrimitiveRoot_four (hmin : minpoly ℤ θ = X ^ 2 + 1) : IsPrimitiveRo
   have hsq : (θ : K) ^ 2 = -1 := by
     have h := congrArg (algebraMap (𝓞 K) K) (sq_eq_neg_one hmin)
     simpa using h
-  rw [← isRoot_cyclotomic_iff_charZero (by norm_num), show (4 : ℕ) = 2 ^ (1 + 1) by norm_num,
+  -- Mathlib evaluates `Φ_{p^(k+1)}` as a geometric sum; `Φ₄` is the case `p = 2`, `k = 1`, where
+  -- the sum is `1 + X²`.
+  have hfour : (4 : ℕ) = 2 ^ (1 + 1) := by norm_num
+  rw [← isRoot_cyclotomic_iff_charZero (by norm_num), hfour,
     cyclotomic_prime_pow_eq_geom_sum Nat.prime_two]
   simp [Finset.sum_range_succ, hsq]
 
