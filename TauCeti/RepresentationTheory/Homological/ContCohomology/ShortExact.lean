@@ -55,6 +55,9 @@ sequence and has to name the same two coefficient maps.
 * `TauCeti.ContCohomology.DiscreteShortExact.inclDistribMulActionHom` and
   `TauCeti.ContCohomology.DiscreteShortExact.projDistribMulActionHom`: the inclusion and projection
   bundled as equivariant additive homomorphisms, suitable as inputs to `explicitCoeff0`.
+  `TauCeti.ContCohomology.DiscreteShortExact.ofDiscreteModuleMap_inclDistribMulActionHom` and
+  `TauCeti.ContCohomology.DiscreteShortExact.ofDiscreteModuleMap_projDistribMulActionHom` identify
+  their canonical coefficient maps with those of the raw homomorphisms.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0` and
   `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta1`: the connecting homomorphisms
   `H⁰(G, C) → H¹(G, A)` and `H¹(G, C) → H²(G, A)`.
@@ -251,6 +254,32 @@ theorem projDistribMulActionHom_apply (b : B) : S.projDistribMulActionHom b = S.
 theorem exists_incl_eq {b : B} (hb : S.proj b = 0) : ∃ a : A, S.incl a = b := S.exact b |>.1 hb
 
 end Basic
+
+section CanonicalCoefficientMaps
+
+variable {G : Type u} [Monoid G]
+  {A : Type w} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
+  {B : Type w} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
+  {C : Type w} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
+  (S : DiscreteShortExact G A B C)
+
+/-- The canonical coefficient map of the bundled inclusion is that of the raw inclusion: the
+explicit comparison lemmas are stated for `S.inclDistribMulActionHom`, the canonical long exact
+sequence for `S.incl`. -/
+theorem ofDiscreteModuleMap_inclDistribMulActionHom :
+    ofDiscreteModuleMap S.inclDistribMulActionHom.toAddMonoidHom.toIntLinearMap
+        (fun g a ↦ map_smul S.inclDistribMulActionHom g a) =
+      ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant := (rfl)
+
+/-- The canonical coefficient map of the bundled projection is that of the raw projection: the
+explicit comparison lemmas are stated for `S.projDistribMulActionHom`, the canonical long exact
+sequence for `S.proj`. -/
+theorem ofDiscreteModuleMap_projDistribMulActionHom :
+    ofDiscreteModuleMap S.projDistribMulActionHom.toAddMonoidHom.toIntLinearMap
+        (fun g b ↦ map_smul S.projDistribMulActionHom g b) =
+      ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant := (rfl)
+
+end CanonicalCoefficientMaps
 
 section OfAddSubgroup
 

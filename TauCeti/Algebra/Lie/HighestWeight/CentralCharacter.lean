@@ -236,7 +236,8 @@ theorem IsHighestWeightVector.representation_eq_vermaCentralCharacter_smul_of_li
       vermaCentralCharacter b lam
         (vermaGenerator_ne_zero_of_isHighestWeightVector b lam hv) u • m :=
   UniversalEnvelopingAlgebra.representation_eq_smul_of_mem_center_of_lieSpan_eq_top K L M u.2
-    (hv.representation_eq_vermaCentralCharacter_smul u) hgen m
+    (by simpa only [Set.mem_singleton_iff, forall_eq] using
+      hv.representation_eq_vermaCentralCharacter_smul u) hgen m
 
 /-! ### The Casimir element -/
 

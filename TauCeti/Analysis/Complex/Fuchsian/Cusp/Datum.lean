@@ -27,6 +27,7 @@ on the scaling, and the datum is unique once the cusp and the scaling are fixed.
 ## Main declarations
 
 * `Subgroup.CuspDatum`: normalized cusp data of `Γ ≤ PSL(2, ℝ)`.
+* `Subgroup.CuspDatum.cusp_eq_of_scaling_eq`: cusp data with equal scalings have equal cusps.
 * `Subgroup.CuspDatum.mem_stabilizer_iff_conj`: the conjugated stabilizer of the cusp is exactly
   the group of translations by `width * ℤ`.
 * `Subgroup.CuspDatum.ext`: a cusp datum is determined by its cusp and
@@ -202,6 +203,12 @@ theorem scaling_smul_cusp : D.scaling • D.cusp = ∞ := by
   rwa [(isParabolic_upperRightHom_iff.mpr D.width_pos.ne').smul_eq_self_iff,
     parabolicFixedPoint_upperRightHom] at hfix
 
+/-- Cusp data with the same scaling represent the same boundary point. -/
+theorem cusp_eq_of_scaling_eq {Δ : Subgroup PSL(2, ℝ)} (D : Δ.CuspDatum) (E : Γ.CuspDatum)
+    (hσ : D.scaling = E.scaling) : D.cusp = E.cusp :=
+  (MulAction.injective D.scaling)
+    (D.scaling_smul_cusp.trans (hσ.symm ▸ E.scaling_smul_cusp).symm)
+
 /-- The point of a cusp datum is a cusp point. -/
 theorem isCuspPoint : Γ.IsCuspPoint D.cusp :=
   isCuspPoint_iff_exists_mem_stabilizer_isParabolic.mpr
@@ -271,6 +278,24 @@ theorem ext {D D' : Γ.CuspDatum} (hc : D.cusp = D'.cusp)
   simp_all
 
 end CuspDatum
+
+/-- Enlarging the subgroup sends a normalized cusp datum to the orbit of its cusp point. -/
+@[simp]
+theorem cuspOrbitMap_cuspOrbit {Δ Γ : Subgroup PSL(2, ℝ)} (h : Δ ≤ Γ)
+    (D : Δ.CuspDatum) :
+    cuspOrbitMap h D.cuspOrbit =
+      Γ.cuspOrbitMk ⟨D.cusp, mem_cuspPoints.mpr (D.isCuspPoint.mono h)⟩ := by
+  apply Subtype.ext
+  simp only [cuspOrbitMap_val, D.cuspOrbit_val, cuspOrbitMk_val,
+    TauCeti.Setoid.map_of_le_mk]
+
+/-- Cusp data with the same boundary point have corresponding cusp orbits under inclusion. -/
+theorem cuspOrbitMap_cuspOrbit_eq_of_cusp_eq {Δ Γ : Subgroup PSL(2, ℝ)}
+    (h : Δ ≤ Γ) {D : Δ.CuspDatum} {E : Γ.CuspDatum} (hc : E.cusp = D.cusp) :
+    cuspOrbitMap h D.cuspOrbit = E.cuspOrbit := by
+  rw [cuspOrbitMap_cuspOrbit]
+  apply Subtype.ext
+  simpa only [cuspOrbitMk_val, E.cuspOrbit_val] using congrArg Quotient.mk'' hc.symm
 
 /-- **Existence of normalized cusp data.** Let `Γ ≤ PSL(2, ℝ)` be discrete and `c` a cusp point
 of `Γ`. For every `σ ∈ PSL(2, ℝ)` with `σ • c = ∞` there is a cusp datum with cusp `c` and

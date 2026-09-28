@@ -76,27 +76,6 @@ variable {G : Type u} {M : Type v} [Group G] [CommGroup M] [MulDistribMulAction 
 
 namespace Extension
 
-/-- **The twisted product is `M × G` as a type.** It is the multiplication that the factor set
-twists, not the underlying set, so this is the equivalence along which the topology is
-transported. -/
-def equivProd (α : FactorSet G M) : α.Extension ≃ M × G where
-  toFun x := (x.left, x.right)
-  invFun p := ⟨p.1, p.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-omit [TopologicalSpace G] [TopologicalSpace M] in
-@[simp]
-theorem equivProd_apply {α : FactorSet G M} (x : α.Extension) :
-    equivProd α x = (x.left, x.right) :=
-  (rfl)
-
-omit [TopologicalSpace G] [TopologicalSpace M] in
-@[simp]
-theorem equivProd_symm_apply {α : FactorSet G M} (p : M × G) :
-    (equivProd α).symm p = ⟨p.1, p.2⟩ :=
-  (rfl)
-
 /-- The twisted product carries the product topology of `M × G`, transported along
 `TauCeti.FactorSet.Extension.equivProd`; see `TauCeti.FactorSet.Extension.homeomorphProd`. -/
 instance instTopologicalSpace (α : FactorSet G M) : TopologicalSpace α.Extension :=
@@ -109,18 +88,19 @@ factor set, the topology is not. -/
 def homeomorphProd (α : FactorSet G M) : α.Extension ≃ₜ M × G := (equivProd α).homeomorph
 
 @[simp]
-theorem homeomorphProd_apply (x : α.Extension) : homeomorphProd α x = (x.left, x.right) := (rfl)
+theorem homeomorphProd_apply (x : α.Extension) : homeomorphProd α x = (x.left, x.right) :=
+  equivProd_apply x
 
 @[simp]
 theorem homeomorphProd_symm_apply (p : M × G) :
     (homeomorphProd α).symm p = ⟨p.1, p.2⟩ :=
-  (rfl)
+  equivProd_symm_apply p
 
 /-- The defining property of the topology on the twisted product: it is induced from `M × G`.
 This is the lemma every continuity argument about the twisted product goes through. -/
 theorem isInducing_leftRight :
-    Topology.IsInducing fun x : α.Extension => (x.left, x.right) :=
-  (homeomorphProd α).isInducing
+    Topology.IsInducing fun x : α.Extension => (x.left, x.right) := by
+  simpa only [← homeomorphProd_apply] using (homeomorphProd α).isInducing
 
 theorem continuous_left : Continuous (Extension.left : α.Extension → M) :=
   continuous_fst.comp isInducing_leftRight.continuous
@@ -140,9 +120,6 @@ instance [TotallyDisconnectedSpace M] [TotallyDisconnectedSpace G] :
 
 instance [DiscreteTopology M] [DiscreteTopology G] : DiscreteTopology α.Extension :=
   (homeomorphProd α).symm.discreteTopology
-
-instance [Finite M] [Finite G] : Finite α.Extension :=
-  .of_equiv _ (homeomorphProd α).symm.toEquiv
 
 /-! ### The topological group structure -/
 
@@ -236,7 +213,9 @@ theorem isClosedEmbedding_inl [T1Space G] : Topology.IsClosedEmbedding (inl α) 
 /-- The projection of the twisted product onto `G` is open: under
 `TauCeti.FactorSet.Extension.homeomorphProd` it is the projection `M × G → G`. -/
 theorem isOpenMap_rightHom : IsOpenMap (rightHom α) := by
-  have : ⇑(rightHom α) = Prod.snd ∘ Extension.homeomorphProd α := funext (rightHom_apply α)
+  have : ⇑(rightHom α) = Prod.snd ∘ Extension.homeomorphProd α := by
+    funext x
+    simp
   rw [this]
   exact isOpenMap_snd.comp (Extension.homeomorphProd α).isOpenMap
 

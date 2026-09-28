@@ -14,12 +14,11 @@ public import TauCeti.RepresentationTheory.Quiver.Reflection.Uniqueness
 
 Let `V` be a finite quiver whose Tits form is positive definite, the numerical side of the ADE
 condition in Gabriel's theorem. This file proves that `V` has finite representation type
-(`TauCeti.isFiniteRepType_of_titsForm_posDef`), and bounds the number of its indecomposables by the
-number of positive roots of the Tits form
-(`TauCeti.card_skeleton_indecomposable_le_card_positiveRoots`).
+(`TauCeti.isFiniteRepType_of_titsForm_posDef`).
 
-Both come from one map. The dimension vector is constant on isomorphism classes, so it descends to
-the skeleton of the finite-dimensional indecomposables as `TauCeti.isoClassDimVector`. That map
+The result comes from one map. The dimension vector is constant on isomorphism classes, so it
+descends to the skeleton of the finite-dimensional indecomposables as
+`TauCeti.isoClassDimVector`. That map
 lands in the positive roots, by `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`,
 and is injective, by `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`; a
 positive definite integral quadratic form takes the value `1` only finitely often, by
@@ -50,8 +49,6 @@ in `TauCeti.not_isFiniteRepType_kronecker`.
   the isomorphism classes into the positive roots.
 * `TauCeti.isFiniteRepType_of_titsForm_posDef`: **a finite quiver with positive definite Tits form
   has finite representation type.**
-* `TauCeti.card_skeleton_indecomposable_le_card_positiveRoots`: it has at most as many
-  indecomposables as the Tits form has positive roots.
 
 ## Implementation notes
 
@@ -70,11 +67,10 @@ at a sink is cut out of a product indexed by the arrows there.
 
 ## References
 
-This is the affirming direction of the Gabriel dichotomy `gabriel_finiteRepType_iff` of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, together with the upper bound
-of its count milestone. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*,
-and Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras* I,
-Ch. VII.
+This is the affirming direction of Gabriel's theorem: positive definiteness of the Tits form is
+what forces the indecomposables to be finite in number. See Bernstein--Gelfand--Ponomarev,
+*Coxeter functors and Gabriel's theorem*, and Assem--Simson--Skowroński, *Elements of the
+Representation Theory of Associative Algebras* I, Ch. VII.
 -/
 
 public section
@@ -162,19 +158,6 @@ theorem isFiniteRepType_of_titsForm_posDef (hpd : (titsForm V).PosDef) :
     (finite_setOf_nonneg_titsForm_eq_one V hpd).to_subtype
   rw [isFiniteRepType_iff]
   exact Finite.of_injective _ (isoClassDimVectorEmbedding.{u, v, w, x} (k := k) hpd).injective
-
-/-- **A finite quiver with positive definite Tits form has at most as many indecomposable
-representations as its Tits form has positive roots.** Gabriel's theorem sharpens this to an
-equality, by realizing every positive root; the inequality is what the injection of
-`TauCeti.isoClassDimVectorEmbedding` already gives. -/
-theorem card_skeleton_indecomposable_le_card_positiveRoots (hpd : (titsForm V).PosDef) :
-    Nat.card (Skeleton (ObjectProperty.FullSubcategory
-        (fun M : QuiverRep.{u, v, w, max v w x} k V ↦ IsFinDim k V M ∧ Indecomposable M))) ≤
-      Nat.card {d : V → ℤ // 0 ≤ d ∧ titsForm V d = 1} := by
-  have : Finite {d : V → ℤ // 0 ≤ d ∧ titsForm V d = 1} :=
-    (finite_setOf_nonneg_titsForm_eq_one V hpd).to_subtype
-  exact Nat.card_le_card_of_injective _
-    (isoClassDimVectorEmbedding.{u, v, w, x} (k := k) hpd).injective
 
 end Tits
 

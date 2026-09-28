@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
@@ -26,8 +25,9 @@ in residue characteristic two. This supplies the neighborhoods in which a nonzer
 stays in one square class, used in approximation arguments for quadratic forms.
 
 The exponent is `natCastValuation K 2 h2`, so no choice of a dyadic base field is needed.
-The proof identifies `𝓂[K]^(2 v_K(2) + 1)` with `4 𝓂[K]` and applies Hensel's lemma to
-`X² + X - c` at zero: if `c ∈ 𝓂[K]`, then `c = t² + t` and `1 + 4c = (1 + 2t)²`.
+The inclusion is the case `p = 2`, `i = v_K(2) + 1` of
+`TauCeti.map_powMonoidHom_unitFiltration_of_prime`: squaring carries `U(K, v_K(2) + 1)` onto
+`U(K, 2 v_K(2) + 1)`.
 
 The depth is sharp: `U(K, 2 v_K(2))` is not contained in the squares. Since
 `𝓂[K]^(2 v_K(2)) = 4 𝒪[K]`, an element `1 + 4c` of that depth is a square exactly when
@@ -121,19 +121,12 @@ only characteristic two itself is excluded. -/
 theorem unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     unitFiltration K (2 * natCastValuation K 2 h2 + 1) ≤
       (powMonoidHom 2 : Kˣ →* Kˣ).range := by
-  intro x hx
-  obtain ⟨u, hu, hux⟩ := mem_unitFiltration_iff_exists.mp hx
-  rw [pow_succ, ← span_four_eq_maximalIdeal_pow h2] at hu
-  obtain ⟨c, hc, hcu⟩ := Ideal.mem_span_singleton_mul.mp hu
-  have hsq : IsSquare (u : 𝒪[K]) := by
-    have hu' : (u : 𝒪[K]) = 1 + 4 * c := by linear_combination -hcu
-    rw [hu']
-    exact HenselianRing.isSquare_one_add_four_mul_of_mem hc
-  obtain ⟨a, ha⟩ := hsq
-  have haU : IsUnit a := isUnit_mul_self_iff.mp (ha ▸ u.isUnit)
-  refine ⟨Units.map (Subring.subtype 𝒪[K]).toMonoidHom haU.unit, ?_⟩
-  apply Units.ext
-  simpa [pow_two, haU.unit_spec, ← hux] using congrArg (fun z : 𝒪[K] ↦ (z : K)) ha.symm
+  -- Put the depth in the `i + v_K(2)` form expected by the general deep-unit theorem.
+  have hdepth : 2 * natCastValuation K 2 h2 + 1 =
+      natCastValuation K 2 h2 + 1 + natCastValuation K 2 h2 := by omega
+  rw [hdepth]
+  exact unitFiltration_le_range_powMonoidHom h2 fun p hp hpK hpn ↦
+    natCastValuation_lt_sub_one_mul_of_lt_of_dvd h2 (Nat.lt_succ_self _) hp hpK hpn
 
 /-- A unit `w = 1 + 4m` is a square if the residue of `m` lies in the range of
 `t ↦ t² + t`. -/

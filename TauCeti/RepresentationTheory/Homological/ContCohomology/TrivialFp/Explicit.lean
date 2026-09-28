@@ -1,0 +1,174 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.H2ZMod
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
+public import TauCeti.Topology.Algebra.ContinuousZModDual
+import TauCeti.Data.ZMod.TrivialAction
+
+/-!
+# The explicit models of `H¹(G, 𝔽_p)` and `H²(G, 𝔽_p)`
+
+The cohomology `cohomFp p G n` with trivial `ZMod p` coefficients is Mathlib's continuous cohomology
+of an object of `TopRep (ZMod p) G`, while the explicit low-degree cohomology `H1 G M` and `H2 G M`
+of `TauCeti.ContCohomology` is computed from inhomogeneous cochains with values in a discrete
+`G`-module, and every rank count of a pro-`p` group is stated for the explicit model. This file
+identifies the two in degrees one and two.
+
+The comparison for a discrete smooth representation over any scalars is
+`TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete` and its degree-two counterpart. For
+`X = trivialFp p G` the carrier is the universe lift of `ZMod p`, and a further change of
+coefficients along `trivialFpEquiv p G` lands in `H1 G (ZMod p)` and `H2 G (ZMod p)`, for any
+trivial action of `G` on `ZMod p`. In degree one, the class group of a trivial action is the group
+of continuous characters, so `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of `G`, as an
+`𝔽_p`-vector space.
+
+## Main definitions
+
+* `TauCeti.cohomFpAddEquivH1`, `TauCeti.cohomFpAddEquivH2`: `cohomFp p G 1` and `cohomFp p G 2` are
+  the explicit `H1 G (ZMod p)` and `H2 G (ZMod p)` for a trivial action.
+* `TauCeti.cohomFpLinearEquivH2`: the degree-two identification is `𝔽_p`-linear.
+* `TauCeti.cohomFpLinearEquivContinuousZModDual`: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of
+  `G`, as an `𝔽_p`-vector space.
+* `TauCeti.cohomFpTwoLinearEquivOfContinuousMulEquiv`: a topological isomorphism `G ≃ₜ* H` induces
+  `H²(G, 𝔽_p) ≃ₗ[𝔽_p] H²(H, 𝔽_p)`, with no action of either group in its statement; on the
+  explicit models it is the pullback along `e.symm` for any trivial actions
+  (`TauCeti.cohomFpTwoLinearEquivOfContinuousMulEquiv_apply`), so
+  `TauCeti.finrank_cohomFp_two_congr`: the dimension of `H²(-, 𝔽_p)` is an isomorphism invariant.
+
+## References
+
+* J.-P. Serre, *Galois Cohomology*, I §2.
+-/
+public section
+
+namespace TauCeti
+
+open CategoryTheory TauCeti.ContCohomology _root_.ContinuousCohomology
+
+universe u v
+
+attribute [local instance] TopRep.distribMulAction
+
+-- Preferring the ring path keeps a single additive structure on `ZMod p`.
+attribute [local instance 2000] Ring.toAddCommGroup
+
+section TrivialFp
+
+variable (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+attribute [local instance] continuousSMul_trivialFp
+
+variable [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
+  (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
+include htriv
+
+omit [IsTopologicalGroup G] [ContinuousSMul G (ZMod p)] in
+/-- The universe lift `trivialFpEquiv p G` is compatible with the trivial actions on both sides. -/
+private theorem trivialFpEquiv_smul (g : G) (x : (trivialFp p G).V) :
+    trivialFpEquiv p G ((ContinuousMulEquiv.refl G) g • x) = g • trivialFpEquiv p G x := by
+  rw [smul_trivialFp_V, htriv]
+
+/-- **`H¹(G, 𝔽_p)` is the explicit `H1 G (ZMod p)`**, for any trivial action of `G` on `ZMod p`. -/
+noncomputable def cohomFpAddEquivH1 : cohomFp p G 1 ≃+ H1 G (ZMod p) :=
+  (trivialFp p G).explicitH1AddEquivContinuousCohomologyOfDiscrete.symm.trans
+    (explicitMap1Equiv G (trivialFp p G).V G (ZMod p) (ContinuousMulEquiv.refl G)
+      (trivialFpEquiv p G).toAddEquiv continuous_of_discreteTopology continuous_of_discreteTopology
+      (trivialFpEquiv_smul p G htriv))
+
+/-- **`H²(G, 𝔽_p)` is the explicit `H2 G (ZMod p)`**, for any trivial action of `G` on `ZMod p`. -/
+noncomputable def cohomFpAddEquivH2 [LocallyCompactSpace G] : cohomFp p G 2 ≃+ H2 G (ZMod p) :=
+  (trivialFp p G).explicitH2AddEquivContinuousCohomologyOfDiscrete.symm.trans
+    (explicitMap2Equiv G (trivialFp p G).V G (ZMod p) (ContinuousMulEquiv.refl G)
+      (trivialFpEquiv p G).toAddEquiv continuous_of_discreteTopology continuous_of_discreteTopology
+      (trivialFpEquiv_smul p G htriv))
+
+/-- **`H²(G, 𝔽_p)` is the explicit `H2 G (ZMod p)` as an `𝔽_p`-vector space**, for any trivial
+action of `G` on `ZMod p`. -/
+noncomputable def cohomFpLinearEquivH2 [LocallyCompactSpace G] :
+    cohomFp p G 2 ≃ₗ[ZMod p] H2 G (ZMod p) :=
+  LinearEquiv.ofBijective ((cohomFpAddEquivH2 p G htriv).toAddMonoidHom.toZModLinearMap p)
+    (cohomFpAddEquivH2 p G htriv).bijective
+
+/-- The linear identification of `H²(G, 𝔽_p)` with its explicit model is the additive one. -/
+@[simp]
+theorem cohomFpLinearEquivH2_apply [LocallyCompactSpace G] (x : cohomFp p G 2) :
+    cohomFpLinearEquivH2 p G htriv x = cohomFpAddEquivH2 p G htriv x :=
+  (rfl)
+
+omit htriv in
+/-- **`H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of `G`**, as an `𝔽_p`-vector space: the classes of
+continuous `1`-cocycles for the trivial action are the continuous characters `G → 𝔽_p`. -/
+noncomputable def cohomFpLinearEquivContinuousZModDual :
+    cohomFp p G 1 ≃ₗ[ZMod p] continuousZModDual p G :=
+  -- The explicit model `H1 G (ZMod p)` needs an action of `G` on `ZMod p`; the trivial one is
+  -- installed for the duration of the construction and does not appear in the statement.
+  let _ := trivialZModAction p G
+  have : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
+  let e : cohomFp p G 1 ≃+ continuousZModDual p G :=
+    (cohomFpAddEquivH1 p G fun _ _ ↦ rfl).trans (H1EquivOfSmulEqSelf fun _ _ ↦ rfl)
+  LinearEquiv.ofBijective (e.toAddMonoidHom.toZModLinearMap p) e.bijective
+
+end TrivialFp
+
+section Transport
+
+variable (p : ℕ) {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+
+/-- **`H²(-, 𝔽_p)` is invariant under topological isomorphism**: a topological isomorphism
+`G ≃ₜ* H` induces an `𝔽_p`-linear isomorphism `H²(G, 𝔽_p) ≃ₗ[𝔽_p] H²(H, 𝔽_p)`. On the explicit
+models `H2 G (ZMod p)` and `H2 H (ZMod p)`, for any trivial actions of `G` and `H` on `ZMod p`, it
+is the pullback along `e.symm` (`TauCeti.cohomFpTwoLinearEquivOfContinuousMulEquiv_apply`). -/
+noncomputable def cohomFpTwoLinearEquivOfContinuousMulEquiv (e : G ≃ₜ* H) :
+    cohomFp p G 2 ≃ₗ[ZMod p] cohomFp p H 2 :=
+  -- The explicit models need actions of `G` and `H` on `ZMod p`; the trivial ones are installed
+  -- for the duration of the construction and do not appear in the statement.
+  haveI : LocallyCompactSpace H := e.toHomeomorph.locallyCompactSpace_iff.1 inferInstance
+  letI := trivialZModAction p G
+  letI := trivialZModAction p H
+  haveI : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
+  haveI : ContinuousSMul H (ZMod p) := ⟨continuous_snd⟩
+  let f : H2 G (ZMod p) ≃+ H2 H (ZMod p) :=
+    explicitMap2Equiv G (ZMod p) H (ZMod p) e.symm (AddEquiv.refl (ZMod p)) continuous_id
+      continuous_id fun _ _ ↦ rfl
+  (cohomFpLinearEquivH2 p G fun _ _ ↦ rfl).trans
+    ((LinearEquiv.ofBijective (f.toAddMonoidHom.toZModLinearMap p) f.bijective).trans
+      (cohomFpLinearEquivH2 p H fun _ _ ↦ rfl).symm)
+
+/-- On the explicit models, for any trivial actions of `G` and `H` on `ZMod p`, the transport of
+`H²(-, 𝔽_p)` along `e : G ≃ₜ* H` is the pullback along `e.symm`. -/
+@[simp]
+theorem cohomFpTwoLinearEquivOfContinuousMulEquiv_apply [LocallyCompactSpace H]
+    [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)] [DistribMulAction H (ZMod p)]
+    [ContinuousSMul H (ZMod p)] (e : G ≃ₜ* H) (htG : ∀ (g : G) (m : ZMod p), g • m = m)
+    (htH : ∀ (h : H) (m : ZMod p), h • m = m) (x : cohomFp p G 2) :
+    cohomFpTwoLinearEquivOfContinuousMulEquiv p e x =
+      (cohomFpLinearEquivH2 p H htH).symm (explicitMap2 G (ZMod p) H (ZMod p) e.symm
+        (AddMonoidHom.id (ZMod p)) continuous_id (fun h m ↦ (htG (e.symm h) m).trans (htH h m).symm)
+        (cohomFpLinearEquivH2 p G htG x)) := by
+  -- Both actions are the trivial one, so the explicit models are those of the construction.
+  obtain rfl : ‹DistribMulAction G (ZMod p)› = trivialZModAction p G :=
+    DistribMulAction.ext (funext fun g ↦ funext fun m ↦ htG g m)
+  obtain rfl : ‹DistribMulAction H (ZMod p)› = trivialZModAction p H :=
+    DistribMulAction.ext (funext fun h ↦ funext fun m ↦ htH h m)
+  let := trivialZModAction p G
+  let := trivialZModAction p H
+  exact congrArg (cohomFpLinearEquivH2 p H htH).symm
+    (explicitMap2Equiv_apply G (ZMod p) H (ZMod p) e.symm (AddEquiv.refl (ZMod p)) continuous_id
+      continuous_id _ (cohomFpLinearEquivH2 p G htG x))
+
+/-- **The dimension of `H²(-, 𝔽_p)` is invariant under topological isomorphism.** -/
+theorem finrank_cohomFp_two_congr (e : G ≃ₜ* H) :
+    Module.finrank (ZMod p) (cohomFp p G 2) = Module.finrank (ZMod p) (cohomFp p H 2) :=
+  (cohomFpTwoLinearEquivOfContinuousMulEquiv p e).finrank_eq
+
+end Transport
+
+end TauCeti

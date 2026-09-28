@@ -26,7 +26,8 @@ on the target. It also records the pointwise characterization of finite-order co
 homomorphisms and the open kernel of a finite-order continuous character into complex units.
 Kernels of continuous homomorphisms into a discrete monoid are closed, so on a
 compact group the common kernel of a family of them is approximated from outside by the common
-kernels of its finite subfamilies.
+kernels of its finite subfamilies, and the range of a continuous homomorphism out of a compact
+group into a Hausdorff group is a closed subgroup.
 -/
 
 public section
@@ -97,6 +98,14 @@ theorem exists_finset_iInter_ker_subset [CompactSpace G] {H : Type*}
     (Set.disjoint_left.mpr fun x hx hmem ↦ hx (h hmem))
   exact ⟨F, fun x hx ↦ not_not.mp fun hxU ↦ Set.disjoint_left.mp hF hxU hx⟩
 
+/-- The range of a continuous homomorphism out of a compact group into a Hausdorff group is a
+closed subgroup. -/
+theorem _root_.MonoidHom.isClosed_range_of_continuous [CompactSpace G] {H : Type*} [Group H]
+    [TopologicalSpace H] [T2Space H] {f : G →* H} (hf : Continuous f) :
+    IsClosed (f.range : Set H) := by
+  rw [MonoidHom.coe_range]
+  exact (isCompact_range hf).isClosed
+
 namespace ContinuousMonoidHom
 
 /-- Evaluating a continuous homomorphism assembled from a homomorphism and a continuity proof. -/
@@ -105,8 +114,11 @@ theorem _root_.ContinuousMonoidHom.coe_mk {A B : Type*} [Monoid A] [TopologicalS
     [TopologicalSpace B] (f : A →* B) (hf : Continuous f) : ⇑(⟨f, hf⟩ : A →ₜ* B) = f :=
   rfl
 
--- Both definitions below are exposed: downstream, `TopRep.res` objects taken along them have to
--- be definitionally the ones taken along the bare `Subgroup.subtype` and `QuotientGroup.mk'`.
+-- The three definitions below are exposed: downstream, `TopRep.res` objects taken along them have
+-- to be definitionally the ones taken along the bare `Subgroup.subtype`, `Subgroup.inclusion` and
+-- `QuotientGroup.mk'`. For `subgroupInclusion h` with `h : H ≤ S` this is what lets the identity
+-- of `TopRep.res H.subtype X` serve as the coefficient map of `ContinuousCohomology.map` along the
+-- inclusion `H ↪ S` (the restriction `TauCeti.ContinuousCohomology.resLE`).
 /-- The inclusion of a subgroup, carrying the subspace topology, as a continuous homomorphism. -/
 @[expose] def subgroupSubtype (S : Subgroup G) : S →ₜ* G where
   __ := S.subtype
@@ -118,6 +130,41 @@ theorem coe_subgroupSubtype (S : Subgroup G) : (subgroupSubtype S : S →* G) = 
 
 @[simp]
 theorem subgroupSubtype_apply (S : Subgroup G) (s : S) : subgroupSubtype S s = (s : G) :=
+  (rfl)
+
+/-- The inclusion of a subgroup into a larger subgroup, both carrying the subspace topology, as a
+continuous homomorphism. -/
+@[expose] def subgroupInclusion {H S : Subgroup G} (h : H ≤ S) : H →ₜ* S where
+  __ := Subgroup.inclusion h
+  continuous_toFun := continuous_subtype_val.subtype_mk _
+
+@[simp]
+theorem coe_subgroupInclusion {H S : Subgroup G} (h : H ≤ S) :
+    (subgroupInclusion h : H →* S) = Subgroup.inclusion h :=
+  (rfl)
+
+@[simp]
+theorem subgroupInclusion_apply {H S : Subgroup G} (h : H ≤ S) (x : H) :
+    subgroupInclusion h x = Subgroup.inclusion h x :=
+  (rfl)
+
+/-- The inclusion of a subgroup into itself is the identity. -/
+@[simp]
+theorem subgroupInclusion_refl (H : Subgroup G) :
+    subgroupInclusion (le_refl H) = ContinuousMonoidHom.id H :=
+  (rfl)
+
+/-- Inclusions of subgroups compose: including `H` into `S` and then `S` into `T` is including `H`
+into `T`. -/
+@[simp]
+theorem subgroupInclusion_comp_subgroupInclusion {H S T : Subgroup G} (hHS : H ≤ S) (hST : S ≤ T) :
+    (subgroupInclusion hST).comp (subgroupInclusion hHS) = subgroupInclusion (hHS.trans hST) :=
+  (rfl)
+
+/-- The inclusion of a subgroup factors through any larger subgroup. -/
+@[simp]
+theorem subgroupSubtype_comp_subgroupInclusion {H S : Subgroup G} (h : H ≤ S) :
+    (subgroupSubtype S).comp (subgroupInclusion h) = subgroupSubtype H :=
   (rfl)
 
 end ContinuousMonoidHom

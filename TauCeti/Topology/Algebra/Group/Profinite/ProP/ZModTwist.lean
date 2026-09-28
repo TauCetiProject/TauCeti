@@ -9,7 +9,7 @@ public import TauCeti.Data.ZMod.MulCastHom
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicUnits
 
 /-!
 # The twisted coefficients `I(χ)/pⁱ` of a `p`-adic character
@@ -51,6 +51,9 @@ its generators. `I(χ)/p` is `ZModTwist χ 1`, the module at `i = 1`, with carri
 ## Main results
 
 * `TauCeti.ZModTwist.isProP_multiplicative`: `I(χ)/pⁱ` is pro-`p`.
+* `TauCeti.IsProP.charScalar_one_eq_one`, `TauCeti.IsProP.smul_zModTwist_one_eq_self`: a pro-`p`
+  group acts trivially on the bottom level `I(χ)/p`, because a continuous character of a pro-`p`
+  group takes principal-unit values.
 * `TauCeti.ZModTwist.reduce_surjective`: the reductions are surjective.
 * `TauCeti.ZModTwist.mulPow_injective`: the multiplications are injective.
 * `TauCeti.ZModTwist.reduce_mulPow_eq_mulPow_reduce`: the reductions commute with the
@@ -365,5 +368,28 @@ theorem explicitCoeff1_reduce_explicitCoeff1_mulPow {i' n' : ℕ} (h : i + j = n
     (reduce_comp_mulPow χ h h' hi hn)
 
 end ZModTwist
+
+/-! ### The bottom level `I(χ)/p` of a pro-`p` group -/
+
+section LevelOne
+
+variable (hG : IsProP p G)
+include hG
+
+-- Not `@[simp]`: the simp lemma `charScalar_apply` rewrites the left-hand side to
+-- `PadicInt.toZModPow 1 (χ g)` first, so the tagged lemma fails the `simpNF` linter.
+/-- **A pro-`p` group acts trivially on `I(χ)/p`**: the scalar `χ g mod p` is `1`, because a
+continuous character of a pro-`p` group takes values in the principal units `1 + pℤ_p`. -/
+theorem IsProP.charScalar_one_eq_one (g : G) : charScalar χ 1 g = 1 := by
+  rw [charScalar_apply]
+  exact mem_unitsPrincipal_iff_toZModPow.mp (hG.mem_unitsPrincipal_one χ g)
+
+/-- The action of a pro-`p` group on the bottom level `I(χ)/p` of the twisted coefficients is
+trivial. -/
+@[simp]
+theorem IsProP.smul_zModTwist_one_eq_self (g : G) (x : ZModTwist χ 1) : g • x = x :=
+  ZModTwist.ext (by rw [ZModTwist.val_smul, hG.charScalar_one_eq_one χ g, one_mul])
+
+end LevelOne
 
 end TauCeti

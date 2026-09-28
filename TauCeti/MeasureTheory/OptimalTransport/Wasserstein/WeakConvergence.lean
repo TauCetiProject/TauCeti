@@ -27,6 +27,8 @@ finite-distance components into `ProbabilityMeasure` are continuous.
 
 ## Main statements
 
+* `TauCeti.wassersteinEDist_map_le_of_edist_le` — an almost-everywhere displacement bound for
+  the Wasserstein distance to a pushforward;
 * `TauCeti.levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self` — a quantitative comparison
   between the two extended distances;
 * `TauCeti.WassersteinSpace.continuous_toProbabilityMeasure` — Wasserstein convergence of
@@ -50,6 +52,21 @@ open scoped ENNReal
 namespace TauCeti
 
 universe u
+
+/-- If an almost-everywhere measurable map moves almost every point by at most `δ`, its
+pushforward is at most `δ` away in the first Wasserstein distance. -/
+theorem wassersteinEDist_map_le_of_edist_le
+    {Z : Type*} [PseudoMetricSpace Z] [SecondCountableTopology Z]
+    [MeasurableSpace Z] [BorelSpace Z]
+    (ρ : Measure Z) [IsProbabilityMeasure ρ] {F : Z → Z} (hF : AEMeasurable F ρ)
+    {δ : ℝ≥0∞} (hδ : ∀ᵐ z ∂ρ, edist z (F z) ≤ δ) :
+    wassersteinEDist 1 ρ (ρ.map F) ≤ δ := by
+  have hm : AEMeasurable (fun z : Z ↦ edist z (F z)) ρ :=
+    measurable_edist.comp_aemeasurable (aemeasurable_id.prodMk hF)
+  refine (wassersteinEDist_map_le measurable_edist hF 1).trans ?_
+  refine (eLpNorm_mono_enorm_ae hm.aestronglyMeasurable (g := fun _ : Z ↦ δ) hδ).trans ?_
+  rw [eLpNorm_const _ (by norm_num : (1 : ℝ≥0∞) ≠ 0) (IsProbabilityMeasure.ne_zero ρ)]
+  simp
 
 section Comparison
 

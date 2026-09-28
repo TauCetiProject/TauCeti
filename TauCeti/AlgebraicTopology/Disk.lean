@@ -16,6 +16,12 @@ public import Mathlib.Topology.Homotopy.Contractible
 The closed Euclidean disk is contractible, and its boundary is path-connected when the disk has
 dimension at least two.  This module also constructs the standard `TopPair` consisting of a disk
 and its boundary, providing the topological input for relative-homology calculations.
+
+Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
+`EuclideanSpace ℝ (Fin n)`.  It is homeomorphic to the unit sphere of the Euclidean space
+`EuclideanSpace ℝ (ULift (Fin n))` of the same dimension in the lifted universe
+(`TauCeti.diskBoundaryHomeomorph`), which lets results about unit spheres of inner product spaces
+in that universe be applied to it.  In particular the boundary of the `0`-disk is empty.
 -/
 
 public section
@@ -91,6 +97,33 @@ lets instances about pairs with contractible ambient space apply to `diskBoundar
 instance contractibleSpace_diskBoundaryPair_fst (n : ℕ) :
     ContractibleSpace (diskBoundaryPair.{u} n).fst :=
   TopCat.contractibleSpace_disk n
+
+/-- Mathlib's boundary `TopCat.diskBoundary n` of the `n`-disk, the universe lift of the unit
+sphere of `EuclideanSpace ℝ (Fin n)`, is homeomorphic to the unit sphere of the Euclidean space
+`EuclideanSpace ℝ (ULift (Fin n))` of the same dimension in the lifted universe. -/
+def diskBoundaryHomeomorph (n : ℕ) :
+    TopCat.diskBoundary.{u} n ≃ₜ Metric.sphere (0 : EuclideanSpace ℝ (ULift.{u} (Fin n))) 1 :=
+  Homeomorph.ulift.trans <|
+    (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.ulift.{u}.symm : Fin n ≃ ULift.{u} (Fin n)))
+      |>.toHomeomorph.subtype fun x ↦ by simp
+
+/-- The dimension of the Euclidean space `EuclideanSpace ℝ (ULift (Fin n))`. -/
+lemma finrank_euclideanSpace_ulift_fin (n : ℕ) :
+    Module.finrank ℝ (EuclideanSpace ℝ (ULift.{u} (Fin n))) = n := by
+  rw [finrank_euclideanSpace, Fintype.card_ulift, Fintype.card_fin]
+
+/-- The boundary of the `0`-disk is empty. -/
+instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
+  have : Subsingleton (EuclideanSpace ℝ (ULift.{u} (Fin 0))) :=
+    Module.finrank_zero_iff.mp (finrank_euclideanSpace_ulift_fin 0)
+  have : IsEmpty (Metric.sphere (0 : EuclideanSpace ℝ (ULift.{u} (Fin 0))) 1) :=
+    Set.isEmpty_coe_sort.mpr (Metric.sphere_eq_empty_of_subsingleton one_ne_zero)
+  (diskBoundaryHomeomorph 0).toEquiv.isEmpty
+
+/-- The subspace of the pair consisting of the `0`-disk and its boundary is empty.  This lets
+instances about pairs with empty subspace apply to `diskBoundaryPair 0`. -/
+instance isEmpty_diskBoundaryPair_zero_snd : IsEmpty (diskBoundaryPair.{u} 0).snd :=
+  inferInstanceAs (IsEmpty (TopCat.diskBoundary.{u} 0))
 
 end TauCeti
 end

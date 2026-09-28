@@ -142,19 +142,48 @@ section Conditional
 variable {β : Type*} [MeasurableSpace β]
 
 omit [StandardBorelSpace α] [Nonempty α] in
-/-- A jointly measurable realization of a Markov kernel turns independent uniform noise into its
-composition-product with any s-finite base measure. -/
-theorem map_prod_volume_eq_compProd_of_map_volume {μ : Measure β} [SFinite μ]
-    (κ : Kernel β α) [IsSFiniteKernel κ] (f : β → I → α)
-    (hf : Measurable (Function.uncurry f))
-    (hmap : ∀ b, (volume : Measure I).map (f b) = κ b) :
-    (μ.prod (volume : Measure I)).map (fun p => (p.1, f p.1 p.2)) = μ ⊗ₘ κ := by
-  have hF : Measurable (fun p : β × I => (p.1, f p.1 p.2)) := by fun_prop
+/-- A jointly measurable fibrewise realization of a kernel turns independent noise with law `ρ`
+into the corresponding composition-product with any s-finite base measure. -/
+theorem _root_.ProbabilityTheory.Kernel.map_prod_eq_compProd_of_map
+    {ξ : Type*} [MeasurableSpace ξ]
+    {μ : Measure β} [SFinite μ] (κ : Kernel β α) [IsSFiniteKernel κ]
+    (ρ : Measure ξ) [SFinite ρ] (f : β → ξ → α) (hf : Measurable (Function.uncurry f))
+    (hmap : ∀ b, ρ.map (f b) = κ b) :
+    (μ.prod ρ).map (fun p => (p.1, f p.1 p.2)) = μ ⊗ₘ κ := by
+  have hF : Measurable (fun p : β × ξ => (p.1, f p.1 p.2)) := by
+    fun_prop
   ext s hs
   rw [Measure.map_apply hF hs, Measure.prod_apply (hs.preimage hF), Measure.compProd_apply hs]
   congr with b
   rw [← hmap b, Measure.map_apply hf.of_uncurry_left (measurable_prodMk_left hs)]
   rfl
+
+omit [StandardBorelSpace α] [Nonempty α] in
+/-- **Separate randomizations realize a product kernel.** If `f b` and `g b` realize two kernels
+from independent noise variables, then applying them to the two coordinates of the product noise
+realizes the product kernel. The base point is retained in the output. -/
+theorem _root_.ProbabilityTheory.Kernel.map_prod_prod_eq_compProd_prod_of_map
+    {γ ξ ζ : Type*} [MeasurableSpace γ] [MeasurableSpace ξ] [MeasurableSpace ζ]
+    (κ : Kernel β α) [IsSFiniteKernel κ] (η : Kernel β γ) [IsSFiniteKernel η]
+    {μ : Measure β} [SFinite μ] (ρ₁ : Measure ξ) (ρ₂ : Measure ζ)
+    [SFinite ρ₁] [SFinite ρ₂] (f : β → ξ → α) (g : β → ζ → γ)
+    (hf : Measurable (Function.uncurry f)) (hg : Measurable (Function.uncurry g))
+    (hf_map : ∀ b, ρ₁.map (f b) = κ b) (hg_map : ∀ b, ρ₂.map (g b) = η b) :
+    (μ.prod (ρ₁.prod ρ₂)).map
+        (fun p => (p.1, f p.1 p.2.1, g p.1 p.2.2)) = μ ⊗ₘ (κ ×ₖ η) := by
+  let F : β → ξ × ζ → α × γ := fun b u => (f b u.1, g b u.2)
+  have hF : Measurable (Function.uncurry F) := by
+    fun_prop
+  have hF_map (b : β) :
+      (ρ₁.prod ρ₂).map (F b) = (κ ×ₖ η) b := by
+    rw [Kernel.prod_apply, ← hf_map b, ← hg_map b]
+    calc
+      (ρ₁.prod ρ₂).map (F b) = (ρ₁.prod ρ₂).map (Prod.map (f b) (g b)) := by
+        congr 1
+      _ = (ρ₁.map (f b)).prod (ρ₂.map (g b)) :=
+        (Measure.map_prod_map ρ₁ ρ₂ hf.of_uncurry_left hg.of_uncurry_left).symm
+  exact (κ ×ₖ η).map_prod_eq_compProd_of_map
+    (ρ₁.prod ρ₂) F hF hF_map
 
 /-- **Conditional randomization of a Markov kernel.** There is a jointly measurable function of
 the kernel parameter and one uniform variable whose skew-product law over any s-finite base
@@ -164,7 +193,7 @@ theorem exists_measurable_map_prod_volume_eq_compProd (κ : Kernel β α)
     ∃ f : β → I → α, Measurable (Function.uncurry f) ∧
       (μ.prod (volume : Measure I)).map (fun p => (p.1, f p.1 p.2)) = μ ⊗ₘ κ := by
   obtain ⟨f, hf, hmap⟩ := Kernel.exists_measurable_map_eq_unitInterval κ
-  exact ⟨f, hf, map_prod_volume_eq_compProd_of_map_volume κ f hf hmap⟩
+  exact ⟨f, hf, κ.map_prod_eq_compProd_of_map volume f hf hmap⟩
 
 /-- **Conditional randomization of a joint law.** Every finite measure on `β × α` is obtained by
 first drawing its first marginal and then applying a jointly measurable function to that point

@@ -260,6 +260,19 @@ theorem exists_isLocalEquationAt (D : CartierDivisor X) (x : X) :
   rw [rationalUnitClass_apply]
   exact ((congrArg _ ((rationalUnitSectionsEquiv X V).symm_apply_apply f)).trans hf)
 
+/-- Every point of an open subset has a smaller open neighbourhood on which `D` has a single
+Cartier equation. -/
+theorem exists_localEquation_le (D : CartierDivisor X) (U : X.Opens) {x : X} (hx : x ∈ U) :
+    ∃ (V : X.Opens) (_hVU : V ≤ U) (hxV : x ∈ V) (g : X.functionFieldˣ),
+      haveI : Nonempty V := ⟨⟨x, hxV⟩⟩
+      rationalUnitClass X V (Additive.ofMul g) = D |_ V := by
+  obtain ⟨g, hg⟩ := D.exists_isLocalEquationAt x
+  obtain ⟨W, hxW, hg⟩ := isLocalEquationAt_iff.mp hg
+  have : Nonempty W := ⟨⟨x, hxW⟩⟩
+  have : Nonempty (U ⊓ W : X.Opens) := ⟨⟨x, hx, hxW⟩⟩
+  exact ⟨U ⊓ W, inf_le_left, ⟨hx, hxW⟩, g,
+    rationalUnitClass_eq_of_le inf_le_right hg⟩
+
 /-- Two local equations of `D` at `x` differ by a unit of the local ring `𝒪_{X,x}`. -/
 theorem IsLocalEquationAt.exists_unit_mul_eq {D : CartierDivisor X} {x : X}
     {f g : X.functionFieldˣ} (hf : D.IsLocalEquationAt x f) (hg : D.IsLocalEquationAt x g) :

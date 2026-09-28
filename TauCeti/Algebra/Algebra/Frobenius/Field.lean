@@ -80,4 +80,18 @@ theorem _root_.LinearMap.existsUnique_unit_apply_eq_apply_mul (s t : L →ₗ[K]
         exact (hu x).symm
       _ = e a := hta.symm
 
+variable {E : Type*} [AddCommGroup E] [Module L E] [Module K E] [IsScalarTower K L E]
+
+/-- The composite of a nonzero linear functional on a field extension with a nonzero linear
+functional on an `L`-module is nonzero. The restriction of scalars is needed so that the inner
+functional can be composed over the base field. -/
+theorem _root_.LinearMap.comp_restrictScalars_ne_zero (s : L →ₗ[K] K) (t : E →ₗ[L] L)
+    (hs : s ≠ 0) (ht : t ≠ 0) : s.comp (t.restrictScalars K) ≠ 0 := by
+  have ht_surjective : Function.Surjective t :=
+    surjective_of_nonzero_of_finrank_eq_one (Module.finrank_self L) ht
+  intro hcomp
+  apply hs
+  exact Function.Surjective.injective_linearMapComp_right (g := t.restrictScalars K)
+    ht_surjective (by simpa using hcomp)
+
 end TauCeti

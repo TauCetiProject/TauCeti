@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
 
 /-!
 # Conditional independence and the indicator conditional-expectation projection
@@ -24,16 +25,24 @@ the generic contraction-independence identity that feeds them:
   `mH`-measurable `H`).
 * `condExp_indicator_sup_eq_of_condIndep` — the converse projection: from `CondIndep mG mF mH`,
   conditioning an `mH`-measurable indicator on the join `mF ⊔ mG` collapses to conditioning on `mG`.
+* `condIndep_of_condIndep_of_le_of_le` — weak union: conditional independence persists
+  when the conditioning σ-algebra is enlarged by information from one side.
 * `condExp_indicator_eq_of_law_eq_of_comap_le` — Kallenberg's contraction-independence identity
   (Lemma 1.3): if the pair laws agree, `(X, W) =ᵈ (X, W')`, and `σ(W) ≤ σ(W')`, then conditioning
   the indicator of `X ⁻¹' A` on the finer `σ(W')` equals conditioning on the coarser `σ(W)`.  Its
   pair-law/L² machinery is generic conditional-expectation infrastructure, kept `private` here.
+* `iCondIndep_of_condIndep_compl` — a family is conditionally independent if each member is
+  conditionally independent of all the others together. It turns local deletion arguments into
+  simultaneous conditional independence.
 
-These feed the de Finetti block-product factorisation / prefix-deletion drop-info step —
-the standard conditional-independence characterisation of the de Finetti route; see Kallenberg,
-*Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
+The first four results feed the de Finetti block-product factorisation / prefix-deletion drop-info
+step — the standard conditional-independence characterisation of the de Finetti route; see
+Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
 `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
+
+The complement criterion turns one-cell deletion arguments into conditional independence of all
+visible array cells given the crossing strips.
 -/
 
 public section
@@ -249,6 +258,28 @@ theorem condExp_indicator_sup_eq_of_condIndep {Ω : Type*} {mΩ : MeasurableSpac
     (fun _ _ _ ↦ integrable_condExp.integrableOn) (fun s hs _ ↦
       setIntegral_condExp_indicator_eq_of_measurableSet_sup hmF hmG hmH hCI hH hs)
     (stronglyMeasurable_condExp.aestronglyMeasurable.mono le_sup_right)).symm
+
+/-- **Conditional independence persists when the conditioning information is enlarged inside one
+side.** If `mF` and `mH` are conditionally independent given `mG`, and
+`mG ≤ mG' ≤ mH`, then they are conditionally independent given `mG'`.
+
+This is the weak-union property of conditional independence, in the nested form most useful for
+random fields: one may reveal additional information from the `mH` side without creating a
+dependence on `mF`. -/
+theorem condIndep_of_condIndep_of_le_of_le {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    [StandardBorelSpace Ω] {μ : @Measure Ω mΩ} [IsFiniteMeasure μ]
+    {mF mG mG' mH : MeasurableSpace Ω} (hmF : mF ≤ mΩ) (hmG : mG ≤ mΩ)
+    (hmH : mH ≤ mΩ) (h : CondIndep mG mF mH hmG μ) (hGG' : mG ≤ mG')
+    (hG'H : mG' ≤ mH) :
+    CondIndep mG' mF mH (hG'H.trans hmH) μ := by
+  apply CondIndep.symm
+  refine condIndep_of_indicator_condExp_eq hmH (hG'H.trans hmH) hmF ?_
+  intro F hF
+  rw [sup_eq_left.mpr hG'H]
+  have hdrop := condExp_indicator_sup_eq_of_condIndep hmH hmG hmF h.symm hF
+  rw [sup_eq_left.mpr (hGG'.trans hG'H)] at hdrop
+  exact hdrop.trans
+    (TauCeti.MeasureTheory.condExp_ae_eq_of_le_of_le hGG' hG'H hmH hdrop).symm
 
 /-! ### Kallenberg Lemma 1.3 (contraction-independence)
 
@@ -515,6 +546,43 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω 
   -- `μ₁ =ᵐ μ₂` from the polarisation `∫ (μ₂ - μ₁)² = ∫ μ₂² - 2 ∫ μ₂ μ₁ + ∫ μ₁² = 0`.
   exact (ae_eq_of_integral_mul_eq_of_integral_sq_eq hμ₁sq_int hμ₂sq_int hμ₂μ₁_int
     h_cross h_sq_eq).symm
+
+variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace Ω]
+  {μ : Measure Ω} [IsFiniteMeasure μ]
+  {m' : MeasurableSpace Ω} (hm' : m' ≤ mΩ)
+  {m : ι → MeasurableSpace Ω}
+
+/-- A family is conditionally independent when each member is conditionally independent of all
+the others together, given the same conditioning sigma-algebra. This criterion applies when
+local independence is proved by removing one coordinate from a process. -/
+theorem iCondIndep_of_condIndep_compl
+    (hm : ∀ i, m i ≤ mΩ)
+    (h : ∀ i, CondIndep m' (m i) (⨆ j : {j : ι // j ≠ i}, m j.1)
+      (mΩ := mΩ) hm' μ) :
+    iCondIndep m' hm' m μ := by
+  classical
+  refine (iCondIndep_iff m' hm' m hm μ).2 ?_
+  intro s f hf
+  induction s using Finset.induction_on with
+  | empty =>
+      simp only [Finset.notMem_empty, Set.iInter_of_empty, Set.iInter_univ,
+        Set.indicator_univ, Finset.prod_empty, condExp_const hm']
+      filter_upwards [] with ω
+      rfl
+  | @insert a s ha ih =>
+    have hrest : MeasurableSet[⨆ j : {j : ι // j ≠ a}, m j.1]
+        (⋂ j ∈ s, f j) := by
+      apply Finset.measurableSet_biInter
+      intro j hj
+      exact (le_iSup (fun k : {k : ι // k ≠ a} => m k.1)
+        ⟨j, fun hja => ha (hja ▸ hj)⟩) (f j)
+          (hf j (Finset.mem_insert_of_mem hj))
+    have hfactor := (condIndep_iff m' (m a) (⨆ j : {j : ι // j ≠ a}, m j.1)
+      hm' (hm a) (iSup_le fun j => hm j.1) μ).1 (h a)
+      (f a) (⋂ j ∈ s, f j) (hf a (Finset.mem_insert_self _ _)) hrest
+    simpa only [Finset.set_biInter_insert, Finset.prod_insert ha] using
+      hfactor.trans (Filter.EventuallyEq.rfl.mul (ih (fun j hj =>
+        hf j (Finset.mem_insert_of_mem hj))))
 
 end Probability
 

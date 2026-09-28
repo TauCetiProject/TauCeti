@@ -7,13 +7,15 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+public import TauCeti.Algebra.Quaternion.NormForm
 
 /-!
 # The compact three-dimensional even Clifford algebra
 
 The even Clifford algebra of the positive-definite real form in dimension three is the Hamilton
 quaternion algebra. Under this identification, Clifford reversal is quaternion conjugation, so
-the reverse norm is the quaternion norm-square.
+the reverse norm is the quaternion norm-square. The underlying quadratic space is identified with
+the pure Hamilton quaternions using coordinates oriented compatibly with this even-algebra model.
 
 The construction follows the standard reductions
 `Cl⁺(3,0) ≃ Cl⁺(0,3) ≃ Cl(0,2) ≃ ℍ`: first negate the form, then split off one negative line,
@@ -29,6 +31,8 @@ model.
   quaternion basis.
 * `TauCeti.realCliffordThreeZeroEvenEquivQuaternion_map_reverseEven_mul_self_eq_normSq`
   identifies the reverse norm with the quaternion norm-square.
+* `TauCeti.realCliffordThreeZeroPureQuaternionEquiv` identifies the underlying quadratic space
+  with the pure Hamilton quaternions.
 
 ## References
 
@@ -42,6 +46,13 @@ open QuadraticMap
 open scoped Quaternion
 
 namespace TauCeti
+
+/-- The positive-definite three-dimensional real Clifford form in coordinates. -/
+theorem realCliffordForm_three_zero_apply (v : Fin 3 → ℝ) :
+    realCliffordForm 3 0 v = v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by
+  rw [realCliffordForm_zero_eq_weightedSumSquares_one,
+    QuadraticMap.weightedSumSquares_apply]
+  simp [Fin.sum_univ_three, pow_two]
 
 private noncomputable def realCliffordZeroThreeAugmentedIsometry :
     (realCliffordForm 0 3).IsometryEquiv
@@ -150,6 +161,39 @@ theorem realCliffordThreeZeroEvenEquivQuaternion_map_reverseEven_mul_self_eq_nor
       Quaternion.normSq (realCliffordThreeZeroEvenEquivQuaternion x) := by
   rw [map_mul, realCliffordThreeZeroEvenEquivQuaternion_reverseEven,
     Quaternion.star_mul_self]
+
+/-- The oriented pure-quaternion model of the vector space underlying `Cl(3,0)`. The signs are
+fixed by the ordered volume element `e₀e₁e₂` under the chosen even-algebra equivalence. -/
+noncomputable def realCliffordThreeZeroPureQuaternionEquiv :
+    (realCliffordForm 3 0).IsometryEquiv
+      (QuaternionAlgebra.pureNormForm (-1 : ℝ) (-1 : ℝ)) where
+  toFun v := ⟨⟨0, -v 1, v 0, -v 2⟩, by simp⟩
+  invFun q := ![(q : ℍ[ℝ]).imJ, -(q : ℍ[ℝ]).imI, -(q : ℍ[ℝ]).imK]
+  left_inv v := by ext i; fin_cases i <;> simp
+  right_inv q := by
+    apply Subtype.ext
+    have hre : (q : ℍ[ℝ]).re = 0 := q.2
+    ext <;> simp [hre]
+  map_add' _ _ := by apply Subtype.ext; ext <;> simp <;> abel
+  map_smul' _ _ := by apply Subtype.ext; ext <;> simp
+  map_app' v := by
+    rw [QuaternionAlgebra.pureNormForm_apply_coordinates,
+      realCliffordForm_three_zero_apply]
+    simp
+    ring
+
+/-- The pure-quaternion coordinates of a vector in the compact real three-dimensional model. -/
+@[simp]
+theorem coe_realCliffordThreeZeroPureQuaternionEquiv_apply (v : Fin 3 → ℝ) :
+    (realCliffordThreeZeroPureQuaternionEquiv v : ℍ[ℝ]) =
+      ⟨0, -v 1, v 0, -v 2⟩ := (rfl)
+
+/-- The vector coordinates recovered from a pure Hamilton quaternion. -/
+@[simp]
+theorem realCliffordThreeZeroPureQuaternionEquiv_symm_apply
+    (q : LinearMap.ker (QuaternionAlgebra.reₗ (-1 : ℝ) (0 : ℝ) (-1 : ℝ))) :
+    realCliffordThreeZeroPureQuaternionEquiv.symm q =
+      ![(q : ℍ[ℝ]).imJ, -(q : ℍ[ℝ]).imI, -(q : ℍ[ℝ]).imK] := (rfl)
 
 end TauCeti
 
