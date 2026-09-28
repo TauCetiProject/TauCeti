@@ -67,6 +67,42 @@ lemma squareCell_apply (H : C(unitInterval × unitInterval, X))
     squareCell H a b c d z = H ((Path.id.subpath a b) z.1, (Path.id.subpath c d) z.2) :=
   by simp [squareCell]
 
+/-- The bottom edge of a reparameterized cell is the horizontal subpath at height `c`. -/
+@[simp]
+lemma squareCell_bottom_apply (H : C(unitInterval × unitInterval, X))
+    (a b c d t : unitInterval) :
+    ((Path.id.prod (Path.refl (0 : unitInterval))).map
+      (squareCell H a b c d).continuous) t = H ((Path.id.subpath a b) t, c) := by
+  change H ((Path.id.subpath a b) t, (Path.id.subpath c d) 0) = _
+  simp
+
+/-- The right edge of a reparameterized cell is the vertical subpath at `b`. -/
+@[simp]
+lemma squareCell_right_apply (H : C(unitInterval × unitInterval, X))
+    (a b c d t : unitInterval) :
+    (((Path.refl (1 : unitInterval)).prod Path.id).map
+      (squareCell H a b c d).continuous) t = H (b, (Path.id.subpath c d) t) := by
+  change H ((Path.id.subpath a b) 1, (Path.id.subpath c d) t) = _
+  simp
+
+/-- The left edge of a reparameterized cell is the vertical subpath at `a`. -/
+@[simp]
+lemma squareCell_left_apply (H : C(unitInterval × unitInterval, X))
+    (a b c d t : unitInterval) :
+    (((Path.refl (0 : unitInterval)).prod Path.id).map
+      (squareCell H a b c d).continuous) t = H (a, (Path.id.subpath c d) t) := by
+  change H ((Path.id.subpath a b) 0, (Path.id.subpath c d) t) = _
+  simp
+
+/-- The top edge of a reparameterized cell is the horizontal subpath at height `d`. -/
+@[simp]
+lemma squareCell_top_apply (H : C(unitInterval × unitInterval, X))
+    (a b c d t : unitInterval) :
+    ((Path.id.prod (Path.refl (1 : unitInterval))).map
+      (squareCell H a b c d).continuous) t = H ((Path.id.subpath a b) t, d) := by
+  change H ((Path.id.subpath a b) t, (Path.id.subpath c d) 1) = _
+  simp
+
 /-- A cell whose image lies in `V`, regarded as a map with codomain `V`. -/
 def squareCellIn (H : C(unitInterval × unitInterval, X))
     (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)

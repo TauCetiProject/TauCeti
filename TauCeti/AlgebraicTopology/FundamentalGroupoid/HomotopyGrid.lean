@@ -48,7 +48,7 @@ theorem squareCell_lowerRight_eq_leftUpper_in_subset
 /-- A neighbourhood cover of the image of a homotopy square gives a finite grid in which each
 cell's two boundary routes agree within one cover member. These are the local relations used by
 the Čech van Kampen argument. -/
-theorem exists_subordinate_homotopy_grid_relations {ι : Type u} {U : ι → Set X}
+theorem exists_subordinate_homotopy_grid_relations {ι : Sort u} {U : ι → Set X}
     (H : C(unitInterval × unitInterval, X))
     (hU : ∀ z : unitInterval × unitInterval, ∃ i, U i ∈ 𝓝 (H z)) :
     ∃ (n : ℕ) (t : Fin (n + 1) → unitInterval),
