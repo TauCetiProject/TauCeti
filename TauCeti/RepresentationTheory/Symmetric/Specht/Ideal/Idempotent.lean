@@ -50,6 +50,8 @@ directly; those evaluations live with the rest of the extreme-shape theory, in
   `c_t * c_t = (n! / dim) • c_t`.
 * `TauCeti.YoungTableau.isIdempotentElem_smul_youngSymmetrizer`: the normalisation
   `(dim / n!) • c_t` is idempotent.
+* `TauCeti.YoungTableau.youngSymmetrizerOver_sq`: essential idempotence of the Young symmetrizer
+  transported into a `ℚ`-algebra `k`, with the same scalar read in `k`.
 
 ## Implementation notes
 
@@ -161,6 +163,14 @@ theorem isIdempotentElem_smul_youngSymmetrizer (t : YoungTableau μ) :
     congr 1
     field_simp
   exact key
+
+/-- **Essential idempotence over a `ℚ`-algebra.** The Young symmetrizer transported into `k[Sₙ]`
+squares to the same scalar `n! / dim ℚ[Sₙ] c_t` times itself, the scalar now read in `k`. -/
+theorem youngSymmetrizerOver_sq (k : Type*) [CommSemiring k] [Algebra ℚ k] (t : YoungTableau μ) :
+    youngSymmetrizerOver k t * youngSymmetrizerOver k t =
+      algebraMap ℚ k ((μ.card.factorial : ℚ) / (finrank ℚ (spechtIdeal t) : ℚ)) •
+        youngSymmetrizerOver k t := by
+  rw [algebraMap_smul, youngSymmetrizerOver_def, ← map_mul, youngSymmetrizer_sq, map_smul]
 
 end YoungTableau
 
