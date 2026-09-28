@@ -10,15 +10,17 @@ public import Mathlib.Analysis.Analytic.Order
 /-!
 # The analytic order of products, power maps and derivatives
 
-Extensions of Mathlib's `analyticOrderAt` calculus: the order is additive over finite products,
-composing with `q ↦ q ^ N` at `0` multiplies the order by `N`, the power map `w ↦ w ^ m` recentred
-at `0` has order `m` there for `m ≠ 0`, and the recentred function `f · - f x` has order `1` at
-`x` exactly when `deriv f x ≠ 0`. The finiteness a zero count also needs is
+Extensions of Mathlib's analytic-order calculus: `analyticOrderNatAt` respects eventual equality,
+the order is additive over finite products, composing with `q ↦ q ^ N` at `0` multiplies the order
+by `N`, the power map `w ↦ w ^ m` recentred at `0` has order `m` there for `m ≠ 0`, and the
+recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`. The finiteness a
+zero count also needs is
 `TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
 ## Main declarations
 
+* `TauCeti.analyticOrderNatAt_congr`: eventual equality preserves the natural analytic order.
 * `TauCeti.analyticOrderAt_prod`: the order of `∏ i ∈ s, F i` is `∑ i ∈ s`, of the orders.
 * `TauCeti.analyticOrderAt_comp_pow_zero`: the order of `q ↦ f (q ^ N)` at `0` is `N` times
   the order of `f` at `0`.
@@ -36,9 +38,17 @@ at `0` has order `m` there for `m ≠ 0`, and the recentred function `f · - f x
 
 public section
 
+open Filter Topology
+
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {z₀ : 𝕜}
+
+/-- Functions that agree near a point have the same natural analytic order there. -/
+theorem analyticOrderNatAt_congr {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f g : 𝕜 → E} (hfg : f =ᶠ[𝓝 z₀] g) :
+    analyticOrderNatAt f z₀ = analyticOrderNatAt g z₀ := by
+  rw [analyticOrderNatAt, analyticOrderNatAt, analyticOrderAt_congr hfg]
 
 /-- The order is additive when taking a finite product of analytic functions. -/
 theorem analyticOrderAt_prod {ι : Type*} {s : Finset ι} {F : ι → 𝕜 → 𝕜}

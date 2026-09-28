@@ -18,13 +18,18 @@
 #   HEAD_REPO        for a PR, the head repository (owner/name), which may be a fork
 # Output: if scoped, OUT_DIR/modules.txt lists the changed TauCeti modules (possibly none) and
 # `LINT_ONLY_MODULES=OUT_DIR/modules.txt` is appended to $GITHUB_ENV; if not,
-# `LINT_ONLY_MODULES=` is. It reads only GitHub API metadata, never candidate files.
+# `LINT_ONLY_MODULES=` is. OUT_DIR/unmatched.txt lists every changed `.lean` file that is not one of
+# those modules (the root file, a name outside the module pattern such as a non-ASCII one): the lint
+# can ignore them, but a check that must see every changed declaration (the axiom audit) cannot, and
+# falls back to the whole library when this file is non-empty. It reads only GitHub API metadata,
+# never candidate files.
 set -euo pipefail
 
 OUT_DIR="${1:?usage: lint-scope.sh OUT_DIR}"
 mkdir -p "$OUT_DIR"
 LIST="$OUT_DIR/modules.txt"
-rm -f "$LIST"
+UNMATCHED="$OUT_DIR/unmatched.txt"
+rm -f "$LIST" "$UNMATCHED"
 : "${GITHUB_ENV:?GITHUB_ENV is required}"
 
 full() {
@@ -71,10 +76,14 @@ done
 
 module_re="^TauCeti(/[A-Za-z_][A-Za-z0-9_']*)+\.lean$"
 : > "$LIST"
+: > "$UNMATCHED"
 while IFS=$'\t' read -r status file; do
   [ -n "${file:-}" ] || continue
   [ "$status" = removed ] && continue
-  [[ "$file" =~ $module_re ]] || continue
+  if ! [[ "$file" =~ $module_re ]]; then
+    [[ "$file" == *.lean ]] && printf '%s\n' "$file" >> "$UNMATCHED"
+    continue
+  fi
   module="${file%.lean}"
   printf '%s\n' "${module//\//.}" >> "$LIST"
 done <<<"$files"

@@ -31,12 +31,18 @@ the generic contraction-independence identity that feeds them:
   (Lemma 1.3): if the pair laws agree, `(X, W) =ᵈ (X, W')`, and `σ(W) ≤ σ(W')`, then conditioning
   the indicator of `X ⁻¹' A` on the finer `σ(W')` equals conditioning on the coarser `σ(W)`.  Its
   pair-law/L² machinery is generic conditional-expectation infrastructure, kept `private` here.
+* `iCondIndep_of_condIndep_compl` — a family is conditionally independent if each member is
+  conditionally independent of all the others together. It turns local deletion arguments into
+  simultaneous conditional independence.
 
-These feed the de Finetti block-product factorisation / prefix-deletion drop-info step —
-the standard conditional-independence characterisation of the de Finetti route; see Kallenberg,
-*Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
+The first four results feed the de Finetti block-product factorisation / prefix-deletion drop-info
+step — the standard conditional-independence characterisation of the de Finetti route; see
+Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
 `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
+
+The complement criterion turns one-cell deletion arguments into conditional independence of all
+visible array cells given the crossing strips.
 -/
 
 public section
@@ -540,6 +546,43 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω 
   -- `μ₁ =ᵐ μ₂` from the polarisation `∫ (μ₂ - μ₁)² = ∫ μ₂² - 2 ∫ μ₂ μ₁ + ∫ μ₁² = 0`.
   exact (ae_eq_of_integral_mul_eq_of_integral_sq_eq hμ₁sq_int hμ₂sq_int hμ₂μ₁_int
     h_cross h_sq_eq).symm
+
+variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace Ω]
+  {μ : Measure Ω} [IsFiniteMeasure μ]
+  {m' : MeasurableSpace Ω} (hm' : m' ≤ mΩ)
+  {m : ι → MeasurableSpace Ω}
+
+/-- A family is conditionally independent when each member is conditionally independent of all
+the others together, given the same conditioning sigma-algebra. This criterion applies when
+local independence is proved by removing one coordinate from a process. -/
+theorem iCondIndep_of_condIndep_compl
+    (hm : ∀ i, m i ≤ mΩ)
+    (h : ∀ i, CondIndep m' (m i) (⨆ j : {j : ι // j ≠ i}, m j.1)
+      (mΩ := mΩ) hm' μ) :
+    iCondIndep m' hm' m μ := by
+  classical
+  refine (iCondIndep_iff m' hm' m hm μ).2 ?_
+  intro s f hf
+  induction s using Finset.induction_on with
+  | empty =>
+      simp only [Finset.notMem_empty, Set.iInter_of_empty, Set.iInter_univ,
+        Set.indicator_univ, Finset.prod_empty, condExp_const hm']
+      filter_upwards [] with ω
+      rfl
+  | @insert a s ha ih =>
+    have hrest : MeasurableSet[⨆ j : {j : ι // j ≠ a}, m j.1]
+        (⋂ j ∈ s, f j) := by
+      apply Finset.measurableSet_biInter
+      intro j hj
+      exact (le_iSup (fun k : {k : ι // k ≠ a} => m k.1)
+        ⟨j, fun hja => ha (hja ▸ hj)⟩) (f j)
+          (hf j (Finset.mem_insert_of_mem hj))
+    have hfactor := (condIndep_iff m' (m a) (⨆ j : {j : ι // j ≠ a}, m j.1)
+      hm' (hm a) (iSup_le fun j => hm j.1) μ).1 (h a)
+      (f a) (⋂ j ∈ s, f j) (hf a (Finset.mem_insert_self _ _)) hrest
+    simpa only [Finset.set_biInter_insert, Finset.prod_insert ha] using
+      hfactor.trans (Filter.EventuallyEq.rfl.mul (ih (fun j hj =>
+        hf j (Finset.mem_insert_of_mem hj))))
 
 end Probability
 
