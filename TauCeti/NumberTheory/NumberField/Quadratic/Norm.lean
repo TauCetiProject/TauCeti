@@ -17,7 +17,8 @@ For a quadratic number field `K = ℚ(√d)` presented by an algebraic integer `
 `K` in terms of the coordinates in the basis `1, θ`:
 
 * `norm_gen_eq_neg_radicand`: the norm of the generator, `N(θ) = -d` (negative of the radicand);
-* `norm_add_mul_gen`: in the coordinates `x = b + aθ` the norm is `N(b + aθ) = b² - d·a²`;
+* `norm_add_mul_gen`: in the coordinates `x = b + aθ` the norm is `N(b + aθ) = b² - d·a²`, and
+  `norm_int_add_mul_gen` is the same formula for the integer norm on `𝓞 K`;
 * `norm_pos_of_radicand_neg`: when `d < 0` — the imaginary quadratic case, where `K` is totally
   complex — the norm is strictly positive on every nonzero element;
 * `radicand_pos_of_norm_eq_neg_one`: consequently an element of norm `-1` forces `0 < d`;
@@ -66,6 +67,20 @@ normalization rule. -/
     Algebra.IsQuadraticExtension.norm_algebraMap_add_algebraMap_mul, trace_gen_eq_zero hmin,
     norm_gen_eq_neg_radicand hmin hgen]
   ring
+
+/-- **The integer norm in the basis `1, θ`:** on `𝓞 K`, `N(b + aθ) = b² - d·a²` for integers
+`a`, `b`. This is `norm_add_mul_gen` read through `Algebra.coe_norm_int`. -/
+theorem norm_int_add_mul_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (a b : ℤ) :
+    Algebra.norm ℤ ((b : 𝓞 K) + (a : 𝓞 K) * θ) = b ^ 2 - d * a ^ 2 := by
+  have h : (Algebra.norm ℤ ((b : 𝓞 K) + (a : 𝓞 K) * θ) : ℚ) =
+      (b : ℚ) ^ 2 - (d : ℚ) * (a : ℚ) ^ 2 := by
+    have hval : (((b : 𝓞 K) + (a : 𝓞 K) * θ : 𝓞 K) : K) =
+        ((b : ℚ) : K) + ((a : ℚ) : K) * (θ : K) := by
+      simp only [RingOfIntegers.coe_eq_algebraMap, map_add, map_mul, map_intCast,
+        Rat.cast_intCast]
+    rw [Algebra.coe_norm_int, hval, norm_add_mul_gen hmin hgen]
+  exact_mod_cast h
 
 /-- **The norm is positive in the imaginary case.** When `d < 0` the field `K = ℚ(√d)` is totally
 complex, and `N(b + aθ) = b² + |d|·a²`, so the norm is strictly positive on every nonzero element.

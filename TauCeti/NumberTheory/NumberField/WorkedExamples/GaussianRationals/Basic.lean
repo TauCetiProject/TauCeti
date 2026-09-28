@@ -20,6 +20,7 @@ theory, and `[K : ℚ] = 2`.
 ## Main results
 
 * `TauCeti.NumberField.GaussianRationals.sq_eq_neg_one`: `θ² = −1`.
+* `TauCeti.NumberField.GaussianRationals.isUnit`: `θ` is a unit, since `θ · (−θ) = 1`.
 * `TauCeti.NumberField.GaussianRationals.finrank_eq_two`: `[K : ℚ] = 2`.
 -/
 
@@ -44,6 +45,11 @@ omit [NumberField K] in
 @[simp]
 theorem sq_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 + 1) : θ ^ 2 = -1 := by
   rw [gen_sq (minpoly_eq_X_sq_sub_C hmin), map_neg, map_one]
+
+omit [NumberField K] in
+/-- `θ` is a unit of `𝓞 K`: `θ · (−θ) = 1`. -/
+theorem isUnit (hmin : minpoly ℤ θ = X ^ 2 + 1) : IsUnit θ :=
+  IsUnit.of_mul_eq_one (-θ) (by linear_combination -(sq_eq_neg_one hmin))
 
 /-- `ℚ(i)` has degree `2`. -/
 theorem finrank_eq_two (hmin : minpoly ℤ θ = X ^ 2 + 1)
