@@ -81,13 +81,16 @@ def stabilizerBallQuotientChart : OpenPartialHomeomorph (orbitRel.Quotient Γ �
       (stabilizerBallQuotientHomeomorph Γ z ε hε.le)).trans
     (isOpen_ball.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph _)
 
-@[simp]
+-- The source and the target of the chart are deliberately not simp lemmas. Rewriting a membership
+-- hypothesis in terms of them leaves the domain of a transition between two charts in the form of
+-- a norm bound and an existential over the local quotient map, and the hypotheses of a simp lemma
+-- must themselves be in simp-normal form for the lemma ever to fire
+-- (`Subgroup.stabilizerBallQuotientChart_trans_apply`).
 theorem stabilizerBallQuotientChart_source :
     (stabilizerBallQuotientChart hε hopen).source =
       range (stabilizerBallQuotientToQuotient Γ z ε) := by
   simp [stabilizerBallQuotientChart]
 
-@[simp]
 theorem stabilizerBallQuotientChart_target :
     (stabilizerBallQuotientChart hε hopen).target =
       ball 0 (Real.tanh (ε / 2) ^ Nat.card (stabilizer Γ z)) := by
@@ -251,22 +254,20 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
   exact (differentiableOn_descendPow hs_open hFd hinv).mono hsub
 
 /-- **The elliptic chart at the orbit of `z` does not depend on the invariant disc.** The charts
-at the orbit of `z` built from the invariant discs of radii `ε` and `ε'`, both positive, apply at
-every point of the source of the transition to the point itself, so the two charts define the
-same local complex structure on the coarse quotient. Being the characteristic computation rule for
-that independence, it is recorded as a simp lemma. -/
+at the orbit of `z` built from the invariant discs of radii `ε` and `ε'`, both positive, agree at
+every point of the domain of the transition between them, that is at every point `u` of the target
+of the first chart whose inverse image belongs to the source of the second, so the two charts
+define the same local complex structure on the coarse quotient. Being the characteristic
+computation rule for that independence, it is recorded as a simp lemma. -/
 @[simp]
 theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε' : 0 < ε')
     (hopen' : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε')) {u : ℂ}
-    (hu : u ∈ ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
-      stabilizerBallQuotientChart hε' hopen').source) :
+    (hu : u ∈ (stabilizerBallQuotientChart hε hopen).target ∧
+      (stabilizerBallQuotientChart hε hopen).symm u ∈
+        (stabilizerBallQuotientChart hε' hopen').source) :
     (stabilizerBallQuotientChart hε' hopen')
       ((stabilizerBallQuotientChart hε hopen).symm u) = u := by
-  have hu1 : u ∈ ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
-      stabilizerBallQuotientChart hε' hopen').source := hu
-  rw [OpenPartialHomeomorph.trans_source] at hu1
-  rw [OpenPartialHomeomorph.symm_source] at hu1
-  have hu2 : u ∈ (stabilizerBallQuotientChart hε hopen).target := hu1.1
+  obtain ⟨hu2, hu'⟩ := hu
   -- The inverse chart sends `w ^ m` to the orbit of the point of disc coordinate `w`, and the
   -- chart reads the orbit of a point `τ` of the invariant disc of radius `ε` or `ε'` as
   -- `discCoordinate z τ ^ m`, with `m = Nat.card (stabilizer Γ z)`. The orbit
@@ -294,9 +295,9 @@ theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε' : 0 < ε')
         exact lt_of_lt_of_le hwn hmono)
     rw [stabilizerBallQuotientChart_symm_pow hε hopen hwn,
       stabilizerBallQuotientChart_mk hε' hopen' hτε, hτ, hτdisc]
-  · have hu1' : u ∈ (stabilizerBallQuotientChart hε hopen).symm ⁻¹'
-        (stabilizerBallQuotientChart hε' hopen').source := hu1.2
-    rw [Set.mem_preimage, stabilizerBallQuotientChart_source] at hu1'
+  · have hu1' : (stabilizerBallQuotientChart hε hopen).symm u ∈
+        range (stabilizerBallQuotientToQuotient Γ z ε') := by
+      rwa [← stabilizerBallQuotientChart_source]
     obtain ⟨σ, hσ⟩ := Set.mem_range.mp hu1'
     obtain ⟨τ, rfl⟩ := Quotient.exists_rep σ
     have hτε : dist (τ : ℍ) z < ε' := (mem_stabilizerBall Γ z ε').1 τ.2
