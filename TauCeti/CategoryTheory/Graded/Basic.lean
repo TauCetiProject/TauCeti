@@ -41,7 +41,7 @@ between the two presentations.
 * `TauCeti.GradedLinearQuiver.grHom`: the morphisms `X → Y` of a fixed degree.
 * `TauCeti.GradedLinearQuiver.gradedHom`: the hom modules of a graded linear quiver as a graded
   object.
-* `TauCeti.GradedLinearQuiver.gradedHom_ofGradedHom`: the graded object of hom modules of
+* `TauCeti.GradedLinearQuiver.gradedHomOfGradedHom`: the graded object of hom modules of
   `ofGradedHom F` recovers `F` degree by degree.
 * `TauCeti.GradedLinearQuiver.grHomReindex`: a homogeneous morphism recorded at another degree.
 
@@ -92,7 +92,7 @@ variable (R : Type w) [CommRing R] {C : Type u}
 module of morphisms `X → Y` is the external direct sum of the components of `F X Y`.
 
 The two fields of this quiver are `homModule_ofGradedHom` and `grading_ofGradedHom`, and
-`gradedHom_ofGradedHom` recovers the graded object `F` itself, degree by degree. -/
+`gradedHomOfGradedHom` recovers the graded object `F` itself, degree by degree. -/
 @[instance_reducible, expose]
 noncomputable def ofGradedHom (F : (X Y : C) → CategoryTheory.GradedObject ℤ (ModuleCat.{v} R)) :
     GradedLinearQuiver R C where
@@ -117,7 +117,7 @@ theorem grading_ofGradedHom (X Y : C) :
 
 /-- The graded object of hom modules of the graded linear quiver `ofGradedHom F` is the graded
 object `F X Y` of the components, degree by degree. -/
-noncomputable def gradedHom_ofGradedHom (X Y : C) :
+noncomputable def gradedHomOfGradedHom (X Y : C) :
     ((ofGradedHom (R := R) (C := C) F).grading X Y).toGradedObject ≅ F X Y :=
   InternalGrading.ofGradedObjectToGradedObjectIso R (F X Y)
 
