@@ -18,6 +18,10 @@ coefficients. In particular that product has finite support. This is the diagona
 used for the finite support of the Hasse invariant after the local invariant is available at all
 finite places.
 
+`Global.HilbertSymbol` already proves finite support for each localized symbol and registers it
+with `fun_prop` for finite products. Here the coefficient-support bound is made explicit for a
+diagonal product and combined with the existing diagonalization of a regular form.
+
 The good-place calculation follows O'Meara, *Introduction to Quadratic Forms*, 66:6, using the
 unramified norm-equation calculation for each pair of coefficients.
 -/
