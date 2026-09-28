@@ -47,7 +47,7 @@ theorem autToPow_frobeniusThreeSeven :
   simp only [frobeniusThreeSeven, MulEquiv.apply_symm_apply, Units.val_mk0]
 
 /-- The cyclotomic character of the exponent-three automorphism. -/
-@[simp] theorem galEquivZMod_frobeniusThreeSeven :
+theorem galEquivZMod_frobeniusThreeSeven :
     ((Rat.galEquivZMod 7 L (frobeniusThreeSeven (L := L)) : (ZMod 7)ˣ) : ZMod 7) = 3 := by
   simp only [frobeniusThreeSeven, MulEquiv.apply_symm_apply, Units.val_mk0]
 
@@ -85,7 +85,6 @@ theorem orderOf_frobeniusThreeSeven_sq :
   decide
 
 /-- The square of the Frobenius at three acts with exponent two on a primitive seventh root. -/
-@[simp]
 theorem autToPow_frobeniusThreeSeven_sq :
     ((zeta_spec 7 ℚ L).autToPow ℚ (frobeniusThreeSeven (L := L) ^ 2) : ZMod 7) = 2 := by
   rw [map_pow, Units.val_pow_eq_pow_val, autToPow_frobeniusThreeSeven]

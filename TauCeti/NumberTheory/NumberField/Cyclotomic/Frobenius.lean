@@ -159,7 +159,7 @@ theorem isArithFrobAt_iff_galEquivZMod_eq_absNorm
     (𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
     (hm : (n : 𝓞 ℚ) ∉ 𝔭.asIdeal)
     (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
-    [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] (σ : F ≃ₐ[ℚ] F) :
+    (σ : F ≃ₐ[ℚ] F) :
     IsArithFrobAt (𝓞 ℚ) σ Q ↔
       ((Rat.galEquivZMod n F σ : (ZMod n)ˣ) : ZMod n) =
         Ideal.absNorm 𝔭.asIdeal := by
