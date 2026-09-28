@@ -21,7 +21,8 @@ The input `t : U.LeftTransversal` bundles the transversal invariant. The section
 `fun x => (t.2.leftQuotientEquiv x : G)` can be passed unchanged to cochain formulas taking a
 representative map; `t.2.quotientGroupMk_leftQuotientEquiv` proves that it represents each coset.
 Conversely, Mathlib's `Subgroup.isComplement_range_left` packages any representative map with
-that property as a `U.LeftTransversal`, preserving the chosen representatives.
+that property as a `U.LeftTransversal`; `Subgroup.IsComplement.leftQuotientEquiv_apply` proves
+that its representative map recovers the original map pointwise.
 The public maps are called as `TauCeti.monomialHom U t` and
 `TauCeti.monomialFinHom U t`.
 Continuity for an open subgroup is proved in
