@@ -32,8 +32,8 @@ composition of the refinement step, and its strict energy alternative is consume
 * `TauCeti.DenseGraphLimits.exists_refinement_energy_add_sq_lt` is the quantitative refinement
   step: a bad cut-norm approximation yields an energy gain of more than `ε²` while multiplying the
   number of parts by at most four;
-* `TauCeti.DenseGraphLimits.weak_regularity_frieze_kannan` is the Layer-2 weak regularity
-  theorem, with complexity `4 ^ (Nat.ceil (1 / ε ^ 2))`.
+* `TauCeti.DenseGraphLimits.weak_regularity_frieze_kannan` is the weak regularity theorem, with
+  complexity `4 ^ (Nat.ceil (1 / ε ^ 2))`.
 
 ## References
 
@@ -62,11 +62,9 @@ namespace DenseGraphLimits
 variable {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
 
 /-- A cut-norm defect larger than `ε` produces a measurable common refinement with at most four
-times as many parts and graphon partition energy **more than** `ε²` larger. The gain is strict
-because the cut-norm witness `|∫_{S ×ˢ T} D| > ε` is squared strictly before being compared with
-the `L²` seminorm. -/
+times as many parts and graphon partition energy **more than** `ε²` larger. -/
 theorem exists_refinement_energy_add_sq_lt (P : Finpartition (Set.univ : Set Ω))
-    (hP : ∀ p ∈ P.parts, MeasurableSet p) (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < ε)
+    (hP : ∀ p ∈ P.parts, MeasurableSet p) (W : Graphon Ω μ) {ε : ℝ} (hε : 0 ≤ ε)
     (hbad : ε < cutNorm μ (W.toSymmKernel - (stepGraphonAvg (μ := μ) P hP W).toSymmKernel)) :
     ∃ (Q : Finpartition (Set.univ : Set Ω)) (hQ : ∀ q ∈ Q.parts, MeasurableSet q),
       Q ≤ P ∧ Q.parts.card ≤ 4 * P.parts.card ∧
@@ -118,6 +116,8 @@ theorem exists_refinement_energy_add_sq_lt (P : Finpartition (Set.univ : Set Ω)
     (stepGraphonAvg (μ := μ) P hP W).toSymmKernel
   have hLrect : L.rectIntegral μ S T = D.rectIntegral μ S T := by
     simp only [L, D, SymmKernel.rectIntegral_sub, havg]
+  -- The gain is strict because the cut-norm witness `|∫_{S ×ˢ T} D| > ε` is squared strictly
+  -- before being compared with the `L²` seminorm.
   have hsq : ε ^ 2 < (D.rectIntegral μ S T) ^ 2 := by
     simpa only [sq_abs] using
       (sq_lt_sq' (by linarith [abs_nonneg (D.rectIntegral μ S T)]) hrect)
@@ -160,7 +160,7 @@ private theorem exists_partition_cutNorm_le_or_energy_add_mul_sq_lt
       · refine ⟨P, hP, ?_, Or.inl hgood⟩
         exact Nat.le_mul_of_pos_left _ (by positivity)
       · obtain ⟨Q, hQ, _, hQcard_step, hQenergy⟩ :=
-          exists_refinement_energy_add_sq_lt μ P hP W hε (lt_of_not_ge hgood)
+          exists_refinement_energy_add_sq_lt μ P hP W (le_of_lt hε) (lt_of_not_ge hgood)
         exact ⟨Q, hQ, by simpa using hQcard_step, Or.inr (by simpa using hQenergy)⟩
   | succ n ih =>
       -- One further step: stop if already good, otherwise refine once and iterate, composing the
@@ -171,7 +171,7 @@ private theorem exists_partition_cutNorm_le_or_energy_add_mul_sq_lt
       · refine ⟨P, hP, ?_, Or.inl hgood⟩
         exact Nat.le_mul_of_pos_left _ (by positivity)
       · obtain ⟨Q, hQ, _, hQcard_step, hQenergy⟩ :=
-          exists_refinement_energy_add_sq_lt μ P hP W hε (lt_of_not_ge hgood)
+          exists_refinement_energy_add_sq_lt μ P hP W (le_of_lt hε) (lt_of_not_ge hgood)
         obtain ⟨R, hR, hRcard, hRdichotomy⟩ := ih Q hQ
         have hRbound : R.parts.card ≤ 4 ^ (n + 1 + 1) * P.parts.card := by
           calc R.parts.card ≤ 4 ^ (n + 1) * Q.parts.card := hRcard
@@ -201,7 +201,7 @@ theorem weak_regularity_frieze_kannan (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < 
     dsimp only [N]
     exact Nat.le_ceil _
   have hN1 : 1 ≤ N := by
-    have hone : (0 : ℝ) < 1 / ε ^ 2 := div_pos (show (0 : ℝ) < 1 from by norm_num) hεsq
+    have hone : (0 : ℝ) < 1 / ε ^ 2 := by positivity
     have hNpos : 0 < N := by
       exact_mod_cast (lt_of_lt_of_le hone hceil)
     omega

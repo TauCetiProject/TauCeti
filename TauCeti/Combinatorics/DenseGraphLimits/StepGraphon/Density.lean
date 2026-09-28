@@ -27,9 +27,9 @@ remain, is `TauCeti.Combinatorics.DenseGraphLimits.CutMetric.OfMatrixGrid`.
 ## Main results
 
 * `TauCeti.DenseGraphLimits.exists_stepGraphon_cutDist_le` -- every graphon is within `ε` in cut
-  distance of a step graphon on a measurable finite partition with at most `4 ^ (⌈1/ε²⌉ + 1)` parts;
+  distance of a step graphon on a measurable finite partition with at most `4 ^ ⌈1/ε²⌉` parts;
 * `TauCeti.DenseGraphLimits.exists_ofMatrix_cutDist_le` -- every graphon is within `ε` in cut
-  distance of a finite weighted graph on any vertex set of size at least `4 ^ (⌈1/ε²⌉ + 1)`.
+  distance of a finite weighted graph on any vertex set of size at least `4 ^ ⌈1/ε²⌉`.
 
 ## References
 
