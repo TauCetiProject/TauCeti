@@ -27,7 +27,7 @@ namespace TauCeti
 
 variable {B F N : Type*} {E : B → Type*}
 variable [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)]
-  [∀ x, Zero (E x)] [∀ x, SMul ℝ (E x)] [TopologicalSpace N]
+  [∀ x, AddCommGroup (E x)] [∀ x, Module ℝ (E x)] [TopologicalSpace N]
 
 /-- The data supplied by a tubular-neighborhood theorem.
 
@@ -54,27 +54,42 @@ structure TubularNeighborhoodData (f : B → N) (U : Set (TotalSpace F E))
   isEmbedding_f : IsEmbedding f
   /-- The tubular chart restricts to the core map on the zero section. -/
   map_zero : ∀ x, toFun ⟨zeroSection F E x, zero_mem x⟩ = f x
+  /-- Radial contraction is continuous on the interval and tubular domain.
+
+  This explicit field records the topological compatibility needed by the
+  deformation arguments consuming tubular-neighborhood data. -/
+  continuous_radial : Continuous (fun p : Icc (0 : ℝ) 1 × U =>
+    (⟨p.2.1.1, (p.1 : ℝ) • p.2.1.2⟩ : TotalSpace F E))
 
 namespace TubularNeighborhoodData
 
 variable {f : B → N} {U : Set (TotalSpace F E)} {toFun : U → N}
 
-/-- The zero section gives a canonical tubular data object for its own total
-space.  This is a useful nonempty model for consumers of the interface and
-fixes all conventions about the subtype domain. -/
-theorem zeroSectionData (hzero : IsEmbedding (zeroSection F E)) :
-    TubularNeighborhoodData (zeroSection F E) (Set.univ : Set (TotalSpace F E))
-      (fun x : (Set.univ : Set (TotalSpace F E)) => x.1) where
-  isOpen := isOpen_univ
-  zero_mem := fun _ => mem_univ _
-  fiberwise_smul_mem := by
-    intro x v _ t ht
-    exact mem_univ _
-  isOpenEmbedding := isOpen_univ.isOpenEmbedding_subtypeVal
-  isEmbedding_f := hzero
-  map_zero := by
-    intro x
-    rfl
+/-- The radial contraction of a tubular neighborhood, with its image kept in
+the tubular domain by `fiberwise_smul_mem`. -/
+def radialContraction (T : TubularNeighborhoodData f U toFun) : Icc (0 : ℝ) 1 × U → U :=
+  fun p => ⟨⟨p.2.1.1, (p.1 : ℝ) • p.2.1.2⟩,
+    T.fiberwise_smul_mem p.2.property p.1.property⟩
+
+/-- The radial contraction supplied by tubular-neighborhood data is continuous. -/
+theorem continuous_radialContraction (T : TubularNeighborhoodData f U toFun) :
+    Continuous T.radialContraction :=
+  T.continuous_radial.subtype_mk _
+
+/-- At time one, radial contraction is the identity. -/
+@[simp] theorem radialContraction_one (T : TubularNeighborhoodData f U toFun) (u : U) :
+    T.radialContraction ⟨1, u⟩ = u := by
+  apply Subtype.ext
+  change (⟨u.1.1, (1 : ℝ) • u.1.2⟩ : TotalSpace F E) = u.1
+  rw [one_smul]
+
+/-- At time zero, radial contraction lands on the zero section. -/
+@[simp] theorem radialContraction_zero (T : TubularNeighborhoodData f U toFun) (u : U) :
+    T.radialContraction ⟨0, u⟩ = ⟨zeroSection F E u.1.1, T.zero_mem u.1.1⟩ := by
+  apply Subtype.ext
+  change (⟨u.1.1, (0 : ℝ) • u.1.2⟩ : TotalSpace F E) = zeroSection F E u.1.1
+  rw [zero_smul]
+  rfl
 
 end TubularNeighborhoodData
 
