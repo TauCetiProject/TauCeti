@@ -7,7 +7,6 @@ module
 
 public import TauCeti.InformationTheory.Coding.Basic
 public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
-public import TauCeti.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
