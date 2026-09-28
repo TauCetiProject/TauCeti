@@ -22,10 +22,6 @@ and the same holds over any commutative ring as soon as `M ⧸ P` is flat. This 
 upgrades a submodule of a coalgebra whose comultiplication lands in both one-sided tensor
 products to a subcoalgebra.
 
-The proof only uses right exactness of the tensor product
-(`LinearMap.rTensor_exact`) together with the injectivity of `(M ⧸ P) ⊗ Q → (M ⧸ P) ⊗ N`
-supplied by flatness (`Module.Flat.lTensor_preserves_injective_linearMap`).
-
 ## Main results
 
 * `Submodule.range_map_subtype_subtype`: the image of `P ⊗[R] Q` in `M ⊗[R] N` is the

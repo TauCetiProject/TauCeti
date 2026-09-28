@@ -285,13 +285,13 @@ theorem IsNormal.antipode_mem_coinvariants (hI : I.IsNormal) (hh : h ∈ I.coinv
       _ = g.ofConv (HopfAlgebraStruct.antipode R h) := AlgHom.convInv_apply _ h
 
 /-- **Coinvariants of a normal Hopf ideal form a right coideal.** Over a flat Hopf algebra,
-comultiplication maps the coinvariants of a normal Hopf ideal into `H^{co H/I} ⊗ H`. This follows
-from the left coideal property and stability under the antipode, since
-`Δ ∘ S = (S ⊗ S) ∘ τ ∘ Δ` and `S ∘ S = id`. -/
+comultiplication maps the coinvariants of a normal Hopf ideal into `H^{co H/I} ⊗ H`. -/
 theorem IsNormal.comul_mem_range_rTensor_of_mem_coinvariants [Module.Flat R H] (hI : I.IsNormal)
     (hh : h ∈ I.coinvariants) :
     Coalgebra.comul (R := R) h ∈
       LinearMap.range ((Subalgebra.toSubmodule I.coinvariants).subtype.rTensor H) := by
+  -- Apply the left coideal property to `S h` and transport it back along
+  -- `Δ ∘ S = (S ⊗ S) ∘ τ ∘ Δ` and `S ∘ S = id`.
   let B := Subalgebra.toSubmodule I.coinvariants
   let S : H →ₗ[R] H := HopfAlgebraStruct.antipode R
   let SB : B →ₗ[R] B := S.restrict fun _ hx ↦ hI.antipode_mem_coinvariants hx
