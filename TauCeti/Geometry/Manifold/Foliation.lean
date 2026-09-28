@@ -11,11 +11,13 @@ public import TauCeti.Geometry.Manifold.Distribution
 # Foliations
 
 A foliation of rank `k` of a manifold `M` decomposes `M` into `k`-dimensional immersed
-submanifolds, its leaves. It is recorded here by its tangent distribution, the field of tangent
-spaces of the leaves: a `C^n` foliation of rank `k`, for `1 ≤ n`, is a `C^n` involutive
-distribution of rank `k`. The Frobenius theorem, which is not proved here, makes such a
-distribution the tangent field of a unique foliation in the chart sense, the leaves being its
-maximal connected integral manifolds; the distribution is therefore the data of the foliation.
+submanifolds, its leaves. This library defines a foliation by its tangent distribution, the field
+of tangent spaces of the leaves: here a `C^n` foliation of rank `k`, for `1 ≤ n`, is by definition
+a `C^n` involutive distribution of rank `k`, over any nontrivially normed field and model space.
+In the classical setting of a real manifold modelled on a finite-dimensional space, the Frobenius
+theorem, which is not proved here, makes such a distribution the tangent field of a unique
+foliation in the chart sense, the leaves being its maximal connected integral manifolds, so that
+there the distribution is the data of the foliation.
 The regularity `1 ≤ n` is required: a `C⁰` foliation need not have a continuous tangent field,
 and for a merely continuous distribution the involutivity condition, which tests only
 differentiable tangent vector fields, need not constrain it. The manifold `M` is required to be

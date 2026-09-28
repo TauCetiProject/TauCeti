@@ -18,7 +18,8 @@ tangent space `T_x M`. It is a `C^n` distribution of rank `k` when near every po
 by `k` vector fields of class `C^n` whose values are linearly independent, that is, when it admits
 `C^n` local frames. It is *involutive* when the Lie bracket of two vector fields tangent to `D` is
 again tangent to `D`. Involutivity is the hypothesis of the Frobenius theorem, which is not proved
-here: it makes an involutive distribution the tangent field of a foliation.
+here: on a real manifold modelled on a finite-dimensional space, it makes an involutive smooth
+distribution the tangent field of a foliation.
 
 The distribution is recorded as the family of subspaces `D : Π x, Submodule 𝕜 (TangentSpace I x)`,
 while its regularity and involutivity are predicates on that family.
@@ -224,12 +225,13 @@ theorem isInvolutiveDistribution_top : IsInvolutiveDistribution I (fun _ : M ↦
 theorem isInvolutiveDistribution_const {S : Submodule 𝕜 E} (hS : IsClosed (S : Set E)) :
     IsInvolutiveDistribution 𝓘(𝕜, E) (fun _ : E ↦ S) := by
   intro U hU V W _ _ hV hW x hx
-  have hVS : ∀ᶠ y in 𝓝 x, V y ∈ S := eventually_of_mem (hU.mem_nhds hx) hV
-  have hWS : ∀ᶠ y in 𝓝 x, W y ∈ S := eventually_of_mem (hU.mem_nhds hx) hW
+  have hVS := fderiv_apply_mem_of_eventually_sub_mem (f := V) hS
+    (eventually_of_mem (hU.mem_nhds hx) fun y hy ↦ S.sub_mem (hV y hy) (hV x hx))
+  have hWS := fderiv_apply_mem_of_eventually_sub_mem (f := W) hS
+    (eventually_of_mem (hU.mem_nhds hx) fun y hy ↦ S.sub_mem (hW y hy) (hW x hx))
   rw [mlieBracket_eq_lieBracket]
   -- `lieBracket 𝕜 V W x` is by definition `fderiv 𝕜 W x (V x) - fderiv 𝕜 V x (W x)`.
-  exact S.sub_mem (fderiv_apply_mem_of_eventually_mem hS hWS _)
-    (fderiv_apply_mem_of_eventually_mem hS hVS _)
+  exact S.sub_mem (hWS _) (hVS _)
 
 end Involutive
 
