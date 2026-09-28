@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
+public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 
 /-!
 # Closed surfaces and Haken embeddings
@@ -15,8 +16,10 @@ This file packages the manifold hypotheses used for the Haken condition in dimen
 `IsClosedConnectedSurface` records a compact, connected, boundaryless 2-manifold, while
 `IsClosedConnectedThreeManifold` records the analogous hypotheses in dimension three.  The
 relation `IsClosedIncompressibleSurfaceEmbedding` then combines both conditions with Tau Ceti's
-dimension-independent `IsIncompressible` predicate.  A later Haken predicate can use this
-relation for a chosen surface embedding without repeating either manifold package.
+dimension-independent `IsIncompressible` predicate.  It is deliberately only the topological
+embedding and π₁-injectivity package.  `IsHakenSurfaceEmbedding` adds the codimension-one
+local-flatness, two-sidedness, and non-spherical hypotheses that a later Haken predicate can
+existentially quantify.
 
 The product-slice witness is the basic example: a continuous retraction onto the first factor
 makes the inclusion of a surface as a slice incompressible.  This is the standard elementary
@@ -31,6 +34,7 @@ Chapter II.
 * `TauCeti.IsClosedConnectedThreeManifold`: the analogous 3-manifold predicate.
 * `TauCeti.IsClosedIncompressibleSurfaceEmbedding`: a closed connected surface embedded
   incompressibly in a closed connected 3-manifold.
+* `TauCeti.IsHakenSurfaceEmbedding`: a tame, two-sided, non-spherical witness for Haken-ness.
 
 ## Main results
 
@@ -38,6 +42,7 @@ Chapter II.
 * `TauCeti.isClosedIncompressibleSurfaceEmbedding_of_leftInverse` and
   `TauCeti.isClosedIncompressibleSurfaceEmbedding_prodMk` provide reusable incompressible-surface
   witnesses.
+* `TauCeti.isHakenSurfaceEmbedding_iff` exposes the additional Haken-witness conditions.
 -/
 
 public section
@@ -137,5 +142,25 @@ theorem isClosedIncompressibleSurfaceEmbedding_prodMk {Y : Type*} [TopologicalSp
     IsClosedIncompressibleSurfaceEmbedding (ContinuousMap.prodMk (ContinuousMap.id S)
       (ContinuousMap.const S y₀)) :=
   ⟨hS, hM, isIncompressible_prodMk y₀⟩
+
+/-- A **Haken surface embedding** is a closed incompressible embedding with the geometric
+conditions needed for the usual Haken witness: it is locally flat in codimension one, globally
+bicollared (hence two-sided), and its source has a nontrivial fundamental group, excluding the
+spherical case.  The separate `IsClosedIncompressibleSurfaceEmbedding` package intentionally
+remains the dimension-independent topological core; a Haken predicate may existentially quantify
+this stronger relation without admitting wild, one-sided, or spherical surfaces. -/
+def IsHakenSurfaceEmbedding (f : C(S, M)) : Prop :=
+  IsClosedIncompressibleSurfaceEmbedding f ∧
+    IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f ∧ IsBicollared f ∧
+      ∃ s : S, Nontrivial (FundamentalGroup S s)
+
+/-- The defining conditions of `IsHakenSurfaceEmbedding`. -/
+@[simp]
+theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
+    IsHakenSurfaceEmbedding f ↔
+      IsClosedIncompressibleSurfaceEmbedding f ∧
+        IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f ∧ IsBicollared f ∧
+          ∃ s : S, Nontrivial (FundamentalGroup S s) :=
+  Iff.rfl
 
 end TauCeti
