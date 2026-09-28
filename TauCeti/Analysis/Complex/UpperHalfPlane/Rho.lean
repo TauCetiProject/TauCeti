@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
+public import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
 # The elliptic points `i`, `ρ` and `ρ + 1` on the fundamental domain boundary
@@ -28,6 +29,8 @@ that classify a boundary point as one of the three.
 
 * `UpperHalfPlane.neg_one_div_ρ`: the inversion carries `ρ` to `ρ + 1`.
 * `UpperHalfPlane.neg_one_div_ρ_add_one`: the inversion carries `ρ + 1` to `ρ`.
+* `UpperHalfPlane.isPrimitiveRoot_ρ_add_one`: the second corner `ρ + 1 = e^{πi/3}` is a
+  primitive sixth root of unity.
 * `UpperHalfPlane.re_ρ`, `UpperHalfPlane.norm_eq_one_of_mem_ellipticPoints` and the pairwise
   distinctness of `i`, `ρ`, `ρ + 1`.
 * `UpperHalfPlane.coe_vadd_one_ρ`: the translated corner `(1 : ℝ) +ᵥ ρ` is `ρ + 1` in `ℂ`.
@@ -60,6 +63,16 @@ lemma norm_ρ_add_one : ‖(ρ : ℂ) + 1‖ = 1 := by
 lemma neg_one_div_ρ_add_one : -1 / ((ρ : ℂ) + 1) = (ρ : ℂ) := by
   rw [← neg_one_div_ρ]
   field_simp
+
+/-- The second corner `ρ + 1 = e^{πi/3}` is a primitive sixth root of unity. -/
+lemma isPrimitiveRoot_ρ_add_one : IsPrimitiveRoot ((ρ : ℂ) + 1) 6 := by
+  have h : (ρ : ℂ) + 1 = Complex.exp (2 * Real.pi * Complex.I / (6 : ℕ)) := by
+    rw [show 2 * (Real.pi : ℂ) * Complex.I / (6 : ℕ) = ((Real.pi / 3 : ℝ) : ℂ) * Complex.I by
+      push_cast; ring, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin,
+      Real.cos_pi_div_three, Real.sin_pi_div_three]
+    apply Complex.ext <;> norm_num [ρ]
+  rw [h]
+  exact Complex.isPrimitiveRoot_exp 6 (by norm_num)
 
 /-- The real part of the corner `ρ`. -/
 @[simp]
