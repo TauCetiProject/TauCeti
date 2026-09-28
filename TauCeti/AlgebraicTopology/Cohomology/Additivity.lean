@@ -19,10 +19,12 @@ The singular chains of a disjoint union form the coproduct of the singular chain
 summands. Applying the contravariant functor `Hom(-, M)` therefore identifies the singular
 cochain complex of the disjoint union with the product of the cochain complexes of the summands.
 
-Products of modules are exact, so taking cohomology preserves this product. Consequently the
-singular cohomology of a disjoint union is the product of the singular cohomologies of its
-summands. Both universal properties use the maps induced by the canonical inclusions into the
-disjoint union.
+Whenever `ι`-indexed products of the coefficient modules are exact, taking cohomology preserves
+this product. Consequently the singular cohomology of a disjoint union is the product of the
+singular cohomologies of its summands. Products of modules over a ring are always exact, so for a
+`v`-small index type and a coefficient ring in universe `v` the exactness hypothesis is supplied by
+Mathlib's AB4* instance. Both universal properties use the maps induced by the canonical inclusions
+into the disjoint union.
 
 ## Main results
 
@@ -48,7 +50,8 @@ takes coproducts to products, by Markus Himmel in
 opposite categories, by Markus Himmel in `Mathlib/CategoryTheory/Limits/Preserves/Opposites` and by
 Kim Morrison and Floris van Doorn in
 `Mathlib/CategoryTheory/Limits/Shapes/Opposites/Products`; and the AB4* instance making products of
-modules exact, by Dagur Asgeirsson in `Mathlib/Algebra/Category/ModuleCat/AB`.
+modules exact, which discharges the exactness hypothesis in the same-universe case, by Dagur
+Asgeirsson in `Mathlib/Algebra/Category/ModuleCat/AB`.
 -/
 
 public section
@@ -57,13 +60,15 @@ noncomputable section
 
 open CategoryTheory Limits Opposite TopCat
 
-universe v u
+universe w v u
 
 namespace TauCeti
 
-variable {ι : Type v} (X : ι → TopCat.{v})
-  (C : Type u) [Category.{v} C] [HasCoproducts.{v} C] [Abelian C] (R : C)
-  (k : Type v) [Ring k] [Linear k C] (M : C)
+-- `Small.{v} ι` is stated after `Category.{v} C` so that `v` is already determined when it is
+-- synthesised; declaring it first makes Lean solve it by `small_self` and collapse `w` into `v`.
+variable {ι : Type w} (X : ι → TopCat.{w})
+  (C : Type u) [Category.{v} C] [Small.{v} ι] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (k : Type*) [Ring k] [Linear k C] (M : C)
 
 /-- **Additivity of singular cochains.** The singular cochain complex of a disjoint union is the
 product of the singular cochain complexes of its summands. The projections are the cochain maps
@@ -77,10 +82,15 @@ def isLimitFanSingularCochainComplex :
     -- `yoneda.obj M`, which takes coproducts in `C` to products of types.
     have hforget : (linearYoneda k C).obj M ⋙ forget (ModuleCat.{v} k) = yoneda.obj M :=
       Functor.congr_obj (whiskering_linearYoneda k C) M
-    let _ : PreservesLimitsOfShape (Discrete ι)ᵒᵖ
+    let _ : PreservesLimitsOfShape (Discrete (Shrink.{v} ι))ᵒᵖ
         ((linearYoneda k C).obj M ⋙ forget (ModuleCat.{v} k)) :=
       hforget ▸ inferInstance
-    exact preservesLimitsOfShape_of_reflects_of_preserves _ (forget (ModuleCat k))
+    -- `forget (ModuleCat.{v} k)` reflects limits only of `v`-small shape, so the reflection step
+    -- runs over a `v`-small copy of `ι` and is transported back along the induced equivalence.
+    let _ : PreservesLimitsOfShape (Discrete (Shrink.{v} ι))ᵒᵖ ((linearYoneda k C).obj M) :=
+      preservesLimitsOfShape_of_reflects_of_preserves _ (forget (ModuleCat.{v} k))
+    exact preservesLimitsOfShape_of_equiv
+      (Discrete.equivalence (equivShrink.{v} ι)).symm.op _
   let _ : HasColimitsOfShape (Discrete ι) C := inferInstance
   let _ : PreservesColimitsOfShape (Discrete ι) ((linearYoneda k C).obj M).rightOp :=
     preservesColimitsOfShape_rightOp _ _
@@ -91,7 +101,7 @@ def isLimitFanSingularCochainComplex :
       (((linearYoneda k C).obj M).rightOp.mapHomologicalComplex (ComplexShape.down ℕ)).op :=
     preservesLimitsOfShape_op _ _
   let _ : PreservesLimitsOfShape (Discrete ι)
-      (HomologicalComplex.unopFunctor (ModuleCat k) (ComplexShape.down ℕ)) := inferInstance
+      (HomologicalComplex.unopFunctor (ModuleCat.{v} k) (ComplexShape.down ℕ)) := inferInstance
   let _ : PreservesLimitsOfShape (Discrete ι)
       (ChainComplex.linearYonedaFunctor (α := ℕ) k M) :=
     inferInstanceAs (PreservesLimitsOfShape (Discrete ι)
@@ -99,6 +109,11 @@ def isLimitFanSingularCochainComplex :
         HomologicalComplex.unopFunctor _ _))
   exact isLimitFanMkObjOfIsLimit (ChainComplex.linearYonedaFunctor (α := ℕ) k M) _ _
     (Cofan.IsColimit.op (isColimitCofanSingularChainComplex X C R))
+
+section Cohomology
+
+variable [HasLimitsOfShape (Discrete ι) (ModuleCat.{v} k)]
+  [HasExactLimitsOfShape (Discrete ι) (ModuleCat.{v} k)]
 
 /-- **Additivity of singular cohomology.** In every degree, the singular cohomology of a
 disjoint union is the product of the singular cohomologies of its summands. The projections are
@@ -110,5 +125,7 @@ def isLimitFanSingularCohomology (n : ℕ) :
   isLimitFanMkObjOfIsLimit (HomologicalComplex.homologyFunctor
     (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
       (isLimitFanSingularCochainComplex X C R k M)
+
+end Cohomology
 
 end TauCeti
