@@ -101,18 +101,13 @@ private theorem exists_radius_of_notEventuallyConst
     filter_upwards [e.open_source.mem_nhds hx, hP2, hP3] with x' hxsrc hz2 hz3
     have h3 : e' (f (e.symm (e x'))) = c := by simpa only [F] using hz3
     simpa only [e.left_inv hxsrc] using (e'.injOn hz2 hfx (h3.trans hc0)).symm
-  -- Since `F - F (e x)` is analytic at `e x` and does not vanish identically there, `e x` is an
-  -- isolated zero of it.
-  have hsub : AnalyticAt ℂ (fun z ↦ F z - F (e x)) (e x) := hFa.sub analyticAt_const
+  -- By the principle of isolated zeros, the analytic function `F` agrees with the constant
+  -- `F (e x)` at a nearby point only at `e x` itself, since it does not agree with it eventually.
   have hiso : ∀ᶠ z in 𝓝 (e x), z ≠ e x → F z ≠ F (e x) := by
-    have : ∀ᶠ z in 𝓝[≠] (e x), F z ≠ F (e x) := by
-      rcases hsub.eventually_eq_zero_or_eventually_ne_zero with heq | hne'
-      · exfalso
-        refine hneF ((EventuallyConst.const (F (e x))).congr ?_)
-        filter_upwards [heq] with z hz
-        exact (sub_eq_zero.mp hz).symm
-      · simpa only [sub_ne_zero] using hne'
-    simpa only [eventually_nhdsWithin_iff, Set.mem_compl_singleton_iff, not_not] using this
+    have h : ∀ᶠ z in 𝓝[≠] (e x), F z ≠ F (e x) :=
+      (hFa.eventually_eq_or_eventually_ne analyticAt_const).resolve_left
+        (fun heq => hneF (eventuallyConst_iff_exists_eventuallyEq.mpr ⟨F (e x), heq⟩))
+    simpa only [eventually_nhdsWithin_iff, Set.mem_compl_singleton_iff, not_not] using h
   -- Shrinking the radius, the representative is analytic, its inverse chart is defined, its image
   -- stays in the target chart, and the zero `e x` of `F - F (e x)` is isolated there too.
   obtain ⟨ε₁, hε₁, hA₁⟩ := Metric.eventually_nhds_iff.mp hFa.eventually_analyticAt
