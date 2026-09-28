@@ -31,6 +31,8 @@ require additional hypotheses.
 ## Main statements
 
 * `TauCeti.IsCyclicallyMonotone` — finite `c`-cyclical monotonicity of a set of pairs;
+* `TauCeti.isCyclicallyMonotone_add_split_iff` — invariance under adding separate source
+  and target terms to the cost;
 * `TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support` — the support of an optimal coupling
   of finite cost for a continuous cost `c : X × Y → ℝ≥0∞` is `c`-cyclically monotone.
 
