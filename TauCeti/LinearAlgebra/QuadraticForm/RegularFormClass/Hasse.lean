@@ -179,7 +179,7 @@ theorem hasseInvariant_add_mk (p q : RegularFormPresentation K) :
         quaternionClass (∏ i, p.2 i) (∏ j, q.2 j) := by
   rw [mk_add_mk, RegularFormPresentation.append_def, hasseInvariant_mk,
     hasseInvariant_mk, hasseInvariant_mk]
-  exact prod_prod_Ioi_append_symbol quaternionClass quaternionClass_one_left
+  exact prod_prod_Ioi_append_of_mul quaternionClass quaternionClass_one_left
     quaternionClass_one_right quaternionClass_mul_left
     (fun a b c => quaternionClass_mul a b c) p.2 q.2
 
