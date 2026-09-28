@@ -13,9 +13,11 @@ public import TauCeti.FieldTheory.FunctionField.Basic
 
 When a finite extension of constants is adjoined to an algebraic function field,
 the compositum is again an algebraic function field over the enlarged constant field.  This
-gives the function-field structure needed to discuss its places, divisors, and genus.
+gives the function-field structure needed to discuss its places, divisors, and genus.  A separable
+extension of constants moreover produces a separable compositum.
 
-Separability and exactness of the original constant field are not needed here.
+Exactness of the original constant field is not needed here, and neither is separability except
+where it is the very property being transported.
 
 ## Reference
 
@@ -54,6 +56,18 @@ theorem finiteDimensional_of_constantCompositum_eq_top [FiniteDimensional k k']
   have := IntermediateField.finiteDimensional_adjoin hi
   rw [htop] at this
   exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
+
+/-- A separable extension of the constant field produces a separable compositum over the
+original field. -/
+theorem isSeparable_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
+    (hcomp : constantCompositum F k' F' = ⊤) : Algebra.IsSeparable F F' := by
+  rw [← IntermediateField.isSeparable_top]
+  rw [← hcomp, constantCompositum_def,
+    IntermediateField.isSeparable_adjoin_iff_isSeparable]
+  rintro y ⟨c, rfl⟩
+  exact IsSeparable.tower_top F <|
+    (Algebra.IsSeparable.isSeparable k c).map (IsScalarTower.toAlgHom k k' F')
+      (algebraMap k' F').injective
 
 /-- Adjoining a finite extension of constants to a function field produces a
 function field over the enlarged constant field.  The statement uses an ambient compositum

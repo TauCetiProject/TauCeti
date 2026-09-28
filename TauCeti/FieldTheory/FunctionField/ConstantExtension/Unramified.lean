@@ -16,16 +16,15 @@ import Mathlib.FieldTheory.PrimitiveElement
 Let `k' / k` be finite and separable and suppose that `F'` is the compositum `F k'`. Then
 `F' / F` is separable and is unramified at every place.
 
-Separability is inherited by scalar extension: each adjoined constant is separable over `k`, and
-hence over the larger field `F`. For unramifiedness, choose a primitive element `c` of `k' / k`.
-Its image generates `F' / F`, while the derivative of its minimal polynomial is a nonzero constant
-and hence a unit at every place of `F'`. The derivative criterion for the different therefore makes
-every different exponent vanish.
+Separability is inherited by scalar extension, which is
+`TauCeti.isSeparable_of_constantCompositum_eq_top`. For unramifiedness, choose a primitive element
+`c` of `k' / k`. Its image generates `F' / F`, while the derivative of the minimal polynomial of
+`c` evaluated at `c` is a nonzero element of `k'`, so its image in `F'` is a constant and hence a
+unit at every place of `F'`. The derivative criterion for the different therefore makes every
+different exponent vanish.
 
 ## Main results
 
-* `TauCeti.isSeparable_of_constantCompositum_eq_top`: a separable extension of the constants
-  produces a separable compositum over the original function field.
 * `TauCeti.Place.differentExponent_eq_zero_of_constantCompositum_eq_top`: every different
   exponent of the constant extension vanishes.
 * `TauCeti.Place.isUnramifiedAt_constantCompositum_eq_top`: each corresponding local model is
@@ -52,18 +51,6 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-
-/-- A separable extension of the constant field produces a separable compositum over the
-original field. -/
-theorem isSeparable_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
-    (hcomp : constantCompositum F k' F' = ⊤) : Algebra.IsSeparable F F' := by
-  rw [← IntermediateField.isSeparable_top]
-  rw [← hcomp, constantCompositum_def,
-    IntermediateField.isSeparable_adjoin_iff_isSeparable]
-  rintro y ⟨c, rfl⟩
-  exact IsSeparable.tower_top F <|
-    (Algebra.IsSeparable.isSeparable k c).map (IsScalarTower.toAlgHom k k' F')
-      (algebraMap k' F').injective
 
 namespace Place
 
