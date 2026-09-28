@@ -11,6 +11,7 @@ public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.Homology.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
+public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.AlgebraicTopology.SimplexCategory.Subinterval
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
@@ -84,16 +85,6 @@ private lemma ιTensorObj_D₂_succ (r s n : ℕ) (h : r + (s + 1) = n + 1) :
     (show (ComplexShape.down ℕ).Rel (s + 1) s by simp) _ (by simp; omega)]
   simp [Units.smul_def]
 
-/- The tensor product of chain maps is `HomologicalComplex.tensorHom`, i.e.
-`HomologicalComplex.mapBifunctorMap`, by definition of the monoidal structure on chain complexes;
-Mathlib states its action on summands only in the `mapBifunctorMap` form. -/
-private lemma ιTensorObj_tensorHom_f {L₁ L₂ : ChainComplex C ℕ} (f₁ : K₁ ⟶ L₁)
-    (f₂ : K₂ ⟶ L₂) (p q n : ℕ) (h : p + q = n) :
-    ιTensorObj K₁ K₂ p q n h ≫ (f₁ ⊗ₘ f₂).f n =
-      (f₁.f p ⊗ₘ f₂.f q) ≫ ιTensorObj L₁ L₂ p q n h := by
-  refine (ι_mapBifunctorMap _ _ _ _ _ _ _ _).trans ?_
-  simp [tensorHom_def]
-
 private lemma ιTensorObj_D₂_zero (n : ℕ) :
     ιTensorObj K₁ K₂ (n + 1) 0 (n + 1) (by omega) ≫
         mapBifunctor.D₂ K₁ K₂ (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n = 0 := by
@@ -148,24 +139,6 @@ private lemma map_subinterval_zero_δ_of_lt {n p : ℕ} (a : K _⦋n + 1⦌) (k 
 
 end Faces
 
-section Product
-
-variable (K L : SSet.{w})
-
-private lemma fst_δ_tensor {n : ℕ} (i : Fin (n + 2)) (x : (K ⊗ L) _⦋n + 1⦌) :
-    ((K ⊗ L).δ i x).1 = K.δ i x.1 := (rfl)
-
-private lemma snd_δ_tensor {n : ℕ} (i : Fin (n + 2)) (x : (K ⊗ L) _⦋n + 1⦌) :
-    ((K ⊗ L).δ i x).2 = L.δ i x.2 := (rfl)
-
-private lemma fst_tensorHom_app {K' L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L') {n : ℕ}
-    (x : (K ⊗ L) _⦋n⦌) : ((f ⊗ₘ g).app _ x).1 = f.app _ x.1 := (rfl)
-
-private lemma snd_tensorHom_app {K' L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L') {n : ℕ}
-    (x : (K ⊗ L) _⦋n⦌) : ((f ⊗ₘ g).app _ x).2 = g.app _ x.2 := (rfl)
-
-end Product
-
 variable [HasCoproducts.{w} C] (K L : SSet.{w}) (R S : C)
 
 /-- The summand of the Alexander–Whitney map on the simplex `x` in bidegree `(p, q)`: the front
@@ -208,7 +181,8 @@ private lemma alexanderWhitneyTerm_D {n : ℕ} (x : (K ⊗ L) _⦋n + 1⦌) (r s
   conv_rhs =>
     rw [← Fin.sum_congr' _ (show r + 1 + (s + 1) = n + 2 by omega), Fin.sum_univ_add]
   rw [Fin.sum_univ_castSucc (n := r + 1), Fin.sum_univ_succ (n := s + 1)]
-  simp only [alexanderWhitneyTerm_of_eq K L R S _ r s h, fst_δ_tensor, snd_δ_tensor]
+  simp only [alexanderWhitneyTerm_of_eq K L R S _ r s h]
+  simp only [Monoidal.tensorObj_obj, prod_δ_fst, prod_δ_snd]
   rw [δ_last_map_subinterval_zero, δ_zero_map_subinterval, smul_add, Finset.smul_sum,
     add_add_add_comm]
   -- the two sums match termwise, and the two remaining terms cancel
@@ -295,8 +269,7 @@ lemma alexanderWhitney_naturality {K' L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L
     ιChainComplex_alexanderWhitney_f_assoc, ιChainComplex_alexanderWhitney_f,
     Preadditive.sum_comp, Category.assoc]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [ιTensorObj_tensorHom_f, tensorHom_comp_tensorHom_assoc, ι_chainComplexMap_f,
-    ι_chainComplexMap_f, fst_tensorHom_app, snd_tensorHom_app, NatTrans.naturality_apply,
-    NatTrans.naturality_apply]
+  simp only [ι_tensorHom, tensorHom_comp_tensorHom_assoc, ι_chainComplexMap_f,
+    Monoidal.tensorHom_app, Monoidal.tensorObj_obj, tensorHom_app_apply, NatTrans.naturality_apply]
 
 end SSet

@@ -17,7 +17,7 @@ chain map from the singular chains of `X × Y` with coefficients in `R ⊗ S` to
 the singular chains of `X` and of `Y`.  A singular simplex `σ` of `X × Y` is sent to
 `∑_{p + q = n} (pr₁ ∘ σ)|[0, …, p] ⊗ (pr₂ ∘ σ)|[p, …, n]`: it is the simplicial Alexander–Whitney
 map `SSet.alexanderWhitney` precomposed with the map `Sing(X × Y) ⟶ Sing X × Sing Y` induced by the
-two projections.  It is natural in both spaces.
+two projections (`CartesianMonoidalCategory.prodComparison`).  It is natural in both spaces.
 
 ## Main definitions and results
 
@@ -45,12 +45,12 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
   [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]
 
 /-- The Alexander–Whitney map `C(X × Y; R ⊗ S) ⟶ C(X; R) ⊗ C(Y; S)` on singular chains: the
-simplicial Alexander–Whitney map of `Sing X` and `Sing Y`, precomposed with the map induced by the
-two projections of `X × Y`. -/
+simplicial Alexander–Whitney map of `Sing X` and `Sing Y`, precomposed with the comparison map
+`Sing(X × Y) ⟶ Sing X × Sing Y` induced by the two projections of `X × Y`. -/
 def alexanderWhitney (X Y : TopCat.{w}) (R S : C) :
     (toSSet.obj (X ⊗ Y)).chainComplex (R ⊗ S) ⟶
       (toSSet.obj X).chainComplex R ⊗ (toSSet.obj Y).chainComplex S :=
-  SSet.chainComplexMap (lift (toSSet.map (fst X Y)) (toSSet.map (snd X Y))) (R ⊗ S) ≫
+  SSet.chainComplexMap (CartesianMonoidalCategory.prodComparison toSSet X Y) (R ⊗ S) ≫
     SSet.alexanderWhitney _ _ R S
 
 /-- The Alexander–Whitney map on the summand of a singular simplex `σ` of `X × Y` is the
@@ -63,7 +63,8 @@ lemma ιChainComplex_alexanderWhitney_f {X Y : TopCat.{w}} (R S : C) {n : ℕ}
           ((toSSet.map (fst X Y)).app _ σ, (toSSet.map (snd X Y)).app _ σ) ≫
         (SSet.alexanderWhitney _ _ R S).f n := by
   simp only [alexanderWhitney, HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc]
-  -- the components of `lift f g` on simplices are, by definition, the pairs of components
+  -- `prodComparison` is the `lift` of the two projections, whose components on simplices are, by
+  -- definition, the pairs of components
   rfl
 
 /-- The Alexander–Whitney map on singular chains is natural in both spaces. -/
@@ -73,10 +74,8 @@ lemma alexanderWhitney_naturality {X Y X' Y' : TopCat.{w}} (f : X ⟶ X') (g : Y
     SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S) ≫ alexanderWhitney X' Y' R S =
       alexanderWhitney X Y R S ≫
         (SSet.chainComplexMap (toSSet.map f) R ⊗ₘ SSet.chainComplexMap (toSSet.map g) S) := by
-  have h : toSSet.map (f ⊗ₘ g) ≫ lift (toSSet.map (fst X' Y')) (toSSet.map (snd X' Y')) =
-      lift (toSSet.map (fst X Y)) (toSSet.map (snd X Y)) ≫ (toSSet.map f ⊗ₘ toSSet.map g) := by
-    ext1 <;> simp [← Functor.map_comp]
-  rw [alexanderWhitney, alexanderWhitney, ← Category.assoc, ← Functor.map_comp, h,
+  rw [alexanderWhitney, alexanderWhitney, ← Category.assoc, ← Functor.map_comp,
+    CartesianMonoidalCategory.prodComparison_natural,
     Functor.map_comp, Category.assoc, SSet.alexanderWhitney_naturality, Category.assoc]
 
 end TopCat
