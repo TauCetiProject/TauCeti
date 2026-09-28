@@ -344,10 +344,8 @@ theorem exists_pow_smul_le_pow_smul (P : PairOfDefinition A) {s : A}
 /-- **The filtrations defined by two pseudouniformisers are cofinal.** For every `sⁿ • M₀`,
 some `tᵏ • M₀` is contained in it.
 
-Indeed, `sⁿ A₀` is a neighbourhood of zero because `s` is a unit, and the `tᵏ A₀` form a
-neighbourhood basis of zero in `A` because `t` is a pseudouniformiser, so `tᵏ A₀ ⊆ sⁿ A₀` for
-some `k`. Multiplying this inclusion by `M₀` gives the result. Only `t` need be a
-pseudouniformiser, and no finite-generation or spanning hypothesis on `M₀` is needed. -/
+Only `t` need be a pseudouniformiser (`s` need only be a unit), and no finite-generation or
+spanning hypothesis on `M₀` is needed. -/
 theorem exists_pow_smul_le_pow_smul_of_isPseudoUniformizer (P : PairOfDefinition A) {s t : A}
     (hs : IsUnit s) (ht : IsPseudoUniformizer t)
     (hs0 : s ∈ P.ringOfDefinition) (ht0 : t ∈ P.ringOfDefinition)

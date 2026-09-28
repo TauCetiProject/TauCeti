@@ -110,9 +110,8 @@ theorem exists_pow_smul_subset_pow_smul (P Q : PairOfDefinition A) {s : A}
 /-- The topology on a finite `A`-module defined by powers of a pseudouniformiser is independent
 of the ring of definition, the finite spanning lattice, and the pseudouniformiser.
 
-The two pseudouniformisers need not lie in a common ring of definition: a positive power of `s`
-lies in the open subring `Q.ringOfDefinition`, and it serves as a common intermediate via
-`TauCeti.Huber.PairOfDefinition.submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer`. -/
+The pseudouniformisers `s ∈ P.ringOfDefinition` and `t ∈ Q.ringOfDefinition` need not lie in a
+common ring of definition. -/
 theorem submodulesBasis_pow_smul_topology_eq_of_ringOfDefinition
     (P Q : PairOfDefinition A) {s t : A} (hs : IsPseudoUniformizer s)
     (ht : IsPseudoUniformizer t) (hsP : s ∈ P.ringOfDefinition) (htQ : t ∈ Q.ringOfDefinition)
