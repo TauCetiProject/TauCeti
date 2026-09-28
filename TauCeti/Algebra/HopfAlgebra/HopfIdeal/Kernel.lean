@@ -328,10 +328,7 @@ theorem kerOfSurjective_mkBialgHom (I : HopfIdeal R H) :
     kerOfSurjective (Bialgebra.Quotient.mkBialgHom I.toIdeal)
       Ideal.Quotient.mk_surjective = I := by
   ext x
-  -- `rw [mem_kerOfSurjective]` fails with an application type mismatch under implicit transparency
-  -- because `Ideal.Quotient.mk_surjective` is typed for `Ideal.Quotient.mk` rather than
-  -- `Bialgebra.Quotient.mkBialgHom`; `change` exposes the membership condition directly.
-  change Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal x = 0 ↔ x ∈ I
+  refine (mem_kerOfSurjective _ _).trans ?_
   rw [Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
 
 end Hopf
