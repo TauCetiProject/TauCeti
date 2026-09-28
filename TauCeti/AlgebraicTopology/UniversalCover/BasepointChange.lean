@@ -74,7 +74,6 @@ def basepointChangeHomeomorph (γ : Path x y) :
   continuous_invFun := continuous_basepointPrepend γ.symm
 
 /-- Basepoint change sends the distinguished point to the path class defining the change. -/
-@[simp]
 theorem basepointChangeHomeomorph_apply_basepointLift (γ : Path x y) :
     basepointChangeHomeomorph γ (basepointLift y : UniversalCover y) =
       mk y (Path.Homotopic.Quotient.mk γ) :=
