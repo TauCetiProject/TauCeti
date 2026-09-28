@@ -168,26 +168,28 @@ theorem isAddCyclic_torsionBy (hn : (n : 𝕜) ≠ 0) : IsAddCyclic ((AddCircle 
   (AddSubgroup.isAddCyclic_iff_exists_zmultiples_eq_top _).mpr
     ⟨_, (torsionBy_eq_zmultiples p hn).symm⟩
 
+/-- A subgroup of `AddCircle p` with `n` elements is the `n`-torsion, whenever `n` is nonzero in
+`𝕜`. For a nonzero period in characteristic zero this makes the `n`-torsion the only subgroup of
+order `n`. -/
+theorem eq_torsionBy_of_natCard_eq (hn : (n : 𝕜) ≠ 0) {H : AddSubgroup (AddCircle p)}
+    (hH : Nat.card H = n) : H = (AddCircle p)[(n : ℤ)] := by
+  have := finite_torsionBy p fun x y h ↦ mul_left_cancel₀ hn (by simpa only [nsmul_eq_mul] using h)
+  refine AddSubgroup.eq_of_le_of_card_ge (hH ▸ AddSubgroup.le_torsionBy_natCard) ?_
+  rw [torsionBy_eq_zmultiples p hn, Nat.card_zmultiples, hH]
+  exact Nat.le_of_dvd (Nat.pos_of_ne_zero (by rintro rfl; exact hn Nat.cast_zero))
+    (addOrderOf_dvd_of_nsmul_eq_zero (torsionBy.nsmul_iff.mp (coe_period_div_mem_torsionBy p)))
+
 end Torsion
 
 section FiniteSubgroups
 
-variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜) {n : ℕ}
-
-/-- A subgroup of `AddCircle p` with `n` elements is the `n`-torsion. For a nonzero period this
-makes the `n`-torsion the only subgroup of order `n`. -/
-theorem eq_torsionBy_of_natCard_eq (hn : 0 < n) {H : AddSubgroup (AddCircle p)}
-    (hH : Nat.card H = n) : H = (AddCircle p)[(n : ℤ)] := by
-  have := finite_torsionBy p (nsmul_right_injective hn.ne')
-  refine AddSubgroup.eq_of_le_of_card_ge (hH ▸ AddSubgroup.le_torsionBy_natCard) ?_
-  rw [torsionBy_eq_zmultiples p (Nat.cast_ne_zero.mpr hn.ne'), Nat.card_zmultiples, hH]
-  exact Nat.le_of_dvd hn
-    (addOrderOf_dvd_of_nsmul_eq_zero (torsionBy.nsmul_iff.mp (coe_period_div_mem_torsionBy p)))
+variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜)
 
 /-- Every finite subgroup of `AddCircle p` is a torsion subgroup. -/
 theorem exists_eq_torsionBy {H : AddSubgroup (AddCircle p)} [Finite H] :
     ∃ n : ℕ, 0 < n ∧ H = (AddCircle p)[(n : ℤ)] :=
-  ⟨Nat.card H, Nat.card_pos, eq_torsionBy_of_natCard_eq p Nat.card_pos rfl⟩
+  ⟨Nat.card H, Nat.card_pos,
+    eq_torsionBy_of_natCard_eq p (Nat.cast_ne_zero.mpr Nat.card_pos.ne') rfl⟩
 
 end FiniteSubgroups
 
