@@ -31,6 +31,7 @@ namespace TauCeti
 
 /-- The natural numbers with distance one between distinct points. -/
 structure UnitDiscreteNat where
+  /-- The underlying natural number. -/
   val : ℕ
   deriving DecidableEq
 
