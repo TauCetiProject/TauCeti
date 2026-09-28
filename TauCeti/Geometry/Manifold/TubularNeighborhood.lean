@@ -53,9 +53,9 @@ structure IsTubularNeighborhood (f : B → N) (U : Set (TotalSpace F E))
   isOpen : IsOpen U
   /-- Every point of the core has its zero vector in the tubular domain. -/
   zero_mem : ∀ x, zeroSection F E x ∈ U
-  /-- The domain is closed under radial contraction in each fiber. -/
-  fiberwise_smul_mem : ∀ {x} {v : E x}, (⟨x, v⟩ : TotalSpace F E) ∈ U →
-    ∀ {t : ℝ}, t ∈ Icc (0 : ℝ) 1 → (⟨x, t • v⟩ : TotalSpace F E) ∈ U
+  /-- Each fiber slice of the domain is star-convex at the zero vector. -/
+  fiberwise_starConvex : ∀ x, StarConvex ℝ 0
+    {v : E x | (⟨x, v⟩ : TotalSpace F E) ∈ U}
   /-- The tubular chart is an open embedding. -/
   isOpenEmbedding : IsOpenEmbedding toFun
   /-- The core map is an embedding. -/
@@ -85,9 +85,9 @@ theorem isTubularNeighborhood_zeroSection
       (fun x : (Set.univ : Set (TotalSpace F E)) => x.1) where
   isOpen := isOpen_univ
   zero_mem := fun _ => mem_univ _
-  fiberwise_smul_mem := by
-    intro x v _ t ht
-    exact mem_univ _
+  fiberwise_starConvex := by
+    intro x
+    simpa using (starConvex_univ (𝕜 := ℝ) (0 : E x))
   isOpenEmbedding := isOpen_univ.isOpenEmbedding_subtypeVal
   isEmbedding_f := hzero
   map_zeroSection := by
@@ -99,10 +99,12 @@ theorem isTubularNeighborhood_zeroSection
     rfl
 
 /-- The radial contraction of a tubular neighborhood, with its image kept in
-the tubular domain by `fiberwise_smul_mem`. -/
+the tubular domain by `fiberwise_starConvex`. -/
 def radialContraction (T : IsTubularNeighborhood f U toFun) : Icc (0 : ℝ) 1 × U → U :=
   fun p => ⟨⟨p.2.1.1, (p.1 : ℝ) • p.2.1.2⟩,
-    T.fiberwise_smul_mem p.2.property p.1.property⟩
+    by
+      simpa using (T.fiberwise_starConvex p.2.1.1).smul_mem p.2.property
+        p.1.2.1 p.1.2.2⟩
 
 /-- The radial contraction supplied by tubular-neighborhood data is continuous. -/
 theorem continuous_radialContraction (T : IsTubularNeighborhood f U toFun) :
