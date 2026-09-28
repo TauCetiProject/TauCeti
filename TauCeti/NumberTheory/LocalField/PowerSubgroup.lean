@@ -68,12 +68,13 @@ when `2` is a unit of `𝒪[K]`.
 
 ## Implementation notes
 
-The hypothesis `IsUnit (n : 𝒪[K])` already forces `n ≠ 0`, so no separate nonvanishing
-assumption is taken. In mixed characteristic the same openness holds for every `n ≠ 0`, but
-there the `p`-primary part needs the logarithm on deep units instead of Hensel's lemma at `1`,
-and in equal characteristic `p` the range of `powMonoidHom p` is not open. Likewise the count
-acquires the factor `q ^ v_K(n)` when `n` is not a unit, and in equal characteristic `p` the
-quotient `Kˣ ⧸ (Kˣ)ᵖ` is infinite.
+In the theorems assuming `IsUnit (n : 𝒪[K])`, this hypothesis already forces `n ≠ 0`, so
+no separate nonvanishing assumption is taken. The general reduction theorem
+`card_powerClasses_eq_of_index_unitFiltration_one` instead requires `n ≠ 0` explicitly. In mixed
+characteristic the same openness holds for every `n ≠ 0`, but there the `p`-primary part needs the
+logarithm on deep units instead of Hensel's lemma at `1`, and in equal characteristic `p` the range
+of `powMonoidHom p` is not open. Likewise the count acquires the factor `q ^ v_K(n)` when `n` is not
+a unit, and in equal characteristic `p` the quotient `Kˣ ⧸ (Kˣ)ᵖ` is infinite.
 
 ## References
 
