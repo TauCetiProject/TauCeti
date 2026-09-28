@@ -65,6 +65,14 @@ def _root_.SheafOfModules.overIhomComparison
   CategoryTheory.Functor.ihomComparison
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M
 
+/-- The named internal-Hom comparison for restriction is the generic comparison of the strong
+monoidal restriction functor. -/
+theorem _root_.SheafOfModules.overIhomComparison_eq_ihomComparison
+    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    M.overIhomComparison R X = CategoryTheory.Functor.ihomComparison
+      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M :=
+  (rfl)
+
 -- A pre-lemma (`simp↓`, as in #8642): otherwise `Functor.comp_obj`, `Functor.id_obj` and
 -- `SheafOfModules.ihom_obj` rewrite the implicit source and target objects of the comparison's
 -- component first, and the left-hand side no longer matches.
