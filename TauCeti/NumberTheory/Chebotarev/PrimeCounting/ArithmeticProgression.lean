@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PowerIndex
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 public import TauCeti.NumberTheory.Chebotarev.PrimesCongruent
 import TauCeti.NumberTheory.Chebotarev.CyclotomicRamification
-import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # Cyclotomic Frobenius von Mangoldt coefficients and arithmetic progressions
