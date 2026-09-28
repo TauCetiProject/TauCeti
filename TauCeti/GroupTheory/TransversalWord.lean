@@ -47,8 +47,8 @@ Mathlib's `Subgroup.LeftTransversal` bundles a set of coset representatives. Its
 construction. The word calculus takes a map `t : G ⧸ U → G` satisfying `↑(t u) = u` when needed;
 `Quotient.out` is the canonical example.
 
-This material is the group-theoretic input to the corestriction maps of the roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, Layer 6, whose §3 fixes the displayed formula.
+The transversal word supplies the subgroup-valued arguments in the cochain formulas for
+corestriction; its cocycle and change-of-transversal identities support their algebraic proofs.
 -/
 
 public section
