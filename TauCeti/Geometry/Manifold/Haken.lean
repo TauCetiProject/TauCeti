@@ -37,7 +37,8 @@ Chapter II.
 * `TauCeti.IsHakenSurfaceEmbedding`: a proper, incompressible, non-spherical witness for
   Haken-ness, allowing boundary.
 * `TauCeti.IsClosedHakenSurfaceEmbedding`: the closed, bicollared specialization.
-* `TauCeti.IsIrreducibleThreeManifold`: every closed embedded 2-sphere bounds an embedded 3-ball.
+* `TauCeti.IsIrreducibleThreeManifold`: every closed locally flat embedded 2-sphere bounds an
+  embedded 3-ball.
 * `TauCeti.IsHakenThreeManifold` and `TauCeti.IsClosedHakenThreeManifold`: the corresponding
   irreducible existential Haken predicates for ambient 3-manifolds.
 
@@ -179,11 +180,12 @@ end BoundaryAware
 
 /-! ### Irreducible three-manifolds -/
 
-/-- A three-manifold is **irreducible** when every closed embedded 2-sphere extends across an
-embedded 3-ball.  The disk and its boundary are Mathlib's standard `𝔻 3` and `𝕊 2` objects, so
-this is the usual sphere-bounds-a-ball condition. -/
+/-- A three-manifold is **irreducible** when every closed locally flat embedded 2-sphere extends
+across an embedded 3-ball.  The disk and its boundary are Mathlib's standard `𝔻 3` and `𝕊 2`
+objects, so this is the usual tame sphere-bounds-a-ball condition. -/
 def IsIrreducibleThreeManifold (M : Type u) [TopologicalSpace M] : Prop :=
   ∀ f : C((TopCat.sphere 2 : TopCat.{u}), M), IsClosedEmbedding f →
+    IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f →
     ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
       g.comp (TopCat.diskBoundaryInclusion 3).hom = f
 
