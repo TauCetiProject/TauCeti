@@ -30,10 +30,6 @@ caller has already done.
 * `Representation.IntertwiningMap.equivOfRange`: an injective intertwining map is an equivalence
   onto a subrepresentation that its image fills.
 
-## Main results
-
-* `Representation.IntertwiningMap.map_asAlgebraHom`: an intertwining map commutes with the action
-  of the whole monoid algebra, not only with that of the monoid.
 -/
 
 public section
@@ -73,16 +69,5 @@ theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Inject
     {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
     ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
   rfl
-
-/-- **An intertwining map commutes with the monoid-algebra action**: intertwining each element of
-`G` propagates, by linearity, to every element of `A[G]`. -/
-theorem map_asAlgebraHom (f : IntertwiningMap ρ σ) (a : MonoidAlgebra A G) (v : V) :
-    f (ρ.asAlgebraHom a v) = σ.asAlgebraHom a (f v) := by
-  induction a using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
-  | single g r =>
-    simp only [Representation.asAlgebraHom_single, LinearMap.smul_apply, map_smul,
-      f.isIntertwining]
 
 end Representation.IntertwiningMap

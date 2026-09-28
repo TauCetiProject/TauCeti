@@ -21,20 +21,20 @@ file identifies the intertwining maps out of it:
 
 where `a V` is the image of `a` acting on `V` through `σ`.
 
-This is how the multiplicity space of an irreducible representation presented as a left ideal is
-computed: when `k[G] a` is irreducible, `Hom_G(k[G] a, V)` is the space that records how often it
-occurs in `V`, and it is here identified with a subspace of `V` itself, the image of `a`. The
-identification is natural in `V` (`Representation.spanSingletonHomEquivRange_comp`), so
-any operator on `V` commuting with `G` acts compatibly on both sides.
+This identifies the intertwiner space with a subspace of `V` itself, the image of `a`. In a split
+semisimple setting, when `k[G] a` is irreducible, this intertwiner space is its multiplicity space
+in `V`. The identification is natural in `V`
+(`Representation.spanSingletonHomEquivRange_comp`), so any operator on `V` commuting with `G`
+acts compatibly on both sides.
 
 Allowing a scalar `κ` rather than asking for an idempotent is what the applications need: the
 Young symmetrizer `c_t` satisfies `c_t * c_t = κ • c_t` with `κ = n! / dim (k[Sₙ] c_t)`, and it is
 `c_t` itself, not its normalization, whose image cuts out the Weyl module.
 
-Both directions are elementary. An intertwining map commutes with the whole of `k[G]`
-(`Representation.IntertwiningMap.map_asAlgebraHom`), so its value on an element `r a` of the ideal
-is `r` applied to its value at `a`, which therefore determines it; and that value lies in `a V`
-because `a = κ⁻¹ a a`. Conversely a vector `a v` of `a V` defines the intertwining map
+Both directions are elementary. The monoid-algebra linear map corresponding to an intertwining map
+commutes with the whole of `k[G]`, so its value on an element `r a` of the ideal is `r` applied to
+its value at `a`, which therefore determines it; and that value lies in `a V` because
+`a = κ⁻¹ a a`. Conversely a vector `a v` of `a V` defines the intertwining map
 `x ↦ κ⁻¹ x (a v)`, which sends `a` to `κ⁻¹ a a v = a v`.
 
 ## Main definitions
@@ -87,7 +87,8 @@ private theorem smul_spanSingletonGenerator_self (ha : a * a = κ • a) :
 /-- An intertwining map out of `k[G] a` sends `r a` to `r` applied to its value at `a`. -/
 private theorem intertwining_apply_smul_generator (f : IntertwiningMap (ρₐ a) σ) (r : k[G]) :
     f (r • spanSingletonGenerator a) = σ.asAlgebraHom r (f (spanSingletonGenerator a)) := by
-  rw [← f.map_asAlgebraHom, TauCeti.Representation.asAlgebraHom_ofModule'_apply]
+  rw [← TauCeti.Representation.asAlgebraHom_ofModule'_apply]
+  exact (IntertwiningMap.equivLinearMapAsModule _ _ f).map_smul' r _
 
 /-- The value of an intertwining map out of `k[G] a` at the generator lies in the image of `a`. -/
 private theorem intertwining_apply_generator_mem_range (hκ : IsUnit κ) (ha : a * a = κ • a)
