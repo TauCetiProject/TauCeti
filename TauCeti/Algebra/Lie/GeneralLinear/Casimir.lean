@@ -250,7 +250,8 @@ theorem glCasimir_smul_of_isGlHighestWeightVector_of_lieSpan_eq_top
       (∑ i : Fin N, mu i * (mu i + (N : K) - 1 - 2 * (i : K))) • m := by
   apply UniversalEnvelopingAlgebra.representation_eq_smul_of_mem_center_of_lieSpan_eq_top
     K (Matrix (Fin N) (Fin N) K) M (glCasimir_mem_center K (Fin N)) _ hgen m
-  exact glCasimir_smul_of_isGlHighestWeightVector (K := K) hv
+  simpa only [Set.mem_singleton_iff, forall_eq] using
+    glCasimir_smul_of_isGlHighestWeightVector (K := K) hv
 
 end HighestWeight
 

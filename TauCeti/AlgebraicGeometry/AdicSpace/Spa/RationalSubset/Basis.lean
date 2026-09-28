@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Sets.Opens
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Spectral
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
@@ -66,9 +67,11 @@ the basis arguments uses it.
 * `TauCeti.ValuationSpectrum.isCompact_of_mem_spaRationalFamily`: every member of the family is
   quasi-compact. Each result also has an `_of_pairOfDefinition` form for use with a specified
   pair of definition.
+* `TauCeti.ValuationSpectrum.spaComap_preimage_mem_spaRationalFamily`: a rational open pulls back
+  to a rational open when the ring map sends open ideals to open ideals.
 * `TauCeti.ValuationSpectrum.exists_finite_spaRationalFamily_refinement`: every open cover of a
-  member of the family admits a finite refinement by members of the family — the two results
-  above combined, and the form a sheaf criterion on this basis consumes.
+  member of the family admits a finite refinement by members of the family — the basis and
+  compactness results combined, and the form a sheaf criterion on this basis consumes.
 * `TauCeti.ValuationSpectrum.spa_eq_biUnion_rationalSubset_of_isTateRing_of_isOpen`: over a Tate
   ring, if a finite set `T` generates an open ideal, then the standard rational subsets cover
   `spa Aplus` (Wedhorn Corollary 7.53 specialization).
@@ -135,6 +138,21 @@ theorem mem_spaRationalFamily_iff {Aplus : Subring A} {U : Set (spa Aplus)} :
     U ∈ spaRationalFamily Aplus ↔
       ∃ (T : Finset A) (s : A), IsOpen (Ideal.span (T : Set A) : Set A) ∧
         U = Subtype.val ⁻¹' rationalSubset Aplus T s := Iff.rfl
+
+open scoped Classical in
+/-- Rational opens pull back to rational opens when images of open ideals are open. -/
+theorem spaComap_preimage_mem_spaRationalFamily {B : Type*} [CommRing B]
+    [TopologicalSpace B] (φ : A →+* B) (hφ : Continuous φ)
+    (Aplus : Subring A) (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hopen : ∀ J : Ideal A, IsOpen (J : Set A) → IsOpen (Ideal.map φ J : Set B))
+    {U : Set (spa Aplus)} (hU : U ∈ spaRationalFamily Aplus) :
+    spaComap φ hφ Aplus Bplus hplus ⁻¹' U ∈ spaRationalFamily Bplus := by
+  obtain ⟨V, s, hV, rfl⟩ := mem_spaRationalFamily_iff.mp hU
+  rw [spaComap_preimage_rationalSubset]
+  exact mem_spaRationalFamily_iff.mpr
+    ⟨V.image φ, φ s, by
+      rw [Finset.coe_image, ← Ideal.map_span]
+      exact hopen _ hV, rfl⟩
 
 /-- The whole adic spectrum belongs to its rational family, presented as `R({1}/1)`. -/
 theorem univ_mem_spaRationalFamily (Aplus : Subring A) :
