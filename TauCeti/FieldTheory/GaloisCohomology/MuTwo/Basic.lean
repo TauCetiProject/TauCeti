@@ -345,6 +345,26 @@ private noncomputable def kummerCohomMap :
   (ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 1).mapIso
     (kummerCoeffIsoTrivialF2 K) |>.hom
 
+/-- The coefficient isomorphism `TauCeti.kummerCoeffIsoTrivialF2` is the coefficient dictionary
+`TauCeti.kummerCoeffToTrivialF2` followed by the transport of
+`TauCeti.ofDiscreteModule_trivialF2`. -/
+private theorem kummerCoeffIsoTrivialF2_hom :
+    (kummerCoeffIsoTrivialF2 K).hom =
+      kummerCoeffToTrivialF2 K ≫ eqToHom (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)) :=
+  rfl
+
+/-- **`TauCeti.kummerCohomMap` factors through the coefficient map of the dictionary**: it is
+the coefficient map of `TauCeti.kummerCoeffToTrivialF2` followed by the transport of
+`TauCeti.ofDiscreteModule_trivialF2` on degree-one continuous cohomology. -/
+private theorem kummerCohomMap_eq_coeffMap_comp :
+    kummerCohomMap K =
+      ContinuousCohomology.coeffMap (kummerCoeffToTrivialF2 K) 1 ≫
+        eqToHom (congrArg (continuousCohomology 1)
+          (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K))) := by
+  rw [kummerCohomMap, Functor.mapIso_hom,
+    ContinuousCohomology.continuousCohomologyFunctor_map, kummerCoeffIsoTrivialF2_hom,
+    ContinuousCohomology.coeffMap_comp, ContinuousCohomology.coeffMap_eqToHom]
+
 /-- **The coefficient isomorphism read on degree-one continuous cohomology, as an equivalence of
 additive groups**: the equivalence of additive groups that
 `TauCeti.ContinuousCohomology.continuousCohomologyFunctor` assigns to
@@ -462,7 +482,7 @@ theorem kummerCocycleModTwoClass_eq_explicitCoeff1Equiv {a : Kˣ} {α : (Separab
       explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2)
         (kummerCoeffEquiv K) continuous_of_discreteTopology continuous_of_discreteTopology
         (fun g x => by simp [kummerCoeffEquiv_apply]) (kummerCocycleClass hα) := by
-  rw [kummerCocycleModTwoClass, kummerCocycleClass]
+  rw [kummerCocycleModTwoClass, kummerCocycleClass_def]
   -- Both sides are quotient classes. Exposing their cocycle representatives reduces the
   -- comparison theorem to `explicitCoeff1Equiv_mk`.
   change (kummerCocycleModTwo K hα :
@@ -548,18 +568,7 @@ private theorem kummerCohomMap_explicitH1 (x : H1 (AbsoluteGaloisGroup K) (Kumme
           (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K 2) (kummerCoeffEquiv K)
             continuous_of_discreteTopology continuous_of_discreteTopology
             (kummerCoeffEquiv_equivariant K) x)) := by
-  have hmap : kummerCohomMap K =
-      ContinuousCohomology.coeffMap (kummerCoeffToTrivialF2 K) 1 ≫
-        eqToHom (congrArg (continuousCohomology 1)
-          (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K))) := by
-    rw [kummerCohomMap, kummerCoeffIsoTrivialF2, Functor.mapIso_hom, Iso.trans_hom,
-      kummerCoeffIsoDiscreteImage, eqToIso.hom, Functor.map_comp,
-      ContinuousCohomology.continuousCohomologyFunctor_map,
-      ContinuousCohomology.continuousCohomologyFunctor_map,
-      ContinuousCohomology.coeffMap_eqToHom]
-    -- what is left is the `hom` field of the isomorphism literal
-    rfl
-  rw [hmap, ConcreteCategory.comp_apply]
+  rw [kummerCohomMap_eq_coeffMap_comp, ConcreteCategory.comp_apply]
   refine congrArg _ ?_
   have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id (AbsoluteGaloisGroup K) :
         AbsoluteGaloisGroup K →* AbsoluteGaloisGroup K)

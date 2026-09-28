@@ -66,13 +66,15 @@ noncomputable def kummerCup :
 
 /-- The Kummer cup pairing is the cup product after applying the square-class Kummer
 isomorphism in both variables. -/
+@[simp]
 theorem kummerCup_apply (x y : SquareClassGroup K) :
     kummerCup K x y = (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
       (kummerSquareClassEquiv K x) (kummerSquareClassEquiv K y) :=
   (rfl)
 
+-- Not `@[simp]`: `simp` proves it from `kummerCup_apply` and
+-- `kummerSquareClassEquiv_squareClass`.
 /-- The Kummer cup on representatives is the cup product of their Kummer classes. -/
-@[simp]
 theorem kummerCup_squareClass_squareClass (a b : Kˣ) :
     kummerCup K (squareClass a) (squareClass b) =
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
