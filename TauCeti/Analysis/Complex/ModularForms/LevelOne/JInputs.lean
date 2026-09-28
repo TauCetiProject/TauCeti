@@ -37,6 +37,8 @@ theorem j_apply (z : ℍ) : j z = E₄ z ^ 3 / discriminant z := by rfl
 theorem j_mdifferentiable : MDiff j := by
   exact (ModularForm.holo' E₄).pow 3 |>.div (CuspForm.discriminant.holo') discriminant_ne_zero
 
+-- A direct-action `@[simp]` variant fails `simpNF`:
+-- `ModularGroup.sl_moeb` simplifies its left side.
 /-- The weight factors cancel, so `j` is invariant under `SL₂(ℤ)`. -/
 @[simp]
 theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
