@@ -285,7 +285,7 @@ theorem basisModificationTail_le_iff {ρ : gradedPiece p (freeProP p X) 1} {j : 
 
 section
 
-noncomputable local instance : Fintype X := Fintype.ofFinite X
+attribute [local instance] Fintype.ofFinite
 
 /-- **Membership in the tail**: the elements of `T_j(ρ)` are the linear combinations of the
 `π^j ξ_i` over the indices `i` with `c_i = 0`. -/
