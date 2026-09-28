@@ -75,15 +75,16 @@ theorem isEffective_equivCartierDivisor_iff (hX : ∀ x : X, coheight x ≤ 1)
     exact (equivCartierDivisor hX).left_inv D
   rw [h]
 
--- `equivCartierDivisor_apply` is a simp lemma, so `simp` reaches this constructor form first.
+-- The general effectivity criterion rewrites the Cartier side before this constructor form.
 @[simp]
 private theorem isEffective_cartierDivisor_iff (hX : ∀ x : X, coheight x ≤ 1)
     (D : SchemeWeilDivisor X) :
-    (IsLocallyPrincipal.cartierDivisor hX
-      (isLocallyPrincipal_of_forall_coheight_le_one hX D)).IsEffective ↔
+    WeilDivisor.IsEffective ((IsLocallyPrincipal.cartierDivisor hX
+      (isLocallyPrincipal_of_forall_coheight_le_one hX D)).toWeilDivisor) ↔
         WeilDivisor.IsEffective D := by
   rw [← equivCartierDivisor_apply hX D]
-  exact isEffective_equivCartierDivisor_iff hX D
+  rw [← equivCartierDivisor_symm_apply hX (equivCartierDivisor hX D),
+    AddEquiv.symm_apply_apply]
 
 /-- The Weil–Cartier equivalence restricts to an additive equivalence of effective divisors. -/
 def effectiveEquivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1) :
