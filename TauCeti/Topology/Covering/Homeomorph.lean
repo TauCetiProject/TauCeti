@@ -16,6 +16,7 @@ particular the identity of a space is a covering map, the trivial one-sheeted co
 ## Main results
 
 * `Homeomorph.isCoveringMap`: a homeomorphism is a covering map.
+* `IsCoveringMap.id`: the identity of a space is a covering map.
 -/
 
 public section
@@ -32,3 +33,7 @@ theorem Homeomorph.isCoveringMap (e : X ≃ₜ Y) : IsCoveringMap e := by
       invFun u := ⟨e.symm u.1, trivial⟩
       left_inv x := Subtype.ext (e.symm_apply_apply x)
       right_inv u := Prod.ext (by simp) (Subsingleton.elim _ _) }, fun _ ↦ rfl⟩
+
+/-- The identity of a space is a covering map, the trivial one-sheeted cover. -/
+protected theorem IsCoveringMap.id : IsCoveringMap (@id X) :=
+  (Homeomorph.refl X).isCoveringMap

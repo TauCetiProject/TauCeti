@@ -36,6 +36,12 @@ The conjecture is stated, not proved.
 
 * `TauCeti.VirtualFiberingConjecture`: every closed hyperbolic 3-manifold is virtually fibered.
 
+## Main results
+
+* `TauCeti.VirtualFiberingConjecture.isVirtuallyFibered`: applying the conjecture to a closed
+  hyperbolic 3-manifold.
+* `TauCeti.virtualFiberingConjecture_iff`: the defining characterization.
+
 ## References
 
 * R. Kirby (ed.), *Problems in Low-Dimensional Topology*, Problem 3.51, in *Geometric Topology*,
@@ -61,5 +67,21 @@ def VirtualFiberingConjecture : Prop :=
   ∀ (M : Type u) [MetricSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
     [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M],
     IsHyperbolic (I := 𝓡 3) (M := M) → IsVirtuallyFibered M
+
+/-- A proof of the virtual fibering conjecture makes every closed hyperbolic 3-manifold virtually
+fibered. -/
+theorem VirtualFiberingConjecture.isVirtuallyFibered (h : VirtualFiberingConjecture.{u})
+    (M : Type u) [MetricSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
+    [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M]
+    (hM : IsHyperbolic (I := 𝓡 3) (M := M)) : IsVirtuallyFibered M :=
+  h M hM
+
+/-- The defining characterization of the virtual fibering conjecture. -/
+theorem virtualFiberingConjecture_iff :
+    VirtualFiberingConjecture.{u} ↔
+      ∀ (M : Type u) [MetricSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
+        [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M],
+        IsHyperbolic (I := 𝓡 3) (M := M) → IsVirtuallyFibered M :=
+  Iff.rfl
 
 end TauCeti

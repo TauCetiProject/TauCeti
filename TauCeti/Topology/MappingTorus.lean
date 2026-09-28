@@ -9,6 +9,7 @@ public import Mathlib.Topology.Homeomorph.Defs
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Topology.Constructions
 public import Mathlib.GroupTheory.GroupAction.Defs
+public import TauCeti.Topology.Instances.AddCircle.Defs
 
 /-!
 # Mapping tori and fibering over the circle
@@ -180,8 +181,6 @@ theorem FibersOverCircle.infinite {M : Type u} [TopologicalSpace M] (h : FibersO
   obtain ⟨p⟩ := h
   let _ := p.fiberTopology
   have := p.nonemptyFiber
-  have : Infinite UnitAddCircle :=
-    (AddCircle.equivIco (1 : ℝ) 0).infinite_iff.2 (Set.Ico_infinite (by norm_num)).to_subtype
   exact .of_surjective _ ((MappingTorus.proj_surjective p.monodromy).comp p.equivalence.surjective)
 
 end TauCeti
