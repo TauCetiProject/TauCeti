@@ -14,7 +14,9 @@ public import TauCeti.Combinatorics.PermutationTriple.Passport.Stabilizer
 The normalizer of a passport's reference monodromy group acts on its generating triples.
 Every stabilizer is the centralizer, so every orbit has the same size. Counting the generating
 triples by orbits gives an exact division formula for the number of isomorphism classes in the
-passport. The divisibility statement makes the natural-number quotient meaningful.
+passport in terms of the finite set of generating triples. The divisibility statement makes the
+natural-number quotient meaningful. A generating-count recursion can evaluate the finite-set
+cardinality separately.
 
 ## References
 
@@ -90,8 +92,8 @@ theorem card_normalizer_dvd_card_generatingTriple_mul_card_centralizer :
     P.card_generatingTripleOrbits_mul_card_normalizer_eq_card_generatingTriple_mul_card_centralizer
   simpa only [mul_comm] using h.symm
 
-/-- The exact passport-size formula: generating triples are divided into equal normalizer
-orbits, each having normalizer order divided by centralizer order elements. -/
+/-- The passport-size formula in terms of the generating-triple finset: its elements form equal
+normalizer orbits, each having normalizer order divided by centralizer order elements. -/
 theorem passportSize_eq_card_generatingTriples_mul_card_centralizer_div_card_normalizer
     (hn : n ≠ 0)
     (hG : IsPretransitive P.G (Fin n)) :
