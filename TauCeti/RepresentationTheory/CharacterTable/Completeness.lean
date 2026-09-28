@@ -31,7 +31,8 @@ function is determined by its pairings with the `χᵢ`. Applying the expansion 
 function of a conjugacy class, whose pairings are computed by
 `TauCeti.ClassFunction.characterPairing_classIndicator_inv`, gives the **second (column)
 orthogonality relation** `|C_g| · ∑ᵢ χᵢ(g) χᵢ(h⁻¹) = |G|` or `0` according as `g` and `h` are
-conjugate or not.
+conjugate or not. Its identity column, where the class of `1` is `{1}` and `χᵢ(1) = dim Vᵢ`, is the
+degree sum `∑ᵢ (dim Vᵢ)² = |G|`.
 
 ## Main statements
 
@@ -50,6 +51,9 @@ conjugate or not.
 * `TauCeti.ClassFunction.card_conjClass_mul_sum_char_mul_char_inv`: **the second orthogonality
   relation**, in a form free of division, and `TauCeti.ClassFunction.sum_char_mul_char_inv` in the
   quotient form `|G| / |C_g|`.
+* `TauCeti.ClassFunction.sum_sq_finrank_eq_card`: **the squares of the degrees sum to `|G|`**, the
+  identity column of the second orthogonality relation, with
+  `TauCeti.ClassFunction.sum_sq_finrank_eq_natCard` its characteristic-zero form in `ℕ`.
 
 ## Implementation notes
 
@@ -228,6 +232,61 @@ theorem sum_char_mul_char_inv (g h : G) :
     exact (mul_eq_zero.mp hgh).resolve_left hc
 
 end Orthogonality
+
+section DegreeSum
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+  [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
+  (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
+  (hcard : Nat.card ι = Nat.card (ConjClasses G))
+
+include hind hcard
+
+/-- **The squares of the degrees sum to the order of the group.** This is the identity column of
+the second orthogonality relation: the identity is alone in its conjugacy class, and the character
+values there are the degrees.
+
+The identity is stated in `k`; in characteristic zero
+`TauCeti.ClassFunction.sum_sq_finrank_eq_natCard` reads it back in `ℕ`. -/
+theorem sum_sq_finrank_eq_card :
+    ∑ i, (Module.finrank k (V i) : k) ^ 2 = (Nat.card G : k) := by
+  let := Fintype.ofFinite G
+  have h := card_conjClass_mul_sum_char_mul_char_inv ρ hind hcard 1 1
+  rw [ite_eq_left (IsConj.refl (1 : G))] at h
+  have hcarrier : (ConjClasses.mk (1 : G)).carrier = {1} := by
+    ext x
+    rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mk_eq_mk_iff_isConj,
+      Set.mem_singleton_iff]
+    exact isConj_one_left
+  rw [hcarrier] at h
+  simpa only [Nat.card_unique, Nat.cast_one, one_mul, inv_one, Representation.char_one, sq]
+    using h
+
+end DegreeSum
+
+section DegreeSumCharZero
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k] [CharZero k]
+  {ι : Type*} [Fintype ι] {V : ι → Type w}
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
+  (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
+  (hcard : Nat.card ι = Nat.card (ConjClasses G))
+
+include hind hcard
+
+/-- **The squares of the degrees sum to the order of the group**, as an identity of natural
+numbers. In characteristic zero the order of the group is automatically invertible, and the cast
+`ℕ → k` is injective, so `TauCeti.ClassFunction.sum_sq_finrank_eq_card` transfers. -/
+theorem sum_sq_finrank_eq_natCard :
+    ∑ i, Module.finrank k (V i) ^ 2 = Nat.card G := by
+  let _ : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  exact_mod_cast sum_sq_finrank_eq_card ρ hind hcard
+
+end DegreeSumCharZero
 
 section Classification
 
