@@ -8,16 +8,17 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
-public import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.RingTheory.Polynomial.Distinguished
+
+import Mathlib.Algebra.Polynomial.RingDivision
 
 /-!
 # The group algebra of a finite cyclic group: the powers of `σ - 1`
 
-Let `C` be a finite cyclic group with generator `σ`, and let `R` be a commutative ring. The
-powers `(σ - 1) ^ i` for `0 ≤ i < |C|` form an `R`-basis of the group algebra `R[C]`
-(`TauCeti.MonoidAlgebra.basisSubOnePow`). In this basis, the coordinates of the value
+Let `C` be a finite cyclic group with generator `σ`, and let `R` be a ring. The powers
+`(σ - 1) ^ i` for `0 ≤ i < |C|` form an `R`-basis of the group algebra `R[C]`
+(`TauCeti.MonoidAlgebra.basisSubOnePow`). When `R` is commutative, the coordinates of the value
 `f(σ - 1) ∈ R[C]` of a polynomial `f` of degree `< |C|` are the coefficients of `f`
 (`basisSubOnePow_repr_aeval`), so such an `f` is determined by `f(σ - 1)`; in particular, if
 `f(σ - 1)` is a scalar multiple `r • y`, then `r` divides every coefficient of `f`
@@ -53,7 +54,11 @@ open Module Polynomial
 
 namespace TauCeti.MonoidAlgebra
 
-variable {R : Type*} [CommRing R] {C : Type*} [Group C] [Finite C] {σ : C}
+variable {R : Type*} {C : Type*} [Group C] [Finite C] {σ : C}
+
+section Ring
+
+variable [Ring R]
 
 /-- The powers `(σ - 1) ^ i` for `i < |C|` of a generator `σ` of a finite cyclic group `C` span
 the group algebra `R[C]`. -/
@@ -85,12 +90,33 @@ theorem span_range_of_sub_one_pow_eq_top (hσ : ∀ x, x ∈ Subgroup.zpowers σ
 linearly independent in the group algebra `R[C]`. -/
 theorem linearIndependent_of_sub_one_pow (hσ : ∀ x, x ∈ Subgroup.zpowers σ) :
     LinearIndependent R fun i : Fin (Nat.card C) ↦ (MonoidAlgebra.of R C σ - 1) ^ (i : ℕ) := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · exact linearIndependent_of_subsingleton
-  · have := Fintype.ofFinite C
-    refine linearIndependent_of_top_le_span_of_card_eq_finrank
-      (span_range_of_sub_one_pow_eq_top hσ).ge ?_
-    rw [Fintype.card_fin, finrank_eq_card_basis (MonoidAlgebra.basis C R), Nat.card_eq_fintype_card]
+  have hord := orderOf_eq_card_of_forall_mem_zpowers hσ
+  have he (g : C) : ∃ j < Nat.card C, σ ^ j = g := by
+    obtain ⟨j, rfl⟩ := (Submonoid.mem_powers_iff g σ).mp (mem_powers_iff_mem_zpowers.mpr (hσ g))
+    exact ⟨j % Nat.card C, Nat.mod_lt _ Nat.card_pos, by rw [← hord, pow_mod_orderOf]⟩
+  choose e he_lt he_pow using he
+  set x := MonoidAlgebra.of R C σ
+  have hx (k : ℕ) : x ^ k = MonoidAlgebra.basis C R (σ ^ k) := by
+    rw [MonoidAlgebra.basis_apply, ← map_pow, MonoidAlgebra.of_apply]
+  -- The linear map `σ ^ k ↦ (σ + 1) ^ k`, `k < |C|`, sends `(σ - 1) ^ i` to `σ ^ i`.
+  let Ψ : MonoidAlgebra R C →ₗ[R] MonoidAlgebra R C :=
+    (MonoidAlgebra.basis C R).constr ℕ fun g ↦ (x + 1) ^ e g
+  have hΨ {k : ℕ} (hk : k < Nat.card C) (m : ℕ) :
+      Ψ (x ^ k * (-1) ^ m) = (x + 1) ^ k * (-1) ^ m := by
+    have : Ψ (x ^ k) = (x + 1) ^ k := by
+      rw [hx, Basis.constr_basis]
+      congr 1
+      exact pow_injOn_Iio_orderOf (by simpa [hord] using he_lt _) (by simpa [hord]) (he_pow _)
+    rcases neg_one_pow_eq_or (MonoidAlgebra R C) m with h | h <;> simp [h, this]
+  refine LinearIndependent.of_comp Ψ ?_
+  convert (MonoidAlgebra.basis C R).linearIndependent.comp (fun i : Fin (Nat.card C) ↦ σ ^ (i : ℕ))
+    fun i j h ↦ Fin.ext (pow_injOn_Iio_orderOf (by simp [hord]) (by simp [hord]) h) using 1
+  funext i
+  rw [Function.comp_apply, Function.comp_apply, ← hx, sub_eq_add_neg,
+    (Commute.neg_one_right x).add_pow', map_sum]
+  conv_rhs => rw [← add_neg_cancel_right x 1, (Commute.neg_one_right (x + 1)).add_pow']
+  refine Finset.sum_congr rfl fun m hm ↦ ?_
+  rw [map_nsmul, hΨ ((Nat.le.intro (Finset.mem_antidiagonal.mp hm)).trans_lt i.isLt)]
 
 /-- **The basis of powers of `σ - 1`.** For a generator `σ` of a finite cyclic group `C`, the
 powers `(σ - 1) ^ i` with `0 ≤ i < |C|` form an `R`-basis of the group algebra `R[C]`. -/
@@ -103,6 +129,10 @@ theorem coe_basisSubOnePow (hσ : ∀ x, x ∈ Subgroup.zpowers σ) :
     ⇑(basisSubOnePow (R := R) hσ) = fun i : Fin (Nat.card C) ↦
       (MonoidAlgebra.of R C σ - 1) ^ (i : ℕ) :=
   Basis.coe_mk _ _
+
+end Ring
+
+variable [CommRing R]
 
 /-- The coordinates of `f(σ - 1)` in the basis of powers of `σ - 1` are the coefficients of the
 polynomial `f`, when `f` has degree `< |C|`. -/
@@ -135,11 +165,8 @@ the finite cyclic group `C`. -/
 theorem eq_zero_of_aeval_of_sub_one_eq_zero (hσ : ∀ x, x ∈ Subgroup.zpowers σ) {f : R[X]}
     (hf : f.degree < Nat.card C) (h : aeval (MonoidAlgebra.of R C σ - 1) f = 0) : f = 0 := by
   ext i
-  rw [coeff_zero]
-  by_cases hi : i < Nat.card C
-  · have := basisSubOnePow_repr_aeval hσ hf ⟨i, hi⟩
-    rwa [h, map_zero, Finsupp.zero_apply, eq_comm] at this
-  · exact coeff_eq_zero_of_degree_lt (hf.trans_le (by exact_mod_cast not_lt.mp hi))
+  simpa using dvd_coeff_of_aeval_of_sub_one_eq_smul hσ hf
+    (r := 0) (y := 0) (by simpa using h) i
 
 omit [Finite C] in
 /-- The polynomial `(1 + X) ^ |C| - 1` vanishes at `σ - 1` in the group algebra `R[C]` of a finite
@@ -153,19 +180,10 @@ theorem aeval_of_sub_one_one_add_X_pow_card_sub_one_eq_zero (σ : C) :
 group `C`. -/
 theorem aeval_of_sub_one_surjective (hσ : ∀ x, x ∈ Subgroup.zpowers σ) :
     Function.Surjective (aeval (MonoidAlgebra.of R C σ - 1) : R[X] →ₐ[R] MonoidAlgebra R C) := by
-  intro x
-  have hx : x ∈ Submodule.span R (Set.range fun i : Fin (Nat.card C) ↦
-      (MonoidAlgebra.of R C σ - 1) ^ (i : ℕ)) := by
-    rw [span_range_of_sub_one_pow_eq_top hσ]
-    exact Submodule.mem_top
-  have hle : Submodule.span R (Set.range fun i : Fin (Nat.card C) ↦
-      (MonoidAlgebra.of R C σ - 1) ^ (i : ℕ)) ≤ Subalgebra.toSubmodule
-        (aeval (MonoidAlgebra.of R C σ - 1) : R[X] →ₐ[R] MonoidAlgebra R C).range := by
-    rw [Submodule.span_le]
-    rintro _ ⟨i, rfl⟩
-    exact (Subalgebra.mem_toSubmodule _).mpr
-      ((AlgHom.mem_range _).mpr ⟨X ^ (i : ℕ), by rw [map_pow, aeval_X]⟩)
-  exact hle hx
+  rw [← AlgHom.range_eq_top, ← Algebra.toSubmodule_eq_top, eq_top_iff,
+    ← span_range_of_sub_one_pow_eq_top hσ, Submodule.span_le]
+  rintro _ ⟨i, rfl⟩
+  exact ⟨X ^ (i : ℕ), by simp⟩
 
 /-- **The group algebra of a finite cyclic group as a quotient of the polynomial ring.** For a
 generator `σ` of the finite cyclic group `C`, the kernel of evaluation at `σ - 1`, `R[X] → R[C]`,
@@ -186,11 +204,9 @@ theorem ker_aeval_of_sub_one (hσ : ∀ x, x ∈ Subgroup.zpowers σ) :
     have := degree_modByMonic_lt f hmonic
     rwa [degree_eq_natDegree hmonic.ne_zero, TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one]
       at this
-  have hr : aeval (MonoidAlgebra.of R C σ - 1) (f %ₘ ((1 + X) ^ Nat.card C - 1)) = 0 := by
-    rw [modByMonic_eq_sub_mul_div f, map_sub, map_mul, hf,
-      aeval_of_sub_one_one_add_X_pow_card_sub_one_eq_zero, zero_mul, sub_zero]
-  refine ⟨f /ₘ ((1 + X) ^ Nat.card C - 1), ?_⟩
-  conv_lhs => rw [← modByMonic_add_div f ((1 + X) ^ Nat.card C - 1)]
-  rw [eq_zero_of_aeval_of_sub_one_eq_zero hσ hdeg hr, zero_add]
+  apply (modByMonic_eq_zero_iff_dvd hmonic).mp
+  apply eq_zero_of_aeval_of_sub_one_eq_zero hσ hdeg
+  rw [aeval_modByMonic_eq_self_of_root
+    (aeval_of_sub_one_one_add_X_pow_card_sub_one_eq_zero σ), hf]
 
 end TauCeti.MonoidAlgebra

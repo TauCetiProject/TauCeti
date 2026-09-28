@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Map
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Fiber
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.FiniteIndex
 public import TauCeti.GroupTheory.DoubleCoset.Fiber
 
 /-!
@@ -72,18 +73,7 @@ theorem finite_fiber_cuspOrbitMap (C : Γ.CuspOrbit) :
       Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le
         (X := OnePoint ℝ) h) q = C.1} :=
     TauCeti.finite_fiber_orbitRel_map_of_isFiniteRelIndex h C.1
-  let f : {D : Δ.CuspOrbit // cuspOrbitMap h D = C} →
-      {q : Δ.BoundaryOrbit //
-        Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le
-          (X := OnePoint ℝ) h) q = C.1} :=
-    fun D => ⟨D.1.1, by simpa only [cuspOrbitMap_val] using congrArg Subtype.val D.2⟩
-  apply Finite.of_injective f
-  intro D E hDE
-  have hval : D.1.1 = E.1.1 :=
-    congrArg (fun q : {q : Δ.BoundaryOrbit //
-      Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le
-        (X := OnePoint ℝ) h) q = C.1} => q.1) hDE
-  exact Subtype.ext (Subtype.ext hval)
+  exact Finite.of_equiv _ (cuspOrbitFiberEquivBoundaryOrbitFiber h C).symm
 
 /-- Every fibre of the map of compactified quotients for a finite-index inclusion is finite. -/
 theorem finite_fiber_compactifiedQuotientMap (x : Γ.CompactifiedQuotient) :
@@ -94,33 +84,6 @@ theorem finite_fiber_compactifiedQuotientMap (x : Γ.CompactifiedQuotient) :
       exact Finite.of_equiv _ (orbitFiberEquivCompactifiedFiber h p)
   | ofCusp C =>
       have := finite_fiber_cuspOrbitMap h C
-      let f : {y : Δ.CompactifiedQuotient //
-          compactifiedQuotientMap h y = .ofCusp C} →
-          {D : Δ.CuspOrbit // cuspOrbitMap h D = C} := fun y => by
-        obtain ⟨y, hy⟩ := y
-        cases y with
-        | ofQuotient q =>
-            simp only [compactifiedQuotientMap_ofQuotient] at hy
-            cases hy
-        | ofCusp D =>
-            simp only [compactifiedQuotientMap_ofCusp] at hy
-            exact ⟨D, CompactifiedQuotient.ofCusp.inj hy⟩
-      apply Finite.of_injective f
-      intro y z hyz
-      obtain ⟨y, hy⟩ := y
-      obtain ⟨z, hz⟩ := z
-      cases y with
-      | ofQuotient q =>
-          simp only [compactifiedQuotientMap_ofQuotient] at hy
-          cases hy
-      | ofCusp D =>
-          cases z with
-          | ofQuotient q =>
-              simp only [compactifiedQuotientMap_ofQuotient] at hz
-              cases hz
-          | ofCusp E =>
-              apply Subtype.ext
-              exact congrArg CompactifiedQuotient.ofCusp
-                (congrArg Subtype.val hyz)
+      exact Finite.of_equiv _ (cuspOrbitFiberEquivCompactifiedFiber h C)
 
 end Subgroup

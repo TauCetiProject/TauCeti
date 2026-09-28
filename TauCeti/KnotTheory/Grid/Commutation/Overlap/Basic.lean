@@ -32,6 +32,9 @@ replaced grid line, and the branch data below identifies which one from the colu
 
 ## Main results
 
+* `TauCeti.GridPentagonRectangleDecomposition.isEmpty_pentagon_of_isRecut` and the
+  corresponding rectangle--pentagon lemmas: recut emptiness and repartition identities
+  transfer to either typed decomposition shape after forgetting the turn row.
 * `TauCeti.GridRectanglePentagonDecomposition.recutLeftEqLeft`: promote the one-common-side
   rectangle recut to a pentagon--rectangle decomposition when the common side is initial for both
   original domains.
@@ -52,6 +55,8 @@ replaced grid line, and the branch data below identifies which one from the colu
 * `TauCeti.GridRectanglePentagonDecomposition.recutOfIsEmpty_eq_recut`: the shared recut
   identified with the underlying rectangle decomposition's recut, for consumers that need the
   definitional unfolding.
+* `TauCeti.GridRectanglePentagonDecomposition.isRecut_recutOfIsEmpty`: the shared recut
+  retains the recut relation after forgetting the turn row.
 * `TauCeti.GridRectanglePentagonDecomposition.first_recut_branch_data_of_right_eq_right`:
   when the first recut rectangle carries the pentagon's terminal side, the recut branch is
   forced, fixing the column geometry of the shared recut.
@@ -74,6 +79,99 @@ Ozsvath--Stipsicz--Szabo, *Grid Homology for Knots and Links*, Section 5.1.
 public section
 
 namespace TauCeti
+
+namespace GridPentagonRectangleDecomposition
+
+variable {n : ℕ} {a s : Fin n} {x z : GridState n}
+
+/-- A recut into a pentagon followed by a rectangle has an empty pentagon. -/
+theorem isEmpty_pentagon_of_isRecut (E : GridPentagonRectangleDecomposition a s x z)
+    {D : GridRectangleDecomposition x z}
+    (h : D.IsRecut E.toRectangleDecomposition) :
+    E.pentagon.IsEmpty := by
+  simpa only [toRectangleDecomposition_first_toGridRectangle,
+    GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] using h.isEmpty_first
+
+/-- A recut into a pentagon followed by a rectangle has an empty rectangle. -/
+theorem isEmpty_rectangle_of_isRecut (E : GridPentagonRectangleDecomposition a s x z)
+    {D : GridRectangleDecomposition x z}
+    (h : D.IsRecut E.toRectangleDecomposition) :
+    E.rectangle.IsEmpty := by
+  simpa only [toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle,
+    GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] using h.isEmpty_second
+
+/-- The underlying rectangles of a repartition into a pentagon and rectangle cover the
+original region. -/
+theorem coveredSquares_union_of_isRepartition (E : GridPentagonRectangleDecomposition a s x z)
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (h : D.toRectangleDecomposition.IsRepartition E.toRectangleDecomposition) :
+    E.pentagon.toGridRectangle.coveredSquares ∪ E.rectangle.toGridRectangle.coveredSquares =
+      D.rectangle.toGridRectangle.coveredSquares ∪ D.pentagon.toGridRectangle.coveredSquares := by
+  simpa only [toRectangleDecomposition_first_toGridRectangle,
+    toRectangleDecomposition_second_toGridRectangle,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle] using
+      h.coveredSquares_union_eq
+
+/-- Repartition into a pentagon and rectangle preserves the product of the underlying
+rectangle `O`-monomials. -/
+theorem OMonomial_mul_OMonomial_of_isRepartition
+    (E : GridPentagonRectangleDecomposition a s x z)
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (h : D.toRectangleDecomposition.IsRepartition E.toRectangleDecomposition)
+    (G : GridDiagram n) (R : Type*) [CommSemiring R] :
+    G.OMonomial R E.pentagon.toGridRectangle * G.OMonomial R E.rectangle.toGridRectangle =
+      G.OMonomial R D.rectangle.toGridRectangle * G.OMonomial R D.pentagon.toGridRectangle := by
+  simpa only [toRectangleDecomposition_first_toGridRectangle,
+    toRectangleDecomposition_second_toGridRectangle,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle] using
+      h.OMonomial_mul_OMonomial G R
+
+end GridPentagonRectangleDecomposition
+
+namespace GridRectanglePentagonDecomposition
+
+variable {n : ℕ} {a s : Fin n} {x z : GridState n}
+
+/-- A recut into a rectangle followed by a pentagon has an empty rectangle. -/
+theorem isEmpty_rectangle_of_isRecut (E : GridRectanglePentagonDecomposition a s x z)
+    {D : GridRectangleDecomposition x z}
+    (h : D.IsRecut E.toRectangleDecomposition) :
+    E.rectangle.IsEmpty := by
+  simpa only [toRectangleDecomposition_middle, toRectangleDecomposition_first_toGridRectangle,
+    GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] using h.isEmpty_first
+
+/-- A recut into a rectangle followed by a pentagon has an empty pentagon. -/
+theorem isEmpty_pentagon_of_isRecut (E : GridRectanglePentagonDecomposition a s x z)
+    {D : GridRectangleDecomposition x z}
+    (h : D.IsRecut E.toRectangleDecomposition) :
+    E.pentagon.IsEmpty := by
+  simpa only [toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle,
+    GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] using h.isEmpty_second
+
+/-- The underlying rectangles of a repartition into a rectangle and pentagon cover the
+original region. -/
+theorem coveredSquares_union_of_isRepartition
+    (E D : GridRectanglePentagonDecomposition a s x z)
+    (h : D.toRectangleDecomposition.IsRepartition E.toRectangleDecomposition) :
+    E.rectangle.toGridRectangle.coveredSquares ∪ E.pentagon.toGridRectangle.coveredSquares =
+      D.rectangle.toGridRectangle.coveredSquares ∪ D.pentagon.toGridRectangle.coveredSquares := by
+  simpa only [toRectangleDecomposition_first_toGridRectangle,
+    toRectangleDecomposition_second_toGridRectangle] using h.coveredSquares_union_eq
+
+/-- Repartition into a rectangle and pentagon preserves the product of the underlying
+rectangle `O`-monomials. -/
+theorem OMonomial_mul_OMonomial_of_isRepartition
+    (E D : GridRectanglePentagonDecomposition a s x z)
+    (h : D.toRectangleDecomposition.IsRepartition E.toRectangleDecomposition)
+    (G : GridDiagram n) (R : Type*) [CommSemiring R] :
+    G.OMonomial R E.rectangle.toGridRectangle * G.OMonomial R E.pentagon.toGridRectangle =
+      G.OMonomial R D.rectangle.toGridRectangle * G.OMonomial R D.pentagon.toGridRectangle := by
+  simpa only [toRectangleDecomposition_first_toGridRectangle,
+    toRectangleDecomposition_second_toGridRectangle] using h.OMonomial_mul_OMonomial G R
+
+end GridRectanglePentagonDecomposition
 
 namespace GridRectanglePentagonDecomposition
 
@@ -316,15 +414,8 @@ theorem isEmpty_pentagon_recutLeftEqLeft
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).pentagon.IsEmpty := by
-  simpa only [recutLeftEqLeft, GridPentagonBetween.ofRightEq_toGridRectangleBetween] using
-    (D.toRectangleDecomposition.isRecut_recut hone
-      (by
-      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-      (by
-      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_middle,
-        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).isEmpty_first
+  have h := D.isRecut_recutLeftEqLeft hcommon hone hrectangle hpentagon
+  exact (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).isEmpty_pentagon_of_isRecut h
 
 /-- The rectangle in the overlap recut is empty. -/
 @[simp]
@@ -334,15 +425,8 @@ theorem isEmpty_rectangle_recutLeftEqLeft
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).rectangle.IsEmpty := by
-  simpa only [recutLeftEqLeft] using
-    (D.toRectangleDecomposition.isRecut_recut hone
-      (by
-      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-      (by
-      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_middle,
-        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).isEmpty_second
+  have h := D.isRecut_recutLeftEqLeft hcommon hone hrectangle hpentagon
+  exact (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).isEmpty_rectangle_of_isRecut h
 
 /-- The underlying rectangles of the promoted overlap recut cover the same squares as the
 original rectangle and the rectangle underlying the original pentagon. -/
@@ -356,12 +440,10 @@ theorem coveredSquares_union_recutLeftEqLeft
     (D.recutLeftEqLeft hcommon hone hrectangle
           hpentagon).rectangle.toGridRectangle.coveredSquares =
       D.rectangle.toGridRectangle.coveredSquares ∪ D.pentagon.toGridRectangle.coveredSquares := by
-  have h := (D.isRecut_recutLeftEqLeft hcommon hone hrectangle
-    hpentagon).isRepartition.coveredSquares_union_eq
-  simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_toGridRectangle,
-    GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle,
-    GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle,
-    GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle] using h
+  have h := D.isRecut_recutLeftEqLeft hcommon hone hrectangle hpentagon
+  exact
+    (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).coveredSquares_union_of_isRepartition D
+      h.isRepartition
 
 /-- The promoted overlap recut preserves the product of the `O`-monomials of its two underlying
 rectangles. This is the rectangle-weight consequence of the generic covered-square repartition;
@@ -378,12 +460,10 @@ theorem OMonomial_mul_OMonomial_recutLeftEqLeft
           (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).rectangle.toGridRectangle =
       G.OMonomial R D.rectangle.toGridRectangle *
         G.OMonomial R D.pentagon.toGridRectangle := by
-  have h := (D.isRecut_recutLeftEqLeft hcommon hone hrectangle
-    hpentagon).isRepartition.OMonomial_mul_OMonomial G R
-  simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_toGridRectangle,
-    GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle,
-    GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle,
-    GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle] using h
+  have h := D.isRecut_recutLeftEqLeft hcommon hone hrectangle hpentagon
+  exact
+    (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).OMonomial_mul_OMonomial_of_isRepartition D
+      h.isRepartition G R
 
 end GridRectanglePentagonDecomposition
 
@@ -524,6 +604,16 @@ theorem recutOfIsEmpty_eq_recut
           D.toRectangleDecomposition_second_toGridRectangle] using
         hpentagon) :=
   D.recutOfIsEmpty_eq_recut_aux hone hrectangle hpentagon
+
+/-- The shared recut of two empty typed domains is a recut of their underlying rectangles. -/
+theorem isRecut_recutOfIsEmpty
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    D.toRectangleDecomposition.IsRecut
+      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
+  rw [D.recutOfIsEmpty_eq_recut hone hrectangle hpentagon]
+  exact D.toRectangleDecomposition.isRecut_recut hone _ _
 
 /-- Common setup for the terminal-side branch determination: the pentagon's terminal side
 is the common right side of the forgotten rectangle decomposition. -/

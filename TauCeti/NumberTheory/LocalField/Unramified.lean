@@ -31,10 +31,22 @@ the valuation form `v_L ∘ algebraMap = v_K`, the ideal form `𝓂[K] 𝒪[L] =
 extensions of local fields. Unramifiedness is also shown to be stable in a tower in both
 directions.
 
+The ideal form is what makes the integers of an unramified extension a lattice modelled on the
+residue extension: reduction modulo `𝓂[K] 𝒪[L] = 𝓂[L]` loses no generators, by
+`TauCeti.IsLocalRing.span_residue_image_eq_top_iff_span_eq_top`, and the two extensions have the
+same degree. Bases therefore correspond in both directions: a family of elements of `𝒪[L]`
+lifting a basis of `𝓀[L]` over `𝓀[K]` is a basis of `𝒪[L]` over `𝒪[K]`, and the reduction of a
+basis of `𝒪[L]` over `𝒪[K]` is a basis of `𝓀[L]` over `𝓀[K]`. These integral bases are the
+computational input to the norm and trace of an unramified extension.
+
 ## Main definitions
 
 * `TauCeti.IsUnramified`: an extension of nonarchimedean local fields is unramified when its
   ramification index is `1` and its residue extension is separable.
+* `TauCeti.IsUnramified.basisOfResidueBasis`: the integral basis of `𝒪[L]` over `𝒪[K]` given by
+  a family lifting a basis of `𝓀[L]` over `𝓀[K]`.
+* `TauCeti.IsUnramified.residueBasis`: the basis of `𝓀[L]` over `𝓀[K]` given by the reduction of
+  a basis of `𝒪[L]` over `𝒪[K]`.
 
 ## Main results
 
@@ -57,6 +69,15 @@ directions.
 * `TauCeti.isUnramified_iff_formallyUnramified` and `TauCeti.isUnramified_iff_isUnramifiedAt`:
   the comparison with Mathlib's `Algebra.FormallyUnramified` and `Algebra.IsUnramifiedAt` for
   `𝒪[L]` over `𝒪[K]`.
+* `TauCeti.IsUnramified.finrank_integerRing_eq_finrank_residueField`: the rank of `𝒪[L]` over
+  `𝒪[K]` is the degree of the residue extension.
+* `TauCeti.IsUnramified.residueBasis_repr`: the coordinates of a residue in the residue basis
+  are the residues of the integral coordinates.
+* `TauCeti.IsUnramified.residueBasis_basisOfResidueBasis` and
+  `TauCeti.IsUnramified.basisOfResidueBasis_residueBasis`: the two constructions are mutually
+  inverse.
+* `TauCeti.IsUnramified.exists_basis_residue_eq`: every basis of the residue extension is the
+  reduction of an integral basis.
 
 ## References
 
@@ -217,5 +238,100 @@ over `𝒪[K]` at `𝓂[L]`**, in Mathlib's sense. -/
 theorem isUnramified_iff_isUnramifiedAt :
     IsUnramified K L ↔ Algebra.IsUnramifiedAt 𝒪[K] 𝓂[L] := by
   rw [isUnramifiedAt_maximalIdeal_iff, isUnramified_iff_formallyUnramified]
+
+/-! ### The integral basis attached to a residue basis -/
+
+variable (K L) in
+/-- **In an unramified extension the rank of `𝒪[L]` over `𝒪[K]` is the degree of the residue
+extension.** Both are the degree `[L : K]`. Mathlib's
+`IsLocalRing.finrank_eq_finrank_residueField` is the same identity under the stronger hypothesis
+`Algebra.Etale 𝒪[K] 𝒪[L]`, which unramifiedness of `L/K` does not by itself supply. -/
+theorem IsUnramified.finrank_integerRing_eq_finrank_residueField [IsUnramified K L] :
+    Module.finrank 𝒪[K] 𝒪[L] = Module.finrank 𝓀[K] 𝓀[L] := by
+  rw [finrank_integerRing, ← inertiaDegree_def, IsUnramified.inertiaDegree_eq_finrank]
+
+section ResidueBasis
+
+variable {ι : Type*} [Fintype ι]
+
+/-- **The integral basis of an unramified extension attached to a residue basis**: a family in
+`𝒪[L]` whose residues form a basis of `𝓀[L]` over `𝓀[K]` is a basis of `𝒪[L]` over `𝒪[K]`. -/
+noncomputable def IsUnramified.basisOfResidueBasis [IsUnramified K L]
+    (b : Module.Basis ι 𝓀[K] 𝓀[L]) (x : ι → 𝒪[L]) (hx : ∀ i, residue 𝒪[L] (x i) = b i) :
+    Module.Basis ι 𝒪[K] 𝒪[L] :=
+  basisOfTopLeSpanOfCardEqFinrank x
+    (by
+      refine ((IsLocalRing.span_residue_image_eq_top_iff_span_eq_top
+        (IsUnramified.map_maximalIdeal (K := K) (L := L))).1 ?_).ge
+      rw [← Set.range_comp]
+      simpa only [Function.comp_def, hx] using b.span_eq)
+    (by rw [IsUnramified.finrank_integerRing_eq_finrank_residueField K L,
+      ← Module.finrank_eq_card_basis b])
+
+@[simp]
+theorem IsUnramified.coe_basisOfResidueBasis [IsUnramified K L]
+    (b : Module.Basis ι 𝓀[K] 𝓀[L]) (x : ι → 𝒪[L]) (hx : ∀ i, residue 𝒪[L] (x i) = b i) :
+    ⇑(IsUnramified.basisOfResidueBasis b x hx) = x :=
+  coe_basisOfTopLeSpanOfCardEqFinrank ..
+
+/-- **The residue basis of an integral basis of an unramified extension**: the reduction of a
+basis of `𝒪[L]` over `𝒪[K]` is a basis of `𝓀[L]` over `𝓀[K]`. This is Mathlib's
+`IsLocalRing.basisQuotient` for the quotients by `𝓂[K]` and `𝓂[K] 𝒪[L]`, stated for the residue
+fields themselves, which it identifies because `𝓂[K] 𝒪[L] = 𝓂[L]`. -/
+noncomputable def IsUnramified.residueBasis [IsUnramified K L]
+    (B : Module.Basis ι 𝒪[K] 𝒪[L]) : Module.Basis ι 𝓀[K] 𝓀[L] :=
+  basisOfTopLeSpanOfCardEqFinrank (residue 𝒪[L] ∘ B)
+    (by
+      rw [Set.range_comp]
+      exact ((IsLocalRing.span_residue_image_eq_top_iff_span_eq_top
+        (IsUnramified.map_maximalIdeal (K := K) (L := L))).2 B.span_eq).ge)
+    (by rw [← IsUnramified.finrank_integerRing_eq_finrank_residueField K L,
+      ← Module.finrank_eq_card_basis B])
+
+@[simp]
+theorem IsUnramified.coe_residueBasis [IsUnramified K L] (B : Module.Basis ι 𝒪[K] 𝒪[L]) :
+    ⇑(IsUnramified.residueBasis B) = residue 𝒪[L] ∘ B :=
+  coe_basisOfTopLeSpanOfCardEqFinrank ..
+
+/-- The coordinates of the residue of `x` in the residue basis of `B` are the residues of the
+coordinates of `x` in `B`. -/
+@[simp]
+theorem IsUnramified.residueBasis_repr [IsUnramified K L] (B : Module.Basis ι 𝒪[K] 𝒪[L])
+    (x : 𝒪[L]) (i : ι) :
+    (IsUnramified.residueBasis B).repr (residue 𝒪[L] x) i = residue 𝒪[K] (B.repr x i) := by
+  have hx : residue 𝒪[L] x = ∑ c, residue 𝒪[K] (B.repr x c) • IsUnramified.residueBasis B c := by
+    conv_lhs => rw [← B.sum_repr x]
+    simp only [map_sum, Algebra.smul_def, map_mul, ← ResidueField.algebraMap_residue,
+      IsUnramified.coe_residueBasis, Function.comp_apply]
+  rw [hx, Module.Basis.repr_sum_self]
+
+/-- Reducing the integral basis lifting a residue basis returns that residue basis. -/
+@[simp]
+theorem IsUnramified.residueBasis_basisOfResidueBasis [IsUnramified K L]
+    (b : Module.Basis ι 𝓀[K] 𝓀[L]) (x : ι → 𝒪[L]) (hx : ∀ i, residue 𝒪[L] (x i) = b i) :
+    IsUnramified.residueBasis (IsUnramified.basisOfResidueBasis b x hx) = b :=
+  DFunLike.coe_injective <| by
+    rw [IsUnramified.coe_residueBasis, IsUnramified.coe_basisOfResidueBasis]
+    exact funext hx
+
+/-- Lifting the reduction of an integral basis returns that integral basis. -/
+@[simp]
+theorem IsUnramified.basisOfResidueBasis_residueBasis [IsUnramified K L]
+    (B : Module.Basis ι 𝒪[K] 𝒪[L]) :
+    IsUnramified.basisOfResidueBasis (IsUnramified.residueBasis B) B
+      (fun i ↦ (congrFun (IsUnramified.coe_residueBasis B) i).symm) = B :=
+  DFunLike.coe_injective (IsUnramified.coe_basisOfResidueBasis ..)
+
+end ResidueBasis
+
+/-- Every basis of the residue extension of an unramified extension is the reduction of a basis
+of `𝒪[L]` over `𝒪[K]`. -/
+theorem IsUnramified.exists_basis_residue_eq [IsUnramified K L] {ι : Type*}
+    (b : Module.Basis ι 𝓀[K] 𝓀[L]) :
+    ∃ B : Module.Basis ι 𝒪[K] 𝒪[L], ∀ i, residue 𝒪[L] (B i) = b i := by
+  have := Module.Finite.finite_basis b
+  let _ := Fintype.ofFinite ι
+  choose x hx using fun i ↦ residue_surjective (R := 𝒪[L]) (b i)
+  exact ⟨IsUnramified.basisOfResidueBasis b x hx, by simp [hx]⟩
 
 end TauCeti
