@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FiniteSupport
 import Mathlib.Probability.Distributions.Geometric
 
 /-!
@@ -41,20 +41,17 @@ instance : Countable UnitDiscreteNat :=
 instance : TopologicalSpace UnitDiscreteNat := ⊥
 instance : DiscreteTopology UnitDiscreteNat := ⟨rfl⟩
 
-/-- The unit discrete distance used on `UnitDiscreteNat`. -/
-def unitDiscreteDist (x y : UnitDiscreteNat) : ℝ := if x = y then 0 else 1
-
 instance : MetricSpace UnitDiscreteNat :=
-  MetricSpace.ofDistTopology unitDiscreteDist
-    (by intro x; simp [unitDiscreteDist])
-    (by intro x y; simp [unitDiscreteDist, eq_comm])
+  MetricSpace.ofDistTopology (fun x y ↦ if x = y then 0 else 1)
+    (by intro x; simp)
+    (by intro x y; simp [eq_comm])
     (by
       intro x y z
       by_cases hxy : x = y
-      · subst y; simp [unitDiscreteDist]
+      · subst y; simp
       by_cases hyz : y = z
-      · subst z; simp [unitDiscreteDist]
-      simp [unitDiscreteDist, hxy, hyz]
+      · subst z; simp
+      simp [hxy, hyz]
       split_ifs <;> norm_num)
     (by
       intro s; simp only [isOpen_discrete, true_iff]
@@ -62,8 +59,8 @@ instance : MetricSpace UnitDiscreteNat :=
       intro y hy
       by_cases h : x = y
       · exact h ▸ hx
-      simp [unitDiscreteDist, h] at hy)
-    (by intro x y; simp [unitDiscreteDist])
+      simp [h] at hy)
+    (by intro x y; simp)
 
 instance : MeasurableSpace UnitDiscreteNat := ⊤
 instance : BorelSpace UnitDiscreteNat := ⟨borel_eq_top_of_discrete.symm⟩
@@ -73,11 +70,18 @@ instance : Infinite UnitDiscreteNat := Infinite.of_injective UnitDiscreteNat.mk 
 
 /-- Distance in the unit discrete metric. -/
 @[simp] theorem UnitDiscreteNat.dist_eq (x y : UnitDiscreteNat) :
-    dist x y = unitDiscreteDist x y := rfl
+    dist x y = if x = y then 0 else 1 := rfl
+
+/-- Extended distance in the unit discrete metric. -/
+@[simp] theorem UnitDiscreteNat.edist_eq (x y : UnitDiscreteNat) :
+    edist x y = if x = y then 0 else 1 := by
+  by_cases h : x = y
+  · subst y; simp
+  · simp [edist_dist, UnitDiscreteNat.dist_eq, h]
 
 private lemma edist_eq_one_of_ne {x y : UnitDiscreteNat} (h : x ≠ y) :
     edist x y = 1 := by
-  simp [edist_dist, UnitDiscreteNat.dist_eq, unitDiscreteDist, h]
+  simp [UnitDiscreteNat.edist_eq, h]
 
 private lemma edist_le_one (x y : UnitDiscreteNat) : edist x y ≤ 1 := by
   by_cases h : x = y
@@ -144,13 +148,15 @@ private theorem one_le_edist_geometricLaw_of_finite_support
 
 /-- Finitely supported laws are not dense in the infinite-exponent Wasserstein space over
 an infinite countable space with unit distance between distinct points. -/
-theorem WassersteinSpace.not_dense_finiteSupport_top_unitDiscreteNat :
+theorem WassersteinSpace.not_dense_setOfPred_ae_mem_finset_top_unitDiscreteNat :
     ¬ Dense {ν : WassersteinSpace ∞ UnitDiscreteNat |
-      ∃ s : Finset UnitDiscreteNat, ∀ᵐ y ∂(ν : Measure UnitDiscreteNat), y ∈ s} := by
+      ∃ s : Finset UnitDiscreteNat,
+        ((ν : ProbabilityMeasure UnitDiscreteNat) : Measure UnitDiscreteNat)
+          ((s : Set UnitDiscreteNat)ᶜ) = 0} := by
   intro hd
   obtain ⟨ν, hball, ⟨s, hs⟩⟩ :=
     (Metric.dense_iff.mp hd geometricWassersteinLaw 1 (by norm_num))
-  have hsep := one_le_edist_geometricLaw_of_finite_support ν s hs
+  have hsep := one_le_edist_geometricLaw_of_finite_support ν s (mem_ae_iff.mpr hs)
   have hdist : dist geometricWassersteinLaw ν < 1 := by
     rw [dist_comm]
     exact Metric.mem_ball.mp hball
