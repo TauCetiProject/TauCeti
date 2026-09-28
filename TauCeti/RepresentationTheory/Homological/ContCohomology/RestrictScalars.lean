@@ -55,6 +55,10 @@ what lets every result of the first kind be applied to coefficients of the secon
   the scalars, as an isomorphism in `TopModuleCat ℤ`;
   `TauCeti.ContCohomology.cocyclesRestrictScalarsIntIso` is the corresponding identification of
   the cocycles.
+* `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntIso`: for a discrete `X`, the
+  continuous cohomology of `ofDiscreteModule ℤ G X.V` is the underlying topological abelian group
+  of the continuous cohomology of `X`; `subsingleton_continuousCohomology_ofDiscreteModule_iff`
+  and `nontrivial_continuousCohomology_ofDiscreteModule_iff` read it on vanishing.
 
 ## Main results
 
@@ -363,5 +367,39 @@ theorem ofDiscreteModule_eq_restrictScalarsInt_obj (X : TopRep k G) [DiscreteTop
         (TopRep.distribMulAction_smul X g x)).trans (restrictScalarsInt_obj_ρ_apply X g x).symm
   -- Both sides are `TopRep.of` of their operators, so they agree as soon as the operators do.
   exact congrArg (TopRep.of (X := X.V)) h
+
+end TauCeti.ContCohomology
+
+namespace TauCeti.ContCohomology
+
+open TopRep
+
+attribute [local instance] TopRep.distribMulAction
+
+variable {k : Type*} [Ring k] [TopologicalSpace k] {G : Type*} [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] (X : TopRep k G) [DiscreteTopology X.V] (n : ℕ)
+
+/-- **The continuous cohomology of a discrete representation over any scalars is that of its
+carrier as a discrete `ℤ`-module**, with the action read off from `X`: the composite of
+`ofDiscreteModule_eq_restrictScalarsInt_obj` and `restrictScalarsIntIso`. -/
+noncomputable def ofDiscreteModuleRestrictScalarsIntIso :
+    continuousCohomology n (ofDiscreteModule ℤ G X.V) ≅
+      TopModuleCat.restrictScalarsInt.obj (continuousCohomology n X) :=
+  eqToIso (congrArg (continuousCohomology n) (ofDiscreteModule_eq_restrictScalarsInt_obj X)) ≪≫
+    restrictScalarsIntIso X n
+
+/-- `Hⁿ(G, X)` vanishes exactly when the `ℤ`-cohomology of the carrier of the discrete `X`
+vanishes. -/
+theorem subsingleton_continuousCohomology_ofDiscreteModule_iff :
+    Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G X.V)) ↔
+      Subsingleton (continuousCohomology n X) :=
+  (ofDiscreteModuleRestrictScalarsIntIso X n).toContinuousLinearEquiv.toEquiv.subsingleton_congr
+
+/-- `Hⁿ(G, X)` is nontrivial exactly when the `ℤ`-cohomology of the carrier of the discrete `X`
+is nontrivial. -/
+theorem nontrivial_continuousCohomology_ofDiscreteModule_iff :
+    Nontrivial (continuousCohomology n (ofDiscreteModule ℤ G X.V)) ↔
+      Nontrivial (continuousCohomology n X) :=
+  (ofDiscreteModuleRestrictScalarsIntIso X n).toContinuousLinearEquiv.toEquiv.nontrivial_congr
 
 end TauCeti.ContCohomology

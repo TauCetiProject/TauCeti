@@ -61,6 +61,8 @@ are strictly larger than `Kˣ`.
 * `TauCeti.kummerShortExact`: the Kummer sequence as a short exact sequence of discrete
   `G_K`-modules.
 * `TauCeti.baseUnitsEquivInvariants`: the isomorphism `Kˣ ≅ H⁰(G_K, (Kˢ)ˣ)`.
+* `TauCeti.embeddedUnitsInvariants`: for a `K`-embedding `σ : L →ₐ[K] Kˢ`, a unit `b` of `L` as
+  the invariant `σ b` of `(Kˢ)ˣ` under the subgroup of `G_K` fixing `σ(L)`.
 
 ## Main results
 
@@ -275,5 +277,40 @@ theorem toMul_coe_baseUnitsEquivInvariants (a : Additive Kˣ) :
     ((baseUnitsEquivInvariants K a : UnitsCoeff K).toMul : (SeparableClosure K)ˣ) =
       Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a.toMul :=
   (rfl)
+
+section Embedded
+
+variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
+
+/-- **A unit of `L` as an invariant of `(Kˢ)ˣ` under `Gal(Kˢ/σ(L))`**: every automorphism of `Kˢ`
+fixing `σ(L)` fixes `σ b`. For the subgroup cut out by `σ` this is what
+`TauCeti.baseUnitsEquivInvariants` is for the whole of `G_K`. -/
+def embeddedUnitsInvariants (b : Lˣ) : H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K) :=
+  ⟨Additive.ofMul (Units.map σ.toRingHom.toMonoidHom b), by
+    refine (FixedPoints.mem_addSubgroup _ _ _).2 fun h => ?_
+    rw [Subgroup.smul_def (α := UnitsCoeff K), ← Additive.ofMul_smul]
+    exact congrArg Additive.ofMul (Units.ext
+      ((IntermediateField.mem_fixingSubgroup_iff _ _).1 h.2 (σ b) ⟨b, rfl⟩))⟩
+
+/-- The invariant attached to a unit of `L` is the image of that unit in `(Kˢ)ˣ`. -/
+@[simp]
+theorem toMul_coe_embeddedUnitsInvariants (b : Lˣ) :
+    ((embeddedUnitsInvariants K L σ b : UnitsCoeff K).toMul : (SeparableClosure K)ˣ) =
+      Units.map σ.toRingHom.toMonoidHom b :=
+  (rfl)
+
+/-- The unit `1` of `L` is the zero invariant. -/
+@[simp]
+theorem embeddedUnitsInvariants_one : embeddedUnitsInvariants K L σ 1 = 0 :=
+  Subtype.ext <| Additive.toMul.injective <| map_one (Units.map σ.toRingHom.toMonoidHom)
+
+/-- Multiplication of units of `L` becomes addition of invariants. -/
+@[simp]
+theorem embeddedUnitsInvariants_mul (a b : Lˣ) :
+    embeddedUnitsInvariants K L σ (a * b) =
+      embeddedUnitsInvariants K L σ a + embeddedUnitsInvariants K L σ b :=
+  Subtype.ext <| Additive.toMul.injective <| map_mul (Units.map σ.toRingHom.toMonoidHom) a b
+
+end Embedded
 
 end TauCeti

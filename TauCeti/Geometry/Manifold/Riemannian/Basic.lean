@@ -20,6 +20,8 @@ to a fixed vector, depends continuously on the base point.
 
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle`: package the metric of a
   `C^n` Riemannian bundle.
+* `Bundle.ContMDiffRiemannianMetric.InducesRiemannianDistance`: express that a smooth metric
+  induces the ambient Riemannian distance.
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner`: the packaged metric is
   the bundle's inner product.
 * `Bundle.IsContinuousRiemannianBundle.toIsContMDiffZero`: view a continuous Riemannian bundle as
@@ -120,6 +122,32 @@ theorem toIsContinuousRiemannianBundle [IsContMDiffRiemannianBundle IB n F V] :
   exact ⟨⟨g, hg.continuous, hinner⟩⟩
 
 end IsContMDiffRiemannianBundle
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [MetricSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M]
+  [T2Space (TangentBundle I M)]
+
+/-- The metric `g` induces the Riemannian distance on `M` through the ambient metric space. -/
+def InducesRiemannianDistance
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) : Prop :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  IsRiemannianManifold I M
+
+omit [FiniteDimensional ℝ E] [T2Space (TangentBundle I M)] in
+/-- The metric's induced-distance condition yields the corresponding Riemannian-manifold
+structure after installing its metric bundle. -/
+theorem InducesRiemannianDistance.toIsRiemannianManifold
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (h : g.InducesRiemannianDistance (I := I) (M := M)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    IsRiemannianManifold I M := by
+  simpa only [InducesRiemannianDistance] using h
+
+end Bundle.ContMDiffRiemannianMetric
 
 section NormMFDeriv
 

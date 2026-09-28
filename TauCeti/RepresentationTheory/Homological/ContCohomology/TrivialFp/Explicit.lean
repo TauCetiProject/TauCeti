@@ -67,7 +67,7 @@ omit [IsTopologicalGroup G] [ContinuousSMul G (ZMod p)] in
 /-- The universe lift `trivialFpEquiv p G` is compatible with the trivial actions on both sides. -/
 private theorem trivialFpEquiv_smul (g : G) (x : (trivialFp p G).V) :
     trivialFpEquiv p G ((ContinuousMulEquiv.refl G) g • x) = g • trivialFpEquiv p G x := by
-  rw [TopRep.distribMulAction_smul, trivialFp_ρ_apply_apply, htriv]
+  rw [smul_trivialFp_V, htriv]
 
 /-- **`H¹(G, 𝔽_p)` is the explicit `H1 G (ZMod p)`**, for any trivial action of `G` on `ZMod p`. -/
 noncomputable def cohomFpAddEquivH1 : cohomFp p G 1 ≃+ H1 G (ZMod p) :=

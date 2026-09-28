@@ -14,6 +14,7 @@ import json
 import os
 import re
 import subprocess
+import threading
 import time
 
 REPO = os.environ.get("GH_REPO", "TauCetiProject/TauCeti")
@@ -29,7 +30,7 @@ _INPROGRESS_RE = re.compile(r"<!--tauceti-review-in-progress (.*?)-->", re.S)
 _REPO_ASSOCIATED = ("OWNER", "MEMBER", "COLLABORATOR")
 
 # `gh` exits nonzero on a rate limit without retrying. The sinks driven by
-# pr-labels.yml, zulip-pr*.yml and housekeeping.yml read through gh_api against
+# pr-status.yml, pr-labels.yml and housekeeping.yml read through gh_api against
 # ONE shared App installation budget; stuck-alerts.yml runs on GITHUB_TOKEN and so
 # has its own. Either way a burst of merges can spend the budget out from under
 # whichever read comes next.
@@ -67,6 +68,7 @@ class RateLimited(RuntimeError):
 # housekeeping and the Zulip backfill loop per PR — would start the full wait again
 # for each one and blow the job's timeout long before doing any work.
 _BLOCKED_UNTIL = 0.0
+_BLOCK_LOCK = threading.Lock()  # batch.py calls gh_api from several threads
 
 
 def _rate_limited(stderr):
@@ -113,7 +115,8 @@ def _block_for(seconds):
     """Refuse reads for `seconds`, never shortening a block already in force: a
     short secondary hold must not overwrite a long primary one."""
     global _BLOCKED_UNTIL
-    _BLOCKED_UNTIL = max(_BLOCKED_UNTIL, time.time() + seconds)
+    with _BLOCK_LOCK:
+        _BLOCKED_UNTIL = max(_BLOCKED_UNTIL, time.time() + seconds)
 
 
 def gh_api(path, jq=None, paginate=False):
@@ -137,9 +140,10 @@ def gh_api(path, jq=None, paginate=False):
     are GitHub's documented floor, not its per-response instruction.
 
     The bound is on the SLEEP SCHEDULE, not on wall clock: the subprocesses
-    themselves are unbounded, so a hung `gh` is not covered. Single-threaded, and
-    the breaker is per process -- separate workflow jobs sharing an installation
-    budget do not coordinate.
+    themselves are unbounded, so a hung `gh` is not covered. The breaker is shared
+    by the threads of one process (under a lock), and a caller that waits out a
+    limit blocks the others meanwhile; separate workflow jobs sharing an
+    installation budget do not coordinate.
     """
     now = time.time()
     if now < _BLOCKED_UNTIL:
@@ -178,6 +182,9 @@ def gh_api(path, jq=None, paginate=False):
                               f"{RATE_LIMIT_ATTEMPTS} attempts: {stderr}")
         delay = reset_in if state is QUOTA_EXHAUSTED else backoff
         print(f"gh api rate-limited; retrying in {delay}s", flush=True)
+        # Hold every other caller off while this one waits, so that concurrent callers (batch.py's
+        # threads) do not each keep hitting a limit that one of them has already found.
+        _block_for(max(0, delay - 1))
         time.sleep(delay)
 
 
