@@ -83,6 +83,13 @@ theorem leftRegularRep_eq_mulLeft (q : L →ₗ⁅R⁆ A) (x : L) :
     leftRegularRep q x = LinearMap.mulLeft R (q x) :=
   (rfl)
 
+/-- A nilpotent element of the associative target acts nilpotently in its left-regular
+representation. -/
+theorem isNilpotent_leftRegularRep (q : L →ₗ⁅R⁆ A) {x : L}
+    (hx : IsNilpotent (q x)) : IsNilpotent (leftRegularRep q x) := by
+  simpa only [leftRegularRep, LieHom.coe_comp, Function.comp_apply, AlgHom.toLieHom_apply]
+    using hx.map (Algebra.lmul R A)
+
 /-- **The left-regular representation is faithful exactly when `q` is injective.** It is the
 composite of `q` with `Algebra.lmul`, and left multiplication determines the multiplier
 (`Algebra.lmul_injective`), so no information is lost in passing to left multiplications. -/
