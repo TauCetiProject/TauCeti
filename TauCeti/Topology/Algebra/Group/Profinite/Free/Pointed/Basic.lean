@@ -43,7 +43,9 @@ converge to `1`.
 
 ## Main results
 
-* `TauCeti.isProC_freeProCPointed`: the free pro-`C` group on a pointed space is pro-`C`.
+* `TauCeti.isProC_freeProCPointed`: the free pro-`C` group on a pointed space is pro-`C`;
+  `TauCeti.freeProCPointed.isProP_finiteGroupClassP`: for `C` the class of finite `p`-groups it is
+  pro-`p`.
 * `TauCeti.freeProCPointed.continuous_of`, `TauCeti.freeProCPointed.of_basePoint`: the canonical
   map is continuous and kills the base point.
 * `TauCeti.freeProCPointed.existsUnique_lift`: the universal property.
@@ -144,6 +146,12 @@ abbrev freeProCPointed : Type u :=
 /-- The free pro-`C` group on a pointed space is pro-`C`. -/
 theorem isProC_freeProCPointed : IsProC C (freeProCPointed C x₀) :=
   (isProC_freeProC C X).quotient _
+
+/-- The free pro-`C` group on a pointed space, for `C` the class of finite `p`-groups, is
+pro-`p`. -/
+theorem freeProCPointed.isProP_finiteGroupClassP (p : ℕ) :
+    IsProP p (freeProCPointed (finiteGroupClassP.{u} p) x₀) :=
+  isProC_finiteGroupClassP_iff.mp (isProC_freeProCPointed (finiteGroupClassP.{u} p) x₀)
 
 namespace freeProCPointed
 

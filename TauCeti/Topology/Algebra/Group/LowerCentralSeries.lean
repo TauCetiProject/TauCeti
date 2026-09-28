@@ -64,6 +64,10 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
   commutators `⁅H, G⁆`.
 * `TauCeti.normal_of_pLowerCentralStep_le_of_le`: a subgroup between `pLowerCentralStep p R` and
   `R` is normal.
+* `TauCeti.instIsMulCommutativeQuotientPLowerCentralStep`,
+  `TauCeti.exponent_quotient_pLowerCentralStep_subgroupOf_dvd`,
+  `TauCeti.isPGroup_quotient_pLowerCentralStep_subgroupOf`: `N ⧸ Nᵖ[N, G]` is commutative and
+  killed by `p`.
 * `TauCeti.mk_conjNormal_eq`: conjugation by `G` acts trivially on `N ⧸ Nᵖ[N, G]`.
 * `TauCeti.pLowerCentralStep_subgroupOf_le_ker_iff`: a homomorphism on a closed normal subgroup
   `R` with closed kernel kills `pLowerCentralStep p R` exactly when it kills `p`-th powers and is
@@ -80,6 +84,9 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
 * `TauCeti.pLowerCentralSeries_eq_topologicalClosure`,
   `TauCeti.pLowerCentralSeries_eq_of_discreteTopology`: comparison with the abstract lower
   `p`-central series of the underlying group.
+* `TauCeti.top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot`,
+  `MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow`: the cyclic group `ℤ/pⁿ`, and any
+  discrete group isomorphic to it, has `p`-class at most `n`.
 
 ## References
 
@@ -283,14 +290,30 @@ theorem isClosed_pLowerCentralStep_subgroupOf (N : Subgroup G) :
     IsClosed ((pLowerCentralStep p N).subgroupOf N : Set N) :=
   (isClosed_pLowerCentralStep N).preimage continuous_subtype_val
 
-/-- `N ⧸ Nᵖ[N, G]` is an abstract `p`-group: the `p`-th power of every element is `1`, since the
-`p`-th powers of the elements of `N` lie in `pLowerCentralStep p N`. -/
+/-- `N ⧸ Nᵖ[N, G]` is commutative: the commutators `⁅N, G⁆` lie in `pLowerCentralStep p N`. -/
+instance instIsMulCommutativeQuotientPLowerCentralStep (N : Subgroup G) [N.Normal] :
+    IsMulCommutative (N ⧸ (pLowerCentralStep p N).subgroupOf N) where
+  is_comm.comm a b := by
+    obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective a
+    obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective b
+    refine (QuotientGroup.commute_mk_iff.mpr (mem_subgroupOf.mpr ?_)).eq
+    rw [← coe_subtype, map_commutatorElement]
+    exact commutator_mem_pLowerCentralStep x.2 y
+
+/-- `N ⧸ Nᵖ[N, G]` has exponent dividing `p`: the `p`-th powers of the elements of `N` lie in
+`pLowerCentralStep p N`. -/
+theorem exponent_quotient_pLowerCentralStep_subgroupOf_dvd (N : Subgroup G) [N.Normal] :
+    Monoid.exponent (N ⧸ (pLowerCentralStep p N).subgroupOf N) ∣ p :=
+  Monoid.exponent_dvd_iff_forall_pow_eq_one.mpr fun q ↦ by
+    obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective q
+    rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, mem_subgroupOf, coe_pow]
+    exact pow_mem_pLowerCentralStep n.2
+
+/-- `N ⧸ Nᵖ[N, G]` is an abstract `p`-group, since its exponent divides `p`. -/
 theorem isPGroup_quotient_pLowerCentralStep_subgroupOf (N : Subgroup G) [N.Normal] :
-    IsPGroup p (N ⧸ (pLowerCentralStep p N).subgroupOf N) := fun q ↦ by
-  obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective q
-  refine ⟨1, ?_⟩
-  rw [pow_one, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, mem_subgroupOf, coe_pow]
-  exact pow_mem_pLowerCentralStep n.2
+    IsPGroup p (N ⧸ (pLowerCentralStep p N).subgroupOf N) :=
+  IsPGroup.of_exponent_dvd_pow (n := 1)
+    (by rw [pow_one]; exact exponent_quotient_pLowerCentralStep_subgroupOf_dvd N)
 
 /-- **Conjugation acts trivially on `N ⧸ Nᵖ[N, G]`.** For a normal subgroup `N`, the class of the
 conjugate `g n g⁻¹` in the quotient of `N` by `pLowerCentralStep p N` is the class of `n`. -/
@@ -420,6 +443,15 @@ theorem pow_mem_pLowerCentralSeries {k : ℕ} {x : G} (hx : x ∈ pLowerCentralS
     x ^ p ∈ pLowerCentralSeries p G (k + 1) := by
   rw [pLowerCentralSeries_succ]
   exact pow_mem_pLowerCentralStep hx
+
+/-- The `p ^ j`-th power of an element of `λ_k` lies in `λ_{k+j}`. -/
+theorem pow_pow_mem_pLowerCentralSeries {k : ℕ} {x : G} (hx : x ∈ pLowerCentralSeries p G k)
+    (j : ℕ) : x ^ p ^ j ∈ pLowerCentralSeries p G (k + j) := by
+  induction j with
+  | zero => simpa using hx
+  | succ j ih =>
+    rw [pow_succ, pow_mul, ← add_assoc]
+    exact pow_mem_pLowerCentralSeries ih
 
 /-- The commutators `⁅λ_k, G⁆` lie in `λ_{k+1}`. -/
 theorem commutator_pLowerCentralSeries_top_le (k : ℕ) :
@@ -571,5 +603,33 @@ theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology [Discrete
     ⟨e, continuous_of_discreteTopology, continuous_of_discreteTopology⟩ k
 
 end Series
+
+/-! ### The cyclic groups `ℤ/pⁿ` -/
+
+section Cyclic
+
+variable {p : ℕ}
+
+/-- **The cyclic group `ℤ/pⁿ` has `p`-class at most `n`**: its lower `p`-series consists of the
+subgroups of `p ^ k`-th powers, and the `p ^ n`-th powers are trivial. -/
+theorem top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot (n : ℕ) :
+    (⊤ : Subgroup (Multiplicative (ZMod (p ^ n)))).pLowerCentralSeries p n = ⊥ := by
+  rw [Subgroup.top_pLowerCentralSeries_eq_range_powMonoidHom, MonoidHom.range_eq_bot_iff]
+  refine MonoidHom.ext fun x ↦ ?_
+  rw [powMonoidHom_apply, MonoidHom.one_apply, ← ofAdd_toAdd x, ← ofAdd_nsmul, nsmul_eq_mul,
+    ZMod.natCast_self, zero_mul, ofAdd_zero]
+
+variable {H : Type*} [Group H] [TopologicalSpace H] [DiscreteTopology H]
+
+/-- A discrete group isomorphic to `ℤ/pⁿ` has `p`-class at most `n`. -/
+theorem _root_.MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow {n : ℕ}
+    (e : H ≃* Multiplicative (ZMod (p ^ n))) : pLowerCentralSeries p H n = ⊥ := by
+  let : TopologicalSpace (Multiplicative (ZMod (p ^ n))) := ⊥
+  have : DiscreteTopology (Multiplicative (ZMod (p ^ n))) := ⟨rfl⟩
+  rw [← Subgroup.map_eq_bot_iff_of_injective (f := e.toMonoidHom) _ e.injective,
+    e.map_pLowerCentralSeries_eq_of_discreteTopology, pLowerCentralSeries_eq_of_discreteTopology,
+    top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot]
+
+end Cyclic
 
 end TauCeti

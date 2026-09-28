@@ -41,11 +41,17 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   degree zero (`TauCeti.gradedPieceZeroEquiv`).
 * `TauCeti.gradedBracket`: the bracket `gr_j(G) →+ gr_k(G) →+ gr_{j+k+1}(G)`, and its
   `ZMod p`-bilinear form `TauCeti.gradedBracketLinear`.
-* `TauCeti.gradedPow`: the `p`-power operator `π : gr_k(G) → gr_{k+1}(G)`.
+* `TauCeti.gradedPow`: the `p`-power operator `π : gr_k(G) → gr_{k+1}(G)`, and its iterate
+  `TauCeti.gradedPowIter` `π^j : gr_0(G) → gr_j(G)` on degree-zero classes.
 * `TauCeti.gradedMap`: the map on graded pieces induced by a continuous homomorphism.
 
 ## Main results
 
+* `TauCeti.quotientPLowerCentralSeriesSuccMulEquiv`: `λ_k ⧸ λ_{k+1}` is the quotient
+  `λ_k ⧸ λ_kᵖ[λ_k, G]` of `λ_k` by one step of the lower `p`-series, through which `gr_k(G)`
+  inherits its commutativity and its exponent.
+* `TauCeti.natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece`: for a normal subgroup
+  `R = λ_k`, the quotient `R ⧸ Rᵖ[R, G]` has as many elements as `gr_k(G)`.
 * `TauCeti.gradedBracket_self`, `TauCeti.gradedBracket_jacobi`: the bracket is alternating and
   satisfies the Jacobi identity.
 * `TauCeti.gradedPow_add_of_one_le`: `π` is additive in every degree `k ≥ 1`.
@@ -57,6 +63,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   `π [x, y] = [π x, y] = [x, π y]` away from degree zero.
 * `TauCeti.gradedMap_gradedBracket`, `TauCeti.gradedMap_gradedPow`: naturality of the bracket and
   of `π`.
+* `MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`: in a discrete group
+  isomorphic to `ℤ/pⁿ⁺¹`, `π^n` of the class of the generator is nonzero.
 
 ## References
 
@@ -234,25 +242,43 @@ theorem gradedMk_pow {k : ℕ} (x : pLowerCentralSeries p G k) (n : ℕ) :
     gradedMk p G k (x ^ n) = n • gradedMk p G k x := by
   rw [gradedMk, gradedMk, QuotientGroup.mk_pow, ofMul_pow]
 
-/-- The quotient `λ_k ⧸ λ_{k+1}` is an abelian group, with its existing quotient operations:
-`⁅λ_k, λ_k⁆ ≤ λ_{2k+1} ≤ λ_{k+1}`. -/
+variable (p G) in
+/-- The quotient `λ_k ⧸ λ_{k+1}` is the quotient `λ_k ⧸ λ_kᵖ[λ_k, G]` of `λ_k` by one step of
+the lower `p`-series, since `λ_{k+1} = λ_kᵖ[λ_k, G]`: the identity of `λ_k` descends to a group
+isomorphism. Through it `gr_k(G)` inherits the commutativity and the exponent of `N ⧸ Nᵖ[N, G]`
+(`TauCeti.instIsMulCommutativeQuotientPLowerCentralStep`,
+`TauCeti.exponent_quotient_pLowerCentralStep_subgroupOf_dvd`). -/
+def quotientPLowerCentralSeriesSuccMulEquiv (k : ℕ) :
+    (pLowerCentralSeries p G k ⧸
+        (pLowerCentralSeries p G (k + 1)).subgroupOf (pLowerCentralSeries p G k)) ≃*
+      (pLowerCentralSeries p G k ⧸
+        (pLowerCentralStep p (pLowerCentralSeries p G k)).subgroupOf (pLowerCentralSeries p G k)) :=
+  QuotientGroup.quotientMulEquivOfEq
+    (congrArg (Subgroup.subgroupOf · _) (pLowerCentralSeries_succ p G k))
+
+@[simp]
+theorem quotientPLowerCentralSeriesSuccMulEquiv_mk (k : ℕ) (x : pLowerCentralSeries p G k) :
+    quotientPLowerCentralSeriesSuccMulEquiv p G k (QuotientGroup.mk x) = QuotientGroup.mk x :=
+  (rfl)
+
+open scoped IsMulCommutative in
+/-- The quotient `λ_k ⧸ λ_{k+1}` is an abelian group, with its existing quotient operations: it is
+the commutative quotient `λ_k ⧸ λ_kᵖ[λ_k, G]`. -/
 instance instCommGroupQuotientPLowerCentralSeries (k : ℕ) :
     CommGroup (pLowerCentralSeries p G k ⧸
       (pLowerCentralSeries p G (k + 1)).subgroupOf (pLowerCentralSeries p G k)) where
-  mul_comm a b := by
-    obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective a
-    obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective b
-    rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, QuotientGroup.eq_subgroupOf, coe_mul,
-      coe_mul, QuotientGroup.mk_mul, QuotientGroup.mk_mul]
-    exact (QuotientGroup.commute_mk_iff.mpr
-      (pLowerCentralSeries_antitone (by omega) (commutator_mem_pLowerCentralSeries x.2 y.2))).eq
+  mul_comm a b :=
+    (quotientPLowerCentralSeriesSuccMulEquiv p G k).injective <| by
+      rw [map_mul, map_mul]
+      exact mul_comm _ _
 
-/-- **The graded pieces are killed by `p`.** -/
+/-- **The graded pieces are killed by `p`**: the exponent of `λ_k ⧸ λ_kᵖ[λ_k, G]` divides `p`. -/
 @[simp]
 theorem nsmul_gradedPiece_eq_zero {k : ℕ} (x : gradedPiece p G k) : p • x = 0 := by
-  obtain ⟨y, rfl⟩ := gradedMk_surjective k x
-  rw [← gradedMk_pow, gradedMk_eq_zero_iff, coe_pow]
-  exact pow_mem_pLowerCentralSeries y.2
+  rw [← ofMul_toMul x, ← ofMul_pow, ofMul_eq_zero]
+  exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp
+    ((Monoid.exponent_eq_of_mulEquiv (quotientPLowerCentralSeriesSuccMulEquiv p G k)).dvd.trans
+      (exponent_quotient_pLowerCentralStep_subgroupOf_dvd _)) _
 
 /-- For odd `p`, the graded pieces are killed by `p choose 2 = p * ((p - 1) / 2)`. -/
 theorem choose_two_nsmul_gradedPiece_eq_zero_of_odd (hp : Odd p) {k : ℕ}
@@ -312,6 +338,18 @@ theorem gradedPieceZeroEquiv_gradedMk (x : pLowerCentralSeries p G 0) :
     gradedPieceZeroEquiv p G (gradedMk p G 0 x) =
       Additive.ofMul ((x : G) : G ⧸ pLowerCentralSeries p G 1) :=
   gradedPieceInclusion_gradedMk x
+
+/-- For a normal subgroup `R` equal to the term `λ_k` of the lower `p`-series, the quotient
+`R ⧸ Rᵖ[R, G]` is the graded piece `gr_k(G) = λ_k ⧸ λ_{k+1}`, up to the additive notation; in
+particular they have the same cardinality. The equation `R = λ_k` is a hypothesis rather than a
+substitution, so that the statement applies to the relation subgroup of a presentation, whose
+quotient type depends on it. -/
+theorem natCard_quotient_pLowerCentralStep_eq_natCard_gradedPiece {R : Subgroup G} [R.Normal]
+    {k : ℕ} (hR : R = pLowerCentralSeries p G k) :
+    Nat.card (R ⧸ (pLowerCentralStep p R).subgroupOf R) = Nat.card (gradedPiece p G k) := by
+  subst hR
+  exact Nat.card_congr
+    ((quotientPLowerCentralSeriesSuccMulEquiv p G k).symm.toEquiv.trans Additive.ofMul)
 
 /-! ### The class of an element of `G` in degree zero -/
 
@@ -827,5 +865,89 @@ theorem gradedMap_gradedPow (f : G →* H) (hf : Continuous f) {k : ℕ} (x : gr
   exact Subtype.ext (map_pow f _ _)
 
 end Functoriality
+
+/-! ### Iterated `p`-powers of degree-zero classes -/
+
+section PowIter
+
+variable (p G) in
+/-- **The iterated `p`-power operator** `π^j : gr_0(G) → gr_j(G)`, the `j`-fold composite
+`π ∘ ⋯ ∘ π` of `TauCeti.gradedPow` starting in degree zero. On classes it is induced by
+`g ↦ g ^ (p ^ j)` (`TauCeti.gradedPowIter_gradedMkZero`). It commutes with scalars
+(`TauCeti.gradedPowIter_smul`), but for `p = 2` it need not be additive: already `π^1 = π` has
+the defect `[x, y]` in degree zero (`TauCeti.gradedPow_add_zero_of_two`), which is nonzero for the
+free pro-`2` group of rank two (`TauCeti.gradedPow_freeProP_two_not_additive`). -/
+def gradedPowIter : (j : ℕ) → gradedPiece p G 0 → gradedPiece p G j
+  | 0 => id
+  | j + 1 => gradedPow p G j ∘ gradedPowIter j
+
+@[simp]
+theorem gradedPowIter_zero (x : gradedPiece p G 0) : gradedPowIter p G 0 x = x :=
+  (rfl)
+
+@[simp]
+theorem gradedPowIter_succ (j : ℕ) (x : gradedPiece p G 0) :
+    gradedPowIter p G (j + 1) x = gradedPow p G j (gradedPowIter p G j x) :=
+  (rfl)
+
+/-- **The iterated `p`-power operator on classes**: `π^j` sends the class of `g` to the class of
+`g ^ (p ^ j)` in `gr_j(G)`. -/
+@[simp]
+theorem gradedPowIter_gradedMkZero (j : ℕ) (g : G) :
+    gradedPowIter p G j (gradedMkZero p G g) =
+      gradedMk p G j ⟨g ^ p ^ j, by
+        simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) j⟩ := by
+  induction j with
+  | zero =>
+    rw [gradedPowIter_zero, gradedMkZero]
+    congr 1
+    exact Subtype.ext (by simp)
+  | succ j ih =>
+    rw [gradedPowIter_succ, ih, gradedPow_gradedMk]
+    congr 1
+    exact Subtype.ext (by simp [pow_succ, pow_mul])
+
+@[simp]
+theorem gradedPowIter_zero_right (j : ℕ) : gradedPowIter p G j 0 = 0 := by
+  rw [← gradedMkZero_one, gradedPowIter_gradedMkZero, gradedMk_eq_zero_iff, coe_mk, one_pow]
+  exact one_mem _
+
+/-- **The iterated `p`-power operator commutes with scalars**: in degree zero by
+`TauCeti.gradedPow_smul_zero`, and above degree zero because `π` is additive there. -/
+@[simp]
+theorem gradedPowIter_smul [NeZero p] (j : ℕ) (c : ZMod p) (x : gradedPiece p G 0) :
+    gradedPowIter p G j (c • x) = c • gradedPowIter p G j x := by
+  induction j with
+  | zero => rw [gradedPowIter_zero, gradedPowIter_zero]
+  | succ j ih =>
+    rw [gradedPowIter_succ, gradedPowIter_succ, ih]
+    rcases Nat.eq_zero_or_pos j with rfl | hj
+    · exact gradedPow_smul_zero c _
+    · exact map_smul ((gradedPowAddMonoidHom p G hj).toZModLinearMap p) c _
+
+/-- **Naturality of the iterated `p`-power operator.** -/
+@[simp]
+theorem gradedMap_gradedPowIter {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    (f : G →* H) (hf : Continuous f) (j : ℕ) (x : gradedPiece p G 0) :
+    gradedMap p f hf j (gradedPowIter p G j x) = gradedPowIter p H j (gradedMap p f hf 0 x) := by
+  induction j with
+  | zero => rw [gradedPowIter_zero, gradedPowIter_zero]
+  | succ j ih => rw [gradedPowIter_succ, gradedPowIter_succ, gradedMap_gradedPow, ih]
+
+variable [Fact p.Prime] {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H] in
+/-- In a discrete group isomorphic to `ℤ/pⁿ⁺¹`, the iterated `p`-power class `π^n` of the
+generator is nonzero in `gr_n`. -/
+theorem _root_.MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow {n : ℕ}
+    (e : H ≃* Multiplicative (ZMod (p ^ (n + 1)))) :
+    gradedPowIter p H n (gradedMkZero p H (e.symm (Multiplicative.ofAdd 1))) ≠ 0 := by
+  rw [gradedPowIter_gradedMkZero, ne_eq, gradedMk_eq_zero_iff, Subgroup.coe_mk,
+    e.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow, Subgroup.mem_bot, ← map_pow,
+    e.symm.map_eq_one_iff]
+  have hp : p.Prime := Fact.out
+  apply pow_ne_one_of_lt_orderOf (pow_ne_zero n hp.ne_zero)
+  rw [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  exact Nat.pow_lt_pow_right hp.one_lt n.lt_succ_self
+
+end PowIter
 
 end TauCeti

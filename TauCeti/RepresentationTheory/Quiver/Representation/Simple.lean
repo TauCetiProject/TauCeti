@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Representation.Subrepresentation
 public import Mathlib.Algebra.Category.ModuleCat.Simple
+public import Mathlib.Algebra.Category.ModuleCat.Ulift
 
 /-!
 # The vertex simple representations of a quiver
@@ -20,9 +21,11 @@ acyclic quiver these are *all* the simple objects.
 
 The construction is a `CategoryTheory.Paths.lift` of the prefunctor sending `i` to `k`, every other
 vertex to the zero module, and every arrow to the zero map; functoriality along path concatenation
-is then supplied by Mathlib. Simplicity is checked pointwise: a monomorphism into `Sᵢ` is zero away
-from `i` because the target vanishes there, so it is determined by its component at `i`, where `k`
-is a simple `k`-module.
+is then supplied by Mathlib. Simplicity is checked pointwise, and uses only that `Sᵢ` is supported
+at the single vertex `i`: a monomorphism into a representation that vanishes away from `i` is zero
+there, so it is determined by its component at `i`, where `k` is a simple `k`-module. Lifting the
+vertex spaces to a larger universe preserves both of those properties, so the lifted `Sᵢ` is simple
+as well.
 
 The converse classification runs through the subrepresentations of
 `TauCeti.RepresentationTheory.Quiver.Representation.Subrepresentation`. A nonzero vector `x` of `Mᵢ`
@@ -41,7 +44,11 @@ line through `x` at `i` and zero elsewhere, which is `Sᵢ`.
 
 ## Main results
 
+* `TauCeti.simple_of_simple_obj_of_isZero_obj`: a representation whose vertex space at one vertex
+  is a simple module and which vanishes at every other vertex is simple.
 * `TauCeti.simpleRep_simple`: `Sᵢ` is a simple object of `TauCeti.QuiverRep k Q`.
+* `TauCeti.simple_simpleRep_comp_uliftFunctor`: lifting the vertex spaces of `Sᵢ` to a larger
+  universe preserves simplicity.
 * `TauCeti.isIso_simpleRepHom`: a representation spanned at `i` by a single nonzero vector and
   vanishing at every other vertex is `Sᵢ`.
 * `TauCeti.exists_iso_simpleRep_of_simple`: over an acyclic quiver every simple representation is
@@ -82,7 +89,7 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits
 open scoped ZeroObject
 
-universe u v
+universe u v w x
 
 variable (k : Type u) (Q : Type v) [Field k] [Quiver Q]
 
@@ -207,32 +214,57 @@ theorem simpleRep_hom_eq_zero_iff {i : Q} {M : QuiverRep k Q} (f : simpleRep k Q
   · exact h
   · exact (isZero_simpleRep_obj (Q := Q) ha).eq_of_src _ _
 
+/-- **A representation supported at a single vertex is simple** as soon as its vertex space there
+is: if `M` vanishes at every vertex other than `j` and the module `Mⱼ` is simple, then `M` is a
+simple object of `TauCeti.QuiverRep k Q`. A monomorphism into such an `M` is zero away from `j`
+because the target vanishes there, so it is determined by its component at `j`, where simplicity
+of `Mⱼ` makes a nonzero monomorphism invertible. -/
+theorem simple_of_simple_obj_of_isZero_obj {M : QuiverRep k Q} {j : Q} (hj : Simple (M.obj j))
+    (hzero : ∀ a : Q, a ≠ j → IsZero (M.obj a)) : Simple M := by
+  -- expose the simplicity of the vertex space at `j` to instance search
+  have := hj
+  -- A morphism into `M` is detected by its component at `j`: elsewhere the target vanishes.
+  have happ : ∀ {N : QuiverRep k Q} (f : N ⟶ M), f.app j = 0 → f = 0 := fun f hf ↦
+    NatTrans.ext (funext fun a ↦ by
+      rcases eq_or_ne a j with rfl | ha
+      · exact hf
+      · exact (hzero a ha).eq_of_tgt _ _)
+  refine { mono_isIso_iff_nonzero := fun {N} f _ ↦ ⟨fun _ h ↦ ?_, fun h ↦ ?_⟩ }
+  · exact Simple.not_isZero (M.obj j) ((IsZero.of_epi_eq_zero f h).obj j)
+  · rw [NatTrans.isIso_iff_isIso_app]
+    intro a
+    rcases eq_or_ne a j with rfl | ha
+    · exact isIso_of_mono_of_nonzero fun hz ↦ h (happ f hz)
+    · have ht := hzero a ha
+      have hs : IsZero (N.obj a) := IsZero.of_mono (f.app a) ht
+      rw [hs.eq_of_src (f.app a) (hs.iso ht).hom]
+      infer_instance
+
 /-- **The vertex simples are simple.** The vertex representation `Sᵢ = simpleRep k Q i` is a simple
 object of `TauCeti.QuiverRep k Q`. -/
-instance simpleRep_simple (i : Q) : Simple (simpleRep k Q i) where
-  mono_isIso_iff_nonzero {M} f _ := by
-    constructor
-    · intro _ h
-      have hzi : IsZero ((simpleRep k Q i).obj i) := (IsZero.of_epi_eq_zero f h).obj i
-      rw [simpleRep_obj_self] at hzi
-      exact not_subsingleton k (ModuleCat.subsingleton_of_isZero hzi)
-    · intro h
-      rw [NatTrans.isIso_iff_isIso_app]
-      intro a
-      change Q at a
-      change IsIso (f.app ((Paths.of Q).obj a))
-      rcases eq_or_ne a i with rfl | ha
-      · let : Simple ((simpleRep k Q a).obj ((Paths.of Q).obj a)) := by
-          change Simple ((simpleRep k Q a).obj a)
-          exact simple_simpleRep_obj_self a
-        exact isIso_of_mono_of_nonzero ((hom_simpleRep_eq_zero_iff f).ne.mp h)
-      · have ht : IsZero ((simpleRep k Q i).obj ((Paths.of Q).obj a)) := by
-          change IsZero ((simpleRep k Q i).obj a)
-          exact isZero_simpleRep_obj (Q := Q) ha
-        have hs : IsZero (M.obj ((Paths.of Q).obj a)) :=
-          IsZero.of_mono (f.app ((Paths.of Q).obj a)) ht
-        rw [hs.eq_of_src (f.app ((Paths.of Q).obj a)) (hs.iso ht).hom]
-        infer_instance
+instance simpleRep_simple (i : Q) : Simple (simpleRep k Q i) :=
+  simple_of_simple_obj_of_isZero_obj (simple_simpleRep_obj_self i)
+    fun _ ha ↦ isZero_simpleRep_obj ha
+
+/-- Universe-lifting the vertex spaces of a vertex simple representation preserves its
+simplicity. -/
+theorem simple_simpleRep_comp_uliftFunctor (k : Type u) (Q : Type v) [Field k]
+    [q : _root_.Quiver.{w} Q] (j : Q) :
+    Simple (simpleRep k Q j ⋙ ModuleCat.uliftFunctor.{max v w x, u} k) := by
+  -- The vertex spaces are computed in the form `uliftFunctor.obj ((simpleRep k Q j).obj a)`, which
+  -- is what `rw` can operate on: in the composite `simpleRep k Q j ⋙ uliftFunctor` applied to a
+  -- vertex, as opposed to an object of `CategoryTheory.Paths Q`, the goal is not type-correct at
+  -- the transparency at which `rw` builds its motive, so `Functor.comp_obj` does not fire there.
+  -- The two forms are definitionally equal, and `exact` identifies them.
+  have hj : Simple ((ModuleCat.uliftFunctor.{max v w x, u} k).obj ((simpleRep k Q j).obj j)) := by
+    rw [simpleRep_obj_self, simple_iff_isSimpleModule']
+    exact ULift.moduleEquiv.isSimpleModule_iff.mpr inferInstance
+  have hzero : ∀ a : Q, a ≠ j →
+      IsZero ((ModuleCat.uliftFunctor.{max v w x, u} k).obj ((simpleRep k Q j).obj a)) := by
+    intro a ha
+    rw [simpleRep_obj_of_ne ha]
+    exact (ModuleCat.uliftFunctor.{max v w x, u} k).map_isZero (isZero_zero _)
+  exact simple_of_simple_obj_of_isZero_obj (j := j) hj hzero
 
 /-- The dimension vector of the vertex simple `Sᵢ` is the standard basis vector at `i`. -/
 @[simp]

@@ -52,7 +52,7 @@ theorem card_totalPath : Fintype.card (Quiver.TotalPath D4) = 7 := by
 arrows. -/
 theorem finrank_pathAlgebra (k : Type w) [DivisionRing k] :
     Module.finrank k (pathAlgebra k D4) = 7 := by
-  rw [TauCeti.finrank_pathAlgebra k D4, card_totalPath]
+  rw [TauCeti.finrank_pathAlgebra k D4, Nat.card_eq_fintype_card, card_totalPath]
 
 end Quiver.D4
 

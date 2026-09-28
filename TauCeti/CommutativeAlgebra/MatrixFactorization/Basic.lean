@@ -86,6 +86,14 @@ theorem parityShift_comp_inclusion :
     parityShift (S := S) (w := w) ⋙ inclusion =
       inclusion ⋙ CurvedDuplex.parityShift (FGModuleCat.{u} S) w := rfl
 
+@[simp] theorem parityShift_obj (X : MatrixFactorization S w) :
+    ((parityShift (S := S) (w := w)).obj X).obj =
+      (CurvedDuplex.parityShift (FGModuleCat.{u} S) w).obj X.obj := rfl
+
+@[simp] theorem parityShift_map_hom {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+    ((parityShift (S := S) (w := w)).map f).hom =
+      (CurvedDuplex.parityShift (FGModuleCat.{u} S) w).map f.hom := rfl
+
 @[simp] theorem parityShift_obj_X₀ (X : MatrixFactorization S w) :
     ((parityShift (S := S) (w := w)).obj X).obj.X₀ = X.obj.X₁ := rfl
 

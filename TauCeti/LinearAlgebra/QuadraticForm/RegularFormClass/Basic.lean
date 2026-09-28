@@ -241,6 +241,27 @@ theorem RegularFormPresentation.append_apply_natAdd (p q : RegularFormPresentati
       (Fin.cast (RegularFormPresentation.fst_append p q).symm (Fin.natAdd p.1 j)) = q.2 j := by
   simp [RegularFormPresentation.append]
 
+-- `append` is opaque to importing modules; this equation lets them rewrite a full presentation.
+/-- Appending presentations concatenates their weight tuples. -/
+theorem RegularFormPresentation.append_def (p q : RegularFormPresentation K) :
+    p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := by
+  let hfst := RegularFormPresentation.fst_append p q
+  have hw : (p.append q).2 ∘ Fin.cast hfst.symm = Fin.append p.2 q.2 := by
+    funext i
+    refine Fin.addCases ?_ ?_ i
+    · intro k
+      simpa only [Function.comp_apply, Fin.append_left] using
+        RegularFormPresentation.append_apply_castAdd p q k
+    · intro k
+      simpa only [Function.comp_apply, Fin.append_right] using
+        RegularFormPresentation.append_apply_natAdd p q k
+  apply RegularFormPresentation.ext hfst
+  intro i
+  let j := Fin.cast hfst i
+  have hi : i = Fin.cast hfst.symm j := Fin.ext rfl
+  rw [hi]
+  exact congrFun hw j
+
 /-- The weight product of a concatenation is the product of the two weight products. -/
 theorem RegularFormPresentation.prod_append (p q : RegularFormPresentation K) :
     (∏ i, (RegularFormPresentation.append p q).2 i) = (∏ i, p.2 i) * ∏ j, q.2 j := by
@@ -451,6 +472,23 @@ theorem RegularFormClass.rank_add (x y : RegularFormClass K) :
 @[simp]
 theorem RegularFormClass.rank_zero : RegularFormClass.rank (0 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.zero_def, RegularFormClass.rank_mk]
+
+/-- A regular-form class has rank zero exactly when it is the zero class. -/
+@[simp]
+theorem RegularFormClass.rank_eq_zero_iff {x : RegularFormClass K} :
+    x.rank = 0 ↔ x = 0 := by
+  constructor
+  · intro hx
+    induction x using Quotient.inductionOn with
+    | h p =>
+      rw [RegularFormClass.rank_mk] at hx
+      rw [RegularFormClass.zero_def]
+      apply congrArg (Quotient.mk (regularFormSetoid K))
+      apply RegularFormPresentation.ext hx
+      intro i
+      exact (Fin.cast hx i).elim0
+  · rintro rfl
+    exact RegularFormClass.rank_zero
 
 /-! ### Induction on the rank -/
 

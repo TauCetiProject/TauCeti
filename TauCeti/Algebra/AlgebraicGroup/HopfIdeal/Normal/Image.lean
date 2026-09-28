@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
+import TauCeti.RingTheory.Flat.TensorProduct
+
 /-!
 # Normal scheme-theoretic images
 
@@ -38,8 +40,8 @@ ideal. Over a field all these flatness conditions are automatic.
 
 * J. S. Milne, *Algebraic Groups* (2017), §5.a and §10.20.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§16--17.
-* The tensor-kernel identity is `ker_lTensor_eq_rightTensorIdeal` from
-  `TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel`, using Mathlib's `Module.Flat.ker_lTensor_eq`.
+* The tensor-kernel identity is `Algebra.TensorProduct.lTensor_ker_of_flat` from
+  `TauCeti.RingTheory.Flat.TensorProduct`, using Mathlib's `Module.Flat.ker_lTensor_eq`.
 
 Applied to multiplication from the semidirect product of two normal closed subgroups, the lifted
 action is simultaneous ambient conjugation and the image is their normal product.
@@ -109,7 +111,9 @@ theorem IsNormal.comap_of_injective {I : HopfIdeal k K} (hI : I.IsNormal)
     rw [comap_toIdeal]
     ext y
     simp [g, q, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
-  rw [hgker, ← ker_lTensor_eq_rightTensorIdeal g, RingHom.mem_ker]
+  rw [hgker, rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+    ← Algebra.TensorProduct.lTensor_ker_of_flat g,
+    RingHom.mem_ker]
   have hmaps' :
       (Algebra.TensorProduct.map f.toAlgHom (AlgHom.id k (K ⧸ I.toIdeal))).comp
           (Algebra.TensorProduct.map (AlgHom.id k H) g) =
@@ -155,7 +159,9 @@ theorem isNormal_ker_of_conjugation_equivariant (f : H →ₐc[k] K)
   rw [isNormal_iff_conjugation_mem]
   intro x hx
   rw [ker_toIdeal]
-  rw [← ker_lTensor_eq_rightTensorIdeal f.toAlgHom, RingHom.mem_ker]
+  rw [rightTensorIdeal_def, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+    ← Algebra.TensorProduct.lTensor_ker_of_flat f.toAlgHom,
+    RingHom.mem_ker]
   have hfx : f x = 0 := (mem_ker f).mp hx
   calc
     Algebra.TensorProduct.map (AlgHom.id k H) f.toAlgHom

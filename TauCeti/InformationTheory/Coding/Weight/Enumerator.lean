@@ -312,6 +312,13 @@ theorem weightEnumerator_singleton {ι : Type*} {β : ι → Type*} [Fintype ι]
   rw [Set.weightEnumerator_eq_sum (Set.finite_singleton _)]
   simp
 
+/-- The zero code has just its zero word, of weight zero. -/
+theorem weightEnumerator_bot {ι R : Type*} [Fintype ι] [Semiring R] [DecidableEq R] :
+    ((⊥ : Submodule R (ι → R)) : Set (ι → R)).weightEnumerator =
+      (X 0 : MvPolynomial (Fin 2) ℤ) ^ Fintype.card ι := by
+  simp only [Submodule.bot_coe, weightEnumerator_singleton, hammingNorm_zero,
+    Nat.sub_zero, pow_zero, mul_one]
+
 variable {ι R : Type*} [Fintype ι] [Zero R] [DecidableEq R]
 
 /-- The whole word space has weight enumerator `(X + (q - 1) Y)^n`. -/

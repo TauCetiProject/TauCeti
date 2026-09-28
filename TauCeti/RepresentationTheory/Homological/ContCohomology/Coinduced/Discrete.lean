@@ -5,6 +5,7 @@ Authors: Claude, Codex
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced
 
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
@@ -40,7 +41,11 @@ and the one Shapiro's lemma is stated against.
   scalar multiplication is continuous;
 * `TauCeti.DiscreteCoind.trace_apply`, `TauCeti.DiscreteCoind.trace_eq_sum_transversal` and
   `TauCeti.DiscreteCoind.trace_map`: the trace formula, along any transversal, and its naturality
-  in the coefficients.
+  in the coefficients;
+* `TauCeti.DiscreteCoind.ofContinuousMap` and `TauCeti.DiscreteCoind.toContinuousMap`: a
+  continuous map into a discrete group as an element of `Coind_1^G A`, and conversely, packaged as
+  the additive equivalence `TauCeti.DiscreteCoind.addEquivContinuousMap : Coind_1^G A ≃+ C(G, A)`,
+  with `TauCeti.DiscreteCoind.smul_ofContinuousMap` computing the translation action.
 -/
 
 public section
@@ -156,9 +161,17 @@ instance instSMulScalar : SMul R (DiscreteCoind G U A) :=
 theorem coe_smul_scalar (r : R) (f : DiscreteCoind G U A) (g : G) :
     (r • f) g = r • f g := rfl
 
-instance instModuleScalar : Module R (DiscreteCoind G U A) :=
-  Function.Injective.module R (toCoind G U A).toAddMonoidHom
-    (toCoind G U A).injective fun _ _ => rfl
+/-- The scalar module structure on the discrete carrier. Its scalar action is `instSMulScalar`
+itself, so that instances stated for that action, such as `instSMulCommClass`, apply to the module
+structure at instance transparency. -/
+instance instModuleScalar : Module R (DiscreteCoind G U A) where
+  toSMul := instSMulScalar
+  one_smul f := ext fun g => one_smul R (f g)
+  mul_smul r s f := ext fun g => mul_smul r s (f g)
+  smul_zero r := ext fun _ => smul_zero r
+  smul_add r f f' := ext fun g => smul_add r (f g) (f' g)
+  add_smul r s f := ext fun g => add_smul r s (f g)
+  zero_smul f := ext fun g => zero_smul R (f g)
 
 end Scalar
 
@@ -387,5 +400,72 @@ instance instContinuousSMul [IsTopologicalGroup G] [CompactSpace G] :
 end DiscreteCoind
 
 end DiscreteCarrier
+
+/-! ### The coinduced module of the trivial subgroup -/
+
+section Bot
+
+variable (G : Type*) [Group G] [TopologicalSpace G]
+  (A : Type*) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction (⊥ : Subgroup G) A]
+
+namespace DiscreteCoind
+
+/-- A continuous map from `G` to a discrete group `A`, as an element of `Coind_1^G A`: it is
+locally constant, and the equivariance condition for the trivial subgroup is empty. -/
+def ofContinuousMap (f : C(G, A)) : DiscreteCoind G ⊥ A :=
+  mk G ⊥ A f ((IsLocallyConstant.iff_continuous _).2 f.continuous) fun u g => by
+    rw [Subsingleton.elim u 1, one_smul, OneMemClass.coe_one, one_mul]
+
+@[simp]
+theorem ofContinuousMap_apply (f : C(G, A)) (g : G) : ofContinuousMap G A f g = f g := (rfl)
+
+/-- An element of `Coind_1^G A`, as a continuous map `G → A`: it is locally constant, and `A` is
+discrete. -/
+def toContinuousMap (f : DiscreteCoind G ⊥ A) : C(G, A) :=
+  ⟨f, (IsLocallyConstant.iff_continuous _).1 f.isLocallyConstant⟩
+
+@[simp]
+theorem coe_toContinuousMap (f : DiscreteCoind G ⊥ A) : ⇑(toContinuousMap G A f) = ⇑f := (rfl)
+
+@[simp]
+theorem toContinuousMap_ofContinuousMap (f : C(G, A)) :
+    toContinuousMap G A (ofContinuousMap G A f) = f :=
+  ContinuousMap.ext fun _ => rfl
+
+@[simp]
+theorem ofContinuousMap_toContinuousMap (f : DiscreteCoind G ⊥ A) :
+    ofContinuousMap G A (toContinuousMap G A f) = f :=
+  ext fun _ => rfl
+
+/-- **`Coind_1^G A` is the group of continuous maps `G → A`**: the locally constant maps into the
+discrete group `A` are the continuous ones, and the equivariance condition for the trivial
+subgroup is empty. -/
+def addEquivContinuousMap : DiscreteCoind G ⊥ A ≃+ C(G, A) where
+  toFun := toContinuousMap G A
+  invFun := ofContinuousMap G A
+  left_inv := ofContinuousMap_toContinuousMap G A
+  right_inv := toContinuousMap_ofContinuousMap G A
+  map_add' _ _ := rfl
+
+@[simp]
+theorem addEquivContinuousMap_apply (f : DiscreteCoind G ⊥ A) :
+    addEquivContinuousMap G A f = toContinuousMap G A f :=
+  (rfl)
+
+@[simp]
+theorem addEquivContinuousMap_symm_apply (f : C(G, A)) :
+    (addEquivContinuousMap G A).symm f = ofContinuousMap G A f :=
+  (rfl)
+
+/-- Right translation on `Coind_1^G A` is precomposition with right multiplication. -/
+@[simp]
+theorem smul_ofContinuousMap [ContinuousMul G] (g : G) (f : C(G, A)) :
+    g • ofContinuousMap G A f = ofContinuousMap G A (f.comp (ContinuousMap.mulRight g)) :=
+  ext fun _ => rfl
+
+end DiscreteCoind
+
+end Bot
 
 end TauCeti

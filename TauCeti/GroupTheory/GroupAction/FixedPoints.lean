@@ -34,7 +34,8 @@ Nothing here is specific to a topology or to cohomology; the continuous-cohomolo
   `TauCeti.distribMulActionQuotientFixedPointsAddSubmonoid`: the distributive `G`- and
   `G ⧸ H`-actions on the fixed points of a normal `H`, with their `AddSubgroup` forms and the
   coercion lemmas `TauCeti.coe_smul_fixedPoints_addSubgroup` and
-  `TauCeti.coe_quotient_smul_fixedPoints_addSubgroup`.
+  `TauCeti.coe_quotient_smul_fixedPoints_addSubgroup`; a trivial `G`-action on `M` gives a trivial
+  `G ⧸ H`-action on `M ^ H` (`TauCeti.quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq`).
 * `TauCeti.fixedPointsInclusion`, `TauCeti.fixedPointsDistribMulActionInclusion`, and
   `TauCeti.fixedPointsDistribMulActionSubtype`: the additive and equivariant inclusions between
   fixed points and into the ambient additive monoid, with their functoriality laws.
@@ -164,6 +165,14 @@ theorem coe_quotient_smul_fixedPoints_addSubgroup (g : G)
     (m : FixedPoints.addSubgroup H M) :
     (g : G ⧸ H) • m = g • m :=
   rfl
+
+/-- If `G` acts trivially on `M`, then `G ⧸ H` acts trivially on `M ^ H`. -/
+@[simp]
+theorem quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq (h : ∀ (g : G) (m : M), g • m = m)
+    (q : G ⧸ H) (m : FixedPoints.addSubgroup H M) : q • m = m := by
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+  rw [coe_quotient_smul_fixedPoints_addSubgroup]
+  exact Subtype.ext ((coe_smul_fixedPoints_addSubgroup g m).trans (h g m))
 
 end AddGroup
 

@@ -34,9 +34,12 @@ the same diagram without passing through any statement about the underlying abst
 
 ## Main results
 
-* `comapOfSurjective_conjCoordinateIso_inv_le_kostantToralDefiningIdeal` and
+* `comapOfSurjective_conjCoordinateIso_inv_le_kostantToralDefiningIdeal`,
+  `kostantToralConjToQuotient`, and
   `conj_mem_hopfIdealPointsSubgroup_of_mem_kostantToralPointsSubgroup`: the universal property
-  above, for an arbitrary closed subgroup scheme of `GLₙ`, on defining ideals and on points.
+  above, for an arbitrary closed subgroup scheme of `GLₙ`, on defining ideals, schemes, and
+  points. The scheme morphism is a closed immersion and its composite with the target inclusion
+  is the source inclusion followed by conjugation.
 * `map_conj_kostantToralPointsSubgroup_le`: conjugation by `P` maps the points of one toral closure
   into those of a second when it maps its generators there.
 * `map_reindex_conj_kostantToralPointsSubgroup_eq` and `kostantToralPointsReindexConjMulEquiv`:
@@ -149,6 +152,118 @@ theorem comapOfSurjective_conjCoordinateIso_inv_le_kostantToralDefiningIdeal
       (hmatrix ▸ htorus _ _) (HopfIdeal.mem_comapOfSurjective.mp hy)
     rw [hc] at hzero
     exact hzero
+
+/-- The coordinate morphism from the quotient cut out by `J` to the toral-closure quotient,
+obtained by first transporting along conjugation by `P` and then applying the quotient map induced
+by the universal-property containment. Contravariantly, this presents the conjugated toral closure
+as a closed subgroup of the quotient by `J`. -/
+noncomputable def kostantToralConjCoordinateMap
+    (hroot : ∀ (A : Type) [CommRing A] (i : I)
+      (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P *
+          kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A)
+    (htorus : ∀ (A : Type) [CommRing A] (s : κ → Aˣ),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P * kostantTorusMatrix M b wt s *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A) :
+    CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n) J ⟶
+      CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+        (kostantToralDefiningIdeal e h ρ M hM hnil b wt) :=
+  (CommHopfAlgCat.quotientIsoOfIso (GeneralLinear.conjCoordinateIso P).symm J).inv ≫
+    CommHopfAlgCat.quotientMapOfLe (GeneralLinear.coordinateHopfAlgebra ℤ n)
+      (comapOfSurjective_conjCoordinateIso_inv_le_kostantToralDefiningIdeal
+        e h ρ M hM hnil b wt J P hroot htorus)
+
+/-- The conjugated quotient coordinate morphism is induced by the ambient conjugation coordinate
+automorphism. -/
+@[simp]
+theorem mkQuotient_comp_kostantToralConjCoordinateMap
+    (hroot : ∀ (A : Type) [CommRing A] (i : I)
+      (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P *
+          kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A)
+    (htorus : ∀ (A : Type) [CommRing A] (s : κ → Aˣ),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P * kostantTorusMatrix M b wt s *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A) :
+    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n) J ≫
+        kostantToralConjCoordinateMap e h ρ M hM hnil b wt J P hroot htorus =
+      (GeneralLinear.conjCoordinateIso P).hom ≫
+        CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+          (kostantToralDefiningIdeal e h ρ M hM hnil b wt) := by
+  rw [kostantToralConjCoordinateMap, ← Category.assoc,
+    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfIso_inv, Category.assoc,
+    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe]
+  rfl
+
+/-- **The closed immersion of the toral Kostant closure into the quotient cut out by `J`, after
+conjugation by `P`.** It exists whenever conjugation carries every root-subgroup generator and
+every weight-torus generator into that quotient. -/
+noncomputable def kostantToralConjToQuotient
+    (hroot : ∀ (A : Type) [CommRing A] (i : I)
+      (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P *
+          kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A)
+    (htorus : ∀ (A : Type) [CommRing A] (s : κ → Aˣ),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P * kostantTorusMatrix M b wt s *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A) :
+    kostantToralGroupScheme e h ρ M hM hnil b wt ⟶
+      CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra ℤ n) J :=
+  (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map
+    (kostantToralConjCoordinateMap e h ρ M hM hnil b wt J P hroot htorus).op
+
+/-- The conjugated toral closure is a closed subgroup scheme of the quotient cut out by `J`. -/
+instance isClosedImmersion_kostantToralConjToQuotient
+    (hroot : ∀ (A : Type) [CommRing A] (i : I)
+      (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P *
+          kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A)
+    (htorus : ∀ (A : Type) [CommRing A] (s : κ → Aˣ),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P * kostantTorusMatrix M b wt s *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A) :
+    AlgebraicGeometry.IsClosedImmersion
+      (kostantToralConjToQuotient e h ρ M hM hnil b wt J P hroot htorus).hom.hom.left := by
+  rw [kostantToralConjToQuotient,
+    CommHopfAlgCat.isClosedImmersion_hopfSpec_map_iff]
+  exact (CommHopfAlgCat.quotientMapOfLe_surjective _ _).comp
+    (ConcreteCategory.bijective_of_isIso
+      (CommHopfAlgCat.quotientIsoOfIso (GeneralLinear.conjCoordinateIso P).symm J).inv).2
+
+/-- The conjugated toral-closure immersion, followed by the target quotient inclusion, is the
+source quotient inclusion followed by conjugation on the ambient general-linear spectrum. -/
+@[simp]
+theorem kostantToralConjToQuotient_comp_quotientSpecι
+    (hroot : ∀ (A : Type) [CommRing A] (i : I)
+      (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P *
+          kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b q *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A)
+    (htorus : ∀ (A : Type) [CommRing A] (s : κ → Aˣ),
+      Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P * kostantTorusMatrix M b wt s *
+          (Matrix.GeneralLinearGroup.map (algebraMap ℤ A) P)⁻¹ ∈
+        GeneralLinear.hopfIdealPointsSubgroup n J A) :
+    kostantToralConjToQuotient e h ρ M hM hnil b wt J P hroot htorus ≫
+        CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra ℤ n) J =
+      CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra ℤ n)
+          (kostantToralDefiningIdeal e h ρ M hM hnil b wt) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map
+          (GeneralLinear.conjCoordinateIso P).hom.op := by
+  rw [kostantToralConjToQuotient, CommHopfAlgCat.quotientSpecι_def,
+    CommHopfAlgCat.quotientSpecι_def,
+    ← (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map_comp,
+    ← (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map_comp,
+    ← op_comp, ← op_comp, mkQuotient_comp_kostantToralConjCoordinateMap]
 
 /-- **The toral closure is carried into every closed subgroup scheme into which conjugation by `P`
 carries its generators.** -/

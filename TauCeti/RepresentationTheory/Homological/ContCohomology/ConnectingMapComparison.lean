@@ -31,11 +31,16 @@ H⁰_cont(G, C) ----delta 0--> H¹_cont(G, A)   H¹_cont(G, C) ----delta 1--> H�
 
 So a statement about the long exact sequence proved on explicit cocycles, such as the Kummer
 description of the connecting map, is a statement about the canonical long exact sequence.
+Conversely, exactness of the canonical sequence at `H²(G, C)` transports to the explicit model,
+where no `H³` exists: if `H³(G, A)` vanishes, the explicit coefficient map `H²(G, B) → H²(G, C)`
+is surjective.
 
 ## Main results
 
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitIso_delta0`: the degree-zero square.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitIso_delta1`: the degree-one square.
+* `TauCeti.ContCohomology.DiscreteShortExact.explicitCoeff2_proj_surjective_of_subsingleton`:
+  vanishing of `H³(G, A)` makes the explicit `H²(G, B) → H²(G, C)` surjective.
 
 ## References
 
@@ -178,5 +183,23 @@ theorem explicitIso_delta1 (x : DiscreteH1 G C) :
         have hδ := S.explicitDelta1_apply f hec he ha hae'
         rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, hf] at hδ
         rw [hδ, explicitH2IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply]
+
+omit [ContinuousSMul G A] in
+/-- **Vanishing of `H³(G, A)` makes `H²(G, B) → H²(G, C)` surjective** on the explicit second
+cohomology. The canonical connecting map `H²(G, C) → H³(G, A)` is zero, so exactness of the
+canonical long exact sequence at `H²(G, C)` makes the canonical coefficient map onto, and the
+degree-two comparison carries it to the explicit coefficient map. -/
+theorem explicitCoeff2_proj_surjective_of_subsingleton
+    [Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ G A))] :
+    Function.Surjective
+      (explicitCoeff2 G B S.projDistribMulActionHom continuous_of_discreteTopology) := by
+  intro y
+  obtain ⟨x, hx⟩ := (S.longExact_exact₃ 2 (explicitH2AddEquivContinuousCohomology G C y)).1
+    (Subsingleton.elim _ _)
+  refine ⟨(explicitH2AddEquivContinuousCohomology G B).symm x, ?_⟩
+  apply (explicitH2AddEquivContinuousCohomology G C).injective
+  rw [← explicitH2AddEquivContinuousCohomology_coeffMap, AddEquiv.apply_symm_apply,
+    S.ofDiscreteModuleMap_projDistribMulActionHom]
+  exact hx
 
 end TauCeti.ContCohomology.DiscreteShortExact

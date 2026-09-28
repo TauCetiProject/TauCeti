@@ -7,7 +7,12 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 public import TauCeti.RepresentationTheory.CharacterTable.Degree
+-- `FDRep.character_mem_irreducibleCharacters` is stated for a simple object of `FDRep k G`.
+public import TauCeti.RepresentationTheory.Simple.Basic
 import TauCeti.RepresentationTheory.FDRep
+-- Non-public: irreducibility transports along an equivariant linear equivalence, used to move an
+-- irreducible representation onto a coordinate space.
+import TauCeti.RepresentationTheory.Irreducible
 
 /-!
 # The character table of a finite group
@@ -109,9 +114,8 @@ variable (k : Type u) (G : Type v) [Field k] [Group G]
 /-- **The irreducible characters of `G` over `k`**: the set of characters of the irreducible
 representations of `G` on the coordinate spaces `Fin n → k`.
 
-Restricting to coordinate spaces costs nothing over an algebraically closed field in which `|G|` is
-invertible: by `TauCeti.character_mem_irreducibleCharacters` the character of an irreducible
-representation on any finite-dimensional space belongs to this set. -/
+Restricting to coordinate spaces costs nothing: by `TauCeti.character_mem_irreducibleCharacters` the
+character of an irreducible representation on any finite-dimensional space belongs to this set. -/
 def irreducibleCharacters : Set (G → k) :=
   {f | ∃ (n : ℕ) (ρ : Representation k G (Fin n → k)), ρ.IsIrreducible ∧ ρ.character = f}
 
@@ -126,20 +130,34 @@ theorem mem_irreducibleCharacters_iff {f : G → k} :
       ∃ (n : ℕ) (ρ : Representation k G (Fin n → k)), ρ.IsIrreducible ∧ ρ.character = f :=
   Iff.rfl
 
-variable [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
-
-/-- **Every irreducible character is an irreducible character**: the character of an irreducible
-representation on an arbitrary finite-dimensional space lies in `TauCeti.irreducibleCharacters`,
-because it is equivalent to one of the representations on a coordinate space. -/
+/-- **The character of an irreducible representation is an irreducible character**: the character
+of an irreducible representation on an arbitrary finite-dimensional space lies in
+`TauCeti.irreducibleCharacters`, because a basis transports it to an equivalent representation on a
+coordinate space. -/
 @[simp]
 theorem character_mem_irreducibleCharacters {V : Type w} [AddCommGroup V] [Module k V]
     [FiniteDimensional k V] (σ : Representation k G V) [σ.IsIrreducible] :
     σ.character ∈ irreducibleCharacters k G := by
-  have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
-  obtain ⟨d, ρ, hirr, hind, -⟩ := exists_irreducible_family_conjClasses k G
-  have := hirr
-  obtain ⟨C, ⟨e⟩⟩ := ClassFunction.exists_nonempty_equiv ρ hind rfl σ
-  exact ⟨d C, ρ C, hirr C, (_root_.Representation.char_iso e).symm⟩
+  let e : V ≃ₗ[k] (Fin (finrank k V) → k) := (Module.finBasis k V).equivFun
+  -- the representation `σ` transported along `e`
+  let ρ : Representation k G (Fin (finrank k V) → k) :=
+    { toFun g := e.conj (σ g)
+      map_one' := by simp [Module.End.one_eq_id, LinearEquiv.conj_id]
+      map_mul' g h := by simp [Module.End.mul_eq_comp, LinearEquiv.conj_comp] }
+  have he : ∀ g v, e (σ g v) = ρ g (e v) := fun g v => by
+    simp [ρ, LinearEquiv.conj_apply_apply]
+  exact ⟨_, ρ, Representation.isIrreducible_of_linearEquiv e he ‹_›,
+    (_root_.Representation.char_iso (Representation.Equiv.mk e fun g => LinearMap.ext (he g))).symm⟩
+
+/-- **The character of a simple object of `FDRep k G` is an irreducible character**, the bundled
+form of `TauCeti.character_mem_irreducibleCharacters`. -/
+@[simp]
+theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
+    [CategoryTheory.Simple X] : X.character ∈ irreducibleCharacters k G :=
+  have := FDRep.isIrreducible_of_simple X
+  TauCeti.character_mem_irreducibleCharacters X.ρ
+
+variable [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
 variable (k G)
 

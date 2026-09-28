@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 
@@ -65,6 +66,29 @@ noncomputable def quotientLieHom (I : HopfIdeal R H) :
         (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B) →ₗ⁅B⁆
       Derivation R H (Bialgebra.CounitAlgebra R H B) :=
   derivationCompLieHom (B := B) (Bialgebra.Quotient.mkBialgHom I.toIdeal)
+
+/-- The differential of a closed-subgroup inclusion is precomposition with the quotient map. -/
+theorem quotientLieHom_apply (I : HopfIdeal R H)
+    (d : Derivation R (H ⧸ I.toIdeal)
+      (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B)) :
+    quotientLieHom I d =
+      derivationComp (Bialgebra.Quotient.mkBialgHom I.toIdeal) d := by
+  exact derivationCompLieHom_apply _ _
+
+/-- The differential of a closed-subgroup inclusion intertwines the adjoint actions. -/
+@[simp]
+theorem quotientLieHom_adDerivation (I : HopfIdeal R H)
+    (g : WithConv ((H ⧸ I.toIdeal) →ₐ[R]
+      Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B))
+    (d : Derivation R (H ⧸ I.toIdeal)
+      (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B)) :
+    quotientLieHom I (Derivation.adDerivation B g d) =
+      Derivation.adDerivation B
+        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R H B)
+          (Bialgebra.Quotient.mkBialgHom I.toIdeal) g)
+        (quotientLieHom I d) := by
+  rw [quotientLieHom_apply, quotientLieHom_apply]
+  exact derivationComp_adDerivation _ g d
 
 /-- The closed-subgroup differential acts by precomposition with the quotient map. -/
 @[simp]

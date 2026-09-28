@@ -109,6 +109,20 @@ theorem binaryFormRep_op_neg_of_even (hw : Even w) (M : Matrix (Fin 2) (Fin 2) �
     binaryFormRep R w (op (-M)) = binaryFormRep R w (op M) := by
   rw [binaryFormRep_op_neg, hw.neg_one_pow, one_smul]
 
+/-- An integer scalar matrix acts on degree-`w` binary forms by its `w`th power. -/
+@[simp]
+theorem binaryFormRep_op_scalar (a : ℤ) :
+    binaryFormRep R w (op !![a, 0; 0, a]) =
+      (a : R) ^ w • (1 : Module.End R (homogeneousSubmodule (Fin 2) R w)) := by
+  have hmat : (!![a, 0; 0, a] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → R) =
+      (a : R) • (1 : Matrix (Fin 2) (Fin 2) R) := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.smul_apply]
+  apply LinearMap.ext
+  intro P
+  apply Subtype.ext
+  simp [hmat, P.2.linearSubst_smul]
+
 variable (R w)
 
 /-- The **period-polynomial space** `W_w = ker(1 + S) ∩ ker(1 + U + U²)` inside the binary forms
