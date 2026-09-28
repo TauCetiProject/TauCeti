@@ -40,8 +40,9 @@ The unbundled rational-preimage criterion is in `Spa/RationalSubset/Basis.lean`.
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, §6.5 for related adic homomorphisms and
-  Proposition 6.25 on maps from Tate rings, Definition 7.23 for morphisms of Huber pairs,
-  and Theorem 7.35 for the rational basis of quasi-compact opens used here.
+  Proposition 6.25 on maps from Tate rings, Definition 7.14(4) for morphisms of Huber pairs,
+  Remark and Definition 7.28 for their induced maps on `Spa`, and Theorem 7.35 for the rational
+  basis of quasi-compact opens used here.
 * R. Huber, *Continuous valuations*, Math. Z. 212 (1993), §3, for adic spectra and their
   rational subsets.
 -/

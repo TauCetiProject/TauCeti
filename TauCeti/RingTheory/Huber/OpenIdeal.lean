@@ -305,16 +305,11 @@ theorem IsTateRing.eq_top_of_isOpen [IsTateRing A] {J : Ideal A}
   obtain ⟨n, hn⟩ := hϖ.isTopologicallyNilpotent.exists_pow_mem_of_mem_nhds (hJ.mem_nhds J.zero_mem)
   exact Ideal.eq_top_of_isUnit_mem J hn (hϖ.isUnit.pow n)
 
-/-- A ring homomorphism from a Tate ring sends every open ideal to the unit ideal. -/
-theorem IsTateRing.map_eq_top_of_isOpen [IsTateRing A] {B : Type*} [CommRing B]
-    (f : A →+* B) {J : Ideal A} (hJ : IsOpen (J : Set A)) : Ideal.map f J = ⊤ := by
-  rw [IsTateRing.eq_top_of_isOpen hJ, Ideal.map_top]
-
 /-- A ring homomorphism from a Tate ring sends every open ideal to an open ideal. -/
 theorem IsTateRing.isOpen_map_of_isOpen [IsTateRing A] {B : Type*} [CommRing B]
     [TopologicalSpace B] (f : A →+* B) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
     IsOpen (Ideal.map f J : Set B) := by
-  rw [IsTateRing.map_eq_top_of_isOpen f hJ, Submodule.top_coe]
+  rw [IsTateRing.eq_top_of_isOpen hJ, Ideal.map_top, Submodule.top_coe]
   exact isOpen_univ
 
 /-- In a Tate ring, an ideal is open if and only if it is the whole ring `⊤`. -/

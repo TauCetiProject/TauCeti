@@ -70,8 +70,8 @@ the basis arguments uses it.
 * `TauCeti.ValuationSpectrum.spaComap_preimage_mem_spaRationalFamily`: a rational open pulls back
   to a rational open when the ring map sends open ideals to open ideals.
 * `TauCeti.ValuationSpectrum.exists_finite_spaRationalFamily_refinement`: every open cover of a
-  member of the family admits a finite refinement by members of the family — the two results
-  above combined, and the form a sheaf criterion on this basis consumes.
+  member of the family admits a finite refinement by members of the family — the basis and
+  compactness results combined, and the form a sheaf criterion on this basis consumes.
 * `TauCeti.ValuationSpectrum.spa_eq_biUnion_rationalSubset_of_isTateRing_of_isOpen`: over a Tate
   ring, if a finite set `T` generates an open ideal, then the standard rational subsets cover
   `spa Aplus` (Wedhorn Corollary 7.53 specialization).
