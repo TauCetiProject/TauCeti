@@ -318,27 +318,20 @@ private noncomputable def stableConflationTriangleIsoRotateLoopBaseChange :
     E.projectiveStableFunctor_map_cokernelMap_id _
       (hE.isProjective_I (hE.suspensionPresentation _)), Category.comp_id] at hδ₁ hδ₂
   have _ := isIso_projectiveStableFunctor_map_toLoopPullback hE hS sq
-  -- The connecting map `Z ⟶ ΣΩZ` of the loop conflation is a stable isomorphism.
-  let δ : S.X₃ ⟶ hE.suspensionObj Ω :=
-    hE.connectingMap (hE.enoughProjectives.conflation_loopInflation_loopDeflation S.X₃)
-  have _ : IsIso (q.map δ) :=
-    ⟨⟨q.map (hE.fromSuspensionLoop S.X₃),
-      by rw [← Functor.map_comp,
-        hE.projectiveStableFunctor_map_connectingMap_comp_fromSuspensionLoop],
-      by rw [← Functor.map_comp,
-        hE.projectiveStableFunctor_map_fromSuspensionLoop_comp_connectingMap]⟩⟩
+  -- The connecting map `Z ⟶ ΣΩZ` of the loop conflation is inverse to `ΣΩZ ≅ Z`.
   have hIso : T₁ ≅ T₂ := by
     refine Triangle.isoMk _ _ (asIso (q.map (hE.toLoopPullback sq))) (Iso.refl _)
-      (asIso (q.map δ) ≪≫ hE.stableSuspensionObjIsoShift Ω) ?_ ?_ ?_
+      ((hE.suspensionLoopIso S.X₃).symm ≪≫ hE.stableSuspensionObjIsoShift Ω) ?_ ?_ ?_
     · simp [T₁, T₂, S', q, ← Functor.map_comp]
-    · simp only [T₁, T₂, Triangle.mk_mor₂, Iso.trans_hom, asIso_hom, Iso.refl_hom,
-        Category.id_comp]
+    · simp only [T₁, T₂, Triangle.mk_mor₂, Iso.trans_hom, Iso.symm_hom, suspensionLoopIso_inv,
+        Iso.refl_hom, Category.id_comp]
       rw [← hδ₂, Category.assoc]
-    · simp only [T₁, T₂, Triangle.mk_mor₃, asIso_hom, Iso.trans_hom, Category.assoc]
+    · simp only [T₁, T₂, Triangle.mk_mor₃, asIso_hom, Iso.trans_hom, Iso.symm_hom,
+        suspensionLoopIso_inv, Category.assoc]
       rw [hE.projectiveStableFunctor_map_loopBaseChange_f hS sq, Functor.map_neg, neg_neg,
         Functor.map_comp, Functor.map_comp,
         ← hE.stableSuspensionObjIsoShift_hom_naturality_assoc, hδ₁]
-      simp only [Category.assoc, q, J, δ, Ω]
+      simp only [Category.assoc, q, J, Ω]
   simpa only [hT₁, hT₂] using hIso
 
 omit sq in

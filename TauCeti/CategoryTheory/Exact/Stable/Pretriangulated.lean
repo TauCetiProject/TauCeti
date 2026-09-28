@@ -56,6 +56,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
 
 /-- The contractible triangle `X ⟶ X ⟶ 0 ⟶ X⟦1⟧` is a distinguished stable triangle: it is the
 standard triangle of the split conflation `X ⟶ X ⟶ 0`. -/
+@[simp]
 theorem contractibleTriangle_mem_stableDistinguishedTriangles (X : E.ProjectiveStableCategory) :
     letI := hE.stableHasShift
     contractibleTriangle X ∈ hE.stableDistinguishedTriangles := by
