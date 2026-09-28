@@ -59,14 +59,12 @@ with `u = 1`, and this is the canonical representative of the pair.
 * `WeierstrassCurve.ofCInvariants_c₄`, `WeierstrassCurve.ofCInvariants_c₆` and
   `WeierstrassCurve.ofCInvariants_Δ`: its invariants are `c₄`, `c₆` and `(c₄³ - c₆²)/1728`.
 * `WeierstrassCurve.smul_ofCInvariants`: every Weierstrass equation is the
-  `(b₂/12, a₁/2, a₃/2)`-transform of the canonical equation with its own `c`-invariants. The
-  scaling factor is `1`, so a pair of `c`-invariants pins an equation down to that one change of
-  variables.
+  `(b₂/12, a₁/2, a₃/2)`-transform, with scaling factor `1`, of the canonical equation with its own
+  `c`-invariants. So the equations carrying a given pair of `c`-invariants form a single orbit
+  under the changes of variables with `u = 1`.
 * `WeierstrassCurve.map_ofCInvariants`, `WeierstrassCurve.baseChange_ofCInvariants` and
   `WeierstrassCurve.ofCInvariants_equation_iff`: the same transport and equation API that
   `shortCurve` carries, phrased on the canonical equation.
-* `WeierstrassCurve.Δ_eq_of_c₄_eq_of_c₆_eq`: two equations with the same `c`-invariants have the
-  same discriminant, wherever `1728` is a regular element.
 
 The classical discriminant `-16(4A³ + 27B²)` is *not* restated: it is Mathlib's `Δ_of_isShortNF`,
 which the instance below makes applicable and the coefficient lemmas reduce.
@@ -168,13 +166,6 @@ about an arbitrary `[W.IsShortNF]` reaches the explicit `y² = x³ + Ax + B` sha
       shortCurve (u⁻¹ ^ 4 * A) (u⁻¹ ^ 6 * B) := by
   ext <;> simp [variableChange_def]
 
-/-- **The discriminant is determined by the `c`-invariants**, wherever `1728` can be cancelled:
-`WeierstrassCurve.c_relation` pins `1728 * Δ` down to `c₄³ - c₆²`. -/
-lemma Δ_eq_of_c₄_eq_of_c₆_eq (h1728 : IsRegular (1728 : R)) {W W' : WeierstrassCurve R}
-    (h₄ : W.c₄ = W'.c₄) (h₆ : W.c₆ = W'.c₆) : W.Δ = W'.Δ := by
-  have h : (1728 : R) * W.Δ = 1728 * W'.Δ := by rw [c_relation, c_relation, h₄, h₆]
-  exact h1728.left h
-
 section CInvariants
 
 variable {K : Type*} [Field K]
@@ -251,9 +242,11 @@ variable (c₄ c₆ : K)
   field_simp
 
 /-- **Every Weierstrass equation is a translate of the canonical equation with its own
-`c`-invariants.** The change of variables is forced: it has `u = 1` because the two equations
-already share `c₄` and `c₆`, and `(r, s, t) = (b₂/12, a₁/2, a₃/2)` is the only triple returning
-the coefficients `a₁`, `a₂`, `a₃` of `W` from the vanishing ones of `ofCInvariants`.
+`c`-invariants.** The change of variables exhibited here takes the scaling factor to be `u = 1`;
+sharing `c₄` and `c₆` does not by itself force that choice, since `u = -1` scales `c₄` by `u⁻⁴ = 1`
+and `c₆` by `u⁻⁶ = 1` as well. Once `u = 1` is fixed, `(r, s, t) = (b₂/12, a₁/2, a₃/2)` is the only
+triple returning the coefficients `a₁`, `a₂`, `a₃` of `W` from the vanishing ones of
+`ofCInvariants`.
 
 Mathlib's `WeierstrassCurve.toShortNF` makes the opposite move, carrying `W` to *a* short
 equation, also with scaling factor `1`. This lemma is that move inverted and written out, which
