@@ -24,7 +24,10 @@ closed lower half-plane.  Unless the data vanish, `S` has no zero on the slit pl
 its closure.  The Pick characterization then produces the complete Bernstein function.
 
 No nonvanishing hypothesis is needed: zero data represent the zero function, whose reciprocal
-and conjugate are again zero because `0⁻¹ = 0`.
+and conjugate are again zero because `0⁻¹ = 0`.  So the statements here generalize the classical
+correspondence for nonzero functions to include the zero function, via Lean's convention
+`0⁻¹ = 0`.  Since `t ↦ f(t)⁻¹` only sees `f` on `(0, ∞)`, recovering that `f` itself is complete
+Bernstein also needs right-continuity at `0`, which pins down `f 0`.
 
 ## Main declarations
 
@@ -34,6 +37,8 @@ and conjugate are again zero because `0⁻¹ = 0`.
   Bernstein function is Stieltjes.
 * `TauCeti.isStieltjesFunction_iff_exists_isCompleteBernsteinFunction_eqOn_inv`: `f` is Stieltjes
   exactly when `t ↦ f(t)⁻¹` on `(0, ∞)` extends to a complete Bernstein function.
+* `TauCeti.isCompleteBernsteinFunction_iff_continuousWithinAt_isStieltjesFunction_inv`: `f` is
+  complete Bernstein exactly when it is right-continuous at `0` and `t ↦ f(t)⁻¹` is Stieltjes.
 
 ## References
 
@@ -105,6 +110,24 @@ theorem isStieltjesFunction_iff_exists_isCompleteBernsteinFunction_eqOn_inv :
   · rintro ⟨g, hg, hgf⟩
     refine hg.isStieltjesFunction_inv.congr fun t ht => ?_
     simp only [hgf ht, inv_inv]
+
+/-- **Complete Bernstein functions are the reciprocals of Stieltjes functions**
+(Schilling--Song--Vondraček, Chapter 7).  A function `f` is complete Bernstein exactly when it is
+right-continuous at `0` and `t ↦ f(t)⁻¹` is Stieltjes.  The continuity condition recovers `f 0`,
+which the reciprocal does not see; no nonvanishing hypothesis is needed, since for the zero
+function both sides hold. -/
+theorem isCompleteBernsteinFunction_iff_continuousWithinAt_isStieltjesFunction_inv (f : ℝ → ℝ) :
+    IsCompleteBernsteinFunction f ↔
+      ContinuousWithinAt f (Ici 0) 0 ∧ IsStieltjesFunction (fun t => (f t)⁻¹) := by
+  refine ⟨fun hf => ⟨hf.isBernsteinFunction.continuousOn.continuousWithinAt (mem_Ici.mpr le_rfl),
+    hf.isStieltjesFunction_inv⟩, fun ⟨hfc, hs⟩ => ?_⟩
+  -- `f` agrees on `(0, ∞)` with a complete Bernstein `g`; transfer `g`'s Pick extension to `f`.
+  obtain ⟨g, hg, hgf⟩ := isStieltjesFunction_iff_exists_isCompleteBernsteinFunction_eqOn_inv.mp hs
+  have hgf' : EqOn g f (Ioi 0) := fun t ht => by simp only [hgf ht, inv_inv]
+  obtain ⟨-, hpos, F, hF, hFf, him⟩ :=
+    (isCompleteBernsteinFunction_iff_continuousWithinAt_nonneg_exists_analyticOnNhd g).mp hg
+  refine (isCompleteBernsteinFunction_iff_continuousWithinAt_nonneg_exists_analyticOnNhd f).mpr
+    ⟨hfc, fun t ht => hgf' ht ▸ hpos t ht, F, hF, fun t ht => by rw [hFf t ht, hgf' ht], him⟩
 
 end TauCeti
 
