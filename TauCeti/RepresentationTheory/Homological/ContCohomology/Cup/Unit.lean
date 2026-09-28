@@ -30,8 +30,8 @@ level of homogeneous cochains: the Alexander–Whitney formula
 `(a ⌣ b) (g₀, …, g_{m+n}) = μ (a (g₀, …, g_m)) (b (g_m, …, g_{m+n}))` pairs every value of `a` with
 `u`, or `u` with every value of `a`. On the right the total degree `m + 0` is `m` by definition. On
 the left the total degree `0 + n` is only propositionally `n`, so the cochain-level identity carries
-the transport `HomologicalComplex.XIsoOfEq` and the class-level identity carries `eqToHom` along
-`continuousCohomology n X = continuousCohomology (0 + n) X`.
+the transport `HomologicalComplex.XIsoOfEq` and the class-level identity carries the transport
+`TauCeti.ContinuousCohomology.degreeCast` along `n = 0 + n`.
 
 ## Main results
 
@@ -145,10 +145,10 @@ discrete `G`-ring and its multiplication this is `1 ⌣ a = a`. -/
 @[simp]
 theorem cup_one_left (hinv : ∀ g : G, Y.ρ g u = u) (n : ℕ) (a : continuousCohomology n X) :
     P.cup 0 n (degreeZeroClass Y u hinv) a =
-      eqToHom (congrArg (continuousCohomology · X) (Nat.zero_add n).symm) a := by
+      (ContinuousCohomology.degreeCast X (Nat.zero_add n).symm).hom a := by
   obtain ⟨a, rfl⟩ := (homogeneousCochains X).homologyπ_surjective n a
   rw [← ContinuousCohomology.π_degreeZeroCocycle u hinv, cup_π]
-  refine ContinuousCohomology.π_eq_eqToHom_π (Nat.zero_add n).symm _ _ ?_
+  refine ContinuousCohomology.π_eq_degreeCast_π (Nat.zero_add n).symm _ _ ?_
   rw [iCycles_cupCocycles]
   exact P.cupCochain_degreeZeroCocycle_left u hu hinv n _
 
