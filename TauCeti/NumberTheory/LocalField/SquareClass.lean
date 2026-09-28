@@ -36,6 +36,8 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
 
 ## Main results
 
+* `TauCeti.card_squareClasses`: if `2` is nonzero, there are
+  `4 · #𝓀[K] ^ v_K(2)` square classes.
 * `TauCeti.card_squareClasses_dyadic`: a finite extension of `ℚ_[2]` has
   `4 · #𝓀[K] ^ e(K/ℚ_[2])` square classes.
 * `TauCeti.card_squareClass_dyadic` and `TauCeti.natCard_squareClassGroup_dyadic`: the same count
@@ -73,6 +75,13 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
+/-- **The number of square classes of a nonarchimedean local field.** If `2` is nonzero in `K`,
+then `Kˣ ⧸ (Kˣ)²` has `4 · #𝓀[K] ^ v_K(2)` elements. -/
+theorem card_squareClasses (h2 : (2 : K) ≠ 0) :
+    Nat.card (Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) =
+      4 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
+  rw [card_powerClasses h2, card_rootsOfUnity_two h2]
+
 /-- **The number of square classes of a dyadic local field.** If `K` is a finite compatible
 extension of `ℚ_[2]`, then `Kˣ ⧸ (Kˣ)²` has
 `4 · #𝓀[K] ^ e(K/ℚ_[2])` elements. -/
@@ -83,8 +92,7 @@ theorem card_squareClasses_dyadic [FinitePadicExtension K 2] :
   have h2 : (2 : K) ≠ 0 := by
     rw [← map_ofNat (algebraMap ℚ_[2] K) 2]
     exact (map_ne_zero _).mpr two_ne_zero
-  rw [card_powerClasses h2, card_rootsOfUnity_two h2,
-    ← absoluteRamificationIndex_eq_natCastValuation K 2]
+  rw [card_squareClasses h2, ← absoluteRamificationIndex_eq_natCastValuation K 2]
 
 /-- **The multiplicative square-class group of a dyadic local field.** This is
 `TauCeti.card_squareClasses_dyadic` read on the literal quotient `Kˣ ⧸ (Kˣ)²`;
