@@ -68,8 +68,10 @@ the invariant disc is `Subgroup.stabilizerBallQuotientChart_trans_apply`.
   `Subgroup.LinearizingCoordinate.quotientImage` with `…_isOpen_quotientImage` and
   `…_mem_quotientImage_iff`:
   the local quotient coordinate, its invariance, its level sets, and the open set of its values.
-* `Subgroup.LinearizingCoordinate.exists_quotientCoordinate_trans`: the biholomorphic
-  transition between the quotient coordinates of two local linearizing coordinates.
+* `Subgroup.LinearizingCoordinate.quotientCoordinateTrans`,
+  `…_quotientCoordinateTrans_mem_quotientImage` and `…_exists_quotientCoordinate_trans`: the
+  transition between the quotient coordinates of two local linearizing coordinates, the set of
+  quotient-coordinate values it maps into, and the biholomorphic transition it is.
 * `Subgroup.LinearizingCoordinate.discCoordinate` and `…_rotation`: the two reparametrizations
   available by construction, with `…_quotientCoordinate` and `…_quotientCoordinate_rotation`
   computing their quotient coordinates.
@@ -500,6 +502,16 @@ theorem LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinate
   simp only [transFun, coordinate, quotientCoordinate]
   rw [ψ.left_inv _ (mem_ball_discCoordinate τ)]
 
+/-- **The transition of the local quotient coordinates takes a quotient coordinate to a quotient
+coordinate**, so it maps the set of quotient-coordinate values of the first local linearizing
+coordinate into that of the second. -/
+theorem LinearizingCoordinate.quotientCoordinateTrans_mem_quotientImage
+    (ψ ψ' : Γ.LinearizingCoordinate z ε) {w : ℂ} (hw : w ∈ ψ.quotientImage) :
+    quotientCoordinateTrans ψ ψ' w ∈ ψ'.quotientImage := by
+  obtain ⟨τ, rfl⟩ := (ψ.mem_quotientImage_iff w).mp hw
+  exact (ψ'.mem_quotientImage_iff _).mpr
+    ⟨τ, quotientCoordinateTrans_quotientCoordinate ψ ψ' τ⟩
+
 /-- **The transitions of the local quotient coordinates in the two directions are inverse** on the
 set of quotient-coordinate values: the transition
 `Subgroup.LinearizingCoordinate.quotientCoordinateTrans ψ' ψ`, the transition in the other
@@ -533,8 +545,10 @@ disc of radius `ε`, constant on the orbits of the stabilizer of `z`
 `Subgroup.LinearizingCoordinate.quotientImage` of quotient-coordinate values, and the quotient
 coordinates of two local linearizing coordinates differ by a biholomorphic change of those open
 sets: a holomorphic map `T` between the two open sets of quotient-coordinate values with a
-holomorphic inverse `T'`, taking the quotient coordinate of a point of the invariant disc in the
-first local linearizing coordinate to its quotient coordinate in the second. The transition is
+holomorphic inverse `T'`, each taking the quotient-coordinate values of its own open set into the
+other (`Subgroup.LinearizingCoordinate.quotientCoordinateTrans_mem_quotientImage`), and taking
+the quotient coordinate of a point of the invariant disc in the first local linearizing coordinate
+to its quotient coordinate in the second. The transition is
 `Subgroup.LinearizingCoordinate.quotientCoordinateTrans`, the descent of the change of local
 linearizing coordinate `Subgroup.LinearizingCoordinate.transFun` through `u ↦ u ^ m`. -/
 theorem LinearizingCoordinate.exists_quotientCoordinate_trans (hε : 0 < ε)
@@ -543,6 +557,8 @@ theorem LinearizingCoordinate.exists_quotientCoordinate_trans (hε : 0 < ε)
       IsOpen ψ.quotientImage ∧ IsOpen ψ'.quotientImage ∧
       DifferentiableOn ℂ T ψ.quotientImage ∧
       DifferentiableOn ℂ T' ψ'.quotientImage ∧
+      (∀ w ∈ ψ.quotientImage, T w ∈ ψ'.quotientImage) ∧
+      (∀ w ∈ ψ'.quotientImage, T' w ∈ ψ.quotientImage) ∧
       (∀ τ : stabilizerBall Γ z ε, T (ψ.quotientCoordinate τ) = ψ'.quotientCoordinate τ) ∧
       (∀ τ : stabilizerBall Γ z ε, T' (ψ'.quotientCoordinate τ) = ψ.quotientCoordinate τ) ∧
       (∀ w ∈ ψ.quotientImage, (T' ∘ T) w = w) ∧
@@ -553,6 +569,8 @@ theorem LinearizingCoordinate.exists_quotientCoordinate_trans (hε : 0 < ε)
     LinearizingCoordinate.isOpen_quotientImage hε ψ',
     LinearizingCoordinate.differentiableOn_quotientCoordinateTrans hε ψ ψ',
     LinearizingCoordinate.differentiableOn_quotientCoordinateTrans hε ψ' ψ,
+    fun _ hw => LinearizingCoordinate.quotientCoordinateTrans_mem_quotientImage ψ ψ' hw,
+    fun _ hw => LinearizingCoordinate.quotientCoordinateTrans_mem_quotientImage ψ' ψ hw,
     fun _ => LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinate ψ ψ' _,
     fun _ => LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinate ψ' ψ _,
     fun _ hw =>
