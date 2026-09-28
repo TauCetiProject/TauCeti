@@ -19,7 +19,8 @@ prime `p` exactly when `p ≡ ±1 (mod 5)`; at `p = 5` the symbol is `0`.
 
 ## Main results
 
-* `TauCeti.ZMod.isSquare_natCast_five_iff`: the nonzero squares in `ZMod 5` are `1` and `4`.
+* `TauCeti.ZMod.isSquare_natCast_mod_five_iff_eq_one_or_eq_four`: the nonzero squares in
+  `ZMod 5` are `1` and `4`.
 * `TauCeti.legendreSym_five_eq_one_iff`: for an odd prime `p`, `legendreSym p 5 = 1` if and
   only if `p % 5 = 1 ∨ p % 5 = 4`.
 -/
@@ -29,7 +30,7 @@ public section
 namespace TauCeti
 
 /-- The nonzero squares in `ZMod 5` are `1` and `4`. -/
-theorem ZMod.isSquare_natCast_five_iff {r : ℕ} (hlt : r < 5) (hr0 : r ≠ 0) :
+theorem ZMod.isSquare_natCast_mod_five_iff_eq_one_or_eq_four {r : ℕ} (hlt : r < 5) (hr0 : r ≠ 0) :
     IsSquare ((r : ℕ) : ZMod 5) ↔ r = 1 ∨ r = 4 := by
   interval_cases r
   · exact absurd rfl hr0
@@ -63,6 +64,6 @@ theorem legendreSym_five_eq_one_iff {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) :
     rw [Int.cast_natCast, Ne, ZMod.natCast_eq_zero_iff]
     exact fun h => hr0 (Nat.mod_eq_zero_of_dvd h)
   rw [hrec, legendreSym.eq_one_iff _ hp0, Int.cast_natCast, ← ZMod.natCast_mod p 5]
-  exact ZMod.isSquare_natCast_five_iff (Nat.mod_lt _ (by norm_num)) hr0
+  exact ZMod.isSquare_natCast_mod_five_iff_eq_one_or_eq_four (Nat.mod_lt _ (by norm_num)) hr0
 
 end TauCeti
