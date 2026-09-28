@@ -12,9 +12,8 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 # Eisenstein polynomials over discrete valuation rings
 
 This file records the elementary consequence of the Eisenstein condition that the constant
-coefficient is a uniformizer, and conversely that `X ^ n - ϖ` is Eisenstein for every uniformizer
-`ϖ`.  It complements Mathlib's general Eisenstein criterion with the specialization to a discrete
-valuation ring.
+coefficient is a uniformizer.  It complements Mathlib's general Eisenstein criterion with the
+specialization to a discrete valuation ring.
 -/
 
 public section
@@ -62,21 +61,3 @@ theorem irreducible_coeff_zero {f : R[X]} (hf : f.IsEisensteinAt (maximalIdeal R
   exact Associated.irreducible ⟨u, by simpa [mul_comm] using hu.symm⟩ hϖ
 
 end Polynomial.IsEisensteinAt
-
-/-- Over a discrete valuation ring, `X ^ n - C ϖ` is Eisenstein at the maximal ideal for every
-uniformizer `ϖ` and every `n > 0`: the polynomial whose roots are the `n`-th roots of `ϖ`. -/
-theorem Irreducible.isEisensteinAt_X_pow_sub_C {R : Type*} [CommRing R] [IsDomain R]
-    [IsDiscreteValuationRing R] {ϖ : R} (hϖ : Irreducible ϖ) {n : ℕ} (hn : 0 < n) :
-    (Polynomial.X ^ n - Polynomial.C ϖ).IsEisensteinAt (maximalIdeal R) := by
-  refine (Polynomial.monic_X_pow_sub_C ϖ hn.ne').isEisensteinAt_of_mem_of_notMem
-    (maximalIdeal.isMaximal R).ne_top (fun {m} hm ↦ ?_) ?_
-  · rw [Polynomial.natDegree_X_pow_sub_C] at hm
-    rcases eq_or_ne m 0 with rfl | hm0
-    · rw [hϖ.maximalIdeal_eq]
-      simp [hn.ne]
-    · simp [Polynomial.coeff_X_pow, Polynomial.coeff_C, hm0, hm.ne]
-  · have hsq : ¬ϖ ^ 2 ∣ ϖ ^ 1 := by
-      rw [pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit]
-      lia
-    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
-    simpa [Polynomial.coeff_X_pow, hn.ne] using hsq

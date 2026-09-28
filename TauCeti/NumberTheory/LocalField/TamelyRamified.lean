@@ -9,9 +9,9 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 import Mathlib.FieldTheory.IntermediateField.Algebraic
-import Mathlib.RingTheory.Polynomial.GaussLemma
+import Mathlib.RingTheory.OrderOfVanishing.Noetherian
+import TauCeti.FieldTheory.KummerExtension
 import TauCeti.NumberTheory.LocalField.PowerSubgroup
-import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 
 /-!
 # Totally and tamely ramified extensions of local fields
@@ -29,8 +29,6 @@ has even valuation and lies in a different square class from every uniformizer.
 
 ## Main results
 
-* `TauCeti.X_pow_sub_C_irreducible_of_irreducible`: for a uniformizer `ϖ` of `K` and `n > 0`,
-  the polynomial `X ^ n - ϖ` is irreducible over `K`.
 * `TauCeti.IsTotallyRamified.exists_eq_algebraMap_mul_pow`: in a totally ramified extension,
   every unit of `𝒪[L]` is a unit of `𝒪[K]` times the `n`-th power of a unit of `𝒪[L]`, for every
   `n` invertible in `𝒪[L]`.
@@ -43,7 +41,8 @@ has even valuation and lies in a different square class from every uniformizer.
 The proof needs no enlargement of the residue field. Writing the image of a uniformizer of `K` as
 `u · ϖ_L ^ e`, the unit `u` is a unit of `𝒪[K]` times an `e`-th power, because the residue fields
 agree and `e` is invertible in `𝒪[L]`; absorbing these factors gives `α ^ e = π`. Since
-`X ^ e - π` is Eisenstein, `[K(α) : K] = e = [L : K]`.
+`π` has order `1` for the valuation of `𝒪[K]`, `X ^ e - π` is irreducible by
+`Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one`, so `[K(α) : K] = e = [L : K]`.
 
 ## References
 
@@ -60,16 +59,6 @@ namespace TauCeti
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-/-- **Eisenstein's criterion for radicals of a uniformizer.** For a uniformizer `ϖ` of a
-nonarchimedean local field `K` and `n > 0`, the polynomial `X ^ n - ϖ` is irreducible over `K`. -/
-theorem X_pow_sub_C_irreducible_of_irreducible {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) {n : ℕ}
-    (hn : 0 < n) : Irreducible (X ^ n - C (ϖ : K)) := by
-  have hmon : (X ^ n - C ϖ).Monic := monic_X_pow_sub_C ϖ hn.ne'
-  have h := (hϖ.isEisensteinAt_X_pow_sub_C hn).irreducible (maximalIdeal.isMaximal _).isPrime
-    hmon.isPrimitive (by rwa [natDegree_X_pow_sub_C])
-  simpa [Algebra.algebraMap_ofSubsemiring_apply] using
-    (hmon.irreducible_iff_irreducible_map_fraction_map (K := K)).1 h
 
 variable [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
   [Algebra K L] [ValuativeExtension K L]
@@ -147,10 +136,17 @@ theorem IsTotallyRamified.exists_pow_eq_uniformizer_of_isTamelyRamified (h : IsT
   refine ⟨Units.mk0 (ϖK : K) hϖK0, Units.mk0 (ϖα : L) hϖα0,
     (isUniformizer_iff_exists_irreducible K _).2 ⟨ϖK, hϖK, rfl⟩,
     (isUniformizer_iff_exists_irreducible L _).2 ⟨ϖα, hϖα, rfl⟩, hαpow, ?_⟩
-  -- `X ^ e - ϖK` is irreducible over `K`, so it is the minimal polynomial of `ϖα`
+  -- `ϖK` has order `1`, so `X ^ e - ϖK` is irreducible over `K` and is the minimal polynomial
+  -- of `ϖα`
+  have hirr : Irreducible (X ^ e - C (ϖK : K)) := by
+    refine Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one
+      ((IsDiscreteValuationRing.maximalIdeal 𝒪[K]).valuation K) he0.ne' ?_
+    have hord := Ring.ordFrac_irreducible (K := K) hϖK
+    rw [Ring.ordFrac_eq_valuation_inv, inv_eq_iff_eq_inv, ← WithZero.exp_neg] at hord
+    simp only [Algebra.algebraMap_ofSubsemiring_apply] at hord
+    simp [Valuation.ord_def, hord]
   have hmin : minpoly K (ϖα : L) = X ^ e - C (ϖK : K) :=
-    (minpoly.eq_of_irreducible_of_monic (X_pow_sub_C_irreducible_of_irreducible hϖK he0)
-      (by simp [hαpow]) (monic_X_pow_sub_C _ he0.ne')).symm
+    (minpoly.eq_of_irreducible_of_monic hirr (by simp [hαpow]) (monic_X_pow_sub_C _ he0.ne')).symm
   refine IntermediateField.eq_of_le_of_finrank_eq le_top ?_
   rw [Units.val_mk0, IntermediateField.finrank_top',
     IntermediateField.adjoin.finrank (.of_finite K _), hmin, natDegree_X_pow_sub_C]
