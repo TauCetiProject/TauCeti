@@ -33,6 +33,7 @@ variable {R : Type*} [CommRing R] (A : Type*) [Ring A] [Algebra R A]
 
 /-- The kernel of `A ⊗[R] C → A ⊗[R] (C ⧸ I)` is the extension of `I` along
 `C → A ⊗[R] C`. -/
+@[simp]
 theorem ker_map_id_mkₐ (I : Ideal C) :
     RingHom.ker (map (AlgHom.id R A) (Ideal.Quotient.mkₐ R I)) =
       I.map (includeRight : C →ₐ[R] A ⊗[R] C) := by

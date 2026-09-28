@@ -29,6 +29,7 @@ open PrimeSpectrum
 variable {R : Type*} [CommRing R]
 
 /-- The closed subset `V(I)` of `Spec R` has the Krull dimension of `R ⧸ I`. -/
+@[simp]
 theorem topologicalKrullDim_zeroLocus (I : Ideal R) :
     topologicalKrullDim (PrimeSpectrum.zeroLocus (I : Set R)) = ringKrullDim (R ⧸ I) := by
   have hi := isClosedEmbedding_comap_of_surjective _ _ (Quotient.mk_surjective (I := I))
