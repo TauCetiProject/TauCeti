@@ -21,6 +21,9 @@ residue characteristic, its local Hasse invariant is the sign
 `∏_{i<j} (aᵢ, aⱼ)ₖ`. Witt's chain theorem makes this independent of the diagonalization:
 the Hilbert symbol is symmetric, multiplicative, and constant on isometric binary forms.
 
+This odd-residue construction supplies one case of the roadmap's unrestricted `localHasse`.
+The dyadic case requires the unrestricted Hilbert-symbol laws and is not defined here.
+
 The orthogonal-sum formula has a cross term given by the Hilbert symbol of the two
 discriminants. This is the convention of Serre's `ε` and Lam's `s`; O'Meara's product
 over `i ≤ j` uses a different convention.
