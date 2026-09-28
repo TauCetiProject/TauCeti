@@ -55,7 +55,8 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega V : Opens E}
   {u u' : E → F} {U : E → E →L[ℝ] F} {v h : E}
 
-local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
+local instance weakDerivTranslation_isAddHaarMeasure :
+    (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
   rw [Opens.coe_top, Measure.restrict_univ]
   infer_instance
 
