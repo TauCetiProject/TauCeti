@@ -60,32 +60,33 @@ namespace TauCeti
 
 /-- If a sum of measures is a Dirac mass, both summands are multiples of that Dirac mass. -/
 theorem measure_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
-    [MeasurableSingletonClass X] {μ ν : Measure X} {x : X}
+    {μ ν : Measure X} {x : X}
     (h : μ + ν = Measure.dirac x) :
-    μ = μ {x} • Measure.dirac x ∧ ν = ν {x} • Measure.dirac x := by
-  have hcomp : μ {x}ᶜ + ν {x}ᶜ = 0 := by
-    have h' := congrArg (fun η : Measure X => η {x}ᶜ) h
-    simpa [Measure.add_apply, Measure.dirac_apply' _ (measurableSet_singleton x).compl] using h'
-  have hμ : μ {x}ᶜ = 0 := by
-    apply le_antisymm _ zero_le
-    calc
-      μ {x}ᶜ ≤ μ {x}ᶜ + ν {x}ᶜ := le_add_of_nonneg_right zero_le
-      _ = 0 := hcomp
-  have hν : ν {x}ᶜ = 0 := by
-    apply le_antisymm _ zero_le
-    calc
-      ν {x}ᶜ ≤ μ {x}ᶜ + ν {x}ᶜ := le_add_of_nonneg_left zero_le
-      _ = 0 := hcomp
+    μ = μ Set.univ • Measure.dirac x ∧ ν = ν Set.univ • Measure.dirac x := by
+  have hzero (s : Set X) (hs : MeasurableSet s) (hx : x ∉ s) :
+      μ s = 0 ∧ ν s = 0 := by
+    have h' := congrArg (fun η : Measure X => η s) h
+    rw [Measure.add_apply, Measure.dirac_apply' _ hs,
+      Set.indicator_of_notMem hx] at h'
+    exact add_eq_zero.mp h'
   constructor
-  · calc
-      μ = μ.restrict {x} + μ.restrict {x}ᶜ :=
-        (Measure.restrict_add_restrict_compl (measurableSet_singleton x)).symm
-      _ = μ {x} • Measure.dirac x := by
-        rw [Measure.restrict_eq_zero.mpr hμ, add_zero, Measure.restrict_singleton]
-  · calc
-      ν = ν.restrict {x} + ν.restrict {x}ᶜ :=
-        (Measure.restrict_add_restrict_compl (measurableSet_singleton x)).symm
-      _ = ν {x} • Measure.dirac x := by
-        rw [Measure.restrict_eq_zero.mpr hν, add_zero, Measure.restrict_singleton]
+  · apply Measure.ext
+    intro s hs
+    by_cases hx : x ∈ s
+    · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
+        Set.indicator_of_mem hx, Pi.one_apply, smul_eq_mul, mul_one]
+      exact measure_of_measure_compl_eq_zero (hzero sᶜ hs.compl (by simpa)).1
+    · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
+        Set.indicator_of_notMem hx, smul_eq_mul, mul_zero]
+      exact (hzero s hs hx).1
+  · apply Measure.ext
+    intro s hs
+    by_cases hx : x ∈ s
+    · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
+        Set.indicator_of_mem hx, Pi.one_apply, smul_eq_mul, mul_one]
+      exact measure_of_measure_compl_eq_zero (hzero sᶜ hs.compl (by simpa)).2
+    · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
+        Set.indicator_of_notMem hx, smul_eq_mul, mul_zero]
+      exact (hzero s hs hx).2
 
 end TauCeti

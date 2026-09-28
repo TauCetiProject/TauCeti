@@ -48,10 +48,10 @@ theorem exponential_extreme_ray {f g : ℝ → ℝ} (p : ℝ≥0)
   have hsum : μ + ν = Measure.dirac p :=
     (hμ.add hν).unique ((representsLaplace_dirac p).congr (fun t ht => hfg t ht))
   obtain ⟨hμdirac, hνdirac⟩ := measure_eq_smul_dirac_of_add_eq_dirac hsum
-  let a : ℝ≥0 := (μ {p}).toNNReal
-  let b : ℝ≥0 := (ν {p}).toNNReal
-  have ha : (a : ℝ≥0∞) = μ {p} := ENNReal.coe_toNNReal (measure_ne_top μ {p})
-  have hb : (b : ℝ≥0∞) = ν {p} := ENNReal.coe_toNNReal (measure_ne_top ν {p})
+  let a : ℝ≥0 := (μ Set.univ).toNNReal
+  let b : ℝ≥0 := (ν Set.univ).toNNReal
+  have ha : (a : ℝ≥0∞) = μ Set.univ := ENNReal.coe_toNNReal (measure_ne_top μ Set.univ)
+  have hb : (b : ℝ≥0∞) = ν Set.univ := ENNReal.coe_toNNReal (measure_ne_top ν Set.univ)
   have hfa : RepresentsLaplace μ (fun t => (a : ℝ) * Real.exp (-(t * (p : ℝ)))) := by
     rw [hμdirac, ← ha]
     exact (representsLaplace_dirac p).smul a
