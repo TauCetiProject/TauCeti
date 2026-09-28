@@ -247,38 +247,106 @@ def dedekindPrimeThreeQuotEquiv :
   (quotEquivOfEq (dedekindPrimeThree_eq_ker hmin hgen)).trans
     (RingHom.quotientKerEquivOfSurjective (ZMod.ringHom_surjective _))
 
-/-- Reduction modulo `(2, θ, β)` sends `a + bθ + cβ` to `a`. -/
-@[simp] theorem dedekindPrimeOneQuotEquiv_mk (a b c : ℤ) :
-    a + b * dedekindPrimeOneQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) +
-        c * dedekindPrimeOneQuotEquiv hmin hgen
-          (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) =
-      (a : ZMod 2) := by
+/-- Reduction modulo `(2, θ, β)` sends `θ` to `0`. -/
+@[simp] theorem dedekindPrimeOneQuotEquiv_mk_theta :
+    dedekindPrimeOneQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) = 0 := by
   simp only [dedekindPrimeOneQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
-    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta, residueHom_beta]
-  push_cast
+    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta]
+  simp
+
+/-- Reduction modulo `(2, θ, β)` sends `β` to `0`. -/
+@[simp] theorem dedekindPrimeOneQuotEquiv_mk_beta :
+    dedekindPrimeOneQuotEquiv hmin hgen
+        (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) = 0 := by
+  simp only [dedekindPrimeOneQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_beta]
+  simp
+
+/-- Reduction modulo `(2, θ, β)` sends `a + bθ + cβ` to `a`. -/
+theorem dedekindPrimeOneQuotEquiv_mk (a b c : ℤ) :
+    dedekindPrimeOneQuotEquiv hmin hgen
+        (Ideal.Quotient.mk _ (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin))) =
+      (a : ZMod 2) := by
+  simp only [map_add, map_mul, map_intCast, dedekindPrimeOneQuotEquiv_mk_theta,
+    dedekindPrimeOneQuotEquiv_mk_beta]
   ring
+
+/-- An algebraic integer `a + bθ + cβ` lies in `(2, θ, β)` exactly when `2 ∣ a`. -/
+theorem mem_dedekindPrimeOne_iff (a b c : ℤ) :
+    (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin) : 𝓞 K) ∈
+        dedekindPrimeOne (dedekindCubic_relation hmin) ↔ 2 ∣ a := by
+  rw [← Quotient.eq_zero_iff_mem,
+    ← map_eq_zero_iff _ (dedekindPrimeOneQuotEquiv hmin hgen).injective,
+    dedekindPrimeOneQuotEquiv_mk, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  norm_num
+
+/-- Reduction modulo `(2, θ, β - 1)` sends `θ` to `0`. -/
+@[simp] theorem dedekindPrimeTwoQuotEquiv_mk_theta :
+    dedekindPrimeTwoQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) = 0 := by
+  simp only [dedekindPrimeTwoQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta]
+  simp
+
+/-- Reduction modulo `(2, θ, β - 1)` sends `β` to `1`. -/
+@[simp] theorem dedekindPrimeTwoQuotEquiv_mk_beta :
+    dedekindPrimeTwoQuotEquiv hmin hgen
+        (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) = 1 := by
+  simp only [dedekindPrimeTwoQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_beta]
+  simp
 
 /-- Reduction modulo `(2, θ, β - 1)` sends `a + bθ + cβ` to `a + c`. -/
-@[simp] theorem dedekindPrimeTwoQuotEquiv_mk (a b c : ℤ) :
-    a + b * dedekindPrimeTwoQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) +
-        c * dedekindPrimeTwoQuotEquiv hmin hgen
-          (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) =
+theorem dedekindPrimeTwoQuotEquiv_mk (a b c : ℤ) :
+    dedekindPrimeTwoQuotEquiv hmin hgen
+        (Ideal.Quotient.mk _ (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin))) =
       ((a + c : ℤ) : ZMod 2) := by
-  simp only [dedekindPrimeTwoQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
-    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta, residueHom_beta]
+  simp only [map_add, map_mul, map_intCast, dedekindPrimeTwoQuotEquiv_mk_theta,
+    dedekindPrimeTwoQuotEquiv_mk_beta]
   push_cast
   ring
 
-/-- Reduction modulo `(2, θ - 1, β - 1)` sends `a + bθ + cβ` to `a + b + c`. -/
-@[simp] theorem dedekindPrimeThreeQuotEquiv_mk (a b c : ℤ) :
-    a + b * dedekindPrimeThreeQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) +
-        c * dedekindPrimeThreeQuotEquiv hmin hgen
-          (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) =
-      ((a + b + c : ℤ) : ZMod 2) := by
+/-- An algebraic integer `a + bθ + cβ` lies in `(2, θ, β - 1)` exactly when `2 ∣ a + c`. -/
+theorem mem_dedekindPrimeTwo_iff (a b c : ℤ) :
+    (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin) : 𝓞 K) ∈
+        dedekindPrimeTwo (dedekindCubic_relation hmin) ↔ 2 ∣ a + c := by
+  rw [← Quotient.eq_zero_iff_mem,
+    ← map_eq_zero_iff _ (dedekindPrimeTwoQuotEquiv hmin hgen).injective,
+    dedekindPrimeTwoQuotEquiv_mk, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  norm_num
+
+/-- Reduction modulo `(2, θ - 1, β - 1)` sends `θ` to `1`. -/
+@[simp] theorem dedekindPrimeThreeQuotEquiv_mk_theta :
+    dedekindPrimeThreeQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) = 1 := by
   simp only [dedekindPrimeThreeQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
-    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta, residueHom_beta]
+    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta]
+  simp
+
+/-- Reduction modulo `(2, θ - 1, β - 1)` sends `β` to `1`. -/
+@[simp] theorem dedekindPrimeThreeQuotEquiv_mk_beta :
+    dedekindPrimeThreeQuotEquiv hmin hgen
+        (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) = 1 := by
+  simp only [dedekindPrimeThreeQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_beta]
+  simp
+
+/-- Reduction modulo `(2, θ - 1, β - 1)` sends `a + bθ + cβ` to `a + b + c`. -/
+theorem dedekindPrimeThreeQuotEquiv_mk (a b c : ℤ) :
+    dedekindPrimeThreeQuotEquiv hmin hgen
+        (Ideal.Quotient.mk _ (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin))) =
+      ((a + b + c : ℤ) : ZMod 2) := by
+  simp only [map_add, map_mul, map_intCast, dedekindPrimeThreeQuotEquiv_mk_theta,
+    dedekindPrimeThreeQuotEquiv_mk_beta]
   push_cast
   ring
+
+/-- An algebraic integer `a + bθ + cβ` lies in `(2, θ - 1, β - 1)` exactly when `2 ∣ a + b + c`. -/
+theorem mem_dedekindPrimeThree_iff (a b c : ℤ) :
+    (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin) : 𝓞 K) ∈
+        dedekindPrimeThree (dedekindCubic_relation hmin) ↔ 2 ∣ a + b + c := by
+  rw [← Quotient.eq_zero_iff_mem,
+    ← map_eq_zero_iff _ (dedekindPrimeThreeQuotEquiv hmin hgen).injective,
+    dedekindPrimeThreeQuotEquiv_mk, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  norm_num
 
 /-- The ideal `(2, θ, β)` is maximal. -/
 theorem isMaximal_dedekindPrimeOne :
@@ -317,19 +385,19 @@ theorem liesOver_dedekindPrimeThree :
     (subset_span (by simp))
 
 /-- The prime `(2, θ, β)` has absolute norm `2`: its residue field has two elements. -/
-theorem absNorm_dedekindPrimeOne :
+@[simp] theorem absNorm_dedekindPrimeOne :
     absNorm (dedekindPrimeOne (dedekindCubic_relation hmin)) = 2 := by
   rw [absNorm_apply, Submodule.cardQuot_apply,
     Nat.card_congr (dedekindPrimeOneQuotEquiv hmin hgen).toEquiv, Nat.card_zmod]
 
 /-- The prime `(2, θ, β - 1)` has absolute norm `2`: its residue field has two elements. -/
-theorem absNorm_dedekindPrimeTwo :
+@[simp] theorem absNorm_dedekindPrimeTwo :
     absNorm (dedekindPrimeTwo (dedekindCubic_relation hmin)) = 2 := by
   rw [absNorm_apply, Submodule.cardQuot_apply,
     Nat.card_congr (dedekindPrimeTwoQuotEquiv hmin hgen).toEquiv, Nat.card_zmod]
 
 /-- The prime `(2, θ - 1, β - 1)` has absolute norm `2`: its residue field has two elements. -/
-theorem absNorm_dedekindPrimeThree :
+@[simp] theorem absNorm_dedekindPrimeThree :
     absNorm (dedekindPrimeThree (dedekindCubic_relation hmin)) = 2 := by
   rw [absNorm_apply, Submodule.cardQuot_apply,
     Nat.card_congr (dedekindPrimeThreeQuotEquiv hmin hgen).toEquiv, Nat.card_zmod]

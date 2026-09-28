@@ -90,7 +90,7 @@ theorem monicIrreduciblesOfDegree_one :
 variable (R) in
 /-- Over a domain there are as many monic irreducible polynomials of degree one as elements of
 the coefficient ring. -/
-theorem ncard_monicIrreduciblesOfDegree_one :
+@[simp] theorem ncard_monicIrreduciblesOfDegree_one :
     (monicIrreduciblesOfDegree R 1).ncard = Nat.card R := by
   rw [monicIrreduciblesOfDegree_one]
   exact Set.ncard_range_of_injective fun a b h => by simpa using h
