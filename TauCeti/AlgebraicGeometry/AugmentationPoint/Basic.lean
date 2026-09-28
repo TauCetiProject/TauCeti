@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Scheme
-public import TauCeti.Algebra.Algebra.Hom
 
 /-!
 # The spectrum point defined by an augmentation
