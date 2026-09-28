@@ -19,6 +19,9 @@ where the source is regarded as a module by scalar extension.
 Unlike scalar extension, Scharlau transfer is not generally multiplicative. It is therefore
 packaged as an additive homomorphism, with the projection formula recording its module-linearity.
 
+Throughout, the Witt ring of an extension field is formed with respect to the invertibility of `2`
+supplied by `TauCeti.invertibleTwoOfBaseField`.
+
 ## Main definitions
 
 * `TauCeti.WittRing.scharlauTransfer`: Scharlau transfer as an additive homomorphism on Witt
@@ -53,18 +56,25 @@ universe u v w
 variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
   [FiniteDimensional K L] [Invertible (2 : K)]
 
+/-- Invertibility of `2` in an extension field, induced from the base field. Every Witt ring in
+this module is formed with respect to this instance.
+
+The inverse is taken in the extension rather than transported along `algebraMap K L`, so that the
+resulting instance does not mention the base field: the tower law compares the instances obtained
+over `K` and over an intermediate field. -/
+@[expose, instance_reducible]
+def invertibleTwoOfBaseField (K : Type*) (L : Type*) [Field K] [Field L] [Algebra K L]
+    [Invertible (2 : K)] : Invertible (2 : L) :=
+  invertibleOfNonzero <|
+    letI : Invertible (2 : L) := (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    Invertible.ne_zero (2 : L)
+
 /-- Scharlau transfer on Witt–Grothendieck rings. This is only an additive homomorphism:
 transfer is not generally compatible with multiplication. -/
 def WittGrothendieckRing.scharlauTransfer (s : L →ₗ[K] K) (hs : s ≠ 0) :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     WittGrothendieckRing L →+ WittGrothendieckRing K :=
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   (WittGrothendieckRing.equivGrothendieck (K := K)).symm.toAddEquiv.toAddMonoidHom.comp <|
     (Algebra.GrothendieckAddGroup.lift
       ((Algebra.GrothendieckAddGroup.of :
@@ -76,16 +86,10 @@ def WittGrothendieckRing.scharlauTransfer (s : L →ₗ[K] K) (hs : s ≠ 0) :
 @[simp]
 theorem WittGrothendieckRing.scharlauTransfer_toWittGrothendieck (s : L →ₗ[K] K)
     (hs : s ≠ 0) (x : RegularFormClass L) :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     WittGrothendieckRing.scharlauTransfer s hs (toWittGrothendieck x) =
       toWittGrothendieck (RegularFormClass.scharlauTransfer s hs x) := by
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   apply (WittGrothendieckRing.equivGrothendieck (K := K)).injective
   rw [WittGrothendieckRing.scharlauTransfer, AddMonoidHom.comp_apply]
   -- Unfold the two Grothendieck equivalences so that `lift_apply_of` exposes the
@@ -106,22 +110,17 @@ theorem WittGrothendieckRing.scharlauTransfer_toWittGrothendieck (s : L →ₗ[K
 /-- Scharlau transfer carries the hyperbolic ideal into the hyperbolic ideal. -/
 theorem WittGrothendieckRing.scharlauTransfer_mem_hyperbolicIdeal (s : L →ₗ[K] K)
     (hs : s ≠ 0) {x : WittGrothendieckRing L} :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     x ∈ hyperbolicIdeal L →
     WittGrothendieckRing.scharlauTransfer s hs x ∈ hyperbolicIdeal K := by
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   intro hx
   obtain ⟨n, rfl⟩ := mem_hyperbolicIdeal_iff.mp hx
   have hhyper := RegularFormClass.scharlauTransfer_hyperbolicClass s hs
-  have hinst : ((Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm) =
-      (inferInstance : Invertible (2 : L)) := Subsingleton.elim _ _
-  rw [hinst] at hhyper
+  -- `Transfer/Class/Frobenius` states its result for the transported instance; `Invertible` is a
+  -- subsingleton, so it agrees with the instance used here.
+  rw [Subsingleton.elim ((Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm)
+    (invertibleTwoOfBaseField K L)] at hhyper
   rw [map_zsmul, WittGrothendieckRing.scharlauTransfer_toWittGrothendieck,
     hhyper, map_nsmul]
   apply mem_hyperbolicIdeal_iff.mpr
@@ -129,16 +128,10 @@ theorem WittGrothendieckRing.scharlauTransfer_mem_hyperbolicIdeal (s : L →ₗ[
   simp [mul_assoc]
 
 private def WittRing.scharlauTransferDescentData (s : L →ₗ[K] K) (hs : s ≠ 0) :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     { f : WittGrothendieckRing L →+ WittRing K //
       (WittRing.mk (K := L)).toAddMonoidHom.ker ≤ f.ker } :=
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   ⟨(WittRing.mk (K := K)).toAddMonoidHom.comp
       (WittGrothendieckRing.scharlauTransfer s hs), fun x hx ↦ by
       rw [AddMonoidHom.mem_ker] at hx ⊢
@@ -152,15 +145,9 @@ private def WittRing.scharlauTransferDescentData (s : L →ₗ[K] K) (hs : s ≠
 /-- **Scharlau transfer on Witt rings.** Transfer along a nonzero `K`-linear functional
 `s : L → K` descends to an additive homomorphism from `W(L)` to `W(K)`. -/
 def WittRing.scharlauTransfer (s : L →ₗ[K] K) (hs : s ≠ 0) :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     WittRing L →+ WittRing K :=
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   (WittRing.mk (K := L)).toAddMonoidHom.liftOfSurjective WittRing.mk_surjective
       (WittRing.scharlauTransferDescentData s hs)
 
@@ -168,16 +155,10 @@ def WittRing.scharlauTransfer (s : L →ₗ[K] K) (hs : s ≠ 0) :
 @[simp]
 theorem WittRing.scharlauTransfer_mk (s : L →ₗ[K] K) (hs : s ≠ 0)
     (x : WittGrothendieckRing L) :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     WittRing.scharlauTransfer s hs (WittRing.mk x) =
       WittRing.mk (K := K) (WittGrothendieckRing.scharlauTransfer s hs x) := by
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   have hmk (z : WittGrothendieckRing L) :
       (WittRing.mk (K := L)).toAddMonoidHom z = WittRing.mk z := by
     exact DFunLike.congr_fun (RingHom.toAddMonoidHom_eq_coe (WittRing.mk (K := L))) z
@@ -192,16 +173,10 @@ theorem WittRing.scharlauTransfer_mk (s : L →ₗ[K] K) (hs : s ≠ 0)
 @[simp]
 theorem WittRing.scharlauTransfer_wittClass (s : L →ₗ[K] K) (hs : s ≠ 0)
     (x : RegularFormClass L) :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     WittRing.scharlauTransfer s hs (wittClass x) =
       wittClass (RegularFormClass.scharlauTransfer s hs x) := by
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   rw [wittClass_apply, wittClass_apply, WittRing.scharlauTransfer_mk,
     WittGrothendieckRing.scharlauTransfer_toWittGrothendieck]
 
@@ -210,17 +185,11 @@ the base field may be moved across transfer after scalar extension. -/
 @[simp]
 theorem WittRing.scharlauTransfer_baseChange_mul (s : L →ₗ[K] K) (hs : s ≠ 0)
     (a : WittRing K) :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     ∀ x : WittRing L,
     WittRing.scharlauTransfer s hs (WittRing.baseChange (L := L) a * x) =
       a * WittRing.scharlauTransfer s hs x := by
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   intro x
   obtain ⟨p, rfl⟩ := wittClass_surjective a
   obtain ⟨q, rfl⟩ := wittClass_surjective x
@@ -233,17 +202,11 @@ theorem WittRing.scharlauTransfer_baseChange_mul (s : L →ₗ[K] K) (hs : s ≠
 /-- Scharlau transfer bundled as a linear map over `W(K)`, with the `W(K)`-module structure on
 `W(L)` induced by scalar extension. -/
 def WittRing.scharlauTransferLinear (s : L →ₗ[K] K) (hs : s ≠ 0) :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     letI : Module (WittRing K) (WittRing L) :=
       Module.compHom (WittRing L) (WittRing.baseChange (L := L))
     WittRing L →ₗ[WittRing K] WittRing K := by
-  letI : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
   letI : Module (WittRing K) (WittRing L) :=
     Module.compHom (WittRing L) (WittRing.baseChange (L := L))
   refine
@@ -257,28 +220,22 @@ def WittRing.scharlauTransferLinear (s : L →ₗ[K] K) (hs : s ≠ 0) :
 @[simp]
 theorem WittRing.scharlauTransferLinear_apply (s : L →ₗ[K] K) (hs : s ≠ 0)
     :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     ∀ x : WittRing L,
     letI : Module (WittRing K) (WittRing L) :=
       Module.compHom (WittRing L) (WittRing.baseChange (L := L))
     WittRing.scharlauTransferLinear s hs x = WittRing.scharlauTransfer s hs x := by
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   intro x
   rfl
 
 /-- Scharlau transfer along the identity functional is the identity on the Witt ring. -/
 @[simp]
 theorem WittRing.scharlauTransfer_id :
-    letI : Invertible (2 : K) := invertibleOfNonzero (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : K) := invertibleTwoOfBaseField K K
     WittRing.scharlauTransfer (LinearMap.id : K →ₗ[K] K) one_ne_zero =
       AddMonoidHom.id (WittRing K) := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : K) := invertibleTwoOfBaseField K K
   ext x
   obtain ⟨q, rfl⟩ := wittClass_surjective x
   simp
@@ -293,34 +250,22 @@ variable {E : Type w} [Field E] [Algebra L E] [Algebra K E] [IsScalarTower K L E
 theorem WittRing.scharlauTransfer_comp (s : L →ₗ[K] K) (hs : s ≠ 0)
     (t : E →ₗ[L] L) (ht : t ≠ 0) :
     letI : FiniteDimensional K E := FiniteDimensional.trans K L E
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
-    letI : Invertible (2 : E) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K E) 2, ← map_zero (algebraMap K E)]
-        exact (FaithfulSMul.algebraMap_injective K E).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
+    letI : Invertible (2 : E) := invertibleTwoOfBaseField K E
     (WittRing.scharlauTransfer s hs).comp (WittRing.scharlauTransfer t ht) =
       WittRing.scharlauTransfer (s.comp (t.restrictScalars K))
         (s.comp_restrictScalars_ne_zero t hs ht) := by
   let _ : FiniteDimensional K E := FiniteDimensional.trans K L E
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
-  let _ : Invertible (2 : E) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K E) 2, ← map_zero (algebraMap K E)]
-      exact (FaithfulSMul.algebraMap_injective K E).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
+  let _ : Invertible (2 : E) := invertibleTwoOfBaseField K E
   ext x
   obtain ⟨q, rfl⟩ := wittClass_surjective x
   rw [AddMonoidHom.comp_apply, WittRing.scharlauTransfer_wittClass,
     WittRing.scharlauTransfer_wittClass, WittRing.scharlauTransfer_wittClass]
   have h := DFunLike.congr_fun (RegularFormClass.scharlauTransfer_comp s hs t ht) q
-  have hinst : ((Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm) =
-      (inferInstance : Invertible (2 : L)) := Subsingleton.elim _ _
-  rw [hinst] at h
+  -- As above, the class-level statement uses the transported instance.
+  rw [Subsingleton.elim ((Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm)
+    (invertibleTwoOfBaseField K L)] at h
   rw [AddMonoidHom.comp_apply] at h
   exact congrArg wittClass h
 
@@ -330,46 +275,28 @@ variable [Algebra.IsSeparable K L]
 
 /-- Trace transfer on Witt rings for a finite separable field extension. -/
 def WittRing.traceTransfer :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     WittRing L →+ WittRing K :=
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   WittRing.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L)
 
 /-- Trace transfer on Witt rings is Scharlau transfer along the algebra trace. This makes the
 generic transfer results — the projection formula and the tower law — available for trace
 transfer. -/
 theorem WittRing.traceTransfer_eq_scharlauTransfer :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     WittRing.traceTransfer (K := K) (L := L) =
       WittRing.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L) := by
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   rfl
 
 /-- Trace transfer of a Witt class is the Witt class of the class-level trace transfer. -/
 @[simp]
 theorem WittRing.traceTransfer_wittClass (x : RegularFormClass L) :
-    letI : Invertible (2 : L) :=
-      invertibleOfNonzero <| by
-        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    letI : Invertible (2 : L) := invertibleTwoOfBaseField K L
     WittRing.traceTransfer (K := K) (L := L) (wittClass x) =
       wittClass (RegularFormClass.traceTransfer K x) := by
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero <| by
-      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
-      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  let _ : Invertible (2 : L) := invertibleTwoOfBaseField K L
   rw [WittRing.traceTransfer_eq_scharlauTransfer, WittRing.scharlauTransfer_wittClass,
     RegularFormClass.traceTransfer_eq_scharlauTransfer]
 
