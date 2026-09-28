@@ -19,13 +19,12 @@ promotes to a pentagon whichever new rectangle inherits the replaced grid line, 
 contributions of the chain-map equation can be paired.
 
 Pairing also needs the promoted pentagon to be a pentagon of the same kind as the original one,
-that is to carry no `X`-marking. The
-covered-square repartition proved in `Overlap/Right.lean` is one of the two *underlying
-rectangles*, and a pentagon covers only part of its underlying rectangle: in the two columns next
-to the replaced grid line its turn row cuts the covered arc. The pentagon-level statement is
-therefore its own, and it does follow from the geometry: the promoted pentagon spans the rows of
-the original pentagon together with those of the original rectangle, and its column arc is
-contained in both of theirs, so the general containment
+that is to carry no `X`-marking. The covered-square repartition proved in `Overlap/Right.lean`
+concerns the two *underlying rectangles*, and a pentagon covers only part of its underlying
+rectangle: in the two columns next to the replaced grid line its turn row cuts the covered arc.
+The pentagon-level statement is therefore its own, and it does follow from the geometry: the
+promoted pentagon spans the rows of the original pentagon together with those of the original
+rectangle, and its column arc is contained in both of theirs, so the general containment
 `GridPentagonBetween.coveredSquares_subset_union_of_stacked` applies and an `X`-marking avoided
 by both original domains is avoided by it.
 
