@@ -19,8 +19,6 @@ generated subgroup with the tripled integral carrier and a pinned split group of
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
-* The argument follows the generated-subgroup construction in
-  `TauCeti.Algebra.Lie.E7.Minuscule.GeneratedSmooth`.
 -/
 
 public section
@@ -33,6 +31,7 @@ universe u
 
 variable (k : Type u) [Field k]
 
+-- The proof follows the construction in `TauCeti.Algebra.Lie.E7.Minuscule.GeneratedSmooth`.
 private theorem isReduced_generatorCoordinateAlgebra :
     ∀ j, IsReduced (generatorCoordinateAlgebra k j) := by
   let : IsReduced (AdditiveGroup.coordinateHopfAlgebra k) :=
