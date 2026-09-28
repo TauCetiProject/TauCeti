@@ -20,13 +20,8 @@ projection: its local multiplicity at `z` is the order `m` of the stabilizer of 
 of the free locus, and ramifies exactly at the elliptic points, where its local model is the
 cyclic quotient map `u ↦ u ^ m`.
 
-The computation reads the projection in the chart `Subgroup.stabilizerBallQuotientChart` at the
-orbit of `z`, where it is the `m`-th power of the disc coordinate centred at `z`. A chart has
-local multiplicity one and the disc coordinate is injective, so both factors are transparent and
-the exponent `m` is the whole contribution.
-
-Multiplicativity of the local multiplicity turns this into the ramification formula for descent: a
-holomorphic map `F` on `Γ \ ℍ` and its pullback to the upper half-plane satisfy
+The ramification formula for descent follows: a holomorphic map `F` on `Γ \ ℍ` and its pullback
+to the upper half-plane satisfy
 `localMultiplicity (F ∘ π) z = m * localMultiplicity F (π z)`
 (`Subgroup.localMultiplicity_comp_quotientMk`). Read from right to left, this computes the local
 multiplicity of an invariant holomorphic map upstairs from that of its unique descent
@@ -118,10 +113,9 @@ theorem localMultiplicity_quotientMk_pos (z : ℍ) :
   rw [localMultiplicity_quotientMk]
   exact Nat.card_pos
 
-/-- The ramification index of the orbit projection depends only on the orbit.
-
-Not `@[simp]`: as for `TauCeti.card_stabilizer_smul`, whether the value at `g • z` is in normal
-form depends on which form of the point the ambient goal presents. -/
+/-- The ramification index of the orbit projection depends only on the orbit. -/
+-- Not `@[simp]`: as for `TauCeti.card_stabilizer_smul`, whether the value at `g • z` is in normal
+-- form depends on which form of the point the ambient goal presents.
 theorem localMultiplicity_quotientMk_smul (g : Γ) (z : ℍ) :
     localMultiplicity (Quotient.mk (orbitRel Γ ℍ)) (g • z)
       = localMultiplicity (Quotient.mk (orbitRel Γ ℍ)) z := by
@@ -129,10 +123,9 @@ theorem localMultiplicity_quotientMk_smul (g : Γ) (z : ℍ) :
 
 /-- **The orbit projection is unramified exactly on the free locus**: its local multiplicity at
 `z` is one exactly when the stabilizer of `z` is trivial, that is, when `z` lies in
-`TauCeti.freeLocus Γ ℍ`.
-
-Not `@[simp]`: `Subgroup.localMultiplicity_quotientMk` already rewrites the left-hand side, so a
-`simp` lemma of this shape could never fire and `simpNF` rejects it. -/
+`TauCeti.freeLocus Γ ℍ`. -/
+-- Not `@[simp]`: `Subgroup.localMultiplicity_quotientMk` already rewrites the left-hand side, so a
+-- `simp` lemma of this shape could never fire and `simpNF` rejects it.
 theorem localMultiplicity_quotientMk_eq_one_iff (z : ℍ) :
     localMultiplicity (Quotient.mk (orbitRel Γ ℍ)) z = 1 ↔ stabilizer Γ z = ⊥ := by
   rw [localMultiplicity_quotientMk, Subgroup.card_eq_one]
@@ -147,9 +140,8 @@ theorem exists_injOn_nhds_quotientMk_iff_stabilizer_eq_bot (z : ℍ) :
     localMultiplicity_quotientMk_eq_one_iff]
 
 /-- **The orbit projection ramifies exactly at the elliptic points**: its local multiplicity at
-`z` exceeds one exactly when the stabilizer of `z` is nontrivial.
-
-Not `@[simp]`, for the same reason as `Subgroup.localMultiplicity_quotientMk_eq_one_iff`. -/
+`z` exceeds one exactly when the stabilizer of `z` is nontrivial. -/
+-- Not `@[simp]`, for the same reason as `Subgroup.localMultiplicity_quotientMk_eq_one_iff`.
 theorem one_lt_localMultiplicity_quotientMk_iff (z : ℍ) :
     1 < localMultiplicity (Quotient.mk (orbitRel Γ ℍ)) z ↔ stabilizer Γ z ≠ ⊥ := by
   have hpos := localMultiplicity_quotientMk_pos Γ z
