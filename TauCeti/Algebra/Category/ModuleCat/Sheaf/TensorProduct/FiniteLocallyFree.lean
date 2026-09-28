@@ -74,8 +74,8 @@ omit [HasBinaryProducts C] [HasWeakSheafify J AddCommGrpCat.{u}]
 local freeness. This is the chartwise input for descending internal Homs from a finite locally
 free source. -/
 theorem isFiniteLocallyFree_ihom_chart
-    (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
-    (q : M.LocalGeneratorsData.{u}) (i : q.I)
+    {M : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    {q : M.LocalGeneratorsData.{u}} (i : q.I)
     [IsIso (q.generators i).π] [(q.generators i).IsFiniteType]
     (N : _root_.SheafOfModules.{u} ((ringCatSheaf R).over (q.X i)))
     (hN : isFiniteLocallyFree ((ringCatSheaf R).over (q.X i)) N) :
