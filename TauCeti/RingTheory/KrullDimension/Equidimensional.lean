@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Adjoin
-public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import Mathlib.RingTheory.Flat.Stability
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.RingTheory.Ideal.GoingDown
 public import TauCeti.RingTheory.KrullDimension.FiniteType
+public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.TensorProduct.IsDomain
+public import TauCeti.RingTheory.TensorProduct.Quotient
 public import TauCeti.Topology.PureDimension
 
 /-!
@@ -43,8 +44,6 @@ is a rational function field over `K`, with `L / E` algebraic.
 
 ## Main results
 
-* `PrimeSpectrum.topologicalKrullDim_zeroLocus`: the closed subset `V(I)` of `Spec R` has the
-  Krull dimension of `R ⧸ I`.
 * `TauCeti.isPureDimensional_primeSpectrum_iff`: `Spec R` is pure-dimensional of dimension `d`
   exactly when `R ⧸ P` has dimension `d` for every minimal prime `P`.
 * `TauCeti.comap_includeRight_mem_minimalPrimes`: a minimal prime of `L ⊗[K] A` contracts to a
@@ -65,22 +64,6 @@ public section
 open scoped TensorProduct
 open Algebra.TensorProduct (includeRight)
 
-namespace PrimeSpectrum
-
-variable {R : Type*} [CommRing R]
-
-/-- The closed subset `V(I)` of `Spec R` has the Krull dimension of `R ⧸ I`. -/
-theorem topologicalKrullDim_zeroLocus (I : Ideal R) :
-    topologicalKrullDim (zeroLocus (I : Set R)) = ringKrullDim (R ⧸ I) := by
-  have hi := isClosedEmbedding_comap_of_surjective _ _ (Ideal.Quotient.mk_surjective (I := I))
-  have hrange : Set.range (comap (Ideal.Quotient.mk I)) = zeroLocus (I : Set R) := by
-    rw [range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker]
-  rw [← topologicalKrullDim_eq_ringKrullDim]
-  exact ((hi.isEmbedding.toHomeomorph).trans (Homeomorph.setCongr hrange)).symm.isHomeomorph
-    |>.topologicalKrullDim_eq
-
-end PrimeSpectrum
-
 namespace TauCeti
 
 section PrimeSpectrum
@@ -92,7 +75,7 @@ Krull dimension `d` for every minimal prime `P` of `R`. -/
 theorem isPureDimensional_primeSpectrum_iff {d : ℕ} :
     IsPureDimensional d (PrimeSpectrum R) ↔ ∀ P ∈ minimalPrimes R, ringKrullDim (R ⧸ P) = d := by
   simp_rw [isPureDimensional_iff, ← PrimeSpectrum.zeroLocus_minimalPrimes, Set.forall_mem_image,
-    Function.comp_apply, PrimeSpectrum.topologicalKrullDim_zeroLocus]
+    Function.comp_apply, Ideal.topologicalKrullDim_zeroLocus]
 
 end PrimeSpectrum
 
@@ -113,13 +96,6 @@ theorem comap_includeRight_mem_minimalPrimes (L : Type*) [CommRing L] [Algebra K
   algebraize [(includeRight : A →ₐ[K] L ⊗[K] A).toRingHom]
   exact Ideal.under_mem_minimalPrimes hQ
 
-/-- The kernel of `E ⊗[K] A → E ⊗[K] (A ⧸ P)` is the extension of `P`. -/
-private theorem ker_map_mkₐ (E : Type*) [CommRing E] [Algebra K E] (P : Ideal A) :
-    RingHom.ker (Algebra.TensorProduct.map (AlgHom.id K E) (Ideal.Quotient.mkₐ K P)) =
-      P.map (includeRight : A →ₐ[K] E ⊗[K] A) := by
-  rw [Algebra.TensorProduct.lTensor_ker _ (Ideal.Quotient.mkₐ_surjective K P),
-    ← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker]
-
 /-- If `E ⊗[K] (A ⧸ P)` is a domain for every prime `P` of `A`, as for a rational function field
 `E` over `K`, then every minimal prime of `E ⊗[K] A` is the extension of its contraction to `A`. -/
 private theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [Field E] [Algebra K E]
@@ -130,7 +106,7 @@ private theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [Field E] [Alg
   have := hdom (Q.comap includeRight) inferInstance
   have hPQ : (Q.comap includeRight).map includeRight ≤ Q := Ideal.map_le_iff_le_comap.mpr le_rfl
   refine le_antisymm (hQ.2 ⟨?_, bot_le⟩ hPQ) hPQ
-  rw [← ker_map_mkₐ]
+  rw [← Algebra.TensorProduct.ker_map_id_mkₐ]
   exact RingHom.ker_isPrime _
 
 /-- For an algebraic extension `L / E` of field extensions of `K`, the ring `L ⊗[K] A` is integral
@@ -185,7 +161,8 @@ theorem ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes (L : Type*) [Fi
     Algebra.TensorProduct.map_surjective _ _ Function.surjective_id
       (Ideal.Quotient.mkₐ_surjective K _)
   rw [hdim, ringKrullDim_eq_of_ringEquiv ((Ideal.quotEquivOfEq
-      (hQ'.trans (ker_map_mkₐ E _).symm)).trans (RingHom.quotientKerEquivOfSurjective hsurj)),
+      (hQ'.trans (Algebra.TensorProduct.ker_map_id_mkₐ E _).symm)).trans
+        (RingHom.quotientKerEquivOfSurjective hsurj)),
     ringKrullDim_tensorProduct_field_of_finiteType]
 
 /-- The spectrum of a finitely generated algebra `A` over a field `K` is pure-dimensional of
