@@ -65,8 +65,8 @@ local freeness. This is the chartwise input for descending internal Homs from a 
 free source. -/
 theorem isFiniteLocallyFree_ihom_chart
     (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
-    (q : M.LocalGeneratorsData.{u}) [q.IsLocallyFreeData] [q.IsFiniteType]
-    (i : q.I)
+    (q : M.LocalGeneratorsData.{u}) (i : q.I)
+    [IsIso (q.generators i).π] [(q.generators i).IsFiniteType]
     (N : _root_.SheafOfModules.{u} ((ringCatSheaf R).over (q.X i)))
     (hN : isFiniteLocallyFree ((ringCatSheaf R).over (q.X i)) N) :
     letI : MonoidalCategory (_root_.SheafOfModules.{u} ((ringCatSheaf R).over (q.X i))) :=
@@ -79,8 +79,6 @@ theorem isFiniteLocallyFree_ihom_chart
     monoidalCategory (R.over (q.X i))
   let : MonoidalClosed (_root_.SheafOfModules.{u} ((ringCatSheaf R).over (q.X i))) :=
     monoidalClosed (R.over (q.X i))
-  have : (q.generators i).IsFiniteType :=
-    LocalGeneratorsData.IsFiniteType.isFiniteType i
   have : HasBinaryProducts (Over (q.X i)) :=
     Over.ConstructProducts.over_binaryProduct_of_pullback
   let e : free (R := (ringCatSheaf R).over (q.X i)) (q.generators i).I ≅
