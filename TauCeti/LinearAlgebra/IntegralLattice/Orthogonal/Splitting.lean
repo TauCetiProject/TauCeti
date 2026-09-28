@@ -31,15 +31,14 @@ complement. -/
 theorem isCompl_orthogonal_of_restrict_bijective (L : IntegralLattice V)
     (S : Submodule ℤ L) (h : Function.Bijective (L.integralForm.restrict S)) :
     IsCompl S (L.integralForm.orthogonal S) :=
-  TauCeti.bilinForm_isCompl_orthogonal_of_restrict_bijective
-    L.integralForm L.isSymm_integralForm S h
+  L.integralForm.isCompl_orthogonal_of_restrict_bijective S
+    (L.isSymm_integralForm.restrict S) h
 
 /-- A vector of unit norm spans an orthogonal direct summand of an integral lattice. -/
 theorem isCompl_span_singleton_orthogonal_of_isUnit (L : IntegralLattice V) (x : L)
     (hx : IsUnit (L.integralForm x x)) :
     IsCompl (ℤ ∙ x) (L.integralForm.orthogonal (ℤ ∙ x)) :=
-  TauCeti.bilinForm_isCompl_span_singleton_orthogonal_of_isUnit
-    L.integralForm L.isSymm_integralForm x hx
+  L.integralForm.isCompl_span_singleton_orthogonal_of_isUnit x hx
 
 end IntegralLattice
 
