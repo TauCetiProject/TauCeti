@@ -215,7 +215,6 @@ theorem exists_eq_add_mul_sqrtFive (y : DyadicSqrtFive) :
   exact ⟨a, b, rfl⟩
 
 /-- **The norm form of `ℚ_2(√5)/ℚ_2`.** The norm of `a + b√5` is `a² − 5b²`. -/
-@[simp]
 theorem norm_add_mul_sqrtFive (a b : ℚ_[2]) :
     Algebra.norm ℚ_[2] (algebraMap ℚ_[2] DyadicSqrtFive a +
       algebraMap ℚ_[2] DyadicSqrtFive b * sqrtFive) = a ^ 2 - 5 * b ^ 2 := by
