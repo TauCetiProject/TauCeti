@@ -80,9 +80,9 @@ theorem oddResidueHasse_mk (h2 : IsUnit (2 : 𝒪[K])) (p : RegularFormPresentat
       ∏ i, ∏ j ∈ Ioi i, hilbertSymbol (p.2 i) (p.2 j) := by
   simp only [oddResidueHasse, liftDiagonal_mk]
 
-/-- O'Meara's `i ≤ j` product of local Hilbert signs is the Lam–Serre Hasse sign times
+/-- O'Meara's `i ≤ j` Hasse symbol of local Hilbert signs is the Lam–Serre Hasse sign times
 the symbol of the unsigned discriminant with `-1`. -/
-theorem oddResidueOmearaHasseProduct_eq (h2 : IsUnit (2 : 𝒪[K]))
+theorem oddResidueOmearaHasseSymbol_eq (h2 : IsUnit (2 : 𝒪[K]))
     (p : RegularFormPresentation K) :
     (∏ i, ∏ j ∈ Ici i, hilbertSymbol (p.2 i) (p.2 j)) =
       oddResidueHasse h2 (Quotient.mk (regularFormSetoid K) p) *

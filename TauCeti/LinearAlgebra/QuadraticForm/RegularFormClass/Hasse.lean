@@ -42,7 +42,7 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
 
 * `TauCeti.RegularFormClass.hasseInvariant_mk`: its value `∏_{i<j} [(aᵢ, aⱼ)]` on a diagonal
   presentation `⟨a₁, …, aₙ⟩`.
-* `TauCeti.RegularFormClass.omearaHasseProduct_eq`: O'Meara's `i ≤ j` product is the
+* `TauCeti.RegularFormClass.omearaHasseSymbol_eq`: O'Meara's `i ≤ j` symbol is the
   Lam–Serre Hasse invariant times the symbol of the discriminant with `-1`.
 * `TauCeti.RegularFormClass.hasseInvariant_formClass`: the same value on the class of any regular
   form isometric to `⟨a₁, …, aₙ⟩`.
@@ -128,10 +128,10 @@ theorem hasseInvariant_mk (p : RegularFormPresentation K) :
   liftDiagonal_mk _ hasseProd_eq_of_permutationStep hasseProd_eq_of_binaryStep
     (fun a b _ => hasseProd_rankOne a b) p
 
-/-- O'Meara's Hasse product `∏_{i≤j} [(aᵢ,aⱼ)]` equals the Lam–Serre Hasse invariant
+/-- O'Meara's Hasse symbol `∏_{i≤j} [(aᵢ,aⱼ)]` equals the Lam–Serre Hasse invariant
 `∏_{i<j} [(aᵢ,aⱼ)]` times `[(d(q),-1)]`. The diagonal correction uses
 `[(a,a)] = [(a,-1)]`, so the discriminant here is the unsigned one. -/
-theorem omearaHasseProduct_eq (p : RegularFormPresentation K) :
+theorem omearaHasseSymbol_eq (p : RegularFormPresentation K) :
     (∏ i, ∏ j ∈ Ici i, quaternionClass (p.2 i) (p.2 j)) =
       hasseInvariant (Quotient.mk (regularFormSetoid K) p) *
         quaternionClassOnSquareClasses
