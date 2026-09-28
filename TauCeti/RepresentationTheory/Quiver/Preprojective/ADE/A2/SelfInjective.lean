@@ -128,7 +128,8 @@ instance isPerfPair_preprojectiveA2FrobeniusPairing :
 /-- **The displayed functional makes the `A₂` preprojective algebra Frobenius.** -/
 theorem isFrobeniusFunctional_preprojectiveA2FrobeniusFunctional :
     (preprojectiveA2FrobeniusFunctional k).IsFrobeniusFunctional :=
-  (isPerfPair_preprojectiveA2FrobeniusPairing k).isFrobeniusFunctional
+  LinearMap.isFrobeniusFunctional_iff.mpr
+    (isPerfPair_preprojectiveA2FrobeniusPairing k).nondegenerate
 
 end CommRing
 
