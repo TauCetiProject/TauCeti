@@ -57,14 +57,6 @@ theorem isCompletelyReducible_corestrict_iff_of_split (f : C →ₗc[k] D)
       (Subcomodule.corestrictOrderIsoOfSplit f r hr) (OrderIso.refl _)
       (fun A ↦ by simp)
 
-/-- Complete reducibility descends along a coalgebra morphism with a linear retraction. -/
-theorem IsCompletelyReducible.of_corestrict_of_split (f : C →ₗc[k] D)
-    (r : D →ₗ[k] C) (hr : r.comp f.toLinearMap = LinearMap.id)
-    (h : letI : Comodule k D V := Comodule.Corestrict f
-      IsCompletelyReducible k D V) :
-    IsCompletelyReducible k C V :=
-  (isCompletelyReducible_corestrict_iff_of_split f r hr).mp h
-
 end Comodule
 
 namespace Comodule
@@ -92,13 +84,6 @@ theorem isCompletelyReducible_corestrict_iff_of_injective (f : C →ₗc[k] D)
     LinearMap.leftInverse_comp_of_inj hker
   exact isCompletelyReducible_corestrict_iff_of_split f r hr
 
-/-- Complete reducibility descends along an injective coalgebra morphism. -/
-theorem IsCompletelyReducible.of_corestrict_of_injective (f : C →ₗc[k] D)
-    (h : letI : Comodule k D V := Comodule.Corestrict f
-      IsCompletelyReducible k D V) (hf : Function.Injective f) :
-    IsCompletelyReducible k C V :=
-  (isCompletelyReducible_corestrict_iff_of_injective f hf).mp h
-
 end Comodule
 
 namespace Coalgebra
@@ -115,8 +100,8 @@ theorem IsLinearlyReductive.of_injective (f : C →ₗc[k] D)
   apply IsLinearlyReductive.of_forall_isCompletelyReducible
   intro V _ _ _ _
   let _ : Comodule k D V := Comodule.Corestrict f
-  exact Comodule.IsCompletelyReducible.of_corestrict_of_injective f
-    (hD.isCompletelyReducible_sameUniverse k V) hf
+  exact (Comodule.isCompletelyReducible_corestrict_iff_of_injective f hf).mp
+    (hD.isCompletelyReducible_sameUniverse k V)
 
 end Coalgebra
 
