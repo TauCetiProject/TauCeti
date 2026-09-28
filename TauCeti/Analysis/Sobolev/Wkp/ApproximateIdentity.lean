@@ -46,25 +46,6 @@ private theorem continuous_translateLIE (hp : p ≠ ∞) (k : ℕ) (u : Wkp mu �
     Continuous fun h => translateLIE h k u := by
   simpa only [translateLIE_apply] using continuous_translate hp k u
 
-omit [FiniteDimensional ℝ E] in
-private theorem value_translateLp_sobolev1Jet (h : E) (J : Sobolev1JetLp mu ⊤ p) :
-    Sobolev1JetLp.value
-        ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h J) =
-      (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h
-        (Sobolev1JetLp.value J) := by
-  apply Lp.ext
-  have hvalueJ : (fun x => Sobolev1JetLp.value J x) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
-      fun x => WithLp.fst (J x) := Sobolev1JetLp.value_apply_ae J
-  have hshift := hvalueJ.comp_tendsto
-    ((measurePreserving_add_right
-      (mu.restrict ((⊤ : Opens E) : Set E)) h).quasiMeasurePreserving.tendsto_ae)
-  filter_upwards [Sobolev1JetLp.value_apply_ae
-      ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h J),
-    Measure.coeFn_translateLp h J,
-    Measure.coeFn_translateLp h (Sobolev1JetLp.value J), hshift] with x hvalue hjet hscalar hsource
-  rw [hvalue, hjet, hscalar, hsource]
-  rfl
-
 /-- Mollification by a normalized smooth bump on the whole-space Sobolev space `W^{k,p}`, as a
 continuous linear operator. It averages the Sobolev translations in the Bochner sense. The
 restriction `p < ∞` supplies the strong continuity that makes this integrand Bochner integrable. -/
@@ -95,10 +76,8 @@ theorem value_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu ⊤ p k) :
     value k (normedBumpL hp phi k u) =
       TauCeti.normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (value k u) := by
-  rw [← valueL_apply, normedBumpL, TauCeti.map_normedBumpAverageL,
-    TauCeti.normedBumpLp_apply]
-  apply integral_congr_ae
-  filter_upwards with t
+  rw [normedBumpL, TauCeti.normedBumpLp, ← valueL_apply, ← valueL_apply k u]
+  refine TauCeti.normedBumpAverageL_comm _ _ _ _ _ _ _ (fun h u => ?_) u
   simp only [valueL_apply, translateLIE_apply, value_translate]
 
 /-- At order zero, Sobolev mollification is the existing `Lᵖ` approximate identity. -/
@@ -118,39 +97,17 @@ theorem normedBumpL_one (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
   apply ContinuousLinearMap.ext
   intro u
   apply ext 1
-  rw [value_normedBumpL, value_one, value_one, W1p.value_coe u,
-    W1p.value_coe (W1p.normedBumpL hp phi u), W1p.coe_normedBumpL]
-  have hint : Integrable (fun t =>
-      phi.normed (mu.restrict ((⊤ : Opens E) : Set E)) t •
-        (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p (-t)
-          (u : Sobolev1JetLp mu ⊤ p)) (mu.restrict ((⊤ : Opens E) : Set E)) := by
-    apply Continuous.integrable_of_hasCompactSupport
-    · exact phi.continuous_normed.smul
-        ((Measure.continuous_translateLp hp (u : Sobolev1JetLp mu ⊤ p)).comp continuous_neg)
-    · exact phi.hasCompactSupport_normed.smul_right
-  rw [TauCeti.normedBumpLp_apply, TauCeti.normedBumpLp_apply]
-  let Javg : Sobolev1JetLp mu ⊤ p :=
-    ∫ t, phi.normed (mu.restrict ((⊤ : Opens E) : Set E)) t •
-      (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p (-t)
-        (u : Sobolev1JetLp mu ⊤ p) ∂(mu.restrict ((⊤ : Opens E) : Set E))
-  change _ = Sobolev1JetLp.value Javg
-  rw [← Sobolev1JetLp.valueL_apply Javg]
-  dsimp only [Javg]
-  rw [← Sobolev1JetLp.valueL.integral_comp_comm hint]
-  apply integral_congr_ae
-  filter_upwards with t
-  rw [map_smul, Sobolev1JetLp.valueL_apply, value_translateLp_sobolev1Jet]
+  rw [value_normedBumpL, value_one, value_one, W1p.value_normedBumpL]
 
 /-- Mollification commutes with forgetting the highest weak derivative. -/
 theorem lowerOrder_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) :
     lowerOrder k (normedBumpL hp phi (k + 1) u) =
       normedBumpL hp phi k (lowerOrder k u) := by
-  rw [← lowerOrderL_apply, normedBumpL, normedBumpL,
-    TauCeti.map_normedBumpAverageL, TauCeti.normedBumpAverageL_apply]
-  apply integral_congr_ae
-  filter_upwards with t
-  rw [lowerOrderL_apply, translateLIE_apply, lowerOrder_translate, translateLIE_apply]
+  rw [normedBumpL, normedBumpL, ← lowerOrderL_apply, ← lowerOrderL_apply k u]
+  refine TauCeti.normedBumpAverageL_comm _ _ _ _ _ _ _ (fun h u => ?_) u
+  rw [lowerOrderL_apply, lowerOrderL_apply, translateLIE_apply, translateLIE_apply,
+    lowerOrder_translate]
 
 /-- The highest weak derivative of a Sobolev mollification is the `Lᵖ` mollification of the
 highest weak derivative. -/
@@ -159,11 +116,11 @@ theorem iteratedGradient_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E
     iteratedGradient k (normedBumpL hp phi (k + 1) u) =
       TauCeti.normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E))
         (iteratedGradient k u) := by
-  rw [← iteratedGradientL_apply, normedBumpL, TauCeti.map_normedBumpAverageL,
-    TauCeti.normedBumpLp_apply]
-  apply integral_congr_ae
-  filter_upwards with t
-  rw [iteratedGradientL_apply, translateLIE_apply, iteratedGradient_translate]
+  rw [normedBumpL, TauCeti.normedBumpLp, ← iteratedGradientL_apply,
+    ← iteratedGradientL_apply k u]
+  refine TauCeti.normedBumpAverageL_comm _ _ _ _ _ _ _ (fun h u => ?_) u
+  rw [iteratedGradientL_apply, iteratedGradientL_apply, translateLIE_apply,
+    iteratedGradient_translate]
 
 /-- **Smooth approximate identity in `W^{k,p}(ℝⁿ)`.** Normalized smooth bumps whose
 outer radii tend to zero converge strongly to the identity on every finite-exponent whole-space

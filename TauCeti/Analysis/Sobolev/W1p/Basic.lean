@@ -109,6 +109,12 @@ def Sobolev1JetLp.gradient (J : Sobolev1JetLp mu Omega p) : Lp E p (mu.restrict 
   Sobolev1JetLp.gradientL J
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- Applying the bundled gradient projection gives the gradient component of a Sobolev jet. -/
+@[simp]
+theorem Sobolev1JetLp.gradientL_apply (J : Sobolev1JetLp mu Omega p) :
+    Sobolev1JetLp.gradientL J = Sobolev1JetLp.gradient J := (rfl)
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
 @[simp]
 theorem Sobolev1JetLp.value_apply_ae (J : Sobolev1JetLp mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega,

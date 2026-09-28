@@ -151,6 +151,18 @@ theorem map_normedBumpAverageL {G : Type*} [NormedAddCommGroup G] [NormedSpace �
   filter_upwards with t
   rw [map_smul]
 
+/-- A continuous linear map between complete spaces that intertwines two strongly continuous
+families of linear isometries also intertwines their normalized-bump averages. -/
+theorem normedBumpAverageL_comm {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace F] [CompleteSpace G]
+    (A : F →L[ℝ] G) (phi : ContDiffBump (0 : E))
+    (mu : Measure E) [mu.IsAddHaarMeasure] (T : E → F ≃ₗᵢ[ℝ] F) (T' : E → G ≃ₗᵢ[ℝ] G)
+    (hT : ∀ f, Continuous fun h ↦ T h f) (hT' : ∀ g, Continuous fun h ↦ T' h g)
+    (hA : ∀ h f, A (T h f) = T' h (A f)) (f : F) :
+    A (normedBumpAverageL phi mu T hT f) = normedBumpAverageL phi mu T' hT' (A f) := by
+  rw [map_normedBumpAverageL, normedBumpAverageL_apply]
+  simp only [hA]
+
 /-- A normalized-bump average of linear isometries has operator norm at most one. -/
 theorem norm_normedBumpAverageL_le_one (phi : ContDiffBump (0 : E))
     (mu : Measure E) [mu.IsAddHaarMeasure] (T : E → F ≃ₗᵢ[ℝ] F)
@@ -187,6 +199,7 @@ Completeness of `F` is not part of the definition, exactly as for `MeasureTheory
 unless that space is complete. So this operator is the advertised average of the translates of
 its argument precisely when `F` is a Banach space, which is the setting of
 `TauCeti.tendsto_normedBumpLp`; the contraction bound holds in either case. -/
+@[expose]
 def normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (mu : Measure E) [mu.IsAddHaarMeasure] : Lp F p mu →L[ℝ] Lp F p mu :=
   normedBumpAverageL phi mu (mu.translateLp p) (Measure.continuous_translateLp hp)
