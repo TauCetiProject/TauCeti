@@ -353,8 +353,7 @@ theorem exists_pow_smul_le_pow_smul_of_isPseudoUniformizer (P : PairOfDefinition
   obtain ⟨k, -, hk⟩ := (ht.hasBasis_nhds_zero P).mem_iff.mp
     (hs.smul_ringOfDefinition_mem_nhds_zero P n)
   have htk : t ^ k ∈ (s ^ n) • (P.ringOfDefinition : Set A) :=
-    hk (show t ^ k ∈ (t ^ k : A) • (P.ringOfDefinition : Set A) from by
-      exact Set.mem_smul_set.mpr ⟨1, P.ringOfDefinition.one_mem, by simp⟩)
+    hk (Set.mem_smul_set.mpr ⟨1, P.ringOfDefinition.one_mem, by simp⟩)
   obtain ⟨a, ha, hsa⟩ := Set.mem_smul_set.mp htk
   refine ⟨k, fun x hx ↦ ?_⟩
   obtain ⟨y, hy, hty⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
