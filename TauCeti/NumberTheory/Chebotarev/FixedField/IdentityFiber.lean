@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.FixedField.FiberCount
+public import TauCeti.NumberTheory.Chebotarev.SplitsCompletely
 
 /-!
 # The identity fibre in a cyclic fixed field
@@ -49,10 +50,8 @@ theorem fixedField_frobenius_fiber_eq_empty_of_one (σ : L ≃ₐ[K] L) (hσ : �
     rw [← Ideal.under_under (B := 𝓞 ↥(fixedField (Subgroup.zpowers σ))) Q.1,
       hQE, ← HeightOneSpectrum.under_asIdeal, hPp]
   have : Q.1.LiesOver p.asIdeal := ⟨hQK.symm⟩
-  have hur := (mem_frobeniusPrimeSet_iff.mp hp).choose
   have hQdeg : Q.1.inertiaDeg (𝓞 K) = 1 :=
-    (artinSymbol_eq_one_iff_inertiaDeg_eq_one p.asIdeal hur Q.1).mp
-      (mem_frobeniusPrimeSet_iff.mp hp).choose_spec
+    inertiaDeg_eq_one_of_mem_frobeniusPrimeSet_one hp Q.1
   have hPdeg : P.asIdeal.inertiaDeg (𝓞 K) = 1 := by
     have htower := Ideal.inertiaDeg_tower (R := 𝓞 K)
       (Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))) Q.1
@@ -61,17 +60,16 @@ theorem fixedField_frobenius_fiber_eq_empty_of_one (σ : L ≃ₐ[K] L) (hσ : �
   have hpσ : p ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) :=
     (inertiaDeg_eq_one_iff_under_mem_frobeniusPrimeSet σ hP
       (hPp ▸ hram)).mp hPdeg |> (hPp ▸ ·)
-  have hclass : (1 : ConjClasses (L ≃ₐ[K] L)) = ConjClasses.mk σ := by
-    exact (mem_frobeniusPrimeSet_iff.mp hp).choose_spec.symm.trans
-      ((mem_frobeniusPrimeSet_iff_artinSymbol_eq hur _).mp hpσ)
-  have hc : IsConj σ 1 :=
-    ConjClasses.mk_eq_mk_iff_isConj.mp
+  have hne : (1 : ConjClasses (L ≃ₐ[K] L)) ≠ ConjClasses.mk σ := by
+    intro hclass
+    have hc : IsConj σ 1 := ConjClasses.mk_eq_mk_iff_isConj.mp
       (by simpa only [ConjClasses.one_eq_mk_one] using hclass.symm)
-  exact hσ (isConj_one_left.mp hc)
+    exact hσ (isConj_one_left.mp hc)
+  exact Set.disjoint_left.mp (disjoint_frobeniusPrimeSet hne) hp hpσ
 
 /-- The fixed-field relative fibre of a nonidentity element over a completely split prime has
-cardinality zero. In particular this is the missing identity-fibre case when `σ` generates a
-nontrivial cyclic Galois group. -/
+cardinality zero. When `σ` generates a nontrivial cyclic Galois group, this gives zero
+cardinality over the identity Frobenius fibre. -/
 theorem fixedField_frobenius_fiber_card_eq_zero_of_one (σ : L ≃ₐ[K] L) (hσ : σ ≠ 1)
     (p : HeightOneSpectrum (𝓞 K)) (hp : p ∈ frobeniusPrimeSet K L 1) :
     Nat.card {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers σ))) //
