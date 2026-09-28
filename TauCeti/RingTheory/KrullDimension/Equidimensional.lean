@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.AlgebraicIndependent.Adjoin
 public import Mathlib.RingTheory.Flat.Stability
 public import Mathlib.RingTheory.Ideal.Over
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.RingTheory.Ideal.GoingDown
 public import TauCeti.RingTheory.KrullDimension.FiniteType
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.TensorProduct.IsDomain
-public import TauCeti.RingTheory.TensorProduct.Quotient
 public import TauCeti.Topology.PureDimension
 
 /-!
@@ -79,6 +80,31 @@ theorem isPureDimensional_primeSpectrum_iff {d : ℕ} :
 
 end PrimeSpectrum
 
+section CommRing
+
+variable {K : Type*} [CommRing K] {A : Type*} [CommRing A] [Algebra K A]
+
+/-- If `E ⊗[K] (A ⧸ P)` is a domain for every prime `P` of `A`, then every minimal prime of
+`E ⊗[K] A` is the extension of its contraction to `A`. -/
+theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [CommRing E] [Algebra K E]
+    (hdom : ∀ P : Ideal A, P.IsPrime → IsDomain (E ⊗[K] (A ⧸ P)))
+    {Q : Ideal (E ⊗[K] A)} (hQ : Q ∈ minimalPrimes (E ⊗[K] A)) :
+    Q = (Q.comap includeRight).map includeRight := by
+  have : Q.IsPrime := hQ.1.1
+  have := hdom (Q.comap includeRight) inferInstance
+  have hPQ : (Q.comap includeRight).map includeRight ≤ Q := Ideal.map_le_iff_le_comap.mpr le_rfl
+  refine le_antisymm (hQ.2 ⟨?_, bot_le⟩ hPQ) hPQ
+  have hker : RingHom.ker
+      (Algebra.TensorProduct.map (AlgHom.id K E) (Ideal.Quotient.mkₐ K (Q.comap includeRight))) =
+      (Q.comap includeRight).map (includeRight : A →ₐ[K] E ⊗[K] A) := by
+    rw [Algebra.TensorProduct.lTensor_ker _
+        (Ideal.Quotient.mkₐ_surjective K (Q.comap includeRight)),
+      ← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker]
+  rw [← hker]
+  exact RingHom.ker_isPrime _
+
+end CommRing
+
 variable {K : Type*} [Field K] {A : Type*} [CommRing A] [Algebra K A]
 
 /-- A minimal prime of `L ⊗[K] A` contracts to a minimal prime of `A`: every `K`-module is flat,
@@ -96,23 +122,11 @@ theorem comap_includeRight_mem_minimalPrimes (L : Type*) [CommRing L] [Algebra K
   algebraize [(includeRight : A →ₐ[K] L ⊗[K] A).toRingHom]
   exact Ideal.under_mem_minimalPrimes hQ
 
-/-- If `E ⊗[K] (A ⧸ P)` is a domain for every prime `P` of `A`, as for a rational function field
-`E` over `K`, then every minimal prime of `E ⊗[K] A` is the extension of its contraction to `A`. -/
-theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [Field E] [Algebra K E]
-    (hdom : ∀ P : Ideal A, P.IsPrime → IsDomain (E ⊗[K] (A ⧸ P)))
-    {Q : Ideal (E ⊗[K] A)} (hQ : Q ∈ minimalPrimes (E ⊗[K] A)) :
-    Q = (Q.comap includeRight).map includeRight := by
-  have : Q.IsPrime := hQ.1.1
-  have := hdom (Q.comap includeRight) inferInstance
-  have hPQ : (Q.comap includeRight).map includeRight ≤ Q := Ideal.map_le_iff_le_comap.mpr le_rfl
-  refine le_antisymm (hQ.2 ⟨?_, bot_le⟩ hPQ) hPQ
-  rw [← Algebra.TensorProduct.ker_map_id_mkₐ]
-  exact RingHom.ker_isPrime _
-
 /-- For an algebraic extension `L / E` of field extensions of `K`, the ring `L ⊗[K] A` is integral
 and flat over `E ⊗[K] A`. So a minimal prime of `L ⊗[K] A` contracts to a minimal prime of
 `E ⊗[K] A`, and the two quotients have the same Krull dimension. -/
-theorem mem_minimalPrimes_comap_of_isAlgebraic (L E : Type*) [Field L] [Algebra K L]
+theorem mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isAlgebraic
+    (L E : Type*) [Field L] [Algebra K L]
     [Field E] [Algebra K E] [Algebra E L] [IsScalarTower K E L] [Algebra.IsAlgebraic E L]
     {Q : Ideal (L ⊗[K] A)} (hQ : Q ∈ minimalPrimes (L ⊗[K] A)) :
     Q.comap (Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L) (AlgHom.id K A)) ∈
@@ -147,7 +161,7 @@ theorem ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes (L : Type*) [Fi
   obtain ⟨s, hs⟩ := exists_isTranscendenceBasis K L
   let E := IntermediateField.adjoin K (Set.range ((↑) : s → L))
   have : Algebra.IsAlgebraic E L := hs.isAlgebraic_field
-  obtain ⟨h1, hdim⟩ := mem_minimalPrimes_comap_of_isAlgebraic L E hQ
+  obtain ⟨h1, hdim⟩ := mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isAlgebraic L E hQ
   have hdom (P : Ideal A) (_ : P.IsPrime) : IsDomain (E ⊗[K] (A ⧸ P)) :=
     (Algebra.TensorProduct.congr hs.1.aevalEquivField AlgEquiv.refl).symm.toMulEquiv.isDomain
   have hQ' := eq_map_comap_includeRight_of_isDomain E hdom h1
@@ -157,12 +171,18 @@ theorem ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes (L : Type*) [Fi
     simp [Ideal.mem_comap]
   rw [hP] at hQ'
   -- `(E ⊗[K] A) ⧸ Q'` is `E ⊗[K] (A ⧸ P)`, which has the dimension of `A ⧸ P`.
+  have hker : RingHom.ker
+      (Algebra.TensorProduct.map (AlgHom.id K E) (Ideal.Quotient.mkₐ K (Q.comap includeRight))) =
+      (Q.comap includeRight).map (includeRight : A →ₐ[K] E ⊗[K] A) := by
+    rw [Algebra.TensorProduct.lTensor_ker _
+        (Ideal.Quotient.mkₐ_surjective K (Q.comap includeRight)),
+      ← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker]
   have hsurj : Function.Surjective
       (Algebra.TensorProduct.map (AlgHom.id K E) (Ideal.Quotient.mkₐ K (Q.comap includeRight))) :=
     Algebra.TensorProduct.map_surjective _ _ Function.surjective_id
       (Ideal.Quotient.mkₐ_surjective K _)
   rw [hdim, ringKrullDim_eq_of_ringEquiv ((Ideal.quotEquivOfEq
-      (hQ'.trans (Algebra.TensorProduct.ker_map_id_mkₐ E _).symm)).trans
+      (hQ'.trans hker.symm)).trans
         (RingHom.quotientKerEquivOfSurjective hsurj)),
     ringKrullDim_tensorProduct_field_of_finiteType]
 
