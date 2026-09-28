@@ -52,20 +52,20 @@ theorem isClosed_range_powMonoidHom {n : ℕ} (hn : (n : K) ≠ 0) :
   Subgroup.isClosed_of_isOpen _ (isOpen_range_powMonoidHom hn)
 
 /-- A subgroup of `Kˣ` is open if the exponent of its quotient is nonzero in `K`. -/
-theorem isOpen_of_exponent {H : Subgroup Kˣ}
+theorem isOpen_of_natCast_exponent_ne_zero {H : Subgroup Kˣ}
     (hH : (Monoid.exponent (Kˣ ⧸ H) : K) ≠ 0) : IsOpen (H : Set Kˣ) := by
   refine Subgroup.isOpen_mono ?_ (isOpen_range_powMonoidHom hH)
   rintro _ ⟨y, rfl⟩
   simpa [← QuotientGroup.eq_one_iff] using Monoid.pow_exponent_eq_one (y : Kˣ ⧸ H)
 
 /-- A subgroup of `Kˣ` is open if its index is nonzero in `K`. -/
-theorem isOpen_of_index {H : Subgroup Kˣ} (hH : (H.index : K) ≠ 0) :
+theorem isOpen_of_natCast_index_ne_zero {H : Subgroup Kˣ} (hH : (H.index : K) ≠ 0) :
     IsOpen (H : Set Kˣ) := by
   have hExp : (Monoid.exponent (Kˣ ⧸ H) : K) ≠ 0 := by
     obtain ⟨k, hk⟩ := Group.exponent_dvd_nat_card (G := Kˣ ⧸ H)
     intro hz
     apply hH
     rw [H.index_eq_card, hk, Nat.cast_mul, hz, zero_mul]
-  exact isOpen_of_exponent hExp
+  exact isOpen_of_natCast_exponent_ne_zero hExp
 
 end TauCeti
