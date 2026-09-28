@@ -151,8 +151,9 @@ theorem frobeniusVonMangoldtCoeff_galEquivZMod_symm_of_coprime (a : (ZMod n)ˣ) 
 a unit `a` is the von Mangoldt function `Λ` restricted to the progression `m ≡ a (mod n)`.
 
 The primes dividing such a level ramify in `ℚ(ζₙ)`, and their powers are not units modulo `n`, so
-both sides vanish there. At levels `n ≡ 2 (mod 4)` the prime `2` is unramified while `2 ^ j` is not
-a unit modulo `n`; there `frobeniusVonMangoldtCoeff_galEquivZMod_symm_of_coprime` applies. -/
+both sides vanish there. Levels `n ≡ 2 (mod 4)` are excluded: there the prime `2` is unramified
+while `2 ^ j` is not a unit modulo `n`, so the identity can fail at powers of `2`. At every level,
+`frobeniusVonMangoldtCoeff_galEquivZMod_symm_of_coprime` covers the inputs `m` coprime to `n`. -/
 theorem frobeniusVonMangoldtCoeff_galEquivZMod_symm (hn : n % 4 ≠ 2) (a : (ZMod n)ˣ) (m : ℕ) :
     frobeniusVonMangoldtCoeff ℚ F (ConjClasses.mk ((Rat.galEquivZMod n F).symm a)) m =
       if (m : ZMod n) = a then Λ m else 0 := by
@@ -204,8 +205,9 @@ theorem frobeniusVonMangoldtCoeff_cyclotomic_five_of_galEquivZMod_eq_two
   · rw [hcoeff, ite_eq_left (by decide), ArithmeticFunction.vonMangoldt_apply_prime Nat.prime_two,
       Nat.cast_ofNat]
   · rw [hcoeff, ite_eq_right (by decide)]
-  · rw [ConjClasses.mk_pow, ← map_pow, hcoeff, ite_eq_left (by decide),
-      show (4 : ℕ) = 2 ^ 2 by norm_num, ArithmeticFunction.vonMangoldt_apply_pow two_ne_zero,
+  · have h4 : (4 : ℕ) = 2 ^ 2 := by norm_num
+    rw [ConjClasses.mk_pow, ← map_pow, hcoeff, ite_eq_left (by decide),
+      h4, ArithmeticFunction.vonMangoldt_apply_pow two_ne_zero,
       ArithmeticFunction.vonMangoldt_apply_prime Nat.prime_two, Nat.cast_ofNat]
 
 end NumberField.Chebotarev

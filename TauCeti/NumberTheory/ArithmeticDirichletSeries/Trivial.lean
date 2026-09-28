@@ -137,6 +137,7 @@ theorem dedekindZetaCoeff_rat (n : ℕ) :
   exact Nat.card_unique
 
 /-- Over `ℚ`, a nonzero integral ideal is the only one of its absolute norm. -/
+@[simp]
 theorem normFiber_rat_absNorm (I : (Ideal (𝓞 ℚ))⁰) :
     normFiber ℚ (Ideal.absNorm (I : Ideal (𝓞 ℚ))) = {I} := by
   refine Finset.eq_singleton_iff_unique_mem.mpr ⟨(mem_normFiber ℚ).mpr rfl, fun J hJ ↦ ?_⟩
