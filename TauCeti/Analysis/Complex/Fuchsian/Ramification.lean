@@ -131,7 +131,10 @@ theorem localMultiplicity_quotientMk_smul (g : Γ) (z : ℍ) :
 
 /-- **The orbit projection is unramified exactly on the free locus**: its local multiplicity at
 `z` is one exactly when the stabilizer of `z` is trivial, that is, when `z` lies in
-`TauCeti.freeLocus Γ ℍ`. -/
+`TauCeti.freeLocus Γ ℍ`.
+
+Not `@[simp]`: `Subgroup.localMultiplicity_quotientMk` already rewrites the left-hand side, so a
+`simp` lemma of this shape could never fire and `simpNF` rejects it. -/
 theorem localMultiplicity_quotientMk_eq_one_iff (z : ℍ) :
     localMultiplicity (Quotient.mk (orbitRel Γ ℍ)) z = 1 ↔ stabilizer Γ z = ⊥ := by
   rw [localMultiplicity_quotientMk, Subgroup.card_eq_one]
@@ -139,13 +142,16 @@ theorem localMultiplicity_quotientMk_eq_one_iff (z : ℍ) :
 /-- **The orbit projection is locally injective exactly on the free locus.** Near an elliptic
 point every neighbourhood contains a pair of distinct points of one stabilizer orbit, so the
 projection is not a local homeomorphism, hence not a covering map, there. -/
+@[simp]
 theorem exists_injOn_nhds_quotientMk_iff_stabilizer_eq_bot (z : ℍ) :
     (∃ U ∈ 𝓝 z, InjOn (Quotient.mk (orbitRel Γ ℍ)) U) ↔ stabilizer Γ z = ⊥ := by
   rw [← localMultiplicity_eq_one_iff (.of_forall (mdifferentiable_quotientMk Γ)),
     localMultiplicity_quotientMk_eq_one_iff]
 
 /-- **The orbit projection ramifies exactly at the elliptic points**: its local multiplicity at
-`z` exceeds one exactly when the stabilizer of `z` is nontrivial. -/
+`z` exceeds one exactly when the stabilizer of `z` is nontrivial.
+
+Not `@[simp]`, for the same reason as `Subgroup.localMultiplicity_quotientMk_eq_one_iff`. -/
 theorem one_lt_localMultiplicity_quotientMk_iff (z : ℍ) :
     1 < localMultiplicity (Quotient.mk (orbitRel Γ ℍ)) z ↔ stabilizer Γ z ≠ ⊥ := by
   have hpos := localMultiplicity_quotientMk_pos Γ z
