@@ -41,7 +41,9 @@ universe w v u
 
 namespace TopCat
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
+attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
   [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]
 
 /-- The Alexander–Whitney map `C(X × Y; R ⊗ S) ⟶ C(X; R) ⊗ C(Y; S)` on singular chains: the

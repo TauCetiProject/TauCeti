@@ -29,6 +29,7 @@ lemma val_subinterval_toOrderHom_apply {n : ℕ} (j l : ℕ) (hjl : j + l ≤ n)
     ((subinterval j l hjl).toOrderHom i : ℕ) = i + j := (rfl)
 
 /-- A face of a front face is the front face of the corresponding face. -/
+@[simp]
 lemma δ_comp_subinterval_zero {n p : ℕ} (i : Fin (p + 2)) (k : Fin (n + 2))
     (hik : (i : ℕ) = k) (h : 0 + (p + 1) ≤ n + 1) :
     δ i ≫ subinterval 0 (p + 1) h = subinterval 0 p (by omega) ≫ δ k := by
@@ -41,6 +42,7 @@ lemma δ_comp_subinterval_zero {n p : ℕ} (i : Fin (p + 2)) (k : Fin (n + 2))
   split_ifs <;> omega
 
 /-- The last face of the front `(p + 1)`-face is the front `p`-face. -/
+@[simp]
 lemma δ_last_comp_subinterval_zero {n p : ℕ} (h : 0 + (p + 1) ≤ n) :
     δ (Fin.last (p + 1)) ≫ subinterval 0 (p + 1) h = subinterval 0 p (by omega) := by
   ext j : 3
@@ -48,6 +50,7 @@ lemma δ_last_comp_subinterval_zero {n p : ℕ} (h : 0 + (p + 1) ≤ n) :
   simp [δ]
 
 /-- The zeroth face of the subinterval starting at `j` is the subinterval starting at `j + 1`. -/
+@[simp]
 lemma δ_zero_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
     δ 0 ≫ subinterval j (q + 1) h = subinterval (j + 1) q (by omega) := by
   ext i : 3
@@ -56,6 +59,7 @@ lemma δ_zero_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
   omega
 
 /-- A positive face of a subinterval is the subinterval of the corresponding face. -/
+@[simp]
 lemma δ_succ_comp_subinterval {n j q : ℕ} (i : Fin (q + 1)) (k : Fin (n + 2))
     (hik : j + 1 + (i : ℕ) = k) (h : j + (q + 1) ≤ n + 1) :
     δ i.succ ≫ subinterval j (q + 1) h = subinterval j q (by omega) ≫ δ k := by
@@ -68,6 +72,7 @@ lemma δ_succ_comp_subinterval {n j q : ℕ} (i : Fin (q + 1)) (k : Fin (n + 2))
   split_ifs <;> omega
 
 /-- Deleting a vertex before a subinterval shifts the subinterval. -/
+@[simp]
 lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) ≤ j)
     (h : j + q ≤ n) :
     subinterval j q h ≫ δ k = subinterval (j + 1) q (by omega) := by
@@ -80,6 +85,7 @@ lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) 
   split_ifs <;> omega
 
 /-- Deleting a vertex after a front face does not change it. -/
+@[simp]
 lemma subinterval_zero_comp_δ_of_lt {n p : ℕ} (k : Fin (n + 2)) (hk : p < (k : ℕ))
     (h : 0 + p ≤ n) :
     subinterval 0 p h ≫ δ k = subinterval 0 p (by omega) := by

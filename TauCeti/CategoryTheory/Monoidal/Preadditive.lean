@@ -27,12 +27,14 @@ open MonoidalCategory
 
 variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
 
+/-- Tensoring morphisms commutes with integer scalar multiplication in the first variable. -/
 @[simp]
 lemma zsmul_tensorHom {W X Y Z : C} (m : ℤ) (f : W ⟶ X) (g : Y ⟶ Z) :
     (m • f) ⊗ₘ g = m • (f ⊗ₘ g) := by
   rw [tensorHom_def, tensorHom_def, ← Preadditive.zsmul_comp]
   exact congrArg (· ≫ X ◁ g) ((tensorRight Y).map_zsmul (f := f) (r := m))
 
+/-- Tensoring morphisms commutes with integer scalar multiplication in the second variable. -/
 @[simp]
 lemma tensorHom_zsmul {W X Y Z : C} (m : ℤ) (f : W ⟶ X) (g : Y ⟶ Z) :
     f ⊗ₘ (m • g) = m • (f ⊗ₘ g) := by
