@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Deviation
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
+import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
 # Basis modifications of a free pro-`p` group and the maps `δ`
@@ -40,11 +41,19 @@ The image of `δ` is the subspace of `gr_{m+1}(F)` that the successive-approxima
 the classification of Demushkin groups compare with `gr_{m+1}(F)`; there `m + 1` is the modulus of
 the normal-form congruence, and the classes `ω_i` are the level-`m` basis corrections.
 
+For `p = 2` those arguments compare `gr_j(F)` with the image of `δ` enlarged by one further
+subspace, the **tail** `T_j(ρ)` (`TauCeti.freeProP.basisModificationTail`): the span in `gr_j(F)`
+of the iterated `p`-powers `π^j ξ_i` over the generators whose coefficient `c_i` in `ρ` vanishes,
+which are the generators contributing no `π`-term to `δ`. For the dyadic relator
+`x₁² x₂^{2^f} ⁅x₂, x₃⁆ ⋯` with `f ≥ 2` these are `x₂, …, x_n`.
+
 ## Main definitions
 
 * `TauCeti.freeProP.basisModification`: the endomorphism `θ_w : F → F`, `x_i ↦ x_i * w_i`.
 * `TauCeti.freeProP.basisModificationDelta`: for `m ≥ 1`, the `𝔽_p`-bilinear map
   `δ : gr_1(F) → gr_m(F)^X → gr_{m+1}(F)`, `(ρ, ω) ↦ δ_ρ(ω)`.
+* `TauCeti.freeProP.basisModificationTail`: the tail `T_j(ρ) ≤ gr_j(F)`, spanned by the `π^j ξ_i`
+  with `c_i = 0`.
 
 ## Main results
 
@@ -53,6 +62,9 @@ the normal-form congruence, and the classes `ω_i` are the level-`m` basis corre
 * `TauCeti.freeProP.gradedDeviation_basisModification`,
   `TauCeti.freeProP.gradedMk_inv_mul_basisModification`: the class of `r⁻¹ * θ_w r` in
   `gr_{m+1}(F)` is `δ(ω)`; in particular it depends only on the classes `ω_i`.
+* `TauCeti.freeProP.finrank_basisModificationTail`: `dim T_j(ρ)` is the number of indices `i`
+  with `c_i = 0`.
+* `TauCeti.freeProP.basisModificationTail_succ`: `T_{j+1}(ρ) = π(T_j(ρ))` for `j ≥ 1`.
 
 ## References
 
@@ -64,7 +76,7 @@ public section
 
 namespace TauCeti.freeProP
 
-open Subgroup
+open Subgroup Submodule
 open scoped commutatorElement
 
 universe u
@@ -237,5 +249,83 @@ theorem gradedMk_inv_mul_basisModification (hm : 1 ≤ m)
   rwa [gradedDeviation_gradedMk] at h
 
 end Delta
+
+/-! ### The tails `T_j` -/
+
+section Tail
+
+variable [Fact p.Prime] [Finite X] [LinearOrder X]
+
+variable (p X) in
+/-- **The tail `T_j(ρ)`** of a class `ρ ∈ gr_1(F)`: the subspace of `gr_j(F)` spanned by the
+iterated `p`-powers `π^j ξ_i` of the generator classes `ξ_i ∈ gr_0(F)`, over the indices `i` whose
+coefficient `c_i` of `π ξ_i` in `ρ`, in the standard basis `TauCeti.freeProP.degreeOneBasis`,
+vanishes. For the class `ρ` of a relator these are the generators contributing no `π`-term to the
+basis-modification map `TauCeti.freeProP.basisModificationDelta`. The vectors `π^j ξ_i` are
+linearly independent, so `T_j(ρ)` has dimension the number of such indices
+(`TauCeti.freeProP.finrank_basisModificationTail`), and above degree zero `π` carries `T_j(ρ)`
+onto `T_{j+1}(ρ)` (`TauCeti.freeProP.basisModificationTail_succ`). -/
+noncomputable def basisModificationTail (ρ : gradedPiece p (freeProP p X) 1) (j : ℕ) :
+    Submodule (ZMod p) (gradedPiece p (freeProP p X) j) :=
+  span (ZMod p) (Set.range fun i : {i : X // (degreeOneBasis p X).repr ρ (Sum.inl i) = 0} ↦
+    gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of (i : X))))
+
+/-- An iterated power `π^j ξ_i` belongs to `T_j(ρ)` when its coefficient `c_i` in `ρ`
+vanishes. -/
+theorem gradedPowIter_mem_basisModificationTail {ρ : gradedPiece p (freeProP p X) 1} {i : X}
+    (hi : (degreeOneBasis p X).repr ρ (Sum.inl i) = 0) (j : ℕ) :
+    gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) ∈
+      basisModificationTail p X ρ j :=
+  subset_span ⟨⟨i, hi⟩, rfl⟩
+
+/-- A submodule contains `T_j(ρ)` if and only if it contains every generator `π^j ξ_i`
+whose coefficient `c_i` in `ρ` vanishes. -/
+@[simp]
+theorem basisModificationTail_le_iff {ρ : gradedPiece p (freeProP p X) 1} {j : ℕ}
+    {W : Submodule (ZMod p) (gradedPiece p (freeProP p X) j)} :
+    basisModificationTail p X ρ j ≤ W ↔ ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0 →
+      gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) ∈ W := by
+  simp only [basisModificationTail, span_le, Set.range_subset_iff, Subtype.forall,
+    SetLike.mem_coe]
+
+section
+
+attribute [local instance] Fintype.ofFinite
+
+/-- **Membership in the tail**: the elements of `T_j(ρ)` are the linear combinations of the
+`π^j ξ_i` over the indices `i` with `c_i = 0`. -/
+theorem mem_basisModificationTail_iff {ρ : gradedPiece p (freeProP p X) 1} {j : ℕ}
+    {v : gradedPiece p (freeProP p X) j} :
+    v ∈ basisModificationTail p X ρ j ↔
+      ∃ c : {i : X // (degreeOneBasis p X).repr ρ (Sum.inl i) = 0} → ZMod p,
+        ∑ i, c i • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of (i : X))) =
+          v :=
+  mem_span_range_iff_exists_fun _
+
+end
+
+/-- **`π` carries the tail onto the next tail above degree zero**: for `j ≥ 1`,
+`T_{j+1}(ρ) = π(T_j(ρ))`, since `π` is additive on `gr_j(F)` and `π (π^j ξ_i) = π^{j+1} ξ_i`. -/
+theorem basisModificationTail_succ (ρ : gradedPiece p (freeProP p X) 1) {j : ℕ} (hj : 1 ≤ j) :
+    basisModificationTail p X ρ (j + 1) =
+      (basisModificationTail p X ρ j).map
+        ((gradedPowAddMonoidHom p (freeProP p X) hj).toZModLinearMap p) := by
+  rw [basisModificationTail, basisModificationTail, map_span, ← Set.range_comp]
+  simp only [Function.comp_def, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply,
+    gradedPowIter_succ]
+
+/-- **The dimension of the tail**: `dim T_j(ρ)` is the number of indices `i` whose coefficient
+`c_i` of `π ξ_i` in `ρ` vanishes, because the `π^j ξ_i` are linearly independent
+(`TauCeti.freeProP.linearIndependent_gradedPowIter_gradedMkZero_of`). -/
+theorem finrank_basisModificationTail (ρ : gradedPiece p (freeProP p X) 1) (j : ℕ) :
+    Module.finrank (ZMod p) (basisModificationTail p X ρ j) =
+      Nat.card {i : X // (degreeOneBasis p X).repr ρ (Sum.inl i) = 0} := by
+  classical
+  have := Fintype.ofFinite X
+  exact (finrank_span_eq_card ((linearIndependent_gradedPowIter_gradedMkZero_of p X j).comp
+    (Subtype.val : {i : X // (degreeOneBasis p X).repr ρ (Sum.inl i) = 0} → X)
+    Subtype.val_injective)).trans Nat.card_eq_fintype_card.symm
+
+end Tail
 
 end TauCeti.freeProP

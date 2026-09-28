@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Matrix
-public import TauCeti.InformationTheory.Coding.GaloisDual
+public import TauCeti.InformationTheory.Coding.GaloisDual.Frobenius
 public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.FieldTheory.Finite.Four
 
@@ -206,16 +206,10 @@ theorem checkedBy_map_frobenius_generatorMatrix :
 /-- Over a field of order four, the hexacode is Hermitian self-dual for Frobenius. -/
 theorem galoisDual_code [Finite F] (hF : Nat.card F = 4) :
     (frobeniusEquiv F 2).galoisDual (code ω) = code ω := by
-  let := Fintype.ofFinite F
-  have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
   rw [code_def, Matrix.generatedBy_def,
-    RingEquiv.galoisDual_range_vecMulLinear_of_involutive _
-      (fun x ↦ by
-        simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def,
-          RingHom.comp_apply, RingHom.one_def, RingHom.id_apply] using
-          DFunLike.congr_fun (FiniteField.frobenius_pow (p := 2) (n := 2) hcard) x)]
-  simpa only [Matrix.checkedBy_def, code_def, Matrix.generatedBy_def, coe_frobeniusEquiv]
-    using checkedBy_map_frobenius_generatorMatrix hω
+    RingEquiv.galoisDual_range_vecMulLinear_frobeniusEquiv (hF.trans (by norm_num)),
+    ← Matrix.checkedBy_def, checkedBy_map_frobenius_generatorMatrix hω, code_def,
+    Matrix.generatedBy_def]
 
 end CharacteristicTwo
 

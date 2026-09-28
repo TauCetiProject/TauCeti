@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialFp
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.Empty
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank
 
@@ -22,8 +23,8 @@ The definition is the predicate `IsDemushkin p G`, stated against the continuous
 `cohomFp p G n` and the cup product `cupFp p G` on it. Its first consequences are proved here: a
 Demushkin group is topologically finitely generated, its rank `demushkinRank` is the dimension of
 `H¹(G, 𝔽_p)`, and it is a one-relator pro-`p` group, presented on `demushkinRank` generators by a
-single relator lying in the Frattini subgroup of the free pro-`p` group. A free pro-`p` group is not
-Demushkin, since its `H²(G, 𝔽_p)` vanishes.
+single relator lying in the Frattini subgroup of the free pro-`p` group, and its rank is positive.
+A free pro-`p` group is not Demushkin, since its `H²(G, 𝔽_p)` vanishes.
 
 ## Main definitions
 
@@ -37,6 +38,7 @@ Demushkin, since its `H²(G, 𝔽_p)` vanishes.
 * `TauCeti.IsDemushkin.finrank_cohomFp_one`: `dim_{𝔽_p} H¹(G, 𝔽_p) = demushkinRank`.
 * `TauCeti.IsDemushkin.exists_mem_proPFrattini_continuousMulEquiv_presentedProP`: a Demushkin group
   is a one-relator pro-`p` group with relator in the Frattini subgroup.
+* `TauCeti.IsDemushkin.demushkinRank_pos`: a Demushkin group has positive rank.
 * `TauCeti.not_isDemushkin_freeProP`: a free pro-`p` group is not Demushkin.
 
 ## References
@@ -161,6 +163,24 @@ theorem exists_mem_proPFrattini_continuousMulEquiv_presentedProP (X : Type u) [F
         (Set.singleton_subset_iff.2 x.2)
   exact ⟨x, (topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).2 hrels x.2,
     ⟨(presentedProP.congrOfClosureEq hR).symm.trans e⟩⟩
+
+/-- **A Demushkin group has positive rank**: on an empty generating type the presented group is
+trivial, and a trivial group has vanishing `H²(G, 𝔽_p)`, which is not one-dimensional. -/
+theorem demushkinRank_pos : 0 < demushkinRank hG := by
+  rw [Nat.pos_iff_ne_zero]
+  intro h0
+  obtain ⟨r, -, ⟨e⟩⟩ := hG.exists_mem_proPFrattini_continuousMulEquiv_presentedProP
+    (ULift.{u} (Fin 0)) (by simp [h0])
+  have : Subsingleton (presentedProP p (ULift.{u} (Fin 0)) {r}) :=
+    (presentedProP.mk_surjective p {r}).subsingleton
+  have : Subsingleton G := e.symm.injective.subsingleton
+  -- The explicit `H²(G, 𝔽_p)` needs an action of `G` on `𝔽_p`; the trivial one is installed.
+  let : DistribMulAction G (ZMod p) := DistribMulAction.compHom (ZMod p) (1 : G →* (ZMod p)ˣ)
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m := fun _ m ↦ one_smul (ZMod p)ˣ m
+  have : ContinuousSMul G (ZMod p) := ⟨continuous_snd.congr fun x ↦ (htriv x.1 x.2).symm⟩
+  have h2 : Module.finrank (ZMod p) (H2 G (ZMod p)) = 0 := Module.finrank_zero_of_subsingleton
+  rw [← (cohomFpLinearEquivH2 p G htriv).finrank_eq, hG.finrank_cohomFp_two] at h2
+  exact one_ne_zero h2
 
 end IsDemushkin
 

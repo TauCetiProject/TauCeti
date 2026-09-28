@@ -170,7 +170,7 @@ noncomputable def evensGraphCocycleFixedPoints (U : OpenSubgroup G) (hNU : N ≤
   cocyclesMap2 (G ⧸ N) (trivialF2 (G ⧸ N)).V (G ⧸ N)
       (FixedPoints.addSubgroup N (trivialF2 G).V) (ContinuousMonoidHom.id (G ⧸ N))
       (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
-      (fun q x => by simpa using trivialF2QuotientEquivFixedPoints_smul N q x)
+      (fun _ _ => by simp)
     (evensGraphCocycle (quotientOpenSubgroup N U) (s : G ⧸ N) α
       ((quotientOpenSubgroup_index N U hNU).trans hU)
       (mt (mem_quotientOpenSubgroup_mk_iff N U hNU s).1 hs) hα)
@@ -231,7 +231,7 @@ noncomputable def explicitGraphClassFixedPoints (U : OpenSubgroup G) (hNU : N �
   explicitMap2 (G ⧸ N) (trivialF2 (G ⧸ N)).V (G ⧸ N)
       (FixedPoints.addSubgroup N (trivialF2 G).V) (ContinuousMonoidHom.id (G ⧸ N))
       (trivialF2QuotientEquivFixedPoints N).toAddMonoidHom continuous_of_discreteTopology
-      (fun q x => by simpa using trivialF2QuotientEquivFixedPoints_smul N q x)
+      (fun _ _ => by simp)
     (explicitGraphClass (quotientOpenSubgroup N U)
       ((quotientOpenSubgroup_index N U hNU).trans hU) α hα)
 

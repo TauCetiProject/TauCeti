@@ -22,6 +22,10 @@ For a field extension `L` of `K` the range of the `q`-power map is a subfield ov
 purely inseparable: every `x : L` has `x ^ q` in that image, and `q` is a power of the exponential
 characteristic.
 
+On a finite field of order `p ^ 2` the Frobenius automorphism `frobeniusEquiv K p`, sending `x`
+to `x ^ p`, is an involution. This is the field automorphism behind Hermitian duality of codes
+over the field of four elements.
+
 ## Main definitions
 
 * `TauCeti.FiniteField.frobeniusFixedSubalgebra`: the subalgebra fixed by an iterate of the
@@ -30,10 +34,14 @@ characteristic.
 ## Main results
 
 * `TauCeti.FiniteField.frobeniusAlgHom_pow_apply`: the `n`-th iterate is the `q ^ n`-power map.
+* `TauCeti.FiniteField.sub_pow_natCard`: the `q`-power map is additive,
+  `(x - y) ^ q = x ^ q - y ^ q`.
 * `TauCeti.FiniteField.mem_frobeniusFixedSubalgebra`: membership in the fixed subalgebra is the
   equation `a ^ q ^ n = a`.
 * `TauCeti.FiniteField.isPurelyInseparable_fieldRange_frobeniusAlgHom`: `L` is purely
   inseparable over the field range of `FiniteField.frobeniusAlgHom K L`.
+* `TauCeti.FiniteField.frobeniusEquiv_involutive`: on a field of order `p ^ 2`, the Frobenius
+  automorphism `x ↦ x ^ p` is an involution.
 
 ## Mathematical context
 
@@ -50,6 +58,16 @@ same `q`-power map.
 public section
 
 namespace TauCeti.FiniteField
+
+/-- **Raising to the order of a finite base field is additive**: in a `K`-algebra,
+`(x - y) ^ q = x ^ q - y ^ q` for `q` the number of elements of `K`. -/
+-- Not `@[simp]`: whenever a `Fintype K` instance is available, `Nat.card_eq_fintype_card` rewrites
+-- the left-hand side to `(x - y) ^ Fintype.card K`, so the simpNF linter rejects the attribute.
+theorem sub_pow_natCard (K A : Type*) [Field K] [Finite K] [CommRing A] [Algebra K A] (x y : A) :
+    (x - y) ^ Nat.card K = x ^ Nat.card K - y ^ Nat.card K := by
+  let _ := Fintype.ofFinite K
+  simpa only [_root_.FiniteField.coe_frobeniusAlgHom, Nat.card_eq_fintype_card] using
+    map_sub (_root_.FiniteField.frobeniusAlgHom K A) x y
 
 variable (K A : Type*) [Field K] [Fintype K] [CommRing A] [Algebra K A]
 
@@ -101,6 +119,23 @@ theorem isPurelyInseparable_fieldRange_frobeniusAlgHom :
   rw [AlgHom.mem_fieldRange]
   use x
   rw [FiniteField.coe_frobeniusAlgHom, hcard]
+
+/-! ### The Frobenius of a field of order `p ^ 2` -/
+
+section Involutive
+
+variable {K : Type*} [Field K] [Finite K] {p : ℕ} [Fact p.Prime] [CharP K p]
+
+/-- On a field of order `p ^ 2`, the Frobenius automorphism `x ↦ x ^ p` is an involution. -/
+theorem frobeniusEquiv_involutive (hK : Nat.card K = p ^ 2) :
+    Function.Involutive (frobeniusEquiv K p) := by
+  let := Fintype.ofFinite K
+  have hcard : Fintype.card K = p ^ 2 := Nat.card_eq_fintype_card.symm.trans hK
+  intro x
+  simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def, RingHom.comp_apply, RingHom.one_def,
+    RingHom.id_apply] using DFunLike.congr_fun (FiniteField.frobenius_pow hcard) x
+
+end Involutive
 
 end TauCeti.FiniteField
 

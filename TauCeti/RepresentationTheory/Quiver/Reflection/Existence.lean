@@ -37,8 +37,9 @@ orientation (`TauCeti.vertexPreReflectionList_reflectList`), so no looplessness 
 hypothesis has to be re-established for a reflected quiver. Arrow-finiteness is transported by
 `TauCeti.Quiver.fintypeHomReflectList`.
 
-As in the neighbouring files the comparison with a vertex simple puts the field in the universe of
-the vertex spaces: the vertex space of `Sⱼ` is the field itself.
+As in the neighbouring files, the universe of the vertex spaces is chosen large enough for the
+vertices, arrows, and field. The construction therefore starts from a universe lift of `Sⱼ`,
+whose nonzero vertex space remains a one-dimensional copy of the field.
 
 ## Main results
 
@@ -63,7 +64,7 @@ public section
 
 namespace TauCeti
 
-universe v w x
+universe u v w x
 
 -- The argument, step by step:
 -- 1. One word. `exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg` carries a positive
@@ -141,7 +142,7 @@ section Existence
 
 open CategoryTheory
 
-variable (k : Type (max v w x)) (Q : Type v) [Field k] [Fintype Q] [DecidableEq Q]
+variable (k : Type u) (Q : Type v) [Field k] [Fintype Q] [DecidableEq Q]
 
 /-- **A nonnegative source-reflection word turns a vertex simple into an indecomposable with the
 prescribed dimension vector.** Starting from the vertex simple `Sⱼ` of `q₀` and reflecting along a
@@ -153,26 +154,42 @@ theorem exists_indecomposable_dimVector_eq_vertexPreReflectionList_single
     (l : List Q) (j : Q) (hadm : Quiver.IsSourceAdmissible q₀ l)
     (hnn : ∀ r < l.length,
       0 ≤ @vertexPreReflectionList Q q₀ _ hq₀ _ (l.take (r + 1)) (Pi.single j 1)) :
-    ∃ M : @QuiverRep.{max v w x, v, w, max v w x} k Q _ (Quiver.reflectList q₀ l),
+    ∃ M : @QuiverRep.{u, v, w, max u v w x} k Q _ (Quiver.reflectList q₀ l),
       Indecomposable M ∧
-        @IsFinDim.{max v w x, v, w, max v w x} k Q _ (Quiver.reflectList q₀ l) M ∧
+        @IsFinDim.{u, v, w, max u v w x} k Q _ (Quiver.reflectList q₀ l) M ∧
         (fun t : Q ↦ (@dimVector k Q _ (Quiver.reflectList q₀ l) M t : ℤ))
           = @vertexPreReflectionList Q q₀ _ hq₀ _ l (Pi.single j 1) := by
   let : _root_.Quiver.{w} Q := q₀
   let : ∀ a b : Q, Fintype (@_root_.Quiver.Hom Q q₀ a b) := hq₀
+  let S : @QuiverRep.{u, v, w, max u v w x} k Q _ q₀ :=
+    simpleRep k Q j ⋙ ModuleCat.uliftFunctor.{max v w x, u} k
   -- The dimension vector of the vertex simple is the simple root the word starts from.
-  have hdimsimp : (fun t : Q ↦ (@dimVector k Q _ q₀ (simpleRep k Q j) t : ℤ))
-      = Pi.single j 1 := by
+  have hdimsimp : (fun t : Q ↦ (@dimVector k Q _ q₀ S t : ℤ)) = Pi.single j 1 := by
     funext t
-    rw [dimVector_simpleRep]
-    by_cases h : t = j <;> simp [h]
+    rw [dimVector_apply]
+    -- `uliftFunctor` has no object rewrite lemma; expose its carrier to apply `finrank_ulift`.
+    change (Module.finrank k
+      (ULift.{max v w x, u} ((simpleRep k Q j).obj ((Paths.of Q).obj t))) : ℤ) = _
+    rw [finrank_ulift]
+    have ht := congrFun (dimVector_simpleRep (k := k) (Q := Q) j) t
+    rw [dimVector_apply] at ht
+    calc
+      (Module.finrank k ((simpleRep k Q j).obj ((Paths.of Q).obj t)) : ℤ) =
+          ((Pi.single j (1 : ℕ) : Q → ℕ) t : ℤ) := congrArg Int.ofNat ht
+      _ = (Pi.single j (1 : ℤ) : Q → ℤ) t := by
+        by_cases h : t = j <;> simp [h]
+  have hS : Indecomposable S := by
+    let _ : Simple S := simple_simpleRep_comp_uliftFunctor.{u, v, w, x} k Q j
+    exact indecomposable_of_simple S
+  have hfdS : ∀ a : Q, FiniteDimensional k (S.obj a) := by
+    intro a
+    exact ULift.moduleEquiv.symm.finiteDimensional
   obtain ⟨hind, hdim⟩ :=
-    indecomposable_and_dimVector_sourceReflectionFunctorList.{max v w x, v, w, x}
-      l q₀ hq₀ hadm (simpleRep k Q j) (indecomposable_of_simple _)
-      (fun a ↦ finiteDimensional_simpleRep_obj j a) (by rw [hdimsimp]; exact hnn)
+    indecomposable_and_dimVector_sourceReflectionFunctorList.{u, v, w, max u x}
+      l q₀ hq₀ hadm S hS hfdS (by rw [hdimsimp]; exact hnn)
   refine ⟨_, hind, ?_, ?_⟩
-  · exact isFinDim_sourceReflectionFunctorList_obj.{max v w x, v, w, x} l q₀ hq₀ hadm
-      (simpleRep k Q j) (isFinDim_iff.mpr fun v ↦ finiteDimensional_simpleRep_obj j v)
+  · exact isFinDim_sourceReflectionFunctorList_obj.{u, v, w, max u x}
+      l q₀ hq₀ hadm S (isFinDim_iff.mpr hfdS)
   · rw [hdim, hdimsimp]
 
 omit [DecidableEq Q] in
@@ -185,8 +202,8 @@ vector of an indecomposable *is* a positive root is
 theorem exists_indecomposable_dimVector_eq [q : _root_.Quiver.{w} Q]
     [hq : ∀ a b : Q, Fintype (a ⟶ b)] (hpd : (titsForm Q).PosDef)
     {d : Q → ℤ} (hd : 0 ≤ d) (hroot : titsForm Q d = 1) :
-    ∃ M : QuiverRep.{max v w x, v, w, max v w x} k Q, Indecomposable M ∧
-      IsFinDim.{max v w x, v, w, max v w x} k Q M ∧
+    ∃ M : QuiverRep.{u, v, w, max u v w x} k Q, Indecomposable M ∧
+      IsFinDim.{u, v, w, max u v w x} k Q M ∧
       (fun t : Q ↦ (dimVector M t : ℤ)) = d := by
   classical
   -- A sink-admissible word carries `d` to a simple root without leaving the nonnegative cone, so
@@ -194,10 +211,10 @@ theorem exists_indecomposable_dimVector_eq [q : _root_.Quiver.{w} Q]
   obtain ⟨l, j, hl, hld, hnn⟩ :=
     exists_isSinkAdmissible_vertexPreReflectionList_eq_single_and_nonneg Q hpd hd hroot
   have hloop : ∀ i : Q, IsEmpty (i ⟶ i) := isEmpty_hom_self_of_titsForm_posDef Q hpd
-  suffices h : ∃ M : @QuiverRep.{max v w x, v, w, max v w x} k Q _
+  suffices h : ∃ M : @QuiverRep.{u, v, w, max u v w x} k Q _
       (Quiver.reflectList (Quiver.reflectList q l) l.reverse),
       Indecomposable M ∧
-        @IsFinDim.{max v w x, v, w, max v w x} k Q _
+        @IsFinDim.{u, v, w, max u v w x} k Q _
           (Quiver.reflectList (Quiver.reflectList q l) l.reverse) M ∧
         (fun t : Q ↦ (@dimVector k Q _
           (Quiver.reflectList (Quiver.reflectList q l) l.reverse) M t : ℤ)) = d by
@@ -210,7 +227,7 @@ theorem exists_indecomposable_dimVector_eq [q : _root_.Quiver.{w} Q]
     exact nonneg_vertexPreReflectionList_take_reverse Q (fun i _ ↦ hloop i) hnn (r + 1)
       (by rw [List.length_reverse] at hr; omega)
   obtain ⟨M, hind, hfd, hdim⟩ :=
-    exists_indecomposable_dimVector_eq_vertexPreReflectionList_single k Q
+    exists_indecomposable_dimVector_eq_vertexPreReflectionList_single.{u, v, w, x} k Q
       (Quiver.reflectList q l) (Quiver.fintypeHomReflectList l q hq) l.reverse j
       hl.isSourceAdmissible_reverse hnn'
   refine ⟨M, hind, hfd, ?_⟩
@@ -224,13 +241,14 @@ is `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`, nonnegati
 for a dimension vector. -/
 theorem nonneg_and_titsForm_eq_one_iff_exists_indecomposable [q : _root_.Quiver.{w} Q]
     [hq : ∀ a b : Q, Fintype (a ⟶ b)] (hpd : (titsForm Q).PosDef) {d : Q → ℤ} :
-    0 ≤ d ∧ titsForm Q d = 1 ↔ ∃ M : QuiverRep.{max v w x, v, w, max v w x} k Q,
-      Indecomposable M ∧ IsFinDim.{max v w x, v, w, max v w x} k Q M ∧
+    0 ≤ d ∧ titsForm Q d = 1 ↔ ∃ M : QuiverRep.{u, v, w, max u v w x} k Q,
+      Indecomposable M ∧ IsFinDim.{u, v, w, max u v w x} k Q M ∧
         (fun t : Q ↦ (dimVector M t : ℤ)) = d := by
-  refine ⟨fun ⟨hd, hroot⟩ ↦ exists_indecomposable_dimVector_eq k Q hpd hd hroot, ?_⟩
+  refine ⟨fun ⟨hd, hroot⟩ ↦
+    exists_indecomposable_dimVector_eq.{u, v, w, x} k Q hpd hd hroot, ?_⟩
   rintro ⟨M, hM, hfd, rfl⟩
   exact ⟨fun t ↦ Int.natCast_nonneg _,
-    titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic
+    titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic.{u, v, w, max u x}
       (isAcyclic_of_titsForm_posDef hpd) hpd M hM hfd⟩
 
 end Existence

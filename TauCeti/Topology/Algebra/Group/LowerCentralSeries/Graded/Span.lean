@@ -40,6 +40,8 @@ The openness hypothesis holds in a topologically finitely generated profinite gr
   set span `gr_0(G)`, when `λ_1` is open.
 * `TauCeti.span_gradedPow_gradedMkZero_union_gradedBracket_eq_top`: the `p`-power classes and
   brackets of a topological generating set span `gr_1(G)`, when `λ_2` is open.
+* `TauCeti.linearMap_ext_gradedPiece_one`: linear maps out of `gr_1(G)` are determined by their
+  values on those `p`-power classes and brackets.
 * `TauCeti.span_range_degreeOneFamily_eq_top`: the ordered form of the previous statement.
 
 ## References
@@ -183,6 +185,21 @@ theorem span_gradedPow_gradedMkZero_union_gradedBracket_eq_top [NeZero p]
   obtain ⟨w, hw, hwy⟩ := hlam₁ y.2
   rw [← gradedPieceInclusion_gradedMk] at hwy
   exact gradedPieceInclusion_injective 1 hwy ▸ hw
+
+/-- **Linear maps out of `gr_1(G)` are determined on a topological generating set**, when `λ_2`
+is open: two `ZMod p`-linear maps agreeing on the `p`-power classes `π ⟦x⟧` and the brackets
+`[⟦x⟧, ⟦y⟧]` of the elements `x, y` of a topological generating set are equal. -/
+theorem linearMap_ext_gradedPiece_one [NeZero p] {M : Type*} [AddCommMonoid M]
+    [Module (ZMod p) M] (h₂ : IsOpen (pLowerCentralSeries p G 2 : Set G)) {s : Set G}
+    (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f g : gradedPiece p G 1 →ₗ[ZMod p] M}
+    (hpow : ∀ x ∈ s, f (gradedPow p G 0 (gradedMkZero p G x)) =
+      g (gradedPow p G 0 (gradedMkZero p G x)))
+    (hbr : ∀ x ∈ s, ∀ y ∈ s, f (gradedBracket p G 0 0 (gradedMkZero p G x) (gradedMkZero p G y)) =
+      g (gradedBracket p G 0 0 (gradedMkZero p G x) (gradedMkZero p G y))) : f = g := by
+  refine LinearMap.ext_on (span_gradedPow_gradedMkZero_union_gradedBracket_eq_top h₂ hs) ?_
+  rintro _ (⟨x, hx, rfl⟩ | ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩)
+  · exact hpow x hx
+  · exact hbr x hx y hy
 
 /-! ### The degree-one family of an ordered family -/
 

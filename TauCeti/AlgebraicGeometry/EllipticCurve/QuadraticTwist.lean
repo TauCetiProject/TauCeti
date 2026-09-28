@@ -797,7 +797,7 @@ theorem map_quadraticTwistVariableChange_baseChange {σ : M ≃ₐ[K] M}
     ← VariableChange.baseChange,
     ← negVariableChange_map, hb]
 
-variable [E.IsElliptic] [DecidableEq M]
+variable [DecidableEq M]
 
 variable (L) in
 /-- **The isomorphism `Eᴸ(M) ≅ E(M)` on `M`-points**, for any field `M` in a tower `K ⊆ L ⊆ M`:
@@ -813,7 +813,7 @@ noncomputable def quadraticTwistPointEquiv :
     ((E.quadraticTwist L).baseChange M).toAffine.Point ≃+ (E.baseChange M).toAffine.Point :=
   (AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.toAffine.Point)
       (E.quadraticTwistVariableChange_smul_baseChange L M).symm).trans
-    (Affine.Point.equivVariableChange (E.baseChange M)
+    (Affine.Point.addEquivVariableChange (E.baseChange M)
       ((E.quadraticTwistVariableChange L).baseChange M))
 
 variable (L) in
@@ -831,8 +831,9 @@ is `quadraticTwistVariableChange` base changed to `M`. -/
           ((Affine.variableChange_nonsingular (E.baseChange M)
             ((E.quadraticTwistVariableChange L).baseChange M) x y).mpr
               ((E.quadraticTwistVariableChange_smul_baseChange L M).symm ▸ h)) := by
-  rw [quadraticTwistPointEquiv, AddEquiv.trans_apply, Affine.Point.cast_some,
-    Affine.Point.equivVariableChange_some]
+  rw [quadraticTwistPointEquiv, AddEquiv.trans_apply, AddEquiv.cast_apply,
+    Affine.Point.cast_some (E.quadraticTwistVariableChange_smul_baseChange L M).symm,
+    Affine.Point.coe_addEquivVariableChange, Affine.Point.equivVariableChange_some]
 
 /-- **What the inverse isomorphism does to a point given by coordinates.** It is the map induced
 by the inverse of the base-changed change of variables. -/
@@ -853,7 +854,10 @@ by the inverse of the base-changed change of variables. -/
                 ((inv_smul_smul ((E.quadraticTwistVariableChange L).baseChange M)
                   (E.baseChange M)).symm ▸ h)) := by
   rw [AddEquiv.symm_apply_eq, quadraticTwistPointEquiv, AddEquiv.trans_apply,
-    Affine.Point.cast_some, Affine.Point.equivVariableChange_some, Affine.Point.some.injEq]
+    AddEquiv.cast_apply,
+    Affine.Point.cast_some (E.quadraticTwistVariableChange_smul_baseChange L M).symm,
+    Affine.Point.coe_addEquivVariableChange,
+    Affine.Point.equivVariableChange_some, Affine.Point.some.injEq]
   refine ⟨?_, ?_⟩ <;>
     simp only [VariableChange.inv_def, Units.val_inv_eq_inv_val] <;> field
 

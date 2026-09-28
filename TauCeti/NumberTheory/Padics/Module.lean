@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.RingHoms
-public import Mathlib.Topology.Algebra.Module.Equiv
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.Algebra.Group.Equiv.TypeTags

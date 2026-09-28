@@ -117,7 +117,7 @@ theorem carrierNode_eq_last_iff (i : Fin d.1.rank) :
     have := d.carrierRank_add_one
     rw [Fin.ext_iff, Fin.val_cast, Fin.val_last]
     omega
-  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofC
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   rw [hcarrier, DynkinType.isLongSimpleRoot_congr (LieTypeIndex.dynkinType_C rank q)]
   simp only [DynkinType.isLongSimpleRoot_C, finCongr_apply, Fin.val_cast]
   simp only [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType, LieTypeIndex.dynkinType_C,

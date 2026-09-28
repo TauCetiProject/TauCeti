@@ -135,6 +135,13 @@ theorem demushkinWordNeTwo_def (q n : ℕ) (x : ℕ → H) :
       x 0 ^ q * ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i)) (x (2 * i + 1))).prod :=
   (rfl)
 
+/-- At `q = 0` and rank two the word is the single commutator `(x₁, x₂)`, the surface relation of
+`ℤ_p × ℤ_p`. -/
+@[simp]
+theorem demushkinWordNeTwo_zero_two (x : ℕ → H) :
+    demushkinWordNeTwo 0 2 x = labuteComm (x 0) (x 1) := by
+  simp [demushkinWordNeTwo_def]
+
 /-- The `q = 2`, `n` odd normal-form word `x₁² x₂^{2^f} (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`, on an
 arbitrary tuple `x : ℕ → H`, with `x 0` playing the role of `x₁`. The parameter `f` is finite;
 the word has `n / 2` commutator factors. -/

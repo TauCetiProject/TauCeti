@@ -10,6 +10,9 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.RingTheory.Finiteness.Subalgebra
 public import TauCeti.Algebra.WordFiltration.AssociatedGraded
+-- Private: the vanishing of exterior powers above the dimension is used only to show that the
+-- filtration of a finite-dimensional space stabilises at its dimension.
+import TauCeti.LinearAlgebra.ExteriorPower
 
 /-!
 # The degree filtration of a Clifford algebra
@@ -58,6 +61,8 @@ supremum over the `i` of a fixed parity.
   anything downstream; `CliffordAlgebra.filtration_pow` is its iterate and
   `CliffordAlgebra.mul_mem_filtration` its elementwise form.
 * `CliffordAlgebra.filtration_succ_eq_sup`: the recursion for the successor step.
+* `CliffordAlgebra.filtration_eq_top_of_finrank_le`: over a field, the filtration of a
+  finite-dimensional space is exhausted at its dimension.
 * `CliffordAlgebra.filtration_eq_iSup_pow`: the comparison with the submodule powers of
   `LinearMap.range (ι Q)`.
 * `CliffordAlgebra.filtrationLeadingTerm` and
@@ -565,5 +570,32 @@ theorem fg_filtration [Module.Finite R M] (k : ℕ) : (filtration Q k).FG := by
   | succ k ih =>
     rw [filtration_succ_eq_sup]
     exact ih.sup (hι.pow _)
+
+/-- **The filtration stops at the dimension.** Over a field, every element of the Clifford algebra
+of a finite-dimensional space of dimension at most `n` is a combination of products of at most `n`
+generators: the exterior powers above the dimension vanish, so from degree `n + 1` on the
+leading-term map has a trivial target and each step of the filtration equals the previous one. -/
+theorem filtration_eq_top_of_finrank_le {K : Type u} {V : Type v} [Field K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V) {n : ℕ}
+    (hV : Module.finrank K V ≤ n) : filtration Q n = ⊤ := by
+  rw [eq_top_iff, ← iSup_filtration_eq_top Q]
+  refine iSup_le fun k => ?_
+  induction k with
+  | zero => exact filtration_mono Q (Nat.zero_le n)
+  | succ k ih =>
+    by_cases hk : k + 1 ≤ n
+    · exact filtration_mono Q hk
+    · have hvanish (x : ⋀[K]^(k + 1) V) : x = 0 :=
+        exteriorPower.eq_zero_of_finrank_lt (k + 1) (by omega) x
+      have : Subsingleton (⋀[K]^(k + 1) V) := ⟨fun x y => (hvanish x).trans (hvanish y).symm⟩
+      have : Subsingleton (GradedPiece (ι Q) (k + 1)) :=
+        (filtrationLeadingTerm_surjective Q k).subsingleton
+      -- The degree-`k + 1` quotient is trivial, so the step `k + 1` lies in the step `k`.
+      have hstep : filtration Q (k + 1) ≤ filtration Q k := fun x hx => by
+        have hxzero : (previousRestricted (ι Q) (k + 1)).mkQ ⟨x, hx⟩ = 0 :=
+          Subsingleton.elim _ _
+        rwa [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, mem_previousRestricted_iff,
+          wordFiltrationPrevious_succ] at hxzero
+      exact hstep.trans ih
 
 end CliffordAlgebra

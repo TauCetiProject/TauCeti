@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Basic
-import TauCeti.FieldTheory.KummerExtension
+import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
 # The discriminant field `F(√disc f)`
