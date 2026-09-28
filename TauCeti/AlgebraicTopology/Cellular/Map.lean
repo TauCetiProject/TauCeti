@@ -83,18 +83,11 @@ def cellularChainGroupMap (n : ℕ) :
     cellularChainGroup C R n ⟶ cellularChainGroup C' R n :=
   TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n
 
-/-- The action on a cellular chain group is the singular homology map of the skeletal pair. -/
-lemma cellularChainGroupMap_eq_singularHomologyMap (n : ℕ) :
-    cellularChainGroupMap C C' hf R n =
-      TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n := by
-  unfold cellularChainGroupMap
-  rfl
-
 /-- The identity cellular map acts as the identity on each cellular chain group. -/
 @[simp]
 lemma cellularChainGroupMap_id (n : ℕ) :
     cellularChainGroupMap C C (isCellular_id C) R n = 𝟙 (cellularChainGroup C R n) := by
-  simp [cellularChainGroupMap_eq_singularHomologyMap, skeletonPairMap_id,
+  simp [cellularChainGroupMap, skeletonPairMap_id,
     TopPair.singularHomologyMap]
 
 /-- The maps on cellular chain groups respect composition of cellular maps. -/
@@ -102,7 +95,7 @@ lemma cellularChainGroupMap_id (n : ℕ) :
 lemma cellularChainGroupMap_comp (n : ℕ) :
     cellularChainGroupMap C C'' (IsCellular.comp C C' hf hg) R n =
       cellularChainGroupMap C C' hf R n ≫ cellularChainGroupMap C' C'' hg R n := by
-  rw [cellularChainGroupMap_eq_singularHomologyMap,
+  rw [cellularChainGroupMap,
     skeletonPairMap_comp C C' hf C'' hg n]
   rw [TopPair.singularHomologyMap, Functor.map_comp, SSetPair.homologyMap_comp]
   rfl
