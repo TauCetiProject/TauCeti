@@ -130,7 +130,7 @@ theorem natCard_H2 (cf : ClassFormation F) (L : NormalLayer G) :
 /-- There is exactly one class of invariant `1 / [K : F]`. -/
 theorem existsUnique_inv_eq (cf : ClassFormation F) (L : NormalLayer G) :
     ∃! u : L.H F 2, cf.inv L u = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) :=
-  AddCircle.existsUnique_apply_eq_coe_period_div (1 : ℚ) L.degree_pos (cf.inv_injective L)
+  AddCircle.existsUnique_apply_eq_coe_period_div (1 : ℚ) (cf.inv_injective L)
     (cf.range_inv L)
 
 /-- The **fundamental class** `u_{K/F}` of a finite normal layer: the unique class of invariant
@@ -154,8 +154,9 @@ theorem eq_fundamentalClass_iff (cf : ClassFormation F) {L : NormalLayer G} (x :
 /-- Every class in `H²` of a layer is an integer multiple of the fundamental class. -/
 theorem fundamentalClass_generates (cf : ClassFormation F) (L : NormalLayer G) (x : L.H F 2) :
     ∃ m : ℤ, x = m • cf.fundamentalClass L := by
-  obtain ⟨m, hm⟩ := AddCircle.exists_zsmul_eq_of_apply_eq_coe_period_div (1 : ℚ) L.degree_pos
-    (cf.inv_injective L) (cf.range_inv L) (cf.inv_fundamentalClass L) x
+  obtain ⟨m, hm⟩ := AddCircle.exists_zsmul_eq_of_apply_eq_coe_period_div (1 : ℚ)
+    (Nat.cast_ne_zero.mpr L.degree_pos.ne') (cf.inv_injective L) (cf.range_inv L)
+    (cf.inv_fundamentalClass L) x
   exact ⟨m, hm.symm⟩
 
 /-- The fundamental class generates `H²` of its layer. -/

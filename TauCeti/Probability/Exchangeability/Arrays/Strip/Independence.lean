@@ -39,6 +39,8 @@ been revealed, the rest of the array carries no further information about that v
 
 * `TauCeti.Probability.SeparatelyExchangeable.condIndepFun_rowStrip_colStrip` — the two crossing
   strip families are conditionally independent given their intersection.
+* `TauCeti.Probability.SeparatelyExchangeable.condIndepFun_rowStrip_colStrip_of_enum` — the same
+  statement for `ℕ`-indexed strips given an enumerated hidden block.
 * `TauCeti.Probability.SeparatelyExchangeable.condIndepFun_visibleBlock_compl` — a finite visible
   rectangle is conditionally independent of its complement given the full crossing strips.
 -/
@@ -79,6 +81,50 @@ theorem SeparatelyExchangeable.condIndepFun_rowStrip_colStrip
     exact ⟨id, b, Function.injective_id, hb,
       fun p hp ↦ Prod.ext rfl (hbC p.2 ⟨p, hp, rfl⟩),
       fun p hp ↦ ⟨hp.1, hbT _⟩⟩
+
+/-- **Enumerated crossing strips are conditionally independent given the hidden block.** Let `e`
+and `f` enumerate hidden rows and hidden columns, at least one of them with infinite range. Then
+the row strips `(x (g i, f ·))ᵢ` and the column strips `(x (e ·, g' j))ⱼ` are conditionally
+independent given the `ℕ × ℕ`-indexed hidden block `(x (e a, f b))_{a,b}`, for arbitrary
+`g` and `g'`. This is `condIndepFun_rowStrip_colStrip` for `range e` and `range f`, restated with
+`ℕ`-indexed strips and block. -/
+theorem SeparatelyExchangeable.condIndepFun_rowStrip_colStrip_of_enum
+    (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) {e f : ℕ → ℕ}
+    (hef : (Set.range e).Infinite ∨ (Set.range f).Infinite) (g g' : ℕ → ℕ) :
+    CondIndepFun (MeasurableSpace.comap (fun x : ℕ × ℕ → α ↦ fun q : ℕ × ℕ ↦ x (e q.1, f q.2))
+        inferInstance)
+      (Measurable.of_eval fun q ↦ measurable_pi_apply (e q.1, f q.2)).comap_le
+      (fun x i b ↦ x (g i, f b)) (fun x j a ↦ x (e a, g' j)) ρ := by
+  -- The hidden block generates the same σ-algebra as the restriction to `range e ×ˢ range f`.
+  set S := Set.range e
+  set T := Set.range f
+  let H : (ℕ × ℕ → α) → ℕ × ℕ → α := fun x q ↦ x (e q.1, f q.2)
+  have hHD : H = (fun y q ↦ y ⟨(e q.1, f q.2), ⟨q.1, rfl⟩, ⟨q.2, rfl⟩⟩) ∘
+      (S ×ˢ T).domRestrict (π := fun _ ↦ α) := rfl
+  have hDH : (S ×ˢ T).domRestrict (π := fun _ ↦ α) =
+      (fun h q ↦ h (Function.invFun e q.1.1, Function.invFun f q.1.2)) ∘ H := by
+    funext x q
+    rcases q with ⟨⟨a, b⟩, ⟨i, hi⟩, ⟨j, hj⟩⟩
+    simp only at hi hj
+    subst hi hj
+    simp only [Function.comp_apply, H, Set.domRestrict_apply,
+      Function.invFun_eq (⟨i, rfl⟩ : ∃ i', e i' = e i),
+      Function.invFun_eq (⟨j, rfl⟩ : ∃ j', f j' = f j)]
+  have hcomap : MeasurableSpace.comap H inferInstance =
+      MeasurableSpace.comap ((S ×ˢ T).domRestrict (π := fun _ ↦ α)) inferInstance := by
+    apply le_antisymm
+    · rw [hHD, ← MeasurableSpace.comap_comp]
+      exact MeasurableSpace.comap_mono (Measurable.of_eval fun _ ↦ measurable_pi_apply _).comap_le
+    · rw [hDH, ← MeasurableSpace.comap_comp]
+      exact MeasurableSpace.comap_mono (Measurable.of_eval fun _ ↦ measurable_pi_apply _).comap_le
+  have h := (hρ.condIndepFun_rowStrip_colStrip S (T := T) hef).comp
+    (φ := fun y i b ↦ y ⟨(g i, f b), trivial, ⟨b, rfl⟩⟩)
+    (ψ := fun y j a ↦ y ⟨(e a, g' j), ⟨a, rfl⟩, trivial⟩)
+    (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _)
+    (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _)
+  -- `convert` discharges the equality of the two conditioning σ-algebras with the hypothesis
+  -- `hcomap`; the strip maps agree with the composites by definition.
+  convert h using 1 <;> rfl
 
 /-- **A finite visible rectangle is conditionally independent of its complement given the
 crossing hidden strips.** Let `S` and `T` be infinite sets of hidden row and column indices, and
