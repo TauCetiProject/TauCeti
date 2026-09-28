@@ -39,7 +39,8 @@ variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
 /-- The restrictions to two consecutive skeleta form a map of skeletal pairs. -/
 def skeletonPairMap (n : ℕ) : skeletonPair C n ⟶ skeletonPair C' n :=
-  TopPair.ofHom (skeletonMap C C' hf (n + 1)) (skeletonMap C C' hf n) (by ext x; rfl)
+  TopPair.ofHom (skeletonMap C C' hf (n + 1)) (skeletonMap C C' hf n)
+    (skeletonMap_comp_inclusion C C' hf n)
 
 @[simp]
 lemma skeletonPairMap_fst (n : ℕ) :
@@ -53,13 +54,14 @@ lemma skeletonPairMap_snd (n : ℕ) :
 private def skeletonTripleMap (n : ℕ) : skeletonTriple C n ⟶ skeletonTriple C' n :=
   ⟨ComposableArrows.homMk₂ (skeletonMap C C' hf n)
     (skeletonMap C C' hf (n + 1)) (skeletonMap C C' hf (n + 2))
-    (by ext x; rfl) (by ext x; rfl)⟩
+    (skeletonMap_comp_inclusion C C' hf n).symm
+    (skeletonMap_comp_inclusion C C' hf (n + 1)).symm⟩
 
 /-- Restriction of the identity map to a skeletal pair is the identity pair map. -/
 @[simp]
 lemma skeletonPairMap_id (n : ℕ) :
     skeletonPairMap C C (isCellular_id C) n = 𝟙 (skeletonPair C n) := by
-  ext : 2 <;> rfl
+  ext : 1 <;> simp [skeletonPairMap_fst, skeletonPairMap_snd]
 
 variable {Z : Type w} [TopologicalSpace Z] [T2Space Z] {F : Set Z}
   (C'' : Set Z) [RelCWComplex C'' F]
@@ -70,7 +72,9 @@ variable {Z : Type w} [TopologicalSpace Z] [T2Space Z] {F : Set Z}
 lemma skeletonPairMap_comp (n : ℕ) :
     skeletonPairMap C C'' (IsCellular.comp C C' hf hg) n =
       skeletonPairMap C C' hf n ≫ skeletonPairMap C' C'' hg n := by
-  ext : 2 <;> rfl
+  ext : 1
+  · exact skeletonMap_comp C C' hf C'' hg n
+  · exact skeletonMap_comp C C' hf C'' hg (n + 1)
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
@@ -79,18 +83,28 @@ def cellularChainGroupMap (n : ℕ) :
     cellularChainGroup C R n ⟶ cellularChainGroup C' R n :=
   TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n
 
+/-- The action on a cellular chain group is the singular homology map of the skeletal pair. -/
+@[simp]
+lemma cellularChainGroupMap_eq_singularHomologyMap (n : ℕ) :
+    cellularChainGroupMap C C' hf R n =
+      TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n := by
+  unfold cellularChainGroupMap
+  rfl
+
 /-- The identity cellular map acts as the identity on each cellular chain group. -/
 @[simp]
 lemma cellularChainGroupMap_id (n : ℕ) :
     cellularChainGroupMap C C (isCellular_id C) R n = 𝟙 (cellularChainGroup C R n) := by
-  simp [cellularChainGroupMap, skeletonPairMap_id, TopPair.singularHomologyMap]
+  simp [cellularChainGroupMap_eq_singularHomologyMap, skeletonPairMap_id,
+    TopPair.singularHomologyMap]
 
 /-- The maps on cellular chain groups respect composition of cellular maps. -/
 @[reassoc]
 lemma cellularChainGroupMap_comp (n : ℕ) :
     cellularChainGroupMap C C'' (IsCellular.comp C C' hf hg) R n =
       cellularChainGroupMap C C' hf R n ≫ cellularChainGroupMap C' C'' hg R n := by
-  rw [cellularChainGroupMap, skeletonPairMap_comp C C' hf C'' hg n]
+  rw [cellularChainGroupMap_eq_singularHomologyMap,
+    skeletonPairMap_comp C C' hf C'' hg n]
   rw [TopPair.singularHomologyMap, Functor.map_comp, SSetPair.homologyMap_comp]
   rfl
 
@@ -129,7 +143,8 @@ lemma cellularChainComplexMap_f (n : ℕ) :
 lemma cellularChainComplexMap_id :
     cellularChainComplexMap C C (isCellular_id C) R = 𝟙 (cellularChainComplex C R) := by
   ext n
-  simp [cellularChainComplexMap_f]
+  simp only [cellularChainComplexMap_f, cellularChainGroupMap_id]
+  simp
 
 /-- Composition of cellular maps induces composition of cellular chain maps. -/
 @[reassoc]

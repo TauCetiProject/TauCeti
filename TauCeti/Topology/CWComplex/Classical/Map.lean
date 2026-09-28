@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.CWComplex.Classical.Basic
-public import Mathlib.Topology.Category.TopCat.Basic
+public import TauCeti.Topology.CWComplex.Classical.Skeleton
 
 /-!
 # Cellular maps of relative CW complexes
@@ -31,9 +30,6 @@ variable {X Y Z : Type w} [TopologicalSpace X] [T2Space X]
   {D : Set X} {E : Set Y} {F : Set Z}
   (C : Set X) [RelCWComplex C D] (C' : Set Y) [RelCWComplex C' E]
 
-/-- The `n`-th stage of the skeletal filtration, as an object of `TopCat`. -/
-abbrev skeletonObj (n : ℕ) : TopCat.{w} := TopCat.of (skeletonLT C (n : ℕ∞) : Set X)
-
 /-- A map of relative CW complexes is cellular if it preserves every stage of the skeletal
 filtration. In particular, it sends the base (stage zero) into the target base. -/
 abbrev IsCellular (f : TopCat.of C ⟶ TopCat.of C') : Prop :=
@@ -53,7 +49,7 @@ lemma IsCellular.comp {C'' : Set Z} [RelCWComplex C'' F]
 variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
 /-- The restriction of a cellular map to the `n`-th stage of the skeletal filtration. -/
-@[expose] def skeletonMap (n : ℕ) : skeletonObj C n ⟶ skeletonObj C' n :=
+def skeletonMap (n : ℕ) : skeletonObj C n ⟶ skeletonObj C' n :=
   TopCat.ofHom ⟨fun x ↦ ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1,
     hf n x.2⟩, by fun_prop⟩
 
@@ -62,6 +58,17 @@ lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
     ((show ContinuousMap (skeletonLT C (n : ℕ∞)) (skeletonLT C' (n : ℕ∞))
       from (skeletonMap C C' hf n).hom) x).1 =
       (f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1 := (rfl)
+
+/-- Restriction of a cellular map commutes with the inclusions of consecutive skeleta. -/
+@[reassoc]
+lemma skeletonMap_comp_inclusion (n : ℕ) :
+    skeletonMap C C' hf n ≫
+      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C')
+        (mod_cast n.le_succ))) =
+    TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C)
+      (mod_cast n.le_succ))) ≫ skeletonMap C C' hf (n + 1) := by
+  ext x
+  rfl
 
 /-- Restriction of the identity map to a skeleton is the identity. -/
 @[simp]
