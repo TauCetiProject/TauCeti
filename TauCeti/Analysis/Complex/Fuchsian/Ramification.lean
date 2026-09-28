@@ -69,9 +69,7 @@ namespace Subgroup
 variable (Γ : Subgroup PSL(2, ℝ)) [ProperlyDiscontinuousSMul Γ ℍ]
 
 /-- **The orbit projection of a Fuchsian group has ramification index the stabilizer order.** Its
-local multiplicity at `z` is the order of the stabilizer of `z`: in the chart at the orbit of `z`
-the projection is the `m`-th power of the disc coordinate centred at `z`, and both that chart and
-that coordinate are locally injective. -/
+local multiplicity at `z` is the order of the stabilizer of `z`. -/
 @[simp]
 theorem localMultiplicity_quotientMk (z : ℍ) :
     localMultiplicity (Quotient.mk (orbitRel Γ ℍ)) z = Nat.card (stabilizer Γ z) := by
