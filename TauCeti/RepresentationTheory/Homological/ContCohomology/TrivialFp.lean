@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.Algebra.Algebra
 public import TauCeti.RepresentationTheory.Continuous.Restriction
@@ -35,8 +36,10 @@ without repeatedly transporting across the definitional equality of trivial repr
 
 ## Main results
 
-* `TauCeti.trivialFp_ρ_apply_apply`: the action is trivial.
+* `TauCeti.trivialFp_ρ_apply_apply`, `TauCeti.smul_trivialFp_V`: the action is trivial.
 * `TauCeti.continuousSMul_trivialFp`: the derived action on the carrier is continuous.
+* `TauCeti.natCard_trivialFp_V`: the `Nat.card` of the carrier is `p`.
+* `TauCeti.nontrivial_cohomFp_zero`: `H⁰(G, 𝔽_p)` is nontrivial.
 * `TauCeti.res_trivialFp`: restriction preserves trivial coefficients on the nose;
   `TauCeti.trivialFpEquiv_eqToHom_res_trivialFp`: the transport along this equality is the identity
   on the underlying values.
@@ -95,11 +98,26 @@ theorem trivialFpEquiv_symm_apply (x : ZMod p) :
 instance : DiscreteTopology (trivialFp p G).V :=
   inferInstanceAs (DiscreteTopology (ULift.{u} (ZMod p)))
 
+/-- The lifted carrier of `trivialFp p G` is finite, for `p ≠ 0`. -/
+instance [NeZero p] : Finite (trivialFp p G).V :=
+  inferInstanceAs (Finite (ULift.{u} (ZMod p)))
+
+/-- The `Nat.card` of the carrier of `trivialFp p G` is `p`. For `p ≠ 0` this says that the carrier
+has `p` elements; for `p = 0` the carrier is infinite, and `Nat.card` is `0` by convention. -/
+theorem natCard_trivialFp_V : Nat.card (trivialFp p G).V = p :=
+  (Nat.card_congr (trivialFpEquiv p G).toEquiv).trans (Nat.card_zmod p)
+
 /-- Every monoid element acts trivially on `trivialFp p G`. -/
 @[simp]
 theorem trivialFp_ρ_apply_apply (g : G) (x : (trivialFp p G).V) :
     (trivialFp p G).ρ g x = x :=
   ContRepresentation.trivial_apply g x
+
+attribute [local instance] TopRep.distribMulAction in
+/-- The derived action of `G` on the carrier of `trivialFp p G` is trivial. Not a simp lemma:
+`simp` already proves it from `TopRep.distribMulAction_smul` and `trivialFp_ρ_apply_apply`. -/
+theorem smul_trivialFp_V (g : G) (x : (trivialFp p G).V) : g • x = x :=
+  (TopRep.distribMulAction_smul _ g x).trans (trivialFp_ρ_apply_apply p G g x)
 
 variable [TopologicalSpace G]
 
@@ -141,6 +159,17 @@ theorem continuousSMul_trivialFp : ContinuousSMul G (trivialFp p G).V :=
 
 /-- Continuous cohomology with trivial `ZMod p` coefficients. -/
 noncomputable abbrev cohomFp (n : ℕ) := continuousCohomology n (trivialFp p G)
+
+/-- `H⁰(G, 𝔽_p)` is nontrivial: it is the invariants of the trivial representation, that is the
+whole of `𝔽_p`. -/
+theorem nontrivial_cohomFp_zero [Nontrivial (ZMod p)] : Nontrivial (cohomFp p G 0) := by
+  refine (zeroIso (trivialFp p G)).toContinuousLinearEquiv.toEquiv.nontrivial_congr.2
+    (Submodule.nontrivial_iff_ne_bot.2 fun h ↦ ?_)
+  -- the lift of `1` is invariant and nonzero
+  have hmem : (trivialFpEquiv p G).symm 1 ∈ (trivialFp p G).ρ.invariants := fun g ↦
+    trivialFp_ρ_apply_apply p G g _
+  rw [h, Submodule.mem_bot] at hmem
+  exact one_ne_zero ((trivialFpEquiv p G).symm.injective (hmem.trans (map_zero _).symm))
 
 /-- Restriction on cohomology with trivial `ZMod p` coefficients. -/
 noncomputable def trivialFpResMap (S : Subgroup G) (n : ℕ) :
