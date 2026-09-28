@@ -5,7 +5,7 @@ Authors: Kim Morrison
 -/
 module
 
-public import TauCeti.AlgebraicTopology.UniversalCover.PathHomotopyDiscreteness
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
 public import Mathlib.Topology.CompactOpen
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Order.Basic
@@ -491,8 +491,8 @@ public theorem joinedIn_preimage_of_append {U : Set X} {z : X} (γ : BasedPath x
 
 theorem exists_refined_terminal_vertex [LocallyPathConnectedSpace X]
     {x₀ : X} {n' : ℕ} {U : Set X} (hU_open : IsOpen U) (α : BasedPath x₀) (hα : endpoint α ∈ U)
-    (part : IntervalPartition (n' + 1)) (T : TubeData X (n' + 1))
-    (hα_tube : PathInTube α.toPath part T) :
+    (part : unitInterval.Partition (n' + 1)) (T : Path.Tube X (n' + 1))
+    (hα_tube : Path.IsInTube α.toPath part T) :
     ∃ V_last' : Set X,
       IsOpen V_last' ∧ IsPathConnected V_last' ∧ endpoint α ∈ V_last' ∧
       V_last' ⊆ T.V (Fin.last (n' + 1)) ∧ V_last' ⊆ U := by
@@ -500,59 +500,21 @@ theorem exists_refined_terminal_vertex [LocallyPathConnectedSpace X]
     rw [part.t_last]
     exact α.toPath.target
   let V_last := T.V (Fin.last (n' + 1))
-  have hα_V_last : endpoint α ∈ V_last := hα_at_last ▸ hα_tube.passes_through_V _
+  have hα_V_last : endpoint α ∈ V_last := hα_at_last ▸ hα_tube.mem_V _
   let W : Set X := V_last ∩ U
-  have hW_open : IsOpen W := (T.V_open _).inter hU_open
+  have hW_open : IsOpen W := (T.isOpen_V _).inter hU_open
   have hα_W : endpoint α ∈ W := ⟨hα_V_last, hα⟩
   refine ⟨pathComponentIn W (endpoint α), hW_open.pathComponentIn _,
     isPathConnected_pathComponentIn hα_W, mem_pathComponentIn_self hα_W, ?_, ?_⟩
   · exact pathComponentIn_subset.trans Set.inter_subset_left
   · exact pathComponentIn_subset.trans Set.inter_subset_right
 
-theorem isOpen_refined_tubeNeighborhood {x₀ : X} {n' : ℕ} (part : IntervalPartition (n' + 1))
-    {U : Fin (n' + 1) → Set X} {V : Fin (n' + 2) → Set X}
-    (hU_open : ∀ i, IsOpen (U i)) (hV_open : ∀ j, IsOpen (V j)) :
-    IsOpen {β : BasedPath x₀ |
-      (∀ (i : Fin (n' + 1)) (s : I),
-          (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → β.1 s ∈ U i) ∧
-      (∀ j, β.1 (part.t j) ∈ V j)} := by
-  have h_split : {β : BasedPath x₀ |
-        (∀ (i : Fin (n' + 1)) (s : I),
-            (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → β.1 s ∈ U i) ∧
-        (∀ j, β.1 (part.t j) ∈ V j)} =
-      {β : BasedPath x₀ | ∀ (i : Fin (n' + 1)) (s : I),
-          (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → β.1 s ∈ U i} ∩
-      {β : BasedPath x₀ | ∀ j, β.1 (part.t j) ∈ V j} := by ext β; simp
-  rw [h_split]
-  refine IsOpen.inter ?_ ?_
-  · have h_U_iInter : {β : BasedPath x₀ | ∀ (i : Fin (n' + 1)) (s : I),
-          (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → β.1 s ∈ U i} =
-        ⋂ i : Fin (n' + 1), {β : BasedPath x₀ | ∀ s : I,
-            (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → β.1 s ∈ U i} := by
-      ext β; simp
-    rw [h_U_iInter]
-    refine isOpen_iInter_of_finite fun i ↦ ?_
-    have h_U_preimage : {β : BasedPath x₀ | ∀ s : I,
-          (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → β.1 s ∈ U i} =
-        (fun β : BasedPath x₀ ↦ (β.1 : C(I, X))) ⁻¹'
-          {f : C(I, X) | Set.MapsTo f
-            (Set.Icc (part.t i.castSucc) (part.t i.succ) : Set I) (U i)} := by
-      ext β; simp [Set.MapsTo, Set.mem_Icc]
-    rw [h_U_preimage]
-    exact (ContinuousMap.isOpen_setOfPred_mapsTo isCompact_Icc (hU_open i)).preimage
-      continuous_subtype_val
-  · have h_V_iInter : {β : BasedPath x₀ | ∀ j, β.1 (part.t j) ∈ V j} =
-        ⋂ j : Fin (n' + 2), {β : BasedPath x₀ | β.1 (part.t j) ∈ V j} := by ext β; simp
-    rw [h_V_iInter]
-    exact isOpen_iInter_of_finite fun j ↦
-      (hV_open j).preimage ((continuous_eval_const (part.t j)).comp continuous_subtype_val)
-
 /-- **Refining the terminal vertex set of a tube.** If the last vertex set of `T` is replaced by a
 smaller `V_last'` that is itself open, path-connected and contains `endpoint α`, the resulting
 family is again open and path-connected, is contained in `T.V` pointwise, and `α` still passes
 through it at every partition point. -/
-private theorem exists_refined_vertex_family {n' : ℕ} {part : IntervalPartition (n' + 1)}
-    {T : TubeData X (n' + 1)} {α : BasedPath x₀} (hα_passes : ∀ j, α.toPath (part.t j) ∈ T.V j)
+private theorem exists_refined_vertex_family {n' : ℕ} {part : unitInterval.Partition (n' + 1)}
+    {T : Path.Tube X (n' + 1)} {α : BasedPath x₀} (hα_passes : ∀ j, α.toPath (part.t j) ∈ T.V j)
     {V_last' : Set X} (hV'_open : IsOpen V_last') (hV'_pathConn : IsPathConnected V_last')
     (hα_V' : endpoint α ∈ V_last') (hV'_sub_V : V_last' ⊆ T.V (Fin.last (n' + 1))) :
     ∃ V' : Fin (n' + 2) → Set X,
@@ -565,11 +527,11 @@ private theorem exists_refined_vertex_family {n' : ℕ} {part : IntervalPartitio
   · exact fun j ↦ by
       induction j using Fin.lastCases with
       | last => rw [Fin.snoc_last]; exact hV'_open
-      | cast k => rw [Fin.snoc_castSucc]; exact T.V_open _
+      | cast k => rw [Fin.snoc_castSucc]; exact T.isOpen_V _
   · exact fun j ↦ by
       induction j using Fin.lastCases with
       | last => rw [Fin.snoc_last]; exact hV'_pathConn
-      | cast k => rw [Fin.snoc_castSucc]; exact T.V_pathConn _
+      | cast k => rw [Fin.snoc_castSucc]; exact T.isPathConnected_V _
   · exact fun j ↦ by
       induction j using Fin.lastCases with
       | last => rw [Fin.snoc_last]; exact hV'_sub_V
@@ -582,32 +544,32 @@ private theorem exists_refined_vertex_family {n' : ℕ} {part : IntervalPartitio
 /-- **A path through the refined tube is joined to `α`.** If `β` runs through the same tube as `α`
 with refined vertex sets `V'` whose terminal member is contained in `U`, then `β` is joined to `α`
 inside `endpoint ⁻¹' U`. -/
-private theorem joinedIn_endpoint_preimage_of_pathInTube {n' : ℕ} {U : Set X}
-    {V' : Fin (n' + 2) → Set X} {part : IntervalPartition (n' + 1)}
-    {T : TubeData X (n' + 1)} (hV'_open : ∀ j, IsOpen (V' j))
+private theorem joinedIn_endpoint_preimage_of_isInTube {n' : ℕ} {U : Set X}
+    {V' : Fin (n' + 2) → Set X} {part : unitInterval.Partition (n' + 1)}
+    {T : Path.Tube X (n' + 1)} (hV'_open : ∀ j, IsOpen (V' j))
     (hV'_pathConn : ∀ j, IsPathConnected (V' j)) (hV'_sub_TV : ∀ j, V' j ⊆ T.V j)
     (hV'_last_sub_U : V' (Fin.last (n' + 1)) ⊆ U) {α β : BasedPath x₀}
-    (hα_stays : ∀ (i : Fin (n' + 1)) (s : I),
-      (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → α.toPath s ∈ T.U i)
-    (hα_passes : ∀ j, α.toPath (part.t j) ∈ V' j) (hβ_stays : ∀ (i : Fin (n' + 1)) (s : I),
-      (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → β.1 s ∈ T.U i)
+    (hα_mapsTo : ∀ i : Fin (n' + 1),
+      Set.MapsTo α.toPath (Set.Icc (part.t i.castSucc) (part.t i.succ)) (T.U i))
+    (hα_passes : ∀ j, α.toPath (part.t j) ∈ V' j) (hβ_mapsTo : ∀ i : Fin (n' + 1),
+      Set.MapsTo β.1 (Set.Icc (part.t i.castSucc) (part.t i.succ)) (T.U i))
     (hβ_passes : ∀ j, β.1 (part.t j) ∈ V' j) :
     JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) α β := by
-  let T' : TubeData X (n' + 1) := {
+  let T' : Path.Tube X (n' + 1) := {
     U := T.U
     V := V'
-    U_open := T.U_open
-    U_slsc := T.U_slsc
-    V_open := hV'_open
-    V_pathConn := hV'_pathConn
-    V_left_subset := fun i ↦ (hV'_sub_TV i.castSucc).trans (T.V_left_subset i)
-    V_right_subset := fun i ↦ (hV'_sub_TV i.succ).trans (T.V_right_subset i)
+    isOpen_U := T.isOpen_U
+    isPathHomotopyTrivial_U := T.isPathHomotopyTrivial_U
+    isOpen_V := hV'_open
+    isPathConnected_V := hV'_pathConn
+    V_castSucc_subset := fun i ↦ (hV'_sub_TV i.castSucc).trans (T.V_castSucc_subset i)
+    V_succ_subset := fun i ↦ (hV'_sub_TV i.succ).trans (T.V_succ_subset i)
   }
   have hβ_end_U : endpoint β ∈ U :=
     hV'_last_sub_U (by simpa [part.t_last] using! hβ_passes (Fin.last (n' + 1)))
   obtain ⟨ρ_final, hρ_final_range_V, h_paste⟩ :=
-    Path.tube_subset_homotopy_class_source α.toPath part T' ⟨hα_stays, hα_passes⟩
-      β.toPath ⟨hβ_stays, hβ_passes⟩
+    Path.IsInTube.exists_trans_homotopic (γ := α.toPath) (part := part) (T := T')
+      ⟨hα_mapsTo, hα_passes⟩ (γ' := β.toPath) ⟨hβ_mapsTo, hβ_passes⟩
   refine (joinedIn_preimage_of_append α ρ_final
     (hρ_final_range_V.trans hV'_last_sub_U)).trans ?_
   obtain ⟨γ, hγ⟩ :=
@@ -631,7 +593,7 @@ public theorem exists_open_nhds_pathComponent_preimage
       ∀ β ∈ N, JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) α β := by
   classical
   obtain ⟨n, part, T, hα_tube⟩ :=
-    α.toPath.exists_pathHomotopyTrivial_tube hslsc
+    α.toPath.exists_isInTube_of_semilocallySimplyConnectedOn hslsc
   -- Rule out `n = 0`; the rest of the proof assumes `n = n' + 1`.
   match n, part, T, hα_tube with
   | 0, part, _, _ => exact isEmptyElim part
@@ -639,24 +601,29 @@ public theorem exists_open_nhds_pathComponent_preimage
   obtain ⟨V_last', hV'_open, hV'_pathConn, hα_V', hV'_sub_V, hV'_sub_U⟩ :=
     exists_refined_terminal_vertex hU_open α hα part T hα_tube
   obtain ⟨V', hV'_open_all, hV'_pathConn_all, hV'_sub_TV, hV'_last_eq, hα_passes_V'⟩ :=
-    exists_refined_vertex_family hα_tube.passes_through_V hV'_open hV'_pathConn hα_V'
+    exists_refined_vertex_family hα_tube.mem_V hV'_open hV'_pathConn hα_V'
       hV'_sub_V
   have hV'_last_sub_U : V' (Fin.last (n' + 1)) ⊆ U := hV'_last_eq ▸ hV'_sub_U
   -- The neighborhood `N` of `α`: based paths satisfying the refined tube conditions.
   set N : Set (BasedPath x₀) := {β : BasedPath x₀ |
-      (∀ (i : Fin (n' + 1)) (s : I),
-          (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → β.1 s ∈ T.U i) ∧
+      (∀ i : Fin (n' + 1), Set.MapsTo β.1 (Set.Icc (part.t i.castSucc) (part.t i.succ)) (T.U i)) ∧
       (∀ j, β.1 (part.t j) ∈ V' j)} with hN_def
   refine ⟨N, ?_, ?_, ?_, ?_⟩
-  · simpa [hN_def] using! isOpen_refined_tubeNeighborhood part T.U_open hV'_open_all
+  · -- The topology on `BasedPath x₀` is induced by `Subtype.val`, so `N` is the preimage of an
+    -- open set of maps `C(I, X)`.
+    have hval : Continuous (fun β : BasedPath x₀ ↦ β.1) := continuous_subtype_val
+    have h := (part.isOpen_setOf_mapsTo_Icc_and_mem T.isOpen_U hV'_open_all).preimage hval
+    rw [Set.preimage_ofPred_eq] at h
+    -- `h` is `IsOpen N`, up to reading the vertex index type `Fin (n' + 1 + 1)` as `Fin (n' + 2)`.
+    exact h
   · -- `α ∈ N`.
-    exact ⟨hα_tube.stays_in_U, hα_passes_V'⟩
+    exact ⟨hα_tube.mapsTo, hα_passes_V'⟩
   · -- `N ⊆ endpoint ⁻¹' U`.
     exact fun β hβ ↦
       hV'_last_sub_U (by simpa [part.t_last] using! hβ.2 (Fin.last (n' + 1)))
   · -- Every `β ∈ N` is `JoinedIn (endpoint ⁻¹' U)` to `α`.
-    exact fun β hβ ↦ joinedIn_endpoint_preimage_of_pathInTube hV'_open_all hV'_pathConn_all
-      hV'_sub_TV hV'_last_sub_U hα_tube.stays_in_U hα_passes_V' hβ.1 hβ.2
+    exact fun β hβ ↦ joinedIn_endpoint_preimage_of_isInTube hV'_open_all hV'_pathConn_all
+      hV'_sub_TV hV'_last_sub_U hα_tube.mapsTo hα_passes_V' hβ.1 hβ.2
 
 
 /-- For an open neighborhood `U`, path components of `endpoint ⁻¹' U` are open. -/

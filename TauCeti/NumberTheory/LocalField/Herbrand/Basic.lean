@@ -327,6 +327,27 @@ theorem herbrand_of_coe_le_zero {u : RamificationIndexDomain} (hu : (u : ℝ) �
     herbrand K L u = u :=
   Subtype.ext ((coe_herbrand_eq_herbrandReal K L u).trans (herbrandReal_of_le_zero K L u.2 hu))
 
+/-- The Herbrand function is the identity as long as the lower ramification filtration is
+constant from `0` through `u`. -/
+theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain} (hu : 0 ≤ (u : ℝ))
+    (h : ∀ t : ℝ, 0 < t → t ≤ u →
+      lowerRamificationGroupReal K L t = lowerRamificationGroup K L 0) :
+    herbrand K L u = u := by
+  apply Subtype.ext
+  rw [coe_herbrand]
+  have hcard : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
+    exact_mod_cast Nat.card_pos.ne'
+  have hfun : (∫ t in (0 : ℝ)..u,
+      (Nat.card (lowerRamificationGroupReal K L t) : ℝ) /
+        Nat.card (lowerRamificationGroup K L 0)) = ∫ _ in (0 : ℝ)..u, (1 : ℝ) := by
+    apply intervalIntegral.integral_congr_ae
+    exact Filter.Eventually.of_forall fun t ht ↦ by
+      obtain ⟨ht0, htu⟩ := Set.uIoc_of_le hu ▸ ht
+      rw [h t ht0 htu]
+      exact div_self hcard
+  rw [hfun]
+  simp
+
 /-- The inverse Herbrand function is the identity on `[-1, 0]`. -/
 @[simp]
 theorem inverseHerbrand_of_coe_le_zero {v : RamificationIndexDomain} (hv : (v : ℝ) ≤ 0) :

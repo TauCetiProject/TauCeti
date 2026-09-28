@@ -14,6 +14,7 @@ again. The rest is named here because those generators take their output path fr
 workflow rather than declaring it, so there is nothing to import.
 """
 
+import ci_daily_graphs
 import pr_stats_graphs
 
 OTHER_ASSETS = [
@@ -23,9 +24,12 @@ OTHER_ASSETS = [
     "participation.svg",      # scripts/participant_graph.py
     "progress.json",          # scripts/roadmap_progress.py
     "pipeline-health.json",   # scripts/pipeline_health.py
+    "ci-fleet-72h.svg",       # scripts/ci_stats_graphs.py
+    "ci-fleet-30d.svg",       # scripts/ci_stats_graphs.py
+    "ci-stats.json",          # scripts/ci_stats_graphs.py
 ]
 
-GENERATED_ASSETS = list(pr_stats_graphs.ASSET_NAMES) + OTHER_ASSETS
+GENERATED_ASSETS = list(pr_stats_graphs.ASSET_NAMES) + list(ci_daily_graphs.ASSET_NAMES) + OTHER_ASSETS
 
 
 if __name__ == "__main__":

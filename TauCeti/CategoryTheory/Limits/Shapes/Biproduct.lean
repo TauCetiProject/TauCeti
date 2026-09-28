@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinary
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.Data.Fintype.BigOperators
 
@@ -24,7 +25,9 @@ is the biproduct analogue of Mathlib's `CategoryTheory.Limits.CokernelCofork.isC
 In a preadditive category, a zero object and binary biproducts already give all finite biproducts
 (`TauCeti.hasFiniteBiproducts_of_hasBinaryBiproducts`), and a finite biproduct indexed by
 `Option J` splits off its `none` summand (`TauCeti.biproductOptionIso`); the latter is the
-inductive step for computing additive invariants of finite biproducts.
+inductive step for computing additive invariants of finite biproducts. An additive functor which
+kills one summand of a binary biproduct inverts the projection onto the other
+(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`).
 -/
 
 public section
@@ -33,7 +36,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe v u
+universe v w w' u
 
 variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
 
@@ -113,6 +116,24 @@ theorem biproductOptionIso_hom_snd_π (j : J) :
 end Preadditive
 
 end TauCeti
+
+namespace CategoryTheory.Functor
+
+open Limits
+
+variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [Preadditive C]
+  [Preadditive D] (F : C ⥤ D) [F.Additive]
+
+/-- An additive functor which sends the second summand of a binary biproduct to a zero object
+sends the first projection to an isomorphism, with inverse the image of the first inclusion. -/
+theorem isIso_map_biprod_fst_of_isZero (X Y : C) [HasBinaryBiproduct X Y]
+    (hY : IsZero (F.obj Y)) : IsIso (F.map (biprod.fst : X ⊞ Y ⟶ X)) := by
+  refine ⟨F.map biprod.inl, ?_, ?_⟩
+  · rw [← F.map_comp, eq_sub_of_add_eq biprod.total]
+    simp [hY.eq_zero_of_tgt (F.map biprod.snd)]
+  · rw [← F.map_comp, biprod.inl_fst, F.map_id]
+
+end CategoryTheory.Functor
 
 namespace CategoryTheory.Limits.CokernelCofork
 
