@@ -319,6 +319,7 @@ theorem suspExp_congr {k : ℕ} {d e : ℕ → ℤ} (h : ∀ i < k, d i = e i) :
 
 /-- When all `k` inputs have the same degree `c`, the suspension exponent is
 `(k choose 2) * c = k (k - 1) / 2 * c`. -/
+@[simp]
 theorem suspExp_const (k : ℕ) (c : ℤ) : suspExp k (fun _ ↦ c) = (k.choose 2 : ℤ) * c := by
   induction k with
   | zero => simp
