@@ -22,8 +22,9 @@ the two *underlying rectangles*, and a pentagon covers only part of its underlyi
 two columns next to the replaced grid line its turn row cuts the covered arc. The pentagon-level
 statement is therefore its own, and it does follow from the geometry. The promoted pentagon spans
 either a sub-arc of the original pentagon's column arc with the same rows, or the same column arc
-one row further back, at the original rectangle's initial side. Its covered squares lie in the union
-of the squares covered by the original pentagon and by the original rectangle
+with the rows extended back through the original rectangle's row arc to its initial row. Its
+covered squares lie in the union of the squares covered by the original pentagon and by the
+original rectangle
 (`coveredSquares_pentagon_subset_recutLeftEqLeft`), so a marking avoided by both is avoided by the
 promoted pentagon (`disjoint_coveredSquares_XSet_pentagon_recutLeftEqLeft`).
 
@@ -32,8 +33,9 @@ terminal side lies strictly inside the original pentagon's column arc: the promo
 the terminal part of that arc, between that side and the replaced grid line, with the original
 pentagon's rows, and covers a subset of the original pentagon's squares. In the second, the
 replaced grid line lies strictly inside the original rectangle's column arc: the promoted pentagon
-spans the original pentagon's whole column arc but starts at the original rectangle's initial
-row, and the extra row of squares it then covers comes out of the original rectangle.
+spans the original pentagon's whole column arc but reaches back through the original rectangle's
+row arc to its initial row, and the band of squares it adds along that row arc comes out of the
+original rectangle.
 
 ## Main results
 
@@ -224,8 +226,8 @@ private theorem mem_coveredSquares_pentagon_of_branch1
     exact (GridPentagonBetween.mem_coveredSquares D.pentagon p).2 (Or.inr (Or.inr ⟨h.1, h.2⟩))
 
 /-- In the second recut branch the promoted pentagon spans the whole column arc of the original
-pentagon but starts one row earlier, at the original rectangle's initial side; the row of squares
-it then adds to the original pentagon's comes out of the original rectangle. -/
+pentagon but reaches back through the original rectangle's row arc to its initial row; the band of
+squares it adds along that row arc comes out of the original rectangle. -/
 private theorem mem_coveredSquares_pentagon_of_branch2
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
