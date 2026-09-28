@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Finite.Duality
+public import TauCeti.MeasureTheory.OptimalTransport.Finite.TransportMatrix
 
 /-!
 # The two by two transportation problem
@@ -17,7 +17,7 @@ cost. The sign of this cross difference determines whether optimal plans maximiz
 that entry; if it vanishes, all plans cost the same. A strict inequality gives a unique optimizer.
 
 This calculation explains why the Monge inequality favors uncrossing in ordered finite transport
-problems. The existence of matrices at the two endpoints uses finite transport-cost attainment.
+problems.
 -/
 
 public section
@@ -86,42 +86,28 @@ theorem zero_zero_bounds :
 The four inequalities are exactly the coupling interval constraints. -/
 def ofZeroZeroReal (μ ν : PMF (Fin 2)) (t : ℝ)
     (ht0 : 0 ≤ t) (htμ : t ≤ (μ 0).toReal) (htν : t ≤ (ν 0).toReal)
-    (htlower : (μ 0).toReal + (ν 0).toReal - 1 ≤ t) : TransportMatrix μ ν where
-  matrix i j :=
-    if i = 0 then
-      if j = 0 then ENNReal.ofReal t else ENNReal.ofReal ((μ 0).toReal - t)
-    else if j = 0 then ENNReal.ofReal ((ν 0).toReal - t)
-    else ENNReal.ofReal (1 - (μ 0).toReal - (ν 0).toReal + t)
-  row_sum i := by
+    (htlower : (μ 0).toReal + (ν 0).toReal - 1 ≤ t) : TransportMatrix μ ν := by
+  let f : Fin 2 × Fin 2 → ℝ := fun q ↦
+    if q.1 = 0 then
+      if q.2 = 0 then t else (μ 0).toReal - t
+    else if q.2 = 0 then (ν 0).toReal - t
+    else 1 - (μ 0).toReal - (ν 0).toReal + t
+  have hf : f ∈ RealPlans μ ν := by
     have hμsum : (μ 0).toReal + (μ 1).toReal = 1 := by
       simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one μ
-    fin_cases i
-    · simp only [Fin.sum_univ_two]
-      simp only [show (⟨0, by decide⟩ : Fin 2) = 0 from rfl, show (1 : Fin 2) ≠ 0 from by decide,
-        ite_true, ite_false]
-      rw [← ENNReal.ofReal_add ht0 (sub_nonneg.mpr htμ)]
-      convert ENNReal.ofReal_toReal (μ.apply_ne_top 0) using 1; congr 1; ring
-    · simp only [Fin.sum_univ_two]
-      simp only [show (⟨1, by decide⟩ : Fin 2) = 1 from rfl, show (1 : Fin 2) ≠ 0 from by decide,
-        ite_true, ite_false]
-      rw [← ENNReal.ofReal_add (sub_nonneg.mpr htν) (by linarith :
-        0 ≤ 1 - (μ 0).toReal - (ν 0).toReal + t)]
-      convert ENNReal.ofReal_toReal (μ.apply_ne_top 1) using 1; congr 1; linarith
-  col_sum j := by
     have hνsum : (ν 0).toReal + (ν 1).toReal = 1 := by
       simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one ν
-    fin_cases j
-    · simp only [Fin.sum_univ_two]
-      simp only [show (⟨0, by decide⟩ : Fin 2) = 0 from rfl, show (1 : Fin 2) ≠ 0 from by decide,
-        ite_true, ite_false]
-      rw [← ENNReal.ofReal_add ht0 (sub_nonneg.mpr htν)]
-      convert ENNReal.ofReal_toReal (ν.apply_ne_top 0) using 1; congr 1; ring
-    · simp only [Fin.sum_univ_two]
-      simp only [show (⟨1, by decide⟩ : Fin 2) = 1 from rfl, show (1 : Fin 2) ≠ 0 from by decide,
-        ite_true, ite_false]
-      rw [← ENNReal.ofReal_add (sub_nonneg.mpr htμ) (by linarith :
-        0 ≤ 1 - (μ 0).toReal - (ν 0).toReal + t)]
-      convert ENNReal.ofReal_toReal (ν.apply_ne_top 1) using 1; congr 1; linarith
+    refine ⟨?_, ?_, ?_⟩
+    · intro q
+      rcases q with ⟨i, j⟩
+      fin_cases i <;> fin_cases j <;> simp [f] <;> linarith
+    · intro i
+      fin_cases i <;> simp [f, Fin.sum_univ_two]
+      all_goals linarith
+    · intro j
+      fin_cases j <;> simp [f, Fin.sum_univ_two]
+      all_goals linarith
+  exact ofRealFun hf
 
 /-- The entries of the two by two matrix constructed from a point of the coupling interval. -/
 @[simp]
@@ -133,7 +119,7 @@ theorem ofZeroZeroReal_apply (μ ν : PMF (Fin 2)) (t : ℝ)
         if j = 0 then ENNReal.ofReal t else ENNReal.ofReal ((μ 0).toReal - t)
       else if j = 0 then ENNReal.ofReal ((ν 0).toReal - t)
       else ENNReal.ofReal (1 - (μ 0).toReal - (ν 0).toReal + t) :=
-  (rfl)
+  by simp [ofZeroZeroReal, ofRealFun_apply]; split_ifs <;> rfl
 
 /-- The upper-left real entry of `ofZeroZeroReal` is its parameter. -/
 theorem ofZeroZeroReal_zero_zero (μ ν : PMF (Fin 2)) (t : ℝ)
@@ -218,6 +204,14 @@ theorem cost_le_iff_le_zero_zero_of_reverse_strict_monge (c : Fin 2 × Fin 2 →
   · intro h
     exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.mpr h) hcross.le
 
+/-- Under the reverse Monge inequality, a plan with minimum upper-left mass minimizes cost. -/
+theorem cost_le_of_reverse_monge_of_zero_zero_le (c : Fin 2 × Fin 2 → ℝ)
+    (hc : c (0, 1) + c (1, 0) ≤ c (0, 0) + c (1, 1))
+    (hAB : A.toRealFun (0, 0) ≤ B.toRealFun (0, 0)) :
+    A.cost c ≤ B.cost c := by
+  rw [← sub_nonpos, A.cost_sub_cost_eq B c]
+  exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.mpr hAB) (by linarith)
+
 /-- When the two assignments have equal cost, every transportation matrix has the same cost. -/
 theorem cost_eq_of_cross_eq (c : Fin 2 × Fin 2 → ℝ)
     (hc : c (0, 0) + c (1, 1) = c (0, 1) + c (1, 0)) :
@@ -228,30 +222,49 @@ theorem cost_eq_of_cross_eq (c : Fin 2 × Fin 2 → ℝ)
   exact h
 
 /-- The upper-left mass has a maximum among the transportation matrices with prescribed
-marginals. The cost `-1` at that pair and `0` elsewhere selects such a matrix. -/
+marginals. -/
 theorem exists_max_zero_zero (μ ν : PMF (Fin 2)) :
     ∃ A : TransportMatrix μ ν, ∀ B : TransportMatrix μ ν,
       B.toRealFun (0, 0) ≤ A.toRealFun (0, 0) := by
-  let c : Fin 2 × Fin 2 → ℝ := fun q ↦ if q = (0, 0) then -1 else 0
-  obtain ⟨A, hA⟩ := exists_forall_cost_le c μ ν
-  refine ⟨A, fun B ↦ ?_⟩
-  have hcost (C : TransportMatrix μ ν) : C.cost c = -C.toRealFun (0, 0) := by
-    simp [c, cost_def]
-  have := hA B
-  rw [hcost, hcost] at this
-  linarith
+  have hμsum : (μ 0).toReal + (μ 1).toReal = 1 := by
+    simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one μ
+  have hνsum : (ν 0).toReal + (ν 1).toReal = 1 := by
+    simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one ν
+  have hμle : (μ 0).toReal ≤ 1 := by
+    linarith [show 0 ≤ (μ 1).toReal from ENNReal.toReal_nonneg]
+  have hνle : (ν 0).toReal ≤ 1 := by
+    linarith [show 0 ≤ (ν 1).toReal from ENNReal.toReal_nonneg]
+  let t := min (μ 0).toReal (ν 0).toReal
+  have ht0 : 0 ≤ t := le_min (ENNReal.toReal_nonneg) (ENNReal.toReal_nonneg)
+  have htμ : t ≤ (μ 0).toReal := min_le_left _ _
+  have htν : t ≤ (ν 0).toReal := min_le_right _ _
+  have htlower : (μ 0).toReal + (ν 0).toReal - 1 ≤ t := by
+    apply le_min <;> linarith
+  refine ⟨ofZeroZeroReal μ ν t ht0 htμ htν htlower, fun B ↦ ?_⟩
+  rw [ofZeroZeroReal_zero_zero]
+  exact le_min B.zero_zero_bounds.2.1 B.zero_zero_bounds.2.2.1
 
 /-- The upper-left mass also has a minimum among the transportation matrices with prescribed
 marginals. -/
 theorem exists_min_zero_zero (μ ν : PMF (Fin 2)) :
     ∃ A : TransportMatrix μ ν, ∀ B : TransportMatrix μ ν,
       A.toRealFun (0, 0) ≤ B.toRealFun (0, 0) := by
-  let c : Fin 2 × Fin 2 → ℝ := fun q ↦ if q = (0, 0) then 1 else 0
-  obtain ⟨A, hA⟩ := exists_forall_cost_le c μ ν
-  refine ⟨A, fun B ↦ ?_⟩
-  have hcost (C : TransportMatrix μ ν) : C.cost c = C.toRealFun (0, 0) := by
-    simp [c, cost_def]
-  simpa only [hcost] using hA B
+  have hμsum : (μ 0).toReal + (μ 1).toReal = 1 := by
+    simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one μ
+  have hνsum : (ν 0).toReal + (ν 1).toReal = 1 := by
+    simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one ν
+  have hμle : (μ 0).toReal ≤ 1 := by
+    linarith [show 0 ≤ (μ 1).toReal from ENNReal.toReal_nonneg]
+  have hνle : (ν 0).toReal ≤ 1 := by
+    linarith [show 0 ≤ (ν 1).toReal from ENNReal.toReal_nonneg]
+  let t := max 0 ((μ 0).toReal + (ν 0).toReal - 1)
+  have ht0 : 0 ≤ t := le_max_left _ _
+  have htμ : t ≤ (μ 0).toReal := max_le (ENNReal.toReal_nonneg) (by linarith)
+  have htν : t ≤ (ν 0).toReal := max_le (ENNReal.toReal_nonneg) (by linarith)
+  have htlower : (μ 0).toReal + (ν 0).toReal - 1 ≤ t := le_max_right _ _
+  refine ⟨ofZeroZeroReal μ ν t ht0 htμ htν htlower, fun B ↦ ?_⟩
+  rw [ofZeroZeroReal_zero_zero]
+  exact max_le B.zero_zero_bounds.1 B.zero_zero_bounds.2.2.2
 
 /-- Under a strict Monge inequality, the optimal matrices are exactly those with maximum
 upper-left mass. -/
@@ -265,6 +278,17 @@ theorem isOptimal_iff_max_zero_zero (c : Fin 2 × Fin 2 → ℝ)
   · intro h B
     exact (A.cost_le_iff_le_zero_zero_of_strict_monge B c hc).mpr (h B)
 
+/-- Under a reverse strict Monge inequality, optimal matrices have minimum upper-left mass. -/
+theorem isOptimal_iff_min_zero_zero (c : Fin 2 × Fin 2 → ℝ)
+    (hc : c (0, 1) + c (1, 0) < c (0, 0) + c (1, 1)) :
+    (∀ B : TransportMatrix μ ν, A.cost c ≤ B.cost c) ↔
+      ∀ B : TransportMatrix μ ν, A.toRealFun (0, 0) ≤ B.toRealFun (0, 0) := by
+  constructor
+  · intro h B
+    exact (A.cost_le_iff_le_zero_zero_of_reverse_strict_monge B c hc).mp (h B)
+  · intro h B
+    exact (A.cost_le_iff_le_zero_zero_of_reverse_strict_monge B c hc).mpr (h B)
+
 /-- A strict two by two Monge cost has a unique optimal transportation matrix. -/
 theorem existsUnique_optimal_of_strict_monge (c : Fin 2 × Fin 2 → ℝ)
     (μ ν : PMF (Fin 2))
@@ -277,6 +301,19 @@ theorem existsUnique_optimal_of_strict_monge (c : Fin 2 × Fin 2 → ℝ)
   apply (ENNReal.toReal_eq_toReal_iff' (B.apply_ne_top 0 0) (A.apply_ne_top 0 0)).mp
   simpa only [toRealFun_apply] using
     le_antisymm (hA B) ((B.isOptimal_iff_max_zero_zero c hc).1 hB A)
+
+/-- A reverse strict two by two Monge cost has a unique optimal transportation matrix. -/
+theorem existsUnique_optimal_of_reverse_strict_monge (c : Fin 2 × Fin 2 → ℝ)
+    (μ ν : PMF (Fin 2))
+    (hc : c (0, 1) + c (1, 0) < c (0, 0) + c (1, 1)) :
+    ∃! A : TransportMatrix μ ν, ∀ B : TransportMatrix μ ν, A.cost c ≤ B.cost c := by
+  obtain ⟨A, hA⟩ := exists_min_zero_zero μ ν
+  refine ⟨A, (A.isOptimal_iff_min_zero_zero c hc).2 hA, ?_⟩
+  intro B hB
+  apply ext_zero_zero
+  apply (ENNReal.toReal_eq_toReal_iff' (B.apply_ne_top 0 0) (A.apply_ne_top 0 0)).mp
+  simpa only [toRealFun_apply] using
+    le_antisymm ((B.isOptimal_iff_min_zero_zero c hc).1 hB A) (hA B)
 
 end TransportMatrix
 
