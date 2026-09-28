@@ -7,15 +7,14 @@ module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective
 public import TauCeti.AlgebraicGeometry.CartierDivisor.WeilComparison
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
 
 /-!
 # Effectivity under the Weil–Cartier correspondence
 
-On a regular integral curve, the Cartier divisor associated with a Weil divisor is effective
-exactly when the Weil divisor has nonnegative coefficients. The comparison is expressed using the
-common sheaf of rational sections: effectivity says that the constant rational section `1` belongs
-to `𝒪_X(D)`.
+On a Noetherian integral scheme of dimension at most one, regular in codimension one, the Cartier
+divisor associated with a Weil divisor is effective exactly when the Weil divisor has nonnegative
+coefficients. The comparison uses the common sheaf of rational sections: effectivity says that the
+constant rational section `1` belongs to `𝒪_X(D)`.
 
 The result identifies the effective submonoids of Weil and Cartier divisors. It allows effective
 divisors used in linear systems and Abel maps to be viewed as effective Cartier divisors.
@@ -47,8 +46,9 @@ namespace Scheme.CartierDivisor
 variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
 
-/-- A Cartier divisor on a regular integral curve is effective if and only if every coefficient
-of its associated Weil divisor is nonnegative. -/
+/-- On a Noetherian integral scheme of dimension at most one, regular in codimension one, a
+Cartier divisor is effective if and only if every coefficient of its associated Weil divisor is
+nonnegative. -/
 theorem isEffective_iff_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (D : CartierDivisor X) :
     D.IsEffective ↔ WeilDivisor.IsEffective D.toWeilDivisor := by
@@ -103,6 +103,27 @@ theorem effectiveEquivCartierDivisor_apply (hX : ∀ x : X, coheight x ≤ 1)
       Scheme.CartierDivisor.effectiveSubmonoid X) : Scheme.CartierDivisor X) =
       equivCartierDivisor hX D :=
   AddEquiv.coe_addSubmonoidMap_apply _ _ _
+
+/-- On underlying divisors, the inverse effective equivalence takes the associated Weil
+divisor. -/
+@[simp]
+theorem effectiveEquivCartierDivisor_symm_apply (hX : ∀ x : X, coheight x ≤ 1)
+    (D : Scheme.CartierDivisor.effectiveSubmonoid X) :
+    ((effectiveEquivCartierDivisor hX).symm D : SchemeWeilDivisor X) =
+      (D : Scheme.CartierDivisor X).toWeilDivisor := by
+  have h : equivCartierDivisor hX
+      ((effectiveEquivCartierDivisor hX).symm D : SchemeWeilDivisor X) =
+        (D : Scheme.CartierDivisor X) := by
+    rw [← effectiveEquivCartierDivisor_apply hX]
+    exact congrArg Subtype.val ((effectiveEquivCartierDivisor hX).apply_symm_apply D)
+  calc
+    ((effectiveEquivCartierDivisor hX).symm D : SchemeWeilDivisor X) =
+        (equivCartierDivisor hX).symm
+          (equivCartierDivisor hX
+            ((effectiveEquivCartierDivisor hX).symm D : SchemeWeilDivisor X)) :=
+      ((equivCartierDivisor hX).left_inv _).symm
+    _ = (D : Scheme.CartierDivisor X).toWeilDivisor := by
+      rw [h, equivCartierDivisor_symm_apply]
 
 end SchemeWeilDivisor
 
