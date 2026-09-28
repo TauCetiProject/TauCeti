@@ -83,14 +83,12 @@ section CommRing
 
 variable {K : Type*} [CommRing K] {A : Type*} [CommRing A] [Algebra K A]
 
-/-- If `E ⊗[K] (A ⧸ P)` is a domain for every prime `P` of `A`, then every minimal prime of
-`E ⊗[K] A` is the extension of its contraction to `A`. -/
+/-- A minimal prime `Q` of `E ⊗[K] A` is the extension of its contraction `P` to `A`, provided
+`E ⊗[K] (A ⧸ P)` is a domain. -/
 theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [CommRing E] [Algebra K E]
-    (hdom : ∀ P : Ideal A, P.IsPrime → IsDomain (E ⊗[K] (A ⧸ P)))
-    {Q : Ideal (E ⊗[K] A)} (hQ : Q ∈ minimalPrimes (E ⊗[K] A)) :
+    {Q : Ideal (E ⊗[K] A)} (hQ : Q ∈ minimalPrimes (E ⊗[K] A))
+    (hdom : IsDomain (E ⊗[K] (A ⧸ Q.comap includeRight))) :
     Q = (Q.comap includeRight).map includeRight := by
-  have : Q.IsPrime := hQ.1.1
-  have := hdom (Q.comap includeRight) inferInstance
   have hPQ : (Q.comap includeRight).map includeRight ≤ Q := Ideal.map_le_iff_le_comap.mpr le_rfl
   refine le_antisymm (hQ.2 ⟨?_, bot_le⟩ hPQ) hPQ
   -- `(E ⊗[K] A) ⧸ P.map includeRight` is `E ⊗[K] (A ⧸ P)`, a domain.
@@ -159,7 +157,8 @@ theorem ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes (L : Type*) [Fi
   obtain ⟨h1, hdim⟩ := mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isAlgebraic L E hQ
   have hdom (P : Ideal A) (_ : P.IsPrime) : IsDomain (E ⊗[K] (A ⧸ P)) :=
     (Algebra.TensorProduct.congr hs.1.aevalEquivField AlgEquiv.refl).symm.toMulEquiv.isDomain
-  have hQ' := eq_map_comap_includeRight_of_isDomain E hdom h1
+  have := h1.1.1
+  have hQ' := eq_map_comap_includeRight_of_isDomain E h1 (hdom _ inferInstance)
   have hP : (Q.comap (Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L)
       (AlgHom.id K A))).comap (includeRight : A →ₐ[K] E ⊗[K] A) = Q.comap includeRight := by
     ext a
