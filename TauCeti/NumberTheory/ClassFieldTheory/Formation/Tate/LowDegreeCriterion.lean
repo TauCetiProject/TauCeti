@@ -47,7 +47,7 @@ theorem cupClass_neg_one_bijective (F : Formation G) (L : NormalLayer G) (u : L.
     Function.Injective.subsingleton (L.tateHIsoH F 1).toLinearEquiv.injective
   have : Subsingleton (L.TateH F (-1 + 2)) := by simpa using
     (inferInstance : Subsingleton (L.TateH F 1))
-  exact ⟨fun _ _ _ => Subsingleton.elim _ _, fun y => ⟨0, Subsingleton.elim _ y⟩⟩
+  exact Function.bijective_of_subsingleton' _
 
 /-- Cupping with any degree-two class is injective in degree `1`: the source is
 `H¹(Gal(K/F), ℤ) = 0`. -/
@@ -58,7 +58,7 @@ theorem cupClass_one_injective (F : Formation G) (L : NormalLayer G) (u : L.H F 
       (Rep.trivial ℤ L.Gal ℤ)).of_iso
       ((TateCohomology.isoGroupCohomology 1).app (Rep.trivial ℤ L.Gal ℤ))
   have : Subsingleton (L.TrivialTateH 1) := ModuleCat.subsingleton_of_isZero hz
-  exact fun _ _ _ => Subsingleton.elim _ _
+  exact Function.injective_of_subsingleton _
 
 namespace ClassFormation
 
@@ -74,6 +74,17 @@ theorem cupFundamentalClass_neg_one_bijective (cf : ClassFormation F) (L : Norma
     exact cf.cupFundamentalClass_apply L (-1) x
   rw [heq]
   exact cupClass_neg_one_bijective F L (cf.fundamentalClass L) (cf.subsingleton_h1 L)
+
+/-- In degree `1`, cup product with the fundamental class is injective since
+`H¹(Gal(K/F), ℤ) = 0`. -/
+theorem cupFundamentalClass_one_injective (cf : ClassFormation F) (L : NormalLayer G) :
+    Function.Injective (cf.cupFundamentalClass L 1) := by
+  have heq : cf.cupFundamentalClass L 1 =
+      cupClass F L (cf.fundamentalClass L) 1 := by
+    ext x
+    exact cf.cupFundamentalClass_apply L 1 x
+  rw [heq]
+  exact cupClass_one_injective F L (cf.fundamentalClass L)
 
 end ClassFormation
 
