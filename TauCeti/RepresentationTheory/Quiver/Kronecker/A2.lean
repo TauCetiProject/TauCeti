@@ -163,9 +163,10 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
   · simpa only [hij, ↓reduceIte] using h
 
 open scoped Classical in
-/-- An Ext-Euler pairing of vertex simples is the corresponding Ringel Euler matrix entry. -/
+/-- The Kronecker delta minus the number of arrows between two vertices is the corresponding
+entry of the `A₂` Ringel Euler matrix. -/
 @[simp]
-theorem extEulerMatrix_A2_apply (k : Type v) [Field k] (i j : Fin 2) :
+theorem delta_sub_card_hom_eq_eulerMatrixA2 (k : Type v) [Field k] (i j : Fin 2) :
     (if (![src, tgt] i : Kronecker A) = ![src, tgt] j then (1 : ℤ) else 0) -
       (Fintype.card ((![src, tgt] i : Kronecker A) ⟶ (![src, tgt] j : Kronecker A)) : ℤ) =
       eulerMatrixA2 i j := by
