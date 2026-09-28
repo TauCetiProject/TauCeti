@@ -119,6 +119,9 @@ theorem translate_one_eq_W1p_translate (h : E) (u : Wkp mu ⊤ p 1) :
     translate h 1 u = W1p.translate (h := h) (fun _ _ => by simp) u := by
   simp only [translate, translated, translateOne]
 
+private theorem translate_one_eq_translateOne (h : E) (u : Wkp mu ⊤ p 1) :
+    translate h 1 u = translateOne h u := rfl
+
 /-- The highest weak derivative of a translated Sobolev function is the translated highest
 weak derivative. -/
 @[simp]
@@ -189,21 +192,19 @@ theorem norm_translate (h : E) : ∀ (k : ℕ) (u : Wkp mu ⊤ p k),
         rw [W1p.value_coe] at hval
         simpa only [v, Function.comp_apply] using
           (hv.trans ((congrArg WithLp.fst hjet).trans (hu.symm.trans hval.symm))).symm
-      change ‖translateOne h u‖ = ‖u‖
+      rw [translate_one_eq_translateOne]
       rw [heq]
       exact (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h |>.norm_map u.1
   | k + 2, u => by
-      have hv := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
+      have hv := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k
         (translate h (k + 2) u)
-      have hu := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
+      have hu := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
       rw [lowerOrder_translate, iteratedGradient_translate,
         norm_translate h (k + 1) (lowerOrder (k + 1) u),
         LinearIsometryEquiv.norm_map] at hv
       nlinarith [norm_nonneg (translate h (k + 2) u), norm_nonneg u]
 
-/-- Whole-space translation is a linear isometry on `W^{k,p}`. It acts on the value and every
-weak derivative by the corresponding `Lᵖ` translation. -/
-def translateLI (h : E) (k : ℕ) : Wkp mu ⊤ p k →ₗᵢ[ℝ] Wkp mu ⊤ p k where
+private def translateLI (h : E) (k : ℕ) : Wkp mu ⊤ p k →ₗᵢ[ℝ] Wkp mu ⊤ p k where
   toFun := translate h k
   map_add' := by
     intro u v
@@ -218,9 +219,52 @@ def translateLI (h : E) (k : ℕ) : Wkp mu ⊤ p k →ₗᵢ[ℝ] Wkp mu ⊤ p k
       value_smul, value_translate h k u]
   norm_map' := norm_translate h k
 
+private theorem translateLI_apply (h : E) (k : ℕ) (u : Wkp mu ⊤ p k) :
+    translateLI h k u = translate h k u := rfl
+
+/-- Whole-space translation is a linear isometric equivalence on `W^{k,p}`. Its inverse is
+translation by `-h`; it acts on the value and every weak derivative by `Lᵖ` translation. -/
+def translateLIE (h : E) (k : ℕ) : Wkp mu ⊤ p k ≃ₗᵢ[ℝ] Wkp mu ⊤ p k :=
+  LinearIsometryEquiv.ofSurjective (translateLI h k) (by
+    intro u
+    refine ⟨translate (-h) k u, ?_⟩
+    change translate h k (translate (-h) k u) = u
+    simpa using
+      (translate_add (-h) h k u).symm)
+
 @[simp]
-theorem translateLI_apply (h : E) (k : ℕ) (u : Wkp mu ⊤ p k) :
-    translateLI h k u = translate h k u := (rfl)
+theorem translateLIE_apply (h : E) (k : ℕ) (u : Wkp mu ⊤ p k) :
+    translateLIE h k u = translate h k u := by
+  unfold translateLIE
+  exact (congrFun (LinearIsometryEquiv.coe_ofSurjective (translateLI h k) _) u).trans
+    (translateLI_apply h k u)
+
+/-- The inverse of Sobolev translation is translation by the negative vector. -/
+@[simp]
+theorem translateLIE_symm (h : E) (k : ℕ) :
+    (translateLIE (mu := mu) (p := p) h k).symm = translateLIE (-h) k := by
+  apply LinearIsometryEquiv.ext
+  intro u
+  apply (LinearIsometryEquiv.symm_apply_eq _).2
+  simp only [translateLIE_apply]
+  simpa using translate_add (-h) h k u
+
+/-- Translation by zero is the identity equivalence. -/
+@[simp]
+theorem translateLIE_zero (k : ℕ) :
+    translateLIE (mu := mu) (p := p) (0 : E) k = LinearIsometryEquiv.refl ℝ _ := by
+  apply LinearIsometryEquiv.ext
+  intro u
+  simp
+
+/-- Sobolev translation equivalences compose by addition of their vectors. -/
+theorem translateLIE_add (h₁ h₂ : E) (k : ℕ) :
+    translateLIE (mu := mu) (p := p) (h₁ + h₂) k =
+      (translateLIE h₁ k).trans (translateLIE h₂ k) := by
+  apply LinearIsometryEquiv.ext
+  intro u
+  simpa only [translateLIE_apply, LinearIsometryEquiv.trans_apply] using
+    translate_add h₁ h₂ k u
 
 end TauCeti.Wkp
 
