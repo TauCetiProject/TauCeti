@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Kernel.Randomization
 public import Mathlib.Probability.Independence.Conditional
+import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Randomizing conditionally independent variables
@@ -21,11 +22,17 @@ into separate latent variables. It combines Mathlib's factorization of a conditi
 joint law into a product of conditional distributions with measurable randomization of the two
 kernels.
 
-## Main result
+Conversely, codings of two conditionally independent variables obtained separately, each jointly
+with the conditioning variable, can be fed with independent noises to realize the joint law of all
+three.
+
+## Main results
 
 * `ProbabilityTheory.CondIndepFun.exists_independent_coding` — conditionally independent random
   variables are generated from separate independent uniform variables given the conditioning
   variable.
+* `ProbabilityTheory.CondIndepFun.map_prod_prod_eq_of_map_prod_eq` — given codings of the two
+  variables, independent noises realize their joint law with the conditioning variable.
 
 ## References
 
@@ -91,6 +98,45 @@ theorem CondIndepFun.exists_independent_coding
     _ = ((μ.map Z).prod ((volume : Measure I).prod (volume : Measure I))).map F := by
       rw [hprod]
     _ = μ.map fun ω => (Z ω, X ω, Y ω) := hcode
+
+/-- **Gluing conditionally independent codings.** Suppose `X` and `Y` are conditionally independent
+given `Z`, and each is realized, jointly with `Z`, by a measurable function of `Z` and an
+independent noise, with laws `ρ₁` and `ρ₂`. Then feeding independent noises into the two codings
+realizes the joint law of `(Z, X, Y)`. -/
+theorem CondIndepFun.map_prod_prod_eq_of_map_prod_eq
+    [StandardBorelSpace β] [Nonempty β] [StandardBorelSpace γ] [Nonempty γ]
+    {ξ ζ : Type*} [MeasurableSpace ξ] [MeasurableSpace ζ]
+    {μ : Measure Ω} [IsFiniteMeasure μ] {X : Ω → β} {Y : Ω → γ} {Z : Ω → δ}
+    (hZ : Measurable Z)
+    (h : CondIndepFun (MeasurableSpace.comap Z inferInstance) hZ.comap_le X Y μ)
+    (hX : Measurable X) (hY : Measurable Y)
+    {ρ₁ : Measure ξ} {ρ₂ : Measure ζ} [IsProbabilityMeasure ρ₁] [IsProbabilityMeasure ρ₂]
+    {f : δ → ξ → β} {g : δ → ζ → γ}
+    (hf : Measurable (Function.uncurry f)) (hg : Measurable (Function.uncurry g))
+    (hfX : ((μ.map Z).prod ρ₁).map (fun p => (p.1, f p.1 p.2)) = μ.map fun ω => (Z ω, X ω))
+    (hgY : ((μ.map Z).prod ρ₂).map (fun p => (p.1, g p.1 p.2)) = μ.map fun ω => (Z ω, Y ω)) :
+    ((μ.map Z).prod (ρ₁.prod ρ₂)).map (fun p => (p.1, f p.1 p.2.1, g p.1 p.2.2)) =
+      μ.map fun ω => (Z ω, X ω, Y ω) := by
+  -- The randomizations realize the kernels `z ↦ ρ₁.map (f z)` and `z ↦ ρ₂.map (g z)`, which are
+  -- therefore versions of the conditional distributions of `X` and `Y` given `Z`.
+  let κ : Kernel δ β := ⟨fun z => ρ₁.map (f z),
+    TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry hf⟩
+  let η : Kernel δ γ := ⟨fun z => ρ₂.map (g z),
+    TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry hg⟩
+  have : IsMarkovKernel κ := ⟨fun z => inferInstanceAs (IsProbabilityMeasure (ρ₁.map (f z)))⟩
+  have : IsMarkovKernel η := ⟨fun z => inferInstanceAs (IsProbabilityMeasure (ρ₂.map (g z)))⟩
+  have hκ : condDistrib X Z μ =ᵐ[μ.map Z] κ :=
+    condDistrib_ae_eq_of_measure_eq_compProd_of_measurable hZ hX
+      (hfX.symm.trans (κ.map_prod_eq_compProd_of_map ρ₁ f hf fun _ => rfl))
+  have hη : condDistrib Y Z μ =ᵐ[μ.map Z] η :=
+    condDistrib_ae_eq_of_measure_eq_compProd_of_measurable hZ hY
+      (hgY.symm.trans (η.map_prod_eq_compProd_of_map ρ₂ g hg fun _ => rfl))
+  rw [κ.map_prod_prod_eq_compProd_prod_of_map η ρ₁ ρ₂ f g hf hg (fun _ => rfl) (fun _ => rfl),
+    (condIndepFun_iff_map_prod_eq_prod_condDistrib_prod_condDistrib hX hY hZ).mp h,
+    ← Measure.compProd_eq_comp_prod]
+  refine Measure.compProd_congr ?_
+  filter_upwards [hκ, hη] with z hκz hηz
+  rw [Kernel.prod_apply, Kernel.prod_apply, hκz, hηz]
 
 end ProbabilityTheory
 
