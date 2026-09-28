@@ -51,6 +51,7 @@ def matrixGeneralLinearEquiv {R : Type*} [CommSemiring R] {n : Type*} [Fintype n
   Units.mapEquiv Matrix.toLinAlgEquiv'.toMulEquiv
 
 /-- A general linear matrix acts on coordinate vectors by matrix-vector multiplication. -/
+@[simp]
 theorem matrixGeneralLinearEquiv_apply {R : Type*} [CommSemiring R] {n : Type*}
     [Fintype n] [DecidableEq n] (A : Matrix.GeneralLinearGroup n R) (v : n → R) :
     (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)

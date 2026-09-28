@@ -592,7 +592,7 @@ theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_apply
     (g : specialOrthogonalGroup Q) (i j : n) :
     specialOrthogonalToGeneralLinear Q g i j =
       (g : (n → R) ≃ₗ[R] (n → R)) (Pi.single j 1) i := by
-  change orthogonalToGeneralLinear Q (specialOrthogonalToOrthogonal Q g) i j = _
+  rw [specialOrthogonalToGeneralLinear, MonoidHom.comp_apply]
   rw [orthogonalToGeneralLinear_apply, coe_specialOrthogonalToOrthogonal]
 
 /-- The coordinate inclusion of a special orthogonal group is injective. -/
