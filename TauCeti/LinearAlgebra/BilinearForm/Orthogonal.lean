@@ -30,11 +30,11 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `TauCeti.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
   to a left-separating subspace produces a nondegenerate restriction.
-* `TauCeti.BilinForm.isCompl_orthogonal_of_restrict_bijective`: a perfect restriction splits
+* `TauCeti.bilinForm_isCompl_orthogonal_of_restrict_bijective`: a perfect restriction splits
   a symmetric bilinear module over a commutative ring.
-* `TauCeti.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
+* `TauCeti.bilinForm_restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
   the cyclic restriction perfect.
-* `TauCeti.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
+* `TauCeti.bilinForm_isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
   self-pairing splits off.
 -/
 
@@ -141,12 +141,10 @@ theorem restrict_nondegenerate_sup_span_singleton
 
 end BilinForm
 
-namespace BilinForm
-
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- Restrict pairing with a vector to a submodule. -/
-private def pairingToDual (B : LinearMap.BilinForm R M) (S : Submodule R M) :
+private def bilinFormPairingToDual (B : LinearMap.BilinForm R M) (S : Submodule R M) :
     M →ₗ[R] Module.Dual R S where
   toFun x :=
     { toFun := fun y ↦ B y x
@@ -167,28 +165,29 @@ private def pairingToDual (B : LinearMap.BilinForm R M) (S : Submodule R M) :
 
 /-- A submodule with perfect restricted symmetric pairing is complementary to its orthogonal
 complement. -/
-theorem isCompl_orthogonal_of_restrict_bijective (B : LinearMap.BilinForm R M) (hB : B.IsSymm)
+theorem bilinForm_isCompl_orthogonal_of_restrict_bijective
+    (B : LinearMap.BilinForm R M) (hB : B.IsSymm)
     (S : Submodule R M) (h : Function.Bijective (B.restrict S)) :
     IsCompl S (B.orthogonal S) := by
   let e : S ≃ₗ[R] Module.Dual R S :=
     LinearEquiv.ofBijective (B.restrict S) h
-  let p : M →ₗ[R] S := e.symm.toLinearMap.comp (pairingToDual B S)
+  let p : M →ₗ[R] S := e.symm.toLinearMap.comp (bilinFormPairingToDual B S)
   have hp : ∀ y : S, p y = y := by
     intro y
     apply e.injective
     ext z
-    simp [p, e, pairingToDual, LinearMap.BilinForm.restrict_apply, hB.eq]
+    simp [p, e, bilinFormPairingToDual, LinearMap.BilinForm.restrict_apply, hB.eq]
   have hker : LinearMap.ker p = B.orthogonal S := by
     ext x
     rw [LinearMap.mem_ker, ← e.map_eq_zero_iff]
-    have hpx : e (p x) = pairingToDual B S x := by simp [p]
+    have hpx : e (p x) = bilinFormPairingToDual B S x := by simp [p]
     rw [hpx]
     constructor
     · intro hx
       rw [LinearMap.BilinForm.mem_orthogonal_iff]
       intro y hy
       have hy' := congrArg (fun f : Module.Dual R S ↦ f ⟨y, hy⟩) hx
-      simpa [pairingToDual] using hy'
+      simpa [bilinFormPairingToDual] using hy'
     · intro hx
       ext y
       exact (LinearMap.BilinForm.mem_orthogonal_iff.mp hx) y y.property
@@ -196,7 +195,7 @@ theorem isCompl_orthogonal_of_restrict_bijective (B : LinearMap.BilinForm R M) (
   exact LinearMap.isCompl_of_proj hp
 
 /-- Unit self-pairing makes the restricted pairing on the cyclic span perfect. -/
-theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M)
+theorem bilinForm_restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M)
     (x : M) (hx : IsUnit (B x x)) : Function.Bijective (B.restrict (R ∙ x)) := by
   obtain ⟨a, ha⟩ := isUnit_iff_exists_inv.mp hx
   have ha' : a * B x x = 1 := by simpa [mul_comm] using ha
@@ -234,12 +233,11 @@ theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M
       _ = b * f ⟨x, hxS⟩ := by rw [ha']; ring
 
 /-- A vector with unit self-pairing spans an orthogonal direct summand. -/
-theorem isCompl_span_singleton_orthogonal_of_isUnit (B : LinearMap.BilinForm R M) (hB : B.IsSymm)
+theorem bilinForm_isCompl_span_singleton_orthogonal_of_isUnit
+    (B : LinearMap.BilinForm R M) (hB : B.IsSymm)
     (x : M) (hx : IsUnit (B x x)) :
     IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) :=
-  isCompl_orthogonal_of_restrict_bijective B hB (R ∙ x)
-    (restrict_span_singleton_bijective_of_isUnit B x hx)
-
-end BilinForm
+  bilinForm_isCompl_orthogonal_of_restrict_bijective B hB (R ∙ x)
+    (bilinForm_restrict_span_singleton_bijective_of_isUnit B x hx)
 
 end TauCeti
