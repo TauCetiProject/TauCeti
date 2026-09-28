@@ -11,9 +11,10 @@ public import Mathlib.GroupTheory.Perm.Fin
 /-!
 # Transitivity from cyclic rotation
 
-A permutation subgroup containing cyclic rotation acts transitively on the finite ordinal.
-This gives a transitivity criterion for groups specified by generators, including the empty
-and singleton ordinals.
+A permutation subgroup containing a cycle whose support is everything acts transitively. In
+particular, a permutation subgroup containing cyclic rotation acts transitively on the finite
+ordinal. This gives a transitivity criterion for groups specified by generators, including the
+empty and singleton ordinals.
 -/
 
 public section
@@ -22,6 +23,15 @@ namespace TauCeti
 
 open Equiv Equiv.Perm MulAction
 
+/-- A permutation subgroup containing a cycle with full support acts transitively. -/
+theorem isPretransitive_of_isCycle_mem_of_support_eq_univ {α : Type*} [Fintype α]
+    [DecidableEq α] {G : Subgroup (Perm α)} {g : Perm α} (hgc : g.IsCycle) (hg : g ∈ G)
+    (hsupp : g.support = Finset.univ) : IsPretransitive G α := by
+  have h := Equiv.Perm.isPretransitive_of_isCycle_mem hgc hg
+  rw [hsupp, Finset.coe_univ, Set.compl_univ] at h
+  exact IsPretransitive.of_surjective_map
+    SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
+
 /-- A permutation subgroup containing cyclic rotation acts transitively. -/
 theorem isPretransitive_of_finRotate_mem {n : ℕ}
     {G : Subgroup (Perm (Fin n))} (hg : finRotate n ∈ G) : IsPretransitive G (Fin n) := by
@@ -29,9 +39,6 @@ theorem isPretransitive_of_finRotate_mem {n : ℕ}
   · infer_instance
   · refine ⟨fun x y ↦ ⟨1, ?_⟩⟩
     exact Fin.ext (by omega)
-  · have h := Equiv.Perm.isPretransitive_of_isCycle_mem (G := G) isCycle_finRotate hg
-    rw [support_finRotate, Finset.coe_univ, Set.compl_univ] at h
-    exact IsPretransitive.of_surjective_map
-      SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
+  · exact isPretransitive_of_isCycle_mem_of_support_eq_univ isCycle_finRotate hg support_finRotate
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.List
+public import TauCeti.GroupTheory.GroupAction.FinRotate
 public import TauCeti.GroupTheory.Perm.MultipleTransitivity
 public import TauCeti.GroupTheory.Perm.Recognition
 public import TauCeti.GroupTheory.TriangleGroup.Basic
@@ -175,10 +176,7 @@ private theorem isPretransitive_octahedralGenerators :
   have hgSupport : g.support = Finset.univ := by
     rw [hg_eq, List.support_formPerm_of_nodup _ (by decide) (by decide)]
     decide
-  have h := Equiv.Perm.isPretransitive_of_isCycle_mem hgCycle hg
-  rw [hgSupport, Finset.coe_univ, Set.compl_univ] at h
-  exact IsPretransitive.of_surjective_map
-    SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
+  exact isPretransitive_of_isCycle_mem_of_support_eq_univ hgCycle hg hgSupport
 
 /-- The image of the octahedral representation is the full symmetric group `S₄`. -/
 @[simp]
@@ -256,10 +254,7 @@ private theorem isPretransitive_icosahedralGenerators :
   have hgSupport : g.support = Finset.univ := by
     rw [hg_eq, List.support_formPerm_of_nodup _ (by decide) (by decide)]
     decide
-  have h := Equiv.Perm.isPretransitive_of_isCycle_mem hgCycle hg
-  rw [hgSupport, Finset.coe_univ, Set.compl_univ] at h
-  exact IsPretransitive.of_surjective_map
-    SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
+  exact isPretransitive_of_isCycle_mem_of_support_eq_univ hgCycle hg hgSupport
 
 /-- The image of the icosahedral representation is the alternating group `A₅`. -/
 @[simp]
