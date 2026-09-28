@@ -62,10 +62,8 @@ theorem isOpen_of_natCast_exponent_ne_zero {H : Subgroup Kˣ}
 theorem isOpen_of_natCast_index_ne_zero {H : Subgroup Kˣ} (hH : (H.index : K) ≠ 0) :
     IsOpen (H : Set Kˣ) := by
   have hExp : (Monoid.exponent (Kˣ ⧸ H) : K) ≠ 0 := by
-    obtain ⟨k, hk⟩ := Group.exponent_dvd_nat_card (G := Kˣ ⧸ H)
-    intro hz
-    apply hH
-    rw [H.index_eq_card, hk, Nat.cast_mul, hz, zero_mul]
+    exact ne_zero_of_dvd_ne_zero (by simpa only [H.index_eq_card] using hH)
+      (Nat.cast_dvd_cast Group.exponent_dvd_nat_card)
   exact isOpen_of_natCast_exponent_ne_zero hExp
 
 end TauCeti
