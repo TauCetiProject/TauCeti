@@ -41,7 +41,7 @@ private instance : DiscreteTopology P.snd :=
 
 /-- The map from the homology of a subspace of a discrete space to the homology of the ambient
 space is a split monomorphism when the subspace is nonempty. -/
-noncomputable def splitMono_singularHomologyMap_of_discrete [Nonempty P.snd] (n : ℕ) :
+noncomputable def splitMonoSingularHomologyMapOfDiscrete [Nonempty P.snd] (n : ℕ) :
     SplitMono (SSet.homologyMap (TopCat.toSSet.map P.map) R n) := by
   let r : P.fst ⟶ P.snd := TopCat.ofHom
     ⟨Function.invFun P.map.hom, continuous_of_discreteTopology⟩
@@ -60,7 +60,7 @@ lemma mono_singularHomologyMap_zero_of_discrete :
     Mono (SSet.homologyMap (TopCat.toSSet.map P.map) R 0) := by
   by_cases h : Nonempty P.snd
   · let := h
-    exact (splitMono_singularHomologyMap_of_discrete P R 0).mono
+    exact (splitMonoSingularHomologyMapOfDiscrete P R 0).mono
   · let : IsEmpty P.snd := not_nonempty_iff.mp h
     let : (TopCat.toSSet.obj P.snd).HasDimensionLT 0 :=
       TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty P
