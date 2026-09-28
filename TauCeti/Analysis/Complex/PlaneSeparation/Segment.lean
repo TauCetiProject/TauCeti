@@ -68,4 +68,30 @@ theorem disjoint_segment_of_im_mul_sub_neg (c u v w x : ℂ)
   · simpa only [neg_mul, Complex.neg_im] using neg_pos.mpr hw
   · simpa only [neg_mul, Complex.neg_im] using neg_pos.mpr hx
 
+/-- A segment on a supporting line can meet a segment with one endpoint on the line and
+the other strictly above it only at the endpoint on the line. -/
+theorem eq_left_of_mem_segment_of_im_mul_sub_pos (c u v w x z : ℂ)
+    (hline : (c * (v - u)).im = 0)
+    (hw : (c * (w - u)).im = 0) (hx : 0 < (c * (x - u)).im)
+    (hz₁ : z ∈ segment ℝ u v) (hz₂ : z ∈ segment ℝ w x) : z = w := by
+  have hzero : (c * (z - u)).im = 0 := by
+    rw [segment_eq_image'] at hz₁
+    obtain ⟨t, _, rfl⟩ := hz₁
+    simp only [add_sub_cancel_left, mul_smul_comm, Complex.smul_im,
+      hline, smul_zero]
+  rw [segment_eq_image'] at hz₂
+  obtain ⟨t, _, rfl⟩ := hz₂
+  have hcomb : (c * (w + t • (x - w) - u)).im = t * (c * (x - u)).im := by
+    have heq : w + t • (x - w) - u = (1 - t) • (w - u) + t • (x - u) := by
+      rw [Complex.real_smul, Complex.real_smul, Complex.real_smul]
+      push_cast
+      ring
+    rw [heq, mul_add, mul_smul_comm, mul_smul_comm, Complex.add_im,
+      Complex.smul_im, Complex.smul_im, hw]
+    simp
+  have htzero : t = 0 := by
+    have h : t * (c * (x - u)).im = 0 := hcomb ▸ hzero
+    exact (mul_eq_zero.mp h).resolve_right hx.ne'
+  simp [htzero]
+
 end TauCeti
