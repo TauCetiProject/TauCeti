@@ -11,10 +11,9 @@ public import TauCeti.FieldTheory.FunctionField.ConstantField
 /-!
 # Finite extensions of the constant field
 
-When a finite extension of constants is adjoined to an algebraic function field,
-the compositum is again an algebraic function field over the enlarged constant field.  This
-gives the function-field structure needed to discuss its places, divisors, and genus.
-Separability and exactness of the original constant field are not needed for this.
+A finite extension of constants yields a finite compositum over the original field.
+The function-field theorem for arbitrary algebraic extensions of constants is in
+`ConstantExtension.Algebraic`.
 
 Under the hypotheses that make constant field extensions well behaved — the original constant
 field `k` is exact in `F` and `k' / k` is separable — the compositum acquires no new separable
@@ -28,8 +27,8 @@ the element `y - t ^ (1/p) * x` of `F · k'` is a `p`-th root of `u`, and `u ^ (
 
 ## Main results
 
-* `TauCeti.IsFunctionField.of_constantCompositum_eq_top`: the compositum with a finite constant
-  field extension is a function field over the enlarged constant field.
+* `TauCeti.finiteDimensional_of_constantCompositum_eq_top`: a compositum with finite constants
+  is finite over the original field.
 * `TauCeti.separableClosure_eq_bot_of_constantCompositum_eq_top`: for a separable constant field
   extension of an exact constant field, `k'` is separably closed in `F · k'`.
 * `TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top`: for a separable constant field
@@ -75,17 +74,6 @@ theorem finiteDimensional_of_constantCompositum_eq_top [FiniteDimensional k k']
   rw [htop] at this
   exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
 
-/-- Adjoining a finite extension of constants to a function field produces a
-function field over the enlarged constant field.  The statement uses an ambient compositum
-equation so that it applies to any compatible field realization. -/
-theorem IsFunctionField.of_constantCompositum_eq_top [FiniteDimensional k k']
-    (hF : IsFunctionField k F)
-    (h : constantCompositum F k' F' = ⊤) : IsFunctionField k' F' := by
-  let := finiteDimensional_of_constantCompositum_eq_top (k := k) (F := F) (k' := k')
-    (F' := F') h
-  let : Algebra.IsAlgebraic k k' := Algebra.IsAlgebraic.of_finite k k'
-  exact (hF.finite_extension (E := F')).of_isAlgebraic
-
 /-! ### The constant field of the compositum -/
 
 /-- **The enlarged constant field is separably closed in the compositum**: if `k` is the exact
@@ -110,10 +98,10 @@ compositum `F · k'` has exact constant field `k'`.  Stichtenoth's hypotheses �
 `k' / k` algebraic — are the special case in which `Algebra.IsSeparable k k'` is inferred and
 `PerfectField k'` is `Algebra.IsAlgebraic.perfectField k`.
 
-Together with `TauCeti.IsFunctionField.of_constantCompositum_eq_top`, this makes `F · k' / k'` a
-function field with exact constant field for a finite `k' / k`, so that its genus, its places and
-their degrees are the ones the theory of constant field extensions compares with those of
-`F / k`. -/
+Together with `TauCeti.IsFunctionField.of_constantCompositum_eq_top` from
+`ConstantExtension.Algebraic`, this makes `F · k' / k'` a function field with exact constant field
+for an algebraic `k' / k`, so that its genus, its places and their degrees are the ones the theory
+of constant field extensions compares with those of `F / k`. -/
 theorem isIntegrallyClosedIn_of_constantCompositum_eq_top [Algebra.IsSeparable k k']
     [PerfectField k'] (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) : IsIntegrallyClosedIn k' F' := by

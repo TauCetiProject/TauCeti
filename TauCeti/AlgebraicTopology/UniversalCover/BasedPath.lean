@@ -9,17 +9,48 @@ public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
 public import Mathlib.Topology.CompactOpen
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Order.Basic
+import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 
 /-!
 # Based paths
 
-This file introduces the compact-open based-path space `BasedPath x₀` and the path-component
-machinery of `endpoint ⁻¹' U` used in the universal-cover construction. It is adapted from
+For a topological space `X` and a basepoint `x₀ : X`, this file introduces the space
+`BasedPath x₀` of continuous maps `γ : C(I, X)` with `γ 0 = x₀`, topologized as a subspace of
+`C(I, X)` with the compact-open topology. Its quotient by endpoint-preserving homotopy is the
+model `TauCeti.UniversalCover x₀` used to construct the universal cover. When `X` is locally
+path-connected and semilocally simply connected, that quotient is simply connected and its endpoint
+projection is a covering map whose range is the path component of `x₀`
+(`TauCeti/AlgebraicTopology/UniversalCover/Covering.lean`); it is then a universal cover of that
+path component, and of `X` when `X` is path-connected. This file is adapted from
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292) by Kim Morrison.
+
+The main results concern the path components of `endpoint ⁻¹' U`. For sufficiently small open
+sets `U`, their images in the universal cover are the sheets over `U`.
+
+## Main definitions
+
+* `BasedPath x₀`: the space of based paths out of `x₀`.
+* `BasedPath.deformTerminal`: modify a based path near its endpoint by a short path, without
+  moving far in the compact-open topology.
+* `BasedPath.initialSegmentFamily`: the family `t ↦ γ|_[0, t]` of initial segments.
+
+## Main statements
+
+* `BasedPath.isOpenMap_endpoint`: the endpoint map `BasedPath x₀ → X` is open when `X` is
+  locally path-connected.
+* `BasedPath.joinedIn_preimage_of_append`: appending a path inside `U` stays in the same path
+  component of `endpoint ⁻¹' U`.
+* `BasedPath.isOpen_pathComponent_preimage`: in a semilocally simply connected, locally
+  path-connected space, path components of `endpoint ⁻¹' U` are open for open `U`.
+* `BasedPath.toPath_homotopic_of_joinedIn_pathHomotopyTrivial`: based paths with the same
+  endpoint in a common path component of `endpoint ⁻¹' U`, for `U` path-homotopy-trivial, are
+  homotopic.
+* `BasedPath.pathComponentIn_ofPath_eq_of_homotopic`: path components of `endpoint ⁻¹' U` are
+  invariant under endpoint-preserving homotopy.
 -/
 
 open scoped unitInterval
-open Topology TauCeti
+open Set Topology TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
 
@@ -34,12 +65,33 @@ variable {x₀ : X}
 public instance : TopologicalSpace (BasedPath x₀) :=
   inferInstanceAs (TopologicalSpace { γ : C(I, X) // γ 0 = x₀ })
 
+public instance : FunLike (BasedPath x₀) I X where
+  coe γ := γ.1
+  coe_injective _ _ h := Subtype.ext (DFunLike.coe_injective h)
+
+/-- Evaluation `BasedPath x₀ × I → X` is jointly continuous. -/
+public instance : ContinuousEval (BasedPath x₀) I X :=
+  .of_continuous_forget continuous_subtype_val
+
+@[simp] public theorem mk_apply (γ : C(I, X)) (h : γ 0 = x₀) (t : I) :
+    (show BasedPath x₀ from ⟨γ, h⟩) t = γ t := rfl
+
+@[simp] public theorem val_apply (γ : BasedPath x₀) (t : I) : γ.1 t = γ t := rfl
+
+/-- A map into `BasedPath x₀` is continuous iff its uncurried form is. -/
+public theorem continuous_iff {Y : Type*} [TopologicalSpace Y] {f : Y → BasedPath x₀} :
+    Continuous f ↔ Continuous fun p : Y × I ↦ f p.1 p.2 :=
+  ⟨fun hf ↦ continuous_eval.comp (hf.prodMap continuous_id),
+    fun h ↦ Continuous.subtype_mk (ContinuousMap.continuous_of_continuous_uncurry _ h) _⟩
+
+@[simp] public theorem source (γ : BasedPath x₀) : γ 0 = x₀ := γ.2
+
 /-- The endpoint of a based path. -/
-@[expose] public def endpoint (γ : BasedPath x₀) : X := γ.1 1
+@[expose] public def endpoint (γ : BasedPath x₀) : X := γ 1
 
 /-- The endpoint map from based paths to their terminal point is continuous. -/
-public theorem continuous_endpoint : Continuous (endpoint (x₀ := x₀)) :=
-  (continuous_eval_const (1 : I)).comp continuous_induced_dom
+@[fun_prop] public theorem continuous_endpoint : Continuous (endpoint (x₀ := x₀)) :=
+  continuous_eval_const 1
 
 /-- View a based path as a path to its endpoint. -/
 @[expose] public def toPath (γ : BasedPath x₀) : Path x₀ (endpoint γ) where
@@ -49,17 +101,15 @@ public theorem continuous_endpoint : Continuous (endpoint (x₀ := x₀)) :=
 
 /-- Definitional unfolding of `endpoint`. Not a global simp lemma: it overlaps with
 `endpoint_refl` (and other `endpoint_…` lemmas) on the simp normal form, so we instead include it
-explicitly in `simp [endpoint_def, …]` at each site that wants to bridge between the named
-`endpoint γ = u` API and the underlying `γ.1 1` evaluation. -/
-public theorem endpoint_def (γ : BasedPath x₀) : endpoint γ = γ.1 1 := rfl
-@[simp] public theorem toPath_apply (γ : BasedPath x₀) (t : I) : toPath γ t = γ.1 t := rfl
+explicitly at each site that wants to pass from the named `endpoint γ` to the evaluation
+`γ 1`. -/
+public theorem endpoint_def (γ : BasedPath x₀) : endpoint γ = γ 1 := rfl
+@[simp] public theorem toPath_apply (γ : BasedPath x₀) (t : I) : toPath γ t = γ t := rfl
 public theorem toPath_source (γ : BasedPath x₀) : toPath γ 0 = x₀ := γ.2
 public theorem toPath_target (γ : BasedPath x₀) : toPath γ 1 = endpoint γ := rfl
 
-@[ext] public theorem ext {γ γ' : BasedPath x₀} (h : ∀ t, γ.1 t = γ'.1 t) : γ = γ' := by
-  apply Subtype.ext
-  ext t
-  exact h t
+@[ext] public theorem ext {γ γ' : BasedPath x₀} (h : ∀ t, γ t = γ' t) : γ = γ' :=
+  DFunLike.ext γ γ' h
 
 /-- The canonical inclusion `Path x₀ y → BasedPath x₀`: package an ordinary path out of `x₀` as a
 based path, forgetting `y` at the type level. The endpoint is recovered as
@@ -68,6 +118,8 @@ based path, forgetting `y` at the type level. The endpoint is recovered as
 right endpoint cast to `endpoint (ofPath γ)` (`toPath_ofPath`). -/
 @[expose] public def ofPath {y : X} (γ : Path x₀ y) : BasedPath x₀ :=
   ⟨γ.toContinuousMap, γ.source⟩
+
+@[simp] public theorem ofPath_apply {y : X} (γ : Path x₀ y) (t : I) : ofPath γ t = γ t := rfl
 
 @[simp] public theorem toPath_ofPath {y : X} (γ : Path x₀ y) :
     (ofPath γ).toPath = γ.cast rfl γ.target := by
@@ -92,7 +144,8 @@ right endpoint cast to `endpoint (ofPath γ)` (`toPath_ofPath`). -/
   endpoint_ofPath _
 
 @[simp] public theorem toPath_refl (x₀ : X) : (refl x₀).toPath = Path.refl x₀ := by
-  apply Path.ext; funext t; rfl
+  ext
+  rfl
 
 @[simp] public theorem ofPath_refl (x₀ : X) :
     ofPath (Path.refl x₀) = refl x₀ := rfl
@@ -118,330 +171,173 @@ based path within a path component of `endpoint ⁻¹' U`. -/
 @[simp] public theorem endpoint_append {y : X} (γ : BasedPath x₀) (δ : Path (endpoint γ) y) :
     endpoint (append γ δ) = y := endpoint_ofPath _
 
-/-- The tail of a based path past time `a`, viewed as a `Path (γ.toPath.extend a) u` where
-`u = endpoint γ`. Concretely it is `γ.toPath.truncateOfLE` between `a` and `1`, cast on the right
-to land at `u`; the only hypothesis required is `a ≤ 1` (for `a < 0` the source is clamped
-through `Path.extend`). This is the "compressed tail" piece used by `deformTerminal` to splice
-a new endpoint path onto `γ` while preserving its image on `[0, a]`. -/
-private noncomputable def terminalTail {u : X} (γ : BasedPath x₀)
-    (hu : endpoint γ = u) (a : ℝ) (ha1 : a ≤ 1) :
-    Path (γ.toPath.extend a) u :=
-  (γ.toPath.truncateOfLE (t₀ := a) (t₁ := 1) ha1).cast rfl
-    (by simpa using! hu.symm)
+/-! ### Deforming the end of a based path -/
 
-/-- Replace the terminal interval of a based path by first traversing a compressed tail of the
-original path and then a new endpoint path. -/
-private noncomputable def deformTerminal {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
-    (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) : BasedPath x₀ := by
-  let tail : Path (γ.toPath.extend a) u := terminalTail γ hu a (by linarith)
+-- The construction and the proof that the endpoint map is open are ported from
+-- https://github.com/leanprover-community/mathlib4/pull/44185.
+
+section deformTerminal
+
+variable {v : X} (γ : BasedPath x₀) (δ : Path (endpoint γ) v) {a b : ℝ}
+
+/-- Replace the end of a based path `γ` by a path `δ` out of its endpoint: the result agrees with
+`γ` on `[0, a]`, traverses `γ|_[a, 1]` on `[a, b]`, and traverses `δ` on `[b, 1]`. When `a` is
+close to `1` and the range of `δ` lies in a small neighborhood of the endpoint, this stays in
+a prescribed compact-open neighborhood of `γ`. -/
+public noncomputable def deformTerminal (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) :
+    BasedPath x₀ :=
   let f : ℝ → X := fun t ↦
-    if hta : t ≤ a then γ.toPath.extend t else
-      if htb : t ≤ b then tail.extend ((t - a) / (b - a)) else δ.extend ((t - b) / (1 - b))
-  have hf_cont : Continuous f := by
+    if t ≤ a then γ.toPath.extend t
+    else if t ≤ b then γ.toPath.extend (a + (t - a) / (b - a) * (1 - a))
+    else δ.extend ((t - b) / (1 - b))
+  have hf : Continuous f := by
     refine Continuous.if_le γ.toPath.continuous_extend ?_ continuous_id continuous_const ?_
-    · refine Continuous.if_le
-        (tail.continuous_extend.comp (by fun_prop))
-        (δ.continuous_extend.comp (by fun_prop))
-        continuous_id continuous_const ?_
-      · intro t htb
-        have hba : b - a ≠ 0 := sub_ne_zero.mpr hab.ne.symm
-        subst t
-        simp [tail, hba]
-    · intro t hta
-      subst t
-      simp [tail, hab.le]
-  refine ⟨ContinuousMap.mk
-    (fun t : I ↦ f t)
-    (hf_cont.comp continuous_subtype_val), ?_⟩
-  -- the basepoint condition is `f 0 = x₀`; `f` is a local `let`, so no application lemma is
-  -- available yet and the branch structure has to be spelled out by hand here.  `0 ≤ a` picks
-  -- the first branch, on which `f` is `γ.toPath.extend`.
-  change (if _ : (0 : ℝ) ≤ a then γ.toPath.extend 0 else
-    if _ : (0 : ℝ) ≤ b then tail.extend ((0 - a) / (b - a))
-    else δ.extend ((0 - b) / (1 - b))) = x₀
-  rw [dite_eq_left ha, Path.extend_zero]
+    · refine Continuous.if_le (by fun_prop) (by fun_prop) continuous_id continuous_const ?_
+      rintro t rfl
+      simp [div_self (sub_ne_zero.2 hab.ne')]
+    · rintro t rfl
+      simp [hab.le]
+  ⟨⟨fun t ↦ f t, hf.comp continuous_subtype_val⟩, by simp [f, ha]⟩
 
-/-- Application lemma for `deformTerminal`: the spliced path is the three-branch `dite` selected
-by `t ≤ a` and `t ≤ b`. -/
--- This is the only place the construction is unfolded; the three branch lemmas below rewrite with
--- it and then discharge the branch conditions.
-private theorem deformTerminal_apply {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
-    (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) (t : I) :
-    (deformTerminal γ hu δ ha hab hb).1 t =
-      if _ : (t : ℝ) ≤ a then γ.toPath.extend t else
-        if _ : (t : ℝ) ≤ b then
-          (terminalTail γ hu a (by linarith)).extend (((t : ℝ) - a) / (b - a))
-        else δ.extend (((t : ℝ) - b) / (1 - b)) :=
-  rfl
+variable (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) {t : I}
 
-private theorem deformTerminal_apply_of_le {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
-    (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) (t : I) (ht : (t : ℝ) ≤ a) :
-    (deformTerminal γ hu δ ha hab hb).1 t = γ.toPath.extend t := by
-  rw [deformTerminal_apply, dite_eq_left ht]
+public theorem deformTerminal_apply_of_le (ht : (t : ℝ) ≤ a) :
+    deformTerminal γ δ ha hab hb t = γ t := by
+  simp [deformTerminal, ht]
 
-private theorem deformTerminal_apply_of_lt_of_le {u v : X} (γ : BasedPath x₀)
-    (hu : endpoint γ = u) (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1)
-    (t : I) (hta : a < (t : ℝ)) (htb : (t : ℝ) ≤ b) : (deformTerminal γ hu δ ha hab hb).1 t =
-      (terminalTail γ hu a (by linarith)).extend (((t : ℝ) - a) / (b - a)) := by
-  rw [deformTerminal_apply, dite_eq_right (not_le_of_gt hta), dite_eq_left htb]
+public theorem deformTerminal_apply_of_lt_of_le (hat : a < t) (htb : (t : ℝ) ≤ b) :
+    deformTerminal γ δ ha hab hb t = γ.toPath.extend (a + (t - a) / (b - a) * (1 - a)) := by
+  simp [deformTerminal, not_le.2 hat, htb]
 
-private theorem deformTerminal_apply_of_lt {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
-    (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) (t : I) (ht : b < (t : ℝ)) :
-    (deformTerminal γ hu δ ha hab hb).1 t = δ.extend (((t : ℝ) - b) / (1 - b)) := by
-  rw [deformTerminal_apply, dite_eq_right (not_le_of_gt (lt_trans hab ht)),
-    dite_eq_right (not_le_of_gt ht)]
+public theorem deformTerminal_apply_of_lt (hbt : b < t) :
+    deformTerminal γ δ ha hab hb t = δ.extend ((t - b) / (1 - b)) := by
+  simp [deformTerminal, not_le.2 (hab.trans hbt), not_le.2 hbt]
 
-/-- The endpoint of `deformTerminal γ hu δ ha hab hb` is the endpoint of `δ`. -/
-private theorem endpoint_deformTerminal {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
-    (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) :
-    endpoint (deformTerminal γ hu δ ha hab hb) = v := by
-  simp only [endpoint_def]
-  rw [deformTerminal_apply_of_lt γ hu δ ha hab hb 1 hb]
-  have hbne : (1 : ℝ) - b ≠ 0 := sub_ne_zero.mpr hb.ne'
-  have hone : (((1 : I) : ℝ) - b) / (1 - b) = 1 := by
-    have : ((1 : I) : ℝ) = 1 := rfl
-    rw [this]; field_simp
-  rw [hone]
-  simp [δ.extend_one]
+@[simp] public theorem endpoint_deformTerminal : endpoint (deformTerminal γ δ ha hab hb) = v := by
+  rw [endpoint_def, deformTerminal_apply_of_lt γ δ ha hab hb (by simpa using hb)]
+  simp [div_self (sub_ne_zero.2 hb.ne')]
 
-/-- Appending a fixed terminal path's initial-segment family to a fixed based path is jointly
-continuous in the family parameter. This packages the boilerplate for using
-`Path.trans_continuous_family` to lift `append γ ∘ Path.initialSegmentFamily δ` to a continuous
-map `I → BasedPath x₀`. -/
-public theorem continuous_append_initialSegmentFamily {x₀ z : X}
-    (γ : BasedPath x₀) (δ : Path (endpoint γ) z) :
-    Continuous fun t : I ↦ γ.append (Path.initialSegmentFamily δ t) := by
-  apply Continuous.subtype_mk
-  refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
-  simpa using!
-    Path.trans_continuous_family (fun _ : I ↦ γ.toPath)
-      (Path.continuous_uncurry_iff.mpr continuous_const) (Path.initialSegmentFamily δ)
-      (Path.continuous_initialSegmentFamily_uncurry δ)
-
-/-- Extract an open path-connected endpoint neighborhood and a terminal interval avoiding the
-subbasic compact sets that do not contain `1`. -/
-theorem exists_endpointNeighborhood_of_basicNeighborhood [LocallyPathConnectedSpace X]
-    {x₀ : X} (γ : BasedPath x₀) (Tgood Tbad : Finset (Set I × Set X))
-    (hTgood_open_mem : ∀ KU ∈ Tgood, IsOpen KU.2 ∧ endpoint γ ∈ KU.2)
-    (hTbad_closed : ∀ KU ∈ Tbad, IsClosed KU.1) (hTbad_not_mem : ∀ KU ∈ Tbad, (1 : I) ∉ KU.1) :
-    ∃ (W : Set X) (a₀ : I) (a b : ℝ),
-      IsOpen W ∧ endpoint γ ∈ W ∧ IsPathConnected W ∧
-      (∀ KU ∈ Tgood, W ⊆ KU.2) ∧
-      Set.Ioc a₀ 1 ⊆ γ.toPath ⁻¹' W ∩ ⋂ KU ∈ Tbad, KU.1ᶜ ∧
-      ((a₀ : I) : ℝ) < a ∧ 0 ≤ a ∧ a ≤ 1 ∧ a < b ∧ b < 1 := by
-  let O : Set X := ⋂ KU ∈ Tgood, KU.2
-  have hOopen : IsOpen O :=
-    isOpen_biInter_finset fun KU hKU ↦ (hTgood_open_mem KU hKU).1
-  have huO : endpoint γ ∈ O := by
-    simp only [O, Set.mem_iInter]
-    exact fun KU hKU ↦ (hTgood_open_mem KU hKU).2
-  rcases (isOpen_isPathConnected_basis (x := endpoint γ)).mem_iff.mp
-      (hOopen.mem_nhds huO) with ⟨W, ⟨hWopen, huW, hWpath⟩, hWO⟩
-  let N : Set I := γ.toPath ⁻¹' W ∩ ⋂ KU ∈ Tbad, KU.1ᶜ
-  have hNnhds : N ∈ 𝓝 (1 : I) := by
-    refine Filter.inter_mem
-      ((hWopen.preimage γ.toPath.continuous).mem_nhds (by simpa using! huW)) ?_
-    refine (isOpen_biInter_finset ?_).mem_nhds ?_
-    · exact fun KU hKU ↦ (hTbad_closed KU hKU).isOpen_compl
-    · simp only [Set.mem_iInter]
-      intro KU hKU
-      exact hTbad_not_mem KU hKU
-  rcases exists_Ioc_subset_of_mem_nhds' hNnhds (show (0 : I) < 1 by simp) with ⟨a₀, ha₀, hIoc⟩
-  let a : ℝ := (((a₀ : I) : ℝ) + 1) / 2
-  let b : ℝ := (a + 1) / 2
-  have ha₀_nonneg : 0 ≤ ((a₀ : I) : ℝ) := a₀.2.1
-  have ha₀_lt_one : ((a₀ : I) : ℝ) < 1 := ha₀.2
-  have ha₀_lt_a : ((a₀ : I) : ℝ) < a := by dsimp [a]; nlinarith
-  have ha0 : 0 ≤ a := by dsimp [a]; nlinarith
-  have ha1 : a ≤ 1 := by dsimp [a]; nlinarith
-  have hab : a < b := by dsimp [a, b]; nlinarith
-  have hb1 : b < 1 := by dsimp [a, b]; nlinarith
-  refine ⟨W, a₀, a, b, hWopen, huW, hWpath, ?_, hIoc, ha₀_lt_a, ha0, ha1, hab, hb1⟩
-  intro KU hKU z hz
-  have hz' : ∀ KU ∈ Tgood, z ∈ KU.2 := by simpa [O] using! hWO hz
-  exact hz' KU hKU
-
-/-- The range of the compressed terminal tail `terminalTail γ rfl a ha1` is contained in `W`,
-given that the terminal interval `Set.Ioc a₀ 1` maps into `W` under `γ.toPath` (`hpreim`), that
-`a₀ < a` (`ha₀_lt_a`) and that `a ≤ 1` (`ha1`). The tail retraces `γ` over `[a, 1]`, and every
-such time already lies in `Set.Ioc a₀ 1`, so its image lies in `W`. -/
-private theorem terminalTail_range_subset (γ : BasedPath x₀) {W : Set X} {a₀ : I} {a : ℝ}
-    (hpreim : Set.Ioc a₀ 1 ⊆ γ.toPath ⁻¹' W) (ha₀_lt_a : ((a₀ : I) : ℝ) < a) (ha1 : a ≤ 1) :
-    Set.range (terminalTail γ rfl a ha1) ⊆ W := by
-  apply Path.truncateOfLE_range_subset (h := ha1)
-  intro s hs
-  have ha0 : (0 : ℝ) ≤ a := (a₀.2.1.trans_lt ha₀_lt_a).le
-  have hs01 : s ∈ (Set.Icc 0 1 : Set ℝ) := ⟨le_trans ha0 hs.1, hs.2⟩
-  simp only [Set.mem_preimage]
-  rw [Path.extend_apply _ hs01]
-  refine hpreim ?_
-  refine ⟨?_, ?_⟩
-  · -- No interval-order lemma matches this mixed subtype/real goal directly.
-    change ((a₀ : I) : ℝ) < s
-    exact lt_of_lt_of_le ha₀_lt_a hs.1
-  · -- No interval-order lemma matches this mixed subtype/real goal directly.
-    change s ≤ 1
-    exact hs.2
-
-/-- For a time `t` with `a < t`, the deformed based path `deformTerminal γ rfl δ ha0 hab hb1`
-takes a value in `U` at `t`, provided `W ⊆ U` (`hWU`), the terminal tail's range lies in `W`
-(`htail`), and `δ`'s range lies in `W` (`hδW`). The bounds are `0 ≤ a` (`ha0`), `a < b` (`hab`),
-`b < 1` (`hb1`), and `a ≤ 1` (`ha1`, which names the tail's defining bound). On `a < t ≤ b` the
-value lies on the tail, and on `b < t` it lies on `δ`; either way it is in `W ⊆ U`. -/
-private theorem deformTerminal_apply_mem_of_lt {v : X} (γ : BasedPath x₀)
-    (δ : Path (endpoint γ) v) {W U : Set X} {a b : ℝ} (ha0 : 0 ≤ a) (hab : a < b) (hb1 : b < 1)
-    (ha1 : a ≤ 1) (hWU : W ⊆ U) (htail : Set.range (terminalTail γ rfl a ha1) ⊆ W)
-    (hδW : Set.range δ ⊆ W) (t : I) (hat : a < (t : ℝ)) :
-    (deformTerminal γ rfl δ ha0 hab hb1).1 t ∈ U := by
+/-- Past time `a`, the deformed path stays in any set containing `γ [a, 1]` and the range of
+`δ`. -/
+public theorem deformTerminal_apply_mem_of_lt {W : Set X}
+    (hγW : MapsTo γ.toPath.extend (Icc a 1) W) (hδW : range δ ⊆ W) (hat : a < t) :
+    deformTerminal γ δ ha hab hb t ∈ W := by
   by_cases htb : (t : ℝ) ≤ b
-  · have hparam : (((t : ℝ) - a) / (b - a)) ∈ (Set.Icc 0 1 : Set ℝ) :=
-      unitInterval.div_mem (sub_nonneg.mpr hat.le) (sub_pos.mpr hab).le (sub_le_sub_right htb a)
-    rw [deformTerminal_apply_of_lt_of_le γ rfl δ ha0 hab hb1 t hat htb,
-      Path.extend_apply _ hparam]
-    exact hWU (htail ⟨⟨((t : ℝ) - a) / (b - a), hparam⟩, rfl⟩)
-  · have hbt : b < (t : ℝ) := lt_of_not_ge htb
-    have hparam : (((t : ℝ) - b) / (1 - b)) ∈ (Set.Icc 0 1 : Set ℝ) :=
-      unitInterval.div_mem (sub_nonneg.mpr hbt.le) (sub_pos.mpr hb1).le (sub_le_sub_right t.2.2 b)
-    rw [deformTerminal_apply_of_lt γ rfl δ ha0 hab hb1 t hbt, Path.extend_apply _ hparam]
-    exact hWU (hδW ⟨⟨((t : ℝ) - b) / (1 - b), hparam⟩, rfl⟩)
+  · rw [deformTerminal_apply_of_lt_of_le γ δ ha hab hb hat htb]
+    have h₀ : 0 ≤ (t - a) / (b - a) := div_nonneg (by linarith) (by linarith)
+    have h₁ : (t - a) / (b - a) ≤ 1 := (div_le_one (by linarith)).2 (by linarith)
+    exact hγW ⟨by nlinarith, by nlinarith⟩
+  · rw [deformTerminal_apply_of_lt γ δ ha hab hb (not_le.1 htb), Path.extend_apply _
+      ⟨div_nonneg (by linarith) (by linarith), (div_le_one (by linarith)).2 (by linarith [t.2.2])⟩]
+    exact hδW (mem_range_self _)
 
-omit [TopologicalSpace X] in
-/-- A time `t` in the set `K` of a `Tbad` pair `(K, U)` (`hKUbad`, `ht`) satisfies
-`(t : ℝ) ≤ a`, provided the terminal interval `Set.Ioc a₀ 1` avoids every `Tbad` set
-(`hbad_avoid`) and `a₀ < a` (`ha₀_lt_a`). Were `(t : ℝ) > a`, then `a₀ < a < t ≤ 1` would place
-`t` in `Set.Ioc a₀ 1`, contradicting that `t` lies in the avoided set `K`. -/
-private theorem coe_le_of_mem_Tbad {Tbad : Finset (Set I × Set X)} {a₀ : I} {a : ℝ}
-    (hbad_avoid : Set.Ioc a₀ 1 ⊆ ⋂ KU ∈ Tbad, KU.1ᶜ) (ha₀_lt_a : ((a₀ : I) : ℝ) < a)
-    {K : Set I} {U : Set X} (hKUbad : (K, U) ∈ Tbad) {t : I} (ht : t ∈ K) : (t : ℝ) ≤ a := by
-  have ht_not_Ioc : t ∉ Set.Ioc a₀ 1 := fun htIoc ↦ by
-    have htN' : ∀ KU ∈ Tbad, t ∉ KU.1 := by simpa using! hbad_avoid htIoc
-    exact htN' (K, U) hKUbad ht
-  by_contra hgt
-  have hat₀ : ((a₀ : I) : ℝ) < t := lt_trans ha₀_lt_a (lt_of_not_ge hgt)
-  exact ht_not_Ioc ⟨hat₀, t.2.2⟩
+end deformTerminal
 
-/-- The deformed based path `deformTerminal γ rfl δ ha0 hab hb1` maps the set `K` of a
-pair `(K, U) ∈ S` (`hKU`) into `U`. Here `hγKU` says `γ.1` already maps `K` into `U`;
-`hT_of_S` includes `S` into `T`;
-`hTgood_iff` and `hTbad_iff` split `T` according to whether `1 ∈ K`; `hW_good` says `W` refines
-every `Tgood` target; `hIoc` places `Set.Ioc a₀ 1` inside `γ.toPath ⁻¹' W` and away from the
-`Tbad` sets; `ha₀_lt_a`, `ha0`, `ha1`, `hab`, `hb1` are the bounds `a₀ < a`, `0 ≤ a`, `a ≤ 1`,
-`a < b`, `b < 1`; and `hδW` says `δ` stays in `W`. For `t ≤ a` the deformed path agrees with `γ`,
-and for `a < t` the pair is forced to be `Tgood`, so the value lies in `W ⊆ U`. -/
-private theorem mapsTo_deformTerminal {v : X} (γ : BasedPath x₀) (δ : Path (endpoint γ) v)
-    {S : Set (Set I × Set X)} {T Tgood Tbad : Finset (Set I × Set X)}
-    (hT_of_S : ∀ KU, KU ∈ S → KU ∈ T) (hTgood_iff : ∀ KU, KU ∈ Tgood ↔ KU ∈ T ∧ (1 : I) ∈ KU.1)
-    (hTbad_iff : ∀ KU, KU ∈ Tbad ↔ KU ∈ T ∧ (1 : I) ∉ KU.1)
-    {W : Set X} (hW_good : ∀ KU ∈ Tgood, W ⊆ KU.2) {a₀ : I} {a b : ℝ}
-    (hIoc : Set.Ioc a₀ 1 ⊆ γ.toPath ⁻¹' W ∩ ⋂ KU ∈ Tbad, KU.1ᶜ)
-    (ha₀_lt_a : ((a₀ : I) : ℝ) < a) (ha0 : 0 ≤ a) (ha1 : a ≤ 1) (hab : a < b) (hb1 : b < 1)
-    (hδW : Set.range δ ⊆ W) {K : Set I} {U : Set X} (hKU : (K, U) ∈ S) (hγKU : Set.MapsTo γ.1 K U) :
-    Set.MapsTo (deformTerminal γ rfl δ ha0 hab hb1).1 K U := by
-  classical
-  have htail : Set.range (terminalTail γ rfl a ha1) ⊆ W :=
-    terminalTail_range_subset γ (hIoc.trans Set.inter_subset_left) ha₀_lt_a ha1
-  intro t ht
-  have hKUT : (K, U) ∈ T := hT_of_S (K, U) hKU
-  by_cases hta : (t : ℝ) ≤ a
-  · rw [deformTerminal_apply_of_le γ rfl δ ha0 hab hb1 t hta, Path.extend_apply _ t.2]
-    exact hγKU ht
-  · have hat : a < (t : ℝ) := lt_of_not_ge hta
+/-! ### The endpoint map is open -/
+
+/-- Given a basic compact-open neighborhood of `γ` (finitely many constraints `MapsTo γ K U`),
+there is a path-connected neighborhood `W` of `endpoint γ` and a terminal interval `[a, 1]` such
+that deforming `γ` on `[a, 1]` by any path in `W` stays inside the neighborhood. -/
+private theorem exists_deformTerminal_mapsTo [LocallyPathConnectedSpace X] (γ : BasedPath x₀)
+    {S : Set (Set I × Set X)} (hS_fin : S.Finite)
+    (hS : ∀ K U, (K, U) ∈ S → IsCompact K ∧ IsOpen U ∧ MapsTo γ K U) :
+    ∃ W : Set X, IsOpen W ∧ endpoint γ ∈ W ∧ IsPathConnected W ∧
+      ∃ (a b : ℝ) (ha : 0 ≤ a) (hab : a < b) (hb : b < 1),
+        ∀ v ∈ W, ∀ δ : Path (endpoint γ) v, range δ ⊆ W →
+          ∀ K U, (K, U) ∈ S → MapsTo (deformTerminal γ δ ha hab hb) K U := by
+  -- `W`: a path-connected neighborhood of `endpoint γ` inside every `U` whose `K` contains `1`.
+  have hO : IsOpen (⋂ KU ∈ S, ⋂ (_ : (1 : I) ∈ KU.1), KU.2) :=
+    hS_fin.isOpen_biInter fun KU hKU ↦ isOpen_iInter_of_finite fun _ ↦ (hS KU.1 KU.2 hKU).2.1
+  have hγO : endpoint γ ∈ ⋂ KU ∈ S, ⋂ (_ : (1 : I) ∈ KU.1), KU.2 := by
+    simp only [mem_iInter]
+    exact fun KU hKU h1 ↦ (hS KU.1 KU.2 hKU).2.2 h1
+  obtain ⟨W, ⟨hW_open, hW, hW_pc⟩, hWO⟩ :=
+    (isOpen_isPathConnected_basis (endpoint γ)).mem_iff.mp (hO.mem_nhds hγO)
+  -- Times near `1` at which `γ` lies in `W`, avoiding every `K` not containing `1`.
+  have hN : γ ⁻¹' W ∩ ⋂ KU ∈ S, ⋂ (_ : (1 : I) ∉ KU.1), KU.1ᶜ ∈ 𝓝 (1 : I) := by
+    refine Filter.inter_mem ((hW_open.preimage (map_continuous γ)).mem_nhds hW) ?_
+    refine (hS_fin.isOpen_biInter fun KU hKU ↦ isOpen_iInter_of_finite fun _ ↦
+      (hS KU.1 KU.2 hKU).1.isClosed.isOpen_compl).mem_nhds ?_
+    simp only [mem_iInter, mem_compl_iff]
+    exact fun _ _ h ↦ h
+  obtain ⟨a₀, ⟨-, ha₀⟩, hIoc⟩ := exists_Ioc_subset_of_mem_nhds' hN (show (0 : I) < 1 by simp)
+  have ha₀' : (a₀ : ℝ) < 1 := ha₀
+  have ha : 0 ≤ ((a₀ : ℝ) + 1) / 2 := by linarith [a₀.2.1]
+  have hab : ((a₀ : ℝ) + 1) / 2 < (((a₀ : ℝ) + 1) / 2 + 1) / 2 := by linarith
+  have hb : (((a₀ : ℝ) + 1) / 2 + 1) / 2 < 1 := by linarith
+  refine ⟨W, hW_open, hW, hW_pc, _, _, ha, hab, hb, fun v hv δ hδ K U hKU t ht ↦ ?_⟩
+  by_cases hta : (t : ℝ) ≤ ((a₀ : ℝ) + 1) / 2
+  · rw [deformTerminal_apply_of_le γ δ ha hab hb hta]
+    exact (hS K U hKU).2.2 ht
+  · rw [not_le] at hta
+    have htIoc : t ∈ Ioc a₀ 1 := ⟨show (a₀ : ℝ) < t by linarith, t.2.2⟩
+    -- `t` avoids every `K` not containing `1`, so `1 ∈ K` and hence `W ⊆ U`.
     have h1K : (1 : I) ∈ K := by
       by_contra h1K
-      exact absurd
-        (coe_le_of_mem_Tbad (hIoc.trans Set.inter_subset_right) ha₀_lt_a
-          ((hTbad_iff (K, U)).2 ⟨hKUT, h1K⟩) ht) (not_le.mpr hat)
-    exact deformTerminal_apply_mem_of_lt γ δ ha0 hab hb1 ha1
-      (hW_good (K, U) ((hTgood_iff (K, U)).2 ⟨hKUT, h1K⟩)) htail hδW t hat
-
-/-- Any point in the chosen path-connected endpoint neighborhood is realized by a deformed based
-path that still lies in the original compact-open basic neighborhood. -/
-theorem exists_deformTerminal_mem_basicNeighborhood
-    {x₀ : X} (γ : BasedPath x₀) {V : Set (C(I, X))} {S : Set (Set I × Set X)}
-    {T Tgood Tbad : Finset (Set I × Set X)}
-    (hSdata : ∀ K U, (K, U) ∈ S → IsCompact K ∧ IsOpen U ∧ Set.MapsTo γ.1 K U)
-    (hT_of_S : ∀ KU, KU ∈ S → KU ∈ T)
-    (hSV : {g : C(I, X) | ∀ K U, (K, U) ∈ S → Set.MapsTo g K U} ⊆ V)
-    (hTgood_iff : ∀ KU, KU ∈ Tgood ↔ KU ∈ T ∧ (1 : I) ∈ KU.1)
-    (hTbad_iff : ∀ KU, KU ∈ Tbad ↔ KU ∈ T ∧ (1 : I) ∉ KU.1)
-    {W : Set X} (huW : endpoint γ ∈ W) (hWpath : IsPathConnected W)
-    (hW_good : ∀ KU ∈ Tgood, W ⊆ KU.2) {a₀ : I} {a b : ℝ}
-    (hIoc : Set.Ioc a₀ 1 ⊆ γ.toPath ⁻¹' W ∩ ⋂ KU ∈ Tbad, KU.1ᶜ)
-    (ha₀_lt_a : ((a₀ : I) : ℝ) < a) (ha0 : 0 ≤ a) (ha1 : a ≤ 1) (hab : a < b) (hb1 : b < 1) :
-    ∀ v ∈ W, ∃ η : BasedPath x₀, η.1 ∈ V ∧ endpoint η = v := by
-  intro v hvW
-  obtain ⟨δ, hδ⟩ := hWpath.joinedIn _ huW _ hvW
-  refine ⟨deformTerminal γ rfl δ ha0 hab hb1, ?_,
-    endpoint_deformTerminal γ rfl δ ha0 hab hb1⟩
-  exact hSV fun K U hKU ↦ mapsTo_deformTerminal γ δ hT_of_S hTgood_iff hTbad_iff
-    hW_good hIoc ha₀_lt_a ha0 ha1 hab hb1 (Set.range_subset_iff.mpr hδ) hKU (hSdata K U hKU).2.2
+      exact mem_iInter.1 (mem_iInter₂.1 (hIoc htIoc).2 (K, U) hKU) h1K ht
+    refine (hWO.trans ((biInter_subset_of_mem hKU).trans (iInter_subset _ h1K)))
+      (deformTerminal_apply_mem_of_lt γ δ ha hab hb (fun s hs ↦ ?_) hδ hta)
+    rw [Path.extend_apply _ ⟨ha.trans hs.1, hs.2⟩]
+    exact (hIoc ⟨show (a₀ : ℝ) < s by linarith [hs.1], hs.2⟩).1
 
 /-- The endpoint map `BasedPath x₀ → X` is an open map when `X` is locally path-connected. -/
 public theorem isOpenMap_endpoint [LocallyPathConnectedSpace X] (x₀ : X) :
     IsOpenMap (endpoint (x₀ := x₀)) := by
-  classical
-  refine IsOpenMap.of_nhds_le ?_
-  intro γ
-  rw [Filter.le_def]
-  intro s hs
-  rw [Filter.mem_map'] at hs
-  have hsub := mem_nhds_subtype (s := {γ : C(I, X) | γ 0 = x₀}) γ
-    ({η : BasedPath x₀ | endpoint η ∈ s})
-  rcases hsub.mp hs with ⟨V, hVγ, hVs⟩
-  rcases ContinuousMap.mem_nhds_iff.1 hVγ with ⟨S, hSfin, hSdata, hSV⟩
-  let T : Finset (Set I × Set X) := hSfin.toFinset
-  let Tgood : Finset (Set I × Set X) := T.filter fun KU ↦ (1 : I) ∈ KU.1
-  let Tbad : Finset (Set I × Set X) := T.filter fun KU ↦ (1 : I) ∉ KU.1
-  have hS_of_T : ∀ KU, KU ∈ T → KU ∈ S := fun _ ↦ hSfin.mem_toFinset.mp
-  have hT_of_S : ∀ KU, KU ∈ S → KU ∈ T := fun _ ↦ hSfin.mem_toFinset.mpr
-  have hgood : ∀ KU ∈ Tgood, KU ∈ S ∧ (1 : I) ∈ KU.1 := fun KU hKU ↦
-    let ⟨hT, h1⟩ := Finset.mem_filter.mp hKU
-    ⟨hS_of_T KU hT, h1⟩
-  have hbad : ∀ KU ∈ Tbad, KU ∈ S ∧ (1 : I) ∉ KU.1 := fun KU hKU ↦
-    let ⟨hT, h1⟩ := Finset.mem_filter.mp hKU
-    ⟨hS_of_T KU hT, h1⟩
-  obtain ⟨W, a₀, a, b, hWopen, huW, hWpath, hW_good, hIoc, ha₀_lt_a, ha0, ha1, hab, hb1⟩ :=
-    exists_endpointNeighborhood_of_basicNeighborhood γ Tgood Tbad
-      (fun KU hKU ↦ ⟨(hSdata KU.1 KU.2 (hgood KU hKU).1).2.1,
-        (hSdata KU.1 KU.2 (hgood KU hKU).1).2.2 (hgood KU hKU).2⟩)
-      (fun KU hKU ↦ (hSdata KU.1 KU.2 (hbad KU hKU).1).1.isClosed)
-      (fun KU hKU ↦ (hbad KU hKU).2)
-  refine mem_nhds_iff.mpr ⟨W, ?_, hWopen, huW⟩
-  intro v hvW
-  obtain ⟨η, hηV, hend⟩ :=
-    exists_deformTerminal_mem_basicNeighborhood γ hSdata hT_of_S hSV
-      (fun KU ↦ by simp [Tgood])
-      (fun KU ↦ by simp [Tbad])
-      huW hWpath hW_good hIoc ha₀_lt_a ha0 ha1 hab hb1 v hvW
-  have hηs : endpoint η ∈ s := hVs hηV
-  rw [hend] at hηs
-  exact hηs
+  refine IsOpenMap.of_nhds_le fun γ s hs ↦ ?_
+  obtain ⟨N, hN, hNs⟩ := (mem_nhds_subtype {γ : C(I, X) | γ 0 = x₀} γ _).mp (Filter.mem_map.mp hs)
+  obtain ⟨S, hS_fin, hS, hSN⟩ := ContinuousMap.mem_nhds_iff.mp hN
+  obtain ⟨W, hW_open, hW, hW_pc, a, b, ha, hab, hb, hη⟩ := exists_deformTerminal_mapsTo γ hS_fin hS
+  refine Filter.mem_of_superset (hW_open.mem_nhds hW) fun v hv ↦ ?_
+  obtain ⟨δ, hδ⟩ := hW_pc.joinedIn _ hW _ hv
+  exact endpoint_deformTerminal γ δ ha hab hb ▸ hNs (hSN (hη v hv δ (range_subset_iff.mpr hδ)))
 
-variable {x₀ : X}
+/-! ### Initial segments -/
+
+/-- The family `t ↦ γ|_[0, t]` of initial segments of a based path. -/
+public noncomputable def initialSegmentFamily (γ : BasedPath x₀) (t : I) :
+    BasedPath x₀ :=
+  ofPath (γ.toPath.initialSegmentFamily t)
+
+@[simp] public theorem initialSegmentFamily_apply (γ : BasedPath x₀) (t s : I) :
+    γ.initialSegmentFamily t s = γ.toPath.extend (min (s : ℝ) t) :=
+  Path.initialSegmentFamily_apply γ.toPath t s
+
+@[simp] public theorem endpoint_initialSegmentFamily (γ : BasedPath x₀) (t : I) :
+    endpoint (γ.initialSegmentFamily t) = γ t :=
+  endpoint_ofPath _
+
+@[simp] public theorem initialSegmentFamily_zero (γ : BasedPath x₀) :
+    γ.initialSegmentFamily 0 = refl x₀ := by
+  rw [initialSegmentFamily, Path.initialSegmentFamily_zero, ofPath_cast, ofPath_refl]
+
+@[simp] public theorem initialSegmentFamily_one (γ : BasedPath x₀) :
+    γ.initialSegmentFamily 1 = γ := by
+  rw [initialSegmentFamily, Path.initialSegmentFamily_one, ofPath_cast, ofPath_toPath_self]
+
+@[fun_prop] public theorem continuous_initialSegmentFamily (γ : BasedPath x₀) :
+    Continuous γ.initialSegmentFamily :=
+  continuous_iff.mpr γ.toPath.continuous_initialSegmentFamily_uncurry
+
+/-- Appending the initial segments of a path `δ` to a based path is continuous in the
+parameter. -/
+@[fun_prop] public theorem continuous_append_initialSegmentFamily {z : X}
+    (γ : BasedPath x₀) (δ : Path (endpoint γ) z) :
+    Continuous fun t : I ↦ γ.append (δ.initialSegmentFamily t) :=
+  continuous_iff.mpr <| Path.trans_continuous_family (fun _ : I ↦ γ.toPath)
+    (Path.continuous_uncurry_iff.mpr continuous_const) δ.initialSegmentFamily
+    δ.continuous_initialSegmentFamily_uncurry
+
+/-! ### Path components of `endpoint ⁻¹' U` -/
 
 /-- Endpoint-preserving homotopic paths to a point `y ∈ U` give joined based paths inside the
 endpoint preimage of `U`. -/
-public theorem joinedIn_endpoint_preimage_of_homotopic (x₀ : X) {y : X} {U : Set X}
-    (hy : y ∈ U) {p q : Path x₀ y} (h : Path.Homotopic p q) :
+public theorem joinedIn_endpoint_preimage_of_homotopic {y : X} {U : Set X} (hy : y ∈ U)
+    {p q : Path x₀ y} (h : p.Homotopic q) :
     JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) (ofPath p) (ofPath q) := by
-  rcases h with ⟨H⟩
-  let γ : Path (ofPath p) (ofPath q) :=
-    { toFun := fun t ↦ ofPath (H.eval t)
-      continuous_toFun := by
-        apply Continuous.subtype_mk
-        exact continuous_induced_dom.comp <| (Path.continuous_uncurry_iff.mp <| by
-          -- `Path.continuous_uncurry_iff` leaves the homotopy as its coercion; name that
-          -- defeq form so `H.continuous` applies.
-          change Continuous fun ts : I × I ↦ H ts
-          exact H.continuous)
-      source' := by
-        ext s
-        simp
-      target' := by
-        ext s
-        simp }
-  refine ⟨γ, fun t ↦ ?_⟩
-  -- `γ` is a let-bound path, so expose its definitional value before using endpoint API.
+  obtain ⟨H⟩ := h
+  refine ⟨⟨⟨fun t ↦ ofPath (H.eval t), continuous_iff.mpr H.continuous⟩, by simp, by simp⟩,
+    fun t ↦ ?_⟩
+  -- The path is given by an anonymous constructor; expose its value at `t`.
   change endpoint (ofPath (H.eval t)) ∈ U
   rw [endpoint_ofPath]
   exact hy
@@ -449,365 +345,133 @@ public theorem joinedIn_endpoint_preimage_of_homotopic (x₀ : X) {y : X} {U : S
 /-- Appending a path that stays inside `U` moves a based path within the same path component of
 the endpoint preimage of `U`. -/
 public theorem joinedIn_preimage_of_append {U : Set X} {z : X} (γ : BasedPath x₀)
-    (δ : Path (endpoint γ) z) (hδU : Set.range δ ⊆ U) :
+    (δ : Path (endpoint γ) z) (hδ : range δ ⊆ U) :
     JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) γ (append γ δ) := by
-  have hγU : endpoint γ ∈ U := by
-    simpa [δ.source] using hδU ⟨0, rfl⟩
-  let γrefl : Path (endpoint γ) (endpoint γ) := Path.refl (endpoint γ)
-  have h_start :
-      JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) γ (append γ γrefl) := by
-    simpa [γrefl] using!
-      (joinedIn_endpoint_preimage_of_homotopic (x₀ := x₀) (U := U) hγU
-        (p := γ.toPath.trans (Path.refl (endpoint γ))) (q := γ.toPath)
-        (Path.Homotopic.trans_refl γ.toPath)).symm
-  have h_move :
-      JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) (append γ γrefl) (append γ δ) := by
-    let η : Path (append γ γrefl) (append γ δ) := {
-      toFun := fun t ↦ append γ (Path.initialSegmentFamily δ t)
-      continuous_toFun := continuous_append_initialSegmentFamily γ δ
-      source' := by
-        rw [Path.initialSegmentFamily_zero]
-        ext s
-        -- The endpoint casts come from `Path.initialSegmentFamily_zero`; expose the appended
-        -- path values so `Path.cast_coe` can remove them pointwise.
-        change (γ.toPath.trans ((Path.refl (endpoint γ)).cast _ _)) s =
-          (γ.toPath.trans γrefl) s
-        rw [Path.trans_apply, Path.trans_apply]
-        split_ifs <;> simp only [γrefl, Path.cast_coe]
-      target' := by
-        rw [Path.initialSegmentFamily_one]
-        ext s
-        -- As above, the final segment differs only by endpoint casts introduced by the
-        -- initial-segment normal form.
-        change (γ.toPath.trans (δ.cast _ _)) s = (γ.toPath.trans δ) s
-        rw [Path.trans_apply, Path.trans_apply]
-        split_ifs <;> simp only [Path.cast_coe] }
-    refine ⟨η, fun t ↦ ?_⟩
-    -- `η` is a let-bound path, so expose its definitional value before using endpoint API.
-    change endpoint (append γ (Path.initialSegmentFamily δ t)) ∈ U
-    rw [BasedPath.endpoint_append]
-    exact hδU ⟨t, rfl⟩
-  exact h_start.trans h_move
+  have hγ : endpoint γ ∈ U := δ.source ▸ hδ (mem_range_self 0)
+  -- Slide `γ` to `append γ (Path.refl _)`, then grow the appended path along `δ`.
+  refine (joinedIn_endpoint_preimage_of_homotopic hγ
+    (Path.Homotopic.trans_refl γ.toPath)).symm.trans ?_
+  refine ⟨⟨⟨fun t ↦ append γ (δ.initialSegmentFamily t), by fun_prop⟩, ?_, ?_⟩, fun t ↦ ?_⟩
+  -- In each goal, the path is given by an anonymous constructor; expose its value.
+  · change append γ (δ.initialSegmentFamily 0) = _
+    rw [Path.initialSegmentFamily_zero]
+    rfl
+  · change append γ (δ.initialSegmentFamily 1) = _
+    rw [Path.initialSegmentFamily_one]
+    rfl
+  · change endpoint (append γ (δ.initialSegmentFamily t)) ∈ U
+    rw [endpoint_append]
+    exact hδ (mem_range_self _)
 
-theorem exists_refined_terminal_vertex [LocallyPathConnectedSpace X]
-    {x₀ : X} {n' : ℕ} {U : Set X} (hU_open : IsOpen U) (α : BasedPath x₀) (hα : endpoint α ∈ U)
-    (part : unitInterval.Partition (n' + 1)) (T : Path.Tube X (n' + 1))
-    (hα_tube : Path.IsInTube α.toPath part T) :
-    ∃ V_last' : Set X,
-      IsOpen V_last' ∧ IsPathConnected V_last' ∧ endpoint α ∈ V_last' ∧
-      V_last' ⊆ T.V (Fin.last (n' + 1)) ∧ V_last' ⊆ U := by
-  have hα_at_last : α.toPath (part.t (Fin.last (n' + 1))) = endpoint α := by
-    rw [part.t_last]
-    exact α.toPath.target
-  let V_last := T.V (Fin.last (n' + 1))
-  have hα_V_last : endpoint α ∈ V_last := hα_at_last ▸ hα_tube.mem_V _
-  let W : Set X := V_last ∩ U
-  have hW_open : IsOpen W := (T.isOpen_V _).inter hU_open
-  have hα_W : endpoint α ∈ W := ⟨hα_V_last, hα⟩
-  refine ⟨pathComponentIn W (endpoint α), hW_open.pathComponentIn _,
-    isPathConnected_pathComponentIn hα_W, mem_pathComponentIn_self hα_W, ?_, ?_⟩
-  · exact pathComponentIn_subset.trans Set.inter_subset_left
-  · exact pathComponentIn_subset.trans Set.inter_subset_right
-
-/-- **Refining the terminal vertex set of a tube.** If the last vertex set of `T` is replaced by a
-smaller `V_last'` that is itself open, path-connected and contains `endpoint α`, the resulting
-family is again open and path-connected, is contained in `T.V` pointwise, and `α` still passes
-through it at every partition point. -/
-private theorem exists_refined_vertex_family {n' : ℕ} {part : unitInterval.Partition (n' + 1)}
-    {T : Path.Tube X (n' + 1)} {α : BasedPath x₀} (hα_passes : ∀ j, α.toPath (part.t j) ∈ T.V j)
-    {V_last' : Set X} (hV'_open : IsOpen V_last') (hV'_pathConn : IsPathConnected V_last')
-    (hα_V' : endpoint α ∈ V_last') (hV'_sub_V : V_last' ⊆ T.V (Fin.last (n' + 1))) :
-    ∃ V' : Fin (n' + 2) → Set X,
-      (∀ j, IsOpen (V' j)) ∧ (∀ j, IsPathConnected (V' j)) ∧ (∀ j, V' j ⊆ T.V j) ∧
-        V' (Fin.last (n' + 1)) = V_last' ∧ ∀ j, α.toPath (part.t j) ∈ V' j := by
-  have hα_at_last : α.toPath (part.t (Fin.last (n' + 1))) = endpoint α := by
-    rw [part.t_last]; exact α.toPath.target
-  refine ⟨Fin.snoc (fun j : Fin (n' + 1) ↦ T.V j.castSucc) V_last', ?_, ?_, ?_,
-    Fin.snoc_last .., ?_⟩
-  · exact fun j ↦ by
-      induction j using Fin.lastCases with
-      | last => rw [Fin.snoc_last]; exact hV'_open
-      | cast k => rw [Fin.snoc_castSucc]; exact T.isOpen_V _
-  · exact fun j ↦ by
-      induction j using Fin.lastCases with
-      | last => rw [Fin.snoc_last]; exact hV'_pathConn
-      | cast k => rw [Fin.snoc_castSucc]; exact T.isPathConnected_V _
-  · exact fun j ↦ by
-      induction j using Fin.lastCases with
-      | last => rw [Fin.snoc_last]; exact hV'_sub_V
-      | cast k => rw [Fin.snoc_castSucc]
-  · exact fun j ↦ by
-      induction j using Fin.lastCases with
-      | last => rw [Fin.snoc_last, hα_at_last]; exact hα_V'
-      | cast k => rw [Fin.snoc_castSucc]; exact hα_passes _
-
-/-- **A path through the refined tube is joined to `α`.** If `β` runs through the same tube as `α`
-with refined vertex sets `V'` whose terminal member is contained in `U`, then `β` is joined to `α`
-inside `endpoint ⁻¹' U`. -/
-private theorem joinedIn_endpoint_preimage_of_isInTube {n' : ℕ} {U : Set X}
-    {V' : Fin (n' + 2) → Set X} {part : unitInterval.Partition (n' + 1)}
-    {T : Path.Tube X (n' + 1)} (hV'_open : ∀ j, IsOpen (V' j))
-    (hV'_pathConn : ∀ j, IsPathConnected (V' j)) (hV'_sub_TV : ∀ j, V' j ⊆ T.V j)
-    (hV'_last_sub_U : V' (Fin.last (n' + 1)) ⊆ U) {α β : BasedPath x₀}
-    (hα_mapsTo : ∀ i : Fin (n' + 1),
-      Set.MapsTo α.toPath (Set.Icc (part.t i.castSucc) (part.t i.succ)) (T.U i))
-    (hα_passes : ∀ j, α.toPath (part.t j) ∈ V' j) (hβ_mapsTo : ∀ i : Fin (n' + 1),
-      Set.MapsTo β.1 (Set.Icc (part.t i.castSucc) (part.t i.succ)) (T.U i))
-    (hβ_passes : ∀ j, β.1 (part.t j) ∈ V' j) :
-    JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) α β := by
-  let T' : Path.Tube X (n' + 1) := {
-    U := T.U
-    V := V'
-    isOpen_U := T.isOpen_U
-    isPathHomotopyTrivial_U := T.isPathHomotopyTrivial_U
-    isOpen_V := hV'_open
-    isPathConnected_V := hV'_pathConn
-    V_castSucc_subset := fun i ↦ (hV'_sub_TV i.castSucc).trans (T.V_castSucc_subset i)
-    V_succ_subset := fun i ↦ (hV'_sub_TV i.succ).trans (T.V_succ_subset i)
-  }
-  have hβ_end_U : endpoint β ∈ U :=
-    hV'_last_sub_U (by simpa [part.t_last] using! hβ_passes (Fin.last (n' + 1)))
-  obtain ⟨ρ_final, hρ_final_range_V, h_paste⟩ :=
-    Path.IsInTube.exists_trans_homotopic (γ := α.toPath) (part := part) (T := T')
-      ⟨hα_mapsTo, hα_passes⟩ (γ' := β.toPath) ⟨hβ_mapsTo, hβ_passes⟩
-  refine (joinedIn_preimage_of_append α ρ_final
-    (hρ_final_range_V.trans hV'_last_sub_U)).trans ?_
-  obtain ⟨γ, hγ⟩ :=
-    (joinedIn_endpoint_preimage_of_homotopic (x₀ := x₀) (U := ({endpoint β} : Set X))
-      (Set.mem_singleton _) h_paste).mono
-      (Set.preimage_mono (Set.singleton_subset_iff.mpr hβ_end_U))
-  exact ⟨γ.cast rfl (by ext t; rfl), hγ⟩
+-- The refined-tube argument below is ported from
+-- https://github.com/leanprover-community/mathlib4/pull/44185.
 
 /-- Variable-endpoint tube/component theorem.
 
 In a locally path-connected space, if semilocal simple connectivity holds along `α.toPath` and
 `α : BasedPath x₀` has endpoint in an open set `U`, then `α` has an open neighborhood `N` in
-`BasedPath x₀` such that every element of `N` has endpoint in `U` and lies in the same path
-component of `endpoint ⁻¹' U` as `α`. -/
+`BasedPath x₀` all of whose members lie in the same path component of `endpoint ⁻¹' U` as `α`. -/
 public theorem exists_open_nhds_pathComponent_preimage
-    [LocallyPathConnectedSpace X] {U : Set X} (hU_open : IsOpen U)
-    (α : BasedPath x₀) (hslsc : SemilocallySimplyConnectedOn (Set.range α.toPath))
+    [LocallyPathConnectedSpace X] {U : Set X} (hU : IsOpen U)
+    (α : BasedPath x₀) (hslsc : SemilocallySimplyConnectedOn (range α.toPath))
     (hα : endpoint α ∈ U) :
     ∃ N : Set (BasedPath x₀), IsOpen N ∧ α ∈ N ∧
-      N ⊆ endpoint (x₀ := x₀) ⁻¹' U ∧
       ∀ β ∈ N, JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) α β := by
-  classical
-  obtain ⟨n, part, T, hα_tube⟩ :=
-    α.toPath.exists_isInTube_of_semilocallySimplyConnectedOn hslsc
-  -- Rule out `n = 0`; the rest of the proof assumes `n = n' + 1`.
-  match n, part, T, hα_tube with
-  | 0, part, _, _ => exact isEmptyElim part
-  | n' + 1, part, T, hα_tube =>
-  obtain ⟨V_last', hV'_open, hV'_pathConn, hα_V', hV'_sub_V, hV'_sub_U⟩ :=
-    exists_refined_terminal_vertex hU_open α hα part T hα_tube
-  obtain ⟨V', hV'_open_all, hV'_pathConn_all, hV'_sub_TV, hV'_last_eq, hα_passes_V'⟩ :=
-    exists_refined_vertex_family hα_tube.mem_V hV'_open hV'_pathConn hα_V'
-      hV'_sub_V
-  have hV'_last_sub_U : V' (Fin.last (n' + 1)) ⊆ U := hV'_last_eq ▸ hV'_sub_U
-  -- The neighborhood `N` of `α`: based paths satisfying the refined tube conditions.
-  set N : Set (BasedPath x₀) := {β : BasedPath x₀ |
-      (∀ i : Fin (n' + 1), Set.MapsTo β.1 (Set.Icc (part.t i.castSucc) (part.t i.succ)) (T.U i)) ∧
-      (∀ j, β.1 (part.t j) ∈ V' j)} with hN_def
-  refine ⟨N, ?_, ?_, ?_, ?_⟩
-  · -- The topology on `BasedPath x₀` is induced by `Subtype.val`, so `N` is the preimage of an
-    -- open set of maps `C(I, X)`.
-    have hval : Continuous (fun β : BasedPath x₀ ↦ β.1) := continuous_subtype_val
-    have h := (part.isOpen_setOf_mapsTo_Icc_and_mem T.isOpen_U hV'_open_all).preimage hval
-    rw [Set.preimage_ofPred_eq] at h
-    -- `h` is `IsOpen N`, up to reading the vertex index type `Fin (n' + 1 + 1)` as `Fin (n' + 2)`.
-    exact h
-  · -- `α ∈ N`.
-    exact ⟨hα_tube.mapsTo, hα_passes_V'⟩
-  · -- `N ⊆ endpoint ⁻¹' U`.
-    exact fun β hβ ↦
-      hV'_last_sub_U (by simpa [part.t_last] using! hβ.2 (Fin.last (n' + 1)))
-  · -- Every `β ∈ N` is `JoinedIn (endpoint ⁻¹' U)` to `α`.
-    exact fun β hβ ↦ joinedIn_endpoint_preimage_of_isInTube hV'_open_all hV'_pathConn_all
-      hV'_sub_TV hV'_last_sub_U hα_tube.mapsTo hα_passes_V' hβ.1 hβ.2
-
+  obtain ⟨n, part, T, hα_tube⟩ := α.toPath.exists_isInTube_of_semilocallySimplyConnectedOn hslsc
+  -- Shrink the last vertex set of the tube to a path-connected neighborhood of `endpoint α`
+  -- inside `U`.
+  have hα_last : α (part.t (Fin.last n)) ∈ T.V (Fin.last n) ∩ U := by
+    refine ⟨hα_tube.mem_V _, ?_⟩
+    rw [part.t_last]
+    exact hα
+  set W := pathComponentIn (T.V (Fin.last n) ∩ U) (α (part.t (Fin.last n)))
+  have hV' : ∀ j, Function.update T.V (Fin.last n) W j ⊆ T.V j := fun j ↦ by
+    rw [Function.update_apply]
+    split_ifs with h
+    · exact h ▸ pathComponentIn_subset.trans inter_subset_left
+    · exact subset_rfl
+  let T' : Path.Tube X n :=
+    { T with
+      V := Function.update T.V (Fin.last n) W
+      isOpen_V := fun j ↦ by
+        rw [Function.update_apply]
+        split_ifs
+        · exact ((T.isOpen_V _).inter hU).pathComponentIn _
+        · exact T.isOpen_V j
+      isPathConnected_V := fun j ↦ by
+        rw [Function.update_apply]
+        split_ifs with h
+        · exact isPathConnected_pathComponentIn hα_last
+        · exact T.isPathConnected_V j
+      V_castSucc_subset := fun i ↦ (hV' _).trans (T.V_castSucc_subset i)
+      V_succ_subset := fun i ↦ (hV' _).trans (T.V_succ_subset i) }
+  have hα_tube' : Path.IsInTube α.toPath part T' := by
+    refine ⟨hα_tube.mapsTo, fun j ↦ ?_⟩
+    -- `T'.V` is the updated vertex family by construction.
+    change α (part.t j) ∈ Function.update T.V (Fin.last n) W j
+    rw [Function.update_apply]
+    split_ifs with h
+    · exact h ▸ mem_pathComponentIn_self hα_last
+    · exact hα_tube.mem_V j
+  have hW_U : T'.V (Fin.last n) ⊆ U := by
+    -- `T'.V` is the updated vertex family by construction.
+    change Function.update T.V (Fin.last n) W (Fin.last n) ⊆ U
+    rw [Function.update_self]
+    exact pathComponentIn_subset.trans inter_subset_right
+  refine ⟨{β | Path.IsInTube β.toPath part T'},
+    (T'.isOpen_setOf_isInTube part).preimage continuous_subtype_val, hα_tube', fun β hβ ↦ ?_⟩
+  obtain ⟨ρ, hρ, h⟩ := hα_tube'.exists_trans_homotopic hβ
+  exact (joinedIn_preimage_of_append α ρ (hρ.trans hW_U)).trans
+    (joinedIn_endpoint_preimage_of_homotopic (hρ.trans hW_U ρ.target_mem_range) h)
 
 /-- For an open neighborhood `U`, path components of `endpoint ⁻¹' U` are open. -/
 public theorem isOpen_pathComponent_preimage
     [SemilocallySimplyConnectedSpace X] [LocallyPathConnectedSpace X]
-    {U : Set X} (hU_open : IsOpen U) (α : BasedPath x₀) :
+    {U : Set X} (hU : IsOpen U) (α : BasedPath x₀) :
     IsOpen (pathComponentIn (endpoint (x₀ := x₀) ⁻¹' U) α) := by
-  apply isOpen_iff_mem_nhds.mpr
-  intro β hβ
-  have hβ_end_U : endpoint β ∈ U := hβ.target_mem
-  obtain ⟨N, hN_open, hβ_N, _, hN_joined⟩ :=
-    exists_open_nhds_pathComponent_preimage hU_open
-      β
-      (SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range β.toPath))
-      hβ_end_U
-  refine mem_nhds_iff.mpr ⟨N, ?_, hN_open, hβ_N⟩
-  intro γ hγ_N
-  exact hβ.trans (hN_joined γ hγ_N)
+  refine isOpen_iff_forall_mem_open.mpr fun β hβ ↦ ?_
+  obtain ⟨N, hN_open, hβN, hN⟩ := exists_open_nhds_pathComponent_preimage hU β
+    (.of_semilocallySimplyConnectedSpace _) hβ.target_mem
+  exact ⟨N, fun γ hγ ↦ hβ.trans (hN γ hγ), hN_open, hβN⟩
 
-section joinedInSLSC
-
-/-! Reparametrisation helpers for
-`toPath_homotopic_of_joinedIn_pathHomotopyTrivial` (private to this section). -/
-
-private def joinedInSLSC_uReal (ts : ℝ × ℝ) : ℝ :=
-  ts.1 + max 0 (2 * ts.2 - 1) * (1 - ts.1)
-
-private def joinedInSLSC_vReal (ts : ℝ × ℝ) : ℝ :=
-  min (2 * ts.2) 1
-
-private theorem joinedInSLSC_uReal_mem (t s : I) :
-    joinedInSLSC_uReal ((t : ℝ), (s : ℝ)) ∈ I := by
-  simp only [joinedInSLSC_uReal]
-  have hm_nn : (0 : ℝ) ≤ max 0 (2 * (s : ℝ) - 1) := le_max_left _ _
-  have hm_le : max 0 (2 * (s : ℝ) - 1) ≤ 1 := max_le zero_le_one (by linarith [s.2.2])
-  refine ⟨?_, ?_⟩
-  · have h0 : 0 ≤ max 0 (2 * (s : ℝ) - 1) * (1 - (t : ℝ)) :=
-      mul_nonneg hm_nn (by linarith [t.2.2])
-    linarith [t.2.1]
-  · nlinarith [t.2.1, t.2.2]
-
-private theorem joinedInSLSC_vReal_mem (t s : I) :
-    joinedInSLSC_vReal ((t : ℝ), (s : ℝ)) ∈ I := by
-  refine ⟨le_min (by linarith [s.2.1]) zero_le_one, min_le_right _ _⟩
-
-private def joinedInSLSC_uFn : I × I → I := fun ts ↦
-  ⟨joinedInSLSC_uReal ((ts.1 : ℝ), (ts.2 : ℝ)), joinedInSLSC_uReal_mem ts.1 ts.2⟩
-
-private def joinedInSLSC_vFn : I × I → I := fun ts ↦
-  ⟨joinedInSLSC_vReal ((ts.1 : ℝ), (ts.2 : ℝ)), joinedInSLSC_vReal_mem ts.1 ts.2⟩
-
-private theorem continuous_joinedInSLSC_uFn : Continuous joinedInSLSC_uFn := by
-  have hu_cont : Continuous joinedInSLSC_uReal :=
-    (continuous_fst).add <|
-      (Continuous.max continuous_const (by fun_prop)).mul (by fun_prop)
-  exact Continuous.subtype_mk (hu_cont.comp (by fun_prop)) _
-
-private theorem continuous_joinedInSLSC_vFn : Continuous joinedInSLSC_vFn := by
-  have hv_cont : Continuous joinedInSLSC_vReal :=
-    Continuous.min (by fun_prop) continuous_const
-  exact Continuous.subtype_mk (hv_cont.comp (by fun_prop)) _
-
-/-- The uncurried evaluation of a path of based paths is continuous in both arguments. -/
-private theorem continuous_uncurry_basedPath {α β : BasedPath x₀} (F : Path α β) :
-    Continuous fun ts : I × I ↦ (F ts.1).1 ts.2 := by
-  have h1 : Continuous (fun t : I ↦ ((F t).1 : C(I, X))) :=
-    continuous_subtype_val.comp F.continuous
-  exact ContinuousMap.continuous_uncurry_of_continuous ⟨_, h1⟩
-
-private theorem joinedInSLSC_uFn_zero_left (s : I) :
-    (joinedInSLSC_uFn (0, s) : ℝ) = max 0 (2 * (s : ℝ) - 1) := by
-  simp [joinedInSLSC_uFn, joinedInSLSC_uReal]
-
-private theorem joinedInSLSC_uFn_one_left (s : I) : joinedInSLSC_uFn (1, s) = 1 :=
-  Subtype.ext (by simp [joinedInSLSC_uFn, joinedInSLSC_uReal])
-
-private theorem joinedInSLSC_uFn_one_right (t : I) : joinedInSLSC_uFn (t, 1) = 1 :=
-  Subtype.ext (by simp [joinedInSLSC_uFn, joinedInSLSC_uReal]; ring)
-
-private theorem joinedInSLSC_vFn_left (t s : I) :
-    (joinedInSLSC_vFn (t, s) : ℝ) = min (2 * (s : ℝ)) 1 := by
-  simp [joinedInSLSC_vFn, joinedInSLSC_vReal]
-
-private theorem joinedInSLSC_vFn_zero_right (t : I) : joinedInSLSC_vFn (t, 0) = 0 :=
-  Subtype.ext (by simp [joinedInSLSC_vFn, joinedInSLSC_vReal])
-
-private theorem joinedInSLSC_vFn_one_right (t : I) : joinedInSLSC_vFn (t, 1) = 1 :=
-  Subtype.ext (by simp [joinedInSLSC_vFn, joinedInSLSC_vReal])
-
-private theorem joinedInSLSC_uFn_zero_left_eq_zero_of_le_half {s : I}
-    (hs : (s : ℝ) ≤ 1 / 2) : joinedInSLSC_uFn (0, s) = 0 :=
-  Subtype.ext <| by
-    rw [joinedInSLSC_uFn_zero_left, max_eq_left (by linarith)]; rfl
-
-private theorem joinedInSLSC_uFn_zero_left_eq_two_mul_sub_one_of_half_le
-    {s : I} (hs : 1 / 2 ≤ (s : ℝ)) :
-    joinedInSLSC_uFn (0, s) =
-      ⟨2 * (s : ℝ) - 1,
-        unitInterval.two_mul_sub_one_mem_iff.2 ⟨hs, s.2.2⟩⟩ :=
-  Subtype.ext <| by
-    rw [joinedInSLSC_uFn_zero_left, max_eq_right (by linarith)]
-
-private theorem joinedInSLSC_vFn_eq_two_mul_of_le_half {t s : I} (hs : (s : ℝ) ≤ 1 / 2) :
-    joinedInSLSC_vFn (t, s) =
-      ⟨2 * (s : ℝ),
-        (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨s.2.1, hs⟩⟩ :=
-  Subtype.ext <| by rw [joinedInSLSC_vFn_left, min_eq_left (by linarith)]
-
-private theorem joinedInSLSC_vFn_eq_one_of_half_le {t s : I}
-    (hs : 1 / 2 ≤ (s : ℝ)) : joinedInSLSC_vFn (t, s) = 1 :=
-  Subtype.ext <| by
-    rw [joinedInSLSC_vFn_left, min_eq_right (by linarith)]; rfl
-
-end joinedInSLSC
-
-/-- If `α` and `β` are based paths with the same endpoint `v ∈ U`, joined inside
-`endpoint ⁻¹' U`, and `U` has the SLSC uniqueness property, then their associated paths
-`α.toPath` and `β.toPath` are homotopic (after casting to a common endpoint).
-
-This is the heart of the sheet-injectivity argument: a path in the based-path space descends
-to a free homotopy of paths in `X` whose endpoint trace is a loop in `U`, which is killed by
-the SLSC hypothesis. -/
-public theorem toPath_homotopic_of_joinedIn_pathHomotopyTrivial
-    {U : Set X} (hU_slsc : IsPathHomotopyTrivial U) {α β : BasedPath x₀}
-    (heq : endpoint α = endpoint β) (hAB : JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) α β) :
-    Path.Homotopic (α.toPath.cast rfl heq.symm) β.toPath := by
-  obtain ⟨F, hF_U⟩ := hAB
-  set v : X := endpoint β with hv_def
-  have hFv_cont := continuous_uncurry_basedPath F
-  -- The endpoint-trace loop `L : Path v v`.
-  have hF0_eq : (F (0 : I)).1 = α.1 := congrArg Subtype.val F.source
-  have hF1_eq : (F (1 : I)).1 = β.1 := congrArg Subtype.val F.target
-  have hv : v ∈ U := by simpa [v, hv_def, endpoint_def, hF1_eq] using hF_U 1
-  let L : Path v v :=
-    { toFun := fun t ↦ (F t).1 1
-      continuous_toFun := by
-        simpa using! hFv_cont.comp (continuous_id.prodMk (continuous_const (y := (1 : I))))
-      source' := by rw [hF0_eq]; exact heq
-      target' := by rw [hF1_eq]; rfl }
-  have hL_refl : L.Homotopic (Path.refl v) :=
-    isPathHomotopyTrivial_def.mp hU_slsc L (Path.refl v) (by
-      rintro _ ⟨t, rfl⟩
-      exact hF_U t) (by
-      rintro _ ⟨_, rfl⟩; simpa using! hv)
-  -- Cast α.toPath to target `v`.
-  let α' : Path x₀ v := α.toPath.cast rfl heq.symm
-  -- The rectangle homotopy.
-  let K_fn : I × I → X := fun ts ↦ (F (joinedInSLSC_uFn ts)).1 (joinedInSLSC_vFn ts)
-  have K_fn_apply : ∀ ts : I × I, K_fn ts = (F (joinedInSLSC_uFn ts)).1 (joinedInSLSC_vFn ts) :=
-    fun _ ↦ rfl
-  have hK_cont : Continuous K_fn :=
-    hFv_cont.comp (continuous_joinedInSLSC_uFn.prodMk continuous_joinedInSLSC_vFn)
-  -- Auxiliary identities evaluating K at corners/edges.
-  have hK_zero : ∀ s : I, K_fn (0, s) = (α'.trans L) s := fun s ↦ by
-    rw [K_fn_apply, Path.trans_apply]
-    by_cases hs : (s : ℝ) ≤ 1 / 2
-    · rw [dite_eq_left hs, joinedInSLSC_uFn_zero_left_eq_zero_of_le_half hs,
-        joinedInSLSC_vFn_eq_two_mul_of_le_half hs, hF0_eq]; rfl
-    · rw [dite_eq_right hs,
-        joinedInSLSC_uFn_zero_left_eq_two_mul_sub_one_of_half_le (not_le.mp hs).le,
-        joinedInSLSC_vFn_eq_one_of_half_le (not_le.mp hs).le]; rfl
-  have hK_one : ∀ s : I, K_fn (1, s) = (β.toPath.trans (Path.refl v)) s := fun s ↦ by
-    rw [K_fn_apply, Path.trans_apply, joinedInSLSC_uFn_one_left]
-    by_cases hs : (s : ℝ) ≤ 1 / 2
-    · rw [dite_eq_left hs, joinedInSLSC_vFn_eq_two_mul_of_le_half hs, hF1_eq]; rfl
-    · rw [dite_eq_right hs, joinedInSLSC_vFn_eq_one_of_half_le (not_le.mp hs).le, hF1_eq]; rfl
-  have hK_at_zero : ∀ t : I, K_fn (t, 0) = x₀ := fun t ↦ by
-    rw [K_fn_apply, joinedInSLSC_vFn_zero_right]
-    exact (F (joinedInSLSC_uFn (t, 0))).2
-  have hK_at_one : ∀ t : I, K_fn (t, 1) = v := fun t ↦ by
-    rw [K_fn_apply, joinedInSLSC_uFn_one_right, joinedInSLSC_vFn_one_right, hF1_eq]; rfl
-  -- The square deforms `α' ⬝ L` into `β ⬝ const`, and `L` is null-homotopic, so it collapses.
-  exact (Path.Homotopic.trans_right_of_nullhomotopic hL_refl).symm.trans
-    ((Path.homotopic_of_continuous_square K_fn hK_cont hK_zero hK_one hK_at_zero hK_at_one).trans
-      (Path.Homotopic.trans_refl β.toPath))
-
+-- Ported from https://github.com/leanprover-community/mathlib4/pull/44185.
+/-- If `α` and `β` are based paths with the same endpoint, joined inside `endpoint ⁻¹' U` for a
+path-homotopy-trivial set `U`, then `α.toPath` and `β.toPath` are homotopic (after casting to a
+common endpoint). A path in `BasedPath x₀` from `α` to `β` is a free homotopy from `α` to `β`
+whose endpoint trace is a loop in `U`, and that loop is nullhomotopic. -/
+public theorem toPath_homotopic_of_joinedIn_pathHomotopyTrivial {U : Set X}
+    (hU : IsPathHomotopyTrivial U) {α β : BasedPath x₀} (heq : endpoint α = endpoint β)
+    (hαβ : JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) α β) :
+    (α.toPath.cast rfl heq.symm).Homotopic β.toPath := by
+  obtain ⟨F, hF⟩ := hαβ
+  -- The free homotopy `H : α ∼ β` given by `H (t, s) = F t s`.
+  let H : ContinuousMap.Homotopy α.1 β.1 :=
+    { toFun := fun ts ↦ F ts.1 ts.2
+      continuous_toFun := continuous_iff.mp F.continuous
+      map_zero_left := fun s ↦ by simp
+      map_one_left := fun s ↦ by simp }
+  -- The endpoint trace of `F` is a loop `L` in `U`, hence nullhomotopic.
+  let L : Path (endpoint β) (endpoint β) := (H.evalAt 1).cast heq.symm rfl
+  have hL : L.Homotopic (Path.refl _) := hU.nullhomotopic L (by
+    rintro _ ⟨t, rfl⟩
+    exact hF t)
+  -- Naturality of `H`: `α · L` is homotopic to `H.evalAt 0 · β`, and `H.evalAt 0` is constant.
+  have key : ((α.toPath.cast rfl heq.symm).trans L).Homotopic ((Path.refl x₀).trans β.toPath) := by
+    have h := (Path.Homotopic.map_trans_evalAt H Path.id).pathCast α.2.symm
+      (show endpoint β = β.1 1 from rfl)
+    have h0 : H.evalAt 0 = (Path.refl x₀).cast α.2 β.2 := Path.ext <| funext fun t ↦ (F t).2
+    rw [h0] at h
+    convert h using 1 <;> exact Path.ext rfl
+  exact (Path.Homotopic.trans_right_of_nullhomotopic hL).symm.trans
+    (key.trans (Path.Homotopic.refl_trans _))
 
 /-- Path components of `endpoint ⁻¹' U` are invariant under endpoint-preserving homotopy:
 if `p ≃ q` are homotopic paths from `x₀` to `y ∈ U`, then the based paths `ofPath p` and
 `ofPath q` lie in the same path component of `endpoint ⁻¹' U`. -/
 public theorem pathComponentIn_ofPath_eq_of_homotopic {U : Set X} {y : X} (hy : y ∈ U)
-    {p q : Path x₀ y} (h : Path.Homotopic p q) :
+    {p q : Path x₀ y} (h : p.Homotopic q) :
     pathComponentIn (endpoint (x₀ := x₀) ⁻¹' U) (ofPath p) =
       pathComponentIn (endpoint (x₀ := x₀) ⁻¹' U) (ofPath q) :=
-  pathComponentIn_congr (joinedIn_endpoint_preimage_of_homotopic x₀ hy h).symm
+  pathComponentIn_congr (joinedIn_endpoint_preimage_of_homotopic hy h).symm
 
 end BasedPath

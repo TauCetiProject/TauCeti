@@ -241,6 +241,27 @@ theorem RegularFormPresentation.append_apply_natAdd (p q : RegularFormPresentati
       (Fin.cast (RegularFormPresentation.fst_append p q).symm (Fin.natAdd p.1 j)) = q.2 j := by
   simp [RegularFormPresentation.append]
 
+-- `append` is opaque to importing modules; this equation lets them rewrite a full presentation.
+/-- Appending presentations concatenates their weight tuples. -/
+theorem RegularFormPresentation.append_def (p q : RegularFormPresentation K) :
+    p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := by
+  let hfst := RegularFormPresentation.fst_append p q
+  have hw : (p.append q).2 ∘ Fin.cast hfst.symm = Fin.append p.2 q.2 := by
+    funext i
+    refine Fin.addCases ?_ ?_ i
+    · intro k
+      simpa only [Function.comp_apply, Fin.append_left] using
+        RegularFormPresentation.append_apply_castAdd p q k
+    · intro k
+      simpa only [Function.comp_apply, Fin.append_right] using
+        RegularFormPresentation.append_apply_natAdd p q k
+  apply RegularFormPresentation.ext hfst
+  intro i
+  let j := Fin.cast hfst i
+  have hi : i = Fin.cast hfst.symm j := Fin.ext rfl
+  rw [hi]
+  exact congrFun hw j
+
 /-- The weight product of a concatenation is the product of the two weight products. -/
 theorem RegularFormPresentation.prod_append (p q : RegularFormPresentation K) :
     (∏ i, (RegularFormPresentation.append p q).2 i) = (∏ i, p.2 i) * ∏ j, q.2 j := by

@@ -204,6 +204,17 @@ theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
   rw [inf_comm, Nat.card_zpowers φ, ← hmul, mul_comm] at hidx
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
 
+/-- The residue degree below the fixed field of a power of a Frobenius is its exponent's
+greatest common divisor with the Frobenius order. -/
+theorem inertiaDeg_under_fixedField_zpowers_pow_eq_gcd (Q : Ideal (𝓞 L)) [Q.IsPrime]
+    (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] {φ : L ≃ₐ[K] L}
+    (hφ : IsArithFrobAt (𝓞 K) φ Q) (k : ℕ) :
+    (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers (φ ^ k))))).inertiaDeg (𝓞 K) =
+      Nat.gcd k (orderOf φ) := by
+  rw [inertiaDeg_under_fixedField_eq_relIndex Q hQ _ hφ,
+    ← zpow_natCast, Subgroup.relIndex_zpowers_zpow]
+  simp
+
 /-- **The residue degree is the least exponent landing in `H`.**  For `φ` a Frobenius at an
 unramified `Q`, the residue degree below `L ^ H` is the smallest `n ≥ 1` with `φ ^ n ∈ H`.
 

@@ -122,7 +122,7 @@ theorem continuous_initialSegmentFamily_uncurry {a b : X} (γ : Path a b) :
     (γ.truncate_const_continuous_family 0).comp hincl
   simpa [initialSegmentFamily] using! htrunc
 
-@[simp] private theorem initialSegmentFamily_apply {a b : X} (γ : Path a b) (t s : I) :
+@[simp] theorem initialSegmentFamily_apply {a b : X} (γ : Path a b) (t s : I) :
     initialSegmentFamily γ t s = γ.extend (min (s : ℝ) t) := by
   simp [initialSegmentFamily, Path.truncate, max_eq_left s.2.1]
 

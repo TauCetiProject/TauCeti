@@ -66,9 +66,14 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- A natural number that is a unit in the integer ring is nonzero in the field. -/
+theorem natCast_ne_zero_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) : (n : K) ≠ 0 := by
+  simpa only [map_natCast] using (hn.map (Subring.subtype 𝒪[K])).ne_zero
+
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- If `2` is a unit in the integer ring, it is nonzero in the field. -/
 theorem two_ne_zero_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) : (2 : K) ≠ 0 := by
-  simpa only [map_ofNat] using (h2.map (Subring.subtype 𝒪[K])).ne_zero
+  exact_mod_cast natCast_ne_zero_of_isUnit (K := K) (n := 2) (by exact_mod_cast h2)
 
 -- The declaration sequence follows the human-authored specification in
 -- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.
@@ -186,6 +191,25 @@ theorem natCastValuation_mul {m n : ℕ} (hm : (m : K) ≠ 0) (hn : (n : K) ≠ 
   rw [normalizedValuationWithZero_natCast K _ hmn, normalizedValuationWithZero_natCast K m hm,
     normalizedValuationWithZero_natCast K n hn, ← WithZero.exp_add, WithZero.exp_inj] at h
   exact_mod_cast h
+
+variable (K) in
+/-- The normalized valuation of a natural number is monotone for divisibility. -/
+theorem natCastValuation_le_of_dvd {m n : ℕ} (hm : (m : K) ≠ 0) (hn : (n : K) ≠ 0) (h : m ∣ n) :
+    natCastValuation K m hm ≤ natCastValuation K n hn := by
+  obtain ⟨k, rfl⟩ := h
+  have hk : (k : K) ≠ 0 := right_ne_zero_of_mul (by simpa only [Nat.cast_mul] using hn)
+  rw [natCastValuation_mul K hm hk]
+  exact Nat.le_add_right _ _
+
+/-- **The depth condition beyond `v_K(n)`.** If `v_K(n) < i`, then every prime `p ∣ n` satisfies
+`v_K(p) < (p - 1) * i`, the depth condition of the deep-unit power lemmas
+`map_powMonoidHom_unitFiltration` and `disjoint_rootsOfUnity_unitFiltration` of
+`TauCeti.NumberTheory.LocalField.UnitFiltration.Pow`. -/
+theorem natCastValuation_lt_sub_one_mul_of_lt_of_dvd {n i : ℕ} (hn : (n : K) ≠ 0)
+    (hi : natCastValuation K n hn < i) {p : ℕ} (hp : p.Prime) (hpK : (p : K) ≠ 0) (hpn : p ∣ n) :
+    natCastValuation K p hpK < (p - 1) * i :=
+  (natCastValuation_le_of_dvd K hpK hn hpn).trans_lt <|
+    hi.trans_le (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt hp.one_lt))
 
 variable (K) in
 /-- The normalized valuation of a power of a natural number. -/

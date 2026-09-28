@@ -108,9 +108,18 @@ noncomputable def pathAlgebraEulerPairingK0 :
   (eulerForm Q).comp (pathAlgebraDimensionVectorK0 k Q).toIntLinearMap
     (pathAlgebraDimensionVectorK0 k Q).toIntLinearMap
 
+/-- The pulled-back form is the quiver Euler form of the two dimension-vector images. -/
+@[simp]
+theorem pathAlgebraEulerPairingK0_apply
+    (x y : ExactK0 (finiteModulesExactStructure (pathAlgebra k Q))) :
+    pathAlgebraEulerPairingK0 k Q x y =
+      eulerForm Q (pathAlgebraDimensionVectorK0 k Q x) (pathAlgebraDimensionVectorK0 k Q y) :=
+  LinearMap.BilinForm.comp_apply _ _ _ x y
+
 /-- On module classes, the pulled-back form is the quiver Euler form of the two dimension
 vectors. -/
-@[simp]
+-- Not `@[simp]`: `pathAlgebraEulerPairingK0_apply` and `pathAlgebraDimensionVectorK0_of` already
+-- prove it, so simpNF would flag it.
 theorem pathAlgebraEulerPairingK0_of_of
     (M N : FGModuleCat (pathAlgebra k Q)) :
     pathAlgebraEulerPairingK0 k Q (ExactK0.of M) (ExactK0.of N) =
