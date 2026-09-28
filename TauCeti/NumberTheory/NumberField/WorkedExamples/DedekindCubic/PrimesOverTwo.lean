@@ -34,10 +34,10 @@ index of every integral primitive element, and `K` is not monogenic, although `2
 
 ## Main definitions
 
-* `TauCeti.NumberField.dedekindPrimeOne`, `dedekindPrimeTwo`, `dedekindPrimeThree`: the three
+* `TauCeti.NumberField.dedekindIdealOne`, `dedekindIdealTwo`, `dedekindIdealThree`: the three
   displayed ideals.
-* `TauCeti.NumberField.dedekindPrimeOneQuotEquiv`, `dedekindPrimeTwoQuotEquiv`,
-  `dedekindPrimeThreeQuotEquiv`: their residue rings are `ZMod 2`.
+* `TauCeti.NumberField.dedekindIdealOneQuotEquiv`, `dedekindIdealTwoQuotEquiv`,
+  `dedekindIdealThreeQuotEquiv`: their residue rings are `ZMod 2`.
 
 ## Main results
 
@@ -67,31 +67,31 @@ section Ideals
 variable {K : Type*} [Field K] [CharZero K] {θ : 𝓞 K}
 
 /-- The ideal `(2, θ, β)` of Dedekind's cubic field, where `β = (θ² - θ) / 2`. -/
-def dedekindPrimeOne (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : Ideal (𝓞 K) :=
+def dedekindIdealOne (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : Ideal (𝓞 K) :=
   span {2, θ, dedekindBeta hθ}
 
 /-- The ideal `(2, θ, β - 1)` of Dedekind's cubic field, where `β = (θ² - θ) / 2`. -/
-def dedekindPrimeTwo (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : Ideal (𝓞 K) :=
+def dedekindIdealTwo (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : Ideal (𝓞 K) :=
   span {2, θ, dedekindBeta hθ - 1}
 
 /-- The ideal `(2, θ - 1, β - 1)` of Dedekind's cubic field, where `β = (θ² - θ) / 2`. -/
-def dedekindPrimeThree (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : Ideal (𝓞 K) :=
+def dedekindIdealThree (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : Ideal (𝓞 K) :=
   span {2, θ - 1, dedekindBeta hθ - 1}
 
 /-- The ideal `(2, θ, β)` is the span of its displayed generators. -/
-theorem dedekindPrimeOne_def (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
-    dedekindPrimeOne hθ = span {2, θ, dedekindBeta hθ} := by
-  rw [dedekindPrimeOne]
+theorem dedekindIdealOne_def (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindIdealOne hθ = span {2, θ, dedekindBeta hθ} := by
+  rw [dedekindIdealOne]
 
 /-- The ideal `(2, θ, β - 1)` is the span of its displayed generators. -/
-theorem dedekindPrimeTwo_def (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
-    dedekindPrimeTwo hθ = span {2, θ, dedekindBeta hθ - 1} := by
-  rw [dedekindPrimeTwo]
+theorem dedekindIdealTwo_def (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindIdealTwo hθ = span {2, θ, dedekindBeta hθ - 1} := by
+  rw [dedekindIdealTwo]
 
 /-- The ideal `(2, θ - 1, β - 1)` is the span of its displayed generators. -/
-theorem dedekindPrimeThree_def (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
-    dedekindPrimeThree hθ = span {2, θ - 1, dedekindBeta hθ - 1} := by
-  rw [dedekindPrimeThree]
+theorem dedekindIdealThree_def (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindIdealThree hθ = span {2, θ - 1, dedekindBeta hθ - 1} := by
+  rw [dedekindIdealThree]
 
 end Ideals
 
@@ -223,271 +223,271 @@ end Residue
 
 include hmin hgen
 
-private theorem dedekindPrimeOne_eq_ker :
-    dedekindPrimeOne (dedekindCubic_relation hmin) =
+private theorem dedekindIdealOne_eq_ker :
+    dedekindIdealOne (dedekindCubic_relation hmin) =
       RingHom.ker (residueHom hmin hgen 0 0 (by simp)) := by
-  rw [ker_residueHom, dedekindPrimeOne]
+  rw [ker_residueHom, dedekindIdealOne]
   simp
 
-private theorem dedekindPrimeTwo_eq_ker :
-    dedekindPrimeTwo (dedekindCubic_relation hmin) =
+private theorem dedekindIdealTwo_eq_ker :
+    dedekindIdealTwo (dedekindCubic_relation hmin) =
       RingHom.ker (residueHom hmin hgen 0 1 (by simp)) := by
-  rw [ker_residueHom, dedekindPrimeTwo]
+  rw [ker_residueHom, dedekindIdealTwo]
   simp
 
-private theorem dedekindPrimeThree_eq_ker :
-    dedekindPrimeThree (dedekindCubic_relation hmin) =
+private theorem dedekindIdealThree_eq_ker :
+    dedekindIdealThree (dedekindCubic_relation hmin) =
       RingHom.ker (residueHom hmin hgen 1 1 (by simp)) := by
-  rw [ker_residueHom, dedekindPrimeThree]
+  rw [ker_residueHom, dedekindIdealThree]
   simp
 
 /-- The residue ring of `(2, θ, β)` is `ZMod 2`: the reduction sends `θ ↦ 0` and `β ↦ 0`, see
-`dedekindPrimeOneQuotEquiv_mk`. -/
-def dedekindPrimeOneQuotEquiv :
-    𝓞 K ⧸ dedekindPrimeOne (dedekindCubic_relation hmin) ≃+* ZMod 2 :=
-  (quotEquivOfEq (dedekindPrimeOne_eq_ker hmin hgen)).trans
+`dedekindIdealOneQuotEquiv_mk`. -/
+def dedekindIdealOneQuotEquiv :
+    𝓞 K ⧸ dedekindIdealOne (dedekindCubic_relation hmin) ≃+* ZMod 2 :=
+  (quotEquivOfEq (dedekindIdealOne_eq_ker hmin hgen)).trans
     (RingHom.quotientKerEquivOfSurjective (ZMod.ringHom_surjective _))
 
 /-- The residue ring of `(2, θ, β - 1)` is `ZMod 2`: the reduction sends `θ ↦ 0` and `β ↦ 1`,
-see `dedekindPrimeTwoQuotEquiv_mk`. -/
-def dedekindPrimeTwoQuotEquiv :
-    𝓞 K ⧸ dedekindPrimeTwo (dedekindCubic_relation hmin) ≃+* ZMod 2 :=
-  (quotEquivOfEq (dedekindPrimeTwo_eq_ker hmin hgen)).trans
+see `dedekindIdealTwoQuotEquiv_mk`. -/
+def dedekindIdealTwoQuotEquiv :
+    𝓞 K ⧸ dedekindIdealTwo (dedekindCubic_relation hmin) ≃+* ZMod 2 :=
+  (quotEquivOfEq (dedekindIdealTwo_eq_ker hmin hgen)).trans
     (RingHom.quotientKerEquivOfSurjective (ZMod.ringHom_surjective _))
 
 /-- The residue ring of `(2, θ - 1, β - 1)` is `ZMod 2`: the reduction sends `θ ↦ 1` and
-`β ↦ 1`, see `dedekindPrimeThreeQuotEquiv_mk`. -/
-def dedekindPrimeThreeQuotEquiv :
-    𝓞 K ⧸ dedekindPrimeThree (dedekindCubic_relation hmin) ≃+* ZMod 2 :=
-  (quotEquivOfEq (dedekindPrimeThree_eq_ker hmin hgen)).trans
+`β ↦ 1`, see `dedekindIdealThreeQuotEquiv_mk`. -/
+def dedekindIdealThreeQuotEquiv :
+    𝓞 K ⧸ dedekindIdealThree (dedekindCubic_relation hmin) ≃+* ZMod 2 :=
+  (quotEquivOfEq (dedekindIdealThree_eq_ker hmin hgen)).trans
     (RingHom.quotientKerEquivOfSurjective (ZMod.ringHom_surjective _))
 
 /-- Reduction modulo `(2, θ, β)` sends `θ` to `0`. -/
-@[simp] theorem dedekindPrimeOneQuotEquiv_mk_theta :
-    dedekindPrimeOneQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) = 0 := by
-  simp only [dedekindPrimeOneQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+@[simp] theorem dedekindIdealOneQuotEquiv_mk_theta :
+    dedekindIdealOneQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) = 0 := by
+  simp only [dedekindIdealOneQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
     RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta]
   simp
 
 /-- Reduction modulo `(2, θ, β)` sends `β` to `0`. -/
-@[simp] theorem dedekindPrimeOneQuotEquiv_mk_beta :
-    dedekindPrimeOneQuotEquiv hmin hgen
+@[simp] theorem dedekindIdealOneQuotEquiv_mk_beta :
+    dedekindIdealOneQuotEquiv hmin hgen
         (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) = 0 := by
-  simp only [dedekindPrimeOneQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+  simp only [dedekindIdealOneQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
     RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_beta]
   simp
 
 /-- Reduction modulo `(2, θ, β)` sends `a + bθ + cβ` to `a`. -/
-theorem dedekindPrimeOneQuotEquiv_mk (a b c : ℤ) :
-    dedekindPrimeOneQuotEquiv hmin hgen
+theorem dedekindIdealOneQuotEquiv_mk (a b c : ℤ) :
+    dedekindIdealOneQuotEquiv hmin hgen
         (Ideal.Quotient.mk _ (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin))) =
       (a : ZMod 2) := by
-  simp only [map_add, map_mul, map_intCast, dedekindPrimeOneQuotEquiv_mk_theta,
-    dedekindPrimeOneQuotEquiv_mk_beta]
+  simp only [map_add, map_mul, map_intCast, dedekindIdealOneQuotEquiv_mk_theta,
+    dedekindIdealOneQuotEquiv_mk_beta]
   ring
 
 /-- An algebraic integer `a + bθ + cβ` lies in `(2, θ, β)` exactly when `2 ∣ a`. -/
-@[simp] theorem mem_dedekindPrimeOne_iff (a b c : ℤ) :
+@[simp] theorem mem_dedekindIdealOne_iff (a b c : ℤ) :
     (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin) : 𝓞 K) ∈
-        dedekindPrimeOne (dedekindCubic_relation hmin) ↔ 2 ∣ a := by
+        dedekindIdealOne (dedekindCubic_relation hmin) ↔ 2 ∣ a := by
   rw [← Quotient.eq_zero_iff_mem,
-    ← map_eq_zero_iff _ (dedekindPrimeOneQuotEquiv hmin hgen).injective,
-    dedekindPrimeOneQuotEquiv_mk, ZMod.intCast_zmod_eq_zero_iff_dvd]
+    ← map_eq_zero_iff _ (dedekindIdealOneQuotEquiv hmin hgen).injective,
+    dedekindIdealOneQuotEquiv_mk, ZMod.intCast_zmod_eq_zero_iff_dvd]
   norm_num
 
 /-- Reduction modulo `(2, θ, β - 1)` sends `θ` to `0`. -/
-@[simp] theorem dedekindPrimeTwoQuotEquiv_mk_theta :
-    dedekindPrimeTwoQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) = 0 := by
-  simp only [dedekindPrimeTwoQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+@[simp] theorem dedekindIdealTwoQuotEquiv_mk_theta :
+    dedekindIdealTwoQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) = 0 := by
+  simp only [dedekindIdealTwoQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
     RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta]
   simp
 
 /-- Reduction modulo `(2, θ, β - 1)` sends `β` to `1`. -/
-@[simp] theorem dedekindPrimeTwoQuotEquiv_mk_beta :
-    dedekindPrimeTwoQuotEquiv hmin hgen
+@[simp] theorem dedekindIdealTwoQuotEquiv_mk_beta :
+    dedekindIdealTwoQuotEquiv hmin hgen
         (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) = 1 := by
-  simp only [dedekindPrimeTwoQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+  simp only [dedekindIdealTwoQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
     RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_beta]
   simp
 
 /-- Reduction modulo `(2, θ, β - 1)` sends `a + bθ + cβ` to `a + c`. -/
-theorem dedekindPrimeTwoQuotEquiv_mk (a b c : ℤ) :
-    dedekindPrimeTwoQuotEquiv hmin hgen
+theorem dedekindIdealTwoQuotEquiv_mk (a b c : ℤ) :
+    dedekindIdealTwoQuotEquiv hmin hgen
         (Ideal.Quotient.mk _ (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin))) =
       ((a + c : ℤ) : ZMod 2) := by
-  simp only [map_add, map_mul, map_intCast, dedekindPrimeTwoQuotEquiv_mk_theta,
-    dedekindPrimeTwoQuotEquiv_mk_beta]
+  simp only [map_add, map_mul, map_intCast, dedekindIdealTwoQuotEquiv_mk_theta,
+    dedekindIdealTwoQuotEquiv_mk_beta]
   push_cast
   ring
 
 /-- An algebraic integer `a + bθ + cβ` lies in `(2, θ, β - 1)` exactly when `2 ∣ a + c`. -/
-@[simp] theorem mem_dedekindPrimeTwo_iff (a b c : ℤ) :
+@[simp] theorem mem_dedekindIdealTwo_iff (a b c : ℤ) :
     (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin) : 𝓞 K) ∈
-        dedekindPrimeTwo (dedekindCubic_relation hmin) ↔ 2 ∣ a + c := by
+        dedekindIdealTwo (dedekindCubic_relation hmin) ↔ 2 ∣ a + c := by
   rw [← Quotient.eq_zero_iff_mem,
-    ← map_eq_zero_iff _ (dedekindPrimeTwoQuotEquiv hmin hgen).injective,
-    dedekindPrimeTwoQuotEquiv_mk, ZMod.intCast_zmod_eq_zero_iff_dvd]
+    ← map_eq_zero_iff _ (dedekindIdealTwoQuotEquiv hmin hgen).injective,
+    dedekindIdealTwoQuotEquiv_mk, ZMod.intCast_zmod_eq_zero_iff_dvd]
   norm_num
 
 /-- Reduction modulo `(2, θ - 1, β - 1)` sends `θ` to `1`. -/
-@[simp] theorem dedekindPrimeThreeQuotEquiv_mk_theta :
-    dedekindPrimeThreeQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) = 1 := by
-  simp only [dedekindPrimeThreeQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+@[simp] theorem dedekindIdealThreeQuotEquiv_mk_theta :
+    dedekindIdealThreeQuotEquiv hmin hgen (Ideal.Quotient.mk _ θ) = 1 := by
+  simp only [dedekindIdealThreeQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
     RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_theta]
   simp
 
 /-- Reduction modulo `(2, θ - 1, β - 1)` sends `β` to `1`. -/
-@[simp] theorem dedekindPrimeThreeQuotEquiv_mk_beta :
-    dedekindPrimeThreeQuotEquiv hmin hgen
+@[simp] theorem dedekindIdealThreeQuotEquiv_mk_beta :
+    dedekindIdealThreeQuotEquiv hmin hgen
         (Ideal.Quotient.mk _ (dedekindBeta (dedekindCubic_relation hmin))) = 1 := by
-  simp only [dedekindPrimeThreeQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
+  simp only [dedekindIdealThreeQuotEquiv, RingEquiv.trans_apply, quotEquivOfEq_mk,
     RingHom.quotientKerEquivOfSurjective_apply_mk, residueHom_beta]
   simp
 
 /-- Reduction modulo `(2, θ - 1, β - 1)` sends `a + bθ + cβ` to `a + b + c`. -/
-theorem dedekindPrimeThreeQuotEquiv_mk (a b c : ℤ) :
-    dedekindPrimeThreeQuotEquiv hmin hgen
+theorem dedekindIdealThreeQuotEquiv_mk (a b c : ℤ) :
+    dedekindIdealThreeQuotEquiv hmin hgen
         (Ideal.Quotient.mk _ (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin))) =
       ((a + b + c : ℤ) : ZMod 2) := by
-  simp only [map_add, map_mul, map_intCast, dedekindPrimeThreeQuotEquiv_mk_theta,
-    dedekindPrimeThreeQuotEquiv_mk_beta]
+  simp only [map_add, map_mul, map_intCast, dedekindIdealThreeQuotEquiv_mk_theta,
+    dedekindIdealThreeQuotEquiv_mk_beta]
   push_cast
   ring
 
 /-- An algebraic integer `a + bθ + cβ` lies in `(2, θ - 1, β - 1)` exactly when `2 ∣ a + b + c`. -/
-@[simp] theorem mem_dedekindPrimeThree_iff (a b c : ℤ) :
+@[simp] theorem mem_dedekindIdealThree_iff (a b c : ℤ) :
     (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin) : 𝓞 K) ∈
-        dedekindPrimeThree (dedekindCubic_relation hmin) ↔ 2 ∣ a + b + c := by
+        dedekindIdealThree (dedekindCubic_relation hmin) ↔ 2 ∣ a + b + c := by
   rw [← Quotient.eq_zero_iff_mem,
-    ← map_eq_zero_iff _ (dedekindPrimeThreeQuotEquiv hmin hgen).injective,
-    dedekindPrimeThreeQuotEquiv_mk, ZMod.intCast_zmod_eq_zero_iff_dvd]
+    ← map_eq_zero_iff _ (dedekindIdealThreeQuotEquiv hmin hgen).injective,
+    dedekindIdealThreeQuotEquiv_mk, ZMod.intCast_zmod_eq_zero_iff_dvd]
   norm_num
 
 /-- The ideal `(2, θ, β)` is maximal. -/
-theorem isMaximal_dedekindPrimeOne :
-    (dedekindPrimeOne (dedekindCubic_relation hmin)).IsMaximal :=
+theorem isMaximal_dedekindIdealOne :
+    (dedekindIdealOne (dedekindCubic_relation hmin)).IsMaximal :=
   Quotient.maximal_of_isField _
-    ((dedekindPrimeOneQuotEquiv hmin hgen).toMulEquiv.isField (Field.toIsField _))
+    ((dedekindIdealOneQuotEquiv hmin hgen).toMulEquiv.isField (Field.toIsField _))
 
 /-- The ideal `(2, θ, β - 1)` is maximal. -/
-theorem isMaximal_dedekindPrimeTwo :
-    (dedekindPrimeTwo (dedekindCubic_relation hmin)).IsMaximal :=
+theorem isMaximal_dedekindIdealTwo :
+    (dedekindIdealTwo (dedekindCubic_relation hmin)).IsMaximal :=
   Quotient.maximal_of_isField _
-    ((dedekindPrimeTwoQuotEquiv hmin hgen).toMulEquiv.isField (Field.toIsField _))
+    ((dedekindIdealTwoQuotEquiv hmin hgen).toMulEquiv.isField (Field.toIsField _))
 
 /-- The ideal `(2, θ - 1, β - 1)` is maximal. -/
-theorem isMaximal_dedekindPrimeThree :
-    (dedekindPrimeThree (dedekindCubic_relation hmin)).IsMaximal :=
+theorem isMaximal_dedekindIdealThree :
+    (dedekindIdealThree (dedekindCubic_relation hmin)).IsMaximal :=
   Quotient.maximal_of_isField _
-    ((dedekindPrimeThreeQuotEquiv hmin hgen).toMulEquiv.isField (Field.toIsField _))
+    ((dedekindIdealThreeQuotEquiv hmin hgen).toMulEquiv.isField (Field.toIsField _))
 
 /-- The prime `(2, θ, β)` lies over `2`. -/
-theorem liesOver_dedekindPrimeOne :
-    (dedekindPrimeOne (dedekindCubic_relation hmin)).LiesOver (span {(2 : ℤ)}) :=
-  (liesOver_span_iff (isMaximal_dedekindPrimeOne hmin hgen).ne_top Int.prime_two).mpr
+theorem liesOver_dedekindIdealOne :
+    (dedekindIdealOne (dedekindCubic_relation hmin)).LiesOver (span {(2 : ℤ)}) :=
+  (liesOver_span_iff (isMaximal_dedekindIdealOne hmin hgen).ne_top Int.prime_two).mpr
     (subset_span (by simp))
 
 /-- The prime `(2, θ, β - 1)` lies over `2`. -/
-theorem liesOver_dedekindPrimeTwo :
-    (dedekindPrimeTwo (dedekindCubic_relation hmin)).LiesOver (span {(2 : ℤ)}) :=
-  (liesOver_span_iff (isMaximal_dedekindPrimeTwo hmin hgen).ne_top Int.prime_two).mpr
+theorem liesOver_dedekindIdealTwo :
+    (dedekindIdealTwo (dedekindCubic_relation hmin)).LiesOver (span {(2 : ℤ)}) :=
+  (liesOver_span_iff (isMaximal_dedekindIdealTwo hmin hgen).ne_top Int.prime_two).mpr
     (subset_span (by simp))
 
 /-- The prime `(2, θ - 1, β - 1)` lies over `2`. -/
-theorem liesOver_dedekindPrimeThree :
-    (dedekindPrimeThree (dedekindCubic_relation hmin)).LiesOver (span {(2 : ℤ)}) :=
-  (liesOver_span_iff (isMaximal_dedekindPrimeThree hmin hgen).ne_top Int.prime_two).mpr
+theorem liesOver_dedekindIdealThree :
+    (dedekindIdealThree (dedekindCubic_relation hmin)).LiesOver (span {(2 : ℤ)}) :=
+  (liesOver_span_iff (isMaximal_dedekindIdealThree hmin hgen).ne_top Int.prime_two).mpr
     (subset_span (by simp))
 
 /-- The prime `(2, θ, β)` has absolute norm `2`: its residue field has two elements. -/
-@[simp] theorem absNorm_dedekindPrimeOne :
-    absNorm (dedekindPrimeOne (dedekindCubic_relation hmin)) = 2 := by
+@[simp] theorem absNorm_dedekindIdealOne :
+    absNorm (dedekindIdealOne (dedekindCubic_relation hmin)) = 2 := by
   rw [absNorm_apply, Submodule.cardQuot_apply,
-    Nat.card_congr (dedekindPrimeOneQuotEquiv hmin hgen).toEquiv, Nat.card_zmod]
+    Nat.card_congr (dedekindIdealOneQuotEquiv hmin hgen).toEquiv, Nat.card_zmod]
 
 /-- The prime `(2, θ, β - 1)` has absolute norm `2`: its residue field has two elements. -/
-@[simp] theorem absNorm_dedekindPrimeTwo :
-    absNorm (dedekindPrimeTwo (dedekindCubic_relation hmin)) = 2 := by
+@[simp] theorem absNorm_dedekindIdealTwo :
+    absNorm (dedekindIdealTwo (dedekindCubic_relation hmin)) = 2 := by
   rw [absNorm_apply, Submodule.cardQuot_apply,
-    Nat.card_congr (dedekindPrimeTwoQuotEquiv hmin hgen).toEquiv, Nat.card_zmod]
+    Nat.card_congr (dedekindIdealTwoQuotEquiv hmin hgen).toEquiv, Nat.card_zmod]
 
 /-- The prime `(2, θ - 1, β - 1)` has absolute norm `2`: its residue field has two elements. -/
-@[simp] theorem absNorm_dedekindPrimeThree :
-    absNorm (dedekindPrimeThree (dedekindCubic_relation hmin)) = 2 := by
+@[simp] theorem absNorm_dedekindIdealThree :
+    absNorm (dedekindIdealThree (dedekindCubic_relation hmin)) = 2 := by
   rw [absNorm_apply, Submodule.cardQuot_apply,
-    Nat.card_congr (dedekindPrimeThreeQuotEquiv hmin hgen).toEquiv, Nat.card_zmod]
+    Nat.card_congr (dedekindIdealThreeQuotEquiv hmin hgen).toEquiv, Nat.card_zmod]
 
 /-- The prime `(2, θ, β)` is nonzero. -/
-theorem dedekindPrimeOne_ne_bot : dedekindPrimeOne (dedekindCubic_relation hmin) ≠ ⊥ :=
-  ne_of_apply_ne absNorm (by rw [absNorm_dedekindPrimeOne hmin hgen, absNorm_bot]; decide)
+theorem dedekindIdealOne_ne_bot : dedekindIdealOne (dedekindCubic_relation hmin) ≠ ⊥ :=
+  ne_of_apply_ne absNorm (by rw [absNorm_dedekindIdealOne hmin hgen, absNorm_bot]; decide)
 
 /-- The prime `(2, θ, β - 1)` is nonzero. -/
-theorem dedekindPrimeTwo_ne_bot : dedekindPrimeTwo (dedekindCubic_relation hmin) ≠ ⊥ :=
-  ne_of_apply_ne absNorm (by rw [absNorm_dedekindPrimeTwo hmin hgen, absNorm_bot]; decide)
+theorem dedekindIdealTwo_ne_bot : dedekindIdealTwo (dedekindCubic_relation hmin) ≠ ⊥ :=
+  ne_of_apply_ne absNorm (by rw [absNorm_dedekindIdealTwo hmin hgen, absNorm_bot]; decide)
 
 /-- The prime `(2, θ - 1, β - 1)` is nonzero. -/
-theorem dedekindPrimeThree_ne_bot : dedekindPrimeThree (dedekindCubic_relation hmin) ≠ ⊥ :=
-  ne_of_apply_ne absNorm (by rw [absNorm_dedekindPrimeThree hmin hgen, absNorm_bot]; decide)
+theorem dedekindIdealThree_ne_bot : dedekindIdealThree (dedekindCubic_relation hmin) ≠ ⊥ :=
+  ne_of_apply_ne absNorm (by rw [absNorm_dedekindIdealThree hmin hgen, absNorm_bot]; decide)
 
 /-- The primes `(2, θ, β)` and `(2, θ, β - 1)` are distinct. -/
-theorem dedekindPrimeOne_ne_dedekindPrimeTwo :
-    dedekindPrimeOne (dedekindCubic_relation hmin) ≠
-      dedekindPrimeTwo (dedekindCubic_relation hmin) := by
+theorem dedekindIdealOne_ne_dedekindIdealTwo :
+    dedekindIdealOne (dedekindCubic_relation hmin) ≠
+      dedekindIdealTwo (dedekindCubic_relation hmin) := by
   intro h
   have hmem : dedekindBeta (dedekindCubic_relation hmin) ∈
-      dedekindPrimeOne (dedekindCubic_relation hmin) :=
+      dedekindIdealOne (dedekindCubic_relation hmin) :=
     subset_span (by simp)
-  rw [h, dedekindPrimeTwo_eq_ker hmin hgen, RingHom.mem_ker, residueHom_beta] at hmem
+  rw [h, dedekindIdealTwo_eq_ker hmin hgen, RingHom.mem_ker, residueHom_beta] at hmem
   simp at hmem
 
 /-- The primes `(2, θ, β)` and `(2, θ - 1, β - 1)` are distinct. -/
-theorem dedekindPrimeOne_ne_dedekindPrimeThree :
-    dedekindPrimeOne (dedekindCubic_relation hmin) ≠
-      dedekindPrimeThree (dedekindCubic_relation hmin) := by
+theorem dedekindIdealOne_ne_dedekindIdealThree :
+    dedekindIdealOne (dedekindCubic_relation hmin) ≠
+      dedekindIdealThree (dedekindCubic_relation hmin) := by
   intro h
-  have hmem : θ ∈ dedekindPrimeOne (dedekindCubic_relation hmin) := subset_span (by simp)
-  rw [h, dedekindPrimeThree_eq_ker hmin hgen, RingHom.mem_ker, residueHom_theta] at hmem
+  have hmem : θ ∈ dedekindIdealOne (dedekindCubic_relation hmin) := subset_span (by simp)
+  rw [h, dedekindIdealThree_eq_ker hmin hgen, RingHom.mem_ker, residueHom_theta] at hmem
   simp at hmem
 
 /-- The primes `(2, θ, β - 1)` and `(2, θ - 1, β - 1)` are distinct. -/
-theorem dedekindPrimeTwo_ne_dedekindPrimeThree :
-    dedekindPrimeTwo (dedekindCubic_relation hmin) ≠
-      dedekindPrimeThree (dedekindCubic_relation hmin) := by
+theorem dedekindIdealTwo_ne_dedekindIdealThree :
+    dedekindIdealTwo (dedekindCubic_relation hmin) ≠
+      dedekindIdealThree (dedekindCubic_relation hmin) := by
   intro h
-  have hmem : θ ∈ dedekindPrimeTwo (dedekindCubic_relation hmin) := subset_span (by simp)
-  rw [h, dedekindPrimeThree_eq_ker hmin hgen, RingHom.mem_ker, residueHom_theta] at hmem
+  have hmem : θ ∈ dedekindIdealTwo (dedekindCubic_relation hmin) := subset_span (by simp)
+  rw [h, dedekindIdealThree_eq_ker hmin hgen, RingHom.mem_ker, residueHom_theta] at hmem
   simp at hmem
 
 /-! ### The splitting of `2` -/
 
 private instance : (span {(2 : ℤ)} : Ideal ℤ).IsMaximal := Int.ideal_span_isMaximal_of_prime 2
 
-private theorem ncard_dedekindPrimes :
-    ({dedekindPrimeOne (dedekindCubic_relation hmin),
-      dedekindPrimeTwo (dedekindCubic_relation hmin),
-      dedekindPrimeThree (dedekindCubic_relation hmin)} : Set (Ideal (𝓞 K))).ncard = 3 :=
-  Set.ncard_eq_three.mpr ⟨_, _, _, dedekindPrimeOne_ne_dedekindPrimeTwo hmin hgen,
-    dedekindPrimeOne_ne_dedekindPrimeThree hmin hgen,
-    dedekindPrimeTwo_ne_dedekindPrimeThree hmin hgen, rfl⟩
+private theorem ncard_dedekindIdeals :
+    ({dedekindIdealOne (dedekindCubic_relation hmin),
+      dedekindIdealTwo (dedekindCubic_relation hmin),
+      dedekindIdealThree (dedekindCubic_relation hmin)} : Set (Ideal (𝓞 K))).ncard = 3 :=
+  Set.ncard_eq_three.mpr ⟨_, _, _, dedekindIdealOne_ne_dedekindIdealTwo hmin hgen,
+    dedekindIdealOne_ne_dedekindIdealThree hmin hgen,
+    dedekindIdealTwo_ne_dedekindIdealThree hmin hgen, rfl⟩
 
 /-- The primes of `𝓞 K` above `2` are exactly `(2, θ, β)`, `(2, θ, β - 1)` and
 `(2, θ - 1, β - 1)`. -/
 theorem dedekindCubic_primesOver_two_eq :
     (span {(2 : ℤ)}).primesOver (𝓞 K) =
-      {dedekindPrimeOne (dedekindCubic_relation hmin),
-        dedekindPrimeTwo (dedekindCubic_relation hmin),
-        dedekindPrimeThree (dedekindCubic_relation hmin)} := by
-  have := isMaximal_dedekindPrimeOne hmin hgen
-  have := isMaximal_dedekindPrimeTwo hmin hgen
-  have := isMaximal_dedekindPrimeThree hmin hgen
-  have := liesOver_dedekindPrimeOne hmin hgen
-  have := liesOver_dedekindPrimeTwo hmin hgen
-  have := liesOver_dedekindPrimeThree hmin hgen
+      {dedekindIdealOne (dedekindCubic_relation hmin),
+        dedekindIdealTwo (dedekindCubic_relation hmin),
+        dedekindIdealThree (dedekindCubic_relation hmin)} := by
+  have := isMaximal_dedekindIdealOne hmin hgen
+  have := isMaximal_dedekindIdealTwo hmin hgen
+  have := isMaximal_dedekindIdealThree hmin hgen
+  have := liesOver_dedekindIdealOne hmin hgen
+  have := liesOver_dedekindIdealTwo hmin hgen
+  have := liesOver_dedekindIdealThree hmin hgen
   refine (Set.eq_of_subset_of_ncard_le ?_ ?_ (Set.toFinite _)).symm
   · simp only [Set.insert_subset_iff, Set.singleton_subset_iff]
     exact ⟨⟨inferInstance, inferInstance⟩, ⟨inferInstance, inferInstance⟩,
       ⟨inferInstance, inferInstance⟩⟩
-  · rw [ncard_dedekindPrimes hmin hgen, ← dedekindCubic_finrank_eq_three hmin hgen,
+  · rw [ncard_dedekindIdeals hmin hgen, ← dedekindCubic_finrank_eq_three hmin hgen,
       ← RingOfIntegers.rank K]
     exact RamificationInertia.ncard_primesOver_le_finrank _
 
@@ -495,7 +495,7 @@ theorem dedekindCubic_primesOver_two_eq :
 above it. -/
 theorem dedekindCubic_ncard_primesOver_two_eq_finrank :
     ((span {(2 : ℤ)}).primesOver (𝓞 K)).ncard = Module.finrank ℚ K := by
-  rw [dedekindCubic_primesOver_two_eq hmin hgen, ncard_dedekindPrimes hmin hgen,
+  rw [dedekindCubic_primesOver_two_eq hmin hgen, ncard_dedekindIdeals hmin hgen,
     dedekindCubic_finrank_eq_three hmin hgen]
 
 open RamificationInertia in
@@ -512,23 +512,23 @@ theorem dedekindCubic_ramificationIdx_eq_one_and_inertiaDeg_eq_one {P : Ideal (�
 /-- **Dedekind's factorization of `2`**: `(2) = (2, θ, β) · (2, θ, β - 1) · (2, θ - 1, β - 1)`. -/
 theorem dedekindCubic_map_span_two_eq :
     (span {(2 : ℤ)}).map (algebraMap ℤ (𝓞 K)) =
-      dedekindPrimeOne (dedekindCubic_relation hmin) *
-        dedekindPrimeTwo (dedekindCubic_relation hmin) *
-        dedekindPrimeThree (dedekindCubic_relation hmin) := by
+      dedekindIdealOne (dedekindCubic_relation hmin) *
+        dedekindIdealTwo (dedekindCubic_relation hmin) *
+        dedekindIdealThree (dedekindCubic_relation hmin) := by
   classical
   have hfin : ((span {(2 : ℤ)}).primesOver (𝓞 K)).toFinset =
-      {dedekindPrimeOne (dedekindCubic_relation hmin),
-        dedekindPrimeTwo (dedekindCubic_relation hmin),
-        dedekindPrimeThree (dedekindCubic_relation hmin)} := by
+      {dedekindIdealOne (dedekindCubic_relation hmin),
+        dedekindIdealTwo (dedekindCubic_relation hmin),
+        dedekindIdealThree (dedekindCubic_relation hmin)} := by
     ext P
     simp only [Set.mem_toFinset, dedekindCubic_primesOver_two_eq hmin hgen, Set.mem_insert_iff,
       Set.mem_singleton_iff, Finset.mem_insert, Finset.mem_singleton]
   rw [map_algebraMap_eq_finsetProd_pow (by simp), Finset.prod_congr rfl fun P hP => by
     rw [(dedekindCubic_ramificationIdx_eq_one_and_inertiaDeg_eq_one hmin hgen
       (Set.mem_toFinset.mp hP)).1, pow_one], hfin,
-    Finset.prod_insert (by simp [dedekindPrimeOne_ne_dedekindPrimeTwo hmin hgen,
-      dedekindPrimeOne_ne_dedekindPrimeThree hmin hgen]),
-    Finset.prod_insert (by simp [dedekindPrimeTwo_ne_dedekindPrimeThree hmin hgen]),
+    Finset.prod_insert (by simp [dedekindIdealOne_ne_dedekindIdealTwo hmin hgen,
+      dedekindIdealOne_ne_dedekindIdealThree hmin hgen]),
+    Finset.prod_insert (by simp [dedekindIdealTwo_ne_dedekindIdealThree hmin hgen]),
     Finset.prod_singleton, mul_assoc]
 
 /-! ### Non-monogenicity -/
