@@ -328,7 +328,8 @@ private theorem monodromy_homeomorphMulEquivOfEq_fromPath (γ : Path (1 : Circle
       AddCircle.homeomorphCircle_symm_one]
   refine congrArg Subtype.val ((AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy_eq_of_map_eq
     (ey := ⟨a, ha⟩) (Path.Homotopic.Quotient.mk θ) ?_)
-  rw [TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_fromPath, ← Path.Homotopic.Quotient.mk_map]
+  rw [TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
+    ← Path.Homotopic.Quotient.mk_map]
   -- Casting a path class casts its representative, and `Path.cast` does not change the
   -- underlying function. Both are unfolded definitionally rather than by `mk_cast` and
   -- `Path.cast_coe`, because the endpoint proofs supplied by `monodromy_eq_of_map_eq` are fibre
@@ -364,8 +365,9 @@ theorem fundamentalGroupMulEquiv_fromPath {x : Circle} (γ : Path x x) :
   -- degree.
   rw [fundamentalGroupMulEquiv_def, MulEquiv.trans_apply,
     FundamentalGroup.fundamentalGroupMulEquivOfPathConnected,
-    FundamentalGroup.fundamentalGroupMulEquivOfPath_fromPath,
-    homeomorphMulEquivOfEq_trans_fundamentalGroupMulEquivZero_fromPath, degree_symm_trans_trans]
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
+  exact (homeomorphMulEquivOfEq_trans_fundamentalGroupMulEquivZero_fromPath _).trans
+    (congrArg Multiplicative.ofAdd (degree_symm_trans_trans γ _))
 
 /-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/
 def expLoop : Path (1 : Circle) 1 where

@@ -38,8 +38,6 @@ the unit circle `Circle ⊆ ℂ`, obtained from the additive-circle computation 
 * `TauCeti.FundamentalGroup.mapOfEq_rfl`: along the reflexivity proof, `mapOfEq` is `map`.
 * `TauCeti.FundamentalGroup.homeomorphMulEquivOfEq`: `π₁(X, x) ≃* π₁(Y, y)` from `e : X ≃ₜ Y`
   with `e x = y`.
-* `TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_fromPath`: it sends the class of a loop `γ` to
-  the class of `e ∘ γ`.
 * `TauCeti.FundamentalGroup.homeomorphMulEquiv`: `π₁(X, x) ≃* π₁(Y, e x)`.
 -/
 
@@ -133,15 +131,6 @@ theorem homeomorphMulEquivOfEq_symm_apply (e : X ≃ₜ Y) (h : e x = y)
       _root_.FundamentalGroup.mapOfEq ⟨e.symm, e.symm.continuous⟩
         (show e.symm y = x by rw [← h, e.symm_apply_apply]) q :=
   rfl
-
-/-- On the class of a loop `γ`, the isomorphism induced by a homeomorphism `e` with `e x = y` is
-the class of the image loop `e ∘ γ`, recast to the basepoint `y`. -/
-theorem homeomorphMulEquivOfEq_fromPath (e : X ≃ₜ Y) (h : e x = y) (γ : Path x x) :
-    homeomorphMulEquivOfEq e h
-        (_root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
-      _root_.FundamentalGroup.fromPath
-        (Path.Homotopic.Quotient.mk ((γ.map e.continuous).cast h.symm h.symm)) :=
-  _root_.FundamentalGroup.mapOfEq_apply _ h _
 
 /-- A homeomorphism `e : X ≃ₜ Y` induces an isomorphism of fundamental groups
 `π₁(X, x) ≃* π₁(Y, e x)`. -/
