@@ -185,7 +185,6 @@ theorem norm_eq_holderNorm (f : HolderSpace α X Y) :
     ‖f‖ = holderNorm α f.toBoundedContinuousFunction := (rfl)
 
 /-- The Hölder-space norm is the sum of the supremum norm and the global Hölder seminorm. -/
-@[simp]
 theorem norm_def (f : HolderSpace α X Y) :
     ‖f‖ = ‖f.toBoundedContinuousFunction‖ +
       nnHolderNorm α (f.toBoundedContinuousFunction : X → Y) := by
@@ -373,6 +372,7 @@ theorem norm_const_le (c : Y) : ‖const (α := α) (X := X) c‖ ≤ ‖c‖ :=
   exact BoundedContinuousFunction.norm_const_le c
 
 /-- On a nonempty domain, constant functions have exactly the norm of their value. -/
+@[simp]
 theorem norm_const [Nonempty X] (c : Y) : ‖const (α := α) (X := X) c‖ = ‖c‖ := by
   refine le_antisymm (norm_const_le c) ?_
   obtain ⟨x⟩ := ‹Nonempty X›
