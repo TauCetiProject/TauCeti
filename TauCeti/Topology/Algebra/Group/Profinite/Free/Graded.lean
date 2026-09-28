@@ -30,8 +30,8 @@ by `X ⊕ {(i, j) : i < j}`, so its coordinates split a class in `gr_1(F)` into 
 with one coefficient per generator, and its commutator part, with one coefficient per unordered
 pair of generators. These coordinates are what reading off the class of a relator of a pro-`p`
 group presented on the generators `x_i` requires. The results hold for any universe of `X`; the
-two finite `p`-groups of `p`-class two used as detecting groups are `ℤ/p²` and the Heisenberg
-group over `𝔽_p`.
+two finite `p`-groups of `p`-class two used as detecting groups for this degree-one basis are
+`ℤ/p²` and the Heisenberg group over `𝔽_p`.
 
 In every degree `j`, the iterated `p`-power classes `π^j x'_i ∈ gr_j(F)` of the generators are
 linearly independent, detected in the cyclic groups `ℤ/pʲ⁺¹` of `p`-class `j + 1`; for `j = 1`
