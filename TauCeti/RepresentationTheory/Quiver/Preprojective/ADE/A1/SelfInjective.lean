@@ -11,9 +11,9 @@ public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 /-!
 # Self-injectivity of the preprojective algebra of `A₁`
 
-The preprojective algebra of the one-vertex quiver is the coefficient field. Its regular module
-is therefore injective. This supplies the rank-one case of self-injectivity for finite ADE
-preprojective algebras.
+The preprojective algebra of the one-vertex quiver is the coefficient ring. When this ring is
+semisimple, its regular module is injective. This supplies the rank-one case of self-injectivity
+for finite ADE preprojective algebras.
 
 The algebra comparison is `TauCeti.preprojectiveAlgebraEquivA1`; the preprojective presentation
 follows Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
@@ -25,7 +25,8 @@ public section
 namespace TauCeti
 
 /-- The regular left module of the `A₁` preprojective algebra is injective. -/
-theorem moduleInjective_preprojectiveAlgebra_A1 (k : Type*) [Field k] :
+theorem moduleInjective_preprojectiveAlgebra_A1 (k : Type*) [CommRing k]
+    [IsSemisimpleRing k] :
     Module.Injective (preprojectiveAlgebra k preprojectiveA1Quiver)
       (preprojectiveAlgebra k preprojectiveA1Quiver) := by
   have h : IsSemisimpleRing (preprojectiveAlgebra k preprojectiveA1Quiver) :=
