@@ -109,7 +109,7 @@ private theorem closure_reflections_eq_top :
 
 /-- The `4T3` reference subgroup is the dihedral group of the square. The four-cycle
 `finRotate 4` corresponds to `r 1`, and the reflection `swap 0 2` to `sr 0`. -/
-noncomputable def referenceSubgroupFourMulEquivDihedralGroup :
+noncomputable def referenceSubgroupFourMulEquivDihedralGroupFour :
     referenceSubgroup 4 ⟨2, by simp⟩ ≃* DihedralGroup 4 :=
   (dihedralGroupMulEquiv squareReflection_sq secondSquareReflection_sq
     squareReflection_ne_one secondSquareReflection_ne_one orderOf_reflections_mul
@@ -117,10 +117,10 @@ noncomputable def referenceSubgroupFourMulEquivDihedralGroup :
 
 /-- The generator of the dihedral rotation subgroup acts as the four-cycle of the square. -/
 @[simp]
-theorem coe_referenceSubgroupFourMulEquivDihedralGroup_symm_r_one :
-    (referenceSubgroupFourMulEquivDihedralGroup.symm (DihedralGroup.r 1) : Perm (Fin 4)) =
+theorem coe_referenceSubgroupFourMulEquivDihedralGroupFour_symm_r_one :
+    (referenceSubgroupFourMulEquivDihedralGroupFour.symm (DihedralGroup.r 1) : Perm (Fin 4)) =
       finRotate 4 := by
-  rw [referenceSubgroupFourMulEquivDihedralGroup, MulEquiv.symm_symm,
+  rw [referenceSubgroupFourMulEquivDihedralGroupFour, MulEquiv.symm_symm,
     dihedralGroupMulEquiv_apply, dihedralHom_r]
   have hcast : (ZMod.cast (1 : ZMod 4) : ℤ) = 1 := by decide
   rw [hcast, zpow_one]
@@ -130,43 +130,43 @@ theorem coe_referenceSubgroupFourMulEquivDihedralGroup_symm_r_one :
 
 /-- The distinguished dihedral reflection swaps opposite vertices `0` and `2`. -/
 @[simp]
-theorem coe_referenceSubgroupFourMulEquivDihedralGroup_symm_sr_zero :
-    (referenceSubgroupFourMulEquivDihedralGroup.symm (DihedralGroup.sr 0) : Perm (Fin 4)) =
+theorem coe_referenceSubgroupFourMulEquivDihedralGroupFour_symm_sr_zero :
+    (referenceSubgroupFourMulEquivDihedralGroupFour.symm (DihedralGroup.sr 0) : Perm (Fin 4)) =
       swap 0 2 := by
-  rw [referenceSubgroupFourMulEquivDihedralGroup, MulEquiv.symm_symm,
+  rw [referenceSubgroupFourMulEquivDihedralGroupFour, MulEquiv.symm_symm,
     dihedralGroupMulEquiv_apply, dihedralHom_sr]
   simp
   rfl
 
 /-- The four-cycle in `4T3` maps to the standard dihedral rotation. -/
 @[simp]
-theorem referenceSubgroupFourMulEquivDihedralGroup_finRotate :
-    referenceSubgroupFourMulEquivDihedralGroup
+theorem referenceSubgroupFourMulEquivDihedralGroupFour_finRotate :
+    referenceSubgroupFourMulEquivDihedralGroupFour
       (⟨finRotate 4, by
         simpa [referenceSubgroup_four_two] using
           (Subgroup.subset_closure (by simp) :
             finRotate 4 ∈ Subgroup.closure {finRotate 4, swap 0 2})⟩ :
         referenceSubgroup 4 ⟨2, by simp⟩) =
         DihedralGroup.r 1 := by
-  apply referenceSubgroupFourMulEquivDihedralGroup.symm.injective
+  apply referenceSubgroupFourMulEquivDihedralGroupFour.symm.injective
   apply Subtype.ext
   simpa only [MulEquiv.symm_apply_apply] using
-    coe_referenceSubgroupFourMulEquivDihedralGroup_symm_r_one.symm
+    coe_referenceSubgroupFourMulEquivDihedralGroupFour_symm_r_one.symm
 
 /-- The swap of opposite vertices in `4T3` maps to the standard dihedral reflection. -/
 @[simp]
-theorem referenceSubgroupFourMulEquivDihedralGroup_swap :
-    referenceSubgroupFourMulEquivDihedralGroup
+theorem referenceSubgroupFourMulEquivDihedralGroupFour_swap :
+    referenceSubgroupFourMulEquivDihedralGroupFour
       (⟨swap 0 2, by
         simpa [referenceSubgroup_four_two] using
           (Subgroup.subset_closure (by simp) :
             swap (0 : Fin 4) 2 ∈ Subgroup.closure {finRotate 4, swap 0 2})⟩ :
         referenceSubgroup 4 ⟨2, by simp⟩) =
         DihedralGroup.sr 0 := by
-  apply referenceSubgroupFourMulEquivDihedralGroup.symm.injective
+  apply referenceSubgroupFourMulEquivDihedralGroupFour.symm.injective
   apply Subtype.ext
   simpa only [MulEquiv.symm_apply_apply] using
-    coe_referenceSubgroupFourMulEquivDihedralGroup_symm_sr_zero.symm
+    coe_referenceSubgroupFourMulEquivDihedralGroupFour_symm_sr_zero.symm
 
 /-- A conjugator from the wreath product's four-point permutation image to `4T3`. -/
 noncomputable def wreathTwoFourConjugator : Perm (Fin 4) :=
@@ -189,13 +189,13 @@ noncomputable def wreathTwoMulEquivDihedralGroupFour :
   let e₂ : wreathTwoToPermFour.range ≃* squareGroup :=
     Subgroup.congrOfMapEq (MulAut.conj wreathTwoFourConjugator)
       wreathTwoToPermFour_range_map_conj_eq_referenceSubgroup
-  exact (e₁.trans e₂).trans referenceSubgroupFourMulEquivDihedralGroup
+  exact (e₁.trans e₂).trans referenceSubgroupFourMulEquivDihedralGroupFour
 
 /-- The wreath-product isomorphism transports the four-point action by the chosen conjugator. -/
 @[simp]
-theorem coe_referenceSubgroupFourMulEquivDihedralGroup_symm_wreathTwoMulEquiv
+theorem coe_referenceSubgroupFourMulEquivDihedralGroupFour_symm_wreathTwoMulEquivDihedralGroupFour
     (w : WreathProduct (Multiplicative (ZMod 2)) (Fin 2)) :
-    (referenceSubgroupFourMulEquivDihedralGroup.symm
+    (referenceSubgroupFourMulEquivDihedralGroupFour.symm
       (wreathTwoMulEquivDihedralGroupFour w) : Perm (Fin 4)) =
         (MulAut.conj wreathTwoFourConjugator) (wreathTwoToPermFour w) := by
   simp only [wreathTwoMulEquivDihedralGroupFour, MulEquiv.trans_apply,
