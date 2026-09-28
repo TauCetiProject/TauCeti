@@ -104,7 +104,7 @@ theorem sqrtFive_sq : sqrtFive ^ 2 = 5 := by
   exact h
 
 /-- `√5` generates `ℚ_2(√5)` over `ℚ_2`. -/
-theorem adjoin_sqrtFive : IntermediateField.adjoin ℚ_[2] {sqrtFive} = ⊤ :=
+theorem adjoin_sqrtFive_eq_top : IntermediateField.adjoin ℚ_[2] {sqrtFive} = ⊤ :=
   IntermediateField.adjoin_root_eq_top _
 
 /-- `ℚ_2(√5)` is a quadratic extension of `ℚ_2`. -/
@@ -134,7 +134,7 @@ instance : IsUnramified ℚ_[2] DyadicSqrtFive := by
     have hsqrt : sqrtFive = 2 * goldenRatio - 1 := by
       rw [goldenRatio]
       ring
-    rw [eq_top_iff, ← adjoin_sqrtFive, IntermediateField.adjoin_simple_le_iff, hsqrt]
+    rw [eq_top_iff, ← adjoin_sqrtFive_eq_top, IntermediateField.adjoin_simple_le_iff, hsqrt]
     exact sub_mem (mul_mem (ofNat_mem _ 2) (IntermediateField.mem_adjoin_simple_self _ _))
       (one_mem _)
   · apply Subtype.ext
@@ -162,6 +162,7 @@ theorem inertiaDegree_eq_two : inertiaDegree ℚ_[2] DyadicSqrtFive = 2 := by
   rw [IsUnramified.inertiaDegree_eq_finrank, finrank_eq_two]
 
 /-- The residue field of `ℚ_2(√5)` has `4` elements. -/
+@[simp high] -- Compute the cardinality before `Nat.card_eq_fintype_card` changes its form.
 theorem natCard_residueField : Nat.card 𝓀[DyadicSqrtFive] = 4 := by
   rw [TauCeti.natCard_residueField (K := ℚ_[2]), Padic.natCard_residueField, inertiaDegree_eq_two]
   norm_num
