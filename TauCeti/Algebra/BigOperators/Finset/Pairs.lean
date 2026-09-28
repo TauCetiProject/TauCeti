@@ -151,8 +151,8 @@ pairing. The self-pairing law supplies the correction for each coefficient pair.
 theorem prod_prod_Ioi_scale {A M : Type*} [CommMonoid A] [CommMonoid M] (F : A → A → M)
     {s : A}
     (hmul_right : ∀ a b c, F a (b * c) = F a b * F a c)
-    (hone : ∀ a, F a 1 = 1) (hcomm : ∀ a b, F a b = F b a)
-    (hself : ∀ a, F a a = F a s) (a : A) {n : ℕ} (w : Fin n → A) :
+    (hcomm : ∀ a b, F a b = F b a) (a : A) (hself : F a a = F a s)
+    {n : ℕ} (w : Fin n → A) :
     (∏ i, ∏ j ∈ Ioi i, F (a * w i) (a * w j)) =
       (∏ i, ∏ j ∈ Ioi i, F (w i) (w j)) *
         F a s ^ n.choose 2 * F a (∏ i, w i) ^ (n - 1) := by
@@ -162,35 +162,44 @@ theorem prod_prod_Ioi_scale {A M : Type*} [CommMonoid A] [CommMonoid M] (F : A �
       F (a * b) (a * c) = F b c * F a s * F a b * F a c := by
     rw [hmul_left, hmul_right, hmul_right, hself, hcomm b a]
     ac_rfl
-  let h₁ : A →* M := {
-    toFun := F a
-    map_one' := hone a
-    map_mul' := hmul_right a }
+  have hprod_nonempty {k : ℕ} (v : Fin (k + 1) → A) :
+      (∏ i, F a (v i)) = F a (∏ i, v i) := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      calc
+        (∏ i, F a (v i)) = F a (v 0) * ∏ i : Fin (k + 1), F a (v i.succ) :=
+          Fin.prod_univ_succ _
+        _ = F a (v 0) * F a (∏ i : Fin (k + 1), v i.succ) :=
+          congrArg (F a (v 0) * ·) (ih (fun i => v i.succ))
+        _ = F a (∏ i, v i) := by rw [Fin.prod_univ_succ v, hmul_right]
   induction n with
   | zero => simp
   | succ n ih =>
-    let w₀ := Fin.init w
-    let b := w (Fin.last n)
-    have hw : w = Fin.snoc w₀ b := (Fin.snoc_init_self w).symm
-    rw [hw]
-    have hs (i : Fin (n + 1)) :
-        a * Fin.snoc (α := fun _ => A) w₀ b i =
-          Fin.snoc (α := fun _ => A) (fun j => a * w₀ j) (a * b) i := by
-      rcases i.eq_castSucc_or_eq_last with ⟨j, rfl⟩ | rfl <;> simp
-    simp_rw [hs]
-    have hprod : (∏ i, F a (w₀ i)) = F a (∏ i, w₀ i) :=
-      (map_prod h₁ w₀ Finset.univ).symm
-    have hchoose : (n + 1).choose 2 = n.choose 2 + n := by
-      rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm]
-    rw [prod_prod_Ioi_snoc F (fun j => a * w₀ j) (a * b),
-      prod_prod_Ioi_snoc F w₀ b, ih w₀, Fin.prod_snoc, Nat.add_sub_cancel]
-    simp_rw [hmulmul]
-    simp only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-      hprod, hmul_right, mul_pow, hchoose, pow_add]
     cases n with
-    | zero => simp [hone]
+    | zero => simp
     | succ n =>
-      rw [Nat.add_sub_cancel, pow_succ (F a (∏ i, w₀ i)) n]
+      let w₀ := Fin.init w
+      let b := w (Fin.last (n + 1))
+      have hw : w = Fin.snoc w₀ b := (Fin.snoc_init_self w).symm
+      rw [hw]
+      have hs (i : Fin ((n + 1) + 1)) :
+          a * Fin.snoc (α := fun _ => A) w₀ b i =
+            Fin.snoc (α := fun _ => A) (fun j => a * w₀ j) (a * b) i := by
+        rcases i.eq_castSucc_or_eq_last with ⟨j, rfl⟩ | rfl <;> simp
+      simp_rw [hs]
+      have hprod : (∏ i, F a (w₀ i)) = F a (∏ i, w₀ i) :=
+        hprod_nonempty w₀
+      have hchoose : ((n + 1) + 1).choose 2 = (n + 1).choose 2 + (n + 1) := by
+        rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm]
+      rw [prod_prod_Ioi_snoc F (fun j => a * w₀ j) (a * b),
+        prod_prod_Ioi_snoc F w₀ b, ih w₀, Fin.prod_snoc, Nat.add_sub_cancel]
+      simp_rw [hmulmul]
+      simp only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+        hprod, hmul_right, mul_pow, hchoose, pow_add]
+      rw [Nat.add_sub_cancel, pow_succ (F a (∏ i, w₀ i)) n,
+        pow_succ (F a b) n]
+      simp only [pow_one]
       ac_nf
 
 /-- **A sum over all ordered pairs, folded onto the increasing ones.** A function vanishing on the

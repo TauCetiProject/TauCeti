@@ -106,8 +106,8 @@ private theorem hasseProd_scale (a : Kˣ) {n : ℕ} (w : Fin n → Kˣ) :
         quaternionClass a (-1) ^ n.choose 2 *
         quaternionClass a (∏ i, w i) ^ (n - 1) :=
   prod_prod_Ioi_scale (s := -1) quaternionClass
-    (fun a b c => quaternionClass_mul a b c) quaternionClass_one_right
-    quaternionClass_comm quaternionClass_self a w
+    (fun a b c => quaternionClass_mul a b c) quaternionClass_comm a
+    (quaternionClass_self a) w
 
 /-- **The Hasse invariant of an isometry class of regular quadratic forms**: for a diagonal
 presentation `⟨a₁, …, aₙ⟩` of the class, the product `∏_{i<j} [(aᵢ, aⱼ)]` of quaternion symbols in
