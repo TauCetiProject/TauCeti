@@ -17,11 +17,13 @@ Let `A` be a Tate ring, `A₀` a ring of definition, `ϖ ∈ A₀` a pseudounifo
 as a `SubmodulesBasis`, which is Mathlib's machinery for turning such a family into a topology;
 `SubmodulesBasis.topology` and `.nonarchimedean` then apply.
 
-Two of the results below say nothing about `ϖ`: that the family is a neighbourhood basis at `0`,
-and that mutually cofinal families induce the same topology. Both are proved for an arbitrary
-`SubmodulesBasis` in `TauCeti/Topology/Algebra/Nonarchimedean/SubmodulesBasis.lean`, and
-`hasBasis_nhds_zero_pow_smul` and `submodulesBasis_pow_smul_topology_eq` are those two lemmas
-at this family.
+The result that the family is a neighbourhood basis at `0` says nothing about `ϖ`: it is proved
+for an arbitrary `SubmodulesBasis` in
+`TauCeti/Topology/Algebra/Nonarchimedean/SubmodulesBasis.lean`, and
+`hasBasis_nhds_zero_pow_smul` specializes it to this family. The abstract result that mutually
+cofinal families induce the same topology is `SubmodulesBasis.topology_eq`;
+`submodulesBasis_pow_smul_topology_eq` combines it with the lattice- and
+pseudouniformiser-cofinality theorems below.
 
 **Two of Proposition 6.18(1)'s clauses are established for the induced topology** — that it is an
 `A`-module topology (`powSmulModuleFilterBasis`, since `SubmodulesBasis.toModuleFilterBasis`
