@@ -45,22 +45,25 @@ theorem exists_pow_smul_mem_of_fg (P Q : PairOfDefinition A) {s : A}
     (hspan : (M₁ : Set M) ⊆ Submodule.span A (M₀ : Set M)) (hfg : M₁.FG) :
     ∃ k : ℕ, ∀ x ∈ M₁, s ^ k • x ∈ M₀ := by
   obtain ⟨G, hG⟩ := hfg
-  choose! f hf using fun (z : M) (hz : z ∈ Submodule.span A (M₀ : Set M)) ↦
-    P.exists_pow_smul_mem hs hsP M₀ hz
-  have hGmem : ∀ g ∈ (G : Set M), g ∈ Submodule.span A (M₀ : Set M) :=
-    fun g hg ↦ hspan (hG ▸ Submodule.subset_span hg)
+  let N := Submodule.span P.ringOfDefinition (G : Set M)
+  have hNspan : (N : Set M) ⊆ Submodule.span A (M₀ : Set M) := by
+    intro x hx
+    induction hx using Submodule.span_induction with
+    | mem g hg => exact hspan (hG ▸ Submodule.subset_span hg)
+    | zero => exact (Submodule.span A (M₀ : Set M)).zero_mem
+    | add x y _ _ ihx ihy => exact (Submodule.span A (M₀ : Set M)).add_mem ihx ihy
+    | smul a x _ ih => exact (Submodule.span A (M₀ : Set M)).smul_mem (a : A) ih
+  obtain ⟨d, hd⟩ := P.exists_pow_smul_le hs hsP M₀ N hNspan
+    (Submodule.fg_span G.finite_toSet)
   obtain ⟨j, hj⟩ := Q.isBounded_ringOfDefinition.exists_pow_mul_subset hs
     (P.isOpen_ringOfDefinition.mem_nhds P.ringOfDefinition.zero_mem)
   have hQ (a : Q.ringOfDefinition) : s ^ j * (a : A) ∈ P.ringOfDefinition := by
     apply hj
     exact ⟨s ^ j, by simp, a, a.property, rfl⟩
-  let d := G.sup f
   have hgen (g : M) (h : g ∈ (G : Set M)) : s ^ d • g ∈ M₀ := by
-    obtain ⟨e, he⟩ := Nat.exists_eq_add_of_le (Finset.le_sup (f := f) h)
-    -- The chosen maximum differs from this generator's exponent by `e`.
-    change d = f g + e at he
-    rw [he, Nat.add_comm]
-    exact M₀.pow_add_smul_mem hsP e (f g) g (hf g (hGmem g h))
+    have hmem := hd (Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mpr
+      ⟨g, Submodule.subset_span h, rfl⟩)
+    simpa only [SetLike.mem_coe, Subring.smul_def, SubmonoidClass.coe_pow] using hmem
   have key : ∀ x ∈ M₁, ∀ a : Q.ringOfDefinition,
       s ^ (j + d) • ((a : A) • x) ∈ M₀ := by
     intro x hx
