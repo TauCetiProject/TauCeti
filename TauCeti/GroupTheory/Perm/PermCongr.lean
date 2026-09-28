@@ -28,6 +28,7 @@ the acting group: an action of `G` on `α` and the action of the subgroup
 * `Equiv.conj_eq_permCongrHom`: conjugation by a permutation is transport along that
   permutation.
 * `Equiv.isPretransitive_map_permCongrHom_iff`: transport preserves transitivity.
+* `Equiv.map_inf_alternatingGroup_permCongrHom`: transport preserves the even part of a subgroup.
 * `Equiv.isPretransitive_even_map_permCongrHom_iff`: transport preserves transitivity of the
   even part of a subgroup.
 * `Equiv.isPreprimitive_map_permCongrHom_iff`: transport preserves primitivity.
@@ -81,13 +82,11 @@ theorem map_permCongrHom_eq_map_conj (e e' : α ≃ β) (G : Subgroup (Perm α))
 
 variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 
-/-- Transport along an equivalence preserves transitivity of the intersection of a permutation
-subgroup with the alternating group. -/
-theorem isPretransitive_even_map_permCongrHom_iff (e : α ≃ β)
-    (G : Subgroup (Perm α)) :
-    IsPretransitive ((G.map e.permCongrHom.toMonoidHom ⊓ alternatingGroup β) :
-      Subgroup (Perm β)) β ↔
-    IsPretransitive ((G ⊓ alternatingGroup α) : Subgroup (Perm α)) α := by
+/-- Transport along an equivalence carries the even part of a permutation subgroup to the
+even part of its transport. -/
+theorem map_inf_alternatingGroup_permCongrHom (e : α ≃ β) (G : Subgroup (Perm α)) :
+    ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map e.permCongrHom.toMonoidHom =
+      G.map e.permCongrHom.toMonoidHom ⊓ alternatingGroup β := by
   have hA : (alternatingGroup α).map e.permCongrHom.toMonoidHom =
       alternatingGroup β := by
     ext σ
@@ -95,12 +94,17 @@ theorem isPretransitive_even_map_permCongrHom_iff (e : α ≃ β)
       Equiv.permCongrHom_symm]
     change Perm.sign (e.symm.permCongr σ) = 1 ↔ Perm.sign σ = 1
     rw [Equiv.Perm.sign_permCongr]
-  have hmap :
-      ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map e.permCongrHom.toMonoidHom =
-      G.map e.permCongrHom.toMonoidHom ⊓ alternatingGroup β := by
-    rw [Subgroup.map_inf G (alternatingGroup α)
-      e.permCongrHom.toMonoidHom e.permCongrHom.injective, hA]
-  rw [← hmap, isPretransitive_map_permCongrHom_iff]
+  rw [Subgroup.map_inf G (alternatingGroup α)
+    e.permCongrHom.toMonoidHom e.permCongrHom.injective, hA]
+
+/-- Transport along an equivalence preserves transitivity of the intersection of a permutation
+subgroup with the alternating group. -/
+theorem isPretransitive_even_map_permCongrHom_iff (e : α ≃ β)
+    (G : Subgroup (Perm α)) :
+    IsPretransitive ((G.map e.permCongrHom.toMonoidHom ⊓ alternatingGroup β) :
+      Subgroup (Perm β)) β ↔
+    IsPretransitive ((G ⊓ alternatingGroup α) : Subgroup (Perm α)) α := by
+  rw [← map_inf_alternatingGroup_permCongrHom, isPretransitive_map_permCongrHom_iff]
 
 /-- Transport along an equivalence preserves containment in the alternating group, since it
 preserves the sign of every permutation. -/

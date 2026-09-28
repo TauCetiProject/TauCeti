@@ -63,10 +63,8 @@ theorem isPretransitive_referenceSubgroup_four_two_even :
         alternatingGroup (Fin 4) := by
     exact le_inf referenceSubgroup_four_one_le_referenceSubgroup_four_two
       referenceSubgroup_four_one_le_alternatingGroup
-  constructor
-  intro x y
-  obtain ⟨g, hg⟩ := (isPretransitive_referenceSubgroup 4 ⟨1, by simp⟩).exists_smul_eq x y
-  exact ⟨⟨g, hle g.2⟩, hg⟩
+  exact IsPretransitive.of_compHom (Subgroup.inclusion hle)
+    (h := isPretransitive_referenceSubgroup 4 ⟨1, by simp⟩)
 
 /-- The even part of a transitive quartic permutation group is transitive exactly when the group
 is not the cyclic group `4T1`. In particular, this separates the cyclic and dihedral groups,
