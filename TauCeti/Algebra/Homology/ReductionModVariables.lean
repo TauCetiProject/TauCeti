@@ -65,11 +65,12 @@ namespace LinearMap
 
 open MvPolynomial
 
-variable {R σ ι κ : Type*} [CommRing R]
+variable {R σ ι κ : Type*}
 
 section Coefficients
 
-variable {f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
+variable [CommRing R]
+  {f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
   {f₀ : (ι →₀ R) →ₗ[R] (κ →₀ R)}
 
 /-- The matrix coefficients of the reduction of `f` modulo the variables are the constant
@@ -108,7 +109,8 @@ end Coefficients
 
 section Exactness
 
-variable {d : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (ι →₀ MvPolynomial σ R)}
+variable [CommRing R]
+  {d : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (ι →₀ MvPolynomial σ R)}
   {d₀ : (ι →₀ R) →ₗ[R] (ι →₀ R)} {w : σ → ℤ} {g : ι → ℤ} {r : ℤ}
 
 /-- A chain all of whose terms `V ^ e • single i a` have degree `g i + weight w e` at least `a`. -/
@@ -293,7 +295,7 @@ end Exactness
 
 section Reduction
 
-variable {μ : Type*}
+variable [CommSemiring R] {μ : Type*}
 
 /-- If `f₀` and `g₀` are the reductions of `f` and `g` modulo the variables, then `g₀ ∘ f₀` is the
 reduction of `g ∘ f`. -/
@@ -327,7 +329,7 @@ end Reduction
 
 section QuasiIso
 
-variable {S : Type*} [CommRing S]
+variable [CommRing R] {S : Type*} [CommRing S]
 
 /-- The mapping cone of `f` on `(ι ⊕ κ) →₀ S`, transported from `(ι →₀ S) × (κ →₀ S)`. -/
 private noncomputable abbrev sumMappingCone (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
