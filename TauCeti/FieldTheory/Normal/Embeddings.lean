@@ -39,6 +39,8 @@ separability the count drops, and without normality the minimal polynomials need
 * `AlgEquiv.isPretransitiveAlgHom`: over a normal `M / F`, any two embeddings lie in one orbit.
 * `TauCeti.FieldTheory.stabilizer_algHom_eq_fixingSubgroup`: the stabilizer of an embedding `φ`
   is the subgroup fixing `φ(L)`.
+* `AlgHom.fixingSubgroup_fieldRange_conj`: the fixing subgroups of two embedded
+  images are conjugate in a normal ambient extension.
 * `TauCeti.FieldTheory.fixingSubgroupQuotientEquivAlgHom`: over a normal `M / F`, the cosets of
   that subgroup are the embeddings of `L` into `M`.
 * `TauCeti.FieldTheory.eq_one_of_forall_smul_eq`: if the embedded images generate `M`, an
@@ -143,6 +145,35 @@ theorem stabilizer_algHom_eq_fixingSubgroup (φ : L →ₐ[F] M) :
     ext x
     rw [AlgEquiv.smul_algHom_apply]
     exact h (φ x) ⟨x, rfl⟩
+
+end TauCeti.FieldTheory
+
+namespace AlgHom
+
+variable {F L M : Type*} [Field F] [Field L] [Field M] [Algebra F L] [Algebra F M]
+
+/-- The fixing subgroups of the images of two embeddings into a normal extension are
+conjugate. No finiteness assumption on the embedded extension is needed. -/
+theorem fixingSubgroup_fieldRange_conj [Normal F M] (φ ψ : L →ₐ[F] M) :
+    ∃ g : M ≃ₐ[F] M,
+      ψ.fieldRange.fixingSubgroup =
+        φ.fieldRange.fixingSubgroup.map (MulAut.conj g).toMonoidHom := by
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (M ≃ₐ[F] M) φ ψ
+  refine ⟨g, ?_⟩
+  calc
+    ψ.fieldRange.fixingSubgroup = MulAction.stabilizer (M ≃ₐ[F] M) ψ :=
+      (TauCeti.FieldTheory.stabilizer_algHom_eq_fixingSubgroup ψ).symm
+    _ = MulAction.stabilizer (M ≃ₐ[F] M) (g • φ) := by rw [hg]
+    _ = (MulAction.stabilizer (M ≃ₐ[F] M) φ).map (MulAut.conj g).toMonoidHom :=
+      MulAction.stabilizer_smul_eq_stabilizer_map_conj g φ
+    _ = φ.fieldRange.fixingSubgroup.map (MulAut.conj g).toMonoidHom := by
+      rw [TauCeti.FieldTheory.stabilizer_algHom_eq_fixingSubgroup]
+
+end AlgHom
+
+namespace TauCeti.FieldTheory
+
+variable {F L M : Type*} [Field F] [Field L] [Field M] [Algebra F L] [Algebra F M]
 
 /-- **The cosets of `Gal(M / φ(L))` are the embeddings of `L` into `M`** for a normal `M / F`,
 the coset of `g` corresponding to `g ∘ φ`. -/
