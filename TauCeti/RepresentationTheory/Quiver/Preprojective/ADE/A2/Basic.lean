@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Truncation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 
@@ -16,6 +17,10 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 The doubled one-arrow quiver has two length-two paths, one backtrack at each vertex. Its local
 preprojective relations kill both paths, so the preprojective algebra is the arrow-ideal-square-zero
 quotient. In particular it is finite-dimensional over any field.
+
+Over any commutative ring this quotient is free on the two vertex idempotents and the two
+oppositely oriented arrows, `TauCeti.preprojectiveA2Basis`; the products of these basis vectors are
+recorded by `TauCeti.preprojectiveA2Basis_mul`.
 
 The orientation is from the smaller to the larger Bourbaki-numbered vertex. The ideal computation
 is over a commutative ring; finite-dimensionality uses a field.
@@ -129,10 +134,18 @@ def preprojectiveA2ForwardArrow : (Symmetrify.of.obj preprojectiveA2VertexZero �
 def preprojectiveA2ReverseArrow : (Symmetrify.of.obj preprojectiveA2VertexOne ⟶
     Symmetrify.of.obj preprojectiveA2VertexZero) := Sum.inr preprojectiveA2Arrow
 
-private theorem reverse_forwardArrow :
+/-- The formal reverse of the forward arrow is the reverse arrow. Not a simp lemma: simp rewrites
+the left side with Mathlib's `Quiver.symmetrify_reverse`. -/
+theorem reverse_preprojectiveA2ForwardArrow :
     Quiver.reverse preprojectiveA2ForwardArrow = preprojectiveA2ReverseArrow := by
   simp [preprojectiveA2ForwardArrow, preprojectiveA2ReverseArrow, symmetrify_reverse]
   rfl
+
+/-- The formal reverse of the reverse arrow is the forward arrow. Not a simp lemma, for the same
+reason as `TauCeti.reverse_preprojectiveA2ForwardArrow`. -/
+theorem reverse_preprojectiveA2ReverseArrow :
+    Quiver.reverse preprojectiveA2ReverseArrow = preprojectiveA2ForwardArrow := by
+  rw [← reverse_preprojectiveA2ForwardArrow, Quiver.reverse_reverse]
 
 /-- The two vertices of the doubled `A₂` quiver. -/
 noncomputable def preprojectiveA2DoubledVertexEquiv :
@@ -142,6 +155,7 @@ noncomputable def preprojectiveA2DoubledVertexEquiv :
       (Equiv.ofBijective _ symmetrify_of_obj_bijective)
 
 /-- The vertex numbered zero under `TauCeti.preprojectiveA2DoubledVertexEquiv`. -/
+@[simp]
 theorem preprojectiveA2DoubledVertexEquiv_zero :
     preprojectiveA2DoubledVertexEquiv 0 = Symmetrify.of.obj preprojectiveA2VertexZero := by
   simp [preprojectiveA2DoubledVertexEquiv, preprojectiveA2VertexZero,
@@ -149,6 +163,7 @@ theorem preprojectiveA2DoubledVertexEquiv_zero :
   rfl
 
 /-- The vertex numbered one under `TauCeti.preprojectiveA2DoubledVertexEquiv`. -/
+@[simp]
 theorem preprojectiveA2DoubledVertexEquiv_one :
     preprojectiveA2DoubledVertexEquiv 1 = Symmetrify.of.obj preprojectiveA2VertexOne := by
   simp [preprojectiveA2DoubledVertexEquiv, preprojectiveA2VertexOne,
@@ -278,7 +293,7 @@ private theorem mul_arrows_mem_preprojectiveIdeal (k : Type*) [CommRing k]
       change ofArrow (Quiver.reverse preprojectiveA2ForwardArrow) *
         ofArrow preprojectiveA2ForwardArrow ∈
         preprojectiveIdeal k preprojectiveA2Quiver at h
-      rw [reverse_forwardArrow] at h
+      rw [reverse_preprojectiveA2ForwardArrow] at h
       exact h
   · rcases preprojectiveA2DoubledArrow_cases b with ⟨hj', hl, hb⟩ | ⟨hj', hl, hb⟩
     · subst i; subst j; subst l
@@ -291,7 +306,7 @@ private theorem mul_arrows_mem_preprojectiveIdeal (k : Type*) [CommRing k]
       change ofArrow preprojectiveA2ForwardArrow *
         ofArrow (Quiver.reverse preprojectiveA2ForwardArrow) ∈
         preprojectiveIdeal k preprojectiveA2Quiver at h
-      rw [reverse_forwardArrow] at h
+      rw [reverse_preprojectiveA2ForwardArrow] at h
       exact h
     · exact (preprojectiveA2DoubledVertexZero_ne_one (hj'.symm.trans hj).symm).elim
 
@@ -359,6 +374,145 @@ theorem preprojectiveAlgebraEquivA2_preprojectiveMk (k : Type*) [CommRing k]
       Ideal.Quotient.mk (arrowIdeal k (Symmetrify preprojectiveA2Quiver) ^ 2) x := by
   rw [preprojectiveMk_apply, preprojectiveAlgebraEquivA2]
   exact Ideal.quotientEquivAlgOfEq_mk k (preprojectiveIdeal_A2_eq_arrowIdeal_sq k) x
+
+/-! ### The path basis -/
+
+private def a2ShortPath : Fin 4 → ShortPath (Symmetrify preprojectiveA2Quiver) 2
+  | 0 => ⟨⟨Symmetrify.of.obj preprojectiveA2VertexZero,
+      Symmetrify.of.obj preprojectiveA2VertexZero, .nil⟩, by simp⟩
+  | 1 => ⟨⟨Symmetrify.of.obj preprojectiveA2VertexOne,
+      Symmetrify.of.obj preprojectiveA2VertexOne, .nil⟩, by simp⟩
+  | 2 => ⟨⟨Symmetrify.of.obj preprojectiveA2VertexZero,
+      Symmetrify.of.obj preprojectiveA2VertexOne, preprojectiveA2ForwardArrow.toPath⟩, by simp⟩
+  | 3 => ⟨⟨Symmetrify.of.obj preprojectiveA2VertexOne,
+      Symmetrify.of.obj preprojectiveA2VertexZero, preprojectiveA2ReverseArrow.toPath⟩, by simp⟩
+
+private theorem a2ShortPath_injective : Function.Injective a2ShortPath := by
+  intro i j h
+  apply Fin.ext
+  have hc := congrArg
+    (fun x : ShortPath (Symmetrify preprojectiveA2Quiver) 2 =>
+      2 * x.1.2.2.length + (preprojectiveA2DoubledVertexEquiv.symm x.1.1).val) h
+  fin_cases i <;> fin_cases j <;>
+    simp [a2ShortPath] at hc ⊢
+
+private theorem a2ShortPath_surjective : Function.Surjective a2ShortPath := by
+  rintro ⟨⟨i, j, p⟩, hp⟩
+  dsimp only at hp
+  have hlen : p.length = 0 ∨ p.length = 1 := by omega
+  rcases hlen with hlen | hlen
+  · obtain rfl := Path.eq_of_length_zero p hlen
+    obtain rfl := Path.eq_nil_of_length_zero p hlen
+    rcases preprojectiveA2DoubledVertex_cases i with rfl | rfl
+    · exact ⟨0, rfl⟩
+    · exact ⟨1, rfl⟩
+  · obtain ⟨c, e, q, hq, rfl⟩ := Path.eq_toPath_comp_of_length_eq_succ p hlen
+    obtain rfl := Path.eq_of_length_zero q hq
+    obtain rfl := Path.eq_nil_of_length_zero q hq
+    rcases preprojectiveA2DoubledArrow_cases e with
+      ⟨rfl, rfl, he⟩ | ⟨rfl, rfl, he⟩
+    · cases he
+      exact ⟨2, rfl⟩
+    · cases he
+      exact ⟨3, rfl⟩
+
+private theorem a2ShortPath_bijective : Function.Bijective a2ShortPath :=
+  ⟨a2ShortPath_injective, a2ShortPath_surjective⟩
+
+private noncomputable def a2ShortPathEquiv :
+    Fin 4 ≃ ShortPath (Symmetrify preprojectiveA2Quiver) 2 :=
+  Equiv.ofBijective a2ShortPath a2ShortPath_bijective
+
+section Basis
+
+variable (k : Type*) [CommRing k]
+
+/-- The basis of the `A₂` preprojective algebra consisting, in order, of the vertex at `0`, the
+vertex at `1`, the arrow `0 → 1`, and its formal reverse `1 → 0`. -/
+noncomputable def preprojectiveA2Basis :
+    Module.Basis (Fin 4) k (preprojectiveAlgebra k preprojectiveA2Quiver) :=
+  (((arrowIdealQuotientBasis k (Symmetrify preprojectiveA2Quiver) 2).reindex
+    a2ShortPathEquiv.symm).map (preprojectiveAlgebraEquivA2 k).symm.toLinearEquiv)
+
+private theorem preprojectiveA2Basis_apply (i : Fin 4) :
+    preprojectiveA2Basis k i =
+      preprojectiveMk k preprojectiveA2Quiver (ofPath (a2ShortPath i).1) := by
+  rw [preprojectiveA2Basis, Module.Basis.map_apply, Module.Basis.reindex_apply,
+    Equiv.symm_symm, AlgEquiv.toLinearEquiv_apply]
+  apply (preprojectiveAlgebraEquivA2 k).injective
+  rw [AlgEquiv.apply_symm_apply, arrowIdealQuotientBasis_apply,
+    preprojectiveAlgebraEquivA2_preprojectiveMk, a2ShortPathEquiv, Equiv.ofBijective_apply]
+
+/-- The first basis vector is the trivial path at vertex zero. -/
+theorem preprojectiveA2Basis_zero :
+    preprojectiveA2Basis k 0 =
+      preprojectiveMk k preprojectiveA2Quiver
+        (ofPath ⟨Symmetrify.of.obj preprojectiveA2VertexZero,
+          Symmetrify.of.obj preprojectiveA2VertexZero, .nil⟩) := by
+  simpa [a2ShortPath] using preprojectiveA2Basis_apply k (0 : Fin 4)
+
+/-- The second basis vector is the trivial path at vertex one. -/
+theorem preprojectiveA2Basis_one :
+    preprojectiveA2Basis k 1 =
+      preprojectiveMk k preprojectiveA2Quiver
+        (ofPath ⟨Symmetrify.of.obj preprojectiveA2VertexOne,
+          Symmetrify.of.obj preprojectiveA2VertexOne, .nil⟩) := by
+  simpa [a2ShortPath] using preprojectiveA2Basis_apply k (1 : Fin 4)
+
+/-- The third basis vector is the forward arrow. -/
+theorem preprojectiveA2Basis_two :
+    preprojectiveA2Basis k 2 = preprojectiveMk k preprojectiveA2Quiver
+      (ofPath ⟨Symmetrify.of.obj preprojectiveA2VertexZero,
+        Symmetrify.of.obj preprojectiveA2VertexOne,
+          preprojectiveA2ForwardArrow.toPath⟩) := by
+  simpa [a2ShortPath] using preprojectiveA2Basis_apply k (2 : Fin 4)
+
+/-- The fourth basis vector is the reverse arrow. -/
+theorem preprojectiveA2Basis_three :
+    preprojectiveA2Basis k 3 = preprojectiveMk k preprojectiveA2Quiver
+      (ofPath ⟨Symmetrify.of.obj preprojectiveA2VertexOne,
+        Symmetrify.of.obj preprojectiveA2VertexZero,
+          preprojectiveA2ReverseArrow.toPath⟩) := by
+  simpa [a2ShortPath] using preprojectiveA2Basis_apply k (3 : Fin 4)
+
+/-- Paths of length at least two vanish in the `A₂` preprojective algebra. -/
+theorem preprojectiveMk_A2_ofPath_eq_zero_of_two_le
+    (p : Quiver.TotalPath (Symmetrify preprojectiveA2Quiver)) (hp : 2 ≤ p.2.2.length) :
+    preprojectiveMk k preprojectiveA2Quiver (ofPath p) = 0 := by
+  rw [preprojectiveMk_eq_zero_iff, ← TwoSidedIdeal.mem_asIdeal,
+    preprojectiveIdeal_A2_eq_arrowIdeal_sq]
+  exact Ideal.pow_le_pow_right hp (ofPath_mem_arrowIdeal_pow p)
+
+/-- The partial multiplication operation on indices of `TauCeti.preprojectiveA2Basis`; `none`
+means that the product is zero. -/
+@[expose] def preprojectiveA2BasisMul : Fin 4 → Fin 4 → Option (Fin 4)
+  | 0, 0 => some 0
+  | 0, 3 => some 3
+  | 1, 1 => some 1
+  | 1, 2 => some 2
+  | 2, 0 => some 2
+  | 3, 1 => some 3
+  | _, _ => none
+
+/-- The multiplication table of `TauCeti.preprojectiveA2Basis`. -/
+theorem preprojectiveA2Basis_mul (i j : Fin 4) :
+    preprojectiveA2Basis k i * preprojectiveA2Basis k j =
+      (preprojectiveA2BasisMul i j).elim 0 (preprojectiveA2Basis k) := by
+  fin_cases i <;> fin_cases j <;>
+    simp only [preprojectiveA2BasisMul, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Fin.isValue, Option.elim_some, Option.elim_none]
+  all_goals simp only [preprojectiveA2Basis_apply, a2ShortPath]
+  all_goals rw [← map_mul]
+  all_goals first
+    | rw [ofPath_mul_ofPath_of_not_composable preprojectiveA2DoubledVertexZero_ne_one, map_zero]
+    | rw [ofPath_mul_ofPath_of_not_composable preprojectiveA2DoubledVertexZero_ne_one.symm,
+        map_zero]
+    | rw [ofPath_mul_ofPath_of_comp, Path.comp_nil]
+    | rw [ofPath_mul_ofPath_of_comp, Path.nil_comp]
+    | (rw [ofPath_mul_ofPath_of_comp]
+       exact preprojectiveMk_A2_ofPath_eq_zero_of_two_le k _ (by simp))
+
+end Basis
 
 /-- **The `A₂` preprojective algebra is finite-dimensional** over every field. -/
 noncomputable instance instFiniteDimensionalPreprojectiveAlgebraA2 (k : Type*) [Field k] :
