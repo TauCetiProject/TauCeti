@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
 # The isomorphism of point groups induced by a change of variables
@@ -93,16 +94,6 @@ private lemma mapVariableChangeFun_injective :
     exact ⟨hx,
       (C.u.isUnit.pow 3).mul_left_cancel (by linear_combination hY - (C.u : R) ^ 2 * C.s * hx)⟩
 
-private lemma cast_zero {V V' : WeierstrassCurve R} (h : V = V') :
-    Equiv.cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) 0 = 0 := by
-  subst h; rfl
-
-private lemma cast_some {V V' : WeierstrassCurve R} (h : V = V') {x y : R}
-    (hns : V.toAffine.Nonsingular x y) :
-    Equiv.cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) (.some x y hns)
-      = .some x y (h ▸ hns) := by
-  subst h; rfl
-
 /-- The inverse map `W.Point → (C • W).Point`, induced by `C⁻¹` via `C⁻¹ • (C • W) = W`. -/
 private def mapVariableChangeInvFun (P : W.toAffine.Point) : (C • W).toAffine.Point :=
   mapVariableChangeFun (C • W) C⁻¹
@@ -115,13 +106,14 @@ private lemma mapVariableChangeInvFun_some {x y : R} (h : W.toAffine.Nonsingular
           (((C⁻¹).u : R) ^ 3 * y + ((C⁻¹).u : R) ^ 2 * (C⁻¹).s * x + (C⁻¹).t)
           ((variableChange_nonsingular (C • W) C⁻¹ x y).mpr
             ((inv_smul_smul C W).symm ▸ h)) := by
-  rw [mapVariableChangeInvFun, cast_some (inv_smul_smul C W).symm, mapVariableChangeFun_some]
+  rw [mapVariableChangeInvFun, Equiv.cast_apply, cast_some (inv_smul_smul C W).symm,
+    mapVariableChangeFun_some]
 
 private lemma mapVariableChangeFun_mapVariableChangeInvFun (P : W.toAffine.Point) :
     mapVariableChangeFun W C (mapVariableChangeInvFun W C P) = P := by
   rcases P with _ | ⟨x, y, h⟩
-  · rw [mapVariableChangeInvFun, ← zero_def, cast_zero (inv_smul_smul C W).symm,
-      mapVariableChangeFun_zero, mapVariableChangeFun_zero]
+  · rw [mapVariableChangeInvFun, ← zero_def, Equiv.cast_apply,
+      cast_zero (inv_smul_smul C W).symm, mapVariableChangeFun_zero, mapVariableChangeFun_zero]
   · have hu : (C.u : R) * ((C.u⁻¹ : Rˣ) : R) = 1 := C.u.mul_inv
     rw [mapVariableChangeInvFun_some, mapVariableChangeFun_some]
     simp only [some.injEq, VariableChange.inv_def]
