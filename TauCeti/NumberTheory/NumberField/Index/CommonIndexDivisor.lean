@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind
+import TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind
 public import TauCeti.NumberTheory.NumberField.Index.Exponent
 public import TauCeti.RingTheory.Polynomial.Monic.Irreducible
 

@@ -214,7 +214,7 @@ omit hgen in
 open scoped Classical in
 /-- A Frobenius above any prime away from `23` acts on the roots of the defining cubic
 with cycle lengths given by its factor degrees modulo that prime. -/
-theorem fullCycleType_frob_eq_factorDegrees_of_not_dvd_neg_twenty_three
+theorem fullCycleType_galActionHom_restrict_eq_factorDegrees_of_not_dvd_neg_twenty_three
     {M : Type*} [Field M] [NumberField M] (p : ℕ) [Fact p.Prime]
     (hp : ¬ (p : ℤ) ∣ (-23 : ℤ))
     [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
@@ -240,7 +240,7 @@ theorem fullCycleType_frob_eq_factorDegrees_of_not_dvd_neg_twenty_three
 omit hgen in
 open scoped Classical in
 /-- A Frobenius at `2` has cycle type `{3}` on the roots of the defining cubic. -/
-theorem fullCycleType_frob_two
+theorem fullCycleType_galActionHom_restrict_two_of_isArithFrobAt
     {M : Type*} [Field M] [NumberField M]
     [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(2 : ℤ)})]
@@ -248,13 +248,13 @@ theorem fullCycleType_frob_two
     (Polynomial.Gal.galActionHom (minpoly ℚ (θ : K)) M
       (Polynomial.Gal.restrict (minpoly ℚ (θ : K)) M σ)).fullCycleType = {3} := by
   simpa only [factorDegrees_two] using
-    fullCycleType_frob_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 2
+    fullCycleType_galActionHom_restrict_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 2
       (by norm_num) Q hσ
 
 omit hgen in
 open scoped Classical in
 /-- A Frobenius at `3` has cycle type `{3}` on the roots of the defining cubic. -/
-theorem fullCycleType_frob_three
+theorem fullCycleType_galActionHom_restrict_three_of_isArithFrobAt
     {M : Type*} [Field M] [NumberField M]
     [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(3 : ℤ)})]
@@ -262,13 +262,13 @@ theorem fullCycleType_frob_three
     (Polynomial.Gal.galActionHom (minpoly ℚ (θ : K)) M
       (Polynomial.Gal.restrict (minpoly ℚ (θ : K)) M σ)).fullCycleType = {3} := by
   simpa only [factorDegrees_three] using
-    fullCycleType_frob_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 3
+    fullCycleType_galActionHom_restrict_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 3
       (by norm_num) Q hσ
 
 omit hgen in
 open scoped Classical in
 /-- A Frobenius at `5` has cycle type `{1, 2}` on the roots of the defining cubic. -/
-theorem fullCycleType_frob_five
+theorem fullCycleType_galActionHom_restrict_five_of_isArithFrobAt
     {M : Type*} [Field M] [NumberField M]
     [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(5 : ℤ)})]
@@ -276,13 +276,13 @@ theorem fullCycleType_frob_five
     (Polynomial.Gal.galActionHom (minpoly ℚ (θ : K)) M
       (Polynomial.Gal.restrict (minpoly ℚ (θ : K)) M σ)).fullCycleType = {1, 2} := by
   simpa only [factorDegrees_five] using
-    fullCycleType_frob_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 5
+    fullCycleType_galActionHom_restrict_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 5
       (by norm_num) Q hσ
 
 omit hgen in
 open scoped Classical in
 /-- A Frobenius at `7` has cycle type `{1, 2}` on the roots of the defining cubic. -/
-theorem fullCycleType_frob_seven
+theorem fullCycleType_galActionHom_restrict_seven_of_isArithFrobAt
     {M : Type*} [Field M] [NumberField M]
     [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(7 : ℤ)})]
@@ -290,13 +290,13 @@ theorem fullCycleType_frob_seven
     (Polynomial.Gal.galActionHom (minpoly ℚ (θ : K)) M
       (Polynomial.Gal.restrict (minpoly ℚ (θ : K)) M σ)).fullCycleType = {1, 2} := by
   simpa only [factorDegrees_seven] using
-    fullCycleType_frob_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 7
+    fullCycleType_galActionHom_restrict_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 7
       (by norm_num) Q hσ
 
 omit hgen in
 open scoped Classical in
 /-- A Frobenius at `59` has cycle type `{1, 1, 1}` on the roots of the defining cubic. -/
-theorem fullCycleType_frob_fifty_nine
+theorem fullCycleType_galActionHom_restrict_fifty_nine_of_isArithFrobAt
     {M : Type*} [Field M] [NumberField M]
     [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(59 : ℤ)})]
@@ -304,14 +304,14 @@ theorem fullCycleType_frob_fifty_nine
     (Polynomial.Gal.galActionHom (minpoly ℚ (θ : K)) M
       (Polynomial.Gal.restrict (minpoly ℚ (θ : K)) M σ)).fullCycleType = {1, 1, 1} := by
   simpa only [factorDegrees_fifty_nine] using
-    fullCycleType_frob_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 59
+    fullCycleType_galActionHom_restrict_eq_factorDegrees_of_not_dvd_neg_twenty_three hmin 59
       (by norm_num) Q hσ
 
 omit hgen in
 open scoped Classical in
 /-- At `59`, a Frobenius restricts to the identity in the splitting field of the defining
 cubic, since it fixes all three roots. -/
-theorem frob_restrict_eq_one_fifty_nine
+theorem restrict_eq_one_fifty_nine_of_isArithFrobAt
     {M : Type*} [Field M] [NumberField M]
     [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(59 : ℤ)})]
@@ -320,7 +320,7 @@ theorem frob_restrict_eq_one_fifty_nine
   let π := Polynomial.Gal.galActionHom (minpoly ℚ (θ : K)) M
     (Polynomial.Gal.restrict (minpoly ℚ (θ : K)) M σ)
   have htype : π.fullCycleType = ({1, 1, 1} : Multiset ℕ) :=
-    fullCycleType_frob_fifty_nine hmin Q hσ
+    fullCycleType_galActionHom_restrict_fifty_nine_of_isArithFrobAt hmin Q hσ
   have hcard : Fintype.card ((minpoly ℚ (θ : K)).rootSet M) = 3 := by
     rw [← Equiv.Perm.sum_fullCycleType π, htype]
     rfl
