@@ -9,10 +9,10 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.Homology.Monoidal
-public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.AlgebraicTopology.SimplexCategory.Subinterval
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -277,6 +277,8 @@ lemma alexanderWhitney_naturality {K' L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L
     ιChainComplex_alexanderWhitney_f_assoc, ιChainComplex_alexanderWhitney_f,
     Preadditive.sum_comp, Category.assoc]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [show chainComplexMap f R ⊗ₘ chainComplexMap g S =
+    HomologicalComplex.tensorHom (chainComplexMap f R) (chainComplexMap g S) from rfl]
   simp only [ι_tensorHom, tensorHom_comp_tensorHom_assoc, ι_chainComplexMap_f,
     Monoidal.tensorHom_app, Monoidal.tensorObj_obj, tensorHom_app_apply, NatTrans.naturality_apply]
 
@@ -289,19 +291,20 @@ lemma alexanderWhitney_coefficient_naturality {R' S' : C} (f : R ⟶ R') (g : S 
       alexanderWhitney K L R S ≫
         (((chainComplexFunctor C).map f).app K ⊗ₘ
           ((chainComplexFunctor C).map g).app L) := by
-  have iota_coefficient_map {X : SSet.{w}} {T T' : C} (h : T ⟶ T') {n : ℕ}
-      (x : X _⦋n⦌) :
-      X.ιChainComplex x ≫ (((chainComplexFunctor C).map h).app X).f n =
-        h ≫ X.ιChainComplex x := by
-    dsimp [chainComplexFunctor, ιChainComplex, chainComplex]
-    simp
   ext n x
   simp only [HomologicalComplex.comp_f]
-  rw [← Category.assoc, iota_coefficient_map, Category.assoc,
+  rw [← Category.assoc, TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f,
+    Category.assoc,
     ιChainComplex_alexanderWhitney_f, ιChainComplex_alexanderWhitney_f_assoc,
     Preadditive.comp_sum, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [show (((chainComplexFunctor C).map f).app K ⊗ₘ
+      ((chainComplexFunctor C).map g).app L) =
+    HomologicalComplex.tensorHom (((chainComplexFunctor C).map f).app K)
+      (((chainComplexFunctor C).map g).app L) from rfl]
   rw [← Category.assoc, tensorHom_comp_tensorHom, Category.assoc, ι_tensorHom,
-    ← Category.assoc, tensorHom_comp_tensorHom, iota_coefficient_map, iota_coefficient_map]
+    ← Category.assoc, tensorHom_comp_tensorHom,
+    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f,
+    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f]
 
 end SSet

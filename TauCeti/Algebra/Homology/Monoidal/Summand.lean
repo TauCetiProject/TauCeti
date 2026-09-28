@@ -48,22 +48,18 @@ namespace HomologicalComplex
 
 section General
 
-variable {C : Type*} [Category* C] [MonoidalCategory C] [Preadditive C] [HasZeroObject C]
+variable {C : Type*} [Category* C] [MonoidalCategory C] [Preadditive C]
   [(curriedTensor C).Additive] [∀ (X₁ : C), ((curriedTensor C).obj X₁).Additive]
   {I : Type*} [AddMonoid I] {c : ComplexShape I} [c.TensorSigns] [DecidableEq I]
-  [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
-  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
-  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
-  [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
-  [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
 
 /-- The tensor product of two morphisms of homological complexes, restricted to a homogeneous
 summand, is the tensor product of their components.  Mathlib states this only for
 `HomologicalComplex.mapBifunctorMap`, by which `⊗ₘ` is defined. -/
 @[reassoc (attr := simp)]
 lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂)
+    [HasTensor K₁ K₂] [HasTensor L₁ L₂]
     (i₁ i₂ j : I) (h : i₁ + i₂ = j) :
-    ιTensorObj K₁ K₂ i₁ i₂ j h ≫ (f₁ ⊗ₘ f₂).f j =
+    ιTensorObj K₁ K₂ i₁ i₂ j h ≫ (tensorHom f₁ f₂).f j =
       (f₁.f i₁ ⊗ₘ f₂.f i₂) ≫ ιTensorObj L₁ L₂ i₁ i₂ j h := by
   refine (ι_mapBifunctorMap _ _ _ _ _ _ _ _).trans ?_
   simp [tensorHom_def]
@@ -94,7 +90,8 @@ whiskering of the summand. -/
 lemma ι_whiskerLeft (X : CochainComplex (ModuleCat.{v} R) ℤ)
     {Y Z : CochainComplex (ModuleCat.{v} R) ℤ} (g : Y ⟶ Z) (p q j : ℤ) (h : p + q = j) :
     ιTensorObj X Y p q j h ≫ (X ◁ g).f j = (X.X p ◁ g.f q) ≫ ιTensorObj X Z p q j h := by
-  rw [← id_tensorHom, ι_tensorHom, id_f, id_tensorHom]
+  change ιTensorObj X Y p q j h ≫ (tensorHom (𝟙 X) g).f j = _
+  rw [ι_tensorHom, id_f, id_tensorHom]
 
 /-- Right whiskering of cochain complexes of modules, restricted to a homogeneous summand, is
 right whiskering of the summand. -/
@@ -102,7 +99,8 @@ right whiskering of the summand. -/
 lemma ι_whiskerRight {X Y : CochainComplex (ModuleCat.{v} R) ℤ} (f : X ⟶ Y)
     (Z : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ) (h : p + q = j) :
     ιTensorObj X Z p q j h ≫ (f ▷ Z).f j = (f.f p ▷ Z.X q) ≫ ιTensorObj Y Z p q j h := by
-  rw [← tensorHom_id, ι_tensorHom, id_f, tensorHom_id]
+  change ιTensorObj X Z p q j h ≫ (tensorHom f (𝟙 Z)).f j = _
+  rw [ι_tensorHom, id_f, tensorHom_id]
 
 /-- The degreewise component of the inverse left unitor of cochain complexes of modules is the
 component of the auxiliary graded isomorphism `HomologicalComplex.leftUnitor'`, whose value is
