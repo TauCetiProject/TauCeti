@@ -128,32 +128,13 @@ theorem IsUnramified.of_adjoin_range_eq_top [IsUnramified K L] (ι : L →ₐ[K]
   -- A generator `a` of `𝒪[L]` over `𝒪[K]` at which `g = minpoly 𝒪[K] a` has unit derivative.
   obtain ⟨a, ha, hu⟩ := (isUnramified_iff_exists_isUnit_aeval_derivative_minpoly (K := K)).1 ‹_›
   obtain ⟨c, hc⟩ := hu.exists_right_inv
-  -- `ι` carries `𝒪[L]` into `𝒪[M]`, both being integral closures of `𝒪[K]`.
-  have hmap (x : 𝒪[L]) : ι x ∈ 𝒪[M] := by
-    have hx : (x : L) ∈ (integralClosure 𝒪[K] L).toSubring :=
-      integerRing_eq_integralClosure K L ▸ x.2
-    rw [integerRing_eq_integralClosure K M]
-    exact (hx.map (ι.restrictScalars 𝒪[K]) :)
-  let b : 𝒪[M] := ⟨ι a, hmap a⟩
+  let b : 𝒪[M] := ι.integerRingHom a
   -- Evaluating a polynomial over `𝒪[K]` at `b` is applying `ι` to its evaluation at `a`.
   have heval (r : 𝒪[K][X]) :
-      (aeval b (r.map (algebraMap 𝒪[K] 𝒪[F])) : M) = ι (aeval a r : L) := by
-    -- The structure maps out of `𝒪[M]` and `𝒪[L]` are the subring inclusions.
-    have hcoeM (y : 𝒪[M]) : algebraMap 𝒪[M] M y = y := rfl
-    have hcoeL (y : 𝒪[L]) : algebraMap 𝒪[L] L y = y := rfl
-    have key : (algebraMap 𝒪[M] M).comp
-        ((aeval b).toRingHom.comp (mapRingHom (algebraMap 𝒪[K] 𝒪[F]))) =
-        (ι.toRingHom.comp (algebraMap 𝒪[L] L)).comp (aeval a).toRingHom := by
-      ext k
-      · simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, coe_mapRingHom,
-          map_C, aeval_C]
-        rw [hcoeM, hcoeL, coe_algebraMap_integerRing, coe_algebraMap_integerRing,
-          coe_algebraMap_integerRing, AlgHom.commutes, IsScalarTower.algebraMap_apply K F M]
-      · simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, coe_mapRingHom,
-          map_X, aeval_X]
-        -- `b` is `ι a` by definition.
-        rw [hcoeM, hcoeL]
-    exact congr($key r)
+      aeval b (r.map (algebraMap 𝒪[K] 𝒪[F])) = ι.integerRingHom (aeval a r) := by
+    refine (map_aeval_eq_aeval_map (ψ := ι.integerRingHom.toRingHom) ?_ r a).symm
+    ext x
+    simp [IsScalarTower.algebraMap_apply K F M]
   refine isUnramified_of_isUnit_aeval_derivative (b := b)
     (p := (minpoly 𝒪[K] a).map (algebraMap 𝒪[K] 𝒪[F])) ?_ ?_ ?_
   · -- `M = F(b)`, because `L = K(a)`.
@@ -161,13 +142,14 @@ theorem IsUnramified.of_adjoin_range_eq_top [IsUnramified K L] (ι : L →ₐ[K]
       TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top ha
     rw [← h, ← AlgHom.coe_fieldRange, AlgHom.fieldRange_eq_map, ← hKa,
       IntermediateField.adjoin_map, Set.image_singleton, IntermediateField.adjoin_adjoin_right]
-    -- `b` is `ι a` by definition, and `algebraMap 𝒪[L] L` is the subring inclusion.
+    -- `algebraMap 𝒪[L] L` is the subring inclusion, and `b` is the image of `a`.
+    change _ = IntermediateField.adjoin F {ι (a : L)}
+    rw [← AlgHom.coe_integerRingHom_apply]
     rfl
-  · exact Subtype.ext (by rw [heval, minpoly.aeval]; simp)
+  · rw [heval, minpoly.aeval, map_zero]
   · -- `g'(b)` is a unit of `𝒪[M]`, with inverse the image of `c`.
-    refine IsUnit.of_mul_eq_one ⟨ι c, hmap c⟩ (Subtype.ext ?_)
-    rw [MulMemClass.coe_mul, derivative_map, heval]
-    simp [← map_mul, ← Subring.coe_mul, hc]
+    refine IsUnit.of_mul_eq_one (ι.integerRingHom c) ?_
+    rw [derivative_map, heval, ← map_mul, hc, map_one]
 
 end BaseChange
 

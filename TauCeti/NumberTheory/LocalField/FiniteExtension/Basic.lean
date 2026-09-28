@@ -64,6 +64,8 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
   extending that of `K`, an element of `M` is integral over a ring of integers of `K` exactly when
   its valuation is at most `1`.
 * `TauCeti.integerRing_eq_integralClosure`: `𝒪[M]` is the integral closure of `𝒪[K]` in `M`.
+* `AlgHom.integerRingHom`: a `K`-algebra map of finite extensions restricts to an
+  `𝒪[K]`-algebra map of their rings of integers.
 
 ## Implementation notes
 
@@ -469,6 +471,26 @@ theorem _root_.AlgEquiv.coe_integerRingEquiv_apply (e : L ≃ₐ[K] M) (x : 𝒪
       e x.val
   simp only [RingEquiv.subringCongr_symm, RingEquiv.coe_subringCongr_apply,
     AlgEquiv.coe_mapIntegralClosure, AlgEquiv.restrictScalars_apply]
+
+/-- A base-field algebra map restricts to an algebra map of integer rings: `ι` carries `𝒪[L]`
+into `𝒪[M]`, both being integral closures of `𝒪[K]`. -/
+def _root_.AlgHom.integerRingHom (ι : L →ₐ[K] M) : 𝒪[L] →ₐ[𝒪[K]] 𝒪[M] where
+  toFun x := ⟨ι x, by
+    have hx : (x : L) ∈ (integralClosure 𝒪[K] L).toSubring :=
+      integerRing_eq_integralClosure K L ▸ x.2
+    rw [integerRing_eq_integralClosure K M]
+    exact (hx.map (ι.restrictScalars 𝒪[K]) :)⟩
+  map_one' := Subtype.ext (map_one ι)
+  map_mul' x y := Subtype.ext (map_mul ι (x : L) y)
+  map_zero' := Subtype.ext (map_zero ι)
+  map_add' x y := Subtype.ext (map_add ι (x : L) y)
+  commutes' r := Subtype.ext (by simp)
+
+/-- The integer-ring map acts by the original field map. -/
+@[simp]
+theorem _root_.AlgHom.coe_integerRingHom_apply (ι : L →ₐ[K] M) (x : 𝒪[L]) :
+    (ι.integerRingHom x : M) = ι (x : L) := by
+  rfl
 
 end IntegerRingEquiv
 
