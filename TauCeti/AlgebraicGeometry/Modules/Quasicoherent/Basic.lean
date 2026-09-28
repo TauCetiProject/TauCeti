@@ -136,7 +136,7 @@ theorem coevaluation_free_hom (I : Type u) [Finite I] :
 
 variable {X} in
 /-- The pullback of quasicoherent sheaves along a morphism of schemes `f : X ⟶ Y`. -/
-@[expose] def pullback {Y : Scheme.{u}} (f : X ⟶ Y) :
+def pullback {Y : Scheme.{u}} (f : X ⟶ Y) :
     QuasicoherentSheaf Y ⥤ QuasicoherentSheaf X :=
   (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf).lift
     ((_root_.SheafOfModules.isQuasicoherent Y.ringCatSheaf).ι ⋙ Scheme.Modules.pullback f)
@@ -167,55 +167,78 @@ lemma pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : QuasicoherentSheaf 
 
 /-- Pullback of quasi-coherent modules along the identity is naturally the identity. -/
 noncomputable def pullbackId (X : Scheme.{u}) :
-    pullback (𝟙 X) ≅ 𝟭 (QuasicoherentSheaf X) := by
-  refine NatIso.ofComponents (fun E => ObjectProperty.isoMk _
-    ((Scheme.Modules.pullbackId X).app E.obj)) ?_
-  intro E F φ
-  apply ObjectProperty.hom_ext
-  exact (Scheme.Modules.pullbackId X).hom.naturality φ.hom
+    pullback (𝟙 X) ≅ 𝟭 (QuasicoherentSheaf X) :=
+  NatIso.ofComponents (fun E => ObjectProperty.isoMk _
+    ((eqToIso (pullback_obj_obj (𝟙 X) E)) ≪≫
+      (Scheme.Modules.pullbackId X).app E.obj)) (by
+    intro E F φ
+    apply ObjectProperty.hom_ext
+    change (Scheme.Modules.pullback (𝟙 X)).map φ.hom ≫
+        (Scheme.Modules.pullbackId X).hom.app F.obj =
+      (Scheme.Modules.pullbackId X).hom.app E.obj ≫ (𝟭 X.Modules).map φ.hom
+    exact (Scheme.Modules.pullbackId X).hom.naturality φ.hom)
 
 /-- The identity comparison is Mathlib's comparison on underlying modules. -/
 @[simp]
 theorem pullbackId_hom_app_hom (X : Scheme.{u}) (E : QuasicoherentSheaf X) :
     ((pullbackId X).hom.app E).hom =
-      (Scheme.Modules.pullbackId X).hom.app E.obj := by
-  simp only [Functor.id_obj]
-  exact Iso.app_hom (Scheme.Modules.pullbackId X) E.obj
+      eqToHom (pullback_obj_obj (𝟙 X) E) ≫
+        (Scheme.Modules.pullbackId X).hom.app E.obj := by
+  rfl
 
 /-- The inverse identity comparison is Mathlib's inverse on underlying modules. -/
 @[simp]
 theorem pullbackId_inv_app_hom (X : Scheme.{u}) (E : QuasicoherentSheaf X) :
     ((pullbackId X).inv.app E).hom =
-      (Scheme.Modules.pullbackId X).inv.app E.obj := by
-  simp only [Functor.id_obj]
-  exact Iso.app_inv (Scheme.Modules.pullbackId X) E.obj
+      (Scheme.Modules.pullbackId X).inv.app E.obj ≫
+        eqToHom (pullback_obj_obj (𝟙 X) E).symm := by
+  rfl
+
+private lemma pullbackComp_obj_obj {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (E : QuasicoherentSheaf Z) :
+    ((pullback g ⋙ pullback f).obj E).obj =
+      (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj E.obj :=
+  (pullback_obj_obj f ((pullback g).obj E)).trans
+    (congrArg (Scheme.Modules.pullback f).obj (pullback_obj_obj g E))
 
 /-- Pullback of quasi-coherent modules respects composition. -/
 noncomputable def pullbackComp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    pullback g ⋙ pullback f ≅ pullback (f ≫ g) := by
-  refine NatIso.ofComponents (fun E => ObjectProperty.isoMk _
-    ((Scheme.Modules.pullbackComp f g).app E.obj)) ?_
-  intro E F φ
-  apply ObjectProperty.hom_ext
-  exact (Scheme.Modules.pullbackComp f g).hom.naturality φ.hom
+    pullback g ⋙ pullback f ≅ pullback (f ≫ g) :=
+  NatIso.ofComponents (fun E => ObjectProperty.isoMk _
+    ((eqToIso (pullbackComp_obj_obj f g E)) ≪≫
+      (Scheme.Modules.pullbackComp f g).app E.obj ≪≫
+      eqToIso (pullback_obj_obj (f ≫ g) E).symm)) (by
+    intro E F φ
+    apply ObjectProperty.hom_ext
+    change (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).map φ.hom ≫
+        (Scheme.Modules.pullbackComp f g).hom.app F.obj =
+      (Scheme.Modules.pullbackComp f g).hom.app E.obj ≫
+        (Scheme.Modules.pullback (f ≫ g)).map φ.hom
+    exact (Scheme.Modules.pullbackComp f g).hom.naturality φ.hom)
 
 /-- The composition comparison is Mathlib's comparison on underlying modules. -/
 @[simp]
 theorem pullbackComp_hom_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (E : QuasicoherentSheaf Z) :
     ((pullbackComp f g).hom.app E).hom =
-      (Scheme.Modules.pullbackComp f g).hom.app E.obj := by
-  simp only [Functor.comp_obj]
-  exact Iso.app_hom (Scheme.Modules.pullbackComp f g) E.obj
+      eqToHom (show ((pullback g ⋙ pullback f).obj E).obj =
+        (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj E.obj by
+          exact pullbackComp_obj_obj f g E) ≫
+        (Scheme.Modules.pullbackComp f g).hom.app E.obj ≫
+        eqToHom (pullback_obj_obj (f ≫ g) E).symm := by
+  rfl
 
 /-- The inverse composition comparison is Mathlib's inverse on underlying modules. -/
 @[simp]
 theorem pullbackComp_inv_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (E : QuasicoherentSheaf Z) :
     ((pullbackComp f g).inv.app E).hom =
-      (Scheme.Modules.pullbackComp f g).inv.app E.obj := by
-  simp only [Functor.comp_obj]
-  exact Iso.app_inv (Scheme.Modules.pullbackComp f g) E.obj
+      eqToHom (pullback_obj_obj (f ≫ g) E) ≫
+        (Scheme.Modules.pullbackComp f g).inv.app E.obj ≫
+        eqToHom (show (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj E.obj =
+          ((pullback g ⋙ pullback f).obj E).obj by
+            exact (pullbackComp_obj_obj f g E).symm) := by
+  rfl
 
 /-- An isomorphism of schemes induces an equivalence of quasi-coherent modules. -/
 noncomputable def equivOfIso {X Y : Scheme.{u}} (e : X ≅ Y) :
