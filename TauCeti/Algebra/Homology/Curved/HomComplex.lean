@@ -63,13 +63,13 @@ def oddDifferential : OddCochain X Y →ₗ[R] EvenCochain X Y where
   simp [oddDifferential]
 
 /-- The even-to-odd differential followed by the odd-to-even differential vanishes. -/
-theorem oddDifferential_comp_evenDifferential :
+@[simp] theorem oddDifferential_comp_evenDifferential :
     (oddDifferential X Y).comp (evenDifferential X Y) = 0 := by
   ext h : 1
   ext <;> simp [evenDifferential, oddDifferential, sub_comp, comp_sub, Category.assoc]
 
 /-- The odd-to-even differential followed by the even-to-odd differential vanishes. -/
-theorem evenDifferential_comp_oddDifferential :
+@[simp] theorem evenDifferential_comp_oddDifferential :
     (evenDifferential X Y).comp (oddDifferential X Y) = 0 := by
   ext f : 1
   ext <;> simp [evenDifferential, oddDifferential, add_comp, comp_add, Category.assoc]
@@ -103,7 +103,7 @@ theorem evenDifferential_eq_zero_iff (f : EvenCochain X Y) :
   simp [Prod.ext_iff, sub_eq_zero]
 
 /-- A closed even map gives a cycle in the Hom complex. -/
-theorem evenDifferential_eq_zero (f : X ⟶ Y) :
+@[simp] theorem evenDifferential_eq_zero (f : X ⟶ Y) :
     evenDifferential X Y (f.f₀, f.f₁) = 0 := by
   exact (evenDifferential_eq_zero_iff X Y _).2 ⟨f.comm₀, f.comm₁⟩
 
