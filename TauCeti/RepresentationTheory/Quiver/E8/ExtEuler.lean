@@ -36,8 +36,10 @@ variable (k : Type) [Field k]
 Rows and columns follow `vertexEquiv`; rows are the first argument of the Euler pairing. -/
 noncomputable def extEulerMatrix : Matrix (Fin 8) (Fin 8) ℤ :=
   Matrix.of fun i j ↦
-    extEuler k (isEulerAdmissible_vertexSimpleModule_vertexSimpleModule k E8
-      (vertexEquiv i) (vertexEquiv j))
+    extEuler k (isEulerAdmissible_vertexSimpleModule k E8 (vertexEquiv i)
+      (vertexSimpleModule k E8 (vertexEquiv j))
+      (finiteDimensional_vertexSimpleModule_obj k E8 (vertexEquiv j) (vertexEquiv i))
+      (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k E8 (vertexEquiv j) a))
 
 /-- The categorical Ext-Euler matrix is the combinatorial Euler matrix `I - A`. -/
 theorem extEulerMatrix_eq_eulerForm :
@@ -66,9 +68,8 @@ the two numbered vertices. -/
 theorem extEulerMatrix_apply (i j : Fin 8) :
     extEulerMatrix k i j =
       (if i = j then 1 else 0) - (Fintype.card (vertexEquiv i ⟶ vertexEquiv j) : ℤ) := by
-  rw [extEulerMatrix_eq_eulerForm, Matrix.submatrix_apply,
-    LinearMap.BilinForm.toMatrix_apply, Pi.basisFun_apply, Pi.basisFun_apply,
-    eulerForm_single_single]
+  rw [extEulerMatrix, Matrix.of_apply,
+    extEuler_vertexSimpleModule_vertexSimpleModule]
   simp only [vertexEquiv.injective.eq_iff]
 
 /-- In the numbered simple basis, the categorical Ext-Euler matrix is the explicit upper

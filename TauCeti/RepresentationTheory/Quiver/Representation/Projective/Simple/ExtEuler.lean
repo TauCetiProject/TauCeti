@@ -87,15 +87,6 @@ theorem isEulerAdmissible_vertexSimpleModule (i : Q)
         IsExtBoundedBy S.X₃ Y 2).isExtBounded⟩
   exact h₃.of_iso (vertexSimpleModuleResolutionX₃Iso k i) (Iso.refl Y)
 
-/-- Vertex-simple modules are Euler-admissible in every pair when the source vertex has
-finitely many outgoing arrows. -/
-theorem isEulerAdmissible_vertexSimpleModule_vertexSimpleModule (i j : Q)
-    [Finite ((a : Q) × (i ⟶ a))] :
-    IsEulerAdmissible k (vertexSimpleModule k Q i) (vertexSimpleModule k Q j) :=
-  isEulerAdmissible_vertexSimpleModule k Q i (vertexSimpleModule k Q j)
-    (finiteDimensional_vertexSimpleModule_obj k Q j i)
-    (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k Q j a)
-
 private theorem finrank_hom_vertexSimpleModuleResolution_X₁ (i : Q)
     [Fintype ((j : Q) × (i ⟶ j))]
     (Y : ModuleCat (pathAlgebra k Q))
@@ -193,5 +184,29 @@ theorem extEuler_vertexSimpleModule_eq_eulerForm (i : Q)
   simp [Finset.sum_const]
 
 end EulerForm
+
+open scoped Classical in
+/-- The Ext-Euler value between vertex simples is the Kronecker delta minus the number of
+arrows from the first vertex to the second. -/
+@[simp]
+theorem extEuler_vertexSimpleModule_vertexSimpleModule [∀ a b : Q, Fintype (a ⟶ b)]
+    (i j : Q) :
+    extEuler k (isEulerAdmissible_vertexSimpleModule k Q i (vertexSimpleModule k Q j)
+      (finiteDimensional_vertexSimpleModule_obj k Q j i)
+      (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k Q j a)) =
+      (if i = j then 1 else 0) - (Fintype.card (i ⟶ j) : ℤ) := by
+  classical
+  have : Fintype Q := Fintype.ofFinite Q
+  rw [extEuler_vertexSimpleModule_eq_eulerForm k Q i (vertexSimpleModule k Q j)
+    (finiteDimensional_vertexSimpleModule_obj k Q j i)
+    (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k Q j a)]
+  simp only [dimVector_eq_of_iso (vertexSimpleModuleIso k Q i),
+    dimVector_eq_of_iso (vertexSimpleModuleIso k Q j), dimVector_simpleRep]
+  have hcast (b : Q) :
+      (fun a : Q ↦ ((Pi.single b 1 : Q → ℕ) a : ℤ)) =
+        (Pi.single b 1 : Q → ℤ) := by
+    funext a
+    by_cases h : a = b <;> simp [h]
+  rw [hcast i, hcast j, eulerForm_single_single]
 
 end TauCeti
