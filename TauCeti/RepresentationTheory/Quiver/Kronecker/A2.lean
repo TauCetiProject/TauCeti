@@ -165,7 +165,7 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
 /-- The delta-minus-arrow-count formula for two vertices of `1 ⟶ 2` gives the corresponding
 Ringel Euler matrix entry. -/
 @[simp]
-theorem extEulerMatrix_A2_apply (k : Type v) [Field k] (i j : Fin 2) :
+theorem sub_arrow_card_eq_eulerMatrixA2 (k : Type v) [Field k] (i j : Fin 2) :
     (if (![src, tgt] i : Kronecker A) = ![src, tgt] j then 1 else 0) -
       (Fintype.card ((![src, tgt] i : Kronecker A) ⟶ ![src, tgt] j) : ℤ) =
         eulerMatrixA2 i j := by
