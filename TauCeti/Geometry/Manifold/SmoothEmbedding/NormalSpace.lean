@@ -79,6 +79,13 @@ noncomputable instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
   inferInstanceAs (TopologicalSpace (TangentSpace J (f x) ⧸ f.tangentRange x hn))
 
 instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    T3Space (f.NormalSpace x hn) := by
+  have hclosed : IsClosed (f.tangentRange x hn : Set (TangentSpace J (f x))) :=
+    f.isClosed_tangentRange x hn
+  exact @Submodule.t3_quotient_of_isClosed 𝕜 (TangentSpace J (f x))
+    _ _ _ _ (f.tangentRange x hn) _ hclosed
+
+instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     IsTopologicalAddGroup (f.NormalSpace x hn) :=
   inferInstanceAs (IsTopologicalAddGroup (TangentSpace J (f x) ⧸ f.tangentRange x hn))
 
@@ -143,11 +150,8 @@ theorem normalLiftL_comp_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (h
   let hker : f.tangentRange x hn ≤ g.ker := by
     intro w hw
     exact (LinearMap.mem_ker).2 (hg w hw)
-  -- Identify the normal-space wrappers with Mathlib's quotient maps for the evaluation lemmas.
   change (f.tangentRange x hn).liftQL g hker ((f.tangentRange x hn).mkQL v) = g v
-  rw [Submodule.mkQL_apply, Submodule.liftQL_apply, Submodule.mkQ_apply,
-    Submodule.liftQ_apply]
-  rfl
+  simp [Submodule.mkQL_apply, Submodule.liftQL_apply]
 
 /-- Every normal vector has an ambient tangent representative. -/
 theorem normalClass_surjective (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
