@@ -119,14 +119,15 @@ variable [FiniteDimensional K L] [P.IsMaximal]
 
 omit [P.LiesOver p] in
 include K L E P in
-/-- The inertia group of `P` in `L/K`, acting on `B` over `𝓞E`, has order
-`e(P ∣ P.under 𝓞E) · fᵢ(P ∣ P.under 𝓞E)` and also `e(P ∣ P.under A) · fᵢ(P ∣ P.under A)`. Comparing
-the two through the tower law for inseparable degrees and `e(P ∣ P.under 𝓞E) ≤ e(P ∣ P.under A)`
-forces the residue extension of `P.under 𝓞E` over `P.under A` to be separable and the two
-ramification indices to agree. -/
+/-- Over the inertia field, the ramification index of `P` is unchanged, and the residue extension
+of `P.under 𝓞E` over `P.under A` is separable. -/
 private lemma ramificationIdxIn_eq_and_isSeparable :
     ramificationIdxIn (P.under 𝓞E) B = (P.under A).ramificationIdxIn B ∧
       Algebra.IsSeparable (A ⧸ P.under A) (𝓞E ⧸ P.under 𝓞E) := by
+  -- The inertia group of `P` in `L/K`, acting on `B` over `𝓞E`, has order
+  -- `e(P ∣ P.under 𝓞E) · fᵢ(P ∣ P.under 𝓞E)` and also `e(P ∣ P.under A) · fᵢ(P ∣ P.under A)`.
+  -- The tower law for inseparable degrees and `e(P ∣ P.under 𝓞E) ≤ e(P ∣ P.under A)` then force
+  -- `fᵢ(P.under 𝓞E ∣ P.under A) = 1` and the equality of the ramification indices.
   obtain ⟨_, _, _, _, _⟩ := instances A K L P E 𝓞E
   let _ : (P.under A).IsMaximal := Ideal.IsMaximal.under A P
   let _ : (P.under 𝓞E).IsMaximal := Ideal.IsMaximal.under 𝓞E P
