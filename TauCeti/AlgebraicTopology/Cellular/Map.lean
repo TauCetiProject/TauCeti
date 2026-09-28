@@ -84,7 +84,6 @@ def cellularChainGroupMap (n : ℕ) :
   TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n
 
 /-- The action on a cellular chain group is the singular homology map of the skeletal pair. -/
-@[simp]
 lemma cellularChainGroupMap_eq_singularHomologyMap (n : ℕ) :
     cellularChainGroupMap C C' hf R n =
       TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n := by
