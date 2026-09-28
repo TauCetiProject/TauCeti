@@ -98,7 +98,7 @@ theorem comap_includeRight_mem_minimalPrimes (L : Type*) [CommRing L] [Algebra K
 
 /-- If `E ⊗[K] (A ⧸ P)` is a domain for every prime `P` of `A`, as for a rational function field
 `E` over `K`, then every minimal prime of `E ⊗[K] A` is the extension of its contraction to `A`. -/
-private theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [Field E] [Algebra K E]
+theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [Field E] [Algebra K E]
     (hdom : ∀ P : Ideal A, P.IsPrime → IsDomain (E ⊗[K] (A ⧸ P)))
     {Q : Ideal (E ⊗[K] A)} (hQ : Q ∈ minimalPrimes (E ⊗[K] A)) :
     Q = (Q.comap includeRight).map includeRight := by
@@ -112,13 +112,14 @@ private theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [Field E] [Alg
 /-- For an algebraic extension `L / E` of field extensions of `K`, the ring `L ⊗[K] A` is integral
 and flat over `E ⊗[K] A`. So a minimal prime of `L ⊗[K] A` contracts to a minimal prime of
 `E ⊗[K] A`, and the two quotients have the same Krull dimension. -/
-private theorem mem_minimalPrimes_comap_of_isAlgebraic (L E : Type*) [Field L] [Algebra K L]
+theorem mem_minimalPrimes_comap_of_isAlgebraic (L E : Type*) [Field L] [Algebra K L]
     [Field E] [Algebra K E] [Algebra E L] [IsScalarTower K E L] [Algebra.IsAlgebraic E L]
     {Q : Ideal (L ⊗[K] A)} (hQ : Q ∈ minimalPrimes (L ⊗[K] A)) :
-    let f := Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L) (AlgHom.id K A)
-    Q.comap f ∈ minimalPrimes (E ⊗[K] A) ∧
-      ringKrullDim ((L ⊗[K] A) ⧸ Q) = ringKrullDim ((E ⊗[K] A) ⧸ Q.comap f) := by
-  intro f
+    Q.comap (Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L) (AlgHom.id K A)) ∈
+        minimalPrimes (E ⊗[K] A) ∧
+      ringKrullDim ((L ⊗[K] A) ⧸ Q) = ringKrullDim ((E ⊗[K] A) ⧸
+        Q.comap (Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L) (AlgHom.id K A))) := by
+  set f := Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L) (AlgHom.id K A)
   algebraize [f.toRingHom]
   have : IsScalarTower E (E ⊗[K] A) (L ⊗[K] A) := .of_algebraMap_eq fun x ↦ by
     simp [RingHom.algebraMap_toAlgebra, f]
