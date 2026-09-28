@@ -59,7 +59,8 @@ variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
 @[simp]
 lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
-    (skeletonMap C C' hf n x).1 =
+    ((show ContinuousMap (skeletonLT C (n : ℕ∞)) (skeletonLT C' (n : ℕ∞))
+      from (skeletonMap C C' hf n).hom) x).1 =
       (f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1 := (rfl)
 
 /-- Restriction of the identity map to a skeleton is the identity. -/
