@@ -91,16 +91,6 @@ private theorem a2Vertices_one : a2Vertices 1 = v1 := by
   simp [a2Vertices, v1, preprojectiveA2VertexOne, OrientedQuiver.vertexEquiv_apply]
   rfl
 
-@[simp]
-private theorem a2Vertices_symm_v0 : a2Vertices.symm v0 = 0 := by
-  rw [Equiv.symm_apply_eq]
-  exact a2Vertices_zero.symm
-
-@[simp]
-private theorem a2Vertices_symm_v1 : a2Vertices.symm v1 = 1 := by
-  rw [Equiv.symm_apply_eq]
-  exact a2Vertices_one.symm
-
 private theorem vertex_cases (i : Symmetrify preprojectiveA2Quiver) : i = v0 ∨ i = v1 := by
   have hcases : ∀ x : Fin 2, x = 0 ∨ x = 1 := by
     intro x
