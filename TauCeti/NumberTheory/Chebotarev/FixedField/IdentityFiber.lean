@@ -32,6 +32,8 @@ namespace NumberField.Chebotarev
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] [IsGalois K L]
 
+-- `mem_frobeniusPrimeSet_iff` simplifies the fibres below before these equalities can apply,
+-- so tagging them `@[simp]` would violate `simpNF`.
 /-- Above a completely split prime, the relative Frobenius in `L/L ^ ⟨σ⟩` cannot be a
 nonidentity `σ`. The statement uses the actual relative fibre, without identifying the fixed
 field with `K` even when `σ` generates the whole Galois group. -/
