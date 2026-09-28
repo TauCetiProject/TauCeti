@@ -307,6 +307,41 @@ theorem ker_le_range_of_mapRange_constantCoeff
 
 end Exactness
 
+section Reduction
+
+variable {μ : Type*}
+
+/-- If `f₀` and `g₀` are the reductions of `f` and `g` modulo the variables, then `g₀ ∘ f₀` is the
+reduction of `g ∘ f`. -/
+theorem comp_apply_mapRange_constantCoeff
+    {f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
+    {g : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (μ →₀ MvPolynomial σ R)}
+    {f₀ : (ι →₀ R) →ₗ[R] (κ →₀ R)} {g₀ : (κ →₀ R) →ₗ[R] (μ →₀ R)}
+    (hf₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
+      (f x).mapRange constantCoeff (map_zero _))
+    (hg₀ : ∀ x, g₀ (x.mapRange constantCoeff (map_zero _)) =
+      (g x).mapRange constantCoeff (map_zero _)) (x : ι →₀ MvPolynomial σ R) :
+    (g₀ ∘ₗ f₀) (x.mapRange constantCoeff (map_zero _)) =
+      ((g ∘ₗ f) x).mapRange constantCoeff (map_zero _) := by
+  rw [comp_apply, hf₀, hg₀, comp_apply]
+
+/-- A reduction modulo the variables is determined by the map it reduces: reductions `f₀` of `f`
+and `f₀'` of `f'` agree when `f = f'`. -/
+theorem eq_of_mapRange_constantCoeff
+    {f f' : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
+    {f₀ f₀' : (ι →₀ R) →ₗ[R] (κ →₀ R)}
+    (hf₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
+      (f x).mapRange constantCoeff (map_zero _))
+    (hf₀' : ∀ x, f₀' (x.mapRange constantCoeff (map_zero _)) =
+      (f' x).mapRange constantCoeff (map_zero _)) (h : f = f') :
+    f₀ = f₀' := by
+  refine LinearMap.ext fun x ↦ ?_
+  obtain ⟨x, rfl⟩ := Finsupp.mapRange_surjective _ (map_zero _)
+    (fun c ↦ ⟨C c, constantCoeff_C σ c⟩) x
+  rw [hf₀, hf₀', h]
+
+end Reduction
+
 section QuasiIso
 
 variable {S : Type*} [CommRing S]
@@ -332,40 +367,18 @@ private theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι
     {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} :
     ker (sumMappingCone d e f) ≤ range (sumMappingCone d e f) ↔
       ker (mappingCone d e f) ≤ range (mappingCone d e f) := by
-  let ε := sumFinsuppLEquivProdFinsupp (M := S) S (α := ι) (β := κ)
-  constructor
-  · intro h x hx
-    obtain ⟨y, hy⟩ := h (x := ε.symm x) (by
-      rw [mem_ker, sumMappingCone_apply]
-      change ε.symm (mappingCone d e f (ε (ε.symm x))) = 0
-      rw [ε.apply_symm_apply, mem_ker.mp hx, map_zero])
-    refine ⟨ε y, ?_⟩
-    have hε := congr(ε $hy)
-    rw [sumMappingCone_apply] at hε
-    change ε (ε.symm (mappingCone d e f (ε y))) = ε (ε.symm x) at hε
-    simpa only [ε.apply_symm_apply] using hε
-  · intro h x hx
-    obtain ⟨y, hy⟩ := h (x := ε x) (by
-      rw [mem_ker] at hx ⊢
-      have hε := congr(ε $hx)
-      rw [sumMappingCone_apply] at hε
-      change ε (ε.symm (mappingCone d e f (ε x))) = ε 0 at hε
-      simpa only [ε.apply_symm_apply, map_zero] using hε)
-    refine ⟨ε.symm y, ?_⟩
-    rw [sumMappingCone_apply]
-    change ε.symm (mappingCone d e f (ε (ε.symm y))) = x
-    rw [ε.apply_symm_apply, hy, ε.symm_apply_apply]
+  rw [sumMappingCone, LinearEquiv.ker_comp, ker_comp, range_comp, LinearEquiv.range_comp,
+    Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
+  exact Submodule.comap_le_comap_iff_of_surjective (LinearEquiv.surjective _)
 
 private theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
     {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} (hd : d ∘ₗ d = 0)
     (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) :
     sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 := by
-  let ε := sumFinsuppLEquivProdFinsupp (M := S) S (α := ι) (β := κ)
-  apply LinearMap.ext
-  intro x
-  rw [comp_apply, sumMappingCone_apply, sumMappingCone_apply]
-  change ε.symm (mappingCone d e f (ε (ε.symm (mappingCone d e f (ε x))))) = 0
-  rw [ε.apply_symm_apply, ← comp_apply, mappingCone_comp_self f hd he hf, zero_apply, map_zero]
+  refine LinearMap.ext fun x ↦ ?_
+  rw [comp_apply, sumMappingCone_apply, sumMappingCone_apply, LinearEquiv.apply_symm_apply,
+    ← comp_apply (mappingCone d e f), mappingCone_comp_self f hd he hf, zero_apply, map_zero,
+    zero_apply]
 
 variable {d : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (ι →₀ MvPolynomial σ R)}
   {e : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
@@ -395,34 +408,11 @@ theorem homologyMap_bijective_of_mapRange_constantCoeff
     (hff₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
       (f x).mapRange constantCoeff (map_zero _))
     (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f)
-    (h : Function.Bijective (homologyMap f₀ (show d₀ ∘ₗ d₀ = 0 from by
-      apply LinearMap.ext
-      intro x
-      ext i
-      let x' := x.mapRange (C : R →+* MvPolynomial σ R).toAddMonoidHom (map_zero _)
-      have hx : x'.mapRange constantCoeff (map_zero _) = x := by
-        ext
-        simp [x']
-      rw [comp_apply, ← hx, hdd₀, hdd₀, ← comp_apply, hd, zero_apply]
-      simp) (show e₀ ∘ₗ e₀ = 0 from by
-      apply LinearMap.ext
-      intro x
-      ext i
-      let x' := x.mapRange (C : R →+* MvPolynomial σ R).toAddMonoidHom (map_zero _)
-      have hx : x'.mapRange constantCoeff (map_zero _) = x := by
-        ext
-        simp [x']
-      rw [comp_apply, ← hx, hee₀, hee₀, ← comp_apply, he, zero_apply]
-      simp) (show f₀ ∘ₗ d₀ = e₀ ∘ₗ f₀ from by
-      apply LinearMap.ext
-      intro x
-      ext i
-      let x' := x.mapRange (C : R →+* MvPolynomial σ R).toAddMonoidHom (map_zero _)
-      have hx : x'.mapRange constantCoeff (map_zero _) = x := by
-        ext
-        simp [x']
-      rw [comp_apply, comp_apply, ← hx, hdd₀, hff₀, hff₀, hee₀, ← comp_apply,
-        hf, comp_apply]))) :
+    (h : Function.Bijective (homologyMap f₀
+      (eq_of_mapRange_constantCoeff (comp_apply_mapRange_constantCoeff hdd₀ hdd₀) (by simp) hd)
+      (eq_of_mapRange_constantCoeff (comp_apply_mapRange_constantCoeff hee₀ hee₀) (by simp) he)
+      (eq_of_mapRange_constantCoeff (comp_apply_mapRange_constantCoeff hdd₀ hff₀)
+        (comp_apply_mapRange_constantCoeff hff₀ hee₀) hf))) :
     Function.Bijective (homologyMap f hd he hf) := by
   rw [← ker_le_range_mappingCone_iff, ← ker_le_range_sumMappingCone_iff]
   rw [← ker_le_range_mappingCone_iff, ← ker_le_range_sumMappingCone_iff] at h
