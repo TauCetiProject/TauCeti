@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomFpH1
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.H1ZMod
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.DualRank
 
@@ -37,16 +37,14 @@ Here `H¹` is the explicit inhomogeneous group `TauCeti.ContCohomology.H1 G (ZMo
 which depends on the action of `G` on the coefficients, so a statement about it names the action it
 is made under. The canonical carrier of that same cohomology is `TauCeti.cohomFp p G 1`, whose
 coefficients carry the trivial action of `G` by themselves, so a statement about it names no
-action of `G` at all. The two are identified by
-`TauCeti.h1EquivCohomFp : H1 G (ZMod p) ≃ₗ[ZMod p] cohomFp p G 1`, the degree-one comparison
-with the coefficient object `TauCeti.trivialFp p G` of `TauCeti.cohomFp` in
-`TauCeti.RepresentationTheory.Homological.ContCohomology.CohomFpH1`, and
-`TauCeti.cohomFpEquivFrattiniQuotientDual` here is that comparison followed by
-`TauCeti.h1EquivFrattiniQuotientDual`. The identification of `TauCeti.cohomFp p G 1` with the
-continuous `𝔽_p`-dual of `G` itself, and the dimension and finiteness of that carrier, are
-`TauCeti.cohomFpLinearEquivContinuousZModDual`, `TauCeti.IsProP.rank_cohomFp_one`,
+action of `G` at all. The identification of the two models of degree one is the existing
+`TauCeti.cohomFpAddEquivH1` of
+`TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit`, which this file does
+not restate; on the canonical carrier it reads as `TauCeti.cohomFpLinearEquivContinuousZModDual`,
+the continuous `𝔽_p`-dual of `G`, and `TauCeti.cohomFpEquivFrattiniQuotientDual` here is that
+equivalence followed by the precomposition along the projection to the Frattini quotient. The
+dimension and finiteness of that carrier are `TauCeti.IsProP.rank_cohomFp_one`,
 `TauCeti.IsProP.finrank_cohomFp_one` and `TauCeti.IsProP.finite_cohomFp_one_iff` of
-`TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit` and
 `TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp`; this file does not restate them, and adds
 on that carrier only the count of elements.
 
@@ -65,17 +63,14 @@ rank. The same count on the canonical carrier is `TauCeti.IsProP.natCard_cohomFp
 * `TauCeti.h1EquivFrattiniQuotientDual`: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of the
   pro-`p` Frattini quotient `G ⧸ Φ(G)`.
 * `TauCeti.cohomFpEquivFrattiniQuotientDual`: the same identification with the Frattini quotient,
-  with `TauCeti.cohomFp p G 1` in place of `H¹(G, 𝔽_p)`.
+  with `TauCeti.cohomFp p G 1` in place of `H¹(G, 𝔽_p)`, read from the two existing
+  equivalences rather than from a new comparison of the two models of degree one.
 
 ## Main results
 
 * `TauCeti.h1EquivFrattiniQuotientDual_apply_mk` and
   `TauCeti.h1EquivFrattiniQuotientDual_symm_apply`: the identification in both directions, evaluated
   on the Frattini quotient.
-* `TauCeti.cohomFpEquivFrattiniQuotientDual_apply` and
-  `TauCeti.cohomFpEquivFrattiniQuotientDual_symm_apply`: the identification on the canonical
-  carrier, in both directions, evaluated on the homogeneous `1`-cocycle a class carries and on a
-  continuous character of the Frattini quotient.
 * `TauCeti.IsProP.rank_H1_eq_topologicalGeneratorRank`: the dimension of `H¹(G, 𝔽_p)` over
   `𝔽_p` is the topological generator rank of `G`, as an identity of cardinals.
 * `TauCeti.IsProP.finrank_H1_eq_topologicalGeneratorRankNat`: the natural-number form of the
@@ -153,95 +148,17 @@ section CohomFp
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
--- The canonical `1`-cocycle of a class of `TauCeti.cohomFp p G 1` is read here through the carrier
--- of the coefficient object, with the action of the coefficient object itself, as in
--- `TauCeti.RepresentationTheory.Homological.ContCohomology.CohomFpH1`.
-attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-
-/-- The action of the coefficient object on its own carrier is continuous, being the trivial one. -/
-local instance : ContinuousSMul G (trivialFp p G).V where
-  -- The action of the coefficient object is trivial, so the action map is the second projection.
-  continuous_smul := by
-    have htriv :
-        (fun q : G × (trivialFp p G).V => q.1 • q.2) = (fun q : G × (trivialFp p G).V => q.2) :=
-      funext fun q => smul_trivialFp_V p G q.1 q.2
-    rw [htriv]
-    exact ⟨fun _s hs => hs.preimage continuous_snd⟩
-
-/-- The trivial action of `G` on `ZMod p`, the action the coefficients of `TauCeti.cohomFp` carry by
-construction, so that the `H¹(G, 𝔽_p)` appearing in the statement below is the one of those
-coefficients and not one made under an ambient action. It is the action
-`TauCeti.RepresentationTheory.Homological.ContCohomology.CohomFpH1` uses for the same reason. -/
-local instance instTrivialDistribMulActionZMod : DistribMulAction G (ZMod p) where
-  smul _ m := m
-  one_smul _ := rfl
-  mul_smul _ _ _ := rfl
-  smul_add _ _ _ := rfl
-  smul_zero _ := rfl
-
-/-- The trivial action of `G` on `ZMod p` is continuous, being independent of `G`. -/
-local instance instTrivialContinuousSMulZMod : ContinuousSMul G (ZMod p) where
-  continuous_smul := ⟨fun _s hs => hs.preimage continuous_snd⟩
-
-/-- **`TauCeti.cohomFp p G 1` is the continuous `𝔽_p`-dual of the pro-`p` Frattini quotient.** This
-is the degree-one comparison `TauCeti.h1EquivCohomFp` of
-`TauCeti.RepresentationTheory.Homological.ContCohomology.CohomFpH1` followed by
-`TauCeti.h1EquivFrattiniQuotientDual`, and it needs no hypothesis on an action of `G`: the
-coefficient object of `TauCeti.cohomFp` carries the trivial action by construction. The companion
-without the Frattini quotient is `TauCeti.cohomFpLinearEquivContinuousZModDual` of
-`TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit`, which is not
-restated here. -/
+/-- **`TauCeti.cohomFp p G 1` is the continuous `𝔽_p`-dual of the pro-`p` Frattini quotient.**
+This is `TauCeti.cohomFpLinearEquivContinuousZModDual` of
+`TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit` followed by the
+precomposition along the projection to the Frattini quotient, and it needs no hypothesis on an
+action of `G`: the coefficient object of `TauCeti.cohomFp` carries the trivial action by
+construction. It is not a second form of `TauCeti.h1EquivFrattiniQuotientDual`; the identification
+of the two models of degree one is the existing `TauCeti.cohomFpAddEquivH1`, which this file does
+not restate. -/
 noncomputable def cohomFpEquivFrattiniQuotientDual :
     cohomFp p G 1 ≃ₗ[ZMod p] continuousZModDual p (G ⧸ proPFrattini p G) :=
-  (h1EquivCohomFp (fun _ _ => rfl)).symm.trans (h1EquivFrattiniQuotientDual (fun _ _ => rfl))
-
-/-- The image of a canonical cohomology class is the character its homogeneous cocycle defines on
-the pro-`p` Frattini quotient: evaluated on the class of `g` it is the value of the inhomogeneous
-`1`-cocycle the class carries, read through `TauCeti.trivialFpEquiv`. -/
-@[simp]
-theorem cohomFpEquivFrattiniQuotientDual_apply
-    (c : _root_.ContinuousCohomology.cocycles (trivialFp p G) 1) (g : G) :
-    Additive.toMul (cohomFpEquivFrattiniQuotientDual
-        ((TopRep.homogeneousCochains (trivialFp p G)).homologyπ 1 c))
-      (g : G ⧸ proPFrattini p G) = Multiplicative.ofAdd
-          (trivialFpEquiv p G (((cohomFpCocycleEquiv1 p G).symm c :
-            G → (trivialFp p G).V) g)) := by
-  simp only [cohomFpEquivFrattiniQuotientDual, LinearEquiv.trans_apply,
-    h1EquivFrattiniQuotientDual_apply_mk, h1EquivCohomFp_symm_apply, h1CoeffEquiv_symm_apply,
-    ContCohomology.explicitCoeff1_mk, cohomFpCocycleEquiv1_symm_apply,
-    CategoryTheory.Functor.mapHomologicalComplex_obj_X]
-  -- The cocycle the coefficient transport is applied to is read at the point by
-  -- `TauCeti.ContCohomology.cocyclesMap1_apply`.
-  let f : (trivialFp p G).V →+[G] ZMod p :=
-    { toFun := trivialFpEquiv p G
-      map_zero' := (trivialFpEquiv p G).toAddMonoidHom.map_zero'
-      map_add' := (trivialFpEquiv p G).toAddMonoidHom.map_add'
-      map_smul' := fun g m => by rw [smul_trivialFp_V]; rfl }
-  have hpoint (c : _root_.ContinuousCohomology.cocycles (trivialFp p G) 1) (g : G) :
-      (cocyclesMap1 G (trivialFp p G) G (ZMod p) (ContinuousMonoidHom.id G) f _ _
-        ((cohomFpCocycleEquiv1 p G).symm c) : G → ZMod p) g
-        = f (((cohomFpCocycleEquiv1 p G).symm c : G → (trivialFp p G).V) g) :=
-    ContCohomology.cocyclesMap1_apply G (trivialFp p G) G (ZMod p) (ContinuousMonoidHom.id G)
-      f continuous_of_discreteTopology (fun g m => by rw [smul_trivialFp_V]; rfl) _ g
-  dsimp only [f] at hpoint
-  rw [hpoint]
-  -- The canonical cocycle of a class is the homogeneous form of the cocycle the class carries.
-  simp only [cohomFpCocycleEquiv1_symm_apply]
-  rfl
-
-/-- The inverse image of a continuous `𝔽_p`-valued character of the pro-`p` Frattini
-quotient is the canonical cohomology class of the homogeneous `1`-cocycle it corresponds to, read
-from the class in `H¹(G, 𝔽_p)`. -/
-@[simp]
-theorem cohomFpEquivFrattiniQuotientDual_symm_apply
-    (φ : continuousZModDual p (G ⧸ proPFrattini p G)) :
-    (cohomFpEquivFrattiniQuotientDual).symm φ
-      = h1EquivCohomFp (fun _ _ => rfl)
-          (((Z1EquivOfSmulEqSelf (fun _ _ => rfl)).symm
-              ((frattiniQuotientDualEquiv (p := p) (G := G)) φ) : H1 G (ZMod p))) := by
-  refine (cohomFpEquivFrattiniQuotientDual).symm_apply_eq.2 ?_
-  rw [cohomFpEquivFrattiniQuotientDual, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
-    ← h1EquivFrattiniQuotientDual_symm_apply, LinearEquiv.apply_symm_apply]
+  (cohomFpLinearEquivContinuousZModDual p G).trans (frattiniQuotientDualEquiv (p := p)).symm
 
 end CohomFp
 
