@@ -161,6 +161,15 @@ section CohomFp
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
+-- The canonical `1`-cocycle of a class of `TauCeti.cohomFp p G 1` is read here through the carrier
+-- of the coefficient object, with the action of the coefficient object itself, as in
+-- `TauCeti.RepresentationTheory.Homological.ContCohomology.CohomFpH1`.
+attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
+
+/-- The action of the coefficient object on its own carrier is continuous, being the trivial one. -/
+local instance : ContinuousSMul G (trivialFp p G).V where
+  continuous_smul := ⟨fun _s hs => hs.preimage continuous_snd⟩
+
 /-- The trivial action of `G` on `ZMod p`, the action the coefficients of `TauCeti.cohomFp` carry by
 construction, so that the `H¹(G, 𝔽_p)` appearing in the statement below is the one of those
 coefficients and not one made under an ambient action. It is the action
@@ -195,7 +204,7 @@ theorem cohomFpEquivFrattiniQuotientDual_apply
         ((TopRep.homogeneousCochains (trivialFp p G)).homologyπ 1 c))
       (g : G ⧸ proPFrattini p G) = Multiplicative.ofAdd
           (trivialFpEquiv p G (((cohomFpCocycleEquiv1 p G).symm c :
-            G → ULift.{u} (ZMod p)) g)) := by
+            G → (trivialFp p G).V) g)) := by
   simp only [cohomFpEquivFrattiniQuotientDual, LinearEquiv.trans_apply,
     frattiniQuotientDualEquiv_symm_apply_mk, cohomFpEquivContinuousZModDual_apply]
 
