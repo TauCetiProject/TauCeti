@@ -21,7 +21,7 @@ noncomputable section
 
 open scoped IntermediateField
 
-namespace TauCeti.IntermediateField
+namespace TauCeti
 
 universe u v
 
@@ -81,4 +81,4 @@ theorem finrank_sup_eq_finrank_of_linearDisjoint
   have := (mul_left_cancel₀ hpos.ne' heq).symm
   exact this
 
-end TauCeti.IntermediateField
+end TauCeti

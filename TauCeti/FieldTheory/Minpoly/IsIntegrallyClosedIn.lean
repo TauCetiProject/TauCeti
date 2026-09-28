@@ -36,7 +36,7 @@ constants over `k` stays linearly independent over `F`.
   a common overfield is linearly disjoint from `F`.
 * `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: a linearly independent
   family of separable elements stays linearly independent after extending scalars from `k` to `F`.
-* `TauCeti.IntermediateField.finrank_adjoin_eq_of_isIntegrallyClosedIn`: extending exact
+* `TauCeti.finrank_adjoin_eq_of_isIntegrallyClosedIn`: extending exact
   constants preserves the degree over a rational parameter.
 
 ## References
@@ -185,8 +185,6 @@ end Field
 
 variable {k : Type u} {L : Type v} [Field k] [Field L] [Algebra k L]
 
-namespace IntermediateField
-
 /-- A finite separable extension of an exact field of constants preserves the degree over any
 rational parameter. The equation is stated for the compositum `L = A · B` inside a common ambient
 field; `A ⊔ k(x)` is the enlarged rational subfield. This is Stichtenoth,
@@ -215,7 +213,5 @@ theorem finrank_adjoin_eq_of_isIntegrallyClosedIn
     simp only [IntermediateField.mem_extendScalars, hAB, IntermediateField.mem_top]
   rw [htop, IntermediateField.finrank_top'] at hdegree
   exact hdegree
-
-end IntermediateField
 
 end TauCeti
