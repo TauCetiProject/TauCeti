@@ -165,13 +165,15 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
 /-- An Ext-Euler pairing of vertex simples is the corresponding Ringel Euler matrix entry. -/
 @[simp]
 theorem extEulerMatrix_A2_apply (k : Type v) [Field k] (i j : Fin 2) :
-    extEuler k (isEulerAdmissible_vertexSimpleModule k (Kronecker A) (![src, tgt] i)
-      (vertexSimpleModule k (Kronecker A) (![src, tgt] j))
-      (finiteDimensional_vertexSimpleModule_obj (k := k) (Q := Kronecker A)
-        (![src, tgt] j) (![src, tgt] i))
-      (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj
-        (k := k) (Q := Kronecker A) (![src, tgt] j) a)) = eulerMatrixA2 i j := by
-  exact congrFun (congrFun (extEulerMatrix_A2_eq k) i) j
+    (if (![src, tgt] i : Kronecker A) = ![src, tgt] j then 1 else 0) -
+      (Fintype.card ((![src, tgt] i : Kronecker A) ⟶ ![src, tgt] j) : ℤ) =
+        eulerMatrixA2 i j := by
+  let _ : Fintype A := Unique.fintype
+  have h := congrFun (congrFun (extEulerMatrix_A2_eq (A := A) k) i) j
+  simp only [extEuler_vertexSimpleModule_vertexSimpleModule] at h
+  by_cases hij : (![src, tgt] i : Kronecker A) = ![src, tgt] j
+  · simpa only [hij, ↓reduceIte] using h
+  · simpa only [hij, ↓reduceIte] using h
 
 end Quiver.Kronecker
 
