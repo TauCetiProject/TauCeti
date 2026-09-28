@@ -60,9 +60,6 @@ declarations name the action of the coefficient object instead.
   carrier.
 * `TauCeti.h1EquivCohomFp`: `H¹(G, ZMod n)` is the degree-one continuous cohomology of
   `TauCeti.cohomFp`, as an isomorphism of `ZMod n`-modules.
-* `TauCeti.cohomFpEquivContinuousZModDual`: `TauCeti.cohomFp n G 1` is the continuous `ZMod n`-dual
-  of `G`, as an isomorphism of `ZMod n`-modules, for a coefficient object whose trivial action is
-  the only action involved.
 
 ## Main results
 
@@ -80,10 +77,11 @@ declarations name the action of the coefficient object instead.
   the cocycle comparison; it is applied by name rather than by `simp`, because its left-hand side
   mentions the carrier of a canonical `1`-cocycle and so is not in simp normal form (see the
   comment on it).
-* `TauCeti.cohomFpEquivContinuousZModDual_apply` and
-  `TauCeti.cohomFpEquivContinuousZModDual_symm_apply`: the continuous-dual equivalence on the
-  canonical carrier, in both directions: a class carries the homogeneous `1`-cocycle that the
-  character of the class defines, and a character is read back as the class of its cocycle.
+
+The identification of `TauCeti.cohomFp n G 1` with the continuous `ZMod n`-dual of `G` is
+`TauCeti.cohomFpLinearEquivContinuousZModDual` of
+`TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit`; this file is the
+comparison between the two models of `H¹`, not a second form of that equivalence.
 
 ## References
 
@@ -535,12 +533,13 @@ isomorphism of `ZMod n`-modules.**
 
 A class of `H¹(G, ZMod n)` is sent to the canonical cohomology class of the homogeneous cocycle it
 defines, read through `TauCeti.trivialFpEquiv` in the universe lift of `ZMod n`. This is the
-`ZMod n`-linear degree-one comparison the coefficients of `TauCeti.cohomFp` need, and it is what
-makes the rank, finite-dimensionality and cardinality of `TauCeti.cohomFp n G 1` the invariants of
-`H¹(G, ZMod n)`; the four results computed from it are in
-`TauCeti.Topology.Algebra.Group.Profinite.ProP.H1Dual`. The `ZMod n`-module structure on the
-source is `TauCeti.instModuleH1`, the one on the target is the canonical one of
-`TauCeti.cohomFp`. -/
+`ZMod n`-linear degree-one comparison the coefficients of `TauCeti.cohomFp` need: it is what
+identifies the canonical carrier with the explicit one, and
+`TauCeti.cohomFpEquivFrattiniQuotientDual` in
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.H1Dual` is the identification of the canonical
+carrier with the continuous `ZMod n`-dual of the pro-`p` Frattini quotient that follows from it.
+The `ZMod n`-module structure on the source is `TauCeti.instModuleH1`, the one on the target is
+the canonical one of `TauCeti.cohomFp`. -/
 noncomputable def h1EquivCohomFp (htriv : ∀ (g : G) (m : ZMod n), g • m = m) :
     H1 G (ZMod n) ≃ₗ[ZMod n] cohomFp n G 1 :=
   let e : H1 G (ZMod n) ≃+ cohomFp n G 1 :=
@@ -573,100 +572,5 @@ theorem h1EquivCohomFp_symm_apply (htriv : ∀ (g : G) (m : ZMod n), g • m = m
   simp
 
 end Coefficients
-
-section Dual
-
-variable (n : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
--- The carrier of the coefficient object is the universe lift of `ZMod n`, and the comparison
--- below is stated on it; it acts on it by its own action, as in the canonical section above.
-attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
-
-/-- The action of the coefficient object on its own carrier is continuous, being the trivial
-one. -/
-local instance : ContinuousSMul G (trivialFp n G).V where
-  -- The action of the coefficient object is trivial, so the action map is the second projection.
-  continuous_smul := by
-    have htriv :
-        (fun p : G × (trivialFp n G).V => p.1 • p.2) = (fun p : G × (trivialFp n G).V => p.2) :=
-      funext fun p => smul_trivialFp_V n G p.1 p.2
-    rw [htriv]
-    exact ⟨fun _s hs => hs.preimage continuous_snd⟩
-
-/-- The trivial action of `G` on `ZMod n`, the action the coefficients of `TauCeti.cohomFp` carry
-by construction. With this action in place the explicit `H¹(G, ZMod n)` of
-`TauCeti.h1EquivCohomFp` and `TauCeti.h1EquivContinuousZModDual` are the ones of the canonical
-coefficient object `TauCeti.trivialFp n G`, so the statements below are about
-`TauCeti.cohomFp n G 1` and mention no action of `G` of their own. -/
-local instance instDistribMulActionZMod : DistribMulAction G (ZMod n) where
-  smul _ m := m
-  one_smul _ := rfl
-  mul_smul _ _ _ := rfl
-  smul_add _ _ _ := rfl
-  smul_zero _ := rfl
-
-/-- The trivial action of `G` on `ZMod n` is continuous, being independent of `G`. -/
-local instance instContinuousSMulZMod : ContinuousSMul G (ZMod n) where
-  continuous_smul := ⟨fun _s hs => hs.preimage continuous_snd⟩
-
-/-- **`TauCeti.cohomFp n G 1` is the continuous `ZMod n`-dual of `G`.** The coefficient object
-`TauCeti.trivialFp n G` carries the trivial action of `G`, so with trivial coefficients a
-continuous `1`-cocycle is a continuous character, and
-`TauCeti.h1EquivContinuousZModDual` composed with the degree-one comparison
-`TauCeti.h1EquivCohomFp` identifies the canonical degree-one group with the continuous `ZMod n`-dual
-as `ZMod n`-modules. No hypothesis on an action of `G` is needed: the carrier of
-`TauCeti.cohomFp` comes with its own trivial coefficient action. -/
-noncomputable def cohomFpEquivContinuousZModDual :
-    cohomFp n G 1 ≃ₗ[ZMod n] continuousZModDual n G :=
-  (h1EquivCohomFp (fun _ _ => rfl)).symm.trans (h1EquivContinuousZModDual (fun _ _ => rfl))
-
-/-- The image of a canonical cohomology class is the character its homogeneous cocycle defines:
-evaluated at `g` it is the value of the inhomogeneous `1`-cocycle the class carries, read through
-`TauCeti.trivialFpEquiv`. -/
-@[simp]
-theorem cohomFpEquivContinuousZModDual_apply
-    (c : _root_.ContinuousCohomology.cocycles (trivialFp n G) 1) (g : G) :
-    Additive.toMul (cohomFpEquivContinuousZModDual n G
-        ((TopRep.homogeneousCochains (trivialFp n G)).homologyπ 1 c)) g
-      = Multiplicative.ofAdd
-          (trivialFpEquiv n G (((cohomFpCocycleEquiv1 n G).symm c :
-            G → (trivialFp n G).V) g)) := by
-  simp only [cohomFpEquivContinuousZModDual, LinearEquiv.trans_apply,
-    h1EquivContinuousZModDual_apply_mk, h1EquivCohomFp_symm_apply, h1CoeffEquiv_symm_apply,
-    ContCohomology.explicitCoeff1_mk,
-    cohomFpCocycleEquiv1_symm_apply, CategoryTheory.Functor.mapHomologicalComplex_obj_X]
-  -- The cocycle the coefficient transport is applied to is read at the point by
-  -- `TauCeti.ContCohomology.cocyclesMap1_apply`.
-  let f : (trivialFp n G).V →+[G] ZMod n :=
-    { toFun := trivialFpEquiv n G
-      map_zero' := (trivialFpEquiv n G).toAddMonoidHom.map_zero'
-      map_add' := (trivialFpEquiv n G).toAddMonoidHom.map_add'
-      map_smul' := fun g m => by rw [smul_trivialFp_V]; rfl }
-  have hpoint (c : _root_.ContinuousCohomology.cocycles (trivialFp n G) 1) (g : G) :
-      (cocyclesMap1 G (trivialFp n G) G (ZMod n) (ContinuousMonoidHom.id G) f _ _
-        ((cohomFpCocycleEquiv1 n G).symm c) : G → ZMod n) g
-        = f (((cohomFpCocycleEquiv1 n G).symm c : G → (trivialFp n G).V) g) :=
-    ContCohomology.cocyclesMap1_apply G (trivialFp n G) G (ZMod n) (ContinuousMonoidHom.id G)
-      f continuous_of_discreteTopology (fun g m => by rw [smul_trivialFp_V]; rfl) _ g
-  dsimp only [f] at hpoint
-  rw [hpoint]
-  -- The canonical cocycle of a class is the homogeneous form of the cocycle the class carries.
-  simp only [cohomFpCocycleEquiv1_symm_apply]
-  rfl
-
-/-- The inverse image of a continuous `ZMod n`-valued character of `G` is the canonical cohomology
-class of the homogeneous `1`-cocycle the character defines, read from the class of that continuous
-`1`-cocycle in `H¹(G, ZMod n)`. -/
-@[simp]
-theorem cohomFpEquivContinuousZModDual_symm_apply (φ : continuousZModDual n G) :
-    (cohomFpEquivContinuousZModDual n G).symm φ
-      = h1EquivCohomFp (fun _ _ => rfl)
-          (((Z1EquivOfSmulEqSelf (fun _ _ => rfl)).symm φ : H1 G (ZMod n))) := by
-  refine (cohomFpEquivContinuousZModDual n G).symm_apply_eq.2 ?_
-  rw [cohomFpEquivContinuousZModDual, LinearEquiv.trans_apply,
-    LinearEquiv.symm_apply_apply, ← h1EquivContinuousZModDual_symm_apply,
-    LinearEquiv.apply_symm_apply]
-
-end Dual
 
 end TauCeti
