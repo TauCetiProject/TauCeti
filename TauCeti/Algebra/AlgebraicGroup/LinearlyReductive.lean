@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.BaseChange
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Injective
 
 /-!
 # Linearly reductive commutative Hopf algebras
@@ -33,6 +34,8 @@ equivalent in characteristic zero.
   has the property.
 * `TauCeti.linearlyReductiveCommHopfAlgProperty.of_baseChange`: the property descends along
   field extensions.
+* `TauCeti.linearlyReductiveCommHopfAlgProperty.of_injective`: the property descends along
+  injective coordinate morphisms.
 * `TauCeti.LinearlyReductiveCommHopfAlgCat`: the corresponding full subcategory.
 
 ## References
@@ -96,6 +99,17 @@ theorem linearlyReductiveCommHopfAlgProperty.of_baseChange {k : Type u} [Field k
   (linearlyReductiveCommHopfAlgProperty_iff k H).2
     (Coalgebra.IsLinearlyReductive.of_baseChange K
       ((linearlyReductiveCommHopfAlgProperty_iff K _).1 hH))
+
+/-- An injective coordinate morphism of commutative Hopf algebras preserves linear
+reductivity from its codomain to its domain. In particular, it applies to a quotient
+affine-group projection with an injective coordinate morphism. -/
+theorem linearlyReductiveCommHopfAlgProperty.of_injective {k : Type u} [Field k]
+    {H K : CommHopfAlgCat.{v} k} (f : H ⟶ K)
+    (hf : Function.Injective f.hom) (hK : linearlyReductiveCommHopfAlgProperty k K) :
+    linearlyReductiveCommHopfAlgProperty k H :=
+  (linearlyReductiveCommHopfAlgProperty_iff k H).2
+    (Coalgebra.IsLinearlyReductive.of_injective f.hom.toCoalgHom hf
+      ((linearlyReductiveCommHopfAlgProperty_iff k K).1 hK))
 
 /-- The category of linearly reductive commutative Hopf algebras over a field. -/
 abbrev LinearlyReductiveCommHopfAlgCat (k : Type u) [Field k] :=

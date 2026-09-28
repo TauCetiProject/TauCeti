@@ -54,6 +54,10 @@ and Labute's action is recovered by precomposing with the inversion of the actin
 * `TopologicalAbelianization.map_mk`, `TopologicalAbelianization.continuous_map`,
   `TopologicalAbelianization.map_id`, `TopologicalAbelianization.map_comp`: the characteristic
   properties of `map`.
+* `TopologicalAbelianization.map_surjective`, `TopologicalAbelianization.ker_map_of_surjective`:
+  a continuous surjection `f : G →* H` of a compact group onto a Hausdorff group induces a
+  surjection `G^{ab} →* H^{ab}` whose kernel is the image of `ker f`, so that `H^{ab}` is the
+  quotient of `G^{ab}` by the image of `ker f`.
 * `TopologicalAbelianization.mk_smul_mk`: the class of `g : G` acts on the class of `n : N` by
   the class of `g * n * g⁻¹`; `TopologicalAbelianization.mk_inv_smul_mk` is Labute's form of
   the same action, the inverse of the class of `g` acting by the class of `g⁻¹ * n * g`.
@@ -126,6 +130,31 @@ composite of the induced maps. -/
 theorem map_comp (g : H →* K) (hg : Continuous g) (f : G →* H) (hf : Continuous f) :
     (map g hg).comp (map f hf) = map (g.comp f) (hg.comp hf) :=
   QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun x => by simp)
+
+/-- The homomorphism between topological abelianizations induced by a continuous surjection is
+surjective. -/
+theorem map_surjective (f : G →* H) (hf : Continuous f) (hsurj : Function.Surjective f) :
+    Function.Surjective (map f hf) :=
+  QuotientGroup.map_surjective_of_surjective _ _ f
+    ((QuotientGroup.mk'_surjective (commutator H).topologicalClosure).comp hsurj) _
+
+/-- **The kernel of the map induced on abelianizations by a surjection.** For a continuous
+surjection `f : G →* H` from a compact group onto a Hausdorff group, the kernel of
+`G^{ab} →* H^{ab}` is the image of `ker f` in `G^{ab}`. Compactness is what makes the image of the
+closed commutator subgroup of `G` closed, so that it is the closed commutator subgroup of `H`. -/
+theorem ker_map_of_surjective [CompactSpace G] [T2Space H] (f : G →* H) (hf : Continuous f)
+    (hsurj : Function.Surjective f) :
+    (map f hf).ker = f.ker.map (QuotientGroup.mk' (commutator G).topologicalClosure) := by
+  have hcomm : (commutator H).topologicalClosure = (commutator G).topologicalClosure.map f := by
+    rw [f.map_topologicalClosure hf _ (Subgroup.isClosed_topologicalClosure _).isCompact,
+      map_commutator_eq, MonoidHom.range_eq_top.mpr hsurj, ← commutator_def]
+  refine Subgroup.comap_injective
+    (QuotientGroup.mk'_surjective (commutator G).topologicalClosure) ?_
+  have h : (map f hf).comp (QuotientGroup.mk' (commutator G).topologicalClosure) =
+      (QuotientGroup.mk' (commutator H).topologicalClosure).comp f :=
+    MonoidHom.ext fun x ↦ map_mk f hf x
+  rw [Subgroup.comap_map_eq, QuotientGroup.ker_mk', MonoidHom.comap_ker, h, ← MonoidHom.comap_ker,
+    QuotientGroup.ker_mk', hcomm, Subgroup.comap_map_eq, sup_comm]
 
 end Map
 

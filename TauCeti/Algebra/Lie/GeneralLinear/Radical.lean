@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
-import Mathlib.Tactic.NoncommRing
 
 /-!
 # The radicals of `gl n K` and `sl n K`
@@ -16,9 +15,8 @@ import Mathlib.Tactic.NoncommRing
 matrices) and its derived ideal (`sl n R`), and shows that the two are complementary submodules as
 soon as the size of the matrices is invertible. This file proves the reductivity criterion itself,
 Mathlib's `LieAlgebra.HasCentralRadical`: over a field in which `2 ≠ 0`, the solvable radical of
-`gl n K` **is** its centre. That is the third clause of the concrete `gl n` structure statement of
-the highest-weight roadmap, and it is what makes the reductive vocabulary applicable to `gl n`,
-whose Killing form is degenerate.
+`gl n K` **is** its centre. This makes the reductive vocabulary applicable to `gl n`, whose Killing
+form is degenerate.
 
 The same structure shows that `sl n K` has trivial radical when `2` and the nonempty matrix size
 are nonzero. In characteristic zero this is registered as an instance, so Cartan's criterion makes
@@ -36,7 +34,7 @@ Bracketing against a diagonal matrix rescales a matrix unit,
 `⁅diagonal d, Eₚq c⁆ = Eₚq ((dₚ - d_q) c)` (`TauCeti.lie_single_of_mem_diagonalCartan`, from the
 diagonal Cartan subalgebra file), which extracts `Eₚq` from any diagonal element separating the
 indices `p` and `q`. Bracketing twice against `Eⱼᵢ` annihilates everything except one entry,
-`(ad Eⱼᵢ)² x = Eⱼᵢ (-2 xᵢⱼ)` (`TauCeti.lie_single_lie_single_self`), which extracts `Eⱼᵢ` from any
+`(ad Eⱼᵢ)² x = Eⱼᵢ (-2 xᵢⱼ)` (`TauCeti.lie_single_lie_single_of_ne`), which extracts `Eⱼᵢ` from any
 element with a nonzero `(i, j)` entry. A non-central matrix is either non-diagonal, and then the
 second bracket applies, or diagonal with two distinct entries, and then the first does. Once one
 off-diagonal matrix unit lies in the ideal, so does the difference of diagonal units
@@ -46,8 +44,6 @@ bracket again, all the remaining units.
 
 ## Main results
 
-* `TauCeti.lie_single_self_sub_single_self_single` and `TauCeti.lie_single_lie_single_self`: the
-  bracket computations that produce matrix units inside a Lie ideal.
 * `TauCeti.slIdeal_le_of_notMem_center`: **a Lie ideal of `gl n K` containing a non-central matrix
   contains `sl n K`**; equivalently `TauCeti.slIdeal_le_or_le_center`, every Lie ideal of `gl n K`
   either contains `sl n K` or consists of scalar matrices.
@@ -69,24 +65,16 @@ statement is proved uniformly in the index type, the case of at most one index b
 one, where the radical and the centre are both everything.
 
 Only the results about ideals are stated over a field, because the generation argument divides by an
-arbitrary nonzero matrix entry. The two bracket identities need only a commutative ring, and
+arbitrary nonzero matrix entry. The two bracket identities in `Basic.lean` need only a ring, and
 perfectness of `sl n R` — which divides by `2` alone — is stated over a commutative ring in which
 `2` is a unit, non-solvability adding only `Nontrivial R`; the radical computation specialises these
 to a field.
 
-The bracket against a diagonal matrix is not recomputed here: a diagonal matrix lies in the diagonal
-Cartan subalgebra of `TauCeti/Algebra/Lie/GeneralLinear/DiagonalCartan.lean`, so the eigenvector
-computation `TauCeti.lie_single_of_mem_diagonalCartan` of that file supplies it, and a difference of
-diagonal matrix units is turned into a diagonal matrix by `Matrix.diagonal_single` and
-`Matrix.diagonal_sub`.
+The bracket against a diagonal matrix comes from `TauCeti.lie_single_of_mem_diagonalCartan`.
+The matrix-unit bracket identities live alongside the other ring-level computations in
+`TauCeti/Algebra/Lie/GeneralLinear/Basic.lean`.
 
 ## References
-
-This proves the `gl n` half of the opening "structure of reductive Lie algebras" target of Layer 9
-of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: *"Concretely for `gl_n`: the
-centre is the scalar matrices, the derived ideal is `sl n`, and `gl_n` is reductive"*, whose first
-two clauses are `TauCeti/Algebra/Lie/GeneralLinear/Basic.lean`; the third is the roadmap's
-`hasCentralRadical_matrix`.
 
 * J. Dixmier, *Enveloping Algebras*, AMS GSM 11 (1996), Section 1.6 (reductive Lie algebras).
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Springer GTM 9 (1972),
@@ -103,49 +91,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {R : Type*} {n : Type*} [DecidableEq n] [Fintype n]
 
-/-! ### Two brackets between matrix units -/
-
-section Brackets
-
-variable [CommRing R]
-
-/-- **A difference of diagonal matrix units doubles the matrix unit between them**:
-`⁅Eₚₚ - E_qq, Eₚq c⁆ = Eₚq (2 c)`.
-
-The difference is diagonal, so `TauCeti.lie_single_of_mem_diagonalCartan` applies, with eigenvalue
-the difference `1 - (-1)` of its `(p, p)` and `(q, q)` entries. -/
-theorem lie_single_self_sub_single_self_single {p q : n} (hpq : p ≠ q) (c : R) :
-    ⁅single p p (1 : R) - single q q (1 : R), single p q c⁆ = single p q (2 * c) := by
-  have hcoeff : (single p p (1 : R) - single q q (1 : R)) p p
-      - (single p p (1 : R) - single q q (1 : R)) q q = 2 := by
-    simp [hpq, hpq.symm]
-    ring
-  rw [lie_single_of_mem_diagonalCartan
-      (sub_mem (single_self_mem_diagonalCartan p 1) (single_self_mem_diagonalCartan q 1)),
-    hcoeff, smul_single, smul_eq_mul]
-
-/-- **The double bracket against a matrix unit isolates a single entry**:
-`(ad Eⱼᵢ)² x = Eⱼᵢ (-2 · xᵢⱼ)` for `i ≠ j`.
-
-The square of `Eⱼᵢ` vanishes, so only the cross term `Eⱼᵢ x Eⱼᵢ = Eⱼᵢ xᵢⱼ` survives, twice. -/
-theorem lie_single_lie_single_self {i j : n} (hij : i ≠ j) (x : Matrix n n R) :
-    ⁅single j i (1 : R), ⁅single j i (1 : R), x⁆⁆ = single j i (-(2 * x i j)) := by
-  have hsq : single j i (1 : R) * single j i (1 : R) = 0 := by
-    rw [single_mul_single_of_ne (h := hij)]
-  have hmid : single j i (1 : R) * x * single j i (1 : R) = single j i (x i j) := by
-    rw [single_mul_mul_single]
-    simp
-  have hval : x i j + x i j = 2 * x i j := by ring
-  have expand : ⁅single j i (1 : R), ⁅single j i (1 : R), x⁆⁆
-      = single j i (1 : R) * single j i (1 : R) * x + x * (single j i (1 : R) * single j i (1 : R))
-        - (single j i (1 : R) * x * single j i (1 : R)
-            + single j i (1 : R) * x * single j i (1 : R)) := by
-    simp only [LieRing.of_associative_ring_bracket]
-    noncomm_ring
-  rw [expand, hsq, hmid, zero_mul, mul_zero, zero_add, zero_sub, ← single_add, ← single_neg, hval]
-
-end Brackets
-
 /-! ### Matrix units inside a Lie ideal -/
 
 section Ideals
@@ -155,9 +100,7 @@ variable {K : Type*} [Field K] (I : LieIdeal K (Matrix n n K))
 /-- **A diagonal element of a Lie ideal separating two indices contributes their matrix unit.** -/
 theorem single_mem_of_diagonal_mem {d : n → K} (hd : diagonal d ∈ I) {p q : n}
     (hpq : d p ≠ d q) (c : K) : single p q c ∈ I := by
-  have hmem : ⁅diagonal d, single p q ((d p - d q)⁻¹ * c)⁆ ∈ I := by
-    have h := I.lie_mem (x := -single p q ((d p - d q)⁻¹ * c)) hd
-    rwa [neg_lie, lie_skew] at h
+  have hmem := lie_mem_left K (Matrix n n K) I _ (single p q ((d p - d q)⁻¹ * c)) hd
   rwa [lie_single_of_mem_diagonalCartan (diagonal_mem_diagonalCartan d), diagonal_apply_eq,
     diagonal_apply_eq, smul_single, smul_eq_mul, ← mul_assoc,
     mul_inv_cancel₀ (sub_ne_zero.mpr hpq), one_mul] at hmem
@@ -185,18 +128,11 @@ theorem single_mem_of_apply_ne_zero (htwo : (2 : K) ≠ 0) {x : Matrix n n K} (h
   have hne : -(2 * x i j) ≠ 0 := neg_ne_zero.mpr (mul_ne_zero htwo hxij)
   have hmem : single j i (-(2 * x i j)) ∈ I := by
     have h := I.lie_mem (x := single j i (1 : K)) (I.lie_mem (x := single j i (1 : K)) hx)
-    rwa [lie_single_lie_single_self hij] at h
+    rwa [lie_single_lie_single_of_ne hij] at h
   have hscal : ((-(2 * x i j))⁻¹ * c) * (-(2 * x i j)) = c := by
     rw [mul_comm ((-(2 * x i j))⁻¹) c, mul_assoc, inv_mul_cancel₀ hne, mul_one]
   have h := SMulMemClass.smul_mem ((-(2 * x i j))⁻¹ * c) hmem
   rwa [smul_single, smul_eq_mul, hscal] at h
-
-/-- In a field in which `2 ≠ 0` the two square roots of `1` are distinct. -/
-private theorem one_ne_neg_one (htwo : (2 : K) ≠ 0) : (1 : K) ≠ -1 := by
-  intro h
-  refine htwo ?_
-  have h2 : (2 : K) = 1 - -1 := by ring
-  rw [h2, ← h, sub_self]
 
 /-- **One off-diagonal matrix unit generates `sl n K`**: a Lie ideal of `gl n K` containing `Eₐb`
 for some `a ≠ b` contains every trace-zero matrix. -/
@@ -219,7 +155,7 @@ theorem slIdeal_le_of_single_mem (htwo : (2 : K) ≠ 0) {a b : n} (hab : a ≠ b
         have hrhs : (single b b (1 : K) - single a a (1 : K)) a a = -1 := by
           simp [hab.symm]
         rw [hrhs]
-        exact one_ne_neg_one htwo
+        simpa only [ne_eq, eq_neg_iff_add_eq_zero, one_add_one_eq_two] using htwo
       · have hrhs : (single b b (1 : K) - single a a (1 : K)) p p = 0 := by
           simp [hpb.symm, hpa.symm]
         rw [hrhs]
@@ -256,57 +192,28 @@ theorem slIdeal_le_of_single_mem (htwo : (2 : K) ≠ 0) {a b : n} (hab : a ≠ b
   exact mem_of_trace_eq_zero_of_single_mem (fun hpq c => hoff hpq c) (fun p q c => hdiff p q c)
     (mem_slIdeal_iff.mp hA)
 
-/-- With at most one index every matrix is a scalar, so a non-central matrix forces two indices. -/
-private theorem nontrivial_of_notMem_center {x : Matrix n n K}
-    (hx : x ∉ LieAlgebra.center K (Matrix n n K)) : Nontrivial n := by
-  rcases subsingleton_or_nontrivial n with hsub | hnt
-  · refine absurd (mem_center_matrix_iff.mpr ?_) hx
-    rcases isEmpty_or_nonempty n with hempty | hne
-    · have := hempty
-      exact ⟨0, by rw [Subsingleton.elim x 0, zero_smul]⟩
-    · obtain ⟨k⟩ := hne
-      refine ⟨x k k, ?_⟩
-      ext i j
-      rw [Subsingleton.elim i k, Subsingleton.elim j k]
-      simp
-  · exact hnt
-
 /-- **A Lie ideal of `gl n K` containing a non-central matrix contains `sl n K`.** -/
 theorem slIdeal_le_of_notMem_center (htwo : (2 : K) ≠ 0) {x : Matrix n n K} (hxI : x ∈ I)
     (hx : x ∉ LieAlgebra.center K (Matrix n n K)) : slIdeal K n ≤ I := by
   by_cases hoff : ∀ i j : n, i ≠ j → x i j = 0
   · -- `x` is diagonal, and not a scalar, so two of its diagonal entries differ.
-    have hxd : (diagonal fun k => x k k) ∈ I := by
-      have hx' : x = diagonal fun k => x k k := by
-        ext i j
-        rcases eq_or_ne i j with rfl | hij
-        · simp
-        · rw [diagonal_apply_ne _ hij, hoff i j hij]
-      rw [← hx']
-      exact hxI
+    have hx' : x = diagonal fun k ↦ x k k :=
+      (Matrix.IsDiag.diagonal_diag fun _ _ hij ↦ hoff _ _ hij).symm
+    have hxd : (diagonal fun k => x k k) ∈ I := hx' ▸ hxI
     obtain ⟨p, q, hpq⟩ : ∃ p q : n, x p p ≠ x q q := by
       by_contra hcon
-      have hall : ∀ p q : n, x p p = x q q := by
-        intro p q
-        by_contra hne
-        exact hcon ⟨p, q, hne⟩
+      have hall : ∀ p q : n, x p p = x q q := by simpa using hcon
       refine hx (mem_center_matrix_iff.mpr ?_)
       rcases isEmpty_or_nonempty n with hempty | hne
       · have := hempty
         exact ⟨0, by rw [Subsingleton.elim x 0, zero_smul]⟩
       · obtain ⟨k⟩ := hne
         refine ⟨x k k, ?_⟩
-        ext i j
-        rcases eq_or_ne i j with rfl | hij
-        · simp [hall i k]
-        · rw [hoff i j hij, Matrix.smul_apply, Matrix.one_apply_ne hij, smul_zero]
+        rw [Matrix.smul_one_eq_diagonal]
+        exact hx'.trans (congrArg diagonal (funext fun i ↦ hall i k))
     exact slIdeal_le_of_single_mem I htwo (fun h => hpq (by rw [h]))
       (single_mem_of_diagonal_mem I hxd hpq 1)
-  · obtain ⟨i, j, hij, hxij⟩ : ∃ i j : n, i ≠ j ∧ x i j ≠ 0 := by
-      by_contra hcon
-      refine hoff fun i j hij => ?_
-      by_contra hne
-      exact hcon ⟨i, j, hij, hne⟩
+  · obtain ⟨i, j, hij, hxij⟩ : ∃ i j : n, i ≠ j ∧ x i j ≠ 0 := by simpa using hoff
     exact slIdeal_le_of_single_mem I htwo hij.symm
       (single_mem_of_apply_ne_zero I htwo hxI hij hxij 1)
 
@@ -397,7 +304,8 @@ theorem radical_matrix_eq_center (htwo : (2 : K) ≠ 0) :
   rw [Set.mem_ofPred_eq] at hI
   by_contra hIc
   obtain ⟨x, hxI, hx⟩ := IsConcreteLE.not_le_iff_exists.mp hIc
-  have hnt : Nontrivial n := nontrivial_of_notMem_center hx
+  rcases subsingleton_or_nontrivial n with hn | hn
+  · simp only [center_matrix_eq_top, LieSubmodule.mem_top, not_true_eq_false] at hx
   exact not_isSolvable_slIdeal (isUnit_iff_ne_zero.mpr htwo)
     (LieAlgebra.le_solvable_ideal_solvable (slIdeal_le_of_notMem_center I htwo hxI hx) hI)
 
@@ -427,25 +335,9 @@ private theorem slIncl_isIdealMorphism
     ((SpecialLinear.sl n K).incl.comp J.incl).IsIdealMorphism := by
   rw [LieHom.isIdealMorphism_iff]
   intro A y
-  cases isEmpty_or_nonempty n with
-  | inl hn' =>
-      let _ := hn'
-      exact ⟨0, Subsingleton.elim _ _⟩
-  | inr hn' =>
-      let _ := hn'
-      let _ : Invertible (Fintype.card n : K) := invertibleOfNonzero (hn hn')
-      obtain ⟨X, Z, hX, hZ, hXZ⟩ := Submodule.codisjoint_iff_exists_add_eq.mp
-        (isCompl_center_derivedSeries_one_matrix K n).codisjoint A
-      have hZsl : Z ∈ SpecialLinear.sl n K := by
-        rw [← derivedSeries_one_toLieSubalgebra_eq_sl K n]
-        exact hZ
-      have hXzero : ⁅X, ((SpecialLinear.sl n K).incl.comp J.incl) y⁆ = 0 := by
-        rw [← lie_skew, (LieModule.mem_maxTrivSubmodule K _ _ X).1 hX, neg_zero]
-      let z : J := ⟨⁅⟨Z, hZsl⟩, (y : SpecialLinear.sl n K)⁆, J.lie_mem y.property⟩
-      refine ⟨z, ?_⟩
-      rw [← hXZ, add_lie, hXzero, zero_add]
-      simp only [z, LieHom.coe_comp, Function.comp_apply, LieSubalgebra.coe_incl,
-        LieIdeal.incl_apply, LieSubalgebra.coe_bracket]
+  obtain ⟨X, r, rfl⟩ := exists_sl_add_smul_one_eq (fun h ↦ isUnit_iff_ne_zero.mpr (hn h)) A
+  refine ⟨⟨⁅X, (y : SpecialLinear.sl n K)⁆, J.lie_mem y.property⟩, ?_⟩
+  simp [LieRing.of_associative_ring_bracket, add_mul, mul_add]
 
 /-- **The special linear Lie algebra has trivial radical.** If `2` and, for nonempty `n`, the
 cardinality of `n` are nonzero, a solvable ideal of `sl n` maps to a solvable ideal of `gl n`,
@@ -460,14 +352,13 @@ theorem hasTrivialRadical_sl (htwo : (2 : K) ≠ 0)
   intro x hx
   let f : J →ₗ⁅K⁆ Matrix n n K := (SpecialLinear.sl n K).incl.comp J.incl
   have hf : f.IsIdealMorphism := slIncl_isIdealMorphism K n hn J
-  have hsolvRange : LieAlgebra.IsSolvable f.range := by
-    let _ : LieAlgebra.IsSolvable J := hJ
-    infer_instance
   have hsolv : LieAlgebra.IsSolvable f.idealRange := by
-    let e : (f.idealRange : LieSubalgebra K (Matrix n n K)) ≃ₗ⁅K⁆ f.range :=
-      LieEquiv.ofEq _ _ (congrArg (fun S : LieSubalgebra K (Matrix n n K) ↦
-        (S : Set (Matrix n n K))) hf.eq)
-    exact (LieAlgebra.solvable_iff_equiv_solvable e).mpr hsolvRange
+    let _ : LieAlgebra.IsSolvable J := hJ
+    -- The Lie structure of a Lie ideal is by definition that of its underlying subalgebra
+    -- (`LieIdeal.lieAlgebra`), so solvability transfers along `hf.eq : f.idealRange = f.range`.
+    change LieAlgebra.IsSolvable (f.idealRange : LieSubalgebra K (Matrix n n K))
+    rw [hf.eq]
+    infer_instance
   have hcenter : f ⟨x, hx⟩ ∈ LieAlgebra.center K (Matrix n n K) := by
     rw [← radical_matrix_eq_center htwo]
     exact (LieIdeal.solvable_iff_le_radical K _ f.idealRange).mp hsolv

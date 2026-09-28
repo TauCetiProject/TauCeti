@@ -51,6 +51,9 @@ shifting.
   for a discrete torsion `G`-module `M`, comes from a finite `G`-stable subgroup of `M`.
 * `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_of_forall_finite_addSubgroup`:
   `Hⁿ(G, M)` vanishes as soon as `Hⁿ(G, N)` vanishes for every finite `G`-stable subgroup `N`.
+* `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_of_forall_finite`: for a
+  discrete `p`-primary torsion `M` and `p ≠ 0`, `Hⁿ(G, M)` vanishes as soon as `Hⁿ(G, N)` vanishes
+  for every finite discrete `p`-primary `G`-module `N`.
 * `TauCeti.cohomologicalDimensionLE_iff_forall_finite`,
   `TauCeti.cohomologicalDimensionAt_le_iff_forall_finite`: the `p`-cohomological dimension of a
   compact group is at most `n` exactly when `Hⁱ(G, M)` vanishes for every `i > n` and every
@@ -312,6 +315,22 @@ theorem subsingleton_continuousCohomology_of_forall_finite_addSubgroup (hM : IsA
   have := h N hN hfin
   rw [Subsingleton.elim y 0, map_zero]
 
+/-- **Vanishing of continuous cohomology is detected on finite `p`-primary coefficients**, in a
+fixed degree. Let `G` be a compact group, `p ≠ 0`, and `M` a discrete `p`-primary torsion
+`G`-module with continuous action. If `Hⁿ(G, N)` vanishes for every finite discrete `p`-primary
+`G`-module `N`, then `Hⁿ(G, M)` vanishes. -/
+theorem subsingleton_continuousCohomology_of_forall_finite {p : ℕ} (hp : p ≠ 0)
+    (hM : IsPPrimaryTorsion p M) (n : ℕ)
+    (h : ∀ (N : Type (max v w)) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+      [DistribMulAction G N] [ContinuousSMul G N] [Finite N], IsPPrimaryTorsion p N →
+      Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G N))) :
+    Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G M)) := by
+  refine subsingleton_continuousCohomology_of_forall_finite_addSubgroup (hM.isAddTorsion hp) n
+    fun N hN hfin ↦ ?_
+  let := N.restrictDistribMulAction hN
+  have : ContinuousSMul G N := N.restrictDistribMulAction_continuousSMul hN
+  exact h N (hM.of_injective N.subtype N.subtype_injective)
+
 end DiscreteModule
 
 end ContinuousCohomology
@@ -333,12 +352,9 @@ theorem cohomologicalDimensionLE_iff_forall_finite (hp : p ≠ 0) {n : ℕ} :
         [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
         ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) := by
   rw [cohomologicalDimensionLE_iff]
-  refine ⟨fun h M _ _ _ _ _ _ hM i hi ↦ h M hM i hi, fun h M _ _ _ _ _ hM i hi ↦ ?_⟩
-  refine ContinuousCohomology.subsingleton_continuousCohomology_of_forall_finite_addSubgroup
-    (hM.isAddTorsion hp) i fun N hN hfin ↦ ?_
-  let := N.restrictDistribMulAction hN
-  have : ContinuousSMul G N := N.restrictDistribMulAction_continuousSMul hN
-  exact h N (hM.of_injective N.subtype N.subtype_injective) i hi
+  exact ⟨fun h M _ _ _ _ _ _ hM i hi ↦ h M hM i hi, fun h M _ _ _ _ _ hM i hi ↦
+    ContinuousCohomology.subsingleton_continuousCohomology_of_forall_finite hp hM i
+      fun N _ _ _ _ _ _ hN ↦ h N hN i hi⟩
 
 /-- **The `p`-cohomological dimension of a compact group is detected on finite coefficients**
 (NSW (3.3.2), coefficient reduction). For `p ≠ 0`, `cd_p G ≤ n` exactly when `Hⁱ(G, M)` vanishes
