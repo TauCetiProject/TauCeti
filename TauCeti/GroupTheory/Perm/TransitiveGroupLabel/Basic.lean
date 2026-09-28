@@ -477,7 +477,9 @@ theorem TransitiveGroupLabel.isPretransitive_even_iff {n : ℕ}
     IsPretransitive ((referenceSubgroup n j ⊓ alternatingGroup (Fin n)) :
       Subgroup (Perm (Fin n))) (Fin n) := by
   obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
-  rw [← hτ, Equiv.isPretransitive_even_map_permCongrHom_iff]
+  have hτ' : G.map τ.permCongrHom = referenceSubgroup n j := by
+    simpa only [MulEquiv.toMonoidHom_eq_coe] using hτ
+  rw [← hτ', Equiv.isPretransitive_even_map_permCongrHom_iff]
 
 /-- A subgroup carrying a transitive-group label acts primitively exactly when its reference
 subgroup does. -/

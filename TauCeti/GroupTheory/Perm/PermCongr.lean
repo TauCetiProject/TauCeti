@@ -86,11 +86,12 @@ variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 even part of its transport. -/
 @[simp]
 theorem map_inf_alternatingGroup_permCongrHom (e : α ≃ β) (G : Subgroup (Perm α)) :
-    ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map e.permCongrHom.toMonoidHom =
-      G.map e.permCongrHom.toMonoidHom ⊓ alternatingGroup β := by
-  have hA : (alternatingGroup α).map e.permCongrHom.toMonoidHom =
+    ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map e.permCongrHom =
+      G.map e.permCongrHom ⊓ alternatingGroup β := by
+  have hA : (alternatingGroup α).map e.permCongrHom =
       alternatingGroup β := by
     simp [Subgroup.ext_iff, Subgroup.map_equiv_eq_comap_symm]
+  simp only [← MulEquiv.toMonoidHom_eq_coe] at hA ⊢
   rw [Subgroup.map_inf G (alternatingGroup α)
     e.permCongrHom.toMonoidHom e.permCongrHom.injective, hA]
 
@@ -99,10 +100,16 @@ subgroup with the alternating group. -/
 @[simp]
 theorem isPretransitive_even_map_permCongrHom_iff (e : α ≃ β)
     (G : Subgroup (Perm α)) :
-    IsPretransitive ((G.map e.permCongrHom.toMonoidHom ⊓ alternatingGroup β) :
+    IsPretransitive ((G.map e.permCongrHom ⊓ alternatingGroup β) :
       Subgroup (Perm β)) β ↔
     IsPretransitive ((G ⊓ alternatingGroup α) : Subgroup (Perm α)) α := by
-  rw [← map_inf_alternatingGroup_permCongrHom, isPretransitive_map_permCongrHom_iff]
+  rw [← map_inf_alternatingGroup_permCongrHom]
+  have hmap : ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map
+      e.permCongrHom.toMonoidHom =
+      ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map e.permCongrHom := by
+    simp only [MulEquiv.toMonoidHom_eq_coe]
+  exact hmap ▸ isPretransitive_map_permCongrHom_iff e
+    ((G ⊓ alternatingGroup α) : Subgroup (Perm α))
 
 /-- Transport along an equivalence preserves containment in the alternating group, since it
 preserves the sign of every permutation. -/
