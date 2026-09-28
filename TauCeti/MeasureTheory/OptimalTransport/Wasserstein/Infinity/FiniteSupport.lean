@@ -72,6 +72,15 @@ instance : Infinite UnitDiscreteNat := Infinite.of_injective UnitDiscreteNat.mk 
 @[simp] theorem UnitDiscreteNat.dist_eq (x y : UnitDiscreteNat) :
     dist x y = if x = y then 0 else 1 := rfl
 
+/-- The unit discrete metric is complete: every Cauchy sequence is eventually constant. -/
+instance : CompleteSpace UnitDiscreteNat := by
+  refine Metric.complete_of_cauchySeq_tendsto fun u hu ↦ ?_
+  obtain ⟨N, hN⟩ := (Metric.cauchySeq_iff'.1 hu) 1 (by norm_num)
+  refine ⟨u N, tendsto_atTop_of_eventually_const (i₀ := N) (fun n hn ↦ ?_)⟩
+  have hlt := hN n hn
+  by_contra hne
+  simp [UnitDiscreteNat.dist_eq, hne] at hlt
+
 /-- Extended distance in the unit discrete metric. -/
 @[simp] theorem UnitDiscreteNat.edist_eq (x y : UnitDiscreteNat) :
     edist x y = if x = y then 0 else 1 := by
