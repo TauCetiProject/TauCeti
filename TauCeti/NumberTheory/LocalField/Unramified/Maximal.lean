@@ -131,7 +131,7 @@ for `f ≠ 0`, where `q` is the cardinality of the residue field of `K`. -/
 theorem maximalUnramifiedExtension_eq_adjoin :
     maximalUnramifiedExtension K Ω =
       adjoin K {x : Ω | ∃ f ≠ 0, x ^ Nat.card 𝓀[K] ^ f = x} := by
-  simp only [maximalUnramifiedExtension, unramifiedExtension, ← adjoin_iUnion]
+  simp only [maximalUnramifiedExtension, unramifiedExtension_def, ← adjoin_iUnion]
   congr 1
   ext x
   simp only [Set.mem_iUnion, Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero]
@@ -158,7 +158,7 @@ private theorem algHom_ext_unramifiedExtension {f : ℕ} {A : Type*} [Field A] [
     {φ ψ : unramifiedExtension K Ω f →ₐ[K] A}
     (h : ∀ x : unramifiedExtension K Ω f, (x : Ω) ^ Nat.card 𝓀[K] ^ f = x → φ x = ψ x) :
     φ = ψ := by
-  refine algHom_ext_of_eq_adjoin K rfl fun x hx ↦ h _ ?_
+  refine algHom_ext_of_eq_adjoin K (unramifiedExtension_def K Ω f) fun x hx ↦ h _ ?_
   rw [Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero] at hx
   exact hx.2
 
