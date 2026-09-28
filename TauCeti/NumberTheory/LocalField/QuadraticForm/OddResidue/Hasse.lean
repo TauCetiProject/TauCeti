@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Induction
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
 public import TauCeti.NumberTheory.HilbertSymbol.Binary
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity
-import TauCeti.NumberTheory.LocalField.NatCastValuation
+public import TauCeti.NumberTheory.LocalField.NatCastValuation
 
 /-!
 # The Hasse sign over a local field of odd residue characteristic
@@ -73,13 +73,15 @@ theorem oddResidueHasse_mk (h2 : IsUnit (2 : 𝒪[K])) (p : RegularFormPresentat
   simp only [oddResidueHasse, liftDiagonal_mk]
 
 /-- The Hasse sign of a regular form is computed from any diagonalization of that form. -/
-theorem oddResidueHasse_formClass [Invertible (2 : K)] (h2 : IsUnit (2 : 𝒪[K]))
+theorem oddResidueHasse_formClass (h2 : IsUnit (2 : 𝒪[K]))
     {V : Type*} [AddCommGroup V] [Module K V]
     [FiniteDimensional K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     {n : ℕ} (w : Fin n → Kˣ)
     (h : Q.Equivalent (weightedSumSquares K fun i => (w i : K))) :
-    oddResidueHasse h2 (formClass Q hQ) =
-      ∏ i, ∏ j ∈ Ioi i, hilbertSymbol (w i) (w j) := by
+    (letI : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
+     oddResidueHasse h2 (formClass Q hQ) =
+       ∏ i, ∏ j ∈ Ioi i, hilbertSymbol (w i) (w j)) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   rw [formClass_mk Q hQ ⟨n, w⟩ (by rwa [presentedForm_eq_weightedSumSquares_coe]),
     oddResidueHasse_mk]
 
