@@ -10,9 +10,9 @@ public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
-import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The orthogonal group of a quadratic form
@@ -1019,13 +1019,8 @@ not two, on a nonzero space. On the zero space the two groups coincide
 (`specialOrthogonalWithin_eq_top`). -/
 theorem index_specialOrthogonalWithin [Nontrivial V] (hQ : Q.Nondegenerate) :
     (specialOrthogonalWithin Q).index = 2 := by
-  have hneg : IsPrimitiveRoot (-1 : K) 2 := by
-    refine IsPrimitiveRoot.mk_of_lt _ two_pos (by norm_num) fun l hl hl2 => ?_
-    obtain rfl : l = 1 := by omega
-    rw [pow_one]
-    exact fun h => NeZero.ne (2 : K) (by linear_combination -h)
   rw [specialOrthogonalWithin, Subgroup.index_ker, range_orthogonalDet hQ,
-    hneg.card_rootsOfUnity]
+    card_rootsOfUnity_two (NeZero.ne 2)]
 
 end DetField
 
