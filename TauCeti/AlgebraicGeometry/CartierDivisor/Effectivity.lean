@@ -64,15 +64,26 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
 
 /-- The Weil–Cartier equivalence preserves effectivity. -/
-theorem isEffective_iff_equivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1)
+@[simp]
+theorem isEffective_equivCartierDivisor_iff (hX : ∀ x : X, coheight x ≤ 1)
     (D : SchemeWeilDivisor X) :
-    WeilDivisor.IsEffective D ↔
-      (equivCartierDivisor hX D).IsEffective := by
+    (equivCartierDivisor hX D).IsEffective ↔
+      WeilDivisor.IsEffective D := by
   rw [Scheme.CartierDivisor.isEffective_iff_toWeilDivisor hX]
   have h : (equivCartierDivisor hX D).toWeilDivisor = D := by
     rw [← equivCartierDivisor_symm_apply hX (equivCartierDivisor hX D)]
     exact (equivCartierDivisor hX).left_inv D
   rw [h]
+
+-- `equivCartierDivisor_apply` is a simp lemma, so `simp` reaches this constructor form first.
+@[simp]
+private theorem isEffective_cartierDivisor_iff (hX : ∀ x : X, coheight x ≤ 1)
+    (D : SchemeWeilDivisor X) :
+    (IsLocallyPrincipal.cartierDivisor hX
+      (isLocallyPrincipal_of_forall_coheight_le_one hX D)).IsEffective ↔
+        WeilDivisor.IsEffective D := by
+  rw [← equivCartierDivisor_apply hX D]
+  exact isEffective_equivCartierDivisor_iff hX D
 
 /-- The Weil–Cartier equivalence restricts to an additive equivalence of effective divisors. -/
 def effectiveEquivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1) :
@@ -85,12 +96,12 @@ def effectiveEquivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1) :
       constructor
       · rintro ⟨D, hD, rfl⟩
         exact (Scheme.CartierDivisor.mem_effectiveSubmonoid _).mpr
-          ((isEffective_iff_equivCartierDivisor hX D).mp
+          ((isEffective_equivCartierDivisor_iff hX D).mpr
             ((WeilDivisor.mem_effectiveSubmonoid _).mp hD))
       · intro hE
         refine ⟨(equivCartierDivisor hX).symm E, ?_, ?_⟩
         · exact (WeilDivisor.mem_effectiveSubmonoid _).mpr
-            ((isEffective_iff_equivCartierDivisor hX _).mpr (by
+            ((isEffective_equivCartierDivisor_iff hX _).mp (by
               simpa only [AddEquiv.apply_symm_apply] using
                 (Scheme.CartierDivisor.mem_effectiveSubmonoid _).mp hE))
         · exact (equivCartierDivisor hX).apply_symm_apply E))
