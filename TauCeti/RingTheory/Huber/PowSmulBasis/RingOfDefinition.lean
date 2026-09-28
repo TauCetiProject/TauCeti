@@ -36,7 +36,7 @@ namespace TauCeti.Huber.PairOfDefinition
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   {M : Type*} [AddCommGroup M] [Module A M]
 
-/-- A finite lattice over `Q` can be scaled into a lattice over `P`, provided it lies in
+/-- A finitely generated `Q`-submodule can be scaled into a `P`-submodule when it lies in
 the ambient `A`-span of the latter. Boundedness of `Q` makes the exponent uniform over
 the coefficients of its generators. -/
 theorem exists_pow_smul_mem_of_fg (P Q : PairOfDefinition A) {s : A}
@@ -87,7 +87,8 @@ theorem exists_pow_smul_mem_of_fg (P Q : PairOfDefinition A) {s : A}
   refine ⟨j + d, fun x hx ↦ ?_⟩
   simpa using key x hx 1
 
-/-- Every `P`-lattice neighbourhood contains a `Q`-lattice neighbourhood. -/
+/-- If a finitely generated `Q`-submodule lies in the `A`-span of a `P`-submodule, then
+every power scaling of the latter contains a power scaling of the former. -/
 theorem exists_pow_smul_subset_pow_smul (P Q : PairOfDefinition A) {s : A}
     (hs : IsTopologicallyNilpotent s) (hsP : s ∈ P.ringOfDefinition)
     (hsQ : s ∈ Q.ringOfDefinition)
