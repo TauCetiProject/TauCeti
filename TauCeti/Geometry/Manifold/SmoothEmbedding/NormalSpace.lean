@@ -81,6 +81,14 @@ noncomputable instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TopologicalSpace (f.NormalSpace x hn) :=
   inferInstanceAs (TopologicalSpace (TangentSpace J (f x) ⧸ f.tangentRange x hn))
 
+instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    IsTopologicalAddGroup (f.NormalSpace x hn) :=
+  inferInstanceAs (IsTopologicalAddGroup (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+
+instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    ContinuousSMul 𝕜 (f.NormalSpace x hn) :=
+  inferInstanceAs (ContinuousSMul 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+
 /-- Project an ambient tangent vector to its normal class. -/
 noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn :=
@@ -152,12 +160,6 @@ theorem normalClass_eq_zero_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n 
     -- Expose the quotient hidden by `NormalSpace` so the standard quotient criterion applies.
     change (Submodule.Quotient.mk v : TangentSpace J (f x) ⧸ f.tangentRange x hn) = 0 ↔ _
     exact Submodule.Quotient.mk_eq_zero (p := f.tangentRange x hn) (x := v)
-
-/-- The kernel of the normal-class map is the tangent range. -/
-@[simp]
-theorem normalClass_ker (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    LinearMap.ker (f.normalClass x hn) = f.tangentRange x hn := by
-  convert Submodule.ker_mkQ (f.tangentRange x hn) using 1; rfl
 
 /-- The differential of the embedding has zero normal class. -/
 @[simp]
