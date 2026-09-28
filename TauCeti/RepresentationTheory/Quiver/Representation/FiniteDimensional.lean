@@ -29,6 +29,8 @@ finite-dimensional over the base field gives such a representation.
 
 * `TauCeti.IsFinDim.of_iso`: pointwise finite-dimensionality transports along an isomorphism.
 * The full subcategory of `IsFinDim` representations is essentially small for finite `Q`.
+* `TauCeti.module_finite_asModule_of_isFinDim`: a pointwise finite-dimensional representation
+  gives a finite module over the path algebra when the vertex set is finite.
 * `TauCeti.isFinDim_quiverRepFunctor_obj`: finite-dimensionality passes from a module to its
   associated representation.
 
@@ -144,7 +146,9 @@ end ExactStructure
 
 variable (k Q) [Finite Q]
 
-private theorem finite_asModule_of_isFinDim [DecidableEq Q]
+/-- A pointwise finite-dimensional representation of a finite quiver gives a finite module over
+the path algebra under `QuiverRep.asModule`. -/
+theorem module_finite_asModule_of_isFinDim [DecidableEq Q]
     (M : QuiverRep.{u, v, w, t} k Q) (hM : IsFinDim k Q M) :
     Module.Finite (pathAlgebra k Q) (QuiverRep.asModule k Q M) := by
   let h (i : Q) : Module.Finite k (QuiverRep.vertexSpace k Q M i) :=
@@ -163,7 +167,7 @@ instance : EssentiallySmall.{max (max u v) w}
     ((ModuleCat.isFG (pathAlgebra k Q)).lift
       ((ObjectProperty.ι (IsFinDim k Q)) ⋙ (quiverRepEquivalence k Q).functor) (fun M => by
         let hmodule : Module.Finite (pathAlgebra k Q) (QuiverRep.asModule k Q M.1) :=
-          finite_asModule_of_isFinDim k Q M.1 M.property
+          module_finite_asModule_of_isFinDim k Q M.1 M.property
         let hshrink : Module.Finite (pathAlgebra k Q)
             (QuiverRep.asModuleShrink k Q M.1) :=
           Module.Finite.equiv (QuiverRep.asModuleShrinkEquiv k Q M.1).symm
