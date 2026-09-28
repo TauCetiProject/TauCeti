@@ -18,7 +18,10 @@ distribution the tangent field of a unique foliation in the chart sense, the lea
 maximal connected integral manifolds; the distribution is therefore the data of the foliation.
 The regularity `1 ≤ n` is required: a `C⁰` foliation need not have a continuous tangent field,
 and for a merely continuous distribution the involutivity condition, which tests only
-differentiable tangent vector fields, need not constrain it.
+differentiable tangent vector fields, need not constrain it. The manifold `M` is required to be
+`C^(n+1)`, so that its tangent bundle is a `C^n` vector bundle and a `C^n` distribution is a
+`C^n` subbundle of it; on a less regular manifold the regularity of the distribution would not be
+meaningful (the rank-zero distribution, for instance, would be `C^n` for every `n`).
 
 A foliation is data rather than a property of `M`, so it is a structure, bundling the
 distribution with its regularity and involutivity. The foliation of a normed space by the
@@ -26,7 +29,7 @@ translates of a finite-dimensional subspace is the basic example.
 
 ## Main definitions
 
-* `TauCeti.Foliation I n M k`: the `C^n` foliations of `M` of rank `k`.
+* `TauCeti.Foliation I n M k`: the `C^n` foliations of rank `k` of a `C^(n+1)` manifold `M`.
 * `TauCeti.Foliation.ofSubmodule S hn`: the foliation of a normed space `E` by the translates of a
   finite-dimensional subspace `S`.
 
@@ -52,10 +55,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {k : ℕ}
 
 variable (I n M k) in
-/-- A `C^n` foliation of `M` of rank `k`, for `1 ≤ n`, recorded by the tangent spaces of its
-leaves: a `C^n` involutive distribution of rank `k`. -/
+/-- A `C^n` foliation of the `C^(n+1)` manifold `M` of rank `k`, for `1 ≤ n`, recorded by the
+tangent spaces of its leaves: a `C^n` involutive distribution of rank `k`. -/
 @[ext]
-structure Foliation where
+structure Foliation [IsManifold I (n + 1) M] where
   /-- The foliation is at least `C¹`, so that its tangent distribution is locally spanned by
   differentiable vector fields and involutivity is a condition on it. -/
   one_le : 1 ≤ n
@@ -68,6 +71,8 @@ structure Foliation where
   isInvolutiveDistribution : IsInvolutiveDistribution I distribution
 
 namespace Foliation
+
+variable [IsManifold I (n + 1) M]
 
 /-- The leaves of a foliation of rank `k` have `k`-dimensional tangent spaces. -/
 theorem finrank_distribution (F : Foliation I n M k) (x : M) :
