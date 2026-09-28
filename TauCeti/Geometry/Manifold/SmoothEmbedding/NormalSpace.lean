@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
-public import Mathlib.LinearAlgebra.Dimension.RankNullity
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 
 /-!
 # Normal spaces of smooth embeddings
