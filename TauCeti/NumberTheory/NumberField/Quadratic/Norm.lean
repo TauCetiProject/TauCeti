@@ -70,7 +70,7 @@ normalization rule. -/
 
 /-- **The integer norm in the basis `1, θ`:** on `𝓞 K`, `N(b + aθ) = b² - d·a²` for integers
 `a`, `b`. This is `norm_add_mul_gen` read through `Algebra.coe_norm_int`. -/
-theorem norm_int_add_mul_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
+@[simp] theorem norm_int_add_mul_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (a b : ℤ) :
     Algebra.norm ℤ ((b : 𝓞 K) + (a : 𝓞 K) * θ) = b ^ 2 - d * a ^ 2 := by
   have h : (Algebra.norm ℤ ((b : 𝓞 K) + (a : 𝓞 K) * θ) : ℚ) =
@@ -124,14 +124,9 @@ theorem exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one (hmin : minpoly ℤ �
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {a b : ℤ} (hab : b ^ 2 - d * a ^ 2 = -1) :
     ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1 := by
   set x : 𝓞 K := (b : 𝓞 K) + (a : 𝓞 K) * θ with hxdef
-  have habq : ((b : ℤ) : ℚ) ^ 2 - ((d : ℤ) : ℚ) * ((a : ℤ) : ℚ) ^ 2 = -1 := by exact_mod_cast hab
   have hnorm : Algebra.norm ℚ ((x : K)) = -1 := by
-    have hval : ((x : 𝓞 K) : K)
-        = (((b : ℤ) : ℚ) : K) + (((a : ℤ) : ℚ) : K) * (θ : K) := by
-      rw [hxdef]
-      simp only [RingOfIntegers.coe_eq_algebraMap, map_add, map_mul, map_intCast,
-        Rat.cast_intCast]
-    rw [hval, norm_add_mul_gen hmin hgen, habq]
+    rw [← Algebra.coe_norm_int, hxdef, norm_int_add_mul_gen hmin hgen, hab]
+    norm_num
   have hunit : IsUnit x := by
     rw [NumberField.isUnit_iff_norm, RingOfIntegers.coe_norm, hnorm]
     norm_num
