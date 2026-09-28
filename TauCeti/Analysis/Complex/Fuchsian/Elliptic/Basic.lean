@@ -250,4 +250,41 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
   rw [hdesc]
   exact (differentiableOn_descendPow hs_open hFd hinv).mono hsub
 
+/-- **The elliptic chart at the orbit of `z` does not depend on the invariant disc.** The charts
+at the orbit of `z` built from the invariant discs of radii `ε` and `ε'`, `ε ≤ ε'`, have the
+identity as their transition map, so the two charts define the same local complex structure on
+the coarse quotient. -/
+theorem stabilizerBallQuotientChart_trans_eq_id {ε' : ℝ} (hε' : 0 < ε') (hε'' : ε ≤ ε')
+    (hopen' : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε')) {u : ℂ}
+    (hu : u ∈ ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
+      stabilizerBallQuotientChart hε' hopen').source) :
+    ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
+      stabilizerBallQuotientChart hε' hopen') u = u := by
+  -- The target of the chart at the orbit of `z` is the `m`-th power of the Euclidean disc of
+  -- radius `Real.tanh (ε / 2)`, `m = Nat.card (stabilizer Γ z)`, and the inverse chart sends
+  -- `w ^ m` to the orbit of the point of disc coordinate `w`, which the chart for the invariant
+  -- disc of radius `ε'` reads back as `w ^ m`.
+  have hr : 0 ≤ Real.tanh (ε / 2) := by
+    rw [← Real.tanh_zero]
+    exact Real.tanh_strictMono.monotone (by linarith)
+  have hu1 : u ∈ ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
+      stabilizerBallQuotientChart hε' hopen').source := hu
+  rw [OpenPartialHomeomorph.trans_source] at hu1
+  rw [OpenPartialHomeomorph.symm_source] at hu1
+  have hu2 : u ∈ (stabilizerBallQuotientChart hε hopen).target := hu1.1
+  rw [stabilizerBallQuotientChart_target, ← image_pow_ball hr] at hu2
+  obtain ⟨w, hw, rfl⟩ := hu2
+  have hwn : ‖w‖ < Real.tanh (ε / 2) := mem_ball_zero_iff.1 hw
+  set τ : ℍ := (discCoordinateHomeomorph z).symm (.mk w (hwn.trans (Real.tanh_lt_one _))) with hτ
+  have hτdisc : discCoordinate z τ = w := by
+    simp [hτ]
+  have hmono : Real.tanh (ε / 2) ≤ Real.tanh (ε' / 2) :=
+    Real.tanh_strictMono.monotone (by linarith)
+  have hτε : dist τ z < ε' :=
+    mem_ball_iff_norm_discCoordinate_lt.2 (by
+      rw [hτdisc]
+      exact lt_of_lt_of_le hwn hmono)
+  rw [OpenPartialHomeomorph.trans_apply, stabilizerBallQuotientChart_symm_pow hε hopen hwn,
+    stabilizerBallQuotientChart_mk hε' hopen' hτε, hτ, hτdisc]
+
 end Subgroup
