@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.List
-public import TauCeti.GroupTheory.GroupAction.FinRotate
 public import TauCeti.GroupTheory.Perm.MultipleTransitivity
 public import TauCeti.GroupTheory.Perm.Recognition
 public import TauCeti.GroupTheory.TriangleGroup.Basic
