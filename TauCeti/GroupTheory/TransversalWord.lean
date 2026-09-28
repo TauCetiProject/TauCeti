@@ -25,10 +25,8 @@ lies in `U` whenever `t` really is a transversal, and it is a `1`-cocycle for th
 ℓᵗ_u(γ) * ℓᵗ_{γ⁻¹ • u}(η) = ℓᵗ_u(γ * η).
 ```
 
-This file also defines `TauCeti.CosetTransversal`, a representative map bundled with its
-section property for constructions that require a genuine transversal. It records the word
-calculus through `TauCeti.lWord` and the three identities that make it useful,
-namely `TauCeti.lWord_mem`, `TauCeti.lWord_mul_lWord`, and
+This file records the word calculus through `TauCeti.lWord` and the three identities that make it
+useful: `TauCeti.lWord_mem`, `TauCeti.lWord_mul_lWord`, and
 `TauCeti.transversal_mul_lWord`, the last of which is the rewriting rule
 `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` that turns a `U`-cocycle relation into a `G`-cocycle relation.
 It also records how the word changes when the transversal does (`TauCeti.transversalDiff` and
@@ -44,11 +42,10 @@ In the word calculus, the transversal is a variable, and only `lWord_mem` and
 
 ## Implementation notes
 
-Mathlib's `Subgroup.LeftTransversal` bundles a *set* of coset representatives, with
-`Subgroup.IsComplement.leftQuotientEquiv`, applied to the complement proof `S.2` of such an `S`,
-turning it into an equivalence `G ⧸ U ≃ S`. The formulas that consume the
-transversal word index sums by `G ⧸ U`, so a transversal is taken here in the equivalent form of a
-map `t : G ⧸ U → G` satisfying `↑(t u) = u`; `Quotient.out` is the canonical example.
+Mathlib's `Subgroup.LeftTransversal` bundles a set of coset representatives. Its
+`Subgroup.IsComplement.leftQuotientEquiv` supplies the representative map used by the monomial
+construction. The word calculus takes a map `t : G ⧸ U → G` satisfying `↑(t u) = u` when needed;
+`Quotient.out` is the canonical example.
 
 This material is the group-theoretic input to the corestriction maps of the roadmap at
 `TauCetiRoadmap/ProfiniteCohomology/README.md`, Layer 6, whose §3 fixes the displayed formula.
@@ -59,13 +56,6 @@ public section
 namespace TauCeti
 
 variable {G : Type*} [Group G]
-
-/-- A choice of representative for each left coset of `U`, together with its section property. -/
-structure CosetTransversal (U : Subgroup G) where
-  /-- The chosen representative of each left coset. -/
-  rep : G ⧸ U → G
-  /-- Each representative belongs to the coset it represents. -/
-  mk_rep : ∀ x, (QuotientGroup.mk (rep x) : G ⧸ U) = x
 
 variable (U : Subgroup G) (t t' : G ⧸ U → G)
 
