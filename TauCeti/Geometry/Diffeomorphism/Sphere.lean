@@ -294,6 +294,8 @@ theorem continuousOrthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
     (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
     continuousOrthogonalToDiffSphere n m A = orthogonalToDiffSphere n m A :=
   by
+    -- `ContinuousMap` application does not unfold this bundled definition automatically;
+    -- expose the underlying map before closing the resulting reflexive equality.
     change orthogonalToDiffSphere n m A = orthogonalToDiffSphere n m A
     rfl
 
