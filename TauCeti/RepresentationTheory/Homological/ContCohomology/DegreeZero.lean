@@ -253,12 +253,7 @@ noncomputable def degreeZeroCocycle (X : TopRep R G) (u : X.V) (hu : ∀ g : G, 
 /-- The constant `0`-cocycle of `u` is, as a homogeneous cochain, the constant map `g ↦ u`. -/
 theorem coe_iCycles_degreeZeroCocycle (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
     ((homogeneousCochains X).iCycles 0 (degreeZeroCocycle X u hu)).1 = (TopRep.d X 0).hom u := by
-  rw [← coe_cocycles₀Iso_hom]
-  change (((((cocycles₀Iso X).hom
-    ((cocycles₀Iso X).inv ((d₀kerIso X).symm
-      ⟨u, (ContRepresentation.mem_invariants u).2 hu⟩))) :
-        ((homogeneousCochains X).d 0 1).hom.ker) : (homogeneousCochains X).X 0)).1 = _
-  rw [Iso.inv_hom_id_apply]
+  rw [← coe_cocycles₀Iso_hom, degreeZeroCocycle, Iso.inv_hom_id_apply]
   rfl
 
 /-- **The class of the constant `0`-cocycle of an invariant vector is its degree-zero class.** -/
