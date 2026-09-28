@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.NumberTheory.Padics.PadicValNat
 import TauCeti.RingTheory.Valuation.PowSubPow
+import TauCeti.Topology.Algebra.ValuativeRel.HasSum
 
 /-!
 # The logarithm on the principal units of a finite extension of `ℚ_[p]`
@@ -90,16 +91,6 @@ private theorem valuation_logSeries_coeff_mul (p : ℕ) [Fact p.Prime] [FinitePa
   rw [← natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p n hn,
     ← valuation_natCast_eq_pow hπ, ← map_mul, hcancel]
   simp
-
-/-- A convergent series whose terms all have valuation less than `γ` has sum of valuation less
-than `γ`, because the open ball `{z | v z < γ}` is a closed additive subgroup. -/
-private theorem valuation_lt_of_hasSum {f : ℕ → K} {s : K} (hf : HasSum f s)
-    (γ : (ValueGroupWithZero K)ˣ) (h : ∀ n, valuation K (f n) < γ) : valuation K s < γ := by
-  let S := (valuation K).ltAddSubgroup γ
-  have hS : IsClosed (S : Set K) := by
-    refine AddSubgroup.isClosed_of_isOpen S (AddSubgroup.isOpen_of_mem_nhds S (g := 0) ?_)
-    exact (IsValuativeTopology.mem_nhds_zero_iff _).mpr ⟨γ, fun z hz => hz⟩
-  exact hS.mem_of_tendsto hf (Eventually.of_forall fun t => AddSubgroup.sum_mem _ fun n _ => h n)
 
 /-- On a finite extension of `ℚ_[p]`, the logarithm series converges to `NormedSpace.log u` for
 every principal unit `u ∈ U(K,1)`. -/
