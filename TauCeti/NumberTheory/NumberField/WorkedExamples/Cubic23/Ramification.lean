@@ -108,8 +108,8 @@ private theorem primeRoot_eq_symm (r : ℕ)
         ⟨X - C (r : ZMod 23), hr⟩ : Ideal (𝓞 K)) := by
   have hmap : ((X - C (r : ℤ)) : ℤ[X]).map (Int.castRingHom (ZMod 23)) =
       X - C (r : ZMod 23) := by
-    simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C]
-    rfl
+    simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C,
+      Int.coe_castRingHom, Int.cast_natCast]
   have hf : (X - C (r : ℤ)).map (Int.castRingHom (ZMod 23)) ∈
       RingOfIntegers.monicFactorsMod θ 23 := by
     rw [hmap]
