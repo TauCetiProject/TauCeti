@@ -22,6 +22,10 @@ corresponding exact pairing in `X.Modules`.
 Quasi-coherence is stable under pullback along an arbitrary morphism of schemes, so pullback of
 modules restricts to quasicoherent sheaves.
 
+The identity and composition comparisons for this restricted pullback follow the
+full-subcategory construction in `TauCeti/AlgebraicGeometry/VectorBundle/Functoriality.lean`,
+which in turn follows `TauCeti/AlgebraicGeometry/LineBundle/Functoriality.lean`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf X`: quasicoherent sheaves on `X`;
