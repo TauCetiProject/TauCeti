@@ -61,17 +61,13 @@ theorem exponential_extreme_ray {f g : ℝ → ℝ} (p : ℝ≥0)
   refine ⟨a, b, ?_, ?_, ?_⟩
   · have h0 := hfg 0 le_rfl
     have hfa0 : f 0 = (a : ℝ) := by
-      calc
-        f 0 = laplaceTransform μ 0 := hμ.eq_laplaceTransform le_rfl
-        _ = (a : ℝ) * Real.exp (-(0 * (p : ℝ))) :=
-          (hfa.eq_laplaceTransform le_rfl).symm
-        _ = a := by simp
+      rw [← bernsteinMeasure_real_univ hf]
+      change (μ Set.univ).toReal = (a : ℝ)
+      rw [← ha, ENNReal.coe_toReal]
     have hgb0 : g 0 = (b : ℝ) := by
-      calc
-        g 0 = laplaceTransform ν 0 := hν.eq_laplaceTransform le_rfl
-        _ = (b : ℝ) * Real.exp (-(0 * (p : ℝ))) :=
-          (hgb.eq_laplaceTransform le_rfl).symm
-        _ = b := by simp
+      rw [← bernsteinMeasure_real_univ hg]
+      change (ν Set.univ).toReal = (b : ℝ)
+      rw [← hb, ENNReal.coe_toReal]
     simp only [zero_mul, neg_zero, Real.exp_zero] at h0
     linarith
   · intro t ht
