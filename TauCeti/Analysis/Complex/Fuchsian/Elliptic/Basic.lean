@@ -251,16 +251,9 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
   exact (differentiableOn_descendPow hs_open hFd hinv).mono hsub
 
 /-- **The elliptic chart at the orbit of `z` does not depend on the invariant disc.** The charts
-at the orbit of `z` built from the invariant discs of radii `ε` and `ε'`, both positive, have the
-identity as their transition map, so the two charts define the same local complex structure on
-the coarse quotient.
-
-This lemma is deliberately not tagged `@[simp]`: its premise is a membership condition in the
-source of the transition, which a simplifier does not discharge from the local context (with the
-membership hypothesis merely in context, `simp only [stabilizerBallQuotientChart_trans_apply]`
-makes no progress), and the `simpNF` linter accordingly rejects the annotation. Pass the
-membership proof to the lemma, as in `simp only [stabilizerBallQuotientChart_trans_apply hu]`, or
-rewrite with it. -/
+at the orbit of `z` built from the invariant discs of radii `ε` and `ε'`, both positive, apply at
+every point of the source of the transition to the point itself, so the two charts define the
+same local complex structure on the coarse quotient. -/
 theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε' : 0 < ε')
     (hopen' : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε')) {u : ℂ}
     (hu : u ∈ ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
