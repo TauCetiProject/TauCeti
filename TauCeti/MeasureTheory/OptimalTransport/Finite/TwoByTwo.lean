@@ -136,7 +136,6 @@ theorem ofZeroZeroReal_apply (μ ν : PMF (Fin 2)) (t : ℝ)
   (rfl)
 
 /-- The upper-left real entry of `ofZeroZeroReal` is its parameter. -/
-@[simp]
 theorem ofZeroZeroReal_zero_zero (μ ν : PMF (Fin 2)) (t : ℝ)
     (ht0 : 0 ≤ t) (htμ : t ≤ (μ 0).toReal) (htν : t ≤ (ν 0).toReal)
     (htlower : (μ 0).toReal + (ν 0).toReal - 1 ≤ t) :
