@@ -283,8 +283,10 @@ be two equations generating an ideal with radical `𝔪`. Then the length
 hypothesis is placed on `R`: what the condition says is that the closed point is the only common
 point of the two equations there, and in a two-dimensional local ring it is what says that the two
 curves they define meet properly at the closed point and share no component there. The finite
-length is then the local intersection multiplicity of the two curves, and the intersection numbers
-`aᵢⱼ` and the component multiplicities of a special fibre are natural numbers for the same reason.
+length is then the local intersection multiplicity of the two curves, and the natural number of
+the theorem is that intersection multiplicity. Nothing beyond it is claimed: the intersection
+numbers and the component multiplicities of a special fibre of a model are a separate application
+of these results.
 
 No regularity is assumed of `R`, and no hypothesis of the form `f ∉ 𝔪²` is placed on `f`: a
 reducible first equation is admitted, and this is what a reducible or singular curve needs. In
