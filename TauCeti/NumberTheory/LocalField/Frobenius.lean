@@ -94,11 +94,13 @@ theorem frobeniusAlgEquiv_apply_of_pow_eq_one [IsUnramified K L] {n : ℕ}
   -- A root of unity has valuation `1`, so it is integral.
   have hxv : x ∈ 𝒪[L] := (Valuation.mem_integer_iff _ _).2
     ((pow_le_one_iff_of_nonneg zero_le hn0).1 (by rw [← map_pow, hx, map_one]))
+  -- `𝓂[L]` lies over `𝓂[K]`, the kernel of reduction `𝒪[K] → 𝓀[K]`, so the quotient is `𝓀[K]`.
+  have hq : Nat.card (𝒪[K] ⧸ 𝓂[L].under 𝒪[K]) = Nat.card 𝓀[K] := by
+    rw [← Ideal.over_def 𝓂[L] 𝓂[K], ← IsLocalRing.ker_residue]
+    exact Nat.card_congr
+      (RingHom.quotientKerEquivOfSurjective IsLocalRing.residue_surjective).toEquiv
   -- Frobenius is an arithmetic Frobenius of `𝒪[L] / 𝒪[K]` at the maximal ideal, so Mathlib's
   -- `AlgHom.IsArithFrobAt.apply_of_pow_eq_one` applies.
-  have hq : Nat.card (𝒪[K] ⧸ 𝓂[L].under 𝒪[K]) = Nat.card 𝓀[K] := by
-    rw [← Ideal.over_def 𝓂[L] 𝓂[K]]
-    rfl
   have hσ : IsArithFrobAt 𝒪[K] (frobeniusAlgEquiv (K := K) (L := L)) 𝓂[L] := fun y ↦ by
     rw [hq]
     refine (Valuation.mem_maximalIdeal_iff (v := valuation L)).2 ?_
