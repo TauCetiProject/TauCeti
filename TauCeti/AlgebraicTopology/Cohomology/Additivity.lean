@@ -19,12 +19,10 @@ The singular chains of a disjoint union form the coproduct of the singular chain
 summands. Applying the contravariant functor `Hom(-, M)` therefore identifies the singular
 cochain complex of the disjoint union with the product of the cochain complexes of the summands.
 
-Whenever `ι`-indexed products of the coefficient modules are exact, taking cohomology preserves
-this product. Consequently the singular cohomology of a disjoint union is the product of the
-singular cohomologies of its summands. Products of modules over a ring are always exact, so for a
-`v`-small index type and a coefficient ring in universe `v` the exactness hypothesis is supplied by
-Mathlib's AB4* instance. Both universal properties use the maps induced by the canonical inclusions
-into the disjoint union.
+Products of modules over a ring are always exact, so taking cohomology preserves this product:
+the singular cohomology of a disjoint union is the product of the singular cohomologies of its
+summands. Both universal properties use the maps induced by the canonical inclusions into the
+disjoint union.
 
 ## Main results
 
@@ -50,8 +48,9 @@ takes coproducts to products, by Markus Himmel in
 opposite categories, by Markus Himmel in `Mathlib/CategoryTheory/Limits/Preserves/Opposites` and by
 Kim Morrison and Floris van Doorn in
 `Mathlib/CategoryTheory/Limits/Shapes/Opposites/Products`; and the AB4* instance making products of
-modules exact, which discharges the exactness hypothesis in the same-universe case, by Dagur
-Asgeirsson in `Mathlib/Algebra/Category/ModuleCat/AB`.
+abelian groups exact, by David Kurniadi Angdinata, Moritz Firsching, Nikolas Kuhn and Amelia
+Livingston in `Mathlib/Algebra/Category/Grp/AB`, from which exactness of products of modules is
+transferred along the forgetful functor.
 -/
 
 public section
@@ -110,11 +109,6 @@ def isLimitFanSingularCochainComplex :
   exact isLimitFanMkObjOfIsLimit (ChainComplex.linearYonedaFunctor (α := ℕ) k M) _ _
     (Cofan.IsColimit.op (isColimitCofanSingularChainComplex X C R))
 
-section Cohomology
-
-variable [HasLimitsOfShape (Discrete ι) (ModuleCat.{v} k)]
-  [HasExactLimitsOfShape (Discrete ι) (ModuleCat.{v} k)]
-
 /-- **Additivity of singular cohomology.** In every degree, the singular cohomology of a
 disjoint union is the product of the singular cohomologies of its summands. The projections are
 the maps on cohomology induced by the canonical inclusions of the summands. -/
@@ -122,10 +116,24 @@ def isLimitFanSingularCohomology (n : ℕ) :
     IsLimit (Fan.mk ((TopCat.of (Σ i, X i)).singularCohomology R k M n)
       (fun i ↦ TopCat.singularCohomologyMap (sigmaι X i) n) :
       Fan fun i ↦ (X i).singularCohomology R k M n) :=
+  -- `ι`-indexed products of `k`-modules exist and are exact for a coefficient ring in any
+  -- universe: Mathlib's AB4* instance gives exactness in `AddCommGrpCat.{v}` for the `v`-small
+  -- copy `Shrink.{v} ι` of the index type, and both facts transfer to `ModuleCat.{v} k` along
+  -- `forget₂ (ModuleCat k) AddCommGrpCat`, which preserves these products and preserves and
+  -- reflects finite colimits.
+  haveI : HasLimitsOfShape (Discrete ι) (ModuleCat.{v} k) := ModuleCat.hasLimitsOfShape
+  haveI : HasExactLimitsOfShape (Discrete ι) AddCommGrpCat.{v} :=
+    HasExactLimitsOfShape.of_domain_equivalence _ (Discrete.equivalence (equivShrink.{v} ι)).symm
+  haveI : PreservesLimitsOfShape (Discrete ι) (forget₂ (ModuleCat.{v} k) AddCommGrpCat.{v}) :=
+    { preservesLimit := inferInstance }
+  haveI : PreservesFiniteColimits (forget₂ (ModuleCat.{v} k) AddCommGrpCat.{v}) :=
+    ⟨fun _ _ _ ↦ inferInstance⟩
+  haveI : ReflectsFiniteColimits (forget₂ (ModuleCat.{v} k) AddCommGrpCat.{v}) :=
+    { reflects := fun _ _ _ ↦ inferInstance }
+  haveI : HasExactLimitsOfShape (Discrete ι) (ModuleCat.{v} k) :=
+    HasExactLimitsOfShape.domain_of_functor _ (forget₂ (ModuleCat.{v} k) AddCommGrpCat.{v})
   isLimitFanMkObjOfIsLimit (HomologicalComplex.homologyFunctor
     (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
       (isLimitFanSingularCochainComplex X C R k M)
-
-end Cohomology
 
 end TauCeti
