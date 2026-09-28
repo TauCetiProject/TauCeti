@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Generator.SmoothVectors
-public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
-public import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import Mathlib.Analysis.Calculus.BumpFunction.Convolution
+import Mathlib.Analysis.Calculus.ContDiff.Convolution
 
 /-!
 # Density of smooth semigroup vectors
@@ -74,7 +74,6 @@ private theorem realOperator_smoothApprox (x : X) (n : ℕ) {t : ℝ} (ht : 0 �
   · have hsball : s ∈ Metric.ball (0 : ℝ) (smoothBump n).rOut := by
       rw [← (smoothBump n).support_normed_eq (μ := volume)]
       exact hs
-    have hε : 0 < (1 : ℝ) / (n + 1) := by positivity
     have hsabs : |s| < 1 / ((n : ℝ) + 1) := by
       simpa [smoothBump, Metric.mem_ball, Real.dist_0_eq_abs] using hsball
     have ha : 0 ≤ a - s := by
@@ -114,11 +113,9 @@ private theorem tendsto_smoothApprox (x : X) :
   have hφ : Tendsto (fun n : ℕ => (smoothBump n).rOut) atTop (nhds 0) := by
     simpa [smoothBump] using hδ
   have ht : Tendsto smoothingTime atTop (nhds (0 : ℝ)) := by
-    have heq (n : ℕ) : smoothingTime n = 2 * ((1 : ℝ) / ((n : ℝ) + 1)) := by
-      unfold smoothingTime
-      ring
-    rw [show smoothingTime = fun n : ℕ => 2 * ((1 : ℝ) / ((n : ℝ) + 1)) from funext heq]
-    simpa using hδ.const_mul 2
+    -- Eta expansion lets `simp` unfold the evaluation time at each `n`.
+    change Tendsto (fun n : ℕ => smoothingTime n) atTop (nhds (0 : ℝ))
+    simpa [smoothingTime, div_eq_mul_inv] using hδ.const_mul 2
   have hlim : Tendsto (uncurry (fun _ : ℕ => g)) (atTop ×ˢ nhds 0) (nhds x) := by
     -- `uncurry` of a constant family is composition with the second projection.
     change Tendsto (g ∘ Prod.snd) (atTop ×ˢ nhds 0) (nhds x)
