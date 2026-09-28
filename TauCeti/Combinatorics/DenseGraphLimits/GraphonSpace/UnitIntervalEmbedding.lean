@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.UnitIntervalModel
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Basic
-public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel
+public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel.Transport
 
 /-!
 # Every graphon space embeds isometrically in the unit-interval graphon space
@@ -26,8 +26,8 @@ see `homDensityOnSpace_toGraphonSpaceI` in `GraphonSpace/HomDensity.lean`.
 
 Over an atomless standard Borel carrier the embedding is onto: such a carrier maps
 measure-preservingly onto `(I, volume)`
-(`MeasureTheory.Measure.exists_mpModNull_equiv_unitInterval`), so every graphon, on any carrier,
-is at cut distance zero from a graphon on it. The graphon space over such a carrier is then
+(`MeasureTheory.Measure.exists_measurePreserving_of_nullSingleton`), so every graphon, on any
+carrier, is at cut distance zero from a graphon on it. The graphon space over such a carrier is then
 isometric to the unit-interval graphon space, and every metric property of `GraphonSpaceI` --
 compactness in the first place -- transfers to it.
 
@@ -150,7 +150,7 @@ This generalizes `exists_graphon_unitInterval_cutDist_eq_zero`, which represents
 the particular atomless carrier `(I, volume)`, to every atomless standard Borel carrier. -/
 theorem exists_graphon_cutDist_eq_zero (V : Graphon Ω' μ') :
     ∃ W : Graphon Ω μ, cutDist V W = 0 := by
-  obtain ⟨f, -, hf, -⟩ := μ.exists_mpModNull_equiv_unitInterval
+  obtain ⟨f, hf⟩ := Measure.exists_measurePreserving_of_nullSingleton μ (volume : Measure I)
   refine ⟨V.unitIntervalRepr.comap f hf.measurable μ, ?_⟩
   rw [← Graphon.cutDist_unitIntervalRepr_left, cutDist_comap_right _ _ hf, cutDist_self]
 
