@@ -144,6 +144,52 @@ theorem homologyMap_id (hd : d ∘ₗ d = 0) :
   rw [homologyπ_apply, homologyMap_mk]
   rfl
 
+/-- The zero chain map induces the zero map on homology. -/
+@[simp]
+theorem homologyMap_zero (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) :
+    homologyMap (0 : M →ₗ[S] N) hd he (by simp) = 0 := by
+  apply LinearMap.ext
+  intro c
+  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
+  simp only [homologyπ_apply, homologyMap_mk, zero_apply]
+  rfl
+
+/-- The map on homology induced by `-f` is the negative of the map induced by `f`. -/
+@[simp]
+theorem homologyMap_neg (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₗ d = e ∘ₗ f) :
+    homologyMap (-f) hd he (by rw [neg_comp, comp_neg, hf]) = -homologyMap f hd he hf := by
+  apply LinearMap.ext
+  intro c
+  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
+  simp only [homologyπ_apply, homologyMap_mk, neg_apply, ← Submodule.Quotient.mk_neg]
+  rfl
+
+/-- The map on homology induced by `f + g` is the sum of the maps induced by `f` and `g`. -/
+@[simp]
+theorem homologyMap_add (f g : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g) :
+    homologyMap (f + g) hd he (by rw [add_comp, comp_add, hf, hg]) =
+      homologyMap f hd he hf + homologyMap g hd he hg := by
+  apply LinearMap.ext
+  intro c
+  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
+  simp only [homologyπ_apply, homologyMap_mk, add_apply, ← Submodule.Quotient.mk_add]
+  rfl
+
+/-- The map on homology induced by `f - g` is the difference of the maps induced by `f` and
+`g`. -/
+@[simp]
+theorem homologyMap_sub (f g : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g) :
+    homologyMap (f - g) hd he (by rw [sub_comp, comp_sub, hf, hg]) =
+      homologyMap f hd he hf - homologyMap g hd he hg := by
+  apply LinearMap.ext
+  intro c
+  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
+  simp only [homologyπ_apply, homologyMap_mk, sub_apply, ← Submodule.Quotient.mk_sub]
+  rfl
+
 variable {P : Type*} [AddCommGroup P] [Module S P] {q : P →ₗ[S] P}
 
 /-- The map on homology induced by a composite is the composite of the induced maps. -/
