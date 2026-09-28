@@ -24,6 +24,10 @@ Together with dimension and discriminant, this sign enters the classification of
 quadratic forms over local fields. The assumption that two is a unit excludes residue
 characteristic two, where the norm groups require different arithmetic arguments.
 
+The descent construction and orthogonal-sum and scaling formulas adapt the formalization
+of `TauCeti.RegularFormClass.hasseInvariant` in
+`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse` to the local Hilbert sign.
+
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Chapter V, §3.
