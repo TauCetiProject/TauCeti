@@ -86,16 +86,16 @@ variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
 /-- A recut into a pentagon followed by a rectangle has an empty pentagon. -/
 theorem isEmpty_pentagon_of_isRecut (E : GridPentagonRectangleDecomposition a s x z)
-    (D : GridRectanglePentagonDecomposition a s x z)
-    (h : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) :
+    {D : GridRectangleDecomposition x z}
+    (h : D.IsRecut E.toRectangleDecomposition) :
     E.pentagon.IsEmpty := by
   simpa only [toRectangleDecomposition_first_toGridRectangle,
     GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] using h.isEmpty_first
 
 /-- A recut into a pentagon followed by a rectangle has an empty rectangle. -/
 theorem isEmpty_rectangle_of_isRecut (E : GridPentagonRectangleDecomposition a s x z)
-    (D : GridRectanglePentagonDecomposition a s x z)
-    (h : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) :
+    {D : GridRectangleDecomposition x z}
+    (h : D.IsRecut E.toRectangleDecomposition) :
     E.rectangle.IsEmpty := by
   simpa only [toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle,
     GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] using h.isEmpty_second
@@ -135,15 +135,17 @@ namespace GridRectanglePentagonDecomposition
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
 /-- A recut into a rectangle followed by a pentagon has an empty rectangle. -/
-theorem isEmpty_rectangle_of_isRecut (E D : GridRectanglePentagonDecomposition a s x z)
-    (h : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) :
+theorem isEmpty_rectangle_of_isRecut (E : GridRectanglePentagonDecomposition a s x z)
+    {D : GridRectangleDecomposition x z}
+    (h : D.IsRecut E.toRectangleDecomposition) :
     E.rectangle.IsEmpty := by
   simpa only [toRectangleDecomposition_middle, toRectangleDecomposition_first_toGridRectangle,
     GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] using h.isEmpty_first
 
 /-- A recut into a rectangle followed by a pentagon has an empty pentagon. -/
-theorem isEmpty_pentagon_of_isRecut (E D : GridRectanglePentagonDecomposition a s x z)
-    (h : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) :
+theorem isEmpty_pentagon_of_isRecut (E : GridRectanglePentagonDecomposition a s x z)
+    {D : GridRectangleDecomposition x z}
+    (h : D.IsRecut E.toRectangleDecomposition) :
     E.pentagon.IsEmpty := by
   simpa only [toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle,
     GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] using h.isEmpty_second
@@ -413,7 +415,7 @@ theorem isEmpty_pentagon_recutLeftEqLeft
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).pentagon.IsEmpty := by
   have h := D.isRecut_recutLeftEqLeft hcommon hone hrectangle hpentagon
-  exact (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).isEmpty_pentagon_of_isRecut D h
+  exact (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).isEmpty_pentagon_of_isRecut h
 
 /-- The rectangle in the overlap recut is empty. -/
 @[simp]
@@ -424,7 +426,7 @@ theorem isEmpty_rectangle_recutLeftEqLeft
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).rectangle.IsEmpty := by
   have h := D.isRecut_recutLeftEqLeft hcommon hone hrectangle hpentagon
-  exact (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).isEmpty_rectangle_of_isRecut D h
+  exact (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).isEmpty_rectangle_of_isRecut h
 
 /-- The underlying rectangles of the promoted overlap recut cover the same squares as the
 original rectangle and the rectangle underlying the original pentagon. -/

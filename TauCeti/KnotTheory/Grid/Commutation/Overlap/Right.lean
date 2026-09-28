@@ -488,7 +488,7 @@ theorem isEmpty_pentagon_recutRightEqRightFirst
   have h := D.isRecut_recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
   exact
     (D.recutRightEqRightFirst hcommon hone
-      hrectangle hpentagon hfirst).isEmpty_pentagon_of_isRecut D
+      hrectangle hpentagon hfirst).isEmpty_pentagon_of_isRecut
       h
 
 /-- The rectangle left after promoting the first recut rectangle remains empty. -/
@@ -505,7 +505,7 @@ theorem isEmpty_rectangle_recutRightEqRightFirst
   have h := D.isRecut_recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
   exact
     (D.recutRightEqRightFirst hcommon hone
-      hrectangle hpentagon hfirst).isEmpty_rectangle_of_isRecut D
+      hrectangle hpentagon hfirst).isEmpty_rectangle_of_isRecut
       h
 
 /-- The two underlying rectangles of the first promotion cover precisely the original region. -/
@@ -598,7 +598,7 @@ theorem isEmpty_rectangle_recutRightEqRightSecond
   have h := D.isRecut_recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond
   exact
     (D.recutRightEqRightSecond hcommon hone
-      hrectangle hpentagon hsecond).isEmpty_rectangle_of_isRecut D
+      hrectangle hpentagon hsecond).isEmpty_rectangle_of_isRecut
       h
 
 /-- The pentagon promoted from the second recut rectangle remains empty. -/
@@ -615,7 +615,7 @@ theorem isEmpty_pentagon_recutRightEqRightSecond
   have h := D.isRecut_recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond
   exact
     (D.recutRightEqRightSecond hcommon hone
-      hrectangle hpentagon hsecond).isEmpty_pentagon_of_isRecut D
+      hrectangle hpentagon hsecond).isEmpty_pentagon_of_isRecut
       h
 
 /-- The two underlying rectangles of the second promotion cover precisely the original region. -/
