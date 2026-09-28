@@ -630,15 +630,6 @@ theorem _root_.MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow {n : 
     e.map_pLowerCentralSeries_eq_of_discreteTopology, pLowerCentralSeries_eq_of_discreteTopology,
     top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot]
 
-variable [Fact p.Prime] in
-/-- The `p ^ n`-th power of the generator of `ℤ/pⁿ⁺¹` is nontrivial. -/
-theorem ofAdd_one_pow_pow_ne_one (n : ℕ) :
-    (Multiplicative.ofAdd (1 : ZMod (p ^ (n + 1)))) ^ p ^ n ≠ 1 := by
-  have hp : p.Prime := Fact.out
-  rw [← ofAdd_nsmul, ne_eq, ofAdd_eq_one, nsmul_one, ZMod.natCast_eq_zero_iff,
-    Nat.pow_dvd_pow_iff_le_right hp.one_lt]
-  omega
-
 end Cyclic
 
 end TauCeti

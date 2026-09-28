@@ -943,7 +943,10 @@ theorem _root_.MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_p
   rw [gradedPowIter_gradedMkZero, ne_eq, gradedMk_eq_zero_iff, Subgroup.coe_mk,
     e.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow, Subgroup.mem_bot, ← map_pow,
     e.symm.map_eq_one_iff]
-  exact ofAdd_one_pow_pow_ne_one n
+  have hp : p.Prime := Fact.out
+  apply pow_ne_one_of_lt_orderOf (pow_ne_zero n hp.ne_zero)
+  rw [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  exact Nat.pow_lt_pow_right hp.one_lt n.lt_succ_self
 
 end PowIter
 
