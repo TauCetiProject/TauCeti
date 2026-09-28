@@ -22,9 +22,12 @@ The defining resultant is taken in `(R[X])[Y]`, where `f.map C` is `f(Y)` and `C
 gives the product formula `∏ (X - C (T.eval α))`, and from it the monicity and the degree of the
 transform, which hold over every domain by base change to a splitting field of `f`.
 
-Classically the transform replaces a polynomial whose resolvent has repeated values by one whose
-resolvent does not, without changing the Galois group; the field-theoretic half of that statement
-is in `TauCeti/FieldTheory/GaloisGroups/Tschirnhaus.lean`.
+The point of the construction is to *choose* `T`: classically one picks a transform that separates
+the roots of `f`, so that a resolvent which took a repeated value at the roots of `f` no longer
+does at the roots of the transform. An arbitrary `T` achieves neither — it need not separate the
+roots, and it need not preserve the Galois group. It is for a separable `f` and such an admissible
+`T` that the Galois group is unchanged; that field-theoretic half is in
+`TauCeti/FieldTheory/GaloisGroups/Tschirnhaus.lean`.
 
 ## Main declarations
 
@@ -32,7 +35,8 @@ is in `TauCeti/FieldTheory/GaloisGroups/Tschirnhaus.lean`.
 
 ## Main results
 
-* `Polynomial.Monic.tschirnhausPolynomial_eq_resultant`: the transform computed with any valid
+* `Polynomial.tschirnhausPolynomial_def`: the defining resultant, and
+  `Polynomial.Monic.tschirnhausPolynomial_eq_resultant`: the transform computed with any valid
   degree bound for `T`.
 * `Polynomial.tschirnhausPolynomial_X_add_C`: transforming along a shift is the substitution
   `X ↦ X - c` that depresses a polynomial.
@@ -66,6 +70,10 @@ values of `T` at the roots of `f`. -/
 def tschirnhausPolynomial (f T : R[X]) : R[X] :=
   (f.map (C : R →+* R[X])).resultant (C X - T.map C)
 
+/-- The Tschirnhaus transform, unfolded to its defining resultant. -/
+theorem tschirnhausPolynomial_def (f T : R[X]) :
+    f.tschirnhausPolynomial T = (f.map (C : R →+* R[X])).resultant (C X - T.map C) := (rfl)
+
 /-- The polynomial `X - T(Y)`, read in `Y`, has degree at most that of `T`. -/
 private theorem natDegree_C_X_sub_map_C_le (T : R[X]) {k : ℕ} (hT : T.natDegree ≤ k) :
     (C X - T.map (C : R →+* R[X])).natDegree ≤ k :=
@@ -82,6 +90,7 @@ theorem Monic.tschirnhausPolynomial_eq_resultant (hf : f.Monic) (T : R[X]) {k : 
 
 /-- **The Tschirnhaus transform commutes with base change.** No hypothesis on `T` is needed: the
 transform reads the coefficients of `f` and `T`, and `Polynomial.map` commutes with that. -/
+@[simp]
 theorem Monic.map_tschirnhausPolynomial (hf : f.Monic) (T : R[X]) (φ : R →+* S) :
     (f.tschirnhausPolynomial T).map φ = (f.map φ).tschirnhausPolynomial (T.map φ) := by
   nontriviality S
@@ -119,6 +128,7 @@ private theorem map_X_sub_C_eval (T : R[X]) (s : Multiset R) :
 
 /-- **The roots of a Tschirnhaus transform are the values of `T` at the roots.** Over a domain in
 which `f` splits, this is an equality of multisets, so multiplicities are matched too. -/
+@[simp]
 theorem Monic.roots_tschirnhausPolynomial [IsDomain R] (hf : f.Monic) (hsp : f.Splits)
     (T : R[X]) : (f.tschirnhausPolynomial T).roots = f.roots.map T.eval := by
   rw [hf.tschirnhausPolynomial_eq_prod hsp, map_X_sub_C_eval T f.roots,
@@ -137,6 +147,7 @@ private theorem exists_injective_ringHom_splits [IsDomain R] (f : R[X]) :
     exact IsSplittingField.splits _ _
 
 /-- **A Tschirnhaus transform preserves the degree.** -/
+@[simp]
 theorem Monic.natDegree_tschirnhausPolynomial [IsDomain R] (hf : f.Monic) (T : R[X]) :
     (f.tschirnhausPolynomial T).natDegree = f.natDegree := by
   obtain ⟨L, _, φ, hinj, hsp⟩ := exists_injective_ringHom_splits f
@@ -172,6 +183,7 @@ theorem tschirnhausPolynomial_C (f : R[X]) (c : R) :
 /-- **The transform along a shift is the classical substitution.** Transforming along `X + c`
 translates every root by `c`, which on the coefficient side is the substitution `X ↦ X - c` used
 to depress a polynomial. -/
+@[simp]
 theorem tschirnhausPolynomial_X_add_C (f : R[X]) (c : R) :
     f.tschirnhausPolynomial (X + C c) = f.comp (X - C c) := by
   nontriviality R

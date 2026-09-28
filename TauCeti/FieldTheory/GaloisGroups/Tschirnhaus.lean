@@ -15,11 +15,19 @@ A Tschirnhaus transform `Polynomial.tschirnhausPolynomial f T` replaces the root
 the values `T(α)`. This file is the field-theoretic half of the construction: it records what the
 transform does to the roots of a monic `f`, and shows that for a monic separable `f` an
 *admissible* transform — one that separates the roots of `f` — changes neither the splitting field
-nor the Galois group. Every result below about the transform assumes `f.Monic`, and `f.Separable`
-is assumed wherever it is needed, which is everywhere except the statement about the Galois images.
+nor the Galois group.
 
-For a monic `f` and any extension `E` in which `f` splits, the roots of the transform are exactly
-the values of `T` at the roots of `f`, with multiplicity, so the transform splits in `E` as well.
+The hypotheses differ by category of result. The statements about roots, root sets and splitting
+ask only that `f` be monic and split in the extension, and hold over a domain extension of a
+commutative ring; the definition of admissibility and the fact that a shift is admissible ask for
+neither monicity nor separability. Separability of `f` is assumed exactly where the Galois
+correspondence enters: for the separability of the transform, for the splitting fields and for the
+isomorphism of Galois groups. The conjugacy of the Galois images needs monicity and admissibility
+only.
+
+For a monic `f` and any domain extension `E` in which `f` splits, the roots of the transform are
+exactly the values of `T` at the roots of `f`, with multiplicity, so the transform splits in `E`
+as well.
 Admissibility is `Polynomial.TschirnhausAdmissible f T`: injectivity of `α ↦ T(α)` on the root set
 of `f` in its splitting field. Under it, a monic separable `f` has a separable transform and its
 splitting field *is* a splitting field of the transform; and for a monic `f`, separable or not, the
@@ -61,20 +69,22 @@ open Polynomial
 
 namespace Polynomial
 
-variable {F : Type*} [Field F] {f T : F[X]} {E : Type*} [Field E] [Algebra F E]
+section CommRing
+
+variable {R : Type*} [CommRing R] {f T : R[X]} {E : Type*} [CommRing E] [IsDomain E] [Algebra R E]
 
 /-- **The roots of a Tschirnhaus transform are the values of `T` at the roots of `f`.** The
 equality is one of multisets, so multiplicities correspond too. -/
 theorem Monic.aroots_tschirnhausPolynomial (hf : f.Monic)
-    (hsp : (f.map (algebraMap F E)).Splits) (T : F[X]) :
+    (hsp : (f.map (algebraMap R E)).Splits) (T : R[X]) :
     (f.tschirnhausPolynomial T).aroots E = (f.aroots E).map fun α ↦ aeval α T := by
-  rw [aroots_def, aroots_def, hf.map_tschirnhausPolynomial T (algebraMap F E),
+  rw [aroots_def, aroots_def, hf.map_tschirnhausPolynomial T (algebraMap R E),
     (hf.map _).roots_tschirnhausPolynomial hsp]
   exact Multiset.map_congr rfl fun α _ ↦ by simp [aeval_def, eval_map]
 
 /-- **The root sets correspond under `α ↦ T(α)`.** -/
 theorem Monic.rootSet_tschirnhausPolynomial (hf : f.Monic)
-    (hsp : (f.map (algebraMap F E)).Splits) (T : F[X]) :
+    (hsp : (f.map (algebraMap R E)).Splits) (T : R[X]) :
     (f.tschirnhausPolynomial T).rootSet E = (fun α ↦ aeval α T) '' f.rootSet E := by
   classical
   rw [rootSet_def, rootSet_def, hf.aroots_tschirnhausPolynomial hsp, Multiset.toFinset_map,
@@ -83,11 +93,15 @@ theorem Monic.rootSet_tschirnhausPolynomial (hf : f.Monic)
 /-- A Tschirnhaus transform splits in every extension in which `f` splits: its roots there are
 the values of `T` at the roots of `f`. -/
 theorem Monic.splits_map_tschirnhausPolynomial (hf : f.Monic)
-    (hsp : (f.map (algebraMap F E)).Splits) (T : F[X]) :
-    ((f.tschirnhausPolynomial T).map (algebraMap F E)).Splits := by
+    (hsp : (f.map (algebraMap R E)).Splits) (T : R[X]) :
+    ((f.tschirnhausPolynomial T).map (algebraMap R E)).Splits := by
   rw [splits_iff_card_roots, ← aroots_def, hf.aroots_tschirnhausPolynomial hsp, Multiset.card_map,
-    (hf.tschirnhausPolynomial T).natDegree_map, hf.natDegree_tschirnhausPolynomial,
-    ← hsp.natDegree_eq_card_roots, hf.natDegree_map]
+    hf.map_tschirnhausPolynomial T (algebraMap R E), (hf.map _).natDegree_tschirnhausPolynomial,
+    ← hsp.natDegree_eq_card_roots]
+
+end CommRing
+
+variable {F : Type*} [Field F] {f T : F[X]}
 
 /-- A Tschirnhaus transform `T` is **admissible** for `f` when it separates the roots of `f`, that
 is, when it is injective on the root set of `f` in the splitting field. -/
