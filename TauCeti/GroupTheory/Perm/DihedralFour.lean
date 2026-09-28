@@ -135,19 +135,41 @@ theorem coe_dihedralGroupFourMulEquivReferenceSubgroup_sr_zero :
   simp
   rfl
 
+/-- A conjugator from the wreath product's four-point permutation image to `4T3`. -/
+noncomputable def wreathTwoFourConjugator : Perm (Fin 4) :=
+  Classical.choose ((transitiveGroupLabel_iff _ _).mp transitiveGroupLabel_wreathTwoToPermFour)
+
+/-- The chosen conjugator carries the wreath product's permutation image onto `4T3`. -/
+theorem conj_wreathTwoFourConjugator_range :
+    Subgroup.map (MulAut.conj wreathTwoFourConjugator).toMonoidHom
+      wreathTwoToPermFour.range = referenceSubgroup 4 ⟨2, by simp⟩ :=
+  Classical.choose_spec
+    ((transitiveGroupLabel_iff _ _).mp transitiveGroupLabel_wreathTwoToPermFour)
+
 /-- The two-by-two cyclic wreath product is dihedral of order eight. The isomorphism uses a
 conjugation of its faithful four-point action onto the `4T3` reference subgroup. -/
 noncomputable def wreathTwoMulEquivDihedralGroupFour :
     WreathProduct (Multiplicative (ZMod 2)) (Fin 2) ≃* DihedralGroup 4 := by
-  have hlabel := (transitiveGroupLabel_iff _ _).mp transitiveGroupLabel_wreathTwoToPermFour
-  let τ := Classical.choose hlabel
-  have hτ := Classical.choose_spec hlabel
   let e₁ : WreathProduct (Multiplicative (ZMod 2)) (Fin 2) ≃*
       wreathTwoToPermFour.range :=
     wreathTwoSylowFourEquiv.trans (MulEquiv.subgroupCongr wreathTwoSylowFour_toSubgroup)
   let e₂ : wreathTwoToPermFour.range ≃* squareGroup :=
-    ((MulAut.conj τ).subgroupMap wreathTwoToPermFour.range).trans
-      (MulEquiv.subgroupCongr hτ)
+    ((MulAut.conj wreathTwoFourConjugator).subgroupMap wreathTwoToPermFour.range).trans
+      (MulEquiv.subgroupCongr conj_wreathTwoFourConjugator_range)
   exact (e₁.trans e₂).trans dihedralGroupFourMulEquivReferenceSubgroup.symm
+
+/-- The wreath-product isomorphism transports the four-point action by the chosen conjugator. -/
+@[simp]
+theorem coe_dihedralGroupFourMulEquivReferenceSubgroup_wreathTwoMulEquiv
+    (w : WreathProduct (Multiplicative (ZMod 2)) (Fin 2)) :
+    (dihedralGroupFourMulEquivReferenceSubgroup
+      (wreathTwoMulEquivDihedralGroupFour w) : Perm (Fin 4)) =
+        (MulAut.conj wreathTwoFourConjugator) (wreathTwoToPermFour w) := by
+  simp only [wreathTwoMulEquivDihedralGroupFour, MulEquiv.trans_apply,
+    MulEquiv.apply_symm_apply]
+  -- The subgroup equivalences only change the subtype of the underlying permutation.
+  change (MulAut.conj wreathTwoFourConjugator)
+    (wreathTwoSylowFourEquiv w : Perm (Fin 4)) = _
+  rw [coe_wreathTwoSylowFourEquiv, MulAut.conj_apply]
 
 end TauCeti
