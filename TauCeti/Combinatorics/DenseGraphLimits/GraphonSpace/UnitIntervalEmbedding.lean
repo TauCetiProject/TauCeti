@@ -51,7 +51,7 @@ compactness in the first place -- transfers to it.
   induced map is the identity;
 * `TauCeti.DenseGraphLimits.exists_graphon_cutDist_eq_zero` -- every graphon is at cut distance
   zero from a graphon on a given atomless standard Borel carrier;
-* `TauCeti.DenseGraphLimits.surjective_toGraphonSpaceI` -- over an atomless standard Borel
+* `TauCeti.DenseGraphLimits.toGraphonSpaceI_surjective` -- over an atomless standard Borel
   carrier the induced map is onto.
 
 ## References
@@ -156,7 +156,7 @@ theorem exists_graphon_cutDist_eq_zero (V : Graphon Ω' μ') :
 
 /-- Over an atomless standard Borel carrier the embedding into the unit-interval graphon space is
 onto. -/
-theorem surjective_toGraphonSpaceI : Function.Surjective (toGraphonSpaceI (μ := μ)) := by
+theorem toGraphonSpaceI_surjective : Function.Surjective (toGraphonSpaceI (μ := μ)) := by
   refine SeparationQuotient.surjective_mk.forall.2 fun V => ?_
   obtain ⟨W, hW⟩ := exists_graphon_cutDist_eq_zero μ V
   exact ⟨SeparationQuotient.mk W, by simpa using (cutDist_comm W V).trans hW⟩
@@ -165,7 +165,7 @@ theorem surjective_toGraphonSpaceI : Function.Surjective (toGraphonSpaceI (μ :=
 graphon space**, through the embedding `toGraphonSpaceI`. -/
 def isometryEquivGraphonSpaceI : GraphonSpace Ω μ ≃ᵢ GraphonSpaceI where
   toEquiv := .ofBijective toGraphonSpaceI
-    ⟨isometry_toGraphonSpaceI.injective, surjective_toGraphonSpaceI⟩
+    ⟨isometry_toGraphonSpaceI.injective, toGraphonSpaceI_surjective⟩
   isometry_toFun := isometry_toGraphonSpaceI
 
 /-- The isometry equivalence acts as the embedding `toGraphonSpaceI`. -/
