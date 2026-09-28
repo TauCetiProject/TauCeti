@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 public import TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
 
@@ -14,7 +15,7 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
 The standard representation of `GL n k` is the internal direct sum of its weight spaces, the
 coordinate lines, with the `i`-th line carrying the weight `Pi.single i 1`
 (`TauCeti.isInternal_weightSpace_stdRep`). This file computes the weight spaces of its exterior
-powers, the representations `⋀ᵈ(kⁿ)` of Layer 1.
+powers, the representations `⋀ᵈ(kⁿ)`.
 
 A wedge `e_{i₁} ∧ ⋯ ∧ e_{i_d}` of standard basis vectors is again a weight vector: a diagonal
 matrix scales it by the product `t_{i₁} ⋯ t_{i_d}` of the corresponding entries. Its weight is
@@ -27,10 +28,11 @@ by the wedge of `s` if `l` is the indicator of `s`, and is zero otherwise. In pa
 weight of `⋀ᵈ(kⁿ)` has multiplicity one, and there are `n.choose d` of them.
 
 So the weights of `⋀ᵈ(kⁿ)` are exactly the sums `Pi.single i₁ 1 + ⋯ + Pi.single i_d 1` of `d`
-distinct weights of the standard representation, each occurring once. The largest of them in the
-dominance order is `(1, …, 1, 0, …, 0)` with `d` ones, the `d`-th fundamental weight of `GL n`;
-identifying it as the *highest* weight of `⋀ᵈ(kⁿ)` needs the highest-weight classification and is
-not done here.
+distinct weights of the standard representation, each occurring once. For `d = 0` the only weight
+is `0`, and for `d > n` there is no weight at all, the exterior power being zero. For `1 ≤ d ≤ n`
+the largest weight in the dominance order is `(1, …, 1, 0, …, 0)` with `d` ones, the `d`-th
+fundamental weight of `GL n`; identifying it as the *highest* weight of `⋀ᵈ(kⁿ)` needs the
+highest-weight classification and is not done here.
 
 ## Main definitions
 
@@ -75,9 +77,6 @@ weight-space statements here refine that character identity to the decomposition
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, "The maximal torus and weight spaces", for the exterior powers of Layer 1,
-  "Symmetric and exterior power representations".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 
@@ -96,6 +95,7 @@ the wedge of the standard basis vectors indexed by `s`. -/
 def weightOfSubset {n : ℕ} (s : Finset (Fin n)) : Fin n → ℤ := fun i => if i ∈ s then 1 else 0
 
 /-- The defining formula for `TauCeti.weightOfSubset`. -/
+@[simp]
 theorem weightOfSubset_apply {n : ℕ} (s : Finset (Fin n)) (i : Fin n) :
     weightOfSubset s i = if i ∈ s then 1 else 0 :=
   (rfl)
@@ -111,13 +111,14 @@ theorem weightOfSubset_injective {n : ℕ} : Function.Injective (weightOfSubset 
 /-- The weight of a subset has total degree its cardinality: the weights of `⋀ᵈ(kⁿ)` all lie in
 degree `d`. -/
 theorem sum_weightOfSubset {n : ℕ} (s : Finset (Fin n)) : ∑ i, weightOfSubset s i = s.card := by
-  simp [weightOfSubset_apply, Finset.sum_ite_mem]
+  simp [Finset.sum_ite_mem]
 
 section CommRing
 
 variable {k : Type u} [CommRing k] {n d : ℕ}
 
 /-- **The torus character of a subset weight** is the product of the entries it selects. -/
+@[simp]
 theorem weightChar_weightOfSubset (s : Finset (Fin n)) (t : Fin n → kˣ) :
     weightChar k (weightOfSubset s) t = ∏ i ∈ s, t i := by
   rw [weightChar_apply, torusCharacter_def]
@@ -148,27 +149,6 @@ theorem basis_mem_weightSpace_extPowerRep (s : Set.powersetCard (Fin n) d) :
   intro t
   rw [extPowerRep_diagGL_apply_basis, weightChar_weightOfSubset, Units.coe_prod]
 
-/-- A diagonal matrix acts diagonally in the wedge basis, so it scales each coordinate of a vector
-by the eigenvalue of the corresponding basis vector. -/
-private theorem repr_extPowerRep_diagGL (t : Fin n → kˣ) (s : Set.powersetCard (Fin n) d)
-    (w : ⋀[k]^d (Fin n → k)) :
-    ((Pi.basisFun k (Fin n)).exteriorPower d).repr (extPowerRep k n d (diagGL t) w) s =
-      (∏ i ∈ (s : Finset (Fin n)), (t i : k)) *
-        ((Pi.basisFun k (Fin n)).exteriorPower d).repr w s := by
-  have key :
-      (((Pi.basisFun k (Fin n)).exteriorPower d).coord s).comp (extPowerRep k n d (diagGL t)) =
-        (∏ i ∈ (s : Finset (Fin n)), (t i : k)) •
-          ((Pi.basisFun k (Fin n)).exteriorPower d).coord s := by
-    refine ((Pi.basisFun k (Fin n)).exteriorPower d).ext fun s' => ?_
-    rw [LinearMap.comp_apply, extPowerRep_diagGL_apply_basis, map_smul, LinearMap.smul_apply,
-      Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply]
-    by_cases h : s' = s
-    · subst h
-      simp
-    · simp [h]
-  simpa only [LinearMap.comp_apply, LinearMap.smul_apply, smul_eq_mul,
-    Module.Basis.coord_apply] using LinearMap.congr_fun key w
-
 /-- **The weight spaces of an exterior power of the standard representation span it**: the wedge
 basis consists of weight vectors. -/
 theorem iSup_weightSpace_extPowerRep_eq_top :
@@ -196,14 +176,13 @@ theorem repr_eq_zero_of_mem_weightSpace_extPowerRep
     {w : ⋀[k]^d (Fin n → k)} (hw : w ∈ weightSpace (extPowerRep k n d) l)
     {s : Set.powersetCard (Fin n) d} (hs : weightOfSubset (s : Finset (Fin n)) ≠ l) :
     ((Pi.basisFun k (Fin n)).exteriorPower d).repr w s = 0 := by
-  by_contra hne
-  refine hs (hchar (MonoidHom.ext fun t => ?_))
-  have h := congrArg (fun x => ((Pi.basisFun k (Fin n)).exteriorPower d).repr x s)
-    (apply_of_mem_weightSpace hw t)
-  rw [repr_extPowerRep_diagGL, map_smul, Finsupp.smul_apply, smul_eq_mul] at h
-  refine Units.ext ?_
+  refine ((Pi.basisFun k (Fin n)).exteriorPower d).repr_eq_zero_of_weight_ne
+    (f := fun t => extPowerRep k n d (diagGL t))
+    (a := fun (u : Set.powersetCard (Fin n) d) t => ∏ i ∈ (u : Finset (Fin n)), (t i : k))
+    (fun u t => extPowerRep_diagGL_apply_basis t u) (apply_of_mem_weightSpace hw) fun heq => ?_
+  refine hs (hchar (MonoidHom.ext fun t => Units.ext ?_))
   rw [weightChar_weightOfSubset, Units.coe_prod]
-  exact mul_right_cancel₀ hne h
+  exact congrFun heq t
 
 /-- **The weight spaces of an exterior power of the standard representation are the coordinate
 lines of the wedge basis**: the weight-`l` space of `⋀ᵈ(kⁿ)`, for `l` the indicator of a
@@ -241,6 +220,19 @@ theorem weightSpace_extPowerRep_eq_bot
   rw [Module.Basis.coord_apply]
   exact repr_eq_zero_of_mem_weightSpace_extPowerRep hchar hw fun hcon => hl s hcon.symm
 
+/-- **The weights of `⋀ᵈ(kⁿ)` are exactly the indicators of the `d`-element subsets of
+`Fin n`**, of which there are `n.choose d`. -/
+theorem weightSpace_extPowerRep_ne_bot_iff
+    (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
+    weightSpace (extPowerRep k n d) l ≠ ⊥ ↔
+      ∃ s : Set.powersetCard (Fin n) d, l = weightOfSubset (s : Finset (Fin n)) := by
+  refine ⟨fun h => ?_, ?_⟩
+  · by_contra hcon
+    exact h (weightSpace_extPowerRep_eq_bot hchar (by simpa using hcon))
+  · rintro ⟨s, rfl⟩
+    rw [weightSpace_extPowerRep_eq_span hchar s, Ne, Submodule.span_singleton_eq_bot]
+    exact ((Pi.basisFun k (Fin n)).exteriorPower d).ne_zero s
+
 end Domain
 
 section Field
@@ -262,19 +254,6 @@ theorem finrank_weightSpace_extPowerRep
       (weightOfSubset (s : Finset (Fin n)))) = 1 := by
   rw [weightSpace_extPowerRep_eq_span hchar s]
   exact finrank_span_singleton (((Pi.basisFun k (Fin n)).exteriorPower d).ne_zero s)
-
-/-- **The weights of `⋀ᵈ(kⁿ)` are exactly the indicators of the `d`-element subsets of
-`Fin n`**, of which there are `n.choose d`. -/
-theorem weightSpace_extPowerRep_ne_bot_iff
-    (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
-    weightSpace (extPowerRep k n d) l ≠ ⊥ ↔
-      ∃ s : Set.powersetCard (Fin n) d, l = weightOfSubset (s : Finset (Fin n)) := by
-  refine ⟨fun h => ?_, ?_⟩
-  · by_contra hcon
-    exact h (weightSpace_extPowerRep_eq_bot hchar (by simpa using hcon))
-  · rintro ⟨s, rfl⟩
-    rw [weightSpace_extPowerRep_eq_span hchar s, Ne, Submodule.span_singleton_eq_bot]
-    exact ((Pi.basisFun k (Fin n)).exteriorPower d).ne_zero s
 
 end Field
 
