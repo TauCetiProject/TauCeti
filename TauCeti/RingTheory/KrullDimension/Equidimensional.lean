@@ -46,8 +46,8 @@ is a rational function field over `K`, with `L / E` algebraic.
 
 * `TauCeti.isPureDimensional_primeSpectrum_iff`: `Spec R` is pure-dimensional of dimension `d`
   exactly when `R ⧸ P` has dimension `d` for every minimal prime `P`.
-* `TauCeti.comap_includeRight_mem_minimalPrimes`: a minimal prime of `L ⊗[K] A` contracts to a
-  minimal prime of `A`.
+* `TauCeti.comap_includeRight_mem_minimalPrimes`: for `L` flat over `K`, a minimal prime of
+  `L ⊗[K] A` contracts to a minimal prime of `A`.
 * `TauCeti.ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes`: for finitely generated `A`,
   a minimal prime `Q` of `L ⊗[K] A` satisfies `dim ((L ⊗[K] A) ⧸ Q) = dim (A ⧸ Q ∩ A)`.
 * `TauCeti.isPureDimensional_primeSpectrum_tensorProduct_iff`: pure-dimensionality of the
@@ -96,14 +96,10 @@ theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [CommRing E] [Algebra 
     |>.toMulEquiv.isDomain
   exact Ideal.Quotient.isDomain_iff_prime _ |>.mp this
 
-end CommRing
-
-variable {K : Type*} [Field K] {A : Type*} [CommRing A] [Algebra K A]
-
-/-- A minimal prime of `L ⊗[K] A` contracts to a minimal prime of `A`: every `K`-module is flat,
-so `L ⊗[K] A` is flat over `A` and satisfies going down. -/
+/-- A minimal prime of `L ⊗[K] A` contracts to a minimal prime of `A` when `L` is flat over `K`:
+then `L ⊗[K] A` is flat over `A` and satisfies going down. -/
 theorem comap_includeRight_mem_minimalPrimes (L : Type*) [CommRing L] [Algebra K L]
-    {Q : Ideal (L ⊗[K] A)} (hQ : Q ∈ minimalPrimes (L ⊗[K] A)) :
+    [Module.Flat K L] {Q : Ideal (L ⊗[K] A)} (hQ : Q ∈ minimalPrimes (L ⊗[K] A)) :
     Q.comap (includeRight : A →ₐ[K] L ⊗[K] A) ∈ minimalPrimes A := by
   have hflat : (includeRight : A →ₐ[K] L ⊗[K] A).toRingHom.Flat := by
     have : (includeRight : A →ₐ[K] L ⊗[K] A).toRingHom =
@@ -115,17 +111,13 @@ theorem comap_includeRight_mem_minimalPrimes (L : Type*) [CommRing L] [Algebra K
   algebraize [(includeRight : A →ₐ[K] L ⊗[K] A).toRingHom]
   exact Ideal.under_mem_minimalPrimes hQ
 
-section Algebraic
-
-variable {K : Type*} [CommRing K] {A : Type*} [CommRing A] [Algebra K A]
-
-/-- For an algebraic `E`-algebra `L` with compatible `K`-algebra structures, where `E` is a field,
-the ring `L ⊗[K] A` is integral and flat over `E ⊗[K] A`. So a minimal prime of `L ⊗[K] A`
-contracts to a minimal prime of `E ⊗[K] A`, and the two quotients have the same Krull dimension. -/
-theorem mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isAlgebraic
+/-- For a flat, integral `E`-algebra `L` with compatible `K`-algebra structures, the ring
+`L ⊗[K] A` is integral and flat over `E ⊗[K] A`. So a minimal prime of `L ⊗[K] A` contracts to a
+minimal prime of `E ⊗[K] A`, and the two quotients have the same Krull dimension. -/
+theorem mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isIntegral
     (L E : Type*) [CommRing L] [Algebra K L]
-    [Field E] [Algebra K E] [Algebra E L] [IsScalarTower K E L] [Algebra.IsAlgebraic E L]
-    {Q : Ideal (L ⊗[K] A)} (hQ : Q ∈ minimalPrimes (L ⊗[K] A)) :
+    [CommRing E] [Algebra K E] [Algebra E L] [IsScalarTower K E L] [Module.Flat E L]
+    [Algebra.IsIntegral E L] {Q : Ideal (L ⊗[K] A)} (hQ : Q ∈ minimalPrimes (L ⊗[K] A)) :
     Q.comap (Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L) (AlgHom.id K A)) ∈
         minimalPrimes (E ⊗[K] A) ∧
       ringKrullDim ((L ⊗[K] A) ⧸ Q) = ringKrullDim ((E ⊗[K] A) ⧸
@@ -147,7 +139,9 @@ theorem mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isAlgebraic
   have : Q.LiesOver (Q.comap f) := ⟨rfl⟩
   exact ⟨Ideal.under_mem_minimalPrimes hQ, ringKrullDim_eq_of_isIntegral_of_faithfulSMul⟩
 
-end Algebraic
+end CommRing
+
+variable {K : Type*} [Field K] {A : Type*} [CommRing A] [Algebra K A]
 
 /-- Let `A` be a finitely generated algebra over a field `K` and `L / K` a field extension. For a
 minimal prime `Q` of `L ⊗[K] A`, the irreducible component `V(Q)` of `Spec (L ⊗[K] A)` has the
@@ -160,7 +154,7 @@ theorem ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes (L : Type*) [Fi
   obtain ⟨s, hs⟩ := exists_isTranscendenceBasis K L
   let E := IntermediateField.adjoin K (Set.range ((↑) : s → L))
   have : Algebra.IsAlgebraic E L := hs.isAlgebraic_field
-  obtain ⟨h1, hdim⟩ := mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isAlgebraic L E hQ
+  obtain ⟨h1, hdim⟩ := mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isIntegral L E hQ
   have hdom (P : Ideal A) (_ : P.IsPrime) : IsDomain (E ⊗[K] (A ⧸ P)) :=
     (Algebra.TensorProduct.congr hs.1.aevalEquivField AlgEquiv.refl).symm.toMulEquiv.isDomain
   have := h1.1.1
