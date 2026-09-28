@@ -71,8 +71,8 @@ In the namespace `TauCeti`:
   `𝔪`-primary ideal give a finite length, which is a natural number;
 * `length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors`: that length is additive over a
   product of equations, which is additivity over a union of curves, whenever the image of the
-  second factor is a non-zero-divisor on the first curve; no condition is placed on the two
-  further equations, so the three lengths may be infinite;
+  second factor `h` on the first curve is a non-zero-divisor; `g` is unrestricted, and no
+  finiteness is assumed, so the three lengths may be infinite;
 * `length_quotient_span_pair_mul_eq_add`: the same additivity for an irreducible first curve, that
   is, a prime `(f)`, where it is enough that the second factor `h` lie outside `(f)`, so that its
   image there is a nonzero element of the domain `R ⧸ (f)` and hence a non-zero-divisor; the three
@@ -82,8 +82,10 @@ In the namespace `TauCeti`:
 * `radical_span_pair_eq_maximalIdeal_of_prime`, `isFiniteLength_quotient_span_pair_of_prime` and
   `exists_nat_length_quotient_span_pair_of_prime`: in a two-dimensional noetherian local ring, an
   irreducible first equation, a non-zero-divisor `f` with `(f)` prime, which lies in `𝔪` for that
-  reason, and a second equation outside `(f)` give an ideal with radical `𝔪`, a finite length, and
-  a natural number for it;
+  reason, and a second equation outside `(f)` give a finite length and a natural number for it, a
+  unit second equation giving the unit ideal and length zero, and give an ideal with radical `𝔪`,
+  a proper intersection, once that second equation also lies in `𝔪`, as the radical theorem
+  requires;
 * `length_quotient_span_pair_mul_eq_add_of_prime`: the same additivity over a product of equations
   for such a first equation, with no condition at all on the two further equations, so that it is
   an identity of lengths, of intersection numbers wherever both pairs are proper intersections.
@@ -142,16 +144,17 @@ For elements `f` and `g` of a commutative ring, the order of vanishing of `g` in
 `(f)` is the length of that quotient by the image of `g`, which the third isomorphism theorem
 identifies with the length of `R ⧸ (f, g)`. This is an algebraic identity in an arbitrary
 commutative ring, where no hypothesis is placed on `f` or on `g` and the length may be infinite. It
-is the local intersection multiplicity of the two equations once the length is finite: in a
-two-dimensional regular local ring with `f` a parameter, that is
-`f ∈ maximalIdeal R \ maximalIdeal R ^ 2`, and with a proper intersection, that is
-`g ∉ Ideal.span {f}`, whose principal ideal is prime by
-`TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`, the length is finite by
-`TauCeti.isFiniteLength_quotient_span_pair_of_prime` and is the order of vanishing of `g` on the
-discrete valuation ring `R ⧸ (f)`, and it is positive, that is, the multiplicity of two curves
-meeting at the closed point, exactly when `g ∈ maximalIdeal R`, by
-`TauCeti.one_le_length_quotient_span_pair`, and is zero otherwise, by
-`TauCeti.length_quotient_span_pair_eq_zero_iff`. -/
+is the local intersection multiplicity of the two equations where the two curves meet at the closed
+point: in a two-dimensional regular local ring with `f` a parameter, that is
+`f ∈ maximalIdeal R \ maximalIdeal R ^ 2`, whose principal ideal is prime by
+`TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`, and with a second equation `g` in
+`𝔪` outside `(f)`, so that `(f, g)` has radical `𝔪` and the two curves meet properly there, the
+length is finite by `TauCeti.isFiniteLength_quotient_span_pair_of_prime` and is the order of
+vanishing of `g` on the discrete valuation ring `R ⧸ (f)`, and it is positive, that is, the
+multiplicity of two curves meeting at the closed point, by
+`TauCeti.one_le_length_quotient_span_pair`. Finiteness asks only that `g` lie outside `(f)`, a unit
+`g` giving the unit ideal and length zero, and the length vanishes exactly when the two equations
+generate the unit ideal, by `TauCeti.length_quotient_span_pair_eq_zero_iff`. -/
 theorem ord_eq_length_quotient_span_pair (f g : R) :
     Ring.ord (R ⧸ Ideal.span {f}) (Ideal.Quotient.mk (Ideal.span {f}) g)
       = Module.length R (R ⧸ Ideal.span {f, g}) := by
@@ -420,12 +423,14 @@ theorem radical_span_pair_eq_maximalIdeal_of_prime (hd : ringKrullDim R = 2) {f 
   exact (Ideal.map_eq_iff_sup_ker_eq_of_surjective (Ideal.Quotient.mk (Ideal.span {f}))
     Ideal.Quotient.mk_surjective).mp hrad
 
-/-- **A proper intersection with an irreducible first equation in a two-dimensional noetherian
-local ring has finite local intersection multiplicity.** This is the finiteness of
+/-- **In a two-dimensional noetherian local ring, a second equation outside an irreducible
+first equation has finite length.** This is the finiteness of
 `TauCeti.exists_nat_length_quotient_span_pair` when the first equation is an irreducible one, that
 is, a non-zero-divisor `f` with `(f)` prime, which lies in `𝔪` for that reason. The length is finite
 whether or not the second curve contains the closed point, a unit `g` giving the unit ideal and
-length zero. -/
+length zero. When `g` lies in `𝔪` as well, the two curves meet properly at the closed point, by
+`TauCeti.radical_span_pair_eq_maximalIdeal_of_prime`, and that finite length is their local
+intersection multiplicity there. -/
 theorem isFiniteLength_quotient_span_pair_of_prime (hd : ringKrullDim R = 2) {f g : R}
     (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime) (hg : g ∉ Ideal.span {f}) :
     IsFiniteLength R (R ⧸ Ideal.span {f, g}) := by
@@ -443,10 +448,12 @@ theorem isFiniteLength_quotient_span_pair_of_prime (hd : ringKrullDim R = 2) {f 
     let _ : Subsingleton (R ⧸ (⊤ : Ideal R)) := Submodule.Quotient.subsingleton_iff.mpr rfl
     exact IsFiniteLength.of_subsingleton
 
-/-- **The local intersection multiplicity of a proper intersection with an irreducible first
-equation in a two-dimensional noetherian local ring is a natural number.** This is
+/-- **In a two-dimensional noetherian local ring, the length by an irreducible first equation
+and a second equation outside it is a natural number.** This is
 `TauCeti.exists_nat_length_quotient_span_pair` when the first equation is irreducible, that is, a
-non-zero-divisor `f` with `(f)` prime, which lies in `𝔪` for that reason. -/
+non-zero-divisor `f` with `(f)` prime, which lies in `𝔪` for that reason. A second equation `g` in
+`𝔪` gives a proper intersection at the closed point, and that natural number is the local
+intersection multiplicity of the two curves there; a unit `g` gives the natural number zero. -/
 theorem exists_nat_length_quotient_span_pair_of_prime (hd : ringKrullDim R = 2) {f g : R}
     (hfnd : f ∈ nonZeroDivisors R) (hfprime : (Ideal.span {f}).IsPrime) (hg : g ∉ Ideal.span {f}) :
     ∃ n : ℕ, Module.length R (R ⧸ Ideal.span {f, g}) = n := by
