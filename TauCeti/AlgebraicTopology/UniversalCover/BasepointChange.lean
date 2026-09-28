@@ -29,29 +29,6 @@ namespace TauCeti.UniversalCover
 
 variable {X : Type*} [TopologicalSpace X] {x y : X}
 
-/-- Prepending a fixed path is continuous on the based-path quotient. -/
-private theorem continuous_basepointPrepend (γ : Path x y) :
-    Continuous (fun e : UniversalCover y =>
-      mk e.proj ((Path.Homotopic.Quotient.mk γ).trans e.path)) := by
-  rw [(isQuotientMap_ofBasedPath y).continuous_iff]
-  suffices h : Continuous (fun β : BasedPath y =>
-      ofBasedPath x (BasedPath.ofPath (γ.trans β.toPath))) by
-    apply h.congr
-    intro β
-    rw [ofBasedPath_ofPath, Function.comp_apply, ofBasedPath_def,
-      Path.Homotopic.Quotient.mk_trans]
-  refine (continuous_ofBasedPath x).comp (Continuous.subtype_mk ?_ _)
-  refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
-  have h_eval : Continuous fun p : BasedPath y × I => p.1.1 p.2 :=
-    continuous_eval.comp (continuous_subtype_val.prodMap continuous_id)
-  -- The underlying continuous map is the concatenation of a fixed path and a family of paths.
-  change Continuous fun p : BasedPath y × I => γ.trans p.1.toPath p.2
-  exact Path.trans_continuous_family (a := fun _ : BasedPath y => x)
-    (b := fun _ : BasedPath y => y)
-    (c := fun β : BasedPath y => BasedPath.endpoint β)
-    (fun _ => γ) (Path.continuous_uncurry_iff.mpr continuous_const)
-    (fun β => β.toPath) h_eval
-
 /-- Changing the basepoint along `γ` gives a homeomorphism over `X` that sends the constant path
 at `y` to the class of `γ` at `x`. -/
 def basepointChangeHomeomorph (γ : Path x y) :
@@ -70,10 +47,11 @@ def basepointChangeHomeomorph (γ : Path x y) :
     congr 1
     rw [← Path.Homotopic.Quotient.trans_assoc,
       Path.Homotopic.Quotient.trans_symm, Path.Homotopic.Quotient.refl_trans]
-  continuous_toFun := continuous_basepointPrepend γ
-  continuous_invFun := continuous_basepointPrepend γ.symm
+  continuous_toFun := continuous_prepend γ
+  continuous_invFun := continuous_prepend γ.symm
 
 /-- Basepoint change sends the distinguished point to the path class defining the change. -/
+@[simp]
 theorem basepointChangeHomeomorph_apply_basepointLift (γ : Path x y) :
     basepointChangeHomeomorph γ (basepointLift y : UniversalCover y) =
       mk y (Path.Homotopic.Quotient.mk γ) :=
@@ -92,6 +70,16 @@ theorem basepointChangeHomeomorph_apply_mk (γ : Path x y) {z : X}
     basepointChangeHomeomorph γ (mk z q) =
       mk z ((Path.Homotopic.Quotient.mk γ).trans q) := by
   simp [basepointChangeHomeomorph]
+
+/-- Changing basepoint along concatenated paths composes the corresponding homeomorphisms. -/
+@[simp]
+theorem basepointChangeHomeomorph_trans (γ : Path x y) {z : X} (δ : Path y z) :
+    basepointChangeHomeomorph (γ.trans δ) =
+      (basepointChangeHomeomorph δ).trans (basepointChangeHomeomorph γ) := by
+  apply Homeomorph.ext
+  rintro ⟨w, q⟩
+  simp only [basepointChangeHomeomorph_apply_mk, Homeomorph.trans_apply,
+    Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.trans_assoc]
 
 /-- Homotopic paths induce the same basepoint change. -/
 theorem basepointChangeHomeomorph_eq_of_homotopic {γ δ : Path x y}
@@ -115,7 +103,7 @@ theorem basepointChangeHomeomorph_symm (γ : Path x y) :
     (basepointChangeHomeomorph γ).symm = basepointChangeHomeomorph γ.symm := by
   apply Homeomorph.ext
   rintro ⟨z, q⟩
-  rfl
+  simp [basepointChangeHomeomorph]
 
 /-- Projection and the image of the constant path determine the basepoint-change map uniquely
 among continuous maps when the projection is a covering map. -/

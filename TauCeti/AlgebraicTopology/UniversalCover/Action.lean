@@ -101,27 +101,16 @@ instance : FaithfulSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
 /-- Every fundamental-group element acts continuously on the universal cover. -/
 instance : ContinuousConstSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
   continuous_const_smul g := by
-    rw [(isQuotientMap_ofBasedPath x₀).continuous_iff]
     obtain ⟨γ, hγ⟩ := Quotient.exists_rep (g⁻¹.toPath : Path.Homotopic.Quotient x₀ x₀)
     have hγ' : Path.Homotopic.Quotient.mk γ = g⁻¹.toPath := hγ
-    suffices h_cont : Continuous (fun β : BasedPath x₀ ↦
-        ofBasedPath x₀ (BasedPath.ofPath (γ.trans β.toPath))) by
-      apply h_cont.congr
-      intro β
-      rw [ofBasedPath_ofPath, Function.comp_apply, ofBasedPath_def, smul_mk,
-        Path.Homotopic.Quotient.mk_trans, hγ']
-    refine (continuous_ofBasedPath x₀).comp (Continuous.subtype_mk ?_ _)
-    refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
-    have h_eval : Continuous fun p : BasedPath x₀ × I ↦ p.1.1 p.2 :=
-      continuous_eval.comp (continuous_subtype_val.prodMap continuous_id)
-    -- Unfolding `BasedPath.ofPath` and its underlying `Path.toContinuousMap`, then evaluating
-    -- the resulting continuous map at `p.2`, identifies the uncurried goal with concatenation.
-    change Continuous fun p : BasedPath x₀ × I ↦ γ.trans p.1.toPath p.2
-    exact Path.trans_continuous_family (a := fun _ : BasedPath x₀ ↦ x₀)
-        (b := fun _ : BasedPath x₀ ↦ x₀)
-        (c := fun β : BasedPath x₀ ↦ BasedPath.endpoint β)
-        (fun _ ↦ γ) (Path.continuous_uncurry_iff.mpr continuous_const)
-        (fun β ↦ β.toPath) h_eval
+    have h : (fun e : UniversalCover x₀ => g • e) =
+        (fun e => mk e.proj ((Path.Homotopic.Quotient.mk γ).trans e.path)) := by
+      funext ⟨z, q⟩
+      change mk z (g⁻¹.toPath.trans q) =
+        mk z ((Path.Homotopic.Quotient.mk γ).trans q)
+      rw [← hγ']
+    rw [h]
+    exact continuous_prepend γ
 
 /-- The action of the fundamental group on the universal cover is free. -/
 instance : IsCancelSMul (FundamentalGroup X x₀) (UniversalCover x₀) where
