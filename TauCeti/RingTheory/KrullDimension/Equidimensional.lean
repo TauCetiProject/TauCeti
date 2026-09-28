@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.AlgebraicIndependent.Adjoin
 public import Mathlib.RingTheory.Flat.Stability
 public import Mathlib.RingTheory.Ideal.Over
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.RingHom.Flat
+public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.RingTheory.Ideal.GoingDown
 public import TauCeti.RingTheory.KrullDimension.FiniteType
 public import TauCeti.RingTheory.KrullDimension.Quotient
@@ -94,14 +93,10 @@ theorem eq_map_comap_includeRight_of_isDomain (E : Type*) [CommRing E] [Algebra 
   have := hdom (Q.comap includeRight) inferInstance
   have hPQ : (Q.comap includeRight).map includeRight ≤ Q := Ideal.map_le_iff_le_comap.mpr le_rfl
   refine le_antisymm (hQ.2 ⟨?_, bot_le⟩ hPQ) hPQ
-  have hker : RingHom.ker
-      (Algebra.TensorProduct.map (AlgHom.id K E) (Ideal.Quotient.mkₐ K (Q.comap includeRight))) =
-      (Q.comap includeRight).map (includeRight : A →ₐ[K] E ⊗[K] A) := by
-    rw [Algebra.TensorProduct.lTensor_ker _
-        (Ideal.Quotient.mkₐ_surjective K (Q.comap includeRight)),
-      ← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker]
-  rw [← hker]
-  exact RingHom.ker_isPrime _
+  -- `(E ⊗[K] A) ⧸ P.map includeRight` is `E ⊗[K] (A ⧸ P)`, a domain.
+  have := (Algebra.TensorProduct.tensorQuotientEquiv (R := K) K A E (Q.comap includeRight)).symm
+    |>.toMulEquiv.isDomain
+  exact Ideal.Quotient.isDomain_iff_prime _ |>.mp this
 
 end CommRing
 
@@ -171,19 +166,9 @@ theorem ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes (L : Type*) [Fi
     simp [Ideal.mem_comap]
   rw [hP] at hQ'
   -- `(E ⊗[K] A) ⧸ Q'` is `E ⊗[K] (A ⧸ P)`, which has the dimension of `A ⧸ P`.
-  have hker : RingHom.ker
-      (Algebra.TensorProduct.map (AlgHom.id K E) (Ideal.Quotient.mkₐ K (Q.comap includeRight))) =
-      (Q.comap includeRight).map (includeRight : A →ₐ[K] E ⊗[K] A) := by
-    rw [Algebra.TensorProduct.lTensor_ker _
-        (Ideal.Quotient.mkₐ_surjective K (Q.comap includeRight)),
-      ← RingHom.ker_coe_toRingHom, Ideal.Quotient.mkₐ_ker]
-  have hsurj : Function.Surjective
-      (Algebra.TensorProduct.map (AlgHom.id K E) (Ideal.Quotient.mkₐ K (Q.comap includeRight))) :=
-    Algebra.TensorProduct.map_surjective _ _ Function.surjective_id
-      (Ideal.Quotient.mkₐ_surjective K _)
-  rw [hdim, ringKrullDim_eq_of_ringEquiv ((Ideal.quotEquivOfEq
-      (hQ'.trans hker.symm)).trans
-        (RingHom.quotientKerEquivOfSurjective hsurj)),
+  rw [hdim, ringKrullDim_eq_of_ringEquiv ((Ideal.quotEquivOfEq hQ').trans
+      (Algebra.TensorProduct.tensorQuotientEquiv (R := K) K A E
+        (Q.comap includeRight)).symm.toRingEquiv),
     ringKrullDim_tensorProduct_field_of_finiteType]
 
 /-- The spectrum of a finitely generated algebra `A` over a field `K` is pure-dimensional of
