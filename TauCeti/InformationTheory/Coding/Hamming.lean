@@ -32,7 +32,7 @@ variable {F ι : Type*} [Field F]
 /-- A linear code transported to Mathlib's Hamming-space type synonym. -/
 noncomputable def hammingCode (C : LinearCode F ι) :
     Submodule F (Hamming (fun _ : ι ↦ F)) :=
-  C.map (hammingLinearEquiv F ι).toLinearMap
+  C.map (LinearEquiv.refl F (ι → F) : (ι → F) ≃ₗ[F] Hamming (fun _ : ι ↦ F)).toLinearMap
 
 /-- A Hamming-space word belongs to the transported code exactly when its underlying
 function belongs to the original code. -/
@@ -40,20 +40,29 @@ function belongs to the original code. -/
 theorem mem_hammingCode_iff (C : LinearCode F ι)
     (x : Hamming (fun _ : ι ↦ F)) :
     x ∈ hammingCode C ↔ Hamming.ofHamming x ∈ C := by
-  simp [hammingCode, Submodule.mem_map_equiv]
+  -- `Hamming` is a type synonym, so this `refl` map reduces to the identity map.
+  change x ∈ C.map (LinearMap.id : (ι → F) →ₗ[F] (ι → F)) ↔ Hamming.ofHamming x ∈ C
+  simp only [Submodule.map_id]
+  rfl
 
 /-- The underlying set of the transported code is the image of the original codewords. -/
 theorem coe_hammingCode (C : LinearCode F ι) :
     (hammingCode C : Set (Hamming (fun _ : ι ↦ F))) =
       Hamming.toHamming '' (C : Set (ι → F)) := by
-  simp only [hammingCode, Submodule.map_coe, LinearEquiv.coe_coe,
-    hammingLinearEquiv_apply]
+  ext x
+  constructor
+  · intro hx
+    exact ⟨Hamming.ofHamming x, (mem_hammingCode_iff C x).mp hx,
+      Hamming.toHamming_ofHamming x⟩
+  · rintro ⟨y, hy, rfl⟩
+    exact (mem_hammingCode_iff C (Hamming.toHamming y)).mpr (by simpa using hy)
 
 /-- A code and its Hamming-space transport have the same dimension. -/
 @[simp]
 theorem finrank_hammingCode (C : LinearCode F ι) :
     Module.finrank F (hammingCode C) = Module.finrank F C := by
-  rw [hammingCode, LinearEquiv.finrank_map_eq]
+  exact (LinearEquiv.refl F (ι → F) :
+    (ι → F) ≃ₗ[F] Hamming (fun _ : ι ↦ F)).finrank_map_eq C
 
 /-- The minimum distance of a code is the metric infimum separation of its Hamming-space
 transport, including the zero and singleton codes. -/
