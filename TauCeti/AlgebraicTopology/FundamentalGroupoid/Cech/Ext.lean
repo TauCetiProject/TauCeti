@@ -36,10 +36,11 @@ open TauCeti.TopCat
 variable {X : TopCat.{v}} {ι : Type u} (U : ι → Opens X)
 
 /-- Functors out of the ambient fundamental groupoid of an open cover are determined by their
-composites with the legs of the Čech cocone. -/
-theorem cechCocone_hom_ext (hU : IsOpenCover U) {G : Grpd}
+composites with the singleton legs of the Čech cocone. -/
+theorem cechCocone_hom_ext_singleton (hU : IsOpenCover U) {G : Grpd}
     {F H : (cechCocone U).pt ⟶ G}
-    (h : ∀ s, (cechCocone U).ι.app s ≫ F = (cechCocone U).ι.app s ≫ H) : F = H := by
+    (h : ∀ i, (cechCocone U).ι.app (CechIndex.singleton i) ≫ F =
+      (cechCocone U).ι.app (CechIndex.singleton i) ≫ H) : F = H := by
   apply TauCeti.FundamentalGroupoid.functor_ext
     (U := fun i ↦ (U i : Set X)) (fun x ↦ hU.exists_mem_nhds x)
   intro i
@@ -61,10 +62,17 @@ theorem cechCocone_hom_ext (hU : IsOpenCover U) {G : Grpd}
       _ = _ := by
         rw [hpt]
         exact (Category.assoc _ _ _).symm.trans (Category.comp_id _)
-  have hi := congrArg (fun f => eqToHom (cechDiagram_obj U s).symm ≫ f) (h s)
+  have hi := congrArg (fun f => eqToHom (cechDiagram_obj U s).symm ≫ f) (h i)
   rw [← Category.assoc, ← hleg, ← Category.assoc, ← hleg] at hi
   dsimp only [s] at hi
   rw [cechIntersection_singleton] at hi
   exact hi
+
+/-- Functors out of the ambient fundamental groupoid of an open cover are determined by their
+composites with all the legs of the Čech cocone. -/
+theorem cechCocone_hom_ext (hU : IsOpenCover U) {G : Grpd}
+    {F H : (cechCocone U).pt ⟶ G}
+    (h : ∀ s, (cechCocone U).ι.app s ≫ F = (cechCocone U).ι.app s ≫ H) : F = H :=
+  cechCocone_hom_ext_singleton U hU (fun i ↦ h (CechIndex.singleton i))
 
 end TauCeti.FundamentalGroupoid
