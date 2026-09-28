@@ -28,8 +28,10 @@ one-variable case proved here is the base of that induction.
 
 ## Main results
 
-* `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq_subring`: Weierstrass division read
-  inside the ring of restricted series, where quotient and remainder are elements of that ring.
+* `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq_subring` and
+  `TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq_subring`: Weierstrass division read
+  inside the ring of restricted series, where quotient and remainder are elements of that ring,
+  in its existence and unique-existence forms.
 * `TauCeti.PowerSeries.IsDistinguished.span_singleton_eq_of_forall_le` and
   `TauCeti.PowerSeries.IsDistinguished.le_of_mem_span_singleton`: an element of an ideal whose
   distinguished degree is least generates that ideal, and conversely a generator has least
@@ -86,15 +88,16 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {c 
 
 /-- **Weierstrass division inside the ring of restricted power series.** Over a complete
 nonarchimedean field, a member `f` of the ring of series restricted at a positive radius `c` which
-is distinguished of degree `s` divides every member `g`:
+is distinguished of degree `s` divides every member `g` with remainder:
 
 ```text
 g = q * f + r,    r a polynomial of degree less than s,
 ```
 
-with `q` and `r` again restricted at `c`. This is
+with `q` and `r` again restricted at `c`; the remainder `r` is in general nonzero. This is
 `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq` read in the ring of restricted series,
-which is the form ideal-theoretic arguments use. -/
+which is the form ideal-theoretic arguments use. The pair `(q, r)` is unique, by
+`TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq_subring`. -/
 theorem IsDistinguished.exists_mul_add_eq_subring (hc : 0 < c)
     {f : PowerSeries.IsRestricted.subring (R := K) c}
     (hf : IsDistinguished c s (f : PowerSeries K))
@@ -105,6 +108,30 @@ theorem IsDistinguished.exists_mul_add_eq_subring (hc : 0 < c)
   -- the coercion of a sum and of a product in a subring reduces to the sum and product of the
   -- coercions, so `hqr` is literally the required equation of underlying series
   exact ⟨⟨q, hq⟩, ⟨r, isRestricted_of_forall_coeff_eq_zero hr⟩, hr, Subtype.ext hqr⟩
+
+/-- **Weierstrass division inside the ring of restricted power series is unique.** The quotient and
+remainder of `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq_subring` are the only ones: a
+member `g` of the ring of series restricted at a positive radius `c` is written as `q * f + r`,
+with `r` a polynomial of degree less than the distinguished degree `s` of `f`, in exactly one way.
+This is `TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq` read in that ring. -/
+theorem IsDistinguished.existsUnique_mul_add_eq_subring (hc : 0 < c)
+    {f : PowerSeries.IsRestricted.subring (R := K) c}
+    (hf : IsDistinguished c s (f : PowerSeries K))
+    (g : PowerSeries.IsRestricted.subring (R := K) c) :
+    ∃! p : PowerSeries.IsRestricted.subring (R := K) c ×
+        PowerSeries.IsRestricted.subring (R := K) c,
+      (∀ m, s ≤ m → (p.2 : PowerSeries K).coeff m = 0) ∧ p.1 * f + p.2 = g := by
+  obtain ⟨q, r, hr, hqr⟩ := hf.exists_mul_add_eq_subring hc g
+  refine ⟨(q, r), ⟨hr, hqr⟩, fun p ⟨h2, h3⟩ ↦ ?_⟩
+  -- the coercions of the two decompositions are equations of underlying series, to which the
+  -- uniqueness of Weierstrass division applies
+  have hcoe : (p.1 : PowerSeries K) * (f : PowerSeries K) + (p.2 : PowerSeries K)
+      = (q : PowerSeries K) * (f : PowerSeries K) + (r : PowerSeries K) := by
+    have := congrArg (Subtype.val (p := (· ∈ PowerSeries.IsRestricted.subring (R := K) c)))
+      (h3.trans hqr.symm)
+    simpa using this
+  obtain ⟨e1, e2⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc p.1.2 q.2 h2 hr hcoe
+  exact Prod.ext (Subtype.ext e1) (Subtype.ext e2)
 
 /-- **An element of least distinguished degree generates.** If `f` lies in an ideal `I` of the ring
 of series restricted at a positive radius `c`, is distinguished of degree `s`, and no member of `I`
