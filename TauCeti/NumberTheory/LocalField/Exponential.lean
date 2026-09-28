@@ -23,12 +23,13 @@ converges for `x ∈ 𝓂[K] ^ i`, and this file proves that convergence.  Its s
 The threshold `e < (p - 1) * i` is exactly the range in which the term valuations tend to
 infinity throughout the ideal: there the normalized valuation of `x ^ n / n !` grows linearly in
 `n` for every `x ∈ 𝓂[K] ^ i`, so the series converges on all of `𝓂[K] ^ i` rather than on a
-smaller ball.  The strictness matters: at `e = (p - 1) * i` the term valuations stay bounded for
-an `x` of valuation exactly `i`, so the terms do not tend to zero.  Convergence on the
-whole ideal is what makes the exponential a map from the deep additive group `𝓂[K] ^ i` to the
-deep unit group `1 + 𝓂[K] ^ i`, whose inverse is the logarithm; that identification of a deep
-additive group with a deep unit group is what computes the power classes, and hence the square
-classes, of `K`.
+smaller ball.  The strictness matters: at `e = (p - 1) * i` an `x` of normalized valuation
+exactly `i` has `x ^ n / n !` of valuation `i * s` with `s` the sum of the base `p` digits of
+`n`, so the term valuations stay bounded along `n = p ^ k` and the terms do not tend to zero.
+Convergence on the whole ideal is what makes the exponential a map from the deep additive
+group `𝓂[K] ^ i` to the deep unit group `1 + 𝓂[K] ^ i`, whose inverse is the logarithm; that
+identification of a deep additive group with a deep unit group is what computes the power
+classes, and hence the square classes, of `K`.
 
 ## Main results
 
