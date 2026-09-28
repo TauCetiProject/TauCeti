@@ -224,6 +224,22 @@ theorem support_subfan_subset : (Φ.subfan S hS hface).support ⊆ Φ.support :=
   obtain ⟨σ, hσ, hxσ⟩ := (Φ.subfan S hS hface).mem_support.1 hx
   exact Φ.subset_support (hS hσ) hxσ
 
+/-- Regard a cone of a subfan as a cone of the ambient fan. -/
+@[expose] def subfanCone (σ : (Φ.subfan S hS hface).cones) : Φ.cones :=
+  ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩
+
+/-- The ambient cone of a subfan cone is its original cone. -/
+@[simp]
+theorem coe_subfanCone (σ : (Φ.subfan S hS hface).cones) :
+    (Φ.subfanCone S hS hface σ : PointedCone ℝ V) = σ :=
+  rfl
+
+/-- Regarding subfan cones as ambient cones preserves intersections. -/
+@[simp]
+theorem subfanCone_inf (σ τ : (Φ.subfan S hS hface).cones) :
+    Φ.subfanCone S hS hface (σ ⊓ τ) = Φ.subfanCone S hS hface σ ⊓ Φ.subfanCone S hS hface τ :=
+  Subtype.ext rfl
+
 /-- The faces of a cone of a fan are again cones of the fan, so they form a subfan of it. -/
 theorem isFaceOf_subset_cones (hσ : σ ∈ Φ.cones) :
     {τ : PointedCone ℝ V | τ.IsFaceOf σ} ⊆ Φ.cones :=
