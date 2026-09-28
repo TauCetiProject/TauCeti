@@ -49,8 +49,8 @@ the two predicates, so downstream code never has to unfold them.
 * `TauCeti.krausLocalCondition_iff_exists_integralModel`: over a local ring the condition holds
   exactly when some Weierstrass equation with coefficients in `R` has `c`-invariants `c₄` and
   `c₆` and nonzero discriminant.
-* `TauCeti.isIntegral_ofCInvariants`: where `6` is a unit the canonical equation is itself
-  integral, so no auxiliary data is needed;
+* `TauCeti.isIntegral_ofCInvariants`: where `6` is a unit and `c₄`, `c₆` lie in the image of `R`,
+  the canonical equation is itself integral, so no auxiliary data is needed;
 * `TauCeti.krausLocalCondition_of_isUnit_six`: consequently the condition is automatic there,
   given only the integrality and nonvanishing of the invariants.
 
@@ -123,8 +123,9 @@ structure KrausLocalCondition : Prop where
 
 variable {R c₄ c₆}
 
-/-- **Where `6` is a unit the canonical equation is already integral.** Its two coefficients are
-`-c₄/48` and `-c₆/864`, and `48` and `864` are units as soon as `6` is. -/
+/-- **Where `6` is a unit an integral pair of invariants already gives an integral canonical
+equation.** Its two coefficients are `-c₄/48` and `-c₆/864`, so once `c₄` and `c₆` lie in the
+image of `R` so do these, because `48` and `864` are units as soon as `6` is. -/
 theorem isIntegral_ofCInvariants (h6 : IsUnit (6 : R)) (h₄ : ∃ x : R, algebraMap R K x = c₄)
     (h₆ : ∃ x : R, algebraMap R K x = c₆) : (ofCInvariants c₄ c₆).IsIntegral R := by
   obtain ⟨u₄, hu₄⟩ : IsUnit (48 : R) := isUnit_of_dvd_unit ⟨27, by norm_num⟩ (h6.pow 4)
