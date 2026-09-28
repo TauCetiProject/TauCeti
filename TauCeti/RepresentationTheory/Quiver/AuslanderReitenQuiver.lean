@@ -99,9 +99,6 @@ separate step and is not done in this file.
 
 ## References
 
-This is the `arQuiver` target of sublayer 6F of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
-
 * M. Auslander, I. Reiten, S. Smalø, *Representation Theory of Artin Algebras*, CUP (1995), VII.1.
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
   Algebras, Vol. 1*, LMS Student Texts 65, CUP (2006), IV.4 and VII.1.
