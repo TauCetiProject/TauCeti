@@ -30,7 +30,7 @@ descent through `u ↦ u ^ m` of a holomorphic function invariant under the `m`-
 and descent preserves holomorphy (`TauCeti.differentiableOn_descendPow`). These are the local
 inputs that make the atlas of all such charts a holomorphic atlas on `Γ \ ℍ`.
 
-The cyclic quotient model follows Farkas–Kra, *Riemann Surfaces*, Chapter I §§4–5, and Katok,
+The cyclic quotient model follows Farkas–Kra, *Riemann Surfaces*, Chapter IV §9, and Katok,
 *Fuchsian Groups*, §2.4.
 
 ## Main declarations
@@ -49,7 +49,7 @@ The cyclic quotient model follows Farkas–Kra, *Riemann Surfaces*, Chapter I §
 ## References
 
 * Hershel Farkas and Irwin Kra, *Riemann Surfaces*, Graduate Texts in Mathematics 71, Springer,
-  second edition, 1992, Chapter I §§4–5.
+  second edition, 1992, Chapter IV §9.
 * Svetlana Katok, *Fuchsian Groups*, Chicago Lectures in Mathematics, University of Chicago
   Press, 1992, §2.4.
 -/
@@ -251,41 +251,66 @@ theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' 
   exact (differentiableOn_descendPow hs_open hFd hinv).mono hsub
 
 /-- **The elliptic chart at the orbit of `z` does not depend on the invariant disc.** The charts
-at the orbit of `z` built from the invariant discs of radii `ε` and `ε'`, `ε ≤ ε'`, have the
+at the orbit of `z` built from the invariant discs of radii `ε` and `ε'`, both positive, have the
 identity as their transition map, so the two charts define the same local complex structure on
-the coarse quotient. -/
-theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε'' : ε ≤ ε')
+the coarse quotient.
+
+This lemma is deliberately not tagged `@[simp]`: its premise is a membership condition in the
+source of the transition, which a simplifier does not discharge from the local context (with the
+membership hypothesis merely in context, `simp only [stabilizerBallQuotientChart_trans_apply]`
+makes no progress), and the `simpNF` linter accordingly rejects the annotation. Pass the
+membership proof to the lemma, as in `simp only [stabilizerBallQuotientChart_trans_apply hu]`, or
+rewrite with it. -/
+theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε' : 0 < ε')
     (hopen' : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε')) {u : ℂ}
     (hu : u ∈ ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
-      stabilizerBallQuotientChart (lt_of_lt_of_le hε hε'') hopen').source) :
-    ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
-      stabilizerBallQuotientChart (lt_of_lt_of_le hε hε'') hopen') u = u := by
-  have hε' : 0 < ε' := lt_of_lt_of_le hε hε''
-  -- The target of the chart at the orbit of `z` is the `m`-th power of the Euclidean disc of
-  -- radius `Real.tanh (ε / 2)`, `m = Nat.card (stabilizer Γ z)`, and the inverse chart sends
-  -- `w ^ m` to the orbit of the point of disc coordinate `w`, which the chart for the invariant
-  -- disc of radius `ε'` reads back as `w ^ m`.
-  have hr : 0 ≤ Real.tanh (ε / 2) := by
-    rw [← Real.tanh_zero]
-    exact Real.tanh_strictMono.monotone (by linarith)
+      stabilizerBallQuotientChart hε' hopen').source) :
+    (stabilizerBallQuotientChart hε' hopen')
+      ((stabilizerBallQuotientChart hε hopen).symm u) = u := by
   have hu1 : u ∈ ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
       stabilizerBallQuotientChart hε' hopen').source := hu
   rw [OpenPartialHomeomorph.trans_source] at hu1
   rw [OpenPartialHomeomorph.symm_source] at hu1
   have hu2 : u ∈ (stabilizerBallQuotientChart hε hopen).target := hu1.1
-  rw [stabilizerBallQuotientChart_target, ← image_pow_ball hr] at hu2
-  obtain ⟨w, hw, rfl⟩ := hu2
-  have hwn : ‖w‖ < Real.tanh (ε / 2) := mem_ball_zero_iff.1 hw
-  set τ : ℍ := (discCoordinateHomeomorph z).symm (.mk w (hwn.trans (Real.tanh_lt_one _))) with hτ
-  have hτdisc : discCoordinate z τ = w := by
-    simp [hτ]
-  have hmono : Real.tanh (ε / 2) ≤ Real.tanh (ε' / 2) :=
-    Real.tanh_strictMono.monotone (by linarith)
-  have hτε : dist τ z < ε' :=
-    mem_ball_iff_norm_discCoordinate_lt.2 (by
-      rw [hτdisc]
-      exact lt_of_lt_of_le hwn hmono)
-  rw [OpenPartialHomeomorph.trans_apply, stabilizerBallQuotientChart_symm_pow hε hopen hwn,
-    stabilizerBallQuotientChart_mk hε' hopen' hτε, hτ, hτdisc]
+  -- The inverse chart sends `w ^ m` to the orbit of the point of disc coordinate `w`, and the
+  -- chart reads the orbit of a point `τ` of the invariant disc of radius `ε` or `ε'` as
+  -- `discCoordinate z τ ^ m`, with `m = Nat.card (stabilizer Γ z)`. The orbit
+  -- `(stabilizerBallQuotientChart hε hopen).symm u` is thus the orbit of a point `τ` lying in
+  -- both invariant discs: of the point of disc coordinate `w` if `ε ≤ ε'`, and of a point of the
+  -- disc of radius `ε'` otherwise. The transition is then `discCoordinate z τ ^ m`, which is `u`
+  -- because the chart of a disc containing `τ` reads that orbit of `τ` as `u`.
+  by_cases hεε' : ε ≤ ε'
+  · have hr : 0 ≤ Real.tanh (ε / 2) := by
+      rw [← Real.tanh_zero]
+      exact Real.tanh_strictMono.monotone (by linarith)
+    have hu3 : u ∈ (· ^ Nat.card (stabilizer Γ z)) '' Metric.ball 0 (Real.tanh (ε / 2)) := by
+      rw [stabilizerBallQuotientChart_target, ← image_pow_ball hr] at hu2
+      exact hu2
+    obtain ⟨w, hw, rfl⟩ := hu3
+    have hwn : ‖w‖ < Real.tanh (ε / 2) := mem_ball_zero_iff.1 hw
+    set τ : ℍ := (discCoordinateHomeomorph z).symm (.mk w (hwn.trans (Real.tanh_lt_one _))) with hτ
+    have hτdisc : discCoordinate z τ = w := by
+      simp [hτ]
+    have hmono : Real.tanh (ε / 2) ≤ Real.tanh (ε' / 2) :=
+      Real.tanh_strictMono.monotone (by linarith)
+    have hτε : dist τ z < ε' :=
+      mem_ball_iff_norm_discCoordinate_lt.2 (by
+        rw [hτdisc]
+        exact lt_of_lt_of_le hwn hmono)
+    rw [stabilizerBallQuotientChart_symm_pow hε hopen hwn,
+      stabilizerBallQuotientChart_mk hε' hopen' hτε, hτ, hτdisc]
+  · have hu1' : u ∈ (stabilizerBallQuotientChart hε hopen).symm ⁻¹'
+        (stabilizerBallQuotientChart hε' hopen').source := hu1.2
+    rw [Set.mem_preimage, stabilizerBallQuotientChart_source] at hu1'
+    obtain ⟨σ, hσ⟩ := Set.mem_range.mp hu1'
+    obtain ⟨τ, rfl⟩ := Quotient.exists_rep σ
+    have hτε : dist (τ : ℍ) z < ε' := (mem_stabilizerBall Γ z ε').1 τ.2
+    have hε'ε : ε' ≤ ε := le_of_not_ge hεε'
+    have hτεε : dist (τ : ℍ) z < ε := lt_of_lt_of_le hτε hε'ε
+    have hp : (stabilizerBallQuotientChart hε hopen).symm u = Quotient.mk _ (τ : ℍ) := by
+      rw [← hσ, stabilizerBallQuotientToQuotient_mk]
+    rw [hp, stabilizerBallQuotientChart_mk hε' hopen' hτε,
+      ← stabilizerBallQuotientChart_mk hε hopen hτεε, hp.symm,
+      (stabilizerBallQuotientChart hε hopen).right_inv hu2]
 
 end Subgroup
