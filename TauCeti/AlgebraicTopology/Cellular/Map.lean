@@ -13,7 +13,8 @@ public import TauCeti.AlgebraicTopology.Cellular.Chains
 A continuous map between relative CW complexes is cellular when it carries each stage of the
 skeletal filtration into the corresponding stage. Such a map induces maps on the relative
 homology of consecutive skeleta. Naturality of the connecting morphism of a pair and of the
-quotient map to relative homology shows that these maps commute with the cellular differential.
+map from skeletal homology to relative homology shows that these maps commute with the cellular
+differential.
 Thus a cellular map induces a map of cellular chain complexes, respecting identities and
 composition. No choice of characteristic maps or cellular representatives is involved.
 The predicate is used as `TauCeti.IsCellular f`, and its induced chain map as
@@ -49,6 +50,11 @@ subspaces. -/
 def IsCellular (f : ContinuousMap C C') : Prop :=
   ∀ (n : ℕ) (x : C), (x : X) ∈ skeletonLT C (n : ℕ∞) →
     ((f x : C') : Y) ∈ skeletonLT C' (n : ℕ∞)
+
+/-- Cellularity means preserving every stage of the skeletal filtration. -/
+theorem isCellular_iff {f : ContinuousMap C C'} :
+    IsCellular f ↔ ∀ (n : ℕ) (x : C), (x : X) ∈ skeletonLT C (n : ℕ∞) →
+      ((f x : C') : Y) ∈ skeletonLT C' (n : ℕ∞) := Iff.rfl
 
 /-- The identity map of a relative CW complex is cellular. -/
 lemma isCellular_id : IsCellular (C := C) (C' := C) (ContinuousMap.id C) := by
@@ -150,7 +156,7 @@ lemma skeletonPairMap_comp {f : ContinuousMap C C'} {g : ContinuousMap C' C''}
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
 /-- The map induced by a cellular map on the cellular chain group in degree `n`. -/
-def cellularChainGroupMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
+abbrev cellularChainGroupMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
     cellularChainGroup C R n ⟶ cellularChainGroup C' R n :=
   TopPair.singularHomologyMap (skeletonPairMap f hf n) R n
 
@@ -186,8 +192,8 @@ lemma skeletonPairδ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n 
   simp only [skeletonPairδ, cellularChainGroupMap, cellularChainGroup, skeletonHomology]
   exact h
 
-/-- Naturality of the quotient map from the homology of a skeleton to its cellular chain
-group. -/
+/-- Naturality of the map from the singular homology of a skeleton to the relative homology of
+its skeletal pair. -/
 @[reassoc (attr := simp)]
 lemma skeletonPairπ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
     SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n ≫
@@ -202,7 +208,7 @@ lemma skeletonPairπ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n 
 /-- The maps induced on consecutive skeletal relative homology groups commute with the
 cellular differential. -/
 @[reassoc]
-lemma cellularChainGroupMap_comp_cellularDifferential (f : ContinuousMap C C')
+lemma cellularDifferential_naturality (f : ContinuousMap C C')
     (hf : IsCellular f) (n : ℕ) :
     cellularChainGroupMap R f hf (n + 1) ≫ cellularDifferential C' R n =
       cellularDifferential C R n ≫ cellularChainGroupMap R f hf n := by
@@ -233,7 +239,7 @@ def cellularChainComplexMap (f : ContinuousMap C C') (hf : IsCellular f) :
       eqToHom_refl, Category.id_comp]
     rw [← Category.assoc (cellularChainGroupMap R f hf (n + 1)),
       ← Category.assoc (cellularDifferential C R n),
-      cellularChainGroupMap_comp_cellularDifferential R f hf n])
+      cellularDifferential_naturality R f hf n])
 
 /-- The degree-`n` component of the cellular chain map is the relative-homology map,
 transported along the object equalities of the cellular chain complexes. -/
