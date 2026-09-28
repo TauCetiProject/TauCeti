@@ -25,14 +25,14 @@ The orthogonal-sum formula has a cross term given by the Hilbert symbol of the t
 discriminants. This is the convention of Serre's `ε` and Lam's `s`; O'Meara's product
 over `i ≤ j` uses a different convention.
 
-The construction and proof structure are adapted from
-`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse`.
-
 ## References
 
 * J.-P. Serre, *A Course in Arithmetic*, Chapter IV, §2.1.
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Chapter V, §3.
 -/
+
+/- The construction and proofs are adapted from
+`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse`. -/
 
 public section
 
@@ -70,50 +70,15 @@ private theorem localHasseProd_rankOne (a b : Kˣ) :
       ∏ i : Fin 1, ∏ _j ∈ Ioi i, hilbertSymbol b b := by
   simp
 
-private theorem hilbertSymbol_mul_mul (h2 : IsUnit (2 : 𝒪[K])) (a b c : Kˣ) :
-    hilbertSymbol (a * b) (a * c) =
-      hilbertSymbol b c * hilbertSymbol a (-1) * hilbertSymbol a b * hilbertSymbol a c := by
-  rw [hilbertSymbol_mul_left h2, hilbertSymbol_mul_right h2,
-    hilbertSymbol_mul_right h2, hilbertSymbol_self, hilbertSymbol_comm b a]
-  ac_rfl
-
 private theorem localHasseProd_scale (h2 : IsUnit (2 : 𝒪[K])) (a : Kˣ)
     {n : ℕ} (w : Fin n → Kˣ) :
     (∏ i, ∏ j ∈ Ioi i, hilbertSymbol (a * w i) (a * w j)) =
       (∏ i, ∏ j ∈ Ioi i, hilbertSymbol (w i) (w j)) *
         hilbertSymbol a (-1) ^ n.choose 2 *
-        hilbertSymbol a (∏ i, w i) ^ (n - 1) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    let w₀ := Fin.init w
-    let b := w (Fin.last n)
-    have hw : w = Fin.snoc w₀ b := (Fin.snoc_init_self w).symm
-    rw [hw]
-    have hs (i : Fin (n + 1)) :
-        a * Fin.snoc (α := fun _ => Kˣ) w₀ b i =
-          Fin.snoc (α := fun _ => Kˣ) (fun j => a * w₀ j) (a * b) i := by
-      rcases i.eq_castSucc_or_eq_last with ⟨j, rfl⟩ | rfl <;> simp
-    simp_rw [hs]
-    let h₁ : Kˣ →* ℤˣ := {
-      toFun := hilbertSymbol a
-      map_one' := hilbertSymbol_one_right a
-      map_mul' := hilbertSymbol_mul_right h2 a }
-    have hprod : (∏ i, hilbertSymbol a (w₀ i)) = hilbertSymbol a (∏ i, w₀ i) :=
-      (map_prod h₁ w₀ Finset.univ).symm
-    have hchoose : (n + 1).choose 2 = n.choose 2 + n := by
-      rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm]
-    rw [prod_prod_Ioi_snoc hilbertSymbol (fun j => a * w₀ j) (a * b),
-      prod_prod_Ioi_snoc hilbertSymbol w₀ b, ih w₀, Fin.prod_snoc, Nat.add_sub_cancel]
-    simp_rw [hilbertSymbol_mul_mul h2]
-    simp only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-      hprod, hilbertSymbol_mul_right h2, mul_pow, hchoose, pow_add]
-    cases n with
-    | zero => simp
-    | succ n =>
-      rw [Nat.add_sub_cancel, pow_succ (hilbertSymbol a (∏ i, w₀ i)) n]
-      ac_nf
-      rw [mul_left_comm (hilbertSymbol a (-1) ^ (n + 1))]
+        hilbertSymbol a (∏ i, w i) ^ (n - 1) :=
+  prod_prod_Ioi_scale hilbertSymbol (fun a b c => hilbertSymbol_mul_left h2 c a b)
+    (hilbertSymbol_mul_right h2) hilbertSymbol_one_right hilbertSymbol_comm
+    hilbertSymbol_self a w
 
 end Auxiliary
 
@@ -209,26 +174,11 @@ theorem localHasseOfOdd_add_mk (h2 : IsUnit (2 : 𝒪[K]))
         localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) q) *
         hilbertSymbol (∏ i, p.2 i) (∏ j, q.2 j) := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
-  let h₁ (a : Kˣ) : Kˣ →* ℤˣ := {
-    toFun := hilbertSymbol a
-    map_one' := hilbertSymbol_one_right a
-    map_mul' := hilbertSymbol_mul_right h2 a }
-  let h₂ (b : Kˣ) : Kˣ →* ℤˣ := {
-    toFun := fun a => hilbertSymbol a b
-    map_one' := hilbertSymbol_one_left b
-    map_mul' := fun a c => hilbertSymbol_mul_left h2 b a c }
   rw [mk_add_mk, RegularFormPresentation.append_eq,
-    localHasseOfOdd_mk, localHasseOfOdd_mk, localHasseOfOdd_mk,
-    prod_prod_Ioi_append]
-  congr 1
-  calc
-    (∏ i, ∏ j, hilbertSymbol (p.2 i) (q.2 j)) =
-        ∏ i, hilbertSymbol (p.2 i) (∏ j, q.2 j) := by
-          apply Finset.prod_congr rfl
-          intro i _
-          exact (map_prod (h₁ (p.2 i)) q.2 Finset.univ).symm
-    _ = hilbertSymbol (∏ i, p.2 i) (∏ j, q.2 j) :=
-      (map_prod (h₂ (∏ j, q.2 j)) p.2 Finset.univ).symm
+    localHasseOfOdd_mk, localHasseOfOdd_mk, localHasseOfOdd_mk]
+  exact prod_prod_Ioi_append_symbol hilbertSymbol hilbertSymbol_one_left
+    hilbertSymbol_one_right (fun a b c => hilbertSymbol_mul_left h2 c a b)
+    (hilbertSymbol_mul_right h2) p.2 q.2
 
 /-- Scaling the coefficients of a diagonal presentation changes the local Hasse invariant
 by a correction for each coefficient pair and a correction involving the discriminant. -/
@@ -257,7 +207,7 @@ theorem localHasseOfOdd_mk_rankOne_mul_mk (h2 : IsUnit (2 : 𝒪[K]))
   let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   rw [mk_mul_mk, RegularFormPresentation.rankOne_tmul, localHasseOfOdd_mk_scale]
 
-/-- Orthogonal sum multiplies the two local Hasse invariants and adds the Hilbert
+/-- Orthogonal sum multiplies the two local Hasse invariants and the Hilbert
 symbol of their discriminants as a cross term. -/
 theorem localHasseOfOdd_add (h2 : IsUnit (2 : 𝒪[K])) (x y : RegularFormClass K) :
     letI : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)

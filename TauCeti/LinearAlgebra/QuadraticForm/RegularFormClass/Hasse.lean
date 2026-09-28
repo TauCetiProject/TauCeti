@@ -100,59 +100,14 @@ private theorem hasseProd_rankOne (a b : Kˣ) :
       ∏ i : Fin 1, ∏ _j ∈ Ioi i, quaternionClass b b := by
   simp
 
-/-- The pairwise identity behind the scaling formula: scaling both parameters of a symbol by `a`
-gives `[(ab, ac)] = [(b, c)] · [(a, -1)] · [(a, b)] · [(a, c)]`, by bilinearity and
-`[(a, a)] = [(a, -1)]`. -/
-private theorem quaternionClass_mul_mul (a b c : Kˣ) :
-    quaternionClass (a * b) (a * c) =
-      quaternionClass b c * quaternionClass a (-1) * quaternionClass a b * quaternionClass a c := by
-  rw [quaternionClass_mul_left, quaternionClass_mul, quaternionClass_mul, quaternionClass_self,
-    quaternionClass_comm b a]
-  ac_rfl
-
-/-- Scaling every coefficient by `a` multiplies the pair product by one `[(a, -1)]` per pair and,
-since each coefficient lies in `n - 1` pairs, by `[(a, ∏ wᵢ)] ^ (n - 1)`. The induction appends a
-last coefficient `b` to `w₀ : Fin n → Kˣ`: by `quaternionClass_mul_mul`, the `n` new pairs
-contribute `[(a, -1)] ^ n · [(a, ∏ w₀ᵢ)] · [(a, b)] ^ n`, which is exactly the change in both
-correction terms. -/
 private theorem hasseProd_scale (a : Kˣ) {n : ℕ} (w : Fin n → Kˣ) :
     (∏ i, ∏ j ∈ Ioi i, quaternionClass (a * w i) (a * w j)) =
       (∏ i, ∏ j ∈ Ioi i, quaternionClass (w i) (w j)) *
         quaternionClass a (-1) ^ n.choose 2 *
-        quaternionClass a (∏ i, w i) ^ (n - 1) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    let w₀ := Fin.init w
-    let b := w (Fin.last n)
-    have hw : w = Fin.snoc w₀ b := (Fin.snoc_init_self w).symm
-    rw [hw]
-    have hs (i : Fin (n + 1)) :
-        a * Fin.snoc (α := fun _ => Kˣ) w₀ b i =
-          Fin.snoc (α := fun _ => Kˣ) (fun j => a * w₀ j) (a * b) i := by
-      rcases i.eq_castSucc_or_eq_last with ⟨j, rfl⟩ | rfl <;> simp
-    simp_rw [hs]
-    let h₁ : Kˣ →* BrauerGroup K := {
-      toFun := quaternionClass a
-      map_one' := quaternionClass_one_right a
-      map_mul' := quaternionClass_mul a }
-    have hprod : (∏ i, quaternionClass a (w₀ i)) = quaternionClass a (∏ i, w₀ i) :=
-      (map_prod h₁ w₀ Finset.univ).symm
-    have hchoose : (n + 1).choose 2 = n.choose 2 + n := by
-      rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm]
-    rw [prod_prod_Ioi_snoc quaternionClass (fun j => a * w₀ j) (a * b),
-      prod_prod_Ioi_snoc quaternionClass w₀ b, ih w₀, Fin.prod_snoc, Nat.add_sub_cancel]
-    simp_rw [quaternionClass_mul_mul]
-    simp only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-      hprod, quaternionClass_mul, mul_pow, hchoose, pow_add]
-    -- It remains to merge `[(a, ∏ w₀ᵢ)] ^ (n - 1)` from the induction hypothesis with the single
-    -- `[(a, ∏ w₀ᵢ)]` from the new pairs; for `n = 0` that symbol is trivial.
-    cases n with
-    | zero => simp
-    | succ n =>
-      rw [Nat.add_sub_cancel, pow_succ (quaternionClass a (∏ i, w₀ i)) n]
-      ac_nf
-      rw [mul_left_comm (quaternionClass a (-1) ^ (n + 1))]
+        quaternionClass a (∏ i, w i) ^ (n - 1) :=
+  prod_prod_Ioi_scale quaternionClass quaternionClass_mul_left
+    (fun a b c => quaternionClass_mul a b c) quaternionClass_one_right
+    quaternionClass_comm quaternionClass_self a w
 
 /-- **The Hasse invariant of an isometry class of regular quadratic forms**: for a diagonal
 presentation `⟨a₁, …, aₙ⟩` of the class, the product `∏_{i<j} [(aᵢ, aⱼ)]` of quaternion symbols in
@@ -222,26 +177,11 @@ theorem hasseInvariant_add_mk (p q : RegularFormPresentation K) :
       hasseInvariant (Quotient.mk (regularFormSetoid K) p) *
         hasseInvariant (Quotient.mk (regularFormSetoid K) q) *
         quaternionClass (∏ i, p.2 i) (∏ j, q.2 j) := by
-  let h₁ (a : Kˣ) : Kˣ →* BrauerGroup K := {
-    toFun := quaternionClass a
-    map_one' := quaternionClass_one_right a
-    map_mul' := quaternionClass_mul a }
-  let h₂ (b : Kˣ) : Kˣ →* BrauerGroup K := {
-    toFun := fun a => quaternionClass a b
-    map_one' := quaternionClass_one_left b
-    map_mul' := fun a c => quaternionClass_mul_left a c b }
   rw [mk_add_mk, RegularFormPresentation.append_eq, hasseInvariant_mk,
     hasseInvariant_mk, hasseInvariant_mk]
-  rw [prod_prod_Ioi_append]
-  congr 1
-  calc
-    (∏ i, ∏ j, quaternionClass (p.2 i) (q.2 j)) =
-        ∏ i, quaternionClass (p.2 i) (∏ j, q.2 j) := by
-          apply Finset.prod_congr rfl
-          intro i _
-          exact (map_prod (h₁ (p.2 i)) q.2 Finset.univ).symm
-    _ = quaternionClass (∏ i, p.2 i) (∏ j, q.2 j) :=
-      (map_prod (h₂ (∏ j, q.2 j)) p.2 Finset.univ).symm
+  exact prod_prod_Ioi_append_symbol quaternionClass quaternionClass_one_left
+    quaternionClass_one_right quaternionClass_mul_left
+    (fun a b c => quaternionClass_mul a b c) p.2 q.2
 
 /-- **Scaling formula** on a diagonal presentation: the first correction counts coefficient
 pairs, and the second uses the product of coefficients representing the discriminant. -/
