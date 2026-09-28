@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.NumberTheory.LocalField.Teichmuller
-public import TauCeti.RingTheory.RootsOfUnity.LocalRing
+public import Mathlib.RingTheory.Frobenius
 
 /-!
 # Frobenius in unramified local fields
@@ -91,29 +91,26 @@ theorem frobeniusAlgEquiv_apply_of_pow_eq_one [IsUnramified K L] {n : ℕ}
   have hn0 : n ≠ 0 := by
     rintro rfl
     simp at hn
-  have : NeZero n := ⟨hn0⟩
-  set σ := frobeniusAlgEquiv (K := K) (L := L)
   -- A root of unity has valuation `1`, so it is integral.
   have hxv : x ∈ 𝒪[L] := (Valuation.mem_integer_iff _ _).2
     ((pow_le_one_iff_of_nonneg zero_le hn0).1 (by rw [← map_pow, hx, map_one]))
-  let y : 𝒪[L] := ⟨x, hxv⟩
-  have hy : y ^ n = 1 := Subtype.ext (by simpa [y] using hx)
-  have hσy : σ.integerRingEquiv y ^ n = 1 := by rw [← map_pow, hy, map_one]
-  have hyq : (y ^ Nat.card 𝓀[K]) ^ n = 1 := by rw [← pow_mul, mul_comm, pow_mul, hy, one_pow]
-  -- `Frob y` and `y ^ q` are `n`-th roots of unity with the same residue, so they are equal.
-  have hres : IsLocalRing.residue 𝒪[L] (σ.integerRingEquiv y) =
-      IsLocalRing.residue 𝒪[L] (y ^ Nat.card 𝓀[K]) := by
-    rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff]
+  -- Frobenius is an arithmetic Frobenius of `𝒪[L] / 𝒪[K]` at the maximal ideal, so Mathlib's
+  -- `AlgHom.IsArithFrobAt.apply_of_pow_eq_one` applies.
+  have hq : Nat.card (𝒪[K] ⧸ 𝓂[L].under 𝒪[K]) = Nat.card 𝓀[K] := by
+    rw [← Ideal.over_def 𝓂[L] 𝓂[K]]
+    rfl
+  have hσ : IsArithFrobAt 𝒪[K] (frobeniusAlgEquiv (K := K) (L := L)) 𝓂[L] := fun y ↦ by
+    rw [hq]
     refine (Valuation.mem_maximalIdeal_iff (v := valuation L)).2 ?_
-    have h := valuation_frobeniusAlgEquiv_sub_pow (K := K) (L := L) y
-    push_cast
-    rw [AlgEquiv.integerRingEquiv_apply, AlgEquiv.coe_smul_integerRing]
-    exact h
-  have heq := rootsOfUnityResidue_injective hn
-    (a₁ := rootsOfUnity.mkOfPowEq _ hσy) (a₂ := rootsOfUnity.mkOfPowEq _ hyq)
-    (by ext; simpa using hres)
-  have := congrArg (fun z : rootsOfUnity n 𝒪[L] ↦ (((z : 𝒪[L]ˣ) : 𝒪[L]) : L)) heq
-  simpa [y] using this
+    rw [MulSemiringAction.toAlgHom_apply, AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow,
+      AlgEquiv.coe_smul_integerRing]
+    exact valuation_frobeniusAlgEquiv_sub_pow (K := K) (L := L) y
+  have h := hσ.apply_of_pow_eq_one (ζ := ⟨x, hxv⟩)
+    (Subtype.ext (by rw [SubmonoidClass.coe_pow, hx, OneMemClass.coe_one]))
+    ((IsLocalRing.mem_maximalIdeal _).not.2 (not_not.2 hn))
+  rw [hq, MulSemiringAction.toAlgHom_apply] at h
+  have h' := congrArg Subtype.val h
+  rwa [AlgEquiv.coe_smul_integerRing, SubmonoidClass.coe_pow] at h'
 
 end Teichmuller
 
