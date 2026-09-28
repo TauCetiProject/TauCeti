@@ -1,0 +1,217 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RingTheory.Polynomial.Tschirnhaus
+public import Mathlib.FieldTheory.PolynomialGaloisGroup
+import Mathlib.FieldTheory.Galois.Basic
+
+/-!
+# Tschirnhaus transforms and the Galois group
+
+A Tschirnhaus transform `Polynomial.tschirnhausPolynomial f T` replaces the roots `α` of `f` by
+the values `T(α)`. This file is the field-theoretic half of the construction: it records what the
+transform does to the roots, and shows that an *admissible* transform — one that separates the
+roots of `f` — changes neither the splitting field nor the Galois group.
+
+Over any extension `E` in which `f` splits, the roots of the transform are exactly the values of
+`T` at the roots of `f`, with multiplicity, so the transform splits in `E` as well. Admissibility
+is `Polynomial.TschirnhausAdmissible f T`: injectivity of `α ↦ T(α)` on the root set of `f` in its
+splitting field. Under it, a separable `f` has a separable transform, the splitting field of `f`
+*is* a splitting field of the transform, and the two Galois images inside the permutations of
+their respective root sets are conjugate along `α ↦ T(α)`.
+
+That last statement is what carries information back: a constraint on the Galois image of the
+transform — typically an upper bound read off a resolvent that became separable after the
+substitution — is a constraint on the Galois image of `f`.
+
+## Main definitions
+
+* `Polynomial.TschirnhausAdmissible`: the transform separates the roots of `f`.
+
+## Main results
+
+* `Polynomial.Monic.aroots_tschirnhausPolynomial`,
+  `Polynomial.Monic.rootSet_tschirnhausPolynomial`: the roots of the transform, as a multiset and
+  as a set.
+* `Polynomial.Monic.splits_map_tschirnhausPolynomial`: the transform splits wherever `f` does.
+* `Polynomial.TschirnhausAdmissible.separable_tschirnhausPolynomial`: an admissible transform of a
+  separable polynomial is separable.
+* `Polynomial.TschirnhausAdmissible.isSplittingField` and
+  `Polynomial.TschirnhausAdmissible.nonempty_algEquiv_splittingField`: the splitting fields agree.
+* `Polynomial.TschirnhausAdmissible.nonempty_galMulEquiv`: the Galois groups are isomorphic.
+* `Polynomial.TschirnhausAdmissible.exists_equiv_range_galActionHom_eq`: the two Galois images are
+  conjugate along the bijection `α ↦ T(α)` of root sets.
+
+## References
+
+* H. Cohen, *A Course in Computational Algebraic Number Theory*, §6.3.
+-/
+
+public section
+
+noncomputable section
+
+open Polynomial
+
+namespace Polynomial
+
+variable {F : Type*} [Field F] {f T : F[X]} {E : Type*} [Field E] [Algebra F E]
+
+/-- **The roots of a Tschirnhaus transform are the values of `T` at the roots of `f`.** The
+equality is one of multisets, so multiplicities correspond too. -/
+theorem Monic.aroots_tschirnhausPolynomial (hf : f.Monic)
+    (hsp : (f.map (algebraMap F E)).Splits) (T : F[X]) :
+    (f.tschirnhausPolynomial T).aroots E = (f.aroots E).map fun α ↦ aeval α T := by
+  rw [aroots_def, aroots_def, hf.map_tschirnhausPolynomial T (algebraMap F E),
+    (hf.map _).roots_tschirnhausPolynomial hsp]
+  exact Multiset.map_congr rfl fun α _ ↦ by simp [aeval_def, eval_map]
+
+/-- **The root sets correspond under `α ↦ T(α)`.** -/
+theorem Monic.rootSet_tschirnhausPolynomial (hf : f.Monic)
+    (hsp : (f.map (algebraMap F E)).Splits) (T : F[X]) :
+    (f.tschirnhausPolynomial T).rootSet E = (fun α ↦ aeval α T) '' f.rootSet E := by
+  classical
+  rw [rootSet_def, rootSet_def, hf.aroots_tschirnhausPolynomial hsp, Multiset.toFinset_map,
+    Finset.coe_image]
+
+/-- A Tschirnhaus transform splits in every extension in which `f` splits: its roots there are
+the values of `T` at the roots of `f`. -/
+theorem Monic.splits_map_tschirnhausPolynomial (hf : f.Monic)
+    (hsp : (f.map (algebraMap F E)).Splits) (T : F[X]) :
+    ((f.tschirnhausPolynomial T).map (algebraMap F E)).Splits := by
+  rw [splits_iff_card_roots, ← aroots_def, hf.aroots_tschirnhausPolynomial hsp, Multiset.card_map,
+    (hf.tschirnhausPolynomial T).natDegree_map, hf.natDegree_tschirnhausPolynomial,
+    ← hsp.natDegree_eq_card_roots, hf.natDegree_map]
+
+/-- A Tschirnhaus transform `T` is **admissible** for `f` when it separates the roots of `f`, that
+is, when it is injective on the root set of `f` in the splitting field. -/
+def TschirnhausAdmissible (f T : F[X]) : Prop :=
+  Set.InjOn (fun α : f.SplittingField ↦ aeval α T) (f.rootSet f.SplittingField)
+
+/-- Admissibility unfolded. -/
+theorem tschirnhausAdmissible_iff :
+    TschirnhausAdmissible f T ↔
+      Set.InjOn (fun α : f.SplittingField ↦ aeval α T) (f.rootSet f.SplittingField) :=
+  Iff.rfl
+
+/-- A shift is admissible for every polynomial: translating the roots by a constant is injective.
+On the coefficient side this is the substitution that depresses a polynomial, by
+`Polynomial.tschirnhausPolynomial_X_add_C`. -/
+theorem tschirnhausAdmissible_X_add_C (f : F[X]) (c : F) :
+    TschirnhausAdmissible f (X + C c) := by
+  rw [tschirnhausAdmissible_iff]
+  intro x _ y _ hxy
+  simp only [map_add, aeval_X, aeval_C] at hxy
+  exact add_right_cancel hxy
+
+/-- **An admissible transform preserves separability.** The roots of the transform are the values
+of `T` at the roots of `f`, and admissibility keeps them distinct. -/
+theorem TschirnhausAdmissible.separable_tschirnhausPolynomial (h : TschirnhausAdmissible f T)
+    (hf : f.Monic) (hsep : f.Separable) : (f.tschirnhausPolynomial T).Separable := by
+  classical
+  have hsp : (f.map (algebraMap F f.SplittingField)).Splits := SplittingField.splits f
+  have hnd : (f.aroots f.SplittingField).Nodup :=
+    (nodup_aroots_iff_of_splits hf.ne_zero hsp).mpr hsep
+  refine (nodup_aroots_iff_of_splits (hf.tschirnhausPolynomial T).ne_zero
+    (hf.splits_map_tschirnhausPolynomial hsp T)).mp ?_
+  rw [hf.aroots_tschirnhausPolynomial hsp]
+  refine hnd.map_on fun x hx y hy hxy ↦ tschirnhausAdmissible_iff.mp h ?_ ?_ hxy
+  · rwa [rootSet_def, Finset.mem_coe, Multiset.mem_toFinset]
+  · rwa [rootSet_def, Finset.mem_coe, Multiset.mem_toFinset]
+
+/-- **The splitting field of `f` is a splitting field of an admissible transform.** An
+automorphism fixing every value `T(α)` fixes every root `α`, by admissibility, hence is trivial;
+the Galois correspondence then forces the field generated by the values to be everything. -/
+theorem TschirnhausAdmissible.isSplittingField (h : TschirnhausAdmissible f T) (hf : f.Monic)
+    (hsep : f.Separable) :
+    IsSplittingField F f.SplittingField (f.tschirnhausPolynomial T) := by
+  have hsp : (f.map (algebraMap F f.SplittingField)).Splits := SplittingField.splits f
+  have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field hsep
+  refine ⟨hf.splits_map_tschirnhausPolynomial hsp T, ?_⟩
+  rw [← IntermediateField.adjoin_eq_top_iff]
+  set M := IntermediateField.adjoin F ((f.tschirnhausPolynomial T).rootSet f.SplittingField) with hM
+  have hfix : M.fixingSubgroup = ⊥ := by
+    rw [eq_bot_iff]
+    intro ϕ hϕ
+    have hEq : Set.EqOn ϕ.toAlgHom (AlgHom.id F f.SplittingField)
+        (f.rootSet f.SplittingField) := by
+      intro α hα
+      have hmem : aeval α T ∈ (f.tschirnhausPolynomial T).rootSet f.SplittingField := by
+        rw [hf.rootSet_tschirnhausPolynomial hsp]
+        exact ⟨α, hα, rfl⟩
+      have h1 : ϕ (aeval α T) = aeval α T :=
+        (mem_fixingSubgroup_iff Gal(f.SplittingField/F)).mp hϕ _
+          (hM ▸ IntermediateField.subset_adjoin F _ hmem)
+      have h2 : aeval (ϕ α) T = aeval α T := by
+        rw [aeval_algHom_apply ϕ α T, h1]
+      exact tschirnhausAdmissible_iff.mp h ((rootSet_mapsTo ϕ.toAlgHom) hα) hα h2
+    have := AlgHom.ext_of_adjoin_eq_top
+      (IsSplittingField.adjoin_rootSet (L := f.SplittingField) f) hEq
+    exact Subgroup.mem_bot.mpr (AlgEquiv.ext fun x ↦ DFunLike.congr_fun this x)
+  rw [← IsGalois.fixedField_fixingSubgroup M, hfix, IntermediateField.fixedField_bot]
+
+/-- The splitting field of `f` is a splitting field of an admissible transform, so the two
+splitting fields agree up to an `F`-algebra equivalence. -/
+theorem TschirnhausAdmissible.nonempty_algEquiv_splittingField (h : TschirnhausAdmissible f T)
+    (hf : f.Monic) (hsep : f.Separable) :
+    Nonempty (f.SplittingField ≃ₐ[F] (f.tschirnhausPolynomial T).SplittingField) :=
+  haveI := h.isSplittingField hf hsep
+  ⟨IsSplittingField.algEquiv f.SplittingField (f.tschirnhausPolynomial T)⟩
+
+/-- **A Tschirnhaus transform does not change the Galois group.** -/
+theorem TschirnhausAdmissible.nonempty_galMulEquiv (h : TschirnhausAdmissible f T) (hf : f.Monic)
+    (hsep : f.Separable) : Nonempty ((f.tschirnhausPolynomial T).Gal ≃* f.Gal) := by
+  obtain ⟨ψ⟩ := h.nonempty_algEquiv_splittingField hf hsep
+  exact ⟨AlgEquiv.autCongr ψ.symm⟩
+
+section GaloisImage
+
+/-- A polynomial splits in its splitting field, recorded as the `Fact` that
+`Polynomial.Gal.galActionHom` asks for. It stays local: as a global instance it would give
+`f.rootSet f.SplittingField` the action `Polynomial.Gal.galAction` in addition to Mathlib's
+intrinsic `Polynomial.Gal.galActionAux`, and the two are different actions. -/
+local instance factSplitsSplittingField (p : F[X]) :
+    Fact ((p.map (algebraMap F p.SplittingField)).Splits) := ⟨SplittingField.splits p⟩
+
+/-- **The Galois images of `f` and of an admissible transform are conjugate.** They are conjugate
+along the bijection `α ↦ T(α)` of root sets in the splitting field of `f`, which is where both
+polynomials split. The hypothesis that the transform splits there is
+`Polynomial.Monic.splits_map_tschirnhausPolynomial`. -/
+theorem TschirnhausAdmissible.exists_equiv_range_galActionHom_eq (h : TschirnhausAdmissible f T)
+    (hf : f.Monic)
+    [Fact (((f.tschirnhausPolynomial T).map (algebraMap F f.SplittingField)).Splits)] :
+    ∃ e : f.rootSet f.SplittingField ≃ (f.tschirnhausPolynomial T).rootSet f.SplittingField,
+      (∀ x, (e x : f.SplittingField) = aeval (x : f.SplittingField) T) ∧
+        (Gal.galActionHom (f.tschirnhausPolynomial T) f.SplittingField).range =
+          (Gal.galActionHom f f.SplittingField).range.map
+            (Equiv.permCongrHom e).toMonoidHom := by
+  have hsp : (f.map (algebraMap F f.SplittingField)).Splits := SplittingField.splits f
+  set g := f.tschirnhausPolynomial T
+  set E := f.SplittingField
+  obtain ⟨e, hcoe⟩ : ∃ e : f.rootSet E ≃ g.rootSet E, ∀ x, (e x : E) = aeval (x : E) T :=
+    ⟨(Equiv.Set.imageOfInjOn _ _ (tschirnhausAdmissible_iff.mp h)).trans
+      (Set.equivOfEq (hf.rootSet_tschirnhausPolynomial hsp T).symm), fun _ ↦ rfl⟩
+  refine ⟨e, hcoe, ?_⟩
+  have : Normal F E := Normal.of_isSplittingField f
+  have hcomp : (Gal.galActionHom g E).comp (Gal.restrict g E) =
+      (Equiv.permCongrHom e).toMonoidHom.comp
+        ((Gal.galActionHom f E).comp (Gal.restrict f E)) := by
+    refine MonoidHom.ext fun ϕ ↦ Equiv.ext fun y ↦ Subtype.ext ?_
+    rw [MonoidHom.comp_apply, Gal.galActionHom_restrict, MonoidHom.comp_apply,
+      MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe,
+      Equiv.permCongr_apply, hcoe, Gal.galActionHom_restrict, aeval_algHom_apply ϕ _ T,
+      ← hcoe, e.apply_symm_apply]
+  have hg : (Gal.galActionHom g E).range =
+      ((Gal.galActionHom g E).comp (Gal.restrict g E)).range := by
+    rw [MonoidHom.range_comp, MonoidHom.range_eq_top.mpr (Gal.restrict_surjective g E),
+      ← MonoidHom.range_eq_map]
+  rw [hg, hcomp, MonoidHom.range_comp, MonoidHom.range_comp,
+    MonoidHom.range_eq_top.mpr (Gal.restrict_surjective f E), ← MonoidHom.range_eq_map]
+
+end GaloisImage
+
+end Polynomial
