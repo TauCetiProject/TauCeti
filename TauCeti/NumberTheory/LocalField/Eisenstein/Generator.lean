@@ -51,8 +51,7 @@ extension integer ring generates that integer ring over the base integer ring. -
 theorem adjoin_eq_top_of_isTotallyRamified_of_irreducible
     (h : IsTotallyRamified K L) {ξ : 𝒪[L]} (hξ : Irreducible ξ) :
     Algebra.adjoin 𝒪[K] {ξ} = ⊤ := by
-  have hf : inertiaDegree K L = 1 :=
-    (isTotallyRamified_iff_inertiaDegree_eq_one K L).mp h
+  have hf : inertiaDegree K L = 1 := h.inertiaDegree_eq_one
   have hsurj : Function.Surjective
       (algebraMap (ResidueField 𝒪[K]) (ResidueField 𝒪[L])) :=
     (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp (inertiaDegree_def K L ▸ hf)).surjective
@@ -89,8 +88,7 @@ theorem isEisensteinAt_minpoly_of_isTotallyRamified_of_irreducible
     (h : IsTotallyRamified K L) (ξ : 𝒪[L]) (hξ : Irreducible ξ) :
     (minpoly 𝒪[K] ξ).IsEisensteinAt 𝓂[K] := by
   let _ : Module.Finite K L := finite_of_valuativeExtension K L
-  have hf : inertiaDegree K L = 1 :=
-    (isTotallyRamified_iff_inertiaDegree_eq_one K L).mp h
+  have hf : inertiaDegree K L = 1 := h.inertiaDegree_eq_one
   have hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤ :=
     adjoin_eq_top_of_isTotallyRamified_of_irreducible h hξ
   have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
