@@ -16,6 +16,14 @@ import Mathlib.FieldTheory.PrimitiveElement
 Let `k' / k` be finite and separable and suppose that `F'` is the compositum `F k'`. Then
 `F' / F` is separable and is unramified at every place.
 
+This is the local input to the comparison of the divisor theories of `F / k` and `F' / k'`.
+Because every different exponent vanishes, the different divisor of `F' / F` is zero, so the
+Riemann–Hurwitz formula leaves the genus unchanged: a finite separable constant extension does
+not alter the genus (Stichtenoth, Section III.6).  Because every ramification index is one, a
+place of `F` is the sum of the places of `F'` above it with no multiplicities, so divisors and
+their degrees — and with them the Riemann–Roch spaces `L(D)` — are transported to `F'` by base
+change alone, with the residue degrees as the only local data left to track.
+
 Separability is inherited by scalar extension, which is
 `TauCeti.isSeparable_of_constantCompositum_eq_top`. For unramifiedness, choose a primitive element
 `c` of `k' / k`. Its image generates `F' / F`, while the derivative of the minimal polynomial of
@@ -54,17 +62,20 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 namespace Place
 
-/-- Every different exponent in a finite separable constant extension vanishes, provided the
-compositum is separable over the original field.
+/-- Every different exponent in a finite separable constant extension vanishes.
 
 The `FiniteDimensional F F'` and `Algebra.IsSeparable F F'` instances are the ambient parameters
-of `differentExponent`; `TauCeti.finiteDimensional_of_constantCompositum_eq_top` and
-`TauCeti.isSeparable_of_constantCompositum_eq_top` construct them from the other hypotheses. -/
+of `differentExponent`; the statement installs them from `hcomp` through
+`TauCeti.finiteDimensional_of_constantCompositum_eq_top` and
+`TauCeti.isSeparable_of_constantCompositum_eq_top`. -/
 theorem differentExponent_eq_zero_of_constantCompositum_eq_top
-    [FiniteDimensional k k'] [Algebra.IsSeparable k k'] [FiniteDimensional F F']
-    [Algebra.IsSeparable F F']
+    [FiniteDimensional k k'] [Algebra.IsSeparable k k']
     (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
+    letI := finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
+    letI := isSeparable_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
     differentExponent k F P' = 0 := by
+  let := finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
+  let := isSeparable_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
   obtain ⟨c, hc⟩ := Field.exists_primitive_element k k'
   let y : F' := algebraMap k' F' c
   have hgen : F⟮y⟯ = ⊤ := by
@@ -94,21 +105,22 @@ theorem differentExponent_eq_zero_of_constantCompositum_eq_top
   exact differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one
     k F hgen hpmonic hpcoeff hroot hderiv
 
-/-- The local model of a finite separable constant extension is unramified at every place,
-provided the compositum is separable over the original field. -/
+/-- The local model of a finite separable constant extension is unramified at every place.
+
+As for the different exponent, the ambient instances for `F' / F` are installed from `hcomp`. -/
 theorem isUnramifiedAt_constantCompositum_eq_top
-    [FiniteDimensional k k'] [Algebra.IsSeparable k k'] [FiniteDimensional F F']
-    [Algebra.IsSeparable F F']
+    [FiniteDimensional k k'] [Algebra.IsSeparable k k']
     (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
+    letI := finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
+    letI := isSeparable_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
     Algebra.IsUnramifiedAt ((P'.restrict k F).integers)
-      (centerIntegralClosure k F P').asIdeal :=
-  (differentExponent_eq_zero_iff k F P').mp
+      (centerIntegralClosure k F P').asIdeal := by
+  let := finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
+  let := isSeparable_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
+  exact (differentExponent_eq_zero_iff k F P').mp
     (differentExponent_eq_zero_of_constantCompositum_eq_top hcomp P')
 
-/-- Every place in a finite separable constant extension has ramification index one.
-
-Unlike the local-model formulations, this statement constructs the finite-dimensionality and
-separability instances for `F' / F` internally. -/
+/-- Every place in a finite separable constant extension has ramification index one. -/
 theorem ramificationIdx_eq_one_of_constantCompositum_eq_top
     [FiniteDimensional k k'] [Algebra.IsSeparable k k']
     (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
@@ -117,8 +129,8 @@ theorem ramificationIdx_eq_one_of_constantCompositum_eq_top
     finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
   let _ : Algebra.IsSeparable F F' :=
     isSeparable_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
-  have hd := differentExponent_eq_zero_of_constantCompositum_eq_top
-    (k := k) (k' := k') (F := F) hcomp P'
+  have hd : differentExponent k F P' = 0 :=
+    differentExponent_eq_zero_of_constantCompositum_eq_top (k := k) (k' := k') (F := F) hcomp P'
   have hle := ramificationIdx_le_differentExponent_add_one k F P'
   rw [hd] at hle
   exact Nat.le_antisymm (by simpa using hle) (ramificationIdx_pos F P')
