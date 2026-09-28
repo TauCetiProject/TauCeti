@@ -543,7 +543,14 @@ theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_apply
     (Q : QuadraticMap R (n → R) N) (g : orthogonalGroup Q) (i j : n) :
     orthogonalToGeneralLinear Q g i j =
       (g : (n → R) ≃ₗ[R] (n → R)) (Pi.single j 1) i := by
-  rfl
+  -- Express the matrix entry as a column to use its evaluation on a coordinate vector.
+  change (Matrix.col (orthogonalToGeneralLinear Q g : Matrix n n R) j) i = _
+  rw [← Matrix.mulVec_single_one]
+  -- The two bundled general linear groups need to be converted to linear equivalences.
+  change (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+    (Matrix.GeneralLinearGroup.toLin (orthogonalToGeneralLinear Q g))
+    (Pi.single j 1)) i = _
+  simp [orthogonalToGeneralLinear]
 
 /-- The underlying matrix of the coordinate inclusion is the matrix of the linear equivalence. -/
 @[simp]
@@ -569,6 +576,14 @@ noncomputable def _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear
     specialOrthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
   (orthogonalToGeneralLinear Q).comp (specialOrthogonalToOrthogonal Q)
 
+/-- The special orthogonal coordinate inclusion factors through the full orthogonal group. -/
+@[simp]
+theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_specialOrthogonalToOrthogonal
+    (Q : QuadraticMap R (n → R) N) (g : specialOrthogonalGroup Q) :
+    orthogonalToGeneralLinear Q (specialOrthogonalToOrthogonal Q g) =
+      specialOrthogonalToGeneralLinear Q g := by
+  rfl
+
 /-- A special orthogonal transformation acts through its usual coordinate matrix. -/
 @[simp]
 theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_apply
@@ -576,7 +591,8 @@ theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_apply
     (g : specialOrthogonalGroup Q) (i j : n) :
     specialOrthogonalToGeneralLinear Q g i j =
       (g : (n → R) ≃ₗ[R] (n → R)) (Pi.single j 1) i := by
-  rfl
+  rw [← orthogonalToGeneralLinear_specialOrthogonalToOrthogonal,
+    orthogonalToGeneralLinear_apply, coe_specialOrthogonalToOrthogonal]
 
 /-- The coordinate inclusion of a special orthogonal group is injective. -/
 theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_injective
