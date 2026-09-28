@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Topology.Maps.Basic
+public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 
@@ -36,8 +37,9 @@ Chapter II.
 * `TauCeti.IsHakenSurfaceEmbedding`: a proper, incompressible, non-spherical witness for
   Haken-ness, allowing boundary.
 * `TauCeti.IsClosedHakenSurfaceEmbedding`: the closed, bicollared specialization.
+* `TauCeti.IsIrreducibleThreeManifold`: every closed embedded 2-sphere bounds an embedded 3-ball.
 * `TauCeti.IsHakenThreeManifold` and `TauCeti.IsClosedHakenThreeManifold`: the corresponding
-  existential Haken predicates for ambient 3-manifolds.
+  irreducible existential Haken predicates for ambient 3-manifolds.
 
 ## Main results
 
@@ -55,7 +57,7 @@ public section
 
 open Set Topology
 
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff TopCat
 
 namespace TauCeti
 
@@ -175,6 +177,16 @@ theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
 
 end BoundaryAware
 
+/-! ### Irreducible three-manifolds -/
+
+/-- A three-manifold is **irreducible** when every closed embedded 2-sphere extends across an
+embedded 3-ball.  The disk and its boundary are Mathlib's standard `𝔻 3` and `𝕊 2` objects, so
+this is the usual sphere-bounds-a-ball condition. -/
+def IsIrreducibleThreeManifold (M : Type u) [TopologicalSpace M] : Prop :=
+  ∀ f : C((TopCat.sphere 2 : TopCat.{u}), M), IsClosedEmbedding f →
+    ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
+      g.comp (TopCat.diskBoundaryInclusion 3).hom = f
+
 /-! ### Boundary-aware existential Haken predicate -/
 
 section BoundaryHakenPredicate
@@ -186,6 +198,7 @@ exists. -/
 def IsHakenThreeManifold (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 3) M] : Prop :=
   IsCompactConnectedThreeManifold M ∧
+    IsIrreducibleThreeManifold M ∧
     ∃ (S : Type u) (tS : TopologicalSpace S)
       (cS : ChartedSpace (EuclideanHalfSpace 2) S),
       letI : TopologicalSpace S := tS
@@ -196,8 +209,9 @@ def IsHakenThreeManifold (M : Type u) [TopologicalSpace M]
 theorem isHakenThreeManifold_of_isHakenSurfaceEmbedding {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 2) S] [ChartedSpace (EuclideanHalfSpace 3) M]
-    {f : C(S, M)} (h : IsHakenSurfaceEmbedding f) : IsHakenThreeManifold M := by
-  refine ⟨h.2.1, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+    (hirr : IsIrreducibleThreeManifold M) {f : C(S, M)}
+    (h : IsHakenSurfaceEmbedding f) : IsHakenThreeManifold M := by
+  refine ⟨h.2.1, hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
 end BoundaryHakenPredicate
 
@@ -270,6 +284,7 @@ witness retains incompressibility, local flatness, bicollaring, and non-spherici
 def IsClosedHakenThreeManifold (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] : Prop :=
   IsClosedConnectedThreeManifold M ∧
+    IsIrreducibleThreeManifold M ∧
     ∃ (S : Type u) (tS : TopologicalSpace S)
       (cS : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S),
       letI : TopologicalSpace S := tS
@@ -281,8 +296,9 @@ theorem isClosedHakenThreeManifold_of_isClosedHakenSurfaceEmbedding {S M : Type 
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
-    {f : C(S, M)} (h : IsClosedHakenSurfaceEmbedding f) : IsClosedHakenThreeManifold M := by
-  refine ⟨h.1.2.1, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+    (hirr : IsIrreducibleThreeManifold M) {f : C(S, M)}
+    (h : IsClosedHakenSurfaceEmbedding f) : IsClosedHakenThreeManifold M := by
+  refine ⟨h.1.2.1, hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
 end Closed
 
