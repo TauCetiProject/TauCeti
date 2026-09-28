@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Data.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E7.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
@@ -254,34 +255,13 @@ private theorem e7MinusculeWeight_succ_eq_reflection_parent (a : Fin 55) :
 finite sequence of simple reflections. -/
 theorem exists_e7MinusculeReflections_eq (a : Fin 56) :
     ∃ l : List (Fin 7), l.foldl (fun b i ↦ e7MinusculeReflection i b) 0 = a := by
-  have aux : ∀ n, ∀ hn : n < 56,
-      ∃ l : List (Fin 7), l.foldl (fun b i ↦ e7MinusculeReflection i b) 0 =
-        (⟨n, hn⟩ : Fin 56) := by
-    intro n hn
-    induction n using Nat.strong_induction_on with
-    | h n ih =>
-        by_cases hzero : n = 0
-        · subst n
-          exact ⟨[], rfl⟩
-        · let c : Fin 55 := ⟨n - 1, by omega⟩
-          have hsucc : c.succ = (⟨n, hn⟩ : Fin 56) := by
-            apply Fin.ext
-            simp [c]
-            omega
-          obtain ⟨l, hl⟩ := ih (e7MinusculeParent c)
-            (by
-              have hlt := e7MinusculeParent_lt_succ c
-              have hval : (c.succ : ℕ) = n := congrArg Fin.val hsucc
-              rw [hval] at hlt
-              exact hlt)
-            (e7MinusculeParent c).isLt
-          refine ⟨l ++ [e7MinusculeParentNode c], ?_⟩
-          rw [List.foldl_append, hl]
-          simp only [List.foldl_cons, List.foldl_nil]
-          apply e7MinusculeWeight_injective
-          rw [← hsucc, e7MinusculeWeight_succ_eq_reflection_parent,
-            e7SimplyConnectedRootDatum_reflection_e7MinusculeWeight]
-  exact aux a a.isLt
+  apply exists_foldl_eq_of_parent
+    (fun b i ↦ e7MinusculeReflection i b) e7MinusculeParent
+    e7MinusculeParentNode e7MinusculeParent_lt_succ
+  intro c
+  apply e7MinusculeWeight_injective
+  rw [e7MinusculeWeight_succ_eq_reflection_parent,
+    e7SimplyConnectedRootDatum_reflection_e7MinusculeWeight]
 
 private theorem e7MinusculeWeight_mem_orbit (a : Fin 56) :
     e7MinusculeWeight a ∈

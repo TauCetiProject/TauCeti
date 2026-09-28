@@ -12,10 +12,7 @@ public import Mathlib.RingTheory.Norm.Defs
 -- Non-public: the matrix of multiplication by `x` in the basis `(1, x)` is the companion matrix
 -- `TauCeti.companionFinTwo`, whose trace and determinant are already known; used in proofs only.
 import TauCeti.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
--- Non-public: `basisOfLinearIndependentOfCardEqFinrank` builds that basis, inside a proof only.
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
--- Non-public: `TauCeti.linearIndependent_one_of_notMem_range_algebraMap` gives the
--- independence of `1` and `x` that the basis rests on; used in a proof only.
+-- Non-public: the shared basis `(1, x)` is used in the matrix calculations below.
 import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 -- Non-public: the extension theory of finite fields supplies the root of an irreducible quadratic,
 -- inside a proof only.
@@ -76,30 +73,22 @@ section Basis
 
 variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
-/-- The `F`-basis `(1, x)` of a degree-`2` extension `E/F` attached to an element `x` outside `F`.
-It is used only to compute the trace and the norm of `x`, both of which are basis independent. -/
-private noncomputable def oneRootBasis {x : E}
-    (hx : x ∉ Set.range (algebraMap F E)) : Module.Basis (Fin 2) F E :=
-  have h2 := Algebra.IsQuadraticExtension.finrank_eq_two F E
-  basisOfLinearIndependentOfCardEqFinrank (b := ![1, x])
-    (TauCeti.linearIndependent_one_of_notMem_range_algebraMap F E hx) (by simp [h2])
-
-private theorem coe_oneRootBasis {x : E} (hx : x ∉ Set.range (algebraMap F E)) :
-    ⇑(oneRootBasis hx) = ![1, x] := by
-  simp only [oneRootBasis, coe_basisOfLinearIndependentOfCardEqFinrank]
-
 /-- In the basis `(1, x)`, multiplication by `x` **is** the companion matrix of the monic quadratic
 that `x` satisfies. -/
-private theorem leftMulMatrix_oneRootBasis {x : E}
+private theorem leftMulMatrix_quadraticExtensionBasis {x : E}
     (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
-    Algebra.leftMulMatrix (oneRootBasis hx) x = companionFinTwo t d := by
-  have hb := coe_oneRootBasis hx
-  have e0 : x * oneRootBasis hx 0 = oneRootBasis hx 1 := by
-    simp [hb]
-  have e1 : x * oneRootBasis hx 1
-      = (-d) • oneRootBasis hx 0 + t • oneRootBasis hx 1 := by
-    simp only [hb, Matrix.cons_val_zero, Matrix.cons_val_one, Algebra.smul_def, mul_one, map_neg]
+    Algebra.leftMulMatrix
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)) x =
+      companionFinTwo t d := by
+  let b := quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)
+  -- Use the shared basis under a short name for the two column calculations.
+  change Algebra.leftMulMatrix b x = companionFinTwo t d
+  have e0 : x * b 0 = b 1 := by
+    simp [b]
+  have e1 : x * b 1 = (-d) • b 0 + t • b 1 := by
+    simp only [b, quadraticExtensionBasis_zero, quadraticExtensionBasis_one, Algebra.smul_def,
+      mul_one, map_neg]
     linear_combination hx2
   rw [companionFinTwo_def]
   ext i j
@@ -120,7 +109,9 @@ theorem trace_eq_of_mul_self_eq {x : E}
     (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
     Algebra.trace F E x = t := by
-  rw [Algebra.trace_eq_matrix_trace (oneRootBasis hx), leftMulMatrix_oneRootBasis hx hx2,
+  rw [Algebra.trace_eq_matrix_trace
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)),
+    leftMulMatrix_quadraticExtensionBasis hx hx2,
     trace_companionFinTwo]
 
 /-- **The norm of a quadratic irrationality.** If `E/F` has degree `2` and `x : E` lies outside `F`
@@ -129,7 +120,9 @@ theorem norm_eq_of_mul_self_eq {x : E}
     (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
     Algebra.norm F x = d := by
-  rw [Algebra.norm_eq_matrix_det (oneRootBasis hx), leftMulMatrix_oneRootBasis hx hx2,
+  rw [Algebra.norm_eq_matrix_det
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)),
+    leftMulMatrix_quadraticExtensionBasis hx hx2,
     det_companionFinTwo]
 
 end Algebra
