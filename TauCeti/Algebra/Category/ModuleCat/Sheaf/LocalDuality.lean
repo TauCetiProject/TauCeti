@@ -56,8 +56,7 @@ local instance localMonoidalClosed (X : C) : MonoidalClosed
 
 /-- On each finite free chart, a locally free sheaf has an exact self-pairing. This pairing is
 transported from the standard basis pairing and depends on the chosen chart. -/
-@[instance_reducible]
-noncomputable def _root_.SheafOfModules.LocalGeneratorsData.exactPairing
+noncomputable abbrev _root_.SheafOfModules.LocalGeneratorsData.exactPairing
     (q : M.LocalGeneratorsData) (i : q.I)
     [IsIso (q.generators i).π] [Finite (q.generators i).I] :
     ExactPairing (M.over (q.X i)) (M.over (q.X i)) := by
@@ -121,7 +120,8 @@ omit [HasWeakSheafify J AddCommGrpCat.{u}]
   [J.WEqualsLocallyBijective AddCommGrpCat.{u}] in
 /-- A finite locally free sheaf has a cover of finite free charts, each equipped with the local
 dual-tensor comparison isomorphism. -/
-theorem _root_.SheafOfModules.IsLocallyFree.exists_isIso_dualTensorIhom_on_finite_free_charts
+theorem
+    _root_.SheafOfModules.IsLocallyFree.exists_isLocallyFreeData_isFiniteType_isIso_dualTensorIhom
     [M.IsLocallyFree] [M.IsFiniteType] :
     ∃ q : M.LocalGeneratorsData.{u}, q.IsLocallyFreeData ∧ q.IsFiniteType ∧
       ∀ i : q.I, IsIso (dualTensorIhom (M.over (q.X i))) := by
