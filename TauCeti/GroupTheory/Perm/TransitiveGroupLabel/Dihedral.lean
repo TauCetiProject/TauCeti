@@ -84,7 +84,7 @@ noncomputable def referenceSubgroupFourTwoMulEquivDihedralGroup :
 
 /-- The standard dihedral reflection gives the diagonal swap in the reference action. -/
 @[simp]
-theorem referenceSubgroupFourTwoMulEquivDihedralGroup_symm_sr_zero :
+theorem referenceSubgroupFourTwoMulEquivDihedralGroup_symm_apply_sr_zero :
     referenceSubgroupFourTwoMulEquivDihedralGroup.symm (.sr 0) =
       (⟨swap 0 2, by
         rw [referenceSubgroup_four_two]
@@ -96,7 +96,7 @@ theorem referenceSubgroupFourTwoMulEquivDihedralGroup_symm_sr_zero :
 
 /-- The inverse standard dihedral rotation gives the four-cycle in the reference action. -/
 @[simp]
-theorem referenceSubgroupFourTwoMulEquivDihedralGroup_symm_r_three :
+theorem referenceSubgroupFourTwoMulEquivDihedralGroup_symm_apply_r_three :
     referenceSubgroupFourTwoMulEquivDihedralGroup.symm (.r (3 : ZMod 4)) =
       (⟨finRotate 4, by
         rw [referenceSubgroup_four_two]
