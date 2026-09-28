@@ -128,6 +128,8 @@ theorem hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer
     isSquare_unitsMap_subtype_iff h2 v]
   by_cases hs : IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) v) <;> simp [hs]
 
+namespace Units
+
 /-- The sign of the quadratic character of the reduction of an integral unit. -/
 noncomputable def oddResidueSign (u : 𝒪[K]ˣ) : ℤˣ := by
   classical
@@ -186,6 +188,10 @@ theorem oddResidueSign_zpow (u : 𝒪[K]ˣ) (n : ℤ) :
       map_one' := oddResidueSign_one
       map_mul' := oddResidueSign_mul }
   exact map_zpow f u n
+
+end Units
+
+open _root_.TauCeti.Units
 
 /-- The sign is the Hilbert symbol against any uniformizer. -/
 theorem oddResidueSign_eq_hilbertSymbol (h2 : IsUnit (2 : 𝒪[K]))

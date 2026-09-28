@@ -30,6 +30,8 @@ open ValuativeRel IsLocalRing
 
 namespace TauCeti
 
+open _root_.TauCeti.Units
+
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
@@ -70,6 +72,7 @@ theorem hilbertSymbol_oddResidue_formula (h2 : IsUnit (2 : 𝒪[K]))
     rw [hilbertSymbol_comm]
     exact (oddResidueSign_eq_hilbertSymbol h2 v hπ).symm
   rw [hpu, hpv]
-  simp [mul_comm, mul_left_comm]
+  simp only [mul_one, mul_comm α β]
+  ac_rfl
 
 end TauCeti
