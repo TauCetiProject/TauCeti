@@ -144,8 +144,7 @@ private lemma squareRetract_top (t : I) : squareRetract (1, t) = (1, 0) := by
     simp only [Set.Icc.coe_one]
     linarith
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
-  · rw [squareRetract_fst, squareFst_def, ite_eq_left hle, Set.Icc.coe_one,
-      show (2 : ℝ) * 1 - (t : ℝ) = 2 - (t : ℝ) by ring]
+  · rw [squareRetract_fst, squareFst_def, ite_eq_left hle, Set.Icc.coe_one, mul_one]
     exact div_self (by linarith)
   · rw [squareRetract_snd, squareSnd_def, ite_eq_left hle, Set.Icc.coe_zero]
 

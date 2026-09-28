@@ -74,7 +74,11 @@ sending `(1, x)` to `f x`.
 
 The presentation as a quotient is exposed because it is what the structure maps
 `TauCeti.MappingCylinder.mkCyl` and `TauCeti.MappingCylinder.mkBase` and the universal property
-`TauCeti.MappingCylinder.lift` compute with. -/
+`TauCeti.MappingCylinder.lift` compute with.  Consumers need not use it: points of the mapping
+cylinder come from `TauCeti.MappingCylinder.mkCyl` and `TauCeti.MappingCylinder.mkBase`, maps out
+of it from `TauCeti.MappingCylinder.lift`, equalities of such maps from
+`TauCeti.MappingCylinder.hom_ext`, and statements about all of its points from
+`TauCeti.MappingCylinder.ind`. -/
 @[expose]
 def MappingCylinder (f : C(X, Y)) : Type max u v :=
   Quotient (Setoid.ker (cylinderNormalize f))
@@ -113,6 +117,7 @@ lemma mkCyl_one (x : X) : mkCyl f (1, x) = mkBase f (f x) :=
 
 /-- Two points of the cylinder have the same image in the mapping cylinder exactly when they are
 equal, or both lie in the top face and have the same image under `f`. -/
+@[simp]
 lemma mkCyl_eq_mkCyl_iff {s t : I} {x y : X} :
     mkCyl f (s, x) = mkCyl f (t, y) ↔ (s = t ∧ x = y) ∨ (s = 1 ∧ t = 1 ∧ f x = f y) := by
   rw [mkCyl_eq_mkCyl_iff']
@@ -190,6 +195,23 @@ lemma lift_mkCyl (hgh : ∀ x, g (1, x) = h (f x)) (p : I × X) :
 @[simp]
 lemma lift_mkBase (hgh : ∀ x, g (1, x) = h (f x)) (y : Y) :
     lift g h hgh (mkBase f y) = h y := (rfl)
+
+/-- **Extensionality for maps out of the mapping cylinder.**  Two continuous maps out of the
+mapping cylinder which agree on the cylinder and on the base are equal. -/
+@[ext]
+theorem hom_ext {F G : C(MappingCylinder f, W)} (cyl : ∀ p : I × X, F (mkCyl f p) = G (mkCyl f p))
+    (base : ∀ y : Y, F (mkBase f y) = G (mkBase f y)) : F = G := by
+  refine ContinuousMap.ext fun m => ?_
+  induction m using ind with
+  | cyl q => exact cyl q
+  | base y => exact base y
+
+/-- **Uniqueness in the universal property of the mapping cylinder.**  A map out of the mapping
+cylinder is determined by its restrictions to the cylinder and to the base. -/
+theorem lift_unique (hgh : ∀ x, g (1, x) = h (f x)) {F : C(MappingCylinder f, W)}
+    (hcyl : ∀ p : I × X, F (mkCyl f p) = g p) (hbase : ∀ y : Y, F (mkBase f y) = h y) :
+    F = lift g h hgh :=
+  hom_ext (fun p => by rw [hcyl, lift_mkCyl]) fun y => by rw [hbase, lift_mkBase]
 
 end Lift
 
