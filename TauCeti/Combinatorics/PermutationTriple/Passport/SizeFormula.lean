@@ -18,7 +18,9 @@ passport in terms of the finite set of generating triples. The divisibility stat
 natural-number quotient meaningful. A generating-count recursion can evaluate the finite-set
 cardinality separately. These results supply the orbit-counting prerequisite for BelyiMaps
 Layer 3.4 step 4; the final formula in terms of `genCountType` also needs Layers 3.2–3.3
-and Layer 3.4 steps 1–2.
+and Layer 3.4 steps 1–2. The subgroup-lattice partition and downward recursion of Layer 3.3
+are already available in `TauCeti.RepresentationTheory.CharacterTable.GeneratingCount`;
+the remaining conjugacy regrouping and cycle-type specialization are separate from this orbit count.
 
 ## References
 
