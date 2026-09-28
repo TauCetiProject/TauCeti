@@ -82,6 +82,7 @@ theorem maurerCartanSum_def (α : A) (N : ℕ) :
 theorem maurerCartanSum_zero (α : A) : 𝒜.maurerCartanSum α 0 = 0 := by
   simp [maurerCartanSum_def]
 
+@[simp]
 theorem maurerCartanSum_succ (α : A) (N : ℕ) :
     𝒜.maurerCartanSum α (N + 1) =
       𝒜.maurerCartanSum α N + negOnePowCast R (N.choose 2) • 𝒜.m N fun _ ↦ α := by
@@ -125,6 +126,7 @@ theorem isMaurerCartan_iff {α : A} {N : ℕ} (hN : ∀ n, N ≤ n → 𝒜.m n 
 
 variable (𝒜) in
 /-- Zero is a Maurer--Cartan element. -/
+@[simp]
 theorem isMaurerCartan_zero : 𝒜.IsMaurerCartan 0 := by
   have hm : ∀ n, 𝒜.m n (fun _ ↦ (0 : A)) = 0 := by
     intro n
@@ -209,7 +211,7 @@ theorem maurerCartanSum_toAInfinityAlgebra (h : IsNonUnitalDGAlgebra 𝒜 d) (α
     (hN : 3 ≤ N) : h.toAInfinityAlgebra.maurerCartanSum α N = d α - α * α := by
   rw [h.toAInfinityAlgebra.maurerCartanSum_eq_of_le
     (fun n hn ↦ by rw [h.toAInfinityAlgebra_m_of_three_le hn, _root_.zero_apply]) hN]
-  simp [AInfinityAlgebra.maurerCartanSum_succ, sub_eq_add_neg]
+  simp [sub_eq_add_neg]
 
 /-- In a DG algebra, the Maurer--Cartan equation is `dα = α²` for `α` of degree one. -/
 theorem isMaurerCartan_toAInfinityAlgebra_iff (h : IsNonUnitalDGAlgebra 𝒜 d) {α : A} :
