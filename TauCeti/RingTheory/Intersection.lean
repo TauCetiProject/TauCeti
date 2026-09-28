@@ -159,11 +159,14 @@ theorem ord_eq_length_quotient_span_pair (f g : R) :
     Module.length_eq_of_surjective (R := R ⧸ Ideal.span {f}) Ideal.Quotient.mk_surjective]
   rfl
 
-/-- **The local intersection multiplicity of two equations is symmetric in them.** The two
-equations generate the same ideal in either order, so the length of the quotient by them, the local
-intersection multiplicity of the two curves, does not depend on the order. Together with
+/-- **The length of the quotient by two equations is symmetric in them.** The two equations
+generate the same ideal in either order, so the length of the quotient by them does not depend on
+the order, in an arbitrary commutative ring, where that length may be infinite. Together with
 `TauCeti.length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors` this transports additivity
-over a product of equations from the second equation to the first. -/
+over a product of equations from the second equation to the first. Where the pair `(f, g)` is a
+proper intersection, that is, where its radical is the maximal ideal of a noetherian local ring,
+that length is the local intersection multiplicity of the two curves there, and the additivity
+transported here is one of intersection numbers. -/
 theorem length_quotient_span_pair_comm (f g : R) :
     Module.length R (R ⧸ Ideal.span {f, g}) = Module.length R (R ⧸ Ideal.span {g, f}) := by
   refine congrArg (fun I : Ideal R => Module.length R (R ⧸ I)) ?_
@@ -191,10 +194,13 @@ theorem length_quotient_span_pair_eq_zero_iff_isUnit (f g : R) :
   rw [← ord_eq_length_quotient_span_pair f g, Ring.ord, Module.length_eq_zero_iff,
     Submodule.Quotient.subsingleton_iff, Ideal.span_singleton_eq_top]
 
-/-- **The local intersection multiplicity is additive over a product of equations.** If the image
-of `h` in `R ⧸ (f)` is a non-zero-divisor, then the length of `R ⧸ (f, g * h)` is the sum of the
-lengths of `R ⧸ (f, g)` and `R ⧸ (f, h)`: by `TauCeti.ord_eq_length_quotient_span_pair` this is the
-additivity `Ring.ord_mul` of the order of vanishing on the curve `f = 0`. -/
+/-- **The length of the quotient by an equation and a product of two further equations is the
+sum of the two lengths.** If the image of `h` in `R ⧸ (f)` is a non-zero-divisor, then the length of
+`R ⧸ (f, g * h)` is the sum of the lengths of `R ⧸ (f, g)` and `R ⧸ (f, h)`: by
+`TauCeti.ord_eq_length_quotient_span_pair` this is the additivity `Ring.ord_mul` of the order of
+vanishing on the curve `f = 0`. No hypothesis on `R` beyond commutativity is placed, and no
+finiteness on the three lengths, so this is additivity of lengths, of which the three may be
+infinite, and not of intersection numbers. -/
 theorem length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors {f g h : R}
     (hh : Ideal.Quotient.mk (Ideal.span {f}) h ∈ nonZeroDivisors (R ⧸ Ideal.span {f})) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
@@ -202,8 +208,7 @@ theorem length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors {f g h : R}
   rw [← ord_eq_length_quotient_span_pair f (g * h), map_mul, Ring.ord_mul (R ⧸ Ideal.span {f}) hh,
     ← ord_eq_length_quotient_span_pair f g, ← ord_eq_length_quotient_span_pair f h]
 
-/-- **The local intersection multiplicity of an irreducible curve is additive over a product of
-equations.**
+/-- **On an irreducible first curve the length is additive over a product of equations.**
 
 Let `(f)` be prime in a commutative ring `R`, that is, the curve `f = 0` is irreducible, and
 let `g` and `h` be two further equations with `h ∉ (f)`, so that the curve `h = 0` does not

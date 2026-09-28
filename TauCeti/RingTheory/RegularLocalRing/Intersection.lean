@@ -11,16 +11,18 @@ public import TauCeti.RingTheory.RegularLocalRing.Basic
 /-!
 # Local intersection multiplicities on a regular surface
 
-Fix a two-dimensional regular local ring `(R, 𝔪)` and two of its elements `f` and `g`. The local
-intersection multiplicity of the two curves they cut out at the closed point is the length
-`Module.length R (R ⧸ (f, g))`, and the general facts about that length, none of which needs a
-regular surface, are in `TauCeti.RingTheory.Intersection`. What a regular surface adds is a
-condition on the first equation under which the curve `R ⧸ (f)` is a curve of dimension one, so that
-the order of vanishing of the second equation on it is an order on a domain. A nonzero element `f`
-of `𝔪` whose principal ideal is prime is such a condition: the curve `R ⧸ (f)` is then a
-one-dimensional local domain, by the dimension drop along the non-zero-divisor `f`, and a second
-equation `g` through the closed point, outside `(f)`, generates with `f` an ideal whose radical is
-`𝔪`, the proper-intersection condition of that general file.
+Fix a two-dimensional regular local ring `(R, 𝔪)` and two of its elements `f` and `g`. The quotient
+`R ⧸ (f, g)` carries the length `Module.length R (R ⧸ (f, g))`, which may be infinite. Where the two
+curves `f = 0` and `g = 0` meet properly at the closed point, that is, where `(f, g)` has radical
+`𝔪`, that finite length is the local intersection multiplicity of the two curves there. The general
+facts about that length, none of which needs a regular surface, are in
+`TauCeti.RingTheory.Intersection`. What a regular surface adds is a condition on the first equation
+under which the curve `R ⧸ (f)` is a curve of dimension one, so that the order of vanishing of the
+second equation on it is an order on a domain. A nonzero element `f` of `𝔪` whose principal ideal is
+prime is such a condition: the curve `R ⧸ (f)` is then a one-dimensional local domain, by the
+dimension drop along the non-zero-divisor `f`, and a second equation `g` through the closed point,
+outside `(f)`, generates with `f` an ideal whose radical is `𝔪`, the proper-intersection condition
+of that general file.
 
 The results below are the parameter level of a pair of levels, the prime level being the one of
 `TauCeti.RingTheory.Intersection`. A parameter, `f ∈ 𝔪 \ 𝔪²`, is a non-zero-divisor of the domain
