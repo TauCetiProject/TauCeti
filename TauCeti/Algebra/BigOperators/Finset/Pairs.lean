@@ -119,20 +119,20 @@ theorem prod_prod_Ioi_append {A M : Type*} [CommMonoid M] {n m : ℕ}
     ac_rfl
 
 /-- The pairwise product of a concatenation for a bimultiplicative pairing. -/
-theorem prod_prod_Ioi_append_of_mul {R M : Type*} [CommMonoid M] [CommMonoid R] (F : Rˣ → Rˣ → M)
+theorem prod_prod_Ioi_append_of_mul {A M : Type*} [CommMonoid A] [CommMonoid M] (F : A → A → M)
     (hone_left : ∀ b, F 1 b = 1) (hone_right : ∀ a, F a 1 = 1)
     (hmul_left : ∀ a b c, F (a * b) c = F a c * F b c)
     (hmul_right : ∀ a b c, F a (b * c) = F a b * F a c)
-    {m n : ℕ} (p : Fin m → Rˣ) (q : Fin n → Rˣ) :
+    {m n : ℕ} (p : Fin m → A) (q : Fin n → A) :
     (∏ i, ∏ j ∈ Ioi i, F (Fin.append p q i) (Fin.append p q j)) =
       (∏ i, ∏ j ∈ Ioi i, F (p i) (p j)) *
         (∏ i, ∏ j ∈ Ioi i, F (q i) (q j)) *
         F (∏ i, p i) (∏ j, q j) := by
-  let h₁ (a : Rˣ) : Rˣ →* M := {
+  let h₁ (a : A) : A →* M := {
     toFun := F a
     map_one' := hone_right a
     map_mul' := hmul_right a }
-  let h₂ (b : Rˣ) : Rˣ →* M := {
+  let h₂ (b : A) : A →* M := {
     toFun := fun a => F a b
     map_one' := hone_left b
     map_mul' := fun a c => hmul_left a c b }
@@ -148,21 +148,21 @@ theorem prod_prod_Ioi_append_of_mul {R M : Type*} [CommMonoid M] [CommMonoid R] 
 
 /-- Scaling every coefficient in a pairwise product for a symmetric bimultiplicative
 pairing. The self-pairing law supplies the correction for each coefficient pair. -/
-theorem prod_prod_Ioi_scale {R M : Type*} [CommMonoid M] [CommMonoid R] (F : Rˣ → Rˣ → M)
-    {s : Rˣ}
+theorem prod_prod_Ioi_scale {A M : Type*} [CommMonoid A] [CommMonoid M] (F : A → A → M)
+    {s : A}
     (hmul_right : ∀ a b c, F a (b * c) = F a b * F a c)
     (hone : ∀ a, F a 1 = 1) (hcomm : ∀ a b, F a b = F b a)
-    (hself : ∀ a, F a a = F a s) (a : Rˣ) {n : ℕ} (w : Fin n → Rˣ) :
+    (hself : ∀ a, F a a = F a s) (a : A) {n : ℕ} (w : Fin n → A) :
     (∏ i, ∏ j ∈ Ioi i, F (a * w i) (a * w j)) =
       (∏ i, ∏ j ∈ Ioi i, F (w i) (w j)) *
         F a s ^ n.choose 2 * F a (∏ i, w i) ^ (n - 1) := by
-  have hmul_left (x y z : Rˣ) : F (x * y) z = F x z * F y z := by
+  have hmul_left (x y z : A) : F (x * y) z = F x z * F y z := by
     rw [hcomm (x * y) z, hmul_right, hcomm z x, hcomm z y]
-  have hmulmul (b c : Rˣ) :
+  have hmulmul (b c : A) :
       F (a * b) (a * c) = F b c * F a s * F a b * F a c := by
     rw [hmul_left, hmul_right, hmul_right, hself, hcomm b a]
     ac_rfl
-  let h₁ : Rˣ →* M := {
+  let h₁ : A →* M := {
     toFun := F a
     map_one' := hone a
     map_mul' := hmul_right a }
@@ -174,8 +174,8 @@ theorem prod_prod_Ioi_scale {R M : Type*} [CommMonoid M] [CommMonoid R] (F : Rˣ
     have hw : w = Fin.snoc w₀ b := (Fin.snoc_init_self w).symm
     rw [hw]
     have hs (i : Fin (n + 1)) :
-        a * Fin.snoc (α := fun _ => Rˣ) w₀ b i =
-          Fin.snoc (α := fun _ => Rˣ) (fun j => a * w₀ j) (a * b) i := by
+        a * Fin.snoc (α := fun _ => A) w₀ b i =
+          Fin.snoc (α := fun _ => A) (fun j => a * w₀ j) (a * b) i := by
       rcases i.eq_castSucc_or_eq_last with ⟨j, rfl⟩ | rfl <;> simp
     simp_rw [hs]
     have hprod : (∏ i, F a (w₀ i)) = F a (∏ i, w₀ i) :=
