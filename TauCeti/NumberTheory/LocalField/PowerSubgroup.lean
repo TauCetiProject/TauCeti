@@ -49,6 +49,8 @@ invertible in `𝒪[K]`, since it then contains the power subgroup attached to t
 ## Main results
 
 * `TauCeti.card_powerClasses`: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K) · q ^ v_K(n)` for `(n : K) ≠ 0`.
+* `TauCeti.card_powerClasses_eq_mul_inv_normalizedAbsoluteValue`: the same count as an equality
+  `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K) · ‖n‖_K⁻¹` in `ℚ≥0`, with `‖·‖_K` the normalized absolute value.
 * `TauCeti.finiteIndex_range_powMonoidHom`: `(Kˣ)ⁿ` has finite index in `Kˣ` for `(n : K) ≠ 0`.
 * `TauCeti.map_powMonoidHom_unitFiltration_succ_of_isUnit`: the `n`-th power map carries
   `U(K,i+1)` onto itself.
@@ -91,6 +93,8 @@ a unit, and in equal characteristic `p` the quotient `Kˣ ⧸ (Kˣ)ᵖ` is infin
 public section
 
 open ValuativeRel IsLocalRing IsNonarchimedeanLocalField
+
+open scoped NNRat
 
 namespace TauCeti
 
@@ -390,6 +394,16 @@ theorem card_powerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
   have h := Subgroup.index_range_pow_mul_card_ker U n
   rw [hkerU, mul_one, hidxU] at h
   exact h
+
+/-- **The number of `n`-th power classes, absolute-value form.** For `n` with `(n : K) ≠ 0`, the
+quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K) · ‖n‖_K⁻¹` elements, where `μ_n(K)` is the group of `n`-th
+roots of unity in `K` and `‖·‖_K` is the normalized absolute value of `K`. Since
+`‖n‖_K = q ^ (-v_K(n))`, the factor `‖n‖_K⁻¹` is the factor `q ^ v_K(n)` of `card_powerClasses`,
+and the equation holds in `ℚ≥0` after casting the natural-number cardinalities. -/
+theorem card_powerClasses_eq_mul_inv_normalizedAbsoluteValue {n : ℕ} (hn : (n : K) ≠ 0) :
+    (Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) : ℚ≥0) =
+      (n : ℚ≥0) * (Nat.card (rootsOfUnity n K) : ℚ≥0) * (normalizedAbsoluteValue K (n : K))⁻¹ := by
+  simp [card_powerClasses hn, normalizedAbsoluteValue_natCast K n hn]
 
 /-- For `(n : K) ≠ 0`, the subgroup `(Kˣ)ⁿ` of `n`-th powers has finite index in `Kˣ`. -/
 theorem finiteIndex_range_powMonoidHom {n : ℕ} (hn : (n : K) ≠ 0) :
