@@ -211,11 +211,6 @@ section IsCancelMulZero
 
 variable {k : Type} [CommRing k] [IsCancelMulZero k] {n d : ℕ}
 
-/-- The multiplicity vector of the index of a basis vector of `Symᵈ(kⁿ)` determines that index. -/
-theorem weightOfMultiset_coe_injective :
-    Function.Injective fun s : Sym (Fin n) d => weightOfMultiset (s : Multiset (Fin n)) :=
-  fun _ _ h => Subtype.val_injective (weightOfMultiset_injective h)
-
 /-- **The weight spaces of a symmetric power of the standard representation are the coordinate
 lines of the symmetric-power basis**: the weight-`l` space of `Symᵈ(kⁿ)`, for `l` the multiplicity
 vector of an unordered `d`-tuple `s`, is the line spanned by the product of the standard basis
@@ -225,7 +220,8 @@ theorem weightSpace_symPowerRep_eq_span
     weightSpace (symPowerRep k n d) (weightOfMultiset (s : Multiset (Fin n))) =
       Submodule.span k {(Pi.basisFun k (Fin n)).symmetricPower d s} :=
   ((Pi.basisFun k (Fin n)).symmetricPower d).weightSpace_eq_span
-    basis_mem_weightSpace_symPowerRep hchar weightOfMultiset_coe_injective s
+    basis_mem_weightSpace_symPowerRep hchar
+    (fun _ _ h => Subtype.val_injective (weightOfMultiset_injective h)) s
 
 /-- **Only the multiplicity vectors are weights** of a symmetric power of the standard
 representation. -/
@@ -275,7 +271,8 @@ theorem finrank_weightSpace_symPowerRep
     Module.finrank k (weightSpace (symPowerRep k n d)
       (weightOfMultiset (s : Multiset (Fin n)))) = 1 :=
   ((Pi.basisFun k (Fin n)).symmetricPower d).finrank_weightSpace_eq_one
-    basis_mem_weightSpace_symPowerRep hchar weightOfMultiset_coe_injective s
+    basis_mem_weightSpace_symPowerRep hchar
+    (fun _ _ h => Subtype.val_injective (weightOfMultiset_injective h)) s
 
 end Field
 

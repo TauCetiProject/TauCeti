@@ -171,11 +171,6 @@ section IsCancelMulZero
 
 variable {k : Type u} [CommRing k] [IsCancelMulZero k] {n d : ℕ}
 
-/-- The indicator of the index of a basis vector of `⋀ᵈ(kⁿ)` determines that index. -/
-theorem weightOfSubset_coe_injective :
-    Function.Injective fun s : Set.powersetCard (Fin n) d => weightOfSubset (s : Finset (Fin n)) :=
-  fun _ _ h => Subtype.val_injective (weightOfSubset_injective h)
-
 /-- **The weight spaces of an exterior power of the standard representation are the coordinate
 lines of the wedge basis**: the weight-`l` space of `⋀ᵈ(kⁿ)`, for `l` the indicator of a
 `d`-element subset `s`, is the line spanned by the wedge of the standard basis vectors indexed by
@@ -186,7 +181,8 @@ theorem weightSpace_extPowerRep_eq_span
     weightSpace (extPowerRep k n d) (weightOfSubset (s : Finset (Fin n))) =
       Submodule.span k {(Pi.basisFun k (Fin n)).exteriorPower d s} :=
   ((Pi.basisFun k (Fin n)).exteriorPower d).weightSpace_eq_span
-    basis_mem_weightSpace_extPowerRep hchar weightOfSubset_coe_injective s
+    basis_mem_weightSpace_extPowerRep hchar
+    (fun _ _ h => Subtype.val_injective (weightOfSubset_injective h)) s
 
 /-- **Only the indicators are weights** of an exterior power of the standard representation. -/
 theorem weightSpace_extPowerRep_eq_bot
@@ -226,7 +222,8 @@ theorem finrank_weightSpace_extPowerRep
     Module.finrank k (weightSpace (extPowerRep k n d)
       (weightOfSubset (s : Finset (Fin n)))) = 1 :=
   ((Pi.basisFun k (Fin n)).exteriorPower d).finrank_weightSpace_eq_one
-    basis_mem_weightSpace_extPowerRep hchar weightOfSubset_coe_injective s
+    basis_mem_weightSpace_extPowerRep hchar
+    (fun _ _ h => Subtype.val_injective (weightOfSubset_injective h)) s
 
 end Field
 
