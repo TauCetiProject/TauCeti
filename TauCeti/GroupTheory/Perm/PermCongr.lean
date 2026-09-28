@@ -84,6 +84,7 @@ variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 
 /-- Transport along an equivalence carries the even part of a permutation subgroup to the
 even part of its transport. -/
+@[simp]
 theorem map_inf_alternatingGroup_permCongrHom (e : α ≃ β) (G : Subgroup (Perm α)) :
     ((G ⊓ alternatingGroup α) : Subgroup (Perm α)).map e.permCongrHom.toMonoidHom =
       G.map e.permCongrHom.toMonoidHom ⊓ alternatingGroup β := by
@@ -95,6 +96,7 @@ theorem map_inf_alternatingGroup_permCongrHom (e : α ≃ β) (G : Subgroup (Per
 
 /-- Transport along an equivalence preserves transitivity of the intersection of a permutation
 subgroup with the alternating group. -/
+@[simp]
 theorem isPretransitive_even_map_permCongrHom_iff (e : α ≃ β)
     (G : Subgroup (Perm α)) :
     IsPretransitive ((G.map e.permCongrHom.toMonoidHom ⊓ alternatingGroup β) :
