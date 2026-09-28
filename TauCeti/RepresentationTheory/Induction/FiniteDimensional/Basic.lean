@@ -24,7 +24,9 @@ forgetful functor to `Rep k G`.
 
 That functor is additive (`indFDRepMap_add`); the general fact it rests on, additivity of induced
 intertwiners along an arbitrary group homomorphism, is `Rep.indMap_add` of
-`TauCeti.RepresentationTheory.Induction.Basic`.
+`TauCeti.RepresentationTheory.Induction.Basic`. Read through the functor, induction sends an
+isomorphism of representations to an isomorphism of the induced ones
+(`nonempty_iso_indFDRep`).
 
 The objectwise construction, dimension theorem, and functor on `FDRep` allow the scalar field and
 group to live in separate universes. It uses a small model of Mathlib's induced carrier, compared by
@@ -448,6 +450,13 @@ theorem indFDRepFunctor_map {k : Type u} {G : Type v} [Field k] [Group G]
   -- The transports reconcile the opaque object projections with the types of `indFDRepMap`.
   -- They are not a useful simp normal form, so this projection is intentionally not a simp rule.
   rfl
+
+/-- **Induction from a finite-index subgroup carries isomorphic representations to isomorphic
+ones.** -/
+theorem nonempty_iso_indFDRep {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] {A B : FDRep k S} (e : A ≅ B) : Nonempty (indFDRep A ≅ indFDRep B) :=
+  ⟨(eqToIso (indFDRepFunctor_obj A)).symm ≪≫
+    (indFDRepFunctor (k := k) (S := S)).mapIso e ≪≫ eqToIso (indFDRepFunctor_obj B)⟩
 
 /-- **Induction from a finite-index subgroup is an additive functor**, which is what lets it be
 passed to the split Grothendieck group in

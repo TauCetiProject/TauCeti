@@ -45,6 +45,7 @@ range, so the value is a `dite` rather than a plain application.
   read off the value.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
   `b - j`, or vanishes when there is no such index.
+* `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
 * `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
@@ -137,6 +138,37 @@ theorem predAbove_succ_succAbove {n : ℕ} (p i : Fin n) : p.predAbove (p.succ.s
 end Fin
 
 namespace TauCeti
+
+/-- A decreasing parent table gives a word carrying its root to every vertex. -/
+theorem exists_foldl_eq_of_parent {n : ℕ} {J : Type*}
+    (step : Fin (n + 1) → J → Fin (n + 1))
+    (parent : Fin n → Fin (n + 1)) (edge : Fin n → J)
+    (hparent : ∀ a, (parent a : ℕ) < (a.succ : ℕ))
+    (hstep : ∀ a, step (parent a) (edge a) = a.succ) (a : Fin (n + 1)) :
+    ∃ l : List J, l.foldl step 0 = a := by
+  have aux : ∀ m, ∀ hm : m < n + 1,
+      ∃ l : List J, l.foldl step 0 = (⟨m, hm⟩ : Fin (n + 1)) := by
+    intro m hm
+    induction m using Nat.strong_induction_on with
+    | h m ih =>
+        by_cases hzero : m = 0
+        · subst m
+          exact ⟨[], rfl⟩
+        · let c : Fin n := ⟨m - 1, by omega⟩
+          have hsucc : c.succ = (⟨m, hm⟩ : Fin (n + 1)) := by
+            apply Fin.ext
+            simp [c]
+            omega
+          obtain ⟨l, hl⟩ := ih (parent c)
+            (by
+              have hlt := hparent c
+              have hval : (c.succ : ℕ) = m := congrArg Fin.val hsucc
+              rwa [hval] at hlt)
+            (parent c).isLt
+          refine ⟨l ++ [edge c], ?_⟩
+          rw [List.foldl_append, hl]
+          simpa only [List.foldl_cons, List.foldl_nil, hstep] using hsucc
+  exact aux a a.isLt
 
 open Set
 
