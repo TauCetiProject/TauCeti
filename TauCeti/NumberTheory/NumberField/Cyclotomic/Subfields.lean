@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
+public import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Subgroups
 import Mathlib.RingTheory.ZMod.UnitsCyclic
 import Mathlib.Tactic.NormNum.Prime
@@ -58,33 +59,24 @@ exponent `-1` fixes it. -/
 theorem mem_fifthCyclotomicQuadraticSubfield_iff (x : K) :
     x ∈ fifthCyclotomicQuadraticSubfield ↔
       ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ)) x = x := by
-  let κ := (galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ)
-  -- Keep `galEquivZMod` opaque: rewriting the two local definitions unfolds its equivalence.
-  change x ∈ fixedField (Subgroup.zpowers κ) ↔ κ x = x
-  rw [mem_fixedField_iff]
-  constructor
-  · intro hx
-    exact hx κ (Subgroup.mem_zpowers κ)
-  · intro hx σ hσ
-    have hκ : κ ∈ MulAction.stabilizer (Gal(K/ℚ)) x := by
-      simpa [MulAction.mem_stabilizer_iff] using hx
-    have hle := Subgroup.zpowers_le_of_mem hκ
-    have hs := hle hσ
-    simpa [MulAction.mem_stabilizer_iff] using hs
+  unfold fifthCyclotomicQuadraticSubfield
+  exact IntermediateField.mem_fixedField_zpowers_iff _ _
 
 /-- The middle field of a fifth cyclotomic field has degree two over `ℚ`. -/
 @[simp]
 theorem finrank_fifthCyclotomicQuadraticSubfield :
     Module.finrank ℚ (fifthCyclotomicQuadraticSubfield (K := K)) = 2 := by
-  have hrel : Module.finrank (fifthCyclotomicQuadraticSubfield (K := K)) K = 2 :=
-    (IntermediateField.finrank_fixedField_eq_card (orderTwoSubgroup (K := K))).trans
-      (card_orderTwoSubgroup (K := K))
+  have htower := IntermediateField.finrank_fixedField_zpowers_mul_orderOf
+    ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ))
   have htot : Module.finrank ℚ K = 4 := by
     rw [IsCyclotomicExtension.Rat.finrank 5 K,
       Nat.totient_prime (by norm_num : Nat.Prime 5)]
-  have htower := Module.finrank_mul_finrank ℚ
-    (fifthCyclotomicQuadraticSubfield (K := K)) K
-  rw [hrel, htot] at htower
+  change Module.finrank ℚ (fifthCyclotomicQuadraticSubfield (K := K)) *
+    orderOf ((galEquivZMod 5 K).symm (-1 : (ZMod 5)ˣ)) = Module.finrank ℚ K at htower
+  rw [← Nat.card_zpowers] at htower
+  change Module.finrank ℚ (fifthCyclotomicQuadraticSubfield (K := K)) *
+    Nat.card (orderTwoSubgroup (K := K)) = Module.finrank ℚ K at htower
+  rw [card_orderTwoSubgroup, htot] at htower
   omega
 
 /-- There are exactly three subfields of the fifth cyclotomic field over `ℚ`. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.GaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Real.Basic
+import TauCeti.FieldTheory.Galois.FixedField
 import Mathlib.Analysis.Complex.Order
 import Mathlib.FieldTheory.Galois.Basic
 
@@ -141,16 +142,8 @@ theorem candidateGenusFieldSignPattern_conj_apply (hd : Squarefree d)
 private theorem mem_fixedField_zpowers_candidateGenusFieldConj_iff (hd : Squarefree d)
     (x : candidateGenusField hd) :
     x ∈ IntermediateField.fixedField (Subgroup.zpowers (candidateGenusFieldConj hd)) ↔
-      candidateGenusFieldConj hd x = x := by
-  rw [IntermediateField.mem_fixedField_iff, Subgroup.forall_mem_zpowers]
-  constructor
-  · intro h
-    simpa using h 1
-  · intro h n
-    have hx : x ∈ MulAction.fixedBy (candidateGenusField hd) (candidateGenusFieldConj hd) := by
-      simpa only [MulAction.mem_fixedBy, AlgEquiv.smul_def] using h
-    simpa only [MulAction.mem_fixedBy, AlgEquiv.smul_def] using
-      MulAction.mem_fixedBy_zpow hx n
+      candidateGenusFieldConj hd x = x :=
+  IntermediateField.mem_fixedField_zpowers_iff _ _
 
 /-- An element of the candidate genus field is fixed by complex conjugation exactly when it lies
 in the maximal totally real subfield. -/

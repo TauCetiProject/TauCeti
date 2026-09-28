@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
 public import Mathlib.RingTheory.Frobenius
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
 
 /-!
 # The arithmetic Frobenius on roots of unity
@@ -143,3 +144,43 @@ theorem autToPow_eq_absNorm {m : ℕ} [NeZero m] {ζ : F} (hζ : IsPrimitiveRoot
   exact (ZMod.natCast_eq_natCast_iff _ _ _).mpr h
 
 end AlgHom.IsArithFrobAt
+
+namespace TauCeti.NumberField
+
+open Ideal IsCyclotomicExtension
+open scoped _root_.NumberField
+
+variable {n : ℕ} [NeZero n] {F : Type*} [Field F] [NumberField F]
+  [IsCyclotomicExtension {n} ℚ F]
+
+/-- In a rational cyclotomic extension, the cyclotomic exponent identifies the arithmetic
+Frobenius at an unramified prime with the norm of the prime below it. -/
+theorem isArithFrobAt_iff_galEquivZMod_eq_absNorm
+    (𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
+    (hm : (n : 𝓞 ℚ) ∉ 𝔭.asIdeal)
+    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
+    [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] (σ : F ≃ₐ[ℚ] F) :
+    IsArithFrobAt (𝓞 ℚ) σ Q ↔
+      ((Rat.galEquivZMod n F σ : (ZMod n)ˣ) : ZMod n) =
+        Ideal.absNorm 𝔭.asIdeal := by
+  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q
+  let _ : Finite (𝓞 F ⧸ Q) := Ring.HasFiniteQuotients.finiteQuotient hQ
+  have _ : IsGalois ℚ F := IsCyclotomicExtension.isGalois {n} ℚ F
+  have hchar (τ : F ≃ₐ[ℚ] F) (hτ : IsArithFrobAt (𝓞 ℚ) τ Q) :
+      ((Rat.galEquivZMod n F τ : (ZMod n)ˣ) : ZMod n) =
+        Ideal.absNorm 𝔭.asIdeal := by
+    have h := hτ.autToPow_eq_absNorm (zeta_spec n ℚ F) 𝔭 hm Q
+    rwa [(zeta_spec n ℚ F).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
+      ZMod.unitsMap_self, MonoidHom.id_apply] at h
+  constructor
+  · exact hchar σ
+  · intro hσ
+    let τ := arithFrobAt (𝓞 ℚ) (F ≃ₐ[ℚ] F) Q
+    have hτ : IsArithFrobAt (𝓞 ℚ) τ Q := IsArithFrobAt.arithFrobAt _ _ _
+    have heq : σ = τ := by
+      apply (Rat.galEquivZMod n F).injective
+      apply Units.ext
+      exact hσ.trans (hchar τ hτ).symm
+    exact heq ▸ hτ
+
+end TauCeti.NumberField
