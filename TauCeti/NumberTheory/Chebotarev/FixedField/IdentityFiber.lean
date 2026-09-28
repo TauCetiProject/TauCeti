@@ -16,8 +16,9 @@ intermediate field. Consequently its relative Frobenius in the extension over th
 an automorphism is the identity. This excludes the relative fibre of every nonidentity
 automorphism, including a generator of a cyclic Galois group.
 
-The argument uses the residue-degree tower law and the fixed-field Frobenius criterion. See
-J. Neukirch, *Algebraic Number Theory*, Chapter VII, §13.
+This zero-fibre case supports the fixed-field fibre count used to contract Frobenius prime sets
+from a cyclic fixed field to the base field. See J. Neukirch, *Algebraic Number Theory*,
+Chapter VII, §13.
 -/
 
 public section
