@@ -9,8 +9,8 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Henselian.Basic
 public import TauCeti.RingTheory.RootsOfUnity.Basic
+import Mathlib.GroupTheory.IndexNSmul
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 
 /-!
@@ -62,8 +62,6 @@ when `2` is a unit of `𝒪[K]`.
   bijection of `U(K,i+1)`.
 * `TauCeti.card_powerClasses_eq_of_index_unitFiltration_one`: the power-class count reduces to
   the index/kernel ratio of the power map on the principal units.
-* `TauCeti.card_powerClasses_eq_of_finiteIndex_unitFiltration_one_subgroup`: it is enough to
-  compute the power-map index on a torsion-free finite-index subgroup of the principal units.
 * `TauCeti.card_powerClasses_of_isUnit`: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K)`.
 * `TauCeti.finiteIndex_range_powMonoidHom_of_isUnit`: `(Kˣ)ⁿ` has finite index in `Kˣ`.
 * `TauCeti.card_squareClasses_of_isUnit`: `#(Kˣ ⧸ (Kˣ)²) = 4` when `2` is a unit of `𝒪[K]`.
@@ -351,22 +349,6 @@ theorem card_powerClasses_eq_of_index_unitFiltration_one {n c : ℕ} (hn : n ≠
       congrArg (· * c) (congrArg (n * ·) hproductKernel.symm)
     _ = n * Nat.card (rootsOfUnity n K) * c :=
       congrArg (· * c) (congrArg (n * ·) hker.symm)
-
-/-- A power-class count may be computed on any finite-index subgroup `W` of the principal units
-on which the `n`-th power map is injective. If that power map has index `c` in `W`, then
-`#(Kˣ/(Kˣ)ⁿ) = n · #μ_n(K) · c`.
-
-In mixed characteristic, `W` is supplied by a sufficiently deep unit-filtration step: the
-logarithm makes its power map injective and turns its index calculation into one on an additive
-lattice. -/
-theorem card_powerClasses_eq_of_finiteIndex_unitFiltration_one_subgroup {n c : ℕ} (hn : n ≠ 0)
-    (W : Subgroup (unitFiltration K 1)) [W.FiniteIndex]
-    (hinj : Function.Injective (powMonoidHom n : W →* W))
-    (hW : (powMonoidHom n : W →* W).range.index = c) :
-    Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) =
-      n * Nat.card (rootsOfUnity n K) * c := by
-  apply card_powerClasses_eq_of_index_unitFiltration_one hn
-  rw [Subgroup.index_range_powMonoidHom_eq_card_ker_mul_of_injective W n hinj, hW]
 
 /-- **The number of `n`-th power classes away from the residue characteristic.** For `n`
 invertible in `𝒪[K]`, the quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K)` elements, where `μ_n(K)` is the
