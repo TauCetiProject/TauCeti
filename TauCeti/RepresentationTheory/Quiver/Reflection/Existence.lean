@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Quiver.Acyclic.TitsForm
 public import TauCeti.RepresentationTheory.Quiver.Reflection.PositiveRoot
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Source.Composite
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Uniqueness
-public import Mathlib.Algebra.Category.ModuleCat.Ulift
 
 /-!
 # Every positive root is the dimension vector of an indecomposable representation
@@ -142,72 +141,8 @@ end Word
 section Existence
 
 open CategoryTheory
-open CategoryTheory.Limits
 
 variable (k : Type u) (Q : Type v) [Field k] [Fintype Q] [DecidableEq Q]
-
-omit [Fintype Q] [DecidableEq Q] in
-/-- Universe-lifting the vertex spaces of a vertex simple representation preserves its
-simplicity. -/
-theorem simple_simpleRep_comp_uliftFunctor [q : _root_.Quiver.{w} Q] (j : Q) :
-    Simple (simpleRep k Q j ⋙ ModuleCat.uliftFunctor.{max v w x, u} k) := by
-  classical
-  let S : QuiverRep.{u, v, w, max u v w x} k Q :=
-    simpleRep k Q j ⋙ ModuleCat.uliftFunctor.{max v w x, u} k
-  have hzero (a : Q) (ha : a ≠ j) : IsZero (S.obj ((Paths.of Q).obj a)) := by
-    -- `uliftFunctor` has no object rewrite lemma, so expose the object of the composite functor.
-    change IsZero
-      ((ModuleCat.uliftFunctor.{max v w x, u} k).obj ((simpleRep k Q j).obj a))
-    rw [simpleRep_obj_of_ne ha]
-    dsimp [ModuleCat.uliftFunctor]
-    apply ModuleCat.isZero_iff_subsingleton.2
-    constructor
-    intro p q
-    exact ULift.ext ((ModuleCat.subsingleton_of_isZero (isZero_zero _)).elim p.down q.down)
-  let hsimpleObj : Simple (S.obj ((Paths.of Q).obj j)) := by
-    -- As above, expose the object of the composite before rewriting the vertex-simple object.
-    change Simple
-      ((ModuleCat.uliftFunctor.{max v w x, u} k).obj ((simpleRep k Q j).obj j))
-    rw [simpleRep_obj_self]
-    -- The bundled `ModuleCat` object reduces definitionally to the lifted module carrier.
-    change Simple (ModuleCat.of k (ULift.{max v w x, u} k))
-    exact simple_iff_isSimpleModule.mpr
-      (ULift.moduleEquiv.isSimpleModule_iff.mpr inferInstance)
-  exact {
-    mono_isIso_iff_nonzero := by
-      intro M f hf
-      constructor
-      · intro _ h
-        have hzj : IsZero (S.obj ((Paths.of Q).obj j)) :=
-          (IsZero.of_epi_eq_zero f h).obj ((Paths.of Q).obj j)
-        exact Simple.not_isZero (S.obj ((Paths.of Q).obj j)) hzj
-      · intro h
-        rw [NatTrans.isIso_iff_isIso_app]
-        intro a
-        -- Objects of `Paths Q` are definitionally vertices; there is no conversion lemma to
-        -- rewrite.
-        change Q at a
-        change IsIso (f.app ((Paths.of Q).obj a))
-        rcases eq_or_ne a j with rfl | ha
-        · let _ : Simple (S.obj ((Paths.of Q).obj a)) := by simpa using hsimpleObj
-          exact isIso_of_mono_of_nonzero (by
-            intro hfzero
-            apply h
-            refine NatTrans.ext (funext fun b ↦ ?_)
-            -- Again convert the path-category object to its definitionally equal vertex.
-            change Q at b
-            rcases eq_or_ne b a with rfl | ha
-            · exact hfzero
-            · have hz := hzero b ha
-              -- After the conversion above, expose the same natural-transformation component.
-              change f.app b = 0
-              apply hz.eq_of_tgt)
-        · have ht := hzero a ha
-          have hs : IsZero (M.obj ((Paths.of Q).obj a)) :=
-            IsZero.of_mono (f.app ((Paths.of Q).obj a)) ht
-          let _ : IsIso (hs.iso ht).hom := by infer_instance
-          rw [hs.eq_of_src (f.app ((Paths.of Q).obj a)) (hs.iso ht).hom]
-          infer_instance }
 
 /-- **A nonnegative source-reflection word turns a vertex simple into an indecomposable with the
 prescribed dimension vector.** Starting from the vertex simple `Sⱼ` of `q₀` and reflecting along a
