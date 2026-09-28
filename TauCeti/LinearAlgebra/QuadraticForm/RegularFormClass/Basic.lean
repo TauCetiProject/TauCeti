@@ -242,7 +242,7 @@ theorem RegularFormPresentation.append_apply_natAdd (p q : RegularFormPresentati
   simp [RegularFormPresentation.append]
 
 /-- Appending presentations concatenates their weight tuples. -/
-theorem RegularFormPresentation.append_eq (p q : RegularFormPresentation K) :
+theorem RegularFormPresentation.append_def (p q : RegularFormPresentation K) :
     p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := by
   let hfst := RegularFormPresentation.fst_append p q
   have hw : (p.append q).2 ∘ Fin.cast hfst.symm = Fin.append p.2 q.2 := by

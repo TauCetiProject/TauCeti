@@ -174,7 +174,7 @@ theorem localHasseOfOdd_add_mk (h2 : IsUnit (2 : 𝒪[K]))
         localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) q) *
         hilbertSymbol (∏ i, p.2 i) (∏ j, q.2 j) := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
-  rw [mk_add_mk, RegularFormPresentation.append_eq,
+  rw [mk_add_mk, RegularFormPresentation.append_def,
     localHasseOfOdd_mk, localHasseOfOdd_mk, localHasseOfOdd_mk]
   exact prod_prod_Ioi_append_symbol hilbertSymbol hilbertSymbol_one_left
     hilbertSymbol_one_right (fun a b c => hilbertSymbol_mul_left h2 c a b)
