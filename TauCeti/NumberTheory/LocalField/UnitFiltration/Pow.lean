@@ -242,7 +242,9 @@ theorem map_powMonoidHom_unitFiltration_of_prime {p : ℕ} (hp : p.Prime) (hpK :
           ≤ P ⊔ unitFiltration K (i + e + k) := ih
         _ ≤ P ⊔ (P ⊔ unitFiltration K (i + e + (k + 1))) := by
           refine sup_le_sup_left ?_ _
-          rw [show i + e + k = i + k + e by omega, show i + e + (k + 1) = i + k + e + 1 by omega]
+          -- `hstep` is stated at depth `i + k + e`; reorder it to the depths `i + e + k` of `ih`.
+          rw [Nat.add_right_comm i k e] at hstep
+          rw [← add_assoc (i + e) k 1]
           exact hstep.trans (sup_le_sup_right hmono _)
         _ = P ⊔ unitFiltration K (i + e + (k + 1)) := by rw [← sup_assoc, sup_idem]
   -- Hence `U(K, i + e)` lies in `P · U(K,m)` for every `m`, so in the closure of `P`, which is `P`
