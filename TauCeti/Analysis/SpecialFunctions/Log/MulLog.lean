@@ -18,9 +18,9 @@ up a small amount of its value is bounded by that same tangent line.
 
 ## Main results
 
-* `TauCeti.Real.mul_log_sub_mul_log_ge`: for `0 < a` and `0 ≤ u`,
+* `Real.mul_log_sub_mul_log_ge`: for `0 < a` and `0 ≤ u`,
   `u * log u - a * log a ≥ (u - a) * (log a + 1)`.
-* `TauCeti.Real.sub_mul_log_le`: for `0 ≤ t` and `t ≤ x / 2`,
+* `Real.sub_mul_log_le`: for `0 ≤ t` and `t ≤ x / 2`,
   `(x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1)`.
 
 The first estimate is the tangent line at `a`, whose slope `log a + 1` is the derivative
@@ -36,7 +36,7 @@ hypotheses then force, so that a caller whose amount `t` may vanish needs no sep
 -/
 public section
 
-namespace TauCeti.Real
+namespace Real
 
 /-- The supporting line of the convex function `u ↦ u * log u` at a positive point `a` lies below
 the graph at every nonnegative `u`: with the slope `log a + 1` of `Real.deriv_mul_log`,
@@ -59,7 +59,7 @@ theorem mul_log_sub_mul_log_ge (a u : ℝ) (ha : 0 < a) (hu : 0 ≤ u) :
 
 /-- The loss of the function `u ↦ u * log u` at a value `x` that gives up an amount `t`, where
 `0 ≤ t` and `t ≤ x / 2`, is at most `-t * (log x - log 2 + 1)`: the supporting line
-`TauCeti.Real.mul_log_sub_mul_log_ge` at `x - t` bounds the loss by `-t * (log (x - t) + 1)`, and
+`Real.mul_log_sub_mul_log_ge` at `x - t` bounds the loss by `-t * (log (x - t) + 1)`, and
 `x - t ≥ x / 2` bounds `log (x - t)` from below by `log x - log 2`.
 
 The case `x = 0`, which the hypotheses force together with `t = 0` and which makes both sides
@@ -85,4 +85,4 @@ theorem sub_mul_log_le {x t : ℝ} (ht0 : 0 ≤ t) (htx : t ≤ x / 2) :
     subst ht
     simp
 
-end TauCeti.Real
+end Real

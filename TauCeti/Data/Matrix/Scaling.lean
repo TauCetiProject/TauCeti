@@ -374,37 +374,31 @@ private lemma subIndicator_mul_eq_zero (i i' : ι) (j j' : κ) (x : ι) (y : κ)
 theorem HasMarginals.add_vecMulVec_of_sum_eq_zero (a : ι → ℝ) (b : κ → ℝ) (P : Matrix ι κ ℝ)
     (hP : HasMarginals P a b) (r : ι → ℝ) (c : κ → ℝ) (hr : ∑ x, r x = 0)
     (hc : ∑ y, c y = 0) (t : ℝ) : HasMarginals (P + Matrix.vecMulVec (fun x => t * r x) c) a b := by
+  -- The row sums of a matrix are its product with the constant-one vector by `Matrix.mulVec`, and
+  -- its column sums the same product by `Matrix.vecMul`, so each half of the goal is the vanishing
+  -- of the corresponding product of the added outer product.
+  have hzero : Matrix.mulVec (Matrix.vecMulVec (fun x => t * r x) c) (fun _ => (1 : ℝ)) = 0 ∧
+      Matrix.vecMul (fun _ => (1 : ℝ)) (Matrix.vecMulVec (fun x => t * r x) c) = 0 := by
+    constructor
+    · rw [Matrix.vecMulVec_mulVec]
+      simp [dotProduct, hc]
+    · rw [Matrix.vecMul_vecMulVec]
+      simp [dotProduct, ← Finset.mul_sum, hr]
+  have hrow : Matrix.mulVec (P + Matrix.vecMulVec (fun x => t * r x) c) (fun _ => (1 : ℝ)) = a := by
+    rw [Matrix.add_mulVec, hzero.1, add_zero]
+    funext x
+    simpa only [Matrix.mulVec_apply_eq_sum, mul_one] using hP.1 x
+  have hcol : Matrix.vecMul (fun _ => (1 : ℝ)) (P + Matrix.vecMulVec (fun x => t * r x) c) = b := by
+    rw [Matrix.vecMul_add, hzero.2, add_zero]
+    funext y
+    simpa only [Matrix.vecMul_apply_eq_sum, one_mul] using hP.2 y
   constructor
   · intro x
-    have key : (∑ y, (Matrix.vecMulVec (fun x => t * r x) c) x y) = 0 := by
-      calc (∑ y, (Matrix.vecMulVec (fun x => t * r x) c) x y)
-          = ∑ y, t * r x * c y := by simp only [Matrix.vecMulVec_apply]
-      _ = ∑ y, t * (r x * c y) := by
-          apply Fintype.sum_congr
-          intro y
-          ring
-      _ = t * (r x * ∑ z, c z) := by rw [Finset.mul_sum, Finset.mul_sum]
-      _ = 0 := by rw [hc, mul_zero, mul_zero]
-    calc (∑ y, (P + Matrix.vecMulVec (fun x => t * r x) c) x y)
-        = (∑ y, P x y) + ∑ y, (Matrix.vecMulVec (fun x => t * r x) c) x y := by
-          simp only [Matrix.add_apply]
-          rw [Finset.sum_add_distrib]
-      _ = a x := by rw [key, add_zero, hP.1 x]
+    have h := congrFun hrow x
+    simpa only [Matrix.mulVec_apply_eq_sum, mul_one] using h
   · intro y
-    have key : (∑ x, (Matrix.vecMulVec (fun x => t * r x) c) x y) = 0 := by
-      calc (∑ x, (Matrix.vecMulVec (fun x => t * r x) c) x y)
-          = ∑ x, (t * r x) * c y := by simp only [Matrix.vecMulVec_apply]
-      _ = ∑ x, t * (r x * c y) := by
-          apply Fintype.sum_congr
-          intro x
-          ring
-      _ = t * ((∑ z, r z) * c y) := by rw [Finset.sum_mul, Finset.mul_sum]
-      _ = 0 := by rw [hr, zero_mul, mul_zero]
-    calc (∑ x, (P + Matrix.vecMulVec (fun x => t * r x) c) x y)
-        = (∑ x, P x y) + ∑ x, (Matrix.vecMulVec (fun x => t * r x) c) x y := by
-          simp only [Matrix.add_apply]
-          rw [Finset.sum_add_distrib]
-      _ = b y := by rw [key, add_zero, hP.2 y]
+    have h := congrFun hcol y
+    simpa only [Matrix.vecMul_apply_eq_sum, one_mul] using h
 
 omit [Fintype ι] [Fintype κ] in
 open scoped Classical in
@@ -687,11 +681,11 @@ theorem pos_of_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
   -- The supporting-line inequality bounds the loss at each of the two donor cells and the gain at
   -- the receiving cell.
   have hby : (y - t) * Real.log (y - t) - y * Real.log y
-      ≤ -t * (Real.log y - Real.log 2 + 1) := TauCeti.Real.sub_mul_log_le ht0.le hty
+      ≤ -t * (Real.log y - Real.log 2 + 1) := Real.sub_mul_log_le ht0.le hty
   have hbz : (z - t) * Real.log (z - t) - z * Real.log z
-      ≤ -t * (Real.log z - Real.log 2 + 1) := TauCeti.Real.sub_mul_log_le ht0.le htz
+      ≤ -t * (Real.log z - Real.log 2 + 1) := Real.sub_mul_log_le ht0.le htz
   have hbq : (q + t) * Real.log (q + t) - q * Real.log q ≤ t * (Real.log (q + 1) + 1) := by
-    have hle := TauCeti.Real.mul_log_sub_mul_log_ge (q + t) q hqt0 hq0
+    have hle := Real.mul_log_sub_mul_log_ge (q + t) q hqt0 hq0
     have h2 : Real.log (q + t) ≤ Real.log (q + 1) :=
       Real.strictMonoOn_log.monotoneOn hqt0 hqt1 (by linarith [ht1])
     have h3 := mul_le_mul_of_nonneg_left h2 ht0.le
