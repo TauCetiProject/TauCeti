@@ -34,10 +34,6 @@ noncomputable def hammingCode (C : LinearCode F ι) :
     Submodule F (Hamming (fun _ : ι ↦ F)) :=
   C.map (hammingLinearEquiv F ι).toLinearMap
 
-/-- The Hamming-space code is the image under the canonical linear equivalence. -/
-theorem hammingCode_def (C : LinearCode F ι) :
-    hammingCode C = C.map (hammingLinearEquiv F ι).toLinearMap := (rfl)
-
 /-- A Hamming-space word belongs to the transported code exactly when its underlying
 function belongs to the original code. -/
 @[simp]
@@ -50,14 +46,14 @@ theorem mem_hammingCode_iff (C : LinearCode F ι)
 theorem coe_hammingCode (C : LinearCode F ι) :
     (hammingCode C : Set (Hamming (fun _ : ι ↦ F))) =
       Hamming.toHamming '' (C : Set (ι → F)) := by
-  ext x
-  simp [mem_hammingCode_iff]
+  simp only [hammingCode, Submodule.map_coe, LinearEquiv.coe_coe,
+    hammingLinearEquiv_apply]
 
 /-- A code and its Hamming-space transport have the same dimension. -/
 @[simp]
 theorem finrank_hammingCode (C : LinearCode F ι) :
     Module.finrank F (hammingCode C) = Module.finrank F C := by
-  rw [hammingCode_def, LinearEquiv.finrank_map_eq]
+  rw [hammingCode, LinearEquiv.finrank_map_eq]
 
 /-- The minimum distance of a code is the metric infimum separation of its Hamming-space
 transport, including the zero and singleton codes. -/
