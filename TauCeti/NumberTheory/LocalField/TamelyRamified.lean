@@ -72,15 +72,15 @@ theorem IsTotallyRamified.exists_eq_algebraMap_mul_pow (h : IsTotallyRamified K 
   -- the quotient `y = u / a` is a principal unit, hence the `n`-th power of a principal unit
   set y : 𝒪[L]ˣ := u * ha.unit⁻¹ with hy
   have hy1 : Units.map (Subring.subtype 𝒪[L] : 𝒪[L] →* L) y ∈ unitFiltration L 1 := by
-    refine mem_unitFiltration_iff_exists.2 ⟨y, ?_, rfl⟩
-    rw [pow_one, ← residue_eq_zero_iff, map_sub, map_one, sub_eq_zero]
+    rw [mem_unitFiltration_one_iff_residue_eq_one]
     simp [hy, ← hc, (ha.map (residue 𝒪[L])).ne_zero]
   obtain ⟨⟨w, hw⟩, hwy⟩ := (powMonoidHom_unitFiltration_succ_bijective_of_isUnit hn 0).2 ⟨_, hy1⟩
-  obtain ⟨w', -, hw'⟩ := mem_unitFiltration_iff_exists.1 hw
+  let w' := unitFiltrationToIntegerUnits 1 ⟨w, hw⟩
   refine ⟨(isUnit_of_map_unit _ _ ha).unit, w', ?_⟩
   have hwy' : w' ^ n = y := by
-    ext
-    simpa [hw'] using congrArg Units.val (Subtype.ext_iff.1 hwy)
+    apply Units.map_injective (f := (Subring.subtype 𝒪[L] : 𝒪[L] →* L)) Subtype.coe_injective
+    rw [map_pow, unitsMap_subtype_unitFiltrationToIntegerUnits]
+    exact Subtype.ext_iff.1 hwy
   rw [← Units.val_pow_eq_pow_val, hwy', IsUnit.unit_spec, ← ha.unit_spec, ← Units.val_mul, hy,
     mul_comm, inv_mul_cancel_right]
 
