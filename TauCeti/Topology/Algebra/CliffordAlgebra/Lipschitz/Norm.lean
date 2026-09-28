@@ -40,12 +40,6 @@ theorem continuous_cliffordNorm : Continuous (cliffordNorm Q) := by
     convert ((continuous_reverse Q).comp hval).mul hval using 1
     funext x
     exact (reverse_mul_self_eq_algebraMap_cliffordNorm x).symm
-  apply Units.continuous_iff.mpr
-  refine ⟨hscalar, ?_⟩
-  have hinv : Continuous (fun x : lipschitzGroup Q => (cliffordNorm Q x⁻¹ : K)) :=
-    hscalar.comp continuous_inv
-  convert hinv using 1
-  funext x
-  exact congrArg Units.val (map_inv (cliffordNorm Q) x).symm
+  exact Continuous.of_coeHom_comp hscalar
 
 end CliffordAlgebra
