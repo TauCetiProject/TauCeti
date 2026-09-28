@@ -18,6 +18,8 @@ with `γ` at `x`.
 
 The universal-cover construction itself adapts Kim Morrison's work in
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292).
+The uniqueness proof uses Thomas Browning's `IsCoveringMap.eq_of_comp_eq` in
+`Mathlib.Topology.Covering.Basic`, recorded there as Proposition 1.34 of [hatcher02].
 -/
 
 public section
