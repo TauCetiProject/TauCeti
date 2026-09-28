@@ -85,26 +85,30 @@ private theorem closure_reflections_eq_top :
   have hr : squareRotation ∈ K := by
     have h : squareReflection⁻¹ * secondSquareReflection ∈ K := mul_mem (inv_mem hs) ht
     simpa [secondSquareReflection] using h
-  have hle : squareGroup ≤ K.map squareGroup.subtype := by
-    have hle' :
-        Subgroup.closure ({finRotate 4, swap (0 : Fin 4) 2} : Set (Perm (Fin 4))) ≤
-          K.map squareGroup.subtype := by
-      apply (Subgroup.closure_le _).2
-      intro g hg
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hg
-      rcases hg with rfl | rfl
-      · exact ⟨squareRotation, hr, rfl⟩
-      · exact ⟨squareReflection, hs, rfl⟩
-    simpa only [squareGroup, referenceSubgroup_four_two] using hle'
-  rw [Subgroup.eq_top_iff']
-  intro x
-  obtain ⟨y, hy, hxy⟩ := hle x.property
-  have : y = x := Subtype.ext hxy
-  simpa [this] using hy
+  have hle :
+      Subgroup.closure (((↑) : squareGroup → Perm (Fin 4)) ⁻¹'
+        ({finRotate 4, swap 0 2} : Set (Perm (Fin 4)))) ≤ K := by
+    apply (Subgroup.closure_le _).2
+    intro g hg
+    simp only [Set.mem_preimage, Set.mem_insert_iff, Set.mem_singleton_iff] at hg
+    rcases hg with h | h
+    · have heq : g = squareRotation := Subtype.ext h
+      simpa [heq] using hr
+    · have heq : g = squareReflection := Subtype.ext h
+      simpa [heq] using hs
+  have htop :
+      Subgroup.closure (((↑) : squareGroup → Perm (Fin 4)) ⁻¹'
+        ({finRotate 4, swap 0 2} : Set (Perm (Fin 4)))) = ⊤ := by
+    have h : squareGroup =
+        Subgroup.closure ({finRotate 4, swap 0 2} : Set (Perm (Fin 4))) := by
+      simpa only [squareGroup] using referenceSubgroup_four_two
+    rw [h]
+    exact Subgroup.closure_closure_coe_preimage
+  exact eq_top_iff.mpr (by simpa only [htop] using hle)
 
 /-- The `4T3` reference subgroup is the dihedral group of the square. Its rotation `r 1`
 corresponds to `finRotate 4`, and its reflection `sr 0` to `swap 0 2`. -/
-noncomputable def dihedralFourMulEquivReferenceSubgroup :
+noncomputable def dihedralGroupFourMulEquivReferenceSubgroup :
     DihedralGroup 4 ≃* referenceSubgroup 4 ⟨2, by simp⟩ :=
   dihedralGroupMulEquiv squareReflection_sq secondSquareReflection_sq
     squareReflection_ne_one secondSquareReflection_ne_one orderOf_reflections_mul
@@ -112,10 +116,10 @@ noncomputable def dihedralFourMulEquivReferenceSubgroup :
 
 /-- The generator of the dihedral rotation subgroup acts as the four-cycle of the square. -/
 @[simp]
-theorem coe_dihedralFourMulEquivReferenceSubgroup_r_one :
-    (dihedralFourMulEquivReferenceSubgroup (DihedralGroup.r 1) : Perm (Fin 4)) =
+theorem coe_dihedralGroupFourMulEquivReferenceSubgroup_r_one :
+    (dihedralGroupFourMulEquivReferenceSubgroup (DihedralGroup.r 1) : Perm (Fin 4)) =
       finRotate 4 := by
-  rw [dihedralFourMulEquivReferenceSubgroup, dihedralGroupMulEquiv_apply, dihedralHom_r]
+  rw [dihedralGroupFourMulEquivReferenceSubgroup, dihedralGroupMulEquiv_apply, dihedralHom_r]
   have hcast : (ZMod.cast (1 : ZMod 4) : ℤ) = 1 := by decide
   rw [hcast, zpow_one]
   have heq : squareReflection * secondSquareReflection = squareRotation := by
@@ -124,16 +128,16 @@ theorem coe_dihedralFourMulEquivReferenceSubgroup_r_one :
 
 /-- The distinguished dihedral reflection swaps opposite vertices `0` and `2`. -/
 @[simp]
-theorem coe_dihedralFourMulEquivReferenceSubgroup_sr_zero :
-    (dihedralFourMulEquivReferenceSubgroup (DihedralGroup.sr 0) : Perm (Fin 4)) =
+theorem coe_dihedralGroupFourMulEquivReferenceSubgroup_sr_zero :
+    (dihedralGroupFourMulEquivReferenceSubgroup (DihedralGroup.sr 0) : Perm (Fin 4)) =
       swap 0 2 := by
-  rw [dihedralFourMulEquivReferenceSubgroup, dihedralGroupMulEquiv_apply, dihedralHom_sr]
+  rw [dihedralGroupFourMulEquivReferenceSubgroup, dihedralGroupMulEquiv_apply, dihedralHom_sr]
   simp
   rfl
 
 /-- The two-by-two cyclic wreath product is dihedral of order eight. The isomorphism uses a
 conjugation of its faithful four-point action onto the `4T3` reference subgroup. -/
-noncomputable def wreathTwoMulEquivDihedralFour :
+noncomputable def wreathTwoMulEquivDihedralGroupFour :
     WreathProduct (Multiplicative (ZMod 2)) (Fin 2) ≃* DihedralGroup 4 := by
   have hlabel := (transitiveGroupLabel_iff _ _).mp transitiveGroupLabel_wreathTwoToPermFour
   let τ := Classical.choose hlabel
@@ -144,6 +148,6 @@ noncomputable def wreathTwoMulEquivDihedralFour :
   let e₂ : wreathTwoToPermFour.range ≃* squareGroup :=
     ((MulAut.conj τ).subgroupMap wreathTwoToPermFour.range).trans
       (MulEquiv.subgroupCongr hτ)
-  exact (e₁.trans e₂).trans dihedralFourMulEquivReferenceSubgroup.symm
+  exact (e₁.trans e₂).trans dihedralGroupFourMulEquivReferenceSubgroup.symm
 
 end TauCeti
