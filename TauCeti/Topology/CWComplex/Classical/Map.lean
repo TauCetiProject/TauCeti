@@ -57,7 +57,6 @@ variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
   TopCat.ofHom ⟨fun x ↦ ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1,
     hf n x.2⟩, by fun_prop⟩
 
-@[simp]
 lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
     (skeletonMap C C' hf n x).1 =
       (f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1 := (rfl)
