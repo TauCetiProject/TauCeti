@@ -82,9 +82,9 @@ universe u v w
 
 namespace HopfIdeal
 
-section Coinvariants
+section Basic
 
-variable {R : Type u} {H : Type v} [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable {R : Type u} {H : Type v} [CommSemiring R] [CommRing H] [HopfAlgebra R H]
 
 /-- The **coinvariants** of a Hopf ideal `I`: the elements `h` with `(id ⊗ π) (Δ h) = h ⊗ 1`,
 where `π : H → H ⧸ I` is the quotient map. Geometrically these are the functions on the affine
@@ -104,14 +104,6 @@ theorem mem_coinvariants_iff :
       Algebra.TensorProduct.map (AlgHom.id R H) (Ideal.Quotient.mkₐ R I.toIdeal)
           (Coalgebra.comul (R := R) h) = h ⊗ₜ[R] (1 : H ⧸ I.toIdeal) :=
   AlgHom.mem_equalizer _ _ h
-
-/-- Membership in the coinvariants: `Δ h - h ⊗ 1` lies in `H ⊗ I`. -/
-theorem mem_coinvariants_iff_comul_sub_mem_rightTensorIdeal :
-    h ∈ I.coinvariants ↔
-      Coalgebra.comul (R := R) h - h ⊗ₜ[R] (1 : H) ∈
-        rightTensorIdeal (R := R) (H := H) I.toIdeal := by
-  rw [← ker_tensorProduct_map_id_quotient, RingHom.mem_ker, mem_coinvariants_iff]
-  simp [sub_eq_zero]
 
 /-- A coinvariant is congruent modulo `I` to the scalar given by its counit: the functions
 invariant under the subgroup cut out by `I` are constant on that subgroup. -/
@@ -137,13 +129,6 @@ theorem mk_eq_algebraMap_counit_of_mem_coinvariants (hh : h ∈ I.coinvariants) 
     simp [e, Algebra.smul_def]
   rw [← hlhs, mem_coinvariants_iff.mp hh, hrhs]
 
-/-- A coinvariant minus its counit lies in the Hopf ideal: the augmentation ideal of the
-coinvariants is contained in `I`. -/
-theorem sub_algebraMap_counit_mem_of_mem_coinvariants (hh : h ∈ I.coinvariants) :
-    h - algebraMap R H (Coalgebra.counit (R := R) h) ∈ I := by
-  rw [← mem_toIdeal, ← Ideal.Quotient.eq, mk_eq_algebraMap_counit_of_mem_coinvariants hh,
-    Ideal.Quotient.mk_algebraMap]
-
 /-- Enlarging the Hopf ideal shrinks the subgroup it cuts out, so enlarges the coinvariants. -/
 theorem coinvariants_mono {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     I.coinvariants ≤ J.coinvariants := by
@@ -156,6 +141,28 @@ theorem coinvariants_mono {I J : HopfIdeal R H} (hIJ : I ≤ J) :
   rw [AlgHom.id_comp, Ideal.Quotient.factorₐ_comp_mk, AlgHom.comp_apply] at hcomp
   rw [mem_coinvariants_iff, hcomp, hfactor, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
     map_one]
+
+end Basic
+
+section Ring
+
+variable {R : Type u} {H : Type v} [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable {I : HopfIdeal R H} {h : H}
+
+/-- Membership in the coinvariants: `Δ h - h ⊗ 1` lies in `H ⊗ I`. -/
+theorem mem_coinvariants_iff_comul_sub_mem_rightTensorIdeal :
+    h ∈ I.coinvariants ↔
+      Coalgebra.comul (R := R) h - h ⊗ₜ[R] (1 : H) ∈
+        rightTensorIdeal (R := R) (H := H) I.toIdeal := by
+  rw [← ker_tensorProduct_map_id_quotient, RingHom.mem_ker, mem_coinvariants_iff]
+  simp [sub_eq_zero]
+
+/-- A coinvariant minus its counit lies in the Hopf ideal: the augmentation ideal of the
+coinvariants is contained in `I`. -/
+theorem sub_algebraMap_counit_mem_of_mem_coinvariants (hh : h ∈ I.coinvariants) :
+    h - algebraMap R H (Coalgebra.counit (R := R) h) ∈ I := by
+  rw [← mem_toIdeal, ← Ideal.Quotient.eq, mk_eq_algebraMap_counit_of_mem_coinvariants hh,
+    Ideal.Quotient.mk_algebraMap]
 
 /-- The zero Hopf ideal cuts out the whole group, whose right-invariant functions are the
 constants. -/
@@ -211,7 +218,7 @@ theorem comul_mem_range_lTensor_of_mem_coinvariants [Module.Flat R H] (hh : h �
   rw [hB]
   exact ⟨y, by rw [← hy, TensorProduct.AlgebraTensorModule.coe_lTensor]⟩
 
-end Coinvariants
+end Ring
 
 section Points
 
