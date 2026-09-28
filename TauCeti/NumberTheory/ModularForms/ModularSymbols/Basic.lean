@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 public import Mathlib.NumberTheory.ModularForms.Cusps
 public import Mathlib.RepresentationTheory.Coinvariants
-public import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial
+public import TauCeti.NumberTheory.ModularForms.BinaryForms
 public import TauCeti.RepresentationTheory.Augmentation
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 
@@ -75,13 +75,17 @@ namespace TauCeti
 
 namespace ModularSymbols
 
-variable (R : Type*) [CommRing R]
+variable (R : Type*)
 
 local notation "Div₀" =>
   Subrepresentation.toSubmodule
     (augmentationSubrepresentation R (GL (Fin 2) ℚ) (OnePoint ℚ))
 
 /-! ### Divisors on the cusps -/
+
+section Semiring
+
+variable [Semiring R]
 
 /-- The permutation representation of `SL(2, ℤ)` on the `R`-divisors `R[ℙ¹(ℚ)]` on the cusps
 `ℙ¹(ℚ) = OnePoint ℚ`, through the Möbius action of `GL(2, ℚ)`. -/
@@ -106,6 +110,12 @@ noncomputable def degreeZeroRep : Representation R SL(2, ℤ) Div₀ :=
 theorem coe_degreeZeroRep_apply (g : SL(2, ℤ)) (D : Div₀) :
     (degreeZeroRep R g D : R[OnePoint ℚ]) = divisorRep R g D := by
   rfl
+
+end Semiring
+
+section Ring
+
+variable {R} [Ring R]
 
 /-- The span of the unimodular symbols `[g∞] - [g0]` is `SL(2, ℤ)`-stable. -/
 private theorem divisorRep_mem_span_unimodular (g : SL(2, ℤ)) {D : R[OnePoint ℚ]}
@@ -167,7 +177,11 @@ theorem span_degreeZeroRep_eq_top :
   ext g
   simp
 
+end Ring
+
 /-! ### Binary forms as a left representation -/
+
+variable {R} [CommRing R]
 
 variable (R) in
 /-- The left action `P ↦ P ∣ γ⁻¹` of `SL(2, ℤ)` on binary forms of degree `w`, obtained from the
@@ -236,6 +250,7 @@ noncomputable def symbol (α β : OnePoint ℚ) :
   Coinvariants.mk _ ∘ₗ TensorProduct.mk R _ _
     ⟨_, single_sub_single_mem_augmentationSubrepresentation α β⟩
 
+@[simp]
 theorem symbol_apply (α β : OnePoint ℚ) (P : homogeneousSubmodule (Fin 2) R w) :
     symbol Γ α β P =
       Coinvariants.mk _
@@ -252,6 +267,7 @@ theorem symbol_self (α : OnePoint ℚ) :
   rw [symbol_apply, h, zero_tmul, map_zero, LinearMap.zero_apply]
 
 /-- Modular symbols are additive in the pair of cusps: `{α, β} + {β, γ} = {α, γ}`. -/
+@[simp]
 theorem symbol_add_symbol (α β γ : OnePoint ℚ) :
     symbol Γ α β + symbol Γ β γ =
       (symbol Γ α γ : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
