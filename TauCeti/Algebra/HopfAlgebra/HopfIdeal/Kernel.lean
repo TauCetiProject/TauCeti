@@ -304,16 +304,17 @@ noncomputable def kerLiftBialgEquiv (f : H →ₐc[R] K) (hf : Function.Surjecti
 @[simp]
 theorem kerLiftBialgEquiv_apply (f : H →ₐc[R] K) (hf : Function.Surjective f)
     (q : H ⧸ (kerOfSurjective f hf).toIdeal) :
-    kerLiftBialgEquiv f hf q = kerLiftBialgHom f hf q :=
-  (rfl)
+    kerLiftBialgEquiv f hf q = kerLiftBialgHom f hf q := by
+  rw [kerLiftBialgEquiv, BialgEquiv.ofBijective_apply]
 
 /-- The bialgebra morphism underlying the kernel quotient equivalence is the kernel quotient
 lift. -/
 @[simp]
 theorem kerLiftBialgEquiv_toBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     (kerLiftBialgEquiv f hf : H ⧸ (kerOfSurjective f hf).toIdeal →ₐc[R] K) =
-      kerLiftBialgHom f hf :=
-  (rfl)
+      kerLiftBialgHom f hf := by
+  ext q
+  exact kerLiftBialgEquiv_apply f hf q
 
 /-- The quotient by the Hopf-ideal kernel of a surjective morphism is reduced when the codomain
 is. -/
