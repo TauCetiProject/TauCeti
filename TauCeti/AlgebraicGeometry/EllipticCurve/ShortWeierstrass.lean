@@ -180,13 +180,14 @@ integrality there. -/
 def ofCInvariants (c₄ c₆ : K) : WeierstrassCurve K :=
   shortCurve (-c₄ / 48) (-c₆ / 864)
 
+/-- The canonical equation of a pair of `c`-invariants, unfolded to its `shortCurve` spelling.
+This is the bridge to the `shortCurve` API and, through it, to the `IsShortNF` instance: no such
+instance is registered for `ofCInvariants` itself, because it would put Mathlib's `@[simp]` lemma
+`c₄_of_isCharNeTwoNF` in competition with `ofCInvariants_c₄` below, and `simp` would expand
+`(ofCInvariants c₄ c₆).c₄` back into coefficients instead of returning `c₄`. Rewriting with this
+lemma hands the instance over on demand. -/
 lemma ofCInvariants_eq_shortCurve (c₄ c₆ : K) :
     ofCInvariants c₄ c₆ = shortCurve (-c₄ / 48) (-c₆ / 864) := (rfl)
-
--- No `IsShortNF` instance is registered for `ofCInvariants`: it would put Mathlib's `@[simp]`
--- lemma `c₄_of_isCharNeTwoNF` in competition with `ofCInvariants_c₄` below, and `simp` would
--- expand `(ofCInvariants c₄ c₆).c₄` back into coefficients instead of returning `c₄`.
--- `ofCInvariants_eq_shortCurve` hands the instance over on demand.
 
 @[simp] lemma ofCInvariants_a₁ (c₄ c₆ : K) : (ofCInvariants c₄ c₆).a₁ = 0 := (rfl)
 
