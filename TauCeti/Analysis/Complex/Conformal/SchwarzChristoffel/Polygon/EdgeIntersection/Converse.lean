@@ -74,7 +74,7 @@ theorem schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_inject
 
 /-- A bounded Schwarz--Christoffel side can meet the left closing side only
 at the first finite vertex when the compactified boundary is injective. -/
-theorem schwarzChristoffelPolygon_bounded_leftClosing_eq_first_vertex_of_injective
+theorem schwarzChristoffelPolygon_bounded_edgeSet_last_eq_first_vertex_of_injective
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l)
     (hinfty : ∑ k, e k < -1)
@@ -112,7 +112,7 @@ theorem schwarzChristoffelPolygon_bounded_leftClosing_eq_first_vertex_of_injecti
 
 /-- A bounded Schwarz--Christoffel side can meet the right closing side only
 at the last finite vertex when the compactified boundary is injective. -/
-theorem schwarzChristoffelPolygon_bounded_rightClosing_eq_last_vertex_of_injective
+theorem schwarzChristoffelPolygon_bounded_edgeSet_last_prevertex_eq_last_vertex_of_injective
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l)
     (hinfty : ∑ k, e k < -1)
@@ -179,11 +179,11 @@ theorem schwarzChristoffelCompactifiedBoundary_injective_iff_edge_intersections
         a e z₀ ha hfinite hB
         i j hij z hzi hzj,
       fun i z hzi hzleft =>
-        schwarzChristoffelPolygon_bounded_leftClosing_eq_first_vertex_of_injective
+        schwarzChristoffelPolygon_bounded_edgeSet_last_eq_first_vertex_of_injective
           a e z₀ ha hfinite
           hinfty hinj i z hzi hzleft,
       fun i z hzi hzright =>
-        schwarzChristoffelPolygon_bounded_rightClosing_eq_last_vertex_of_injective
+        schwarzChristoffelPolygon_bounded_edgeSet_last_prevertex_eq_last_vertex_of_injective
           a e z₀ ha hfinite
           hinfty hinj i z hzi hzright⟩
   · rintro ⟨hbounded, hleft, hright⟩
