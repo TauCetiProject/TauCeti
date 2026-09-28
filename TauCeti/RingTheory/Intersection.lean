@@ -63,8 +63,8 @@ In the namespace `TauCeti`:
 * `length_quotient_span_pair_eq_zero_iff`: that length vanishes exactly when the two equations
   generate the unit ideal, `Ideal.span {f, g} = ⊤`;
 * `length_quotient_span_pair_eq_zero_iff_isUnit`: the same vanishing read on the first curve, where
-  it says that the second equation is a unit there, that is, that the point does not lie on the
-  second curve;
+  it says that the second equation is a unit there, that is, that the two zero loci have no common
+  point, and in a local ring with `f ∈ 𝔪` that the closed point does not lie on the curve `g = 0`;
 * `one_le_length_quotient_span_pair`: in a local ring, the length of the quotient by two equations
   through the closed point is positive;
 * `exists_nat_length_quotient_span_pair`: in a noetherian local ring, two equations generating an
@@ -223,10 +223,10 @@ smooth first curves: a reducible
 first equation, `f = x * y` for a node or a tangent pair of lines, is precisely the case left out
 here. The curve itself, `k[[x, y]] ⧸ (x * y)`, is a one-dimensional ring of infinite length, and
 what is finite is the proper-intersection quotient by `x * y` and a second equation through the
-closed point, by `TauCeti.exists_nat_length_quotient_span_pair`. That finite number is not the
-order of vanishing of a single equation on a domain, which is infinite there, so a proof of
-additivity over the components of such a curve through this route would need a theory of the
-associated primes of a module of infinite length, which this file does not have. -/
+closed point, by `TauCeti.exists_nat_length_quotient_span_pair`. The hypothesis of this theorem
+is not met there, `k[[x, y]] ⧸ (x * y)` being not a domain, so additivity over the components of
+such a curve is not reached by this route: it would need a theory of the associated primes of a
+module of infinite length, which this file does not have. -/
 theorem length_quotient_span_pair_mul_eq_add {f g h : R} (hfprime : (Ideal.span {f}).IsPrime)
     (hh : h ∉ Ideal.span {f}) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
