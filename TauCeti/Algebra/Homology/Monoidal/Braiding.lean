@@ -336,7 +336,8 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
   simp only [HomologicalComplex.id_f, CategoryTheory.Functor.map_id, Category.id_comp]
   simp only [curriedTensor_map_app]
   rw [← MonoidalCategory.comp_whiskerRight_assoc, ι_koszulBraidingHom, koszulBraidingSummand,
-    Units.smul_def, zsmul_whiskerRight, ← Units.smul_def, MonoidalCategory.comp_whiskerRight,
+    Units.smul_def, ← tensorHom_id, zsmul_tensorHom, tensorHom_id, ← Units.smul_def,
+    MonoidalCategory.comp_whiskerRight,
     Linear.units_smul_comp, Category.assoc,
     HomologicalComplex.ι_ι_associator_hom_assoc,
     HomologicalComplex.whiskerLeft_eq_mapBifunctorMap, HomologicalComplex.ι_mapBifunctorMap]
@@ -344,7 +345,8 @@ private lemma ι₁₂_hexagon_forward_rhs (p q r j : ℤ)
     Category.id_comp]
   simp only [curriedTensor_obj_map]
   rw [← MonoidalCategory.whiskerLeft_comp_assoc, ι_koszulBraidingHom, koszulBraidingSummand,
-    Units.smul_def (p * r).negOnePow, whiskerLeft_zsmul, ← Units.smul_def,
+    Units.smul_def (p * r).negOnePow, ← id_tensorHom, tensorHom_zsmul, id_tensorHom,
+    ← Units.smul_def,
     MonoidalCategory.whiskerLeft_comp,
     Linear.units_smul_comp, Category.assoc,
     ← ι₂₃_eq R Y Z X q r p (p + r) j (by omega) (by omega),
