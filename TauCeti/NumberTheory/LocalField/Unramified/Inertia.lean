@@ -11,21 +11,21 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 /-!
 # The inertia subgroup of the absolute Galois group of a local field
 
-Let `K` be a nonarchimedean local field with residue field of cardinality `q`, let `K̄` be its
-algebraic closure, and let `G_K = Field.absoluteGaloisGroup K = Gal(K̄/K)`. This file defines the
-**inertia subgroup**
+Let `K` be a nonarchimedean local field with residue field of cardinality `q`, let `K^{alg}` be
+its algebraic closure, and let `G_K = Field.absoluteGaloisGroup K = Gal(K^{alg}/K)`. This file
+defines the **inertia subgroup**
 
 `TauCeti.inertiaSubgroup K ≤ G_K`,
 
-the automorphisms of `K̄` fixing the maximal unramified extension `K^{ur}` of `K` inside `K̄`, so
-that `IntermediateField.fixingSubgroupEquiv` identifies it with `Gal(K̄/K^{ur})`. It is a closed
-normal subgroup, and it sits in the exact sequence
+the automorphisms of `K^{alg}` fixing the maximal unramified extension `K^{ur}` of `K` inside
+`K^{alg}`, so that `IntermediateField.fixingSubgroupEquiv` identifies it with `Gal(K^{alg}/K^{ur})`.
+It is a closed normal subgroup, and it sits in the exact sequence
 
 `1 → I_K → G_K → Gal(K^{ur}/K) → 1`
 
 given by restriction `TauCeti.restrictMaximalUnramifiedHom K`, which is surjective with kernel
 `I_K`; the unramified quotient `G_K ⧸ I_K` is identified with `Gal(K^{ur}/K)` as a topological
-group. A finite separable subextension of `K̄/K` is unramified exactly when inertia fixes it.
+group. A finite separable subextension of `K^{alg}/K` is unramified exactly when inertia fixes it.
 
 An **arithmetic Frobenius lift** is an element of `G_K` restricting to the arithmetic Frobenius
 `TauCeti.maximalUnramifiedFrobenius` of `K^{ur}/K`; equivalently, it raises every root of every
@@ -75,7 +75,7 @@ variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchi
 
 /-- **The inertia subgroup** `I_K` of the absolute Galois group of a nonarchimedean local field `K`:
 the automorphisms of the algebraic closure fixing the maximal unramified extension `K^{ur}`. Through
-`IntermediateField.fixingSubgroupEquiv` it is `Gal(K̄/K^{ur})`. -/
+`IntermediateField.fixingSubgroupEquiv` it is `Gal(K^{alg}/K^{ur})`. -/
 def inertiaSubgroup : Subgroup (Field.absoluteGaloisGroup K) :=
   (maximalUnramifiedExtension K (AlgebraicClosure K)).fixingSubgroup
 
@@ -96,9 +96,9 @@ theorem mem_inertiaSubgroup_iff {σ : Field.absoluteGaloisGroup K} :
   mem_fixingSubgroup_iff _ _
 
 variable {K} in
-/-- **Inertia, through the roots of `X^{q^f} − X`.** An automorphism of `K̄` lies in the inertia
-subgroup exactly when it fixes every root of every polynomial `X^{q^f} − X` with `f ≠ 0`, where `q`
-is the cardinality of the residue field of `K`. -/
+/-- **Inertia, through the roots of `X^{q^f} − X`.** An automorphism of `K^{alg}` lies in the
+inertia subgroup exactly when it fixes every root of every polynomial `X^{q^f} − X` with `f ≠ 0`,
+where `q` is the cardinality of the residue field of `K`. -/
 theorem mem_inertiaSubgroup_iff_pow_natCard_pow_eq_self {σ : Field.absoluteGaloisGroup K} :
     σ ∈ inertiaSubgroup K ↔
       ∀ (x : AlgebraicClosure K) (f : ℕ), f ≠ 0 → x ^ Nat.card 𝓀[K] ^ f = x →
@@ -122,9 +122,9 @@ instance inertiaSubgroup_normal : (inertiaSubgroup K).Normal :=
 
 /-! ### The exact sequence `1 → I_K → G_K → Gal(K^{ur}/K) → 1` -/
 
-/-- Restriction of automorphisms of `K̄` to the maximal unramified extension, as a homomorphism
+/-- Restriction of automorphisms of `K^{alg}` to the maximal unramified extension, as a homomorphism
 `G_K →* Gal(K^{ur}/K)`. It is `AlgEquiv.restrictNormalHom`, typed at `Field.absoluteGaloisGroup K`,
-whose group structure is not reducibly that of `Gal(K̄/K)`. -/
+whose group structure is not reducibly that of `Gal(K^{alg}/K)`. -/
 def restrictMaximalUnramifiedHom :
     Field.absoluteGaloisGroup K →* Gal(maximalUnramifiedExtension K (AlgebraicClosure K)/K) :=
   AlgEquiv.restrictNormalHom _
@@ -142,7 +142,8 @@ theorem restrictMaximalUnramifiedHom_apply_coe (σ : Field.absoluteGaloisGroup K
 theorem continuous_restrictMaximalUnramifiedHom : Continuous (restrictMaximalUnramifiedHom K) :=
   InfiniteGalois.restrictNormalHom_continuous _
 
-/-- **Restriction to `K^{ur}` is surjective**: every automorphism of `K^{ur}/K` extends to `K̄`. -/
+/-- **Restriction to `K^{ur}` is surjective**: every automorphism of `K^{ur}/K` extends to
+`K^{alg}`. -/
 theorem restrictMaximalUnramifiedHom_surjective :
     Function.Surjective (restrictMaximalUnramifiedHom K) :=
   AlgEquiv.restrictNormalHom_surjective _
@@ -173,8 +174,8 @@ theorem quotientInertiaSubgroupEquiv_mk (σ : Field.absoluteGaloisGroup K) :
 
 variable {K} in
 /-- **Unramified subextensions are those fixed by inertia.** A finite separable subextension `E` of
-`K̄/K`, with a structure of nonarchimedean local field compatible with `K`, is unramified over `K`
-exactly when every element of the inertia subgroup fixes it.
+`K^{alg}/K`, with a structure of nonarchimedean local field compatible with `K`, is unramified over
+`K` exactly when every element of the inertia subgroup fixes it.
 
 Separability cannot be dropped: in positive characteristic a purely inseparable extension of `K`
 is fixed by all of `G_K`, but it is ramified. -/
@@ -198,7 +199,8 @@ theorem inertiaSubgroup_le_fixingSubgroup_iff (E : IntermediateField K (Algebrai
 /-- An **arithmetic Frobenius lift** is an element of the absolute Galois group of `K` whose
 restriction to the maximal unramified extension is its arithmetic Frobenius
 `TauCeti.maximalUnramifiedFrobenius`. By `TauCeti.isArithFrobeniusLift_iff` these are the
-automorphisms of `K̄` raising every root of every `X^{q^f} − X`, `f ≠ 0`, to the `q`-th power. -/
+automorphisms of `K^{alg}` raising every root of every `X^{q^f} − X`, `f ≠ 0`, to the `q`-th
+power. -/
 def IsArithFrobeniusLift (σ : Field.absoluteGaloisGroup K) : Prop :=
   restrictMaximalUnramifiedHom K σ = maximalUnramifiedFrobenius K (AlgebraicClosure K)
 
@@ -211,7 +213,7 @@ theorem isArithFrobeniusLift_def {σ : Field.absoluteGaloisGroup K} :
       restrictMaximalUnramifiedHom K σ = maximalUnramifiedFrobenius K (AlgebraicClosure K) :=
   Iff.rfl
 
-/-- **Frobenius lifts, through the roots of `X^{q^f} − X`.** An automorphism of `K̄` is an
+/-- **Frobenius lifts, through the roots of `X^{q^f} − X`.** An automorphism of `K^{alg}` is an
 arithmetic Frobenius lift exactly when it raises every root of every polynomial `X^{q^f} − X` with
 `f ≠ 0` to the `q`-th power, where `q` is the cardinality of the residue field of `K`. -/
 theorem isArithFrobeniusLift_iff {σ : Field.absoluteGaloisGroup K} :
