@@ -1,0 +1,113 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective
+public import TauCeti.AlgebraicGeometry.CartierDivisor.WeilComparison
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
+
+/-!
+# Effectivity under the Weil–Cartier correspondence
+
+On a regular integral curve, the Cartier divisor associated with a Weil divisor is effective
+exactly when the Weil divisor has nonnegative coefficients. The comparison is expressed using the
+common sheaf of rational sections: effectivity says that the constant rational section `1` belongs
+to `𝒪_X(D)`.
+
+The result identifies the effective submonoids of Weil and Cartier divisors. It allows effective
+divisors used in linear systems and Abel maps to be viewed as effective Cartier divisors.
+
+The comparison uses `Scheme.CartierDivisor.isEffective_iff_one_mem_sections` and
+`Scheme.CartierDivisor.sections_eq_toWeilDivisor`; the effective monoid equivalence is the
+restriction of `SchemeWeilDivisor.equivCartierDivisor`.
+
+## References
+
+* R. Hartshorne, *Algebraic Geometry*, II.6.11.
+* The Stacks Project, *Divisors*, Tag 0BE9.
+-/
+
+public section
+
+open AlgebraicGeometry CategoryTheory Order
+
+namespace TauCeti
+
+namespace AlgebraicGeometry
+
+universe u
+
+noncomputable section
+
+namespace Scheme.CartierDivisor
+
+variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+  [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+
+/-- A Cartier divisor on a regular integral curve is effective if and only if every coefficient
+of its associated Weil divisor is nonnegative. -/
+theorem isEffective_iff_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
+    (D : CartierDivisor X) :
+    D.IsEffective ↔ WeilDivisor.IsEffective D.toWeilDivisor := by
+  rw [isEffective_iff_one_mem_sections,
+    SchemeWeilDivisor.isEffective_iff_one_mem_sections,
+    sections_eq_toWeilDivisor hX]
+
+end Scheme.CartierDivisor
+
+namespace SchemeWeilDivisor
+
+variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+  [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+
+/-- The Weil–Cartier equivalence preserves effectivity. -/
+theorem isEffective_iff_equivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1)
+    (D : SchemeWeilDivisor X) :
+    WeilDivisor.IsEffective D ↔
+      (equivCartierDivisor hX D).IsEffective := by
+  rw [Scheme.CartierDivisor.isEffective_iff_toWeilDivisor hX]
+  have h : (equivCartierDivisor hX D).toWeilDivisor = D := by
+    rw [← equivCartierDivisor_symm_apply hX (equivCartierDivisor hX D)]
+    exact (equivCartierDivisor hX).left_inv D
+  rw [h]
+
+/-- The Weil–Cartier equivalence restricts to an additive equivalence of effective divisors. -/
+def effectiveEquivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1) :
+    WeilDivisor.effectiveSubmonoid (CodimensionOnePoint X) ≃+
+      Scheme.CartierDivisor.effectiveSubmonoid X :=
+  (equivCartierDivisor hX).addSubmonoidMap
+      (WeilDivisor.effectiveSubmonoid (CodimensionOnePoint X)) |>.trans
+    (AddEquiv.addSubmonoidCongr (by
+      ext E
+      constructor
+      · rintro ⟨D, hD, rfl⟩
+        exact (Scheme.CartierDivisor.mem_effectiveSubmonoid _).mpr
+          ((isEffective_iff_equivCartierDivisor hX D).mp
+            ((WeilDivisor.mem_effectiveSubmonoid _).mp hD))
+      · intro hE
+        refine ⟨(equivCartierDivisor hX).symm E, ?_, ?_⟩
+        · exact (WeilDivisor.mem_effectiveSubmonoid _).mpr
+            ((isEffective_iff_equivCartierDivisor hX _).mpr (by
+              simpa only [AddEquiv.apply_symm_apply] using
+                (Scheme.CartierDivisor.mem_effectiveSubmonoid _).mp hE))
+        · exact (equivCartierDivisor hX).apply_symm_apply E))
+
+/-- On underlying divisors, the effective equivalence is the Weil–Cartier equivalence. -/
+@[simp]
+theorem effectiveEquivCartierDivisor_apply (hX : ∀ x : X, coheight x ≤ 1)
+    (D : WeilDivisor.effectiveSubmonoid (CodimensionOnePoint X)) :
+    ((effectiveEquivCartierDivisor hX D :
+      Scheme.CartierDivisor.effectiveSubmonoid X) : Scheme.CartierDivisor X) =
+      equivCartierDivisor hX D :=
+  AddEquiv.coe_addSubmonoidMap_apply _ _ _
+
+end SchemeWeilDivisor
+
+end
+
+end AlgebraicGeometry
+
+end TauCeti
