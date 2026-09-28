@@ -312,10 +312,12 @@ theorem isUniformizer_normUnits_iff {ϖ : Lˣ} (hϖ : IsUniformizer L ϖ) :
     nsmul_one]
   exact Nat.cast_eq_one
 
+omit [FiniteDimensional K L] in
 /-- The norm of an irreducible element of `𝒪[L]` is irreducible in `𝒪[K]` exactly when the
 residue degree of `L/K` is one. -/
 theorem irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible {ξ : 𝒪[L]}
     (hξ : Irreducible ξ) : Irreducible (Algebra.norm 𝒪[K] ξ) ↔ inertiaDegree K L = 1 := by
+  let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
   have hξL : (ξ : L) ≠ 0 := fun h ↦ hξ.ne_zero (Subtype.ext h)
   let x : Lˣ := Units.mk0 (ξ : L) hξL
   have hnorm0 : ((Algebra.norm 𝒪[K] ξ : 𝒪[K]) : K) ≠ 0 := by
