@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Psi
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PowerIndex
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 
@@ -97,6 +98,18 @@ theorem ofPrime_mem_frobeniusPrimePowerSet_iff {𝔭 : HeightOneSpectrum (𝓞 K
       𝔭 ∈ frobeniusPrimeSet K L C := by
   simp only [mem_frobeniusPrimePowerSet_iff, primePowerBase_ofPrime,
     primePowerExponent_ofPrime, ConjClasses.pow_one, mem_frobeniusPrimeSet_iff]
+
+/-- The prime power `𝔭 ^ (k + 1)` lies in the powered `C`-fibre exactly when `𝔭` lies in the
+Frobenius fibre of a class whose `(k + 1)`-th power is `C`. -/
+theorem idealPrimePowerOf_mem_frobeniusPrimePowerSet_iff {𝔭 : HeightOneSpectrum (𝓞 K)} {k : ℕ}
+    {C : ConjClasses (L ≃ₐ[K] L)} :
+    𝔭.idealPrimePowerOf k ∈ frobeniusPrimePowerSet K L C ↔
+      ∃ D, 𝔭 ∈ frobeniusPrimeSet K L D ∧ D ^ (k + 1) = C := by
+  rw [mem_frobeniusPrimePowerSet_iff, HeightOneSpectrum.primePowerExponent_idealPrimePowerOf,
+    HeightOneSpectrum.primePowerBase_idealPrimePowerOf]
+  refine ⟨fun ⟨hur, h⟩ ↦ ⟨_, mem_frobeniusPrimeSet_artinSymbol hur, h⟩, fun ⟨D, h𝔭, h⟩ ↦ ?_⟩
+  obtain ⟨hur, rfl⟩ := mem_frobeniusPrimeSet_iff.mp h𝔭
+  exact ⟨hur, h⟩
 
 variable (K L) in
 /-- The logarithmic weight on prime powers selected by their powered Artin class. -/
