@@ -22,6 +22,8 @@ toric variety.
 
 * W. Fulton, *Introduction to Toric Varieties*, §§1.4 and 2.4.
 * D. Cox, J. Little and H. Schenck, *Toric Varieties*, §§3.1 and 3.4.
+* The injectivity, range, and open-embedding development adapts the algebraic formalization in
+  `TauCeti.Geometry.Toric.Algebraic.Fan.SubfanScheme`.
 -/
 
 public section
