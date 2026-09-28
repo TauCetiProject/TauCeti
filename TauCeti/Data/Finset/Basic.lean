@@ -256,22 +256,15 @@ of its values at those two points. -/
 theorem sum_eq_two {α M : Type*} [Fintype α] [AddCommMonoid M] (f : α → M) (a b : α)
     (hab : a ≠ b) (h : ∀ x, x ≠ a → x ≠ b → f x = 0) : ∑ x, f x = f a + f b := by
   classical
-  have key : ∀ x : α, f x = (if x = a then f a else 0) + (if x = b then f b else 0) := by
-    intro x
-    by_cases hx : x = a
-    · rw [hx, ite_eq_left rfl, ite_eq_right hab]
-      simp
-    · rw [ite_eq_right hx]
-      by_cases hxb : x = b
-      · rw [ite_eq_left hxb, hxb]
-        simp
-      · rw [ite_eq_right hxb, h x hx hxb]
-        simp
-  calc (∑ x, f x) = ∑ x, ((if x = a then f a else 0) + (if x = b then f b else 0)) :=
-        Fintype.sum_congr _ _ key
-    _ = (∑ x, if x = a then f a else 0) + ∑ x, if x = b then f b else 0 := Finset.sum_add_distrib
-    _ = f a + f b := by
-        rw [Fintype.sum_ite_eq' a fun _ => f a, Fintype.sum_ite_eq' b fun _ => f b]
+  -- The summand vanishes away from the pair `a`, `b`, so the sum over the whole type is the sum
+  -- over the two-point finset, which `Finset.sum_pair` evaluates.
+  calc (∑ x, f x) = ∑ x ∈ ({a, b} : Finset α), f x := by
+        refine (Finset.sum_subset (s₁ := ({a, b} : Finset α)) (s₂ := (Finset.univ : Finset α))
+          (fun x _ => Finset.mem_univ x) ?_).symm
+        intro x _ hx
+        have hx' : x ≠ a ∧ x ≠ b := by simpa using hx
+        exact h x hx'.1 hx'.2
+    _ = f a + f b := Finset.sum_pair hab
 
 /-- The double sum over a pair of finite types of a function that vanishes outside the four cells
 of the rectangle `i`, `i'` by `j`, `j'` is the sum of its four values there. -/
