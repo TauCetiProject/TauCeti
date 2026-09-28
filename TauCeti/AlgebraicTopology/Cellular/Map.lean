@@ -187,7 +187,7 @@ lemma skeletonPairδ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n 
 
 /-- Naturality of the quotient map from the homology of a skeleton to its cellular chain
 group. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma skeletonPairπ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
     SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n ≫
         skeletonPairπ C' R n =
