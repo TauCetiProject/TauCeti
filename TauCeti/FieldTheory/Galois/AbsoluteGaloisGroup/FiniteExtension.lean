@@ -48,7 +48,9 @@ module. Separability of `L/K` is a consequence of the existence of `σ` and is n
 
 ## Main results
 
-* `TauCeti.galoisSubgroup_index`: the index of `galoisSubgroup K L σ` in `G_K` is `[L : K]`.
+* `TauCeti.galoisSubgroup_index`: the index of `galoisSubgroup K L σ` in `G_K` is `[L : K]`, so
+  the subgroup fixing `σ(L)` has finite index
+  (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`).
 * `TauCeti.galoisSubgroupEquiv_apply_separableClosureRingEquiv`: the isomorphism intertwines the
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
 
@@ -100,6 +102,19 @@ theorem mem_galoisSubgroup_iff {g : AbsoluteGaloisGroup K} :
 theorem galoisSubgroup_index : (galoisSubgroup K L σ).toSubgroup.index = Module.finrank K L := by
   rw [galoisSubgroup_toSubgroup, ← finrank_eq_fixingSubgroup_index]
   exact (AlgEquiv.ofInjectiveField σ).toLinearEquiv.finrank_eq.symm
+
+/-- **The subgroup of `G_K` fixing `σ(L)` has finite index**, namely `[L : K]`. This is what
+discharges the finite-index hypothesis of corestriction and of the other operations of Galois
+cohomology indexed by a subgroup of `G_K`. -/
+instance finiteIndex_fixingSubgroup_fieldRange :
+    (σ.fieldRange.fixingSubgroup : Subgroup (AbsoluteGaloisGroup K)).FiniteIndex :=
+  ⟨by rw [← galoisSubgroup_toSubgroup, galoisSubgroup_index]; exact Module.finrank_pos.ne'⟩
+
+/-- **The subgroup of `G_K` fixing `σ(L)` is open**, `galoisSubgroup K L σ` read as a plain
+subgroup. -/
+theorem isOpen_fixingSubgroup_fieldRange :
+    IsOpen (σ.fieldRange.fixingSubgroup : Set (AbsoluteGaloisGroup K)) :=
+  galoisSubgroup_toSubgroup K L σ ▸ (galoisSubgroup K L σ).isOpen
 
 /-- `galoisSubgroup K L σ` is all of `G_K` exactly when `L/K` is trivial, that is `[L : K] = 1`. -/
 theorem galoisSubgroup_eq_top_iff : galoisSubgroup K L σ = ⊤ ↔ Module.finrank K L = 1 := by

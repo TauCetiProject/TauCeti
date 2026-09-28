@@ -27,6 +27,8 @@ coalgebras must preserve the invariant subspaces of their comodules.
   coalgebra equivalence.
 * `TauCeti.Subcomodule.corestrictOrderIso`: the carrier-preserving order isomorphism induced
   by a coalgebra equivalence.
+* `TauCeti.Subcomodule.ofCorestrictOfSplit` and `corestrictOrderIsoOfSplit`: recovery and
+  order correspondence given a linear retraction over a commutative semiring.
 * `TauCeti.Subcomodule.map_id_coact_coe_eq_tmul_one`: a vector of a subcomodule fixed by the
   corestricted coaction is fixed by the corestricted coaction of the ambient comodule.
 
@@ -224,6 +226,108 @@ theorem map_id_coact_coe_eq_tmul_one (f : C →ₗc[R] D) (W : Subcomodule R C M
   exact h
 
 end Induced
+
+section Split
+
+variable {k : Type u} [CommSemiring k]
+variable {C : Type v} {D : Type w}
+variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
+variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
+variable {V : Type x} [AddCommMonoid V] [Module k V] [Comodule k C V]
+
+/-- A linear retraction of a coalgebra morphism recovers every subcomodule of the
+corestricted comodule, with the same underlying submodule. -/
+def ofCorestrictOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) : Subcomodule k C V :=
+  letI : Comodule k D V := Comodule.Corestrict f
+  Subcomodule.ofSubmodule W.carrier (fun m hm ↦ by
+    obtain ⟨t, ht⟩ := W.coact_mem hm
+    refine ⟨TensorProduct.map LinearMap.id r t, ?_⟩
+    have h := congrArg (TensorProduct.map (LinearMap.id : V →ₗ[k] V) r) ht
+    simpa only [Comodule.corestrict_coact_apply, TensorProduct.map_map,
+      LinearMap.id_comp, LinearMap.comp_id, hr, TensorProduct.map_id,
+      LinearMap.id_apply] using h)
+
+/-- Recovery from a split corestriction preserves the underlying submodule. -/
+@[simp]
+theorem ofCorestrictOfSplit_toSubmodule (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    (ofCorestrictOfSplit f r hr W).toSubmodule = W.toSubmodule := by
+  unfold ofCorestrictOfSplit
+  exact Subcomodule.ofSubmodule_carrier _ _
+
+/-- Membership is unchanged by recovery from a split corestriction. -/
+@[simp]
+theorem mem_ofCorestrictOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) (m : V) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    m ∈ ofCorestrictOfSplit f r hr W ↔ m ∈ W := by
+  let _ : Comodule k D V := Comodule.Corestrict f
+  rw [← mem_toSubmodule, ofCorestrictOfSplit_toSubmodule, mem_toSubmodule]
+
+/-- Corestricting a subcomodule recovered through a linear retraction gives the original. -/
+@[simp]
+theorem corestrict_ofCorestrictOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    (ofCorestrictOfSplit f r hr W).corestrict f = W := by
+  let _ : Comodule k D V := Comodule.Corestrict f
+  ext m
+  simp only [mem_corestrict, mem_ofCorestrictOfSplit]
+
+/-- Recovering a corestricted subcomodule through a linear retraction gives the original. -/
+@[simp]
+theorem ofCorestrictOfSplit_corestrict (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id) (W : Subcomodule k C V) :
+    ofCorestrictOfSplit f r hr (W.corestrict f) = W := by
+  ext m
+  simp only [mem_ofCorestrictOfSplit, mem_corestrict]
+
+/-- The order isomorphism induced by a coalgebra morphism with a linear retraction
+preserves underlying submodules. -/
+def corestrictOrderIsoOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    Subcomodule k C V ≃o Subcomodule k D V :=
+  letI : Comodule k D V := Comodule.Corestrict f
+  { toFun := fun W ↦ W.corestrict f
+    invFun := ofCorestrictOfSplit f r hr
+    left_inv := ofCorestrictOfSplit_corestrict f r hr
+    right_inv := corestrict_ofCorestrictOfSplit f r hr
+    map_rel_iff' := by
+      rfl }
+
+/-- The forward map of the split-corestriction order isomorphism is corestriction. -/
+@[simp]
+theorem corestrictOrderIsoOfSplit_apply (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id) (W : Subcomodule k C V) :
+    corestrictOrderIsoOfSplit f r hr W = W.corestrict f := by
+  let _ : Comodule k D V := Comodule.Corestrict f
+  ext m
+  rfl
+
+/-- The inverse map of the split-corestriction order isomorphism recovers the subcomodule. -/
+@[simp]
+theorem corestrictOrderIsoOfSplit_symm_apply (f : C →ₗc[k] D) (r : D →ₗ[k] C)
+    (hr : r.comp f.toLinearMap = LinearMap.id)
+    (W : letI : Comodule k D V := Comodule.Corestrict f
+      Subcomodule k D V) :
+    letI : Comodule k D V := Comodule.Corestrict f
+    (corestrictOrderIsoOfSplit f r hr).symm W = ofCorestrictOfSplit f r hr W := by
+  let _ : Comodule k D V := Comodule.Corestrict f
+  ext m
+  rfl
+
+end Split
 
 end Subcomodule
 

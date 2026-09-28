@@ -413,12 +413,10 @@ section OfDiscrete
 
 /-! ### Discrete smooth representations over any scalars
 
-Forgetting the scalars does not change continuous cohomology
-(`TauCeti.ContCohomology.restrictScalarsIntIso`), and the underlying additive representation of a
-discrete `X : TopRep k G` is the canonical object attached to its carrier `X.V`
-(`TauCeti.ContCohomology.ofDiscreteModule_eq_restrictScalarsInt_obj`), so the `ℤ`-comparisons above
-identify the explicit `H¹` and `H²` of `X.V` with `continuousCohomology 1 X` and
-`continuousCohomology 2 X`. -/
+The continuous cohomology of a discrete `X : TopRep k G` is that of its carrier `X.V` as a discrete
+`ℤ`-module (`TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntIso`), so the
+`ℤ`-comparisons above identify the explicit `H¹` and `H²` of `X.V` with `continuousCohomology 1 X`
+and `continuousCohomology 2 X`. -/
 
 variable {G} {k : Type*} [Ring k] [TopologicalSpace k] (X : TopRep k G) [DiscreteTopology X.V]
 
@@ -431,8 +429,7 @@ the action read off from `X`, is Mathlib's `continuousCohomology 1 X`. -/
 noncomputable def _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete :
     H1 G X.V ≃+ continuousCohomology 1 X :=
   (explicitH1AddEquivContinuousCohomology G X.V).trans
-    (eqToIso (congrArg (continuousCohomology 1) (ofDiscreteModule_eq_restrictScalarsInt_obj X)) ≪≫
-      restrictScalarsIntIso X 1).toContinuousLinearEquiv.toAddEquiv
+    (ofDiscreteModuleRestrictScalarsIntIso X 1).toContinuousLinearEquiv.toAddEquiv
 
 /-- The explicit `H²` of the carrier of a discrete smooth representation `X` over any scalars, with
 the action read off from `X`, is Mathlib's `continuousCohomology 2 X`. -/
@@ -440,8 +437,7 @@ noncomputable def _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete
     [LocallyCompactSpace G] :
     H2 G X.V ≃+ continuousCohomology 2 X :=
   (explicitH2AddEquivContinuousCohomology G X.V).trans
-    (eqToIso (congrArg (continuousCohomology 2) (ofDiscreteModule_eq_restrictScalarsInt_obj X)) ≪≫
-      restrictScalarsIntIso X 2).toContinuousLinearEquiv.toAddEquiv
+    (ofDiscreteModuleRestrictScalarsIntIso X 2).toContinuousLinearEquiv.toAddEquiv
 
 end OfDiscrete
 
