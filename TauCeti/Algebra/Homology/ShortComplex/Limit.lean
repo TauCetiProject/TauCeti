@@ -59,10 +59,10 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u v w
+universe u v w w'
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
-variable {J : Type w} [Category.{w} J] [HasLimitsOfShape J C]
+variable {J : Type w} [Category.{w'} J] [HasLimitsOfShape J C]
   [HasExactLimitsOfShape J C]
 
 private noncomputable abbrev shortComplexDiagram
