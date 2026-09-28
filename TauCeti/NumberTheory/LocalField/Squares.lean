@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
-public import TauCeti.NumberTheory.LocalField.PowerSubgroup
+public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Algebra.Group.PowMonoidHom

@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.LocalField.Uniformizer
 import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
-import TauCeti.NumberTheory.LocalField.PowerSubgroup
+import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
