@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.LowDegree
-public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 
 /-!
@@ -248,16 +247,20 @@ invariant because `u` is, and a cocycle because the resolution is a complex. Its
 `degreeZeroClass X u hu` (`π_degreeZeroCocycle`). -/
 noncomputable def degreeZeroCocycle (X : TopRep R G) (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
     cocycles X 0 :=
-  (homogeneousCochains X).cyclesMkOfEq
-    ⟨(TopRep.d X 0).hom u, fun g ↦ by rw [← (TopRep.d X 0).hom.isIntertwining g u, hu]⟩ 1
-    (CochainComplex.next ℕ 0) (Subtype.ext <| by
-      rw [TopRep.homogeneousCochains.d_apply]
-      exact congr($(TopRep.d_comp_d X 0) u))
+  (cocycles₀Iso X).inv
+    ((d₀kerIso X).symm ⟨u, (ContRepresentation.mem_invariants u).2 hu⟩)
 
 /-- The constant `0`-cocycle of `u` is, as a homogeneous cochain, the constant map `g ↦ u`. -/
+@[simp]
 theorem coe_iCycles_degreeZeroCocycle (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
     ((homogeneousCochains X).iCycles 0 (degreeZeroCocycle X u hu)).1 = (TopRep.d X 0).hom u := by
-  rw [degreeZeroCocycle, HomologicalComplex.iCycles_cyclesMkOfEq]
+  rw [← coe_cocycles₀Iso_hom]
+  change (((((cocycles₀Iso X).hom
+    ((cocycles₀Iso X).inv ((d₀kerIso X).symm
+      ⟨u, (ContRepresentation.mem_invariants u).2 hu⟩))) :
+        ((homogeneousCochains X).d 0 1).hom.ker) : (homogeneousCochains X).X 0)).1 = _
+  rw [Iso.inv_hom_id_apply]
+  rfl
 
 /-- **The class of the constant `0`-cocycle of an invariant vector is its degree-zero class.** -/
 @[simp]
