@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
+public import Mathlib.Topology.PartialHomeomorph.Basic
 
 /-!
 # The open cells lying between two consecutive skeleta
@@ -70,20 +71,15 @@ lemma map_map_symm {i : cell C n} {x : X} (hx : x ∈ openCell (C := C) n i) :
   (map n i).right_inv (by rwa [target_map_eq_openCell])
 
 /-- **The characteristic map of a cell is a homeomorphism onto the open cell.**  By definition it
-restricts to a bijection of the open unit ball onto the open cell, continuous in both
-directions. -/
+is a partial homeomorphism with source the open unit ball and target the open cell, so it suffices
+to read off `PartialHomeomorph.toHomeomorphSourceTarget`. -/
 @[expose]
-def openCellHomeomorph (i : cell C n) : ball (0 : Fin n → ℝ) 1 ≃ₜ (openCell (C := C) n i) where
-  toFun y := ⟨map n i y, ⟨y, y.2, rfl⟩⟩
-  invFun x := ⟨(map n i).symm x, map_symm_mem_ball n x.2⟩
-  left_inv y := Subtype.ext ((map n i).left_inv (by rw [source_eq]; exact y.2))
-  right_inv x := Subtype.ext (map_map_symm n x.2)
-  continuous_toFun :=
-    Continuous.subtype_mk ((continuousOn n i).mono ball_subset_closedBall).domRestrict _
-  continuous_invFun := by
-    have h := continuousOn_symm (C := C) n i
-    rw [target_map_eq_openCell] at h
-    exact Continuous.subtype_mk h.domRestrict _
+def openCellHomeomorph (i : cell C n) : ball (0 : Fin n → ℝ) 1 ≃ₜ (openCell (C := C) n i) :=
+  (Homeomorph.setCongr (source_eq n i).symm).trans <|
+    (PartialHomeomorph.mk (map n i)
+        (source_eq n i ▸ (continuousOn n i).mono ball_subset_closedBall)
+        (continuousOn_symm n i)).toHomeomorphSourceTarget.trans
+      (Homeomorph.setCongr (target_map_eq_openCell n i))
 
 /-- The homeomorphism onto an open cell is the characteristic map. -/
 @[simp]
@@ -175,17 +171,15 @@ dimension.** -/
 lemma skeletonLT_succ_diff_skeletonLT :
     (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) \ skeletonLT C (n : ℕ∞) =
       ⋃ i : cell C n, openCell (C := C) n i := by
-  refine subset_antisymm (fun x hx ↦ ?_) (iUnion_subset fun i ↦ subset_sdiff.2
-    ⟨by exact_mod_cast openCell_subset_skeletonLT n i,
-      (disjoint_skeletonLT_openCell (le_refl (n : ℕ∞))).symm⟩)
-  obtain hD | ⟨m, hm, j, hj⟩ := mem_skeletonLT_iff.1 hx.1
-  · exact absurd ((skeletonLT C (n : ℕ∞)).base_subset hD) hx.2
-  have hm' : m < n + 1 := by exact_mod_cast hm
-  obtain rfl : m = n := by
-    rcases lt_or_ge m n with h | h
-    · exact absurd (mem_skeletonLT_iff.2 (Or.inr ⟨m, mod_cast h, j, hj⟩)) hx.2
-    omega
-  exact mem_iUnion.2 ⟨j, hj⟩
+  have hunion : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) =
+      (skeletonLT C (n : ℕ∞) : Set X) ∪ ⋃ i : cell C n, openCell (C := C) n i := by
+    -- Read both skeleta as the base together with all open cells of lower dimension.
+    rw [← iUnion_openCell_eq_skeletonLT, ← iUnion_openCell_eq_skeletonLT, union_assoc]
+    congr 1
+    simp_rw [Nat.cast_lt]
+    exact biUnion_lt_succ _ n
+  rw [hunion, union_sdiff_cancel_left]
+  exact (disjoint_iUnion_right.2 fun _ ↦ disjoint_skeletonLT_openCell le_rfl).le_bot
 
 /-- Each open `n`-cell is open in the union of all open `n`-cells: its complement there is cut out
 by the closed set obtained by adjoining the remaining closed `n`-cells to the
