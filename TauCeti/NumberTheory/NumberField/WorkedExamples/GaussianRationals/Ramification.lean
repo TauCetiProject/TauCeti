@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.Different
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
 import TauCeti.NumberTheory.NumberField.Quadratic.Different
@@ -111,9 +110,8 @@ theorem differentIdeal_eq_sq : differentIdeal ℤ (𝓞 K) = 𝔭 ^ 2 := by
 /-- **The different exponent at the dyadic prime is `2 = e`**: `v_𝔭(𝔡) = 2`, the wild lower
 bound attained. -/
 theorem multiplicity_differentIdeal_eq_two : multiplicity 𝔭 (differentIdeal ℤ (𝓞 K)) = 2 := by
-  have h𝔭 : 𝔭 ≠ ⊥ :=
-    ne_bot_of_liesOver_of_ne_bot
-      (show span {(2 : ℤ)} ≠ ⊥ from span_singleton_eq_bot.not.mpr two_ne_zero) 𝔭
+  have htwo : span {(2 : ℤ)} ≠ ⊥ := span_singleton_eq_bot.not.mpr two_ne_zero
+  have h𝔭 : 𝔭 ≠ ⊥ := ne_bot_of_liesOver_of_ne_bot htwo 𝔭
   rw [differentIdeal_eq_sq hmin hgen 𝔭]
   exact multiplicity_pow_self_of_prime (Ideal.prime_of_isPrime h𝔭 ‹_›) 2
 

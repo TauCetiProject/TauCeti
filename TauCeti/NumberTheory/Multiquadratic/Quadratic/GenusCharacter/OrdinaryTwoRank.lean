@@ -120,7 +120,7 @@ theorem genusCharFunNarrowClassGroupHom_mkPrincipal_gen {s : Finset ℤ}
       P.sign := by
   set x : 𝓞 K := 1 + 2 * θ with hxdef
   have hnorm : Algebra.norm ℤ x = 1 - 4 * d := by
-    have h := norm_int_add_mul_gen hmin hgen 2 1
+    have h := TauCeti.NumberField.norm_int_add_mul_gen hmin hgen 2 1
     push_cast at h
     rw [hxdef, h]
     ring

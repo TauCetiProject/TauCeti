@@ -160,17 +160,6 @@ rational prime `p` has ramification index `e(𝔭 ∣ p) = 2`. -/
 theorem ramificationIdx_eq_two_of_mem_ramifiedPrimes : 𝔭.ramificationIdx ℤ = 2 :=
   (totallyRamified_of_mem_ramifiedPrimes hK hmem 𝔭).1
 
-/-- **A ramified prime of a quadratic field has ramification index `2`**, in the form
-`ramificationIdxIn` that names no prime above `p`: the quadratic field is Galois over `ℚ`, so
-the ramification index is the same at every prime above `p`. -/
-theorem ramificationIdxIn_eq_two_of_mem_ramifiedPrimes :
-    (span {(p : ℤ)} : Ideal ℤ).ramificationIdxIn (𝓞 K) = 2 := by
-  let _ : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
-  have := Fact.mk (prime_of_mem_ramifiedPrimes hmem)
-  obtain ⟨𝔮, _, _⟩ := (inferInstance : Nonempty ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)))
-  rw [Ideal.ramificationIdxIn_eq_ramificationIdx (span {(p : ℤ)}) 𝔮 (K ≃ₐ[ℚ] K)]
-  exact ramificationIdx_eq_two_of_mem_ramifiedPrimes hK hmem 𝔮
-
 /-- **The residue field does not grow at a ramified prime of a quadratic field.** The prime `𝔭`
 above a ramified rational prime `p` has inertia degree `f(𝔭 ∣ p) = 1`. -/
 theorem inertiaDeg_eq_one_of_mem_ramifiedPrimes : 𝔭.inertiaDeg ℤ = 1 :=
@@ -233,6 +222,18 @@ end NumberField
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {p : ℕ}
+
+/-- **A ramified prime of a quadratic field has ramification index `2`**, in the form
+`ramificationIdxIn` that names no prime above `p`: the quadratic field is Galois over `ℚ`, so
+the ramification index is the same at every prime above `p`. -/
+theorem ramificationIdxIn_eq_two_of_mem_ramifiedPrimes (hK : finrank ℚ K = 2)
+    (hmem : p ∈ _root_.NumberField.ramifiedPrimes K) :
+    (span {(p : ℤ)} : Ideal ℤ).ramificationIdxIn (𝓞 K) = 2 := by
+  let _ : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
+  have := Fact.mk (_root_.NumberField.prime_of_mem_ramifiedPrimes hmem)
+  obtain ⟨𝔮, _, _⟩ := (inferInstance : Nonempty ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)))
+  rw [Ideal.ramificationIdxIn_eq_ramificationIdx (span {(p : ℤ)}) 𝔮 (K ≃ₐ[ℚ] K)]
+  exact _root_.NumberField.ramificationIdx_eq_two_of_mem_ramifiedPrimes hK hmem 𝔮
 
 /-- **An ideal of prime norm is the unique prime above a ramified rational prime.** If `p`
 ramifies in a quadratic number field, every ideal of absolute norm `p` equals the caller's chosen

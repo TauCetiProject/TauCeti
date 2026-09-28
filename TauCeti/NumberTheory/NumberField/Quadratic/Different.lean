@@ -20,7 +20,7 @@ when `d` is squarefree and not `1` modulo `4` (`adjoin_gen_eq_top_of_mod_four_ne
 
 ## Main results
 
-* `NumberField.differentIdeal_eq_span_two_mul_gen`: `differentIdeal ℤ (𝓞 K) = (2θ)`.
+* `TauCeti.NumberField.differentIdeal_eq_span_two_mul_gen`: `differentIdeal ℤ (𝓞 K) = (2θ)`.
 -/
 
 public section
@@ -28,7 +28,7 @@ public section
 open Polynomial Ideal
 open scoped NumberField
 
-namespace NumberField
+namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
@@ -39,4 +39,4 @@ theorem differentIdeal_eq_span_two_mul_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
   rw [TauCeti.differentIdeal_eq_span_aeval_derivative_minpoly ℤ ℚ K (𝓞 K) θ hadj, hmin]
   simp [map_ofNat]
 
-end NumberField
+end TauCeti.NumberField

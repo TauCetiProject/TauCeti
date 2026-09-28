@@ -18,7 +18,7 @@ For a quadratic number field `K = ℚ(√d)` presented by an algebraic integer `
 
 * `norm_gen_eq_neg_radicand`: the norm of the generator, `N(θ) = -d` (negative of the radicand);
 * `norm_add_mul_gen`: in the coordinates `x = b + aθ` the norm is `N(b + aθ) = b² - d·a²`, and
-  `norm_int_add_mul_gen` is the same formula for the integer norm on `𝓞 K`;
+  `TauCeti.NumberField.norm_int_add_mul_gen` is the same formula for the integer norm on `𝓞 K`;
 * `norm_pos_of_radicand_neg`: when `d < 0` — the imaginary quadratic case, where `K` is totally
   complex — the norm is strictly positive on every nonzero element;
 * `radicand_pos_of_norm_eq_neg_one`: consequently an element of norm `-1` forces `0 < d`;
@@ -68,6 +68,12 @@ normalization rule. -/
     norm_gen_eq_neg_radicand hmin hgen]
   ring
 
+end NumberField
+
+namespace TauCeti.NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
 /-- **The integer norm in the basis `1, θ`:** on `𝓞 K`, `N(b + aθ) = b² - d·a²` for integers
 `a`, `b`. This is `norm_add_mul_gen` read through `Algebra.coe_norm_int`. -/
 @[simp] theorem norm_int_add_mul_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
@@ -81,6 +87,12 @@ normalization rule. -/
         Rat.cast_intCast]
     rw [Algebra.coe_norm_int, hval, norm_add_mul_gen hmin hgen]
   exact_mod_cast h
+
+end TauCeti.NumberField
+
+namespace NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
 /-- **The norm is positive in the imaginary case.** When `d < 0` the field `K = ℚ(√d)` is totally
 complex, and `N(b + aθ) = b² + |d|·a²`, so the norm is strictly positive on every nonzero element.
@@ -125,7 +137,7 @@ theorem exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one (hmin : minpoly ℤ �
     ∃ u : (𝓞 K)ˣ, Algebra.norm ℚ (((u : 𝓞 K) : K)) = -1 := by
   set x : 𝓞 K := (b : 𝓞 K) + (a : 𝓞 K) * θ with hxdef
   have hnorm : Algebra.norm ℚ ((x : K)) = -1 := by
-    rw [← Algebra.coe_norm_int, hxdef, norm_int_add_mul_gen hmin hgen, hab]
+    rw [← Algebra.coe_norm_int, hxdef, TauCeti.NumberField.norm_int_add_mul_gen hmin hgen, hab]
     norm_num
   have hunit : IsUnit x := by
     rw [NumberField.isUnit_iff_norm, RingOfIntegers.coe_norm, hnorm]
