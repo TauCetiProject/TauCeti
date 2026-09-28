@@ -36,8 +36,8 @@ constants over `k` stays linearly independent over `F`.
   a common overfield is linearly disjoint from `F`.
 * `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: a linearly independent
   family of separable elements stays linearly independent after extending scalars from `k` to `F`.
-* `TauCeti.finrank_adjoin_eq_of_isIntegrallyClosedIn`: extending exact
-  constants preserves the degree over a rational parameter.
+* `TauCeti.finrank_adjoin_eq_of_isIntegrallyClosedIn`: a finite separable extension
+  of exact constants preserves the degree over a rational parameter.
 
 ## References
 
