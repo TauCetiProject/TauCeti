@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.Multiquadratic.Quadratic.RamifiedPrime.Narrow
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.ElementaryTwoQuotient
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.NarrowClassGroup
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
-import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.NumberTheory.NumberField.ClassNumber.SmallDiscriminant
 import TauCeti.Data.ZMod.IntUnitsPower
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.ElementaryTwoQuotient
