@@ -28,7 +28,7 @@ supplied by flatness (`Module.Flat.lTensor_preserves_injective_linearMap`).
 
 ## Main results
 
-* `LinearMap.range_map_subtype_subtype`: the image of `P ⊗[R] Q` in `M ⊗[R] N` is the
+* `Submodule.range_map_subtype_subtype`: the image of `P ⊗[R] Q` in `M ⊗[R] N` is the
   intersection of the images of `M ⊗[R] Q` and `P ⊗[R] N`, when `M ⧸ P` is flat.
 
 ## References
@@ -39,9 +39,9 @@ supplied by flatness (`Module.Flat.lTensor_preserves_injective_linearMap`).
 
 public section
 
-open TensorProduct
+open TensorProduct LinearMap
 
-namespace LinearMap
+namespace Submodule
 
 universe u v w
 
@@ -78,4 +78,4 @@ theorem range_map_subtype_subtype (P : Submodule R M) (Q : Submodule R N)
       (hzero.trans (map_zero _).symm))
   exact ⟨z, by rw [← lTensor_comp_rTensor, comp_apply]⟩
 
-end LinearMap
+end Submodule
