@@ -21,15 +21,11 @@ fibre of `f` restricted to a chart neighbourhood of the point. It is the countin
 the local normal form `z ↦ z ^ m` of a nonconstant holomorphic map, obtained as a count rather
 than as a conjugacy.
 
-The ingredients are the planar count `TauCeti.localDegree` of
-`TauCeti.Analysis.Complex.Conformal.LocalDegree`, the isolated zero principle of
-`TauCeti.Analysis.Analytic.IsolatedZeros` in the finiteness form
-`TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, and the chart description
-`TauCeti.RiemannSurface.localMultiplicity_eq_analyticOrderNatAt` of
-`TauCeti.RiemannSurface.localMultiplicity`. Nonconstancy of `f` near `x` is spelled
-`¬ EventuallyConst f (𝓝 x)`, which by `TauCeti.RiemannSurface.localMultiplicity_pos_iff` says
-that the local multiplicity of `f` at `x` is positive, so the count below is a positive
-integer.
+A degree read as a sum of local multiplicities over a whole fibre rests on the local statement
+recorded here: close to a point where the multiplicity of `f` is positive, every nearby fibre is
+finite, nonempty, and carries exactly the multiplicity of the base point. Nonconstancy of `f` near
+`x` is therefore spelled as the hypothesis `¬ EventuallyConst f (𝓝 x)`, which says that
+`localMultiplicity f x` is positive, so the count is a positive integer.
 
 ## Main declarations
 
