@@ -47,8 +47,8 @@ lemmas of Heegaard Floer theory.
 
 * `TauCeti.exists_nonneg_sum_smul_eq_zero_and_coeff_add_dual_pos_at`: Tucker's key lemma.
 * `TauCeti.exists_nonneg_sum_smul_eq_zero_and_forall_coeff_add_dual_pos`: Tucker's theorem.
-* `TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_pos_add`: Tucker's theorem for a finite family
-  in a finite free `ℤ`-module.
+* `TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos`: Tucker's theorem for a
+  finite family in a finite free `ℤ`-module.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
 * `Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
   `ι → K`.
@@ -222,7 +222,8 @@ variable {N : Type*} [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N]
 `ℤ`-module there are a linear relation `∑ j, x j • a j = 0` with natural-number coefficients and an
 integer-valued additive functional `m` that is nonnegative on every `a j`, such that
 `x j + m (a j) > 0` for every `j`. -/
-theorem exists_nat_sum_nsmul_eq_zero_and_forall_pos_add [Fintype ι] (a : ι → N) :
+theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
+    (a : ι → N) :
     ∃ (x : ι → ℕ) (m : N →+ ℤ), ∑ j, x j • a j = 0 ∧ (∀ j, 0 ≤ m (a j)) ∧
       ∀ j, 0 < (x j : ℤ) + m (a j) := by
   classical

@@ -467,7 +467,7 @@ theorem exists_comap_inclusion_eq_iff (h₁ : S₁ ≤ S₃) (h₂ : S₂ ≤ S�
     exact Subtype.ext h
   intro h
   -- Every element of `S₃` is a sum of an element of `S₁` and an element of `S₂`.
-  let π : S₁ × S₂ → S₃ := fun p ↦ AddSubmonoid.inclusion h₁ p.1 + AddSubmonoid.inclusion h₂ p.2
+  let π : S₁ × S₂ →+ S₃ := (AddSubmonoid.inclusion h₁).coprod (AddSubmonoid.inclusion h₂)
   have hπ : Function.Surjective π := fun w ↦ by
     obtain ⟨s, hs, t, ht, hst⟩ := AddSubmonoid.mem_sup.1 (h₃ w.2)
     exact ⟨(⟨s, hs⟩, ⟨t, ht⟩), Subtype.ext hst⟩
@@ -476,8 +476,6 @@ theorem exists_comap_inclusion_eq_iff (h₁ : S₁ ≤ S₃) (h₂ : S₂ ≤ S�
     x (MonoidAlgebra.single (ofAdd p.1) 1) * y (MonoidAlgebra.single (ofAdd p.2) 1)
   have hχ : ∀ p, χ (Function.surjInv hπ (π p)) = χ p := fun p ↦
     h _ _ _ _ (congrArg Subtype.val (Function.surjInv_eq hπ (π p)))
-  have hπ_add : ∀ p q, π (p + q) = π p + π q := fun p q ↦
-    Subtype.ext (by simp [π, add_add_add_comm])
   have hχ_add : ∀ p q, χ (p + q) = χ p * χ q := fun p q ↦ by
     simp only [χ, Prod.fst_add, Prod.snd_add, apply_single_add]
     ring
@@ -490,7 +488,7 @@ theorem exists_comap_inclusion_eq_iff (h₁ : S₁ ≤ S₃) (h₂ : S₂ ≤ S�
       map_mul' w w' := by
         have : toAdd (w * w') =
             π (Function.surjInv hπ (toAdd w) + Function.surjInv hπ (toAdd w')) := by
-          rw [hπ_add, Function.surjInv_eq hπ, Function.surjInv_eq hπ, toAdd_mul]
+          rw [map_add, Function.surjInv_eq hπ, Function.surjInv_eq hπ, toAdd_mul]
         rw [this, hχ, hχ_add] }
   refine ⟨MonoidAlgebra.lift ℂ ℂ (Multiplicative S₃) f, ext fun s ↦ ?_, ext fun t ↦ ?_⟩ <;>
     simp only [comap_apply_single, MonoidAlgebra.lift_single, one_smul]

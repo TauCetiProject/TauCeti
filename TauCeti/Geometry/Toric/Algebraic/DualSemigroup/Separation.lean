@@ -86,8 +86,9 @@ theorem exists_mem_dualSemigroup_neg_mem_dualSemigroup_inf_ker_eq (hi : IsIntegr
   obtain ⟨s, rfl⟩ := isLatticeRational_iff.1 hσ
   obtain ⟨t, rfl⟩ := isLatticeRational_iff.1 hτ
   -- Tucker's theorem for the generators of `σ` and the negatives of the generators of `τ`.
-  obtain ⟨x, m, hsum, hm, hpos⟩ := exists_nat_sum_nsmul_eq_zero_and_forall_pos_add
-    (Sum.elim (fun a : s ↦ (a : N)) fun b : t ↦ -(b : N))
+  obtain ⟨x, m, hsum, hm, hpos⟩ :=
+    exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos
+      (Sum.elim (fun a : s ↦ (a : N)) fun b : t ↦ -(b : N))
   simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, smul_neg, Finset.sum_neg_distrib,
     ← sub_eq_add_neg, sub_eq_zero] at hsum
   have hms : ∀ a ∈ s, 0 ≤ m a := fun a ha ↦ by simpa using hm (.inl ⟨a, ha⟩)
