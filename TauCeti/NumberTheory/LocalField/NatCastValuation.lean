@@ -66,6 +66,11 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- A natural number that is a unit in the integer ring is nonzero in the field. -/
+theorem natCast_ne_zero_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) : (n : K) ≠ 0 := by
+  simpa only [map_natCast] using (hn.map (Subring.subtype 𝒪[K])).ne_zero
+
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- If `2` is a unit in the integer ring, it is nonzero in the field. -/
 theorem two_ne_zero_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) : (2 : K) ≠ 0 := by
   simpa only [map_ofNat] using (h2.map (Subring.subtype 𝒪[K])).ne_zero

@@ -7,44 +7,50 @@ module
 
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
-public import TauCeti.RingTheory.Henselian.Basic
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.IndexNSmul
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 
 /-!
-# The `n`-th power subgroup of a local field away from the residue characteristic
+# The `n`-th power subgroup of a local field
 
-Let `K` be a nonarchimedean local field and let `n` be a natural number that is invertible in
-`𝒪[K]`, that is, prime to the residue characteristic. This file shows that the subgroup
-`(Kˣ)ⁿ`, the range of `powMonoidHom n : Kˣ →* Kˣ`, is open, and hence closed, in `Kˣ`.
+Let `K` be a nonarchimedean local field. This file counts the power classes `Kˣ ⧸ (Kˣ)ⁿ`, where
+`(Kˣ)ⁿ` is the range of `powMonoidHom n : Kˣ →* Kˣ`, and studies `(Kˣ)ⁿ` further when `n` is
+invertible in `𝒪[K]`, that is, prime to the residue characteristic.
 
-The proof exhibits an explicit open subgroup inside the range: every principal unit is an
-`n`-th power. More precisely, the `n`-th power map carries each positive-depth step `U(K,i+1)` of
-the unit filtration onto itself, by Hensel's lemma applied to `X ^ n - u` at the approximate root
-`1`, whose derivative `n` is a unit there. Openness does not follow from any finiteness of the
-quotient `Kˣ ⧸ (Kˣ)ⁿ`: a subgroup of finite index in a topological group need not be open.
+For every `n` with `(n : K) ≠ 0`,
 
-Since the principal units are exactly the units of `𝒪[K]` that reduce to `1`, it follows that a
-unit of `𝒪[K]` is an `n`-th power in `K` precisely when its residue is an `n`-th power in
-`𝓀[K]`. At `n = 2` that is the criterion for a unit of `𝒪[K]` to be a square.
+`#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K) · q ^ v_K(n)`,
 
-As a consequence, a subgroup of `Kˣ` is open as soon as the exponent (for instance, the index) of
-the quotient by it is invertible in `𝒪[K]`, since it then contains the power subgroup attached to
-that exponent.
+where `μ_n(K)` is the group of `n`-th roots of unity in `K`, `q` is the cardinality of the residue
+field and `v_K(n)` is the normalized valuation `natCastValuation K n hn`. In characteristic zero,
+for instance for a finite extension of `ℚ_[p]`, this covers every `n ≠ 0`, including multiples of
+the residue characteristic. The proof compares the index of the `n`-th powers with the number of
+`n`-torsion elements, which is unchanged on passing to a subgroup of finite index
+(`Subgroup.index_range_pow_mul_card_ker`). Through the splitting `Kˣ ≅ ℤ × U(K,0)`, the factor `ℤ`
+contributes `n`. In `U(K,0)` the `n`-torsion is all of `μ_n(K)`, and the deep subgroup
+`U(K, v_K(n) + 1)` has no `n`-torsion and is carried by the `n`-th power map onto
+`U(K, 2 v_K(n) + 1)`, of index `q ^ v_K(n)` (`TauCeti.map_powMonoidHom_unitFiltration`).
+In particular there are `4` square classes when `2` is a unit of `𝒪[K]`.
 
-The file also counts the power classes: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K)`, where `μ_n(K)` is the group
-of `n`-th roots of unity in `K`. The `n`-th power map is an automorphism of the group `U(K,1)` of
-principal units: it is onto by the Hensel argument above, and one-to-one because a root of unity
-of order prime to the residue characteristic that is congruent to `1` is equal to `1`. Through
-the splitting `Kˣ ≅ ℤ × μ_{q-1}(K) × U(K,1)`, the count therefore comes from the factor `ℤ`, which
-contributes `n`, and the finite factor `μ_{q-1}(K)`, whose power classes are as many as its
-`n`-torsion elements, which make up `μ_n(K)`. In particular there are `4` square classes
-when `2` is a unit of `𝒪[K]`.
+When `n` is invertible in `𝒪[K]`, so that `v_K(n) = 0`, the `n`-th power map is an automorphism of
+each positive-depth step `U(K,i+1)`, so every principal unit is an `n`-th power. Hence `(Kˣ)ⁿ`
+contains an open subgroup and is open, and hence closed, in `Kˣ`. Openness does not follow from
+any finiteness of the quotient `Kˣ ⧸ (Kˣ)ⁿ`: a subgroup of finite index in a topological group need
+not be open. Since the principal units are exactly the units of `𝒪[K]` that reduce to `1`, a unit
+of `𝒪[K]` is then an `n`-th power in `K` precisely when its residue is an `n`-th power in `𝓀[K]`.
+At `n = 2` that is the criterion for a unit of `𝒪[K]` to be a square. As a consequence, a subgroup
+of `Kˣ` is open as soon as the exponent (for instance, the index) of the quotient by it is
+invertible in `𝒪[K]`, since it then contains the power subgroup attached to that exponent.
 
 ## Main results
 
+* `TauCeti.card_powerClasses`: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K) · q ^ v_K(n)` for `(n : K) ≠ 0`.
+* `TauCeti.finiteIndex_range_powMonoidHom`: `(Kˣ)ⁿ` has finite index in `Kˣ` for `(n : K) ≠ 0`.
 * `TauCeti.map_powMonoidHom_unitFiltration_succ_of_isUnit`: the `n`-th power map carries
   `U(K,i+1)` onto itself.
 * `TauCeti.unitFiltration_one_le_range_powMonoidHom_of_isUnit`: every principal unit is an
@@ -67,15 +73,16 @@ when `2` is a unit of `𝒪[K]`.
 ## Implementation notes
 
 The hypothesis `IsUnit (n : 𝒪[K])` already forces `n ≠ 0`, so no separate nonvanishing
-assumption is taken. In mixed characteristic the same openness holds for every `n ≠ 0`, but
-there the `p`-primary part needs the logarithm on deep units instead of Hensel's lemma at `1`,
-and in equal characteristic `p` the range of `powMonoidHom p` is not open. Likewise the count
-acquires the factor `q ^ v_K(n)` when `n` is not a unit, and in equal characteristic `p` the
-quotient `Kˣ ⧸ (Kˣ)ᵖ` is infinite.
+assumption is taken. The hypothesis `(n : K) ≠ 0` of the count is needed: in equal
+characteristic `p` the quotient `Kˣ ⧸ (Kˣ)ᵖ` is infinite. For the same reason the range of
+`powMonoidHom p` is not open in equal characteristic `p`. In characteristic zero `(Kˣ)ⁿ` contains
+the open subgroup `U(K, 2 v_K(n) + 1)` for every `n ≠ 0`, by
+`TauCeti.map_powMonoidHom_unitFiltration`.
 
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter V, §3.
+* J. Neukirch, J. Schmidt, K. Wingberg, *Cohomology of Number Fields*, Chapter VII, §3.
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, §5.
 -/
 
@@ -89,28 +96,14 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 /-- For `n` invertible in `𝒪[K]`, the `n`-th power map carries each positive-depth step
-`U(K,i+1)` of the unit filtration onto itself. -/
+`U(K,i+1)` of the unit filtration onto itself. This is the case `v_K(n) = 0` of
+`map_powMonoidHom_unitFiltration`. -/
 theorem map_powMonoidHom_unitFiltration_succ_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K]))
     (i : ℕ) :
     (unitFiltration K (i + 1)).map (powMonoidHom n) = unitFiltration K (i + 1) := by
-  refine le_antisymm (Subgroup.map_le_iff_le_comap.mpr fun x hx ↦ pow_mem hx n) fun x hx ↦ ?_
-  -- `𝒪[K]` is Henselian at `𝓂[K]`: it is complete for the adic topology of its maximal ideal,
-  -- which Mathlib records for the uniformity attached to the topological additive group `K`.
-  have : HenselianRing 𝒪[K] 𝓂[K] := by
-    let := IsTopologicalAddGroup.rightUniformSpace K
-    have := isUniformAddGroup_of_addCommGroup (G := K)
-    exact IsAdicComplete.henselianRing 𝒪[K] 𝓂[K]
-  obtain ⟨u, hu, hux⟩ := mem_unitFiltration_iff_exists.mp hx
-  obtain ⟨a, ha, ha1⟩ := HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem
-    (Ideal.pow_le_self i.succ_ne_zero) hn hu
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    simp at hn
-  have haU : IsUnit a := (isUnit_pow_iff hn0).mp (ha ▸ u.isUnit)
-  refine ⟨Units.map (Subring.subtype 𝒪[K]).toMonoidHom haU.unit,
-    (mem_unitFiltration_succ_congr i _).mpr (by simpa using ha1), ?_⟩
-  ext
-  simp [← hux, ← ha]
+  have hnK := natCast_ne_zero_of_isUnit hn
+  have hv := natCastValuation_eq_zero_of_isUnit K hnK hn
+  simpa [hv] using map_powMonoidHom_unitFiltration hnK (i := i + 1) (by omega)
 
 /-- For `n` invertible in `𝒪[K]`, every principal unit of `K` is an `n`-th power. -/
 theorem unitFiltration_one_le_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
@@ -215,17 +208,13 @@ theorem isOpen_of_isUnit_index {H : Subgroup Kˣ} (hH : IsUnit (H.index : 𝒪[K
     isUnit_of_dvd_unit (Nat.cast_dvd_cast Group.exponent_dvd_nat_card) hH
 
 /-- For `n` invertible in `𝒪[K]`, the only `n`-th root of unity in `K` that is a principal unit
-is `1`: the groups `μ_n(K)` and `U(K,1)` intersect trivially. -/
+is `1`: the groups `μ_n(K)` and `U(K,1)` intersect trivially. This is the case `v_K(n) = 0` of
+`disjoint_rootsOfUnity_unitFiltration`. -/
 theorem disjoint_rootsOfUnity_unitFiltration_one_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
     Disjoint (rootsOfUnity n K) (unitFiltration K 1) := by
-  refine Subgroup.disjoint_def.mpr fun {x} hxn hx1 ↦ ?_
-  obtain ⟨u, hu1, hux⟩ := mem_unitFiltration_iff_exists.mp hx1
-  have hpow : (u : 𝒪[K]) ^ n = 1 :=
-    Subtype.coe_injective <| by simpa [hux] using congrArg Units.val ((mem_rootsOfUnity n x).mp hxn)
-  have hu : (u : 𝒪[K]) = 1 := eq_one_of_pow_eq_one_of_sub_one_mem
-    (notMem_maximalIdeal.mpr hn) hpow (by simpa using hu1)
-  ext
-  simp [← hux, hu]
+  have hnK := natCast_ne_zero_of_isUnit hn
+  exact disjoint_rootsOfUnity_unitFiltration hnK
+    (by simp [natCastValuation_eq_zero_of_isUnit K hnK hn])
 
 /-- For `n` invertible in `𝒪[K]`, the `n`-th power map is a bijection of each positive-depth step
 `U(K,i+1)` of the unit filtration. -/
@@ -240,52 +229,17 @@ theorem powMonoidHom_unitFiltration_succ_bijective_of_isUnit {n : ℕ} (hn : IsU
   · rw [← Subgroup.subgroupOf_map_powMonoidHom_eq_range,
       map_powMonoidHom_unitFiltration_succ_of_isUnit hn i, Subgroup.subgroupOf_self]
 
-/-- **The number of `n`-th power classes away from the residue characteristic.** For `n`
-invertible in `𝒪[K]`, the quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K)` elements, where `μ_n(K)` is the
-group of `n`-th roots of unity in `K`. This holds in either characteristic. -/
-theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
-    Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) = n * Nat.card (rootsOfUnity n K) := by
+/-- Through the splitting `Kˣ ≅ ℤ × U(K,0)` attached to a uniformizer, the index of `(Kˣ)ⁿ` is `n`
+times the index of the `n`-th powers in `U(K,0)`. -/
+private theorem index_range_powMonoidHom_eq_mul_unitFiltration_zero (n : ℕ) :
+    (powMonoidHom n : Kˣ →* Kˣ).range.index =
+      n * (powMonoidHom n : unitFiltration K 0 →* unitFiltration K 0).range.index := by
   obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
-  set μ := rootsOfUnity (Nat.card 𝓀[K] - 1) K
-  set V := unitFiltration K 1
-  have : Finite μ := .of_equiv _
-    (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
-      𝒪[K] K).symm.toEquiv
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    simp at hn
-  -- The splitting `Kˣ ≃* ℤ × μ_{q-1}(K) × U(K,1)` attached to the uniformizer `ϖ`.
-  let e : Kˣ ≃* Multiplicative ℤ × μ × V :=
-    (unitsEquivIntProd K ϖ hϖ).toMulEquiv.trans
-      (MulEquiv.prodCongr (.refl _) (unitFiltrationZeroEquivProd K).toMulEquiv)
-  -- Both the index of `(Kˣ)ⁿ` and the number of `n`-th roots of unity transfer along `e`.
-  have hidx : (powMonoidHom n : Kˣ →* Kˣ).range.index =
-      (powMonoidHom n : Multiplicative ℤ × μ × V →* _).range.index := by
-    rw [← e.map_range_powMonoidHom n, Subgroup.index_map_equiv]
-  have hker : Nat.card (rootsOfUnity n K) =
-      Nat.card (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker := by
-    have hmap : (powMonoidHom n : Kˣ →* Kˣ).ker.map e.toMonoidHom =
-        (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker := by
-      have hcomm :
-          (powMonoidHom n : Kˣ →* Kˣ).comp e.symm.toMonoidHom =
-            e.symm.toMonoidHom.comp
-              (powMonoidHom n : Multiplicative ℤ × μ × V →* _) := by
-        ext
-        simp
-      calc
-        _ = ((powMonoidHom n : Kˣ →* Kˣ).comp e.symm.toMonoidHom).ker :=
-          (MonoidHom.ker_comp_mulEquiv (powMonoidHom n : Kˣ →* Kˣ) e.symm).symm
-        _ = (e.symm.toMonoidHom.comp
-              (powMonoidHom n : Multiplicative ℤ × μ × V →* _)).ker :=
-          congrArg MonoidHom.ker hcomm
-        _ = _ := MonoidHom.ker_mulEquiv_comp _ e.symm
-    rw [rootsOfUnity_eq_ker, ← hmap]
-    exact Nat.card_congr (Subgroup.equivMapOfInjective _ e.toMonoidHom e.injective).toEquiv
-  -- On the product, the power map is componentwise.
-  have hprod : (powMonoidHom n : Multiplicative ℤ × μ × V →* _) =
-      (powMonoidHom n).prodMap ((powMonoidHom n).prodMap (powMonoidHom n)) := by
+  let e := (unitsEquivIntProd K ϖ hϖ).toMulEquiv
+  have hprod : (powMonoidHom n : Multiplicative ℤ × unitFiltration K 0 →* _) =
+      (powMonoidHom n).prodMap (powMonoidHom n) := by
     ext x <;> simp
-  -- The factor `ℤ` contributes index `n` and no torsion.
+  -- The factor `ℤ` contributes index `n`.
   have hZ : (powMonoidHom n : Multiplicative ℤ →* _).range.index = n := by
     have : (powMonoidHom n : Multiplicative ℤ →* _) =
         AddMonoidHom.toMultiplicative (nsmulAddMonoidHom (α := ℤ) n) := by
@@ -294,71 +248,90 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
     rw [this, MonoidHom.coe_toMultiplicative_range, AddSubgroup.index_toSubgroup,
       AddSubgroup.index_range_nsmul]
     simp
-  have hZker : (powMonoidHom n : Multiplicative ℤ →* _).ker = ⊥ := by
-    ext
-    simp [hn0]
-  -- The factor `U(K,1)` contributes neither, and the finite factor `μ_{q-1}(K)` has as many power
-  -- classes as `n`-torsion elements.
-  obtain ⟨hVinj, hVsurj⟩ := powMonoidHom_unitFiltration_succ_bijective_of_isUnit hn 0
-  have hμ : (powMonoidHom n : μ →* μ).range.index =
-      Nat.card (powMonoidHom n : μ →* μ).ker := Subgroup.index_range
-  have hVrange : (powMonoidHom n : V →* V).range = ⊤ :=
-    MonoidHom.range_eq_top.mpr hVsurj
-  have hVker : (powMonoidHom n : V →* V).ker = ⊥ :=
-    (MonoidHom.ker_eq_bot_iff _).mpr hVinj
-  have hVindex : (powMonoidHom n : V →* V).range.index = 1 := by
-    rw [hVrange, Subgroup.index_top]
-  have hZkerCard : Nat.card (powMonoidHom n : Multiplicative ℤ →* _).ker = 1 := by
-    rw [hZker]
-    simp
-  have hVkerCard : Nat.card (powMonoidHom n : V →* V).ker = 1 := by
-    rw [hVker]
-    simp
-  have hproductIndex :
-      (powMonoidHom n : Multiplicative ℤ × μ × V →* _).range.index =
-        n * Nat.card (powMonoidHom n : μ →* μ).ker := by
-    calc
-      _ = (powMonoidHom n : Multiplicative ℤ →* _).range.index *
-          ((powMonoidHom n : μ →* μ).range.index *
-            (powMonoidHom n : V →* V).range.index) := by
-        rw [hprod, MonoidHom.range_prodMap, MonoidHom.range_prodMap,
-          Subgroup.index_prod, Subgroup.index_prod]
-      _ = n * (Nat.card (powMonoidHom n : μ →* μ).ker * 1) := by
-        rw [hZ, hμ, hVindex]
-      _ = _ := by simp
-  have hproductKernel :
-      Nat.card (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker =
-        Nat.card (powMonoidHom n : μ →* μ).ker := by
-    calc
-      _ = Nat.card (powMonoidHom n : Multiplicative ℤ →* _).ker *
-          (Nat.card (powMonoidHom n : μ →* μ).ker *
-            Nat.card (powMonoidHom n : V →* V).ker) := by
-        rw [hprod, MonoidHom.ker_prodMap, MonoidHom.ker_prodMap,
-          Nat.card_congr (Subgroup.prodEquiv _ _).toEquiv, Nat.card_prod,
-          Nat.card_congr (Subgroup.prodEquiv _ _).toEquiv, Nat.card_prod]
-      _ = 1 * (Nat.card (powMonoidHom n : μ →* μ).ker * 1) := by
-        rw [hZkerCard, hVkerCard]
-      _ = _ := by simp
-  calc
-    Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) =
-        (powMonoidHom n : Kˣ →* Kˣ).range.index := (Subgroup.index_eq_card _).symm
-    _ = (powMonoidHom n : Multiplicative ℤ × μ × V →* _).range.index := hidx
-    _ = n * Nat.card (powMonoidHom n : μ →* μ).ker := hproductIndex
-    _ = n * Nat.card (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker :=
-      congrArg (n * ·) hproductKernel.symm
-    _ = n * Nat.card (rootsOfUnity n K) := congrArg (n * ·) hker.symm
+  rw [← Subgroup.index_map_equiv _ e, e.map_range_powMonoidHom n, hprod,
+    MonoidHom.range_prodMap, Subgroup.index_prod, hZ]
 
-/-- For `n` invertible in `𝒪[K]`, the subgroup `(Kˣ)ⁿ` of `n`-th powers has finite index in
-`Kˣ`. -/
-theorem finiteIndex_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
+/-- **The number of `n`-th power classes.** For `n` with `(n : K) ≠ 0`, the quotient
+`Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K) · q ^ v_K(n)` elements, where `μ_n(K)` is the group of `n`-th roots
+of unity in `K`, `q` is the cardinality of the residue field and `v_K(n)` is the normalized
+valuation of `n`. This holds in either characteristic; in characteristic zero, for instance for
+`K` a finite extension of `ℚ_[p]`, it applies to every `n ≠ 0`, including multiples of the residue
+characteristic. -/
+theorem card_powerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
+    Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) =
+      n * Nat.card (rootsOfUnity n K) * Nat.card 𝓀[K] ^ natCastValuation K n hn := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
+  set v := natCastValuation K n hn
+  set G := unitFiltration K 0
+  -- The deep subgroup `U(K,v+1)`, viewed inside `U(K,0)`.
+  set U := (unitFiltration K (v + 1)).subgroupOf G
+  -- The `n`-torsion of `U(K,0)` is all of `μ_n(K)`.
+  have hker : Nat.card (powMonoidHom n : G →* G).ker = Nat.card (rootsOfUnity n K) := by
+    have h : (powMonoidHom n : G →* G).ker = (rootsOfUnity n K).subgroupOf G := by
+      ext x
+      simp [Subgroup.mem_subgroupOf, mem_rootsOfUnity, Subtype.ext_iff]
+    rw [h]
+    exact Nat.card_congr
+      (Subgroup.subgroupOfEquivOfLe (rootsOfUnity_le_unitFiltration_zero K hn0)).toEquiv
+  -- `U(K,v+1)` has index `(q - 1) q ^ v` in `U(K,0)`.
+  have : U.FiniteIndex := by
+    refine ⟨?_⟩
+    have h := Subgroup.relIndex_mul_relIndex (unitFiltration K (v + 1)) (unitFiltration K 1) G
+      (unitFiltration_antitone (by omega)) (unitFiltration_antitone (by omega))
+    have hdeep := relIndex_unitFiltration_add_succ_succ (K := K) 0 v
+    rw [zero_add, zero_add] at hdeep
+    rw [hdeep, relIndex_unitFiltration_one_zero] at h
+    rw [← Subgroup.relIndex, ← h]
+    exact mul_ne_zero (pow_ne_zero _ Nat.card_pos.ne') (Nat.sub_ne_zero_of_lt Finite.one_lt_card)
+  -- On `U(K,v+1)` the `n`-th power map is injective with image `U(K,2v+1)`.
+  have hkerU : Nat.card (powMonoidHom n : U →* U).ker = 1 := by
+    rw [Subgroup.card_eq_one, eq_bot_iff]
+    intro x hx
+    have h1 : ((x : G) : Kˣ) = 1 := Subgroup.disjoint_def.mp
+      (disjoint_rootsOfUnity_unitFiltration hn (Nat.lt_succ_self v))
+      ((mem_rootsOfUnity n _).mpr (by simpa using congrArg (fun y : U ↦ ((y : G) : Kˣ)) hx))
+      x.2
+    exact Subgroup.mem_bot.mpr (Subtype.ext (Subtype.ext h1))
+  have hidxU : (powMonoidHom n : U →* U).range.index = Nat.card 𝓀[K] ^ v := by
+    let f : U ≃* unitFiltration K (v + 1) :=
+      Subgroup.subgroupOfEquivOfLe (unitFiltration_antitone (Nat.zero_le _))
+    have hrel := relIndex_unitFiltration_add_succ_succ (K := K) v v
+    rw [Subgroup.relIndex] at hrel
+    rw [← Subgroup.index_map_equiv _ f, f.map_range_powMonoidHom n,
+      ← Subgroup.subgroupOf_map_powMonoidHom_eq_range,
+      map_powMonoidHom_unitFiltration hn (Nat.lt_succ_self v),
+      show v + 1 + v = v + v + 1 by omega, hrel]
+  -- Comparing `U(K,0)` with its finite-index subgroup `U(K,v+1)`.
+  have h := Subgroup.index_range_pow_mul_card_ker U n
+  rw [hkerU, mul_one, hker, hidxU] at h
+  rw [← Subgroup.index_eq_card, index_range_powMonoidHom_eq_mul_unitFiltration_zero, h, mul_assoc]
+
+/-- For `(n : K) ≠ 0`, the subgroup `(Kˣ)ⁿ` of `n`-th powers has finite index in `Kˣ`. -/
+theorem finiteIndex_range_powMonoidHom {n : ℕ} (hn : (n : K) ≠ 0) :
     (powMonoidHom n : Kˣ →* Kˣ).range.FiniteIndex := by
   have hn0 : n ≠ 0 := by
     rintro rfl
     simp at hn
   have : NeZero n := ⟨hn0⟩
   refine ⟨?_⟩
-  rw [Subgroup.index_eq_card, card_powerClasses_of_isUnit hn]
-  exact mul_ne_zero hn0 Nat.card_pos.ne'
+  rw [Subgroup.index_eq_card, card_powerClasses hn]
+  exact mul_ne_zero (mul_ne_zero hn0 Nat.card_pos.ne') (pow_ne_zero _ Nat.card_pos.ne')
+
+/-- **The number of `n`-th power classes away from the residue characteristic.** For `n`
+invertible in `𝒪[K]`, the quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K)` elements, where `μ_n(K)` is the
+group of `n`-th roots of unity in `K`. This holds in either characteristic. -/
+theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
+    Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) = n * Nat.card (rootsOfUnity n K) := by
+  have hnK := natCast_ne_zero_of_isUnit hn
+  rw [card_powerClasses hnK, natCastValuation_eq_zero_of_isUnit K hnK hn, pow_zero, mul_one]
+
+/-- For `n` invertible in `𝒪[K]`, the subgroup `(Kˣ)ⁿ` of `n`-th powers has finite index in
+`Kˣ`. -/
+theorem finiteIndex_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
+    (powMonoidHom n : Kˣ →* Kˣ).range.FiniteIndex :=
+  finiteIndex_range_powMonoidHom (natCast_ne_zero_of_isUnit hn)
 
 /-- **The square classes away from residue characteristic `2`.** If `2` is invertible in `𝒪[K]`,
 then `Kˣ ⧸ (Kˣ)²` has `4` elements: `μ_2(K) = {±1}` has order `2`. -/
