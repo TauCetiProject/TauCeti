@@ -22,7 +22,10 @@ The input `t : U.LeftTransversal` bundles the transversal invariant. The section
 representative map; `t.2.quotientGroupMk_leftQuotientEquiv` proves that it represents each coset.
 Conversely, Mathlib's `Subgroup.isComplement_range_left` packages any representative map with
 that property as a `U.LeftTransversal`; `Subgroup.IsComplement.leftQuotientEquiv_apply` proves
-that its representative map recovers the original map pointwise.
+that its representative map recovers the original map pointwise. Thus a cochain formula can use
+the same section `r` as the monomial map by taking
+`t = ⟨Set.range r, Subgroup.isComplement_range_left hr⟩`, where
+`hr : ∀ x, (r x : G ⧸ U) = x`.
 The public maps are called as `TauCeti.monomialHom U t` and
 `TauCeti.monomialFinHom U t`.
 Continuity for an open subgroup is proved in
