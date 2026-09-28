@@ -15,10 +15,14 @@ import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 /-!
 # The Auslander--Reiten quiver of a quiver
 
-The **Auslander--Reiten quiver** of a quiver `Q` over a field `k` is the quiver whose vertices are
-the isomorphism classes of finite-dimensional indecomposable representations of `Q` and whose
-arrows `[M] → [N]` are a basis of the space of irreducible morphisms `rad(M, N) / rad²(M, N)`.
-This file builds it.
+The **Auslander--Reiten quiver** of a quiver `Q` over a field `k` has as vertices the isomorphism
+classes of finite-dimensional indecomposable representations of `Q`, with the arrows `[M] → [N]`
+recording the irreducible morphisms `M ⟶ N`, that is the space `rad(M, N) / rad²(M, N)`. This file
+builds it with the arrows indexed by a `k`-basis of that space: the convention in which the arrow
+count is `dim_k rad(M, N) / rad²(M, N)`, which is the classical arrow multiplicity exactly when the
+residue division rings of the two endomorphism algebras are `k` -- as over an algebraically closed
+`k` with finite-dimensional endomorphism algebras -- and exceeds it in general. Over a general field
+no statement below claims a multiplicity in that finer sense; see the implementation notes.
 
 Both halves of the construction are supplied by existing files and are assembled here. The vertex
 type is Mathlib's `CategoryTheory.Skeleton` of the full subcategory of finite-dimensional
@@ -78,9 +82,16 @@ here; the quiver itself, its local finiteness and its arrow count need none of i
 What is counted here is the `k`-dimension of `rad(M, N) / rad²(M, N)`. As
 `TauCeti/CategoryTheory/Preadditive/Radical/Quotient.lean` records, the classical arrow
 multiplicity is the dimension over the residue division rings `End M / rad(End M)` and
-`End N / rad(End N)`, and the two counts agree when both of those are `k` -- as they are over an
-algebraically closed `k` with finite-dimensional endomorphism algebras. No statement below claims
-the multiplicity in that finer sense.
+`End N / rad(End N)`, so over a field for which those are larger than `k` the `k`-dimension is a
+multiple of it; the two counts agree when both residue division rings are `k` -- as they are over an
+algebraically closed `k` with finite-dimensional endomorphism algebras -- and, vacuously, whenever
+`rad(M, N) / rad²(M, N)` vanishes. No statement below claims the multiplicity in that finer sense,
+and no hypothesis here could make the `Quiver` instance compute it: the instance is uniform in the
+two vertices, while the agreement of the two counts is a condition on the endomorphism algebras of
+the representatives, which even over an algebraically closed `k` needs them to be
+finite-dimensional. The valued Auslander--Reiten quiver, whose arrows carry those two
+multiplicities, would need the bimodule structure of `rad / rad²` over the residue division rings,
+which `Radical/Quotient.lean` does not build.
 
 The Auslander--Reiten translate `τ = D Tr`, which makes this quiver a translation quiver, is built
 in `TauCeti/Algebra/Module/AuslanderReiten/Translate.lean`; attaching it to the vertices here is a
@@ -164,11 +175,13 @@ noncomputable def arRepIso {M : QuiverRep.{u, v, w, t} k Q} (hM : IsFinDim k Q M
 /-! ### The arrows -/
 
 variable (k) in
-/-- **The Auslander--Reiten quiver.** The arrows `X → Y` are the index set of a basis of the space
-`rad(M, N) / rad²(M, N)` of irreducible morphisms between the representatives `M` and `N` of the
-two vertices, so that -- between objects with local endomorphism rings -- there is an arrow exactly
-when there is an irreducible morphism (`TauCeti.nonempty_hom_arQuiver_iff`), and the arrows are
-counted by `dim_k rad / rad²` (`TauCeti.natCard_hom_arQuiver`). -/
+/-- **The Auslander--Reiten quiver**, with its arrows `X → Y` the index set of a `k`-basis of the
+space `rad(M, N) / rad²(M, N)` of irreducible morphisms between the representatives `M` and `N` of
+the two vertices, so that -- between objects with local endomorphism rings -- there is an arrow
+exactly when there is an irreducible morphism (`TauCeti.nonempty_hom_arQuiver_iff`), and the arrows
+are counted by `dim_k rad / rad²` (`TauCeti.natCard_hom_arQuiver`). That count is the classical
+arrow multiplicity when both residue division rings are `k` and exceeds it in general; the module
+docstring records the boundary. -/
 noncomputable instance : Quiver (arQuiver.{u, v, w, t} k Q) where
   Hom X Y := Module.Basis.ofVectorSpaceIndex k (irreducibleMorphismSpace k (arRep X) (arRep Y))
 
