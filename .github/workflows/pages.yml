@@ -44,6 +44,8 @@ on:
       - 'scripts/pr_stats_graphs.py'
       - 'scripts/pipeline_health.py'
       - 'scripts/ci_stats_graphs.py'
+      - 'scripts/ci_daily_graphs.py'
+      - 'scripts/generated_assets.py'
       - 'scripts/roadmap_progress.py'
       - 'scripts/roadmap_topics.json'
       - 'scripts/roadmap_coverage.json'
