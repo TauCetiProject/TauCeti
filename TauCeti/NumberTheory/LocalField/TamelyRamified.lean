@@ -76,13 +76,12 @@ theorem IsTotallyRamified.exists_eq_algebraMap_mul_pow (h : IsTotallyRamified K 
     refine mem_unitFiltration_iff_exists.2 ⟨y, ?_, rfl⟩
     rw [pow_one, ← residue_eq_zero_iff, map_sub, map_one, sub_eq_zero]
     simp [hy, ← hc, (ha.map (residue 𝒪[L])).ne_zero]
-  rw [← map_powMonoidHom_unitFiltration_succ_of_isUnit hn 0] at hy1
-  obtain ⟨w, hw, hwy⟩ := hy1
+  obtain ⟨⟨w, hw⟩, hwy⟩ := (powMonoidHom_unitFiltration_succ_bijective_of_isUnit hn 0).2 ⟨_, hy1⟩
   obtain ⟨w', -, hw'⟩ := mem_unitFiltration_iff_exists.1 hw
   refine ⟨(isUnit_of_map_unit _ _ ha).unit, w', ?_⟩
   have hwy' : w' ^ n = y := by
     ext
-    simpa [hw'] using congrArg Units.val hwy
+    simpa [hw'] using congrArg Units.val (Subtype.ext_iff.1 hwy)
   rw [← Units.val_pow_eq_pow_val, hwy', IsUnit.unit_spec, ← ha.unit_spec, ← Units.val_mul, hy,
     mul_comm, inv_mul_cancel_right]
 
