@@ -58,9 +58,12 @@ separate application of the general length results of `TauCeti.RingTheory.Inters
 
 In the namespace `TauCeti`:
 
-* `length_quotient_span_pair_mul_eq_add_of_notMem_sq`: the length of the quotient by a parameter
-  and a product of two further equations is the sum of the two lengths, the parameter being the
-  first equation.
+* `length_quotient_span_pair_mul_eq_add_of_notMem_sq`: the length of the quotient by a parameter,
+  that is, a nonunit `f ∉ 𝔪²` of a two-dimensional regular local ring, and a product of two
+  further equations is the sum of the two lengths, the parameter being the first equation. Its
+  hypothesis `f ∉ 𝔪²` admits a unit `f` as well, which the statement treats as a separate case: a
+  unit `f` generates the unit ideal with either other equation, so all three quotients are the zero
+  ring, of length zero, and the identity reads `0 = 0 + 0`.
 
 The primality of a parameter, `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq` in
 `TauCeti.RingTheory.RegularLocalRing.Basic`, is a general fact about parameters and is stated
@@ -73,15 +76,18 @@ natural number, by `TauCeti.exists_nat_length_quotient_span_pair_of_prime`.
 
 ## Implementation notes
 
-The quotient `R ⧸ (f)` is a one-dimensional local domain: local because `(f)` lies in the maximal
-ideal of the local ring `R`, a domain by primality of `(f)`, and of dimension one by
-`TauCeti.ringKrullDim_quotient_span_singleton_eq_one` along the non-zero-divisor `f`. That is what
-makes the additivity below the statement for an irreducible first equation,
+The one theorem here assumes only `f ∉ 𝔪²`, which admits a unit `f` as well as a parameter, and
+the two cases are separate. A unit `f` generates the unit ideal with either of the two further
+equations, so `(f, g * h)`, `(f, g)` and `(f, h)` are all the unit ideal, the three quotients are
+the zero ring, of length zero, and the identity reads `0 = 0 + 0`.
+
+For a nonunit `f`, that is `f ∈ 𝔪`, the quotient `R ⧸ (f)` is a one-dimensional local domain: local
+because `(f)` lies in the maximal ideal of the local ring `R`, a domain by primality of `(f)`, and
+of dimension one by `TauCeti.ringKrullDim_quotient_span_singleton_eq_one` along the non-zero-divisor
+`f`. That is what makes the additivity below the statement for an irreducible first equation,
 `TauCeti.length_quotient_span_pair_mul_eq_add_of_prime`, the primality hypothesis of which a
-parameter meets by `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`; the case of a
-unit `f`, which is no parameter and is admitted here as well, makes all three quotients the zero
-ring, of length zero, so the identity is `0 = 0 + 0`. The infinite length of the curve over itself,
-which absorbs the remaining summand in that statement, is
+parameter meets by `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`. The infinite
+length of the curve over itself, which absorbs the remaining summand in that statement, is
 `TauCeti.length_self_eq_top_of_ringKrullDim_pos` in `TauCeti.RingTheory.Length`.
 
 ## References
