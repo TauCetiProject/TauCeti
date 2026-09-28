@@ -22,7 +22,7 @@ degrees `g i` are bounded above, every variable `V_v` has negative degree `w v`,
 homogeneous of some degree `r`, then `d` is exact as soon as `d₀` is
 (`LinearMap.ker_le_range_of_mapRange_constantCoeff`). Applied to mapping cones, a homogeneous
 chain map `f` between two such complexes induces a bijection on homology as soon as its reduction
-`f₀` does (`LinearMap.bijective_homologyMap_of_mapRange_constantCoeff`).
+`f₀` does (`LinearMap.homologyMap_bijective_of_mapRange_constantCoeff`).
 
 This is the algebraic input for deducing statements about the unblocked grid complexes `GC⁻`
 over `𝔽₂[V₀, …, V_{n-1}]` from the fully blocked complexes, in which every variable is set to
@@ -45,7 +45,7 @@ but is not surjective.
 
 * `LinearMap.ker_le_range_of_mapRange_constantCoeff`: a graded square-zero endomorphism of a free
   module over a polynomial ring is exact if its reduction modulo the variables is.
-* `LinearMap.bijective_homologyMap_of_mapRange_constantCoeff`: a graded chain map between such
+* `LinearMap.homologyMap_bijective_of_mapRange_constantCoeff`: a graded chain map between such
   complexes induces a bijection on homology if its reduction modulo the variables does.
 
 ## References
@@ -108,7 +108,7 @@ private theorem coeff_apply_of_mem_pow_idealOfVars
   rw [apply_eq_sum, apply_eq_sum, Finsupp.sum_mapRange_index (by simp), Finsupp.sum,
     Finsupp.sum, coeff_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coeff_mul_of_mem_pow_idealOfVars (hz i) _ he.le, reduction_single_apply hf₀, one_mul,
+  rw [coeff_mul_of_mem_pow_idealOfVars _ (hz i) _ he.le, reduction_single_apply hf₀, one_mul,
     lcoeff_apply]
 
 end Coefficients
@@ -262,14 +262,19 @@ private theorem exists_sub_apply_mem_pow_idealOfVars (hexact : ker d₀ ≤ rang
           simp [hy, heE]
         rw [this, map_zero, Finsupp.zero_apply, hE he heE]
 
-include hw in
+omit hhom hd₀ in
 /-- **Graded Nakayama lemma for free complexes over a polynomial ring.** Let `d` be a square-zero
 endomorphism of the free module `ι →₀ R[V_v : v ∈ σ]` which is homogeneous of degree `r` when the
 generator `i` has degree `g i` and the variable `V_v` has negative degree `w v`, with the degrees
 `g i` bounded above. If the reduction `d₀` of `d` modulo the variables, the endomorphism of
 `ι →₀ R` with `d₀ ∘ ρ = ρ ∘ d` for `ρ` the coordinatewise constant coefficient, is exact, then so
 is `d`. -/
-theorem ker_le_range_of_mapRange_constantCoeff (hg : BddAbove (Set.range g))
+theorem ker_le_range_of_mapRange_constantCoeff
+    (d : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (ι →₀ MvPolynomial σ R))
+    (hw : ∀ v, w v < 0)
+    (hhom : ∀ i j, IsWeightedHomogeneous w (d (Finsupp.single i 1) j) (g i + r - g j))
+    (hd₀ : ∀ x, d₀ (x.mapRange constantCoeff (map_zero _)) =
+      (d x).mapRange constantCoeff (map_zero _)) (hg : BddAbove (Set.range g))
     (hd : d ∘ₗ d = 0) (hexact : ker d₀ ≤ range d₀) : ker d ≤ range d := by
   classical
   intro z hz
@@ -291,7 +296,7 @@ theorem ker_le_range_of_mapRange_constantCoeff (hg : BddAbove (Set.range g))
       have hcycle : d (z - d y) = 0 := by
         rw [map_sub, mem_ker.mp hz, ← comp_apply d d, hd, zero_apply, sub_zero]
       obtain ⟨y', hy'a, hy'k⟩ :=
-        exists_sub_apply_mem_pow_idealOfVars hhom hd₀ hexact hcycle hya hyk
+        exists_sub_apply_mem_pow_idealOfVars (d := d) hhom hd₀ hexact hcycle hya hyk
       refine ⟨y + y', ?_, ?_⟩
       · rw [map_add, ← sub_sub]
         exact hya.sub (by simpa using hy'a.apply hhom)
@@ -313,6 +318,16 @@ private noncomputable abbrev sumMappingCone (d : (ι →₀ S) →ₗ[S] (ι →
   (sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ mappingCone d e f ∘ₗ
     (sumFinsuppLEquivProdFinsupp S).toLinearMap
 
+/-- The transported mapping cone is computed by applying the product mapping cone between the
+forward and inverse `Finsupp` sum-product equivalences. -/
+private theorem sumMappingCone_apply (d : (ι →₀ S) →ₗ[S] (ι →₀ S))
+    (e : (κ →₀ S) →ₗ[S] (κ →₀ S)) (f : (ι →₀ S) →ₗ[S] (κ →₀ S))
+    (x : (ι ⊕ κ) →₀ S) :
+    sumMappingCone d e f x =
+      (sumFinsuppLEquivProdFinsupp S).symm
+        (mappingCone d e f (sumFinsuppLEquivProdFinsupp S x)) :=
+  rfl
+
 private theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
     {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} :
     ker (sumMappingCone d e f) ≤ range (sumMappingCone d e f) ↔
@@ -320,19 +335,37 @@ private theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι
   let ε := sumFinsuppLEquivProdFinsupp (M := S) S (α := ι) (β := κ)
   constructor
   · intro h x hx
-    obtain ⟨y, hy⟩ := h (x := ε.symm x) (by simp [ε, mem_ker.mp hx])
-    exact ⟨ε y, by simpa [ε] using congr(ε $hy)⟩
+    obtain ⟨y, hy⟩ := h (x := ε.symm x) (by
+      rw [mem_ker, sumMappingCone_apply]
+      change ε.symm (mappingCone d e f (ε (ε.symm x))) = 0
+      rw [ε.apply_symm_apply, mem_ker.mp hx, map_zero])
+    refine ⟨ε y, ?_⟩
+    have hε := congr(ε $hy)
+    rw [sumMappingCone_apply] at hε
+    change ε (ε.symm (mappingCone d e f (ε y))) = ε (ε.symm x) at hε
+    simpa only [ε.apply_symm_apply] using hε
   · intro h x hx
-    obtain ⟨y, hy⟩ := h (x := ε x) (by simpa [ε] using congr(ε $(mem_ker.mp hx)))
-    exact ⟨ε.symm y, by simp [ε, hy]⟩
+    obtain ⟨y, hy⟩ := h (x := ε x) (by
+      rw [mem_ker] at hx ⊢
+      have hε := congr(ε $hx)
+      rw [sumMappingCone_apply] at hε
+      change ε (ε.symm (mappingCone d e f (ε x))) = ε 0 at hε
+      simpa only [ε.apply_symm_apply, map_zero] using hε)
+    refine ⟨ε.symm y, ?_⟩
+    rw [sumMappingCone_apply]
+    change ε.symm (mappingCone d e f (ε (ε.symm y))) = x
+    rw [ε.apply_symm_apply, hy, ε.symm_apply_apply]
 
 private theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)}
     {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} (hd : d ∘ₗ d = 0)
     (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) :
     sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 := by
-  refine LinearMap.ext fun x ↦ ?_
-  simpa using congr((sumFinsuppLEquivProdFinsupp S).symm
-    ($(mappingCone_comp_self hd he hf) (sumFinsuppLEquivProdFinsupp S x)))
+  let ε := sumFinsuppLEquivProdFinsupp (M := S) S (α := ι) (β := κ)
+  apply LinearMap.ext
+  intro x
+  rw [comp_apply, sumMappingCone_apply, sumMappingCone_apply]
+  change ε.symm (mappingCone d e f (ε (ε.symm (mappingCone d e f (ε x))))) = 0
+  rw [ε.apply_symm_apply, ← comp_apply, mappingCone_comp_self f hd he hf, zero_apply, map_zero]
 
 variable {d : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (ι →₀ MvPolynomial σ R)}
   {e : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)}
@@ -348,7 +381,9 @@ maps `d` and `e` are homogeneous of the same degree `r`, and `f` is homogeneous 
 the reduction `f₀` of `f` modulo the variables induces a bijection from the homology of the
 reduction `d₀` of `d` to that of the reduction `e₀` of `e`, then `f` induces a bijection on
 homology. -/
-theorem bijective_homologyMap_of_mapRange_constantCoeff (hw : ∀ v, w v < 0)
+theorem homologyMap_bijective_of_mapRange_constantCoeff
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R))
+    (hw : ∀ v, w v < 0)
     (hg : BddAbove (Set.range g)) (hg' : BddAbove (Set.range g'))
     (hdhom : ∀ i j, IsWeightedHomogeneous w (d (Finsupp.single i 1) j) (g i + r - g j))
     (hehom : ∀ i j, IsWeightedHomogeneous w (e (Finsupp.single i 1) j) (g' i + r - g' j))
@@ -359,15 +394,42 @@ theorem bijective_homologyMap_of_mapRange_constantCoeff (hw : ∀ v, w v < 0)
       (e x).mapRange constantCoeff (map_zero _))
     (hff₀ : ∀ x, f₀ (x.mapRange constantCoeff (map_zero _)) =
       (f x).mapRange constantCoeff (map_zero _))
-    (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hd₀ : d₀ ∘ₗ d₀ = 0)
-    (he₀ : e₀ ∘ₗ e₀ = 0) (hf₀ : f₀ ∘ₗ d₀ = e₀ ∘ₗ f₀)
-    (h : Function.Bijective (homologyMap f₀ hd₀ he₀ hf₀)) :
+    (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f)
+    (h : Function.Bijective (homologyMap f₀ (show d₀ ∘ₗ d₀ = 0 from by
+      apply LinearMap.ext
+      intro x
+      ext i
+      let x' := x.mapRange (C : R →+* MvPolynomial σ R).toAddMonoidHom (map_zero _)
+      have hx : x'.mapRange constantCoeff (map_zero _) = x := by
+        ext
+        simp [x']
+      rw [comp_apply, ← hx, hdd₀, hdd₀, ← comp_apply, hd, zero_apply]
+      simp) (show e₀ ∘ₗ e₀ = 0 from by
+      apply LinearMap.ext
+      intro x
+      ext i
+      let x' := x.mapRange (C : R →+* MvPolynomial σ R).toAddMonoidHom (map_zero _)
+      have hx : x'.mapRange constantCoeff (map_zero _) = x := by
+        ext
+        simp [x']
+      rw [comp_apply, ← hx, hee₀, hee₀, ← comp_apply, he, zero_apply]
+      simp) (show f₀ ∘ₗ d₀ = e₀ ∘ₗ f₀ from by
+      apply LinearMap.ext
+      intro x
+      ext i
+      let x' := x.mapRange (C : R →+* MvPolynomial σ R).toAddMonoidHom (map_zero _)
+      have hx : x'.mapRange constantCoeff (map_zero _) = x := by
+        ext
+        simp [x']
+      rw [comp_apply, comp_apply, ← hx, hdd₀, hff₀, hff₀, hee₀, ← comp_apply,
+        hf, comp_apply]))) :
     Function.Bijective (homologyMap f hd he hf) := by
   rw [← ker_le_range_mappingCone_iff, ← ker_le_range_sumMappingCone_iff]
   rw [← ker_le_range_mappingCone_iff, ← ker_le_range_sumMappingCone_iff] at h
   obtain ⟨G, hG⟩ := hg
   obtain ⟨G', hG'⟩ := hg'
-  refine ker_le_range_of_mapRange_constantCoeff (g := Sum.elim (fun i ↦ g i + δ - r) g') (r := r)
+  refine ker_le_range_of_mapRange_constantCoeff (sumMappingCone d e f)
+    (g := Sum.elim (fun i ↦ g i + δ - r) g') (r := r)
     (d₀ := sumMappingCone d₀ e₀ f₀) hw ?_ ?_ ⟨max (G + δ - r) G', ?_⟩
     (sumMappingCone_comp_self hd he hf) h
   · rintro (i | i) (j | j)

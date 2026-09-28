@@ -110,7 +110,8 @@ section Map
 variable {N : Type*} [AddCommGroup N] [Module S N] {d} {e : N →ₗ[S] N}
 
 /-- A chain map `f`, one with `f ∘ d = e ∘ f`, sends the kernel of `d` into the kernel of `e`. -/
-theorem map_mem_ker_of_comp_eq {f : M →ₗ[S] N} (hf : f ∘ₗ d = e ∘ₗ f) {x : M} (hx : x ∈ ker d) :
+theorem map_mem_ker_of_comp_eq (f : M →ₗ[S] N) (hf : f ∘ₗ d = e ∘ₗ f) {x : M}
+    (hx : x ∈ ker d) :
     f x ∈ ker e := by
   rw [mem_ker, ← comp_apply e f, ← hf, comp_apply, mem_ker.mp hx, map_zero]
 
@@ -118,7 +119,8 @@ theorem map_mem_ker_of_comp_eq {f : M →ₗ[S] N} (hf : f ∘ₗ d = e ∘ₗ f
 map with `f ∘ d = e ∘ f`: the class of a cycle `z` goes to the class of `f z`. -/
 noncomputable def homologyMap (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
     (hf : f ∘ₗ d = e ∘ₗ f) : d.homology hd →ₗ[S] e.homology he :=
-  d.boundariesInKer.mapQ e.boundariesInKer (f.restrict fun _ ↦ map_mem_ker_of_comp_eq hf) <| by
+  d.boundariesInKer.mapQ e.boundariesInKer
+    (f.restrict fun _ ↦ map_mem_ker_of_comp_eq (d := d) (e := e) f hf) <| by
     rintro z ⟨w, hw⟩
     refine ⟨f w, ?_⟩
     rw [Submodule.subtype_apply, coe_restrict_apply, ← comp_apply e f, ← hf, comp_apply, hw,
@@ -129,8 +131,32 @@ noncomputable def homologyMap (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e 
 theorem homologyMap_mk (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
     (hf : f ∘ₗ d = e ∘ₗ f) (z : ker d) :
     homologyMap f hd he hf (Submodule.Quotient.mk z) =
-      Submodule.Quotient.mk ⟨f z, map_mem_ker_of_comp_eq hf z.2⟩ :=
+      Submodule.Quotient.mk ⟨f z, map_mem_ker_of_comp_eq (d := d) (e := e) f hf z.2⟩ :=
   (rfl)
+
+/-- The identity chain map induces the identity map on homology. -/
+@[simp]
+theorem homologyMap_id (hd : d ∘ₗ d = 0) :
+    homologyMap LinearMap.id hd hd (by simp) = LinearMap.id := by
+  apply LinearMap.ext
+  intro c
+  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
+  rw [homologyπ_apply, homologyMap_mk]
+  rfl
+
+variable {P : Type*} [AddCommGroup P] [Module S P] {q : P →ₗ[S] P}
+
+/-- The map on homology induced by a composite is the composite of the induced maps. -/
+@[simp]
+theorem homologyMap_comp (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₗ d = e ∘ₗ f)
+    (hg : g ∘ₗ e = q ∘ₗ g) :
+    homologyMap (g ∘ₗ f) hd hq (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) =
+      homologyMap g he hq hg ∘ₗ homologyMap f hd he hf := by
+  apply LinearMap.ext
+  intro c
+  obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
+  simp only [homologyπ_apply, homologyMap_mk, comp_apply]
 
 /-- The map induced by `f` on homology is surjective exactly when every cycle of `e` differs from
 the image of a cycle of `d` by a boundary. -/
@@ -187,7 +213,7 @@ theorem mappingCone_apply (f : M →ₗ[S] N) (x : M × N) :
   (rfl)
 
 /-- The mapping cone of a chain map between square-zero endomorphisms squares to zero. -/
-theorem mappingCone_comp_self {f : M →ₗ[S] N} (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+theorem mappingCone_comp_self (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
     (hf : f ∘ₗ d = e ∘ₗ f) : mappingCone d e f ∘ₗ mappingCone d e f = 0 := by
   refine LinearMap.ext fun x ↦ Prod.ext ?_ ?_
   · simpa using congr($hd x.1)
