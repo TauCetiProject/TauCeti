@@ -204,6 +204,11 @@ noncomputable abbrev minusculeCharacter (a : Fin 27) :
     Multiplicative (Fin 6 →₀ ℤ) :=
   Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (DynkinType.e6MinusculeWeight a))
 
+/-- **Restricting the standard carrier comodule to the rank-six weight torus gives the direct
+sum of the 27 distinct minuscule weight comodules.** Corestricting along
+`weightTorusToBaseChangeCoordinateMap` turns the standard comodule on `Fin 27 → k` into the
+comodule in which the coordinate basis vector at `a` spans the weight line of the torus
+character `minusculeCharacter a`. -/
 theorem torusCorestrict_eq_ofWeights :
     let _ := standardComodule k
     Comodule.Corestrict (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom =
@@ -211,9 +216,9 @@ theorem torusCorestrict_eq_ofWeights :
   let _ := GeneralLinear.standardComodule k 27
   let _ := standardComodule k
   apply Comodule.ext
-  change Comodule.corestrictCoact (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom = _
-  rw [← Comodule.corestrictCoact_comp (coordinateMap k).hom.toCoalgHom
-    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom]
+  rw [Comodule.corestrict_coact,
+    ← Comodule.corestrictCoact_comp (coordinateMap k).hom.toCoalgHom
+      (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom]
   have hcomp :
       _root_.CoalgHom.comp ((weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom)
           ((coordinateMap k).hom.toCoalgHom) =

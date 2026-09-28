@@ -198,9 +198,12 @@ theorem corestrictOrderIso_symm_apply (e : C ≃ₗc[R] D)
 
 section WeightGraph
 
-variable {k : Type u} [Field k]
-variable {H : Type v} [AddCommGroup H] [Module k H] [Coalgebra k H]
+variable {H : Type v} [AddCommGroup H]
 variable {G : Type w} {I : Type x} [Finite I] [DecidableEq I]
+
+section CommRing
+
+variable {k : Type u} [CommRing k] [Module k H] [Coalgebra k H]
 variable [Comodule k H (I → k)]
 
 /-- Restriction to distinct one-dimensional weights extracts every scaled coordinate vector of a
@@ -232,6 +235,13 @@ theorem single_smul_mem_of_corestrict_eq_ofWeights
   rw [hproj, Comodule.weightProj_ofWeights_eq (Pi.basisFun k I) wt hwt] at hpN
   simpa only [Pi.basisFun_repr, Finsupp.single_eq_same, Pi.basisFun_apply,
     Pi.single_smul', smul_eq_mul, mul_one] using hpN
+
+end CommRing
+
+section Field
+
+variable {k : Type u} [Field k] [Module k H] [Coalgebra k H]
+variable [Comodule k H (I → k)]
 
 /-- **A comodule with distinct one-dimensional weights and a connected weight graph is
 simple.** The graph edges are supplied as involutions of the basis indices which preserve
@@ -266,7 +276,7 @@ theorem isSimpleOrder_of_corestrict_eq_ofWeights
       have hbmem := single_smul_mem_of_corestrict_eq_ofWeights f wt hwt hcomodule N hv b
       have hseed : Pi.single b 1 ∈ N := by
         have hscaled := N.toSubmodule.smul_mem (v b)⁻¹ hbmem
-        change Pi.single b 1 ∈ N.toSubmodule
+        rw [← Subcomodule.mem_toSubmodule]
         simpa only [inv_smul_smul₀ hb0] using hscaled
       obtain ⟨l, hl⟩ := hconnected b
       have hbase : Pi.single base 1 ∈ N := by
@@ -283,6 +293,8 @@ theorem isSimpleOrder_of_corestrict_eq_ofWeights
         rw [(hconnected a).choose_spec] at ha
         rw [Subcomodule.mem_toSubmodule]
         simpa only [Pi.basisFun_apply] using ha)
+
+end Field
 
 end WeightGraph
 

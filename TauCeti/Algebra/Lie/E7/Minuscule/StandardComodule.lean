@@ -209,9 +209,9 @@ private theorem torusCorestrict_eq_ofWeights :
   let _ := GeneralLinear.standardComodule k 56
   let _ := standardComodule k
   apply Comodule.ext
-  change Comodule.corestrictCoact (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom = _
-  rw [← Comodule.corestrictCoact_comp (coordinateMap k).hom.toCoalgHom
-    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom]
+  rw [Comodule.corestrict_coact,
+    ← Comodule.corestrictCoact_comp (coordinateMap k).hom.toCoalgHom
+      (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom]
   have hcomp :
       _root_.CoalgHom.comp ((weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom)
           ((coordinateMap k).hom.toCoalgHom) =
