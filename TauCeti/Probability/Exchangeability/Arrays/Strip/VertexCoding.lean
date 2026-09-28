@@ -93,40 +93,11 @@ theorem SeparatelyExchangeable.exists_vertex_strip_coding
     (φ := fun z q ↦ z q.2 q.1) (Measurable.of_eval fun q ↦
       (measurable_pi_apply q.1).comp (measurable_pi_apply q.2)) hC (ae_of_all _ fun _ ↦ rfl)
   beta_reduce at hrow hcol
-  -- The hidden block generates the same σ-algebra as the restriction to `range e ×ˢ range f`,
-  -- so the crossing strips are conditionally independent given it.
-  set S := Set.range e
-  set T := Set.range f
-  let H : (ℕ × ℕ → α) → ℕ × ℕ → α := fun x q ↦ x (e q.1, f q.2)
-  have hH : Measurable H := Measurable.of_eval fun q ↦ measurable_pi_apply (e q.1, f q.2)
-  have hHD : H = (fun y q ↦ y ⟨(e q.1, f q.2), ⟨q.1, rfl⟩, ⟨q.2, rfl⟩⟩) ∘
-      (S ×ˢ T).domRestrict (π := fun _ ↦ α) := rfl
-  have hDH : (S ×ˢ T).domRestrict (π := fun _ ↦ α) =
-      (fun h q ↦ h (Function.invFun e q.1.1, Function.invFun f q.1.2)) ∘ H := by
-    funext x q
-    rcases q with ⟨⟨a, b⟩, ⟨i, hi⟩, ⟨j, hj⟩⟩
-    simp only at hi hj
-    subst hi hj
-    simp only [Function.comp_apply, H, Set.domRestrict_apply, Function.leftInverse_invFun he i,
-      Function.leftInverse_invFun hf j]
-  have hcomap : MeasurableSpace.comap H inferInstance =
-      MeasurableSpace.comap ((S ×ˢ T).domRestrict (π := fun _ ↦ α)) inferInstance := by
-    apply le_antisymm
-    · rw [hHD, ← MeasurableSpace.comap_comp]
-      exact MeasurableSpace.comap_mono (Measurable.of_eval fun _ ↦ measurable_pi_apply _).comap_le
-    · rw [hDH, ← MeasurableSpace.comap_comp]
-      exact MeasurableSpace.comap_mono (Measurable.of_eval fun _ ↦ measurable_pi_apply _).comap_le
-  have hci : CondIndepFun (MeasurableSpace.comap H inferInstance) hH.comap_le
-      (fun x i b ↦ x (g i, f b)) (fun x j a ↦ x (e a, g' j)) ρ := by
-    have h := (hρ.condIndepFun_rowStrip_colStrip S (T := T)
-      (Or.inl (Set.infinite_range_of_injective he))).comp
-      (φ := fun y i b ↦ y ⟨(g i, f b), trivial, ⟨b, rfl⟩⟩)
-      (ψ := fun y j a ↦ y ⟨(e a, g' j), ⟨a, rfl⟩, trivial⟩)
-      (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _)
-      (Measurable.of_eval fun _ ↦ Measurable.of_eval fun _ ↦ measurable_pi_apply _)
-    -- `convert` discharges the equality of the two conditioning σ-algebras with the hypothesis
-    -- `hcomap`; the strip maps agree with the composites by definition.
-    convert h using 1 <;> rfl
+  -- The crossing strips are conditionally independent given the hidden block.
+  have hH : Measurable fun (x : ℕ × ℕ → α) (q : ℕ × ℕ) ↦ x (e q.1, f q.2) :=
+    Measurable.of_eval fun q ↦ measurable_pi_apply (e q.1, f q.2)
+  have hci := hρ.condIndepFun_rowStrip_colStrip_of_enum (f := f)
+    (Or.inl (Set.infinite_range_of_injective he)) g g'
   have hr : Measurable (Function.uncurry fun (h : ℕ × ℕ → α) (t : I) ↦
       unitIntervalCoding (ℕ → α) (R h) t) :=
     (measurable_uncurry_unitIntervalCoding (ℕ → α)).comp (hR.prodMap measurable_id)

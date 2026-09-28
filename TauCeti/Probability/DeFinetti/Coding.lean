@@ -12,8 +12,7 @@ public import TauCeti.Probability.Kernel.Randomization
 public import TauCeti.Probability.DeFinetti.Barycenter
 -- Public: `jointPathLaw` and `iidMixtureLaw` appear in the joint statements.
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegration
--- Non-public: de Finetti's theorem is used only inside proofs.
-import TauCeti.Probability.DeFinetti.Theorem
+-- Non-public: de Finetti's theorem, via its subsequence form, is used only inside proofs.
 import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
 import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.Probability.DeFinetti.Subsequence
