@@ -53,8 +53,8 @@ Herbrand shift instead.
   `TauCeti.toAdd_normalizedValuation_norm`.
 * `TauCeti.normalizedValuationWithZero_norm`: the same formula for arbitrary field elements,
   including zero.
-* `TauCeti.irreducible_norm_of_inertiaDegree_eq_one_of_irreducible`: the norm of an irreducible
-  integer is irreducible when the residue degree is one.
+* `TauCeti.irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible`: the norm of an irreducible
+  integer is irreducible exactly when the residue degree is one.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
   `TauCeti.map_normUnits_unitFiltration_le`: the norm carries `U(L, e(L/K) i)` into `U(K,i)`.
 
@@ -312,11 +312,10 @@ theorem isUniformizer_normUnits_iff {ϖ : Lˣ} (hϖ : IsUniformizer L ϖ) :
     nsmul_one]
   exact Nat.cast_eq_one
 
-/-- The norm of an irreducible element of `𝒪[L]` is irreducible in `𝒪[K]` when the residue
-degree of `L/K` is one. -/
-theorem irreducible_norm_of_inertiaDegree_eq_one_of_irreducible
-    (hf : inertiaDegree K L = 1) {ξ : 𝒪[L]} (hξ : Irreducible ξ) :
-    Irreducible (Algebra.norm 𝒪[K] ξ) := by
+/-- The norm of an irreducible element of `𝒪[L]` is irreducible in `𝒪[K]` exactly when the
+residue degree of `L/K` is one. -/
+theorem irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible {ξ : 𝒪[L]}
+    (hξ : Irreducible ξ) : Irreducible (Algebra.norm 𝒪[K] ξ) ↔ inertiaDegree K L = 1 := by
   have hξL : (ξ : L) ≠ 0 := fun h ↦ hξ.ne_zero (Subtype.ext h)
   let x : Lˣ := Units.mk0 (ξ : L) hξL
   have hnorm0 : ((Algebra.norm 𝒪[K] ξ : 𝒪[K]) : K) ≠ 0 := by
@@ -328,9 +327,8 @@ theorem irreducible_norm_of_inertiaDegree_eq_one_of_irreducible
     simp [x]
   have hx : IsUniformizer L x :=
     (isUniformizer_def _).mpr (by simpa [x] using normalizedValuation_irreducible hξ)
-  have hnorm : IsUniformizer K (Algebra.normUnits K x) :=
-    (isUniformizer_normUnits_iff hx).mpr hf
-  rw [heq] at hnorm
+  rw [← isUniformizer_normUnits_iff hx, heq]
+  refine ⟨fun h ↦ (isUniformizer_def _).mpr (normalizedValuation_irreducible h), fun hnorm ↦ ?_⟩
   obtain ⟨π, hπ, hπeq⟩ := (isUniformizer_iff_exists_irreducible K _).mp hnorm
   have hπnorm : π = Algebra.norm 𝒪[K] ξ := by
     apply Subtype.ext
