@@ -97,7 +97,6 @@ theorem oddResidueHasse_eq_one_of_rank_le_one (h2 : IsUnit (2 : 𝒪[K]))
     omega
 
 /-- The Hasse sign of a binary diagonal form is its Hilbert symbol. -/
-@[simp]
 theorem oddResidueHasse_mk_binary (h2 : IsUnit (2 : 𝒪[K])) (a b : Kˣ) :
     oddResidueHasse h2 (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) =
       hilbertSymbol a b := by
