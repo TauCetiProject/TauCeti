@@ -73,4 +73,18 @@ theorem isNilpotent_leftRegularRep_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp
   exact (LieHom.isNilpotent_leftRegularRep_iff _ _).2
     (isNilpotent_map_ι_of_isNilpotent_ad R L p hp q n hq hx)
 
+/-- In exponential characteristic `p ≠ 1`, the left-regular representation on the quotient by
+the `n`-th power of the central augmentation ideal sends every adjoint-nilpotent Lie element to
+a nilpotent endomorphism. -/
+theorem isNilpotent_quotient_leftRegularRep_of_isNilpotent_ad
+    (p : ℕ) [ExpChar R p] (hp : p ≠ 1) (n : ℕ)
+    {x : L} (hx : IsNilpotent (LieAlgebra.ad R L x)) :
+    IsNilpotent (LieHom.leftRegularRep
+      ((((Ideal.Quotient.mkₐ R (HopfIdeal.centralAugmentationIdeal R U ^ n)) :
+        U →ₗ⁅R⁆ U ⧸ (HopfIdeal.centralAugmentationIdeal R U ^ n)).comp
+        (_root_.UniversalEnvelopingAlgebra.ι R))) x) := by
+  exact isNilpotent_leftRegularRep_of_isNilpotent_ad R L p hp
+    (Ideal.Quotient.mkₐ R (HopfIdeal.centralAugmentationIdeal R U ^ n)) n
+    (fun z hz => Ideal.Quotient.eq_zero_iff_mem.mpr hz) hx
+
 end TauCeti.UniversalEnvelopingAlgebra
