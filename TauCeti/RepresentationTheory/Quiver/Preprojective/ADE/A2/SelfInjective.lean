@@ -36,7 +36,7 @@ a finite-dimensional self-injective algebra over every field.
 
 ## Main results
 
-* `TauCeti.preprojectiveA2FrobeniusPairing_isPerfPair`: the Frobenius pairing is perfect.
+* `TauCeti.isPerfPair_preprojectiveA2FrobeniusPairing`: the Frobenius pairing is perfect.
 * `TauCeti.moduleInjective_preprojectiveAlgebra_A2`: the `A₂` preprojective algebra is
   left self-injective.
 * `TauCeti.moduleInjective_op_preprojectiveAlgebra_A2`: the `A₂` preprojective algebra is
@@ -120,7 +120,7 @@ theorem preprojectiveA2FrobeniusPairing_basis (i j : Fin 4) :
 
 /-- **The `A₂` Frobenius pairing is perfect.** Its Gram matrix is a permutation matrix, so no
 scalar needs to be inverted and a commutative base ring suffices. -/
-instance preprojectiveA2FrobeniusPairing_isPerfPair :
+instance isPerfPair_preprojectiveA2FrobeniusPairing :
     (preprojectiveA2FrobeniusPairing k).IsPerfPair :=
   (preprojectiveA2Basis k).isPerfPair_of_apply_eq_ite _ preprojectiveA2RightDualIndex
     (preprojectiveA2FrobeniusPairing_basis k)
@@ -128,7 +128,7 @@ instance preprojectiveA2FrobeniusPairing_isPerfPair :
 /-- **The displayed functional makes the `A₂` preprojective algebra Frobenius.** -/
 theorem isFrobeniusFunctional_preprojectiveA2FrobeniusFunctional :
     (preprojectiveA2FrobeniusFunctional k).IsFrobeniusFunctional :=
-  (preprojectiveA2FrobeniusPairing_isPerfPair k).isFrobeniusFunctional
+  (isPerfPair_preprojectiveA2FrobeniusPairing k).isFrobeniusFunctional
 
 end CommRing
 
