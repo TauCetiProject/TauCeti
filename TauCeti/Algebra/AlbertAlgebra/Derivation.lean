@@ -9,6 +9,7 @@ public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import TauCeti.Algebra.AlbertAlgebra.Basic
 public import TauCeti.Algebra.Lie.Derivation.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Derivations of the split Albert algebra
@@ -83,7 +84,8 @@ spanning statement that the trace computation below runs on, and all three arriv
 
 The index arithmetic of `Fin 3` — that `j`, `j + 1` and `j + 2` are distinct and that shifting twice
 more returns to them — is discharged by `decide` in a block of private lemmas, so that no proof
-below argues about `Fin 3` while it is computing in `J`.
+below argues about `Fin 3` while it is computing in `J`; the one case already available in general,
+`j + 2 ≠ j`, is `TauCeti.add_one_add_one_ne_self`.
 
 Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (AlbertAlgebra R)` of
 `TauCeti/Algebra/Lie/Derivation/Basic.lean`, and are applied through the coercion
@@ -114,8 +116,6 @@ variable {R : Type*}
 /-! ### The index arithmetic of `Fin 3` -/
 
 private theorem add_one_ne_self (j : Fin 3) : j + 1 ≠ j := by revert j; decide
-
-private theorem add_two_ne_self (j : Fin 3) : j + 2 ≠ j := by revert j; decide
 
 private theorem add_two_ne_add_one (j : Fin 3) : j + 2 ≠ j + 1 := by revert j; decide
 
@@ -239,6 +239,9 @@ through the single scalar `t = ⟨Uⱼ, a⟩`: the entries read `½ Wⱼ = 0`, `
 `W_{j+1} + W_{j+2} = 0`. -/
 theorem trace_derivation_apply_offDiagSingle (j : Fin 3) (a : Octonion R) :
     trace ((D : Module.End R (AlbertAlgebra R)) (offDiagSingle j a)) = 0 := by
+  have hne : j + 2 ≠ j := by
+    rw [← add_one_add_one j]
+    exact add_one_add_one_ne_self le_rfl j
   have hE : diagIdempotent R (j + 1) * offDiagSingle j a = ⅟(2 : R) • offDiagSingle j a := by
     rw [diagIdempotent_mul_offDiagSingle, ite_eq_right (add_one_ne_self j)]
   have h := derivationLieAlgebra.leibniz D (diagIdempotent R (j + 1)) (offDiagSingle j a)
@@ -247,12 +250,12 @@ theorem trace_derivation_apply_offDiagSingle (j : Fin 3) (a : Octonion R) :
   set W := (D : Module.End R (AlbertAlgebra R)) (offDiagSingle j a)
   have e0 : ⅟(2 : R) * W.diag j = 0 := by
     have hj := congrArg (fun X : AlbertAlgebra R => X.diag j) h
-    simpa [Pi.single_eq_of_ne (add_one_ne_self j), Pi.single_eq_of_ne (add_two_ne_self j),
+    simpa [Pi.single_eq_of_ne (add_one_ne_self j), Pi.single_eq_of_ne hne,
       Pi.single_eq_of_ne (Ne.symm (add_one_ne_self j))] using hj
   have e1 : ⅟(2 : R) * W.diag (j + 1) =
       QuadraticMap.associated (Octonion.normQuadraticForm R) (U.offDiag j) a + W.diag (j + 1) := by
     have hj := congrArg (fun X : AlbertAlgebra R => X.diag (j + 1)) h
-    simpa [add_one_add_one j, add_one_add_two j, Pi.single_eq_of_ne (add_two_ne_self j)] using hj
+    simpa [add_one_add_one j, add_one_add_two j, Pi.single_eq_of_ne hne] using hj
   have e2 : ⅟(2 : R) * W.diag (j + 2) =
       QuadraticMap.associated (Octonion.normQuadraticForm R) (U.offDiag j) a := by
     have hj := congrArg (fun X : AlbertAlgebra R => X.diag (j + 2)) h
