@@ -254,23 +254,19 @@ theorem ker_mkBialgHom (I : HopfIdeal R H)
 
 end Flat
 
-private theorem kerOfSurjective_toIdeal_le (f : H →ₐc[R] K) (hf : Function.Surjective f) :
-    (kerOfSurjective f hf).toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom :=
-  (kerOfSurjective_toIdeal f hf).le
-
 /-- The bialgebra morphism induced from a surjective morphism on the quotient by its
 Hopf-ideal kernel. -/
 noncomputable def kerLiftBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     H ⧸ (kerOfSurjective f hf).toIdeal →ₐc[R] K :=
   Bialgebra.Quotient.liftBialgHom (kerOfSurjective f hf).toIdeal f
-    (kerOfSurjective_toIdeal_le f hf)
+    (kerOfSurjective_toIdeal f hf).le
 
 /-- The kernel quotient lift evaluates on quotient classes as the original morphism. -/
 @[simp]
 theorem kerLiftBialgHom_mk (f : H →ₐc[R] K) (hf : Function.Surjective f) (h : H) :
     kerLiftBialgHom f hf (Ideal.Quotient.mk (kerOfSurjective f hf).toIdeal h) = f h :=
   Bialgebra.Quotient.liftBialgHom_mk (kerOfSurjective f hf).toIdeal f
-    (kerOfSurjective_toIdeal_le f hf) h
+    (kerOfSurjective_toIdeal f hf).le h
 
 /-- The kernel quotient lift composed with the quotient map is the original morphism. -/
 @[simp]
@@ -278,7 +274,7 @@ theorem kerLiftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K) (hf : Function.Surj
     (kerLiftBialgHom f hf).comp
         (Bialgebra.Quotient.mkBialgHom (kerOfSurjective f hf).toIdeal) = f :=
   Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom (kerOfSurjective f hf).toIdeal f
-    (kerOfSurjective_toIdeal_le f hf)
+    (kerOfSurjective_toIdeal f hf).le
 
 /-- The quotient by the Hopf-ideal kernel of a surjective morphism maps bijectively to the
 codomain. -/
