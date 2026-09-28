@@ -53,7 +53,7 @@ Herbrand shift instead.
   `TauCeti.toAdd_normalizedValuation_norm`.
 * `TauCeti.normalizedValuationWithZero_norm`: the same formula for arbitrary field elements,
   including zero.
-* `TauCeti.irreducible_norm_of_irreducible_of_inertiaDegree_eq_one`: the norm of an irreducible
+* `TauCeti.irreducible_norm_of_inertiaDegree_eq_one_of_irreducible`: the norm of an irreducible
   integer is irreducible when the residue degree is one.
 * `TauCeti.normUnits_mem_unitFiltration_of_mem` and
   `TauCeti.map_normUnits_unitFiltration_le`: the norm carries `U(L, e(L/K) i)` into `U(K,i)`.
@@ -314,7 +314,7 @@ theorem isUniformizer_normUnits_iff {ϖ : Lˣ} (hϖ : IsUniformizer L ϖ) :
 
 /-- The norm of an irreducible element of `𝒪[L]` is irreducible in `𝒪[K]` when the residue
 degree of `L/K` is one. -/
-theorem irreducible_norm_of_irreducible_of_inertiaDegree_eq_one
+theorem irreducible_norm_of_inertiaDegree_eq_one_of_irreducible
     (hf : inertiaDegree K L = 1) {ξ : 𝒪[L]} (hξ : Irreducible ξ) :
     Irreducible (Algebra.norm 𝒪[K] ξ) := by
   have hξL : (ξ : L) ≠ 0 := fun h ↦ hξ.ne_zero (Subtype.ext h)
