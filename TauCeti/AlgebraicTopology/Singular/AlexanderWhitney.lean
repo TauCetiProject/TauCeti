@@ -24,6 +24,7 @@ two projections (`CartesianMonoidalCategory.prodComparison`).  It is natural in 
 * `TopCat.alexanderWhitney`: the Alexander–Whitney map on singular chains.
 * `TopCat.ιChainComplex_alexanderWhitney_f`: its value on a singular simplex.
 * `TopCat.alexanderWhitney_naturality`: it is natural in both spaces.
+* `TopCat.alexanderWhitney_coefficient_naturality`: it is natural in both coefficient objects.
 
 ## References
 
@@ -41,9 +42,10 @@ universe w v u
 
 namespace TopCat
 
+attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
+variable {C : Type u} [Category.{v} C] [Preadditive C]
   [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]
 
 /-- The Alexander–Whitney map `C(X × Y; R ⊗ S) ⟶ C(X; R) ⊗ C(Y; S)` on singular chains: the
@@ -79,5 +81,19 @@ lemma alexanderWhitney_naturality {X Y X' Y' : TopCat.{w}} (f : X ⟶ X') (g : Y
   rw [alexanderWhitney, alexanderWhitney, ← Category.assoc, ← Functor.map_comp,
     CartesianMonoidalCategory.prodComparison_natural,
     Functor.map_comp, Category.assoc, SSet.alexanderWhitney_naturality, Category.assoc]
+
+/-- The Alexander–Whitney map on singular chains is natural in both coefficient objects. -/
+@[reassoc]
+lemma alexanderWhitney_coefficient_naturality (X Y : TopCat.{w}) {R S R' S' : C}
+    (f : R ⟶ R') (g : S ⟶ S') :
+    ((SSet.chainComplexFunctor C).map (f ⊗ₘ g)).app (toSSet.obj (X ⊗ Y)) ≫
+        alexanderWhitney X Y R' S' =
+      alexanderWhitney X Y R S ≫
+        (((SSet.chainComplexFunctor C).map f).app (toSSet.obj X) ⊗ₘ
+          ((SSet.chainComplexFunctor C).map g).app (toSSet.obj Y)) := by
+  rw [alexanderWhitney, alexanderWhitney, ← Category.assoc,
+    ← ((SSet.chainComplexFunctor C).map (f ⊗ₘ g)).naturality
+      (CartesianMonoidalCategory.prodComparison toSSet X Y),
+    Category.assoc, SSet.alexanderWhitney_coefficient_naturality, Category.assoc]
 
 end TopCat

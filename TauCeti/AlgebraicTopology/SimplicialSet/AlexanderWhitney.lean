@@ -18,8 +18,8 @@ public import TauCeti.CategoryTheory.Monoidal.Preadditive
 /-!
 # The Alexander–Whitney map
 
-Let `C` be a preadditive monoidal category with finite and `w`-small coproducts, and let `R` and
-`S` be objects of `C`.  For simplicial sets `K` and `L`, the Alexander–Whitney map is the morphism
+Let `C` be a preadditive monoidal category with `w`-small coproducts, and let `R` and `S` be
+objects of `C`.  For simplicial sets `K` and `L`, the Alexander–Whitney map is the morphism
 of chain complexes `SSet.alexanderWhitney K L R S` from `(K ⊗ L).chainComplex (R ⊗ S)`, the
 simplicial chains of the product `K × L`, to `K.chainComplex R ⊗ L.chainComplex S`, the tensor
 product of the simplicial chains of the factors.  On an `n`-simplex `(x, y)` of `K × L` it is
@@ -38,6 +38,7 @@ of cochains.  For the usual coefficients take `C := ModuleCat k` and `R = S = k`
 * `SSet.alexanderWhitney`: the Alexander–Whitney chain map.
 * `SSet.ιChainComplex_alexanderWhitney_f`: its value on a simplex.
 * `SSet.alexanderWhitney_naturality`: it is natural in both simplicial sets.
+* `SSet.alexanderWhitney_coefficient_naturality`: it is natural in both coefficient objects.
 
 ## References
 
@@ -55,10 +56,11 @@ universe w v u
 
 namespace SSet
 
+attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
-  [MonoidalCategory C] [MonoidalPreadditive C]
+variable {C : Type u} [Category.{v} C] [Preadditive C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [HasCoproducts.{w} C]
 
 section Tensor
 
@@ -143,7 +145,7 @@ private lemma map_subinterval_zero_δ_of_lt {n p : ℕ} (a : K _⦋n + 1⦌) (k 
 
 end Faces
 
-variable [HasCoproducts.{w} C] (K L : SSet.{w}) (R S : C)
+variable (K L : SSet.{w}) (R S : C)
 
 /-- The summand of the Alexander–Whitney map on the simplex `x` in bidegree `(p, q)`: the front
 `p`-face of `x.1` tensored with the back `q`-face of `x.2`, or zero if `p + q` is not the degree
@@ -277,5 +279,29 @@ lemma alexanderWhitney_naturality {K' L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L
   refine Finset.sum_congr rfl fun p _ ↦ ?_
   simp only [ι_tensorHom, tensorHom_comp_tensorHom_assoc, ι_chainComplexMap_f,
     Monoidal.tensorHom_app, Monoidal.tensorObj_obj, tensorHom_app_apply, NatTrans.naturality_apply]
+
+variable {R S} in
+/-- The Alexander–Whitney map is natural in both coefficient objects. -/
+@[reassoc]
+lemma alexanderWhitney_coefficient_naturality {R' S' : C} (f : R ⟶ R') (g : S ⟶ S') :
+    ((chainComplexFunctor C).map (f ⊗ₘ g)).app (K ⊗ L) ≫
+        alexanderWhitney K L R' S' =
+      alexanderWhitney K L R S ≫
+        (((chainComplexFunctor C).map f).app K ⊗ₘ
+          ((chainComplexFunctor C).map g).app L) := by
+  have iota_coefficient_map {X : SSet.{w}} {T T' : C} (h : T ⟶ T') {n : ℕ}
+      (x : X _⦋n⦌) :
+      X.ιChainComplex x ≫ (((chainComplexFunctor C).map h).app X).f n =
+        h ≫ X.ιChainComplex x := by
+    dsimp [chainComplexFunctor, ιChainComplex, chainComplex]
+    simp
+  ext n x
+  simp only [HomologicalComplex.comp_f]
+  rw [← Category.assoc, iota_coefficient_map, Category.assoc,
+    ιChainComplex_alexanderWhitney_f, ιChainComplex_alexanderWhitney_f_assoc,
+    Preadditive.comp_sum, Preadditive.sum_comp]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [← Category.assoc, tensorHom_comp_tensorHom, Category.assoc, ι_tensorHom,
+    ← Category.assoc, tensorHom_comp_tensorHom, iota_coefficient_map, iota_coefficient_map]
 
 end SSet
