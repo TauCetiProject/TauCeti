@@ -41,14 +41,6 @@ theorem isAlgebraic_constantCompositum [Algebra.IsAlgebraic k k'] :
   exact (IsIntegral.algebraMap
     ((Algebra.IsAlgebraic.isAlgebraic (R := k) c).isIntegral)).tower_top
 
-/-- If the compositum with algebraic constants is the ambient field, that field is algebraic
-over the original field. -/
-theorem isAlgebraic_of_constantCompositum_eq_top [Algebra.IsAlgebraic k k']
-    (h : constantCompositum F k' F' = ⊤) : Algebra.IsAlgebraic F F' := by
-  have h' := isAlgebraic_constantCompositum (k := k) (k' := k') (F := F) (F' := F')
-  rw [h] at h'
-  exact IntermediateField.topEquiv.isAlgebraic_iff.mp h'
-
 /-- The compositum is finitely generated over the new constants. A finite field-generating
 set for `F / k` also generates `F' / k'`, since the two fields generate the compositum. -/
 theorem essFiniteType_of_constantCompositum_eq_top [Algebra.EssFiniteType k F]
@@ -92,7 +84,9 @@ theorem IsFunctionField.of_constantCompositum_eq_top
   let : Algebra.EssFiniteType k F := hF.essFiniteType
   let : Algebra.EssFiniteType k' F' := essFiniteType_of_constantCompositum_eq_top (k := k) h
   rw [isFunctionField_iff_trdeg_eq_one]
-  let : Algebra.IsAlgebraic F F' := isAlgebraic_of_constantCompositum_eq_top (k := k) h
-  exact hF.trdeg_eq_one_of_isAlgebraic_baseExtension
+  have halg := isAlgebraic_constantCompositum (k := k) (k' := k') (F := F) (F' := F')
+  rw [h] at halg
+  let : Algebra.IsAlgebraic F F' := IntermediateField.topEquiv.isAlgebraic_iff.mp halg
+  exact trdeg_eq_one_iff_of_isAlgebraic_base.mpr hF.trdeg_eq_one_of_isAlgebraic
 
 end TauCeti

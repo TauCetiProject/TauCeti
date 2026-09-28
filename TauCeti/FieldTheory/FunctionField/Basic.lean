@@ -335,12 +335,6 @@ theorem IsFunctionField.isAlgebraic_baseExtension (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F') : Algebra.IsAlgebraic k k' :=
   isAlgebraic_of_trdeg_eq_one (hF.trdeg_eq_one_of_isAlgebraic (E := F')) hF'.trdeg_eq_one
 
-/-- An algebraic extension of a function field has transcendence degree one over any algebraic
-extension of its base field inside the ambient field. -/
-theorem IsFunctionField.trdeg_eq_one_of_isAlgebraic_baseExtension
-    [Algebra.IsAlgebraic k k'] (hF : IsFunctionField k F) : Algebra.trdeg k' F' = 1 :=
-  trdeg_eq_one_iff_of_isAlgebraic_base.mpr hF.trdeg_eq_one_of_isAlgebraic
-
 end Extension
 
 end TauCeti
