@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.AllGenerators
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Root-space lines of the split even orthogonal Lie algebra
@@ -48,92 +49,6 @@ variable {K ι : Type*} [CommRing K] [DecidableEq ι] [Fintype ι]
 
 namespace TypeDStd
 
-omit [Fintype ι] in
-private theorem exists_isRegular_weightSub_sub (h2 : IsRegular (2 : K))
-    {i j : ι} (hij : i ≠ j) (a b : ι) (hne : ¬(a = i ∧ b = j)) :
-    ∃ k, IsRegular
-      ((Pi.single (M := fun _ : ι => K) a 1) k -
-        (Pi.single (M := fun _ : ι => K) b 1) k -
-        ((Pi.single (M := fun _ : ι => K) i 1) k -
-          (Pi.single (M := fun _ : ι => K) j 1) k)) := by
-  classical
-  by_cases hab : a = b
-  · subst b
-    refine ⟨i, ?_⟩
-    simpa [hij] using (isUnit_neg_one.isRegular : IsRegular (-1 : K))
-  · by_cases hai : a = i
-    · have hbj : b ≠ j := fun h => hne ⟨hai, h⟩
-      refine ⟨b, ?_⟩
-      simpa [hai, hbj] using (isUnit_neg_one.isRegular : IsRegular (-1 : K))
-    · refine ⟨a, ?_⟩
-      by_cases haj : a = j
-      · subst a
-        simpa [hab, hai, hij, one_add_one_eq_two] using h2
-      · simpa [hab, hai, haj] using (isRegular_one : IsRegular (1 : K))
-
-omit [Fintype ι] in
-private theorem exists_isRegular_weightAdd_sub (h2 : IsRegular (2 : K))
-    {i j : ι} (hij : i ≠ j) (a b : ι)
-    (hne : ¬((a = i ∧ b = j) ∨ (a = j ∧ b = i))) :
-    ∃ k, IsRegular
-      ((Pi.single (M := fun _ : ι => K) a 1) k +
-        (Pi.single (M := fun _ : ι => K) b 1) k -
-        ((Pi.single (M := fun _ : ι => K) i 1) k +
-          (Pi.single (M := fun _ : ι => K) j 1) k)) := by
-  classical
-  by_cases hab : a = b
-  · subst b
-    refine ⟨a, ?_⟩
-    by_cases hai : a = i
-    · subst a
-      simpa [hij] using (isRegular_one : IsRegular (1 : K))
-    · by_cases haj : a = j
-      · subst a
-        simpa [hij] using (isRegular_one : IsRegular (1 : K))
-      · simpa [hai, haj, one_add_one_eq_two] using h2
-  · by_cases hai : a = i
-    · have hbj : b ≠ j := fun h => hne (Or.inl ⟨hai, h⟩)
-      have hbi : b ≠ i := fun h => hab (hai.trans h.symm)
-      refine ⟨b, ?_⟩
-      simpa [hab, hbi, hbj] using (isRegular_one : IsRegular (1 : K))
-    · by_cases haj : a = j
-      · have hbi : b ≠ i := fun h => hne (Or.inr ⟨haj, h⟩)
-        have hbj : b ≠ j := fun h => hab (haj.trans h.symm)
-        refine ⟨b, ?_⟩
-        simpa [hab, hbi, hbj] using (isRegular_one : IsRegular (1 : K))
-      · refine ⟨a, ?_⟩
-        simpa [hab, hai, haj] using (isRegular_one : IsRegular (1 : K))
-
-omit [Fintype ι] in
-private theorem exists_isRegular_negWeightAdd_sub_weightAdd (h2 : IsRegular (2 : K))
-    {i j : ι} (hij : i ≠ j) (a b : ι) :
-    ∃ k, IsRegular
-      (-((Pi.single (M := fun _ : ι => K) a 1) k +
-          (Pi.single (M := fun _ : ι => K) b 1) k) -
-        ((Pi.single (M := fun _ : ι => K) i 1) k +
-          (Pi.single (M := fun _ : ι => K) j 1) k)) := by
-  classical
-  have hneg2 : IsRegular (-(2 : K)) := by
-    rw [show -(2 : K) = (-1) * 2 by ring]
-    exact isUnit_neg_one.isRegular.mul h2
-  by_cases hai : a = i
-  · by_cases hbi : b = i
-    · subst a
-      subst b
-      refine ⟨j, ?_⟩
-      simpa [hij] using (isUnit_neg_one.isRegular : IsRegular (-1 : K))
-    · refine ⟨i, ?_⟩
-      convert hneg2 using 1
-      simp [hai, hbi, hij]
-      ring
-  · by_cases hbi : b = i
-    · refine ⟨i, ?_⟩
-      convert hneg2 using 1
-      simp [hai, hbi, hij]
-      ring
-    · refine ⟨i, ?_⟩
-      simpa [hai, hbi, hij] using (isUnit_neg_one.isRegular : IsRegular (-1 : K))
-
 private theorem rootSpace_entry_eq_zero_of_isRegular_coordinate
     {chi : Module.Dual K (typeDDiagonalCartan K ι)}
     {X : LieAlgebra.Orthogonal.typeD ι K}
@@ -161,7 +76,7 @@ private theorem rootSpace_typeDWeightSub_apply_eq_zero
   · have hp : ¬(a = i ∧ b = j) := by
       rintro ⟨rfl, rfl⟩
       exact hne (typeDMatrixWeight_inl_inl a b)
-    obtain ⟨k, hk⟩ := exists_isRegular_weightSub_sub h2 hij a b hp
+    obtain ⟨k, hk⟩ := exists_isRegular_single_sub_single_sub h2 hij a b hp
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inl a) (.inl b) k
     simpa [typeDWeightSub_def, Pi.single_apply, eq_comm] using hk
   · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inl a) (.inr b)
@@ -178,7 +93,7 @@ private theorem rootSpace_typeDWeightSub_apply_eq_zero
   · have hp : ¬(b = i ∧ a = j) := by
       rintro ⟨rfl, rfl⟩
       exact hne (typeDMatrixWeight_inr_inr a b)
-    obtain ⟨k, hk⟩ := exists_isRegular_weightSub_sub h2 hij b a hp
+    obtain ⟨k, hk⟩ := exists_isRegular_single_sub_single_sub h2 hij b a hp
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inr a) (.inr b) k
     simpa [typeDWeightSub_def, Pi.single_apply, eq_comm] using hk
 
@@ -202,10 +117,11 @@ private theorem rootSpace_typeDWeightAdd_apply_eq_zero
       rcases hp with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · rfl
       · exact typeDWeightAdd_comm _ _)
-    obtain ⟨k, hk⟩ := exists_isRegular_weightAdd_sub h2 hij a b hp
+    obtain ⟨k, hk⟩ := exists_isRegular_single_add_single_sub h2 hij a b hp
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inl a) (.inr b) k
     simpa [typeDWeightAdd_def, Pi.single_apply, eq_comm] using hk
-  · obtain ⟨k, hk⟩ := exists_isRegular_negWeightAdd_sub_weightAdd h2 hij a b
+  · obtain ⟨k, hk⟩ :=
+      exists_isRegular_neg_single_add_single_sub_single_add_single h2 hij a b
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inr a) (.inl b) k
     simpa [typeDWeightAdd_def, Pi.single_apply, eq_comm] using hk
   · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inr a) (.inr b)
@@ -237,7 +153,7 @@ private theorem rootSpace_neg_typeDWeightAdd_apply_eq_zero
       rcases hp with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · rfl
       · exact congrArg Neg.neg (typeDWeightAdd_comm _ _))
-    obtain ⟨k, hk⟩ := exists_isRegular_weightAdd_sub h2 hij a b hp
+    obtain ⟨k, hk⟩ := exists_isRegular_single_add_single_sub h2 hij a b hp
     have hneg : IsRegular
         (-((Pi.single (M := fun _ : ι => K) a 1) k +
           (Pi.single (M := fun _ : ι => K) b 1) k -
