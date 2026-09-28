@@ -63,7 +63,7 @@ public section
 
 namespace TauCeti
 
-open Matrix
+open Matrix _root_.LieAlgebra.Orthogonal
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -172,7 +172,7 @@ def typeDDiagonalEquiv : (ι → K) ≃ₗ[K] typeDDiagonalCartan K ι where
       rcases a with i | i
       · simp [typeDDiagonalMatrix]
       · simp only [typeDDiagonalMatrix_apply, ↓reduceIte, typeDDiagonalValue_inr]
-        exact (typeD_apply_inr_inr
+        exact (typeD.apply_inr_inr
           (A : LieAlgebra.Orthogonal.typeD ι K) i i).symm
     · rw [typeDDiagonalMatrix_apply, ite_eq_right hab]
       exact (mem_typeDDiagonalCartan_iff_isDiag.mp A.2 hab).symm

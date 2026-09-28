@@ -34,7 +34,7 @@ the abstract type-`D` root datum.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§8, 12.
 -/
 
-open _root_.Matrix
+open _root_.Matrix _root_.LieAlgebra.Orthogonal
 
 public section
 
@@ -292,7 +292,7 @@ private theorem smul_differenceRootGenerator_eq_of_support
     rw [hz]
     simp [val_differenceRootGenerator, differenceRootMatrix_def]
   · -- The lower-right block is determined by the transpose of the upper-left block.
-    rw [typeD_apply_inr_inr X a b]
+    rw [typeD.apply_inr_inr X a b]
     by_cases hab : b = i ∧ a = j
     · obtain ⟨rfl, rfl⟩ := hab
       simp [val_differenceRootGenerator, differenceRootMatrix_def]
@@ -301,7 +301,7 @@ private theorem smul_differenceRootGenerator_eq_of_support
         exact hab hp)
       rw [hz]
       have hpos : ¬(i = b ∧ j = a) := fun h => hab ⟨h.1.symm, h.2.symm⟩
-      simp [typeD_apply_inr_inr, val_differenceRootGenerator, differenceRootMatrix_def, hpos]
+      simp [typeD.apply_inr_inr, val_differenceRootGenerator, differenceRootMatrix_def, hpos]
 
 /-- Over a nontrivial ring in which `2` is regular, the root space of `εᵢ - εⱼ`, for `i ≠ j`,
 is the line through the standard difference-root generator. -/
@@ -338,7 +338,7 @@ private theorem smul_sumRootGenerator_eq_of_support
     · obtain ⟨rfl, rfl⟩ := h₁
       simp [val_sumRootGenerator, sumRootMatrix_def, hij]
     · by_cases h₂ : a = j ∧ b = i
-      · rw [typeD_apply_inl_inr X a b, h₂.2, h₂.1]
+      · rw [typeD.apply_inl_inr X a b, h₂.2, h₂.1]
         simp [val_sumRootGenerator, sumRootMatrix_def, hij]
       · have hz := hs (.inl a) (.inr b) (fun hw => by
             rcases (typeDMatrixWeight_eq_typeDWeightAdd_iff h2 hij (.inl a) (.inr b)).mp hw
@@ -400,7 +400,7 @@ private theorem smul_negSumRootGenerator_eq_of_support
     · obtain ⟨rfl, rfl⟩ := h₁
       simp [val_negSumRootGenerator, negSumRootMatrix_def, hij]
     · by_cases h₂ : a = j ∧ b = i
-      · rw [typeD_apply_inr_inl X a b, h₂.2, h₂.1]
+      · rw [typeD.apply_inr_inl X a b, h₂.2, h₂.1]
         simp [val_negSumRootGenerator, negSumRootMatrix_def, hij]
       · have hz := hs (.inr a) (.inl b) (fun hw => by
             rcases (typeDMatrixWeight_eq_neg_typeDWeightAdd_iff h2 hij (.inr a) (.inl b)).mp hw

@@ -44,7 +44,7 @@ public section
 
 namespace TauCeti
 
-open _root_.Matrix
+open _root_.Matrix _root_.LieAlgebra.Orthogonal
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -86,7 +86,7 @@ theorem typeDCoordinateWeight_apply (a : ι ⊕ ι) (A : typeDDiagonalCartan K �
     typeDCoordinateWeight a A = (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a a := by
   cases a with
   | inl i => simp [typeDCoordinateWeight]
-  | inr i => simp [typeDCoordinateWeight, typeD_apply_inr_inr]
+  | inr i => simp [typeDCoordinateWeight, typeD.apply_inr_inr]
 
 /-- The matrix-entry weight evaluates as the difference of the two signed diagonal coordinates. -/
 @[simp]
