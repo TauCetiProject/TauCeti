@@ -59,33 +59,21 @@ private theorem prime_five_int : Prime (5 : ℤ) := by norm_num
 /-- Ten is not a rational square, in the shape the square-class comparison of two quadratic
 subfields produces it. -/
 private theorem not_isSquare_two_mul_five : ¬ IsSquare (((2 : ℤ) : ℚ) * ((5 : ℤ) : ℚ)) := by
-  have hsf : Squarefree (10 : ℤ) := by
-    have h : Squarefree ((2 : ℤ) * 5) := squarefree_mul_iff.mpr
-      ⟨(Int.isCoprime_iff_gcd_eq_one.mpr (by decide)).isRelPrime, Int.prime_two.squarefree,
-        prime_five_int.squarefree⟩
-    simpa using h
-  rw [show ((2 : ℤ) : ℚ) * ((5 : ℤ) : ℚ) = ((10 : ℤ) : ℚ) by norm_num]
+  have hsf : Squarefree ((2 : ℤ) * 5) := squarefree_mul_iff.mpr
+    ⟨(Int.isCoprime_iff_gcd_eq_one.mpr (by decide)).isRelPrime, Int.prime_two.squarefree,
+      prime_five_int.squarefree⟩
+  rw [← Int.cast_mul]
   exact not_isSquare_intCast_of_squarefree_of_ne_one hsf (by decide)
 
 /-- The square root of two generates a quadratic extension of `ℚ`. -/
 private theorem finrank_adjoin_of_sq_eq_two {L : Type*} [Field L] [Algebra ℚ L] {x : L}
     (hx : x ^ 2 = algebraMap ℚ L ((2 : ℤ) : ℚ)) : Module.finrank ℚ ℚ⟮x⟯ = 2 :=
-  Multiquadratic.finrank_adjoin_simple_of_squarefree Int.prime_two.squarefree
-    Int.prime_two.not_isUnit hx
+  Multiquadratic.finrank_adjoin_simple_of_squarefree Int.prime_two.squarefree (by decide) hx
 
 /-- The square root of five generates a quadratic extension of `ℚ`. -/
 private theorem finrank_adjoin_of_sq_eq_five {L : Type*} [Field L] [Algebra ℚ L] {x : L}
     (hx : x ^ 2 = algebraMap ℚ L ((5 : ℤ) : ℚ)) : Module.finrank ℚ ℚ⟮x⟯ = 2 :=
-  Multiquadratic.finrank_adjoin_simple_of_squarefree prime_five_int.squarefree
-    prime_five_int.not_isUnit hx
-
-/-- An element with quadratic simple extension does not lie in the base field. -/
-private theorem notMem_bot_of_finrank_adjoin_eq_two {L : Type*} [Field L] [Algebra ℚ L] {x : L}
-    (hx : Module.finrank ℚ ℚ⟮x⟯ = 2) : x ∉ (⊥ : IntermediateField ℚ L) := by
-  intro hmem
-  rw [← IntermediateField.adjoin_simple_eq_bot_iff] at hmem
-  rw [hmem, IntermediateField.finrank_bot] at hx
-  omega
+  Multiquadratic.finrank_adjoin_simple_of_squarefree prime_five_int.squarefree (by decide) hx
 
 /-- **Two is not a square in a fifth cyclotomic field.** The unique quadratic subfield is
 `ℚ(√5)`, and `ℚ(√2) ≠ ℚ(√5)` because `10` is not a rational square. -/
@@ -93,19 +81,20 @@ theorem not_isSquare_two_fifthCyclotomic {K : Type*} [Field K] [_root_.NumberFie
     [IsCyclotomicExtension {5} ℚ K] : ¬ IsSquare (2 : K) := by
   rintro ⟨x, hx⟩
   have hx2 : x ^ 2 = algebraMap ℚ K ((2 : ℤ) : ℚ) := by rw [sq, ← hx]; simp
+  have hxdeg : Module.finrank ℚ ℚ⟮x⟯ = 2 := finrank_adjoin_of_sq_eq_two hx2
   obtain ⟨ζ, hζ⟩ :=
     IsCyclotomicExtension.exists_isPrimitiveRoot (S := {5}) ℚ K (Set.mem_singleton _) (by norm_num)
   have hs2 : (1 + 2 * (ζ + ζ⁻¹) : K) ^ 2 = algebraMap ℚ K ((5 : ℤ) : ℚ) := by
     rw [hζ.one_add_two_mul_add_inv_sq_of_five]; simp
   -- Both `ℚ(√2)` and `ℚ(√5)` are the unique quadratic subfield, so they agree.
   have hxq : ℚ⟮x⟯ = ℚ⟮(1 + 2 * (ζ + ζ⁻¹) : K)⟯ :=
-    (ℚ⟮x⟯.eq_fifthCyclotomicQuadraticSubfield_of_finrank_eq_two
-        (finrank_adjoin_of_sq_eq_two hx2)).trans
+    (ℚ⟮x⟯.eq_fifthCyclotomicQuadraticSubfield_of_finrank_eq_two hxdeg).trans
       (adjoin_sqrt_five_eq_fifthCyclotomicQuadraticSubfield
         hζ.one_add_two_mul_add_inv_sq_of_five).symm
+  -- A quadratic `ℚ⟮x⟯` puts `x` outside `ℚ`, since `x ∈ ℚ` would make that degree `1`.
   exact not_isSquare_two_mul_five
     (TauCeti.IntermediateField.isSquare_mul_of_adjoin_simple_eq hx2 hs2
-      (notMem_bot_of_finrank_adjoin_eq_two (finrank_adjoin_of_sq_eq_two hx2)) hxq)
+      (IntermediateField.finrank_adjoin_simple_eq_one_iff.not.mp (by omega)) hxq)
 
 variable {Ω : Type*} [Field Ω] [CharZero Ω] {a b ζ : Ω}
 
@@ -156,9 +145,10 @@ private theorem notMem_adjoin_of_sq_eq_two_of_sq_eq_five (ha : a ^ 2 = 2) (hb : 
   have heq : ℚ⟮a⟯ = ℚ⟮b⟯ :=
     IntermediateField.eq_of_le_of_finrank_eq (IntermediateField.adjoin_simple_le_iff.mpr hmem)
       (by rw [hadeg, finrank_adjoin_of_sq_eq_five hb'])
+  -- A quadratic `ℚ⟮a⟯` puts `a` outside `ℚ`, since `a ∈ ℚ` would make that degree `1`.
   exact not_isSquare_two_mul_five
     (TauCeti.IntermediateField.isSquare_mul_of_adjoin_simple_eq ha' hb'
-      (notMem_bot_of_finrank_adjoin_eq_two hadeg) heq)
+      (IntermediateField.finrank_adjoin_simple_eq_one_iff.not.mp (by omega)) heq)
 
 /-- **`ℚ(√5, √2)` meets a fifth cyclotomic field in `ℚ(√5)`.** -/
 theorem adjoin_inf_adjoin_eq_adjoin_of_sq_eq_two (ha : a ^ 2 = 2) (hb : b ^ 2 = 5)
