@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.Brauer.Generator
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # The Brauer diagrams on at most two strands
 
@@ -105,8 +107,7 @@ theorem exists_eq_permToBrauer_iff_bottomCap_eq_empty (D : BrauerDiagram k) :
 /-- **A cap joins two distinct bottom points**, so on at most one strand no bottom point is
 capped. -/
 theorem bottomCap_eq_empty_of_le_one (D : BrauerDiagram k) (hk : k ≤ 1) : D.bottomCap = ∅ := by
-  have hsub : Subsingleton (Fin k) :=
-    ⟨fun a b => Fin.val_injective (by have := a.isLt; have := b.isLt; omega)⟩
+  have hsub : Subsingleton (Fin k) := Fin.subsingleton_iff_le_one.mpr hk
   refine Finset.eq_empty_of_forall_notMem fun i hi => ?_
   obtain ⟨i', hi'⟩ : ∃ i', D.val (Sum.inl i) = Sum.inl i' :=
     ⟨_, (Sum.inl_getLeft _ ((D.isCap_def _).mp ((mem_bottomCap _).mp hi)).2).symm⟩
@@ -117,21 +118,10 @@ theorem eq_permToBrauer_one_of_le_one (D : BrauerDiagram k) (hk : k ≤ 1) :
     D = permToBrauer 1 := by
   obtain ⟨σ, rfl⟩ :=
     (exists_eq_permToBrauer_iff_bottomCap_eq_empty D).mpr (D.bottomCap_eq_empty_of_le_one hk)
-  have hsub : Subsingleton (Fin k) :=
-    ⟨fun a b => Fin.val_injective (by have := a.isLt; have := b.isLt; omega)⟩
-  exact congrArg permToBrauer (Equiv.ext fun _ => Subsingleton.elim _ _)
+  have hsub : Subsingleton (Fin k) := Fin.subsingleton_iff_le_one.mpr hk
+  exact congrArg permToBrauer (Subsingleton.elim σ 1)
 
 /-! ### Two strands -/
-
-/-- On two letters an index other than `0` is `1`. -/
-private theorem fin_two_eq_one_of_ne_zero (i : Fin 2) (h : i ≠ 0) : i = 1 := by
-  revert i
-  decide
-
-/-- On two letters a permutation is the identity or the transposition. -/
-private theorem perm_fin_two_eq (σ : Equiv.Perm (Fin 2)) : σ = 1 ∨ σ = Equiv.swap 0 1 := by
-  revert σ
-  decide
 
 /-- **A Brauer diagram on two strands either caps nothing, or caps and cups its whole boundary.**
 The capped bottom points are even in number and there are at most two of them, so there are none
@@ -159,29 +149,23 @@ theorem eq_permToBrauer_or_eq_capCup (D : BrauerDiagram 2) :
   have hcap : D.val (Sum.inl 0) = Sum.inl 1 := by
     obtain ⟨i, hi⟩ : ∃ i, D.val (Sum.inl 0) = Sum.inl i :=
       ⟨_, (Sum.inl_getLeft _ ((D.isCap_def _).mp (hbot 0)).2).symm⟩
-    rw [hi, fin_two_eq_one_of_ne_zero i fun hz => D.apply_ne (Sum.inl 0) (by rw [hi, hz])]
+    rw [hi, Fin.eq_one_of_ne_zero i fun hz => D.apply_ne (Sum.inl 0) (by rw [hi, hz])]
   have hcup : D.val (Sum.inr 0) = Sum.inr 1 := by
     obtain ⟨j, hj⟩ : ∃ j, D.val (Sum.inr 0) = Sum.inr j :=
       ⟨_, (Sum.inr_getRight _ ((D.isCup_def _).mp (htop 0)).2).symm⟩
-    rw [hj, fin_two_eq_one_of_ne_zero j fun hz => D.apply_ne (Sum.inr 0) (by rw [hj, hz])]
+    rw [hj, Fin.eq_one_of_ne_zero j fun hz => D.apply_ne (Sum.inr 0) (by rw [hj, hz])]
   exact (eq_capCup_iff (by decide)).mpr
-    ⟨hcap, hcup, fun i hi0 hi1 => absurd (fin_two_eq_one_of_ne_zero i hi0) hi1⟩
+    ⟨hcap, hcup, fun i hi0 hi1 => absurd (Fin.eq_one_of_ne_zero i hi0) hi1⟩
 
 /-- **The three Brauer diagrams on two strands**: the identity diagram, the crossing, and the
 cap-cup diagram. -/
 theorem eq_permToBrauer_one_or_eq_permToBrauer_swap_or_eq_capCup (D : BrauerDiagram 2) :
     D = permToBrauer 1 ∨ D = permToBrauer (Equiv.swap 0 1) ∨ D = capCup 0 1 := by
   rcases eq_permToBrauer_or_eq_capCup D with ⟨σ, rfl⟩ | h
-  · rcases perm_fin_two_eq σ with rfl | rfl
+  · rcases perm_fin_two_eq_one_or_swap σ with rfl | rfl
     · exact Or.inl rfl
     · exact Or.inr (Or.inl rfl)
   · exact Or.inr (Or.inr h)
-
-/-- **The identity diagram and the crossing are distinct**, so the three diagrams on two strands
-really are three. -/
-theorem permToBrauer_one_ne_permToBrauer_swap :
-    permToBrauer (1 : Equiv.Perm (Fin 2)) ≠ permToBrauer (Equiv.swap 0 1) := fun h =>
-  (by decide : (1 : Equiv.Perm (Fin 2)) ≠ Equiv.swap 0 1) (permToBrauer_injective 2 h)
 
 /-- **The enumeration of the Brauer diagrams on two strands.** -/
 theorem univ_two : (Finset.univ : Finset (BrauerDiagram 2)) =
