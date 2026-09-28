@@ -230,24 +230,8 @@ theorem hasseInvariant_add_mk (p q : RegularFormPresentation K) :
     toFun := fun a => quaternionClass a b
     map_one' := quaternionClass_one_left b
     map_mul' := fun a c => quaternionClass_mul_left a c b }
-  have happend : p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := by
-    let hfst := RegularFormPresentation.fst_append p q
-    have hw : (p.append q).2 ∘ Fin.cast hfst.symm = Fin.append p.2 q.2 := by
-      funext i
-      refine Fin.addCases ?_ ?_ i
-      · intro k
-        simpa only [Function.comp_apply, Fin.append_left] using
-          RegularFormPresentation.append_apply_castAdd p q k
-      · intro k
-        simpa only [Function.comp_apply, Fin.append_right] using
-          RegularFormPresentation.append_apply_natAdd p q k
-    apply RegularFormPresentation.ext hfst
-    intro i
-    let j := Fin.cast hfst i
-    have hi : i = Fin.cast hfst.symm j := Fin.ext rfl
-    rw [hi]
-    exact congrFun hw j
-  rw [mk_add_mk, happend, hasseInvariant_mk, hasseInvariant_mk, hasseInvariant_mk]
+  rw [mk_add_mk, RegularFormPresentation.append_eq, hasseInvariant_mk,
+    hasseInvariant_mk, hasseInvariant_mk]
   rw [prod_prod_Ioi_append]
   congr 1
   calc
@@ -279,20 +263,7 @@ theorem hasseInvariant_mk_rankOne_mul_mk (a : Kˣ) (p : RegularFormPresentation 
       hasseInvariant (Quotient.mk (regularFormSetoid K) p) *
         quaternionClass a (-1) ^ p.1.choose 2 *
         quaternionClass a (∏ i, p.2 i) ^ (p.1 - 1) := by
-  let r : RegularFormPresentation K := ⟨1, fun _ => a⟩
-  have hrank : (r.tmul p).1 = p.1 := by simp [r]
-  have hscale : r.tmul p = ⟨p.1, fun i => a * p.2 i⟩ := by
-    refine RegularFormPresentation.ext (q := ⟨p.1, fun i => a * p.2 i⟩) hrank ?_
-    intro i
-    let j := Fin.cast hrank i
-    have happly := RegularFormPresentation.tmul_apply r p (0 : Fin r.1) j
-    have hi : Fin.cast (RegularFormPresentation.fst_tmul r p).symm
-        (finProdFinEquiv (0, j)) = i := by
-      apply Fin.ext
-      simp [r, j, finProdFinEquiv]
-    rw [hi] at happly
-    simpa [r, j] using happly
-  rw [mk_mul_mk, hscale, hasseInvariant_mk_scale]
+  rw [mk_mul_mk, RegularFormPresentation.rankOne_tmul, hasseInvariant_mk_scale]
 
 /-- **Orthogonal-sum formula** for regular-form classes: the cross term is the quaternion
 symbol of their discriminants. -/

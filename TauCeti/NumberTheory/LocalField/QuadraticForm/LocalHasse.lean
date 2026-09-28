@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
 public import TauCeti.NumberTheory.HilbertSymbol.Binary
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity
+public import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.NumberTheory.LocalField.SquareClasses
 
 /-!
@@ -24,6 +25,9 @@ The orthogonal-sum formula has a cross term given by the Hilbert symbol of the t
 discriminants. This is the convention of Serre's `ε` and Lam's `s`; O'Meara's product
 over `i ≤ j` uses a different convention.
 
+The construction and proof structure are adapted from
+`TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse`.
+
 ## References
 
 * J.-P. Serre, *A Course in Arithmetic*, Chapter IV, §2.1.
@@ -36,10 +40,14 @@ open Finset QuadraticMap ValuativeRel
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [Invertible (2 : K)] [ValuativeRel K] [TopologicalSpace K]
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 namespace RegularFormClass
+
+section Auxiliary
+
+variable [Invertible (2 : K)]
 
 omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 private theorem localHasseProd_eq_of_permutationStep
@@ -107,10 +115,13 @@ private theorem localHasseProd_scale (h2 : IsUnit (2 : 𝒪[K])) (a : Kˣ)
       ac_nf
       rw [mul_left_comm (hilbertSymbol a (-1) ^ (n + 1))]
 
+end Auxiliary
+
 /-- The product of pairwise Hilbert symbols on a regular-form class over a local field
 of odd residue characteristic. It is independent of the diagonal presentation. -/
 noncomputable def localHasseOfOdd (h2 : IsUnit (2 : 𝒪[K])) :
     RegularFormClass K → ℤˣ := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   exact liftDiagonal
     (fun p => ∏ i, ∏ j ∈ Ioi i, hilbertSymbol (p.2 i) (p.2 j))
     localHasseProd_eq_of_permutationStep
@@ -123,6 +134,7 @@ Hilbert symbols. -/
 theorem localHasseOfOdd_mk (h2 : IsUnit (2 : 𝒪[K])) (p : RegularFormPresentation K) :
     localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) p) =
       ∏ i, ∏ j ∈ Ioi i, hilbertSymbol (p.2 i) (p.2 j) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   exact liftDiagonal_mk _ localHasseProd_eq_of_permutationStep
     (localHasseProd_eq_of_binaryStep h2)
     (fun a b _ => localHasseProd_rankOne a b) p
@@ -132,8 +144,10 @@ theorem localHasseOfOdd_formClass (h2 : IsUnit (2 : 𝒪[K]))
     {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {n : ℕ}
     (w : Fin n → Kˣ) (h : Q.Equivalent (weightedSumSquares K fun i => (w i : K))) :
+    letI : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
     localHasseOfOdd h2 (formClass Q hQ) =
       ∏ i, ∏ j ∈ Ioi i, hilbertSymbol (w i) (w j) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   rw [formClass_mk Q hQ ⟨n, w⟩ (by rwa [presentedForm_eq_weightedSumSquares_coe]),
     localHasseOfOdd_mk]
 
@@ -160,6 +174,7 @@ theorem localHasseOfOdd_mk_rankOne (h2 : IsUnit (2 : 𝒪[K])) (a : Kˣ) :
 theorem localHasseOfOdd_mk_binary (h2 : IsUnit (2 : 𝒪[K])) (a b : Kˣ) :
     localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) =
       hilbertSymbol a b := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   rw [localHasseOfOdd_mk]
   simp [Fin.prod_univ_succ]
 
@@ -178,18 +193,22 @@ theorem localHasseOfOdd_one (h2 : IsUnit (2 : 𝒪[K])) :
 /-- The hyperbolic plane `⟨1, -1⟩` has trivial local Hasse invariant. -/
 @[simp]
 theorem localHasseOfOdd_hyperbolicClass (h2 : IsUnit (2 : 𝒪[K])) :
+    letI : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
     localHasseOfOdd h2 (hyperbolicClass K) = 1 := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   rw [hyperbolicClass_def, localHasseOfOdd_mk_binary, hilbertSymbol_one_left]
 
 /-- The Hasse invariant of an orthogonal sum of diagonal presentations. The cross term
 is the Hilbert symbol of their coefficient products. -/
 theorem localHasseOfOdd_add_mk (h2 : IsUnit (2 : 𝒪[K]))
     (p q : RegularFormPresentation K) :
+    letI : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
     localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) p +
       Quotient.mk (regularFormSetoid K) q) =
       localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) p) *
         localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) q) *
         hilbertSymbol (∏ i, p.2 i) (∏ j, q.2 j) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   let h₁ (a : Kˣ) : Kˣ →* ℤˣ := {
     toFun := hilbertSymbol a
     map_one' := hilbertSymbol_one_right a
@@ -198,24 +217,8 @@ theorem localHasseOfOdd_add_mk (h2 : IsUnit (2 : 𝒪[K]))
     toFun := fun a => hilbertSymbol a b
     map_one' := hilbertSymbol_one_left b
     map_mul' := fun a c => hilbertSymbol_mul_left h2 b a c }
-  have happend : p.append q = ⟨p.1 + q.1, Fin.append p.2 q.2⟩ := by
-    let hfst := RegularFormPresentation.fst_append p q
-    have hw : (p.append q).2 ∘ Fin.cast hfst.symm = Fin.append p.2 q.2 := by
-      funext i
-      refine Fin.addCases ?_ ?_ i
-      · intro k
-        simpa only [Function.comp_apply, Fin.append_left] using
-          RegularFormPresentation.append_apply_castAdd p q k
-      · intro k
-        simpa only [Function.comp_apply, Fin.append_right] using
-          RegularFormPresentation.append_apply_natAdd p q k
-    apply RegularFormPresentation.ext hfst
-    intro i
-    let j := Fin.cast hfst i
-    have hi : i = Fin.cast hfst.symm j := Fin.ext rfl
-    rw [hi]
-    exact congrFun hw j
-  rw [mk_add_mk, happend, localHasseOfOdd_mk, localHasseOfOdd_mk, localHasseOfOdd_mk,
+  rw [mk_add_mk, RegularFormPresentation.append_eq,
+    localHasseOfOdd_mk, localHasseOfOdd_mk, localHasseOfOdd_mk,
     prod_prod_Ioi_append]
   congr 1
   calc
@@ -236,37 +239,31 @@ theorem localHasseOfOdd_mk_scale (h2 : IsUnit (2 : 𝒪[K])) (a : Kˣ)
       localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) p) *
         hilbertSymbol a (-1) ^ p.1.choose 2 *
         hilbertSymbol a (∏ i, p.2 i) ^ (p.1 - 1) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   rw [localHasseOfOdd_mk, localHasseOfOdd_mk]
   exact localHasseProd_scale h2 a p.2
 
-/-- Scaling by a rank-one class is coefficientwise scaling of a diagonal presentation. -/
+/-- Scaling by a rank-one class changes the local Hasse invariant by the Hilbert symbol
+of the scale with `-1` for each coefficient pair, and with the coefficient product
+for each of the remaining `p.1 - 1` occurrences. -/
 theorem localHasseOfOdd_mk_rankOne_mul_mk (h2 : IsUnit (2 : 𝒪[K]))
     (a : Kˣ) (p : RegularFormPresentation K) :
+    letI : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
     localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ *
       Quotient.mk (regularFormSetoid K) p) =
       localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) p) *
         hilbertSymbol a (-1) ^ p.1.choose 2 *
         hilbertSymbol a (∏ i, p.2 i) ^ (p.1 - 1) := by
-  let r : RegularFormPresentation K := ⟨1, fun _ => a⟩
-  have hrank : (r.tmul p).1 = p.1 := by simp [r]
-  have hscale : r.tmul p = ⟨p.1, fun i => a * p.2 i⟩ := by
-    refine RegularFormPresentation.ext (q := ⟨p.1, fun i => a * p.2 i⟩) hrank ?_
-    intro i
-    let j := Fin.cast hrank i
-    have happly := RegularFormPresentation.tmul_apply r p (0 : Fin r.1) j
-    have hi : Fin.cast (RegularFormPresentation.fst_tmul r p).symm
-        (finProdFinEquiv (0, j)) = i := by
-      apply Fin.ext
-      simp [r, j, finProdFinEquiv]
-    rw [hi] at happly
-    simpa [r, j] using happly
-  rw [mk_mul_mk, hscale, localHasseOfOdd_mk_scale]
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
+  rw [mk_mul_mk, RegularFormPresentation.rankOne_tmul, localHasseOfOdd_mk_scale]
 
 /-- Orthogonal sum multiplies the two local Hasse invariants and adds the Hilbert
 symbol of their discriminants as a cross term. -/
 theorem localHasseOfOdd_add (h2 : IsUnit (2 : 𝒪[K])) (x y : RegularFormClass K) :
+    letI : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
     localHasseOfOdd h2 (x + y) = localHasseOfOdd h2 x * localHasseOfOdd h2 y *
       hilbertSymbolOnSquareClasses (discr x) (discr y) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   induction x using Quotient.inductionOn with
   | h p =>
     induction y using Quotient.inductionOn with
@@ -278,9 +275,11 @@ theorem localHasseOfOdd_add (h2 : IsUnit (2 : 𝒪[K])) (x y : RegularFormClass 
 Hilbert symbol of `a` with `-1` and with the class's discriminant. -/
 theorem localHasseOfOdd_mk_rankOne_mul (h2 : IsUnit (2 : 𝒪[K]))
     (a : Kˣ) (x : RegularFormClass K) :
+    letI : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
     localHasseOfOdd h2 (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) =
       localHasseOfOdd h2 x * hilbertSymbol a (-1) ^ (rank x).choose 2 *
         hilbertSymbolOnSquareClasses (squareClass a) (discr x) ^ (rank x - 1) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (two_ne_zero_of_isUnit_two h2)
   induction x using Quotient.inductionOn with
   | h p =>
     simpa only [rank_mk, discr_mk, hilbertSymbolOnSquareClasses_squareClass] using
