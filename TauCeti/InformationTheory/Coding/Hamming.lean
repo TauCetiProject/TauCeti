@@ -39,22 +39,19 @@ function belongs to the original code. -/
 theorem mem_hammingCode_iff (C : LinearCode F ι)
     (x : Hamming (fun _ : ι ↦ F)) :
     x ∈ hammingCode C ↔ Hamming.ofHamming x ∈ C := by
-  -- `Hamming` is a type synonym, so this `refl` map reduces to the identity map.
-  change x ∈ C.map (LinearMap.id : (ι → F) →ₗ[F] (ι → F)) ↔ Hamming.ofHamming x ∈ C
-  simp only [Submodule.map_id]
-  rfl
+  -- `Hamming` is a type synonym, so the inverse of `refl` is `ofHamming` by definition.
+  exact (Submodule.mem_map_equiv C (e :=
+    (LinearEquiv.refl F (ι → F) : (ι → F) ≃ₗ[F] Hamming (fun _ : ι ↦ F)))
+    (x := x)).trans (by rfl)
 
 /-- The underlying set of the transported code is the image of the original codewords. -/
 theorem coe_hammingCode (C : LinearCode F ι) :
     (hammingCode C : Set (Hamming (fun _ : ι ↦ F))) =
       Hamming.toHamming '' (C : Set (ι → F)) := by
-  ext x
-  constructor
-  · intro hx
-    exact ⟨Hamming.ofHamming x, (mem_hammingCode_iff C x).mp hx,
-      Hamming.toHamming_ofHamming x⟩
-  · rintro ⟨y, hy, rfl⟩
-    exact (mem_hammingCode_iff C (Hamming.toHamming y)).mpr (by simpa using hy)
+  -- The underlying map of `refl` is `toHamming` by definition.
+  exact (Submodule.map_coe
+    (LinearEquiv.refl F (ι → F) : (ι → F) ≃ₗ[F] Hamming (fun _ : ι ↦ F)).toLinearMap
+    C).trans (by rfl)
 
 /-- A code and its Hamming-space transport have the same dimension. -/
 @[simp]
