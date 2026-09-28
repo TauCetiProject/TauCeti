@@ -101,43 +101,37 @@ omit hmin hgen in
 /-- The prime above `23` associated to the simple root `15` of the defining cubic. -/
 def primeFifteen : Ideal (𝓞 K) := Ideal.span {(23 : 𝓞 K), θ - 15}
 
+private theorem primeRoot_eq_symm (r : ℕ)
+    (hr : (X - C (r : ZMod 23)) ∈ RingOfIntegers.monicFactorsMod θ 23) :
+    Ideal.span {(23 : 𝓞 K), θ - r} =
+      ((primesOverSpanEquivMonicFactorsMod (not_dvd_exponent hmin hgen)).symm
+        ⟨X - C (r : ZMod 23), hr⟩ : Ideal (𝓞 K)) := by
+  have hmap : ((X - C (r : ℤ)) : ℤ[X]).map (Int.castRingHom (ZMod 23)) =
+      X - C (r : ZMod 23) := by
+    simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C]
+    rfl
+  have hf : (X - C (r : ℤ)).map (Int.castRingHom (ZMod 23)) ∈
+      RingOfIntegers.monicFactorsMod θ 23 := by
+    rw [hmap]
+    exact hr
+  have h := primesOverSpanEquivMonicFactorsMod_symm_apply_eq_span
+    (not_dvd_exponent hmin hgen) hf
+  have hr' : (algebraMap ℤ (𝓞 K)) (r : ℤ) = (r : 𝓞 K) := by simp
+  have h23 : (algebraMap ℤ (𝓞 K)) (23 : ℤ) = (23 : 𝓞 K) := by simp
+  have hnat : ((23 : ℕ) : 𝓞 K) = (23 : 𝓞 K) := by norm_num
+  simpa only [hmap, map_sub, aeval_X, aeval_C, hr', h23, hnat] using h.symm
+
 private theorem primeSixteen_eq_symm :
     primeSixteen (θ := θ) =
       ((primesOverSpanEquivMonicFactorsMod (not_dvd_exponent hmin hgen)).symm
         ⟨X - C 16, factor_sixteen_mem hmin⟩ : Ideal (𝓞 K)) := by
-  have hmap : ((X - C (16 : ℤ)) : ℤ[X]).map (Int.castRingHom (ZMod 23)) =
-      X - C (16 : ZMod 23) := by
-    simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C]
-    rfl
-  have hf : (X - C (16 : ℤ)).map (Int.castRingHom (ZMod 23)) ∈
-      RingOfIntegers.monicFactorsMod θ 23 := by
-    rw [hmap]
-    exact factor_sixteen_mem hmin
-  have h := primesOverSpanEquivMonicFactorsMod_symm_apply_eq_span
-    (not_dvd_exponent hmin hgen) hf
-  have h16 : (algebraMap ℤ (𝓞 K)) (16 : ℤ) = (16 : 𝓞 K) := by simp
-  have h23 : (algebraMap ℤ (𝓞 K)) (23 : ℤ) = (23 : 𝓞 K) := by simp
-  have hnat : ((23 : ℕ) : 𝓞 K) = (23 : 𝓞 K) := by norm_num
-  simpa only [hmap, primeSixteen, map_sub, aeval_X, aeval_C, h16, h23, hnat] using h.symm
+  exact primeRoot_eq_symm hmin hgen 16 (factor_sixteen_mem hmin)
 
 private theorem primeFifteen_eq_symm :
     primeFifteen (θ := θ) =
       ((primesOverSpanEquivMonicFactorsMod (not_dvd_exponent hmin hgen)).symm
         ⟨X - C 15, factor_fifteen_mem hmin⟩ : Ideal (𝓞 K)) := by
-  have hmap : ((X - C (15 : ℤ)) : ℤ[X]).map (Int.castRingHom (ZMod 23)) =
-      X - C (15 : ZMod 23) := by
-    simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C]
-    rfl
-  have hf : (X - C (15 : ℤ)).map (Int.castRingHom (ZMod 23)) ∈
-      RingOfIntegers.monicFactorsMod θ 23 := by
-    rw [hmap]
-    exact factor_fifteen_mem hmin
-  have h := primesOverSpanEquivMonicFactorsMod_symm_apply_eq_span
-    (not_dvd_exponent hmin hgen) hf
-  have h15 : (algebraMap ℤ (𝓞 K)) (15 : ℤ) = (15 : 𝓞 K) := by simp
-  have h23 : (algebraMap ℤ (𝓞 K)) (23 : ℤ) = (23 : 𝓞 K) := by simp
-  have hnat : ((23 : ℕ) : 𝓞 K) = (23 : 𝓞 K) := by norm_num
-  simpa only [hmap, primeFifteen, map_sub, aeval_X, aeval_C, h15, h23, hnat] using h.symm
+  exact primeRoot_eq_symm hmin hgen 15 (factor_fifteen_mem hmin)
 
 /-- The ideal attached to the double root is prime. -/
 theorem isPrime_primeSixteen : (primeSixteen (θ := θ)).IsPrime := by
@@ -166,16 +160,23 @@ theorem liesOver_primeFifteen :
     ⟨X - C 15, factor_fifteen_mem hmin⟩).property.2
 
 omit [NumberField K] hgen in
-private theorem factor_sixteen_multiplicity :
-    multiplicity (X - C (16 : ZMod 23))
-      ((minpoly ℤ θ).map (Int.castRingHom (ZMod 23))) = 2 := by
+private theorem factor_root_multiplicity_eq_count (r : ZMod 23) :
+    multiplicity (X - C r)
+      ((minpoly ℤ θ).map (Int.castRingHom (ZMod 23))) =
+      (normalizedFactors ((minpoly ℤ θ).map (Int.castRingHom (ZMod 23)))).count
+        (X - C r) := by
   classical
   have h0 : (minpoly ℤ θ).map (Int.castRingHom (ZMod 23)) ≠ 0 := by
     rw [minpoly_mod_twenty_three hmin]
     exact mul_ne_zero (pow_ne_zero _ (X_sub_C_ne_zero 16)) (X_sub_C_ne_zero 15)
-  rw [multiplicity_eq_count_normalizedFactors (irreducible_X_sub_C (16 : ZMod 23)) h0,
-    (monic_X_sub_C (16 : ZMod 23)).normalize_eq_self,
-    normalizedFactors_mod_twenty_three hmin]
+  rw [multiplicity_eq_count_normalizedFactors (irreducible_X_sub_C r) h0,
+    (monic_X_sub_C r).normalize_eq_self]
+
+omit [NumberField K] hgen in
+private theorem factor_sixteen_multiplicity :
+    multiplicity (X - C (16 : ZMod 23))
+      ((minpoly ℤ θ).map (Int.castRingHom (ZMod 23))) = 2 := by
+  rw [factor_root_multiplicity_eq_count hmin, normalizedFactors_mod_twenty_three hmin]
   have hne : (16 : ZMod 23) ≠ 15 := by decide
   simp [hne]
 
@@ -183,13 +184,7 @@ omit [NumberField K] hgen in
 private theorem factor_fifteen_multiplicity :
     multiplicity (X - C (15 : ZMod 23))
       ((minpoly ℤ θ).map (Int.castRingHom (ZMod 23))) = 1 := by
-  classical
-  have h0 : (minpoly ℤ θ).map (Int.castRingHom (ZMod 23)) ≠ 0 := by
-    rw [minpoly_mod_twenty_three hmin]
-    exact mul_ne_zero (pow_ne_zero _ (X_sub_C_ne_zero 16)) (X_sub_C_ne_zero 15)
-  rw [multiplicity_eq_count_normalizedFactors (irreducible_X_sub_C (15 : ZMod 23)) h0,
-    (monic_X_sub_C (15 : ZMod 23)).normalize_eq_self,
-    normalizedFactors_mod_twenty_three hmin]
+  rw [factor_root_multiplicity_eq_count hmin, normalizedFactors_mod_twenty_three hmin]
   have hne : (15 : ZMod 23) ≠ 16 := by decide
   simp [hne]
 
