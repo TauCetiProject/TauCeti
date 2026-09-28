@@ -20,9 +20,11 @@ group. Composing the two counts the characters of an arbitrary finite group:
 `Nat.card (G →* Mˣ) = Nat.card (Abelianization G)`.
 
 The hypothesis is the one Mathlib's counting theorem carries, asked of the abelianization rather
-than of `G`: `M` has enough roots of unity for the exponent of `Abelianization G`, which for an
-algebraically closed field of characteristic zero is automatic. Nothing weaker will do, since a
-character group can collapse for want of roots of unity — over `ℝ` the group `ZMod 3` has only the
+than of `G`: writing `n` for `Monoid.exponent (Abelianization G)`, `HasEnoughRootsOfUnity M n` asks
+that `M` contain a primitive `n`-th root of unity and that the `n`-th roots of unity in `M` form a
+cyclic group. An algebraically closed field of characteristic zero satisfies it for every `n`. It is
+a sufficient condition, not one shown here to be necessary, but some hypothesis on `M` is needed:
+a character group can collapse for want of roots of unity — over `ℝ` the group `ZMod 3` has only the
 trivial character, while its abelianization is itself — and it can also grow, since over `ℝ × ℝ`
 the group `ZMod 2` has four characters rather than two.
 

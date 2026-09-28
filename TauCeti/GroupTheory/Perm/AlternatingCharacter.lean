@@ -49,12 +49,13 @@ are `1`, `χ` and `χ⁻¹`. Combined with the inversion lemma above this closes
 the other, so they form a *single* orbit of the conjugation action of `Equiv.Perm α`, not merely a
 pair of distinct characters inside one.
 
-The roots-of-unity hypothesis on the last three statements is not removable, and is not merely a
-device to rule out too *few* characters: the character group can also be too *large*. Over
-`M = ℂ × ℂ` the characters of `A₄` are the pairs of cube roots of unity, nine of them, and a
-nontrivial one such as `(ω, 1)` has neither `(1, ω)` nor its inverse among its powers. What
-`HasEnoughRootsOfUnity M (Monoid.exponent (Abelianization (alternatingGroup α)))` pins down is that
-`M` carries exactly the cube roots of unity of a field, no more and no fewer.
+The roots-of-unity hypothesis on the last three statements is not merely a device to rule out too
+*few* characters: the character group can also be too *large*. Over `M = ℂ × ℂ` the characters of
+`A₄` are the pairs of cube roots of unity, nine of them, and a nontrivial one such as `(ω, 1)` has
+neither `(1, ω)` nor its inverse among its powers, so the classification genuinely fails there.
+`HasEnoughRootsOfUnity M (Monoid.exponent (Abelianization (alternatingGroup α)))` rules that out by
+asking for a primitive cube root of unity in `M` and for the cube roots of unity in `M` to form a
+cyclic group. It is a sufficient condition, not one shown here to be necessary.
 
 For `4 < Nat.card α` the alternating group is perfect instead, and the statements above are then all
 vacuously about the trivial character.
@@ -74,8 +75,7 @@ vacuously about the trivial character.
 * `TauCeti.card_abelianization_alternatingGroup`: **the abelianization of `A₄` has order three.**
 * `TauCeti.monoidHom_alternatingGroup_apply_pow_three` and
   `TauCeti.monoidHom_alternatingGroup_pow_three`: **the linear characters of `A₄` are
-  cube-root-of-unity valued**, over arbitrary commutative coefficients. Neither is a `simp` lemma;
-  the first carries the reason.
+  cube-root-of-unity valued**, over arbitrary commutative coefficients.
 * `TauCeti.card_monoidHom_alternatingGroup`: **`A₄` has exactly three linear characters**, with
   `TauCeti.exists_monoidHom_alternatingGroup_ne_one` the corollary that one of them is nontrivial.
 * `TauCeti.monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv`: **the linear characters of `A₄` are
@@ -275,49 +275,33 @@ theorem card_abelianization_alternatingGroup (hα : Nat.card α = 4) :
   rw [alternatingGroup.card_of_card_eq_four hα, hcomm] at hsplit
   omega
 
-/-- A four-element type carries an odd permutation, namely a transposition. This is what turns the
-inversion lemma of `MonoidHom.comp_conjNormal_alternatingGroup_eq_inv` into transitivity of the
-conjugation action on the nontrivial characters. -/
-private theorem exists_notMem_alternatingGroup (hα : Nat.card α = 4) :
-    ∃ s : Perm α, s ∉ alternatingGroup α := by
-  have hnt : Nontrivial α := by
-    rw [← Finite.one_lt_card_iff_nontrivial, hα]
-    omega
-  obtain ⟨a, b, hab⟩ := exists_pair_ne α
-  refine ⟨Equiv.swap a b, ?_⟩
-  rw [mem_alternatingGroup, Equiv.Perm.sign_swap hab]
-  decide
-
 section CubeRoots
 
 variable {M : Type*} [CommMonoid M]
+
+-- The two reductions below spell their hypothesis with `Fintype.card α`, the `simp`-normal form of
+-- `Nat.card α = 4`, so that `simp` can discharge it and they can carry `@[simp]`.
 
 /-- **The linear characters of `A₄` are cube-root-of-unity valued.** A character factors through
 the abelianization `A₄ / V₄`, which has order three by
 `TauCeti.card_abelianization_alternatingGroup`, so every one of its values cubes to `1`. Nothing is
 asked of the roots of unity in `M`: the claim is about a value of `χ`, not about how many characters
-there are.
-
-This and `TauCeti.monoidHom_alternatingGroup_pow_three` are the canonical reductions of a cube to
-`1`, but neither can carry `@[simp]`: their side condition `Nat.card α = 4` is not in simp-normal
-form -- `simp` rewrites it to `Fintype.card α = 4` through `Nat.card_eq_fintype_card` -- so the
-`simpNF` linter rejects the tag. Restating the side condition with `Fintype.card α` to earn it would
-split this file's hypothesis away from the `Nat.card α = 4` that Mathlib's
-`alternatingGroup.kleinFour_eq_commutator` and `alternatingGroup.card_of_card_eq_four` take, which
-is the worse trade. -/
-theorem monoidHom_alternatingGroup_apply_pow_three (hα : Nat.card α = 4)
+there are. -/
+@[simp]
+theorem monoidHom_alternatingGroup_apply_pow_three (hα : Fintype.card α = 4)
     (χ : alternatingGroup α →* Mˣ) (x : alternatingGroup α) : χ x ^ 3 = 1 := by
+  have hcard : Nat.card α = 4 := by rw [Nat.card_eq_fintype_card, hα]
   have hx : Abelianization.of x ^ 3 = 1 := by
-    rw [← card_abelianization_alternatingGroup (α := α) hα]
+    rw [← card_abelianization_alternatingGroup (α := α) hcard]
     exact pow_card_eq_one'
   calc χ x ^ 3 = Abelianization.lift χ (Abelianization.of x ^ 3) := by
         rw [map_pow, Abelianization.lift_apply_of]
     _ = 1 := by rw [hx, map_one]
 
 /-- **A linear character of `A₄` is a cube root of unity in the character group**, the form of
-`TauCeti.monoidHom_alternatingGroup_apply_pow_three` as an equation between homomorphisms; the note
-there explains why neither is a `simp` lemma. -/
-theorem monoidHom_alternatingGroup_pow_three (hα : Nat.card α = 4)
+`TauCeti.monoidHom_alternatingGroup_apply_pow_three` as an equation between homomorphisms. -/
+@[simp]
+theorem monoidHom_alternatingGroup_pow_three (hα : Fintype.card α = 4)
     (χ : alternatingGroup α →* Mˣ) : χ ^ 3 = 1 := by
   ext x
   rw [MonoidHom.pow_apply, MonoidHom.one_apply,
@@ -355,9 +339,9 @@ variable {M}
 /-- **`A₄` has exactly three linear characters**, and once a nontrivial one `χ` is fixed they are
 `1`, `χ` and `χ⁻¹`. The character group has prime order three by
 `TauCeti.card_monoidHom_alternatingGroup`, so every nontrivial element generates it, and the three
-powers of `χ` are these. Enough roots of unity is the right hypothesis in both directions: without
-roots there are too few characters, while over `M = ℂ × ℂ` there are nine of them and the
-conclusion fails. -/
+powers of `χ` are these. Some hypothesis on `M` is needed on both counts: without roots of unity
+there are too few characters, while over `M = ℂ × ℂ` there are nine of them and the conclusion
+fails. -/
 theorem monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv (hα : Nat.card α = 4)
     {χ : alternatingGroup α →* Mˣ} (hχ : χ ≠ 1) (ψ : alternatingGroup α →* Mˣ) :
     ψ = 1 ∨ ψ = χ ∨ ψ = χ⁻¹ := by
@@ -373,9 +357,10 @@ theorem monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv (hα : Nat.card α = 4
   have hstep : χ ^ (n % 3) = ψ := by
     rw [← hord, pow_mod_orderOf]
     exact hn
+  have hcard : Fintype.card α = 4 := by rw [← Nat.card_eq_fintype_card, hα]
   have hsq : χ ^ 2 = χ⁻¹ :=
     eq_inv_of_mul_eq_one_left <| by
-      rw [← pow_succ, monoidHom_alternatingGroup_pow_three hα χ]
+      rw [← pow_succ, monoidHom_alternatingGroup_pow_three hcard χ]
   -- The residue of `n` modulo three is `0`, `1` or `2`, giving `1`, `χ` or `χ⁻¹`.
   have hthree : n % 3 = 0 ∨ n % 3 = 1 ∨ n % 3 = 2 := by omega
   rcases hthree with h | h | h
@@ -398,8 +383,15 @@ theorem exists_comp_conjNormal_alternatingGroup_eq (hα : Nat.card α = 4)
     rw [h]
     ext x
     simp
-  · obtain ⟨s, hs⟩ := exists_notMem_alternatingGroup hα
-    exact ⟨s, by rw [MonoidHom.comp_conjNormal_alternatingGroup_eq_inv χ hs, h]⟩
+  · -- A four-element type carries an odd permutation, `Equiv.Perm.sign` being onto `ℤˣ`.
+    have hnt : Nontrivial α := by
+      rw [← Finite.one_lt_card_iff_nontrivial, hα]
+      omega
+    obtain ⟨s, hs⟩ := sign_surjective α (-1)
+    have hs' : s ∉ alternatingGroup α := by
+      rw [mem_alternatingGroup, hs]
+      decide
+    exact ⟨s, by rw [MonoidHom.comp_conjNormal_alternatingGroup_eq_inv χ hs', h]⟩
 
 end EnoughRoots
 
