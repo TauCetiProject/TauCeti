@@ -26,18 +26,24 @@ are; on the trace line the action is in fact trivial, the invariant bivector spa
 fixed.  This is the first, two-strand, instance of the trace filtration of `V^{⊗k}` cut out by the
 horizontal arcs of a Brauer diagram, and the trace line is exactly the summand that is absent from
 the general-linear decomposition `V^{⊗2} ≅ Sym²V ⊕ ⋀²V` of
-`TauCeti/RepresentationTheory/ClassicalGroups/Decomposition.lean`: breaking `GLₙ` to `Oₙ` by
-fixing the invariant form is what makes the trace a subrepresentation.
+`TauCeti/RepresentationTheory/ClassicalGroups/Decomposition.lean`, which needs `2` invertible:
+breaking `GLₙ` to `Oₙ` by fixing the invariant form is what makes the trace a subrepresentation.
 
 The counting is `1 + (n² - 1) = n²`: the trace line is a line, and the harmonic tensors are a
-hyperplane.  Antisymmetric tensors are harmonic
-(`TauCeti.tprod_sub_swap_mem_orthogonalHarmonic`), so for `n = 3` the harmonic hyperplane is the
-`8`-dimensional sum of the `3`-dimensional antisymmetric and the `5`-dimensional traceless
-symmetric parts.  The further splitting of the harmonic tensors into those two pieces needs the
-symmetric and exterior squares and is not proved here, and neither is the symplectic mirror, where
-the cap and the cup of
+hyperplane.  About the finer structure of that hyperplane this file proves only one inclusion, that
+the antisymmetric tensors are harmonic (`TauCeti.tprod_sub_swap_mem_orthogonalHarmonic`).  When `2`
+is invertible the hyperplane is in fact the direct sum of the antisymmetric and the traceless
+symmetric tensors, which for `n = 3` is the classical `8 = 3 + 5`; that direct-sum decomposition
+needs the symmetric and the exterior square as submodules of the tensor square and is not proved
+here, and neither is the symplectic mirror, where the cap and the cup of
 `TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic.lean` have loop value
 `-2n`.
+
+The two pieces, the idempotent `e / n`, and its kernel and image need no subtraction, so they are
+stated over a commutative semiring.  Three things ask for a commutative ring: the orthogonal group,
+the inclusion of the antisymmetric tensors, and the complementarity of the two pieces, since
+`LinearMap.IsIdempotentElem.isCompl` splits a module over a ring.  Only the dimension counts ask
+for a field.
 
 ## Main definitions
 
@@ -50,7 +56,6 @@ the cap and the cup of
 
 ## Main results
 
-* `TauCeti.finrank_tensorPower`: the dimension `n ^ d` of `(kⁿ)^{⊗d}`.
 * `TauCeti.tensorPower_apply_of_mem_orthogonalTraceLine`: the orthogonal group fixes the trace
   line pointwise.
 * `TauCeti.ker_orthogonalCupCap` and `TauCeti.range_orthogonalCupCap`: the diagrammatic reading of
@@ -64,9 +69,6 @@ the cap and the cup of
 
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), Chapter 10, for harmonic tensors and the trace-free decomposition.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, "Harmonic tensors and the trace maps", and the worked example "Brauer duality on
-  `(ℂ³)^{⊗2}` for `O(3)`".
 -/
 
 public section
@@ -78,18 +80,11 @@ universe u
 
 namespace TauCeti
 
-/-- **The dimension of the tensor power `(kⁿ)^{⊗d}` is `n ^ d`**, read off the monomial basis
-`TauCeti.tensorPowerBasis`. -/
-theorem finrank_tensorPower (k : Type u) [Field k] (n d : ℕ) :
-    Module.finrank k (⨂[k]^d (Fin n → k)) = n ^ d := by
-  rw [Module.finrank_eq_card_basis (tensorPowerBasis k n d)]
-  simp
-
 variable (k : Type u) (n : ℕ)
 
-section CommRing
+section CommSemiring
 
-variable [CommRing k]
+variable [CommSemiring k]
 
 /-! ### The two pieces -/
 
@@ -105,13 +100,15 @@ theorem orthogonalHarmonic_def :
   (rfl)
 
 /-- A tensor of the square is harmonic exactly when the cap annihilates it. -/
+@[simp]
 theorem mem_orthogonalHarmonic_iff {x : ⨂[k]^2 (Fin n → k)} :
     x ∈ orthogonalHarmonic k n ↔ orthogonalCap k n x = 0 :=
   LinearMap.mem_ker
 
 /-- **The trace line** of the tensor square: the image of the cup, spanned by the invariant
 bivector `∑ⱼ eⱼ ⊗ eⱼ`.  It is the summand the invariant form contributes, and the one the
-general-linear decomposition `V^{⊗2} ≅ Sym²V ⊕ ⋀²V` does not see. -/
+general-linear decomposition `V^{⊗2} ≅ Sym²V ⊕ ⋀²V`, available when `2` is invertible, does not
+see. -/
 noncomputable def orthogonalTraceLine : Submodule k (⨂[k]^2 (Fin n → k)) :=
   LinearMap.range (orthogonalCup k n)
 
@@ -120,12 +117,116 @@ theorem orthogonalTraceLine_def :
     orthogonalTraceLine k n = LinearMap.range (orthogonalCup k n) :=
   (rfl)
 
+/-- A tensor of the square lies on the trace line exactly when it is a cup; the coefficient it is
+the cup of is unique by `TauCeti.orthogonalCup_injective`. -/
+@[simp]
+theorem mem_orthogonalTraceLine_iff {x : ⨂[k]^2 (Fin n → k)} :
+    x ∈ orthogonalTraceLine k n ↔ ∃ c, orthogonalCup k n c = x :=
+  LinearMap.mem_range
+
 -- Not a `simp` lemma: `TauCeti.orthogonalCup_apply` rewrites the left-hand side first, expanding
 -- the cup into the invariant bivector, so `simpNF` reports this form as not simp-normal.
 /-- Every cup lies in the trace line. -/
 theorem orthogonalCup_mem_orthogonalTraceLine (c : k) :
     orthogonalCup k n c ∈ orthogonalTraceLine k n :=
   LinearMap.mem_range_self _ c
+
+/-! ### The trace projection -/
+
+section Invertible
+
+variable [Invertible (n : k)]
+
+/-- **The cup is injective** once the loop value is invertible: capping a cup back off multiplies
+by `n`. -/
+theorem orthogonalCup_injective : Function.Injective (orthogonalCup k n) := by
+  intro c d h
+  have h' : ⅟(n : k) * ((n : k) * c) = ⅟(n : k) * ((n : k) * d) := by
+    rw [← orthogonalCap_comp_orthogonalCup_apply k n c,
+      ← orthogonalCap_comp_orthogonalCup_apply k n d, h]
+  rwa [invOf_mul_cancel_left, invOf_mul_cancel_left] at h'
+
+/-- **The cap is surjective** once the loop value is invertible. -/
+theorem orthogonalCap_surjective : Function.Surjective (orthogonalCap k n) := fun c =>
+  ⟨orthogonalCup k n (⅟(n : k) * c), by
+    rw [orthogonalCap_comp_orthogonalCup_apply, mul_invOf_cancel_left]⟩
+
+/-- The kernel of the Brauer generator `e` is the harmonic tensors: the cup is injective, so
+capping and cupping back destroys no more information than the cap already does. -/
+theorem ker_orthogonalCupCap :
+    LinearMap.ker (orthogonalCupCap k n) = orthogonalHarmonic k n := by
+  refine le_antisymm (fun x hx => ?_) fun x hx => ?_
+  · refine (mem_orthogonalHarmonic_iff k n).mpr (orthogonalCup_injective k n ?_)
+    rw [map_zero, ← orthogonalCupCap_apply]
+    exact LinearMap.mem_ker.mp hx
+  · rw [LinearMap.mem_ker, orthogonalCupCap_apply, (mem_orthogonalHarmonic_iff k n).mp hx, map_zero]
+
+/-- The image of the Brauer generator `e` is the trace line.  Together with
+`TauCeti.ker_orthogonalCupCap` this is the diagrammatic reading of the trace splitting: the
+horizontal arc of `e` cuts out the trace summand and kills the harmonic one. -/
+theorem range_orthogonalCupCap :
+    LinearMap.range (orthogonalCupCap k n) = orthogonalTraceLine k n := by
+  refine le_antisymm ?_ fun x hx => ?_
+  · rintro x ⟨y, rfl⟩
+    rw [orthogonalCupCap_apply]
+    exact orthogonalCup_mem_orthogonalTraceLine k n _
+  · obtain ⟨c, rfl⟩ := hx
+    refine ⟨orthogonalCup k n (⅟(n : k) * c), ?_⟩
+    rw [orthogonalCupCap_apply, orthogonalCap_comp_orthogonalCup_apply, mul_invOf_cancel_left]
+
+/-- **The trace projection** `e / n`, the Brauer generator rescaled so as to be idempotent.  The
+rescaling is where the invertibility of the loop value enters. -/
+noncomputable def orthogonalTraceProj : Module.End k (⨂[k]^2 (Fin n → k)) :=
+  ⅟(n : k) • orthogonalCupCap k n
+
+/-- The trace projection caps a tensor off, rescales by `⅟n`, and cups the result back. -/
+@[simp]
+theorem orthogonalTraceProj_apply (x : ⨂[k]^2 (Fin n → k)) :
+    orthogonalTraceProj k n x = orthogonalCup k n (⅟(n : k) * orthogonalCap k n x) := by
+  rw [orthogonalTraceProj, LinearMap.smul_apply, orthogonalCupCap_apply, ← map_smul, smul_eq_mul]
+
+/-- **The trace projection is idempotent**: this is the Brauer relation `e * e = n • e` divided
+by `n ^ 2`. -/
+theorem isIdempotentElem_orthogonalTraceProj : IsIdempotentElem (orthogonalTraceProj k n) := by
+  have h : orthogonalTraceProj k n * orthogonalTraceProj k n =
+      (⅟(n : k) * ⅟(n : k) * (n : k)) • orthogonalCupCap k n := by
+    rw [orthogonalTraceProj, smul_mul_assoc, mul_smul_comm, orthogonalCupCap_mul_self, smul_smul,
+      smul_smul]
+  rw [IsIdempotentElem, h, invOf_mul_cancel_right, orthogonalTraceProj]
+
+/-- The kernel of the trace projection is the harmonic tensors. -/
+theorem ker_orthogonalTraceProj :
+    LinearMap.ker (orthogonalTraceProj k n) = orthogonalHarmonic k n := by
+  refine le_antisymm (fun x hx => ?_) fun x hx => ?_
+  · have h : ⅟(n : k) * orthogonalCap k n x = 0 :=
+      orthogonalCup_injective k n (by
+        rw [map_zero, ← orthogonalTraceProj_apply]
+        exact LinearMap.mem_ker.mp hx)
+    refine (mem_orthogonalHarmonic_iff k n).mpr ?_
+    calc orthogonalCap k n x
+        = (n : k) * (⅟(n : k) * orthogonalCap k n x) := (mul_invOf_cancel_left _ _).symm
+      _ = 0 := by rw [h, mul_zero]
+  · rw [LinearMap.mem_ker, orthogonalTraceProj_apply, (mem_orthogonalHarmonic_iff k n).mp hx,
+      mul_zero, map_zero]
+
+/-- The image of the trace projection is the trace line. -/
+theorem range_orthogonalTraceProj :
+    LinearMap.range (orthogonalTraceProj k n) = orthogonalTraceLine k n := by
+  refine le_antisymm ?_ fun x hx => ?_
+  · rintro x ⟨y, rfl⟩
+    rw [orthogonalTraceProj_apply]
+    exact orthogonalCup_mem_orthogonalTraceLine k n _
+  · obtain ⟨c, rfl⟩ := hx
+    refine ⟨orthogonalCup k n c, ?_⟩
+    rw [orthogonalTraceProj_apply, orthogonalCap_comp_orthogonalCup_apply, invOf_mul_cancel_left]
+
+end Invertible
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing k]
 
 /-- **An antisymmetric tensor is harmonic.**  The cap is the dot product, which is symmetric, so it
 kills every difference `v ⊗ w - w ⊗ v`; this is the inclusion of the exterior square in the
@@ -186,103 +287,16 @@ theorem orthogonalTraceLineSubrep_toSubmodule :
     (orthogonalTraceLineSubrep k n).toSubmodule = orthogonalTraceLine k n :=
   (rfl)
 
-/-! ### The trace projection and the splitting -/
-
-section Invertible
-
-variable [Invertible (n : k)]
-
-/-- **The cup is injective** once the loop value is invertible: capping a cup back off multiplies
-by `n`. -/
-theorem orthogonalCup_injective : Function.Injective (orthogonalCup k n) := by
-  intro c d h
-  have h' : ⅟(n : k) * ((n : k) * c) = ⅟(n : k) * ((n : k) * d) := by
-    rw [← orthogonalCap_comp_orthogonalCup_apply k n c,
-      ← orthogonalCap_comp_orthogonalCup_apply k n d, h]
-  rwa [invOf_mul_cancel_left, invOf_mul_cancel_left] at h'
-
-/-- **The cap is surjective** once the loop value is invertible. -/
-theorem orthogonalCap_surjective : Function.Surjective (orthogonalCap k n) := fun c =>
-  ⟨orthogonalCup k n (⅟(n : k) * c), by
-    rw [orthogonalCap_comp_orthogonalCup_apply, mul_invOf_cancel_left]⟩
-
-/-- The kernel of the Brauer generator `e` is the harmonic tensors: the cup is injective, so
-capping and cupping back destroys no more information than the cap already does. -/
-theorem ker_orthogonalCupCap :
-    LinearMap.ker (orthogonalCupCap k n) = orthogonalHarmonic k n := by
-  refine le_antisymm (fun x hx => ?_) fun x hx => ?_
-  · refine (mem_orthogonalHarmonic_iff k n).mpr (orthogonalCup_injective k n ?_)
-    rw [map_zero, ← orthogonalCupCap_apply]
-    exact LinearMap.mem_ker.mp hx
-  · rw [LinearMap.mem_ker, orthogonalCupCap_apply, (mem_orthogonalHarmonic_iff k n).mp hx, map_zero]
-
-/-- The image of the Brauer generator `e` is the trace line.  Together with
-`TauCeti.ker_orthogonalCupCap` this is the diagrammatic reading of the trace splitting: the
-horizontal arc of `e` cuts out the trace summand and kills the harmonic one. -/
-theorem range_orthogonalCupCap :
-    LinearMap.range (orthogonalCupCap k n) = orthogonalTraceLine k n := by
-  refine le_antisymm ?_ fun x hx => ?_
-  · rintro x ⟨y, rfl⟩
-    rw [orthogonalCupCap_apply]
-    exact orthogonalCup_mem_orthogonalTraceLine k n _
-  · obtain ⟨c, rfl⟩ := hx
-    refine ⟨orthogonalCup k n (⅟(n : k) * c), ?_⟩
-    rw [orthogonalCupCap_apply, orthogonalCap_comp_orthogonalCup_apply, mul_invOf_cancel_left]
-
-/-- **The trace projection** `e / n`, the Brauer generator rescaled so as to be idempotent.  The
-rescaling is where the invertibility of the loop value enters. -/
-noncomputable def orthogonalTraceProj : Module.End k (⨂[k]^2 (Fin n → k)) :=
-  ⅟(n : k) • orthogonalCupCap k n
-
-/-- The trace projection caps a tensor off, rescales by `⅟n`, and cups the result back. -/
-theorem orthogonalTraceProj_apply (x : ⨂[k]^2 (Fin n → k)) :
-    orthogonalTraceProj k n x = orthogonalCup k n (⅟(n : k) * orthogonalCap k n x) := by
-  rw [orthogonalTraceProj, LinearMap.smul_apply, orthogonalCupCap_apply, ← map_smul, smul_eq_mul]
-
-/-- **The trace projection is idempotent**: this is the Brauer relation `e * e = n • e` divided
-by `n ^ 2`. -/
-theorem isIdempotentElem_orthogonalTraceProj : IsIdempotentElem (orthogonalTraceProj k n) := by
-  have h : orthogonalTraceProj k n * orthogonalTraceProj k n =
-      (⅟(n : k) * ⅟(n : k) * (n : k)) • orthogonalCupCap k n := by
-    rw [orthogonalTraceProj, smul_mul_assoc, mul_smul_comm, orthogonalCupCap_mul_self, smul_smul,
-      smul_smul]
-  rw [IsIdempotentElem, h, invOf_mul_cancel_right, orthogonalTraceProj]
-
-/-- The kernel of the trace projection is the harmonic tensors. -/
-theorem ker_orthogonalTraceProj :
-    LinearMap.ker (orthogonalTraceProj k n) = orthogonalHarmonic k n := by
-  refine le_antisymm (fun x hx => ?_) fun x hx => ?_
-  · have h : ⅟(n : k) * orthogonalCap k n x = 0 :=
-      orthogonalCup_injective k n (by
-        rw [map_zero, ← orthogonalTraceProj_apply]
-        exact LinearMap.mem_ker.mp hx)
-    refine (mem_orthogonalHarmonic_iff k n).mpr ?_
-    calc orthogonalCap k n x
-        = (n : k) * (⅟(n : k) * orthogonalCap k n x) := (mul_invOf_cancel_left _ _).symm
-      _ = 0 := by rw [h, mul_zero]
-  · rw [LinearMap.mem_ker, orthogonalTraceProj_apply, (mem_orthogonalHarmonic_iff k n).mp hx,
-      mul_zero, map_zero]
-
-/-- The image of the trace projection is the trace line. -/
-theorem range_orthogonalTraceProj :
-    LinearMap.range (orthogonalTraceProj k n) = orthogonalTraceLine k n := by
-  refine le_antisymm ?_ fun x hx => ?_
-  · rintro x ⟨y, rfl⟩
-    rw [orthogonalTraceProj_apply]
-    exact orthogonalCup_mem_orthogonalTraceLine k n _
-  · obtain ⟨c, rfl⟩ := hx
-    refine ⟨orthogonalCup k n c, ?_⟩
-    rw [orthogonalTraceProj_apply, orthogonalCap_comp_orthogonalCup_apply, invOf_mul_cancel_left]
+/-! ### The splitting -/
 
 /-- **The trace splitting of the tensor square.**  When the loop value `n` is invertible the tensor
 square is the direct sum of the trace line and the harmonic tensors, the two being the image and
-the kernel of the idempotent `e / n`. -/
-theorem isCompl_orthogonalTraceLine_orthogonalHarmonic :
+the kernel of the idempotent `e / n`.  The complementarity, unlike the idempotent itself, needs the
+tensor square to be a module over a ring. -/
+theorem isCompl_orthogonalTraceLine_orthogonalHarmonic [Invertible (n : k)] :
     IsCompl (orthogonalTraceLine k n) (orthogonalHarmonic k n) := by
   rw [← range_orthogonalTraceProj, ← ker_orthogonalTraceProj]
   exact LinearMap.IsIdempotentElem.isCompl (isIdempotentElem_orthogonalTraceProj k n)
-
-end Invertible
 
 end CommRing
 
@@ -321,9 +335,5 @@ theorem finrank_orthogonalHarmonic_three {k : Type u} [Field k] [Invertible ((3 
   have h := finrank_orthogonalHarmonic_add_one k 3
   have h9 : (3 : ℕ) ^ 2 = 9 := by norm_num
   omega
-
-theorem finrank_orthogonalHarmonic_rat_three :
-    Module.finrank ℚ (orthogonalHarmonic ℚ 3) = 8 :=
-  @finrank_orthogonalHarmonic_three ℚ _ (invertibleOfNonzero (by norm_num))
 
 end TauCeti
