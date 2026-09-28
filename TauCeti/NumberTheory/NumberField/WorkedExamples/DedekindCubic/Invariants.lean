@@ -18,8 +18,7 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 the ring of integers has the integral basis `(1, θ, (θ² − θ)/2)` of discriminant `−503`. This
 file records the consequences: the field discriminant is `−503`, the generator `θ` has index
 `2` in the ring of integers (since `disc(minpoly θ) = −2012 = 2² · (−503)`), the signature is
-`(1, 1)` and the intrinsic label prefix is `3.1.503`. The discriminant and the index are outputs
-of the integral basis, not inputs: the basis is certified first, in
+`(1, 1)` and the intrinsic label prefix is `3.1.503`. The integral basis is the one of
 `TauCeti.NumberTheory.NumberField.Index.DedekindCubic.RingOfIntegers`.
 
 ## Main results
@@ -42,9 +41,10 @@ open Polynomial NumberField NumberField.InfinitePlace
 
 namespace TauCeti.NumberField
 
-/-- The discriminant of Dedekind's cubic is `−2012 = 2² · (−503)`. Not a `simp` lemma: `simp`
-rewrites the constants `C 2` and `C 8` of the left-hand side to numerals, and the statement keeps
-the form of the minimal polynomial used throughout the Dedekind-cubic files. -/
+-- Not a `simp` lemma: `simp` rewrites the constants `C 2` and `C 8` of the left-hand side to
+-- numerals, so `simpNF` rejects the tag; the statement keeps the form of the minimal polynomial
+-- used throughout the Dedekind-cubic files.
+/-- The discriminant of Dedekind's cubic is `−2012 = 2² · (−503)`. -/
 theorem dedekindCubic_discr_polynomial :
     (X ^ 3 - X ^ 2 - C 2 * X - C 8 : ℤ[X]).discr = -2012 := by
   rw [Polynomial.discr_of_degree_eq_three (by compute_degree <;> norm_num)]
