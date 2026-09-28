@@ -43,6 +43,7 @@ on:
       - 'scripts/participant_graph.py'
       - 'scripts/pr_stats_graphs.py'
       - 'scripts/pipeline_health.py'
+      - 'scripts/ci_stats_graphs.py'
       - 'scripts/roadmap_progress.py'
       - 'scripts/roadmap_topics.json'
       - 'scripts/roadmap_coverage.json'
@@ -317,6 +318,21 @@ jobs:
           || {
             echo "::warning::roadmap progress generation failed; keeping the committed fallback JSON"
             echo "roadmap progress" >> "$RUNNER_TEMP/data-failures"
+          }
+
+      # TauCetiCI records every Actions run in the organisation and publishes a SQLite database
+      # daily; the CI page's fleet timelines are drawn from it. The release is public, so the
+      # download needs no credentials beyond the token gh wants to have.
+      - name: Regenerate the CI fleet charts into static_files
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/ci_stats_graphs.py --download --db "$RUNNER_TEMP/ci.sqlite" \
+            --out-dir web/static_files \
+          || {
+            echo "::warning::CI chart generation failed; keeping the last published SVGs"
+            echo "CI fleet charts" >> "$RUNNER_TEMP/data-failures"
           }
 
       # An explicit allowlist of GENERATED assets, not the whole directory. static_files also

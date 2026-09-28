@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.RationalSubset
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 
 /-!
 # Rational subsets of the completed rational localization
@@ -89,20 +90,17 @@ theorem spaComapLoc_preimage_mem_spaRationalFamily (P : PairOfDefinition A) (Apl
   have hcont : Continuous (algebraMap A S) := by
     have h := continuous_algebraMap_locTopology P T s S hden
     rwa [← locUniformSpace_toTopologicalSpace P T s S hden] at h
-  obtain ⟨V, r, hV, rfl⟩ := mem_spaRationalFamily_iff.mp hW
-  -- the set identity is the two-step form of `spaComap_preimage_rationalSubset`; what is left is
-  -- that the numerator ideal stays open, which holds for each factor separately
+  have hlocOpen : ∀ J : Ideal A, IsOpen (J : Set A) →
+      IsOpen (Ideal.map (algebraMap A S) J : Set S) := by
+    intro J hJ
+    exact isOpen_map_algebraMap_locUniformSpace P T s S hden hJ
   rw [spaComapLoc_eq_comp P Aplus T s S hden hcont
       (algebraMap_mem_integralClosure_adjoin_plus Aplus T s S) Completion.continuous_coeRingHom
       fun _ hx ↦ coeRingHom_mem_completedPlusSubring P Aplus T s S hden hx,
-    Set.preimage_comp, spaComap_preimage_rationalSubset, spaComap_preimage_rationalSubset]
-  refine mem_spaRationalFamily_iff.mpr ⟨_, _, ?_, rfl⟩
-  -- the numerator ideal is carried to an open ideal by each of the two factors in turn
-  rw [Finset.coe_image, ← Ideal.map_span]
-  refine isOpen_map_coeRingHom ?_
-  rw [Finset.coe_image, ← Ideal.map_span]
-  have hopen := isOpen_map_algebraMap_locTopology P T s S hden hV
-  rwa [← locUniformSpace_toTopologicalSpace P T s S hden] at hopen
+    Set.preimage_comp]
+  exact spaComap_preimage_mem_spaRationalFamily _ _ _ _ _
+    (fun _ h ↦ isOpen_map_coeRingHom h)
+    (spaComap_preimage_mem_spaRationalFamily _ _ _ _ _ hlocOpen hW)
 
 /-- **Every rational subset of `Spa (A⟨T/s⟩, A_U⁺)` is pulled back from one of `Spa (A, A⁺)`.**
 This is the substantial direction of Wedhorn Proposition 8.2 (2).

@@ -22,6 +22,9 @@ gives local path connectedness of the subspace.
   the inclusion of a path component.
 * Instances making `↥(pathComponent x₀)` path connected and locally path connected.
 * `TauCeti.pathComponentSelf`: a point viewed in its own path component.
+* `Joined.eq_of_totallyDisconnectedSpace` and
+  `ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace`: in a totally disconnected space,
+  the path components are the points.
 
 ## References
 
@@ -71,5 +74,17 @@ instance instLocallyPathConnectedSpaceSubtypePathComponent [LocallyPathConnected
 /-- The basepoint of `X`, viewed as a point of its own path component. -/
 abbrev pathComponentSelf : (pathComponent x₀ : Set X) :=
   ⟨x₀, mem_pathComponent_self x₀⟩
+
+/-- In a totally disconnected space, points joined by a path are equal. -/
+theorem _root_.Joined.eq_of_totallyDisconnectedSpace [TotallyDisconnectedSpace X] {x y : X}
+    (h : Joined x y) : x = y := by
+  obtain ⟨γ⟩ := h
+  simpa using (isPreconnected_range γ.continuous).subsingleton
+    (Set.mem_range_self 0) (Set.mem_range_self 1)
+
+/-- In a totally disconnected space, distinct points lie in distinct path components. -/
+theorem _root_.ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace
+    [TotallyDisconnectedSpace X] : Function.Injective (ZerothHomotopy.mk (X := X)) :=
+  fun _ _ h ↦ Joined.eq_of_totallyDisconnectedSpace (Quotient.exact h)
 
 end TauCeti
