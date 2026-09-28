@@ -50,20 +50,10 @@ lemma skeletonPairMap_snd (n : ℕ) :
     TopPair.Hom.snd (skeletonPairMap C C' hf n) = skeletonMap C C' hf n := (rfl)
 
 /-- The restrictions to three consecutive skeleta form a map of skeletal triples. -/
-def skeletonTripleMap (n : ℕ) : skeletonTriple C n ⟶ skeletonTriple C' n :=
+private def skeletonTripleMap (n : ℕ) : skeletonTriple C n ⟶ skeletonTriple C' n :=
   ⟨ComposableArrows.homMk₂ (skeletonMap C C' hf n)
     (skeletonMap C C' hf (n + 1)) (skeletonMap C C' hf (n + 2))
     (by ext x; rfl) (by ext x; rfl)⟩
-
-@[simp]
-lemma skeletonTripleMap_innerPair (n : ℕ) :
-    TopTriple.innerPair.map (skeletonTripleMap C C' hf n) =
-      skeletonPairMap C C' hf n := (rfl)
-
-@[simp]
-lemma skeletonTripleMap_outerPair (n : ℕ) :
-    TopTriple.outerPair.map (skeletonTripleMap C C' hf n) =
-      skeletonPairMap C C' hf (n + 1) := (rfl)
 
 /-- Restriction of the identity map to a skeletal pair is the identity pair map. -/
 @[simp]
@@ -88,11 +78,6 @@ variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 def cellularChainGroupMap (n : ℕ) :
     cellularChainGroup C R n ⟶ cellularChainGroup C' R n :=
   TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n
-
-/-- The map on cellular chains is the map on relative homology of skeletal pairs. -/
-lemma cellularChainGroupMap_eq_singularHomologyMap (n : ℕ) :
-    cellularChainGroupMap C C' hf R n =
-      TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n := (rfl)
 
 /-- The identity cellular map acts as the identity on each cellular chain group. -/
 @[simp]
