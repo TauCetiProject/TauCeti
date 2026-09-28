@@ -526,14 +526,18 @@ end Det
 
 section Coordinate
 
-variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
+variable {R : Type u} [CommSemiring R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
+
+private def coordinateToLin :
+    Matrix.GeneralLinearGroup n R ≃* LinearMap.GeneralLinearGroup R (n → R) :=
+  Units.mapEquiv Matrix.toLinAlgEquiv'.toMulEquiv
 
 /-- The coordinate inclusion of an orthogonal group into `GL(n, R)`. -/
 noncomputable def _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     orthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
-  (Matrix.GeneralLinearGroup.toLin (n := n) (R := R)).symm.toMonoidHom.comp
+  (coordinateToLin (n := n) (R := R)).symm.toMonoidHom.comp
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.toMonoidHom.comp
       (orthogonalGroup Q).subtype)
 
@@ -548,10 +552,12 @@ theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_apply
         (Pi.single j 1)) i := by
       rw [Matrix.mulVec_single_one, Matrix.col_apply]
     _ = ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
-        (Matrix.GeneralLinearGroup.toLin (orthogonalToGeneralLinear Q g)))
+        (coordinateToLin (orthogonalToGeneralLinear Q g)))
           (Pi.single j 1)) i := by
       rw [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
-        Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply]
+        coordinateToLin, Units.coe_mapEquiv]
+      change _ = (Matrix.toLinAlgEquiv' _ _) i
+      rw [Matrix.toLinAlgEquiv'_apply]
     _ = _ := by simp [orthogonalToGeneralLinear]
 
 /-- The underlying matrix of the coordinate inclusion is the matrix of the linear equivalence. -/
@@ -568,9 +574,16 @@ theorem _root_.TauCeti.QuadraticMap.coe_orthogonalToGeneralLinear
 theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_injective
     (Q : QuadraticMap R (n → R) N) :
     Function.Injective (orthogonalToGeneralLinear Q) :=
-  (Matrix.GeneralLinearGroup.toLin (n := n) (R := R)).symm.injective.comp
+  (coordinateToLin (n := n) (R := R)).symm.injective.comp
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.injective.comp
       Subtype.coe_injective)
+
+end Coordinate
+
+section SpecialCoordinate
+
+variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
+  {N : Type w} [AddCommMonoid N] [Module R N]
 
 /-- The coordinate inclusion of a special orthogonal group into `GL(n, R)`. -/
 noncomputable def _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear
@@ -602,7 +615,7 @@ theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_injective
     Function.Injective (specialOrthogonalToGeneralLinear Q) :=
   (orthogonalToGeneralLinear_injective Q).comp specialOrthogonalToOrthogonal_injective
 
-end Coordinate
+end SpecialCoordinate
 
 section Reflection
 
