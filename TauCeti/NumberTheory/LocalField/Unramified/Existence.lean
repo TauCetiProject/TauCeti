@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Frobenius
 public import TauCeti.NumberTheory.LocalField.Unramified.Criterion
+import TauCeti.RingTheory.RootsOfUnity.Adjoin
 
 /-!
 # Existence and uniqueness of unramified extensions
@@ -110,8 +111,7 @@ theorem unramifiedExtension_eq_adjoin_simple {f : ℕ} (hf : f ≠ 0) {ζ : Ω}
       have h := hx.2
       rw [hsucc, pow_succ] at h
       exact mul_right_cancel₀ hx0 (by rw [one_mul, h])
-    obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one hxn
-    exact pow_mem (mem_adjoin_simple_self K ζ) i
+    exact hζ.mem_adjoin_of_pow_eq_one hxn
   · refine Polynomial.mem_rootSet.2 ⟨hP, ?_⟩
     rw [map_sub, map_pow, aeval_X, hsucc, pow_succ, hζ.pow_eq_one, one_mul, sub_self]
 
