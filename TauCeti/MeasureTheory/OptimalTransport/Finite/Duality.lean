@@ -595,7 +595,7 @@ theorem exists_cost_eq_finiteDualValue (c : ι × κ → ℝ) (μ : PMF ι) (ν 
     refine le_iInf₂ fun f hf ↦ ?_
     by_cases hmem : f ∈ RealPlans μ ν
     · rw [iSup_lagrangian_of_mem c hmem, EReal.coe_le_coe_iff]
-      change A.cost c ≤ ∑ q, c q * f q
+      rw [costFun]
       rw [← TransportMatrix.cost_ofRealFun c hmem]
       exact hA _
     · rw [iSup_lagrangian_of_notMem c hf hmem]

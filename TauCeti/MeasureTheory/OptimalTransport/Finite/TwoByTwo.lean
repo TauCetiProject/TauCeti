@@ -77,9 +77,11 @@ theorem zero_zero_bounds :
   constructor
   · exact hnonneg 0 0
   constructor
-  · linarith [hnonneg 0 1]
+  · simpa only [toRealFun_apply] using
+      ENNReal.toReal_mono (μ.apply_ne_top 0) (A.apply_le_row 0 0)
   constructor
-  · linarith [hnonneg 1 0]
+  · simpa only [toRealFun_apply] using
+      ENNReal.toReal_mono (ν.apply_ne_top 0) (A.apply_le_col 0 0)
   · linarith [hnonneg 1 1]
 
 /-- Construct the two by two transportation matrix with prescribed upper-left real mass `t`.
@@ -122,6 +124,7 @@ theorem ofZeroZeroReal_apply (μ ν : PMF (Fin 2)) (t : ℝ)
   by simp [ofZeroZeroReal, ofRealFun_apply]; split_ifs <;> rfl
 
 /-- The upper-left real entry of `ofZeroZeroReal` is its parameter. -/
+@[simp]
 theorem ofZeroZeroReal_zero_zero (μ ν : PMF (Fin 2)) (t : ℝ)
     (ht0 : 0 ≤ t) (htμ : t ≤ (μ 0).toReal) (htν : t ≤ (ν 0).toReal)
     (htlower : (μ 0).toReal + (ν 0).toReal - 1 ≤ t) :
@@ -179,8 +182,8 @@ theorem cost_le_of_monge_of_le_zero_zero (c : Fin 2 × Fin 2 → ℝ)
   rw [A.cost_sub_cost_eq B c]
   exact mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.mpr hAB) (by linarith)
 
-/-- Under a strict Monge inequality, a plan minimizes cost exactly when its upper-left mass is
-maximal among plans with the prescribed marginals. -/
+/-- Under a strict Monge inequality, `A` costs no more than `B` exactly when `A` has at least
+as much upper-left mass as `B`. -/
 theorem cost_le_iff_le_zero_zero_of_strict_monge (c : Fin 2 × Fin 2 → ℝ)
     (hc : c (0, 0) + c (1, 1) < c (0, 1) + c (1, 0)) :
     A.cost c ≤ B.cost c ↔ B.toRealFun (0, 0) ≤ A.toRealFun (0, 0) := by
@@ -226,14 +229,10 @@ marginals. -/
 theorem exists_max_zero_zero (μ ν : PMF (Fin 2)) :
     ∃ A : TransportMatrix μ ν, ∀ B : TransportMatrix μ ν,
       B.toRealFun (0, 0) ≤ A.toRealFun (0, 0) := by
-  have hμsum : (μ 0).toReal + (μ 1).toReal = 1 := by
-    simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one μ
-  have hνsum : (ν 0).toReal + (ν 1).toReal = 1 := by
-    simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one ν
   have hμle : (μ 0).toReal ≤ 1 := by
-    linarith [show 0 ≤ (μ 1).toReal from ENNReal.toReal_nonneg]
+    simpa using ENNReal.toReal_mono ENNReal.one_ne_top (μ.coe_le_one 0)
   have hνle : (ν 0).toReal ≤ 1 := by
-    linarith [show 0 ≤ (ν 1).toReal from ENNReal.toReal_nonneg]
+    simpa using ENNReal.toReal_mono ENNReal.one_ne_top (ν.coe_le_one 0)
   let t := min (μ 0).toReal (ν 0).toReal
   have ht0 : 0 ≤ t := le_min (ENNReal.toReal_nonneg) (ENNReal.toReal_nonneg)
   have htμ : t ≤ (μ 0).toReal := min_le_left _ _
@@ -249,14 +248,10 @@ marginals. -/
 theorem exists_min_zero_zero (μ ν : PMF (Fin 2)) :
     ∃ A : TransportMatrix μ ν, ∀ B : TransportMatrix μ ν,
       A.toRealFun (0, 0) ≤ B.toRealFun (0, 0) := by
-  have hμsum : (μ 0).toReal + (μ 1).toReal = 1 := by
-    simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one μ
-  have hνsum : (ν 0).toReal + (ν 1).toReal = 1 := by
-    simpa only [Fin.sum_univ_two] using PMF.sum_toReal_eq_one ν
   have hμle : (μ 0).toReal ≤ 1 := by
-    linarith [show 0 ≤ (μ 1).toReal from ENNReal.toReal_nonneg]
+    simpa using ENNReal.toReal_mono ENNReal.one_ne_top (μ.coe_le_one 0)
   have hνle : (ν 0).toReal ≤ 1 := by
-    linarith [show 0 ≤ (ν 1).toReal from ENNReal.toReal_nonneg]
+    simpa using ENNReal.toReal_mono ENNReal.one_ne_top (ν.coe_le_one 0)
   let t := max 0 ((μ 0).toReal + (ν 0).toReal - 1)
   have ht0 : 0 ≤ t := le_max_left _ _
   have htμ : t ≤ (μ 0).toReal := max_le (ENNReal.toReal_nonneg) (by linarith)

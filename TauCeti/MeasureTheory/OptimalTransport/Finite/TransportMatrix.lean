@@ -173,11 +173,20 @@ theorem ofRealFun_apply {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) (i :
   rfl
 
 /-- Converting a real plan to a matrix preserves every real entry. -/
+@[simp]
 theorem toRealFun_ofRealFun {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) :
     (ofRealFun hf).toRealFun = f := by
   funext q
   rw [toRealFun_apply]
   exact ENNReal.toReal_ofReal (hf.1 q)
+
+/-- Converting the real entries of a transportation matrix back recovers the matrix. -/
+@[simp]
+theorem ofRealFun_toRealFun (A : TransportMatrix μ ν) :
+    ofRealFun A.toRealFun_mem_realPlans = A := by
+  apply ext
+  intro i j
+  rw [ofRealFun_apply, toRealFun_apply, ENNReal.ofReal_toReal (A.apply_ne_top i j)]
 
 /-- The real-valued entries of a transportation matrix have total mass one. -/
 theorem sum_toRealFun (A : TransportMatrix μ ν) : ∑ p, A.toRealFun p = 1 := by
