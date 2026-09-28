@@ -125,7 +125,6 @@ theorem natCard_squareClassGroup_dyadic [FinitePadicExtension K 2] :
   exact natCard_squareClassGroup _
 
 /-- The multiplicative group of `ℚ_[2]` has eight square classes. -/
-@[simp]
 theorem card_squareClasses_padic_two :
     Nat.card (ℚ_[2]ˣ ⧸ (powMonoidHom 2 : ℚ_[2]ˣ →* ℚ_[2]ˣ).range) = 8 := by
   rw [card_squareClasses_dyadic, Padic.natCard_residueField,
