@@ -32,17 +32,19 @@ namespace TauCeti.FundamentalGroupoid
 
 variable {X : Type v} [TopologicalSpace X]
 
-/-- The bottom-right and left-top routes across a subordinate rectangular cell agree in the
-fundamental groupoid of its cover member. -/
-theorem squareCell_lowerRight_eq_leftUpper_in_subset
+/-- The bottom and right edges of a subordinate cell compose to the same morphism as its left
+and top edges in the fundamental groupoid of the cover member. -/
+theorem squareCell_bottom_right_eq_left_top_in_subset
     (H : C(unitInterval × unitInterval, X)) (a b c d : unitInterval)
     (hab : a ≤ b) (hcd : c ≤ d) (V : Set X)
     (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) :
-    Path.Homotopic.Quotient.mk
-        (lowerRight.map (squareCellIn H a b c d hab hcd V hV).continuous) =
-      Path.Homotopic.Quotient.mk
-        (leftUpper.map (squareCellIn H a b c d hab hcd V hV).continuous) :=
-  Path.Homotopic.Quotient.eq.mpr
+    (Path.Homotopic.Quotient.mk (squareCellBottom H a b c d hab hcd V hV)).trans
+        (Path.Homotopic.Quotient.mk (squareCellRight H a b c d hab hcd V hV)) =
+      (Path.Homotopic.Quotient.mk (squareCellLeft H a b c d hab hcd V hV)).trans
+        (Path.Homotopic.Quotient.mk (squareCellTop H a b c d hab hcd V hV)) := by
+  rw [← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_trans,
+    squareCellBottom_trans_right, squareCellLeft_trans_top]
+  exact Path.Homotopic.Quotient.eq.mpr
     (lowerRight_homotopic_leftUpper (squareCellIn H a b c d hab hcd V hV))
 
 /-- A neighbourhood cover of the image of a homotopy square gives a finite grid in which each
@@ -57,10 +59,14 @@ theorem exists_subordinate_homotopy_grid_relations {ι : Sort u} {U : ι → Set
           (hab : t j.castSucc ≤ t j.succ) (hcd : t k.castSucc ≤ t k.succ)
           (hV : MapsTo H (Icc (t j.castSucc) (t j.succ) ×ˢ
             Icc (t k.castSucc) (t k.succ)) (U i)),
-            Path.Homotopic.Quotient.mk
-                (lowerRight.map (squareCellIn H _ _ _ _ hab hcd (U i) hV).continuous) =
-              Path.Homotopic.Quotient.mk
-                (leftUpper.map (squareCellIn H _ _ _ _ hab hcd (U i) hV).continuous) := by
+            (Path.Homotopic.Quotient.mk
+                (squareCellBottom H _ _ _ _ hab hcd (U i) hV)).trans
+                (Path.Homotopic.Quotient.mk
+                  (squareCellRight H _ _ _ _ hab hcd (U i) hV)) =
+              (Path.Homotopic.Quotient.mk
+                (squareCellLeft H _ _ _ _ hab hcd (U i) hV)).trans
+                (Path.Homotopic.Quotient.mk
+                  (squareCellTop H _ _ _ _ hab hcd (U i) hV)) := by
   obtain ⟨n, t, ht0, htmono, ht1, htcover⟩ :=
     ContinuousMap.exists_grid_subdivision H (fun i ↦ interior (U i))
       (fun _ ↦ isOpen_interior) (fun z ↦ by
@@ -76,6 +82,6 @@ theorem exists_subordinate_homotopy_grid_relations {ι : Sort u} {U : ι → Set
   have hj : t j.castSucc ≤ t j.succ := htmono j.castSucc_le_succ
   have hk : t k.castSucc ≤ t k.succ := htmono k.castSucc_le_succ
   exact ⟨i, hj, hk, hV,
-    squareCell_lowerRight_eq_leftUpper_in_subset H _ _ _ _ hj hk (U i) hV⟩
+    squareCell_bottom_right_eq_left_top_in_subset H _ _ _ _ hj hk (U i) hV⟩
 
 end TauCeti.FundamentalGroupoid

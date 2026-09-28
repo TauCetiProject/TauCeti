@@ -126,4 +126,58 @@ lemma squareCellIn_apply (H : C(unitInterval × unitInterval, X))
     (squareCellIn H a b c d hab hcd V hV z).1 = squareCell H a b c d z :=
   by simp [squareCellIn]
 
+/-- The bottom edge of a cell, valued in the cover member containing it. -/
+def squareCellBottom (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) :
+    Path (squareCellIn H a b c d hab hcd V hV (0, 0))
+      (squareCellIn H a b c d hab hcd V hV (1, 0)) :=
+  (Path.id.prod (Path.refl (0 : unitInterval))).map
+    (squareCellIn H a b c d hab hcd V hV).continuous
+
+/-- The right edge of a cell, valued in the cover member containing it. -/
+def squareCellRight (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) :
+    Path (squareCellIn H a b c d hab hcd V hV (1, 0))
+      (squareCellIn H a b c d hab hcd V hV (1, 1)) :=
+  ((Path.refl (1 : unitInterval)).prod Path.id).map
+    (squareCellIn H a b c d hab hcd V hV).continuous
+
+/-- The left edge of a cell, valued in the cover member containing it. -/
+def squareCellLeft (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) :
+    Path (squareCellIn H a b c d hab hcd V hV (0, 0))
+      (squareCellIn H a b c d hab hcd V hV (0, 1)) :=
+  ((Path.refl (0 : unitInterval)).prod Path.id).map
+    (squareCellIn H a b c d hab hcd V hV).continuous
+
+/-- The top edge of a cell, valued in the cover member containing it. -/
+def squareCellTop (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) :
+    Path (squareCellIn H a b c d hab hcd V hV (0, 1))
+      (squareCellIn H a b c d hab hcd V hV (1, 1)) :=
+  (Path.id.prod (Path.refl (1 : unitInterval))).map
+    (squareCellIn H a b c d hab hcd V hV).continuous
+
+/-- The bottom-right boundary route is the composite of the named cell edges. -/
+theorem squareCellBottom_trans_right (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) :
+    (squareCellBottom H a b c d hab hcd V hV).trans
+      (squareCellRight H a b c d hab hcd V hV) =
+        lowerRight.map (squareCellIn H a b c d hab hcd V hV).continuous := by
+  simp only [squareCellBottom, squareCellRight, lowerRight, Path.map_trans]
+
+/-- The left-top boundary route is the composite of the named cell edges. -/
+theorem squareCellLeft_trans_top (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) :
+    (squareCellLeft H a b c d hab hcd V hV).trans
+      (squareCellTop H a b c d hab hcd V hV) =
+        leftUpper.map (squareCellIn H a b c d hab hcd V hV).continuous := by
+  simp only [squareCellLeft, squareCellTop, leftUpper, Path.map_trans]
+
 end TauCeti.HomotopySquare
