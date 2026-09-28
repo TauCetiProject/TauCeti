@@ -33,7 +33,6 @@ side, and conversely.
 
 * `TauCeti.inertiaDegree`: the residue degree `f(L/K)` of an extension of nonarchimedean local
   fields.
-* `TauCeti.IsTotallyRamified`: the predicate that `e(L/K) = [L : K]`.
 
 ## Main results
 
@@ -110,18 +109,6 @@ theorem ramificationIndex_mul_inertiaDegree :
   exact absurd (Subtype.ext (by simpa [hs] using q.2)) hq
 
 variable (K L) in
-/-- A finite extension of nonarchimedean local fields is totally ramified when its ramification
-index equals its degree. -/
-def IsTotallyRamified : Prop := ramificationIndex K L = Module.finrank K L
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [ValuativeExtension K L] in
-variable (K L) in
-/-- Total ramification unfolds to its defining equality `e(L/K) = [L : K]`. -/
-theorem isTotallyRamified_iff_ramificationIndex_eq_finrank :
-    IsTotallyRamified K L ↔ ramificationIndex K L = Module.finrank K L := Iff.rfl
-
-variable (K L) in
 /-- A finite extension of nonarchimedean local fields is totally ramified if and only if its
 residue degree is one. -/
 theorem isTotallyRamified_iff_inertiaDegree_eq_one :
@@ -130,7 +117,7 @@ theorem isTotallyRamified_iff_inertiaDegree_eq_one :
   constructor
   · intro h
     have hef := ramificationIndex_mul_inertiaDegree (K := K) (L := L)
-    rw [h] at hef
+    rw [(isTotallyRamified_iff_ramificationIndex_eq_finrank K L).mp h] at hef
     exact Nat.eq_of_mul_eq_mul_left Module.finrank_pos (by simpa using hef)
   · intro hf
     rw [isTotallyRamified_iff_ramificationIndex_eq_finrank, ← ramificationIndex_mul_inertiaDegree,
