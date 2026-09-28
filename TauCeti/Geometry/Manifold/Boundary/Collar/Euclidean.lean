@@ -91,6 +91,23 @@ noncomputable def boundaryCollar (n : ℕ) :
     EuclideanHalfSpace.collarDiffeomorph_apply_succ]
   rfl
 
+/-- The collar image is exactly the half-space region with normal coordinate below one. -/
+theorem mem_range_boundaryCollar_iff (n : ℕ)
+    {p : EuclideanHalfSpace (n + 1)} :
+    p ∈ range (boundaryCollar n) ↔ p.1 0 < 1 := by
+  constructor
+  · rintro ⟨⟨x, t⟩, rfl⟩
+    simpa only [boundaryCollar_apply_zero] using t.2.2
+  · intro hp
+    let t : Ico (0 : ℝ) 1 := ⟨p.1 0, p.2, hp⟩
+    refine ⟨(boundaryProj n p, t), ?_⟩
+    apply Subtype.ext
+    apply (WithLp.ext_iff _).2
+    funext i
+    refine Fin.cases ?_ (fun j ↦ ?_) i
+    · simp [t]
+    · simp [t]
+
 /-- The explicit map `boundaryCollar n` is a collar of the standard half-space boundary
 parametrization. -/
 theorem isCollar_boundaryParam (n : ℕ) :
