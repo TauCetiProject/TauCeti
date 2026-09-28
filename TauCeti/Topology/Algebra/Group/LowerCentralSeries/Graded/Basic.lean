@@ -41,7 +41,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   degree zero (`TauCeti.gradedPieceZeroEquiv`).
 * `TauCeti.gradedBracket`: the bracket `gr_j(G) →+ gr_k(G) →+ gr_{j+k+1}(G)`, and its
   `ZMod p`-bilinear form `TauCeti.gradedBracketLinear`.
-* `TauCeti.gradedPow`: the `p`-power operator `π : gr_k(G) → gr_{k+1}(G)`.
+* `TauCeti.gradedPow`: the `p`-power operator `π : gr_k(G) → gr_{k+1}(G)`, and its iterate
+  `TauCeti.gradedPowIter` `π^j : gr_0(G) → gr_j(G)` on degree-zero classes.
 * `TauCeti.gradedMap`: the map on graded pieces induced by a continuous homomorphism.
 
 ## Main results
@@ -862,5 +863,77 @@ theorem gradedMap_gradedPow (f : G →* H) (hf : Continuous f) {k : ℕ} (x : gr
   exact Subtype.ext (map_pow f _ _)
 
 end Functoriality
+
+/-! ### Iterated `p`-powers of degree-zero classes -/
+
+section PowIter
+
+variable (p G) in
+/-- **The iterated `p`-power operator** `π^j : gr_0(G) → gr_j(G)`, the `j`-fold composite
+`π ∘ ⋯ ∘ π` of `TauCeti.gradedPow` starting in degree zero. On classes it is induced by
+`g ↦ g ^ (p ^ j)` (`TauCeti.gradedPowIter_gradedMkZero`). It commutes with scalars
+(`TauCeti.gradedPowIter_smul`), but for `p = 2` and `j ≥ 1` it is not additive, since `π` is not
+additive in degree zero (`TauCeti.gradedPow_add_zero_of_two`). -/
+def gradedPowIter : (j : ℕ) → gradedPiece p G 0 → gradedPiece p G j
+  | 0 => id
+  | j + 1 => gradedPow p G j ∘ gradedPowIter j
+
+@[simp]
+theorem gradedPowIter_zero (x : gradedPiece p G 0) : gradedPowIter p G 0 x = x :=
+  (rfl)
+
+theorem gradedPowIter_succ (j : ℕ) (x : gradedPiece p G 0) :
+    gradedPowIter p G (j + 1) x = gradedPow p G j (gradedPowIter p G j x) :=
+  (rfl)
+
+@[simp]
+theorem gradedPowIter_one (x : gradedPiece p G 0) : gradedPowIter p G 1 x = gradedPow p G 0 x :=
+  (rfl)
+
+/-- **The iterated `p`-power operator on classes**: `π^j` sends the class of `g` to the class of
+`g ^ (p ^ j)` in `gr_j(G)`. -/
+@[simp]
+theorem gradedPowIter_gradedMkZero (j : ℕ) (g : G) :
+    gradedPowIter p G j (gradedMkZero p G g) =
+      gradedMk p G j ⟨g ^ p ^ j, by
+        simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) j⟩ := by
+  induction j with
+  | zero =>
+    rw [gradedPowIter_zero, gradedMkZero]
+    congr 1
+    exact Subtype.ext (by simp)
+  | succ j ih =>
+    rw [gradedPowIter_succ, ih, gradedPow_gradedMk]
+    congr 1
+    exact Subtype.ext (by simp [pow_succ, pow_mul])
+
+@[simp]
+theorem gradedPowIter_zero_right (j : ℕ) : gradedPowIter p G j 0 = 0 := by
+  rw [← gradedMkZero_one, gradedPowIter_gradedMkZero, gradedMk_eq_zero_iff, coe_mk, one_pow]
+  exact one_mem _
+
+/-- **The iterated `p`-power operator commutes with scalars**: in degree zero by
+`TauCeti.gradedPow_smul_zero`, and above degree zero because `π` is additive there. -/
+@[simp]
+theorem gradedPowIter_smul [NeZero p] (j : ℕ) (c : ZMod p) (x : gradedPiece p G 0) :
+    gradedPowIter p G j (c • x) = c • gradedPowIter p G j x := by
+  induction j with
+  | zero => rw [gradedPowIter_zero, gradedPowIter_zero]
+  | succ j ih =>
+    rw [gradedPowIter_succ, gradedPowIter_succ, ih]
+    rcases Nat.eq_zero_or_pos j with rfl | hj
+    · exact gradedPow_smul_zero c _
+    · exact map_smul ((gradedPowAddMonoidHom p G hj).toZModLinearMap p) c _
+
+/-- **Naturality of the iterated `p`-power operator.** -/
+@[simp]
+theorem gradedMap_gradedPowIter {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    (f : G →* H) (hf : Continuous f) (j : ℕ) (x : gradedPiece p G 0) :
+    gradedMap p f hf j (gradedPowIter p G j x) = gradedPowIter p H j (gradedMap p f hf 0 x) := by
+  induction j with
+  | zero => rw [gradedPowIter_zero, gradedPowIter_zero]
+  | succ j ih => rw [gradedPowIter_succ, gradedPowIter_succ, gradedMap_gradedPow, ih]
+
+end PowIter
 
 end TauCeti

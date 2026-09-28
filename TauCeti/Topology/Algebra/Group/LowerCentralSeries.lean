@@ -441,6 +441,15 @@ theorem pow_mem_pLowerCentralSeries {k : ℕ} {x : G} (hx : x ∈ pLowerCentralS
   rw [pLowerCentralSeries_succ]
   exact pow_mem_pLowerCentralStep hx
 
+/-- The `p ^ j`-th power of an element of `λ_k` lies in `λ_{k+j}`. -/
+theorem pow_pow_mem_pLowerCentralSeries {k : ℕ} {x : G} (hx : x ∈ pLowerCentralSeries p G k)
+    (j : ℕ) : x ^ p ^ j ∈ pLowerCentralSeries p G (k + j) := by
+  induction j with
+  | zero => simpa using hx
+  | succ j ih =>
+    rw [pow_succ, pow_mul, ← add_assoc]
+    exact pow_mem_pLowerCentralSeries ih
+
 /-- The commutators `⁅λ_k, G⁆` lie in `λ_{k+1}`. -/
 theorem commutator_pLowerCentralSeries_top_le (k : ℕ) :
     ⁅pLowerCentralSeries p G k, (⊤ : Subgroup G)⁆ ≤ pLowerCentralSeries p G (k + 1) := by
