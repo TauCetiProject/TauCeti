@@ -11,11 +11,11 @@ public import TauCeti.Topology.CWComplex.Classical.Map
 /-!
 # Cellular maps act on cellular chains
 
-A continuous map between relative CW complexes is cellular when it carries each stage of the
-skeletal filtration into the stage of the same degree. It then induces maps of consecutive
-skeletal pairs. Naturality of the connecting morphism of a pair shows that these maps commute
-with the cellular differential, giving a chain map. This construction keeps the maps of pairs
-visible, so the resulting chain map is induced by the original continuous map.
+A continuous map between the carriers of relative CW complexes is cellular when it carries each
+stage of the skeletal filtration into the stage of the same degree. It then induces maps of
+consecutive skeletal pairs. Naturality of the connecting morphism of a pair shows that these maps
+commute with the cellular differential, giving a chain map. This construction keeps the maps of
+pairs visible, so the resulting chain map is induced by the original continuous map.
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -35,14 +35,16 @@ variable {X Y : Type w} [TopologicalSpace X] [T2Space X]
   {D : Set X} {E : Set Y}
   (C : Set X) [RelCWComplex C D] (C' : Set Y) [RelCWComplex C' E]
 
-variable {f : TopCat.of X ⟶ TopCat.of Y} (hf : IsCellular C C' f)
+variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
 /-- The restriction of a cellular map to the `n`-th stage of the skeletal filtration. -/
 def skeletonMap (n : ℕ) : skeletonObj C n ⟶ skeletonObj C' n :=
-  TopCat.ofHom ⟨(hf n).restrict, f.hom.continuous.restrict (hf n)⟩
+  TopCat.ofHom ⟨fun x ↦ ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1,
+    hf n x.2⟩, by fun_prop⟩
 
 lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
-    (skeletonMap C C' hf n x).1 = f x.1 := (rfl)
+    (skeletonMap C C' hf n x).1 =
+      (f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1 := (rfl)
 
 /-- The restrictions to two consecutive skeleta form a map of skeletal pairs. -/
 def skeletonPairMap (n : ℕ) : skeletonPair C n ⟶ skeletonPair C' n :=
@@ -71,7 +73,7 @@ lemma skeletonPairMap_id (n : ℕ) :
 
 variable {Z : Type w} [TopologicalSpace Z] [T2Space Z] {F : Set Z}
   (C'' : Set Z) [RelCWComplex C'' F]
-  {g : TopCat.of Y ⟶ TopCat.of Z} (hg : IsCellular C' C'' g)
+  {g : TopCat.of C' ⟶ TopCat.of C''} (hg : IsCellular C' C'' g)
 
 /-- Restriction to a skeleton respects composition of cellular maps. -/
 @[reassoc]

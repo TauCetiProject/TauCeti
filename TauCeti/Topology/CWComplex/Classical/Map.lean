@@ -33,24 +33,17 @@ variable {X Y Z : Type w} [TopologicalSpace X] [T2Space X]
 
 /-- A map of relative CW complexes is cellular if it preserves every stage of the skeletal
 filtration. In particular, it sends the base (stage zero) into the target base. -/
-abbrev IsCellular (f : TopCat.of X ⟶ TopCat.of Y) : Prop :=
-  ∀ n : ℕ, Set.MapsTo f (skeletonLT C (n : ℕ∞)) (skeletonLT C' (n : ℕ∞))
-
-/-- A cellular map sends the carrier of the source complex into the carrier of the target.
-Every point of a relative CW complex belongs to some finite skeleton. -/
-lemma IsCellular.mapsTo {f : TopCat.of X ⟶ TopCat.of Y}
-    (hf : IsCellular C C' f) : Set.MapsTo f C C' := by
-  intro x hx
-  rw [← (iUnion_skeletonLT_eq_complex (C := C))] at hx
-  obtain ⟨n, hn⟩ := Set.mem_iUnion.mp hx
-  exact (skeletonLT C' (n : ℕ∞)).subset_complex (hf n hn)
+abbrev IsCellular (f : TopCat.of C ⟶ TopCat.of C') : Prop :=
+  ∀ n : ℕ, Set.MapsTo f
+    {x : C | x.1 ∈ skeletonLT C (n : ℕ∞)}
+    {y : C' | y.1 ∈ skeletonLT C' (n : ℕ∞)}
 
 /-- The identity map preserves every skeleton. -/
-lemma isCellular_id : IsCellular C C (𝟙 (TopCat.of X)) := fun _ _ h ↦ h
+lemma isCellular_id : IsCellular C C (𝟙 (TopCat.of C)) := fun _ _ h ↦ h
 
 /-- The composite of cellular maps is cellular. -/
 lemma IsCellular.comp {C'' : Set Z} [RelCWComplex C'' F]
-    {f : TopCat.of X ⟶ TopCat.of Y} {g : TopCat.of Y ⟶ TopCat.of Z}
+    {f : TopCat.of C ⟶ TopCat.of C'} {g : TopCat.of C' ⟶ TopCat.of C''}
     (hf : IsCellular C C' f) (hg : IsCellular C' C'' g) :
     IsCellular C C'' (f ≫ g) := fun n _ hx ↦ hg n (hf n hx)
 
