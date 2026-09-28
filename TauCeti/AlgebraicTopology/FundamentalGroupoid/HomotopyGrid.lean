@@ -45,7 +45,7 @@ theorem squareCell_bottom_right_eq_left_top_in_subset
   rw [← Path.Homotopic.Quotient.mk_trans, ← Path.Homotopic.Quotient.mk_trans,
     squareCellBottom_trans_right, squareCellLeft_trans_top]
   exact Path.Homotopic.Quotient.eq.mpr
-    (lowerRight_homotopic_leftUpper (squareCellIn H a b c d hab hcd V hV))
+    (bottomRight_homotopic_leftTop (squareCellIn H a b c d hab hcd V hV))
 
 /-- A neighbourhood cover of the image of a homotopy square gives a finite grid in which each
 cell's two boundary routes agree within one cover member. These are the local relations used by

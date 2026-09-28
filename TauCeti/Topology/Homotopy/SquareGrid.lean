@@ -35,24 +35,24 @@ namespace TauCeti.HomotopySquare
 variable {X : Type v} [TopologicalSpace X]
 
 /-- The route along the bottom and right edges of the unit square. -/
-def lowerRight : Path ((0 : unitInterval), (0 : unitInterval)) (1, 1) :=
+def bottomRight : Path ((0 : unitInterval), (0 : unitInterval)) (1, 1) :=
   (Path.id.prod (Path.refl (0 : unitInterval))).trans
     ((Path.refl (1 : unitInterval)).prod Path.id)
 
 /-- The route along the left and top edges of the unit square. -/
-def leftUpper : Path ((0 : unitInterval), (0 : unitInterval)) (1, 1) :=
+def leftTop : Path ((0 : unitInterval), (0 : unitInterval)) (1, 1) :=
   ((Path.refl (0 : unitInterval)).prod Path.id).trans
     (Path.id.prod (Path.refl (1 : unitInterval)))
 
 /-- The two edge routes of a continuous square represent the same morphism of the fundamental
 groupoid of its codomain. -/
-theorem lowerRight_homotopic_leftUpper (H : C(unitInterval × unitInterval, X)) :
-    (lowerRight.map H.continuous).Homotopic (leftUpper.map H.continuous) := by
+theorem bottomRight_homotopic_leftTop (H : C(unitInterval × unitInterval, X)) :
+    (bottomRight.map H.continuous).Homotopic (leftTop.map H.continuous) := by
   let hI : ContractibleSpace unitInterval :=
     (convex_Icc (0 : ℝ) 1).contractibleSpace (by simp)
   let hSquare : ContractibleSpace (unitInterval × unitInterval) := inferInstance
   let hSimply : SimplyConnectedSpace (unitInterval × unitInterval) := inferInstance
-  exact (SimplyConnectedSpace.paths_homotopic lowerRight leftUpper).map H
+  exact (SimplyConnectedSpace.paths_homotopic bottomRight leftTop).map H
 
 /-- Reparameterize a rectangular cell of a homotopy square as a unit square. -/
 def squareCell (H : C(unitInterval × unitInterval, X))
@@ -208,8 +208,8 @@ theorem squareCellBottom_trans_right (H : C(unitInterval × unitInterval, X))
     (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) :
     (squareCellBottom H a b c d hab hcd V hV).trans
       (squareCellRight H a b c d hab hcd V hV) =
-        lowerRight.map (squareCellIn H a b c d hab hcd V hV).continuous := by
-  simp only [squareCellBottom, squareCellRight, lowerRight, Path.map_trans]
+        bottomRight.map (squareCellIn H a b c d hab hcd V hV).continuous := by
+  simp only [squareCellBottom, squareCellRight, bottomRight, Path.map_trans]
 
 /-- The left-top boundary route is the composite of the named cell edges. -/
 theorem squareCellLeft_trans_top (H : C(unitInterval × unitInterval, X))
@@ -217,7 +217,7 @@ theorem squareCellLeft_trans_top (H : C(unitInterval × unitInterval, X))
     (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) :
     (squareCellLeft H a b c d hab hcd V hV).trans
       (squareCellTop H a b c d hab hcd V hV) =
-        leftUpper.map (squareCellIn H a b c d hab hcd V hV).continuous := by
-  simp only [squareCellLeft, squareCellTop, leftUpper, Path.map_trans]
+        leftTop.map (squareCellIn H a b c d hab hcd V hV).continuous := by
+  simp only [squareCellLeft, squareCellTop, leftTop, Path.map_trans]
 
 end TauCeti.HomotopySquare
