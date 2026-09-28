@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.NumberField.Cyclotomic.SeventhCyclotomic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
-import Mathlib.Tactic.NormNum.Prime
 
 /-!
 # Frobenius at three in the seventh cyclotomic field
@@ -33,7 +32,7 @@ noncomputable section
 open Ideal NumberField IsCyclotomicExtension IntermediateField
 open scoped NumberField
 
-namespace NumberField.Chebotarev
+namespace TauCeti.NumberField.Chebotarev
 
 open TauCeti.NumberField
 
@@ -65,59 +64,81 @@ theorem isArithFrobAt_frobeniusThreeSeven
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
     IsArithFrobAt (𝓞 ℚ) (frobeniusThreeSeven (L := L)) Q := by
   have hm := seven_not_mem_of_absNorm_three 𝔭 h𝔭
-  have _ : Algebra.IsUnramifiedAt (𝓞 ℚ) Q :=
-    isUnramifiedAt_of_absNorm_three 𝔭 h𝔭 Q
   apply (TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_absNorm 𝔭 hm Q _).2
-  rw [galEquivZMod_frobeniusThreeSeven, h𝔭]
-  rfl
+  rw [galEquivZMod_frobeniusThreeSeven, h𝔭, Nat.cast_ofNat]
 
 /-- At a prime above three, the prime below it in the quadratic fixed field has residue degree
 two over `ℚ`. -/
-theorem inertiaDeg_under_frobeniusThreeSevenQuadraticField
+theorem inertiaDeg_under_seventhCyclotomicQuadraticSubfield
     (𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
     (h𝔭 : Ideal.absNorm 𝔭.asIdeal = 3)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
-    (Q.under (𝓞 ↥(frobeniusThreeSevenQuadraticField (L := L)))).inertiaDeg (𝓞 ℚ) = 2 := by
+    (Q.under (𝓞 ↥(seventhCyclotomicQuadraticSubfield (L := L)))).inertiaDeg (𝓞 ℚ) = 2 := by
   have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q
   have _ : Algebra.IsUnramifiedAt (𝓞 ℚ) Q :=
     isUnramifiedAt_of_absNorm_three 𝔭 h𝔭 Q
-  rw [frobeniusThreeSevenQuadraticField_eq_fixedField,
-    Ideal.inertiaDeg_under_fixedField_zpowers_pow Q hQ
+  rw [seventhCyclotomicQuadraticSubfield_def,
+    Ideal.inertiaDeg_under_fixedField_zpowers_pow_eq_gcd Q hQ
       (isArithFrobAt_frobeniusThreeSeven 𝔭 h𝔭 Q) 2,
     orderOf_frobeniusThreeSeven]
   decide
 
-/-- At a prime above three, raising the base from `ℚ` to the quadratic intermediate field
-squares the arithmetic Frobenius. Its image in `Gal(L/ℚ)` is the automorphism with exponent
-`3² = 2` modulo seven, of order three. -/
+/-- At a prime above three, every relative arithmetic Frobenius restricts to the square of the
+absolute Frobenius. -/
+theorem restrictScalars_eq_frobeniusThreeSeven_sq_of_isArithFrobAt
+    (𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
+    (h𝔭 : Ideal.absNorm 𝔭.asIdeal = 3)
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
+    {τ : L ≃ₐ[(seventhCyclotomicQuadraticSubfield (L := L))] L}
+    (hτ : IsArithFrobAt (𝓞 (seventhCyclotomicQuadraticSubfield (L := L))) τ Q) :
+    AlgEquiv.restrictScalars ℚ τ = frobeniusThreeSeven (L := L) ^ 2 := by
+  have : IsScalarTower ℚ (seventhCyclotomicQuadraticSubfield (L := L)) L :=
+    IntermediateField.isScalarTower_mid' _
+  have : IsGalois (seventhCyclotomicQuadraticSubfield (L := L)) L := by
+    rw [seventhCyclotomicQuadraticSubfield_def]
+    exact IsGalois.of_fixed_field L
+      (Subgroup.zpowers (frobeniusThreeSeven (L := L) ^ 2))
+  have hσ := isArithFrobAt_frobeniusThreeSeven 𝔭 h𝔭 Q
+  have _ : Algebra.IsUnramifiedAt (𝓞 ℚ) Q :=
+    isUnramifiedAt_of_absNorm_three 𝔭 h𝔭 Q
+  have hdeg := inertiaDeg_under_seventhCyclotomicQuadraticSubfield 𝔭 h𝔭 Q
+  simpa only [hdeg] using
+    (NumberField.restrictScalars_eq_pow_inertiaDeg (K := ℚ)
+      (M := seventhCyclotomicQuadraticSubfield (L := L)) hσ hτ)
+
+/-- Every relative arithmetic Frobenius at a prime above three has order three. -/
+theorem orderOf_eq_three_of_isArithFrobAt
+    (𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
+    (h𝔭 : Ideal.absNorm 𝔭.asIdeal = 3)
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
+    {τ : L ≃ₐ[(seventhCyclotomicQuadraticSubfield (L := L))] L}
+    (hτ : IsArithFrobAt (𝓞 (seventhCyclotomicQuadraticSubfield (L := L))) τ Q) :
+    orderOf τ = 3 := by
+  rw [← orderOf_injective (AlgEquiv.restrictScalarsHom ℚ)
+    (AlgEquiv.restrictScalars_injective ℚ), AlgEquiv.restrictScalarsHom_apply,
+    restrictScalars_eq_frobeniusThreeSeven_sq_of_isArithFrobAt 𝔭 h𝔭 Q hτ,
+    orderOf_frobeniusThreeSeven_sq]
+
+/-- At a prime above three there is a relative arithmetic Frobenius, which restricts to the
+square of the absolute Frobenius and has order three. -/
 theorem exists_isArithFrobAt_and_restrictScalars_eq_frobeniusThreeSeven_sq_and_orderOf_eq_three
     (𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
     (h𝔭 : Ideal.absNorm 𝔭.asIdeal = 3)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] :
-    ∃ τ : L ≃ₐ[(frobeniusThreeSevenQuadraticField (L := L))] L,
-      IsArithFrobAt (𝓞 (frobeniusThreeSevenQuadraticField (L := L))) τ Q ∧
+    ∃ τ : L ≃ₐ[(seventhCyclotomicQuadraticSubfield (L := L))] L,
+      IsArithFrobAt (𝓞 (seventhCyclotomicQuadraticSubfield (L := L))) τ Q ∧
         AlgEquiv.restrictScalars ℚ τ = frobeniusThreeSeven (L := L) ^ 2 ∧
         orderOf τ = 3 := by
-  rw [frobeniusThreeSevenQuadraticField_eq_fixedField]
-  let E := fixedField (Subgroup.zpowers (frobeniusThreeSeven (L := L) ^ 2))
-  have : IsScalarTower ℚ E L := E.isScalarTower_mid'
-  have : IsGalois E L := IsGalois.of_fixed_field L
-    (Subgroup.zpowers (frobeniusThreeSeven (L := L) ^ 2))
+  have : IsGalois (seventhCyclotomicQuadraticSubfield (L := L)) L := by
+    rw [seventhCyclotomicQuadraticSubfield_def]
+    exact IsGalois.of_fixed_field L
+      (Subgroup.zpowers (frobeniusThreeSeven (L := L) ^ 2))
   have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q
-  have hσ := isArithFrobAt_frobeniusThreeSeven 𝔭 h𝔭 Q
-  have _ : Algebra.IsUnramifiedAt (𝓞 ℚ) Q :=
-    isUnramifiedAt_of_absNorm_three 𝔭 h𝔭 Q
-  have hdeg := inertiaDeg_under_frobeniusThreeSevenQuadraticField 𝔭 h𝔭 Q
-  rw [frobeniusThreeSevenQuadraticField_eq_fixedField] at hdeg
-  obtain ⟨τ, hτ⟩ := NumberField.exists_isArithFrobAt E Q hQ
-  have hpower : AlgEquiv.restrictScalars ℚ τ = frobeniusThreeSeven (L := L) ^ 2 := by
-    simpa only [E, hdeg] using
-      (NumberField.restrictScalars_eq_pow_inertiaDeg (K := ℚ) (M := E) hσ hτ)
-  refine ⟨τ, hτ, hpower, ?_⟩
-  rw [← orderOf_injective (AlgEquiv.restrictScalarsHom ℚ)
-    (AlgEquiv.restrictScalars_injective ℚ), AlgEquiv.restrictScalarsHom_apply,
-    hpower, orderOf_frobeniusThreeSeven_sq]
+  obtain ⟨τ, hτ⟩ := NumberField.exists_isArithFrobAt
+    (seventhCyclotomicQuadraticSubfield (L := L)) Q hQ
+  exact ⟨τ, hτ, restrictScalars_eq_frobeniusThreeSeven_sq_of_isArithFrobAt 𝔭 h𝔭 Q hτ,
+    orderOf_eq_three_of_isArithFrobAt 𝔭 h𝔭 Q hτ⟩
 
-end NumberField.Chebotarev
+end TauCeti.NumberField.Chebotarev
 
 end

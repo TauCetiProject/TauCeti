@@ -206,7 +206,7 @@ theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
 
 /-- The residue degree below the fixed field of a power of a Frobenius is its exponent's
 greatest common divisor with the Frobenius order. -/
-theorem inertiaDeg_under_fixedField_zpowers_pow (Q : Ideal (𝓞 L)) [Q.IsPrime]
+theorem inertiaDeg_under_fixedField_zpowers_pow_eq_gcd (Q : Ideal (𝓞 L)) [Q.IsPrime]
     (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] {φ : L ≃ₐ[K] L}
     (hφ : IsArithFrobAt (𝓞 K) φ Q) (k : ℕ) :
     (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers (φ ^ k))))).inertiaDeg (𝓞 K) =
