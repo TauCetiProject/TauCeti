@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import Mathlib.CategoryTheory.Abelian.Transfer
@@ -12,10 +13,9 @@ public import Mathlib.CategoryTheory.Abelian.Transfer
 /-!
 # Quasi-coherent modules on an affine scheme
 
-The category of quasi-coherent modules on `Spec R` is abelian. Mathlib's tilde equivalence
-identifies it with `ModuleCat R`, so kernels and cokernels can be computed using modules.
-It also has enough injectives, transported from the module category. These are the category
-theoretic inputs for deriving the exact global-sections functor on an affine scheme.
+The category of quasi-coherent modules on an affine scheme `X` is abelian and has enough
+injectives. Pullback along `X.isoSpec` and Mathlib's tilde equivalence identify it with
+`ModuleCat Γ(X, ⊤)`. These are the category theoretic inputs for deriving exact global sections.
 -/
 
 public section
@@ -28,21 +28,28 @@ namespace AlgebraicGeometry
 
 universe u
 
+namespace QuasicoherentSheaf
+
+/-- Quasi-coherent modules on an affine scheme are equivalent to modules over its global
+sections. -/
+noncomputable def affineEquiv (X : Scheme.{u}) [IsAffine X] :
+    QuasicoherentSheaf X ≌ ModuleCat Γ(X, ⊤) :=
+  (equivOfIso X.isoSpec).symm.trans (tildeEquiv (R := Γ(X, ⊤))).symm
+
 /-- Quasi-coherent modules on an affine scheme form an abelian category. -/
-noncomputable instance instAbelianAffineQuasicoherent (R : CommRingCat.{u}) :
-    Abelian (SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).FullSubcategory := by
-  letI : Limits.HasFiniteProducts
-      (SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).FullSubcategory :=
-    ⟨fun _ =>
-      Adjunction.hasLimitsOfShape_of_equivalence (tildeEquiv (R := R)).inverse⟩
-  exact abelianOfEquivalence (tildeEquiv (R := R)).inverse
+noncomputable instance (X : Scheme.{u}) [IsAffine X] : Abelian (QuasicoherentSheaf X) := by
+  let e := affineEquiv X
+  letI : Limits.HasFiniteProducts (QuasicoherentSheaf X) :=
+    ⟨fun _ => Adjunction.hasLimitsOfShape_of_equivalence e.functor⟩
+  exact abelianOfEquivalence e.functor
 
 /-- Quasi-coherent modules on an affine scheme admit injective resolutions. -/
-noncomputable instance (R : CommRingCat.{u}) :
-    EnoughInjectives
-      (SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).FullSubcategory := by
-  let : EnoughInjectives (ModuleCat R) := ModuleCat.enoughInjectives R
-  exact EnoughInjectives.of_equivalence (tildeEquiv (R := R)).inverse
+noncomputable instance (X : Scheme.{u}) [IsAffine X] :
+    EnoughInjectives (QuasicoherentSheaf X) := by
+  let : EnoughInjectives (ModuleCat Γ(X, ⊤)) := ModuleCat.enoughInjectives _
+  exact EnoughInjectives.of_equivalence (affineEquiv X).functor
+
+end QuasicoherentSheaf
 
 end AlgebraicGeometry
 

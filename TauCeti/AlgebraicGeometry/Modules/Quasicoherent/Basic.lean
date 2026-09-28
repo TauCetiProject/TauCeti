@@ -164,6 +164,39 @@ lemma pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : QuasicoherentSheaf 
   -- remaining equation is the defining equation of the lifted functor `pullback f` on morphisms.
   exact ((Category.id_comp _).trans (Category.comp_id _)).symm
 
+/-- Pullback of quasi-coherent modules along the identity is naturally the identity. -/
+noncomputable def pullbackId (X : Scheme.{u}) :
+    pullback (𝟙 X) ≅ 𝟭 (QuasicoherentSheaf X) := by
+  refine NatIso.ofComponents (fun E => ObjectProperty.isoMk _
+    ((Scheme.Modules.pullbackId X).app E.obj)) ?_
+  intro E F φ
+  apply ObjectProperty.hom_ext
+  exact (Scheme.Modules.pullbackId X).hom.naturality φ.hom
+
+/-- Pullback of quasi-coherent modules respects composition. -/
+noncomputable def pullbackComp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    pullback g ⋙ pullback f ≅ pullback (f ≫ g) := by
+  refine NatIso.ofComponents (fun E => ObjectProperty.isoMk _
+    ((Scheme.Modules.pullbackComp f g).app E.obj)) ?_
+  intro E F φ
+  apply ObjectProperty.hom_ext
+  exact (Scheme.Modules.pullbackComp f g).hom.naturality φ.hom
+
+/-- An isomorphism of schemes induces an equivalence of quasi-coherent modules. -/
+noncomputable def equivOfIso {X Y : Scheme.{u}} (e : X ≅ Y) :
+    QuasicoherentSheaf Y ≌ QuasicoherentSheaf X := by
+  let F := pullback e.hom
+  let G := pullback e.inv
+  have hFG : F ⋙ G ≅ 𝟭 (QuasicoherentSheaf Y) := by
+    let h := pullbackComp e.inv e.hom
+    rw [e.inv_hom_id] at h
+    exact h ≪≫ pullbackId Y
+  have hGF : G ⋙ F ≅ 𝟭 (QuasicoherentSheaf X) := by
+    let h := pullbackComp e.hom e.inv
+    rw [e.hom_inv_id] at h
+    exact h ≪≫ pullbackId X
+  exact CategoryTheory.Equivalence.mk F G hFG.symm hGF
+
 end QuasicoherentSheaf
 
 end
