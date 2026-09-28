@@ -53,6 +53,15 @@ theorem sturmVariation_cons {p : K[X]} (hp : p ≠ 0) (q : K[X]) (x : K) :
       (p.eval x :: (sturmSeq q (-p % q)).map (fun r => r.eval x)).signVariations := by
   simp only [sturmVariation, sturmSeq_cons hp, List.map_cons]
 
+/-- A zero first value is deleted when counting Sturm variations. -/
+@[simp] theorem sturmVariation_of_eval_eq_zero {p q : K[X]} {x : K}
+    (hp : p.eval x = 0) :
+    sturmVariation p q x = sturmVariation q (-p % q) x := by
+  by_cases hp0 : p = 0
+  · simp [hp0]
+  · rw [sturmVariation_cons hp0]
+    simp only [hp, List.signVariations_zero_cons, sturmVariation]
+
 variable [IsStrictOrderedRing K]
 
 /-- At a zero of the second polynomial that is not a zero of the first,
