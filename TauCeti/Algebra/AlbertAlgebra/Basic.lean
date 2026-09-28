@@ -51,6 +51,8 @@ ring for the trace-zero subspace.
 * `TauCeti.AlbertAlgebra.trace`: the trace `d 0 + d 1 + d 2`, an `R`-linear functional.
 * `TauCeti.AlbertAlgebra.traceZero`: the trace-zero subspace `J₀`, the kernel of the trace.
 * `TauCeti.AlbertAlgebra.diagIdempotent`: the three diagonal idempotents `E₀`, `E₁`, `E₂`.
+* `TauCeti.AlbertAlgebra.offDiagSingle`: the three off-diagonal slots `Fⱼ(a)`, the Hermitian
+  matrix whose only nonzero entry is the octonion `a` in position `(j + 1, j + 2)`.
 
 ## Main results
 
@@ -62,6 +64,11 @@ ring for the trace-zero subspace.
 * `TauCeti.AlbertAlgebra.diagIdempotent_mul_diagIdempotent` and
   `TauCeti.AlbertAlgebra.sum_diagIdempotent`: the diagonal idempotents are orthogonal and sum
   to `1`.
+* `TauCeti.AlbertAlgebra.diagIdempotent_mul_offDiagSingle`: the **Peirce relation** between the
+  diagonal frame and the off-diagonal slots: `Eᵢ` annihilates its opposite slot and halves the other
+  two.
+* `TauCeti.AlbertAlgebra.eq_sum_smul_diagIdempotent_add_sum_offDiagSingle`: the diagonal frame and
+  the off-diagonal slots span `H₃(𝕆)`.
 
 ## Implementation notes
 
@@ -395,6 +402,56 @@ identity. Not a `simp` lemma: `TauCeti.AlbertAlgebra.trace_apply` already takes 
 apart, and `simp` proves it outright. -/
 theorem trace_diagIdempotent [Semiring R] (i : Fin 3) : trace (diagIdempotent R i) = 1 := by
   simp [Pi.single_apply]
+
+/-! ### The off-diagonal slots -/
+
+/-- A distinct index of `Fin 3` is one of the two shifts of the other. Private: it is `Fin 3`
+arithmetic, used only to read off the Peirce relation below. -/
+private theorem eq_add_one_or_eq_add_two {i j : Fin 3} (h : i ≠ j) : i = j + 1 ∨ i = j + 2 := by
+  revert h; revert i j; decide
+
+/-- The Hermitian octonion matrix whose only nonzero entry is the octonion `a`, in position
+`(j + 1, j + 2)`: the `j`-th **off-diagonal slot** `Fⱼ(a)` of `H₃(𝕆)`. Together with the diagonal
+frame `TauCeti.AlbertAlgebra.diagIdempotent` these span the algebra. -/
+def offDiagSingle [Zero R] (j : Fin 3) (a : Octonion R) : AlbertAlgebra R := ⟨0, Pi.single j a⟩
+
+@[simp] theorem offDiagSingle_diag [Zero R] (j : Fin 3) (a : Octonion R) :
+    (offDiagSingle j a).diag = 0 := (rfl)
+
+@[simp] theorem offDiagSingle_offDiag [Zero R] (j : Fin 3) (a : Octonion R) :
+    (offDiagSingle j a).offDiag = Pi.single j a := (rfl)
+
+/-- **The Peirce relation between the diagonal frame and the off-diagonal slots**: the `j`-th slot
+sits in position `(j + 1, j + 2)`, so `Eⱼ` — whose only entry is in position `(j, j)` — annihilates
+it, while the two other idempotents halve it. -/
+@[simp] theorem diagIdempotent_mul_offDiagSingle [CommRing R] [Invertible (2 : R)] (i j : Fin 3)
+    (a : Octonion R) :
+    diagIdempotent R i * offDiagSingle j a =
+      if i = j then 0 else ⅟(2 : R) • offDiagSingle j a := by
+  rcases eq_or_ne i j with rfl | h
+  · refine AlbertAlgebra.ext (funext fun m => ?_) (funext fun m => ?_)
+    · simp
+    · rcases eq_or_ne m i with rfl | hm
+      · simp
+      · simp [Pi.single_eq_of_ne hm]
+  · refine AlbertAlgebra.ext (funext fun m => ?_) (funext fun m => ?_)
+    · simp [h]
+    · rcases eq_or_ne m j with rfl | hm
+      · rcases eq_add_one_or_eq_add_two h with rfl | rfl
+        · simp [h]
+        · simp [h]
+      · simp [h, Pi.single_eq_of_ne hm]
+
+/-- **The diagonal frame and the off-diagonal slots span `H₃(𝕆)`**: a Hermitian octonion matrix is
+the combination of the diagonal idempotents read off its diagonal, plus its three off-diagonal
+slots. -/
+theorem eq_sum_smul_diagIdempotent_add_sum_offDiagSingle [CommRing R] (A : AlbertAlgebra R) :
+    A = (∑ i, A.diag i • diagIdempotent R i) + ∑ i, offDiagSingle i (A.offDiag i) := by
+  refine AlbertAlgebra.ext (funext fun m => ?_) (funext fun m => ?_) <;>
+    simp only [Fin.sum_univ_three, add_diag, add_offDiag, smul_diag, smul_offDiag,
+      diagIdempotent_diag, diagIdempotent_offDiag, offDiagSingle_diag, offDiagSingle_offDiag,
+      Pi.add_apply, Pi.smul_apply, Pi.zero_apply, smul_zero, add_zero, zero_add] <;>
+    fin_cases m <;> simp
 
 end AlbertAlgebra
 

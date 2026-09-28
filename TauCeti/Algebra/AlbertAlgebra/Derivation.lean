@@ -47,18 +47,11 @@ faithfully on it: a derivation kills `1`, so it sends the trace-zero element `3 
 
 ## Main definitions
 
-* `TauCeti.AlbertAlgebra.offDiagSingle`: the Hermitian matrix with a single octonion entry, in
-  position `(j + 1, j + 2)`.
 * `TauCeti.AlbertAlgebra.traceZeroLieSubmodule`: the trace-zero subspace `J₀` as a Lie submodule of
   `J` over `Der J`, so that `J₀` is a representation of `Der J`.
 
 ## Main results
 
-* `TauCeti.AlbertAlgebra.diagIdempotent_mul_offDiagSingle`: the **Peirce relation** between the
-  diagonal frame and the off-diagonal slots: `Eᵢ` annihilates its opposite slot and halves the other
-  two.
-* `TauCeti.AlbertAlgebra.eq_sum_smul_diagIdempotent_add_sum_offDiagSingle`: the frame and the slots
-  span `J`.
 * `TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_diag_eq_zero`: the value of a derivation at
   a diagonal idempotent has vanishing diagonal.
 * `TauCeti.AlbertAlgebra.trace_derivation_apply_eq_zero`: **a derivation of `J` has values of trace
@@ -78,10 +71,6 @@ class; the instance form of it therefore asks for the two classes
 stronger. Some such hypothesis is necessary for this argument: in characteristic `3` the trace-zero
 element `3 • A - (tr A) • 1` degenerates to `-(tr A) • 1`, which retains no information about `A`.
 
-`TauCeti.AlbertAlgebra.offDiagSingle` is placed here rather than beside
-`TauCeti.AlbertAlgebra.diagIdempotent`: its only purpose is to state the Peirce relation and the
-spanning statement that the trace computation below runs on, and all three arrive together.
-
 The index arithmetic of `Fin 3` — that `j`, `j + 1` and `j + 2` are distinct and that shifting twice
 more returns to them — is discharged by `decide` in a block of private lemmas, so that no proof
 below argues about `Fin 3` while it is computing in `J`; the one case already available in general,
@@ -93,13 +82,17 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (A
 
 ## References
 
-This is the first step of the `F₄ = Der(H₃(𝕆))` target of Layer 8 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` ("build
-`derivationLieAlgebra (AlbertAlgebra K)`, prove `finrank = 52` and Killing-simplicity of type
-`F₄`", "with its `26`-dimensional fundamental representation the trace-zero elements
-`J₀ = ker(albertTrace)`"). The count `finrank (Der J) = 52`, the type-`F₄` Killing-simplicity, the
-Jordan identity and the identification with `LieAlgebra.f₄` are not proved here.
-
+* `TauCeti/Algebra/Octonion/Derivation.lean`, the `G₂ = Der(𝕆)` counterpart of this file, from which
+  the packaging of the invariant subspace is adapted: `TauCeti.Octonion.imaginaryLieSubmodule`,
+  `TauCeti.Octonion.isFaithful_imaginaryLieSubmodule` and
+  `TauCeti.Octonion.instIsFaithfulImaginaryLieSubmodule` — the imaginary octonions as a Lie
+  submodule over `Der 𝕆`, faithful once multiplication by the scalar `2` is regular — are the
+  models for
+  `TauCeti.AlbertAlgebra.traceZeroLieSubmodule`,
+  `TauCeti.AlbertAlgebra.isFaithful_traceZeroLieSubmodule` and
+  `TauCeti.AlbertAlgebra.instIsFaithfulTraceZeroLieSubmodule` here. The trace computation itself is
+  not adapted from it: there the argument is the skewness of a derivation for the norm form, here it
+  is the Peirce calculus of the diagonal frame.
 * T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional Groups*, §5.
 * N. Jacobson, *Structure and Representations of Jordan Algebras*, Ch. IX, where the Peirce calculus
   of a complete orthogonal frame of idempotents is developed.
@@ -127,9 +120,6 @@ private theorem add_two_add_one (j : Fin 3) : j + 2 + 1 = j := by revert j; deci
 
 private theorem add_two_add_two (j : Fin 3) : j + 2 + 2 = j + 1 := by revert j; decide
 
-private theorem eq_add_one_or_eq_add_two {i j : Fin 3} (h : i ≠ j) : i = j + 1 ∨ i = j + 2 := by
-  revert h; revert i j; decide
-
 /-- A sum over `Fin 3` read off starting from an arbitrary index. -/
 private theorem sum_fin_three_rotate {M : Type*} [AddCommMonoid M] (f : Fin 3 → M) (j : Fin 3) :
     ∑ m, f m = f j + f (j + 1) + f (j + 2) := by
@@ -137,78 +127,14 @@ private theorem sum_fin_three_rotate {M : Type*} [AddCommMonoid M] (f : Fin 3 �
     Fintype.sum_equiv (Equiv.addLeft j) _ _ fun _ => rfl
   rw [← h, Fin.sum_univ_three, add_zero]
 
-/-! ### The off-diagonal slots -/
-
-/-- The Hermitian octonion matrix whose only nonzero entry is the octonion `a`, in position
-`(j + 1, j + 2)`: the `j`-th **off-diagonal slot** of `H₃(𝕆)`. Together with the diagonal frame
-`TauCeti.AlbertAlgebra.diagIdempotent` these span the algebra. -/
-def offDiagSingle [Zero R] (j : Fin 3) (a : Octonion R) : AlbertAlgebra R := ⟨0, Pi.single j a⟩
-
-@[simp] theorem offDiagSingle_diag [Zero R] (j : Fin 3) (a : Octonion R) :
-    (offDiagSingle j a).diag = 0 := (rfl)
-
-@[simp] theorem offDiagSingle_offDiag [Zero R] (j : Fin 3) (a : Octonion R) :
-    (offDiagSingle j a).offDiag = Pi.single j a := (rfl)
-
-/-- An off-diagonal slot has trace `0`: it has no diagonal entries. Not a `simp` lemma, for the
-reason `TauCeti.AlbertAlgebra.trace_diagIdempotent` is not: `TauCeti.AlbertAlgebra.trace_apply`
-already takes its left-hand side apart, and `simp` proves it outright. -/
-theorem trace_offDiagSingle [Semiring R] (j : Fin 3) (a : Octonion R) :
-    trace (offDiagSingle j a) = 0 := by
-  simp
-
-section Peirce
-
-variable [CommRing R] [Invertible (2 : R)]
-
-/-- **The Peirce relation between the diagonal frame and the off-diagonal slots**: the `j`-th slot
-sits in position `(j + 1, j + 2)`, so `Eⱼ` — whose only entry is in position `(j, j)` — annihilates
-it, while the two other idempotents halve it. -/
-theorem diagIdempotent_mul_offDiagSingle (i j : Fin 3) (a : Octonion R) :
-    diagIdempotent R i * offDiagSingle j a =
-      if i = j then 0 else ⅟(2 : R) • offDiagSingle j a := by
-  rcases eq_or_ne i j with rfl | h
-  · refine AlbertAlgebra.ext (funext fun m => ?_) (funext fun m => ?_)
-    · simp
-    · rcases eq_or_ne m i with rfl | hm
-      · simp
-      · simp [Pi.single_eq_of_ne hm]
-  · refine AlbertAlgebra.ext (funext fun m => ?_) (funext fun m => ?_)
-    · simp [h]
-    · rcases eq_or_ne m j with rfl | hm
-      · rcases eq_add_one_or_eq_add_two h with rfl | rfl
-        · simp [h]
-        · simp [h]
-      · simp [h, Pi.single_eq_of_ne hm]
-
-end Peirce
-
-section Span
-
-variable [CommRing R]
-
-/-- **The diagonal frame and the off-diagonal slots span `H₃(𝕆)`**: a Hermitian octonion matrix is
-the combination of the diagonal idempotents read off its diagonal, plus its three off-diagonal
-slots. -/
-theorem eq_sum_smul_diagIdempotent_add_sum_offDiagSingle (A : AlbertAlgebra R) :
-    A = (∑ i, A.diag i • diagIdempotent R i) + ∑ i, offDiagSingle i (A.offDiag i) := by
-  refine AlbertAlgebra.ext (funext fun m => ?_) (funext fun m => ?_) <;>
-    simp only [Fin.sum_univ_three, add_diag, add_offDiag, smul_diag, smul_offDiag,
-      diagIdempotent_diag, diagIdempotent_offDiag, offDiagSingle_diag, offDiagSingle_offDiag,
-      Pi.add_apply, Pi.smul_apply, Pi.zero_apply, smul_zero, add_zero, zero_add] <;>
-    fin_cases m <;> simp
-
-end Span
-
 /-! ### A derivation has trace-zero values -/
 
 section Derivation
 
 variable [CommRing R] [Invertible (2 : R)] (D : derivationLieAlgebra R (AlbertAlgebra R))
 
-/-- **The value of a derivation at a diagonal idempotent has no diagonal.** Differentiating
-`Eᵢ ∘ Eᵢ = Eᵢ` gives `D Eᵢ = 2 (Eᵢ ∘ D Eᵢ)`; taking the `m`-th diagonal entry multiplies that entry
-by `2 δ_{m i}`, which kills it off `i` and forces `x = 2 x` at `i`. -/
+/-- **The value of a derivation at a diagonal idempotent has no diagonal**: every scalar entry of
+`D Eᵢ` vanishes, so in particular `D Eᵢ` has trace `0`. -/
 theorem derivation_apply_diagIdempotent_diag_eq_zero (i : Fin 3) :
     ((D : Module.End R (AlbertAlgebra R)) (diagIdempotent R i)).diag = 0 := by
   have hEE : diagIdempotent R i * diagIdempotent R i = diagIdempotent R i := by simp
@@ -231,12 +157,7 @@ theorem trace_derivation_apply_diagIdempotent (i : Fin 3) :
     trace ((D : Module.End R (AlbertAlgebra R)) (diagIdempotent R i)) = 0 := by
   simp [derivation_apply_diagIdempotent_diag_eq_zero D i]
 
-/-- **A derivation kills the trace of an off-diagonal slot.** Differentiating the single Peirce
-relation `E_{j+1} ∘ Fⱼ(a) = ½ Fⱼ(a)` gives `½ W = U ∘ Fⱼ(a) + E_{j+1} ∘ W` for `W = D Fⱼ(a)` and
-`U = D E_{j+1}`, and the octonion slots of `U` enter the three diagonal entries of that equation
-through the single scalar `t = ⟨Uⱼ, a⟩`: the entries read `½ Wⱼ = 0`, `½ W_{j+1} = t + W_{j+1}` and
-`½ W_{j+2} = t`. The first kills `Wⱼ`, and eliminating `t` between the other two gives
-`W_{j+1} + W_{j+2} = 0`. -/
+/-- **A derivation kills the trace of an off-diagonal slot.** -/
 theorem trace_derivation_apply_offDiagSingle (j : Fin 3) (a : Octonion R) :
     trace ((D : Module.End R (AlbertAlgebra R)) (offDiagSingle j a)) = 0 := by
   have hne : j + 2 ≠ j := by
@@ -250,24 +171,34 @@ theorem trace_derivation_apply_offDiagSingle (j : Fin 3) (a : Octonion R) :
   set W := (D : Module.End R (AlbertAlgebra R)) (offDiagSingle j a)
   have e0 : ⅟(2 : R) * W.diag j = 0 := by
     have hj := congrArg (fun X : AlbertAlgebra R => X.diag j) h
-    simpa [Pi.single_eq_of_ne (add_one_ne_self j), Pi.single_eq_of_ne hne,
-      Pi.single_eq_of_ne (Ne.symm (add_one_ne_self j))] using hj
+    simpa only [smul_diag, Pi.smul_apply, smul_eq_mul, add_diag, Pi.add_apply, mul_diag,
+      offDiagSingle_diag, offDiagSingle_offDiag, diagIdempotent_diag, diagIdempotent_offDiag,
+      Pi.zero_apply, Pi.single_eq_of_ne (add_one_ne_self j), Pi.single_eq_of_ne hne,
+      Pi.single_eq_of_ne (Ne.symm (add_one_ne_self j)), mul_zero, zero_mul, map_zero,
+      LinearMap.zero_apply, add_zero] using hj
   have e1 : ⅟(2 : R) * W.diag (j + 1) =
       QuadraticMap.associated (Octonion.normQuadraticForm R) (U.offDiag j) a + W.diag (j + 1) := by
     have hj := congrArg (fun X : AlbertAlgebra R => X.diag (j + 1)) h
-    simpa [add_one_add_one j, add_one_add_two j, Pi.single_eq_of_ne hne] using hj
+    simpa only [smul_diag, Pi.smul_apply, smul_eq_mul, add_diag, Pi.add_apply, mul_diag,
+      offDiagSingle_diag, offDiagSingle_offDiag, diagIdempotent_diag, diagIdempotent_offDiag,
+      add_one_add_one j, add_one_add_two j, Pi.zero_apply, Pi.single_eq_of_ne hne,
+      Pi.single_eq_same, mul_zero, one_mul, map_zero, LinearMap.zero_apply, add_zero,
+      zero_add] using hj
   have e2 : ⅟(2 : R) * W.diag (j + 2) =
       QuadraticMap.associated (Octonion.normQuadraticForm R) (U.offDiag j) a := by
     have hj := congrArg (fun X : AlbertAlgebra R => X.diag (j + 2)) h
-    simpa [add_two_add_one j, add_two_add_two j, Pi.single_eq_of_ne (add_one_ne_self j),
-      Pi.single_eq_of_ne (add_two_ne_add_one j)] using hj
+    simpa only [smul_diag, Pi.smul_apply, smul_eq_mul, add_diag, Pi.add_apply, mul_diag,
+      offDiagSingle_diag, offDiagSingle_offDiag, diagIdempotent_diag, diagIdempotent_offDiag,
+      add_two_add_one j, add_two_add_two j, Pi.zero_apply,
+      Pi.single_eq_of_ne (add_one_ne_self j), Pi.single_eq_of_ne (add_two_ne_add_one j),
+      Pi.single_eq_same, mul_zero, zero_mul, map_zero, LinearMap.zero_apply, add_zero,
+      zero_add] using hj
   have h2 : ⅟(2 : R) * 2 = 1 := invOf_mul_self' 2
   rw [trace_apply, sum_fin_three_rotate _ j]
   linear_combination (2 : R) * e0 - (2 : R) * e1 + (2 : R) * e2 +
     (W.diag (j + 1) - W.diag (j + 2) - W.diag j) * h2
 
-/-- **A derivation of the split Albert algebra has values of trace `0`.** The diagonal frame and the
-off-diagonal slots span, and the trace of a derivation vanishes on each of them. -/
+/-- **A derivation of the split Albert algebra has values of trace `0`.** -/
 theorem trace_derivation_apply_eq_zero (A : AlbertAlgebra R) :
     trace ((D : Module.End R (AlbertAlgebra R)) A) = 0 := by
   rw [eq_sum_smul_diagIdempotent_add_sum_offDiagSingle A]
@@ -307,14 +238,10 @@ section Faithful
 
 variable [CommRing R] [Invertible (2 : R)]
 
-/-- **`Der H₃(𝕆)` acts faithfully on the trace-zero subspace**, so no information is lost by
-restricting the derivation algebra to its candidate fundamental representation.
-
-A derivation kills `1`, and `3 · A - (tr A) · 1` has trace `0` with
-`D (3 · A - (tr A) · 1) = 3 · D A`, so a derivation vanishing on `J₀` vanishes outright as soon as
-scalar multiplication by `3` on `J` is regular. That regularity is the exact hypothesis the proof
-uses; the instance `TauCeti.AlbertAlgebra.instIsFaithfulTraceZeroLieSubmodule` supplies it from
-typeclasses. -/
+/-- **`Der H₃(𝕆)` acts faithfully on the trace-zero subspace** as soon as scalar multiplication by
+`3` on `H₃(𝕆)` is regular, so no information is lost by restricting the derivation algebra to its
+candidate fundamental representation. Some hypothesis on `3` is needed; the instance
+`TauCeti.AlbertAlgebra.instIsFaithfulTraceZeroLieSubmodule` supplies this one from typeclasses. -/
 theorem isFaithful_traceZeroLieSubmodule (h3 : IsSMulRegular (AlbertAlgebra R) (3 : R)) :
     LieModule.IsFaithful R (derivationLieAlgebra R (AlbertAlgebra R))
       (traceZeroLieSubmodule R) := by
