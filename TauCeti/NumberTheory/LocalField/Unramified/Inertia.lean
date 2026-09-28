@@ -185,6 +185,18 @@ theorem quotientInertiaSubgroupEquiv_unramifiedDegree (σ : Field.absoluteGalois
   absoluteGaloisGroupQuotientEquiv_mk σ
 
 variable {K} in
+/-- The inverse identification of `Gal(K^{ur}/K)` with the unramified quotient sends the
+restriction of `σ` to `K^{ur}` back to the unramified degree of `σ`; with
+`TauCeti.restrictMaximalUnramifiedHom_surjective` this computes it on every element. -/
+@[simp]
+theorem quotientInertiaSubgroupEquiv_symm_restrictMaximalUnramifiedHom
+    (σ : Field.absoluteGaloisGroup K) :
+    (quotientInertiaSubgroupEquiv K).symm (restrictMaximalUnramifiedHom K σ) =
+      unramifiedDegree K σ :=
+  -- `restrictMaximalUnramifiedHom K` is by definition `AlgEquiv.restrictNormalHom`.
+  absoluteGaloisGroupQuotientEquiv_symm_restrictNormalHom σ
+
+variable {K} in
 /-- **Unramified subextensions are those fixed by inertia.** A finite separable subextension `E` of
 `K^{alg}/K`, with a structure of nonarchimedean local field compatible with `K`, is unramified over
 `K` exactly when every element of the inertia subgroup fixes it.
@@ -220,6 +232,7 @@ variable {K}
 
 /-- `σ` is an arithmetic Frobenius lift exactly when it restricts to the arithmetic Frobenius of
 `K^{ur}`. -/
+@[simp]
 theorem isArithFrobeniusLift_def {σ : Field.absoluteGaloisGroup K} :
     IsArithFrobeniusLift K σ ↔
       restrictMaximalUnramifiedHom K σ = maximalUnramifiedFrobenius K (AlgebraicClosure K) :=
