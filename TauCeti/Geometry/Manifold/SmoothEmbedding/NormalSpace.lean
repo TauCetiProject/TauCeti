@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
-public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 
 /-!
 # Normal spaces of smooth embeddings
