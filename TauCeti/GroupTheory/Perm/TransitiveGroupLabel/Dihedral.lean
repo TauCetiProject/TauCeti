@@ -82,14 +82,57 @@ noncomputable def referenceSubgroupFourTwoMulEquivDihedralGroup :
     exact this ▸ hh
   exact (dihedralGroupMulEquiv hs ht hs1 ht1 hn hgen).symm
 
+private theorem referenceSubgroupFourTwoMulEquivDihedralGroup_symm_sr_zero :
+    referenceSubgroupFourTwoMulEquivDihedralGroup.symm (.sr 0) =
+      (⟨swap 0 2, by
+        rw [referenceSubgroup_four_two]
+        exact Subgroup.subset_closure
+          (Set.mem_insert_of_mem _ (Set.mem_singleton _))⟩ :
+        referenceSubgroup 4 ⟨2, by simp⟩) := by
+  simp [referenceSubgroupFourTwoMulEquivDihedralGroup, dihedralGroupMulEquiv_apply,
+    dihedralHom_sr, reflection]
+
+private theorem referenceSubgroupFourTwoMulEquivDihedralGroup_symm_r_three :
+    referenceSubgroupFourTwoMulEquivDihedralGroup.symm (.r (3 : ZMod 4)) =
+      (⟨finRotate 4, by
+        rw [referenceSubgroup_four_two]
+        exact Subgroup.subset_closure (Set.mem_insert _ _)⟩ :
+        referenceSubgroup 4 ⟨2, by simp⟩) := by
+  simp only [referenceSubgroupFourTwoMulEquivDihedralGroup,
+    MulEquiv.symm_symm, dihedralGroupMulEquiv_apply, dihedralHom_r]
+  ext x
+  fin_cases x <;> decide
+
+/-- The concrete reflection maps to the standard dihedral reflection. -/
+@[simp]
+theorem referenceSubgroupFourTwoMulEquivDihedralGroup_apply_swap :
+    referenceSubgroupFourTwoMulEquivDihedralGroup
+      (⟨swap 0 2, by
+        rw [referenceSubgroup_four_two]
+        exact Subgroup.subset_closure
+          (Set.mem_insert_of_mem _ (Set.mem_singleton _))⟩ :
+        referenceSubgroup 4 ⟨2, by simp⟩) = .sr 0 := by
+  apply referenceSubgroupFourTwoMulEquivDihedralGroup.symm.injective
+  simpa using referenceSubgroupFourTwoMulEquivDihedralGroup_symm_sr_zero.symm
+
+/-- The concrete four-cycle maps to the inverse of the standard dihedral rotation. -/
+@[simp]
+theorem referenceSubgroupFourTwoMulEquivDihedralGroup_apply_finRotate :
+    referenceSubgroupFourTwoMulEquivDihedralGroup
+      (⟨finRotate 4, by
+        rw [referenceSubgroup_four_two]
+        exact Subgroup.subset_closure (Set.mem_insert _ _)⟩ :
+        referenceSubgroup 4 ⟨2, by simp⟩) = .r (3 : ZMod 4) := by
+  apply referenceSubgroupFourTwoMulEquivDihedralGroup.symm.injective
+  simpa using referenceSubgroupFourTwoMulEquivDihedralGroup_symm_r_three.symm
+
 /-- Every permutation subgroup with label `4T3` is abstractly the dihedral group of the
 square. The isomorphism depends on the conjugating permutation used to read the label. -/
 theorem TransitiveGroupLabel.nonempty_mulEquiv_dihedralGroup_four_two
     {G : Subgroup (Perm (Fin 4))}
     (h : TransitiveGroupLabel (⟨2, by simp⟩ : TransitiveGroupIndex 4) G) :
     Nonempty (G ≃* DihedralGroup 4) := by
-  obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
-  refine ⟨(τ.permCongrHom.subgroupMap G).trans ?_⟩
-  exact hτ ▸ referenceSubgroupFourTwoMulEquivDihedralGroup
+  obtain ⟨e⟩ := h.nonempty_mulEquiv_referenceSubgroup
+  exact ⟨e.trans referenceSubgroupFourTwoMulEquivDihedralGroup⟩
 
 end TauCeti

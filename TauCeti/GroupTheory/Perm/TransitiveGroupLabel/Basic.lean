@@ -405,6 +405,13 @@ theorem TransitiveGroupLabel.exists_map_permCongrHom_eq {n : ℕ} {j : Transitiv
   ext σ x
   simp [Equiv.permCongr_eq_mul]
 
+/-- A subgroup carrying a label is abstractly isomorphic to its reference subgroup. -/
+theorem TransitiveGroupLabel.nonempty_mulEquiv_referenceSubgroup {n : ℕ}
+    {j : TransitiveGroupIndex n} {G : Subgroup (Perm (Fin n))}
+    (h : TransitiveGroupLabel j G) : Nonempty (G ≃* referenceSubgroup n j) := by
+  obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
+  exact ⟨hτ ▸ τ.permCongrHom.subgroupMap G⟩
+
 /-- If a subgroup carries the label `j` and the reference subgroup for `j` lies in `H`, then the
 subgroup lies in a conjugate of `H`. -/
 theorem TransitiveGroupLabel.exists_le_map_conj_of_le {n : ℕ} {j : TransitiveGroupIndex n}
