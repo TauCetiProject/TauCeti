@@ -89,11 +89,7 @@ theorem map_inf_alternatingGroup_permCongrHom (e : α ≃ β) (G : Subgroup (Per
       G.map e.permCongrHom.toMonoidHom ⊓ alternatingGroup β := by
   have hA : (alternatingGroup α).map e.permCongrHom.toMonoidHom =
       alternatingGroup β := by
-    ext σ
-    simp only [Subgroup.mem_map_equiv, Equiv.Perm.mem_alternatingGroup,
-      Equiv.permCongrHom_symm]
-    change Perm.sign (e.symm.permCongr σ) = 1 ↔ Perm.sign σ = 1
-    rw [Equiv.Perm.sign_permCongr]
+    simp [Subgroup.ext_iff, Subgroup.map_equiv_eq_comap_symm]
   rw [Subgroup.map_inf G (alternatingGroup α)
     e.permCongrHom.toMonoidHom e.permCongrHom.injective, hA]
 
