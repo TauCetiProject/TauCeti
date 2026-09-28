@@ -162,6 +162,46 @@ def squareCellTop (H : C(unitInterval × unitInterval, X))
   (Path.id.prod (Path.refl (1 : unitInterval))).map
     (squareCellIn H a b c d hab hcd V hV).continuous
 
+/-- The bottom edge of a cell, viewed in the ambient space. -/
+@[simp]
+lemma squareCellBottom_apply (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) (t : unitInterval) :
+    (squareCellBottom H a b c d hab hcd V hV t).1 =
+      H ((Path.id.subpath a b) t, c) := by
+  change H ((Path.id.subpath a b) t, (Path.id.subpath c d) 0) = _
+  simp
+
+/-- The right edge of a cell, viewed in the ambient space. -/
+@[simp]
+lemma squareCellRight_apply (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) (t : unitInterval) :
+    (squareCellRight H a b c d hab hcd V hV t).1 =
+      H (b, (Path.id.subpath c d) t) := by
+  change H ((Path.id.subpath a b) 1, (Path.id.subpath c d) t) = _
+  simp
+
+/-- The left edge of a cell, viewed in the ambient space. -/
+@[simp]
+lemma squareCellLeft_apply (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) (t : unitInterval) :
+    (squareCellLeft H a b c d hab hcd V hV t).1 =
+      H (a, (Path.id.subpath c d) t) := by
+  change H ((Path.id.subpath a b) 0, (Path.id.subpath c d) t) = _
+  simp
+
+/-- The top edge of a cell, viewed in the ambient space. -/
+@[simp]
+lemma squareCellTop_apply (H : C(unitInterval × unitInterval, X))
+    (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
+    (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) (t : unitInterval) :
+    (squareCellTop H a b c d hab hcd V hV t).1 =
+      H ((Path.id.subpath a b) t, d) := by
+  change H ((Path.id.subpath a b) t, (Path.id.subpath c d) 1) = _
+  simp
+
 /-- The bottom-right boundary route is the composite of the named cell edges. -/
 theorem squareCellBottom_trans_right (H : C(unitInterval × unitInterval, X))
     (a b c d : unitInterval) (hab : a ≤ b) (hcd : c ≤ d)
