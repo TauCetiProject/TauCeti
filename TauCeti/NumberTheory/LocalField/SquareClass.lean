@@ -79,6 +79,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- **The multiplicative square-class group of a nonarchimedean local field.** This is
 `TauCeti.card_squareClasses` read on the literal quotient `Kˣ ⧸ (Kˣ)²`. -/
+@[simp]
 theorem card_squareClass (h2 : (2 : K) ≠ 0) :
     Nat.card (MultiplicativeSquareClassGroup K) =
       4 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 :=
@@ -87,6 +88,7 @@ theorem card_squareClass (h2 : (2 : K) ≠ 0) :
 
 /-- **The square-class group of a nonarchimedean local field.** This is
 `TauCeti.card_squareClasses` read on `TauCeti.SquareClassGroup`. -/
+@[simp]
 theorem natCard_squareClassGroup (h2 : (2 : K) ≠ 0) :
     Nat.card (SquareClassGroup K) = 4 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
   rw [← natCard_multiplicativeSquareClassGroup]
@@ -123,6 +125,7 @@ theorem natCard_squareClassGroup_dyadic [FinitePadicExtension K 2] :
   exact natCard_squareClassGroup _
 
 /-- The multiplicative group of `ℚ_[2]` has eight square classes. -/
+@[simp]
 theorem card_squareClasses_padic_two :
     Nat.card (ℚ_[2]ˣ ⧸ (powMonoidHom 2 : ℚ_[2]ˣ →* ℚ_[2]ˣ).range) = 8 := by
   rw [card_squareClasses_dyadic, Padic.natCard_residueField,

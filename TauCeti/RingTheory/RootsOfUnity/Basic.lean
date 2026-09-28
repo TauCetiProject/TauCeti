@@ -50,6 +50,7 @@ theorem eq_one_of_pow_eq_one_of_sub_one_mem [NoZeroDivisors R] {I : Ideal R} {n 
 
 /-- In a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` of square roots of unity has two
 elements. -/
+@[simp]
 theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
     Nat.card (rootsOfUnity 2 R) = 2 :=
   (IsPrimitiveRoot.neg_one (ringChar R) fun h ↦

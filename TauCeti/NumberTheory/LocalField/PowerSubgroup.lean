@@ -426,6 +426,7 @@ theorem card_squareClasses_of_isUnit (h2 : IsUnit (2 : 𝒪[K])) :
 
 /-- **The number of square classes of a nonarchimedean local field.** If `2` is nonzero in `K`,
 then `Kˣ ⧸ (Kˣ)²` has `4 · #𝓀[K] ^ v_K(2)` elements. -/
+@[simp]
 theorem card_squareClasses (h2 : (2 : K) ≠ 0) :
     Nat.card (Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) =
       4 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
