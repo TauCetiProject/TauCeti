@@ -139,6 +139,22 @@ def IsContMDiffDistribution (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) : 
 
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
 
+/-- A distribution has rank `k` and class `C^n` as soon as every point has a neighbourhood, not
+necessarily open, on which it has a `C^n` local frame of `k` vector fields. -/
+theorem IsContMDiffDistribution.of_mem_nhds
+    (h : ∀ x : M, ∃ U ∈ 𝓝 x, ∃ X : Fin k → Π y : M, TangentSpace I y,
+      IsDistributionFrameOn I n D X U) :
+    IsContMDiffDistribution I n k D := fun x ↦ by
+  obtain ⟨U, hU, X, hX⟩ := h x
+  exact ⟨interior U, isOpen_interior, mem_interior_iff_mem_nhds.mpr hU, X,
+    hX.mono interior_subset⟩
+
+/-- A distribution with a global `C^n` frame of `k` vector fields is a `C^n` distribution of
+rank `k`. -/
+theorem IsDistributionFrameOn.isContMDiffDistribution {X : Fin k → Π x : M, TangentSpace I x}
+    (hX : IsDistributionFrameOn I n D X univ) : IsContMDiffDistribution I n k D := fun x ↦
+  ⟨univ, isOpen_univ, mem_univ x, X, hX⟩
+
 /-- A distribution of rank `k` has `k`-dimensional subspaces. -/
 theorem IsContMDiffDistribution.finrank_eq (hD : IsContMDiffDistribution I n k D) (x : M) :
     finrank 𝕜 (D x) = k := by
@@ -165,9 +181,10 @@ theorem isContMDiffDistribution_top [FiniteDimensional 𝕜 E] [IsManifold I (n 
 /-- A finite-dimensional subspace `S` of `E`, taken at every point of `E`, is a `C^n` distribution
 on `E` whose rank is the dimension of `S`. Its local frames are constant. -/
 theorem isContMDiffDistribution_const (S : Submodule 𝕜 E) [FiniteDimensional 𝕜 S] :
-    IsContMDiffDistribution 𝓘(𝕜, E) n (finrank 𝕜 S) (fun _ : E ↦ S) := fun x ↦ by
+    IsContMDiffDistribution 𝓘(𝕜, E) n (finrank 𝕜 S) (fun _ : E ↦ S) := by
   let b := Module.finBasis 𝕜 S
-  refine ⟨univ, isOpen_univ, mem_univ x, fun i _ ↦ (b i : E), fun i ↦ ?_, fun _ ↦ ?_, fun _ ↦ ?_⟩
+  refine IsDistributionFrameOn.isContMDiffDistribution (X := fun i _ ↦ (b i : E))
+    ⟨fun i ↦ ?_, fun _ ↦ ?_, fun _ ↦ ?_⟩
   · exact contMDiffOn_vectorSpace_iff_contDiffOn.mpr contDiffOn_const
   · exact b.linearIndependent.map' S.subtype S.ker_subtype
   · have hspan : Submodule.span 𝕜 (range fun i ↦ (b i : E)) = S := by
@@ -277,8 +294,8 @@ private theorem isDistributionFrameOn_contactFrame :
 variable (n) in
 /-- The standard contact distribution is a `C^n` distribution of rank two. -/
 theorem isContMDiffDistribution_standardContactDistribution :
-    IsContMDiffDistribution 𝓘(𝕜, 𝕜 × 𝕜 × 𝕜) n 2 (standardContactDistribution 𝕜) := fun p ↦
-  ⟨univ, isOpen_univ, mem_univ p, contactFrame 𝕜, isDistributionFrameOn_contactFrame⟩
+    IsContMDiffDistribution 𝓘(𝕜, 𝕜 × 𝕜 × 𝕜) n 2 (standardContactDistribution 𝕜) :=
+  isDistributionFrameOn_contactFrame.isContMDiffDistribution
 
 /-- The standard contact distribution is not involutive: the Lie bracket of its frame fields
 `(1, 0, 0)` and `(0, 1, x)` is the vector field `(0, 0, 1)`, which is nowhere tangent to it. -/
