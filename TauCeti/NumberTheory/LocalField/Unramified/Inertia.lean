@@ -137,9 +137,10 @@ def restrictMaximalUnramifiedHom :
   AlgEquiv.restrictNormalHom _
 
 variable {K} in
-/-- Restricting `σ` to `K^{ur}` does not move elements: its value at `x ∈ K^{ur}` is `σ x`. -/
+/-- Restricting `σ` to `K^{ur}` agrees with `σ` on underlying elements: its value at `x ∈ K^{ur}`
+is `σ x`. -/
 @[simp]
-theorem restrictMaximalUnramifiedHom_apply_coe (σ : Field.absoluteGaloisGroup K)
+theorem restrictMaximalUnramifiedHom_coe_apply (σ : Field.absoluteGaloisGroup K)
     (x : maximalUnramifiedExtension K (AlgebraicClosure K)) :
     (restrictMaximalUnramifiedHom K σ x : AlgebraicClosure K) =
       DFunLike.coe (F := Gal(AlgebraicClosure K/K)) σ (x : AlgebraicClosure K) :=
@@ -274,8 +275,8 @@ theorem isArithFrobeniusLift_iff {σ : Field.absoluteGaloisGroup K} :
     have hxM : x ∈ M := (maximalUnramifiedExtension_eq_adjoin K _).ge
       (subset_adjoin _ _ ⟨f, hf, hx⟩)
     have h' := congrArg Subtype.val (h ⟨x, hxM⟩ f hf (Subtype.ext (by simpa using hx)))
-    rwa [restrictMaximalUnramifiedHom_apply_coe, SubmonoidClass.coe_pow] at h'
-  · rw [restrictMaximalUnramifiedHom_apply_coe, SubmonoidClass.coe_pow]
+    rwa [restrictMaximalUnramifiedHom_coe_apply, SubmonoidClass.coe_pow] at h'
+  · rw [restrictMaximalUnramifiedHom_coe_apply, SubmonoidClass.coe_pow]
     exact h y f hf (by rw [← SubmonoidClass.coe_pow, hy])
 
 variable (K) in
