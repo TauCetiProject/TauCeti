@@ -65,7 +65,7 @@ theorem SeparatelyExchangeable.iCondIndepFun_visibleCells
   apply (iCondIndepFun_iff_iCondIndep (mΩ := MeasurableSpace.pi)
     m' hm' (fun _ : V => inferInstance)
     (fun p : V => fun x : ℕ × ℕ → α => x p.1) ρ).2
-  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) ρ hm' hm
+  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm' hm
   intro p
   let C : Set (ℕ × ℕ) := ({p.1.1} : Set ℕ) ×ˢ ({p.1.2} : Set ℕ)
   have hC : C = {p.1} := by ext q; simp [C, Prod.ext_iff]

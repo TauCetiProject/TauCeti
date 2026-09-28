@@ -545,7 +545,7 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω 
     h_cross h_sq_eq).symm
 
 variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace Ω]
-  (μ : Measure Ω) [IsFiniteMeasure μ]
+  {μ : Measure Ω} [IsFiniteMeasure μ]
   {m' : MeasurableSpace Ω} (hm' : m' ≤ mΩ)
   {m : ι → MeasurableSpace Ω}
 
