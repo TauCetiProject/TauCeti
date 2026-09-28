@@ -117,33 +117,21 @@ instance : ContinuousSMul (ComplexTorus N) (Φ.analyticRealization hΦ) := by
     IsOpenQuotientMap.id
   have hQ : IsOpenQuotientMap (Prod.map id q) := hId.prodMap hq
   apply hQ.isQuotientMap.continuous_iff.mpr
-  have hcσ : Continuous (fun p : Σ σ, ((Φ.analyticAffineChartDiagram hΦ).obj σ) ×
-      ComplexTorus N ↦ p.2.2 • Φ.analyticAffineChartι hΦ p.1 p.2.1) := by
-    apply continuous_sigma
-    intro σ
-    have hc := ((Φ.analyticAffineChartι hΦ σ).hom.continuous_toFun).comp
-      ((continuous_smul (M := ComplexTorus N)
-        (X := (Φ.analyticAffineChartDiagram hΦ).obj σ)).comp
-          (Homeomorph.prodComm _ _).continuous)
-    convert hc using 1
-    funext x
-    simp [smul_analyticAffineChartι]
-  have hc : Continuous (fun p : (Σ σ, (Φ.analyticAffineChartDiagram hΦ).obj σ) ×
-      ComplexTorus N ↦ p.2 • q p.1) := by
-    let e : ((Σ σ, (Φ.analyticAffineChartDiagram hΦ).obj σ) × ComplexTorus N) ≃ₜ
-        (Σ σ, ((Φ.analyticAffineChartDiagram hΦ).obj σ) × ComplexTorus N) :=
-      Homeomorph.sigmaProdDistrib
-    have h := hcσ.comp e.continuous
-    convert h using 1
-    funext p
-    rcases p with ⟨⟨σ, x⟩, t⟩
-    -- The homeomorphism uses the inverse of `Equiv.sigmaProdDistrib` internally.
-    simp [e, q, analyticAffineChartι_def, Homeomorph.sigmaProdDistrib,
-      Equiv.sigmaProdDistrib]
-    rfl
-  have h := hc.comp (Homeomorph.prodComm _ _).continuous
-  convert h using 1
-  funext p
-  rfl
+  rw [← ((Homeomorph.prodComm _ _).trans Homeomorph.sigmaProdDistrib).symm.comp_continuous_iff',
+    continuous_sigma_iff]
+  intro σ
+  simp only [Function.comp_def, Homeomorph.symm_trans_apply,
+    Homeomorph.sigmaProdDistrib_symm_apply]
+  simp only [Homeomorph.prodComm_symm, Homeomorph.coe_prodComm, Prod.map, id_eq, q,
+    ← analyticAffineChartι_def]
+  simp only [Prod.swap]
+  -- The chart inclusion is definitionally the underlying map of its `TopCat` morphism.
+  change Continuous (fun a : ((Φ.analyticAffineChartDiagram hΦ).obj σ) ×
+    ComplexTorus N ↦ a.2 • Φ.analyticAffineChartι hΦ σ a.1)
+  simp only [smul_analyticAffineChartι]
+  have hmul := (continuous_smul (M := ComplexTorus N)
+    (X := (Φ.analyticAffineChartDiagram hΦ).obj σ)).comp
+      (Homeomorph.prodComm _ _).continuous
+  exact (Φ.analyticAffineChartι hΦ σ).hom.continuous_toFun.comp hmul
 
 end TauCeti.Toric.Fan
