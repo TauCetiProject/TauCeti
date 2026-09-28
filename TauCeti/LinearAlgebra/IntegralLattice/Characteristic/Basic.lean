@@ -47,6 +47,20 @@ theorem isCharacteristicVector_iff (L : IntegralLattice V) (w : L) :
       ∀ x : L, L.integralForm w x ≡ L.integralNorm x [ZMOD 2] :=
   Iff.rfl
 
+/-- The characteristic condition says that pairing with the vector represents norm parity. -/
+@[grind =]
+theorem isCharacteristicVector_iff_forall_integralForm_eq_normParity
+    (L : IntegralLattice V) (w : L) :
+    L.IsCharacteristicVector w ↔
+      ∀ x : L, (L.integralForm w x : ZMod 2) = L.normParity x := by
+  constructor
+  · intro hw x
+    simpa only [L.normParity_apply] using
+      (ZMod.intCast_eq_intCast_iff _ _ 2).mpr (hw x)
+  · intro hw x
+    apply (ZMod.intCast_eq_intCast_iff _ _ 2).mp
+    simpa only [L.normParity_apply] using hw x
+
 /-- Zero is characteristic precisely when the lattice is even. -/
 @[simp ←]
 theorem isEven_iff_isCharacteristicVector_zero (L : IntegralLattice V) :

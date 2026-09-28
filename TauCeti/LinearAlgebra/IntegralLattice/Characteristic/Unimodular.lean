@@ -43,11 +43,10 @@ theorem IsUnimodular.exists_isCharacteristicVector {L : IntegralLattice V}
     intro i
     simp [f]
   refine ⟨(L.integralPairingEquiv hL).symm f, ?_⟩
-  rw [L.isCharacteristicVector_iff]
+  rw [L.isCharacteristicVector_iff_forall_integralForm_eq_normParity]
   intro x
-  apply (ZMod.intCast_eq_intCast_iff _ _ 2).mp
   have hx := LinearMap.congr_fun hparity x
-  have hnorm : ((f x : ℤ) : ZMod 2) = (L.integralNorm x : ZMod 2) := by
+  have hnorm : ((f x : ℤ) : ZMod 2) = L.normParity x := by
     simpa using hx
   have hpair := LinearMap.congr_fun (L.integralPairingEquiv_toLinearMap hL)
     ((L.integralPairingEquiv hL).symm f)
@@ -60,7 +59,7 @@ theorem IsUnimodular.exists_isCharacteristicVector {L : IntegralLattice V}
   exact hnorm
 
 /-- Two characteristic vectors of a unimodular lattice differ by twice a lattice vector. -/
-theorem IsUnimodular.characteristicVector_sub_eq_two_smul {L : IntegralLattice V}
+theorem IsUnimodular.exists_characteristicVector_sub_eq_two_smul {L : IntegralLattice V}
     (hL : L.IsUnimodular) {w₁ w₂ : L}
     (h₁ : L.IsCharacteristicVector w₁) (h₂ : L.IsCharacteristicVector w₂) :
     ∃ v : L, w₁ - w₂ = (2 : ℤ) • v := by
@@ -92,13 +91,13 @@ theorem IsUnimodular.isCharacteristicVector_iff {L : IntegralLattice V}
     L.IsCharacteristicVector w ↔ ∃ v : L, w = w₀ + (2 : ℤ) • v := by
   constructor
   · intro hw
-    obtain ⟨v, hv⟩ := hL.characteristicVector_sub_eq_two_smul hw hw₀
+    obtain ⟨v, hv⟩ := hL.exists_characteristicVector_sub_eq_two_smul hw hw₀
     exact ⟨v, (sub_eq_iff_eq_add.mp hv).trans (add_comm _ _)⟩
   · rintro ⟨v, rfl⟩
     exact hw₀.add_two_smul v
 
 /-- Characteristic vectors of a unimodular lattice have the same norm modulo eight. -/
-theorem IsUnimodular.characteristicVector_norm_modEq {L : IntegralLattice V}
+theorem IsUnimodular.characteristicVector_integralNorm_modEq {L : IntegralLattice V}
     (hL : L.IsUnimodular) {w₁ w₂ : L}
     (h₁ : L.IsCharacteristicVector w₁) (h₂ : L.IsCharacteristicVector w₂) :
     L.integralNorm w₁ ≡ L.integralNorm w₂ [ZMOD 8] := by
