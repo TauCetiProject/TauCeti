@@ -94,6 +94,12 @@ noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n �
     TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn :=
   (f.tangentRange x hn).mkQ
 
+/-- The kernel of the normal-class map is exactly the tangent range. -/
+@[simp]
+theorem normalClass_ker (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    (f.normalClass x hn).ker = f.tangentRange x hn :=
+  (f.tangentRange x hn).ker_mkQ
+
 /-- The continuous quotient map from ambient tangent vectors to normal classes. -/
 noncomputable def normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TangentSpace J (f x) →L[𝕜] f.NormalSpace x hn :=
@@ -188,6 +194,17 @@ noncomputable def normalLift (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠
     intro v hv
     exact (LinearMap.mem_ker).2 (hg v hv))
 
+/-- The underlying linear map of the continuous normal lift is the linear normal lift. -/
+@[simp]
+theorem normalLiftL_toLinearMap (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
+    (g : TangentSpace J (f x) →L[𝕜] V)
+    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) :
+    (f.normalLiftL x hn g hg).toLinearMap =
+      f.normalLift x hn g.toLinearMap (fun v hv => hg v hv) := by
+  simp only [normalLiftL, normalLift, Submodule.toLinearMap_liftQL]
+  rfl
+
 /-- Composing the quotient lift with the normal-class map recovers the original linear map. -/
 @[simp]
 theorem normalLift_comp_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
@@ -216,13 +233,10 @@ theorem normalLiftL_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0
     (h : f.NormalSpace x hn →L[𝕜] V) (hh : h.comp (f.normalClassL x hn) = g) :
     h = f.normalLiftL x hn g hg := by
   apply ContinuousLinearMap.coe_injective
-  apply Submodule.linearMap_qext
-  have hcomp := congrArg ContinuousLinearMap.toLinearMap hh
-  have hlift := congrArg ContinuousLinearMap.toLinearMap
-    (f.normalLiftL_comp_normalClassL x hn g hg)
-  convert hcomp.trans hlift.symm using 1 <;>
-    simp only [ContinuousLinearMap.toLinearMap_comp, normalClassL_toLinearMap,
-      normalClass] <;> rfl
+  rw [normalLiftL_toLinearMap]
+  apply f.normalLift_unique x hn g.toLinearMap (fun v hv => hg v hv)
+  simpa only [← normalClassL_toLinearMap, ← ContinuousLinearMap.toLinearMap_comp] using
+    congrArg ContinuousLinearMap.toLinearMap hh
 
 /-- The normal dimension plus the tangent dimension equals the ambient dimension for a
 finite-dimensional smooth embedding. -/
