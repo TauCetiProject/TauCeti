@@ -13,12 +13,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 
 This file connects the bundled `TauCeti.HyperbolicMetric` with the Riemannian volume API.  A
 hyperbolic metric is data, so its volume is defined as the total volume of the carried Riemannian
-metric.  The metric-independent volume requires the Mostow rigidity theorem and is intentionally
-left for prerequisite work.
+metric.  Metric-independence is the volume consequence of Mostow rigidity.
 
-The construction follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Chapter 2;
-the volume-independence statement is the volume consequence of Mostow rigidity.  No external
-formalization is vendored here.
+The construction follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Chapter 2.
 
 ## Main definitions
 
@@ -49,6 +46,18 @@ noncomputable def hypVolumeOfMetric (g : HyperbolicMetric (I := I) (M := M)) : �
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
       (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
   exact riemannianTotalVolume I M
+
+omit [T2Space (TangentBundle I M)] [LindelofSpace M] in
+/-- `hypVolumeOfMetric` is the total volume for the metric carried by `g`. -/
+theorem hypVolumeOfMetric_def (g : HyperbolicMetric (I := I) (M := M)) :
+    hypVolumeOfMetric (I := I) g =
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.metric.toRiemannianMetric⟩
+      letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+          (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+      riemannianTotalVolume I M := by
+  rfl
 
 omit [T2Space (TangentBundle I M)] [LindelofSpace M] in
 /-- Hyperbolic volume is nonnegative, as a total Riemannian volume. -/
