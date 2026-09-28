@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.PadicVal.Defs
 public import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 
 /-!
 # Sublinear growth of the `p`-adic valuation of natural numbers
@@ -16,10 +17,14 @@ Since `p ^ padicValNat p n ∣ n`, the valuation `padicValNat p n` is at most lo
 This file records the consequence that any fixed multiple of it, shifted by any constant, is
 eventually below `n`:
 
-`∀ᶠ n in atTop, M + c * padicValNat p n ≤ n`.
+`∀ᶠ n in atTop, M + c * padicValNat p n ≤ n`,
 
-This is the estimate that makes a power series with coefficients `1 / n` converge on the open
-unit disc of a `p`-adic field, for instance the logarithm series.
+together with the uniform form `c * padicValNat p n ≤ n + C` for some constant `C`, and the sharp
+bound `e * padicValNat p n < i * (n - 1)` for `n ≥ 2` whenever `e < (p - 1) * i`.
+
+These are the estimates that make a power series with coefficients `1 / n` converge on the open
+unit disc of a `p`-adic field, for instance the logarithm series, and make its nonlinear terms
+strictly smaller than the linear one on sufficiently deep inputs.
 -/
 
 public section
@@ -51,5 +56,32 @@ theorem eventually_add_mul_padicValNat_le (p M c : ℕ) :
     rw [← pow_add, ← hj] at hprod
     rw [hj] at hkK ⊢
     nlinarith
+
+/-- Scaled by any constant `c`, the `p`-adic valuation of natural numbers is bounded by `n` up to
+an additive constant: for some `C`, `c * padicValNat p n ≤ n + C` for all `n`. -/
+theorem exists_mul_padicValNat_le_add (p c : ℕ) : ∃ C, ∀ n, c * padicValNat p n ≤ n + C := by
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (eventually_add_mul_padicValNat_le p 0 c)
+  refine ⟨c * N, fun n => ?_⟩
+  rcases lt_or_ge n N with hn | hn
+  · have := Nat.mul_le_mul_left c ((Nat.padicValNat_le_self (p := p) n).trans hn.le)
+    omega
+  · simpa using (hN n hn).trans (Nat.le_add_right n (c * N))
+
+/-- If `e < (p - 1) * i`, then `e * padicValNat p n < i * (n - 1)` for every `n ≥ 2`. -/
+theorem mul_padicValNat_lt_mul_sub_one {p e i n : ℕ} (hi : e < (p - 1) * i)
+    (hn : 2 ≤ n) : e * padicValNat p n < i * (n - 1) := by
+  set k := padicValNat p n
+  -- From `p * k ≤ n`: `(p - 1) * k ≤ n - 1`, since `k = 0` or `k ≥ 1`.
+  have hk : (p - 1) * k ≤ n - 1 := by
+    have h : p * k ≤ n := mul_padicValNat_le
+    rcases Nat.eq_zero_or_pos k with h0 | h0
+    · simp [h0]
+    · rw [Nat.sub_one_mul]
+      omega
+  refine Nat.lt_of_mul_lt_mul_left (a := p - 1) ?_
+  calc (p - 1) * (e * k) = e * ((p - 1) * k) := by ring
+    _ ≤ e * (n - 1) := Nat.mul_le_mul_left e hk
+    _ < (p - 1) * i * (n - 1) := Nat.mul_lt_mul_of_pos_right hi (by omega)
+    _ = (p - 1) * (i * (n - 1)) := by ring
 
 end TauCeti

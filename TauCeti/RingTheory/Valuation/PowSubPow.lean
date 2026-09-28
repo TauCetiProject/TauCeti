@@ -17,8 +17,8 @@ ultrametric inequality give
 
 `v (x ^ n - y ^ n) ≤ v (x - y) * c ^ (n - 1)`.
 
-This is the estimate that makes a power series with small coefficients contract differences of
-its arguments, for instance the logarithm on the deep units of a local field.
+This estimate controls the nonlinear terms of a power series on sufficiently deep inputs; for
+instance, it shows that the logarithm is an isometry on the deep units of a local field.
 -/
 
 public section
@@ -34,8 +34,13 @@ theorem map_pow_sub_pow_le (v : Valuation R Γ₀) {x y : R} {c : Γ₀} (hx : v
   rw [← geom_sum₂_mul, map_mul, mul_comm]
   gcongr
   refine v.map_sum_le fun j hj => ?_
-  have hj : j ≤ n - 1 := Nat.le_sub_one_of_lt (Finset.mem_range.mp hj)
-  rw [map_mul, map_pow, map_pow, ← Nat.add_sub_cancel' hj, pow_add, Nat.add_sub_cancel_left]
-  gcongr <;> exact zero_le
+  -- Each summand `x ^ j * y ^ (n - 1 - j)` has total degree `n - 1`.
+  have hdeg : j + (n - 1 - j) = n - 1 := by
+    have := Finset.mem_range.mp hj
+    omega
+  calc v (x ^ j * y ^ (n - 1 - j)) ≤ c ^ j * c ^ (n - 1 - j) := by
+        simp only [map_mul, map_pow]
+        gcongr <;> exact zero_le
+    _ = c ^ (n - 1) := by rw [← pow_add, hdeg]
 
 end Valuation
