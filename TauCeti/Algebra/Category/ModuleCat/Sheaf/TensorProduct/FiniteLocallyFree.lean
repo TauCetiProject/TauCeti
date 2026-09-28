@@ -58,6 +58,18 @@ theorem isFiniteLocallyFree_ihom_free (I : Type u) [Finite I]
     (isFiniteLocallyFree (ringCatSheaf R)).prop_tensor hfree hN
   exact (isFiniteLocallyFree (ringCatSheaf R)).prop_of_iso (ihomFreeIso I N).symm htensor
 
+/-- Internal Hom from a sheaf isomorphic to a finite free sheaf preserves finite local
+freeness. -/
+theorem isFiniteLocallyFree_ihom_of_iso_free (I : Type u) [Finite I]
+    (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) (e : free I ≅ M)
+    (hN : isFiniteLocallyFree (ringCatSheaf R) N) :
+    isFiniteLocallyFree (ringCatSheaf R) ((ihom M).obj N) := by
+  have hfree : isFiniteLocallyFree (ringCatSheaf R) ((ihom (free I)).obj N) :=
+    isFiniteLocallyFree_ihom_free I N hN
+  have : IsIso (MonoidalClosed.pre e.hom) := MonoidalClosed.pre_isIso e
+  exact (isFiniteLocallyFree (ringCatSheaf R)).prop_of_iso
+    (asIso ((MonoidalClosed.pre e.hom).app N)).symm hfree
+
 omit [HasBinaryProducts C] [HasWeakSheafify J AddCommGrpCat.{u}]
   [J.WEqualsLocallyBijective AddCommGrpCat.{u}] [HasSheafify J AddCommGrpCat.{u}] in
 /-- On a finite free chart of `M`, internal Hom from the restriction of `M` preserves finite
@@ -83,12 +95,8 @@ theorem isFiniteLocallyFree_ihom_chart
     Over.ConstructProducts.over_binaryProduct_of_pullback
   let e : free (R := (ringCatSheaf R).over (q.X i)) (q.generators i).I ≅
       M.over (q.X i) := asIso (q.generators i).π
-  have hfree : isFiniteLocallyFree ((ringCatSheaf R).over (q.X i))
-      ((ihom (free (R := (ringCatSheaf R).over (q.X i)) (q.generators i).I)).obj N) :=
-    isFiniteLocallyFree_ihom_free (R := R.over (q.X i)) (q.generators i).I N hN
-  have : IsIso (MonoidalClosed.pre e.hom) := MonoidalClosed.pre_isIso e
-  exact (isFiniteLocallyFree ((ringCatSheaf R).over (q.X i))).prop_of_iso
-    (asIso ((MonoidalClosed.pre e.hom).app N)).symm hfree
+  exact isFiniteLocallyFree_ihom_of_iso_free (R := R.over (q.X i))
+    (q.generators i).I (M.over (q.X i)) N e hN
 
 /-- Internal Hom out of a finite free sheaf as an endofunctor of finite locally free sheaves. -/
 def ihomFree (I : Type u) [Finite I] :
