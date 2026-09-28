@@ -21,15 +21,16 @@ of `TauCeti.cohomFp`, whose degree-one group is `TauCeti.cohomFp n G 1`, live in
 object, `TauCeti.trivialFp n G`, whose coefficient ring is `ZMod n` and whose carrier is the
 universe lift of `ZMod n`; this file identifies the two.
 
-The `ℤ` comparison does not apply to the second object: it is stated for the `ℤ` coefficient ring,
-and `TauCeti.trivialFp n G` is not of the form
-`TauCeti.ContCohomology.ofDiscreteModule R G M` for any `R`, being the `ZMod n`-module with the
-trivial action rather than the module for a given action over `ℤ`. What is shared between the two
-objects is the shape of their cochain spaces, so the degree-one comparison is built here for
-`TauCeti.trivialFp n G` out of the same inhomogeneous building blocks
-(`TauCeti.ContCohomology.homogeneous1`, `TauCeti.ContCohomology.Z1`,
-`TauCeti.ContCohomology.B1`) that the `ℤ` comparison uses, and not by any new construction of
-continuous cohomology.
+The `ℤ` comparison does not apply to the second object: it is stated against the object
+`TauCeti.ContCohomology.ofDiscreteModule ℤ G M` of `TauCeti.TopRep ℤ G`, whereas
+`TauCeti.trivialFp n G` is an object of `TauCeti.TopRep (ZMod n) G`, and is not that object.
+The carrier of `TauCeti.trivialFp n G` is the discrete `ZMod n`-module `ULift (ZMod n)` with the
+trivial action, which is the shape `ofDiscreteModule` builds; the coefficient ring alone is what
+separates the two objects. What is shared between the two objects is the shape of their cochain
+spaces, so the degree-one comparison is built here for `TauCeti.trivialFp n G` out of the same
+inhomogeneous building blocks (`TauCeti.ContCohomology.homogeneous1`,
+`TauCeti.ContCohomology.Z1`, `TauCeti.ContCohomology.B1`) that the `ℤ` comparison uses, and not
+by any new construction of continuous cohomology.
 
 The comparison is the inhomogeneous cocycle description of `H¹(G, ZMod n)` in degree one: with
 trivial coefficients a continuous `1`-cocycle is a continuous homomorphism `G → (ZMod n, +)`, its
