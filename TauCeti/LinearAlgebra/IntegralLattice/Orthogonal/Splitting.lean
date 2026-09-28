@@ -14,6 +14,8 @@ public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 A sublattice with perfect restricted pairing is complementary to its orthogonal complement.
 A vector of unit norm spans such a summand. These specialize the corresponding results for
 symmetric bilinear forms over commutative rings.
+
+The unimodular splitting theorem is from O. T. O'Meara, *Introduction to Quadratic Forms*, §82.
 -/
 
 public section

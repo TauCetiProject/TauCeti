@@ -30,8 +30,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `TauCeti.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
   to a left-separating subspace produces a nondegenerate restriction.
-* `LinearMap.BilinForm.isCompl_orthogonal_of_restrict_bijective`: a perfect restriction splits
-  a bilinear module over a commutative ring when the restriction is symmetric.
+* `LinearMap.BilinForm.isCompl_orthogonal_of_flip_restrict_bijective`: a perfect flipped
+  restriction splits a bilinear module over a commutative ring.
+* `LinearMap.BilinForm.isCompl_orthogonal_of_restrict_bijective`: a perfect symmetric
+  restriction splits a bilinear module over a commutative ring.
 * `LinearMap.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
   the cyclic restriction perfect.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
@@ -147,21 +149,21 @@ namespace LinearMap.BilinForm
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
-/-- A submodule with perfect symmetric restricted pairing is complementary to its orthogonal
+/-- A submodule with perfect flipped restricted pairing is complementary to its right orthogonal
 complement. -/
-theorem isCompl_orthogonal_of_restrict_bijective
-    (B : LinearMap.BilinForm R M) (S : Submodule R M) (hB : (B.restrict S).IsSymm)
-    (h : Function.Bijective (B.restrict S)) :
+theorem isCompl_orthogonal_of_flip_restrict_bijective
+    (B : LinearMap.BilinForm R M) (S : Submodule R M)
+    (h : Function.Bijective (B.flip.restrict S)) :
     IsCompl S (B.orthogonal S) := by
   let e : S ≃ₗ[R] Module.Dual R S :=
-    LinearEquiv.ofBijective (B.restrict S) h
+    LinearEquiv.ofBijective (B.flip.restrict S) h
   let p : M →ₗ[R] S := e.symm.toLinearMap.comp (B.flip.domRestrict₂ S)
   have hp : ∀ y : S, p y = y := by
     intro y
     apply e.injective
     ext z
-    simpa [p, e, LinearMap.BilinForm.restrict_apply,
-      LinearMap.domRestrict₂_apply] using (hB.eq z y)
+    simp [p, e, LinearMap.BilinForm.restrict_apply,
+      LinearMap.domRestrict₂_apply, LinearMap.BilinForm.flip_apply]
   have hker : LinearMap.ker p = B.orthogonal S := by
     ext x
     rw [LinearMap.mem_ker, ← e.map_eq_zero_iff]
@@ -178,6 +180,18 @@ theorem isCompl_orthogonal_of_restrict_bijective
       exact (LinearMap.BilinForm.mem_orthogonal_iff.mp hx) y y.property
   rw [← hker]
   exact LinearMap.isCompl_of_proj hp
+
+/-- A submodule with perfect symmetric restricted pairing is complementary to its orthogonal
+complement. -/
+theorem isCompl_orthogonal_of_restrict_bijective
+    (B : LinearMap.BilinForm R M) (S : Submodule R M) (hB : (B.restrict S).IsSymm)
+    (h : Function.Bijective (B.restrict S)) :
+    IsCompl S (B.orthogonal S) := by
+  have hflip : B.flip.restrict S = B.restrict S := by
+    ext x y
+    simpa [LinearMap.BilinForm.restrict_apply, LinearMap.BilinForm.flip_apply] using
+      (hB.eq y x)
+  exact B.isCompl_orthogonal_of_flip_restrict_bijective S (hflip ▸ h)
 
 /-- Unit self-pairing makes the restricted pairing on the cyclic span perfect. -/
 theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M)
