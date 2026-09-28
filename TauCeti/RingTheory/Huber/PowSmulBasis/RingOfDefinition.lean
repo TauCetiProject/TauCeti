@@ -12,8 +12,8 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
 # Independence of the ring of definition in a finite-module topology
 
 The neighbourhood basis `ϖⁿ • M₀` of a finite module over a Tate ring can be constructed
-using different rings of definition and different finite lattices. Both choices yield the
-same topology when the pseudouniformiser belongs to both rings. The comparison uses
+using different rings of definition, different finite lattices, and different
+pseudouniformisers. All these choices yield the same topology. The comparison uses
 boundedness of a ring of definition: one fixed power of `ϖ` sends all its scalars into
 the other ring of definition.
 
@@ -107,27 +107,41 @@ theorem exists_pow_smul_subset_pow_smul (P Q : PairOfDefinition A) {s : A}
   simpa only [SetLike.mem_coe, Subring.smul_def, SubmonoidClass.coe_pow, pow_add,
     mul_smul] using hmem
 
-/-- The topology on a finite `A`-module defined by powers of a common
-pseudouniformiser is independent of the ring of definition and finite spanning lattice. -/
+/-- The topology on a finite `A`-module defined by powers of a pseudouniformiser is independent
+of the ring of definition, the finite spanning lattice, and the pseudouniformiser.
+
+The pseudouniformisers `s ∈ P.ringOfDefinition` and `t ∈ Q.ringOfDefinition` need not lie in a
+common ring of definition. -/
 theorem submodulesBasis_pow_smul_topology_eq_of_ringOfDefinition
-    (P Q : PairOfDefinition A) {s : A} (hs : IsPseudoUniformizer s)
-    (hsP : s ∈ P.ringOfDefinition) (hsQ : s ∈ Q.ringOfDefinition)
+    (P Q : PairOfDefinition A) {s t : A} (hs : IsPseudoUniformizer s)
+    (ht : IsPseudoUniformizer t) (hsP : s ∈ P.ringOfDefinition) (htQ : t ∈ Q.ringOfDefinition)
     (M₀ : Submodule P.ringOfDefinition M) (M₁ : Submodule Q.ringOfDefinition M)
     (hspan₀ : Submodule.span A (M₀ : Set M) = ⊤)
     (hspan₁ : Submodule.span A (M₁ : Set M) = ⊤)
     (hfg₀ : M₀.FG) (hfg₁ : M₁.FG) :
     (P.submodulesBasis_pow_smul hs hsP M₀ hspan₀).topology =
-      (Q.submodulesBasis_pow_smul hs hsQ M₁ hspan₁).topology := by
+      (Q.submodulesBasis_pow_smul ht htQ M₁ hspan₁).topology := by
+  have hsQ := hs.eventually_pow_mem_ringOfDefinition Q
+  obtain ⟨m, huQ, hm⟩ := (hsQ.and (eventually_gt_atTop 0)).exists
+  have hu : IsPseudoUniformizer (s ^ m) := by
+    refine isPseudoUniformizer_iff.mpr ⟨hs.isUnit.pow m, ?_⟩
+    simp_rw [IsTopologicallyNilpotent, ← pow_mul]
+    exact hs.isTopologicallyNilpotent.comp
+      (tendsto_atTop_mono (fun n ↦ Nat.le_mul_of_pos_left n hm) tendsto_id)
+  have huP : s ^ m ∈ P.ringOfDefinition := pow_mem hsP m
+  refine (P.submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer hs hu hsP huP M₀
+    hspan₀).trans (Eq.trans ?_ (Q.submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer
+      hu ht huQ htQ M₁ hspan₁))
   apply IsTopologicalAddGroup.ext inferInstance inferInstance
-  apply (P.submodulesBasis_pow_smul hs hsP M₀ hspan₀).hasBasis_nhds_zero.ext
-    (Q.submodulesBasis_pow_smul hs hsQ M₁ hspan₁).hasBasis_nhds_zero
+  apply (P.submodulesBasis_pow_smul hu huP M₀ hspan₀).hasBasis_nhds_zero.ext
+    (Q.submodulesBasis_pow_smul hu huQ M₁ hspan₁).hasBasis_nhds_zero
   · intro n _
-    obtain ⟨k, hk⟩ := P.exists_pow_smul_subset_pow_smul Q hs.isTopologicallyNilpotent
-      hsP hsQ M₀ M₁ (by rw [hspan₀]; exact Set.subset_univ _) hfg₁ n
+    obtain ⟨k, hk⟩ := P.exists_pow_smul_subset_pow_smul Q hu.isTopologicallyNilpotent
+      huP huQ M₀ M₁ (by rw [hspan₀]; exact Set.subset_univ _) hfg₁ n
     exact ⟨k, trivial, hk⟩
   · intro n _
-    obtain ⟨k, hk⟩ := Q.exists_pow_smul_subset_pow_smul P hs.isTopologicallyNilpotent
-      hsQ hsP M₁ M₀ (by rw [hspan₁]; exact Set.subset_univ _) hfg₀ n
+    obtain ⟨k, hk⟩ := Q.exists_pow_smul_subset_pow_smul P hu.isTopologicallyNilpotent
+      huQ huP M₁ M₀ (by rw [hspan₁]; exact Set.subset_univ _) hfg₀ n
     exact ⟨k, trivial, hk⟩
 
 end TauCeti.Huber.PairOfDefinition

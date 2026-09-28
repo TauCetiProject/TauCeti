@@ -479,6 +479,19 @@ theorem pLowerCentralSeries_one :
   rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero, pLowerCentralStep_def, coe_top,
     Set.image_univ, commutator_def]
 
+/-- **`λ_1(G)` lies in the kernel of a homomorphism to an abelian group that kills `p`-th
+powers.** For a homomorphism `φ : G →* K` with closed kernel into a commutative group,
+`λ_1(G) ≤ ker φ` as soon as `φ` kills the `p`-th powers of `G`: the kernel is closed and contains
+`Gᵖ` and `[G, G]`. -/
+theorem _root_.MonoidHom.pLowerCentralSeries_one_le_ker {K : Type*} [CommGroup K] (φ : G →* K)
+    (hφ : IsClosed (φ.ker : Set G)) (hp : ∀ g : G, φ g ^ p = 1) :
+    pLowerCentralSeries p G 1 ≤ φ.ker := by
+  rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero]
+  refine (pLowerCentralStep_le_iff hφ).mpr ⟨fun g _ ↦ ?_, commutator_le.mpr fun g _ g' _ ↦ ?_⟩
+  · rw [MonoidHom.mem_ker, map_pow, hp]
+  · rw [MonoidHom.mem_ker, map_commutatorElement, commutatorElement_eq_one_iff_mul_comm]
+    exact mul_comm _ _
+
 /-- **The degree-raising law.** Commutators of `λ_j` with `λ_k` lie in `λ_{j+k+1}`. -/
 theorem commutator_pLowerCentralSeries_le (j k : ℕ) :
     ⁅pLowerCentralSeries p G j, pLowerCentralSeries p G k⁆ ≤

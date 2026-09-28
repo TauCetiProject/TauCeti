@@ -35,7 +35,8 @@ of continuous characters, so `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of
   the explicit `H1 G (ZMod p)` and `H2 G (ZMod p)` for a trivial action.
 * `TauCeti.cohomFpLinearEquivH2`: the degree-two identification is `𝔽_p`-linear.
 * `TauCeti.cohomFpLinearEquivContinuousZModDual`: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of
-  `G`, as an `𝔽_p`-vector space.
+  `G`, as an `𝔽_p`-vector space; `TauCeti.cohomFpLinearEquivContinuousZModDual_π_apply` computes
+  it on the class of a homogeneous one-cocycle.
 * `TauCeti.cohomFpTwoLinearEquivOfContinuousMulEquiv`: a topological isomorphism `G ≃ₜ* H` induces
   `H²(G, 𝔽_p) ≃ₗ[𝔽_p] H²(H, 𝔽_p)`, with no action of either group in its statement; on the
   explicit models it is the pullback along `e.symm` for any trivial actions
@@ -114,6 +115,51 @@ noncomputable def cohomFpLinearEquivContinuousZModDual :
   let e : cohomFp p G 1 ≃+ continuousZModDual p G :=
     (cohomFpAddEquivH1 p G fun _ _ ↦ rfl).trans (H1EquivOfSmulEqSelf fun _ _ ↦ rfl)
   LinearEquiv.ofBijective (e.toAddMonoidHom.toZModLinearMap p) e.bijective
+
+omit [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)] htriv in
+/-- The character attached by `cohomFpLinearEquivContinuousZModDual` to the class of a homogeneous
+one-cocycle `z` reads `z` at `(1, g)`. -/
+theorem cohomFpLinearEquivContinuousZModDual_π_apply (z : cocycles (trivialFp p G) 1) (g : G) :
+    Multiplicative.toAdd
+        (Additive.toMul (cohomFpLinearEquivContinuousZModDual p G (π (trivialFp p G) 1 z)) g) =
+      trivialFpEquiv p G (((TopRep.homogeneousCochains (trivialFp p G)).iCycles 1 z).val 1 g) := by
+  -- The trivial action installed by the construction.
+  let _ := trivialZModAction p G
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m := fun _ _ ↦ rfl
+  have : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
+  have h1 : cohomFpLinearEquivContinuousZModDual p G (π (trivialFp p G) 1 z) =
+      H1EquivOfSmulEqSelf htriv (cohomFpAddEquivH1 p G htriv (π (trivialFp p G) 1 z)) := rfl
+  -- The cocycle of the carrier corresponding to `z`: it has the same values, and its class maps
+  -- to the class of `z`.
+  set w := (ofDiscreteModuleCocyclesRestrictScalarsIntIso (trivialFp p G) 1).inv z
+  have hz : (ofDiscreteModuleCocyclesRestrictScalarsIntIso (trivialFp p G) 1).hom w = z :=
+    Iso.inv_hom_id_apply _ _
+  have hval : ((TopRep.homogeneousCochains (trivialFp p G)).iCycles 1 z).val 1 g =
+      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G (trivialFp p G).V)).iCycles 1 w).val 1
+        g := by
+    rw [← hz]
+    exact iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply (trivialFp p G) w 1 g
+  have hπ : (ofDiscreteModuleRestrictScalarsIntIso (trivialFp p G) 1).hom
+      (π (ofDiscreteModule ℤ G (trivialFp p G).V) 1 w) = π (trivialFp p G) 1 z := by
+    rw [← CategoryTheory.comp_apply, π_comp_ofDiscreteModuleRestrictScalarsIntIso_hom,
+      CategoryTheory.comp_apply, hz]
+    rfl
+  have h2 : (trivialFp p G).explicitH1AddEquivContinuousCohomologyOfDiscrete.symm
+      (π (trivialFp p G) 1 z) =
+      (((cocycleEquiv1 G (trivialFp p G).V).symm w : Z1 G _) : H1 G (trivialFp p G).V) := by
+    rw [AddEquiv.symm_apply_eq, TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply,
+      explicitH1AddEquivContinuousCohomology_apply, AddEquiv.apply_symm_apply]
+    exact hπ.symm
+  rw [h1, cohomFpAddEquivH1, AddEquiv.trans_apply, h2, explicitMap1Equiv_apply]
+  -- `explicitMap1_mk` and `cocyclesMap1_apply` are applied as terms: `explicitMap1Equiv` states
+  -- the continuity of the coefficient map at the equivalence and the lemmas at its coercion to a
+  -- homomorphism, which `rw` does not identify.
+  refine (congrArg (fun q ↦ Multiplicative.toAdd (Additive.toMul (H1EquivOfSmulEqSelf htriv q) g))
+    (explicitMap1_mk _ _ _ _ _ _ _ _ ((cocycleEquiv1 G (trivialFp p G).V).symm w))).trans ?_
+  rw [H1EquivOfSmulEqSelf_mk, Z1EquivOfSmulEqSelf_apply, toAdd_ofAdd]
+  refine (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ g).trans ?_
+  rw [cocycleEquiv1_symm_apply, hval]
+  rfl
 
 end TrivialFp
 

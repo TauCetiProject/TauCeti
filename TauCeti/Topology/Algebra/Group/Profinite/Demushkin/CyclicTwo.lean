@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
+import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Character
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.RankParity
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ElementaryAbelian
@@ -25,9 +25,10 @@ square is nonzero, and **`ℤ/2` is a Demushkin group of rank one**, the first e
 (Labute, p. 106).
 
 The cup square is computed on Mathlib's homogeneous cochains. The nonzero class of `H¹(ℤ/2, 𝔽₂)`
-(`TauCeti.cyclicTwoClass`) is represented by the homogeneous cocycle `(g₀, g₁) ↦ g₀⁻¹ g₁`, the
-homogeneous form of the identity character `ℤ/2 → 𝔽₂`; the cup square of that cocycle is the
-homogeneous two-cochain
+(`TauCeti.cyclicTwoClass`) is the class of the identity character `ℤ/2 → 𝔽₂` under the
+identification `TauCeti.cohomFpLinearEquivContinuousZModDual` of `H¹(ℤ/2, 𝔽₂)` with the continuous
+`𝔽₂`-dual of `ℤ/2`, represented by the homogeneous cocycle `(g₀, g₁) ↦ g₀⁻¹ g₁` of that character
+(`TauCeti.characterCocycle`); the cup square of that cocycle is the homogeneous two-cochain
 `(g₀, g₁, g₂) ↦ (g₀⁻¹ g₁) (g₁⁻¹ g₂)`, which takes the value `1` at `(1, s, 1)` and `0` at
 `(1, 1, 1)`, where `s` is the generator. A homogeneous one-cochain `b` is invariant, so
 `b s 1 = b 1 s`, and its coboundary takes the value `b 1 1` at both `(1, s, 1)` and `(1, 1, 1)`;
@@ -35,8 +36,8 @@ hence the cup square is not a coboundary.
 
 ## Main results
 
-* `TauCeti.cyclicTwoClass`: the class in `H¹(ℤ/2, 𝔽₂)` of the homogeneous cocycle
-  `(g₀, g₁) ↦ g₀⁻¹ g₁`; `TauCeti.cyclicTwoClass_ne_zero` and
+* `TauCeti.cyclicTwoClass`: the class in `H¹(ℤ/2, 𝔽₂)` of the identity character `ℤ/2 → 𝔽₂`;
+  `TauCeti.cyclicTwoClass_ne_zero` and
   `TauCeti.cupFp_cyclicTwoClass_self_ne_zero`: it is nonzero and its cup square is nonzero.
 * `TauCeti.isDemushkin_multiplicative_zmod_two`: **`ℤ/2` is a Demushkin group at `p = 2`**, and
   `TauCeti.demushkinRank_multiplicative_zmod_two`: its rank is `1`.
@@ -78,56 +79,11 @@ end ZMod
 
 /-! ### The cup square of the generator of `H¹(ℤ/2, 𝔽₂)` -/
 
-/-- The homogeneous one-cochain `(g₀, g₁) ↦ g₀⁻¹ g₁` of `ℤ/2` with trivial `𝔽₂` coefficients: the
-homogeneous form of the identity character `ℤ/2 → 𝔽₂`. -/
-private noncomputable def cyclicTwoCochain :
-    (homogeneousCochains (trivialFp 2 (Multiplicative (ZMod 2)))).X 1 :=
-  ⟨ContinuousMap.curry ⟨fun q : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) ↦
-      (trivialFpEquiv 2 (Multiplicative (ZMod 2))).symm (Multiplicative.toAdd (q.1⁻¹ * q.2)),
-      continuous_of_discreteTopology⟩, fun g ↦ by
-    ext h k
-    simp only [ContRepresentation.coind₁_apply_apply, trivialFp_ρ_apply_apply,
-      ContinuousMap.curry_apply, ContinuousMap.coe_mk]
-    rw [mul_inv_rev, inv_inv, mul_assoc, mul_inv_cancel_left]⟩
-
-/-- The value of the cochain `cyclicTwoCochain` at `(g₀, g₁)` is `g₀⁻¹ g₁`, read in `𝔽₂`. -/
--- Not a `simp` lemma: the carrier of the homogeneous cochains is the iterated function space
--- `C(G, C(G, X.V))` only after unfolding the coinduction, which `simp` does not do when matching
--- the left-hand side; use it with `rw`.
-private theorem cyclicTwoCochain_apply (g₀ g₁ : Multiplicative (ZMod 2)) :
-    cyclicTwoCochain.val g₀ g₁ =
-      (trivialFpEquiv 2 (Multiplicative (ZMod 2))).symm (Multiplicative.toAdd (g₀⁻¹ * g₁)) :=
-  (rfl)
-
-/-- The cochain `cyclicTwoCochain` is a cocycle: `g₀⁻¹ g₁` is additive in the sense
-`g₁⁻¹ g₂ - g₀⁻¹ g₂ + g₀⁻¹ g₁ = 0`. -/
-private theorem d_cyclicTwoCochain :
-    ((homogeneousCochains (trivialFp 2 (Multiplicative (ZMod 2)))).d 1 (1 + 1)).hom
-      cyclicTwoCochain = 0 := by
-  apply Subtype.ext
-  ext g₀ g₁ g₂
-  rw [homogeneousCochains.d_one_apply, cyclicTwoCochain_apply, cyclicTwoCochain_apply,
-    cyclicTwoCochain_apply, ← map_sub, ← map_sub]
-  simp only [toAdd_mul, toAdd_inv, Submodule.coe_zero, ContinuousMap.zero_apply]
-  rw [← map_zero (trivialFpEquiv 2 (Multiplicative (ZMod 2))).symm]
-  congr 1
-  abel
-
-/-- The homogeneous one-cocycle `(g₀, g₁) ↦ g₀⁻¹ g₁` of `ℤ/2` with trivial `𝔽₂` coefficients. -/
-private noncomputable def cyclicTwoCocycle : cocycles (trivialFp 2 (Multiplicative (ZMod 2))) 1 :=
-  (homogeneousCochains (trivialFp 2 (Multiplicative (ZMod 2)))).cyclesMkOfEq cyclicTwoCochain
-    (1 + 1) (CochainComplex.next ℕ 1) d_cyclicTwoCochain
-
-/-- The underlying homogeneous cochain of `cyclicTwoCocycle` is `cyclicTwoCochain`. -/
-private theorem iCycles_cyclicTwoCocycle :
-    (homogeneousCochains (trivialFp 2 (Multiplicative (ZMod 2)))).iCycles 1 cyclicTwoCocycle =
-      cyclicTwoCochain :=
-  HomologicalComplex.iCycles_cyclesMkOfEq _ _ _ _ _
-
-/-- **The generator of `H¹(ℤ/2, 𝔽₂)`**: the class of the homogeneous cocycle `(g₀, g₁) ↦ g₀⁻¹ g₁`,
-the homogeneous form of the identity character `ℤ/2 → 𝔽₂`. -/
+/-- **The generator of `H¹(ℤ/2, 𝔽₂)`**: the class of the identity character `ℤ/2 → 𝔽₂`, represented
+by the homogeneous cocycle `(g₀, g₁) ↦ g₀⁻¹ g₁` (`TauCeti.characterCocycle`). -/
 noncomputable def cyclicTwoClass : cohomFp 2 (Multiplicative (ZMod 2)) 1 :=
-  π (trivialFp 2 (Multiplicative (ZMod 2))) 1 cyclicTwoCocycle
+  (cohomFpLinearEquivContinuousZModDual 2 (Multiplicative (ZMod 2))).symm
+    (Additive.ofMul (ContinuousMonoidHom.id (Multiplicative (ZMod 2))))
 
 /-- **The cup square of the generator of `H¹(ℤ/2, 𝔽₂)` is nonzero.** The cup square of the
 homogeneous cocycle `(g₀, g₁) ↦ g₀⁻¹ g₁` is the two-cochain `(g₀, g₁, g₂) ↦ (g₀⁻¹ g₁) (g₁⁻¹ g₂)`,
@@ -135,7 +91,7 @@ which is not the coboundary of any invariant one-cochain. -/
 @[simp]
 theorem cupFp_cyclicTwoClass_self_ne_zero :
     cupFp 2 (Multiplicative (ZMod 2)) cyclicTwoClass cyclicTwoClass ≠ 0 := by
-  rw [cyclicTwoClass, cupFp_π]
+  rw [cyclicTwoClass, cohomFpLinearEquivContinuousZModDual_symm_apply, cupFp_π]
   intro hzero
   obtain ⟨b, hb⟩ :=
     ((homogeneousCochains (trivialFp 2 (Multiplicative (ZMod 2)))).homologyπ_eq_zero_iff 2 (m := 1)
@@ -146,7 +102,7 @@ theorem cupFp_cyclicTwoClass_self_ne_zero :
   have h := congrArg ((homogeneousCochains (trivialFp 2 (Multiplicative (ZMod 2)))).iCycles (1 + 1))
     hb
   rw [HomologicalComplex.iCycles_toCycles_apply, TopPairing.iCycles_cupCocycles,
-    iCycles_cyclicTwoCocycle] at h
+    iCycles_characterCocycle] at h
   -- Evaluate at `(1, s, 1)` and at `(1, 1, 1)`, where `s` is the generator.
   have h₁ := ContinuousMap.congr_fun (ContinuousMap.congr_fun (ContinuousMap.congr_fun
     (congrArg Subtype.val h) 1) (Multiplicative.ofAdd 1)) 1
@@ -156,9 +112,10 @@ theorem cupFp_cyclicTwoClass_self_ne_zero :
   -- which are the carriers of the homogeneous cochains only after unfolding the coinduction; `rw`
   -- unfolds that much, `simp` does not.
   rw [homogeneousCochains.d_one_apply, TopPairing.cupCochain_one_one_apply] at h₁ h₂
-  rw [cyclicTwoCochain_apply, cyclicTwoCochain_apply] at h₁
-  rw [cyclicTwoCochain_apply] at h₂
-  simp only [fpPairing_bil_apply, LinearEquiv.apply_symm_apply] at h₁ h₂
+  rw [characterCochain_apply, characterCochain_apply] at h₁
+  rw [characterCochain_apply] at h₂
+  simp only [fpPairing_bil_apply, LinearEquiv.apply_symm_apply, toMul_ofMul,
+    ContinuousMonoidHom.coe_id, id_eq] at h₁ h₂
   -- The one-cochain `b` is invariant, so `b s 1 = b 1 s`.
   have hinv : b.val (Multiplicative.ofAdd 1) 1 = b.val 1 (Multiplicative.ofAdd 1) := by
     have := congrArg (fun F : C(Multiplicative (ZMod 2), C(Multiplicative (ZMod 2),

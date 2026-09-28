@@ -28,8 +28,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 ## Main results
 
 * `PadicInt.val_toZModPow_eq_appr`: `appr` computes the `ZMod (p ^ n)`-value of `toZModPow`.
-* `PadicInt.continuous_toZModPow`: truncation modulo `p ^ n` is continuous, `ZMod (p ^ n)`
-  carrying the discrete topology.
+* `PadicInt.continuous_toZModPow`, `PadicInt.continuous_toZMod`: truncation modulo `p ^ n` and
+  reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
+  topology.
 * `PadicInt.appr_modEq`, `PadicInt.appr_add_modEq`, `PadicInt.appr_mul_modEq`,
   `PadicInt.appr_natCast_modEq`: the truncations are compatible with each other and with the
   ring operations, modulo `p ^ n`.
@@ -81,6 +82,17 @@ theorem continuous_toZModPow (n : ℕ) : Continuous (toZModPow (p := p) n) := by
   have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
   rw [h]
   exact IsUltrametricDist.isOpen_closedBall _ (zpow_ne_zero _ hp0.ne')
+
+/-- Reduction modulo `p` is continuous: its fibres are those of the truncation `toZModPow 1`,
+both kernels being the maximal ideal `(p)`. -/
+theorem continuous_toZMod : Continuous (toZMod : ℤ_[p] → ZMod p) := by
+  refine (IsLocallyConstant.iff_isOpen_fiber_apply.mpr fun x ↦ ?_).continuous
+  have h : (toZMod : ℤ_[p] → ZMod p) ⁻¹' {toZMod x} = toZModPow 1 ⁻¹' {toZModPow 1 x} := by
+    ext y
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, ← RingHom.sub_mem_ker_iff, ker_toZMod,
+      ker_toZModPow, maximalIdeal_eq_span_p, pow_one]
+  rw [h]
+  exact (continuous_toZModPow 1).isOpen_preimage _ (isOpen_discrete _)
 
 /-- A coarser truncation of `x` is a finer truncation of `x` read modulo the coarser
 modulus. -/

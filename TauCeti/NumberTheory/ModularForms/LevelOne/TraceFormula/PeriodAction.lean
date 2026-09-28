@@ -15,7 +15,8 @@ import Mathlib.Algebra.MonoidAlgebra.Module
 For even `w`, the right substitution action of a determinant-`n` matrix on homogeneous binary
 forms of degree `w` depends only on its class modulo sign. Extending this action linearly gives
 an action of the matrix module used in the level-one trace formula. Popa and Zagier's exchange
-relations ensure that this action preserves the period-polynomial space.
+relations ensure that this action maps each of `ker (1 + S)` and `ker (1 + U + U²)`, with `U = T S`,
+into the other, and hence preserves their intersection, the period-polynomial space.
 
 ## References
 
@@ -181,30 +182,56 @@ private theorem periodAction_right_one_add_add_sq (hw : Even w) (g : SL(2, ℤ))
             (periodAction (R := R) hw ξ P)) := by
   simp [periodAction_ofMulAction_op, pow_two, map_add]
 
+/-- **The first exchange map.** By the exchange relation `ξ (1 + S) ∈ (1 + U + U²) ℛₙ`, the action
+of `ξ` maps `ker (1 + U + U²)` into `ker (1 + S)`, where `U = T S`. -/
+theorem ExchangeRelations.periodAction_mem_ker_one_add_S (hw : Even w)
+    {ξ : R[TraceFormulaMatrixModule n]} (hξ : ExchangeRelations R n ξ)
+    {P : homogeneousSubmodule (Fin 2) R w}
+    (hP : P ∈ LinearMap.ker
+      (1 + binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) +
+        binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) ^ 2)) :
+    periodAction (R := R) hw ξ P ∈
+      LinearMap.ker (1 + binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ))) := by
+  have hU : P + binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) P +
+      binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
+        (binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) P) = 0 := by
+    simpa [pow_two] using hP
+  obtain ⟨η, hη⟩ := hξ.one_add_S
+  have h := congrArg (fun ζ : R[TraceFormulaMatrixModule n] ↦ periodAction (R := R) hw ζ P) hη
+  rw [periodAction_left_one_add_add_sq hw (T * S) η P, hU, map_zero,
+    periodAction_right_one_add hw S ξ P] at h
+  simpa using h.symm
+
+/-- **The second exchange map.** By the exchange relation `ξ (1 + U + U²) ∈ (1 + S) ℛₙ`, the action
+of `ξ` maps `ker (1 + S)` into `ker (1 + U + U²)`, where `U = T S`. -/
+theorem ExchangeRelations.periodAction_mem_ker_one_add_U_add_U_sq (hw : Even w)
+    {ξ : R[TraceFormulaMatrixModule n]} (hξ : ExchangeRelations R n ξ)
+    {P : homogeneousSubmodule (Fin 2) R w}
+    (hP : P ∈ LinearMap.ker (1 + binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)))) :
+    periodAction (R := R) hw ξ P ∈ LinearMap.ker
+      (1 + binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) +
+        binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) ^ 2) := by
+  have hS : P + binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) P = 0 := by simpa using hP
+  obtain ⟨θ, hθ⟩ := hξ.one_add_U_add_U_sq
+  have h := congrArg (fun ζ : R[TraceFormulaMatrixModule n] ↦ periodAction (R := R) hw ζ P) hθ
+  -- The exchange relation multiplies the images of `T` and `S` in `PSL(2, ℤ)`, while
+  -- `periodAction_right_one_add_add_sq` takes the image of a single matrix `U = T S` of
+  -- `SL(2, ℤ)`; the projection `SL(2, ℤ) → PSL(2, ℤ)` is multiplicative.
+  have hU : ((T * S : SL(2, ℤ)) : PSL(2, ℤ)) = (T : PSL(2, ℤ)) * S := QuotientGroup.mk_mul _ _ _
+  rw [← hU] at h
+  rw [periodAction_left_one_add hw S θ P, hS, map_zero,
+    periodAction_right_one_add_add_sq hw (T * S) ξ P] at h
+  simpa [pow_two] using h.symm
+
 /-- Popa and Zagier's exchange relations make the determinant-matrix action preserve the
 period-polynomial space. -/
 theorem ExchangeRelations.periodAction_mem_periodPolynomials (hw : Even w)
     {ξ : R[TraceFormulaMatrixModule n]} (hξ : ExchangeRelations R n ξ)
     {P : homogeneousSubmodule (Fin 2) R w} (hP : P ∈ periodPolynomials R w) :
     periodAction (R := R) hw ξ P ∈ periodPolynomials R w := by
-  let U : SL(2, ℤ) := T * S
-  have hUproj : (U : PSL(2, ℤ)) = (T : PSL(2, ℤ)) * S := by simp [U]
-  obtain ⟨hS, hU⟩ := mem_periodPolynomials_iff.mp hP
-  obtain ⟨η, hη⟩ := hξ.one_add_S
-  obtain ⟨θ, hθ⟩ := hξ.one_add_U_add_U_sq
-  apply mem_periodPolynomials_iff.mpr
-  constructor
-  · have h := congrArg (fun ζ : R[TraceFormulaMatrixModule n] ↦
-        periodAction (R := R) hw ζ P) hη
-    rw [periodAction_left_one_add_add_sq hw U η P, hU, map_zero,
-      periodAction_right_one_add hw S ξ P] at h
-    exact h.symm
-  · have h := congrArg (fun ζ : R[TraceFormulaMatrixModule n] ↦
-        periodAction (R := R) hw ζ P) hθ
-    rw [← hUproj] at h
-    rw [periodAction_left_one_add hw S θ P, hS, map_zero,
-      periodAction_right_one_add_add_sq hw U ξ P] at h
-    exact h.symm
+  rw [periodPolynomials_def, Submodule.mem_inf] at hP ⊢
+  exact ⟨hξ.periodAction_mem_ker_one_add_S hw hP.2,
+    hξ.periodAction_mem_ker_one_add_U_add_U_sq hw hP.1⟩
 
 /-- The action of an element satisfying the exchange relations on period polynomials. -/
 noncomputable def ExchangeRelations.periodActionRestrict (hw : Even w)

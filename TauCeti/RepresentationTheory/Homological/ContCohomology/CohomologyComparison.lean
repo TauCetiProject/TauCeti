@@ -431,6 +431,15 @@ noncomputable def _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete
   (explicitH1AddEquivContinuousCohomology G X.V).trans
     (ofDiscreteModuleRestrictScalarsIntIso X 1).toContinuousLinearEquiv.toAddEquiv
 
+/-- The degree-one comparison for a discrete `X` is the `ℤ`-comparison of its carrier followed by
+`ofDiscreteModuleRestrictScalarsIntIso`. -/
+-- Not `@[simp]`: the comparison is the intended normal form, and this lemma unfolds it.
+theorem _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply (x : H1 G X.V) :
+    X.explicitH1AddEquivContinuousCohomologyOfDiscrete x =
+      (ofDiscreteModuleRestrictScalarsIntIso X 1).hom
+        (explicitH1AddEquivContinuousCohomology G X.V x) :=
+  (rfl)
+
 /-- The explicit `H²` of the carrier of a discrete smooth representation `X` over any scalars, with
 the action read off from `X`, is Mathlib's `continuousCohomology 2 X`. -/
 noncomputable def _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete
