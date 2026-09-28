@@ -34,7 +34,8 @@ def IsMetabolic (A : FiniteQuadraticModule) : Prop :=
 theorem isMetabolic_def (A : FiniteQuadraticModule) :
     A.IsMetabolic ↔ ∃ H : AddSubgroup A, A.IsLagrangian H := Iff.rfl
 
-/-- An isometry preserves the existence of a quadratic Lagrangian. -/
+/-- An isometry preserves the existence of a quadratic Lagrangian.
+The isometry must be supplied explicitly: it occurs in neither side of the equivalence. -/
 theorem Isometry.isMetabolic_iff {A B : FiniteQuadraticModule} (f : Isometry A B) :
     A.IsMetabolic ↔ B.IsMetabolic := by
   rw [A.isMetabolic_def, B.isMetabolic_def]
