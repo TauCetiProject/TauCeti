@@ -137,6 +137,16 @@ def InducesRiemannianDistance
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   IsRiemannianManifold I M
 
+omit [FiniteDimensional ℝ E] [T2Space (TangentBundle I M)] in
+/-- The metric's induced-distance condition yields the corresponding Riemannian-manifold
+structure after installing its metric bundle. -/
+theorem InducesRiemannianDistance.toIsRiemannianManifold
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (h : g.InducesRiemannianDistance (I := I) (M := M)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    IsRiemannianManifold I M := by
+  simpa only [InducesRiemannianDistance] using h
+
 end Bundle.ContMDiffRiemannianMetric
 
 section NormMFDeriv
