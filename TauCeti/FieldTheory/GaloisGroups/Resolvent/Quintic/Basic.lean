@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
 
@@ -42,6 +43,7 @@ from such a root separately requires the separation evidence above.
 
 ## Main results
 
+* `TauCeti.isHomogeneous_quinticF20Invariant`: the invariant is homogeneous of degree four.
 * `TauCeti.rename_quinticF20Invariant_eq_self_iff`: the stabilizer of the invariant is exactly
   the reference subgroup of `5T3`.
 * `TauCeti.card_renameOrbit_quinticF20Invariant`: its orbit has six elements.
@@ -75,6 +77,14 @@ theorem quinticF20Invariant_def :
         (MvPolynomial.X (a + 1) * MvPolynomial.X (a - 1) +
           MvPolynomial.X (a + 2) * MvPolynomial.X (a - 2)) :=
   (rfl)
+
+/-- Dummit's `F₂₀`-invariant is homogeneous of degree four. -/
+theorem isHomogeneous_quinticF20Invariant : quinticF20Invariant.IsHomogeneous 4 := by
+  rw [quinticF20Invariant_def]
+  refine MvPolynomial.IsHomogeneous.sum _ _ _ fun a _ => ?_
+  have hX (i : Fin 5) := MvPolynomial.isHomogeneous_X ℤ i
+  exact (MvPolynomial.isHomogeneous_X_pow a 2).mul
+    (((hX _).mul (hX _)).add ((hX _).mul (hX _)))
 
 /-- Renaming the variables of the `F₂₀`-invariant along `σ`. -/
 theorem rename_quinticF20Invariant (σ : Perm (Fin 5)) :

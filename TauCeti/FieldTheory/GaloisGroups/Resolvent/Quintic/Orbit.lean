@@ -37,6 +37,12 @@ def quinticF20OrbitRepresentatives : Finset (Perm (Fin 5)) :=
   {1, swap 2 3, swap 3 4, swap 2 4, swap 2 3 * swap 3 4,
     swap 3 4 * swap 2 3}
 
+/-- The six explicit permutation representatives of the invariant's orbit. -/
+theorem quinticF20OrbitRepresentatives_def :
+    quinticF20OrbitRepresentatives =
+      {1, swap 2 3, swap 3 4, swap 2 4, swap 2 3 * swap 3 4,
+        swap 3 4 * swap 2 3} := (rfl)
+
 noncomputable section
 
 private def orbitTestPoint : Fin 5 → ℤ := ![1, 2, 4, 8, 16]
