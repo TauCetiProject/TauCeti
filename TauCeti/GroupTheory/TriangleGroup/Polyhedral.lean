@@ -18,10 +18,10 @@ have concrete permutation representations whose images are respectively the tetr
 octahedral, and icosahedral rotation groups. This file constructs those representations and
 identifies their images with `A₄`, `S₄`, and `A₅`.
 
-The image computations use permutation-group recognition. In degrees four and five the displayed
-generators act transitively. A three-cycle with a unique fixed point makes the degree-four actions
-primitive, after which Jordan's three-cycle or transposition criterion identifies the image. In
-degree five, transitivity and the order-three generator identify the alternating group.
+These maps provide explicit finite quotients of the three spherical triangle groups, of orders
+`12`, `24`, and `60`. Their image cardinalities give the lower bounds which, together with matching
+coset-enumeration upper bounds, identify the triangle groups themselves with the corresponding
+polyhedral rotation groups.
 
 ## Main definitions
 
@@ -94,6 +94,7 @@ private theorem isPretransitive_tetrahedralGenerators :
   exact (isPretransitive_iff_orbit_eq_univ 0).mpr horbit
 
 /-- The image of the tetrahedral representation is the alternating group `A₄`. -/
+@[simp]
 theorem range_tetrahedralRep :
     tetrahedralRep.range = alternatingGroup (Fin 4) := by
   rw [range_eq_closure, tetrahedralRep_x, tetrahedralRep_y]
@@ -160,23 +161,27 @@ private theorem isPretransitive_octahedralGenerators :
       (Fin 4) := by
   let a : Perm (Fin 4) := swap 0 1
   let b : Perm (Fin 4) := ([1, 2, 3] : List (Fin 4)).formPerm
+  let g : Perm (Fin 4) := b * a
   let G : Subgroup (Perm (Fin 4)) := Subgroup.closure {a, b}
   have ha : a ∈ G := Subgroup.subset_closure (Set.mem_insert a {b})
   have hb : b ∈ G := Subgroup.subset_closure (Set.mem_insert_of_mem a rfl)
-  have horbit : orbit G (0 : Fin 4) = Set.univ := by
-    apply Set.eq_univ_of_forall
-    intro i
-    rw [mem_orbit_iff]
-    fin_cases i
-    · exact ⟨1, rfl⟩
-    · exact ⟨⟨a, ha⟩, by simp only [Subgroup.smul_def, Perm.smul_def]; apply Fin.ext; decide⟩
-    · exact ⟨⟨b * a, G.mul_mem hb ha⟩,
-        by simp only [Subgroup.smul_def, Perm.smul_def]; apply Fin.ext; decide⟩
-    · exact ⟨⟨b ^ 2 * a, G.mul_mem (G.pow_mem hb 2) ha⟩,
-        by simp only [Subgroup.smul_def, Perm.smul_def]; apply Fin.ext; decide⟩
-  exact (isPretransitive_iff_orbit_eq_univ 0).mpr horbit
+  have hg : g ∈ G := G.mul_mem hb ha
+  have hg_eq : g = ([0, 2, 3, 1] : List (Fin 4)).formPerm := by
+    ext i
+    fin_cases i <;> decide
+  have hgCycle : g.IsCycle := by
+    rw [hg_eq]
+    exact List.isCycle_formPerm (by decide) (by decide)
+  have hgSupport : g.support = Finset.univ := by
+    rw [hg_eq, List.support_formPerm_of_nodup _ (by decide) (by decide)]
+    decide
+  have h := Equiv.Perm.isPretransitive_of_isCycle_mem hgCycle hg
+  rw [hgSupport, Finset.coe_univ, Set.compl_univ] at h
+  exact IsPretransitive.of_surjective_map
+    SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
 
 /-- The image of the octahedral representation is the full symmetric group `S₄`. -/
+@[simp]
 theorem range_octahedralRep : octahedralRep.range = ⊤ := by
   rw [range_eq_closure, octahedralRep_x, octahedralRep_y]
   let a : Perm (Fin 4) := swap 0 1
@@ -242,22 +247,22 @@ private theorem isPretransitive_icosahedralGenerators :
   have ha : a ∈ G := Subgroup.subset_closure (Set.mem_insert a {b})
   have hb : b ∈ G := Subgroup.subset_closure (Set.mem_insert_of_mem a rfl)
   have hg : g ∈ G := G.mul_mem hb ha
-  have horbit : orbit G (0 : Fin 5) = Set.univ := by
-    apply Set.eq_univ_of_forall
-    intro i
-    rw [mem_orbit_iff]
-    fin_cases i
-    · exact ⟨1, rfl⟩
-    · exact ⟨⟨g, hg⟩, by simp only [Subgroup.smul_def, Perm.smul_def]; apply Fin.ext; decide⟩
-    · exact ⟨⟨g ^ 3, G.pow_mem hg 3⟩,
-        by simp only [Subgroup.smul_def, Perm.smul_def]; apply Fin.ext; decide⟩
-    · exact ⟨⟨g ^ 4, G.pow_mem hg 4⟩,
-        by simp only [Subgroup.smul_def, Perm.smul_def]; apply Fin.ext; decide⟩
-    · exact ⟨⟨g ^ 2, G.pow_mem hg 2⟩,
-        by simp only [Subgroup.smul_def, Perm.smul_def]; apply Fin.ext; decide⟩
-  exact (isPretransitive_iff_orbit_eq_univ 0).mpr horbit
+  have hg_eq : g = ([0, 1, 4, 2, 3] : List (Fin 5)).formPerm := by
+    ext i
+    fin_cases i <;> decide
+  have hgCycle : g.IsCycle := by
+    rw [hg_eq]
+    exact List.isCycle_formPerm (by decide) (by decide)
+  have hgSupport : g.support = Finset.univ := by
+    rw [hg_eq, List.support_formPerm_of_nodup _ (by decide) (by decide)]
+    decide
+  have h := Equiv.Perm.isPretransitive_of_isCycle_mem hgCycle hg
+  rw [hgSupport, Finset.coe_univ, Set.compl_univ] at h
+  exact IsPretransitive.of_surjective_map
+    SubMulAction.ofFixingSubgroupEmpty_equivariantMap_bijective.surjective h
 
 /-- The image of the icosahedral representation is the alternating group `A₅`. -/
+@[simp]
 theorem range_icosahedralRep :
     icosahedralRep.range = alternatingGroup (Fin 5) := by
   rw [range_eq_closure, icosahedralRep_x, icosahedralRep_y]
