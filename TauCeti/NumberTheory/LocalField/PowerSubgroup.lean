@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
-public import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.IndexNSmul
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.GroupTheory.Index.NSmul
@@ -103,7 +102,9 @@ theorem map_powMonoidHom_unitFiltration_succ_of_isUnit {n : ℕ} (hn : IsUnit (n
     (unitFiltration K (i + 1)).map (powMonoidHom n) = unitFiltration K (i + 1) := by
   have hnK := natCast_ne_zero_of_isUnit hn
   have hv := natCastValuation_eq_zero_of_isUnit K hnK hn
-  simpa [hv] using map_powMonoidHom_unitFiltration hnK (i := i + 1) (by omega)
+  simpa [hv] using map_powMonoidHom_unitFiltration hnK (i := i + 1) fun p hp hpK hpn ↦
+    (natCastValuation_le_of_dvd K hpK hnK hpn).trans_lt
+      (hv ▸ Nat.mul_pos (Nat.sub_pos_of_lt hp.one_lt) i.succ_pos)
 
 /-- For `n` invertible in `𝒪[K]`, every principal unit of `K` is an `n`-th power. -/
 theorem unitFiltration_one_le_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
@@ -213,8 +214,10 @@ is `1`: the groups `μ_n(K)` and `U(K,1)` intersect trivially. This is the case 
 theorem disjoint_rootsOfUnity_unitFiltration_one_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
     Disjoint (rootsOfUnity n K) (unitFiltration K 1) := by
   have hnK := natCast_ne_zero_of_isUnit hn
-  exact disjoint_rootsOfUnity_unitFiltration hnK
-    (by simp [natCastValuation_eq_zero_of_isUnit K hnK hn])
+  exact disjoint_rootsOfUnity_unitFiltration hnK fun p hp hpK hpn ↦
+    (natCastValuation_le_of_dvd K hpK hnK hpn).trans_lt
+      (natCastValuation_eq_zero_of_isUnit K hnK hn ▸ Nat.mul_pos (Nat.sub_pos_of_lt hp.one_lt)
+        Nat.one_pos)
 
 /-- For `n` invertible in `𝒪[K]`, the `n`-th power map is a bijection of each positive-depth step
 `U(K,i+1)` of the unit filtration. -/
@@ -275,23 +278,22 @@ theorem card_powerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
     rw [h]
     exact Nat.card_congr
       (Subgroup.subgroupOfEquivOfLe (rootsOfUnity_le_unitFiltration_zero K hn0)).toEquiv
-  -- `U(K,v+1)` has index `(q - 1) q ^ v` in `U(K,0)`.
-  have : U.FiniteIndex := by
-    refine ⟨?_⟩
-    have h := Subgroup.relIndex_mul_relIndex (unitFiltration K (v + 1)) (unitFiltration K 1) G
-      (unitFiltration_antitone (by omega)) (unitFiltration_antitone (by omega))
-    have hdeep := relIndex_unitFiltration_add_succ_succ (K := K) 0 v
-    rw [zero_add, zero_add] at hdeep
-    rw [hdeep, relIndex_unitFiltration_one_zero] at h
-    rw [← Subgroup.relIndex, ← h]
-    exact mul_ne_zero (pow_ne_zero _ Nat.card_pos.ne') (Nat.sub_ne_zero_of_lt Finite.one_lt_card)
+  -- `U(K,v+1)` has finite index in `U(K,0)`.
+  have : (unitFiltration K (v + 1)).IsFiniteRelIndex G :=
+    (unitFiltration_isFiniteRelIndex_succ (v + 1) 0).trans unitFiltration_one_isFiniteRelIndex_zero
+  -- Every prime `p ∣ n` has `v_K(p) ≤ v < (p - 1) (v + 1)`.
+  have hdepth : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
+      natCastValuation K p hpK < (p - 1) * (v + 1) := fun p hp hpK hpn ↦
+    (natCastValuation_le_of_dvd K hpK hn hpn).trans_lt <|
+      (Nat.lt_succ_self v).trans_le (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt hp.one_lt))
   -- On `U(K,v+1)` the `n`-th power map is injective with image `U(K,2v+1)`.
   have hkerU : Nat.card (powMonoidHom n : U →* U).ker = 1 := by
     rw [Subgroup.card_eq_one, eq_bot_iff]
     intro x hx
     have h1 : ((x : G) : Kˣ) = 1 := Subgroup.disjoint_def.mp
-      (disjoint_rootsOfUnity_unitFiltration hn (Nat.lt_succ_self v))
-      ((mem_rootsOfUnity n _).mpr (by simpa using congrArg (fun y : U ↦ ((y : G) : Kˣ)) hx))
+      (disjoint_rootsOfUnity_unitFiltration hn hdepth)
+      ((mem_rootsOfUnity n _).mpr
+        (by simpa using congrArg (fun y : U ↦ ((y : G) : Kˣ)) (MonoidHom.mem_ker.mp hx)))
       x.2
     exact Subgroup.mem_bot.mpr (Subtype.ext (Subtype.ext h1))
   have hidxU : (powMonoidHom n : U →* U).range.index = Nat.card 𝓀[K] ^ v := by
@@ -301,7 +303,7 @@ theorem card_powerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
     rw [Subgroup.relIndex] at hrel
     rw [← Subgroup.index_map_equiv _ f, f.map_range_powMonoidHom n,
       ← Subgroup.subgroupOf_map_powMonoidHom_eq_range,
-      map_powMonoidHom_unitFiltration hn (Nat.lt_succ_self v),
+      map_powMonoidHom_unitFiltration hn hdepth,
       show v + 1 + v = v + v + 1 by omega, hrel]
   -- Comparing `U(K,0)` with its finite-index subgroup `U(K,v+1)`.
   have h := Subgroup.index_range_pow_mul_card_ker U n

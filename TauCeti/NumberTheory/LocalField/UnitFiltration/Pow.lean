@@ -16,8 +16,9 @@ import Mathlib.Topology.Algebra.Group.Units
 
 Let `K` be a nonarchimedean local field, let `n` be a natural number with `(n : K) ≠ 0`, and write
 `v_K(n)` for its normalized valuation `natCastValuation K n hn`. This file shows that at every
-depth `i > v_K(n)` the `n`-th power map is an isomorphism of the unit filtration step `U(K,i)`
-onto `U(K, i + v_K(n))`:
+depth `i` with `v_K(p) < (p - 1) * i` for each prime `p ∣ n`, in particular at every depth
+`i > v_K(n)`, the `n`-th power map is an isomorphism of the unit filtration step `U(K,i)` onto
+`U(K, i + v_K(n))`:
 
 * it maps `U(K,i)` onto `U(K, i + v_K(n))`;
 * it is injective on `U(K,i)`, that is, `U(K,i)` contains no nontrivial `n`-th root of unity.
@@ -49,9 +50,10 @@ of `(Kˣ)ⁿ` with a step of the filtration, which is open in `Kˣ`.
   `U(K,i) ^ p = U(K, i + v_K(p))`.
 * `TauCeti.disjoint_rootsOfUnity_unitFiltration_of_prime`: for `v_K(p) < (p - 1) * i`, the group
   `U(K,i)` contains no nontrivial `p`-th root of unity.
-* `TauCeti.map_powMonoidHom_unitFiltration`: for `v_K(n) < i`, `U(K,i) ^ n = U(K, i + v_K(n))`.
-* `TauCeti.disjoint_rootsOfUnity_unitFiltration`: for `v_K(n) < i`, the group `U(K,i)` contains
-  no nontrivial `n`-th root of unity.
+* `TauCeti.map_powMonoidHom_unitFiltration`: if `v_K(p) < (p - 1) * i` for every prime `p ∣ n`,
+  then `U(K,i) ^ n = U(K, i + v_K(n))`.
+* `TauCeti.disjoint_rootsOfUnity_unitFiltration`: under the same depth condition, the group
+  `U(K,i)` contains no nontrivial `n`-th root of unity.
 
 ## References
 
@@ -67,14 +69,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-/-- Membership in a positive-depth step of the unit filtration, as an inequality on `x - 1`
-measured against a uniformizer `π`. -/
-private theorem mem_unitFiltration_iff_valuation_sub_one_le {i : ℕ} (hi : i ≠ 0) {π : 𝒪[K]}
-    (hπ : Irreducible π) {x : Kˣ} :
-    x ∈ unitFiltration K i ↔ valuation K ((x : K) - 1) ≤ valuation K (π : K) ^ i := by
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi
-  rw [mem_unitFiltration_succ_valuation j x π hπ, map_pow]
 
 /-- **The binomial estimate on deep units.** If `v_K(p) < (p - 1) * i` and `x ∈ 𝓂[K] ^ i`, then
 `(1 + x) ^ p = 1 + p x + r` with `r` deeper than `p x` by at least one step. -/
@@ -301,10 +295,12 @@ theorem disjoint_rootsOfUnity_unitFiltration_of_prime {p : ℕ} (hp : p.Prime) (
   rw [Valuation.zero_iff, mul_eq_zero, sub_eq_zero] at h0
   exact Units.ext (h0.resolve_left hpK)
 
-/-- **Deep units are `n`-th powers.** For `(n : K) ≠ 0` and a depth `i > v_K(n)`, the `n`-th
-power map carries `U(K,i)` onto `U(K, i + v_K(n))`. -/
+/-- **Deep units are `n`-th powers.** For `(n : K) ≠ 0` and a depth `i` with
+`v_K(p) < (p - 1) * i` for every prime `p ∣ n`, the `n`-th power map carries `U(K,i)` onto
+`U(K, i + v_K(n))`. The depth condition holds in particular for every `i > v_K(n)`. -/
 theorem map_powMonoidHom_unitFiltration {n : ℕ} (hn : (n : K) ≠ 0) {i : ℕ}
-    (hi : natCastValuation K n hn < i) :
+    (hi : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
+      natCastValuation K p hpK < (p - 1) * i) :
     (unitFiltration K i).map (powMonoidHom n) = unitFiltration K (i + natCastValuation K n hn) := by
   induction n using Nat.recOnMul generalizing i with
   | zero => simp at hn
@@ -312,44 +308,47 @@ theorem map_powMonoidHom_unitFiltration {n : ℕ} (hn : (n : K) ≠ 0) {i : ℕ}
     rw [natCastValuation_one, add_zero]
     ext x
     simp
-  | prime p hp =>
-    exact map_powMonoidHom_unitFiltration_of_prime hp hn
-      (hi.trans_le (Nat.le_mul_of_pos_left i (by have := hp.two_le; omega)))
+  | prime p hp => exact map_powMonoidHom_unitFiltration_of_prime hp hn (hi p hp hn dvd_rfl)
   | mul a b iha ihb =>
     have ha : (a : K) ≠ 0 := left_ne_zero_of_mul (by simpa using hn)
     have hb : (b : K) ≠ 0 := right_ne_zero_of_mul (by simpa using hn)
-    have hv := natCastValuation_mul K ha hb
-    rw [hv] at hi ⊢
+    rw [natCastValuation_mul K ha hb]
     have hcomp : (powMonoidHom (a * b) : Kˣ →* Kˣ) = (powMonoidHom b).comp (powMonoidHom a) := by
       ext
       simp [pow_mul]
-    rw [hcomp, ← Subgroup.map_map, iha ha (by omega), ihb hb (by omega), add_assoc]
+    -- The depth condition passes to `a` at depth `i` and to `b` at the deeper depth `i + v_K(a)`.
+    rw [hcomp, ← Subgroup.map_map,
+      iha ha fun p hp hpK hpa ↦ hi p hp hpK (hpa.mul_right b),
+      ihb hb fun p hp hpK hpb ↦ (hi p hp hpK (hpb.mul_left a)).trans_le
+        (Nat.mul_le_mul_left _ (Nat.le_add_right _ _)), add_assoc]
 
-/-- **Deep units carry no `n`-torsion.** For `(n : K) ≠ 0` and a depth `i > v_K(n)`, the only
-`n`-th root of unity in `U(K,i)` is `1`. -/
+/-- **Deep units carry no `n`-torsion.** For `(n : K) ≠ 0` and a depth `i` with
+`v_K(p) < (p - 1) * i` for every prime `p ∣ n`, the only `n`-th root of unity in `U(K,i)` is `1`.
+The depth condition holds in particular for every `i > v_K(n)`. -/
 theorem disjoint_rootsOfUnity_unitFiltration {n : ℕ} (hn : (n : K) ≠ 0) {i : ℕ}
-    (hi : natCastValuation K n hn < i) :
+    (hi : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
+      natCastValuation K p hpK < (p - 1) * i) :
     Disjoint (rootsOfUnity n K) (unitFiltration K i) := by
   induction n using Nat.recOnMul generalizing i with
   | zero => simp at hn
   | one => simp
-  | prime p hp =>
-    exact disjoint_rootsOfUnity_unitFiltration_of_prime hp hn
-      (hi.trans_le (Nat.le_mul_of_pos_left i (by have := hp.two_le; omega)))
+  | prime p hp => exact disjoint_rootsOfUnity_unitFiltration_of_prime hp hn (hi p hp hn dvd_rfl)
   | mul a b iha ihb =>
     have ha : (a : K) ≠ 0 := left_ne_zero_of_mul (by simpa using hn)
     have hb : (b : K) ≠ 0 := right_ne_zero_of_mul (by simpa using hn)
-    have hv := natCastValuation_mul K ha hb
-    rw [hv] at hi
+    have hia : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ a →
+        natCastValuation K p hpK < (p - 1) * i :=
+      fun p hp hpK hpa ↦ hi p hp hpK (hpa.mul_right b)
     refine Subgroup.disjoint_def.mpr fun {u} hu hui ↦ ?_
     -- `u ^ a` is a `b`-th root of unity in `U(K, i + v_K(a))`, hence trivial.
     have hua : u ^ a ∈ unitFiltration K (i + natCastValuation K a ha) :=
-      (map_powMonoidHom_unitFiltration ha (by omega)).le ⟨u, hui, rfl⟩
+      (map_powMonoidHom_unitFiltration ha hia).le ⟨u, hui, rfl⟩
     have hub : u ^ a ∈ rootsOfUnity b K := by
       rw [mem_rootsOfUnity, ← pow_mul]
       exact (mem_rootsOfUnity _ u).mp hu
-    have h1 : u ^ a = 1 :=
-      Subgroup.disjoint_def.mp (ihb hb (i := i + natCastValuation K a ha) (by omega)) hub hua
-    exact Subgroup.disjoint_def.mp (iha ha (by omega)) ((mem_rootsOfUnity a u).mpr h1) hui
+    have h1 : u ^ a = 1 := Subgroup.disjoint_def.mp (ihb hb fun p hp hpK hpb ↦
+      (hi p hp hpK (hpb.mul_left a)).trans_le (Nat.mul_le_mul_left _ (Nat.le_add_right _ _)))
+      hub hua
+    exact Subgroup.disjoint_def.mp (iha ha hia) ((mem_rootsOfUnity a u).mpr h1) hui
 
 end TauCeti
