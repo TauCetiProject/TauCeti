@@ -16,13 +16,14 @@ import Mathlib.FieldTheory.PrimitiveElement
 Let `k' / k` be finite and separable and suppose that `F'` is the compositum `F k'`. Then
 `F' / F` is separable and is unramified at every place.
 
-This is the local input to the comparison of the divisor theories of `F / k` and `F' / k'`.
-Because every different exponent vanishes, the different divisor of `F' / F` is zero, so the
-Riemann–Hurwitz formula leaves the genus unchanged: a finite separable constant extension does
-not alter the genus (Stichtenoth, Section III.6).  Because every ramification index is one, a
-place of `F` is the sum of the places of `F'` above it with no multiplicities, so divisors and
-their degrees — and with them the Riemann–Roch spaces `L(D)` — are transported to `F'` by base
-change alone, with the residue degrees as the only local data left to track.
+These are the local inputs to the comparison of the divisor theories of `F / k` and `F' / k'`.
+Vanishing different exponents say that the different divisor of `F' / F` is zero, and
+`e(P' | P) = 1` says that no place of `F` ramifies in `F'`, so a place of `F` is the sum of the
+places of `F'` above it with no multiplicities, leaving the residue degrees as the only local
+data to track.  The genus, divisor-degree and Riemann–Roch comparisons of Stichtenoth,
+Section III.6 consume these local facts, but do not follow from them alone: they also need the
+constant field of `F'`, the comparison of degrees normalised over `k` with those normalised over
+`k'`, and base change for the Riemann–Roch spaces `L(D)`, none of which is proved here.
 
 Separability is inherited by scalar extension, which is
 `TauCeti.isSeparable_of_constantCompositum_eq_top`. For unramifiedness, choose a primitive element
