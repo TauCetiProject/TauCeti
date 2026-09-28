@@ -33,6 +33,9 @@ union split as sums over the two coordinate types. Weight also splits over a ret
 set and its complement. These identities let constructions assembled from independent coordinate
 blocks reduce their Hamming data to the data of the blocks.
 
+The canonical linear equivalence from function words to Mathlib's `Hamming` type synonym lets
+linear codes use that metric space without changing their underlying coordinate functions.
+
 It also proves that Hamming distance and Hamming weight are invariant under relabelling a finite
 coordinate type along an equivalence, and evaluates a product over the coordinates of a word which
 only depends on which coordinates vanish; this is how weight monomials `X^(n - wt x) Y^(wt x)`
@@ -42,6 +45,27 @@ factor over the coordinates.
 public section
 
 namespace TauCeti
+
+/-- The linear equivalence between function words and Mathlib's Hamming type synonym. -/
+def hammingLinearEquiv (R ι : Type*) [Semiring R] :
+    (ι → R) ≃ₗ[R] Hamming (fun _ : ι ↦ R) where
+  toFun := Hamming.toHamming
+  invFun := Hamming.ofHamming
+  left_inv := Hamming.ofHamming_toHamming
+  right_inv := Hamming.toHamming_ofHamming
+  map_add' := fun _ _ ↦ Hamming.toHamming_add
+  map_smul' := fun _ _ ↦ Hamming.toHamming_smul
+
+/-- The Hamming-space linear equivalence acts as the identity on coordinates. -/
+@[simp]
+theorem hammingLinearEquiv_apply (R ι : Type*) [Semiring R] (x : ι → R) :
+    hammingLinearEquiv R ι x = Hamming.toHamming x := (rfl)
+
+/-- The inverse Hamming-space linear equivalence forgets the type synonym. -/
+@[simp]
+theorem hammingLinearEquiv_symm_apply (R ι : Type*) [Semiring R]
+    (x : Hamming (fun _ : ι ↦ R)) :
+    (hammingLinearEquiv R ι).symm x = Hamming.ofHamming x := (rfl)
 
 /-! ### Hamming support -/
 
