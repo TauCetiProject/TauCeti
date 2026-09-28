@@ -12,18 +12,21 @@ public import Mathlib.Data.List.SignVariations
 # Variations of a Sturm sequence at a point
 
 The variation of a signed Euclidean remainder sequence is the number used in
-Sturm's root-counting formula. At a zero of the second polynomial, the first
-and third values are opposite, so deleting the zero reveals exactly one sign
-change. This file records that local calculation alongside the sequence
-recurrence and the zero cases. The calculation works over any ordered field;
-it does not require real closedness.
+Sturm's root-counting formula. Mathlib's `Polynomial.sturmSeq` supplies the
+sequence and `List.signVariations` counts its sign changes. At a zero of the
+second polynomial where the first is nonzero, the first and third values are
+opposite, so deleting the zero reveals exactly one sign change. This file
+records that local calculation alongside the sequence recurrence and the zero
+cases. The calculation works over any ordered field; it does not require real
+closedness.
 -/
 
 public section
 
 namespace TauCeti
+namespace Polynomial
 
-open Polynomial
+open _root_.Polynomial
 
 variable {K : Type*} [Field K] [LinearOrder K]
 
@@ -54,7 +57,7 @@ variable [IsStrictOrderedRing K]
 
 /-- At a zero of the second polynomial that is not a zero of the first,
 the first Sturm variation step contributes exactly one sign change. -/
-theorem sturmVariation_eq_succ_of_eval_eq_zero {p q : K[X]} {x : K}
+@[simp] theorem sturmVariation_eq_succ_of_eval_eq_zero {p q : K[X]} {x : K}
     (hp : p.eval x ≠ 0) (hq0 : q ≠ 0) (hq : q.eval x = 0) :
     sturmVariation p q x = sturmVariation q (-p % q) x + 1 := by
   have hp0 : p ≠ 0 := by
@@ -82,7 +85,7 @@ theorem sturmVariation_eq_succ_of_eval_eq_zero {p q : K[X]} {x : K}
 
 /-- Multiplying both inputs by a common polynomial does not alter their
 Sturm variation away from its roots. -/
-theorem sturmVariation_mul_left {r : K[X]} (p q : K[X]) {x : K}
+@[simp] theorem sturmVariation_mul_left {r : K[X]} (p q : K[X]) {x : K}
     (hrx : r.eval x ≠ 0) :
     sturmVariation (r * p) (r * q) x = sturmVariation p q x := by
   have hr : r ≠ 0 := by
@@ -101,7 +104,7 @@ theorem sturmVariation_mul_left {r : K[X]} (p q : K[X]) {x : K}
 omit [IsStrictOrderedRing K] in
 /-- A common root of the two input polynomials annihilates every entry of
 their Sturm sequence, so its variation at that point is zero. -/
-theorem sturmVariation_eq_zero_of_common_root {p q : K[X]} {x : K}
+@[simp] theorem sturmVariation_eq_zero_of_common_root {p q : K[X]} {x : K}
     (hp : p.eval x = 0) (hq : q.eval x = 0) : sturmVariation p q x = 0 := by
   have hpd : X - C x ∣ p := dvd_iff_isRoot.mpr hp
   have hqd : X - C x ∣ q := dvd_iff_isRoot.mpr hq
@@ -114,4 +117,5 @@ theorem sturmVariation_eq_zero_of_common_root {p q : K[X]} {x : K}
     exact hz s hs
   simp [sturmVariation, hmap, List.signVariations]
 
+end Polynomial
 end TauCeti
