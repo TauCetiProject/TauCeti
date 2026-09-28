@@ -498,8 +498,8 @@ open RamificationInertia in
 theorem dedekindCubic_ramificationIdx_eq_one_and_inertiaDeg_eq_one {P : Ideal (𝓞 K)}
     (hP : P ∈ (span {(2 : ℤ)}).primesOver (𝓞 K)) :
     P.ramificationIdx ℤ = 1 ∧ P.inertiaDeg ℤ = 1 := by
-  have := hP.1
-  have := hP.2
+  have hPprime : P.IsPrime := hP.1
+  have hPlies : P.LiesOver (span {(2 : ℤ)}) := hP.2
   refine ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank
     (span {(2 : ℤ)}) P ?_
   rw [dedekindCubic_ncard_primesOver_two_eq_finrank hmin hgen, RingOfIntegers.rank K]
