@@ -72,13 +72,6 @@ def mk (φ : F ≃ₜ F) (x : F) (t : ℝ) : MappingTorus φ :=
   @Quotient.mk'' (F × ℝ)
     (@AddAction.orbitRel ℤ (F × ℝ) inferInstance (MappingTorus.action φ)) (x, t)
 
-/-- Every mapping-torus point is represented by a point of the cylinder. -/
-theorem mk_surjective (φ : F ≃ₜ F) :
-    Function.Surjective (fun p : F × ℝ ↦ mk φ p.1 p.2) := by
-  intro q
-  induction q using Quotient.inductionOn' with
-  | _ p => exact ⟨p, rfl⟩
-
 /-- The quotient identifies (φ ^ n) x at height t + n with x at height t. -/
 @[simp]
 theorem mk_vadd (φ : F ≃ₜ F) (n : ℤ) (x : F) (t : ℝ) :
@@ -119,18 +112,6 @@ theorem proj_mk (φ : F ≃ₜ F) (x : F) (t : ℝ) :
     proj φ (mk φ x t) = (t : UnitAddCircle) := by
   unfold proj mk
   apply Quotient.lift_mk
-
-/-- The cylinder map into the mapping torus is a quotient map. -/
-theorem isQuotientMap_mk (φ : F ≃ₜ F) :
-    IsQuotientMap (fun p : F × ℝ ↦ mk φ p.1 p.2) := by
-  let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
-  change IsQuotientMap (@Quotient.mk' (F × ℝ) (AddAction.orbitRel ℤ (F × ℝ)))
-  exact isQuotientMap_quotient_mk'
-
-/-- The quotient map from the cylinder into the mapping torus is continuous. -/
-theorem continuous_mk (φ : F ≃ₜ F) :
-  Continuous (fun p : F × ℝ ↦ mk φ p.1 p.2) := by
-  exact (isQuotientMap_mk φ).continuous
 
 /-- The canonical projection from a mapping torus to the additive circle is continuous. -/
 theorem continuous_proj (φ : F ≃ₜ F) : Continuous (proj φ) := by
