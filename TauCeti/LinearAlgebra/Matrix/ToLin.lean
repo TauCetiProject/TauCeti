@@ -43,7 +43,8 @@ public section
 namespace TauCeti
 
 /-- The matrix general linear group is the group of linear automorphisms of coordinate vectors
-over a commutative semiring. -/
+over a commutative semiring. Mathlib's `Matrix.GeneralLinearGroup.toLin` requires a commutative
+ring. -/
 def matrixGeneralLinearEquiv {R : Type*} [CommSemiring R] {n : Type*} [Fintype n]
     [DecidableEq n] :
     Matrix.GeneralLinearGroup n R ≃* LinearMap.GeneralLinearGroup R (n → R) :=
