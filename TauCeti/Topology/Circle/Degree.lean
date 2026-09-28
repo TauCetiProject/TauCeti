@@ -25,10 +25,11 @@ homotopies through loops, whose basepoint may move (`Circle.degree_eq_of_homotop
 under homotopies of based loops (`Circle.degree_eq_of_homotopic`), and it is additive under the
 pointwise product of loops (`Circle.degree_mul`), because angle functions add.
 
-At the basepoint `1` the degree is the integer that Tau Ceti's identification
-`Circle.fundamentalGroupMulEquiv : π₁(Circle, 1) ≃* Multiplicative ℤ` assigns to the class of the
+The degree is the integer that Tau Ceti's identification
+`Circle.fundamentalGroupMulEquiv : π₁(Circle, x) ≃* Multiplicative ℤ` assigns to the class of the
 loop (`Circle.fundamentalGroupMulEquiv_fromPath`); the lift description is what makes it computable
-and gives its invariance under free homotopies and pointwise products. It is the invariant through
+and gives its invariance under free homotopies, changes of basepoint
+(`Circle.degree_symm_trans_trans`) and pointwise products. It is the invariant through
 which the Maslov index of a loop of totally real subspaces is defined.
 
 ## Main declarations
@@ -37,6 +38,7 @@ which the Maslov index of a loop of totally real subspaces is defined.
 * `Circle.sub_eq_degree_mul`: every continuous lift `θ` of a loop satisfies
   `θ 1 - θ 0 = degree γ * (2 * π)`.
 * `Circle.degree_eq_of_homotopy`: the degree is invariant under free homotopies of loops.
+* `Circle.degree_symm_trans_trans`: the degree is invariant under change of basepoint.
 * `Circle.degree_mul`: the degree of a pointwise product of loops is the sum of the degrees.
 -/
 
@@ -118,6 +120,31 @@ theorem degree_eq_of_homotopic {x : Circle} {γ₀ γ₁ : Path x x} (h : γ₀.
   obtain ⟨F⟩ := h
   exact degree_eq_of_homotopy γ₀ γ₁ F.toContinuousMap (by simp) (by simp)
     (fun s => by simp)
+
+/-- Conjugating a loop by a path does not change its degree: `p⁻¹ ⬝ γ ⬝ p` has the degree of `γ`.
+This is the invariance of the degree under change of basepoint. -/
+theorem degree_symm_trans_trans {x y : Circle} (γ : Path x x) (p : Path x y) :
+    degree (p.symm.trans (γ.trans p)) = degree γ := by
+  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
+  obtain ⟨φ, hφ', hφ0⟩ := isCoveringMap_exp.exists_path_lifts p.toContinuousMap (θ 1)
+    (by simp [hθ])
+  have hφ (t : I) : exp (φ t) = p t := congr_fun hφ' t
+  have hexp : exp (θ 1 - θ 0) = 1 := by simp [exp_sub, hθ]
+  -- Lift `p⁻¹` by the reversed lift of `p`, shifted back by the total angle of `γ`, so that the
+  -- lifts of `p⁻¹`, `γ` and `p` concatenate.
+  let Φ : Path (φ 1 - (θ 1 - θ 0)) (θ 0) :=
+    { toFun := fun t => φ (σ t) - (θ 1 - θ 0)
+      continuous_toFun := by fun_prop
+      source' := by simp
+      target' := by simp [hφ0] }
+  let Θ : Path (θ 0) (θ 1) := ⟨θ, rfl, rfl⟩
+  let Ψ : Path (θ 1) (φ 1) := ⟨φ, hφ0, rfl⟩
+  refine degree_eq_of_sub_eq _ (θ := Φ.trans (Θ.trans Ψ)) (Φ.trans (Θ.trans Ψ)).continuous
+    (fun t => ?_) (by simp [sub_eq_degree_mul γ θ.continuous hθ])
+  simp only [Path.trans_apply, Path.symm_apply]
+  split_ifs <;> simp [Φ, Θ, Ψ, exp_sub, hθ, hφ, hexp]
 
 /-- The degree of the pointwise product of two loops is the sum of their degrees. -/
 @[simp]
