@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
-public import Mathlib.Algebra.Homology.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.AlgebraicTopology.SimplexCategory.Subinterval
@@ -277,10 +276,9 @@ lemma alexanderWhitney_naturality {K' L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L
     ιChainComplex_alexanderWhitney_f_assoc, ιChainComplex_alexanderWhitney_f,
     Preadditive.sum_comp, Category.assoc]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [show chainComplexMap f R ⊗ₘ chainComplexMap g S =
-    HomologicalComplex.tensorHom (chainComplexMap f R) (chainComplexMap g S) from rfl]
-  simp only [ι_tensorHom, tensorHom_comp_tensorHom_assoc, ι_chainComplexMap_f,
-    Monoidal.tensorHom_app, Monoidal.tensorObj_obj, tensorHom_app_apply, NatTrans.naturality_apply]
+  simp only [tensorHom_eq_mapBifunctorMap, ι_tensorHom, tensorHom_comp_tensorHom_assoc,
+    ι_chainComplexMap_f, Monoidal.tensorHom_app, Monoidal.tensorObj_obj, tensorHom_app_apply,
+    NatTrans.naturality_apply]
 
 variable {R S} in
 /-- The Alexander–Whitney map is natural in both coefficient objects. -/
@@ -298,12 +296,8 @@ lemma alexanderWhitney_coefficient_naturality {R' S' : C} (f : R ⟶ R') (g : S 
     ιChainComplex_alexanderWhitney_f, ιChainComplex_alexanderWhitney_f_assoc,
     Preadditive.comp_sum, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [show (((chainComplexFunctor C).map f).app K ⊗ₘ
-      ((chainComplexFunctor C).map g).app L) =
-    HomologicalComplex.tensorHom (((chainComplexFunctor C).map f).app K)
-      (((chainComplexFunctor C).map g).app L) from rfl]
-  rw [← Category.assoc, tensorHom_comp_tensorHom, Category.assoc, ι_tensorHom,
-    ← Category.assoc, tensorHom_comp_tensorHom,
+  rw [tensorHom_eq_mapBifunctorMap, ← Category.assoc, tensorHom_comp_tensorHom, Category.assoc,
+    ι_tensorHom, ← Category.assoc, tensorHom_comp_tensorHom,
     TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f,
     TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f]
 
