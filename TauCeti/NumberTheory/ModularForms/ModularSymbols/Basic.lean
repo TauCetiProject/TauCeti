@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 public import Mathlib.NumberTheory.ModularForms.Cusps
 public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial
+public import TauCeti.RepresentationTheory.Augmentation
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!
@@ -38,9 +39,8 @@ representatives and `bᵢ` over a spanning family of the binary forms, span `�
 
 * `TauCeti.ModularSymbols.divisorRep R`: the permutation representation of `SL(2, ℤ)` on the
   `R`-divisors `R[ℙ¹(ℚ)]` on the cusps.
-* `TauCeti.ModularSymbols.degree R`: the degree `R[ℙ¹(ℚ)] → R` of a divisor.
-* `TauCeti.ModularSymbols.degreeZero R`: the degree-zero divisors `Div⁰(ℙ¹(ℚ))`, and
-  `TauCeti.ModularSymbols.degreeZeroRep R` the representation of `SL(2, ℤ)` on them.
+* `TauCeti.ModularSymbols.degreeZeroRep R`: the representation of `SL(2, ℤ)` on the augmentation
+  submodule of the cusp divisors, which is `Div⁰(ℙ¹(ℚ))`.
 * `TauCeti.ModularSymbols.binaryFormSLRep R w`: the left action `P ↦ P ∣ γ⁻¹` of `SL(2, ℤ)` on
   binary forms of degree `w`.
 * `TauCeti.ModularSymbols R Γ w`: the module of modular symbols `𝕄_w(Γ; R)`.
@@ -77,6 +77,10 @@ namespace ModularSymbols
 
 variable (R : Type*) [CommRing R]
 
+local notation "Div₀" =>
+  Subrepresentation.toSubmodule
+    (augmentationSubrepresentation R (GL (Fin 2) ℚ) (OnePoint ℚ))
+
 /-! ### Divisors on the cusps -/
 
 /-- The permutation representation of `SL(2, ℤ)` on the `R`-divisors `R[ℙ¹(ℚ)]` on the cusps
@@ -90,72 +94,18 @@ theorem divisorRep_single (g : SL(2, ℤ)) (x : OnePoint ℚ) (r : R) :
     divisorRep R g (single x r) = single (mapGL ℚ g • x) r := by
   simp [divisorRep]
 
-/-- The degree `∑ₓ nₓ` of a divisor `∑ₓ nₓ [x]` on the cusps. -/
-noncomputable def degree : R[OnePoint ℚ] →ₗ[R] R :=
-  Finsupp.linearCombination R (fun _ ↦ 1) ∘ₗ (coeffLinearEquiv R).toLinearMap
-
 variable {R}
-
-@[simp]
-theorem degree_single (x : OnePoint ℚ) (r : R) : degree R (single x r) = r := by
-  simp [degree]
-
-@[simp]
-theorem degree_divisorRep (g : SL(2, ℤ)) (D : R[OnePoint ℚ]) :
-    degree R (divisorRep R g D) = degree R D := by
-  induction D using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add D D' hD hD' => simp [hD, hD']
-  | single x r => simp
-
-variable (R) in
-/-- The module `Div⁰(ℙ¹(ℚ))` of degree-zero `R`-divisors on the cusps. -/
-noncomputable def degreeZero : Submodule R R[OnePoint ℚ] :=
-  LinearMap.ker (degree R)
-
-@[simp]
-theorem mem_degreeZero {D : R[OnePoint ℚ]} : D ∈ degreeZero R ↔ degree R D = 0 :=
-  LinearMap.mem_ker
-
-theorem single_sub_single_mem_degreeZero (x y : OnePoint ℚ) :
-    single x (1 : R) - single y 1 ∈ degreeZero R := by
-  simp
-
-theorem divisorRep_mem_degreeZero (g : SL(2, ℤ)) {D : R[OnePoint ℚ]} (hD : D ∈ degreeZero R) :
-    divisorRep R g D ∈ degreeZero R := by
-  simpa using hD
-
-/-- `Div⁰(ℙ¹(ℚ))` is spanned by the divisors `[x] - [∞]`. -/
-theorem degreeZero_eq_span :
-    degreeZero R =
-      Submodule.span R (Set.range fun x : OnePoint ℚ ↦ single x (1 : R) - single ∞ 1) := by
-  refine le_antisymm (fun D hD ↦ ?_) (Submodule.span_le.2 ?_)
-  · -- Every divisor differs from `(degree D) • [∞]` by an element of the span.
-    have key : ∀ D : R[OnePoint ℚ], D - single ∞ (degree R D) ∈
-        Submodule.span R (Set.range fun x : OnePoint ℚ ↦ single x (1 : R) - single ∞ 1) := by
-      intro D
-      induction D using MonoidAlgebra.induction_linear with
-      | zero => simp
-      | add D D' hD hD' =>
-        convert add_mem hD hD' using 1
-        rw [map_add, single_add]
-        abel
-      | single x r =>
-        convert Submodule.smul_mem _ r (Submodule.subset_span (Set.mem_range_self x)) using 1
-        simp [smul_sub, smul_single]
-    simpa [mem_degreeZero.1 hD] using key D
-  · rintro _ ⟨x, rfl⟩
-    exact single_sub_single_mem_degreeZero x ∞
 
 variable (R) in
 /-- The representation of `SL(2, ℤ)` on the degree-zero divisors `Div⁰(ℙ¹(ℚ))`. -/
-noncomputable def degreeZeroRep : Representation R SL(2, ℤ) (degreeZero R) :=
-  (divisorRep R).subrepresentation (degreeZero R) fun g _ ↦ divisorRep_mem_degreeZero g
+noncomputable def degreeZeroRep : Representation R SL(2, ℤ) Div₀ :=
+  (augmentationSubrepresentation R (GL (Fin 2) ℚ) (OnePoint ℚ)).toRepresentation.comp
+    (mapGL ℚ)
 
 @[simp]
-theorem coe_degreeZeroRep_apply (g : SL(2, ℤ)) (D : degreeZero R) :
+theorem coe_degreeZeroRep_apply (g : SL(2, ℤ)) (D : Div₀) :
     (degreeZeroRep R g D : R[OnePoint ℚ]) = divisorRep R g D := by
-  simp [degreeZeroRep]
+  rfl
 
 /-- The span of the unimodular symbols `[g∞] - [g0]` is `SL(2, ℤ)`-stable. -/
 private theorem divisorRep_mem_span_unimodular (g : SL(2, ℤ)) {D : R[OnePoint ℚ]}
@@ -171,7 +121,7 @@ private theorem divisorRep_mem_span_unimodular (g : SL(2, ℤ)) {D : R[OnePoint 
 /-- **Manin's lemma.** The degree-zero divisors on the cusps are spanned by the unimodular
 symbols `[g∞] - [g0]`, `g ∈ SL(2, ℤ)`, that is, by the `SL(2, ℤ)`-translates of `[∞] - [0]`. -/
 theorem degreeZero_eq_span_unimodular :
-    degreeZero R = Submodule.span R (Set.range fun g : SL(2, ℤ) ↦
+    Div₀ = Submodule.span R (Set.range fun g : SL(2, ℤ) ↦
       single (mapGL ℚ g • ∞) (1 : R) - single (mapGL ℚ g • ((0 : ℚ) : OnePoint ℚ)) 1) := by
   set M := Submodule.span R (Set.range fun h : SL(2, ℤ) ↦
     single (mapGL ℚ h • ∞) (1 : R) - single (mapGL ℚ h • ((0 : ℚ) : OnePoint ℚ)) 1)
@@ -196,19 +146,21 @@ theorem degreeZero_eq_span_unimodular :
       · have hT : mapGL ℚ T • (∞ : OnePoint ℚ) = ∞ := by
           simp [smul_infty_eq_ite]
         simp [H, hT]
-    rw [degreeZero_eq_span, Submodule.span_le]
+    rw [toSubmodule_augmentationSubrepresentation,
+      MonoidAlgebra.ker_sumCoords_basis_eq_span R (OnePoint ℚ) ∞, Submodule.span_le]
     rintro _ ⟨x, rfl⟩
     obtain ⟨g, rfl⟩ := OnePoint.exists_mem_SL2 ℤ x
     exact (hH ▸ Subgroup.mem_top g : g ∈ H)
   · rintro _ ⟨g, rfl⟩
-    exact single_sub_single_mem_degreeZero _ _
+    exact single_sub_single_mem_augmentationSubrepresentation _ _
 
 /-- **Manin's lemma**, inside `Div⁰(ℙ¹(ℚ))`: the `SL(2, ℤ)`-translates of `[∞] - [0]` span the
 degree-zero divisors. -/
 theorem span_degreeZeroRep_eq_top :
     Submodule.span R (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-      ⟨_, single_sub_single_mem_degreeZero ∞ ((0 : ℚ) : OnePoint ℚ)⟩) = ⊤ := by
-  apply Submodule.map_injective_of_injective (degreeZero R).injective_subtype
+      ⟨_, single_sub_single_mem_augmentationSubrepresentation ∞
+        ((0 : ℚ) : OnePoint ℚ)⟩) = ⊤ := by
+  apply Submodule.map_injective_of_injective (Div₀).injective_subtype
   rw [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp]
   refine Eq.trans ?_ degreeZero_eq_span_unimodular.symm
   congr 2
@@ -245,11 +197,11 @@ theorem binaryFormSLRep_binaryFormRep (γ : SL(2, ℤ)) (P : homogeneousSubmodul
 variable (R w) in
 /-- The diagonal representation of `SL(2, ℤ)` on `Div⁰(ℙ¹(ℚ)) ⊗_R Sym^w(R²)`. -/
 noncomputable def symbolRep :
-    Representation R SL(2, ℤ) (degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :=
+    Representation R SL(2, ℤ) (Div₀ ⊗[R] homogeneousSubmodule (Fin 2) R w) :=
   (degreeZeroRep R).tprod (binaryFormSLRep R w)
 
 @[simp]
-theorem symbolRep_tmul (g : SL(2, ℤ)) (D : degreeZero R) (P : homogeneousSubmodule (Fin 2) R w) :
+theorem symbolRep_tmul (g : SL(2, ℤ)) (D : Div₀) (P : homogeneousSubmodule (Fin 2) R w) :
     symbolRep R w g (D ⊗ₜ P) = degreeZeroRep R g D ⊗ₜ binaryFormSLRep R w g P := by
   simp [symbolRep]
 
@@ -265,29 +217,36 @@ This is an abbreviation for the coinvariants, so that their universal property
 (`Representation.Coinvariants.lift`, `Representation.Coinvariants.hom_ext`) applies directly. -/
 abbrev ModularSymbols (Γ : Subgroup SL(2, ℤ)) (w : ℕ) : Type _ :=
   Representation.Coinvariants
-    (V := ModularSymbols.degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w)
+    (V := (augmentationSubrepresentation R (GL (Fin 2) ℚ) (OnePoint ℚ)).toSubmodule ⊗[R]
+      homogeneousSubmodule (Fin 2) R w)
     ((ModularSymbols.symbolRep R w).comp Γ.subtype)
 
 namespace ModularSymbols
 
 variable {R} (Γ : Subgroup SL(2, ℤ)) {w : ℕ}
 
+local notation "Div₀" =>
+  Subrepresentation.toSubmodule
+    (augmentationSubrepresentation R (GL (Fin 2) ℚ) (OnePoint ℚ))
+
 /-- The modular symbol `{α, β} ⊗ P ∈ 𝕄_w(Γ; R)`, the class of `([α] - [β]) ⊗ P`, as an `R`-linear
 map in the binary form `P`. -/
 noncomputable def symbol (α β : OnePoint ℚ) :
     homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w :=
-  Coinvariants.mk _ ∘ₗ TensorProduct.mk R _ _ ⟨_, single_sub_single_mem_degreeZero α β⟩
+  Coinvariants.mk _ ∘ₗ TensorProduct.mk R _ _
+    ⟨_, single_sub_single_mem_augmentationSubrepresentation α β⟩
 
 theorem symbol_apply (α β : OnePoint ℚ) (P : homogeneousSubmodule (Fin 2) R w) :
     symbol Γ α β P =
-      Coinvariants.mk _ (⟨_, single_sub_single_mem_degreeZero α β⟩ ⊗ₜ[R] P) := by
+      Coinvariants.mk _
+        (⟨_, single_sub_single_mem_augmentationSubrepresentation α β⟩ ⊗ₜ[R] P) := by
   simp [symbol]
 
 @[simp]
 theorem symbol_self (α : OnePoint ℚ) :
     symbol Γ α α = (0 : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   ext P
-  have h : (⟨_, single_sub_single_mem_degreeZero α α⟩ : degreeZero R) = 0 := by
+  have h : (⟨_, single_sub_single_mem_augmentationSubrepresentation α α⟩ : Div₀) = 0 := by
     ext1
     simp
   rw [symbol_apply, h, zero_tmul, map_zero, LinearMap.zero_apply]
@@ -297,8 +256,9 @@ theorem symbol_add_symbol (α β γ : OnePoint ℚ) :
     symbol Γ α β + symbol Γ β γ =
       (symbol Γ α γ : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   ext P
-  have h : (⟨_, single_sub_single_mem_degreeZero α β⟩ : degreeZero R) +
-      ⟨_, single_sub_single_mem_degreeZero β γ⟩ = ⟨_, single_sub_single_mem_degreeZero α γ⟩ := by
+  have h : (⟨_, single_sub_single_mem_augmentationSubrepresentation α β⟩ : Div₀) +
+      ⟨_, single_sub_single_mem_augmentationSubrepresentation β γ⟩ =
+        ⟨_, single_sub_single_mem_augmentationSubrepresentation α γ⟩ := by
     ext1
     simp
   simp only [LinearMap.add_apply, symbol_apply, ← map_add, ← add_tmul, h]
@@ -314,7 +274,7 @@ theorem symbol_mapGL_smul {γ : SL(2, ℤ)} (hγ : γ ∈ Γ) (α β : OnePoint 
     symbol Γ (mapGL ℚ γ • α) (mapGL ℚ γ • β) P =
       symbol Γ α β (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P) := by
   rw [symbol_apply, symbol_apply, ← Coinvariants.mk_self_apply _ (⟨γ, hγ⟩ : Γ)
-    ((⟨_, single_sub_single_mem_degreeZero α β⟩ : degreeZero R) ⊗ₜ[R]
+    ((⟨_, single_sub_single_mem_augmentationSubrepresentation α β⟩ : Div₀) ⊗ₜ[R]
       binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P)]
   simp only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype, symbolRep_tmul,
     binaryFormSLRep_binaryFormRep]
@@ -323,7 +283,7 @@ theorem symbol_mapGL_smul {γ : SL(2, ℤ)} (hγ : γ ∈ Γ) (α β : OnePoint 
   simp
 
 /-- A translate `hD ⊗ P`, for `h ∈ Γ`, is the translate `D ⊗ (P ∣ h)` in `𝕄_w(Γ; R)`. -/
-private theorem mk_degreeZeroRep_tmul {h : SL(2, ℤ)} (hh : h ∈ Γ) (D : degreeZero R)
+private theorem mk_degreeZeroRep_tmul {h : SL(2, ℤ)} (hh : h ∈ Γ) (D : Div₀)
     (P : homogeneousSubmodule (Fin 2) R w) :
     Coinvariants.mk ((symbolRep R w).comp Γ.subtype) (degreeZeroRep R h D ⊗ₜ P) =
       Coinvariants.mk _ (D ⊗ₜ binaryFormRep R w (op (h : Matrix (Fin 2) (Fin 2) ℤ)) P) := by
@@ -336,19 +296,23 @@ private theorem span_mk_degreeZeroRep_tmul_eq_top :
     Submodule.span R (Set.image2
       (fun D P ↦ Coinvariants.mk ((symbolRep R w).comp Γ.subtype) (D ⊗ₜ[R] P))
       (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-        ⟨_, single_sub_single_mem_degreeZero ∞ ((0 : ℚ) : OnePoint ℚ)⟩)
+        ⟨_, single_sub_single_mem_augmentationSubrepresentation ∞
+          ((0 : ℚ) : OnePoint ℚ)⟩)
       Set.univ) = ⊤ := by
-  have h := Submodule.map₂_span_span R (TensorProduct.mk R (degreeZero R)
+  have h := Submodule.map₂_span_span R (TensorProduct.mk R Div₀
     (homogeneousSubmodule (Fin 2) R w)) (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-      ⟨_, single_sub_single_mem_degreeZero ∞ ((0 : ℚ) : OnePoint ℚ)⟩) Set.univ
+      ⟨_, single_sub_single_mem_augmentationSubrepresentation ∞
+        ((0 : ℚ) : OnePoint ℚ)⟩) Set.univ
   rw [span_degreeZeroRep_eq_top, Submodule.span_univ, TensorProduct.map₂_mk_top_top_eq_top] at h
   have himage : Set.image2
       (fun D P ↦ Coinvariants.mk ((symbolRep R w).comp Γ.subtype) (D ⊗ₜ[R] P))
       (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-        ⟨_, single_sub_single_mem_degreeZero ∞ ((0 : ℚ) : OnePoint ℚ)⟩) Set.univ =
+        ⟨_, single_sub_single_mem_augmentationSubrepresentation ∞
+          ((0 : ℚ) : OnePoint ℚ)⟩) Set.univ =
       Coinvariants.mk _ '' Set.image2 (fun D P ↦ TensorProduct.mk R _ _ D P)
         (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
-          ⟨_, single_sub_single_mem_degreeZero ∞ ((0 : ℚ) : OnePoint ℚ)⟩) Set.univ := by
+          ⟨_, single_sub_single_mem_augmentationSubrepresentation ∞
+            ((0 : ℚ) : OnePoint ℚ)⟩) Set.univ := by
     rw [Set.image_image2]
     rfl
   rw [himage, ← Submodule.map_span, ← h, Submodule.map_top, LinearMap.range_eq_top]
@@ -373,7 +337,8 @@ theorem span_symbol_eq_top :
 module of modular symbols `𝕄_w(Γ; R)` is a finitely generated `R`-module. -/
 instance instModuleFinite [Γ.FiniteIndex] : Module.Finite R (ModularSymbols R Γ w) := by
   obtain ⟨n, b, hb⟩ := Module.Finite.exists_fin (R := R) (M := homogeneousSubmodule (Fin 2) R w)
-  let e : degreeZero R := ⟨_, single_sub_single_mem_degreeZero ∞ ((0 : ℚ) : OnePoint ℚ)⟩
+  let e : Div₀ := ⟨_, single_sub_single_mem_augmentationSubrepresentation ∞
+    ((0 : ℚ) : OnePoint ℚ)⟩
   -- The symbols `r⁻¹{∞, 0} ⊗ bᵢ`, for `r` running over representatives of `SL(2, ℤ) ⧸ Γ`.
   let f : (SL(2, ℤ) ⧸ Γ) × Fin n → ModularSymbols R Γ w := fun x ↦
     Coinvariants.mk _ (degreeZeroRep R x.1.out⁻¹ e ⊗ₜ b x.2)
