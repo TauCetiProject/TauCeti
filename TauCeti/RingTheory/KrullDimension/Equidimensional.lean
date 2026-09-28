@@ -115,11 +115,15 @@ theorem comap_includeRight_mem_minimalPrimes (L : Type*) [CommRing L] [Algebra K
   algebraize [(includeRight : A →ₐ[K] L ⊗[K] A).toRingHom]
   exact Ideal.under_mem_minimalPrimes hQ
 
-/-- For an algebraic extension `L / E` of field extensions of `K`, the ring `L ⊗[K] A` is integral
-and flat over `E ⊗[K] A`. So a minimal prime of `L ⊗[K] A` contracts to a minimal prime of
-`E ⊗[K] A`, and the two quotients have the same Krull dimension. -/
+section Algebraic
+
+variable {K : Type*} [CommRing K] {A : Type*} [CommRing A] [Algebra K A]
+
+/-- For an algebraic `E`-algebra `L` with compatible `K`-algebra structures, where `E` is a field,
+the ring `L ⊗[K] A` is integral and flat over `E ⊗[K] A`. So a minimal prime of `L ⊗[K] A`
+contracts to a minimal prime of `E ⊗[K] A`, and the two quotients have the same Krull dimension. -/
 theorem mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isAlgebraic
-    (L E : Type*) [Field L] [Algebra K L]
+    (L E : Type*) [CommRing L] [Algebra K L]
     [Field E] [Algebra K E] [Algebra E L] [IsScalarTower K E L] [Algebra.IsAlgebraic E L]
     {Q : Ideal (L ⊗[K] A)} (hQ : Q ∈ minimalPrimes (L ⊗[K] A)) :
     Q.comap (Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L) (AlgHom.id K A)) ∈
@@ -142,6 +146,8 @@ theorem mem_minimalPrimes_comap_and_ringKrullDim_eq_of_isAlgebraic
   -- The algebra structure has `algebraMap = f`, so `Q` lies over its contraction along `f`.
   have : Q.LiesOver (Q.comap f) := ⟨rfl⟩
   exact ⟨Ideal.under_mem_minimalPrimes hQ, ringKrullDim_eq_of_isIntegral_of_faithfulSMul⟩
+
+end Algebraic
 
 /-- Let `A` be a finitely generated algebra over a field `K` and `L / K` a field extension. For a
 minimal prime `Q` of `L ⊗[K] A`, the irreducible component `V(Q)` of `Spec (L ⊗[K] A)` has the
