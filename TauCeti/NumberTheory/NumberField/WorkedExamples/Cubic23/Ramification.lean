@@ -43,20 +43,24 @@ private theorem not_dvd_exponent : ¬ 23 ∣ RingOfIntegers.exponent θ := by
   rw [h]
   norm_num
 
-omit [NumberField K] hgen in
-/-- Modulo `23`, the defining cubic has a double root at `16` and a simple root at `15`. -/
-@[simp] theorem minpoly_mod_twenty_three :
-    (minpoly ℤ θ).map (Int.castRingHom (ZMod 23)) =
-      (X - C 16) ^ 2 * (X - C 15) := by
-  rw [hmin]
-  simp only [Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow,
-    Polynomial.map_X, Polynomial.map_one]
+omit [NumberField K] hmin hgen in
+/-- Over `ZMod 23`, the defining cubic factors with a double root at `16`. -/
+@[simp] theorem cubic_factorization_mod_twenty_three :
+    (X ^ 3 - X ^ 2 + 1 : (ZMod 23)[X]) = (X - C 16) ^ 2 * (X - C 15) := by
   -- The numeral coercions in the product are definitionally equal to the `C` expressions,
   -- but rewriting with `C_eq_natCast` needs the polynomial numerals exposed explicitly.
   rw [show C (16 : ZMod 23) = (16 : (ZMod 23)[X]) from C_eq_natCast 16,
     show C (15 : ZMod 23) = (15 : (ZMod 23)[X]) from C_eq_natCast 15]
   have h23 : (23 : (ZMod 23)[X]) = 0 := CharP.cast_eq_zero _ _
   linear_combination (167 - 32 * X + 2 * X ^ 2) * h23
+
+omit [NumberField K] hgen in
+/-- Modulo `23`, the minimal polynomial has a double root at `16` and a simple root at `15`. -/
+theorem minpoly_mod_twenty_three :
+    (minpoly ℤ θ).map (Int.castRingHom (ZMod 23)) =
+      (X - C 16) ^ 2 * (X - C 15) := by
+  simpa only [hmin, Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow,
+    Polynomial.map_X, Polynomial.map_one] using cubic_factorization_mod_twenty_three
 
 omit [NumberField K] hgen in
 private theorem normalizedFactors_mod_twenty_three :
