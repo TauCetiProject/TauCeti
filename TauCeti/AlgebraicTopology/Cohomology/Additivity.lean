@@ -31,9 +31,24 @@ disjoint union.
 * `TauCeti.isLimitFanSingularCohomology`: singular cohomology takes a disjoint union to a product
   in every degree.
 
-## References
+## Sources
 
-* S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*, Chapter I, Section 3.
+The informal source is S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*,
+Chapter I, Section 3.
+
+The coproduct decomposition of the singular chains is
+`TauCeti.isColimitCofanSingularChainComplex`, in `TauCeti/AlgebraicTopology/Singular/Additivity`,
+and the passage from cochains to cohomology is
+`TauCeti.homologicalComplexHomologyFunctor_preservesLimitsOfShape`, in
+`TauCeti/Algebra/Homology/ShortComplex/Limit`. The formal inputs from Mathlib are the linear Yoneda
+embedding `linearYoneda` and its comparison `whiskering_linearYoneda` with the ordinary Yoneda
+embedding, by Kim Morrison in `Mathlib/CategoryTheory/Linear/Yoneda`; the fact that `Hom(-, M)`
+takes coproducts to products, by Markus Himmel in
+`Mathlib/CategoryTheory/Preadditive/Yoneda/Limits`; the transfer of (co)limit preservation across
+opposite categories, by Markus Himmel in `Mathlib/CategoryTheory/Limits/Preserves/Opposites` and by
+Kim Morrison and Floris van Doorn in
+`Mathlib/CategoryTheory/Limits/Shapes/Opposites/Products`; and the AB4* instance making products of
+modules exact, by Dagur Asgeirsson in `Mathlib/Algebra/Category/ModuleCat/AB`.
 -/
 
 public section
@@ -58,10 +73,13 @@ def isLimitFanSingularCochainComplex :
       (fun i ↦ TopCat.singularCochainComplexMap (sigmaι X i)) :
       Fan fun i ↦ (X i).singularCochainComplex R k M) := by
   let _ : PreservesLimitsOfShape (Discrete ι)ᵒᵖ ((linearYoneda k C).obj M) := by
+    -- Forgetting the `k`-module structure turns `Hom(-, M)` into the ordinary hom functor
+    -- `yoneda.obj M`, which takes coproducts in `C` to products of types.
+    have hforget : (linearYoneda k C).obj M ⋙ forget (ModuleCat.{v} k) = yoneda.obj M :=
+      Functor.congr_obj (whiskering_linearYoneda k C) M
     let _ : PreservesLimitsOfShape (Discrete ι)ᵒᵖ
-        ((linearYoneda k C).obj M ⋙ forget (ModuleCat k)) := by
-      change PreservesLimitsOfShape (Discrete ι)ᵒᵖ (yoneda.obj M)
-      infer_instance
+        ((linearYoneda k C).obj M ⋙ forget (ModuleCat.{v} k)) :=
+      hforget ▸ inferInstance
     exact preservesLimitsOfShape_of_reflects_of_preserves _ (forget (ModuleCat k))
   let _ : HasColimitsOfShape (Discrete ι) C := inferInstance
   let _ : PreservesColimitsOfShape (Discrete ι) ((linearYoneda k C).obj M).rightOp :=
