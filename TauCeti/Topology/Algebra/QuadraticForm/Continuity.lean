@@ -52,7 +52,7 @@ theorem _root_.QuadraticMap.continuous
 /-- Endomorphisms preserving a continuous quadratic map form a closed subset of the
 endomorphism space when the codomain is Hausdorff. -/
 theorem _root_.QuadraticMap.isClosed_setOfPred_forall_map_app
-    {R M N : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+    {R M N : Type*} [CommRing R] [TopologicalSpace R]
     [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsModuleTopology R M]
     [TopologicalSpace (Module.End R M)] [IsModuleTopology R (Module.End R M)]
     [AddCommGroup N] [Module R N] [TopologicalSpace N] [T2Space N]
