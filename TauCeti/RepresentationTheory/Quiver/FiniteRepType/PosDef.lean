@@ -67,11 +67,10 @@ at a sink is cut out of a product indexed by the arrows there.
 
 ## References
 
-This is the affirming direction of the Gabriel dichotomy `gabriel_finiteRepType_iff` of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See
-Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*,
-and Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras* I,
-Ch. VII.
+This is the affirming direction of Gabriel's theorem: positive definiteness of the Tits form is
+what forces the indecomposables to be finite in number. See Bernstein--Gelfand--Ponomarev,
+*Coxeter functors and Gabriel's theorem*, and Assem--Simson--Skowroński, *Elements of the
+Representation Theory of Associative Algebras* I, Ch. VII.
 -/
 
 public section

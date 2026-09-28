@@ -31,6 +31,9 @@ arbitrary field.
 
 ## Main results
 
+* `TauCeti.coe_gabrielIndecomposableEquivPositiveRoot_apply` and
+  `TauCeti.isoClassDimVector_gabrielIndecomposableEquivPositiveRoot_symm_apply`: both directions of
+  the correspondence are computed by the dimension vector.
 * `TauCeti.card_skeleton_indecomposable_eq_card_positiveRoots`: the two sides of the
   correspondence have the same cardinality.
 
@@ -90,6 +93,16 @@ theorem coe_gabrielIndecomposableEquivPositiveRoot_apply (hpd : (titsForm V).Pos
       {d : V → ℤ // 0 ≤ d ∧ titsForm V d = 1}) : V → ℤ) =
         isoClassDimVector.{u, v, w, max u x} X :=
   coe_isoClassDimVectorEmbedding_apply.{u, v, w, max u x} hpd X
+
+/-- The class that Gabriel's correspondence assigns to a positive root has that root as its
+dimension vector. -/
+@[simp]
+theorem isoClassDimVector_gabrielIndecomposableEquivPositiveRoot_symm_apply
+    (hpd : (titsForm V).PosDef) (d : {d : V → ℤ // 0 ≤ d ∧ titsForm V d = 1}) :
+    isoClassDimVector.{u, v, w, max u x}
+        ((gabrielIndecomposableEquivPositiveRoot.{u, v, w, x} (k := k) hpd).symm d) =
+      (d : V → ℤ) := by
+  rw [← coe_gabrielIndecomposableEquivPositiveRoot_apply hpd, Equiv.apply_symm_apply]
 
 /-- **A positive definite quiver has as many indecomposable isomorphism classes as positive
 roots.** -/

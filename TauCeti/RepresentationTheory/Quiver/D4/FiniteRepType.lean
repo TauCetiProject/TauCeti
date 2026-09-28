@@ -15,11 +15,13 @@ The Tits form of the `D₄` quiver is positive definite (`TauCeti.Quiver.D4.tits
 the Gabriel correspondence identifies its finite-dimensional indecomposable representations up to
 isomorphism with the twelve positive roots counted by `TauCeti.Quiver.D4.card_positiveRoots`.
 
-This is the first case of the affirming half of Gabriel's dichotomy that is not settled by an
-explicit classification. The `A₂` quiver was: `TauCeti.isFiniteRepType_kronecker` reads its finite
-representation type off the list of its three indecomposables, in
-`TauCeti.card_skeleton_indecomposable_kronecker`. No such list is available for `D₄`, and none is
-needed; the count comes from the general correspondence and the explicit positive-root calculation.
+Neither result classifies the indecomposables of `D₄`. Positive definiteness alone gives finite
+representation type, through `TauCeti.isFiniteRepType_of_titsForm_posDef`, and the count is the
+number of positive roots of the Tits form, through
+`TauCeti.card_skeleton_indecomposable_eq_card_positiveRoots`; that number is computed from the
+form itself. This is in contrast with `TauCeti.isFiniteRepType_kronecker`, which reads the finite
+representation type of `A₂` off the list of its three indecomposables in
+`TauCeti.card_skeleton_indecomposable_kronecker`.
 
 ## Main results
 
@@ -30,10 +32,9 @@ needed; the count comes from the general correspondence and the explicit positiv
 
 ## References
 
-This is the affirming half of the “`D₄` quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose Layer 5 count
-milestone asks for the twelve indecomposables of `D₄`. See Assem--Simson--Skowroński, *Elements of
-the Representation Theory of Associative Algebras* I, Ch. VII.
+The twelve indecomposables of `D₄` are the standard worked example of the affirming half of
+Gabriel's theorem. See Assem--Simson--Skowroński, *Elements of the Representation Theory of
+Associative Algebras* I, Ch. VII.
 -/
 
 public section
