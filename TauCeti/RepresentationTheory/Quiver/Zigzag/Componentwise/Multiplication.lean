@@ -48,7 +48,10 @@ private theorem componentBasis_mul_nontrivial (C : G.ConnectedComponent) [Nontri
   rw [map_mul]
   simp only [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns]
   rcases b with i | d | i <;> rcases c with j | e | j
-  all_goals simp only [zigzagBasisMul]
+  all_goals simp only [zigzagBasisMul_vertex_vertex, zigzagBasisMul_vertex_dart,
+    zigzagBasisMul_vertex_volume, zigzagBasisMul_dart_vertex, zigzagBasisMul_dart_dart,
+    zigzagBasisMul_dart_volume, zigzagBasisMul_volume_vertex, zigzagBasisMul_volume_dart,
+    zigzagBasisMul_volume_volume]
   all_goals try split_ifs
   all_goals simp only [Option.elim_some, Option.elim_none, map_zero,
     zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns,
@@ -92,21 +95,21 @@ private theorem componentBasis_mul_subsingleton (C : G.ConnectedComponent) [Subs
     · have hij : i = j := Subsingleton.elim _ _
       subst j
       apply (zigzagComponentAlgebraEquivULiftDualNumber k G C).injective
-      simp [zigzagBasisMul]
+      simp
     · exact (noDart e).elim
     · have hij : i = j := Subsingleton.elim _ _
       subst j
       apply (zigzagComponentAlgebraEquivULiftDualNumber k G C).injective
-      simp [zigzagBasisMul]
+      simp
   · exact (noDart d).elim
   · rcases c with j | e | j
     · have hij : i = j := Subsingleton.elim _ _
       subst j
       apply (zigzagComponentAlgebraEquivULiftDualNumber k G C).injective
-      simp [zigzagBasisMul]
+      simp
     · exact (noDart e).elim
     · apply (zigzagComponentAlgebraEquivULiftDualNumber k G C).injective
-      simp only [zigzagBasisMul, Option.elim_none, map_mul, map_zero,
+      simp only [zigzagBasisMul_volume_volume, Option.elim_none, map_mul, map_zero,
         zigzagComponentAlgebraEquivULiftDualNumber_zigzagComponentBasis_inr_inr]
       apply ULift.ext
       exact DualNumber.eps_mul_eps
@@ -133,7 +136,7 @@ theorem zigzagBasisMul_component (C : G.ConnectedComponent)
         (fun d => zigzagComponentBasisIndexEquiv G ⟨C, d⟩) := by
   classical
   rcases b with i | d | i <;> rcases c with j | e | j
-  all_goals simp [zigzagBasisMul, SimpleGraph.Dart.ext_iff, Prod.ext_iff]
+  all_goals simp [SimpleGraph.Dart.ext_iff, Prod.ext_iff]
 
 omit [Finite V] in
 private theorem component_vertices_ne {C D : G.ConnectedComponent} (h : C ≠ D)
@@ -148,13 +151,13 @@ private theorem component_vertices_ne {C D : G.ConnectedComponent} (h : C ≠ D)
 omit [Finite V] in
 /-- Basis indices from distinct components have zero product. -/
 @[simp]
-theorem zigzagBasisMul_ne_component {C D : G.ConnectedComponent} (h : C ≠ D)
+theorem zigzagBasisMul_eq_none_of_ne_component {C D : G.ConnectedComponent} (h : C ≠ D)
     (b : ZigzagBasisIndex C.toSimpleGraph) (c : ZigzagBasisIndex D.toSimpleGraph) :
     zigzagBasisMul G (zigzagComponentBasisIndexEquiv G ⟨C, b⟩)
       (zigzagComponentBasisIndexEquiv G ⟨D, c⟩) = none := by
   classical
   rcases b with i | d | i <;> rcases c with j | e | j
-  all_goals simp [zigzagBasisMul, SimpleGraph.Dart.ext_iff, Prod.ext_iff,
+  all_goals simp [SimpleGraph.Dart.ext_iff, Prod.ext_iff,
     component_vertices_ne G h, Ne.symm (component_vertices_ne G h _ _)]
 
 /-- The complete multiplication table of the public zigzag algebra. Every
@@ -185,7 +188,7 @@ theorem zigzagAlgebraBasis_mul (b c : ZigzagBasisIndex G) :
       cases hp : zigzagBasisMul C.toSimpleGraph b' c' with
       | none => simp
       | some d => simp [zigzagComponentProjection_zigzagAlgebraBasis_of_ne G k C E hEC]
-  · rw [zigzagBasisMul_ne_component G hCD]
+  · rw [zigzagBasisMul_eq_none_of_ne_component G hCD]
     apply zigzagAlgebra.ext k G
     intro E
     rw [map_mul]
