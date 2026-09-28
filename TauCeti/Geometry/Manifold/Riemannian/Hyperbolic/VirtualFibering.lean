@@ -18,17 +18,15 @@ metric (`TauCeti.IsHyperbolic`) is virtually fibered (`TauCeti.IsVirtuallyFibere
 
 A closed 3-manifold is modelled here on `EuclideanSpace ℝ (Fin 3)` with the boundaryless model
 `𝓡 3`, and is compact and connected. Its topology is that of a metric space, as
-`TauCeti.HyperbolicMetric` requires its metric to induce the given distance. Connectedness is
-necessary: a virtually fibered space is connected (`TauCeti.IsVirtuallyFibered.connectedSpace`),
-while a disjoint union of two closed hyperbolic 3-manifolds is still hyperbolic. Orientability is
-not assumed; Agol's theorem covers non-orientable manifolds by passing to the orientation double
-cover.
+`TauCeti.HyperbolicMetric` requires its metric to induce the given distance. The hypothesis
+`[ConnectedSpace M]` is stated explicitly for readability; it is in fact implied by
+`TauCeti.IsHyperbolic`, since the Riemannian distance between points joined by no `C^1` path is
+infinite while the metric-space distance is finite. Orientability is not assumed; Agol's theorem
+covers non-orientable manifolds by passing to the orientation double cover.
 
 The conclusion asks for a finite cover homeomorphic to a mapping torus, the topological form of a
 fibration over the circle recorded by `TauCeti.FibersOverCircle`. A surface bundle over the circle
-is the mapping torus of its monodromy, so Agol's theorem gives this conclusion. Conversely, when
-the cover is a closed 3-manifold, the fibre `F` of such a presentation is compact and `F × ℝ`
-covers the 3-manifold, which forces `F` to be a closed surface.
+is the mapping torus of its monodromy, so Agol's theorem gives this conclusion.
 
 The conjecture is stated, not proved.
 
