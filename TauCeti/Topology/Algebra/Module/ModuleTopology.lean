@@ -49,6 +49,20 @@ end Module.Basis
 
 namespace TauCeti
 
+variable {K V ι : Type*} [Semiring K] [TopologicalSpace K] [IsTopologicalSemiring K]
+  [AddCommMonoid V] [Module K V] [TopologicalSpace V] [IsModuleTopology K V] [Finite ι]
+
+/-- The module topology is Hausdorff when the scalars are Hausdorff and the module has a finite
+basis. -/
+theorem t2Space_of_basis (b : Module.Basis ι K V) [T2Space K] : T2Space V :=
+  b.equivFunHomeomorph.symm.t2Space
+
+/-- The module topology is locally compact when the scalars are locally compact and the module
+has a finite basis. -/
+theorem locallyCompactSpace_of_basis (b : Module.Basis ι K V) [LocallyCompactSpace K] :
+    LocallyCompactSpace V :=
+  b.equivFunHomeomorph.isOpenEmbedding.locallyCompactSpace
+
 variable {K V : Type*} [DivisionRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
@@ -58,7 +72,7 @@ theorem t2Space_moduleTopology [T2Space K] :
     @T2Space V (moduleTopology K V) := by
   let _ : TopologicalSpace V := moduleTopology K V
   let b := Module.finBasis K V
-  exact b.equivFunHomeomorph.symm.t2Space
+  exact t2Space_of_basis b
 
 /-- The module topology of a finite-dimensional space over a locally compact division ring
 equipped with a topological semiring structure is locally compact. -/
@@ -66,6 +80,6 @@ theorem locallyCompactSpace_moduleTopology [LocallyCompactSpace K] :
     @LocallyCompactSpace V (moduleTopology K V) := by
   let _ : TopologicalSpace V := moduleTopology K V
   let b := Module.finBasis K V
-  exact b.equivFunHomeomorph.isOpenEmbedding.locallyCompactSpace
+  exact locallyCompactSpace_of_basis b
 
 end TauCeti
