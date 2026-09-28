@@ -21,7 +21,7 @@ noncomputable section
 
 open scoped IntermediateField
 
-namespace TauCeti
+namespace TauCeti.IntermediateField
 
 universe u v
 
@@ -29,7 +29,7 @@ variable {k : Type u} {L : Type v} [Field k] [Field L] [Algebra k L]
 
 /-- Base change by a finite linearly disjoint extension preserves the degree of an intermediate
 field extension. -/
-theorem intermediateField_finrank_sup_eq_finrank_of_linearDisjoint
+theorem finrank_sup_eq_finrank_of_linearDisjoint
     (A B C : IntermediateField k L) (hCB : C ≤ B)
     (hA : FiniteDimensional k A)
     (h : A.LinearDisjoint B) :
@@ -81,4 +81,4 @@ theorem intermediateField_finrank_sup_eq_finrank_of_linearDisjoint
   have := (mul_left_cancel₀ hpos.ne' heq).symm
   exact this
 
-end TauCeti
+end TauCeti.IntermediateField
