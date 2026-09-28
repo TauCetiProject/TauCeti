@@ -186,10 +186,8 @@ theorem IsConstantCurvatureTensor.curvatureTensor_eq
     (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x w u v =
       κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) := by
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  have h' := h
-  change g.toRiemannianMetric.IsConstantCurvatureTensor
-    (CovariantDerivative.leviCivitaConnection I M) inferInstance κ at h'
   exact Bundle.RiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq
-    g.toRiemannianMetric (CovariantDerivative.leviCivitaConnection I M) inferInstance κ h' x w u v
+    g.toRiemannianMetric (CovariantDerivative.leviCivitaConnection I M) inferInstance κ
+    (by simpa only [IsConstantCurvatureTensor] using h) x w u v
 
 end Bundle.ContMDiffRiemannianMetric
