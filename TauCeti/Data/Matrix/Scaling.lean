@@ -9,15 +9,16 @@ public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Topology.Instances.Matrix
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The entropy minimiser with prescribed marginals
 
 Let `ι` and `κ` be finite types, let `a : ι → ℝ` and `b : κ → ℝ` be the row and the column sums,
-and let `S` be the set of the nonnegative matrices `ι × κ → ℝ` of a matrix `K` whose row sums
-are `a` and whose column sums are `b`. When `S` is nonempty, the relative entropy of a matrix
-against `K` attains a minimum on `S`, and for strictly positive marginals of equal total mass
-every minimiser has strictly positive entries.
+and let `S` be the set of the nonnegative matrices `P : ι × κ → ℝ` whose row sums are `a` and
+whose column sums are `b`. Against a fixed matrix `K : ι × κ → ℝ`, the relative entropy of `P`
+attains a minimum on `S` as soon as `S` is nonempty, and for strictly positive marginals of equal
+total mass every minimiser has strictly positive entries.
 
 Nothing here uses the ordinal structure of the row and column types: the results are stated for
 arbitrary finite `ι` and `κ`, and the diagonal scaling of a kernel between two enumerated finite
@@ -310,11 +311,12 @@ difference of the values of `g` at `i` and `i'`. -/
 private lemma sum_subIndicator_mul {ι : Type*} [Fintype ι] [DecidableEq ι] (i i' : ι) (g : ι → ℝ) :
     ∑ x, subIndicator i i' x * g x = g i - g i' := by
   calc (∑ x, subIndicator i i' x * g x)
-      = ∑ x, (Pi.single i (1 : ℝ) : ι → ℝ) x * g x
-        - ∑ x, (Pi.single i' (1 : ℝ) : ι → ℝ) x * g x := by
+      = (Pi.single i (1 : ℝ) : ι → ℝ) ⬝ᵥ g - (Pi.single i' (1 : ℝ) : ι → ℝ) ⬝ᵥ g := by
+          -- The dot product of two vectors is by definition the sum of the products of their
+          -- entries, so unfolding the two dot products gives the two sums of the left side.
+          rw [dotProduct, dotProduct]
           simp only [subIndicator, Pi.sub_apply, sub_mul, Finset.sum_sub_distrib]
     _ = g i - g i' := by
-          change _ ⬝ᵥ _ - _ ⬝ᵥ _ = _
           rw [single_one_dotProduct i g, single_one_dotProduct i' g]
 
 /-- The sum of the sparse vector `subIndicator i i' x` over `x` is `0`. -/
@@ -365,48 +367,6 @@ private lemma subIndicator_mul_eq_zero (i i' : ι) (j j' : κ) (x : ι) (y : κ)
   · have h0 : subIndicator i i' x = 0 := by
       rw [subIndicator_apply, ite_eq_right hx, ite_eq_right hx', sub_zero]
     rw [h0, zero_mul]
-
-/-- The sum of a function of a finite type that vanishes off two distinct points is the sum of its
-values at those two points. -/
-private lemma sum_eq_two {η : Type*} [Fintype η] (f : η → ℝ) (a b : η) (hab : a ≠ b)
-    (h : ∀ x, x ≠ a → x ≠ b → f x = 0) : ∑ x, f x = f a + f b := by
-  classical
-  have key : ∀ x : η, f x = (if x = a then f a else 0) + (if x = b then f b else 0) := by
-    intro x
-    by_cases hx : x = a
-    · rw [hx, ite_eq_left rfl, ite_eq_right hab]
-      simp
-    · rw [ite_eq_right hx]
-      by_cases hxb : x = b
-      · rw [ite_eq_left hxb, hxb]
-        ring
-      · rw [ite_eq_right hxb, h x hx hxb]
-        ring
-  calc (∑ x, f x) = ∑ x, ((if x = a then f a else 0) + (if x = b then f b else 0)) :=
-        Fintype.sum_congr _ _ key
-    _ = (∑ x, if x = a then f a else 0) + ∑ x, if x = b then f b else 0 := Finset.sum_add_distrib
-    _ = f a + f b := by
-        rw [Fintype.sum_ite_eq' a fun _ => f a, Fintype.sum_ite_eq' b fun _ => f b]
-
-/-- A function of the two indices of a matrix that vanishes outside the four cells of the
-rectangle `i`, `i'` by `j`, `j'` has double sum equal to the sum of its four values there. -/
-private lemma sum_eq_four (g : ι → κ → ℝ) (i i' : ι) (j j' : κ) (hi'ne : i ≠ i') (hj'ne : j ≠ j')
-    (h0 : ∀ x y, ¬(x = i ∧ y = j) → ¬(x = i ∧ y = j') → ¬(x = i' ∧ y = j) → ¬(x = i' ∧ y = j') →
-      g x y = 0) :
-    (∑ x, ∑ y, g x y) = g i j + g i j' + g i' j + g i' j' := by
-  classical
-  have hzero (x : ι) (hx : x ≠ i) (hx' : x ≠ i') : (∑ y, g x y) = 0 := by
-    apply Finset.sum_eq_zero
-    intro y _
-    exact h0 x y (fun h => hx h.1) (fun h => hx h.1) (fun h => hx' h.1) (fun h => hx' h.1)
-  calc (∑ x, ∑ y, g x y) = (∑ y, g i y) + (∑ y, g i' y) :=
-        sum_eq_two (fun x => ∑ y, g x y) i i' hi'ne (fun x hx hx' => hzero x hx hx')
-    _ = (g i j + g i j') + (g i' j + g i' j') := by
-        rw [sum_eq_two (g i) j j' hj'ne (fun y hyj hyj' => h0 i y (fun h => hyj h.2)
-              (fun h => hyj' h.2) (fun h => hi'ne h.1) (fun h => hi'ne h.1)),
-          sum_eq_two (g i') j j' hj'ne (fun y hyj hyj' => h0 i' y (fun h => hi'ne h.1.symm)
-              (fun h => hi'ne h.1.symm) (fun h => hyj h.2) (fun h => hyj' h.2))]
-    _ = g i j + g i j' + g i' j + g i' j' := by ring
 
 /-- Adding the outer product `Matrix.vecMulVec (t * r) c` of a row weight `r` and a column weight
 `c`, both of total sum `0`, preserves the row sums and the column sums: the row of `x` gains
@@ -532,7 +492,7 @@ private lemma relEntropy_add_subIndicator (K P : Matrix ι κ ℝ) (i i' : ι) (
     simp only [hφ, h0]
     ring
   have hφsum : (∑ x, ∑ y, φ x y) = φ i j + φ i j' + φ i' j + φ i' j' :=
-    sum_eq_four φ i i' j j' hi'ne hj'ne hφ0
+    Finset.sum_eq_four φ i i' j j' hi'ne hj'ne hφ0
   -- The change of the two sums of `u * log (K u v)`, supported on the four cells as well.
   have hKsum : (∑ x, ∑ y, ((Q x y - P x y) * Real.log (K x y)))
       = (Real.log (K i j) - Real.log (K i j') - Real.log (K i' j)
@@ -727,9 +687,9 @@ theorem pos_of_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
   -- The supporting-line inequality bounds the loss at each of the two donor cells and the gain at
   -- the receiving cell.
   have hby : (y - t) * Real.log (y - t) - y * Real.log y
-      ≤ -t * (Real.log y - Real.log 2 + 1) := TauCeti.Real.sub_mul_log_le hy0 ht0 hty
+      ≤ -t * (Real.log y - Real.log 2 + 1) := TauCeti.Real.sub_mul_log_le ht0.le hty
   have hbz : (z - t) * Real.log (z - t) - z * Real.log z
-      ≤ -t * (Real.log z - Real.log 2 + 1) := TauCeti.Real.sub_mul_log_le hz0 ht0 htz
+      ≤ -t * (Real.log z - Real.log 2 + 1) := TauCeti.Real.sub_mul_log_le ht0.le htz
   have hbq : (q + t) * Real.log (q + t) - q * Real.log q ≤ t * (Real.log (q + 1) + 1) := by
     have hle := TauCeti.Real.mul_log_sub_mul_log_ge (q + t) q hqt0 hq0
     have h2 : Real.log (q + t) ≤ Real.log (q + 1) :=
