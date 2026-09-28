@@ -171,21 +171,10 @@ theorem ofBasedPath_eq_of_homotopic_toPath {α β : BasedPath x₀}
 /-- The endpoint projection `UniversalCover x₀ → X` is an open map when `X` is locally
 path-connected. -/
 theorem isOpenMap_proj [LocallyPathConnectedSpace X] (x₀ : X) :
-    IsOpenMap (proj (x₀ := x₀)) := by
-  intro s hs
-  have hs_pre : IsOpen (ofBasedPath x₀ ⁻¹' s) :=
-    (isQuotientMap_ofBasedPath x₀).isOpen_preimage.2 hs
-  have himage :
-      proj (x₀ := x₀) '' s = BasedPath.endpoint '' (ofBasedPath x₀ ⁻¹' s) := by
-    ext x
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      rcases surjective_ofBasedPath x₀ z with ⟨γ, rfl⟩
-      exact ⟨γ, hz, by simp [proj_ofBasedPath]⟩
-    · rintro ⟨γ, hsγ, hγ⟩
-      exact ⟨ofBasedPath x₀ γ, hsγ, by simpa [proj_ofBasedPath] using hγ⟩
-  rw [himage]
-  exact BasedPath.isOpenMap_endpoint x₀ _ hs_pre
+    IsOpenMap (proj (x₀ := x₀)) :=
+  -- Ported from https://github.com/leanprover-community/mathlib4/pull/44185.
+  IsOpenMap.of_comp (continuous_ofBasedPath x₀) (surjective_ofBasedPath x₀)
+    (BasedPath.isOpenMap_endpoint x₀)
 
 /-! ### Sheet construction over a good neighborhood
 
