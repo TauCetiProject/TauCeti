@@ -261,13 +261,6 @@ theorem valuation_log_sub_log {i : ℕ} (hi : absoluteRamificationIndex K p < (p
   rw [← sub_add_cancel (log (u : K) - log (w : K)) ((u : K) - w)]
   exact Valuation.map_add_eq_of_lt_right _ (valuation_log_sub_log_sub_sub_lt hi hu hw huw)
 
-/-- On `U(K,i)` with `(p - 1) * i > e`, `log u ≡ u - 1` modulo strictly deeper terms:
-`v(log u - (u - 1)) < v(u - 1)` for `u ≠ 1`, where `v` is the multiplicative valuation. -/
-theorem valuation_log_sub_sub_one_lt {i : ℕ} (hi : absoluteRamificationIndex K p < (p - 1) * i)
-    {u : Kˣ} (hu : u ∈ unitFiltration K i) (hu1 : u ≠ 1) :
-    valuation K (log (u : K) - ((u : K) - 1)) < valuation K ((u : K) - 1) := by
-  simpa using valuation_log_sub_log_sub_sub_lt hi hu (one_mem _) hu1
-
 /-- On `U(K,i)` with `(p - 1) * i > e`, the logarithm preserves the valuation of `u - 1`; in
 particular it maps `U(K,i)` into `𝓂[K] ^ i` (see `exists_mem_maximalIdeal_pow_eq_log`). -/
 theorem valuation_log {i : ℕ} (hi : absoluteRamificationIndex K p < (p - 1) * i) {u : Kˣ}
