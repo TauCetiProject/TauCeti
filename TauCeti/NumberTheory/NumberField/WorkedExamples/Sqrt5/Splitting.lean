@@ -72,7 +72,7 @@ theorem ncard_primesOver_eq_two_iff_legendreSym (hmin : minpoly ℤ θ = X ^ 2 -
     · exact hp5 h1
   have hgen' : Algebra.adjoin ℚ {algebraMap (𝓞 K) K (2 * θ - 1)} = ⊤ := by
     rw [map_sub, map_mul, map_one, map_ofNat]
-    exact TauCeti.Algebra.adjoin_two_mul_sub_one_eq_top two_ne_zero hgen
+    exact TauCeti.Algebra.adjoin_two_mul_sub_one_eq_top two_ne_zero.isUnit hgen
   rw [← finrank_eq_two hmin hgen]
   exact ncard_primesOver_quadratic_iff (minpoly_two_mul_sub_one hmin) hgen' hodd hcop
 
