@@ -85,11 +85,11 @@ theorem mul_left (a b : WreathProduct D ι) (i : ι) :
 theorem inv_left (a : WreathProduct D ι) (i : ι) :
     (a⁻¹).left i = (a.left (a.right i))⁻¹ := by
   have h := congrFun (SemidirectProduct.inv_left a) i
-  -- The semidirect action is `mulAutArrow`; its inverse permutation precomposes
-  -- by `a.right`, and inversion in the base group is pointwise.
   have haction : (mulAutArrow a.right⁻¹) a.left⁻¹ i =
       (a.left (a.right i))⁻¹ := by
-    rfl
+    -- The inverse permutation precomposes the pointwise inverse by `a.right`.
+    change (a.left⁻¹) (a.right i) = (a.left (a.right i))⁻¹
+    exact Pi.inv_apply _ _
   exact h.trans haction
 
 /-- The natural cardinality of a full permutation wreath product with finite index type. -/

@@ -7,14 +7,15 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.GroupTheory.TransversalWord
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # Continuity of the transversal word
 
 For a subgroup `U` of a group `G` and a map `t : G ⧸ U → G`, the transversal word
 `ℓᵗ_u(γ) = (t u)⁻¹ * γ * t (γ⁻¹ • u)` of `TauCeti.lWord` is a purely group-theoretic construction.
-This file adds the one statement about it that needs a topology: if `G` is a topological group and
-`U` is *open*, then `γ ↦ ℓᵗ_u(γ)` is continuous (`TauCeti.continuous_lWord`). Of the three factors,
+If multiplication on `G` is separately continuous and `U` is *open*, then
+`γ ↦ ℓᵗ_u(γ)` is continuous (`TauCeti.continuous_lWord`). Of the three factors,
 `(t u)⁻¹` is constant and `γ ↦ γ` is the continuous identity; the only one whose continuity is not
 immediate is `γ ↦ t (γ⁻¹ • u)`, and openness of `U` makes `G ⧸ U` discrete, so that factor is
 locally constant and no continuity is required of `t` itself. The variant
@@ -31,7 +32,7 @@ public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   (U : Subgroup G) (t : G ⧸ U → G)
 
 /-- For an *open* subgroup `U` the transversal word `γ ↦ ℓᵗ_u(γ)` is continuous, for any map `t`
@@ -40,8 +41,10 @@ theorem continuous_lWord (hU : IsOpen (U : Set G)) (u : G ⧸ U) : Continuous (l
   have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
   have h : lWord U t u = fun γ : G => (t u)⁻¹ * γ * t (γ⁻¹ • u) := funext (lWord_def U t u)
   rw [h]
-  exact (continuous_const.mul continuous_id).mul
-    (continuous_of_discreteTopology.comp (continuous_inv.smul continuous_const))
+  have hmul : Continuous (fun p : G × (G ⧸ U) => (t u)⁻¹ * p.1 * t p.2) :=
+    continuous_prod_of_discrete_right.mpr fun v => by
+      simpa using (continuous_const_mul ((t u)⁻¹)).mul_const (t v)
+  exact hmul.comp (continuous_id.prodMk (QuotientGroup.continuous_inv_smul_const U u))
 
 /-- For an *open* subgroup `U` the transversal word is continuous jointly in its group variable
 and in a coset index translated by a second group variable: `(γ, η) ↦ ℓᵗ_{γ⁻¹ • u}(η)`. Here both
@@ -55,9 +58,16 @@ theorem continuous_lWord_inv_smul (hU : IsOpen (U : Set G)) (u : G ⧸ U) :
     funext fun q => lWord_def U t _ _
   rw [h]
   have hfst : Continuous fun q : G × G => (q.1⁻¹ • u : G ⧸ U) :=
-    (continuous_inv.comp continuous_fst).smul continuous_const
-  exact ((continuous_of_discreteTopology.comp hfst).inv.mul continuous_snd).mul
-    (continuous_of_discreteTopology.comp
-      ((continuous_inv.comp continuous_snd).smul hfst))
+    (QuotientGroup.continuous_inv_smul_const U u).comp continuous_fst
+  have haction : Continuous (fun p : G × (G ⧸ U) => p.1⁻¹ • p.2) :=
+    continuous_prod_of_discrete_right.mpr fun v => by
+      simpa using (QuotientGroup.continuous_inv_smul_const U v)
+  have hsnd : Continuous fun q : G × G => (q.2⁻¹ • q.1⁻¹ • u : G ⧸ U) :=
+    haction.comp (continuous_snd.prodMk hfst)
+  have hmul : Continuous (fun p : G × ((G ⧸ U) × (G ⧸ U)) =>
+      (t p.2.1)⁻¹ * p.1 * t p.2.2) :=
+    continuous_prod_of_discrete_right.mpr fun v => by
+      simpa using (continuous_const_mul ((t v.1)⁻¹)).mul_const (t v.2)
+  exact hmul.comp (continuous_snd.prodMk (hfst.prodMk hsnd))
 
 end TauCeti

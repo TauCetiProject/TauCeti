@@ -38,13 +38,13 @@ variable {D ι} {κ : Type*} [TopologicalSpace D] [TopologicalSpace ι]
   [TopologicalSpace κ]
 
 /-- The coordinate map induces the topology on the permutation wreath product. -/
-theorem isInducing_coords :
+theorem isInducing_left_right :
     Topology.IsInducing (fun w : WreathProduct D ι => (w.left, (w.right : ι → ι))) := ⟨rfl⟩
 
 /-- The coordinate map embeds the permutation wreath product into the product of function spaces. -/
-theorem isEmbedding_coords :
+theorem isEmbedding_left_right :
     Topology.IsEmbedding (fun w : WreathProduct D ι => (w.left, (w.right : ι → ι))) := by
-  refine ⟨isInducing_coords, ?_⟩
+  refine ⟨isInducing_left_right, ?_⟩
   intro w z h
   apply SemidirectProduct.ext
   · exact congrArg Prod.fst h
@@ -60,11 +60,11 @@ theorem continuous_iff {α : Type*} [TopologicalSpace α]
   constructor
   · intro hf
     have h : Continuous (fun a => ((f a).left, ((f a).right : ι → ι))) :=
-      isInducing_coords.continuous_iff.mp hf
+      isInducing_left_right.continuous_iff.mp hf
     exact ⟨fun i => (continuous_apply i).comp h.fst,
       fun i => (continuous_apply i).comp h.snd⟩
   · rintro ⟨hl, hr⟩
-    exact isInducing_coords.continuous_iff.mpr
+    exact isInducing_left_right.continuous_iff.mpr
       ((continuous_pi hl).prodMk (continuous_pi hr))
 
 /-- Evaluation of a base coordinate is continuous. -/

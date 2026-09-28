@@ -42,10 +42,11 @@ In the word calculus, the transversal is a variable, and only `lWord_mem` and
 
 ## Implementation notes
 
-Mathlib's `Subgroup.LeftTransversal` bundles a set of coset representatives. Its
-`Subgroup.IsComplement.leftQuotientEquiv` supplies the representative map used by the monomial
-construction. The word calculus takes a map `t : G ⧸ U → G` satisfying `↑(t u) = u` when needed;
-`Quotient.out` is the canonical example.
+The word calculus takes a map `t : G ⧸ U → G` because its consuming formulas index by `G ⧸ U`.
+The map satisfies `↑(t u) = u` when membership in `U` is needed; `Quotient.out` is the canonical
+example. A Mathlib `Subgroup.LeftTransversal` yields such a map via its
+`Subgroup.IsComplement.leftQuotientEquiv`, with the representative property given by
+`quotientGroupMk_leftQuotientEquiv`.
 
 The transversal word supplies the subgroup-valued arguments in the cochain formulas for
 corestriction; its cocycle and change-of-transversal identities support their algebraic proofs.
