@@ -89,7 +89,6 @@ theorem pathAlgebraDimensionVectorK0Equiv_apply
   exact h.trans (jordanHolderCoordinate_vertexSimpleModuleFG_eq_dimVector k Q i x)
 
 /-- A vertex simple maps to the corresponding standard basis vector. -/
-@[simp]
 theorem pathAlgebraDimensionVectorK0Equiv_vertexSimple [DecidableEq Q] (i : Q) :
     pathAlgebraDimensionVectorK0Equiv k Q (ExactK0.of (vertexSimpleModuleFG k Q i)) =
       Pi.single i 1 := by
@@ -127,7 +126,6 @@ theorem jordanHolderMultiplicity_vertexSimpleModuleFG_eq_dimVector
 /-- **The Cartan path-count formula.** The multiplicity of `Sᵢ` in the vertex projective `Pⱼ`
 is the number of oriented paths from `j` to `i`. With simples in rows and projectives in columns,
 these are the entries of the Cartan matrix of a finite acyclic path algebra. -/
-@[simp]
 theorem jordanHolderMultiplicity_indecProjModule_eq_card_path (i j : Q) :
     jordanHolderMultiplicity (pathAlgebra k Q)
       (vertexProjectiveModuleFG k Q j)
