@@ -29,7 +29,7 @@ namespace TauCeti
 
 /-- For ordered hyperbolic triangle indices, the orbifold deficit is at least `1/42`.
 The equality case is realized by `(2, 3, 7)`. -/
-private theorem one_div_forty_two_le_hyperbolic_triangle_ordered
+private theorem one_div_forty_two_le_hyperbolic_triangle_deficit_ordered
     {a b c : ℕ} (ha : 2 ≤ a) (hab : a ≤ b) (hbc : b ≤ c)
     (hhyper : (1 : ℚ) / a + 1 / b + 1 / c < 1) :
     (1 : ℚ) / 42 ≤ 1 - 1 / a - 1 / b - 1 / c := by
@@ -108,29 +108,29 @@ private theorem one_div_forty_two_le_hyperbolic_triangle_ordered
 
 /-- The sharp numerical bound for a hyperbolic triple of natural numbers.
 The equality case is realized by the indices `(2, 3, 7)`. -/
-theorem one_div_forty_two_le_hyperbolic_triangle
+theorem one_div_forty_two_le_hyperbolic_triangle_deficit
     {a b c : ℕ} (ha : 2 ≤ a) (hb : 2 ≤ b) (hc : 2 ≤ c)
     (hhyper : (1 : ℚ) / a + 1 / b + 1 / c < 1) :
     (1 : ℚ) / 42 ≤ 1 - 1 / a - 1 / b - 1 / c := by
   rcases le_total a b with hab | hba
   · rcases le_total b c with hbc | hcb
-    · exact one_div_forty_two_le_hyperbolic_triangle_ordered ha hab hbc hhyper
+    · exact one_div_forty_two_le_hyperbolic_triangle_deficit_ordered ha hab hbc hhyper
     · rcases le_total a c with hac | hca
-      · have h := one_div_forty_two_le_hyperbolic_triangle_ordered ha hac hcb
+      · have h := one_div_forty_two_le_hyperbolic_triangle_deficit_ordered ha hac hcb
           (by linarith : (1 : ℚ) / a + 1 / c + 1 / b < 1)
         linarith
-      · have h := one_div_forty_two_le_hyperbolic_triangle_ordered hc hca hab
+      · have h := one_div_forty_two_le_hyperbolic_triangle_deficit_ordered hc hca hab
           (by linarith : (1 : ℚ) / c + 1 / a + 1 / b < 1)
         linarith
   · rcases le_total a c with hac | hca
-    · have h := one_div_forty_two_le_hyperbolic_triangle_ordered hb hba hac
+    · have h := one_div_forty_two_le_hyperbolic_triangle_deficit_ordered hb hba hac
         (by linarith : (1 : ℚ) / b + 1 / a + 1 / c < 1)
       linarith
     · rcases le_total b c with hbc | hcb
-      · have h := one_div_forty_two_le_hyperbolic_triangle_ordered hb hbc hca
+      · have h := one_div_forty_two_le_hyperbolic_triangle_deficit_ordered hb hbc hca
           (by linarith : (1 : ℚ) / b + 1 / c + 1 / a < 1)
         linarith
-      · have h := one_div_forty_two_le_hyperbolic_triangle_ordered hc hcb hba
+      · have h := one_div_forty_two_le_hyperbolic_triangle_deficit_ordered hc hcb hba
           (by linarith : (1 : ℚ) / c + 1 / b + 1 / a < 1)
         linarith
 
