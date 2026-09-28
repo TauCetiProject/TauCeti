@@ -192,7 +192,7 @@ theorem iCondIndepFun.map_prod_pi_coding_eq
     (hX : ∀ i, Measurable (X i))
     {ξ : Type*} [MeasurableSpace ξ] {ρ : Measure ξ} [IsProbabilityMeasure ρ]
     (f : ∀ i, δ → ξ → β i) (hf : ∀ i, Measurable (Function.uncurry (f i)))
-    (hmap : ∀ i z, ρ.map (f i z) = condDistrib (X i) Z μ z) :
+    (hmap : ∀ i, ∀ᵐ z ∂μ.map Z, ρ.map (f i z) = condDistrib (X i) Z μ z) :
     (μ.prod (Measure.pi fun _ : ι => ρ)).map
         (fun p => (Z p.1, fun i => f i (Z p.1) (p.2 i))) =
       μ.map fun ω => (Z ω, fun i => X i ω) := by
@@ -228,6 +228,8 @@ theorem iCondIndepFun.map_prod_pi_coding_eq
     simp only [Set.mem_ofPred_eq, Set.mem_univ_pi] at hA hs
     have hB : MeasurableSet (Set.univ.pi s) := MeasurableSet.univ_pi hs
     have hvec : Measurable (fun ω i => X i ω) := Measurable.of_eval hX
+    have hmap_all : ∀ᵐ z ∂μ.map Z,
+        ∀ i, ρ.map (f i z) = condDistrib (X i) Z μ z := ae_all_iff.2 hmap
     have hcode : Measurable (fun p : δ × (ι → ξ) =>
         (p.1, fun i => f i p.1 (p.2 i))) := by
       exact measurable_fst.prodMk <| Measurable.of_eval fun i =>
@@ -246,19 +248,20 @@ theorem iCondIndepFun.map_prod_pi_coding_eq
         ← Measure.map_map hcode (hZ.prodMap measurable_id), hprod,
         Measure.map_apply hcode (hA.prod hB), Measure.prod_apply (hcode (hA.prod hB))]
       rw [← lintegral_indicator hA]
-      refine lintegral_congr fun z => ?_
+      refine lintegral_congr_ae ?_
+      filter_upwards [hmap_all] with z hzmap
       rw [Set.indicator]
       by_cases hz : z ∈ A
       · rw [ite_eq_left hz]
         have hfz : Measurable (fun (u : ι → ξ) i => f i z (u i)) :=
           Measurable.of_eval fun i => (hf i).of_uncurry_left.comp (measurable_pi_apply i)
         have : ∀ i, SigmaFinite (ρ.map (f i z)) := fun i => by
-          rw [hmap i z]
+          rw [hzmap i]
           infer_instance
         have hpush : (Measure.pi fun _ : ι => ρ).map (fun u i => f i z (u i)) =
             Measure.pi fun i => condDistrib (X i) Z μ z := by
           rw [Measure.pi_map_pi fun i => (hf i).of_uncurry_left.aemeasurable]
-          simp_rw [hmap]
+          simp_rw [hzmap]
         have hsection :
             Prod.mk z ⁻¹' (fun p : δ × (ι → ξ) =>
                 (p.1, fun i => f i p.1 (p.2 i))) ⁻¹' (A ×ˢ Set.univ.pi s) =
@@ -316,7 +319,8 @@ theorem iCondIndepFun.exists_independent_coding
         μ.map fun ω => (Z ω, fun i => X i ω) := by
   choose f hf hmap using fun i =>
     Kernel.exists_measurable_map_eq_unitInterval (condDistrib (X i) Z μ)
-  exact ⟨f, hf, h.map_prod_pi_coding_eq hZ hX f hf hmap⟩
+  exact ⟨f, hf, h.map_prod_pi_coding_eq hZ hX f hf fun i =>
+    Filter.Eventually.of_forall (hmap i)⟩
 
 end Families
 
