@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.EdgeIntersectionCriterion
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.EdgeIntersection.Criterion
 
 /-!
 # Recovering side intersections from a simple Schwarz--Christoffel boundary
@@ -35,7 +35,7 @@ variable {n : ℕ}
 
 /-- On an injective Schwarz--Christoffel boundary, two distinct
 bounded sides can meet only when consecutive, at their common finite vertex. -/
-theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_bounded_edgeSet_of_injective
+theorem schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injective
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l)
     (hinj : Function.Injective (schwarzChristoffelBoundary a e z₀))
@@ -74,7 +74,7 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_bounded_edgeSet_of_injec
 
 /-- A bounded Schwarz--Christoffel side can meet the left closing side only
 at the first finite vertex when the compactified boundary is injective. -/
-theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_leftClosing_edgeSet_of_injective
+theorem schwarzChristoffelPolygon_bounded_leftClosing_eq_first_vertex_of_injective
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l)
     (hinfty : ∑ k, e k < -1)
@@ -112,7 +112,7 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_leftClosing_edgeSet_of_i
 
 /-- A bounded Schwarz--Christoffel side can meet the right closing side only
 at the last finite vertex when the compactified boundary is injective. -/
-theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_rightClosing_edgeSet_of_injective
+theorem schwarzChristoffelPolygon_bounded_rightClosing_eq_last_vertex_of_injective
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l)
     (hinfty : ∑ k, e k < -1)
@@ -175,15 +175,15 @@ theorem schwarzChristoffelCompactifiedBoundary_injective_iff_edge_intersections
   · intro hinj
     have hB := ((schwarzChristoffelCompactifiedBoundary_injective_iff a e z₀).mp hinj).1
     exact ⟨fun i j hij z hzi hzj =>
-      schwarzChristoffelPolygon_bounded_edgeSet_inter_bounded_edgeSet_of_injective
+      schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injective
         a e z₀ ha hfinite hB
         i j hij z hzi hzj,
       fun i z hzi hzleft =>
-        schwarzChristoffelPolygon_bounded_edgeSet_inter_leftClosing_edgeSet_of_injective
+        schwarzChristoffelPolygon_bounded_leftClosing_eq_first_vertex_of_injective
           a e z₀ ha hfinite
           hinfty hinj i z hzi hzleft,
       fun i z hzi hzright =>
-        schwarzChristoffelPolygon_bounded_edgeSet_inter_rightClosing_edgeSet_of_injective
+        schwarzChristoffelPolygon_bounded_rightClosing_eq_last_vertex_of_injective
           a e z₀ ha hfinite
           hinfty hinj i z hzi hzright⟩
   · rintro ⟨hbounded, hleft, hright⟩
