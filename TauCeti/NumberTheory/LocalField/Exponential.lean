@@ -20,9 +20,11 @@ integral depth `i` satisfying `e < (p - 1) * i`, the exponential series
 converges for `x ∈ 𝓂[K] ^ i`, and this file proves that convergence.  Its sum is Mathlib's
 `NormedSpace.exp`, so no new exponential is introduced here.
 
-The threshold `e < (p - 1) * i` is the exact range in which the factorial denominators cannot
-outgrow the numerators: there the normalized valuation of `x ^ n / n !` grows linearly in `n`, so
-the series converges on all of `𝓂[K] ^ i` rather than on a smaller ball.  Convergence on the
+The threshold `e < (p - 1) * i` is exactly the range in which the term valuations tend to
+infinity throughout the ideal: there the normalized valuation of `x ^ n / n !` grows linearly in
+`n` for every `x ∈ 𝓂[K] ^ i`, so the series converges on all of `𝓂[K] ^ i` rather than on a
+smaller ball.  The strictness matters: at `e = (p - 1) * i` the term valuations stay bounded for
+an `x` of valuation exactly `i`, so the terms do not tend to zero.  Convergence on the
 whole ideal is what makes the exponential a map from the deep additive group `𝓂[K] ^ i` to the
 deep unit group `1 + 𝓂[K] ^ i`, whose inverse is the logarithm; that identification of a deep
 additive group with a deep unit group is what computes the power classes, and hence the square
@@ -41,9 +43,6 @@ classes, of `K`.
 
 * J.-P. Serre, *Local Fields*, Chapter II, §5.
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, §5.
-* The term estimate is `TauCeti.sub_one_mul_natCastValuation_factorial_lt_of_ne_zero`, and
-  summability is taken from Mathlib's
-  `NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero`.
 -/
 
 public section
