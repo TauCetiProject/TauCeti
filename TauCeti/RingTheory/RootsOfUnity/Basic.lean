@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Basic
-public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # Basic results on roots of unity
 
-This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`.
+This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
+and counts the square roots of unity in a domain in which `2 ≠ 0`.
 
 ## Main results
 
 * `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a commutative ring without zero divisors, a
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
+* `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
+  elements.
 -/
 
 public section
@@ -44,5 +47,12 @@ theorem eq_one_of_pow_eq_one_of_sub_one_mem [NoZeroDivisors R] {I : Ideal R} {n 
   have h := congrArg (Ideal.Quotient.mk I) hgeom
   rw [map_sum, map_zero] at h
   simpa [map_pow, hres] using h
+
+/-- In a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` of square roots of unity has two
+elements. -/
+theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
+    Nat.card (rootsOfUnity 2 R) = 2 :=
+  (IsPrimitiveRoot.neg_one (ringChar R) fun h ↦
+    h2 (by simpa [h] using ringChar.Nat.cast_ringChar (R := R))).card_rootsOfUnity
 
 end TauCeti

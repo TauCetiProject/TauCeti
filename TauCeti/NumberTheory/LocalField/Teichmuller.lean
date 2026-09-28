@@ -16,7 +16,8 @@ public import TauCeti.RingTheory.Henselian.Teichmuller
 For a nonarchimedean local field `K`, `TauCeti.teichmuller 𝒪[K]` is the canonical
 multiplicative section `𝓀[K]ˣ →* 𝒪[K]ˣ`. This file adds its zero-preserving extension
 `teichmullerLift K : 𝓀[K] →*₀ 𝒪[K]`, obtained from Mathlib's `Perfection.teichmuller₀`, and proves
-that the two constructions agree on units.
+that the two constructions agree on units. It also records that, for `q = #𝓀[K]` and `f ≠ 0`,
+`q ^ f - 1` is a unit in `𝒪[K]`.
 
 ## Main definitions
 
@@ -25,6 +26,7 @@ that the two constructions agree on units.
 ## Main results
 
 * `TauCeti.residue_teichmullerLift`: the lift is a section of reduction.
+* `TauCeti.isUnit_natCast_natCard_pow_sub_one`: for `f ≠ 0`, `q ^ f - 1` is a unit in `𝒪[K]`.
 * `TauCeti.eq_teichmullerLift_iff`: an element of `𝒪[K]` is `teichmullerLift K a` exactly
   when it reduces to `a` and is fixed by the `q`-th power map.
 * `TauCeti.teichmullerLift_unique`: it is the unique zero-preserving multiplicative section of
@@ -86,6 +88,16 @@ theorem teichmullerLift_pow_fintype_card (a : 𝓀[K]) :
     teichmullerLift K a ^ @Fintype.card 𝓀[K] (Fintype.ofFinite 𝓀[K]) = teichmullerLift K a := by
   rw [← @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])]
   exact teichmullerLift_pow_natCard K a
+
+/-- For `f ≠ 0`, `q ^ f - 1` is prime to the residue characteristic, so it is a unit in `𝒪[K]`;
+here `q` is the cardinality of `𝓀[K]`. -/
+theorem isUnit_natCast_natCard_pow_sub_one {f : ℕ} (hf : f ≠ 0) :
+    IsUnit ((Nat.card 𝓀[K] ^ f - 1 : ℕ) : 𝒪[K]) := by
+  let _ := Fintype.ofFinite 𝓀[K]
+  rw [← residue_ne_zero_iff_isUnit, map_natCast,
+    Nat.cast_sub (Nat.one_le_pow _ _ Nat.card_pos), Nat.cast_pow, Nat.card_eq_fintype_card,
+    Nat.cast_card_eq_zero, zero_pow hf, Nat.cast_one, zero_sub, neg_ne_zero]
+  exact one_ne_zero
 
 /-- On units, the zero-preserving lift is the Henselian-local-ring Teichmüller lift. -/
 @[simp]
