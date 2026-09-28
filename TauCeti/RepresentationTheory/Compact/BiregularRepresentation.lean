@@ -10,35 +10,35 @@ public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
 /-!
 # The biregular representation of a compact group on `L²(G)`
 
-A compact group `G` acts on `L²(G)` from both sides. This file bundles the left action
-`(g · f) x = f (g⁻¹ * x)` as `TauCeti.leftRegularLp`, and the commuting left and right actions
-together as the **biregular representation**
+A compact group `G` acts on `L²(G)` from both sides, by `TauCeti.leftRegularLp` and
+`TauCeti.rightRegularLp`. The two actions commute, and this file bundles them into the **biregular
+representation** of `G × G`,
 
 `((g, h) · f) x = f (g⁻¹ * x * h)`.
 
-Both actions preserve normalized Haar measure and are therefore unitary. They are also strongly
+Bi-translation preserves normalized Haar measure, so the action is unitary. It is also strongly
 continuous: the orbit map is continuous at every `L²` function, although for an infinite compact
-group the representation need not be continuous in the operator norm. The biregular action is the
-`G × G`-action used by the equivariant form of the Peter-Weyl decomposition.
+group the representation need not be continuous in the operator norm. This is the `G × G`-action
+used by the equivariant form of the Peter-Weyl decomposition.
 
 ## Main definitions
 
-* `TauCeti.leftRegularLp`: the left regular representation of `G` on `L²(G)`.
 * `TauCeti.biRegularLp`: the biregular representation of `G × G` on `L²(G)`.
 
 ## Main statements
 
-* `TauCeti.leftRegularLp_apply`, `TauCeti.biRegularLp_apply`: unfold the actions to
-  `Lp.compMeasurePreserving`.
-* `TauCeti.leftRegularLp_toLp`, `TauCeti.biRegularLp_toLp`: compute the actions on continuous
-  representatives.
-* `TauCeti.isUnitary_leftRegularLp`, `TauCeti.isUnitary_biRegularLp`: both representations are
-  unitary.
-* `TauCeti.continuous_leftRegularLp_apply`, `TauCeti.continuous_biRegularLp_apply`: both actions are
-  strongly continuous.
+* `TauCeti.biRegularLp_apply`: unfolds the action to `Lp.compMeasurePreserving`; the body of
+  `biRegularLp` is not exposed, so this is the interface to its raw form.
+* `TauCeti.biRegularLp_toLp`: computes the action on continuous representatives.
+* `TauCeti.biRegularLp_apply_mk_one` and `TauCeti.biRegularLp_apply_one_mk`: the two factors are
+  the left and the right regular representation.
+* `TauCeti.biRegularLp_apply_eq_left_right` and `TauCeti.biRegularLp_apply_eq_right_left`: the
+  action is the composite of the two translations, in either order.
+* `TauCeti.isUnitary_biRegularLp`: the representation is unitary.
+* `TauCeti.continuous_biRegularLp_apply`: the action is strongly continuous.
 -/
 
-@[expose] public section
+public section
 
 open MeasureTheory
 
@@ -48,73 +48,6 @@ section CompactGroup
 
 variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-
-variable (𝕜 G) in
-/-- **The left regular representation** of a compact group on `L²(G)`: the element `g` acts by
-`f ↦ (x ↦ f (g⁻¹ * x))`. The inverse makes this a representation rather than an
-antirepresentation.
-
-As for `TauCeti.rightRegularLp`, only strong continuity is asserted; operator-norm continuity is
-not needed and generally fails for infinite compact groups. -/
-noncomputable def leftRegularLp : ContRepresentation 𝕜 G (Lp 𝕜 2 (haarProb G)) :=
-  .ofMonoidHom
-    { toFun g := (Lp.compMeasurePreservingₗᵢ 𝕜 (g⁻¹ * ·)
-        (measurePreserving_mul_left (haarProb G) g⁻¹)).toContinuousLinearMap
-      map_one' := ContinuousLinearMap.ext fun f => by
-        change Lp.compMeasurePreserving (fun x : G => (1 : G)⁻¹ * x)
-            (measurePreserving_mul_left (haarProb G) (1 : G)⁻¹) f = f
-        simpa only [inv_one, one_mul, Function.id_def] using
-          (Lp.compMeasurePreserving_id_apply (E := 𝕜) (p := 2) f)
-      map_mul' g h := ContinuousLinearMap.ext fun f => by
-        have hfun : (fun x : G => (g * h)⁻¹ * x) =
-            (fun x : G => h⁻¹ * x) ∘ (fun x : G => g⁻¹ * x) := by
-          funext x
-          simp only [Function.comp_apply, mul_inv_rev, mul_assoc]
-        simp only [mul_apply_eq_comp, hfun]
-        exact Lp.compMeasurePreserving_comp_apply f
-          (measurePreserving_mul_left (haarProb G) h⁻¹)
-          (measurePreserving_mul_left (haarProb G) g⁻¹) }
-
-/-- **Left translation on `L²(G)`, unfolded to `Lp.compMeasurePreserving`.** -/
-theorem leftRegularLp_apply (g : G) (f : Lp 𝕜 2 (haarProb G)) :
-    leftRegularLp 𝕜 G g f =
-      Lp.compMeasurePreserving (g⁻¹ * ·) (measurePreserving_mul_left (haarProb G) g⁻¹) f :=
-  rfl
-
-/-- Left translation on `L²(G)` is represented by left translation of functions. -/
-theorem coeFn_leftRegularLp (g : G) (f : Lp 𝕜 2 (haarProb G)) :
-    leftRegularLp 𝕜 G g f =ᵐ[haarProb G] fun x => f (g⁻¹ * x) := by
-  rw [leftRegularLp_apply]
-  exact Lp.coeFn_compMeasurePreserving f _
-
-/-- **On a continuous function, the left regular representation is left translation by the
-inverse.** -/
-@[simp]
-theorem leftRegularLp_toLp (F : C(G, 𝕜)) (g : G) :
-    leftRegularLp 𝕜 G g (ContinuousMap.toLp 2 (haarProb G) 𝕜 F) =
-      ContinuousMap.toLp 2 (haarProb G) 𝕜 (F.comp (.mulLeft g⁻¹)) := by
-  rw [leftRegularLp_apply]
-  exact Lp.compMeasurePreserving_toLp 𝕜 F (.mulLeft g⁻¹)
-    (measurePreserving_mul_left (haarProb G) g⁻¹)
-
-variable (𝕜 G) in
-/-- **The left regular representation is unitary**, because left translation preserves normalized
-Haar measure. -/
-theorem isUnitary_leftRegularLp : ContRepresentation.IsUnitary (leftRegularLp 𝕜 G) := by
-  rw [ContRepresentation.isUnitary_iff_norm_map]
-  intro g f
-  rw [leftRegularLp_apply]
-  exact Lp.norm_compMeasurePreserving f _
-
-/-- **The left regular representation is strongly continuous:** every orbit map `g ↦ g · f` is
-continuous. -/
-theorem continuous_leftRegularLp_apply (f : Lp 𝕜 2 (haarProb G)) :
-    Continuous fun g : G => leftRegularLp 𝕜 G g f := by
-  have hg : Continuous fun g : G => ContinuousMap.mulLeft (X := G) g⁻¹ :=
-    (ContinuousMap.curry
-      ⟨fun p : G × G => p.1⁻¹ * p.2, continuous_fst.inv.mul continuous_snd⟩).continuous
-  simp only [leftRegularLp_apply]
-  exact continuous_const.compMeasurePreservingLp hg _ (by simp)
 
 /-- Bi-translation `x ↦ g⁻¹ * x * h` preserves normalized Haar measure. -/
 theorem measurePreserving_biTranslate (g h : G) :
@@ -134,10 +67,10 @@ noncomputable def biRegularLp : ContRepresentation 𝕜 (G × G) (Lp 𝕜 2 (haa
     { toFun p := (Lp.compMeasurePreservingₗᵢ 𝕜 (fun x => p.1⁻¹ * x * p.2)
         (measurePreserving_biTranslate p.1 p.2)).toContinuousLinearMap
       map_one' := ContinuousLinearMap.ext fun f => by
-        change Lp.compMeasurePreserving (fun x : G => (1 : G)⁻¹ * x * 1)
-            (measurePreserving_biTranslate (1 : G) 1) f = f
-        simpa only [Prod.fst_one, Prod.snd_one, inv_one, one_mul, mul_one, Function.id_def] using
-          (Lp.compMeasurePreserving_id_apply (E := 𝕜) (p := 2) f)
+        simp only [one_apply_eq_self, LinearIsometry.coe_toContinuousLinearMap,
+          Lp.compMeasurePreservingₗᵢ_apply, Prod.fst_one, Prod.snd_one, inv_one, one_mul, mul_one,
+          ← Function.id_def]
+        exact Lp.compMeasurePreserving_id_apply f
       map_mul' p q := ContinuousLinearMap.ext fun f => by
         have hfun : (fun x : G => (p * q).1⁻¹ * x * (p * q).2) =
             (fun x : G => q.1⁻¹ * x * q.2) ∘ (fun x : G => p.1⁻¹ * x * p.2) := by
@@ -149,12 +82,14 @@ noncomputable def biRegularLp : ContRepresentation 𝕜 (G × G) (Lp 𝕜 2 (haa
           (measurePreserving_biTranslate q.1 q.2)
           (measurePreserving_biTranslate p.1 p.2) }
 
-/-- **Bi-translation on `L²(G)`, unfolded to `Lp.compMeasurePreserving`.** -/
+/-- **Bi-translation on `L²(G)`, unfolded to the underlying `Lp.compMeasurePreserving`.** The body
+of `biRegularLp` is not exposed, so this is the lemma that moves a statement between the
+representation and its raw `Lp.compMeasurePreserving` form. -/
 theorem biRegularLp_apply (p : G × G) (f : Lp 𝕜 2 (haarProb G)) :
     biRegularLp 𝕜 G p f =
       Lp.compMeasurePreserving (fun x => p.1⁻¹ * x * p.2)
         (measurePreserving_biTranslate p.1 p.2) f :=
-  rfl
+  (rfl)
 
 /-- Bi-translation on `L²(G)` is represented by bi-translation of functions. -/
 theorem coeFn_biRegularLp (p : G × G) (f : Lp 𝕜 2 (haarProb G)) :

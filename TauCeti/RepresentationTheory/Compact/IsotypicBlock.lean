@@ -82,12 +82,15 @@ skeleton enters exactly where density is claimed.
 
 ## What is not proved here
 
-Every statement in this file is a statement about Hilbert spaces, their subspaces, their isometries
-and their bounded operators. The blocks are called *isotypic* because the `π`-block is spanned by
+The decomposition results in this file -- the blocks and their bases, their orthogonality, the
+Hilbert sum, the comparison with `End(V_π)` and the averaging operator -- are statements about
+Hilbert spaces, their subspaces, their isometries and their bounded operators, and no group action
+enters them. The blocks are called *isotypic* because the `π`-block is spanned by
 the matrix coefficients of `π` alone; that it is the `π`-isotypic component of a `G`-action, and
 that the decomposition of `L²(G)` is one of unitary `G × G`-representations under left and right
-translation, are statements about group actions and are **not** proved here. What is proved about
-the action is that each block is stable under the biregular representation
+translation, are statements about group actions and are **not** proved here. What *is* proved
+about the action, in the section `Stability under translation` and nowhere else, is that each
+block is stable under the biregular representation
 (`TauCeti.biRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
 model to matrix coefficients of the same model
 (`TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft` and
