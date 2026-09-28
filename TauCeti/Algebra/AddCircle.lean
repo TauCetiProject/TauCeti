@@ -242,21 +242,36 @@ end ExactOrder
 
 section PeriodDiv
 
-variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜) {n : ℕ}
+variable {𝕜 : Type*} [DivisionRing 𝕜] (p : 𝕜) {n : ℕ}
 
 /-- Scaling the class of `p / n` by a divisor `d` of `n` gives the class of `p / (n / d)`. For
-positive `n` these two classes are the canonical generators of the `n`-torsion and of the
-`n / d`-torsion; for `n = 0` both sides are `0`.
+`n` nonzero in `𝕜` these two classes are the canonical generators of the `n`-torsion and of the
+`n / d`-torsion; when `n` vanishes in `𝕜` both sides are `0`.
 
 For `p = 1` over `ℚ` this reads `d • (1 / n) = 1 / (n / d)`, the arithmetic behind the way
 restriction rescales a class-field-theoretic invariant. -/
 @[simp]
 theorem nsmul_coe_period_div {d : ℕ} (hd : d ∣ n) :
     d • ((p / n : 𝕜) : AddCircle p) = ((p / (n / d : ℕ) : 𝕜) : AddCircle p) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  have hd0 : d ≠ 0 := by rintro rfl; exact hn (Nat.zero_dvd.mp hd)
-  have hd0' : (d : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hd0
+  rcases eq_or_ne (n : 𝕜) 0 with hn | hn
+  · rw [hn, div_zero, coe_zero, smul_zero]
+    by_cases he : ((n / d : ℕ) : 𝕜) = 0
+    · rw [he, div_zero, coe_zero]
+    obtain ⟨q, _⟩ := CharP.exists 𝕜
+    have hqe : ¬q ∣ n / d := fun h ↦ he ((CharP.cast_eq_zero_iff 𝕜 q _).mpr h)
+    have hcop : Nat.Coprime q (n / d) := by
+      rcases CharP.char_is_prime_or_zero 𝕜 q with hq | rfl
+      · exact (Nat.Prime.coprime_iff_not_dvd hq).mpr hqe
+      · rw [Nat.eq_zero_of_zero_dvd ((CharP.cast_eq_zero_iff 𝕜 0 n).mp hn), Nat.zero_div] at hqe
+        exact absurd (dvd_zero 0) hqe
+    -- The class of `p / (n / d)` is killed both by `n / d` and by the characteristic `q`.
+    have hq : q • ((p / (n / d : ℕ) : 𝕜) : AddCircle p) = 0 := by
+      rw [← coe_nsmul, nsmul_eq_mul, CharP.cast_eq_zero, zero_mul, coe_zero]
+    have he' := torsionBy.nsmul_iff.mp (coe_period_div_mem_torsionBy p (n := n / d))
+    have := Nat.dvd_gcd (addOrderOf_dvd_of_nsmul_eq_zero hq) (addOrderOf_dvd_of_nsmul_eq_zero he')
+    rw [hcop.gcd_eq_one, Nat.dvd_one, AddMonoid.addOrderOf_eq_one_iff] at this
+    exact this.symm
+  have hd0' : (d : 𝕜) ≠ 0 := fun h ↦ hn (by rw [← Nat.div_mul_cancel hd, Nat.cast_mul, h, mul_zero])
   have key : (d : 𝕜) * (p / n) = p / ((n / d : ℕ) : 𝕜) := by
     rw [Nat.cast_div hd hd0', div_div_eq_mul_div, ← mul_div_assoc, (Nat.cast_commute d p).eq]
   rw [← coe_nsmul, nsmul_eq_mul, key]
