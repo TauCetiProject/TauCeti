@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Perm.SylowFour
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
+public import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 
 /-!
@@ -172,7 +173,7 @@ noncomputable def wreathTwoFourConjugator : Perm (Fin 4) :=
   Classical.choose ((transitiveGroupLabel_iff _ _).mp transitiveGroupLabel_wreathTwoToPermFour)
 
 /-- The chosen conjugator carries the wreath product's permutation image onto `4T3`. -/
-theorem conj_wreathTwoFourConjugator_range :
+theorem wreathTwoToPermFour_range_map_conj_eq_referenceSubgroup :
     Subgroup.map (MulAut.conj wreathTwoFourConjugator).toMonoidHom
       wreathTwoToPermFour.range = referenceSubgroup 4 ⟨2, by simp⟩ :=
   Classical.choose_spec
@@ -186,8 +187,8 @@ noncomputable def wreathTwoMulEquivDihedralGroupFour :
       wreathTwoToPermFour.range :=
     wreathTwoSylowFourEquiv.trans (MulEquiv.subgroupCongr wreathTwoSylowFour_toSubgroup)
   let e₂ : wreathTwoToPermFour.range ≃* squareGroup :=
-    ((MulAut.conj wreathTwoFourConjugator).subgroupMap wreathTwoToPermFour.range).trans
-      (MulEquiv.subgroupCongr conj_wreathTwoFourConjugator_range)
+    Subgroup.congrOfMapEq (MulAut.conj wreathTwoFourConjugator)
+      wreathTwoToPermFour_range_map_conj_eq_referenceSubgroup
   exact (e₁.trans e₂).trans referenceSubgroupFourMulEquivDihedralGroup
 
 /-- The wreath-product isomorphism transports the four-point action by the chosen conjugator. -/
@@ -199,9 +200,15 @@ theorem coe_referenceSubgroupFourMulEquivDihedralGroup_symm_wreathTwoMulEquiv
         (MulAut.conj wreathTwoFourConjugator) (wreathTwoToPermFour w) := by
   simp only [wreathTwoMulEquivDihedralGroupFour, MulEquiv.trans_apply,
     MulEquiv.symm_apply_apply]
-  -- The subgroup equivalences only change the subtype of the underlying permutation.
-  change (MulAut.conj wreathTwoFourConjugator)
-    (wreathTwoSylowFourEquiv w : Perm (Fin 4)) = _
-  rw [coe_wreathTwoSylowFourEquiv, MulAut.conj_apply]
+  calc
+    _ = (MulAut.conj wreathTwoFourConjugator)
+        ((MulEquiv.subgroupCongr wreathTwoSylowFour_toSubgroup)
+          (wreathTwoSylowFourEquiv w) : Perm (Fin 4)) :=
+      Subgroup.coe_congrOfMapEq_apply _ _ _
+    _ = _ := by
+      -- The remaining subgroup equivalence only changes the subtype of the permutation.
+      change (MulAut.conj wreathTwoFourConjugator)
+        (wreathTwoSylowFourEquiv w : Perm (Fin 4)) = _
+      rw [coe_wreathTwoSylowFourEquiv, MulAut.conj_apply]
 
 end TauCeti
