@@ -64,12 +64,10 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 namespace Place
 
-/-- Every different exponent in a finite separable constant extension vanishes.
-
-The `FiniteDimensional F F'` and `Algebra.IsSeparable F F'` instances are the ambient parameters
-of `differentExponent`; the statement installs them from `hcomp` through
-`TauCeti.finiteDimensional_of_constantCompositum_eq_top` and
-`TauCeti.isSeparable_of_constantCompositum_eq_top`. -/
+/-- **Every different exponent of a finite separable constant extension vanishes** (Stichtenoth,
+Proposition 3.6.3(a)): for a place `P'` of `F' / k'` lying over the place `P = P'.restrict k F` of
+`F / k`, the different exponent `d(P' ∣ P)` is zero, so the different divisor of `F' / F` is the
+zero divisor. -/
 theorem differentExponent_eq_zero_of_constantCompositum_eq_top
     [FiniteDimensional k k'] [Algebra.IsSeparable k k']
     (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
@@ -107,9 +105,11 @@ theorem differentExponent_eq_zero_of_constantCompositum_eq_top
   exact differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one
     k F hgen hpmonic hpcoeff hroot hderiv
 
-/-- The local model of a finite separable constant extension is unramified at every place.
-
-As for the different exponent, the ambient instances for `F' / F` are installed from `hcomp`. -/
+/-- **A finite separable constant extension is unramified at every place** (Stichtenoth,
+Proposition 3.6.3(a)), in Mathlib's local formulation: for a place `P'` of `F' / k'` over
+`P = P'.restrict k F`, the local model of `F'` at `P` — the integral closure of the valuation ring
+`𝒪_P` in `F'` — is unramified at the centre of `P'`, so `P'` is unramified over `P` with separable
+residue extension. -/
 theorem isUnramifiedAt_of_constantCompositum_eq_top
     [FiniteDimensional k k'] [Algebra.IsSeparable k k']
     (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
@@ -131,11 +131,10 @@ theorem ramificationIdx_eq_one_of_constantCompositum_eq_top
     finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
   let _ : Algebra.IsSeparable F F' :=
     isSeparable_of_constantCompositum_eq_top (k := k) (k' := k') hcomp
-  have hd : differentExponent k F P' = 0 :=
-    differentExponent_eq_zero_of_constantCompositum_eq_top (k := k) (k' := k') (F := F) hcomp P'
-  have hle := ramificationIdx_le_differentExponent_add_one k F P'
-  rw [hd] at hle
-  exact Nat.le_antisymm (by simpa using hle) (ramificationIdx_pos F P')
+  have := isUnramifiedAt_of_constantCompositum_eq_top (k := k) (k' := k') (F := F) hcomp P'
+  rw [ramificationIdx_eq_ramificationIdx_center (R := (P'.restrict k F).integers) k F P'
+    (algebraMap_mem_integers_of_mem_integralClosure k F P'), ← centerIntegralClosure_def]
+  exact Ideal.ramificationIdx_eq_one_of_isUnramifiedAt
 
 end Place
 
