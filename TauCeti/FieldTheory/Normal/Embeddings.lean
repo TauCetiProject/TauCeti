@@ -39,6 +39,8 @@ separability the count drops, and without normality the minimal polynomials need
 * `AlgEquiv.isPretransitiveAlgHom`: over a normal `M / F`, any two embeddings lie in one orbit.
 * `TauCeti.FieldTheory.stabilizer_algHom_eq_fixingSubgroup`: the stabilizer of an embedding `φ`
   is the subgroup fixing `φ(L)`.
+* `TauCeti.FieldTheory.fixingSubgroup_fieldRange_conj`: the fixing subgroups of two embedded
+  images are conjugate in a normal ambient extension.
 * `TauCeti.FieldTheory.fixingSubgroupQuotientEquivAlgHom`: over a normal `M / F`, the cosets of
   that subgroup are the embeddings of `L` into `M`.
 * `TauCeti.FieldTheory.eq_one_of_forall_smul_eq`: if the embedded images generate `M`, an
@@ -143,6 +145,24 @@ theorem stabilizer_algHom_eq_fixingSubgroup (φ : L →ₐ[F] M) :
     ext x
     rw [AlgEquiv.smul_algHom_apply]
     exact h (φ x) ⟨x, rfl⟩
+
+/-- The fixing subgroups of the images of two embeddings into a normal extension are
+conjugate. No finiteness assumption on the embedded extension is needed. -/
+theorem fixingSubgroup_fieldRange_conj [Normal F M] (φ ψ : L →ₐ[F] M) :
+    ∃ g : M ≃ₐ[F] M,
+      ψ.fieldRange.fixingSubgroup =
+        φ.fieldRange.fixingSubgroup.map (MulAut.conj g).toMonoidHom := by
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (M ≃ₐ[F] M) φ ψ
+  have hcomp : g.toAlgHom.comp φ = ψ := by
+    simpa only [AlgEquiv.smul_algHom_def] using hg
+  have hfield : φ.fieldRange.map g.toAlgHom = ψ.fieldRange := by
+    calc
+      φ.fieldRange.map g.toAlgHom = (g.toAlgHom.comp φ).fieldRange :=
+        AlgHom.map_fieldRange φ g.toAlgHom
+      _ = ψ.fieldRange := by rw [hcomp]
+  refine ⟨g, ?_⟩
+  rw [← hfield, IsGalois.map_fixingSubgroup]
+  exact Subgroup.pointwise_smul_def φ.fieldRange.fixingSubgroup
 
 /-- **The cosets of `Gal(M / φ(L))` are the embeddings of `L` into `M`** for a normal `M / F`,
 the coset of `g` corresponding to `g ∘ φ`. -/

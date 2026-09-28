@@ -36,17 +36,7 @@ theorem fixingSubgroup_fieldRange_conj (σ τ : L →ₐ[K] SeparableClosure K) 
     ∃ g : AbsoluteGaloisGroup K,
       τ.fieldRange.fixingSubgroup =
         σ.fieldRange.fixingSubgroup.map (MulAut.conj g).toMonoidHom := by
-  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (AbsoluteGaloisGroup K) σ τ
-  have hcomp : g.toAlgHom.comp σ = τ := by
-    simpa only [AlgEquiv.smul_algHom_def] using hg
-  have hfield : σ.fieldRange.map g.toAlgHom = τ.fieldRange := by
-    calc
-      σ.fieldRange.map g.toAlgHom = (g.toAlgHom.comp σ).fieldRange :=
-        AlgHom.map_fieldRange σ g.toAlgHom
-      _ = τ.fieldRange := by rw [hcomp]
-  refine ⟨g, ?_⟩
-  rw [← hfield, IsGalois.map_fixingSubgroup]
-  exact Subgroup.pointwise_smul_def σ.fieldRange.fixingSubgroup
+  exact FieldTheory.fixingSubgroup_fieldRange_conj σ τ
 
 /-- The open subgroups of `G_K` fixing two embedded copies of a finite extension `L/K`
 are conjugate. The conjugating automorphism extends the natural `K`-algebra isomorphism
