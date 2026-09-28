@@ -45,6 +45,16 @@ variable (S : StronglyContinuousSemigroup X)
 def IsSmoothVector (x : X) : Prop := ∀ n : ℕ, x ∈ domainPow S.generator n
 
 omit [CompleteSpace X] in
+/-- The linear subspace of vectors in every iterated generator domain. -/
+def smoothVectors : Submodule ℝ X := ⨅ n : ℕ, domainPow S.generator n
+
+omit [CompleteSpace X] in
+/-- Membership in the smooth-vector submodule is smoothness of the vector. -/
+@[simp] theorem mem_smoothVectors {x : X} :
+    x ∈ S.smoothVectors ↔ S.IsSmoothVector x := by
+  simp [smoothVectors, IsSmoothVector, Submodule.mem_iInf]
+
+omit [CompleteSpace X] in
 /-- Every smooth vector belongs to the generator domain. -/
 theorem IsSmoothVector.mem_domain {x : X} (hx : S.IsSmoothVector x) : x ∈ S.domain := by
   rw [← S.generator_domain, ← domainPow_one]
