@@ -48,12 +48,4 @@ def SmaleConjecture : Prop :=
       (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞),
     e.toFun = continuousOrthogonalToDiffSphere 3 ∞
 
-/-- Construct `SmaleConjecture` from a homotopy equivalence whose underlying map is the canonical
-inclusion. -/
-theorem SmaleConjecture.of
-    (e : ContinuousMap.HomotopyEquiv (Matrix.orthogonalGroup (Fin 4) ℝ)
-      (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞))
-    (he : e.toFun = continuousOrthogonalToDiffSphere 3 ∞) : SmaleConjecture :=
-  ⟨e, he⟩
-
 end TauCeti
