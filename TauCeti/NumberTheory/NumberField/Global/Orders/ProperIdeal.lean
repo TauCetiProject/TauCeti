@@ -122,15 +122,23 @@ theorem isProperFractionalIdeal_mul_spanSingleton
 
 /-- The unit fractional ideal has precisely the order as its multiplier ring. -/
 @[simp]
-theorem isProperFractionalIdeal_one :
-    O.IsProperFractionalIdeal (1 : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) := by
-  rw [O.isProperFractionalIdeal_iff]
+theorem multiplierRing_one :
+    O.multiplierRing (1 : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) =
+      O.toSubalgebra.toSubring := by
+  apply le_antisymm ?_ (O.order_le_multiplierRing 1)
   intro x hx
+  rw [O.mem_multiplierRing_iff] at hx
   have h := hx 1 (FractionalIdeal.one_mem_one (nonZeroDivisors O.toSubalgebra))
   have hx1 : x ∈ (1 : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) := by
     simpa using h
   obtain ⟨a, rfl⟩ := (FractionalIdeal.mem_one_iff (nonZeroDivisors O.toSubalgebra)).mp hx1
   exact a.property
+
+/-- The unit fractional ideal is proper. -/
+@[simp]
+theorem isProperFractionalIdeal_one :
+    O.IsProperFractionalIdeal (1 : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :=
+  O.multiplierRing_one
 
 /-- Every invertible fractional ideal is proper. -/
 theorem isProperFractionalIdeal_of_mul_eq_one
