@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PowerIndex
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 public import TauCeti.NumberTheory.Chebotarev.PrimesCongruent
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
@@ -96,13 +97,10 @@ theorem idealPrimePowerOf_mem_frobeniusPrimePowerSet_galEquivZMod_symm_iff
     have := IsCyclotomicExtension.isMulCommutative {n} ℚ F
     rw [ConjClasses.mk_pow, ← map_pow, ConjClasses.mk_injective.eq_iff, MulEquiv.apply_eq_iff_eq,
       Units.ext_iff, Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Nat.cast_pow]
-  rw [idealPrimePowerOf_mem_frobeniusPrimePowerSet_iff, ← hpow]
-  refine ⟨fun ⟨D, hD, hDpow⟩ ↦ ?_, fun h ↦ ⟨_, h𝔭, h⟩⟩
-  -- The Frobenius fibres are disjoint, so `D` is the Artin class of `𝔭`.
-  obtain rfl : D = ConjClasses.mk ((Rat.galEquivZMod n F).symm u) := by
-    by_contra hne
-    exact Set.disjoint_left.mp (disjoint_frobeniusPrimeSet hne) hD h𝔭
-  exact hDpow
+  obtain ⟨hur, hart⟩ := mem_frobeniusPrimeSet_iff.mp h𝔭
+  rw [mem_frobeniusPrimePowerSet_iff, HeightOneSpectrum.primePowerExponent_idealPrimePowerOf,
+    HeightOneSpectrum.primePowerBase_idealPrimePowerOf, ← hpow, ← hart]
+  exact ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨hur, h⟩⟩
 
 /-- **The cyclotomic Frobenius von Mangoldt coefficient on a progression.** At every level `n`,
 the Frobenius von Mangoldt coefficient of the fibre of `ℚ(ζₙ) / ℚ` tagged by a unit `a` agrees,
@@ -172,8 +170,9 @@ theorem frobeniusVonMangoldtCoeff_galEquivZMod_symm (hn : n % 4 ≠ 2) (a : (ZMo
   subst h𝔭
   rw [ite_eq_right ha, frobeniusVonMangoldtCoeff_rat_natGenerator_pow]
   refine frobeniusPrimePowerWeight_of_notMem fun hmem ↦ ?_
-  obtain ⟨D, hD, -⟩ := idealPrimePowerOf_mem_frobeniusPrimePowerSet_iff.mp hmem
-  exact frobeniusPrimeSet_subset_compl_ramifiedPrimes D hD hram
+  obtain ⟨hur, -⟩ := mem_frobeniusPrimePowerSet_iff.mp hmem
+  rw [HeightOneSpectrum.primePowerBase_idealPrimePowerOf] at hur
+  exact frobeniusPrimeSet_subset_compl_ramifiedPrimes _ (mem_frobeniusPrimeSet_artinSymbol hur) hram
 
 /-- **The degree-four test of the powered Frobenius filter.** In a fifth cyclotomic field, let `g`
 be the automorphism with cyclotomic character `2`, the arithmetic Frobenius at `2`. It has order
