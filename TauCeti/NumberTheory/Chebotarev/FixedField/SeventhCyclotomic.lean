@@ -54,10 +54,11 @@ private theorem seven_not_mem_of_absNorm_three
 def frobeniusThreeSeven : L ≃ₐ[ℚ] L :=
   (Rat.galEquivZMod 7 L).symm (Units.mk0 (3 : ZMod 7) (by decide))
 
-/-- The exponent of `frobeniusThreeSeven` in the cyclotomic Galois identification is three. -/
-@[simp]
-theorem galEquivZMod_frobeniusThreeSeven :
-    (Rat.galEquivZMod 7 L (frobeniusThreeSeven (L := L)) : ZMod 7) = 3 := by
+/-- The exponent of `frobeniusThreeSeven` on a primitive seventh root of unity is three. -/
+theorem autToPow_frobeniusThreeSeven :
+    ((zeta_spec 7 ℚ L).autToPow ℚ (frobeniusThreeSeven (L := L)) : ZMod 7) = 3 := by
+  rw [(zeta_spec 7 ℚ L).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
+    ZMod.unitsMap_self, MonoidHom.id_apply]
   simp only [frobeniusThreeSeven, MulEquiv.apply_symm_apply, Units.val_mk0]
 
 /-- The cyclotomic automorphism with exponent three modulo seven has order six. -/
@@ -95,11 +96,11 @@ theorem orderOf_frobeniusThreeSeven_sq :
   rw [orderOf_pow, orderOf_frobeniusThreeSeven]
   decide
 
-/-- The square of the Frobenius at three has cyclotomic exponent two modulo seven. -/
+/-- The square of the Frobenius at three acts with exponent two on a primitive seventh root. -/
 @[simp]
-theorem galEquivZMod_frobeniusThreeSeven_sq :
-    (Rat.galEquivZMod 7 L (frobeniusThreeSeven (L := L) ^ 2) : ZMod 7) = 2 := by
-  rw [map_pow, Units.val_pow_eq_pow_val, galEquivZMod_frobeniusThreeSeven]
+theorem autToPow_frobeniusThreeSeven_sq :
+    ((zeta_spec 7 ℚ L).autToPow ℚ (frobeniusThreeSeven (L := L)) : ZMod 7) ^ 2 = 2 := by
+  rw [autToPow_frobeniusThreeSeven]
   decide
 
 /-- The field fixed by the square of the Frobenius at three has degree two over `ℚ`. -/
