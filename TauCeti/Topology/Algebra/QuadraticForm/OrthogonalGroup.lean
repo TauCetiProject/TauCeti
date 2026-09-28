@@ -22,9 +22,9 @@ groups and to study compactness of real and nonarchimedean isometry groups.
 
 public section
 
-namespace TauCeti.QuadraticMap
+namespace QuadraticMap
 
-open _root_.QuadraticMap
+open TauCeti.QuadraticMap
 open Matrix
 
 noncomputable section
@@ -39,23 +39,26 @@ attribute [local instance] Classical.decEq
 
 /-- The topology on the orthogonal group of a coordinate quadratic map is induced by its
 faithful matrix representation in `GL(n, R)`. -/
-instance instTopologicalSpaceOrthogonalGroupPi (Q : QuadraticMap R (n → R) N) :
+instance _root_.TauCeti.QuadraticMap.instTopologicalSpaceOrthogonalGroupPi
+    (Q : QuadraticMap R (n → R) N) :
     TopologicalSpace (orthogonalGroup Q) :=
   TopologicalSpace.induced (orthogonalToGeneralLinear Q) inferInstance
 
 /-- The coordinate representation of an orthogonal group is a topological embedding. -/
-theorem isEmbedding_orthogonalToGeneralLinear (Q : QuadraticMap R (n → R) N) :
+theorem _root_.TauCeti.QuadraticMap.isEmbedding_orthogonalToGeneralLinear
+    (Q : QuadraticMap R (n → R) N) :
     Topology.IsEmbedding (orthogonalToGeneralLinear Q) :=
   (orthogonalToGeneralLinear_injective Q).isEmbedding_induced
 
 /-- The orthogonal group in coordinates is a topological group over a topological ring. -/
-instance instIsTopologicalGroupOrthogonalGroupPi [IsTopologicalRing R]
+instance _root_.TauCeti.QuadraticMap.instIsTopologicalGroupOrthogonalGroupPi
+    [IsTopologicalRing R]
     (Q : QuadraticMap R (n → R) N) :
     IsTopologicalGroup (orthogonalGroup Q) :=
   isTopologicalGroup_induced (orthogonalToGeneralLinear Q)
 
 /-- The coordinate orthogonal group over a Hausdorff ring is Hausdorff. -/
-instance instT2SpaceOrthogonalGroupPi [T2Space R]
+instance _root_.TauCeti.QuadraticMap.instT2SpaceOrthogonalGroupPi [T2Space R]
     (Q : QuadraticMap R (n → R) N) :
     T2Space (orthogonalGroup Q) :=
   (isEmbedding_orthogonalToGeneralLinear Q).t2Space
@@ -64,7 +67,7 @@ omit [TopologicalSpace R] in
 /-- The coordinate matrix of a special orthogonal element is unchanged by its inclusion in the
 orthogonal group. -/
 @[simp]
-theorem orthogonalToGeneralLinear_specialOrthogonalToOrthogonal
+theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_specialOrthogonalToOrthogonal
     (Q : QuadraticMap R (n → R) N) (g : specialOrthogonalGroup Q) :
     orthogonalToGeneralLinear Q (specialOrthogonalToOrthogonal Q g) =
       specialOrthogonalToGeneralLinear Q g := by
@@ -74,7 +77,7 @@ theorem orthogonalToGeneralLinear_specialOrthogonalToOrthogonal
     coe_specialOrthogonalToOrthogonal]
 
 /-- The determinant-one subgroup has the subspace topology from the orthogonal group. -/
-theorem isEmbedding_specialOrthogonalToOrthogonal
+theorem _root_.TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToOrthogonal
     (Q : QuadraticMap R (n → R) N) :
     Topology.IsEmbedding (specialOrthogonalToOrthogonal Q) := by
   have hcomp : Topology.IsEmbedding
@@ -87,7 +90,7 @@ theorem isEmbedding_specialOrthogonalToOrthogonal
 /-- The action of the coordinate orthogonal group on its underlying module is jointly
 continuous. -/
 @[fun_prop]
-theorem continuous_orthogonalGroup_action [IsTopologicalRing R]
+theorem _root_.TauCeti.QuadraticMap.continuous_orthogonalGroup_action [IsTopologicalRing R]
     (Q : QuadraticMap R (n → R) N) :
     Continuous (fun p : orthogonalGroup Q × (n → R) =>
       (p.1 : (n → R) ≃ₗ[R] (n → R)) p.2) := by
@@ -105,7 +108,7 @@ theorem continuous_orthogonalGroup_action [IsTopologicalRing R]
 
 /-- Applying a coordinate orthogonal transformation to a fixed vector is continuous. -/
 @[fun_prop]
-theorem continuous_orthogonalGroup_apply [IsTopologicalRing R]
+theorem _root_.TauCeti.QuadraticMap.continuous_orthogonalGroup_apply [IsTopologicalRing R]
     (Q : QuadraticMap R (n → R) N) (x : n → R) :
     Continuous (fun g : orthogonalGroup Q => (g : (n → R) ≃ₗ[R] (n → R)) x) := by
   have hpair : Continuous (fun g : orthogonalGroup Q => (g, x)) := by fun_prop
@@ -113,7 +116,8 @@ theorem continuous_orthogonalGroup_apply [IsTopologicalRing R]
 
 /-- The coordinate orthogonal group is a closed subgroup of matrix `GL` over a Hausdorff
 topological ring in which two is invertible. -/
-theorem isClosed_range_orthogonalToGeneralLinear [IsTopologicalRing R] [T2Space R]
+theorem _root_.TauCeti.QuadraticMap.isClosed_range_orthogonalToGeneralLinear
+    [IsTopologicalRing R] [T2Space R]
     [Invertible (2 : R)] (Q : QuadraticForm R (n → R)) :
     IsClosed (Set.range (orthogonalToGeneralLinear Q)) := by
   have hQ : Continuous Q := Q.continuous
@@ -148,7 +152,8 @@ theorem isClosed_range_orthogonalToGeneralLinear [IsTopologicalRing R] [T2Space 
   exact isClosed_eq (hQ.comp hmul) continuous_const
 
 /-- The coordinate orthogonal group is a closed topological subgroup of matrix `GL`. -/
-theorem isClosedEmbedding_orthogonalToGeneralLinear [IsTopologicalRing R] [T2Space R]
+theorem _root_.TauCeti.QuadraticMap.isClosedEmbedding_orthogonalToGeneralLinear
+    [IsTopologicalRing R] [T2Space R]
     [Invertible (2 : R)] (Q : QuadraticForm R (n → R)) :
     Topology.IsClosedEmbedding (orthogonalToGeneralLinear Q) :=
   ⟨isEmbedding_orthogonalToGeneralLinear Q,
@@ -156,7 +161,7 @@ theorem isClosedEmbedding_orthogonalToGeneralLinear [IsTopologicalRing R] [T2Spa
 
 /-- The determinant of a coordinate orthogonal transformation is continuous. -/
 @[fun_prop]
-theorem continuous_orthogonalDet [IsTopologicalRing R]
+theorem _root_.TauCeti.QuadraticMap.continuous_orthogonalDet [IsTopologicalRing R]
     (Q : QuadraticMap R (n → R) N) :
     Continuous (orthogonalDet Q) := by
   have h : Continuous (fun g : orthogonalGroup Q =>
@@ -172,7 +177,8 @@ theorem continuous_orthogonalDet [IsTopologicalRing R]
 
 /-- The determinant-one subgroup is closed in the coordinate orthogonal group over a
 Hausdorff topological ring. -/
-theorem isClosed_specialOrthogonalWithin [IsTopologicalRing R] [T2Space R]
+theorem _root_.TauCeti.QuadraticMap.isClosed_specialOrthogonalWithin
+    [IsTopologicalRing R] [T2Space R]
     (Q : QuadraticMap R (n → R) N) :
     IsClosed (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) := by
   have hset : (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) =
@@ -186,4 +192,4 @@ theorem isClosed_specialOrthogonalWithin [IsTopologicalRing R] [T2Space R]
 
 end
 
-end TauCeti.QuadraticMap
+end QuadraticMap

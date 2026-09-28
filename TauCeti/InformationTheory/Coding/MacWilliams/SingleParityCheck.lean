@@ -31,11 +31,13 @@ variable (F ι : Type*) [Field F] [Finite F] [DecidableEq F] [Fintype ι]
 times the repetition enumerator. -/
 @[simp]
 theorem aeval_weightEnumerator_singleParityCheckCode :
-    bind₁ ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
+    bind₁ ![X 0 + (@Fintype.card F (Fintype.ofFinite F) - 1 :
+      MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
         (singleParityCheckCode F ι : Set (ι → F)).weightEnumerator =
       (Nat.card (singleParityCheckCode F ι) : MvPolynomial (Fin 2) ℤ) *
         (repetitionCode F ι : Set (ι → F)).weightEnumerator := by
   classical
+  rw [← @Nat.card_eq_fintype_card F (Fintype.ofFinite F)]
   by_cases hι : Nonempty ι
   · let _ : Nonempty ι := hι
     let q : MvPolynomial (Fin 2) ℤ := Nat.card F
