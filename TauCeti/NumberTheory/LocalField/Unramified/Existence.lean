@@ -110,7 +110,8 @@ theorem unramifiedExtension_le_of_dvd {f g : ℕ} (hg : g ≠ 0) (h : f ∣ g) :
   rw [Polynomial.mem_rootSet, map_sub, map_pow, aeval_X, sub_eq_zero] at hx ⊢
   refine ⟨FiniteField.X_pow_card_pow_sub_X_ne_zero _ hg Finite.one_lt_card, ?_⟩
   -- `x` is fixed by `y ↦ y ^ (q ^ f)`, hence by its `k`-th iterate `y ↦ y ^ (q ^ (f * k))`.
-  have h := (show Function.IsFixedPt (· ^ Nat.card 𝓀[K] ^ f) x from hx.2).iterate k
+  have hfix : Function.IsFixedPt (· ^ Nat.card 𝓀[K] ^ f) x := hx.2
+  have h := hfix.iterate k
   rwa [pow_iterate, Function.IsFixedPt, ← pow_mul] at h
 
 variable {K Ω} in
