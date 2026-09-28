@@ -71,31 +71,31 @@ theorem orbitFiberEquivCompactifiedFiber_apply (h : Δ ≤ Γ)
 
 /-- The fibre of a compactified Fuchsian quotient map over the interior orbit of `z` is the
 orbit space of the stabilizer of `z` acting on the subgroup cosets. -/
-noncomputable def stabilizerOrbitQuotientEquivCompactifiedFiber (h : Δ ≤ Γ) (z : ℍ) :
+noncomputable def stabilizerOrbitRelQuotientEquivCompactifiedFiber (h : Δ ≤ Γ) (z : ℍ) :
     orbitRel.Quotient (stabilizer Γ z) (Γ ⧸ Δ.subgroupOf Γ) ≃
       {y : Δ.CompactifiedQuotient //
         compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)} :=
-  (TauCeti.stabilizerOrbitQuotientEquivOrbitRelMapFiber h z).trans
+  (TauCeti.stabilizerOrbitRelQuotientEquivOrbitRelMapFiber h z).trans
     (orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z))
 
 /-- The stabilizer-orbit equivalence sends the orbit of a coset to the compactified point
 represented by the corresponding inverse translate of `z`. -/
 @[simp]
-theorem stabilizerOrbitQuotientEquivCompactifiedFiber_mk (h : Δ ≤ Γ) (z : ℍ)
+theorem stabilizerOrbitRelQuotientEquivCompactifiedFiber_mk (h : Δ ≤ Γ) (z : ℍ)
     (q : Γ ⧸ Δ.subgroupOf Γ) :
-    (stabilizerOrbitQuotientEquivCompactifiedFiber h z (Quotient.mk'' q)).1 =
+    (stabilizerOrbitRelQuotientEquivCompactifiedFiber h z (Quotient.mk'' q)).1 =
       .ofQuotient (TauCeti.orbitOfCosetTranslate z q) := by
-  simp [stabilizerOrbitQuotientEquivCompactifiedFiber]
+  simp [stabilizerOrbitRelQuotientEquivCompactifiedFiber]
 
 /-- The cardinality of a compactified interior fibre is the number of stabilizer-orbits on
 the subgroup coset space. In particular, this counts elliptic fibres without treating the
 quotient map as a covering at a ramified point. -/
-theorem card_fiber_compactifiedQuotientMap_eq_card_stabilizerOrbitQuotient
+theorem card_fiber_compactifiedQuotientMap_eq_card_stabilizerOrbitRelQuotient
     (h : Δ ≤ Γ) (z : ℍ) :
     Nat.card {y : Δ.CompactifiedQuotient //
       compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)} =
       Nat.card (orbitRel.Quotient (stabilizer Γ z) (Γ ⧸ Δ.subgroupOf Γ)) :=
-  Nat.card_congr (stabilizerOrbitQuotientEquivCompactifiedFiber h z).symm
+  Nat.card_congr (stabilizerOrbitRelQuotientEquivCompactifiedFiber h z).symm
 
 variable (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
 

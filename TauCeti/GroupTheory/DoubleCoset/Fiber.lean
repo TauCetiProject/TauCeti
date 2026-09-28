@@ -94,7 +94,7 @@ theorem finite_fiber_orbitRel_map_of_isFiniteRelIndex {H K : Subgroup G}
 
 The stabilizer acts by left translation. Two cosets determine the same smaller-subgroup
 orbit precisely when they lie in the same stabilizer orbit. -/
-noncomputable def stabilizerOrbitQuotientEquivOrbitRelMapFiber {H K : Subgroup G}
+noncomputable def stabilizerOrbitRelQuotientEquivOrbitRelMapFiber {H K : Subgroup G}
     (h : H ≤ K) (x : X) :
     orbitRel.Quotient (stabilizer K x) (K ⧸ H.subgroupOf K) ≃
       {q : orbitRel.Quotient H X //
@@ -109,11 +109,11 @@ noncomputable def stabilizerOrbitQuotientEquivOrbitRelMapFiber {H K : Subgroup G
 /-- The stabilizer-orbit equivalence sends the orbit of a coset to the smaller-subgroup
 orbit of the corresponding inverse translate. -/
 @[simp]
-theorem stabilizerOrbitQuotientEquivOrbitRelMapFiber_mk {H K : Subgroup G}
+theorem stabilizerOrbitRelQuotientEquivOrbitRelMapFiber_mk {H K : Subgroup G}
     (h : H ≤ K) (x : X) (q : K ⧸ H.subgroupOf K) :
-    (stabilizerOrbitQuotientEquivOrbitRelMapFiber h x (Quotient.mk'' q)).1 =
+    (stabilizerOrbitRelQuotientEquivOrbitRelMapFiber h x (Quotient.mk'' q)).1 =
       orbitOfCosetTranslate x q := by
-  rw [stabilizerOrbitQuotientEquivOrbitRelMapFiber, Equiv.trans_apply,
+  rw [stabilizerOrbitRelQuotientEquivOrbitRelMapFiber, Equiv.trans_apply,
     Setoid.quotientKerEquivOfSurjective, Setoid.quotientKerEquivOfRightInverse_apply]
   -- `Quotient.congrRight` only changes the relation, not the class, so `Setoid.kerLift` still
   -- evaluates at `q`; Mathlib has no evaluation lemma for `Quotient.congrRight`, and
@@ -125,13 +125,13 @@ theorem stabilizerOrbitQuotientEquivOrbitRelMapFiber_mk {H K : Subgroup G}
 subgroup coset space. Several cosets can lie in one stabilizer orbit and hence determine
 the same point of the fibre. In geometric applications satisfying the relevant hypotheses,
 these identifications can describe ramification. -/
-theorem card_fiber_orbitRel_map_eq_card_stabilizerOrbitQuotient {H K : Subgroup G}
+theorem card_fiber_orbitRel_map_eq_card_stabilizerOrbitRelQuotient {H K : Subgroup G}
     (h : H ≤ K) (x : X) :
     Nat.card {q : orbitRel.Quotient H X //
       Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := X) h) q =
         Quotient.mk'' x} =
       Nat.card (orbitRel.Quotient (stabilizer K x) (K ⧸ H.subgroupOf K)) :=
-  Nat.card_congr (stabilizerOrbitQuotientEquivOrbitRelMapFiber h x).symm
+  Nat.card_congr (stabilizerOrbitRelQuotientEquivOrbitRelMapFiber h x).symm
 
 /-- If the stabilizer acts trivially on the coset space, the fibre of an orbit map is
 indexed exactly by the cosets of the smaller subgroup in the larger one. -/
