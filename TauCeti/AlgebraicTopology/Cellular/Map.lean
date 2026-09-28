@@ -90,7 +90,6 @@ def cellularChainGroupMap (n : ℕ) :
   TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n
 
 /-- The map on cellular chains is the map on relative homology of skeletal pairs. -/
-@[simp]
 lemma cellularChainGroupMap_eq_singularHomologyMap (n : ℕ) :
     cellularChainGroupMap C C' hf R n =
       TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n := (rfl)
@@ -145,7 +144,7 @@ lemma cellularChainComplexMap_f (n : ℕ) :
 lemma cellularChainComplexMap_id :
     cellularChainComplexMap C C (isCellular_id C) R = 𝟙 (cellularChainComplex C R) := by
   ext n
-  simp [cellularChainComplexMap_f, skeletonPairMap_id, TopPair.singularHomologyMap]
+  simp [cellularChainComplexMap_f]
 
 /-- Composition of cellular maps induces composition of cellular chain maps. -/
 @[reassoc]
