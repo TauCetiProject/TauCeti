@@ -159,22 +159,8 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
   simp only [Matrix.submatrix_apply, LinearMap.BilinForm.toMatrix_apply,
     Pi.basisFun_apply, eulerForm_single_single] at h
   by_cases hij : (![src, tgt] i : Kronecker A) = ![src, tgt] j
-  · simpa only [hij, ↓reduceIte] using h
-  · simpa only [hij, ↓reduceIte] using h
-
-open scoped Classical in
-/-- The Kronecker delta minus the number of arrows between two vertices is the corresponding
-entry of the `A₂` Ringel Euler matrix. -/
-@[simp]
-theorem delta_sub_card_hom_eq_eulerMatrixA2 (k : Type v) [Field k] (i j : Fin 2) :
-    (if (![src, tgt] i : Kronecker A) = ![src, tgt] j then (1 : ℤ) else 0) -
-      (Fintype.card ((![src, tgt] i : Kronecker A) ⟶ (![src, tgt] j : Kronecker A)) : ℤ) =
-      eulerMatrixA2 i j := by
-  have h := congrFun (congrFun (extEulerMatrix_A2_eq (A := A) k) i) j
-  simp only [extEuler_vertexSimpleModule_vertexSimpleModule] at h
-  by_cases hij : (![src, tgt] i : Kronecker A) = ![src, tgt] j
-  · simpa only [hij, ↓reduceIte] using h
-  · simpa only [hij, ↓reduceIte] using h
+  · simpa only [hij, ↓reduceIte, Nat.card_eq_fintype_card] using h
+  · simpa only [hij, ↓reduceIte, Nat.card_eq_fintype_card] using h
 
 end Quiver.Kronecker
 

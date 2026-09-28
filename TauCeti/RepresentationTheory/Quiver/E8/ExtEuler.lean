@@ -49,7 +49,7 @@ theorem extEulerMatrix_apply (i j : Fin 8) :
       (if i = j then 1 else 0) - (Fintype.card (vertexEquiv i ⟶ vertexEquiv j) : ℤ) := by
   rw [extEulerMatrix, Matrix.of_apply,
     extEuler_vertexSimpleModule_vertexSimpleModule]
-  simp only [vertexEquiv.injective.eq_iff]
+  simp only [vertexEquiv.injective.eq_iff, Nat.card_eq_fintype_card]
 
 /-- The categorical Ext-Euler matrix is the combinatorial Euler matrix `I - A`. -/
 theorem extEulerMatrix_eq_eulerForm :

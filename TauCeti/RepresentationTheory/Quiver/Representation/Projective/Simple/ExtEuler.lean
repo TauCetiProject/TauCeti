@@ -190,12 +190,18 @@ open scoped Classical in
 arrows from the first vertex to the second. -/
 @[simp]
 theorem extEuler_vertexSimpleModule_vertexSimpleModule (i j : Q)
-    [Finite ((a : Q) × (i ⟶ a))] [Fintype (i ⟶ j)] :
+    [Finite ((a : Q) × (i ⟶ a))] :
     extEuler k (isEulerAdmissible_vertexSimpleModule k Q i (vertexSimpleModule k Q j)
       (finiteDimensional_vertexSimpleModule_obj k Q j i)
       (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj k Q j a)) =
-      (if i = j then 1 else 0) - (Fintype.card (i ⟶ j) : ℤ) := by
+      (if i = j then 1 else 0) - (Nat.card (i ⟶ j) : ℤ) := by
   classical
+  have : Finite (i ⟶ j) := Finite.of_injective
+    (fun f : i ⟶ j ↦ (⟨j, f⟩ : (a : Q) × (i ⟶ a))) (by
+      intro f g h
+      cases h
+      rfl)
+  let _ : Fintype (i ⟶ j) := Fintype.ofFinite _
   let _ : Fintype ((a : Q) × (i ⟶ a)) := Fintype.ofFinite _
   rw [extEuler_vertexSimpleModule k Q i (vertexSimpleModule k Q j)
     (finiteDimensional_vertexSimpleModule_obj k Q j i)
@@ -210,6 +216,6 @@ theorem extEuler_vertexSimpleModule_vertexSimpleModule (i j : Q)
     left_inv := by intro ⟨⟨a, f⟩, h⟩; cases h; rfl
     right_inv := by intro f; rfl
   }
-  simpa only [Fintype.card_subtype] using Fintype.card_congr e
+  simpa only [Fintype.card_subtype, Nat.card_eq_fintype_card] using Fintype.card_congr e
 
 end TauCeti
