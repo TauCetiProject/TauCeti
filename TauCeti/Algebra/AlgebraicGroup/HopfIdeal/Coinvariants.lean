@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Basic
+import Mathlib.RingTheory.Flat.Equalizer
 import TauCeti.Algebra.HopfAlgebra.Antipode
 import TauCeti.LinearAlgebra.TensorProduct.Intersection
 
@@ -179,9 +180,9 @@ theorem comul_mem_range_lTensor_of_mem_coinvariants [Module.Flat R H] (hh : h �
     induction y with
     | tmul a b => simp [π]
     | add y z hy hz => simp [hy, hz]
-  have hB : Subalgebra.toSubmodule I.coinvariants = LinearMap.ker (f - g) := by
+  have hB : Subalgebra.toSubmodule I.coinvariants = LinearMap.eqLocus f g := by
     ext x
-    simp [mem_coinvariants_iff, hmap, f, g, sub_eq_zero]
+    simp [mem_coinvariants_iff, hmap, f, g]
   -- Both `id ⊗ f` and `id ⊗ g` send `Δ h` to the reassociation of `Δ h ⊗ 1`.
   have hf : f.lTensor H (Coalgebra.comul (R := R) h) =
       TensorProduct.assoc R H H Q (Coalgebra.comul (R := R) h ⊗ₜ[R] 1) := by
@@ -200,10 +201,15 @@ theorem comul_mem_range_lTensor_of_mem_coinvariants [Module.Flat R H] (hh : h �
     induction y with
     | tmul a b => simp [g]
     | add y z hy hz => simp [hy, hz, TensorProduct.add_tmul]
-  have hzero : (f - g).lTensor H (Coalgebra.comul (R := R) h) = 0 := by
-    rw [LinearMap.lTensor_sub, LinearMap.sub_apply, hf, hg, sub_self]
+  have hmem : Coalgebra.comul (R := R) h ∈ LinearMap.eqLocus
+      (TensorProduct.AlgebraTensorModule.lTensor R H f)
+      (TensorProduct.AlgebraTensorModule.lTensor R H g) := by
+    rw [LinearMap.mem_eqLocus, TensorProduct.AlgebraTensorModule.coe_lTensor,
+      TensorProduct.AlgebraTensorModule.coe_lTensor, hf, hg]
+  rw [Module.Flat.eqLocus_lTensor_eq] at hmem
+  obtain ⟨y, hy⟩ := hmem
   rw [hB]
-  exact (Module.Flat.lTensor_exact H (LinearMap.exact_subtype_ker_map (f - g)) _).mp hzero
+  exact ⟨y, by rw [← hy, TensorProduct.AlgebraTensorModule.coe_lTensor]⟩
 
 end Coinvariants
 
