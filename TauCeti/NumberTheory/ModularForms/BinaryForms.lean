@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
 /-!
