@@ -17,8 +17,9 @@ import Mathlib.Tactic.NormNum.Prime
 Let `θ` be an algebraic integer with minimal polynomial
 `X³ - X² - 2X - 8` which generates a number field.  The order with basis
 `(1, θ, (θ² - θ) / 2)` is the full ring of integers.  In particular, the displayed basis
-is an integral basis for computing the field discriminant and studying the splitting of
-prime ideals, including the primes above `2` in Dedekind's classical example.
+is an integral basis, `TauCeti.NumberField.dedekindIntegralBasis`, for computing the field
+discriminant and studying the splitting of prime ideals, including the primes above `2` in
+Dedekind's classical example.
 
 The result follows Neukirch, *Algebraic Number Theory*, Chapter III, §2, Exercise 1.
 -/
@@ -168,6 +169,23 @@ theorem index_dedekindOrder_sq_mul_discr
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     dedekindOrder (dedekindCubic_relation hmin) = ⊤ :=
   (dedekindOrderIndex_eq_one_iff _).mp (dedekindOrderIndex_eq_one hmin hgen)
+
+/-- The integral basis `(1, θ, (θ² - θ) / 2)` of the full ring of integers of Dedekind's cubic
+field. -/
+def dedekindIntegralBasis
+    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : Basis (Fin 3) ℤ (𝓞 K) :=
+  (dedekindOrderBasis hmin).map
+    ((Subalgebra.equivOfEq _ _ (dedekindOrder_eq_ringOfIntegers hmin hgen)).trans
+      Subalgebra.topEquiv).toLinearEquiv
+
+/-- The vectors of the integral basis are `1`, `θ`, and `(θ² - θ) / 2`. -/
+@[simp] theorem dedekindIntegralBasis_apply
+    (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 - C 2 * X - C 8)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (i : Fin 3) :
+    dedekindIntegralBasis hmin hgen i =
+      ![1, θ, dedekindBeta (dedekindCubic_relation hmin)] i := by
+  simp [dedekindIntegralBasis]
 
 end TauCeti.NumberField
 
