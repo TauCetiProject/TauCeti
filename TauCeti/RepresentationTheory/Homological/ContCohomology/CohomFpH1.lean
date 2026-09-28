@@ -16,14 +16,14 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 
 `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology` identifies the inhomogeneous
 `H¹(G, M)` of a discrete `G`-module `M` with the continuous cohomology of the object
-`TauCeti.ContCohomology.ofDiscreteModule ℤ G M`, whose coefficient ring is `ℤ`. The coefficients
+`TauCeti.ofDiscreteModule ℤ G M`, whose coefficient ring is `ℤ`. The coefficients
 of `TauCeti.cohomFp`, whose degree-one group is `TauCeti.cohomFp n G 1`, live in a different
 object, `TauCeti.trivialFp n G`, whose coefficient ring is `ZMod n` and whose carrier is the
 universe lift of `ZMod n`; this file identifies the two.
 
 The `ℤ` comparison does not apply to the second object: it is stated against the object
-`TauCeti.ContCohomology.ofDiscreteModule ℤ G M` of `TauCeti.TopRep ℤ G`, whereas
-`TauCeti.trivialFp n G` is an object of `TauCeti.TopRep (ZMod n) G`, and is not that object.
+`TauCeti.ofDiscreteModule ℤ G M` of `TopRep ℤ G`, whereas
+`TauCeti.trivialFp n G` is an object of `TopRep (ZMod n) G`, and is not that object.
 The carrier of `TauCeti.trivialFp n G` is the discrete `ZMod n`-module `ULift (ZMod n)` with the
 trivial action, which is the shape `ofDiscreteModule` builds; the coefficient ring alone is what
 separates the two objects. What is shared between the two objects is the shape of their cochain
@@ -47,7 +47,7 @@ continuous cohomology with these coefficients.
 
 Those statements are made on the carrier of the coefficient object itself, not on the bare universe
 lift, and the explicit inhomogeneous cochains are given the action of the coefficient object on that
-carrier (`TauCeti.TopRep.distribMulAction`), which is the trivial one. The action is local to this
+carrier (`TopRep.distribMulAction`), which is the trivial one. The action is local to this
 file: `ULift (ZMod n)` is a carrier other modules may act on in another way, and the exported
 declarations name the action of the coefficient object instead.
 
