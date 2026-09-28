@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.RamificationInertia.Basic
 public import Mathlib.NumberTheory.RamificationInertia.Inertia
-public import Mathlib.NumberTheory.RamificationInertia.Galois
+import Mathlib.NumberTheory.RamificationInertia.Galois
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 public import Mathlib.Algebra.Algebra.Equiv
 
