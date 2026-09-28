@@ -64,6 +64,8 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
   extending that of `K`, an element of `M` is integral over a ring of integers of `K` exactly when
   its valuation is at most `1`.
 * `TauCeti.integerRing_eq_integralClosure`: `𝒪[M]` is the integral closure of `𝒪[K]` in `M`.
+* `TauCeti.integerRingEquivIntegralClosure`: the resulting `𝒪[K]`-algebra equivalence between
+  `𝒪[M]` and the integral closure of `𝒪[K]` in `M`.
 * `AlgHom.integerRingHom`: a `K`-algebra map of finite extensions restricts to an
   `𝒪[K]`-algebra map of their rings of integers.
 
@@ -370,13 +372,14 @@ theorem _root_.AlgEquiv.valuation_eq [ValuativeRel M] [ValuativeExtension K M] (
 /-- **Embeddings respect the extended valuations.** A `K`-algebra map `ι : M →ₐ[K] N` from a
 finite extension `M` of a nonarchimedean local field `K` to a field `N`, for valuative relations
 on `M` and on `N` both extending that of `K`, makes `N` a valuative extension of `M` through
-`ι.toAlgebra`: the valuation of `N` pulled back along `ι` extends the valuation class of `K`, so by
-uniqueness it is the valuation of `M`. -/
+`ι.toAlgebra`. -/
 theorem _root_.AlgHom.valuativeExtension {N : Type*} [Field N] [ValuativeRel N] [Algebra K N]
     [ValuativeExtension K N] [ValuativeRel M] [ValuativeExtension K M] (ι : M →ₐ[K] N) :
     letI := ι.toAlgebra
     ValuativeExtension M N := by
   let _ := ι.toAlgebra
+  -- The valuation of `N` pulled back along `ι` extends the valuation class of `K`, so by
+  -- uniqueness it is the valuation of `M`.
   have hN := ValuativeRel.isEquiv ((valuation N).comap (algebraMap K N)) (valuation K)
   rw [← ι.comp_algebraMap, Valuation.comap_comp] at hN
   have h := finiteExtensionValuation_isEquiv hN
@@ -440,57 +443,49 @@ variable {K M} [ValuativeRel M] [ValuativeExtension K M]
 variable {L : Type*} [Field L] [ValuativeRel L] [Algebra K L]
   [ValuativeExtension K L] [Module.Finite K L]
 
+variable (K M) in
+/-- The ring of integers `𝒪[M]` of a finite extension `M` of a nonarchimedean local field `K`,
+as an `𝒪[K]`-algebra, is the integral closure of `𝒪[K]` in `M`; this is the equivalence given by
+`integerRing_eq_integralClosure`. -/
+def integerRingEquivIntegralClosure : 𝒪[M] ≃ₐ[𝒪[K]] integralClosure 𝒪[K] M :=
+  AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr (integerRing_eq_integralClosure K M))
+    fun _ ↦ Subtype.ext (RingEquiv.coe_subringCongr_apply _ _)
+
+/-- The equivalence `integerRingEquivIntegralClosure` does not change the underlying element. -/
+@[simp]
+theorem coe_integerRingEquivIntegralClosure_apply (x : 𝒪[M]) :
+    (integerRingEquivIntegralClosure K M x : M) = x := by
+  rw [integerRingEquivIntegralClosure, AlgEquiv.ofRingEquiv_apply]
+  exact RingEquiv.coe_subringCongr_apply _ _
+
+/-- The inverse of `integerRingEquivIntegralClosure` does not change the underlying element. -/
+@[simp]
+theorem coe_integerRingEquivIntegralClosure_symm_apply (x : integralClosure 𝒪[K] M) :
+    ((integerRingEquivIntegralClosure K M).symm x : M) = x := by
+  conv_rhs => rw [← (integerRingEquivIntegralClosure K M).apply_symm_apply x]
+  exact (coe_integerRingEquivIntegralClosure_apply _).symm
+
 /-- A base-field algebra equivalence restricts to an algebra equivalence of integer rings. -/
-noncomputable def _root_.AlgEquiv.integerRingEquiv (e : L ≃ₐ[K] M) :
-    𝒪[L] ≃ₐ[𝒪[K]] 𝒪[M] := by
-  let iL : 𝒪[L] ≃ₐ[𝒪[K]] integralClosure 𝒪[K] L :=
-    AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr (integerRing_eq_integralClosure K L))
-      (by
-        intro x
-        apply Subtype.ext
-        exact RingEquiv.coe_subringCongr_apply _ _)
-  let iM : 𝒪[M] ≃ₐ[𝒪[K]] integralClosure 𝒪[K] M :=
-    AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr (integerRing_eq_integralClosure K M))
-      (by
-        intro x
-        apply Subtype.ext
-        exact RingEquiv.coe_subringCongr_apply _ _)
-  exact (iL.trans (e.restrictScalars 𝒪[K]).mapIntegralClosure).trans iM.symm
+def _root_.AlgEquiv.integerRingEquiv (e : L ≃ₐ[K] M) : 𝒪[L] ≃ₐ[𝒪[K]] 𝒪[M] :=
+  ((integerRingEquivIntegralClosure K L).trans (e.restrictScalars 𝒪[K]).mapIntegralClosure).trans
+    (integerRingEquivIntegralClosure K M).symm
 
 /-- The integer-ring equivalence acts by the original field equivalence. -/
 @[simp]
 theorem _root_.AlgEquiv.coe_integerRingEquiv_apply (e : L ≃ₐ[K] M) (x : 𝒪[L]) :
     (e.integerRingEquiv x : M) = e (x : L) := by
-  simp only [AlgEquiv.integerRingEquiv, AlgEquiv.trans_apply,
-    AlgEquiv.ofRingEquiv_apply, AlgEquiv.ofRingEquiv_symm_apply]
-  -- Unfold the local equivalences `iL` and `iM` packaged in `integerRingEquiv` so that
-  -- the application lemmas for `subringCongr` and `mapIntegralClosure` can rewrite the goal.
-  change (((RingEquiv.subringCongr (integerRing_eq_integralClosure K M)).symm
-      ((e.restrictScalars 𝒪[K]).mapIntegralClosure
-        ((RingEquiv.subringCongr (integerRing_eq_integralClosure K L)) x))).val : M) =
-      e x.val
-  simp only [RingEquiv.subringCongr_symm, RingEquiv.coe_subringCongr_apply,
-    AlgEquiv.coe_mapIntegralClosure, AlgEquiv.restrictScalars_apply]
+  simp [AlgEquiv.integerRingEquiv]
 
-/-- A base-field algebra map restricts to an algebra map of integer rings: `ι` carries `𝒪[L]`
-into `𝒪[M]`, both being integral closures of `𝒪[K]`. -/
-def _root_.AlgHom.integerRingHom (ι : L →ₐ[K] M) : 𝒪[L] →ₐ[𝒪[K]] 𝒪[M] where
-  toFun x := ⟨ι x, by
-    have hx : (x : L) ∈ (integralClosure 𝒪[K] L).toSubring :=
-      integerRing_eq_integralClosure K L ▸ x.2
-    rw [integerRing_eq_integralClosure K M]
-    exact (hx.map (ι.restrictScalars 𝒪[K]) :)⟩
-  map_one' := Subtype.ext (map_one ι)
-  map_mul' x y := Subtype.ext (map_mul ι (x : L) y)
-  map_zero' := Subtype.ext (map_zero ι)
-  map_add' x y := Subtype.ext (map_add ι (x : L) y)
-  commutes' r := Subtype.ext (by simp)
+/-- A base-field algebra map restricts to an algebra map of integer rings. -/
+def _root_.AlgHom.integerRingHom (ι : L →ₐ[K] M) : 𝒪[L] →ₐ[𝒪[K]] 𝒪[M] :=
+  ((integerRingEquivIntegralClosure K M).symm.toAlgHom.comp
+    (ι.restrictScalars 𝒪[K]).mapIntegralClosure).comp (integerRingEquivIntegralClosure K L)
 
 /-- The integer-ring map acts by the original field map. -/
 @[simp]
 theorem _root_.AlgHom.coe_integerRingHom_apply (ι : L →ₐ[K] M) (x : 𝒪[L]) :
     (ι.integerRingHom x : M) = ι (x : L) := by
-  rfl
+  simp [AlgHom.integerRingHom]
 
 end IntegerRingEquiv
 
