@@ -70,23 +70,7 @@ theorem _root_.Submodule.exists_isCompl_iff_isTorsionFree_quotient
         rw [S.ker_mkQ]
         exact x.2
       simp [p, e, hx]
-    have hker : LinearMap.ker p = LinearMap.range g := by
-      ext x
-      constructor
-      · intro hx
-        have hex : e x = 0 := congrArg Subtype.val (LinearMap.mem_ker.mp hx)
-        refine ⟨S.mkQ x, ?_⟩
-        have : x - g (S.mkQ x) = 0 := hex
-        exact (sub_eq_zero.mp this).symm
-      · rintro ⟨y, rfl⟩
-        rw [LinearMap.mem_ker]
-        apply Subtype.ext
-        have hy : S.mkQ (g y) = y := by
-          simpa only [LinearMap.comp_apply, LinearMap.id_apply] using LinearMap.congr_fun hg y
-        simp [p, e, hy]
-    refine ⟨LinearMap.range g, ?_⟩
-    rw [← hker]
-    exact LinearMap.isCompl_of_proj hp
+    exact ⟨LinearMap.ker p, LinearMap.isCompl_of_proj hp⟩
 
 end Submodule
 
