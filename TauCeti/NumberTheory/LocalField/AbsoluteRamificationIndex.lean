@@ -31,6 +31,7 @@ The definition is confined to mixed characteristic by requiring an algebra struc
 
 ## Main results
 
+* `TauCeti.FinitePadicExtension.charZero`: a finite extension of `ℚ_[p]` has characteristic zero.
 * `TauCeti.absoluteRamificationIndex_pos`: the absolute ramification index is positive.
 * `TauCeti.absoluteRamificationIndex_eq_natCastValuation`: the absolute ramification index is
   the normalized valuation of `p` in `K`.
@@ -82,6 +83,13 @@ instance ofInstances (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   toModuleFinite := inferInstance
   toValuativeExtension := inferInstance
 
+/-- A finite extension of `ℚ_[p]` has characteristic zero. This is not an instance: `p` is not
+determined by `CharZero K`. -/
+theorem charZero (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p] :
+    CharZero K :=
+  charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+
 end FinitePadicExtension
 
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -103,14 +111,12 @@ theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
     (n : ℕ) (hn : n ≠ 0) :
     natCastValuation K n
         (by
-          simpa only [map_natCast] using
-            (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
-              (Nat.cast_ne_zero.mpr hn : (n : ℚ_[p]) ≠ 0)) =
+          have := FinitePadicExtension.charZero K p
+          exact Nat.cast_ne_zero.mpr hn) =
       absoluteRamificationIndex K p * padicValNat p n := by
   let hnQ : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  let hnK : (n : K) ≠ 0 := by
-    simpa only [map_natCast] using
-      (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr hnQ
+  have := FinitePadicExtension.charZero K p
+  let hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hmap : Units.map (algebraMap ℚ_[p] K : ℚ_[p] →* K)
       (Units.mk0 (n : ℚ_[p]) hnQ) = Units.mk0 (n : K) hnK := by
     ext
@@ -131,9 +137,8 @@ theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
 theorem absoluteRamificationIndex_eq_natCastValuation :
     absoluteRamificationIndex K p = natCastValuation K p
       (by
-        simpa only [map_natCast] using
-          (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
-            (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero : (p : ℚ_[p]) ≠ 0)) := by
+        have := FinitePadicExtension.charZero K p
+        exact Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) := by
   have hpval : padicValNat p p = 1 := by
     simpa only [Padic.natCastValuation_eq_padicValNat] using
       (Padic.natCastValuation_self (p := p))
