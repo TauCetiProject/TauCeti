@@ -24,7 +24,7 @@ public section
 
 namespace TauCeti
 
-namespace Module.Basis
+namespace ModuleTopology
 
 variable {K V ι : Type*} [Semiring K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommMonoid V] [Module K V] [TopologicalSpace V] [IsModuleTopology K V]
@@ -59,7 +59,7 @@ theorem locallyCompactSpace (b : _root_.Module.Basis ι K V) [LocallyCompactSpac
     LocallyCompactSpace V :=
   (equivFunHomeomorph b).isOpenEmbedding.locallyCompactSpace
 
-end Module.Basis
+end ModuleTopology
 
 variable {K V : Type*} [DivisionRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
@@ -70,7 +70,7 @@ theorem t2Space_moduleTopology [T2Space K] :
     @T2Space V (moduleTopology K V) := by
   let _ : TopologicalSpace V := moduleTopology K V
   let b := Module.finBasis K V
-  exact Module.Basis.t2Space b
+  exact ModuleTopology.t2Space b
 
 /-- The module topology of a finite-dimensional space over a locally compact division ring
 equipped with a topological semiring structure is locally compact. -/
@@ -78,6 +78,6 @@ theorem locallyCompactSpace_moduleTopology [LocallyCompactSpace K] :
     @LocallyCompactSpace V (moduleTopology K V) := by
   let _ : TopologicalSpace V := moduleTopology K V
   let b := Module.finBasis K V
-  exact Module.Basis.locallyCompactSpace b
+  exact ModuleTopology.locallyCompactSpace b
 
 end TauCeti
