@@ -25,11 +25,15 @@ orbit of `z`, where it is the `m`-th power of the disc coordinate centred at `z`
 local multiplicity one and the disc coordinate is injective, so both factors are transparent and
 the exponent `m` is the whole contribution.
 
-Multiplicativity of the local multiplicity turns this into the order formula for descent: a
-holomorphic function `F` on `Γ \ ℍ` and its pullback to the upper half-plane satisfy
-`ord_z (F ∘ π) = m * ord_[z] F` (`Subgroup.localMultiplicity_comp_quotientMk`). Read from right
-to left, this computes the order of an invariant holomorphic function upstairs from the order of
-its unique descent (`Subgroup.existsUnique_mdifferentiable_quotientMk`) downstairs.
+Multiplicativity of the local multiplicity turns this into the ramification formula for descent: a
+holomorphic map `F` on `Γ \ ℍ` and its pullback to the upper half-plane satisfy
+`localMultiplicity (F ∘ π) z = m * localMultiplicity F (π z)`
+(`Subgroup.localMultiplicity_comp_quotientMk`). Read from right to left, this computes the local
+multiplicity of an invariant holomorphic map upstairs from that of its unique descent
+(`Subgroup.existsUnique_mdifferentiable_quotientMk`) downstairs. Both sides are local
+multiplicities, that is, ramification indices: `localMultiplicity F q` is the vanishing order of
+the chart representative of `F` recentred at `F q`, not the order of vanishing of `F` itself, so
+the formula says nothing on its own about the zeros of `F`.
 
 ## Main declarations
 
@@ -147,11 +151,13 @@ theorem one_lt_localMultiplicity_quotientMk_iff (z : ℍ) :
   rw [ne_eq, ← localMultiplicity_quotientMk_eq_one_iff]
   omega
 
-/-- **The local order formula for descent.** Pulling a holomorphic map on the coarse quotient back
+/-- **The ramification formula for descent.** Pulling a holomorphic map on the coarse quotient back
 to the upper half-plane multiplies its local multiplicity by the order of the stabilizer. Applied
-to the unique descent of an invariant holomorphic function
-(`Subgroup.existsUnique_mdifferentiable_quotientMk`), this computes the order of the function
-upstairs from the order of its descent downstairs. -/
+to the unique descent of an invariant holomorphic map
+(`Subgroup.existsUnique_mdifferentiable_quotientMk`), this computes the local multiplicity of the
+map upstairs from that of its descent downstairs. Recall that the local multiplicity of `F` at `q`
+is the vanishing order of the chart representative of `F` recentred at `F q`, so this is a
+statement about ramification indices, not about the zeros of `F`. -/
 theorem localMultiplicity_comp_quotientMk {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y]
     [IsManifold 𝓘(ℂ) 1 Y] {F : orbitRel.Quotient Γ ℍ → Y} {z : ℍ}
     (hF : ∀ᶠ q in 𝓝 (Quotient.mk (orbitRel Γ ℍ) z), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) F q) :
