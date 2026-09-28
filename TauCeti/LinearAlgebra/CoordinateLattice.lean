@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Lattice
+public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Basis.Submodule
 public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.LinearAlgebra.Eigenspace.Binomial
@@ -24,12 +25,16 @@ module instead of rebuilding the same restricted-scalars basis in each construct
 * `TauCeti.mem_coordinateLattice_iff`: membership means that every coordinate is integral.
 * `TauCeti.basisFun_mem_coordinateLattice` and `TauCeti.coordinateLatticeBasis`: the standard
   coordinate vectors and basis over `ℤ`.
+* `TauCeti.apply_coordinateLatticeBasis_eq_sum_of_forall_apply_eq_mulVec`: an endomorphism
+  represented by an integer matrix has that matrix in the coordinate-lattice basis.
 
 This is a reusable prerequisite for the Chevalley--Demazure carriers in Layer 9 of
 `TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section
+
+open scoped Matrix
 
 namespace TauCeti
 
@@ -76,6 +81,25 @@ noncomputable def coordinateLatticeBasis :
     ((coordinateLatticeBasis ι i : coordinateLattice ι) : ι → ℚ) = Pi.basisFun ℚ ι i := by
   unfold coordinateLatticeBasis coordinateLattice
   rw [Module.Basis.restrictScalars_apply]
+
+/-- An endomorphism represented by an integral matrix has that matrix as its coordinate-lattice
+basis expansion. -/
+theorem apply_coordinateLatticeBasis_eq_sum_of_forall_apply_eq_mulVec [Fintype ι]
+    (f : Module.End ℚ (ι → ℚ)) (X : Matrix ι ι ℤ)
+    (hf : ∀ v, f v = X.map (Int.cast : ℤ → ℚ) *ᵥ v) (s : ι) :
+    f ((coordinateLatticeBasis ι s : coordinateLattice ι) : ι → ℚ) =
+      ∑ r, X r s •
+        ((coordinateLatticeBasis ι r : coordinateLattice ι) : ι → ℚ) := by
+  classical
+  rw [hf, coe_coordinateLatticeBasis, Pi.basisFun_apply, Matrix.mulVec_single_one]
+  ext a
+  simp only [Matrix.col_apply, Matrix.map_apply, Finset.sum_apply, Pi.smul_apply,
+    coe_coordinateLatticeBasis, Pi.basisFun_apply, Pi.single_apply]
+  rw [Finset.sum_eq_single a]
+  · simp
+  · intro b _ hba
+    simp [Ne.symm hba]
+  · simp
 
 /-- Extending a coordinate-lattice basis coefficient to `ℚ` recovers the corresponding rational
 coordinate. -/

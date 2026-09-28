@@ -8,12 +8,15 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.OfMatrixGrid
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.UnitIntervalModel
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Density
+public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.UnitIntervalEmbedding
 
 /-!
 # Graphon space is totally bounded
 
 On the canonical carrier `(I, volume)` the space of graphons is **totally bounded**: for every `ε`
-there are finitely many graphons within `ε` in cut distance of every graphon.
+there are finitely many graphons within `ε` in cut distance of every graphon. The graphon space
+over an arbitrary probability carrier embeds isometrically in the unit-interval one
+(`isometry_toGraphonSpaceI`), so it is totally bounded as well.
 
 The net is finite because a Frieze--Kannan approximation is a finite weighted graph on a vertex set
 whose size depends only on `ε`, and both of its weightings can be pushed onto a grid at a controlled
@@ -29,6 +32,8 @@ being completeness.
 ## Main results
 
 * `TauCeti.DenseGraphLimits.totallyBounded_graphonSpaceI` -- `GraphonSpaceI` is totally bounded.
+* `TauCeti.DenseGraphLimits.totallyBounded_graphonSpace` -- the graphon space over an arbitrary
+  probability carrier is totally bounded.
 
 ## References
 
@@ -124,6 +129,12 @@ theorem totallyBounded_graphonSpaceI : TotallyBounded (Set.univ : Set GraphonSpa
   exact key
 
 end Net
+
+/-- **Graphon space over an arbitrary probability carrier is totally bounded**: it embeds
+isometrically in the totally bounded unit-interval graphon space. -/
+theorem totallyBounded_graphonSpace : TotallyBounded (Set.univ : Set (GraphonSpace Ω μ)) :=
+  Set.preimage_univ (f := toGraphonSpaceI (μ := μ)) ▸
+    totallyBounded_preimage isometry_toGraphonSpaceI.isUniformInducing totallyBounded_graphonSpaceI
 
 end DenseGraphLimits
 

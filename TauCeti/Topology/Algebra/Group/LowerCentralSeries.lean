@@ -84,6 +84,9 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
 * `TauCeti.pLowerCentralSeries_eq_topologicalClosure`,
   `TauCeti.pLowerCentralSeries_eq_of_discreteTopology`: comparison with the abstract lower
   `p`-central series of the underlying group.
+* `TauCeti.top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot`,
+  `MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow`: the cyclic group `ℤ/pⁿ`, and any
+  discrete group isomorphic to it, has `p`-class at most `n`.
 
 ## References
 
@@ -441,6 +444,15 @@ theorem pow_mem_pLowerCentralSeries {k : ℕ} {x : G} (hx : x ∈ pLowerCentralS
   rw [pLowerCentralSeries_succ]
   exact pow_mem_pLowerCentralStep hx
 
+/-- The `p ^ j`-th power of an element of `λ_k` lies in `λ_{k+j}`. -/
+theorem pow_pow_mem_pLowerCentralSeries {k : ℕ} {x : G} (hx : x ∈ pLowerCentralSeries p G k)
+    (j : ℕ) : x ^ p ^ j ∈ pLowerCentralSeries p G (k + j) := by
+  induction j with
+  | zero => simpa using hx
+  | succ j ih =>
+    rw [pow_succ, pow_mul, ← add_assoc]
+    exact pow_mem_pLowerCentralSeries ih
+
 /-- The commutators `⁅λ_k, G⁆` lie in `λ_{k+1}`. -/
 theorem commutator_pLowerCentralSeries_top_le (k : ℕ) :
     ⁅pLowerCentralSeries p G k, (⊤ : Subgroup G)⁆ ≤ pLowerCentralSeries p G (k + 1) := by
@@ -591,5 +603,33 @@ theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology [Discrete
     ⟨e, continuous_of_discreteTopology, continuous_of_discreteTopology⟩ k
 
 end Series
+
+/-! ### The cyclic groups `ℤ/pⁿ` -/
+
+section Cyclic
+
+variable {p : ℕ}
+
+/-- **The cyclic group `ℤ/pⁿ` has `p`-class at most `n`**: its lower `p`-series consists of the
+subgroups of `p ^ k`-th powers, and the `p ^ n`-th powers are trivial. -/
+theorem top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot (n : ℕ) :
+    (⊤ : Subgroup (Multiplicative (ZMod (p ^ n)))).pLowerCentralSeries p n = ⊥ := by
+  rw [Subgroup.top_pLowerCentralSeries_eq_range_powMonoidHom, MonoidHom.range_eq_bot_iff]
+  refine MonoidHom.ext fun x ↦ ?_
+  rw [powMonoidHom_apply, MonoidHom.one_apply, ← ofAdd_toAdd x, ← ofAdd_nsmul, nsmul_eq_mul,
+    ZMod.natCast_self, zero_mul, ofAdd_zero]
+
+variable {H : Type*} [Group H] [TopologicalSpace H] [DiscreteTopology H]
+
+/-- A discrete group isomorphic to `ℤ/pⁿ` has `p`-class at most `n`. -/
+theorem _root_.MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow {n : ℕ}
+    (e : H ≃* Multiplicative (ZMod (p ^ n))) : pLowerCentralSeries p H n = ⊥ := by
+  let : TopologicalSpace (Multiplicative (ZMod (p ^ n))) := ⊥
+  have : DiscreteTopology (Multiplicative (ZMod (p ^ n))) := ⟨rfl⟩
+  rw [← Subgroup.map_eq_bot_iff_of_injective (f := e.toMonoidHom) _ e.injective,
+    e.map_pLowerCentralSeries_eq_of_discreteTopology, pLowerCentralSeries_eq_of_discreteTopology,
+    top_pLowerCentralSeries_multiplicative_zmod_pow_eq_bot]
+
+end Cyclic
 
 end TauCeti

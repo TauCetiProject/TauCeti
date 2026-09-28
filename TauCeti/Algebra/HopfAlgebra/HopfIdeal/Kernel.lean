@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.RingTheory.Flat.Equalizer
+public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
@@ -41,13 +41,11 @@ in particular over fields, where every module is flat.
   the codomain is.
 * `TauCeti.HopfIdeal.kerOfSurjective_mkBialgHom`: the kernel of the quotient morphism by `I`
   is `I`.
-* `TauCeti.HopfIdeal.ker_lTensor_eq_rightTensorIdeal`: tensoring on the left by a flat algebra
-  carries the kernel of an algebra map to the corresponding right tensor ideal.
 
 ## References
 
 The construction is the standard kernel Hopf ideal. The tensor-kernel exactness steps use
-Mathlib's `Algebra.TensorProduct.map_ker` and `Module.Flat.ker_lTensor_eq`.
+Mathlib's `Algebra.TensorProduct.map_ker` and flatness API.
 
 -/
 
@@ -60,50 +58,6 @@ universe u v w x
 namespace TauCeti
 
 namespace HopfIdeal
-
-section TensorIdeal
-
-variable {R : Type u}
-variable [CommRing R]
-
-/-- Tensoring on the left by a flat algebra carries the kernel of an algebra map to the
-corresponding right tensor ideal. -/
-theorem ker_lTensor_eq_rightTensorIdeal {A B : Type*} [Ring A] [Ring B]
-    [Algebra R A] [Algebra R B] [Module.Flat R A] (f : A →ₐ[R] B) :
-    RingHom.ker (Algebra.TensorProduct.map (AlgHom.id R A) f) =
-      rightTensorIdeal (R := R) (H := A) (RingHom.ker f) := by
-  rw [← Submodule.restrictScalars_inj R]
-  have hmap :
-      (RingHom.ker (Algebra.TensorProduct.map (AlgHom.id R A) f)).restrictScalars R =
-        LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor R A f.toLinearMap) := by
-    have hlinear :
-        (Algebra.TensorProduct.map (AlgHom.id R A) f).toLinearMap =
-          TensorProduct.AlgebraTensorModule.lTensor R A f.toLinearMap := by
-      apply TensorProduct.AlgebraTensorModule.ext
-      intro x y
-      simp only [Algebra.TensorProduct.toLinearMap_map, AlgHom.toLinearMap_id,
-        TensorProduct.AlgebraTensorModule.map_tmul,
-        TensorProduct.AlgebraTensorModule.lTensor_tmul, LinearMap.id_apply]
-    ext x
-    simp only [Submodule.restrictScalars_mem, RingHom.mem_ker, LinearMap.mem_ker]
-    rw [← LinearMap.congr_fun hlinear x]
-    simp only [AlgHom.toLinearMap_apply]
-  rw [hmap]
-  rw [Module.Flat.ker_lTensor_eq]
-  have hker : f.toLinearMap.ker = (RingHom.ker f).restrictScalars R := by
-    ext x
-    simp only [LinearMap.mem_ker, Submodule.restrictScalars_mem, RingHom.mem_ker,
-      AlgHom.toLinearMap_apply]
-  rw [hker]
-  have hsubtype : ((RingHom.ker f).restrictScalars R).subtype =
-      (RingHom.ker f).subtype.restrictScalars R := by
-    ext x
-    exact (LinearMap.restrictScalars_apply R (RingHom.ker f).subtype x).symm
-  rw [hsubtype, rightTensorIdeal_def]
-  exact TensorProduct.AlgebraTensorModule.range_lTensor_idealMap
-    (R := R) A R (RingHom.ker f)
-
-end TensorIdeal
 
 section BialgScaffolding
 

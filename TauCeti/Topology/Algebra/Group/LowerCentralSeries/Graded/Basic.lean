@@ -41,7 +41,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   degree zero (`TauCeti.gradedPieceZeroEquiv`).
 * `TauCeti.gradedBracket`: the bracket `gr_j(G) →+ gr_k(G) →+ gr_{j+k+1}(G)`, and its
   `ZMod p`-bilinear form `TauCeti.gradedBracketLinear`.
-* `TauCeti.gradedPow`: the `p`-power operator `π : gr_k(G) → gr_{k+1}(G)`.
+* `TauCeti.gradedPow`: the `p`-power operator `π : gr_k(G) → gr_{k+1}(G)`, and its iterate
+  `TauCeti.gradedPowIter` `π^j : gr_0(G) → gr_j(G)` on degree-zero classes.
 * `TauCeti.gradedMap`: the map on graded pieces induced by a continuous homomorphism.
 
 ## Main results
@@ -62,6 +63,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   `π [x, y] = [π x, y] = [x, π y]` away from degree zero.
 * `TauCeti.gradedMap_gradedBracket`, `TauCeti.gradedMap_gradedPow`: naturality of the bracket and
   of `π`.
+* `MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`: in a discrete group
+  isomorphic to `ℤ/pⁿ⁺¹`, `π^n` of the class of the generator is nonzero.
 
 ## References
 
@@ -862,5 +865,89 @@ theorem gradedMap_gradedPow (f : G →* H) (hf : Continuous f) {k : ℕ} (x : gr
   exact Subtype.ext (map_pow f _ _)
 
 end Functoriality
+
+/-! ### Iterated `p`-powers of degree-zero classes -/
+
+section PowIter
+
+variable (p G) in
+/-- **The iterated `p`-power operator** `π^j : gr_0(G) → gr_j(G)`, the `j`-fold composite
+`π ∘ ⋯ ∘ π` of `TauCeti.gradedPow` starting in degree zero. On classes it is induced by
+`g ↦ g ^ (p ^ j)` (`TauCeti.gradedPowIter_gradedMkZero`). It commutes with scalars
+(`TauCeti.gradedPowIter_smul`), but for `p = 2` it need not be additive: already `π^1 = π` has
+the defect `[x, y]` in degree zero (`TauCeti.gradedPow_add_zero_of_two`), which is nonzero for the
+free pro-`2` group of rank two (`TauCeti.gradedPow_freeProP_two_not_additive`). -/
+def gradedPowIter : (j : ℕ) → gradedPiece p G 0 → gradedPiece p G j
+  | 0 => id
+  | j + 1 => gradedPow p G j ∘ gradedPowIter j
+
+@[simp]
+theorem gradedPowIter_zero (x : gradedPiece p G 0) : gradedPowIter p G 0 x = x :=
+  (rfl)
+
+@[simp]
+theorem gradedPowIter_succ (j : ℕ) (x : gradedPiece p G 0) :
+    gradedPowIter p G (j + 1) x = gradedPow p G j (gradedPowIter p G j x) :=
+  (rfl)
+
+/-- **The iterated `p`-power operator on classes**: `π^j` sends the class of `g` to the class of
+`g ^ (p ^ j)` in `gr_j(G)`. -/
+@[simp]
+theorem gradedPowIter_gradedMkZero (j : ℕ) (g : G) :
+    gradedPowIter p G j (gradedMkZero p G g) =
+      gradedMk p G j ⟨g ^ p ^ j, by
+        simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g) j⟩ := by
+  induction j with
+  | zero =>
+    rw [gradedPowIter_zero, gradedMkZero]
+    congr 1
+    exact Subtype.ext (by simp)
+  | succ j ih =>
+    rw [gradedPowIter_succ, ih, gradedPow_gradedMk]
+    congr 1
+    exact Subtype.ext (by simp [pow_succ, pow_mul])
+
+@[simp]
+theorem gradedPowIter_zero_right (j : ℕ) : gradedPowIter p G j 0 = 0 := by
+  rw [← gradedMkZero_one, gradedPowIter_gradedMkZero, gradedMk_eq_zero_iff, coe_mk, one_pow]
+  exact one_mem _
+
+/-- **The iterated `p`-power operator commutes with scalars**: in degree zero by
+`TauCeti.gradedPow_smul_zero`, and above degree zero because `π` is additive there. -/
+@[simp]
+theorem gradedPowIter_smul [NeZero p] (j : ℕ) (c : ZMod p) (x : gradedPiece p G 0) :
+    gradedPowIter p G j (c • x) = c • gradedPowIter p G j x := by
+  induction j with
+  | zero => rw [gradedPowIter_zero, gradedPowIter_zero]
+  | succ j ih =>
+    rw [gradedPowIter_succ, gradedPowIter_succ, ih]
+    rcases Nat.eq_zero_or_pos j with rfl | hj
+    · exact gradedPow_smul_zero c _
+    · exact map_smul ((gradedPowAddMonoidHom p G hj).toZModLinearMap p) c _
+
+/-- **Naturality of the iterated `p`-power operator.** -/
+@[simp]
+theorem gradedMap_gradedPowIter {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    (f : G →* H) (hf : Continuous f) (j : ℕ) (x : gradedPiece p G 0) :
+    gradedMap p f hf j (gradedPowIter p G j x) = gradedPowIter p H j (gradedMap p f hf 0 x) := by
+  induction j with
+  | zero => rw [gradedPowIter_zero, gradedPowIter_zero]
+  | succ j ih => rw [gradedPowIter_succ, gradedPowIter_succ, gradedMap_gradedPow, ih]
+
+variable [Fact p.Prime] {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H] in
+/-- In a discrete group isomorphic to `ℤ/pⁿ⁺¹`, the iterated `p`-power class `π^n` of the
+generator is nonzero in `gr_n`. -/
+theorem _root_.MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow {n : ℕ}
+    (e : H ≃* Multiplicative (ZMod (p ^ (n + 1)))) :
+    gradedPowIter p H n (gradedMkZero p H (e.symm (Multiplicative.ofAdd 1))) ≠ 0 := by
+  rw [gradedPowIter_gradedMkZero, ne_eq, gradedMk_eq_zero_iff, Subgroup.coe_mk,
+    e.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow, Subgroup.mem_bot, ← map_pow,
+    e.symm.map_eq_one_iff]
+  have hp : p.Prime := Fact.out
+  apply pow_ne_one_of_lt_orderOf (pow_ne_zero n hp.ne_zero)
+  rw [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  exact Nat.pow_lt_pow_right hp.one_lt n.lt_succ_self
+
+end PowIter
 
 end TauCeti
