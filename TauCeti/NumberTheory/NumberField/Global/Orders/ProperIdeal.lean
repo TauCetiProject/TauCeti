@@ -73,6 +73,7 @@ theorem multiplierRing_le_multiplierRing_mul
     exact (I * J : FractionalIdeal _ K).val.add_mem ha hb
 
 /-- Multiplication by an invertible fractional ideal preserves the multiplier ring. -/
+@[simp]
 theorem multiplierRing_mul_isUnit
     (I J : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) (hJ : IsUnit J) :
     O.multiplierRing (I * J) = O.multiplierRing I := by
@@ -82,6 +83,7 @@ theorem multiplierRing_mul_isUnit
   simpa [mul_assoc, hJJ'] using h
 
 /-- Scaling a fractional ideal by a nonzero field element preserves its multiplier ring. -/
+@[simp]
 theorem multiplierRing_mul_spanSingleton
     (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) {x : K} (hx : x ≠ 0) :
     O.multiplierRing (I * FractionalIdeal.spanSingleton _ x) = O.multiplierRing I := by
@@ -106,12 +108,14 @@ theorem isProperFractionalIdeal_iff (I : FractionalIdeal (nonZeroDivisors O.toSu
     exact le_antisymm (fun x hx => h x hx) (O.order_le_multiplierRing I)
 
 /-- Properness is unchanged by multiplication by an invertible fractional ideal. -/
+@[simp]
 theorem isProperFractionalIdeal_mul_isUnit
     (I J : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) (hJ : IsUnit J) :
     O.IsProperFractionalIdeal (I * J) ↔ O.IsProperFractionalIdeal I := by
   simp only [IsProperFractionalIdeal, O.multiplierRing_mul_isUnit I J hJ]
 
 /-- Properness is unchanged by nonzero principal scaling. -/
+@[simp]
 theorem isProperFractionalIdeal_mul_spanSingleton
     (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) {x : K} (hx : x ≠ 0) :
     O.IsProperFractionalIdeal (I * FractionalIdeal.spanSingleton _ x) ↔
