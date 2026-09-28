@@ -57,6 +57,9 @@ noncomputable def splitMonoSingularHomologyMapOfTotallyDisconnectedSpace
       simp only [r, TopCat.toSSetIsoConst, NatTrans.comp_app]
       apply (P.snd.toSSetObjEquiv n).injective
       ext y
+      -- The constant-set isomorphism evaluates a simplex at an arbitrary point. Here `change`
+      -- exposes that evaluation through the singular-set equivalence and the inclusion map;
+      -- there is no named pointwise simp lemma for this composite of natural transformations.
       change Function.invFun P.map.hom
         (P.map.hom ((P.snd.toSSetObjEquiv n x) (Classical.arbitrary _))) =
           (P.snd.toSSetObjEquiv n x) y
