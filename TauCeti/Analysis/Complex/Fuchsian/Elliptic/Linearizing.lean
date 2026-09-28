@@ -108,11 +108,9 @@ coordinate of the invariant disc; the stabilizer of `z` acts on that disc, and b
 The image `image` of the reparametrization is only required to be open, not to be the whole
 Euclidean disc: local linearizing coordinates are not all rotations of the disc coordinate, the
 equivariant biholomorphic reparametrizations of a disc being an infinite-dimensional family.
-Biholomorphy is phrased through the two ambient functions `toFun` and `invFun` and their
-holomorphy on the disc and on the image, so that the change of coordinate between two local
-linearizing coordinates is seen to be holomorphic without any bookkeeping on subtypes; the
-holomorphy of `invFun` is recorded explicitly for use, and follows too from that of `toFun` by
-the inverse function theorem, the image being open
+Biholomorphy is the requirement that `toFun` and `invFun` be holomorphic on the disc and on
+`image` respectively and inverse to one another there, the holomorphy of `invFun` following too
+from that of `toFun` by the inverse function theorem, the image being open
 (`Subgroup.LinearizingCoordinate.isOpen_image`). -/
 structure LinearizingCoordinate (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (ε : ℝ)
     [Finite (stabilizer Γ z)] where
@@ -148,17 +146,6 @@ structure LinearizingCoordinate (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (ε : ℝ)
   smul : ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ, ∀ w : ℂ,
     w ∈ Metric.ball 0 (Real.tanh (ε / 2)) → toFun (ζ • w) = ζ • toFun w
 
-/-- The radius of the disc of the invariant hyperbolic disc of radius `ε` about `z` is
-positive. -/
-private theorem radius_pos (hε : 0 < ε) : 0 < Real.tanh (ε / 2) := by
-  rw [← Real.tanh_zero]
-  exact Real.tanh_strictMono (by linarith)
-
-/-- The radius of the disc of the invariant disc, viewed in `ℂ`, has modulus equal to itself, by
-`Complex.norm_of_nonneg` for the positivity of that radius. -/
-private theorem norm_tanh (hε : 0 < ε) : ‖(Real.tanh (ε / 2) : ℂ)‖ = Real.tanh (ε / 2) :=
-  Complex.norm_of_nonneg (radius_pos hε).le
-
 omit [Finite (stabilizer Γ z)] in
 /-- The disc coordinate of a point of the invariant disc lies in the disc of the invariant
 disc, the domain of a reparametrization. -/
@@ -168,11 +155,6 @@ private theorem mem_ball_discCoordinate (τ : stabilizerBall Γ z ε) :
   rw [mem_ball_zero_iff]
   exact (mem_ball_iff_norm_discCoordinate_lt (z := z) (τ := (τ : ℍ)) (ε := ε)).mp hball
 
-/-- The centre lies in the disc of the invariant disc. -/
-private theorem mem_ball_zero (hε : 0 < ε) : (0 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
-  rw [mem_ball_zero_iff]
-  simpa using radius_pos hε
-
 /-- A rotation of a point of the disc of the invariant disc lies in it, the modulus of a root of
 unity being one by `Complex.norm_eq_one_of_mem_rootsOfUnity`. -/
 private theorem mem_ball_smul (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) {w : ℂ}
@@ -181,12 +163,6 @@ private theorem mem_ball_smul (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) �
   rw [mem_ball_zero_iff] at hw ⊢
   rw [rootsOfUnity.smul_eq_mul, norm_mul, Complex.norm_eq_one_of_mem_rootsOfUnity ζ.2, one_mul]
   exact hw
-
-/-- Half the radius of the disc of the invariant disc lies in it. -/
-private theorem mem_ball_radius_div_two (hε : 0 < ε) :
-    (Real.tanh (ε / 2) / 2 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
-  rw [mem_ball_zero_iff, Complex.norm_div, Complex.norm_ofNat, norm_tanh hε]
-  linarith [radius_pos hε]
 
 /-- The reparametrization of a local linearizing coordinate is injective on the disc of the
 invariant disc. -/
@@ -228,7 +204,8 @@ theorem LinearizingCoordinate.coordinate_eq_zero_iff
       have h'' : ψ.toFun (discCoordinate z (τ : ℍ)) = 0 := h
       rw [h'', ψ.zero]
     have hinj : discCoordinate z (τ : ℍ) = 0 :=
-      ψ.injOn_ball (mem_ball_discCoordinate τ) (mem_ball_zero hε) h'
+      ψ.injOn_ball (mem_ball_discCoordinate τ)
+        (Metric.mem_ball_self (Real.tanh_pos_of_pos (by linarith : 0 < ε / 2))) h'
     exact discCoordinate_eq_zero_iff.mp hinj
   · intro hτ
     have hmem : (z : ℍ) ∈ (stabilizerBall Γ z ε : Set ℍ) :=
@@ -290,9 +267,12 @@ theorem LinearizingCoordinate.mem_image_iff (ψ : Γ.LinearizingCoordinate z ε)
 positive radius under a holomorphic reparametrization which is not constant there. -/
 theorem LinearizingCoordinate.isOpen_image (hε : 0 < ε) (ψ : Γ.LinearizingCoordinate z ε) :
     IsOpen ψ.image := by
-  have hball : (0 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := mem_ball_zero hε
-  have hhalf : (Real.tanh (ε / 2) / 2 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) :=
-    mem_ball_radius_div_two hε
+  have hpos : 0 < Real.tanh (ε / 2) := Real.tanh_pos_of_pos (by linarith)
+  have hball : (0 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := Metric.mem_ball_self hpos
+  have hhalf : (Real.tanh (ε / 2) / 2 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
+    rw [mem_ball_zero_iff, Complex.norm_div, Complex.norm_ofNat,
+      Complex.norm_of_nonneg hpos.le]
+    linarith
   have hpre : IsPreconnected (Metric.ball (0 : ℂ) (Real.tanh (ε / 2))) :=
     (convex_ball (0 : ℂ) (Real.tanh (ε / 2))).isPreconnected
   rcases (ψ.differentiable.analyticOnNhd Metric.isOpen_ball).is_constant_or_isOpen hpre with
@@ -308,8 +288,8 @@ theorem LinearizingCoordinate.isOpen_image (hε : 0 < ε) (ψ : Γ.LinearizingCo
       exact e
     have hzero : (Real.tanh (ε / 2) / 2 : ℂ) = 0 := e1.symm.trans e0
     have hnorm := congrArg (fun w : ℂ => ‖w‖) hzero
-    rw [norm_zero, Complex.norm_div, Complex.norm_ofNat, norm_tanh hε] at hnorm
-    linarith [radius_pos hε]
+    rw [norm_zero, Complex.norm_div, Complex.norm_ofNat, Complex.norm_of_nonneg hpos.le] at hnorm
+    linarith
   · rw [ψ.image_eq]
     exact hopen _ subset_rfl Metric.isOpen_ball
 
@@ -424,11 +404,10 @@ coordinate in the other direction
 def LinearizingCoordinate.transFun (ψ ψ' : Γ.LinearizingCoordinate z ε) : ℂ → ℂ :=
   fun u => ψ'.toFun (ψ.invFun u)
 
-/-- The change of local linearizing coordinate takes the image of the reparametrization to the
-image of the reparametrization. For a point given as a coordinate value this is the simplification
-`Subgroup.LinearizingCoordinate.transFun_coordinate`, so this lemma is deliberately not tagged
-`@[simp]`: the membership form is not the simp normal form of
-`Subgroup.LinearizingCoordinate.mem_image_iff`. -/
+/-- **The change of local linearizing coordinate takes a coordinate value to a coordinate
+value**: it carries a point of the image `Subgroup.LinearizingCoordinate.image` of `ψ` to a
+point of the image of `ψ'`, so the change of coordinate is a map between the two open sets of
+coordinate values. -/
 theorem LinearizingCoordinate.transFun_mem_image (ψ ψ' : Γ.LinearizingCoordinate z ε)
     {u : ℂ} (hu : u ∈ ψ.image) : transFun ψ ψ' u ∈ ψ'.image := by
   rw [ψ'.image_eq, Set.mem_image]
