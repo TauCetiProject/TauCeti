@@ -46,7 +46,6 @@ lemma IsCellular.mapsTo {f : TopCat.of X ⟶ TopCat.of Y}
   exact (skeletonLT C' (n : ℕ∞)).subset_complex (hf n hn)
 
 /-- The identity map preserves every skeleton. -/
-@[simp]
 lemma isCellular_id : IsCellular C C (𝟙 (TopCat.of X)) := fun _ _ h ↦ h
 
 /-- The composite of cellular maps is cellular. -/

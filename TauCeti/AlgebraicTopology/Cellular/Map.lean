@@ -41,7 +41,6 @@ variable {f : TopCat.of X ⟶ TopCat.of Y} (hf : IsCellular C C' f)
 def skeletonMap (n : ℕ) : skeletonObj C n ⟶ skeletonObj C' n :=
   TopCat.ofHom ⟨(hf n).restrict, f.hom.continuous.restrict (hf n)⟩
 
-@[simp]
 lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
     (skeletonMap C C' hf n x).1 = f x.1 := (rfl)
 
