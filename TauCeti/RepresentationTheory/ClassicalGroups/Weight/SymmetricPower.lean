@@ -9,6 +9,8 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
 -- The weight spaces of a representation with a basis of weight vectors.
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basis
+-- The multiplicity vector `TauCeti.weightOfMultiset` of a multiset, and its torus character.
+public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Combinatorics
 
 /-!
 # The weights of a symmetric power of the standard representation
@@ -21,7 +23,7 @@ powers, the representations `Symᵈ(kⁿ)`.
 A product `e_{i₁} ⋯ e_{i_d}` of standard basis vectors is again a weight vector: a diagonal matrix
 scales it by the product `t_{i₁} ⋯ t_{i_d}` of the corresponding entries, repetitions included.
 Its weight is therefore the **multiplicity vector** of the unordered tuple `{i₁, …, i_d}`, which is
-`TauCeti.weightOfMultiset` below.  Those products are the basis `Module.Basis.symmetricPower` of
+`TauCeti.weightOfMultiset`.  Those products are the basis `Module.Basis.symmetricPower` of
 `Sym[k]^d(Fin n → k)`, indexed by `Sym (Fin n) d`, and a multiset over `Fin n` is recovered from
 its multiplicity vector, so the general machinery of
 `TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basis` applies verbatim: the weight-`l` space
@@ -45,14 +47,8 @@ symmetric power being zero.  For `0 < n` the largest weight in the dominance ord
 `(d, 0, …, 0)`; identifying it as the *highest* weight of `Symᵈ(kⁿ)` needs the highest-weight
 classification and is not done here.
 
-## Main definitions
-
-* `TauCeti.weightOfMultiset`: the weight of a multiset over `Fin n`, its multiplicity vector.
-
 ## Main results
 
-* `TauCeti.exists_sym_weightOfMultiset_eq_iff`: **the multiplicity vectors of the unordered
-  `d`-tuples over `Fin n` are exactly the nonnegative integer vectors summing to `d`.**
 * `TauCeti.symPowerRep_diagGL_apply_basis`: **a product of standard basis vectors is an
   eigenvector of every diagonal matrix**, with eigenvalue the product of the entries it lists.
 * `TauCeti.basis_mem_weightSpace_symPowerRep`: that product lies in the weight space of the
@@ -70,14 +66,13 @@ classification and is not done here.
 
 ## Implementation notes
 
-The multiset weight is packaged as `TauCeti.weightOfMultiset`, taking a bare `Multiset (Fin n)`
-rather than an element of `Sym (Fin n) d`: nothing in the definition or in its injectivity uses
-the cardinality, and the consumers below apply it to the underlying multiset of a basis index.
-The cardinality reappears only in `TauCeti.sum_weightOfMultiset`, which records that a weight of
-`Symᵈ(kⁿ)` has total degree `d`.  The vector itself is `Multiset.toFinsupp` read in `ℤ`, but it is
-spelled as a plain function rather than through that equivalence because a weight is a plain
-function `Fin n → ℤ`: routing it through a `Finsupp` coercion would leave every rewrite below
-fighting the coercion for no gain.
+Everything past the eigenvector computation is an instance of
+`TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basis`, which reads the weight spaces of a
+representation off a basis of weight vectors; what is specific to the symmetric power is the
+product basis, the multiset labelling, and the injectivity of that labelling.  The multiplicity
+vector itself and the combinatorics of which vectors arise are
+`TauCeti.RepresentationTheory.ClassicalGroups.Weight.Combinatorics`, which mentions no
+representation.
 
 The coefficients are pinned to `k : Type` rather than a general universe, as everywhere in the
 symmetric-power API: `TauCeti.SymmetricPower` is built on `PiTensorProduct` at that altitude.  The
@@ -102,69 +97,9 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-! ### The weight of a multiset -/
-
-/-- The **weight of a multiset** over `Fin n`: its multiplicity vector.  This is the weight carried
-by the product of the standard basis vectors it lists. -/
-def weightOfMultiset {n : ℕ} (s : Multiset (Fin n)) : Fin n → ℤ := fun i => Multiset.count i s
-
-/-- The defining formula for `TauCeti.weightOfMultiset`. -/
-@[simp]
-theorem weightOfMultiset_apply {n : ℕ} (s : Multiset (Fin n)) (i : Fin n) :
-    weightOfMultiset s i = Multiset.count i s :=
-  (rfl)
-
-/-- Multiplicities are nonnegative, so the weights of a symmetric power are. -/
-theorem weightOfMultiset_nonneg {n : ℕ} (s : Multiset (Fin n)) (i : Fin n) :
-    0 ≤ weightOfMultiset s i :=
-  Int.natCast_nonneg _
-
-/-- **A multiset is recovered from its weight**, a multiset over `Fin n` being determined by its
-multiplicities. -/
-theorem weightOfMultiset_injective {n : ℕ} : Function.Injective (weightOfMultiset (n := n)) :=
-  fun _ _ h => Multiset.count_injective (funext fun i => Nat.cast_injective (congrFun h i))
-
-/-- The weight of a multiset has total degree its cardinality: the weights of `Symᵈ(kⁿ)` all lie
-in degree `d`. -/
-theorem sum_weightOfMultiset {n : ℕ} (s : Multiset (Fin n)) :
-    ∑ i, weightOfMultiset s i = Multiset.card s := by
-  simp only [weightOfMultiset_apply]
-  rw [← Nat.cast_sum, Multiset.sum_count_eq_card fun a _ => Finset.mem_univ a]
-
-/-- **The weights of `Symᵈ(kⁿ)` are the exponent vectors of the degree-`d` monomials in `n`
-variables**: an integer vector is the multiplicity vector of an unordered `d`-tuple over `Fin n`
-exactly when it is nonnegative and sums to `d`. -/
-theorem exists_sym_weightOfMultiset_eq_iff {n d : ℕ} (l : Fin n → ℤ) :
-    (∃ s : Sym (Fin n) d, weightOfMultiset (s : Multiset (Fin n)) = l) ↔
-      (∀ i, 0 ≤ l i) ∧ ∑ i, l i = d := by
-  refine ⟨?_, ?_⟩
-  · rintro ⟨s, rfl⟩
-    exact ⟨weightOfMultiset_nonneg _, by rw [sum_weightOfMultiset, Sym.card_coe]⟩
-  · rintro ⟨hnonneg, hsum⟩
-    -- `Sym.equivNatSumOfFintype` turns the natural-valued multiplicity vector back into a multiset
-    have hnat : ∑ i, (l i).toNat = d := by
-      have : ((∑ i, (l i).toNat : ℕ) : ℤ) = (d : ℤ) := by
-        rw [Nat.cast_sum, ← hsum]
-        exact Finset.sum_congr rfl fun i _ => Int.toNat_of_nonneg (hnonneg i)
-      exact_mod_cast this
-    refine ⟨(Sym.equivNatSumOfFintype (Fin n) d).symm ⟨_, hnat⟩, funext fun i => ?_⟩
-    rw [weightOfMultiset_apply, ← Sym.coe_equivNatSumOfFintype_apply_apply,
-      Equiv.apply_symm_apply]
-    exact Int.toNat_of_nonneg (hnonneg i)
-
 section CommRing
 
 variable {k : Type} [CommRing k] {n d : ℕ}
-
-/-- **The torus character of a multiset weight** is the product of the entries it lists. -/
-@[simp]
-theorem weightChar_weightOfMultiset (s : Multiset (Fin n)) (t : Fin n → kˣ) :
-    weightChar k (weightOfMultiset s) t = (s.map t).prod := by
-  rw [weightChar_apply, torusCharacter_def, Finset.prod_multiset_map_count]
-  simp only [weightOfMultiset_apply, zpow_natCast]
-  refine (Finset.prod_subset (Finset.subset_univ s.toFinset) fun i _ hi => ?_).symm
-  rw [Multiset.mem_toFinset] at hi
-  rw [Multiset.count_eq_zero_of_notMem hi, pow_zero]
 
 /-! ### The products of standard basis vectors are weight vectors -/
 
