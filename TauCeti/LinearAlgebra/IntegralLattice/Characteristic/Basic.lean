@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Int.ModEq
+public import Mathlib.Data.ZMod.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.OrthogonalSum
 
 /-!
@@ -14,7 +15,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.OrthogonalSum
 A lattice vector is characteristic when pairing it with any lattice vector agrees modulo two
 with the latter's norm. This parity condition is the input to the characteristic-norm congruence
 for unimodular lattices. The results here give its behavior under evenness, isometries,
-translation by twice a vector, and orthogonal sums.
+translation by twice a vector, and orthogonal sums. The norm modulo two is also packaged as
+an additive character.
 
 The congruences are in `ℤ`, using the integral restriction of the rational bilinear form.
 
@@ -33,6 +35,21 @@ variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 variable {W : Type v} [AddCommGroup W] [Module ℚ W]
 
 namespace IntegralLattice
+
+/-- The norm modulo two, as an additive character of the carrier. -/
+noncomputable def normParity (L : IntegralLattice V) : L →+ ZMod 2 where
+  toFun x := (L.integralNorm x : ZMod 2)
+  map_zero' := by simp
+  map_add' x y := by
+    rw [L.integralNorm_add]
+    push_cast
+    simp only [show (2 : ZMod 2) = 0 by decide, zero_mul, add_zero]
+
+/-- The norm parity character evaluates to the norm modulo two. -/
+@[simp]
+theorem normParity_apply (L : IntegralLattice V) (x : L) :
+    L.normParity x = (L.integralNorm x : ZMod 2) :=
+  (rfl)
 
 /-- A vector is characteristic when its pairing with every lattice vector is congruent
 modulo two to that vector's norm. -/
