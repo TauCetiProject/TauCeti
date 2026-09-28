@@ -29,9 +29,7 @@ open CategoryTheory Limits MonoidalCategory
 
 namespace TauCeti
 
-namespace SheafOfModules
-
-open _root_.SheafOfModules
+open _root_.SheafOfModules TauCeti.SheafOfModules
 
 universe u
 
@@ -125,7 +123,5 @@ theorem ihomFree_map_hom (I : Type u) [Finite I]
   rfl
 
 end
-
-end SheafOfModules
 
 end TauCeti
