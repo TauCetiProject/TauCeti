@@ -61,7 +61,11 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
     simpa [SL_slash_apply, j, hpow] using hz
   have hAction : (map (Int.castRingHom ℝ) γ) • z = γ • z := by
     rw [ModularGroup.sl_moeb]
-    rfl
+    change (mapGL ℝ (map (Int.castRingHom ℝ) γ)) • z = (mapGL ℝ γ) • z
+    have hMap : mapGL ℝ (map (Int.castRingHom ℝ) γ) = mapGL ℝ γ := by
+      ext i j
+      simp [mapGL_coe_matrix]
+    exact congrArg (· • z) hMap
   rw [hAction]
   exact hinv
 
