@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.LinearMap.EqOn
+public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
@@ -529,24 +530,11 @@ section Coordinate
 variable {R : Type u} [CommSemiring R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
 
--- Mathlib's `Matrix.GeneralLinearGroup.toLin` requires `CommRing`; this coordinate equivalence
--- also works over a commutative semiring, as needed by the full orthogonal group API below.
-private def coordinateToLin :
-    Matrix.GeneralLinearGroup n R ≃* LinearMap.GeneralLinearGroup R (n → R) :=
-  Units.mapEquiv Matrix.toLinAlgEquiv'.toMulEquiv
-
-private theorem coordinateToLin_apply (A : Matrix.GeneralLinearGroup n R) (v : n → R) :
-    (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R) (coordinateToLin A)) v =
-      Matrix.mulVec (A : Matrix n n R) v := by
-  rw [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
-    coordinateToLin, Units.coe_mapEquiv]
-  exact Matrix.toLinAlgEquiv'_apply _ _
-
 /-- The coordinate inclusion of an orthogonal group into `GL(n, R)`. -/
 noncomputable def _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     orthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
-  (coordinateToLin (n := n) (R := R)).symm.toMonoidHom.comp
+  (matrixGeneralLinearEquiv (n := n) (R := R)).symm.toMonoidHom.comp
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.toMonoidHom.comp
       (orthogonalGroup Q).subtype)
 
@@ -561,9 +549,9 @@ theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_apply
         (Pi.single j 1)) i := by
       rw [Matrix.mulVec_single_one, Matrix.col_apply]
     _ = ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
-        (coordinateToLin (orthogonalToGeneralLinear Q g)))
+        (matrixGeneralLinearEquiv (orthogonalToGeneralLinear Q g)))
           (Pi.single j 1)) i := by
-      rw [coordinateToLin_apply]
+      rw [matrixGeneralLinearEquiv_apply]
     _ = _ := by simp [orthogonalToGeneralLinear]
 
 /-- The underlying matrix of the coordinate inclusion is the matrix of the linear equivalence. -/
@@ -580,7 +568,7 @@ theorem _root_.TauCeti.QuadraticMap.coe_orthogonalToGeneralLinear
 theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_injective
     (Q : QuadraticMap R (n → R) N) :
     Function.Injective (orthogonalToGeneralLinear Q) :=
-  (coordinateToLin (n := n) (R := R)).symm.injective.comp
+  (matrixGeneralLinearEquiv (n := n) (R := R)).symm.injective.comp
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.injective.comp
       Subtype.coe_injective)
 
