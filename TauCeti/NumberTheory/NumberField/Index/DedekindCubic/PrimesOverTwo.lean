@@ -78,6 +78,21 @@ def dedekindPrimeTwo (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : Ideal (𝓞 K) :
 def dedekindPrimeThree (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) : Ideal (𝓞 K) :=
   span {2, θ - 1, dedekindBeta hθ - 1}
 
+/-- The ideal `(2, θ, β)` is the span of its displayed generators. -/
+theorem dedekindPrimeOne_def (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindPrimeOne hθ = span {2, θ, dedekindBeta hθ} := by
+  rw [dedekindPrimeOne]
+
+/-- The ideal `(2, θ, β - 1)` is the span of its displayed generators. -/
+theorem dedekindPrimeTwo_def (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindPrimeTwo hθ = span {2, θ, dedekindBeta hθ - 1} := by
+  rw [dedekindPrimeTwo]
+
+/-- The ideal `(2, θ - 1, β - 1)` is the span of its displayed generators. -/
+theorem dedekindPrimeThree_def (hθ : θ ^ 3 - θ ^ 2 - 2 * θ - 8 = 0) :
+    dedekindPrimeThree hθ = span {2, θ - 1, dedekindBeta hθ - 1} := by
+  rw [dedekindPrimeThree]
+
 end Ideals
 
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
@@ -272,7 +287,7 @@ theorem dedekindPrimeOneQuotEquiv_mk (a b c : ℤ) :
   ring
 
 /-- An algebraic integer `a + bθ + cβ` lies in `(2, θ, β)` exactly when `2 ∣ a`. -/
-theorem mem_dedekindPrimeOne_iff (a b c : ℤ) :
+@[simp] theorem mem_dedekindPrimeOne_iff (a b c : ℤ) :
     (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin) : 𝓞 K) ∈
         dedekindPrimeOne (dedekindCubic_relation hmin) ↔ 2 ∣ a := by
   rw [← Quotient.eq_zero_iff_mem,
@@ -306,7 +321,7 @@ theorem dedekindPrimeTwoQuotEquiv_mk (a b c : ℤ) :
   ring
 
 /-- An algebraic integer `a + bθ + cβ` lies in `(2, θ, β - 1)` exactly when `2 ∣ a + c`. -/
-theorem mem_dedekindPrimeTwo_iff (a b c : ℤ) :
+@[simp] theorem mem_dedekindPrimeTwo_iff (a b c : ℤ) :
     (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin) : 𝓞 K) ∈
         dedekindPrimeTwo (dedekindCubic_relation hmin) ↔ 2 ∣ a + c := by
   rw [← Quotient.eq_zero_iff_mem,
@@ -340,7 +355,7 @@ theorem dedekindPrimeThreeQuotEquiv_mk (a b c : ℤ) :
   ring
 
 /-- An algebraic integer `a + bθ + cβ` lies in `(2, θ - 1, β - 1)` exactly when `2 ∣ a + b + c`. -/
-theorem mem_dedekindPrimeThree_iff (a b c : ℤ) :
+@[simp] theorem mem_dedekindPrimeThree_iff (a b c : ℤ) :
     (a + b * θ + c * dedekindBeta (dedekindCubic_relation hmin) : 𝓞 K) ∈
         dedekindPrimeThree (dedekindCubic_relation hmin) ↔ 2 ∣ a + b + c := by
   rw [← Quotient.eq_zero_iff_mem,
