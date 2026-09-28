@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fintype.Fiber
 public import Mathlib.Algebra.BigOperators.Fin
-public import Mathlib.Data.Fintype.EquivFin
 public import Mathlib.Data.List.GetD
-public import Mathlib.SetTheory.Cardinal.Finite
-public import Mathlib.Logic.Equiv.Basic
 
 /-!
 # Occurrence and transition counts of a finite word
@@ -36,7 +34,6 @@ transition counts of a path are the sufficient statistic: see
 
 ## Main definitions
 
-* `TauCeti.occCount`: the number of positions of a word carrying a given letter.
 * `TauCeti.transitionCount`: the number of positions of a word at which a given ordered pair of
   letters occurs consecutively.
 
@@ -69,73 +66,25 @@ noncomputable section
 
 open Finset
 
+open Function (occCount occCount_eq_card_filter occCount_castSucc occCount_succ)
+
 namespace TauCeti
 
 variable {α : Type*}
 
-/-- The number of positions of the word `w` carrying the letter `a`. -/
-def occCount {N : ℕ} (w : Fin N → α) (a : α) : ℕ :=
-  Nat.card {i : Fin N // w i = a}
-
 /-- The number of positions `i` of the word `w` at which the letter `a` is immediately followed by
 the letter `b`. -/
 def transitionCount {n : ℕ} (w : Fin (n + 1) → α) (a b : α) : ℕ :=
-  Nat.card {i : Fin n // w i.castSucc = a ∧ w i.succ = b}
+  occCount (fun i : Fin n => (w i.castSucc, w i.succ)) (a, b)
 
-/-- The occurrence count as the cardinality of a `Finset` of positions. -/
-theorem occCount_eq_card_filter [DecidableEq α] {N : ℕ} (w : Fin N → α) (a : α) :
-    occCount w a = #{i : Fin N | w i = a} := by
-  rw [occCount, Nat.card_eq_fintype_card, Fintype.card_subtype]
+/-- Transition counts are occurrence counts of consecutive pairs. -/
+theorem transitionCount_def {n : ℕ} (w : Fin (n + 1) → α) (a b : α) :
+    transitionCount w a b = occCount (fun i : Fin n => (w i.castSucc, w i.succ)) (a, b) := (rfl)
 
 /-- The transition count as the cardinality of a `Finset` of positions. -/
 theorem transitionCount_eq_card_filter [DecidableEq α] {n : ℕ} (w : Fin (n + 1) → α) (a b : α) :
     transitionCount w a b = #{i : Fin n | w i.castSucc = a ∧ w i.succ = b} := by
-  rw [transitionCount, Nat.card_eq_fintype_card, Fintype.card_subtype]
-
-/-- The occurrence count as a sum of indicators over the positions. -/
-theorem occCount_eq_sum [DecidableEq α] {N : ℕ} (w : Fin N → α) (a : α) :
-    occCount w a = ∑ i : Fin N, if w i = a then 1 else 0 := by
-  rw [occCount_eq_card_filter, card_filter]
-
-/-- **Occurrence counts grow along a letter-preserving embedding of positions.** If `e` embeds the
-positions of `u` into those of `v` in a way that carries each letter of `u` to the same letter of
-`v`, then `v` uses each letter at least as often as `u`. -/
-theorem occCount_le_occCount_of_comp_eq {M N : ℕ} {u : Fin M → α} {v : Fin N → α}
-    (e : Fin M ↪ Fin N) (he : ∀ i, v (e i) = u i) (a : α) : occCount u a ≤ occCount v a := by
-  classical
-  rw [occCount_eq_card_filter, occCount_eq_card_filter]
-  refine card_le_card_of_injOn e (fun i hi => ?_) e.injective.injOn
-  rw [mem_coe, mem_filter] at hi ⊢
-  exact ⟨mem_univ _, (he i).trans hi.2⟩
-
-/-- **A letter-preserving embedding that misses an occurrence loses it.** If in addition to the
-hypotheses of `TauCeti.occCount_le_occCount_of_comp_eq` some position `j` of `v` carrying `a` is
-outside the range of `e`, then `v` uses `a` strictly more often than `u`. -/
-theorem occCount_lt_occCount_of_comp_eq {M N : ℕ} {u : Fin M → α} {v : Fin N → α} {a : α}
-    {j : Fin N} (e : Fin M ↪ Fin N) (he : ∀ i, v (e i) = u i) (hj : v j = a)
-    (hmiss : ∀ i, e i ≠ j) : occCount u a < occCount v a := by
-  classical
-  have hsubset : (filter (fun i => u i = a) univ).image e ⊆ filter (fun i => v i = a) univ := by
-    intro l hl
-    obtain ⟨i, hi, rfl⟩ := mem_image.1 hl
-    rw [mem_filter] at hi ⊢
-    exact ⟨mem_univ _, (he i).trans hi.2⟩
-  have hnot : j ∉ (filter (fun i => u i = a) univ).image e := fun hmem => by
-    obtain ⟨i, _, hi⟩ := mem_image.1 hmem
-    exact hmiss i hi
-  have hlt : (filter (fun i => u i = a) univ).card < (filter (fun i => v i = a) univ).card := by
-    rw [← card_image_of_injective (filter (fun i => u i = a) univ) e.injective]
-    exact card_lt_card ((ssubset_iff_of_subset hsubset).2
-      ⟨j, mem_filter.2 ⟨mem_univ _, hj⟩, hnot⟩)
-  rw [occCount_eq_card_filter, occCount_eq_card_filter]
-  exact hlt
-
-/-- Splitting off the last position: the occurrences of `a` in a word are those in its initial
-segment together with a possible occurrence at the last position. -/
-theorem occCount_comp_castSucc_add_last [DecidableEq α] {n : ℕ} (w : Fin (n + 1) → α) (a : α) :
-    occCount (w ∘ Fin.castSucc) a + (if w (Fin.last n) = a then 1 else 0) = occCount w a := by
-  rw [occCount_eq_sum, occCount_eq_sum, Fin.sum_univ_castSucc]
-  rfl
+  simp only [transitionCount_def, occCount_eq_card_filter, Prod.mk.injEq]
 
 /-- Splitting off the last transition: the transitions in a word are those in its initial segment
 together with a possible transition at the final position. -/
@@ -144,16 +93,9 @@ theorem transitionCount_comp_castSucc_add_last [DecidableEq α] {n : ℕ}
     transitionCount (w ∘ Fin.castSucc) a b +
         (if w (Fin.castSucc (Fin.last n)) = a ∧ w (Fin.last (n + 1)) = b then 1 else 0) =
       transitionCount w a b := by
-  rw [transitionCount_eq_card_filter, transitionCount_eq_card_filter, Finset.card_filter,
-    Finset.card_filter, Fin.sum_univ_castSucc]
-  rfl
-
-/-- Splitting off the first position: the occurrences of `a` in a word are those in its final
-segment together with a possible occurrence at the first position. -/
-theorem occCount_comp_succ_add_zero [DecidableEq α] {n : ℕ} (w : Fin (n + 1) → α) (a : α) :
-    occCount (w ∘ Fin.succ) a + (if w 0 = a then 1 else 0) = occCount w a := by
-  rw [occCount_eq_sum, occCount_eq_sum, Fin.sum_univ_succ, Nat.add_comm]
-  rfl
+  simpa only [transitionCount_def, Function.comp_def, Prod.mk.injEq, Fin.succ_castSucc,
+    Fin.succ_last] using
+    occCount_castSucc (fun i : Fin (n + 1) => (w i.castSucc, w i.succ)) (a, b)
 
 /-- Splitting off the first transition: the transitions in a word are those in its final segment
 together with a possible transition at the first position. -/
@@ -161,9 +103,9 @@ theorem transitionCount_comp_succ_add_zero [DecidableEq α] {n : ℕ}
     (w : Fin (n + 2) → α) (a b : α) :
     transitionCount (w ∘ Fin.succ) a b + (if w 0 = a ∧ w 1 = b then 1 else 0) =
       transitionCount w a b := by
-  rw [transitionCount_eq_card_filter, transitionCount_eq_card_filter, Finset.card_filter,
-    Finset.card_filter, Fin.sum_univ_succ, Nat.add_comm]
-  rfl
+  simpa only [transitionCount_def, Function.comp_def, Prod.mk.injEq, Fin.succ_castSucc,
+    Fin.castSucc_zero, Fin.succ_zero_eq_one] using
+    occCount_succ (fun i : Fin (n + 1) => (w i.castSucc, w i.succ)) (a, b)
 
 /-! ## Words presented as lists
 
@@ -238,15 +180,6 @@ theorem prod_consecutivePairs_getD {M : Type*} [CommMonoid M] (p : α → α →
       prod_consecutivePairs_getD p d t.length (y :: t) rfl]
     simp
 
-/-- **The occurrence counts of a word sum to its length.** The index set `S` only has to contain
-the letters the word uses. -/
-theorem sum_occCount_eq_card {N : ℕ} (w : Fin N → α) {S : Finset α} (hS : ∀ i, w i ∈ S) :
-    ∑ a ∈ S, occCount w a = N := by
-  classical
-  have h := card_eq_sum_card_fiberwise (s := (univ : Finset (Fin N))) (f := w) (t := S)
-    fun i _ => hS i
-  simpa only [card_univ, Fintype.card_fin, occCount_eq_card_filter] using h.symm
-
 /-- Summing the transitions out of `a` counts the positions carrying `a` other than the last one.
 The index set `S` only has to contain the successors of transitions in `w`. -/
 theorem sum_transitionCount_right {n : ℕ} (w : Fin (n + 1) → α) {S : Finset α}
@@ -298,24 +231,12 @@ theorem occCount_eq_of_transitionCount_eq {n : ℕ} {u v : Fin (n + 1) → α} (
     rw [← sum_transitionCount_left u (fun i => hSu i.castSucc) a,
       ← sum_transitionCount_left v (fun i => hSv i.castSucc) a]
     exact sum_congr rfl fun c _ => h c a
-  have hu_last := occCount_comp_castSucc_add_last u a
-  have hu_zero := occCount_comp_succ_add_zero u a
-  have hv_last := occCount_comp_castSucc_add_last v a
-  have hv_zero := occCount_comp_succ_add_zero v a
+  have hu_last := occCount_castSucc u a
+  have hu_zero := occCount_succ u a
+  have hv_last := occCount_castSucc v a
+  have hv_zero := occCount_succ v a
   rw [h0] at hu_zero
   omega
-
-/-- Two words with the same occurrence counts are rearrangements of each other. -/
-theorem exists_perm_comp_of_occCount_eq {N : ℕ} {u v : Fin N → α}
-    (h : ∀ a, occCount u a = occCount v a) :
-    ∃ σ : Equiv.Perm (Fin N), v ∘ σ = u := by
-  classical
-  refine ⟨Equiv.ofFiberEquiv (f := u) (g := v) fun c =>
-    Fintype.equivOfCardEq (by
-      rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card]
-      exact h c), ?_⟩
-  funext i
-  exact Equiv.ofFiberEquiv_map _ i
 
 /-- **Words with the same first letter and the same transition counts are rearrangements of each
 other.** This is the elementary fact underlying Markov exchangeability: the transition counts of a
@@ -324,7 +245,7 @@ counts, so any symmetry expressed through them is implied by exchangeability. -/
 theorem exists_perm_comp_of_transitionCount_eq {n : ℕ} {u v : Fin (n + 1) → α} (h0 : u 0 = v 0)
     (h : ∀ a b, transitionCount u a b = transitionCount v a b) :
     ∃ σ : Equiv.Perm (Fin (n + 1)), v ∘ σ = u :=
-  exists_perm_comp_of_occCount_eq (occCount_eq_of_transitionCount_eq h0 h)
+  Function.exists_perm_of_occCount_eq (occCount_eq_of_transitionCount_eq h0 h)
 
 /-- **A product of transition weights along a word is a function of its transition counts.** The
 index set `S` only has to contain both endpoints of every transition in `w`. -/
@@ -334,17 +255,9 @@ theorem prod_transitionCount {M : Type*} [CommMonoid M] {n : ℕ} (w : Fin (n + 
     ∏ i : Fin n, p (w i.castSucc) (w i.succ) =
       ∏ ab ∈ S ×ˢ S, p ab.1 ab.2 ^ transitionCount w ab.1 ab.2 := by
   classical
-  rw [← prod_fiberwise_of_maps_to (s := (univ : Finset (Fin n))) (t := S ×ˢ S)
-      (g := fun i : Fin n => (w i.castSucc, w i.succ))
-      (fun i _ => mem_product.2 (hS i)) fun i => p (w i.castSucc) (w i.succ)]
-  refine prod_congr rfl fun ab _ => ?_
-  have hval : ∀ i ∈ filter (fun i : Fin n => (w i.castSucc, w i.succ) = ab) univ,
-      p (w i.castSucc) (w i.succ) = p ab.1 ab.2 := fun i hi => by
-    rw [← (mem_filter.1 hi).2]
-  have hset : filter (fun i : Fin n => (w i.castSucc, w i.succ) = ab) univ =
-      filter (fun i : Fin n => w i.castSucc = ab.1 ∧ w i.succ = ab.2) univ :=
-    filter_congr fun i _ => by simp [Prod.ext_iff]
-  rw [prod_congr rfl hval, prod_const, transitionCount_eq_card_filter, hset]
+  simpa only [transitionCount_def] using
+    (Function.prod_occCount_pow (fun i : Fin n => (w i.castSucc, w i.succ))
+      (T := S ×ˢ S) (fun i => mem_product.mpr (hS i)) (fun ab => p ab.1 ab.2)).symm
 
 /-- **Words with the same transition counts have the same product of transition weights.** This is
 `prod_transitionCount` with the index set eliminated: the two words are compared through the common

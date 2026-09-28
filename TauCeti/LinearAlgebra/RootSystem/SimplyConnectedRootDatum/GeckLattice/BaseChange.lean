@@ -287,6 +287,18 @@ noncomputable def geckRootSubgroupIntegralCoordinateMap
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) i
 
+/-- The named integral Geck root-subgroup map is the generic Kostant toral factorization. -/
+theorem geckRootSubgroupIntegralCoordinateMap_def (i : Fin t.rank ⊕ Fin t.rank) :
+    t.geckRootSubgroupIntegralCoordinateMap ht i =
+      kostantRootSubgroupToralCoordinateMap
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) i := by
+  rw [geckRootSubgroupIntegralCoordinateMap]
+  simp
+
 /-- The base change to `A` of a numbered integral Geck root-subgroup coordinate map, transported
 to the coordinate Hopf algebras constructed directly over `A`. -/
 noncomputable def geckRootSubgroupBaseChangeCoordinateMap
@@ -393,6 +405,18 @@ noncomputable def geckWeightTorusIntegralCoordinateMap :
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
+
+/-- The named integral Geck weight-torus map is the generic Kostant toral factorization. -/
+theorem geckWeightTorusIntegralCoordinateMap_def :
+    t.geckWeightTorusIntegralCoordinateMap ht =
+      kostantWeightTorusToralCoordinateMap
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) := by
+  rw [geckWeightTorusIntegralCoordinateMap]
+  simp
 
 /-- The base-changed Geck weight-torus coordinate map factored through the transported Geck
 carrier. -/
