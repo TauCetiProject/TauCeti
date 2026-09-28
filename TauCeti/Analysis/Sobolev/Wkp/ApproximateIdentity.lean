@@ -143,7 +143,6 @@ theorem normedBumpL_zero (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
   rw [value_normedBumpL, value_zero, value_zero]
 
 /-- Mollification commutes with forgetting the highest weak derivative. -/
-@[simp]
 theorem lowerOrder_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) :
     lowerOrder k (normedBumpL hp phi (k + 1) u) =
@@ -158,7 +157,6 @@ theorem lowerOrder_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
 
 /-- The highest weak derivative of a Sobolev mollification is the `Lᵖ` mollification of the
 highest weak derivative. -/
-@[simp]
 theorem iteratedGradient_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) :
     iteratedGradient k (normedBumpL hp phi (k + 1) u) =
