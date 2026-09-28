@@ -162,6 +162,17 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
   · simpa only [hij, ↓reduceIte] using h
   · simpa only [hij, ↓reduceIte] using h
 
+/-- An Ext-Euler pairing of vertex simples is the corresponding Ringel Euler matrix entry. -/
+@[simp]
+theorem extEulerMatrix_A2_apply (k : Type v) [Field k] (i j : Fin 2) :
+    extEuler k (isEulerAdmissible_vertexSimpleModule k (Kronecker A) (![src, tgt] i)
+      (vertexSimpleModule k (Kronecker A) (![src, tgt] j))
+      (finiteDimensional_vertexSimpleModule_obj (k := k) (Q := Kronecker A)
+        (![src, tgt] j) (![src, tgt] i))
+      (fun a _ ↦ finiteDimensional_vertexSimpleModule_obj
+        (k := k) (Q := Kronecker A) (![src, tgt] j) a)) = eulerMatrixA2 i j := by
+  exact congrFun (congrFun (extEulerMatrix_A2_eq (A := A) k) i) j
+
 end Quiver.Kronecker
 
 end TauCeti
