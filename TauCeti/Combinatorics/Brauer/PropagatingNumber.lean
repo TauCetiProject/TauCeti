@@ -64,6 +64,11 @@ middle, which the bounds below do not need.
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
+* T. Halverson and T. N. Jacobson, [*Set-partition tableaux and representations of diagram
+  algebras*][halverson-jacobson2020], Algebraic Combinatorics 3 (2020), 509-538, §2.4, for the
+  propagating number of a diagram and the two-sided ideals of a diagram algebra it filters by.
+
+[halverson-jacobson2020]: https://doi.org/10.5802/alco.102
 -/
 
 public section
