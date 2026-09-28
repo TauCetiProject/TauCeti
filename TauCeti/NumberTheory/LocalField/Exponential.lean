@@ -18,12 +18,15 @@ integral depth `i` satisfying `e < (p - 1) * i`, the exponential series
 `∑ n, x ^ n / n !`
 
 converges for `x ∈ 𝓂[K] ^ i`, and this file proves that convergence.  Its sum is Mathlib's
-`NormedSpace.exp`, so no new exponential is introduced here.  The proof uses the exact
-factorial-valuation estimate: the normalized valuations of the terms tend to infinity linearly, and
-a series in a complete nonarchimedean field is summable exactly when its terms tend to zero.
+`NormedSpace.exp`, so no new exponential is introduced here.
 
-The logarithm series and the inverse identities between exponential and logarithm are subsequent
-steps; convergence of the exponential is isolated here so those arguments can reuse it.
+The threshold `e < (p - 1) * i` is the exact range in which the factorial denominators cannot
+outgrow the numerators: there the normalized valuation of `x ^ n / n !` grows linearly in `n`, so
+the series converges on all of `𝓂[K] ^ i` rather than on a smaller ball.  Convergence on the
+whole ideal is what makes the exponential a map from the deep additive group `𝓂[K] ^ i` to the
+deep unit group `1 + 𝓂[K] ^ i`, whose inverse is the logarithm; that identification of a deep
+additive group with a deep unit group is what computes the power classes, and hence the square
+classes, of `K`.
 
 ## Main results
 
@@ -38,6 +41,9 @@ steps; convergence of the exponential is isolated here so those arguments can re
 
 * J.-P. Serre, *Local Fields*, Chapter II, §5.
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, §5.
+* The term estimate is `TauCeti.sub_one_mul_natCastValuation_factorial_lt_of_ne_zero`, and
+  summability is taken from Mathlib's
+  `NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero`.
 -/
 
 public section
@@ -71,63 +77,66 @@ private theorem toAdd_normalizedValuation_expSeries_term {x : K} (hx : x ≠ 0) 
     toAdd_normalizedValuation_natCast]
   simp only [nsmul_eq_mul]
 
+/-- At a depth `i` in the exponential convergence range, the normalized valuation of the term
+`x ^ n / n !` grows at least linearly in `n`: scaled by `p - 1` it exceeds `n`. -/
+private theorem lt_sub_one_mul_toAdd_normalizedValuation_expSeries_term {i n : ℕ} {x : K}
+    (hx : x ≠ 0) (hfac : (n.factorial : K) ≠ 0) (hn : n ≠ 0)
+    (hxi : (i : ℤ) ≤ (normalizedValuation K (Units.mk0 x hx)).toAdd)
+    (hi : absoluteRamificationIndex K p < (p - 1) * i) :
+    (n : ℤ) < (p - 1 : ℕ) *
+      (normalizedValuation K
+        (Units.mk0 (x ^ n / (n.factorial : K))
+          (div_ne_zero (pow_ne_zero n hx) hfac))).toAdd := by
+  -- The term valuation is `n * v(x) - v(n !)`, where `(p - 1) * v(n !) < e * n` and
+  -- `(p - 1) * n * v(x) ≥ (p - 1) * n * i ≥ (e + 1) * n`, leaving a margin of `n`.
+  have hfact := sub_one_mul_natCastValuation_factorial_lt_of_ne_zero K p hn
+  have hgapn : (absoluteRamificationIndex K p + 1) * n ≤ ((p - 1) * i) * n :=
+    Nat.mul_le_mul_right n (by omega)
+  have hxmul := mul_le_mul_of_nonneg_left hxi
+    (mul_nonneg (Int.natCast_nonneg (p - 1)) (Int.natCast_nonneg n))
+  rw [toAdd_normalizedValuation_expSeries_term (K := K) hx n hfac]
+  nlinarith
+
 /-- At a depth in the exponential convergence range, the terms `x ^ n / n !` tend to zero for
 every nonzero `x` whose normalized valuation is at least that depth. -/
 theorem tendsto_expSeries_term_zero_of_le_normalizedValuation {i : ℕ} {x : K} (hx : x ≠ 0)
     (hxi : (i : ℤ) ≤ (normalizedValuation K (Units.mk0 x hx)).toAdd)
     (hi : absoluteRamificationIndex K p < (p - 1) * i) :
     Tendsto (fun n : ℕ => x ^ n / (n.factorial : K)) atTop (𝓝 0) := by
+  -- The valuation balls `{z | v z < v y}` with `y ≠ 0` are a neighbourhood basis of `0`, so it
+  -- suffices to push the term valuation past that of an arbitrary nonzero `y`.
   refine (IsValuativeTopology.hasBasis_nhds_zero' K).tendsto_right_iff.mpr ?_
   intro γ hγ
   obtain ⟨y, rfl⟩ := ValuativeRel.valuation_surjective γ
   have hy : y ≠ 0 := by simpa using hγ
-  let vy := (normalizedValuation K (Units.mk0 y hy)).toAdd
-  let N := (p - 1) * (vy.natAbs + 1)
-  refine eventually_atTop.2 ⟨N, fun n hn => ?_⟩
   have hp : 0 < p - 1 := Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt
-  have hn0 : n ≠ 0 := by
-    have : 0 < N := Nat.mul_pos hp (Nat.succ_pos _)
-    omega
+  have hpz : (0 : ℤ) < (p - 1 : ℕ) := by exact_mod_cast hp
+  -- Linear growth with slope `1 / (p - 1)` passes the valuation of `y` after this many terms.
+  refine eventually_atTop.2
+    ⟨(p - 1) * ((normalizedValuation K (Units.mk0 y hy)).toAdd.natAbs + 1), fun n hn => ?_⟩
+  have hn0 : n ≠ 0 := ((Nat.mul_pos hp (Nat.succ_pos _)).trans_le hn).ne'
   have hfac : (n.factorial : K) ≠ 0 := by
     simpa only [map_natCast] using
       (map_ne_zero_iff (algebraMap ℚ_[p] K) (algebraMap ℚ_[p] K).injective).mpr
         (Nat.cast_ne_zero.mpr n.factorial_ne_zero : (n.factorial : ℚ_[p]) ≠ 0)
-  have hfact := sub_one_mul_natCastValuation_factorial_lt_of_ne_zero K p hn0
-  have hterm := toAdd_normalizedValuation_expSeries_term (K := K) hx n hfac
-  have hvy : vy ≤ (vy.natAbs : ℤ) := Int.le_natAbs
-  have hpz : (0 : ℤ) < (p - 1 : ℕ) := by exact_mod_cast hp
-  have hdepth :
-      (n : ℤ) < (p - 1 : ℕ) *
-        (normalizedValuation K
-          (Units.mk0 (x ^ n / (n.factorial : K))
-            (div_ne_zero (pow_ne_zero n hx) hfac))).toAdd := by
-    have hgap : absoluteRamificationIndex K p + 1 ≤ (p - 1) * i := hi
-    have hgapn := Nat.mul_le_mul_right n hgap
-    have hxmul := mul_le_mul_of_nonneg_left hxi
-      (mul_nonneg (by omega : (0 : ℤ) ≤ (p - 1 : ℕ)) (Int.natCast_nonneg n))
-    rw [hterm]
-    nlinarith
-  have hvterm :
-      vy < (normalizedValuation K
+  have hdepth := lt_sub_one_mul_toAdd_normalizedValuation_expSeries_term hx hfac hn0 hxi hi
+  have hvterm : (normalizedValuation K (Units.mk0 y hy)).toAdd <
+      (normalizedValuation K
         (Units.mk0 (x ^ n / (n.factorial : K))
           (div_ne_zero (pow_ne_zero n hx) hfac))).toAdd := by
-    have hNnat : (p - 1) * (vy.natAbs + 1) ≤ n := by simpa [N] using hn
-    have hN : (((p - 1) * (vy.natAbs + 1) : ℕ) : ℤ) ≤ (n : ℤ) := by
-      exact_mod_cast hNnat
-    push_cast at hN
-    have hqvy := mul_le_mul_of_nonneg_left hvy hpz.le
-    have hqvy' : (p - 1 : ℕ) * vy ≤ (p - 1 : ℕ) * |vy| := by
-      simpa only [Int.natCast_natAbs] using hqvy
-    have habs : (p - 1 : ℕ) * |vy| < (p - 1 : ℕ) * (|vy| + 1) :=
-      Int.mul_lt_mul_of_pos_left (by omega) hpz
-    have hq : (p - 1 : ℕ) * vy <
-        (p - 1 : ℕ) * (normalizedValuation K
-          (Units.mk0 (x ^ n / (n.factorial : K))
-            (div_ne_zero (pow_ne_zero n hx) hfac))).toAdd :=
-      hqvy'.trans_lt (habs.trans (hN.trans_lt hdepth))
-    exact (Int.mul_lt_mul_left hpz).mp hq
-  change x ^ n / (n.factorial : K) ∈ {z | valuation K z < valuation K y}
-  change valuation K (x ^ n / (n.factorial : K)) < valuation K y
+    have hN : ((p - 1 : ℕ) : ℤ) *
+        (((normalizedValuation K (Units.mk0 y hy)).toAdd.natAbs + 1 : ℕ) : ℤ) ≤ (n : ℤ) := by
+      exact_mod_cast hn
+    refine lt_of_mul_lt_mul_left ?_ hpz.le
+    calc ((p - 1 : ℕ) : ℤ) * (normalizedValuation K (Units.mk0 y hy)).toAdd
+        < ((p - 1 : ℕ) : ℤ) *
+            (((normalizedValuation K (Units.mk0 y hy)).toAdd.natAbs + 1 : ℕ) : ℤ) :=
+          Int.mul_lt_mul_of_pos_left
+            (Int.le_natAbs.trans_lt (by exact_mod_cast Nat.lt_succ_self _)) hpz
+      _ ≤ (n : ℤ) := hN
+      _ < _ := hdepth
+  -- Membership in the basic neighbourhood is exactly the valuation inequality.
+  simp only [Set.mem_ofPred_eq]
   rw [lt_iff_not_ge]
   intro hval
   exact (not_le_of_gt hvterm)
