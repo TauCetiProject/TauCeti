@@ -36,7 +36,7 @@ private def secondReflection : D4 := ⟨finRotate 4 * swap 0 2, by
     (Subgroup.subset_closure (Set.mem_insert_of_mem _ (Set.mem_singleton _)))⟩
 
 /-- The reference subgroup `4T3` is the dihedral group of the square, of order eight. -/
-noncomputable def referenceSubgroup_four_two_mulEquiv_dihedralGroup :
+noncomputable def referenceSubgroupFourTwoMulEquivDihedralGroup :
     referenceSubgroup 4 ⟨2, by simp⟩ ≃* DihedralGroup 4 := by
   let s : D4 := reflection
   let t : D4 := secondReflection
@@ -90,6 +90,6 @@ theorem TransitiveGroupLabel.nonempty_mulEquiv_dihedralGroup_four_two
     Nonempty (G ≃* DihedralGroup 4) := by
   obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
   refine ⟨(τ.permCongrHom.subgroupMap G).trans ?_⟩
-  exact hτ ▸ referenceSubgroup_four_two_mulEquiv_dihedralGroup
+  exact hτ ▸ referenceSubgroupFourTwoMulEquivDihedralGroup
 
 end TauCeti
