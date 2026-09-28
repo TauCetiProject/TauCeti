@@ -41,7 +41,7 @@ theorem exists_integerRing_adjoin_eq_top :
 
 /-- The integer ring of a finite local-field extension has an integral power basis whose
 generator also generates the field extension. Its length is `[L : K]`. -/
-theorem exists_integerRing_powerBasis_field_adjoin_eq_top_and_dim_eq_finrank :
+theorem exists_integerRing_powerBasis_intermediateField_adjoin_eq_top_and_dim_eq_finrank :
     ∃ pb : PowerBasis 𝒪[K] 𝒪[L],
       IntermediateField.adjoin K {((pb.gen : 𝒪[L]) : L)} = ⊤ ∧
       pb.dim = Module.finrank K L := by
