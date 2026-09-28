@@ -72,6 +72,16 @@ theorem coaugmentedMap_reducedInclusion
       TensorWords.reducedInclusion R N (F w) := by
   simp [coaugmentedMap]
 
+/-- Projecting the coaugmented map recovers the reduced map of the projected input. -/
+@[simp]
+theorem reducedProjection_comp_coaugmentedMap
+    (F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N) :
+    TensorWords.reducedProjection R N ∘ₗ coaugmentedMap F =
+      F ∘ₗ TensorWords.reducedProjection R M := by
+  apply LinearMap.ext
+  intro w
+  simp [coaugmentedMap, TensorWords.algebraMap_apply]
+
 /-- Coaugmenting preserves the counit. -/
 @[simp]
 theorem counit_comp_coaugmentedMap

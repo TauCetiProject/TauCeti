@@ -64,6 +64,13 @@ theorem coaugmentedBarMap_reducedInclusion (f : AInfinityHom AA BB)
       TensorWords.reducedInclusion R B (f.barMap w) :=
   ReducedTensorWords.coaugmentedMap_reducedInclusion f.barMap w
 
+/-- Projecting the coaugmented bar map recovers the stored reduced bar map. -/
+@[simp]
+theorem reducedProjection_comp_coaugmentedBarMap (f : AInfinityHom AA BB) :
+    TensorWords.reducedProjection R B ∘ₗ f.coaugmentedBarMap =
+      f.barMap ∘ₗ TensorWords.reducedProjection R A :=
+  ReducedTensorWords.reducedProjection_comp_coaugmentedMap f.barMap
+
 /-- The coaugmented bar map preserves the counit. -/
 @[simp]
 theorem counit_comp_coaugmentedBarMap (f : AInfinityHom AA BB) :
