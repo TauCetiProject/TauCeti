@@ -45,8 +45,6 @@ object.
 
 ## Main results
 
-* `TauCeti.GradedLinearQuiver.grHom_gradedHom`: the module of the morphisms of a degree is the
-component of the graded object of the hom modules in that degree.
 * `TauCeti.GradedLinearQuiver.eq_zero_of_mem_piece_of_ne`: a nonzero morphism is homogeneous of at
 most one degree, so that a degree together with its homogeneous submodule determines a morphism.
 
@@ -106,12 +104,6 @@ abbrev grHom (X Y : C) (n : ℤ) : Type v :=
 the module of the morphisms of that degree. -/
 abbrev gradedHom (X Y : C) : CategoryTheory.GradedObject ℤ (ModuleCat.{v} R) :=
   (grading (R := R) X Y).toGradedObject
-
-/-- The module of the morphisms of the degree `n` is the component of the graded object of the hom
-modules in that degree. -/
-theorem grHom_gradedHom (X Y : C) (n : ℤ) :
-    ModuleCat.of R (grHom R X Y n) = gradedHom R X Y n :=
-  rfl
 
 /-- Record a morphism of degree `n` as a morphism of degree `k`, along an equation `h : n = k` of
 degrees.  The underlying morphism is unchanged. -/
@@ -178,12 +170,6 @@ degree other than `0` and `1`. -/
 theorem twoObjModule_ne (R : Type v) [CommRing R] {p : ℤ} (h0 : p ≠ 0) (h1 : p ≠ 1) :
     twoObjModule R p = ModuleCat.of R PUnit := by
   simp [twoObjModule, h0, h1]
-
-/-- The graded object of the hom modules of `twoObjQuiver` is isomorphic to the graded object
-`twoObjModule` of which that quiver was built. -/
-theorem twoObjQuiver_gradedHom (R : Type v) [CommRing R] :
-    Nonempty (gradedHom R TwoObj.one TwoObj.two ≅ twoObjModule R) :=
-  ⟨InternalGrading.ofGradedObjectToGradedObjectIso R (twoObjModule R)⟩
 
 end Example
 
