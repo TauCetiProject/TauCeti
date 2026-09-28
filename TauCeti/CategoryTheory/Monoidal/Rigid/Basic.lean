@@ -16,7 +16,11 @@ adjunction associated to an exact pairing.
 ## Main declarations
 
 * `TauCeti.exactPairingCongrLeft_evaluation` and
-  `TauCeti.exactPairingCongrLeft_coevaluation`: the pairing transported across an isomorphism;
+  `TauCeti.exactPairingCongrLeft_coevaluation`: transport in the left argument;
+* `TauCeti.exactPairingCongrRight_evaluation` and
+  `TauCeti.exactPairingCongrRight_coevaluation`: transport in the right argument;
+* `TauCeti.exactPairingCongr_evaluation` and
+  `TauCeti.exactPairingCongr_coevaluation`: simultaneous transport in both arguments;
 * `TauCeti.tensorLeftAdjunction_unit_app` and `TauCeti.tensorLeftAdjunction_counit_app`: the unit
   and counit of the adjunction associated to an exact pairing.
 -/
