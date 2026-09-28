@@ -7,11 +7,12 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Basis.Fin
+import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Orthogonal complements of bilinear forms
 
-This file records four facts about the orthogonal complement `LinearMap.BilinForm.orthogonal`
+This file records facts about the orthogonal complement `LinearMap.BilinForm.orthogonal`
 that Mathlib lacks. A vector lies in the orthogonal complement of the span of one or two vectors
 exactly when it is orthogonal to each of them. Over a field, adjoining a non-isotropic vector `x`
 to an orthogonal basis of the orthogonal complement of `x` gives an orthogonal basis of the whole
@@ -29,6 +30,12 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `TauCeti.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
   to a left-separating subspace produces a nondegenerate restriction.
+* `TauCeti.BilinForm.isCompl_orthogonal_of_restrict_bijective`: a perfect restriction splits
+  a symmetric bilinear module over a commutative ring.
+* `TauCeti.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
+  the cyclic restriction perfect.
+* `TauCeti.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
+  self-pairing splits off.
 -/
 
 public section
@@ -131,6 +138,107 @@ theorem restrict_nondegenerate_sup_span_singleton
     simp [← hsum, hw0, ha]
   refine ⟨hleft, fun y hy ↦ hleft y fun z ↦ ?_⟩
   exact (hB.domRestrict S).eq_zero (hy z)
+
+end BilinForm
+
+namespace BilinForm
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Restrict pairing with a vector to a submodule. -/
+private def pairingToDual (B : LinearMap.BilinForm R M) (S : Submodule R M) :
+    M →ₗ[R] Module.Dual R S where
+  toFun x :=
+    { toFun := fun y ↦ B y x
+      map_add' := by
+        intro y z
+        exact congrArg (fun f : M →ₗ[R] R ↦ f x) (B.map_add y z)
+      map_smul' := by
+        intro a y
+        exact congrArg (fun f : M →ₗ[R] R ↦ f x) (B.map_smul a y) }
+  map_add' := by
+    intro x y
+    ext z
+    exact (B z).map_add x y
+  map_smul' := by
+    intro a x
+    ext z
+    exact (B z).map_smul a x
+
+/-- A submodule with perfect restricted symmetric pairing is complementary to its orthogonal
+complement. -/
+theorem isCompl_orthogonal_of_restrict_bijective (B : LinearMap.BilinForm R M) (hB : B.IsSymm)
+    (S : Submodule R M) (h : Function.Bijective (B.restrict S)) :
+    IsCompl S (B.orthogonal S) := by
+  let e : S ≃ₗ[R] Module.Dual R S :=
+    LinearEquiv.ofBijective (B.restrict S) h
+  let p : M →ₗ[R] S := e.symm.toLinearMap.comp (pairingToDual B S)
+  have hp : ∀ y : S, p y = y := by
+    intro y
+    apply e.injective
+    ext z
+    simp [p, e, pairingToDual, LinearMap.BilinForm.restrict_apply, hB.eq]
+  have hker : LinearMap.ker p = B.orthogonal S := by
+    ext x
+    rw [LinearMap.mem_ker, ← e.map_eq_zero_iff]
+    have hpx : e (p x) = pairingToDual B S x := by simp [p]
+    rw [hpx]
+    constructor
+    · intro hx
+      rw [LinearMap.BilinForm.mem_orthogonal_iff]
+      intro y hy
+      have hy' := congrArg (fun f : Module.Dual R S ↦ f ⟨y, hy⟩) hx
+      simpa [pairingToDual] using hy'
+    · intro hx
+      ext y
+      exact (LinearMap.BilinForm.mem_orthogonal_iff.mp hx) y y.property
+  rw [← hker]
+  exact LinearMap.isCompl_of_proj hp
+
+/-- Unit self-pairing makes the restricted pairing on the cyclic span perfect. -/
+theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M)
+    (x : M) (hx : IsUnit (B x x)) : Function.Bijective (B.restrict (R ∙ x)) := by
+  obtain ⟨a, ha⟩ := isUnit_iff_exists_inv.mp hx
+  have ha' : a * B x x = 1 := by simpa [mul_comm] using ha
+  let S : Submodule R M := R ∙ x
+  have hxS : x ∈ S := Submodule.mem_span_singleton_self x
+  constructor
+  · intro y z hyz
+    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp y.property
+    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp z.property
+    have hval := congrArg (fun f : Module.Dual R S ↦ f ⟨x, hxS⟩) hyz
+    change B (y : M) x = B (z : M) x at hval
+    rw [← hb, ← hc, map_smul, map_smul, LinearMap.smul_apply, LinearMap.smul_apply] at hval
+    simp only [smul_eq_mul] at hval
+    have hbc : b = c := by
+      calc
+        b = (a * B x x) * b := by rw [ha']; ring
+        _ = a * (b * B x x) := by ring
+        _ = a * (c * B x x) := by rw [hval]
+        _ = c := by calc
+          a * (c * B x x) = c * (a * B x x) := by ring
+          _ = c := by rw [ha', mul_one]
+    apply Subtype.ext
+    rw [← hb, ← hc, hbc]
+  · intro f
+    refine ⟨⟨(a * f ⟨x, hxS⟩) • x, Submodule.smul_mem S _ hxS⟩, ?_⟩
+    ext y
+    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp y.property
+    have hy : y = b • (⟨x, hxS⟩ : S) := Subtype.ext hb.symm
+    rw [hy]
+    change B ((a * f ⟨x, hxS⟩) • x) (b • x) = f (b • (⟨x, hxS⟩ : S))
+    rw [map_smul, map_smul, map_smul]
+    simp only [LinearMap.smul_apply, smul_eq_mul]
+    calc
+      b * (a * f ⟨x, hxS⟩ * B x x) = b * (a * B x x) * f ⟨x, hxS⟩ := by ring
+      _ = b * f ⟨x, hxS⟩ := by rw [ha']; ring
+
+/-- A vector with unit self-pairing spans an orthogonal direct summand. -/
+theorem isCompl_span_singleton_orthogonal_of_isUnit (B : LinearMap.BilinForm R M) (hB : B.IsSymm)
+    (x : M) (hx : IsUnit (B x x)) :
+    IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) :=
+  isCompl_orthogonal_of_restrict_bijective B hB (R ∙ x)
+    (restrict_span_singleton_bijective_of_isUnit B x hx)
 
 end BilinForm
 
