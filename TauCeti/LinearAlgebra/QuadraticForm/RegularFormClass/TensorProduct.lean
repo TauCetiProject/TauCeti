@@ -72,6 +72,7 @@ theorem RegularFormPresentation.tmul_apply (p q : RegularFormPresentation K)
   simp [RegularFormPresentation.tmul]
 
 /-- Tensoring on the left with a rank-one presentation scales every coefficient. -/
+@[simp]
 theorem RegularFormPresentation.rankOne_tmul (a : Kˣ) (p : RegularFormPresentation K) :
     RegularFormPresentation.tmul (⟨1, fun _ => a⟩ : RegularFormPresentation K) p =
       ⟨p.1, fun i => a * p.2 i⟩ := by
