@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Index
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Holomorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 
