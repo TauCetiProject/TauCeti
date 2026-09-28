@@ -43,7 +43,10 @@ between the open sets of quotient-coordinate values — a biholomorphic transiti
 change of coordinate through `u ↦ u ^ m` with `TauCeti.differentiableOn_descendPow`. Since the
 rotation by which an element of the stabilizer acts is `Subgroup.stabilizerRotation`, the same
 rotation appears in every local linearizing coordinate
-(`Subgroup.LinearizingCoordinate.coordinate_smul`).
+(`Subgroup.LinearizingCoordinate.coordinate_smul`). The coordinate, and with it the local quotient
+coordinate, is holomorphic on the invariant hyperbolic disc
+(`Subgroup.LinearizingCoordinate.mdifferentiableOn_coordinate`,
+`Subgroup.LinearizingCoordinate.mdifferentiableOn_quotientCoordinate`).
 
 The two coordinates available by construction are the disc coordinate centred at `z` and its
 rotation by a root of unity (`Subgroup.LinearizingCoordinate.discCoordinate`,
@@ -57,17 +60,19 @@ the invariant disc is `Subgroup.stabilizerBallQuotientChart_trans_apply`.
 
 * `Subgroup.LinearizingCoordinate`: a local biholomorphic coordinate linearizing the stabilizer
   of `z` on the invariant disc of radius `ε`.
-* `Subgroup.LinearizingCoordinate.coordinate`, `…_smul`, `…_injective`: the coordinate of a point
-  of the invariant disc and the action of the stabilizer on it.
+* `Subgroup.LinearizingCoordinate.coordinate`, `…_smul`, `…_injective` and
+  `…_mdifferentiableOn_coordinate`: the coordinate of a point of the invariant disc, the action of
+  the stabilizer on it, and its holomorphy on the invariant disc.
 * `Subgroup.LinearizingCoordinate.image`, `…_isOpen_image`, `…_mem_image_iff`: the open image of
   the reparametrization, the set of coordinate values.
 * `Subgroup.LinearizingCoordinate.transFun`, `…_transFun_coordinate`, `…_transFun_transFun` and
   `Subgroup.LinearizingCoordinate.differentiableOn_transFun`: the biholomorphic change of local
   linearizing coordinate between two local linearizing coordinates.
-* `Subgroup.LinearizingCoordinate.quotientCoordinate` with `…_smul` and `…_eq_iff`, and
-  `Subgroup.LinearizingCoordinate.quotientImage` with `…_isOpen_quotientImage` and
-  `…_mem_quotientImage_iff`:
-  the local quotient coordinate, its invariance, its level sets, and the open set of its values.
+* `Subgroup.LinearizingCoordinate.quotientCoordinate` with `…_smul`, `…_eq_iff` and
+  `…_mdifferentiableOn_quotientCoordinate`, and `Subgroup.LinearizingCoordinate.quotientImage` with
+  `…_isOpen_quotientImage` and `…_mem_quotientImage_iff`:
+  the local quotient coordinate, its invariance, its level sets, its holomorphy on the invariant
+  disc, and the open set of its values.
 * `Subgroup.LinearizingCoordinate.quotientCoordinateTrans`,
   `…_quotientCoordinateTrans_mem_quotientImage` and `…_exists_quotientCoordinate_trans`: the
   transition between the quotient coordinates of two local linearizing coordinates, the set of
@@ -90,7 +95,7 @@ public noncomputable section
 
 open Filter Metric MulAction Set Topology UpperHalfPlane
 
-open scoped ComplexConjugate MatrixGroups
+open scoped ComplexConjugate Manifold MatrixGroups
 
 namespace Subgroup
 
@@ -168,7 +173,7 @@ private theorem mem_ball_smul (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) �
 
 /-- The reparametrization of a local linearizing coordinate is injective on the disc of the
 invariant disc. -/
-theorem LinearizingCoordinate.injOn_ball (ψ : Γ.LinearizingCoordinate z ε) :
+theorem LinearizingCoordinate.toFun_injOn_ball (ψ : Γ.LinearizingCoordinate z ε) :
     Set.InjOn ψ.toFun (Metric.ball 0 (Real.tanh (ε / 2))) := by
   rintro u hu v hv huv
   have hu' := ψ.left_inv u hu
@@ -189,7 +194,8 @@ theorem LinearizingCoordinate.mem_ball_invFun (ψ : Γ.LinearizingCoordinate z �
 reparametrized disc coordinate, a biholomorphic coordinate on the invariant hyperbolic disc of
 radius `ε` about `z` centred at `z` in which the stabilizer of `z` acts by its rotation
 `Subgroup.stabilizerRotation`
-(`Subgroup.LinearizingCoordinate.coordinate_smul`). -/
+(`Subgroup.LinearizingCoordinate.coordinate_smul`), holomorphic there by
+`Subgroup.LinearizingCoordinate.mdifferentiableOn_coordinate`. -/
 def LinearizingCoordinate.coordinate (ψ : Γ.LinearizingCoordinate z ε)
     (τ : stabilizerBall Γ z ε) : ℂ := ψ.toFun (discCoordinate z (τ : ℍ))
 
@@ -206,7 +212,7 @@ theorem LinearizingCoordinate.coordinate_eq_zero_iff
       have h'' : ψ.toFun (discCoordinate z (τ : ℍ)) = 0 := h
       rw [h'', ψ.zero]
     have hinj : discCoordinate z (τ : ℍ) = 0 :=
-      ψ.injOn_ball (mem_ball_discCoordinate τ)
+      ψ.toFun_injOn_ball (mem_ball_discCoordinate τ)
         (Metric.mem_ball_self (Real.tanh_pos_of_pos (by linarith : 0 < ε / 2))) h'
     exact discCoordinate_eq_zero_iff.mp hinj
   · intro hτ
@@ -221,7 +227,7 @@ theorem LinearizingCoordinate.coordinate_eq_zero_iff
 theorem LinearizingCoordinate.coordinate_injective (ψ : Γ.LinearizingCoordinate z ε) :
     Function.Injective (coordinate ψ) :=
   fun _ _ h => Subtype.ext (discCoordinate_injective z
-    (ψ.injOn_ball (mem_ball_discCoordinate _) (mem_ball_discCoordinate _) h))
+    (ψ.toFun_injOn_ball (mem_ball_discCoordinate _) (mem_ball_discCoordinate _) h))
 
 /-- **The stabilizer of `z` acts in the coordinate of a local linearizing coordinate by its
 rotation.** The rotation does not depend on the local linearizing coordinate: it is
@@ -295,13 +301,43 @@ theorem LinearizingCoordinate.isOpen_image (hε : 0 < ε) (ψ : Γ.LinearizingCo
   · rw [ψ.image_eq]
     exact hopen _ subset_rfl Metric.isOpen_ball
 
+/-- **The coordinate of a local linearizing coordinate is holomorphic on the invariant disc**:
+on the ambient upper half-plane, the invariant disc being the ball `Metric.ball z ε`
+(`Subgroup.mem_stabilizerBall`), it is the composition of the disc coordinate, which is holomorphic
+by `UpperHalfPlane.mdifferentiable_discCoordinate`, with the reparametrization
+`Subgroup.LinearizingCoordinate.differentiable`, which is holomorphic on the disc of the invariant
+disc and which the disc coordinate maps the invariant disc into. Restricted to
+`Subgroup.stabilizerBall Γ z ε` that composition is
+`Subgroup.LinearizingCoordinate.coordinate`, so this is the holomorphy of that coordinate. -/
+theorem LinearizingCoordinate.mdifferentiableOn_coordinate (ψ : Γ.LinearizingCoordinate z ε) :
+    MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (fun τ : ℍ ↦ ψ.toFun (discCoordinate z τ))
+      (Metric.ball z ε) := by
+  refine fun τ hτ => ?_
+  have hτball : (τ : ℍ) ∈ stabilizerBall Γ z ε :=
+    (mem_stabilizerBall Γ z ε).2 (mem_ball.1 hτ)
+  have hMD : MDiffAt (fun σ : ℍ ↦ ψ.toFun (discCoordinate z σ)) τ := by
+    refine UpperHalfPlane.mdifferentiableAt_iff.mpr ?_
+    -- the disc coordinate is holomorphic at `τ`
+    have hdisc : DifferentiableAt ℂ (discCoordinate z ∘ ofComplex) (τ : ℂ) :=
+      UpperHalfPlane.mdifferentiableAt_iff.mp ((mdifferentiable_discCoordinate z) τ)
+    -- the reparametrization is holomorphic at the disc coordinate of `τ`, which lies in its domain
+    have hψ : DifferentiableAt ℂ ψ.toFun (discCoordinate z (ofComplex (τ : ℂ))) := by
+      rw [ofComplex_apply]
+      exact ψ.differentiable.differentiableAt
+        (Metric.isOpen_ball.mem_nhds (mem_ball_discCoordinate ⟨τ, hτball⟩))
+    have h : DifferentiableAt ℂ (fun w : ℂ ↦ ψ.toFun (discCoordinate z (ofComplex w))) (τ : ℂ) :=
+      DifferentiableAt.comp (g := ψ.toFun) (f := discCoordinate z ∘ ofComplex) (x := τ) hψ hdisc
+    simpa only [Function.comp_def] using h
+  exact hMD.mdifferentiableWithinAt
+
 /-- **The local quotient coordinate** in a local linearizing coordinate: the
 `Nat.card (stabilizer Γ z)`-th power of the coordinate, the model of the quotient of the
 invariant disc by the stabilizer of `z`, `m = Nat.card (stabilizer Γ z)`. Its level sets are the
 orbits of that stabilizer (`Subgroup.LinearizingCoordinate.quotientCoordinate_eq_iff`), so it is a
 coordinate on that quotient, and it is independent of the local linearizing coordinate up to the
 biholomorphic transition of
-`Subgroup.LinearizingCoordinate.exists_quotientCoordinate_trans`. -/
+`Subgroup.LinearizingCoordinate.exists_quotientCoordinate_trans`, holomorphic there by
+`Subgroup.LinearizingCoordinate.mdifferentiableOn_quotientCoordinate`. -/
 def LinearizingCoordinate.quotientCoordinate (ψ : Γ.LinearizingCoordinate z ε)
     (τ : stabilizerBall Γ z ε) : ℂ := coordinate ψ τ ^ Nat.card (stabilizer Γ z)
 
@@ -393,6 +429,19 @@ theorem LinearizingCoordinate.isOpen_quotientImage (hε : 0 < ε)
   rw [quotientImage]
   exact (Complex.isOpenQuotientMap_pow (Nat.card (stabilizer Γ z))).isOpenMap _
     (ψ.isOpen_image hε)
+
+/-- **The local quotient coordinate of a local linearizing coordinate is holomorphic on the
+invariant disc**: it is the `Nat.card (stabilizer Γ z)`-th power of the holomorphic coordinate
+`Subgroup.LinearizingCoordinate.mdifferentiableOn_coordinate`. On
+`Subgroup.stabilizerBall Γ z ε` it is `Subgroup.LinearizingCoordinate.quotientCoordinate`, so this
+is the holomorphy of the local quotient coordinate. -/
+theorem LinearizingCoordinate.mdifferentiableOn_quotientCoordinate
+    (ψ : Γ.LinearizingCoordinate z ε) :
+    MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ)
+      (fun τ : ℍ ↦ (ψ.toFun (discCoordinate z τ)) ^ Nat.card (stabilizer Γ z))
+      (Metric.ball z ε) :=
+  -- the local quotient coordinate is the `Nat.card (stabilizer Γ z)`-th power of the coordinate
+  fun τ hτ => (mdifferentiableOn_coordinate ψ τ hτ).pow _
 
 /-- **The change of local linearizing coordinate** between two local linearizing coordinates on
 the invariant disc: the reparametrization `ψ'` pulled back by the inverse reparametrization `ψ`.
