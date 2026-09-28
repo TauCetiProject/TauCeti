@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Equalizer
+public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.TensorProduct.Basic
+
+import Mathlib.RingTheory.Flat.Equalizer
 
 /-!
 # Kernels and injectivity of tensor products of algebra maps under flatness
