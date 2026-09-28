@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.Convex.Between
 
 /-!
