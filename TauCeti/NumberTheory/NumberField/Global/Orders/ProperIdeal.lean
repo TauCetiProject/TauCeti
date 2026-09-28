@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Basic
-public import Mathlib.RingTheory.FractionalIdeal.Operations
+public import Mathlib.RingTheory.FractionalIdeal.Inverse
 
 /-!
 # Proper fractional ideals of a number-field order
@@ -86,10 +86,8 @@ theorem multiplierRing_mul_spanSingleton
     (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) {x : K} (hx : x ≠ 0) :
     O.multiplierRing (I * FractionalIdeal.spanSingleton _ x) = O.multiplierRing I := by
   apply O.multiplierRing_mul_isUnit I
-  apply isUnit_iff_exists_inv.mpr
-  exact ⟨FractionalIdeal.spanSingleton _ x⁻¹, by
-    rw [FractionalIdeal.spanSingleton_mul_spanSingleton, mul_inv_cancel₀ hx,
-      FractionalIdeal.spanSingleton_one]⟩
+  exact (FractionalIdeal.mul_inv_cancel_iff_isUnit K).mp
+    (FractionalIdeal.spanSingleton_mul_inv K hx)
 
 /-- A fractional ideal is proper when its multiplier ring equals the order. -/
 def IsProperFractionalIdeal (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) : Prop :=
@@ -140,22 +138,18 @@ theorem isProperFractionalIdeal_one :
     O.IsProperFractionalIdeal (1 : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :=
   O.multiplierRing_one
 
-/-- Every invertible fractional ideal is proper. -/
-theorem isProperFractionalIdeal_of_mul_eq_one
-    {I J : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K} (hIJ : I * J = 1) :
-    O.IsProperFractionalIdeal I := by
-  apply le_antisymm ?_ (O.order_le_multiplierRing I)
-  calc
-    O.multiplierRing I ≤ O.multiplierRing (I * J) := O.multiplierRing_le_multiplierRing_mul I J
-    _ = O.multiplierRing 1 := by rw [hIJ]
-    _ = O.toSubalgebra.toSubring := O.isProperFractionalIdeal_one
-
 /-- Units of the fractional-ideal monoid, namely invertible fractional ideals, are proper. -/
 theorem isProperFractionalIdeal_of_isUnit
     {I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K} (hI : IsUnit I) :
     O.IsProperFractionalIdeal I := by
-  obtain ⟨J, hIJ⟩ := isUnit_iff_exists_inv.mp hI
-  exact O.isProperFractionalIdeal_of_mul_eq_one hIJ
+  simpa only [one_mul] using
+    (O.isProperFractionalIdeal_mul_isUnit 1 I hI).mpr O.isProperFractionalIdeal_one
+
+/-- A fractional ideal with a multiplicative inverse is proper. -/
+theorem isProperFractionalIdeal_of_mul_eq_one
+    {I J : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K} (hIJ : I * J = 1) :
+    O.IsProperFractionalIdeal I :=
+  O.isProperFractionalIdeal_of_isUnit (IsUnit.of_mul_eq_one J hIJ)
 
 end NumberFieldOrder
 
