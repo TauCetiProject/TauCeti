@@ -55,7 +55,7 @@ unpowered Frobenius class would put the second term in the fibre of `g`.
 public section
 
 open IsDedekindDomain IsCyclotomicExtension TauCeti
-open scoped NumberField ArithmeticFunction.vonMangoldt
+open scoped NumberField ArithmeticFunction.vonMangoldt IsMulCommutative
 
 namespace NumberField.Chebotarev
 
@@ -72,17 +72,6 @@ theorem frobeniusVonMangoldtCoeff_rat_natGenerator_pow {L : Type*} [Field L] [Nu
 
 variable (F : Type*) [Field F] [NumberField F] (n : ℕ) [NeZero n]
   [IsCyclotomicExtension {n} ℚ F] [IsGalois ℚ F]
-
-omit [IsGalois ℚ F] in
-/-- Distinct units modulo `n` tag distinct Frobenius classes of `ℚ(ζₙ)`. -/
-private theorem mk_galEquivZMod_symm_eq_mk_iff (a b : (ZMod n)ˣ) :
-    ConjClasses.mk ((Rat.galEquivZMod n F).symm a) =
-        ConjClasses.mk ((Rat.galEquivZMod n F).symm b) ↔ a = b := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  have hconj := (Rat.galEquivZMod n F).toMonoidHom.map_isConj
-    (ConjClasses.mk_eq_mk_iff_isConj.mp h)
-  rwa [MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply,
-    isConj_iff_eq] at hconj
 
 /-- Away from the level, the prime power `𝔭 ^ (k + 1)` of `𝓞 ℚ` lies in the powered cyclotomic
 Frobenius fibre tagged by a unit `a` modulo `n` exactly when `N(𝔭) ^ (k + 1) ≡ a (mod n)`. -/
@@ -103,8 +92,10 @@ theorem idealPrimePowerOf_mem_frobeniusPrimePowerSet_galEquivZMod_symm_iff
   have hpow : ConjClasses.mk ((Rat.galEquivZMod n F).symm u) ^ (k + 1) =
       ConjClasses.mk ((Rat.galEquivZMod n F).symm a) ↔
         ((Rat.HeightOneSpectrum.natGenerator 𝔭 ^ (k + 1) : ℕ) : ZMod n) = a := by
-    rw [ConjClasses.mk_pow, ← map_pow, mk_galEquivZMod_symm_eq_mk_iff, Units.ext_iff,
-      Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Nat.cast_pow]
+    -- The Galois group of `ℚ(ζₙ)` is abelian, so its conjugacy classes are singletons.
+    have := IsCyclotomicExtension.isMulCommutative {n} ℚ F
+    rw [ConjClasses.mk_pow, ← map_pow, ConjClasses.mk_injective.eq_iff, MulEquiv.apply_eq_iff_eq,
+      Units.ext_iff, Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Nat.cast_pow]
   rw [idealPrimePowerOf_mem_frobeniusPrimePowerSet_iff, ← hpow]
   refine ⟨fun ⟨D, hD, hDpow⟩ ↦ ?_, fun h ↦ ⟨_, h𝔭, h⟩⟩
   -- The Frobenius fibres are disjoint, so `D` is the Artin class of `𝔭`.
