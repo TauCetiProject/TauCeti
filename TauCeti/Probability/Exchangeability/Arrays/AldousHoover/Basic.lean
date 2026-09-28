@@ -126,7 +126,6 @@ theorem indexEquiv_cell {κ ι : Type*} (vertexPerm : κ → Equiv.Perm ℕ)
   (rfl)
 
 /-- The canonical law of the independent uniform variables used by an Aldous--Hoover coding. -/
-@[expose]
 def noiseMeasure (κ ι : Type*) : Measure (NoiseIndex κ ι → I) :=
   Measure.infinitePi fun _ => (volume : Measure I)
 
