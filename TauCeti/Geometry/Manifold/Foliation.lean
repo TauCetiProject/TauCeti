@@ -12,12 +12,13 @@ public import TauCeti.Geometry.Manifold.Distribution
 
 A foliation of rank `k` of a manifold `M` decomposes `M` into `k`-dimensional immersed
 submanifolds, its leaves. It is recorded here by its tangent distribution, the field of tangent
-spaces of the leaves: a `C^n` foliation of rank `k` is a `C^n` involutive distribution of rank
-`k`. For `1 ≤ n`, the Frobenius theorem, which is not proved here, makes such a distribution the
-tangent field of a unique foliation in the chart sense, the leaves being its maximal connected
-integral manifolds; the distribution is therefore the data of the foliation. For `n = 0` the
-structure is not the notion of a `C⁰` foliation, whose leaves need not have a continuous tangent
-field.
+spaces of the leaves: a `C^n` foliation of rank `k`, for `1 ≤ n`, is a `C^n` involutive
+distribution of rank `k`. The Frobenius theorem, which is not proved here, makes such a
+distribution the tangent field of a unique foliation in the chart sense, the leaves being its
+maximal connected integral manifolds; the distribution is therefore the data of the foliation.
+The regularity `1 ≤ n` is required: a `C⁰` foliation need not have a continuous tangent field,
+and for a merely continuous distribution the involutivity condition, which tests only
+differentiable tangent vector fields, need not constrain it.
 
 A foliation is data rather than a property of `M`, so it is a structure, bundling the
 distribution with its regularity and involutivity. The foliation of a normed space by the
@@ -26,7 +27,7 @@ translates of a finite-dimensional subspace is the basic example.
 ## Main definitions
 
 * `TauCeti.Foliation I n M k`: the `C^n` foliations of `M` of rank `k`.
-* `TauCeti.Foliation.ofSubmodule S`: the foliation of a normed space `E` by the translates of a
+* `TauCeti.Foliation.ofSubmodule S hn`: the foliation of a normed space `E` by the translates of a
   finite-dimensional subspace `S`.
 
 ## References
@@ -51,10 +52,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {k : ℕ}
 
 variable (I n M k) in
-/-- A `C^n` foliation of `M` of rank `k`, recorded by the tangent spaces of its leaves: a `C^n`
-involutive distribution of rank `k`. -/
+/-- A `C^n` foliation of `M` of rank `k`, for `1 ≤ n`, recorded by the tangent spaces of its
+leaves: a `C^n` involutive distribution of rank `k`. -/
 @[ext]
 structure Foliation where
+  /-- The foliation is at least `C¹`, so that its tangent distribution is locally spanned by
+  differentiable vector fields and involutivity is a condition on it. -/
+  one_le : 1 ≤ n
   /-- The tangent distribution of the foliation: at each point, the tangent space of the leaf
   through it. -/
   distribution : Π x : M, Submodule 𝕜 (TangentSpace I x)
@@ -72,18 +76,18 @@ theorem finrank_distribution (F : Foliation I n M k) (x : M) :
 
 variable [CompleteSpace 𝕜]
 
-variable (n) in
-/-- The foliation of a normed space `E` whose leaves are the translates `x + S` of a
-finite-dimensional subspace `S`: its tangent space at every point is `S`. -/
-def ofSubmodule (S : Submodule 𝕜 E) [FiniteDimensional 𝕜 S] :
+/-- The `C^n` foliation, for `1 ≤ n`, of a normed space `E` whose leaves are the translates
+`x + S` of a finite-dimensional subspace `S`: its tangent space at every point is `S`. -/
+def ofSubmodule (S : Submodule 𝕜 E) [FiniteDimensional 𝕜 S] (hn : 1 ≤ n) :
     Foliation 𝓘(𝕜, E) n E (finrank 𝕜 S) where
+  one_le := hn
   distribution _ := S
   isContMDiffDistribution := isContMDiffDistribution_const S
   isInvolutiveDistribution := isInvolutiveDistribution_const S.closed_of_finiteDimensional
 
 @[simp]
-theorem ofSubmodule_distribution (S : Submodule 𝕜 E) [FiniteDimensional 𝕜 S] (x : E) :
-    (ofSubmodule n S).distribution x = S :=
+theorem ofSubmodule_distribution (S : Submodule 𝕜 E) [FiniteDimensional 𝕜 S] (hn : 1 ≤ n)
+    (x : E) : (ofSubmodule S hn).distribution x = S :=
   (rfl)
 
 end Foliation
