@@ -82,6 +82,7 @@ theorem orderOf_frobeniusThreeSeven_sq :
   decide
 
 /-- The square of the Frobenius at three acts with exponent two on a primitive seventh root. -/
+-- Not a simp lemma: `map_pow` and `autToPow_frobeniusThreeSeven` normalize its left-hand side.
 theorem autToPow_frobeniusThreeSeven_sq :
     ((zeta_spec 7 ℚ L).autToPow ℚ (frobeniusThreeSeven (L := L) ^ 2) : ZMod 7) = 2 := by
   rw [map_pow, Units.val_pow_eq_pow_val, autToPow_frobeniusThreeSeven]

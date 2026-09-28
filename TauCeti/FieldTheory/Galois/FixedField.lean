@@ -94,6 +94,7 @@ namespace IntermediateField
 variable {K M : Type*} [Field K] [Field M] [Algebra K M]
 
 /-- Membership in the fixed field of a cyclic subgroup is fixedness under its generator. -/
+-- Not a simp lemma: `mem_fixedField_iff` normalizes the left-hand side first (`simpNF`).
 theorem mem_fixedField_zpowers_iff (σ : M ≃ₐ[K] M) (x : M) :
     x ∈ fixedField (Subgroup.zpowers σ) ↔ σ x = x := by
   rw [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
