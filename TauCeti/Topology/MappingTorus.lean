@@ -120,13 +120,17 @@ theorem proj_mk (φ : F ≃ₜ F) (x : F) (t : ℝ) :
   unfold proj mk
   apply Quotient.lift_mk
 
+/-- The cylinder map into the mapping torus is a quotient map. -/
+theorem isQuotientMap_mk (φ : F ≃ₜ F) :
+    IsQuotientMap (fun p : F × ℝ ↦ mk φ p.1 p.2) := by
+  let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
+  change IsQuotientMap (@Quotient.mk' (F × ℝ) (AddAction.orbitRel ℤ (F × ℝ)))
+  exact isQuotientMap_quotient_mk'
+
 /-- The quotient map from the cylinder into the mapping torus is continuous. -/
 theorem continuous_mk (φ : F ≃ₜ F) :
   Continuous (fun p : F × ℝ ↦ mk φ p.1 p.2) := by
-  let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
-  -- `mk` uses `Quotient.mk''`; the quotient theorem is stated with `Quotient.mk'`.
-  change Continuous (@Quotient.mk' (F × ℝ) (AddAction.orbitRel ℤ (F × ℝ)))
-  exact isQuotientMap_quotient_mk'.continuous
+  exact (isQuotientMap_mk φ).continuous
 
 /-- The canonical projection from a mapping torus to the additive circle is continuous. -/
 theorem continuous_proj (φ : F ≃ₜ F) : Continuous (proj φ) := by
