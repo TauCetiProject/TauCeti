@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Node.BaseChange
-public import TauCeti.RingTheory.Node.JacobianLocus
+public import TauCeti.RingTheory.Node.Jacobian.Locus
 
 /-!
 # Base change of the Jacobian locus of a nodal chart
@@ -42,6 +42,7 @@ theorem map_jacobianIdeal :
 
 /-- The first Fitting ideal of the relative differentials of a nodal chart commutes
 with arbitrary change of coefficients. -/
+@[simp]
 theorem map_fittingIdeal_differential_one :
     (fittingIdeal (NodeAlgebra R a) Ω[NodeAlgebra R a⁄R] 1).map (map (S := S) a) =
       fittingIdeal (NodeAlgebra S (algebraMap R S a))
