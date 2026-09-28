@@ -50,3 +50,31 @@ theorem compactifiedQuotientMap_ellipticChart (h : Δ ≤ Γ) (z : ℍ)
   exact stabilizerBallQuotientChart_map_of_le_symm h z hε hΔ hΓ hu
 
 end Subgroup
+
+namespace Subgroup.CompactifiedQuotient
+
+variable {Δ Γ : Subgroup PSL(2, ℝ)} (h : Δ ≤ Γ) (z : ℍ)
+
+/-- The compactified quotient map has elliptic local expression `u ↦ u ^ e` in the
+transported charts at points of the uncompactified quotient. -/
+theorem ofQuotientChart_compactifiedQuotientMap_eq_pow_ellipticRamificationIndex
+    [DiscreteTopology Γ]
+    {ε : ℝ} (hε : 0 < ε)
+    (hopenΔ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Δ z ε))
+    (hopenΓ : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+    {q : orbitRel.Quotient Δ ℍ} :
+    let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+    q ∈ (stabilizerBallQuotientChart hε hopenΔ).source →
+    ofQuotientChart (stabilizerBallQuotientChart hε hopenΓ)
+      (compactifiedQuotientMap h (.ofQuotient q)) =
+      (ofQuotientChart (stabilizerBallQuotientChart hε hopenΔ)
+        (.ofQuotient q)) ^ ellipticRamificationIndex h z := by
+  dsimp only
+  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+  intro hq
+  simpa only [compactifiedQuotientMap_ofQuotient,
+    ofQuotientChart_ofQuotient] using
+    (stabilizerBallQuotientChart_map_eq_pow_ellipticRamificationIndex
+      h z hε hopenΔ hopenΓ hq)
+
+end Subgroup.CompactifiedQuotient
