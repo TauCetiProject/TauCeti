@@ -533,6 +533,13 @@ private def coordinateToLin :
     Matrix.GeneralLinearGroup n R ≃* LinearMap.GeneralLinearGroup R (n → R) :=
   Units.mapEquiv Matrix.toLinAlgEquiv'.toMulEquiv
 
+private theorem coordinateToLin_apply (A : Matrix.GeneralLinearGroup n R) (v : n → R) :
+    (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R) (coordinateToLin A)) v =
+      Matrix.mulVec (A : Matrix n n R) v := by
+  rw [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
+    coordinateToLin, Units.coe_mapEquiv]
+  exact Matrix.toLinAlgEquiv'_apply _ _
+
 /-- The coordinate inclusion of an orthogonal group into `GL(n, R)`. -/
 noncomputable def _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
@@ -554,10 +561,7 @@ theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_apply
     _ = ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
         (coordinateToLin (orthogonalToGeneralLinear Q g)))
           (Pi.single j 1)) i := by
-      rw [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
-        coordinateToLin, Units.coe_mapEquiv]
-      change _ = (Matrix.toLinAlgEquiv' _ _) i
-      rw [Matrix.toLinAlgEquiv'_apply]
+      rw [coordinateToLin_apply]
     _ = _ := by simp [orthogonalToGeneralLinear]
 
 /-- The underlying matrix of the coordinate inclusion is the matrix of the linear equivalence. -/
