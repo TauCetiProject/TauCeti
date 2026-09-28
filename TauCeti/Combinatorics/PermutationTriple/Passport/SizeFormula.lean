@@ -16,7 +16,9 @@ Every stabilizer is the centralizer, so every orbit has the same size. Counting 
 triples by orbits gives an exact division formula for the number of isomorphism classes in the
 passport in terms of the finite set of generating triples. The divisibility statement makes the
 natural-number quotient meaningful. A generating-count recursion can evaluate the finite-set
-cardinality separately.
+cardinality separately. These results supply the orbit-counting prerequisite for BelyiMaps
+Layer 3.4 step 4; the final formula in terms of `genCountType` also needs Layers 3.2–3.3
+and Layer 3.4 steps 1–2.
 
 ## References
 
