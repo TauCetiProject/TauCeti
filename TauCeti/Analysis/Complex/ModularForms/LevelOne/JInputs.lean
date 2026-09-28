@@ -30,6 +30,7 @@ namespace TauCeti.ModularForm
 /-- The normalized modular invariant `j = E₄³ / Δ` on the upper half-plane. -/
 def j (z : ℍ) : ℂ := E₄ z ^ 3 / discriminant z
 
+-- A simp attribute here would make the `j_smul` and fibre simp lemmas fail `simpNF`.
 theorem j_apply (z : ℍ) : j z = E₄ z ^ 3 / discriminant z := by rfl
 
 /-- The modular invariant is holomorphic on the upper half-plane. -/
