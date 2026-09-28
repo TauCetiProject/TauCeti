@@ -323,8 +323,9 @@ noncomputable def IsNormal.coinvariantsSubcoalgebra [Module.Flat R H]
 @[simp]
 theorem IsNormal.mem_coinvariantsSubcoalgebra [Module.Flat R H]
     [Module.Flat R (H ⧸ Subalgebra.toSubmodule I.coinvariants)] (hI : I.IsNormal) :
-    h ∈ hI.coinvariantsSubcoalgebra ↔ h ∈ I.coinvariants :=
-  Iff.rfl
+    h ∈ hI.coinvariantsSubcoalgebra ↔ h ∈ I.coinvariants := by
+  rw [IsNormal.coinvariantsSubcoalgebra, Subcoalgebra.mem_ofSubmodule,
+    Subalgebra.mem_toSubmodule]
 
 end Points
 
