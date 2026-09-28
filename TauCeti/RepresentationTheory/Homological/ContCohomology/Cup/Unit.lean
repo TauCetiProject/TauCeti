@@ -72,7 +72,7 @@ variable (P : TopPairing X Y X) (u : Y.V) (hu : ∀ x : X.V, P.bil x u = x)
 include hu
 
 /-- On the resolution, pairing with the constant map at a right unit `u` is the identity. -/
-theorem resolutionCup_d_zero_of_right_unit : ∀ (m : ℕ) (hk : m = 0 + m)
+private theorem resolutionCup_d_zero_of_right_unit : ∀ (m : ℕ) (hk : m = 0 + m)
     (a : (TopRep.resolutionX X (m + 1)).V),
     P.resolutionCup m 0 m hk (a, (TopRep.d Y 0).hom u) = a
   | 0, hk, a => ContinuousMap.ext fun g ↦ by
@@ -95,6 +95,7 @@ theorem cupCochain_degreeZeroCocycle_right (hinv : ∀ g : G, Y.ρ g u = u) (m :
 /-- **The right unit law for the cup product on continuous cohomology**: if `u` is an invariant
 vector with `P.bil x u = x` for every `x`, then `a ⌣ [u] = a` for every class `a`. For a discrete
 `G`-ring and its multiplication this is `a ⌣ 1 = a`. -/
+@[simp]
 theorem cup_one_right (hinv : ∀ g : G, Y.ρ g u = u) (m : ℕ) (a : continuousCohomology m X) :
     P.cup m 0 a (degreeZeroClass Y u hinv) = a := by
   obtain ⟨a, rfl⟩ := (homogeneousCochains X).homologyπ_surjective m a
@@ -115,7 +116,7 @@ variable (P : TopPairing Y X X) (u : Y.V) (hu : ∀ x : X.V, P.bil u x = x)
 include hu
 
 /-- Pairing a left unit `u` with every value of an iterated map is the identity. -/
-theorem pointwise_of_left_unit : ∀ (n : ℕ) (F : (TopRep.resolutionX X n).V),
+private theorem pointwise_of_left_unit : ∀ (n : ℕ) (F : (TopRep.resolutionX X n).V),
     P.pointwise n n rfl (u, F) = F
   | 0, F => by
     rw [pointwise_zero_apply]
@@ -141,6 +142,7 @@ theorem cupCochain_degreeZeroCocycle_left (hinv : ∀ g : G, Y.ρ g u = u) (n : 
 vector with `P.bil u x = x` for every `x`, then `[u] ⌣ a = a` for every class `a`, where the
 right-hand side is transported from degree `n` to the degree `0 + n` of the cup product. For a
 discrete `G`-ring and its multiplication this is `1 ⌣ a = a`. -/
+@[simp]
 theorem cup_one_left (hinv : ∀ g : G, Y.ρ g u = u) (n : ℕ) (a : continuousCohomology n X) :
     P.cup 0 n (degreeZeroClass Y u hinv) a =
       eqToHom (congrArg (continuousCohomology · X) (Nat.zero_add n).symm) a := by
