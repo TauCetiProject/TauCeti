@@ -89,10 +89,11 @@ a private coordinate extensionality lemma splitting an equation of octonions int
 coordinates.
 
 No definition here is exposed: consumers work through the projection `simp` lemmas rather than
-through any definition body. The additive and module structures are built directly on the
-componentwise operations, and `TauCeti.Octonion.linearEquivProd` packages a vector matrix as the
-tuple of its four entries, a linear isomorphism over any semiring acting on the coefficients; the
-dimension count runs through it with `R` acting on itself.
+through any definition body. The additive and module structures are transported from
+`R × R × (Fin 3 → R) × (Fin 3 → R)` along the injective map to the four entries, and
+`TauCeti.Octonion.linearEquivProd` packages a vector matrix as the tuple of those entries, a
+linear isomorphism over any semiring acting on the coefficients; the dimension count runs through
+it with `R` acting on itself.
 
 The norm is available both as the bare map `Octonion R → R` and, through
 `TauCeti.Octonion.normQuadraticForm`, as a `QuadraticForm R (Octonion R)`; the bundled form is what
@@ -191,38 +192,25 @@ instance [SMul S R] : SMul S (Octonion R) :=
 @[simp] theorem smul_v [SMul S R] (s : S) (x : Octonion R) : (s • x).v = s • x.v := (rfl)
 @[simp] theorem smul_w [SMul S R] (s : S) (x : Octonion R) : (s • x).w = s • x.w := (rfl)
 
-/- The structures below are built directly on the componentwise operations rather than transported
-along an injection into `R × R × (Fin 3 → R) × (Fin 3 → R)`: a transport would have to name that
-injection and its injectivity proof in an instance body, and an instance body may mention only
-public declarations, so the helper would have to be part of the public API. -/
-instance [AddCommMonoid R] : AddCommMonoid (Octonion R) where
-  add_assoc _ _ _ := by ext <;> simp [add_assoc]
-  zero_add _ := by ext <;> simp
-  add_zero _ := by ext <;> simp
-  add_comm _ _ := by ext <;> simp [add_comm]
-  nsmul n x := n • x
-  nsmul_zero _ := by ext <;> simp
-  nsmul_succ _ _ := by ext <;> simp [succ_nsmul]
+instance [AddCommMonoid R] : AddCommMonoid (Octonion R) :=
+  Function.Injective.addCommMonoid (fun x : Octonion R => (x.a, x.b, x.v, x.w))
+    (fun ⟨_, _, _, _⟩ ⟨_, _, _, _⟩ h => by simp_all) rfl (fun _ _ => rfl) fun _ _ => rfl
 
-instance [AddCommGroup R] : AddCommGroup (Octonion R) where
-  __ := (inferInstance : AddCommMonoid (Octonion R))
-  neg_add_cancel _ := by ext <;> simp
-  sub_eq_add_neg _ _ := by ext <;> simp [sub_eq_add_neg]
-  zsmul n x := n • x
-  zsmul_zero' _ := by ext <;> simp
-  zsmul_succ' _ _ := by ext <;> simp [add_zsmul]
-  zsmul_neg' _ _ := by ext <;> simp [add_zsmul, succ_nsmul]
+instance [AddCommGroup R] : AddCommGroup (Octonion R) :=
+  Function.Injective.addCommGroup (fun x : Octonion R => (x.a, x.b, x.v, x.w))
+    (fun ⟨_, _, _, _⟩ ⟨_, _, _, _⟩ h => by simp_all) rfl (fun _ _ => rfl) (fun _ => rfl)
+    (fun _ _ => rfl) (fun _ _ => rfl) fun _ _ => rfl
 
 instance [Monoid S] [AddCommMonoid R] [DistribMulAction S R] :
-    DistribMulAction S (Octonion R) where
-  one_smul _ := by ext <;> simp
-  mul_smul _ _ _ := by ext <;> simp [mul_smul]
-  smul_zero _ := by ext <;> simp
-  smul_add _ _ _ := by ext <;> simp
+    DistribMulAction S (Octonion R) :=
+  Function.Injective.distribMulAction
+    ⟨⟨fun x : Octonion R => (x.a, x.b, x.v, x.w), rfl⟩, fun _ _ => rfl⟩
+    (fun ⟨_, _, _, _⟩ ⟨_, _, _, _⟩ h => by simp_all) fun _ _ => rfl
 
-instance [Semiring S] [AddCommMonoid R] [Module S R] : Module S (Octonion R) where
-  add_smul _ _ _ := by ext <;> simp [add_smul]
-  zero_smul _ := by ext <;> simp
+instance [Semiring S] [AddCommMonoid R] [Module S R] : Module S (Octonion R) :=
+  Function.Injective.module S
+    ⟨⟨fun x : Octonion R => (x.a, x.b, x.v, x.w), rfl⟩, fun _ _ => rfl⟩
+    (fun ⟨_, _, _, _⟩ ⟨_, _, _, _⟩ h => by simp_all) fun _ _ => rfl
 
 instance [AddCommGroup R] [One R] : AddCommGroupWithOne (Octonion R) where
   __ := (inferInstance : AddCommGroup (Octonion R))

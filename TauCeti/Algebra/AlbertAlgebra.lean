@@ -183,7 +183,7 @@ instance [AddCommGroup R] [One R] : AddCommGroupWithOne (AlbertAlgebra R) where
 diagonal and its octonion entries, over any semiring acting on the coefficients. -/
 def linearEquivProd (S R : Type*) [Semiring S] [AddCommMonoid R] [Module S R] :
     AlbertAlgebra R ≃ₗ[S] (Fin 3 → R) × (Fin 3 → Octonion R) :=
-  { addEquivProd R with map_smul' := fun _ _ => rfl }
+  (addEquivProd R).toLinearEquiv fun _ _ => rfl
 
 @[simp] theorem linearEquivProd_apply [Semiring S] [AddCommMonoid R] [Module S R]
     (A : AlbertAlgebra R) : linearEquivProd S R A = (A.diag, A.offDiag) := (rfl)
