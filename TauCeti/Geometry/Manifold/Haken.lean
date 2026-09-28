@@ -36,6 +36,8 @@ Chapter II.
 * `TauCeti.IsHakenSurfaceEmbedding`: a proper, incompressible, non-spherical witness for
   Haken-ness, allowing boundary.
 * `TauCeti.IsClosedHakenSurfaceEmbedding`: the closed, bicollared specialization.
+* `TauCeti.IsHakenThreeManifold` and `TauCeti.IsClosedHakenThreeManifold`: the corresponding
+  existential Haken predicates for ambient 3-manifolds.
 
 ## Main results
 
@@ -44,6 +46,9 @@ Chapter II.
   `TauCeti.isClosedIncompressibleSurfaceEmbedding_prodMk` provide reusable incompressible-surface
   witnesses.
 * `TauCeti.isHakenSurfaceEmbedding_iff` exposes the additional Haken-witness conditions.
+* `TauCeti.isHakenThreeManifold_of_isHakenSurfaceEmbedding` and
+  `TauCeti.isClosedHakenThreeManifold_of_isClosedHakenSurfaceEmbedding` package a surface witness
+  into the corresponding ambient predicate.
 -/
 
 public section
@@ -53,6 +58,8 @@ open Set Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
+
+universe u
 
 /-! ### Compact connected manifold predicates -/
 
@@ -168,7 +175,35 @@ theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
 
 end BoundaryAware
 
+/-! ### Boundary-aware existential Haken predicate -/
+
+section BoundaryHakenPredicate
+
+/-- A compact connected 3-manifold is **Haken** when it admits a boundary-aware Haken surface
+embedding.  The source type, its manifold structures, and the map are existential data, so this
+predicate records the geometric witness rather than merely asserting an incompressible map
+exists. -/
+def IsHakenThreeManifold (M : Type u) [TopologicalSpace M]
+    [ChartedSpace (EuclideanHalfSpace 3) M] : Prop :=
+  IsCompactConnectedThreeManifold M ∧
+    ∃ (S : Type u) (tS : TopologicalSpace S)
+      (cS : ChartedSpace (EuclideanHalfSpace 2) S),
+      letI : TopologicalSpace S := tS
+      letI : ChartedSpace (EuclideanHalfSpace 2) S := cS
+      ∃ f : C(S, M), IsHakenSurfaceEmbedding f
+
+/-- A boundary-aware Haken surface embedding supplies its ambient Haken predicate. -/
+theorem isHakenThreeManifold_of_isHakenSurfaceEmbedding {S M : Type u}
+    [TopologicalSpace S] [TopologicalSpace M]
+    [ChartedSpace (EuclideanHalfSpace 2) S] [ChartedSpace (EuclideanHalfSpace 3) M]
+    {f : C(S, M)} (h : IsHakenSurfaceEmbedding f) : IsHakenThreeManifold M := by
+  refine ⟨h.2.1, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+
+end BoundaryHakenPredicate
+
 /-! ### Closed incompressible surface embeddings -/
+
+section ClosedEmbeddings
 
 variable [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
   [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
@@ -224,5 +259,31 @@ theorem isClosedHakenSurfaceEmbedding_iff {f : C(S, M)} :
         IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f ∧ IsBicollared f ∧
           ∃ s : S, Nontrivial (FundamentalGroup S s) :=
   Iff.rfl
+
+end ClosedEmbeddings
+
+section Closed
+
+/-- A closed connected 3-manifold is **closed Haken** when it admits a closed Haken surface
+embedding.  The source type, its manifold structures, and the map are existential data; the
+witness retains incompressibility, local flatness, bicollaring, and non-sphericity. -/
+def IsClosedHakenThreeManifold (M : Type u) [TopologicalSpace M]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] : Prop :=
+  IsClosedConnectedThreeManifold M ∧
+    ∃ (S : Type u) (tS : TopologicalSpace S)
+      (cS : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S),
+      letI : TopologicalSpace S := tS
+      letI : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S := cS
+      ∃ f : C(S, M), IsClosedHakenSurfaceEmbedding f
+
+/-- A closed Haken surface embedding supplies its ambient closed-Haken predicate. -/
+theorem isClosedHakenThreeManifold_of_isClosedHakenSurfaceEmbedding {S M : Type u}
+    [TopologicalSpace S] [TopologicalSpace M]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
+    {f : C(S, M)} (h : IsClosedHakenSurfaceEmbedding f) : IsClosedHakenThreeManifold M := by
+  refine ⟨h.1.2.1, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+
+end Closed
 
 end TauCeti
