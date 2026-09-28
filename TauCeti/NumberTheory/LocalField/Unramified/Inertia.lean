@@ -8,6 +8,8 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 
+import TauCeti.Topology.Algebra.Group.Subgroup
+
 /-!
 # The inertia subgroup of the absolute Galois group of a local field
 
@@ -36,6 +38,8 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
 
 * `TauCeti.inertiaSubgroup K`: the inertia subgroup `I_K` of `G_K`.
 * `TauCeti.restrictMaximalUnramifiedHom K`: restriction `G_K →* Gal(K^{ur}/K)`.
+* `TauCeti.unramifiedQuotient K`, `TauCeti.unramifiedDegree K`: the quotient `G_K ⧸ I_K` and its
+  canonical quotient map.
 * `TauCeti.quotientInertiaSubgroupEquiv K`: the unramified quotient `G_K ⧸ I_K ≃ₜ* Gal(K^{ur}/K)`.
 * `TauCeti.IsArithFrobeniusLift K σ`: `σ ∈ G_K` restricts to the arithmetic Frobenius of `K^{ur}`.
 
@@ -155,19 +159,27 @@ theorem ker_restrictMaximalUnramifiedHom :
     (restrictMaximalUnramifiedHom K).ker = inertiaSubgroup K :=
   restrictNormalHom_ker _
 
+/-- **The unramified quotient** `G_K ⧸ I_K` of the absolute Galois group. -/
+abbrev unramifiedQuotient := Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K
+
+/-- The canonical quotient map from the absolute Galois group to its unramified quotient. -/
+def unramifiedDegree : Field.absoluteGaloisGroup K →* unramifiedQuotient K :=
+  QuotientGroup.mk' (inertiaSubgroup K)
+
 /-- **The unramified quotient** of the absolute Galois group: restriction to the maximal unramified
 extension induces an isomorphism of topological groups `G_K ⧸ I_K ≃ₜ* Gal(K^{ur}/K)`. -/
 def quotientInertiaSubgroupEquiv :
-    Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K ≃ₜ*
+    unramifiedQuotient K ≃ₜ*
       Gal(maximalUnramifiedExtension K (AlgebraicClosure K)/K) :=
   -- `inertiaSubgroup K` is by definition the fixing subgroup of `K^{ur}`.
   absoluteGaloisGroupQuotientEquiv K (maximalUnramifiedExtension K (AlgebraicClosure K))
 
 variable {K} in
-/-- The unramified quotient map sends the class of `σ` to its restriction to `K^{ur}`. -/
+/-- Identifying the unramified quotient with `Gal(K^{ur}/K)` carries the unramified degree of `σ`
+to its restriction to `K^{ur}`. -/
 @[simp]
-theorem quotientInertiaSubgroupEquiv_mk (σ : Field.absoluteGaloisGroup K) :
-    quotientInertiaSubgroupEquiv K (σ : Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K) =
+theorem quotientInertiaSubgroupEquiv_unramifiedDegree (σ : Field.absoluteGaloisGroup K) :
+    quotientInertiaSubgroupEquiv K (unramifiedDegree K σ) =
       restrictMaximalUnramifiedHom K σ :=
   -- `restrictMaximalUnramifiedHom K` is by definition `AlgEquiv.restrictNormalHom`.
   absoluteGaloisGroupQuotientEquiv_mk σ
@@ -260,23 +272,21 @@ theorem topologicalClosure_zpowers_sup_inertiaSubgroup (hσ : IsArithFrobeniusLi
     (Subgroup.zpowers σ ⊔ inertiaSubgroup K).topologicalClosure = ⊤ := by
   set r := restrictMaximalUnramifiedHom K
   set C := (Subgroup.zpowers σ ⊔ inertiaSubgroup K).topologicalClosure
-  -- Restriction is a closed map, being a continuous map from a compact space to a Hausdorff one.
   have : T2Space Gal(maximalUnramifiedExtension K (AlgebraicClosure K)/K) := krullTopology_t2
-  have hr : IsClosedMap r := (continuous_restrictMaximalUnramifiedHom K).isClosedMap
   have hker : r.ker ≤ C := by
     rw [ker_restrictMaximalUnramifiedHom]
     exact le_sup_right.trans (Subgroup.le_topologicalClosure _)
-  -- The image of `C` is closed and contains Frobenius, so it is everything.
+  -- Restriction carries the compact closure onto the closure of the image, which contains
+  -- Frobenius and is therefore the whole Galois group.
   have hmap : C.map r = ⊤ := by
+    rw [r.map_topologicalClosure (continuous_restrictMaximalUnramifiedHom K) _
+      (Subgroup.isClosed_topologicalClosure _).isCompact]
     refine top_le_iff.1 ?_
     rw [← topologicalClosure_zpowers_maximalUnramifiedFrobenius]
-    refine Subgroup.topologicalClosure_minimal _ ?_ ?_
-    · rw [Subgroup.zpowers_le, ← isArithFrobeniusLift_def.1 hσ]
+    exact Subgroup.topologicalClosure_mono (by
+      rw [Subgroup.zpowers_le, ← isArithFrobeniusLift_def.1 hσ]
       exact Subgroup.mem_map_of_mem r
-        (Subgroup.le_topologicalClosure _ (le_sup_left (b := inertiaSubgroup K)
-          (Subgroup.mem_zpowers σ)))
-    · rw [Subgroup.coe_map]
-      exact hr _ (Subgroup.isClosed_topologicalClosure _)
+        (le_sup_left (b := inertiaSubgroup K) (Subgroup.mem_zpowers σ)))
   rw [← Subgroup.comap_map_eq_self hker, hmap, Subgroup.comap_top]
 
 end IsArithFrobeniusLift
