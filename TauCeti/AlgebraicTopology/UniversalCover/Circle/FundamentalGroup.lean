@@ -341,6 +341,22 @@ private theorem monodromy_homeomorphMulEquivOfEq_fromPath (γ : Path (1 : Circle
     rw [hcoe, hθ]
   exact ht
 
+/-- **The degree at the basepoint `1`.** The additive-circle computation, transported to `Circle`
+along `AddCircle.homeomorphCircle`, sends the class of a loop at `1` to its degree. -/
+private theorem homeomorphMulEquivOfEq_trans_fundamentalGroupMulEquivZero_fromPath
+    (γ : Path (1 : Circle) 1) :
+    ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+          (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
+          (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne')).trans
+      (AddCircle.fundamentalGroupMulEquivZero (2 * Real.pi) Real.two_pi_pos.ne'))
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
+      Multiplicative.ofAdd (degree γ) := by
+  rw [MulEquiv.trans_apply, AddCircle.fundamentalGroupMulEquivZero_apply_eq_iff]
+  obtain ⟨θ, hθ, hθ0⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap 0 (by simp)
+  have hθγ (t : unitInterval) : exp (θ t) = γ t := congr_fun hθ t
+  rw [monodromy_homeomorphMulEquivOfEq_fromPath γ ⟨θ, hθ0, rfl⟩ hθγ]
+  simpa [hθ0, zsmul_eq_mul] using sub_eq_degree_mul γ θ.continuous hθγ
+
 /-- **The isomorphism `π₁(S¹) ≃* ℤ` is the degree.** The class of a loop is sent to its degree
 `Circle.degree`, the number of full turns of any continuous angle lift. -/
 theorem fundamentalGroupMulEquiv_fromPath {x : Circle} (γ : Path x x) :
@@ -350,17 +366,9 @@ theorem fundamentalGroupMulEquiv_fromPath {x : Circle} (γ : Path x x) :
   -- degree.
   rw [fundamentalGroupMulEquiv_def, MulEquiv.trans_apply,
     FundamentalGroup.fundamentalGroupMulEquivOfPathConnected,
-    FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
-    ← degree_symm_trans_trans γ (PathConnectedSpace.somePath x 1)]
-  set δ := (PathConnectedSpace.somePath x 1).symm.trans (γ.trans (PathConnectedSpace.somePath x 1))
-  change ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq _ _).trans
-    (AddCircle.fundamentalGroupMulEquivZero _ _))
-      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk δ)) = _
-  rw [MulEquiv.trans_apply, AddCircle.fundamentalGroupMulEquivZero_apply_eq_iff]
-  obtain ⟨θ, hθ, hθ0⟩ := isCoveringMap_exp.exists_path_lifts δ.toContinuousMap 0 (by simp)
-  have hθδ (t : unitInterval) : exp (θ t) = δ t := congr_fun hθ t
-  rw [monodromy_homeomorphMulEquivOfEq_fromPath δ ⟨θ, hθ0, rfl⟩ hθδ]
-  simpa [hθ0, zsmul_eq_mul] using sub_eq_degree_mul δ θ.continuous hθδ
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_apply, ← Path.Homotopic.Quotient.mk_trans,
+    ← Path.Homotopic.Quotient.mk_symm, ← Path.Homotopic.Quotient.mk_trans,
+    homeomorphMulEquivOfEq_trans_fundamentalGroupMulEquivZero_fromPath, degree_symm_trans_trans]
 
 /-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/
 def expLoop : Path (1 : Circle) 1 where

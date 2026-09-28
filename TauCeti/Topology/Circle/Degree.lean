@@ -22,8 +22,10 @@ by a constant, this integer does not depend on the lift. It is the **degree** (o
 The degree is characterized by any one continuous lift (`Circle.sub_eq_degree_mul` and
 `Circle.degree_eq_of_sub_eq`), which is how it is computed in practice. It is invariant under
 homotopies through loops, whose basepoint may move (`Circle.degree_eq_of_homotopy`), in particular
-under homotopies of based loops (`Circle.degree_eq_of_homotopic`), and it is additive under the
-pointwise product of loops (`Circle.degree_mul`), because angle functions add.
+under homotopies of based loops (`Circle.degree_eq_of_homotopic`). It is additive under the
+concatenation (`Circle.degree_trans`) and the pointwise product (`Circle.degree_mul`) of loops,
+because angle functions concatenate and add, and reversing a loop negates it
+(`Circle.degree_symm`).
 
 The degree is the integer that Tau Ceti's identification
 `Circle.fundamentalGroupMulEquiv : π₁(Circle, x) ≃* Multiplicative ℤ` assigns to the class of the
@@ -39,6 +41,8 @@ which the Maslov index of a loop of totally real subspaces is defined.
   `θ 1 - θ 0 = degree γ * (2 * π)`.
 * `Circle.degree_eq_of_homotopy`: the degree is invariant under free homotopies of loops.
 * `Circle.degree_symm_trans_trans`: the degree is invariant under change of basepoint.
+* `Circle.degree_trans`, `Circle.degree_symm`: the degree of a concatenation of loops is the sum
+  of the degrees, and reversing a loop negates its degree.
 * `Circle.degree_mul`: the degree of a pointwise product of loops is the sum of the degrees.
 -/
 
@@ -51,7 +55,7 @@ namespace Circle
 
 /-- The closing condition of a loop: along any continuous lift of a loop in the circle, the
 angle changes by an integer multiple of `2π`, and this integer is the same for every lift. -/
-theorem exists_forall_sub_eq {x : Circle} (γ : Path x x) :
+private theorem exists_forall_sub_eq {x : Circle} (γ : Path x x) :
     ∃ n : ℤ, ∀ θ : I → ℝ, Continuous θ → (∀ t, exp (θ t) = γ t) →
       θ 1 - θ 0 = n * (2 * π) := by
   obtain ⟨Θ, hΘ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
@@ -120,6 +124,39 @@ theorem degree_eq_of_homotopic {x : Circle} {γ₀ γ₁ : Path x x} (h : γ₀.
   obtain ⟨F⟩ := h
   exact degree_eq_of_homotopy γ₀ γ₁ F.toContinuousMap (by simp) (by simp)
     (fun s => by simp)
+
+/-- The degree of the concatenation of two loops is the sum of their degrees. -/
+@[simp]
+theorem degree_trans {x : Circle} (γ₁ γ₂ : Path x x) :
+    degree (γ₁.trans γ₂) = degree γ₁ + degree γ₂ := by
+  obtain ⟨θ₁, hθ₁', -⟩ := isCoveringMap_exp.exists_path_lifts γ₁.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ₁ (t : I) : exp (θ₁ t) = γ₁ t := congr_fun hθ₁' t
+  obtain ⟨θ₂, hθ₂', hθ₂0⟩ := isCoveringMap_exp.exists_path_lifts γ₂.toContinuousMap (θ₁ 1)
+    (by simp [hθ₁])
+  have hθ₂ (t : I) : exp (θ₂ t) = γ₂ t := congr_fun hθ₂' t
+  -- The lift of `γ₂` starts where the lift of `γ₁` ends, so the two lifts concatenate.
+  let Θ₁ : Path (θ₁ 0) (θ₁ 1) := ⟨θ₁, rfl, rfl⟩
+  let Θ₂ : Path (θ₁ 1) (θ₂ 1) := ⟨θ₂, hθ₂0, rfl⟩
+  refine degree_eq_of_sub_eq _ (θ := Θ₁.trans Θ₂) (Θ₁.trans Θ₂).continuous (fun t => ?_) ?_
+  · simp only [Path.trans_apply]
+    split_ifs <;> simp [Θ₁, Θ₂, hθ₁, hθ₂]
+  · have h₁ := sub_eq_degree_mul γ₁ θ₁.continuous hθ₁
+    have h₂ := sub_eq_degree_mul γ₂ θ₂.continuous hθ₂
+    rw [hθ₂0] at h₂
+    simp only [Path.source, Path.target, Int.cast_add]
+    linarith
+
+/-- Reversing a loop negates its degree. -/
+@[simp]
+theorem degree_symm {x : Circle} (γ : Path x x) : degree γ.symm = -degree γ := by
+  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
+  refine degree_eq_of_sub_eq _ (θ := fun t => θ (σ t)) (by fun_prop) (fun t => by simp [hθ]) ?_
+  have h := sub_eq_degree_mul γ θ.continuous hθ
+  simp only [unitInterval.symm_one, unitInterval.symm_zero, Int.cast_neg]
+  linarith
 
 /-- Conjugating a loop by a path does not change its degree: `p⁻¹ ⬝ γ ⬝ p` has the degree of `γ`.
 This is the invariance of the degree under change of basepoint. -/
