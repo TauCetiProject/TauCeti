@@ -105,10 +105,9 @@ theorem Sobolev1JetLp.value_normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0
     (J : Sobolev1JetLp mu ⊤ p) :
     Sobolev1JetLp.value (normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) J) =
       normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (Sobolev1JetLp.value J) := by
-  rw [TauCeti.normedBumpLp, TauCeti.normedBumpLp, ← Sobolev1JetLp.valueL_apply,
-    ← Sobolev1JetLp.valueL_apply J]
-  refine normedBumpAverageL_comm _ _ _ _ _ _ _ (fun h J => ?_) J
-  simp only [Sobolev1JetLp.valueL_apply, Sobolev1JetLp.value_translateLp]
+  rw [← Sobolev1JetLp.valueL_apply, ← Sobolev1JetLp.valueL_apply,
+    Sobolev1JetLp.valueL_eq_compLpL]
+  exact compLpL_normedBumpLp hp phi _ J
 
 /-- The gradient component of a mollified whole-space jet is the mollification of its gradient
 component. -/
@@ -116,10 +115,9 @@ theorem Sobolev1JetLp.gradient_normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump
     (J : Sobolev1JetLp mu ⊤ p) :
     Sobolev1JetLp.gradient (normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) J) =
       normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (Sobolev1JetLp.gradient J) := by
-  rw [TauCeti.normedBumpLp, TauCeti.normedBumpLp, ← Sobolev1JetLp.gradientL_apply,
-    ← Sobolev1JetLp.gradientL_apply J]
-  refine normedBumpAverageL_comm _ _ _ _ _ _ _ (fun h J => ?_) J
-  simp only [Sobolev1JetLp.gradientL_apply, Sobolev1JetLp.gradient_translateLp]
+  rw [← Sobolev1JetLp.gradientL_apply, ← Sobolev1JetLp.gradientL_apply,
+    Sobolev1JetLp.gradientL_eq_compLpL]
+  exact compLpL_normedBumpLp hp phi _ J
 
 /-- The value of a mollified Sobolev function is the `Lᵖ` mollification of its value. -/
 theorem W1p.value_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (u : W1p mu ⊤ p) :

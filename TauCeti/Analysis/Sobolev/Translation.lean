@@ -257,15 +257,9 @@ component. -/
 theorem Sobolev1JetLp.value_translateLp (h : E) (J : Sobolev1JetLp mu ⊤ p) :
     Sobolev1JetLp.value ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h J) =
       (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (Sobolev1JetLp.value J) := by
-  set nu := mu.restrict ((⊤ : Opens E) : Set E)
-  have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
-    (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
-  apply Lp.ext
-  filter_upwards [Sobolev1JetLp.value_apply_ae (nu.translateLp p h J),
-    Measure.coeFn_translateLp h J, Measure.coeFn_translateLp h (Sobolev1JetLp.value J),
-    hq.eventually (Sobolev1JetLp.value_apply_ae J)] with x hvalue hjet hscalar hsource
-  rw [hvalue, hjet, hscalar]
-  exact hsource.symm
+  rw [← Sobolev1JetLp.valueL_apply, ← Sobolev1JetLp.valueL_apply,
+    Sobolev1JetLp.valueL_eq_compLpL]
+  exact Measure.compLpL_translateLp _ h J
 
 omit [FiniteDimensional ℝ E] in
 /-- The gradient component of a translated whole-space jet is the translate of its gradient
@@ -273,15 +267,9 @@ component. -/
 theorem Sobolev1JetLp.gradient_translateLp (h : E) (J : Sobolev1JetLp mu ⊤ p) :
     Sobolev1JetLp.gradient ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h J) =
       (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (Sobolev1JetLp.gradient J) := by
-  set nu := mu.restrict ((⊤ : Opens E) : Set E)
-  have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
-    (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
-  apply Lp.ext
-  filter_upwards [Sobolev1JetLp.gradient_apply_ae (nu.translateLp p h J),
-    Measure.coeFn_translateLp h J, Measure.coeFn_translateLp h (Sobolev1JetLp.gradient J),
-    hq.eventually (Sobolev1JetLp.gradient_apply_ae J)] with x hgradient hjet hvector hsource
-  rw [hgradient, hjet, hvector]
-  exact hsource.symm
+  rw [← Sobolev1JetLp.gradientL_apply, ← Sobolev1JetLp.gradientL_apply,
+    Sobolev1JetLp.gradientL_eq_compLpL]
+  exact Measure.compLpL_translateLp _ h J
 
 omit [FiniteDimensional ℝ E] in
 /-- **Translation preserves `W^{1,p}(ℝⁿ)`.**  On the whole space the weak-derivative identities

@@ -76,7 +76,8 @@ theorem value_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu ⊤ p k) :
     value k (normedBumpL hp phi k u) =
       TauCeti.normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (value k u) := by
-  rw [normedBumpL, TauCeti.normedBumpLp, ← valueL_apply, ← valueL_apply k u]
+  rw [normedBumpL, TauCeti.normedBumpLp_eq_normedBumpAverageL, ← valueL_apply,
+    ← valueL_apply k u]
   refine TauCeti.normedBumpAverageL_comm _ _ _ _ _ _ _ (fun h u => ?_) u
   simp only [valueL_apply, translateLIE_apply, value_translate]
 
@@ -116,7 +117,7 @@ theorem iteratedGradient_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E
     iteratedGradient k (normedBumpL hp phi (k + 1) u) =
       TauCeti.normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E))
         (iteratedGradient k u) := by
-  rw [normedBumpL, TauCeti.normedBumpLp, ← iteratedGradientL_apply,
+  rw [normedBumpL, TauCeti.normedBumpLp_eq_normedBumpAverageL, ← iteratedGradientL_apply,
     ← iteratedGradientL_apply k u]
   refine TauCeti.normedBumpAverageL_comm _ _ _ _ _ _ _ (fun h u => ?_) u
   rw [iteratedGradientL_apply, iteratedGradientL_apply, translateLIE_apply,

@@ -38,6 +38,10 @@ by the same smooth kernel.
 * `TauCeti.normedBumpLp`: averaging an `Lᵖ` function against a normalized smooth bump, as a
   continuous linear operator on `Lᵖ`.
 * `TauCeti.normedBumpLp_apply`: the defining Bochner integral of that operator.
+* `TauCeti.normedBumpLp_eq_normedBumpAverageL`: this operator is the normalized-bump average of
+  the `Lᵖ` translation action.
+* `TauCeti.compLpL_normedBumpLp`: this operator commutes with postcomposition by a continuous
+  linear map.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
 * `TauCeti.tendsto_normedBumpLp`: normalized bumps whose radii shrink to zero converge strongly
   to the identity on `Lᵖ`.
@@ -199,7 +203,6 @@ Completeness of `F` is not part of the definition, exactly as for `MeasureTheory
 unless that space is complete. So this operator is the advertised average of the translates of
 its argument precisely when `F` is a Banach space, which is the setting of
 `TauCeti.tendsto_normedBumpLp`; the contraction bound holds in either case. -/
-@[expose]
 def normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (mu : Measure E) [mu.IsAddHaarMeasure] : Lp F p mu →L[ℝ] Lp F p mu :=
   normedBumpAverageL phi mu (mu.translateLp p) (Measure.continuous_translateLp hp)
@@ -210,6 +213,20 @@ theorem normedBumpLp_apply (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f : Lp
       ∫ t, phi.normed mu t • mu.translateLp p (-t) f ∂mu := by
   exact normedBumpAverageL_apply (F := Lp F p mu) phi mu (mu.translateLp p)
     (Measure.continuous_translateLp hp) f
+
+/-- `normedBumpLp` is the normalized-bump average of the `Lᵖ` translation action. -/
+theorem normedBumpLp_eq_normedBumpAverageL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
+    normedBumpLp (F := F) hp phi mu =
+      normedBumpAverageL phi mu (mu.translateLp p) (Measure.continuous_translateLp hp) :=
+  (rfl)
+
+/-- Averaging against a normalized bump commutes with postcomposition by a continuous linear map
+between Banach spaces. -/
+theorem compLpL_normedBumpLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace F] [CompleteSpace G] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+    (L : F →L[ℝ] G) (f : Lp F p mu) :
+    L.compLpL p mu (normedBumpLp hp phi mu f) = normedBumpLp hp phi mu (L.compLpL p mu f) :=
+  normedBumpAverageL_comm _ _ _ _ _ _ _ (Measure.compLpL_translateLp L) f
 
 /-- Averaging against a normalized nonnegative bump does not increase the `Lᵖ` norm when
 `p < ∞`. -/
