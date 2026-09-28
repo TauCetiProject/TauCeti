@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.LinearMap.EqOn
+public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
@@ -52,6 +53,8 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   `QuadraticMap.specialOrthogonalWithinEquiv Q` relating the two spellings.
 * `TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear Q`: the faithful coordinate inclusion of
   a special orthogonal group into matrix `GL`.
+* `TauCeti.QuadraticMap.orthogonalToGeneralLinear Q`: the corresponding faithful coordinate
+  inclusion of the full orthogonal group into matrix `GL`.
 * `TauCeti.QuadraticMap.reflection Q v`: the reflection in the hyperplane orthogonal to a vector `v`
   with `Q v` invertible, built from Mathlib's `Module.reflection`.
 * `TauCeti.QuadraticMap.reflectionOrthogonal Q v`: the same reflection bundled as an element of
@@ -530,6 +533,55 @@ end Det
 
 section Coordinate
 
+variable {R : Type u} [CommSemiring R] {n : Type v} [Fintype n] [DecidableEq n]
+  {N : Type w} [AddCommMonoid N] [Module R N]
+
+/-- The coordinate inclusion of an orthogonal group into `GL(n, R)`. -/
+noncomputable def _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear
+    (Q : QuadraticMap R (n → R) N) :
+    orthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
+  (matrixGeneralLinearEquiv (n := n) (R := R)).symm.toMonoidHom.comp
+    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.toMonoidHom.comp
+      (orthogonalGroup Q).subtype)
+
+/-- An orthogonal transformation acts through its usual coordinate matrix. -/
+@[simp]
+theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_apply
+    (Q : QuadraticMap R (n → R) N) (g : orthogonalGroup Q) (i j : n) :
+    orthogonalToGeneralLinear Q g i j =
+      (g : (n → R) ≃ₗ[R] (n → R)) (Pi.single j 1) i := by
+  calc
+    _ = (Matrix.mulVec (orthogonalToGeneralLinear Q g : Matrix n n R)
+        (Pi.single j 1)) i := by
+      rw [Matrix.mulVec_single_one, Matrix.col_apply]
+    _ = ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+        (matrixGeneralLinearEquiv (orthogonalToGeneralLinear Q g)))
+          (Pi.single j 1)) i := by
+      rw [matrixGeneralLinearEquiv_apply]
+    _ = _ := by simp [orthogonalToGeneralLinear]
+
+/-- The underlying matrix of the coordinate inclusion is the matrix of the linear equivalence. -/
+@[simp]
+theorem _root_.TauCeti.QuadraticMap.coe_orthogonalToGeneralLinear
+    (Q : QuadraticMap R (n → R) N) (g : orthogonalGroup Q) :
+    ((orthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) : Matrix n n R) =
+      LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap := by
+  ext i j
+  simp only [orthogonalToGeneralLinear_apply, LinearMap.toMatrix'_apply,
+    LinearEquiv.coe_coe]
+
+/-- The coordinate inclusion of an orthogonal group is injective. -/
+theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_injective
+    (Q : QuadraticMap R (n → R) N) :
+    Function.Injective (orthogonalToGeneralLinear Q) :=
+  (matrixGeneralLinearEquiv (n := n) (R := R)).symm.injective.comp
+    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.injective.comp
+      Subtype.coe_injective)
+
+end Coordinate
+
+section SpecialCoordinate
+
 variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
 
@@ -537,9 +589,7 @@ variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
 noncomputable def _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     specialOrthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
-  (Matrix.GeneralLinearGroup.toLin (n := n) (R := R)).symm.toMonoidHom.comp
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.toMonoidHom.comp
-      (specialOrthogonalGroup Q).subtype)
+  (orthogonalToGeneralLinear Q).comp (specialOrthogonalToOrthogonal Q)
 
 /-- A special orthogonal transformation acts through its usual coordinate matrix. -/
 @[simp]
@@ -548,17 +598,16 @@ theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_apply
     (g : specialOrthogonalGroup Q) (i j : n) :
     specialOrthogonalToGeneralLinear Q g i j =
       (g : (n → R) ≃ₗ[R] (n → R)) (Pi.single j 1) i := by
-  rfl
+  rw [specialOrthogonalToGeneralLinear, MonoidHom.comp_apply]
+  rw [orthogonalToGeneralLinear_apply, coe_specialOrthogonalToOrthogonal]
 
 /-- The coordinate inclusion of a special orthogonal group is injective. -/
 theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_injective
     (Q : QuadraticMap R (n → R) N) :
     Function.Injective (specialOrthogonalToGeneralLinear Q) :=
-  (Matrix.GeneralLinearGroup.toLin (n := n) (R := R)).symm.injective.comp
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.injective.comp
-      Subtype.coe_injective)
+  (orthogonalToGeneralLinear_injective Q).comp specialOrthogonalToOrthogonal_injective
 
-end Coordinate
+end SpecialCoordinate
 
 section Reflection
 
