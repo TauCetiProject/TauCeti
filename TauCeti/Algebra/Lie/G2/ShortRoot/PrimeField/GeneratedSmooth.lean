@@ -114,8 +114,11 @@ theorem baseChangeDefiningIdeal_le_generatedDefiningIdeal :
     baseChangeDefiningIdeal k ≤ generatedDefiningIdeal k := by
   rw [le_generatedDefiningIdeal_iff]
   intro j x hx
-  change (baseChangeGenerator k j).hom x = 0
-  rw [baseChangeGenerator, CommHopfAlgCat.comp_apply]
+  -- Kernel membership is phrased through the underlying ring homomorphism: turn it into an
+  -- equation, peel the bialgebra-to-algebra-to-ring-hom coercions, and split the composition
+  -- defining `baseChangeGenerator` into its two factors.
+  rw [RingHom.mem_ker, baseChangeGenerator, CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom,
+    AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, AlgHom.comp_apply]
   have hx' :
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).inv.hom x ∈
         CommHopfAlgCat.baseChangeHopfIdeal (K := k) definingIdeal :=
