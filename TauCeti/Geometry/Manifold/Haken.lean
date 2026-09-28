@@ -15,11 +15,12 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 # Compact surfaces and Haken embeddings
 
 This file packages the manifold hypotheses used for the Haken condition in dimension three.
-`IsCompactConnectedSurface` and `IsCompactConnectedThreeManifold` are boundary-aware predicates,
-using Mathlib's Euclidean half-space models.  The relation `IsHakenSurfaceEmbedding` combines
-these with a closed embedding, boundary preservation, relative local flatness, a bicollar, and Tau
-Ceti's dimension-independent `IsIncompressible` predicate.  The closed specialization
-`IsClosedHakenSurfaceEmbedding` additionally records local flatness and a global bicollar.
+`IsCompactConnectedSurface` and `IsCompactConnectedThreeManifold` are boundary-aware
+specializations of the dimension-independent compact-connected manifold predicate, using
+Mathlib's Euclidean half-space models.  The relation `IsHakenSurfaceEmbedding` combines these with
+boundary preservation, a bicollar, and Tau Ceti's dimension-independent `IsIncompressible`
+predicate.  The closed specialization `IsClosedHakenSurfaceEmbedding` additionally records a
+global bicollar.
 
 The product-slice witness is the basic example: a continuous retraction onto the first factor
 makes the inclusion of a surface as a slice incompressible.  This is the standard elementary
@@ -68,20 +69,44 @@ universe u
 
 variable {S M : Type*} [TopologicalSpace S] [TopologicalSpace M]
 
+/-- A compact, connected `n`-manifold, allowing a nonempty boundary, in the standard Euclidean
+half-space model. -/
+def IsCompactConnectedManifold (n : ℕ) [NeZero n] (X : Type*) [TopologicalSpace X]
+    [ChartedSpace (EuclideanHalfSpace n) X] : Prop :=
+  T2Space X ∧ SecondCountableTopology X ∧ IsManifold (𝓡∂ n) ∞ X ∧
+    IsCompact (univ : Set X) ∧ IsConnected (univ : Set X)
+
+/-- The defining separation, countability, manifold, compactness, and connectedness conditions for
+`IsCompactConnectedManifold`. -/
+@[simp]
+theorem isCompactConnectedManifold_iff (n : ℕ) [NeZero n] (X : Type*) [TopologicalSpace X]
+    [ChartedSpace (EuclideanHalfSpace n) X] :
+    IsCompactConnectedManifold n X ↔
+      T2Space X ∧ SecondCountableTopology X ∧ IsManifold (𝓡∂ n) ∞ X ∧
+        IsCompact (univ : Set X) ∧ IsConnected (univ : Set X) :=
+  Iff.rfl
+
+/-- The usual compactness, connectedness, separation, and countability typeclasses supply
+`IsCompactConnectedManifold n X`. -/
+theorem isCompactConnectedManifold (n : ℕ) [NeZero n] (X : Type*) [TopologicalSpace X]
+    [ChartedSpace (EuclideanHalfSpace n) X] [IsManifold (𝓡∂ n) ∞ X]
+    [T2Space X] [SecondCountableTopology X] [CompactSpace X] [ConnectedSpace X] :
+    IsCompactConnectedManifold n X :=
+  ⟨inferInstance, inferInstance, inferInstance, isCompact_univ, isConnected_univ⟩
+
 /-- A compact connected surface, allowing a nonempty boundary, in the standard Euclidean
 half-space model. -/
 def IsCompactConnectedSurface (S : Type*) [TopologicalSpace S]
     [ChartedSpace (EuclideanHalfSpace 2) S] : Prop :=
-  T2Space S ∧ SecondCountableTopology S ∧ IsManifold (𝓡∂ 2) ∞ S ∧
-    IsCompact (univ : Set S) ∧ IsConnected (univ : Set S)
+  IsCompactConnectedManifold 2 S
 
 /-- A compact connected 3-manifold, allowing a nonempty boundary, in the standard Euclidean
 half-space model. -/
 def IsCompactConnectedThreeManifold (M : Type*) [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 3) M] : Prop :=
-  T2Space M ∧ SecondCountableTopology M ∧ IsManifold (𝓡∂ 3) ∞ M ∧
-    IsCompact (univ : Set M) ∧ IsConnected (univ : Set M)
+  IsCompactConnectedManifold 3 M
 
+/-- The defining conditions for a compact connected surface. -/
 @[simp]
 theorem isCompactConnectedSurface_iff
     [ChartedSpace (EuclideanHalfSpace 2) S] :
@@ -90,6 +115,7 @@ theorem isCompactConnectedSurface_iff
         IsCompact (univ : Set S) ∧ IsConnected (univ : Set S) :=
   Iff.rfl
 
+/-- The defining conditions for a compact connected 3-manifold. -/
 @[simp]
 theorem isCompactConnectedThreeManifold_iff
     [ChartedSpace (EuclideanHalfSpace 3) M] :
@@ -98,23 +124,59 @@ theorem isCompactConnectedThreeManifold_iff
         IsCompact (univ : Set M) ∧ IsConnected (univ : Set M) :=
   Iff.rfl
 
-/-- A **closed connected surface** is a compact, connected, Hausdorff, second-countable,
-boundaryless smooth 2-manifold.
+/-- The usual compactness, connectedness, separation, and countability typeclasses supply the
+compact-connected-surface predicate. -/
+theorem isCompactConnectedSurface (S : Type*) [TopologicalSpace S]
+    [ChartedSpace (EuclideanHalfSpace 2) S] [IsManifold (𝓡∂ 2) ∞ S]
+    [T2Space S] [SecondCountableTopology S] [CompactSpace S] [ConnectedSpace S] :
+    IsCompactConnectedSurface S :=
+  isCompactConnectedManifold 2 S
 
-The dimension is pinned by the Euclidean 2-space model. The separation and countability clauses
-are explicit because Mathlib's `IsManifold` records only local compatibility with the model. -/
+/-- The usual compactness, connectedness, separation, and countability typeclasses supply the
+compact-connected-3-manifold predicate. -/
+theorem isCompactConnectedThreeManifold (M : Type*) [TopologicalSpace M]
+    [ChartedSpace (EuclideanHalfSpace 3) M] [IsManifold (𝓡∂ 3) ∞ M]
+    [T2Space M] [SecondCountableTopology M] [CompactSpace M] [ConnectedSpace M] :
+    IsCompactConnectedThreeManifold M :=
+  isCompactConnectedManifold 3 M
+
+/-- A compact, connected, Hausdorff, second-countable, boundaryless smooth `n`-manifold. -/
+def IsClosedConnectedManifold (n : ℕ) (X : Type*) [TopologicalSpace X]
+    [ChartedSpace (EuclideanSpace ℝ (Fin n)) X] : Prop :=
+  T2Space X ∧ SecondCountableTopology X ∧ IsManifold (𝓡 n) ∞ X ∧
+    BoundarylessManifold (𝓡 n) X ∧ IsCompact (univ : Set X) ∧ IsConnected (univ : Set X)
+
+/-- The defining conditions for `IsClosedConnectedManifold`. -/
+@[simp]
+theorem isClosedConnectedManifold_iff (n : ℕ) (X : Type*) [TopologicalSpace X]
+    [ChartedSpace (EuclideanSpace ℝ (Fin n)) X] :
+    IsClosedConnectedManifold n X ↔
+      T2Space X ∧ SecondCountableTopology X ∧ IsManifold (𝓡 n) ∞ X ∧
+        BoundarylessManifold (𝓡 n) X ∧ IsCompact (univ : Set X) ∧ IsConnected (univ : Set X) :=
+  Iff.rfl
+
+/-- The usual compactness, connectedness, separation, countability, and boundaryless typeclasses
+supply `IsClosedConnectedManifold n X`. -/
+theorem isClosedConnectedManifold (n : ℕ) (X : Type*) [TopologicalSpace X]
+    [ChartedSpace (EuclideanSpace ℝ (Fin n)) X] [IsManifold (𝓡 n) ∞ X]
+    [T2Space X] [SecondCountableTopology X] [BoundarylessManifold (𝓡 n) X]
+    [CompactSpace X] [ConnectedSpace X] : IsClosedConnectedManifold n X :=
+  ⟨inferInstance, inferInstance, inferInstance, inferInstance, isCompact_univ, isConnected_univ⟩
+
+/-- A **closed connected surface** is a compact, connected, Hausdorff, second-countable,
+boundaryless smooth 2-manifold. The dimension is pinned by the Euclidean 2-space model. -/
 def IsClosedConnectedSurface (S : Type*) [TopologicalSpace S]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] : Prop :=
-  T2Space S ∧ SecondCountableTopology S ∧ IsManifold (𝓡 2) ∞ S ∧
-    BoundarylessManifold (𝓡 2) S ∧ IsCompact (univ : Set S) ∧ IsConnected (univ : Set S)
+  IsClosedConnectedManifold 2 S
 
 /-- A **closed connected 3-manifold** is a compact, connected, Hausdorff, second-countable,
 boundaryless smooth 3-manifold. -/
 def IsClosedConnectedThreeManifold (M : Type*) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] : Prop :=
-  T2Space M ∧ SecondCountableTopology M ∧ IsManifold (𝓡 3) ∞ M ∧
-    BoundarylessManifold (𝓡 3) M ∧ IsCompact (univ : Set M) ∧ IsConnected (univ : Set M)
+  IsClosedConnectedManifold 3 M
 
+/-- The defining manifold, separation, compactness, connectedness, and boundarylessness conditions
+for a closed connected surface. -/
 @[simp]
 theorem isClosedConnectedSurface_iff
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] :
@@ -123,6 +185,8 @@ theorem isClosedConnectedSurface_iff
         BoundarylessManifold (𝓡 2) S ∧ IsCompact (univ : Set S) ∧ IsConnected (univ : Set S) :=
   Iff.rfl
 
+/-- The defining manifold, separation, compactness, connectedness, and boundarylessness conditions
+for a closed connected 3-manifold. -/
 @[simp]
 theorem isClosedConnectedThreeManifold_iff
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] :
@@ -133,19 +197,19 @@ theorem isClosedConnectedThreeManifold_iff
 
 /-- The usual compactness, connectedness, separation, countability, and boundaryless typeclasses
 supply the closed-connected-surface predicate. -/
-theorem isClosedConnectedSurface_of_classes
+theorem isClosedConnectedSurface (S : Type*) [TopologicalSpace S]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] [IsManifold (𝓡 2) ∞ S]
     [T2Space S] [SecondCountableTopology S] [BoundarylessManifold (𝓡 2) S]
     [CompactSpace S] [ConnectedSpace S] : IsClosedConnectedSurface S :=
-  ⟨inferInstance, inferInstance, inferInstance, inferInstance, isCompact_univ, isConnected_univ⟩
+  isClosedConnectedManifold 2 S
 
 /-- The usual compactness, connectedness, separation, countability, and boundaryless typeclasses
 supply the closed-connected-3-manifold predicate. -/
-theorem isClosedConnectedThreeManifold_of_classes
+theorem isClosedConnectedThreeManifold (M : Type*) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] [IsManifold (𝓡 3) ∞ M]
     [T2Space M] [SecondCountableTopology M] [BoundarylessManifold (𝓡 3) M]
     [CompactSpace M] [ConnectedSpace M] : IsClosedConnectedThreeManifold M :=
-  ⟨inferInstance, inferInstance, inferInstance, inferInstance, isCompact_univ, isConnected_univ⟩
+  isClosedConnectedManifold 3 M
 
 /-! ### Boundary-aware Haken witnesses -/
 
@@ -155,25 +219,24 @@ variable [ChartedSpace (EuclideanHalfSpace 2) S]
   [ChartedSpace (EuclideanHalfSpace 3) M]
 
 /-- A **Haken surface embedding** allows the standard properly embedded, boundary-bearing witness.
-It is a closed embedding, preserves the manifold boundary exactly, and is locally flat and
-bicollared in the relative model `EuclideanHalfSpace 2 × ℝ`. Thus interior points cannot land on
-the ambient boundary, boundary points cannot land in the interior, and the surface has two sides
-even where it meets the boundary. It is also incompressible with nontrivial fundamental group. -/
+It preserves the manifold boundary exactly and is bicollared in the relative model
+`EuclideanHalfSpace 2 × ℝ`, hence is locally flat and a closed embedding. Thus interior points
+cannot land on the ambient boundary, boundary points cannot land in the interior, and the surface
+has two sides even where it meets the boundary. It is also incompressible with nontrivial
+fundamental group. -/
 def IsHakenSurfaceEmbedding (f : C(S, M)) : Prop :=
   IsCompactConnectedSurface S ∧ IsCompactConnectedThreeManifold M ∧
-    IsClosedEmbedding f ∧ f ⁻¹' (𝓡∂ 3).boundary M = (𝓡∂ 2).boundary S ∧
-      IsLocallyFlat (EuclideanHalfSpace 2) ℝ f ∧ IsBicollared f ∧
-        IsIncompressible f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s)
+    f ⁻¹' (𝓡∂ 3).boundary M = (𝓡∂ 2).boundary S ∧ IsBicollared f ∧
+      IsIncompressible f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s)
 
-/-- The defining compact, proper, boundary-preserving, locally flat, bicollared, incompressible,
-and non-spherical conditions of `IsHakenSurfaceEmbedding`. -/
+/-- The defining compact, boundary-preserving, bicollared, incompressible, and non-spherical
+conditions of `IsHakenSurfaceEmbedding`. -/
 @[simp]
 theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
     IsHakenSurfaceEmbedding f ↔
       IsCompactConnectedSurface S ∧ IsCompactConnectedThreeManifold M ∧
-        IsClosedEmbedding f ∧ f ⁻¹' (𝓡∂ 3).boundary M = (𝓡∂ 2).boundary S ∧
-          IsLocallyFlat (EuclideanHalfSpace 2) ℝ f ∧ IsBicollared f ∧
-            IsIncompressible f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s) :=
+        f ⁻¹' (𝓡∂ 3).boundary M = (𝓡∂ 2).boundary S ∧ IsBicollared f ∧
+          IsIncompressible f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s) :=
   Iff.rfl
 
 end BoundaryAware
@@ -188,6 +251,16 @@ def IsIrreducibleThreeManifold (M : Type u) [TopologicalSpace M] : Prop :=
     IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f →
     ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
       g.comp (TopCat.diskBoundaryInclusion 3).hom = f
+
+/-- The sphere-bounds-a-ball condition defining an irreducible 3-manifold. -/
+@[simp]
+theorem isIrreducibleThreeManifold_iff (M : Type u) [TopologicalSpace M] :
+    IsIrreducibleThreeManifold M ↔
+      ∀ f : C((TopCat.sphere 2 : TopCat.{u}), M), IsClosedEmbedding f →
+        IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f →
+        ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
+          g.comp (TopCat.diskBoundaryInclusion 3).hom = f :=
+  Iff.rfl
 
 /-! ### Boundary-aware existential Haken predicate -/
 
@@ -207,13 +280,30 @@ def IsHakenThreeManifold (M : Type u) [TopologicalSpace M]
       letI : ChartedSpace (EuclideanHalfSpace 2) S := cS
       ∃ f : C(S, M), IsHakenSurfaceEmbedding f
 
+/-- The compactness, irreducibility, and boundary-aware surface-witness conditions defining a
+Haken 3-manifold. -/
+@[simp]
+theorem isHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
+    [ChartedSpace (EuclideanHalfSpace 3) M] :
+    IsHakenThreeManifold M ↔
+      IsCompactConnectedThreeManifold M ∧
+        IsIrreducibleThreeManifold M ∧
+        ∃ (S : Type u) (tS : TopologicalSpace S)
+          (cS : ChartedSpace (EuclideanHalfSpace 2) S),
+          letI : TopologicalSpace S := tS
+          letI : ChartedSpace (EuclideanHalfSpace 2) S := cS
+          ∃ f : C(S, M), IsHakenSurfaceEmbedding f :=
+  Iff.rfl
+
 /-- A boundary-aware Haken surface embedding supplies its ambient Haken predicate. -/
 theorem isHakenThreeManifold_of_isHakenSurfaceEmbedding {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 2) S] [ChartedSpace (EuclideanHalfSpace 3) M]
     (hirr : IsIrreducibleThreeManifold M) {f : C(S, M)}
     (h : IsHakenSurfaceEmbedding f) : IsHakenThreeManifold M := by
-  refine ⟨h.2.1, hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+  rcases isHakenSurfaceEmbedding_iff.mp h with
+    ⟨_hS, hM, _hboundary, _hbicollared, _hincompressible, _hnontrivial⟩
+  exact ⟨hM, hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
 end BoundaryHakenPredicate
 
@@ -257,23 +347,21 @@ theorem isClosedIncompressibleSurfaceEmbedding_prodMk {Y : Type*} [TopologicalSp
   ⟨hS, hM, isIncompressible_prodMk y₀⟩
 
 /-- A **closed Haken surface embedding** is a closed incompressible embedding with the geometric
-conditions needed for the usual Haken witness: it is locally flat in codimension one, globally
-bicollared (hence two-sided), and its source has a nontrivial fundamental group, excluding the
-spherical case.  The separate `IsClosedIncompressibleSurfaceEmbedding` package intentionally
-remains the dimension-independent topological core; a Haken predicate may existentially quantify
-this stronger relation without admitting wild, one-sided, or spherical surfaces. -/
+conditions needed for the usual Haken witness: it is globally bicollared (hence locally flat and
+two-sided), and its source has a nontrivial fundamental group, excluding the spherical case. The
+separate `IsClosedIncompressibleSurfaceEmbedding` package intentionally remains the
+dimension-independent topological core; a Haken predicate may existentially quantify this stronger
+relation without admitting wild, one-sided, or spherical surfaces. -/
 def IsClosedHakenSurfaceEmbedding (f : C(S, M)) : Prop :=
   IsClosedIncompressibleSurfaceEmbedding f ∧
-    IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f ∧ IsBicollared f ∧
-      ∃ s : S, Nontrivial (FundamentalGroup S s)
+    IsBicollared f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s)
 
 /-- The defining conditions of `IsClosedHakenSurfaceEmbedding`. -/
 @[simp]
 theorem isClosedHakenSurfaceEmbedding_iff {f : C(S, M)} :
     IsClosedHakenSurfaceEmbedding f ↔
       IsClosedIncompressibleSurfaceEmbedding f ∧
-        IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f ∧ IsBicollared f ∧
-          ∃ s : S, Nontrivial (FundamentalGroup S s) :=
+        IsBicollared f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s) :=
   Iff.rfl
 
 end ClosedEmbeddings
@@ -281,8 +369,9 @@ end ClosedEmbeddings
 section Closed
 
 /-- A closed connected 3-manifold is **closed Haken** when it admits a closed Haken surface
-embedding.  The source type, its manifold structures, and the map are existential data; the
-witness retains incompressibility, local flatness, bicollaring, and non-sphericity. -/
+embedding. The source type, its manifold structures, and the map are existential data; the witness
+retains incompressibility, bicollaring, and non-sphericity (with local flatness derived from the
+bicollar). -/
 def IsClosedHakenThreeManifold (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] : Prop :=
   IsClosedConnectedThreeManifold M ∧
@@ -293,6 +382,21 @@ def IsClosedHakenThreeManifold (M : Type u) [TopologicalSpace M]
       letI : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S := cS
       ∃ f : C(S, M), IsClosedHakenSurfaceEmbedding f
 
+/-- The closedness, irreducibility, and closed surface-witness conditions defining a closed Haken
+3-manifold. -/
+@[simp]
+theorem isClosedHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] :
+    IsClosedHakenThreeManifold M ↔
+      IsClosedConnectedThreeManifold M ∧
+        IsIrreducibleThreeManifold M ∧
+        ∃ (S : Type u) (tS : TopologicalSpace S)
+          (cS : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S),
+          letI : TopologicalSpace S := tS
+          letI : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S := cS
+          ∃ f : C(S, M), IsClosedHakenSurfaceEmbedding f :=
+  Iff.rfl
+
 /-- A closed Haken surface embedding supplies its ambient closed-Haken predicate. -/
 theorem isClosedHakenThreeManifold_of_isClosedHakenSurfaceEmbedding {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
@@ -300,7 +404,11 @@ theorem isClosedHakenThreeManifold_of_isClosedHakenSurfaceEmbedding {S M : Type 
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
     (hirr : IsIrreducibleThreeManifold M) {f : C(S, M)}
     (h : IsClosedHakenSurfaceEmbedding f) : IsClosedHakenThreeManifold M := by
-  refine ⟨h.1.2.1, hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+  rcases isClosedHakenSurfaceEmbedding_iff.mp h with
+    ⟨hincompressible, _hbicollared, _hnontrivial⟩
+  rcases isClosedIncompressibleSurfaceEmbedding_iff.mp hincompressible with
+    ⟨_hS, hM, _hincompressible⟩
+  exact ⟨hM, hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
 end Closed
 
