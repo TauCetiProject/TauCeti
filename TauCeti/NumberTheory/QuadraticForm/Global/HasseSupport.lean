@@ -76,6 +76,8 @@ theorem finite_setOf_diagonalHasse_ne_one {n : ℕ} (a : Fin n → Kˣ) :
   by_contra hbad
   exact hv (diagonalHasse_eq_one_of_not_mem_exceptional a hbad)
 
+namespace QuadraticForm
+
 /-- A regular global quadratic form admits one diagonalization whose pairwise local Hasse
 products have finite support, with an explicit finite exceptional set of places. -/
 theorem exists_diagonalization_diagonalHasse_finite_support
@@ -89,5 +91,7 @@ theorem exists_diagonalization_diagonalHasse_finite_support
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   exact ⟨p, hp, finite_setOf_diagonalHasse_ne_one p.2⟩
+
+end QuadraticForm
 
 end TauCeti
