@@ -69,6 +69,7 @@ theorem baseChangeGenerator_def (j : (Fin 4 ⊕ Fin 4) ⊕ Unit) :
 
 /-- Evaluation of a scalar-extended generator factors through the coordinate-algebra
 identification and the base-changed prime-field generator. -/
+-- `simpNF` normalizes the coercions on the left before this lemma can fire as a simp rule.
 theorem baseChangeGenerator_apply (j : (Fin 4 ⊕ Fin 4) ⊕ Unit)
     (x : GeneralLinear.coordinateHopfAlgebra k 26) :
     (baseChangeGenerator k j).hom.toAlgHom.toRingHom x =
