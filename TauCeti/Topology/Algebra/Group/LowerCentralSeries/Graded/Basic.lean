@@ -890,9 +890,6 @@ theorem gradedPowIter_succ (j : ℕ) (x : gradedPiece p G 0) :
     gradedPowIter p G (j + 1) x = gradedPow p G j (gradedPowIter p G j x) :=
   (rfl)
 
-theorem gradedPowIter_one (x : gradedPiece p G 0) : gradedPowIter p G 1 x = gradedPow p G 0 x :=
-  (rfl)
-
 /-- **The iterated `p`-power operator on classes**: `π^j` sends the class of `g` to the class of
 `g ^ (p ^ j)` in `gr_j(G)`. -/
 @[simp]
