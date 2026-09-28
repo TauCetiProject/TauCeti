@@ -56,7 +56,8 @@ local instance localMonoidalClosed (X : C) : MonoidalClosed
 
 /-- On each finite free chart, a locally free sheaf has an exact self-pairing. This pairing is
 transported from the standard basis pairing and depends on the chosen chart. -/
-noncomputable abbrev _root_.SheafOfModules.LocalGeneratorsData.exactPairing
+@[instance_reducible]
+noncomputable def _root_.SheafOfModules.LocalGeneratorsData.exactPairing
     (q : M.LocalGeneratorsData) (i : q.I)
     [IsIso (q.generators i).π] [Finite (q.generators i).I] :
     ExactPairing (M.over (q.X i)) (M.over (q.X i)) := by
