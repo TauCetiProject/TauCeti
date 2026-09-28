@@ -283,15 +283,21 @@ theorem basisModificationTail_le_iff {ρ : gradedPiece p (freeProP p X) 1} {j : 
   simp only [basisModificationTail, span_le, Set.range_subset_iff, Subtype.forall,
     SetLike.mem_coe]
 
+section
+
+noncomputable local instance : Fintype X := Fintype.ofFinite X
+
 /-- **Membership in the tail**: the elements of `T_j(ρ)` are the linear combinations of the
 `π^j ξ_i` over the indices `i` with `c_i = 0`. -/
-theorem mem_basisModificationTail_iff [Fintype X] {ρ : gradedPiece p (freeProP p X) 1} {j : ℕ}
+theorem mem_basisModificationTail_iff {ρ : gradedPiece p (freeProP p X) 1} {j : ℕ}
     {v : gradedPiece p (freeProP p X) j} :
     v ∈ basisModificationTail p X ρ j ↔
       ∃ c : {i : X // (degreeOneBasis p X).repr ρ (Sum.inl i) = 0} → ZMod p,
         ∑ i, c i • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of (i : X))) =
           v :=
   mem_span_range_iff_exists_fun _
+
+end
 
 /-- **`π` carries the tail onto the next tail above degree zero**: for `j ≥ 1`,
 `T_{j+1}(ρ) = π(T_j(ρ))`, since `π` is additive on `gr_j(F)` and `π (π^j ξ_i) = π^{j+1} ξ_i`. -/

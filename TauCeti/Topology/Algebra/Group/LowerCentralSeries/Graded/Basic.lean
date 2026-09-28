@@ -883,6 +883,7 @@ def gradedPowIter : (j : ℕ) → gradedPiece p G 0 → gradedPiece p G j
 theorem gradedPowIter_zero (x : gradedPiece p G 0) : gradedPowIter p G 0 x = x :=
   (rfl)
 
+@[simp]
 theorem gradedPowIter_succ (j : ℕ) (x : gradedPiece p G 0) :
     gradedPowIter p G (j + 1) x = gradedPow p G j (gradedPowIter p G j x) :=
   (rfl)
