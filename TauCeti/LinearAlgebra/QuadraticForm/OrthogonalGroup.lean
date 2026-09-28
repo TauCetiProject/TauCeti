@@ -543,14 +543,16 @@ theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_apply
     (Q : QuadraticMap R (n → R) N) (g : orthogonalGroup Q) (i j : n) :
     orthogonalToGeneralLinear Q g i j =
       (g : (n → R) ≃ₗ[R] (n → R)) (Pi.single j 1) i := by
-  -- Express the matrix entry as a column to use its evaluation on a coordinate vector.
-  change (Matrix.col (orthogonalToGeneralLinear Q g : Matrix n n R) j) i = _
-  rw [← Matrix.mulVec_single_one]
-  -- The two bundled general linear groups need to be converted to linear equivalences.
-  change (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
-    (Matrix.GeneralLinearGroup.toLin (orthogonalToGeneralLinear Q g))
-    (Pi.single j 1)) i = _
-  simp [orthogonalToGeneralLinear]
+  calc
+    _ = (Matrix.mulVec (orthogonalToGeneralLinear Q g : Matrix n n R)
+        (Pi.single j 1)) i := by
+      rw [Matrix.mulVec_single_one, Matrix.col_apply]
+    _ = ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+        (Matrix.GeneralLinearGroup.toLin (orthogonalToGeneralLinear Q g)))
+          (Pi.single j 1)) i := by
+      rw [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
+        Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply]
+    _ = _ := by simp [orthogonalToGeneralLinear]
 
 /-- The underlying matrix of the coordinate inclusion is the matrix of the linear equivalence. -/
 @[simp]
