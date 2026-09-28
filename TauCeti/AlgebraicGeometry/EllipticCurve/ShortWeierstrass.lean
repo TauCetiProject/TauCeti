@@ -62,8 +62,11 @@ with `u = 1`, and this is the canonical representative of the pair.
   `(b₂/12, a₁/2, a₃/2)`-transform of the canonical equation with its own `c`-invariants. The
   scaling factor is `1`, so a pair of `c`-invariants pins an equation down to that one change of
   variables.
+* `WeierstrassCurve.map_ofCInvariants`, `WeierstrassCurve.baseChange_ofCInvariants` and
+  `WeierstrassCurve.ofCInvariants_equation_iff`: the same transport and equation API that
+  `shortCurve` carries, phrased on the canonical equation.
 * `WeierstrassCurve.Δ_eq_of_c₄_eq_of_c₆_eq`: two equations with the same `c`-invariants have the
-  same discriminant.
+  same discriminant, wherever `1728` is a regular element.
 
 The classical discriminant `-16(4A³ + 27B²)` is *not* restated: it is Mathlib's `Δ_of_isShortNF`,
 which the instance below makes applicable and the coefficient lemmas reduce.
@@ -165,6 +168,13 @@ about an arbitrary `[W.IsShortNF]` reaches the explicit `y² = x³ + Ax + B` sha
       shortCurve (u⁻¹ ^ 4 * A) (u⁻¹ ^ 6 * B) := by
   ext <;> simp [variableChange_def]
 
+/-- **The discriminant is determined by the `c`-invariants**, wherever `1728` can be cancelled:
+`WeierstrassCurve.c_relation` pins `1728 * Δ` down to `c₄³ - c₆²`. -/
+lemma Δ_eq_of_c₄_eq_of_c₆_eq (h1728 : IsRegular (1728 : R)) {W W' : WeierstrassCurve R}
+    (h₄ : W.c₄ = W'.c₄) (h₆ : W.c₆ = W'.c₆) : W.Δ = W'.Δ := by
+  have h : (1728 : R) * W.Δ = 1728 * W'.Δ := by rw [c_relation, c_relation, h₄, h₆]
+  exact h1728.left h
+
 section CInvariants
 
 variable {K : Type*} [Field K]
@@ -173,8 +183,9 @@ variable {K : Type*} [Field K]
 Over a field in which `2` and `3` are invertible its `c`-invariants are exactly `c₄` and `c₆`
 (`ofCInvariants_c₄` and `ofCInvariants_c₆`), and every equation with those invariants is obtained
 from it by a change of variables with `u = 1` (`smul_ofCInvariants`). It is therefore the
-canonical representative of a pair of invariants, and the equation whose integrality over a
-subring decides whether that pair is realised by an equation with coefficients in the subring. -/
+canonical representative of a pair of invariants: the equation one starts from when asking
+whether the pair is realised over a subring, and whose transforms are the equations to test for
+integrality there. -/
 def ofCInvariants (c₄ c₆ : K) : WeierstrassCurve K :=
   shortCurve (-c₄ / 48) (-c₆ / 864)
 
@@ -195,6 +206,26 @@ lemma ofCInvariants_eq_shortCurve (c₄ c₆ : K) :
 @[simp] lemma ofCInvariants_a₄ (c₄ c₆ : K) : (ofCInvariants c₄ c₆).a₄ = -c₄ / 48 := (rfl)
 
 @[simp] lemma ofCInvariants_a₆ (c₄ c₆ : K) : (ofCInvariants c₄ c₆).a₆ = -c₆ / 864 := (rfl)
+
+/-- A field hom carries the canonical equation of a pair to the canonical equation of the image
+pair: the denominators `48` and `864` transport. -/
+@[simp] lemma map_ofCInvariants {L : Type*} [Field L] (f : K →+* L) (c₄ c₆ : K) :
+    (ofCInvariants c₄ c₆).map f = ofCInvariants (f c₄) (f c₆) := by
+  simp [ofCInvariants_eq_shortCurve, map_div₀, map_ofNat]
+
+/-- The same statement for a base change, which is the spelling consumers actually meet; `simp`
+does not unfold `baseChange`, so `map_ofCInvariants` never fires on it by itself. -/
+@[simp] lemma baseChange_ofCInvariants {L : Type*} [Field L] [Algebra K L] (c₄ c₆ : K) :
+    (ofCInvariants c₄ c₆).baseChange L =
+      ofCInvariants (algebraMap K L c₄) (algebraMap K L c₆) :=
+  map_ofCInvariants _ c₄ c₆
+
+/-- A point lies on the canonical equation of `(c₄, c₆)` exactly when it satisfies
+`y² = x³ - (c₄/48)x - c₆/864`. -/
+@[simp] lemma ofCInvariants_equation_iff (c₄ c₆ x y : K) :
+    (ofCInvariants c₄ c₆).toAffine.Equation x y ↔ y ^ 2 = x ^ 3 - c₄ / 48 * x - c₆ / 864 := by
+  rw [ofCInvariants_eq_shortCurve, shortCurve_equation_iff, neg_div, neg_div]
+  ring_nf
 
 variable [Invertible (2 : K)] [Invertible (3 : K)]
 
@@ -239,14 +270,6 @@ is what a statement phrased on the pair `(c₄, c₆)` rather than on a curve in
       one_pow, one_mul] <;>
     field_simp <;>
     ring
-
-/-- **The discriminant is determined by the `c`-invariants**: it is `(c₄³ - c₆²)/1728`, by
-`WeierstrassCurve.c_relation` and the invertibility of `1728`. -/
-lemma Δ_eq_of_c₄_eq_of_c₆_eq {W W' : WeierstrassCurve K} (h₄ : W.c₄ = W'.c₄) (h₆ : W.c₆ = W'.c₆) :
-    W.Δ = W'.Δ :=
-  mul_left_cancel₀
-    (ne_zero_of_eq_two_pow_mul_three_pow (x := (1728 : K)) (m := 6) (n := 3) (by norm_num))
-    (by rw [c_relation, c_relation, h₄, h₆])
 
 /-- The discriminant attached to a pair of `c`-invariants, `(c₄³ - c₆²)/1728`. -/
 @[simp] lemma ofCInvariants_Δ : (ofCInvariants c₄ c₆).Δ = (c₄ ^ 3 - c₆ ^ 2) / 1728 := by
