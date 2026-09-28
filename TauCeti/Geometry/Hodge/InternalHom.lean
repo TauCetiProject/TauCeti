@@ -465,7 +465,7 @@ theorem isMorphism_iff_mem_internalHom_piece :
       g ∈ (hs₁.internalHom hs₂).piece 0 ∧ (ω₁.internalHom ω₂).toEquiv g = g := by
   rw [isMorphism_iff_mem_internalHom_F]
   refine and_congr_left fun hg ↦ ?_
-  rw [mem_piece_iff_of_conj_eq _ _ hg, show n - n - 0 = 0 by ring, and_self]
+  simp only [mem_piece_iff_of_conj_eq _ _ hg, sub_self, and_self]
 
 /-- A morphism of pure Hodge structures of the same weight lies in the Hodge component `H^{0,0}`
 of the internal hom. -/
