@@ -35,11 +35,14 @@ the generic contraction-independence identity that feeds them:
   conditionally independent of all the others together. It turns local deletion arguments into
   simultaneous conditional independence.
 
-These feed the de Finetti block-product factorisation / prefix-deletion drop-info step —
-the standard conditional-independence characterisation of the de Finetti route; see Kallenberg,
-*Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
+The first four results feed the de Finetti block-product factorisation / prefix-deletion drop-info
+step — the standard conditional-independence characterisation of the de Finetti route; see
+Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
 `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
+
+The complement criterion turns one-cell deletion arguments into conditional independence of all
+visible array cells given the crossing strips.
 -/
 
 public section
