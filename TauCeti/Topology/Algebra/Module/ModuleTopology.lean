@@ -12,19 +12,20 @@ import Mathlib.Topology.Compactness.LocallyCompact
 /-!
 # Finite-dimensional module topology in coordinates
 
-For a finite-dimensional vector space over a topological field, the module topology is the
-coordinate topology through any basis. This identifies the canonical topology used on quadratic
-spaces and their endomorphisms with a finite product of copies of the field. In particular, over
-a Hausdorff locally compact field it is Hausdorff and locally compact. No norm or completeness
-hypothesis on the field is needed.
+For a module over a topological semiring with a finite basis, the module topology is the
+coordinate topology through that basis. This identifies the canonical topology used on quadratic
+spaces and their endomorphisms with a finite product of copies of the scalars. In particular, over
+a Hausdorff locally compact division ring equipped with a topological semiring structure, the
+module topology of a finite-dimensional space is Hausdorff and locally compact. No norm or
+completeness hypothesis on the scalars is needed.
 -/
 
 public section
 
 namespace Module.Basis
 
-variable {K V ι : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
-  [AddCommGroup V] [Module K V] [TopologicalSpace V] [IsModuleTopology K V]
+variable {K V ι : Type*} [Semiring K] [TopologicalSpace K] [IsTopologicalSemiring K]
+  [AddCommMonoid V] [Module K V] [TopologicalSpace V] [IsModuleTopology K V]
   [Finite ι]
 
 /-- Coordinates through a finite basis give a homeomorphism for the module topology. -/
@@ -48,19 +49,19 @@ end Module.Basis
 
 namespace TauCeti
 
-variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
+variable {K V : Type*} [DivisionRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
-/-- The module topology of a finite-dimensional space over a Hausdorff topological field is
-Hausdorff. -/
+/-- The module topology of a finite-dimensional space over a Hausdorff division ring equipped
+with a topological semiring structure is Hausdorff. -/
 theorem t2Space_moduleTopology [T2Space K] :
     @T2Space V (moduleTopology K V) := by
   let _ : TopologicalSpace V := moduleTopology K V
   let b := Module.finBasis K V
   exact b.equivFunHomeomorph.symm.t2Space
 
-/-- The module topology of a finite-dimensional space over a locally compact topological field
-is locally compact. -/
+/-- The module topology of a finite-dimensional space over a locally compact division ring
+equipped with a topological semiring structure is locally compact. -/
 theorem locallyCompactSpace_moduleTopology [LocallyCompactSpace K] :
     @LocallyCompactSpace V (moduleTopology K V) := by
   let _ : TopologicalSpace V := moduleTopology K V
