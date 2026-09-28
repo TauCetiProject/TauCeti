@@ -66,10 +66,11 @@ The comparison legs are *defined* as the existing all-degree inflation map
 `TauCeti.ContCohomology.coeffMap_ofDiscreteModuleQuotient_comp_infl` supplies the compatible-pair
 presentation, which is what `continuousFiniteQuotientComparisonApp_eq_map` records.
 
-Every definition keeps its body sealed except `continuousFiniteQuotientSystem` and
-`continuousFiniteQuotientCocone`, as in `FiniteQuotient.Basic`: the statements of their `map` and
-`ι` lemmas compare a morphism out of `F.obj U` (or into `c.pt`) with one whose type is what that
-field reduces to, so with the body sealed those characteristic lemmas do not elaborate.
+Every definition keeps its body sealed and is characterized by lemmas. As for
+`explicitFiniteQuotientSystem0_map` in `FiniteQuotient.Explicit`, the characteristic lemmas of the
+system's arrows, the comparison legs and the cocone legs are stated across the `eqToHom`
+transports given by the object and point equations, since with the bodies sealed a morphism out
+of `F.obj U` (or into `c.pt`) does not have the type of the map it is built from.
 -/
 
 public section
@@ -201,7 +202,7 @@ section System
 /-- The canonical system over the open normal subgroups of `G` in degree `n`. It sends `U` to
 `Hⁿ(G ⧸ U, M^U)` and an inclusion `V ≤ U` to compatible-pair pullback from the `U`-level to
 the `V`-level. -/
-@[expose] noncomputable def continuousFiniteQuotientSystem (n : ℕ) :
+noncomputable def continuousFiniteQuotientSystem (n : ℕ) :
     (OpenNormalSubgroup G)ᵒᵖ ⥤ TopModuleCat.{u} ℤ where
   obj U := continuousCohomology n
     (ofDiscreteModule ℤ (G ⧸ U.unop.toSubgroup)
@@ -217,15 +218,18 @@ theorem continuousFiniteQuotientSystem_obj (n : ℕ) (U : OpenNormalSubgroup G) 
     (continuousFiniteQuotientSystem G M n).obj (Opposite.op U) =
       continuousCohomology n
         (ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) :=
-  rfl
+  (rfl)
 
-/-- Every arrow of the canonical system is the compatible-pair transition. -/
+/-- Under the object identifications above, every arrow of the canonical system is the
+compatible-pair transition. -/
 @[simp]
 theorem continuousFiniteQuotientSystem_map (n : ℕ)
     {U V : (OpenNormalSubgroup G)ᵒᵖ} (f : U ⟶ V) :
-    (continuousFiniteQuotientSystem G M n).map f =
+    eqToHom (continuousFiniteQuotientSystem_obj G M n U.unop).symm ≫
+        (continuousFiniteQuotientSystem G M n).map f ≫
+      eqToHom (continuousFiniteQuotientSystem_obj G M n V.unop) =
       continuousFiniteQuotientTransition G M (leOfHom f.unop) n :=
-  rfl
+  (rfl)
 
 end System
 
@@ -294,17 +298,18 @@ noncomputable def continuousFiniteQuotientComparison (n : ℕ) :
   naturality _ _ f := continuousFiniteQuotientTransition_comp_comparisonApp G M
     (leOfHom f.unop) n
 
-/-- The comparison natural transformation at `U` is canonical inflation and inclusion from the
-`U`-level. -/
+/-- Under the object identification at `U`, the comparison natural transformation at `U` is
+canonical inflation and inclusion from the `U`-level. -/
 @[simp]
 theorem continuousFiniteQuotientComparison_app (n : ℕ) (U : OpenNormalSubgroup G) :
-    (continuousFiniteQuotientComparison G M n).app (Opposite.op U) =
+    eqToHom (continuousFiniteQuotientSystem_obj G M n U).symm ≫
+        (continuousFiniteQuotientComparison G M n).app (Opposite.op U) =
       continuousFiniteQuotientComparisonApp G M U n :=
   (rfl)
 
 /-- The canonical cocone over the open-normal-subgroup system in degree `n`, with point `Hⁿ(G, M)`
 and legs the inflation-and-inclusion comparisons. -/
-@[expose] noncomputable def continuousFiniteQuotientCocone (n : ℕ) :
+noncomputable def continuousFiniteQuotientCocone (n : ℕ) :
     Limits.Cocone (continuousFiniteQuotientSystem G M n) where
   pt := continuousCohomology n (ofDiscreteModule ℤ G M)
   ι := continuousFiniteQuotientComparison G M n
@@ -314,13 +319,17 @@ and legs the inflation-and-inclusion comparisons. -/
 theorem continuousFiniteQuotientCocone_pt (n : ℕ) :
     (continuousFiniteQuotientCocone G M n).pt =
       continuousCohomology n (ofDiscreteModule ℤ G M) :=
-  rfl
+  (rfl)
 
-/-- The legs of the canonical cocone are the comparison maps. -/
+/-- Under the object and point identifications, the leg of the canonical cocone at `U` is canonical
+inflation and inclusion from the `U`-level. -/
 @[simp]
-theorem continuousFiniteQuotientCocone_ι (n : ℕ) :
-    (continuousFiniteQuotientCocone G M n).ι = continuousFiniteQuotientComparison G M n :=
-  rfl
+theorem continuousFiniteQuotientCocone_ι_app (n : ℕ) (U : OpenNormalSubgroup G) :
+    eqToHom (continuousFiniteQuotientSystem_obj G M n U).symm ≫
+        (continuousFiniteQuotientCocone G M n).ι.app (Opposite.op U) ≫
+      eqToHom (continuousFiniteQuotientCocone_pt G M n) =
+      continuousFiniteQuotientComparisonApp G M U n :=
+  (rfl)
 
 end Cocone
 
