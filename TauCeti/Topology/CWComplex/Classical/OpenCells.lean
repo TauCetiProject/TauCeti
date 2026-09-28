@@ -92,37 +92,6 @@ map. -/
 lemma openCellHomeomorph_symm_apply (i : cell C n) (x : (openCell (C := C) n i)) :
     ((openCellHomeomorph n i).symm x : Fin n → ℝ) = (map n i).symm x := rfl
 
-/-- The characteristic maps of the `n`-cells, assembled into a map from the disjoint union of one
-open unit ball per `n`-cell onto the union of the open `n`-cells. -/
-@[expose]
-def sigmaOpenCellMap :
-    (Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1)) →
-      (⋃ k : cell C n, openCell (C := C) n k : Set X) :=
-  fun p ↦ ⟨map n p.1 p.2, mem_iUnion.2 ⟨p.1, p.2, p.2.2, rfl⟩⟩
-
-/-- The assembled characteristic map of the `n`-cells is a bijection: the open cells are pairwise
-disjoint, and each characteristic map is injective on the open unit ball. -/
-lemma sigmaOpenCellMap_bijective : Function.Bijective (sigmaOpenCellMap (C := C) n) := by
-  constructor
-  · rintro ⟨i, y⟩ ⟨j, z⟩ h
-    have h' : map n i (y : Fin n → ℝ) = map n j (z : Fin n → ℝ) := congrArg Subtype.val h
-    obtain rfl : i = j := by
-      by_contra hij
-      have hmi : map n i (y : Fin n → ℝ) ∈ openCell (C := C) n i := ⟨y, y.2, rfl⟩
-      have hmj : map n i (y : Fin n → ℝ) ∈ openCell (C := C) n j := ⟨z, z.2, h'.symm⟩
-      exact (disjoint_openCell_of_ne fun hh ↦
-        hij (eq_of_heq (Sigma.mk.inj_iff.1 hh).2)).notMem_of_mem_left hmi hmj
-    exact congrArg (Sigma.mk i) (Subtype.ext
-      ((map n i).injOn (by rw [source_eq]; exact y.2) (by rw [source_eq]; exact z.2) h'))
-  · rintro ⟨x, hx⟩
-    obtain ⟨i, y, hy, rfl⟩ := mem_iUnion.1 hx
-    exact ⟨⟨i, ⟨y, hy⟩⟩, rfl⟩
-
-/-- The assembled characteristic map of the `n`-cells is continuous. -/
-lemma continuous_sigmaOpenCellMap : Continuous (sigmaOpenCellMap (C := C) n) :=
-  continuous_sigma fun i ↦ Continuous.subtype_mk
-    ((continuousOn n i).mono ball_subset_closedBall).domRestrict _
-
 variable [T2Space X]
 
 /-- Adjoining any family of closed `n`-cells to the `(n-1)`-skeleton gives a closed set.  Taking
@@ -207,33 +176,57 @@ lemma isOpen_preimage_val_openCell (i : cell C n) :
   exact ((isClosed_skeletonLT_union_iUnion_closedCell n _).preimage
     continuous_subtype_val).isOpen_compl
 
-/-- The assembled characteristic map of the `n`-cells is an open map: each of its restrictions is
-an embedding onto an open cell, which is open in the union of the open `n`-cells. -/
-lemma isOpenMap_sigmaOpenCellMap : IsOpenMap (sigmaOpenCellMap (C := C) n) := by
-  refine isOpenMap_sigma.2 fun i ↦ ?_
-  -- Both sides send `y` to `map n i y`, read in `X`.
-  have hfun : (Subtype.val ∘ fun y : ball (0 : Fin n → ℝ) 1 ↦ sigmaOpenCellMap (C := C) n ⟨i, y⟩) =
-      Subtype.val ∘ (openCellHomeomorph n i) := rfl
-  have hemb : IsEmbedding fun y : ball (0 : Fin n → ℝ) 1 ↦ sigmaOpenCellMap (C := C) n ⟨i, y⟩ := by
-    refine IsEmbedding.subtypeVal.of_comp_iff.1 ?_
-    rw [hfun]
-    exact IsEmbedding.subtypeVal.comp (openCellHomeomorph n i).isEmbedding
-  have hrange : range (fun y : ball (0 : Fin n → ℝ) 1 ↦ sigmaOpenCellMap (C := C) n ⟨i, y⟩) =
-      Subtype.val ⁻¹' openCell (C := C) n i := by
-    ext x
-    exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ ⟨y, y.2, rfl⟩, fun ⟨y, hy, hxy⟩ ↦ ⟨⟨y, hy⟩, Subtype.ext hxy⟩⟩
-  exact (IsOpenEmbedding.mk hemb (hrange ▸ isOpen_preimage_val_openCell n i)).isOpenMap
-
 /-- **The open `n`-cells form a topological disjoint union of open balls.**  The characteristic
 maps assemble into a homeomorphism from the disjoint union of one open unit ball for each `n`-cell
 onto the union of the open `n`-cells, which by `TauCeti.skeletonLT_succ_diff_skeletonLT` is the
-difference of the `n`-skeleton and the `(n-1)`-skeleton. -/
+difference of the `n`-skeleton and the `(n-1)`-skeleton.
+
+The assembled map is injective because the open cells are pairwise disjoint and each
+characteristic map is injective on the open unit ball, surjective because the open cells cover
+the union, continuous because each characteristic map is, and open because its restriction to a
+summand is an embedding onto an open cell, which is open in the union by
+`TauCeti.isOpen_preimage_val_openCell`.  Use `TauCeti.iUnionOpenCellHomeomorph_apply` and
+`TauCeti.iUnionOpenCellHomeomorph_symm_apply` rather than this construction. -/
 @[expose]
 noncomputable def iUnionOpenCellHomeomorph :
     (Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1)) ≃ₜ
       (⋃ k : cell C n, openCell (C := C) n k : Set X) :=
-  (Equiv.ofBijective _ (sigmaOpenCellMap_bijective (C := C) n)).toHomeomorphOfContinuousOpen
-    (continuous_sigmaOpenCellMap n) (isOpenMap_sigmaOpenCellMap n)
+  (Equiv.ofBijective
+    (fun p : Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1) ↦
+      (⟨map n p.1 p.2, mem_iUnion.2 ⟨p.1, p.2, p.2.2, rfl⟩⟩ :
+        (⋃ k : cell C n, openCell (C := C) n k : Set X)))
+    (by
+      constructor
+      · rintro ⟨i, y⟩ ⟨j, z⟩ h
+        have h' : map n i (y : Fin n → ℝ) = map n j (z : Fin n → ℝ) := congrArg Subtype.val h
+        obtain rfl : i = j := by
+          by_contra hij
+          have hmi : map n i (y : Fin n → ℝ) ∈ openCell (C := C) n i := ⟨y, y.2, rfl⟩
+          have hmj : map n i (y : Fin n → ℝ) ∈ openCell (C := C) n j := ⟨z, z.2, h'.symm⟩
+          exact (disjoint_openCell_of_ne fun hh ↦
+            hij (eq_of_heq (Sigma.mk.inj_iff.1 hh).2)).notMem_of_mem_left hmi hmj
+        exact congrArg (Sigma.mk i) (Subtype.ext
+          ((map n i).injOn (by rw [source_eq]; exact y.2) (by rw [source_eq]; exact z.2) h'))
+      · rintro ⟨x, hx⟩
+        obtain ⟨i, y, hy, rfl⟩ := mem_iUnion.1 hx
+        exact ⟨⟨i, ⟨y, hy⟩⟩, rfl⟩)).toHomeomorphOfContinuousOpen
+    (continuous_sigma fun i ↦ Continuous.subtype_mk
+      ((continuousOn n i).mono ball_subset_closedBall).domRestrict _)
+    (isOpenMap_sigma.2 fun i ↦ by
+      -- On the summand `i` the map is `openCellHomeomorph n i` followed by the inclusion of the
+      -- open cell `i`, whose range is open in the union.
+      have hemb : IsEmbedding fun y : ball (0 : Fin n → ℝ) 1 ↦
+          (⟨map n i y, mem_iUnion.2 ⟨i, y, y.2, rfl⟩⟩ :
+            (⋃ k : cell C n, openCell (C := C) n k : Set X)) :=
+        (IsEmbedding.inclusion (subset_iUnion (fun k ↦ openCell (C := C) n k) i)).comp
+          (openCellHomeomorph n i).isEmbedding
+      have hrange : (range fun y : ball (0 : Fin n → ℝ) 1 ↦
+          (⟨map n i y, mem_iUnion.2 ⟨i, y, y.2, rfl⟩⟩ :
+            (⋃ k : cell C n, openCell (C := C) n k : Set X))) =
+          Subtype.val ⁻¹' openCell (C := C) n i := by
+        ext x
+        exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ ⟨y, y.2, rfl⟩, fun ⟨y, hy, hxy⟩ ↦ ⟨⟨y, hy⟩, Subtype.ext hxy⟩⟩
+      exact (IsOpenEmbedding.mk hemb (hrange ▸ isOpen_preimage_val_openCell n i)).isOpenMap)
 
 /-- The homeomorphism onto the union of the open `n`-cells is the assembled characteristic map. -/
 @[simp]
