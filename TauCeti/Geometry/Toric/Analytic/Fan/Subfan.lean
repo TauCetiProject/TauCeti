@@ -130,6 +130,14 @@ noncomputable def subfanAnalyticChartIso (hPhi : Phi.IsRegular)
   inv_hom_id := (Phi.subfanAnalyticChartIsoAux S hS hface hPhi sigma _
     (Phi.coe_subfanCone S hS hface sigma)).inv_hom_id
 
+/-- The forward map of the chart isomorphism is the chart identification. -/
+@[simp]
+theorem subfanAnalyticChartIso_hom (hPhi : Phi.IsRegular)
+    (sigma : (Phi.subfan S hS hface).cones) :
+    (Phi.subfanAnalyticChartIso S hS hface hPhi sigma).hom =
+      Phi.subfanAnalyticChartMap S hS hface hPhi sigma :=
+  (rfl)
+
 /-- The identity map from a subfan chart to its ambient chart is an open embedding. -/
 theorem isOpenEmbedding_subfanAnalyticChartMap (hPhi : Phi.IsRegular)
     (sigma : (Phi.subfan S hS hface).cones) :
