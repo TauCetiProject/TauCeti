@@ -15,9 +15,9 @@ public import Mathlib.GroupTheory.GroupAction.Defs
 
 For a homeomorphism `φ : F ≃ₜ F`, the mapping torus identifies `(φ x, t + 1)` with
 `(x, t)`. The quotient model below is deliberately topological: manifold charts and
-the local-triviality theorem are separate geometric input. `FibersOverCircle` records
-the data needed to state that a space is a mapping torus, while retaining the fibre and
-monodromy rather than hiding them in an existential proposition.
+the local-triviality theorem are separate geometric input. `MappingTorusPresentation`
+stores the fibre and monodromy, while `FibersOverCircle` asserts that such a presentation
+exists.
 
 The quotient projection to `UnitAddCircle` records the circle coordinate of each orbit.
 
@@ -37,10 +37,6 @@ variable {F : Type*} [TopologicalSpace F]
 
 namespace MappingTorus
 
-private theorem zpow_apply_add (φ : F ≃ₜ F) (m n : ℤ) (x : F) :
-    (φ ^ (m + n)) x = (φ ^ m) ((φ ^ n) x) := by
-  rw [zpow_add, Homeomorph.mul_apply]
-
 /-- The integer action translating the real coordinate and applying monodromy. -/
 def vadd (φ : F ≃ₜ F) (n : ℤ) (p : F × ℝ) : F × ℝ :=
   ((φ ^ n) p.1, p.2 + n)
@@ -50,10 +46,12 @@ def vadd (φ : F ≃ₜ F) (n : ℤ) (p : F × ℝ) : F × ℝ :=
 def action (φ : F ≃ₜ F) : AddAction ℤ (F × ℝ) where
   vadd := vadd φ
   zero_vadd p := by
+    -- Unfold the action field to expose the concrete `vadd` operation.
     change vadd φ 0 p = p
     dsimp [vadd]
     simp
   add_vadd m n p := by
+    -- Unfold the action field to expose the concrete `vadd` operation.
     change vadd φ (m + n) p = vadd φ m (vadd φ n p)
     dsimp [vadd]
     apply Prod.ext
@@ -74,12 +72,34 @@ def mk (φ : F ≃ₜ F) (x : F) (t : ℝ) : MappingTorus φ :=
   @Quotient.mk'' (F × ℝ)
     (@AddAction.orbitRel ℤ (F × ℝ) inferInstance (MappingTorus.action φ)) (x, t)
 
+@[simp]
+theorem mk_vadd (φ : F ≃ₜ F) (n : ℤ) (x : F) (t : ℝ) :
+    mk φ ((φ ^ n) x) (t + n) = mk φ x t := by
+  let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
+  change Quotient.mk'' ((φ ^ n) x, t + n) = Quotient.mk'' (x, t)
+  apply Quotient.sound
+  exact AddAction.orbitRel_apply.mpr ⟨n, rfl⟩
+
+theorem mk_eq_iff (φ : F ≃ₜ F) {x y : F} {t s : ℝ} :
+    mk φ x t = mk φ y s ↔ ∃ n : ℤ, (φ ^ n) y = x ∧ s + n = t := by
+  let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
+  change (Quotient.mk'' (x, t) : MappingTorus φ) = Quotient.mk'' (y, s) ↔ _
+  rw [Quotient.eq, AddAction.orbitRel_apply, AddAction.mem_orbit_iff]
+  constructor
+  · rintro ⟨n, hn⟩
+    refine ⟨n, ?_, ?_⟩
+    · exact congrArg Prod.fst hn
+    · exact congrArg Prod.snd hn
+  · rintro ⟨n, hxy, hts⟩
+    exact ⟨n, Prod.ext hxy hts⟩
+
 /-- The canonical projection of a mapping torus to the circle. -/
 def proj (φ : F ≃ₜ F) : MappingTorus φ → UnitAddCircle :=
   letI := MappingTorus.action φ
   Quotient.lift (fun z : F × ℝ ↦ (z.2 : UnitAddCircle)) (by
     intro a b h
-    obtain ⟨n, rfl⟩ := (show a ∈ AddAction.orbit ℤ b from h)
+    obtain ⟨n, rfl⟩ := AddAction.mem_orbit_iff.mp h
+    -- The action orbit witness must be unfolded to expose its real coordinate.
     change ((b.2 + (n : ℝ) : ℝ) : UnitAddCircle) = (b.2 : UnitAddCircle)
     rw [AddCircle.coe_add]
     simp)
@@ -94,6 +114,7 @@ theorem proj_mk (φ : F ≃ₜ F) (x : F) (t : ℝ) :
 theorem continuous_mk (φ : F ≃ₜ F) :
   Continuous (fun p : F × ℝ ↦ mk φ p.1 p.2) := by
   let _ : AddAction ℤ (F × ℝ) := MappingTorus.action φ
+  -- `mk` uses `Quotient.mk''`; the quotient theorem is stated with `Quotient.mk'`.
   change Continuous (@Quotient.mk' (F × ℝ) (AddAction.orbitRel ℤ (F × ℝ)))
   exact isQuotientMap_quotient_mk'.continuous
 
@@ -137,7 +158,7 @@ theorem fibersOverCircle_mappingTorus (φ : F ≃ₜ F) :
   ⟨MappingTorus.presentation φ⟩
 
 /-- A homeomorphism transports a fibering-over-the-circle presentation. -/
-theorem FibersOverCircle.ofHomeomorph {M N : Type u} [TopologicalSpace M] [TopologicalSpace N]
+theorem _root_.Homeomorph.fibersOverCircle {M N : Type u} [TopologicalSpace M] [TopologicalSpace N]
     (h : M ≃ₜ N) (hN : FibersOverCircle N) : FibersOverCircle M := by
   obtain ⟨p⟩ := hN
   let _ := p.fiberTopology
