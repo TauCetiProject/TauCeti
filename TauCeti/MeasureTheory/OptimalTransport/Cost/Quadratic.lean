@@ -33,6 +33,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Quadratic-cost cyclical monotonicity is cyclical monotonicity for the negative
 inner-product pairing. -/
+@[simp]
 theorem isCyclicallyMonotone_quadratic_iff (S : Set (E × E)) :
     IsCyclicallyMonotone (fun (p : E × E) ↦ ‖p.1 - p.2‖ ^ 2 / 2) S ↔
       IsCyclicallyMonotone (fun (p : E × E) ↦ -⟪p.1, p.2⟫_ℝ) S := by

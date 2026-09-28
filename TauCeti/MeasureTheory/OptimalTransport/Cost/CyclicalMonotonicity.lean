@@ -111,8 +111,9 @@ end IsCyclicallyMonotone
 
 /-- Adding a function of the source and a function of the target does not change
 cyclical monotonicity. Each permutation preserves the sums of both marginal terms. -/
-theorem isCyclicallyMonotone_add_split_iff {G : Type*} [AddCommGroup G]
-    [PartialOrder G] [IsOrderedAddMonoid G]
+@[simp]
+theorem isCyclicallyMonotone_add_split_iff {G : Type*} [AddCommMonoid G]
+    [Preorder G] [IsOrderedCancelAddMonoid G]
     (c : X × Y → G) (a : X → G) (b : Y → G) (S : Set (X × Y)) :
     IsCyclicallyMonotone (fun p ↦ c p + a p.1 + b p.2) S ↔
       IsCyclicallyMonotone c S := by
