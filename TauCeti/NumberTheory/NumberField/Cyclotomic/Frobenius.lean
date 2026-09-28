@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
 public import Mathlib.RingTheory.Frobenius
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
 
 /-!
 # The arithmetic Frobenius on roots of unity
@@ -143,3 +144,51 @@ theorem autToPow_eq_absNorm {m : ℕ} [NeZero m] {ζ : F} (hζ : IsPrimitiveRoot
   exact (ZMod.natCast_eq_natCast_iff _ _ _).mpr h
 
 end AlgHom.IsArithFrobAt
+
+namespace TauCeti.NumberField
+
+open Ideal IsCyclotomicExtension
+open scoped _root_.NumberField
+
+/-- In a cyclotomic extension, an automorphism is an arithmetic Frobenius exactly when its
+cyclotomic exponent is the norm of the prime below. -/
+theorem isArithFrobAt_iff_autToPow_eq_absNorm
+    {m : ℕ} [NeZero m] {K F : Type*} [Field K] [NumberField K]
+    [Field F] [NumberField F] [Algebra K F] [IsCyclotomicExtension {m} K F]
+    {ζ : F} (hζ : IsPrimitiveRoot ζ m)
+    (𝔭 : HeightOneSpectrum (𝓞 K)) (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal)
+    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
+    (σ : F ≃ₐ[K] F) :
+    IsArithFrobAt (𝓞 K) σ Q ↔
+      (hζ.autToPow K σ : ZMod m) = Ideal.absNorm 𝔭.asIdeal := by
+  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q
+  let _ : Finite (𝓞 F ⧸ Q) := Ring.HasFiniteQuotients.finiteQuotient hQ
+  let _ : IsGalois K F := IsCyclotomicExtension.isGalois {m} K F
+  constructor
+  · intro hσ
+    exact hσ.autToPow_eq_absNorm hζ 𝔭 hm Q
+  · intro hσ
+    let τ := arithFrobAt (𝓞 K) (F ≃ₐ[K] F) Q
+    have hτ : IsArithFrobAt (𝓞 K) τ Q := IsArithFrobAt.arithFrobAt _ _ _
+    have heq : σ = τ := hζ.autToPow_injective K
+      (Units.ext (hσ.trans (hτ.autToPow_eq_absNorm hζ 𝔭 hm Q).symm))
+    exact heq ▸ hτ
+
+variable {n : ℕ} [NeZero n] {F : Type*} [Field F] [NumberField F]
+  [IsCyclotomicExtension {n} ℚ F]
+
+/-- In a rational cyclotomic extension, the cyclotomic exponent identifies the arithmetic
+Frobenius at an unramified prime with the norm of the prime below it. -/
+theorem isArithFrobAt_iff_galEquivZMod_eq_absNorm
+    (𝔭 : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
+    (hm : (n : 𝓞 ℚ) ∉ 𝔭.asIdeal)
+    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal]
+    (σ : F ≃ₐ[ℚ] F) :
+    IsArithFrobAt (𝓞 ℚ) σ Q ↔
+      ((Rat.galEquivZMod n F σ : (ZMod n)ˣ) : ZMod n) =
+        Ideal.absNorm 𝔭.asIdeal := by
+  rw [isArithFrobAt_iff_autToPow_eq_absNorm (zeta_spec n ℚ F) 𝔭 hm Q σ,
+    (zeta_spec n ℚ F).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
+    ZMod.unitsMap_self, MonoidHom.id_apply]
+
+end TauCeti.NumberField

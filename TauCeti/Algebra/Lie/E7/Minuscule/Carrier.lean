@@ -335,44 +335,44 @@ theorem coe_rootSubgroupPoints (k : Fin 7 ⊕ Fin 7) (A : Type v) [CommRing A]
 private theorem nilpotencyClass_rep_rootGenerator_le_two (i : Fin 7 ⊕ Fin 7) :
     nilpotencyClass
       (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7) i))) ≤ 2 := by
-  exact nilpotencyClass_le_of_pow_eq_zero (pow_two_rep_serreRootGenerator_eq_zero i)
+        (TauCeti.serreRootGenerator (CartanMatrix.E 7) i))) ≤ 2 :=
+  nilpotencyClass_le_of_pow_eq_zero (pow_two_rep_serreRootGenerator_eq_zero i)
 
 private theorem rep_positiveRootGenerator_latticeBasis_eq_sum (i : Fin 7) (s : Fin 56) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inl i)))
         ((latticeBasis s : lattice) : Fin 56 → ℚ) =
-      ∑ r, raisingMatrix i r s •
-          ((latticeBasis r : lattice) : Fin 56 → ℚ) := by
-  rw [rep_ι_apply]
-  rw [TauCeti.serreRootGenerator_inl, rationalSerreRepresentation_serreE]
-  rw [coe_latticeBasis, Matrix.mulVec_single_one]
-  ext a
-  simp only [Matrix.col_apply, Finset.sum_apply, Pi.smul_apply, coe_latticeBasis,
-    Pi.single_apply]
-  rw [Finset.sum_eq_single a]
-  · simp [raisingMatrixRat_apply, raisingMatrix_apply]
-  · intro b _ hba
-    simp [Ne.symm hba]
-  · simp
+      ∑ r, raisingMatrix i r s • ((latticeBasis r : lattice) : Fin 56 → ℚ) := by
+  simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis,
+    Pi.basisFun_apply] using
+    (TauCeti.apply_coordinateLatticeBasis_eq_sum_of_forall_apply_eq_mulVec (Fin 56)
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inl i))))
+      (raisingMatrix i) (by
+        intro v
+        rw [rep_ι_apply, TauCeti.serreRootGenerator_inl,
+          rationalSerreRepresentation_serreE]
+        congr 1
+        ext a b
+        simp) s)
 
 private theorem rep_negativeRootGenerator_latticeBasis_eq_sum (i : Fin 7) (s : Fin 56) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inr i)))
         ((latticeBasis s : lattice) : Fin 56 → ℚ) =
-      ∑ r, loweringMatrix i r s •
-          ((latticeBasis r : lattice) : Fin 56 → ℚ) := by
-  rw [rep_ι_apply]
-  rw [TauCeti.serreRootGenerator_inr, rationalSerreRepresentation_serreF]
-  rw [coe_latticeBasis, Matrix.mulVec_single_one]
-  ext a
-  simp only [Matrix.col_apply, Finset.sum_apply, Pi.smul_apply, coe_latticeBasis,
-    Pi.single_apply]
-  rw [Finset.sum_eq_single a]
-  · simp [loweringMatrixRat_apply, loweringMatrix_apply]
-  · intro b _ hba
-    simp [Ne.symm hba]
-  · simp
+      ∑ r, loweringMatrix i r s • ((latticeBasis r : lattice) : Fin 56 → ℚ) := by
+  simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis,
+    Pi.basisFun_apply] using
+    (TauCeti.apply_coordinateLatticeBasis_eq_sum_of_forall_apply_eq_mulVec (Fin 56)
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inr i))))
+      (loweringMatrix i) (by
+        intro v
+        rw [rep_ι_apply, TauCeti.serreRootGenerator_inr,
+          rationalSerreRepresentation_serreF]
+        congr 1
+        ext a b
+        simp) s)
 
 /-- A positive simple-root point has matrix `1 + uEᵢ` in the minuscule basis. -/
 theorem coe_rootSubgroupPoints_inl (i : Fin 7) (A : Type v) [CommRing A]
@@ -386,7 +386,8 @@ theorem coe_rootSubgroupPoints_inl (i : Fin 7) (A : Type v) [CommRing A]
       (TauCeti.serreRootGenerator (CartanMatrix.E 7))
       (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
       rep_kostantForm_mem_lattice (.inl i) (isNilpotent_rep_serreRootGenerator (.inl i))
-      latticeBasis (raisingMatrix i) (nilpotencyClass_rep_rootGenerator_le_two (.inl i))
+      latticeBasis (raisingMatrix i)
+      (nilpotencyClass_rep_rootGenerator_le_two (.inl i))
       (rep_positiveRootGenerator_latticeBasis_eq_sum i)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
 
@@ -402,7 +403,8 @@ theorem coe_rootSubgroupPoints_inr (i : Fin 7) (A : Type v) [CommRing A]
       (TauCeti.serreRootGenerator (CartanMatrix.E 7))
       (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
       rep_kostantForm_mem_lattice (.inr i) (isNilpotent_rep_serreRootGenerator (.inr i))
-      latticeBasis (loweringMatrix i) (nilpotencyClass_rep_rootGenerator_le_two (.inr i))
+      latticeBasis (loweringMatrix i)
+      (nilpotencyClass_rep_rootGenerator_le_two (.inr i))
       (rep_negativeRootGenerator_latticeBasis_eq_sum i)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
 

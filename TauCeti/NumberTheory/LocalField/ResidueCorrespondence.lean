@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Finite.Basic
-public import TauCeti.NumberTheory.LocalField.Unramified
+public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
 
 /-!
