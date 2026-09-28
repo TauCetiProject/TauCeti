@@ -26,6 +26,7 @@ the quotient topology coming from the compact-open based-path space.
   `path : Path.Homotopic.Quotient x₀ proj` (the homotopy class of paths from `x₀`),
   topologized as the quotient of `BasedPath x₀` under endpoint-preserving homotopy.
 * `UniversalCover.proj : UniversalCover x₀ → X`: the endpoint projection (auto-generated).
+* `UniversalCover.basepointLift`: the constant-path point over `x₀`.
 * `UniversalCover.sheet`: the sheet indexed by `q : Path.Homotopic.Quotient x₀ x` over a good
   neighborhood `U`, viewed as a subset of `UniversalCover x₀`.
 
@@ -143,6 +144,28 @@ theorem continuous_prepend {y : X} (γ : Path x₀ y) :
 theorem proj_ofBasedPath (x₀ : X) (γ : BasedPath x₀) :
     proj (ofBasedPath x₀ γ) = BasedPath.endpoint γ :=
   (rfl)
+
+/-- The constant-path point in the fibre of the universal covering projection over `x₀`. -/
+def basepointLift (x₀ : X) : (proj : UniversalCover x₀ → X) ⁻¹' {x₀} :=
+  ⟨ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀)),
+    Set.mem_singleton_iff.mpr (by
+      rw [proj_ofBasedPath]
+      exact BasedPath.endpoint_ofPath _)⟩
+
+/-- The endpoint projection sends the constant-path point to the basepoint.
+
+This remains an explicit rewrite lemma: `basepointLift_coe` already puts its left-hand side in
+simp-normal form, so the `simpNF` linter rejects a redundant `@[simp]` annotation here. -/
+theorem proj_basepointLift (x₀ : X) : proj (basepointLift x₀ : UniversalCover x₀) = x₀ :=
+  (basepointLift x₀).2
+
+/-- The underlying point of `basepointLift` is represented by the constant path. -/
+@[simp]
+theorem basepointLift_coe (x₀ : X) :
+    (basepointLift x₀ : UniversalCover x₀) =
+      mk x₀ (Path.Homotopic.Quotient.refl x₀) := by
+  simp only [basepointLift]
+  rw [ofBasedPath_ofPath, Path.Homotopic.Quotient.mk_refl]
 
 /-- The endpoint projection of the universal cover has range the path component of `x₀`. -/
 @[simp]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.UniversalCover.Action
+public import TauCeti.AlgebraicTopology.UniversalCover.Covering
 
 /-!
 # Changing the basepoint of a universal cover
