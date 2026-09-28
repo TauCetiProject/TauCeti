@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Smooth.Fiber
 public import Mathlib.RingTheory.Unramified.LocalRing
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.RingTheory.Unramified.LocalRing
@@ -26,10 +27,10 @@ notions rests on.
 
 The file proves the equivalent forms of the predicate that later work uses: the value-group form,
 the valuation form `v_L ∘ algebraMap = v_K`, the ideal form `𝓂[K] 𝒪[L] = 𝓂[L]`, the degree form
-`f(L/K) = [L : K]`, and the comparison with `Algebra.FormallyUnramified 𝒪[K] 𝒪[L]` and
-`Algebra.IsUnramifiedAt 𝒪[K] 𝓂[L]`, which makes Mathlib's unramifiedness theory available for
-extensions of local fields. Unramifiedness is also shown to be stable in a tower in both
-directions.
+`f(L/K) = [L : K]`, and the comparison with `Algebra.FormallyUnramified 𝒪[K] 𝒪[L]`,
+`Algebra.IsUnramifiedAt 𝒪[K] 𝓂[L]` and `Algebra.Etale 𝒪[K] 𝒪[L]`, which makes Mathlib's
+unramifiedness and étale theory available for extensions of local fields. Unramifiedness is also
+shown to be stable in a tower in both directions.
 
 The ideal form is what makes the integers of an unramified extension a lattice modelled on the
 residue extension: reduction modulo `𝓂[K] 𝒪[L] = 𝓂[L]` loses no generators, by
@@ -66,9 +67,9 @@ computational input to the norm and trace of an unramified extension.
 * `TauCeti.isUnramified_tower_iff`, `TauCeti.IsUnramified.trans`,
   `TauCeti.IsUnramified.tower_bot` and `TauCeti.IsUnramified.tower_top`: `M/K` is unramified
   exactly when both steps of a tower `M/L/K` are.
-* `TauCeti.isUnramified_iff_formallyUnramified` and `TauCeti.isUnramified_iff_isUnramifiedAt`:
-  the comparison with Mathlib's `Algebra.FormallyUnramified` and `Algebra.IsUnramifiedAt` for
-  `𝒪[L]` over `𝒪[K]`.
+* `TauCeti.isUnramified_iff_formallyUnramified`, `TauCeti.isUnramified_iff_isUnramifiedAt` and
+  `TauCeti.isUnramified_iff_etale`: the comparison with Mathlib's `Algebra.FormallyUnramified`,
+  `Algebra.IsUnramifiedAt` and `Algebra.Etale` for `𝒪[L]` over `𝒪[K]`.
 * `TauCeti.IsUnramified.finrank_integerRing_eq_finrank_residueField`: the rank of `𝒪[L]` over
   `𝒪[K]` is the degree of the residue extension.
 * `TauCeti.IsUnramified.residueBasis_repr`: the coordinates of a residue in the residue basis
@@ -239,13 +240,25 @@ theorem isUnramified_iff_isUnramifiedAt :
     IsUnramified K L ↔ Algebra.IsUnramifiedAt 𝒪[K] 𝓂[L] := by
   rw [isUnramifiedAt_maximalIdeal_iff, isUnramified_iff_formallyUnramified]
 
+variable (K L) in
+/-- **An extension of nonarchimedean local fields is unramified exactly when `𝒪[L]` is étale over
+`𝒪[K]`.** -/
+theorem isUnramified_iff_etale : IsUnramified K L ↔ Algebra.Etale 𝒪[K] 𝒪[L] := by
+  rw [isUnramified_iff_formallyUnramified]
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  -- `𝒪[L]` is finite and free over the noetherian ring `𝒪[K]`, so it is flat and of finite
+  -- presentation, and étale is then the same as formally unramified.
+  have : Algebra.FinitePresentation 𝒪[K] 𝒪[L] :=
+    Algebra.FinitePresentation.of_finiteType.1 inferInstance
+  exact Algebra.Etale.of_formallyUnramified_of_flat
+
 /-! ### The integral basis attached to a residue basis -/
 
 variable (K L) in
 /-- **In an unramified extension the rank of `𝒪[L]` over `𝒪[K]` is the degree of the residue
-extension.** Both are the degree `[L : K]`. Mathlib's
-`IsLocalRing.finrank_eq_finrank_residueField` is the same identity under the stronger hypothesis
-`Algebra.Etale 𝒪[K] 𝒪[L]`, which unramifiedness of `L/K` does not by itself supply. -/
+extension.** Both are the degree `[L : K]`. This is Mathlib's
+`IsLocalRing.finrank_eq_finrank_residueField` for the étale extension `𝒪[L]/𝒪[K]` of
+`isUnramified_iff_etale`, stated for local fields. -/
 theorem IsUnramified.finrank_integerRing_eq_finrank_residueField [IsUnramified K L] :
     Module.finrank 𝒪[K] 𝒪[L] = Module.finrank 𝓀[K] 𝓀[L] := by
   rw [finrank_integerRing, ← inertiaDegree_def, IsUnramified.inertiaDegree_eq_finrank]

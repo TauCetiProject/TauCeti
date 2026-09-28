@@ -39,10 +39,11 @@ and recorded label depths are separate fields. A snapshot without a readiness
 audit cannot establish a merge bottleneck from its ready-label count.
 
 [`labels.py`](labels.py) is the sole label writer. It sets one lifecycle label
-for an open PR and removes them on close. `pr-labels.yml` handles PR changes,
-review-comment creation/edit/deletion, and completed builds. Its scheduled sweep
-reconciles all open PRs, including stale ready labels. Dispatch it with `pr=all`
-for a policy migration/backfill or with a PR number for a single reconciliation.
+for an open PR and removes them on close. `pr-status.yml` handles PR changes,
+review-comment creation/edit/deletion, and builds (see below). `pr-labels.yml`'s
+scheduled sweep reconciles all open PRs, including stale ready labels. Dispatch it
+with `pr=all` for a policy migration/backfill or with a PR number for a single
+reconciliation.
 The backfill updates label descriptions once, continues after individual errors,
 and reports failures. A rate limit stops the remaining pass visibly.
 
@@ -92,16 +93,17 @@ can never leave a PR without its durable Zulip message. Only the bot's *own*
 reactions are authoritative (presence is judged by the bot's user id), so a
 human reacting on a status message never confuses reconciliation.
 
-Three event-driven workflows drive it:
+Two workflows drive it:
 
-- [`zulip-pr.yml`](../../.github/workflows/zulip-pr.yml): on PR
-  `opened`/`reopened`/`closed` and label changes. Creates the message, keeps its
-  roadmap metadata current, and owns the merged/closed ending. The automatic
-  status-label transitions also make review reactions refresh promptly; on an
-  open PR they can self-heal a message missed by a transient opening failure,
-  while label churn on a closed PR can never create a late post.
-- [`zulip-pr-status.yml`](../../.github/workflows/zulip-pr-status.yml): on
-  `workflow_run` of `pr-build` and `Review`. Refreshes the CI and review groups.
+- [`pr-status.yml`](../../.github/workflows/pr-status.yml): on PR events,
+  review-state comments, and `workflow_run` of `pr-build` and `Review`. It
+  reconciles in batches ([`batch.py`](batch.py)): one run at a time, each covering
+  every PR with activity since the previous successful run started, so a burst of
+  events costs one or two GitHub-hosted jobs rather than one per event. Per PR it
+  runs the status-label reconcile, then the Zulip reconcile: creating the message
+  only while the PR is open (so churn on a closed PR can never create a late post),
+  keeping its roadmap metadata current, owning the merged/closed ending, and
+  painting CI as running while a `pr-build` run for the head is queued or running.
 - [`zulip-healthcheck.yml`](../../.github/workflows/zulip-healthcheck.yml): a
   schedule (every 6h) that runs `check` to probe the credentials, so a broken
   key is caught even during quiet periods with no PR activity.
@@ -227,7 +229,7 @@ a persistent Zulip config break, exactly like the healthcheck.
    > Avoid `echo "$KEY" | gh secret set ...` (echo adds a newline). The script
    > also `.strip()`s both creds defensively, but set them cleanly anyway.
 
-The labels need no secret: `pr-labels.yml` uses the same GitHub App
+The labels need no secret: `pr-status.yml` and `pr-labels.yml` use the same GitHub App
 (`APP_ID` / `APP_PRIVATE_KEY`) already configured for the roadmap and merge
 workflows, scoped to this repo, and provisions lifecycle labels on first use.
 

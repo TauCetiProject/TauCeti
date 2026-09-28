@@ -41,6 +41,8 @@ one, spanned by the exterior product of a basis, and an endomorphism acts on it 
 
 * `exteriorPower.eq_zero_of_finrank_lt` states that every element of `⋀[R]^d M` is zero when
   `Module.finrank R M < d`.
+* `exteriorPower.map_basis_exteriorPower_of_apply_basis` says that an endomorphism diagonal in a
+  basis is again diagonal in the induced basis of the exterior power.
 * `exteriorPower.trace_map_of_apply_basis` computes the trace on `⋀[R]^d M` from the
   eigenvalues of an endomorphism on a finite basis.
 * `exteriorPower.ιMulti_eq_basis_det_smul` expands a top-degree exterior product of vectors in
@@ -72,6 +74,39 @@ variable {R : Type u} {M : Type w}
 
 namespace exteriorPower
 
+section Diagonal
+
+variable [CommRing R]
+variable {I : Type*} [LinearOrder I]
+variable [AddCommGroup M] [Module R M]
+
+/-- **An endomorphism diagonal in a basis is diagonal in the induced basis of the exterior
+power**: the basis vector indexed by the `d`-element subset `s` is an eigenvector, with eigenvalue
+the product of the eigenvalues indexed by `s`. Summing those eigenvalues over all `s` gives the
+trace, `exteriorPower.trace_map_of_apply_basis`. -/
+theorem map_basis_exteriorPower_of_apply_basis (b : Module.Basis I R M) (f : M →ₗ[R] M)
+    (a : I → R) (hf : ∀ i, f (b i) = a i • b i) (d : ℕ) (s : Set.powersetCard I d) :
+    map d f (b.exteriorPower d s) = (∏ i ∈ (s : Finset I), a i) • b.exteriorPower d s := by
+  have hprod : ∏ j : Fin d, a (Set.powersetCard.ofFinEmbEquiv.symm s j)
+      = ∏ i ∈ (s : Finset I), a i := by
+    rw [← Finset.prod_coe_sort s.1 a]
+    apply Fintype.prod_equiv (s.1.orderIsoOfFin s.2).toEquiv
+    intro j
+    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
+    exact congrArg a (Finset.coe_orderIsoOfFin_apply s.1 s.2 j)
+  have hfun :
+      (f ∘ b) ∘ Set.powersetCard.ofFinEmbEquiv.symm s =
+        fun j => a (Set.powersetCard.ofFinEmbEquiv.symm s j) •
+          b (Set.powersetCard.ofFinEmbEquiv.symm s j) := by
+    funext j
+    simp only [Function.comp_apply, hf]
+  rw [basis_apply, map_apply_ιMulti_family, ιMulti_family, ιMulti_family, hfun, ← hprod]
+  simpa only [Function.comp_def] using
+    (ιMulti R d).map_smul_univ (fun j => a (Set.powersetCard.ofFinEmbEquiv.symm s j))
+      (fun j => b (Set.powersetCard.ofFinEmbEquiv.symm s j))
+
+end Diagonal
+
 section Trace
 
 variable [CommRing R]
@@ -86,39 +121,11 @@ theorem trace_map_of_apply_basis (b : Module.Basis I R M) (f : M →ₗ[R] M)
       ∑ s : Set.powersetCard I d, ∏ i ∈ (s : Finset I), a i := by
   classical
   let : LinearOrder I := linearOrderOfSTO WellOrderingRel
-  let B := b.exteriorPower d
-  rw [LinearMap.trace_eq_matrix_trace R B, Matrix.trace]
-  apply Finset.sum_congr rfl
-  intro s _
-  rw [Matrix.diag_apply, LinearMap.toMatrix_apply]
-  simp only [B, basis_apply]
-  rw [map_apply_ιMulti_family, basis_repr_apply]
-  have hmap :
-      ιMulti_family R d (f ∘ b) s =
-        (∏ j : Fin d, a (Set.powersetCard.ofFinEmbEquiv.symm s j)) •
-          ιMulti_family R d b s := by
-    rw [ιMulti_family, ιMulti_family]
-    have hfun :
-        (f ∘ b) ∘ Set.powersetCard.ofFinEmbEquiv.symm s =
-          fun j => a (Set.powersetCard.ofFinEmbEquiv.symm s j) •
-            b (Set.powersetCard.ofFinEmbEquiv.symm s j) := by
-      funext j
-      simp only [Function.comp_apply, hf]
-    have hbfun :
-        b ∘ Set.powersetCard.ofFinEmbEquiv.symm s =
-          fun j => b (Set.powersetCard.ofFinEmbEquiv.symm s j) := rfl
-    rw [hfun]
-    rw [hbfun]
-    simpa only [Function.comp_apply] using
-      (ιMulti R d).map_smul_univ
-        (fun j => a (Set.powersetCard.ofFinEmbEquiv.symm s j))
-        (fun j => b (Set.powersetCard.ofFinEmbEquiv.symm s j))
-  rw [hmap, map_smul, ιMultiDual_apply_diag, smul_eq_mul, mul_one]
-  rw [← Finset.prod_coe_sort s.1 a]
-  apply Fintype.prod_equiv (s.1.orderIsoOfFin s.2).toEquiv
-  intro j
-  rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
-  exact congrArg a (Finset.coe_orderIsoOfFin_apply s.1 s.2 j)
+  rw [LinearMap.trace_eq_matrix_trace R (b.exteriorPower d), Matrix.trace]
+  refine Finset.sum_congr rfl fun s _ => ?_
+  rw [Matrix.diag_apply, LinearMap.toMatrix_apply,
+    map_basis_exteriorPower_of_apply_basis b f a hf d s, map_smul, Finsupp.smul_apply,
+    Module.Basis.repr_self, Finsupp.single_eq_same, smul_eq_mul, mul_one]
 
 end Trace
 
