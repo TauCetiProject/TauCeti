@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.BlockSucc
+public import TauCeti.LinearAlgebra.Pi
 
 /-!
 # The upper-left block embedding of an orthogonal group in the next one
@@ -40,12 +41,6 @@ statement for `TauCeti.glBlockSucc` is false, the stabilizer of the last basis v
 * `TauCeti.orthogonalBlockSucc_injective`: the block inclusion is injective.
 * `TauCeti.exists_orthogonalBlockSucc_eq_iff_mulVec_single`: an orthogonal matrix of size `n + 1` is
   an extension exactly when it fixes the last basis vector.
-
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 0, "The subgroups and the extra invariants", and Layer 6, whose orthogonal branching runs
-  along this chain.
 -/
 
 public section
@@ -62,6 +57,7 @@ attribute [local instance] starRingOfComm
 with the transpose (`Matrix.transpose_blockSucc`) and with products (`Matrix.blockSucc_mul`) and
 takes the identity matrix to the identity matrix, so `Matrix.blockSucc M * (Matrix.blockSucc M)ᵀ`
 is the extension of `M * Mᵀ`; the reverse implication is the injectivity of the extension. -/
+@[simp]
 theorem blockSucc_mem_orthogonalGroup_iff {M : Matrix (Fin n) (Fin n) k} :
     blockSucc M ∈ orthogonalGroup (Fin (n + 1)) k ↔ M ∈ orthogonalGroup (Fin n) k := by
   rw [mem_orthogonalGroup_iff, mem_orthogonalGroup_iff, transpose_blockSucc, ← blockSucc_mul,
@@ -108,16 +104,6 @@ theorem orthogonalBlockSucc_injective : Function.Injective (orthogonalBlockSucc 
 
 /-! ### The image of the inclusion -/
 
-/-- The last standard basis vector of `Fin (n + 1) → k`, read through the splitting that
-`Matrix.blockSucc` is built from. -/
-private theorem single_last_eq_snoc :
-    (Pi.single (Fin.last n) 1 : Fin (n + 1) → k) =
-      Fin.snoc (α := fun _ => k) (0 : Fin n → k) 1 := by
-  funext i
-  induction i using Fin.lastCases with
-  | last => simp
-  | cast i => simp
-
 /-- **The image of the orthogonal block inclusion is the stabilizer of the last basis vector.**  An
 extended matrix clearly fixes the last basis vector.  Conversely, fixing it says that the last
 *column* is the last basis vector, and for an **orthogonal** matrix that already forces the last
@@ -134,7 +120,7 @@ theorem exists_orthogonalBlockSucc_eq_iff_mulVec_single
         Pi.single (Fin.last n) 1 := by
   constructor
   · rintro ⟨h, rfl⟩
-    rw [coe_orthogonalBlockSucc, single_last_eq_snoc, blockSucc_mulVec, Fin.init_snoc,
+    rw [coe_orthogonalBlockSucc, ← Fin.snoc_zero_eq_single, blockSucc_mulVec, Fin.init_snoc,
       Fin.snoc_last, mulVec_zero]
   · intro hfix
     have hgmem : (g : Matrix (Fin (n + 1)) (Fin (n + 1)) k) ∈ orthogonalGroup (Fin (n + 1)) k :=

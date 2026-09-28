@@ -59,12 +59,6 @@ is the orthogonal complement of the smaller standard module.
 * `TauCeti.stdOrthogonalRep_comp_orthogonalBlockSucc_injective`: the restriction is still faithful.
 * `TauCeti.char_stdOrthogonalRep_orthogonalBlockSucc`: the character of the restriction is the
   character of the standard representation plus one.
-
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 0, "The subgroups and the extra invariants", and Layer 6, "`SOₙ ↓ SOₙ₋₁` and
-  `Spₙ ↓ Spₙ₋₂`".
 -/
 
 public section
@@ -128,9 +122,10 @@ theorem stdOrthogonalRepBlockSuccEquiv_symm_apply (p : (Fin n → k) × k) :
 
 /-- **The branching splitting is orthogonal for the invariant form**: the dot product of two
 vectors is the dot product of their images in the standard module of the smaller group plus the
-product of their images in the trivial summand.  So the trivial summand is the orthogonal
-complement of the smaller standard module, and the invariant form of `O(n + 1, k)` restricts to the
-invariant form of `O(n, k)` on it. -/
+product of their images in the trivial summand.  So the two summands are orthogonal to each other:
+the invariant form of `O(n + 1, k)` restricts to the invariant form of `O(n, k)` on the smaller
+standard summand and to multiplication on the trivial summand, and the trivial summand is the
+orthogonal complement of the smaller standard module. -/
 theorem dotProduct_eq_stdOrthogonalRepBlockSuccEquiv (v w : Fin (n + 1) → k) :
     v ⬝ᵥ w =
       (stdOrthogonalRepBlockSuccEquiv k n v).1 ⬝ᵥ (stdOrthogonalRepBlockSuccEquiv k n w).1 +
