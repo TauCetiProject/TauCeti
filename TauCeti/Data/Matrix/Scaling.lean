@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Topology.Instances.Matrix
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # The entropy minimiser with prescribed marginals
@@ -77,6 +78,9 @@ def IsDiagonalScaling (P : Matrix (Fin n) (Fin m) ℝ) (K : Matrix (Fin n) (Fin 
 @[simp] theorem isDiagonalScaling_def (P K : Matrix (Fin n) (Fin m) ℝ) (u : Fin n → ℝ)
     (v : Fin m → ℝ) : IsDiagonalScaling P K u v ↔ ∀ i j, P i j = u i * K i j * v j := Iff.rfl
 
+/-- The row and column sums of a diagonal scaling are the row and column sums of its factors, so
+the stated sums of `u i * K i j * v j` over the columns and over the rows transfer through
+`IsDiagonalScaling` to `HasMarginals P a b`. -/
 theorem IsDiagonalScaling.hasMarginals {P K : Matrix (Fin n) (Fin m) ℝ} {u : Fin n → ℝ}
     {v : Fin m → ℝ} (h : IsDiagonalScaling P K u v) (a : Fin n → ℝ) (b : Fin m → ℝ)
     (ha : ∀ i, (∑ j, u i * K i j * v j) = a i) (hb : ∀ j, (∑ i, u i * K i j * v j) = b j) :
@@ -201,64 +205,115 @@ theorem exists_relEntropy_minOn (K : Matrix (Fin n) (Fin m) ℝ) (a : Fin n → 
   rw [hS, Set.mem_ofPred] at hPmem
   exact ⟨P, hPmem.1, hPmem.2, fun Q hQ0 hQa => (isMinOn_iff.mp hPmin) Q ⟨hQ0, hQa⟩⟩
 
-/-- For strictly positive marginals `a` and `b` of equal total mass, the product coupling
-`P i j = a i * b j / ∑ k, a k` is a nonnegative matrix with row sums `a` and column sums `b`, so
-`exists_relEntropy_minOn` applies. The assumption `n > 0` is needed here, not in
-`exists_relEntropy_minOn`: for `n = 0` the marginals of a nonnegative matrix cannot be strictly
-positive. -/
-theorem exists_relEntropy_minOn_of_pos [NeZero n] (K : Matrix (Fin n) (Fin m) ℝ) (a : Fin n → ℝ)
-    (b : Fin m → ℝ) (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j) (hmass : (∑ i, a i) = ∑ j, b j) :
+/-- The relative entropy against `K` attains a minimum on the nonnegative matrices with row sums
+`a` and column sums `b` whenever `a` and `b` are nonnegative and of equal total mass.
+
+Such a matrix is always available: the product coupling `P i j = a i * b j / ∑ k, a k` has the
+prescribed marginals when the total mass is positive, and when the total mass is zero both marginals
+vanish identically, so the zero matrix has them. -/
+theorem exists_relEntropy_minOn_of_nonneg (K : Matrix (Fin n) (Fin m) ℝ) (a : Fin n → ℝ)
+    (b : Fin m → ℝ) (ha : ∀ i, 0 ≤ a i) (hb : ∀ j, 0 ≤ b j)
+    (hmass : (∑ i, a i) = ∑ j, b j) :
     ∃ P : Matrix (Fin n) (Fin m) ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b ∧
       ∀ Q : Matrix (Fin n) (Fin m) ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
         relEntropy P K ≤ relEntropy Q K := by
-  have hApos : 0 < ∑ i, a i := Finset.sum_pos (fun i _ => ha i) ⟨0, Finset.mem_univ _⟩
-  set A : ℝ := ∑ i, a i with hA
-  have hA0 : A ≠ 0 := ne_of_gt hApos
-  have hP₀ : (∀ i j, 0 ≤ (fun i j => a i * (b j * A⁻¹)) i j) ∧
-      HasMarginals (fun i j => a i * (b j * A⁻¹)) a b := by
-    constructor
-    · intro i j
-      exact mul_nonneg (le_of_lt (ha i)) (mul_nonneg (le_of_lt (hb j)) (inv_nonneg.mpr hApos.le))
-    · constructor
-      · intro i
-        calc ∑ j, a i * (b j * A⁻¹) = a i * ∑ j, (b j * A⁻¹) := by rw [Finset.mul_sum]
-          _ = a i * ((∑ j, b j) * A⁻¹) := by rw [← Finset.sum_mul]
-          _ = a i * (A * A⁻¹) := by rw [← hmass]
-          _ = a i := by rw [mul_inv_cancel₀ hA0, mul_one]
-      · intro j
-        calc ∑ i, a i * (b j * A⁻¹) = (∑ i, a i) * (b j * A⁻¹) := by rw [Finset.sum_mul]
-          _ = A * (b j * A⁻¹) := by rw [hA]
-          _ = b j * (A * A⁻¹) := by ring
-          _ = b j := by rw [mul_inv_cancel₀ hA0, mul_one]
-  exact exists_relEntropy_minOn K a b ⟨fun i j => a i * (b j * A⁻¹), hP₀.1, hP₀.2⟩
+  have hfeas : ∃ P : Matrix (Fin n) (Fin m) ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b := by
+    by_cases hApos : 0 < ∑ i, a i
+    · -- The product coupling of the two marginals.
+      set A : ℝ := ∑ i, a i with hA
+      have hA0 : A ≠ 0 := ne_of_gt hApos
+      have hP₀ : (∀ i j, 0 ≤ (fun i j => a i * (b j * A⁻¹)) i j) ∧
+          HasMarginals (fun i j => a i * (b j * A⁻¹)) a b := by
+        constructor
+        · intro i j
+          exact mul_nonneg (ha i) (mul_nonneg (hb j) (inv_nonneg.mpr hApos.le))
+        · constructor
+          · intro i
+            calc ∑ j, a i * (b j * A⁻¹) = a i * ∑ j, (b j * A⁻¹) := by rw [Finset.mul_sum]
+              _ = a i * ((∑ j, b j) * A⁻¹) := by rw [← Finset.sum_mul]
+              _ = a i * (A * A⁻¹) := by rw [← hmass]
+              _ = a i := by rw [mul_inv_cancel₀ hA0, mul_one]
+          · intro j
+            calc ∑ i, a i * (b j * A⁻¹) = (∑ i, a i) * (b j * A⁻¹) := by rw [Finset.sum_mul]
+              _ = A * (b j * A⁻¹) := by rw [hA]
+              _ = b j * (A * A⁻¹) := by ring
+              _ = b j := by rw [mul_inv_cancel₀ hA0, mul_one]
+      exact ⟨fun i j => a i * (b j * A⁻¹), hP₀.1, hP₀.2⟩
+    · -- A total mass of zero forces both marginals to vanish.
+      have hA0 : (∑ i, a i) = 0 :=
+        le_antisymm (not_lt.mp hApos) (Finset.sum_nonneg fun i _ => ha i)
+      have hb0 : (∑ j, b j) = 0 := by rw [← hmass, hA0]
+      have hzero : HasMarginals (0 : Matrix (Fin n) (Fin m) ℝ) a b := by
+        constructor
+        · intro i
+          have hle : a i ≤ ∑ k, a k := Finset.single_le_sum (fun k _ => ha k) (Finset.mem_univ i)
+          rw [hA0] at hle
+          simp only [Matrix.zero_apply, Finset.sum_const_zero]
+          exact (le_antisymm hle (ha i)).symm
+        · intro j
+          have hle : b j ≤ ∑ k, b k := Finset.single_le_sum (fun k _ => hb k) (Finset.mem_univ j)
+          rw [hb0] at hle
+          simp only [Matrix.zero_apply, Finset.sum_const_zero]
+          exact (le_antisymm hle (hb j)).symm
+      exact ⟨0, fun _ _ => by simp, hzero⟩
+  obtain ⟨P, hP, hPa⟩ := hfeas
+  exact exists_relEntropy_minOn K a b ⟨P, hP, hPa⟩
+
+/-- For strictly positive marginals `a` and `b` of equal total mass, the relative entropy against
+`K` attains a minimum on the nonnegative matrices with row sums `a` and column sums `b`.
+
+This is the case of nonnegative marginals of `exists_relEntropy_minOn_of_nonneg`; it is stated
+separately because strictly positive marginals are the setting of the later steps of this
+development, which identify the minimiser with a diagonal scaling of `K`. -/
+theorem exists_relEntropy_minOn_of_pos (K : Matrix (Fin n) (Fin m) ℝ) (a : Fin n → ℝ)
+    (b : Fin m → ℝ) (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j)
+    (hmass : (∑ i, a i) = ∑ j, b j) :
+    ∃ P : Matrix (Fin n) (Fin m) ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b ∧
+      ∀ Q : Matrix (Fin n) (Fin m) ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
+        relEntropy P K ≤ relEntropy Q K :=
+  exists_relEntropy_minOn_of_nonneg K a b (fun i => (ha i).le) (fun j => (hb j).le) hmass
 
 /-! ### Rectangle perturbations -/
 
-/-- `subIndicator i i' x` is `1` at `i`, `-1` at `i'` and `0` elsewhere. It is the difference of the
-indicator functions of `i` and `i'`, and it is used below as the weight of a perturbation of the
-rows, or of the columns, of a matrix. -/
+/-- `subIndicator i i' x` is `1` at `i`, `-1` at `i'` and `0` elsewhere. It is the difference of
+the two sparse vectors `Pi.single i 1` and `Pi.single i' 1`, and it is the weight of a perturbation
+of the rows, or of the columns, of a matrix. -/
 private def subIndicator {ι : Type*} [DecidableEq ι] (i i' : ι) : ι → ℝ :=
-  fun x => (if x = i then 1 else 0) - (if x = i' then 1 else 0)
+  Pi.single i 1 - Pi.single i' 1
 
-private theorem subIndicator_eq_one {ι : Type*} [DecidableEq ι] {i i' : ι}
-    (h : i ≠ i') : subIndicator i i' i = 1 := by
-  simp [subIndicator, h]
+/-- The value of the sparse vector `subIndicator i i' x` is the difference of the indicators of `i`
+and `i'` at `x`. -/
+private theorem subIndicator_apply {ι : Type*} [DecidableEq ι] (i i' x : ι) :
+    subIndicator i i' x = (if x = i then (1 : ℝ) else 0) - if x = i' then 1 else 0 := by
+  simp [subIndicator, Pi.single_apply]
 
-private theorem subIndicator_eq_neg_one {ι : Type*} [DecidableEq ι] {i i' : ι}
-    (h : i ≠ i') : subIndicator i i' i' = -1 := by
-  simp [subIndicator, Ne.symm h]
+/-- The sparse vector `subIndicator i i' x` is `1` at `i`, provided `i` and `i'` are distinct. -/
+private theorem subIndicator_eq_one {ι : Type*} [DecidableEq ι] {i i' : ι} (h : i ≠ i') :
+    subIndicator i i' i = 1 := by
+  rw [subIndicator_apply, ite_eq_left rfl, ite_eq_right h, sub_zero]
 
-private theorem subIndicator_eq_zero {ι : Type*} [DecidableEq ι] {i i' : ι} {x : ι}
-    (h : x ≠ i) (h' : x ≠ i') : subIndicator i i' x = 0 := by
-  simp [subIndicator, h, h']
+/-- The sparse vector `subIndicator i i' x` is `-1` at `i'`, provided `i` and `i'` are distinct. -/
+private theorem subIndicator_eq_neg_one {ι : Type*} [DecidableEq ι] {i i' : ι} (h : i ≠ i') :
+    subIndicator i i' i' = -1 := by
+  rw [subIndicator_apply, ite_eq_right (Ne.symm h), ite_eq_left rfl, zero_sub]
 
-/-- The sum of `subIndicator i i' x * g x` over `x` is the difference of the values of `g` at `i`
-and `i'`, and in particular the sum of `subIndicator i i' x` over `x` is `0`. -/
+/-- The sum of the sparse vector `Pi.single a 1` against a function `g` is the value of `g` at
+`a`. -/
+private lemma sum_pi_single_mul {ι : Type*} [Fintype ι] [DecidableEq ι] (a : ι) (g : ι → ℝ) :
+    ∑ x, (Pi.single a (1 : ℝ) : ι → ℝ) x * g x = g a := by
+  simp [Pi.single_apply]
+
+/-- The sum of the sparse vector `subIndicator i i' x` against a function `g` of `x` is the
+difference of the values of `g` at `i` and `i'`. -/
 private lemma sum_subIndicator_mul {ι : Type*} [Fintype ι] [DecidableEq ι] (i i' : ι) (g : ι → ℝ) :
     ∑ x, subIndicator i i' x * g x = g i - g i' := by
-  simp only [subIndicator, sub_mul, Finset.sum_sub_distrib, ite_mul, zero_mul, one_mul,
-    Fintype.sum_ite_eq']
+  calc (∑ x, subIndicator i i' x * g x)
+      = ∑ x, (Pi.single i (1 : ℝ) : ι → ℝ) x * g x
+        - ∑ x, (Pi.single i' (1 : ℝ) : ι → ℝ) x * g x := by
+          simp only [subIndicator, Pi.sub_apply, sub_mul, Finset.sum_sub_distrib]
+    _ = g i - g i' := by rw [sum_pi_single_mul i g, sum_pi_single_mul i' g]
 
+/-- The sum of the sparse vector `subIndicator i i' x` over `x` is `0`. -/
 private lemma sum_subIndicator {ι : Type*} [Fintype ι] [DecidableEq ι] (i i' : ι) :
     ∑ x, subIndicator i i' x = 0 := by
   simpa using (sum_subIndicator_mul i i' fun _ => (1 : ℝ))
@@ -268,16 +323,122 @@ alternating sum of the values of `g` at the four cells of the rectangle `i`, `i'
 private lemma sum_subIndicator_prod (g : Fin n → Fin m → ℝ) (i i' : Fin n) (j j' : Fin m) :
     (∑ x, ∑ y, subIndicator i i' x * (subIndicator j j' y * g x y))
       = g i j - g i j' - g i' j + g i' j' := by
-  have h1 : ∀ x : Fin n, ∑ y, subIndicator i i' x * (subIndicator j j' y * g x y)
-      = subIndicator i i' x * (g x j - g x j') := by
-    intro x
-    rw [← Finset.mul_sum, sum_subIndicator_mul]
+  have key : ∀ x : Fin n, (∑ y, subIndicator j j' y * g x y) = g x j - g x j' :=
+    fun _ => sum_subIndicator_mul j j' (g _)
   calc (∑ x, ∑ y, subIndicator i i' x * (subIndicator j j' y * g x y))
-      = ∑ x, subIndicator i i' x * (g x j - g x j') := Fintype.sum_congr _ _ fun x => h1 x
+      = ∑ x, subIndicator i i' x * (∑ y, subIndicator j j' y * g x y) := by
+        apply Fintype.sum_congr
+        intro x
+        rw [Finset.mul_sum]
+    _ = ∑ x, subIndicator i i' x * (g x j - g x j') := by
+        apply Fintype.sum_congr
+        intro x
+        rw [key x]
     _ = g i j - g i j' - g i' j + g i' j' := by
-        simp only [subIndicator, sub_mul, Finset.sum_sub_distrib, ite_mul, zero_mul, one_mul,
-          Fintype.sum_ite_eq']
+        rw [sum_subIndicator_mul i i' (fun x => g x j - g x j')]
         ring
+
+/-- The outer product of two differences of sparse vectors vanishes outside the four cells of the
+rectangle `i`, `i'` by `j`, `j'`: a row or a column outside the rectangle carries the weight `0`. -/
+private lemma subIndicator_mul_eq_zero (i i' : Fin n) (j j' : Fin m) (x : Fin n) (y : Fin m)
+    (h1 : ¬(x = i ∧ y = j)) (h2 : ¬(x = i ∧ y = j')) (h3 : ¬(x = i' ∧ y = j))
+    (h4 : ¬(x = i' ∧ y = j')) : subIndicator i i' x * subIndicator j j' y = 0 := by
+  by_cases hx : x = i
+  · have hy1 : y ≠ j := fun e => h1 ⟨hx, e⟩
+    have hy2 : y ≠ j' := fun e => h2 ⟨hx, e⟩
+    have h0 : subIndicator j j' y = 0 := by
+      rw [subIndicator_apply, ite_eq_right hy1, ite_eq_right hy2, sub_zero]
+    rw [h0, mul_zero]
+  by_cases hx' : x = i'
+  · have hy1 : y ≠ j := fun e => h3 ⟨hx', e⟩
+    have hy2 : y ≠ j' := fun e => h4 ⟨hx', e⟩
+    have h0 : subIndicator j j' y = 0 := by
+      rw [subIndicator_apply, ite_eq_right hy1, ite_eq_right hy2, sub_zero]
+    rw [h0, mul_zero]
+  · have h0 : subIndicator i i' x = 0 := by
+      rw [subIndicator_apply, ite_eq_right hx, ite_eq_right hx', sub_zero]
+    rw [h0, zero_mul]
+
+/-- A function of the two indices of a matrix that vanishes outside the four cells of the
+rectangle `i`, `i'` by `j`, `j'` is the sum of the four single-cell matrices `Matrix.single _ _ _`
+of its values there, so its double sum is the sum of those four values. -/
+private lemma sum_eq_four (g : Fin n → Fin m → ℝ) (i i' : Fin n) (j j' : Fin m)
+    (hi'ne : i ≠ i') (hj'ne : j ≠ j')
+    (h0 : ∀ x y, ¬(x = i ∧ y = j) → ¬(x = i ∧ y = j') → ¬(x = i' ∧ y = j) → ¬(x = i' ∧ y = j') →
+      g x y = 0) :
+    (∑ x, ∑ y, g x y) = g i j + g i j' + g i' j + g i' j' := by
+  have key : ∀ x y, g x y = (Matrix.single i j (g i j) + Matrix.single i j' (g i j')
+      + Matrix.single i' j (g i' j) + Matrix.single i' j' (g i' j')) x y := by
+    intro x y
+    rw [Matrix.add_apply, Matrix.add_apply, Matrix.add_apply]
+    by_cases h1 : x = i ∧ y = j
+    · rw [h1.1, h1.2, Matrix.single_apply_same,
+        Matrix.single_apply_of_ne i j' (g i j') i j (fun h => hj'ne h.2.symm),
+        Matrix.single_apply_of_ne i' j (g i' j) i j (fun h => hi'ne h.1.symm),
+        Matrix.single_apply_of_ne i' j' (g i' j') i j (fun h => hi'ne h.1.symm)]
+      simp only [add_zero]
+    by_cases h2 : x = i ∧ y = j'
+    · rw [h2.1, h2.2, Matrix.single_apply_of_ne i j (g i j) i j' (fun h => hj'ne h.2),
+        Matrix.single_apply_same,
+        Matrix.single_apply_of_ne i' j (g i' j) i j' (fun h => hi'ne h.1.symm),
+        Matrix.single_apply_of_ne i' j' (g i' j') i j' (fun h => hi'ne h.1.symm)]
+      simp
+    by_cases h3 : x = i' ∧ y = j
+    · rw [h3.1, h3.2, Matrix.single_apply_of_ne i j (g i j) i' j (fun h => hi'ne h.1),
+        Matrix.single_apply_of_ne i j' (g i j') i' j (fun h => hi'ne h.1),
+        Matrix.single_apply_same,
+        Matrix.single_apply_of_ne i' j' (g i' j') i' j (fun h => hj'ne h.2.symm)]
+      simp
+    by_cases h4 : x = i' ∧ y = j'
+    · rw [h4.1, h4.2, Matrix.single_apply_of_ne i j (g i j) i' j' (fun h => hi'ne h.1),
+        Matrix.single_apply_of_ne i j' (g i j') i' j' (fun h => hi'ne h.1),
+        Matrix.single_apply_of_ne i' j (g i' j) i' j' (fun h => hj'ne h.2),
+        Matrix.single_apply_same]
+      simp
+    · rw [Matrix.single_apply_of_ne i j (g i j) x y (fun h => h1 ⟨h.1.symm, h.2.symm⟩),
+        Matrix.single_apply_of_ne i j' (g i j') x y (fun h => h2 ⟨h.1.symm, h.2.symm⟩),
+        Matrix.single_apply_of_ne i' j (g i' j) x y (fun h => h3 ⟨h.1.symm, h.2.symm⟩),
+        Matrix.single_apply_of_ne i' j' (g i' j') x y (fun h => h4 ⟨h.1.symm, h.2.symm⟩)]
+      simp only [add_zero]
+      exact h0 x y h1 h2 h3 h4
+  -- The double sum of the single-cell matrix of a value is that value.
+  have single : ∀ (c : ℝ) (x : Fin n) (y : Fin m), (∑ p, ∑ q, Matrix.single x y c p q) = c := by
+    intro c x y
+    have key : ∀ p : Fin n, (∑ q, Matrix.single x y c p q) = if p = x then c else 0 := by
+      intro p
+      by_cases hp : p = x
+      · rw [ite_eq_left hp]
+        calc (∑ q, Matrix.single x y c p q)
+            = ∑ q, (if q = y then c else 0) := by
+                apply Fintype.sum_congr
+                intro q
+                rw [Matrix.single_apply, hp]
+                by_cases hq : y = q
+                · rw [ite_eq_left ⟨rfl, hq⟩, ite_eq_left (Eq.symm hq)]
+                · rw [ite_eq_right (fun h => hq h.2), ite_eq_right (fun h => hq h.symm)]
+          _ = c := Fintype.sum_ite_eq' y (fun _ => c)
+      · rw [ite_eq_right hp]
+        calc (∑ q, Matrix.single x y c p q)
+            = ∑ _q, (0 : ℝ) := by
+                apply Fintype.sum_congr
+                intro q
+                rw [Matrix.single_apply, ite_eq_right (fun h => hp h.1.symm)]
+          _ = 0 := Finset.sum_const_zero
+    calc (∑ p, ∑ q, Matrix.single x y c p q)
+        = ∑ p, (if p = x then c else 0) := Fintype.sum_congr _ _ key
+      _ = c := Fintype.sum_ite_eq' x (fun _ => c)
+  calc (∑ x, ∑ y, g x y)
+      = ∑ x, ∑ y, ((Matrix.single i j (g i j) + Matrix.single i j' (g i j')
+        + Matrix.single i' j (g i' j) + Matrix.single i' j' (g i' j')) x y) := by
+          apply Fintype.sum_congr
+          intro x
+          apply Fintype.sum_congr
+          intro y
+          rw [key x y]
+    _ = g i j + g i j' + g i' j + g i' j' := by
+        simp only [Matrix.add_apply, Finset.sum_add_distrib]
+        rw [single (g i j) i j, single (g i j') i j', single (g i' j) i' j,
+          single (g i' j') i' j']
 
 /-- The double sums of two functions are subtracted termwise. -/
 private lemma sum_sub_eq_sum_sub (f g : Fin n → Fin m → ℝ) :
@@ -285,144 +446,82 @@ private lemma sum_sub_eq_sum_sub (f g : Fin n → Fin m → ℝ) :
   calc (∑ x, ∑ y, f x y) - ∑ x, ∑ y, g x y
       = ∑ x, (∑ y, f x y - ∑ y, g x y) := by rw [← Finset.sum_sub_distrib]
     _ = ∑ x, ∑ y, (f x y - g x y) := by
-      refine Fintype.sum_congr _ _ fun x => ?_
+      apply Fintype.sum_congr
+      intro x
       rw [← Finset.sum_sub_distrib]
 
-/-- The double sum of the indicator matrix of a single cell against a function of both indices is
-the value of the function at that cell. -/
-private lemma sum_ite_and (g : Fin n → Fin m → ℝ) (i : Fin n) (j : Fin m) :
-    (∑ x, ∑ y, ((if x = i ∧ y = j then 1 else 0 : ℝ)) * g x y) = g i j := by
-  calc (∑ x, ∑ y, ((if x = i ∧ y = j then 1 else 0 : ℝ)) * g x y)
-      = ∑ x, ∑ y, (if x = i ∧ y = j then g x y else 0) := by
-        refine Finset.sum_congr rfl fun x _ => ?_
-        refine Finset.sum_congr rfl fun y _ => ?_
-        split_ifs <;> simp
-    _ = ∑ x, (if x = i then g x j else 0) := by
-        refine Finset.sum_congr rfl fun x _ => ?_
-        by_cases h : x = i <;> simp [h]
-    _ = g i j := Fintype.sum_ite_eq' i fun x => g x j
-
-/-- A function that vanishes outside the four cells of a rectangle has total sum equal to the
-sum of its values at those four cells. -/
-private lemma sum_four_ite (g : Fin n → Fin m → ℝ) (i i' : Fin n) (j j' : Fin m)
-    (hi'ne : i ≠ i') (hj'ne : j ≠ j')
-    (h0 : ∀ x y, (x ≠ i ∨ y ≠ j) → (x ≠ i ∨ y ≠ j') → (x ≠ i' ∨ y ≠ j)
-      → (x ≠ i' ∨ y ≠ j') → g x y = 0) :
-    (∑ x, ∑ y, g x y) = g i j + g i j' + g i' j + g i' j' := by
-  have e1 : (∑ x, ∑ y, ((if x = i ∧ y = j then 1 else 0 : ℝ)) * g x y) = g i j := sum_ite_and g i j
-  have e2 : (∑ x, ∑ y, ((if x = i ∧ y = j' then 1 else 0 : ℝ)) * g x y) = g i j' :=
-    sum_ite_and g i j'
-  have e3 : (∑ x, ∑ y, ((if x = i' ∧ y = j then 1 else 0 : ℝ)) * g x y) = g i' j :=
-    sum_ite_and g i' j
-  have e4 : (∑ x, ∑ y, ((if x = i' ∧ y = j' then 1 else 0 : ℝ)) * g x y) = g i' j' :=
-    sum_ite_and g i' j'
-  calc (∑ x, ∑ y, g x y)
-      = ∑ x, ∑ y, ((if x = i ∧ y = j then 1 else 0) + (if x = i ∧ y = j' then 1 else 0)
-        + (if x = i' ∧ y = j then 1 else 0) + (if x = i' ∧ y = j' then 1 else 0)) * g x y := by
-        refine Finset.sum_congr rfl fun x _ => ?_
-        refine Finset.sum_congr rfl fun y _ => ?_
-        by_cases h1 : x = i <;> by_cases h2 : y = j <;> by_cases h3 : x = i'
-          <;> by_cases h4 : y = j' <;> simp_all
-    _ = g i j + g i j' + g i' j + g i' j' := by
-        have split : (∑ x, ∑ y, ((if x = i ∧ y = j then 1 else 0)
-              + (if x = i ∧ y = j' then 1 else 0) + (if x = i' ∧ y = j then 1 else 0)
-              + (if x = i' ∧ y = j' then 1 else 0)) * g x y)
-            = (∑ x, ∑ y, ((if x = i ∧ y = j then 1 else 0 : ℝ)) * g x y)
-              + (∑ x, ∑ y, ((if x = i ∧ y = j' then 1 else 0 : ℝ)) * g x y)
-              + (∑ x, ∑ y, ((if x = i' ∧ y = j then 1 else 0 : ℝ)) * g x y)
-              + (∑ x, ∑ y, ((if x = i' ∧ y = j' then 1 else 0 : ℝ)) * g x y) := by
-          simp only [add_mul, Finset.sum_add_distrib]
-        rw [split, e1, e2, e3, e4]
-
-/-- Adding a multiple of the outer product of a row weight and a column weight, both of total sum
-`0`, preserves the row sums and the column sums. -/
+/-- Adding the outer product `Matrix.vecMulVec r c` of a row weight `r` and a column weight `c`,
+both of total sum `0`, preserves the row sums and the column sums. -/
 private lemma hasMarginals_add_outer (a : Fin n → ℝ) (b : Fin m → ℝ) (P : Matrix (Fin n) (Fin m) ℝ)
     (hP : HasMarginals P a b) (r : Fin n → ℝ) (c : Fin m → ℝ) (hr : ∑ x, r x = 0)
-    (hc : ∑ y, c y = 0) (t : ℝ) : HasMarginals (fun x y => P x y + t * (r x * c y)) a b := by
+    (hc : ∑ y, c y = 0) (t : ℝ) : HasMarginals (P + Matrix.vecMulVec (fun x => t * r x) c) a b := by
   constructor
   · intro x
-    have key : (∑ y, t * (r x * c y)) = t * (r x * ∑ z, c z) := by
-      rw [Finset.mul_sum, Finset.mul_sum]
-    have h1 : (∑ y, (P x y + t * (r x * c y))) = ∑ y, P x y := by
-      simp only [Finset.sum_add_distrib, key, hc, mul_zero, add_zero]
-    rw [h1]
-    exact hP.1 x
+    have key : (∑ y, (Matrix.vecMulVec (fun x => t * r x) c) x y) = 0 := by
+      calc (∑ y, (Matrix.vecMulVec (fun x => t * r x) c) x y)
+          = ∑ y, t * r x * c y := by simp only [Matrix.vecMulVec_apply]
+      _ = ∑ y, t * (r x * c y) := by
+          apply Fintype.sum_congr
+          intro y
+          ring
+      _ = t * (r x * ∑ z, c z) := by rw [Finset.mul_sum, Finset.mul_sum]
+      _ = 0 := by rw [hc, mul_zero, mul_zero]
+    calc (∑ y, (P + Matrix.vecMulVec (fun x => t * r x) c) x y)
+        = (∑ y, P x y) + ∑ y, (Matrix.vecMulVec (fun x => t * r x) c) x y := by
+          simp only [Matrix.add_apply]
+          rw [Finset.sum_add_distrib]
+      _ = a x := by rw [key, add_zero, hP.1 x]
   · intro y
-    have key : (∑ x, t * (r x * c y)) = t * ((∑ z, r z) * c y) := by
-      rw [Finset.sum_mul, Finset.mul_sum]
-    have h1 : (∑ x, (P x y + t * (r x * c y))) = ∑ x, P x y := by
-      simp only [Finset.sum_add_distrib, key, hr, zero_mul, mul_zero, add_zero]
-    rw [h1]
-    exact hP.2 y
+    have key : (∑ x, (Matrix.vecMulVec (fun x => t * r x) c) x y) = 0 := by
+      calc (∑ x, (Matrix.vecMulVec (fun x => t * r x) c) x y)
+          = ∑ x, (t * r x) * c y := by simp only [Matrix.vecMulVec_apply]
+      _ = ∑ x, t * (r x * c y) := by
+          apply Fintype.sum_congr
+          intro x
+          ring
+      _ = t * ((∑ z, r z) * c y) := by rw [Finset.sum_mul, Finset.mul_sum]
+      _ = 0 := by rw [hr, zero_mul, mul_zero]
+    calc (∑ x, (P + Matrix.vecMulVec (fun x => t * r x) c) x y)
+        = (∑ x, P x y) + ∑ x, (Matrix.vecMulVec (fun x => t * r x) c) x y := by
+          simp only [Matrix.add_apply]
+          rw [Finset.sum_add_distrib]
+      _ = b y := by rw [key, add_zero, hP.2 y]
 
-/-- A nonnegative matrix `P` perturbed by `t * subIndicator i i' x * subIndicator j j' y` in the
-four cells of the rectangle `i`, `i'` by `j`, `j'` stays nonnegative as soon as `0 ≤ t ≤ P i j'`
-and `0 ≤ t ≤ P i' j`, that is as soon as the two cells that give up mass keep a nonnegative
-value. -/
+/-- A nonnegative matrix `P` perturbed by the outer product of `t * subIndicator i i'` and
+`subIndicator j j'`, which moves `t` into the cell `(i, j)`, takes it from the cells `(i, j')` and
+`(i', j)` and adds it at `(i', j')`, stays nonnegative as soon as `0 ≤ t ≤ P i j'` and
+`0 ≤ t ≤ P i' j`, that is as soon as the two cells that give up mass keep a nonnegative value. -/
 private lemma nonneg_add_subIndicator (P : Matrix (Fin n) (Fin m) ℝ) (i i' : Fin n) (j j' : Fin m)
     (hi'ne : i ≠ i') (hj'ne : j ≠ j') (t : ℝ) (ht0 : 0 ≤ t) (hty : t ≤ P i j')
     (htz : t ≤ P i' j) (hP : ∀ i j, 0 ≤ P i j) (u : Fin n) (v : Fin m) :
     0 ≤ P u v + t * (subIndicator i i' u * subIndicator j j' v) := by
-  by_cases h1 : u = i
-  · rw [h1]
-    by_cases h2 : v = j
-    · rw [h2]
-      have hu : subIndicator i i' i = 1 := subIndicator_eq_one hi'ne
-      have hv : subIndicator j j' j = 1 := subIndicator_eq_one hj'ne
-      rw [hu, hv, one_mul, mul_one]
-      linarith [hP i j]
-    · by_cases h3 : v = j'
-      · rw [h3]
-        have hu : subIndicator i i' i = 1 := subIndicator_eq_one hi'ne
-        have hv : subIndicator j j' j' = -1 := subIndicator_eq_neg_one hj'ne
-        rw [hu, hv, one_mul]
-        linarith [hP i j', hty]
-      · have hu : subIndicator i i' i = 1 := subIndicator_eq_one hi'ne
-        have hv : subIndicator j j' v = 0 := subIndicator_eq_zero h2 h3
-        rw [hu, hv, one_mul, mul_zero, add_zero]
-        exact hP i v
-  · by_cases h3 : u = i'
-    · rw [h3]
-      by_cases h2 : v = j
-      · rw [h2]
-        have hu : subIndicator i i' i' = -1 := subIndicator_eq_neg_one hi'ne
-        have hv : subIndicator j j' j = 1 := subIndicator_eq_one hj'ne
-        rw [hu, hv, neg_one_mul]
-        linarith [hP i' j, htz]
-      · by_cases h4 : v = j'
-        · rw [h4]
-          have hu : subIndicator i i' i' = -1 := subIndicator_eq_neg_one hi'ne
-          have hv : subIndicator j j' j' = -1 := subIndicator_eq_neg_one hj'ne
-          rw [hu, hv, neg_one_mul, neg_neg, mul_one]
-          linarith [hP i' j']
-        · have hu : subIndicator i i' i' = -1 := subIndicator_eq_neg_one hi'ne
-          have hv : subIndicator j j' v = 0 := subIndicator_eq_zero h2 h4
-          rw [hu, hv, neg_one_mul, neg_zero, mul_zero, add_zero]
-          exact hP i' v
-    · by_cases h2 : v = j
-      · rw [h2]
-        have hu : subIndicator i i' u = 0 := subIndicator_eq_zero h1 h3
-        have hv : subIndicator j j' j = 1 := subIndicator_eq_one hj'ne
-        rw [hu, hv, zero_mul, mul_zero, add_zero]
-        exact hP u j
-      · by_cases h4 : v = j'
-        · rw [h4]
-          have hu : subIndicator i i' u = 0 := subIndicator_eq_zero h1 h3
-          have hv : subIndicator j j' j' = -1 := subIndicator_eq_neg_one hj'ne
-          rw [hu, hv, zero_mul, mul_zero, add_zero]
-          exact hP u j'
-        · have hu : subIndicator i i' u = 0 := subIndicator_eq_zero h1 h3
-          have hv : subIndicator j j' v = 0 := subIndicator_eq_zero h2 h4
-          rw [hu, hv, zero_mul, mul_zero, add_zero]
-          exact hP u v
+  by_cases h1 : u = i ∧ v = j
+  · rw [h1.1, h1.2, subIndicator_eq_one hi'ne, subIndicator_eq_one hj'ne, one_mul]
+    linarith [hP i j]
+  by_cases h2 : u = i ∧ v = j'
+  · rw [h2.1, h2.2, subIndicator_eq_one hi'ne, subIndicator_eq_neg_one hj'ne, one_mul, mul_neg,
+      mul_one]
+    linarith [hP i j', hty]
+  by_cases h3 : u = i' ∧ v = j
+  · rw [h3.1, h3.2, subIndicator_eq_neg_one hi'ne, subIndicator_eq_one hj'ne, neg_one_mul,
+      mul_neg, mul_one]
+    linarith [hP i' j, htz]
+  by_cases h4 : u = i' ∧ v = j'
+  · rw [h4.1, h4.2, subIndicator_eq_neg_one hi'ne, subIndicator_eq_neg_one hj'ne, neg_one_mul,
+      neg_neg, mul_one]
+    linarith [hP i' j']
+  have h0 : subIndicator i i' u * subIndicator j j' v = 0 :=
+    subIndicator_mul_eq_zero i i' j j' u v h1 h2 h3 h4
+  rw [h0, mul_zero, add_zero]
+  exact hP u v
 
 /-- Moving `t` into the cell `(i, j)` of `P`, taking it from the cells `(i, j')` and `(i', j)`, and
 adding it to the cell `(i', j')`, changes the relative entropy against `K` by the corresponding
-change of `u * log u`, minus `t` times the alternating sum of `Real.log (K _ _)` over the four
-cells. -/
+change of `u * log u` at those four cells, minus `t` times the alternating sum of `Real.log (K _ _)`
+over them. -/
 private lemma relEntropy_add_subIndicator (K P : Matrix (Fin n) (Fin m) ℝ) (i i' : Fin n)
     (j j' : Fin m) (hi'ne : i ≠ i') (hj'ne : j ≠ j') (t : ℝ) :
-    relEntropy (fun x y => P x y + t * (subIndicator i i' x * subIndicator j j' y)) K
+    relEntropy (P + Matrix.vecMulVec (fun x => t * subIndicator i i' x) (subIndicator j j')) K
         - relEntropy P K
       = ((P i j + t) * Real.log (P i j + t) - P i j * Real.log (P i j)
         + (P i j' - t) * Real.log (P i j' - t) - P i j' * Real.log (P i j')
@@ -430,67 +529,77 @@ private lemma relEntropy_add_subIndicator (K P : Matrix (Fin n) (Fin m) ℝ) (i 
         + (P i' j' + t) * Real.log (P i' j' + t) - P i' j' * Real.log (P i' j'))
       - (Real.log (K i j) - Real.log (K i j') - Real.log (K i' j)
         + Real.log (K i' j')) * t := by
-  set Q : Fin n → Fin m → ℝ :=
-    fun x y => P x y + t * (subIndicator i i' x * subIndicator j j' y) with hQ
-  -- The four perturbed cells.
+  set Q : Matrix (Fin n) (Fin m) ℝ :=
+    P + Matrix.vecMulVec (fun x => t * subIndicator i i' x) (subIndicator j j') with hQ
+  have hQapply : ∀ x y,
+      Q x y = P x y + (t * subIndicator i i' x) * subIndicator j j' y := by
+    intro x y
+    simp only [hQ, Matrix.add_apply, Matrix.vecMulVec_apply]
+  -- The values at the four cells of the rectangle.
   have hQ1 : Q i j = P i j + t := by
-    have hu : subIndicator i i' i = 1 := subIndicator_eq_one hi'ne
-    have hv : subIndicator j j' j = 1 := subIndicator_eq_one hj'ne
-    simp only [hQ, hu, hv, mul_one]
+    rw [hQapply, subIndicator_eq_one hi'ne, subIndicator_eq_one hj'ne]
+    ring
   have hQ2 : Q i j' = P i j' - t := by
-    have hu : subIndicator i i' i = 1 := subIndicator_eq_one hi'ne
-    have hv : subIndicator j j' j' = -1 := subIndicator_eq_neg_one hj'ne
-    simp only [hQ, hu, hv, mul_neg, mul_one, sub_eq_add_neg]
+    rw [hQapply, subIndicator_eq_one hi'ne, subIndicator_eq_neg_one hj'ne]
+    ring
   have hQ3 : Q i' j = P i' j - t := by
-    have hu : subIndicator i i' i' = -1 := subIndicator_eq_neg_one hi'ne
-    have hv : subIndicator j j' j = 1 := subIndicator_eq_one hj'ne
-    simp only [hQ, hu, hv, mul_neg, mul_one, sub_eq_add_neg]
+    rw [hQapply, subIndicator_eq_neg_one hi'ne, subIndicator_eq_one hj'ne]
+    ring
   have hQ4 : Q i' j' = P i' j' + t := by
-    have hu : subIndicator i i' i' = -1 := subIndicator_eq_neg_one hi'ne
-    have hv : subIndicator j j' j' = -1 := subIndicator_eq_neg_one hj'ne
-    simp only [hQ, hu, hv, neg_one_mul, neg_neg, mul_one]
-  -- Outside the four cells the perturbation vanishes.
-  have hDzero : ∀ x y, (x ≠ i ∨ y ≠ j) → (x ≠ i ∨ y ≠ j') → (x ≠ i' ∨ y ≠ j)
-      → (x ≠ i' ∨ y ≠ j') →
-      subIndicator i i' x * subIndicator j j' y = 0 := by
+    rw [hQapply, subIndicator_eq_neg_one hi'ne, subIndicator_eq_neg_one hj'ne]
+    ring
+  -- Outside the four cells the perturbation vanishes, so the matrix `Q` agrees there with `P`.
+  have hD : ∀ x y, ¬(x = i ∧ y = j) → ¬(x = i ∧ y = j') → ¬(x = i' ∧ y = j)
+      → ¬(x = i' ∧ y = j') → subIndicator i i' x * subIndicator j j' y = 0 :=
+    fun _ _ h1 h2 h3 h4 => subIndicator_mul_eq_zero i i' j j' _ _ h1 h2 h3 h4
+  have hQ0 : ∀ x y, ¬(x = i ∧ y = j) → ¬(x = i ∧ y = j') → ¬(x = i' ∧ y = j)
+      → ¬(x = i' ∧ y = j') → Q x y = P x y := by
     intro x y h1 h2 h3 h4
-    by_cases hx : x = i <;> by_cases hx' : x = i' <;> by_cases hy : y = j
-      <;> by_cases hy' : y = j' <;> simp_all [subIndicator]
-  -- The change of the two sums of `u * log u`, which is supported on the four cells.
+    have h0 : (t * subIndicator i i' x) * subIndicator j j' y = 0 := by
+      calc (t * subIndicator i i' x) * subIndicator j j' y
+          = t * (subIndicator i i' x * subIndicator j j' y) := by ring
+        _ = 0 := by rw [hD x y h1 h2 h3 h4, mul_zero]
+    rw [hQapply, h0, add_zero]
+  -- The change of the two sums of `u * log u`, supported on the four cells.
   set φ : Fin n → Fin m → ℝ := fun x y => Q x y * Real.log (Q x y) - P x y * Real.log (P x y)
     with hφ
-  have hφ0 : ∀ x y, (x ≠ i ∨ y ≠ j) → (x ≠ i ∨ y ≠ j') → (x ≠ i' ∨ y ≠ j)
-      → (x ≠ i' ∨ y ≠ j') → φ x y = 0 := by
+  have hφ0 : ∀ x y, ¬(x = i ∧ y = j) → ¬(x = i ∧ y = j') → ¬(x = i' ∧ y = j)
+      → ¬(x = i' ∧ y = j') → φ x y = 0 := by
     intro x y h1 h2 h3 h4
-    have h0 : subIndicator i i' x * subIndicator j j' y = 0 := hDzero x y h1 h2 h3 h4
-    simp only [hφ, hQ, h0, mul_zero, add_zero, add_mul, zero_mul]
+    have h0 : Q x y = P x y := hQ0 x y h1 h2 h3 h4
+    simp only [hφ, h0]
     ring
   have hφsum : (∑ x, ∑ y, φ x y) = φ i j + φ i j' + φ i' j + φ i' j' :=
-    sum_four_ite φ i i' j j' hi'ne hj'ne hφ0
-  -- The change of the two sums of `u * log (K u v)`, also supported on the four cells.
+    sum_eq_four φ i i' j j' hi'ne hj'ne hφ0
+  -- The change of the two sums of `u * log (K u v)`, supported on the four cells as well.
   have hKsum : (∑ x, ∑ y, ((Q x y - P x y) * Real.log (K x y)))
       = (Real.log (K i j) - Real.log (K i j') - Real.log (K i' j)
         + Real.log (K i' j')) * t := by
     calc (∑ x, ∑ y, ((Q x y - P x y) * Real.log (K x y)))
         = ∑ x, ∑ y, (t * (subIndicator i i' x * subIndicator j j' y)) * Real.log (K x y) := by
-          refine Fintype.sum_congr _ _ fun x => Fintype.sum_congr _ _ fun y => ?_
-          simp only [hQ]
+          apply Fintype.sum_congr
+          intro x
+          apply Fintype.sum_congr
+          intro y
+          rw [hQapply]
           ring
       _ = ∑ x, ∑ y, subIndicator i i' x * (subIndicator j j' y * (t * Real.log (K x y))) := by
-          refine Fintype.sum_congr _ _ fun x => Fintype.sum_congr _ _ fun y => ?_
+          apply Fintype.sum_congr
+          intro x
+          apply Fintype.sum_congr
+          intro y
           ring
       _ = (Real.log (K i j) - Real.log (K i j') - Real.log (K i' j)
           + Real.log (K i' j')) * t := by
           rw [sum_subIndicator_prod (fun x y => t * Real.log (K x y)) i i' j j']
           ring
-  calc relEntropy (fun x y => P x y + t * (subIndicator i i' x * subIndicator j j' y)) K
-        - relEntropy P K
+  calc relEntropy Q K - relEntropy P K
       = (∑ x, ∑ y, φ x y) - ∑ x, ∑ y, ((Q x y - P x y) * Real.log (K x y)) := by
         have key : ∀ x y, (Q x y * Real.log (Q x y) - Q x y * Real.log (K x y))
               - (P x y * Real.log (P x y) - P x y * Real.log (K x y))
             = φ x y - (Q x y - P x y) * Real.log (K x y) := by
           intro x y
-          simp only [hφ, hQ]
+          simp only [hφ]
           ring
         unfold relEntropy
         calc (∑ x, ∑ y, (Q x y * Real.log (Q x y) - Q x y * Real.log (K x y)))
@@ -498,7 +607,10 @@ private lemma relEntropy_add_subIndicator (K P : Matrix (Fin n) (Fin m) ℝ) (i 
             = ∑ x, ∑ y, ((Q x y * Real.log (Q x y) - Q x y * Real.log (K x y))
                 - (P x y * Real.log (P x y) - P x y * Real.log (K x y))) := sum_sub_eq_sum_sub _ _
           _ = ∑ x, ∑ y, (φ x y - (Q x y - P x y) * Real.log (K x y)) := by
-              refine Fintype.sum_congr _ _ fun x => Fintype.sum_congr _ _ fun y => ?_
+              apply Fintype.sum_congr
+              intro x
+              apply Fintype.sum_congr
+              intro y
               exact key x y
           _ = (∑ x, ∑ y, φ x y) - ∑ x, ∑ y, ((Q x y - P x y) * Real.log (K x y)) :=
               (sum_sub_eq_sum_sub _ _).symm
@@ -516,23 +628,25 @@ private lemma relEntropy_add_subIndicator (K P : Matrix (Fin n) (Fin m) ℝ) (i 
         rw [hQ1, hQ2, hQ3, hQ4]
         ring
 
-/-- The supporting-line inequality for the convex function `u ↦ u * Real.log u` on the nonnegative
-reals: the tangent line at the positive point `a` lies below the graph at every nonnegative `u`. -/
-private lemma mul_log_sub_mul_log_ge (a u : ℝ) (ha : 0 < a) (hu : 0 ≤ u) :
-    u * Real.log u - a * Real.log a ≥ (u - a) * (Real.log a + 1) := by
-  rcases lt_or_eq_of_le hu with hu' | hu0
-  · have key : u * Real.log u - a * Real.log a - (u - a) * (Real.log a + 1)
-        = a * ((u / a) * Real.log (u / a) - (u / a - 1)) := by
-      rw [Real.log_div (x := u) (y := a) hu'.ne' ha.ne']
-      field_simp
-      ring
-    have h1 : 0 ≤ (u / a) * Real.log (u / a) - (u / a - 1) :=
-      sub_nonneg.mpr (Real.self_sub_one_le_mul_log (le_of_lt (div_pos hu' ha)))
-    have h2 := mul_nonneg (le_of_lt ha) h1
+/-- The loss of the function `u ↦ u * log u` at a cell of value `x` that gives up an amount `t`,
+where `0 < t` and `t ≤ x / 2`, is at most `- t * (log x - log 2 + 1)`: the supporting line of
+`TauCeti.Real.mul_log_sub_mul_log_ge` bounds the loss by `- t * (log (x - t) + 1)`, and
+`x - t ≥ x / 2` bounds `log (x - t)` from below by `log x - log 2`. -/
+private lemma sub_mul_log_le {x t : ℝ} (hx0 : 0 < x) (ht0 : 0 < t) (htx : t ≤ x / 2) :
+    (x - t) * Real.log (x - t) - x * Real.log x ≤ -t * (Real.log x - Real.log 2 + 1) := by
+  have hxt0 : 0 < x - t := by linarith
+  have h1 : x * Real.log x - (x - t) * Real.log (x - t) ≥ t * (Real.log (x - t) + 1) := by
+    have hle := TauCeti.Real.mul_log_sub_mul_log_ge (x - t) x hxt0 (le_of_lt hx0)
     linarith
-  · subst hu0
-    simp only [Real.log_zero, zero_mul]
-    linarith
+  have hhalf : x / 2 ≤ x - t := by
+    calc x / 2 = x - x / 2 := by ring
+      _ ≤ x - t := sub_le_sub_left htx x
+  have h2 : Real.log x - Real.log 2 ≤ Real.log (x - t) := by
+    rw [← Real.log_div (x := x) (y := 2) (ne_of_gt hx0) (by norm_num : (2 : ℝ) ≠ 0)]
+    exact Real.strictMonoOn_log.monotoneOn (a := x / 2) (b := x - t)
+      (div_pos hx0 (by norm_num : (0 : ℝ) < 2)) hxt0 hhalf
+  have h3 := mul_le_mul_of_nonneg_left h2 ht0.le
+  linarith
 
 /-- A minimiser of the relative entropy against `K` has no zero entry, for every matrix `K`: moving
 a sufficiently small positive amount of mass into a zero entry, taken from one entry of the same
@@ -592,10 +706,14 @@ theorem pos_of_relEntropy_minOn (K : Matrix (Fin n) (Fin m) ℝ) (a : Fin n → 
   -- For `0 < t` the perturbation `Q t = P + t * (subIndicator i i' ⊗ subIndicator j j')` moves `t`
   -- into the cell `(i, j)`, takes it from `(i, j')` and `(i', j)`, and adds it at `(i', j')`.
   set Q : ℝ → Matrix (Fin n) (Fin m) ℝ :=
-    fun t x y => P x y + t * (subIndicator i i' x * subIndicator j j' y) with hQ
+    fun t => P + Matrix.vecMulVec (fun x => t * subIndicator i i' x) (subIndicator j j') with hQ
   have hQnonneg : ∀ t, 0 ≤ t → t ≤ min y z → ∀ u v, 0 ≤ Q t u v := by
     intro t ht htmin u v
     rw [hQ]
+    simp only [Matrix.add_apply, Matrix.vecMulVec_apply]
+    have hre : (t * subIndicator i i' u) * subIndicator j j' v
+        = t * (subIndicator i i' u * subIndicator j j' v) := by ring
+    rw [hre]
     exact nonneg_add_subIndicator P i i' j j' hi'ne' hj'ne' t ht
       (le_trans htmin (min_le_left _ _)) (le_trans htmin (min_le_right _ _)) hP u v
   have hQmarg : ∀ t, HasMarginals (Q t) a b := by
@@ -662,40 +780,14 @@ theorem pos_of_relEntropy_minOn (K : Matrix (Fin n) (Fin m) ℝ) (a : Fin n → 
     have h1 : Real.log t ≤ Real.log (Real.exp (-(C + 1))) := by
       exact Real.strictMonoOn_log.monotoneOn ht0 (Real.exp_pos _) htE
     rwa [Real.log_exp] at h1
-  have hhalfy : y / 2 ≤ y - t := by
-    calc y / 2 = y - y / 2 := by ring
-      _ ≤ y - t := sub_le_sub_left hty y
-  have hhalfz : z / 2 ≤ z - t := by
-    calc z / 2 = z - z / 2 := by ring
-      _ ≤ z - t := sub_le_sub_left htz z
   -- The supporting-line inequality bounds the loss at each of the two donor cells and the gain at
   -- the receiving cell.
   have hby : (y - t) * Real.log (y - t) - y * Real.log y
-      ≤ -t * (Real.log y - Real.log 2 + 1) := by
-    have h1 : y * Real.log y - (y - t) * Real.log (y - t)
-        ≥ t * (Real.log (y - t) + 1) := by
-      have hle := mul_log_sub_mul_log_ge (y - t) y hty0 (le_of_lt hy0)
-      linarith
-    have h2 : Real.log y - Real.log 2 ≤ Real.log (y - t) := by
-      rw [← Real.log_div (x := y) (y := 2) (ne_of_gt hy0) (by norm_num : (2 : ℝ) ≠ 0)]
-      exact Real.strictMonoOn_log.monotoneOn (a := y / 2) (b := y - t)
-        (div_pos hy0 (by norm_num : (0 : ℝ) < 2)) hty0 hhalfy
-    have h3 := mul_le_mul_of_nonneg_left h2 ht0.le
-    linarith
+      ≤ -t * (Real.log y - Real.log 2 + 1) := sub_mul_log_le hy0 ht0 hty
   have hbz : (z - t) * Real.log (z - t) - z * Real.log z
-      ≤ -t * (Real.log z - Real.log 2 + 1) := by
-    have h1 : z * Real.log z - (z - t) * Real.log (z - t)
-        ≥ t * (Real.log (z - t) + 1) := by
-      have hle := mul_log_sub_mul_log_ge (z - t) z htz0 (le_of_lt hz0)
-      linarith
-    have h2 : Real.log z - Real.log 2 ≤ Real.log (z - t) := by
-      rw [← Real.log_div (x := z) (y := 2) (ne_of_gt hz0) (by norm_num : (2 : ℝ) ≠ 0)]
-      exact Real.strictMonoOn_log.monotoneOn (a := z / 2) (b := z - t)
-        (div_pos hz0 (by norm_num : (0 : ℝ) < 2)) htz0 hhalfz
-    have h3 := mul_le_mul_of_nonneg_left h2 ht0.le
-    linarith
+      ≤ -t * (Real.log z - Real.log 2 + 1) := sub_mul_log_le hz0 ht0 htz
   have hbq : (q + t) * Real.log (q + t) - q * Real.log q ≤ t * (Real.log (q + 1) + 1) := by
-    have hle := mul_log_sub_mul_log_ge (q + t) q hqt0 hq0
+    have hle := TauCeti.Real.mul_log_sub_mul_log_ge (q + t) q hqt0 hq0
     have h2 : Real.log (q + t) ≤ Real.log (q + 1) :=
       Real.strictMonoOn_log.monotoneOn hqt0 hqt1 (by linarith [ht1])
     have h3 := mul_le_mul_of_nonneg_left h2 ht0.le
