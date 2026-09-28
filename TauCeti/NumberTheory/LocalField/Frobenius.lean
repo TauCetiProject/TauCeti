@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.NumberTheory.LocalField.Teichmuller
+public import TauCeti.RingTheory.RootsOfUnity.LocalRing
 
 /-!
 # Frobenius in unramified local fields
@@ -26,6 +27,8 @@ roots of unity to that same power.
   on a residue element and its `q`-th power agree.
 * `TauCeti.frobeniusAlgEquiv_rootsOfUnity`: on prime-to-residue-characteristic roots of
   unity, arithmetic Frobenius acts by the `q`-th power map.
+* `TauCeti.frobeniusAlgEquiv_apply_of_pow_eq_one`: the same holds for every root of unity whose
+  order is invertible in `𝒪[L]`, not only for the `(q_L − 1)`-st roots of unity.
 
 ## References
 
@@ -78,6 +81,39 @@ theorem frobeniusAlgEquiv_rootsOfUnity [IsUnramified K L]
     map_pow]
   exact (map_pow (algebraMap 𝒪[L] L) (teichmullerLift L (a : 𝓀[L]))
     (Nat.card 𝓀[K])).symm
+
+/-- **Arithmetic Frobenius on roots of unity of order prime to the residue characteristic.** In a
+finite unramified Galois extension `L / K`, if `x ^ n = 1` for an `n` invertible in `𝒪[L]`, then
+`Frob x = x ^ q`, where `q` is the cardinality of the residue field of `K`. -/
+theorem frobeniusAlgEquiv_apply_of_pow_eq_one [IsUnramified K L] {n : ℕ}
+    (hn : IsUnit (n : 𝒪[L])) {x : L} (hx : x ^ n = 1) :
+    frobeniusAlgEquiv (K := K) (L := L) x = x ^ Nat.card 𝓀[K] := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
+  have : NeZero n := ⟨hn0⟩
+  set σ := frobeniusAlgEquiv (K := K) (L := L)
+  -- A root of unity has valuation `1`, so it is integral.
+  have hxv : x ∈ 𝒪[L] := (Valuation.mem_integer_iff _ _).2
+    ((pow_le_one_iff_of_nonneg zero_le hn0).1 (by rw [← map_pow, hx, map_one]))
+  let y : 𝒪[L] := ⟨x, hxv⟩
+  have hy : y ^ n = 1 := Subtype.ext (by simpa [y] using hx)
+  have hσy : σ.integerRingEquiv y ^ n = 1 := by rw [← map_pow, hy, map_one]
+  have hyq : (y ^ Nat.card 𝓀[K]) ^ n = 1 := by rw [← pow_mul, mul_comm, pow_mul, hy, one_pow]
+  -- `Frob y` and `y ^ q` are `n`-th roots of unity with the same residue, so they are equal.
+  have hres : IsLocalRing.residue 𝒪[L] (σ.integerRingEquiv y) =
+      IsLocalRing.residue 𝒪[L] (y ^ Nat.card 𝓀[K]) := by
+    rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff]
+    refine (Valuation.mem_maximalIdeal_iff (v := valuation L)).2 ?_
+    have h := valuation_frobeniusAlgEquiv_sub_pow (K := K) (L := L) y
+    push_cast
+    rw [AlgEquiv.integerRingEquiv_apply, AlgEquiv.coe_smul_integerRing]
+    exact h
+  have heq := rootsOfUnityResidue_injective hn
+    (a₁ := rootsOfUnity.mkOfPowEq _ hσy) (a₂ := rootsOfUnity.mkOfPowEq _ hyq)
+    (by ext; simpa using hres)
+  have := congrArg (fun z : rootsOfUnity n 𝒪[L] ↦ (((z : 𝒪[L]ˣ) : 𝒪[L]) : L)) heq
+  simpa [y] using this
 
 end Teichmuller
 
