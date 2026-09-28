@@ -18,9 +18,8 @@ coefficients. In particular that product has finite support. This is the diagona
 used for the finite support of the Hasse invariant after the local invariant is available at all
 finite places.
 
-`Global.HilbertSymbol` already proves finite support for each localized symbol and registers it
-with `fun_prop` for finite products. Here the coefficient-support bound is made explicit for a
-diagonal product and combined with the existing diagonalization of a regular form.
+The exceptional set is the union of the dyadic places and the primes supporting the diagonal
+coefficients. Every regular global form has a diagonalization with this finite support property.
 
 The good-place calculation follows O'Meara, *Introduction to Quadratic Forms*, 66:6, using the
 unramified norm-equation calculation for each pair of coefficients.
@@ -35,8 +34,7 @@ namespace TauCeti
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- At a finite place where two and every diagonal coefficient are units, every pairwise Hilbert
-symbol, and hence their product, equals one. The pairwise simp lemma already proves this
-conclusion, so `simpNF` rejects a redundant `@[simp]` attribute here. -/
+symbol, and hence their product, equals one. -/
 theorem diagonalHasse_eq_one_of_valuation_eq_one {n : ℕ} (a : Fin n → Kˣ)
     (v : HeightOneSpectrum (𝓞 K)) (h2 : v.valuation K 2 = 1)
     (ha : ∀ i, v.valuation K (a i) = 1) :
@@ -78,11 +76,13 @@ theorem finite_setOf_diagonalHasse_ne_one {n : ℕ} (a : Fin n → Kˣ) :
   by_contra hbad
   exact hv (diagonalHasse_eq_one_of_not_mem_exceptional a hbad)
 
+namespace QuadraticForm
+
 /-- A regular global quadratic form admits one diagonalization whose pairwise local Hasse
 products have finite support, with an explicit finite exceptional set of places. -/
 theorem exists_diagonalization_diagonalHasse_finite_support
     {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
     ∃ p : RegularFormPresentation K, Q.Equivalent (presentedForm p) ∧
       ({v : HeightOneSpectrum (𝓞 K) |
         (∏ ij ∈ univ.filter (fun ij : Fin p.1 × Fin p.1 => ij.1 < ij.2),
@@ -91,5 +91,7 @@ theorem exists_diagonalization_diagonalHasse_finite_support
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   exact ⟨p, hp, finite_setOf_diagonalHasse_ne_one p.2⟩
+
+end QuadraticForm
 
 end TauCeti
