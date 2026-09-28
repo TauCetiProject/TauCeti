@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Index.Basic
 public import TauCeti.NumberTheory.NumberField.IntrinsicLabel
 public import TauCeti.NumberTheory.NumberField.Monogenic
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Basic
+public import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
@@ -19,7 +20,9 @@ For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ =
 `−1` is `3` modulo `4`, so the quadratic-field theory of the radicand presentation applies
 directly: `𝓞 K = ℤ[θ]`, the field is monogenic with index `1`, and `discr K = 4 · (−1) = −4`.
 The negative radicand rules out real places, so the signature is `(0, 1)` and the intrinsic
-label prefix is `2.0.4`.
+label prefix is `2.0.4`. Minkowski's bound `(4/π)^{r₂} · n!/nⁿ · √|discr K|` is `2√4/π < 2`,
+so every ideal class contains an integral ideal of norm `1`: `𝓞 K` is a principal ideal domain
+and the class number is `1`.
 
 ## Main results
 
@@ -29,11 +32,13 @@ label prefix is `2.0.4`.
 * `TauCeti.NumberField.GaussianRationals.isTotallyComplex`, `nrRealPlaces_eq_zero`,
   `nrComplexPlaces_eq_one`: the field is totally complex, of signature `(0, 1)`;
   `hasLMFDBIntrinsicLabel`: the intrinsic label prefix is `2.0.4`.
+* `TauCeti.NumberField.GaussianRationals.isPrincipalIdealRing`, `classNumber_eq_one`: `𝓞 K` is a
+  principal ideal domain, by Mathlib's Minkowski criterion.
 -/
 
 public section
 
-open Polynomial NumberField NumberField.InfinitePlace
+open Polynomial NumberField NumberField.InfinitePlace Nat Real
 open scoped NumberField
 
 namespace TauCeti.NumberField.GaussianRationals
@@ -90,5 +95,24 @@ theorem hasLMFDBIntrinsicLabel (hmin : minpoly ℤ θ = X ^ 2 + 1)
   refine ⟨finrank_eq_two hmin hgen, nrRealPlaces_eq_zero hmin, ?_⟩
   rw [discr_eq_neg_four hmin hgen]
   norm_num
+
+
+/-- **`ℤ[i]` is a principal ideal domain**: Minkowski's bound `(4/π) · (2!/2²) · √4 = 4/π` is
+less than `2`, so every ideal class contains an integral ideal of norm `1`. -/
+theorem isPrincipalIdealRing (hmin : minpoly ℤ θ = X ^ 2 + 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : IsPrincipalIdealRing (𝓞 K) := by
+  apply RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt
+  rw [discr_eq_neg_four hmin hgen, finrank_eq_two hmin hgen, nrComplexPlaces_eq_one hmin hgen]
+  simp only [Int.reduceNeg, abs_neg, Int.cast_abs, Int.cast_ofNat,
+    abs_of_pos (by norm_num : (0 : ℝ) < 4), pow_one, Nat.cast_ofNat, factorial_two]
+  suffices (2 * (3 / 4) * (2 ^ 2 / 2)) ^ 2 < (2 * (π / 4) * (2 ^ 2 / 2)) ^ 2 from
+    lt_trans (by norm_num) this
+  gcongr
+  exact pi_gt_three
+
+/-- The class number of `ℚ(i)` is `1`. -/
+theorem classNumber_eq_one (hmin : minpoly ℤ θ = X ^ 2 + 1)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : classNumber K = 1 :=
+  classNumber_eq_one_iff.mpr (isPrincipalIdealRing hmin hgen)
 
 end TauCeti.NumberField.GaussianRationals
