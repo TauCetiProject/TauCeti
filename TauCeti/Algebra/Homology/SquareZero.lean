@@ -157,6 +157,27 @@ theorem homologyMap_comp (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ 
   obtain ⟨z, rfl⟩ := d.homologyπ_surjective hd c
   simp only [homologyπ_apply, homologyMap_mk, comp_apply]
 
+/-- The composite of two induced maps on homology is the map induced by the composite. This is
+`homologyMap_comp` read right to left, the orientation usable by `simp`: its left-hand side
+mentions the intermediate differential `e`, which the left-hand side of `homologyMap_comp` does
+not. -/
+@[simp]
+theorem homologyMap_comp_homologyMap (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₗ d = e ∘ₗ f)
+    (hg : g ∘ₗ e = q ∘ₗ g) :
+    homologyMap g he hq hg ∘ₗ homologyMap f hd he hf =
+      homologyMap (g ∘ₗ f) hd hq (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) :=
+  (homologyMap_comp g f hd he hq hf hg).symm
+
+/-- Applying two induced maps on homology in turn is applying the map induced by the composite. -/
+@[simp]
+theorem homologyMap_homologyMap (g : N →ₗ[S] P) (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₗ d = e ∘ₗ f)
+    (hg : g ∘ₗ e = q ∘ₗ g) (c : d.homology hd) :
+    homologyMap g he hq hg (homologyMap f hd he hf c) =
+      homologyMap (g ∘ₗ f) hd hq (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) c :=
+  congr($(homologyMap_comp_homologyMap g f hd he hq hf hg) c)
+
 /-- The map induced by `f` on homology is surjective exactly when every cycle of `e` differs from
 the image of a cycle of `d` by a boundary. -/
 theorem homologyMap_surjective_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
