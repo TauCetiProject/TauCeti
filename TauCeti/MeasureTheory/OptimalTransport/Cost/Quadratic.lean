@@ -58,7 +58,7 @@ theorem isCyclicallyMonotone_norm_sub_sq_div_two_iff_sum_inner_le (S : Set (E ×
 
 /-- Two points in a cyclically monotone set for quadratic cost form a monotone pair:
 their source and target differences have nonnegative inner product. -/
-theorem inner_sub_nonneg_of_isCyclicallyMonotone_norm_sub_sq_div_two {S : Set (E × E)}
+theorem inner_sub_sub_nonneg_of_isCyclicallyMonotone_norm_sub_sq_div_two {S : Set (E × E)}
     (hS : IsCyclicallyMonotone (fun p : E × E ↦ ‖p.1 - p.2‖ ^ 2 / 2) S)
     {x₁ x₂ y₁ y₂ : E} (h₁ : (x₁, y₁) ∈ S) (h₂ : (x₂, y₂) ∈ S) :
     0 ≤ ⟪x₁ - x₂, y₁ - y₂⟫_ℝ := by
