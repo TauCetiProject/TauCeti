@@ -66,20 +66,18 @@ variable {X : Type u} [TopologicalSpace X] {Y : Type v} [TopologicalSpace Y]
 top face `{1} × X` of the cylinder is replaced by its image in `Y`, and every other point is
 left alone.  Two points of `I × X ⊕ Y` have the same normal form exactly when the gluing of the
 mapping cylinder identifies them, which is how the mapping cylinder is defined below. -/
-def cylinderNormalize (f : C(X, Y)) (a : I × X ⊕ Y) : I × X ⊕ Y :=
+private def cylinderNormalize (f : C(X, Y)) (a : I × X ⊕ Y) : I × X ⊕ Y :=
   a.elim (fun p => if p.1 = 1 then .inr (f p.2) else .inl p) .inr
 
 /-- The **mapping cylinder** of `f : C(X, Y)`: the cylinder `I × X` glued to `Y` along the map
 sending `(1, x)` to `f x`.
 
-The presentation as a quotient is exposed because it is what the structure maps
-`TauCeti.MappingCylinder.mkCyl` and `TauCeti.MappingCylinder.mkBase` and the universal property
-`TauCeti.MappingCylinder.lift` compute with.  Consumers need not use it: points of the mapping
-cylinder come from `TauCeti.MappingCylinder.mkCyl` and `TauCeti.MappingCylinder.mkBase`, maps out
-of it from `TauCeti.MappingCylinder.lift`, equalities of such maps from
-`TauCeti.MappingCylinder.hom_ext`, and statements about all of its points from
-`TauCeti.MappingCylinder.ind`. -/
-@[expose]
+The presentation as a quotient is private to this file and is not part of the public interface:
+points of the mapping cylinder come from `TauCeti.MappingCylinder.mkCyl` and
+`TauCeti.MappingCylinder.mkBase`, which points they identify from
+`TauCeti.MappingCylinder.mkCyl_eq_mkCyl_iff` and its companions, maps out of it from
+`TauCeti.MappingCylinder.lift`, equalities of such maps from `TauCeti.MappingCylinder.hom_ext`,
+and statements about all of its points from `TauCeti.MappingCylinder.ind`. -/
 def MappingCylinder (f : C(X, Y)) : Type max u v :=
   Quotient (Setoid.ker (cylinderNormalize f))
 
@@ -87,7 +85,10 @@ namespace MappingCylinder
 
 variable {f : C(X, Y)}
 
-instance : TopologicalSpace (MappingCylinder f) :=
+/-! The topology is transported from the private quotient; the instance is `@[no_expose]`, which
+is what lets its body name the private constant. -/
+
+@[no_expose] instance : TopologicalSpace (MappingCylinder f) :=
   inferInstanceAs (TopologicalSpace (Quotient (Setoid.ker (cylinderNormalize f))))
 
 /-- The point of the mapping cylinder of `f` represented by a point of the cylinder `I × X`. -/
