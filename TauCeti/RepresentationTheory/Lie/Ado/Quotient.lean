@@ -39,8 +39,8 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- If an algebra map kills a power of the central augmentation ideal, then it sends every
-adjoint-nilpotent Lie element to a nilpotent element. -/
+/-- In exponential characteristic `p ≠ 1`, if an algebra map kills a power of the central
+augmentation ideal, then it sends every adjoint-nilpotent Lie element to a nilpotent element. -/
 theorem isNilpotent_map_ι_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp : p ≠ 1)
     (q : U →ₐ[R] A) (n : ℕ)
     (hq : ∀ z ∈ HopfIdeal.centralAugmentationIdeal R U ^ n, q z = 0)
@@ -52,8 +52,8 @@ theorem isNilpotent_map_ι_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp : p ≠
   rw [← map_pow]
   exact hq _ (he n)
 
-/-- In the quotient by the `n`-th power of the central augmentation ideal, every
-adjoint-nilpotent Lie element has nilpotent image. -/
+/-- In exponential characteristic `p ≠ 1`, every adjoint-nilpotent Lie element has nilpotent
+image in the quotient by the `n`-th power of the central augmentation ideal. -/
 theorem isNilpotent_quotient_ι_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp : p ≠ 1)
     (n : ℕ) {x : L} (hx : IsNilpotent (LieAlgebra.ad R L x)) :
     IsNilpotent (Ideal.Quotient.mk (HopfIdeal.centralAugmentationIdeal R U ^ n)
@@ -62,15 +62,15 @@ theorem isNilpotent_quotient_ι_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp : 
     (Ideal.Quotient.mkₐ R (HopfIdeal.centralAugmentationIdeal R U ^ n)) n
     (fun z hz => Ideal.Quotient.eq_zero_iff_mem.mpr hz) hx
 
-/-- The left-regular Lie representation of such a target acts nilpotently on every
-adjoint-nilpotent Lie element. -/
+/-- In exponential characteristic `p ≠ 1`, the left-regular Lie representation of such a target
+acts nilpotently on every adjoint-nilpotent Lie element. -/
 theorem isNilpotent_leftRegularRep_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp : p ≠ 1)
     (q : U →ₐ[R] A) (n : ℕ)
     (hq : ∀ z ∈ HopfIdeal.centralAugmentationIdeal R U ^ n, q z = 0)
     {x : L} (hx : IsNilpotent (LieAlgebra.ad R L x)) :
     IsNilpotent (LieHom.leftRegularRep
       (((q : U →ₗ⁅R⁆ A).comp (_root_.UniversalEnvelopingAlgebra.ι R))) x) := by
-  exact LieHom.isNilpotent_leftRegularRep _
+  exact (LieHom.isNilpotent_leftRegularRep_iff _ _).2
     (isNilpotent_map_ι_of_isNilpotent_ad R L p hp q n hq hx)
 
 end TauCeti.UniversalEnvelopingAlgebra
