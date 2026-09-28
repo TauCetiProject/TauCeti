@@ -103,8 +103,7 @@ theorem map_powMonoidHom_unitFiltration_succ_of_isUnit {n : ℕ} (hn : IsUnit (n
   have hnK := natCast_ne_zero_of_isUnit hn
   have hv := natCastValuation_eq_zero_of_isUnit K hnK hn
   simpa [hv] using map_powMonoidHom_unitFiltration hnK (i := i + 1) fun p hp hpK hpn ↦
-    (natCastValuation_le_of_dvd K hpK hnK hpn).trans_lt
-      (hv ▸ Nat.mul_pos (Nat.sub_pos_of_lt hp.one_lt) i.succ_pos)
+    natCastValuation_lt_sub_one_mul_of_dvd_of_lt hnK (hv ▸ i.succ_pos) hp hpK hpn
 
 /-- For `n` invertible in `𝒪[K]`, every principal unit of `K` is an `n`-th power. -/
 theorem unitFiltration_one_le_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
@@ -215,9 +214,8 @@ theorem disjoint_rootsOfUnity_unitFiltration_one_of_isUnit {n : ℕ} (hn : IsUni
     Disjoint (rootsOfUnity n K) (unitFiltration K 1) := by
   have hnK := natCast_ne_zero_of_isUnit hn
   exact disjoint_rootsOfUnity_unitFiltration hnK fun p hp hpK hpn ↦
-    (natCastValuation_le_of_dvd K hpK hnK hpn).trans_lt
-      (natCastValuation_eq_zero_of_isUnit K hnK hn ▸ Nat.mul_pos (Nat.sub_pos_of_lt hp.one_lt)
-        Nat.one_pos)
+    natCastValuation_lt_sub_one_mul_of_dvd_of_lt hnK
+      (natCastValuation_eq_zero_of_isUnit K hnK hn ▸ Nat.one_pos) hp hpK hpn
 
 /-- For `n` invertible in `𝒪[K]`, the `n`-th power map is a bijection of each positive-depth step
 `U(K,i+1)` of the unit filtration. -/
@@ -281,11 +279,10 @@ theorem card_powerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
   -- `U(K,v+1)` has finite index in `U(K,0)`.
   have : (unitFiltration K (v + 1)).IsFiniteRelIndex G :=
     (unitFiltration_isFiniteRelIndex_succ (v + 1) 0).trans unitFiltration_one_isFiniteRelIndex_zero
-  -- Every prime `p ∣ n` has `v_K(p) ≤ v < (p - 1) (v + 1)`.
+  -- Every prime `p ∣ n` has `v_K(p) < (p - 1) (v + 1)`.
   have hdepth : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
       natCastValuation K p hpK < (p - 1) * (v + 1) := fun p hp hpK hpn ↦
-    (natCastValuation_le_of_dvd K hpK hn hpn).trans_lt <|
-      (Nat.lt_succ_self v).trans_le (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt hp.one_lt))
+    natCastValuation_lt_sub_one_mul_of_dvd_of_lt hn (Nat.lt_succ_self v) hp hpK hpn
   -- On `U(K,v+1)` the `n`-th power map is injective with image `U(K,2v+1)`.
   have hkerU : Nat.card (powMonoidHom n : U →* U).ker = 1 := by
     rw [Subgroup.card_eq_one, eq_bot_iff]

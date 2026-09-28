@@ -121,11 +121,10 @@ only characteristic two itself is excluded. -/
 theorem unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     unitFiltration K (2 * natCastValuation K 2 h2 + 1) ≤
       (powMonoidHom 2 : Kˣ →* Kˣ).range := by
-  have h := map_powMonoidHom_unitFiltration_of_prime Nat.prime_two h2
-    (i := natCastValuation K 2 h2 + 1) (by omega)
   rw [show 2 * natCastValuation K 2 h2 + 1 = natCastValuation K 2 h2 + 1 + natCastValuation K 2 h2
-    by omega, ← h]
-  exact Subgroup.map_le_range _ _
+    by omega]
+  exact unitFiltration_le_range_powMonoidHom h2 fun p hp hpK hpn ↦
+    natCastValuation_lt_sub_one_mul_of_dvd_of_lt h2 (Nat.lt_succ_self _) hp hpK hpn
 
 /-- A unit `w = 1 + 4m` is a square if the residue of `m` lies in the range of
 `t ↦ t² + t`. -/
