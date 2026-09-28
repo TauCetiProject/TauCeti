@@ -63,7 +63,8 @@ definition, so a caller holding `powerBoundedSubring A` can use them.
   generated lattice is cofinal in the one built from `M₀`. This is one direction of the comparison
   behind Remark 6.19's well-definedness in the lattice.
 * `TauCeti.Huber.PairOfDefinition.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer`: the
-  filtrations of one lattice by two pseudouniformisers are cofinal.
+  filtrations of one lattice by two pseudouniformisers are cofinal (one of the two scalars need
+  only be a unit).
 * `TauCeti.Huber.PairOfDefinition.submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer`:
   changing the pseudouniformiser does not change the topology induced by a fixed spanning lattice.
 * `TauCeti.Huber.PairOfDefinition.submodulesBasis_pow_smul_topology_eq`: two finitely
@@ -341,17 +342,21 @@ theorem exists_pow_smul_le_pow_smul (P : PairOfDefinition A) {s : A}
 /-- **The filtrations defined by two pseudouniformisers are cofinal.** For every `sⁿ • M₀`,
 some `tᵏ • M₀` is contained in it.
 
-Indeed, `tᵏ A₀ ⊆ sⁿ A₀` for some `k`, because both families are neighbourhood bases of zero
-in `A`. Multiplying this inclusion by `M₀` gives the result. No finite-generation or spanning
-hypothesis on `M₀` is needed. -/
+Indeed, `sⁿ A₀` is a neighbourhood of zero because `s` is a unit, and the `tᵏ A₀` form a
+neighbourhood basis of zero in `A` because `t` is a pseudouniformiser, so `tᵏ A₀ ⊆ sⁿ A₀` for
+some `k`. Multiplying this inclusion by `M₀` gives the result. Only `t` need be a
+pseudouniformiser, and no finite-generation or spanning hypothesis on `M₀` is needed. -/
 theorem exists_pow_smul_le_pow_smul_of_isPseudoUniformizer (P : PairOfDefinition A) {s t : A}
-    (hs : IsPseudoUniformizer s) (ht : IsPseudoUniformizer t)
+    (hs : IsUnit s) (ht : IsPseudoUniformizer t)
     (hs0 : s ∈ P.ringOfDefinition) (ht0 : t ∈ P.ringOfDefinition)
     (M₀ : Submodule P.ringOfDefinition M) (n : ℕ) :
     ∃ k : ℕ, (⟨t, ht0⟩ : P.ringOfDefinition) ^ k • M₀
       ≤ (⟨s, hs0⟩ : P.ringOfDefinition) ^ n • M₀ := by
-  obtain ⟨k, -, hk⟩ := (ht.hasBasis_nhds_zero P).mem_iff.mp
-    (hs.smul_ringOfDefinition_mem_nhds_zero P n)
+  have hsn : (s ^ n) • (P.ringOfDefinition : Set A) ∈ 𝓝 (0 : A) := by
+    have h := (hs.pow n).smul_mem_nhds_smul_iff (s := (P.ringOfDefinition : Set A)) (a := (0 : A))
+    rw [smul_zero] at h
+    exact h.mpr (P.isOpen_ringOfDefinition.mem_nhds P.ringOfDefinition.zero_mem)
+  obtain ⟨k, -, hk⟩ := (ht.hasBasis_nhds_zero P).mem_iff.mp hsn
   have htk : t ^ k ∈ (s ^ n) • (P.ringOfDefinition : Set A) :=
     hk (Set.mem_smul_set.mpr ⟨1, P.ringOfDefinition.one_mem, by simp⟩)
   obtain ⟨a, ha, hsa⟩ := Set.mem_smul_set.mp htk
@@ -377,8 +382,8 @@ theorem submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer (P : PairOfD
       = (P.submodulesBasis_pow_smul ht ht0 M₀ hspan).topology :=
   (P.submodulesBasis_pow_smul hs hs0 M₀ hspan).topology_eq
     (P.submodulesBasis_pow_smul ht ht0 M₀ hspan)
-    (P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer hs ht hs0 ht0 M₀)
-    (P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer ht hs ht0 hs0 M₀)
+    (P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer hs.isUnit ht hs0 ht0 M₀)
+    (P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer ht.isUnit hs ht0 hs0 M₀)
 
 /-- **The induced topology does not depend on the lattice or the pseudouniformiser.** Two finitely
 generated `A₀`-submodules that each span `M` over `A`, filtered by any two pseudouniformisers in
@@ -410,13 +415,13 @@ theorem submodulesBasis_pow_smul_topology_eq (P : PairOfDefinition A) {s t : A}
     obtain ⟨j, hj⟩ := P.exists_pow_smul_le_pow_smul hs.isTopologicallyNilpotent hs0 M₀ M₁
       (by rw [hspan₀]; exact fun _ _ ↦ Submodule.mem_top) hfg₁ n
     obtain ⟨k, hk⟩ :=
-      P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer hs ht hs0 ht0 M₁ j
+      P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer hs.isUnit ht hs0 ht0 M₁ j
     exact ⟨k, hk.trans hj⟩
   · intro n
     obtain ⟨j, hj⟩ := P.exists_pow_smul_le_pow_smul ht.isTopologicallyNilpotent ht0 M₁ M₀
       (by rw [hspan₁]; exact fun _ _ ↦ Submodule.mem_top) hfg₀ n
     obtain ⟨k, hk⟩ :=
-      P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer ht hs ht0 hs0 M₀ j
+      P.exists_pow_smul_le_pow_smul_of_isPseudoUniformizer ht.isUnit hs ht0 hs0 M₀ j
     exact ⟨k, hk.trans hj⟩
 
 end TauCeti.Huber.PairOfDefinition
