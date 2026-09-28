@@ -38,24 +38,24 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} (Phi : Fan i) (S : Set (PointedCone ℝ V)) (hS : S ⊆ Phi.cones)
   (hface : ∀ ⦃sigma tau⦄, sigma ∈ S → tau.IsFaceOf sigma → tau ∈ S)
 
-/-- The affine chart of a subfan cone maps identically to the corresponding chart of the
-ambient fan. -/
-noncomputable def subfanAnalyticChartMap (hPhi : Phi.IsRegular)
-    (sigma : (Phi.subfan S hS hface).cones) :
+/-- The identity map from the affine chart of a subfan cone to the chart of an ambient cone with
+the same underlying cone. The ambient cone is generalized so that the identification with
+`subfanCone` enters only through `coe_subfanCone`. -/
+private noncomputable def subfanAnalyticChartMapAux (hPhi : Phi.IsRegular)
+    (sigma : (Phi.subfan S hS hface).cones) (c : Phi.cones)
+    (hc : (c : PointedCone ℝ V) = sigma) :
     ((Phi.subfan S hS hface).analyticAffineChartDiagram
-      (hPhi.subfan S hS hface)).obj sigma ⟶
-      (Phi.analyticAffineChartDiagram hPhi).obj
-        (Phi.subfanCone S hS hface sigma) := by
+      (hPhi.subfan S hS hface)).obj sigma ⟶ (Phi.analyticAffineChartDiagram hPhi).obj c := by
+  obtain ⟨c, hcmem⟩ := c
+  dsimp only at hc
+  subst hc
   rw [analyticAffineChartDiagram_obj, analyticAffineChartDiagram_obj]
   unfold analyticAffineChart
   rw [subfan_lattice Phi S hS hface]
-  unfold subfanCone
   let gsource := analyticChartGenerators (Phi.subfan S hS hface) sigma
     ((isRegular_iff.mp (hPhi.subfan S hS hface)) sigma.1 sigma.2)
-  let gtarget := analyticChartGenerators Phi
-    (Phi.subfanCone S hS hface sigma)
-    ((isRegular_iff.mp hPhi) sigma.1
-      (Phi.subfanCone S hS hface sigma).2)
+  let gtarget := analyticChartGenerators Phi ⟨sigma.1, hcmem⟩
+    ((isRegular_iff.mp hPhi) sigma.1 hcmem)
   let T := AffineSemigroupComplexPoint (dualSemigroup Phi.lattice sigma.1)
   refine @TopCat.ofHom T T (affinePointTopology gsource.2)
     (affinePointTopology gtarget.2)
@@ -64,21 +64,22 @@ noncomputable def subfanAnalyticChartMap (hPhi : Phi.IsRegular)
   rw [affinePointTopology_eq gsource.2 gtarget.2]
   exact @continuous_id T (affinePointTopology gtarget.2)
 
-private noncomputable def subfanAnalyticChartMapInv (hPhi : Phi.IsRegular)
-    (sigma : (Phi.subfan S hS hface).cones) :
-    (Phi.analyticAffineChartDiagram hPhi).obj (Phi.subfanCone S hS hface sigma) ⟶
+private noncomputable def subfanAnalyticChartMapInvAux (hPhi : Phi.IsRegular)
+    (sigma : (Phi.subfan S hS hface).cones) (c : Phi.cones)
+    (hc : (c : PointedCone ℝ V) = sigma) :
+    (Phi.analyticAffineChartDiagram hPhi).obj c ⟶
       ((Phi.subfan S hS hface).analyticAffineChartDiagram
         (hPhi.subfan S hS hface)).obj sigma := by
+  obtain ⟨c, hcmem⟩ := c
+  dsimp only at hc
+  subst hc
   rw [analyticAffineChartDiagram_obj, analyticAffineChartDiagram_obj]
   unfold analyticAffineChart
   rw [subfan_lattice Phi S hS hface]
-  unfold subfanCone
   let gtarget := analyticChartGenerators (Phi.subfan S hS hface) sigma
     ((isRegular_iff.mp (hPhi.subfan S hS hface)) sigma.1 sigma.2)
-  let gsource := analyticChartGenerators Phi
-    ⟨sigma.1, hS (by simpa only [subfan_cones] using sigma.2)⟩
-    ((isRegular_iff.mp hPhi) sigma.1
-      (hS (by simpa only [subfan_cones] using sigma.2)))
+  let gsource := analyticChartGenerators Phi ⟨sigma.1, hcmem⟩
+    ((isRegular_iff.mp hPhi) sigma.1 hcmem)
   let T := AffineSemigroupComplexPoint (dualSemigroup Phi.lattice sigma.1)
   refine @TopCat.ofHom T T (affinePointTopology gsource.2)
     (affinePointTopology gtarget.2)
@@ -86,6 +87,34 @@ private noncomputable def subfanAnalyticChartMapInv (hPhi : Phi.IsRegular)
         (affinePointTopology gtarget.2) id ?_)
   rw [affinePointTopology_eq gsource.2 gtarget.2]
   exact @continuous_id T (affinePointTopology gtarget.2)
+
+private noncomputable def subfanAnalyticChartIsoAux (hPhi : Phi.IsRegular)
+    (sigma : (Phi.subfan S hS hface).cones) (c : Phi.cones)
+    (hc : (c : PointedCone ℝ V) = sigma) :
+    ((Phi.subfan S hS hface).analyticAffineChartDiagram
+      (hPhi.subfan S hS hface)).obj sigma ≅ (Phi.analyticAffineChartDiagram hPhi).obj c where
+  hom := Phi.subfanAnalyticChartMapAux S hS hface hPhi sigma c hc
+  inv := Phi.subfanAnalyticChartMapInvAux S hS hface hPhi sigma c hc
+  hom_inv_id := by
+    obtain ⟨c, hcmem⟩ := c
+    dsimp only at hc
+    subst hc
+    exact TopCat.ext fun _ ↦ rfl
+  inv_hom_id := by
+    obtain ⟨c, hcmem⟩ := c
+    dsimp only at hc
+    subst hc
+    exact TopCat.ext fun _ ↦ rfl
+
+/-- The affine chart of a subfan cone maps identically to the corresponding chart of the
+ambient fan. -/
+noncomputable def subfanAnalyticChartMap (hPhi : Phi.IsRegular)
+    (sigma : (Phi.subfan S hS hface).cones) :
+    ((Phi.subfan S hS hface).analyticAffineChartDiagram
+      (hPhi.subfan S hS hface)).obj sigma ⟶
+      (Phi.analyticAffineChartDiagram hPhi).obj
+        (Phi.subfanCone S hS hface sigma) :=
+  Phi.subfanAnalyticChartMapAux S hS hface hPhi sigma _ (Phi.coe_subfanCone S hS hface sigma)
 
 /-- The affine chart of a subfan is canonically isomorphic to the corresponding ambient chart. -/
 noncomputable def subfanAnalyticChartIso (hPhi : Phi.IsRegular)
@@ -94,23 +123,41 @@ noncomputable def subfanAnalyticChartIso (hPhi : Phi.IsRegular)
       (hPhi.subfan S hS hface)).obj sigma ≅
       (Phi.analyticAffineChartDiagram hPhi).obj (Phi.subfanCone S hS hface sigma) where
   hom := Phi.subfanAnalyticChartMap S hS hface hPhi sigma
-  inv := Phi.subfanAnalyticChartMapInv S hS hface hPhi sigma
-  hom_inv_id := by
-    apply TopCat.ext
-    intro x
-    unfold subfanAnalyticChartMap subfanAnalyticChartMapInv
-    rfl
-  inv_hom_id := by
-    apply TopCat.ext
-    intro x
-    unfold subfanAnalyticChartMap subfanAnalyticChartMapInv
-    rfl
+  inv := (Phi.subfanAnalyticChartIsoAux S hS hface hPhi sigma _
+    (Phi.coe_subfanCone S hS hface sigma)).inv
+  hom_inv_id := (Phi.subfanAnalyticChartIsoAux S hS hface hPhi sigma _
+    (Phi.coe_subfanCone S hS hface sigma)).hom_inv_id
+  inv_hom_id := (Phi.subfanAnalyticChartIsoAux S hS hface hPhi sigma _
+    (Phi.coe_subfanCone S hS hface sigma)).inv_hom_id
 
 /-- The identity map from a subfan chart to its ambient chart is an open embedding. -/
 theorem isOpenEmbedding_subfanAnalyticChartMap (hPhi : Phi.IsRegular)
     (sigma : (Phi.subfan S hS hface).cones) :
     IsOpenEmbedding (Phi.subfanAnalyticChartMap S hS hface hPhi sigma) :=
   (TopCat.homeoOfIso (Phi.subfanAnalyticChartIso S hS hface hPhi sigma)).isOpenEmbedding
+
+private theorem analyticFaceMap_comp_subfanAnalyticChartMapAux (hPhi : Phi.IsRegular)
+    {tau sigma : (Phi.subfan S hS hface).cones} (f : tau ⟶ sigma) (c d : Phi.cones)
+    (hc : (c : PointedCone ℝ V) = tau) (hd : (d : PointedCone ℝ V) = sigma) (hcd : c ≤ d) :
+    (Phi.subfan S hS hface).analyticFaceMap
+        ((isRegular_iff.mp (hPhi.subfan S hS hface)) tau.1 tau.2)
+        ((isRegular_iff.mp (hPhi.subfan S hS hface)) sigma.1 sigma.2) f ≫
+      Phi.subfanAnalyticChartMapAux S hS hface hPhi sigma d hd =
+    Phi.subfanAnalyticChartMapAux S hS hface hPhi tau c hc ≫
+      Phi.analyticFaceMap ((isRegular_iff.mp hPhi) c.1 c.2) ((isRegular_iff.mp hPhi) d.1 d.2)
+        (homOfLE hcd) := by
+  obtain ⟨c, hcmem⟩ := c
+  obtain ⟨d, hdmem⟩ := d
+  dsimp only at hc hd
+  subst hc hd
+  apply TopCat.ext
+  intro x
+  erw [TopCat.comp_app, TopCat.comp_app]
+  unfold subfanAnalyticChartMapAux
+  erw [analyticFaceMap_apply]
+  rw [subfan_lattice Phi S hS hface]
+  erw [Phi.analyticFaceMap_apply]
+  rfl
 
 /-- The identity maps from subfan charts to ambient charts commute with face maps. -/
 @[reassoc]
@@ -122,19 +169,10 @@ theorem analyticFaceMap_comp_subfanAnalyticChartMap (hPhi : Phi.IsRegular)
       Phi.subfanAnalyticChartMap S hS hface hPhi sigma =
     Phi.subfanAnalyticChartMap S hS hface hPhi tau ≫
       Phi.analyticFaceMap
-        ((isRegular_iff.mp hPhi) tau.1
-          (Phi.subfanCone S hS hface tau).2)
-        ((isRegular_iff.mp hPhi) sigma.1
-          (Phi.subfanCone S hS hface sigma).2)
-        (homOfLE (leOfHom f)) := by
-  apply TopCat.ext
-  intro x
-  erw [TopCat.comp_app, TopCat.comp_app]
-  unfold subfanAnalyticChartMap
-  erw [analyticFaceMap_apply]
-  rw [subfan_lattice Phi S hS hface]
-  erw [Phi.analyticFaceMap_apply]
-  rfl
+        ((isRegular_iff.mp hPhi) _ (Phi.subfanCone S hS hface tau).2)
+        ((isRegular_iff.mp hPhi) _ (Phi.subfanCone S hS hface sigma).2)
+        (homOfLE ((Phi.subfanCone_le_subfanCone S hS hface).2 (leOfHom f))) :=
+  Phi.analyticFaceMap_comp_subfanAnalyticChartMapAux S hS hface hPhi f _ _ _ _ _
 
 /-- The identity maps from subfan charts to ambient charts form a natural transformation of
 affine-chart diagrams. -/
@@ -146,7 +184,7 @@ theorem analyticAffineChartDiagram_map_comp_subfanAnalyticChartMap (hPhi : Phi.I
       Phi.subfanAnalyticChartMap S hS hface hPhi sigma =
     Phi.subfanAnalyticChartMap S hS hface hPhi tau ≫
       (Phi.analyticAffineChartDiagram hPhi).map
-        (homOfLE (leOfHom f)) := by
+        (homOfLE ((Phi.subfanCone_le_subfanCone S hS hface).2 (leOfHom f))) := by
   rw [(Phi.subfan S hS hface).analyticAffineChartDiagram_map,
     Phi.analyticAffineChartDiagram_map]
   exact Phi.analyticFaceMap_comp_subfanAnalyticChartMap S hS hface hPhi f
@@ -168,15 +206,16 @@ theorem analyticFaceMap_comp_subfanAnalyticChartMap_comp_analyticAffineChartι
   calc
     _ = Phi.subfanAnalyticChartMap S hS hface hPhi tau ≫
         Phi.analyticFaceMap
-          ((isRegular_iff.mp hPhi) tau.1 (Phi.subfanCone S hS hface tau).2)
-          ((isRegular_iff.mp hPhi) sigma.1 (Phi.subfanCone S hS hface sigma).2)
-          (homOfLE (leOfHom f)) ≫
+          ((isRegular_iff.mp hPhi) _ (Phi.subfanCone S hS hface tau).2)
+          ((isRegular_iff.mp hPhi) _ (Phi.subfanCone S hS hface sigma).2)
+          (homOfLE ((Phi.subfanCone_le_subfanCone S hS hface).2 (leOfHom f))) ≫
         Phi.analyticAffineChartι hPhi (Phi.subfanCone S hS hface sigma) :=
       Phi.analyticFaceMap_comp_subfanAnalyticChartMap_assoc S hS hface hPhi f _
     _ = _ := by
       have h := Phi.analyticFaceMap_comp_analyticAffineChartι hPhi
         (τ := Phi.subfanCone S hS hface tau)
-        (σ := Phi.subfanCone S hS hface sigma) (homOfLE (leOfHom f))
+        (σ := Phi.subfanCone S hS hface sigma)
+        (homOfLE ((Phi.subfanCone_le_subfanCone S hS hface).2 (leOfHom f)))
       convert congrArg
         (fun g ↦ Phi.subfanAnalyticChartMap S hS hface hPhi tau ≫ g) h using 1
       all_goals rfl
@@ -279,21 +318,23 @@ theorem analyticAffineChartι_comp_subfanAnalyticMap (hPhi : Phi.IsRegular)
   rw [analyticAffineChartι_def]
   apply Multicoequalizer.π_desc
 
-/-- A subfan face map, applied to a point pulled back along the chart identification, is carried by
+/-- A subfan face map, applied to a point pulled back along a chart identification, is carried by
 the chart identification to the corresponding ambient face map. -/
 private theorem subfanAnalyticChartMap_map_inv_apply (hPhi : Phi.IsRegular)
-    {tau sigma : (Phi.subfan S hS hface).cones} (f : tau ⟶ sigma)
-    (z : (Phi.analyticAffineChartDiagram hPhi).obj (Phi.subfanCone S hS hface tau)) :
+    {tau sigma : (Phi.subfan S hS hface).cones} (f : tau ⟶ sigma) (c : Phi.cones)
+    (hc : (c : PointedCone ℝ V) = tau) (hcs : c ≤ Phi.subfanCone S hS hface sigma)
+    (z : (Phi.analyticAffineChartDiagram hPhi).obj c) :
     Phi.subfanAnalyticChartMap S hS hface hPhi sigma
         (((Phi.subfan S hS hface).analyticAffineChartDiagram (hPhi.subfan S hS hface)).map f
-          ((Phi.subfanAnalyticChartIso S hS hface hPhi tau).inv z)) =
-      (Phi.analyticAffineChartDiagram hPhi).map (homOfLE (leOfHom f)) z := by
+          ((Phi.subfanAnalyticChartIsoAux S hS hface hPhi tau c hc).inv z)) =
+      (Phi.analyticAffineChartDiagram hPhi).map (homOfLE hcs) z := by
   have hnat := ConcreteCategory.congr_hom
-    (Phi.analyticAffineChartDiagram_map_comp_subfanAnalyticChartMap S hS hface hPhi f)
-    ((Phi.subfanAnalyticChartIso S hS hface hPhi tau).inv z)
-  rw [TopCat.comp_app, TopCat.comp_app] at hnat
+    (Phi.analyticFaceMap_comp_subfanAnalyticChartMapAux S hS hface hPhi f c _ hc
+      (Phi.coe_subfanCone S hS hface sigma) hcs)
+    ((Phi.subfanAnalyticChartIsoAux S hS hface hPhi tau c hc).inv z)
+  rw [(Phi.subfan S hS hface).analyticAffineChartDiagram_map, Phi.analyticAffineChartDiagram_map]
   exact hnat.trans (congrArg _
-    (TopCat.inv_hom_id_apply (Phi.subfanAnalyticChartIso S hS hface hPhi tau) z))
+    (TopCat.inv_hom_id_apply (Phi.subfanAnalyticChartIsoAux S hS hface hPhi tau c hc) z))
 
 /-- The analytic realization map induced by a subfan inclusion is injective. -/
 theorem subfanAnalyticMap_injective (hPhi : Phi.IsRegular) :
@@ -317,15 +358,18 @@ theorem subfanAnalyticMap_injective (hPhi : Phi.IsRegular) :
       (τ := Phi.subfanCone S hS hface tau)
       (Phi.subfanAnalyticChartMap S hS hface hPhi sigma a)
       (Phi.subfanAnalyticChartMap S hS hface hPhi tau b)).1 hxy
-  refine ⟨(Phi.subfanAnalyticChartIso S hS hface hPhi (sigma ⊓ tau)).inv z, ?_, ?_⟩
+  have hc : ((Phi.subfanCone S hS hface sigma ⊓ Phi.subfanCone S hS hface tau : Phi.cones) :
+      PointedCone ℝ V) = (sigma ⊓ tau : (Phi.subfan S hS hface).cones) := by
+    rw [← subfanCone_inf, coe_subfanCone]
+  refine ⟨(Phi.subfanAnalyticChartIsoAux S hS hface hPhi (sigma ⊓ tau) _ hc).inv z, ?_, ?_⟩
   · apply (Phi.isOpenEmbedding_subfanAnalyticChartMap S hS hface hPhi sigma).injective
     rw [analyticOverlapLeft_def] at hza ⊢
     exact (Phi.subfanAnalyticChartMap_map_inv_apply S hS hface hPhi
-      (homOfLE inf_le_left : sigma ⊓ tau ⟶ sigma) z).trans hza
+      (homOfLE inf_le_left : sigma ⊓ tau ⟶ sigma) _ hc inf_le_left z).trans hza
   · apply (Phi.isOpenEmbedding_subfanAnalyticChartMap S hS hface hPhi tau).injective
     rw [analyticOverlapRight_def] at hzb ⊢
     exact (Phi.subfanAnalyticChartMap_map_inv_apply S hS hface hPhi
-      (homOfLE inf_le_right : sigma ⊓ tau ⟶ tau) z).trans hzb
+      (homOfLE inf_le_right : sigma ⊓ tau ⟶ tau) _ hc inf_le_right z).trans hzb
 
 /-- The image of a subfan's analytic realization is the union of its affine charts in the
 ambient analytic realization. -/
