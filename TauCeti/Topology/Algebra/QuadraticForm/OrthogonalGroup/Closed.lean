@@ -11,14 +11,16 @@ public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
 /-!
 # Closedness of the orthogonal group in the endomorphism space
 
-For a nondegenerate quadratic form on a finite free module over a domain, every endomorphism
-preserving the form is automatically invertible. Thus the orthogonal group, viewed in the space
-of linear endomorphisms, is the common zero set of the equations `Q (f x) = Q x`.
-The module topology makes each equation continuous, so this image is closed. This description
-is useful when passing from the topology of linear endomorphisms to local orthogonal point groups.
+For a quadratic form with separating polar form on a finite free module over a domain, every
+endomorphism preserving the form is automatically invertible. Thus the orthogonal group, viewed
+in the space of linear endomorphisms, is the common zero set of the equations `Q (f x) = Q x`.
+When the form is continuous, this image is closed. This description is useful when passing from
+the topology of linear endomorphisms to local orthogonal point groups.
 
-The result holds over a Hausdorff topological commutative domain with two invertible and a finite
-free module. Local compactness is not needed for closedness.
+The result holds over a Hausdorff commutative domain with module topologies and a finite free
+module, provided the form is continuous. If the scalar topology is a topological ring, invertibility
+of two supplies continuity; the theorem takes continuity directly. Local compactness is not needed
+for closedness.
 -/
 
 public section
@@ -29,21 +31,20 @@ namespace QuadraticMap
 
 open scoped Topology
 
-variable {R M : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [T2Space R]
+variable {R M : Type*} [CommRing R] [TopologicalSpace R] [T2Space R]
   [AddCommGroup M] [Module R M] [Module.Finite R M]
   [TopologicalSpace M] [IsModuleTopology R M]
   [TopologicalSpace (Module.End R M)] [IsModuleTopology R (Module.End R M)]
-  [Invertible (2 : R)]
 
 variable [IsDomain R] [Module.Free R M]
 
-/-- The orthogonal group of a nondegenerate quadratic form on a finite free module is closed in
-the endomorphism space, through its underlying linear maps. -/
+/-- The orthogonal group of a continuous quadratic form with separating polar form on a finite
+free module is closed in the endomorphism space, through its underlying linear maps. -/
 theorem isClosed_range_orthogonalGroup_toLinearMap
-    (Q : QuadraticForm R M) (hQ : Q.Nondegenerate) :
+    (Q : QuadraticForm R M) (hQ : Q.polarBilin.SeparatingLeft) (hcont : Continuous Q) :
     IsClosed (Set.range (fun g : orthogonalGroup Q => (g : M ≃ₗ[R] M).toLinearMap)) := by
-  rw [range_orthogonalGroup_toLinearMap Q ((QuadraticMap.nondegenerate_polar_iff).mpr hQ).1]
-  exact Q.isClosed_setOfPred_forall_map_app Q.continuous
+  rw [range_orthogonalGroup_toLinearMap Q hQ]
+  exact Q.isClosed_setOfPred_forall_map_app hcont
 
 end QuadraticMap
 
