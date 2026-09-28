@@ -121,8 +121,10 @@ only characteristic two itself is excluded. -/
 theorem unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     unitFiltration K (2 * natCastValuation K 2 h2 + 1) ≤
       (powMonoidHom 2 : Kˣ →* Kˣ).range := by
-  rw [show 2 * natCastValuation K 2 h2 + 1 = natCastValuation K 2 h2 + 1 + natCastValuation K 2 h2
-    by omega]
+  -- Put the depth in the `i + v_K(2)` form expected by the general deep-unit theorem.
+  have hdepth : 2 * natCastValuation K 2 h2 + 1 =
+      natCastValuation K 2 h2 + 1 + natCastValuation K 2 h2 := by omega
+  rw [hdepth]
   exact unitFiltration_le_range_powMonoidHom h2 fun p hp hpK hpn ↦
     natCastValuation_lt_sub_one_mul_of_lt_of_dvd h2 (Nat.lt_succ_self _) hp hpK hpn
 

@@ -298,10 +298,11 @@ theorem card_powerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
       Subgroup.subgroupOfEquivOfLe (unitFiltration_antitone (Nat.zero_le _))
     have hrel := relIndex_unitFiltration_add_succ_succ (K := K) v v
     rw [Subgroup.relIndex] at hrel
+    -- Reassociate the filtration depth to match the form in the relative-index theorem.
+    have hdepth_eq : v + 1 + v = v + v + 1 := by omega
     rw [← Subgroup.index_map_equiv _ f, f.map_range_powMonoidHom n,
       ← Subgroup.subgroupOf_map_powMonoidHom_eq_range,
-      map_powMonoidHom_unitFiltration hn hdepth,
-      show v + 1 + v = v + v + 1 by omega, hrel]
+      map_powMonoidHom_unitFiltration hn hdepth, hdepth_eq, hrel]
   -- Comparing `U(K,0)` with its finite-index subgroup `U(K,v+1)`.
   have h := Subgroup.index_range_pow_mul_card_ker U n
   rw [hkerU, mul_one, hker, hidxU] at h
