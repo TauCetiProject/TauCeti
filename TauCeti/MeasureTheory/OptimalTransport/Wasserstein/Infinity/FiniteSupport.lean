@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Nonseparable
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 -- Proof-only: the bounded prefix metric on Baire sequences and a full-support probability law
 -- on the natural numbers.
 import Mathlib.Probability.Distributions.Geometric
@@ -88,10 +88,9 @@ theorem not_dense_setOfPred_ae_mem_finset_top_baire :
     (ae_le_eLpNormEssSup (f := fun z : (ℕ → ℕ) × (ℕ → ℕ) ↦ edist z.1 z.2)
       (μ := π)).mono fun _ hz ↦ hz.trans_lt hπess
   have hsnd : ∀ᵐ z ∂π, z.2 ∈ s := by
-    apply ae_of_ae_map measurable_snd.aemeasurable
-    change ∀ᵐ y ∂π.snd, y ∈ s
-    rw [hπ.snd_eq]
-    exact mem_ae_iff.mpr hνs
+    rw [ae_iff]
+    have h : π.snd ((s : Set (ℕ → ℕ))ᶜ) = 0 := by rw [hπ.snd_eq]; exact hνs
+    rwa [Measure.snd_apply s.measurableSet.compl] at h
   obtain ⟨n, hnsub⟩ := Finset.exists_nat_subset_range (s.image fun x ↦ x 0)
   have hn : n ∉ s.image fun x ↦ x 0 := fun hn ↦ by simpa using hnsub hn
   have hfst_ne : ∀ᵐ z ∂π, z.1 ≠ c n := by
@@ -130,7 +129,7 @@ theorem not_dense_setOfPred_ae_mem_finset_top_baire :
       _ = π (Prod.fst ⁻¹' {c n}) := Measure.fst_apply (MeasurableSet.singleton _)
       _ = 0 := hπzero
   have hμpos : μ {c n} ≠ 0 := by
-    change (geometricMeasure p).map c {c n} ≠ 0
+    dsimp only [μ]
     rw [Measure.map_apply hc (MeasurableSet.singleton _)]
     have hpreimage : c ⁻¹' {c n} = {n} := by
       ext k
