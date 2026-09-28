@@ -10,8 +10,10 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.GeneralL
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Relabel
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
+public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 
@@ -47,6 +49,8 @@ No faithfulness is asserted: an arbitrary weight family may have a common kernel
   coordinate morphism surjective.
 * `TauCeti.GeneralLinear.weightTorusCoordinateBialgHom`: its direct diagonal-representation form,
   allowing the base ring and torus index to live in different universes.
+* `TauCeti.GeneralLinear.corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights`:
+  restriction of the standard comodule to a weight torus is the corresponding weight comodule.
 * `TauCeti.GeneralLinear.weightTorusBaseChangeCoordinateMap`: that morphism base changed along
   `R → K` and transported into the coordinate Hopf algebras built directly over `K`.
 * `TauCeti.GeneralLinear.hom_weightTorusBaseChangeCoordinateMap`: the transported map's
@@ -81,7 +85,7 @@ No faithfulness is asserted: an arbitrary weight family may have a common kernel
 public section
 
 open AlgebraicGeometry CategoryTheory WithConv
-open scoped CategoryTheory.MonObj
+open scoped CategoryTheory.MonObj TensorProduct
 
 namespace TauCeti.GeneralLinear
 
@@ -126,6 +130,61 @@ theorem weightTorusCoordinateBialgHom_X (wt : Fin N → sigma → ℤ) (i j : Fi
   · simpa only [Matrix.diagonal_apply_eq, ↓reduceIte] using congrArg
       (fun g => MonoidAlgebra.single g (1 : S)) hweight
   · simp [hij]
+
+/-- Corestricting the standard general-linear comodule along a weight-torus coordinate morphism
+is the direct sum of its prescribed one-dimensional weight comodules. -/
+theorem corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
+    (wt : Fin N → sigma → ℤ) :
+    let _ := standardComodule S N
+    Comodule.Corestrict (weightTorusCoordinateBialgHom (S := S) wt).toCoalgHom =
+      Comodule.ofWeights (Pi.basisFun S (Fin N))
+        (fun a ↦ Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))) := by
+  let _ := standardComodule S N
+  apply Comodule.ext
+    (rho := Comodule.Corestrict (weightTorusCoordinateBialgHom (S := S) wt).toCoalgHom)
+    (sigma := Comodule.ofWeights (Pi.basisFun S (Fin N))
+      (fun a ↦ Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))))
+  apply (Pi.basisFun S (Fin N)).ext
+  intro a
+  rw [Comodule.ofWeights_coact_basis, Pi.basisFun_apply,
+    Comodule.corestrict_coact_apply, standardComodule_coact,
+    standardCoact_apply_basisFun, map_sum]
+  have hlinear :
+      (weightTorusCoordinateBialgHom (S := S) wt).toCoalgHom.toLinearMap =
+        (weightTorusCoordinateBialgHom (S := S) wt).toAlgHom.toLinearMap :=
+    (_root_.BialgHom.toAlgHom_toLinearMap
+      (weightTorusCoordinateBialgHom (S := S) wt)).symm
+  rw [hlinear]
+  simp only [TensorProduct.map_tmul, LinearMap.id_coe, id_eq,
+    AlgHom.toLinearMap_apply]
+  calc
+    _ = ∑ i, (Pi.single i (1 : S) : Fin N → S) ⊗ₜ[S]
+        (if i = a then MonoidAlgebra.single
+          (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))) (1 : S) else 0) := by
+      apply Finset.sum_congr rfl
+      intro i _
+      have hcoordinate :
+          (weightTorusCoordinateBialgHom (S := S) wt)
+              (coordinateHopfAlgebraAlgEquiv S N
+                (coordinateRingMap S N (MvPolynomial.X (i, a)))) =
+            if i = a then MonoidAlgebra.single
+              (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))) (1 : S) else 0 := by
+        calc
+          _ = if i = a then MonoidAlgebra.single
+                (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt i))) (1 : S) else 0 :=
+            weightTorusCoordinateBialgHom_X (S := S) wt i a
+          _ = _ := by
+            split_ifs with h
+            · subst i
+              rfl
+            · rfl
+      exact congrArg (fun z ↦ (Pi.single i (1 : S) : Fin N → S) ⊗ₜ[S] z) hcoordinate
+    _ = _ := by
+      rw [Finset.sum_eq_single a]
+      · simp
+      · intro i _ hia
+        simp [hia]
+      · simp
 
 end DirectCoordinateMap
 

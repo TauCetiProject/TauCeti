@@ -444,14 +444,8 @@ theorem spinWeightSpace_eq_bot_of_notMem_range [NoZeroDivisors K] {χ : ι → K
   rw [map_zero]
   ext t
   have hne : spinWeight K t ≠ χ := fun h => hχ ⟨t, h⟩
-  obtain ⟨i, hi⟩ := Function.ne_iff.mp hne
-  have hcoord := repr_spinAction_diagonalBivector P b i t x
-  rw [hx i, map_smul, Finsupp.smul_apply, smul_eq_mul] at hcoord
-  have hsub : (spinWeight K t i - χ i) * b.ExteriorAlgebra.repr x t = 0 := by
-    rw [sub_mul, ← hcoord, sub_self]
-  rcases mul_eq_zero.mp hsub with h | h
-  · exact absurd (sub_eq_zero.mp h) hi
-  · simpa using h
+  exact b.ExteriorAlgebra.repr_eq_zero_of_weight_ne
+    (fun s i => P.spinAction_diagonalBivector_basis b i s) hx hne
 
 /-- **The weights of the spinor module are exactly the sign vectors**: a tuple of eigenvalues has
 a nonzero simultaneous eigenspace precisely when it is one of the `TauCeti.spinWeight K s`. -/

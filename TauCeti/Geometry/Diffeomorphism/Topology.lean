@@ -109,7 +109,7 @@ theorem continuous_weakWhitney_iff {Q : Type*} [TopologicalSpace Q] {f : Q → M
 
 /-- Evaluation at a fixed point of the source is continuous. -/
 theorem continuous_eval_const (x : M) : Continuous fun f : M ≃ₘ^n⟮I, J⟯ N ↦ f x :=
-  (ContMDiffMap.continuous_eval_manifoldWeakWhitney x).comp continuous_toContMDiffMap
+  (ContMDiffMap.continuous_eval_const_manifoldWeakWhitney x).comp continuous_toContMDiffMap
 
 /-- A Hausdorff target gives a Hausdorff space of diffeomorphisms. -/
 theorem t2Space_weakWhitney [T2Space N] : T2Space (M ≃ₘ^n⟮I, J⟯ N) :=

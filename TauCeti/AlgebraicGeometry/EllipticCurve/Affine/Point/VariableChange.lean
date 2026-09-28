@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
@@ -31,6 +32,10 @@ so this applies to the nonsingular points of singular Weierstrass curves as well
   with decidable equality, whose underlying functions are given by
   `WeierstrassCurve.Affine.Point.coe_addEquivVariableChange` and
   `WeierstrassCurve.Affine.Point.coe_addEquivVariableChange_symm`.
+* `WeierstrassCurve.pointEquivVariableChange`: for `W` and `C` over a commutative ring `R` and a
+  field `L` over `R`, the group isomorphism between the points over `L` of `C • W` and of `W`, that
+  is `((C • W).baseChange L).toAffine.Point ≃+ (W.baseChange L).toAffine.Point`, with its coordinate
+  lemmas `pointEquivVariableChange_some` and `pointEquivVariableChange_symm_some`.
 
 These maps identify the point groups of different Weierstrass models and, in particular, a
 quadratic twist with its original curve over a splitting field.
@@ -204,5 +209,62 @@ inverse of `equivVariableChange`. -/
 end Point
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+/-! ### Curves over a ring and their points over a field -/
+
+section BaseChange
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (L : Type*) [Field L] [DecidableEq L]
+  [Algebra R L] (C : VariableChange R)
+
+/-- **The points over `L` of `C • W` and of `W` are identified by a change of variables `C` over
+`R`**: the group isomorphism `(x, y) ↦ (u²x + r, u³y + u²sx + t)` between the points of their base
+changes to a field `L`. It is `WeierstrassCurve.Affine.Point.addEquivVariableChange` for the base
+change of `C` to `L`, read on the base change of `C • W`. -/
+def pointEquivVariableChange :
+    ((C • W).baseChange L).toAffine.Point ≃+ (W.baseChange L).toAffine.Point :=
+  (AddEquiv.cast (M := fun V : WeierstrassCurve L ↦ V.toAffine.Point)
+    (baseChange_smul_baseChange L C W).symm).trans
+    (Affine.Point.addEquivVariableChange (W.baseChange L) (C.baseChange L))
+
+/-- What the identification `pointEquivVariableChange` does to a point given by coordinates: it is
+the change of variables `C`, base changed to `L`. -/
+@[simp]
+theorem pointEquivVariableChange_some {x y : L}
+    (h : ((C • W).baseChange L).toAffine.Nonsingular x y) :
+    W.pointEquivVariableChange L C (.some x y h) =
+      .some (((C.baseChange L).u : L) ^ 2 * x + (C.baseChange L).r)
+        (((C.baseChange L).u : L) ^ 3 * y + ((C.baseChange L).u : L) ^ 2 * (C.baseChange L).s * x +
+          (C.baseChange L).t)
+        ((Affine.variableChange_nonsingular (W.baseChange L) (C.baseChange L) x y).mpr
+          ((baseChange_smul_baseChange L C W).symm ▸ h)) := by
+  rw [pointEquivVariableChange, AddEquiv.trans_apply, AddEquiv.cast_apply,
+    Affine.Point.cast_some (baseChange_smul_baseChange L C W).symm,
+    Affine.Point.coe_addEquivVariableChange,
+    Affine.Point.equivVariableChange_some]
+
+/-- What the inverse of the identification `pointEquivVariableChange` does to a point given by
+coordinates: it is the change of variables `C⁻¹`, base changed to `L`. -/
+@[simp]
+theorem pointEquivVariableChange_symm_some {x y : L}
+    (h : (W.baseChange L).toAffine.Nonsingular x y) :
+    (W.pointEquivVariableChange L C).symm (.some x y h) =
+      .some (((C.baseChange L)⁻¹.u : L) ^ 2 * x + (C.baseChange L)⁻¹.r)
+        (((C.baseChange L)⁻¹.u : L) ^ 3 * y +
+          ((C.baseChange L)⁻¹.u : L) ^ 2 * (C.baseChange L)⁻¹.s * x + (C.baseChange L)⁻¹.t)
+        (baseChange_smul_baseChange L C W ▸
+          (Affine.variableChange_nonsingular (C.baseChange L • W.baseChange L)
+            (C.baseChange L)⁻¹ x y).mpr
+            ((inv_smul_smul (C.baseChange L) (W.baseChange L)).symm ▸ h)) := by
+  rw [pointEquivVariableChange, AddEquiv.symm_trans_apply,
+    Affine.Point.coe_addEquivVariableChange_symm,
+    Affine.Point.equivVariableChange_symm_some, AddEquiv.symm_apply_eq, AddEquiv.cast_apply,
+    Affine.Point.cast_some (baseChange_smul_baseChange L C W).symm]
+
+end BaseChange
+
+end WeierstrassCurve
 
 end

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Artinian.Module
+public import Mathlib.RingTheory.KrullDimension.Field
 public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
 -- Proof-only: `QuotSMulTop` supplies the transport used to prove `length_quotient_lsmul_congr`;
@@ -18,7 +20,10 @@ Mathlib defines `Module.length R M` as the Krull dimension of the lattice of sub
 proves that it is additive in short exact sequences. This file adds the facts about it that a
 length-counting argument needs but Mathlib does not yet have: monotonicity in the submodule
 quotiented by, additivity along a filtration, the length of an image, the fact that finitely
-generated submodules already see the whole length, and the length of `I ⧸ aI` for an ideal `I`.
+generated submodules already see the whole length, the length of `I ⧸ aI` for an ideal `I`, the
+length of `R ⧸ 𝔪` for a local ring, the finite length of a quotient of a noetherian
+local ring by a maximal-primary ideal, and the infinite length of a ring of positive Krull
+dimension over itself.
 
 The finite-generation reduction is the load-bearing one. `Module.length` is a supremum over
 strictly increasing chains, and any *finite* chain — in particular any one witnessing a finite
@@ -50,6 +55,13 @@ applies to the quotients appearing here without any further appeal to defeq.
   contains a non-zero-divisor.
 * `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
   with `A ⧸ I` of finite length.
+* `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
+* `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
+  length over itself.
+* `Ideal.isFiniteLength_quotient_of_radical_eq_maximalIdeal`: `A ⧸ I` has finite length when the
+  radical of `I` is the maximal ideal of a noetherian local ring. It is in the namespace of `Ideal`
+  rather than that of `TauCeti` because its first explicit argument is an ideal, so that a consumer
+  reads it as `I.isFiniteLength_quotient_of_radical_eq_maximalIdeal`.
 -/
 
 public section
@@ -249,5 +261,101 @@ theorem length_quotient_lsmul_ideal_eq_ord (I : Ideal A) (hI : IsFiniteLength A 
   exact (WithTop.add_left_cancel hfin (hfilt.trans (add_comm _ _))).symm
 
 end CommRing
+
+section LocalRing
+
+open _root_.IsLocalRing
+
+variable {A : Type*} [CommRing A] [IsLocalRing A]
+
+/-- The length of a quotient by the maximal ideal of a local ring is one, the quotient being the
+residue field. -/
+@[simp]
+theorem length_quotient_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdeal A) = 1 := by
+  rw [Module.length_eq_one_iff, isSimpleModule_iff_isSimpleModule_of_algebraMap_surjective
+    (S := A ⧸ maximalIdeal A) Ideal.Quotient.mk_surjective]
+  let _ := Ideal.Quotient.field (maximalIdeal A)
+  exact instIsSimpleModule _
+
+end LocalRing
+
+end TauCeti
+
+namespace Ideal
+
+section NoetherianLocalRing
+
+open _root_.IsLocalRing
+
+variable {A : Type*} [CommRing A] [IsNoetherianRing A] [IsLocalRing A]
+
+/-- **A quotient by a maximal-primary ideal has finite length.** Let `(A, 𝔪)` be a noetherian
+local ring and let `I` be an ideal whose radical is `𝔪`, so that `I` is maximal-primary. Then
+`A ⧸ I` is a noetherian local ring, its maximal ideal is the image of `𝔪`, and
+`𝔪 ⁿ ≤ I` for some power `𝔪 ⁿ` of `𝔪`, so that maximal ideal is nilpotent.
+A noetherian local ring with nilpotent maximal ideal is Artinian, and `A ⧸ I` is then both
+noetherian and Artinian as an `A`-module, which is finite length. -/
+theorem isFiniteLength_quotient_of_radical_eq_maximalIdeal (I : Ideal A)
+    (hI : I.radical = maximalIdeal A) : IsFiniteLength A (A ⧸ I) := by
+  -- the quotient by `I` is a noetherian local ring
+  have hne : I ≠ ⊤ := by
+    rintro htop
+    have hone : (1 : A) ∈ I := htop ▸ Submodule.mem_top
+    exact (IsLocalRing.notMem_maximalIdeal (R := A)).mpr isUnit_one
+      (hI.symm ▸ Ideal.le_radical hone)
+  let _ : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hne
+  let _ : IsLocalRing (A ⧸ I) :=
+    IsLocalRing.of_surjective' (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
+  -- a power of the maximal ideal lies in `I`, so its image is nilpotent
+  obtain ⟨n, hn⟩ : ∃ n, maximalIdeal A ^ n ≤ I :=
+    Ideal.exists_pow_le_of_le_radical_of_fg (by rw [hI])
+      (maximalIdeal A).fg_of_isNoetherianRing
+  have hnil : IsNilpotent (maximalIdeal (A ⧸ I)) := by
+    have hmap : (maximalIdeal A).map (Ideal.Quotient.mk I) = maximalIdeal (A ⧸ I) :=
+      IsLocalRing.map_maximalIdeal_of_surjective (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
+    rw [← hmap]
+    refine ⟨n, ?_⟩
+    rw [← Ideal.map_pow]
+    exact (Ideal.map_eq_bot_iff_le_ker (Ideal.Quotient.mk I)).mpr
+      (hn.trans (le_of_eq Ideal.mk_ker.symm))
+  -- noetherian and Artinian over `A`, hence of finite length
+  rw [isFiniteLength_iff_isNoetherian_isArtinian]
+  let _ : IsArtinianRing (A ⧸ I) :=
+    isArtinianRing_iff_isNilpotent_maximalIdeal (A ⧸ I) |>.mpr hnil
+  exact ⟨inferInstance,
+    isArtinian_of_surjective_algebraMap (Ideal.Quotient.mk_surjective (I := I))⟩
+
+end NoetherianLocalRing
+
+end Ideal
+
+namespace TauCeti
+
+section PositiveKrullDimension
+
+variable {A : Type*} [CommRing A]
+
+/-- **A ring of positive Krull dimension has infinite length over itself.** A ring of finite
+length over itself is both noetherian and Artinian, by `Module.length_ne_top_iff` and
+`isFiniteLength_iff_isNoetherian_isArtinian`, and a commutative Artinian ring is of Krull
+dimension zero, by `isArtinianRing_iff_isNoetherianRing_krullDimLE_zero`. So a ring of positive
+Krull dimension is of infinite length over itself, and the hypothesis is what rules out the
+zero-dimensional case, the trivial ring among it, whose `ringKrullDim` is `⊥` rather than `0` and
+which is of length zero over itself.
+
+In particular the length of a one-dimensional local domain over itself is infinite, which is what
+a length read along such a domain, the order of vanishing of an element of it, has to be measured
+against. -/
+@[simp]
+theorem length_self_eq_top_of_ringKrullDim_pos (hpos : 0 < ringKrullDim A) :
+    Module.length A A = ⊤ := by
+  by_contra h
+  have hfin : IsFiniteLength A A := (Module.length_ne_top_iff).1 fun hc => h hc
+  obtain ⟨-, hArt⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hfin
+  have hle : ringKrullDim A ≤ 0 :=
+    Ring.krullDimLE_iff.mp (isArtinianRing_iff_isNoetherianRing_krullDimLE_zero.mp hArt).2
+  exact absurd hpos (not_lt_of_ge hle)
+
+end PositiveKrullDimension
 
 end TauCeti

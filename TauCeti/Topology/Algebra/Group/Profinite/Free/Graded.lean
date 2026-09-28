@@ -30,8 +30,13 @@ by `X ⊕ {(i, j) : i < j}`, so its coordinates split a class in `gr_1(F)` into 
 with one coefficient per generator, and its commutator part, with one coefficient per unordered
 pair of generators. These coordinates are what reading off the class of a relator of a pro-`p`
 group presented on the generators `x_i` requires. The results hold for any universe of `X`; the
-two finite `p`-groups of `p`-class two used as detecting groups are `ℤ/p²` and the Heisenberg
-group over `𝔽_p`.
+two finite `p`-groups of `p`-class two used as detecting groups for this degree-one basis are
+`ℤ/p²` and the Heisenberg group over `𝔽_p`.
+
+In every degree `j`, the iterated `p`-power classes `π^j x'_i ∈ gr_j(F)` of the generators are
+linearly independent, detected in the cyclic groups `ℤ/pʲ⁺¹` of `p`-class `j + 1`; for `j = 1`
+these are the `p`-power part of the basis above. They span the tails of the successive
+approximation of relators in normal form.
 
 At `p = 2` the bracket `[x'_0, x'_1]` in `gr_1(freeProP 2 (Fin 2))` is therefore nonzero, and the
 degree-zero power-defect formula shows that the `2`-power operator on this free pro-`2` group is
@@ -44,6 +49,8 @@ not additive.
 ## Main results
 
 * `TauCeti.freeProP.linearIndependent_degreeOneFamily_of`: the family is linearly independent.
+* `TauCeti.freeProP.linearIndependent_gradedPowIter_gradedMkZero_of`: the classes `π^j x'_i` are
+  linearly independent in `gr_j(F)`, for every `j`.
 * `TauCeti.freeProP.finrank_gradedPiece_one`: `dim gr_1(F) = #X + (#X choose 2)`;
   `TauCeti.freeProP.natCard_gradedPiece_one`: so `gr_1(F)` has `p ^ (#X + (#X choose 2))` elements.
 * `TauCeti.gradedBracket_freeProP_two_ne_zero`: the bracket of the two generator classes of
@@ -65,34 +72,18 @@ open scoped commutatorElement
 
 universe u
 
-/-! ### The two detecting groups
+/-! ### The detecting groups
 
 The lower `p`-series of a finite discrete group is its abstract lower `p`-central series, so the
-computations below are transported from
-`Subgroup.top_pLowerCentralSeries_eq_range_powMonoidHom` and
-`TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot` along a group isomorphism, which
-lets the detecting groups live in any universe. -/
+computations below are transported from `TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot`
+along a group isomorphism, which lets the detecting groups live in any universe. The cyclic
+detecting groups `ℤ/pⁿ` are handled in the same way by
+`MulEquiv.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow` and
+`MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`. -/
 
 section Detecting
 
-variable {p : ℕ}
-
-/-- **The cyclic group `ℤ/p²` has `p`-class at most two** (for `p > 0` it has order `p ^ 2`). -/
-theorem top_pLowerCentralSeries_multiplicative_zmod_sq_two_eq_bot :
-    (⊤ : Subgroup (Multiplicative (ZMod (p ^ 2)))).pLowerCentralSeries p 2 = ⊥ := by
-  rw [Subgroup.top_pLowerCentralSeries_eq_range_powMonoidHom, MonoidHom.range_eq_bot_iff]
-  refine MonoidHom.ext fun x ↦ ?_
-  rw [powMonoidHom_apply, MonoidHom.one_apply, ← ofAdd_toAdd x, ← ofAdd_nsmul, nsmul_eq_mul,
-    ZMod.natCast_self, zero_mul, ofAdd_zero]
-
-variable {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H]
-
-/-- A discrete group isomorphic to `ℤ/p²` has `p`-class at most two. -/
-theorem _root_.MulEquiv.pLowerCentralSeries_two_eq_bot_multiplicative_zmod_sq
-    (e : H ≃* Multiplicative (ZMod (p ^ 2))) : pLowerCentralSeries p H 2 = ⊥ := by
-  rw [← Subgroup.map_eq_bot_iff_of_injective (f := e.toMonoidHom) _ e.injective,
-    e.map_pLowerCentralSeries_eq_of_discreteTopology, pLowerCentralSeries_eq_of_discreteTopology,
-    top_pLowerCentralSeries_multiplicative_zmod_sq_two_eq_bot]
+variable {p : ℕ} {H : Type u} [Group H] [TopologicalSpace H] [DiscreteTopology H]
 
 /-- A discrete group isomorphic to the Heisenberg group over `ZMod p` has `p`-class at most two. -/
 theorem _root_.MulEquiv.pLowerCentralSeries_two_eq_bot_heisenbergGroup
@@ -115,24 +106,6 @@ theorem _root_.MulEquiv.gradedPow_gradedMkZero_eq_zero_heisenbergGroup
   exact one_mem _
 
 variable [Fact p.Prime]
-
-/-- The `p`-th power of the generator of `ℤ/p²` is nontrivial. -/
-theorem ofAdd_one_pow_ne_one : (Multiplicative.ofAdd (1 : ZMod (p ^ 2))) ^ p ≠ 1 := by
-  have hp : p.Prime := Fact.out
-  rw [← ofAdd_nsmul, ne_eq, ofAdd_eq_one, nsmul_one, ZMod.natCast_eq_zero_iff]
-  intro h
-  have := Nat.le_of_dvd hp.pos h
-  nlinarith [hp.two_le]
-
-/-- In a discrete group isomorphic to `ℤ/p²`, the `p`-power class of the generator is nonzero. -/
-theorem _root_.MulEquiv.gradedPow_gradedMkZero_ne_zero_multiplicative_zmod_sq
-    (e : H ≃* Multiplicative (ZMod (p ^ 2))) :
-    gradedPow p H 0 (gradedMkZero p H (e.symm (Multiplicative.ofAdd 1))) ≠ 0 := by
-  rw [gradedPow_gradedMkZero, ne_eq, gradedMk_eq_zero_iff, Subgroup.coe_mk]
-  simp only [Nat.reduceAdd]
-  rw [e.pLowerCentralSeries_two_eq_bot_multiplicative_zmod_sq, Subgroup.mem_bot,
-    ← map_pow, e.symm.map_eq_one_iff]
-  exact ofAdd_one_pow_ne_one
 
 /-- In a discrete group isomorphic to the Heisenberg group over `𝔽_p`, the bracket of the classes
 of the two standard generators `(1, 0, 0)` and `(0, 1, 0)` is nonzero. -/
@@ -193,16 +166,18 @@ theorem linearIndependent_degreeOneFamily_of :
   intro c hc
   rintro (i | ⟨⟨i, j⟩, hij⟩)
   · -- The coefficient of `π x'_i`: send `x_i` to the generator of `ℤ/p²` and the others to `1`.
-    let e : ULift.{u} (Multiplicative (ZMod (p ^ 2))) ≃* Multiplicative (ZMod (p ^ 2)) :=
+    let e : ULift.{u} (Multiplicative (ZMod (p ^ (1 + 1)))) ≃*
+        Multiplicative (ZMod (p ^ (1 + 1))) :=
       MulEquiv.ulift
-    have hP : IsProP p (ULift.{u} (Multiplicative (ZMod (p ^ 2)))) :=
-      ((isProP_iff_isPGroup.mp (isProP_multiplicative_zmod_pow p 2)).of_equiv e.symm).isProP
+    have hP : IsProP p (ULift.{u} (Multiplicative (ZMod (p ^ (1 + 1))))) :=
+      ((isProP_iff_isPGroup.mp (isProP_multiplicative_zmod_pow p (1 + 1))).of_equiv
+        e.symm).isProP
     have h := sum_smul_degreeOneFamily_eq_zero p X hP
       (fun k ↦ if k = i then e.symm (Multiplicative.ofAdd 1) else 1) hc
     rw [Fintype.sum_eq_single (Sum.inl i)] at h
     · refine (smul_eq_zero_iff_left ?_).mp h
       rw [degreeOneFamily_inl]
-      simpa using e.gradedPow_gradedMkZero_ne_zero_multiplicative_zmod_sq
+      simpa using e.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow
     · intro k hk
       refine smul_eq_zero_of_right _ ?_
       rcases k with k | ⟨⟨k, l⟩, hkl⟩
@@ -254,6 +229,30 @@ theorem linearIndependent_degreeOneFamily_of :
         rcases hzero with h | h
         · rw [h, gradedMkZero_one, map_zero, AddMonoidHom.zero_apply]
         · rw [h, gradedMkZero_one, map_zero]
+
+omit [Finite X] [LinearOrder X] in
+/-- **The iterated `p`-powers of the generator classes are linearly independent**: for every `j`,
+the classes `π^j x'_i ∈ gr_j(freeProP p X)` of the `p ^ j`-th powers of the generators are linearly
+independent. The coefficient of `π^j x'_i` is read off in `ℤ/pʲ⁺¹`, by sending `x_i` to the
+generator and the other generators to `1`. -/
+theorem linearIndependent_gradedPowIter_gradedMkZero_of (j : ℕ) :
+    LinearIndependent (ZMod p)
+      fun i : X ↦ gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) := by
+  classical
+  refine linearIndependent_iff'.mpr fun s c hc i hi ↦ ?_
+  let e : ULift.{u} (Multiplicative (ZMod (p ^ (j + 1)))) ≃* Multiplicative (ZMod (p ^ (j + 1))) :=
+    MulEquiv.ulift
+  have hP : IsProP p (ULift.{u} (Multiplicative (ZMod (p ^ (j + 1))))) :=
+    ((isProP_iff_isPGroup.mp (isProP_multiplicative_zmod_pow p (j + 1))).of_equiv e.symm).isProP
+  let y : X → ULift.{u} (Multiplicative (ZMod (p ^ (j + 1)))) := fun k ↦
+    if k = i then e.symm (Multiplicative.ofAdd 1) else 1
+  have h := congrArg ((gradedMap p (lift hP y).toMonoidHom (lift hP y).continuous j).toZModLinearMap
+    p) hc
+  simp only [map_sum, map_smul, map_zero, AddMonoidHom.coe_toZModLinearMap,
+    gradedMap_gradedPowIter, gradedMap_gradedMkZero, ContinuousMonoidHom.coe_toMonoidHom] at h
+  rw [Finset.sum_eq_single_of_mem i hi fun k _ hk ↦ by simp [y, hk]] at h
+  refine (smul_eq_zero_iff_left ?_).mp h
+  simpa [y] using e.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow
 
 /-- **The standard basis of `gr_1` of a free pro-`p` group of finite rank**: the `p`-power classes
 `π x'_i` for `i ∈ X` and the brackets `[x'_i, x'_j]` for `i < j` of the generator classes,
