@@ -121,6 +121,12 @@ theorem continuous_proj (φ : F ≃ₜ F) : Continuous (proj φ) := by
     ((isQuotientMap_quotient_mk' (s := AddAction.orbitRel ℤ (F × ℝ))).continuous_iff.mpr
       ((AddCircle.continuous_mk' (1 : ℝ)).comp continuous_snd))
 
+/-- The projection from the mapping torus of a nonempty space onto the circle is surjective. -/
+theorem proj_surjective [Nonempty F] (φ : F ≃ₜ F) : Function.Surjective (proj φ) := by
+  intro θ
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  exact ⟨mk φ (Classical.arbitrary F) t, proj_mk φ _ t⟩
+
 end MappingTorus
 
 /-- A mapping-torus presentation of a topological space, including its fibre and monodromy. -/
@@ -167,5 +173,15 @@ theorem _root_.Homeomorph.fibersOverCircle {M N : Type u} [TopologicalSpace M] [
             monodromy := p.monodromy
             equivalence := ?_ }⟩
   exact h.trans e
+
+/-- A space that fibers over the circle is infinite, since it maps onto the circle. -/
+theorem FibersOverCircle.infinite {M : Type u} [TopologicalSpace M] (h : FibersOverCircle M) :
+    Infinite M := by
+  obtain ⟨p⟩ := h
+  let _ := p.fiberTopology
+  have := p.nonemptyFiber
+  have : Infinite UnitAddCircle :=
+    (AddCircle.equivIco (1 : ℝ) 0).infinite_iff.2 (Set.Ico_infinite (by norm_num)).to_subtype
+  exact .of_surjective _ ((MappingTorus.proj_surjective p.monodromy).comp p.equivalence.surjective)
 
 end TauCeti
