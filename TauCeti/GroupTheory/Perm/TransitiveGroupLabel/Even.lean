@@ -26,15 +26,6 @@ namespace TauCeti
 
 open Equiv Equiv.Perm MulAction
 
-private theorem TransitiveGroupLabel.isPretransitive_even_iff {j : TransitiveGroupIndex 4}
-    {G : Subgroup (Perm (Fin 4))} (h : TransitiveGroupLabel j G) :
-    IsPretransitive ((G ⊓ alternatingGroup (Fin 4)) : Subgroup (Perm (Fin 4)))
-      (Fin 4) ↔
-    IsPretransitive ((referenceSubgroup 4 j ⊓ alternatingGroup (Fin 4)) :
-      Subgroup (Perm (Fin 4))) (Fin 4) := by
-  obtain ⟨τ, hτ⟩ := (transitiveGroupLabel_iff j G).mp h
-  rw [← hτ, Equiv.Perm.isPretransitive_even_map_conj_iff]
-
 /-- The even part of the cyclic quartic reference group is not transitive. -/
 theorem not_isPretransitive_referenceSubgroup_four_zero_even :
     ¬ IsPretransitive
