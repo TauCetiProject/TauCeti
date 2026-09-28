@@ -50,21 +50,28 @@ def SmaleConjecture : Prop :=
       Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) =
       fun A ↦ orthogonalToDiffSphere 3 ∞ A
 
-/-- An introduction/elimination form for `SmaleConjecture`. -/
-theorem smaleConjecture_iff :
-    SmaleConjecture ↔
-      ∃ e : ContinuousMap.HomotopyEquiv (Matrix.orthogonalGroup (Fin 4) ℝ)
-          (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞),
-        (e.toFun : Matrix.orthogonalGroup (Fin 4) ℝ →
-            Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) =
-          fun A ↦ orthogonalToDiffSphere 3 ∞ A := by
-  rfl
-
 /-- The canonical inclusion, packaged as a continuous map for homotopy constructions. -/
 noncomputable def continuousOrthogonalToDiffSphere :
     ContinuousMap (Matrix.orthogonalGroup (Fin 4) ℝ)
       (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) :=
   ⟨orthogonalToDiffSphere 3 ∞, continuous_orthogonalToDiffSphere 3 ∞⟩
+
+/-- Characterize `SmaleConjecture` using the bundled canonical continuous map. -/
+theorem smaleConjecture_iff :
+    SmaleConjecture ↔
+      ∃ e : ContinuousMap.HomotopyEquiv (Matrix.orthogonalGroup (Fin 4) ℝ)
+          (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞),
+        e.toFun = continuousOrthogonalToDiffSphere := by
+  constructor
+  · rintro ⟨e, he⟩
+    refine ⟨e, ?_⟩
+    apply ContinuousMap.ext
+    intro A
+    exact congrFun he A
+  · rintro ⟨e, he⟩
+    refine ⟨e, ?_⟩
+    funext A
+    exact ContinuousMap.congr_fun he A
 
 /-- Smale's conjecture supplies a continuous homotopy inverse for the canonical inclusion. -/
 theorem smaleConjecture_homotopyInverse (h : SmaleConjecture) :
@@ -73,16 +80,11 @@ theorem smaleConjecture_homotopyInverse (h : SmaleConjecture) :
         (Matrix.orthogonalGroup (Fin 4) ℝ),
       (g.comp continuousOrthogonalToDiffSphere).Homotopic (ContinuousMap.id _) ∧
         (continuousOrthogonalToDiffSphere.comp g).Homotopic (ContinuousMap.id _) := by
-  rcases h with ⟨e, he⟩
-  have hf : e.toFun = continuousOrthogonalToDiffSphere := by
-    apply ContinuousMap.ext
-    intro A
-    change e.toFun A = orthogonalToDiffSphere 3 ∞ A
-    exact congrFun he A
+  rcases smaleConjecture_iff.mp h with ⟨e, he⟩
   refine ⟨e.invFun, ?_, ?_⟩
-  · rw [← hf]
+  · rw [← he]
     exact e.left_inv
-  · rw [← hf]
+  · rw [← he]
     exact e.right_inv
 
 end TauCeti
