@@ -872,8 +872,9 @@ variable (p G) in
 /-- **The iterated `p`-power operator** `π^j : gr_0(G) → gr_j(G)`, the `j`-fold composite
 `π ∘ ⋯ ∘ π` of `TauCeti.gradedPow` starting in degree zero. On classes it is induced by
 `g ↦ g ^ (p ^ j)` (`TauCeti.gradedPowIter_gradedMkZero`). It commutes with scalars
-(`TauCeti.gradedPowIter_smul`), but for `p = 2` and `j ≥ 1` it is not additive, since `π` is not
-additive in degree zero (`TauCeti.gradedPow_add_zero_of_two`). -/
+(`TauCeti.gradedPowIter_smul`), but for `p = 2` it need not be additive: already `π^1 = π` has
+the defect `[x, y]` in degree zero (`TauCeti.gradedPow_add_zero_of_two`), which is nonzero for the
+free pro-`2` group of rank two (`TauCeti.gradedPow_freeProP_two_not_additive`). -/
 def gradedPowIter : (j : ℕ) → gradedPiece p G 0 → gradedPiece p G j
   | 0 => id
   | j + 1 => gradedPow p G j ∘ gradedPowIter j
