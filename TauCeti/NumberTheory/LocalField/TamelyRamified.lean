@@ -8,10 +8,9 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Uniformizer
-import Mathlib.FieldTheory.IntermediateField.Algebraic
-import Mathlib.RingTheory.OrderOfVanishing.Noetherian
-import TauCeti.FieldTheory.KummerExtension
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.LocalField.PowerSubgroup
+import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
 # Totally and tamely ramified extensions of local fields
@@ -92,9 +91,7 @@ theorem IsTotallyRamified.exists_pow_eq_uniformizer_of_isTamelyRamified (h : IsT
     (ht : IsTamelyRamified K L) :
     ∃ (π : Kˣ) (α : Lˣ), IsUniformizer K π ∧ IsUniformizer L α ∧
       (α : L) ^ ramificationIndex K L = algebraMap K L π ∧ K⟮(α : L)⟯ = ⊤ := by
-  have : Module.Finite K L := finite_of_valuativeExtension K L
   set e := ramificationIndex K L
-  have he0 : 0 < e := ramificationIndex_pos
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   obtain ⟨ϖL, hϖL⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   -- the image of `ϖ` in `𝒪[L]` is `u * ϖL ^ e`, with `u = a * w ^ e`
@@ -127,20 +124,13 @@ theorem IsTotallyRamified.exists_pow_eq_uniformizer_of_isTamelyRamified (h : IsT
   refine ⟨Units.mk0 (ϖK : K) hϖK0, Units.mk0 (ϖα : L) hϖα0,
     (isUniformizer_iff_exists_irreducible K _).2 ⟨ϖK, hϖK, rfl⟩,
     (isUniformizer_iff_exists_irreducible L _).2 ⟨ϖα, hϖα, rfl⟩, hαpow, ?_⟩
-  -- `ϖK` has order `1`, so `X ^ e - ϖK` is irreducible over `K` and is the minimal polynomial
-  -- of `ϖα`
-  have hirr : Irreducible (X ^ e - C (ϖK : K)) := by
-    refine Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one
-      ((IsDiscreteValuationRing.maximalIdeal 𝒪[K]).valuation K) he0.ne' ?_
-    have hord := Ring.ordFrac_irreducible (K := K) hϖK
-    rw [Ring.ordFrac_eq_valuation_inv, inv_eq_iff_eq_inv, ← WithZero.exp_neg] at hord
-    simp only [Algebra.algebraMap_ofSubsemiring_apply] at hord
-    simp [Valuation.ord_def, hord]
-  have hmin : minpoly K (ϖα : L) = X ^ e - C (ϖK : K) :=
-    (minpoly.eq_of_irreducible_of_monic hirr (by simp [hαpow]) (monic_X_pow_sub_C _ he0.ne')).symm
-  refine IntermediateField.eq_of_le_of_finrank_eq le_top ?_
-  rw [Units.val_mk0, IntermediateField.finrank_top',
-    IntermediateField.adjoin.finrank (.of_finite K _), hmin, natDegree_X_pow_sub_C]
-  exact (isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1 h
+  -- `ϖα` generates the maximal ideal of `𝒪[L]` and the residue fields agree, so `ϖα` generates
+  -- `𝒪[L]` over `𝒪[K]`, hence `L` over `K`
+  have hadj : Algebra.adjoin 𝒪[K] {ϖα} = ⊤ :=
+    IsLocalRing.adjoin_eq_top_of_algebraMap_residueField_surjective_of_span_eq_maximalIdeal
+      ((isTotallyRamified_iff_surjective_algebraMap_residueField K L).1 h)
+      hϖα.maximalIdeal_eq.symm
+  have := IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top (K := K) (L := L) hadj
+  rwa [Units.val_mk0]
 
 end TauCeti
