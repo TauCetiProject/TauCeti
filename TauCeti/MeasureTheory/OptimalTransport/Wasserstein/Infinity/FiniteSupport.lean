@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FiniteSupport
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import Mathlib.Probability.Distributions.Geometric
 
 /-!
