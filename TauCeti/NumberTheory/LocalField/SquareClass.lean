@@ -43,6 +43,7 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
   `4 · #𝓀[K] ^ e(K/ℚ_[2])` square classes.
 * `TauCeti.card_squareClass_dyadic` and `TauCeti.natCard_squareClassGroup_dyadic`: the same count
   on the literal quotient by squares and on the square-class group.
+* `TauCeti.card_squareClasses_padic_two`: `ℚ_[2]` has eight square classes.
 * `TauCeti.card_squareClass_of_odd`: away from residue
   characteristic two the literal quotient by squares has four elements.
 * `TauCeti.natCard_squareClassGroup_of_isUnit_two`: away from residue characteristic two the
@@ -122,7 +123,8 @@ theorem natCard_squareClassGroup_dyadic [FinitePadicExtension K 2] :
   exact natCard_squareClassGroup _
 
 /-- The multiplicative group of `ℚ_[2]` has eight square classes. -/
-example : Nat.card (ℚ_[2]ˣ ⧸ (powMonoidHom 2 : ℚ_[2]ˣ →* ℚ_[2]ˣ).range) = 8 := by
+theorem card_squareClasses_padic_two :
+    Nat.card (ℚ_[2]ˣ ⧸ (powMonoidHom 2 : ℚ_[2]ˣ →* ℚ_[2]ˣ).range) = 8 := by
   rw [card_squareClasses_dyadic, Padic.natCard_residueField,
     absoluteRamificationIndex_padic]
   norm_num
