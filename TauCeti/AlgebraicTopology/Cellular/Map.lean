@@ -96,6 +96,7 @@ lemma cellularChainGroupMap_eq_singularHomologyMap (n : ℕ) :
       TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n := (rfl)
 
 /-- The identity cellular map acts as the identity on each cellular chain group. -/
+@[simp]
 lemma cellularChainGroupMap_id (n : ℕ) :
     cellularChainGroupMap C C (isCellular_id C) R n = 𝟙 (cellularChainGroup C R n) := by
   simp [cellularChainGroupMap, skeletonPairMap_id, TopPair.singularHomologyMap]
