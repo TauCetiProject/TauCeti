@@ -121,54 +121,95 @@ private theorem headBacktrack_mem_preprojectiveIdeal (k : Type*) [CommRing k] :
   rw [← localPreprojectiveRelator_one]
   exact localPreprojectiveRelator_mem_preprojectiveIdeal k preprojectiveA2VertexOne
 
-private def e01 : (Symmetrify.of.obj preprojectiveA2VertexZero ⟶
+/-- The forward arrow in the doubled `A₂` quiver. -/
+def preprojectiveA2ForwardArrow : (Symmetrify.of.obj preprojectiveA2VertexZero ⟶
     Symmetrify.of.obj preprojectiveA2VertexOne) := Sum.inl preprojectiveA2Arrow
 
-private def e10 : (Symmetrify.of.obj preprojectiveA2VertexOne ⟶
+/-- The reverse arrow in the doubled `A₂` quiver. -/
+def preprojectiveA2ReverseArrow : (Symmetrify.of.obj preprojectiveA2VertexOne ⟶
     Symmetrify.of.obj preprojectiveA2VertexZero) := Sum.inr preprojectiveA2Arrow
 
-private theorem reverse_e01 : Quiver.reverse e01 = e10 := by
-  simp [e01, e10, symmetrify_reverse]
+private theorem reverse_forwardArrow :
+    Quiver.reverse preprojectiveA2ForwardArrow = preprojectiveA2ReverseArrow := by
+  simp [preprojectiveA2ForwardArrow, preprojectiveA2ReverseArrow, symmetrify_reverse]
   rfl
 
-private noncomputable def vertices : Fin 2 ≃ Symmetrify preprojectiveA2Quiver :=
+/-- The two vertices of the doubled `A₂` quiver. -/
+noncomputable def preprojectiveA2DoubledVertexEquiv :
+    Fin 2 ≃ Symmetrify preprojectiveA2Quiver :=
   (OrientedQuiver.vertexEquiv zigzagA2Graph
     (Orientation.ofLinearOrder zigzagA2Graph)).trans
       (Equiv.ofBijective _ symmetrify_of_obj_bijective)
 
-private theorem vertices_zero :
-    vertices 0 = Symmetrify.of.obj preprojectiveA2VertexZero := by
-  simp [vertices, preprojectiveA2VertexZero, OrientedQuiver.vertexEquiv_apply]
+/-- The vertex numbered zero under `TauCeti.preprojectiveA2DoubledVertexEquiv`. -/
+theorem preprojectiveA2DoubledVertexEquiv_zero :
+    preprojectiveA2DoubledVertexEquiv 0 = Symmetrify.of.obj preprojectiveA2VertexZero := by
+  simp [preprojectiveA2DoubledVertexEquiv, preprojectiveA2VertexZero,
+    OrientedQuiver.vertexEquiv_apply]
   rfl
 
-private theorem vertices_one :
-    vertices 1 = Symmetrify.of.obj preprojectiveA2VertexOne := by
-  simp [vertices, preprojectiveA2VertexOne, OrientedQuiver.vertexEquiv_apply]
+/-- The vertex numbered one under `TauCeti.preprojectiveA2DoubledVertexEquiv`. -/
+theorem preprojectiveA2DoubledVertexEquiv_one :
+    preprojectiveA2DoubledVertexEquiv 1 = Symmetrify.of.obj preprojectiveA2VertexOne := by
+  simp [preprojectiveA2DoubledVertexEquiv, preprojectiveA2VertexOne,
+    OrientedQuiver.vertexEquiv_apply]
   rfl
 
-private theorem vertex_cases (i : Symmetrify preprojectiveA2Quiver) :
+/-- The inverse vertex equivalence sends the underlying doubled vertex zero to zero. This is the
+normal form obtained from `TauCeti.symmetrify_of_obj`. -/
+@[simp]
+theorem preprojectiveA2DoubledVertexEquiv_symm_zero :
+    preprojectiveA2DoubledVertexEquiv.symm
+      (show Symmetrify preprojectiveA2Quiver from preprojectiveA2VertexZero) = 0 := by
+  have h := congrArg preprojectiveA2DoubledVertexEquiv.symm
+    preprojectiveA2DoubledVertexEquiv_zero
+  rw [preprojectiveA2DoubledVertexEquiv.symm_apply_apply, symmetrify_of_obj] at h
+  exact h.symm
+
+/-- The inverse vertex equivalence sends the underlying doubled vertex one to one. This is the
+normal form obtained from `TauCeti.symmetrify_of_obj`. -/
+@[simp]
+theorem preprojectiveA2DoubledVertexEquiv_symm_one :
+    preprojectiveA2DoubledVertexEquiv.symm
+      (show Symmetrify preprojectiveA2Quiver from preprojectiveA2VertexOne) = 1 := by
+  have h := congrArg preprojectiveA2DoubledVertexEquiv.symm
+    preprojectiveA2DoubledVertexEquiv_one
+  rw [preprojectiveA2DoubledVertexEquiv.symm_apply_apply, symmetrify_of_obj] at h
+  exact h.symm
+
+/-- Every vertex of the doubled `A₂` quiver is one of its two named vertices. -/
+theorem preprojectiveA2DoubledVertex_cases (i : Symmetrify preprojectiveA2Quiver) :
     i = Symmetrify.of.obj preprojectiveA2VertexZero ∨
       i = Symmetrify.of.obj preprojectiveA2VertexOne := by
   have hcases : ∀ x : Fin 2, x = 0 ∨ x = 1 := by
     intro x
     fin_cases x <;> simp
-  have h := hcases (vertices.symm i)
+  have h := hcases (preprojectiveA2DoubledVertexEquiv.symm i)
   rcases h with h | h
   · left
     calc
-      i = vertices (vertices.symm i) := (vertices.apply_symm_apply i).symm
-      _ = _ := by rw [h, vertices_zero]
+      i = preprojectiveA2DoubledVertexEquiv
+          (preprojectiveA2DoubledVertexEquiv.symm i) :=
+        (preprojectiveA2DoubledVertexEquiv.apply_symm_apply i).symm
+      _ = _ := by rw [h, preprojectiveA2DoubledVertexEquiv_zero]
   · right
     calc
-      i = vertices (vertices.symm i) := (vertices.apply_symm_apply i).symm
-      _ = _ := by rw [h, vertices_one]
+      i = preprojectiveA2DoubledVertexEquiv
+          (preprojectiveA2DoubledVertexEquiv.symm i) :=
+        (preprojectiveA2DoubledVertexEquiv.apply_symm_apply i).symm
+      _ = _ := by rw [h, preprojectiveA2DoubledVertexEquiv_one]
 
-private theorem doubleArrow_cases {i j : Symmetrify preprojectiveA2Quiver} (e : i ⟶ j) :
+/-- Every arrow of the doubled `A₂` quiver is its forward or reverse arrow. -/
+theorem preprojectiveA2DoubledArrow_cases
+    {i j : Symmetrify preprojectiveA2Quiver} (e : i ⟶ j) :
     (i = Symmetrify.of.obj preprojectiveA2VertexZero ∧
-      j = Symmetrify.of.obj preprojectiveA2VertexOne ∧ HEq e e01) ∨
+      j = Symmetrify.of.obj preprojectiveA2VertexOne ∧
+        HEq e preprojectiveA2ForwardArrow) ∨
       (i = Symmetrify.of.obj preprojectiveA2VertexOne ∧
-        j = Symmetrify.of.obj preprojectiveA2VertexZero ∧ HEq e e10) := by
-  rcases vertex_cases i with rfl | rfl <;> rcases vertex_cases j with rfl | rfl
+        j = Symmetrify.of.obj preprojectiveA2VertexZero ∧
+          HEq e preprojectiveA2ReverseArrow) := by
+  rcases preprojectiveA2DoubledVertex_cases i with rfl | rfl <;>
+    rcases preprojectiveA2DoubledVertex_cases j with rfl | rfl
   · cases e with
     | inl a =>
         have ha : preprojectiveA2VertexZero ⟶ preprojectiveA2VertexZero := by
@@ -182,7 +223,7 @@ private theorem doubleArrow_cases {i j : Symmetrify preprojectiveA2Quiver} (e : 
     | inl a =>
         simp only [symmetrify_of_obj] at a
         have he : a = preprojectiveA2Arrow := Subsingleton.elim _ _
-        exact Or.inl ⟨rfl, rfl, by simp [e01, he]⟩
+        exact Or.inl ⟨rfl, rfl, by simp [preprojectiveA2ForwardArrow, he]⟩
     | inr a =>
         have ha : preprojectiveA2VertexOne ⟶ preprojectiveA2VertexZero := by
           simpa only [symmetrify_of_obj] using a
@@ -195,7 +236,7 @@ private theorem doubleArrow_cases {i j : Symmetrify preprojectiveA2Quiver} (e : 
     | inr a =>
         simp only [symmetrify_of_obj] at a
         have he : a = preprojectiveA2Arrow := Subsingleton.elim _ _
-        exact Or.inr ⟨rfl, rfl, by simp [e10, he]⟩
+        exact Or.inr ⟨rfl, rfl, by simp [preprojectiveA2ReverseArrow, he]⟩
   · cases e with
     | inl a =>
         have ha : preprojectiveA2VertexOne ⟶ preprojectiveA2VertexOne := by
@@ -206,7 +247,8 @@ private theorem doubleArrow_cases {i j : Symmetrify preprojectiveA2Quiver} (e : 
           simpa only [symmetrify_of_obj] using a
         exact isEmptyElim ha
 
-private theorem v0_ne_v1 :
+/-- The two vertices of the doubled `A₂` quiver are distinct. -/
+theorem preprojectiveA2DoubledVertexZero_ne_one :
     (Symmetrify.of.obj preprojectiveA2VertexZero : Symmetrify preprojectiveA2Quiver) ≠
       Symmetrify.of.obj preprojectiveA2VertexOne := by
   intro h
@@ -223,9 +265,9 @@ private theorem mul_arrows_mem_preprojectiveIdeal (k : Type*) [CommRing k]
     {i j l : Symmetrify preprojectiveA2Quiver} (a : i ⟶ j) (b : j ⟶ l) :
     (ofArrow b * ofArrow a : pathAlgebra k (Symmetrify preprojectiveA2Quiver)) ∈
       preprojectiveIdeal k preprojectiveA2Quiver := by
-  rcases doubleArrow_cases a with ⟨hi, hj, ha⟩ | ⟨hi, hj, ha⟩
-  · rcases doubleArrow_cases b with ⟨hj', hl, hb⟩ | ⟨hj', hl, hb⟩
-    · exact (v0_ne_v1 (hj.symm.trans hj').symm).elim
+  rcases preprojectiveA2DoubledArrow_cases a with ⟨hi, hj, ha⟩ | ⟨hi, hj, ha⟩
+  · rcases preprojectiveA2DoubledArrow_cases b with ⟨hj', hl, hb⟩ | ⟨hj', hl, hb⟩
+    · exact (preprojectiveA2DoubledVertexZero_ne_one (hj.symm.trans hj').symm).elim
     · subst i; subst j; subst l
       cases ha
       cases hb
@@ -233,11 +275,12 @@ private theorem mul_arrows_mem_preprojectiveIdeal (k : Type*) [CommRing k]
       rw [← ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem] at h
       rw [Symmetrify.of_map] at h
       -- The backtrack lemma names the original arrow through `Symmetrify.of.map`.
-      change ofArrow (Quiver.reverse e01) * ofArrow e01 ∈
+      change ofArrow (Quiver.reverse preprojectiveA2ForwardArrow) *
+        ofArrow preprojectiveA2ForwardArrow ∈
         preprojectiveIdeal k preprojectiveA2Quiver at h
-      rw [reverse_e01] at h
+      rw [reverse_forwardArrow] at h
       exact h
-  · rcases doubleArrow_cases b with ⟨hj', hl, hb⟩ | ⟨hj', hl, hb⟩
+  · rcases preprojectiveA2DoubledArrow_cases b with ⟨hj', hl, hb⟩ | ⟨hj', hl, hb⟩
     · subst i; subst j; subst l
       cases ha
       cases hb
@@ -245,11 +288,12 @@ private theorem mul_arrows_mem_preprojectiveIdeal (k : Type*) [CommRing k]
       rw [← ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem] at h
       rw [Symmetrify.of_map] at h
       -- The backtrack lemma names the original arrow through `Symmetrify.of.map`.
-      change ofArrow e01 * ofArrow (Quiver.reverse e01) ∈
+      change ofArrow preprojectiveA2ForwardArrow *
+        ofArrow (Quiver.reverse preprojectiveA2ForwardArrow) ∈
         preprojectiveIdeal k preprojectiveA2Quiver at h
-      rw [reverse_e01] at h
+      rw [reverse_forwardArrow] at h
       exact h
-    · exact (v0_ne_v1 (hj'.symm.trans hj).symm).elim
+    · exact (preprojectiveA2DoubledVertexZero_ne_one (hj'.symm.trans hj).symm).elim
 
 private theorem arrowIdeal_sq_le_preprojectiveIdeal (k : Type*) [CommRing k] :
     arrowIdeal k (Symmetrify preprojectiveA2Quiver) ^ 2 ≤
