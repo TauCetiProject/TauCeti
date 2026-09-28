@@ -22,6 +22,8 @@ completeness hypothesis on the scalars is needed.
 
 public section
 
+namespace TauCeti
+
 namespace Module.Basis
 
 variable {K V ι : Type*} [Semiring K] [TopologicalSpace K] [IsTopologicalSemiring K]
@@ -29,39 +31,35 @@ variable {K V ι : Type*} [Semiring K] [TopologicalSpace K] [IsTopologicalSemiri
   [Finite ι]
 
 /-- Coordinates through a finite basis give a homeomorphism for the module topology. -/
-noncomputable def equivFunHomeomorph (b : Basis ι K V) : V ≃ₜ (ι → K) :=
+noncomputable def equivFunHomeomorph (b : _root_.Module.Basis ι K V) : V ≃ₜ (ι → K) :=
   let _ : ContinuousAdd V := IsModuleTopology.toContinuousAdd K V
   { b.equivFun with
     continuous_toFun := IsModuleTopology.continuous_of_linearMap b.equivFun.toLinearMap
     continuous_invFun := IsModuleTopology.continuous_of_linearMap b.equivFun.symm.toLinearMap }
 
 @[simp]
-theorem equivFunHomeomorph_apply (b : Basis ι K V) (v : V) :
-    b.equivFunHomeomorph v = b.equivFun v := by
+theorem equivFunHomeomorph_apply (b : _root_.Module.Basis ι K V) (v : V) :
+    equivFunHomeomorph b v = b.equivFun v := by
   simp [equivFunHomeomorph]
 
 @[simp]
-theorem equivFunHomeomorph_symm_apply (b : Basis ι K V) (c : ι → K) :
-    b.equivFunHomeomorph.symm c = b.equivFun.symm c := by
+theorem equivFunHomeomorph_symm_apply (b : _root_.Module.Basis ι K V) (c : ι → K) :
+    (equivFunHomeomorph b).symm c = b.equivFun.symm c := by
   simp [equivFunHomeomorph]
 
-end Module.Basis
-
-namespace TauCeti
-
-variable {K V ι : Type*} [Semiring K] [TopologicalSpace K] [IsTopologicalSemiring K]
-  [AddCommMonoid V] [Module K V] [TopologicalSpace V] [IsModuleTopology K V] [Finite ι]
 
 /-- The module topology is Hausdorff when the scalars are Hausdorff and the module has a finite
 basis. -/
-theorem t2Space_of_basis (b : Module.Basis ι K V) [T2Space K] : T2Space V :=
-  b.equivFunHomeomorph.symm.t2Space
+theorem t2Space (b : _root_.Module.Basis ι K V) [T2Space K] : T2Space V :=
+  (equivFunHomeomorph b).symm.t2Space
 
 /-- The module topology is locally compact when the scalars are locally compact and the module
 has a finite basis. -/
-theorem locallyCompactSpace_of_basis (b : Module.Basis ι K V) [LocallyCompactSpace K] :
+theorem locallyCompactSpace (b : _root_.Module.Basis ι K V) [LocallyCompactSpace K] :
     LocallyCompactSpace V :=
-  b.equivFunHomeomorph.isOpenEmbedding.locallyCompactSpace
+  (equivFunHomeomorph b).isOpenEmbedding.locallyCompactSpace
+
+end Module.Basis
 
 variable {K V : Type*} [DivisionRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
@@ -72,7 +70,7 @@ theorem t2Space_moduleTopology [T2Space K] :
     @T2Space V (moduleTopology K V) := by
   let _ : TopologicalSpace V := moduleTopology K V
   let b := Module.finBasis K V
-  exact t2Space_of_basis b
+  exact Module.Basis.t2Space b
 
 /-- The module topology of a finite-dimensional space over a locally compact division ring
 equipped with a topological semiring structure is locally compact. -/
@@ -80,6 +78,6 @@ theorem locallyCompactSpace_moduleTopology [LocallyCompactSpace K] :
     @LocallyCompactSpace V (moduleTopology K V) := by
   let _ : TopologicalSpace V := moduleTopology K V
   let b := Module.finBasis K V
-  exact locallyCompactSpace_of_basis b
+  exact Module.Basis.locallyCompactSpace b
 
 end TauCeti
