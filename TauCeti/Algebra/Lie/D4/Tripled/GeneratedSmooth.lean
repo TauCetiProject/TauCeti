@@ -24,8 +24,6 @@ this subgroup equals the base change of the integral carrier.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26–27.
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
-* The coordinate-algebra argument follows
-  `TauCeti.Algebra.Lie.E7.Minuscule.GeneratedSmooth`.
 -/
 
 public section
@@ -38,6 +36,8 @@ universe u
 
 variable (k : Type u) [Field k]
 
+/- The coordinate-algebra argument follows
+`TauCeti.Algebra.Lie.E7.Minuscule.GeneratedSmooth`. -/
 private theorem isReduced_generatorCoordinateAlgebra :
     ∀ j, IsReduced (generatorCoordinateAlgebra k j) := by
   let : IsReduced (AdditiveGroup.coordinateHopfAlgebra k) :=
