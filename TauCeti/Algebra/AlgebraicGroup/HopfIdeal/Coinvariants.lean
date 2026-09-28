@@ -97,6 +97,7 @@ noncomputable def coinvariants (I : HopfIdeal R H) : Subalgebra R H :=
 variable {I : HopfIdeal R H} {h : H}
 
 /-- Membership in the coinvariants: `(id ⊗ π) (Δ h) = h ⊗ 1`. -/
+@[simp]
 theorem mem_coinvariants_iff :
     h ∈ I.coinvariants ↔
       Algebra.TensorProduct.map (AlgHom.id R H) (Ideal.Quotient.mkₐ R I.toIdeal)
