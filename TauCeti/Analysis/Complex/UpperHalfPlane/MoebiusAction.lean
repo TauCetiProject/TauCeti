@@ -102,12 +102,10 @@ theorem smul_eq_smul_of_eq_or_eq_neg {g k : SL(2, ℤ)} {z : ℍ} (hg : g = k �
     g • z = k • z :=
   hg.elim (· ▸ rfl) (· ▸ SL_neg_smul _ _)
 
-/-- The inversion `S` negates the real part of every point and divides by its norm-square.
-
-Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp lemma
-`ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted action, which is not how any call site in
-this development states the `S`-action, so tagging would make the lemma unusable via plain
-`rw`. -/
+-- Not `@[simp]`: the simpNF linter rewrites the stated LHS through the unconditional simp lemma
+-- `ModularGroup.sl_moeb` to the `GL (Fin 2) ℝ`-lifted action, which is not how call sites state
+-- the `S`-action.
+/-- The inversion `S` negates the real part of every point and divides by its norm-square. -/
 lemma re_S_smul (p : ℍ) : (S • p).re = -p.re / Complex.normSq (p : ℂ) := by
   rw [modular_S_smul]
   simp [Complex.inv_re]

@@ -168,8 +168,7 @@ lemma periodic_comp_ofComplex_iff {α : Type*} {f : ℍ → α} {c : ℝ} :
       exact h _
 
 /-- `UpperHalfPlane.re`'s closures and preimages commute, the `ℍ` analogue of
-`Complex.closure_preimage_re`; the shared open-map step behind both half-plane closures
-below. -/
+`Complex.closure_preimage_re`. -/
 theorem closure_preimage_re (s : Set ℝ) :
     closure (UpperHalfPlane.re ⁻¹' s) = UpperHalfPlane.re ⁻¹' closure s :=
   (UpperHalfPlane.isOpenMap_re.preimage_closure_eq_closure_preimage

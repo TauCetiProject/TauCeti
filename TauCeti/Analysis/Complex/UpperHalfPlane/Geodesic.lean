@@ -126,21 +126,18 @@ theorem range_geodesicLine (g : PSL(2, ℝ)) :
     Set.range (geodesicLine g) = g • {z : ℍ | z.re = 0} := by
   rw [← range_geodesicLine_one, smul_range_geodesicLine, mul_one]
 
-/-- Membership test for a geodesic line, without unfolding the smul-image. Deliberately not
-`@[simp]`: at default priority it never fires, since `Set.mem_range` already rewrites the same
-term first; at `@[simp high]` it always fires first instead, which regresses the trivial
-self-membership goal `geodesicLine g t ∈ Set.range (geodesicLine g)` (closed by `Set.mem_range`
-together with `exists_apply_eq_apply'`) into the harder `(g⁻¹ • geodesicLine g t).re = 0`. Use
-`rw [mem_range_geodesicLine_iff]` explicitly instead. -/
+-- Not `@[simp]`: at default priority it never fires, since `Set.mem_range` rewrites the same
+-- term first; at `@[simp high]` it regresses the self-membership goal
+-- `geodesicLine g t ∈ Set.range (geodesicLine g)` into the harder
+-- `(g⁻¹ • geodesicLine g t).re = 0`. Use it via `rw`.
+/-- A point `z` lies on the geodesic line of `g` iff `g⁻¹ • z` lies on the imaginary axis. -/
 theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
     z ∈ Set.range (geodesicLine g) ↔ (g⁻¹ • z : ℍ).re = 0 := by
   rw [range_geodesicLine, Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq]
 
-/-- Unlike `HalfPlane.lean`'s half-planes, the geodesic line's image is unaffected by
-multiplying by `pslS` (the `PSL(2, ℝ)` element of `z ↦ -1/z`, defined in
-`LinearAlgebra/Matrix/ProjectiveSpecialLinearGroup.lean`): for
-this representative change, `HalfPlane.lean`'s `rightHalfPlane_mul_pslS` swaps the two sides
-while the line itself is fixed setwise. -/
+/-- The geodesic lines of `g` and `g * pslS` have the same image: `z ↦ -1/z` fixes the
+imaginary axis setwise. (The two half-planes it bounds are swapped instead, see
+`rightHalfPlane_mul_pslS`.) -/
 theorem range_geodesicLine_mul_pslS (g : PSL(2, ℝ)) :
     Set.range (geodesicLine (g * pslS)) = Set.range (geodesicLine g) := by
   ext z
