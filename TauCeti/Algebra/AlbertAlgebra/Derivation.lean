@@ -19,33 +19,22 @@ import TauCeti.Data.Fin.Basic
 statement can be made until one knows that a derivation of `J` lands in `J₀`; that is what this file
 proves.
 
-The argument is the Peirce calculus of the diagonal frame `E₀, E₁, E₂` of
-`TauCeti/Algebra/AlbertAlgebra/Basic.lean`, and it needs no Jordan identity — which is just as well,
-since `J` is not yet known here to satisfy one. Write `Fᵢ(a)` for the Hermitian matrix whose only
-nonzero entry is the octonion `a` in position `(i + 1, i + 2)`
-(`TauCeti.AlbertAlgebra.offDiagSingle`). The frame and the three slots span `J`
-(`TauCeti.AlbertAlgebra.eq_sum_smul_diagIdempotent_add_sum_offDiagSingle`), so it is enough to
-annihilate the trace on each of them, and each case is one application of the Leibniz rule to a
-Peirce relation.
+Write `Fⱼ(a)` for the Hermitian matrix whose only nonzero entry is the octonion `a` in position
+`(j + 1, j + 2)` (`TauCeti.AlbertAlgebra.offDiagSingle`). Together with the diagonal frame
+`E₀, E₁, E₂` of `TauCeti/Algebra/AlbertAlgebra/Basic.lean` the slots span `J`
+(`TauCeti.AlbertAlgebra.eq_sum_smul_diagIdempotent_add_sum_offDiagSingle`), and the trace of a
+derivation is killed on each kind of generator separately; on a diagonal idempotent more is true,
+`D Eᵢ` has no diagonal at all
+(`TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_diag_eq_zero`). Only the Peirce calculus of
+the frame enters, so no Jordan identity is needed — which is just as well, since `J` is not yet
+known here to satisfy one.
 
-* On `Eᵢ`: from `Eᵢ ∘ Eᵢ = Eᵢ` the value `D Eᵢ` satisfies `D Eᵢ = 2 (Eᵢ ∘ D Eᵢ)`, whose `m`-th
-  diagonal entry is `2 δ_{m i}` times the `m`-th diagonal entry of `D Eᵢ`. Off `i` that forces the
-  entry to vanish, and at `i` it forces `x = 2 x`. So **`D Eᵢ` has no diagonal at all**
-  (`TauCeti.AlbertAlgebra.derivation_apply_diagIdempotent_diag_eq_zero`), and in particular
-  trace `0`.
-* On `Fⱼ(a)`: the single relation `E_{j+1} ∘ Fⱼ(a) = ½ Fⱼ(a)`
-  (`TauCeti.AlbertAlgebra.diagIdempotent_mul_offDiagSingle`) differentiates to
-  `½ W = U ∘ Fⱼ(a) + E_{j+1} ∘ W` with `W = D Fⱼ(a)` and `U = D E_{j+1}`. Its three diagonal
-  entries read `½ W_j = 0`, `½ W_{j+1} = t + W_{j+1}` and `½ W_{j+2} = t` for the single scalar
-  `t = ⟨U_j, a⟩` that the off-diagonal slots contribute. The first gives `W_j = 0`, and the other
-  two give `W_{j+1} + W_{j+2} = 0`, so the three entries sum to zero.
-
-So `D` maps all of `J` into the trace-zero subspace, that subspace is a Lie submodule
-(`TauCeti.AlbertAlgebra.traceZeroLieSubmodule`) — this is the candidate fundamental representation,
-of dimension `26` over a base satisfying `StrongRankCondition`
-(`TauCeti.AlbertAlgebra.finrank_traceZeroLieSubmodule`) — and, when scalar multiplication by `3`
-on `J` is regular, `Der J` acts faithfully on it: a derivation kills `1`, so it sends the trace-zero
-element `3 • A - (tr A) • 1` to `3 • D A`, and regularity cancels that `3`.
+The trace-zero subspace is therefore a Lie submodule
+(`TauCeti.AlbertAlgebra.traceZeroLieSubmodule`), the candidate fundamental representation, of
+dimension `26` over a base satisfying `StrongRankCondition`
+(`TauCeti.AlbertAlgebra.finrank_traceZeroLieSubmodule`); `Der J` acts faithfully on it whenever
+scalar multiplication by `3` on `J` is regular
+(`TauCeti.AlbertAlgebra.isFaithful_traceZeroLieSubmodule`).
 
 ## Main definitions
 
@@ -68,21 +57,16 @@ element `3 • A - (tr A) • 1` to `3 • D A`, and regularity cancels that `3`
 ## Implementation notes
 
 Everything is stated over a commutative ring in which `2` is invertible, the hypothesis the
-symmetrized product already carries; the base is a field nowhere. The faithfulness result is stated
-for the exact hypothesis its proof uses, `IsSMulRegular (AlbertAlgebra R) (3 : R)`, which is not a
-class; the instance form of it therefore asks for the two classes
-`[NoZeroSMulDivisors R (AlbertAlgebra R)]` and `[NeZero (3 : R)]`, which imply it but are strictly
-stronger. Some such hypothesis is necessary for this argument: in characteristic `3` the trace-zero
-element `3 • A - (tr A) • 1` degenerates to `-(tr A) • 1`, which retains no information about `A`.
-
-The index arithmetic of `Fin 3` — that `j`, `j + 1` and `j + 2` are distinct and that shifting twice
-more returns to them — is discharged by `decide` in a block of private lemmas, so that no proof
-below argues about `Fin 3` while it is computing in `J`; the one case already available in general,
-`j + 2 ≠ j`, is `TauCeti.add_one_add_one_ne_self`.
+symmetrized product already carries; the base is a field nowhere. Faithfulness is stated for the
+exact hypothesis it needs, `IsSMulRegular (AlbertAlgebra R) (3 : R)`, which is not a class; the
+instance form asks instead for `[NoZeroSMulDivisors R (AlbertAlgebra R)]` and `[NeZero (3 : R)]`,
+which imply it but are strictly stronger. Some hypothesis on `3` is unavoidable: in characteristic
+`3` the trace-zero element `3 • A - (tr A) • 1` degenerates to `-(tr A) • 1`, which retains no
+information about `A`.
 
 Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (AlbertAlgebra R)` of
 `TauCeti/Algebra/Lie/Derivation/Basic.lean`, and are applied through the coercion
-`(D : Module.End R (AlbertAlgebra R))`, which is the simp-normal form of their action there.
+`(D : Module.End R (AlbertAlgebra R))`.
 
 ## References
 
@@ -239,11 +223,8 @@ theorem mem_traceZeroLieSubmodule [CommRing R] [Invertible (2 : R)] {A : AlbertA
     A ∈ traceZeroLieSubmodule R ↔ trace A = 0 := by
   rw [← LieSubmodule.mem_toSubmodule, toSubmodule_traceZeroLieSubmodule, mem_traceZero]
 
-/-- **The trace-zero subspace is `26`-dimensional**, over a base satisfying `StrongRankCondition`.
-The carrier of `TauCeti.AlbertAlgebra.traceZeroLieSubmodule` is the submodule
-`TauCeti.AlbertAlgebra.traceZero` itself — `TauCeti.AlbertAlgebra.toSubmodule_traceZeroLieSubmodule`
-holds by `rfl` — so this is `TauCeti.AlbertAlgebra.finrank_traceZero` read along that
-identification. -/
+/-- **The trace-zero subspace is `26`-dimensional**, over a base satisfying
+`StrongRankCondition`. -/
 theorem finrank_traceZeroLieSubmodule (R : Type*) [CommRing R] [Invertible (2 : R)]
     [StrongRankCondition R] : Module.finrank R (traceZeroLieSubmodule R) = 26 :=
   finrank_traceZero R

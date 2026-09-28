@@ -398,8 +398,7 @@ otherwise. -/
   rfl
 
 /-- Each diagonal idempotent has trace `1`, so the frame accounts for the whole trace of the
-identity. Not a `simp` lemma: `TauCeti.AlbertAlgebra.trace_apply` already takes its left-hand side
-apart, and `simp` proves it outright. -/
+identity. -/
 theorem trace_diagIdempotent [Semiring R] (i : Fin 3) : trace (diagIdempotent R i) = 1 := by
   simp [Pi.single_apply]
 
