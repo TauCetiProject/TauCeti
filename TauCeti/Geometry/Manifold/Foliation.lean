@@ -52,7 +52,7 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {k : ℕ}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {k : ℕ}
 
 variable (I n M k) in
 /-- A `C^n` foliation of the `C^(n+1)` manifold `M` of rank `k`, for `1 ≤ n`, recorded by the
@@ -66,9 +66,13 @@ structure Foliation [IsManifold I (n + 1) M] where
   through it. -/
   distribution : Π x : M, Submodule 𝕜 (TangentSpace I x)
   /-- The tangent distribution is a `C^n` distribution of rank `k`. -/
-  isContMDiffDistribution : IsContMDiffDistribution I n k distribution
+  isContMDiffDistribution :
+    let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+    IsContMDiffDistribution I n k distribution
   /-- The tangent distribution is involutive. -/
-  isInvolutiveDistribution : IsInvolutiveDistribution I distribution
+  isInvolutiveDistribution :
+    let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+    IsInvolutiveDistribution I distribution
 
 namespace Foliation
 
@@ -76,8 +80,9 @@ variable [IsManifold I (n + 1) M]
 
 /-- The leaves of a foliation of rank `k` have `k`-dimensional tangent spaces. -/
 theorem finrank_distribution (F : Foliation I n M k) (x : M) :
-    finrank 𝕜 (F.distribution x) = k :=
-  F.isContMDiffDistribution.finrank_eq x
+    finrank 𝕜 (F.distribution x) = k := by
+  let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+  exact F.isContMDiffDistribution.finrank_eq x
 
 variable [CompleteSpace 𝕜]
 

@@ -139,11 +139,6 @@ def IsContMDiffDistribution (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) : 
 
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
 
-theorem isContMDiffDistribution_iff :
-    IsContMDiffDistribution I n k D ↔ ∀ x : M, ∃ U : Set M, IsOpen U ∧ x ∈ U ∧
-      ∃ X : Fin k → Π y : M, TangentSpace I y, IsDistributionFrameOn I n D X U :=
-  (Iff.rfl)
-
 /-- A distribution of rank `k` has `k`-dimensional subspaces. -/
 theorem IsContMDiffDistribution.finrank_eq (hD : IsContMDiffDistribution I n k D) (x : M) :
     finrank 𝕜 (D x) = k := by
@@ -194,12 +189,6 @@ def IsInvolutiveDistribution (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) :
       ∀ x ∈ U, mlieBracket I V W x ∈ D x
 
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
-
-theorem isInvolutiveDistribution_iff :
-    IsInvolutiveDistribution I D ↔ ∀ ⦃U : Set M⦄, IsOpen U → ∀ ⦃V W : Π x : M, TangentSpace I x⦄,
-      MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) → (∀ x ∈ U, W x ∈ D x) →
-        ∀ x ∈ U, mlieBracket I V W x ∈ D x :=
-  (Iff.rfl)
 
 /-- The Lie bracket of two vector fields that are differentiable and tangent to an involutive
 distribution on an open set is tangent to it there. -/
