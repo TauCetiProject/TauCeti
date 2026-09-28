@@ -9,12 +9,18 @@ public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Map
 public import TauCeti.GroupTheory.DoubleCoset.Fiber
 
 /-!
-# Finite fibres of compactified quotient maps
+# Fibres of compactified quotient maps
 
 For a finite-index inclusion of projective subgroups, the map on compactified
 quotients has finite fibres. Both the coarse and cusp fibres are covered by the
 finite set of subgroup cosets. The same argument works for the boundary action
 even though its stabilizers need not be trivial.
+
+Over an interior point `z` the fibre is identified with the orbit space of the stabilizer of
+`z` in the larger group acting on the subgroup cosets, which counts it exactly whenever it is
+finite; for an infinite fibre both sides of the cardinality formula are zero by the convention
+for `Nat.card`. At a free point the stabilizer action is trivial and the count is the subgroup
+index; in general stabilizer orbits record exactly which cosets represent the same fibre point.
 -/
 
 public noncomputable section
@@ -62,6 +68,34 @@ theorem orbitFiberEquivCompactifiedFiber_apply (h : Δ ≤ Γ)
       Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q = p}) :
     (orbitFiberEquivCompactifiedFiber h p q).1 = .ofQuotient q.1 :=
   (rfl)
+
+/-- The fibre of a compactified Fuchsian quotient map over the interior orbit of `z` is the
+orbit space of the stabilizer of `z` acting on the subgroup cosets. -/
+noncomputable def stabilizerOrbitQuotientEquivCompactifiedFiber (h : Δ ≤ Γ) (z : ℍ) :
+    orbitRel.Quotient (stabilizer Γ z) (Γ ⧸ Δ.subgroupOf Γ) ≃
+      {y : Δ.CompactifiedQuotient //
+        compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)} :=
+  (TauCeti.stabilizerOrbitQuotientEquivOrbitRelMapFiber h z).trans
+    (orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z))
+
+/-- The stabilizer-orbit equivalence sends the orbit of a coset to the compactified point
+represented by the corresponding inverse translate of `z`. -/
+@[simp]
+theorem stabilizerOrbitQuotientEquivCompactifiedFiber_mk (h : Δ ≤ Γ) (z : ℍ)
+    (q : Γ ⧸ Δ.subgroupOf Γ) :
+    (stabilizerOrbitQuotientEquivCompactifiedFiber h z (Quotient.mk'' q)).1 =
+      .ofQuotient (TauCeti.orbitOfCosetTranslate z q) := by
+  simp [stabilizerOrbitQuotientEquivCompactifiedFiber]
+
+/-- The cardinality of a compactified interior fibre is the number of stabilizer-orbits on
+the subgroup coset space. In particular, this counts elliptic fibres without treating the
+quotient map as a covering at a ramified point. -/
+theorem card_fiber_compactifiedQuotientMap_eq_card_stabilizerOrbitQuotient
+    (h : Δ ≤ Γ) (z : ℍ) :
+    Nat.card {y : Δ.CompactifiedQuotient //
+      compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)} =
+      Nat.card (orbitRel.Quotient (stabilizer Γ z) (Γ ⧸ Δ.subgroupOf Γ)) :=
+  Nat.card_congr (stabilizerOrbitQuotientEquivCompactifiedFiber h z).symm
 
 variable (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
 

@@ -103,15 +103,8 @@ noncomputable def stabilizerOrbitQuotientEquivOrbitRelMapFiber {H K : Subgroup G
   refine (Quotient.congrRight fun a b ↦ ?_).trans
     (Setoid.quotientKerEquivOfSurjective (cosetToOrbitRelMapFiber h x)
       (cosetToOrbitRelMapFiber_surjective h x))
-  rw [orbitRel_apply, ← orbitOfCosetTranslate_eq_iff h x]
-  change orbitOfCosetTranslate x a = orbitOfCosetTranslate x b ↔
-    cosetToOrbitRelMapFiber h x a = cosetToOrbitRelMapFiber h x b
-  constructor
-  · intro hab
-    apply Subtype.ext
-    simpa only [cosetToOrbitRelMapFiber_apply] using hab
-  · intro hab
-    simpa only [cosetToOrbitRelMapFiber_apply] using congrArg Subtype.val hab
+  rw [Setoid.ker_def, ← Subtype.val_inj, cosetToOrbitRelMapFiber_apply,
+    cosetToOrbitRelMapFiber_apply, orbitRel_apply, orbitOfCosetTranslate_eq_iff h x]
 
 /-- The stabilizer-orbit equivalence sends the orbit of a coset to the smaller-subgroup
 orbit of the corresponding inverse translate. -/
@@ -119,10 +112,14 @@ orbit of the corresponding inverse translate. -/
 theorem stabilizerOrbitQuotientEquivOrbitRelMapFiber_mk {H K : Subgroup G}
     (h : H ≤ K) (x : X) (q : K ⧸ H.subgroupOf K) :
     (stabilizerOrbitQuotientEquivOrbitRelMapFiber h x (Quotient.mk'' q)).1 =
-      orbitOfCosetTranslate x q :=
-  by
-    change (cosetToOrbitRelMapFiber h x q).1 = orbitOfCosetTranslate x q
-    exact cosetToOrbitRelMapFiber_apply h x q
+      orbitOfCosetTranslate x q := by
+  rw [stabilizerOrbitQuotientEquivOrbitRelMapFiber, Equiv.trans_apply,
+    Setoid.quotientKerEquivOfSurjective, Setoid.quotientKerEquivOfRightInverse_apply]
+  -- `Quotient.congrRight` only changes the relation, not the class, so `Setoid.kerLift` still
+  -- evaluates at `q`; Mathlib has no evaluation lemma for `Quotient.congrRight`, and
+  -- `Quot.congr_mk` does not match the `Quotient.mk''` spelling, so this step is definitional.
+  exact (congrArg Subtype.val (Setoid.kerLift_mk (cosetToOrbitRelMapFiber h x) q)).trans
+    (cosetToOrbitRelMapFiber_apply h x q)
 
 /-- The cardinality of an orbit-map fibre is the number of stabilizer-orbits on the
 subgroup coset space. Several cosets can lie in one stabilizer orbit and hence determine
