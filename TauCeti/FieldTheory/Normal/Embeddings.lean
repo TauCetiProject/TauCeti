@@ -153,16 +153,15 @@ theorem fixingSubgroup_fieldRange_conj [Normal F M] (φ ψ : L →ₐ[F] M) :
       ψ.fieldRange.fixingSubgroup =
         φ.fieldRange.fixingSubgroup.map (MulAut.conj g).toMonoidHom := by
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (M ≃ₐ[F] M) φ ψ
-  have hcomp : g.toAlgHom.comp φ = ψ := by
-    simpa only [AlgEquiv.smul_algHom_def] using hg
-  have hfield : φ.fieldRange.map g.toAlgHom = ψ.fieldRange := by
-    calc
-      φ.fieldRange.map g.toAlgHom = (g.toAlgHom.comp φ).fieldRange :=
-        AlgHom.map_fieldRange φ g.toAlgHom
-      _ = ψ.fieldRange := by rw [hcomp]
   refine ⟨g, ?_⟩
-  rw [← hfield, IsGalois.map_fixingSubgroup]
-  exact Subgroup.pointwise_smul_def φ.fieldRange.fixingSubgroup
+  calc
+    ψ.fieldRange.fixingSubgroup = MulAction.stabilizer (M ≃ₐ[F] M) ψ :=
+      (stabilizer_algHom_eq_fixingSubgroup ψ).symm
+    _ = MulAction.stabilizer (M ≃ₐ[F] M) (g • φ) := by rw [hg]
+    _ = (MulAction.stabilizer (M ≃ₐ[F] M) φ).map (MulAut.conj g).toMonoidHom :=
+      MulAction.stabilizer_smul_eq_stabilizer_map_conj g φ
+    _ = φ.fieldRange.fixingSubgroup.map (MulAut.conj g).toMonoidHom := by
+      rw [stabilizer_algHom_eq_fixingSubgroup]
 
 /-- **The cosets of `Gal(M / φ(L))` are the embeddings of `L` into `M`** for a normal `M / F`,
 the coset of `g` corresponding to `g ∘ φ`. -/

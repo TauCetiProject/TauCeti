@@ -18,8 +18,8 @@ group. This is the subgroup comparison used when transporting restriction, cores
 and the Evens norm between different choices of embedding.
 
 The automorphism carrying one embedding to the other comes from the transitive action on
-embeddings in `TauCeti.FieldTheory.Normal.Embeddings`. The passage from field image to fixing
-subgroup uses `IsGalois.map_fixingSubgroup`.
+embeddings in `TauCeti.FieldTheory.Normal.Embeddings`. Conjugacy of the fixing subgroups
+follows from the corresponding stabilizer conjugacy theorem.
 -/
 
 public section
@@ -30,14 +30,6 @@ universe u v
 
 variable (K : Type u) [Field K] (L : Type v) [Field L] [Algebra K L]
 
-/-- The subgroups of `G_K` fixing the images of two embeddings of `L` into `Kˢ` are
-conjugate, without a finiteness assumption on `L/K`. -/
-theorem fixingSubgroup_fieldRange_conj (σ τ : L →ₐ[K] SeparableClosure K) :
-    ∃ g : AbsoluteGaloisGroup K,
-      τ.fieldRange.fixingSubgroup =
-        σ.fieldRange.fixingSubgroup.map (MulAut.conj g).toMonoidHom := by
-  exact FieldTheory.fixingSubgroup_fieldRange_conj σ τ
-
 /-- The open subgroups of `G_K` fixing two embedded copies of a finite extension `L/K`
 are conjugate. The conjugating automorphism extends the natural `K`-algebra isomorphism
 between the two copies of `L`. -/
@@ -46,6 +38,7 @@ theorem galoisSubgroup_conj [FiniteDimensional K L]
     ∃ g : AbsoluteGaloisGroup K,
       (galoisSubgroup K L τ).toSubgroup =
         (galoisSubgroup K L σ).toSubgroup.map (MulAut.conj g).toMonoidHom := by
-  simpa only [galoisSubgroup_toSubgroup] using fixingSubgroup_fieldRange_conj K L σ τ
+  simpa only [galoisSubgroup_toSubgroup] using
+    FieldTheory.fixingSubgroup_fieldRange_conj σ τ
 
 end TauCeti
