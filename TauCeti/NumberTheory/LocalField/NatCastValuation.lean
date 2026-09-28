@@ -201,6 +201,16 @@ theorem natCastValuation_le_of_dvd {m n : ℕ} (hm : (m : K) ≠ 0) (hn : (n : K
   rw [natCastValuation_mul K hm hk]
   exact Nat.le_add_right _ _
 
+/-- **The depth condition beyond `v_K(n)`.** If `v_K(n) < i`, then every prime `p ∣ n` satisfies
+`v_K(p) < (p - 1) * i`, the depth condition of the deep-unit power lemmas
+`map_powMonoidHom_unitFiltration` and `disjoint_rootsOfUnity_unitFiltration` of
+`TauCeti.NumberTheory.LocalField.UnitFiltration.Pow`. -/
+theorem natCastValuation_lt_sub_one_mul_of_lt_of_dvd {n i : ℕ} (hn : (n : K) ≠ 0)
+    (hi : natCastValuation K n hn < i) {p : ℕ} (hp : p.Prime) (hpK : (p : K) ≠ 0) (hpn : p ∣ n) :
+    natCastValuation K p hpK < (p - 1) * i :=
+  (natCastValuation_le_of_dvd K hpK hn hpn).trans_lt <|
+    hi.trans_le (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt hp.one_lt))
+
 variable (K) in
 /-- The normalized valuation of a power of a natural number. -/
 @[simp]

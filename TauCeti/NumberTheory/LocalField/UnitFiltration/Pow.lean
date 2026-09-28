@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.Data.Nat.Factorization.Induction
-import Mathlib.Topology.Algebra.Group.Units
 
 /-!
 # Powers of deep units
@@ -56,8 +55,6 @@ of `(Kˣ)ⁿ` with a step of the filtration, which is open in `Kˣ`.
   `U(K, i + v_K(n))` is an `n`-th power.
 * `TauCeti.disjoint_rootsOfUnity_unitFiltration`: under the same depth condition, the group
   `U(K,i)` contains no nontrivial `n`-th root of unity.
-* `TauCeti.natCastValuation_lt_sub_one_mul_of_dvd_of_lt`: every depth `i > v_K(n)` satisfies the
-  depth condition.
 
 ## References
 
@@ -249,11 +246,7 @@ theorem map_powMonoidHom_unitFiltration_of_prime {p : ℕ} (hp : p.Prime) (hpK :
           exact hstep.trans (sup_le_sup_right hmono _)
         _ = P ⊔ unitFiltration K (i + e + (k + 1)) := by rw [← sup_assoc, sup_idem]
   -- Hence `U(K, i + e)` lies in `P · U(K,m)` for every `m`, so in the closure of `P`, which is `P`
-  -- because `P` is the image of the compact set `U(K,i)` in the Hausdorff group `Kˣ` (its
-  -- identity `{1} = ⋂ m, U(K,m)` is closed).
-  have : T2Space Kˣ := IsTopologicalGroup.t2Space_iff_one_closed.mpr <| by
-    rw [← Subgroup.coe_bot, ← iInf_unitFiltration, Subgroup.coe_iInf]
-    exact isClosed_iInter fun m ↦ (unitFiltration K m).isClosed_of_isOpen (isOpen_unitFiltration m)
+  -- because `P` is the image of the compact set `U(K,i)` in the Hausdorff group `Kˣ`.
   have hP : IsClosed (P : Set Kˣ) := by
     simpa [P, Subgroup.coe_map] using
       ((isCompact_unitFiltration i).image (continuous_pow p)).isClosed
@@ -290,19 +283,10 @@ theorem disjoint_rootsOfUnity_unitFiltration_of_prime {p : ℕ} (hp : p.Prime) (
   rw [Valuation.zero_iff, mul_eq_zero, sub_eq_zero] at h0
   exact Units.ext (h0.resolve_left hpK)
 
-/-- **The depth condition beyond `v_K(n)`.** If `v_K(n) < i`, then every prime `p ∣ n` satisfies
-`v_K(p) < (p - 1) * i`, the depth condition of `map_powMonoidHom_unitFiltration` and
-`disjoint_rootsOfUnity_unitFiltration`. -/
-theorem natCastValuation_lt_sub_one_mul_of_dvd_of_lt {n i : ℕ} (hn : (n : K) ≠ 0)
-    (hi : natCastValuation K n hn < i) {p : ℕ} (hp : p.Prime) (hpK : (p : K) ≠ 0) (hpn : p ∣ n) :
-    natCastValuation K p hpK < (p - 1) * i :=
-  (natCastValuation_le_of_dvd K hpK hn hpn).trans_lt <|
-    hi.trans_le (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt hp.one_lt))
-
 /-- **Deep units are `n`-th powers.** For `(n : K) ≠ 0` and a depth `i` with
 `v_K(p) < (p - 1) * i` for every prime `p ∣ n`, the `n`-th power map carries `U(K,i)` onto
 `U(K, i + v_K(n))`. The depth condition holds in particular for every `i > v_K(n)`, by
-`natCastValuation_lt_sub_one_mul_of_dvd_of_lt`. -/
+`natCastValuation_lt_sub_one_mul_of_lt_of_dvd`. -/
 theorem map_powMonoidHom_unitFiltration {n : ℕ} (hn : (n : K) ≠ 0) {i : ℕ}
     (hi : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
       natCastValuation K p hpK < (p - 1) * i) :
@@ -338,7 +322,7 @@ theorem unitFiltration_le_range_powMonoidHom {n : ℕ} (hn : (n : K) ≠ 0) {i :
 /-- **Deep units carry no `n`-torsion.** For `(n : K) ≠ 0` and a depth `i` with
 `v_K(p) < (p - 1) * i` for every prime `p ∣ n`, the only `n`-th root of unity in `U(K,i)` is `1`.
 The depth condition holds in particular for every `i > v_K(n)`, by
-`natCastValuation_lt_sub_one_mul_of_dvd_of_lt`. -/
+`natCastValuation_lt_sub_one_mul_of_lt_of_dvd`. -/
 theorem disjoint_rootsOfUnity_unitFiltration {n : ℕ} (hn : (n : K) ≠ 0) {i : ℕ}
     (hi : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
       natCastValuation K p hpK < (p - 1) * i) :

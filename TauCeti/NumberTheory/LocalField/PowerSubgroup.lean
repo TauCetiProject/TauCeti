@@ -103,7 +103,7 @@ theorem map_powMonoidHom_unitFiltration_succ_of_isUnit {n : ℕ} (hn : IsUnit (n
   have hnK := natCast_ne_zero_of_isUnit hn
   have hv := natCastValuation_eq_zero_of_isUnit K hnK hn
   simpa [hv] using map_powMonoidHom_unitFiltration hnK (i := i + 1) fun p hp hpK hpn ↦
-    natCastValuation_lt_sub_one_mul_of_dvd_of_lt hnK (hv ▸ i.succ_pos) hp hpK hpn
+    natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK (hv ▸ i.succ_pos) hp hpK hpn
 
 /-- For `n` invertible in `𝒪[K]`, every principal unit of `K` is an `n`-th power. -/
 theorem unitFiltration_one_le_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
@@ -214,7 +214,7 @@ theorem disjoint_rootsOfUnity_unitFiltration_one_of_isUnit {n : ℕ} (hn : IsUni
     Disjoint (rootsOfUnity n K) (unitFiltration K 1) := by
   have hnK := natCast_ne_zero_of_isUnit hn
   exact disjoint_rootsOfUnity_unitFiltration hnK fun p hp hpK hpn ↦
-    natCastValuation_lt_sub_one_mul_of_dvd_of_lt hnK
+    natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK
       (natCastValuation_eq_zero_of_isUnit K hnK hn ▸ Nat.one_pos) hp hpK hpn
 
 /-- For `n` invertible in `𝒪[K]`, the `n`-th power map is a bijection of each positive-depth step
@@ -282,7 +282,7 @@ theorem card_powerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
   -- Every prime `p ∣ n` has `v_K(p) < (p - 1) (v + 1)`.
   have hdepth : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
       natCastValuation K p hpK < (p - 1) * (v + 1) := fun p hp hpK hpn ↦
-    natCastValuation_lt_sub_one_mul_of_dvd_of_lt hn (Nat.lt_succ_self v) hp hpK hpn
+    natCastValuation_lt_sub_one_mul_of_lt_of_dvd hn (Nat.lt_succ_self v) hp hpK hpn
   -- On `U(K,v+1)` the `n`-th power map is injective with image `U(K,2v+1)`.
   have hkerU : Nat.card (powMonoidHom n : U →* U).ker = 1 := by
     rw [Subgroup.card_eq_one, eq_bot_iff]

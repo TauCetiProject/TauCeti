@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
+public import Mathlib.Topology.Algebra.Group.Units
 
 /-!
 # The unit filtration of a nonarchimedean local field
@@ -56,7 +57,7 @@ action on a finite extension, and its behaviour under a field embedding.
 * `TauCeti.iInf_unitFiltration`: the filtration separates points, `⨅ i, U(K,i) = ⊥`.
 * `TauCeti.isOpen_unitFiltration`, `TauCeti.isCompact_unitFiltration` and
   `TauCeti.hasBasis_nhds_one_unitFiltration`: every `U(K,i)` is an open compact subgroup of
-  `Kˣ`, and the family is a neighbourhood basis of `1`.
+  `Kˣ`, and the family is a neighbourhood basis of `1`; in particular `Kˣ` is Hausdorff.
 
 ## Implementation notes
 
@@ -399,6 +400,11 @@ theorem unitFiltration_mem_nhds_one (i : ℕ) :
 /-- Each step of the unit filtration is an open subgroup of `Kˣ`. -/
 theorem isOpen_unitFiltration (i : ℕ) : IsOpen (unitFiltration K i : Set Kˣ) :=
   (unitFiltration K i).isOpen_of_mem_nhds (unitFiltration_mem_nhds_one i)
+
+/-- The multiplicative group `Kˣ` is Hausdorff: its identity `{1} = ⋂ i, U(K,i)` is closed. -/
+instance : T2Space Kˣ := IsTopologicalGroup.t2Space_iff_one_closed.mpr <| by
+  rw [← Subgroup.coe_bot, ← iInf_unitFiltration, Subgroup.coe_iInf]
+  exact isClosed_iInter fun i ↦ (unitFiltration K i).isClosed_of_isOpen (isOpen_unitFiltration i)
 
 /-- The image in `K` of the depth-zero step of the unit filtration. -/
 private theorem image_unitFiltration_zero :
