@@ -132,7 +132,6 @@ theorem isPrincipalIdealRing (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (by rw [discr_eq_five hmin hgen]; norm_num)
 
 /-- The class number of `ℚ(√5)` is `1`. -/
-@[simp]
 theorem classNumber_eq_one (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : classNumber K = 1 :=
   classNumber_eq_one_iff.mpr (isPrincipalIdealRing hmin hgen)
