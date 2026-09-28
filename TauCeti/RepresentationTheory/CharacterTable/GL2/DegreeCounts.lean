@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.Classification
 
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import Mathlib.FieldTheory.Finite.Extension
--- Non-public: `AddChar.FiniteField.primitiveChar_to_Complex_ne_one` supplies the nontrivial
+-- Non-public: `TauCeti.primitiveChar_to_Complex_ne_one` supplies the nontrivial
 -- additive character that the classification theorem needs.
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 
@@ -106,7 +106,7 @@ theorem irreducibleCharacters_GL2_degree_one_eq_range (hq : 3 ≤ Fintype.card F
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 1} =
       Set.range fun alpha : Fˣ →* ℂˣ => (GL2Linear F alpha).character := by
   rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
-    (finrank_gl2QuadraticExtension F) (AddChar.FiniteField.primitiveChar_to_Complex_ne_one F)]
+    (finrank_gl2QuadraticExtension F) (primitiveChar_to_Complex_ne_one F)]
   ext chi
   constructor
   · rintro ⟨(((hlin | hstein) | hprincipal) | hcuspidal), hdegree⟩
@@ -129,7 +129,7 @@ theorem irreducibleCharacters_GL2_degree_card_eq_range :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = Fintype.card F} =
       Set.range fun alpha : Fˣ →* ℂˣ => (GL2SteinbergTwist F alpha).character := by
   rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
-    (finrank_gl2QuadraticExtension F) (AddChar.FiniteField.primitiveChar_to_Complex_ne_one F)]
+    (finrank_gl2QuadraticExtension F) (primitiveChar_to_Complex_ne_one F)]
   have hq : 1 < Fintype.card F := Fintype.one_lt_card
   ext chi
   constructor
@@ -155,7 +155,7 @@ theorem irreducibleCharacters_GL2_degree_card_add_one_eq_image :
       (fun p : (Fˣ →* ℂˣ) × (Fˣ →* ℂˣ) =>
         (GL2PrincipalSeries F p.1 p.2).character) '' {p | p.1 ≠ p.2} := by
   rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
-    (finrank_gl2QuadraticExtension F) (AddChar.FiniteField.primitiveChar_to_Complex_ne_one F)]
+    (finrank_gl2QuadraticExtension F) (primitiveChar_to_Complex_ne_one F)]
   have hq : 1 < Fintype.card F := Fintype.one_lt_card
   ext chi
   constructor
@@ -235,10 +235,10 @@ theorem ncard_irreducibleCharacters_GL2_degree_card_sub_one (hq : 3 ≤ Fintype.
       Fintype.card F * (Fintype.card F - 1) / 2 := by
   rw [irreducibleCharacters_GL2_degree_card_sub_one_eq_image F (gl2QuadraticExtension F)
       (finrank_gl2QuadraticExtension F)
-      (AddChar.FiniteField.primitiveChar_to_Complex_ne_one F) hq,
+      (primitiveChar_to_Complex_ne_one F) hq,
     ncard_image_GL2CuspidalVirtualCharacter F (gl2QuadraticExtension F)
       (finrank_gl2QuadraticExtension F)
-      (AddChar.FiniteField.primitiveChar_to_Complex_ne_one F)]
+      (primitiveChar_to_Complex_ne_one F)]
 
 /-- The four irreducible degree families satisfy the degree-squared formula for `GL₂(F)`. -/
 theorem GL2_sum_characterDegrees_sq_eq_natCard :

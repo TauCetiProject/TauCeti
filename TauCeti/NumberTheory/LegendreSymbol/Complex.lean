@@ -19,21 +19,20 @@ character, which is primitivity read at the shift by `1`.
 
 ## Main results
 
-* `AddChar.FiniteField.primitiveChar_to_Complex_ne_one`:
+* `TauCeti.primitiveChar_to_Complex_ne_one`:
   `AddChar.FiniteField.primitiveChar_to_Complex F ≠ 1`.
 -/
 
 public section
 
-namespace AddChar.FiniteField
+namespace TauCeti
 
 variable (F : Type*) [Field F] [Finite F]
 
-/-- Mathlib's canonical primitive complex additive character of a finite field is nontrivial:
-primitivity at `1` says exactly that its `mulShift` by `1`, which is the character itself, is
-not the trivial character. -/
-theorem primitiveChar_to_Complex_ne_one : primitiveChar_to_Complex F ≠ 1 := by
+/-- Mathlib's canonical primitive complex additive character of a finite field is nontrivial. -/
+theorem primitiveChar_to_Complex_ne_one :
+    AddChar.FiniteField.primitiveChar_to_Complex F ≠ 1 := by
   simpa only [AddChar.mulShift_one] using
-    primitiveChar_to_Complex_isPrimitive F (one_ne_zero : (1 : F) ≠ 0)
+    AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F (one_ne_zero : (1 : F) ≠ 0)
 
-end AddChar.FiniteField
+end TauCeti
