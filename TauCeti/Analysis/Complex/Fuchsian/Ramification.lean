@@ -31,9 +31,10 @@ holomorphic map `F` on `Γ \ ℍ` and its pullback to the upper half-plane satis
 (`Subgroup.localMultiplicity_comp_quotientMk`). Read from right to left, this computes the local
 multiplicity of an invariant holomorphic map upstairs from that of its unique descent
 (`Subgroup.existsUnique_mdifferentiable_quotientMk`) downstairs. Both sides are local
-multiplicities, that is, ramification indices: `localMultiplicity F q` is the vanishing order of
-the chart representative of `F` recentred at `F q`, not the order of vanishing of `F` itself, so
-the formula says nothing on its own about the zeros of `F`.
+multiplicities: `localMultiplicity F q` is the vanishing order of the chart representative of `F`
+recentred at `F q`, not the order of vanishing of `F` itself, so the formula says nothing on its
+own about the zeros of `F`. When `F` is nonconstant near the orbit of `z` these two multiplicities
+are the ramification indices of `F` and of `F ∘ π`; when `F` is constant there both sides vanish.
 
 ## Main declarations
 
@@ -157,7 +158,9 @@ to the unique descent of an invariant holomorphic map
 (`Subgroup.existsUnique_mdifferentiable_quotientMk`), this computes the local multiplicity of the
 map upstairs from that of its descent downstairs. Recall that the local multiplicity of `F` at `q`
 is the vanishing order of the chart representative of `F` recentred at `F q`, so this is a
-statement about ramification indices, not about the zeros of `F`. -/
+statement about local multiplicities, not about the zeros of `F`; they are the ramification indices
+of `F` and of `F ∘ π` when `F` is nonconstant near the orbit of `z`, and both are `0` when `F` is
+constant there. -/
 theorem localMultiplicity_comp_quotientMk {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y]
     [IsManifold 𝓘(ℂ) 1 Y] {F : orbitRel.Quotient Γ ℍ → Y} {z : ℍ}
     (hF : ∀ᶠ q in 𝓝 (Quotient.mk (orbitRel Γ ℍ) z), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) F q) :
