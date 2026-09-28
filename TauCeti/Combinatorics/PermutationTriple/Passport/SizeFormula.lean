@@ -67,18 +67,40 @@ theorem passportSize_mul_card_normalizer_eq_card_generatingTriple_mul_card_centr
 
 /-- The normalizer order divides the product of the generating-triple count and the
 centralizer order. -/
-theorem card_normalizer_dvd_card_generatingTriple_mul_card_centralizer (hn : n ≠ 0)
-    (hG : IsPretransitive P.G (Fin n)) :
+theorem card_normalizer_dvd_card_generatingTriple_mul_card_centralizer :
     Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) ∣
       Nat.card P.GeneratingTriple *
         Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin n)))) := by
-  exact ⟨P.passportSize, by simpa only [mul_comm] using
-    (P.passportSize_mul_card_normalizer_eq_card_generatingTriple_mul_card_centralizer
-      hn hG).symm⟩
+  classical
+  let N := Subgroup.normalizer (P.G : Set (Perm (Fin n)))
+  let C := Subgroup.centralizer (P.G : Set (Perm (Fin n)))
+  let Ω := orbitRel.Quotient N P.GeneratingTriple
+  let _ : Fintype Ω := Fintype.ofFinite Ω
+  let _ : Fintype P.GeneratingTriple := Fintype.ofFinite P.GeneratingTriple
+  have horbit (ω : Ω) : Nat.card (orbit N ω.out) * Nat.card C = Nat.card N :=
+    P.card_orbit_generatingTriple_mul_card_centralizer_eq_card_normalizer ω.out
+  have hsum : Nat.card P.GeneratingTriple =
+      ∑ ω : Ω, Nat.card (orbit N ω.out) := by
+    calc
+      Nat.card P.GeneratingTriple =
+          Nat.card (Σ ω : Ω, orbit N ω.out) :=
+        Nat.card_congr (selfEquivSigmaOrbits N P.GeneratingTriple)
+      _ = ∑ ω : Ω, Nat.card (orbit N ω.out) := by
+        simp only [Nat.card_eq_fintype_card, Fintype.card_sigma]
+  refine ⟨Nat.card Ω, ?_⟩
+  calc
+    Nat.card P.GeneratingTriple * Nat.card C =
+        ∑ ω : Ω, Nat.card (orbit N ω.out) * Nat.card C := by
+      rw [hsum, Finset.sum_mul]
+    _ = Nat.card N * Nat.card Ω := by
+      simp only [horbit, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_comm]
+      simp only [Nat.card_eq_fintype_card]
+      norm_cast
 
 /-- The exact passport-size formula: generating triples are divided into equal normalizer
 orbits, each having normalizer order divided by centralizer order elements. -/
-theorem passportSize_eq_generatingTriples_card_mul_card_centralizer_div (hn : n ≠ 0)
+theorem passportSize_eq_card_generatingTriples_mul_card_centralizer_div_card_normalizer
+    (hn : n ≠ 0)
     (hG : IsPretransitive P.G (Fin n)) :
     P.passportSize =
       P.generatingTriples.card *
