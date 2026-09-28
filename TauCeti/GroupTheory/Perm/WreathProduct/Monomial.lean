@@ -17,9 +17,11 @@ and coordinates indexed by `G ⧸ U`. Its permutation part is left translation o
 coordinate at `x` is the transversal word `r(x)⁻¹ g r(g⁻¹ • x)`, where
 `r(x) = (t.2.leftQuotientEquiv x : G)`. Its cocycle law
 gives the homomorphism, and both the coset-indexed and finite-coordinate forms are injective.
-The input `t : U.LeftTransversal` supplies representatives through
-`t.2.leftQuotientEquiv` and their coset identities through
-`t.2.quotientGroupMk_leftQuotientEquiv`.
+The input `t : U.LeftTransversal` bundles the transversal invariant. It supplies representatives
+through `t.2.leftQuotientEquiv` and proves that each represents its coset through
+`t.2.quotientGroupMk_leftQuotientEquiv`. Conversely, Mathlib's
+`Subgroup.isComplement_range_left` packages any representative map with that property as a
+`U.LeftTransversal`.
 The public maps are called as `TauCeti.monomialHom U t` and
 `TauCeti.monomialFinHom U t`.
 Continuity for an open subgroup is proved in
