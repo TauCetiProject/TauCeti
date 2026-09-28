@@ -19,6 +19,7 @@ opposite, so deleting the zero reveals exactly one sign change. This file
 records that local calculation alongside the sequence recurrence and the zero
 cases. The calculation works over any ordered field; it does not require real
 closedness.
+Use `TauCeti.Polynomial.sturmVariation p q x` to access the evaluated variation.
 -/
 
 public section
