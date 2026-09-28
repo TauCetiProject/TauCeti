@@ -39,7 +39,7 @@ theorem isMetabolic_discriminantQuadraticModule_iff (hL : L.IsEven) :
         M.2.isIntegral.toIntegralLattice.IsUnimodular := by
   constructor
   · intro hMetabolic
-    obtain ⟨H, hH⟩ := (L.discriminantQuadraticModule hL).isMetabolic_iff.mp hMetabolic
+    obtain ⟨H, hH⟩ := (L.discriminantQuadraticModule hL).isMetabolic_def.mp hMetabolic
     have hH' := ((L.discriminantQuadraticModule hL).isLagrangian_def H).mp hH
     have hEven : IntermediateCarrier.IsEven
         (L.intermediateCarrierOfDiscriminantSubgroup H) :=
@@ -60,7 +60,7 @@ theorem isMetabolic_discriminantQuadraticModule_iff (hL : L.IsEven) :
       rw [M.2.isIntegral.toIntegralLattice_carrier,
         M.2.isIntegral.toIntegralLattice_dualCarrier] at h
       exact h.symm
-    apply (L.discriminantQuadraticModule hL).isMetabolic_iff.mpr
+    apply (L.discriminantQuadraticModule hL).isMetabolic_def.mpr
     refine ⟨L.discriminantSubgroup M.1,
       ((L.discriminantQuadraticModule hL).isLagrangian_def _).mpr ⟨?_, ?_⟩⟩
     · exact (IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hL M.1).1 M.2

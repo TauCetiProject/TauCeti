@@ -30,20 +30,21 @@ def IsMetabolic (A : FiniteQuadraticModule) : Prop :=
   ∃ H : AddSubgroup A, A.IsLagrangian H
 
 /-- Metabolicity means that a quadratic Lagrangian exists. -/
-theorem isMetabolic_iff (A : FiniteQuadraticModule) :
+@[simp]
+theorem isMetabolic_def (A : FiniteQuadraticModule) :
     A.IsMetabolic ↔ ∃ H : AddSubgroup A, A.IsLagrangian H := Iff.rfl
 
 /-- An isometry preserves the existence of a quadratic Lagrangian. -/
 theorem Isometry.isMetabolic_iff {A B : FiniteQuadraticModule} (f : Isometry A B) :
-    B.IsMetabolic ↔ A.IsMetabolic := by
-  rw [B.isMetabolic_iff, A.isMetabolic_iff]
+    A.IsMetabolic ↔ B.IsMetabolic := by
+  rw [A.isMetabolic_def, B.isMetabolic_def]
   constructor
-  · rintro ⟨H, hH⟩
-    exact ⟨H.map f.symm.toAddEquiv,
-      (FiniteQuadraticModule.Isometry.isLagrangian_map_iff B (f.symm : Isometry B A) H).2 hH⟩
   · rintro ⟨H, hH⟩
     exact ⟨H.map f.toAddEquiv,
       (FiniteQuadraticModule.Isometry.isLagrangian_map_iff A f H).2 hH⟩
+  · rintro ⟨H, hH⟩
+    exact ⟨H.map f.symm.toAddEquiv,
+      (FiniteQuadraticModule.Isometry.isLagrangian_map_iff B (f.symm : Isometry B A) H).2 hH⟩
 
 end FiniteQuadraticModule
 
