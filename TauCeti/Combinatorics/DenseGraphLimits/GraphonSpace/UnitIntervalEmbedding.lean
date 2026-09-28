@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.UnitIntervalModel
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Basic
+public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel.Transport
 
 /-!
 # Every graphon space embeds isometrically in the unit-interval graphon space
@@ -23,11 +24,20 @@ properties of `GraphonSpaceI` that pass to subspaces -- total boundedness in the
 hold on every fixed-carrier graphon space. The embedding also preserves homomorphism densities;
 see `homDensityOnSpace_toGraphonSpaceI` in `GraphonSpace/HomDensity.lean`.
 
+Over an atomless standard Borel carrier the embedding is onto: such a carrier maps
+measure-preservingly onto `(I, volume)`
+(`MeasureTheory.Measure.exists_measurePreserving_of_nullSingleton`), so every graphon, on any
+carrier, is at cut distance zero from a graphon on it. The graphon space over such a carrier is then
+isometric to the unit-interval graphon space, and every metric property of `GraphonSpaceI` --
+compactness in the first place -- transfers to it.
+
 ## Main definitions
 
 * `TauCeti.DenseGraphLimits.Graphon.unitIntervalRepr` -- a unit-interval graphon at cut distance
   zero from a given graphon on an arbitrary probability carrier;
-* `TauCeti.DenseGraphLimits.toGraphonSpaceI` -- the induced map on graphon spaces.
+* `TauCeti.DenseGraphLimits.toGraphonSpaceI` -- the induced map on graphon spaces;
+* `TauCeti.DenseGraphLimits.isometryEquivGraphonSpaceI` -- over an atomless standard Borel
+  carrier, the induced map as an isometry equivalence.
 
 ## Main results
 
@@ -38,12 +48,16 @@ see `homDensityOnSpace_toGraphonSpaceI` in `GraphonSpace/HomDensity.lean`.
   isometry of strict graphons;
 * `TauCeti.DenseGraphLimits.isometry_toGraphonSpaceI` -- the induced map is an isometry;
 * `TauCeti.DenseGraphLimits.toGraphonSpaceI_eq_self` -- on the unit-interval graphon space the
-  induced map is the identity.
+  induced map is the identity;
+* `TauCeti.DenseGraphLimits.exists_graphon_cutDist_eq_zero` -- every graphon is at cut distance
+  zero from a graphon on a given atomless standard Borel carrier;
+* `TauCeti.DenseGraphLimits.toGraphonSpaceI_surjective` -- over an atomless standard Borel
+  carrier the induced map is onto.
 
 ## References
 
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
-  (2013), Theorem 7.1.
+  (2013), Theorem 7.1 and Theorem A.7.
 -/
 
 public section
@@ -122,6 +136,54 @@ theorem isometry_toGraphonSpaceI : Isometry (toGraphonSpaceI (μ := μ)) := by
 theorem toGraphonSpaceI_eq_self (x : GraphonSpaceI) : toGraphonSpaceI x = x := by
   obtain ⟨W, rfl⟩ := SeparationQuotient.surjective_mk x
   simp
+
+section Atomless
+
+variable [StandardBorelSpace Ω] [NullSingletonClass μ]
+
+variable (μ) in
+/-- **Every graphon is represented on every atomless standard Borel carrier**: a graphon on an
+arbitrary probability carrier is at cut distance zero from a graphon on `(Ω, μ)` whenever `Ω` is
+standard Borel and `μ` has no atoms.
+
+This generalizes `exists_graphon_unitInterval_cutDist_eq_zero`, which represents every graphon on
+the particular atomless carrier `(I, volume)`, to every atomless standard Borel carrier. -/
+theorem exists_graphon_cutDist_eq_zero (V : Graphon Ω' μ') :
+    ∃ W : Graphon Ω μ, cutDist V W = 0 := by
+  obtain ⟨f, hf⟩ := Measure.exists_measurePreserving_of_nullSingleton μ (volume : Measure I)
+  refine ⟨V.unitIntervalRepr.comap f hf.measurable μ, ?_⟩
+  rw [← Graphon.cutDist_unitIntervalRepr_left, cutDist_comap_right _ _ hf, cutDist_self]
+
+/-- Over an atomless standard Borel carrier the embedding into the unit-interval graphon space is
+onto. -/
+theorem toGraphonSpaceI_surjective : Function.Surjective (toGraphonSpaceI (μ := μ)) := by
+  refine SeparationQuotient.surjective_mk.forall.2 fun V => ?_
+  obtain ⟨W, hW⟩ := exists_graphon_cutDist_eq_zero μ V
+  exact ⟨SeparationQuotient.mk W, by simpa using (cutDist_comm W V).trans hW⟩
+
+/-- **The graphon space over an atomless standard Borel carrier is isometric to the unit-interval
+graphon space**, through the embedding `toGraphonSpaceI`. -/
+def isometryEquivGraphonSpaceI : GraphonSpace Ω μ ≃ᵢ GraphonSpaceI where
+  toEquiv := .ofBijective toGraphonSpaceI
+    ⟨isometry_toGraphonSpaceI.injective, toGraphonSpaceI_surjective⟩
+  isometry_toFun := isometry_toGraphonSpaceI
+
+/-- The isometry equivalence acts as the embedding `toGraphonSpaceI`. -/
+@[simp]
+theorem coe_isometryEquivGraphonSpaceI :
+    ⇑(isometryEquivGraphonSpaceI (μ := μ)) = toGraphonSpaceI :=
+  (rfl)
+
+/-- The inverse isometry sends the class of a unit-interval graphon `V` to the class of any graphon
+on `(Ω, μ)` at cut distance zero from `V`. -/
+@[simp]
+theorem isometryEquivGraphonSpaceI_symm_mk_eq_mk_iff (V : Graphon I (volume : Measure I))
+    (W : Graphon Ω μ) :
+    isometryEquivGraphonSpaceI.symm (SeparationQuotient.mk V) = SeparationQuotient.mk W ↔
+      cutDist V W = 0 := by
+  simp [IsometryEquiv.symm_apply_eq]
+
+end Atomless
 
 end DenseGraphLimits
 
