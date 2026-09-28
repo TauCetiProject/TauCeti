@@ -61,25 +61,16 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex [Discrete
   have hf : ∀ᶠ y in 𝓝 x,
       MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (compactifiedQuotientMap h) y := by
     exact Filter.Eventually.of_forall (mdifferentiable_compactifiedQuotientMap h)
-  rw [localMultiplicity_eq_analyticOrderNatAt he he' hxe hfxe hf]
   have hex : e x = 0 := by simp [e, x]
   have hefx : e' (compactifiedQuotientMap h x) = 0 := by simp [e', hfx]
-  rw [hex]
-  simp only [hefx]
-  have heq : (fun z ↦ e' (compactifiedQuotientMap h (e.symm z)) - 0) =ᶠ[𝓝 0]
-      fun z : ℂ ↦ z ^ n - 0 ^ n := by
+  have hpow : (fun z ↦ e' (compactifiedQuotientMap h (e.symm z))) =ᶠ[𝓝 0]
+      fun z : ℂ ↦ z ^ n := by
     filter_upwards [hex ▸ e.open_target.mem_nhds (e.map_source hxe)] with z hz
     have hz' : e.symm z ∈ cuspNhd D D.width := by
       simpa [e] using e.map_target hz
     rw [cuspChart_compactifiedQuotientMap_eq_pow_widthIndex h D E hc hσ hD hz']
-    simp [e, n, e.right_inv hz, zero_pow hn.ne']
-  calc
-    analyticOrderNatAt (fun z ↦ e' (compactifiedQuotientMap h (e.symm z)) - 0) 0 =
-        analyticOrderNatAt (fun z : ℂ ↦ z ^ n - 0 ^ n) 0 := by
-      exact TauCeti.analyticOrderNatAt_congr heq
-    _ = localMultiplicity (fun z : ℂ ↦ z ^ n) 0 := by
-      rw [localMultiplicity_eq_analyticOrderNatAt_sub]
-    _ = n := localMultiplicity_pow_zero n
-    _ = widthIndex h D E hc hσ := rfl
+    simp [e, n, e.right_inv hz]
+  exact localMultiplicity_eq_of_coordinate_eventuallyEq_pow_zero
+    he he' hxe hfxe hf hn hex hefx hpow
 
 end Subgroup.CompactifiedQuotient
