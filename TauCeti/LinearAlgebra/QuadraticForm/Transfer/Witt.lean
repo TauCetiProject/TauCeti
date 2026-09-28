@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.Class
-public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.Frobenius
+public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.Class.Frobenius
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.BaseChange
 
 /-!
@@ -29,12 +28,11 @@ packaged as an additive homomorphism, with the projection formula recording its 
 
 ## Main results
 
-* `TauCeti.RegularFormClass.scharlauTransfer_mul_baseChange`: Frobenius reciprocity on regular
-  form classes.
-* `TauCeti.RegularFormClass.scharlauTransfer_hyperbolicClass`: transfer of a hyperbolic plane is
-  a sum of `[L : K]` hyperbolic planes.
 * `TauCeti.WittRing.scharlauTransfer_wittClass`: the descended map agrees with form transfer.
 * `TauCeti.WittRing.scharlauTransfer_baseChange_mul`: the projection formula on Witt rings.
+* `TauCeti.WittRing.scharlauTransfer_comp`: transfers compose in a tower of extensions.
+* `TauCeti.WittRing.traceTransfer_eq_scharlauTransfer`: trace transfer is Scharlau transfer along
+  the algebra trace.
 
 ## References
 
@@ -54,53 +52,6 @@ universe u v w
 
 variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
   [FiniteDimensional K L] [Invertible (2 : K)]
-
-/-- **Frobenius reciprocity on regular-form classes.** Transfer of a class over `L` multiplied
-by a scalar-extended class from `K` is the transfer multiplied by the original base class. -/
-@[simp]
-theorem RegularFormClass.scharlauTransfer_mul_baseChange (s : L →ₗ[K] K) (hs : s ≠ 0)
-    (x : RegularFormClass L) (y : RegularFormClass K) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    RegularFormClass.scharlauTransfer s hs (x * y.baseChange L) =
-      RegularFormClass.scharlauTransfer s hs x * y := by
-  let _ : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  induction x using Quotient.inductionOn with
-  | h p =>
-    induction y using Quotient.inductionOn with
-    | h q =>
-      let _ : FiniteDimensional K
-          ((Fin p.1 → L) ⊗[L] (L ⊗[K] (Fin q.1 → K))) :=
-        FiniteDimensional.trans K L _
-      rw [← formClass_presentedForm p, ← formClass_presentedForm q,
-        ← QuadraticForm.formClass_baseChange, ← formClass_tmul,
-        RegularFormClass.scharlauTransfer_formClass,
-        RegularFormClass.scharlauTransfer_formClass, ← formClass_tmul]
-      exact (formClass_eq_iff _ _ _ _).mpr
-        ⟨QuadraticMap.IsometryEquiv.scharlauTransferTmulBaseChange
-          (presentedForm p) (presentedForm q) s⟩
-
-/-- Transfer of a hyperbolic plane over `L` is a sum of `[L : K]` hyperbolic planes over `K`.
-This is the hyperbolic-preservation statement that makes transfer descend to Witt rings. -/
-@[simp]
-theorem RegularFormClass.scharlauTransfer_hyperbolicClass (s : L →ₗ[K] K) (hs : s ≠ 0) :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-    RegularFormClass.scharlauTransfer s hs (hyperbolicClass L) =
-      Module.finrank K L • hyperbolicClass K := by
-  let _ : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  calc
-    RegularFormClass.scharlauTransfer s hs (hyperbolicClass L) =
-        RegularFormClass.scharlauTransfer s hs
-          (1 * RegularFormClass.baseChange L (hyperbolicClass K)) := by
-            rw [one_mul, RegularFormClass.baseChange_hyperbolicClass]
-    _ = RegularFormClass.scharlauTransfer s hs 1 * hyperbolicClass K :=
-      RegularFormClass.scharlauTransfer_mul_baseChange s hs 1 (hyperbolicClass K)
-    _ = RegularFormClass.rank (RegularFormClass.scharlauTransfer s hs 1) •
-        hyperbolicClass K := RegularFormClass.mul_hyperbolicClass _
-    _ = Module.finrank K L • hyperbolicClass K := by simp
 
 /-- Scharlau transfer on Witt–Grothendieck rings. This is only an additive homomorphism:
 transfer is not generally compatible with multiplication. -/
@@ -233,16 +184,9 @@ theorem WittRing.scharlauTransfer_mk (s : L →ₗ[K] K) (hs : s ≠ 0)
   have hmk' (z : WittGrothendieckRing K) :
       (WittRing.mk (K := K)).toAddMonoidHom z = WittRing.mk z := by
     exact DFunLike.congr_fun (RingHom.toAddMonoidHom_eq_coe (WittRing.mk (K := K))) z
-  rw [← hmk x, ← hmk' (WittGrothendieckRing.scharlauTransfer s hs x)]
-  rw [WittRing.scharlauTransfer]
-  unfold AddMonoidHom.liftOfSurjective
-  simpa only [WittRing.scharlauTransferDescentData, AddMonoidHom.comp_apply,
-    RingHom.toAddMonoidHom_eq_coe] using
-      (AddMonoidHom.liftOfRightInverse_comp_apply
-        (f := (WittRing.mk (K := L)).toAddMonoidHom)
-        (f_neg := Function.surjInv WittRing.mk_surjective)
-        (Function.rightInverse_surjInv WittRing.mk_surjective)
-        (WittRing.scharlauTransferDescentData s hs) x)
+  rw [← hmk x, ← hmk' (WittGrothendieckRing.scharlauTransfer s hs x),
+    WittRing.scharlauTransfer]
+  exact AddMonoidHom.liftOfRightInverse_comp_apply _ _ _ _ x
 
 /-- Scharlau transfer of the Witt class of a form class is the Witt class of its transfer. -/
 @[simp]
@@ -397,6 +341,22 @@ def WittRing.traceTransfer :
       exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
   WittRing.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L)
 
+/-- Trace transfer on Witt rings is Scharlau transfer along the algebra trace. This makes the
+generic transfer results — the projection formula and the tower law — available for trace
+transfer. -/
+theorem WittRing.traceTransfer_eq_scharlauTransfer :
+    letI : Invertible (2 : L) :=
+      invertibleOfNonzero <| by
+        rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
+        exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+    WittRing.traceTransfer (K := K) (L := L) =
+      WittRing.scharlauTransfer (Algebra.trace K L) (Algebra.trace_ne_zero K L) := by
+  let _ : Invertible (2 : L) :=
+    invertibleOfNonzero <| by
+      rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
+      exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
+  rfl
+
 /-- Trace transfer of a Witt class is the Witt class of the class-level trace transfer. -/
 @[simp]
 theorem WittRing.traceTransfer_wittClass (x : RegularFormClass L) :
@@ -410,7 +370,7 @@ theorem WittRing.traceTransfer_wittClass (x : RegularFormClass L) :
     invertibleOfNonzero <| by
       rw [← map_ofNat (algebraMap K L) 2, ← map_zero (algebraMap K L)]
       exact (FaithfulSMul.algebraMap_injective K L).ne (Invertible.ne_zero (2 : K))
-  rw [WittRing.traceTransfer, WittRing.scharlauTransfer_wittClass,
+  rw [WittRing.traceTransfer_eq_scharlauTransfer, WittRing.scharlauTransfer_wittClass,
     RegularFormClass.traceTransfer_eq_scharlauTransfer]
 
 end TauCeti
