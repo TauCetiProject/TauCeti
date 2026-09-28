@@ -55,7 +55,7 @@ variable {C : Type*} [Category* C] [MonoidalCategory C] [Preadditive C]
 /-- The tensor product of two morphisms of homological complexes, restricted to a homogeneous
 summand, is the tensor product of their components.  Mathlib states this only for
 `HomologicalComplex.mapBifunctorMap`, by which `⊗ₘ` is defined. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂)
     [HasTensor K₁ K₂] [HasTensor L₁ L₂]
     (i₁ i₂ j : I) (h : i₁ + i₂ = j) :
