@@ -567,9 +567,7 @@ theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_injective
 noncomputable def _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     specialOrthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
-  (Matrix.GeneralLinearGroup.toLin (n := n) (R := R)).symm.toMonoidHom.comp
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.toMonoidHom.comp
-      (specialOrthogonalGroup Q).subtype)
+  (orthogonalToGeneralLinear Q).comp (specialOrthogonalToOrthogonal Q)
 
 /-- A special orthogonal transformation acts through its usual coordinate matrix. -/
 @[simp]
@@ -584,9 +582,7 @@ theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_apply
 theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_injective
     (Q : QuadraticMap R (n → R) N) :
     Function.Injective (specialOrthogonalToGeneralLinear Q) :=
-  (Matrix.GeneralLinearGroup.toLin (n := n) (R := R)).symm.injective.comp
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.injective.comp
-      Subtype.coe_injective)
+  (orthogonalToGeneralLinear_injective Q).comp specialOrthogonalToOrthogonal_injective
 
 end Coordinate
 

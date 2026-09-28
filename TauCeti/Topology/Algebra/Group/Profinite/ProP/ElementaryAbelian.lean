@@ -164,15 +164,8 @@ variable [DistribMulAction (X → Multiplicative (ZMod p)) (ZMod p)]
 `H²((ℤ/p)^X, 𝔽_p)` has `p ^ (#X (#X + 1) / 2)` elements. -/
 @[simp]
 theorem natCard_H2_pi_multiplicative_zmod :
-    @Fintype.card (H2 (X → Multiplicative (ZMod p)) (ZMod p))
-      (@Fintype.ofFinite _
-        (finite_H2_of_proPFrattini_eq_bot isTopologicallyFinitelyGenerated_of_fg
-          (proPFrattini_pi_multiplicative_zmod_eq_bot p X))) =
+    Nat.card (H2 (X → Multiplicative (ZMod p)) (ZMod p)) =
       p ^ (Nat.card X * (Nat.card X + 1) / 2) := by
-  rw [← @Nat.card_eq_fintype_card _
-    (@Fintype.ofFinite _
-      (finite_H2_of_proPFrattini_eq_bot isTopologicallyFinitelyGenerated_of_fg
-        (proPFrattini_pi_multiplicative_zmod_eq_bot p X)))]
   rw [natCard_H2_of_proPFrattini_eq_bot isTopologicallyFinitelyGenerated_of_fg
     (proPFrattini_pi_multiplicative_zmod_eq_bot p X),
     topologicalGeneratorRankNat_pi_multiplicative_zmod]
