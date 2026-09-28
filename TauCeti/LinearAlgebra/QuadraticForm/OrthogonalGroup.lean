@@ -111,6 +111,9 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   over a field of characteristic not two, the determinant takes exactly the values `±1`, so
   `SO(Q)` has index two in `O(Q)`; on the zero space the two coincide,
   `TauCeti.QuadraticMap.specialOrthogonalWithin_eq_top`.
+* `TauCeti.QuadraticMap.range_orthogonalGroup_toLinearMap`: on a finite free module over a domain,
+  if the polar form separates points, the underlying maps of `O(Q)` are exactly the endomorphisms
+  preserving `Q`; `exists_orthogonalGroup_toLinearMap_eq` gives the lift.
 
 ## Implementation notes
 
@@ -127,6 +130,8 @@ spelling also assumes `2 ≠ 0`. The fixed-subspace correction assumes a field a
 closing Cartan--Dieudonne dichotomy assumes a field, a nonzero common quadratic value, and `2 ≠ 0`.
 The determinant's square needs a separating polar form on a finite free module over a domain, and
 its range and index a nondegenerate form over a field in which `2 ≠ 0`.
+The endomorphism characterization needs a separating polar form on a finite free module over a
+domain.
 
 ## References
 
@@ -136,6 +141,7 @@ its range and index a nondegenerate form over a field in which `2 ≠ 0`.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 * E. Artin, *Geometric Algebra* (1957), Chapter III.
 * O. T. O'Meara, *Introduction to Quadratic Forms* (1963), §43.
+  The endomorphism characterization below is the algebraic observation in this section.
 -/
 
 public section
@@ -1022,6 +1028,39 @@ theorem index_specialOrthogonalWithin [Nontrivial V] (hQ : Q.Nondegenerate) :
     hneg.card_rootsOfUnity]
 
 end DetField
+
+section Endomorphism
+
+variable {R : Type u} {M : Type v} [CommRing R] [IsDomain R] [AddCommGroup M]
+  [Module R M] [Module.Free R M] [Module.Finite R M]
+
+/-- A form-preserving endomorphism of a finite free module over a domain lifts to an orthogonal
+automorphism when the polar form is left-separating. -/
+theorem exists_orthogonalGroup_toLinearMap_eq {Q : QuadraticForm R M}
+    (hQ : Q.polarBilin.SeparatingLeft) {f : Module.End R M}
+    (hf : ∀ x, Q (f x) = Q x) :
+    ∃ g : orthogonalGroup Q, (g : M ≃ₗ[R] M).toLinearMap = f := by
+  have hI : BilinForm.IsIsometry Q.polarBilin f :=
+    QuadraticForm.isIsometry_polarBilin_of_forall_map_app hf
+  refine ⟨⟨hI.toIsometryGroup hQ, ?_⟩, ?_⟩
+  · exact mem_orthogonalGroup_iff.mpr fun x => by
+      simpa only [BilinForm.IsIsometry.toIsometryGroup_apply] using hf x
+  · exact BilinForm.IsIsometry.coe_toIsometryGroup hQ hI
+
+/-- An endomorphism of a finite free module over a domain preserves a quadratic form with
+left-separating polar form exactly when it underlies an orthogonal automorphism. -/
+theorem range_orthogonalGroup_toLinearMap (Q : QuadraticForm R M)
+    (hQ : Q.polarBilin.SeparatingLeft) :
+    Set.range (fun g : orthogonalGroup Q => (g : M ≃ₗ[R] M).toLinearMap) =
+      {f : Module.End R M | ∀ x : M, Q (f x) = Q x} := by
+  ext f
+  constructor
+  · rintro ⟨g, rfl⟩ x
+    exact mem_orthogonalGroup_iff.mp g.2 x
+  · intro hf
+    exact exists_orthogonalGroup_toLinearMap_eq hQ hf
+
+end Endomorphism
 
 end QuadraticMap
 

@@ -27,6 +27,7 @@ on the scaling, and the datum is unique once the cusp and the scaling are fixed.
 ## Main declarations
 
 * `Subgroup.CuspDatum`: normalized cusp data of `Γ ≤ PSL(2, ℝ)`.
+* `Subgroup.CuspDatum.cusp_eq_of_scaling_eq`: cusp data with equal scalings have equal cusps.
 * `Subgroup.CuspDatum.mem_stabilizer_iff_conj`: the conjugated stabilizer of the cusp is exactly
   the group of translations by `width * ℤ`.
 * `Subgroup.CuspDatum.ext`: a cusp datum is determined by its cusp and
@@ -201,6 +202,12 @@ theorem scaling_smul_cusp : D.scaling • D.cusp = ∞ := by
       D.generator_mem_stabilizer]
   rwa [(isParabolic_upperRightHom_iff.mpr D.width_pos.ne').smul_eq_self_iff,
     parabolicFixedPoint_upperRightHom] at hfix
+
+/-- Cusp data with the same scaling represent the same boundary point. -/
+theorem cusp_eq_of_scaling_eq {Δ : Subgroup PSL(2, ℝ)} (D : Δ.CuspDatum) (E : Γ.CuspDatum)
+    (hσ : D.scaling = E.scaling) : D.cusp = E.cusp :=
+  (MulAction.injective D.scaling)
+    (D.scaling_smul_cusp.trans (hσ.symm ▸ E.scaling_smul_cusp).symm)
 
 /-- The point of a cusp datum is a cusp point. -/
 theorem isCuspPoint : Γ.IsCuspPoint D.cusp :=

@@ -18,6 +18,8 @@ import Mathlib.Analysis.Real.Sqrt
 A quadratic map on a finite module is continuous for the module topologies when two is
 invertible. This follows from Mathlib's continuity theorem for bilinear maps by evaluating
 the associated bilinear map on the diagonal.
+For any continuous quadratic map, its preserving endomorphisms form a closed set when the
+codomain is Hausdorff.
 
 Over the reals, near a vector with nonzero quadratic value, the ratio to that value is a
 nonzero square. This is the neighborhood condition that allows weak approximation of vectors
@@ -46,6 +48,23 @@ theorem _root_.QuadraticMap.continuous
   simpa only [Function.comp_def, id_eq, QuadraticMap.associated_eq_self_apply] using
     (IsModuleTopology.continuous_bilinear_of_finite_left (Q.associatedHom R)).comp
       (continuous_id.prodMk continuous_id)
+
+/-- Endomorphisms preserving a continuous quadratic map form a closed subset of the
+endomorphism space when the codomain is Hausdorff. -/
+theorem _root_.QuadraticMap.isClosed_setOfPred_forall_map_app
+    {R M N : Type*} [CommRing R] [TopologicalSpace R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsModuleTopology R M]
+    [TopologicalSpace (Module.End R M)] [IsModuleTopology R (Module.End R M)]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N] [T2Space N]
+    (Q : QuadraticMap R M N) (hQ : Continuous Q) :
+    IsClosed {f : Module.End R M | ∀ x : M, Q (f x) = Q x} := by
+  let : ContinuousAdd M := IsModuleTopology.toContinuousAdd R M
+  have h (x : M) : IsClosed {f : Module.End R M | Q (f x) = Q x} := by
+    have hev : Continuous (fun f : Module.End R M => f x) :=
+      IsModuleTopology.continuous_of_linearMap ((LinearMap.applyₗ :
+        M →ₗ[R] Module.End R M →ₗ[R] M) x)
+    exact isClosed_eq (hQ.comp hev) continuous_const
+  simpa only [Set.ofPred_forall] using isClosed_iInter h
 
 /-- Near a vector where a real quadratic form is nonzero, its value remains nonzero and in
 the same square class. No nondegeneracy assumption on the form is needed. -/
