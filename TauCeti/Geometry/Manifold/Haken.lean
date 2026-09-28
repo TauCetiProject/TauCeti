@@ -43,6 +43,8 @@ Chapter II.
   `TauCeti.isClosedIncompressibleSurfaceEmbedding_prodMk` provide reusable incompressible-surface
   witnesses.
 * `TauCeti.isHakenSurfaceEmbedding_iff` exposes the additional Haken-witness conditions.
+* `TauCeti.IsHakenSurfaceEmbedding.exists_isOpen_sdiff_range_eq_union` records the two-sided
+  complement of a Haken surface embedding.
 -/
 
 public section
@@ -162,5 +164,19 @@ theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
         IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f ∧ IsBicollared f ∧
           ∃ s : S, Nontrivial (FundamentalGroup S s) :=
   Iff.rfl
+
+namespace IsHakenSurfaceEmbedding
+
+/-- A Haken surface embedding is two-sided: its image has an open neighbourhood whose complement
+splits into two disjoint nonempty open sides. -/
+theorem exists_isOpen_sdiff_range_eq_union {f : C(S, M)}
+    (h : IsHakenSurfaceEmbedding f) :
+    ∃ U V W : Set M,
+      IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧ V.Nonempty ∧ W.Nonempty ∧
+        Disjoint V W ∧ U \ range f = V ∪ W := by
+  have hnonempty : Nonempty S := ⟨h.2.2.2.choose⟩
+  exact @IsBicollared.exists_isOpen_sdiff_range_eq_union M S _ _ f hnonempty h.2.2.1
+
+end IsHakenSurfaceEmbedding
 
 end TauCeti
