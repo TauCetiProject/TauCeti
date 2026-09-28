@@ -317,11 +317,13 @@ theorem SeparatelyExchangeable.exists_common_visibleCells_coding
     measurable_fst.prodMk (Measurable.of_eval fun r => hg.comp
       (((measurable_cellContextOfStrips e f r.1.1.1 r.1.1.2).comp measurable_fst).prodMk
         ((measurable_pi_apply r).comp measurable_snd)))
-  rw [show ((ρ.map H.domRestrict).prod (Measure.pi fun _ : F => (volume : Measure I))) =
-      (ρ.prod (Measure.pi fun _ : F => (volume : Measure I))).map (Prod.map H.domRestrict id) from
-        by simpa using
-          Measure.map_prod_map ρ (Measure.pi fun _ : F => (volume : Measure I)) hZ measurable_id,
-    Measure.map_map hcoded (hZ.prodMap measurable_id)] at hglue
+  -- The strips are read off `ρ` itself, so the law of the strips paired with the uniform family
+  -- is the image of `ρ` paired with that family: the restriction only acts on the first factor.
+  have hprod : (ρ.map H.domRestrict).prod (Measure.pi fun _ : F => (volume : Measure I)) =
+      (ρ.prod (Measure.pi fun _ : F => (volume : Measure I))).map (Prod.map H.domRestrict id) := by
+    simpa using
+      Measure.map_prod_map ρ (Measure.pi fun _ : F => (volume : Measure I)) hZ measurable_id
+  rw [hprod, Measure.map_map hcoded (hZ.prodMap measurable_id)] at hglue
   refine Eq.trans (congrArg (Measure.map · _) ?_) hglue
   funext q
   refine Prod.ext rfl (funext fun p => ?_)
