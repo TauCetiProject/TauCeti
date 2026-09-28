@@ -267,7 +267,7 @@ theorem primesOver_twenty_three :
       subst P
       exact ⟨isPrime_primeFifteen hmin hgen, liesOver_primeFifteen hmin hgen⟩
 
-/-- There are two primes above `23`, one ramified and one unramified. -/
+/-- There are exactly two primes above `23`. -/
 theorem ncard_primesOver_twenty_three :
     ((Ideal.span {(23 : ℤ)}).primesOver (𝓞 K)).ncard = 2 := by
   rw [primesOver_twenty_three hmin hgen]
