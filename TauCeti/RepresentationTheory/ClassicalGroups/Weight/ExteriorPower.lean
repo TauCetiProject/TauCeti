@@ -203,7 +203,7 @@ theorem weightSpace_extPowerRep_ne_bot_iff
     weightSpace (extPowerRep k n d) l ≠ ⊥ ↔
       ∃ s : Set.powersetCard (Fin n) d, l = weightOfSubset (s : Finset (Fin n)) :=
   weightSpace_ne_bot_iff_of_basis ((Pi.basisFun k (Fin n)).exteriorPower d)
-    basis_mem_weightSpace_extPowerRep hchar weightOfSubset_coe_injective l
+    basis_mem_weightSpace_extPowerRep hchar l
 
 end Domain
 

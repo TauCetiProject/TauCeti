@@ -34,8 +34,9 @@ distinct characters of the torus; `TauCeti.weightChar_injective` supplies it ove
 field, and without it every weight space of every representation is everything over `𝔽₂`.  The
 **injectivity of the labelling** `Function.Injective wt` is a separate, combinatorial condition: it
 says the basis vectors have pairwise distinct weights, which is what makes each weight space a
-single line rather than a larger coordinate subspace.  The spanning statement needs neither, and
-the vanishing statement needs only the first.
+single line rather than a larger coordinate subspace.  The spanning statement needs neither; the
+vanishing statement, and with it the description of which weights occur at all, needs only the
+first.
 
 ## Main results
 
@@ -53,8 +54,6 @@ the vanishing statement needs only the first.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, "The maximal torus and weight spaces".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 
@@ -140,17 +139,17 @@ theorem weightSpace_eq_bot_of_basis (b : Module.Basis ι k W)
   exact repr_eq_zero_of_mem_weightSpace_of_basis b hb hchar hw fun hcon => hl i hcon.symm
 
 /-- **The weights of a representation with a basis of weight vectors are exactly the labels of that
-basis.** -/
+basis.**  The labelling need not be injective here: a label occurring at all already makes its
+weight space nonzero, since it contains a nonzero basis vector. -/
 theorem weightSpace_ne_bot_iff_of_basis (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
-    (hchar : Function.Injective (weightChar k (κ := Fin n))) (hwt : Function.Injective wt)
+    (hchar : Function.Injective (weightChar k (κ := Fin n)))
     (l : Fin n → ℤ) : weightSpace ρ l ≠ ⊥ ↔ ∃ i, l = wt i := by
   refine ⟨fun h => ?_, ?_⟩
   · by_contra hcon
     exact h (weightSpace_eq_bot_of_basis b hb hchar (by simpa using hcon))
   · rintro ⟨i, rfl⟩
-    rw [weightSpace_eq_span_of_basis b hb hchar hwt i, Ne, Submodule.span_singleton_eq_bot]
-    exact b.ne_zero i
+    exact fun hbot => b.ne_zero i ((Submodule.eq_bot_iff _).mp hbot _ (hb i))
 
 end Domain
 

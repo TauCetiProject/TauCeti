@@ -41,9 +41,9 @@ each of multiplicity one.  That is the weight-space refinement of
 symmetric polynomial `h_d`.
 
 For `d = 0` the only weight is `0`, and for `n = 0` and `d > 0` there is no weight at all, the
-symmetric power being zero.  The largest weight in the dominance order is `(d, 0, …, 0)`;
-identifying it as the *highest* weight of `Symᵈ(kⁿ)` needs the highest-weight classification and
-is not done here.
+symmetric power being zero.  For `0 < n` the largest weight in the dominance order is
+`(d, 0, …, 0)`; identifying it as the *highest* weight of `Symᵈ(kⁿ)` needs the highest-weight
+classification and is not done here.
 
 ## Main definitions
 
@@ -92,8 +92,6 @@ representation is everything.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, "The maximal torus and weight spaces".
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 
@@ -143,18 +141,16 @@ theorem exists_sym_weightOfMultiset_eq_iff {n d : ℕ} (l : Fin n → ℤ) :
   · rintro ⟨s, rfl⟩
     exact ⟨weightOfMultiset_nonneg _, by rw [sum_weightOfMultiset, Sym.card_coe]⟩
   · rintro ⟨hnonneg, hsum⟩
-    -- assemble the multiset with `(l i).toNat` copies of each `i`
-    set m : Multiset (Fin n) := ∑ i : Fin n, Multiset.replicate (l i).toNat i with hm
-    have hcount : ∀ j, Multiset.count j m = (l j).toNat := by
-      intro j
-      simp [hm, Multiset.count_sum', Multiset.count_replicate]
-    have hweight : weightOfMultiset m = l := by
-      funext j
-      rw [weightOfMultiset_apply, hcount j, Int.toNat_of_nonneg (hnonneg j)]
-    refine ⟨⟨m, ?_⟩, hweight⟩
-    have : ((Multiset.card m : ℕ) : ℤ) = (d : ℤ) := by
-      rw [← sum_weightOfMultiset m, hweight, hsum]
-    exact_mod_cast this
+    -- `Sym.equivNatSumOfFintype` turns the natural-valued multiplicity vector back into a multiset
+    have hnat : ∑ i, (l i).toNat = d := by
+      have : ((∑ i, (l i).toNat : ℕ) : ℤ) = (d : ℤ) := by
+        rw [Nat.cast_sum, ← hsum]
+        exact Finset.sum_congr rfl fun i _ => Int.toNat_of_nonneg (hnonneg i)
+      exact_mod_cast this
+    refine ⟨(Sym.equivNatSumOfFintype (Fin n) d).symm ⟨_, hnat⟩, funext fun i => ?_⟩
+    rw [weightOfMultiset_apply, ← Sym.coe_equivNatSumOfFintype_apply_apply,
+      Equiv.apply_symm_apply]
+    exact Int.toNat_of_nonneg (hnonneg i)
 
 section CommRing
 
@@ -247,7 +243,7 @@ theorem weightSpace_symPowerRep_ne_bot_iff
     weightSpace (symPowerRep k n d) l ≠ ⊥ ↔
       ∃ s : Sym (Fin n) d, l = weightOfMultiset (s : Multiset (Fin n)) :=
   weightSpace_ne_bot_iff_of_basis ((Pi.basisFun k (Fin n)).symmetricPower d)
-    basis_mem_weightSpace_symPowerRep hchar weightOfMultiset_coe_injective l
+    basis_mem_weightSpace_symPowerRep hchar l
 
 /-- **The weights of `Symᵈ(kⁿ)` are the exponent vectors of the degree-`d` monomials in `n`
 variables**: the nonnegative integer vectors of total degree `d`.  This is the weight-space
