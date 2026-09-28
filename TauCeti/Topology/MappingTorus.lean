@@ -146,6 +146,8 @@ end MappingTorus
 structure MappingTorusPresentation (M : Type u) [TopologicalSpace M] where
   /-- The fibre type. -/
   Fiber : Type u
+  /-- The fibre is nonempty. -/
+  nonemptyFiber : Nonempty Fiber
   /-- The topology carried by the fibre. -/
   fiberTopology : TopologicalSpace Fiber
   /-- The monodromy homeomorphism around the circle. -/
@@ -159,15 +161,16 @@ def FibersOverCircle (M : Type u) [TopologicalSpace M] : Prop :=
   Nonempty (MappingTorusPresentation M)
 
 /-- The mapping torus has its canonical presentation. -/
-def MappingTorus.presentation (φ : F ≃ₜ F) :
+def MappingTorus.presentation [Nonempty F] (φ : F ≃ₜ F) :
     MappingTorusPresentation (MappingTorus φ) where
   Fiber := F
+  nonemptyFiber := inferInstance
   fiberTopology := inferInstance
   monodromy := φ
   equivalence := Homeomorph.refl _
 
 /-- The mapping torus carries its canonical fibering-over-the-circle presentation. -/
-theorem fibersOverCircle_mappingTorus (φ : F ≃ₜ F) :
+theorem fibersOverCircle_mappingTorus [Nonempty F] (φ : F ≃ₜ F) :
     FibersOverCircle (MappingTorus φ) :=
   ⟨MappingTorus.presentation φ⟩
 
@@ -178,6 +181,7 @@ theorem _root_.Homeomorph.fibersOverCircle {M N : Type u} [TopologicalSpace M] [
   let _ := p.fiberTopology
   let e : N ≃ₜ @MappingTorus p.Fiber p.fiberTopology p.monodromy := p.equivalence
   refine ⟨{ Fiber := p.Fiber
+            nonemptyFiber := p.nonemptyFiber
             fiberTopology := p.fiberTopology
             monodromy := p.monodromy
             equivalence := ?_ }⟩
