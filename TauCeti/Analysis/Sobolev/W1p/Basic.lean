@@ -93,6 +93,12 @@ def Sobolev1JetLp.valueL :
 def Sobolev1JetLp.value (J : Sobolev1JetLp mu Omega p) : Lp ℝ p (mu.restrict Omega) :=
   Sobolev1JetLp.valueL J
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- Applying the bundled value projection gives the value component of a Sobolev jet. -/
+@[simp]
+theorem Sobolev1JetLp.valueL_apply (J : Sobolev1JetLp mu Omega p) :
+    Sobolev1JetLp.valueL J = Sobolev1JetLp.value J := (rfl)
+
 /-- The continuous linear projection from an `Lᵖ` Sobolev jet to its gradient component. -/
 def Sobolev1JetLp.gradientL :
     Sobolev1JetLp mu Omega p →L[ℝ] Lp E p (mu.restrict Omega) :=
