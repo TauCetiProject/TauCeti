@@ -40,6 +40,8 @@ special case where each radicand is prime.
 * `TauCeti.Multiquadratic.finrank_adjoin_range_of_coprime_squarefree`:
   `[ℚ(√d₁, …, √dₙ) : ℚ] = 2^|ι|` for pairwise coprime squarefree non-unit integer radicands, the
   squarefree-integer corollary of `finrank_adjoin_range`.
+* `TauCeti.Multiquadratic.finrank_adjoin_simple_of_squarefree`: `[ℚ(√d) : ℚ] = 2` for a
+  squarefree non-unit integer `d`, the one-radicand case.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_six_thirtyfive`: `[ℚ(√6, √35) : ℚ] = 4`, a worked
   example with composite radicands, beyond the reach of the distinct-primes corollary.
 -/
@@ -87,6 +89,22 @@ theorem finrank_adjoin_range_of_coprime_squarefree {ι : Type*} [Finite ι] {L :
     Module.finrank ℚ (IntermediateField.adjoin ℚ (Set.range root)) = 2 ^ Nat.card ι :=
   finrank_adjoin_range (d := fun i => (d i : ℚ)) hroot
     (not_isSquare_prod_of_coprime_squarefree_rat d hcop hsf hnu)
+
+/-- **Degree of a quadratic field with a squarefree integer radicand.** If `d` is a squarefree
+integer that is not a unit and `x` is a square root of `d` in a field `L` over `ℚ`, then
+`[ℚ(√d) : ℚ] = 2`. This is the one-radicand case of
+`finrank_adjoin_range_of_coprime_squarefree`, where the coprimality hypothesis is vacuous. -/
+theorem finrank_adjoin_simple_of_squarefree {L : Type*} [Field L] [Algebra ℚ L] {d : ℤ}
+    (hsf : Squarefree d) (hnu : ¬ IsUnit d) {x : L} (hx : x ^ 2 = algebraMap ℚ L d) :
+    Module.finrank ℚ (IntermediateField.adjoin ℚ {x}) = 2 := by
+  have h := finrank_adjoin_range_of_coprime_squarefree (L := L) ![d] ![x]
+    (fun i => by fin_cases i; simpa using hx) Subsingleton.pairwise
+    (fun i => by fin_cases i; simpa using hsf) (fun i => by fin_cases i; simpa using hnu)
+  have hset : (Set.range ![x]) = {x} := by
+    ext y
+    simp [eq_comm]
+  rw [hset] at h
+  simpa using h
 
 /-- **Worked example: `[ℚ(√6, √35) : ℚ] = 4`.** The radicands `6 = 2·3` and `35 = 5·7` are
 composite, so this lies beyond the distinct-primes corollary `finrank_adjoin_sqrt_primes`; it is
