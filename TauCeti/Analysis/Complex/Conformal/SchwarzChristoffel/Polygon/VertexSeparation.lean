@@ -42,7 +42,8 @@ boundary arc injective. Heights are measured after rotating each earlier side to
 The condition allows both positive and negative turning exponents. -/
 theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_vertex_separation
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 1)
+    (he : ∀ k, -1 < e k)
+    (hcorner : ∀ k : Fin n, e k.succ < 1)
     (hne : ∀ k : Fin n, e k.succ ≠ 0)
     (hsep : ∀ (i j : Fin n), i.val + 1 < j.val →
       let c := Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I)
@@ -54,7 +55,7 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_vertex_separation
     InjOn (schwarzChristoffelBoundary a e z₀)
       (Icc (a 0) (a (Fin.last n))) := by
   have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+    simpa [ha.injective.eq_iff, Finset.filter_eq'] using he k
   apply schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersections
     a e z₀ ha.monotone hfinite
   intro i j hij z hzi hzj
@@ -63,7 +64,8 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_vertex_separation
       schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacent
         a e z₀ ha.monotone i j hadj (ha i.castSucc_lt_succ)
         (ha j.castSucc_lt_succ) (hfinite _)
-        (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using he i.succ)
+        (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using
+          (show e i.succ ∈ Ioo (-1 : ℝ) 1 from ⟨he i.succ, hcorner i⟩))
         (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using hne i)
         (hfinite _) ⟨hzi, hzj⟩
     exact ⟨hadj.symm, hz⟩
