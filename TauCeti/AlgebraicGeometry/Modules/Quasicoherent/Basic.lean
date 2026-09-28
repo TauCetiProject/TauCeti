@@ -22,9 +22,8 @@ corresponding exact pairing in `X.Modules`.
 Quasi-coherence is stable under pullback along an arbitrary morphism of schemes, so pullback of
 modules restricts to quasicoherent sheaves.
 
-The identity and composition comparisons for this restricted pullback follow the
-full-subcategory construction in `TauCeti/AlgebraicGeometry/VectorBundle/Functoriality.lean`,
-which in turn follows `TauCeti/AlgebraicGeometry/LineBundle/Functoriality.lean`.
+Pullback of quasicoherent sheaves is compatible with identities and composition. In particular,
+an isomorphism of schemes induces an equivalence of their quasicoherent-sheaf categories.
 
 ## Main declarations
 
@@ -35,6 +34,10 @@ which in turn follows `TauCeti/AlgebraicGeometry/LineBundle/Functoriality.lean`.
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pullback f`: the pullback of quasicoherent
   sheaves along a morphism of schemes `f`.
 -/
+
+-- The pullback comparisons follow the full-subcategory construction in
+-- `TauCeti/AlgebraicGeometry/VectorBundle/Functoriality.lean`, which in turn follows
+-- `TauCeti/AlgebraicGeometry/LineBundle/Functoriality.lean`.
 
 public section
 
@@ -177,6 +180,8 @@ noncomputable def pullbackId (X : Scheme.{u}) :
       (Scheme.Modules.pullbackId X).app E.obj)) (by
     intro E F φ
     apply ObjectProperty.hom_ext
+    -- The full-subcategory lift and its underlying module functor are definitionally equal
+    -- on morphisms, so this reduces naturality to Mathlib's module comparison.
     change (Scheme.Modules.pullback (𝟙 X)).map φ.hom ≫
         (Scheme.Modules.pullbackId X).hom.app F.obj =
       (Scheme.Modules.pullbackId X).hom.app E.obj ≫ (𝟭 X.Modules).map φ.hom
@@ -198,7 +203,9 @@ theorem pullbackId_inv_app_hom (X : Scheme.{u}) (E : QuasicoherentSheaf X) :
         eqToHom (pullback_obj_obj (𝟙 X) E).symm := by
   rfl
 
-private lemma pullbackComp_obj_obj {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+/-- The underlying module of a composite restricted pullback is the composite module
+pullback. -/
+theorem pullbackComp_obj_obj {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (E : QuasicoherentSheaf Z) :
     ((pullback g ⋙ pullback f).obj E).obj =
       (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj E.obj :=
@@ -214,6 +221,8 @@ noncomputable def pullbackComp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) 
       eqToIso (pullback_obj_obj (f ≫ g) E).symm)) (by
     intro E F φ
     apply ObjectProperty.hom_ext
+    -- Unfolding the full-subcategory lift on morphisms leaves the naturality square for
+    -- Mathlib's comparison of the underlying module pullbacks.
     change (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).map φ.hom ≫
         (Scheme.Modules.pullbackComp f g).hom.app F.obj =
       (Scheme.Modules.pullbackComp f g).hom.app E.obj ≫
@@ -225,9 +234,7 @@ noncomputable def pullbackComp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) 
 theorem pullbackComp_hom_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (E : QuasicoherentSheaf Z) :
     ((pullbackComp f g).hom.app E).hom =
-      eqToHom (show ((pullback g ⋙ pullback f).obj E).obj =
-        (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj E.obj by
-          exact pullbackComp_obj_obj f g E) ≫
+      eqToHom (pullbackComp_obj_obj f g E) ≫
         (Scheme.Modules.pullbackComp f g).hom.app E.obj ≫
         eqToHom (pullback_obj_obj (f ≫ g) E).symm := by
   rfl
@@ -239,9 +246,7 @@ theorem pullbackComp_inv_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z
     ((pullbackComp f g).inv.app E).hom =
       eqToHom (pullback_obj_obj (f ≫ g) E) ≫
         (Scheme.Modules.pullbackComp f g).inv.app E.obj ≫
-        eqToHom (show (Scheme.Modules.pullback g ⋙ Scheme.Modules.pullback f).obj E.obj =
-          ((pullback g ⋙ pullback f).obj E).obj by
-            exact (pullbackComp_obj_obj f g E).symm) := by
+        eqToHom (pullbackComp_obj_obj f g E).symm := by
   rfl
 
 /-- An isomorphism of schemes induces an equivalence of quasi-coherent modules. -/
