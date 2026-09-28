@@ -65,6 +65,7 @@ theorem coaugmentedBarMap_reducedInclusion (f : AInfinityHom AA BB)
   ReducedTensorWords.coaugmentedMap_reducedInclusion f.barMap w
 
 /-- The coaugmented bar map preserves the counit. -/
+@[simp]
 theorem counit_comp_coaugmentedBarMap (f : AInfinityHom AA BB) :
     TensorWords.counit R B ∘ₗ f.coaugmentedBarMap = TensorWords.counit R A :=
   ReducedTensorWords.counit_comp_coaugmentedMap f.barMap
@@ -89,6 +90,7 @@ theorem isHomogeneous_coaugmentedBarMap (f : AInfinityHom AA BB) :
   ReducedTensorWords.isHomogeneous_coaugmentedMap f.isHomogeneous_barMap
 
 /-- The coaugmented bar map intertwines the square-zero bar differentials. -/
+@[simp]
 theorem coaugmentedBarDifferential_comp_coaugmentedBarMap
     (f : AInfinityHom AA BB) :
     BB.coaugmentedBarDifferential ∘ₗ f.coaugmentedBarMap =
@@ -129,6 +131,22 @@ theorem coaugmentedBarMap_comp (g : AInfinityHom BB CC) (f : AInfinityHom AA BB)
   rw [coaugmentedBarMap, barMap_comp,
     ReducedTensorWords.coaugmentedMap_comp]
   rfl
+
+/-- The identity `A∞` morphism induces the identity coalgebra morphism on coaugmented bars. -/
+@[simp]
+theorem coaugmentedBarCoalgHom_id (AA : AInfinityAlgebra R A) :
+    (AInfinityHom.id AA).coaugmentedBarCoalgHom =
+      CoalgHom.id R (TensorWords R A) := by
+  apply CoalgHom.linearMapOfClass_injective
+  simp
+
+/-- Composition of `A∞` morphisms induces composition of coaugmented coalgebra morphisms. -/
+@[simp]
+theorem coaugmentedBarCoalgHom_comp (g : AInfinityHom BB CC) (f : AInfinityHom AA BB) :
+    (g.comp f).coaugmentedBarCoalgHom =
+      g.coaugmentedBarCoalgHom.comp f.coaugmentedBarCoalgHom := by
+  apply CoalgHom.linearMapOfClass_injective
+  simp
 
 end AInfinityHom
 

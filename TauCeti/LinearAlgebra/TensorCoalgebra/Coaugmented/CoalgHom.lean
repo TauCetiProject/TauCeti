@@ -149,12 +149,11 @@ theorem deconcatenation_comp_coaugmentedMap
     simp [TensorWords.deconcatenation_one, Algebra.algebraMap_eq_smul_one,
       TensorProduct.smul_tmul']
   · rw [← TensorWords.reducedInclusion_of R M ⟨n, hn⟩
-        (PiTensorProduct.tprod R x),
-      LinearMap.comp_apply, coaugmentedMap_reducedInclusion,
-      LinearMap.comp_apply, TensorWords.deconcatenation_comp_reducedInclusion_apply,
-      TensorWords.deconcatenation_comp_reducedInclusion_apply,
-      map_add, map_add, TensorProduct.map_tmul, TensorProduct.map_tmul,
-      coaugmentedMap_reducedInclusion,
+        (PiTensorProduct.tprod R x)]
+    simp only [LinearMap.comp_apply, coaugmentedMap_reducedInclusion]
+    rw [TensorWords.deconcatenation_comp_reducedInclusion_apply,
+      TensorWords.deconcatenation_comp_reducedInclusion_apply]
+    simp only [map_add, TensorProduct.map_tmul, coaugmentedMap_reducedInclusion,
       coaugmentedMap_one]
     rw [hF.deconcatenation_apply]
     congr 1
@@ -191,6 +190,25 @@ theorem coaugmentedCoalgHom_toLinearMap
       coaugmentedMap F := by
   rw [coaugmentedCoalgHom]
   exact CoalgHom.coe_linearMap_mk _ _
+
+/-- Coaugmenting the identity reduced coalgebra map gives the identity coalgebra morphism. -/
+@[simp]
+theorem coaugmentedCoalgHom_id :
+    coaugmentedCoalgHom (isCoalgHom_id M) =
+      CoalgHom.id R (TensorWords R M) := by
+  apply CoalgHom.linearMapOfClass_injective
+  simp
+
+/-- Coaugmenting a composite of reduced coalgebra maps gives the composite morphism. -/
+@[simp]
+theorem coaugmentedCoalgHom_comp {P : Type*} [AddCommMonoid P] [Module R P]
+    {G : ReducedTensorWords R N →ₗ[R] ReducedTensorWords R P}
+    {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
+    (hG : IsCoalgHom R G) (hF : IsCoalgHom R F) :
+    coaugmentedCoalgHom (hG.comp hF) =
+      (coaugmentedCoalgHom hG).comp (coaugmentedCoalgHom hF) := by
+  apply CoalgHom.linearMapOfClass_injective
+  simp
 
 
 end ReducedTensorWords
