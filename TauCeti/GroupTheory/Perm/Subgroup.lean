@@ -10,8 +10,8 @@ public import Mathlib.GroupTheory.Perm.Subgroup
 /-!
 # The permutation subgroup of a faithful group action
 
-These formulas describe how Mathlib's `Equiv.Perm.subgroupOfMulAction` and its inverse
-act on points of the underlying faithful group action.
+These formulas describe how the permutation associated by Mathlib's
+`Equiv.Perm.subgroupOfMulAction`, and its inverse permutation, act on points of a faithful action.
 -/
 
 public section
@@ -25,7 +25,7 @@ theorem subgroupOfMulAction_apply (G H : Type*) [Group G] [MulAction G H]
     ((Equiv.Perm.subgroupOfMulAction G H g : (MulAction.toPermHom G H).range) :
       Equiv.Perm H) x = g • x := rfl
 
-/-- The inverse of Cayley's equivalence acts by the inverse group element. -/
+/-- The inverse permutation associated to `g` acts by `g⁻¹`. -/
 @[simp]
 theorem subgroupOfMulAction_inv_apply (G H : Type*) [Group G] [MulAction G H]
     [FaithfulSMul G H] (g : G) (x : H) :
