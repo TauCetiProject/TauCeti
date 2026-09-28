@@ -38,6 +38,7 @@ known; it is a finite computation, run by `decide`.
 
 * `TauCeti.CosetTable`: the action of the generators on `k` points, and a word for each point.
 * `TauCeti.CosetTable.point`: the point of a `G`-set named by an index of the table.
+* `TauCeti.CosetTable.checkAction`: the Boolean check that a certificate establishes every edge.
 * `TauCeti.CosetTable.check`: the Boolean check of a deduction certificate.
 
 ## Main results
@@ -111,6 +112,15 @@ def deduce (known : List (Fin m × Fin k)) (i : Fin k) : List (Fin m) → List (
 def treeEdges : List (Fin m × Fin k) :=
   (List.finRange m ×ˢ List.finRange k).filter fun e ↦ T.word (T.act e.1 e.2) = e.1 :: T.word e.2
 
+/-- The action check of a deduction certificate `cert` for the relators `rels` and the subgroup
+generators `stab`. It verifies that each deduction scans a relator, or a subgroup generator at a
+point with the empty word, and that running the deductions makes every edge of the table known. -/
+@[expose]
+def checkAction (rels stab : List (List (Fin m))) (cert : List (Fin k × List (Fin m))) : Bool :=
+  cert.all (fun c ↦ c.2 ∈ rels || (T.word c.1 = [] && c.2 ∈ stab)) &&
+    (List.finRange m).all fun t ↦ (List.finRange k).all fun i ↦
+      (t, i) ∈ cert.foldl (fun known c ↦ T.deduce known c.1 c.2) T.treeEdges
+
 /-- The check of a deduction certificate `cert` for the relators `rels` and the subgroup
 generators `stab`. It verifies that some point has the empty word, that each deduction `(i, r)`
 scans a relator, or a subgroup generator at a point with the empty word, and that running the
@@ -118,9 +128,7 @@ deductions in order from `T.treeEdges` makes every edge of the table known. -/
 @[expose]
 def check (rels stab : List (List (Fin m))) (cert : List (Fin k × List (Fin m))) : Bool :=
   (List.finRange k).any (T.word · = []) &&
-    cert.all (fun c ↦ c.2 ∈ rels || (T.word c.1 = [] && c.2 ∈ stab)) &&
-    (List.finRange m).all fun t ↦ (List.finRange k).all fun i ↦
-      (t, i) ∈ cert.foldl (fun known c ↦ T.deduce known c.1 c.2) T.treeEdges
+    T.checkAction rels stab cert
 
 @[simp]
 theorem trace_nil (i : Fin k) : T.trace [] i = i := rfl
@@ -197,12 +205,12 @@ private theorem sound_foldl {rels stab : List (List (Fin m))}
 and the words `stab` fix the base point `a`, a table whose certificate checks describes the action
 of each generator on the points it names. -/
 theorem smul_point {rels stab : List (List (Fin m))} {cert : List (Fin k × List (Fin m))}
-    (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
+    (hT : T.checkAction rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod • a = a) (t : Fin m) (i : Fin k) :
     g t • T.point g a i = T.point g a (T.act t i) := by
-  simp only [check, Bool.and_eq_true, List.any_eq_true, List.all_eq_true, Bool.or_eq_true,
-    decide_eq_true_eq, List.mem_finRange, true_and, forall_const] at hT
-  exact sound_foldl hrels hstab cert _ hT.1.2 sound_treeEdges _ (hT.2 t i)
+  simp only [checkAction, Bool.and_eq_true, List.all_eq_true, Bool.or_eq_true,
+    decide_eq_true_eq, List.mem_finRange, forall_const] at hT
+  exact sound_foldl hrels hstab cert _ hT.1 sound_treeEdges _ (hT.2 t i)
 
 /-- If the generators `g` generate `G`, the points named by a certified coset table contain the
 whole orbit of the base point `a`. -/
@@ -211,6 +219,8 @@ theorem smul_mem_range_point {rels stab : List (List (Fin m))}
     (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod • a = a) (x : G) :
     x • a ∈ Set.range (T.point g a) := by
+  rw [check, Bool.and_eq_true] at hT
+  have hT' : T.checkAction rels stab cert = true := hT.2
   have hfin : (Set.range (T.point g a)).Finite := Set.finite_range _
   have hstabilizer : Subgroup.closure (Set.range g) ≤
       MulAction.stabilizer G (Set.range (T.point g a)) := by
@@ -218,12 +228,12 @@ theorem smul_mem_range_point {rels stab : List (List (Fin m))}
     rintro _ ⟨t, rfl⟩
     rw [SetLike.mem_coe, MulAction.mem_stabilizer_set' hfin]
     rintro _ ⟨i, rfl⟩
-    exact ⟨T.act t i, (smul_point hT hrels hstab t i).symm⟩
+    exact ⟨T.act t i, (smul_point hT' hrels hstab t i).symm⟩
   have hx : x ∈ MulAction.stabilizer G (Set.range (T.point g a)) :=
     hstabilizer (hg ▸ Subgroup.mem_top x)
   refine (MulAction.mem_stabilizer_set' hfin).1 hx ?_
-  simp only [check, Bool.and_eq_true, List.any_eq_true, decide_eq_true_eq] at hT
-  obtain ⟨i, -, hi⟩ := hT.1.1
+  simp only [List.any_eq_true, decide_eq_true_eq] at hT
+  obtain ⟨i, -, hi⟩ := hT.1
   exact ⟨i, by rw [point_def, hi, List.map_nil, List.prod_nil, one_smul]⟩
 
 /-- The cosets named by a certified coset table for a subgroup `H` are all the cosets of `H`. -/

@@ -314,6 +314,7 @@ private def polyhedralRelators (n : ℕ) : List (List (Fin 2)) :=
 private theorem prod_polyhedralRelators (n : ℕ) :
     ∀ r ∈ polyhedralRelators n, (r.map ![x 2 3 n, y 2 3 n]).prod = 1 := by
   have hxy : (x 2 3 n * y 2 3 n) ^ n = 1 := by
+    -- Express `(x * y) ^ n` as the conjugate by `x` of the known relation `(y * x) ^ n`.
     rw [show x 2 3 n * y 2 3 n = x 2 3 n * (y 2 3 n * x 2 3 n) * (x 2 3 n)⁻¹ by group,
       conj_pow, y_mul_x_pow, mul_one, mul_inv_cancel]
   simp only [polyhedralRelators, List.mem_cons, List.not_mem_nil, or_false]
