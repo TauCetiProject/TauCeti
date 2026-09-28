@@ -76,7 +76,7 @@ private theorem localHasseProd_scale (h2 : IsUnit (2 : 𝒪[K])) (a : Kˣ)
       (∏ i, ∏ j ∈ Ioi i, hilbertSymbol (w i) (w j)) *
         hilbertSymbol a (-1) ^ n.choose 2 *
         hilbertSymbol a (∏ i, w i) ^ (n - 1) :=
-  prod_prod_Ioi_scale hilbertSymbol (fun a b c => hilbertSymbol_mul_left h2 c a b)
+  prod_prod_Ioi_scale (s := -1) hilbertSymbol
     (hilbertSymbol_mul_right h2) hilbertSymbol_one_right hilbertSymbol_comm
     hilbertSymbol_self a w
 

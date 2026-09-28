@@ -105,7 +105,7 @@ private theorem hasseProd_scale (a : Kˣ) {n : ℕ} (w : Fin n → Kˣ) :
       (∏ i, ∏ j ∈ Ioi i, quaternionClass (w i) (w j)) *
         quaternionClass a (-1) ^ n.choose 2 *
         quaternionClass a (∏ i, w i) ^ (n - 1) :=
-  prod_prod_Ioi_scale quaternionClass quaternionClass_mul_left
+  prod_prod_Ioi_scale (s := -1) quaternionClass
     (fun a b c => quaternionClass_mul a b c) quaternionClass_one_right
     quaternionClass_comm quaternionClass_self a w
 

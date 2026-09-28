@@ -148,16 +148,18 @@ theorem prod_prod_Ioi_append_of_mul {R M : Type*} [CommMonoid M] [CommMonoid R] 
 
 /-- Scaling every coefficient in a pairwise product for a symmetric bimultiplicative
 pairing. The self-pairing law supplies the correction for each coefficient pair. -/
-theorem prod_prod_Ioi_scale {R M : Type*} [CommMonoid M] [CommRing R] (F : Rˣ → Rˣ → M)
-    (hmul_left : ∀ a b c, F (a * b) c = F a c * F b c)
+theorem prod_prod_Ioi_scale {R M : Type*} [CommMonoid M] [CommMonoid R] (F : Rˣ → Rˣ → M)
+    {s : Rˣ}
     (hmul_right : ∀ a b c, F a (b * c) = F a b * F a c)
     (hone : ∀ a, F a 1 = 1) (hcomm : ∀ a b, F a b = F b a)
-    (hself : ∀ a, F a a = F a (-1)) (a : Rˣ) {n : ℕ} (w : Fin n → Rˣ) :
+    (hself : ∀ a, F a a = F a s) (a : Rˣ) {n : ℕ} (w : Fin n → Rˣ) :
     (∏ i, ∏ j ∈ Ioi i, F (a * w i) (a * w j)) =
       (∏ i, ∏ j ∈ Ioi i, F (w i) (w j)) *
-        F a (-1) ^ n.choose 2 * F a (∏ i, w i) ^ (n - 1) := by
+        F a s ^ n.choose 2 * F a (∏ i, w i) ^ (n - 1) := by
+  have hmul_left (x y z : Rˣ) : F (x * y) z = F x z * F y z := by
+    rw [hcomm (x * y) z, hmul_right, hcomm z x, hcomm z y]
   have hmulmul (b c : Rˣ) :
-      F (a * b) (a * c) = F b c * F a (-1) * F a b * F a c := by
+      F (a * b) (a * c) = F b c * F a s * F a b * F a c := by
     rw [hmul_left, hmul_right, hmul_right, hself, hcomm b a]
     ac_rfl
   let h₁ : Rˣ →* M := {
