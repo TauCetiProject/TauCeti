@@ -99,6 +99,7 @@ noncomputable def stablePretriangulated :
 
 /-- The distinguished triangles of `stablePretriangulated` are the triangles isomorphic to
 standard triangles of conflations. -/
+@[simp]
 theorem stablePretriangulated_distinguishedTriangles :
     letI := hE.stableHasShift
     letI : ∀ n : ℤ, (shiftFunctor E.ProjectiveStableCategory n).Additive :=

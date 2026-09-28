@@ -131,7 +131,6 @@ noncomputable def stableConeTriangleRotateIso (f : X ⟶ Y) :
   simpa only [hT₁, hT₂] using hIso
 
 /-- The rotation of a stable cone triangle is distinguished. -/
-@[simp]
 theorem stableConeTriangle_rotate_mem (f : X ⟶ Y) :
     letI := hE.stableHasShift
     (hE.stableConeTriangle f).rotate ∈ hE.stableDistinguishedTriangles := by
@@ -363,6 +362,7 @@ theorem mem_stableDistinguishedTriangles_of_rotate_mem
     ((rotate E.ProjectiveStableCategory).preimageIso (e ≪≫ e')).symm
 
 /-- A triangle is a distinguished stable triangle exactly when its rotation is. -/
+@[simp]
 theorem rotate_mem_stableDistinguishedTriangles_iff
     (T : (letI := hE.stableHasShift; Triangle E.ProjectiveStableCategory)) :
     (letI := hE.stableHasShift; T.rotate ∈ hE.stableDistinguishedTriangles) ↔
