@@ -72,7 +72,7 @@ open TauCeti
 
 namespace Subrepresentation
 
-variable {k G V : Type*} [DivisionRing k] [Monoid G] [AddCommGroup V] [Module k V]
+variable {k G V : Type*} [Semiring k] [Monoid G] [AddCommMonoid V] [Module k V]
   {ρ : Representation k G V}
 
 /-- The bottom and top subrepresentations are distinct when the ambient space is nontrivial. -/
