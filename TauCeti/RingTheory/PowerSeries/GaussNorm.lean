@@ -544,8 +544,9 @@ theorem gaussValuation_X (hc : 0 < c) :
         PowerSeries.IsRestricted.subring (R := R) c) = ⟨c, hc.le⟩ := by
   apply NNReal.eq
   rw [coe_gaussValuation]
-  change _ = c
-  refine (gaussNorm_eq_of_forall_le (s := 1) fun m ↦ ?_).trans (by simp)
+  calc
+    _ = c := (gaussNorm_eq_of_forall_le (s := 1) fun m ↦ ?_).trans (by simp)
+    _ = ((⟨c, hc.le⟩ : ℝ≥0) : ℝ) := rfl
   by_cases hm : m = 1
   · subst m
     simp [PowerSeries.coeff_X]

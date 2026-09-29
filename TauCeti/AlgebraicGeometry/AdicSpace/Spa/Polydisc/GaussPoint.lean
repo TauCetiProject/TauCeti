@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Huber.Restricted.OneVariable
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.Basic
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
+import TauCeti.RingTheory.Valuation.Archimedean
 import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Analysis.SpecificLimits.Normed
 
@@ -197,18 +198,13 @@ section NontriviallyNormedField
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
   {r : ℝ}
 
-private theorem mulArchimedean_valueGroup₀ {A : Type*} [CommRing A]
-    (w : Valuation A ℝ≥0) : MulArchimedean w.ValueGroup₀ :=
-  MulArchimedean.comap MonoidWithZeroHom.ValueGroup₀.embedding.toMonoidHom
-    MonoidWithZeroHom.ValueGroup₀.embedding_strictMono
-
 /-- **The Gauss valuation is at most one on power-bounded elements** of `K⟨T⟩`. -/
 theorem closedDiscGaussValuation_le_one_of_isPowerBounded (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     {f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight}
     (hf : IsPowerBounded f) : closedDiscGaussValuation hr₀ hr₁ f ≤ 1 := by
   let v := closedDiscGaussValuation (R := K) hr₀ hr₁
   obtain ⟨c, hc₀, hc₁⟩ := NormedField.exists_norm_lt K one_pos
-  let _ : MulArchimedean v.ValueGroup₀ := mulArchimedean_valueGroup₀ v
+  let _ : MulArchimedean v.ValueGroup₀ := TauCeti.mulArchimedean_valueGroup₀ v
   have hcNil : IsTopologicallyNilpotent c :=
     tendsto_pow_atTop_nhds_zero_of_norm_lt_one hc₁
   have hnil : IsTopologicallyNilpotent
