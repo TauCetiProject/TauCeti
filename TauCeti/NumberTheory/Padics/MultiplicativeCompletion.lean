@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.NumberTheory.Padics.RingHoms
 
@@ -49,11 +50,9 @@ variable (p : ℕ) [Fact p.Prime] (L : Type*) [Field L]
 def padicCompletionTransition (m : ℕ) :
     (Lˣ ⧸ (powMonoidHom (p ^ (m + 1)) : Lˣ →* Lˣ).range) →*
       (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) :=
-  QuotientGroup.map _ _ (MonoidHom.id Lˣ) (by
+  QuotientGroup.mapOfLE (by
     rintro _ ⟨x, rfl⟩
-    refine ⟨x ^ p, ?_⟩
-    simp only [powMonoidHom_apply, MonoidHom.id_apply, ← pow_mul]
-    rw [← pow_succ'])
+    exact ⟨x ^ p, by rw [powMonoidHom_apply, powMonoidHom_apply, ← pow_mul, ← pow_succ']⟩)
 
 omit [Fact p.Prime] in
 /-- The transition map sends the class of a unit to its class at the previous level. -/
@@ -62,7 +61,7 @@ theorem padicCompletionTransition_mk (m : ℕ) (x : Lˣ) :
     padicCompletionTransition p L m
         (x : Lˣ ⧸ (powMonoidHom (p ^ (m + 1)) : Lˣ →* Lˣ).range) =
       (x : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) :=
-  QuotientGroup.map_mk _ _ _ _ x
+  QuotientGroup.mapOfLE_mk _ x
 
 /-- `A(L) = lim_m Lˣ/(Lˣ)^(p^m)`, realized as the subgroup of compatible families in the
 product of the power-class groups. -/
