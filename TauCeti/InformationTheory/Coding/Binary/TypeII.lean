@@ -54,6 +54,14 @@ theorem IsTypeII.isDoublyEven (hC : IsTypeII C) : IsDoublyEven C :=
 theorem IsTypeII.eq_euclideanDual (hC : IsTypeII C) : C = C.euclideanDual :=
   hC.2
 
+/-- A Type II code is Euclidean self-dual when viewed as the `ZMod 2`-submodule attached to its
+additive subgroup, the form in which Construction A consumes a code. -/
+theorem IsTypeII.toZModSubmodule_eq_euclideanDual (hC : IsTypeII C) :
+    AddSubgroup.toZModSubmodule 2 C.toAddSubgroup =
+      (AddSubgroup.toZModSubmodule 2 C.toAddSubgroup).euclideanDual := by
+  rw [Submodule.toAddSubgroup_toZModSubmodule]
+  exact hC.eq_euclideanDual
+
 /-- Over `ℤ/2 = ℤ/2^1`, the Type II condition for codes over `ℤ/2^r` is the binary Type II
 condition: binary Euclidean weights are Hamming weights. -/
 theorem _root_.TauCeti.TwoPowCode.isTypeII_one_iff :
