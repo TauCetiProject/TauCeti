@@ -28,7 +28,7 @@ The construction follows the family modules it imports.
 * `TauCeti.ValidLieTypeIndex.steinberg`: the Steinberg endomorphism on the ambient group of each
   valid Lie-type index.
 * `TauCeti.ValidLieTypeIndex.FixedPoints`: the fixed subgroup of the Steinberg endomorphism.
-* `TauCeti.ValidLieTypeIndex.Group`: the finite simple group candidate, the derived subgroup
+* `TauCeti.ValidLieTypeIndex.Group`: the Lie-type candidate group, the derived subgroup
   of the fixed points modulo its centre.
 
 ## Main results
