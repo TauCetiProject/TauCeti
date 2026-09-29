@@ -170,7 +170,8 @@ variable {n : ℕ} [NeZero n] {F : Type*} [Field F] [NeZero (n : F)]
 This is useful for transporting cyclotomic irreducibility through extensions whose degrees have no
 common factor with the cyclotomic degree.
 
-Source: the coprime-degree linear-disjointness criterion in Lang, *Algebra*, Chapter VI, §1. -/
+Source: the linear-disjointness theory in Lang, *Algebra*, revised third edition, Chapter VIII,
+§3. -/
 theorem irreducible_cyclotomic_of_coprime_finrank
     (hirr : Irreducible (cyclotomic n F))
     (hcop : n.totient.Coprime (Module.finrank F K)) :
