@@ -219,6 +219,7 @@ theorem coe_regularIsoClassEquiv_symm_apply [NeZero n]
 
 /-- The normal subgroup of the class of a regular triple `t` is the kernel of the representation
 of `t`. -/
+@[simp]
 theorem coe_regularIsoClassEquiv_mk [NeZero n] (h : IsoClass.mk t ∈ regularIsoClasses a b c n) :
     (regularIsoClassEquiv ⟨IsoClass.mk t, h⟩ : Subgroup (TriangleGroup a b c)) =
       (toPerm t ha hb hc).ker := by
