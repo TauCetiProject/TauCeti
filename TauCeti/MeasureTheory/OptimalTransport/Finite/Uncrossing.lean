@@ -29,42 +29,43 @@ namespace TransportMatrix
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   {μ : PMF ι} {ν : PMF κ}
 
-section
-
-variable [DecidableEq ι] [DecidableEq κ]
-
 private abbrev corner (a : ι) (b : κ) (q : ι × κ) : ℝ :=
-  (Pi.single (a, b) (1 : ℝ) : ι × κ → ℝ) q
+  Set.indicator {(a, b)} (fun _ ↦ (1 : ℝ)) q
 
 omit [Fintype ι] in
 private theorem sum_corner_row (a : ι) (b : κ) (i : ι) :
-    ∑ j, corner a b (i, j) = if i = a then 1 else 0 := by
+    ∑ j, corner a b (i, j) = (open scoped Classical in if i = a then 1 else 0) := by
   classical
   by_cases h : i = a
   · subst i
-    simp [corner, Pi.single_apply, Prod.mk.injEq]
-  · simp [corner, h]
+    simp [corner, Set.indicator, Prod.mk.injEq]
+  · simp [corner, Set.indicator, h]
 
 omit [Fintype κ] in
 private theorem sum_corner_col (a : ι) (b : κ) (j : κ) :
-    ∑ i, corner a b (i, j) = if j = b then 1 else 0 := by
+    ∑ i, corner a b (i, j) = (open scoped Classical in if j = b then 1 else 0) := by
   classical
   by_cases h : j = b
   · subst j
-    simp [corner, Pi.single_apply, Prod.mk.injEq]
-  · simp [corner, h]
+    simp [corner, Set.indicator, Prod.mk.injEq]
+  · simp [corner, Set.indicator, h]
 
 private theorem sum_cost_corner (c : ι × κ → ℝ) (a : ι) (b : κ) :
     ∑ q, c q * corner a b q = c (a, b) := by
   classical
-  simp [corner, Pi.single_apply]
+  simp [corner, Set.indicator]
 
-private theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ : κ}
+/-- Transfer the smaller crossing mass to the two uncrossed cells. The resulting plan has the
+same marginals, and the formula specifies every entry of the four-cell update. -/
+theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ : κ}
     (hi : i₁ ≠ i₂) (hj : j₁ ≠ j₂) :
     ∃ B : TransportMatrix μ ν, ∃ δ : ℝ,
       0 ≤ δ ∧ δ = min (A.toRealFun (i₁, j₂)) (A.toRealFun (i₂, j₁)) ∧
       (∀ q, B.toRealFun q = A.toRealFun q +
-        δ * (corner i₁ j₁ q + corner i₂ j₂ q - corner i₁ j₂ q - corner i₂ j₁ q)) := by
+        δ * (Set.indicator {(i₁, j₁)} (fun _ ↦ (1 : ℝ)) q +
+          Set.indicator {(i₂, j₂)} (fun _ ↦ (1 : ℝ)) q -
+          Set.indicator {(i₁, j₂)} (fun _ ↦ (1 : ℝ)) q -
+          Set.indicator {(i₂, j₁)} (fun _ ↦ (1 : ℝ)) q)) := by
   classical
   let f := A.toRealFun
   let δ := min (f (i₁, j₂)) (f (i₂, j₁))
@@ -105,8 +106,6 @@ private theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j�
   intro q
   rw [toRealFun_ofRealFun]
 
-end
-
 /-- A four-cell uncrossing empties one crossing cell and does not increase cost whenever
 the uncrossed assignment satisfies the local Monge inequality. -/
 theorem exists_uncross_cost_le (A : TransportMatrix μ ν) (c : ι × κ → ℝ)
@@ -145,13 +144,13 @@ theorem exists_uncross_cost_le (A : TransportMatrix μ ν) (c : ι × κ → ℝ
   · rcases le_total (A.toRealFun (i₁, j₂)) (A.toRealFun (i₂, j₁)) with h | h
     · left
       rw [hB, hδ, min_eq_left h]
-      simp [corner, hi, hj.symm]
+      simp [hi, hj.symm]
     · right
       rw [hB, hδ, min_eq_right h]
-      simp [corner, hi.symm, hj]
+      simp [hi.symm, hj]
   · intro q h₁₁ h₂₂ h₁₂ h₂₁
     rw [hB]
-    simp [corner, h₁₁, h₂₂, h₁₂, h₂₁]
+    simp [h₁₁, h₂₂, h₁₂, h₂₁]
 
 end TransportMatrix
 end TauCeti
