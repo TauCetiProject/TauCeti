@@ -134,7 +134,7 @@ theorem IsGradedCoderivationOver.square_commutes_coact
 
 /-- The square of an odd homogeneous coderivation over a square-zero coalgebra operator
 is a comodule endomorphism. -/
-def IsGradedCoderivationOver.squareHom_of_odd {r : ℤ}
+def IsGradedCoderivationOver.squareHomOfOdd {r : ℤ}
     (h : IsGradedCoderivationOver G q b D)
     (hD : LinearMap.IsHomogeneous D G.piece G.piece r)
     (hqr : (((q * r).negOnePow : ℤ) : R) = -1)
@@ -149,17 +149,17 @@ def IsGradedCoderivationOver.squareHom
     (h : IsGradedCoderivationOver G 1 b D)
     (hD : LinearMap.IsHomogeneous D G.piece G.piece 1)
     (hb : b ∘ₗ b = 0) : Hom R C M M :=
-  h.squareHom_of_odd hD (by norm_num) hb
+  h.squareHomOfOdd hD (by norm_num) hb
 
 /-- The underlying map of the odd square comodule endomorphism. -/
 @[simp]
-theorem IsGradedCoderivationOver.squareHom_of_odd_toLinearMap {r : ℤ}
+theorem IsGradedCoderivationOver.squareHomOfOdd_toLinearMap {r : ℤ}
     (h : IsGradedCoderivationOver G q b D)
     (hD : LinearMap.IsHomogeneous D G.piece G.piece r)
     (hqr : (((q * r).negOnePow : ℤ) : R) = -1)
     (hb : b ∘ₗ b = 0) :
-    (h.squareHom_of_odd hD hqr hb).toLinearMap = D ∘ₗ D := by
-  rw [squareHom_of_odd]
+    (h.squareHomOfOdd hD hqr hb).toLinearMap = D ∘ₗ D := by
+  rw [squareHomOfOdd]
 
 /-- The underlying map of the square comodule endomorphism is the square of the
 coderivation. -/
@@ -169,7 +169,7 @@ theorem IsGradedCoderivationOver.squareHom_toLinearMap
     (hD : LinearMap.IsHomogeneous D G.piece G.piece 1)
     (hb : b ∘ₗ b = 0) :
     (h.squareHom hD hb).toLinearMap = D ∘ₗ D :=
-  by rw [squareHom, squareHom_of_odd_toLinearMap]
+  by rw [squareHom, squareHomOfOdd_toLinearMap]
 
 section Cofree
 
@@ -190,18 +190,18 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit_of_odd {r : ℤ}
     D ∘ₗ D = 0 ↔
       (TensorProduct.rid R N).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ (D ∘ₗ D) = 0 := by
-  let f : Hom R C (N ⊗[R] C) (N ⊗[R] C) := h.squareHom_of_odd hD hqr hb
+  let f : Hom R C (N ⊗[R] C) (N ⊗[R] C) := h.squareHomOfOdd hD hqr hb
   constructor
   · intro hsq
     rw [hsq]
     simp
   · intro hc
     have hf : (Hom.cofreeEquiv (R := R) (C := C) (M := N) (P := N ⊗[R] C)) f = 0 := by
-      simpa only [Hom.cofreeEquiv_apply, f, squareHom_of_odd_toLinearMap] using hc
+      simpa only [Hom.cofreeEquiv_apply, f, squareHomOfOdd_toLinearMap] using hc
     have hz : f = 0 := (Hom.cofreeEquiv (R := R) (C := C) (M := N)
       (P := N ⊗[R] C)).injective (by simpa using hf)
     have hlin := congrArg (fun g : Hom R C (N ⊗[R] C) (N ⊗[R] C) => g.toLinearMap) hz
-    simpa only [f, squareHom_of_odd_toLinearMap, Hom.zero_toLinearMap] using hlin
+    simpa only [f, squareHomOfOdd_toLinearMap, Hom.zero_toLinearMap] using hlin
 
 /-- For a degree-one coderivation, the square vanishes if and only if its cofree
 counit component vanishes. -/
