@@ -59,13 +59,15 @@ noncomputable abbrev zHat : ProfiniteGrp.{u} :=
 namespace zHat
 
 /-- The canonical homomorphism from `ℤ`, written multiplicatively, to the profinite integers. It
-is Mathlib's unit `ProfiniteGrp.ProfiniteCompletion.eta` at `Multiplicative ℤ`, read as a plain
+sends `z` through `ULift.up` into the defining copy `ULift.{u} (Multiplicative ℤ)`, and then
+through Mathlib's unit `ProfiniteGrp.ProfiniteCompletion.eta` at that copy, read as a plain
 monoid homomorphism. -/
 noncomputable def ofInt : Multiplicative ℤ →* zHat.{u} :=
   (ProfiniteGrp.ProfiniteCompletion.eta
     (GrpCat.of (ULift.{u} (Multiplicative ℤ)))).hom.comp MulEquiv.ulift.symm.toMonoidHom
 
-/-- The underlying function of `ofInt` is the unit map into the profinite completion. -/
+/-- The underlying function of `ofInt` is `ULift.up` followed by the unit map of the profinite
+completion of `ULift.{u} (Multiplicative ℤ)`. -/
 theorem coe_ofInt :
     ⇑(ofInt : Multiplicative ℤ →* zHat.{u}) = fun z ↦
       ProfiniteGrp.ProfiniteCompletion.etaFn
@@ -86,19 +88,8 @@ theorem ofInt_ofAdd (n : ℤ) :
 
 /-- The image of `ℤ` is dense in the profinite integers. -/
 theorem denseRange_ofInt : DenseRange (ofInt : Multiplicative ℤ →* zHat.{u}) := by
-  rw [denseRange_iff_closure_range, coe_ofInt]
-  have hrange : Set.range (fun z : Multiplicative ℤ ↦
-      ProfiniteGrp.ProfiniteCompletion.etaFn
-        (GrpCat.of (ULift.{u} (Multiplicative ℤ))) (ULift.up z)) =
-      Set.range (ProfiniteGrp.ProfiniteCompletion.etaFn
-        (GrpCat.of (ULift.{u} (Multiplicative ℤ)))) := by
-    ext x
-    constructor
-    · rintro ⟨z, rfl⟩
-      exact ⟨ULift.up z, rfl⟩
-    · rintro ⟨z, rfl⟩
-      exact ⟨z.down, congrArg _ (ULift.ext rfl)⟩
-  rw [hrange, (ProfiniteGrp.ProfiniteCompletion.denseRange _).closure_range]
+  rw [DenseRange, coe_ofInt, ← Function.comp_def, ULift.up_surjective.range_comp]
+  exact ProfiniteGrp.ProfiniteCompletion.denseRange _
 
 /-- The profinite integers are commutative, since the image of `ℤ` is dense. -/
 instance : IsMulCommutative zHat.{u} where

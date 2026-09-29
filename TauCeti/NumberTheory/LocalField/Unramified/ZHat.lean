@@ -24,7 +24,7 @@ of that quotient.
 
 ## Main definition
 
-* `TauCeti.maximalUnramifiedGaloisEquivZHat`: the continuous multiplicative equivalence
+* `TauCeti.maximalUnramifiedGaloisGroupEquivZHat`: the continuous multiplicative equivalence
   `Gal(Kᵘʳ/K) ≃ₜ* ℤ̂`, carrying arithmetic Frobenius to `zHat.gen`.
 
 ## References
@@ -104,12 +104,12 @@ private theorem mem_zpowers_quotientGenerator
     ∀ x : ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup,
       x ∈ Subgroup.zpowers
         (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))) := by
-  intro x
-  obtain ⟨z, rfl⟩ := QuotientGroup.mk_surjective x
-  refine ⟨z.down.toAdd, ?_⟩
-  apply congrArg (QuotientGroup.mk : ULift.{u} (Multiplicative ℤ) → _)
-  apply ULift.ext
-  simp [← ofAdd_zsmul]
+  have hf : zpowersHom _ (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1)) :
+      ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup) =
+      (QuotientGroup.mk' H.toSubgroup).comp MulEquiv.ulift.symm.toMonoidHom :=
+    MonoidHom.ext_mint rfl
+  rw [← Subgroup.eq_top_iff', ← Subgroup.range_zpowersHom, hf, MonoidHom.range_eq_top]
+  exact (QuotientGroup.mk'_surjective _).comp MulEquiv.ulift.symm.surjective
 
 /-- Every finite coordinate of `ℤ̂` is detected by restriction to a finite unramified level. -/
 private theorem exists_finiteQuotient_maximalUnramifiedFrobenius :
@@ -168,7 +168,7 @@ private theorem maximalUnramifiedFrobeniusLift_bijective :
 
 /-- **The Galois group of the maximal unramified extension is the profinite integers.** This
 continuous multiplicative equivalence sends arithmetic Frobenius to `zHat.gen`. -/
-noncomputable def maximalUnramifiedGaloisEquivZHat :
+noncomputable def maximalUnramifiedGaloisGroupEquivZHat :
     Gal(maximalUnramifiedExtension K Ω/K) ≃ₜ* zHat.{u} := by
   let f := zHat.lift (maximalUnramifiedFrobenius K Ω)
   have hf := maximalUnramifiedFrobeniusLift_bijective K Ω
@@ -181,26 +181,26 @@ noncomputable def maximalUnramifiedGaloisEquivZHat :
 
 /-- The inverse isomorphism sends the canonical generator of `ℤ̂` to arithmetic Frobenius. -/
 @[simp]
-theorem maximalUnramifiedGaloisEquivZHat_symm_apply_gen :
-    (maximalUnramifiedGaloisEquivZHat K Ω).symm zHat.gen =
+theorem maximalUnramifiedGaloisGroupEquivZHat_symm_apply_gen :
+    (maximalUnramifiedGaloisGroupEquivZHat K Ω).symm zHat.gen =
       maximalUnramifiedFrobenius K Ω := by
-  rw [maximalUnramifiedGaloisEquivZHat, ContinuousMulEquiv.symm_symm]
+  rw [maximalUnramifiedGaloisGroupEquivZHat, ContinuousMulEquiv.symm_symm]
   exact zHat.lift_gen _
 
 /-- The isomorphism sends arithmetic Frobenius to the canonical generator of `ℤ̂`. -/
 @[simp]
-theorem maximalUnramifiedGaloisEquivZHat_apply_frobenius :
-    maximalUnramifiedGaloisEquivZHat K Ω (maximalUnramifiedFrobenius K Ω) = zHat.gen := by
-  apply (maximalUnramifiedGaloisEquivZHat K Ω).symm.injective
+theorem maximalUnramifiedGaloisGroupEquivZHat_apply_frobenius :
+    maximalUnramifiedGaloisGroupEquivZHat K Ω (maximalUnramifiedFrobenius K Ω) = zHat.gen := by
+  apply (maximalUnramifiedGaloisGroupEquivZHat K Ω).symm.injective
   rw [ContinuousMulEquiv.symm_apply_apply,
-    maximalUnramifiedGaloisEquivZHat_symm_apply_gen]
+    maximalUnramifiedGaloisGroupEquivZHat_symm_apply_gen]
 
 /-- Integral powers of the canonical generator correspond to the same powers of arithmetic
 Frobenius. -/
-theorem maximalUnramifiedGaloisEquivZHat_symm_apply_ofInt (n : ℤ) :
-    (maximalUnramifiedGaloisEquivZHat K Ω).symm
+theorem maximalUnramifiedGaloisGroupEquivZHat_symm_apply_ofInt (n : ℤ) :
+    (maximalUnramifiedGaloisGroupEquivZHat K Ω).symm
         (zHat.ofInt (Multiplicative.ofAdd n)) =
       maximalUnramifiedFrobenius K Ω ^ n := by
-  rw [zHat.ofInt_ofAdd, map_zpow, maximalUnramifiedGaloisEquivZHat_symm_apply_gen]
+  rw [zHat.ofInt_ofAdd, map_zpow, maximalUnramifiedGaloisGroupEquivZHat_symm_apply_gen]
 
 end TauCeti
