@@ -52,6 +52,9 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
   `TauCeti.ContinuousCohomology.coeffMap_comp_infl`: naturality of restriction and of inflation in
   the coefficients.
 * `TauCeti.ContinuousCohomology.map_congr`: two compatible pairs that agree induce the same map.
+* `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_one_apply` and
+  `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_two_apply`: evaluation of mapped homogeneous
+  cocycles in degrees one and two.
 -/
 
 public section
@@ -373,6 +376,29 @@ theorem iCycles_cocyclesMap_apply (n : ℕ) (a : _root_.ContinuousCohomology.coc
   have h := ConcreteCategory.congr_hom
     (HomologicalComplex.cyclesMap_i (_root_.ContinuousCohomology.cochainsMap φ f) n) a
   simpa only [ConcreteCategory.comp_apply] using h
+
+/-- A mapped homogeneous one-cocycle is evaluated by applying the underlying additive coefficient
+map after precomposing both arguments with the group homomorphism. -/
+theorem iCycles_cocyclesMap_one_apply (a : _root_.ContinuousCohomology.cocycles X 1)
+    (f' : X.V →+ Y.V) (hf : ∀ m, f.hom m = f' m) (h₀ h₁ : H) :
+    ((TopRep.homogeneousCochains Y).iCycles 1
+        (_root_.ContinuousCohomology.cocyclesMap φ f 1 a)).val h₀ h₁ =
+      f' (((TopRep.homogeneousCochains X).iCycles 1 a).val (φ h₀) (φ h₁)) := by
+  rw [iCycles_cocyclesMap_apply, coe_cochainsMap_f_apply,
+    resolutionMap_succ_apply, resolutionMap_succ_apply,
+    _root_.ContinuousCohomology.resolutionMap_zero, hf]
+
+/-- A mapped homogeneous two-cocycle is evaluated by applying the underlying additive coefficient
+map after precomposing all three arguments with the group homomorphism. -/
+theorem iCycles_cocyclesMap_two_apply (a : _root_.ContinuousCohomology.cocycles X 2)
+    (f' : X.V →+ Y.V) (hf : ∀ m, f.hom m = f' m) (h₀ h₁ h₂ : H) :
+    ((TopRep.homogeneousCochains Y).iCycles 2
+        (_root_.ContinuousCohomology.cocyclesMap φ f 2 a)).val h₀ h₁ h₂ =
+      f' (((TopRep.homogeneousCochains X).iCycles 2 a).val
+        (φ h₀) (φ h₁) (φ h₂)) := by
+  rw [iCycles_cocyclesMap_apply, coe_cochainsMap_f_apply,
+    resolutionMap_succ_apply, resolutionMap_succ_apply, resolutionMap_succ_apply,
+    _root_.ContinuousCohomology.resolutionMap_zero, hf]
 
 /-- A coefficient map along an equality of coefficient objects is the transport along the induced
 equality of cohomology groups. -/

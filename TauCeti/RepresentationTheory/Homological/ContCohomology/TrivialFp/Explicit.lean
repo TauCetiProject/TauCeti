@@ -36,7 +36,8 @@ with a trivial action.
 
 * `TauCeti.cohomFpAddEquivH1`, `TauCeti.cohomFpAddEquivH2`: `cohomFp p G 1` and `cohomFp p G 2` are
   the explicit `H1 G (ZMod p)` and `H2 G (ZMod p)` for a trivial action.
-* `TauCeti.cohomFpLinearEquivH2`: the degree-two identification is `𝔽_p`-linear.
+* `TauCeti.cohomFpLinearEquivH2`: the degree-two identification is `𝔽_p`-linear; by
+  `TauCeti.cohomFpAddEquivH2_cohomFpMap` it carries `cohomFpMap` to the explicit pullback.
 * `TauCeti.cohomFpAddEquivH2Additive`: `cohomFp p G 2` is the explicit `H²(G, Additive 𝔽_p)` of
   the additive type tag of a multiplicatively written `𝔽_p` with trivial action.
 * `TauCeti.cohomFpLinearEquivContinuousZModDual`: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of
@@ -116,6 +117,44 @@ theorem cohomFpAddEquivH2_explicitH2AddEquivContinuousCohomologyOfDiscrete [Loca
         (trivialFpEquiv p G).toAddEquiv continuous_of_discreteTopology
         continuous_of_discreteTopology (trivialFpEquiv_smul p G htriv) x := by
   rw [cohomFpAddEquivH2, AddEquiv.trans_apply, AddEquiv.symm_apply_apply]
+
+/-- **The degree-two identification is natural.** Under `cohomFpAddEquivH2`, the cohomology map
+`cohomFpMap p φ 2` along a continuous homomorphism `φ : H →ₜ* G` is the explicit pullback of
+two-cocycles along `φ`, for any trivial actions of `G` and `H` on `ZMod p`. -/
+theorem cohomFpAddEquivH2_cohomFpMap [LocallyCompactSpace G] {H : Type u} [Group H]
+    [TopologicalSpace H] [IsTopologicalGroup H] [LocallyCompactSpace H]
+    [DistribMulAction H (ZMod p)] [ContinuousSMul H (ZMod p)]
+    (htH : ∀ (h : H) (m : ZMod p), h • m = m) (φ : H →ₜ* G) (x : cohomFp p G 2) :
+    cohomFpAddEquivH2 p H htH (cohomFpMap p φ 2 x) =
+      explicitMap2 G (ZMod p) H (ZMod p) φ (AddMonoidHom.id (ZMod p)) continuous_id
+        (fun h m ↦ (htriv (φ h) m).trans (htH h m).symm) (cohomFpAddEquivH2 p G htriv x) := by
+  -- The coefficient transport of `cohomFpMap` is the identity of the universe lift `ZMod p`.
+  let f : (trivialFp p G).V →+ (trivialFp p H).V :=
+    ((trivialFpEquiv p H).symm.toLinearMap ∘ₗ (trivialFpEquiv p G).toLinearMap).toAddMonoidHom
+  have hF (m : (TopRep.res (φ : H →* G) (trivialFp p G)).V) :
+      (eqToHom (res_trivialFp_hom p φ)).hom m = f m :=
+    (trivialFpEquiv p H).injective <| by
+      simpa [f] using trivialFpEquiv_eqToHom_res_trivialFp_hom p φ m
+  have hf (h : H) (m : (trivialFp p G).V) : f (φ h • m) = h • f m := by
+    rw [smul_trivialFp_V, smul_trivialFp_V]
+  obtain ⟨y, rfl⟩ := (trivialFp p G).explicitH2AddEquivContinuousCohomologyOfDiscrete.surjective x
+  rw [cohomFpMap_def, TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map (trivialFp p G)
+      (trivialFp p H) φ _ f hF hf,
+    cohomFpAddEquivH2_explicitH2AddEquivContinuousCohomologyOfDiscrete,
+    cohomFpAddEquivH2_explicitH2AddEquivContinuousCohomologyOfDiscrete]
+  induction y using QuotientAddGroup.induction_on with
+  | H c =>
+    rw [explicitMap2Equiv_apply, explicitMap2Equiv_apply,
+      explicitMap2_mk G (trivialFp p G).V H (trivialFp p H).V]
+    -- `explicitMap2_mk` is applied as a term where `explicitMap2Equiv` states the continuity of
+    -- the coefficient map at the equivalence, which `rw` does not identify with its coercion.
+    refine (explicitMap2_mk H (trivialFp p H).V H (ZMod p) _ _ _ _ _).trans ?_
+    refine Eq.trans ?_ (congrArg (explicitMap2 G (ZMod p) H (ZMod p) φ _ _ _)
+      (explicitMap2_mk G (trivialFp p G).V G (ZMod p) _ _ _ _ c)).symm
+    rw [explicitMap2_mk]
+    -- Both cocycles read `c` at `(φ g, φ h)` through the universe lifts of `ZMod p`.
+    refine congrArg _ (Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_))
+    simp [f, cocyclesMap2_apply]
 
 /-- **`H²(G, 𝔽_p)` is the explicit `H2 G (ZMod p)` as an `𝔽_p`-vector space**, for any trivial
 action of `G` on `ZMod p`. -/
