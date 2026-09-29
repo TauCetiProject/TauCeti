@@ -70,17 +70,6 @@ public section
 
 open TauCeti
 
-namespace Subrepresentation
-
-variable {k G V : Type*} [Semiring k] [Monoid G] [AddCommMonoid V] [Module k V]
-  {ρ : Representation k G V}
-
-instance instNontrivial [Nontrivial V] : Nontrivial (Subrepresentation ρ) :=
-  ⟨⟨⊥, ⊤, fun hc => _root_.bot_ne_top (α := Submodule k V) (by
-    rw [← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), hc])⟩⟩
-
-end Subrepresentation
-
 namespace Representation
 
 variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
