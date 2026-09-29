@@ -43,7 +43,8 @@ noncomputable def specialFiberBaseChangeIso :
 @[reassoc (attr := simp)]
 theorem specialFiberBaseChangeIso_hom_fst :
     (specialFiberBaseChangeIso f).hom ≫
-        genericFiberι (ResidueField R) (ResidueField S) (specialFiber R f).hom ≫
+        genericFiberι (ResidueField R) (ResidueField S)
+          (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R)))) ≫
           specialFiberι R f =
       specialFiberι S (genericFiber R S f).hom ≫ genericFiberι R S f := by
   -- Both presentations of a special fibre use the same pullback; the tower lemmas are
@@ -64,10 +65,12 @@ theorem specialFiberBaseChangeIso_hom_fst :
 
 /-- The special-fibre base-change isomorphism preserves projection to the new residue-field
 spectrum. -/
-@[reassoc (attr := simp)]
+@[simp]
 theorem specialFiberBaseChangeIso_hom_snd :
     (specialFiberBaseChangeIso f).hom ≫
-      (genericFiber (ResidueField R) (ResidueField S) (specialFiber R f).hom).hom =
+      pullback.snd
+        (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R))))
+        (Spec.map (CommRingCat.ofHom (algebraMap (ResidueField R) (ResidueField S)))) =
       (specialFiber S (genericFiber R S f).hom).hom := by
   -- The tower projection lemmas use `genericFiber` for both residue-field pullbacks.
   change (specialFiberBaseChangeIso f).hom ≫
@@ -85,5 +88,22 @@ theorem specialFiberBaseChangeIso_hom_snd :
     _ = _ := by
       simpa only [genericFiber_hom] using
         genericFiberTowerIso_hom_hom R S (ResidueField S) f
+
+/-- The projection to the new residue-field spectrum remains unchanged after postcomposition. -/
+@[simp]
+theorem specialFiberBaseChangeIso_hom_snd_assoc {Y : Scheme.{u}}
+    (h : Spec (.of (ResidueField S)) ⟶ Y) :
+    (specialFiberBaseChangeIso f).hom ≫
+      (pullback.snd
+        (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R))))
+        (Spec.map (CommRingCat.ofHom (algebraMap (ResidueField R) (ResidueField S)))) ≫ h) =
+      (specialFiber S (genericFiber R S f).hom).hom ≫ h := by
+  calc
+    _ = ((specialFiberBaseChangeIso f).hom ≫
+        pullback.snd
+          (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R))))
+          (Spec.map (CommRingCat.ofHom (algebraMap (ResidueField R) (ResidueField S))))) ≫
+        h := (Category.assoc _ _ _).symm
+    _ = _ := congrArg (fun k ↦ k ≫ h) (specialFiberBaseChangeIso_hom_snd f)
 
 end TauCeti
