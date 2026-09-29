@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Boundary concentration of the Poisson kernel of the ball
@@ -121,12 +122,11 @@ theorem tendsto_setIntegral_ballPoissonKernel_away {z : EuclideanSpace ℝ (Fin 
             (delta / 2) ^ n)) := by
           simp only [setIntegral_const, smul_eq_mul, measureReal_def]
 
-/-- The contribution of boundary data from a fixed positive distance away from `z`
-vanishes in the Poisson integral as the pole approaches `z` from inside the ball. -/
+/-- The contribution of essentially bounded boundary data from a fixed positive distance
+away from `z` vanishes in the Poisson integral as the pole approaches `z` from inside the ball. -/
 theorem tendsto_setIntegral_ballPoissonKernel_mul_away
     (f : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ)
-    (hf : AEStronglyMeasurable f volume.toSphere)
-    (hbounded : Bornology.IsBounded (Set.range f))
+    (hf : MemLp f ⊤ volume.toSphere)
     {z : EuclideanSpace ℝ (Fin n)} (hz : ‖z‖ = 1)
     {delta : ℝ} (hdelta : 0 < delta) :
     Tendsto (fun x : EuclideanSpace ℝ (Fin n) =>
@@ -136,7 +136,8 @@ theorem tendsto_setIntegral_ballPoissonKernel_mul_away
       (nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1)) (nhds 0) := by
   let s : Set (sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :=
     {y | delta ≤ dist (y : EuclideanSpace ℝ (Fin n)) z}
-  obtain ⟨C, hC⟩ := hbounded.exists_norm_le
+  let C := lpNorm f ⊤ volume.toSphere
+  have hC : ∀ᵐ y ∂volume.toSphere, ‖f y‖ ≤ C := ae_le_lpNorm_exponent_top hf
   have hinside : ∀ᶠ x in nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1),
       ‖x‖ < 1 := by
     filter_upwards [self_mem_nhdsWithin] with x hx
@@ -158,15 +159,15 @@ theorem tendsto_setIntegral_ballPoissonKernel_mul_away
     (integrableOn_ballPoissonKernel x hx.ne s).const_mul C
   have hbound : ∀ᵐ (y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) ∂(nu.restrict s),
       ‖ballPoissonKernel n x y * f y‖ ≤ C * ballPoissonKernel n x y := by
-    filter_upwards [] with y
+    filter_upwards [ae_mono Measure.restrict_le_self hC] with y hy
     rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg (hK y)]
     simpa only [mul_comm C] using
-      mul_le_mul_of_nonneg_left (hC (f y) (Set.mem_range_self y)) (hK y)
+      mul_le_mul_of_nonneg_left hy (hK y)
   have hmeas : AEStronglyMeasurable
       (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
         ballPoissonKernel n x y * f y) (nu.restrict s) :=
     ((continuous_ballPoissonKernel_on_sphere x hx.ne).aestronglyMeasurable.mono_measure
-      Measure.restrict_le_self).mul (hf.mono_measure Measure.restrict_le_self)
+      Measure.restrict_le_self).mul (hf.aestronglyMeasurable.mono_measure Measure.restrict_le_self)
   have hweighted : Integrable
       (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
         ballPoissonKernel n x y * f y) (nu.restrict s) :=
@@ -186,8 +187,10 @@ theorem tendsto_setIntegral_ballPoissonKernel_mul_away_of_continuous
           delta ≤ dist (y : EuclideanSpace ℝ (Fin n)) z},
         ballPoissonKernel n x y * f y ∂volume.toSphere)
       (nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1)) (nhds 0) := by
-  exact tendsto_setIntegral_ballPoissonKernel_mul_away f hf.aestronglyMeasurable
-    (isCompact_range hf).isBounded hz hdelta
+  obtain ⟨C, hC⟩ := (isCompact_range hf).isBounded.exists_norm_le
+  exact tendsto_setIntegral_ballPoissonKernel_mul_away f
+    (memLp_top_of_bound hf.aestronglyMeasurable C
+      (Filter.Eventually.of_forall fun y => hC (f y) (Set.mem_range_self y))) hz hdelta
 
 end TauCeti
 
