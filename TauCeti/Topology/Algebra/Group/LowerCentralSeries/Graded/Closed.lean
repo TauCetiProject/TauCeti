@@ -30,7 +30,7 @@ make the bracket `ℤ_p`-bilinear.
 ## Main results
 
 * `TauCeti.lcsGradedMk_conj`: conjugation is trivial on each graded piece.
-* `TauCeti.lcsBracket_natural`: the bracket is natural in continuous homomorphisms.
+* `TauCeti.gradedMap_lcsBracket`: the bracket is natural in continuous homomorphisms.
 * `TauCeti.IsProP.lcsGradedMk_padicPow`: a `p`-adic power becomes scalar multiplication on a
   graded piece.
 * `TauCeti.lcsBracket_padicPow_left`, `TauCeti.lcsBracket_padicPow_right`: a `p`-adic power in
@@ -83,7 +83,7 @@ abbrev lcsBracket (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGrou
   gradedBracket 0 G j k
 
 /-- The closed-series bracket on classes is represented by the group commutator. -/
-theorem lcsBracket_mk {j k : ℕ} (x : closedLowerCentralSeries G j)
+theorem lcsBracket_lcsGradedMk {j k : ℕ} (x : closedLowerCentralSeries G j)
     (y : closedLowerCentralSeries G k) :
     lcsBracket G j k (lcsGradedMk G j x) (lcsGradedMk G k y) =
       lcsGradedMk G (j + k + 1)
@@ -107,7 +107,7 @@ theorem lcsBracket_add_right {j k : ℕ} (x : lcsGradedPiece G j)
 
 /-- **Naturality of the closed-series bracket**: the graded maps induced by a continuous
 homomorphism commute with the bracket. -/
-theorem lcsBracket_natural {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+theorem gradedMap_lcsBracket {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     (f : G →* H) (hf : Continuous f) {j k : ℕ} (x : lcsGradedPiece G j)
     (y : lcsGradedPiece G k) :
     gradedMap 0 f hf (j + k + 1) (lcsBracket G j k x y) =
