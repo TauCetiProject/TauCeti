@@ -131,18 +131,18 @@ namespace Newform
 
 /-- The nebentypus of a newform, extended by zero from units modulo `N` to a Dirichlet
 character. This packages Mathlib's `MulChar.ofUnitHom` for formulas attached to the newform. -/
-@[expose] public noncomputable def dirichletLift (f : Newform N k) : DirichletCharacter ℂ N :=
+public noncomputable def dirichletLift (f : Newform N k) : DirichletCharacter ℂ N :=
   MulChar.ofUnitHom f.χ
 
 /-- The zero extension defining the Dirichlet character of a newform. -/
 theorem dirichletLift_eq_ofUnitHom (f : Newform N k) :
-    f.dirichletLift = MulChar.ofUnitHom f.χ := rfl
+    f.dirichletLift = MulChar.ofUnitHom f.χ := (rfl)
 
 /-- Restricting the zero-extended nebentypus to units recovers the character of the newform. -/
 @[simp]
 theorem dirichletLift_toUnitHom (f : Newform N k) :
     MulChar.equivToUnitHom f.dirichletLift = f.χ := by
-  change (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N).toUnitHom = f.χ
+  rw [dirichletLift_eq_ofUnitHom]
   exact MulChar.equivToUnitHom.apply_symm_apply f.χ
 
 /-- The zero-extended nebentypus vanishes at indices not coprime to the level. -/
