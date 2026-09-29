@@ -240,15 +240,30 @@ theorem preprojectiveMk_ofPath_eq_zero_of_signless
     (hx : signlessPreprojectiveMk k _
       (ofPath ((symmetrifyMap G o).mapTotalPath x)) = 0) :
     preprojectiveMk k (OrientedQuiver G o) (ofPath x) = 0 := by
-  apply (symmetrifySignlessPreprojectiveAlgebraEquiv k hc).symm.injective
-  apply (orientationSignlessPreprojectiveAlgebraEquiv o k).symm.injective
-  have hpath : signlessPreprojectiveMk k _ (ofPath x) =
-      orientationSignlessPreprojectiveAlgebraEquiv o k (signlessPreprojectiveMk k _
-        (ofPath ((symmetrifyMap G o).mapTotalPath x))) := by
-    rw [orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+  let e := (orientationSignlessPreprojectiveAlgebraEquiv o k).trans
+    (symmetrifySignlessPreprojectiveAlgebraEquiv k hc)
+  have hpath :
+      (orientationSignlessPreprojectiveAlgebraEquiv o k).symm
+        (signlessPreprojectiveMk k _ (ofPath x)) =
+      signlessPreprojectiveMk k _
+        (ofPath ((symmetrifyMap G o).mapTotalPath x)) := by
+    apply (orientationSignlessPreprojectiveAlgebraEquiv o k).injective
+    rw [AlgEquiv.apply_symm_apply,
+      orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
       ← orientationPathAlgebraEquiv_symm_ofPath, AlgEquiv.apply_symm_apply]
-  rw [map_zero, map_zero, symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
-    rescale_ofPath, map_smul, map_smul, hpath, AlgEquiv.symm_apply_apply, hx, smul_zero]
+  have htransport :
+      e.symm (preprojectiveMk k (OrientedQuiver G o) (ofPath x)) =
+        _root_.Quiver.Path.weight
+          (fun {_ _} f => doubledLabelling k (fun _ j _ => if c j then (1 : k) else -1) f)
+          x.2.2 • signlessPreprojectiveMk k _
+            (ofPath ((symmetrifyMap G o).mapTotalPath x)) := by
+    change (orientationSignlessPreprojectiveAlgebraEquiv o k).symm
+      ((symmetrifySignlessPreprojectiveAlgebraEquiv k hc).symm
+        (preprojectiveMk k (OrientedQuiver G o) (ofPath x))) = _
+    rw [symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
+      rescale_ofPath, map_smul, map_smul, hpath]
+  apply e.symm.injective
+  simp only [htransport, hx, smul_zero, map_zero]
 
 end Quotient
 

@@ -172,6 +172,7 @@ private theorem d4Arrow_mul_eq_zero {v₀ v₁ v₂ v₃ v₄ v₅ : Fin 4} (h�
 /-! ### Paths of length five -/
 
 /-- **Every path of length at least five vanishes in the signless algebra of `D₄`.** -/
+@[simp]
 theorem signlessPreprojectiveMk_D4_ofPath_eq_zero_of_five_le
     (x : Quiver.TotalPath (DoubledQuiver zigzagD4Graph)) (hx : 5 ≤ x.2.2.length) :
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
@@ -215,6 +216,7 @@ variable (o : Orientation zigzagD4Graph)
 
 /-- **Every path of length at least five vanishes in the preprojective algebra of `D₄`**, for
 every orientation of the `D₄` graph. -/
+@[simp]
 theorem preprojectiveMk_D4_ofPath_eq_zero_of_five_le
     (x : Quiver.TotalPath (Symmetrify (OrientedQuiver zigzagD4Graph o)))
     (hx : 5 ≤ x.2.2.length) :
