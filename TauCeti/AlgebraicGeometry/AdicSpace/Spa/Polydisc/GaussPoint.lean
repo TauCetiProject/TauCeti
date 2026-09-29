@@ -207,13 +207,15 @@ theorem closedDiscGaussValuation_le_one_of_isPowerBounded (hr₀ : 0 < r) (hr₁
     {f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight}
     (hf : IsPowerBounded f) : closedDiscGaussValuation hr₀ hr₁ f ≤ 1 := by
   let v := closedDiscGaussValuation (R := K) hr₀ hr₁
-  change v f ≤ 1
   obtain ⟨c, hc₀, hc₁⟩ := NormedField.exists_norm_lt K one_pos
   let _ : MulArchimedean v.ValueGroup₀ := mulArchimedean_valueGroup₀ v
+  have hcNil : IsTopologicallyNilpotent c :=
+    tendsto_pow_atTop_nhds_zero_of_norm_lt_one hc₁
+  have hnil : IsTopologicallyNilpotent
+      (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c) :=
+    hcNil.map (continuous_weightedC isWeightFamily_one_weight)
   exact (isContinuous_closedDiscGaussValuation hr₀ hr₁ : v.IsContinuous).le_one_of_isPowerBounded
-    ((show IsTopologicallyNilpotent c from
-      tendsto_pow_atTop_nhds_zero_of_norm_lt_one hc₁).map
-        (continuous_weightedC isWeightFamily_one_weight))
+    hnil
     (by rw [closedDiscGaussValuation_weightedC]
         exact nnnorm_ne_zero_iff.mpr (norm_pos_iff.mp hc₀)) hf
 

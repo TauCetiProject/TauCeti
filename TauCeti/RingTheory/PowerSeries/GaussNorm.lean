@@ -502,8 +502,7 @@ open scoped NNReal
 variable [NormOneClass R]
 
 /-- **The Gauss valuation** at a positive radius `c`: the Gauss norm `f ↦ sup ‖aₙ‖ cⁿ`, as a
-valuation with values in `ℝ≥0` on the ring of power series restricted at `c`. It is
-multiplicative by `gaussNorm_mul_of_isRestricted` and ultrametric because the norm of `R` is. -/
+valuation with values in `ℝ≥0` on the ring of power series restricted at `c`. -/
 noncomputable def gaussValuation (hc : 0 < c) :
     Valuation (PowerSeries.IsRestricted.subring (R := R) c) ℝ≥0 where
   toFun f := ⟨(f : PowerSeries R).gaussNorm norm c,
@@ -523,6 +522,34 @@ noncomputable def gaussValuation (hc : 0 < c) :
 @[simp]
 theorem coe_gaussValuation (hc : 0 < c) (f : PowerSeries.IsRestricted.subring (R := R) c) :
     (gaussValuation hc f : ℝ) = (f : PowerSeries R).gaussNorm norm c := (rfl)
+
+/-- The Gauss valuation of a constant series is the norm of its coefficient. -/
+@[simp]
+theorem gaussValuation_C (hc : 0 < c) (a : R) :
+    gaussValuation hc
+      (⟨PowerSeries.C a, PowerSeries.isRestricted_C c a⟩ :
+        PowerSeries.IsRestricted.subring (R := R) c) = ‖a‖₊ := by
+  apply NNReal.eq
+  rw [coe_gaussValuation]
+  refine (gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_).trans (by simp)
+  rcases m with _ | m <;> simp [PowerSeries.coeff_C]
+
+/-- The Gauss valuation of the variable is the radius. -/
+@[simp]
+theorem gaussValuation_X (hc : 0 < c) :
+    gaussValuation hc
+      (⟨(PowerSeries.X : PowerSeries R), by
+          rw [PowerSeries.X_eq]
+          exact PowerSeries.isRestricted_monomial c 1 (1 : R)⟩ :
+        PowerSeries.IsRestricted.subring (R := R) c) = ⟨c, hc.le⟩ := by
+  apply NNReal.eq
+  rw [coe_gaussValuation]
+  change _ = c
+  refine (gaussNorm_eq_of_forall_le (s := 1) fun m ↦ ?_).trans (by simp)
+  by_cases hm : m = 1
+  · subst m
+    simp [PowerSeries.coeff_X]
+  · simp [PowerSeries.coeff_X, hm, hc.le]
 
 /-- The Gauss valuation vanishes only at zero: its support is trivial. -/
 @[simp]
