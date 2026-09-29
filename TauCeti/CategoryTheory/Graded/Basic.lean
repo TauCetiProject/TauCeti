@@ -35,7 +35,8 @@ and uniquely determined sum of morphisms of definite degrees, its degree-`n` com
 through `TauCeti.GradedLinearQuiver.gradedHom` and the constructor
 `TauCeti.GradedLinearQuiver.ofGradedHom`;
 `TauCeti.InternalGrading.toGradedObject` and `TauCeti.InternalGrading.ofGradedObject` convert
-between the two presentations.
+between the two presentations, and `TauCeti.InternalGrading.ofGradedObjectToGradedObjectIso`
+recovers the components `F X Y` of `ofGradedHom F` from its grading, degree by degree.
 
 ## Main definitions
 
@@ -45,8 +46,6 @@ between the two presentations.
 * `TauCeti.GradedLinearQuiver.grHom`: the morphisms `X → Y` of a fixed degree.
 * `TauCeti.GradedLinearQuiver.gradedHom`: the hom modules of a graded linear quiver as a graded
   object.
-* `TauCeti.GradedLinearQuiver.gradedHomOfGradedHom`: the graded object of hom modules of
-  `ofGradedHom F` recovers `F` degree by degree.
 * `TauCeti.GradedLinearQuiver.grHomReindex`: a homogeneous morphism recorded at another degree.
 
 ## Main results
@@ -96,7 +95,8 @@ variable (R : Type w) [CommRing R] {C : Type u}
 module of morphisms `X → Y` is the external direct sum of the components of `F X Y`.
 
 The two fields of this quiver are `homModule_ofGradedHom` and `grading_ofGradedHom`, and
-`gradedHomOfGradedHom` recovers the graded object `F` itself, degree by degree. -/
+`InternalGrading.ofGradedObjectToGradedObjectIso` recovers the graded object `F` itself, degree by
+degree, from the second of them. -/
 -- The body is exposed, since the module system hides the body of a `def` from the statements of
 -- the other exported declarations of a module, and the two field equations could not be stated
 -- without it.
@@ -121,12 +121,6 @@ canonical grading of the external direct sum of the components of `F X Y`. -/
 theorem grading_ofGradedHom (X Y : C) :
     (ofGradedHom (R := R) (C := C) F).grading X Y = InternalGrading.ofGradedObject R (F X Y) :=
   rfl
-
-/-- The graded object of hom modules of the graded linear quiver `ofGradedHom F` is the graded
-object `F X Y` of the components, degree by degree. -/
-noncomputable def gradedHomOfGradedHom (X Y : C) :
-    ((ofGradedHom (R := R) (C := C) F).grading X Y).toGradedObject ≅ F X Y :=
-  InternalGrading.ofGradedObjectToGradedObjectIso R (F X Y)
 
 variable [GradedLinearQuiver R C] {X Y : C}
 
