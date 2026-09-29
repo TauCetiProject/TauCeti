@@ -50,7 +50,8 @@ private theorem restrict_invariant_pure_tensor (M N : Rep k G) (H : Subgroup G)
             (Rep.res H.subtype N).ρ.invariants).1) := by
   rfl
 
-/-- Restriction commutes with the degree-zero cup product in its `cupH0` normal form. -/
+/-- Restriction commutes with the degree-zero cup product in its `cupH0` normal form.
+This is the form used by `simp` after reducing `cup` and `res` in degree zero. -/
 @[simp]
 theorem cupH0_H0Res (M N : Rep k G) (H : Subgroup G)
     (x : tateCohomology M 0) (y : tateCohomology N 0) :
