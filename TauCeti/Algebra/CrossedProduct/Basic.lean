@@ -424,6 +424,7 @@ theorem lift_inc (x : L) : lift f u hf hu hu₁ (inc c x) = f x := by
 
 /-- **Uniqueness in the universal property**: a `K`-algebra homomorphism out of `CrossedProduct c`
 is determined by its values on the copy `inc c` of `L` and on the basis elements `u_σ`. -/
+@[ext]
 theorem algHom_ext {F G : CrossedProduct c →ₐ[K] R} (hinc : ∀ x, F (inc c x) = G (inc c x))
     (hbasis : ∀ σ, F (basis c σ) = G (basis c σ)) : F = G :=
   AlgHom.ext fun a ↦ by
