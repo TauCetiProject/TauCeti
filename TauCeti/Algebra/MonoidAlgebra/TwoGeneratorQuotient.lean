@@ -32,11 +32,11 @@ what makes it no larger than the roots of unity themselves.
 
 ## Main statements
 
-* `TauCeti.MonoidAlgebra.mk_mul_single_eq_smul_of_sub_mem`: if a left ideal `I` contains
+* `MonoidAlgebra.mk_mul_single_eq_smul_of_sub_mem`: if a left ideal `I` contains
   `g - c`, right multiplication by `g` acts on `R[G] ⧸ I` as `c`.
-* `TauCeti.MonoidAlgebra.pow_orderOf_sub_one_smul_eq_zero_of_sub_mem`: such a quotient is killed
+* `MonoidAlgebra.pow_orderOf_sub_one_smul_eq_zero_of_sub_mem`: such a quotient is killed
   by `c ^ orderOf g - 1`.
-* `TauCeti.MonoidAlgebra.surjective_toSpanSingleton_mk_one`: when `σ, τ` generate a finite group,
+* `MonoidAlgebra.surjective_toSpanSingleton_mk_one`: when `σ, τ` generate a finite group,
   the quotient is generated over `R` by the class of `1`.
 
 ## References
@@ -46,9 +46,7 @@ what makes it no larger than the roots of unity themselves.
 
 public section
 
-namespace TauCeti.MonoidAlgebra
-
-open _root_.MonoidAlgebra
+namespace MonoidAlgebra
 
 variable {R : Type*} [CommRing R] {G : Type*}
 
@@ -129,4 +127,4 @@ theorem surjective_toSpanSingleton_mk_one [Finite G] (hgen : Subgroup.closure {�
     rw [← mul_one r, ← smul_eq_mul, ← smul_single, Submodule.Quotient.mk_smul]
     exact Submodule.smul_mem _ r (hsingle g)
 
-end TauCeti.MonoidAlgebra
+end MonoidAlgebra

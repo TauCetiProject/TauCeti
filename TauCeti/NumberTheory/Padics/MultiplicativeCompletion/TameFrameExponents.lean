@@ -28,8 +28,8 @@ action.
 The proof has three steps.
 
 * Since `σ, τ` generate `G`, the quotient `ℤ_p[G] ⧸ J` is a cyclic `ℤ_p`-module, and it is killed
-  by `b ^ orderOf τ - 1` (`TauCeti.MonoidAlgebra.surjective_toSpanSingleton_mk_one`,
-  `TauCeti.MonoidAlgebra.pow_orderOf_sub_one_smul_eq_zero_of_sub_mem`).
+  by `b ^ orderOf τ - 1` (`MonoidAlgebra.surjective_toSpanSingleton_mk_one`,
+  `MonoidAlgebra.pow_orderOf_sub_one_smul_eq_zero_of_sub_mem`).
 * Any lift `b₀` of the action of `τ` satisfies `b₀ ^ orderOf τ ≡ 1 (mod q(L))`. Since `p` does
   not divide `orderOf τ`, replacing `b₀` by `b₀ + q(L)` if necessary makes the `p`-adic valuation
   of `b ^ orderOf τ - 1` exactly that of `q(L)`, so `ℤ_p[G] ⧸ J` has at most `q(L)` elements.
