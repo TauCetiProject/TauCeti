@@ -25,14 +25,16 @@ is the finite ideal sum `∑_{N(I) ≤ x} f(I) perronStep (x / N(I))`
 integer endpoint `x = N` every ideal of norm `N` enters with half weight, so that the limit is
 `∑_{N(I) ≤ N} f(I) - normCoeff K f N / 2`.
 
-Only norm endpoints matter.  An integer `x` that is not the norm of any nonzero ideal behaves like
-a non-integer, because the norm coefficient of `f` vanishes there; this is why the off-norm
-statements exclude exactly the norms of nonzero ideals rather than all natural numbers.
+Only nonzero norm coefficients matter at endpoints. An integer `x` for which `normCoeff K f x = 0`
+behaves like a non-integer, even when ideals of norm `x` exist. The off-norm statements are
+corollaries for endpoints that are not norms of nonzero ideals.
 
 ## Main results
 
 * `TauCeti.perronFormula`: the truncated Perron integral of the `L`-series of the norm
   coefficients tends to the step-weighted ideal sum `∑_{N(I) ≤ x} f(I) perronStep (x / N(I))`.
+* `TauCeti.perronFormula_of_forall_normCoeff_ne`: when the norm coefficient at any possible
+  endpoint vanishes, the limit is `TauCeti.idealSummatory K f x`.
 * `TauCeti.perronFormula_of_forall_absNorm_ne`: off the norms the limit is
   `TauCeti.idealSummatory K f x`.
 * `TauCeti.perronFormula_natCast`: at an integer endpoint `N` the limit is
@@ -40,7 +42,8 @@ statements exclude exactly the norms of nonzero ideals rather than all natural n
   weight.
 * `TauCeti.norm_truncatedPerron_LSeries_normCoeff_sub_idealSummatory_le`: off the norms, the
   truncated integral at finite height differs from `TauCeti.idealSummatory K f x` by at most the
-  series of the smoothed-step kernel errors.
+  series of the smoothed-step kernel errors. Its `_of_forall_normCoeff_ne` variant only requires
+  nonzero norm coefficients to avoid the endpoint.
 
 ## References
 
@@ -79,7 +82,7 @@ theorem tsum_normCoeff_mul_perronStep (f : IdealArithmeticFunction K) (x : ℝ) 
 
 /-- **Off the norms the step weights are sharp.**  If `x` is not the absolute norm of any nonzero
 ideal, every ideal counted up to `x` has norm strictly below `x`, and so step weight `1`. -/
-theorem sum_idealsLE_mul_perronStep_of_forall_absNorm_ne
+@[simp] theorem sum_idealsLE_mul_perronStep_of_forall_absNorm_ne
     (hoff : ∀ I : (Ideal (𝓞 K))⁰, (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≠ x)
     (f : IdealArithmeticFunction K) :
     ∑ I ∈ idealsLE K x, f I * perronStep (x / Ideal.absNorm (I : Ideal (𝓞 K))) =
@@ -96,7 +99,7 @@ theorem sum_idealsLE_mul_perronStep_of_forall_absNorm_ne
 /-- **The half weight at an integer endpoint.**  At `x = N` the ideals of norm `N` receive step
 weight `1 / 2` and all others counted up to `N` receive `1`, so the step-weighted sum is the
 inclusive ideal sum less half of the norm coefficient at `N`. -/
-theorem sum_idealsLE_mul_perronStep_natCast (f : IdealArithmeticFunction K) (N : ℕ) :
+@[simp] theorem sum_idealsLE_mul_perronStep_natCast (f : IdealArithmeticFunction K) (N : ℕ) :
     ∑ I ∈ idealsLE K N, f I * perronStep ((N : ℝ) / Ideal.absNorm (I : Ideal (𝓞 K))) =
       idealSummatory K f N - normCoeff K f N / 2 := by
   classical
@@ -123,6 +126,33 @@ theorem sum_idealsLE_mul_perronStep_natCast (f : IdealArithmeticFunction K) (N :
   rw [Finset.sum_congr rfl hstep, Finset.sum_sub_distrib, ← Finset.sum_div, ← Finset.sum_filter,
     hfib, ← normCoeff_eq_sum_normFiber, ← idealSummatory_apply]
 
+/-- The step-weighted ideal sum equals the inclusive sum whenever the norm coefficient at a
+possible endpoint vanishes. -/
+theorem sum_idealsLE_mul_perronStep_of_forall_normCoeff_ne (f : IdealArithmeticFunction K)
+    (hoff : ∀ n : ℕ, normCoeff K f n ≠ 0 → x ≠ n) :
+    ∑ I ∈ idealsLE K x, f I * perronStep (x / Ideal.absNorm (I : Ideal (𝓞 K))) =
+      idealSummatory K f x := by
+  rcases em (∃ N : ℕ, (N : ℝ) = x) with ⟨N, rfl⟩ | hnot
+  · have hzero : normCoeff K f N = 0 := by
+      by_contra hn
+      exact (hoff N hn) rfl
+    rw [sum_idealsLE_mul_perronStep_natCast, hzero]
+    simp
+  · apply sum_idealsLE_mul_perronStep_of_forall_absNorm_ne
+    intro I hI
+    exact hnot ⟨Ideal.absNorm (I : Ideal (𝓞 K)), hI⟩
+
+private theorem normCoeff_ne_imp_ne_of_forall_absNorm_ne
+    (hoff : ∀ I : (Ideal (𝓞 K))⁰, (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≠ x) :
+    ∀ n : ℕ, normCoeff K f n ≠ 0 → x ≠ n := by
+  rintro n hn rfl
+  obtain ⟨I, hI⟩ : (normFiber K n).Nonempty := by
+    rw [Finset.nonempty_iff_ne_empty]
+    rintro h0
+    rw [normCoeff_eq_sum_normFiber, h0, Finset.sum_empty] at hn
+    exact hn rfl
+  exact hoff I (by rw [(mem_normFiber K).mp hI])
+
 /-- **The arithmetic Perron formula for ideal sums.**  Where the `L`-series of the norm
 coefficients of `f` converges absolutely on the line `Re s = c`, the truncated Perron integral
 tends, as the height grows, to the ideal sum `∑_{N(I) ≤ x} f(I)` in which each ideal of norm
@@ -135,6 +165,16 @@ theorem perronFormula (hx : 0 < x) (hc : 0 < c) (h : LSeriesSummable (normCoeff 
   rw [← tsum_normCoeff_mul_perronStep]
   exact tendsto_truncatedPerron_LSeries hx hc h
 
+/-- The Perron formula when every nonzero norm coefficient is away from the endpoint. -/
+theorem perronFormula_of_forall_normCoeff_ne (hx : 0 < x) (hc : 0 < c)
+    (hoff : ∀ n : ℕ, normCoeff K f n ≠ 0 → x ≠ n)
+    (h : LSeriesSummable (normCoeff K f) c) :
+    Tendsto (fun T : ℝ ↦ ((2 * π : ℝ) : ℂ)⁻¹ *
+        ∫ t in -T..T, LSeries (normCoeff K f) ((c : ℂ) + t * Complex.I) * perronIntegrand x c t)
+      atTop (𝓝 (idealSummatory K f x)) := by
+  rw [← sum_idealsLE_mul_perronStep_of_forall_normCoeff_ne f hoff]
+  exact perronFormula hx hc h
+
 /-- **The Perron formula off the norms.**  If `x > 0` is not the absolute norm of a nonzero ideal,
 the truncated Perron integral tends to the inclusive ideal sum `∑_{N(I) ≤ x} f(I)`. -/
 theorem perronFormula_of_forall_absNorm_ne (hx : 0 < x) (hc : 0 < c)
@@ -143,8 +183,8 @@ theorem perronFormula_of_forall_absNorm_ne (hx : 0 < x) (hc : 0 < c)
     Tendsto (fun T : ℝ ↦ ((2 * π : ℝ) : ℂ)⁻¹ *
         ∫ t in -T..T, LSeries (normCoeff K f) ((c : ℂ) + t * Complex.I) * perronIntegrand x c t)
       atTop (𝓝 (idealSummatory K f x)) := by
-  rw [← sum_idealsLE_mul_perronStep_of_forall_absNorm_ne hoff f]
-  exact perronFormula hx hc h
+  exact perronFormula_of_forall_normCoeff_ne hx hc
+    (normCoeff_ne_imp_ne_of_forall_absNorm_ne hoff) h
 
 /-- **The Perron formula at an integer endpoint.**  At `x = N` the truncated Perron integral tends
 to the inclusive ideal sum `∑_{N(I) ≤ N} f(I)` less half of the norm coefficient at `N`: every
@@ -156,6 +196,23 @@ theorem perronFormula_natCast {N : ℕ} (hN : 0 < N) (hc : 0 < c)
       atTop (𝓝 (idealSummatory K f N - normCoeff K f N / 2)) := by
   rw [← sum_idealsLE_mul_perronStep_natCast]
   exact perronFormula (Nat.cast_pos.2 hN) hc h
+
+/-- The truncated Perron error bound when every nonzero norm coefficient is away from the
+endpoint. -/
+theorem norm_truncatedPerron_LSeries_normCoeff_sub_idealSummatory_le_of_forall_normCoeff_ne
+    (hx : 0 < x) (hc : 0 < c)
+    (hT : 0 < T)
+    (hoff : ∀ n : ℕ, normCoeff K f n ≠ 0 → x ≠ n)
+    (h : LSeriesSummable (normCoeff K f) c) :
+    ‖(((2 * π : ℝ) : ℂ)⁻¹ *
+        ∫ t in -T..T, LSeries (normCoeff K f) ((c : ℂ) + t * Complex.I) * perronIntegrand x c t)
+        - idealSummatory K f x‖
+      ≤ ∑' n : ℕ, ‖normCoeff K f n‖ * ((x / n) ^ c / (π * T * |Real.log (x / n)|)) := by
+  have hsum : ∑ n ∈ Finset.Ico 1 ⌈x⌉₊, normCoeff K f n = idealSummatory K f x := by
+    rw [← tsum_mul_perronStep_div _ hoff, tsum_normCoeff_mul_perronStep,
+      sum_idealsLE_mul_perronStep_of_forall_normCoeff_ne f hoff]
+  rw [← hsum]
+  exact norm_truncatedPerron_LSeries_sub_sum_le hx hc hT hoff h
 
 /-- **The truncated Perron formula off the norms.**  If `x > 0` is not the absolute norm of a
 nonzero ideal, then at every positive height `T` the truncated Perron integral differs from the
@@ -169,19 +226,7 @@ theorem norm_truncatedPerron_LSeries_normCoeff_sub_idealSummatory_le (hx : 0 < x
         ∫ t in -T..T, LSeries (normCoeff K f) ((c : ℂ) + t * Complex.I) * perronIntegrand x c t)
         - idealSummatory K f x‖
       ≤ ∑' n : ℕ, ‖normCoeff K f n‖ * ((x / n) ^ c / (π * T * |Real.log (x / n)|)) := by
-  -- A nonzero norm coefficient at `n` comes from an ideal of norm `n`, so `x ≠ n` there.
-  have hoff' : ∀ n : ℕ, normCoeff K f n ≠ 0 → x ≠ n := by
-    rintro n hn rfl
-    obtain ⟨I, hI⟩ : (normFiber K n).Nonempty := by
-      rw [Finset.nonempty_iff_ne_empty]
-      rintro h0
-      rw [normCoeff_eq_sum_normFiber, h0, Finset.sum_empty] at hn
-      exact hn rfl
-    exact hoff I (by rw [(mem_normFiber K).mp hI])
-  have hsum : ∑ n ∈ Finset.Ico 1 ⌈x⌉₊, normCoeff K f n = idealSummatory K f x := by
-    rw [← tsum_mul_perronStep_div _ hoff', tsum_normCoeff_mul_perronStep,
-      sum_idealsLE_mul_perronStep_of_forall_absNorm_ne hoff]
-  rw [← hsum]
-  exact norm_truncatedPerron_LSeries_sub_sum_le hx hc hT hoff' h
+  exact norm_truncatedPerron_LSeries_normCoeff_sub_idealSummatory_le_of_forall_normCoeff_ne
+    hx hc hT (normCoeff_ne_imp_ne_of_forall_absNorm_ne hoff) h
 
 end TauCeti
