@@ -522,7 +522,11 @@ private theorem degreeOneForm_demushkinWordTwoOdd_dualBasis {f : ℕ} (hf : 0 < 
     degreeOneForm_gradedBracket_gradedMkZero, toMul_dualBasis_freeProPGen, Nat.choose_self,
     one_smul, mul_ite, mul_one, mul_zero]
 
-private theorem degreeOneBasis_repr_demushkinWordTwoOdd_inl {f : ℕ} (hf : 0 < f) (k : Fin n) :
+/-- **The `2`-power coordinates of the class of the `q = 2`, `n` odd normal-form word**
+`x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`, for `f ≥ 1`: the coefficient of `π ξ₁` is `1`, that of
+`π ξ₂` is `2^{f-1}`, and the other `2`-power coordinates vanish. -/
+@[simp]
+theorem degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl {f : ℕ} (hf : 0 < f) (k : Fin n) :
     (degreeOneBasis 2 (Fin n)).repr
       (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
         demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩)
@@ -540,8 +544,20 @@ theorem not_isAlt_degreeOneForm_demushkinWordTwoOdd (hn : 0 < n) {f : ℕ} (hf :
         demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩)).IsAlt := by
   intro h
   have := h (dualBasis 2 (Fin n) ⟨0, hn⟩)
-  rw [degreeOneForm_dualBasis_self, degreeOneBasis_repr_demushkinWordTwoOdd_inl hf] at this
+  rw [degreeOneForm_dualBasis_self, degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl hf] at this
   simp at this
+
+/-- **The first coordinate character splits off the degree-one form of
+`x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`**, for `n ≥ 1` and `f ≥ 1`: pairing any character `χ` with
+the first coordinate character reads off `χ(x₁)`, because `x₁` occurs in no commutator of the
+word. In particular the first coordinate character is orthogonal to all the others. -/
+theorem degreeOneForm_gradedMk_demushkinWordTwoOdd_dualBasis_zero (hn : 0 < n) {f : ℕ}
+    (hf : 0 < f) (χ : continuousZModDual 2 (freeProP 2 (Fin n))) :
+    degreeOneForm (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
+        demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩) χ
+      (dualBasis 2 (Fin n) ⟨0, hn⟩) = (χ.toMul (freeProPGen 2 n 0)).toAdd := by
+  rw [degreeOneForm_demushkinWordTwoOdd_dualBasis hf]
+  simp
 
 /-- **The degree-one form of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` is nondegenerate for `n`
 odd and `f ≥ 1`**: pairing with the `j`-th coordinate character reads off the value of a character

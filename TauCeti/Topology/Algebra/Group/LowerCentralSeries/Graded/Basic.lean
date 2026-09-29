@@ -796,6 +796,16 @@ theorem gradedPow_gradedBracket_right {j k : ℕ} (hk : 1 ≤ k) (x : gradedPiec
     (commutator_mem_pLowerCentralSeries y.2
       (commutator_mem_pLowerCentralSeries x.2 y.2)))).commutatorElement_pow_right p
 
+/-- **A class brackets trivially with its own `p`-power**: `[π x, x] = 0` in every degree, since
+`x ^ p` commutes with `x`. -/
+@[simp]
+theorem gradedBracket_gradedPow_self {k : ℕ} (x : gradedPiece p G k) :
+    gradedBracket p G (k + 1) k (gradedPow p G k x) x = 0 := by
+  obtain ⟨x, rfl⟩ := gradedMk_surjective k x
+  rw [gradedPow_gradedMk, gradedBracket_gradedMk, gradedMk_eq_zero_iff, coe_mk,
+    commutatorElement_eq_one_iff_mul_comm.mpr ((Commute.refl (x : G)).pow_left p).eq]
+  exact one_mem _
+
 end Pow
 
 /-! ### Functoriality -/
