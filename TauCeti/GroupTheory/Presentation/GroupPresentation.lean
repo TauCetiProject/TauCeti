@@ -163,8 +163,7 @@ theorem relatorsCyclicallyReduced_iff (P : GroupPresentation) :
 
 /-- A word is cyclically reduced exactly when free reduction leaves it alone and its last letter
 does not cancel against its first, and both halves of that are decidable. -/
-instance _root_.FreeGroup.decidableIsCyclicallyReduced {α : Type*} [DecidableEq α]
-    (w : PresentationWord α) :
+instance {α : Type*} [DecidableEq α] (w : PresentationWord α) :
     Decidable (FreeGroup.IsCyclicallyReduced w) :=
   decidable_of_iff _ (and_congr_left' FreeGroup.isReduced_iff_reduce_eq).symm
 
