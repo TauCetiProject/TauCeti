@@ -102,11 +102,6 @@ def HasSurjectiveMonodromy (t : PermutationTriple n) (a b c : ℕ) : Prop :=
 @[simp] theorem hasExactOrders_iff : t.HasExactOrders a b c ↔
     t.orderTriple = (a, b, c) := Iff.rfl
 
-/-- Dividing orders are invariant under relabeling: relabeling conjugates each component. -/
-theorem hasDividingOrders_smul_iff (τ : Perm (Fin n)) :
-    (τ • t).HasDividingOrders a b c ↔ t.HasDividingOrders a b c := by
-  simp only [hasDividingOrders_iff, smul_σ0, smul_σ1, smul_σinf, conj_pow, conj_eq_one_iff]
-
 /-- Dividing orders are precisely the multiples of the component orders. -/
 theorem hasDividingOrders_iff_orderTriple_dvd : t.HasDividingOrders a b c ↔
     t.orderTriple.1 ∣ a ∧ t.orderTriple.2.1 ∣ b ∧ t.orderTriple.2.2 ∣ c := by

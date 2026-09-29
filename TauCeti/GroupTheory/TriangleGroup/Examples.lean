@@ -42,10 +42,8 @@ theorem index_ker_toPerm_torusTriple :
 theorem mk_torusTriple_mem_regularIsoClasses :
     PermutationTriple.IsoClass.mk PermutationTriple.torusTriple ∈ regularIsoClasses 4 4 2 4 :=
   mk_mem_regularIsoClasses_iff.mpr ⟨PermutationTriple.isRegular_torusTriple,
-    (PermutationTriple.hasDividingOrders_iff _).mpr
-      ⟨by rw [PermutationTriple.torusTriple_σ0]; decide,
-        by rw [PermutationTriple.torusTriple_σ1]; decide,
-        by rw [PermutationTriple.torusTriple_σinf]; decide⟩⟩
+    (PermutationTriple.hasDividingOrders_iff_orderTriple_dvd _).mpr
+      (by rw [PermutationTriple.orderTriple_torusTriple]; decide)⟩
 
 end TriangleGroup
 

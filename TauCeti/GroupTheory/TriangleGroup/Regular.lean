@@ -152,7 +152,7 @@ theorem mk_mem_regularIsoClasses_iff {t : PermutationTriple n} :
   refine ⟨?_, fun h ↦ ⟨t, h, rfl⟩⟩
   rintro ⟨t', ⟨hr, hd⟩, h⟩
   obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp (IsoClass.mk_eq_mk_iff.mp h)
-  exact ⟨(isRegular_smul_iff τ t').mpr hr, (hasDividingOrders_smul_iff t' τ).mpr hd⟩
+  exact ⟨(isRegular_smul_iff τ t').mpr hr, by simpa [hasDividingOrders_iff] using hd⟩
 
 /-- A numbering of the cosets of a subgroup of index `n ≠ 0`. -/
 private noncomputable def cosetEquivFin [NeZero n] (N : Subgroup (TriangleGroup a b c))
