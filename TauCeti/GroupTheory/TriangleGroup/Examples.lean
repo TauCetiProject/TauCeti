@@ -18,6 +18,9 @@ This file applies the triangle-group regularity API to the concrete permutation 
 
 * `TauCeti.TriangleGroup.index_ker_toPerm_torusTriple`: the torus triple gives a normal subgroup of
   index `4` of `Δ(4, 4, 2)`.
+* `TauCeti.TriangleGroup.mk_torusTriple_mem_regularIsoClasses`: the class of the torus triple is a
+  regular class of degree `4` for `Δ(4, 4, 2)`, so `TauCeti.TriangleGroup.regularIsoClassEquiv`
+  sends it to that normal subgroup.
 -/
 
 public section
@@ -34,6 +37,15 @@ theorem index_ker_toPerm_torusTriple :
       (by rw [PermutationTriple.torusTriple_σ1]; decide)
       (by rw [PermutationTriple.torusTriple_σinf]; decide)).ker.index = 4 :=
   index_ker_toPerm_of_isRegular _ _ _ _ PermutationTriple.isRegular_torusTriple
+
+/-- The class of the torus triple is a regular class of degree `4` for `Δ(4, 4, 2)`. -/
+theorem mk_torusTriple_mem_regularIsoClasses :
+    PermutationTriple.IsoClass.mk PermutationTriple.torusTriple ∈ regularIsoClasses 4 4 2 4 :=
+  mk_mem_regularIsoClasses_iff.mpr ⟨PermutationTriple.isRegular_torusTriple,
+    (PermutationTriple.hasDividingOrders_iff _).mpr
+      ⟨by rw [PermutationTriple.torusTriple_σ0]; decide,
+        by rw [PermutationTriple.torusTriple_σ1]; decide,
+        by rw [PermutationTriple.torusTriple_σinf]; decide⟩⟩
 
 end TriangleGroup
 
