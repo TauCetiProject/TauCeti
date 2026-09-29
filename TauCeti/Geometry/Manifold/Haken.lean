@@ -52,6 +52,8 @@ Chapter II.
 * `TauCeti.isHakenThreeManifold_of_isHakenSurfaceEmbedding` and
   `TauCeti.isClosedHakenThreeManifold_of_isClosedHakenSurfaceEmbedding` package a surface witness
   into the corresponding ambient predicate.
+* `TauCeti.IsHakenThreeManifold.exists_isOpen_sdiff_range_eq_union` and its closed analogue expose
+  the two-sided complement supplied by the existential surface witness.
 -/
 
 public section
@@ -250,6 +252,29 @@ theorem isHakenThreeManifold_of_isHakenSurfaceEmbedding {S M : Type u}
     (h : IsHakenSurfaceEmbedding f) : IsHakenThreeManifold M := by
   exact ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
+namespace IsHakenThreeManifold
+
+/-- A Haken 3-manifold contains a surface with a two-sided open neighbourhood: the complement of
+the surface in that neighbourhood is the union of two disjoint nonempty open sets. -/
+theorem exists_isOpen_sdiff_range_eq_union {M : Type u} [TopologicalSpace M]
+    [ChartedSpace (EuclideanHalfSpace 3) M] (h : IsHakenThreeManifold M) :
+    ∃ (S : Type u) (tS : TopologicalSpace S)
+      (cS : ChartedSpace (EuclideanHalfSpace 2) S),
+      letI : TopologicalSpace S := tS
+      letI : ChartedSpace (EuclideanHalfSpace 2) S := cS
+      ∃ (f : C(S, M)) (U V W : Set M),
+        IsHakenSurfaceEmbedding f ∧ IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧
+          V.Nonempty ∧ W.Nonempty ∧ Disjoint V W ∧ U \ range f = V ∪ W := by
+  rcases h.2 with ⟨S, tS, cS, f, hf⟩
+  rcases hf with ⟨hS, hM, hboundary, hb, hincompressible, s, hs⟩
+  let _ : Nonempty S := ⟨s⟩
+  rcases hb.exists_isOpen_sdiff_range_eq_union with ⟨U, V, W, hU, hV, hW, hrange,
+    hVne, hWne, hdisjoint, hsdiff⟩
+  exact ⟨S, tS, cS, f, U, V, W, ⟨hS, hM, hboundary, hb, hincompressible, s, hs⟩,
+    hU, hV, hW, hrange, hVne, hWne, hdisjoint, hsdiff⟩
+
+end IsHakenThreeManifold
+
 end BoundaryHakenPredicate
 
 /-! ### Closed incompressible surface embeddings -/
@@ -349,6 +374,29 @@ theorem isClosedHakenThreeManifold_of_isClosedHakenSurfaceEmbedding {S M : Type 
     (hirr : IsIrreducibleThreeManifold M) {f : C(S, M)}
     (h : IsClosedHakenSurfaceEmbedding f) : IsClosedHakenThreeManifold M := by
   exact ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+
+namespace IsClosedHakenThreeManifold
+
+/-- A closed Haken 3-manifold contains a surface with a two-sided open neighbourhood: the
+complement of the surface in that neighbourhood is the union of two disjoint nonempty open sets. -/
+theorem exists_isOpen_sdiff_range_eq_union {M : Type u} [TopologicalSpace M]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] (h : IsClosedHakenThreeManifold M) :
+    ∃ (S : Type u) (tS : TopologicalSpace S)
+      (cS : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S),
+      letI : TopologicalSpace S := tS
+      letI : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S := cS
+      ∃ (f : C(S, M)) (U V W : Set M),
+        IsClosedHakenSurfaceEmbedding f ∧ IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧
+          V.Nonempty ∧ W.Nonempty ∧ Disjoint V W ∧ U \ range f = V ∪ W := by
+  rcases h.2 with ⟨S, tS, cS, f, hf⟩
+  rcases hf with ⟨hincompressible, hb, s, hs⟩
+  let _ : Nonempty S := ⟨s⟩
+  rcases hb.exists_isOpen_sdiff_range_eq_union with ⟨U, V, W, hU, hV, hW, hrange,
+    hVne, hWne, hdisjoint, hsdiff⟩
+  exact ⟨S, tS, cS, f, U, V, W, ⟨hincompressible, hb, s, hs⟩,
+    hU, hV, hW, hrange, hVne, hWne, hdisjoint, hsdiff⟩
+
+end IsClosedHakenThreeManifold
 
 end Closed
 
