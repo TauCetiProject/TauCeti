@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
-public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 
 /-!
 # Weighted homogeneity under substitution of homogeneous polynomials
@@ -18,12 +16,12 @@ polynomial of degree `m`. When the substitution is injective the converse holds:
 whose substitution is homogeneous of degree `m` is itself weighted homogeneous of weight `m`.
 
 The motivating substitution sends the variable `i` of `MvPolynomial (Fin n) R` to the elementary
-symmetric polynomial `eᵢ₊₁`, which is homogeneous of degree `i + 1`. By the fundamental theorem
-of symmetric polynomials it is injective, so the expression of a homogeneous symmetric
-polynomial in the elementary symmetric polynomials is weighted homogeneous for the weights
-`i + 1`. The coefficients of a product `∏ (X - C Ψ)` of linear factors with homogeneous
-constant terms of a common degree `m` supply such symmetric polynomials: the coefficient of
-`X ^ k` is homogeneous of degree `m * (s.card - k)`.
+symmetric polynomial `eᵢ₊₁`, which is homogeneous of degree `i + 1`
+(`MvPolynomial.isHomogeneous_esymm`). By the fundamental theorem of symmetric polynomials it is
+injective, so the expression of a homogeneous symmetric polynomial in the elementary symmetric
+polynomials is weighted homogeneous for the weights `i + 1`. The coefficients of a product
+`∏ (X - C Ψ)` of linear factors with homogeneous constant terms of a common degree `m` supply
+such symmetric polynomials (`MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`).
 
 ## Main results
 
@@ -31,10 +29,6 @@ constant terms of a common degree `m` supply such symmetric polynomials: the coe
   of the weights turns weighted homogeneity into homogeneity.
 * `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse, for an injective
   substitution.
-* `MvPolynomial.isHomogeneous_esymm`: the elementary symmetric polynomial `eₖ` is homogeneous of
-  degree `k`.
-* `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a product of linear
-  factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
 -/
 
 public section
@@ -63,14 +57,6 @@ theorem IsWeightedHomogeneous.isHomogeneous_aeval {w : σ → ℕ} {φ : MvPolyn
     convert (isHomogeneous_C τ r).mul hprod using 1
     rw [← hr, Finsupp.weight_apply, Finsupp.sum, zero_add]
     exact Finset.sum_congr rfl fun i _ => by rw [smul_eq_mul, mul_comm]
-
-/-- The elementary symmetric polynomial `eₖ` is homogeneous of degree `k`. -/
-theorem isHomogeneous_esymm [Fintype σ] (k : ℕ) : (esymm σ R k).IsHomogeneous k := by
-  rw [esymm_eq_sum_subtype]
-  refine IsHomogeneous.sum _ _ _ fun t _ => ?_
-  have h := IsHomogeneous.prod (t : Finset σ) (fun i => (X i : MvPolynomial σ R)) (fun _ => 1)
-    fun i _ => isHomogeneous_X R i
-  rwa [Finset.sum_const, smul_eq_mul, mul_one, t.2] at h
 
 /-- **Weighted homogeneity from homogeneity of a substitution.** If `g i` is homogeneous of
 degree `w i` for every variable `i` and substitution of the `g i` is injective, then a polynomial
@@ -105,49 +91,5 @@ theorem isWeightedHomogeneous_of_isHomogeneous_aeval {w : σ → ℕ} {g : σ �
   exact weightedHomogeneousComponent_isWeightedHomogeneous m φ
 
 end CommSemiring
-
-section CommRing
-
-variable [CommRing R]
-
-/-- The coefficient of `X ^ k` in a product of linear factors `X - C Ψ`, whose constant terms `Ψ`
-are all homogeneous of degree `m`, is homogeneous of degree `m * (s.card - k)`. -/
-theorem isHomogeneous_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι)
-    (Ψ : ι → MvPolynomial σ R) {m : ℕ} (hΨ : ∀ i ∈ s, (Ψ i).IsHomogeneous m) (k : ℕ) :
-    ((∏ i ∈ s, (Polynomial.X - Polynomial.C (Ψ i))).coeff k).IsHomogeneous
-      (m * (s.card - k)) := by
-  classical
-  induction s using Finset.induction_on generalizing k with
-  | empty =>
-    rw [Finset.prod_empty, Polynomial.coeff_one]
-    split_ifs
-    · simpa using isHomogeneous_one σ R
-    · exact isHomogeneous_zero σ R _
-  | insert a s ha ih =>
-    have hs (k : ℕ) := ih (fun i hi => hΨ i (Finset.mem_insert_of_mem hi)) k
-    have ha' := hΨ a (Finset.mem_insert_self a s)
-    rw [Finset.prod_insert ha, Finset.card_insert_of_notMem ha, mul_comm]
-    rcases k with _ | j
-    · rw [Polynomial.mul_coeff_zero, Polynomial.coeff_sub, Polynomial.coeff_X_zero,
-        Polynomial.coeff_C_zero, zero_sub, Nat.sub_zero, mul_add_one]
-      have h0 := hs 0
-      rw [Nat.sub_zero] at h0
-      exact h0.mul ha'.neg
-    · rw [Polynomial.coeff_mul_X_sub_C, Nat.add_sub_add_right]
-      refine (hs j).sub ?_
-      by_cases hj : j + 1 ≤ s.card
-      · have hdeg : s.card - j = s.card - (j + 1) + 1 := by omega
-        rw [hdeg, mul_add_one]
-        exact (hs (j + 1)).mul ha'
-      · have hle : (∏ i ∈ s, (Polynomial.X - Polynomial.C (Ψ i))).natDegree ≤ s.card := by
-          refine (Polynomial.natDegree_prod_le _ _).trans ?_
-          simpa using Finset.sum_le_card_nsmul s _ 1 fun i _ =>
-            Polynomial.natDegree_X_sub_C_le (Ψ i)
-        have hlt : (∏ i ∈ s, (Polynomial.X - Polynomial.C (Ψ i))).natDegree < j + 1 := by
-          omega
-        rw [Polynomial.coeff_eq_zero_of_natDegree_lt hlt, zero_mul]
-        exact isHomogeneous_zero σ R _
-
-end CommRing
 
 end MvPolynomial

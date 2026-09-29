@@ -40,7 +40,7 @@ powers of `a`, and the two real orbit values `190 ± 12√31` at the roots of
 
 ## Main results
 
-* `TauCeti.specialize_quinticF20Spec_X_pow_five_add_C_mul_X_add_C`: Dummit's formula for the
+* `TauCeti.quinticF20Spec_specialize_X_pow_five_add_C_mul_X_add_C`: Dummit's formula for the
   specialization at `X⁵ + aX + b` over any commutative ring.
 * `TauCeti.resolventSextic_X_pow_five_add_C_mul_X_add_C`: the resolvent sextic of the integral
   quintic `X⁵ + aX + b`.
@@ -335,7 +335,7 @@ private theorem c_values : c 5 1 0 = 8 ∧ c 4 2 0 = 40 ∧ c 3 3 0 = 160 ∧ c 
 /-- **Dummit's formula for the resolvent of a quintic trinomial.** Over every commutative ring,
 the specialization of the quintic `F₂₀` specification at `X⁵ + aX + b` is
 `X⁶ + 8aX⁵ + 40a²X⁴ + 160a³X³ + 400a⁴X² + (512a⁵ - 3125b⁴)X + (256a⁶ - 9375ab⁴)`. -/
-theorem specialize_quinticF20Spec_X_pow_five_add_C_mul_X_add_C (a b : R) :
+theorem quinticF20Spec_specialize_X_pow_five_add_C_mul_X_add_C (a b : R) :
     quinticF20Spec.specialize R (X ^ 5 + C a * X + C b) =
       X ^ 6 + C (8 * a) * X ^ 5 + C (40 * a ^ 2) * X ^ 4 + C (160 * a ^ 3) * X ^ 3 +
         C (400 * a ^ 4) * X ^ 2 + C (512 * a ^ 5 - 3125 * b ^ 4) * X +
@@ -351,7 +351,7 @@ theorem resolventSextic_X_pow_five_add_C_mul_X_add_C (a b : ℤ) :
       X ^ 6 + C (8 * a) * X ^ 5 + C (40 * a ^ 2) * X ^ 4 + C (160 * a ^ 3) * X ^ 3 +
         C (400 * a ^ 4) * X ^ 2 + C (512 * a ^ 5 - 3125 * b ^ 4) * X +
         C (256 * a ^ 6 - 9375 * a * b ^ 4) := by
-  rw [resolventSextic_def, specialize_quinticF20Spec_X_pow_five_add_C_mul_X_add_C]
+  rw [resolventSextic_def, quinticF20Spec_specialize_X_pow_five_add_C_mul_X_add_C]
 
 /-- The resolvent sextic of `X⁵ - 5X - 12` has the integral root `40`. -/
 theorem isRoot_resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve :
