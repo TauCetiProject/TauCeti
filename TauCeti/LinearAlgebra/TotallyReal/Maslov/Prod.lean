@@ -36,9 +36,11 @@ that multiplication by `i` on a product is the product map of the two multiplica
 
 The axiom is the additivity half of the standard list of properties of the Maslov index
 (Robbin--Salamon, *The Maslov index for paths*, Topology **32** (1993); McDuff--Salamon,
-*J-holomorphic Curves and Symplectic Topology*, Appendix C.3). It is what one needs to add up the
-contributions of the boundary components of a Cauchy--Riemann operator on a surface, each carrying
-its own totally real boundary condition.
+*J-holomorphic Curves and Symplectic Topology*, Appendix C.3). It combines two loops that vary
+independently: it is the statement needed whenever a totally real boundary condition, or a pair of
+complex bundles, is a direct sum of two such conditions or bundles, each with its own loop of
+totally real subspaces. Summing over the separate boundary components of a Cauchy--Riemann operator
+on a surface, each of which carries a loop of its own, is a further step built on top of this one.
 
 ## Main declarations
 
@@ -100,13 +102,7 @@ theorem maslovPhase_prod {L' : Submodule ℝ E} {M' : Submodule ℝ E'}
     rw [← hA, ← hB, h, LinearMap.prodMap_map_prod]
   have hdet : LinearMap.det ((LinearEquiv.prodCongr A B : (E × E') →ₗ[ℂ] (E × E'))) =
       LinearMap.det (A : E →ₗ[ℂ] E) * LinearMap.det (B : E' →ₗ[ℂ] E') := by
-    have h : (LinearEquiv.prodCongr A B : (E × E') →ₗ[ℂ] (E × E')) = LinearMap.prodMap A B := by
-      apply LinearMap.ext
-      intro x
-      rcases x with ⟨x, y⟩
-      simp
-    rw [h]
-    exact LinearMap.det_prodMap (A : E →ₗ[ℂ] E) (B : E' →ₗ[ℂ] E')
+    rw [LinearEquiv.coe_prodCongr, LinearMap.det_prodMap]
   rw [hP.maslovPhase_congr (hL'.isMaximalTotallyReal_prod hM')
     (hP.map_linearEquiv (LinearEquiv.prodCongr A B)) hsub,
     hP.maslovPhase_map, hdet,
@@ -119,8 +115,8 @@ end IsMaximalTotallyReal
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
 
 /-- The loop of coordinate subspaces of a pair of loops of maximal totally real subspaces: the
 direct sum `Λ ⊕ Λ'` of `t ↦ Λ t` and `t ↦ Λ' t`, in the product of the ambient spaces. -/
@@ -150,11 +146,12 @@ noncomputable def prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
   toFun_zero_eq_toFun_one :=
     by rw [Λ.toFun_zero_eq_toFun_one, Λ'.toFun_zero_eq_toFun_one]
 
-omit [FiniteDimensional ℂ E] [FiniteDimensional ℂ E'] in
 @[simp]
 theorem prod_apply (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') (t : I) :
     Λ.prod Λ' t = (Λ t).prod (Λ' t) :=
   (rfl)
+
+variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ E']
 
 /-- **The direct-sum axiom of the Maslov index.** The Maslov index of the direct sum of two loops
 of maximal totally real subspaces is the sum of their Maslov indices. -/
