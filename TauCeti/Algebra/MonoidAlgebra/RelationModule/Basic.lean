@@ -95,6 +95,7 @@ theorem range_linearCombination_le_ker_augmentation (g : ι → G) :
 
 /-- Changing coefficients along a ring homomorphism `f : R →+* S` commutes with the map
 `e_i ↦ g_i - 1`. -/
+@[simp]
 theorem mapRingHom_linearCombination {S : Type*} [Ring S] (f : R →+* S) (g : ι → G)
     (c : ι → MonoidAlgebra R G) :
     mapRingHom G f

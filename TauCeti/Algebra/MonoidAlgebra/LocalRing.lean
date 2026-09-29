@@ -11,12 +11,12 @@ public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
-# Group algebras over a local ring
+# Monoid algebras over a local ring
 
-For a finite group `G` and a local ring `R` with residue field `k`, the free module `R[G]^ι` of
-finite rank is a finitely generated `R`-module, so Nakayama's lemma over `R` detects surjectivity
-of its endomorphisms after reduction to `k[G]^ι`. The Orzech property then upgrades surjectivity
-to bijectivity.
+For a finite monoid `G` (for instance a finite group) and a local ring `R` with residue field `k`,
+the free module `R[G]^ι` of finite rank is a finitely generated `R`-module, so Nakayama's lemma
+over `R` detects surjectivity of its endomorphisms after reduction to `k[G]^ι`.
+The Orzech property then upgrades surjectivity to bijectivity.
 
 ## Main results
 
@@ -30,7 +30,7 @@ open MonoidAlgebra IsLocalRing
 
 namespace TauCeti.MonoidAlgebra
 
-variable {R : Type*} [CommRing R] [IsLocalRing R] {G : Type*} [Group G] [Finite G] {ι : Type*}
+variable {R : Type*} [CommRing R] [IsLocalRing R] {G : Type*} [Monoid G] [Finite G] {ι : Type*}
   [Finite ι]
 
 /-- **Nakayama's lemma for `R[G]^ι`.** An `R[G]`-linear endomorphism of `R[G]^ι` that is onto
