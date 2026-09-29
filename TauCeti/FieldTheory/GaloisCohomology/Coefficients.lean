@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
@@ -64,6 +65,8 @@ are strictly larger than `Kˣ`.
 * `TauCeti.embeddedUnitsInvariants`: for a `K`-embedding `σ : L →ₐ[K] Kˢ`, a unit `b` of `L` as
   the invariant `σ b` of `(Kˢ)ˣ` under the subgroup of `G_K` fixing `σ(L)`.
 * `TauCeti.embeddedUnitsEquivInvariants`: the isomorphism `Lˣ ≅ H⁰(Gal(Kˢ/σ(L)), (Kˢ)ˣ)`.
+  For normal `L/K` it intertwines the action of `σ.restrictNormalHom g` with that of `g`
+  (`TauCeti.embeddedUnitsEquivInvariants_restrictNormalHom_smul`).
 
 ## Main results
 
@@ -337,8 +340,9 @@ theorem mem_H0_fixingSubgroup_unitsCoeff_iff {u : UnitsCoeff K} :
       exact u.toMul.ne_zero (by simpa using hb.symm)
     exact ⟨Units.mk0 b hb0, Units.ext hb⟩
   · rintro ⟨b, hb⟩
-    rw [show u = embeddedUnitsInvariants K L σ b from
-      Additive.toMul.injective (hb.symm.trans (toMul_coe_embeddedUnitsInvariants K L σ b).symm)]
+    have hu : u = embeddedUnitsInvariants K L σ b :=
+      Additive.toMul.injective (hb.symm.trans (toMul_coe_embeddedUnitsInvariants K L σ b).symm)
+    rw [hu]
     exact (embeddedUnitsInvariants K L σ b).2
 
 /-- **The invariants of `(Kˢ)ˣ` under `Gal(Kˢ/σ(L))` are the units of `L`**, that is
@@ -365,6 +369,21 @@ def embeddedUnitsEquivInvariants :
 theorem embeddedUnitsEquivInvariants_apply (b : Additive Lˣ) :
     embeddedUnitsEquivInvariants K L σ b = embeddedUnitsInvariants K L σ b.toMul :=
   (rfl)
+
+/-- **`embeddedUnitsEquivInvariants` is Galois-equivariant**: for normal `L/K`, embedding by `σ`
+turns the action of the restriction `σ.restrictNormalHom g` on `Lˣ` into the action of `g` on
+`(Kˢ)ˣ`. -/
+theorem embeddedUnitsEquivInvariants_restrictNormalHom_smul [Normal K L]
+    (g : AbsoluteGaloisGroup K) (b : Additive Lˣ) :
+    (embeddedUnitsEquivInvariants K L σ (Additive.ofMul (σ.restrictNormalHom g • b.toMul)) :
+        UnitsCoeff K) =
+      g • (embeddedUnitsEquivInvariants K L σ b : UnitsCoeff K) := by
+  refine Additive.toMul.injective (Units.ext ?_)
+  rw [embeddedUnitsEquivInvariants_apply, embeddedUnitsEquivInvariants_apply, Additive.toMul_smul,
+    toMul_coe_embeddedUnitsInvariants, toMul_coe_embeddedUnitsInvariants, toMul_ofMul,
+    AlgEquiv.smul_units_def, AlgEquiv.smul_units_def]
+  simp only [Units.coe_map]
+  exact σ.restrictNormalHom_commutes g b.toMul
 
 end Embedded
 

@@ -228,32 +228,6 @@ theorem galoisOpenNormalSubgroup_toSubgroup :
     (galoisOpenNormalSubgroup K L σ).toSubgroup = σ.fieldRange.fixingSubgroup :=
   (rfl)
 
-omit [FiniteDimensional K L] in
-/-- Embedding units of `L` by `σ` turns the action of the restriction of `g` into the action
-of `g`. -/
-private theorem embeddedUnitsEquivInvariants_restrictNormalHom_smul
-    (g : AbsoluteGaloisGroup K) (b : Additive Lˣ) :
-    (embeddedUnitsEquivInvariants K L σ (Additive.ofMul (σ.restrictNormalHom g • b.toMul)) :
-        UnitsCoeff K) =
-      g • (embeddedUnitsEquivInvariants K L σ b : UnitsCoeff K) := by
-  refine Additive.toMul.injective (Units.ext ?_)
-  rw [embeddedUnitsEquivInvariants_apply, embeddedUnitsEquivInvariants_apply, Additive.toMul_smul,
-    toMul_coe_embeddedUnitsInvariants, toMul_coe_embeddedUnitsInvariants, toMul_ofMul,
-    AlgEquiv.smul_units_def, AlgEquiv.smul_units_def]
-  simp only [Units.coe_map]
-  exact σ.restrictNormalHom_commutes g b.toMul
-
-/-- `quotientFixingSubgroupFieldRangeEquiv`, read at the level `galoisOpenNormalSubgroup K L σ`,
-whose underlying subgroup is by definition the fixing subgroup of `σ(L)`. -/
-private def levelQuotientEquiv :
-    AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup ≃* Gal(L/K) :=
-  quotientFixingSubgroupFieldRangeEquiv K L σ
-
-/-- `levelQuotientEquiv` sends the class of `g` to its restriction to `L`. -/
-private theorem levelQuotientEquiv_mk (g : AbsoluteGaloisGroup K) :
-    levelQuotientEquiv K L σ g = σ.restrictNormalHom g :=
-  quotientFixingSubgroupFieldRangeEquiv_mk K L σ g
-
 /-- **The relative Brauer group `H²(Gal(L/K), Lˣ)` is the level of `Gal(Kˢ/σ(L))`**: Mathlib's
 group cohomology of `Lˣ` is carried by `quotientFixingSubgroupFieldRangeEquiv` and
 `TauCeti.embeddedUnitsEquivInvariants` to that of `((Kˢ)ˣ)^U` over `Gal(Kˢ/K) ⧸ U`, for
@@ -263,17 +237,21 @@ def relBrLevelEquiv :
     groupCohomology (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) 2 ≃+
       H2 (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup)
         (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup (UnitsCoeff K)) :=
-  (groupCohomology.mapIso (levelQuotientEquiv K L σ).symm
+  (groupCohomology.mapIso (quotientFixingSubgroupFieldRangeEquiv K L σ).symm
     (embeddedUnitsEquivInvariants K L σ).toIntLinearEquiv (fun τ => by
       obtain ⟨g, rfl⟩ := σ.restrictNormalHom_surjective τ
       refine LinearMap.ext fun b => Subtype.ext ?_
       rw [LinearMap.comp_apply, LinearMap.comp_apply,
-        (MulEquiv.symm_apply_eq _).2 (levelQuotientEquiv_mk K L σ g).symm]
+        (MulEquiv.symm_apply_eq _).2 (quotientFixingSubgroupFieldRangeEquiv_mk K L σ g).symm]
       -- Both sides are the action on the image of `b` in `(Kˢ)ˣ`, the representations acting by
       -- `Rep.ofMulDistribMulAction_ρ_apply_apply` and `Rep.ofDistribMulAction_ρ_apply_apply`, and
       -- `G_K ⧸ U` acting on `((Kˢ)ˣ)^U` through representatives, all of which hold by `rfl`.
       exact embeddedUnitsEquivInvariants_restrictNormalHom_smul K L σ g b)
-    2).toLinearEquiv.toAddEquiv.trans (explicitH2IsoGroupCohomology _ _).symm
+    2).toLinearEquiv.toAddEquiv.trans
+    -- The quotient is named through the level, whose discrete topology and action on the
+    -- invariants are the instances of `H2`; for the fixing subgroup itself they are not found.
+    (explicitH2IsoGroupCohomology
+      (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup) _).symm
 
 /-- **Inflation from the relative Brauer group** `H²(Gal(L/K), Lˣ) → Br K` of a finite normal
 extension `L/K` embedded in `Kˢ` by `σ`: the identification `relBrLevelEquiv` of
