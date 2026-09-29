@@ -48,19 +48,28 @@ def SmaleConjecture : Prop :=
       (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞),
     e.toFun = continuousOrthogonalToDiffSphere 3 ∞
 
-/-- Smale's conjecture yields a homotopy inverse for the canonical inclusion, together with both
-homotopies witnessing the inverse laws. -/
-theorem exists_homotopyInverse_of_smaleConjecture (h : SmaleConjecture) :
-    ∃ g : ContinuousMap
-        (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞)
-        (Matrix.orthogonalGroup (Fin 4) ℝ),
-      (g.comp (continuousOrthogonalToDiffSphere 3 ∞)).Homotopic (ContinuousMap.id _) ∧
-        ((continuousOrthogonalToDiffSphere 3 ∞).comp g).Homotopic (ContinuousMap.id _) := by
-  rcases h with ⟨e, he⟩
-  refine ⟨e.invFun, ?_, ?_⟩
-  · rw [← he]
-    exact e.left_inv
-  · rw [← he]
-    exact e.right_inv
+/-- Characterize Smale's conjecture by a continuous inverse for the canonical inclusion and the two
+homotopies witnessing its inverse laws. -/
+theorem smaleConjecture_iff_exists_homotopyInverse :
+    SmaleConjecture ↔
+      ∃ g : ContinuousMap
+          (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞)
+          (Matrix.orthogonalGroup (Fin 4) ℝ),
+        (g.comp (continuousOrthogonalToDiffSphere 3 ∞)).Homotopic (ContinuousMap.id _) ∧
+          ((continuousOrthogonalToDiffSphere 3 ∞).comp g).Homotopic (ContinuousMap.id _) := by
+  constructor
+  · rintro ⟨e, he⟩
+    refine ⟨e.invFun, ?_, ?_⟩
+    · rw [← he]
+      exact e.left_inv
+    · rw [← he]
+      exact e.right_inv
+  · rintro ⟨g, hleft, hright⟩
+    exact ⟨{
+      toFun := continuousOrthogonalToDiffSphere 3 ∞
+      invFun := g
+      left_inv := hleft
+      right_inv := hright
+    }, rfl⟩
 
 end TauCeti
