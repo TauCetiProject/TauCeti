@@ -140,11 +140,11 @@ theorem multiplicity_differentIdeal_eq_three :
 /-- **The dyadic valuation of `2` in `ℚ(√2)` is `2`**: `v_𝔭(2) = 2`. -/
 theorem multiplicity_span_two_eq_two : multiplicity 𝔭 (span {(2 : 𝓞 K)}) = 2 := by
   have htwo : span {(2 : ℤ)} ≠ ⊥ := span_singleton_eq_bot.not.mpr two_ne_zero
-  have h𝔭 : 𝔭 ≠ ⊥ := ne_bot_of_liesOver_of_ne_bot htwo 𝔭
-  have hspan : span {(2 : 𝓞 K)} = 𝔭 ^ 2 := by
-    simpa [Ideal.map_span] using map_span_two_eq_sq hmin hgen 𝔭
-  rw [hspan]
-  exact multiplicity_pow_self_of_prime (Ideal.prime_of_isPrime h𝔭 ‹_›) 2
+  have hmap : (span {(2 : ℤ)}).map (algebraMap ℤ (𝓞 K)) ≠ ⊥ :=
+    map_ne_bot_of_ne_bot htwo
+  simpa [Ideal.map_span, ramificationIdx_eq_two hmin hgen 𝔭] using
+    (IsDedekindDomain.ramificationIdx_eq_multiplicity
+      (p := span {(2 : ℤ)}) (q := 𝔭) hmap).symm
 
 /-- **The wild upper bound is attained in `ℚ(√2)`**: at the dyadic prime,
 `v_𝔭(𝔡) = e − 1 + v_𝔭(e)`, with `e = 2` and both sides equal to `3`. -/
