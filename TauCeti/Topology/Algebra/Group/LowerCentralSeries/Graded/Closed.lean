@@ -64,20 +64,6 @@ abbrev lcsGradedMk (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGro
     (n : ℕ) (x : closedLowerCentralSeries G n) : lcsGradedPiece G n :=
   gradedMk 0 G n ⟨x, by rw [← closedLowerCentralSeries_def]; exact x.2⟩
 
-/-- Commutators of elements of `γ_j(G)` and `γ_k(G)` lie in `γ_{j+k+1}(G)`. -/
-theorem commutatorElement_mem_closedLowerCentralSeries {j k : ℕ} {x y : G}
-    (hx : x ∈ closedLowerCentralSeries G j) (hy : y ∈ closedLowerCentralSeries G k) :
-    ⁅x, y⁆ ∈ closedLowerCentralSeries G (j + k + 1) := by
-  rw [closedLowerCentralSeries_def] at hx hy ⊢
-  exact commutator_mem_pLowerCentralSeries hx hy
-
-/-- A `p`-adic power of an element of `γ_n(G)` remains in `γ_n(G)`. -/
-theorem IsProP.padicPow_mem_closedLowerCentralSeries {p : ℕ} [Fact p.Prime] [CompactSpace G]
-    [TotallyDisconnectedSpace G] (hG : IsProP p G) {n : ℕ} {x : G}
-    (hx : x ∈ closedLowerCentralSeries G n) (u : ℤ_[p]) :
-    hG.padicPow x u ∈ closedLowerCentralSeries G n :=
-  hG.padicPow_mem (isClosed_closedLowerCentralSeries n) hx u
-
 /-- Conjugation acts trivially on every graded piece of the closed lower central series. -/
 @[simp]
 theorem lcsGradedMk_conj (n : ℕ) (g : G) (x : closedLowerCentralSeries G n) :
@@ -94,6 +80,30 @@ abbrev lcsBracket (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGrou
     (j k : ℕ) (x : lcsGradedPiece G j) (y : lcsGradedPiece G k) :
     lcsGradedPiece G (j + k + 1) :=
   gradedBracket 0 G j k x y
+
+/-- The closed-series bracket on classes is represented by the group commutator. -/
+theorem lcsBracket_mk {j k : ℕ} (x : closedLowerCentralSeries G j)
+    (y : closedLowerCentralSeries G k) :
+    lcsBracket G j k (lcsGradedMk G j x) (lcsGradedMk G k y) =
+      lcsGradedMk G (j + k + 1)
+        ⟨⁅(x : G), (y : G)⁆,
+          (commutator_closedLowerCentralSeries_le j k)
+            (Subgroup.commutator_mem_commutator x.2 y.2)⟩ := by
+  rw [lcsBracket, lcsGradedMk, lcsGradedMk, gradedBracket_gradedMk]
+
+/-- The closed-series bracket is additive in its first argument. -/
+@[simp]
+theorem lcsBracket_add_left {j k : ℕ} (x x' : lcsGradedPiece G j)
+    (y : lcsGradedPiece G k) :
+    lcsBracket G j k (x + x') y = lcsBracket G j k x y + lcsBracket G j k x' y := by
+  simp only [lcsBracket, map_add, AddMonoidHom.add_apply]
+
+/-- The closed-series bracket is additive in its second argument. -/
+@[simp]
+theorem lcsBracket_add_right {j k : ℕ} (x : lcsGradedPiece G j)
+    (y y' : lcsGradedPiece G k) :
+    lcsBracket G j k x (y + y') = lcsBracket G j k x y + lcsBracket G j k x y' := by
+  simp only [lcsBracket, map_add]
 
 section PadicPow
 
@@ -115,11 +125,13 @@ noncomputable def IsProP.lcsGradedPieceModule (hG : IsProP p G) (n : ℕ) :
 
 /-- In a pro-`p` group, the class of a `p`-adic power in a closed-series graded piece is the
 corresponding `ℤ_p`-scalar multiple. -/
+@[simp]
 theorem IsProP.lcsGradedMk_padicPow (hG : IsProP p G) {n : ℕ}
     (x : closedLowerCentralSeries G n) (u : ℤ_[p]) :
     letI := hG.lcsGradedPieceModule n
     lcsGradedMk G n
-        ⟨hG.padicPow (x : G) u, hG.padicPow_mem_closedLowerCentralSeries x.2 u⟩ =
+        ⟨hG.padicPow (x : G) u,
+          hG.padicPow_mem (isClosed_closedLowerCentralSeries n) x.2 u⟩ =
       u • lcsGradedMk G n x := by
   let R := pLowerCentralSeries 0 G n
   let N := (pLowerCentralSeries 0 G (n + 1)).subgroupOf R
@@ -138,7 +150,7 @@ theorem IsProP.lcsGradedMk_padicPow (hG : IsProP p G) {n : ℕ}
       -- `R` is the lower-`p` spelling of the sealed closed-series term.
       change hG.padicPow (x : G) u ∈ pLowerCentralSeries 0 G n
       rw [← closedLowerCentralSeries_def]
-      exact hG.padicPow_mem_closedLowerCentralSeries x.2 u⟩
+      exact hG.padicPow_mem (isClosed_closedLowerCentralSeries n) x.2 u⟩
   have hpow : hR.padicPow xR u = xuR := by
     apply Subtype.ext
     exact hR.map_padicPow hG R.subtype continuous_subtype_val xR u
@@ -147,8 +159,8 @@ theorem IsProP.lcsGradedMk_padicPow (hG : IsProP p G) {n : ℕ}
   -- Expose the subgroup quotient underlying the sealed graded class map.
   change Additive.ofMul (QuotientGroup.mk xuR : R ⧸ N) =
     u • Additive.ofMul (QuotientGroup.mk xR : R ⧸ N)
-  simp only [IsProP.module_smul, toMul_ofMul]
-  rw [← hR.mk_padicPow_quotient, hpow]
+  rw [← hpow]
+  exact hR.ofMul_mk_padicPow_quotient N xR u
 
 /-- Modulo `γ_{j+k+2}`, taking a `p`-adic power in the left input of a commutator is the same
 as taking that power of the commutator. -/
@@ -256,9 +268,10 @@ theorem lcsBracket_padicPow_left (hG : IsProP p G) {j k : ℕ}
     ∃ hxy : hG.padicPow ⁅(x : G), (y : G)⁆ u ∈ closedLowerCentralSeries G (j + k + 1),
       lcsBracket G j k (lcsGradedMk G j ⟨_, hx⟩) (lcsGradedMk G k y) =
         lcsGradedMk G (j + k + 1) ⟨_, hxy⟩ := by
-  refine ⟨hG.padicPow_mem_closedLowerCentralSeries x.2 u,
-    hG.padicPow_mem_closedLowerCentralSeries
-      (commutatorElement_mem_closedLowerCentralSeries x.2 y.2) u, ?_⟩
+  refine ⟨hG.padicPow_mem (isClosed_closedLowerCentralSeries j) x.2 u,
+    hG.padicPow_mem (isClosed_closedLowerCentralSeries (j + k + 1))
+      ((commutator_closedLowerCentralSeries_le j k)
+        (Subgroup.commutator_mem_commutator x.2 y.2)) u, ?_⟩
   rw [lcsBracket, lcsGradedMk, gradedBracket_gradedMk, gradedMk_eq_gradedMk_iff]
   exact hG.mk_commutatorElement_padicPow_left x y u
 
@@ -270,9 +283,10 @@ theorem lcsBracket_padicPow_right (hG : IsProP p G) {j k : ℕ}
     ∃ hxy : hG.padicPow ⁅(x : G), (y : G)⁆ u ∈ closedLowerCentralSeries G (j + k + 1),
       lcsBracket G j k (lcsGradedMk G j x) (lcsGradedMk G k ⟨_, hy⟩) =
         lcsGradedMk G (j + k + 1) ⟨_, hxy⟩ := by
-  refine ⟨hG.padicPow_mem_closedLowerCentralSeries y.2 u,
-    hG.padicPow_mem_closedLowerCentralSeries
-      (commutatorElement_mem_closedLowerCentralSeries x.2 y.2) u, ?_⟩
+  refine ⟨hG.padicPow_mem (isClosed_closedLowerCentralSeries k) y.2 u,
+    hG.padicPow_mem (isClosed_closedLowerCentralSeries (j + k + 1))
+      ((commutator_closedLowerCentralSeries_le j k)
+        (Subgroup.commutator_mem_commutator x.2 y.2)) u, ?_⟩
   rw [lcsBracket, lcsGradedMk, gradedBracket_gradedMk, gradedMk_eq_gradedMk_iff]
   exact hG.mk_commutatorElement_padicPow_right x y u
 
@@ -302,7 +316,9 @@ theorem IsProP.lcsBracket_smul_left (hG : IsProP p G) {j k : ℕ} (u : ℤ_[p])
   obtain ⟨_, _, hbracket⟩ := lcsBracket_padicPow_left hG xc yc u
   rw [hbracket]
   let c : closedLowerCentralSeries G (j + k + 1) :=
-    ⟨⁅(xc : G), (yc : G)⁆, commutatorElement_mem_closedLowerCentralSeries xc.2 yc.2⟩
+    ⟨⁅(xc : G), (yc : G)⁆,
+      (commutator_closedLowerCentralSeries_le j k)
+        (Subgroup.commutator_mem_commutator xc.2 yc.2)⟩
   rw [lcsBracket, lcsGradedMk, gradedBracket_gradedMk]
   simpa only [c] using hG.lcsGradedMk_padicPow c u
 
@@ -332,7 +348,9 @@ theorem IsProP.lcsBracket_smul_right (hG : IsProP p G) {j k : ℕ} (u : ℤ_[p])
   obtain ⟨_, _, hbracket⟩ := lcsBracket_padicPow_right hG xc yc u
   rw [hbracket]
   let c : closedLowerCentralSeries G (j + k + 1) :=
-    ⟨⁅(xc : G), (yc : G)⁆, commutatorElement_mem_closedLowerCentralSeries xc.2 yc.2⟩
+    ⟨⁅(xc : G), (yc : G)⁆,
+      (commutator_closedLowerCentralSeries_le j k)
+        (Subgroup.commutator_mem_commutator xc.2 yc.2)⟩
   rw [lcsBracket, lcsGradedMk, gradedBracket_gradedMk]
   simpa only [c] using hG.lcsGradedMk_padicPow c u
 
