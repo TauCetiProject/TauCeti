@@ -37,6 +37,8 @@ operator into `C¹` dependence of its fixed points on parameters.
 
 ## Main declarations
 
+* `BoundedContinuousFunction.exists_eq_comp`: along a function with values in `s`, the
+  derivatives `t ↦ G' (f t)` form a bounded continuous family.
 * `BoundedContinuousFunction.hasFDerivAt_comp`: the superposition operator is differentiable at
   `f₀`, with derivative `h ↦ (t ↦ G' (f₀ t) (h t))`.
 * `BoundedContinuousFunction.hasStrictFDerivAt_comp`: the derivative is strict.
@@ -70,11 +72,13 @@ private theorem ball_half_subset_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, b
     (hf₀ t)
 
 /-- Along a function `f` with values in `s`, the derivatives `t ↦ G' (f t)` form a bounded
-continuous family: they are bounded by the Lipschitz constant of `G`. -/
-private theorem exists_eq_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
-    (hG' : UniformContinuousOn G' s) {f : α →ᵇ X} (hf : ∀ t, f t ∈ s) :
+continuous family: they are bounded by the Lipschitz constant of `G`. This supplies the family `Φ`
+in `BoundedContinuousFunction.hasFDerivAt_comp` and
+`BoundedContinuousFunction.hasStrictFDerivAt_comp`. -/
+theorem exists_eq_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
+    (hG' : ContinuousOn G' s) {f : α →ᵇ X} (hf : ∀ t, f t ∈ s) :
     ∃ Φ : α →ᵇ (X →L[𝕜] Y), ∀ t, Φ t = G' (f t) :=
-  ⟨ofNormedAddCommGroup (fun t ↦ G' (f t)) (hG'.continuousOn.comp_continuous f.continuous hf) C
+  ⟨ofNormedAddCommGroup (fun t ↦ G' (f t)) (hG'.comp_continuous f.continuous hf) C
     fun t ↦ (hGs _ (hf t)).le_of_lipschitz hG, fun _ ↦ rfl⟩
 
 /-- **The derivative of a superposition operator.** Let `G` be Lipschitz, with derivative `G' x`
@@ -114,7 +118,7 @@ distance inside `s`. -/
 private theorem hasFDerivAt_fderiv_comp (hG : LipschitzWith C G)
     (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x) (hG' : UniformContinuousOn G' s) (hδ : 0 < δ)
     (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) : HasFDerivAt (comp G hG) (fderiv 𝕜 (comp G hG) f₀) f₀ :=
-  have ⟨_, hΦ⟩ := exists_eq_comp hG hGs hG' fun t ↦ hf₀ t (mem_ball_self hδ)
+  have ⟨_, hΦ⟩ := exists_eq_comp hG hGs hG'.continuousOn fun t ↦ hf₀ t (mem_ball_self hδ)
   (hasFDerivAt_comp hG hGs hG' hδ hf₀ hΦ).differentiableAt.hasFDerivAt
 
 /-- The derivative of the superposition operator is continuous at every function whose values
@@ -127,8 +131,9 @@ private theorem continuousAt_fderiv_comp (hG : LipschitzWith C G)
   refine ⟨min (δ / 2) η, lt_min (half_pos hδ) hη, fun f hf ↦ ?_⟩
   have hfδ : f ∈ ball f₀ (δ / 2) := mem_ball.2 (hf.trans_le (min_le_left _ _))
   have hfs := ball_half_subset_of_mem_ball hf₀ hfδ
-  obtain ⟨Φ, hΦ⟩ := exists_eq_comp hG hGs hG' fun t ↦ hfs t (mem_ball_self (half_pos hδ))
-  obtain ⟨Φ₀, hΦ₀⟩ := exists_eq_comp hG hGs hG' fun t ↦ hf₀ t (mem_ball_self hδ)
+  obtain ⟨Φ, hΦ⟩ :=
+    exists_eq_comp hG hGs hG'.continuousOn fun t ↦ hfs t (mem_ball_self (half_pos hδ))
+  obtain ⟨Φ₀, hΦ₀⟩ := exists_eq_comp hG hGs hG'.continuousOn fun t ↦ hf₀ t (mem_ball_self hδ)
   rw [(hasFDerivAt_comp hG hGs hG' (half_pos hδ) hfs hΦ).fderiv,
     (hasFDerivAt_comp hG hGs hG' hδ hf₀ hΦ₀).fderiv, dist_eq_norm, ← map_sub]
   refine ((norm_applyCLM_apply_le _).trans ?_).trans_lt (half_lt_self hε)
