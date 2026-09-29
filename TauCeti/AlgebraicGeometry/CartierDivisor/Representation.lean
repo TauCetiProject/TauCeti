@@ -270,7 +270,6 @@ def toLineBundleClass : LineBundleClass X :=
   LineBundleClass.mk D.toInvertibleSheaf
 
 /-- The class of `D` is represented by its associated invertible sheaf. -/
-@[simp]
 lemma toLineBundleClass_eq_mk (D : CartierDivisor X) :
     D.toLineBundleClass = LineBundleClass.mk D.toInvertibleSheaf := by
   unfold toLineBundleClass
