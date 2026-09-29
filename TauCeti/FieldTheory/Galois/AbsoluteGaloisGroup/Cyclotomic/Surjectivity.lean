@@ -17,12 +17,10 @@ import TauCeti.Topology.Algebra.ContinuousMonoidHom
 /-!
 # Surjectivity of a local cyclotomic character
 
-If every `p`-power cyclotomic polynomial is irreducible over `K`, Galois automorphisms of each
-finite cyclotomic layer realize every residue of a `p`-adic unit. The corresponding closed subsets
-of the compact absolute Galois group are nested, so one automorphism realizes all residues at once.
-
-This is the finite-layer and compactness argument underlying the cyclotomic part of local Galois
-theory; see Serre, *Local Fields*, Chapter IV, §2.
+This file gives a criterion for the local `p`-adic cyclotomic character to be surjective: every
+`p`-power cyclotomic polynomial must be irreducible over the base field. It is intended for local
+Galois-theory applications where those finite-layer irreducibility results are available; see
+Serre, *Local Fields*, Chapter IV, §2.
 -/
 
 public section
@@ -53,7 +51,7 @@ private theorem exists_localCyclotomicCharacter_toZModPow_eq
   let g : Field.absoluteGaloisGroup K := σ
   refine ⟨g, ?_⟩
   have hζL : ζ ∈ L := by
-    change ζ ∈ IntermediateField.adjoin K ({ζ} : Set (AlgebraicClosure K))
+    dsimp only [L]
     exact IntermediateField.subset_adjoin K _ (Set.mem_singleton ζ)
   have hτζ : τ ⟨ζ, hζL⟩ = (⟨ζ, hζL⟩ : L) ^ (c : ZMod (p ^ n)).val := by
     have hζsub : IsPrimitiveRoot (⟨ζ, hζL⟩ : L) (p ^ n) :=
@@ -74,8 +72,8 @@ private theorem exists_localCyclotomicCharacter_toZModPow_eq
     exact (IsPrimitiveRoot.autToPow_spec K hζsub τ).symm
   have hσζ : σ ζ = ζ ^ (c : ZMod (p ^ n)).val := by
     have hcomm := AlgEquiv.restrictNormal_commutes σ L ⟨ζ, hζL⟩
-    change σ.restrictNormal L = τ at hσ
-    rw [hσ] at hcomm
+    have hrestrict : σ.restrictNormal L = τ := hσ
+    rw [hrestrict] at hcomm
     exact hcomm.symm.trans (congrArg Subtype.val hτζ)
   have hchar := cyclotomicCharacter.spec p g.toRingEquiv ζ hζ.pow_eq_one
   rw [localCyclotomicCharacter_apply]

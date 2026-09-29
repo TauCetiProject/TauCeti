@@ -8,17 +8,14 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 public import TauCeti.NumberTheory.LocalField.RootsOfUnity
 
-import Mathlib.NumberTheory.Padics.PadicIntegers
-import Mathlib.RingTheory.Polynomial.Eisenstein.IsIntegral
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 
 /-!
 # The dyadic cyclotomic character in odd degree
 
-Every `2`-power cyclotomic polynomial remains irreducible over a finite odd-degree extension of
-`ℚ₂`: after translating by one, the polynomial over `ℤ₂` is Eisenstein, and coprime-degree linear
-disjointness handles the base change. Consequently the local cyclotomic character has full image
-in `ℤ₂ˣ`.
+This file shows that the local cyclotomic character of a finite odd-degree extension of `ℚ₂` has
+full image in `ℤ₂ˣ`. The base case `Φ₁` is linear, while for positive exponents the translated
+`2`-power cyclotomic polynomial over `ℤ₂` is Eisenstein.
 
 The predicate `IsDyadicOddCase` packages the two numerical invariants used by the odd dyadic case
 of the local Galois-group classification. See Serre, *Local Fields*, Chapter IV, §2, for the
@@ -30,66 +27,6 @@ public section
 open Polynomial
 
 namespace TauCeti
-
-/-- The `2^n`-th cyclotomic polynomial is irreducible over `ℚ₂`. -/
-theorem irreducible_cyclotomic_two_pow_ratPadic (n : ℕ) :
-    Irreducible (cyclotomic (2 ^ n) ℚ_[2]) := by
-  cases n with
-  | zero =>
-      simpa only [pow_zero, cyclotomic_one, C_1] using
-        (irreducible_X_sub_C (1 : ℚ_[2]))
-  | succ k =>
-      let fz : ℤ[X] := (cyclotomic (2 ^ (k + 1)) ℤ).comp (X + 1)
-      let fi : ℤ_[2][X] := fz.map (Int.castRingHom ℤ_[2])
-      have hfz : fz.IsEisensteinAt (Ideal.span {(2 : ℤ)}) :=
-        cyclotomic_prime_pow_comp_X_add_one_isEisensteinAt 2 k
-      have hfi : fi.IsEisensteinAt (IsLocalRing.maximalIdeal ℤ_[2]) := by
-        apply Monic.isEisensteinAt_of_mem_of_notMem
-        · exact (cyclotomic.monic _ ℤ).comp_X_add_C 1 |>.map (Int.castRingHom ℤ_[2])
-        · exact (IsLocalRing.maximalIdeal.isMaximal _).ne_top
-        · intro i hi
-          have hdeg : fi.natDegree = fz.natDegree := by
-            simpa only [fi] using
-              Polynomial.natDegree_map_eq_of_injective Int.cast_injective fz
-          have hzmem : fz.coeff i ∈ Ideal.span {(2 : ℤ)} := hfz.mem (hdeg ▸ hi)
-          rw [PadicInt.maximalIdeal_eq_span_p, Ideal.mem_span_singleton]
-          simp only [fi, coeff_map]
-          have hzdiv : (2 : ℤ) ∣ fz.coeff i := by rwa [← Ideal.mem_span_singleton]
-          obtain ⟨a, ha⟩ := hzdiv
-          refine ⟨Int.castRingHom ℤ_[2] a, ?_⟩
-          calc
-            (Int.castRingHom ℤ_[2]) (fz.coeff i) =
-                (Int.castRingHom ℤ_[2]) ((2 : ℤ) * a) :=
-              congrArg (Int.castRingHom ℤ_[2]) ha
-            _ = (2 : ℤ_[2]) * (Int.castRingHom ℤ_[2]) a := by norm_num
-        · have hconst : fi.coeff 0 = 2 := by
-            simp [fi, fz, coeff_zero_eq_eval_zero, eval_comp,
-              eval_one_cyclotomic_prime_pow]
-          rw [hconst, PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow,
-            Ideal.mem_span_singleton]
-          intro h
-          have := (PadicInt.pow_p_dvd_int_iff (p := 2) 2 2).mp h
-          norm_num at this
-      have hfimonic : fi.Monic :=
-        (cyclotomic.monic _ ℤ).comp_X_add_C 1 |>.map (Int.castRingHom ℤ_[2])
-      have hfi_irr : Irreducible fi := hfi.irreducible
-        (IsLocalRing.maximalIdeal.isMaximal ℤ_[2]).isPrime
-        hfimonic.isPrimitive
-        (by
-          rw [show fi.natDegree = fz.natDegree by
-            simpa only [fi] using
-              Polynomial.natDegree_map_eq_of_injective Int.cast_injective fz]
-          rw [show fz.natDegree = (2 ^ (k + 1)).totient by
-            simp [fz, natDegree_comp, natDegree_cyclotomic]]
-          exact Nat.totient_pos.mpr (Nat.pow_pos (by norm_num)))
-      have hq_irr : Irreducible (fi.map (algebraMap ℤ_[2] ℚ_[2])) :=
-        hfimonic.isPrimitive.irreducible_iff_irreducible_map_fraction_map.mp hfi_irr
-      have hcomp : fi.map (algebraMap ℤ_[2] ℚ_[2]) =
-          (cyclotomic (2 ^ (k + 1)) ℚ_[2]).comp (X + 1) := by
-        simp [fi, fz, map_comp]
-      rw [hcomp] at hq_irr
-      have hmapped := hq_irr.map (Polynomial.algEquivAevalXAddC (-(1 : ℚ_[2])))
-      simpa [Polynomial.algEquivAevalXAddC, ← comp_eq_aeval, comp_assoc] using hmapped
 
 section FiniteExtension
 
@@ -123,10 +60,45 @@ def IsDyadicOddCase : Prop :=
     (finite_pPowerRootsOfUnity (p := 2) (K := K) (by norm_num)) = 2 ∧
       Odd (Module.finrank ℚ_[2] K)
 
+omit [FiniteDimensional ℚ_[2] K] in
+/-- Characterization of the numerical conditions in `IsDyadicOddCase`. -/
+theorem isDyadicOddCase_iff : IsDyadicOddCase K ↔
+    let _ : CharZero K :=
+      charZero_of_injective_algebraMap (algebraMap ℚ_[2] K).injective
+    localRootOfUnityOrder 2 K
+      (finite_pPowerRootsOfUnity (p := 2) (K := K) (by norm_num)) = 2 ∧
+        Odd (Module.finrank ℚ_[2] K) :=
+  Iff.rfl
+
+omit [FiniteDimensional ℚ_[2] K] in
+/-- Construct the odd dyadic case from its two numerical conditions. -/
+theorem IsDyadicOddCase.mk
+    (hroots : let _ : CharZero K :=
+      charZero_of_injective_algebraMap (algebraMap ℚ_[2] K).injective
+      localRootOfUnityOrder 2 K
+        (finite_pPowerRootsOfUnity (p := 2) (K := K) (by norm_num)) = 2)
+    (hodd : Odd (Module.finrank ℚ_[2] K)) : IsDyadicOddCase K :=
+  (isDyadicOddCase_iff (K := K)).mpr ⟨hroots, hodd⟩
+
+omit [FiniteDimensional ℚ_[2] K] in
+/-- The odd dyadic case has exactly two `2`-power roots of unity. -/
+theorem IsDyadicOddCase.localRootOfUnityOrder_eq_two (hcase : IsDyadicOddCase K) :
+    let _ : CharZero K :=
+      charZero_of_injective_algebraMap (algebraMap ℚ_[2] K).injective
+    localRootOfUnityOrder 2 K
+      (finite_pPowerRootsOfUnity (p := 2) (K := K) (by norm_num)) = 2 :=
+  ((isDyadicOddCase_iff (K := K)).mp hcase).1
+
+omit [FiniteDimensional ℚ_[2] K] in
+/-- The degree over `ℚ₂` in the odd dyadic case is odd. -/
+theorem IsDyadicOddCase.odd_finrank (hcase : IsDyadicOddCase K) :
+    Odd (Module.finrank ℚ_[2] K) :=
+  ((isDyadicOddCase_iff (K := K)).mp hcase).2
+
 /-- In the odd dyadic case, the image of the local cyclotomic character is all of `ℤ₂ˣ`. -/
 theorem range_localCyclotomicCharacter_of_degree_odd (hcase : IsDyadicOddCase K) :
     (localCyclotomicCharacter 2 K).range = ⊤ :=
-  range_localCyclotomicCharacter_of_odd_finrank K hcase.2
+  range_localCyclotomicCharacter_of_odd_finrank K hcase.odd_finrank
 
 end FiniteExtension
 
