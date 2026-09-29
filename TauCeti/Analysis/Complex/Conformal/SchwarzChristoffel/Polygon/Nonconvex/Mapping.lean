@@ -14,8 +14,9 @@ import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.EdgeInterse
 # A Schwarz--Christoffel map onto a nonconvex polygon
 
 Finite signed-height checks on the Schwarz--Christoffel vertices certify that the bounded sides
-do not cross and that the bounded arc stays above the closing side. With nonzero corner exponents
-in `(-1, 1)` and total exponent `-2`, these checks make the compactified boundary a Jordan curve.
+do not cross and that the bounded arc stays above the closing side. With interior turning
+exponents in `(-1, 1) \ {0}`, endpoint exponents greater than `-1`, and total exponent `-2`,
+these checks make the compactified boundary a Jordan curve.
 The primitive then maps the upper half-plane bijectively onto the filled interior of that polygon.
 Positive exponents, and hence reentrant corners, are allowed.
 

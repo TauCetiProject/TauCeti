@@ -33,8 +33,8 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- On an injective Schwarz--Christoffel boundary, two distinct
-bounded sides can meet only when consecutive, at their common finite vertex. -/
+/-- If the Schwarz--Christoffel boundary is injective between the first and last prevertices,
+two distinct bounded sides can meet only when consecutive, at their common finite vertex. -/
 theorem schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injOn
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l)
