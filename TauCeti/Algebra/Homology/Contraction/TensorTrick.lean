@@ -12,11 +12,12 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 # The tensor trick
 
 A special contraction of `(M, d)` onto `(N, d')` induces a special contraction of the reduced
-tensor coalgebras `Tᶜ(M) = ⨁_{n ≥ 1} M^{⊗ n}` onto `Tᶜ(N)`.  The differentials on words are the
+tensor coalgebras `Tᶜ(M) = ⨁_{n ≥ 1} M^{⊗ n}` onto `Tᶜ(N)`.  The endomorphisms on words are the
 letterwise extensions of `d` and `d'`, the degree-one graded coderivations
 `ReducedTensorWords.gradedCoderiv G (d ∘ letter) 1` whose only Taylor component is `d` on single
 letters; on a word they apply `d` to one letter at a time, with the Koszul sign of the letters it
-passes.  The inclusion and projection act letterwise, and the homotopy is
+passes.  When `d` and `d'` square to zero, these extensions are differentials.  The inclusion and
+projection act letterwise, and the homotopy is
 
 `H = ∑_j τ^{⊗ j} ⊗ h ⊗ (i p)^{⊗ (n - j - 1)}`
 
@@ -39,6 +40,8 @@ applies to the contraction of bar constructions produced here.
 
 ## Main results
 
+* `TauCeti.LinearSpecialContraction.reducedTensorWordsHomotopy_of`: the value of `H` on an
+  arbitrary homogeneous tensor word.
 * `TauCeti.LinearSpecialContraction.reducedTensorWordsHomotopy_of_tprod`: the value of `H` on a pure
   tensor word.
 
@@ -256,11 +259,24 @@ noncomputable def reducedTensorWordsHomotopy (G : InternalGrading R M) :
     of R M n ∘ₗ ∑ j ∈ Finset.range n.1, PiTensorProduct.map fun i : Fin n.1 ↦
       if i.val < j then G.koszulTwist 1 else if i.val = j then c.homotopy else c.incl ∘ₗ c.proj
 
-private theorem reducedTensorWordsHomotopy_of (G : InternalGrading R M) (n : {n : ℕ // 0 < n})
+private theorem reducedTensorWordsHomotopy_of_slotSum (G : InternalGrading R M)
+    (n : {n : ℕ // 0 < n})
     (z : TensorPower R n.1 M) :
     c.reducedTensorWordsHomotopy G (of R M n z) =
       of R M n (slotSum n.1 (G.koszulTwist 1) c.homotopy (c.incl ∘ₗ c.proj) z) :=
   toModule_of R M _ n z
+
+/-- The tensor-trick homotopy on an arbitrary word of length `n`, expanded as the sum of its
+single-slot actions. -/
+@[simp]
+theorem reducedTensorWordsHomotopy_of (G : InternalGrading R M) (n : {n : ℕ // 0 < n})
+    (z : TensorPower R n.1 M) :
+    c.reducedTensorWordsHomotopy G (of R M n z) =
+      of R M n ((∑ j ∈ Finset.range n.1, PiTensorProduct.map fun i : Fin n.1 ↦
+        if i.val < j then G.koszulTwist 1
+        else if i.val = j then c.homotopy else c.incl ∘ₗ c.proj) z) := by
+  rw [c.reducedTensorWordsHomotopy_of_slotSum G n z]
+  rfl
 
 /-- The tensor-trick homotopy on a pure tensor word: the sum over positions `j` of the word with
 the letters before `j` Koszul-twisted, `h` applied at `j`, and `i p` applied after `j`. -/
@@ -270,10 +286,9 @@ theorem reducedTensorWordsHomotopy_of_tprod (G : InternalGrading R M) (n : {n : 
       ∑ j ∈ Finset.range n.1, of R M n (PiTensorProduct.tprod R fun i ↦
         if i.val < j then G.koszulTwist 1 (x i)
         else if i.val = j then c.homotopy (x i) else c.incl (c.proj (x i))) := by
-  simp only [reducedTensorWordsHomotopy_of, slotSum, LinearMap.sum_apply, map_sum,
+  simp only [reducedTensorWordsHomotopy_of, LinearMap.sum_apply, map_sum,
     PiTensorProduct.map_tprod]
   refine Finset.sum_congr rfl fun j _ ↦ congrArg _ (congrArg _ (funext fun i ↦ ?_))
-  simp only [slotFamily_apply]
   split_ifs <;> rfl
 
 /-- The contraction identity for the tensor-trick homotopy against the letterwise differential,
@@ -309,8 +324,9 @@ private theorem slotSum_contraction (G : InternalGrading R M) (H : InternalGradi
 
 /-- **The tensor trick.** A special contraction of `(M, dM)` onto `(N, dN)` by graded maps of the
 expected degrees induces a special contraction of the reduced tensor coalgebras, whose
-differentials are the letterwise extensions of `dM` and `dN` with the Koszul signs of `G` and `H`.
-The inclusion and projection act letterwise, and the homotopy is `reducedTensorWordsHomotopy`. -/
+endomorphisms are the letterwise extensions of `dM` and `dN` with the Koszul signs of `G` and `H`.
+When `dM` and `dN` square to zero, these extensions are differentials.  The inclusion and
+projection act letterwise, and the homotopy is `reducedTensorWordsHomotopy`. -/
 noncomputable def reducedTensorWords (G : InternalGrading R M) (H : InternalGrading R N)
     (hdM : LinearMap.IsHomogeneous dM G.piece G.piece 1)
     (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
@@ -339,8 +355,8 @@ noncomputable def reducedTensorWords (G : InternalGrading R M) (H : InternalGrad
     simp only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.sub_apply,
       LinearMap.id_apply] at h
     simp only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.sub_apply,
-      LinearMap.id_apply, map_of, gradedCoderiv_comp_letter_of, reducedTensorWordsHomotopy_of,
-      ← map_add, ← map_sub, h]
+      LinearMap.id_apply, map_of, gradedCoderiv_comp_letter_of,
+      reducedTensorWordsHomotopy_of_slotSum, ← map_add, ← map_sub, h]
   homotopy_comp_incl := linearMap_ext R N fun n x ↦ by
     simp only [LinearMap.comp_apply, map_of_tprod, reducedTensorWordsHomotopy_of_tprod,
       LinearMap.zero_apply]
