@@ -60,7 +60,7 @@ theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
 /-- The differential of a diffeomorphism maps the pullback of a vector field at `x` to the value
 of the field at `h x`. -/
 @[simp]
-theorem mfderiv_mpullback (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (V : Π y : N, TangentSpace J y)
+theorem mfderiv_apply_mpullback (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (V : Π y : N, TangentSpace J y)
     (x : M) : mfderiv I J h x (VectorField.mpullback I J h V x) = V (h x) :=
   (h.isInvertible_mfderiv hn).self_apply_inverse _
 

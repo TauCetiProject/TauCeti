@@ -20,12 +20,6 @@ where `Φ^* Y = VectorField.mpullback I J Φ Y` is the pullback vector field
 `x ↦ (dΦ_x)⁻¹ (Y (Φ x))`. Equivalently, the connection on `M` obtained by transporting `∇ᴺ`
 along `Φ` agrees with `∇ᴹ` on differentiable vector fields.
 
-The proof is the uniqueness argument for the Levi-Civita connection. Every ingredient of the
-Koszul expression `TauCeti.Manifold.koszul` is natural under `Φ`: inner products because `dΦ`
-is a linear isometry, directional derivatives of functions by the chain rule, and Lie brackets by
-Mathlib's `VectorField.mpullback_mlieBracket`. Hence the Koszul expression of pulled-back fields
-is the pulled-back Koszul expression, and the Koszul formula determines the connection.
-
 This is the connection-level input for transporting geodesics, their maximal intervals, and
 exponential maps along Riemannian isometries.
 
@@ -75,8 +69,8 @@ theorem inner_mpullback (Φ : RiemannianIsometry I J M N) (Y Z : Π y : N, Tange
     inner ℝ (mpullback I J Φ Y x) (mpullback I J Φ Z x) = inner ℝ (Y (Φ x)) (Z (Φ x)) := by
   rw [← Φ.inner_mfderiv x]
   -- `⇑Φ.toDiffeomorph` is `⇑Φ` by definition (`coe_toDiffeomorph` is `rfl`).
-  exact congrArg₂ (inner ℝ) (Φ.toDiffeomorph.mfderiv_mpullback (by simp) Y x)
-    (Φ.toDiffeomorph.mfderiv_mpullback (by simp) Z x)
+  exact congrArg₂ (inner ℝ) (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Y x)
+    (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Z x)
 
 variable [IsManifold I 2 M] [IsManifold J 2 N] [CompleteSpace E]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
@@ -84,6 +78,7 @@ variable [IsManifold I 2 M] [IsManifold J 2 N] [CompleteSpace E]
 /-- **Naturality of the Koszul expression.** The Koszul expression of the pullbacks of three
 vector fields along a Riemannian isometry `Φ` is the Koszul expression of the fields themselves,
 evaluated at the image point. -/
+@[simp]
 theorem koszul_mpullback (Φ : RiemannianIsometry I J M N) {X Y Z : Π y : N, TangentSpace J y}
     {x : M} (hX : MDiffAt (T% X) (Φ x)) (hY : MDiffAt (T% Y) (Φ x))
     (hZ : MDiffAt (T% Z) (Φ x)) :
@@ -99,7 +94,7 @@ theorem koszul_mpullback (Φ : RiemannianIsometry I J M N) {X Y Z : Π y : N, Ta
     have hcomp : (fun y ↦ inner ℝ (mpullback I J Φ V y) (mpullback I J Φ W y)) =
         (fun y ↦ inner ℝ (V y) (W y)) ∘ Φ := funext fun y ↦ Φ.inner_mpullback V W y
     rw [hcomp, mvfderiv_comp_apply x (mdifferentiableAt_inner hV hW) (Φ.mdifferentiableAt x)]
-    exact congrArg _ (Φ.toDiffeomorph.mfderiv_mpullback (by simp) U x)
+    exact congrArg _ (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) U x)
   -- Lie brackets: Mathlib's naturality of the Lie bracket under pullback.
   have hb : ∀ {V W : Π y : N, TangentSpace J y}, MDiffAt (T% V) (Φ x) →
       MDiffAt (T% W) (Φ x) →
@@ -146,13 +141,14 @@ theorem mfderiv_apply_mpullback_of_isLeviCivitaConnection (Φ : RiemannianIsomet
   have hinner : inner ℝ (mfderiv I J Φ x (covM (mpullback I J Φ Y) x v)) (Z (Φ x)) =
       inner ℝ (covM (mpullback I J Φ Y) x v) (mpullback I J Φ Z x) := by
     rw [← Φ.inner_mfderiv x]
-    exact congrArg _ (Φ.toDiffeomorph.mfderiv_mpullback (by simp) Z x).symm
+    exact congrArg _ (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Z x).symm
   linarith
 
 /-- **Naturality of the Levi-Civita connection under Riemannian isometries**, for Mathlib's
 `CovariantDerivative.leviCivitaConnection`:
 `dΦ_x (∇ᴹ_v (Φ^* Y)) = ∇ᴺ_{dΦ_x v} Y` for every vector field `Y` on `N` differentiable at
 `Φ x`. -/
+@[simp]
 theorem mfderiv_leviCivitaConnection_mpullback (Φ : RiemannianIsometry I J M N)
     {Y : Π y : N, TangentSpace J y} {x : M} (hY : MDiffAt (T% Y) (Φ x)) (v : TangentSpace I x) :
     mfderiv I J Φ x (leviCivitaConnection I M (mpullback I J Φ Y) x v) =
