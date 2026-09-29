@@ -16,9 +16,9 @@ public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 The `p`-power roots of unity form the `p`-primary component of the multiplicative group.
 In a nonarchimedean local field of characteristic different from `p`, this group is finite:
 every root has valuation zero, and sufficiently deep principal units have no `p`-power
-torsion. The resulting injection into a finite unit-filtration quotient also shows why the
-group is cyclic. These facts make its order an arithmetic invariant of finite extensions of
-`ℚ_p`.
+torsion. The resulting injection into a finite unit-filtration quotient proves finiteness.
+A finite subgroup of a field's unit group is cyclic. These facts make its order an arithmetic
+invariant of finite extensions of `ℚ_p`.
 
 The finiteness argument uses the unit-filtration results in this library. For the standard
 structure theorem see Serre, *Local Fields*, Chapter II, §§4–5.
@@ -51,20 +51,21 @@ theorem pPowerRootsOfUnity_eq_iSup_rootsOfUnity :
 
 /-- The order of the `p`-power roots of unity, with finiteness made explicit. In local-field
 applications the witness is `finite_pPowerRootsOfUnity`. -/
-noncomputable def localRootOfUnityOrder (h : Finite (pPowerRootsOfUnity p K)) : ℕ :=
-  @Fintype.card _ (@Fintype.ofFinite _ h)
-
-/-- The local root-of-unity order is the cardinality of the finite primary component. -/
-theorem localRootOfUnityOrder_def (h : Finite (pPowerRootsOfUnity p K)) :
-    localRootOfUnityOrder p K h = Nat.card (pPowerRootsOfUnity p K) := by
-  exact (@Nat.card_eq_fintype_card _ (@Fintype.ofFinite _ h)).symm
+noncomputable def localRootOfUnityOrder (_h : Finite (pPowerRootsOfUnity p K)) : ℕ :=
+  Nat.card (pPowerRootsOfUnity p K)
 
 /-- The order of a finite `p`-power root group is positive. -/
 theorem localRootOfUnityOrder_pos (h : Finite (pPowerRootsOfUnity p K)) :
     0 < localRootOfUnityOrder p K h := by
-  rw [localRootOfUnityOrder_def]
+  unfold localRootOfUnityOrder
   let _ := h
   exact Nat.card_pos
+
+/-- A finite group of `p`-power roots of unity in a field is cyclic. -/
+theorem isCyclic_pPowerRootsOfUnity (h : Finite (pPowerRootsOfUnity p K)) :
+    IsCyclic (pPowerRootsOfUnity p K) := by
+  let _ := h
+  exact isCyclic_subgroup_units (pPowerRootsOfUnity p K)
 
 end TauCeti
 
@@ -142,20 +143,11 @@ theorem finite_pPowerRootsOfUnity (hpK : (p : K) ≠ 0) :
   have h1 : x.1 * y.1⁻¹ = 1 := Subgroup.disjoint_def.mp hdisjoint hroot hmem
   exact Subtype.ext (mul_inv_eq_one.mp h1)
 
-/-- The finite group of `p`-power roots of unity in a local field is cyclic. -/
-theorem isCyclic_pPowerRootsOfUnity (hpK : (p : K) ≠ 0) :
-    IsCyclic (pPowerRootsOfUnity p K) := by
-  have hfinite := finite_pPowerRootsOfUnity hpK
-  exact isCyclic_of_injective_ringHom
-    ((Units.coeHom K).comp (pPowerRootsOfUnity p K).subtype) (by
-      intro x y h
-      exact Subtype.ext (Units.ext h))
-
 omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- The order of the `p`-power roots of unity is a power of `p`. -/
 theorem localRootOfUnityOrder_isPow (h : Finite (pPowerRootsOfUnity p K)) :
     ∃ n : ℕ, localRootOfUnityOrder p K h = p ^ n := by
-  rw [localRootOfUnityOrder_def]
+  unfold localRootOfUnityOrder
   let _ := h
   exact IsPGroup.iff_card.mp CommGroup.primaryComponent.isPGroup
 
@@ -171,7 +163,7 @@ theorem pPowerRootsOfUnity_eq_rootsOfUnity_order
   constructor
   · intro hx
     rw [mem_rootsOfUnity]
-    rw [localRootOfUnityOrder_def]
+    unfold localRootOfUnityOrder
     exact congrArg Subtype.val (pow_card_eq_one' (x := (⟨x, hx⟩ : pPowerRootsOfUnity p K)))
   · intro hx
     apply (mem_pPowerRootsOfUnity_iff p K x).mpr
@@ -197,14 +189,14 @@ theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder (hpK : (p : K) ≠ 0)
         orderOf (⟨u, hmem⟩ : pPowerRootsOfUnity p K) = orderOf u :=
           (Subgroup.orderOf_coe _).symm
         _ = p ^ n := hu.eq_orderOf.symm
-    simpa only [localRootOfUnityOrder_def, hord] using
+    simpa only [localRootOfUnityOrder, hord] using
       (orderOf_dvd_natCard (⟨u, hmem⟩ : pPowerRootsOfUnity p K))
   · intro hdvd
-    let _ := isCyclic_pPowerRootsOfUnity hpK
+    let _ := isCyclic_pPowerRootsOfUnity p K hfinite
     obtain ⟨g, hg⟩ := IsCyclic.exists_ofOrder_eq_natCard
       (α := pPowerRootsOfUnity p K)
     have hdiv : p ^ n ∣ orderOf g := by
-      simpa only [hg, localRootOfUnityOrder_def] using hdvd
+      simpa only [hg, localRootOfUnityOrder] using hdvd
     have hg0 : orderOf g ≠ 0 := by
       rw [hg]
       exact Nat.ne_of_gt Nat.card_pos
