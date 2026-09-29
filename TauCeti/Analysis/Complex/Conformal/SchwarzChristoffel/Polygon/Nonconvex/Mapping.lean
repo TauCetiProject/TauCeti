@@ -38,7 +38,7 @@ variable {n : ℕ}
 
 /-- Signed vertex separation for nonadjacent bounded sides, together with strict heights above
 the closing line, makes the entire compactified Schwarz--Christoffel boundary injective. -/
-theorem schwarzChristoffelCompactifiedBoundary_injective_of_vertex_separation
+theorem schwarzChristoffelCompactifiedBoundary_injective_of_vertex_separation_of_vertex_heights
     (a e : Fin (n + 3) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, -1 < e k) (hsum : ∑ k, e k = -2)
     (hcorner : ∀ k : Fin (n + 2), k.val + 1 < n + 2 → e k.succ < 1)
@@ -70,7 +70,7 @@ theorem schwarzChristoffelCompactifiedBoundary_injective_of_vertex_separation
 /-- Under finite vertex-separation and closing-height checks, the Schwarz--Christoffel primitive
 maps the upper half-plane bijectively onto the filled polygon interior. The exponents may be
 positive at reentrant corners. -/
-theorem bijOn_schwarzChristoffelPrimitive_filledHull_sdiff_of_vertex_separation
+theorem bijOn_schwarzChristoffelPrimitive_filledHull_sdiff_of_vertex_separation_of_vertex_heights
     (a e : Fin (n + 3) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, -1 < e k) (hsum : ∑ k, e k = -2)
     (hcorner : ∀ k : Fin (n + 2), k.val + 1 < n + 2 → e k.succ < 1)
@@ -90,8 +90,9 @@ theorem bijOn_schwarzChristoffelPrimitive_filledHull_sdiff_of_vertex_separation
   have hfinite (k : Fin (n + 3)) : -1 < ∑ l with a l = a k, e l := by
     simpa [ha.injective.eq_iff, Finset.filter_eq'] using he k
   have hinfty : ∑ k, e k < -1 := by rw [hsum]; norm_num
-  have hinj := schwarzChristoffelCompactifiedBoundary_injective_of_vertex_separation
-    a e z₀ ha he hsum hcorner hne hsep hheight
+  have hinj :=
+    schwarzChristoffelCompactifiedBoundary_injective_of_vertex_separation_of_vertex_heights
+      a e z₀ ha he hsum hcorner hne hsep hheight
   rw [← range_schwarzChristoffelCompactifiedBoundary a e z₀ ha.monotone hfinite hinfty]
   exact bijOn_schwarzChristoffelPrimitive_filledHull_sdiff a e z₀ hfinite hinfty hinj
 
