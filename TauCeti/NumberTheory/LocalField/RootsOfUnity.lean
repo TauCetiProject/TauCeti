@@ -220,4 +220,44 @@ theorem primitiveRoot_iff_dvd_localRootOfUnityOrder (hpK : (p : K) ≠ 0) :
       p ∣ localRootOfUnityOrder p K (finite_pPowerRootsOfUnity hpK) := by
   simpa only [pow_one] using primitiveRoot_pow_iff_dvd_localRootOfUnityOrder hpK 1
 
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+
+/-- In a dyadic local field, the `2`-power root group has order greater than two exactly when
+there is a primitive fourth root of unity. This distinguishes the two dyadic presentation
+branches. -/
+theorem localRootOfUnityOrder_ne_two_iff (h2 : (2 : K) ≠ 0) :
+    localRootOfUnityOrder 2 K (finite_pPowerRootsOfUnity h2) ≠ 2 ↔
+      ∃ ζ : K, IsPrimitiveRoot ζ 4 := by
+  let : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  let q := localRootOfUnityOrder 2 K (finite_pPowerRootsOfUnity h2)
+  have hchar : ringChar K ≠ 2 := by
+    intro h
+    apply h2
+    exact (ringChar.spec K 2).mpr (by simp [h])
+  have hprimitive : IsPrimitiveRoot (-1 : K) 2 := by
+    apply IsPrimitiveRoot.iff_orderOf.mpr
+    simp [orderOf_neg_one, hchar]
+  have htwo : 2 ∣ q := by
+    exact (primitiveRoot_iff_dvd_localRootOfUnityOrder h2).mp ⟨-1, hprimitive⟩
+  have hpow : ∃ n : ℕ, q = 2 ^ n := localRootOfUnityOrder_isPow 2 K _
+  have hfour : (∃ ζ : K, IsPrimitiveRoot ζ 4) ↔ 4 ∣ q := by
+    simpa [q] using (primitiveRoot_pow_iff_dvd_localRootOfUnityOrder h2 2)
+  rw [hfour]
+  obtain ⟨n, hn⟩ := hpow
+  constructor
+  · intro hne
+    cases n with
+    | zero => simp [hn] at htwo
+    | succ n =>
+      cases n with
+      | zero => exact (hne (by simpa [hn])).elim
+      | succ n =>
+        rw [hn]
+        simpa using (pow_dvd_pow (2 : ℕ) (by omega : 2 ≤ n.succ.succ))
+  · intro hdvd heq
+    have hq : q = 2 := heq
+    rw [hq] at hdvd
+    norm_num at hdvd
+
 end TauCeti
