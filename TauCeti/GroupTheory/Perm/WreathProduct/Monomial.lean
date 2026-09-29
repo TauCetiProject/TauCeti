@@ -76,6 +76,12 @@ theorem coe_monomialHom_left (t : G ⧸ U → G) (ht : ∀ x, (QuotientGroup.mk 
     (monomialHom U t ht g).right x = g • x := by
   simp [monomialHom]
 
+/-- The inverse permutation coordinate translates a coset by the inverse group element. -/
+@[simp] theorem monomialHom_right_inv (t : G ⧸ U → G)
+    (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) (x : G ⧸ U) :
+    (monomialHom U t ht g).right⁻¹ x = g⁻¹ • x := by
+  simpa only [map_inv, SemidirectProduct.inv_right] using monomialHom_right U t ht g⁻¹ x
+
 /-- The monomial homomorphism associated to a subgroup transversal is injective. -/
 theorem monomialHom_injective (t : G ⧸ U → G) (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     Function.Injective (monomialHom U t ht) := by
@@ -136,6 +142,14 @@ theorem coe_monomialFinHom_left (t : G ⧸ U → G) (ht : ∀ x, (QuotientGroup.
     (g : G) (i : Fin U.index) :
     (monomialFinHom U t ht e g).right i = e (g • e.symm i) := by
   simp [monomialFinHom]
+
+/-- The inverse finite permutation coordinate translates the named coset by the inverse group
+element. -/
+@[simp] theorem monomialFinHom_right_inv (t : G ⧸ U → G)
+    (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x)
+    (e : G ⧸ U ≃ Fin U.index) (g : G) (i : Fin U.index) :
+    (monomialFinHom U t ht e g).right⁻¹ i = e (g⁻¹ • e.symm i) := by
+  simpa only [map_inv, SemidirectProduct.inv_right] using monomialFinHom_right U t ht e g⁻¹ i
 
 /-- The finite-coordinate monomial homomorphism is injective. -/
 theorem monomialFinHom_injective (t : G ⧸ U → G)

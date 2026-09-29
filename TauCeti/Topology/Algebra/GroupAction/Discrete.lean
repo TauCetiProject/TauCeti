@@ -14,6 +14,9 @@ public import Mathlib.Topology.Algebra.MulAction
 /-!
 # Continuous actions on discrete spaces
 
+Pointwise continuous families of equivalences have continuous inverse evaluation on a discrete
+space.
+
 This file develops openness properties of continuous group actions on discrete spaces.
 For a finite space, the kernel of the action is open and the action factors through a finite
 quotient. For an arbitrary discrete space acted on by a compact topological group, every finite
@@ -36,6 +39,22 @@ public section
 namespace TauCeti
 
 universe u v
+
+/-- Inverse evaluation of a family of equivalences on a discrete space is continuous if every
+forward evaluation is continuous. -/
+theorem continuous_equiv_symm_apply {α β : Type*} [TopologicalSpace α]
+    [TopologicalSpace β] [DiscreteTopology β] {f : α → β ≃ β}
+    (hf : ∀ b, Continuous fun a => f a b) (b : β) :
+    Continuous fun a => (f a).symm b := by
+  rw [continuous_discrete_rng]
+  intro c
+  have h : (fun a : α => (f a).symm b) ⁻¹' {c} =
+      (fun a : α => f a c) ⁻¹' {b} := by
+    ext a
+    simp only [Set.mem_preimage, Set.mem_singleton_iff]
+    exact (Equiv.symm_apply_eq (e := f a) (x := b) (y := c)).trans eq_comm
+  rw [h]
+  exact (isOpen_discrete _).preimage (hf c)
 
 section Elementwise
 

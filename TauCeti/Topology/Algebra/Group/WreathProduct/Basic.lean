@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Defs.Induced
 public import Mathlib.Topology.Algebra.Group.Basic
+public import TauCeti.Topology.Algebra.GroupAction.Discrete
 
 /-!
 # Coordinate topology on permutation wreath products
@@ -80,16 +81,9 @@ theorem continuous_iff {α : Type*} [TopologicalSpace α]
 /-- Evaluation of the inverse permutation coordinate is continuous when the index is discrete. -/
 @[continuity, fun_prop] theorem continuous_right_inv [DiscreteTopology ι] (i : ι) :
     Continuous (fun w : WreathProduct D ι => w.right⁻¹ i) := by
-  rw [continuous_discrete_rng]
-  intro j
-  have h : (fun w : WreathProduct D ι => w.right⁻¹ i) ⁻¹' {j} =
-      (fun w : WreathProduct D ι => w.right j) ⁻¹' {i} := by
-    ext w
-    simp only [Set.mem_preimage, Set.mem_singleton_iff]
-    simpa only [Equiv.Perm.coe_inv] using
-      (Equiv.symm_apply_eq (e := w.right) (x := i) (y := j)).trans eq_comm
-  rw [h]
-  exact (isOpen_discrete _).preimage (continuous_right j)
+  simpa only [Equiv.Perm.coe_inv] using
+    (continuous_equiv_symm_apply (f := fun w : WreathProduct D ι => w.right)
+      (fun j => continuous_right j) i)
 
 /-- Joint evaluation of a base coordinate is continuous for a discrete index type. -/
 theorem continuous_left_eval [DiscreteTopology ι] :

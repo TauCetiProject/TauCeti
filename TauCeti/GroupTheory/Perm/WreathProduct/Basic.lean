@@ -87,9 +87,9 @@ theorem inv_left (a : WreathProduct D ι) (i : ι) :
   have h := congrFun (SemidirectProduct.inv_left a) i
   have haction : (mulAutArrow a.right⁻¹) a.left⁻¹ i =
       (a.left (a.right i))⁻¹ := by
-    -- The inverse permutation precomposes the pointwise inverse by `a.right`.
-    change (a.left⁻¹) (a.right i) = (a.left (a.right i))⁻¹
-    exact Pi.inv_apply _ _
+    rw [mulAutArrow_apply_apply]
+    simp [Pi.inv_apply]
+    rfl
   exact h.trans haction
 
 /-- The natural cardinality of a full permutation wreath product with finite index type. -/
