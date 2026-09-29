@@ -212,9 +212,8 @@ theorem _root_.MvPolynomial.height_eq_natCard_of_isMaximal {ι : Type*} [Finite 
       IH, Finite.card_option, Nat.cast_add, Nat.cast_one]
 
 variable (k) in
-/-- Every maximal ideal of a finitely generated domain `A` over a field `k` has height the Krull
-dimension of `A`. -/
-theorem height_eq_ringKrullDim_of_isMaximal {A : Type*} [CommRing A] [IsDomain A] [Algebra k A]
+private theorem height_eq_ringKrullDim_of_isMaximal_of_isDomain {A : Type*} [CommRing A]
+    [IsDomain A] [Algebra k A]
     [Algebra.FiniteType k A] (m : Ideal A) [m.IsMaximal] :
     (m.height : WithBot ℕ∞) = ringKrullDim A := by
   -- Noether normalization `k[X₁, …, Xₛ] → A` gives `dim A = s`; going down over the normal domain
@@ -232,6 +231,44 @@ theorem height_eq_ringKrullDim_of_isMaximal {A : Type*} [CommRing A] [IsDomain A
   rw [Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown p m,
     MvPolynomial.height_eq_natCard_of_isMaximal p]
   exact_mod_cast le_self_add
+
+variable (k) in
+/-- Every maximal ideal of a finitely generated algebra with irreducible spectrum over a field
+has height the Krull dimension of the algebra. -/
+theorem height_eq_ringKrullDim_of_isMaximal {A : Type*} [CommRing A] [Algebra k A]
+    [Algebra.FiniteType k A] [IrreducibleSpace (PrimeSpectrum A)]
+    (m : Ideal A) [m.IsMaximal] : (m.height : WithBot ℕ∞) = ringKrullDim A := by
+  let I : Ideal A := nilradical A
+  have hI : I.IsPrime := PrimeSpectrum.irreducibleSpace_iff_isPrime_nilradical.mp inferInstance
+  have : I.IsPrime := hI
+  have : IsDomain (A ⧸ I) := (Ideal.Quotient.isDomain_iff_prime I).mpr hI
+  have : Algebra.FiniteType k (A ⧸ I) := .of_surjective (Ideal.Quotient.mkₐ k I)
+    Ideal.Quotient.mk_surjective
+  let e : PrimeSpectrum (A ⧸ I) ≃o PrimeSpectrum A :=
+    (I.primeSpectrumQuotientOrderIsoZeroLocus).trans
+      ((Set.orderIsoOfEq _ _ PrimeSpectrum.zeroLocus_nilradical).trans OrderIso.Set.univ)
+  have hdim : ringKrullDim (A ⧸ I) = ringKrullDim A := by
+    rw [ringKrullDim, ringKrullDim, Order.krullDim_eq_of_orderIso e]
+  let q : Ideal (A ⧸ I) := m.map (Ideal.Quotient.mk I)
+  have hIm : I ≤ m := nilradical_le_prime m
+  have : q.IsMaximal := Ideal.IsMaximal.map_of_surjective_of_ker_le
+    (f := Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective (by simpa [Ideal.mk_ker] using hIm)
+  have he : e ⟨q, inferInstance⟩ = (⟨m, inferInstance⟩ : PrimeSpectrum A) := by
+    apply PrimeSpectrum.ext
+    change (m.map (Ideal.Quotient.mk I)).comap (Ideal.Quotient.mk I) = m
+    rw [Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
+      ← RingHom.ker_eq_comap_bot, Ideal.mk_ker]
+    exact sup_of_le_left hIm
+  have hheight : q.height = m.height := by
+    calc
+      q.height = Order.height (⟨q, inferInstance⟩ : PrimeSpectrum (A ⧸ I)) :=
+        PrimeSpectrum.height_eq_orderHeight (⟨q, inferInstance⟩ : PrimeSpectrum (A ⧸ I))
+      _ = Order.height (⟨m, inferInstance⟩ : PrimeSpectrum A) := by
+        rw [← he, Order.height_orderIso]
+      _ = m.height :=
+        (PrimeSpectrum.height_eq_orderHeight (⟨m, inferInstance⟩ : PrimeSpectrum A)).symm
+  rw [← hheight, ← hdim]
+  exact height_eq_ringKrullDim_of_isMaximal_of_isDomain k q
 
 variable (k) in
 /-- In the spectrum of a finitely generated algebra over a field, a nonempty open part `Z ∩ U` of
