@@ -164,12 +164,14 @@ theorem _root_.Polynomial.psc_C_mul_left [CommRing R] (p q : R[X]) (r : R) (m n 
 subresultant coefficient, by `r ^ (m - j)`. -/
 theorem _root_.Polynomial.psc_C_mul_right [CommRing R] (p q : R[X]) (r : R) (m n j : ℕ) :
     psc p (C r * q) m n j = r ^ (m - j) * psc p q m n j := by
-  have : subresultantMatrix p (C r * q) m n j = .of fun i k =>
-      Fin.addCases (fun _ => r) (fun _ => 1) k * subresultantMatrix p q m n j i k := by
-    ext i k
-    induction k using Fin.addCases <;> simp [subresultantMatrix, coeff_C_mul]
-  rw [psc_def, psc_def, this, Matrix.det_mul_row, Fin.prod_univ_add]
-  simp
+  calc
+    psc p (C r * q) m n j =
+        (-1) ^ ((m - j) * (n - j)) * psc (C r * q) p n m j := psc_comm ..
+    _ = (-1) ^ ((m - j) * (n - j)) * (r ^ (m - j) * psc q p n m j) := by
+      rw [psc_C_mul_left]
+    _ = r ^ (m - j) * ((-1) ^ ((m - j) * (n - j)) * psc q p n m j) := by
+      ac_rfl
+    _ = r ^ (m - j) * psc p q m n j := by rw [← psc_comm]
 
 /-- At the left formal degree bound, the principal coefficient is the corresponding power of the
 left polynomial's coefficient.  This is the terminal coefficient when `m ≤ n`; when `n < m`,
@@ -206,25 +208,7 @@ both sides reduce to `1` because the index is beyond the subresultant range. -/
 theorem _root_.Polynomial.psc_right_bound [CommRing R]
     (p q : R[X]) (m n : ℕ) :
     psc p q m n n = q.coeff n ^ (m - n) := by
-  classical
-  let M := subresultantMatrix p q m n n
-  have htri : M.IsUpperTriangular := by
-    intro i k hki
-    induction k using Fin.addCases with
-    | left k =>
-        have hki' : (k : ℕ) < (i : ℕ) := by
-          simpa only [id_eq, Fin.val_castAdd] using Fin.lt_def.mp hki
-        simp only [M, subresultantMatrix, Matrix.of_apply, Fin.addCases_left]
-        split_ifs with h
-        · omega
-        · rfl
-    | right k => exact Fin.elim0 (Fin.cast (by simp) k)
-  have hdiag (i : Fin ((m - n) + (n - n))) : M i i = q.coeff n := by
-    induction i using Fin.addCases with
-    | left i => simp [M, subresultantMatrix]
-    | right i => exact Fin.elim0 (Fin.cast (by simp) i)
-  rw [psc_def, Matrix.det_of_isUpperTriangular htri]
-  simp_rw [hdiag]
+  rw [psc_comm, psc_left_bound]
   simp
 
 /-- The principal coefficient at the terminal subresultant index is a power of the coefficient
