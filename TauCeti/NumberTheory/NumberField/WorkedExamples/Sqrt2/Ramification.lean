@@ -29,7 +29,7 @@ bound determines the wild different exponent.
 
 * `TauCeti.NumberField.Sqrt2.adjoin_eq_top`: `𝓞 K = ℤ[θ]`, and `discr_eq_eight`: `discr K = 8`.
 * `TauCeti.NumberField.Sqrt2.eq_span_gen`: the prime above `2` is `(θ)`, with
-  `ramificationIdx_eq_two` and `map_span_two_eq_sq`: `e = 2` and `2 𝓞 K = 𝔭²`.
+  `ramificationIdx_eq_two`: `e = 2`.
 * `TauCeti.NumberField.Sqrt2.differentIdeal_eq_pow_three` and
   `multiplicity_differentIdeal_eq_three`: `𝔡 = 𝔭³`, that is `v_𝔭(𝔡) = 3`.
 * `TauCeti.NumberField.Sqrt2.multiplicity_span_two_eq_two`: `v_𝔭(2) = 2`.
@@ -119,11 +119,6 @@ theorem eq_span_gen : 𝔭 = span {θ} :=
 theorem ramificationIdx_eq_two : 𝔭.ramificationIdx ℤ = 2 :=
   ramificationIdx_eq_two_of_mem_ramifiedPrimes (p := 2) (finrank_eq_two hmin hgen)
     (two_mem_ramifiedPrimes hmin hgen) 𝔭
-
-/-- **`2 𝓞 K = 𝔭²`** in `ℚ(√2)`. -/
-theorem map_span_two_eq_sq : (span {(2 : ℤ)}).map (algebraMap ℤ (𝓞 K)) = 𝔭 ^ 2 := by
-  rw [eq_span_gen hmin hgen 𝔭, span_singleton_pow, sq_eq_two hmin, map_span,
-    Set.image_singleton, map_ofNat]
 
 /-- **The different of `ℚ(√2)` is `𝔭³`.** -/
 theorem differentIdeal_eq_pow_three : differentIdeal ℤ (𝓞 K) = 𝔭 ^ 3 := by
