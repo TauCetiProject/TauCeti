@@ -128,6 +128,27 @@ theorem conjugate_inv_le_of_mem_quotientPointsSubgroup
     exact hker _ ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mp hmem x hx)
   simpa using conjugate_mono g⁻¹ hle
 
+/-- For a quotient's generic point, vanishing in the quotient supplies the kernel condition
+needed to turn point membership into containment of conjugated Hopf ideals. -/
+theorem conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
+    (I J : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
+    (hmem : WithConv.toConv (((CommHopfAlgCat.mkQuotient
+      (CommHopfAlgCat.of R H) I).hom : H →ₐ[R]
+        (CommHopfAlgCat.quotient (CommHopfAlgCat.of R H) I)).comp
+        (HopfAlgebra.pointConjugationAlgHom g)) ∈
+      CommHopfAlgCat.quotientPointsSubgroup (CommHopfAlgCat.of R H) J
+        (CommAlgCat.of R (CommHopfAlgCat.quotient (CommHopfAlgCat.of R H) I))) :
+    J.conjugate g⁻¹ ≤ I := by
+  exact conjugate_inv_le_of_mem_quotientPointsSubgroup I J g
+    ((CommHopfAlgCat.mkQuotient (CommHopfAlgCat.of R H) I).hom : H →ₐ[R]
+      (CommHopfAlgCat.quotient (CommHopfAlgCat.of R H) I))
+    (by
+      intro x hx
+      -- Recover the concrete quotient map from its algebra-homomorphism coercion.
+      change (CommHopfAlgCat.mkQuotient (CommHopfAlgCat.of R H) I).hom x = 0 at hx
+      exact HopfIdeal.mem_toIdeal.mp
+        ((CommHopfAlgCat.mkQuotient_eq_zero_iff (CommHopfAlgCat.of R H) I x).mp hx)) hmem
+
 /-- Conjugation preserves and reflects containment of Hopf ideals. -/
 @[simp]
 theorem conjugate_le_conjugate_iff (I J : HopfIdeal R H)

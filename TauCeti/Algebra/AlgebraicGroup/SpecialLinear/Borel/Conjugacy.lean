@@ -74,13 +74,12 @@ theorem exists_conjugate_definingHopfIdeal_le
   obtain ⟨P, hdet, hP⟩ := UpperTriangularGroup.exists_det_eq_one_conjugate_mem
     (algebraMap k Q) _ P₀ hP₀
   let s : Matrix.SpecialLinearGroup (Fin 2) k :=
-    ⟨P, by rw [← Matrix.GeneralLinearGroup.val_det_apply, hdet, Units.val_one]⟩
+    Matrix.SpecialLinearGroup.toGLKerEquiv.symm ⟨P, hdet⟩
   let g : WithConv (SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] k) :=
     (SpecialLinear.pointsMulEquiv (R := k) (A := k) 2).symm s⁻¹
-  have hs : Matrix.SpecialLinearGroup.toGL s = P := by
-    apply Matrix.GeneralLinearGroup.ext
-    intro i j
-    rfl
+  have hs : Matrix.SpecialLinearGroup.toGL s = P :=
+    congrArg Subtype.val
+      (Matrix.SpecialLinearGroup.toGLKerEquiv.apply_symm_apply ⟨P, hdet⟩)
   -- Identify conjugation of the quotient's generic `SL₂` point with ordinary matrix
   -- conjugation by the determinant-one triangularizing matrix.
   have hmatrix : Matrix.SpecialLinearGroup.toGL
@@ -108,13 +107,8 @@ theorem exists_conjugate_definingHopfIdeal_le
       (TauCeti.blockTriangular_id_iff.mp (UpperTriangularGroup.mem_iff.mp htri))
   -- Vanishing of the standard Borel ideal on this conjugated generic point gives the
   -- scheme-theoretic containment, rather than only containment on `k`-points.
-  exact ⟨g⁻¹, HopfIdeal.conjugate_inv_le_of_mem_quotientPointsSubgroup
-    I (definingHopfIdeal k) g
-    (πS : SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] Q)
-    (by
-      intro x hx
-      exact HopfIdeal.mem_toIdeal.mp
-        ((CommHopfAlgCat.mkQuotient_eq_zero_iff _ I x).mp hx)) hmem⟩
+  exact ⟨g⁻¹, HopfIdeal.conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
+    I (definingHopfIdeal k) g hmem⟩
 
 private theorem exists_conjugate_definingHopfIdeal_le_of_isBorelOverAlgClosed
     (I : HopfIdeal k (SpecialLinear.coordinateHopfAlgebra k 2))
