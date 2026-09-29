@@ -120,10 +120,7 @@ theorem isLocalRing_of_forall_isIdempotentElem [Nontrivial S] (J : Ideal S) [Hen
     rcases h e he with rfl | rfl
     · exact Or.inl (map_zero _)
     · exact Or.inr (map_one _)
-  refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun s ↦ ?_
-  refine (IsLocalRing.isUnit_or_isUnit_one_sub_self (Ideal.Quotient.mk J s)).imp
-    (isUnit_of_map_unit _ _) fun hs ↦ isUnit_of_map_unit (Ideal.Quotient.mk J) _ ?_
-  rwa [map_sub, map_one]
+  exact RingHom.domain_isLocalRing (Ideal.Quotient.mk J)
 
 end HenselianRing
 
