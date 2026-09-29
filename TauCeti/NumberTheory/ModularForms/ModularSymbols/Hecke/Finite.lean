@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke
+public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Basic
 import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
@@ -27,6 +27,8 @@ It does not require the Hecke operators to commute.
 ## Main results
 
 * `TauCeti.ModularSymbols.heckeTSymbol_mem_heckeTAlgebra`: each `Tₙ` belongs to the algebra.
+* `TauCeti.ModularSymbols.heckeTAlgebra_le_iff`: an algebra contains the generated algebra
+  exactly when it contains every positive-index `Tₙ`.
 * `TauCeti.ModularSymbols.heckeTAlgebra_finite`: the algebra is a finite `ℤ`-module.
 
 ## References
@@ -53,10 +55,25 @@ def heckeTAlgebra : Subalgebra ℤ (Module.End ℤ (ModularSymbols ℤ (Gamma1 N
   Algebra.adjoin ℤ (Set.range (heckeTSymbolPos N w))
 
 /-- Each positive-index Hecke operator belongs to the integral Hecke algebra. -/
+@[simp]
 theorem heckeTSymbol_mem_heckeTAlgebra (n : ℕ) [NeZero n] :
     heckeTSymbol ℤ w N n ∈ heckeTAlgebra N w := by
   let npos : ℕ+ := ⟨n, NeZero.pos n⟩
   exact Algebra.subset_adjoin (Set.mem_range.mpr ⟨npos, rfl⟩)
+
+/-- An integral subalgebra contains the Hecke algebra if and only if it contains every
+positive-index Hecke operator. -/
+theorem heckeTAlgebra_le_iff
+    (S : Subalgebra ℤ (Module.End ℤ (ModularSymbols ℤ (Gamma1 N) w))) :
+    heckeTAlgebra N w ≤ S ↔
+      ∀ (n : ℕ) [NeZero n], heckeTSymbol ℤ w N n ∈ S := by
+  constructor
+  · intro h n _
+    exact h (heckeTSymbol_mem_heckeTAlgebra N w n)
+  · intro h
+    apply Algebra.adjoin_le
+    rintro _ ⟨n, rfl⟩
+    exact @h (n : ℕ) ⟨n.ne_zero⟩
 
 /-- The integral Hecke algebra acting on modular symbols is finitely generated as a
 `ℤ`-module, even though it is generated as an algebra by infinitely many `Tₙ`. -/
