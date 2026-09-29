@@ -492,9 +492,9 @@ variable (K L) in
 ring `𝒪[L]`, the form in which tameness enters Hensel-type arguments in `L`. -/
 theorem isTamelyRamified_iff_isUnit_natCast :
     IsTamelyRamified K L ↔ IsUnit (ramificationIndex K L : 𝒪[L]) := by
-  rw [isTamelyRamified_iff_natCast_ne_zero, ← IsLocalRing.notMem_maximalIdeal,
-    ← IsLocalRing.residue_eq_zero_iff, map_natCast, ← map_natCast (algebraMap 𝓀[K] 𝓀[L]),
-    ne_eq, map_eq_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
+  rw [isTamelyRamified_iff_natCast_ne_zero, ← IsLocalRing.residue_ne_zero_iff_isUnit,
+    map_natCast, ← map_natCast (algebraMap 𝓀[K] 𝓀[L]),
+    map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
 
 end Rest
 

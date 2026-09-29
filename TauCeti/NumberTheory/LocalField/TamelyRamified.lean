@@ -9,8 +9,8 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.NumberTheory.LocalField.Monogenic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
-import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
 # Totally and tamely ramified extensions of local fields
@@ -126,10 +126,7 @@ theorem IsTotallyRamified.exists_pow_eq_uniformizer_of_isTamelyRamified (h : IsT
     (isUniformizer_iff_exists_irreducible L _).2 ⟨ϖα, hϖα, rfl⟩, hαpow, ?_⟩
   -- `ϖα` generates the maximal ideal of `𝒪[L]` and the residue fields agree, so `ϖα` generates
   -- `𝒪[L]` over `𝒪[K]`, hence `L` over `K`
-  have hadj : Algebra.adjoin 𝒪[K] {ϖα} = ⊤ :=
-    IsLocalRing.adjoin_eq_top_of_algebraMap_residueField_surjective_of_span_eq_maximalIdeal
-      ((isTotallyRamified_iff_surjective_algebraMap_residueField K L).1 h)
-      hϖα.maximalIdeal_eq.symm
+  have hadj := h.adjoin_eq_top_of_irreducible hϖα
   have := IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top (K := K) (L := L) hadj
   rwa [Units.val_mk0]
 
