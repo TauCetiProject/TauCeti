@@ -86,12 +86,19 @@ theorem forall_hom_mem_coinvariants_iff (f : K ⟶ H) :
             (TensorProduct.map (f.hom : K →ₗ[R] H) (f.hom : K →ₗ[R] H) t) =
           TensorProduct.map (f.hom : K →ₗ[R] H) (Algebra.linearMap R (H ⧸ I.toIdeal))
             ((Coalgebra.counit (R := R) (A := K)).lTensor K t) := by
-      induction t using TensorProduct.inductionOn with
-      | tmul a b =>
+      have heq : (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap ∘ₗ
+          (f.hom : K →ₗ[R] H) =
+          (Algebra.linearMap R (H ⧸ I.toIdeal)) ∘ₗ
+            (Coalgebra.counit (R := R) (A := K)) := by
+        ext b
         have hb := AlgHom.congr_fun h b
         simp only [AlgHom.comp_apply, Algebra.ofId_apply, Bialgebra.counitAlgHom_apply] at hb
-        simpa using congrArg (f.hom a ⊗ₜ[R] ·) hb
-      | add s t hs ht => simp only [map_add, hs, ht]
+        exact hb
+      change TensorProduct.map (LinearMap.id : H →ₗ[R] H)
+          (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
+            (TensorProduct.map (f.hom : K →ₗ[R] H) (f.hom : K →ₗ[R] H) t) = _
+      rw [TensorProduct.map_map, LinearMap.map_lTensor]
+      simp only [LinearMap.id_comp, heq]
     rw [mem_coinvariants_iff, ← CoalgHomClass.map_comp_comul_apply f.hom x, key,
       Coalgebra.lTensor_counit_comul]
     simp
@@ -103,9 +110,12 @@ variable [Module.Flat R H] [Module.Flat R (H ⧸ Subalgebra.toSubmodule I.coinva
 theorem IsNormal.isHopfSubalgebra_coinvariants (hI : I.IsNormal) :
     I.coinvariants.IsHopfSubalgebra where
   comul_mem _ hx := by
-    rw [Submodule.range_map_subtype_subtype]
-    exact ⟨comul_mem_range_lTensor_of_mem_coinvariants hx,
-      hI.comul_mem_range_rTensor_of_mem_coinvariants hx⟩
+    have hcarrier : hI.coinvariantsSubcoalgebra.carrier =
+        Subalgebra.toSubmodule I.coinvariants :=
+      Submodule.ext fun _ ↦ hI.mem_coinvariantsSubcoalgebra
+    rw [← hcarrier]
+    exact (hI.coinvariantsSubcoalgebra).comul_mem
+      ((hI.mem_coinvariantsSubcoalgebra).2 hx)
   antipode_mem _ hx := hI.antipode_mem_coinvariants hx
 
 end HopfIdeal

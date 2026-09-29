@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.RingTheory.Flat.Basic
+import Mathlib.RingTheory.Coalgebra.CoassocSimps
 
 /-!
 # Hopf subalgebras
@@ -51,7 +52,7 @@ universe u v
 
 namespace Subalgebra
 
-variable {R : Type u} {H : Type v} [CommRing R] [Ring H] [HopfAlgebra R H]
+variable {R : Type u} {H : Type v} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 
 /-- A subalgebra `A` of a Hopf algebra `H` is a **Hopf subalgebra** when comultiplication maps it
 into the image of `A ⊗[R] A` and the antipode maps it into itself. -/
@@ -112,20 +113,21 @@ private theorem coassoc_comulAlgHom :
         hA.comulAlgHom.toLinearMap =
       hA.comulAlgHom.toLinearMap.lTensor A ∘ₗ hA.comulAlgHom.toLinearMap := by
   let ι := A.val.toLinearMap
+  have hcomul : TensorProduct.map ι ι ∘ₗ hA.comulAlgHom.toLinearMap =
+      (Coalgebra.comul (R := R) (A := H)) ∘ₗ ι :=
+    LinearMap.ext hA.map_val_comulAlgHom'
   have hleft (t : A ⊗[R] A) :
       TensorProduct.map ι (TensorProduct.map ι ι)
           (TensorProduct.assoc R A A A (hA.comulAlgHom.toLinearMap.rTensor A t)) =
         TensorProduct.assoc R H H H
           ((Coalgebra.comul (R := R) (A := H)).rTensor H (TensorProduct.map ι ι t)) := by
-    induction t using TensorProduct.inductionOn with
-    | tmul a b => simp [TensorProduct.map_map_assoc, ι, map_val_comulAlgHom']
-    | add s t hs ht => simp only [map_add, hs, ht]
+    rw [TensorProduct.map_map_assoc, LinearMap.map_rTensor, hcomul]
+    simp only [LinearMap.rTensor, TensorProduct.map_map, LinearMap.id_comp]
   have hright (t : A ⊗[R] A) :
       TensorProduct.map ι (TensorProduct.map ι ι) (hA.comulAlgHom.toLinearMap.lTensor A t) =
         (Coalgebra.comul (R := R) (A := H)).lTensor H (TensorProduct.map ι ι t) := by
-    induction t using TensorProduct.inductionOn with
-    | tmul a b => simp [ι, map_val_comulAlgHom']
-    | add s t hs ht => simp only [map_add, hs, ht]
+    rw [LinearMap.map_lTensor, hcomul]
+    simp only [LinearMap.lTensor, TensorProduct.map_map, LinearMap.id_comp]
   ext x
   apply map_val_map_val_injective
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply]
@@ -139,9 +141,13 @@ private theorem rTensor_counit_comulAlgHom :
           ((Coalgebra.counit (R := R) (A := H) ∘ₗ A.val.toLinearMap).rTensor A t) : H) =
         TensorProduct.lid R H ((Coalgebra.counit (R := R) (A := H)).rTensor H
           (TensorProduct.map A.val.toLinearMap A.val.toLinearMap t)) := by
-    induction t using TensorProduct.inductionOn with
-    | tmul a b => simp
-    | add s t hs ht => simp only [map_add, Subalgebra.coe_add, hs, ht]
+    let ι := A.val.toLinearMap
+    let ε := Coalgebra.counit (R := R) (A := H)
+    change ι (TensorProduct.lid R A (((ε ∘ₗ ι).rTensor A) t)) =
+      TensorProduct.lid R H (ε.rTensor H (TensorProduct.map ι ι t))
+    simpa only [LinearMap.rTensor, TensorProduct.map_map, LinearMap.id_comp,
+      LinearMap.comp_apply, LinearEquiv.coe_coe] using
+      (LinearMap.congr_fun (CoassocSimps.lid_comp_map (ε ∘ₗ ι) ι) t).symm
   ext x
   apply (TensorProduct.lid R A).injective
   apply Subtype.val_injective
@@ -155,9 +161,13 @@ private theorem lTensor_counit_comulAlgHom :
           ((Coalgebra.counit (R := R) (A := H) ∘ₗ A.val.toLinearMap).lTensor A t) : H) =
         TensorProduct.rid R H ((Coalgebra.counit (R := R) (A := H)).lTensor H
           (TensorProduct.map A.val.toLinearMap A.val.toLinearMap t)) := by
-    induction t using TensorProduct.inductionOn with
-    | tmul a b => simp
-    | add s t hs ht => simp only [map_add, Subalgebra.coe_add, hs, ht]
+    let ι := A.val.toLinearMap
+    let ε := Coalgebra.counit (R := R) (A := H)
+    change ι (TensorProduct.rid R A (((ε ∘ₗ ι).lTensor A) t)) =
+      TensorProduct.rid R H (ε.lTensor H (TensorProduct.map ι ι t))
+    simpa only [LinearMap.lTensor, TensorProduct.map_map, LinearMap.id_comp,
+      LinearMap.comp_apply, LinearEquiv.coe_coe] using
+      (LinearMap.congr_fun (CoassocSimps.rid_comp_map ι (ε ∘ₗ ι)) t).symm
   ext x
   apply (TensorProduct.rid R A).injective
   apply Subtype.val_injective
