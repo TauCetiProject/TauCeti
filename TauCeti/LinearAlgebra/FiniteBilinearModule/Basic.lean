@@ -49,8 +49,9 @@ restriction to a subgroup can be degenerate.
   orthogonal complement under an isometry is the orthogonal complement of the inverse image.
 * `TauCeti.FiniteBilinearModule.Isometry.orthogonalComplementEquiv`: the induced equivalence
   between corresponding orthogonal complements.
-* `TauCeti.FiniteBilinearModule.Isometry.isIsotropic_map_iff`: an isometry transports isotropic
-  subgroups.
+* `TauCeti.FiniteBilinearModule.Hom.isIsotropic_map_iff`: the image of a subgroup under a
+  morphism is isotropic exactly when the subgroup is; `Isometry.isIsotropic_map_iff` is the form
+  for an isometry's additive equivalence.
 * `TauCeti.FiniteBilinearModule.Isometry.isIsotropic_comap_iff`: an isometry transports
   isotropic subgroups by inverse image.
 * `TauCeti.FiniteBilinearModule.Isometry.isLagrangian_map_iff`: an isometry transports Lagrangian
@@ -399,6 +400,11 @@ def toHom (f : Isometry A B) : Hom A B where
 
 @[simp]
 theorem toHom_apply (f : Isometry A B) (x : A) : f.toHom x = f x := (rfl)
+
+/-- The additive homomorphism underlying `f.toHom` is that of the additive equivalence of `f`. -/
+@[simp]
+theorem toHom_toAddMonoidHom (f : Isometry A B) :
+    f.toHom.toAddMonoidHom = (f.toAddEquiv : A →+ B) := (rfl)
 
 /-- The underlying morphism of an isometry is bijective. -/
 theorem toHom_bijective (f : Isometry A B) : Function.Bijective f.toHom := by
@@ -765,11 +771,18 @@ theorem isIsotropicElem_zero : A.IsIsotropicElem 0 := by
 theorem isIsotropicElem_neg (x : A) : A.IsIsotropicElem (-x) ↔ A.IsIsotropicElem x := by
   rw [isIsotropicElem_def, isIsotropicElem_def, pairing_neg_left, pairing_neg_right, neg_neg]
 
-/-- An isometry preserves isotropic elements. -/
+/-- A morphism of finite bilinear modules preserves and reflects isotropic elements. -/
+@[simp]
+theorem Hom.isIsotropicElem_iff {B : FiniteBilinearModule} (f : Hom A B) (x : A) :
+    B.IsIsotropicElem (f x) ↔ A.IsIsotropicElem x := by
+  rw [isIsotropicElem_def, isIsotropicElem_def, map_pairing]
+
+/-- An isometry preserves and reflects isotropic elements. -/
 @[simp]
 theorem Isometry.isIsotropicElem_iff {B : FiniteBilinearModule} (f : Isometry A B) (x : A) :
     B.IsIsotropicElem (f x) ↔ A.IsIsotropicElem x := by
-  rw [isIsotropicElem_def, isIsotropicElem_def, map_pairing]
+  rw [← f.toHom_apply]
+  exact f.toHom.isIsotropicElem_iff A x
 
 /-- Form negation preserves isotropic elements. -/
 @[simp]
@@ -939,13 +952,26 @@ theorem Isometry.map_mem_orthogonalComplement_of_map_eq {B : FiniteBilinearModul
   rw [← h, ← f.map_orthogonalComplement (H := H)]
   exact AddSubgroup.mem_map_of_mem _ hx
 
-/-- An isometry transports isotropic subgroups. -/
+/-- The image of a subgroup under a morphism of finite bilinear modules is isotropic exactly
+when the subgroup is. -/
+@[simp]
+theorem Hom.isIsotropic_map_iff {B : FiniteBilinearModule} (f : Hom A B) (H : AddSubgroup A) :
+    B.IsIsotropic (H.map f.toAddMonoidHom) ↔ A.IsIsotropic H := by
+  constructor
+  · intro hH x hx y hy
+    rw [← f.map_pairing]
+    exact hH _ (AddSubgroup.mem_map_of_mem _ hx) _ (AddSubgroup.mem_map_of_mem _ hy)
+  · rintro hH _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    exact (f.map_pairing x y).trans (hH x hx y hy)
+
+/-- An isometry transports isotropic subgroups, stated for the image under its additive
+equivalence. -/
 @[simp]
 theorem Isometry.isIsotropic_map_iff {B : FiniteBilinearModule} (f : Isometry A B)
     (H : AddSubgroup A) :
     B.IsIsotropic (H.map f.toAddEquiv) ↔ A.IsIsotropic H := by
-  rw [B.isIsotropic_iff_le_orthogonalComplement, A.isIsotropic_iff_le_orthogonalComplement,
-    ← f.map_orthogonalComplement, AddSubgroup.map_le_map_iff_of_injective f.toAddEquiv.injective]
+  rw [← f.toHom_toAddMonoidHom]
+  exact f.toHom.isIsotropic_map_iff A H
 
 /-- An isometry transports isotropic subgroups by inverse image. -/
 @[simp]

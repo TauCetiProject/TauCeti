@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.RingTheory.Nilpotent.Lemmas
 
 /-!
 # The left-regular representation of a Lie map into an associative algebra
@@ -82,6 +83,13 @@ left-multiplication API of an associative algebra reaches the left-regular repre
 theorem leftRegularRep_eq_mulLeft (q : L →ₗ⁅R⁆ A) (x : L) :
     leftRegularRep q x = LinearMap.mulLeft R (q x) :=
   (rfl)
+
+/-- An element acts nilpotently in its left-regular representation exactly when its image
+in the associative target is nilpotent. -/
+@[simp]
+theorem isNilpotent_leftRegularRep_iff (q : L →ₗ⁅R⁆ A) (x : L) :
+    IsNilpotent (leftRegularRep q x) ↔ IsNilpotent (q x) := by
+  rw [leftRegularRep_eq_mulLeft, LinearMap.isNilpotent_mulLeft_iff]
 
 /-- **The left-regular representation is faithful exactly when `q` is injective.** It is the
 composite of `q` with `Algebra.lmul`, and left multiplication determines the multiplier
