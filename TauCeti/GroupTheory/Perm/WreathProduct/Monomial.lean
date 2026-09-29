@@ -15,6 +15,10 @@ A transversal for `U ≤ G` embeds `G` in the permutation wreath product with ba
 and coordinates indexed by `G ⧸ U`. Its permutation part is left translation on cosets; its
 coordinate at `x` is the transversal word `t(x)⁻¹ g t(g⁻¹ • x)`. A representative map
 `t : G ⧸ U → G` and proof that it represents each coset are shared with the cochain formulas.
+For `s : U.LeftTransversal`, Mathlib supplies such a map through `s.2.leftQuotientEquiv`, with its
+section property given by `s.2.quotientGroupMk_leftQuotientEquiv`. Conversely, a section map
+`r` with proof `hr` gives `⟨Set.range r, Subgroup.isComplement_range_left hr⟩ : U.LeftTransversal`,
+whose representative map recovers `r` by `Subgroup.IsComplement.leftQuotientEquiv_apply`.
 The cocycle law gives the homomorphism, and both the coset-indexed and finite-coordinate forms
 are injective. The public maps are called as `TauCeti.monomialHom U t ht` and
 `TauCeti.monomialFinHom U t ht e`, where `e` labels the cosets by `Fin U.index`.
