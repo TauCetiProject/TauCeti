@@ -47,6 +47,8 @@ on a surface, each of which carries a loop of its own, is a further step built o
 * `TauCeti.IsMaximalTotallyReal.maslovPhase_prod`: the Maslov phase of a direct sum is the product
   of the two phases.
 * `TauCeti.TotallyRealLoop.prod`: the loop of coordinate subspaces of a pair of loops.
+* `TauCeti.TotallyRealLoop.maslovPhasePath_prod_apply`: the loop of Maslov phases of a direct sum
+  is the product of the two loops of Maslov phases.
 * `TauCeti.TotallyRealLoop.maslovIndex_prod`: **the direct-sum axiom.**
 * `TauCeti.TotallyRealLoop.maslovIndex_prod_rotation`: the two half-turns, taken in the two
   summands, have Maslov index the sum of the two complex dimensions.
@@ -156,6 +158,24 @@ theorem prod_apply (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') (t : I) :
 
 variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ E']
 
+/-- **The loop of Maslov phases of a direct sum is the product of the two loops of Maslov
+phases:** the phase of the direct sum at `t`, read as a complex number, is the product of the two
+phases at `t`. This is the pointwise form of the path equation
+`(Λ.prod Λ').maslovPhasePath = Λ.maslovPhasePath.mul Λ'.maslovPhasePath`, which is stated on `ℂ`
+because `Path` has no `Monoid` instance in the pinned Mathlib and `1 * 1` is not `1` in `Circle`
+definitionally, so a product of two paths out of `1` is a path out of `1 * 1` and not out of `1`.
+
+The equation is deliberately left out of the `simp` set: `maslovPhasePath_apply` is already a
+`simp` lemma and normalizes the left-hand side first, so `simpNF` reports that this left-hand
+side "simplifies ... using `maslovPhasePath_apply, prod_apply`", i.e. that a `simp` annotation here
+would add a rule that never applies. It is a rewrite rule, to be used with `rw`. -/
+theorem maslovPhasePath_prod_apply (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') (t : I) :
+    ((Λ.prod Λ').maslovPhasePath t : ℂ) =
+      (Λ.maslovPhasePath t : ℂ) * (Λ'.maslovPhasePath t : ℂ) := by
+  rw [maslovPhasePath_apply, maslovPhasePath_apply, maslovPhasePath_apply]
+  exact IsMaximalTotallyReal.maslovPhase_prod (Λ.isMaximalTotallyReal 0)
+    (Λ'.isMaximalTotallyReal 0) (Λ.isMaximalTotallyReal t) (Λ'.isMaximalTotallyReal t)
+
 /-- **The direct-sum axiom of the Maslov index.** The Maslov index of the direct sum of two loops
 of maximal totally real subspaces is the sum of their Maslov indices. -/
 @[simp]
@@ -177,7 +197,7 @@ theorem maslovIndex_prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
   have hμ₂ : Λ'.maslovIndex = Circle.degree (Λ'.maslovPhasePath) :=
     Λ'.maslovIndex_eq_degree hL₂ (Λ'.maslovPhasePath) fun _ => maslovPhasePath_apply _ _
   -- Both loops of phases are based at `1`, so their pointwise product is again a loop, and it is
-  -- the loop of phases of the direct sum.
+  -- the loop of phases of the direct sum, by `maslovPhasePath_prod_apply`.
   have hμ₃ : (Λ.prod Λ').maslovIndex = Circle.degree ((Λ.maslovPhasePath).mul
       (Λ'.maslovPhasePath)) := by
     refine (Λ.prod Λ').maslovIndex_eq_degree hL₁₂ _ fun t => ?_
