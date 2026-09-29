@@ -78,10 +78,9 @@ private noncomputable def automorphismGroupEvalEquiv
       intro τ σ h
       apply Subtype.ext
       have hfix : (((σ⁻¹ * τ : t.automorphismGroup) : Perm (Fin n))) i = i := by
-        change ((σ : Perm (Fin n))⁻¹ * (τ : Perm (Fin n))) i = i
-        rw [Perm.mul_apply]
-        rw [show (τ : Perm (Fin n)) i = (σ : Perm (Fin n)) i from h]
-        exact (σ : Perm (Fin n)).symm_apply_apply i
+        dsimp only at h
+        rw [Subgroup.smul_def, Subgroup.smul_def, Perm.smul_def, Perm.smul_def] at h
+        rw [Subgroup.coe_mul, Subgroup.coe_inv, Perm.mul_apply, h, Perm.inv_def, symm_apply_apply]
       have hone : (σ⁻¹ * τ : t.automorphismGroup) = 1 := Subtype.ext <|
         eq_one_of_mem_automorphismGroup_of_apply_eq ht.isConnected.isPretransitive
           (σ⁻¹ * τ).2 hfix
@@ -101,6 +100,14 @@ private noncomputable def monodromyGroupEvalEquiv
       intro j
       exact ht.isConnected.isPretransitive.exists_smul_eq i j⟩
 
+private theorem automorphismGroupEvalEquiv_apply (ht : t.IsRegular) (i : Fin n)
+    (τ : t.automorphismGroup) : automorphismGroupEvalEquiv ht i τ = τ • i :=
+  Equiv.ofBijective_apply _ _ _
+
+private theorem monodromyGroupEvalEquiv_apply (ht : t.IsRegular) (i : Fin n)
+    (g : t.monodromyGroup) : monodromyGroupEvalEquiv ht i g = g • i :=
+  Equiv.ofBijective_apply _ _ _
+
 private noncomputable def automorphismGroupEquivMonodromyGroup
     (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃ t.monodromyGroup :=
   (automorphismGroupEvalEquiv ht i).trans (monodromyGroupEvalEquiv ht i).symm
@@ -108,33 +115,27 @@ private noncomputable def automorphismGroupEquivMonodromyGroup
 private theorem automorphismGroupEquivMonodromyGroup_smul
     (ht : t.IsRegular) (i : Fin n) (τ : t.automorphismGroup) :
     automorphismGroupEquivMonodromyGroup ht i τ • i = τ • i := by
-  change monodromyGroupEvalEquiv ht i
-      ((monodromyGroupEvalEquiv ht i).symm (automorphismGroupEvalEquiv ht i τ)) =
-    automorphismGroupEvalEquiv ht i τ
-  exact Equiv.apply_symm_apply _ _
+  rw [automorphismGroupEquivMonodromyGroup, Equiv.trans_apply, ← monodromyGroupEvalEquiv_apply ht,
+    Equiv.apply_symm_apply, automorphismGroupEvalEquiv_apply]
 
 private noncomputable def automorphismGroupMulEquivMonodromyGroupOpposite
     (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃* t.monodromyGroupᵐᵒᵖ where
   toEquiv := (automorphismGroupEquivMonodromyGroup ht i).trans MulOpposite.opEquiv
   map_mul' τ σ := by
     apply MulOpposite.unop_injective
-    change automorphismGroupEquivMonodromyGroup ht i (τ * σ) =
-      automorphismGroupEquivMonodromyGroup ht i σ *
-        automorphismGroupEquivMonodromyGroup ht i τ
+    simp only [Equiv.toFun_as_coe, Equiv.trans_apply, MulOpposite.opEquiv_apply,
+      MulOpposite.unop_mul, MulOpposite.unop_op]
     let _ : IsCancelSMul t.monodromyGroup (Fin n) := ht.isCancelSMul
     apply IsCancelSMul.right_cancel _ _ i
     rw [automorphismGroupEquivMonodromyGroup_smul, mul_smul, mul_smul,
       automorphismGroupEquivMonodromyGroup_smul]
     rw [← automorphismGroupEquivMonodromyGroup_smul ht i σ]
-    change (τ : Perm (Fin n))
-        (((automorphismGroupEquivMonodromyGroup ht i σ : t.monodromyGroup) : Perm (Fin n)) i) =
-      ((automorphismGroupEquivMonodromyGroup ht i σ : t.monodromyGroup) : Perm (Fin n))
-        ((τ : Perm (Fin n)) i)
+    simp only [Subgroup.smul_def, Perm.smul_def]
     have hτ : (τ : Perm (Fin n)) ∈
         Subgroup.centralizer (t.monodromyGroup : Set (Perm (Fin n))) := by
       rw [← automorphismGroup_eq_centralizer_monodromyGroup]
       exact τ.2
-    exact DFunLike.congr_fun (Subgroup.mem_centralizer_iff.mp hτ
+    simpa only [Perm.mul_apply] using DFunLike.congr_fun (Subgroup.mem_centralizer_iff.mp hτ
       (automorphismGroupEquivMonodromyGroup ht i σ)
       (automorphismGroupEquivMonodromyGroup ht i σ).2).symm i
 

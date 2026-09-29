@@ -157,6 +157,7 @@ theorem quotientComapStabilizerEquiv_mk (ρ : G →* Perm X) (hρ : IsPretransit
   rfl
 
 /-- The identification of the coset space with `X` carries left multiplication by `g` to `ρ g`. -/
+@[simp]
 theorem quotientComapStabilizerEquiv_smul (ρ : G →* Perm X) (hρ : IsPretransitive ρ.range X)
     (x : X) (g : G) (q : G ⧸ (stabilizer (Perm X) x).comap ρ) :
     quotientComapStabilizerEquiv ρ hρ x (g • q) = ρ g (quotientComapStabilizerEquiv ρ hρ x q) := by
