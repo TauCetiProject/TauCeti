@@ -138,7 +138,6 @@ theorem peripheralTuple_last (x : Fin r → G) : peripheralTuple x (Fin.last r) 
   Fin.snoc_last ..
 
 /-- The ordered product of the peripheral tuple is `1`. -/
-@[simp]
 theorem prod_ofFn_peripheralTuple (x : Fin r → G) : (List.ofFn (peripheralTuple x)).prod = 1 := by
   rw [List.ofFn_succ', List.prod_concat]
   simp
