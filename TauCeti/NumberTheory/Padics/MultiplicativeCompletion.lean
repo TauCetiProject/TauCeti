@@ -22,8 +22,10 @@ families.  Its `ℤ_p`-module structure is intrinsic: at level `m`, a `p`-adic i
 through its residue modulo `p^m`.  Field automorphisms preserve power subgroups, and therefore
 act on the whole inverse limit.
 
-The construction is the integral multiplicative lattice used in local reciprocity and in the
-Galois-module theory of local units.
+For a finite extension `L` of `ℚ_p`, this completed multiplicative module is the one used in
+local reciprocity and in the Galois-module theory of local units, where it is finitely generated
+over `ℤ_p`. This file imposes no such hypothesis and proves no finiteness statement: it supplies
+only the carrier, its `ℤ_p`-module structure, and its Galois action.
 
 ## Main declarations
 
