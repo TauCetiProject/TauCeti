@@ -35,7 +35,15 @@ public section
 
 namespace Matrix.GeneralLinearGroup
 
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+variable {n R : Type*} [Fintype n] [DecidableEq n]
+
+/-- For nonempty `n`, the scalar embedding `Rˣ → GL n R` is injective. -/
+theorem scalar_injective [Semiring R] [Nonempty n] :
+    Function.Injective (scalar n : Rˣ →* GL n R) :=
+  fun u v h ↦
+    Units.ext (Matrix.scalar_inj.mp (by simpa only [coe_scalar] using congrArg Units.val h))
+
+variable [CommRing R]
 
 /-- Shifting a matrix by a scalar and taking its determinant is invariant under conjugation in
 the general linear group. -/
@@ -54,11 +62,6 @@ theorem det_sub_algebraMap_conj (g x : GL n R) (a : R) :
         ((g : Matrix n n R) - algebraMap R (Matrix n n R) a) * (x : Matrix n n R) := by
     rw [mul_sub, sub_mul, hcancel, Units.val_mul, Units.val_mul]
   rw [hsplit, Matrix.coe_units_inv, Matrix.det_conj' x.isUnit]
-
-/-- For nonempty `n`, the scalar embedding `Rˣ → GL n R` is injective. -/
-theorem scalar_injective [Nonempty n] : Function.Injective (scalar n : Rˣ →* GL n R) :=
-  fun u v h ↦
-    Units.ext (Matrix.scalar_inj.mp (by simpa only [coe_scalar] using congrArg Units.val h))
 
 /-- **An inner automorphism determines its conjugator up to a scalar.** If `g` and `h` in
 `GL n R` conjugate every matrix in the same way, then `g` is `h` multiplied by the scalar matrix

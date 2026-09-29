@@ -20,9 +20,10 @@ import Mathlib.RingTheory.SimpleRing.Matrix
 /-!
 # The Galois `2`-cocycle of a split algebra
 
-Let `A` be a `K`-algebra and `L` a field extension of `K`, and suppose we are given descent data in
-the form of an `L`-algebra isomorphism `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)`. This file attaches to `φ` a
-`2`-cocycle of `Aut_K(L)` with values in `Lˣ`, in the normalization of `TauCeti.TwoCocycle`.
+Let `A` be a `K`-algebra and `L` a field equipped with a `K`-algebra structure, and suppose we are
+given descent data in the form of an `L`-algebra isomorphism `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)`. This file
+attaches to `φ` a `2`-cocycle of `Aut_K(L)` with values in `Lˣ`, in the normalization of
+`TauCeti.TwoCocycle`.
 
 Each `σ : L ≃ₐ[K] L` acts on `L ⊗[K] A` by `σ ⊗ 1` and on `Mₙ(L)` entrywise, and both actions are
 `σ`-semilinear. Transporting `σ ⊗ 1` along `φ` and undoing the entrywise action gives the
@@ -37,7 +38,9 @@ induce the same conjugation and differ by a unit scalar; this scalar is the cocy
 The construction is carried out for an arbitrary family of conjugators in
 `TauCeti.TwoCocycle.ofConjugators`, since the cocycle depends on the conjugators and not only on
 `φ`; `TauCeti.cocycleOfSplitting` is the cocycle of the conjugators chosen by
-`TauCeti.splittingConjugator`.
+`TauCeti.splittingConjugator`. Only the choice of conjugators, via Skolem–Noether, needs `L` to be
+a field: `splittingAut` and its lemmas are stated for a commutative semiring `L`, and
+`TauCeti.TwoCocycle.ofConjugators` for a commutative ring `L`.
 
 ## Main definitions
 
@@ -53,6 +56,8 @@ The construction is carried out for an arbitrary family of conjugators in
 * `TauCeti.splittingAut_mul`: the twisted multiplicativity of `σ ↦ splittingAut φ σ`.
 * `TauCeti.TwoCocycle.ofConjugators_toFun_eq_iff`: the value `c(σ, τ)` is the unique unit `u` with
   `u · g_σ · σ(g_τ) = g_στ`.
+* `TauCeti.cocycleOfSplitting_toFun_eq_iff`: the same characterization of `cocycleOfSplitting φ`
+  with respect to the chosen conjugators `splittingConjugator φ σ`.
 
 ## Implementation notes
 
@@ -80,7 +85,11 @@ universe u v w
 namespace TauCeti
 
 variable {K : Type u} [CommSemiring K] {A : Type w} [Semiring A] [Algebra K A]
-  {L : Type v} [Field L] [Algebra K L] {n : Type*} [Fintype n] [DecidableEq n]
+  {n : Type*} [Fintype n] [DecidableEq n]
+
+section CommSemiring
+
+variable {L : Type v} [CommSemiring L] [Algebra K L]
 
 /-- The automorphism `φ ∘ (σ ⊗ 1) ∘ φ⁻¹ ∘ σ⁻¹` of `Mₙ(L)` attached to a splitting
 `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)` and `σ : L ≃ₐ[K] L`, where `σ⁻¹` acts on matrices entrywise. The two
@@ -133,6 +142,12 @@ theorem splittingAut_mul (σ τ : L ≃ₐ[K] L) (m : Matrix n n L) :
   rw [hm, splittingAut_map, AlgEquiv.mapMatrix_apply, splittingAut_map, splittingAut_map,
     AlgEquiv.symm_apply_apply, ht]
 
+end CommSemiring
+
+section CommRing
+
+variable {L : Type v} [CommRing L] [Algebra K L] (φ : L ⊗[K] A ≃ₐ[L] Matrix n n L)
+
 /-- For a family `g` of conjugators for `φ`, `g_στ` is a unit scalar times `g_σ · σ(g_τ)`, because
 both conjugate like `splittingAut φ (στ)`. -/
 private theorem exists_scalar_mul_eq (g : (L ≃ₐ[K] L) → GL n L)
@@ -148,23 +163,6 @@ private theorem exists_scalar_mul_eq (g : (L ≃ₐ[K] L) → GL n L)
   simp only [Matrix.map_mul, _root_.mul_inv_rev, Units.val_mul, ← map_inv, hcoe, mul_assoc]
 
 variable [Nonempty n]
-
-/-- By Skolem–Noether, each `splittingAut φ σ` is conjugation by an invertible matrix. -/
-private theorem exists_mul_mul_inv_eq_splittingAut (σ : L ≃ₐ[K] L) :
-    ∃ g : GL n L, ∀ m, (g : Matrix n n L) * m * ((g⁻¹ : GL n L) : Matrix n n L) =
-      splittingAut φ σ m :=
-  (exists_unit_conj_of_algEquiv L (splittingAut φ σ)).imp fun _ hg m ↦ (hg m).symm
-
-/-- A chosen conjugator `g_σ ∈ GL_n(L)` for `splittingAut φ σ`, so that `splittingAut φ σ` is
-`m ↦ g_σ * m * g_σ⁻¹`. It is determined by `φ` and `σ` only up to a unit scalar. -/
-noncomputable def splittingConjugator (σ : L ≃ₐ[K] L) : GL n L :=
-  (exists_mul_mul_inv_eq_splittingAut φ σ).choose
-
-/-- `splittingAut φ σ` is conjugation by `splittingConjugator φ σ`. -/
-theorem splittingConjugator_mul_mul_inv (σ : L ≃ₐ[K] L) (m : Matrix n n L) :
-    (splittingConjugator φ σ : Matrix n n L) * m *
-      ((splittingConjugator φ σ)⁻¹ : GL n L) = splittingAut φ σ m :=
-  (exists_mul_mul_inv_eq_splittingAut φ σ).choose_spec m
 
 /-- The **`2`-cocycle of a family of conjugators** for a splitting `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)`:
 given `g_σ ∈ GL_n(L)` with `splittingAut φ σ` equal to conjugation by `g_σ` for every `σ`, the
@@ -219,6 +217,29 @@ theorem TwoCocycle.ofConjugators_toFun_eq_iff (g : (L ≃ₐ[K] L) → GL n L)
   refine ⟨fun h ↦ h ▸ scalar_ofConjugators_mul φ g hg σ τ, fun h ↦ scalar_injective (n := n) ?_⟩
   exact mul_right_cancel ((scalar_ofConjugators_mul φ g hg σ τ).trans h.symm)
 
+end CommRing
+
+section Field
+
+variable {L : Type v} [Field L] [Algebra K L] (φ : L ⊗[K] A ≃ₐ[L] Matrix n n L) [Nonempty n]
+
+/-- By Skolem–Noether, each `splittingAut φ σ` is conjugation by an invertible matrix. -/
+private theorem exists_mul_mul_inv_eq_splittingAut (σ : L ≃ₐ[K] L) :
+    ∃ g : GL n L, ∀ m, (g : Matrix n n L) * m * ((g⁻¹ : GL n L) : Matrix n n L) =
+      splittingAut φ σ m :=
+  (exists_unit_conj_of_algEquiv L (splittingAut φ σ)).imp fun _ hg m ↦ (hg m).symm
+
+/-- A chosen conjugator `g_σ ∈ GL_n(L)` for `splittingAut φ σ`, so that `splittingAut φ σ` is
+`m ↦ g_σ * m * g_σ⁻¹`. It is determined by `φ` and `σ` only up to a unit scalar. -/
+noncomputable def splittingConjugator (σ : L ≃ₐ[K] L) : GL n L :=
+  (exists_mul_mul_inv_eq_splittingAut φ σ).choose
+
+/-- `splittingAut φ σ` is conjugation by `splittingConjugator φ σ`. -/
+theorem splittingConjugator_mul_mul_inv (σ : L ≃ₐ[K] L) (m : Matrix n n L) :
+    (splittingConjugator φ σ : Matrix n n L) * m *
+      ((splittingConjugator φ σ)⁻¹ : GL n L) = splittingAut φ σ m :=
+  (exists_mul_mul_inv_eq_splittingAut φ σ).choose_spec m
+
 /-- The **cocycle of a split algebra with chosen descent data**: for a splitting
 `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)` with `n` nonempty, the `2`-cocycle of the conjugators
 `splittingConjugator φ σ`, that is, the unit scalars `c(σ, τ)` with
@@ -226,10 +247,22 @@ theorem TwoCocycle.ofConjugators_toFun_eq_iff (g : (L ≃ₐ[K] L) → GL n L)
 noncomputable def cocycleOfSplitting : TwoCocycle K L :=
   TwoCocycle.ofConjugators φ (splittingConjugator φ) (splittingConjugator_mul_mul_inv φ)
 
-/-- `cocycleOfSplitting φ` is the cocycle of the conjugator family `splittingConjugator φ`. -/
-theorem cocycleOfSplitting_eq_ofConjugators :
-    cocycleOfSplitting φ =
-      TwoCocycle.ofConjugators φ (splittingConjugator φ) (splittingConjugator_mul_mul_inv φ) :=
-  (rfl)
+/-- The defining property of `cocycleOfSplitting`: with `g_σ = splittingConjugator φ σ`,
+`c(σ, τ) · g_σ · σ(g_τ) = g_στ`. -/
+theorem scalar_cocycleOfSplitting_mul (σ τ : L ≃ₐ[K] L) :
+    scalar n ((cocycleOfSplitting φ).toFun σ τ) *
+        (splittingConjugator φ σ * map (σ : L →+* L) (splittingConjugator φ τ)) =
+      splittingConjugator φ (σ * τ) :=
+  TwoCocycle.scalar_ofConjugators_mul φ _ _ σ τ
+
+/-- **Characterization of the cocycle of a split algebra**: with `g_σ = splittingConjugator φ σ`,
+`c(σ, τ)` is the unique unit `u` with `u · g_σ · σ(g_τ) = g_στ`. -/
+theorem cocycleOfSplitting_toFun_eq_iff (σ τ : L ≃ₐ[K] L) (u : Lˣ) :
+    (cocycleOfSplitting φ).toFun σ τ = u ↔
+      scalar n u * (splittingConjugator φ σ * map (σ : L →+* L) (splittingConjugator φ τ)) =
+        splittingConjugator φ (σ * τ) :=
+  TwoCocycle.ofConjugators_toFun_eq_iff φ _ _ σ τ u
+
+end Field
 
 end TauCeti
