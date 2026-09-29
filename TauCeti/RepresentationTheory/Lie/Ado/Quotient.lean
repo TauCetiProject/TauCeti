@@ -15,15 +15,14 @@ import Mathlib.RingTheory.Ideal.Quotient.Operations
 In positive characteristic, a power of the enveloping-algebra generator of an element whose
 adjoint action is nilpotent lies in every prescribed power of the central augmentation ideal.
 Consequently, any associative target killing such an ideal power sends that generator to a
-nilpotent element. Its left-regular representation also acts nilpotently. This is the
-nilpotence-preservation step for quotients in the positive-characteristic construction of
-faithful Lie representations.
+nilpotent element. Its left-regular representation also acts nilpotently.
 
-These conditional statements do not construct a finite-dimensional separating quotient. That
-construction uses the later Krull-intersection step. The statements do not require the target
-to be finite-dimensional or the Lie algebra to be nilpotent.
+These conclusions hold for the quotient by any power of the central augmentation ideal. They
+require neither a finite-dimensional separating quotient nor a nilpotent Lie algebra. When a
+quotient over a field is finite-dimensional and separates the Lie algebra, its left-regular
+action gives a faithful representation that preserves adjoint nilpotence.
 
-This is the quotient-nilpotence step of G. Hochschild, *An Addition to Ado's Theorem*,
+The quotient-nilpotence argument follows G. Hochschild, *An Addition to Ado's Theorem*,
 Proceedings of the American Mathematical Society **17** (1966), 531–533.
 -/
 
