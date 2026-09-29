@@ -11,8 +11,9 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 /-!
 # Tensor products of crossed-product algebras
 
-The pointwise product of two Galois `2`-cocycles is again a `2`-cocycle. This file proves that its
-crossed product represents the product of the two original Brauer classes.
+The pointwise product of two Galois `2`-cocycles is again a `2`-cocycle
+(`TauCeti.TwoCocycle.instCommGroup`). This file proves that its crossed product represents the
+product of the two original Brauer classes.
 
 The algebra-level argument is the standard matrix stabilization. If `c` and `d` are cocycles of
 `G = Aut_K(L)`, the two crossed products act by commuting monomial matrices over the crossed
@@ -29,8 +30,10 @@ the two sides have the same Brauer class.
 
 ## Main results
 
-* `TauCeti.TwoCocycle.instMul`: pointwise multiplication of Galois `2`-cocycles.
-* `TauCeti.CrossedProduct.tensorProductAlgEquivMatrix`: the matrix stabilization above.
+* `TauCeti.CrossedProduct.tensorProductAlgEquivMatrix`: the matrix stabilization above, with its
+  entries on `(x • u_σ) ⊗ 1` and `1 ⊗ (y • u_τ)` given by
+  `TauCeti.CrossedProduct.tensorProductAlgEquivMatrix_smul_basis_tmul_one_apply` and
+  `TauCeti.CrossedProduct.tensorProductAlgEquivMatrix_one_tmul_smul_basis_apply`.
 * `TauCeti.BrauerGroup.crossedProductClass_mul`: pointwise multiplication of cocycles presents
   multiplication of their Brauer classes.
 
@@ -45,35 +48,15 @@ public section
 open scoped TensorProduct
 open groupCohomology
 
-universe u
+universe u v
 
 namespace TauCeti
 
-variable {K : Type u} [Field K] {L : Type u} [Field L] [Algebra K L]
-
-namespace TwoCocycle
-
-/-- The pointwise product of two Galois `2`-cocycles. -/
-protected abbrev mul (c d : TwoCocycle K L) : TwoCocycle K L where
-  toFun σ τ := c.toFun σ τ * d.toFun σ τ
-  isMulCocycle₂ σ τ ρ := by
-    rw [mul_mul_mul_comm, c.isMulCocycle₂ σ τ ρ, d.isMulCocycle₂ σ τ ρ]
-    simp only [AlgEquiv.smul_units_def, map_mul]
-    ac_rfl
-
-instance : Mul (TwoCocycle K L) := ⟨TwoCocycle.mul⟩
-
-/-- Multiplication of `2`-cocycles is pointwise multiplication. -/
-@[simp]
-theorem toFun_mul (c d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L) :
-    (c * d).toFun σ τ = c.toFun σ τ * d.toFun σ τ :=
-  rfl
-
-end TwoCocycle
+variable {K : Type u} [Field K]
 
 namespace CrossedProduct
 
-variable [FiniteDimensional K L] [IsGalois K L]
+variable {L : Type v} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
 
 /-- Decidable equality on the finite Galois group, used to form its matrix algebra. -/
 noncomputable local instance : DecidableEq (L ≃ₐ[K] L) := Classical.decEq _
@@ -85,14 +68,9 @@ private noncomputable def leftEntry (c d : TwoCocycle K L) (σ ρ : L ≃ₐ[K] 
   map_smul' r x := by simp
 
 private noncomputable def leftGenerator (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) :
-    L →ₗ[K] Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) := by
-  classical
-  let f := LinearMap.pi fun ρ ↦ LinearMap.pi fun τ ↦
+    L →ₗ[K] Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
+  (Matrix.ofLinearEquiv K).toLinearMap ∘ₗ LinearMap.pi fun ρ ↦ LinearMap.pi fun τ ↦
     if τ = ρ * σ then leftEntry c d σ ρ else 0
-  exact
-    { toFun := f
-      map_add' := f.map_add
-      map_smul' := f.map_smul }
 
 private noncomputable def rightEntry (c d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L) :
     L →ₗ[K] CrossedProduct (c * d) where
@@ -101,14 +79,9 @@ private noncomputable def rightEntry (c d : TwoCocycle K L) (σ τ : L ≃ₐ[K]
   map_smul' r x := by simp [mul_assoc]
 
 private noncomputable def rightGenerator (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) :
-    L →ₗ[K] Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) := by
-  classical
-  let f := LinearMap.pi fun ρ ↦ LinearMap.pi fun τ ↦
+    L →ₗ[K] Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
+  (Matrix.ofLinearEquiv K).toLinearMap ∘ₗ LinearMap.pi fun ρ ↦ LinearMap.pi fun τ ↦
     if ρ = σ * τ then rightEntry c d σ τ else 0
-  exact
-    { toFun := f
-      map_add' := f.map_add
-      map_smul' := f.map_smul }
 
 omit [FiniteDimensional K L] [IsGalois K L] in
 @[simp]
@@ -116,10 +89,9 @@ private theorem leftGenerator_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) 
     (ρ τ : L ≃ₐ[K] L) :
     leftGenerator c d σ x ρ τ =
       if τ = ρ * σ then inc (c * d) (ρ x * c.toFun ρ σ) else 0 := by
-  classical
-  rw [leftGenerator]
-  change (if τ = ρ * σ then leftEntry c d σ ρ else 0) x = _
-  split <;> rfl
+  simp only [leftGenerator, LinearMap.coe_comp, LinearEquiv.coe_coe, Matrix.coe_ofLinearEquiv,
+    Function.comp_apply, Matrix.of_apply, LinearMap.pi_apply]
+  split_ifs <;> simp [leftEntry]
 
 omit [FiniteDimensional K L] [IsGalois K L] in
 @[simp]
@@ -127,10 +99,35 @@ private theorem rightGenerator_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L)
     (ρ τ : L ≃ₐ[K] L) :
     rightGenerator c d σ x ρ τ = if ρ = σ * τ then
       inc (c * d) (x * (c.toFun σ τ)⁻¹) * basis (c * d) σ else 0 := by
-  classical
-  rw [rightGenerator]
-  change (if ρ = σ * τ then rightEntry c d σ τ else 0) x = _
-  split <;> rfl
+  simp only [rightGenerator, LinearMap.coe_comp, LinearEquiv.coe_coe, Matrix.coe_ofLinearEquiv,
+    Function.comp_apply, Matrix.of_apply, LinearMap.pi_apply]
+  split_ifs <;> simp [rightEntry]
+
+omit [IsGalois K L] in
+/-- Row `ρ` of `leftGenerator c d σ x` has its only nonzero entry in column `ρ * σ`. -/
+private theorem leftGenerator_mul_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L)
+    (M : Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d))) (ρ υ : L ≃ₐ[K] L) :
+    (leftGenerator c d σ x * M) ρ υ = inc (c * d) (ρ x * c.toFun ρ σ) * M (ρ * σ) υ := by
+  rw [Matrix.mul_apply, Finset.sum_eq_single (ρ * σ)]
+  · simp
+  · intro κ _ hκ
+    simp [hκ]
+  · simp
+
+omit [IsGalois K L] in
+/-- Row `ρ` of `rightGenerator c d σ x` has its only nonzero entry in column `σ⁻¹ * ρ`. -/
+private theorem rightGenerator_mul_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L)
+    (M : Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d))) (ρ υ : L ≃ₐ[K] L) :
+    (rightGenerator c d σ x * M) ρ υ =
+      inc (c * d) (x * (c.toFun σ (σ⁻¹ * ρ))⁻¹) * basis (c * d) σ * M (σ⁻¹ * ρ) υ := by
+  rw [Matrix.mul_apply, Finset.sum_eq_single (σ⁻¹ * ρ)]
+  · simp
+  · intro κ _ hκ
+    have hρ : ρ ≠ σ * κ := by
+      rintro rfl
+      exact hκ (inv_mul_cancel_left σ κ).symm
+    rw [rightGenerator_apply, ite_eq_right hρ, zero_mul]
+  · simp
 
 omit [IsGalois K L] in
 private theorem leftGenerator_mul (c d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L) (x y : L) :
@@ -298,96 +295,36 @@ private noncomputable def rightAlgHom (c d : TwoCocycle K L) :
       Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
   AlgHom.ofLinearMap (rightLinear c d) (rightLinear_one c d) (rightLinear_mul c d)
 
+omit [FiniteDimensional K L] [IsGalois K L] in
+/-- The scalar identity behind the commutation of the two actions, at the entry in row `τ * κ` and
+column `κ * σ`: it is the cocycle identity for `(τ, κ, σ)`. -/
+private theorem comm_scalar (c : TwoCocycle K L) (σ τ κ : L ≃ₐ[K] L) (x y : L) :
+    (τ * κ) x * c.toFun (τ * κ) σ * (y * ↑(c.toFun τ (κ * σ))⁻¹) =
+      y * ↑(c.toFun τ κ)⁻¹ * τ (κ x * c.toFun κ σ) := by
+  have hc := c.map_toFun_mul_toFun τ κ σ
+  rw [AlgEquiv.mul_apply, map_mul, Units.val_inv_eq_inv_val, Units.val_inv_eq_inv_val]
+  field_simp
+  linear_combination -τ (κ x) * y * hc
+
 omit [IsGalois K L] in
 private theorem leftGenerator_comm_rightGenerator (c d : TwoCocycle K L)
     (σ τ : L ≃ₐ[K] L) (x y : L) :
     leftGenerator c d σ x * rightGenerator c d τ y =
       rightGenerator c d τ y * leftGenerator c d σ x := by
-  classical
   apply Matrix.ext
   intro ρ υ
-  simp only [Matrix.mul_apply]
-  by_cases h : ρ * σ = τ * υ
-  · rw [Finset.sum_eq_single (ρ * σ), Finset.sum_eq_single (τ⁻¹ * ρ)]
-    · have hρ : ρ = τ * (τ⁻¹ * ρ) := by group
-      have hυ : υ = (τ⁻¹ * ρ) * σ := by
-        calc
-          υ = τ⁻¹ * (τ * υ) := by group
-          _ = τ⁻¹ * (ρ * σ) := by rw [h]
-          _ = (τ⁻¹ * ρ) * σ := by group
-      rw [leftGenerator_apply, rightGenerator_apply, rightGenerator_apply,
-        leftGenerator_apply, ite_eq_left rfl, ite_eq_left h, ite_eq_left hρ,
-        ite_eq_left hυ]
-      rw [← mul_assoc
-          (inc (c * d) (ρ x * c.toFun ρ σ))
-          (inc (c * d) (y * (c.toFun τ υ)⁻¹))
-          (basis (c * d) τ),
-        ← map_mul,
-        mul_assoc
-          (inc (c * d) (y * (c.toFun τ (τ⁻¹ * ρ))⁻¹))
-          (basis (c * d) τ)
-          (inc (c * d) ((τ⁻¹ * ρ) x * c.toFun (τ⁻¹ * ρ) σ)),
-        basis_mul_inc,
-        ← mul_assoc
-          (inc (c * d) (y * (c.toFun τ (τ⁻¹ * ρ))⁻¹))
-          (inc (c * d) (τ ((τ⁻¹ * ρ) x * c.toFun (τ⁻¹ * ρ) σ)))
-          (basis (c * d) τ),
-        ← map_mul,
-        ← smul_def, ← smul_def]
-      congr 1
-      rw [hυ]
-      have hc := c.map_toFun_mul_toFun τ (τ⁻¹ * ρ) σ
-      rw [← hρ] at hc
-      have hx : τ ((τ⁻¹ * ρ) x) = ρ x := by
-        rw [← AlgEquiv.mul_apply, ← hρ]
-      simp only [map_mul]
-      rw [hx]
-      simp only [Units.val_inv_eq_inv_val]
-      field_simp
-      linear_combination -ρ x * y * hc
-    · intro κ _ hκ
-      have hκ' : ρ ≠ τ * κ := by
-        intro h'
-        apply hκ
-        rw [h']
-        group
-      have hz : rightGenerator c d τ y ρ κ = 0 := by
-        rw [rightGenerator_apply]
-        exact ite_eq_right hκ'
-      rw [hz, zero_mul]
-    · simp
-    · intro κ _ hκ
-      have hz : leftGenerator c d σ x ρ κ = 0 := by
-        rw [leftGenerator_apply]
-        exact ite_eq_right hκ
-      rw [hz, zero_mul]
-    · simp
-  · rw [Finset.sum_eq_zero, Finset.sum_eq_zero]
-    · intro κ _
-      by_cases hκ : ρ = τ * κ
-      · have hκ' : υ ≠ κ * σ := by
-          intro h'
-          apply h
-          rw [hκ, h', mul_assoc]
-        have hz : leftGenerator c d σ x κ υ = 0 := by
-          rw [leftGenerator_apply]
-          exact ite_eq_right hκ'
-        rw [hz, mul_zero]
-      · have hz : rightGenerator c d τ y ρ κ = 0 := by
-          rw [rightGenerator_apply]
-          exact ite_eq_right hκ
-        rw [hz, zero_mul]
-    · intro κ _
-      by_cases hκ : κ = ρ * σ
-      · subst κ
-        have hz : rightGenerator c d τ y (ρ * σ) υ = 0 := by
-          rw [rightGenerator_apply]
-          exact ite_eq_right h
-        rw [hz, mul_zero]
-      · have hz : leftGenerator c d σ x ρ κ = 0 := by
-          rw [leftGenerator_apply]
-          exact ite_eq_right hκ
-        rw [hz, zero_mul]
+  -- Write the row index as `τ * κ`, so that both products are supported on the column `κ * σ`.
+  obtain ⟨κ, rfl⟩ : ∃ κ, ρ = τ * κ := ⟨τ⁻¹ * ρ, (mul_inv_cancel_left τ ρ).symm⟩
+  rw [leftGenerator_mul_apply, rightGenerator_mul_apply, inv_mul_cancel_left,
+    rightGenerator_apply, leftGenerator_apply]
+  by_cases hυ : υ = κ * σ
+  · subst hυ
+    rw [ite_eq_left (mul_assoc τ κ σ), ite_eq_left rfl]
+    -- Move `inc` past `u_τ` on the right, then collect the scalars on both sides.
+    rw [mul_assoc _ (basis (c * d) τ), basis_mul_inc, ← mul_assoc, ← mul_assoc, ← map_mul,
+      ← map_mul, comm_scalar]
+  · have hne : τ * κ * σ ≠ τ * υ := fun h ↦ hυ (by simpa [mul_assoc] using h.symm)
+    rw [ite_eq_right hne, ite_eq_right hυ, mul_zero, mul_zero]
 
 omit [IsGalois K L] in
 private theorem leftAlgHom_comm_rightAlgHom (c d : TwoCocycle K L)
@@ -423,19 +360,36 @@ private theorem finrank_tensorProduct_eq_matrix (c d : TwoCocycle K L) :
 crossed product for their pointwise product. -/
 noncomputable def tensorProductAlgEquivMatrix (c d : TwoCocycle K L) :
     CrossedProduct c ⊗[K] CrossedProduct d ≃ₐ[K]
-      Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) := by
-  let f := tensorProductToMatrix c d
-  have hinj : Function.Injective f := f.toRingHom.injective
-  have hsurj : Function.Surjective f :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-      (finrank_tensorProduct_eq_matrix c d)).mp hinj
-  exact AlgEquiv.ofBijective f ⟨hinj, hsurj⟩
+      Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d)) :=
+  have hinj : Function.Injective (tensorProductToMatrix c d) :=
+    (tensorProductToMatrix c d).toRingHom.injective
+  AlgEquiv.ofBijective (tensorProductToMatrix c d)
+    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (finrank_tensorProduct_eq_matrix c d)).mp hinj⟩
+
+/-- The matrix of `(x • u_σ) ⊗ 1` under `tensorProductAlgEquivMatrix`: row `ρ` has its only
+nonzero entry `ρ(x) · c(ρ, σ)` in column `ρ * σ`. -/
+@[simp]
+theorem tensorProductAlgEquivMatrix_smul_basis_tmul_one_apply (c d : TwoCocycle K L)
+    (σ : L ≃ₐ[K] L) (x : L) (ρ τ : L ≃ₐ[K] L) :
+    tensorProductAlgEquivMatrix c d ((x • basis c σ) ⊗ₜ[K] 1) ρ τ =
+      if τ = ρ * σ then inc (c * d) (ρ x * c.toFun ρ σ) else 0 := by
+  simp [tensorProductAlgEquivMatrix, tensorProductToMatrix, leftAlgHom]
+
+/-- The matrix of `1 ⊗ (y • u_σ)` under `tensorProductAlgEquivMatrix`: column `τ` has its only
+nonzero entry `(y · c(σ, τ)⁻¹) · u_σ` in row `σ * τ`. -/
+@[simp]
+theorem tensorProductAlgEquivMatrix_one_tmul_smul_basis_apply (c d : TwoCocycle K L)
+    (σ : L ≃ₐ[K] L) (y : L) (ρ τ : L ≃ₐ[K] L) :
+    tensorProductAlgEquivMatrix c d (1 ⊗ₜ[K] (y • basis d σ)) ρ τ =
+      if ρ = σ * τ then inc (c * d) (y * (c.toFun σ τ)⁻¹) * basis (c * d) σ else 0 := by
+  simp [tensorProductAlgEquivMatrix, tensorProductToMatrix, rightAlgHom]
 
 end CrossedProduct
 
 namespace BrauerGroup
 
-variable [FiniteDimensional K L] [IsGalois K L]
+variable {L : Type u} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
 
 /-- **Multiplication of crossed-product classes.** The pointwise product of two Galois
 `2`-cocycles presents the product of the Brauer classes presented by the two cocycles. -/
