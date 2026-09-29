@@ -196,6 +196,7 @@ lemma finrank_tangentSpace_eq_finrank_cotangentSpace (A : AbelianVariety K) :
 
 /-- The tangent space of an abelian variety at the identity has dimension the dimension of the
 abelian variety. -/
+@[simp]
 theorem finrank_tangentSpace_eq_dim (A : AbelianVariety K) :
     (Module.finrank K A.TangentSpace : WithBot ℕ∞) = A.dim := by
   have := isRegularLocalRing_stalk_of_smooth A.toOver.hom A.zeroPoint

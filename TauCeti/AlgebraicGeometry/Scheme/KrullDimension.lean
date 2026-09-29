@@ -201,7 +201,7 @@ theorem ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed {K : Type u} [Fiel
   -- Pass to an affine chart `Spec R` around `x`, in which `x` is a maximal ideal of the finitely
   -- generated `K`-domain `R`; its height is `dim R`, and the chart has the dimension of `X`.
   obtain ⟨R, g, _, ⟨y, rfl⟩, -⟩ :=
-    X.exists_affine_mem_range_and_range_subset (show x ∈ ⊤ from trivial)
+    X.exists_affine_mem_range_and_range_subset (x := x) (U := ⊤) (by simp)
   obtain ⟨φ, hφ⟩ : ∃ φ, Spec.map φ = g ≫ f := ⟨_, Spec.map_preimage _⟩
   let := φ.hom.toAlgebra
   have : Algebra.FiniteType K R :=

@@ -188,15 +188,8 @@ lemma toOver_hom_zeroPoint (A : AbelianVariety K) :
 /-- The identity point is a closed point: the zero section is a section of the separated structure
 morphism, hence a closed immersion, and its image is the identity point. -/
 lemma isClosed_singleton_zeroPoint (A : AbelianVariety K) : IsClosed {A.zeroPoint} := by
-  have : IsClosedImmersion (A.zeroSection ≫ A.toOver.hom) := by
-    rw [zeroSection_comp_toOver_hom]
-    infer_instance
-  have : IsClosedImmersion A.zeroSection := IsClosedImmersion.of_comp A.zeroSection A.toOver.hom
-  convert A.zeroSection.isClosedEmbedding.isClosed_range
-  ext x
-  refine ⟨fun hx ↦ ⟨_, hx.symm⟩, ?_⟩
-  rintro ⟨y, rfl⟩
-  rw [Set.mem_singleton_iff, zeroPoint_def, Subsingleton.elim y (IsLocalRing.closedPoint K)]
+  rw [zeroPoint_def]
+  exact isClosed_singleton_of_section (zeroSection_comp_toOver_hom A)
 
 /-- The residue field of an abelian variety at its identity is canonically the ground field `K`,
 through the evaluation map of the zero section. -/
