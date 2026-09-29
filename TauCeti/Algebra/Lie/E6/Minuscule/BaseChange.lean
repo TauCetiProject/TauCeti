@@ -97,7 +97,7 @@ variable (A : Type v) [CommRing A]
 
 /-- The Hopf ideal in `O(GL₂₇/A)` obtained by transporting the defining ideal of the integral
 full-weight type-`E₆` minuscule carrier along `ℤ → A`. -/
-noncomputable def baseChangeDefiningIdeal :
+@[expose] noncomputable def baseChangeDefiningIdeal :
     HopfIdeal A (GeneralLinear.coordinateHopfAlgebra A 27) :=
   kostantToralBaseChangePresentationIdeal
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
