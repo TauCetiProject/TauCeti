@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 import Mathlib.NumberTheory.ModularForms.RamanujanFormula
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
+import TauCeti.NumberTheory.ModularForms.Basic
 
 /-!
 # The level-one modular invariant
@@ -141,26 +142,30 @@ private lemma denom_S_mul_T_ρ : denom (mapGL ℝ (S * T)) ρ = ρ + 1 := by
 /-- A form of weight `k` for a group containing `S` vanishes at the elliptic point `i` unless
 `4 ∣ k`. -/
 theorem apply_I_eq_zero_of_not_dvd {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)}
-    [Γ.HasDetOne] {k : ℤ} [SlashInvariantFormClass F Γ k] (hS : mapGL ℝ S ∈ Γ) (f : F)
+    {k : ℤ} [SlashInvariantFormClass F Γ k] (hS : mapGL ℝ S ∈ Γ) (f : F)
     (hk : ¬ (4 : ℤ) ∣ k) : f I = 0 := by
   have hSI : mapGL ℝ S • I = I := by
     rw [← MulAction.compHom_smul_def]
     exact stabilizer_I.mpr (by simp)
-  have h := SlashInvariantForm.slash_action_eqn'' f hS I
+  have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hS
+    (det_pos_of_mem_slGL ⟨S, rfl⟩) I
   rw [hSI, denom_S_I] at h
+  simp at h
   by_contra hf
   exact hk ((Complex.isPrimitiveRoot_I.zpow_eq_one_iff_dvd k).mp ((mul_eq_right₀ hf).mp h.symm))
 
 /-- A form of weight `k` for a group containing `S * T` vanishes at the elliptic point `ρ`
 unless `6 ∣ k`. -/
 theorem apply_ρ_eq_zero_of_not_dvd {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)}
-    [Γ.HasDetOne] {k : ℤ} [SlashInvariantFormClass F Γ k] (hST : mapGL ℝ (S * T) ∈ Γ)
+    {k : ℤ} [SlashInvariantFormClass F Γ k] (hST : mapGL ℝ (S * T) ∈ Γ)
     (f : F) (hk : ¬ (6 : ℤ) ∣ k) : f ρ = 0 := by
   have hSTρ : mapGL ℝ (S * T) • ρ = ρ := by
     rw [← MulAction.compHom_smul_def]
     exact stabilizer_ρ.mpr (by simp)
-  have h := SlashInvariantForm.slash_action_eqn'' f hST ρ
+  have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hST
+    (det_pos_of_mem_slGL ⟨S * T, rfl⟩) ρ
   rw [hSTρ, denom_S_mul_T_ρ] at h
+  simp at h
   by_contra hf
   exact hk ((isPrimitiveRoot_ρ_add_one.zpow_eq_one_iff_dvd k).mp ((mul_eq_right₀ hf).mp h.symm))
 
