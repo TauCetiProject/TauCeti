@@ -59,11 +59,6 @@ This is the existence predicate used by later hyperbolic-volume and Mostow-rigid
 the chosen metric remains available through `HyperbolicMetric` when a proof is needed. -/
 def IsHyperbolic : Prop := Nonempty (HyperbolicMetric (I := I) (M := M))
 
-omit [T2Space (TangentBundle I M)] in
-/-- The existence predicate for a hyperbolic metric is the corresponding nonempty witness type. -/
-theorem isHyperbolic_iff_nonempty :
-    IsHyperbolic (I := I) (M := M) ↔ Nonempty (HyperbolicMetric (I := I) (M := M)) := Iff.rfl
-
 namespace HyperbolicMetric
 
 omit [T2Space (TangentBundle I M)] in
