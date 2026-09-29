@@ -68,6 +68,7 @@ theorem isPretransitive_referenceSubgroup_four_two_inf_alternatingGroup :
 
 /-- The even part of a transitive quartic permutation group is transitive exactly when the group
 is not the cyclic group `4T1`. In particular, this separates the cyclic and dihedral groups. -/
+@[simp]
 theorem TransitiveGroupLabel.isPretransitive_inf_alternatingGroup_iff_ne_zero
     {j : TransitiveGroupIndex 4} {G : Subgroup (Perm (Fin 4))}
     (h : TransitiveGroupLabel j G) :
