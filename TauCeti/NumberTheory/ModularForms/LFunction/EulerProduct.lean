@@ -153,10 +153,10 @@ theorem LSeries_eulerProduct_hasProd (f : Newform N k) {s : ℂ}
     (hs : (k : ℝ) / 2 + 1 < s.re) :
     HasProd (fun p : Nat.Primes ↦
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
-          (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
+          f.dirichletLift p.val *
             (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹)
       (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) := by
-  simpa only [toEigenform_toCuspForm, toEigenform_χ] using
+  simpa only [dirichletLift_eq_ofUnitHom, toEigenform_toCuspForm, toEigenform_χ] using
     (f.toEigenform.LSeries_eulerProduct_hasProd
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hs)
 
@@ -165,7 +165,7 @@ theorem LSeries_eulerProduct_tprod (f : Newform N k) {s : ℂ}
     (hs : (k : ℝ) / 2 + 1 < s.re) :
     (∏' p : Nat.Primes,
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
-          (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
+          f.dirichletLift p.val *
             (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹) =
       LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
   (f.LSeries_eulerProduct_hasProd hs).tprod_eq
@@ -176,10 +176,10 @@ theorem LSeries_eulerProduct (f : Newform N k) {s : ℂ}
     Tendsto (fun n : ℕ ↦
         ∏ p ∈ Nat.primesBelow n,
           (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
-            (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
+            f.dirichletLift p *
               (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s)) := by
-  simpa only [toEigenform_toCuspForm, toEigenform_χ] using
+  simpa only [dirichletLift_eq_ofUnitHom, toEigenform_toCuspForm, toEigenform_χ] using
     (f.toEigenform.LSeries_eulerProduct
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hs)
 
@@ -188,10 +188,10 @@ theorem L_eulerProduct_hasProd (f : Newform N k) (hk : 0 < k) {s : ℂ}
     (hs : (k : ℝ) / 2 + 1 < s.re) :
     HasProd (fun p : Nat.Primes ↦
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
-          (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
+          f.dirichletLift p.val *
             (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹)
       (ModularForm.L hk f.toCuspForm s) := by
-  simpa only [toEigenform_toCuspForm, toEigenform_χ] using
+  simpa only [dirichletLift_eq_ofUnitHom, toEigenform_toCuspForm, toEigenform_χ] using
     (f.toEigenform.L_eulerProduct_hasProd
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hk hs)
 
@@ -200,7 +200,7 @@ theorem L_eulerProduct_tprod (f : Newform N k) (hk : 0 < k) {s : ℂ}
     (hs : (k : ℝ) / 2 + 1 < s.re) :
     (∏' p : Nat.Primes,
         (1 - (qExpansion 1 f.toCuspForm).coeff p.val * (p.val : ℂ) ^ (-s) +
-          (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
+          f.dirichletLift p.val *
             (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹) =
       ModularForm.L hk f.toCuspForm s :=
   (f.L_eulerProduct_hasProd hk hs).tprod_eq
@@ -211,10 +211,10 @@ theorem L_eulerProduct (f : Newform N k) (hk : 0 < k) {s : ℂ}
     Tendsto (fun n : ℕ ↦
         ∏ p ∈ Nat.primesBelow n,
           (1 - (qExpansion 1 f.toCuspForm).coeff p * (p : ℂ) ^ (-s) +
-            (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
+            f.dirichletLift p *
               (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (ModularForm.L hk f.toCuspForm s)) := by
-  simpa only [toEigenform_toCuspForm, toEigenform_χ] using
+  simpa only [dirichletLift_eq_ofUnitHom, toEigenform_toCuspForm, toEigenform_χ] using
     (f.toEigenform.L_eulerProduct
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hk hs)
 
