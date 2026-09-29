@@ -478,7 +478,10 @@ section CommRing
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
 
-/-- The determinant-one isometry group of a bilinear form. -/
+/-- The determinant-one isometry group of a bilinear form.
+
+The determinant is Mathlib's `LinearEquiv.det`, which is `1` by convention on a module that is not
+finite free; on such a module this subgroup is therefore all of `isometryGroup B`. -/
 noncomputable def specialIsometryGroup (B : BilinForm R M) : Subgroup (M ≃ₗ[R] M) :=
   isometryGroup B ⊓ (LinearEquiv.det (R := R) (M := M)).ker
 
