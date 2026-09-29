@@ -39,8 +39,7 @@ with pair of definition `(A_inf, (p, [ϖ]))`.
 
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017, §3.1.
 * J. Jiang, `Mathlib.RingTheory.WittVector.Complete` in Mathlib: the `p`-adic case
-  `WittVector.isAdicCompleteIdealSpanP`. The proof of `WittVector.isPrecomplete_span_p_teichmuller`
-  adapts its coordinatewise diagonal construction of the limit.
+  `WittVector.isAdicCompleteIdealSpanP`.
 -/
 
 public section
@@ -141,6 +140,7 @@ precomplete for the `(p, [ϖ])`-adic filtration. -/
 instance isPrecomplete_span_p_teichmuller (ϖ : R) [IsPrecomplete (span {ϖ}) R] :
     IsPrecomplete (span {(p : 𝕎 R), teichmuller p ϖ}) (𝕎 R) where
   prec' f hf := by
+    -- Adapt Jiang's coordinatewise diagonal construction for the `p`-adic case.
     simp only [smul_eq_mul, mul_top, SModEq.sub_mem] at hf ⊢
     -- The coordinates of `f (k + k)` and `f (l + l)` below `k` agree modulo `ϖ ^ k`.
     have key {k l : ℕ} (hkl : k ≤ l) {i : ℕ} (hi : i < k) :
