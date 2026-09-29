@@ -79,32 +79,6 @@ noncomputable def generalLinearContinuousMulEquiv :
     exact (LinearMap.GeneralLinearGroup.generalLinearEquiv K V).symm_apply_apply x
   continuous_invFun := continuous_induced_dom
 
-omit [TopologicalSpace K] in
-/-- The endomorphism underlying a linear automorphism agrees with the forward projection of
-its image in the general linear group. -/
-@[simp]
-theorem linearEquiv_coe_generalLinearEquiv_symm (f : V ≃ₗ[K] V) :
-    (((LinearMap.GeneralLinearGroup.generalLinearEquiv K V).symm f :
-      LinearMap.GeneralLinearGroup K V) : Module.End K V) = (f : Module.End K V) := rfl
-
-omit [TopologicalSpace K] in
-/-- The inverse endomorphism underlying a linear automorphism agrees with the inverse
-projection of its image in the general linear group. -/
-@[simp]
-theorem linearEquiv_coe_inv_generalLinearEquiv_symm (f : V ≃ₗ[K] V) :
-    (((((LinearMap.GeneralLinearGroup.generalLinearEquiv K V).symm f)⁻¹ :
-      LinearMap.GeneralLinearGroup K V) : Module.End K V)) =
-      ((f⁻¹ : V ≃ₗ[K] V) : Module.End K V) := rfl
-
-/-- The underlying endomorphism varies continuously with a linear automorphism. -/
-@[fun_prop]
-theorem continuous_linearEquiv_toLinearMap :
-    Continuous (fun e : V ≃ₗ[K] V => (e : Module.End K V)) := by
-  have h : Continuous ((LinearMap.GeneralLinearGroup.generalLinearEquiv K V).symm :
-      (V ≃ₗ[K] V) → LinearMap.GeneralLinearGroup K V) := continuous_induced_dom
-  simpa only [Function.comp_def, linearEquiv_coe_generalLinearEquiv_symm] using
-    Units.continuous_val.comp h
-
 /-- A family of linear automorphisms is continuous exactly when its forward and inverse
 endomorphisms are both continuous. -/
 theorem continuous_linearEquiv_iff {X : Type*} [TopologicalSpace X]
@@ -122,7 +96,19 @@ theorem continuous_linearEquiv_iff {X : Type*} [TopologicalSpace X]
       t.symm a) he
   simp only [Function.comp_def, he_symm]
   dsimp only [g]
-  simp only [linearEquiv_coe_generalLinearEquiv_symm,
-    linearEquiv_coe_inv_generalLinearEquiv_symm]
+  have h_forward (a : V ≃ₗ[K] V) :
+      (((LinearMap.GeneralLinearGroup.generalLinearEquiv K V).symm a :
+        LinearMap.GeneralLinearGroup K V) : Module.End K V) = (a : Module.End K V) := rfl
+  have h_inverse (a : V ≃ₗ[K] V) :
+      (((((LinearMap.GeneralLinearGroup.generalLinearEquiv K V).symm a)⁻¹ :
+        LinearMap.GeneralLinearGroup K V) : Module.End K V)) =
+        ((a⁻¹ : V ≃ₗ[K] V) : Module.End K V) := rfl
+  simp only [h_forward, h_inverse]
+
+/-- The underlying endomorphism varies continuously with a linear automorphism. -/
+@[fun_prop]
+theorem continuous_linearEquiv_toLinearMap :
+    Continuous (fun e : V ≃ₗ[K] V => (e : Module.End K V)) :=
+  (continuous_linearEquiv_iff.mp (continuous_id : Continuous (fun e : V ≃ₗ[K] V => e))).1
 
 end TauCeti
