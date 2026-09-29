@@ -46,7 +46,7 @@ theorem mem_centralAugmentationCenterIdeal (z : Subalgebra.center K H) :
 commutative center. -/
 @[simp]
 theorem map_centralAugmentationCenterIdeal :
-    Ideal.map (Subalgebra.center K H).val.toRingHom
+    Ideal.map ((Subalgebra.center K H).val : (Subalgebra.center K H) →+* H)
       (centralAugmentationCenterIdeal K H) = centralAugmentationIdeal K H := by
   apply le_antisymm
   · rw [Ideal.map_le_iff_le_comap]
@@ -72,8 +72,9 @@ theorem mem_iInf_centralAugmentationIdeal_pow_iff
       ∃ z ∈ centralAugmentationCenterIdeal K H, (z : H) * x = x := by
   have h := @Ideal.mem_iInf_map_algebraMap_pow_iff
     (Subalgebra.center K H) H _ _ _ _ hFinite (centralAugmentationCenterIdeal K H) x
-  rw [Subalgebra.centerAlgebra_algebraMap,
-    map_centralAugmentationCenterIdeal] at h
+  rw [Subalgebra.centerAlgebra_algebraMap] at h
+  simp only [AlgHom.toRingHom_eq_coe] at h
+  rw [map_centralAugmentationCenterIdeal] at h
   exact h
 
 /-- If the Hopf algebra has no zero divisors, the central augmentation ideal is separated by
@@ -91,8 +92,9 @@ theorem iInf_centralAugmentationIdeal_pow_eq_bot
     have hzero := (mem_centralAugmentationCenterIdeal K H z).mp hz
     have hone := congrArg (Coalgebra.counit (R := K)) heq
     simp [hzero] at hone
-  rw [Subalgebra.centerAlgebra_algebraMap,
-    map_centralAugmentationCenterIdeal] at h
+  rw [Subalgebra.centerAlgebra_algebraMap] at h
+  simp only [AlgHom.toRingHom_eq_coe] at h
+  rw [map_centralAugmentationCenterIdeal] at h
   exact h
 
 end TauCeti.HopfIdeal
