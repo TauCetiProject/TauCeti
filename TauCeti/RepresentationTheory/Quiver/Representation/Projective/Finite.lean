@@ -71,7 +71,8 @@ theorem vertexProjectiveModuleFG_obj [FiniteDimensional k (pathAlgebra k Q)] (i 
 /-- A finite vertex projective is projective as a path-algebra module. -/
 instance [FiniteDimensional k (pathAlgebra k Q)] (i : Q) :
     Module.Projective (pathAlgebra k Q) (vertexProjectiveModuleFG k Q i) := by
-  change Module.Projective (pathAlgebra k Q) (indecProjModule k Q i)
+  change Module.Projective (pathAlgebra k Q) (vertexProjectiveModuleFG k Q i).obj
+  rw [vertexProjectiveModuleFG_obj]
   infer_instance
 
 /-- A finite vertex projective is a projective object of finitely generated modules. -/

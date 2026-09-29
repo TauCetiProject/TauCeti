@@ -137,7 +137,7 @@ is the number of oriented paths from `j` to `i`. With simples in rows and projec
 these are the entries of the Cartan matrix of a finite acyclic path algebra. -/
 -- The general multiplicity and projective-object simp lemmas simplify the left-hand side first;
 -- marking this specialization `@[simp]` fails the `simpNF` linter.
-theorem jordanHolderMultiplicity_indecProjModule_eq_card_path (i j : Q) :
+theorem jordanHolderMultiplicity_vertexProjectiveModuleFG_eq_card_path (i j : Q) :
     jordanHolderMultiplicity (pathAlgebra k Q)
       (vertexProjectiveModuleFG k Q j)
       (vertexSimpleModuleFG k Q i) = Nat.card (Quiver.Path j i) := by
