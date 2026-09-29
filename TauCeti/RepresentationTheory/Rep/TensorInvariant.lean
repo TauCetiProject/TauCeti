@@ -99,19 +99,6 @@ theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
       (x : M.V) ⊗ₜ[k] y := by
   simp [_root_.Rep.hom_braiding]
 
-/-- Restricting `y ↦ x ⊗ₜ y` along a monoid homomorphism gives the same map for the restricted
-representations, tensoring with `x` viewed as an invariant of the restriction. -/
-theorem resMap_tensorInvariant_braiding (N : _root_.Rep k G) {H : Type u} [Group H] (f : H →* G)
-    (x : M.ρ.invariants) (x' : (_root_.Rep.res f M).ρ.invariants) (hx : (x' : M.V) = x) :
-    _root_.Rep.resMap f (_root_.Rep.tensorInvariant N x ≫ (β_ N M).hom) =
-      _root_.Rep.tensorInvariant (_root_.Rep.res f N) x' ≫
-        (β_ (_root_.Rep.res f N) (_root_.Rep.res f M)).hom := by
-  ext y
-  -- Restriction keeps the underlying linear map, so both sides are evaluations of
-  -- `tensorInvariant_braiding_hom_apply`.
-  exact (tensorInvariant_braiding_hom_apply x y).trans
-    ((congrArg (· ⊗ₜ[k] y) hx.symm).trans (tensorInvariant_braiding_hom_apply x' y).symm)
-
 end TauCeti.Rep
 
 namespace Rep
@@ -135,5 +122,18 @@ theorem tensorInvariant_one_braiding_leftUnitor (M : Rep k G) :
   -- defines that unit as `Rep.trivial k G k`; `change` checks precisely this definitional equality.
   change (ρ_ M).inv ≫ (β_ M (𝟙_ (Rep k G))).hom ≫ (λ_ M).hom = 𝟙 M
   rw [braiding_leftUnitor, Iso.inv_hom_id]
+
+/-- Restricting `y ↦ x ⊗ₜ y` along a monoid homomorphism gives the same map for the restricted
+representations, tensoring with `x` viewed as an invariant of the restriction. -/
+theorem resMap_tensorInvariant_braiding {M : Rep k G} (N : Rep k G) {H : Type u} [Group H]
+    (f : H →* G) (x : M.ρ.invariants) (x' : (Rep.res f M).ρ.invariants) (hx : (x' : M.V) = x) :
+    Rep.resMap f (tensorInvariant N x ≫ (β_ N M).hom) =
+      tensorInvariant (Rep.res f N) x' ≫ (β_ (Rep.res f N) (Rep.res f M)).hom := by
+  ext y
+  -- Restriction keeps the underlying linear map, so both sides are evaluations of
+  -- `tensorInvariant_braiding_hom_apply`.
+  exact (TauCeti.Rep.tensorInvariant_braiding_hom_apply x y).trans
+    ((congrArg (· ⊗ₜ[k] y) hx.symm).trans
+      (TauCeti.Rep.tensorInvariant_braiding_hom_apply x' y).symm)
 
 end Rep
