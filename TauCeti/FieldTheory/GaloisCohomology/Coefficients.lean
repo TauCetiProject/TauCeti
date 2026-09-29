@@ -66,7 +66,8 @@ are strictly larger than `Kˣ`.
   the invariant `σ b` of `(Kˢ)ˣ` under the subgroup of `G_K` fixing `σ(L)`.
 * `TauCeti.embeddedUnitsEquivInvariants`: the isomorphism `Lˣ ≅ H⁰(Gal(Kˢ/σ(L)), (Kˢ)ˣ)`.
   For normal `L/K` it intertwines the action of `σ.restrictNormalHom g` with that of `g`
-  (`TauCeti.embeddedUnitsEquivInvariants_restrictNormalHom_smul`).
+  (`TauCeti.embeddedUnitsEquivInvariants_restrictNormalHom_smul`, with the `simp` form
+  `TauCeti.coe_embeddedUnitsInvariants_map_restrictNormalHom`).
 
 ## Main results
 
@@ -370,6 +371,21 @@ theorem embeddedUnitsEquivInvariants_apply (b : Additive Lˣ) :
     embeddedUnitsEquivInvariants K L σ b = embeddedUnitsInvariants K L σ b.toMul :=
   (rfl)
 
+/-- **`embeddedUnitsInvariants` is Galois-equivariant**, in `simp`-normal form: for normal `L/K`,
+embedding by `σ` turns the restriction `σ.restrictNormalHom g` acting on `Lˣ` into the action of
+`g` on `(Kˢ)ˣ`. -/
+@[simp]
+theorem coe_embeddedUnitsInvariants_map_restrictNormalHom [Normal K L]
+    (g : AbsoluteGaloisGroup K) (b : Lˣ) :
+    (embeddedUnitsInvariants K L σ (Units.map (σ.restrictNormalHom g : L →* L) b) :
+        UnitsCoeff K) =
+      g • (embeddedUnitsInvariants K L σ b : UnitsCoeff K) := by
+  refine Additive.toMul.injective (Units.ext ?_)
+  rw [Additive.toMul_smul, toMul_coe_embeddedUnitsInvariants, toMul_coe_embeddedUnitsInvariants,
+    AlgEquiv.smul_units_def]
+  simp only [Units.coe_map]
+  exact σ.restrictNormalHom_commutes g b
+
 /-- **`embeddedUnitsEquivInvariants` is Galois-equivariant**: for normal `L/K`, embedding by `σ`
 turns the action of the restriction `σ.restrictNormalHom g` on `Lˣ` into the action of `g` on
 `(Kˢ)ˣ`. -/
@@ -378,12 +394,7 @@ theorem embeddedUnitsEquivInvariants_restrictNormalHom_smul [Normal K L]
     (embeddedUnitsEquivInvariants K L σ (Additive.ofMul (σ.restrictNormalHom g • b.toMul)) :
         UnitsCoeff K) =
       g • (embeddedUnitsEquivInvariants K L σ b : UnitsCoeff K) := by
-  refine Additive.toMul.injective (Units.ext ?_)
-  rw [embeddedUnitsEquivInvariants_apply, embeddedUnitsEquivInvariants_apply, Additive.toMul_smul,
-    toMul_coe_embeddedUnitsInvariants, toMul_coe_embeddedUnitsInvariants, toMul_ofMul,
-    AlgEquiv.smul_units_def, AlgEquiv.smul_units_def]
-  simp only [Units.coe_map]
-  exact σ.restrictNormalHom_commutes g b.toMul
+  simp
 
 end Embedded
 
