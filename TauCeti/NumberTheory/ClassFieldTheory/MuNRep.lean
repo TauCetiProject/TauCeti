@@ -132,10 +132,15 @@ theorem continuous_kummerCoeffEquivMuNRep_symm :
 
 /-- **The coefficient dictionary is equivariant**: `σ ∈ G_F` acts on `muNRep n F` as its
 restriction to the separable closure acts on `TauCeti.KummerCoeff F n`. -/
+@[simp]
 theorem kummerCoeffEquivMuNRep_smul (g : Field.absoluteGaloisGroup F) (x : KummerCoeff F n) :
     kummerCoeffEquivMuNRep n F (absoluteGaloisGroupRestrictEquiv F g • x) =
       (muNRep n F).ρ g (kummerCoeffEquivMuNRep n F x) :=
-  (rfl)
+  (ofDiscreteModule_ρ_apply_apply (R := ZMod n) (absoluteGaloisGroupRestrictEquiv F g) x).symm.trans
+    (ContRepresentation.restrict_apply_apply
+      (ofDiscreteModule (ZMod n) (AbsoluteGaloisGroup F) (KummerCoeff F n)).ρ
+      (absoluteGaloisGroupRestrictEquiv F : Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
+      g x).symm
 
 /-- **`μₙ` is a smooth discrete coefficient object**: the stabilizer of a root of unity is the
 preimage, under the restriction isomorphism, of its open stabilizer in `Gal(Fˢ/F)`. -/
