@@ -197,7 +197,6 @@ theorem maximalUnramifiedGaloisEquivZHat_apply_frobenius :
 
 /-- Integral powers of the canonical generator correspond to the same powers of arithmetic
 Frobenius. -/
-@[simp]
 theorem maximalUnramifiedGaloisEquivZHat_symm_apply_ofInt (n : ℤ) :
     (maximalUnramifiedGaloisEquivZHat K Ω).symm
         (zHat.ofInt (Multiplicative.ofAdd n)) =
