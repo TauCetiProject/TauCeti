@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Marking
-import TauCeti.KnotTheory.Grid.CyclicInterval
 
 /-!
 # X-avoidance of the rectangle in a common-initial-side commutation recut
@@ -43,33 +42,12 @@ theorem disjoint_coveredSquares_XSet_rectangle_recutLeftEqLeft
       (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).rectangle.toGridRectangle.coveredSquares
       (G.swapColumns a (finRotate n a)).XSet := by
   let E := D.recutLeftEqLeft hcommon hone hrectangle hpentagon
-  have hE : E.toRectangleDecomposition = D.recutOfIsEmpty hone hrectangle hpentagon := by
-    simpa only [E, D.recutOfIsEmpty_eq_recut] using
-      D.recutLeftEqLeft_toRectangleDecomposition hcommon hone hrectangle hpentagon
-  have hdata : D.toRectangleDecomposition.IsRecutOfLeftEqLeft
-      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
-    rw [D.recutOfIsEmpty_eq_recut]
-    exact D.toRectangleDecomposition.isRecutOfLeftEqLeft_recut
-      (by simpa only [toRectangleDecomposition_first_left,
-        toRectangleDecomposition_second_left] using hcommon) hone _ _
-  have hEright : E.rectangle.right = D.rectangle.right := by
-    have h := hdata.recut_sides.2
-    rw [← hE] at h
-    simpa only [toRectangleDecomposition_first_right,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right] using h
-  rcases hdata.recut_branch with ⟨hcol, _, _, hsecondleft⟩ |
-    ⟨hcol, hmiddle, _, hsecondleft⟩
+  rcases D.recut_rectangle_branch_data_of_left_eq_left hcommon hone hrectangle hpentagon with
+    ⟨hcol', hEleft, hEright⟩ |
+    ⟨hcol', hEleft, hEright, hEmiddle, hEbottom, hEtop⟩
   -- The recut rectangle covers neither swapped column. Repartition reduces its X-avoidance
   -- to that of the original rectangle and pentagon.
-  · have hEleft : E.rectangle.left = D.rectangle.left := by
-      rw [← hE] at hsecondleft
-      simpa only [toRectangleDecomposition_first_left,
-        GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left] using hsecondleft
-    have hcol' : D.rectangle.right ∈
-        Grid.cIoo D.rectangle.left (finRotate n a) := by
-      simpa only [toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
-        toRectangleDecomposition_second_right, D.pentagon.right_eq] using hcol
-    have hne : D.rectangle.right ≠ finRotate n a :=
+  · have hne : D.rectangle.right ≠ finRotate n a :=
       Grid.ne_right_of_mem_cIoo hcol'
     have haTail : a ∈ Grid.cIco D.rectangle.right (finRotate n a) :=
       Grid.self_mem_cIco_finRotate hne
@@ -109,34 +87,13 @@ theorem disjoint_coveredSquares_XSet_rectangle_recutLeftEqLeft
       E.rectangle.toGridRectangle hboth).2 hEdisj
   -- The recut rectangle starts at the replaced line. It has the original rectangle's row
   -- interval and a smaller column interval, so subinterval transfer applies.
-  · have hEleft : E.rectangle.left = finRotate n a := by
-      rw [← hE] at hsecondleft
-      simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left,
-        toRectangleDecomposition_second_right, D.pentagon.right_eq] using hsecondleft
-    have hcol' : finRotate n a ∈
-        Grid.cIoo D.rectangle.left D.rectangle.right := by
-      simpa only [toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
-        toRectangleDecomposition_second_right, D.pentagon.right_eq] using hcol
-    have hEmiddle : E.middle = x.swapColumns D.rectangle.left (finRotate n a) := by
-      rw [← hE] at hmiddle
-      simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_middle,
-        toRectangleDecomposition_first_left, toRectangleDecomposition_second_right,
-        D.pentagon.right_eq] using hmiddle
-    have hEbottom : E.rectangle.bottom = D.rectangle.bottom := by
-      rw [GridRectangleBetween.bottom_def, hEleft, hEmiddle,
-        GridState.swapColumns_apply, Equiv.swap_apply_right,
-        ← GridRectangleBetween.bottom_def]
-    have hEtop : E.rectangle.top = D.rectangle.top := by
-      rw [GridRectangleBetween.top_def, hEright, hEmiddle,
-        GridState.swapColumns_apply,
-        Equiv.swap_apply_of_ne_of_ne D.rectangle.left_ne_right.symm
-          (Grid.ne_right_of_mem_cIoo hcol').symm,
-        ← GridRectangleBetween.top_def]
-    have hRows : E.rectangle.toGridRectangle.coveredRows ⊆
+  · have hRows : E.rectangle.toGridRectangle.coveredRows ⊆
         D.rectangle.toGridRectangle.coveredRows := by
-      simp only [GridRectangle.coveredRows_def, GridRectangleBetween.toGridRectangle_bottom,
-        GridRectangleBetween.toGridRectangle_top, hEbottom, hEtop]
-      exact fun _ h => h
+      dsimp only [E]
+      simpa only [GridRectangle.coveredRows_def, GridRectangleBetween.toGridRectangle_bottom,
+        GridRectangleBetween.toGridRectangle_top, hEbottom, hEtop] using
+        (show Grid.cIco D.rectangle.bottom D.rectangle.top ⊆
+          Grid.cIco D.rectangle.bottom D.rectangle.top from fun _ h => h)
     have ha : a ∈ D.rectangle.toGridRectangle.coveredColumns := by
       rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
         GridRectangleBetween.toGridRectangle_right]
