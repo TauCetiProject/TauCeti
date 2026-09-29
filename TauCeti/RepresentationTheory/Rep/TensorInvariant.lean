@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.RelativeNorm
+public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
 # Tensoring a representation with an invariant

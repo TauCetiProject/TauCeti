@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.Coset.Basic
 
@@ -186,11 +187,6 @@ theorem apply_eq_apply_of_quotientGroup_mk_eq {x : V}
     ⟨⟨a⁻¹ * b, QuotientGroup.eq.mp hab⟩, by simp⟩
   rw [map_mul, Module.End.mul_apply]
   exact congrArg (ρ a) (((mem_invariants _ _).mp hx h).symm)
-
-/-- A `G`-invariant element is `H`-invariant. -/
-theorem invariants_le_invariants_comp_subtype :
-    ρ.invariants ≤ Representation.invariants (ρ.comp H.subtype) :=
-  fun _ hx h => hx (h : G)
 
 variable [Fintype (G ⧸ H)]
 
