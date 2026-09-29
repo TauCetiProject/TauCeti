@@ -150,8 +150,16 @@ instance : Quiver.IsThin (OrientedQuiver G o) := fun _ _ =>
 instance [Finite V] : Finite (OrientedQuiver G o) :=
   Finite.of_equiv V (vertexEquiv G o)
 
+/-- The oriented quiver has finitely many vertices when the graph does. -/
+noncomputable instance [Finite V] : Fintype (OrientedQuiver G o) :=
+  Fintype.ofFinite _
+
 instance (i j : OrientedQuiver G o) : Finite (i ⟶ j) :=
   Finite.of_subsingleton
+
+/-- The arrows of an oriented simple graph form a finite type between any two vertices. -/
+noncomputable instance (i j : OrientedQuiver G o) : Fintype (i ⟶ j) :=
+  Fintype.ofFinite _
 
 /-- The oriented-quiver arrow corresponding to a chosen dart. -/
 def arrow {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o) :
@@ -190,8 +198,7 @@ theorem exists_eq_arrow {i j : V} (e : vertex G o i ⟶ vertex G o j) :
 
 /-- For the linear-order orientation, there is one arrow from `i` to `j` exactly when `i < j`
 and the vertices are adjacent. -/
--- Keep `Nat.card`: arrow spaces have a `Finite` instance but no `Fintype` instance at this
--- generality. Consumers with a `Fintype` instance can rewrite via `Nat.card_eq_fintype_card`.
+-- Keep `Nat.card` so this statement does not depend on a choice of finiteness enumeration.
 theorem card_hom_ofLinearOrder [LinearOrder V] (i j : V) [Decidable (i < j ∧ G.Adj i j)] :
     Nat.card (vertex G (Orientation.ofLinearOrder G) i ⟶
         vertex G (Orientation.ofLinearOrder G) j) =

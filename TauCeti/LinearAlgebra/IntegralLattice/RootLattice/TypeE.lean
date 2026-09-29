@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
+import Mathlib.Algebra.BigOperators.Field
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 
 /-!
