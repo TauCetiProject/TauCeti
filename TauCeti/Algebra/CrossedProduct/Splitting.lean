@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 -- uniqueness of conjugators up to scalars, are used only in proofs.
 import TauCeti.Algebra.CentralSimple.SkolemNoether
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 import Mathlib.Algebra.Central.Basic
 import Mathlib.Algebra.Central.Matrix
 import Mathlib.RingTheory.SimpleRing.Matrix
@@ -369,23 +370,24 @@ private theorem cohomologous_cocycleOfSplitting_trans_reindex {m : Type*} [Finty
     [DecidableEq m] [Nonempty m] (ψ : L ⊗[K] A ≃ₐ[L] Matrix m m L) (e : m ≃ n) :
     (cocycleOfSplitting (ψ.trans (reindexAlgEquiv L L e))).Cohomologous
       (cocycleOfSplitting ψ) := by
-  set R : GL m L →* GL n L := Units.map (reindexAlgEquiv L L e : Matrix m m L →* Matrix n n L)
-  have hR (x : GL m L) : (R x : Matrix n n L) = reindexAlgEquiv L L e x := by simp [R]
-  set g : (L ≃ₐ[K] L) → GL n L := fun σ ↦ R (splittingConjugator ψ σ)
+  set g : (L ≃ₐ[K] L) → GL n L := fun σ ↦ e.reindexGL L (splittingConjugator ψ σ)
   have hg : ∀ σ x, (g σ : Matrix n n L) * x * ((g σ)⁻¹ : GL n L) =
       splittingAut (ψ.trans (reindexAlgEquiv L L e)) σ x := by
     intro σ x
     rw [splittingAut_trans_reindex, ← splittingConjugator_mul_mul_inv, ← Matrix.coe_units_inv,
-      map_mul, map_mul, AlgEquiv.apply_symm_apply, ← hR, ← hR, map_inv]
+      map_mul, map_mul, AlgEquiv.apply_symm_apply, Matrix.coe_reindexAlgEquiv,
+      Matrix.reindex_apply, Matrix.reindex_apply, ← Equiv.coe_reindexGL,
+      ← Equiv.coe_reindexGL, map_inv]
   have heq : TwoCocycle.ofConjugators _ g hg = cocycleOfSplitting ψ := by
     refine TwoCocycle.ext (funext₂ fun σ τ ↦
       (TwoCocycle.ofConjugators_toFun_eq_iff _ g hg σ τ _).2 ?_)
-    have hscalar (u : Lˣ) : R (scalar m u) = scalar n u := by
+    have hscalar (u : Lˣ) : e.reindexGL L (scalar m u) = scalar n u := by
       ext i j
-      simp [hR, coe_scalar, Matrix.diagonal_apply]
-    have hmap (x : GL m L) : map (σ : L →+* L) (R x) = R (map (σ : L →+* L) x) := by
+      simp [Equiv.coe_reindexGL, coe_scalar, Matrix.diagonal_apply]
+    have hmap (x : GL m L) :
+        map (σ : L →+* L) (e.reindexGL L x) = e.reindexGL L (map (σ : L →+* L) x) := by
       ext i j
-      simp [hR]
+      simp [Equiv.coe_reindexGL]
     simp only [g, hmap, ← hscalar, ← map_mul, scalar_cocycleOfSplitting_mul]
   rw [← heq]
   exact TwoCocycle.cohomologous_ofConjugators _ _ g _ hg
