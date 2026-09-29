@@ -73,6 +73,7 @@ lemma squareCell_bottom_apply (H : C(unitInterval × unitInterval, X))
     (a b c d t : unitInterval) :
     ((Path.id.prod (Path.refl (0 : unitInterval))).map
       (squareCell H a b c d).continuous) t = H ((Path.id.subpath a b) t, c) := by
+  -- `simp` does not unfold the mapped product path; expose its cell subpaths first.
   change H ((Path.id.subpath a b) t, (Path.id.subpath c d) 0) = _
   simp
 
@@ -82,6 +83,7 @@ lemma squareCell_right_apply (H : C(unitInterval × unitInterval, X))
     (a b c d t : unitInterval) :
     (((Path.refl (1 : unitInterval)).prod Path.id).map
       (squareCell H a b c d).continuous) t = H (b, (Path.id.subpath c d) t) := by
+  -- `simp` does not unfold the mapped product path; expose its cell subpaths first.
   change H ((Path.id.subpath a b) 1, (Path.id.subpath c d) t) = _
   simp
 
@@ -91,6 +93,7 @@ lemma squareCell_left_apply (H : C(unitInterval × unitInterval, X))
     (a b c d t : unitInterval) :
     (((Path.refl (0 : unitInterval)).prod Path.id).map
       (squareCell H a b c d).continuous) t = H (a, (Path.id.subpath c d) t) := by
+  -- `simp` does not unfold the mapped product path; expose its cell subpaths first.
   change H ((Path.id.subpath a b) 0, (Path.id.subpath c d) t) = _
   simp
 
@@ -100,6 +103,7 @@ lemma squareCell_top_apply (H : C(unitInterval × unitInterval, X))
     (a b c d t : unitInterval) :
     ((Path.id.prod (Path.refl (1 : unitInterval))).map
       (squareCell H a b c d).continuous) t = H ((Path.id.subpath a b) t, d) := by
+  -- `simp` does not unfold the mapped product path; expose its cell subpaths first.
   change H ((Path.id.subpath a b) t, (Path.id.subpath c d) 1) = _
   simp
 
@@ -169,6 +173,7 @@ lemma squareCellBottom_apply (H : C(unitInterval × unitInterval, X))
     (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) (t : unitInterval) :
     (squareCellBottom H a b c d hab hcd V hV t).1 =
       H ((Path.id.subpath a b) t, c) := by
+  -- `simp` does not unfold the subtype-valued mapped path; expose its cell subpaths first.
   change H ((Path.id.subpath a b) t, (Path.id.subpath c d) 0) = _
   simp
 
@@ -179,6 +184,7 @@ lemma squareCellRight_apply (H : C(unitInterval × unitInterval, X))
     (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) (t : unitInterval) :
     (squareCellRight H a b c d hab hcd V hV t).1 =
       H (b, (Path.id.subpath c d) t) := by
+  -- `simp` does not unfold the subtype-valued mapped path; expose its cell subpaths first.
   change H ((Path.id.subpath a b) 1, (Path.id.subpath c d) t) = _
   simp
 
@@ -189,6 +195,7 @@ lemma squareCellLeft_apply (H : C(unitInterval × unitInterval, X))
     (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) (t : unitInterval) :
     (squareCellLeft H a b c d hab hcd V hV t).1 =
       H (a, (Path.id.subpath c d) t) := by
+  -- `simp` does not unfold the subtype-valued mapped path; expose its cell subpaths first.
   change H ((Path.id.subpath a b) 0, (Path.id.subpath c d) t) = _
   simp
 
@@ -199,6 +206,7 @@ lemma squareCellTop_apply (H : C(unitInterval × unitInterval, X))
     (V : Set X) (hV : MapsTo H (Icc a b ×ˢ Icc c d) V) (t : unitInterval) :
     (squareCellTop H a b c d hab hcd V hV t).1 =
       H ((Path.id.subpath a b) t, d) := by
+  -- `simp` does not unfold the subtype-valued mapped path; expose its cell subpaths first.
   change H ((Path.id.subpath a b) t, (Path.id.subpath c d) 1) = _
   simp
 
