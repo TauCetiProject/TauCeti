@@ -257,9 +257,7 @@ theorem preprojectiveMk_ofPath_eq_zero_of_signless
           (fun {_ _} f => doubledLabelling k (fun _ j _ => if c j then (1 : k) else -1) f)
           x.2.2 • signlessPreprojectiveMk k _
             (ofPath ((symmetrifyMap G o).mapTotalPath x)) := by
-    change (orientationSignlessPreprojectiveAlgebraEquiv o k).symm
-      ((symmetrifySignlessPreprojectiveAlgebraEquiv k hc).symm
-        (preprojectiveMk k (OrientedQuiver G o) (ofPath x))) = _
+    rw [AlgEquiv.symm_trans_apply]
     rw [symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
       rescale_ofPath, map_smul, map_smul, hpath]
   apply e.symm.injective
