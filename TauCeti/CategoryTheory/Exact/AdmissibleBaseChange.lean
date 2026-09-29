@@ -48,7 +48,7 @@ theorem map_isPushout (hF : E.IsConflationExact E' F)
   let sq := hsq.toCommSq
   let sq' := F.map_commSq sq
   have hc : E'.Conflation sq'.shortComplex :=
-    E'.conflation_of_iso (commSqShortComplexMapIso (F := F) sq)
+    E'.conflation_of_iso (sq.shortComplexMapIso (F := F))
       (hF.map_conflation (E.conflation_shortComplex_of_isPushout_of_isInflation hf hsq))
   have hp := E'.isKernelCokernelPair sq'.shortComplex hc
   exact IsPushout.of_isColimit' sq'

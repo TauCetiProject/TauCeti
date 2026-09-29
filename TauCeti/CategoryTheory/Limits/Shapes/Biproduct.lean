@@ -36,26 +36,15 @@ kills one summand of a binary biproduct inverts the projection onto the other
 
 public section
 
-namespace TauCeti
+namespace CategoryTheory.CommSq
 
-open CategoryTheory CategoryTheory.Limits
+open Limits
 
-universe v w w' u u'
-
-variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
-
-/-- A binary biproduct map factors by changing its first and second summands in succession. -/
-theorem biprod_map_factor {X₁ X₂ Y₁ Y₂ : C} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂)
-    [HasBinaryBiproduct X₁ X₂] [HasBinaryBiproduct Y₁ X₂]
-    [HasBinaryBiproduct Y₁ Y₂] :
-    biprod.map f g = biprod.map f (𝟙 X₂) ≫ biprod.map (𝟙 Y₁) g := by
-  ext <;> simp
-
-section CommSq
+universe v w u u'
 
 /-- Mapping the short complex of a commutative square agrees, up to the canonical biproduct
 comparison, with the short complex of the mapped square. -/
-noncomputable def commSqShortComplexMapIso
+noncomputable def shortComplexMapIso
     {C₁ : Type u} {D : Type u'} [Category.{v} C₁] [Preadditive C₁]
     [Category.{w} D] [Preadditive D]
     {F : C₁ ⥤ D} [F.Additive]
@@ -75,7 +64,22 @@ noncomputable def commSqShortComplexMapIso
       simpa only [Iso.refl_hom, Category.comp_id] using
         (biprod.mapBiprod_hom_desc F X Y h i))
 
-end CommSq
+end CategoryTheory.CommSq
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits
+
+universe v w w' u u'
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+
+/-- A binary biproduct map factors by changing its first and second summands in succession. -/
+theorem biprod_map_factor {X₁ X₂ Y₁ Y₂ : C} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂)
+    [HasBinaryBiproduct X₁ X₂] [HasBinaryBiproduct Y₁ X₂]
+    [HasBinaryBiproduct Y₁ Y₂] :
+    biprod.map f g = biprod.map f (𝟙 X₂) ≫ biprod.map (𝟙 Y₁) g := by
+  ext <;> simp
 
 /-- The square formed by a morphism and the corresponding biproduct inclusions is a pushout. -/
 theorem isPushout_biprod_inl_map {X Y : C} (f : X ⟶ Y) (Z : C)
