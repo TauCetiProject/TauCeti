@@ -44,8 +44,9 @@ powers of `a`, and the two real orbit values `190 ± 12√31` at the roots of
   specialization at `X⁵ + aX + b` over any commutative ring.
 * `TauCeti.resolventSextic_X_pow_five_add_C_mul_X_add_C`: the resolvent sextic of the integral
   quintic `X⁵ + aX + b`.
-* `TauCeti.isRoot_resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve`: the resolvent sextic of
-  `X⁵ - 5X - 12` has the root `40`.
+* `TauCeti.resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve` and
+  `TauCeti.isRoot_resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve`: the resolvent sextic of
+  `X⁵ - 5X - 12`, and its root `40`.
 
 ## References
 
@@ -364,13 +365,22 @@ theorem resolventSextic_X_pow_five_add_C_mul_X_add_C (a b : ℤ) :
         C (256 * a ^ 6 - 9375 * a * b ^ 4) := by
   rw [resolventSextic_def, quinticF20Spec_specialize_X_pow_five_add_C_mul_X_add_C]
 
-/-- The resolvent sextic of `X⁵ - 5X - 12` has the integral root `40`. -/
-theorem isRoot_resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve :
-    (resolventSextic (X ^ 5 - 5 * X - 12)).IsRoot 40 := by
+/-- The resolvent sextic of `X⁵ - 5X - 12`, from Dummit's formula for a quintic trinomial. -/
+theorem resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve :
+    resolventSextic (X ^ 5 - 5 * X - 12) =
+      X ^ 6 - 40 * X ^ 5 + 1000 * X ^ 4 - 20000 * X ^ 3 + 250000 * X ^ 2 - 66400000 * X +
+        976000000 := by
   have hf : (X ^ 5 - 5 * X - 12 : ℤ[X]) = X ^ 5 + C (-5) * X + C (-12) := by
     simp only [map_neg, C_ofNat]
     ring
   rw [hf, resolventSextic_X_pow_five_add_C_mul_X_add_C]
+  norm_num [C_ofNat]
+  ring
+
+/-- The resolvent sextic of `X⁵ - 5X - 12` has the integral root `40`. -/
+theorem isRoot_resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve :
+    (resolventSextic (X ^ 5 - 5 * X - 12)).IsRoot 40 := by
+  rw [resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve]
   norm_num [IsRoot]
 
 end TauCeti
