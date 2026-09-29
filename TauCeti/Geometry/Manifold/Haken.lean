@@ -17,8 +17,9 @@ This file packages the manifold hypotheses used for the Haken condition in dimen
 The relation `IsHakenSurfaceEmbedding` combines the standard surface and three-manifold
 specializations from `Geometry.Manifold.Basic` with
 boundary preservation, a bicollar, and Tau Ceti's dimension-independent `IsIncompressible`
-predicate.  The closed specialization `IsClosedHakenSurfaceEmbedding` uses boundaryless
-Euclidean-space models and omits the boundary-preservation conjunct.
+predicate.  The surface witness has infinite fundamental group, excluding both spherical and
+projective-plane witnesses.  The closed specialization `IsClosedHakenSurfaceEmbedding` uses
+boundaryless Euclidean-space models and omits the boundary-preservation conjunct.
 
 The product-slice witness is the basic example: a continuous retraction onto the first factor
 makes the inclusion of a surface as a slice incompressible.  This is the standard elementary
@@ -30,8 +31,8 @@ Chapter II.
 
 * `TauCeti.IsClosedIncompressibleSurfaceEmbedding`: a closed connected surface embedded
   incompressibly in a closed connected 3-manifold.
-* `TauCeti.IsHakenSurfaceEmbedding`: a proper, incompressible, non-spherical witness for
-  Haken-ness, allowing boundary.
+* `TauCeti.IsHakenSurfaceEmbedding`: a proper, incompressible witness with infinite fundamental
+  group for Haken-ness, allowing boundary.
 * `TauCeti.IsClosedHakenSurfaceEmbedding`: the closed, bicollared specialization.
 * `TauCeti.IsIrreducibleThreeManifold`: every closed locally flat embedded 2-sphere bounds an
   embedded 3-ball.
@@ -72,21 +73,22 @@ variable [ChartedSpace (EuclideanHalfSpace 2) S]
 It preserves the manifold boundary exactly and is bicollared in the relative model
 `EuclideanHalfSpace 2 × ℝ`, hence is locally flat and a closed embedding. Thus interior points
 cannot land on the ambient boundary, boundary points cannot land in the interior, and the surface
-has two sides even where it meets the boundary. It is also incompressible with nontrivial
+has two sides even where it meets the boundary. It is also incompressible with infinite
 fundamental group. -/
 def IsHakenSurfaceEmbedding (f : C(S, M)) : Prop :=
   IsCompactConnectedSurface S ∧ IsCompactConnectedThreeManifold M ∧
     f ⁻¹' (𝓡∂ 3).boundary M = (𝓡∂ 2).boundary S ∧ IsBicollared f ∧
-      IsIncompressible f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s)
+      IsIncompressible f ∧ ∃ s : S, Infinite (FundamentalGroup S s)
 
-/-- The defining compact, boundary-preserving, bicollared, incompressible, and non-spherical
+/-- The defining compact, boundary-preserving, bicollared, incompressible, and infinite
+fundamental-group
 conditions of `IsHakenSurfaceEmbedding`. -/
 @[simp]
 theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
     IsHakenSurfaceEmbedding f ↔
       IsCompactConnectedSurface S ∧ IsCompactConnectedThreeManifold M ∧
         f ⁻¹' (𝓡∂ 3).boundary M = (𝓡∂ 2).boundary S ∧ IsBicollared f ∧
-          IsIncompressible f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s) :=
+          IsIncompressible f ∧ ∃ s : S, Infinite (FundamentalGroup S s) :=
   Iff.rfl
 
 end BoundaryAware
@@ -219,21 +221,22 @@ theorem isClosedIncompressibleSurfaceEmbedding_prodMk {Y : Type*} [TopologicalSp
 
 /-- A **closed Haken surface embedding** is a closed incompressible embedding with the geometric
 conditions needed for the usual Haken witness: it is globally bicollared (hence locally flat and
-two-sided), and its source has a nontrivial fundamental group, excluding the spherical case. The
+two-sided), and its source has an infinite fundamental group, excluding spherical and
+projective-plane cases. The
 dimension-independent topological core is `IsIncompressible`; the separate
 `IsClosedIncompressibleSurfaceEmbedding` package combines it with dimension-specific closed
 surface and ambient-manifold predicates. A Haken predicate may existentially quantify this
 stronger relation without admitting wild, one-sided, or spherical surfaces. -/
 def IsClosedHakenSurfaceEmbedding (f : C(S, M)) : Prop :=
   IsClosedIncompressibleSurfaceEmbedding f ∧
-    IsBicollared f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s)
+    IsBicollared f ∧ ∃ s : S, Infinite (FundamentalGroup S s)
 
 /-- The defining conditions of `IsClosedHakenSurfaceEmbedding`. -/
 @[simp]
 theorem isClosedHakenSurfaceEmbedding_iff {f : C(S, M)} :
     IsClosedHakenSurfaceEmbedding f ↔
       IsClosedIncompressibleSurfaceEmbedding f ∧
-        IsBicollared f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s) :=
+        IsBicollared f ∧ ∃ s : S, Infinite (FundamentalGroup S s) :=
   Iff.rfl
 
 end ClosedEmbeddings
