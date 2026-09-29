@@ -546,6 +546,15 @@ noncomputable def ofDiscreteModuleCocyclesRestrictScalarsIntIso :
   eqToIso (congrArg (cocycles · n) (ofDiscreteModule_eq_restrictScalarsInt_obj X)) ≪≫
     cocyclesRestrictScalarsIntIso X n
 
+/-- `ofDiscreteModuleCocyclesRestrictScalarsIntIso` is the transport along the equality of objects
+followed by `cocyclesRestrictScalarsIntEquiv`. -/
+theorem ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply
+    (w : cocycles (ofDiscreteModule ℤ G X.V) n) :
+    (ofDiscreteModuleCocyclesRestrictScalarsIntIso X n).hom w =
+      cocyclesRestrictScalarsIntEquiv X n (eqToHom (congrArg (cocycles · n)
+        (ofDiscreteModule_eq_restrictScalarsInt_obj X)) w) :=
+  (rfl)
+
 /-- `ofDiscreteModuleRestrictScalarsIntIso` carries the class of a cocycle of the carrier to the
 class of the corresponding cocycle of `X`. -/
 @[reassoc (attr := simp)]

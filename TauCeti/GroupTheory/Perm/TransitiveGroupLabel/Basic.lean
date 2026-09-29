@@ -39,10 +39,11 @@ transitive-groups table. The reference family is empty outside degrees one throu
   `TauCeti.TransitiveGroupLabel.exists_le_map_conj_iff`: a labelled subgroup lies in a conjugate
   of a fixed subgroup exactly when its reference subgroup does.
 * `TauCeti.TransitiveGroupLabel.natCard_eq`, `TauCeti.TransitiveGroupLabel.le_alternatingGroup_iff`,
-  `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`, `TauCeti.TransitiveGroupLabel.isSolvable_iff`,
-  `TauCeti.TransitiveGroupLabel.isCyclic_iff`:
-  a labelled subgroup has the order, parity, primitivity, solvability, and cyclicity of its
-  reference.
+  `TauCeti.TransitiveGroupLabel.isPretransitive_inf_alternatingGroup_iff`,
+  `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`,
+  `TauCeti.TransitiveGroupLabel.isSolvable_iff`, `TauCeti.TransitiveGroupLabel.isCyclic_iff`:
+  a labelled subgroup has the order, parity, even-part transitivity, primitivity, solvability,
+  and cyclicity of its reference.
 * `TauCeti.transitiveGroupLabel_one`, `TauCeti.transitiveGroupLabel_two_iff`: in degrees one and
   two, a subgroup carries the unique label exactly when it is transitive.
 
@@ -474,6 +475,19 @@ theorem TransitiveGroupLabel.le_alternatingGroup_iff {n : ℕ} {j : TransitiveGr
     G ≤ alternatingGroup (Fin n) ↔ referenceSubgroup n j ≤ alternatingGroup (Fin n) := by
   obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
   rw [← hτ, Equiv.map_permCongrHom_le_alternatingGroup_iff]
+
+/-- The even part of a labelled subgroup is transitive exactly when the even part of its
+reference subgroup is transitive. -/
+theorem TransitiveGroupLabel.isPretransitive_inf_alternatingGroup_iff {n : ℕ}
+    {j : TransitiveGroupIndex n} {G : Subgroup (Perm (Fin n))}
+    (h : TransitiveGroupLabel j G) :
+    IsPretransitive ((G ⊓ alternatingGroup (Fin n)) : Subgroup (Perm (Fin n))) (Fin n) ↔
+    IsPretransitive ((referenceSubgroup n j ⊓ alternatingGroup (Fin n)) :
+      Subgroup (Perm (Fin n))) (Fin n) := by
+  obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
+  have hτ' : G.map τ.permCongrHom = referenceSubgroup n j := by
+    simpa only [MulEquiv.toMonoidHom_eq_coe] using hτ
+  rw [← hτ', Equiv.isPretransitive_inf_alternatingGroup_map_permCongrHom_iff]
 
 /-- A subgroup carrying a transitive-group label acts primitively exactly when its reference
 subgroup does. -/
