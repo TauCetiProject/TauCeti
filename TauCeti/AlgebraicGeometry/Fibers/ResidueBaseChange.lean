@@ -31,6 +31,16 @@ variable {R S : Type u} [CommRing R] [IsLocalRing R] [CommRing S] [IsLocalRing S
   [Algebra R S] [IsLocalHom (algebraMap R S)]
 variable {X : Scheme.{u}} (f : X ⟶ Spec (.of R))
 
+-- The special-fibre projections are the corresponding scalar-extension projections at the
+-- residue field. Keeping these identifications explicit makes the tower calculations readable.
+private lemma specialFiberι_eq_genericFiberι (T : Type u) [CommRing T] [IsLocalRing T]
+    {Y : Scheme.{u}} (g : Y ⟶ Spec (.of T)) :
+    specialFiberι T g = genericFiberι T (ResidueField T) g := rfl
+
+private lemma specialFiber_hom_eq_genericFiber_hom (T : Type u) [CommRing T] [IsLocalRing T]
+    {Y : Scheme.{u}} (g : Y ⟶ Spec (.of T)) :
+    (specialFiber T g).hom = (genericFiber T (ResidueField T) g).hom := rfl
+
 /-- Base change to a local ring followed by passage to its special fibre is the same as
 extending the original special fibre to the larger residue field. -/
 noncomputable def specialFiberBaseChangeIso :
@@ -47,8 +57,8 @@ theorem specialFiberBaseChangeIso_hom_fst :
           (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R)))) ≫
           specialFiberι R f =
       specialFiberι S (genericFiber R S f).hom ≫ genericFiberι R S f := by
-  -- Both presentations of a special fibre use the same pullback; the tower lemmas are
-  -- phrased using `genericFiber`.
+  simp only [specialFiberι_eq_genericFiberι]
+  -- The remaining `pullback.snd` is the generic-fibre structure map.
   change (specialFiberBaseChangeIso f).hom ≫
       genericFiberι (ResidueField R) (ResidueField S) (genericFiber R (ResidueField R) f).hom ≫
         genericFiberι R (ResidueField R) f =
@@ -72,7 +82,8 @@ theorem specialFiberBaseChangeIso_hom_snd :
         (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R))))
         (Spec.map (CommRingCat.ofHom (algebraMap (ResidueField R) (ResidueField S)))) =
       (specialFiber S (genericFiber R S f).hom).hom := by
-  -- The tower projection lemmas use `genericFiber` for both residue-field pullbacks.
+  simp only [specialFiber_hom_eq_genericFiber_hom]
+  -- The remaining `pullback.snd` is the generic-fibre structure map.
   change (specialFiberBaseChangeIso f).hom ≫
       (genericFiber (ResidueField R) (ResidueField S)
         (genericFiber R (ResidueField R) f).hom).hom =
@@ -102,8 +113,12 @@ theorem specialFiberBaseChangeIso_inv_fst :
       genericFiberι (ResidueField R) (ResidueField S)
         (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R)))) ≫
         specialFiberι R f := by
+  simp only [specialFiberι_eq_genericFiberι]
+  -- The nested projection is the structure map of the first scalar extension.
   change (specialFiberBaseChangeIso f).inv ≫
-    specialFiberι S (genericFiber R S f).hom ≫ genericFiberι R S f = _
+      genericFiberι S (ResidueField S) (genericFiber R S f).hom ≫ genericFiberι R S f =
+    genericFiberι (ResidueField R) (ResidueField S)
+      (genericFiber R (ResidueField R) f).hom ≫ genericFiberι R (ResidueField R) f
   rw [← specialFiberBaseChangeIso_hom_fst f, ← Category.assoc,
     Iso.inv_hom_id, Category.id_comp]
   rfl
@@ -119,6 +134,8 @@ theorem specialFiberBaseChangeIso_inv_snd :
       pullback.snd
         (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R))))
         (Spec.map (CommRingCat.ofHom (algebraMap (ResidueField R) (ResidueField S)))) := by
+  simp only [specialFiber_hom_eq_genericFiber_hom]
+  -- Both nested projections are generic-fibre structure maps at residue fields.
   change (specialFiberBaseChangeIso f).inv ≫
       (genericFiber S (ResidueField S) (genericFiber R S f).hom).hom =
     (genericFiber (ResidueField R) (ResidueField S)
