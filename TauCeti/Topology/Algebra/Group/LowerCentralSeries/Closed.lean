@@ -141,13 +141,8 @@ theorem closedLowerCentralSeries_eq_topologicalClosure (n : ℕ) :
 series is contained in the corresponding term of the lower `p`-series. -/
 theorem closedLowerCentralSeries_le_pLowerCentralSeries (p n : ℕ) :
     closedLowerCentralSeries G n ≤ pLowerCentralSeries p G n := by
-  induction n with
-  | zero => rw [closedLowerCentralSeries_zero, pLowerCentralSeries_zero]
-  | succ n ih =>
-    rw [closedLowerCentralSeries_succ]
-    exact topologicalClosure_minimal _
-      ((commutator_mono ih le_rfl).trans (commutator_pLowerCentralSeries_top_le n))
-      (isClosed_pLowerCentralSeries _)
+  rw [closedLowerCentralSeries_eq_topologicalClosure, pLowerCentralSeries_eq_topologicalClosure]
+  exact topologicalClosure_mono (lowerCentralSeries_le_pLowerCentralSeries p _ n)
 
 /-! ### Functoriality -/
 
