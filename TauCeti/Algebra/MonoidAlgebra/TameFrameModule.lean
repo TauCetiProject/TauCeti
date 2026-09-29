@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.Module.Presentation.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Module
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
 # The tame-frame module
@@ -24,33 +22,30 @@ generators of the absolute Galois group, and `a, b` are exponents through which 
 `p`-power roots of unity. The module is a quotient of `R[G]²`, which is where the `2` in the
 generator count `[K : ℚ_p] + 2` comes from.
 
-The module is characterised by its universal property: a left `R[G]`-linear map out of `M₀` is a
-pair of elements `x, y` of the target with `(σ - a) x + (τ - b) y = 0`, the images of the two
-generators `e₀, e₁`, the classes of the standard basis vectors of `R[G]²`.
+The module is presented by Mathlib's `Module.Relations`: `tameFrameRelations` has generator type
+`Fin 2` and a single relation, and `TameFrameModule` is its `Module.Relations.Quotient`. The class
+of `Finsupp.single i 1` under `Module.Relations.toQuotient` is the generator `eᵢ`, and
+`Module.Relations.toQuotient_relation` says that the generators satisfy the relation. A left
+`R[G]`-linear map out of `M₀` is a pair of elements `x, y` of the target with
+`(σ - a) x + (τ - b) y = 0`: `tameFrameSolution` packages such a pair as a
+`Module.Relations.Solution`, whose `Module.Relations.Solution.fromQuotient` is the map, and
+`Module.Relations.Quotient.linearMap_ext` says that a map out of `M₀` is determined by the images
+of `e₀, e₁`.
 
 ## Main definitions
 
-* `TauCeti.MonoidAlgebra.TameFrameModule`: the quotient `R[G]² / R[G]·(σ - a, τ - b)`.
-* `TauCeti.MonoidAlgebra.TameFrameModule.lift`: the linear map out of `M₀` sending the generators
-  to `x, y`.
-
-## Main statements
-
-* `TauCeti.MonoidAlgebra.TameFrameModule.mk_relation`: the generators satisfy
+* `TauCeti.MonoidAlgebra.tameFrameRelations`: two generators subject to the relation
   `(σ - a) e₀ + (τ - b) e₁ = 0`.
-* `TauCeti.MonoidAlgebra.TameFrameModule.lift_mk`: the defining equation of `lift`.
-* `TauCeti.MonoidAlgebra.TameFrameModule.hom_ext`: a linear map out of `M₀` is determined by the
-  images of the two generators.
+* `TauCeti.MonoidAlgebra.TameFrameModule`: the module `R[G]² / R[G]·(σ - a, τ - b)` it presents.
+* `TauCeti.MonoidAlgebra.tameFrameSolution`: the solution of the relation in a module `M` given by
+  `x, y ∈ M` with `(σ - a) x + (τ - b) y = 0`.
 
 ## Implementation notes
 
-Mathlib's `Module.Relations` presents the same module, with generator type `Fin 2` and one
-relation. Its generator type is a structure field: for a semireducible system it unfolds to
-`Fin 2` only at default transparency, so terms such as `Finsupp.single (0 : Fin 2) 1` indexing the
-generators are not type-correct at the transparency `simp` works at; for a reducible system the
-field reduces to `Fin 2` and no longer matches the keys of the `Module.Relations.Quotient` simp
-lemmas such as `Module.Relations.Solution.fromQuotient_toQuotient`. The quotient of `Fin 2 → R[G]`
-is used directly instead, and its universal property is proved here.
+`tameFrameRelations` is reducible, so that its generator type is `Fin 2` at reducible
+transparency and generators can be written as `Finsupp.single (0 : Fin 2) 1`. The keys of the
+generic `Module.Relations` simp lemmas then no longer match, so the universal property is
+evaluated with `rw [Module.Relations.Solution.fromQuotient_toQuotient]` rather than `simp`.
 
 ## References
 
@@ -67,61 +62,32 @@ universe u v
 
 variable (R : Type u) [Ring R] (G : Type v) [Monoid G]
 
+/-- The relations of the **tame-frame module** of two elements `σ, τ` of `G` and two coefficients
+`a, b` of `R`: two generators `e₀, e₁` subject to the single relation
+`(σ - a) e₀ + (τ - b) e₁ = 0`. -/
+noncomputable abbrev tameFrameRelations (σ τ : G) (a b : R) :
+    Module.Relations (MonoidAlgebra R G) where
+  G := Fin 2
+  R := Unit
+  relation _ := Finsupp.single 0 (single σ (1 : R) - single 1 a) +
+    Finsupp.single 1 (single τ (1 : R) - single 1 b)
+
 /-- The **tame-frame module** `M₀ = R[G]² / R[G]·(σ - a, τ - b)` of two elements `σ, τ` of `G` and
-two coefficients `a, b` of `R`: the left `R[G]`-module on two generators `e₀, e₁` subject to the
-single relation `(σ - a) e₀ + (τ - b) e₁ = 0`. -/
+two coefficients `a, b` of `R`: the left `R[G]`-module presented by `tameFrameRelations`. -/
 abbrev TameFrameModule (σ τ : G) (a b : R) : Type (max u v) :=
-  (Fin 2 → MonoidAlgebra R G) ⧸ Submodule.span (MonoidAlgebra R G)
-    {![single σ (1 : R) - single 1 a, single τ (1 : R) - single 1 b]}
+  (tameFrameRelations R G σ τ a b).Quotient
 
-namespace TameFrameModule
+variable {R G} {σ τ : G} {a b : R} {M : Type*} [AddCommGroup M] [Module (MonoidAlgebra R G) M]
 
-variable {R G} {σ τ : G} {a b : R}
-
-/-- The two generators `e₀, e₁` of the tame-frame module satisfy `(σ - a) e₀ + (τ - b) e₁ = 0`. -/
-theorem mk_relation :
-    (single σ (1 : R) - single 1 a) •
-        (Submodule.Quotient.mk (Pi.single 0 1) : TameFrameModule R G σ τ a b) +
-      (single τ (1 : R) - single 1 b) •
-        (Submodule.Quotient.mk (Pi.single 1 1) : TameFrameModule R G σ τ a b) = 0 := by
-  rw [← Submodule.Quotient.mk_smul, ← Submodule.Quotient.mk_smul, ← Submodule.Quotient.mk_add,
-    Submodule.Quotient.mk_eq_zero]
-  convert Submodule.mem_span_singleton_self _ using 1
-  ext i
-  fin_cases i <;> simp
-
-variable {M : Type*} [AddCommGroup M] [Module (MonoidAlgebra R G) M]
-
-/-- The left `R[G]`-linear map out of the tame-frame module sending the generators `e₀, e₁` to
-`x, y`, for `x, y` satisfying the relation `(σ - a) x + (τ - b) y = 0`. -/
-noncomputable def lift (x y : M)
+/-- The solution of `tameFrameRelations` in `M` sending the generators `e₀, e₁` to `x, y`, for
+`x, y` satisfying the relation `(σ - a) x + (τ - b) y = 0`. Its
+`Module.Relations.Solution.fromQuotient` is the left `R[G]`-linear map out of the tame-frame
+module sending `e₀, e₁` to `x, y`. -/
+@[expose, simps]
+noncomputable def tameFrameSolution (x y : M)
     (h : (single σ (1 : R) - single 1 a) • x + (single τ (1 : R) - single 1 b) • y = 0) :
-    TameFrameModule R G σ τ a b →ₗ[MonoidAlgebra R G] M :=
-  Submodule.liftQ _ (Fintype.linearCombination (MonoidAlgebra R G) ![x, y]) <| by
-    rw [Submodule.span_le, Set.singleton_subset_iff, SetLike.mem_coe, LinearMap.mem_ker,
-      Fintype.linearCombination_apply, Fin.sum_univ_two]
-    simpa using h
-
-/-- The defining equation of `TameFrameModule.lift`: the class of `(c₀, c₁)` is sent to
-`c₀ x + c₁ y`. -/
-@[simp]
-theorem lift_mk (x y : M)
-    (h : (single σ (1 : R) - single 1 a) • x + (single τ (1 : R) - single 1 b) • y = 0)
-    (c : Fin 2 → MonoidAlgebra R G) :
-    lift x y h (Submodule.Quotient.mk c : TameFrameModule R G σ τ a b) = c 0 • x + c 1 • y := by
-  simp [lift, Fintype.linearCombination_apply, Fin.sum_univ_two]
-
-/-- A left `R[G]`-linear map out of the tame-frame module is determined by the images of the two
-generators `e₀, e₁`. -/
-theorem hom_ext {f f' : TameFrameModule R G σ τ a b →ₗ[MonoidAlgebra R G] M}
-    (h₀ : f (Submodule.Quotient.mk (Pi.single 0 1)) = f' (Submodule.Quotient.mk (Pi.single 0 1)))
-    (h₁ : f (Submodule.Quotient.mk (Pi.single 1 1)) = f' (Submodule.Quotient.mk (Pi.single 1 1))) :
-    f = f' := by
-  apply Submodule.linearMap_qext
-  refine LinearMap.pi_ext' fun i ↦ LinearMap.ext_ring ?_
-  fin_cases i
-  exacts [h₀, h₁]
-
-end TameFrameModule
+    (tameFrameRelations R G σ τ a b).Solution M where
+  var := ![x, y]
+  linearCombination_var_relation _ := by simpa [sub_smul] using h
 
 end TauCeti.MonoidAlgebra

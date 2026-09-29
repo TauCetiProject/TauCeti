@@ -60,6 +60,7 @@ variable [Monoid G]
 /-- The **relation module** of a family `g : ι → G`: the kernel of the left `R[G]`-linear map
 `R[G]^ι → R[G]` sending the `i`-th basis vector to `g_i - 1`. For a generating family it is the
 relation module `N^ab` of the presentation of `G` on the `g_i` (NSW (5.6.6)). -/
+@[expose]
 noncomputable def relationModule (g : ι → G) :
     Submodule (MonoidAlgebra R G) (ι → MonoidAlgebra R G) :=
   LinearMap.ker (Fintype.linearCombination (MonoidAlgebra R G) fun i ↦ single (g i) (1 : R) - 1)
@@ -72,13 +73,6 @@ variable {R G}
 theorem mem_relationModule_iff {g : ι → G} {c : ι → MonoidAlgebra R G} :
     c ∈ relationModule R G g ↔ ∑ i, c i * (single (g i) (1 : R) - 1) = 0 := by
   simp [relationModule, Fintype.linearCombination_apply]
-
-/-- The relation module is the kernel of the map `e_i ↦ g_i - 1`. -/
-theorem ker_linearCombination_eq_relationModule (g : ι → G) :
-    LinearMap.ker (Fintype.linearCombination (MonoidAlgebra R G)
-        fun i ↦ single (g i) (1 : R) - 1) =
-      relationModule R G g :=
-  (rfl)
 
 /-- The map `e_i ↦ g_i - 1` lands in the augmentation ideal. -/
 theorem range_linearCombination_le_ker_augmentation (g : ι → G) :
