@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.CrossedProduct.BrauerClass
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.RingTheory.Trace.Basic
 import TauCeti.FieldTheory.Galois.Trace
 
 /-!
@@ -142,7 +141,7 @@ private theorem fiberMap_mul_inc_mul [IsGalois K M] (a a' : CrossedProduct c) (y
           rw [smul_mul_assoc, basis_mul_inc, ← smul_def, smul_smul, smul_basis_mul_smul_basis,
             fiberMap_smul_basis]
           refine Finset.sum_congr rfl fun k _ ↦ ?_
-          rw [sum_fiber_apply_eq_algebraMap_trace f hf' σ y]
+          rw [f.sum_fiber_apply_eq_algebraMap_trace hf' σ y]
           congr 1
           simp only [C, map_mul]
           ring

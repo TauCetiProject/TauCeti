@@ -17,7 +17,7 @@ its automorphisms. This file records two consequences for a tower `K ⊆ L ⊆ M
 
 ## Main results
 
-* `TauCeti.sum_fiber_apply_eq_algebraMap_trace`: for `f : Gal(M/K) → Gal(L/K)` compatible with the
+* `MonoidHom.sum_fiber_apply_eq_algebraMap_trace`: for `f : Gal(M/K) → Gal(L/K)` compatible with the
   inclusion `L ⊆ M`, the automorphisms in the fibre of `f` over `σ` sum to `σ ∘ Tr_{M/L}`, because
   that fibre is a coset of `Gal(M/L)`.
 * `Module.Basis.sum_traceDual_mul_apply`: for an `L`-basis `m` of a finite Galois extension `M/L`
@@ -29,7 +29,7 @@ public section
 
 open Module
 
-namespace TauCeti
+namespace MonoidHom
 
 variable {K L M : Type*} [Field K] [Field L] [Field M] [Algebra K L] [Algebra K M] [Algebra L M]
   [IsScalarTower K L M]
@@ -71,7 +71,7 @@ theorem sum_fiber_apply_eq_algebraMap_trace [FiniteDimensional K M] [IsGalois K 
     _ = algebraMap L M (σ (Algebra.trace L M z)) := by
         rw [← map_sum, ← trace_eq_sum_automorphisms, ← hf, hg₀]
 
-end TauCeti
+end MonoidHom
 
 open Classical in
 /-- For an `L`-basis `m` of a finite Galois extension `M/L` and `g ∈ Gal(M/L)`, the sum
