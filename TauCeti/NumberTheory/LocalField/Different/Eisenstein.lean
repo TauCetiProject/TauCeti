@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Different.Monogenic
 public import TauCeti.NumberTheory.LocalField.Eisenstein.PowerBasis
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
+import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 
 /-!
 # The different of an Eisenstein extension

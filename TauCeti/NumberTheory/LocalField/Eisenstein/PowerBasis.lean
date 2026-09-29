@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
-public import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
+import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 
 /-!
