@@ -62,7 +62,6 @@ variable [Monoid G]
 `R[G]^ι → R[G]` sending the `i`-th basis vector to `g_i - 1`. For a generating family of a group
 it is `R ⊗_ℤ N^ab`, for `N^ab` the relation module of the presentation of `G` on the `g_i`
 (NSW (5.6.6)); for `R = ℤ` it is `N^ab` itself. -/
-@[expose]
 noncomputable def relationModule (g : ι → G) :
     Submodule (MonoidAlgebra R G) (ι → MonoidAlgebra R G) :=
   LinearMap.ker (Fintype.linearCombination (MonoidAlgebra R G) fun i ↦ single (g i) (1 : R) - 1)
