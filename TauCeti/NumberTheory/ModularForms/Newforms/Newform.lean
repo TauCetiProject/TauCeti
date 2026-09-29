@@ -130,7 +130,7 @@ end EigenformAwayFromLevel
 namespace Newform
 
 /-- The nebentypus of a newform, extended by zero from units modulo `N` to a Dirichlet
-character. -/
+character. This packages Mathlib's `MulChar.ofUnitHom` for formulas attached to the newform. -/
 @[expose] public noncomputable def dirichletLift (f : Newform N k) : DirichletCharacter ℂ N :=
   MulChar.ofUnitHom f.χ
 
