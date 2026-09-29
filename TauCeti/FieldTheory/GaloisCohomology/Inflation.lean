@@ -51,7 +51,6 @@ noncomputable def unitsInflationHom :
         AlgEquiv.restrictNormal_commutes σ L (Rep.toAdditive a).toMul
 
 /-- `unitsInflationHom K L M` is the inclusion `Lˣ → Mˣ`. -/
-@[simp]
 theorem unitsInflationHom_apply (a : Lˣ) :
     (unitsInflationHom K L M).hom
         ((Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).symm (Additive.ofMul a)) =
