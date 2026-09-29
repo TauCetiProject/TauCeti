@@ -32,11 +32,6 @@ of `K` is the class of a crossed product, i.e. that the crossed-product construc
 * `TauCeti.BrauerGroup.exists_crossedProductClass_eq_of_isSplittingField`: every central simple
   algebra split by a finite Galois `L/K` has the Brauer class of a crossed product over `L`.
 
-## Implementation notes
-
-`A` and `L` live in the universe of `K`, because the proof uses the group law of
-`BrauerGroup.{u, u} K`, in which the class of `Aᵐᵒᵖ` is the inverse of the class of `A`.
-
 ## References
 
 * P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology* (2006), §4.4.
@@ -53,6 +48,8 @@ universe u
 
 namespace TauCeti
 
+-- `A` and `L` live in the universe of `K`: the proof uses the group law of `BrauerGroup.{u, u} K`,
+-- in which the class of `Aᵐᵒᵖ` is the inverse of the class of `A`.
 variable {K : Type u} [Field K] {A : Type u} [Ring A] [Algebra K A]
   {L : Type u} [Field L] [Algebra K L] {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
   (φ : L ⊗[K] A ≃ₐ[L] Matrix n n L)
