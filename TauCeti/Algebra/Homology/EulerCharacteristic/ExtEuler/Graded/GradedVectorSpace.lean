@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.CategoryTheory.Adjunction.Unique
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ForgetGrading
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
 public import TauCeti.CategoryTheory.GradedObject
 
 /-!
@@ -294,8 +293,8 @@ noncomputable def shiftCompTotalIso :
     (shift k).functor ⋙ GradedObject.total ℤ (ModuleCat.{u} k) ≅
       GradedObject.total ℤ (ModuleCat.{u} k) :=
   Adjunction.leftAdjointUniq
-    ((shift k).toAdjunction.comp (GradedObject.totalAdjunction ℤ (ModuleCat.{u} k)))
-    ((GradedObject.totalAdjunction ℤ (ModuleCat.{u} k)).ofNatIsoRight (Iso.refl _))
+    ((shift k).toAdjunction.comp (gradedObjectTotalAdjunction ℤ (ModuleCat.{u} k)))
+    ((gradedObjectTotalAdjunction ℤ (ModuleCat.{u} k)).ofNatIsoRight (Iso.refl _))
 
 private noncomputable def coproductUnitIso :
     (∐ fun i : ℤ ↦ unit k i) ≅ ModuleCat.of k k where

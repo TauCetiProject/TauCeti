@@ -21,7 +21,7 @@ and scaled componentwise (`CategoryTheory.GradedObject.add_apply`,
 `CategoryTheory.GradedObject.smul_apply`).
 It also records that the canonical reindexing and shift functors are additive and linear, and that
 totalizing a graded object, `X ↦ ∐ᵢ Xᵢ`, is left adjoint to the constant graded object
-(`CategoryTheory.GradedObject.totalAdjunction`).
+(`TauCeti.gradedObjectTotalAdjunction`).
 
 Mathlib provides the category of graded objects and its grading shift, but not these
 structures. They are what homological algebra needs: `Ext` groups, and hence the graded
@@ -147,18 +147,14 @@ noncomputable instance gradedObjectAbelian (β : Type w) [Abelian C] :
   let _ : Preadditive (β → C) := gradedObjectPreadditive β
   exact abelianOfEquivalence (piEquivalenceFunctorDiscrete β C).functor
 
-end TauCeti
-
-namespace CategoryTheory.GradedObject
-
 /-- **Totalizing a graded object is left adjoint to the constant graded object**: morphisms
 `∐ᵢ Xᵢ ⟶ Y` correspond to families of morphisms `Xᵢ ⟶ Y`. -/
-noncomputable def totalAdjunction (β : Type) (C : Type u) [Category.{v} C] [HasCoproducts.{0} C] :
-    total β C ⊣ Functor.pi' fun _ : β ↦ 𝟭 C := by
+noncomputable def gradedObjectTotalAdjunction (β : Type) (C : Type u) [Category.{v} C]
+    [HasCoproducts.{0} C] : GradedObject.total β C ⊣ Functor.pi' fun _ : β ↦ 𝟭 C := by
   -- `GradedObject.total` is by definition `X ↦ ∐ᵢ Xᵢ`, the colimit of the diagram
   -- `Discrete β ⥤ C` corresponding to `X`.
   change (piEquivalenceFunctorDiscrete β C).functor ⋙ colim ⊣ _
   exact ((piEquivalenceFunctorDiscrete β C).toAdjunction.comp colimConstAdj).ofNatIsoRight
     (Iso.refl _)
 
-end CategoryTheory.GradedObject
+end TauCeti
