@@ -60,13 +60,13 @@ private lemma coe_lineDerivCLM (φ : 𝓓(Ω, ℝ)) (v : E) :
       fun x ↦ lineDeriv ℝ (φ : E → ℝ) x v :=
   funext fun _ ↦ TestFunction.lineDerivCLM_apply_of_le le_top
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- The iterated line derivative of a smooth test function in a fixed direction is the iterated
 Fréchet derivative applied to that direction. -/
-private lemma lineDeriv_lineDeriv_testFunction (φ : 𝓓(Ω, ℝ)) (v x : E) :
-    lineDeriv ℝ (fun y ↦ lineDeriv ℝ (φ : E → ℝ) y v) x v =
-      fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y v) x v := by
-  have hφ1 : ∀ y, lineDeriv ℝ (φ : E → ℝ) y v = fderiv ℝ (φ : E → ℝ) y v := fun y ↦
+private lemma lineDeriv_lineDeriv_testFunction (φ : 𝓓(Ω, F)) (v x : E) :
+    lineDeriv ℝ (fun y ↦ lineDeriv ℝ (φ : E → F) y v) x v =
+      fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → F) y v) x v := by
+  have hφ1 : ∀ y, lineDeriv ℝ (φ : E → F) y v = fderiv ℝ (φ : E → F) y v := fun y ↦
     (φ.contDiff.differentiable (by simp) y).lineDeriv_eq_fderiv
   simp_rw [hφ1]
   exact (((φ.contDiff.fderiv_right (by simp)).clm_apply contDiff_const).differentiable
@@ -171,11 +171,12 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero
   · rw [(hu x hx).2.eq_of_nhds, Pi.zero_apply, smul_zero]
   · simp [φ.zero_on_compl hx]
 
-omit [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- Applying the test-function Laplacian operator agrees pointwise with the classical
 Laplacian of the underlying smooth function. -/
-theorem _root_.TestFunction.laplacianCLM_apply (φ : 𝓓(Ω, ℝ)) (y : E) :
-    (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ) y = Δ (φ : E → ℝ) y := by
+@[simp]
+theorem _root_.TestFunction.laplacianCLM_apply (φ : 𝓓(Ω, F)) (y : E) :
+    (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, F)) φ) y = Δ (φ : E → F) y := by
   simp only [LineDeriv.laplacianCLM]
   rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
   simp only [iteratedFDeriv_two_apply, sum_apply, ContinuousLinearMap.comp_apply]
@@ -184,8 +185,8 @@ theorem _root_.TestFunction.laplacianCLM_apply (φ : 𝓓(Ω, ℝ)) (y : E) :
   simp only [TestFunction.lineDerivOpCLM_eq_lineDerivCLM]
   rw [TestFunction.lineDerivCLM_apply_of_le le_top]
   have hinner :
-      ((TestFunction.lineDerivCLM ℝ ((stdOrthonormalBasis ℝ E) i) φ : 𝓓(Ω, ℝ)) : E → ℝ) =
-      fun z => lineDeriv ℝ (φ : E → ℝ) z ((stdOrthonormalBasis ℝ E) i) :=
+      ((TestFunction.lineDerivCLM ℝ ((stdOrthonormalBasis ℝ E) i) φ : 𝓓(Ω, F)) : E → F) =
+      fun z => lineDeriv ℝ (φ : E → F) z ((stdOrthonormalBasis ℝ E) i) :=
     funext fun z => TestFunction.lineDerivCLM_apply_of_le le_top
   rw [hinner]
   rw [lineDeriv_lineDeriv_testFunction φ ((stdOrthonormalBasis ℝ E) i) y]

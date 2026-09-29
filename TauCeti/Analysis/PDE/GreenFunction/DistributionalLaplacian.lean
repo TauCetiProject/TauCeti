@@ -34,17 +34,6 @@ open scoped Distributions RealInnerProductSpace
 
 variable {n : ℕ}
 
-/-- The reflected-pole corrector is harmonic throughout the open unit ball whenever the
-pole lies inside it. -/
-theorem harmonicOnNhd_ballGreenCorrector {x : EuclideanSpace ℝ (Fin n)}
-    (hx : ‖x‖ < 1) : HarmonicOnNhd (ballGreenCorrector n x)
-      (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))) := by
-  intro y hy
-  have hy' : ‖y‖ < 1 := by simpa using hy
-  exact harmonicAt_ballGreenCorrector
-    (norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos
-      ((mul_le_of_le_one_right (norm_nonneg x) hy'.le).trans_lt hx).ne)
-
 /-- The unit-ball Green kernel has distributional negative Laplacian equal to a Dirac mass
 at its pole. The test function is supported strictly inside the ball, so no boundary term
 appears. -/
@@ -58,7 +47,7 @@ theorem integral_laplacian_mul_ballGreenKernel (hn : 3 ≤ n)
     fun y => TestFunction.laplacianCLM_apply φ y
   have hc : LocallyIntegrableOn (ballGreenCorrector n x)
       (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))) volume :=
-    (harmonicOnNhd_ballGreenCorrector hx).contDiffOn.continuousOn.locallyIntegrableOn
+    (harmonicOnNhd_ballGreenCorrector hx.le).contDiffOn.continuousOn.locallyIntegrableOn
       (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))).isOpen.measurableSet
   have hcint : Integrable (fun y => Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y *
       ballGreenCorrector n x y) volume := by
@@ -87,11 +76,8 @@ theorem integral_laplacian_mul_ballGreenKernel (hn : 3 ≤ n)
   have hcorrector : ∫ y, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y *
       ballGreenCorrector n x y = 0 := by
     simpa only [smul_eq_mul] using
-      (harmonicOnNhd_ballGreenCorrector hx).integral_laplacian_smul_eq_zero (μ := volume) φ
-  rw [show (fun y => Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y * ballGreenKernel n x y) =
-      (fun y => Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y * newtonianKernel n (y - x) -
-        Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y * ballGreenCorrector n x y) by
-        funext y; rw [ballGreenKernel_def]; ring]
+      (harmonicOnNhd_ballGreenCorrector hx.le).integral_laplacian_smul_eq_zero (μ := volume) φ
+  simp_rw [ballGreenKernel_def, mul_sub]
   rw [integral_sub hni hcint, hcorrector, sub_zero]
   exact integral_laplacian_mul_newtonianKernel_sub hn (φ.contDiff.of_le (by norm_num))
     φ.hasCompactSupport x

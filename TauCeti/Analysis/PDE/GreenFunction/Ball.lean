@@ -42,6 +42,7 @@ dimension two that kernel vanishes identically, so the planar case is instead
 ## Main declarations
 
 * `TauCeti.ballGreenCorrector`: the reflected Newtonian kernel correcting the boundary values.
+* `TauCeti.harmonicOnNhd_ballGreenCorrector`: harmonicity of the corrector inside the ball.
 * `TauCeti.ballGreenKernel`: the Dirichlet Green kernel of the unit ball.
 * `TauCeti.ballGreenKernel_comm`: symmetry of the Green kernel in its two arguments.
 * `TauCeti.harmonicAt_ballGreenKernel`: harmonicity in `y` away from the pole.
@@ -66,7 +67,7 @@ noncomputable section
 
 namespace TauCeti
 
-open InnerProductSpace MeasureTheory Metric
+open InnerProductSpace MeasureTheory Metric TopologicalSpace
 
 open scoped RealInnerProductSpace
 
@@ -197,6 +198,21 @@ theorem harmonicAt_ballGreenCorrector {x y : EuclideanSpace ℝ (Fin n)}
     rw [hfun]
     exact (harmonicAt_comp_const_add_smul_iff (-(‖x‖⁻¹ • x)) (norm_ne_zero_iff.mpr hx)).2
       (harmonicAt_newtonianKernel n hne)
+
+/-- The reflected-pole corrector is harmonic throughout the open unit ball whenever the
+pole lies in the closed unit ball. -/
+theorem harmonicOnNhd_ballGreenCorrector {x : EuclideanSpace ℝ (Fin n)}
+    (hx : ‖x‖ ≤ 1) : HarmonicOnNhd (ballGreenCorrector n x)
+      (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))) := by
+  intro y hy
+  have hy' : ‖y‖ < 1 := by simpa using hy
+  have hxy : ‖x‖ * ‖y‖ < 1 := by
+    calc
+      ‖x‖ * ‖y‖ ≤ 1 * ‖y‖ := mul_le_mul_of_nonneg_right hx (norm_nonneg y)
+      _ = ‖y‖ := one_mul _
+      _ < 1 := hy'
+  exact harmonicAt_ballGreenCorrector
+    (norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos hxy.ne)
 
 /-- The scalar identity turning the derivative of the corrector into the normalization of the
 derivative of the Newtonian kernel. -/
