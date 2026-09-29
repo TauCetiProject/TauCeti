@@ -11,17 +11,15 @@ public import TauCeti.RingTheory.KrullSchmidt.Cancellation
 /-!
 # Surjections from a projective module over a semiprimary ring
 
-Over a semiprimary ring every module has a projective cover, and this makes a map from a projective
-module of finite length determined, up to an automorphism of its source, by its range: if
-`a b : F → E` have the same range `X`, then `b ∘ θ = a` for an automorphism `θ` of `F`. Both maps
-factor through the projective cover `P → X` by surjections `F → P`, and two surjections onto the
-projective module `P` of finite length differ by an automorphism, by Krull–Schmidt cancellation of
-`P` (`TauCeti.exists_linearEquiv_comp_eq_of_surjective`).
+Over a semiprimary ring a map from a projective module of finite length is determined, up to an
+automorphism of its source, by its range: if `a b : F → E` have the same range, then `b ∘ θ = a`
+for an automorphism `θ` of `F`.
 
-For `F` free this says that two presentations of the same module by the same number of generators
-are related by a change of generators, the module-theoretic analogue of Gaschütz's lemma. Over the
-group algebra of a finite group over a field it compares two presentations of the augmentation
-ideal; lifting from the residue field, it compares them over a local ring as well.
+For `F` free of finite length, for instance free of finite rank over an Artinian ring, this says
+that two presentations of the same module by the same number of generators are related by a change
+of generators, the module-theoretic analogue of Gaschütz's lemma. Over the group algebra of a
+finite group over a field it compares two presentations of the augmentation ideal; lifting from the
+residue field, it compares them over a local ring as well.
 
 ## Main results
 
@@ -66,7 +64,7 @@ theorem exists_linearEquiv_comp_eq_of_range_eq [Module.Projective R F] (hF : IsF
     a.surjective_rangeRestrict
   obtain ⟨t, ht, ht'⟩ := IsProjectiveCover.exists_surjective (P := P) (f := π) hP hb'
   -- The cover is a quotient of `F`, hence of finite length, so the two lifts differ by an
-  -- automorphism of `F`.
+  -- automorphism of `F`, by Krull–Schmidt cancellation of the cover.
   obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hF
   have : IsNoetherian R P := isNoetherian_of_surjective s (LinearMap.range_eq_top.mpr hs')
   have : IsArtinian R P := isArtinian_of_surjective F s hs'

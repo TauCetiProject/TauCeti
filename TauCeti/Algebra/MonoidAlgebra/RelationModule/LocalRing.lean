@@ -16,22 +16,10 @@ Let `G` be a finite group and `R` a local ring. A generating family `g : ι → 
 type gives Lyndon's exact sequence `0 → relationModule R G g → R[G]^ι → I_G → 0`. This file proves
 that for two generating families `g` and `g'` indexed by finite types of the same cardinality the
 presentation maps onto `I_G` differ by an isomorphism of the free modules, so that the relation
-module depends, up to isomorphism, only on the group and the number of generators. For `R = ℤ_p`
-this is the independence of `R^ab(p)` from the chosen generators used in the computation of the
-generator rank of the absolute Galois group of a `p`-adic field (NSW (5.6.6), (7.4.1)).
-
-Schanuel's lemma alone gives `relationModule R G g × R[G]^ι ≃ relationModule R G g' × R[G]^ι`, and
-the free summand would still have to be cancelled. The proof here reduces modulo the maximal ideal
-`𝔪` instead. Over the residue field `k` the group algebra `k[G]` is finite-dimensional, hence
-Artinian, and the two presentation maps have the same image, so they differ by an automorphism
-`θ₀` of `k[G]^ι` (`TauCeti.exists_linearEquiv_comp_eq_of_range_eq`, which rests on projective
-covers and Krull–Schmidt cancellation over `k[G]`). Lift the images of the basis vectors under
-`θ₀`, and correct the lifts by families reducing to zero — possible because the augmentation ideal
-is a direct summand of `R[G]` as an `R`-module — so that the lifted map `θ` still intertwines the
-two presentations. It reduces to `θ₀`, so it is onto by Nakayama's lemma over `R`, `R[G]^ι` being
-a finitely generated `R`-module, and hence bijective
-(`TauCeti.MonoidAlgebra.bijective_of_forall_exists_mapRingHom_residue_eq`). No completeness of `R`
-is needed. Families indexed by different types of the same size are first reindexed to one type.
+module depends, up to isomorphism, only on the group and the number of generators. No completeness
+of `R` is needed. For `R = ℤ_p` this is the independence of `R^ab(p)` from the chosen generators
+used in the computation of the generator rank of the absolute Galois group of a `p`-adic field
+(NSW (5.6.6), (7.4.1)).
 
 ## Main results
 
@@ -105,6 +93,8 @@ private theorem exists_linearEquiv_linearCombination_comp_eq_of_same_index {g g'
   set b := Fintype.linearCombination (MonoidAlgebra R G) fun i ↦ single (g' i) (1 : R) - 1
   set red := mapRingHom G (residue R)
   have hred : Function.Surjective red := map_surjective _ (residue_surjective (R := R))
+  -- Schanuel's lemma would leave a free summand `R[G]^ι` to cancel; instead reduce modulo `𝔪`,
+  -- compare the presentations over the residue field, and lift the comparison.
   -- Over the residue field the group algebra is Artinian, so the two presentations differ by an
   -- automorphism `θ₀` there.
   have : IsArtinianRing (MonoidAlgebra (ResidueField R) G) :=
