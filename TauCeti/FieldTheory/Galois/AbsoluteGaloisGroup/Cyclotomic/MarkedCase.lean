@@ -36,6 +36,17 @@ def IsFreeCase : Prop :=
 theorem isFreeCase_iff : IsFreeCase p K ↔ ¬ ∃ ζ : K, IsPrimitiveRoot ζ p :=
   Iff.rfl
 
+variable {K}
+
+/-- A field in which `2 ≠ 0` (for example, any field of characteristic zero) is never in the
+free arithmetic case at `p = 2`, since `-1` is a primitive square root of unity. -/
+theorem not_isFreeCase_two [NeZero (2 : K)] : ¬ IsFreeCase 2 K := by
+  rw [isFreeCase_iff]
+  push Not
+  have := ringChar.charP K
+  refine ⟨-1, IsPrimitiveRoot.neg_one (ringChar K) fun h => NeZero.ne (2 : K) ?_⟩
+  exact_mod_cast h ▸ ringChar.Nat.cast_ringChar
+
 end FreeCase
 
 section QNeTwoCase
@@ -184,17 +195,6 @@ theorem IsDyadicEvenPrincipalCase.neg_one_notMem_range
     (hcase : IsDyadicEvenPrincipalCase K) :
     (-1 : ℤ_[2]ˣ) ∉ (localCyclotomicCharacter 2 K).range :=
   ((isDyadicEvenPrincipalCase_iff (K := K)).mp hcase).2.2
-
-omit [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] in
-/-- A dyadic local field is never in the free arithmetic case, since `-1` is a primitive square
-root of unity in characteristic zero. -/
-theorem not_isFreeCase_two : ¬ IsFreeCase 2 K := by
-  rw [isFreeCase_iff]
-  push Not
-  let _ : CharZero K :=
-    charZero_of_injective_algebraMap (algebraMap ℚ_[2] K).injective
-  exact ⟨-1, IsPrimitiveRoot.neg_one 0 (by norm_num)⟩
 
 /-- Every finite extension of `ℚ₂` belongs to exactly one arithmetic branch of the marked
 classification. -/
