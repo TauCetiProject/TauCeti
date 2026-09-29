@@ -251,11 +251,12 @@ noncomputable def automorphismGroupMulEquivQuotientKer (ht : t.IsRegular) :
 /-- The characteristic property of `TauCeti.TriangleGroup.automorphismGroupMulEquivQuotientKer`:
 the coset that an automorphism `τ` goes to moves the sheet `0` to `τ 0`. -/
 @[simp]
-theorem kerLift_automorphismGroupMulEquivQuotientKer_apply (ht : t.IsRegular) (h0 : 0 < n)
+theorem kerLift_automorphismGroupMulEquivQuotientKer_apply (ht : t.IsRegular)
     (τ : t.automorphismGroup) :
     QuotientGroup.kerLift (toPerm t ha hb hc)
-        (automorphismGroupMulEquivQuotientKer t ha hb hc ht τ).unop ⟨0, h0⟩ =
-      (τ : Perm (Fin n)) ⟨0, h0⟩ := by
+        (automorphismGroupMulEquivQuotientKer t ha hb hc ht τ).unop
+          ⟨0, Nat.pos_of_ne_zero ht.isConnected.ne_zero⟩ =
+      (τ : Perm (Fin n)) ⟨0, Nat.pos_of_ne_zero ht.isConnected.ne_zero⟩ := by
   have hq (x : TriangleGroup a b c ⧸ (toPerm t ha hb hc).ker) :
       (((QuotientGroup.quotientKerEquivRange (toPerm t ha hb hc)).trans
         (MulEquiv.subgroupCongr (range_toPerm t ha hb hc)) x : t.monodromyGroup) :
@@ -266,7 +267,7 @@ theorem kerLift_automorphismGroupMulEquivQuotientKer_apply (ht : t.IsRegular) (h
     Function.comp_apply, Function.comp_apply, MulOpposite.unop_op, ← hq,
     MulEquiv.apply_symm_apply]
   simpa only [Subgroup.smul_def, Perm.smul_def] using
-    PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupOpposite_smul ht ⟨0, h0⟩ τ
+    PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupOpposite_smul ht _ τ
 
 end NormalSubgroup
 
