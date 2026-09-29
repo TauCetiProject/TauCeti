@@ -9,8 +9,8 @@ public import TauCeti.FieldTheory.Galois.Minpoly
 public import TauCeti.NumberTheory.LocalField.Different.Monogenic
 public import TauCeti.NumberTheory.LocalField.Monogenic
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
-public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Valuation.AddValuation
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
 # Hilbert's formula for the different exponent
