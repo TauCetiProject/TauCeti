@@ -17,15 +17,14 @@ are not joined in the Dynkin diagram, and roots of opposite signs commute at dis
 These are equalities in the carrier's group of points over **every** commutative ring, including
 rings of positive characteristic.
 
-The Serre relations give the required vanishing Lie brackets. The generic Kostant
-root-subgroup theorem then transports those brackets through integral divided-power
-exponentials; no factorial is inverted.
-
-The proof structure is adapted from
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.SimpleRootRelations`.
+Together these give the zero-commutator cases of the pinned Chevalley relations for the E₇
+carrier. They allow the numbered root-subgroup points to be reordered at nonadjacent nodes or
+at distinct nodes with opposite signs.
 
 ## References
 
+* Formalization adapted:
+  `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.SimpleRootRelations`.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§25–26.
 -/
@@ -44,15 +43,13 @@ local notation "cartanGen" => TauCeti.serreH ℚ CM
 
 private theorem lie_positive_positive_eq_zero {i j : Fin 7} (hij : CM i j = 0) :
     ⁅rootGen (.inl i), rootGen (.inl j)⁆ = 0 := by
-  simpa only [TauCeti.serreRootGenerator_inl] using
-    (show ⁅TauCeti.serreE ℚ CM i, TauCeti.serreE ℚ CM j⁆ = 0 by
-      simpa [hij] using TauCeti.ad_pow_lie_serreE_serreE ℚ CM i j)
+  simpa [TauCeti.serreRootGenerator_inl, hij] using
+    TauCeti.ad_pow_lie_serreE_serreE ℚ CM i j
 
 private theorem lie_negative_negative_eq_zero {i j : Fin 7} (hij : CM i j = 0) :
     ⁅rootGen (.inr i), rootGen (.inr j)⁆ = 0 := by
-  simpa only [TauCeti.serreRootGenerator_inr] using
-    (show ⁅TauCeti.serreF ℚ CM i, TauCeti.serreF ℚ CM j⁆ = 0 by
-      simpa [hij] using TauCeti.ad_pow_lie_serreF_serreF ℚ CM i j)
+  simpa [TauCeti.serreRootGenerator_inr, hij] using
+    TauCeti.ad_pow_lie_serreF_serreF ℚ CM i j
 
 private theorem lie_positive_negative_eq_zero {i j : Fin 7} (hij : i ≠ j) :
     ⁅rootGen (.inl i), rootGen (.inr j)⁆ = 0 := by
