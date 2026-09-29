@@ -38,6 +38,8 @@ shown to be nondegenerate.
 
 * `TauCeti.cohomFpLinearEquivContinuousZModDual_symm_apply`: the class attached to a character is
   the class of its homogeneous cocycle.
+* `TauCeti.cohomFpLinearEquivContinuousZModDual_cohomFpMap`: pullback of degree-one classes is
+  precomposition of their characters.
 * `TauCeti.mul_eq_mul_of_cupFp_eq_zero`: if `a ⌣ b = 0` then the characters `χ, ψ` of `a, b`
   satisfy `χ(x) ψ(y) = χ(y) ψ(x)` for commuting `x` and `y`.
 
@@ -144,6 +146,54 @@ theorem cohomFpLinearEquivContinuousZModDual_symm_apply (χ : continuousZModDual
       π (trivialFp p G) 1 (characterCocycle p χ) :=
   (cohomFpLinearEquivContinuousZModDual p G).symm_apply_eq.2
     (cohomFpLinearEquivContinuousZModDual_π_characterCocycle p χ).symm
+
+variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+
+/-- The identification of degree-one cohomology with continuous characters is natural in the
+group: pullback of cohomology classes corresponds to precomposition of characters. -/
+theorem cohomFpLinearEquivContinuousZModDual_cohomFpMap (f : H →ₜ* G)
+    (x : cohomFp p G 1) :
+    cohomFpLinearEquivContinuousZModDual p H (cohomFpMap p f 1 x) =
+      f.continuousZModDualMap (cohomFpLinearEquivContinuousZModDual p G x) := by
+  let χ := cohomFpLinearEquivContinuousZModDual p G x
+  apply (cohomFpLinearEquivContinuousZModDual p H).symm.injective
+  rw [LinearEquiv.symm_apply_apply]
+  calc
+    cohomFpMap p f 1 x =
+        cohomFpMap p f 1 ((cohomFpLinearEquivContinuousZModDual p G).symm χ) := by
+      simp only [χ, LinearEquiv.symm_apply_apply]
+    _ = cohomFpMap p f 1 (π (trivialFp p G) 1 (characterCocycle p χ)) := by
+      rw [cohomFpLinearEquivContinuousZModDual_symm_apply]
+    _ = π (trivialFp p H) 1
+        (_root_.ContinuousCohomology.cocyclesMap f
+          (eqToHom (res_trivialFp_hom p f)) 1 (characterCocycle p χ)) := by
+      rw [cohomFpMap_def, ContinuousCohomology.map_π_apply]
+    _ = π (trivialFp p H) 1 (characterCocycle p (f.continuousZModDualMap χ)) := by
+      congr 1
+      apply (TopRep.homogeneousCochains (trivialFp p H)).iCycles_injective 1
+      rw [ContinuousCohomology.iCycles_cocyclesMap_apply,
+        iCycles_characterCocycle, iCycles_characterCocycle]
+      apply Subtype.ext
+      ext h₀ h₁
+      rw [ContinuousCohomology.coe_cochainsMap_f_apply,
+        ContinuousCohomology.resolutionMap_succ_apply,
+        ContinuousCohomology.resolutionMap_succ_apply,
+        characterCochain_apply, characterCochain_apply]
+      rw [_root_.ContinuousCohomology.resolutionMap_zero]
+      apply (trivialFpEquiv p H).injective
+      rw [trivialFpEquiv_eqToHom_res_trivialFp_hom,
+        ContinuousMonoidHom.toMul_continuousZModDualMap_apply]
+      rw [LinearEquiv.apply_symm_apply]
+      calc
+        Multiplicative.toAdd (χ.toMul ((f h₀)⁻¹ * f h₁)) =
+            Multiplicative.toAdd (χ.toMul (f (h₀⁻¹ * h₁))) := by
+          rw [map_mul f, map_inv f]
+        _ = trivialFpEquiv p H
+            ((trivialFpEquiv p H).symm (Multiplicative.toAdd (χ.toMul (f (h₀⁻¹ * h₁))))) :=
+          (LinearEquiv.apply_symm_apply _ _).symm
+    _ = (cohomFpLinearEquivContinuousZModDual p H).symm
+        (f.continuousZModDualMap χ) :=
+      (cohomFpLinearEquivContinuousZModDual_symm_apply p _).symm
 
 /-! ### The symmetry test for the cup product -/
 

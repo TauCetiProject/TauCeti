@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ConjInvariants
+public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.DualRank
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
 
 /-!
 # The invariant part of `H¹(N, 𝔽_p)` and the rank of `N ⧸ Nᵖ[N, G]`
@@ -26,6 +28,10 @@ makes the dimension of `H²(G, 𝔽_p)` the relation rank of `G`.
 
 ## Main results
 
+* `TauCeti.pLowerCentralStep_proPKernel`: the relative elementary abelian `p`-quotient of the
+  pro-`p` kernel is trivial.
+* `TauCeti.maximalProPQuotient.continuousZModDualMap_bijective`: pullback identifies the
+  continuous `ZMod p`-valued characters of `G(p)` and `G`.
 * `TauCeti.finite_H1ConjInvariants_iff`: `H¹(N, 𝔽_p)^G` is finite exactly when
   `N ⧸ Nᵖ[N, G]` is topologically finitely generated.
 * `TauCeti.natCard_H1ConjInvariants`: in that case `H¹(N, 𝔽_p)^G` has `p ^ d(N ⧸ Nᵖ[N, G])`
@@ -51,8 +57,112 @@ universe u
 -- Preferring the ring path locally keeps a single additive structure on `ZMod p`.
 attribute [local instance 2000] Ring.toAddCommGroup
 
-variable {p : ℕ} [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [TotallyDisconnectedSpace G] {N : Subgroup G} [N.Normal]
+variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G]
+
+/-! ### The maximal pro-`p` kernel -/
+
+section MaximalKernel
+
+variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- The pro-`p` kernel has no nontrivial elementary abelian `p`-quotient invariant under the
+ambient group: `Rᵖ[R,G]` is dense in `R` for `R = proPKernel p G`. Indeed, the quotient of `G`
+by `Rᵖ[R,G]` is an extension of `G(p)` by an elementary abelian pro-`p` group, hence is itself
+pro-`p`; the universal property then forces `R` into `Rᵖ[R,G]`. -/
+theorem pLowerCentralStep_proPKernel :
+    pLowerCentralStep p (proPKernel p G) = proPKernel p G := by
+  let R : Subgroup G := proPKernel p G
+  let _ : R.Normal := by dsimp [R]; infer_instance
+  let S : Subgroup G := pLowerCentralStep p R
+  let _ : S.Normal := by dsimp [S]; infer_instance
+  let _ : IsClosed (S : Set G) := isClosed_pLowerCentralStep R
+  let f : (G ⧸ S) →* (G ⧸ R) := QuotientGroup.map S R (MonoidHom.id G)
+    (by simpa only [Subgroup.comap_id] using
+      pLowerCentralStep_le (p := p) (H := R) (isClosed_proPKernel (p := p) (G := G)))
+  have hf : Continuous f := by
+    refine (QuotientGroup.isQuotientMap_mk S).continuous_iff.mpr ?_
+    change Continuous fun g : G => (g : G ⧸ R)
+    exact QuotientGroup.continuous_mk
+  have hsurj : Function.Surjective f :=
+    QuotientGroup.map_surjective_of_surjective (N := S) (M := R) (MonoidHom.id G)
+      (QuotientGroup.mk'_surjective R)
+      (by simpa only [Subgroup.comap_id] using
+        pLowerCentralStep_le (p := p) (H := R) (isClosed_proPKernel (p := p) (G := G)))
+  have hker : IsPGroup p f.ker := by
+    refine IsPGroup.of_exponent_dvd_pow (n := 1) ?_
+    rw [pow_one, Monoid.exponent_dvd_iff_forall_pow_eq_one]
+    intro x
+    obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective x.1
+    have hgR : g ∈ R := by
+      have hx := x.2
+      rw [MonoidHom.mem_ker] at hx
+      change f x.1 = 1 at hx
+      rw [← hg] at hx
+      change (g : G ⧸ R) = 1 at hx
+      rw [QuotientGroup.eq_one_iff] at hx
+      exact hx
+    apply Subtype.ext
+    change x.1 ^ p = 1
+    rw [← hg, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+    exact pow_mem_pLowerCentralStep hgR
+  have hGS : IsProP p (G ⧸ S) :=
+    (isProP_maximalProPQuotient (p := p) (G := G)).of_ker_isProP hf hsurj hker.isProP
+  apply le_antisymm
+    (pLowerCentralStep_le (p := p) (H := proPKernel p G)
+      (isClosed_proPKernel (p := p) (G := G)))
+  intro g hg
+  change g ∈ S
+  exact (QuotientGroup.eq_one_iff g).mp
+    (proPKernel_le_ker hGS (QuotientGroup.mk' S) QuotientGroup.continuous_mk hg)
+
+end MaximalKernel
+
+section MaximalDual
+
+variable [Fact p.Prime]
+
+/-- Pullback along the maximal pro-`p` quotient identifies the continuous `ZMod p`-valued
+characters of the quotient with those of the original profinite group. -/
+theorem maximalProPQuotient.continuousZModDualMap_bijective :
+    Function.Bijective
+      ((⟨maximalProPQuotient.mk p G, maximalProPQuotient.continuous_mk p G⟩ :
+          G →ₜ* maximalProPQuotient p G).continuousZModDualMap (n := p)) := by
+  constructor
+  · intro χ ψ h
+    apply Additive.toMul.injective
+    apply ContinuousMonoidHom.ext
+    intro x
+    obtain ⟨g, rfl⟩ := maximalProPQuotient.mk_surjective p G x
+    have h' := congrArg Additive.toMul h
+    have hg := DFunLike.congr_fun h' g
+    rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
+      ContinuousMonoidHom.toMul_continuousZModDualMap_apply] at hg
+    change χ.toMul (maximalProPQuotient.mk p G g) =
+      ψ.toMul (maximalProPQuotient.mk p G g) at hg
+    exact hg
+  · intro χ
+    let f : G →* Multiplicative (ZMod p) := χ.toMul.toMonoidHom
+    let hP : IsProP p (Multiplicative (ZMod p)) :=
+      IsPGroup.isProP (ZModModule.isPGroup_multiplicative (n := p) (G := ZMod p))
+    let lift := maximalProPQuotient.lift hP f χ.toMul.continuous
+    have hlift : Continuous lift :=
+      maximalProPQuotient.continuous_lift hP f χ.toMul.continuous
+    refine ⟨Additive.ofMul (⟨lift, hlift⟩ :
+      maximalProPQuotient p G →ₜ* Multiplicative (ZMod p)), ?_⟩
+    apply Additive.toMul.injective
+    apply ContinuousMonoidHom.ext
+    intro g
+    rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply]
+    change lift (maximalProPQuotient.mk p G g) = χ.toMul g
+    rw [maximalProPQuotient.mk_apply]
+    exact (maximalProPQuotient.lift_mk hP f χ.toMul.continuous g).trans rfl
+
+end MaximalDual
+
+/-! ### Invariant degree-one classes -/
+
+variable [Fact p.Prime] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
+variable {N : Subgroup G} [N.Normal]
   [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
 
 variable (hN : IsClosed (N : Set G)) (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
