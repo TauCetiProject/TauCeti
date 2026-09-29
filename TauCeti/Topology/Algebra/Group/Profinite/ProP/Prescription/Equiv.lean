@@ -32,11 +32,12 @@ independent of the chosen presentation.
 
 ## Implementation notes
 
-The equivalence on explicit continuous `H¹` is `TauCeti.ContCohomology.explicitMap1Equiv`
-applied to the compatible pair `(e, compEquiv e χ i)`; its compatibility with reduction follows
-from the naturality lemmas `TauCeti.ContCohomology.explicitMap1_comp`,
-`TauCeti.ContCohomology.explicitMap1_congr_of_eq` and
-`TauCeti.ContCohomology.explicitCoeff1_eq_explicitMap1`.
+Explicit continuous `H¹` is functorial in pairs consisting of a group homomorphism and a
+compatible map of coefficient modules (`TauCeti.ContCohomology.explicitMap1Equiv` in the
+invertible case).  The `H¹` equivalence here is this functoriality for the pair
+`(e, compEquiv e χ i)`, so it commutes with the maps on `H¹` induced by reduction
+`I(χ)/pⁱ → I(χ)/p`.  Hence surjectivity of these maps, which is the prescription property,
+transports along `e`.
 
 ## References
 
