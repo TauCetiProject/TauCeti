@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 public import TauCeti.Algebra.HopfAlgebra.Subalgebra
-import TauCeti.LinearAlgebra.TensorProduct.Intersection
 
 /-!
 # The quotient of an affine group by a normal subgroup
@@ -94,6 +93,8 @@ theorem forall_hom_mem_coinvariants_iff (f : K ⟶ H) :
         have hb := AlgHom.congr_fun h b
         simp only [AlgHom.comp_apply, Algebra.ofId_apply, Bialgebra.counitAlgHom_apply] at hb
         exact hb
+      -- `TensorProduct.map_map` is stated for linear maps. Unfold the algebra tensor map
+      -- to that definition so the quotient map and `f` can be composed via `heq`.
       change TensorProduct.map (LinearMap.id : H →ₗ[R] H)
           (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
             (TensorProduct.map (f.hom : K →ₗ[R] H) (f.hom : K →ₗ[R] H) t) = _

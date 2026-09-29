@@ -143,6 +143,8 @@ private theorem rTensor_counit_comulAlgHom :
           (TensorProduct.map A.val.toLinearMap A.val.toLinearMap t)) := by
     let ι := A.val.toLinearMap
     let ε := Coalgebra.counit (R := R) (A := H)
+    -- `CoassocSimps.lid_comp_map` is stated for linear maps. Expose the subtype
+    -- coercion as `ι` and the counit as `ε` to match its two sides.
     change ι (TensorProduct.lid R A (((ε ∘ₗ ι).rTensor A) t)) =
       TensorProduct.lid R H (ε.rTensor H (TensorProduct.map ι ι t))
     simpa only [LinearMap.rTensor, TensorProduct.map_map, LinearMap.id_comp,
@@ -163,6 +165,8 @@ private theorem lTensor_counit_comulAlgHom :
           (TensorProduct.map A.val.toLinearMap A.val.toLinearMap t)) := by
     let ι := A.val.toLinearMap
     let ε := Coalgebra.counit (R := R) (A := H)
+    -- `CoassocSimps.rid_comp_map` likewise uses linear maps; identify the subtype
+    -- coercion with `ι` before applying that lemma to the right counit law.
     change ι (TensorProduct.rid R A (((ε ∘ₗ ι).lTensor A) t)) =
       TensorProduct.rid R H (ε.lTensor H (TensorProduct.map ι ι t))
     simpa only [LinearMap.lTensor, TensorProduct.map_map, LinearMap.id_comp,
