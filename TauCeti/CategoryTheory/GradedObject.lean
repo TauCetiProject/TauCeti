@@ -16,8 +16,16 @@ public import Mathlib.CategoryTheory.Linear.LinearFunctor
 # Additive structures on graded objects
 
 This file equips Mathlib's canonical category `CategoryTheory.GradedObject β C` with the
-pointwise preadditive, linear, and abelian structures inherited from `C`. It also records that
-the canonical reindexing and shift functors are additive and linear.
+pointwise preadditive, linear, and abelian structures inherited from `C`, with morphisms added
+and scaled componentwise (`TauCeti.GradedObject.add_apply`, `TauCeti.GradedObject.smul_apply`).
+It also records that the canonical reindexing and shift functors are additive and linear.
+
+Mathlib provides the category of graded objects and its grading shift, but not these
+structures. They are what homological algebra needs: `Ext` groups, and hence the graded
+Ext-Euler form `χ_q(X, Y) = ∑ n, j, (-1)ⁿ q⁻ʲ dim Extⁿ(X, Y{j})`, are only defined in an abelian
+category, and the q-Euler form uses the grading shift as a linear autoequivalence. With these
+instances, categories of graded objects such as graded vector spaces
+`GradedObjectWithShift (-1) (ModuleCat k)` become examples of the graded Ext-Euler formalism.
 -/
 
 public section
@@ -43,55 +51,55 @@ instance gradedObjectHomNeg (β : Type w) [Preadditive C] (X Y : GradedObject β
 /-- The pointwise preadditive structure on Mathlib's category of graded objects. -/
 instance gradedObjectPreadditive (β : Type w) [Preadditive C] :
     Preadditive (GradedObject β C) where
-  homGroup X Y := by
-    change AddCommGroup (∀ i, X i ⟶ Y i)
-    infer_instance
+  homGroup X Y := inferInstanceAs (AddCommGroup (∀ i, X i ⟶ Y i))
   add_comp := by intros; funext i; apply add_comp
   comp_add := by intros; funext i; apply comp_add
 
 /-- The pointwise linear structure on Mathlib's category of graded objects. -/
 instance gradedObjectLinear (β : Type w) (R : Type t) [Semiring R] [Preadditive C] [Linear R C] :
     Linear R (GradedObject β C) where
-  homModule X Y := by
-    change Module R (∀ i, X i ⟶ Y i)
-    infer_instance
+  homModule X Y := inferInstanceAs (Module R (∀ i, X i ⟶ Y i))
   smul_comp := by intros; funext i; apply Linear.smul_comp
   comp_smul := by intros; funext i; apply Linear.comp_smul
+
+namespace GradedObject
+
+/-- Morphisms of graded objects are added componentwise. -/
+@[simp]
+theorem add_apply {β : Type w} [Preadditive C] {X Y : GradedObject β C} (f g : X ⟶ Y) (i : β) :
+    (f + g) i = f i + g i :=
+  rfl
+
+/-- Morphisms of graded objects are scaled componentwise. -/
+@[simp]
+theorem smul_apply {β : Type w} {R : Type t} [Semiring R] [Preadditive C] [Linear R C]
+    {X Y : GradedObject β C} (r : R) (f : X ⟶ Y) (i : β) :
+    (r • f) i = r • f i :=
+  rfl
+
+end GradedObject
 
 /-- Reindexing a graded object is additive. -/
 instance gradedObjectComapAdditive {I J : Type*} [Preadditive C] (f : J → I) :
     (GradedObject.comap C f).Additive where
-  map_add {X Y} {f₁ f₂} := by
-    funext j
-    change f₁ (f j) + f₂ (f j) = f₁ (f j) + f₂ (f j)
-    rfl
+  map_add := rfl
 
 /-- Reindexing a graded object is linear. -/
 instance gradedObjectComapLinear {I J : Type*} [Preadditive C]
     (R : Type t) [Semiring R] [Linear R C] (f : J → I) :
     (GradedObject.comap C f).Linear R where
-  map_smul {X Y} f₁ r := by
-    funext j
-    change r • f₁ (f j) = r • f₁ (f j)
-    rfl
+  map_smul _ _ := rfl
 
 /-- Mathlib's canonical shift functor on graded objects is additive. -/
 instance gradedObjectShiftFunctorAdditive {β : Type*} [AddCommGroup β] [Preadditive C]
     (s : β) (n : ℤ) : (shiftFunctor (GradedObjectWithShift s C) n).Additive where
-  map_add {X Y} {f₁ f₂} := by
-    funext j
-    change f₁ (j + n • s) + f₂ (j + n • s) =
-      f₁ (j + n • s) + f₂ (j + n • s)
-    rfl
+  map_add := rfl
 
 /-- Mathlib's canonical shift functor on graded objects is linear. -/
 instance gradedObjectShiftFunctorLinear {β : Type*} [AddCommGroup β] [Preadditive C]
     (R : Type t) [Semiring R] [Linear R C] (s : β) (n : ℤ) :
     (shiftFunctor (GradedObjectWithShift s C) n).Linear R where
-  map_smul {X Y} f₁ r := by
-    funext j
-    change r • f₁ (j + n • s) = r • f₁ (j + n • s)
-    rfl
+  map_smul _ _ := rfl
 
 instance gradedObjectShiftEquivFunctorAdditive {β : Type*} [AddCommGroup β] [Preadditive C]
     (s : β) (n : ℤ) : (shiftEquiv (GradedObjectWithShift s C) n).functor.Additive :=

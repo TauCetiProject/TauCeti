@@ -440,17 +440,19 @@ theorem isGradedEulerAdmissible_of_projective (P Y : C) [Projective P]
 
 /-- **Graded projective evaluation**: the q-Euler characteristic of a pair with projective first
 entry is the target-shift graded dimension of its graded Hom spaces,
-`χ_q(P, Y) = ∑ j, q⁻ʲ dim_k Hom(P, Y{j})`. -/
+`χ_q(P, Y) = ∑ j, q⁻ʲ dim_k Hom(P, Y{j})`. The finite Laurent support of these Hom spaces is read
+off from the degree-zero part of the admissibility witness. -/
 theorem gradedExtEuler_projective {P Y : C} [Projective P]
-    (hHom : HasFiniteLaurentSupport k fun j ↦ P ⟶ (e ^ j).functor.obj Y)
     (h : IsGradedEulerAdmissible.{w} k e P Y) :
     gradedExtEuler k e h =
-      targetShiftGradedDimension k (fun j ↦ P ⟶ (e ^ j).functor.obj Y) hHom := by
+      targetShiftGradedDimension k (fun j ↦ P ⟶ (e ^ j).functor.obj Y)
+        ((h.internallyFinite.finiteLaurentSupport 0).of_equiv fun _ ↦
+          Ext.linearEquiv₀ (R := k)) := by
   rw [gradedExtEuler_eq k e h (N := 1) ⟨fun _ hn j ↦
       (isExtBoundedBy_one_of_projective.{w} P ((e ^ j).functor.obj Y)).subsingleton hn⟩,
     truncatedGradedExtEuler_succ, truncatedGradedExtEuler_zero, pow_zero, one_smul, zero_add,
     gradedExtDimension_eq_targetShiftGradedDimension]
-  exact targetShiftGradedDimension_congr _ hHom fun j ↦
+  exact targetShiftGradedDimension_congr _ _ fun j ↦
     (Ext.linearEquiv₀ (R := k)).finrank_eq
 
 end Projective
