@@ -18,6 +18,9 @@ automorphism of `P × Q`. The argument is that of Schanuel's lemma — lift each
 and shear — and it needs no surjectivity, only that the two maps have the same range
 (`TauCeti.exists_linearEquiv_comp_fst_eq_comp_snd_comp`).
 
+The second shear follows the shear argument in the proof of `Submodule.minorsIdeal_ker_eq_prod_top`
+in `TauCeti/RingTheory/FittingIdeal/Basic.lean`.
+
 Applied twice, once to the surjections `P₀ → M` and `Q₀ → M` and once to the first maps of two
 projective presentations `P₁ → P₀ → M → 0` and `Q₁ → Q₀ → M → 0`, it shows that any two
 projective presentations of the same module become isomorphic as arrows once each is enlarged by
