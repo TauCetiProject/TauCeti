@@ -204,10 +204,11 @@ omit [Fact p.Prime] in
 private theorem padicCompletionPowerClassMap_symm (σ : L ≃ₐ[K] L) (m : ℕ) :
     (padicCompletionPowerClassMap p L K σ m).symm =
       padicCompletionPowerClassMap p L K σ.symm m := by
-  unfold padicCompletionPowerClassMap
-  rw [QuotientGroup.congrRangePowMonoidHom_symm, Units.mapEquiv_symm]
-  exact congrArg (fun e ↦ QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e) (p ^ m))
-    (AlgEquiv.symm_toMulEquiv σ).symm
+  ext x
+  induction x using QuotientGroup.induction_on with
+  | H x =>
+    rw [MulEquiv.symm_apply_eq, padicCompletionPowerClassMap_mk, padicCompletionPowerClassMap_mk]
+    exact congrArg _ (Units.ext (by simp))
 
 omit [Fact p.Prime] in
 private theorem padicCompletionPowerClassMap_one (m : ℕ) :
