@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Terminal.Marking
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Right
 public import TauCeti.KnotTheory.Grid.Rectangle.Squares
 
 /-!
