@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
-# Dirac measures and their pushforwards
+# Dirac measures: pushforwards and additive rigidity
 
 Mathlib's `MeasureTheory.Measure.map_dirac'` computes `(Measure.dirac x).map T = Measure.dirac
 (T x)` for a measurable `T`. A Dirac measure leaves a map no room to be modified on a null set:
@@ -17,6 +17,10 @@ its only null sets avoid `x`, so a `Measure.dirac x`-a.e. measurable map already
 with the measurable representative it is a.e. equal to. The pushforward formula therefore holds
 under that weaker hypothesis, which is the one a.e.-measurable interfaces such as
 `ProbabilityTheory.HasLaw` provide.
+
+A Dirac measure is also rigid under addition: if two measures sum to a Dirac mass, each is a
+multiple of that same Dirac mass. This identifies the atomic extreme rays in cones represented
+by positive measures.
 
 ## Main results
 

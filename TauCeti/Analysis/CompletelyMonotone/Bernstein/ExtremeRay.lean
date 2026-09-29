@@ -34,7 +34,7 @@ namespace TauCeti
 
 /-- The exponential of rate `p` spans an extreme ray of the cone of completely monotone
 functions on `[0, ∞)`: every positive decomposition splits only its coefficient. -/
-theorem exponential_extreme_ray {f g : ℝ → ℝ} (p : ℝ≥0)
+theorem exp_neg_mul_extreme_ray {f g : ℝ → ℝ} (p : ℝ≥0)
     (hf : IsContinuousCompletelyMonotoneOnIoi f)
     (hg : IsContinuousCompletelyMonotoneOnIoi g)
     (hfg : ∀ t : ℝ, 0 ≤ t → f t + g t = Real.exp (-(t * (p : ℝ)))) :
