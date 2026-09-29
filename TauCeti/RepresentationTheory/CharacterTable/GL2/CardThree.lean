@@ -13,6 +13,8 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 -- Non-public: `AddChar.exists_apply_ne_zero` supplies the nontrivial additive character of `F`.
 import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
+-- Non-public: `FiniteField.Extension` supplies the quadratic extension of `F`.
+import Mathlib.FieldTheory.Finite.Extension
 
 /-!
 # The irreducible characters of `GL₂(𝔽₃)`
@@ -250,7 +252,6 @@ private theorem image_apply_one_irreducibleCharacters_GL2_of_card_eq_three_aux
   simp
   tauto
 
-open Polynomial in
 /-- **The degrees of `GL₂(𝔽₃)` are `1`, `2`, `3` and `4`.** With the counts above, the eight
 irreducible characters have degrees `1, 1, 2, 2, 2, 3, 3, 4`. -/
 theorem image_apply_one_irreducibleCharacters_GL2_of_card_eq_three (hF : Fintype.card F = 3) :
@@ -259,24 +260,12 @@ theorem image_apply_one_irreducibleCharacters_GL2_of_card_eq_three (hF : Fintype
   -- A nontrivial additive character of `F`, from the duality of a finite abelian group.
   obtain ⟨ψ, hψ1⟩ := (AddChar.exists_apply_ne_zero (α := F) (a := 1)).2 one_ne_zero
   have hψ : ψ ≠ 1 := AddChar.ne_one_iff.2 ⟨1, hψ1⟩
-  -- A quadratic extension of `F`, adjoining a square root of a nonsquare.
-  have h3 : ((3 : ℕ) : F) = 0 := by
-    have := Nat.cast_card_eq_zero F
-    rwa [hF] at this
-  have h2 : ringChar F ≠ 2 := by
-    have hdvd := ringChar.dvd h3
-    intro h
-    rw [h] at hdvd
-    omega
-  obtain ⟨a, ha⟩ := FiniteField.exists_nonsquare h2
-  have hirr : Irreducible (X ^ 2 - C a) :=
-    X_pow_sub_C_irreducible_of_prime Nat.prime_two fun b hb => ha ⟨b, by rw [← hb]; ring⟩
-  have : Fact (Irreducible (X ^ 2 - C a)) := ⟨hirr⟩
-  have : Algebra.IsQuadraticExtension F (AdjoinRoot (X ^ 2 - C a)) := by
-    constructor
-    rw [PowerBasis.finrank (AdjoinRoot.powerBasis hirr.ne_zero), AdjoinRoot.powerBasis_dim,
-      natDegree_X_pow_sub_C]
+  -- A quadratic extension of `F`, Mathlib's chosen degree-`2` extension of a finite field.
+  obtain ⟨p, hp⟩ := CharP.exists F
+  have : Fact p.Prime := ⟨CharP.char_is_prime F p⟩
+  have : Algebra.IsQuadraticExtension F (FiniteField.Extension F p 2) :=
+    ⟨FiniteField.finrank_extension F p 2⟩
   exact image_apply_one_irreducibleCharacters_GL2_of_card_eq_three_aux F
-    (AdjoinRoot (X ^ 2 - C a)) hψ hF
+    (FiniteField.Extension F p 2) hψ hF
 
 end TauCeti
