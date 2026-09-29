@@ -63,8 +63,9 @@ theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordi
     (GeneralLinear.coordinateHopfAlgebra A 27) (generatedDefiningIdeal A)
 
 /-- The kernel of the generated subgroup coordinate morphism is its defining ideal. -/
+@[simp]
 theorem generatedCoordinateMap_ker :
-    RingHom.ker (generatedCoordinateMap A).hom.toAlgHom.toRingHom =
+    RingHom.ker (generatedCoordinateMap A).hom =
       (generatedDefiningIdeal A).toIdeal := by
   rw [generatedCoordinateMap]
   exact CommHopfAlgCat.mkQuotient_ker
