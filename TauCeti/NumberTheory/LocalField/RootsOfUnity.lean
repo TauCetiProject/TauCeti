@@ -28,7 +28,7 @@ public section
 
 namespace TauCeti
 
-variable (p : ℕ) (K : Type*) [Field K]
+variable (p : ℕ) (K : Type*) [CommMonoid K]
 
 /-- The subgroup of `Kˣ` consisting of roots of unity of `p`-power order. -/
 abbrev pPowerRootsOfUnity : Subgroup Kˣ := CommGroup.primaryComponent Kˣ p
@@ -51,15 +51,67 @@ theorem pPowerRootsOfUnity_eq_iSup_rootsOfUnity :
 
 /-- The order of the `p`-power roots of unity, with finiteness made explicit. In local-field
 applications the witness is `finite_pPowerRootsOfUnity`. -/
-noncomputable def localRootOfUnityOrder (_h : Finite (pPowerRootsOfUnity p K)) : ℕ :=
+@[expose] noncomputable def localRootOfUnityOrder
+    (_h : Finite (pPowerRootsOfUnity p K)) : ℕ :=
   Nat.card (pPowerRootsOfUnity p K)
+
+/-- The order of the `p`-power roots of unity is the cardinality of its subgroup. -/
+@[simp] theorem localRootOfUnityOrder_def (h : Finite (pPowerRootsOfUnity p K)) :
+    localRootOfUnityOrder p K h = Nat.card (pPowerRootsOfUnity p K) := rfl
 
 /-- The order of a finite `p`-power root group is positive. -/
 theorem localRootOfUnityOrder_pos (h : Finite (pPowerRootsOfUnity p K)) :
     0 < localRootOfUnityOrder p K h := by
-  unfold localRootOfUnityOrder
+  rw [localRootOfUnityOrder_def]
   let _ := h
   exact Nat.card_pos
+
+variable [Fact p.Prime]
+
+/-- The order of the `p`-power roots of unity is a power of `p`. -/
+theorem localRootOfUnityOrder_isPow (h : Finite (pPowerRootsOfUnity p K)) :
+    ∃ n : ℕ, localRootOfUnityOrder p K h = p ^ n := by
+  rw [localRootOfUnityOrder_def]
+  let _ := h
+  exact IsPGroup.iff_card.mp CommGroup.primaryComponent.isPGroup
+
+/-- If the `p`-power roots of unity have order two, then `p = 2`. -/
+theorem prime_eq_two_of_localRootOfUnityOrder_eq_two
+    (h : Finite (pPowerRootsOfUnity p K))
+    (horder : localRootOfUnityOrder p K h = 2) : p = 2 := by
+  obtain ⟨n, hn⟩ := localRootOfUnityOrder_isPow p K h
+  have hpow : p ^ n = 2 := hn.symm.trans horder
+  cases n with
+  | zero => simp at hpow
+  | succ n =>
+    have hdiv : p ∣ 2 := by
+      rw [← hpow]
+      exact dvd_pow_self p (by omega)
+    exact ((Nat.dvd_prime Nat.prime_two).mp hdiv).resolve_left
+      (Fact.out : p.Prime).ne_one
+
+/-- Once the `p`-power roots of unity are finite, a single level of the root tower contains
+them all: that level is their order. -/
+theorem pPowerRootsOfUnity_eq_rootsOfUnity_order
+    (h : Finite (pPowerRootsOfUnity p K)) :
+    pPowerRootsOfUnity p K = rootsOfUnity (localRootOfUnityOrder p K h) K := by
+  let _ := h
+  obtain ⟨n, hn⟩ := localRootOfUnityOrder_isPow p K h
+  ext x
+  constructor
+  · intro hx
+    rw [mem_rootsOfUnity]
+    rw [localRootOfUnityOrder_def]
+    exact congrArg Subtype.val (pow_card_eq_one' (x := (⟨x, hx⟩ : pPowerRootsOfUnity p K)))
+  · intro hx
+    apply (mem_pPowerRootsOfUnity_iff p K x).mpr
+    exact ⟨n, by simpa only [← hn, mem_rootsOfUnity] using hx⟩
+
+end TauCeti
+
+namespace TauCeti
+
+variable (p : ℕ) (K : Type*) [Field K]
 
 /-- A finite group of `p`-power roots of unity in a field is cyclic. -/
 theorem isCyclic_pPowerRootsOfUnity (h : Finite (pPowerRootsOfUnity p K)) :
@@ -76,15 +128,15 @@ open IsNonarchimedeanLocalField
 variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K] [ValuativeRel K]
   [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
+omit [Fact p.Prime] in
 /-- Every `p`-power root of unity has valuation zero. -/
-theorem pPowerRootsOfUnity_le_unitFiltration_zero :
+theorem pPowerRootsOfUnity_le_unitFiltration_zero (hp : p ≠ 0) :
     pPowerRootsOfUnity p K ≤ unitFiltration K 0 := by
   intro x hx
   obtain ⟨n, hn⟩ := (mem_pPowerRootsOfUnity_iff p K x).mp hx
   rw [← ker_normalizedValuation, MonoidHom.mem_ker]
-  have hval : (normalizedValuation K x) ^ (p ^ n) = 1 := by
-    rw [← map_pow, hn, map_one]
-  exact (pow_eq_one_iff_left (pow_ne_zero n (Fact.out : p.Prime).ne_zero)).mp hval
+  exact normalizedValuation_eq_one_of_isOfFinOrder
+    (isOfFinOrder_iff_pow_eq_one.mpr ⟨p ^ n, pow_pos (Nat.pos_of_ne_zero hp) n, hn⟩)
 
 /-- A sufficiently deep principal-unit group contains no nontrivial `p`-power root of unity. -/
 theorem disjoint_pPowerRootsOfUnity_unitFiltration {i : ℕ} (hpK : (p : K) ≠ 0)
@@ -130,7 +182,8 @@ theorem finite_pPowerRootsOfUnity (hpK : (p : K) ≠ 0) :
       ((Subgroup.isFiniteRelIndex_iff_finiteIndex).mp hindex)
   let f : pPowerRootsOfUnity p K →
       unitFiltration K 0 ⧸ (unitFiltration K i).subgroupOf (unitFiltration K 0) :=
-    fun x ↦ QuotientGroup.mk ⟨x.1, pPowerRootsOfUnity_le_unitFiltration_zero x.2⟩
+    fun x ↦ QuotientGroup.mk
+      ⟨x.1, pPowerRootsOfUnity_le_unitFiltration_zero (Fact.out : p.Prime).ne_zero x.2⟩
   apply @Finite.of_injective _ _ hfinite f
   intro x y hxy
   have hmem : (x.1 * y.1⁻¹) ∈ unitFiltration K i := by
@@ -143,43 +196,18 @@ theorem finite_pPowerRootsOfUnity (hpK : (p : K) ≠ 0) :
   have h1 : x.1 * y.1⁻¹ = 1 := Subgroup.disjoint_def.mp hdisjoint hroot hmem
   exact Subtype.ext (mul_inv_eq_one.mp h1)
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- The order of the `p`-power roots of unity is a power of `p`. -/
-theorem localRootOfUnityOrder_isPow (h : Finite (pPowerRootsOfUnity p K)) :
-    ∃ n : ℕ, localRootOfUnityOrder p K h = p ^ n := by
-  unfold localRootOfUnityOrder
-  let _ := h
-  exact IsPGroup.iff_card.mp CommGroup.primaryComponent.isPGroup
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- Once the `p`-power roots of unity are finite, a single level of the root tower contains
-them all: that level is their order. -/
-theorem pPowerRootsOfUnity_eq_rootsOfUnity_order
-    (h : Finite (pPowerRootsOfUnity p K)) :
-    pPowerRootsOfUnity p K = rootsOfUnity (localRootOfUnityOrder p K h) K := by
-  let _ := h
-  obtain ⟨n, hn⟩ := localRootOfUnityOrder_isPow (p := p) (K := K) h
-  ext x
-  constructor
-  · intro hx
-    rw [mem_rootsOfUnity]
-    unfold localRootOfUnityOrder
-    exact congrArg Subtype.val (pow_card_eq_one' (x := (⟨x, hx⟩ : pPowerRootsOfUnity p K)))
-  · intro hx
-    apply (mem_pPowerRootsOfUnity_iff p K x).mpr
-    exact ⟨n, by simpa only [← hn, mem_rootsOfUnity] using hx⟩
-
-/-- A local field contains a primitive `p^n`-th root of unity precisely when `p^n` divides
-the order of its `p`-power root group. -/
-theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder (hpK : (p : K) ≠ 0)
-    (n : ℕ) :
+omit [Fact p.Prime] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] in
+/-- A field with finitely many `p`-power roots of unity contains a primitive `p^n`-th root
+precisely when `p^n` divides the order of their group. -/
+theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder_of_finite
+    [NeZero p] (hfinite : Finite (pPowerRootsOfUnity p K)) (n : ℕ) :
     (∃ ζ : K, IsPrimitiveRoot ζ (p ^ n)) ↔
-      p ^ n ∣ localRootOfUnityOrder p K (finite_pPowerRootsOfUnity hpK) := by
-  let hfinite := finite_pPowerRootsOfUnity hpK
+      p ^ n ∣ localRootOfUnityOrder p K hfinite := by
   let _ := hfinite
   constructor
   · rintro ⟨ζ, hζ⟩
-    have hpn : p ^ n ≠ 0 := pow_ne_zero n (Fact.out : p.Prime).ne_zero
+    have hpn : p ^ n ≠ 0 := pow_ne_zero n (NeZero.ne p)
     let u := (hζ.isUnit hpn).unit
     have hu : IsPrimitiveRoot u (p ^ n) := hζ.isUnit_unit hpn
     have hmem : u ∈ pPowerRootsOfUnity p K :=
@@ -189,14 +217,14 @@ theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder (hpK : (p : K) ≠ 0)
         orderOf (⟨u, hmem⟩ : pPowerRootsOfUnity p K) = orderOf u :=
           (Subgroup.orderOf_coe _).symm
         _ = p ^ n := hu.eq_orderOf.symm
-    simpa only [localRootOfUnityOrder, hord] using
+    simpa only [localRootOfUnityOrder_def, hord] using
       (orderOf_dvd_natCard (⟨u, hmem⟩ : pPowerRootsOfUnity p K))
   · intro hdvd
     let _ := isCyclic_pPowerRootsOfUnity p K hfinite
     obtain ⟨g, hg⟩ := IsCyclic.exists_ofOrder_eq_natCard
       (α := pPowerRootsOfUnity p K)
     have hdiv : p ^ n ∣ orderOf g := by
-      simpa only [hg, localRootOfUnityOrder] using hdvd
+      simpa only [hg, localRootOfUnityOrder_def] using hdvd
     have hg0 : orderOf g ≠ 0 := by
       rw [hg]
       exact Nat.ne_of_gt Nat.card_pos
@@ -205,6 +233,15 @@ theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder (hpK : (p : K) ≠ 0)
     refine ⟨((u : Kˣ) : K), ?_⟩
     apply IsPrimitiveRoot.iff_orderOf.mpr
     simpa only [orderOf_units, Subgroup.orderOf_coe] using hu
+
+/-- A local field contains a primitive `p^n`-th root of unity precisely when `p^n` divides
+the order of its `p`-power root group. -/
+theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder (hpK : (p : K) ≠ 0)
+    (n : ℕ) :
+    (∃ ζ : K, IsPrimitiveRoot ζ (p ^ n)) ↔
+      p ^ n ∣ localRootOfUnityOrder p K (finite_pPowerRootsOfUnity hpK) :=
+  primitiveRoot_pow_iff_dvd_localRootOfUnityOrder_of_finite
+    (finite_pPowerRootsOfUnity hpK) n
 
 /-- A local field contains a primitive `p`-th root of unity exactly when `p` divides the
 order of its `p`-power root group. -/
