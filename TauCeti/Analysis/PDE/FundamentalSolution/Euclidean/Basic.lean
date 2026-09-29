@@ -116,6 +116,53 @@ theorem newtonianKernel_pos (n : ℕ) (hn : 3 ≤ n)
       (volume_real_unitBall_pos n)))
     (Real.rpow_pos_of_pos (norm_pos_iff.mpr hx) _)
 
+/-- A nonzero vector in `EuclideanSpace ℝ (Fin n)` forces the dimension to be positive. -/
+theorem pos_of_ne_zero_euclideanSpace {n : ℕ} {x : EuclideanSpace ℝ (Fin n)}
+    (hx : x ≠ 0) : 0 < n := by
+  have := nontrivial_of_ne x 0 hx
+  simpa using Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ (Fin n))
+
+/-- The radial expression for the Newtonian kernel strictly decreases as the squared radius
+increases, in every nondegenerate positive dimension. -/
+theorem newtonianKernel_rpow_sq_lt (n : ℕ) (hn : n ≠ 2) (hn0 : 0 < n)
+    {a b : ℝ} (ha : 0 < a) (hab : a < b) :
+    ((n : ℝ) * ((n : ℝ) - 2) *
+      volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+        b ^ ((2 - (n : ℝ)) / 2) <
+    ((n : ℝ) * ((n : ℝ) - 2) *
+      volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+        a ^ ((2 - (n : ℝ)) / 2) := by
+  obtain hn1 | hn3 : n = 1 ∨ 3 ≤ n := by omega
+  · have hn1ℝ : (n : ℝ) = 1 := by exact_mod_cast hn1
+    have hc : (n : ℝ) * ((n : ℝ) - 2) *
+        volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) < 0 := by
+      rw [hn1ℝ]
+      linarith [volume_real_unitBall_pos n]
+    have hexp : (0 : ℝ) < (2 - (n : ℝ)) / 2 := by
+      rw [hn1ℝ]
+      norm_num
+    exact mul_lt_mul_of_neg_left
+      (Real.rpow_lt_rpow ha.le hab hexp) (inv_lt_zero.mpr hc)
+  · have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn3
+    have hc : 0 < ((n : ℝ) * ((n : ℝ) - 2) *
+        volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ := by
+      have hnpos : (0 : ℝ) < n := by linarith
+      have hnsub : (0 : ℝ) < (n : ℝ) - 2 := by linarith
+      exact inv_pos.mpr (mul_pos (mul_pos hnpos hnsub)
+        (volume_real_unitBall_pos n))
+    have hexp : (2 - (n : ℝ)) / 2 < 0 := by linarith
+    exact mul_lt_mul_of_pos_left (Real.rpow_lt_rpow_of_neg ha hab hexp) hc
+
+/-- In a positive dimension other than two, the Newtonian kernel strictly decreases with
+distance from the origin. -/
+theorem newtonianKernel_lt_newtonianKernel_of_norm_lt (n : ℕ) (hn : n ≠ 2)
+    {x y : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) (h : ‖x‖ < ‖y‖) :
+    newtonianKernel n y < newtonianKernel n x := by
+  rw [newtonianKernel_def, newtonianKernel_def,
+    norm_rpow_eq_norm_sq_rpow, norm_rpow_eq_norm_sq_rpow]
+  exact newtonianKernel_rpow_sq_lt n hn (pos_of_ne_zero_euclideanSpace hx)
+    (by positivity) (by nlinarith [norm_nonneg x, norm_nonneg y])
+
 /-- The Fréchet derivative of the Newtonian kernel away from its pole. -/
 theorem hasFDerivAt_newtonianKernel (n : ℕ) (hn : n ≠ 2)
     {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :

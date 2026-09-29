@@ -32,31 +32,34 @@ open InnerProductSpace MeasureTheory Metric
 variable {n : ℕ}
 local notation "E" => EuclideanSpace ℝ (Fin n)
 
+section
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
 /-- Reflection through the hyperplane perpendicular to a unit normal `v` has this explicit
 formula. -/
-theorem reflection_orthogonal_singleton_apply {v : E} (hv : ‖v‖ = 1) (x : E) :
+theorem reflection_orthogonal_singleton_apply {v : F} (hv : ‖v‖ = 1) (x : F) :
     (ℝ ∙ v)ᗮ.reflection x = x - (2 * ⟪v, x⟫_ℝ) • v := by
   rw [Submodule.reflection_orthogonal_apply,
     Submodule.reflection_singleton_apply]
-  simp only [RCLike.ofReal_real_eq_id, id_eq, neg_sub, sub_right_inj,
-    hv, one_pow, div_one]
-  rw [two_smul, two_mul, add_smul]
+  simp only [RCLike.ofReal_real_eq_id, id_eq, neg_sub,
+    hv, one_pow, div_one, two_smul, two_mul, add_smul]
 
 /-- Reflection negates the component in the normal direction. -/
-@[simp] theorem inner_reflection_orthogonal_singleton {v : E} (x : E) :
+@[simp] theorem inner_reflection_orthogonal_singleton {v : F} (x : F) :
     ⟪v, (ℝ ∙ v)ᗮ.reflection x⟫_ℝ = -⟪v, x⟫_ℝ := by
   rw [← LinearIsometryEquiv.inner_map_map (ℝ ∙ v)ᗮ.reflection,
     Submodule.reflection_reflection,
     Submodule.reflection_orthogonalComplement_singleton_eq_neg, inner_neg_left]
 
 /-- A point on the bounding hyperplane is fixed by reflection. -/
-theorem reflection_orthogonal_singleton_eq_self_of_inner_eq_zero {v x : E}
+theorem reflection_orthogonal_singleton_eq_self_of_inner_eq_zero {v x : F}
     (hx : ⟪v, x⟫_ℝ = 0) : (ℝ ∙ v)ᗮ.reflection x = x := by
   exact Submodule.reflection_mem_subspace_eq_self
     (Submodule.mem_orthogonal_singleton_iff_inner_right.mpr hx)
 
 /-- Reflection moves across a distance to the image point. -/
-theorem norm_sub_reflection_orthogonal_singleton (v x y : E) :
+theorem norm_sub_reflection_orthogonal_singleton (v x y : F) :
     ‖y - (ℝ ∙ v)ᗮ.reflection x‖ = ‖(ℝ ∙ v)ᗮ.reflection y - x‖ := by
   calc
     ‖y - (ℝ ∙ v)ᗮ.reflection x‖ =
@@ -65,11 +68,13 @@ theorem norm_sub_reflection_orthogonal_singleton (v x y : E) :
     _ = ‖(ℝ ∙ v)ᗮ.reflection y - x‖ := by simp [map_sub]
 
 /-- At the boundary, the pole and its image are equidistant from the variable point. -/
-theorem norm_sub_reflection_orthogonal_singleton_eq_of_inner_eq_zero {v : E}
-    (x : E) {y : E} (hy : ⟪v, y⟫_ℝ = 0) :
+theorem norm_sub_reflection_orthogonal_singleton_eq_of_inner_eq_zero {v : F}
+    (x : F) {y : F} (hy : ⟪v, y⟫_ℝ = 0) :
     ‖y - (ℝ ∙ v)ᗮ.reflection x‖ = ‖y - x‖ := by
   rw [norm_sub_reflection_orthogonal_singleton,
     reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hy]
+
+end
 
 /-- The method-of-images Dirichlet Green kernel for the half-space with unit inward normal
 `v`, evaluated at the pole `x` and variable `y`. The Newtonian normalization gives a genuine
@@ -107,9 +112,13 @@ theorem halfSpaceGreenKernel_comm (v x y : E) :
   rw [halfSpaceGreenKernel_def,
     reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hx, sub_self]
 
+section
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
 /-- A point whose normal component differs from the negated component of `x` is not its
 reflection. -/
-theorem ne_reflection_orthogonal_singleton_of_inner_ne_neg {v x y : E}
+theorem ne_reflection_orthogonal_singleton_of_inner_ne_neg {v x y : F}
     (hinner : ⟪v, y⟫_ℝ ≠ -⟪v, x⟫_ℝ) :
     y ≠ (ℝ ∙ v)ᗮ.reflection x := by
   intro h
@@ -118,7 +127,7 @@ theorem ne_reflection_orthogonal_singleton_of_inner_ne_neg {v x y : E}
 
 /-- The squared distance to the image pole exceeds the squared distance to the pole by
 four times the product of the two signed distances to the boundary. -/
-theorem norm_sub_reflection_orthogonal_singleton_sq {v : E} (hv : ‖v‖ = 1) (x y : E) :
+theorem norm_sub_reflection_orthogonal_singleton_sq {v : F} (hv : ‖v‖ = 1) (x y : F) :
     ‖y - (ℝ ∙ v)ᗮ.reflection x‖ ^ 2 =
       ‖y - x‖ ^ 2 + 4 * ⟪v, x⟫_ℝ * ⟪v, y⟫_ℝ := by
   have heq : y - (ℝ ∙ v)ᗮ.reflection x =
@@ -131,43 +140,24 @@ theorem norm_sub_reflection_orthogonal_singleton_sq {v : E} (hv : ‖v‖ = 1) (
   ring
 
 /-- Both points in the positive half-space are closer to each other than to the image pole. -/
-theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : E} (hv : ‖v‖ = 1)
+theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F} (hv : ‖v‖ = 1)
     (hx : 0 < ⟪v, x⟫_ℝ) (hy : 0 < ⟪v, y⟫_ℝ) :
     ‖y - x‖ < ‖y - (ℝ ∙ v)ᗮ.reflection x‖ := by
   have hsq := norm_sub_reflection_orthogonal_singleton_sq hv x y
   nlinarith [norm_nonneg (y - x), norm_nonneg (y - (ℝ ∙ v)ᗮ.reflection x),
     mul_pos hx hy]
 
+end
+
 /-- Outside dimension two, the half-space Green kernel is positive at distinct
 interior points. -/
 theorem halfSpaceGreenKernel_pos (hn : n ≠ 2) {v x y : E} (hv : ‖v‖ = 1)
     (hx : 0 < ⟪v, x⟫_ℝ) (hy : 0 < ⟪v, y⟫_ℝ) (hxy : y ≠ x) :
     0 < halfSpaceGreenKernel n v x y := by
-  have hnorm : 0 < ‖y - x‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
   have hlt := norm_sub_lt_norm_sub_reflection_orthogonal_singleton hv hx hy
-  rw [halfSpaceGreenKernel_def, newtonianKernel_def, newtonianKernel_def]
-  obtain hn1 | hn3 : n = 1 ∨ 3 ≤ n := by
-    have := nontrivial_of_ne y x hxy
-    have : 0 < n := by simpa using Module.finrank_pos (R := ℝ) (M := E)
-    omega
-  · have hn1ℝ : (n : ℝ) = 1 := by exact_mod_cast hn1
-    have hcoef : ((n : ℝ) * ((n : ℝ) - 2) *
-        volume.real (ball (0 : E) 1))⁻¹ < 0 := by
-      apply inv_lt_zero.mpr
-      rw [hn1ℝ]
-      have := volume_real_unitBall_pos n
-      nlinarith
-    have hexp : 0 < (2 : ℝ) - n := by rw [hn1ℝ]; norm_num
-    exact sub_pos.mpr (mul_lt_mul_of_neg_left
-      (Real.rpow_lt_rpow hnorm.le hlt hexp) hcoef)
-  · have hnreal : (3 : ℝ) ≤ n := by exact_mod_cast hn3
-    have hexp : (2 : ℝ) - n < 0 := by linarith
-    have hcoef : 0 < ((n : ℝ) * ((n : ℝ) - 2) *
-        volume.real (ball (0 : E) 1))⁻¹ := by
-      exact inv_pos.mpr (mul_pos (mul_pos (by linarith) (by linarith))
-        (volume_real_unitBall_pos n))
-    exact sub_pos.mpr (mul_lt_mul_of_pos_left
-      (Real.rpow_lt_rpow_of_neg hnorm hlt hexp) hcoef)
+  rw [halfSpaceGreenKernel_def]
+  exact sub_pos.mpr (newtonianKernel_lt_newtonianKernel_of_norm_lt n hn
+    (sub_ne_zero.mpr hxy) hlt)
 
 /-- The Green kernel is harmonic away from its pole and the reflected pole. -/
 theorem harmonicAt_halfSpaceGreenKernel {v x y : E} (hxy : y ≠ x)
@@ -188,18 +178,15 @@ theorem harmonicOnNhd_halfSpaceGreenKernel {v x : E}
       have hypos : 0 < ⟪v, y⟫_ℝ := hy.1
       linarith))
 
-/-- The Green kernel is harmonic in its pole throughout the punctured half-space. -/
+/-- The Green kernel is harmonic in its pole away from the variable point and its reflection. -/
 theorem harmonicAt_halfSpaceGreenKernel_left {v x y : E}
-    (hx : 0 < ⟪v, x⟫_ℝ) (hy : 0 < ⟪v, y⟫_ℝ) (hxy : x ≠ y) :
+    (hxy : x ≠ y) (hxy' : x ≠ (ℝ ∙ v)ᗮ.reflection y) :
     HarmonicAt (fun z => halfSpaceGreenKernel n v z y) x := by
   have hfun : (fun z => halfSpaceGreenKernel n v z y) = halfSpaceGreenKernel n v y := by
     funext z
     exact halfSpaceGreenKernel_comm v z y
   rw [hfun]
-  exact harmonicAt_halfSpaceGreenKernel hxy
-    (ne_reflection_orthogonal_singleton_of_inner_ne_neg (by
-      intro h
-      linarith [hx, hy]))
+  exact harmonicAt_halfSpaceGreenKernel hxy hxy'
 
 /-- The Poisson kernel for the half-space with unit inward normal `v`. Its boundary
 normalization is `2 ⟪v,x⟫ / (n ωₙ ‖y-x‖ⁿ)`, where `ωₙ` is the volume of the unit ball. -/
@@ -230,8 +217,7 @@ theorem halfSpacePoissonKernel_pos {v x y : E}
     (hx : 0 < ⟪v, x⟫_ℝ) (hxy : y ≠ x) :
     0 < halfSpacePoissonKernel n v x y := by
   rw [halfSpacePoissonKernel_def]
-  have := nontrivial_of_ne y x hxy
-  have hn : 0 < n := by simpa using Module.finrank_pos (R := ℝ) (M := E)
+  have hn : 0 < n := pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)
   have hnreal : (0 : ℝ) < n := by exact_mod_cast hn
   exact mul_pos (mul_pos (by norm_num) hx)
     (mul_pos (inv_pos.mpr (mul_pos hnreal (volume_real_unitBall_pos n)))
@@ -275,11 +261,11 @@ theorem fderiv_halfSpaceGreenKernel_normal (hn : n ≠ 2) {v x y : E}
   rw [hnorm, halfSpacePoissonKernel_def]
   have hinner₁ : ⟪y - x, -v⟫_ℝ = ⟪v, x⟫_ℝ := by
     rw [inner_sub_left, inner_neg_right, inner_neg_right]
-    nlinarith [real_inner_comm y v, real_inner_comm x v, hy]
+    linarith [real_inner_comm y v, real_inner_comm x v, hy]
   have hinner₂ : ⟪y - (ℝ ∙ v)ᗮ.reflection x, -v⟫_ℝ =
       -⟪v, x⟫_ℝ := by
     rw [inner_sub_left, inner_neg_right, inner_neg_right]
-    nlinarith [real_inner_comm y v,
+    linarith [real_inner_comm y v,
       real_inner_comm ((ℝ ∙ v)ᗮ.reflection x) v, hy,
       inner_reflection_orthogonal_singleton (v := v) x]
   rw [hinner₁, hinner₂]

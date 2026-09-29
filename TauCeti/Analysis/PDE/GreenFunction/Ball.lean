@@ -313,29 +313,10 @@ theorem ballGreenKernel_pos (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)} (h
     rw [norm_sub_sq_real, real_inner_comm x y]
     nlinarith [mul_pos hx' hy']
   rw [ballGreenKernel_def, ballGreenCorrector_def, newtonianKernel_def,
-    norm_rpow_eq_norm_sq_rpow, ← mul_sub]
-  obtain hn1 | hn3 : n = 1 ∨ 3 ≤ n := by
-    have := nontrivial_of_ne y x hxy
-    have : 0 < n := by simpa using Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ (Fin n))
-    omega
-  · have hn1ℝ : (n : ℝ) = 1 := by exact_mod_cast hn1
-    have hc : (n : ℝ) * ((n : ℝ) - 2) *
-        volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) < 0 := by
-      rw [hn1ℝ]
-      linarith
-    have hexp : (0 : ℝ) < (2 - (n : ℝ)) / 2 := by
-      rw [hn1ℝ]
-      norm_num
-    exact mul_pos_of_neg_of_neg (inv_lt_zero.mpr hc)
-      (sub_neg.mpr (Real.rpow_lt_rpow hsub.le hlt hexp))
-  · have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn3
-    have hc : 0 < ((n : ℝ) * ((n : ℝ) - 2) *
-        volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ := by
-      have hnpos : (0 : ℝ) < n := by linarith
-      have hnsub : (0 : ℝ) < (n : ℝ) - 2 := by linarith
-      positivity
-    have hexp : (2 - (n : ℝ)) / 2 < 0 := by linarith
-    exact mul_pos hc (sub_pos.mpr (Real.rpow_lt_rpow_of_neg hsub hlt hexp))
+    norm_rpow_eq_norm_sq_rpow, mul_sub]
+  exact sub_pos.mpr (by simpa only [mul_sub] using
+    (newtonianKernel_rpow_sq_lt n hn
+      (pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)) hsub hlt))
 
 /-- The Fréchet derivative of the Green kernel of the unit ball in `y`, away from the pole and
 wherever the reflection polynomial `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` is positive. -/
@@ -373,8 +354,7 @@ theorem ballPoissonKernel_def (x y : EuclideanSpace ℝ (Fin n)) :
 point. -/
 theorem ballPoissonKernel_pos {x y : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1) (hxy : x ≠ y) :
     0 < ballPoissonKernel n x y := by
-  have := nontrivial_of_ne x y hxy
-  have hn : 0 < n := by simpa using Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ (Fin n))
+  have hn : 0 < n := pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)
   have hω := volume_real_unitBall_pos n
   have hsub : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
   have hx' : 0 < 1 - ‖x‖ ^ 2 := by nlinarith [norm_nonneg x]
