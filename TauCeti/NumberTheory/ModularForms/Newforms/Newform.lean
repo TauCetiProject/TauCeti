@@ -140,7 +140,8 @@ theorem dirichletLift_eq_ofUnitHom (f : Newform N k) :
 
 /-- Restricting the zero-extended nebentypus to units recovers the character of the newform. -/
 @[simp]
-theorem dirichletLift_toUnitHom (f : Newform N k) : f.dirichletLift.toUnitHom = f.χ := by
+theorem dirichletLift_toUnitHom (f : Newform N k) :
+    MulChar.equivToUnitHom f.dirichletLift = f.χ := by
   change (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N).toUnitHom = f.χ
   exact MulChar.equivToUnitHom.apply_symm_apply f.χ
 
