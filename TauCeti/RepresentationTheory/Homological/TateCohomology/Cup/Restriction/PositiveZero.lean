@@ -64,7 +64,6 @@ theorem cup_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
 
 /-- Restriction commutes with `cupH0` in positive degree. This form matches the normal form of a
 cup product with a degree-zero right factor. -/
-@[simp]
 theorem cupH0_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
     (x : tateCohomology M ((n + 1 : ℕ) : ℤ)) (y : tateCohomology N 0) :
     posRes (M ⊗ N) H n (cupH0 M N ((n + 1 : ℕ) : ℤ) x y) =
