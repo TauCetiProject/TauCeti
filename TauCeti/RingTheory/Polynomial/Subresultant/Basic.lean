@@ -25,8 +25,10 @@ the scalar data used by subresultant gcd criteria and projection operators.
 * `Polynomial.psc_zero`: the zeroth principal subresultant coefficient is the resultant.
 * `Polynomial.psc_map`: fixed-bound principal subresultant coefficients commute with coefficient
   maps.
-* `Polynomial.psc_terminal_left`, `Polynomial.psc_terminal_right`: the terminal determinants are
-  powers of the coefficients at the smaller degree bound.
+* `Polynomial.psc_left_bound`, `Polynomial.psc_right_bound`: at a formal degree bound, the
+  determinant is a power of the coefficient at that bound.
+* `Polynomial.psc_min`: the terminal determinant is a power of the coefficient at the smaller
+  degree bound.
 
 ## References
 
@@ -102,11 +104,17 @@ The bounds are part of the data: they are not recomputed after coefficient speci
 noncomputable def _root_.Polynomial.psc [CommRing R] (p q : R[X]) (m n j : ℕ) : R :=
   (subresultantMatrix p q m n j).det
 
+/-- The principal subresultant coefficient is the determinant of the principal subresultant
+matrix. -/
+theorem _root_.Polynomial.psc_def [CommRing R] (p q : R[X]) (m n j : ℕ) :
+    psc p q m n j = (subresultantMatrix p q m n j).det := by
+  rw [psc]
+
 /-- The zeroth principal subresultant coefficient is the fixed-bound resultant. -/
 @[simp]
 theorem _root_.Polynomial.psc_zero [CommRing R] (p q : R[X]) (m n : ℕ) :
     psc p q m n 0 = Polynomial.resultant p q m n := by
-  simp [psc, Polynomial.resultant]
+  simp [psc_def, Polynomial.resultant]
 
 /-- Principal subresultant coefficients commute with coefficient maps at fixed bounds.  No
 degree-preservation hypothesis is needed. -/
@@ -114,13 +122,13 @@ degree-preservation hypothesis is needed. -/
 theorem _root_.Polynomial.psc_map [CommRing R] [CommRing S] (f : R →+* S)
     (p q : R[X]) (m n j : ℕ) :
     psc (p.map f) (q.map f) m n j = f (psc p q m n j) := by
-  simp [psc, RingHom.map_det]
+  simp [psc_def, RingHom.map_det]
 
 /-- At the left formal degree bound, the principal coefficient is the corresponding power of the
 left polynomial's coefficient.  This is the terminal coefficient when `m ≤ n`; when `n < m`,
 both sides reduce to `1` because the index is beyond the subresultant range. -/
 @[simp]
-theorem _root_.Polynomial.psc_terminal_left [CommRing R]
+theorem _root_.Polynomial.psc_left_bound [CommRing R]
     (p q : R[X]) (m n : ℕ) :
     psc p q m n m = p.coeff m ^ (n - m) := by
   classical
@@ -140,7 +148,7 @@ theorem _root_.Polynomial.psc_terminal_left [CommRing R]
     induction i using Fin.addCases with
     | left i => exact Fin.elim0 (Fin.cast (by simp) i)
     | right i => simp [M, subresultantMatrix]
-  rw [psc, Matrix.det_of_isUpperTriangular htri]
+  rw [psc_def, Matrix.det_of_isUpperTriangular htri]
   simp_rw [hdiag]
   simp
 
@@ -148,7 +156,7 @@ theorem _root_.Polynomial.psc_terminal_left [CommRing R]
 right polynomial's coefficient.  This is the terminal coefficient when `n ≤ m`; when `m < n`,
 both sides reduce to `1` because the index is beyond the subresultant range. -/
 @[simp]
-theorem _root_.Polynomial.psc_terminal_right [CommRing R]
+theorem _root_.Polynomial.psc_right_bound [CommRing R]
     (p q : R[X]) (m n : ℕ) :
     psc p q m n n = q.coeff n ^ (m - n) := by
   classical
@@ -168,12 +176,13 @@ theorem _root_.Polynomial.psc_terminal_right [CommRing R]
     induction i using Fin.addCases with
     | left i => simp [M, subresultantMatrix]
     | right i => exact Fin.elim0 (Fin.cast (by simp) i)
-  rw [psc, Matrix.det_of_isUpperTriangular htri]
+  rw [psc_def, Matrix.det_of_isUpperTriangular htri]
   simp_rw [hdiag]
   simp
 
 /-- The principal coefficient at the terminal subresultant index is a power of the coefficient
 at the smaller formal degree bound. -/
+@[simp]
 theorem _root_.Polynomial.psc_min [CommRing R] (p q : R[X]) (m n : ℕ) :
     psc p q m n (min m n) =
       if m ≤ n then p.coeff m ^ (n - m) else q.coeff n ^ (m - n) := by
