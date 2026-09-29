@@ -137,7 +137,7 @@ structure LinearizingCoordinate (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (ε : ℝ)
   /-- the inverse reparametrization is holomorphic on the image of the reparametrization -/
   differentiableOn_invFun : DifferentiableOn ℂ toEquiv.invFun toEquiv.target
   /-- the reparametrization fixes the centre -/
-  zero : toEquiv.toFun 0 = 0
+  map_zero : toEquiv.toFun 0 = 0
   /-- the reparametrization is the identity outside the disc of the invariant disc, the choice
   which leaves the disc coordinate the identity reparametrization; it makes a local linearizing
   coordinate determined by its values on that disc (`Subgroup.LinearizingCoordinate.ext`) -/
@@ -148,7 +148,7 @@ structure LinearizingCoordinate (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (ε : ℝ)
   invFun_eq_id : ∀ w : ℂ, w ∉ toEquiv.target → toEquiv.invFun w = w
   /-- the reparametrization intertwines the rotation action of the roots of unity on the disc
   with the rotation action on its image -/
-  smul : ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ, ∀ w : ℂ,
+  map_smul : ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ, ∀ w : ℂ,
     w ∈ Metric.ball 0 (Real.tanh (ε / 2)) → toEquiv.toFun (ζ • w) = ζ • toEquiv.toFun w
 
 omit [Finite (stabilizer Γ z)] in
@@ -205,7 +205,7 @@ theorem LinearizingCoordinate.coordinate_eq_zero_iff
   · intro h
     have h' : ψ.toEquiv (discCoordinate z (τ : ℍ)) = ψ.toEquiv 0 := by
       have h'' : ψ.toEquiv (discCoordinate z (τ : ℍ)) = 0 := h
-      rw [h'', ψ.zero]
+      rw [h'', ψ.map_zero]
     have hr : 0 < Real.tanh (ε / 2) := by
       rw [← Real.tanh_zero]; exact Real.tanh_strictMono (by linarith)
     have hinj : discCoordinate z (τ : ℍ) = 0 :=
@@ -218,7 +218,7 @@ theorem LinearizingCoordinate.coordinate_eq_zero_iff
     have hτ' : τ = ⟨z, hmem⟩ := Subtype.ext hτ
     rw [hτ']
     simp only [coordinate, discCoordinate_self]
-    exact ψ.zero
+    exact ψ.map_zero
 
 /-- The coordinate of a local linearizing coordinate is injective on the invariant disc. -/
 theorem LinearizingCoordinate.coordinate_injective (ψ : Γ.LinearizingCoordinate z ε) :
@@ -239,7 +239,7 @@ theorem LinearizingCoordinate.coordinate_smul (ψ : Γ.LinearizingCoordinate z �
       coe_stabilizerRotation]
   have hsmul : ψ.toEquiv (((stabilizerRotation Γ z q) • (discCoordinate z (τ : ℍ))) : ℂ)
       = stabilizerRotation Γ z q • ψ.toEquiv (discCoordinate z (τ : ℍ)) :=
-    ψ.smul (stabilizerRotation Γ z q) (discCoordinate z (τ : ℍ)) (mem_ball_discCoordinate τ)
+    ψ.map_smul (stabilizerRotation Γ z q) (discCoordinate z (τ : ℍ)) (mem_ball_discCoordinate τ)
   simp only [coordinate]
   rw [hcoord]
   calc ψ.toEquiv (((stabilizerRotation Γ z q) • (discCoordinate z (τ : ℍ))) : ℂ)
@@ -478,7 +478,7 @@ theorem LinearizingCoordinate.invFun_smul (ψ : Γ.LinearizingCoordinate z ε) {
     ψ.toEquiv.invFun (ζ • u) = ζ • ψ.toEquiv.invFun u := by
   have hw := ψ.mem_ball_invFun hu
   have hwu : ψ.toEquiv.toFun (ζ • ψ.toEquiv.invFun u) = ζ • u := by
-    rw [ψ.smul ζ _ hw]
+    rw [ψ.map_smul ζ _ hw]
     exact congrArg (fun w : ℂ => ζ • w) (ψ.toEquiv.right_inv hu)
   calc ψ.toEquiv.invFun (ζ • u)
       = ψ.toEquiv.invFun (ψ.toEquiv.toFun (ζ • ψ.toEquiv.invFun u)) := by rw [hwu]
@@ -494,7 +494,7 @@ theorem LinearizingCoordinate.transEquiv_smul (ψ ψ' : Γ.LinearizingCoordinate
   simp only [transEquiv, PartialEquiv.coe_trans, Function.comp_def]
   have hkey : ψ.toEquiv.invFun (ζ • u) = ζ • ψ.toEquiv.invFun u := ψ.invFun_smul hu ζ
   exact (congrArg (fun w : ℂ => ψ'.toEquiv.toFun w) hkey).trans
-    (ψ'.smul ζ _ (ψ.mem_ball_invFun hu))
+    (ψ'.map_smul ζ _ (ψ.mem_ball_invFun hu))
 
 /-- The changes of local linearizing coordinate in the two directions are inverse: the change of
 coordinate is a biholomorphism of the targets of the reparametrizations, being the `symm` of
@@ -591,10 +591,10 @@ def LinearizingCoordinate.discCoordinate (hε : 0 < ε) : Γ.LinearizingCoordina
   toEquiv_source := rfl
   differentiableOn := differentiable_id.differentiableOn
   differentiableOn_invFun := differentiable_id.differentiableOn
-  zero := rfl
+  map_zero := rfl
   toFun_eq_id := fun _ _ => rfl
   invFun_eq_id := fun _ _ => rfl
-  smul := fun _ _ _ => rfl
+  map_smul := fun _ _ _ => rfl
 
 /-- The coordinate in the disc coordinate of a local linearizing coordinate is the disc
 coordinate itself. -/
@@ -707,7 +707,7 @@ def LinearizingCoordinate.rotation (hε : 0 < ε) (ζ : rootsOfUnity (Nat.card (
     have h : Differentiable ℂ (fun w : ℂ => ζ⁻¹ • w) := by fun_prop
     refine h.differentiableOn.congr_mono (fun u hu => ?_) (Set.subset_univ _)
     simp only [reduceIte, hu]
-  zero := by
+  map_zero := by
     by_cases h : (0 : ℂ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) <;> simp [h, smul_zero]
   toFun_eq_id := by
     intro w hw
@@ -715,7 +715,7 @@ def LinearizingCoordinate.rotation (hε : 0 < ε) (ζ : rootsOfUnity (Nat.card (
   invFun_eq_id := by
     intro w hw
     simp only [reduceIte, hw]
-  smul := by
+  map_smul := by
     intro η w hw
     have hηw : ((η : ℂˣ) : ℂ) * w ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
       rw [← rootsOfUnity.smul_eq_mul]
