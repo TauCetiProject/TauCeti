@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.GeneratedSmooth
+public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
 import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
@@ -48,6 +48,9 @@ variable (k : Type u) [Field k]
 private theorem connectedSpace_generatorCoordinateAlgebra :
     ∀ j, ConnectedSpace (PrimeSpectrum (generatorCoordinateAlgebra k j)) := by
   intro j
+  -- The generator coordinate objects have, definitionally, the additive group's symmetric
+  -- algebra and the torus's monoid algebra as carriers. Exposing these rings lets typeclass
+  -- synthesis use their connected-spectrum instances.
   cases j with
   | inl _ =>
     change ConnectedSpace (PrimeSpectrum (SymmetricAlgebra k k))
