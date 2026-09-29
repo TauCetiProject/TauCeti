@@ -595,6 +595,17 @@ theorem gradedBracket_self {k : ℕ} (x : gradedPiece p G k) : gradedBracket p G
   rw [gradedBracket_gradedMk, gradedMk_eq_zero_iff, coe_mk, commutatorElement_self]
   exact one_mem _
 
+/-- **The bracket of a commutative group vanishes** in every degree, since it is the class of a
+commutator. -/
+@[simp]
+theorem gradedBracket_eq_zero_of_isMulCommutative [IsMulCommutative G] {j k : ℕ}
+    (x : gradedPiece p G j) (y : gradedPiece p G k) : gradedBracket p G j k x y = 0 := by
+  obtain ⟨x, rfl⟩ := gradedMk_surjective j x
+  obtain ⟨y, rfl⟩ := gradedMk_surjective k y
+  rw [gradedBracket_gradedMk, gradedMk_eq_zero_iff, coe_mk,
+    commutatorElement_eq_one_iff_mul_comm.mpr (IsMulCommutative.is_comm.comm _ _)]
+  exact one_mem _
+
 /-- **Skew-symmetry**: `[y, x] = -[x, y]`, transported to a common degree. -/
 theorem gradedCast_gradedBracket_swap {j k : ℕ} (x : gradedPiece p G j) (y : gradedPiece p G k) :
     gradedCast p G (by omega) (gradedBracket p G k j y x) = -gradedBracket p G j k x y := by

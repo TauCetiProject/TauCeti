@@ -83,12 +83,12 @@ theorem fullyBlockedRectangles_eq_empty_of_le_two (hn : n ≤ 2) (x y : GridStat
     obtain ⟨hO, hX⟩ := hcon
     rw [← Fin.val_ne_iff] at hO hX
     omega
-  have hsq : (R.left, x R.left) ∈ R.toGridRectangle.squares := by
-    simpa only [GridRectangleBetween.bottom] using R.left_bottom_mem_squares
+  have hsq : (R.left, x R.left) ∈ R.toGridRectangle.coveredSquares := by
+    simpa only [GridRectangleBetween.bottom] using R.left_bottom_mem_coveredSquares
   rcases hpair with h | h
-  · exact Finset.disjoint_left.mp (R.disjoint_squares_OSet_of_avoidsMarkings havoid) hsq
+  · exact Finset.disjoint_left.mp (R.disjoint_coveredSquares_OSet_of_avoidsMarkings havoid) hsq
       ((G.mk_mem_OSet R.left (x R.left)).mpr h.symm)
-  · exact Finset.disjoint_left.mp (R.disjoint_squares_XSet_of_avoidsMarkings havoid) hsq
+  · exact Finset.disjoint_left.mp (R.disjoint_coveredSquares_XSet_of_avoidsMarkings havoid) hsq
       ((G.mk_mem_XSet R.left (x R.left)).mpr h.symm)
 
 /-- Every fully blocked rectangle coefficient vanishes in grid size at most two: no rectangle is

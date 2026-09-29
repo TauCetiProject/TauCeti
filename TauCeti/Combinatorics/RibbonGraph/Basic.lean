@@ -476,29 +476,14 @@ private def edgeActionHom (f : Γ.Iso Δ) : Γ.E →ₑ[f.rotationGroupEquiv] Δ
         simpa only [MulAction.subgroup_smul_def, Equiv.Perm.smul_def] using
           congrArg (fun p : Equiv.Perm Δ.E ↦ p (f.edge e)) hgroup.symm
 
-/-- Two edges share a connected component exactly when their images do. -/
-private theorem orbitRel_iff (f : Γ.Iso Δ) (x y : Γ.E) :
-    MulAction.orbitRel Γ.rotationGroup Γ.E x y ↔
-      MulAction.orbitRel Δ.rotationGroup Δ.E (f.edge x) (f.edge y) := by
-  rw [MulAction.orbitRel_apply, MulAction.orbitRel_apply,
-    MulAction.mem_orbit_iff, MulAction.mem_orbit_iff]
-  constructor
-  · rintro ⟨g, hg⟩
-    refine ⟨f.rotationGroupEquiv g, ?_⟩
-    exact (f.edgeActionHom.map_smul' g y).symm.trans (congr_arg f.edge hg)
-  · rintro ⟨h, hh⟩
-    obtain ⟨g, rfl⟩ := f.rotationGroupEquiv.surjective h
-    refine ⟨g, f.edge.injective ?_⟩
-    exact (f.edgeActionHom.map_smul' g y).trans hh
-
 /-- An isomorphism relabels the connected components of a bipartite ribbon graph. -/
 def connectedComponentEquiv (f : Γ.Iso Δ) : Γ.ConnectedComponent ≃ Δ.ConnectedComponent :=
-  Quotient.congr f.edge fun x y ↦ f.orbitRel_iff x y
+  MulAction.orbitRelQuotientCongr f.rotationGroupEquiv f.edge f.edgeActionHom.map_smul'
 
 @[simp]
 theorem connectedComponentEquiv_mk (f : Γ.Iso Δ) (e : Γ.E) :
-    f.connectedComponentEquiv (Quotient.mk'' e) = Quotient.mk'' (f.edge e) := by
-  simp only [connectedComponentEquiv, Quotient.congr_mk]
+    f.connectedComponentEquiv (Quotient.mk'' e) = Quotient.mk'' (f.edge e) :=
+  MulAction.orbitRelQuotientCongr_mk _ _ _ e
 
 /-- Connectedness is invariant under isomorphism. -/
 theorem isConnected_iff (f : Γ.Iso Δ) : Γ.IsConnected ↔ Δ.IsConnected := by
@@ -510,27 +495,7 @@ theorem isConnected_iff (f : Γ.Iso Δ) : Γ.IsConnected ↔ Δ.IsConnected := b
 def faceEquiv (f : Γ.Iso Δ) : Γ.Face ≃ Δ.Face :=
   Quotient.congr f.edge fun x y ↦ by
     rw [← f.permCongr_facePerm]
-    constructor
-    · rintro ⟨i, hi⟩
-      refine ⟨i, ?_⟩
-      calc
-        ((f.edge.permCongr Γ.facePerm) ^ i) (f.edge x) =
-            (f.edge.permCongr (Γ.facePerm ^ i)) (f.edge x) :=
-          congrArg (fun p : Equiv.Perm Δ.E ↦ p (f.edge x))
-            (f.edge.permCongrHom.toMonoidHom.map_zpow Γ.facePerm i).symm
-        _ = f.edge ((Γ.facePerm ^ i) x) := by
-          rw [Equiv.permCongr_apply, f.edge.symm_apply_apply]
-        _ = f.edge y := congr_arg f.edge hi
-    · rintro ⟨i, hi⟩
-      refine ⟨i, f.edge.injective ?_⟩
-      calc
-        f.edge ((Γ.facePerm ^ i) x) =
-            (f.edge.permCongr (Γ.facePerm ^ i)) (f.edge x) := by
-          rw [Equiv.permCongr_apply, f.edge.symm_apply_apply]
-        _ = ((f.edge.permCongr Γ.facePerm) ^ i) (f.edge x) :=
-          congrArg (fun p : Equiv.Perm Δ.E ↦ p (f.edge x))
-            (f.edge.permCongrHom.toMonoidHom.map_zpow Γ.facePerm i)
-        _ = f.edge y := hi
+    exact (Perm.sameCycle_permCongr Γ.facePerm f.edge).symm
 
 @[simp]
 theorem faceEquiv_mk (f : Γ.Iso Δ) (e : Γ.E) :

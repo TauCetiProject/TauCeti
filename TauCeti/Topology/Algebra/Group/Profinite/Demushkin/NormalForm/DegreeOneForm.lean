@@ -31,7 +31,9 @@ to the class of one of the normal-form relator words,
   (`exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordNeTwo_zero_of_two`);
 * `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`, which is `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` modulo `λ_2`,
   when `p = 2`, the form is not alternating and `n` is odd
-  (`TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd`);
+  (`TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd`, and
+  `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop` for
+  the word at `f = ∞` itself);
 * `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, which is
   `x₁² (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` modulo `λ_2`, when `p = 2`, the form is not alternating
   and `n` is even
@@ -64,13 +66,17 @@ nondegenerate and not alternating, which is a direct computation.
   the two dyadic normal-form words are nondegenerate, for `n` odd, resp. even, for every `f ≥ 1`
   and every even `a`; under the normal-form bounds `f ≥ 2` and `4 ∣ a` they are moreover not
   alternating (`TauCeti.freeProP.not_isAlt_degreeOneForm_demushkinWordTwoOdd`,
-  `TauCeti.freeProP.not_isAlt_degreeOneForm_demushkinWordTwoEven`).
+  `TauCeti.freeProP.not_isAlt_degreeOneForm_demushkinWordTwoEven`);
+  `TauCeti.freeProP.nondegenerate_degreeOneForm_demushkinWordTwoOddTop` and
+  `TauCeti.freeProP.not_isAlt_degreeOneForm_demushkinWordTwoOddTop`: the same for the odd word at
+  `f = ∞`, which has the class of the odd word at `f = 2`.
 * `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt`: at `p = 2`, two
   classes with nondegenerate nonalternating degree-one forms are carried to one another by a
   continuous automorphism.
 * `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordNeTwo_zero_of_two`:
   the alternating case at `p = 2`, where the `p`-power part vanishes.
 * `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd`,
+  `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop`,
   `TauCeti.freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoEven`: the
   nonalternating case at `p = 2`, of odd and of even rank.
 
@@ -794,6 +800,38 @@ theorem exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd
   exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt ρ _ hnd hnalt
     (nondegenerate_degreeOneForm_demushkinWordTwoOdd hn (zero_lt_two.trans_le hf))
     (not_isAlt_degreeOneForm_demushkinWordTwoOdd hn.pos (zero_lt_two.trans_le hf))
+
+/-- **The degree-one form of `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` is not alternating**, for `n ≥ 1`:
+the word has the class of `x₁² x₂⁴ (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
+theorem not_isAlt_degreeOneForm_demushkinWordTwoOddTop (hn : 0 < n) :
+    ¬ (degreeOneForm (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOddTop n (freeProPGen 2 n),
+        demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n _⟩)).IsAlt := by
+  rw [← gradedMk_demushkinWordTwoOdd_eq_gradedMk_demushkinWordTwoOddTop (f := 2) le_rfl]
+  exact not_isAlt_degreeOneForm_demushkinWordTwoOdd hn two_pos
+
+/-- **The degree-one form of `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` is nondegenerate for `n` odd**: the
+word has the class of `x₁² x₂⁴ (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
+theorem nondegenerate_degreeOneForm_demushkinWordTwoOddTop (hn : Odd n) :
+    (degreeOneForm (gradedMk 2 (freeProP 2 (Fin n)) 1
+      ⟨demushkinWordTwoOddTop n (freeProPGen 2 n),
+        demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n _⟩)).Nondegenerate := by
+  rw [← gradedMk_demushkinWordTwoOdd_eq_gradedMk_demushkinWordTwoOddTop (f := 2) le_rfl]
+  exact nondegenerate_degreeOneForm_demushkinWordTwoOdd hn two_pos
+
+/-- **Labute's normal form modulo `λ_2`, the nonalternating case of odd rank, at level
+`f = ∞`.** Let `F` be the free pro-`2` group on `n` generators, `n` odd, and let `ρ ∈ gr_1(F)`
+have nondegenerate degree-one form that is not alternating. Then a continuous automorphism of `F`
+carries `ρ` to the class of `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
+theorem exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop
+    (hnd : (degreeOneForm ρ).Nondegenerate) (hnalt : ¬ (degreeOneForm ρ).IsAlt) (hn : Odd n) :
+    ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
+      gradedMap 2 (e : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).toMonoidHom
+          (e : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous 1 ρ =
+        gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOddTop n (freeProPGen 2 n),
+          demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n _⟩ :=
+  exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt ρ _ hnd hnalt
+    (nondegenerate_degreeOneForm_demushkinWordTwoOddTop hn)
+    (not_isAlt_degreeOneForm_demushkinWordTwoOddTop hn.pos)
 
 /-- **Labute's normal form modulo `λ_2`, the nonalternating case of even rank.** Let `F` be the
 free pro-`2` group on `n` generators, `n` even, and let `ρ ∈ gr_1(F)` have nondegenerate degree-one

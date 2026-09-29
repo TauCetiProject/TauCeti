@@ -63,18 +63,19 @@ degree-one form `TauCeti.freeProP.degreeOneForm ρ` in the dual basis of the gen
 derivatives span exactly when that form is nondegenerate.
 The **span statements** are: if all `c_i = 0`, then `Im δ_ρ` is the span of the brackets
 `[gr_m(F), gr_0(F)]` and `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)` for every `m ≥ 1`, the tail being
-spanned by all the `π^{m+1} ξ_i`; and if `p` is odd and some `c_i ≠ 0`, then
-`gr_{m+1}(F) = Im δ_ρ` for every `m ≥ 1`. The first case is that of the relators
-`x₁^q (x₁, x₂) (x₃, x₄) ⋯` with `q ≠ p`, whose `p`-power part lies in `λ_2(F)`, and the second that
-of `x₁^p (x₁, x₂) (x₃, x₄) ⋯` at odd `p`. Both rest on the spanning of `gr_{m+1}(F)` by `π gr_m(F)`
-and `[gr_m(F), gr_0(F)]` and on the naturality `π ∘ δ_ρ = δ_ρ ∘ π`, which carries the image of `δ_ρ`
-in degree `m` into its image in degree `m + 1`. For `p = 2` and a class with a `p`-power part the
-odd-`p` argument breaks down at the degree-zero defect of `π`. It survives when a single generator
-`x_{i₀}` carries the `2`-power part and `ξ_{i₀}` occurs in no bracket of `ρ`: then again
-`gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)`, the tail being spanned by the `π^{m+1} ξ_i` with `i ≠ i₀`. That
-is the case of the dyadic relators `x₁² x₂^{2^f} (x₂, x₃) ⋯` of odd rank, whose level `f` is the
-free parameter the tail accounts for. The even-rank dyadic relators `x₁^{2+α} (x₁, x₂) x₃^{2^f} ⋯`,
-where `ξ₁` occurs in a bracket, are not treated here.
+spanned by all the `π^{m+1} ξ_i`, so that `Im δ_ρ` consists exactly of the classes of the
+elements of `λ_{m+1}(F)` all of whose exponent sums are divisible by `p ^ (m + 2)`; and if `p` is
+odd and some `c_i ≠ 0`, then `gr_{m+1}(F) = Im δ_ρ` for every `m ≥ 1`. The first case is that of
+the relators `x₁^q (x₁, x₂) (x₃, x₄) ⋯` with `q ≠ p`, whose `p`-power part lies in `λ_2(F)`, and
+the second that of `x₁^p (x₁, x₂) (x₃, x₄) ⋯` at odd `p`. Both rest on the spanning of
+`gr_{m+1}(F)` by `π gr_m(F)` and `[gr_m(F), gr_0(F)]` and on the naturality `π ∘ δ_ρ = δ_ρ ∘ π`,
+which carries the image of `δ_ρ` in degree `m` into its image in degree `m + 1`. For `p = 2` and a
+class with a `p`-power part the odd-`p` argument breaks down at the degree-zero defect of `π`. It
+survives when a single generator `x_{i₀}` carries the `2`-power part and `ξ_{i₀}` occurs in no
+bracket of `ρ`: then again `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)`, the tail being spanned by the
+`π^{m+1} ξ_i` with `i ≠ i₀`. That is the case of the dyadic relators `x₁² x₂^{2^f} (x₂, x₃) ⋯` of
+odd rank, whose level `f` is the free parameter the tail accounts for. The even-rank dyadic
+relators `x₁^{2+α} (x₁, x₂) x₃^{2^f} ⋯`, where `ξ₁` occurs in a bracket, are not treated here.
 
 ## Main definitions
 
@@ -106,6 +107,10 @@ where `ξ₁` occurs in a bracket, are not treated here.
   `TauCeti.freeProP.range_basisModificationDelta_sup_basisModificationTail_eq_top`: for a class
   without `p`-power part whose derivatives span `gr_0(F)`, `Im δ_ρ = [gr_m(F), gr_0(F)]` and
   `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)`.
+* `TauCeti.freeProP.gradedMk_mem_range_basisModificationDelta_iff`: for a class without `p`-power
+  part whose derivatives span `gr_0(F)`, the class of `z ∈ λ_{m+1}(F)` lies in `Im δ_ρ` if and only
+  if `p ^ (m + 2)` divides every exponent sum of `z`; so `Im δ_ρ` is the kernel of the map to
+  `gr_{m+1}(F^{ab})`.
 * `TauCeti.freeProP.range_basisModificationDelta_eq_top_of_odd`: for odd `p` and a class with a
   `p`-power part whose derivatives span `gr_0(F)`, `gr_{m+1}(F) = Im δ_ρ`.
 * `TauCeti.freeProP.range_basisModificationDelta_sup_basisModificationTail_eq_top_two`: for
@@ -753,6 +758,99 @@ theorem range_basisModificationDelta_sup_basisModificationTail_eq_top (hm : 1 �
         Submodule.mem_sup_left (gradedBracket_mem_range_basisModificationDelta (by omega) hρ hc v y)
     exact gradedPow_mem_range_basisModificationDelta_sup_basisModificationTail hm
       (ih ▸ Submodule.mem_top)
+
+/-! ### The image of `δ` and the exponent sums
+
+For a class `ρ` without `p`-power part the image of `δ_ρ` is spanned by brackets, so every
+continuous homomorphism to a commutative group kills it, while the tail `T_{m+1}(ρ)` is spanned by
+the `p`-powers `π^{m+1} ξ_i`, which the exponent sums modulo `p ^ (m + 2)` separate
+(`TauCeti.freeProP.exponentSumZModPow`). The decomposition `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)`
+therefore identifies `Im δ_ρ` with the classes killed by every exponent sum modulo `p ^ (m + 2)`. -/
+
+/-- **A continuous homomorphism to a commutative group kills the image of `δ_ρ`** when `ρ` has no
+`p`-power part: `δ_ρ(v)` is then a sum of brackets, and brackets vanish in a commutative group. -/
+theorem gradedMap_basisModificationDelta_eq_zero {H : Type u} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] [IsMulCommutative H] (f : freeProP p X →* H) (hf : Continuous f)
+    (hm : 1 ≤ m) {ρ : gradedPiece p (freeProP p X) 1}
+    (hc : ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0)
+    (v : X → gradedPiece p (freeProP p X) m) :
+    gradedMap p f hf (m + 1) (basisModificationDelta p X hm ρ v) = 0 := by
+  cases nonempty_fintype X
+  rw [basisModificationDelta_eq_gradedPow_add_sum]
+  simp only [hc, zero_smul, Finset.sum_const_zero, gradedPow_zero, zero_add, map_sum]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  have h := gradedMap_gradedBracket f hf (v i) (degreeOneDeriv p X i ρ)
+  rw [gradedBracket_eq_zero_of_isMulCommutative (G := H)] at h
+  exact h
+
+/-- **The image of `δ_ρ` through the exponent sums**: if `ρ ∈ gr_1(F)` has no `p`-power part and
+its partial derivatives `∂_i ρ` span `gr_0(F)`, then for `m ≥ 1` the class in `gr_{m+1}(F)` of
+`z ∈ λ_{m+1}(F)` lies in `Im δ_ρ` if and only if `p ^ (m + 2)` divides every exponent sum of `z`.
+So `Im δ_ρ` is the kernel of the map `gr_{m+1}(F) → gr_{m+1}(F^{ab})` induced by the
+abelianization, the complement of the tail `T_{m+1}(ρ)` in
+`TauCeti.freeProP.range_basisModificationDelta_sup_basisModificationTail_eq_top`. This is the span
+statement for the relators `x₁^q (x₁, x₂) (x₃, x₄) ⋯` with `q ≠ p`: a discrepancy between two
+such relators whose exponent sums agree modulo `p ^ (m + 2)` is absorbed by a level-`m` basis
+modification. -/
+theorem gradedMk_mem_range_basisModificationDelta_iff (hm : 1 ≤ m)
+    {ρ : gradedPiece p (freeProP p X) 1}
+    (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
+    (hc : ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0)
+    (z : pLowerCentralSeries p (freeProP p X) (m + 1)) :
+    gradedMk p (freeProP p X) (m + 1) z ∈ LinearMap.range (basisModificationDelta p X hm ρ) ↔
+      ∀ i, (p : ℤ_[p]) ^ (m + 2) ∣ (exponentSum p X (z : freeProP p X)).toAdd i := by
+  classical
+  cases nonempty_fintype X
+  constructor
+  · rintro ⟨v, hv⟩ i
+    have h := gradedMap_exponentSumZModPow_gradedMk_eq_zero_iff i z
+    rw [← hv, gradedMap_basisModificationDelta_eq_zero _ _ hm hc] at h
+    exact h.mp rfl
+  · intro hz
+    have hmem : gradedMk p (freeProP p X) (m + 1) z ∈
+        LinearMap.range (basisModificationDelta p X hm ρ) ⊔
+          basisModificationTail p X ρ (m + 1) := by
+      rw [range_basisModificationDelta_sup_basisModificationTail_eq_top hm hρ hc]
+      exact Submodule.mem_top
+    obtain ⟨_, ⟨v, rfl⟩, t, ht, hdt⟩ := Submodule.mem_sup.mp hmem
+    obtain ⟨c, rfl⟩ := mem_basisModificationTail_iff.mp ht
+    -- Every coefficient of the tail vanishes: the character of the `i`-th exponent sum modulo
+    -- `p ^ (m + 2)` kills the class of `z` and the image of `δ_ρ`, and it reads off the
+    -- coefficient of `π^{m+1} ξ_i`.
+    suffices hc0 : ∀ i, c i = 0 by
+      rw [← hdt]
+      simp [hc0]
+    intro i
+    have h := congrArg ((gradedMap p (exponentSumZModPow p X (m + 1 + 1) (i : X)).toMonoidHom
+      (exponentSumZModPow p X (m + 1 + 1) (i : X)).continuous (m + 1)).toZModLinearMap p) hdt
+    rw [map_add, map_sum] at h
+    simp only [map_smul] at h
+    simp only [AddMonoidHom.coe_toZModLinearMap] at h
+    rw [(gradedMap_exponentSumZModPow_gradedMk_eq_zero_iff (i : X) z).mpr (hz i),
+      gradedMap_basisModificationDelta_eq_zero _ _ hm hc, zero_add,
+      Finset.sum_eq_single i (fun j _ hj ↦ by
+        rw [gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_of_ne _
+          fun h' ↦ hj (Subtype.ext h'), smul_zero]) (by simp)] at h
+    exact (smul_eq_zero_iff_left
+      (gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_self_ne_zero _ _)).mp h
+
+/-- **A class of the closed commutator subgroup lies in the image of `δ_ρ`**: for `ρ` without
+`p`-power part and with spanning partial derivatives, the class in `gr_{m+1}(F)` of an element of
+`λ_{m+1}(F)` lying in the closure of the commutator subgroup is in `Im δ_ρ`. This is the form used
+for the relators `(x₁, x₂) (x₃, x₄) ⋯` with `q = 0`, whose discrepancies have trivial exponent
+sums. -/
+theorem gradedMk_mem_range_basisModificationDelta_of_mem_topologicalClosure_commutator
+    (hm : 1 ≤ m) {ρ : gradedPiece p (freeProP p X) 1}
+    (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
+    (hc : ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0)
+    (z : pLowerCentralSeries p (freeProP p X) (m + 1))
+    (hz : (z : freeProP p X) ∈ (commutator (freeProP p X)).topologicalClosure) :
+    gradedMk p (freeProP p X) (m + 1) z ∈ LinearMap.range (basisModificationDelta p X hm ρ) := by
+  rw [← exponentSum_eq_one_iff] at hz
+  rw [gradedMk_mem_range_basisModificationDelta_iff hm hρ hc]
+  intro i
+  rw [hz, toAdd_one, Pi.zero_apply]
+  exact dvd_zero _
 
 /-- The odd-`p` span statement, in the form in which it is proved: a linear functional `φ` on
 `gr_0(F)` with a value `1` at `y₀` such that `φ(y) • π v + [v, y] ∈ Im δ_ρ` for every `v` and `y`
