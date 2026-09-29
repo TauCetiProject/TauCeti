@@ -33,12 +33,14 @@ prevertices `a i` and the turning exponents `e i`.  The only geometric input is 
 boundary value of `f` lies on the frontier of `U`, and near a side or a vertex that frontier lies
 on the bounding line or on the two bounding rays.
 
-## Main result
+## Main results
 
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain` -- a conformal
   map of the upper half-plane onto a polygonal domain, continuous and injective up to the real
   axis and tending to a side at infinity, is an affine image of the Schwarz--Christoffel
   primitive.
+* `TauCeti.sum_eq_neg_two_of_polygonal_domain` -- the turning exponents of such a polygonal
+  domain sum to `-2`: its interior angles sum to `(n - 2) * π`.
 
 ## References
 
@@ -157,6 +159,35 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
     · rw [update_of_ne h₁, update_of_ne h₂, div_left_inj' hb, sub_left_inj] at h
       simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) h
 
+/-- **Condition at infinity, from the global data.**  If `f` tends at infinity to a point `p`
+which is not a value of `f` on the closed upper half-plane, and hence not a vertex, then `p` lies on
+a side of `U`, and the conclusion of `exists_eqOn_neg_inv_of_tendsto` holds for that side. -/
+private theorem exists_eqOn_neg_inv_of_tendsto_of_side {ι : Type*} {a : ι → ℝ} {v : ι → ℂ}
+    {p : ℂ} (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hfU : f '' upperHalfPlaneSet = U) (hfv : ∀ i, f (a i) = v i)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 p))
+    (hpf : p ∉ f '' {z : ℂ | 0 ≤ z.im})
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im)) :
+    ∃ r > 0, ∃ g : ℂ → ℂ, ∃ q b : ℂ, b ≠ 0 ∧
+      EqOn g (fun w => (f (-w⁻¹) - q) / b) (ball 0 r ∩ upperHalfPlaneSet) ∧
+      ContinuousOn g (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      (∀ z ∈ ball (0 : ℂ) r, z.im = 0 → (g z).im = 0) ∧
+      MapsTo g (ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet ∧
+      InjOn g (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
+  have hpU : p ∈ frontier U := by
+    refine ⟨?_, fun h => hpf ?_⟩
+    · exact mem_closure_of_tendsto (hp.mono_left (inf_le_inf_left _ (principal_mono.mpr hH0)))
+        (eventually_inf_principal.mpr (Eventually.of_forall fun z hz =>
+          hfU ▸ mem_image_of_mem f hz))
+    · obtain ⟨y, hy, hyp⟩ := hfU.symm ▸ interior_subset h
+      exact ⟨y, hH0 hy, hyp⟩
+  obtain ⟨ρ, hρ, q, b, hb, hU⟩ :=
+    hside p hpU fun i h => hpf ⟨(a i : ℂ), by simp, (hfv i).trans h.symm⟩
+  obtain ⟨r, hr, g, hg⟩ := exists_eqOn_neg_inv_of_tendsto hfc hfi hfU hp hpf hpU hρ hb hU
+  exact ⟨r, hr, g, q, b, hb, hg⟩
+
 /-! ### The Schwarz--Christoffel formula -/
 
 /-- **The Schwarz--Christoffel formula for a conformal map onto a polygonal domain.**  Let `U`
@@ -185,7 +216,6 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain
     EqOn f (fun z => deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
       schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
   have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
-  have hvf : ∀ i, v i ∈ f '' {z : ℂ | 0 ≤ z.im} := fun i => ⟨(a i : ℂ), by simp, hfv i⟩
   refine eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary a e ha he z₀ hf
     (fun z hz => deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz)
     (fun x hx => ?_) (fun i => ?_) ?_
@@ -206,16 +236,36 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain
       exists_ball_abs_arg_div_of_image_eq hfc hfi hfU (ofReal_im (a i)) hρ hb hU
     exact ⟨r, hr, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hupper, hreal⟩
   · -- infinity is carried to the point `p` on a side
-    have hpU : p ∈ frontier U := by
-      refine ⟨?_, fun h => hpf ?_⟩
-      · exact mem_closure_of_tendsto (hp.mono_left (inf_le_inf_left _ (principal_mono.mpr hH0)))
-          (eventually_inf_principal.mpr (Eventually.of_forall fun z hz =>
-            hfU ▸ mem_image_of_mem f hz))
-      · obtain ⟨y, hy, hyp⟩ := hfU.symm ▸ interior_subset h
-        exact ⟨y, hH0 hy, hyp⟩
-    obtain ⟨ρ, hρ, q, b, hb, hU⟩ := hside p hpU fun i h => hpf (h ▸ hvf i)
-    obtain ⟨r, hr, g, hg⟩ := exists_eqOn_neg_inv_of_tendsto hfc hfi hfU hp hpf hpU hρ hb hU
-    exact ⟨r, hr, g, q, b, hb, hg⟩
+    exact exists_eqOn_neg_inv_of_tendsto_of_side hfc hfi hfU hfv hp hpf hside
+
+/-- **The angle sum of a polygonal domain.**  Under the hypotheses of
+`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain`, the turning exponents
+sum to `-2`.  Equivalently, the interior angles `(e i + 1) * π` of the polygon sum to
+`(n - 2) * π`, where `n` is the number of vertices. -/
+theorem sum_eq_neg_two_of_polygonal_domain
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
+    (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {v : ι → ℂ} {p : ℂ}
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U)
+    (hfv : ∀ i, f (a i) = v i)
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (𝓝 p))
+    (hpf : p ∉ f '' {z : ℂ | 0 ≤ z.im})
+    (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
+      ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
+    (hcorner : ∀ i, ∃ ρ > 0, ∃ b : ℂ, b ≠ 0 ∧ ∀ z ∈ ball (v i) ρ, z ≠ v i →
+      (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2)) :
+    ∑ i, e i = -2 := by
+  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
+  have hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0 := fun z hz =>
+    deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz
+  -- `f` is an affine image of the primitive, so its pre-Schwarzian is the partial-fraction sum
+  have hform := eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain a e ha he
+    UpperHalfPlane.I hf hfc hfi hfU hfv hp hpf hside hcorner
+  have hpre := (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff a e UpperHalfPlane.I
+    hf hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
+      (schwarzChristoffelIntegrand_ne_zero a e UpperHalfPlane.I.im_pos), _, hform⟩
+  exact sum_eq_neg_two_of_logDeriv_deriv_eqOn a e hf hpre
+    (exists_eqOn_neg_inv_of_tendsto_of_side hfc hfi hfU hfv hp hpf hside)
 
 end TauCeti
 
