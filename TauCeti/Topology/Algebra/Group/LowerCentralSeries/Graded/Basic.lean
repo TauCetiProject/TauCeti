@@ -80,7 +80,7 @@ open scoped commutatorElement
 
 namespace TauCeti
 
-universe u
+universe u v w
 
 variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
@@ -797,8 +797,8 @@ end Pow
 
 section Functoriality
 
-variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-variable {K : Type u} [Group K] [TopologicalSpace K] [IsTopologicalGroup K]
+variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+variable {K : Type w} [Group K] [TopologicalSpace K] [IsTopologicalGroup K]
 
 variable (p) in
 /-- **The graded map of a continuous homomorphism**: `f` carries `λ_k(G)` into `λ_k(H)`, so it
@@ -944,7 +944,7 @@ theorem gradedPowIter_smul [NeZero p] (j : ℕ) (c : ZMod p) (x : gradedPiece p 
 
 /-- **Naturality of the iterated `p`-power operator.** -/
 @[simp]
-theorem gradedMap_gradedPowIter {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+theorem gradedMap_gradedPowIter {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     (f : G →* H) (hf : Continuous f) (j : ℕ) (x : gradedPiece p G 0) :
     gradedMap p f hf j (gradedPowIter p G j x) = gradedPowIter p H j (gradedMap p f hf 0 x) := by
   induction j with

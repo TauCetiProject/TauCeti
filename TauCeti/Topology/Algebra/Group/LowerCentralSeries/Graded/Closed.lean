@@ -15,7 +15,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 
 The successive quotients of the closed lower central series are the case `p = 0` of Tau Ceti's
 graded pieces for the lower `p`-series. This file gives that specialization its consumer-facing
-names; its commutator formula is `gradedBracket_gradedMk`.
+names; its commutator formula is `lcsBracket_lcsGradedMk`.
 
 For a pro-`p` group, taking a `p`-adic power in either argument of a commutator acts on its class
 by the same `p`-adic exponent. Thus the canonical `ℤ_p`-module structures on the graded pieces
@@ -30,6 +30,7 @@ make the bracket `ℤ_p`-bilinear.
 ## Main results
 
 * `TauCeti.lcsGradedMk_conj`: conjugation is trivial on each graded piece.
+* `TauCeti.lcsBracket_lcsGradedMk`: the bracket of two classes is the class of the commutator.
 * `TauCeti.gradedMap_lcsBracket`: the bracket is natural in continuous homomorphisms.
 * `TauCeti.IsProP.lcsGradedMk_padicPow`: a `p`-adic power becomes scalar multiplication on a
   graded piece.
@@ -51,7 +52,7 @@ open scoped commutatorElement
 
 namespace TauCeti
 
-universe u
+universe u v
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
@@ -107,7 +108,7 @@ theorem lcsBracket_add_right {j k : ℕ} (x : lcsGradedPiece G j)
 
 /-- **Naturality of the closed-series bracket**: the graded maps induced by a continuous
 homomorphism commute with the bracket. -/
-theorem gradedMap_lcsBracket {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+theorem gradedMap_lcsBracket {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     (f : G →* H) (hf : Continuous f) {j k : ℕ} (x : lcsGradedPiece G j)
     (y : lcsGradedPiece G k) :
     gradedMap 0 f hf (j + k + 1) (lcsBracket G j k x y) =
@@ -192,12 +193,9 @@ theorem IsProP.mk_commutatorElement_padicPow_left (hG : IsProP p G) {j k : ℕ}
         hG.padicPow (x : G) a * (y : G) * (hG.padicPow (x : G) a)⁻¹ :=
       hxy.mul (hpow x).inv
     exact (hxyx.mul continuous_const).congr fun _ ↦ rfl
-  have hright : Continuous fun a : ℤ_[p] ↦
-      ((hG.padicPow ⁅(x : G), (y : G)⁆ a : G) : G ⧸ N) := by
-    exact QuotientGroup.continuous_mk.comp (hpow _)
-  apply congrFun (PadicInt.denseRange_natCast.equalizer hleft hright ?_) u
-  funext n
-  simp only [Function.comp_apply, hG.padicPow_natCast]
+  rw [hG.mk_padicPow_quotient N]
+  refine (hG.quotient N).eq_padicPow_of_continuous hleft (fun n ↦ ?_) u
+  rw [hG.padicPow_natCast]
   have hx : (x : G) ∈ pLowerCentralSeries 0 G j := by
     rw [← closedLowerCentralSeries_def]
     exact x.2
@@ -210,8 +208,8 @@ theorem IsProP.mk_commutatorElement_padicPow_left (hG : IsProP p G) {j k : ℕ}
       commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries hx hy) (x : G)
   -- Restate coercions as the quotient homomorphism so its map lemmas apply.
   change QuotientGroup.mk' N ⁅(x : G) ^ n, (y : G)⁆ =
-    QuotientGroup.mk' N (⁅(x : G), (y : G)⁆ ^ n)
-  rw [map_pow, map_commutatorElement]
+    QuotientGroup.mk' N ⁅(x : G), (y : G)⁆ ^ n
+  rw [map_commutatorElement, map_pow]
   exact (hcomm.commutatorElement_pow_left n).symm
 
 /-- Modulo `γ_{j+k+2}`, taking a `p`-adic power in the right input of a commutator is the same
@@ -235,12 +233,9 @@ theorem IsProP.mk_commutatorElement_padicPow_right (hG : IsProP p G) {j k : ℕ}
         (x : G) * hG.padicPow (y : G) a * (x : G)⁻¹ :=
       hxy.mul continuous_const
     exact (hxyx.mul (hpow y).inv).congr fun _ ↦ rfl
-  have hright : Continuous fun a : ℤ_[p] ↦
-      ((hG.padicPow ⁅(x : G), (y : G)⁆ a : G) : G ⧸ N) := by
-    exact QuotientGroup.continuous_mk.comp (hpow _)
-  apply congrFun (PadicInt.denseRange_natCast.equalizer hleft hright ?_) u
-  funext n
-  simp only [Function.comp_apply, hG.padicPow_natCast]
+  rw [hG.mk_padicPow_quotient N]
+  refine (hG.quotient N).eq_padicPow_of_continuous hleft (fun n ↦ ?_) u
+  rw [hG.padicPow_natCast]
   have hx : (x : G) ∈ pLowerCentralSeries 0 G j := by
     rw [← closedLowerCentralSeries_def]
     exact x.2
@@ -253,8 +248,8 @@ theorem IsProP.mk_commutatorElement_padicPow_right (hG : IsProP p G) {j k : ℕ}
       commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries hx hy) (y : G)
   -- Restate coercions as the quotient homomorphism so its map lemmas apply.
   change QuotientGroup.mk' N ⁅(x : G), (y : G) ^ n⁆ =
-    QuotientGroup.mk' N (⁅(x : G), (y : G)⁆ ^ n)
-  rw [map_pow, map_commutatorElement]
+    QuotientGroup.mk' N ⁅(x : G), (y : G)⁆ ^ n
+  rw [map_commutatorElement, map_pow]
   exact (hcomm.commutatorElement_pow_right n).symm
 
 /-- Taking a `p`-adic power in the first argument of the closed-series bracket takes the same
