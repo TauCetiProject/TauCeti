@@ -29,7 +29,8 @@ Galois-module theory of local units.
 * `padicCompletionUnits`: the inverse-limit carrier `A(L)`.
 * `padicCompletionUnitsPadicModule`: its intrinsic `ℤ_p`-module structure.
 * `padicCompletionUnitsAut`: the coordinatewise Galois action.
-* `padicCompletionUnitsModule`: the resulting `ℤ_p[Gal(L/K)]`-module structure.
+* `padicCompletionUnitsRepresentation`: the `ℤ_p`-linear Galois representation on `A(L)`; its
+  `Representation.asModule` is the integral `ℤ_p[Gal(L/K)]`-module `A(L)`.
 
 ## References
 
@@ -331,37 +332,11 @@ def padicCompletionUnitsRepresentation :
   map_one' := LinearMap.ext fun x ↦ by simp
   map_mul' σ τ := LinearMap.ext fun x ↦ by simp
 
-/-- The integral `ℤ_p[Gal(L/K)]`-module structure on `A(L)`. -/
-instance padicCompletionUnitsModule :
-    Module (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
-      (Additive ↑(padicCompletionUnits p L)) :=
-  Module.compHom _
-    (padicCompletionUnitsRepresentation p L K).asAlgebraHom.toRingHom
-
-/-- The group algebra acts through the algebra homomorphism of the representation; this holds
-by definition of `Module.compHom`, which provides no unfolding lemma. -/
-private theorem padicCompletionUnits_monoidAlgebra_smul_def
-    (r : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) (x : Additive ↑(padicCompletionUnits p L)) :
-    r • x = (padicCompletionUnitsRepresentation p L K).asAlgebraHom r x :=
-  (rfl)
-
-/-- A group-algebra monomial acts through the corresponding field automorphism, scaled by its
-coefficient. -/
+/-- The representation acts on `A(L)` through the `ℤ_p`-linear Galois action. -/
 @[simp]
-theorem padicCompletionUnits_single_smul (σ : L ≃ₐ[K] L) (a : ℤ_[p])
-    (x : ↑(padicCompletionUnits p L)) :
-    (MonoidAlgebra.single σ a : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) • Additive.ofMul x =
-      a • Additive.ofMul (padicCompletionUnitsAut p L K σ x) := by
-  rw [padicCompletionUnits_monoidAlgebra_smul_def, Representation.asAlgebraHom_single]
-  simp [padicCompletionUnitsRepresentation]
-
-/-- Restriction of the group-algebra action recovers the intrinsic `ℤ_p`-action on `A(L)`. -/
-instance padicCompletionUnits_isScalarTower :
-    IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
-      (Additive ↑(padicCompletionUnits p L)) :=
-  IsScalarTower.of_algebraMap_smul fun a x ↦ by
-    rw [padicCompletionUnits_monoidAlgebra_smul_def, AlgHom.commutes,
-      Module.algebraMap_end_apply]
+theorem padicCompletionUnitsRepresentation_apply (σ : L ≃ₐ[K] L) :
+    padicCompletionUnitsRepresentation p L K σ = padicCompletionUnitsLinearMap p L K σ :=
+  (rfl)
 
 end GaloisAction
 
