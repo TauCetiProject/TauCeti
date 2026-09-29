@@ -91,7 +91,8 @@ theorem exists_linearlyEquivalent_ofPoint_of_genus_eq_one
   have hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) :=
     (UniversallyClosed.eq_valuativeCriterion ▸
       (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
-  have hF := isFunctionField_functionField_of_forall_coheight_le_one k hX.out y.2
+  have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
+    k hX.out y.2
   have hgF : genus k X.functionField = 1 :=
     (genus_eq_genus_functionField hex hX.out hF hk).symm.trans hg
   obtain ⟨P, hP, hlin⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one hF hk hgF
@@ -118,7 +119,8 @@ theorem eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one
   have hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) :=
     (UniversallyClosed.eq_valuativeCriterion ▸
       (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
-  have hF := isFunctionField_functionField_of_forall_coheight_le_one k hX.out x.2
+  have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
+    k hX.out x.2
   have hgF : genus k X.functionField = 1 :=
     (genus_eq_genus_functionField hex hX.out hF hk).symm.trans hg
   apply (CodimensionOnePoint.equivPlace hex hX.out).injective
@@ -162,11 +164,17 @@ private lemma injective_abelJacobiClass :
     Function.Injective fun x : {x : CodimensionOnePoint X //
       (X ↘ Spec (.of k)).residueDegree x = 1} ↦ abelJacobiClass k hx₀ x := by
   intro x y hxy
-  rw [Subtype.ext_iff, coe_abelJacobiClass k hx₀ x.2, coe_abelJacobiClass k hx₀ y.2,
-    WeilDivisor.OrderSystem.divisorClass_eq_iff, WeilDivisor.OrderSystem.linearlyEquivalent_iff,
+  have hlin := (WeilDivisor.OrderSystem.weightedAbelJacobiClass_eq_iff_linearlyEquivalent
+    (S := WeilDivisor.OrderSystem.ofScheme X) _
+    (isWeightedDegreeZero_residueDegree k hX.out) (by simp [hx₀])).mp hxy
+  rw [WeilDivisor.weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one
+      (by simp [x.2]),
+    WeilDivisor.weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one
+      (by simp [y.2]),
+    WeilDivisor.OrderSystem.linearlyEquivalent_iff,
     WeilDivisor.pointDifference, WeilDivisor.pointDifference, sub_sub_sub_cancel_right,
-    ← WeilDivisor.OrderSystem.linearlyEquivalent_iff] at hxy
-  exact Subtype.ext (eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one k hk hg x.2 hxy)
+    ← WeilDivisor.OrderSystem.linearlyEquivalent_iff] at hlin
+  exact Subtype.ext (eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one k hk hg x.2 hlin)
 
 /-- In genus one, every degree-zero divisor class is the Abel–Jacobi class of a point of residue
 degree one: if `D` has degree zero, then `D + x₀` is linearly equivalent to a point `x`, so that
