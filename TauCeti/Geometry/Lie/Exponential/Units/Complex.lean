@@ -14,9 +14,11 @@ import Mathlib.Topology.Homotopy.Lifting
 /-!
 # Continuous one-parameter subgroups of the complex units
 
-Every continuous homomorphism from the additive real line to `ℂˣ` is an exponential, without
-any differentiability hypothesis. The proof lifts the homomorphism through the covering map
-`exp : ℂ → ℂ \ {0}`.
+Every continuous homomorphism from the additive real line to `ℂˣ` is an exponential
+`t ↦ exp (t * s)` for a unique `s : ℂ`, without any differentiability hypothesis. This is the
+automatic-smoothness statement for the one-parameter subgroups of `ℂˣ`: the restriction of a
+continuous character of `ℝˣ` or `ℂˣ` to a one-parameter subgroup, such as the positive reals or
+the unit circle, is recorded by a single complex parameter.
 
 ## Main results
 

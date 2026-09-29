@@ -27,8 +27,8 @@ infinity type at the real and complex places.
 
 The analytic input is `TauCeti.existsUnique_eq_expUnitHom_complex`: every continuous homomorphism
 from the additive real line to `ℂˣ` is `t ↦ exp (t * s)`, with no differentiability hypothesis.
-It is proved by lifting through the covering map `exp : ℂ → ℂ \ {0}`
-(`IsCoveringMap.existsUnique_continuousMap_lifts`).
+It reads off the exponent `s` of a character from its restriction to the positive reals, and the
+angular frequency `k` of a character of `ℂˣ` from its restriction to the unit circle.
 
 ## Main definitions
 
@@ -130,6 +130,7 @@ theorem realUnitsCharacter_zero_left (ε : ZMod 2) :
   exact one_mul (realSignCharacter ^ ε.val)
 
 /-- The sign character has order two. -/
+@[simp]
 theorem realSignCharacter_sq : realSignCharacter ^ 2 = 1 :=
   ContinuousMonoidHom.ext fun x ↦ Units.ext <| by
     rcases lt_or_gt_of_ne x.ne_zero with h | h <;> simp [h]
@@ -139,6 +140,7 @@ theorem realUnitsCharacter_zero_zero : realUnitsCharacter 0 0 = 1 := by
   simp [realUnitsCharacter]
 
 /-- Adding parameters multiplies the characters of `ℝˣ`. -/
+@[simp]
 theorem realUnitsCharacter_add (s t : ℂ) (ε η : ZMod 2) :
     realUnitsCharacter (s + t) (ε + η) = realUnitsCharacter s ε * realUnitsCharacter t η := by
   rw [realUnitsCharacter, realUnitsCharacter, realUnitsCharacter, normCpowCharacter_add,
@@ -152,9 +154,8 @@ theorem realUnitsCharacter_comp_expUnitHom (s : ℂ) (ε : ZMod 2) :
   refine ContinuousMonoidHom.ext fun t ↦ Units.ext ?_
   obtain ⟨t, rfl⟩ := Multiplicative.ofAdd.surjective t
   rw [ContinuousMonoidHom.comp_toFun, coe_realUnitsCharacter_apply, coe_expUnitHom_real,
-    coe_expUnitHom_complex, mul_one, abs_of_pos (Real.exp_pos t), sign_pos (Real.exp_pos t),
-    ofReal_exp_cpow]
-  simp
+    coe_expUnitHom_complex]
+  simp [Real.exp_pos, -ofReal_exp, ofReal_exp_cpow]
 
 /-- Evaluating `realUnitsCharacter s ε` at `-1` gives `(-1) ^ ε`; the exponent `s` is invisible
 there. -/
@@ -266,6 +267,7 @@ theorem complexUnitsCharacter_zero_zero : complexUnitsCharacter 0 0 = 1 := by
   simp [complexUnitsCharacter]
 
 /-- Adding parameters multiplies the characters of `ℂˣ`. -/
+@[simp]
 theorem complexUnitsCharacter_add (s t : ℂ) (k l : ℤ) :
     complexUnitsCharacter (s + t) (k + l) =
       complexUnitsCharacter s k * complexUnitsCharacter t l := by
@@ -280,9 +282,8 @@ theorem complexUnitsCharacter_comp_expUnitHom_one (s : ℂ) (k : ℤ) :
   refine ContinuousMonoidHom.ext fun t ↦ Units.ext ?_
   obtain ⟨t, rfl⟩ := Multiplicative.ofAdd.surjective t
   rw [ContinuousMonoidHom.comp_toFun, coe_complexUnitsCharacter_apply, coe_expUnitHom_complex,
-    coe_expUnitHom_complex, mul_one, norm_exp_ofReal, ← ofReal_exp,
-    div_self (ofReal_ne_zero.2 (Real.exp_pos t).ne'), one_zpow, mul_one,
-    ofReal_exp_cpow]
+    coe_expUnitHom_complex]
+  simp [← ofReal_exp, ofReal_exp_cpow]
 
 /-- Restricting `complexUnitsCharacter s k` to the standard parametrization of the unit circle
 gives `expUnitHom (k * I)`; the modulus exponent is invisible there. -/
@@ -291,8 +292,8 @@ theorem complexUnitsCharacter_comp_expUnitHom_I (s : ℂ) (k : ℤ) :
   refine ContinuousMonoidHom.ext fun t ↦ Units.ext ?_
   obtain ⟨t, rfl⟩ := Multiplicative.ofAdd.surjective t
   rw [ContinuousMonoidHom.comp_toFun, coe_complexUnitsCharacter_apply, coe_expUnitHom_complex,
-    coe_expUnitHom_complex, norm_exp_ofReal_mul_I, ofReal_one, one_cpow, one_mul, div_one,
-    ← exp_int_mul]
+    coe_expUnitHom_complex]
+  simp [← exp_int_mul]
   ring_nf
 
 /-- Continuous characters of `ℂˣ` agree once they agree on the positive reals and on the unit

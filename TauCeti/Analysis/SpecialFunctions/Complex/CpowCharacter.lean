@@ -59,6 +59,7 @@ theorem cpowCharacter_zero (f : G →* NNRealˣ) (hf : Continuous f) :
   ContinuousMonoidHom.ext fun _ ↦ Units.ext <| by simp
 
 /-- Adding exponents multiplies the associated characters. -/
+@[simp]
 theorem cpowCharacter_add (f : G →* NNRealˣ) (hf : Continuous f) (s t : ℂ) :
     cpowCharacter f hf (s + t) = cpowCharacter f hf s * cpowCharacter f hf t :=
   ContinuousMonoidHom.ext fun x ↦ Units.ext <| by
@@ -91,6 +92,7 @@ theorem normCpowCharacter_zero : normCpowCharacter 𝕜 0 = 1 :=
   cpowCharacter_zero _ _
 
 /-- Adding exponents multiplies the characters. -/
+@[simp]
 theorem normCpowCharacter_add (s t : ℂ) :
     normCpowCharacter 𝕜 (s + t) = normCpowCharacter 𝕜 s * normCpowCharacter 𝕜 t :=
   cpowCharacter_add _ _ s t
