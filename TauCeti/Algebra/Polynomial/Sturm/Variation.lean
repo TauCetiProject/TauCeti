@@ -39,6 +39,12 @@ remainder sequence at `x`. -/
 noncomputable def sturmVariation (p q : K[X]) (x : K) : ℕ :=
   ((sturmSeq p q).map (fun r => r.eval x)).signVariations
 
+/-- The Sturm variation counts sign changes in the evaluated remainder sequence. -/
+theorem sturmVariation_def (p q : K[X]) (x : K) :
+    sturmVariation p q x =
+      ((sturmSeq p q).map (fun r => r.eval x)).signVariations := by
+  simp only [sturmVariation]
+
 /-- An empty Sturm sequence has no variations. -/
 @[simp] theorem sturmVariation_zero_left (q : K[X]) (x : K) :
     sturmVariation 0 q x = 0 := by
