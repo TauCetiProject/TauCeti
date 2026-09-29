@@ -202,9 +202,8 @@ discrete `p`-primary torsion `M`. -/
     cohomologicalDimensionAt.{v} p G = 0 ↔
       ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
         [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
-        ∀ i : ℕ, 0 < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) := by
-  rw [← cohomologicalDimensionLE_iff]
-  simpa only [Nat.cast_zero, nonpos_iff_eq_zero] using cohomologicalDimensionAt_le_iff p G 0
+        ∀ i : ℕ, 0 < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) :=
+  leastENatBound_eq_zero_iff.trans cohomologicalDimensionLE_iff
 
 /-- `strictCohomologicalDimensionAt p G ≤ n` exactly when the `p`-primary component of
 `Hⁱ(G, M)` vanishes above `n` for every discrete `M`. -/
