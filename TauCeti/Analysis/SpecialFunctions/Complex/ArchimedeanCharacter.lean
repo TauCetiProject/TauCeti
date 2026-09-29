@@ -135,10 +135,6 @@ theorem realSignCharacter_sq : realSignCharacter ^ 2 = 1 :=
   ContinuousMonoidHom.ext fun x ↦ Units.ext <| by
     rcases lt_or_gt_of_ne x.ne_zero with h | h <;> simp [h]
 
-/-- The parameters `(0, 0)` give the trivial character of `ℝˣ`. -/
-theorem realUnitsCharacter_zero_zero : realUnitsCharacter 0 0 = 1 := by
-  simp [realUnitsCharacter]
-
 /-- Adding parameters multiplies the characters of `ℝˣ`. -/
 @[simp]
 theorem realUnitsCharacter_add (s t : ℂ) (ε η : ZMod 2) :
@@ -216,7 +212,7 @@ and multiplying characters adds their parameters. -/
 def realUnitsCharacterEquiv : Multiplicative (ℂ × ZMod 2) ≃* (ℝˣ →ₜ* ℂˣ) :=
   MulEquiv.ofBijective
     ({ toFun p := realUnitsCharacter p.toAdd.1 p.toAdd.2
-       map_one' := realUnitsCharacter_zero_zero
+       map_one' := by simp
        map_mul' _ _ := realUnitsCharacter_add _ _ _ _ } : Multiplicative (ℂ × ZMod 2) →* _)
     ⟨realUnitsCharacter_injective2.uncurry.comp Multiplicative.toAdd.injective, fun χ ↦
       let ⟨s, ε, h⟩ := exists_eq_realUnitsCharacter χ
@@ -261,10 +257,6 @@ theorem complexUnitsCharacter_zero_left (k : ℤ) :
     complexUnitsCharacter 0 k = complexAngularCharacter ^ k := by
   rw [complexUnitsCharacter, normCpowCharacter_zero]
   exact one_mul (complexAngularCharacter ^ k)
-
-/-- The parameters `(0, 0)` give the trivial character of `ℂˣ`. -/
-theorem complexUnitsCharacter_zero_zero : complexUnitsCharacter 0 0 = 1 := by
-  simp [complexUnitsCharacter]
 
 /-- Adding parameters multiplies the characters of `ℂˣ`. -/
 @[simp]
@@ -356,7 +348,7 @@ multiplying characters adds their parameters. -/
 def complexUnitsCharacterEquiv : Multiplicative (ℂ × ℤ) ≃* (ℂˣ →ₜ* ℂˣ) :=
   MulEquiv.ofBijective
     ({ toFun p := complexUnitsCharacter p.toAdd.1 p.toAdd.2
-       map_one' := complexUnitsCharacter_zero_zero
+       map_one' := by simp
        map_mul' _ _ := complexUnitsCharacter_add _ _ _ _ } : Multiplicative (ℂ × ℤ) →* _)
     ⟨complexUnitsCharacter_injective2.uncurry.comp Multiplicative.toAdd.injective, fun χ ↦
       let ⟨s, k, h⟩ := exists_eq_complexUnitsCharacter χ
