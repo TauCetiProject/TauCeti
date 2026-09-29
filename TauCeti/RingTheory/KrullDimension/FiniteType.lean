@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
+public import Mathlib.RingTheory.IntegralClosure.GoingDown
+public import Mathlib.RingTheory.Jacobson.Ring
 public import Mathlib.RingTheory.KrullDimension.Field
 public import Mathlib.RingTheory.KrullDimension.Polynomial
 public import Mathlib.RingTheory.Localization.InvSubmonoid
 public import Mathlib.RingTheory.NoetherNormalization
+public import Mathlib.RingTheory.Polynomial.RationalRoot
+public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.RingTheory.KrullDimension.Integral
@@ -32,6 +36,15 @@ For a domain `A`, the same Noether normalization identifies `s` with the transce
 `A` over `k`: the variables form a transcendence basis because `A` is integral over them. The
 transcendence degree only sees the fraction field, so an algebraic extension of finitely generated
 domains, such as a localization `A[1/f]` with `f ≠ 0`, does not change the Krull dimension.
+
+Every maximal ideal of a finitely generated domain `A` over `k` has height `dim A`. For the
+polynomial ring `k[X₁, …, Xₛ]` this follows by induction on `s`: a maximal ideal of `R[X]`, for `R`
+a Jacobson ring, contracts to a maximal ideal of `R`, and its height is one more than the height of
+that contraction. For general `A`, Noether normalization makes `A` integral over the normal domain
+`k[X₁, …, Xₛ]`, so going down holds, and the height of a maximal ideal of `A` is at least the height
+`s` of its contraction. Geometrically, all closed points of an irreducible variety have local
+dimension the dimension of the variety.
+
 Geometrically, a nonempty open part of an irreducible closed subset of `Spec A` has the dimension
 of the whole closed subset; this is what makes pure-dimensionality of schemes locally of finite
 type over a field a local property.
@@ -51,6 +64,10 @@ type over a field a local property.
 * `TauCeti.ringKrullDim_eq_of_isAlgebraic`: an algebraic extension of finitely generated domains
   over `k` preserves the Krull dimension; `TauCeti.ringKrullDim_localization_away` is the case of
   `A[1/f]` with `f ≠ 0`.
+* `MvPolynomial.height_eq_natCard_of_isMaximal`: every maximal ideal of `k[Xᵢ | i ∈ ι]`, for `ι`
+  finite, has height the number of variables.
+* `TauCeti.height_eq_ringKrullDim_of_isMaximal`: every maximal ideal of a finitely generated domain
+  `A` over `k` has height `dim A`.
 * `TauCeti.topologicalKrullDim_inter_eq_of_finiteType`: in `Spec A`, a nonempty open part of an
   irreducible closed subset has the dimension of that subset.
 
@@ -59,6 +76,8 @@ type over a field a local property.
 * [Stacks Project, Tag 00OW](https://stacks.math.columbia.edu/tag/00OW) (Noether normalization)
 * [Stacks Project, Tag 00P0](https://stacks.math.columbia.edu/tag/00P0) (dimension and
   transcendence degree)
+* [R. Hartshorne, *Algebraic Geometry*][hartshorne1977], Chapter I, Theorem 1.8A (heights of
+  primes in finitely generated domains over a field)
 -/
 
 public section
@@ -164,6 +183,55 @@ theorem ringKrullDim_localization_away {A : Type*} [CommRing A] [IsDomain A] [Al
   have : IsDomain (Localization.Away f) := IsLocalization.isDomain_localization hle
   have := IsLocalization.isAlgebraic (Localization.Away f) (Submonoid.powers f)
   exact (ringKrullDim_eq_of_isAlgebraic k A _).symm
+
+/-- Every maximal ideal of the polynomial ring `k[Xᵢ | i ∈ ι]` over a field `k` in finitely many
+variables has height the number of variables. -/
+theorem _root_.MvPolynomial.height_eq_natCard_of_isMaximal {ι : Type*} [Finite ι]
+    (M : Ideal (MvPolynomial ι k)) [M.IsMaximal] : M.height = Nat.card ι := by
+  revert M
+  induction ι using Finite.induction_empty_option with
+  | of_equiv e H =>
+    intro M _
+    have := H (M.comap (MvPolynomial.renameEquiv k e).toRingEquiv)
+    rwa [RingEquiv.height_comap, Nat.card_congr e] at this
+  | h_empty =>
+    -- The polynomial ring in no variables has dimension `0`.
+    intro M hM
+    simpa using Ideal.height_le_ringKrullDim_of_ne_top hM.ne_top
+  | h_option IH =>
+    -- A maximal ideal of `R[X]`, with `R = k[Xᵢ | i ∈ α]` Jacobson, lies over a maximal ideal
+    -- of `R` and has height one more than it.
+    rename_i α _
+    intro M _
+    let e := (MvPolynomial.optionEquivLeft k α).toRingEquiv
+    let P := M.map e
+    have : P.IsMaximal := Ideal.map_isMaximal_of_equiv e
+    have : (P.under (MvPolynomial α k)).IsMaximal :=
+      Polynomial.isMaximal_comap_C_of_isJacobsonRing P
+    rw [← e.height_map M, Polynomial.height_eq_height_add_one (P.under (MvPolynomial α k)) P,
+      IH, Finite.card_option, Nat.cast_add, Nat.cast_one]
+
+variable (k) in
+/-- Every maximal ideal of a finitely generated domain `A` over a field `k` has height the Krull
+dimension of `A`. -/
+theorem height_eq_ringKrullDim_of_isMaximal {A : Type*} [CommRing A] [IsDomain A] [Algebra k A]
+    [Algebra.FiniteType k A] (m : Ideal A) [m.IsMaximal] :
+    (m.height : WithBot ℕ∞) = ringKrullDim A := by
+  -- Noether normalization `k[X₁, …, Xₛ] → A` gives `dim A = s`; going down over the normal domain
+  -- `k[X₁, …, Xₛ]` bounds the height of `m` below by that of its contraction, which is `s`.
+  obtain ⟨s, g, hinj, hint⟩ := exists_integral_inj_algHom_of_fg k A
+  refine le_antisymm (Ideal.height_le_ringKrullDim_of_ne_top Ideal.IsPrime.ne_top') ?_
+  rw [ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g hinj hint]
+  algebraize [g.toRingHom]
+  have : FaithfulSMul (MvPolynomial (Fin s) k) A :=
+    (faithfulSMul_iff_algebraMap_injective _ _).2 hinj
+  have : Algebra.IsIntegral (MvPolynomial (Fin s) k) A := ⟨hint⟩
+  have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing k A
+  let p := m.under (MvPolynomial (Fin s) k)
+  have : p.IsMaximal := Ideal.isMaximal_under_of_isIntegral_of_isMaximal m
+  rw [Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown p m,
+    MvPolynomial.height_eq_natCard_of_isMaximal p]
+  exact_mod_cast le_self_add
 
 variable (k) in
 /-- In the spectrum of a finitely generated algebra over a field, a nonempty open part `Z ∩ U` of

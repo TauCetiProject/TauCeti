@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
+public import Mathlib.AlgebraicGeometry.Properties
 public import TauCeti.RingTheory.KrullDimension.Equidimensional
 public import TauCeti.Topology.KrullDimension
 
@@ -33,6 +34,11 @@ statement for spectra of finitely generated algebras
 (`TauCeti.topologicalKrullDim_inter_eq_of_finiteType`), and `Z` is covered by the charts it meets.
 This is the input for the locality of pure-dimensionality on such schemes.
 
+On an integral scheme locally of finite type over a field, the local ring at every closed point
+has the dimension of the scheme. On an affine chart `Spec A` this is the statement that every
+maximal ideal of the finitely generated domain `A` has height `dim A`
+(`TauCeti.height_eq_ringKrullDim_of_isMaximal`), and the chart has the dimension of the scheme.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_iSup_openCover`: the Krull dimension of a
@@ -44,6 +50,9 @@ This is the input for the locality of pure-dimensionality on such schemes.
   the dimension of that subset.
 * `TauCeti.AlgebraicGeometry.isPureDimensional_pullback_Spec_map_iff_of_field`: pure-dimensionality
   of a scheme locally of finite type over a field is invariant under extension of the base field.
+* `TauCeti.AlgebraicGeometry.ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed`: on an integral
+  scheme locally of finite type over a field, the local ring at a closed point has the dimension of
+  the scheme.
 
 ## References
 
@@ -182,6 +191,36 @@ theorem isPureDimensional_pullback_Spec_map_iff_of_field {K L : Type u} [Field K
   refine forall_congr' fun (i : 𝒰.I₀) ↦ ?_
   have : LocallyOfFiniteType (𝒰.f i ≫ f) := inferInstance
   exact isPureDimensional_pullback_Spec_iff_of_field (A := X.affineOpenCover.X i) (hg := this) _
+
+/-- On an integral scheme `X` locally of finite type over a field, the local ring at a closed point
+has the Krull dimension of `X`. -/
+theorem ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed {K : Type u} [Field K]
+    {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [LocallyOfFiniteType f] [IsIntegral X] {x : X}
+    (hx : IsClosed {x}) :
+    ringKrullDim (X.presheaf.stalk x) = topologicalKrullDim X := by
+  -- Pass to an affine chart `Spec R` around `x`, in which `x` is a maximal ideal of the finitely
+  -- generated `K`-domain `R`; its height is `dim R`, and the chart has the dimension of `X`.
+  obtain ⟨R, g, _, ⟨y, rfl⟩, -⟩ :=
+    X.exists_affine_mem_range_and_range_subset (show x ∈ ⊤ from trivial)
+  obtain ⟨φ, hφ⟩ : ∃ φ, Spec.map φ = g ≫ f := ⟨_, Spec.map_preimage _⟩
+  let := φ.hom.toAlgebra
+  have : Algebra.FiniteType K R :=
+    (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp (hφ ▸ inferInstance)
+  have : Nonempty (Spec R) := ⟨y⟩
+  have : IsIntegral (Spec R) := isIntegral_of_isOpenImmersion g
+  have : IsDomain R := (affine_isIntegral_iff R).mp inferInstance
+  have hy : IsClosed ({y} : Set (Spec R)) := by
+    have := hx.preimage g.continuous
+    rwa [← Set.image_singleton, g.isOpenEmbedding.injective.preimage_image] at this
+  have : y.asIdeal.IsMaximal := (PrimeSpectrum.isClosed_singleton_iff_isMaximal y).mp hy
+  rw [ringKrullDim_stalk_eq_coheight, coheight_eq_of_isOpenImmersion, ← idealHeight_eq_coheight,
+    height_eq_ringKrullDim_of_isMaximal K, ← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
+  have hdim := topologicalKrullDim_inter_eq_of_locallyOfFiniteType f
+    (IrreducibleSpace.isIrreducible_univ X) isClosed_univ g.isOpenEmbedding.isOpen_range
+    ⟨g y, trivial, y, rfl⟩
+  rw [Set.univ_inter] at hdim
+  rw [(Homeomorph.Set.univ X).symm.isHomeomorph.topologicalKrullDim_eq, ← hdim]
+  exact g.isOpenEmbedding.toHomeomorph.isHomeomorph.topologicalKrullDim_eq
 
 end AlgebraicGeometry
 
