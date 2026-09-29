@@ -110,11 +110,6 @@ theorem spectralSpace_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
   let _ : CompactSpace X := h.symm.compactSpace
   exact h.isOpenEmbedding.spectralSpace
 
-/-- The underlying topological space of an affinoid pre-adic space is quasi-compact. -/
-theorem compactSpace_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
-    CompactSpace X :=
-  (spectralSpace_of_isAffinoid (X := X) hX).toCompactSpace
-
 end PreAdicSpace
 
 /-- The full subcategory of affinoid pre-adic spaces. -/
