@@ -11,10 +11,11 @@ public import TauCeti.Analysis.Sobolev.Wkp.Zero
 /-!
 # Mollification of compactly supported higher-order Sobolev functions
 
-The first-order part of a `W^{k+1,p}` function records its value and weak gradient. If this
-jet vanishes almost everywhere outside a compact set, a smooth mollification is a test
-function. The resulting equality holds in the full `W^{k+1,p}` space: uniqueness of weak
-derivatives determines all its higher components from its value.
+The first-order part of a `W^{k+1,p}` function records its value and weak gradient. If the
+value vanishes almost everywhere outside a compact set, the gradient vanishes there too,
+since the complement is open. A smooth mollification is then a test function. The resulting
+equality holds in the full `W^{k+1,p}` space: uniqueness of weak derivatives determines all
+its higher components from its value.
 
 This supplies the compact-support step in the density of test functions in whole-space
 Sobolev spaces. The remaining step is to approximate arbitrary higher-order Sobolev
@@ -111,6 +112,60 @@ theorem mem_wkp0Submodule_top_of_firstOrder_ae_eq_zero (hp : p ≠ ∞)
       rw [← hpsi]
       exact ofTestFunctionₗ_mem_wkp0Submodule (mu := mu) (Omega := (⊤ : Opens E))
         (p := p) (k + 1) psi)
+
+private theorem firstOrder_ae_eq_zero_of_value_ae_eq_zero
+    (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) {K : Set E} (hK : IsCompact K)
+    (hu : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
+      value (k + 1) u x = 0) :
+    ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
+      (firstOrder k u : Sobolev1JetLp mu ⊤ p) x = 0 := by
+  let v := firstOrder k u
+  have hval : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
+      W1p.value v x = 0 := by
+    simpa only [v, value_firstOrder] using hu
+  have hvalmu : ∀ᵐ x ∂mu, x ∉ K → W1p.value v x = 0 := by
+    simpa using hval
+  let V : Opens E := ⟨Kᶜ, hK.isClosed.isOpen_compl⟩
+  have hVmeas : MeasurableSet (V : Set E) := V.isOpen.measurableSet
+  have hvalV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value v x = 0 := by
+    rw [ae_restrict_iff' hVmeas]
+    filter_upwards [hvalmu] with x hx hxV
+    exact hx hxV
+  have hgradV := (ae_restrict_iff' hVmeas).1
+    (W1p.gradient_ae_eq_zero_of_value_ae_eq_zero (V := V) le_top hvalV)
+  have hgrad : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
+      W1p.gradient v x = 0 := by
+    have hgradmu : ∀ᵐ x ∂mu, x ∈ (V : Set E) → W1p.gradient v x = 0 := hgradV
+    have hgradtop : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)),
+        x ∈ (V : Set E) → W1p.gradient v x = 0 := by simpa using hgradmu
+    filter_upwards [hgradtop] with x hx hxK
+    exact hx hxK
+  filter_upwards [hval, hgrad, W1p.value_apply_ae v, W1p.gradient_apply_ae v] with
+    x hv hg hv' hg' hxK
+  exact (WithLp.ext_iff _).2 (Prod.ext (hv'.symm.trans (hv hxK))
+    (hg'.symm.trans (hg hxK)))
+
+/-- Mollifying a higher-order Sobolev function supported in a compact set produces a test
+function representing the same higher-order Sobolev element. -/
+theorem normedBumpL_mem_range_of_value_ae_eq_zero (hp : p ≠ ∞)
+    (phi : ContDiffBump (0 : E)) (k : ℕ) (u : Wkp mu ⊤ p (k + 1))
+    {K : Set E} (hK : IsCompact K)
+    (hu : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
+      value (k + 1) u x = 0) :
+    normedBumpL hp phi (k + 1) u ∈
+      LinearMap.range (ofTestFunctionₗ (mu := mu) (Omega := ⊤) (p := p) (k + 1)) :=
+  normedBumpL_mem_range_of_ae_eq_zero hp phi k u hK
+    (firstOrder_ae_eq_zero_of_value_ae_eq_zero k u hK hu)
+
+/-- A compactly supported whole-space higher-order Sobolev function belongs to the closure
+of test functions in the full higher-order norm. -/
+theorem mem_wkp0Submodule_top_of_value_ae_eq_zero (hp : p ≠ ∞)
+    (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) {K : Set E} (hK : IsCompact K)
+    (hu : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
+      value (k + 1) u x = 0) :
+    u ∈ wkp0Submodule mu ⊤ p (k + 1) :=
+  mem_wkp0Submodule_top_of_firstOrder_ae_eq_zero hp k u hK
+    (firstOrder_ae_eq_zero_of_value_ae_eq_zero k u hK hu)
 
 end TauCeti.Wkp
 
