@@ -43,6 +43,8 @@ the standard subgroup as a Borel subgroup.
     geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra`: solvability of
   geometric points.
 * `TauCeti.SpecialLinear.Borel.isBorel_definingHopfIdeal`: the standard subgroup is Borel.
+* `TauCeti.SpecialLinear.Borel.isBorelOverAlgClosed_definingHopfIdeal`: its algebraically closed
+  formulation, used to classify the Borel subgroups by conjugacy.
 
 ## References
 
@@ -412,7 +414,7 @@ section Field
 
 variable {k : Type u} [Field k]
 
-private theorem isBorelOverAlgClosed_definingHopfIdeal [IsAlgClosed k] :
+theorem isBorelOverAlgClosed_definingHopfIdeal [IsAlgClosed k] :
     HopfIdeal.IsBorelOverAlgClosed k
       ⟨SpecialLinear.coordinateHopfAlgebra k 2,
         (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
