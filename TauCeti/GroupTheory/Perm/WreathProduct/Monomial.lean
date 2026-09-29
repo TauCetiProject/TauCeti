@@ -40,7 +40,8 @@ variable {G : Type u} [Group G] (U : Subgroup G)
 
 /-- The monomial homomorphism associated to a transversal `t` of `U`. Its permutation part is
 left translation on `G ⧸ U`; the coordinate at `x` is the element
-`t(x)⁻¹ g t(g⁻¹ • x)` of `U`. -/
+`t(x)⁻¹ g t(g⁻¹ • x)` of `U`. A Mathlib `s : U.LeftTransversal` supplies `t` via
+`s.2.leftQuotientEquiv` and `ht` via `s.2.quotientGroupMk_leftQuotientEquiv`. -/
 noncomputable def monomialHom (t : G ⧸ U → G) (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
     G →* WreathProduct U (G ⧸ U) where
   toFun g := ⟨(fun x => ⟨lWord U t x g, lWord_mem U t ht x g⟩),
