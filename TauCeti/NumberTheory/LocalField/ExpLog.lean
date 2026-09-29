@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Exponential
 public import TauCeti.NumberTheory.LocalField.Logarithm
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.Valuation.Polynomial
 import TauCeti.Topology.Algebra.ValuativeRel.HasSum
@@ -35,13 +36,6 @@ additionally needs the homomorphism property of the logarithm, which this file d
 * `TauCeti.log_exp_of_mem_maximalIdeal_pow`: `log (exp x) = x` for `x ∈ 𝓂[K] ^ i`.
 * `TauCeti.exp_log_of_mem_unitFiltration`: `exp (log u) = u` for `u ∈ U(K,i)`.
 
-## Implementation notes
-
-The identity `log (exp x) = x` is Mathlib's formal identity `PowerSeries.subst_log_exp_sub_one`,
-evaluated at `x`; the weighted bounds of `TauCeti/RingTheory/Valuation/Polynomial.lean` justify
-the evaluation. The identity `exp (log u) = u` then follows from injectivity of the logarithm on
-`U(K,i)` (`TauCeti.log_unitFiltration_injective`).
-
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, Proposition (5.5).
@@ -58,32 +52,6 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 variable {p : ℕ} [Fact p.Prime] [FinitePadicExtension K p] {i : ℕ}
 
 section Bounds
-
-/-- If `t ≤ γ ^ i`, `e < d * i` and `d * q < m`, then
-`t ^ (m * d) * γ ^ (d * i - e) ≤ t ^ d * (γ ^ (d * i - e)) ^ m * γ ^ (d * (e * q))`. This is the
-common numerical core of the coefficient bounds for the exponential and the logarithm. -/
-private theorem pow_mul_pow_le_of_le {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀]
-    {γ t : Γ₀} (hγ : γ ≤ 1) {d e m q : ℕ} (ht : t ≤ γ ^ i) (hi : e < d * i) (hm : 1 ≤ m)
-    (hq : d * q < m) :
-    t ^ (m * d) * γ ^ (d * i - e) ≤ t ^ d * (γ ^ (d * i - e)) ^ m * γ ^ (d * (e * q)) := by
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  obtain ⟨s, hs⟩ : ∃ s, d * i = s + e := ⟨d * i - e, by omega⟩
-  rw [hs, Nat.add_sub_cancel]
-  have hdq : e * (d * q) ≤ e * m := Nat.mul_le_mul_left e (by omega)
-  have hexp : s * (m + 1) + d * (e * q) ≤ i * m * d + s := by
-    have : i * m * d = d * i * m := by ring
-    nlinarith
-  calc t ^ ((m + 1) * d) * γ ^ s = t ^ d * t ^ (m * d) * γ ^ s := by
-        rw [add_mul, one_mul, pow_add, mul_comm (t ^ (m * d))]
-    _ ≤ t ^ d * (γ ^ i) ^ (m * d) * γ ^ s := by
-        gcongr
-        exact zero_le
-    _ = t ^ d * γ ^ (i * m * d + s) := by
-        rw [← pow_mul, mul_assoc, ← pow_add, ← mul_assoc i]
-    _ ≤ t ^ d * γ ^ (s * (m + 1) + d * (e * q)) :=
-        mul_le_mul_right (pow_le_pow_right_of_le_one' hγ hexp) _
-    _ = t ^ d * (γ ^ s) ^ (m + 1) * γ ^ (d * (e * q)) := by
-        rw [pow_add, ← pow_mul, mul_assoc]
 
 variable (K p) in
 /-- The `(p - 1)`-st power of the valuation of `K`. Its values are the `(p - 1)`-st powers of

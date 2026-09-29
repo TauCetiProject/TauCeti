@@ -23,9 +23,10 @@ with nonzero constant term evaluated at an element of value less than `1` has va
 the constant term strictly dominates all the others. This is the polynomial estimate used in
 Stichtenoth's proof that valuation rings of algebraic function fields are discrete.
 
-Finally, weighted coefficient bounds — the `k`-th term of a polynomial at `x` is at most
-`A ^ a * S ^ (k - a)` — are stable under products, powers and suitable composition, and bound the
-value of the polynomial at `x`. This controls truncated composites of power series.
+Finally, weighted coefficient bounds of the form
+`v (P.coeff k * x ^ k) * S ^ a ≤ A ^ a * S ^ k` are stable under products, powers and suitable
+composition, and bound the value of the polynomial at `x`. This controls truncated composites of
+power series.
 
 ## Main results
 
@@ -77,10 +78,10 @@ open Polynomial
 /-! ### Weighted coefficient bounds for products and compositions
 
 Fix `x`, a scale `A` and a ratio `S`. Say that a polynomial `P` has *weight `a`* if
-`v (P.coeff k * x ^ k) * S ^ a ≤ A ^ a * S ^ k` for every `k`: its `k`-th term at `x` is at most
-`A ^ a * S ^ (k - a)`. Weights add under multiplication, so `Q ^ n` has weight `n` when `Q` has
-weight `1`. If `S ≤ 1`, a polynomial of weight `1` whose coefficients below degree `M` vanish has
-`v (P.eval x) * S ≤ A * S ^ M`. When the coefficients of `F` satisfy
+`v (P.coeff k * x ^ k) * S ^ a ≤ A ^ a * S ^ k` for every `k`. Weights add under multiplication,
+so `Q ^ n` has weight `n` when `Q` has weight `1`. If `S ≤ 1`, a polynomial of weight `1` whose
+coefficients below degree `M` vanish has `v (P.eval x) * S ≤ A * S ^ M`. When the coefficients of
+`F` satisfy
 `v (F.coeff n) * A ^ n * S ≤ A * S ^ n`, the composite `F.comp Q` has weight `1` whenever `Q`
 does. These bounds evaluate a truncated composite of two power series, such as the logarithm
 series after the exponential series, at a point of a nonarchimedean field. -/
