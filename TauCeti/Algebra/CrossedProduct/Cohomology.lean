@@ -22,8 +22,10 @@ the Hilbert 90 injectivity theorem to the classification of crossed-product Brau
 
 ## Universes
 
-Mathlib's multiplicative interface to `groupCohomology.cocycles₂` requires the acting group and
-coefficient group to live in `Type`, because `Rep ℤ G` puts all three types in one universe. The
+Mathlib's multiplicative interface to `groupCohomology.cocycles₂` (`cocyclesOfIsMulCocycle₂`,
+`coboundariesOfIsMulCoboundary₂`, `isMulCoboundary₂_of_mem_coboundaries₂`) is stated for an acting
+group and coefficient group in `Type`. This comes from Mathlib's low-degree group cohomology, which
+requires the acting group to share the universe of the coefficient ring, here `ℤ : Type`. The
 underlying `TwoCocycle` and `CrossedProduct` definitions remain universe-polymorphic; only their
 comparison with `groupCohomology` has this restriction.
 
