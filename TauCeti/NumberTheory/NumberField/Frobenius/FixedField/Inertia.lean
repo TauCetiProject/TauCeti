@@ -181,16 +181,9 @@ theorem isUnramifiedAt_fixedField_iff_inertia_inf_eq_bot
   let E := fixedField H
   let _ : IsScalarTower K E L := E.isScalarTower_mid'
   let _ : IsGalois E L := IsGalois.of_fixed_field L H
-  rw [Ideal.isUnramifiedAt_iff_inertia_eq_bot (K := E) Q]
-  constructor
-  · intro h
-    apply Subgroup.eq_bot_of_card_eq
-    rw [← card_inertia_fixedField_eq_card_inf Q H, h]
-    simp
-  · intro h
-    apply Subgroup.eq_bot_of_card_eq
-    rw [card_inertia_fixedField_eq_card_inf Q H, h]
-    simp
+  rw [Ideal.isUnramifiedAt_iff_inertia_eq_bot (K := E) Q,
+    ← Subgroup.card_eq_one, card_inertia_fixedField_eq_card_inf Q H,
+    Subgroup.card_eq_one]
 
 omit [IsGalois K L] in
 /-- **The residue degree below a fixed field.**  For any subgroup `H` and `E = L ^ H`, the residue

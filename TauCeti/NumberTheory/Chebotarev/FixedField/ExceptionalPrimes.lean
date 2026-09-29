@@ -35,25 +35,12 @@ namespace NumberField.Chebotarev
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] [IsGalois K L]
 
-/-- If inertia at `Q` over `K` is nontrivial, the prime below `Q` in `L ^ H` lies above
-a prime ramifying in `L / K`. -/
-theorem under_mem_primesAboveRamifiedPrimes_of_inertia_ne_bot
-    (H : Subgroup (L ≃ₐ[K] L)) (Q : HeightOneSpectrum (𝓞 L))
-    (hI : Q.asIdeal.inertia (L ≃ₐ[K] L) ≠ ⊥) :
-    Q.under (𝓞 ↥(fixedField H)) ∈
-      primesAboveRamifiedPrimes K L ↥(fixedField H) := by
-  let E := fixedField H
-  let _ : IsScalarTower K E L := E.isScalarTower_mid'
-  have hurK : ¬ Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal := by
-    intro hur
-    exact hI ((Ideal.isUnramifiedAt_iff_inertia_eq_bot Q.asIdeal).mp hur)
-  exact under_mem_primesAboveRamifiedPrimes_of_not_isUnramifiedAt Q hurK
-
 omit [IsGalois K L] in
 /-- The prime below `Q` in `L ^ H` is unramified in `L` exactly when the inertia group
 at `Q` over `K` is disjoint from `H`. Together with
-`under_mem_primesAboveRamifiedPrimes_of_inertia_ne_bot`, this shows that the set of primes
-above those ramifying over `K` can strictly contain the primes ramifying in `L / L ^ H`. -/
+`under_mem_primesAboveRamifiedPrimes_iff_inertia_ne_bot`, nontrivial inertia disjoint from `H`
+puts the prime below `Q` in `primesAboveRamifiedPrimes K L (L ^ H)` but not in
+`ramifiedPrimes (L ^ H) L`. -/
 theorem under_notMem_ramifiedPrimes_iff_disjoint_inertia
     (H : Subgroup (L ≃ₐ[K] L)) (Q : HeightOneSpectrum (𝓞 L)) :
     Q.under (𝓞 ↥(fixedField H)) ∉ ramifiedPrimes ↥(fixedField H) L ↔
@@ -61,21 +48,7 @@ theorem under_notMem_ramifiedPrimes_iff_disjoint_inertia
   let E := fixedField H
   let _ : IsScalarTower K E L := E.isScalarTower_mid'
   let _ : IsGalois E L := IsGalois.of_fixed_field L H
-  constructor
-  · intro h
-    rw [mem_ramifiedPrimes_iff, not_not] at h
-    exact disjoint_iff.mpr
-      ((Ideal.isUnramifiedAt_fixedField_iff_inertia_inf_eq_bot Q.asIdeal H).mp
-        (h Q.asIdeal))
-  · intro h
-    rw [mem_ramifiedPrimes_iff, not_not]
-    intro R _ hRP
-    have hidx : R.ramificationIdx (𝓞 E) = Q.asIdeal.ramificationIdx (𝓞 E) :=
-      Ideal.ramificationIdx_eq_of_isGaloisGroup
-        (Q.under (𝓞 E)).asIdeal R Q.asIdeal (L ≃ₐ[E] L)
-    rw [← Ideal.ramificationIdx_eq_one_iff]
-    exact hidx.trans ((Ideal.ramificationIdx_eq_one_iff).mpr
-      ((Ideal.isUnramifiedAt_fixedField_iff_inertia_inf_eq_bot Q.asIdeal H).mpr
-        (disjoint_iff.mp h)))
+  rw [under_notMem_ramifiedPrimes_iff_isUnramifiedAt,
+    Ideal.isUnramifiedAt_fixedField_iff_inertia_inf_eq_bot, disjoint_iff]
 
 end NumberField.Chebotarev

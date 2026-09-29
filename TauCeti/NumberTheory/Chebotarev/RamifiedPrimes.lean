@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Discriminant.Different
 public import TauCeti.RingTheory.DedekindDomain.RamificationLocus
 import TauCeti.NumberTheory.RamificationInertia.Tower
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # The primes of a number field ramifying in a finite extension
@@ -35,6 +36,8 @@ wrapped in a named predicate, matching how the roadmap states it. A `Prop`-value
 ## Main results
 
 * `NumberField.Chebotarev.mem_ramifiedPrimes_iff`: the defining condition for membership.
+* `NumberField.Chebotarev.under_notMem_ramifiedPrimes_iff_isUnramifiedAt`: in a Galois
+  extension, unramifiedness can be tested at one prime above the base prime.
 * `NumberField.Chebotarev.ramifiedPrimes_subset_ramifiedPrimes`: for a tower `K ⊆ L ⊆ M`, every
   prime of `K` ramifying in `L` also ramifies in `M`.
 
@@ -124,6 +127,22 @@ variable {K L}
 theorem mem_ramifiedPrimes_iff (𝔭 : HeightOneSpectrum (𝓞 K)) : 𝔭 ∈ ramifiedPrimes K L ↔
     ¬ ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q :=
   Set.Finite.mem_toFinset _
+
+/-- In a Galois extension, a prime of the base is unramified exactly when one prime above it
+is unramified. -/
+theorem under_notMem_ramifiedPrimes_iff_isUnramifiedAt [IsGalois K L]
+    (Q : HeightOneSpectrum (𝓞 L)) :
+    Q.under (𝓞 K) ∉ ramifiedPrimes K L ↔
+      Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal := by
+  have : Q.asIdeal.LiesOver (Q.under (𝓞 K)).asIdeal := ⟨rfl⟩
+  rw [mem_ramifiedPrimes_iff, not_not]
+  constructor
+  · intro hur
+    exact hur Q.asIdeal
+  · intro hur R _ _
+    let _ : Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal := hur
+    exact Ideal.isUnramifiedAt_of_isGaloisGroup
+      (Q.under (𝓞 K)).asIdeal Q.asIdeal R (L ≃ₐ[K] L)
 
 variable {M : Type*} [Field M] [NumberField M] [Algebra K M] [Algebra L M]
   [IsScalarTower K L M]
