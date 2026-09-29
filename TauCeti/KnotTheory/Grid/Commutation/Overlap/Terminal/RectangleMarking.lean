@@ -19,9 +19,6 @@ occupies a subinterval of the original rectangle's columns and the same rows. In
 branch it is a subrectangle of the original pentagon away from the two columns affected by
 commutation.
 
-The grid differential's square-zero prerequisite is proved in
-`TauCeti.KnotTheory.Grid.Differential.Square.Zero`.
-
 The recut is the common-terminal-side case of Ozsváth--Stipsicz--Szabó,
 *Grid Homology for Knots and Links*, Section 5.1.
 -/
