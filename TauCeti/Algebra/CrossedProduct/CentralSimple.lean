@@ -6,17 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.CrossedProduct.Basic
-public import TauCeti.Algebra.BrauerGroup.Group
+public import Mathlib.Algebra.Central.Basic
 public import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
 # Crossed products are central simple
 
-For a field `L`, a commutative ring `K` with `Algebra K L` and a `2`-cocycle `c` of
+For a field `L`, a commutative semiring `K` with `Algebra K L` and a `2`-cocycle `c` of
 `Aut_K(L)` with values in `Lˣ`, this file proves that the crossed product `(L, Aut_K(L), c)` is a
-simple ring, and that it is central over `K` when `L/K` is a Galois extension of fields. For a
-finite Galois extension the crossed product is therefore a central simple `K`-algebra of degree
-`[L : K]`, and it has a class in the Brauer group of `K`.
+simple ring, and that it is central over `K` when `L/K` is a Galois extension of fields.
 
 Both proofs compare coefficients in the `L`-basis `u_σ`:
 
@@ -33,8 +31,6 @@ Both proofs compare coefficients in the `L`-basis `u_σ`:
 * `TauCeti.CrossedProduct.instIsSimpleRing`: the crossed product is a simple ring.
 * `TauCeti.CrossedProduct.instIsCentral`: for `L/K` Galois, the crossed product is central over
   `K`.
-* `TauCeti.BrauerGroup.crossedProductClass`: the Brauer class of the crossed product of a cocycle
-  of a finite Galois extension.
 
 ## References
 
@@ -52,7 +48,8 @@ namespace CrossedProduct
 
 section Simple
 
-variable {K : Type u} [CommRing K] {L : Type v} [Field L] [Algebra K L] {c : TwoCocycle K L}
+variable {K : Type u} [CommSemiring K] {L : Type v} [Field L] [Algebra K L]
+  {c : TwoCocycle K L}
 
 /-- A nonzero element of a two-sided ideal of the crossed product whose support has at most `n`
 elements yields a nonzero single term `y · u_σ` of the ideal. -/
@@ -148,7 +145,8 @@ instance instIsCentral [IsGalois K L] : Algebra.IsCentral K (CrossedProduct c) w
     have hfix : ∀ τ : L ≃ₐ[K] L, τ y = y := fun τ => by
       have h := ha (basis c τ)
       rw [ha1, basis_mul_inc, ← smul_def, ← smul_def] at h
-      simpa using congrArg (fun b => (basis c).repr b τ) h
+      simpa only [map_smul, Module.Basis.repr_self, Finsupp.smul_apply, smul_eq_mul,
+        Finsupp.single_eq_same, mul_one] using congrArg (fun b => (basis c).repr b τ) h
     obtain ⟨r, hr⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed y).2 hfix
     rw [ha1, ← hr, AlgHom.commutes]
     exact Subalgebra.algebraMap_mem _ r
@@ -156,30 +154,5 @@ instance instIsCentral [IsGalois K L] : Algebra.IsCentral K (CrossedProduct c) w
 end Central
 
 end CrossedProduct
-
-namespace BrauerGroup
-
-variable {K : Type u} [Field K] {L : Type v} [Field L] [Algebra K L] [FiniteDimensional K L]
-  [IsGalois K L]
-
-/-- The crossed product of a cocycle of a finite Galois extension, bundled as a central simple
-algebra. -/
-noncomputable def crossedProductCSA (c : TwoCocycle K L) : CSA.{u, v} K :=
-  CSA.of K (CrossedProduct c)
-
-/-- The bundled algebra underlying `crossedProductCSA` is the crossed product. -/
-@[simp] theorem crossedProductCSA_def (c : TwoCocycle K L) :
-    crossedProductCSA c = CSA.of K (CrossedProduct c) := (rfl)
-
-/-- The **Brauer class of a cocycle** `c` of a finite Galois extension `L/K`: the class of the
-crossed product `(L, Gal(L/K), c)`. -/
-noncomputable def crossedProductClass (c : TwoCocycle K L) : BrauerGroup.{u, v} K :=
-  mk (crossedProductCSA c)
-
-/-- The defining equation for `crossedProductClass`. -/
-theorem crossedProductClass_def (c : TwoCocycle K L) :
-    crossedProductClass c = mk (CSA.of K (CrossedProduct c)) := (rfl)
-
-end BrauerGroup
 
 end TauCeti
