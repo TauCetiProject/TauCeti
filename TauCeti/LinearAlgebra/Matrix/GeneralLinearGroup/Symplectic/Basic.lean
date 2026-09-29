@@ -28,10 +28,10 @@ algebra.
 the underlying matrix in `Matrix.symplecticGroup l R`, so the defining conditions `M J Mᵀ = J`
 and `Mᵀ J M = J` transfer directly, and `TauCeti.GLSymplectic.mulEquivSymplecticGroup` identifies
 the subgroup with Mathlib's group so that neither view is reproved from the other. Invertibility
-costs nothing: a symplectic matrix has unit determinant
-(`SymplecticGroup.symplectic_det`), which is what makes the two carriers agree, and
-closure under the unit inverse is Mathlib's computation `M⁻¹ = (-J) Mᵀ J`
-(`SymplecticGroup.inv_eq_symplectic_inv`) transported across `Matrix.coe_units_inv`.
+costs nothing: Mathlib's symplectic group is a group, so `MonoidHom.toHomUnits` reads it into the
+general linear group, which is what makes the two carriers agree, and closure under the unit
+inverse is Mathlib's computation `M⁻¹ = (-J) Mᵀ J` (`SymplecticGroup.inv_eq_symplectic_inv`)
+transported across `Matrix.coe_units_inv`.
 
 Everything works over an arbitrary commutative ring and an arbitrary finite index type, including
 the empty index type and the zero ring; there is no nontriviality, rank, or characteristic
@@ -48,8 +48,8 @@ symplectic coordinate Hopf algebra and group scheme live in
 * `TauCeti.GLSymplectic`: the symplectic matrices as a subgroup of `GL (l ⊕ l) R`.
 * `TauCeti.GLSymplectic.mem_iff` and `TauCeti.GLSymplectic.mem_iff'`: the two standard forms of
   the defining condition, `M J Mᵀ = J` and `Mᵀ J M = J`.
-* `TauCeti.GLSymplectic.ofSymplecticGroup`: a symplectic matrix, read into the general linear
-  group through its unit determinant.
+* `TauCeti.GLSymplectic.ofSymplecticGroup`: Mathlib's symplectic group, read into the general
+  linear group as a monoid homomorphism.
 * `TauCeti.GLSymplectic.mulEquivSymplecticGroup`: the group identification with
   `Matrix.symplecticGroup`.
 * `TauCeti.GLSymplectic.symJ`: the standard alternating form, as an element of the subgroup.
@@ -148,25 +148,27 @@ theorem fromBlocks_diagonal_mem (A D : Matrix l l R) (hAD : Aᵀ * D = 1) :
 
 variable (l R)
 
-/-- A symplectic matrix, viewed in the general linear group through its unit determinant
-(`SymplecticGroup.symplectic_det`). -/
-noncomputable def ofSymplecticGroup (S : Matrix.symplecticGroup l R) : GL (l ⊕ l) R :=
-  Matrix.GeneralLinearGroup.mk'' _ (SymplecticGroup.symplectic_det S.2)
+/-- Mathlib's symplectic group, read into the general linear group: `MonoidHom.toHomUnits` of the
+inclusion of `Matrix.symplecticGroup` into the matrix monoid, whose inverses are the symplectic
+group's own. -/
+def ofSymplecticGroup : Matrix.symplecticGroup l R →* GL (l ⊕ l) R :=
+  (Matrix.symplecticGroup l R).subtype.toHomUnits
 
 @[simp]
 theorem coe_ofSymplecticGroup (S : Matrix.symplecticGroup l R) :
     (ofSymplecticGroup l R S : Matrix (l ⊕ l) (l ⊕ l) R) =
-      (S : Matrix (l ⊕ l) (l ⊕ l) R) := by
-  simp [ofSymplecticGroup]
+      (S : Matrix (l ⊕ l) (l ⊕ l) R) :=
+  MonoidHom.coe_toHomUnits _ S
 
 theorem ofSymplecticGroup_mem (S : Matrix.symplecticGroup l R) :
     ofSymplecticGroup l R S ∈ GLSymplectic l R := by
   simpa only [mem_iff_mem_symplecticGroup, coe_ofSymplecticGroup] using S.2
 
 /-- **The symplectic subgroup of the general linear group is Mathlib's symplectic group.** The
-two carriers agree because a symplectic matrix has unit determinant, so the equivalence is the
-identity on underlying matrices; its content is that the two group structures match. -/
-noncomputable def mulEquivSymplecticGroup : GLSymplectic l R ≃* Matrix.symplecticGroup l R where
+two carriers agree because a symplectic matrix is invertible in Mathlib's symplectic group, so the
+equivalence is the identity on underlying matrices; its content is that the two group structures
+match. -/
+def mulEquivSymplecticGroup : GLSymplectic l R ≃* Matrix.symplecticGroup l R where
   toFun M := ⟨((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R), M.2⟩
   invFun S := ⟨ofSymplecticGroup l R S, ofSymplecticGroup_mem l R S⟩
   left_inv M := by
@@ -185,7 +187,7 @@ theorem coe_mulEquivSymplecticGroup (M : GLSymplectic l R) :
   simp [mulEquivSymplecticGroup]
 
 /-- The standard alternating form `Matrix.J`, as an element of the symplectic subgroup. -/
-noncomputable def symJ : GLSymplectic l R :=
+def symJ : GLSymplectic l R :=
   ⟨ofSymplecticGroup l R (SymplecticGroup.symJ l R),
     ofSymplecticGroup_mem l R (SymplecticGroup.symJ l R)⟩
 

@@ -38,6 +38,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
   nonzero.
 * `QuadraticMap.Nondegenerate.polarBilin_ne_zero`: a nonzero vector has nonzero polar functional
   for a nondegenerate quadratic form.
+* `QuadraticMap.Isometry.injective_of_radical_eq_bot`: an isometry out of a quadratic map with
+  trivial radical is injective.
 * `QuadraticMap.liftOfSurjective`: descent of a quadratic map along a surjective linear map whose
   kernel lies in the radical.
 * `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a semifield has a vector of
@@ -123,6 +125,16 @@ theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
   rw [hker]
   nontriviality R
   simp only [rank_subsingleton', zero_le]
+
+/-- **An isometry out of a quadratic map with trivial radical is injective.** Its kernel lies in the
+radical: an element `x` killed by `f` has `Q₁ x = Q₂ 0 = 0` and `Q₁ (x + n) = Q₂ (f n) = Q₁ n`. -/
+theorem Isometry.injective_of_radical_eq_bot {Q₁ : QuadraticMap R M P} {Q₂ : QuadraticMap R M' P}
+    (f : Q₁.Isometry Q₂) (h : Q₁.radical = ⊥) : Function.Injective f := by
+  refine (injective_iff_map_eq_zero f).2 fun x hx => ?_
+  have hmem : x ∈ Q₁.radical := mem_radical_iff'.2
+    ⟨by rw [← f.map_app, hx, map_zero], fun n => by rw [← f.map_app, ← f.map_app, map_add, hx,
+      zero_add]⟩
+  simpa [h] using hmem
 
 /-- A nonzero quadratic form over a semifield has a vector of unit norm. -/
 theorem exists_isUnit_of_ne_zero {K V : Type*} [Semifield K] [AddCommMonoid V] [Module K V]

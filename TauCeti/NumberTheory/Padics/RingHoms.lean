@@ -12,6 +12,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Congruence and continuity properties of the truncations of a `p`-adic integer
@@ -32,6 +33,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.continuous_toZModPow`, `PadicInt.continuous_toZMod`: truncation modulo `p ^ n` and
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
+* `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
+  recovers `toZMod`.
 * `PadicInt.appr_modEq`, `PadicInt.appr_add_modEq`, `PadicInt.appr_mul_modEq`,
   `PadicInt.appr_natCast_modEq`: the truncations are compatible with each other and with the
   ring operations, modulo `p ^ n`.
@@ -43,6 +46,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   `PadicInt.natCard_quotient_span`, `PadicInt.isAddCyclic_quotient_span`: a nonzero `x` generates
   the same ideal as `p ^ v` for `v` its valuation, so `ℤ_[p] ⧸ (x)` is `ZMod (p ^ v)`, a finite
   ring of cardinality `p ^ v` whose additive group is cyclic.
+* `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
+  `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
+  continuous ring homomorphism out of `ℤ_[p] ⧸ (q)`.
 * `PadicInt.surjective_units_map_toZModPow`: every unit of `ZMod (p ^ n)` lifts to a unit of
   `ℤ_[p]`.
 * `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
@@ -98,6 +104,16 @@ theorem continuous_toZMod : Continuous (toZMod : ℤ_[p] → ZMod p) := by
       ker_toZModPow, maximalIdeal_eq_span_p, pow_one]
   rw [h]
   exact (continuous_toZModPow 1).isOpen_preimage _ (isOpen_discrete _)
+
+/-- Reducing the truncation `x mod p ^ n` further modulo `p` gives `x mod p`. -/
+@[simp]
+theorem cast_toZModPow_eq_toZMod {n : ℕ} (hn : n ≠ 0) (x : ℤ_[p]) :
+    (ZMod.cast (toZModPow n x) : ZMod p) = toZMod x := by
+  have h : toZMod (x - (x.appr n : ℤ_[p])) = 0 := by
+    rw [← RingHom.mem_ker, ker_toZMod, maximalIdeal_eq_span_p]
+    exact Ideal.span_singleton_le_span_singleton.mpr (dvd_pow_self (p : ℤ_[p]) hn) (appr_spec n x)
+  rw [map_sub, sub_eq_zero] at h
+  rw [h, toZModPow_eq_natCast_appr x n, ZMod.cast_natCast (dvd_pow_self p hn), map_natCast]
 
 /-- A coarser truncation of `x` is a finer truncation of `x` read modulo the coarser
 modulus. -/
@@ -174,6 +190,44 @@ theorem isAddCyclic_quotient_span {x : ℤ_[p]} (hx : x ≠ 0) :
     IsAddCyclic (ℤ_[p] ⧸ Ideal.span {x}) :=
   isAddCyclic_of_surjective (quotientSpanEquivZMod hx).symm.toAddMonoidHom
     (quotientSpanEquivZMod hx).symm.surjective
+
+/-- **Reduction modulo `p` of `ℤ_[p] ⧸ (q)`**, for `p ∣ q`: the ring homomorphism induced by
+`toZMod`, whose kernel `(p)` contains `(q)`. -/
+noncomputable def quotientSpanToZMod {q : ℤ_[p]} (hq : (p : ℤ_[p]) ∣ q) :
+    ℤ_[p] ⧸ Ideal.span {q} →+* ZMod p :=
+  Ideal.Quotient.lift _ toZMod fun a ha ↦ by
+    rw [← RingHom.mem_ker, ker_toZMod, maximalIdeal_eq_span_p]
+    exact Ideal.span_singleton_le_span_singleton.mpr hq ha
+
+/-- Reduction modulo `p` of the class of `x` in `ℤ_[p] ⧸ (q)` is `x mod p`. -/
+@[simp]
+theorem quotientSpanToZMod_mk {q : ℤ_[p]} (hq : (p : ℤ_[p]) ∣ q) (x : ℤ_[p]) :
+    quotientSpanToZMod hq (Ideal.Quotient.mk _ x) = toZMod x :=
+  Ideal.Quotient.lift_mk _ _ _
+
+/-- Reduction modulo `p` of `ℤ_[p] ⧸ (q)` is continuous for the quotient topology. -/
+theorem continuous_quotientSpanToZMod {q : ℤ_[p]} (hq : (p : ℤ_[p]) ∣ q) :
+    Continuous (quotientSpanToZMod hq) :=
+  Ideal.Quotient.continuous_lift _ continuous_toZMod _
+
+/-- **Truncation modulo `p ^ n` of `ℤ_[p] ⧸ (q)`**, for `p ^ n ∣ q`: the ring homomorphism
+induced by `toZModPow n`, whose kernel `(p ^ n)` contains `(q)`. -/
+noncomputable def quotientSpanToZModPow (n : ℕ) {q : ℤ_[p]} (hq : (p : ℤ_[p]) ^ n ∣ q) :
+    ℤ_[p] ⧸ Ideal.span {q} →+* ZMod (p ^ n) :=
+  Ideal.Quotient.lift _ (toZModPow n) fun a ha ↦ by
+    rw [← RingHom.mem_ker, ker_toZModPow]
+    exact Ideal.span_singleton_le_span_singleton.mpr hq ha
+
+/-- Truncation modulo `p ^ n` of the class of `x` in `ℤ_[p] ⧸ (q)` is `x mod p ^ n`. -/
+@[simp]
+theorem quotientSpanToZModPow_mk (n : ℕ) {q : ℤ_[p]} (hq : (p : ℤ_[p]) ^ n ∣ q) (x : ℤ_[p]) :
+    quotientSpanToZModPow n hq (Ideal.Quotient.mk _ x) = toZModPow n x :=
+  Ideal.Quotient.lift_mk _ _ _
+
+/-- Truncation modulo `p ^ n` of `ℤ_[p] ⧸ (q)` is continuous for the quotient topology. -/
+theorem continuous_quotientSpanToZModPow (n : ℕ) {q : ℤ_[p]} (hq : (p : ℤ_[p]) ^ n ∣ q) :
+    Continuous (quotientSpanToZModPow n hq) :=
+  Ideal.Quotient.continuous_lift _ (continuous_toZModPow n) _
 
 /-- Every unit of `ZMod (p ^ n)` lifts to a unit of `ℤ_[p]`. For `n > 0` this holds because
 truncation is a surjective local homomorphism out of the local ring `ℤ_[p]`; for `n = 0` the

@@ -162,7 +162,7 @@ theorem W1p.normedBumpL_mem_range_of_ae_eq_zero (hp : p ≠ ∞) (phi : ContDiff
   set nu := mu.restrict ((⊤ : Opens E) : Set E)
   set J : Sobolev1JetLp mu ⊤ p := u.1 with hJdef
   let Jt : E → Sobolev1Jet E := K.indicator J
-  have hJt_mem : MemLp Jt p nu := (Lp.memLp J).indicator hK.measurableSet
+  have hJt_mem : MemLp Jt p nu := (Lp.memLp J).indicator hK.measurableSet.nullMeasurableSet
   have hJt_cpt : HasCompactSupport Jt :=
     HasCompactSupport.intro hK fun x hx => indicator_of_notMem hx _
   have hJ_eq : hJt_mem.toLp Jt = J := by

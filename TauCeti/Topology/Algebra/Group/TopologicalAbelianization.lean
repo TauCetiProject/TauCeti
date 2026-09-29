@@ -348,6 +348,23 @@ instance : ContinuousSMul (G ⧸ N) (TopologicalAbelianization N) where
 
 variable {R : Subgroup G} [R.Normal] {N}
 
+omit [N.Normal] in
+/-- **An element of `⁅N, N⁆` has trivial class in `N^{ab}`**: `⁅N, N⁆` is the image of the
+commutator subgroup of `N`, which the topological abelianization kills. -/
+@[simp]
+theorem mk_eq_one_of_mem_commutator {r : G} (hrN : r ∈ N) (hr : r ∈ ⁅N, N⁆) :
+    ((⟨r, hrN⟩ : N) : TopologicalAbelianization N) = 1 := by
+  rw [← N.map_subtype_commutator] at hr
+  obtain ⟨s, hs, rfl⟩ := hr
+  exact (QuotientGroup.eq_one_iff _).mpr (Subgroup.le_topologicalClosure _ hs)
+
+omit [N.Normal] in
+/-- An element of `⁅N, N⁆` has zero class in `N^{ab}`, written additively. Not a simp lemma:
+simp derives it from `TopologicalAbelianization.mk_eq_one_of_mem_commutator` and `ofMul_one`. -/
+theorem ofMul_mk_eq_zero_of_mem_commutator {r : G} (hrN : r ∈ N) (hr : r ∈ ⁅N, N⁆) :
+    Additive.ofMul ((⟨r, hrN⟩ : N) : TopologicalAbelianization N) = 0 :=
+  ofMul_eq_zero.mpr (mk_eq_one_of_mem_commutator hrN hr)
+
 /-- For normal subgroups `R ≤ N`, the map `R^{ab} →* N^{ab}` induced by the inclusion is
 equivariant for conjugation by `G`. -/
 theorem map_inclusion_smul (h : R ≤ N) (g : ConjAct G) (x : TopologicalAbelianization R) :

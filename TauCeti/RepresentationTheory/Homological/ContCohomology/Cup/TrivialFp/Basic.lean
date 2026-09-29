@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.GradedComm
+import Mathlib.Algebra.Field.ZMod
 
 /-!
 # The cup product with trivial `ZMod p` coefficients
@@ -20,7 +21,8 @@ prime, `ZMod p` is the field `𝔽_p`.
 
 Because multiplication is commutative the opposite pairing of `fpPairing p G` is itself, and
 graded commutativity of the cup product in bidegree `(1, 1)` reads `cupFp p G a b = - cupFp p G b a`
-(`TauCeti.cupFp_gradedComm`).
+(`TauCeti.cupFp_gradedComm`). Consequently `a ⌣ b` vanishes exactly when `b ⌣ a` does, and at an
+odd prime every cup square `a ⌣ a` vanishes, since `2` is then invertible in `𝔽_p`.
 
 ## Main definitions
 
@@ -33,6 +35,8 @@ graded commutativity of the cup product in bidegree `(1, 1)` reads `cupFp p G a 
 * `TauCeti.cupFp_map`: a continuous group homomorphism preserves `cupFp`.
 * `TauCeti.fpPairing_flip`: the opposite of the multiplication pairing is itself.
 * `TauCeti.cupFp_gradedComm`: the cup square is graded-commutative, `cupFp a b = - cupFp b a`.
+* `TauCeti.cupFp_eq_zero_comm`: `a ⌣ b = 0` exactly when `b ⌣ a = 0`.
+* `TauCeti.cupFp_self_eq_zero_of_ne_two`: at an odd prime every cup square `a ⌣ a` vanishes.
 
 ## References
 
@@ -155,6 +159,19 @@ graded commutativity of the cup product at the multiplication pairing, whose opp
 itself. -/
 theorem cupFp_gradedComm (a b : cohomFp p G 1) : cupFp p G a b = -cupFp p G b a := by
   rw [cupFp_def, (fpPairing p G).cup_one_one_eq_neg_flip a b, fpPairing_flip]
+
+/-- `a ⌣ b` vanishes exactly when `b ⌣ a` does, by graded commutativity. -/
+theorem cupFp_eq_zero_comm (a b : cohomFp p G 1) : cupFp p G a b = 0 ↔ cupFp p G b a = 0 := by
+  rw [cupFp_gradedComm, neg_eq_zero]
+
+/-- **At an odd prime every cup square vanishes**: `a ⌣ a = -(a ⌣ a)` and `2` is invertible. -/
+theorem cupFp_self_eq_zero_of_ne_two [Fact p.Prime] (hp : p ≠ 2) (a : cohomFp p G 1) :
+    cupFp p G a a = 0 := by
+  have h2 : (2 : ZMod p) ≠ 0 := CharP.cast_ne_zero_of_ne_of_prime (ZMod p) Nat.prime_two hp
+  have h : (2 : ZMod p) • cupFp p G a a = 0 := by
+    rw [two_smul]
+    exact add_eq_zero_iff_eq_neg.mpr (cupFp_gradedComm p G a a)
+  exact (smul_eq_zero.mp h).resolve_left h2
 
 end Group
 

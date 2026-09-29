@@ -48,6 +48,7 @@ together with the rank, that classify Demushkin groups with `q ≠ 2`.
 * `TauCeti.IsDemushkin.prime_dvd_demushkinQ`: `p ∣ q(G)`, because the relator of a minimal
   presentation lies in the Frattini subgroup.
 * `TauCeti.demushkinQ_eq_zero_iff`: `q(G) = 0` exactly when `G^{ab}` is torsion-free.
+* `TauCeti.IsDemushkin.exists_demushkinQ_eq_pow`: a nonzero `q(G)` is a positive power of `p`.
 * `TauCeti.demushkinQ_congr`: the `q`-invariant is invariant under topological isomorphism.
 
 ## References
@@ -220,6 +221,22 @@ theorem nonempty_continuousMulEquiv_topologicalAbelianization :
       Multiplicative ((Fin (demushkinRank hG - 1) → ℤ_[p]) ×
         (ℤ_[p] ⧸ Ideal.span {(demushkinQ hG : ℤ_[p])}))) :=
   hG.torsion_spec.2.2
+
+/-- **A nonzero `q`-invariant is a positive power of `p`**: it is the order of the finite cyclic
+`p`-group `ℤ_p ⧸ (q)`, the torsion subgroup of the abelianization. -/
+theorem exists_demushkinQ_eq_pow (hq : demushkinQ hG ≠ 0) :
+    ∃ k, 0 < k ∧ demushkinQ hG = p ^ k := by
+  obtain ⟨e⟩ := hG.nonempty_continuousMulEquiv_topologicalAbelianization
+  have hq' : (demushkinQ hG : ℤ_[p]) ≠ 0 := by exact_mod_cast hq
+  have := PadicInt.finite_quotient_span hq'
+  have hcard : demushkinQ hG = p ^ (demushkinQ hG : ℤ_[p]).valuation := by
+    conv_lhs => rw [demushkinQ_of_not_isMulTorsionFree hG
+      fun h ↦ hq (demushkinQ_of_isMulTorsionFree hG h)]
+    rw [natCard_torsion_of_mulEquiv isAddTorsion_of_finite e.toMulEquiv,
+      PadicInt.natCard_quotient_span hq']
+  refine ⟨_, Nat.pos_of_ne_zero fun h0 ↦ ?_, hcard⟩
+  rw [h0, pow_zero] at hcard
+  exact (Fact.out : p.Prime).one_lt.ne' (Nat.dvd_one.mp (hcard ▸ hG.prime_dvd_demushkinQ))
 
 end IsDemushkin
 

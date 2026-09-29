@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
-import Mathlib.GroupTheory.IndexNSmul
 import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
@@ -45,6 +44,8 @@ of `𝒪[K]` is then an `n`-th power in `K` precisely when its residue is an `n`
 At `n = 2` that is the criterion for a unit of `𝒪[K]` to be a square. As a consequence, a subgroup
 of `Kˣ` is open as soon as the exponent (for instance, the index) of the quotient by it is
 invertible in `𝒪[K]`, since it then contains the power subgroup attached to that exponent.
+The openness results are stated in `PowerSubgroup.Open`, including the general case
+`(n : K) ≠ 0` obtained from powers of deep units.
 
 ## Main results
 
@@ -59,10 +60,6 @@ invertible in `𝒪[K]`, since it then contains the power subgroup attached to t
 * `TauCeti.unitsMap_subtype_mem_range_powMonoidHom_iff` and
   `TauCeti.isSquare_unitsMap_subtype_iff`: a unit of `𝒪[K]` is an `n`-th power, respectively a
   square, in `K` exactly when its residue is one in `𝓀[K]`.
-* `TauCeti.isOpen_range_powMonoidHom_of_isUnit` and
-  `TauCeti.isClosed_range_powMonoidHom_of_isUnit`: the power subgroup is open and closed.
-* `TauCeti.isOpen_of_isUnit_exponent` and `TauCeti.isOpen_of_isUnit_index`: a subgroup of `Kˣ`
-  is open when the exponent, or the index, of the quotient by it is invertible in `𝒪[K]`.
 * `TauCeti.disjoint_rootsOfUnity_unitFiltration_one_of_isUnit`: no nontrivial `n`-th root of
   unity is a principal unit.
 * `TauCeti.powMonoidHom_unitFiltration_succ_bijective_of_isUnit`: the `n`-th power map is a
@@ -79,8 +76,8 @@ invertible in `𝒪[K]`, since it then contains the power subgroup attached to t
 In the theorems assuming `IsUnit (n : 𝒪[K])`, this hypothesis already forces `n ≠ 0`, so
 no separate nonvanishing assumption is taken. The general reduction theorem
 `card_powerClasses_eq_of_index_unitFiltration_one` instead requires `n ≠ 0` explicitly. In mixed
-characteristic the same openness holds for every `n ≠ 0`, but there the `p`-primary part needs the
-logarithm on deep units instead of Hensel's lemma at `1`, and in equal characteristic `p` the range
+characteristic the same openness holds for every `n ≠ 0`, using the binomial power identity on
+deep units instead of Hensel's lemma at `1`, and in equal characteristic `p` the range
 of `powMonoidHom p` is not open. Likewise the count acquires the factor `q ^ v_K(n)` when `n` is not
 a unit, and in equal characteristic `p` the quotient `Kˣ ⧸ (Kˣ)ᵖ` is infinite.
 
@@ -187,33 +184,6 @@ theorem isSquare_unitsMap_subtype_iff (h2 : IsUnit (2 : 𝒪[K])) (u : 𝒪[K]ˣ
   have h2' : IsUnit ((2 : ℕ) : 𝒪[K]) := by simpa using h2
   have h := unitsMap_subtype_mem_range_powMonoidHom_iff h2' u
   simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm] using h
-
-/-- **The power subgroup is open away from the residue characteristic.** For `n` invertible in
-`𝒪[K]`, the subgroup `(Kˣ)ⁿ` of `n`-th powers is open in `Kˣ`. -/
-theorem isOpen_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
-    IsOpen ((powMonoidHom n : Kˣ →* Kˣ).range : Set Kˣ) :=
-  Subgroup.isOpen_mono (unitFiltration_one_le_range_powMonoidHom_of_isUnit hn)
-    (isOpen_unitFiltration 1)
-
-/-- For `n` invertible in `𝒪[K]`, the subgroup `(Kˣ)ⁿ` of `n`-th powers is closed in `Kˣ`. -/
-theorem isClosed_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
-    IsClosed ((powMonoidHom n : Kˣ →* Kˣ).range : Set Kˣ) :=
-  Subgroup.isClosed_of_isOpen _ (isOpen_range_powMonoidHom_of_isUnit hn)
-
-/-- A subgroup `H` of `Kˣ` is open as soon as the exponent of `Kˣ ⧸ H` is invertible in `𝒪[K]`:
-`H` then contains the power subgroup attached to that exponent. -/
-theorem isOpen_of_isUnit_exponent {H : Subgroup Kˣ}
-    (hH : IsUnit (Monoid.exponent (Kˣ ⧸ H) : 𝒪[K])) : IsOpen (H : Set Kˣ) := by
-  refine Subgroup.isOpen_mono ?_ (isOpen_range_powMonoidHom_of_isUnit hH)
-  rintro _ ⟨y, rfl⟩
-  simpa [← QuotientGroup.eq_one_iff] using Monoid.pow_exponent_eq_one (y : Kˣ ⧸ H)
-
-/-- A subgroup of `Kˣ` whose index is invertible in `𝒪[K]` is open. Such a subgroup has finite
-index, since the index `0` of an infinite-index subgroup is not a unit. -/
-theorem isOpen_of_isUnit_index {H : Subgroup Kˣ} (hH : IsUnit (H.index : 𝒪[K])) :
-    IsOpen (H : Set Kˣ) :=
-  isOpen_of_isUnit_exponent <|
-    isUnit_of_dvd_unit (Nat.cast_dvd_cast Group.exponent_dvd_nat_card) hH
 
 /-- For `n` invertible in `𝒪[K]`, the only `n`-th root of unity in `K` that is a principal unit
 is `1`: the groups `μ_n(K)` and `U(K,1)` intersect trivially. This is the case `v_K(n) = 0` of

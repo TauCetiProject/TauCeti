@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Separable
-public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Orbit
+public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Trinomial
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
@@ -26,18 +26,6 @@ namespace TauCeti
 
 private def collisionRoots : Fin 5 → ℂ := ![0, 1, -1, Complex.I, -Complex.I]
 
-private theorem collisionRoots_eval_invariant :
-    MvPolynomial.eval₂ (Int.castRingHom ℂ) collisionRoots quinticF20Invariant = 2 := by
-  rw [quinticF20Invariant_def]
-  simp only [MvPolynomial.eval₂_sum, MvPolynomial.eval₂_mul, MvPolynomial.eval₂_add,
-    MvPolynomial.eval₂_pow, MvPolynomial.eval₂_X]
-  norm_num [Fin.sum_univ_succ, collisionRoots, Complex.I_mul_I]
-
-private theorem collisionOrbitValue_one :
-    MvPolynomial.eval₂ (Int.castRingHom ℂ) collisionRoots
-      (MvPolynomial.rename (⇑(1 : Equiv.Perm (Fin 5))) quinticF20Invariant) = 2 := by
-  simpa using collisionRoots_eval_invariant
-
 private theorem collisionPolynomial_map :
     (X ^ 5 - X : ℤ[X]).map (Int.castRingHom ℂ) =
       ∏ i : Fin 5, (X - C (collisionRoots i)) := by
@@ -49,13 +37,6 @@ private theorem collisionPolynomial_map :
     norm_num [Complex.I_mul_I]
   rw [hI]
   ring
-
-private theorem collisionPolynomial_roots :
-    ((X ^ 5 - X : ℤ[X]).map (Int.castRingHom ℂ)).roots =
-      Finset.univ.val.map collisionRoots := by
-  rw [collisionPolynomial_map]
-  simpa only [Finset.prod_eq_multiset_prod, Multiset.map_map, Function.comp_def]
-    using (roots_multiset_prod_X_sub_C (Finset.univ.val.map collisionRoots))
 
 /-- The discriminant of `X⁵ - X` is `-256`. Its nonzero value proves separability over `ℚ`. -/
 theorem discr_X_pow_five_sub_X : (X ^ 5 - X : ℤ[X]).discr = -256 := by
@@ -85,98 +66,13 @@ theorem separable_X_pow_five_sub_X : (X ^ 5 - X : ℚ[X]).Separable := by
     norm_num)
   simpa using hsep
 
-private theorem collisionOrbitValue_swap23 :
-    MvPolynomial.eval₂ (Int.castRingHom ℂ) collisionRoots
-      (MvPolynomial.rename (⇑(Equiv.swap (2 : Fin 5) 3)) quinticF20Invariant) = 2 := by
-  rw [rename_quinticF20Invariant]
-  simp only [MvPolynomial.eval₂_sum, MvPolynomial.eval₂_mul, MvPolynomial.eval₂_add,
-    MvPolynomial.eval₂_pow, MvPolynomial.eval₂_X]
-  norm_num [Fin.sum_univ_succ, collisionRoots, Equiv.swap_apply_def,
-    Fin.reduceEq, Fin.reduceAdd, Fin.reduceSub, Complex.I_mul_I]
-  ring
-
-private theorem collisionOrbitValue_swap34 :
-    MvPolynomial.eval₂ (Int.castRingHom ℂ) collisionRoots
-      (MvPolynomial.rename (⇑(Equiv.swap (3 : Fin 5) 4)) quinticF20Invariant) = 2 := by
-  rw [rename_quinticF20Invariant]
-  simp only [MvPolynomial.eval₂_sum, MvPolynomial.eval₂_mul, MvPolynomial.eval₂_add,
-    MvPolynomial.eval₂_pow, MvPolynomial.eval₂_X]
-  norm_num [Fin.sum_univ_succ, collisionRoots, Equiv.swap_apply_def,
-    Fin.reduceEq, Fin.reduceAdd, Fin.reduceSub, Complex.I_mul_I]
-
-private theorem collisionOrbitValue_swap24 :
-    MvPolynomial.eval₂ (Int.castRingHom ℂ) collisionRoots
-      (MvPolynomial.rename (⇑(Equiv.swap (2 : Fin 5) 4)) quinticF20Invariant) =
-        -4 * Complex.I := by
-  rw [rename_quinticF20Invariant]
-  simp only [MvPolynomial.eval₂_sum, MvPolynomial.eval₂_mul, MvPolynomial.eval₂_add,
-    MvPolynomial.eval₂_pow, MvPolynomial.eval₂_X]
-  norm_num [Fin.sum_univ_succ, collisionRoots, Equiv.swap_apply_def,
-    Fin.reduceEq, Fin.reduceAdd, Fin.reduceSub, Complex.I_mul_I]
-  ring
-
-private theorem collisionOrbitValue_swap23_mul_swap34 :
-    MvPolynomial.eval₂ (Int.castRingHom ℂ) collisionRoots
-      (MvPolynomial.rename
-        (⇑(Equiv.swap (2 : Fin 5) 3 * Equiv.swap 3 4 : Equiv.Perm (Fin 5)))
-        quinticF20Invariant) =
-        4 * Complex.I := by
-  rw [rename_quinticF20Invariant]
-  simp only [MvPolynomial.eval₂_sum, MvPolynomial.eval₂_mul, MvPolynomial.eval₂_add,
-    MvPolynomial.eval₂_pow, MvPolynomial.eval₂_X]
-  norm_num [Fin.sum_univ_succ, collisionRoots, Equiv.Perm.coe_mul, Function.comp_apply,
-    Equiv.swap_apply_def, Fin.reduceEq, Fin.reduceAdd, Fin.reduceSub, Complex.I_mul_I]
-  ring
-
-private theorem collisionOrbitValue_swap34_mul_swap23 :
-    MvPolynomial.eval₂ (Int.castRingHom ℂ) collisionRoots
-      (MvPolynomial.rename
-        (⇑(Equiv.swap (3 : Fin 5) 4) ∘ ⇑(Equiv.swap 2 3))
-        quinticF20Invariant) = 2 := by
-  rw [← Equiv.Perm.coe_mul, rename_quinticF20Invariant]
-  simp only [MvPolynomial.eval₂_sum, MvPolynomial.eval₂_mul, MvPolynomial.eval₂_add,
-    MvPolynomial.eval₂_pow, MvPolynomial.eval₂_X]
-  norm_num [Fin.sum_univ_succ, collisionRoots, Equiv.Perm.coe_mul, Function.comp_apply,
-    Equiv.swap_apply_def, Fin.reduceEq, Fin.reduceAdd, Fin.reduceSub, Complex.I_mul_I]
-  ring
-
-private theorem collision_resolvent_complex :
-    ((resolventSextic (X ^ 5 - X : ℤ[X])).map (Int.castRingHom ℂ)) =
-      (X - 2) ^ 4 * (X ^ 2 + 16 : ℂ[X]) := by
-  have hf : (X ^ 5 - X : ℤ[X]).Monic := by monicity!
-  have hdeg : (X ^ 5 - X : ℤ[X]).natDegree = 5 := by compute_degree!
-  rw [resolventSextic_def,
-    quinticF20Spec.map_specialize_eq_galResolvent (Int.castRingHom ℂ) hf hdeg
-      collisionPolynomial_roots, quinticF20Spec_Φ,
-    ← MvPolynomial.map_universalResolvent_eq_galResolvent,
-    universalResolvent_quinticF20Invariant, Polynomial.map_prod]
-  simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C,
-    MvPolynomial.coe_eval₂Hom]
-  rw [quinticF20OrbitRepresentatives_def]
-  repeat rw [Finset.prod_insert (by decide)]
-  rw [Finset.prod_singleton, collisionOrbitValue_swap23_mul_swap34,
-    Equiv.Perm.coe_mul, collisionOrbitValue_swap34_mul_swap23]
-  simp only [collisionOrbitValue_one, collisionOrbitValue_swap23,
-    collisionOrbitValue_swap34, collisionOrbitValue_swap24]
-  simp only [map_ofNat]
-  have hI : (C Complex.I : ℂ[X]) ^ 2 = -1 := by
-    rw [← map_pow]
-    norm_num [Complex.I_mul_I]
-  have hquad : (X - C (-(Complex.I * 4))) * (X - C (Complex.I * 4)) =
-      (X ^ 2 + 16 : ℂ[X]) := by
-    simp only [map_neg, map_mul, map_ofNat]
-    calc
-      _ = X ^ 2 - 16 * (C Complex.I) ^ 2 := by ring
-      _ = X ^ 2 + 16 := by rw [hI]; ring
-  calc
-    _ = (X - 2) ^ 4 * ((X - C (-(Complex.I * 4))) * (X - C (Complex.I * 4))) := by ring_nf
-    _ = (X - 2) ^ 4 * (X ^ 2 + 16) := by rw [hquad]
-
 /-- Dummit's sextic of `X⁵ - X` has a quadruple root at `2` and two nonreal roots. -/
 theorem resolventSextic_X_pow_five_sub_X :
     resolventSextic (X ^ 5 - X : ℤ[X]) = (X - 2) ^ 4 * (X ^ 2 + 16) := by
-  apply (Polynomial.map_injective (Int.castRingHom ℂ) Int.cast_injective)
-  simpa using collision_resolvent_complex
+  have hf : (X ^ 5 - X : ℤ[X]) = X ^ 5 + C (-1) * X + C 0 := by simp [sub_eq_add_neg]
+  rw [hf, resolventSextic_X_pow_five_add_C_mul_X_add_C]
+  norm_num
+  ring
 
 /-- The quintic `X⁵ - X` has `2` as an integral root of its sextic resolvent. -/
 theorem isRoot_resolventSextic_X_pow_five_sub_X :
