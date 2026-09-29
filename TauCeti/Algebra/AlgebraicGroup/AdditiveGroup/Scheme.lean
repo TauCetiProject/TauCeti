@@ -43,6 +43,8 @@ affine-space APIs.
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebra`: the symmetric Hopf algebra representing `G_a`.
 * `TauCeti.AdditiveGroup.coordinateAlgEquiv`: its rank-one polynomial presentation.
+* `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra`: its prime spectrum
+  is connected over a domain.
 * `TauCeti.AdditiveGroup.groupScheme`: the additive group scheme over `Spec R`.
 * `TauCeti.AdditiveGroup.groupSchemeAffineSpaceIso`: its canonical identification with affine
   one-space over the base.
@@ -142,6 +144,11 @@ instance instSmoothSymmetricAlgebra : Algebra.Smooth R (SymmetricAlgebra R R) :=
   letI : Algebra.Smooth R (MvPolynomial (CoordinateIndex.{u}) R) :=
     ⟨inferInstance, inferInstance⟩
   Algebra.Smooth.of_equiv (coordinateAlgEquiv R).symm
+
+/-- The coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum over a domain. -/
+theorem connectedSpace_primeSpectrum_coordinateHopfAlgebra [IsDomain R] :
+    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra R)) :=
+  inferInstanceAs (ConnectedSpace (PrimeSpectrum (SymmetricAlgebra R R)))
 
 /-- The additive group scheme obtained by applying relative spectrum to the symmetric Hopf
 algebra on one generator.

@@ -19,8 +19,8 @@ bialgebra of `𝔾ₐ` over `K`. This file bundles that equivalence as an isomor
 `CommHopfAlgCat K`, so that the base change of `𝔾ₐ` over `k` *is* `𝔾ₐ` over `K` as a commutative
 Hopf algebra, and not merely as a bialgebra.
 
-Over a domain, its prime spectrum is connected, and the bundled base-change isomorphism transports
-that connectedness to every scalar extension whose target is a domain.
+The bundled base-change isomorphism transports the connectedness of the prime spectrum of the
+coordinate algebra over a domain to every scalar extension whose target is a domain.
 
 The antipode needs no separate argument: a bialgebra map between Hopf algebras automatically
 commutes with the antipodes, which is what `CommHopfAlgCat.isoMk` uses.
@@ -38,8 +38,6 @@ equivalence has no such restriction.
 ## Main declarations
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebraBaseChangeIso`: the bundled isomorphism.
-* `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra`: the coordinate
-  algebra has connected prime spectrum over a domain.
 * `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra`:
   the base-changed coordinate algebra has connected prime spectrum over a domain.
 
@@ -67,12 +65,6 @@ variable (k : Type u) (K : Type max u v) [CommRing k] [CommRing K] [Algebra k K]
 noncomputable abbrev coordinateHopfAlgebraBaseChangeIso :
     CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra k) ≅ coordinateHopfAlgebra K :=
   _root_.CommHopfAlgCat.isoMk (gaScalarTensorBialgEquiv (k := k) (K := K))
-
-/-- The coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum over a domain. -/
-theorem connectedSpace_primeSpectrum_coordinateHopfAlgebra
-    (K : Type u) [CommRing K] [IsDomain K] :
-    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra K)) :=
-  inferInstanceAs (ConnectedSpace (PrimeSpectrum (SymmetricAlgebra K K)))
 
 /-- The base change of the coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum
 when the extension ring is a domain. -/

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
-import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 
