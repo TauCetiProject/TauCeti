@@ -66,6 +66,12 @@ noncomputable def forgetToSheafedSpace :
 theorem forgetToSheafedSpace_obj (X : SheafyPreAdicSpace.{u}) :
     forgetToSheafedSpace.obj X = X.toSheafedSpace := (rfl)
 
+@[simp]
+theorem forgetToSheafedSpace_map_hom {X Y : SheafyPreAdicSpace.{u}} (f : X ⟶ Y) :
+    HEq (forgetToSheafedSpace.map f).hom f.hom.toHom := by
+  unfold forgetToSheafedSpace toSheafedSpace
+  rfl
+
 /-- A morphism of sheafy pre-adic spaces is determined by its morphism of underlying
 sheafed spaces. -/
 instance : forgetToSheafedSpace.{u}.Faithful where
