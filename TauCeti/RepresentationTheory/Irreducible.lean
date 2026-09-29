@@ -76,13 +76,11 @@ variable {k G V : Type*} [DivisionRing k] [Monoid G] [AddCommGroup V] [Module k 
   {ρ : Representation k G V}
 
 /-- The bottom and top subrepresentations are distinct when the ambient space is nontrivial. -/
-@[simp]
 theorem bot_ne_top [Nontrivial V] : (⊥ : Subrepresentation ρ) ≠ ⊤ := fun hc =>
   _root_.bot_ne_top (α := Submodule k V) (by
     rw [← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), hc])
 
 /-- The top and bottom subrepresentations are distinct when the ambient space is nontrivial. -/
-@[simp]
 theorem top_ne_bot [Nontrivial V] : (⊤ : Subrepresentation ρ) ≠ ⊥ :=
   bot_ne_top.symm
 
