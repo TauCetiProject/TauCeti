@@ -45,8 +45,8 @@ theorem isCompactConnectedManifold_iff (n : ℕ) [NeZero n] (X : Type*) [Topolog
         IsCompact (univ : Set X) ∧ IsConnected (univ : Set X) :=
   Iff.rfl
 
-/-- The usual compactness, connectedness, separation, and countability typeclasses supply
-`IsCompactConnectedManifold n X`. -/
+/-- The usual compactness, connectedness, separation, and countability typeclasses, together
+with the `IsManifold (𝓡∂ n) 0 X` hypothesis, supply `IsCompactConnectedManifold n X`. -/
 theorem isCompactConnectedManifold (n : ℕ) [NeZero n] (X : Type*) [TopologicalSpace X]
     [ChartedSpace (EuclideanHalfSpace n) X] [IsManifold (𝓡∂ n) 0 X]
     [T2Space X] [SecondCountableTopology X] [CompactSpace X] [ConnectedSpace X] :
@@ -69,8 +69,8 @@ theorem isClosedConnectedManifold_iff (n : ℕ) (X : Type*) [TopologicalSpace X]
         IsCompact (univ : Set X) ∧ IsConnected (univ : Set X) :=
   Iff.rfl
 
-/-- The usual compactness, connectedness, separation, and countability typeclasses supply
-`IsClosedConnectedManifold n X`. -/
+/-- The usual compactness, connectedness, separation, and countability typeclasses, together
+with the `IsManifold (𝓡 n) 0 X` hypothesis, supply `IsClosedConnectedManifold n X`. -/
 theorem isClosedConnectedManifold (n : ℕ) (X : Type*) [TopologicalSpace X]
     [ChartedSpace (EuclideanSpace ℝ (Fin n)) X] [IsManifold (𝓡 n) 0 X]
     [T2Space X] [SecondCountableTopology X] [CompactSpace X] [ConnectedSpace X] :
@@ -107,16 +107,16 @@ theorem isCompactConnectedThreeManifold_iff
         IsCompact (univ : Set M) ∧ IsConnected (univ : Set M) :=
   isCompactConnectedManifold_iff 3 M
 
-/-- The usual compactness, connectedness, separation, and countability typeclasses supply the
-compact-connected-surface predicate. -/
+/-- The usual compactness, connectedness, separation, and countability typeclasses, together
+with the `IsManifold (𝓡∂ 2) 0 S` hypothesis, supply the compact-connected-surface predicate. -/
 theorem isCompactConnectedSurface (S : Type*) [TopologicalSpace S]
     [ChartedSpace (EuclideanHalfSpace 2) S] [IsManifold (𝓡∂ 2) 0 S]
     [T2Space S] [SecondCountableTopology S] [CompactSpace S] [ConnectedSpace S] :
     IsCompactConnectedSurface S :=
   isCompactConnectedManifold 2 S
 
-/-- The usual compactness, connectedness, separation, and countability typeclasses supply the
-compact-connected-3-manifold predicate. -/
+/-- The usual compactness, connectedness, separation, and countability typeclasses, together
+with the `IsManifold (𝓡∂ 3) 0 M` hypothesis, supply the compact-connected-3-manifold predicate. -/
 theorem isCompactConnectedThreeManifold (M : Type*) [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 3) M] [IsManifold (𝓡∂ 3) 0 M]
     [T2Space M] [SecondCountableTopology M] [CompactSpace M] [ConnectedSpace M] :
@@ -155,16 +155,16 @@ theorem isClosedConnectedThreeManifold_iff
         IsCompact (univ : Set M) ∧ IsConnected (univ : Set M) :=
   isClosedConnectedManifold_iff 3 M
 
-/-- The usual compactness, connectedness, separation, and countability typeclasses supply the
-closed-connected-surface predicate. -/
+/-- The usual compactness, connectedness, separation, and countability typeclasses, together
+with the `IsManifold (𝓡 2) 0 S` hypothesis, supply the closed-connected-surface predicate. -/
 theorem isClosedConnectedSurface (S : Type*) [TopologicalSpace S]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] [IsManifold (𝓡 2) 0 S]
     [T2Space S] [SecondCountableTopology S] [CompactSpace S] [ConnectedSpace S] :
     IsClosedConnectedSurface S :=
   isClosedConnectedManifold 2 S
 
-/-- The usual compactness, connectedness, separation, and countability typeclasses supply the
-closed-connected-3-manifold predicate. -/
+/-- The usual compactness, connectedness, separation, and countability typeclasses, together
+with the `IsManifold (𝓡 3) 0 M` hypothesis, supply the closed-connected-3-manifold predicate. -/
 theorem isClosedConnectedThreeManifold (M : Type*) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] [IsManifold (𝓡 3) 0 M]
     [T2Space M] [SecondCountableTopology M] [CompactSpace M] [ConnectedSpace M] :

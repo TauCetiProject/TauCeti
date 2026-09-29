@@ -47,7 +47,8 @@ theorem isClosedIncompressibleSurfaceEmbedding_iff {f : C(S, M)} :
       IsClosedConnectedThreeManifold M ∧ IsIncompressible f :=
   Iff.rfl
 
-/-- A continuous left inverse gives a closed incompressible surface embedding. -/
+/-- Under the closed connected surface and closed connected 3-manifold hypotheses, a continuous
+left inverse gives a closed incompressible surface embedding. -/
 theorem isClosedIncompressibleSurfaceEmbedding_of_leftInverse {f : C(S, M)} {r : C(M, S)}
     (hS : IsClosedConnectedSurface S) (hM : IsClosedConnectedThreeManifold M)
     (h : r.comp f = ContinuousMap.id S) :

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Geometry.Manifold.Incompressible
+public import TauCeti.Geometry.Manifold.Irreducible
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 
 /-!
@@ -91,27 +91,6 @@ theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
   Iff.rfl
 
 end BoundaryAware
-
-/-! ### Sphere-bounds-a-ball condition -/
-
-/-- A space satisfies the sphere-bounds-a-ball condition when every closed locally flat embedded
-2-sphere extends across an embedded 3-ball. The disk and its boundary are Mathlib's standard `𝔻 3`
-and `𝕊 2` objects, so this is the usual tame condition used in irreducible 3-manifolds. -/
-def IsSphereBoundsBall (M : Type u) [TopologicalSpace M] : Prop :=
-  ∀ f : C((TopCat.sphere 2 : TopCat.{u}), M), IsClosedEmbedding f →
-    IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f →
-    ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
-      g.comp (TopCat.diskBoundaryInclusion 3).hom = f
-
-/-- The sphere-bounds-a-ball condition defining `IsSphereBoundsBall`. -/
-@[simp]
-theorem isSphereBoundsBall_iff (M : Type u) [TopologicalSpace M] :
-    IsSphereBoundsBall M ↔
-      ∀ f : C((TopCat.sphere 2 : TopCat.{u}), M), IsClosedEmbedding f →
-        IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f →
-        ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
-          g.comp (TopCat.diskBoundaryInclusion 3).hom = f :=
-  Iff.rfl
 
 /-! ### Boundary-aware existential Haken predicate -/
 
