@@ -366,7 +366,7 @@ theorem resolventSextic_X_pow_five_add_C_mul_X_add_C (a b : ℤ) :
   rw [resolventSextic_def, quinticF20Spec_specialize_X_pow_five_add_C_mul_X_add_C]
 
 /-- The resolvent sextic of `X⁵ - 5X - 12`, from Dummit's formula for a quintic trinomial. -/
-theorem resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve :
+@[simp] theorem resolventSextic_X_pow_five_sub_five_mul_X_sub_twelve :
     resolventSextic (X ^ 5 - 5 * X - 12) =
       X ^ 6 - 40 * X ^ 5 + 1000 * X ^ 4 - 20000 * X ^ 3 + 250000 * X ^ 2 - 66400000 * X +
         976000000 := by

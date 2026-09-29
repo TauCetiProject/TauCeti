@@ -49,7 +49,7 @@ field" into the classical resolvent conditions — irreducible, splits completel
   depressed quartic, by explicit division with remainder
 * `Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff`: when a monic quadratic divides
   `X⁵ + cX + d`
-* `Polynomial.Monic.irreducible_of_degree_le_five_of_not_isRoot` and
+* `Polynomial.Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd` and
   `Polynomial.irreducible_X_pow_five_add_C_mul_X_add_C`: irreducibility in degree at most five
   from the absence of linear and monic quadratic factors
 -/
@@ -304,8 +304,8 @@ variable {R : Type*} [CommRing R] [IsDomain R]
 has no root and no monic quadratic factor: a proper monic factor of least degree has degree at
 most half the degree, so it is linear or quadratic. This extends
 `Polynomial.Monic.irreducible_iff_roots_eq_zero_of_degree_le_three` to degrees four and five. -/
-theorem Monic.irreducible_of_degree_le_five_of_not_isRoot {p : R[X]} (hp : p.Monic)
-    (hdeg : p.natDegree ∈ Finset.Icc 1 5) (hroot : ∀ x, ¬ p.IsRoot x)
+theorem Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd {p : R[X]}
+    (hp : p.Monic) (hdeg : p.natDegree ∈ Finset.Icc 1 5) (hroot : ∀ x, ¬ p.IsRoot x)
     (hquad : ∀ a b : R, ¬ X ^ 2 + C a * X + C b ∣ p) : Irreducible p := by
   rw [Finset.mem_Icc] at hdeg
   have hp1 : p ≠ 1 := by rintro rfl; simp at hdeg
@@ -331,9 +331,9 @@ theorem irreducible_X_pow_five_add_C_mul_X_add_C {c d : R}
     (hquad : ∀ a b : R,
       ¬ (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + c = 0 ∧ a ^ 3 * b - 2 * a * b ^ 2 + d = 0)) :
     Irreducible (X ^ 5 + C c * X + C d : R[X]) := by
-  refine Monic.irreducible_of_degree_le_five_of_not_isRoot (by monicity!)
-    (by rw [show (X ^ 5 + C c * X + C d : R[X]).natDegree = 5 by compute_degree!]; decide)
-    (fun x => by simpa using hroot x) fun a b => ?_
+  have hdeg : (X ^ 5 + C c * X + C d : R[X]).natDegree = 5 := by compute_degree!
+  refine Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd (by monicity!)
+    (by rw [hdeg]; decide) (fun x => by simpa using hroot x) fun a b => ?_
   rw [X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff]
   exact hquad a b
 
