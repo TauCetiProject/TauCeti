@@ -69,7 +69,7 @@ variable [Semiring H] [_root_.HopfAlgebra R H] [CommSemiring A] [Algebra R A]
 `f.toLinearMap ∘ₗ HopfAlgebra.antipode R`. This is well-defined even when `H` is
 noncommutative: `S` is an antihomomorphism (`HopfAlgebra.antipode_mul_antidistrib`), and `A` is
 commutative, so `f ∘ S` is a homomorphism. -/
-noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
+@[expose] noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
   AlgHom.ofLinearMap (f.toLinearMap ∘ₗ antipode R)
     (by simp only [LinearMap.coe_comp, Function.comp_apply, antipode_one, f.toLinearMap_apply,
       map_one])
@@ -153,7 +153,7 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 monoids. This needs only the bialgebra structure on `H`. When `H` is moreover a Hopf algebra,
 these convolution monoids are the convolution groups (`instGroup`); a `MonoidHom` between
 groups is automatically a group homomorphism, so no separate construction is needed there. -/
-noncomputable def mapValue (φ : A →ₐ[R] B) :
+@[expose] noncomputable def mapValue (φ : A →ₐ[R] B) :
     WithConv (H →ₐ[R] A) →* WithConv (H →ₐ[R] B) where
   toFun f := toConv (φ.comp f.ofConv)
   map_one' := by
