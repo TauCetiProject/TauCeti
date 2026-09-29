@@ -49,8 +49,11 @@ private lemma toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     dsimp only [g, f]
     have h1 := (LinearMap.algHom_comp_convMul_distrib (φ : A →ₐ[R] B)
       (toConv (HopfAlgebra.antipode R (A := A))) (toConv (LinearMap.id : A →ₗ[R] A))).symm
-    have h2 : (toConv (φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A))) * toConv φ.toLinearMap).ofConv =
-        φ.toLinearMap.comp (toConv (HopfAlgebra.antipode R (A := A)) * toConv LinearMap.id).ofConv :=
+    have h2 :
+        (toConv (φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A))) *
+          toConv φ.toLinearMap).ofConv =
+        φ.toLinearMap.comp (toConv (HopfAlgebra.antipode R (A := A)) *
+          toConv LinearMap.id).ofConv :=
       h1
     rw [h2]
     rw [LinearMap.antipode_mul_id]
@@ -62,8 +65,11 @@ private lemma toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     have h1 := (LinearMap.convMul_comp_coalgHom_distrib
       (toConv (LinearMap.id : B →ₗ[R] B)) (toConv (HopfAlgebra.antipode R (A := B)))
       (φ : A →ₗc[R] B)).symm
-    have h2 : (toConv φ.toLinearMap * toConv ((HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap)).ofConv =
-        (toConv LinearMap.id * toConv (HopfAlgebra.antipode R (A := B))).ofConv.comp φ.toLinearMap :=
+    have h2 :
+        (toConv φ.toLinearMap *
+          toConv ((HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap)).ofConv =
+        (toConv LinearMap.id *
+          toConv (HopfAlgebra.antipode R (A := B))).ofConv.comp φ.toLinearMap :=
       h1
     rw [h2]
     rw [LinearMap.id_mul_antipode]
