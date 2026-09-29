@@ -44,6 +44,8 @@ two rectangles form a thin annulus through `X_k`, are computed in
   disjoint squares, membership says that their union carries the single `X`-marking `X_k`.
 * `TauCeti.GridDiagram.sum_XHomotopyDecompositions_eq_zero`: in characteristic two the
   off-diagonal entries of `∂⁻ ∘ H_k + H_k ∘ ∂⁻` vanish.
+* `TauCeti.GridDiagram.constantCoeff_XHomotopyCoefficient`: setting every variable to zero, a
+  matrix coefficient of `H_k` counts the empty rectangles whose only marking is `X_k`.
 
 ## References
 
@@ -109,6 +111,15 @@ theorem XHomotopyCoefficient_def (k : Fin n) (x y : GridState n) :
     G.XHomotopyCoefficient R k x y =
       ∑ r ∈ G.XHomotopyRectangles k x y, G.OMonomial R r.toGridRectangle := by
   rw [XHomotopyCoefficient]
+
+/-- The constant term of a matrix coefficient of `H_k` counts the contributing rectangles that
+carry no `O`-marking either: setting every variable to zero leaves the fully blocked count of the
+empty rectangles whose only marking is `X_k`. -/
+theorem constantCoeff_XHomotopyCoefficient (k : Fin n) (x y : GridState n) :
+    MvPolynomial.constantCoeff (G.XHomotopyCoefficient R k x y) =
+      (((G.XHomotopyRectangles k x y).filter fun r =>
+        G.OColumns r.toGridRectangle = ∅).card : R) := by
+  rw [XHomotopyCoefficient, constantCoeff_sum_OMonomial]
 
 /-- The `X`-marking homotopy `H_k` on the unblocked grid complex `GC⁻`, linear over the
 polynomial ring: a generator `x` is sent to the sum of the generators `y` weighted by
