@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
+public import Mathlib.Algebra.Exact.Basic
+public import Mathlib.Algebra.Module.Projective
+public import TauCeti.RingTheory.KrullSchmidt.Existence
 
 /-!
-# Cancellation of a summand with local endomorphism ring
+# Cancellation of direct summands
 
 Azumaya's cancellation argument says that a module whose endomorphism ring is local cancels from
 a finite direct sum.  Concretely, if `End(P)` is local and `M × P ≃ N × P`, then `M ≃ N`.
@@ -29,12 +31,23 @@ block equation for `e⁻¹e = 1` is `c' b + d' d = 1`.  Locality makes one summa
 diagonal block is the required isomorphism `M ≃ N`.
 
 This theorem does not require finite generation.  Finiteness enters applications only in proving
-that the common summand decomposes into pieces with local endomorphism rings.
+that the common summand decomposes into pieces with local endomorphism rings.  A module of finite
+length does: splitting off one indecomposable summand at a time, each with local endomorphism ring
+by Fitting's lemma, cancels every common summand of finite length.  The modules being compared need
+not have finite length themselves.
 
-## Main result
+A consequence is that two surjections `s t : M → P` onto a projective module of finite length
+differ by an automorphism of `M`: both split, `M ≃ ker s × P ≃ ker t × P`, and cancelling `P`
+identifies the two kernels.
+
+## Main results
 
 * `TauCeti.nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end`: a common summand with
   local endomorphism ring cancels from a linear equivalence.
+* `TauCeti.nonempty_linearEquiv_of_prod_linearEquiv_of_isFiniteLength`: a common summand of finite
+  length cancels from a linear equivalence.
+* `TauCeti.exists_linearEquiv_comp_eq_of_surjective`: two surjections onto a projective module of
+  finite length differ by an automorphism of their source.
 
 ## References
 
@@ -42,6 +55,8 @@ that the common summand decomposes into pieces with local endomorphism rings.
   theorem*, Nagoya Math. J. 1 (1950), 117--124.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition,
   Proposition (5.6.10)(i).
+* I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
+  Algebras, Vol. 1*, Section I.4.
 -/
 
 public section
@@ -49,6 +64,8 @@ public section
 namespace TauCeti
 
 universe u v w x
+
+section Semiring
 
 variable {A : Type u} [Semiring A]
 variable {M : Type v} [AddCommGroup M] [Module A M]
@@ -159,5 +176,76 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
     rw [hdiagonal] at hmp
     exact ⟨m, congrArg Prod.fst hmp⟩
   exact ⟨LinearEquiv.ofBijective s ⟨hs_injective, hs_surjective⟩⟩
+
+end Semiring
+
+section Ring
+
+variable {A : Type u} [Ring A]
+variable {M : Type v} [AddCommGroup M] [Module A M]
+variable {N : Type w} [AddCommGroup N] [Module A N]
+variable {P : Type x} [AddCommGroup P] [Module A P]
+
+/-- **Cancellation of a summand of finite length.** If `P` has finite length, a linear equivalence
+`M × P ≃ N × P` induces a linear equivalence `M ≃ N`.
+
+No finiteness is required of `M` and `N`. -/
+theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isFiniteLength (hP : IsFiniteLength A P)
+    (h : Nonempty ((M × P) ≃ₗ[A] (N × P))) : Nonempty (M ≃ₗ[A] N) := by
+  obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hP
+  -- Induct over the submodules of `P`, which are well founded because `P` is Artinian.
+  suffices H : ∀ Q : Submodule A P, Nonempty ((M × Q) ≃ₗ[A] (N × Q)) → Nonempty (M ≃ₗ[A] N) by
+    obtain ⟨e⟩ := h
+    exact H ⊤ ⟨((LinearEquiv.refl A M).prodCongr Submodule.topEquiv).trans
+      (e.trans ((LinearEquiv.refl A N).prodCongr Submodule.topEquiv.symm))⟩
+  intro Q
+  induction Q using WellFoundedLT.induction with
+  | _ Q ih =>
+  rintro ⟨e⟩
+  rcases subsingleton_or_nontrivial Q with hQ | hQ
+  · have : Unique Q := uniqueOfSubsingleton 0
+    exact ⟨(LinearEquiv.prodUnique.symm.trans e).trans LinearEquiv.prodUnique⟩
+  -- Split off an indecomposable summand `Q = N₁ ⊕ Q₁`; it has local endomorphism ring.
+  obtain ⟨N₁, Q₁, hc, hN₁⟩ := exists_isCompl_isIndecomposableModule (A := A) (M := Q)
+  have : IsLocalRing (Module.End A N₁) := isLocalRing_end_of_isIndecomposable
+    (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩) hN₁
+  let eQ : (Q₁ × N₁) ≃ₗ[A] Q :=
+    (LinearEquiv.prodComm A Q₁ N₁).trans (Submodule.prodEquivOfIsCompl N₁ Q₁ hc)
+  obtain ⟨e₁⟩ := nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
+    ⟨((LinearEquiv.prodAssoc A M Q₁ N₁).trans ((LinearEquiv.refl A M).prodCongr eQ)).trans
+      (e.trans ((LinearEquiv.prodAssoc A N Q₁ N₁).trans
+        ((LinearEquiv.refl A N).prodCongr eQ)).symm)⟩
+  -- The complement `Q₁` is a proper submodule of `Q`, so the induction hypothesis applies to it.
+  have hlt : Q₁.map Q.subtype < Q := by
+    have hQ₁ : Q₁ ≠ ⊤ := by
+      rintro rfl
+      exact (Submodule.nontrivial_iff_ne_bot.mp hN₁.nontrivial) (by simpa using hc.inf_eq_bot)
+    simpa using Submodule.map_strictMono_of_injective Q.injective_subtype
+      (lt_top_iff_ne_top.mpr hQ₁)
+  let f := Submodule.equivMapOfInjective Q.subtype Q.injective_subtype Q₁
+  exact ih _ hlt ⟨((LinearEquiv.refl A M).prodCongr f.symm).trans
+    (e₁.trans ((LinearEquiv.refl A N).prodCongr f))⟩
+
+/-- **Two surjections onto a projective module of finite length differ by an automorphism.** If
+`P` is projective of finite length and `s t : M → P` are surjective, then `t ∘ θ = s` for some
+automorphism `θ` of `M`. -/
+theorem exists_linearEquiv_comp_eq_of_surjective [Module.Projective A P] (hP : IsFiniteLength A P)
+    {s t : M →ₗ[A] P} (hs : Function.Surjective s) (ht : Function.Surjective t) :
+    ∃ θ : M ≃ₗ[A] M, t ∘ₗ θ.toLinearMap = s := by
+  -- Both surjections split, `M ≃ ker s × P ≃ ker t × P`, and `P` cancels.
+  have split {u : M →ₗ[A] P} (hu : Function.Surjective u) :
+      ∃ e : M ≃ₗ[A] (LinearMap.ker u × P), ∀ x, (e x).2 = u x := by
+    obtain ⟨l, hl⟩ := Module.projective_lifting_property u LinearMap.id hu
+    let e := Function.Exact.splitSurjectiveEquiv (LinearMap.exact_subtype_ker_map u)
+      Subtype.val_injective ⟨l, hl⟩
+    exact ⟨e.1, fun x ↦ (LinearMap.congr_fun e.2.2 x).symm⟩
+  obtain ⟨es, hes⟩ := split hs
+  obtain ⟨et, het⟩ := split ht
+  obtain ⟨φ⟩ := nonempty_linearEquiv_of_prod_linearEquiv_of_isFiniteLength hP ⟨es.symm.trans et⟩
+  refine ⟨es.trans ((φ.prodCongr (LinearEquiv.refl A P)).trans et.symm), ?_⟩
+  ext x
+  simp [← het, ← hes]
+
+end Ring
 
 end TauCeti
