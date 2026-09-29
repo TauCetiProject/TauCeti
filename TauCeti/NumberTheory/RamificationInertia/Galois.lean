@@ -37,8 +37,8 @@ upstairs.
   prime of the base have the same inertia subgroup.
 * `Ideal.isUnramifiedAt_pointwise_smul_iff`: unramifiedness is invariant under translation by
   an algebra automorphism.
-* `Ideal.isUnramifiedAt_of_isGaloisGroup`: unramifiedness transfers between primes above the
-  same base prime in a Galois extension.
+* `Ideal.isUnramifiedAt_of_isUnramifiedAt_of_isGaloisGroup`: unramifiedness transfers between
+  primes above the same base prime in a Galois extension.
 
 ## Provenance
 
@@ -78,7 +78,8 @@ theorem isUnramifiedAt_pointwise_smul_iff (Q : Ideal S) [Q.IsPrime] (g : G) :
 
 /-- Unramifiedness at one prime above `p` implies unramifiedness at every prime above `p`
 when the Galois group acts transitively on them. -/
-theorem isUnramifiedAt_of_isGaloisGroup {A B : Type*} [CommRing A] [CommRing B]
+theorem isUnramifiedAt_of_isUnramifiedAt_of_isGaloisGroup
+    {A B : Type*} [CommRing A] [CommRing B]
     [Algebra A B] (p : Ideal A) (P Q : Ideal B) [P.IsPrime] [P.LiesOver p]
     [Q.IsPrime] [Q.LiesOver p] (G : Type*) [Group G] [Finite G]
     [MulSemiringAction G B] [IsGaloisGroup G A B]

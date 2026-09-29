@@ -141,7 +141,7 @@ theorem under_notMem_ramifiedPrimes_iff_isUnramifiedAt [IsGalois K L]
     exact hur Q.asIdeal
   · intro hur R _ _
     let _ : Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal := hur
-    exact Ideal.isUnramifiedAt_of_isGaloisGroup
+    exact Ideal.isUnramifiedAt_of_isUnramifiedAt_of_isGaloisGroup
       (Q.under (𝓞 K)).asIdeal Q.asIdeal R (L ≃ₐ[K] L)
 
 variable {M : Type*} [Field M] [NumberField M] [Algebra K M] [Algebra L M]
