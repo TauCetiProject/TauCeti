@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.CrossedProduct.BrauerClass
-import Mathlib.FieldTheory.Normal.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.LinearAlgebra.LinearIndependent.Basic
 import Mathlib.RingTheory.Trace.Basic
+import TauCeti.FieldTheory.Galois.Trace
 
 /-!
 # Inflating a cocycle along a compatible pair
@@ -68,43 +67,6 @@ variable {K : Type u} [Field K] {L : Type v} [Field L] [Algebra K L] {M : Type w
   [Algebra K M] [Algebra L M] [IsScalarTower K L M] [FiniteDimensional K M]
   (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L))
   (hf : ∀ g x, IsScalarTower.toAlgHom K L M (f g x) = g (IsScalarTower.toAlgHom K L M x))
-
-include hf in
-/-- The automorphisms in the fibre of `f` over `σ` sum to `σ` followed by the trace of `M/L`. -/
-private theorem sum_fiber_apply [IsGalois K M] [DecidableEq (L ≃ₐ[K] L)] (σ : L ≃ₐ[K] L)
-    (z : M) :
-    ∑ g ∈ Finset.univ.filter (fun g ↦ f g = σ), g z =
-      algebraMap L M (σ (Algebra.trace L M z)) := by
-  have hf : ∀ g x, algebraMap L M (f g x) = g (algebraMap L M x) := fun g x ↦ by
-    simpa only [IsScalarTower.coe_toAlgHom'] using hf g x
-  have : FiniteDimensional L M := Module.Finite.of_restrictScalars_finite K L M
-  have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
-  set g₀ := σ.liftNormal M
-  have hg₀ : f g₀ = σ := AlgEquiv.ext fun x ↦
-    (algebraMap L M).injective ((hf g₀ x).trans (σ.liftNormal_commutes M x))
-  -- `f` is trivial exactly on the automorphisms fixing `L`
-  have hker (g : M ≃ₐ[K] M) : f g = 1 ↔ ∀ x, g (algebraMap L M x) = algebraMap L M x := by
-    refine ⟨fun h x ↦ by rw [← hf, h, AlgEquiv.one_apply], fun h ↦ AlgEquiv.ext fun x ↦
-      (algebraMap L M).injective ?_⟩
-    rw [hf, h, AlgEquiv.one_apply]
-  have hfix (g : M ≃ₐ[K] M) (hg : f g = σ) (x : L) :
-      (g₀⁻¹ * g) (algebraMap L M x) = algebraMap L M x :=
-    (hker _).1 (by rw [map_mul, map_inv, hg, hg₀, inv_mul_cancel]) x
-  calc ∑ g ∈ Finset.univ.filter (fun g ↦ f g = σ), g z
-      = ∑ τ : Gal(M/L), g₀ (τ z) := by
-        symm
-        refine Finset.sum_bij' (fun τ _ ↦ g₀ * τ.restrictScalars K)
-          (fun g hg ↦ AlgEquiv.ofRingEquiv (f := (g₀⁻¹ * g).toRingEquiv)
-            (hfix g (Finset.mem_filter.1 hg).2)) (fun τ _ ↦ ?_) (fun _ _ ↦ Finset.mem_univ _)
-          (fun τ _ ↦ ?_) (fun g _ ↦ ?_) (fun τ _ ↦ rfl)
-        · rw [Finset.mem_filter, map_mul, hg₀, (hker _).2 τ.commutes, mul_one]
-          exact ⟨Finset.mem_univ _, rfl⟩
-        · ext x
-          simp
-        · ext x
-          simp
-    _ = algebraMap L M (σ (Algebra.trace L M z)) := by
-        rw [← map_sum, ← trace_eq_sum_automorphisms, ← hf, hg₀]
 
 variable (c : TwoCocycle K L)
 
@@ -180,7 +142,7 @@ private theorem fiberMap_mul_inc_mul [IsGalois K M] (a a' : CrossedProduct c) (y
           rw [smul_mul_assoc, basis_mul_inc, ← smul_def, smul_smul, smul_basis_mul_smul_basis,
             fiberMap_smul_basis]
           refine Finset.sum_congr rfl fun k _ ↦ ?_
-          rw [sum_fiber_apply f hf σ y]
+          rw [sum_fiber_apply_eq_algebraMap_trace f hf' σ y]
           congr 1
           simp only [C, map_mul]
           ring
@@ -189,38 +151,6 @@ section Dual
 
 variable [FiniteDimensional L M] [Algebra.IsSeparable L M] {ι : Type*} [Fintype ι]
   [DecidableEq ι] (m : Basis ι L M)
-
-open Classical in
-variable (f hf) in
-include hf in
-/-- For `g` fixing `L`, `∑ᵢ m*ᵢ · g(mᵢ)` is `1` if `g = 1` and `0` otherwise. This is Dedekind's
-independence of characters applied to `x = ∑ᵢ m*ᵢ · Tr(mᵢ x) = ∑_g (∑ᵢ m*ᵢ · g(mᵢ)) · g(x)`. -/
-private theorem sum_traceDual_mul_apply [IsGalois K M] (g : M ≃ₐ[K] M) (hg : f g = 1) :
-    ∑ i, m.traceDual i * g (m i) = if g = 1 then 1 else 0 := by
-  classical
-  set C : (M ≃ₐ[K] M) → M := fun g ↦ if f g = 1 then ∑ i, m.traceDual i * g (m i) else 0
-  have hC (x : M) : ∑ g, C g * g x = x := by
-    calc ∑ g, C g * g x
-        = ∑ g ∈ Finset.univ.filter (fun g ↦ f g = 1), ∑ i, m.traceDual i * g (m i * x) := by
-          rw [Finset.sum_filter]
-          refine Finset.sum_congr rfl fun g _ ↦ ?_
-          simp only [C]
-          split_ifs <;> simp [Finset.sum_mul, map_mul, mul_assoc]
-      _ = ∑ i, m.traceDual i * ∑ g ∈ Finset.univ.filter (fun g ↦ f g = 1), g (m i * x) := by
-          rw [Finset.sum_comm]
-          simp only [Finset.mul_sum]
-      _ = ∑ i, Algebra.trace L M (x * m i) • m.traceDual i := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [sum_fiber_apply f hf, AlgEquiv.one_apply, Algebra.smul_def, mul_comm, mul_comm x]
-      _ = x := by
-          conv_rhs => rw [← m.traceDual.sum_repr x]
-          simp [Algebra.traceForm_apply]
-  have hli := (linearIndependent_monoidHom M M).comp (fun g : M ≃ₐ[K] M ↦ (g : M →* M))
-    fun g g' h ↦ AlgEquiv.ext fun x ↦ by simpa using DFunLike.congr_fun h x
-  have := Fintype.linearIndependent_iffₛ.1 hli C (fun g ↦ if g = 1 then 1 else 0) (by
-    funext x
-    simp [Finset.sum_apply, hC, ite_apply])
-  simpa [C, hg] using this g
 
 variable (f hf c) in
 /-- The `K`-linear map `X ↦ ∑_{i,j} m*ᵢ · fiberMap(X i j) · mⱼ`, which is the matrix decomposition
@@ -261,6 +191,15 @@ private theorem matrixLinearMap_mul [IsGalois K M] (X Y : Matrix ι ι (CrossedP
 
 private theorem matrixLinearMap_one [IsGalois K M] : matrixLinearMap f hf c m 1 = 1 := by
   classical
+  have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
+  -- an automorphism in the kernel of `f` fixes `L`, so it is an element of `Gal(M/L)`
+  have hsum (g : M ≃ₐ[K] M) (hg : f g = 1) :
+      ∑ i, m.traceDual i * g (m i) = if g = 1 then 1 else 0 := by
+    have hfix (x : L) : g (algebraMap L M x) = algebraMap L M x := by
+      simpa only [hg, AlgEquiv.one_apply, IsScalarTower.coe_toAlgHom'] using (hf g x).symm
+    have h1 : AlgEquiv.ofRingEquiv (f := g.toRingEquiv) hfix = 1 ↔ g = 1 := by
+      simp [AlgEquiv.ext_iff]
+    simpa [h1] using m.sum_traceDual_mul_apply (AlgEquiv.ofRingEquiv (f := g.toRingEquiv) hfix)
   set F := Finset.univ.filter (fun g : M ≃ₐ[K] M ↦ f g = 1)
   set z := algebraMap L M (((c.toFun 1 1)⁻¹ : Lˣ) : L)
   calc matrixLinearMap f hf c m 1
@@ -276,8 +215,8 @@ private theorem matrixLinearMap_one [IsGalois K M] : matrixLinearMap f hf c m 1 
         ring
     _ = z • basis _ 1 := by
         rw [Finset.sum_congr rfl fun g hg ↦ by
-          rw [sum_traceDual_mul_apply f hf m g (Finset.mem_filter.1 hg).2, mul_ite, mul_one,
-            mul_zero, ite_smul, zero_smul]]
+          rw [hsum g (Finset.mem_filter.1 hg).2, mul_ite, mul_one, mul_zero, ite_smul,
+            zero_smul]]
         rw [Finset.sum_ite_eq']
         simp [F]
     _ = 1 := by

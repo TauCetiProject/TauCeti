@@ -236,6 +236,16 @@ theorem comap_inv : c⁻¹.comap f ι hf = (c.comap f ι hf)⁻¹ :=
 theorem comap_div (d : TwoCocycle K L) : (c / d).comap f ι hf = c.comap f ι hf / d.comap f ι hf :=
   TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
 
+/-- Inflation commutes with natural powers. -/
+@[simp]
+theorem comap_pow (n : ℕ) : (c ^ n).comap f ι hf = c.comap f ι hf ^ n :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+/-- Inflation commutes with integer powers. -/
+@[simp]
+theorem comap_zpow (n : ℤ) : (c ^ n).comap f ι hf = c.comap f ι hf ^ n :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
 end Comap
 
 end TwoCocycle
