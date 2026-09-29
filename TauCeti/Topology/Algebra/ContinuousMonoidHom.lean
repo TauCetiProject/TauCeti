@@ -24,10 +24,10 @@ identity, and composition laws, and the continuous lift through a quotient by a 
 A homomorphism from a topological group with open kernel is also continuous, for every topology
 on the target. It also records the pointwise characterization of finite-order continuous
 homomorphisms and the open kernel of a finite-order continuous character into complex units.
-Kernels of continuous homomorphisms into a discrete monoid are closed, so on a
-compact group the common kernel of a family of them is approximated from outside by the common
-kernels of its finite subfamilies, and the range of a continuous homomorphism out of a compact
-group into a Hausdorff group is a closed subgroup.
+Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
+common kernel of a family of them is approximated from outside by the common kernels of its
+finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
+Hausdorff group is a closed subgroup.
 -/
 
 public section
@@ -82,19 +82,23 @@ theorem _root_.MonoidHom.continuous_of_isOpen_ker [ContinuousMul G] {F : Type*} 
   calc f x = f x * f (x⁻¹ * y) := by rw [MonoidHom.mem_ker.mp hy, mul_one]
     _ = f y := by rw [← map_mul, mul_inv_cancel_left]
 
+/-- The kernel of a continuous homomorphism into a `T1` monoid is closed: it is the preimage of
+the closed point `1`. -/
+theorem _root_.ContinuousMonoidHom.isClosed_ker {H : Type*} [Monoid H] [TopologicalSpace H]
+    [T1Space H] (φ : G →ₜ* H) : IsClosed (φ.ker : Set G) := by
+  rw [MonoidHom.coe_ker]
+  exact isClosed_singleton.preimage φ.continuous
+
 /-- **A finite subfamily of kernels suffices.** In a compact group, an open set containing the
-common kernel of a family of continuous homomorphisms into a discrete monoid already contains the
-common kernel of a finite subfamily: each kernel is the preimage of the closed point `1`, so this
-is the finite intersection property. -/
+common kernel of a family of continuous homomorphisms into a `T1` monoid already contains the
+common kernel of a finite subfamily: each kernel is closed, so this is the finite intersection
+property. -/
 theorem exists_finset_iInter_ker_subset [CompactSpace G] {H : Type*}
-    [Monoid H] [TopologicalSpace H] [DiscreteTopology H] {ι : Type*} (φ : ι → G →ₜ* H)
+    [Monoid H] [TopologicalSpace H] [T1Space H] {ι : Type*} (φ : ι → G →ₜ* H)
     {U : Set G} (hU : IsOpen U) (h : ⋂ j, ((φ j).ker : Set G) ⊆ U) :
     ∃ F : Finset ι, ⋂ j ∈ F, ((φ j).ker : Set G) ⊆ U := by
   obtain ⟨F, hF⟩ := hU.isClosed_compl.isCompact.elim_finite_subfamily_closed
-    (fun j ↦ (((φ j).ker : Subgroup G) : Set G))
-    (fun j ↦ by
-      rw [MonoidHom.coe_ker]
-      exact (isClosed_discrete {1}).preimage (φ j).continuous)
+    (fun j ↦ (((φ j).ker : Subgroup G) : Set G)) (fun j ↦ (φ j).isClosed_ker)
     (Set.disjoint_left.mpr fun x hx hmem ↦ hx (h hmem))
   exact ⟨F, fun x hx ↦ not_not.mp fun hxU ↦ Set.disjoint_left.mp hF hxU hx⟩
 
