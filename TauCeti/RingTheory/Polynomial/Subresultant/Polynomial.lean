@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.OfFn
 public import TauCeti.RingTheory.Polynomial.Subresultant.Basic
 
 /-!
@@ -139,17 +140,30 @@ theorem _root_.Polynomial.subresultantCoeff_map_map [CommRing R] [CommRing S]
       f (subresultantCoeff p q m n j k) := by
   simp [subresultantCoeff_def, RingHom.map_det]
 
+set_option backward.defeqAttrib.useBackward true in
+private theorem sign_blockSwap (m n : ℕ) :
+    Equiv.Perm.sign
+        ((finSumFinEquiv.symm.trans <| (Equiv.sumComm _ _).trans finSumFinEquiv).trans
+          (finCongr (add_comm n m)).symm) =
+      (-1) ^ (m * n) := by
+  rw [Equiv.Perm.sign_eq_prod_prod_Ioi]
+  dsimp
+  simp only [Fin.cast_lt_cast]
+  simp_rw [← finSumFinEquiv.prod_comp, ← Finset.prod_map_equiv finSumFinEquiv.symm]
+  simp only [Equiv.symm_apply_apply, ← Fin.val_fin_lt, Equiv.symm_symm, Function.comp_apply,
+    ← Finset.prod_ite_mem_eq (Finset.map _ _), Finset.mem_map_equiv, Finset.mem_Ioi,
+    Fintype.prod_sum_type, finSumFinEquiv_apply_left, Fin.val_castAdd, Sum.swap_inl,
+    finSumFinEquiv_apply_right, Fin.val_natAdd, Sum.swap_inr, add_lt_add_iff_left,
+    ← ite_not (α := ℤˣ) (p := _ < _) (y := 1), ← ite_and, and_not_self]
+  simp [(Fin.isLt _).trans_le, (Fin.isLt _).le.trans, pow_mul]
+
 /-- Swapping the inputs changes every coefficient minor by the Sylvester block-swap sign. -/
 theorem _root_.Polynomial.subresultantCoeff_comm [CommRing R]
     (p q : R[X]) (m n j k : ℕ) :
     subresultantCoeff p q m n j k =
       (-1) ^ ((m - j) * (n - j)) * subresultantCoeff q p n m j k := by
-  have hsign := resultant_comm (X ^ (m - j) : ℤ[X]) 1 (m - j) (n - j)
-  rw [resultant, sylvester_comm, Matrix.det_reindex, ← resultant] at hsign
-  simp only [resultant_one_left, coeff_X_pow_self, one_pow, mul_one] at hsign
-  rw [Int.cast_id, mul_left_inj' (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))] at hsign
   rw [subresultantCoeff_def, subresultantCoeff_def, subresultantCoeffMatrix_comm,
-    Matrix.det_reindex, hsign]
+    Matrix.det_reindex, sign_blockSwap]
   simp
 
 /-- Scaling the left polynomial by `r` scales every coefficient minor by `r ^ (n - j)`. -/
@@ -185,10 +199,11 @@ Its coefficient of degree `k ≤ j` is `subresultantCoeff p q m n j k`; all coef
 range this definition is zero.  In particular, it does not turn a terminal empty determinant
 into a polynomial, since terminal data is represented by `psc`. -/
 noncomputable def _root_.Polynomial.subresultant [CommRing R]
-    (p q : R[X]) (m n j : ℕ) : R[X] :=
-  if j < min m n then
-    ∑ k ∈ Finset.range (j + 1), monomial k (subresultantCoeff p q m n j k)
-  else 0
+    (p q : R[X]) (m n j : ℕ) : R[X] := by
+  classical
+  exact if j < min m n then
+      ofFn (j + 1) fun k => subresultantCoeff p q m n j k
+    else 0
 
 /-- The coefficient formula for a fixed-bound subresultant polynomial. -/
 @[simp]
@@ -197,7 +212,10 @@ theorem _root_.Polynomial.subresultant_coeff [CommRing R]
     (subresultant p q m n j).coeff k =
       if j < min m n ∧ k ≤ j then subresultantCoeff p q m n j k else 0 := by
   by_cases hj : j < min m n
-  · simp [subresultant, hj, coeff_monomial]
+  · by_cases hkj : k ≤ j
+    · simp [subresultant, hj, hkj]
+    · have hk : j + 1 ≤ k := by omega
+      simp [subresultant, hj, hkj, hk]
   · simp [subresultant, hj]
 
 /-- There is no subresultant polynomial at or beyond the terminal index. -/
@@ -209,6 +227,7 @@ theorem _root_.Polynomial.subresultant_eq_zero_of_min_le [CommRing R]
 
 /-- When both formal bounds are positive, the subresultant polynomial at index zero is the
 constant resultant. -/
+@[simp]
 theorem _root_.Polynomial.subresultant_zero [CommRing R]
     (p q : R[X]) (m n : ℕ) (h : 0 < min m n) :
     subresultant p q m n 0 = C (Polynomial.resultant p q m n) := by
@@ -223,10 +242,17 @@ theorem _root_.Polynomial.subresultant_zero [CommRing R]
 theorem _root_.Polynomial.degree_subresultant_le [CommRing R]
     (p q : R[X]) (m n j : ℕ) :
     (subresultant p q m n j).degree ≤ j := by
-  rw [degree_le_iff_coeff_zero]
-  intro k hk
-  have hjk : j < k := by exact_mod_cast hk
-  simp [Nat.not_le.mpr hjk]
+  classical
+  by_cases hj : j < min m n
+  · simp only [subresultant, hj, ↓reduceIte]
+    by_cases hzero : ofFn (R := R) (j + 1)
+        (fun k => subresultantCoeff p q m n j k) = 0
+    · simp [hzero]
+    · have hdeg := ofFn_degree_lt (R := R)
+          (fun k : Fin (j + 1) => subresultantCoeff p q m n j k)
+      rw [degree_eq_natDegree hzero] at hdeg ⊢
+      exact WithBot.coe_le_coe.2 (Nat.lt_succ_iff.mp (WithBot.coe_lt_coe.1 hdeg))
+  · simp [subresultant, hj]
 
 /-- The subresultant polynomial has degree exactly `j` precisely when its principal coefficient
 does not vanish. -/
