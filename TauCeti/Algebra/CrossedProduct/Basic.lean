@@ -205,15 +205,36 @@ variable (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : �
 
 /-- The defining equation of the inflated cocycle, `(c.comap f ι hf)(g, g') = ι (c (f g, f g'))`,
 as units. -/
+@[simp]
 theorem comap_toFun (g g' : M ≃ₐ[K] M) :
     (c.comap f ι hf).toFun g g' = Units.map (ι : L →* M) (c.toFun (f g) (f g')) :=
   (rfl)
 
-/-- The values of the inflated cocycle, `(c.comap f ι hf)(g, g') = ι (c (f g, f g'))`. -/
-@[simp]
+/-- The values of the inflated cocycle, `(c.comap f ι hf)(g, g') = ι (c (f g, f g'))`. Not a
+`simp` lemma: `simp` reaches its right-hand side through `comap_toFun` and `Units.coe_map`. -/
 theorem coe_comap_toFun (g g' : M ≃ₐ[K] M) :
     ((c.comap f ι hf).toFun g g' : M) = ι (c.toFun (f g) (f g')) :=
   (rfl)
+
+/-- Inflation of the trivial `2`-cocycle is trivial. -/
+@[simp]
+theorem comap_one : (1 : TwoCocycle K L).comap f ι hf = 1 :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+/-- Inflation is multiplicative. -/
+@[simp]
+theorem comap_mul (d : TwoCocycle K L) : (c * d).comap f ι hf = c.comap f ι hf * d.comap f ι hf :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+/-- Inflation commutes with inversion. -/
+@[simp]
+theorem comap_inv : c⁻¹.comap f ι hf = (c.comap f ι hf)⁻¹ :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
+
+/-- Inflation commutes with division. -/
+@[simp]
+theorem comap_div (d : TwoCocycle K L) : (c / d).comap f ι hf = c.comap f ι hf / d.comap f ι hf :=
+  TwoCocycle.ext (funext₂ fun _ _ ↦ by simp)
 
 end Comap
 
