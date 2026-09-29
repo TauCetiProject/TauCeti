@@ -13,11 +13,10 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 /-!
 # Conjugacy of Borel subgroups of `SL₂`
 
-Over an algebraically closed field, a reduced connected solvable closed subgroup of `SL₂` acts on
-the standard two-dimensional module with an invariant flag. Lie--Kolchin triangularizes its
-generic matrix. Rescaling one column of the change-of-basis matrix makes its determinant one
-without changing the flag. Thus the subgroup is contained in an `SL₂`-conjugate of the standard
-upper-triangular subgroup. Maximality identifies every Borel with such a conjugate.
+Over an algebraically closed field, every reduced connected solvable closed subgroup of `SL₂` is
+contained in a conjugate of the standard upper-triangular subgroup. Consequently, every Borel
+subgroup of `SL₂` is conjugate to the standard one, and any two Borel subgroups are conjugate.
+This reduces questions about arbitrary Borel subgroups of `SL₂` to the standard subgroup.
 
 ## Main results
 
@@ -33,10 +32,9 @@ upper-triangular subgroup. Maximality identifies every Borel with such a conjuga
 * J. S. Milne, *Algebraic Groups* (2017), Section 17.a.
 * T. A. Springer, *Linear Algebraic Groups*, Sections 6.2--6.3.
 
-The proof uses the triangularization of a generic matrix from
-`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Borel` and follows the coordinate
-conjugation argument for split maximal tori in
-`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.Conjugacy`.
+The corresponding `GLₙ` development is in
+`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Borel`. The coordinate approach
+follows `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.Conjugacy`.
 -/
 
 public section
