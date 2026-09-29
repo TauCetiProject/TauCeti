@@ -13,8 +13,8 @@ public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Fini
 # Composition multiplicities and vertex dimensions for path algebras
 
 For a finite acyclic quiver, the multiplicity of the vertex simple `Sᵢ` in a finite-dimensional
-path-algebra module is the dimension of its `i`th vertex space. Both functions are additive in
-short exact sequences. They agree on the vertex simples, which generate the Grothendieck group.
+path-algebra module is the dimension of its `i`th vertex space. This identifies the exact
+Grothendieck group with the integral lattice of vertex dimensions.
 For a vertex projective `Pⱼ`, this identifies its multiplicity of `Sᵢ` with the number of paths
 from `j` to `i`. These are the columns of the Cartan matrix in the left-module convention.
 
