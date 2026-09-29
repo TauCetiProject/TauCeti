@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Marking
+public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Basic
 
 /-!
 # X-avoidance of the rectangle in a common-initial-side commutation recut
@@ -90,10 +90,9 @@ theorem disjoint_coveredSquares_XSet_rectangle_recutLeftEqLeft
   · have hRows : E.rectangle.toGridRectangle.coveredRows ⊆
         D.rectangle.toGridRectangle.coveredRows := by
       dsimp only [E]
-      simpa only [GridRectangle.coveredRows_def, GridRectangleBetween.toGridRectangle_bottom,
-        GridRectangleBetween.toGridRectangle_top, hEbottom, hEtop] using
-        (show Grid.cIco D.rectangle.bottom D.rectangle.top ⊆
-          Grid.cIco D.rectangle.bottom D.rectangle.top from fun _ h => h)
+      simp only [GridRectangle.coveredRows_def, GridRectangleBetween.toGridRectangle_bottom,
+        GridRectangleBetween.toGridRectangle_top, hEbottom, hEtop]
+      exact Finset.Subset.rfl
     have ha : a ∈ D.rectangle.toGridRectangle.coveredColumns := by
       rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
         GridRectangleBetween.toGridRectangle_right]

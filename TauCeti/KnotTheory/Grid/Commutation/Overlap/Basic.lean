@@ -633,6 +633,7 @@ theorem recut_rectangle_branch_data_of_left_eq_left
       E.middle = x.swapColumns D.rectangle.left (finRotate n a) ∧
       E.rectangle.bottom = D.rectangle.bottom ∧ E.rectangle.top = D.rectangle.top) := by
   let E := D.recutLeftEqLeft hcommon hone hrectangle hpentagon
+  -- The theorem's `let E` and this local `E` are definitionally the same recut.
   change (D.rectangle.right ∈ Grid.cIoo D.rectangle.left (finRotate n a) ∧
       E.rectangle.left = D.rectangle.left ∧ E.rectangle.right = D.rectangle.right) ∨
     (finRotate n a ∈ Grid.cIoo D.rectangle.left D.rectangle.right ∧
