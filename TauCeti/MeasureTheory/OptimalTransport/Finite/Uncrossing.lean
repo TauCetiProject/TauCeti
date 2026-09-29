@@ -29,48 +29,53 @@ namespace TransportMatrix
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
   {μ : PMF ι} {ν : PMF κ}
 
-private abbrev corner (a : ι) (b : κ) (q : ι × κ) : ℝ :=
-  Set.indicator {(a, b)} (fun _ ↦ (1 : ℝ)) q
-
 omit [Fintype ι] in
-private theorem sum_corner_row (a : ι) (b : κ) (i : ι) :
-    ∑ j, corner a b (i, j) = (open scoped Classical in if i = a then 1 else 0) := by
+open Classical in
+private theorem sum_single_row (a : ι) (b : κ) (i : ι) :
+    ∑ j, Pi.single (M := fun _ : ι × κ ↦ ℝ) (a, b) (1 : ℝ) (i, j) =
+      (open scoped Classical in if i = a then 1 else 0) := by
   classical
   by_cases h : i = a
   · subst i
-    simp [corner, Set.indicator, Prod.mk.injEq]
-  · simp [corner, Set.indicator, h]
+    simp [Pi.single_apply, Prod.mk.injEq]
+  · simp [Prod.mk.injEq, h]
 
 omit [Fintype κ] in
-private theorem sum_corner_col (a : ι) (b : κ) (j : κ) :
-    ∑ i, corner a b (i, j) = (open scoped Classical in if j = b then 1 else 0) := by
+open Classical in
+private theorem sum_single_col (a : ι) (b : κ) (j : κ) :
+    ∑ i, Pi.single (M := fun _ : ι × κ ↦ ℝ) (a, b) (1 : ℝ) (i, j) =
+      (open scoped Classical in if j = b then 1 else 0) := by
   classical
   by_cases h : j = b
   · subst j
-    simp [corner, Set.indicator, Prod.mk.injEq]
-  · simp [corner, Set.indicator, h]
+    simp [Pi.single_apply, Prod.mk.injEq]
+  · simp [Prod.mk.injEq, h]
 
-private theorem sum_cost_corner (c : ι × κ → ℝ) (a : ι) (b : κ) :
-    ∑ q, c q * corner a b q = c (a, b) := by
+open Classical in
+private theorem sum_cost_single (c : ι × κ → ℝ) (a : ι) (b : κ) :
+    ∑ q, c q * Pi.single (M := fun _ : ι × κ ↦ ℝ) (a, b) (1 : ℝ) q = c (a, b) := by
   classical
-  simp [corner, Set.indicator]
+  simp [Pi.single_apply]
 
 /-- Transfer the smaller crossing mass to the two uncrossed cells. The resulting plan has the
 same marginals, and the formula specifies every entry of the four-cell update. -/
 theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ : κ}
     (hi : i₁ ≠ i₂) (hj : j₁ ≠ j₂) :
-    ∃ B : TransportMatrix μ ν, ∃ δ : ℝ,
+    (open Classical in ∃ B : TransportMatrix μ ν, ∃ δ : ℝ,
       0 ≤ δ ∧ δ = min (A.toRealFun (i₁, j₂)) (A.toRealFun (i₂, j₁)) ∧
       (∀ q, B.toRealFun q = A.toRealFun q +
-        δ * (Set.indicator {(i₁, j₁)} (fun _ ↦ (1 : ℝ)) q +
-          Set.indicator {(i₂, j₂)} (fun _ ↦ (1 : ℝ)) q -
-          Set.indicator {(i₁, j₂)} (fun _ ↦ (1 : ℝ)) q -
-          Set.indicator {(i₂, j₁)} (fun _ ↦ (1 : ℝ)) q)) := by
+        δ * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
+          Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
+          Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
+          Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q))) := by
   classical
   let f := A.toRealFun
   let δ := min (f (i₁, j₂)) (f (i₂, j₁))
   let g : ι × κ → ℝ := fun q ↦ f q +
-    δ * (corner i₁ j₁ q + corner i₂ j₂ q - corner i₁ j₂ q - corner i₂ j₁ q)
+    δ * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
+      Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
+      Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
+      Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q)
   have hδ0 : 0 ≤ δ := le_min (A.toRealFun_nonneg _) (A.toRealFun_nonneg _)
   have hδ₁ : δ ≤ f (i₁, j₂) := min_le_left _ _
   have hδ₂ : δ ≤ f (i₂, j₁) := min_le_right _ _
@@ -81,7 +86,7 @@ theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ :
       have hfi := hfnonneg (i, j)
       by_cases h₁ : i = i₁ <;> by_cases h₂ : i = i₂ <;>
         by_cases h₃ : j = j₁ <;> by_cases h₄ : j = j₂
-      all_goals simp_all [g, corner, Prod.mk.injEq] <;>
+      all_goals simp_all [g, Pi.single_apply, Prod.mk.injEq] <;>
         linarith [hfnonneg i j, hfnonneg i₁ j₁, hfnonneg i₁ j₂,
           hfnonneg i₂ j₁, hfnonneg i₂ j₂]
     · intro i
@@ -90,7 +95,7 @@ theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ :
             ((if i = i₁ then 1 else 0) + (if i = i₂ then 1 else 0) -
               (if i = i₁ then 1 else 0) - (if i = i₂ then 1 else 0)) := by
                 simp only [g, Finset.sum_add_distrib, ← Finset.mul_sum,
-                  Finset.sum_sub_distrib, sum_corner_row]
+                  Finset.sum_sub_distrib, sum_single_row]
         _ = ∑ j, f (i, j) := by ring
         _ = (μ i).toReal := A.sum_toRealFun_row i
     · intro j
@@ -99,7 +104,7 @@ theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ :
             ((if j = j₁ then 1 else 0) + (if j = j₂ then 1 else 0) -
               (if j = j₂ then 1 else 0) - (if j = j₁ then 1 else 0)) := by
                 simp only [g, Finset.sum_add_distrib, ← Finset.mul_sum,
-                  Finset.sum_sub_distrib, sum_corner_col]
+                  Finset.sum_sub_distrib, sum_single_col]
         _ = ∑ i, f (i, j) := by ring
         _ = (ν j).toReal := A.sum_toRealFun_col j
   refine ⟨ofRealFun hg, δ, hδ0, rfl, ?_⟩
@@ -124,17 +129,21 @@ theorem exists_uncross_cost_le (A : TransportMatrix μ ν) (c : ι × κ → ℝ
     rw [Finset.sum_add_distrib]
     congr 1
     calc
-      ∑ q, c q * (δ * (corner i₁ j₁ q + corner i₂ j₂ q -
-        corner i₁ j₂ q - corner i₂ j₁ q)) =
-          δ * ∑ q, c q * (corner i₁ j₁ q + corner i₂ j₂ q -
-            corner i₁ j₂ q - corner i₂ j₁ q) := by
+      ∑ q, c q * (δ * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
+        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
+        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
+        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q)) =
+          δ * ∑ q, c q * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
+            Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
+            Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
+            Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q) := by
               rw [Finset.mul_sum]
               apply Finset.sum_congr rfl
               intro q _
               ring
       _ = _ := by
         simp only [mul_add, mul_sub, Finset.sum_add_distrib,
-          Finset.sum_sub_distrib, sum_cost_corner]
+          Finset.sum_sub_distrib, sum_cost_single]
   have hcost_le : B.cost c ≤ A.cost c := by
     rw [hcost]
     have hcross : c (i₁, j₁) + c (i₂, j₂) - c (i₁, j₂) - c (i₂, j₁) ≤ 0 := by
