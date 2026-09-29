@@ -24,8 +24,7 @@ The source is the additive square-class group `TauCeti.SquareClassGroup K`; cons
 biadditivity and invariance under changing representatives are carried by the type. The
 representative formula `TauCeti.kummerCup_squareClass_squareClass` identifies this pairing with
 the cup of the classes constructed in `TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic`, and
-`TauCeti.kummerCup_comm` records that the pairing is symmetric: graded commutativity in bidegree
-`(1, 1)` contributes a sign, which is invisible because the square-class group is killed by two.
+`TauCeti.kummerCup_comm` records that the pairing is symmetric.
 
 ## Main definitions
 
@@ -87,12 +86,12 @@ theorem kummerCup_squareClass_squareClass (a b : Kˣ) :
         (kummerClass a) (kummerClass b) := by
   rw [kummerCup_apply, kummerSquareClassEquiv_squareClass, kummerSquareClassEquiv_squareClass]
 
-/-- **The Kummer cup pairing is symmetric**: `[a] ⌣ [b] = [b] ⌣ [a]`. Graded commutativity in
-bidegree `(1, 1)` gives `[a] ⌣ [b] = -([b] ⌣ [a])`, since the coefficient pairing is its own
-opposite, and the sign disappears because the square-class group is killed by two. -/
+/-- **The Kummer cup pairing is symmetric**: `[a] ⌣ [b] = [b] ⌣ [a]`. -/
 theorem kummerCup_comm (x y : SquareClassGroup K) : kummerCup K x y = kummerCup K y x := by
+  -- Graded commutativity in bidegree `(1, 1)` gives `[a] ⌣ [b] = -([b] ⌣ [a])`, and the sign
+  -- disappears because the square-class group is killed by two.
   have hy : y + y = 0 := by
-    rw [← two_smul (ZMod 2) y, show (2 : ZMod 2) = 0 from rfl, zero_smul]
+    rw [← two_smul (ZMod 2) y, CharTwo.two_eq_zero (R := ZMod 2), zero_smul]
   have h2 : kummerCup K y x + kummerCup K y x = 0 := by
     rw [← AddMonoidHom.add_apply, ← map_add, hy, map_zero, AddMonoidHom.zero_apply]
   rw [kummerCup_apply, TopPairing.cup_one_one_eq_neg_flip, trivialF2TopPairing_flip,

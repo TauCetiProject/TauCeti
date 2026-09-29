@@ -28,10 +28,7 @@ of the square classes of the coefficients.
 This file defines both classes on tuples of units and computes them in low rank and on squares.
 Both classes are unchanged by permuting the coefficients, `w₂` because the cup pairing is symmetric
 (`TauCeti.kummerCup_comm`). The class `w₁` is the Kummer class of the plain discriminant
-`a₁ ⋯ aₙ`, so it is an invariant of the isometry class of the diagonal form. The corresponding
-statement for `w₂` needs, in addition, the cup identity `(a) ∪ (b) = (c) ∪ (d)` for isometric
-binary forms `⟨a, b⟩ ≅ ⟨c, d⟩`, which comes from the cup-norm theorem `(a) ∪ (b) = 0` if and only
-if `b` is a norm from `K(√a)`.
+`a₁ ⋯ aₙ`, so it is an invariant of the isometry class of the diagonal form.
 
 ## Main definitions
 
@@ -53,7 +50,7 @@ if `b` is a norm from `K(√a)`.
 
 ## References
 
-* J. Milnor, *Algebraic K-theory and quadratic forms*, Invent. Math. 9 (1970), §4.
+* J. Milnor, *Algebraic K-theory and quadratic forms*, Invent. Math. 9 (1970), §3.
 * A. Delzant, *Définition des classes de Stiefel-Whitney d'un module quadratique sur un corps de
   caractéristique différente de 2*, C. R. Acad. Sci. Paris 255 (1962), 1366–1368.
 -/
@@ -128,13 +125,15 @@ theorem sw2_comp_perm (w : Fin n → Kˣ) (σ : Equiv.Perm (Fin n)) : sw2 (w ∘
 theorem PermutationStep.sw1_eq {w w' : Fin n → Kˣ} (h : PermutationStep w w') :
     sw1 w = sw1 w' := by
   obtain ⟨σ, hσ⟩ := h.exists_perm
-  rw [show w' = w ∘ σ from funext hσ, sw1_comp_perm]
+  rw [funext hσ]
+  exact (sw1_comp_perm w σ).symm
 
 /-- A permutation step of a diagonal chain does not change `w₂`. -/
 theorem PermutationStep.sw2_eq {w w' : Fin n → Kˣ} (h : PermutationStep w w') :
     sw2 w = sw2 w' := by
   obtain ⟨σ, hσ⟩ := h.exists_perm
-  rw [show w' = w ∘ σ from funext hσ, sw2_comp_perm]
+  rw [funext hσ]
+  exact (sw2_comp_perm w σ).symm
 
 /-! ### Low rank -/
 
