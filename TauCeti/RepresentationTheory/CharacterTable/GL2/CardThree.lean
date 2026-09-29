@@ -11,6 +11,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.Classification
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses
 -- Non-public: `Matrix.card_GL_field` counts the elements of `GL₂(𝔽_q)`.
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+-- Non-public: `AddChar.exists_apply_ne_zero` supplies the nontrivial additive character of `F`.
+import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
 
 /-!
 # The irreducible characters of `GL₂(𝔽₃)`
@@ -39,10 +41,11 @@ four families are nonempty: at `q = 2` the principal series is empty, `½ (q - 1
 zero, which is why `GL₂(𝔽₂)` is a separate, degenerate instance.
 
 Everything is stated for an arbitrary finite field `F` with three elements rather than for a chosen
-model of `𝔽₃`, and carries the same auxiliary data as the general classification does: a
-degree-`2` extension `E/F` — which is what the cuspidal characters are parameterised by — and a
-nontrivial additive character `ψ` of `F`. The statements that mention neither, the two counts and
-the order, ask for neither.
+model of `𝔽₃`. The statements about the cuspidal family carry the auxiliary data the general
+classification carries — a degree-`2` extension `E/F`, which is what the cuspidal characters are
+parameterised by, and a nontrivial additive character `ψ` of `F` — while the statements that
+mention neither, the two counts, the order and the degree set, ask for neither: the last obtains
+its own `E` and `ψ`, as `F` admits both.
 
 The multiplicities above are read off the four families. Identifying the families intrinsically,
 as the fibres of the degree map, is a separate statement about a general `q` and is not used here.
@@ -55,20 +58,19 @@ as the fibres of the degree map, is a separate statement about a general `q` and
   `8` irreducible complex characters.
 * `TauCeti.ncard_range_character_GL2Linear_of_card_eq_three` and its three companions: the four
   families have `2`, `2`, `1` and `3` members.
-* `TauCeti.finrank_GL2SteinbergTwist_of_card_eq_three`,
-  `TauCeti.finrank_GL2PrincipalSeries_of_card_eq_three` and
-  `TauCeti.GL2CuspidalVirtualCharacter_apply_one_of_card_eq_three`: the degrees `3`, `4` and `2` of
-  the three nonlinear families.
+* `TauCeti.finrank_GL2SteinbergTwist_of_card_eq_three` and
+  `TauCeti.finrank_GL2PrincipalSeries_of_card_eq_three`: the degrees `3` and `4` of the Steinberg
+  twists and of the principal series, and
+  `TauCeti.GL2CuspidalVirtualCharacter_apply_one_of_card_eq_three`: the value `2` of
+  `GL2CuspidalVirtualCharacter` at the identity, which is the cuspidal degree `q - 1` at `q = 3`.
 * `TauCeti.ncard_families_GL2_of_card_eq_three` and `TauCeti.sum_sq_degree_GL2_of_card_eq_three`:
-  **the tally** — the four families exhaust the eight irreducible characters, and the sum of the
-  squares of their degrees is the order of the group.
+  **the tally** — the four family sizes add up to the number of irreducible characters, and the
+  sum of the squares of their degrees is the order of the group.
 * `TauCeti.image_apply_one_irreducibleCharacters_GL2_of_card_eq_three`: the degrees of `GL₂(𝔽₃)`
   are exactly `1`, `2`, `3` and `4`.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9 and its worked example `GL₂(𝔽₃)`.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
 -/
 
@@ -139,7 +141,8 @@ theorem finrank_GL2PrincipalSeries_of_card_eq_three (hF : Fintype.card F = 3)
     (α β : Fˣ →* ℂˣ) : Module.finrank ℂ (GL2PrincipalSeries F α β) = 4 := by
   rw [finrank_GL2PrincipalSeries, hF]
 
-/-- A cuspidal character of `GL₂(𝔽₃)` has degree `2`. -/
+/-- **`GL2CuspidalVirtualCharacter` takes the value `2` at the identity** over a field with three
+elements, that being the cuspidal degree `q - 1` at `q = 3`. -/
 theorem GL2CuspidalVirtualCharacter_apply_one_of_card_eq_three (hF : Fintype.card F = 3)
     (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
     (GL2CuspidalVirtualCharacter F E θ ψ).1 1 = 2 := by
@@ -148,8 +151,9 @@ theorem GL2CuspidalVirtualCharacter_apply_one_of_card_eq_three (hF : Fintype.car
 
 /-! ### The tally -/
 
-/-- **The four families account for all eight irreducible characters of `GL₂(𝔽₃)`**: two linear,
-two Steinberg twists, one principal series and three cuspidal. -/
+/-- **The family sizes of `GL₂(𝔽₃)` tally**: the two linear characters, the two Steinberg twists,
+the one principal-series character and the three cuspidal ones are `8` in all, the number of
+irreducible characters. -/
 theorem ncard_families_GL2_of_card_eq_three {ψ : AddChar F ℂ} (hψ : ψ ≠ 1)
     (hF : Fintype.card F = 3) :
     (Set.range fun α : Fˣ →* ℂˣ => (GL2Linear F α).character).ncard
@@ -186,10 +190,11 @@ theorem sum_sq_degree_GL2_of_card_eq_three {ψ : AddChar F ℂ} (hψ : ψ ≠ 1)
   rfl
 
 include E in
-/-- **The degrees of `GL₂(𝔽₃)` are `1`, `2`, `3` and `4`.** With the counts above, the eight
-irreducible characters have degrees `1, 1, 2, 2, 2, 3, 3, 4`. -/
-theorem image_apply_one_irreducibleCharacters_GL2_of_card_eq_three {ψ : AddChar F ℂ} (hψ : ψ ≠ 1)
-    (hF : Fintype.card F = 3) :
+/-- The degree set of `GL₂(𝔽₃)`, read off a given quadratic extension `E/F` and a given
+nontrivial additive character `ψ`. Neither occurs in the conclusion, and
+`image_apply_one_irreducibleCharacters_GL2_of_card_eq_three` supplies both. -/
+private theorem image_apply_one_irreducibleCharacters_GL2_of_card_eq_three_aux
+    {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) (hF : Fintype.card F = 3) :
     (fun χ : GL (Fin 2) F → ℂ => χ 1) '' irreducibleCharacters ℂ (GL (Fin 2) F)
       = {1, 3, 4, 2} := by
   have hlin : (fun χ : GL (Fin 2) F → ℂ => χ 1) ''
@@ -244,5 +249,34 @@ theorem image_apply_one_irreducibleCharacters_GL2_of_card_eq_three {ψ : AddChar
   ext x
   simp
   tauto
+
+open Polynomial in
+/-- **The degrees of `GL₂(𝔽₃)` are `1`, `2`, `3` and `4`.** With the counts above, the eight
+irreducible characters have degrees `1, 1, 2, 2, 2, 3, 3, 4`. -/
+theorem image_apply_one_irreducibleCharacters_GL2_of_card_eq_three (hF : Fintype.card F = 3) :
+    (fun χ : GL (Fin 2) F → ℂ => χ 1) '' irreducibleCharacters ℂ (GL (Fin 2) F)
+      = {1, 3, 4, 2} := by
+  -- A nontrivial additive character of `F`, from the duality of a finite abelian group.
+  obtain ⟨ψ, hψ1⟩ := (AddChar.exists_apply_ne_zero (α := F) (a := 1)).2 one_ne_zero
+  have hψ : ψ ≠ 1 := AddChar.ne_one_iff.2 ⟨1, hψ1⟩
+  -- A quadratic extension of `F`, adjoining a square root of a nonsquare.
+  have h3 : ((3 : ℕ) : F) = 0 := by
+    have := Nat.cast_card_eq_zero F
+    rwa [hF] at this
+  have h2 : ringChar F ≠ 2 := by
+    have hdvd := ringChar.dvd h3
+    intro h
+    rw [h] at hdvd
+    omega
+  obtain ⟨a, ha⟩ := FiniteField.exists_nonsquare h2
+  have hirr : Irreducible (X ^ 2 - C a) :=
+    X_pow_sub_C_irreducible_of_prime Nat.prime_two fun b hb => ha ⟨b, by rw [← hb]; ring⟩
+  have : Fact (Irreducible (X ^ 2 - C a)) := ⟨hirr⟩
+  have : Algebra.IsQuadraticExtension F (AdjoinRoot (X ^ 2 - C a)) := by
+    constructor
+    rw [PowerBasis.finrank (AdjoinRoot.powerBasis hirr.ne_zero), AdjoinRoot.powerBasis_dim,
+      natDegree_X_pow_sub_C]
+  exact image_apply_one_irreducibleCharacters_GL2_of_card_eq_three_aux F
+    (AdjoinRoot (X ^ 2 - C a)) hψ hF
 
 end TauCeti
