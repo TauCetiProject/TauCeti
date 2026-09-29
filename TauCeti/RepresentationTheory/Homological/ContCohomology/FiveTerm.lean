@@ -86,13 +86,8 @@ value at the conjugating element. This is the representative-level identity behi
 theorem smul_inverseConjugation_apply_sub_eq_d0 (c : Z1 G M) (g : G) (n : N) :
     g • (c : G → M) (g⁻¹ * (n : G) * g) - (c : G → M) (n : G) =
       d0 N M ((c : G → M) g) n := by
-  have hc₁ : (c : G → M) (g⁻¹ * (n : G) * g) =
-      g⁻¹ • (c : G → M) ((n : G) * g) + (c : G → M) g⁻¹ := by
-    simpa only [mul_assoc] using (mem_Z1_iff.1 c.2).2 g⁻¹ ((n : G) * g)
-  have hc₂ := (mem_Z1_iff.1 c.2).2 (n : G) g
-  have hcinv := map_inv_of_mem_Z1 c.2 g
-  rw [hc₁, hc₂, smul_add, smul_smul, hcinv]
-  simp only [mul_inv_cancel, one_smul, d0_apply, Subgroup.smul_def]
+  rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.2).2 g (n : G),
+    d0_apply, Subgroup.smul_def]
   abel
 
 /-- Restriction of a first cohomology class to a normal subgroup is invariant under conjugation.

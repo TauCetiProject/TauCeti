@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind
 public import TauCeti.NumberTheory.NumberField.Index.Exponent
 public import TauCeti.RingTheory.Polynomial.Monic.Irreducible
 
@@ -120,18 +121,6 @@ theorem mem_primesOverOfInertiaDeg_iff {d : ℕ}
     Q ∈ primesOverOfInertiaDeg K p d ↔ (Q : Ideal (𝓞 K)).inertiaDeg ℤ = d :=
   Iff.rfl
 
-/-- **The Kummer–Dedekind bijection preserves degree.** For a `θ` whose conductor exponent is
-prime to `p`, the residue degree of a prime above `p` equals the degree of the monic irreducible
-factor of `minpoly ℤ θ` modulo `p` that the bijection assigns to it. -/
-theorem inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod {θ : 𝓞 K}
-    (hp : ¬ p ∣ exponent θ) (Q : (span {(p : ℤ)}).primesOver (𝓞 K)) :
-    (Q : Ideal (𝓞 K)).inertiaDeg ℤ =
-      (primesOverSpanEquivMonicFactorsMod hp Q : (ZMod p)[X]).natDegree := by
-  -- The degree lemma is stated at `.symm`; rewrite `Q` as `.symm (e Q)` to apply it.
-  have h := inertiaDeg_primesOverSpanEquivMonicFactorsMod_symm_apply' hp
-    (primesOverSpanEquivMonicFactorsMod hp Q).2
-  rwa [Subtype.coe_eta, Equiv.symm_apply_apply] at h
-
 omit [NumberField K] in
 /-- The degree-`d` monic irreducible factors of `minpoly ℤ θ` modulo `p` are among the degree-`d`
 monic irreducibles over `𝔽_p`, so they are no more numerous. -/
@@ -164,7 +153,7 @@ private theorem mem_filter_monicFactorsMod_of_mem_primesOverOfInertiaDeg {θ : �
       (monicFactorsMod θ p).filter fun R => R.natDegree = d := by
   classical
   refine Finset.mem_filter.mpr ⟨(primesOverSpanEquivMonicFactorsMod hp Q).2, ?_⟩
-  exact (inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod p hp Q) ▸ hQ
+  exact (inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod hp Q) ▸ hQ
 
 /-- **The Kummer–Dedekind counting bound.** For a `θ` whose conductor exponent is prime to `p`,
 the primes of `𝓞 K` above `p` with residue degree `d` are no more numerous than the degree-`d`

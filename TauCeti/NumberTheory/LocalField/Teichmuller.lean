@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Teichmuller
 public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.RingTheory.Henselian.Teichmuller
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # The zero-preserving Teichmüller lift of a nonarchimedean local field
@@ -16,7 +17,8 @@ public import TauCeti.RingTheory.Henselian.Teichmuller
 For a nonarchimedean local field `K`, `TauCeti.teichmuller 𝒪[K]` is the canonical
 multiplicative section `𝓀[K]ˣ →* 𝒪[K]ˣ`. This file adds its zero-preserving extension
 `teichmullerLift K : 𝓀[K] →*₀ 𝒪[K]`, obtained from Mathlib's `Perfection.teichmuller₀`, and proves
-that the two constructions agree on units.
+that the two constructions agree on units. It also records that, for `q = #𝓀[K]` and `f ≠ 0`,
+`q ^ f - 1` is a unit in `𝒪[K]`.
 
 ## Main definitions
 
@@ -25,6 +27,9 @@ that the two constructions agree on units.
 ## Main results
 
 * `TauCeti.residue_teichmullerLift`: the lift is a section of reduction.
+* `TauCeti.isUnit_natCast_natCard_pow_sub_one`: for `f ≠ 0`, `q ^ f - 1` is a unit in `𝒪[K]`.
+* `TauCeti.exists_isPrimitiveRoot_natCard_residueField_sub_one`: `K` contains a primitive
+  `(q - 1)`-st root of unity.
 * `TauCeti.eq_teichmullerLift_iff`: an element of `𝒪[K]` is `teichmullerLift K a` exactly
   when it reduces to `a` and is fixed by the `q`-th power map.
 * `TauCeti.teichmullerLift_unique`: it is the unique zero-preserving multiplicative section of
@@ -86,6 +91,26 @@ theorem teichmullerLift_pow_fintype_card (a : 𝓀[K]) :
     teichmullerLift K a ^ @Fintype.card 𝓀[K] (Fintype.ofFinite 𝓀[K]) = teichmullerLift K a := by
   rw [← @Nat.card_eq_fintype_card 𝓀[K] (Fintype.ofFinite 𝓀[K])]
   exact teichmullerLift_pow_natCard K a
+
+/-- For `f ≠ 0`, `q ^ f - 1` is prime to the residue characteristic, so it is a unit in `𝒪[K]`;
+here `q` is the cardinality of `𝓀[K]`. -/
+theorem isUnit_natCast_natCard_pow_sub_one {f : ℕ} (hf : f ≠ 0) :
+    IsUnit ((Nat.card 𝓀[K] ^ f - 1 : ℕ) : 𝒪[K]) := by
+  let _ := Fintype.ofFinite 𝓀[K]
+  rw [← residue_ne_zero_iff_isUnit, map_natCast,
+    Nat.cast_sub (Nat.one_le_pow _ _ Nat.card_pos), Nat.cast_pow, Nat.card_eq_fintype_card,
+    Nat.cast_card_eq_zero, zero_pow hf, Nat.cast_one, zero_sub, neg_ne_zero]
+  exact one_ne_zero
+
+/-- A nonarchimedean local field contains a primitive `(q - 1)`-st root of unity, where `q` is the
+cardinality of its residue field: the Teichmüller lifts of the units of `𝓀[K]` are the `(q - 1)`-st
+roots of unity of `K`, and `𝓀[K]ˣ` is cyclic. -/
+theorem exists_isPrimitiveRoot_natCard_residueField_sub_one :
+    ∃ ζ : K, IsPrimitiveRoot ζ (Nat.card 𝓀[K] - 1) := by
+  have : NeZero (Nat.card 𝓀[K] - 1) := ⟨card_residueField_sub_one_ne_zero 𝒪[K]⟩
+  refine card_rootsOfUnity_eq_iff_exists_isPrimitiveRoot.1 ?_
+  rw [Nat.card_congr (rootsOfUnityAlgebraMulEquivUnitsResidueField 𝒪[K] K).toEquiv,
+    Nat.card_units]
 
 /-- On units, the zero-preserving lift is the Henselian-local-ring Teichmüller lift. -/
 @[simp]

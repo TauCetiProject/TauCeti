@@ -30,6 +30,8 @@ that the descent consumes: if `f` transforms under `Γ₀(N)` by a scalar, the s
 * `TauCeti.descendSlash_zero`, `TauCeti.descendSlash_add`, `TauCeti.descendSlash_smul`,
   `TauCeti.descendSlash_finsetSum`:
   `f ↦ descendSlash k p N f` is linear.
+* `TauCeti.descendSlash_eq_heckeSlashUpperTri`: for `p² ∣ N` the descent slash sum is the
+  upper-triangular Hecke sum `heckeSlashUpperTri k p`, the operator `U_p` on functions.
 * `TauCeti.descendSlash_slash_mapGL_of_mem_Gamma0`: for `p² ∣ N` and `γ ∈ Γ₀(N / p)`, if
   `f ∣[k] δ = u • f` for every `δ ∈ Γ₀(N)` with the lower-right entry of `γ` modulo `N / p`, then
   `descendSlash k p N f ∣[k] γ = u • descendSlash k p N f`, for a scalar `u` from any `α` acting
@@ -117,6 +119,18 @@ positive determinant (`descendMatrix_det_pos`). -/
   induction s using Finset.induction_on with
   | empty => simp only [Finset.sum_empty, descendSlash_zero]
   | insert a s ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, descendSlash_add, ih]
+
+/-- **At `p² ∣ N` the descent slash sum is the upper-triangular Hecke sum**
+`∑ b < p, f ∣[k] [1, b; 0, p]`: the family then has exactly its `p` upper-triangular members.
+So at `p² ∣ N` the descent is the bad-prime operator `U_p` on underlying functions. -/
+theorem descendSlash_eq_heckeSlashUpperTri (k : ℤ) [NeZero p] (hpsq : p ^ 2 ∣ N) (f : ℍ → ℂ) :
+    descendSlash k p N f = heckeSlashUpperTri k p f := by
+  rw [descendSlash_def, heckeSlashUpperTri_def]
+  exact Fintype.sum_equiv (finCongr (descendMatrixCount_of_sq_dvd hpsq)) _ _ fun v ↦ by
+    rw [descendMatrix_of_lt (v.isLt.trans_eq (descendMatrixCount_of_sq_dvd hpsq)),
+      ModularForm.rat_slash]
+    -- `finCongr _ v` is `⟨v.val, _⟩`, the index `descendMatrix_of_lt` names
+    rfl
 
 /-- **The descent slash sum is `Γ₀(N / p)`-equivariant at `p² ∣ N`.** If `f ∣[k] δ = u • f` for
 every `δ ∈ Γ₀(N)` with the same lower-right entry modulo `N / p` as `γ ∈ Γ₀(N / p)`, then

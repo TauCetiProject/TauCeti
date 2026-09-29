@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Perm.WreathProduct
+public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
 public import Mathlib.Algebra.Field.ZMod

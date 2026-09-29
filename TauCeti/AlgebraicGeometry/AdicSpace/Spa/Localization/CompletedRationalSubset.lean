@@ -40,7 +40,9 @@ subject only to the hypothesis `A₀ ≤ A⁺` that the homeomorphism already ca
 ## Main results
 
 * `TauCeti.ValuationSpectrum.locOpensComap_spaBasicOpen`: the pullback of the basic open
-  `R(T'/s')` is `R(ρ(T')/ρ(s'))`.
+  `R(T'/s')` is `R(ρ(T')/ρ(s'))`; the pullback of `R(T/s)` itself is the whole spectrum
+  (`TauCeti.ValuationSpectrum.locOpensComap_spaBasicOpen_self`), that is, `R(ρ(T)/ρ(s))` is all
+  of `Spa (A⟨T/s⟩, A_U⁺)` (`TauCeti.ValuationSpectrum.spaBasicOpen_image_toCompletionLoc_eq_top`).
 * `TauCeti.ValuationSpectrum.spaComapLoc_preimage_mem_spaRationalFamily` and
   `TauCeti.ValuationSpectrum.exists_mem_spaRationalFamily_spaComapLoc_preimage_eq`: the rational
   subsets of `Spa (A⟨T/s⟩, A_U⁺)` are exactly the preimages under `ρ` of the rational subsets of
@@ -324,6 +326,40 @@ theorem locOpensComap_spaBasicOpen (T' : Finset A) (s' : A) :
     (continuous_toCompletionLoc P T s S hden)
     fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha]
   exact ⟨fun h ↦ ⟨h, v.2⟩, And.left⟩
+
+/-- Pulling back along `spaComapLoc` commutes with intersections of opens. -/
+@[simp]
+theorem locOpensComap_inf (V V' : Opens ↥(spa Aplus)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    locOpensComap P Aplus T s S hden (V ⊓ V') =
+      locOpensComap P Aplus T s S hden V ⊓ locOpensComap P Aplus T s S hden V' :=
+  SetLike.ext fun _ ↦ by simp
+
+/-- **The pullback of `R(T/s)` is the whole spectrum.** Every point of `Spa (A⟨T/s⟩, A_U⁺)` lies
+over `R(T/s)` (`spaComapLoc_mem_rationalSubset`), so pulling `R(T/s)` back along `spaComapLoc`
+gives all of `Spa (A⟨T/s⟩, A_U⁺)`. -/
+theorem locOpensComap_spaBasicOpen_self :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    locOpensComap P Aplus T s S hden (spaBasicOpen Aplus T s) = ⊤ :=
+  top_unique fun v _ ↦ (mem_locOpensComap P Aplus T s S hden _ v).2 <|
+    mem_spaBasicOpen.2 <| spaComapLoc_mem_rationalSubset P Aplus T s S hden v
+
+open scoped Classical in
+/-- **`R(ρ(T)/ρ(s))` is all of `Spa (A⟨T/s⟩, A_U⁺)`**, where `ρ : A → A⟨T/s⟩` is the structure
+map. This is `locOpensComap_spaBasicOpen_self` with its left side in the form to which
+`locOpensComap_spaBasicOpen` rewrites the pullback of `R(T/s)`. -/
+@[simp]
+theorem spaBasicOpen_image_toCompletionLoc_eq_top :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    spaBasicOpen (completedPlusSubring P Aplus T s S hden) (T.image (toCompletionLoc P T s S hden))
+      (algebraMap A S s : UniformSpace.Completion S) = ⊤ := by
+  simpa using locOpensComap_spaBasicOpen_self P Aplus T s S hden
 
 end locOpensComap
 

@@ -24,8 +24,12 @@ multiplication by `n` gives the points `R` with `n • R = T`, each with multipl
 
 At an `n`-torsion point `T`, the divisor `[n]^* (T) - [n]^* (O)` is principal. This is the second
 input to the divisor construction of the Weil pairing (Silverman III.8.1), after
-`WeierstrassCurve.Affine.exists_principal_zsmul_pointPlace_sub_infinity`: the pairing is built
+`WeierstrassCurve.Affine.exists_principal_eq_zsmul_ofPoint_sub_infinity`: the pairing is built
 from a function with this divisor.
+
+## Main definitions
+
+* `TauCeti.Isogeny.weilPairingDivisor`: the divisor `[n]^* (T) - [n]^* (O)`.
 
 ## Main results
 
@@ -33,7 +37,7 @@ from a function with this divisor.
   place of `R` is the coefficient of `D` at the place of `n • R`.
 * `TauCeti.Isogeny.divisorPullback_mulByIntIsogeny_ofPoint`: over a separably closed field,
   `[n]^* (T) = ∑_{n • R = T} (R)`.
-* `TauCeti.Isogeny.exists_principal_eq_divisorPullback_mulByIntIsogeny_sub`: at an `n`-torsion
+* `TauCeti.Isogeny.exists_principal_eq_weilPairingDivisor`: at an `n`-torsion
   point `T`, `[n]^* (T) - [n]^* (O)` is the divisor of a function.
 
 The place-level inputs are in `Isogeny/MulByInt/PointPlace.lean`
@@ -94,6 +98,29 @@ theorem coeff_divisorPullback_mulByIntIsogeny {n : ℤ} (hchar : (n : F) ≠ 0)
     (Place.restrict_eq_iff_isEquiv_comap F W.toAffine.FunctionField _ _).mpr
       ((isEquiv_comap_valuation_pointEquivDegreeOnePlace_iff W _ R (n • R)).mpr rfl)]
 
+/-- **The divisor `[n]^* (T) - [n]^* (O)`**, the pullback along `[n]` of `(T) - (O)`. The Weil
+pairing is built from a function with this divisor (Silverman III.8.1). -/
+noncomputable def weilPairingDivisor {n : ℤ} (hn : psiFunctionField W n ≠ 0)
+    (T : W.toAffine.Point) :
+    Divisor F W.toAffine.FunctionField :=
+  letI := (mulByIntIsogeny W (hn)).fieldPullback.toAlgebra
+  (mulByIntIsogeny W (hn)).divisorPullback (fun _ ↦ rfl)
+      (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).1) -
+    (mulByIntIsogeny W (hn)).divisorPullback (fun _ ↦ rfl)
+      (WeilDivisor.ofPoint (Place.infinity W.toAffine))
+
+omit [DecidableEq F] in
+/-- The defining equation of `weilPairingDivisor`. -/
+-- A lemma rather than left to unfolding: the body is not exposed across a module boundary.
+theorem weilPairingDivisor_def {n : ℤ} (hn : psiFunctionField W n ≠ 0) (T : W.toAffine.Point) :
+    letI := (mulByIntIsogeny W (hn)).fieldPullback.toAlgebra
+    weilPairingDivisor W hn T =
+      (mulByIntIsogeny W (hn)).divisorPullback (fun _ ↦ rfl)
+          (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).1) -
+        (mulByIntIsogeny W (hn)).divisorPullback (fun _ ↦ rfl)
+          (WeilDivisor.ofPoint (Place.infinity W.toAffine)) :=
+  (rfl)
+
 section SepClosed
 
 variable [IsSepClosed F]
@@ -143,15 +170,11 @@ theorem divisorPullback_mulByIntIsogeny_ofPoint {n : ℤ} (hchar : (n : F) ≠ 0
 /-- **`[n]^* (T) - [n]^* (O)` is principal** at an `n`-torsion point `T`, over a separably closed
 field in which `n` is invertible (Silverman III.8.1). A function with this divisor is the
 function `g_T` from which the Weil pairing is built. -/
-theorem exists_principal_eq_divisorPullback_mulByIntIsogeny_sub {n : ℤ}
-    (hchar : (n : F) ≠ 0) {T : W.toAffine.Point} (hT : n • T = 0) :
-    letI := (mulByIntIsogeny W
-      (psiFunctionField_ne_zero W hchar)).fieldPullback.toRingHom.toAlgebra
+theorem exists_principal_eq_weilPairingDivisor {n : ℤ} (hchar : (n : F) ≠ 0)
+    {T : W.toAffine.Point} (hT : n • T = 0) :
     ∃ z : W.toAffine.FunctionFieldˣ, Divisor.principal W.toAffine.isFunctionField z =
-      (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).divisorPullback (fun _ ↦ rfl)
-          (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).1) -
-        (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).divisorPullback (fun _ ↦ rfl)
-          (WeilDivisor.ofPoint (Place.infinity W.toAffine)) := by
+      weilPairingDivisor W (psiFunctionField_ne_zero W hchar) T := by
+  rw [weilPairingDivisor_def]
   let _ := (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).fieldPullback.toRingHom.toAlgebra
   -- with `n • R₀ = T` the divisor is `∑_{n • S = O} ((R₀ + S) - (S))`, whose sum is
   -- `#E[n] • R₀ = n • (n • R₀) = O`

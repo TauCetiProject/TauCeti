@@ -412,7 +412,7 @@ abbrev toGraphTwistedIndex (d : TypeCLieIndex) : GraphTwistedIndex :=
 /-- The diagram permutation of an untwisted type-`C` index is the identity. -/
 @[simp]
 theorem diagramPerm_eq_one (d : TypeCLieIndex) : d.toGraphTwistedIndex.diagramPerm = 1 := by
-  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofC
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   simpa only [toGraphTwistedIndex] using GraphTwistedIndex.diagramPerm_C hvalid
 
 end TypeCLieIndex
@@ -526,7 +526,7 @@ symmetries of the `Dₙ` diagram belong to `²Dₙ(q)` and, at rank four, to `³
 @[simp]
 theorem diagramPerm_toGraphTwistedIndex (d : TypeDLieIndex) :
     d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm = 1 := by
-  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofD
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   exact GraphTwistedIndex.diagramPerm_D hvalid
 
 end TypeDLieIndex
@@ -541,7 +541,7 @@ the fork exchange is defined at it. -/
 theorem diagramPerm_toGraphTwistedIndex (d : TypeTwistedDLieIndex) :
     d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm =
       graphPermD d.1.rank ((by norm_num : 2 ≤ 4).trans d.toTypeDDiagramLieIndex.four_le_rank) := by
-  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofTwistedD
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   rw [GraphTwistedIndex.diagramPerm_twistedD hvalid]
   -- On the introduction form the index's rank unfolds to the constructor's `rank`, and the two
   -- rank proofs passed to `graphPermD` are identified by proof irrelevance.
@@ -552,7 +552,7 @@ two fork nodes of the `Dₙ` diagram. -/
 @[simp]
 theorem twistOrder_toGraphTwistedIndex (d : TypeTwistedDLieIndex) :
     d.toTypeDDiagramLieIndex.toGraphTwistedIndex.twistOrder = 2 := by
-  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofTwistedD
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   exact GraphTwistedIndex.twistOrder_twistedD hvalid
 
 end TypeTwistedDLieIndex

@@ -91,11 +91,11 @@ theorem eq_or_eq_swapSides (S : GridRectangleBetween x y) : S = R ∨ S = R.swap
   have hSl := (R.apply_ne_iff S.left).mp S.left_apply_ne
   have hSr := (R.apply_ne_iff S.right).mp S.right_apply_ne
   rcases hSl with hSl | hSl
-  · refine Or.inl (eq_of_sides hSl ?_)
+  · refine Or.inl (GridRectangleBetween.ext hSl ?_)
     rcases hSr with hSr | hSr
     · exact absurd (hSl.trans hSr.symm) S.left_ne_right
     · exact hSr
-  · refine Or.inr (eq_of_sides ?_ ?_)
+  · refine Or.inr (GridRectangleBetween.ext ?_ ?_)
     · rw [swapSides_left]; exact hSl
     · rcases hSr with hSr | hSr
       · rw [swapSides_right]; exact hSr

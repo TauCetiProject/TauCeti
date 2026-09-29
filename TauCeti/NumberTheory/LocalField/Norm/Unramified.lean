@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
-public import TauCeti.NumberTheory.LocalField.Unramified
+public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 import Mathlib.FieldTheory.Finite.GaloisField
 import Mathlib.RingTheory.Trace.Basic
 import Mathlib.RingTheory.Trace.Quotient

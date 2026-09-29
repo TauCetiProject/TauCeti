@@ -131,7 +131,7 @@ theorem mapPointsFunctor_coordinateMap_app
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A)
         (CommAlgCat.of A B) g := by
-  apply WithConv.ext
+  unfold coordinateMap CommHopfAlgCat.quotientPointsHom
   rfl
 
 end Points

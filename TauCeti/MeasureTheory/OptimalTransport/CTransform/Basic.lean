@@ -391,14 +391,6 @@ theorem measurable_cTransformSymm_of_upperSemicontinuous [TopologicalSpace X] [M
     Measurable (cTransformSymm c ψ) :=
   (upperSemicontinuous_cTransformSymm_of_upperSemicontinuous hc ψ).measurable
 
-/-- Subtracting a sum whose final term is real can be reassociated when the minuend is real. -/
-private theorem coe_sub_add_coe (b : EReal) (d a : ℝ) :
-    (d : EReal) - (b + (a : EReal)) = (d : EReal) - b - (a : EReal) := by
-  induction b with
-  | bot => simp
-  | coe b => norm_cast; ring
-  | top => simp
-
 /-- Shifting a potential by a real constant shifts its `c`-transform by the opposite constant.
 This is the normalisation freedom of the Kantorovich dual problem: the pair `(φ + a, φᶜ - a)`
 satisfies the same dual constraint as `(φ, φᶜ)`. -/
@@ -406,7 +398,7 @@ theorem cTransform_add_const (c : X × Y → ℝ) (φ : X → EReal) (a : ℝ) (
     cTransform c (fun x => φ x + (a : EReal)) y = cTransform c φ y - (a : EReal) := by
   simp only [cTransform_apply]
   rw [← EReal.iInf_sub_coe]
-  exact iInf_congr fun x => coe_sub_add_coe (φ x) (c (x, y)) a
+  exact iInf_congr fun x => EReal.coe_sub_add_coe (φ x) (c (x, y)) a
 
 /-- Shifting a potential on the target by a real constant shifts its symmetric `c`-transform by
 the opposite constant. -/

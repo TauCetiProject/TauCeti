@@ -17,10 +17,12 @@ import argparse
 import dataclasses
 import hashlib
 import json
+import os
 import pathlib
 import re
 import sys
 from collections import Counter
+from concurrent.futures import ProcessPoolExecutor
 from collections.abc import Callable, Iterable
 
 
@@ -429,8 +431,16 @@ def mathlib_namespaces(root: pathlib.Path) -> set[str]:
     """
     if not root.is_dir():
         raise FileNotFoundError(f"Mathlib source directory not found: {root}")
+    paths = sorted(root.rglob("*.lean"))
     names: set[str] = set()
-    for path in root.rglob("*.lean"):
+    for part in _parallel(_namespaces_of, _chunks(paths)):
+        names |= part
+    return names
+
+
+def _namespaces_of(paths: list[pathlib.Path]) -> set[str]:
+    names: set[str] = set()
+    for path in paths:
         raw = path.read_text(errors="ignore")
         if "namespace" not in raw:
             continue
@@ -438,6 +448,25 @@ def mathlib_namespaces(root: pathlib.Path) -> set[str]:
         for match in NAMESPACE.finditer(text):
             names.update(part for part in match.group(1).split(".") if part != "_root_")
     return names
+
+
+def _chunks(items: list, n: int | None = None) -> list[list]:
+    """Split `items` into about four chunks per worker, preserving order."""
+    n = n or 4 * (os.cpu_count() or 1)
+    size = max(1, -(-len(items) // n))
+    return [items[i:i + size] for i in range(0, len(items), size)]
+
+
+def _parallel(fn: Callable, chunks: list) -> list:
+    """Map `fn` over `chunks` in worker processes: parsing thousands of files is CPU-bound pure
+    Python, so threads would not help. Falls back to one process where workers are unavailable."""
+    if len(chunks) <= 1 or (os.cpu_count() or 1) == 1:
+        return [fn(c) for c in chunks]
+    try:
+        with ProcessPoolExecutor() as pool:
+            return list(pool.map(fn, chunks))
+    except (OSError, PermissionError):
+        return [fn(c) for c in chunks]
 
 
 def update_scope(stack: list[Scope], kind: str, name: str | None) -> None:
@@ -529,6 +558,18 @@ def own_declaration_paths(sources: dict[pathlib.Path, str]) -> set[tuple[str, ..
             path = name.split(".")
             if path and path[0] == "TauCeti":
                 owned.add(tuple(path))
+    return owned
+
+
+def _own_declaration_paths_of(texts: list[str]) -> set[tuple[str, ...]]:
+    return own_declaration_paths({pathlib.Path(str(i)): text for i, text in enumerate(texts)})
+
+
+def own_declaration_paths_parallel(sources: dict[pathlib.Path, str]) -> set[tuple[str, ...]]:
+    """`own_declaration_paths` over all sources, split across worker processes."""
+    owned: set[tuple[str, ...]] = set()
+    for part in _parallel(_own_declaration_paths_of, _chunks(list(sources.values()))):
+        owned |= part
     return owned
 
 
@@ -640,7 +681,8 @@ def _result_has_argument_type(header: str, namespace: str) -> bool:
 
 
 def find_violations(
-    sources: dict[pathlib.Path, str], mathlib_namespace_names: set[str]
+    sources: dict[pathlib.Path, str], mathlib_namespace_names: set[str],
+    only: set[pathlib.Path] | None = None, owned: set[tuple[str, ...]] | None = None,
 ) -> list[Finding]:
     """Find recreated Mathlib type namespaces in a mapping of Tau Ceti source files.
 
@@ -649,8 +691,13 @@ def find_violations(
     type; rooted declarations and namespaces owned by Tau Ceti are excluded.
     """
     findings: list[Finding] = []
-    owned = own_declaration_paths(sources)
+    # Ownership comes from every source, because a type declared in one file owns its namespace in
+    # all of them; the findings, from `only` when it is given.
+    if owned is None:
+        owned = own_declaration_paths(sources)
     for path, text in sorted(sources.items()):
+        if only is not None and path not in only:
+            continue
         parsed = declarations(text)
         events: list[tuple[int, str, object]] = [
             (position, "scope", (kind, name)) for position, kind, name in scopes(text)
@@ -773,6 +820,21 @@ def write_baseline(path: pathlib.Path, findings: list[Finding]) -> None:
         for source, names in grouped.items()))
 
 
+def _find_violations_chunk(args) -> list[Finding]:
+    sources, namespace_names, owned, paths = args
+    return find_violations(sources, namespace_names, only=set(paths), owned=owned)
+
+
+def _find_violations_parallel(sources, namespace_names, owned) -> list[Finding]:
+    """`find_violations` over every source, split across worker processes, in the same order."""
+    paths = sorted(sources)
+    jobs = [({p: sources[p] for p in chunk}, namespace_names, owned, chunk) for chunk in _chunks(paths)]
+    found: list[Finding] = []
+    for part in _parallel(_find_violations_chunk, jobs):
+        found.extend(part)
+    return found
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline", type=pathlib.Path, default=pathlib.Path(
@@ -781,6 +843,16 @@ def main(argv: list[str] | None = None) -> int:
         ".lake/packages/mathlib/Mathlib"))
     parser.add_argument("--source-root", type=pathlib.Path, default=pathlib.Path("TauCeti"))
     parser.add_argument("--write-baseline", action="store_true")
+    parser.add_argument("--only-modules", type=pathlib.Path, default=None,
+                        help="a file of module names (one per line): report findings only in "
+                             "those modules' files. A PR can add a violation only where it changes "
+                             "a file, as long as the Mathlib pin is unchanged; callers lint in full "
+                             "otherwise.")
+    parser.add_argument("--base-source-root", type=pathlib.Path, default=None,
+                        help="with --only-modules, the same source tree at the change's merge base: "
+                             "if the namespaces Tau Ceti owns differ between the two, every file is "
+                             "checked, because ownership decided in one file changes the findings "
+                             "of others")
     args = parser.parse_args(argv)
 
     try:
@@ -795,7 +867,29 @@ def main(argv: list[str] | None = None) -> int:
 
     sources = {path: path.read_text(errors="ignore")
                for path in args.source_root.rglob("*.lean")}
-    found = find_violations(sources, namespace_names)
+    only = None
+    if args.only_modules is not None:
+        root = args.source_root.parent
+        only = {root / (name.strip().replace(".", "/") + ".lean")
+                for name in args.only_modules.read_text().splitlines() if name.strip()}
+        print(f"lint-dot-notation: checking the {len(only)} changed module(s) only")
+    owned = own_declaration_paths_parallel(sources)
+    if only is not None:
+        base = args.base_source_root
+        if base is None or not base.is_dir():
+            print("lint-dot-notation: no merge-base sources to compare ownership against; "
+                  "checking every file")
+            only = None
+        else:
+            base_sources = {path: path.read_text(errors="ignore") for path in base.rglob("*.lean")}
+            if own_declaration_paths_parallel(base_sources) != owned:
+                print("lint-dot-notation: this change alters which namespaces Tau Ceti owns; "
+                      "checking every file")
+                only = None
+    if only is not None:
+        found = find_violations(sources, namespace_names, only=only, owned=owned)
+    else:
+        found = _find_violations_parallel(sources, namespace_names, owned)
 
     if args.write_baseline:
         write_baseline(args.baseline, found)
@@ -817,7 +911,8 @@ def main(argv: list[str] | None = None) -> int:
         if new_counts[finding.declaration]:
             new.append(finding)
             new_counts[finding.declaration] -= 1
-    fixed = sum((known - current).values())
+    # Only a full run can tell which baseline entries have gone.
+    fixed = sum((known - current).values()) if only is None else 0
 
     print(
         f"lint-dot-notation: {len(found)} total, {sum(known.values())} grandfathered, "

@@ -18,15 +18,16 @@ import TauCeti.GroupTheory.Perm.Basic
 
 A finite bipartite ribbon graph consists of a finite set of edges, finite sets of black and white
 vertices, an endpoint of each colour for every edge, and a cyclic order on the edges incident to
-each vertex.  The cyclic orders are encoded by two permutations of the common edge set.  Requiring
-each incidence fibre to be a single cycle excludes isolated vertices and makes the encoding
-extensional: there is no unused cyclic-order data away from the incident edges.
+each vertex.  The cyclic orders are encoded by two permutations of the common edge set.  The two
+endpoint maps are surjective, which excludes isolated vertices, and requiring each incidence
+fibre to be a single cycle makes the encoding extensional: there is no unused cyclic-order data
+away from the incident edges.
 
-The product of the two vertex rotations determines the face permutation.  Its orbits are the
-faces of the associated oriented combinatorial surface, so the Euler characteristic is
-`|B| + |W| - |E| + |F|`.  This file also provides morphisms, isomorphisms, automorphisms,
-connected components, vertex degrees, the two incidence degree-sum formulas, and the copy of a
-ribbon graph in a higher universe.
+The product of the two vertex rotations determines the face permutation, whose orbits are the
+faces.  Gluing a disc into each face gives a closed oriented surface, one for each connected
+component, and `eulerChar` is its Euler characteristic `|B| + |W| - |E| + |F|`.  This file also
+provides morphisms, isomorphisms, automorphisms, connected components, vertex degrees, the two
+incidence degree-sum formulas, and the copy of a ribbon graph in a higher universe.
 
 ## References
 
@@ -165,21 +166,16 @@ theorem isConnected_def :
     Γ.IsConnected ↔ Nonempty Γ.E ∧ MulAction.IsPretransitive Γ.rotationGroup Γ.E := Iff.rfl
 
 /-- A ribbon graph is connected exactly when it has one connected component. -/
-@[simp]
 theorem isConnected_iff_card_connectedComponent_eq_one :
     Γ.IsConnected ↔ Fintype.card Γ.ConnectedComponent = 1 := by
+  rw [← Nat.card_eq_fintype_card, Nat.card_eq_one_iff_unique]
   constructor
-  · intro hΓ
-    let _ : Nonempty Γ.E := hΓ.1
-    let _ : MulAction.IsPretransitive Γ.rotationGroup Γ.E := hΓ.2
-    rw [← Nat.card_eq_fintype_card]
-    exact MulAction.card_orbitRelQuotient_eq_one (G := Γ.rotationGroup) (X := Γ.E)
-  · intro hcard
-    have hcardPos : 0 < Fintype.card Γ.ConnectedComponent := hcard ▸ Nat.zero_lt_one
-    have hE : Nonempty Γ.E :=
-      (nonempty_quotient_iff _).mp (Fintype.card_pos_iff.mp hcardPos)
-    exact ⟨hE, (MulAction.pretransitive_iff_subsingleton_quotient Γ.rotationGroup Γ.E).mpr
-      (Fintype.card_le_one_iff_subsingleton.mp hcard.le)⟩
+  · rintro ⟨hE, hΓ⟩
+    exact ⟨(MulAction.pretransitive_iff_subsingleton_quotient _ _).mp hΓ,
+      (nonempty_quotient_iff _).mpr hE⟩
+  · rintro ⟨hsub, hne⟩
+    exact ⟨(nonempty_quotient_iff _).mp hne,
+      (MulAction.pretransitive_iff_subsingleton_quotient _ _).mpr hsub⟩
 
 /-! ### Degrees and Euler characteristic -/
 
@@ -220,7 +216,9 @@ noncomputable def faceCount : ℕ :=
 /-- The number of faces is the number of orbits of the face permutation. -/
 theorem faceCount_def : Γ.faceCount = Fintype.card Γ.Face := (rfl)
 
-/-- The Euler characteristic of the oriented combinatorial surface carried by the ribbon graph. -/
+/-- The Euler characteristic `|B| + |W| + F - |E|` of the closed oriented surface obtained by
+gluing a disc into each face of the ribbon graph (a disjoint union of closed surfaces when the
+graph is disconnected). -/
 noncomputable def eulerChar : ℤ :=
   Fintype.card Γ.B + Fintype.card Γ.W + Γ.faceCount - Fintype.card Γ.E
 
@@ -462,43 +460,16 @@ def rotationGroupEquiv (f : Γ.Iso Δ) : Γ.rotationGroup ≃* Δ.rotationGroup 
 private def edgeActionHom (f : Γ.Iso Δ) : Γ.E →ₑ[f.rotationGroupEquiv] Δ.E where
   toFun := f.edge
   map_smul' g e := by
-    have hgroup : (f.rotationGroupEquiv g : Equiv.Perm Δ.E) =
-        f.edge.permCongr (g : Equiv.Perm Γ.E) := by
-      calc
-        _ = f.edge.permCongrHom (g : Equiv.Perm Γ.E) := by
-          rw [rotationGroupEquiv, Subgroup.coe_congrOfMapEq_apply]
-        _ = _ := congrFun (Equiv.permCongrHom_coe f.edge) g
-    calc
-      f.edge (g • e) = f.edge ((g : Equiv.Perm Γ.E) e) := rfl
-      _ = f.edge.permCongr (g : Equiv.Perm Γ.E) (f.edge e) := by
-        rw [Equiv.permCongr_apply, f.edge.symm_apply_apply]
-      _ = f.rotationGroupEquiv g • f.edge e := by
-        simpa only [MulAction.subgroup_smul_def, Equiv.Perm.smul_def] using
-          congrArg (fun p : Equiv.Perm Δ.E ↦ p (f.edge e)) hgroup.symm
-
-/-- Two edges share a connected component exactly when their images do. -/
-private theorem orbitRel_iff (f : Γ.Iso Δ) (x y : Γ.E) :
-    MulAction.orbitRel Γ.rotationGroup Γ.E x y ↔
-      MulAction.orbitRel Δ.rotationGroup Δ.E (f.edge x) (f.edge y) := by
-  rw [MulAction.orbitRel_apply, MulAction.orbitRel_apply,
-    MulAction.mem_orbit_iff, MulAction.mem_orbit_iff]
-  constructor
-  · rintro ⟨g, hg⟩
-    refine ⟨f.rotationGroupEquiv g, ?_⟩
-    exact (f.edgeActionHom.map_smul' g y).symm.trans (congr_arg f.edge hg)
-  · rintro ⟨h, hh⟩
-    obtain ⟨g, rfl⟩ := f.rotationGroupEquiv.surjective h
-    refine ⟨g, f.edge.injective ?_⟩
-    exact (f.edgeActionHom.map_smul' g y).trans hh
+    simp [rotationGroupEquiv, MulAction.subgroup_smul_def, Subgroup.coe_congrOfMapEq_apply]
 
 /-- An isomorphism relabels the connected components of a bipartite ribbon graph. -/
 def connectedComponentEquiv (f : Γ.Iso Δ) : Γ.ConnectedComponent ≃ Δ.ConnectedComponent :=
-  Quotient.congr f.edge fun x y ↦ f.orbitRel_iff x y
+  MulAction.orbitRelQuotientCongr f.rotationGroupEquiv f.edge f.edgeActionHom.map_smul'
 
 @[simp]
 theorem connectedComponentEquiv_mk (f : Γ.Iso Δ) (e : Γ.E) :
-    f.connectedComponentEquiv (Quotient.mk'' e) = Quotient.mk'' (f.edge e) := by
-  simp only [connectedComponentEquiv, Quotient.congr_mk]
+    f.connectedComponentEquiv (Quotient.mk'' e) = Quotient.mk'' (f.edge e) :=
+  MulAction.orbitRelQuotientCongr_mk _ _ _ e
 
 /-- Connectedness is invariant under isomorphism. -/
 theorem isConnected_iff (f : Γ.Iso Δ) : Γ.IsConnected ↔ Δ.IsConnected := by
@@ -510,27 +481,7 @@ theorem isConnected_iff (f : Γ.Iso Δ) : Γ.IsConnected ↔ Δ.IsConnected := b
 def faceEquiv (f : Γ.Iso Δ) : Γ.Face ≃ Δ.Face :=
   Quotient.congr f.edge fun x y ↦ by
     rw [← f.permCongr_facePerm]
-    constructor
-    · rintro ⟨i, hi⟩
-      refine ⟨i, ?_⟩
-      calc
-        ((f.edge.permCongr Γ.facePerm) ^ i) (f.edge x) =
-            (f.edge.permCongr (Γ.facePerm ^ i)) (f.edge x) :=
-          congrArg (fun p : Equiv.Perm Δ.E ↦ p (f.edge x))
-            (f.edge.permCongrHom.toMonoidHom.map_zpow Γ.facePerm i).symm
-        _ = f.edge ((Γ.facePerm ^ i) x) := by
-          rw [Equiv.permCongr_apply, f.edge.symm_apply_apply]
-        _ = f.edge y := congr_arg f.edge hi
-    · rintro ⟨i, hi⟩
-      refine ⟨i, f.edge.injective ?_⟩
-      calc
-        f.edge ((Γ.facePerm ^ i) x) =
-            (f.edge.permCongr (Γ.facePerm ^ i)) (f.edge x) := by
-          rw [Equiv.permCongr_apply, f.edge.symm_apply_apply]
-        _ = ((f.edge.permCongr Γ.facePerm) ^ i) (f.edge x) :=
-          congrArg (fun p : Equiv.Perm Δ.E ↦ p (f.edge x))
-            (f.edge.permCongrHom.toMonoidHom.map_zpow Γ.facePerm i)
-        _ = f.edge y := hi
+    exact (Perm.sameCycle_permCongr Γ.facePerm f.edge).symm
 
 @[simp]
 theorem faceEquiv_mk (f : Γ.Iso Δ) (e : Γ.E) :

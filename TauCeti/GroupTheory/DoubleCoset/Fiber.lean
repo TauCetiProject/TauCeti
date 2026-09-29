@@ -18,6 +18,12 @@ When the stabilizer of the representative acts trivially on the coset space, dis
 cosets give distinct `H`-orbits. The resulting equivalence counts the fibre by the
 subgroup index, with no finite-index assumption. For an infinite index, both `Nat.card`
 and the index are zero.
+
+In general, the stabilizer of the representative acts on the coset space, and its orbit
+space is exactly the fibre of the map between orbit spaces. Thus two cosets give the same
+point of the fibre precisely when they lie in the same stabilizer orbit. In geometric
+applications satisfying the relevant hypotheses, these identifications can describe
+ramification.
 -/
 
 public noncomputable section
@@ -82,6 +88,50 @@ theorem finite_fiber_orbitRel_map_of_isFiniteRelIndex {H K : Subgroup G}
     have : Finite (K ⧸ H.subgroupOf K) := inferInstance
     exact Finite.of_surjective (cosetToOrbitRelMapFiber h x)
       (cosetToOrbitRelMapFiber_surjective h x)
+
+/-- The fibre over the orbit of `x` is the orbit space for the action of the stabilizer of
+`x` on the cosets of the smaller subgroup.
+
+The stabilizer acts by left translation. Two cosets determine the same smaller-subgroup
+orbit precisely when they lie in the same stabilizer orbit. -/
+noncomputable def stabilizerOrbitRelQuotientEquivOrbitRelMapFiber {H K : Subgroup G}
+    (h : H ≤ K) (x : X) :
+    orbitRel.Quotient (stabilizer K x) (K ⧸ H.subgroupOf K) ≃
+      {q : orbitRel.Quotient H X //
+        Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := X) h) q =
+          Quotient.mk'' x} := by
+  refine (Quotient.congrRight fun a b ↦ ?_).trans
+    (Setoid.quotientKerEquivOfSurjective (cosetToOrbitRelMapFiber h x)
+      (cosetToOrbitRelMapFiber_surjective h x))
+  rw [Setoid.ker_def, ← Subtype.val_inj, cosetToOrbitRelMapFiber_apply,
+    cosetToOrbitRelMapFiber_apply, orbitRel_apply, orbitOfCosetTranslate_eq_iff h x]
+
+/-- The stabilizer-orbit equivalence sends the orbit of a coset to the smaller-subgroup
+orbit of the corresponding inverse translate. -/
+@[simp]
+theorem stabilizerOrbitRelQuotientEquivOrbitRelMapFiber_mk {H K : Subgroup G}
+    (h : H ≤ K) (x : X) (q : K ⧸ H.subgroupOf K) :
+    (stabilizerOrbitRelQuotientEquivOrbitRelMapFiber h x (Quotient.mk'' q)).1 =
+      orbitOfCosetTranslate x q := by
+  rw [stabilizerOrbitRelQuotientEquivOrbitRelMapFiber, Equiv.trans_apply,
+    Setoid.quotientKerEquivOfSurjective, Setoid.quotientKerEquivOfRightInverse_apply]
+  -- `Quotient.congrRight` only changes the relation, not the class, so `Setoid.kerLift` still
+  -- evaluates at `q`; Mathlib has no evaluation lemma for `Quotient.congrRight`, and
+  -- `Quot.congr_mk` does not match the `Quotient.mk''` spelling, so this step is definitional.
+  exact (congrArg Subtype.val (Setoid.kerLift_mk (cosetToOrbitRelMapFiber h x) q)).trans
+    (cosetToOrbitRelMapFiber_apply h x q)
+
+/-- The cardinality of an orbit-map fibre is the number of stabilizer-orbits on the
+subgroup coset space. Several cosets can lie in one stabilizer orbit and hence determine
+the same point of the fibre. In geometric applications satisfying the relevant hypotheses,
+these identifications can describe ramification. -/
+theorem card_fiber_orbitRel_map_eq_card_stabilizerOrbitRelQuotient {H K : Subgroup G}
+    (h : H ≤ K) (x : X) :
+    Nat.card {q : orbitRel.Quotient H X //
+      Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := X) h) q =
+        Quotient.mk'' x} =
+      Nat.card (orbitRel.Quotient (stabilizer K x) (K ⧸ H.subgroupOf K)) :=
+  Nat.card_congr (stabilizerOrbitRelQuotientEquivOrbitRelMapFiber h x).symm
 
 /-- If the stabilizer acts trivially on the coset space, the fibre of an orbit map is
 indexed exactly by the cosets of the smaller subgroup in the larger one. -/
