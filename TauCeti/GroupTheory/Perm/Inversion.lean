@@ -19,6 +19,8 @@ finite set of inversions, which is the form met by combinatorial permutation cou
 
 * `TauCeti.sign_eq_neg_one_pow_card_inversion`: the sign of a permutation of `Fin n` is
   `(-1)` to the number of its inversions.
+* `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
+  first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
 
 This result was first proved on the earlier Tau Ceti split branch at commit `05c2722248` and is
 adapted here to current `main`.
@@ -62,5 +64,21 @@ theorem sign_eq_neg_one_pow_card_inversion (σ : Equiv.Perm (Fin n)) :
   rw [σ.sign_eq_prod_prod_Ioi, hprod, Finset.prod_ite]
   simp only [Finset.prod_const_one, Finset.prod_const, one_mul]
   rw [hinv]
+
+/-- The block swap of `Fin (m + n)`, exchanging the first `m` indices with the last `n` while
+preserving the order within each block, has sign `(-1) ^ (m * n)`: its inversions are exactly the
+`m * n` pairs taken from different blocks. -/
+theorem sign_finAddFlip_trans_finCongr (m n : ℕ) :
+    Equiv.Perm.sign (finAddFlip.trans (finCongr (add_comm n m))) = (-1) ^ (m * n) := by
+  rw [Equiv.Perm.sign_eq_prod_prod_Ioi]
+  simp only [finAddFlip, Equiv.trans_apply, finCongr_apply, Fin.cast_lt_cast]
+  simp_rw [← finSumFinEquiv.prod_comp, ← Finset.prod_map_equiv finSumFinEquiv.symm]
+  simp only [Equiv.symm_apply_apply, ← Fin.val_fin_lt, Equiv.symm_symm, Function.comp_apply,
+    ← Finset.prod_ite_mem_eq (Finset.map _ _), Finset.mem_map_equiv, Finset.mem_Ioi,
+    Fintype.prod_sum_type, finSumFinEquiv_apply_left, Fin.val_castAdd,
+    finSumFinEquiv_apply_right, Fin.val_natAdd, add_lt_add_iff_left,
+    ← ite_not (α := ℤˣ) (p := _ < _) (y := 1), ← ite_and]
+  simp [(Fin.isLt _).trans_le, (Fin.isLt _).le.trans, pow_mul',
+    fun a b : Fin _ => iff_false_intro fun h : a < b ∧ b ≤ a => h.1.not_ge h.2]
 
 end TauCeti
