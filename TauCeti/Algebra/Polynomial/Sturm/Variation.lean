@@ -19,6 +19,8 @@ opposite, so deleting the zero reveals exactly one sign change. This file
 records that local calculation alongside the sequence recurrence and the zero
 cases. The calculation works over any ordered field; it does not require real
 closedness.
+Negating both inputs or multiplying them by a polynomial nonzero at the
+evaluation point leaves the variation unchanged, while a common root makes it zero.
 Use `TauCeti.Polynomial.sturmVariation p q x` to access the evaluated variation.
 After `open TauCeti`, the same call can be written `p.sturmVariation q x`.
 -/
@@ -64,18 +66,14 @@ theorem sturmVariation_of_eval_eq_zero {p q : K[X]} {x : K}
   · rw [sturmVariation_cons hp0]
     simp only [hp, List.signVariations_zero_cons, sturmVariation]
 
-omit [LinearOrder K] in
-private theorem ne_zero_of_eval_ne_zero {p : K[X]} {x : K} (hp : p.eval x ≠ 0) :
-    p ≠ 0 := fun h => hp (by simp [h])
-
 /-- When the first two evaluations are nonzero, a Sturm variation step adds
 one exactly when their signs differ. -/
 theorem sturmVariation_eq_add_of_eval_ne_zero {p q : K[X]} {x : K}
     (hp : p.eval x ≠ 0) (hq : q.eval x ≠ 0) :
     sturmVariation p q x = sturmVariation q (-p % q) x +
       (if SignType.sign (p.eval x) = SignType.sign (q.eval x) then 0 else 1) := by
-  have hp0 : p ≠ 0 := ne_zero_of_eval_ne_zero hp
-  have hq0 : q ≠ 0 := ne_zero_of_eval_ne_zero hq
+  have hp0 : p ≠ 0 := by rintro rfl; simp at hp
+  have hq0 : q ≠ 0 := by rintro rfl; simp at hq
   rw [sturmVariation_cons hp0, sturmVariation_cons hq0, sturmSeq_cons hq0,
     List.map_cons, List.signVariations_cons_cons_of_ne_zero _ hp hq]
 
@@ -87,16 +85,15 @@ the first Sturm variation step contributes exactly one sign change. -/
     {p q : K[X]} {x : K}
     (hp : p.eval x ≠ 0) (hq0 : q ≠ 0) (hq : q.eval x = 0) :
     sturmVariation p q x = sturmVariation q (-p % q) x + 1 := by
-  have hp0 : p ≠ 0 := ne_zero_of_eval_ne_zero hp
+  have hp0 : p ≠ 0 := by rintro rfl; simp at hp
   rw [sturmVariation_cons hp0, sturmVariation_cons hq0,
     sturmSeq_cons hq0]
   have hr : (-p % q).eval x = -p.eval x := by
     simp [EuclideanDomain.mod_eq_sub_mul_div, hq]
   have hr0 : -p % q ≠ 0 := by
     intro hz
-    have := congrArg (fun r : K[X] => r.eval x) hz
-    rw [hr, eval_zero] at this
-    exact hp (neg_eq_zero.mp this)
+    apply neg_ne_zero.mpr hp
+    rw [← hr, hz, eval_zero]
   rw [sturmSeq_cons hr0]
   simp only [List.map_cons, hq, hr]
   rw [List.signVariations_cons_zero_cons, List.signVariations_zero_cons,
@@ -111,9 +108,7 @@ Sturm variation away from its roots. -/
 @[simp] theorem sturmVariation_mul_left {r : K[X]} (p q : K[X]) {x : K}
     (hrx : r.eval x ≠ 0) :
     sturmVariation (r * p) (r * q) x = sturmVariation p q x := by
-  have hr : r ≠ 0 := by
-    intro h
-    simp [h] at hrx
+  have hr : r ≠ 0 := by rintro rfl; simp at hrx
   have hmap : ((sturmSeq (r * p) (r * q)).map (fun s => s.eval x)) =
       ((sturmSeq p q).map (fun s => s.eval x)).map (fun a => r.eval x * a) := by
     simp [sturmSeq_mul_left hr, List.map_map, Function.comp_def, eval_mul]
@@ -124,6 +119,12 @@ Sturm variation away from its roots. -/
     exact List.signVariations_map_of_sign_eq_neg
       (fun a => by simp [sign_mul, sign_neg hneg]) _
 
+/-- Negating both inputs preserves their Sturm variation. -/
+@[simp] theorem sturmVariation_neg_neg (p q : K[X]) (x : K) :
+    sturmVariation (-p) (-q) x = sturmVariation p q x := by
+  simpa only [neg_one_mul] using
+    (sturmVariation_mul_left (r := -(1 : K[X])) p q (x := x) (by simp))
+
 omit [IsStrictOrderedRing K] in
 /-- A common root of the two input polynomials annihilates every entry of
 their Sturm sequence, so its variation at that point is zero. -/
@@ -133,21 +134,9 @@ their Sturm sequence, so its variation at that point is zero. -/
   have hqd : X - C x ∣ q := dvd_iff_isRoot.mpr hq
   have hz (s : K[X]) (hs : s ∈ sturmSeq p q) : s.eval x = 0 :=
     (dvd_iff_isRoot.mp (dvd_of_mem_sturmSeq hpd hqd hs))
-  have hmap : (sturmSeq p q).map (fun s => s.eval x) =
-      List.replicate (sturmSeq p q).length 0 := by
-    calc
-      (sturmSeq p q).map (fun s => s.eval x) =
-          (sturmSeq p q).map (fun _ => (0 : K)) := by
-            apply List.map_congr_left
-            intro s hs
-            exact hz s hs
-      _ = List.replicate (sturmSeq p q).length 0 := by simp
-  have hzero (n : ℕ) : (List.replicate n (0 : K)).signVariations = 0 := by
-    cases n with
-    | zero => simp
-    | succ n => simpa only [List.replicate_succ] using
-        List.signVariations_cons_replicate_zero (0 : K) n
-  simpa only [sturmVariation, hmap] using hzero (sturmSeq p q).length
+  rw [sturmVariation, ← List.signVariations_filter_ne_zero,
+    List.filter_eq_nil_iff.mpr, List.signVariations_nil]
+  simpa [List.forall_mem_map] using hz
 
 end Polynomial
 end TauCeti
