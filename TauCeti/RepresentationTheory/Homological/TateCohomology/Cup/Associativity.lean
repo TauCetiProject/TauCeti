@@ -49,10 +49,13 @@ theorem cupH0_assoc_zero (M N P : Rep k G)
           H0π_comp_tateCohomologyFunctor_map_apply]
         apply congrArg (H0π (M ⊗ (N ⊗ P)))
         apply Subtype.ext
-        change (TensorProduct.assoc k M.V N.V P.V)
+        -- Expose the underlying map on invariants before using Mathlib's associator formula.
+        change (α_ M N P).hom.hom
           (((x : M.V) ⊗ₜ[k] (y : N.V)) ⊗ₜ[k] (z : P.V)) =
             (x : M.V) ⊗ₜ[k] ((y : N.V) ⊗ₜ[k] (z : P.V))
-        exact TensorProduct.assoc_tmul (x : M.V) (y : N.V) (z : P.V)
+        rw [Rep.hom_hom_associator]
+        exact Representation.TensorProduct.assoc_apply M.ρ N.ρ P.ρ
+          (x : M.V) (y : N.V) (z : P.V)
 
 /-- Associativity of the Tate cup product in bidegrees `(0, 0, 0)`. -/
 theorem cup_assoc_zero_zero_zero (M N P : Rep k G)
