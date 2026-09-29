@@ -128,8 +128,8 @@ theorem conjugate_inv_le_of_mem_quotientPointsSubgroup
     exact hker _ ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mp hmem x hx)
   simpa using conjugate_mono g⁻¹ hle
 
-/-- For a quotient's generic point, vanishing in the quotient supplies the kernel condition
-needed to turn point membership into containment of conjugated Hopf ideals. -/
+/-- If the conjugated generic point of the quotient by `I` belongs to the subgroup defined by
+`J`, then `J.conjugate g⁻¹ ≤ I`. -/
 theorem conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
     (I J : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
     (hmem : WithConv.toConv (((CommHopfAlgCat.mkQuotient
