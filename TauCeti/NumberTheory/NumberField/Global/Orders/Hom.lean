@@ -55,10 +55,6 @@ variable {O''' : NumberFieldOrder N}
 
 instance : CoeFun (Hom O O') (fun _ => K → L) := ⟨fun f => f.fieldHom⟩
 
-/-- The value of an order morphism is its ambient field homomorphism. -/
-@[simp]
-theorem coe_apply (f : Hom O O') (x : K) : f x = f.fieldHom x := rfl
-
 /-- An order morphism maps elements of the source order into the target order. -/
 theorem map_mem (f : Hom O O') {x : K} (hx : x ∈ O.toSubalgebra) :
     f x ∈ O'.toSubalgebra :=
