@@ -110,9 +110,9 @@ be the whole Euclidean disc: local linearizing coordinates are not all rotations
 coordinate, the equivariant biholomorphic reparametrizations of a disc being an infinite-dimensional
 family. Biholomorphy is the requirement that `toFun` and `invFun` be holomorphic on the disc and on
 the `target` respectively and inverse to one another there. Both holomorphy conditions are stored
-explicitly, being hypotheses of the structure: the holomorphy of `invFun` does not follow from that
-of `toFun` by the inverse function theorem, which applies to a map holomorphic on a neighbourhood of
-a point and not to one only holomorphic on a half plane. The `target` is open by
+explicitly, being hypotheses of the structure, so that the biholomorphic reparametrization is
+available without deriving the holomorphy of the inverse from that of `toFun` by the holomorphic
+inverse function theorem. The `target` is open by
 `Subgroup.LinearizingCoordinate.isOpen_target`. -/
 structure LinearizingCoordinate (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (ε : ℝ)
     [Finite (stabilizer Γ z)] where
@@ -193,9 +193,11 @@ theorem LinearizingCoordinate.coordinate_eq_zero_iff
     have h' : ψ.toEquiv (discCoordinate z (τ : ℍ)) = ψ.toEquiv 0 := by
       have h'' : ψ.toEquiv (discCoordinate z (τ : ℍ)) = 0 := h
       rw [h'', ψ.zero]
+    have hr : 0 < Real.tanh (ε / 2) := by
+      rw [← Real.tanh_zero]; exact Real.tanh_strictMono (by linarith)
     have hinj : discCoordinate z (τ : ℍ) = 0 :=
       ψ.toFun_injOn_ball (mem_ball_discCoordinate τ)
-        (Metric.mem_ball_self (Real.tanh_pos_of_pos (by linarith : 0 < ε / 2))) h'
+        (Metric.mem_ball_self hr) h'
     exact discCoordinate_eq_zero_iff.mp hinj
   · intro hτ
     have hmem : (z : ℍ) ∈ (stabilizerBall Γ z ε : Set ℍ) :=
