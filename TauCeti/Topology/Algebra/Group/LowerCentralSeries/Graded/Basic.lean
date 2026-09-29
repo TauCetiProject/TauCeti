@@ -367,6 +367,11 @@ variable (p G) in
 def gradedMkZero (g : G) : gradedPiece p G 0 :=
   gradedMk p G 0 ⟨g, mem_pLowerCentralSeries_zero p g⟩
 
+/-- The class map from a topological group to degree zero of its lower `p`-series is continuous. -/
+theorem continuous_gradedMkZero : Continuous (gradedMkZero p G) := by
+  unfold gradedMkZero gradedMk
+  exact continuous_quotient_mk'.comp (continuous_id.subtype_mk _)
+
 /-- The class in degree zero of an element of `λ_0` is the class of the underlying element. -/
 @[simp]
 theorem gradedMk_zero (x : pLowerCentralSeries p G 0) :

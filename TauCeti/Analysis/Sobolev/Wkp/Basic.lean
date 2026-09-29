@@ -268,6 +268,29 @@ theorem lowerOrderL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     lowerOrderL k u = lowerOrder k u :=
   (rfl)
 
+/-- The continuous projection to the first-order part of a positive-order Sobolev function. -/
+def firstOrderL : (k : ℕ) → Wkp mu Omega p (k + 1) →L[ℝ] W1p mu Omega p
+  | 0 => ContinuousLinearMap.id ℝ _
+  | k + 1 => (firstOrderL k).comp (lowerOrderL (k + 1))
+
+/-- Forget the derivatives above first order in a higher-order Sobolev function. -/
+def firstOrder (k : ℕ) (u : Wkp mu Omega p (k + 1)) : W1p mu Omega p :=
+  firstOrderL k u
+
+/-- Evaluating the continuous first-order projection equals `firstOrder`. -/
+theorem firstOrderL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    firstOrderL k u = firstOrder k u :=
+  (rfl)
+
+/-- The first-order part of a first-order Sobolev function is itself. -/
+@[simp] theorem firstOrder_zero (u : Wkp mu Omega p 1) : firstOrder 0 u = u := by
+  simp only [firstOrder, firstOrderL, ContinuousLinearMap.id_apply]
+
+/-- Forgetting one derivative before taking the first-order part has no effect. -/
+@[simp] theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
+    firstOrder (k + 1) u = firstOrder k (lowerOrder (k + 1) u) := by
+  simp only [firstOrder, firstOrderL, lowerOrder, ContinuousLinearMap.comp_apply]
+
 /-- The continuous projection to the highest weak derivative of a positive-order Sobolev
 function.  For `W^{k+1,p}` its target is `Lᵖ(Ω; IteratedGradient E k)`. -/
 def iteratedGradientL (k : ℕ) : Wkp mu Omega p (k + 1) →L[ℝ]
@@ -338,6 +361,18 @@ theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
     -- `W1p.gradient` is sealed, so this boundary identification uses its application theorem.
     simpa only [iteratedGradient, iteratedGradientL, sobolevStage, firstSobolevStage] using
       W1p.gradientL_apply u
+
+/-- Forgetting higher derivatives preserves the `Lᵖ` value. -/
+@[simp] theorem value_firstOrder (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    W1p.value (firstOrder k u) = value (k + 1) u := by
+  induction k with
+  | zero => exact (value_one u).symm
+  | succ k ih =>
+      calc
+        W1p.value (firstOrder (k + 1) u) =
+            value (k + 1) (lowerOrder (k + 1) u) := by
+              rw [firstOrder_succ, ih]
+        _ = value (k + 1 + 1) u := (value_succ (k + 1) u).symm
 
 /-- The highest derivative projection is the one stored in the corresponding recursive stage. -/
 theorem iteratedGradient_eq_sobolevStage_iteratedGradientL

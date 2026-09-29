@@ -15,6 +15,7 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 
 This file records general-purpose facts about permutations: a transposition preserves the
 complement of a set containing neither of its swapped points, an identity between transpositions,
+a permutation transporting two points outside a fixed set to another such pair,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a permutation transported along an injection, the combination of two
@@ -177,6 +178,34 @@ theorem card_filter_comp_perm {ι : Type*} [Fintype α] [DecidableEq ι]
 theorem swap_apply_notMem {α : Type*} [DecidableEq α] {s : Finset α} {a b z : α}
     (ha : a ∉ s) (hb : b ∉ s) (hz : z ∉ s) : Equiv.swap a b z ∉ s := by
   rw [Equiv.swap_apply_def]; split_ifs <;> assumption
+
+/-- Any ordered pair of distinct points outside `s` can be carried to another such pair by a
+permutation fixing `s` pointwise. -/
+theorem exists_pair_perm_fixed {α : Type*} {s : Set α}
+    {i j i' j' : α} (hij : i ≠ j) (hi'j' : i' ≠ j')
+    (hi : i ∉ s) (hj : j ∉ s) (hi' : i' ∉ s) (hj' : j' ∉ s) :
+    ∃ perm : Equiv.Perm α, (∀ a ∈ s, perm a = a) ∧ perm i = i' ∧ perm j = j' := by
+  classical
+  let τ := Equiv.swap i i'
+  let υ := Equiv.swap (τ j) j'
+  have hτs (a : α) (ha : a ∈ s) : τ a = a :=
+    Equiv.swap_apply_of_ne_of_ne (fun h => hi (h ▸ ha)) (fun h => hi' (h ▸ ha))
+  have hτj : τ j ∉ s := by
+    by_cases hji' : j = i'
+    · simpa [τ, hji'] using hi
+    · simpa [τ, Equiv.swap_apply_of_ne_of_ne hij.symm hji'] using hj
+  have hτji' : τ j ≠ i' := by
+    intro h
+    exact hij (τ.injective ((Equiv.swap_apply_left i i').trans h.symm))
+  refine ⟨τ.trans υ, ?_, ?_, ?_⟩
+  · intro a ha
+    simp only [Equiv.trans_apply]
+    rw [hτs a ha]
+    exact Equiv.swap_apply_of_ne_of_ne
+      (fun h => hτj (h ▸ ha)) (fun h => hj' (h ▸ ha))
+  · rw [Equiv.trans_apply, Equiv.swap_apply_left]
+    exact Equiv.swap_apply_of_ne_of_ne hτji'.symm hi'j'
+  · rw [Equiv.trans_apply, Equiv.swap_apply_left]
 
 /-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
 image of the other. -/

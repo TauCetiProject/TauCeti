@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Closed
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.FiniteGeneration
@@ -46,6 +47,8 @@ finitely generated pro-`p` groups be compared level by level along their lower `
   `TauCeti.IsProP.isPGroup_quotient_pLowerCentralSeries`.
 * `TauCeti.IsProP.exists_pLowerCentralSeries_le`: in a pro-`p` group every open normal subgroup
   contains a term of the lower `p`-series, so `TauCeti.IsProP.iInf_pLowerCentralSeries_eq_bot`.
+  Since the closed lower central series lies termwise below it, also
+  `TauCeti.IsProP.iInf_closedLowerCentralSeries_eq_bot`.
 * `TauCeti.IsProP.eq_bot_of_le_pLowerCentralStep`: **Nakayama's lemma**, a subgroup `K` of a
   pro-`p` group with `K ≤ closure (Kᵖ ⬝ [K, G])` is trivial.
 * `TauCeti.IsProP.le_of_le_topologicalClosure_sup_pLowerCentralStep`: **Nakayama's lemma,
@@ -154,6 +157,12 @@ theorem IsProP.iInf_pLowerCentralSeries_eq_bot (hG : IsProP p G) (hp : p.Prime) 
   refine le_iInf fun U ↦ ?_
   obtain ⟨k, hk⟩ := hG.exists_pLowerCentralSeries_le hp U
   exact (iInf_le _ k).trans hk
+
+/-- In a pro-`p` group the terms of the closed lower central series have trivial intersection. -/
+theorem IsProP.iInf_closedLowerCentralSeries_eq_bot (hG : IsProP p G) (hp : p.Prime) :
+    ⨅ n, closedLowerCentralSeries G n = ⊥ :=
+  le_bot_iff.mp <| (iInf_mono fun n ↦ closedLowerCentralSeries_le_pLowerCentralSeries p n).trans
+    (hG.iInf_pLowerCentralSeries_eq_bot hp).le
 
 /-- **Nakayama's lemma for pro-`p` groups.** In a profinite pro-`p` group a subgroup `K` with
 `K ≤ closure (Kᵖ ⬝ [K, G])` is trivial: it lies in every term of the lower `p`-series. -/

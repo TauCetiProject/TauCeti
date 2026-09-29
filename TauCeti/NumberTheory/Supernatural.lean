@@ -210,6 +210,24 @@ theorem primePower_add (p : Nat.Primes) (m n : ℕ∞) :
   rw [mul_apply]
   exact congrFun (Pi.single_add (f := fun _ : Nat.Primes ↦ ℕ∞) p m n) q
 
+/-- Two prime powers at the same prime compare as their exponents do. -/
+@[simp]
+theorem primePower_le_primePower_iff (p : Nat.Primes) {m n : ℕ∞} :
+    primePower p m ≤ primePower p n ↔ m ≤ n := by
+  rw [le_iff]
+  refine ⟨fun h ↦ by simpa using h p, fun h q ↦ ?_⟩
+  by_cases hq : q = p
+  · subst q
+    simpa using h
+  · simp [hq]
+
+/-- Two prime powers at the same prime compare strictly as their exponents do. -/
+@[simp]
+theorem primePower_lt_primePower_iff (p : Nat.Primes) {m n : ℕ∞} :
+    primePower p m < primePower p n ↔ m < n := by
+  rw [lt_iff_le_not_ge, lt_iff_le_not_ge, primePower_le_primePower_iff,
+    primePower_le_primePower_iff]
+
 /-- A rational prime, regarded as the supernatural number having exponent one at that prime. -/
 instance : Coe Nat.Primes Supernatural :=
   ⟨fun p ↦ primePower p 1⟩

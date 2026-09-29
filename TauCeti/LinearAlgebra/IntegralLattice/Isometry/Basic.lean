@@ -43,6 +43,8 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
 * `TauCeti.IntegralLattice.Isometry.carrierEquiv_ofCarrierEquiv` and
   `TauCeti.IntegralLattice.Isometry.ofCarrierEquiv_carrierEquiv`: the two round trips between
   ambient isometries and form-preserving carrier equivalences.
+* `TauCeti.IntegralLattice.Isometry.carrierEquiv_injective`: an isometry is determined by its
+  restriction to the carriers.
 * `TauCeti.IntegralLattice.Isometry.finrank_carrier_eq`: invariance of the carrier rank.
 * `TauCeti.IntegralLattice.transport_refl`: transporting along the identity changes no lattice.
 
@@ -365,6 +367,13 @@ theorem ofCarrierEquiv_carrierEquiv (e : Isometry L M) :
     LinearEquiv.eq_extendOfIsLattice e.carrierEquiv (e : V ≃ₗ[ℚ] W) e.coe_carrierEquiv_apply
   ext x
   simpa only [ofCarrierEquiv_apply, coe_toLinearEquiv] using (LinearEquiv.congr_fun hlinear x).symm
+
+/-- An isometry is determined by its restriction to the carriers. -/
+theorem carrierEquiv_injective : Function.Injective (carrierEquiv : Isometry L M → L ≃ₗ[ℤ] M) := by
+  intro e f h
+  rw [← ofCarrierEquiv_carrierEquiv e, ← ofCarrierEquiv_carrierEquiv f]
+  ext x
+  simp only [ofCarrierEquiv_apply, h]
 
 end Isometry
 

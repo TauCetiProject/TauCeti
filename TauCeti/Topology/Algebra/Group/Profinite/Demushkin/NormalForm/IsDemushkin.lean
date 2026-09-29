@@ -38,12 +38,14 @@ normal-form presentations are minimal.
 
 * `TauCeti.isDemushkin_presentedProP_demushkinWordNeTwo`,
   `TauCeti.isDemushkin_presentedProP_demushkinWordTwoOdd`,
-  `TauCeti.isDemushkin_presentedProP_demushkinWordTwoEven`: **the normal-form presented groups
-  are Demushkin groups**.
+  `TauCeti.isDemushkin_presentedProP_demushkinWordTwoEven`,
+  `TauCeti.isDemushkin_presentedProP_demushkinWordTwoRankTwo`: **the normal-form presented groups
+  are Demushkin groups**, the last one being the rank-two even form `x₁^{2+a} (x₁, x₂)`.
 * `TauCeti.demushkinRank_presentedProP_demushkinWordNeTwo`,
   `TauCeti.demushkinRank_presentedProP_demushkinWordTwoOdd`,
-  `TauCeti.demushkinRank_presentedProP_demushkinWordTwoEven`: the rank of any of these Demushkin
-  groups is the number `n` of generators.
+  `TauCeti.demushkinRank_presentedProP_demushkinWordTwoEven`,
+  `TauCeti.demushkinRank_presentedProP_demushkinWordTwoRankTwo`: the rank of any of these
+  Demushkin groups is the number `n` of generators.
 
 ## References
 
@@ -119,5 +121,22 @@ theorem demushkinRank_presentedProP_demushkinWordTwoEven {a f : ℕ} (ha : 2 ∣
     demushkinRank hG = n := by
   rw [demushkinRank_def]
   exact topologicalGeneratorRankNat_presentedProP_demushkinWordTwoEven ha hf n
+
+/-- **The rank-two dyadic normal form defines a Demushkin group.** For `a` even, the pro-`2`
+group presented on two generators by `x₁^{2+a} (x₁, x₂)` is a Demushkin group: it is the even
+form on two generators, where the factor `x₃^{2^f}` is absent. -/
+theorem isDemushkin_presentedProP_demushkinWordTwoRankTwo {a : ℕ} (ha : 2 ∣ a) :
+    IsDemushkin 2 (presentedProP 2 (Fin 2) {demushkinWordTwoRankTwo a (freeProPGen 2 2)}) := by
+  rw [← demushkinWordTwoEven_two a 1 _ (freeProPGen_eq_one_of_le 2 le_rfl)]
+  exact isDemushkin_presentedProP_demushkinWordTwoEven even_two two_ne_zero ha one_pos
+
+/-- **The rank-two dyadic normal form has rank `2`**, for `a` even, whenever it is a Demushkin
+group. -/
+@[simp]
+theorem demushkinRank_presentedProP_demushkinWordTwoRankTwo {a : ℕ} (ha : 2 ∣ a)
+    (hG : IsDemushkin 2 (presentedProP 2 (Fin 2) {demushkinWordTwoRankTwo a (freeProPGen 2 2)})) :
+    demushkinRank hG = 2 := by
+  rw [demushkinRank_def]
+  exact topologicalGeneratorRankNat_presentedProP_demushkinWordTwoRankTwo ha
 
 end TauCeti
