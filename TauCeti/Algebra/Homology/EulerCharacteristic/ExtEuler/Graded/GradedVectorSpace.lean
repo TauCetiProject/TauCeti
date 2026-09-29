@@ -8,21 +8,20 @@ module
 public import Mathlib.Algebra.Category.Grp.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import Mathlib.CategoryTheory.Abelian.FunctorCategory
-public import Mathlib.CategoryTheory.Adjunction.Evaluation
 public import Mathlib.CategoryTheory.Adjunction.Unique
+public import Mathlib.CategoryTheory.GradedObject.Single
+public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ForgetGrading
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
-public import TauCeti.CategoryTheory.Adjunction.Linear
-public import TauCeti.CategoryTheory.Linear.FunctorCategory
+public import TauCeti.CategoryTheory.GradedObject
 
 /-!
 # The q-Euler form of graded vector spaces
 
-Let `k` be a field. A `ℤ`-graded `k`-vector space is a functor `Discrete ℤ ⥤ ModuleCat k`, that
-is, a family `(Vᵢ)` of vector spaces indexed by the internal degree; these form a `k`-linear
-abelian category `TauCeti.GradedVectorSpace k`. Its grading shift `V ↦ V{1}` moves every piece up
-by one degree, `(V{1})ᵢ = V_{i-1}`, and is a `k`-linear autoequivalence.
+Let `k` be a field. We use Mathlib's canonical category
+`GradedObjectWithShift (-1) (ModuleCat k)` of `ℤ`-graded vector spaces. Its canonical shift
+`shiftEquiv _ 1` moves every piece up by one degree, `(V{1})ᵢ = V_{i-1}`, and is a `k`-linear
+autoequivalence.
 
 The one-dimensional space `M = k` placed in degree `0` is the smallest nontrivial test of the
 q-Euler formalism: it is projective, it is not isomorphic to any of its shifts `M{j}` with
@@ -42,15 +41,13 @@ bigraded `Ext` groups of `(M, M)` assemble into the ungraded `Ext` groups of `(U
 
 ## Main definitions
 
-* `TauCeti.GradedVectorSpace k`: `ℤ`-graded `k`-vector spaces.
-* `TauCeti.GradedVectorSpace.shift k`: the grading shift, with `(V{1})ᵢ = V_{i-1}`.
-* `TauCeti.GradedVectorSpace.unit k`: the field `k` placed in degree `0`, the left adjoint of
-  evaluation in degree `0` applied to `k`.
+* `TauCeti.GradedVectorSpace.unit k`: the field `k` placed in degree `0`, given by Mathlib's
+  canonical `GradedObject.single₀` applied to `k`.
 * `TauCeti.GradedVectorSpace.homUnitLinearEquiv`: morphisms out of `unit k` are the degree-zero
   piece of the target.
-* `TauCeti.GradedVectorSpace.forget k`: forgetting the grading, `V ↦ ⨁ᵢ Vᵢ`, with
-  `TauCeti.GradedVectorSpace.shiftCompForgetIso` (`{1} ⋙ U ≅ U`) and
-  `TauCeti.GradedVectorSpace.forgetObjUnitIso` (`U M ≅ k`).
+* `GradedObject.total ℤ (ModuleCat k)`: forgetting the grading, `V ↦ ⨁ᵢ Vᵢ`, with
+  `TauCeti.GradedVectorSpace.shiftCompTotalIso` (`{1} ⋙ U ≅ U`) and
+  `TauCeti.GradedVectorSpace.totalObjUnitIso` (`U M ≅ k`).
 
 ## Main results
 
@@ -76,13 +73,9 @@ bigraded `Ext` groups of `(M, M)` assemble into the ungraded `Ext` groups of `(U
 
 ## Implementation notes
 
-Graded vector spaces are modelled as the functor category `Discrete ℤ ⥤ ModuleCat k` rather than
-as Mathlib's `CategoryTheory.GradedObject ℤ (ModuleCat k)`, because the functor category already
-carries Mathlib's abelian and linear structures. The object `M` is the left adjoint of evaluation
-in degree `0` applied to `k`, so that its projectivity and the identification
-`Hom(M, V) ≃ₗ[k] V₀` are instances of general adjunction facts. Likewise the forgetful functor is
-`colim`, the left adjoint of the constant functor, and `U M ≅ k` and `{1} ⋙ U ≅ U` are instances
-of the uniqueness of left adjoints.
+Graded vector spaces use Mathlib's `GradedObjectWithShift`, `GradedObject.single₀`,
+`GradedObject.total`, and `shiftFunctor`. The pointwise abelian and linear instances missing from
+Mathlib are supplied generically in `TauCeti.CategoryTheory.GradedObject`.
 
 The results hold for every choice of `HasExt` instances on the two categories: `Ext` groups are
 only used through their dimensions.
@@ -104,88 +97,100 @@ universe w w' u
 
 variable (k : Type u) [Field k]
 
-/-- **`ℤ`-graded `k`-vector spaces**: families `(Vᵢ)_{i ∈ ℤ}` of `k`-vector spaces, as functors from
-the discrete category on `ℤ`. Morphisms are degree-preserving families of linear maps. -/
-abbrev GradedVectorSpace : Type (u + 1) :=
-  Discrete ℤ ⥤ ModuleCat.{u} k
-
 namespace GradedVectorSpace
 
-/-- The **grading shift** `V ↦ V{1}` of graded vector spaces, moving each piece up by one degree:
-`(V{1})ᵢ = V_{i-1}`. It is reindexing along the translation `i ↦ i + 1` of `ℤ`. -/
-noncomputable def shift : GradedVectorSpace k ≌ GradedVectorSpace k :=
-  (Discrete.equivalence (Equiv.addRight (1 : ℤ))).congrLeft
+local notation "GVS" k => GradedObjectWithShift (-1 : ℤ) (ModuleCat k)
 
-/-- The grading shift is additive, being precomposition with a functor. -/
-instance : (shift k).functor.Additive :=
-  inferInstanceAs ((Functor.whiskeringLeft _ _ (ModuleCat.{u} k)).obj
-    (Discrete.equivalence (Equiv.addRight (1 : ℤ))).inverse).Additive
-
-/-- The grading shift is `k`-linear, being precomposition with a functor. -/
-instance : (shift k).functor.Linear k :=
-  inferInstanceAs (((Functor.whiskeringLeft _ _ (ModuleCat.{u} k)).obj
-    (Discrete.equivalence (Equiv.addRight (1 : ℤ))).inverse).Linear k)
-
-/-- The piece of `V{1}` in degree `i` is the piece of `V` in degree `i - 1`. -/
-@[simp]
-theorem shift_functor_obj_obj (V : GradedVectorSpace k) (i : ℤ) :
-    ((shift k).functor.obj V).obj ⟨i⟩ = V.obj ⟨i - 1⟩ :=
-  (rfl)
-
-/-- The piece of `V{-1}` in degree `i` is the piece of `V` in degree `i + 1`. -/
-@[simp]
-theorem shift_inverse_obj_obj (V : GradedVectorSpace k) (i : ℤ) :
-    ((shift k).inverse.obj V).obj ⟨i⟩ = V.obj ⟨i + 1⟩ :=
-  (rfl)
+local notation "σ" k => shiftEquiv (GVS k) (1 : ℤ)
 
 /-- **The iterated shift reindexes the grading**: the piece of `V{j}` in degree `i` is isomorphic
 to the piece of `V` in degree `i - j`. -/
-theorem nonempty_iso_shift_pow_obj (j : ℤ) (V : GradedVectorSpace k) (i : ℤ) :
-    Nonempty ((((shift k) ^ j).functor.obj V).obj ⟨i⟩ ≅ V.obj ⟨i - j⟩) := by
+theorem nonempty_iso_shift_pow_obj (j : ℤ) (V : GVS k) (i : ℤ) :
+    Nonempty ((((σ k) ^ j).functor.obj V) i ≅ V (i - j)) := by
   induction j using Int.induction_on generalizing V with
   | zero => exact ⟨eqToIso (by simp)⟩
   | succ j ih =>
-    obtain ⟨φ⟩ := ih ((shift k).functor.obj V)
-    refine ⟨(((shift k).powSuccIso j).app V).app ⟨i⟩ ≪≫ φ ≪≫ eqToIso ?_⟩
-    rw [shift_functor_obj_obj, sub_sub]
+    obtain ⟨φ⟩ := ih ((σ k).functor.obj V)
+    refine ⟨Pi.isoApp (((σ k).powSuccIso j).app V) i ≪≫ φ ≪≫ eqToIso ?_⟩
+    change V (i - j - 1) = V (i - (j + 1))
+    congr 1
+    omega
   | pred j ih =>
-    obtain ⟨φ⟩ := ih ((shift k).inverse.obj V)
-    refine ⟨((((shift k).powPredIso (-j)).app V).app ⟨i⟩).symm ≪≫ φ ≪≫ eqToIso ?_⟩
-    rw [shift_inverse_obj_obj]
-    congr 2
-    ring
+    obtain ⟨φ⟩ := ih ((σ k).inverse.obj V)
+    refine ⟨(Pi.isoApp (((σ k).powPredIso (-j)).app V) i).symm ≪≫ φ ≪≫
+      eqToIso ?_⟩
+    change V (i - -(j : ℤ) + 1) = V (i - (-(j : ℤ) - 1))
+    congr 1
+    omega
 
-/-- The **graded vector space `k` placed in degree `0`**: the left adjoint of evaluation in
-degree `0`, applied to the one-dimensional space `k`. -/
-noncomputable def unit : GradedVectorSpace k :=
-  (evaluationLeftAdjoint (ModuleCat.{u} k) (⟨0⟩ : Discrete ℤ)).obj (ModuleCat.of k k)
+/-- The **graded vector space `k` placed in degree `0`**, using Mathlib's canonical single-degree
+graded object. -/
+noncomputable abbrev unit : GVS k :=
+  (GradedObject.single₀ ℤ).obj (ModuleCat.of k k)
 
-/-- `unit k` is projective: it is the image of the projective module `k` under a left adjoint whose
-right adjoint, evaluation in degree `0`, preserves epimorphisms. -/
-instance : Projective (unit k) :=
-  (evaluationAdjunctionRight (ModuleCat.{u} k) (⟨0⟩ : Discrete ℤ)).map_projective _
-    (ModuleCat.projective_of_free (Module.Basis.singleton Unit k))
+/-- The piece of `unit k` in degree `0` is the field `k`. -/
+noncomputable def unitObjZeroLinearEquiv : (unit k 0 : Type u) ≃ₗ[k] k :=
+  (GradedObject.singleObjApplyIso (0 : ℤ) (ModuleCat.of k k)).toLinearEquiv
+
+/-- The pieces of `unit k` away from degree `0` vanish. -/
+theorem isZero_unit_obj {i : ℤ} (hi : i ≠ 0) : IsZero (unit k i) :=
+  (GradedObject.isInitialSingleObjApply 0 (ModuleCat.of k k) i hi).isZero
+
+private noncomputable def homUnitHomLinearEquiv (V : GVS k) :
+    (unit k ⟶ V) ≃ₗ[k] (ModuleCat.of k k ⟶ V 0) where
+  toFun f := f 0
+  invFun f i :=
+    if hi : i = 0 then
+      (GradedObject.singleObjApplyIsoOfEq 0 (ModuleCat.of k k) i hi).hom ≫ f ≫
+        eqToHom (congrArg V hi.symm)
+    else 0
+  left_inv f := by
+    funext i
+    by_cases hi : i = 0
+    · subst i
+      simp only [↓reduceDIte, eqToHom_refl]
+      cat_disch
+    · exact (isZero_unit_obj k hi).eq_of_src _ _
+  right_inv f := by
+    simp only [↓reduceDIte, eqToHom_refl, Category.comp_id]
+    change (𝟙 (ModuleCat.of k k)) ≫ f = f
+    cat_disch
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+private theorem homUnitHomLinearEquiv_symm_apply_zero
+    {V : GVS k} (f : ModuleCat.of k k ⟶ V 0) :
+    (homUnitHomLinearEquiv k V).symm f 0 = f := by
+  simp only [Int.reduceNeg]
+  cat_disch
 
 /-- **Morphisms out of `unit k` are the degree-zero piece** of the target: a morphism is
 determined by the image of `1` in degree `0`. -/
-noncomputable def homUnitLinearEquiv (V : GradedVectorSpace k) :
-    (unit k ⟶ V) ≃ₗ[k] V.obj ⟨0⟩ :=
-  ((evaluationAdjunctionRight (ModuleCat.{u} k) (⟨0⟩ : Discrete ℤ)).homLinearEquiv k _ V).trans
+noncomputable def homUnitLinearEquiv (V : GVS k) :
+    (unit k ⟶ V) ≃ₗ[k] V 0 :=
+  (homUnitHomLinearEquiv k V).trans
     (ModuleCat.homLinearEquiv.trans (LinearMap.ringLmapEquivSelf k k _))
 
-/-- The piece of `unit k` in degree `0` is the field `k`. -/
-noncomputable def unitObjZeroLinearEquiv : ((unit k).obj ⟨0⟩ : Type u) ≃ₗ[k] k :=
-  letI : Unique ((⟨0⟩ : Discrete ℤ) ⟶ ⟨0⟩) := uniqueOfSubsingleton (𝟙 _)
-  (coproductUniqueIso fun _ : (⟨0⟩ : Discrete ℤ) ⟶ ⟨0⟩ ↦ ModuleCat.of k k).toLinearEquiv
-
-/-- The pieces of `unit k` away from degree `0` vanish. -/
-theorem isZero_unit_obj {i : ℤ} (hi : i ≠ 0) : IsZero ((unit k).obj ⟨i⟩) := by
-  have : IsEmpty ((⟨0⟩ : Discrete ℤ) ⟶ ⟨i⟩) := ⟨fun f ↦ hi (Discrete.eq_of_hom f).symm⟩
-  rw [IsZero.iff_id_eq_zero]
-  exact Sigma.hom_ext _ _ fun b ↦ isEmptyElim b
+/-- `unit k` is projective because epimorphisms of graded objects are componentwise epimorphisms
+and the one-dimensional module `k` is projective. -/
+instance : Projective (unit k) where
+  factors {E X} f e _ := by
+    let _ : Epi ((piEquivalenceFunctorDiscrete ℤ (ModuleCat.{u} k)).functor.map e) :=
+      inferInstance
+    let _ : Epi (e 0) := by
+      change Epi (((piEquivalenceFunctorDiscrete ℤ (ModuleCat.{u} k)).functor.map e).app ⟨0⟩)
+      infer_instance
+    have : Projective (ModuleCat.of k k) :=
+      ModuleCat.projective_of_free (Module.Basis.singleton Unit k)
+    obtain ⟨g, hg⟩ := Projective.factors (homUnitHomLinearEquiv k X f) (e 0)
+    refine ⟨(homUnitHomLinearEquiv k E).symm g, ?_⟩
+    apply (homUnitHomLinearEquiv k X).injective
+    change (homUnitHomLinearEquiv k E).symm g 0 ≫ e 0 = f 0
+    rw [homUnitHomLinearEquiv_symm_apply_zero]
+    exact hg
 
 /-- Every piece of `unit k` is finite-dimensional. -/
-theorem finiteDimensional_unit_obj (i : ℤ) : FiniteDimensional k ((unit k).obj ⟨i⟩) := by
+theorem finiteDimensional_unit_obj (i : ℤ) : FiniteDimensional k (unit k i) := by
   by_cases hi : i = 0
   · subst hi
     exact Module.Finite.equiv (unitObjZeroLinearEquiv k).symm
@@ -194,7 +199,7 @@ theorem finiteDimensional_unit_obj (i : ℤ) : FiniteDimensional k ((unit k).obj
 
 /-- The piece of `unit k` in degree `i` has dimension `1` if `i = 0` and `0` otherwise. -/
 theorem finrank_unit_obj (i : ℤ) :
-    Module.finrank k ((unit k).obj ⟨i⟩) = if i = 0 then 1 else 0 := by
+    Module.finrank k (unit k i) = if i = 0 then 1 else 0 := by
   split_ifs with hi
   · subst hi
     rw [(unitObjZeroLinearEquiv k).finrank_eq, Module.finrank_self]
@@ -203,7 +208,7 @@ theorem finrank_unit_obj (i : ℤ) :
 
 /-- The morphisms from `M = unit k` to its shift `M{j}` are the piece of `M` in degree `-j`. -/
 theorem nonempty_linearEquiv_hom_unit_shift_pow (j : ℤ) :
-    Nonempty ((unit k ⟶ ((shift k) ^ j).functor.obj (unit k)) ≃ₗ[k] (unit k).obj ⟨-j⟩) := by
+    Nonempty ((unit k ⟶ ((σ k) ^ j).functor.obj (unit k)) ≃ₗ[k] unit k (-j)) := by
   obtain ⟨φ⟩ := nonempty_iso_shift_pow_obj k j (unit k) 0
   rw [zero_sub] at φ
   exact ⟨(homUnitLinearEquiv k _).trans φ.toLinearEquiv⟩
@@ -211,7 +216,7 @@ theorem nonempty_linearEquiv_hom_unit_shift_pow (j : ℤ) :
 /-- **The degree-zero morphisms `Hom(M, M{j})`** between `M = unit k` and its shifts: they form a
 one-dimensional space for `j = 0` and vanish otherwise. -/
 theorem finrank_hom_unit_shift_pow (j : ℤ) :
-    Module.finrank k (unit k ⟶ ((shift k) ^ j).functor.obj (unit k)) =
+    Module.finrank k (unit k ⟶ ((σ k) ^ j).functor.obj (unit k)) =
       if j = 0 then 1 else 0 := by
   obtain ⟨φ⟩ := nonempty_linearEquiv_hom_unit_shift_pow k j
   rw [φ.finrank_eq, finrank_unit_obj]
@@ -219,7 +224,7 @@ theorem finrank_hom_unit_shift_pow (j : ℤ) :
 
 /-- The graded morphism spaces `Hom(M, M{j})` have finite Laurent support. -/
 theorem hasFiniteLaurentSupport_hom_unit :
-    HasFiniteLaurentSupport k fun j ↦ unit k ⟶ ((shift k) ^ j).functor.obj (unit k) := by
+    HasFiniteLaurentSupport k fun j ↦ unit k ⟶ ((σ k) ^ j).functor.obj (unit k) := by
   refine HasFiniteLaurentSupport.of_finset (fun j ↦ ?_) {0} fun j hj ↦ ?_
   · obtain ⟨φ⟩ := nonempty_linearEquiv_hom_unit_shift_pow k j
     have := finiteDimensional_unit_obj k (-j)
@@ -232,57 +237,80 @@ theorem hasFiniteLaurentSupport_hom_unit :
 /-- **The shifts of `M = unit k` are genuinely different**: `M{j}` is not isomorphic to `M` for
 `j ≠ 0`, since there are no nonzero morphisms `M ⟶ M{j}` while `M` has nonzero endomorphisms. -/
 theorem isEmpty_iso_unit_shift_pow {j : ℤ} (hj : j ≠ 0) :
-    IsEmpty (unit k ≅ ((shift k) ^ j).functor.obj (unit k)) := by
+    IsEmpty (unit k ≅ ((σ k) ^ j).functor.obj (unit k)) := by
   refine ⟨fun f ↦ ?_⟩
-  have : Subsingleton (unit k ⟶ ((shift k) ^ j).functor.obj (unit k)) := by
+  have : Subsingleton (unit k ⟶ ((σ k) ^ j).functor.obj (unit k)) := by
     have := (hasFiniteLaurentSupport_hom_unit k).finiteDimensional j
     rw [← Module.finrank_zero_iff (R := k), finrank_hom_unit_shift_pow]
     simp only [hj, ↓reduceIte]
   have hid : 𝟙 (unit k) = 0 := by
     rw [← f.hom_inv_id, Subsingleton.elim f.hom 0, zero_comp]
-  have : Subsingleton (unit k ⟶ ((shift k) ^ (0 : ℤ)).functor.obj (unit k)) :=
+  have : Subsingleton (unit k ⟶ ((σ k) ^ (0 : ℤ)).functor.obj (unit k)) :=
     ⟨fun a b ↦ by rw [← Category.id_comp a, ← Category.id_comp b, hid, zero_comp, zero_comp]⟩
   have hone := finrank_hom_unit_shift_pow k 0
   rw [Module.finrank_zero_of_subsingleton] at hone
   simp at hone
 
-/-! ### Forgetting the grading -/
+/-! ### Totalizing the grading -/
 
-/-- **Forgetting the grading**: a graded vector space `V` goes to the direct sum `⨁ᵢ Vᵢ` of its
-pieces, the colimit over the discrete category `ℤ`. -/
-noncomputable def forget : GradedVectorSpace k ⥤ ModuleCat.{u} k :=
-  colim
+private noncomputable abbrev gradedConst : ModuleCat.{u} k ⥤ GVS k :=
+  Functor.const (Discrete ℤ) ⋙ (piEquivalenceFunctorDiscrete ℤ (ModuleCat.{u} k)).inverse
 
-/-- **Forgetting the grading is invariant under the shift**: `{1} ⋙ U ≅ U`. Both functors are left
+private noncomputable def totalGradedConstAdj :
+    GradedObject.total ℤ (ModuleCat.{u} k) ⊣ gradedConst k := by
+  change ((piEquivalenceFunctorDiscrete ℤ (ModuleCat.{u} k)).functor ⋙ colim) ⊣ _
+  exact (piEquivalenceFunctorDiscrete ℤ (ModuleCat.{u} k)).toAdjunction.comp colimConstAdj
+
+/-- **Totalizing the grading is invariant under the shift**: `{1} ⋙ U ≅ U`. Both functors are left
 adjoint to the constant functor. -/
-noncomputable def shiftCompForgetIso : (shift k).functor ⋙ forget k ≅ forget k :=
-  Adjunction.leftAdjointUniq ((shift k).toAdjunction.comp colimConstAdj)
-    (colimConstAdj.ofNatIsoRight (Iso.refl _))
+noncomputable def shiftCompTotalIso :
+    (σ k).functor ⋙ GradedObject.total ℤ (ModuleCat.{u} k) ≅
+      GradedObject.total ℤ (ModuleCat.{u} k) :=
+  Adjunction.leftAdjointUniq
+    ((σ k).toAdjunction.comp (totalGradedConstAdj k))
+    ((totalGradedConstAdj k).ofNatIsoRight (Iso.refl _))
 
-/-- **The ungraded space underlying `M = unit k` is `k`**: forgetting the grading after placing a
-space in degree `0` is left adjoint to the identity. -/
-noncomputable def forgetObjUnitIso : (forget k).obj (unit k) ≅ ModuleCat.of k k :=
-  (Adjunction.leftAdjointUniq
-    ((evaluationAdjunctionRight (ModuleCat.{u} k) (⟨0⟩ : Discrete ℤ)).comp colimConstAdj)
-    (Adjunction.id.ofNatIsoRight (Functor.constCompEvaluationObj _ _).symm)).app _
+private noncomputable def coproductUnitIso :
+    (∐ fun i : ℤ ↦ unit k i) ≅ ModuleCat.of k k where
+  hom := Sigma.desc fun i ↦
+    if hi : i = 0 then
+      (GradedObject.singleObjApplyIsoOfEq 0 (ModuleCat.of k k) i hi).hom
+    else 0
+  inv := (GradedObject.singleObjApplyIso 0 (ModuleCat.of k k)).inv ≫ Sigma.ι (unit k) 0
+  hom_inv_id := by
+    apply Sigma.hom_ext
+    intro i
+    by_cases hi : i = 0
+    · subst i
+      simp only [colimit.ι_desc_assoc, Discrete.functor_obj_eq_as, Cofan.mk_pt, Cofan.mk_ι_app,
+        ↓reduceDIte, Iso.hom_inv_id_assoc, Category.comp_id]
+    · exact (isZero_unit_obj k hi).eq_of_src _ _
+  inv_hom_id := by
+    rw [Category.assoc, Sigma.ι_comp_desc]
+    simp [GradedObject.singleObjApplyIsoOfEq, GradedObject.single]
+
+/-- **The total space underlying `M = unit k` is `k`**. -/
+noncomputable def totalObjUnitIso :
+    (GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k) ≅ ModuleCat.of k k :=
+  coproductUnitIso k
 
 /-! ### The q-Euler characteristic of `M = unit k` -/
 
 section GradedExtEuler
 
-variable [HasExt.{w} (GradedVectorSpace k)]
+variable [HasExt.{w} (GVS k)]
 
 /-- The pair `(M, M)` is graded Euler-admissible: `M` is projective and its graded morphism spaces
 have finite Laurent support. -/
 theorem isGradedEulerAdmissible_unit :
-    IsGradedEulerAdmissible.{w} k (shift k) (unit k) (unit k) :=
-  isGradedEulerAdmissible_of_projective k (shift k) _ _ (hasFiniteLaurentSupport_hom_unit k)
+    IsGradedEulerAdmissible.{w} k (σ k) (unit k) (unit k) :=
+  isGradedEulerAdmissible_of_projective k (σ k) _ _ (hasFiniteLaurentSupport_hom_unit k)
 
 /-- **`χ_q(M, M) = 1`**: the only surviving bigraded `Ext` group of `(M, M)` is the
 one-dimensional space of degree-zero endomorphisms. -/
 theorem gradedExtEuler_unit :
-    gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k) = 1 := by
-  rw [gradedExtEuler_projective k (shift k) (hasFiniteLaurentSupport_hom_unit k), ← T_zero]
+    gradedExtEuler k (σ k) (isGradedEulerAdmissible_unit.{w} k) = 1 := by
+  rw [gradedExtEuler_projective k (σ k) (hasFiniteLaurentSupport_hom_unit k), ← T_zero]
   ext j
   rw [coeff_targetShiftGradedDimension, finrank_hom_unit_shift_pow, T_apply]
   simp [eq_comm (a := (0 : ℤ))]
@@ -290,26 +318,26 @@ theorem gradedExtEuler_unit :
 /-- **`χ_q(M, M{1}) = q`**, that is, `q · χ_q(M, M)`: the q-Euler form is q-linear in its second
 argument. -/
 theorem gradedExtEuler_unit_shiftTarget :
-    gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k).shiftTarget = T 1 := by
+    gradedExtEuler k (σ k) (isGradedEulerAdmissible_unit.{w} k).shiftTarget = T 1 := by
   rw [gradedExtEuler_shiftTarget (isGradedEulerAdmissible_unit.{w} k), gradedExtEuler_unit,
     mul_one]
 
 /-- **`χ_q(M{1}, M) = q⁻¹`**, that is, `q⁻¹ · χ_q(M, M)`: the q-Euler form is q-antilinear in its
 first argument. -/
 theorem gradedExtEuler_unit_shiftSource :
-    gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k).shiftSource = T (-1) := by
+    gradedExtEuler k (σ k) (isGradedEulerAdmissible_unit.{w} k).shiftSource = T (-1) := by
   rw [gradedExtEuler_shiftSource (isGradedEulerAdmissible_unit.{w} k), gradedExtEuler_unit,
     mul_one]
 
 /-- At `q = ε` for a unit `ε : ℤˣ`, the value `χ_q(M, M{1})` becomes `ε`. -/
 theorem laurentEval_gradedExtEuler_unit_shiftTarget (ε : ℤˣ) :
-    laurentEval ε (gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k).shiftTarget) =
+    laurentEval ε (gradedExtEuler k (σ k) (isGradedEulerAdmissible_unit.{w} k).shiftTarget) =
       ε := by
   rw [gradedExtEuler_unit_shiftTarget, laurentEval_T_one]
 
 /-- At `q = ε` for a unit `ε : ℤˣ`, the value `χ_q(M{1}, M)` becomes `ε⁻¹`. -/
 theorem laurentEval_gradedExtEuler_unit_shiftSource (ε : ℤˣ) :
-    laurentEval ε (gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k).shiftSource) =
+    laurentEval ε (gradedExtEuler k (σ k) (isGradedEulerAdmissible_unit.{w} k).shiftSource) =
       ((ε⁻¹ : ℤˣ) : ℤ) := by
   rw [gradedExtEuler_unit_shiftSource, laurentEval_T, zpow_neg_one]
 
@@ -317,8 +345,8 @@ theorem laurentEval_gradedExtEuler_unit_shiftSource (ε : ℤˣ) :
 the specialization of `χ_q(M, M)`. -/
 theorem laurentEval_neg_one_gradedExtEuler_unit_shiftTarget :
     laurentEval (-1 : ℤˣ)
-        (gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k).shiftTarget) =
-      -laurentEval (-1 : ℤˣ) (gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k)) := by
+        (gradedExtEuler k (σ k) (isGradedEulerAdmissible_unit.{w} k).shiftTarget) =
+      -laurentEval (-1 : ℤˣ) (gradedExtEuler k (σ k) (isGradedEulerAdmissible_unit.{w} k)) := by
   rw [laurentEval_gradedExtEuler_unit_shiftTarget, gradedExtEuler_unit, map_one, Units.val_neg,
     Units.val_one]
 
@@ -340,29 +368,33 @@ theorem extEuler_moduleCat_self
   rw [extEuler_projective, ModuleCat.homLinearEquiv.finrank_eq,
     (LinearMap.ringLmapEquivSelf k k k).finrank_eq, Module.finrank_self, Nat.cast_one]
 
-variable [HasExt.{w} (GradedVectorSpace k)]
+variable [HasExt.{w} (GVS k)]
 
 /-- **The graded `Ext` groups of `(M, M)` assemble into the ungraded ones of `(U M, U M)`**: in
 each cohomological degree `n`, `⨁ j, Extⁿ(M, M{j}) ≅ Extⁿ_k(U M, U M)`. Both sides are computed:
 they are one-dimensional for `n = 0` and zero otherwise. -/
 theorem isGradedExtComparison_unit :
-    IsGradedExtComparison.{w, w'} k (shift k) (unit k) (unit k)
-      ((forget k).obj (unit k)) ((forget k).obj (unit k)) := by
-  have : Projective ((forget k).obj (unit k)) :=
+    IsGradedExtComparison.{w, w'} k (σ k) (unit k) (unit k)
+      ((GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k))
+      ((GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k)) := by
+  have : Projective ((GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k)) :=
     have := ModuleCat.projective_of_free (Module.Basis.singleton Unit k)
-    Projective.of_iso (forgetObjUnitIso k).symm this
-  have hhom := Linear.homCongr k (forgetObjUnitIso k) (forgetObjUnitIso k)
-  have : FiniteDimensional k ((forget k).obj (unit k) ⟶ (forget k).obj (unit k)) :=
+    Projective.of_iso (totalObjUnitIso k).symm this
+  have hhom := Linear.homCongr k (totalObjUnitIso k) (totalObjUnitIso k)
+  have : FiniteDimensional k
+      ((GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k) ⟶
+        (GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k)) :=
     Module.Finite.equiv (hhom.trans (ModuleCat.homLinearEquiv (S := k))).symm
-  have hadm := isEulerAdmissible_of_projective.{w'} k ((forget k).obj (unit k))
-    ((forget k).obj (unit k))
+  have hadm := isEulerAdmissible_of_projective.{w'} k
+    ((GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k))
+    ((GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k))
   refine ⟨fun n ↦ ?_⟩
   have hfin := (isGradedEulerAdmissible_unit.{w} k).internallyFinite.finiteLaurentSupport n
   have := hfin.finiteDimensional 0
   have := hadm.isExtFinite.finiteDimensional n
   -- In internal degree `j ≠ 0` there are no morphisms and no higher `Ext`.
   have hsub (j : ℤ) (hj : j ≠ 0) :
-      Subsingleton (GradedExt.{w} (shift k) (unit k) (unit k) n j) := by
+      Subsingleton (GradedExt.{w} (σ k) (unit k) (unit k) n j) := by
     have := hfin.finiteDimensional j
     rw [← Module.finrank_zero_iff (R := k)]
     cases n with
@@ -371,27 +403,30 @@ theorem isGradedExtComparison_unit :
       simp only [hj, ↓reduceIte]
     | succ m =>
       have := (isExtBoundedBy_one_of_projective.{w} (unit k)
-        (((shift k) ^ j).functor.obj (unit k))).subsingleton (Nat.le_add_left 1 m)
+        (((σ k) ^ j).functor.obj (unit k))).subsingleton (Nat.le_add_left 1 m)
       exact Module.finrank_zero_of_subsingleton
   -- In internal degree `0` both sides have the same dimension.
   refine ⟨(DirectSum.componentLinearEquiv _ 0 hsub).trans (LinearEquiv.ofFinrankEq _ _ ?_)⟩
   cases n with
   | zero =>
     rw [(Ext.linearEquiv₀ (R := k)).finrank_eq, finrank_hom_unit_shift_pow,
-      (Ext.linearEquiv₀ (R := k)).finrank_eq, hhom.finrank_eq, ModuleCat.homLinearEquiv.finrank_eq,
+      (Ext.linearEquiv₀ (R := k)).finrank_eq, hhom.finrank_eq,
+      ModuleCat.homLinearEquiv.finrank_eq,
       (LinearMap.ringLmapEquivSelf k k k).finrank_eq, Module.finrank_self]
     simp only [↓reduceIte]
   | succ m =>
     have := (isExtBoundedBy_one_of_projective.{w} (unit k)
-      (((shift k) ^ (0 : ℤ)).functor.obj (unit k))).subsingleton (Nat.le_add_left 1 m)
-    have := (isExtBoundedBy_one_of_projective.{w'} ((forget k).obj (unit k))
-      ((forget k).obj (unit k))).subsingleton (Nat.le_add_left 1 m)
+      (((σ k) ^ (0 : ℤ)).functor.obj (unit k))).subsingleton (Nat.le_add_left 1 m)
+    have := (isExtBoundedBy_one_of_projective.{w'}
+      ((GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k))
+      ((GradedObject.total ℤ (ModuleCat.{u} k)).obj (unit k))).subsingleton
+        (Nat.le_add_left 1 m)
     rw [Module.finrank_zero_of_subsingleton, Module.finrank_zero_of_subsingleton]
 
 /-- **At `q = 1` the q-Euler characteristic of `(M, M)` is the ordinary Ext-Euler characteristic of
 the underlying ungraded pair `(U M, U M)`**, as it must be after forgetting the grading. -/
 theorem laurentEval_one_gradedExtEuler_unit :
-    laurentEval (1 : ℤˣ) (gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k)) =
+    laurentEval (1 : ℤˣ) (gradedExtEuler k (σ k) (isGradedEulerAdmissible_unit.{w} k)) =
       extEuler.{w'} k ((isGradedExtComparison_unit.{w, w'} k).isEulerAdmissible
         (isGradedEulerAdmissible_unit.{w} k)) :=
   (isGradedExtComparison_unit.{w, w'} k).laurentEval_one_gradedExtEuler _
