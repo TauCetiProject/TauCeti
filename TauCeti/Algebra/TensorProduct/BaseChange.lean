@@ -25,6 +25,8 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 Scalar extension along a commutative `K`-algebra `L` distributes over the tensor product, commutes
 with passing to the opposite algebra, and composes in stages:
 
+* `TauCeti.lid_rTensor_distribBaseChange_symm`: pairing against a linear functional commutes with
+  distributing scalar extension over a tensor product.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
 * `TauCeti.Algebra.TensorProduct.baseChangeOpAlgEquiv`: `L ⊗[K] Aᵐᵒᵖ ≃ₐ[L] (L ⊗[K] A)ᵐᵒᵖ`;
@@ -32,6 +34,7 @@ with passing to the opposite algebra, and composes in stages:
   `M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A` for a tower `K → L → M`.
 * `TauCeti.Algebra.TensorProduct.baseChangeTowerRingEquiv`: the same tower comparison with tensor
   factors in coordinate-ring order, `(L ⊗[K] A) ⊗[L] M ≃+* A ⊗[K] M`.
+* `TauCeti.ScalarAut.semilinearMap`: the scalar action as a semilinear map over `L`.
 * `TauCeti.ScalarAut.instMulSemiringAction`: scalar automorphisms act on a scalar extension
   through its scalar factor.
 * `TauCeti.ScalarAut.baseChangeMap_smul`: scalar extension of an algebra map is equivariant for
@@ -53,10 +56,9 @@ algebra being extended; the algebras this file exists to serve are central simpl
 commutative in general, and the hypothesis has to go along with the chance to reuse that
 definition.
 
-These are statements about scalar extension as such, with no central-simplicity hypotheses. The
-first three are consumed by `TauCeti/Algebra/CentralSimple/BaseChange.lean`, which re-exports them
-for `TauCeti/Algebra/BrauerGroup/BaseChange.lean`. The coordinate-ring-order comparison is consumed
-by the geometric connectedness and reducedness base-change modules.
+These are statements about scalar extension as such, with no central-simplicity hypotheses. They
+supply the compatibility isomorphisms needed to extend central simple algebras, Brauer classes,
+and coordinate rings along base field extensions.
 
 ## References
 
@@ -109,12 +111,14 @@ def baseChangeTensorAlgEquiv :
         | tmul a₂ b₂ => simp [Algebra.TensorProduct.tmul_mul_tmul])
     (by simp [Algebra.TensorProduct.one_def])
 
+/-- Base change distribution sends pure tensors to pure tensors. -/
 @[simp]
 theorem baseChangeTensorAlgEquiv_tmul (l : L) (a : A) (b : B) :
     baseChangeTensorAlgEquiv K L A B (l ⊗ₜ[K] (a ⊗ₜ[K] b)) = (l ⊗ₜ[K] a) ⊗ₜ[L] (1 ⊗ₜ[K] b) :=
   (Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct_apply _ _ _ _).trans
     (_root_.TensorProduct.AlgebraTensorModule.distribBaseChange_tmul ..)
 
+/-- The inverse base change distribution sends pure tensors to pure tensors. -/
 @[simp]
 theorem baseChangeTensorAlgEquiv_symm_tmul (l₁ l₂ : L) (a : A) (b : B) :
     (baseChangeTensorAlgEquiv K L A B).symm ((l₁ ⊗ₜ[K] a) ⊗ₜ[L] (l₂ ⊗ₜ[K] b)) =
@@ -263,7 +267,6 @@ noncomputable instance instMulSemiringAction :
   MulSemiringAction.compHom _ congrHom
 
 /-- Scalar multiplication on a base change is the tensor-product congruence. -/
-@[simp]
 theorem smul_def (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
     σ • x = Algebra.TensorProduct.congr σ (.refl : A ≃ₐ[K] A) x :=
   rfl
@@ -272,8 +275,7 @@ theorem smul_def (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
 @[simp]
 theorem baseChangeMap_smul {B : Type*} [Semiring B] [Algebra K B] (f : A →ₐ[K] B)
     (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
-    Algebra.TensorProduct.map (AlgHom.id K L) f
-        (Algebra.TensorProduct.map (σ : L →ₐ[K] L) (AlgHom.id K A) x) =
+    Algebra.TensorProduct.map (AlgHom.id K L) f (σ • x) =
       σ • Algebra.TensorProduct.map (AlgHom.id K L) f x := by
   simp only [smul_def, Algebra.TensorProduct.congr_apply, AlgEquiv.refl_toAlgHom,
     ← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp, AlgHom.id_comp, AlgHom.comp_id]
