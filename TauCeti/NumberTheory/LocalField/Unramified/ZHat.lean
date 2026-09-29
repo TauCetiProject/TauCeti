@@ -17,10 +17,8 @@ the Galois group of the maximal unramified extension with the profinite integers
 
 `Gal(Kᵘʳ/K) ≃ₜ* ℤ̂`.
 
-The isomorphism sends arithmetic Frobenius to the canonical generator `zHat.gen`. Surjectivity of
-the inverse map follows because Frobenius is a topological generator. For injectivity, every finite
-quotient of `ℤ̂` is detected by restricting to the unramified extension whose degree is the order
-of that quotient.
+The isomorphism sends arithmetic Frobenius to the canonical generator `zHat.gen`, and hence each
+integral power of `zHat.gen` to the same power of Frobenius.
 
 ## Main definition
 

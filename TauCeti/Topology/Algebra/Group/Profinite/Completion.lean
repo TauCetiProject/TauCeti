@@ -16,14 +16,10 @@ unbundled groups and continuous monoid homomorphisms. It also proves that the ca
 a finite group to its profinite completion is bijective, and exposes the projections of the
 profinite completion onto the finite quotients it is the limit of.
 
-The correspondence allows the target to live in any universe. Mathlib's adjunction
-`ProfiniteGrp.ProfiniteCompletion.homEquiv` is stated within a single universe, so the continuous
-extension is built directly: its coordinates are pushed forward along the given homomorphism and
-read back into the target through Mathlib's presentation
-`ProfiniteGrp.continuousMulEquivLimittoFiniteQuotientFunctor` of a profinite group as the limit of
-its finite quotients. The finite-group result uses the canonical map's dense range and Mathlib's
-residual-finiteness criterion. The projections are the components of Mathlib's explicit limit
-cone.
+The correspondence `continuousMonoidHomEquiv` allows the group and the profinite target to live
+in independent universes, unlike Mathlib's single-universe adjunction
+`ProfiniteGrp.ProfiniteCompletion.homEquiv`; this is what lets a fixed universe-polymorphic
+completion, such as the profinite integers, map to profinite groups in any universe.
 
 The continuous finite quotients of the completion are exactly the finite quotients of `G`
 (`isFiniteContinuousQuotient_iff_exists_surjective`), and the completion of a finitely generated
@@ -147,8 +143,9 @@ private def liftToLimit (f : G →* P) :
     let H := U.toFiniteIndexNormalSubgroup.comap f
     let _ : TopologicalSpace (G ⧸ H.toSubgroup) := ⊥
     have _ : DiscreteTopology (G ⧸ H.toSubgroup) := ⟨rfl⟩
-    have hc := continuous_coordinateHom G H
-    rw [show ⇑(coordinateHom G H) = fun x ↦ x.val H from funext (coordinateHom_apply G H)] at hc
+    have hc : Continuous fun x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) ↦
+        x.val H :=
+      (continuous_coordinateHom G H).congr (coordinateHom_apply G H)
     exact (continuous_of_discreteTopology (α := G ⧸ H.toSubgroup)
       (β := (ProfiniteGrp.diagram (ProfiniteGrp.of P)).obj U)
       (f := QuotientGroup.map H.toSubgroup U.toSubgroup f fun _ h ↦ h)).comp hc
@@ -174,9 +171,11 @@ private theorem liftAux_etaFn (f : G →* P) (g : G) :
   rfl
 
 /-- Continuous homomorphisms from the profinite completion of `G` to a profinite group `P`
-correspond to abstract homomorphisms from `G` to `P`. The target may live in any universe:
-the inverse is built from the presentation of `P` as the limit of its finite quotients, since
-Mathlib's adjunction `ProfiniteGrp.ProfiniteCompletion.homEquiv` is stated within one universe. -/
+correspond to abstract homomorphisms from `G` to `P`, by restriction along the canonical map.
+The target `P` may live in a different universe from `G`. -/
+-- Mathlib's adjunction `ProfiniteGrp.ProfiniteCompletion.homEquiv` is stated within one universe,
+-- so the inverse is built from the presentation of `P` as the limit of its finite quotients,
+-- Mathlib's `ProfiniteGrp.continuousMulEquivLimittoFiniteQuotientFunctor`.
 noncomputable def continuousMonoidHomEquiv :
     (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* P) ≃ (G →* P) where
   toFun f := (f : _ →* P).comp (ProfiniteGrp.ProfiniteCompletion.eta (GrpCat.of G)).hom
