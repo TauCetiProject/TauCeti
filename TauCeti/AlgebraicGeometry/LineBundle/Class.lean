@@ -112,9 +112,9 @@ the structure sheaf. -/
 @[simp]
 lemma mk_eq_one_iff {L : InvertibleSheaf X} :
     mk L = 1 ↔ Nonempty (L.obj ≅ 𝟙_ X.Modules) := by
-  rw [← mk_trivial, mk_eq_mk_iff, InvertibleSheaf.trivial_obj]
-  exact ⟨fun ⟨e⟩ ↦ ⟨e ≪≫ TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf⟩,
-    fun ⟨e⟩ ↦ ⟨e ≪≫ (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf).symm⟩⟩
+  rw [← mk_trivial, mk_eq_mk_iff]
+  exact ⟨fun ⟨e⟩ ↦ ⟨e ≪≫ InvertibleSheaf.trivialObjIsoUnit X⟩,
+    fun ⟨e⟩ ↦ ⟨e ≪≫ (InvertibleSheaf.trivialObjIsoUnit X).symm⟩⟩
 
 /-- Tensor product makes line-bundle classes a commutative monoid. -/
 noncomputable instance : CommMonoid (LineBundleClass X) := by
