@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Algebra.Group.Subgroup.Normalizer
 public import TauCeti.GroupTheory.Commutator
 public import TauCeti.GroupTheory.PLowerCentralSeries
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -81,6 +82,7 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
   degree-raising law `⁅λ_j, λ_k⁆ ≤ λ_{j+k+1}`.
 * `MonoidHom.map_pLowerCentralSeries_le`, `MonoidHom.map_pLowerCentralSeries_eq_of_surjective`,
   `ContinuousMulEquiv.map_pLowerCentralSeries_eq`: functoriality of the series.
+* `TauCeti.isTopCharacteristic_pLowerCentralSeries`: every term is topologically characteristic.
 * `TauCeti.pLowerCentralSeries_eq_topologicalClosure`,
   `TauCeti.pLowerCentralSeries_eq_of_discreteTopology`: comparison with the abstract lower
   `p`-central series of the underlying group.
@@ -607,6 +609,13 @@ theorem _root_.ContinuousMulEquiv.map_pLowerCentralSeries_eq (e : G ≃ₜ* H) (
     e.symm.toMulEquiv.toMonoidHom.map_pLowerCentralSeries_le e.symm.continuous k
       (mem_map_of_mem _ hx)
   exact ⟨e.symm x, hsymm, e.apply_symm_apply x⟩
+
+variable (p) in
+/-- Every term of the lower `p`-series is topologically characteristic, for every topological
+group and every natural number `p`. -/
+theorem isTopCharacteristic_pLowerCentralSeries (k : ℕ) :
+    IsTopCharacteristic G (pLowerCentralSeries p G k) :=
+  isTopCharacteristic_iff_map_eq.mpr fun φ ↦ φ.map_pLowerCentralSeries_eq k
 
 /-- A group isomorphism between discrete groups matches their lower `p`-series term by term. -/
 theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology [DiscreteTopology G]
