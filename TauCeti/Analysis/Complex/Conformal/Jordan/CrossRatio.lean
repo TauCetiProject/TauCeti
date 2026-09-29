@@ -82,7 +82,7 @@ real point. -/
 private theorem one_sub_conj_mul_sub_I_div_add_I_ne_zero (c : Complex.UnitDisc) (x : ℝ) :
     1 - (starRingEnd ℂ) (c : ℂ) * (((x : ℂ) - I) / ((x : ℂ) + I)) ≠ 0 :=
   (sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one c.norm_lt_one
-    (norm_sub_I_div_add_I_ofReal x)).2
+    (by simpa only [norm_div] using norm_sub_I_div_add_I_ofReal x)).2
 
 /-- **The two maps in a common disc picture.** Let `f` and `g` be holomorphic bijections of the
 upper half-plane onto a bounded Jordan domain `U`. Then `g` is `G` after the Cayley transform `C`,
@@ -231,7 +231,7 @@ theorem crossRatio_eq_of_tendsto_of_bijOn_upperHalfPlaneSet {U : Set ℂ} (hUb :
     (sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one c.norm_lt_one
       (mem_sphere_zero_iff_norm.mp ht)).2
   have hS (x : ℝ) : ((x : ℂ) - I) / ((x : ℂ) + I) ∈ sphere (0 : ℂ) 1 :=
-    mem_sphere_zero_iff_norm.mpr (norm_sub_I_div_add_I_ofReal x)
+    mem_sphere_zero_iff_norm.mpr (by simpa only [norm_div] using norm_sub_I_div_add_I_ofReal x)
   have hM := crossRatio_comp_eq_of_sub_eq_div
     (φ := fun w : ℂ => (u : ℂ) * ((w - c) / (1 - (starRingEnd ℂ) (c : ℂ) * w)))
     (d := fun w => 1 - (starRingEnd ℂ) (c : ℂ) * w) (S := sphere 0 1)

@@ -84,7 +84,8 @@ theorem continuousAt_sub_I_div_add_I (x : ℝ) :
 
 /-- The Cayley transform of a real point lies on the unit circle. -/
 @[simp] theorem norm_sub_I_div_add_I_ofReal (x : ℝ) :
-    ‖((x : ℂ) - I) / ((x : ℂ) + I)‖ = 1 := by
+    ‖(x : ℂ) - I‖ / ‖(x : ℂ) + I‖ = 1 := by
+  rw [← norm_div]
   have hx : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
   refine le_antisymm ((norm_sub_I_div_add_I_le_one_iff hx).mpr (by simp)) (not_lt.mp fun h => ?_)
   simpa using (norm_sub_I_div_add_I_lt_one_iff hx).mp h
