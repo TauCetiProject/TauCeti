@@ -78,13 +78,13 @@ variable (K) in
 /-- **The norm character** `c ↦ ‖c‖ ^ s` of the idele class group, for a complex exponent `s`.
 It is unitary exactly when `s` is purely imaginary. -/
 def normPow (s : ℂ) : HeckeCharacter K :=
-  cpowCharacter ideleClassNorm continuous_ideleClassNorm s
+  ideleClassNorm.cpowCharacter continuous_ideleClassNorm s
 
 /-- The value of the norm character `‖·‖ ^ s` at an idele class `c` is `‖c‖ ^ s`. -/
 @[simp]
 theorem normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
     ((normPow K s c : ℂˣ) : ℂ) = (((ideleClassNorm c : ℝ≥0) : ℝ) : ℂ) ^ s :=
-  coe_cpowCharacter_apply _ _ s c
+  MonoidHom.coe_cpowCharacter_apply _ _ s c
 
 /-- The absolute value of `‖c‖ ^ s` is `‖c‖ ^ Re s`. -/
 theorem norm_normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
@@ -94,11 +94,11 @@ theorem norm_normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
 /-- The zeroth power of the idele class norm is the trivial character. -/
 @[simp]
 theorem normPow_zero : normPow K 0 = 1 :=
-  cpowCharacter_zero _ _
+  MonoidHom.cpowCharacter_zero _ _
 
 /-- Norm characters multiply by adding exponents. -/
 theorem normPow_add (s t : ℂ) : normPow K (s + t) = normPow K s * normPow K t :=
-  cpowCharacter_add _ _ s t
+  MonoidHom.cpowCharacter_add _ _ s t
 
 /-- The norm character with the negated exponent is the inverse character. -/
 theorem normPow_neg (s : ℂ) : normPow K (-s) = (normPow K s)⁻¹ :=
