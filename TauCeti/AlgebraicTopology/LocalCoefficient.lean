@@ -208,8 +208,27 @@ homotopy. -/
 theorem pullbackHomotopyIso_hom_app_app (H : f.Homotopy g)
     (L : LocalCoefficientSystem.{u, v₂, w} R Y) (x : FundamentalGroupoid X) :
     ((pullbackHomotopyIso (R := R) H).hom.app L).app x =
-      L.map ⟦H.evalAt x.as⟧ :=
-  (rfl)
+      L.map ⟦H.evalAt x.as⟧ := by
+  -- As in `pullbackCompIso_hom_app_app`, `(pullback f).obj L` is only definitionally a
+  -- whiskered functor, so the whiskered component is exposed with `change`.  Mathlib states no
+  -- `app` lemma for `homotopicMapsNatIso`, so its component is read off from the definition.
+  change L.map ((FundamentalGroupoidFunctor.homotopicMapsNatIso H).app x) = _
+  unfold FundamentalGroupoidFunctor.homotopicMapsNatIso
+  rfl
+
+/-- At a point, the inverse pullback comparison acts by the local system on the reversed path
+traced by the homotopy. -/
+@[simp]
+theorem pullbackHomotopyIso_inv_app_app (H : f.Homotopy g)
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) (x : FundamentalGroupoid X) :
+    ((pullbackHomotopyIso (R := R) H).inv.app L).app x =
+      L.map ⟦(H.evalAt x.as).symm⟧ := by
+  refine Iso.inv_ext (f := ((pullbackHomotopyIso (R := R) H).app L).app x) ?_
+  have h : (⟦H.evalAt x.as⟧ ≫ ⟦(H.evalAt x.as).symm⟧ :
+      FundamentalGroupoid.mk (f x.as) ⟶ FundamentalGroupoid.mk (f x.as)) = 𝟙 _ :=
+    Quotient.sound (Path.Homotopic.trans_symm _)
+  rw [Iso.app_hom, Iso.app_hom, pullbackHomotopyIso_hom_app_app]
+  exact (L.map_comp _ _).symm.trans ((congrArg L.map h).trans (L.map_id _))
 
 end Homotopy
 
