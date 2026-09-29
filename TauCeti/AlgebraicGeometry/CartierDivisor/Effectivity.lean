@@ -65,6 +65,7 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
 
 /-- The Weil–Cartier equivalence preserves effectivity. -/
+@[simp]
 theorem isEffective_equivCartierDivisor_iff (hX : ∀ x : X, coheight x ≤ 1)
     (D : SchemeWeilDivisor X) :
     (equivCartierDivisor hX D).IsEffective ↔
