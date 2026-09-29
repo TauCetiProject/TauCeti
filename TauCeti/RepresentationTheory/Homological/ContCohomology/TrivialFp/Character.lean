@@ -171,26 +171,29 @@ theorem cohomFpLinearEquivContinuousZModDual_cohomFpMap (f : H →ₜ* G)
     _ = π (trivialFp p H) 1 (characterCocycle p (f.continuousZModDualMap χ)) := by
       congr 1
       apply (TopRep.homogeneousCochains (trivialFp p H)).iCycles_injective 1
-      rw [ContinuousCohomology.iCycles_cocyclesMap_apply,
-        iCycles_characterCocycle, iCycles_characterCocycle]
+      let f' : (trivialFp p G).V →+ (trivialFp p H).V :=
+        ((trivialFpEquiv p H).symm.toLinearMap ∘ₗ
+          (trivialFpEquiv p G).toLinearMap).toAddMonoidHom
+      have hf (m : (trivialFp p G).V) :
+          (eqToHom (res_trivialFp_hom p f)).hom m = f' m :=
+        (trivialFpEquiv p H).injective <| by
+          simpa [f'] using trivialFpEquiv_eqToHom_res_trivialFp_hom p f m
       apply Subtype.ext
       ext h₀ h₁
-      rw [ContinuousCohomology.coe_cochainsMap_f_apply,
-        ContinuousCohomology.resolutionMap_succ_apply,
-        ContinuousCohomology.resolutionMap_succ_apply,
+      refine (ContinuousCohomology.iCycles_cocyclesMap_one_apply f
+        (eqToHom (res_trivialFp_hom p f)) (characterCocycle p χ) f' hf h₀ h₁).trans ?_
+      rw [iCycles_characterCocycle, iCycles_characterCocycle,
         characterCochain_apply, characterCochain_apply]
-      rw [_root_.ContinuousCohomology.resolutionMap_zero]
-      apply (trivialFpEquiv p H).injective
-      rw [trivialFpEquiv_eqToHom_res_trivialFp_hom,
-        ContinuousMonoidHom.toMul_continuousZModDualMap_apply]
+      change (trivialFpEquiv p H).symm
+          (trivialFpEquiv p G ((trivialFpEquiv p G).symm
+            (Multiplicative.toAdd (χ.toMul ((f h₀)⁻¹ * f h₁))))) =
+        (trivialFpEquiv p H).symm
+          (Multiplicative.toAdd ((f.continuousZModDualMap χ).toMul (h₀⁻¹ * h₁)))
       rw [LinearEquiv.apply_symm_apply]
-      calc
-        Multiplicative.toAdd (χ.toMul ((f h₀)⁻¹ * f h₁)) =
-            Multiplicative.toAdd (χ.toMul (f (h₀⁻¹ * h₁))) := by
-          rw [map_mul f, map_inv f]
-        _ = trivialFpEquiv p H
-            ((trivialFpEquiv p H).symm (Multiplicative.toAdd (χ.toMul (f (h₀⁻¹ * h₁))))) :=
-          (LinearEquiv.apply_symm_apply _ _).symm
+      apply (trivialFpEquiv p H).injective
+      rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+      rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply]
+      rw [map_mul f, map_inv f]
     _ = (cohomFpLinearEquivContinuousZModDual p H).symm
         (f.continuousZModDualMap χ) :=
       (cohomFpLinearEquivContinuousZModDual_symm_apply p _).symm
