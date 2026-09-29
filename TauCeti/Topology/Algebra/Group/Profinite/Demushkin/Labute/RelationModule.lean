@@ -140,46 +140,40 @@ section CompletedAction
 
 variable [CompactSpace F] [TotallyDisconnectedSpace F]
 
-/-- Inversion on the commutative character quotient. This switches Mathlib's conjugation
-convention to Labute's inverse-conjugation convention. -/
-private noncomputable def orientationQuotientInv (χ : F →ₜ* ℤ_[p]ˣ) :
-    orientationQuotient χ →* orientationQuotient χ where
-  toFun := Inv.inv
-  map_one' := inv_one
-  map_mul' a b := by
-    rw [mul_inv_rev]
-    exact (isMulCommutative_iff.mp (orientationQuotient_isMulCommutative χ) b⁻¹ a⁻¹)
-
-omit [CompactSpace F] [TotallyDisconnectedSpace F] in
-/-- Inversion is continuous on the character quotient. -/
-private theorem continuous_orientationQuotientInv (χ : F →ₜ* ℤ_[p]ˣ) :
-    Continuous (orientationQuotientInv χ) :=
-  continuous_inv
+open scoped IsMulCommutative
 
 /-- The `ℤ_p[[Γ]]`-action on Labute's `E`, obtained by applying inversion to the group algebra
 and then using the completed conjugation action. -/
 noncomputable def labuteSMul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     (a : completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) (ξ : labuteE χ) :
     labuteE χ := by
+  letI : CommGroup (orientationQuotient χ) := by
+    letI : IsMulCommutative (orientationQuotient χ) := orientationQuotient_isMulCommutative χ
+    infer_instance
+  have h_inv : Continuous (invMonoidHom : orientationQuotient χ → orientationQuotient χ) := by
+    simpa only [coe_invMonoidHom] using
+      (continuous_inv : Continuous (fun γ : orientationQuotient χ => γ⁻¹))
   letI : IsClosed ((χ : F →* ℤ_[p]ˣ).ker : Set F) :=
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
   letI := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
     (orientationQuotient χ)
-  exact completedGroupAlgebra.map ℤ_[p] (orientationQuotientInv χ)
-    (continuous_orientationQuotientInv χ) a • ξ
+  exact completedGroupAlgebra.map ℤ_[p] invMonoidHom h_inv a • ξ
 
 /-- The completed action extends inverse conjugation by group elements. -/
 theorem labuteSMul_of (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     (γ : orientationQuotient χ) (ξ : labuteE χ) :
     labuteSMul hF χ (completedGroupAlgebra.of ℤ_[p] (orientationQuotient χ) γ) ξ =
       labuteAction χ γ ξ := by
+  let _ : CommGroup (orientationQuotient χ) := by
+    letI : IsMulCommutative (orientationQuotient χ) := orientationQuotient_isMulCommutative χ
+    infer_instance
   let _ : IsClosed ((χ : F →* ℤ_[p]ˣ).ker : Set F) :=
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
   let _ := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
     (orientationQuotient χ)
   rw [labuteSMul, completedGroupAlgebra.map_of]
   exact (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule_of_smul
-    (orientationQuotientInv χ γ) ξ
+    (invMonoidHom γ) ξ
 
 /-- The completed action satisfies the unit, multiplication and additivity laws of a module. -/
 theorem labuteSMul_laws (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
@@ -188,6 +182,9 @@ theorem labuteSMul_laws (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
       labuteSMul hF χ (a * b) ξ = labuteSMul hF χ a (labuteSMul hF χ b ξ) ∧
       labuteSMul hF χ (a + b) ξ = labuteSMul hF χ a ξ + labuteSMul hF χ b ξ ∧
       labuteSMul hF χ a (ξ + η) = labuteSMul hF χ a ξ + labuteSMul hF χ a η := by
+  let _ : CommGroup (orientationQuotient χ) := by
+    letI : IsMulCommutative (orientationQuotient χ) := orientationQuotient_isMulCommutative χ
+    infer_instance
   let _ : IsClosed ((χ : F →* ℤ_[p]ˣ).ker : Set F) :=
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
   let _ := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
@@ -198,6 +195,12 @@ theorem labuteSMul_laws (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
 theorem continuous_labuteSMul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ) :
     Continuous (fun z : completedGroupAlgebra ℤ_[p] (orientationQuotient χ) × labuteE χ =>
       labuteSMul hF χ z.1 z.2) := by
+  let _ : CommGroup (orientationQuotient χ) := by
+    letI : IsMulCommutative (orientationQuotient χ) := orientationQuotient_isMulCommutative χ
+    infer_instance
+  have h_inv : Continuous (invMonoidHom : orientationQuotient χ → orientationQuotient χ) := by
+    simpa only [coe_invMonoidHom] using
+      (continuous_inv : Continuous (fun γ : orientationQuotient χ => γ⁻¹))
   let _ : IsClosed ((χ : F →* ℤ_[p]ˣ).ker : Set F) :=
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
   let _ := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
@@ -206,8 +209,9 @@ theorem continuous_labuteSMul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ) :
     (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).continuousSMul_completedGroupAlgebraModule
       (orientationQuotient χ)
   exact continuous_smul.comp
-    (((completedGroupAlgebra.continuous_map ℤ_[p] (orientationQuotientInv χ)
-      (continuous_orientationQuotientInv χ)).comp continuous_fst).prodMk continuous_snd)
+    (((completedGroupAlgebra.continuous_map ℤ_[p]
+      (invMonoidHom : orientationQuotient χ →* orientationQuotient χ)
+      h_inv).comp continuous_fst).prodMk continuous_snd)
 
 end CompletedAction
 
