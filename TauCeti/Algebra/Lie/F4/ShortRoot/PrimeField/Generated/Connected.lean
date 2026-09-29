@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
+import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.SmoothConnected
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 
 /-!
