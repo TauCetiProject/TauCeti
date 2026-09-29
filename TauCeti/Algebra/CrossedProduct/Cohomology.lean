@@ -39,6 +39,13 @@ comparison with `groupCohomology` has this restriction.
 
 ## References
 
+The construction adapts the factor-set classification of
+`TauCeti/GroupTheory/GroupExtension/Cohomology.lean` (`TauCeti.FactorSet.toCocycles₂`,
+`TauCeti.FactorSet.cohomologyClass_eq_iff`, `TauCeti.FactorSet.cohomologyClassEquiv`) from
+normalized factor sets of an arbitrary group to the unnormalized cocycles of `Aut_K(L)` used by
+crossed products; since those cocycles are not normalized, no normalization step is needed for
+surjectivity.
+
 * P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology*, §4.4.
 * J.-P. Serre, *Local Fields*, Chapter X, §5.
 -/
