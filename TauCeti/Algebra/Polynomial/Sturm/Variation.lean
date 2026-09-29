@@ -99,8 +99,7 @@ the first Sturm variation step contributes exactly one sign change. -/
   rw [sturmVariation_cons hp0, sturmVariation_cons hq0,
     sturmSeq_cons hq0]
   have hr : (-p % q).eval x = -p.eval x := by
-    rw [neg_mod, eval_neg, EuclideanDomain.mod_eq_sub_mul_div,
-      eval_sub, eval_mul, hq, zero_mul, sub_zero]
+    simp [EuclideanDomain.mod_eq_sub_mul_div, hq]
   have hr0 : -p % q ≠ 0 := by
     intro hz
     have := congrArg (fun r : K[X] => r.eval x) hz
