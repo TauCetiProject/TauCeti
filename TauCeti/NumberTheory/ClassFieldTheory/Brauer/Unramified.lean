@@ -130,6 +130,12 @@ private def unitsToFrobeniusFixed : Additive Kˣ →+ frobeniusFixed K L :=
       (Units.map (algebraMap K L : K →* L)).toAdditive) (frobeniusFixed K L) fun _ ↦
     (mem_frobeniusFixed_iff K L _).2 <| Units.ext <| AlgEquiv.commutes _ _
 
+/-- The value of `unitsToFrobeniusFixed`: the image of `a` in `Lˣ`, written additively. -/
+private theorem coe_unitsToFrobeniusFixed (a : Kˣ) :
+    (unitsToFrobeniusFixed K L (Additive.ofMul a) : Rep.ofAlgebraAutOnUnits K L) =
+      Rep.toAdditive.symm (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)) :=
+  rfl
+
 /-- A Frobenius-fixed element of `Lˣ` lies in `Kˣ`, since Frobenius generates `Gal(L/K)`. -/
 private theorem unitsToFrobeniusFixed_surjective :
     Function.Surjective (unitsToFrobeniusFixed K L) := by
@@ -300,12 +306,7 @@ theorem map_unramifiedClass (a : Kˣ) :
   · rw [IsGalois.card_aut_eq_finrank, IsGalois.card_aut_eq_finrank,
       ← Module.finrank_mul_finrank K L M, mul_comm]
   · -- Both sides are images of `a ^ [M : L]` in `Mˣ`, through `Lˣ` on the right.
-    have hL : (unitsToFrobeniusFixed K L (Additive.ofMul a) : Rep.ofAlgebraAutOnUnits K L) =
-        Rep.toAdditive.symm (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)) := rfl
-    have hM : (unitsToFrobeniusFixed K M (Additive.ofMul (a ^ Module.finrank L M)) :
-        Rep.ofAlgebraAutOnUnits K M) = Rep.toAdditive.symm
-          (Additive.ofMul (Units.map (algebraMap K M : K →* M) (a ^ Module.finrank L M))) := rfl
-    rw [hL, hM]
+    rw [coe_unitsToFrobeniusFixed, coe_unitsToFrobeniusFixed]
     refine Eq.trans ?_ (congrArg (Module.finrank L M • ·) (unitsInflationHom_apply K L M _)).symm
     have hmap : Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) a) =
         Units.map (algebraMap K M : K →* M) a :=

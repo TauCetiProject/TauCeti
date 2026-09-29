@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
-import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 import TauCeti.RepresentationTheory.Homological.Resolution
 
 /-!
@@ -144,6 +144,15 @@ private theorem leftRegular_ρ_single (h x : G) (r : k) :
     (leftRegular k G).ρ h (MonoidAlgebra.single x r) = MonoidAlgebra.single (h * x) r :=
   (Representation.ofMulAction_single (k := k) h x r).trans (by rw [smul_eq_mul])
 
+omit [Fintype G] in
+/-- `leftRegular_ρ_single` for `ρ(h)` written as `applyAsHom`, whose representation carries the
+`CommMonoid` instance path of `G`; it agrees with the `Group` path only up to unfolding instances,
+so `leftRegular_ρ_single` does not rewrite this form. -/
+private theorem applyAsHom_leftRegular_single (h x : G) (r : k) :
+    (applyAsHom (leftRegular k G) h).hom (MonoidAlgebra.single x r) =
+      MonoidAlgebra.single (h * x) r :=
+  leftRegular_ρ_single k h x r
+
 private theorem barToPeriodic₁_comm :
     barToPeriodic₁ k g hg ≫ (applyAsHom (leftRegular k G) g - 𝟙 (leftRegular k G)) =
       Rep.barComplex.d k G 0 ≫ barToPeriodic₀ k := by
@@ -154,9 +163,7 @@ private theorem barToPeriodic₁_comm :
     Pi.sub_apply, Rep.hom_id, Rep.hom_ofHom, Representation.IntertwiningMap.id_apply, map_add,
     map_sum, Representation.freeLift_single_single, one_smul, map_one, Module.End.one_apply,
     Representation.ofMulAction_single, smul_eq_mul, mul_one]
-  -- `ρ(g)` is `applyAsHom`, whose representation carries the `CommMonoid` instance path; the
-  -- rewrite to left multiplication only matches up to unfolding that instance.
-  rw [Finset.sum_congr rfl fun l _ => by erw [leftRegular_ρ_single]]
+  rw [Finset.sum_congr rfl fun l _ => by rw [applyAsHom_leftRegular_single]]
   simp only [← pow_succ']
   rw [Finset.sum_range_sub (fun l => MonoidAlgebra.single (g ^ l) (1 : k)), pow_log, pow_zero,
     Fin.sum_univ_one]
@@ -193,7 +200,7 @@ private theorem barToPeriodic₂_comm :
   set j := log g hg (x 1) with hj
   have hmul : log g hg (x 0 * x 1) = (i + j) % orderOf g := log_mul g hg _ _
   -- As in `barToPeriodic₁_comm`, left multiplication is matched up to the instance path.
-  rw [Finset.sum_congr rfl fun l _ => by erw [leftRegular_ρ_single]]
+  simp only [Representation.ofMulAction_single, smul_eq_mul]
   rw [h₀, h₁, hmul, ← hi, (pow_log g hg (x 0)).symm.trans (congrArg (g ^ ·) hi.symm), map_zero]
   simp only [← pow_add]
   have hS : geomSum k g (i + j) =
@@ -204,7 +211,7 @@ private theorem barToPeriodic₂_comm :
       if orderOf g ≤ i + j then ∑ x : G, MonoidAlgebra.single x (1 : k) else 0 := by
     split_ifs
     · -- `Rep.norm` is stated for the norm of a `Rep` whose monoid instance comes from `Group`.
-      erw [Rep.norm_apply]
+      rw [Rep.norm_apply]
       simp only [Representation.norm, LinearMap.sum_apply, Representation.ofMulAction_single,
         smul_eq_mul, mul_one]
     · exact map_zero _
@@ -277,28 +284,6 @@ private noncomputable abbrev barToPeriodicCochains :
     ((((linearYoneda k (Rep k G)).obj A).rightOp.mapHomologicalComplex _).map
       (barToPeriodic k g hg)).op ≫ (inhomogeneousCochainsIso A).inv
 
-/-- Computing `Hⁿ(G, A)` from the periodic resolution is the map induced on cohomology by the
-comparison map with the bar resolution. -/
-private theorem groupCohomologyIso_resolution_inv (n : ℕ) :
-    (groupCohomologyIso A n (resolution k g hg)).inv =
-      HomologicalComplex.homologyMap (barToPeriodicCochains A g hg) n := by
-  have hext := ProjectiveResolution.isoExt_hom_comp_homologyMap (R := k) (barResolution k G)
-    (resolution k g hg) (barToPeriodic k g hg) (barToPeriodic_f_zero_comp_π k g hg) n A
-  have hinhom : (isoOfQuasiIsoAt (HomotopyEquiv.ofIso (inhomogeneousCochainsIso A)).hom n).inv =
-      HomologicalComplex.homologyMap (inhomogeneousCochainsIso A).inv n :=
-    Iso.inv_ext ((HomologicalComplex.homologyMap_comp _ _ n).symm.trans
-      ((congrArg (HomologicalComplex.homologyMap · n) (inhomogeneousCochainsIso A).hom_inv_id).trans
-        (HomologicalComplex.homologyMap_id _ n)))
-  -- `groupCohomologyIso` is `groupCohomologyIsoExt` followed by the `Ext` computation from the
-  -- periodic resolution, and `groupCohomologyIsoExt` is the `Ext` computation from the bar
-  -- resolution followed by the inhomogeneous cochain isomorphism.
-  have h₁ : (groupCohomologyIso A n (resolution k g hg)).inv = _ := Iso.trans_inv _ _
-  have h₂ : (groupCohomologyIsoExt A n).inv = _ := Iso.trans_inv _ _
-  rw [h₁, h₂, Iso.symm_inv, hinhom]
-  exact ((Category.assoc _ _ _).symm.trans
-    (congrArg (· ≫ _) ((Iso.inv_comp_eq _).2 hext.symm))).trans
-      (HomologicalComplex.homologyMap_comp _ _ n).symm
-
 omit [Fintype G] in
 private theorem ρ_apply_of_mem_ker (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
     A.ρ g x.1 = x.1 := by
@@ -359,14 +344,36 @@ theorem carryCocycle_apply_pow (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.
   rw [coe_carryCocycle, carryCochain_apply, log_pow, log_pow, Nat.mod_eq_of_lt hi,
     Nat.mod_eq_of_lt hj]
 
+/-- The comparison map on cochains in degree `2` sends `k[G] ⟶ A, 1 ↦ a` to the carry cochain of
+`a`: it evaluates the map on the image `barToPeriodic₂ [v₀ | v₁]` of a basis element, which is the
+carry of `v₀, v₁`. -/
+private theorem barToPeriodicCochains_f_two_apply (a : A) (v : Fin 2 → G) :
+    ((barToPeriodicCochains A g hg).f 2).hom (leftRegularHom A a) v =
+      carryCochain A g hg a (v 0, v 1) := by
+  -- Precomposition followed by `inhomogeneousCochainsIso` evaluates a map out of the degree-`2`
+  -- term on the image of the basis element `single v 1`; this is its definition.
+  refine Eq.trans (b := (leftRegularHom A a).hom
+    (((barToPeriodic k g hg).f 2).hom (Finsupp.single v (MonoidAlgebra.single 1 1)))) rfl ?_
+  rw [barToPeriodic_f_two, carryCochain_apply]
+  refine (congrArg (leftRegularHom A a).hom (barToPeriodic₂_single k g hg v)).trans ?_
+  split_ifs
+  · exact (leftRegularHom_hom_single (1 : G) a (1 : k)).trans (by simp)
+  · exact map_zero _
+
 /-- **The periodicity class in degree `2` is the class of the carry cocycle**: Mathlib's
 `groupCohomologyπEven` in degree `2` factors through the carry cocycle. -/
 theorem groupCohomologyπEven_two :
     groupCohomologyπEven A g hg 2 even_two = ModuleCat.ofHom (carryCocycle A g hg) ≫ H2π A := by
   rw [groupCohomologyπEven, groupCohomologyIsoEven]
-  simp only [Iso.trans_inv, groupCohomologyIso_resolution_inv]
+  simp only [Iso.trans_inv, TauCeti.groupCohomologyIso_inv_eq_homologyMap A _ _
+    (barToPeriodic_f_zero_comp_π k g hg)]
   rw [HomologicalComplex.alternatingConstHomologyIsoEven, ShortComplex.homologyMapIso_inv,
     HomologicalComplex.homologyMapIso_inv]
+  -- The compositions are reassociated by hand, with `Category.assoc` under `congrArg`: the leading
+  -- factor `moduleCatCyclesIso.inv` of Mathlib's `groupCohomologyπEven` has source
+  -- `moduleCatLeftHomologyData.K`, which is the kernel in its type only up to unfolding, so the
+  -- goal is not type-correct at instance transparency and `simp only [Category.assoc, …]` and
+  -- `rw [ShortComplex.homologyπ_naturality_assoc]` make no progress on it.
   -- Move the homology class through the comparison map: by naturality of `homologyπ`, the left
   -- side is a map into the `2`-cocycles followed by the projection to `H²(G, A)`.
   refine (congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
@@ -388,16 +395,10 @@ theorem groupCohomologyπEven_two :
   refine ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans (Category.assoc _ _ _).symm).trans ?_
   refine (congrArg (· ≫ _) (ShortComplex.moduleCatCyclesIso_inv_iCycles _)).trans ?_
   ext x v
-  -- On a fixed element `x`, the cochain map evaluates `k[G] ⟶ A, 1 ↦ x` on the image of the
-  -- basis element `[v₀ | v₁]` under the comparison map, which is the carry of `v₀, v₁`.
-  refine Eq.trans (b := (leftRegularHom A x.1).hom
-    (((barToPeriodic k g hg).f 2).hom (Finsupp.single v (MonoidAlgebra.single 1 1)))) rfl ?_
-  refine Eq.trans ?_ (b := carryCochain A g hg x.1 (v 0, v 1)) rfl
-  rw [barToPeriodic_f_two, carryCochain_apply]
-  refine (congrArg (leftRegularHom A x.1).hom (barToPeriodic₂_single k g hg v)).trans ?_
-  split_ifs
-  · exact (leftRegularHom_hom_single (1 : G) x.1 (1 : k)).trans (by simp)
-  · exact map_zero _
+  -- Both sides are definitionally values of cochains at `v`: on the left, `homResolutionIso` sends
+  -- `x` to `k[G] ⟶ A, 1 ↦ x` and the middle component of `alternatingConstScIsoEven` is the
+  -- identity; on the right, `cochainsIso₂` evaluates at the pair `(v 0, v 1)`.
+  exact barToPeriodicCochains_f_two_apply A g hg x.1 v
 
 /-- **The periodicity class in degree `2` is the class of the carry cocycle**: an element `a`
 fixed by the generator `g` is sent to the class of `(gⁱ, gʲ) ↦ a` if `i + j ≥ n`, and `0`
@@ -434,9 +435,9 @@ private theorem mapCocycles₂_carryCocycle_apply [Finite G] (hf : ∀ x, x ∈ 
     ((mapCocycles₂ f φ).hom (carryCocycle B (f g) hf y) : G × G → A) p =
       if orderOf (f g) ≤ log g hg p.1 % orderOf (f g) + log g hg p.2 % orderOf (f g) then
         φ.hom y.1 else 0 := by
-  have e : ((mapCocycles₂ f φ).hom (carryCocycle B (f g) hf y) : G × G → A) p =
-      φ.hom (carryCochain B (f g) hf y.1 (f p.1, f p.2)) := rfl
-  rw [e, carryCochain_apply, log_map g hg f hf, log_map g hg f hf]
+  rw [coe_mapCocycles₂, cochainsMap₂, ModuleCat.ofHom_apply, LinearMap.comp_apply,
+    LinearMap.compLeft_apply, Function.comp_apply, LinearMap.funLeft_apply, Prod.map_apply,
+    coe_carryCocycle, carryCochain_apply, log_map g hg f hf, log_map g hg f hf]
   split_ifs
   · rfl
   · exact map_zero _
