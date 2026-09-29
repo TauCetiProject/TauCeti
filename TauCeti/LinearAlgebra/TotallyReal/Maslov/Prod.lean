@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Prod
-public import Mathlib.LinearAlgebra.Prod
-public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 
@@ -138,7 +136,17 @@ noncomputable def prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
       Continuous.prod_map_equivL ℂ hAc hBc, ?_⟩
     intro t
     rw [hA t, hB t, ← LinearMap.prodMap_map_prod]
-    congr 1
+    -- The product of the two restricted block maps is the restriction of the blockwise product
+    -- map; the two agree pointwise, not definitionally.
+    have hmap : (((A t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ).prodMap
+        (((B t).toLinearEquiv : E' →ₗ[ℂ] E').restrictScalars ℝ) =
+        ((ContinuousLinearEquiv.prodCongr (A t) (B t) : (E × E') ≃ₗ[ℂ] (E × E')) :
+          (E × E') →ₗ[ℂ] (E × E')).restrictScalars ℝ := by
+      apply LinearMap.ext (R := ℝ)
+      intro x
+      rcases x with ⟨x, y⟩
+      simp
+    rw [hmap]
   toFun_zero_eq_toFun_one :=
     by rw [Λ.toFun_zero_eq_toFun_one, Λ'.toFun_zero_eq_toFun_one]
 
@@ -150,6 +158,7 @@ theorem prod_apply (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') (t : I) :
 
 /-- **The direct-sum axiom of the Maslov index.** The Maslov index of the direct sum of two loops
 of maximal totally real subspaces is the sum of their Maslov indices. -/
+@[simp]
 theorem maslovIndex_prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
     (Λ.prod Λ').maslovIndex = Λ.maslovIndex + Λ'.maslovIndex := by
   have hL₁ := Λ.isMaximalTotallyReal 0
