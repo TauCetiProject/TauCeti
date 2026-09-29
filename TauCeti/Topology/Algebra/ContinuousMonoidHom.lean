@@ -125,7 +125,9 @@ pointwise. -/
 theorem _root_.ContinuousMonoidHom.zpow_apply {A E : Type*} [Monoid A] [TopologicalSpace A]
     [CommGroup E] [TopologicalSpace E] [IsTopologicalGroup E] (f : A →ₜ* E) (n : ℤ) (a : A) :
     (f ^ n) a = f a ^ n :=
-  map_zpow (⟨⟨fun g : A →ₜ* E ↦ g a, rfl⟩, fun _ _ ↦ rfl⟩ : (A →ₜ* E) →* E) f n
+  map_zpow
+    (⟨⟨fun g : A →ₜ* E ↦ g a, by simp [ContinuousMonoidHom.one_toFun]⟩,
+      fun g h ↦ ContinuousMonoidHom.mul_apply g h a⟩ : (A →ₜ* E) →* E) f n
 
 -- The three definitions below are exposed: downstream, `TopRep.res` objects taken along them have
 -- to be definitionally the ones taken along the bare `Subgroup.subtype`, `Subgroup.inclusion` and

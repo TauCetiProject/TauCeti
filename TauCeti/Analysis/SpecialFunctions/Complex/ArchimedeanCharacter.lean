@@ -6,12 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
-public import TauCeti.Geometry.Lie.Exponential.Units.Basic
+public import TauCeti.Analysis.SpecialFunctions.Complex.CpowCharacter
+public import TauCeti.Geometry.Lie.Exponential.Units.Complex
 
-import Mathlib.Analysis.Complex.CoveringMap
-import Mathlib.Analysis.Convex.Contractible
-import Mathlib.Topology.Homotopy.Lifting
-import TauCeti.Geometry.Lie.Exponential.OneParameter
 import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
 /-!
@@ -45,9 +42,14 @@ It is proved by lifting through the covering map `exp : ℂ → ℂ \ {0}`
 
 * `TauCeti.existsUnique_eq_expUnitHom_complex`: continuous homomorphisms `ℝ → ℂˣ` are
   exponentials.
-* `TauCeti.exists_eq_realUnitsCharacter`, `TauCeti.realUnitsCharacter_injective`: the
+* `TauCeti.realUnitsCharacter_comp_expUnitHom`, `TauCeti.realUnits_ext`: restriction to the
+  positive reals and extensionality for characters of `ℝˣ`.
+* `TauCeti.exists_eq_realUnitsCharacter`, `TauCeti.realUnitsCharacter_injective2`: the
   classification of the continuous characters of `ℝˣ`.
-* `TauCeti.exists_eq_complexUnitsCharacter`, `TauCeti.complexUnitsCharacter_injective`: the
+* `TauCeti.complexUnitsCharacter_comp_expUnitHom_one`,
+  `TauCeti.complexUnitsCharacter_comp_expUnitHom_I`, `TauCeti.complexUnits_ext`: restriction to
+  the positive reals and unit circle and extensionality for characters of `ℂˣ`.
+* `TauCeti.exists_eq_complexUnitsCharacter`, `TauCeti.complexUnitsCharacter_injective2`: the
   classification of the continuous characters of `ℂˣ`.
 
 ## References
@@ -63,40 +65,6 @@ namespace TauCeti
 
 open Complex
 
-/-! ### Continuous homomorphisms from the real line -/
-
-/-- **Continuous homomorphisms `ℝ → ℂˣ` are exponentials.** Every continuous homomorphism from
-the additive real line to `ℂˣ` is `t ↦ exp (t * s)` for a unique `s : ℂ`. Unlike
-`existsUnique_eq_expUnitHom`, no differentiability is assumed. -/
-theorem existsUnique_eq_expUnitHom_complex (φ : Multiplicative ℝ →ₜ* ℂˣ) :
-    ∃! s : ℂ, φ = expUnitHom s := by
-  refine existsUnique_of_exists_of_unique ?_ fun s t hs ht ↦ expUnitHom_injective (hs ▸ ht)
-  -- Lift `φ` through the covering map `exp : ℂ → ℂ \ {0}`; the lift is additive and continuous,
-  -- hence real-linear.
-  let p : ℂ → {z : ℂ // z ≠ 0} := fun z ↦ ⟨_, z.exp_ne_zero⟩
-  have cov : IsCoveringMap p := isCoveringMap_exp
-  let f : C(ℝ, {z : ℂ // z ≠ 0}) :=
-    ⟨fun t ↦ ⟨φ (.ofAdd t), (φ _).ne_zero⟩, by fun_prop⟩
-  obtain ⟨L, ⟨hL0, hL⟩, -⟩ := cov.existsUnique_continuousMap_lifts f 0 0
-    (Subtype.ext (by simp [p, f]))
-  have hLt (t : ℝ) : exp (L t) = φ (.ofAdd t) :=
-    congrArg Subtype.val (congrFun hL t)
-  -- Both `t ↦ L (a + t)` and `t ↦ L a + L t` lift `t ↦ φ (a + t)` and start at `L a`.
-  have hadd (a t : ℝ) : L (a + t) = L a + L t := by
-    let g : C(ℝ, {z : ℂ // z ≠ 0}) := f.comp ⟨(a + ·), by fun_prop⟩
-    obtain ⟨F, -, hF⟩ := cov.existsUnique_continuousMap_lifts g 0 (L a)
-      (Subtype.ext (by simp [p, g, f, hLt]))
-    have h₁ := hF (L.comp ⟨(a + ·), by fun_prop⟩) ⟨by simp, by
-      funext t; exact Subtype.ext (by simp [p, g, f, hLt])⟩
-    have h₂ := hF ⟨fun t ↦ L a + L t, by fun_prop⟩ ⟨by simp [hL0], by
-      funext t; exact Subtype.ext (by simp [p, g, f, exp_add, hLt, ofAdd_add])⟩
-    exact congrFun (congrArg DFunLike.coe (h₁.trans h₂.symm)) t
-  let A : ℝ →+ ℂ := ⟨⟨L, hL0⟩, hadd⟩
-  refine ⟨L 1, ContinuousMonoidHom.ext fun t ↦ Units.ext ?_⟩
-  rw [← ofAdd_toAdd t, coe_expUnitHom_complex, ← hLt]
-  congr 1
-  simpa [A] using map_real_smul A L.continuous (Multiplicative.toAdd t) 1
-
 /-! ### The basic characters -/
 
 section NormCpow
@@ -105,53 +73,46 @@ variable (𝕜 : Type*) [NormedDivisionRing 𝕜]
 
 /-- The character `x ↦ ‖x‖ ^ s` of the units of a normed division ring, for a complex exponent
 `s`. -/
-def normCpowCharacter (s : ℂ) : 𝕜ˣ →ₜ* ℂˣ where
-  toFun x := Units.mk0 ((‖(x : 𝕜)‖ : ℂ) ^ s) <| by simp
-  map_one' := Units.ext <| by simp
-  map_mul' x y := Units.ext <| by
-    simp [mul_cpow_ofReal_nonneg (norm_nonneg (x : 𝕜)) (norm_nonneg (y : 𝕜))]
-  continuous_toFun := Units.isEmbedding_val₀.continuous_iff.mpr <|
-    (continuous_ofReal.comp (continuous_norm.comp Units.continuous_val)).cpow continuous_const
-      fun x ↦ ofReal_mem_slitPlane.2 (norm_pos_iff.2 x.ne_zero)
+def normCpowCharacter (s : ℂ) : 𝕜ˣ →ₜ* ℂˣ :=
+  cpowCharacter (Units.map nnnormHom.toMonoidHom) (by
+    apply Units.isEmbedding_val₀.continuous_iff.mpr
+    change Continuous fun x : 𝕜ˣ ↦ ‖(x : 𝕜)‖₊
+    fun_prop) s
 
 /-- Evaluating `normCpowCharacter 𝕜 s` at `x` gives `‖x‖ ^ s`. -/
 @[simp]
 theorem coe_normCpowCharacter_apply (s : ℂ) (x : 𝕜ˣ) :
     (normCpowCharacter 𝕜 s x : ℂ) = (‖(x : 𝕜)‖ : ℂ) ^ s :=
-  (rfl)
+  by
+    unfold normCpowCharacter
+    rw [coe_cpowCharacter_apply]
+    rfl
 
 /-- The exponent `0` gives the trivial character. -/
 @[simp]
 theorem normCpowCharacter_zero : normCpowCharacter 𝕜 0 = 1 :=
-  ContinuousMonoidHom.ext fun _ ↦ Units.ext <| by simp
+  cpowCharacter_zero _ _
 
 /-- Adding exponents multiplies the characters. -/
 theorem normCpowCharacter_add (s t : ℂ) :
     normCpowCharacter 𝕜 (s + t) = normCpowCharacter 𝕜 s * normCpowCharacter 𝕜 t :=
-  ContinuousMonoidHom.ext fun x ↦ Units.ext <| by
-    simp [cpow_add _ _ (ofReal_ne_zero.2 (norm_ne_zero_iff.2 x.ne_zero))]
+  cpowCharacter_add _ _ s t
 
 end NormCpow
 
 private lemma coe_sign_eq_div_abs (x : ℝˣ) :
     (SignType.sign (x : ℝ) : ℂ) = ((x : ℝ) : ℂ) / ((|(x : ℝ)| : ℝ) : ℂ) := by
-  have hx : ((x : ℝ) : ℂ) ≠ 0 := by simp
-  rcases lt_or_gt_of_ne x.ne_zero with h | h
-  · rw [sign_neg h, abs_of_neg h, ofReal_neg, div_neg, div_self hx]
-    simp
-  · rw [sign_pos h, abs_of_pos h, div_self hx]
-    simp
+  rw [← SignType.map_cast ofRealHom, ofRealHom_eq_coe,
+    eq_div_iff (ofReal_ne_zero.2 (abs_ne_zero.2 x.ne_zero)), ← ofReal_mul, sign_mul_abs]
 
 /-- The sign character `x ↦ sgn x` of `ℝˣ`, with values `±1` in `ℂˣ`. -/
 def realSignCharacter : ℝˣ →ₜ* ℂˣ where
-  toFun x := Units.mk0 (SignType.sign (x : ℝ) : ℂ) <| by
-    rw [coe_sign_eq_div_abs]
-    simp
-  map_one' := Units.ext <| by simp
-  map_mul' x y := Units.ext <| by simp [sign_mul]
+  toMonoidHom := Units.map ((SignType.castHom : SignType →*₀ ℂ).toMonoidHom.comp
+    (signHom : ℝ →*₀ SignType).toMonoidHom)
   continuous_toFun := by
     refine Units.isEmbedding_val₀.continuous_iff.mpr ?_
-    simp only [Function.comp_def, Units.val_mk0, coe_sign_eq_div_abs]
+    change Continuous fun x : ℝˣ ↦ (SignType.sign (x : ℝ) : ℂ)
+    simp only [coe_sign_eq_div_abs]
     exact (continuous_ofReal.comp Units.continuous_val).div
       (continuous_ofReal.comp (continuous_abs.comp Units.continuous_val)) fun x ↦ by simp
 
@@ -159,7 +120,7 @@ def realSignCharacter : ℝˣ →ₜ* ℂˣ where
 @[simp]
 theorem coe_realSignCharacter_apply (x : ℝˣ) :
     (realSignCharacter x : ℂ) = (SignType.sign (x : ℝ) : ℂ) :=
-  (rfl)
+  by simp [realSignCharacter]
 
 /-- The angular character `z ↦ z / |z|` of `ℂˣ`. -/
 def complexAngularCharacter : ℂˣ →ₜ* ℂˣ where
@@ -207,14 +168,19 @@ theorem realUnitsCharacter_add (s t : ℂ) (ε η : ZMod 2) :
     ZMod.val_add, ← pow_eq_pow_mod _ realSignCharacter_sq, pow_add]
   exact mul_mul_mul_comm (normCpowCharacter ℝ s) _ _ _
 
-private lemma realUnitsCharacter_comp_expUnitHom (s : ℂ) (ε : ZMod 2) :
+private lemma ofReal_exp_cpow (t : ℝ) (s : ℂ) : ((Real.exp t : ℝ) : ℂ) ^ s = exp (t * s) := by
+  rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 (Real.exp_pos t).ne'),
+    ← ofReal_log (Real.exp_pos t).le, Real.log_exp]
+
+/-- Restricting `realUnitsCharacter s ε` to the positive reals gives `expUnitHom s`; the sign
+parameter is invisible on the identity component. -/
+theorem realUnitsCharacter_comp_expUnitHom (s : ℂ) (ε : ZMod 2) :
     (realUnitsCharacter s ε).comp (expUnitHom (1 : ℝ)) = expUnitHom s := by
   refine ContinuousMonoidHom.ext fun t ↦ Units.ext ?_
   obtain ⟨t, rfl⟩ := Multiplicative.ofAdd.surjective t
   rw [ContinuousMonoidHom.comp_toFun, coe_realUnitsCharacter_apply, coe_expUnitHom_real,
     coe_expUnitHom_complex, mul_one, abs_of_pos (Real.exp_pos t), sign_pos (Real.exp_pos t),
-    cpow_def_of_ne_zero (ofReal_ne_zero.2 (Real.exp_pos t).ne'), ← ofReal_log (Real.exp_pos t).le,
-    Real.log_exp]
+    ofReal_exp_cpow]
   simp
 
 private lemma realUnitsCharacter_neg_one (s : ℂ) (ε : ZMod 2) :
@@ -222,7 +188,7 @@ private lemma realUnitsCharacter_neg_one (s : ℂ) (ε : ZMod 2) :
   simp
 
 /-- Continuous characters of `ℝˣ` agree once they agree at `-1` and on the positive reals. -/
-private lemma realUnits_ext {χ ψ : ℝˣ →ₜ* ℂˣ} (hneg : χ (-1) = ψ (-1))
+theorem realUnits_ext {χ ψ : ℝˣ →ₜ* ℂˣ} (hneg : χ (-1) = ψ (-1))
     (hexp : χ.comp (expUnitHom (1 : ℝ)) = ψ.comp (expUnitHom 1)) : χ = ψ := by
   have hexp' (t : ℝ) : χ (expUnitHom (1 : ℝ) (.ofAdd t)) = ψ (expUnitHom (1 : ℝ) (.ofAdd t)) :=
     DFunLike.congr_fun hexp (.ofAdd t)
@@ -249,16 +215,15 @@ theorem exists_eq_realUnitsCharacter (χ : ℝˣ →ₜ* ℂˣ) :
   · refine ⟨s, 1, realUnits_ext (Units.ext ?_) (by rw [hs, realUnitsCharacter_comp_expUnitHom])⟩
     rw [h, realUnitsCharacter_neg_one, ZMod.val_one, pow_one]
 
-/-- The exponent and the parity of `x ↦ |x| ^ s * sgn(x) ^ ε` are determined by the character. -/
-theorem realUnitsCharacter_injective :
-    Function.Injective fun p : ℂ × ZMod 2 ↦ realUnitsCharacter p.1 p.2 := by
-  rintro ⟨s, ε⟩ ⟨t, η⟩ h
-  simp only at h
+/-- The exponent and the parity of `x ↦ |x| ^ s * sgn(x) ^ ε` are jointly determined by the
+character. -/
+theorem realUnitsCharacter_injective2 : Function.Injective2 realUnitsCharacter := by
+  intro s t ε η h
   have hs : s = t := expUnitHom_injective <| by
     rw [← realUnitsCharacter_comp_expUnitHom s ε, h, realUnitsCharacter_comp_expUnitHom]
   have hε : ((-1 : ℂ)) ^ ε.val = (-1) ^ η.val := by
     rw [← realUnitsCharacter_neg_one s, ← realUnitsCharacter_neg_one t, h]
-  refine Prod.ext hs ?_
+  refine ⟨hs, ?_⟩
   have key (e : ZMod 2) : e = 0 ∨ e = 1 := by decide +revert
   rcases key ε with rfl | rfl <;> rcases key η with rfl | rfl
   all_goals first | rfl | norm_num [ZMod.val_one] at hε
@@ -267,9 +232,7 @@ theorem realUnitsCharacter_injective :
 @[simp]
 theorem realUnitsCharacter_inj {s t : ℂ} {ε η : ZMod 2} :
     realUnitsCharacter s ε = realUnitsCharacter t η ↔ s = t ∧ ε = η := by
-  refine ⟨fun h ↦ Prod.ext_iff.1 (realUnitsCharacter_injective (a₁ := (s, ε)) (a₂ := (t, η)) h), ?_⟩
-  rintro ⟨rfl, rfl⟩
-  rfl
+  exact realUnitsCharacter_injective2.eq_iff
 
 /-- **Classification of the continuous characters of `ℝˣ`.** The continuous characters of `ℝˣ`
 are exactly the characters `x ↦ |x| ^ s * sgn(x) ^ ε`, for unique `s : ℂ` and `ε : ZMod 2`,
@@ -279,7 +242,7 @@ def realUnitsCharacterEquiv : Multiplicative (ℂ × ZMod 2) ≃* (ℝˣ →ₜ*
     ({ toFun p := realUnitsCharacter p.toAdd.1 p.toAdd.2
        map_one' := realUnitsCharacter_zero_zero
        map_mul' _ _ := realUnitsCharacter_add _ _ _ _ } : Multiplicative (ℂ × ZMod 2) →* _)
-    ⟨realUnitsCharacter_injective.comp Multiplicative.toAdd.injective, fun χ ↦
+    ⟨realUnitsCharacter_injective2.uncurry.comp Multiplicative.toAdd.injective, fun χ ↦
       let ⟨s, ε, h⟩ := exists_eq_realUnitsCharacter χ
       ⟨.ofAdd (s, ε), h.symm⟩⟩
 
@@ -288,6 +251,12 @@ def realUnitsCharacterEquiv : Multiplicative (ℂ × ZMod 2) ≃* (ℝˣ →ₜ*
 theorem realUnitsCharacterEquiv_apply (s : ℂ) (ε : ZMod 2) :
     realUnitsCharacterEquiv (.ofAdd (s, ε)) = realUnitsCharacter s ε :=
   (rfl)
+
+/-- The inverse classification equivalence recovers the parameters of a real-units character. -/
+@[simp]
+theorem realUnitsCharacterEquiv_symm_apply (s : ℂ) (ε : ZMod 2) :
+    realUnitsCharacterEquiv.symm (realUnitsCharacter s ε) = .ofAdd (s, ε) :=
+  (MulEquiv.symm_apply_eq realUnitsCharacterEquiv).2 rfl
 
 /-! ### Characters of `ℂˣ` -/
 
@@ -315,17 +284,20 @@ theorem complexUnitsCharacter_add (s t : ℂ) (k l : ℤ) :
     zpow_add]
   exact mul_mul_mul_comm (normCpowCharacter ℂ s) _ _ _
 
-private lemma complexUnitsCharacter_comp_expUnitHom_one (s : ℂ) (k : ℤ) :
+/-- Restricting `complexUnitsCharacter s k` to the positive reals gives `expUnitHom s`; the
+angular frequency is invisible there. -/
+theorem complexUnitsCharacter_comp_expUnitHom_one (s : ℂ) (k : ℤ) :
     (complexUnitsCharacter s k).comp (expUnitHom (1 : ℂ)) = expUnitHom s := by
   refine ContinuousMonoidHom.ext fun t ↦ Units.ext ?_
   obtain ⟨t, rfl⟩ := Multiplicative.ofAdd.surjective t
   rw [ContinuousMonoidHom.comp_toFun, coe_complexUnitsCharacter_apply, coe_expUnitHom_complex,
     coe_expUnitHom_complex, mul_one, norm_exp_ofReal, ← ofReal_exp,
     div_self (ofReal_ne_zero.2 (Real.exp_pos t).ne'), one_zpow, mul_one,
-    cpow_def_of_ne_zero (ofReal_ne_zero.2 (Real.exp_pos t).ne'), ← ofReal_log (Real.exp_pos t).le,
-    Real.log_exp]
+    ofReal_exp_cpow]
 
-private lemma complexUnitsCharacter_comp_expUnitHom_I (s : ℂ) (k : ℤ) :
+/-- Restricting `complexUnitsCharacter s k` to the standard parametrization of the unit circle
+gives `expUnitHom (k * I)`; the modulus exponent is invisible there. -/
+theorem complexUnitsCharacter_comp_expUnitHom_I (s : ℂ) (k : ℤ) :
     (complexUnitsCharacter s k).comp (expUnitHom I) = expUnitHom (k * I) := by
   refine ContinuousMonoidHom.ext fun t ↦ Units.ext ?_
   obtain ⟨t, rfl⟩ := Multiplicative.ofAdd.surjective t
@@ -336,7 +308,7 @@ private lemma complexUnitsCharacter_comp_expUnitHom_I (s : ℂ) (k : ℤ) :
 
 /-- Continuous characters of `ℂˣ` agree once they agree on the positive reals and on the unit
 circle. -/
-private lemma complexUnits_ext {χ ψ : ℂˣ →ₜ* ℂˣ}
+theorem complexUnits_ext {χ ψ : ℂˣ →ₜ* ℂˣ}
     (hpos : χ.comp (expUnitHom (1 : ℂ)) = ψ.comp (expUnitHom 1))
     (hcirc : χ.comp (expUnitHom I) = ψ.comp (expUnitHom I)) : χ = ψ := by
   refine ContinuousMonoidHom.ext fun z ↦ ?_
@@ -353,45 +325,40 @@ theorem exists_eq_complexUnitsCharacter (χ : ℂˣ →ₜ* ℂˣ) :
     ∃ (s : ℂ) (k : ℤ), χ = complexUnitsCharacter s k := by
   obtain ⟨s, hs, -⟩ := existsUnique_eq_expUnitHom_complex (χ.comp (expUnitHom 1))
   obtain ⟨a, ha, -⟩ := existsUnique_eq_expUnitHom_complex (χ.comp (expUnitHom I))
-  -- The circle parameter `a` is an integer multiple of `I`, since `exp (2Real.pi I) = 1`.
-  have h2Real.pi : exp (2 * Real.pi * a) = 1 := by
+  -- The circle parameter `a` is an integer multiple of `I`, since `exp (2 * π * I) = 1`.
+  have h2pi : exp (2 * Real.pi * a) = 1 := by
     have h := DFunLike.congr_fun ha (.ofAdd (2 * Real.pi))
     have hone : expUnitHom I (.ofAdd (2 * Real.pi)) = 1 := Units.ext <| by
       rw [coe_expUnitHom_complex, Units.val_one, ofReal_mul, ofReal_ofNat, exp_two_pi_mul_I]
     rw [ContinuousMonoidHom.comp_toFun, hone, map_one] at h
     have h' := congrArg Units.val h
     rwa [coe_expUnitHom_complex, Units.val_one, eq_comm, ofReal_mul, ofReal_ofNat] at h'
-  obtain ⟨k, hk⟩ := exp_eq_one_iff.1 h2Real.pi
+  obtain ⟨k, hk⟩ := exp_eq_one_iff.1 h2pi
   have hak : a = k * I := by
-    have hReal.pi : (2 * Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.two_pi_pos.ne'
-    apply mul_left_cancel₀ hReal.pi
+    have hpi : (2 * Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.two_pi_pos.ne'
+    apply mul_left_cancel₀ hpi
     rw [hk]
     ring
   refine ⟨s, k, complexUnits_ext ?_ ?_⟩
   · rw [hs, complexUnitsCharacter_comp_expUnitHom_one]
   · rw [ha, hak, complexUnitsCharacter_comp_expUnitHom_I]
 
-/-- The exponent and the angular frequency of `z ↦ |z| ^ s * (z / |z|) ^ k` are determined by
-the character. -/
-theorem complexUnitsCharacter_injective :
-    Function.Injective fun p : ℂ × ℤ ↦ complexUnitsCharacter p.1 p.2 := by
-  rintro ⟨s, k⟩ ⟨t, l⟩ h
-  simp only at h
+/-- The exponent and the angular frequency of `z ↦ |z| ^ s * (z / |z|) ^ k` are jointly
+determined by the character. -/
+theorem complexUnitsCharacter_injective2 : Function.Injective2 complexUnitsCharacter := by
+  intro s t k l h
   have hs : s = t := expUnitHom_injective <| by
     rw [← complexUnitsCharacter_comp_expUnitHom_one s k, h,
       complexUnitsCharacter_comp_expUnitHom_one]
   have hk : (k : ℂ) * I = l * I := expUnitHom_injective <| by
     rw [← complexUnitsCharacter_comp_expUnitHom_I s k, h, complexUnitsCharacter_comp_expUnitHom_I]
-  exact Prod.ext hs (by exact_mod_cast mul_right_cancel₀ I_ne_zero hk)
+  exact ⟨hs, by exact_mod_cast mul_right_cancel₀ I_ne_zero hk⟩
 
 /-- Two characters `z ↦ |z| ^ s * (z / |z|) ^ k` agree exactly when their parameters do. -/
 @[simp]
 theorem complexUnitsCharacter_inj {s t : ℂ} {k l : ℤ} :
     complexUnitsCharacter s k = complexUnitsCharacter t l ↔ s = t ∧ k = l := by
-  refine ⟨fun h ↦ Prod.ext_iff.1
-    (complexUnitsCharacter_injective (a₁ := (s, k)) (a₂ := (t, l)) h), ?_⟩
-  rintro ⟨rfl, rfl⟩
-  rfl
+  exact complexUnitsCharacter_injective2.eq_iff
 
 /-- **Classification of the continuous characters of `ℂˣ`.** The continuous characters of `ℂˣ`
 are exactly the characters `z ↦ |z| ^ s * (z / |z|) ^ k`, for unique `s : ℂ` and `k : ℤ`, and
@@ -401,7 +368,7 @@ def complexUnitsCharacterEquiv : Multiplicative (ℂ × ℤ) ≃* (ℂˣ →ₜ*
     ({ toFun p := complexUnitsCharacter p.toAdd.1 p.toAdd.2
        map_one' := complexUnitsCharacter_zero_zero
        map_mul' _ _ := complexUnitsCharacter_add _ _ _ _ } : Multiplicative (ℂ × ℤ) →* _)
-    ⟨complexUnitsCharacter_injective.comp Multiplicative.toAdd.injective, fun χ ↦
+    ⟨complexUnitsCharacter_injective2.uncurry.comp Multiplicative.toAdd.injective, fun χ ↦
       let ⟨s, k, h⟩ := exists_eq_complexUnitsCharacter χ
       ⟨.ofAdd (s, k), h.symm⟩⟩
 
@@ -410,5 +377,12 @@ def complexUnitsCharacterEquiv : Multiplicative (ℂ × ℤ) ≃* (ℂˣ →ₜ*
 theorem complexUnitsCharacterEquiv_apply (s : ℂ) (k : ℤ) :
     complexUnitsCharacterEquiv (.ofAdd (s, k)) = complexUnitsCharacter s k :=
   (rfl)
+
+/-- The inverse classification equivalence recovers the parameters of a complex-units
+character. -/
+@[simp]
+theorem complexUnitsCharacterEquiv_symm_apply (s : ℂ) (k : ℤ) :
+    complexUnitsCharacterEquiv.symm (complexUnitsCharacter s k) = .ofAdd (s, k) :=
+  (MulEquiv.symm_apply_eq complexUnitsCharacterEquiv).2 rfl
 
 end TauCeti
