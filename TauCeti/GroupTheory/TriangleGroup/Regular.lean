@@ -245,7 +245,7 @@ noncomputable def automorphismGroupMulEquivQuotientKer (ht : t.IsRegular) :
   let quotientKerMulEquivMonodromyGroup :=
     (QuotientGroup.quotientKerEquivRange (toPerm t ha hb hc)).trans
       (MulEquiv.subgroupCongr (range_toPerm t ha hb hc))
-  exact (PermutationTriple.automorphismGroupMulEquivMonodromyGroupOpposite ht i).trans <|
+  exact (PermutationTriple.automorphismGroupMulEquivMonodromyGroupMulOpposite ht i).trans <|
     (MulEquiv.op quotientKerMulEquivMonodromyGroup).symm
 
 /-- The characteristic property of `TauCeti.TriangleGroup.automorphismGroupMulEquivQuotientKer`:
@@ -267,7 +267,7 @@ theorem kerLift_automorphismGroupMulEquivQuotientKer_apply (ht : t.IsRegular)
     Function.comp_apply, Function.comp_apply, MulOpposite.unop_op, ← hq,
     MulEquiv.apply_symm_apply]
   simpa only [Subgroup.smul_def, Perm.smul_def] using
-    PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupOpposite_smul ht _ τ
+    PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupMulOpposite_smul ht _ τ
 
 end NormalSubgroup
 

@@ -28,7 +28,7 @@ Counting then turns both characterisations into equalities of orders with the de
 
 * `TauCeti.PermutationTriple.IsRegular`: the triple is connected and its automorphism group is
   transitive on the sheets.
-* `TauCeti.PermutationTriple.automorphismGroupMulEquivMonodromyGroupOpposite`: the automorphism
+* `TauCeti.PermutationTriple.automorphismGroupMulEquivMonodromyGroupMulOpposite`: the automorphism
   group of a regular triple is isomorphic to the opposite of its monodromy group.
 
 ## Main results
@@ -40,7 +40,7 @@ Counting then turns both characterisations into equalities of orders with the de
 * `TauCeti.PermutationTriple.isRegular_iff_card_automorphismGroup`: a triple is regular exactly
   when it is connected and its automorphism group has order the degree.
 * `TauCeti.PermutationTriple.isRegular_smul_iff`: regularity is invariant under relabeling.
-* `TauCeti.PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupOpposite_smul`: the
+* `TauCeti.PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupMulOpposite_smul`: the
   element of the monodromy group corresponding to an automorphism `τ` moves the base sheet `i` to
   `τ i`.
 
@@ -234,9 +234,9 @@ private theorem automorphismGroupEquivMonodromyGroup_smul
 /-- The automorphism group of a regular triple is isomorphic to the opposite of its monodromy
 group. Both act simply transitively on the sheets, and an automorphism `τ` goes to the unique
 element of the monodromy group moving the base sheet `i` to `τ i`
-(`TauCeti.PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupOpposite_smul`). The
+(`TauCeti.PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupMulOpposite_smul`). The
 opposite occurs because automorphisms act on the right of the monodromy action. -/
-noncomputable def automorphismGroupMulEquivMonodromyGroupOpposite
+noncomputable def automorphismGroupMulEquivMonodromyGroupMulOpposite
     (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃* t.monodromyGroupᵐᵒᵖ where
   toEquiv := (automorphismGroupEquivMonodromyGroup ht i).trans MulOpposite.opEquiv
   map_mul' τ σ := by
@@ -258,12 +258,12 @@ noncomputable def automorphismGroupMulEquivMonodromyGroupOpposite
       (automorphismGroupEquivMonodromyGroup ht i σ).2).symm i
 
 /-- The characteristic property of
-`TauCeti.PermutationTriple.automorphismGroupMulEquivMonodromyGroupOpposite`: the element of the
+`TauCeti.PermutationTriple.automorphismGroupMulEquivMonodromyGroupMulOpposite`: the element of the
 monodromy group that an automorphism `τ` goes to moves the base sheet `i` to `τ i`. -/
 @[simp]
-theorem unop_automorphismGroupMulEquivMonodromyGroupOpposite_smul (ht : t.IsRegular) (i : Fin n)
+theorem unop_automorphismGroupMulEquivMonodromyGroupMulOpposite_smul (ht : t.IsRegular) (i : Fin n)
     (τ : t.automorphismGroup) :
-    (automorphismGroupMulEquivMonodromyGroupOpposite ht i τ).unop • i = τ • i :=
+    (automorphismGroupMulEquivMonodromyGroupMulOpposite ht i τ).unop • i = τ • i :=
   automorphismGroupEquivMonodromyGroup_smul ht i τ
 
 end PermutationTriple
