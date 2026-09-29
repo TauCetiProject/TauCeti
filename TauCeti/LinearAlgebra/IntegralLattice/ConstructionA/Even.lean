@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Binary.TypeII
 public import TauCeti.InformationTheory.Coding.Discriminant
 public import TauCeti.InformationTheory.Coding.TwoPowTypeII
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Basic
