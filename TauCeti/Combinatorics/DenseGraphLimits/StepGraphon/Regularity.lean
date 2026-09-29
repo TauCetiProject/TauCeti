@@ -22,11 +22,6 @@ Pythagoras identity for `graphonPartitionEnergy` and Cauchy--Schwarz show that i
 Null parts need no special case: `Finpartition.bipartition` omits empty sets but retains nonempty
 null sets, and `stepGraphonAvg` uses Mathlib's zero set-average convention on their rectangles.
 
-The iteration is carried by the private invariant
-`exists_partition_cutNorm_le_or_energy_add_mul_sq_lt`: it exists only to amortise the repeated
-composition of the refinement step, and its strict energy alternative is consumed by
-`weak_regularity_frieze_kannan` alone.
-
 ## Main results
 
 * `TauCeti.DenseGraphLimits.exists_refinement_energy_add_sq_lt` is the quantitative refinement
@@ -128,22 +123,12 @@ theorem exists_refinement_energy_add_sq_lt (P : Finpartition (Set.univ : Set Ω)
   rw [graphonPartitionEnergy_increment μ P Q hP hQ hQP W]
   simpa only [L, add_comm] using add_lt_add_left hgain (graphonPartitionEnergy μ P hP W)
 
-/-- The iteration invariant behind `weak_regularity_frieze_kannan`: **at most** `n + 1`
-applications of `exists_refinement_energy_add_sq_lt` to a measurable partition `P` produce a
-measurable partition with at most `4 ^ (n + 1)` times as many parts, whose block averages either
-approximate `W` to within `ε` in cut norm, or — when every one of those steps was actually
-taken — carry energy *strictly more than* `(n + 1) * ε ^ 2` above `P`'s. The strictness is what
-lets the iteration run for `⌈1 / ε ^ 2⌉` steps rather than `⌈1 / ε ^ 2⌉ + 1`; it is vacuous at
-`n = 0`, so the count is carried as `n + 1` rather than as a side hypothesis. The count is only an
-upper bound because the induction stops as soon as the cut-norm estimate holds, returning `P`
-itself; the energy alternative is what records how many steps were actually taken. The conclusion
-records only that part-count bound and that dichotomy — it does **not** assert that the partition
-produced refines `P`, since nothing downstream needs it; the refinement relation is available one
-level down, from `exists_refinement_energy_add_sq_lt`. Applying it to the indiscrete partition
-with `n + 1` equal to `⌈1 / ε ^ 2⌉` makes the energy alternative contradict
-`graphonPartitionEnergy_le_one`, leaving the approximation. -/
+/-- **Iteration invariant.** Given a measurable partition `P` and `n + 1` refinement steps, there
+is a measurable partition with at most `4 ^ (n + 1)` times as many parts whose block averages
+either approximate `W` to within `ε` in cut norm, or — when every one of those steps was actually
+taken — carry energy *strictly more than* `(n + 1) * ε ^ 2` above `P`'s. -/
 private theorem exists_partition_cutNorm_le_or_energy_add_mul_sq_lt
-    (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < ε) :
+    (W : Graphon Ω μ) {ε : ℝ} (hε : 0 ≤ ε) :
     ∀ (n : ℕ) (P : Finpartition (Set.univ : Set Ω)) (hP : ∀ p ∈ P.parts, MeasurableSet p),
       ∃ (Q : Finpartition (Set.univ : Set Ω)) (hQ : ∀ q ∈ Q.parts, MeasurableSet q),
         Q.parts.card ≤ 4 ^ (n + 1) * P.parts.card ∧
@@ -160,7 +145,7 @@ private theorem exists_partition_cutNorm_le_or_energy_add_mul_sq_lt
       · refine ⟨P, hP, ?_, Or.inl hgood⟩
         exact Nat.le_mul_of_pos_left _ (by positivity)
       · obtain ⟨Q, hQ, _, hQcard_step, hQenergy⟩ :=
-          exists_refinement_energy_add_sq_lt μ P hP W (le_of_lt hε) (lt_of_not_ge hgood)
+          exists_refinement_energy_add_sq_lt μ P hP W hε (lt_of_not_ge hgood)
         exact ⟨Q, hQ, by simpa using hQcard_step, Or.inr (by simpa using hQenergy)⟩
   | succ n ih =>
       -- One further step: stop if already good, otherwise refine once and iterate, composing the
@@ -171,7 +156,7 @@ private theorem exists_partition_cutNorm_le_or_energy_add_mul_sq_lt
       · refine ⟨P, hP, ?_, Or.inl hgood⟩
         exact Nat.le_mul_of_pos_left _ (by positivity)
       · obtain ⟨Q, hQ, _, hQcard_step, hQenergy⟩ :=
-          exists_refinement_energy_add_sq_lt μ P hP W (le_of_lt hε) (lt_of_not_ge hgood)
+          exists_refinement_energy_add_sq_lt μ P hP W hε (lt_of_not_ge hgood)
         obtain ⟨R, hR, hRcard, hRdichotomy⟩ := ih Q hQ
         have hRbound : R.parts.card ≤ 4 ^ (n + 1 + 1) * P.parts.card := by
           calc R.parts.card ≤ 4 ^ (n + 1) * Q.parts.card := hRcard
@@ -218,7 +203,7 @@ theorem weak_regularity_frieze_kannan (W : Graphon Ω μ) {ε : ℝ} (hε : 0 < 
   have hP₀_card : P₀.parts.card ≤ 1 :=
     Finset.card_le_one.mpr (Finpartition.parts_top_subsingleton _)
   obtain ⟨Q, hQ, hQcard, hgood | henergy⟩ :=
-    exists_partition_cutNorm_le_or_energy_add_mul_sq_lt μ W hε (N - 1) P₀ hP₀
+    exists_partition_cutNorm_le_or_energy_add_mul_sq_lt μ W hε.le (N - 1) P₀ hP₀
   · refine ⟨Q, hQ, ?_, hgood⟩
     have hbound : Q.parts.card ≤ 4 ^ N := by
       calc Q.parts.card ≤ 4 ^ (N - 1 + 1) * P₀.parts.card := hQcard
