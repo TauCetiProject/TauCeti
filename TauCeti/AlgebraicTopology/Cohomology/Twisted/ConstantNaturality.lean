@@ -68,7 +68,7 @@ lemma twistedCochainComplexConstantIso_hom_space_naturality :
   dsimp only [F] at hF
   dsimp only [iX, iY, c] at hF
   simp only [op_comp, Functor.map_comp] at hF
-  rw [TopCat.singularChainComplexFunctor_obj_map N f] at hF
+  rw [TauCeti.singularChainComplexFunctor_obj_map N f] at hF
   simp only [twistedCochainComplexMap,
     twistedCochainComplexCoefficientMap, twistedCochainComplexConstantIso_hom,
     twistedChainComplexCoefficientIso_inv, TopCat.singularCochainComplexMap,

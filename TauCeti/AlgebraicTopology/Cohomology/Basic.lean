@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Algebra.Homology.LinearYoneda
 
 /-!
@@ -49,12 +49,6 @@ namespace TopCat
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
   (R : C) (k : Type*) [Ring k] [Linear k C] (M : C)
-
-/-- The map of the singular-chain functor is the chain map induced by the singular simplicial
-map. -/
-lemma singularChainComplexFunctor_obj_map {X Y : TopCat.{w}} (f : X ⟶ Y) :
-    ((AlgebraicTopology.singularChainComplexFunctor C).obj R).map f =
-      SSet.chainComplexMap (toSSet.map f) R := rfl
 
 /-- The singular cochain complex of a space `X`: in degree `n`, the `k`-module of morphisms from
 the singular `n`-chains of `X` with coefficients in `R` to `M`. -/
