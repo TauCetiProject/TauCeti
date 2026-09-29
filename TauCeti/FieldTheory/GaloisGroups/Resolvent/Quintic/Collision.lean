@@ -169,7 +169,7 @@ private theorem collision_resolvent_complex :
       _ = X ^ 2 - 16 * (C Complex.I) ^ 2 := by ring
       _ = X ^ 2 + 16 := by rw [hI]; ring
   calc
-    _ = (X - 2) ^ 4 * ((X - C (-(Complex.I * 4))) * (X - C (Complex.I * 4))) := by ring
+    _ = (X - 2) ^ 4 * ((X - C (-(Complex.I * 4))) * (X - C (Complex.I * 4))) := by ring_nf
     _ = (X - 2) ^ 4 * (X ^ 2 + 16) := by rw [hquad]
 
 /-- Dummit's sextic of `X⁵ - X` has a quadruple root at `2` and two nonreal roots. -/
