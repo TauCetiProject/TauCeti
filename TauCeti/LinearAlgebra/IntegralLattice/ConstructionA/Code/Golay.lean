@@ -63,7 +63,7 @@ theorem isLagrangian_code :
     ((FiniteBilinearModule.zmodStandard 2).coordinatePower (Fin 24)).IsLagrangian
       code.toAddSubgroup :=
   (isLagrangian_coordinatePower_zmodStandard_iff 2 code.toAddSubgroup).mpr
-    isTypeII_code.toZModSubmodule_eq_euclideanDual
+    (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).eq_euclideanDual
 
 /-- The orthogonal quotient of the Golay code in the binary coordinate discriminant module has
 one element: the code is its own Euclidean dual. -/
@@ -88,7 +88,7 @@ noncomputable def discriminantBilinearOrthogonalQuotientIsometry :
     FiniteBilinearModule.Isometry constructionALattice.discriminantBilinearModule
       (((FiniteBilinearModule.zmodStandard 2).coordinatePower (Fin 24)).orthogonalQuotient
         code.toAddSubgroup) := by
-  let hC := isTypeII_code.toZModSubmodule_eq_euclideanDual.le
+  let hC := (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual
   letI : (ConstructionA.integralLattice 2 code.toAddSubgroup hC).IsNondegenerate :=
     ConstructionA.isNondegenerate_integralLattice 2 code.toAddSubgroup hC
   have hfirst : constructionALattice.discriminantBilinearModule.Isometry
@@ -124,7 +124,7 @@ noncomputable def discriminantQuadraticOrthogonalQuotientIsometry :
 /-- The discriminant bilinear group of the Golay lattice is trivial. -/
 instance subsingleton_discriminantBilinearModule :
     Subsingleton constructionALattice.discriminantBilinearModule := by
-  let hC := isTypeII_code.toZModSubmodule_eq_euclideanDual.le
+  let hC := (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual
   have hU : (ConstructionA.integralLattice 2 code.toAddSubgroup hC).IsUnimodular := by
     rw [← constructionALattice_eq_integralLattice]
     exact isUnimodular_constructionALattice

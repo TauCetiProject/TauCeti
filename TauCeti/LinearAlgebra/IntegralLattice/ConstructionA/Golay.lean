@@ -32,20 +32,20 @@ namespace TauCeti.BinaryGolay
 `ℚ^(Fin 24)` reducing to a Golay codeword modulo two, with the dot product halved. -/
 noncomputable def constructionALattice : IntegralLattice (Fin 24 → ℚ) :=
   ConstructionA.integralLattice 2 code.toAddSubgroup
-    isTypeII_code.toZModSubmodule_eq_euclideanDual.le
+    (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual
 
 /-- The Golay lattice is Construction A applied to the explicit extended binary Golay code. -/
 @[simp]
 theorem constructionALattice_eq_integralLattice :
     constructionALattice = ConstructionA.integralLattice 2 code.toAddSubgroup
-      isTypeII_code.toZModSubmodule_eq_euclideanDual.le := by
+      (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual := by
   rw [constructionALattice]
 
 /-- The named Golay Construction A lattice inherits the nondegeneracy of Construction A. -/
 instance instIsNondegenerateConstructionALattice : constructionALattice.IsNondegenerate := by
   rw [constructionALattice_eq_integralLattice]
   exact ConstructionA.isNondegenerate_integralLattice 2 code.toAddSubgroup
-    isTypeII_code.toZModSubmodule_eq_euclideanDual.le
+    (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual
 
 /-- The Golay Construction A lattice has rank `24`. -/
 theorem finrank_constructionALattice : Module.finrank ℤ constructionALattice = 24 := by
@@ -55,14 +55,16 @@ theorem finrank_constructionALattice : Module.finrank ℤ constructionALattice =
 /-- The Golay Construction A lattice is positive definite. -/
 theorem isPosDef_constructionALattice : constructionALattice.IsPosDef :=
   ConstructionA.isPosDef_integralLattice 2 code.toAddSubgroup
-    isTypeII_code.toZModSubmodule_eq_euclideanDual.le
+    (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual
 
 /-- **The Golay Construction A lattice is even.** -/
 theorem isEven_constructionALattice : constructionALattice.IsEven :=
-  ConstructionA.isEven_integralLattice_two_of_isTypeII isTypeII_code
+  ConstructionA.isEven_integralLattice_of_isTypeII (by decide)
+    (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code)
 
 /-- **The Golay Construction A lattice is unimodular.** -/
 theorem isUnimodular_constructionALattice : constructionALattice.IsUnimodular :=
-  ConstructionA.isUnimodular_integralLattice_two_of_isTypeII isTypeII_code
+  ConstructionA.isUnimodular_integralLattice_of_isTypeII
+    (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code)
 
 end TauCeti.BinaryGolay

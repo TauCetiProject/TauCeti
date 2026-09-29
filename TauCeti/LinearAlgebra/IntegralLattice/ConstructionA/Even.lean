@@ -153,35 +153,6 @@ theorem isEven_integralLattice_two_iff_isDoublyEven (C : LinearCode (ZMod 2) ι)
   refine (isEven_integralLattice_two_iff C.toAddSubgroup hC).trans ?_
   simp only [Submodule.mem_toAddSubgroup]
 
-/-- **A self-orthogonal binary linear code has an even unimodular Construction A lattice exactly
-when it is a Type II code.** -/
-theorem isEven_and_isUnimodular_integralLattice_two_iff_isTypeII (C : LinearCode (ZMod 2) ι)
-    (hC : AddSubgroup.toZModSubmodule 2 C.toAddSubgroup ≤
-      (AddSubgroup.toZModSubmodule 2 C.toAddSubgroup).euclideanDual) :
-    (integralLattice 2 C.toAddSubgroup hC).IsEven ∧
-        (integralLattice 2 C.toAddSubgroup hC).IsUnimodular ↔
-      BinaryCode.IsTypeII C := by
-  have hself : AddSubgroup.toZModSubmodule 2 C.toAddSubgroup =
-      (AddSubgroup.toZModSubmodule 2 C.toAddSubgroup).euclideanDual ↔ C = C.euclideanDual := by
-    rw [Submodule.toAddSubgroup_toZModSubmodule]
-  -- The lattice is built over `ℤ/↑(2 : ℕ+)`, which is `ℤ/2` only up to unfolding the coercion
-  -- `ℕ+ → ℕ`, so the criteria are chained in term mode rather than rewritten.
-  exact ((isEven_integralLattice_two_iff_isDoublyEven C hC).and
-    ((isUnimodular_integralLattice_iff 2 C.toAddSubgroup hC).trans hself)).trans
-      ⟨fun h ↦ h.1.isTypeII h.2, fun h ↦ ⟨h.isDoublyEven, h.eq_euclideanDual⟩⟩
-
-/-- The Construction A lattice of a binary Type II code is even. -/
-theorem isEven_integralLattice_two_of_isTypeII {C : LinearCode (ZMod 2) ι}
-    (hC : BinaryCode.IsTypeII C) :
-    (integralLattice 2 C.toAddSubgroup hC.toZModSubmodule_eq_euclideanDual.le).IsEven :=
-  ((isEven_and_isUnimodular_integralLattice_two_iff_isTypeII C _).mpr hC).1
-
-/-- The Construction A lattice of a binary Type II code is unimodular. -/
-theorem isUnimodular_integralLattice_two_of_isTypeII {C : LinearCode (ZMod 2) ι}
-    (hC : BinaryCode.IsTypeII C) :
-    (integralLattice 2 C.toAddSubgroup hC.toZModSubmodule_eq_euclideanDual.le).IsUnimodular :=
-  (isUnimodular_integralLattice_iff 2 C.toAddSubgroup _).mpr hC.toZModSubmodule_eq_euclideanDual
-
 /-! ## Type II codes over `ℤ/2^r` -/
 
 variable {r : ℕ}
