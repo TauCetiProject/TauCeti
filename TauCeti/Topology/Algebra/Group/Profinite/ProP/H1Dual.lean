@@ -71,6 +71,9 @@ rank. The same count on the canonical carrier is `TauCeti.IsProP.natCard_cohomFp
 * `TauCeti.h1EquivFrattiniQuotientDual_apply_mk` and
   `TauCeti.h1EquivFrattiniQuotientDual_symm_apply`: the identification in both directions, evaluated
   on the Frattini quotient.
+* `TauCeti.cohomFpEquivFrattiniQuotientDual_apply` and
+  `TauCeti.cohomFpEquivFrattiniQuotientDual_symm_apply`: the same identification in both directions
+  on the carrier `TauCeti.cohomFp p G 1`, read through the two equivalences it is built from.
 * `TauCeti.IsProP.rank_H1_eq_topologicalGeneratorRank`: the dimension of `H¹(G, 𝔽_p)` over
   `𝔽_p` is the topological generator rank of `G`, as an identity of cardinals.
 * `TauCeti.IsProP.finrank_H1_eq_topologicalGeneratorRankNat`: the natural-number form of the
@@ -159,6 +162,24 @@ not restate. -/
 noncomputable def cohomFpEquivFrattiniQuotientDual :
     cohomFp p G 1 ≃ₗ[ZMod p] continuousZModDual p (G ⧸ proPFrattini p G) :=
   (cohomFpLinearEquivContinuousZModDual p G).trans (frattiniQuotientDualEquiv (p := p)).symm
+
+/-- A class of `TauCeti.cohomFp p G 1` maps to the character of the Frattini quotient obtained by
+reading the class, through `TauCeti.cohomFpLinearEquivContinuousZModDual`, on that quotient. -/
+@[simp]
+theorem cohomFpEquivFrattiniQuotientDual_apply (x : cohomFp p G 1) :
+    cohomFpEquivFrattiniQuotientDual (p := p) x
+      = (frattiniQuotientDualEquiv (p := p)).symm (cohomFpLinearEquivContinuousZModDual p G x) := by
+  rw [cohomFpEquivFrattiniQuotientDual, LinearEquiv.trans_apply]
+
+/-- A continuous `𝔽_p`-valued character of the Frattini quotient is read, through
+`TauCeti.frattiniQuotientDualEquiv`, as a character of `G` and then lifted by
+`TauCeti.cohomFpLinearEquivContinuousZModDual` to a class of `TauCeti.cohomFp p G 1`. -/
+@[simp]
+theorem cohomFpEquivFrattiniQuotientDual_symm_apply
+    (x : continuousZModDual p (G ⧸ proPFrattini p G)) :
+    (cohomFpEquivFrattiniQuotientDual (p := p)).symm x
+      = (cohomFpLinearEquivContinuousZModDual p G).symm (frattiniQuotientDualEquiv (p := p) x) := by
+  rw [cohomFpEquivFrattiniQuotientDual, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm]
 
 end CohomFp
 
