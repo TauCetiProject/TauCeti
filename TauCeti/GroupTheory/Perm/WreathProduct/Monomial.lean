@@ -19,6 +19,8 @@ For `s : U.LeftTransversal`, Mathlib supplies such a map through `s.2.leftQuotie
 section property given by `s.2.quotientGroupMk_leftQuotientEquiv`. Conversely, a section map
 `r` with proof `hr` gives `⟨Set.range r, Subgroup.isComplement_range_left hr⟩ : U.LeftTransversal`,
 whose representative map recovers `r` by `Subgroup.IsComplement.leftQuotientEquiv_apply`.
+Thus `monomialHom U s.2.leftQuotientEquiv s.2.quotientGroupMk_leftQuotientEquiv` uses the
+same bundled choice of representatives directly.
 The cocycle law gives the homomorphism, and both the coset-indexed and finite-coordinate forms
 are injective. The public maps are called as `TauCeti.monomialHom U t ht` and
 `TauCeti.monomialFinHom U t ht e`, where `e` labels the cosets by `Fin U.index`.
@@ -69,12 +71,6 @@ noncomputable def monomialHom (t : G ⧸ U → G) (ht : ∀ x, (QuotientGroup.mk
     (monomialHom U t ht g).left x = ⟨lWord U t x g, lWord_mem U t ht x g⟩ := by
   rfl
 
-/-- The coordinate of the monomial homomorphism coerces to the transversal word. -/
-theorem coe_monomialHom_left (t : G ⧸ U → G) (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x)
-    (g : G) (x : G ⧸ U) :
-    ((monomialHom U t ht g).left x : G) = lWord U t x g := by
-  simp only [monomialHom_left]
-
 /-- The permutation part of the monomial homomorphism translates left cosets. -/
 @[simp] theorem monomialHom_right (t : G ⧸ U → G) (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x)
     (g : G) (x : G ⧸ U) :
@@ -97,7 +93,7 @@ theorem monomialHom_injective (t : G ⧸ U → G) (ht : ∀ x, (QuotientGroup.mk
     simpa only [monomialHom_right] using this
   have hw : lWord U t (g • x) g = lWord U t (g • x) h := by
     have := congrArg (fun w : WreathProduct U (G ⧸ U) => ((w.left (g • x) : U) : G)) heq
-    simpa only [coe_monomialHom_left] using this
+    simpa only [monomialHom_left, Subtype.coe_mk] using this
   have heq' : g * t x = h * t x := by
     calc
       g * t x = t (g • x) * lWord U t (g • x) g :=
@@ -132,13 +128,6 @@ theorem monomialFinHom_apply (t : G ⧸ U → G)
     (monomialFinHom U t ht e g).left i =
       ⟨lWord U t (e.symm i) g, lWord_mem U t ht _ g⟩ := by
   simp [monomialFinHom]
-
-/-- A finite coordinate coerces to the transversal word at the corresponding coset. -/
-theorem coe_monomialFinHom_left (t : G ⧸ U → G) (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x)
-    (e : G ⧸ U ≃ Fin U.index)
-    (g : G) (i : Fin U.index) :
-    ((monomialFinHom U t ht e g).left i : G) = lWord U t (e.symm i) g := by
-  simp only [monomialFinHom_left]
 
 /-- The finite permutation coordinate translates the corresponding coset. -/
 @[simp] theorem monomialFinHom_right (t : G ⧸ U → G)

@@ -45,7 +45,7 @@ theorem continuous_monomialHom [TopologicalSpace G] [SeparatelyContinuousMul G]
       (continuous_lWord U t hU x).subtype_mk _
     exact h.congr fun g => by
       apply Subtype.ext
-      exact (coe_monomialHom_left U t ht g x).symm
+      simp only [monomialHom_left, Subtype.coe_mk]
   · intro x
     exact (QuotientGroup.continuous_smul_const U x).congr fun g =>
       (monomialHom_right U t ht g x).symm

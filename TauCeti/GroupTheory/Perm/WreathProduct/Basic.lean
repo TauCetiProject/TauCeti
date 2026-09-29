@@ -75,7 +75,7 @@ variable {D ι}
 precomposition with `σ⁻¹`. -/
 -- Mathlib's `mulAutArrow_apply_apply` retains an unevaluated action from its local
 -- `arrowAction` instance. Here that action evaluates by definitional equality.
-theorem mulAutArrow_apply_apply_inv (σ : Equiv.Perm ι) (F : ι → D) (i : ι) :
+@[simp] theorem mulAutArrow_apply_apply_inv (σ : Equiv.Perm ι) (F : ι → D) (i : ι) :
     mulAutArrow σ F i = F (σ⁻¹ i) := rfl
 
 /-- Multiplication in a permutation wreath product, written in coordinates. -/
