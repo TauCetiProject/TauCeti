@@ -13,7 +13,8 @@ public import Mathlib.FieldTheory.Galois.Basic
 
 Let `K` be a commutative semiring and `L` a commutative ring over `K`. A **`2`-cocycle** `c` of
 `Aut_K(L)` with values in `Lˣ` is a
-function `c : Aut_K(L) × Aut_K(L) → Lˣ` satisfying Mathlib's multiplicative cocycle identity
+function `c(σ, τ) ∈ Lˣ` of two automorphisms, stored curried as `c.toFun σ τ`, whose uncurried
+form `Aut_K(L) × Aut_K(L) → Lˣ` satisfies Mathlib's multiplicative cocycle identity
 `groupCohomology.IsMulCocycle₂`, which reads
 `c(στ, ρ) · c(σ, τ) = σ(c(τ, ρ)) · c(σ, τρ)`
 for the Galois action of `Aut_K(L)` on `Lˣ`. This is the inhomogeneous normalization of
@@ -72,15 +73,15 @@ namespace TauCeti
 variable (K : Type u) [CommSemiring K] (L : Type v) [CommRing L] [Algebra K L]
 
 /-- A **`2`-cocycle** of the automorphism group `Aut_K(L)` with values in the units of `L`: a
-function `c : Aut_K(L) × Aut_K(L) → Lˣ` satisfying the multiplicative cocycle identity
-`c(στ, ρ) · c(σ, τ) = σ(c(τ, ρ)) · c(σ, τρ)` of `groupCohomology.IsMulCocycle₂`, for the Galois
-action of `L ≃ₐ[K] L` on `Lˣ`. -/
+function `c(σ, τ) = c.toFun σ τ ∈ Lˣ` whose uncurried form satisfies the multiplicative
+cocycle identity `c(στ, ρ) · c(σ, τ) = σ(c(τ, ρ)) · c(σ, τρ)` of
+`groupCohomology.IsMulCocycle₂`, for the Galois action of `L ≃ₐ[K] L` on `Lˣ`. -/
 @[ext]
 structure TwoCocycle where
-  /-- The underlying function. -/
-  toFun : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) → Lˣ
-  /-- The cocycle identity. -/
-  isMulCocycle₂ : IsMulCocycle₂ toFun
+  /-- The underlying function `(σ, τ) ↦ c(σ, τ)`, in curried form. -/
+  toFun : (L ≃ₐ[K] L) → (L ≃ₐ[K] L) → Lˣ
+  /-- The cocycle identity, for the uncurried function `(σ, τ) ↦ c(σ, τ)`. -/
+  isMulCocycle₂ : IsMulCocycle₂ fun p ↦ toFun p.1 p.2
 
 variable {K L}
 
@@ -90,14 +91,14 @@ variable (c : TwoCocycle K L)
 
 /-- The cocycle identity `σ(c(τ, ρ)) · c(σ, τρ) = c(σ, τ) · c(στ, ρ)`, read in `L`. -/
 theorem map_toFun_mul_toFun (σ τ ρ : L ≃ₐ[K] L) :
-    σ (c.toFun (τ, ρ) : L) * c.toFun (σ, τ * ρ) = c.toFun (σ, τ) * c.toFun (σ * τ, ρ) := by
+    σ (c.toFun τ ρ : L) * c.toFun σ (τ * ρ) = c.toFun σ τ * c.toFun (σ * τ) ρ := by
   have h := congrArg ((↑) : Lˣ → L) (c.isMulCocycle₂ σ τ ρ)
   simp only [Units.val_mul, AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass] at h
   rw [← h, mul_comm]
 
 /-- `c(σ, 1) = σ(c(1, 1))`, Mathlib's `groupCohomology.map_one_snd_of_isMulCocycle₂` read in `L`
 through the Galois action. -/
-theorem toFun_one_right (σ : L ≃ₐ[K] L) : (c.toFun (σ, 1) : L) = σ (c.toFun (1, 1) : L) := by
+theorem toFun_one_right (σ : L ≃ₐ[K] L) : (c.toFun σ 1 : L) = σ (c.toFun 1 1 : L) := by
   simp [map_one_snd_of_isMulCocycle₂ c.isMulCocycle₂ σ]
 
 end TwoCocycle
@@ -148,30 +149,30 @@ noncomputable def basis : Module.Basis (L ≃ₐ[K] L) L (CrossedProduct c) :=
 `(∑ x_σ · u_σ) · (∑ y_τ · u_τ) = ∑ (x_σ · σ(y_τ) · c(σ, τ)) · u_{στ}`. -/
 noncomputable instance : Mul (CrossedProduct c) where
   mul a b := ((basis c).repr a).sum fun σ x => ((basis c).repr b).sum fun τ y =>
-    (x * σ y * c.toFun (σ, τ)) • basis c (σ * τ)
+    (x * σ y * c.toFun σ τ) • basis c (σ * τ)
 
 /-- The identity of the crossed product, `c(1, 1)⁻¹ · u_1`. -/
 noncomputable instance : One (CrossedProduct c) where
-  one := ((c.toFun (1, 1))⁻¹ : Lˣ) • basis c 1
+  one := ((c.toFun 1 1)⁻¹ : Lˣ) • basis c 1
 
 variable {c}
 
 /-- The multiplication of the crossed product in coordinates. -/
 theorem mul_def (a b : CrossedProduct c) :
     a * b = ((basis c).repr a).sum fun σ x => ((basis c).repr b).sum fun τ y =>
-      (x * σ y * c.toFun (σ, τ)) • basis c (σ * τ) :=
+      (x * σ y * c.toFun σ τ) • basis c (σ * τ) :=
   (rfl)
 
 variable (c) in
 /-- The identity of the crossed product is `c(1, 1)⁻¹ · u_1`. -/
-theorem one_def : (1 : CrossedProduct c) = (((c.toFun (1, 1))⁻¹ : Lˣ) : L) • basis c 1 :=
+theorem one_def : (1 : CrossedProduct c) = (((c.toFun 1 1)⁻¹ : Lˣ) : L) • basis c 1 :=
   (rfl)
 
 /-- The multiplication table of the crossed product:
 `(x · u_σ) · (y · u_τ) = (x · σ(y) · c(σ, τ)) · u_{στ}`. -/
 @[simp]
 theorem smul_basis_mul_smul_basis (σ τ : L ≃ₐ[K] L) (x y : L) :
-    (x • basis c σ) * (y • basis c τ) = (x * σ y * c.toFun (σ, τ)) • basis c (σ * τ) := by
+    (x • basis c σ) * (y • basis c τ) = (x * σ y * c.toFun σ τ) • basis c (σ * τ) := by
   simp [mul_def, Finsupp.smul_single]
 
 /-- Induction principle along the `L`-basis `u_σ`: a property of elements of the crossed product
@@ -227,8 +228,8 @@ noncomputable instance : NonAssocRing (CrossedProduct c) where
         map_one_fst_of_isMulCocycle₂ c.isMulCocycle₂ σ, AlgEquiv.one_apply, one_mul]
       congr 1
       calc
-        (↑(c.toFun (1, 1))⁻¹ : L) * x * c.toFun (1, 1) =
-            x * (↑(c.toFun (1, 1))⁻¹ : L) * c.toFun (1, 1) := by rw [mul_comm (↑_ : L) x]
+        (↑(c.toFun 1 1)⁻¹ : L) * x * c.toFun 1 1 =
+            x * (↑(c.toFun 1 1)⁻¹ : L) * c.toFun 1 1 := by rw [mul_comm (↑_ : L) x]
         _ = x := by rw [mul_assoc, Units.inv_mul, mul_one]
   mul_one a := by
     induction a using induction_on with
@@ -238,8 +239,8 @@ noncomputable instance : NonAssocRing (CrossedProduct c) where
       rw [one_def, smul_basis_mul_smul_basis, c.toFun_one_right]
       congr 1
       calc
-        x * σ (↑(c.toFun (1, 1))⁻¹ : L) * σ (c.toFun (1, 1) : L) =
-            x * σ ((↑(c.toFun (1, 1))⁻¹ : L) * c.toFun (1, 1)) := by
+        x * σ (↑(c.toFun 1 1)⁻¹ : L) * σ (c.toFun 1 1 : L) =
+            x * σ ((↑(c.toFun 1 1)⁻¹ : L) * c.toFun 1 1) := by
               rw [mul_assoc, map_mul]
         _ = x := by rw [Units.inv_mul, map_one, mul_one]
 
@@ -287,19 +288,19 @@ variable (c) in
 /-- The embedding `x ↦ (x · c(1, 1)⁻¹) · u_1` of `L` into the crossed product, a homomorphism of
 `K`-algebras. -/
 noncomputable def inc : L →ₐ[K] CrossedProduct c where
-  toFun x := (x * (((c.toFun (1, 1))⁻¹ : Lˣ) : L)) • basis c 1
+  toFun x := (x * (((c.toFun 1 1)⁻¹ : Lˣ) : L)) • basis c 1
   map_one' := by rw [one_mul, one_def]
   map_mul' x y := by
     rw [smul_basis_mul_smul_basis, AlgEquiv.one_apply, mul_one]
     congr 1
-    linear_combination (-(x * y * (((c.toFun (1, 1))⁻¹ : Lˣ) : L))) * Units.inv_mul (c.toFun (1, 1))
+    linear_combination (-(x * y * (((c.toFun 1 1)⁻¹ : Lˣ) : L))) * Units.inv_mul (c.toFun 1 1)
   map_zero' := by simp
   map_add' x y := by simp [add_mul, add_smul]
   commutes' r := by
     rw [Algebra.algebraMap_eq_smul_one (A := CrossedProduct c), one_def, ← smul_assoc,
       Algebra.smul_def]
 
-theorem inc_apply (x : L) : inc c x = (x * (((c.toFun (1, 1))⁻¹ : Lˣ) : L)) • basis c 1 :=
+theorem inc_apply (x : L) : inc c x = (x * (((c.toFun 1 1)⁻¹ : Lˣ) : L)) • basis c 1 :=
   (rfl)
 
 /-- Left multiplication by `inc c x` is the `L`-module structure. -/
@@ -313,10 +314,10 @@ theorem smul_def (x : L) (a : CrossedProduct c) : x • a = inc c x * a := by
     simp only [map_one_fst_of_isMulCocycle₂ c.isMulCocycle₂ σ, AlgEquiv.one_apply, one_mul,
       smul_smul]
     congr 1
-    linear_combination (-(x * y)) * Units.inv_mul (c.toFun (1, 1))
+    linear_combination (-(x * y)) * Units.inv_mul (c.toFun 1 1)
 
 /-- `u_1 = c(1, 1) · 1`. -/
-theorem basis_one : basis c 1 = inc c (c.toFun (1, 1)) := by
+theorem basis_one : basis c 1 = inc c (c.toFun 1 1) := by
   rw [inc_apply, Units.mul_inv, one_smul]
 
 /-- **The semilinearity rule** `u_σ · x = σ(x) · u_σ`. -/
@@ -327,15 +328,15 @@ theorem basis_mul_inc (σ : L ≃ₐ[K] L) (x : L) :
   rw [one_smul, c.toFun_one_right, one_mul]
   congr 1
   calc
-    σ (x * (↑(c.toFun (1, 1))⁻¹ : L)) * σ (c.toFun (1, 1) : L) =
-        σ x * σ ((↑(c.toFun (1, 1))⁻¹ : L) * c.toFun (1, 1)) := by
+    σ (x * (↑(c.toFun 1 1)⁻¹ : L)) * σ (c.toFun 1 1 : L) =
+        σ x * σ ((↑(c.toFun 1 1)⁻¹ : L) * c.toFun 1 1) := by
           rw [map_mul, mul_assoc, map_mul]
     _ = σ x := by rw [Units.inv_mul, map_one, mul_one]
 
 /-- **The cocycle rule** `u_σ · u_τ = c(σ, τ) · u_{στ}`. -/
 @[simp]
 theorem basis_mul_basis (σ τ : L ≃ₐ[K] L) :
-    basis c σ * basis c τ = inc c (c.toFun (σ, τ)) * basis c (σ * τ) := by
+    basis c σ * basis c τ = inc c (c.toFun σ τ) * basis c (σ * τ) := by
   rw [← smul_def, ← one_smul L (basis c σ), ← one_smul L (basis c τ),
     smul_basis_mul_smul_basis]
   simp only [map_one, one_mul]

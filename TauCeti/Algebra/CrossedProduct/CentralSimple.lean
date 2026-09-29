@@ -101,7 +101,7 @@ private theorem one_mem_of_smul_basis_mem (I : TwoSidedIdeal (CrossedProduct c))
     {σ : L ≃ₐ[K] L} {y : L} (hy : y ≠ 0) (hI : y • basis c σ ∈ I) : (1 : CrossedProduct c) ∈ I := by
   have hσy : σ⁻¹ y ≠ 0 := (map_ne_zero _).2 hy
   convert I.mul_mem_left
-    (((c.toFun (1, 1) : L)⁻¹ * (σ⁻¹ y)⁻¹ * (c.toFun (σ⁻¹, σ) : L)⁻¹) • basis c σ⁻¹) _ hI using 1
+    (((c.toFun 1 1 : L)⁻¹ * (σ⁻¹ y)⁻¹ * (c.toFun σ⁻¹ σ : L)⁻¹) • basis c σ⁻¹) _ hI using 1
   rw [smul_basis_mul_smul_basis, inv_mul_cancel, one_def, Units.val_inv_eq_inv_val]
   congr 1
   field_simp
@@ -132,7 +132,7 @@ instance instIsCentral [IsGalois K L] : Algebra.IsCentral K (CrossedProduct c) w
       simp only [← smul_def, map_smul, Finsupp.smul_apply, smul_eq_mul, repr_mul_inc] at h
       exact (mul_eq_zero.1 (by linear_combination h)).resolve_right (sub_ne_zero.2 hx.symm)
     -- so `a = y · c(1, 1)⁻¹ · u_1 = inc c y` for `y = a_1 · c(1, 1)`
-    set y := (basis c).repr a 1 * c.toFun (1, 1)
+    set y := (basis c).repr a 1 * c.toFun 1 1
     have ha1 : a = inc c y := by
       apply (basis c).repr.injective
       ext σ

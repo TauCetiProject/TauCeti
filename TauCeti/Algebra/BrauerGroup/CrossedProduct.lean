@@ -48,7 +48,8 @@ crossed product `(L, Gal(L/K), c)`. -/
 noncomputable def crossedProductClass (c : TwoCocycle K L) : BrauerGroup.{u, v} K :=
   mk (crossedProductCSA c)
 
-/-- The defining equation for `crossedProductClass`. -/
+/-- The defining equation for `crossedProductClass`. Not a `simp` lemma: the class is the normal
+form its relations are stated in, and unfolding it to a bare Brauer class would defeat them. -/
 theorem crossedProductClass_def (c : TwoCocycle K L) :
     crossedProductClass c = mk (CSA.of K (CrossedProduct c)) := (rfl)
 
