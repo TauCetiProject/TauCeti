@@ -13,8 +13,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restrictio
 
 For a positive-degree Tate class and a degree-zero Tate class, restriction of their cup product
 is the cup product of their restrictions. The degree-zero class is represented by an invariant
-vector. Cupping with it is induced by the equivariant map `m ↦ m ⊗ y`, so the result follows
-from naturality of positive-degree Tate restriction in the coefficient representation.
+vector. The compatibility is stated for both the all-degree cup product and its `cupH0` form.
 
 This is the `(n + 1, 0)` case of the restriction law for the all-degree Tate cup product.
 The restriction convention follows Artin and Tate, *Class Field Theory*, Preliminaries §2,
@@ -35,9 +34,9 @@ attribute [local instance] Subgroup.fintypeOfFinite
 
 variable [Fintype G]
 
-/-- Restriction commutes with the Tate cup product in bidegree `(n + 1, 0)`.
-The comparison of restricted tensor products is definitional. Use this as an explicit rewrite:
-`simp` first reduces the degree-zero cup product to `cupH0`. -/
+/-- Restriction commutes with the Tate cup product in bidegree `(n + 1, 0)`: the
+restriction of the cup equals the cup of the restricted classes. This form applies to the
+all-degree `cup` operation. -/
 theorem cup_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
     (x : tateCohomology M ((n + 1 : ℕ) : ℤ)) (y : tateCohomology N 0) :
     posRes (M ⊗ N) H n
@@ -63,8 +62,8 @@ theorem cup_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
     simp only [Int.natCast_add, Int.cast_ofNat_Int, tensor_V, tensor_ρ]
     rfl
 
-/-- The `cupH0` form of positive-degree cup restriction, used after `simp` unfolds a cup with a
-degree-zero right factor. -/
+/-- Restriction commutes with `cupH0` in positive degree. This form matches the normal form of a
+cup product with a degree-zero right factor. -/
 @[simp]
 theorem cupH0_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
     (x : tateCohomology M ((n + 1 : ℕ) : ℤ)) (y : tateCohomology N 0) :

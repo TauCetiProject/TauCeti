@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
-public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.Coset.Basic
