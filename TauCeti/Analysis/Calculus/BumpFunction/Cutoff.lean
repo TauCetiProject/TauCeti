@@ -183,8 +183,8 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
       rw [Real.dist_eq, Real.coe_toNNReal _ (inv_nonneg.2 hRr.le), ← sub_div, abs_div,
         abs_of_pos hRr, div_eq_inv_mul]
       gcongr
-      rw [dist_eq_norm, show R - ‖y - x₀‖ - (R - ‖z - x₀‖) = ‖z - x₀‖ - ‖y - x₀‖ by ring,
-        abs_sub_comm]
+      have hsub : R - ‖y - x₀‖ - (R - ‖z - x₀‖) = ‖z - x₀‖ - ‖y - x₀‖ := by ring
+      rw [dist_eq_norm, hsub, abs_sub_comm]
       simpa using abs_norm_sub_norm_le (y - x₀) (z - x₀)
     rw [_root_.gradient, LinearIsometryEquiv.norm_map]
     refine (norm_fderiv_le_of_lipschitz ℝ hlip).trans_eq ?_

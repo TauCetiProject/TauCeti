@@ -28,16 +28,10 @@ Haar measure used for the `L²` norm. No regularity of the coefficients beyond m
 is used. This is the first half of the De Giorgi–Nash–Moser theorem; Hölder continuity is the
 second.
 
-The argument runs on the truncations `(u - k)⁺`. Caccioppoli's inequality for them bounds
-`∇(ψ (u - l)⁺)` by `(u - l)⁺ ∇ψ`; a Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂` on `W^{1,2}_0(Ω)`
-with `q > 2`, Hölder's inequality on the set `{u > l}`, and Chebyshev's inequality for the
-measure of that set in terms of the truncation at a lower level `k < l` combine into the
-energy recursion `setIntegral_sq_mul_max_sub_sq_le`, in which the truncation at level `l` is
-controlled by the power `2 - 2/q > 1` of the truncation at level `k`. Along a sequence of balls
-shrinking from `B(x₀, R)` to `B(x₀, R/2)` and levels rising from `0` to `K`, the fast geometric
-convergence lemma `TauCeti.tendsto_atTop_zero_of_le_mul_pow_mul_rpow` then forces
-`(u - K)⁺ = 0` on the half ball once `K` exceeds a multiple of `R^{-1/α} ‖u⁺‖₂` with
-`α = 1 - 2/q`.
+The energy recursion `setIntegral_sq_mul_max_sub_sq_le` is useful when a Sobolev inequality
+`‖v‖_q ≤ S ‖∇v‖₂` is available on `W^{1,2}_0(Ω)` for some `q > 2`. It controls higher
+truncation levels on smaller balls and yields the local bound below. The bound can be used as
+the boundedness input for interior oscillation and Hölder regularity estimates.
 
 The Sobolev inequality enters as a hypothesis in the general form, so the theorem applies to any
 exponent `q > 2` for which it is available. In dimension `n ≥ 3` it is the
@@ -76,74 +70,6 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
-
-omit [Fintype ι] [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- For `q ≥ 2`, the Hölder exponent `1 - 2/q` is nonnegative (it is `1` at `q = ∞`). -/
-private theorem one_sub_two_div_toReal_nonneg {q : ℝ≥0∞} (hq : 2 ≤ q) :
-    0 ≤ 1 - 2 / q.toReal := by
-  rcases eq_or_ne q (∞ : ℝ≥0∞) with rfl | hqt
-  · simp
-  · have h2q : (2 : ℝ) ≤ q.toReal := by
-      simpa using ENNReal.toReal_mono hqt hq
-    rw [sub_nonneg, div_le_one (by linarith)]
-    exact h2q
-
-omit [DecidableEq ι] in
-/-- A Sobolev estimate `‖v‖_q ≤ S ‖∇v‖₂`, combined with Hölder's inequality on a set `A` off
-which `v` vanishes, bounds `∫_Ω v²` by `S² ‖∇v‖₂² μ(Ω ∩ A)^{1 - 2/q}`. -/
-private theorem integral_value_sq_le_of_eLpNorm_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S : ℝ≥0}
-    {v : W1p mu Omega 2}
-    (hS : eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
-    {A : Set (EuclideanSpace ℝ ι)} (hA : MeasurableSet A)
-    (hAfin : mu ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A) ≠ (∞ : ℝ≥0∞))
-    (hvA : ∀ᵐ x ∂mu.restrict Omega, x ∉ A → W1p.value v x = 0) :
-    ∫ x in Omega, W1p.value v x ^ 2 ∂mu ≤
-      S ^ 2 * ‖W1p.gradient v‖ ^ 2 *
-        mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A) ^ (1 - 2 / q.toReal) := by
-  set β : ℝ := 1 / (2 : ℝ≥0∞).toReal - 1 / q.toReal
-  have hβ : 0 ≤ β := by
-    have := one_sub_two_div_toReal_nonneg hq
-    rw [div_eq_mul_inv] at this
-    simp only [β, ENNReal.toReal_ofNat, one_div]
-    linarith
-  have hind : (W1p.value v : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega]
-      A.indicator (W1p.value v) := by
-    filter_upwards [hvA] with x hx
-    by_cases hxA : x ∈ A
-    · simp [hxA]
-    · simp [hxA, hx hxA]
-  -- Hölder's inequality on `A`, then the Sobolev estimate.
-  have hle : eLpNorm (W1p.value v) 2 (mu.restrict Omega) ≤
-      S * ‖W1p.gradient v‖ₑ * mu ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A) ^ β := by
-    calc eLpNorm (W1p.value v) 2 (mu.restrict Omega)
-        = eLpNorm (W1p.value v) 2 ((mu.restrict Omega).restrict A) := by
-          rw [eLpNorm_congr_ae hind, eLpNorm_indicator_eq_eLpNorm_restrict hA.nullMeasurableSet]
-      _ ≤ eLpNorm (W1p.value v) q ((mu.restrict Omega).restrict A) *
-            ((mu.restrict Omega).restrict A) univ ^ β :=
-          eLpNorm_le_eLpNorm_mul_rpow_measure_univ hq (Lp.aestronglyMeasurable _).restrict
-      _ ≤ S * ‖W1p.gradient v‖ₑ * mu ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A) ^ β := by
-          rw [Measure.restrict_apply MeasurableSet.univ, univ_inter,
-            Measure.restrict_apply hA, inter_comm]
-          gcongr
-          exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans hS
-  have hfin : (S : ℝ≥0∞) * ‖W1p.gradient v‖ₑ *
-      mu ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A) ^ β ≠ (∞ : ℝ≥0∞) :=
-    ENNReal.mul_ne_top (by finiteness) (ENNReal.rpow_ne_top_of_nonneg hβ hAfin)
-  have hreal := ENNReal.toReal_mono hfin hle
-  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ← ENNReal.toReal_rpow, toReal_enorm,
-    ENNReal.coe_toReal, ← measureReal_def] at hreal
-  rw [W1p.integral_value_sq_eq_norm_value_sq, Lp.norm_def]
-  calc (eLpNorm (W1p.value v) 2 (mu.restrict Omega)).toReal ^ 2
-      ≤ ((S : ℝ) * ‖W1p.gradient v‖ *
-          mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A) ^ β) ^ 2 :=
-        pow_le_pow_left₀ ENNReal.toReal_nonneg hreal 2
-    _ = S ^ 2 * ‖W1p.gradient v‖ ^ 2 *
-          mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A) ^ (1 - 2 / q.toReal) := by
-        rw [mul_pow, mul_pow, ← Real.rpow_mul_natCast measureReal_nonneg]
-        congr 2
-        simp only [β, ENNReal.toReal_ofNat]
-        push_cast
-        ring
 
 /-- **De Giorgi's energy recursion.** Let `a` be measurable and uniformly elliptic on `Ω` with
 constants `0 < λ ≤ Λ`, and suppose that `W^{1,2}_0(Ω)` satisfies a Sobolev inequality
@@ -252,7 +178,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_max_sub_sq_le
     · have hxl : W1p.value u x ≤ l := le_of_not_gt fun hlt => hxA ⟨hxT, hlt⟩
       rw [max_eq_right (by linarith), mul_zero]
     · rw [image_eq_zero_of_notMem_tsupport hxT, zero_mul]
-  have hsob := integral_value_sq_le_of_eLpNorm_le hq (hS z hz) hA hAfin hvA
+  have hsob := W1p.integral_value_sq_le_of_eLpNorm_le hq (hS z hz) hA hAfin hvA
   -- Chebyshev: on `{u > l}`, the lower truncation `(u - k)⁺` is at least `l - k`.
   have hcheb : mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A) ≤ I / (l - k) ^ 2 := by
     have hlk : 0 < (l - k) ^ 2 := by nlinarith
@@ -417,10 +343,16 @@ private theorem setIntegral_ball_max_sub_sq_succ_le
         have hG : (c / (R / 2 ^ (j + 3))) ^ 2 = 64 * c ^ 2 * 4 ^ j * (R ^ 2)⁻¹ := by
           rw [div_div_eq_mul_div, div_pow, mul_pow, h64]
           field_simp
-        rw [hG, hdiv, Real.mul_rpow hY (by positivity),
-          Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_pow_comm (by norm_num),
-          Real.inv_rpow (by positivity), ← Real.rpow_neg (by positivity),
-          Real.rpow_one_add' hY (by linarith), mul_pow, pow_succ]
+        have hpow : (Y * (4 ^ (j + 1) * (K ^ 2)⁻¹)) ^ α =
+            Y ^ α * (4 ^ α * (4 ^ α) ^ j) * (K ^ 2) ^ (-α) := by
+          rw [Real.mul_rpow hY (by positivity),
+            Real.mul_rpow (by positivity) (by positivity),
+            ← Real.rpow_pow_comm (by norm_num), Real.inv_rpow (by positivity),
+            ← Real.rpow_neg (by positivity), pow_succ]
+          ring
+        have hYpow : Y * Y ^ α = Y ^ (1 + α) := by
+          rw [Real.rpow_one_add' hY (by linarith)]
+        rw [hG, hdiv, hpow, ← hYpow]
         ring
 
 /-- **De Giorgi's threshold.** If `∫_{B(x₀, R)} (u⁺)²` lies below the threshold of the fast
@@ -576,12 +508,21 @@ theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral {q : ℝ≥0∞} (hq : 
     -- constant back into the abbreviations `E₁` and `b`, which `set` does not do for new goals.
     change Y₀ = (E₁ * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)
     have hb0 : 0 < b := by positivity
-    rw [Real.mul_rpow (by positivity) (by positivity), Real.mul_rpow hE₁.le (by positivity),
-      ← Real.rpow_mul (by positivity), show -α * -α⁻¹ = 1 by field_simp, Real.rpow_one,
-      Real.inv_rpow (by positivity), Real.rpow_neg (x := R ^ 2) (by positivity), inv_inv,
-      Real.rpow_neg hE₁.le, Real.rpow_neg hb0.le, ← Real.rpow_pow_comm hR.le]
-    simp only [K, mul_pow, Real.sq_sqrt (by positivity : 0 ≤ E₁ ^ α⁻¹ * b ^ (α ^ 2)⁻¹),
-      Real.sq_sqrt hY₀, Real.rpow_neg hR.le]
+    have hαmul : -α * -α⁻¹ = 1 := by field_simp
+    have hKpow : ((K ^ 2) ^ (-α)) ^ (-α⁻¹) = K ^ 2 := by
+      rw [← Real.rpow_mul (by positivity), hαmul, Real.rpow_one]
+    have hRpow : ((R ^ 2)⁻¹) ^ (-α⁻¹) = (R ^ α⁻¹) ^ 2 := by
+      rw [Real.inv_rpow (by positivity), Real.rpow_neg (x := R ^ 2) (by positivity),
+        inv_inv, ← Real.rpow_pow_comm hR.le]
+    have hfactor : (E₁ * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) ^ (-α⁻¹) =
+        E₁ ^ (-α⁻¹) * (R ^ α⁻¹) ^ 2 * K ^ 2 := by
+      rw [Real.mul_rpow (by positivity) (by positivity),
+        Real.mul_rpow hE₁.le (by positivity), hKpow, hRpow]
+    have hKsq : K ^ 2 = E₁ ^ α⁻¹ * b ^ (α ^ 2)⁻¹ * (R ^ (-α⁻¹)) ^ 2 * Y₀ := by
+      simp only [K, mul_pow, Real.sq_sqrt (by positivity : 0 ≤ E₁ ^ α⁻¹ * b ^ (α ^ 2)⁻¹),
+        Real.sq_sqrt hY₀]
+    rw [hfactor, hKsq, Real.rpow_neg hE₁.le, Real.rpow_neg hb0.le,
+      Real.rpow_neg hR.le]
     field_simp
 
 /-- **Local boundedness of weak subsolutions in dimension `n ≥ 3` (De Giorgi).** Let `2*` be the
@@ -629,8 +570,8 @@ theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {psta
       ENNReal.toReal_natCast, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
   have hα : -(1 - 2 / pstar.toReal)⁻¹ = -(Fintype.card ι : ℝ) / 2 := by
     have hn' : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn
-    rw [div_eq_mul_inv 2 pstar.toReal,
-      show pstar.toReal⁻¹ = 2⁻¹ - (Fintype.card ι : ℝ)⁻¹ by linarith]
+    have hpinv' : pstar.toReal⁻¹ = 2⁻¹ - (Fintype.card ι : ℝ)⁻¹ := by linarith
+    rw [div_eq_mul_inv 2 pstar.toReal, hpinv']
     field_simp
     ring
   obtain ⟨D, hD, hmain⟩ := exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral (mu := mu)
