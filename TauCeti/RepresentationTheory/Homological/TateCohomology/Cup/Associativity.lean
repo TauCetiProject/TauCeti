@@ -31,6 +31,7 @@ variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
 
 /-- The degree-zero Tate cup product is associative, after applying the tensor associator
 to the coefficient representation. -/
+@[simp]
 theorem cupH0_assoc_zero (M N P : Rep k G)
     (x : tateCohomology M 0) (y : tateCohomology N 0)
     (z : tateCohomology P 0) :
@@ -46,8 +47,12 @@ theorem cupH0_assoc_zero (M N P : Rep k G)
         rw [cupH0_H0π_H0π, cupH0_H0π_H0π,
           cupH0_H0π_H0π, cupH0_H0π_H0π,
           H0π_comp_tateCohomologyFunctor_map_apply]
-        -- On pure tensors the representation associator is `TensorProduct.assoc_tmul`.
-        congr 1
+        apply congrArg (H0π (M ⊗ (N ⊗ P)))
+        apply Subtype.ext
+        change (TensorProduct.assoc k M.V N.V P.V)
+          (((x : M.V) ⊗ₜ[k] (y : N.V)) ⊗ₜ[k] (z : P.V)) =
+            (x : M.V) ⊗ₜ[k] ((y : N.V) ⊗ₜ[k] (z : P.V))
+        exact TensorProduct.assoc_tmul (x : M.V) (y : N.V) (z : P.V)
 
 /-- Associativity of the Tate cup product in bidegrees `(0, 0, 0)`. -/
 theorem cup_assoc_zero_zero_zero (M N P : Rep k G)
