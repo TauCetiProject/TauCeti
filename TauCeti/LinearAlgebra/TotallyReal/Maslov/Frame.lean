@@ -63,9 +63,7 @@ theorem maslovIndex_map (Λ : TotallyRealLoop E) (B : I → E ≃L[ℂ] E)
           conj (LinearMap.det ((B t).toLinearEquiv : E →ₗ[ℂ] E)) := by
     rw [normalizedDetPath_apply]
     symm
-    apply div_conj_eq_normalized_mul
-    rw [← LinearEquiv.coe_det]
-    exact (LinearEquiv.det (B t).toLinearEquiv).ne_zero
+    exact Complex.div_conj_eq_normalized_mul _
   have hμ : Λ.maslovIndex = Circle.degree γ :=
     Λ.maslovIndex_eq_degree hL₀ γ (fun _ => rfl)
   have hμmap : (Λ.map B hB hB01).maslovIndex = Circle.degree (γ.mul (δ.mul δ)) := by

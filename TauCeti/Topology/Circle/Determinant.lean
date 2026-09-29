@@ -23,10 +23,14 @@ open scoped ComplexConjugate unitInterval
 
 namespace TauCeti
 
-/-- The determinant phase of a nonzero complex number is the square of its normalization to the
+namespace Complex
+
+/-- The determinant phase of a complex number is the square of its normalization to the
 unit circle. -/
-theorem div_conj_eq_normalized_mul (z : ℂ) (hz : z ≠ 0) :
+theorem div_conj_eq_normalized_mul (z : ℂ) :
     z / conj z = (z / (‖z‖ : ℂ)) * (z / (‖z‖ : ℂ)) := by
+  by_cases hz : z = 0
+  · simp [hz]
   have hc : conj z ≠ 0 := by simp [hz]
   have hn : (‖z‖ : ℂ) ≠ 0 := by simp [hz]
   calc
@@ -34,31 +38,40 @@ theorem div_conj_eq_normalized_mul (z : ℂ) (hz : z ≠ 0) :
     _ = z * z / (‖z‖ : ℂ) ^ 2 := by rw [Complex.mul_conj']
     _ = (z / (‖z‖ : ℂ)) * (z / (‖z‖ : ℂ)) := by ring
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+end Complex
+
+namespace LinearEquiv
+
+variable {E : Type*} [AddCommGroup E] [Module ℂ E] [FiniteDimensional ℂ E]
 
 /-- The normalized complex determinant of an automorphism, as a point of the unit circle. -/
-noncomputable def detCircle (B : E ≃L[ℂ] E) : Circle :=
-  ⟨LinearMap.det (B.toLinearEquiv : E →ₗ[ℂ] E) /
-    ‖LinearMap.det (B.toLinearEquiv : E →ₗ[ℂ] E)‖, by
-    have hdet : LinearMap.det (B.toLinearEquiv : E →ₗ[ℂ] E) ≠ 0 := by
+noncomputable def detCircle (B : E ≃ₗ[ℂ] E) : Circle :=
+  ⟨LinearMap.det (B : E →ₗ[ℂ] E) /
+    ‖LinearMap.det (B : E →ₗ[ℂ] E)‖, by
+    have hdet : LinearMap.det (B : E →ₗ[ℂ] E) ≠ 0 := by
       rw [← LinearEquiv.coe_det]
-      exact (LinearEquiv.det B.toLinearEquiv).ne_zero
+      exact (LinearEquiv.det B).ne_zero
     simp [Submonoid.unitSphere, hdet]⟩
 
 omit [FiniteDimensional ℂ E] in
 @[simp]
-theorem detCircle_coe (B : E ≃L[ℂ] E) :
+theorem coe_detCircle (B : E ≃ₗ[ℂ] E) :
     (detCircle B : ℂ) =
-      LinearMap.det (B.toLinearEquiv : E →ₗ[ℂ] E) /
-        ‖LinearMap.det (B.toLinearEquiv : E →ₗ[ℂ] E)‖ :=
+      LinearMap.det (B : E →ₗ[ℂ] E) /
+        ‖LinearMap.det (B : E →ₗ[ℂ] E)‖ :=
   (rfl)
+
+end LinearEquiv
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 
 /-- The loop in the unit circle obtained by normalizing the determinant of a closed path of
 complex-linear automorphisms. -/
 noncomputable def normalizedDetPath (B : I → E ≃L[ℂ] E)
     (hB : Continuous fun t => (B t : E →L[ℂ] E)) (hB01 : B 0 = B 1) :
-    Path (detCircle (B 0)) (detCircle (B 0)) where
-  toFun t := detCircle (B t)
+    Path (LinearEquiv.detCircle (B 0).toLinearEquiv)
+      (LinearEquiv.detCircle (B 0).toLinearEquiv) where
+  toFun t := LinearEquiv.detCircle (B t).toLinearEquiv
   continuous_toFun := by
     have hd : Continuous fun t => LinearMap.det ((B t).toLinearEquiv : E →ₗ[ℂ] E) :=
       ContinuousLinearMap.continuous_det.comp hB
