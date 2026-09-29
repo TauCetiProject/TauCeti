@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.PathCategory.MorphismProperty
 public import Mathlib.Combinatorics.Quiver.Cast
+public import TauCeti.Combinatorics.Quiver.Embedding
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 
@@ -31,7 +32,6 @@ infinitely many, the reduction by which the non-Dynkin half of Gabriel's theorem
 
 ## Main definitions
 
-* `TauCeti.QuiverEmbedding`: a prefunctor injective on vertices and on arrows.
 * `TauCeti.QuiverEmbedding.extendByZeroRep`: the extension by zero of a representation.
 * `TauCeti.QuiverEmbedding.extendByZeroFunctor`: extension by zero as a functor.
 
@@ -76,26 +76,9 @@ open CategoryTheory
 
 universe u v w v' w' t
 
-/-- **An embedding of quivers**: a prefunctor `Q' ⥤q Q` injective on vertices and on the arrows
-between each pair of vertices. It exhibits `Q'` as a subquiver of `Q` that need not be full: an
-arrow of `Q` between two vertices of the image need not come from an arrow of `Q'`. -/
-structure QuiverEmbedding (Q' : Type v') [Quiver.{w'} Q'] (Q : Type v) [Quiver.{w} Q] extends
-    Prefunctor Q' Q where
-  /-- The embedding is injective on vertices. -/
-  obj_injective : Function.Injective obj
-  /-- The embedding is injective on the arrows between each pair of vertices. -/
-  map_injective {a b : Q'} : Function.Injective (map : (a ⟶ b) → (obj a ⟶ obj b))
-
 namespace QuiverEmbedding
 
 variable {Q' : Type v'} [Quiver.{w'} Q'] {Q : Type v} [Quiver.{w} Q] (φ : QuiverEmbedding Q' Q)
-
-/-- The vertices of `Q'` over a vertex `v` of `Q`. There is at most one, `φ` being injective on
-vertices. -/
-abbrev Fiber (v : Q) : Type v' := {u : Q' // φ.obj u = v}
-
-instance (v : Q) : Subsingleton (φ.Fiber v) :=
-  ⟨fun a b ↦ Subtype.ext (φ.obj_injective (a.2.trans b.2.symm))⟩
 
 variable {k : Type u} [Field k]
 
@@ -158,11 +141,8 @@ representation of `Q` with `M u` at `φ u` and the zero space at every vertex ou
 on which the image of an arrow `a` of `Q'` acts as `a` and every other arrow of `Q` acts by zero.
 
 The space over a vertex `v` is the product of the spaces of `M` over the fiber of `φ` at `v`,
-which has at most one point; this names it without choosing a preimage of `v`.
-
-`@[expose]` is load-bearing: a functor built by `CategoryTheory.Paths.lift` reveals its value on
-objects only through its definition, and statements such as
-`TauCeti.QuiverEmbedding.extendByZeroRep_map_toPath` do not elaborate without it. -/
+which has at most one point; this names it without choosing a preimage of `v`. -/
+-- The object and arrow API below elaborates using the value of this functor at a vertex.
 @[expose]
 noncomputable def extendByZeroRep (M : QuiverRep.{u, v', w', t} k Q') :
     QuiverRep.{u, v, w, max v' t} k Q :=
@@ -227,11 +207,8 @@ theorem extendByZeroMap_comp_extendByZeroApp (f : M ⟶ N) {v w : Q} (α : v ⟶
 variable (k) in
 /-- **Extension by zero along an embedding of quivers**, as a functor from the representations of
 `Q'` to those of `Q`; on a morphism it acts by that morphism over the image and by zero
-elsewhere.
-
-`@[expose]` is load-bearing for the same reason as on
-`TauCeti.QuiverEmbedding.extendByZeroRep`: the component of the image of a morphism is only a
-map between products over fibers once the objects of this functor are unfolded. -/
+elsewhere. -/
+-- The componentwise map API below elaborates using the objects of this functor.
 @[expose]
 noncomputable def extendByZeroFunctor :
     QuiverRep.{u, v', w', t} k Q' ⥤ QuiverRep.{u, v, w, max v' t} k Q where
