@@ -89,7 +89,7 @@ theorem pathAlgebraDimensionVectorK0Equiv_apply
     using h.trans (jordanHolderCoordinate_vertexSimpleModuleFG_eq_dimVector k Q i x)
 
 /-- A vertex simple maps to the corresponding standard basis vector. -/
-@[simp]
+-- The general equivalence and dimension-vector simp lemmas already simplify the left-hand side.
 theorem pathAlgebraDimensionVectorK0Equiv_vertexSimple [DecidableEq Q] (i : Q) :
     pathAlgebraDimensionVectorK0Equiv k Q (ExactK0.of (vertexSimpleModuleFG k Q i)) =
       Pi.single i 1 := by
