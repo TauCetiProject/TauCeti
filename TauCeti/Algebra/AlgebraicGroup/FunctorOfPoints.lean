@@ -80,7 +80,7 @@ noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
 
 /-- Evaluation of `antipodeComp f` at an element `h : H` is `f (S h)`. -/
 @[simp]
-lemma antipodeComp_apply (f : H →ₐ[R] A) (h : H) :
+lemma _root_.AlgHom.antipodeComp_apply (f : H →ₐ[R] A) (h : H) :
     antipodeComp f h = f (antipode R h) := (rfl)
 
 /-- The underlying linear map of `antipodeComp f` is `f.toLinearMap ∘ₗ antipode R`. -/
@@ -169,12 +169,12 @@ lemma mapValue_apply (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
 
 /-- The underlying algebra homomorphism of `mapValue φ f` is `φ.comp f.ofConv`. -/
 @[simp]
-lemma ofConv_mapValue (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
+lemma _root_.AlgHom.ofConv_mapValue (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
     (mapValue φ f).ofConv = φ.comp f.ofConv := (rfl)
 
 /-- Pointwise evaluation of `mapValue φ f` at `h : H`. -/
 @[simp]
-lemma mapValue_apply_apply (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) (h : H) :
+lemma _root_.AlgHom.mapValue_apply_apply (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) (h : H) :
     (mapValue φ f) h = φ (f h) := (rfl)
 
 /-- `mapValue` preserves the identity: `mapValue (𝟙 A)` is the identity monoid homomorphism. -/
@@ -211,7 +211,7 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 
 /-- `mapValue` preserves convolution inverses when `H` is a Hopf algebra. -/
 @[simp]
-lemma mapValue_inv (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
+lemma _root_.AlgHom.mapValue_inv (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
     mapValue (H := H) φ f⁻¹ = (mapValue (H := H) φ f)⁻¹ :=
   map_inv (mapValue φ) f
 
