@@ -69,7 +69,6 @@ theorem mapEquiv_apply (e : K ≃ₐ[F] L) (P : (W⁄K).toAffine.Point) :
   by rw [mapEquiv]; rfl
 
 omit [W.IsElliptic] in
-@[simp]
 theorem mapEquiv_symm_apply (e : K ≃ₐ[F] L) (P : (W⁄L).toAffine.Point) :
     (mapEquiv W e).symm P = Point.map e.symm.toAlgHom P :=
   by rw [mapEquiv]; rfl
@@ -96,7 +95,6 @@ theorem mapEquiv_symm (e : K ≃ₐ[F] L) :
     rw [mapEquiv_symm_apply, mapEquiv_apply]
 
 omit [W.IsElliptic] in
-@[simp]
 theorem mapEquiv_some (e : K ≃ₐ[F] L) {x y : K}
     (h : (W⁄K).toAffine.Nonsingular x y) :
     mapEquiv W e (.some x y h) =
@@ -146,7 +144,6 @@ theorem pointGaloisAction_apply (e : K ≃ₐ[F] K)
     rw [Affine.Point.mapEquiv_apply]
 
 omit [W.IsElliptic] in
-@[simp]
 theorem pointGaloisAction_apply_some (e : K ≃ₐ[F] K) {x y : K}
     (h : (W⁄K).toAffine.Nonsingular x y) :
     Multiplicative.toAdd (pointGaloisAction W e) (.some x y h) =
