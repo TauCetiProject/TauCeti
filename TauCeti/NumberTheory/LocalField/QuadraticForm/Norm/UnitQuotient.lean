@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Valuation
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.OddDefect
+import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 
 /-!
 # The quadratic norm quotient is detected on units
@@ -50,8 +51,8 @@ theorem ker_unitNormQuotientMap (a : Kˣ) :
     (unitNormQuotientMap a).ker =
       (quadraticNormSubgroup (a : K)).subgroupOf (unitFiltration K 0) := by
   ext u
-  rw [MonoidHom.mem_ker, unitNormQuotientMap_apply, QuotientGroup.eq_one_iff]
-  rfl
+  rw [MonoidHom.mem_ker, unitNormQuotientMap_apply, QuotientGroup.eq_one_iff,
+    Subgroup.mem_subgroupOf]
 
 /-- If the quadratic defect exponent of `a` is odd, every norm coset has a representative in
 `U(K, 0)`. -/
@@ -85,6 +86,8 @@ noncomputable def unitNormQuotientEquivOfOddDefectExponent {a : Kˣ} {d : ℤ}
   (QuotientGroup.quotientMulEquivOfEq (ker_unitNormQuotientMap a).symm).trans
     (QuotientGroup.quotientKerEquivOfSurjective f hf)
 
+/-- The quotient equivalence sends the class of a depth-zero unit to the class of the same
+element in the full quadratic norm quotient. -/
 @[simp]
 theorem unitNormQuotientEquivOfOddDefectExponent_mk {a : Kˣ} {d : ℤ}
     (hd : defectExponent a = d) (hodd : Odd d) (u : unitFiltration K 0) :
@@ -93,7 +96,7 @@ theorem unitNormQuotientEquivOfOddDefectExponent_mk {a : Kˣ} {d : ℤ}
     unfold unitNormQuotientEquivOfOddDefectExponent
     rw [MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
       TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
-    rfl
+    exact unitNormQuotientMap_apply a u
 
 /-- For odd quadratic defect, the index of the quadratic norm subgroup is already the index of
 the unit norms inside `U(K, 0)`. -/
