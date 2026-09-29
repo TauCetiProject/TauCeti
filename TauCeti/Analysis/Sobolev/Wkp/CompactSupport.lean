@@ -88,38 +88,44 @@ theorem mem_wkp0Submodule_top_of_firstOrder_ae_eq_zero (hp : p ≠ ∞)
       exact ofTestFunctionₗ_mem_wkp0Submodule (mu := mu) (Omega := (⊤ : Opens E))
         (p := p) (k + 1) psi)
 
-/-- If the value vanishes almost everywhere off a compact set, so does its first-order jet. -/
+/-- If the value vanishes almost everywhere on an open subset, so does its first-order jet. -/
 theorem firstOrder_ae_eq_zero_of_value_ae_eq_zero
+    (k : ℕ) (u : Wkp mu Omega p (k + 1)) {V : Opens E} (hV : V ≤ Omega)
+    (hu : ∀ᵐ x ∂mu.restrict (V : Set E), value (k + 1) u x = 0) :
+    ∀ᵐ x ∂mu.restrict (V : Set E),
+      (firstOrder k u : Sobolev1JetLp mu Omega p) x = 0 := by
+  let v := firstOrder k u
+  have hval : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value v x = 0 := by
+    simpa only [v, value_firstOrder] using hu
+  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero hV hval
+  have hvalmu := (ae_restrict_iff' V.isOpen.measurableSet).1 hval
+  have hgradmu := (ae_restrict_iff' V.isOpen.measurableSet).1 hgrad
+  have hvalApply := (ae_restrict_iff' Omega.isOpen.measurableSet).1
+    (W1p.value_apply_ae v)
+  have hgradApply := (ae_restrict_iff' Omega.isOpen.measurableSet).1
+    (W1p.gradient_apply_ae v)
+  rw [ae_restrict_iff' V.isOpen.measurableSet]
+  filter_upwards [hvalmu, hgradmu, hvalApply, hgradApply] with
+    x hv hg hv' hg' hxV
+  exact (WithLp.ext_iff _).2 (Prod.ext ((hv' (hV hxV)).symm.trans (hv hxV))
+    ((hg' (hV hxV)).symm.trans (hg hxV)))
+
+private theorem firstOrder_ae_eq_zero_of_value_ae_eq_zero_of_isCompact
     (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) {K : Set E} (hK : IsCompact K)
     (hu : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
       value (k + 1) u x = 0) :
     ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
       (firstOrder k u : Sobolev1JetLp mu ⊤ p) x = 0 := by
-  let v := firstOrder k u
-  have hval : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
-      W1p.value v x = 0 := by
-    simpa only [v, value_firstOrder] using hu
-  have hvalmu : ∀ᵐ x ∂mu, x ∉ K → W1p.value v x = 0 := by
-    simpa using hval
   let V : Opens E := ⟨Kᶜ, hK.isClosed.isOpen_compl⟩
-  have hVmeas : MeasurableSet (V : Set E) := V.isOpen.measurableSet
-  have hvalV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value v x = 0 := by
-    rw [ae_restrict_iff' hVmeas]
+  have hvalmu : ∀ᵐ x ∂mu, x ∉ K → value (k + 1) u x = 0 := by
+    simpa using hu
+  have hvalV : ∀ᵐ x ∂mu.restrict (V : Set E), value (k + 1) u x = 0 := by
+    rw [ae_restrict_iff' V.isOpen.measurableSet]
     filter_upwards [hvalmu] with x hx hxV
     exact hx hxV
-  have hgradV := (ae_restrict_iff' hVmeas).1
-    (W1p.gradient_ae_eq_zero_of_value_ae_eq_zero (V := V) le_top hvalV)
-  have hgrad : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
-      W1p.gradient v x = 0 := by
-    have hgradmu : ∀ᵐ x ∂mu, x ∈ (V : Set E) → W1p.gradient v x = 0 := hgradV
-    have hgradtop : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)),
-        x ∈ (V : Set E) → W1p.gradient v x = 0 := by simpa using hgradmu
-    filter_upwards [hgradtop] with x hx hxK
-    exact hx hxK
-  filter_upwards [hval, hgrad, W1p.value_apply_ae v, W1p.gradient_apply_ae v] with
-    x hv hg hv' hg' hxK
-  exact (WithLp.ext_iff _).2 (Prod.ext (hv'.symm.trans (hv hxK))
-    (hg'.symm.trans (hg hxK)))
+  have hjetV := (ae_restrict_iff' V.isOpen.measurableSet).1
+    (firstOrder_ae_eq_zero_of_value_ae_eq_zero k u le_top hvalV)
+  simpa [V] using hjetV
 
 /-- Mollifying a higher-order Sobolev function supported in a compact set produces a test
 function representing the same higher-order Sobolev element. -/
@@ -131,7 +137,7 @@ theorem normedBumpL_mem_range_of_value_ae_eq_zero (hp : p ≠ ∞)
     normedBumpL hp phi (k + 1) u ∈
       LinearMap.range (ofTestFunctionₗ (mu := mu) (Omega := ⊤) (p := p) (k + 1)) :=
   normedBumpL_mem_range_of_ae_eq_zero hp phi k u hK
-    (firstOrder_ae_eq_zero_of_value_ae_eq_zero k u hK hu)
+    (firstOrder_ae_eq_zero_of_value_ae_eq_zero_of_isCompact k u hK hu)
 
 /-- A compactly supported whole-space higher-order Sobolev function belongs to the closure
 of test functions in the full higher-order norm. -/
@@ -141,7 +147,7 @@ theorem mem_wkp0Submodule_top_of_value_ae_eq_zero (hp : p ≠ ∞)
       value (k + 1) u x = 0) :
     u ∈ wkp0Submodule mu ⊤ p (k + 1) :=
   mem_wkp0Submodule_top_of_firstOrder_ae_eq_zero hp k u hK
-    (firstOrder_ae_eq_zero_of_value_ae_eq_zero k u hK hu)
+    (firstOrder_ae_eq_zero_of_value_ae_eq_zero_of_isCompact k u hK hu)
 
 end TauCeti.Wkp
 
