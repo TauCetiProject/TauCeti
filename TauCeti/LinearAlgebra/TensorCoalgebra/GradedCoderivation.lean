@@ -57,6 +57,8 @@ by `isHomogeneous_gradedCoderiv` and `IsGradedCoderivation.isHomogeneous`.
   coderivation with letter component `F`.
 * `TauCeti.ReducedTensorWords.IsGradedCoderivation.eq_of_letter_comp_eq`: a graded coderivation is
   determined by its letter component.
+* `TauCeti.ReducedTensorWords.gradedCoderiv_comp_letter_of_tprod`: the coderivation extending a
+  map of letters applies it to one letter at a time, twisting the letters before it.
 * `TauCeti.ReducedTensorWords.iSup_gradedPiece_eq_top`: the total-degree pieces span the reduced
   tensor coalgebra.
 * `TauCeti.ReducedTensorWords.prepend_mem_gradedPiece`,
@@ -236,6 +238,26 @@ theorem ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous (G : InternalGr
   rw [gradedCoderiv_of_tprod]
   refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun d _ ↦
     splice_twistedTuple_smul G q x 𝒟 hx p d _
+
+/-- Evaluation of the graded Taylor expansion of a map acting on single letters only: it applies
+`f` to one letter at a time and twists the letters preceding it.  On homogeneous letters the twist
+is the Koszul sign of moving an operation of degree `q` past those letters. -/
+theorem ReducedTensorWords.gradedCoderiv_comp_letter_of_tprod (G : InternalGrading R M)
+    (f : M →ₗ[R] M) (q : ℤ) {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
+    gradedCoderiv G (f ∘ₗ letter R M) q (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x)) =
+      ∑ p ∈ Finset.range n, of R M ⟨n, hn⟩ (PiTensorProduct.tprod R fun i ↦
+        if i.val < p then koszulTwist G q (x i) else if i.val = p then f (x i) else x i) := by
+  rw [gradedCoderiv_of_tprod]
+  refine Finset.sum_congr rfl fun p hp ↦ ?_
+  rw [Finset.mem_range] at hp
+  rw [Finset.sum_eq_single 1 (fun d _ hd ↦ by
+      rw [LinearMap.comp_apply, letter_subword_of_ne_one R M x p hd, map_zero, splice_zero])
+    (fun h ↦ absurd (Finset.mem_range.mpr (by omega)) h),
+    LinearMap.comp_apply, subword_one R M x hp, letter_ofLetter,
+    splice_eq_of_tprod R _ _ Nat.one_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
+  simp only [twistedTuple_apply, Fin.val_cast, Nat.zero_le, true_and, Nat.zero_add]
+  split_ifs <;> first | omega | rfl | (congr 2; ext; simp; omega)
 
 /-- Evaluation of a Taylor summand on a block read out of a longer tuple: the same transport as
 for the ungraded summands, with the twisted tuple carried along. -/

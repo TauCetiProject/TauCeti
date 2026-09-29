@@ -19,6 +19,7 @@ Demushkin groups,
 * `x₁² x₂^{2^f} (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)` for `f ≥ 2`,
 * `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` for `4 ∣ a` and `f ≥ 2`,
 
+together with the odd word at level `f = ∞`, `x₁² (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`,
 read on any tuple `x : ℕ → H`, are products of `p`-th powers and Labute commutators
 `(x, y) = x⁻¹y⁻¹xy`, so they lie in `λ_1(H)`, the pro-`p` Frattini subgroup; for this membership
 alone the weaker hypotheses `f ≥ 1` and `2 ∣ a` suffice, and the classes are computed under
@@ -26,10 +27,12 @@ these weaker hypotheses. This file computes
 their classes in `gr_1(H)`: the class of a Labute commutator is the bracket of the degree-zero
 classes, the class of a `p`-th power `g ^ (p c)` is `c` times the `p`-power class `π ⟦g⟧`, and so
 the class of a normal-form word is the sum of the brackets of its commutator pairs, plus
-`(q / p) • π ξ₁` for the first word, `π ξ₁ + 2^{f-1} • π ξ₂` for the odd dyadic word and
-`(1 + a/2) • π ξ₁ + 2^{f-1} • π ξ₃` for the even one, where `ξ_i ∈ gr_0(H)` is the class of
-`x_i`. The factors `x₂^{2^f}` and `x₃^{2^f}` with `f ≥ 2`, and `x₁^a` with `4 ∣ a`, are fourth
-powers and lie in `λ_2`, so under the normal-form hypotheses they do not contribute.
+`(q / p) • π ξ₁` for the first word, `π ξ₁ + 2^{f-1} • π ξ₂` for the odd dyadic word,
+`(1 + a/2) • π ξ₁ + 2^{f-1} • π ξ₃` for the even one and `π ξ₁` for the odd word at `f = ∞`, where
+`ξ_i ∈ gr_0(H)` is the class of `x_i`. The factors `x₂^{2^f}` and `x₃^{2^f}` with `f ≥ 2`, and
+`x₁^a` with `4 ∣ a`, are fourth powers and lie in `λ_2`, so under the normal-form hypotheses they
+do not contribute; in particular the odd word at a finite level `f ≥ 2` and the odd word at
+`f = ∞` have the same class.
 
 These are the classes of the normal-form relators modulo `λ_2` (Labute, Proposition 4); the
 theorem that a relator whose degree-one form is nondegenerate is carried into one of them by a
@@ -40,11 +43,15 @@ change of basis of the free pro-`p` group is proved in
 
 * `TauCeti.demushkinWordNeTwo_mem_pLowerCentralSeries_one`,
   `TauCeti.demushkinWordTwoOdd_mem_pLowerCentralSeries_one`,
-  `TauCeti.demushkinWordTwoEven_mem_pLowerCentralSeries_one`: the words lie in `λ_1`.
+  `TauCeti.demushkinWordTwoEven_mem_pLowerCentralSeries_one`,
+  `TauCeti.demushkinWordTwoOddTop_mem_pLowerCentralSeries_one`: the words lie in `λ_1`.
 * `TauCeti.gradedMk_labuteComm`: the class of `(x, y)` in `gr_1(H)` is the bracket `[ξ, η]` of the
   classes of `x` and `y`.
 * `TauCeti.gradedMk_demushkinWordNeTwo`, `TauCeti.gradedMk_demushkinWordTwoOdd`,
-  `TauCeti.gradedMk_demushkinWordTwoEven`: the classes of the three words in `gr_1(H)`.
+  `TauCeti.gradedMk_demushkinWordTwoEven`, `TauCeti.gradedMk_demushkinWordTwoOddTop`: the classes
+  of the four words in `gr_1(H)`;
+  `TauCeti.gradedMk_demushkinWordTwoOdd_eq_gradedMk_demushkinWordTwoOddTop`: for `f ≥ 2` the odd
+  word and the odd word at `f = ∞` have the same class.
 
 ## References
 
@@ -78,6 +85,13 @@ theorem demushkinWordTwoOdd_mem_pLowerCentralSeries_one {f : ℕ} (hf : 0 < f) (
     demushkinWordTwoOdd f n x ∈ pLowerCentralSeries 2 H 1 := by
   rw [pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two]
   exact demushkinWordTwoOdd_mem_proPFrattini hf n x
+
+omit [Fact p.Prime] in
+/-- The `q = 2`, `n` odd normal-form word at level `f = ∞` lies in `λ_1`. -/
+theorem demushkinWordTwoOddTop_mem_pLowerCentralSeries_one (n : ℕ) (x : ℕ → H) :
+    demushkinWordTwoOddTop n x ∈ pLowerCentralSeries 2 H 1 := by
+  rw [pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two]
+  exact demushkinWordTwoOddTop_mem_proPFrattini n x
 
 omit [Fact p.Prime] in
 /-- For `a` even and `f ≥ 1`, the `q = 2`, `n` even normal-form word lies in `λ_1`. -/
@@ -188,6 +202,54 @@ theorem gradedMk_demushkinWordTwoOdd {f : ℕ} (hf : 0 < f) (n : ℕ) (x : ℕ �
       exact (demushkinWordTwoOdd_def f n x).trans (by rw [hf']))
   rw [this, gradedMk_mul, gradedMk_mul, gradedMk_pow_mul, gradedMk_pow_mul,
     gradedMk_list_prod_labuteComm, one_nsmul]
+
+omit [Fact p.Prime] in
+/-- **The class of the `q = 2`, `n` odd normal-form word at level `f = ∞`**
+`x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` in `gr_1`: `π ξ₁ + [ξ₂, ξ₃] + ⋯ + [ξ_{n-1}, ξ_n]`. -/
+theorem gradedMk_demushkinWordTwoOddTop (n : ℕ) (x : ℕ → H) :
+    gradedMk 2 H 1 ⟨demushkinWordTwoOddTop n x,
+        demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n x⟩ =
+      gradedPow 2 H 0 (gradedMkZero 2 H (x 0)) +
+        ∑ i ∈ Finset.range (n / 2),
+          gradedBracket 2 H 0 0 (gradedMkZero 2 H (x (2 * i + 1)))
+            (gradedMkZero 2 H (x (2 * i + 2))) := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have h0 : x 0 ^ (2 * 1) ∈ pLowerCentralSeries 2 H 1 := by
+    rw [pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two]
+    exact pow_mem_proPFrattini_of_dvd (dvd_mul_right 2 1) _
+  have h2 : ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i + 1)) (x (2 * i + 2))).prod ∈
+      pLowerCentralSeries 2 H 1 := by
+    rw [pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two]
+    refine Subgroup.list_prod_mem _ ?_
+    simpa only [List.forall_mem_map] using fun i _ ↦ labuteComm_mem_proPFrattini Nat.prime_two _ _
+  have : (⟨demushkinWordTwoOddTop n x, demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n x⟩ :
+        pLowerCentralSeries 2 H 1) =
+      ⟨x 0 ^ (2 * 1), h0⟩ * ⟨_, h2⟩ :=
+    Subtype.ext (by
+      rw [Subgroup.coe_mul]
+      exact demushkinWordTwoOddTop_def n x)
+  rw [this, gradedMk_mul, gradedMk_pow_mul, gradedMk_list_prod_labuteComm, one_nsmul]
+
+omit [Fact p.Prime] in
+/-- **For `f ≥ 2` the odd word and the odd word at `f = ∞` have the same class in `gr_1`**: the
+factor `x₂^{2^f}` is a fourth power and lies in `λ_2`. This is the sense in which
+`x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` is the normal form of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`
+modulo `λ_2`. -/
+theorem gradedMk_demushkinWordTwoOdd_eq_gradedMk_demushkinWordTwoOddTop {f : ℕ} (hf : 2 ≤ f)
+    (n : ℕ) (x : ℕ → H) :
+    gradedMk 2 H 1 ⟨demushkinWordTwoOdd f n x,
+        demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n x⟩ =
+      gradedMk 2 H 1 ⟨demushkinWordTwoOddTop n x,
+        demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n x⟩ := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have hf' : 2 ^ (f - 1) = 2 ^ (f - 2) * 2 := by
+    rw [← pow_succ]
+    congr 1
+    omega
+  rw [gradedMk_demushkinWordTwoOdd (zero_lt_two.trans_le hf), gradedMk_demushkinWordTwoOddTop, hf',
+    mul_nsmul, nsmul_gradedPiece_eq_zero]
+  -- `rw [add_zero]` fails on the dependent index `gradedPiece 2 H (0 + 1)`.
+  simp
 
 omit [Fact p.Prime] in
 /-- **The class of the `q = 2`, `n` even normal-form word**

@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Span
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
+import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 import Mathlib.FieldTheory.Finiteness
 
@@ -44,6 +45,7 @@ not additive.
 
 ## Main definitions
 
+* `TauCeti.freeProP.degreeZeroBasis`: the basis `x'_i` of `gr_0(F)` formed by the generator classes.
 * `TauCeti.freeProP.degreeOneBasis`: the basis `π x'_i`, `[x'_i, x'_j]` (`i < j`) of `gr_1(F)`.
 
 ## Main results
@@ -274,6 +276,24 @@ theorem span_gradedMkZero_image_range_of_eq_top :
   span_gradedMkZero_image_eq_top
     ((isTopologicallyFinitelyGenerated_freeProP p X).isOpen_pLowerCentralSeries Fact.out 1)
     (topologicalClosure_closure_range_of_eq_top p X)
+
+omit [LinearOrder X] in
+/-- **The basis of `gr_0` of a free pro-`p` group of finite rank** formed by the classes
+`x'_i = ⟦x_i⟧` of the generators: the basis `TauCeti.freeProP.frattiniQuotientBasis` of the
+Frattini quotient `F ⧸ Φ(F)`, transported along `gr_0(F) ≅ F ⧸ λ_1(F) = F ⧸ Φ(F)`. -/
+noncomputable def degreeZeroBasis : Module.Basis X (ZMod p) (gradedPiece p (freeProP p X) 0) :=
+  (frattiniQuotientBasis p X).map <| AddEquiv.toLinearEquiv (R := ZMod p)
+    ((gradedPieceZeroEquiv p (freeProP p X)).trans (MulEquiv.toAdditive
+      (QuotientGroup.quotientMulEquivOfEq (pLowerCentralSeries_one_eq_proPFrattini Fact.out)))).symm
+    (ZMod.map_smul _)
+
+omit [LinearOrder X] in
+@[simp]
+theorem degreeZeroBasis_apply (i : X) :
+    degreeZeroBasis p X i = gradedMkZero p (freeProP p X) (of i) := by
+  rw [degreeZeroBasis, Module.Basis.map_apply, AddEquiv.coe_toLinearEquiv, AddEquiv.symm_apply_eq]
+  -- The identification `gr_0(F) ≅ F ⧸ Φ(F)` carries `x'_i` to the class `⟦x_i⟧`.
+  simp
 
 omit [Finite X] in
 /-- **The dimension of `gr_1` of a free pro-`p` group of finite rank** is `#X + (#X choose 2)`:

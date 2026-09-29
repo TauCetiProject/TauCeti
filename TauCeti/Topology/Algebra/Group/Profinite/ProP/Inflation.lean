@@ -60,12 +60,9 @@ theorem explicitInfl2_proPKernel_injective {M : Type v} [AddCommGroup M] [Topolo
     [IsTopologicalAddGroup M] [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
     (htriv : ∀ (g : G) (m : M), g • m = m) (hpM : ∀ m : M, p • m = 0) :
     Function.Injective (explicitInfl2 G M (proPKernel p G)) := by
-  -- By the five-term sequence, the kernel is the image of the transgression from `H¹(R, M)^G`,
-  -- which vanishes.
   have := subsingleton_h1ConjInvariants_proPKernel htriv hpM
-  rw [← AddMonoidHom.ker_eq_bot_iff, ← fiveTerm_exact_H2Q G M
-    (proPKernel p G) (isClosed_proPKernel (p := p) (G := G)), AddMonoidHom.range_eq_bot_iff]
-  exact AddMonoidHom.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, AddMonoidHom.zero_apply]
+  exact explicitInfl2_injective_of_subsingleton G M (proPKernel p G)
+    (isClosed_proPKernel (p := p) (G := G))
 
 end Explicit
 

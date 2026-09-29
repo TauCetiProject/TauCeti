@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
+public import TauCeti.FieldTheory.Galois.Quotient
+public import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # The absolute Galois group of a finite separable extension as an open subgroup
@@ -39,12 +41,19 @@ index formula `galoisSubgroup_index`; and, through the packaging, it is carried 
 and the isomorphism of Galois groups themselves need no finiteness and live in the imported
 module. Separability of `L/K` is a consequence of the existence of `σ` and is not assumed.
 
+When `L/K` is normal, every automorphism of `Kˢ` preserves `σ(L)`, so restriction
+`σ.restrictNormalHom : G_K →* Gal(L/K)` along `σ` is defined; it is surjective with kernel the
+subgroup fixing `σ(L)`, and `quotientFixingSubgroupFieldRangeEquiv K L σ` is the induced
+isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but not finiteness.
+
 ## Main definitions
 
 * `TauCeti.galoisSubgroup K L σ`: the open subgroup of `G_K` fixing `σ(L)` pointwise, for a
   finite `L/K`.
 * `TauCeti.galoisSubgroupEquiv K L σ`: the isomorphism of topological groups
   `G_L ≃ₜ* galoisSubgroup K L σ`.
+* `TauCeti.quotientFixingSubgroupFieldRangeEquiv K L σ`: for a normal `L/K`, the isomorphism
+  `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)` induced by restriction `σ.restrictNormalHom`.
 
 ## Main results
 
@@ -53,6 +62,8 @@ module. Separability of `L/K` is a consequence of the existence of `σ` and is n
   (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`).
 * `TauCeti.galoisSubgroupEquiv_apply_separableClosureRingEquiv`: the isomorphism intertwines the
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
+* `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`: the isomorphism sends the class of `g`
+  to `σ.restrictNormalHom g`.
 
 ## References
 
@@ -154,5 +165,42 @@ theorem galoisSubgroupEquiv_symm_apply (h : ↥(galoisSubgroup K L σ).toSubgrou
       (separableClosureRingEquiv K L σ).symm
         ((h : AbsoluteGaloisGroup K) (separableClosureRingEquiv K L σ x)) :=
   absoluteGaloisGroupEquivFixingSubgroup_symm_apply K L σ h x
+
+/-! ### Normal extensions: the quotient by the open subgroup -/
+
+section Normal
+
+omit [FiniteDimensional K L]
+
+variable [Normal K L]
+
+/-- The image of a normal extension under a `K`-embedding is normal over `K`. -/
+instance normal_fieldRange : Normal K σ.fieldRange :=
+  Normal.of_algEquiv σ.equivFieldRange
+
+/-- **The Galois group of a normal extension `L` embedded by `σ` is the quotient of `G_K` by the
+subgroup fixing `σ(L)`**: `TauCeti.quotientFixingSubgroupEquiv` for the intermediate field `σ(L)`,
+read on `L` through `σ`. It sends the class of `g` to its restriction `σ.restrictNormalHom g`
+along `σ` (`quotientFixingSubgroupFieldRangeEquiv_mk`). -/
+def quotientFixingSubgroupFieldRangeEquiv :
+    AbsoluteGaloisGroup K ⧸ σ.fieldRange.fixingSubgroup ≃* Gal(L/K) :=
+  (quotientFixingSubgroupEquiv K (SeparableClosure K) σ.fieldRange).toMulEquiv.trans
+    (AlgEquiv.autCongr σ.equivFieldRange).symm
+
+/-- The isomorphism `quotientFixingSubgroupFieldRangeEquiv` sends the class of `g` to its
+restriction `σ.restrictNormalHom g`. -/
+@[simp]
+theorem quotientFixingSubgroupFieldRangeEquiv_mk (g : AbsoluteGaloisGroup K) :
+    quotientFixingSubgroupFieldRangeEquiv K L σ g = σ.restrictNormalHom g := by
+  rw [quotientFixingSubgroupFieldRangeEquiv, MulEquiv.trans_apply]
+  refine (congrArg (AlgEquiv.autCongr σ.equivFieldRange).symm
+    (quotientFixingSubgroupEquiv_mk g)).trans (σ.restrictNormalHom_eq_iff.2 fun x ↦ ?_).symm
+  simp only [AlgEquiv.autCongr_symm, AlgEquiv.autCongr_apply, AlgEquiv.trans_apply,
+    AlgEquiv.symm_symm]
+  symm
+  rw [← AlgHom.equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply,
+    AlgEquiv.restrictNormalHom_apply, ← AlgHom.equivFieldRange_apply_coe]
+
+end Normal
 
 end TauCeti

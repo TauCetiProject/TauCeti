@@ -58,6 +58,11 @@ the scalars and the vectors, the disjointness of the two pins that step down to 
   `CliffordAlgebra.ι_eq_zero_iff`: the generators are a faithful copy of `M`.
 * `CliffordAlgebra.commute_ι_iff_exists_eq_smul`: two vectors commute exactly when they are
   proportional, once the first has unit value under `Q`.
+* `CliffordAlgebra.eq_zero_of_commute_ι_of_isOrtho`: over a field, a vector commuting with two
+  orthogonal anisotropic vectors is zero.
+* `CliffordAlgebra.eq_zero_or_exists_ι_eq_smul_of_mul_self_eq_algebraMap`: over a field, if a
+  vector plus a multiple of a commuting element with nonzero scalar square has scalar square, then
+  the multiple vanishes or the vector is a multiple of that element.
 * `CliffordAlgebra.mul_ι_notMem_range_ι_of_mul_ι_eq_neg`: over a field, a nonzero element
   anticommuting with two orthogonal anisotropic companions of an anisotropic vector `v` sends
   `ι Q v` outside the vectors.
@@ -291,6 +296,64 @@ theorem finrank_filtration_one [FiniteDimensional K V] :
   rw [← (filtrationOneEquiv Q).finrank_eq, Module.finrank_prod, Module.finrank_self,
     Nat.add_comm]
 
+/-! ### A vector commuting with two orthogonal anisotropic vectors is zero -/
+
+variable {Q} in
+/-- **A vector commuting with two orthogonal anisotropic vectors is zero.** Commuting with an
+anisotropic `u` makes `w` proportional to `u` (`commute_ι_iff_exists_eq_smul`), so `w` is
+proportional to both `u₁` and `u₂`, and pairing with `u₁` gives `2 c₁ Q u₁ = polar Q u₁ w = 0`. -/
+theorem eq_zero_of_commute_ι_of_isOrtho {u₁ u₂ w : V} (hu₁ : Q u₁ ≠ 0) (hu₂ : Q u₂ ≠ 0)
+    (hu₁u₂ : Q.IsOrtho u₁ u₂) (h₁ : Commute (ι Q u₁) (ι Q w)) (h₂ : Commute (ι Q u₂) (ι Q w)) :
+    w = 0 := by
+  obtain ⟨c₁, hc₁⟩ := (commute_ι_iff_exists_eq_smul Q (isUnit_iff_ne_zero.mpr hu₁)).mp h₁
+  obtain ⟨c₂, hc₂⟩ := (commute_ι_iff_exists_eq_smul Q (isUnit_iff_ne_zero.mpr hu₂)).mp h₂
+  -- Pairing `w` with `u₁` in the two expressions gives `2 c₁ Q u₁ = polar Q u₁ w = 0`.
+  have hpolar₁ : QuadraticMap.polar Q u₁ w = c₁ * (2 * Q u₁) := by
+    rw [hc₁, QuadraticMap.polar_smul_right, QuadraticMap.polar_self, two_nsmul, smul_eq_mul,
+      two_mul]
+  have hpolar₂ : QuadraticMap.polar Q u₁ w = 0 := by
+    rw [hc₂, QuadraticMap.polar_smul_right, hu₁u₂.polar_eq_zero, smul_zero]
+  have hc₁0 : c₁ = 0 := by
+    rcases mul_eq_zero.mp (hpolar₁.symm.trans hpolar₂) with h | h
+    · exact h
+    · exact absurd h (mul_ne_zero (Invertible.ne_zero (2 : K)) hu₁)
+  rw [hc₁, hc₁0, zero_smul]
+
+/-! ### A vector plus a commuting element with scalar square -/
+
+variable {Q} in
+/-- **A vector plus a multiple of a commuting element with nonzero scalar square has scalar square
+only if the multiple vanishes or the vector is itself a multiple of that element.** Let `ω` commute
+with `ι Q w` and have `ω * ω` the nonzero scalar `s`. If `(ι Q w + c • ω) ^ 2` is a scalar, then
+either `c = 0` or `ι Q w` is a multiple of `ω`: the cross term `2 c • (ω * ι Q w)` is a scalar, and
+multiplying it by `ω` once more isolates `ι Q w`. Only commutation with the single vector `ι Q w`
+is needed; a central `ω` (such as a volume element in odd dimension) supplies it. -/
+theorem eq_zero_or_exists_ι_eq_smul_of_mul_self_eq_algebraMap {ω : CliffordAlgebra Q} {w : V}
+    (hω : Commute ω (ι Q w)) {s : K} (hsq : ω * ω = algebraMap K _ s) (hs : s ≠ 0)
+    {c q : K} (h : (ι Q w + c • ω) * (ι Q w + c • ω) = algebraMap K _ q) :
+    c = 0 ∨ ∃ t : K, ι Q w = t • ω := by
+  have hwω : ι Q w * ω = ω * ι Q w := hω.symm.eq
+  have hexp : (2 * c) • (ω * ι Q w) = algebraMap K _ (q - Q w - c * c * s) := by
+    have hsq' : (ι Q w + c • ω) * (ι Q w + c • ω) =
+        algebraMap K _ (Q w) + (2 * c) • (ω * ι Q w) + algebraMap K _ (c * c * s) := by
+      simp only [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, ι_sq_scalar, hwω, hsq,
+        smul_smul, Algebra.algebraMap_eq_smul_one]
+      module
+    rw [map_sub, map_sub, ← h, hsq']
+    abel
+  by_cases hc : c = 0
+  · exact Or.inl hc
+  · right
+    have h2c : (2 * c) ≠ 0 := mul_ne_zero (Invertible.ne_zero 2) hc
+    have hωw : ω * ι Q w = algebraMap K _ ((2 * c)⁻¹ * (q - Q w - c * c * s)) := by
+      rw [map_mul, ← Algebra.smul_def, ← hexp, smul_smul, inv_mul_cancel₀ h2c, one_smul]
+    refine ⟨s⁻¹ * ((2 * c)⁻¹ * (q - Q w - c * c * s)), ?_⟩
+    -- Multiply by `ω` on the left: `s • ι Q w = r • ω`.
+    have hmul : ω * (ω * ι Q w) = ω * algebraMap K _ ((2 * c)⁻¹ * (q - Q w - c * c * s)) := by
+      rw [hωw]
+    rw [← mul_assoc, hsq, ← Algebra.smul_def, ← Algebra.commutes, ← Algebra.smul_def] at hmul
+    rw [mul_smul, ← hmul, smul_smul, inv_mul_cancel₀ hs, one_smul]
+
 /-! ### An anticommuting element moves an anisotropic vector out of the vectors -/
 
 variable {Q} in
@@ -303,14 +366,12 @@ theorem mul_ι_notMem_range_ι_of_mul_ι_eq_neg {ω : CliffordAlgebra Q} (hω : 
     (hvu₂ : Q.IsOrtho v u₂) (hu₁u₂ : Q.IsOrtho u₁ u₂) (h₁ : ω * ι Q u₁ = -(ι Q u₁ * ω))
     (h₂ : ω * ι Q u₂ = -(ι Q u₂ * ω)) : ω * ι Q v ∉ LinearMap.range (ι Q) := by
   -- If `ω * ι Q v` were a vector `ι Q w`, each companion `u` would commute with it, since `u`
-  -- anticommutes with both `ω` and `ι Q v`, so `w` would be proportional to `u`
-  -- (`commute_ι_iff_exists_eq_smul`); two orthogonal anisotropic companions then force `w = 0`,
-  -- and `ω * ι Q v * ι Q v = Q v • ω` forces `ω = 0`.
+  -- anticommutes with both `ω` and `ι Q v`; two orthogonal anisotropic companions then force
+  -- `w = 0` (`eq_zero_of_commute_ι_of_isOrtho`), and `ω * ι Q v * ι Q v = Q v • ω` forces `ω = 0`.
   rintro ⟨w, hw⟩
-  -- A companion `u` of `v` commutes with `ω * ι Q v`, so `w` is proportional to `u`.
-  have key : ∀ u : V, Q u ≠ 0 → Q.IsOrtho v u → ω * ι Q u = -(ι Q u * ω) → ∃ c : K, w = c • u := by
-    intro u hu huv hωu
-    refine (commute_ι_iff_exists_eq_smul Q (isUnit_iff_ne_zero.mpr hu)).mp ?_
+  -- A companion `u` of `v` commutes with `ω * ι Q v`.
+  have key : ∀ u : V, Q.IsOrtho v u → ω * ι Q u = -(ι Q u * ω) → Commute (ι Q u) (ι Q w) := by
+    intro u huv hωu
     have hvu : ι Q u * ι Q v = -(ι Q v * ι Q u) := ι_mul_ι_comm_of_isOrtho huv.symm
     have huω : ι Q u * ω = -(ω * ι Q u) := by rw [hωu, neg_neg]
     have : ι Q u * (ω * ι Q v) = ω * ι Q v * ι Q u := by
@@ -319,20 +380,10 @@ theorem mul_ι_notMem_range_ι_of_mul_ι_eq_neg {ω : CliffordAlgebra Q} (hω : 
         _ = ω * ι Q v * ι Q u := by rw [hvu, mul_neg, neg_neg, mul_assoc]
     rw [hw]
     exact this
-  obtain ⟨c₁, hc₁⟩ := key u₁ hu₁ hvu₁ h₁
-  obtain ⟨c₂, hc₂⟩ := key u₂ hu₂ hvu₂ h₂
-  -- Pairing `w` with `u₁` in the two expressions gives `2 c₁ Q u₁ = polar Q u₁ w = 0`.
-  have hpolar₁ : QuadraticMap.polar Q u₁ w = c₁ * (2 * Q u₁) := by
-    rw [hc₁, QuadraticMap.polar_smul_right, QuadraticMap.polar_self, two_nsmul, smul_eq_mul,
-      two_mul]
-  have hpolar₂ : QuadraticMap.polar Q u₁ w = 0 := by
-    rw [hc₂, QuadraticMap.polar_smul_right, hu₁u₂.polar_eq_zero, smul_zero]
-  have hc₁0 : c₁ = 0 := by
-    rcases mul_eq_zero.mp (hpolar₁.symm.trans hpolar₂) with h | h
-    · exact h
-    · exact absurd h (mul_ne_zero (Invertible.ne_zero (2 : K)) hu₁)
+  have hw0 : w = 0 :=
+    eq_zero_of_commute_ι_of_isOrtho hu₁ hu₂ hu₁u₂ (key u₁ hvu₁ h₁) (key u₂ hvu₂ h₂)
   -- So `ω * ι Q v = 0`; multiplying by `ι Q v` once more gives `Q v • ω = 0`.
-  have hωv : ω * ι Q v = 0 := by rw [← hw, hc₁, hc₁0, zero_smul, map_zero]
+  have hωv : ω * ι Q v = 0 := by rw [← hw, hw0, map_zero]
   have hQω : Q v • ω = 0 := by
     rw [Algebra.smul_def, Algebra.commutes, ← ι_sq_scalar, ← mul_assoc, hωv, zero_mul]
   exact hω ((smul_eq_zero.mp hQω).resolve_left hv)

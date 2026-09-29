@@ -14,7 +14,10 @@ public import TauCeti.Topology.Compactness.InverseSystem
 # Levelwise comparison along the lower `p`-series
 
 A `PLowerCentralSeriesComparison p G H S` assigns to each datum in `S k` a continuous
-surjection `G ⧸ λ_k → H ⧸ λ_k`. Its bonding maps commute with the quotient projections.
+surjection `G ⧸ λ_k → H ⧸ λ_k`. Its bonding maps commute with the quotient projections; when the
+data are themselves continuous homomorphisms of the finite levels, the descent
+`ContinuousMonoidHom.pLowerCentralSeriesDesc` of
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries` supplies them.
 When every `S k` is finite and nonempty, there is a compatible sequence of data. If `G` is
 compact and `H` is a pro-`p` group, the corresponding quotient maps come from a continuous
 surjection `G → H`.
