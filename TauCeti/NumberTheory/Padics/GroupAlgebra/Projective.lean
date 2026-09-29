@@ -19,8 +19,8 @@ import TauCeti.RingTheory.Huber.Padic.Basic
 # Projective modules over finite `p`-adic group algebras
 
 For a finite monoid `G`, in particular a finite group, multiplication by `p` lies in the Jacobson
-radical of the monoid algebra `\mathbb Z_p[G]`.  Consequently, for a finite group `G`, finitely
-generated projective `\mathbb Z_p[G]`-modules are determined by their reductions modulo `p`.
+radical of the monoid algebra `\mathbb Z_p[G]`.  Consequently, finitely generated projective
+`\mathbb Z_p[G]`-modules are determined by their reductions modulo `p`.
 
 The radical statement is valid even when `p` divides the order of `G`.  To prove it, represent
 left multiplication on the finite free `\mathbb Z_p`-module `\mathbb Z_p[G]` by a matrix.  Every
@@ -101,11 +101,11 @@ end Jacobson
 
 section Reduction
 
-variable (p : ℕ) [Fact p.Prime] (G : Type u) [Group G] [Finite G]
+variable (p : ℕ) [Fact p.Prime] (G : Type u) [Monoid G] [Finite G]
 
 /-- **Projectives over `ℤ_p[G]` are detected modulo `p`** (NSW (5.6.10)(iii)). Two finitely
-generated projective modules over the group algebra of a finite group are isomorphic when their
-reductions modulo `p` are isomorphic. -/
+generated projective modules over the monoid algebra of a finite monoid (in particular the group
+algebra of a finite group) are isomorphic when their reductions modulo `p` are isomorphic. -/
 theorem linearEquiv_of_projective_of_reduction
     (M : Type v) (N : Type w) [AddCommGroup M] [Module (MonoidAlgebra ℤ_[p] G) M]
     [Module.Finite (MonoidAlgebra ℤ_[p] G) M]
