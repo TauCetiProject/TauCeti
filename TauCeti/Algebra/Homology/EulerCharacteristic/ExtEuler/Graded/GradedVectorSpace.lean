@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Adjunction.Evaluation
+public import Mathlib.CategoryTheory.Adjunction.Unique
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ForgetGrading
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
 public import TauCeti.CategoryTheory.Adjunction.Linear
@@ -31,10 +34,11 @@ q-Euler formalism: it is projective, it is not isomorphic to any of its shifts `
 
 At `q = 1` the three values agree, while at `q = -1` a single shift changes the sign.
 
-The ungraded vector space underlying `M` is the one-dimensional space `k`. In every cohomological
-degree the bigraded `Ext` groups of `(M, M)` assemble into the ungraded `Ext` groups of `(k, k)` in
+Forgetting the grading is the functor `U` taking the direct sum `⨁ᵢ Vᵢ` of the pieces; it is
+invariant under the shift, `{1} ⋙ U ≅ U`, and `U M ≅ k`. In every cohomological degree the
+bigraded `Ext` groups of `(M, M)` assemble into the ungraded `Ext` groups of `(U M, U M)` in
 `ModuleCat k`; this is checked directly, by computing both sides, and it identifies the value of
-`χ_q(M, M)` at `q = 1` with the ordinary Ext-Euler characteristic `χ(k, k) = 1`.
+`χ_q(M, M)` at `q = 1` with the ordinary Ext-Euler characteristic `χ(U M, U M) = 1`.
 
 ## Main definitions
 
@@ -44,6 +48,9 @@ degree the bigraded `Ext` groups of `(M, M)` assemble into the ungraded `Ext` gr
   evaluation in degree `0` applied to `k`.
 * `TauCeti.GradedVectorSpace.homUnitLinearEquiv`: morphisms out of `unit k` are the degree-zero
   piece of the target.
+* `TauCeti.GradedVectorSpace.forget k`: forgetting the grading, `V ↦ ⨁ᵢ Vᵢ`, with
+  `TauCeti.GradedVectorSpace.shiftCompForgetIso` (`{1} ⋙ U ≅ U`) and
+  `TauCeti.GradedVectorSpace.forgetObjUnitIso` (`U M ≅ k`).
 
 ## Main results
 
@@ -61,10 +68,11 @@ degree the bigraded `Ext` groups of `(M, M)` assemble into the ungraded `Ext` gr
   `TauCeti.GradedVectorSpace.laurentEval_neg_one_gradedExtEuler_unit_shiftTarget`: at `q = -1`,
   `χ_q(M, M{1})` is the negative of `χ_q(M, M)`.
 * `TauCeti.GradedVectorSpace.isGradedExtComparison_unit`: the bigraded `Ext` groups of `(M, M)`
-  assemble into the `Ext` groups of `(k, k)` in `ModuleCat k`.
+  assemble into the `Ext` groups of the underlying ungraded pair `(U M, U M)` in `ModuleCat k`.
 * `TauCeti.GradedVectorSpace.laurentEval_one_gradedExtEuler_unit`: `χ_q(M, M)` at `q = 1` is the
-  ordinary Ext-Euler characteristic of `(k, k)`, which is `1` by
-  `TauCeti.GradedVectorSpace.extEuler_moduleCat_self`.
+  ordinary Ext-Euler characteristic of `(U M, U M)`.
+* `TauCeti.GradedVectorSpace.extEuler_moduleCat_self`: the ordinary Ext-Euler characteristic
+  `χ(k, k)` in `ModuleCat k` is `1`.
 
 ## Implementation notes
 
@@ -72,7 +80,9 @@ Graded vector spaces are modelled as the functor category `Discrete ℤ ⥤ Modu
 as Mathlib's `CategoryTheory.GradedObject ℤ (ModuleCat k)`, because the functor category already
 carries Mathlib's abelian and linear structures. The object `M` is the left adjoint of evaluation
 in degree `0` applied to `k`, so that its projectivity and the identification
-`Hom(M, V) ≃ₗ[k] V₀` are instances of general adjunction facts.
+`Hom(M, V) ≃ₗ[k] V₀` are instances of general adjunction facts. Likewise the forgetful functor is
+`colim`, the left adjoint of the constant functor, and `U M ≅ k` and `{1} ⋙ U ≅ U` are instances
+of the uniqueness of left adjoints.
 
 The results hold for every choice of `HasExt` instances on the two categories: `Ext` groups are
 only used through their dimensions.
@@ -236,6 +246,26 @@ theorem isEmpty_iso_unit_shift_pow {j : ℤ} (hj : j ≠ 0) :
   rw [Module.finrank_zero_of_subsingleton] at hone
   simp at hone
 
+/-! ### Forgetting the grading -/
+
+/-- **Forgetting the grading**: a graded vector space `V` goes to the direct sum `⨁ᵢ Vᵢ` of its
+pieces, the colimit over the discrete category `ℤ`. -/
+noncomputable def forget : GradedVectorSpace k ⥤ ModuleCat.{u} k :=
+  colim
+
+/-- **Forgetting the grading is invariant under the shift**: `{1} ⋙ U ≅ U`. Both functors are left
+adjoint to the constant functor. -/
+noncomputable def shiftCompForgetIso : (shift k).functor ⋙ forget k ≅ forget k :=
+  Adjunction.leftAdjointUniq ((shift k).toAdjunction.comp colimConstAdj)
+    (colimConstAdj.ofNatIsoRight (Iso.refl _))
+
+/-- **The ungraded space underlying `M = unit k` is `k`**: forgetting the grading after placing a
+space in degree `0` is left adjoint to the identity. -/
+noncomputable def forgetObjUnitIso : (forget k).obj (unit k) ≅ ModuleCat.of k k :=
+  (Adjunction.leftAdjointUniq
+    ((evaluationAdjunctionRight (ModuleCat.{u} k) (⟨0⟩ : Discrete ℤ)).comp colimConstAdj)
+    (Adjunction.id.ofNatIsoRight (Functor.constCompEvaluationObj _ _).symm)).app _
+
 /-! ### The q-Euler characteristic of `M = unit k` -/
 
 section GradedExtEuler
@@ -294,7 +324,7 @@ theorem laurentEval_neg_one_gradedExtEuler_unit_shiftTarget :
 
 end GradedExtEuler
 
-/-! ### Comparison with the ungraded pair `(k, k)` -/
+/-! ### Comparison with the underlying ungraded pair `(U M, U M)` -/
 
 section Comparison
 
@@ -312,17 +342,20 @@ theorem extEuler_moduleCat_self
 
 variable [HasExt.{w} (GradedVectorSpace k)]
 
-/-- **The graded `Ext` groups of `(M, M)` assemble into the ungraded ones of `(k, k)`**: in each
-cohomological degree `n`, `⨁ j, Extⁿ(M, M{j}) ≅ Extⁿ_k(k, k)`. Both sides are computed: they are
-one-dimensional for `n = 0` and zero otherwise. -/
+/-- **The graded `Ext` groups of `(M, M)` assemble into the ungraded ones of `(U M, U M)`**: in
+each cohomological degree `n`, `⨁ j, Extⁿ(M, M{j}) ≅ Extⁿ_k(U M, U M)`. Both sides are computed:
+they are one-dimensional for `n = 0` and zero otherwise. -/
 theorem isGradedExtComparison_unit :
     IsGradedExtComparison.{w, w'} k (shift k) (unit k) (unit k)
-      (ModuleCat.of k k) (ModuleCat.of k k) := by
-  have : Projective (ModuleCat.of k k) :=
-    ModuleCat.projective_of_free (Module.Basis.singleton Unit k)
-  have : FiniteDimensional k (ModuleCat.of k k ⟶ ModuleCat.of k k) :=
-    Module.Finite.equiv (ModuleCat.homLinearEquiv (S := k)).symm
-  have hadm := isEulerAdmissible_of_projective.{w'} k (ModuleCat.of k k) (ModuleCat.of k k)
+      ((forget k).obj (unit k)) ((forget k).obj (unit k)) := by
+  have : Projective ((forget k).obj (unit k)) :=
+    have := ModuleCat.projective_of_free (Module.Basis.singleton Unit k)
+    Projective.of_iso (forgetObjUnitIso k).symm this
+  have hhom := Linear.homCongr k (forgetObjUnitIso k) (forgetObjUnitIso k)
+  have : FiniteDimensional k ((forget k).obj (unit k) ⟶ (forget k).obj (unit k)) :=
+    Module.Finite.equiv (hhom.trans (ModuleCat.homLinearEquiv (S := k))).symm
+  have hadm := isEulerAdmissible_of_projective.{w'} k ((forget k).obj (unit k))
+    ((forget k).obj (unit k))
   refine ⟨fun n ↦ ?_⟩
   have hfin := (isGradedEulerAdmissible_unit.{w} k).internallyFinite.finiteLaurentSupport n
   have := hfin.finiteDimensional 0
@@ -345,18 +378,18 @@ theorem isGradedExtComparison_unit :
   cases n with
   | zero =>
     rw [(Ext.linearEquiv₀ (R := k)).finrank_eq, finrank_hom_unit_shift_pow,
-      (Ext.linearEquiv₀ (R := k)).finrank_eq, ModuleCat.homLinearEquiv.finrank_eq,
+      (Ext.linearEquiv₀ (R := k)).finrank_eq, hhom.finrank_eq, ModuleCat.homLinearEquiv.finrank_eq,
       (LinearMap.ringLmapEquivSelf k k k).finrank_eq, Module.finrank_self]
     simp only [↓reduceIte]
   | succ m =>
     have := (isExtBoundedBy_one_of_projective.{w} (unit k)
       (((shift k) ^ (0 : ℤ)).functor.obj (unit k))).subsingleton (Nat.le_add_left 1 m)
-    have := (isExtBoundedBy_one_of_projective.{w'} (ModuleCat.of k k)
-      (ModuleCat.of k k)).subsingleton (Nat.le_add_left 1 m)
+    have := (isExtBoundedBy_one_of_projective.{w'} ((forget k).obj (unit k))
+      ((forget k).obj (unit k))).subsingleton (Nat.le_add_left 1 m)
     rw [Module.finrank_zero_of_subsingleton, Module.finrank_zero_of_subsingleton]
 
 /-- **At `q = 1` the q-Euler characteristic of `(M, M)` is the ordinary Ext-Euler characteristic of
-`(k, k)`**, as it must be after forgetting the grading. -/
+the underlying ungraded pair `(U M, U M)`**, as it must be after forgetting the grading. -/
 theorem laurentEval_one_gradedExtEuler_unit :
     laurentEval (1 : ℤˣ) (gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k)) =
       extEuler.{w'} k ((isGradedExtComparison_unit.{w, w'} k).isEulerAdmissible
