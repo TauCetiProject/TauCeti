@@ -231,6 +231,25 @@ theorem orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk
   rw [signlessPreprojectiveMk_apply, signlessPreprojectiveMk_apply,
     orientationSignlessPreprojectiveAlgebraEquiv, Ideal.quotientEquivAlg_mk]
 
+/-- Vanishing of a path in the signless algebra of a doubled graph transfers to the
+preprojective algebra of any orientation when the graph is bipartite. -/
+theorem preprojectiveMk_ofPath_eq_zero_of_signless
+    {c : OrientedQuiver G o → Bool}
+    (hc : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → c i ≠ c j)
+    (x : Quiver.TotalPath (Symmetrify (OrientedQuiver G o)))
+    (hx : signlessPreprojectiveMk k _
+      (ofPath ((symmetrifyMap G o).mapTotalPath x)) = 0) :
+    preprojectiveMk k (OrientedQuiver G o) (ofPath x) = 0 := by
+  apply (symmetrifySignlessPreprojectiveAlgebraEquiv k hc).symm.injective
+  apply (orientationSignlessPreprojectiveAlgebraEquiv o k).symm.injective
+  have hpath : signlessPreprojectiveMk k _ (ofPath x) =
+      orientationSignlessPreprojectiveAlgebraEquiv o k (signlessPreprojectiveMk k _
+        (ofPath ((symmetrifyMap G o).mapTotalPath x))) := by
+    rw [orientationSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+      ← orientationPathAlgebraEquiv_symm_ofPath, AlgEquiv.apply_symm_apply]
+  rw [map_zero, map_zero, symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
+    rescale_ofPath, map_smul, map_smul, hpath, AlgEquiv.symm_apply_apply, hx, smul_zero]
+
 end Quotient
 
 end DoubledQuiver
