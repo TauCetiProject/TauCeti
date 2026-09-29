@@ -9,6 +9,8 @@ public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
 public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.BaseChange
+public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # Base change of diagonalizable-group points
@@ -39,6 +41,10 @@ algebra over `K`") and Layer 4 ("Diagonalizable groups and groups of multiplicat
   base.
 * `TauCeti.DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso`: the same isomorphism read in
   `CommHopfAlgCat`.
+* `TauCeti.DiagonalizableGroup.connectedSpace_primeSpectrum_coordinateRing`: a diagonalizable
+  coordinate ring that is a domain has connected prime spectrum.
+* `TauCeti.DiagonalizableGroup.connectedSpace_primeSpectrum_baseChange_coordinateRing`:
+  the base-changed coordinate ring has connected prime spectrum over a domain.
 * `TauCeti.DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply`: its forward map is
   the scalar-tensor bialgebra equivalence.
 * `TauCeti.DiagonalizableGroup.baseChangePointsMulEquiv_apply_coe`: the equivalence reads a
@@ -102,6 +108,28 @@ noncomputable abbrev baseChangeCoordinateHopfAlgebraIso
     CommHopfAlgCat.baseChange (K := K) (coordinateRing k G).obj ≅
       (coordinateRing K G).obj :=
   (ObjectProperty.ι _).mapIso (baseChangeCoordinateRingIso k K G)
+
+/-- The coordinate ring of a diagonalizable group has connected prime spectrum when it is a
+domain. -/
+theorem connectedSpace_primeSpectrum_coordinateRing
+    (K : Type v) [CommRing K] [IsDomain K] (G : FGCommGrpCat.{w})
+    [NoZeroDivisors (MonoidAlgebra K G)] :
+    ConnectedSpace (PrimeSpectrum (coordinateRing K G).obj) := by
+  let _ : IsDomain (MonoidAlgebra K G) := NoZeroDivisors.to_isDomain _
+  change ConnectedSpace (PrimeSpectrum (MonoidAlgebra K G))
+  infer_instance
+
+/-- The base change of a diagonalizable-group coordinate ring has connected prime spectrum when
+the resulting group algebra is a domain. -/
+theorem connectedSpace_primeSpectrum_baseChange_coordinateRing
+    (k : Type u) (K : Type v) [CommRing k] [CommRing K] [IsDomain K] [Algebra k K]
+    (G : FGCommGrpCat.{u}) [NoZeroDivisors (MonoidAlgebra K G)] :
+    ConnectedSpace (PrimeSpectrum
+      (CommHopfAlgCat.baseChange (K := K) (coordinateRing k G).obj)) := by
+  let e := baseChangeCoordinateHopfAlgebraIso k K G
+  have := connectedSpace_primeSpectrum_coordinateRing K G
+  exact connectedSpace_primeSpectrum_of_injective e.hom.hom.toAlgHom.toRingHom
+    (ConcreteCategory.bijective_of_isIso e.hom).1
 
 /-- The forward map of the categorical coordinate-ring base-change isomorphism is the
 scalar-tensor bialgebra equivalence.

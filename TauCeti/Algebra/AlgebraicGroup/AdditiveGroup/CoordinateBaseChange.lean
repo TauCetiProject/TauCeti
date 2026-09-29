@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
+public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # Base change of the bundled coordinate Hopf algebra of `𝔾ₐ`
@@ -16,6 +18,9 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 bialgebra of `𝔾ₐ` over `K`. This file bundles that equivalence as an isomorphism in
 `CommHopfAlgCat K`, so that the base change of `𝔾ₐ` over `k` *is* `𝔾ₐ` over `K` as a commutative
 Hopf algebra, and not merely as a bialgebra.
+
+Over a domain, its prime spectrum is connected, and the bundled base-change isomorphism transports
+that connectedness to every scalar extension whose target is a domain.
 
 The antipode needs no separate argument: a bialgebra map between Hopf algebras automatically
 commutes with the antipodes, which is what `CommHopfAlgCat.isoMk` uses.
@@ -33,6 +38,10 @@ equivalence has no such restriction.
 ## Main declarations
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebraBaseChangeIso`: the bundled isomorphism.
+* `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra`: the coordinate
+  algebra has connected prime spectrum over a domain.
+* `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra`:
+  the base-changed coordinate algebra has connected prime spectrum over a domain.
 
 ## References
 
@@ -44,6 +53,7 @@ half of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. See W. C. Waterho
 
 public section
 
+open CategoryTheory
 open scoped TensorProduct
 
 namespace TauCeti.AdditiveGroup
@@ -57,5 +67,23 @@ variable (k : Type u) (K : Type max u v) [CommRing k] [CommRing K] [Algebra k K]
 noncomputable abbrev coordinateHopfAlgebraBaseChangeIso :
     CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra k) ≅ coordinateHopfAlgebra K :=
   _root_.CommHopfAlgCat.isoMk (gaScalarTensorBialgEquiv (k := k) (K := K))
+
+/-- The coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum over a domain. -/
+theorem connectedSpace_primeSpectrum_coordinateHopfAlgebra
+    (K : Type u) [CommRing K] [IsDomain K] :
+    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra K)) := by
+  change ConnectedSpace (PrimeSpectrum (SymmetricAlgebra K K))
+  infer_instance
+
+/-- The base change of the coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum
+when the extension ring is a domain. -/
+theorem connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra
+    (k : Type u) (K : Type max u v) [CommRing k] [CommRing K] [IsDomain K] [Algebra k K] :
+    ConnectedSpace (PrimeSpectrum
+      (CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra k))) := by
+  let e := coordinateHopfAlgebraBaseChangeIso k K
+  have := connectedSpace_primeSpectrum_coordinateHopfAlgebra K
+  exact connectedSpace_primeSpectrum_of_injective e.hom.hom.toAlgHom.toRingHom
+    (ConcreteCategory.bijective_of_isIso e.hom).1
 
 end TauCeti.AdditiveGroup
