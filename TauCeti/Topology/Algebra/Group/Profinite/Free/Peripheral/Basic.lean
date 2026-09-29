@@ -176,6 +176,11 @@ theorem isPeripheralAut_conj (hF : IsProP p F) (x : Fin r → F) (g : F) :
     IsPeripheralAut hF x 1 (ContinuousAut.conj g) := fun i ↦
   isConj_iff.mpr ⟨g, by rw [ContinuousAut.conj_apply]; simp⟩
 
+/-- **The identity is peripheral of exponent one.** -/
+theorem isPeripheralAut_one (hF : IsProP p F) (x : Fin r → F) :
+    IsPeripheralAut hF x 1 (1 : ContinuousAut F) := by
+  simpa using isPeripheralAut_conj hF x 1
+
 /-- **The exponent of a peripheral automorphism is determined.** For a free pro-`p` group of
 positive rank with its basis, an automorphism peripheral of exponents `u` and `v` has `u = v`. The
 exponent is the scalar by which the automorphism acts on the class of `x_0` in the abelianization
