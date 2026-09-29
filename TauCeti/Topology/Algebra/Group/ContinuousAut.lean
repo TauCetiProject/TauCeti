@@ -223,7 +223,7 @@ abbrev mk : ContinuousAut G →* ContinuousOut G :=
 
 /-- Inner automorphisms have trivial outer class. -/
 @[simp]
-theorem mk_conj (g : G) : mk (ContinuousAut.conj g) = 1 :=
+theorem mk_conj (g : G) : ((ContinuousAut.conj g : ContinuousAut G) : ContinuousOut G) = 1 :=
   (QuotientGroup.eq_one_iff _).mpr ⟨g, rfl⟩
 
 /-- The class of a continuous automorphism in `ContinuousOut G` is trivial exactly when its
@@ -241,12 +241,12 @@ def mulEquivOfIsMulCommutative [IsMulCommutative G] : ContinuousOut G ≃* Conti
 
 @[simp]
 theorem mulEquivOfIsMulCommutative_mk [IsMulCommutative G] (φ : ContinuousAut G) :
-    mulEquivOfIsMulCommutative (mk φ) = φ :=
+    mulEquivOfIsMulCommutative (φ : ContinuousOut G) = φ :=
   (rfl)
 
 @[simp]
 theorem mulEquivOfIsMulCommutative_symm_apply [IsMulCommutative G] (φ : ContinuousAut G) :
-    mulEquivOfIsMulCommutative.symm φ = mk φ :=
+    mulEquivOfIsMulCommutative.symm φ = (φ : ContinuousOut G) :=
   (rfl)
 
 end ContinuousOut
