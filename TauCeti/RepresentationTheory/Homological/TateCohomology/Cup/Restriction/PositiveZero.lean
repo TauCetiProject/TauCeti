@@ -36,8 +36,8 @@ attribute [local instance] Subgroup.fintypeOfFinite
 variable [Fintype G]
 
 /-- Restriction commutes with the Tate cup product in bidegree `(n + 1, 0)`.
-The comparison of restricted tensor products is definitional. -/
-@[simp]
+The comparison of restricted tensor products is definitional. Use this as an explicit rewrite:
+`simp` first reduces the degree-zero cup product to `cupH0`. -/
 theorem cup_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
     (x : tateCohomology M ((n + 1 : ℕ) : ℤ)) (y : tateCohomology N 0) :
     posRes (M ⊗ N) H n
