@@ -33,6 +33,8 @@ In degree `5` this gives the passport with monodromy `C₅` and ordered cycle pa
 
 * `TauCeti.PermutationTriple.cyclicPowTriple`: the triple `(r, r ^ k, (r ^ (k + 1))⁻¹)`.
 * `TauCeti.PassportSpec.cyclicTotallyRamified`: the passport `(⟨r⟩, [n], [n], [n])`.
+* `TauCeti.PassportSpec.hasPassport_cyclicPowTriple_iff`: in nonzero degree,
+  `cyclicPowTriple n k` lies in this passport exactly when `k` and `k + 1` are coprime to `n`.
 * `TauCeti.PassportSpec.classSet_cyclicTotallyRamified`: for nonzero `n`, its isomorphism classes
   are indexed by the `k < n` for which `k` and `k + 1` are coprime to `n`.
 * `TauCeti.PassportSpec.passportSize_cyclicTotallyRamified`: for prime `p`, it has `p - 2`
@@ -119,6 +121,11 @@ def cyclicTotallyRamified (n : ℕ) : PassportSpec n where
 
 @[simp] theorem cyclicTotallyRamified_laminf : (cyclicTotallyRamified n).laminf = {n} := (rfl)
 
+/-- Each branch point of `cyclicTotallyRamified n` has the single-part cycle partition `[n]`. -/
+@[simp] theorem partition_cyclicTotallyRamified (i : Fin 3) :
+    (cyclicTotallyRamified n).partition i = {n} := by
+  fin_cases i <;> simp
+
 /-- The totally ramified cyclic passport is admissible exactly in nonzero degree. -/
 @[simp] theorem isAdmissible_cyclicTotallyRamified :
     (cyclicTotallyRamified n).IsAdmissible ↔ n ≠ 0 := by
@@ -144,6 +151,16 @@ theorem hasPassport_cyclicPowTriple {k : ℕ} (hk : k.Coprime n) (hk' : (k + 1).
   · rw [hc, cyclicTotallyRamified_lam0]
   · rw [hc, cyclicTotallyRamified_lam1]
   · rw [hc, cyclicTotallyRamified_laminf]
+
+/-- In nonzero degree, the triple `cyclicPowTriple n k` has the passport
+`cyclicTotallyRamified n` exactly when `k` and `k + 1` are coprime to `n`. -/
+@[simp] theorem hasPassport_cyclicPowTriple_iff (hn : n ≠ 0) {k : ℕ} :
+    HasPassport ⟨cyclicPowTriple n k, isConnected_cyclicPowTriple hn⟩
+        (cyclicTotallyRamified n) ↔
+      k.Coprime n ∧ (k + 1).Coprime n := by
+  refine ⟨fun h => ?_, fun h => hasPassport_cyclicPowTriple h.1 h.2⟩
+  obtain ⟨-, h0, h1, hinf⟩ := (hasPassport_iff _ _).mp h
+  exact (cycleData_cyclicPowTriple_iff hn).mp (Prod.ext h0 (Prod.ext h1 hinf))
 
 /-- A triple in the passport `cyclicTotallyRamified n` whose component over `0` is rotation is
 `(r, r ^ k)` for a unique-range exponent whose two relevant powers are full cycles. -/
