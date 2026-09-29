@@ -330,6 +330,7 @@ lemma mem_range_toLineBundleClass_iff (L : InvertibleSheaf Y) :
 
 /-- The line-bundle classes underlying classes of rigidified line bundles are exactly those whose
 pullback along `s` is trivial. -/
+@[simp]
 lemma range_toLineBundleClass :
     Set.range (toLineBundleClass : RigidifiedLineBundleClass s → LineBundleClass Y) =
       {a | LineBundleClass.pullback s a = 1} := by

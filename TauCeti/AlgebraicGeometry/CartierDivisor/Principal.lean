@@ -119,7 +119,10 @@ theorem toLineBundleClass_eq_one_iff :
     D.toLineBundleClass = 1 ↔ ∃ f : X.functionFieldˣ, principalCartierDivisor X f = D := by
   constructor
   · intro h
-    rw [toLineBundleClass_eq_mk, LineBundleClass.mk_eq_one_iff, toInvertibleSheaf_obj] at h
+    have hmk : D.toLineBundleClass = LineBundleClass.mk D.toInvertibleSheaf := by
+      apply toLineBundleClass_eq_mk_iff.mpr
+      simpa only [toInvertibleSheaf_obj] using (⟨Iso.refl _⟩ : Nonempty (D.sheaf ≅ D.sheaf))
+    rw [hmk, LineBundleClass.mk_eq_one_iff, toInvertibleSheaf_obj] at h
     obtain ⟨e⟩ := h
     exact exists_principalCartierDivisor_eq_of_nonempty_iso ⟨e.symm⟩
   · rintro ⟨f, rfl⟩

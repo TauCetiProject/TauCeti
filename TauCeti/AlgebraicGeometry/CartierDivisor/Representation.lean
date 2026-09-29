@@ -269,16 +269,10 @@ variable (D) in
 def toLineBundleClass : LineBundleClass X :=
   LineBundleClass.mk D.toInvertibleSheaf
 
-/-- The class of `D` is represented by its associated invertible sheaf. -/
-lemma toLineBundleClass_eq_mk (D : CartierDivisor X) :
-    D.toLineBundleClass = LineBundleClass.mk D.toInvertibleSheaf := by
-  unfold toLineBundleClass
-  rfl
-
 /-- The line-bundle class of `D` is the class of `L` exactly when `𝒪_X(D) ≅ L`. -/
 lemma toLineBundleClass_eq_mk_iff {L : InvertibleSheaf X} :
     D.toLineBundleClass = LineBundleClass.mk L ↔ Nonempty (D.sheaf ≅ L.obj) := by
-  rw [toLineBundleClass_eq_mk, LineBundleClass.mk_eq_mk_iff, toInvertibleSheaf_obj]
+  rw [toLineBundleClass, LineBundleClass.mk_eq_mk_iff, toInvertibleSheaf_obj]
 
 /-- **The sheaf of a principal Cartier divisor is trivial as a line bundle.** -/
 @[simp]
