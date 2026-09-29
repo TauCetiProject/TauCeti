@@ -108,12 +108,15 @@ theorem one_def : (1 : ContinuousAut G) = ContinuousMulEquiv.refl G :=
 theorem inv_def (φ : ContinuousAut G) : φ⁻¹ = φ.symm :=
   (rfl)
 
+@[simp]
 theorem mul_apply (φ ψ : ContinuousAut G) (x : G) : (φ * ψ) x = φ (ψ x) :=
   (rfl)
 
+@[simp]
 theorem one_apply (x : G) : (1 : ContinuousAut G) x = x :=
   (rfl)
 
+@[simp]
 theorem inv_apply (φ : ContinuousAut G) (x : G) : φ⁻¹ x = φ.symm x :=
   (rfl)
 
@@ -241,13 +244,19 @@ def mulEquivOfIsMulCommutative [IsMulCommutative G] : ContinuousOut G ≃* Conti
 
 @[simp]
 theorem mulEquivOfIsMulCommutative_mk [IsMulCommutative G] (φ : ContinuousAut G) :
-    mulEquivOfIsMulCommutative (φ : ContinuousOut G) = φ :=
-  (rfl)
+    mulEquivOfIsMulCommutative (φ : ContinuousOut G) = φ := by
+  change QuotientGroup.quotientBot
+    (QuotientGroup.quotientMulEquivOfEq
+      (ContinuousAut.range_conj_eq_bot_iff.mpr inferInstance) (QuotientGroup.mk φ)) = φ
+  rw [QuotientGroup.quotientMulEquivOfEq_mk]
+  change QuotientGroup.kerLift (MonoidHom.id (ContinuousAut G)) (QuotientGroup.mk φ) = φ
+  rw [QuotientGroup.kerLift_mk, MonoidHom.id_apply]
 
 @[simp]
 theorem mulEquivOfIsMulCommutative_symm_apply [IsMulCommutative G] (φ : ContinuousAut G) :
-    mulEquivOfIsMulCommutative.symm φ = (φ : ContinuousOut G) :=
-  (rfl)
+    mulEquivOfIsMulCommutative.symm φ = (φ : ContinuousOut G) := by
+  apply mulEquivOfIsMulCommutative.injective
+  rw [MulEquiv.apply_symm_apply, mulEquivOfIsMulCommutative_mk]
 
 end ContinuousOut
 
