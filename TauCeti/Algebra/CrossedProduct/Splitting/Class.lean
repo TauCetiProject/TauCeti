@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.CrossedProduct.BrauerClass
-public import TauCeti.Algebra.CrossedProduct.Splitting
+public import TauCeti.Algebra.CrossedProduct.Splitting.Basic
 public import TauCeti.Algebra.CentralSimple.Splitting
 -- Non-public: the dimension counts and the matrix model of `End_K(Lⁿ)` are used only in proofs.
 import Mathlib.LinearAlgebra.Basis.MulOpposite
@@ -14,7 +14,7 @@ import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import TauCeti.Algebra.BrauerGroup.Trivial
 
 /-!
-# The cocycle of a splitting presents the split algebra
+# The cocycle of a splitting recovers the class of the algebra being split
 
 Let `L/K` be a finite Galois extension and `A` a finite-dimensional central simple `K`-algebra with
 a splitting `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)`. This file proves that the crossed product of the cocycle
@@ -148,8 +148,9 @@ private noncomputable def rowCrossedAction :
       simp)
     (fun σ τ ↦ LinearMap.ext fun w ↦ by
       have hmap : (((splittingConjugator φ τ)⁻¹ : GL n L) : Matrix n n L).map σ =
-          (map (σ : L →+* L) (splittingConjugator φ τ)⁻¹ : GL n L) :=
-        (rfl)
+          (map (σ : L →+* L) (splittingConjugator φ τ)⁻¹ : GL n L) := by
+        ext i j
+        rw [Matrix.map_apply, GeneralLinearGroup.map_apply, RingHom.coe_coe]
       simp only [Module.End.mul_apply, rowGenerator_apply, Algebra.lsmul_coe, map_vecMul',
         vecMul_vecMul, hmap]
       rw [← Units.val_mul, map_inv_mul_inv, Units.val_mul, coe_scalar, scalar_apply,
@@ -195,9 +196,9 @@ private theorem rowTensorAction_bijective : Function.Bijective (rowTensorAction 
 
 namespace BrauerGroup
 
-/-- **The cocycle of a splitting presents the split algebra.** For a finite Galois `L/K` and a
-splitting `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)` of a finite-dimensional central simple `K`-algebra `A`, the
-crossed product of `cocycleOfSplitting φ` is Brauer equivalent to `A`. -/
+/-- **The cocycle of a splitting recovers the class of the algebra being split.** For a finite
+Galois `L/K` and a splitting `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)` of a finite-dimensional central simple
+`K`-algebra `A`, the crossed product of `cocycleOfSplitting φ` is Brauer equivalent to `A`. -/
 theorem crossedProductClass_cocycleOfSplitting :
     crossedProductClass (cocycleOfSplitting φ) = mk (CSA.of K A) := by
   let d := Module.finrank K (n → L)

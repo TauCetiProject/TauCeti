@@ -10,7 +10,7 @@ public import Mathlib.FieldTheory.SeparableClosure
 -- Non-public: the finite Galois splitting field and the class of the cocycle of a splitting are
 -- used only in the proof of surjectivity.
 import TauCeti.Algebra.CentralSimple.FiniteGalois
-import TauCeti.Algebra.CrossedProduct.SplittingClass
+import TauCeti.Algebra.CrossedProduct.Splitting.Class
 
 /-!
 # Every Brauer class is a crossed-product class
@@ -71,6 +71,11 @@ variable {K}
 /-- The **Brauer class of a Galois cocycle**: the class of the crossed product of its cocycle. -/
 noncomputable def brauerClass (g : GaloisCocycle K) : BrauerGroup.{u, u} K :=
   BrauerGroup.crossedProductClass g.cocycle
+
+/-- The Brauer class of a Galois cocycle is the crossed-product class of its cocycle. -/
+theorem brauerClass_def (g : GaloisCocycle K) :
+    g.brauerClass = BrauerGroup.crossedProductClass g.cocycle :=
+  (rfl)
 
 /-- The Brauer class of a bundled Galois cocycle is the crossed-product class of its cocycle. -/
 @[simp]

@@ -53,6 +53,8 @@ Central simplicity of the crossed product of a finite Galois extension of fields
   `(x · u_σ) · (y · u_τ) = (x · σ(y) · c(σ, τ)) · u_{στ}`.
 * `TauCeti.CrossedProduct.basis_mul_inc`: `u_σ · x = σ(x) · u_σ`.
 * `TauCeti.CrossedProduct.basis_mul_basis`: `u_σ · u_τ = c(σ, τ) · u_{στ}`.
+* `TauCeti.CrossedProduct.algHom_ext`, `TauCeti.CrossedProduct.lift_unique`: a `K`-algebra
+  homomorphism out of the crossed product is determined by its values on `L` and on the `u_σ`.
 * `TauCeti.CrossedProduct.finrank_eq_finrank_mul_card`: over fields, the `Module.finrank` of the
   crossed product is `Module.finrank K L * Nat.card (Aut_K(L))`; and
   `TauCeti.CrossedProduct.finrank_eq_finrank_sq`: for a finite Galois extension its dimension is
@@ -419,6 +421,22 @@ theorem lift_basis (σ : L ≃ₐ[K] L) : lift f u hf hu hu₁ (basis c σ) = u 
 @[simp]
 theorem lift_inc (x : L) : lift f u hf hu hu₁ (inc c x) = f x := by
   rw [inc_apply, lift_smul_basis, hu₁, ← map_mul, mul_assoc, Units.inv_mul, mul_one]
+
+/-- **Uniqueness in the universal property**: a `K`-algebra homomorphism out of `CrossedProduct c`
+is determined by its values on the copy `inc c` of `L` and on the basis elements `u_σ`. -/
+theorem algHom_ext {F G : CrossedProduct c →ₐ[K] R} (hinc : ∀ x, F (inc c x) = G (inc c x))
+    (hbasis : ∀ σ, F (basis c σ) = G (basis c σ)) : F = G :=
+  AlgHom.ext fun a ↦ by
+    induction a using induction_on with
+    | zero => simp
+    | add a b ha hb => simp only [map_add, ha, hb]
+    | smul_basis σ x => rw [smul_def, map_mul, map_mul, hinc, hbasis]
+
+/-- `CrossedProduct.lift` is the unique `K`-algebra homomorphism restricting to `f` on `inc c` and
+sending each `u_σ` to `u σ`. -/
+theorem lift_unique (F : CrossedProduct c →ₐ[K] R) (hinc : ∀ x, F (inc c x) = f x)
+    (hbasis : ∀ σ, F (basis c σ) = u σ) : F = lift f u hf hu hu₁ :=
+  algHom_ext (fun x ↦ by rw [hinc, lift_inc]) fun σ ↦ by rw [hbasis, lift_basis]
 
 end Lift
 
