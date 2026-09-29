@@ -33,6 +33,7 @@ variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q] [Finite Q]
 theorem module_finite_indecProjModule (i : Q) :
     Module.Finite (pathAlgebra k Q) (indecProjModule k Q i) := by
   classical
+  -- Pointwise finite-dimensionality is unavailable for quivers with cycles, but `Pᵢ` is cyclic.
   let _ : Fintype Q := Fintype.ofFinite Q
   let x : QuiverRep.asModule k Q (indecProjRep k Q i) :=
     QuiverRep.ofVertex k Q (indecProjRep k Q i) i
