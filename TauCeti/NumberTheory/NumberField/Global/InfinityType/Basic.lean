@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Complex.ArchimedeanCharacter
-public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # Infinity types of a number field
@@ -44,7 +43,8 @@ namespace TauCeti.GlobalNumberFields
 /-- The archimedean parameters of a continuous character over `K`: a complex modulus exponent and
 a parity at every real place, and a complex modulus exponent and integral angular frequency at
 every complex place. -/
-structure ContinuousInfinityType (K : Type*) [Field K] [NumberField K] where
+@[ext]
+structure ContinuousInfinityType (K : Type*) [Field K] where
   /-- The exponent of the absolute value at each real place. -/
   realExponent : {w : InfinitePlace K // w.IsReal} → ℂ
   /-- The exponent of the sign character at each real place. -/
@@ -56,106 +56,195 @@ structure ContinuousInfinityType (K : Type*) [Field K] [NumberField K] where
 
 namespace ContinuousInfinityType
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
 
-/-- A continuous infinity type is equivalently its four families of local parameters. -/
-def equivProd : ContinuousInfinityType K ≃
+instance : Zero (ContinuousInfinityType K) :=
+  ⟨⟨0, 0, 0, 0⟩⟩
+
+instance : Add (ContinuousInfinityType K) :=
+  ⟨fun t u ↦ ⟨t.realExponent + u.realExponent, t.realParity + u.realParity,
+    t.complexExponent + u.complexExponent,
+    t.complexAngularFrequency + u.complexAngularFrequency⟩⟩
+
+instance : Neg (ContinuousInfinityType K) :=
+  ⟨fun t ↦ ⟨-t.realExponent, -t.realParity, -t.complexExponent,
+    -t.complexAngularFrequency⟩⟩
+
+instance : Sub (ContinuousInfinityType K) :=
+  ⟨fun t u ↦ ⟨t.realExponent - u.realExponent, t.realParity - u.realParity,
+    t.complexExponent - u.complexExponent,
+    t.complexAngularFrequency - u.complexAngularFrequency⟩⟩
+
+instance : SMul ℕ (ContinuousInfinityType K) :=
+  ⟨fun n t ↦ ⟨n • t.realExponent, n • t.realParity, n • t.complexExponent,
+    n • t.complexAngularFrequency⟩⟩
+
+instance : SMul ℤ (ContinuousInfinityType K) :=
+  ⟨fun n t ↦ ⟨n • t.realExponent, n • t.realParity, n • t.complexExponent,
+    n • t.complexAngularFrequency⟩⟩
+
+/-- The zero continuous infinity type has zero real modulus exponents. -/
+@[simp]
+theorem zero_realExponent : (0 : ContinuousInfinityType K).realExponent = 0 :=
+  rfl
+
+/-- The zero continuous infinity type has zero real parities. -/
+@[simp]
+theorem zero_realParity : (0 : ContinuousInfinityType K).realParity = 0 :=
+  rfl
+
+/-- The zero continuous infinity type has zero complex modulus exponents. -/
+@[simp]
+theorem zero_complexExponent : (0 : ContinuousInfinityType K).complexExponent = 0 :=
+  rfl
+
+/-- The zero continuous infinity type has zero complex angular frequencies. -/
+@[simp]
+theorem zero_complexAngularFrequency : (0 : ContinuousInfinityType K).complexAngularFrequency = 0 :=
+  rfl
+
+/-- Real modulus exponents add pointwise. -/
+@[simp]
+theorem add_realExponent (t u : ContinuousInfinityType K) :
+    (t + u).realExponent = t.realExponent + u.realExponent :=
+  rfl
+
+/-- Real parities add pointwise. -/
+@[simp]
+theorem add_realParity (t u : ContinuousInfinityType K) :
+    (t + u).realParity = t.realParity + u.realParity :=
+  rfl
+
+/-- Complex modulus exponents add pointwise. -/
+@[simp]
+theorem add_complexExponent (t u : ContinuousInfinityType K) :
+    (t + u).complexExponent = t.complexExponent + u.complexExponent :=
+  rfl
+
+/-- Complex angular frequencies add pointwise. -/
+@[simp]
+theorem add_complexAngularFrequency (t u : ContinuousInfinityType K) :
+    (t + u).complexAngularFrequency = t.complexAngularFrequency + u.complexAngularFrequency :=
+  rfl
+
+/-- Negation negates real modulus exponents pointwise. -/
+@[simp]
+theorem neg_realExponent (t : ContinuousInfinityType K) :
+    (-t).realExponent = -t.realExponent :=
+  rfl
+
+/-- Negation negates real parities pointwise. -/
+@[simp]
+theorem neg_realParity (t : ContinuousInfinityType K) :
+    (-t).realParity = -t.realParity :=
+  rfl
+
+/-- Negation negates complex modulus exponents pointwise. -/
+@[simp]
+theorem neg_complexExponent (t : ContinuousInfinityType K) :
+    (-t).complexExponent = -t.complexExponent :=
+  rfl
+
+/-- Negation negates complex angular frequencies pointwise. -/
+@[simp]
+theorem neg_complexAngularFrequency (t : ContinuousInfinityType K) :
+    (-t).complexAngularFrequency = -t.complexAngularFrequency :=
+  rfl
+
+/-- Real modulus exponents subtract pointwise. -/
+@[simp]
+theorem sub_realExponent (t u : ContinuousInfinityType K) :
+    (t - u).realExponent = t.realExponent - u.realExponent :=
+  rfl
+
+/-- Real parities subtract pointwise. -/
+@[simp]
+theorem sub_realParity (t u : ContinuousInfinityType K) :
+    (t - u).realParity = t.realParity - u.realParity :=
+  rfl
+
+/-- Complex modulus exponents subtract pointwise. -/
+@[simp]
+theorem sub_complexExponent (t u : ContinuousInfinityType K) :
+    (t - u).complexExponent = t.complexExponent - u.complexExponent :=
+  rfl
+
+/-- Complex angular frequencies subtract pointwise. -/
+@[simp]
+theorem sub_complexAngularFrequency (t u : ContinuousInfinityType K) :
+    (t - u).complexAngularFrequency = t.complexAngularFrequency - u.complexAngularFrequency :=
+  rfl
+
+/-- Natural-number multiples scale real modulus exponents pointwise. -/
+@[simp]
+theorem nsmul_realExponent (n : ℕ) (t : ContinuousInfinityType K) :
+    (n • t).realExponent = n • t.realExponent :=
+  rfl
+
+/-- Natural-number multiples scale real parities pointwise. -/
+@[simp]
+theorem nsmul_realParity (n : ℕ) (t : ContinuousInfinityType K) :
+    (n • t).realParity = n • t.realParity :=
+  rfl
+
+/-- Natural-number multiples scale complex modulus exponents pointwise. -/
+@[simp]
+theorem nsmul_complexExponent (n : ℕ) (t : ContinuousInfinityType K) :
+    (n • t).complexExponent = n • t.complexExponent :=
+  rfl
+
+/-- Natural-number multiples scale complex angular frequencies pointwise. -/
+@[simp]
+theorem nsmul_complexAngularFrequency (n : ℕ) (t : ContinuousInfinityType K) :
+    (n • t).complexAngularFrequency = n • t.complexAngularFrequency :=
+  rfl
+
+/-- Integer multiples scale real modulus exponents pointwise. -/
+@[simp]
+theorem zsmul_realExponent (n : ℤ) (t : ContinuousInfinityType K) :
+    (n • t).realExponent = n • t.realExponent :=
+  rfl
+
+/-- Integer multiples scale real parities pointwise. -/
+@[simp]
+theorem zsmul_realParity (n : ℤ) (t : ContinuousInfinityType K) :
+    (n • t).realParity = n • t.realParity :=
+  rfl
+
+/-- Integer multiples scale complex modulus exponents pointwise. -/
+@[simp]
+theorem zsmul_complexExponent (n : ℤ) (t : ContinuousInfinityType K) :
+    (n • t).complexExponent = n • t.complexExponent :=
+  rfl
+
+/-- Integer multiples scale complex angular frequencies pointwise. -/
+@[simp]
+theorem zsmul_complexAngularFrequency (n : ℤ) (t : ContinuousInfinityType K) :
+    (n • t).complexAngularFrequency = n • t.complexAngularFrequency :=
+  rfl
+
+instance : AddCommGroup (ContinuousInfinityType K) :=
+  Function.Injective.addCommGroup
+    (fun t ↦ ((t.realExponent, t.realParity), (t.complexExponent, t.complexAngularFrequency)))
+    (fun t u h ↦ by
+      simp only [Prod.mk.injEq] at h
+      exact ContinuousInfinityType.ext h.1.1 h.1.2 h.2.1 h.2.2)
+    rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+/-- A continuous infinity type is equivalently its four families of local parameters, as
+additive groups. -/
+@[expose, simps]
+def equivProd : ContinuousInfinityType K ≃+
     (({w : InfinitePlace K // w.IsReal} → ℂ) ×
       ({w : InfinitePlace K // w.IsReal} → ZMod 2)) ×
     (({w : InfinitePlace K // w.IsComplex} → ℂ) ×
       ({w : InfinitePlace K // w.IsComplex} → ℤ)) where
   toFun t := ((t.realExponent, t.realParity),
     (t.complexExponent, t.complexAngularFrequency))
-  invFun t :=
-    { realExponent := t.1.1
-      realParity := t.1.2
-      complexExponent := t.2.1
-      complexAngularFrequency := t.2.2 }
+  invFun t := ⟨t.1.1, t.1.2, t.2.1, t.2.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
-
-instance : AddCommGroup (ContinuousInfinityType K) :=
-  (equivProd (K := K)).addCommGroup
-
-/-- Two continuous infinity types are equal when all four families of parameters agree. -/
-@[ext]
-theorem ext {t u : ContinuousInfinityType K}
-    (hre : t.realExponent = u.realExponent) (hrp : t.realParity = u.realParity)
-    (hce : t.complexExponent = u.complexExponent)
-    (hca : t.complexAngularFrequency = u.complexAngularFrequency) : t = u := by
-  cases t
-  cases u
-  simp_all
-
-/-- The zero continuous infinity type has zero real modulus exponents. -/
-@[simp]
-theorem realExponent_zero : (0 : ContinuousInfinityType K).realExponent = 0 :=
-  (rfl)
-
-/-- The zero continuous infinity type has zero real parities. -/
-@[simp]
-theorem realParity_zero : (0 : ContinuousInfinityType K).realParity = 0 :=
-  (rfl)
-
-/-- The zero continuous infinity type has zero complex modulus exponents. -/
-@[simp]
-theorem complexExponent_zero : (0 : ContinuousInfinityType K).complexExponent = 0 :=
-  (rfl)
-
-/-- The zero continuous infinity type has zero complex angular frequencies. -/
-@[simp]
-theorem complexAngularFrequency_zero :
-    (0 : ContinuousInfinityType K).complexAngularFrequency = 0 :=
-  (rfl)
-
-/-- Real modulus exponents add pointwise. -/
-@[simp]
-theorem realExponent_add (t u : ContinuousInfinityType K) :
-    (t + u).realExponent = t.realExponent + u.realExponent :=
-  (rfl)
-
-/-- Real parities add pointwise. -/
-@[simp]
-theorem realParity_add (t u : ContinuousInfinityType K) :
-    (t + u).realParity = t.realParity + u.realParity :=
-  (rfl)
-
-/-- Complex modulus exponents add pointwise. -/
-@[simp]
-theorem complexExponent_add (t u : ContinuousInfinityType K) :
-    (t + u).complexExponent = t.complexExponent + u.complexExponent :=
-  (rfl)
-
-/-- Complex angular frequencies add pointwise. -/
-@[simp]
-theorem complexAngularFrequency_add (t u : ContinuousInfinityType K) :
-    (t + u).complexAngularFrequency =
-      t.complexAngularFrequency + u.complexAngularFrequency :=
-  (rfl)
-
-/-- Negation negates real modulus exponents pointwise. -/
-@[simp]
-theorem realExponent_neg (t : ContinuousInfinityType K) :
-    (-t).realExponent = -t.realExponent :=
-  (rfl)
-
-/-- Negation negates real parities pointwise. -/
-@[simp]
-theorem realParity_neg (t : ContinuousInfinityType K) :
-    (-t).realParity = -t.realParity :=
-  (rfl)
-
-/-- Negation negates complex modulus exponents pointwise. -/
-@[simp]
-theorem complexExponent_neg (t : ContinuousInfinityType K) :
-    (-t).complexExponent = -t.complexExponent :=
-  (rfl)
-
-/-- Negation negates complex angular frequencies pointwise. -/
-@[simp]
-theorem complexAngularFrequency_neg (t : ContinuousInfinityType K) :
-    (-t).complexAngularFrequency = -t.complexAngularFrequency :=
-  (rfl)
+  map_add' _ _ := rfl
 
 end ContinuousInfinityType
 
@@ -174,7 +263,7 @@ abbrev FiniteOrderInfinityType (K : Type*) [Field K] :=
 
 namespace AlgebraicInfinityType
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
 
 /-- The continuous infinity type associated to an algebraic infinity type.  At a real place the
 integer exponent gives both the modulus exponent and its parity.  At a complex place, exponents
@@ -191,12 +280,12 @@ def toContinuous : AlgebraicInfinityType K →+ ContinuousInfinityType K where
   map_zero' := by
     apply ContinuousInfinityType.ext <;> funext w <;> simp
   map_add' n m := by
-    apply ContinuousInfinityType.ext <;> funext w
-    · simp
-    · simp
-    · simp
+    ext w
+    · simp only [Pi.add_apply, Int.cast_add, ContinuousInfinityType.add_realExponent]
+    · simp only [Pi.add_apply, Int.cast_add, ContinuousInfinityType.add_realParity]
+    · simp only [Pi.add_apply, Int.cast_add, ContinuousInfinityType.add_complexExponent]
       ring
-    · simp
+    · simp only [Pi.add_apply, ContinuousInfinityType.add_complexAngularFrequency]
       ring
 
 /-- The real modulus exponent of an algebraic infinity type is its exponent at the real
@@ -266,7 +355,7 @@ end AlgebraicInfinityType
 
 namespace FiniteOrderInfinityType
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
 
 /-- A finite-order infinity type as a continuous infinity type: its real signs are retained, and
 all modulus exponents and complex angular frequencies are zero. -/
