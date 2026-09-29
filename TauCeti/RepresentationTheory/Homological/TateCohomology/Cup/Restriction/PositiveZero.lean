@@ -33,28 +33,11 @@ variable {k G : Type u} [CommRing k] [Group G]
 
 attribute [local instance] Subgroup.fintypeOfFinite
 
-/-- Restricting the map `m ↦ m ⊗ y` gives the map defined by the restricted invariant. -/
-private theorem resMap_tensorInvariant (M N : Rep k G) (H : Subgroup G)
-    (y : N.ρ.invariants) :
-    Rep.resMap H.subtype (Rep.tensorInvariant M y) =
-      Rep.tensorInvariant (N := Rep.res H.subtype N) (Rep.res H.subtype M)
-        ((Submodule.inclusion
-          (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y) := by
-  ext m
-  -- Both restricted representations retain the same underlying module and tensor product.
-  change (Rep.tensorInvariant M y).hom m =
-    (Rep.tensorInvariant (N := Rep.res H.subtype N) (Rep.res H.subtype M)
-      ((Submodule.inclusion
-        (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y)).hom m
-  exact (Rep.tensorInvariant_hom_apply M y m).trans
-    (Rep.tensorInvariant_hom_apply (N := Rep.res H.subtype N) (Rep.res H.subtype M)
-      ((Submodule.inclusion
-        (Representation.invariants_le_invariants_comp_subtype (ρ := N.ρ) (H := H))) y) m).symm
-
 variable [Fintype G]
 
 /-- Restriction commutes with the Tate cup product in bidegree `(n + 1, 0)`.
 The comparison of restricted tensor products is definitional. -/
+@[simp]
 theorem cup_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
     (x : tateCohomology M ((n + 1 : ℕ) : ℤ)) (y : tateCohomology N 0) :
     posRes (M ⊗ N) H n
@@ -72,7 +55,7 @@ theorem cup_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
           posRes (M ⊗ N) H n =
         posRes M H n ≫ (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map
           (Rep.resMap H.subtype (Rep.tensorInvariant M y)) := hnat
-    rw [resMap_tensorInvariant M N H y] at hnat'
+    rw [Rep.resMap_tensorInvariant M N H y] at hnat'
     -- The two cup expressions reduce to the same composite. `convert` aligns the
     -- integer degree casts and restricted tensor representation in that composite.
     convert congrArg (fun f => f x) hnat' using 1

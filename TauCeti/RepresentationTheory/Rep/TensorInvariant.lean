@@ -42,6 +42,27 @@ theorem tensorInvariant_hom_apply (M : Rep k G) {N : Rep k G} (y : N.ρ.invarian
     (dsimp% ((tensorInvariant M y).hom m)) = m ⊗ₜ[k] (y : N.V) :=
   (rfl)
 
+/-- Restricting the map `m ↦ m ⊗ y` gives the map defined by the restricted invariant. -/
+theorem resMap_tensorInvariant (M N : Rep k G) (H : Subgroup G)
+    (y : N.ρ.invariants) :
+    Rep.resMap H.subtype (tensorInvariant M y) =
+      tensorInvariant (N := Rep.res H.subtype N) (Rep.res H.subtype M)
+        ((Submodule.inclusion
+          (show N.ρ.invariants ≤ Representation.invariants (N.ρ.comp H.subtype) from
+            fun _ hy h => hy (h : G))) y) := by
+  ext m
+  -- Both restricted representations retain the same underlying module and tensor product.
+  change (tensorInvariant M y).hom m =
+    (tensorInvariant (N := Rep.res H.subtype N) (Rep.res H.subtype M)
+      ((Submodule.inclusion
+        (show N.ρ.invariants ≤ Representation.invariants (N.ρ.comp H.subtype) from
+          fun _ hy h => hy (h : G))) y)).hom m
+  exact (tensorInvariant_hom_apply M y m).trans
+    (tensorInvariant_hom_apply (N := Rep.res H.subtype N) (Rep.res H.subtype M)
+      ((Submodule.inclusion
+        (show N.ρ.invariants ≤ Representation.invariants (N.ρ.comp H.subtype) from
+          fun _ hy h => hy (h : G))) y) m).symm
+
 variable (M : Rep k G) {N : Rep k G}
 
 /-- `m ↦ m ⊗ 0` is the zero morphism. -/
