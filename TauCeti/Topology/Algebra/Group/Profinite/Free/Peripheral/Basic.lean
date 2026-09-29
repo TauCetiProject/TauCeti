@@ -78,7 +78,7 @@ theorem basis_apply (e : F ≃ₜ* freeProP p (Fin r)) (i : Fin r) :
   (rfl)
 
 @[simp]
-theorem apply_basis (e : F ≃ₜ* freeProP p (Fin r)) (i : Fin r) :
+theorem map_basis (e : F ≃ₜ* freeProP p (Fin r)) (i : Fin r) :
     e (basis e i) = freeProP.of i := by
   simp [basis_apply]
 
@@ -114,11 +114,8 @@ theorem inv_cusp (x : Fin r → G) : (cusp x)⁻¹ = (List.ofFn x).prod :=
 theorem prod_mul_cusp (x : Fin r → G) : (List.ofFn x).prod * cusp x = 1 :=
   mul_inv_cancel _
 
-@[simp]
-theorem cusp_mul_prod (x : Fin r → G) : cusp x * (List.ofFn x).prod = 1 :=
-  inv_mul_cancel _
-
 /-- Homomorphisms carry the cusp of a family to the cusp of its image. -/
+@[simp]
 theorem map_cusp {M : Type*} [FunLike M G H] [MonoidHomClass M G H] (f : M) (x : Fin r → G) :
     f (cusp x) = cusp (f ∘ x) := by
   rw [cusp_def, cusp_def, map_inv, map_list_prod, List.map_ofFn]
@@ -143,10 +140,11 @@ theorem prod_ofFn_peripheralTuple (x : Fin r → G) : (List.ofFn (peripheralTupl
   simp
 
 /-- Homomorphisms carry the peripheral tuple of a family to the peripheral tuple of its image. -/
+@[simp]
 theorem map_peripheralTuple {M : Type*} [FunLike M G H] [MonoidHomClass M G H] (f : M)
     (x : Fin r → G) (i : Fin (r + 1)) : f (peripheralTuple x i) = peripheralTuple (f ∘ x) i := by
   induction i using Fin.lastCases with
-  | last => simp [map_cusp]
+  | last => simp
   | cast i => simp
 
 end Cusp
@@ -176,11 +174,7 @@ theorem isPeripheralAut_iff (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]ˣ)
 /-- **Inner automorphisms are peripheral of exponent one.** -/
 theorem isPeripheralAut_conj (hF : IsProP p F) (x : Fin r → F) (g : F) :
     IsPeripheralAut hF x 1 (ContinuousAut.conj g) := fun i ↦
-  isConj_iff.mpr ⟨g, by simp⟩
-
-/-- The identity automorphism is peripheral of exponent one. -/
-theorem isPeripheralAut_one (hF : IsProP p F) (x : Fin r → F) : IsPeripheralAut hF x 1 1 := by
-  simpa using isPeripheralAut_conj hF x 1
+  isConj_iff.mpr ⟨g, by rw [ContinuousAut.conj_apply]; simp⟩
 
 /-- **The exponent of a peripheral automorphism is determined.** For a free pro-`p` group of
 positive rank with its basis, an automorphism peripheral of exponents `u` and `v` has `u = v`. The
