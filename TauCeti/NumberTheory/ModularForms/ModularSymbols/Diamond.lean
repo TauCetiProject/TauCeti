@@ -23,6 +23,8 @@ period pairing uses the induced action by precomposition.
 The construction follows the quotient description of diamond operators in
 Diamond–Shurman, *A First Course in Modular Forms*, §5.1, and the coinvariant description
 of modular symbols in Stein, *Modular Forms: A Computational Approach*, §8.2.
+It adapts the chosen-representative construction of Chris Birkbeck in
+`TauCeti/NumberTheory/ModularForms/DiamondOperators.lean` to modular-symbol coinvariants.
 -/
 
 public section
@@ -37,7 +39,7 @@ variable {R : Type*} [CommRing R] {w N : ℕ}
 
 /-- The action of `g ∈ Γ₀(N)` on modular symbols at level `Γ₁(N)`, induced by the
 `SL₂(ℤ)`-action before passing to coinvariants. -/
-noncomputable def gamma0Symbol (g : ↥(Gamma0 N)) :
+private noncomputable def gamma0Symbol (g : ↥(Gamma0 N)) :
     Module.End R (ModularSymbols R (Gamma1 N) w) :=
   Coinvariants.lift _
     (Coinvariants.mk _ ∘ₗ symbolRep R w (g : SL(2, ℤ))) fun h ↦ by
@@ -63,7 +65,7 @@ noncomputable def gamma0Symbol (g : ↥(Gamma0 N)) :
 
 /-- On a coinvariant class, `gamma0Symbol` applies the representative to the class. -/
 @[simp]
-theorem gamma0Symbol_mk (g : ↥(Gamma0 N))
+private theorem gamma0Symbol_mk (g : ↥(Gamma0 N))
     (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
     gamma0Symbol g (Coinvariants.mk _ x) =
       Coinvariants.mk _ (symbolRep R w (g : SL(2, ℤ)) x) :=
@@ -71,7 +73,7 @@ theorem gamma0Symbol_mk (g : ↥(Gamma0 N))
 
 /-- A representative in `Γ₀(N)` sends a modular symbol to the symbol with translated
 endpoints and the inverse matrix action on its binary form. -/
-theorem gamma0Symbol_symbol (g : ↥(Gamma0 N)) (α β : OnePoint ℚ)
+private theorem gamma0Symbol_symbol (g : ↥(Gamma0 N)) (α β : OnePoint ℚ)
     (P : homogeneousSubmodule (Fin 2) R w) :
     gamma0Symbol g (symbol (Gamma1 N) α β P) =
       symbol (Gamma1 N) (mapGL ℚ (g : SL(2, ℤ)) • α)
@@ -85,7 +87,7 @@ theorem gamma0Symbol_symbol (g : ↥(Gamma0 N)) (α β : OnePoint ℚ)
 
 /-- The action of the identity of `Γ₀(N)` is the identity on modular symbols. -/
 @[simp]
-theorem gamma0Symbol_one :
+private theorem gamma0Symbol_one :
     gamma0Symbol (R := R) (w := w) (N := N) 1 = 1 := by
   apply Coinvariants.hom_ext
   apply LinearMap.ext
@@ -95,7 +97,7 @@ theorem gamma0Symbol_one :
   simp
 
 /-- The `Γ₀(N)`-action on modular symbols respects multiplication. -/
-theorem gamma0Symbol_mul (g h : ↥(Gamma0 N)) :
+private theorem gamma0Symbol_mul (g h : ↥(Gamma0 N)) :
     gamma0Symbol (R := R) (w := w) (g * h) =
       gamma0Symbol g * gamma0Symbol h := by
   apply Coinvariants.hom_ext
@@ -106,7 +108,7 @@ theorem gamma0Symbol_mul (g h : ↥(Gamma0 N)) :
   simp [map_mul, Module.End.mul_apply]
 
 /-- Elements of `Γ₁(N)` act trivially on its modular symbols. -/
-theorem gamma0Symbol_eq_one (g : ↥(Gamma0 N)) (hg : (g : SL(2, ℤ)) ∈ Gamma1 N) :
+private theorem gamma0Symbol_eq_one (g : ↥(Gamma0 N)) (hg : (g : SL(2, ℤ)) ∈ Gamma1 N) :
     gamma0Symbol (R := R) (w := w) g = 1 := by
   apply Coinvariants.hom_ext
   apply LinearMap.ext
@@ -117,7 +119,7 @@ theorem gamma0Symbol_eq_one (g : ↥(Gamma0 N)) (hg : (g : SL(2, ℤ)) ∈ Gamma
     ((symbolRep R w).comp (Gamma1 N).subtype) (⟨g, hg⟩ : Gamma1 N) x
 
 /-- Representatives with the same lower-right entry induce the same action. -/
-theorem gamma0Symbol_eq_of_Gamma0Map_eq (g h : ↥(Gamma0 N))
+private theorem gamma0Symbol_eq_of_Gamma0Map_eq (g h : ↥(Gamma0 N))
     (heq : (Gamma0Map N).toHomUnits g = (Gamma0Map N).toHomUnits h) :
     gamma0Symbol (R := R) (w := w) g = gamma0Symbol h := by
   have hmem : ((g : SL(2, ℤ)) * (h : SL(2, ℤ))⁻¹) ∈ Gamma1 N :=
@@ -128,62 +130,62 @@ theorem gamma0Symbol_eq_of_Gamma0Map_eq (g h : ↥(Gamma0 N))
   simpa [hgh] using hmul
 
 /-- The diamond operator `⟨d⟩` on modular symbols at level `Γ₁(N)`. -/
-noncomputable def diamondSymbol (d : (ZMod N)ˣ) :
+noncomputable def diamondOp (d : (ZMod N)ˣ) :
     Module.End R (ModularSymbols R (Gamma1 N) w) :=
   gamma0Symbol (Gamma0Map_toHomUnits_surjective d).choose
 
 /-- Any representative of `d` computes the diamond operator. -/
-theorem diamondSymbol_eq_gamma0Symbol (d : (ZMod N)ˣ) (g : ↥(Gamma0 N))
+private theorem diamondOp_eq_gamma0Symbol (d : (ZMod N)ˣ) (g : ↥(Gamma0 N))
     (hg : (Gamma0Map N).toHomUnits g = d) :
-    diamondSymbol (R := R) (w := w) d = gamma0Symbol g := by
+    diamondOp (R := R) (w := w) d = gamma0Symbol g := by
   apply gamma0Symbol_eq_of_Gamma0Map_eq
   exact (Gamma0Map_toHomUnits_surjective d).choose_spec.trans hg.symm
 
 /-- The diamond operator on a coinvariant class. -/
-theorem diamondSymbol_mk (d : (ZMod N)ˣ) (g : ↥(Gamma0 N))
+theorem diamondOp_mk (d : (ZMod N)ˣ) (g : ↥(Gamma0 N))
     (hg : (Gamma0Map N).toHomUnits g = d)
     (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
-    diamondSymbol d (Coinvariants.mk _ x) =
+    diamondOp d (Coinvariants.mk _ x) =
       Coinvariants.mk _ (symbolRep R w (g : SL(2, ℤ)) x) := by
-  rw [diamondSymbol_eq_gamma0Symbol d g hg, gamma0Symbol_mk]
+  rw [diamondOp_eq_gamma0Symbol d g hg, gamma0Symbol_mk]
 
 /-- On symbols, `⟨d⟩` translates both endpoints by a representative of `d` and acts on
 the binary form by its inverse. -/
-theorem diamondSymbol_symbol (d : (ZMod N)ˣ) (g : ↥(Gamma0 N))
+theorem diamondOp_symbol (d : (ZMod N)ˣ) (g : ↥(Gamma0 N))
     (hg : (Gamma0Map N).toHomUnits g = d) (α β : OnePoint ℚ)
     (P : homogeneousSubmodule (Fin 2) R w) :
-    diamondSymbol d (symbol (Gamma1 N) α β P) =
+    diamondOp d (symbol (Gamma1 N) α β P) =
       symbol (Gamma1 N) (mapGL ℚ (g : SL(2, ℤ)) • α)
         (mapGL ℚ (g : SL(2, ℤ)) • β)
         (binaryFormSLRep R w (g : SL(2, ℤ)) P) := by
-  rw [diamondSymbol_eq_gamma0Symbol d g hg, gamma0Symbol_symbol]
+  rw [diamondOp_eq_gamma0Symbol d g hg, gamma0Symbol_symbol]
 
 /-- The identity diamond acts as the identity. -/
 @[simp]
-theorem diamondSymbol_one : diamondSymbol (R := R) (w := w) (N := N) 1 = 1 := by
-  rw [diamondSymbol_eq_gamma0Symbol 1 1 (map_one _)]
+theorem diamondOp_one : diamondOp (R := R) (w := w) (N := N) 1 = 1 := by
+  rw [diamondOp_eq_gamma0Symbol 1 1 (map_one _)]
   exact gamma0Symbol_one
 
 /-- Diamond operators multiply according to their indices. -/
-theorem diamondSymbol_mul (d e : (ZMod N)ˣ) :
-    diamondSymbol (R := R) (w := w) (d * e) =
-      diamondSymbol d * diamondSymbol e := by
+theorem diamondOp_mul (d e : (ZMod N)ˣ) :
+    diamondOp (R := R) (w := w) (d * e) =
+      diamondOp d * diamondOp e := by
   obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
   obtain ⟨h, hh⟩ := Gamma0Map_toHomUnits_surjective (N := N) e
-  rw [diamondSymbol_eq_gamma0Symbol (d * e) (g * h) (by simp [map_mul, hg, hh]),
-    diamondSymbol_eq_gamma0Symbol d g hg, diamondSymbol_eq_gamma0Symbol e h hh]
+  rw [diamondOp_eq_gamma0Symbol (d * e) (g * h) (by simp [map_mul, hg, hh]),
+    diamondOp_eq_gamma0Symbol d g hg, diamondOp_eq_gamma0Symbol e h hh]
   exact gamma0Symbol_mul g h
 
 /-- The diamond action as a monoid homomorphism into the endomorphism ring of modular symbols. -/
-noncomputable def diamondSymbolHom :
+noncomputable def diamondOpHom :
     (ZMod N)ˣ →* Module.End R (ModularSymbols R (Gamma1 N) w) where
-  toFun := diamondSymbol
-  map_one' := diamondSymbol_one
-  map_mul' := diamondSymbol_mul
+  toFun := diamondOp
+  map_one' := diamondOp_one
+  map_mul' := diamondOp_mul
 
 @[simp]
-theorem diamondSymbolHom_apply (d : (ZMod N)ˣ) :
-    diamondSymbolHom (R := R) (w := w) d = diamondSymbol d := (rfl)
+theorem diamondOpHom_apply (d : (ZMod N)ˣ) :
+    diamondOpHom (R := R) (w := w) d = diamondOp d := (rfl)
 
 end TauCeti.ModularSymbols
 
