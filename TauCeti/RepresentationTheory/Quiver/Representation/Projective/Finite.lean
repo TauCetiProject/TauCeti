@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
+public import TauCeti.Algebra.Category.FGModuleCat.Projective
 
 /-!
 # Finiteness of vertex projectives
@@ -66,5 +67,16 @@ noncomputable def vertexProjectiveModuleFG [FiniteDimensional k (pathAlgebra k Q
 theorem vertexProjectiveModuleFG_obj [FiniteDimensional k (pathAlgebra k Q)] (i : Q) :
     (vertexProjectiveModuleFG k Q i).obj = indecProjModule k Q i := by
   rfl
+
+/-- A finite vertex projective is projective as a path-algebra module. -/
+instance [FiniteDimensional k (pathAlgebra k Q)] (i : Q) :
+    Module.Projective (pathAlgebra k Q) (vertexProjectiveModuleFG k Q i) := by
+  change Module.Projective (pathAlgebra k Q) (indecProjModule k Q i)
+  infer_instance
+
+/-- A finite vertex projective is a projective object of finitely generated modules. -/
+instance [FiniteDimensional k (pathAlgebra k Q)] (i : Q) :
+    Projective (vertexProjectiveModuleFG k Q i) :=
+  FGModuleCat.projective_of_moduleProjective (pathAlgebra k Q) _
 
 end TauCeti
