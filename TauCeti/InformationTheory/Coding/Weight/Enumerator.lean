@@ -323,6 +323,7 @@ variable {ι R : Type*} [Fintype ι] [Zero R] [DecidableEq R]
 
 /-- Summing the coordinate factor of a weight monomial, `X` at a zero letter and `Y` at a nonzero
 one, over an alphabet with `q` letters gives `X + (q - 1) Y`. -/
+@[simp]
 theorem sum_ite_eq_zero_X_zero_X_one [Fintype R] :
     (∑ a : R, if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) =
       X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1 := by

@@ -22,17 +22,14 @@ satisfies `q W(X,Y) = (X + (q - 1) Y)^n + (q - 1) (X - Y)^n` over the integers a
 The nonempty hypothesis for the repetition formula matters: at length zero the repetition code
 has one word, rather than `q` words.
 
-The parity-check enumerator is computed by counting, without the MacWilliams identity, so that
-comparing the two enumerators is an independent check of that identity. More generally, over a
-finite additive group `A` with `q` elements, the words with coordinate sum `a` have enumerator
+Together, the repetition and parity-check enumerators give an independent check of the
+MacWilliams identity. More generally, over a finite additive group `A` with `q` elements,
+the words with coordinate sum `a` have enumerator
 
 ```text
 q W(X,Y) = (X + (q - 1) Y)^n + (q - 1) (X - Y)^n    if a = 0,
 q W(X,Y) = (X + (q - 1) Y)^n - (X - Y)^n            if a ≠ 0.
 ```
-
-Splitting off one coordinate `c` reduces the sum `a` to `a - c` on the remaining coordinates,
-and both formulas follow together by induction on the coordinate type.
 
 ## References
 

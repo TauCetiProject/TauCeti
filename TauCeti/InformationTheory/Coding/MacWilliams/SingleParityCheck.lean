@@ -13,11 +13,10 @@ public import TauCeti.InformationTheory.Coding.Elementary.WeightEnumerator
 
 The repetition and single-parity-check codes are dual. Applying the MacWilliams substitution to
 the explicit parity-check enumerator gives its cardinality times the repetition enumerator. The
-calculation uses the fact that the substitution squares to multiplication of both variables by
-the alphabet size. The converse substitution, applied to the repetition enumerator, is the
+substitution squares to multiplication of both variables by the alphabet size. Applied to the
+repetition enumerator, the substitution gives the
 parity-check enumerator formula `TauCeti.natCard_mul_weightEnumerator_singleParityCheckCode`.
-Both enumerators are computed directly in `Elementary.WeightEnumerator`, without the MacWilliams
-identity, so these calculations check that identity independently for this pair of dual codes.
+These explicit formulas independently check the MacWilliams identity for this pair of dual codes.
 
 Reference: W. C. Huffman and V. Pless, *Fundamentals of Error-Correcting Codes*, §7.2.
 -/
