@@ -8,10 +8,10 @@ module
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.FieldTheory.LinearDisjoint
 import Mathlib.NumberTheory.Padics.PadicIntegers
 import Mathlib.RingTheory.Polynomial.Eisenstein.IsIntegral
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
 # Irreducibility of the cyclotomic polynomial from the degree of a cyclotomic extension
@@ -163,12 +163,13 @@ theorem irreducible_cyclotomic_two_pow_ratPadic (n : ℕ) :
 
 section BaseChange
 
-variable {n : ℕ} [NeZero n] {F : Type*} [Field F] [NeZero (n : F)]
+variable {n : ℕ} {F : Type*} [Field F]
   {K : Type*} [Field K] [Algebra F K] [FiniteDimensional F K]
 
 /-- Irreducibility of `Φ_n` is preserved by a finite base change of degree coprime to `φ(n)`.
 This is useful for transporting cyclotomic irreducibility through extensions whose degrees have no
-common factor with the cyclotomic degree.
+common factor with the cyclotomic degree. No assumption on the characteristic is needed: the proof
+only uses that `Φ_n` is monic of degree `φ(n)`.
 
 Source: the linear-disjointness theory in Lang, *Algebra*, revised third edition, Chapter VIII,
 §3. -/
@@ -176,27 +177,20 @@ theorem irreducible_cyclotomic_of_coprime_finrank
     (hirr : Irreducible (cyclotomic n F))
     (hcop : n.totient.Coprime (Module.finrank F K)) :
     Irreducible (cyclotomic n K) := by
-  let _ : NeZero (n : K) :=
-    ⟨by
-      rw [← map_natCast (algebraMap F K)]
-      simpa using (algebraMap F K).injective.ne (NeZero.ne (n : F))⟩
-  let _ : NeZero (n : AlgebraicClosure K) :=
-    (inferInstance : NeZero (n : K)).of_injective
-      (algebraMap K (AlgebraicClosure K)).injective
-  let ζ : AlgebraicClosure K :=
-    HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) n |>.choose
-  have hζ : IsPrimitiveRoot ζ n :=
-    HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) n |>.choose_spec
-  let M := IntermediateField.adjoin F ({ζ} : Set (AlgebraicClosure K))
-  let L := IntermediateField.adjoin K ({ζ} : Set (AlgebraicClosure K))
-  let _ : IsCyclotomicExtension {n} F M :=
-    hζ.intermediateField_adjoin_isCyclotomicExtension F
-  let _ : IsCyclotomicExtension {n} K L :=
-    hζ.intermediateField_adjoin_isCyclotomicExtension K
-  let _ : FiniteDimensional F M := IsCyclotomicExtension.finiteDimensional {n} F M
-  let _ : FiniteDimensional K L := IsCyclotomicExtension.finiteDimensional {n} K L
-  have hMfin : Module.finrank F M = n.totient :=
-    IsCyclotomicExtension.finrank M hirr
+  -- Adjoin a root `α` of `Φ_n` to `F` and to `K` inside an algebraic closure of `K`.
+  obtain ⟨α, hα⟩ := IsAlgClosed.exists_aeval_eq_zero (AlgebraicClosure K) (cyclotomic n F)
+    (degree_pos_of_irreducible hirr).ne'
+  have hαK : aeval α (cyclotomic n K) = 0 := by
+    rwa [← map_cyclotomic n (algebraMap F K), aeval_map_algebraMap]
+  have hintF : IsIntegral F α := ⟨_, cyclotomic.monic n F, hα⟩
+  have hintK : IsIntegral K α := ⟨_, cyclotomic.monic n K, hαK⟩
+  let M := IntermediateField.adjoin F ({α} : Set (AlgebraicClosure K))
+  let L := IntermediateField.adjoin K ({α} : Set (AlgebraicClosure K))
+  have hMfin : Module.finrank F M = n.totient := by
+    rw [IntermediateField.adjoin.finrank hintF,
+      ← minpoly.eq_of_irreducible_of_monic hirr hα (cyclotomic.monic n F), natDegree_cyclotomic]
+  -- `F(α)` has degree `φ(n)`, coprime to `[K : F]`, so it is linearly disjoint from `K` and
+  -- `K(α)` still has degree `φ(n)` over `K`.
   have hdis : M.LinearDisjoint K :=
     IntermediateField.LinearDisjoint.of_finrank_coprime (hMfin ▸ hcop)
   have hMle : M ≤ L.restrictScalars F := by
@@ -213,12 +207,20 @@ theorem irreducible_cyclotomic_of_coprime_finrank
       obtain rfl := Set.mem_singleton_iff.mp hx
       apply IntermediateField.subset_adjoin K (M : Set (AlgebraicClosure K))
       dsimp only [M]
-      exact IntermediateField.subset_adjoin F _ (Set.mem_singleton ζ)
+      exact IntermediateField.subset_adjoin F _ (Set.mem_singleton x)
+  have : FiniteDimensional F M := IntermediateField.adjoin.finiteDimensional hintF
   have hrank := hdis.adjoin_rank_eq_rank_left_of_isAlgebraic_left
+  have : FiniteDimensional K L := IntermediateField.adjoin.finiteDimensional hintK
   rw [hadj, ← Module.finrank_eq_rank' K L, ← Module.finrank_eq_rank' F M] at hrank
-  have hfin : Module.finrank K L = Module.finrank F M := by exact_mod_cast hrank
-  exact IsCyclotomicExtension.irreducible_cyclotomic_of_totient_le_finrank K L
-    (by rw [hfin, hMfin])
+  have hLfin : Module.finrank K L = n.totient := by
+    rw [← hMfin]
+    exact_mod_cast hrank
+  -- Hence the minimal polynomial of `α` over `K` is a monic factor of `Φ_n` of full degree.
+  have hdeg : (cyclotomic n K).natDegree ≤ (minpoly K α).natDegree := by
+    rw [natDegree_cyclotomic, ← hLfin, IntermediateField.adjoin.finrank hintK]
+  rw [eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hintK) (cyclotomic.monic n K)
+    (minpoly.dvd K α hαK) hdeg]
+  exact minpoly.irreducible hintK
 
 end BaseChange
 
