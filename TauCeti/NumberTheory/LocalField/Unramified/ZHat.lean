@@ -38,10 +38,10 @@ open CategoryTheory IntermediateField
 
 namespace TauCeti
 
-universe u
+universe u v w
 
 variable (K : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] (Ω : Type u) [Field Ω] [Algebra K Ω] [IsSepClosed Ω]
+  [IsNonarchimedeanLocalField K] (Ω : Type v) [Field Ω] [Algebra K Ω] [IsSepClosed Ω]
 
 /-- The degree-`f` unramified extension, regarded as an intermediate field of the maximal
 unramified extension. -/
@@ -98,12 +98,12 @@ private theorem orderOf_restrict_maximalUnramifiedFrobenius (f : ℕ) (hf : f �
 
 /-- The canonical generator generates every finite quotient of the defining copy of `ℤ`. -/
 private theorem mem_zpowers_quotientGenerator
-    (H : FiniteIndexNormalSubgroup (ULift.{u} (Multiplicative ℤ))) :
-    ∀ x : ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup,
+    (H : FiniteIndexNormalSubgroup (ULift.{w} (Multiplicative ℤ))) :
+    ∀ x : ULift.{w} (Multiplicative ℤ) ⧸ H.toSubgroup,
       x ∈ Subgroup.zpowers
         (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))) := by
   have hf : zpowersHom _ (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1)) :
-      ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup) =
+      ULift.{w} (Multiplicative ℤ) ⧸ H.toSubgroup) =
       (QuotientGroup.mk' H.toSubgroup).comp MulEquiv.ulift.symm.toMonoidHom :=
     MonoidHom.ext_mint rfl
   rw [← Subgroup.eq_top_iff', ← Subgroup.range_zpowersHom, hf, MonoidHom.range_eq_top]
@@ -111,15 +111,15 @@ private theorem mem_zpowers_quotientGenerator
 
 /-- Every finite coordinate of `ℤ̂` is detected by restriction to a finite unramified level. -/
 private theorem exists_finiteQuotient_maximalUnramifiedFrobenius :
-    ∀ H : FiniteIndexNormalSubgroup (ULift.{u} (Multiplicative ℤ)),
+    ∀ H : FiniteIndexNormalSubgroup (ULift.{max u v} (Multiplicative ℤ)),
       letI : TopologicalSpace
-        (ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup) := ⊥
+        (ULift.{max u v} (Multiplicative ℤ) ⧸ H.toSubgroup) := ⊥
       ∃ q : Gal(maximalUnramifiedExtension K Ω/K) →ₜ*
-          (ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup),
+          (ULift.{max u v} (Multiplicative ℤ) ⧸ H.toSubgroup),
         q (maximalUnramifiedFrobenius K Ω) =
           QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1)) := by
   intro H
-  let Q := ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup
+  let Q := ULift.{max u v} (Multiplicative ℤ) ⧸ H.toSubgroup
   let _ : TopologicalSpace Q := ⊥
   let _ : DiscreteTopology Q := ⟨rfl⟩
   let gQ : Q := QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))
@@ -160,7 +160,7 @@ private theorem exists_finiteQuotient_maximalUnramifiedFrobenius :
 extension is bijective. -/
 private theorem maximalUnramifiedFrobeniusLift_bijective :
     Function.Bijective (zHat.lift (maximalUnramifiedFrobenius K Ω) :
-      zHat.{u} →ₜ* Gal(maximalUnramifiedExtension K Ω/K)) :=
+      zHat.{max u v} →ₜ* Gal(maximalUnramifiedExtension K Ω/K)) :=
   ⟨zHat.lift_injective_of_finite_quotients _
       (exists_finiteQuotient_maximalUnramifiedFrobenius K Ω),
     zHat.lift_surjective _ topologicalClosure_zpowers_maximalUnramifiedFrobenius⟩
@@ -168,12 +168,12 @@ private theorem maximalUnramifiedFrobeniusLift_bijective :
 /-- **The Galois group of the maximal unramified extension is the profinite integers.** This
 continuous multiplicative equivalence sends arithmetic Frobenius to `zHat.gen`. -/
 noncomputable def maximalUnramifiedGaloisGroupEquivZHat :
-    Gal(maximalUnramifiedExtension K Ω/K) ≃ₜ* zHat.{u} := by
-  let f : zHat.{u} →ₜ* Gal(maximalUnramifiedExtension K Ω/K) :=
+    Gal(maximalUnramifiedExtension K Ω/K) ≃ₜ* zHat.{max u v} := by
+  let f : zHat.{max u v} →ₜ* Gal(maximalUnramifiedExtension K Ω/K) :=
     zHat.lift (maximalUnramifiedFrobenius K Ω)
   have hf := maximalUnramifiedFrobeniusLift_bijective K Ω
   have : T2Space Gal(maximalUnramifiedExtension K Ω/K) := krullTopology_t2
-  let e : zHat.{u} ≃ₜ* Gal(maximalUnramifiedExtension K Ω/K) :=
+  let e : zHat.{max u v} ≃ₜ* Gal(maximalUnramifiedExtension K Ω/K) :=
     ContinuousMulEquiv.mk (MulEquiv.ofBijective f.toMonoidHom hf) f.continuous
       (f.continuous.continuous_symm_of_equiv_compact_to_t2
         (f := (MulEquiv.ofBijective f.toMonoidHom hf).toEquiv))
