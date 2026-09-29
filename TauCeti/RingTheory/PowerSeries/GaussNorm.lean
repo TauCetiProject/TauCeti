@@ -525,6 +525,7 @@ theorem coe_gaussValuation (hc : 0 < c) (f : PowerSeries.IsRestricted.subring (R
     (gaussValuation hc f : ℝ) = (f : PowerSeries R).gaussNorm norm c := (rfl)
 
 /-- The Gauss valuation vanishes only at zero: its support is trivial. -/
+@[simp]
 theorem gaussValuation_eq_zero_iff (hc : 0 < c)
     {f : PowerSeries.IsRestricted.subring (R := R) c} :
     gaussValuation hc f = 0 ↔ f = 0 := by

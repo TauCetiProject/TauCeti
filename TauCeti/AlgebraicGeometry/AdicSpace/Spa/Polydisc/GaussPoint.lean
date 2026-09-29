@@ -10,7 +10,9 @@ public import TauCeti.RingTheory.PowerSeries.GaussNorm
 public import TauCeti.RingTheory.Huber.Restricted.OneVariable
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.Basic
+import TauCeti.RingTheory.Huber.Continuous.PowerBounded
 import Mathlib.Analysis.Normed.Module.Seminorm.Norm
+import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
 # Gauss points of the closed unit disc
@@ -26,12 +28,12 @@ power series ring, the coordinate ring of the closed unit disc `closedPolydisc 1
 is a multiplicative ultrametric norm on `K⟨T⟩`, hence a valuation. It is continuous and at most
 one on the power-bounded elements, so it defines a point `η_r` of the closed unit disc. At `r = 1`
 this is the Gauss point of the disc; for `r < 1` it is the Gauss norm of the disc of radius `r`
-about the origin, one of the non-classical points of Wedhorn's Example 7.57. The valuation and its
+about the origin, one of the points of Wedhorn's Example 7.57. The valuation and its
 continuity need only a normed commutative ring with multiplicative ultrametric norm in place of
 `K`; the bound on power-bounded elements uses nonzero constants of small norm.
 
-These points are not classical: the support of `η_r` is trivial, while the classical point at `a`
-kills `T - a`. Distinct radii give distinct points, since the radius is recovered by comparing
+When `K` is complete, these points are not classical: the support of `η_r` is trivial, while the
+classical point at `a` kills `T - a`. Distinct radii give distinct points by comparing
 powers of `T` with constants. The file does not treat Wedhorn's classification of all points of
 the disc, nor discs about centres other than the origin.
 
@@ -51,7 +53,8 @@ the disc, nor discs about centres other than the origin.
   conditions for membership in the closed unit disc.
 * `TauCeti.ValuationSpectrum.gaussPoint_vle_iff`: `η_r` compares elements by their Gauss norms.
 * `TauCeti.ValuationSpectrum.supp_gaussPoint`: the support of `η_r` is trivial.
-* `TauCeti.ValuationSpectrum.gaussPoint_ne_classicalPoint`: `η_r` is not a classical point.
+* `TauCeti.ValuationSpectrum.gaussPoint_ne_classicalPoint`: for complete `K`, `η_r` is not a
+  classical point.
 * `TauCeti.ValuationSpectrum.gaussPoint_inj`: distinct radii give distinct points.
 
 ## References
@@ -164,6 +167,7 @@ theorem coe_closedDiscGaussValuation_weightedX (hr₀ : 0 < r) (hr₁ : r ≤ 1)
       (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) 1
 
 /-- The Gauss valuation vanishes only at zero. -/
+@[simp]
 theorem closedDiscGaussValuation_eq_zero_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     {f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight} :
     closedDiscGaussValuation hr₀ hr₁ f = 0 ↔ f = 0 := by
@@ -171,9 +175,7 @@ theorem closedDiscGaussValuation_eq_zero_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     TauCeti.PowerSeries.gaussValuation_eq_zero_iff, map_eq_zero_iff _
       (toRestrictedSubring_injective _)]
 
-/-- **The Gauss valuation is continuous.** A series whose coefficients all lie in an open
-subgroup of `R` inside the ball of radius `γ / 2` has Gauss valuation less than `γ`, so each
-sublevel set contains an open subgroup of `R⟨T⟩`. -/
+/-- **The Gauss valuation is continuous** for `0 < r ≤ 1`. -/
 theorem isContinuous_closedDiscGaussValuation (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     (closedDiscGaussValuation (R := R) hr₀ hr₁).IsContinuous := by
   refine Valuation.isContinuous_of_forall_isOpen_lt fun γ ↦ ?_
@@ -195,32 +197,25 @@ section NontriviallyNormedField
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
   {r : ℝ}
 
-/-- **The Gauss valuation is at most one on power-bounded elements.** If `f` is power-bounded, a
-nonzero constant `c` multiplies every power `fⁿ` into the series with coefficients in the unit
-ball, so `‖c‖ |f|_rⁿ ≤ 1` for all `n`, which forces `|f|_r ≤ 1`. -/
+private theorem mulArchimedean_valueGroup₀ {A : Type*} [CommRing A]
+    (w : Valuation A ℝ≥0) : MulArchimedean w.ValueGroup₀ :=
+  MulArchimedean.comap MonoidWithZeroHom.ValueGroup₀.embedding.toMonoidHom
+    MonoidWithZeroHom.ValueGroup₀.embedding_strictMono
+
+/-- **The Gauss valuation is at most one on power-bounded elements** of `K⟨T⟩`. -/
 theorem closedDiscGaussValuation_le_one_of_isPowerBounded (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     {f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight}
     (hf : IsPowerBounded f) : closedDiscGaussValuation hr₀ hr₁ f ≤ 1 := by
-  obtain ⟨U, hU⟩ := NonarchimedeanAddGroup.is_nonarchimedean _
-    (Metric.ball_mem_nhds (0 : K) one_pos)
-  obtain ⟨V, hV, hVU⟩ := isBounded_iff.mp (isPowerBounded_iff.mp hf) _
-    ((hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).mem_of_mem (i := U) trivial)
-  obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.mp
-    ((continuous_weightedC (T := fun _ : Fin 1 ↦ ({1} : Set K))
-      isWeightFamily_one_weight).continuousAt.preimage_mem_nhds
-      (by rwa [map_zero]))
-  obtain ⟨c, hc₀, hcε⟩ := NormedField.exists_norm_lt K hε
-  have hbound (n : ℕ) : ‖c‖₊ * closedDiscGaussValuation hr₀ hr₁ f ^ n ≤ 1 := by
-    have hmem := hVU (Set.mul_mem_mul (hεV (mem_ball_zero_iff.mpr hcε)) (Set.mem_range_self n))
-    have hle := closedDiscGaussValuation_le_of_forall_norm_coeff_le hr₀ hr₁
-      (f := weightedC _ isWeightFamily_one_weight c * f ^ n) fun ν ↦
-        (mem_ball_zero_iff.mp (hU (by simpa using mem_weightedNhd.mp hmem ν))).le
-    rw [map_mul, map_pow, closedDiscGaussValuation_weightedC] at hle
-    exact_mod_cast hle
-  by_contra! h
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt ‖c‖₊⁻¹ h
-  have hc : 0 < ‖c‖₊ := by exact_mod_cast hc₀
-  exact (hbound n).not_gt ((inv_lt_iff_one_lt_mul₀' hc).mp hn)
+  let v := closedDiscGaussValuation (R := K) hr₀ hr₁
+  change v f ≤ 1
+  obtain ⟨c, hc₀, hc₁⟩ := NormedField.exists_norm_lt K one_pos
+  let _ : MulArchimedean v.ValueGroup₀ := mulArchimedean_valueGroup₀ v
+  exact (isContinuous_closedDiscGaussValuation hr₀ hr₁ : v.IsContinuous).le_one_of_isPowerBounded
+    ((show IsTopologicallyNilpotent c from
+      tendsto_pow_atTop_nhds_zero_of_norm_lt_one hc₁).map
+        (continuous_weightedC isWeightFamily_one_weight))
+    (by rw [closedDiscGaussValuation_weightedC]
+        exact nnnorm_ne_zero_iff.mpr (norm_pos_iff.mp hc₀)) hf
 
 /-- **The Gauss point `η_r` of the closed unit disc**, for `0 < r ≤ 1`: the point of
 `Spa (K⟨T⟩, K⟨T⟩°)` given by the Gauss valuation `f ↦ sup_n ‖aₙ‖ rⁿ`. At `r = 1` it is the Gauss
@@ -233,8 +228,7 @@ noncomputable def gaussPoint (hr₀ : 0 < r) (hr₁ : r ≤ 1) : closedPolydisc 
         exact closedDiscGaussValuation_le_one_of_isPowerBounded hr₀ hr₁
           (mem_powerBoundedSubring.mp hf)⟩⟩
 
-/-- The underlying point in `Spv K⟨T⟩` of the Gauss point is the one defined by the Gauss
-valuation. -/
+/-- The underlying point in `Spv K⟨T⟩` is defined by the Gauss valuation. -/
 theorem gaussPoint_val (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     (gaussPoint (K := K) hr₀ hr₁).1 = ofValuation (closedDiscGaussValuation hr₀ hr₁) :=
   (rfl)
@@ -258,8 +252,7 @@ theorem gaussPoint_vle_zero_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1)
 theorem supp_gaussPoint (hr₀ : 0 < r) (hr₁ : r ≤ 1) : (gaussPoint (K := K) hr₀ hr₁).1.supp = ⊥ :=
   Ideal.ext fun _ ↦ by rw [mem_supp_iff, gaussPoint_vle_zero_iff, Ideal.mem_bot]
 
-/-- **Gauss points are not classical.** The classical point at `a` kills `T - a`, while the
-support of `η_r` is trivial. -/
+/-- **Gauss points over a complete field are not classical points.** -/
 theorem gaussPoint_ne_classicalPoint [CompleteSpace K] (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (x : spa (powerBoundedSubring K)) (a : Fin 1 → K) (ha : ∀ i, IsPowerBounded (a i)) :
     gaussPoint hr₀ hr₁ ≠ classicalPoint x a ha := by
@@ -272,8 +265,7 @@ theorem gaussPoint_ne_classicalPoint [CompleteSpace K] (hr₀ : 0 < r) (hr₁ : 
   have hcoeff := congrArg (MvPowerSeries.coeff (Finsupp.single 0 1)) (congrArg Subtype.val hvle)
   simp [MvPowerSeries.coeff_X, MvPowerSeries.coeff_C] at hcoeff
 
-/-- **Distinct radii give distinct Gauss points.** For `r < s` a power `Tᵐ` and a constant `c`
-with `rᵐ ≤ ‖c‖ < sᵐ` are compared differently by `η_r` and `η_s`. -/
+/-- **Distinct radii `0 < r, s ≤ 1` give distinct Gauss points.** -/
 theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < s) (hs₁ : s ≤ 1) :
     gaussPoint (K := K) hr₀ hr₁ = gaussPoint hs₀ hs₁ ↔ r = s := by
   refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩
