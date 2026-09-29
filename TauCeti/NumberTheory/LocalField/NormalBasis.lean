@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.NormalBasis
+public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.IntegerRing
 
@@ -19,7 +20,7 @@ be taken in `𝒪[L]`. The `𝒪[K]`-span `A` of the orbit of such an `α` is th
 
 * stable under `G` (Mathlib's `Module.End.span_orbit_mem_invtSubmodule`);
 * free over `𝒪[K]` on the conjugates of `α`, that is, free of rank one over the group ring
-  `𝒪[K][G]` with generator `α`;
+  `𝒪[K][G]` with generator `α` (`TauCeti.spanOrbitEquiv`);
 * open in `𝒪[L]`: it contains a power of the maximal ideal `𝓂[L]`.
 
 In general `𝒪[L]` itself is not free over `𝒪[K][G]` (this holds only for tamely ramified
@@ -31,16 +32,24 @@ Galois-stable open subgroups of the units of `𝒪[L]`, with every successive qu
 `A / ϖ • A`, a free module over the group ring `(𝒪[K] ⧸ ϖ)[G]`. Such a filtration of the local
 units is how their Herbrand quotient is computed in the cyclic case.
 
+## Main definitions
+
+* `TauCeti.spanOrbitEquiv`: the isomorphism of representations from the group ring `𝒪[K][G]` onto
+  the `𝒪[K]`-span of the orbit of an element of `𝒪[L]` whose conjugates form a `K`-basis of `L`.
+
 ## Main results
 
-* `TauCeti.exists_linearIndependent_algEquiv_apply_integerRing`: an integral normal basis
-  element exists.
-* `TauCeti.linearIndependent_smul_integerRing`: the conjugates of an integral normal basis
-  element are linearly independent over `𝒪[K]`.
-* `TauCeti.exists_pow_maximalIdeal_le_span_orbit`: the `𝒪[K]`-span of the orbit of an integral
-  normal basis element contains a power of `𝓂[L]`.
-* `TauCeti.exists_span_orbit_mul_le_smul`: for every nonzero `ϖ ∈ 𝒪[K]` there is an integral
-  normal basis element whose orbit spans a lattice `A` with `A * A ≤ ϖ • A`.
+* `TauCeti.exists_linearIndependent_algEquiv_apply_integerRing`: some element of `𝒪[L]` has
+  conjugates forming a `K`-basis of `L`.
+* `TauCeti.linearIndependent_smul_integerRing`: the conjugates of such an element are linearly
+  independent over `𝒪[K]`.
+* `TauCeti.exists_pow_maximalIdeal_le_span_orbit`: the `𝒪[K]`-span of the orbit of such an
+  element contains a power of `𝓂[L]`.
+* `TauCeti.exists_span_orbit_mul_le_smul`: for every nonzero `ϖ ∈ 𝒪[K]` there is such an element
+  whose orbit spans a lattice `A` with `A * A ≤ ϖ • A`.
+
+These elements lie in `𝒪[L]` and their conjugates form a `K`-basis of `L`; they need not give an
+`𝒪[K]`-basis of `𝒪[L]`.
 
 ## References
 
@@ -71,11 +80,44 @@ theorem linearIndependent_smul_integerRing {α : 𝒪[L]}
     ext σ
     simp [Algebra.algebraMap_ofSubsemiring_apply]
 
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- **The span of the orbit is free of rank one over the group ring.** If the conjugates of
+`α ∈ 𝒪[L]` are linearly independent over `K`, then `∑ σ, r_σ σ ↦ ∑ σ, r_σ • σ α` is an
+isomorphism from the group ring `𝒪[K][G]`, with `G` acting by left multiplication, onto the
+`𝒪[K]`-span of the orbit of `α`, with the Galois action restricted from `𝒪[L]`. -/
+noncomputable def spanOrbitEquiv {α : 𝒪[L]}
+    (h : LinearIndependent K fun σ : L ≃ₐ[K] L ↦ σ (α : L)) :
+    (Representation.leftRegular 𝒪[K] (L ≃ₐ[K] L)).Equiv
+      ((Representation.ofDistribMulAction 𝒪[K] (L ≃ₐ[K] L) 𝒪[L]).subrepresentation
+        (span 𝒪[K] (orbit (L ≃ₐ[K] L) α))
+        fun σ ↦ (Module.End.mem_invtSubmodule _).1 <|
+          Module.End.span_orbit_mem_invtSubmodule _ α σ) :=
+  .mk ((MonoidAlgebra.coeffLinearEquiv 𝒪[K]).trans
+    (linearIndependent_smul_integerRing h).linearCombinationEquiv) fun τ ↦ by
+    ext σ : 2
+    refine Subtype.ext ?_
+    simp only [LinearMap.coe_comp, Function.comp_apply, MonoidAlgebra.lsingle_apply,
+      Representation.ofMulAction_single, smul_eq_mul, LinearEquiv.coe_coe,
+      Representation.subrepresentation_apply, LinearMap.coe_restrict_apply,
+      Representation.ofDistribMulAction_apply_apply]
+    change Finsupp.linearCombination 𝒪[K] (fun σ : L ≃ₐ[K] L ↦ σ • α) (.single (τ * σ) 1) =
+      τ • Finsupp.linearCombination 𝒪[K] (fun σ : L ≃ₐ[K] L ↦ σ • α) (.single σ 1)
+    simp [mul_smul]
+
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- `spanOrbitEquiv` sends `r σ ∈ 𝒪[K][G]` to `r • σ α`. -/
+@[simp]
+theorem coe_spanOrbitEquiv_single {α : 𝒪[L]}
+    (h : LinearIndependent K fun σ : L ≃ₐ[K] L ↦ σ (α : L)) (σ : L ≃ₐ[K] L) (r : 𝒪[K]) :
+    (spanOrbitEquiv h (MonoidAlgebra.single σ r) : 𝒪[L]) = r • σ • α := by
+  change Finsupp.linearCombination 𝒪[K] (fun σ : L ≃ₐ[K] L ↦ σ • α) (.single σ r) = _
+  simp
+
 variable [IsGalois K L]
 
 variable (K L) in
-/-- **Integral normal basis elements exist**: some element of `𝒪[L]` has conjugates forming a
-`K`-basis of `L`. -/
+/-- Some element of `𝒪[L]` has conjugates forming a `K`-basis of `L`: a normal basis element of
+`L/K` scaled into `𝒪[L]`. -/
 theorem exists_linearIndependent_algEquiv_apply_integerRing :
     ∃ α : 𝒪[L], LinearIndependent K fun σ : L ≃ₐ[K] L ↦ σ (α : L) := by
   obtain ⟨a, ha, hmem⟩ := exists_algebraMap_mul_mem_integerRing K L (IsGalois.normalBasis K L 1)
@@ -88,7 +130,7 @@ theorem exists_linearIndependent_algEquiv_apply_integerRing :
   simp [Algebra.smul_def]
 
 /-- A nonzero element of `𝒪[K]` carries all of `𝒪[L]` into the `𝒪[K]`-span of the orbit of an
-integral normal basis element. -/
+element of `𝒪[L]` whose conjugates form a `K`-basis of `L`. -/
 private theorem exists_smul_mem_span_orbit {α : 𝒪[L]}
     (h : LinearIndependent K fun σ : L ≃ₐ[K] L ↦ σ (α : L)) :
     ∃ d : 𝒪[K], d ≠ 0 ∧ ∀ x : 𝒪[L], d • x ∈ span 𝒪[K] (orbit (L ≃ₐ[K] L) α) := by
@@ -118,8 +160,8 @@ private theorem exists_smul_mem_span_orbit {α : 𝒪[L]}
   rw [hsum]
   exact sum_mem fun σ _ ↦ smul_mem _ _ (subset_span (mem_orbit α σ))
 
-/-- **The span of the orbit of an integral normal basis element is open**: it contains a power of
-the maximal ideal of `𝒪[L]`. -/
+/-- **The span of the orbit is open**: if the conjugates of `α ∈ 𝒪[L]` form a `K`-basis of `L`,
+the `𝒪[K]`-span of the orbit of `α` contains a power of the maximal ideal of `𝒪[L]`. -/
 theorem exists_pow_maximalIdeal_le_span_orbit {α : 𝒪[L]}
     (h : LinearIndependent K fun σ : L ≃ₐ[K] L ↦ σ (α : L)) :
     ∃ n : ℕ, (𝓂[L] ^ n).restrictScalars 𝒪[K] ≤ span 𝒪[K] (orbit (L ≃ₐ[K] L) α) := by
@@ -137,8 +179,8 @@ theorem exists_pow_maximalIdeal_le_span_orbit {α : 𝒪[L]}
   exact hdα y
 
 /-- **A Galois-stable lattice that is almost closed under multiplication.** For every nonzero
-`ϖ ∈ 𝒪[K]` there is an integral normal basis element `α` of `L/K` such that the `𝒪[K]`-span `A`
-of its orbit satisfies `A * A ≤ ϖ • A`. By `linearIndependent_smul_integerRing` and
+`ϖ ∈ 𝒪[K]` there is `α ∈ 𝒪[L]` whose conjugates form a `K`-basis of `L` such that the
+`𝒪[K]`-span `A` of its orbit satisfies `A * A ≤ ϖ • A`. By `spanOrbitEquiv` and
 `exists_pow_maximalIdeal_le_span_orbit`, this `A` is free of rank one over `𝒪[K][G]` on `α` and
 contains a power of `𝓂[L]`. -/
 theorem exists_span_orbit_mul_le_smul {ϖ : 𝒪[K]} (hϖ : ϖ ≠ 0) :
