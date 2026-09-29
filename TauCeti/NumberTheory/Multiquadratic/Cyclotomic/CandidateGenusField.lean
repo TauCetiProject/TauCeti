@@ -51,12 +51,14 @@ theorem candidateGenusField_eq_map_characterSubfield_genusCharGroup
     (R : Type*) [CommRing R] [CharZero R]
     [HasEnoughRootsOfUnity R
       (Monoid.exponent (ZMod (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs)ˣ)] :
+    haveI := neZero_natAbs_prod_of_forall_isPrimeDiscriminant (genusPrimeDiscriminants_spec hd).1
     haveI := IsCyclotomicExtension.isAbelianGalois
       {(∏ P ∈ genusPrimeDiscriminants hd, P).natAbs} ℚ K
     candidateGenusField hd =
       ((intermediateFieldEquivSubgroupChar (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs K R).symm
         ((genusCharGroup (genusPrimeDiscriminants hd) (genusPrimeDiscriminants_spec hd).1).map
           (MulChar.ringHomCompHom (Int.castRingHom R)))).map K.val := by
+  have := neZero_natAbs_prod_of_forall_isPrimeDiscriminant (genusPrimeDiscriminants_spec hd).1
   have := IsCyclotomicExtension.isAbelianGalois
     {(∏ P ∈ genusPrimeDiscriminants hd, P).natAbs} ℚ K
   rw [characterSubfield_genusCharGroup_eq_adjoin_range _ _ R

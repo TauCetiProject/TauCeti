@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.GaussSum
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
+import TauCeti.FieldTheory.IntermediateField.Rescale
 
 /-!
 # A quadratic field lies in the cyclotomic field of its discriminant
@@ -204,20 +205,13 @@ open IsCyclotomicExtension
 variable {d : ℤ} (hd : Squarefree d) (K : IntermediateField ℚ ℂ)
   [IsCyclotomicExtension {(∏ P ∈ genusPrimeDiscriminants hd, P).natAbs} ℚ K]
 
-/-- The level `|∏ P| = |D|` of the prime discriminants of `ℚ(√d)` is nonzero. -/
-instance neZero_natAbs_prod_genusPrimeDiscriminants :
-    NeZero (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs :=
-  ⟨by
-    rw [(genusPrimeDiscriminants_spec hd).2.2]
-    exact Int.natAbs_ne_zero.mpr (fundamentalDiscriminant_ne_zero hd.ne_zero)⟩
-
 include K in
 /-- **Every chosen root of the candidate genus field lies in a cyclotomic subfield of `ℂ` of
 level `|D|`.** -/
 theorem genusFieldRoot_mem_of_isCyclotomicExtension
     (P : {P // P ∈ genusPrimeDiscriminants hd}) : genusFieldRoot hd P ∈ K := by
-  have hN : 0 < (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs :=
-    Nat.pos_of_ne_zero (neZero_natAbs_prod_genusPrimeDiscriminants hd).out
+  have hne := neZero_natAbs_prod_of_forall_isPrimeDiscriminant (genusPrimeDiscriminants_spec hd).1
+  have hN : 0 < (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs := Nat.pos_of_ne_zero hne.out
   have hζ : IsPrimitiveRoot ((zeta (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs ℚ K : K) : ℂ)
       (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs :=
     (zeta_spec _ ℚ K).map_of_injective (f := K.val) Subtype.val_injective
@@ -276,19 +270,11 @@ rescaled root is a rational multiple of a chosen root and conversely. -/
 theorem map_adjoin_range_genusFieldRootOfPrimeDiscriminant :
     (adjoin ℚ (Set.range (genusFieldRootOfPrimeDiscriminant hd K))).map K.val =
       candidateGenusField hd := by
-  rw [adjoin_map, ← Set.range_comp, candidateGenusField_def]
-  refine le_antisymm (adjoin_le_iff.mpr ?_) (adjoin_le_iff.mpr ?_)
-  · rintro _ ⟨P, rfl⟩
-    rw [Function.comp_apply, coe_val, coe_genusFieldRootOfPrimeDiscriminant]
-    exact mul_mem (IntermediateField.algebraMap_mem _ _) (subset_adjoin ℚ _ ⟨P, rfl⟩)
-  · rintro _ ⟨P, rfl⟩
-    have hscale : genusFieldRoot hd P =
-        (algebraMap ℚ ℂ (genusFieldRootScale hd P))⁻¹ *
-          (K.val ∘ genusFieldRootOfPrimeDiscriminant hd K) P := by
-      rw [Function.comp_apply, coe_val, coe_genusFieldRootOfPrimeDiscriminant, ← mul_assoc,
-        inv_mul_cancel₀ ((map_ne_zero _).mpr (genusFieldRootScale_ne_zero hd P)), one_mul]
-    rw [hscale]
-    exact mul_mem (inv_mem (IntermediateField.algebraMap_mem _ _)) (subset_adjoin ℚ _ ⟨P, rfl⟩)
+  have hcomp : K.val ∘ genusFieldRootOfPrimeDiscriminant hd K =
+      fun P => algebraMap ℚ ℂ (genusFieldRootScale hd P) * genusFieldRoot hd P :=
+    funext fun P => coe_genusFieldRootOfPrimeDiscriminant hd K P
+  rw [adjoin_map, ← Set.range_comp, candidateGenusField_def, hcomp]
+  exact TauCeti.IntermediateField.adjoin_range_algebraMap_mul (genusFieldRootScale_ne_zero hd) _
 
 end Cyclotomic
 
