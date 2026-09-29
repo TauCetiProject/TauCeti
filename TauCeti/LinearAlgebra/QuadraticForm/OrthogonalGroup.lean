@@ -361,16 +361,16 @@ the determinant-one isometry group of its polar bilinear form. This is the deter
 counterpart of `orthogonalGroup_eq_isometryGroup_polarBilin`. -/
 theorem specialOrthogonalGroup_eq_specialIsometryGroup_polarBilin
     (h2 : IsSMulRegular R (2 : R)) :
-    specialOrthogonalGroup Q = BilinForm.specialIsometryGroup Q.polarBilin := by
+    specialOrthogonalGroup Q = LinearMap.BilinForm.specialIsometryGroup Q.polarBilin := by
   ext g
-  rw [mem_specialOrthogonalGroup_iff, BilinForm.mem_specialIsometryGroup_iff,
+  rw [mem_specialOrthogonalGroup_iff, LinearMap.BilinForm.mem_specialIsometryGroup_iff,
     orthogonalGroup_eq_isometryGroup_polarBilin h2]
 
 /-- The canonical group isomorphism between `SO(Q)` and the determinant-one isometry group of the
 polar bilinear form. -/
 noncomputable def specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin
     (h2 : IsSMulRegular R (2 : R)) :
-    specialOrthogonalGroup Q ≃* BilinForm.specialIsometryGroup Q.polarBilin :=
+    specialOrthogonalGroup Q ≃* LinearMap.BilinForm.specialIsometryGroup Q.polarBilin :=
   MulEquiv.subgroupCongr (specialOrthogonalGroup_eq_specialIsometryGroup_polarBilin Q h2)
 
 @[simp]

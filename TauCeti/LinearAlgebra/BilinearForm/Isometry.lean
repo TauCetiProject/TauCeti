@@ -54,14 +54,14 @@ Two statements are worth singling out.
 
 * `TauCeti.BilinForm.IsIsometry`: an endomorphism preserves a bilinear form.
 * `TauCeti.BilinForm.isometryGroup`: the isometry group `Aut(M, B) ≤ M ≃ₗ[R] M`.
-* `TauCeti.BilinForm.specialIsometryGroup`: the determinant-one isometry group of `B`.
+* `LinearMap.BilinForm.specialIsometryGroup`: the determinant-one isometry group of `B`.
 * `TauCeti.BilinForm.IsIsometry.toIsometryGroup`: an isometry of a left-separating form on a finite
   free module over an integral domain, as an element of the isometry group.
 * `TauCeti.BilinForm.isometryGroupBaseChange`: base change of isometries, as a group homomorphism.
-* `TauCeti.BilinForm.specialIsometryGroupBaseChange`: base change of determinant-one isometries.
+* `LinearMap.BilinForm.specialIsometryGroupBaseChange`: base change of determinant-one isometries.
 * `TauCeti.BilinForm.isometryGroupCongr`: transport of the isometry group along a linear
   equivalence.
-* `TauCeti.BilinForm.specialIsometryGroupCongr`: the corresponding transport of its
+* `LinearMap.BilinForm.specialIsometryGroupCongr`: the corresponding transport of its
   determinant-one subgroup.
 
 ## Main results
@@ -343,7 +343,140 @@ section CommRing
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
   {f : M →ₗ[R] M}
 
-/-! ### The determinant-one isometry group -/
+section Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+namespace IsIsometry
+
+/-- An isometry scales the Gram determinant by the square of its determinant — and hence, the form
+being preserved, not at all. -/
+theorem det_sq_mul_det_toMatrix_self (b : Basis ι R M) (hf : IsIsometry B f) :
+    LinearMap.det f ^ 2 * (LinearMap.BilinForm.toMatrix b B).det =
+      (LinearMap.BilinForm.toMatrix b B).det := by
+  have h := congrArg Matrix.det ((isIsometry_iff_toMatrix b).mp hf)
+  rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, LinearMap.det_toMatrix] at h
+  calc LinearMap.det f ^ 2 * (LinearMap.BilinForm.toMatrix b B).det
+      = LinearMap.det f * (LinearMap.BilinForm.toMatrix b B).det * LinearMap.det f := by ring
+    _ = (LinearMap.BilinForm.toMatrix b B).det := h
+
+/-- An isometry of a bilinear form whose Gram determinant is a non-zero-divisor has determinant
+squaring to `1`; over `ℤ` this says its determinant is `±1`. -/
+theorem det_sq_eq_one (b : Basis ι R M)
+    (hG : (LinearMap.BilinForm.toMatrix b B).det ∈ nonZeroDivisors R)
+    (hf : IsIsometry B f) : LinearMap.det f ^ 2 = 1 := by
+  have h : (LinearMap.det f ^ 2 - 1) * (LinearMap.BilinForm.toMatrix b B).det = 0 := by
+    rw [sub_mul, one_mul, hf.det_sq_mul_det_toMatrix_self b, sub_self]
+  exact sub_eq_zero.mp ((mem_nonZeroDivisors_iff.mp hG).2 _ h)
+
+/-- An isometry of a bilinear form whose Gram determinant is a non-zero-divisor has unit
+determinant, its square being `1`. -/
+theorem isUnit_det (b : Basis ι R M)
+    (hG : (LinearMap.BilinForm.toMatrix b B).det ∈ nonZeroDivisors R)
+    (hf : IsIsometry B f) : IsUnit (LinearMap.det f) :=
+  IsUnit.of_mul_eq_one _ (by rw [← sq]; exact hf.det_sq_eq_one b hG)
+
+end IsIsometry
+
+/-- Over an integral domain, the Gram determinant of a left-separating form is a
+non-zero-divisor. -/
+theorem det_toMatrix_mem_nonZeroDivisors [IsDomain R] (b : Basis ι R M)
+    (hB : B.SeparatingLeft) :
+    (LinearMap.BilinForm.toMatrix b B).det ∈ nonZeroDivisors R :=
+  mem_nonZeroDivisors_of_ne_zero ((LinearMap.separatingLeft_iff_det_ne_zero b).mp hB)
+
+end Matrix
+
+section UnitDeterminant
+
+variable [Module.Free R M] [Module.Finite R M]
+
+namespace IsIsometry
+
+/-- An isometry whose underlying endomorphism has unit determinant, as an element of the isometry
+group. -/
+noncomputable def toIsometryGroupOfIsUnitDet (hf : IsIsometry B f)
+    (hdet : IsUnit (LinearMap.det f)) : isometryGroup B :=
+  ⟨LinearMap.equivOfIsUnitDet hdet,
+    mem_isometryGroup.mpr (isIsometry_iff.mpr fun x y => by simpa using hf.apply x y)⟩
+
+@[simp]
+theorem coe_toIsometryGroupOfIsUnitDet (hf : IsIsometry B f)
+    (hdet : IsUnit (LinearMap.det f)) :
+    ((hf.toIsometryGroupOfIsUnitDet hdet : isometryGroup B) : M →ₗ[R] M) = f :=
+  LinearMap.coe_equivOfIsUnitDet hdet
+
+@[simp]
+theorem toIsometryGroupOfIsUnitDet_apply (hf : IsIsometry B f)
+    (hdet : IsUnit (LinearMap.det f)) (x : M) :
+    (hf.toIsometryGroupOfIsUnitDet hdet : M ≃ₗ[R] M) x = f x :=
+  LinearMap.equivOfIsUnitDet_apply hdet x
+
+end IsIsometry
+
+end UnitDeterminant
+
+section SeparatingLeft
+
+variable [IsDomain R] [Module.Free R M] [Module.Finite R M]
+
+namespace IsIsometry
+
+/-- An isometry of a left-separating form on a finite free module over an integral domain has unit
+determinant. -/
+theorem isUnit_det_of_separatingLeft (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
+    IsUnit (LinearMap.det f) :=
+  hf.isUnit_det (Module.Free.chooseBasis R M)
+    (det_toMatrix_mem_nonZeroDivisors (Module.Free.chooseBasis R M) hB)
+
+/-- Over an integral domain, an endomorphism of a finite free module preserving a left-separating
+bilinear form is automatically invertible, hence an element of the isometry group. This is how an
+element of `Aut(V, Q)` usually presents itself: as an endomorphism of the lattice `V` preserving
+`Q`, with invertibility a consequence rather than a hypothesis. -/
+noncomputable def toIsometryGroup (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
+    isometryGroup B :=
+  hf.toIsometryGroupOfIsUnitDet (hf.isUnit_det_of_separatingLeft hB)
+
+@[simp]
+theorem coe_toIsometryGroup (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
+    ((hf.toIsometryGroup hB : isometryGroup B) : M →ₗ[R] M) = f :=
+  LinearMap.coe_equivOfIsUnitDet (hf.isUnit_det_of_separatingLeft hB)
+
+@[simp]
+theorem toIsometryGroup_apply (hB : B.SeparatingLeft) (hf : IsIsometry B f) (x : M) :
+    (hf.toIsometryGroup hB : M ≃ₗ[R] M) x = f x :=
+  LinearMap.equivOfIsUnitDet_apply (hf.isUnit_det_of_separatingLeft hB) x
+
+/-- Over an integral domain, an endomorphism of a finite free module preserving a left-separating
+bilinear form is automatically bijective. -/
+theorem bijective (hB : B.SeparatingLeft) (hf : IsIsometry B f) : Function.Bijective f :=
+  (Module.End.isUnit_iff f).mp
+    ((LinearMap.isUnit_iff_isUnit_det f).mpr (hf.isUnit_det_of_separatingLeft hB))
+
+end IsIsometry
+
+end SeparatingLeft
+
+end CommRing
+
+end BilinForm
+
+end TauCeti
+
+/-! ### The determinant-one isometry group
+
+These declarations live in Mathlib's `LinearMap.BilinForm` namespace so that dot notation such as
+`B.specialIsometryGroup` works on a bilinear form `B`. -/
+
+namespace LinearMap.BilinForm
+
+open Module TauCeti.BilinForm
+open LinearMap (BilinForm)
+open scoped TensorProduct
+
+section CommRing
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
 
 /-- The determinant-one isometry group of a bilinear form. -/
 noncomputable def specialIsometryGroup (B : BilinForm R M) : Subgroup (M ≃ₗ[R] M) :=
@@ -500,122 +633,6 @@ theorem coe_specialIsometryGroupBaseChange (B : BilinForm R M)
 
 end BaseChange
 
-section Matrix
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-namespace IsIsometry
-
-/-- An isometry scales the Gram determinant by the square of its determinant — and hence, the form
-being preserved, not at all. -/
-theorem det_sq_mul_det_toMatrix_self (b : Basis ι R M) (hf : IsIsometry B f) :
-    LinearMap.det f ^ 2 * (LinearMap.BilinForm.toMatrix b B).det =
-      (LinearMap.BilinForm.toMatrix b B).det := by
-  have h := congrArg Matrix.det ((isIsometry_iff_toMatrix b).mp hf)
-  rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, LinearMap.det_toMatrix] at h
-  calc LinearMap.det f ^ 2 * (LinearMap.BilinForm.toMatrix b B).det
-      = LinearMap.det f * (LinearMap.BilinForm.toMatrix b B).det * LinearMap.det f := by ring
-    _ = (LinearMap.BilinForm.toMatrix b B).det := h
-
-/-- An isometry of a bilinear form whose Gram determinant is a non-zero-divisor has determinant
-squaring to `1`; over `ℤ` this says its determinant is `±1`. -/
-theorem det_sq_eq_one (b : Basis ι R M)
-    (hG : (LinearMap.BilinForm.toMatrix b B).det ∈ nonZeroDivisors R)
-    (hf : IsIsometry B f) : LinearMap.det f ^ 2 = 1 := by
-  have h : (LinearMap.det f ^ 2 - 1) * (LinearMap.BilinForm.toMatrix b B).det = 0 := by
-    rw [sub_mul, one_mul, hf.det_sq_mul_det_toMatrix_self b, sub_self]
-  exact sub_eq_zero.mp ((mem_nonZeroDivisors_iff.mp hG).2 _ h)
-
-/-- An isometry of a bilinear form whose Gram determinant is a non-zero-divisor has unit
-determinant, its square being `1`. -/
-theorem isUnit_det (b : Basis ι R M)
-    (hG : (LinearMap.BilinForm.toMatrix b B).det ∈ nonZeroDivisors R)
-    (hf : IsIsometry B f) : IsUnit (LinearMap.det f) :=
-  IsUnit.of_mul_eq_one _ (by rw [← sq]; exact hf.det_sq_eq_one b hG)
-
-end IsIsometry
-
-/-- Over an integral domain, the Gram determinant of a left-separating form is a
-non-zero-divisor. -/
-theorem det_toMatrix_mem_nonZeroDivisors [IsDomain R] (b : Basis ι R M)
-    (hB : B.SeparatingLeft) :
-    (LinearMap.BilinForm.toMatrix b B).det ∈ nonZeroDivisors R :=
-  mem_nonZeroDivisors_of_ne_zero ((LinearMap.separatingLeft_iff_det_ne_zero b).mp hB)
-
-end Matrix
-
-section UnitDeterminant
-
-variable [Module.Free R M] [Module.Finite R M]
-
-namespace IsIsometry
-
-/-- An isometry whose underlying endomorphism has unit determinant, as an element of the isometry
-group. -/
-noncomputable def toIsometryGroupOfIsUnitDet (hf : IsIsometry B f)
-    (hdet : IsUnit (LinearMap.det f)) : isometryGroup B :=
-  ⟨LinearMap.equivOfIsUnitDet hdet,
-    mem_isometryGroup.mpr (isIsometry_iff.mpr fun x y => by simpa using hf.apply x y)⟩
-
-@[simp]
-theorem coe_toIsometryGroupOfIsUnitDet (hf : IsIsometry B f)
-    (hdet : IsUnit (LinearMap.det f)) :
-    ((hf.toIsometryGroupOfIsUnitDet hdet : isometryGroup B) : M →ₗ[R] M) = f :=
-  LinearMap.coe_equivOfIsUnitDet hdet
-
-@[simp]
-theorem toIsometryGroupOfIsUnitDet_apply (hf : IsIsometry B f)
-    (hdet : IsUnit (LinearMap.det f)) (x : M) :
-    (hf.toIsometryGroupOfIsUnitDet hdet : M ≃ₗ[R] M) x = f x :=
-  LinearMap.equivOfIsUnitDet_apply hdet x
-
-end IsIsometry
-
-end UnitDeterminant
-
-section SeparatingLeft
-
-variable [IsDomain R] [Module.Free R M] [Module.Finite R M]
-
-namespace IsIsometry
-
-/-- An isometry of a left-separating form on a finite free module over an integral domain has unit
-determinant. -/
-theorem isUnit_det_of_separatingLeft (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
-    IsUnit (LinearMap.det f) :=
-  hf.isUnit_det (Module.Free.chooseBasis R M)
-    (det_toMatrix_mem_nonZeroDivisors (Module.Free.chooseBasis R M) hB)
-
-/-- Over an integral domain, an endomorphism of a finite free module preserving a left-separating
-bilinear form is automatically invertible, hence an element of the isometry group. This is how an
-element of `Aut(V, Q)` usually presents itself: as an endomorphism of the lattice `V` preserving
-`Q`, with invertibility a consequence rather than a hypothesis. -/
-noncomputable def toIsometryGroup (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
-    isometryGroup B :=
-  hf.toIsometryGroupOfIsUnitDet (hf.isUnit_det_of_separatingLeft hB)
-
-@[simp]
-theorem coe_toIsometryGroup (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
-    ((hf.toIsometryGroup hB : isometryGroup B) : M →ₗ[R] M) = f :=
-  LinearMap.coe_equivOfIsUnitDet (hf.isUnit_det_of_separatingLeft hB)
-
-@[simp]
-theorem toIsometryGroup_apply (hB : B.SeparatingLeft) (hf : IsIsometry B f) (x : M) :
-    (hf.toIsometryGroup hB : M ≃ₗ[R] M) x = f x :=
-  LinearMap.equivOfIsUnitDet_apply (hf.isUnit_det_of_separatingLeft hB) x
-
-/-- Over an integral domain, an endomorphism of a finite free module preserving a left-separating
-bilinear form is automatically bijective. -/
-theorem bijective (hB : B.SeparatingLeft) (hf : IsIsometry B f) : Function.Bijective f :=
-  (Module.End.isUnit_iff f).mp
-    ((LinearMap.isUnit_iff_isUnit_det f).mpr (hf.isUnit_det_of_separatingLeft hB))
-
-end IsIsometry
-
-end SeparatingLeft
-
 end CommRing
 
-end BilinForm
-
-end TauCeti
+end LinearMap.BilinForm
