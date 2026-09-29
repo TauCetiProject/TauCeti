@@ -85,13 +85,11 @@ instance : MulAction (ContinuousOut G) (ConjClasses G) where
         exact mul_smul φ ψ x
 
 /-- The outer action is computed using any representative continuous automorphism. -/
-@[simp]
 theorem mk_smul_conjClasses (φ : ContinuousAut G) (c : ConjClasses G) :
     (mk φ) • c = φ • c :=
   rfl
 
 /-- On the class of an element, the outer action sends it to the class of its image. -/
-@[simp]
 theorem mk_smul_mk (φ : ContinuousAut G) (x : G) :
     (mk φ) • ConjClasses.mk x = ConjClasses.mk (φ x) := by
   rw [mk_smul_conjClasses, ContinuousAut.smul_conjClasses_mk]
