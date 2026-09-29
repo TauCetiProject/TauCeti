@@ -181,7 +181,7 @@ private theorem mem_range_norm_iff (a : Kˣ) :
 /-- The class in `H²(Gal(L/K), Lˣ)` of an element `a ∈ Kˣ`: the image of `a`, which is fixed by
 Frobenius, under two-periodicity of the cohomology of the cyclic group `Gal(L/K)` at its
 generator, arithmetic Frobenius. -/
-def unramifiedClass : Additive Kˣ →+ H2 (Rep.ofAlgebraAutOnUnits K L) :=
+def unramifiedClass : Additive Kˣ →+ H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :=
   (frobeniusπ K L).comp (unitsToFrobeniusFixed K L)
 
 /-- Every class in `H²(Gal(L/K), Lˣ)` is the class of an element of `Kˣ`. -/
@@ -212,7 +212,7 @@ private theorem ker_unramifiedClass_eq_ker_valuationMod :
 arithmetic Frobenius: it sends the class of `a ∈ Kˣ` to `v_K(a)` modulo `[L : K]`
 (`unramifiedInvEquiv_unramifiedClass`). -/
 def unramifiedInvEquiv :
-    H2 (Rep.ofAlgebraAutOnUnits K L) ≃+ ZMod (Module.finrank K L) :=
+    H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) ≃+ ZMod (Module.finrank K L) :=
   (QuotientAddGroup.quotientKerEquivOfSurjective _ (unramifiedClass_surjective K L)).symm.trans <|
     (QuotientAddGroup.quotientAddEquivOfEq (ker_unramifiedClass_eq_ker_valuationMod K L)).trans <|
       QuotientAddGroup.quotientKerEquivOfSurjective _ (valuationMod_surjective K _)
@@ -232,14 +232,14 @@ theorem unramifiedInvEquiv_unramifiedClass (a : Kˣ) :
 
 /-- `H²(Gal(L/K), Lˣ)` of an unramified layer has exactly `[L : K]` elements. -/
 theorem natCard_H2_unramified :
-    Nat.card (H2 (Rep.ofAlgebraAutOnUnits K L)) = Module.finrank K L := by
+    Nat.card (H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)) = Module.finrank K L := by
   have : NeZero (Module.finrank K L) := NeZero.of_pos Module.finrank_pos
   rw [Nat.card_congr (unramifiedInvEquiv K L).toEquiv, Nat.card_zmod]
 
 /-- **The local invariant of an unramified layer** `inv_{L/K} : H²(Gal(L/K), Lˣ) → ℚ/ℤ`,
 normalized by arithmetic Frobenius: the class of `a ∈ Kˣ` has invariant `v_K(a) / [L : K]`
 (`unramifiedInv_unramifiedClass`). -/
-def unramifiedInv : H2 (Rep.ofAlgebraAutOnUnits K L) →+ AddCircle (1 : ℚ) :=
+def unramifiedInv : H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) →+ AddCircle (1 : ℚ) :=
   (ZMod.toRatAddCircle (Module.finrank K L)).comp (unramifiedInvEquiv K L).toAddMonoidHom
 
 variable {K L} in
