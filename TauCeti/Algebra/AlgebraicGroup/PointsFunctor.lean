@@ -108,7 +108,7 @@ It sends an `A`-point `f : H →ₐ[R] A` to the `B`-point `φ ∘ f`. -/
 lemma mapPoints_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f : points (H := H) A) :
     mapPoints (H := H) φ f = toConv (φ.hom.comp f.ofConv) :=
-  rfl
+  AlgHom.mapValue_apply φ.hom f
 
 /-- The map on points sends the identity point to the identity point. -/
 lemma mapPoints_one {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
@@ -140,9 +140,8 @@ lemma mapPoints_comp {A B C : CommAlgCat.{w} R} (φ : A ⟶ B) (ψ : B ⟶ C) :
 @[simp]
 theorem mapPoints_extendPoint {A B : CommAlgCat.{w} R} (f : A ⟶ B)
     (g : points (H := H) (CommAlgCat.of R R)) :
-    mapPoints (H := H) f (extendPoint H A g) = extendPoint H B g := by
-  rw [mapPoints_apply]
-  exact mapValue_extendPoint H f.hom g
+    mapPoints (H := H) f (extendPoint H A g) = extendPoint H B g :=
+  mapValue_extendPoint H f.hom g
 
 /-- The functor of points of the affine group object represented by a Hopf algebra.
 
@@ -188,7 +187,7 @@ lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f : WithConv (H →ₐ[R] A)) (h : H) :
     (((pointsFunctor (H := H)).map φ f : WithConv (H →ₐ[R] B)).ofConv) h =
       φ.hom (f.ofConv h) :=
-  rfl
+  AlgHom.mapValue_apply_apply φ.hom f h
 
 /-- A family of subgroups of the functor of points, equipped with compatible maps between
 value algebras, as a group-valued functor. -/
