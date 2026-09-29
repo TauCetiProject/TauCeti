@@ -50,7 +50,7 @@ namespace TauCeti
 
 universe u v w x
 
-variable {A : Type u} [Ring A]
+variable {A : Type u} [Semiring A]
 variable {M : Type v} [AddCommGroup M] [Module A M]
 variable {N : Type w} [AddCommGroup N] [Module A N]
 variable {P : Type x} [AddCommGroup P] [Module A P]
@@ -89,10 +89,8 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
     right
     have hd'd : ¬IsUnit (d'.comp d) := by
       intro hunit
-      have hbij : Function.Bijective d :=
-        (isIndecomposableModule_of_isLocalRing_end (A := A)).bijective_of_bijective_comp
-          ((Module.End.isUnit_iff _).mp hunit)
-      exact hd ((Module.End.isUnit_iff d).mpr hbij)
+      apply hd
+      exact isUnit_of_mul_isUnit_right (Module.End.mul_eq_comp d' d ▸ hunit)
     have hcb : IsUnit (c'.comp b) := by
       rcases IsLocalRing.isUnit_or_isUnit_of_isUnit_add (hinv.symm ▸ isUnit_one) with hu | hu
       · exact hu
