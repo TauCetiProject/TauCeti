@@ -161,6 +161,7 @@ theorem j_I : j I = 1728 := by
   simp
 
 /-- `E₄` has a simple zero at `ρ`. -/
+@[simp]
 theorem analyticOrderAt_E₄_comp_ofComplex_ρ :
     analyticOrderAt (E₄ ∘ ofComplex) (ρ : ℂ) = 1 := by
   refine (UpperHalfPlane.analyticAt_comp_ofComplex (ModularFormClass.holo E₄) ρ.im_pos)
@@ -171,8 +172,10 @@ theorem analyticOrderAt_E₄_comp_ofComplex_ρ :
   simpa using hD
 
 /-- `E₆` has a simple zero at `i`. -/
+@[simp]
 theorem analyticOrderAt_E₆_comp_ofComplex_I :
-    analyticOrderAt (E₆ ∘ ofComplex) (I : ℂ) = 1 := by
+    analyticOrderAt (E₆ ∘ ofComplex) Complex.I = 1 := by
+  rw [← coe_I]
   refine (UpperHalfPlane.analyticAt_comp_ofComplex (ModularFormClass.holo E₆) I.im_pos)
     |>.analyticOrderAt_eq_one_of_zero_deriv_ne_zero
       (by rw [Function.comp_apply, ofComplex_apply]; exact E₆_I) fun h ↦ E₄_I_ne_zero ?_
@@ -199,6 +202,7 @@ private lemma analyticOrderAt_pow_div_discriminant {f : ℍ → ℂ} (hf : MDiff
     hΔinv.analyticOrderAt_eq_zero.mpr (inv_ne_zero hΔ), add_zero]
 
 /-- The modular invariant vanishes to order exactly `3` at the elliptic point `ρ`. -/
+@[simp]
 theorem analyticOrderAt_j_comp_ofComplex_ρ : analyticOrderAt (j ∘ ofComplex) (ρ : ℂ) = 3 := by
   have heq : j ∘ ofComplex = fun w ↦ E₄ (ofComplex w) ^ 3 / discriminant (ofComplex w) := by
     funext w
@@ -208,13 +212,14 @@ theorem analyticOrderAt_j_comp_ofComplex_ρ : analyticOrderAt (j ∘ ofComplex) 
   simp
 
 /-- The function `j - 1728` vanishes to order exactly `2` at the elliptic point `i`. -/
+@[simp]
 theorem analyticOrderAt_j_sub_1728_comp_ofComplex_I :
-    analyticOrderAt ((j - 1728) ∘ ofComplex) (I : ℂ) = 2 := by
+    analyticOrderAt ((j - 1728) ∘ ofComplex) Complex.I = 2 := by
   have heq : (j - 1728) ∘ ofComplex =
       fun w ↦ E₆ (ofComplex w) ^ 2 / discriminant (ofComplex w) := by
     funext w
     simp [j_sub_1728]
-  rw [heq, analyticOrderAt_pow_div_discriminant (ModularFormClass.holo E₆),
+  rw [heq, ← coe_I, analyticOrderAt_pow_div_discriminant (ModularFormClass.holo E₆), coe_I,
     analyticOrderAt_E₆_comp_ofComplex_I]
   simp
 
