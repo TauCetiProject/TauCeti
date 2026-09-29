@@ -27,21 +27,23 @@ noncomputable section
 
 namespace TauCeti.GlobalNumberFields
 
-namespace NumberFieldOrder
-
-variable {K : Type*} [Field K] [NumberField K]
-
-/-- The group of invertible fractional ideals of an order. Its elements are proper fractional
-ideals, by `NumberFieldOrder.isProperFractionalIdeal_of_isUnit`. -/
-abbrev invertibleProperFractionalIdeals (O : NumberFieldOrder K) :=
-  (FractionalIdeal (nonZeroDivisors O.toSubalgebra) K)ˣ
-
-end NumberFieldOrder
-
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- The wide Picard group of an order: invertible fractional ideals modulo principal ideals.
 `ClassGroup` already implements this quotient for every integral domain. -/
 abbrev Pic (O : NumberFieldOrder K) := ClassGroup O.toSubalgebra
+
+namespace NumberFieldOrder
+
+/-- The wide Picard class of an invertible fractional ideal. -/
+abbrev mkPic (O : NumberFieldOrder K) : O.invertibleProperFractionalIdeals →* Pic O :=
+  ClassGroup.mk K
+
+/-- Every wide Picard class has an invertible fractional-ideal representative. -/
+theorem mkPic_surjective (O : NumberFieldOrder K) : Function.Surjective O.mkPic :=
+  fun c => ClassGroup.induction (K := K) (P := fun c => ∃ I, O.mkPic I = c)
+    (fun I => ⟨I, rfl⟩) c
+
+end NumberFieldOrder
 
 end TauCeti.GlobalNumberFields

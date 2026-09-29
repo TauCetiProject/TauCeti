@@ -114,18 +114,37 @@ theorem mkPrincipal_apply (O : NumberFieldOrder K) (x : Kˣ) :
     mkPrincipal O x = mk O (toPrincipalIdeal O.toSubalgebra K x) :=
   by simp only [mkPrincipal, MonoidHom.comp_apply]
 
+/-- A principal narrow Picard class is trivial exactly when an order unit rescales its
+generator to a totally positive element. -/
+@[simp]
+theorem mkPrincipal_eq_one_iff (O : NumberFieldOrder K) {x : Kˣ} :
+    mkPrincipal O x = 1 ↔ ∃ w : O.toSubalgebraˣ, IsTotallyPositive (w • (x : K)) := by
+  rw [mkPrincipal_apply, mk_eq_one_iff, O.mem_narrowPrincipal_iff]
+  constructor
+  · rintro ⟨y, hy, hyx⟩
+    have hspan : FractionalIdeal.spanSingleton (nonZeroDivisors O.toSubalgebra) (y : K) =
+        FractionalIdeal.spanSingleton (nonZeroDivisors O.toSubalgebra) (x : K) := by
+      rw [← coe_toPrincipalIdeal y, ← coe_toPrincipalIdeal x, hyx]
+    obtain ⟨z, hz⟩ := FractionalIdeal.spanSingleton_eq_spanSingleton.mp hspan
+    exact ⟨z⁻¹, by rw [← hz, inv_smul_smul]; exact hy⟩
+  · rintro ⟨w, hw⟩
+    refine ⟨Units.map (algebraMap O.toSubalgebra K : O.toSubalgebra →* K) w * x, ?_, ?_⟩
+    · simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_ofClass, Units.smul_def,
+        Algebra.smul_def] using hw
+    · rw [← Units.val_inj, coe_toPrincipalIdeal, coe_toPrincipalIdeal]
+      refine FractionalIdeal.spanSingleton_eq_spanSingleton.mpr ⟨w⁻¹, ?_⟩
+      simp [Units.smul_def, Algebra.smul_def]
+
 /-- A totally positive element generates the trivial narrow Picard class. -/
 theorem mkPrincipal_eq_one_of_isTotallyPositive (O : NumberFieldOrder K) {x : Kˣ}
-    (hx : IsTotallyPositive (x : K)) : mkPrincipal O x = 1 := by
-  rw [mkPrincipal_apply, mk_eq_one_iff, O.mem_narrowPrincipal_iff]
-  exact ⟨x, hx, rfl⟩
+    (hx : IsTotallyPositive (x : K)) : mkPrincipal O x = 1 :=
+  (mkPrincipal_eq_one_iff O).mpr ⟨1, by simpa using hx⟩
 
 /-- Every principal narrow Picard class has order dividing two, since a square is totally
 positive at every real place. -/
 @[simp]
 theorem mkPrincipal_sq (O : NumberFieldOrder K) (x : Kˣ) :
-    mk O (toPrincipalIdeal O.toSubalgebra K x) ^ 2 = 1 := by
-  change mkPrincipal O x ^ 2 = 1
+    mkPrincipal O x ^ 2 = 1 := by
   rw [← map_pow]
   exact mkPrincipal_eq_one_of_isTotallyPositive O
     (mem_totallyPositiveUnits.mp (sq_mem_totallyPositiveUnits x))
@@ -142,22 +161,23 @@ private theorem narrowPrincipal_le_ker_pic (O : NumberFieldOrder K) :
 /-- Forgetting the positivity condition gives the canonical map from the narrow to the wide
 Picard group of an order. -/
 def narrowToPic (O : NumberFieldOrder K) : NarrowPic O →* Pic O :=
-  QuotientGroup.lift O.narrowPrincipal (ClassGroup.mk (R := O.toSubalgebra) K)
-    O.narrowPrincipal_le_ker_pic
+  NarrowPic.lift O O.mkPic O.narrowPrincipal_le_ker_pic
 
 /-- On an invertible fractional ideal, the forgetful map gives its wide Picard class. -/
 @[simp]
 theorem narrowToPic_mk (O : NumberFieldOrder K) (I : O.invertibleProperFractionalIdeals) :
-    O.narrowToPic (NarrowPic.mk O I) = ClassGroup.mk K I :=
-  QuotientGroup.lift_mk' _ O.narrowPrincipal_le_ker_pic I
+    O.narrowToPic (NarrowPic.mk O I) = O.mkPic I :=
+  NarrowPic.lift_mk O O.mkPic O.narrowPrincipal_le_ker_pic I
 
 /-- Every wide Picard class has a narrow Picard preimage. -/
 theorem narrowToPic_surjective (O : NumberFieldOrder K) :
-    Function.Surjective O.narrowToPic :=
-  fun c => ClassGroup.induction (K := K) (P := fun c => ∃ d, O.narrowToPic d = c)
-    (fun I => ⟨NarrowPic.mk O I, O.narrowToPic_mk I⟩) c
+    Function.Surjective O.narrowToPic := by
+  intro c
+  obtain ⟨I, rfl⟩ := O.mkPic_surjective c
+  exact ⟨NarrowPic.mk O I, O.narrowToPic_mk I⟩
 
 /-- The narrow class of a principal ideal maps to the trivial wide Picard class. -/
+@[simp]
 theorem narrowToPic_mkPrincipal (O : NumberFieldOrder K) (x : Kˣ) :
     O.narrowToPic (NarrowPic.mkPrincipal O x) = 1 := by
   rw [NarrowPic.mkPrincipal_apply, O.narrowToPic_mk]
@@ -173,14 +193,14 @@ theorem narrowToPic_mk_eq_one_iff (O : NumberFieldOrder K)
 /-- The kernel of the forgetful map consists exactly of narrow classes of principal ideals. -/
 theorem ker_narrowToPic (O : NumberFieldOrder K) :
     MonoidHom.ker O.narrowToPic = (NarrowPic.mkPrincipal O).range := by
-  ext c
-  constructor
-  · intro hc
-    obtain ⟨I, rfl⟩ := NarrowPic.mk_surjective O c
-    obtain ⟨x, rfl⟩ := (O.narrowToPic_mk_eq_one_iff).mp hc
-    exact ⟨x, (NarrowPic.mkPrincipal_apply O x).symm⟩
-  · rintro ⟨x, rfl⟩
-    exact O.narrowToPic_mkPrincipal x
+  have hker : MonoidHom.ker O.narrowToPic =
+      Subgroup.map (NarrowPic.mk O) (MonoidHom.ker O.mkPic) :=
+    QuotientGroup.ker_lift O.narrowPrincipal O.mkPic O.narrowPrincipal_le_ker_pic
+  have hpic : MonoidHom.ker O.mkPic = (toPrincipalIdeal O.toSubalgebra K).range := by
+    ext I
+    exact ClassGroup.mk_eq_one_iff_exists
+  rw [hker, hpic, ← MonoidHom.range_comp]
+  rfl
 
 end NumberFieldOrder
 
