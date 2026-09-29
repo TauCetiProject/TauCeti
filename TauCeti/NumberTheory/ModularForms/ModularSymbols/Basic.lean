@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
-public import Mathlib.NumberTheory.ModularForms.Cusps
 public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.NumberTheory.ModularForms.BinaryForms
+public import TauCeti.NumberTheory.ModularForms.Cusps.ModularGroup
 public import TauCeti.RepresentationTheory.Augmentation
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 
@@ -55,6 +55,7 @@ representatives and `bᵢ` over a spanning family of the binary forms, span `�
   spanned by the unimodular symbols `[g∞] - [g0]`, `g ∈ SL(2, ℤ)`.
 * `TauCeti.ModularSymbols.symbol_mapGL_smul`: the relation `{γα, γβ} ⊗ P = {α, β} ⊗ (P ∣ γ)` for
   `γ ∈ Γ`.
+* `TauCeti.ModularSymbols.span_symbol_eq_top`: the symbols `{α, β} ⊗ P` span the module.
 * `TauCeti.ModularSymbols.instModuleFinite`: `𝕄_w(Γ; R)` is a finite `R`-module when `Γ` has
   finite index in `SL(2, ℤ)`; `TauCeti.ModularSymbols.instModuleFiniteInt` is the integral case.
 
@@ -160,59 +161,6 @@ variable {R} [Ring R]
 theorem single_sub_single_mem_degreeZero (α β : OnePoint ℚ) :
     single α (1 : R) - single β 1 ∈ degreeZero R := by
   simp
-
-/-- `S` sends `∞` to `0` under the Möbius action. -/
-@[simp]
-theorem mapGL_S_smul_infty : mapGL ℚ S • (∞ : OnePoint ℚ) = (0 : ℚ) := by
-  simp [OnePoint.smul_infty_eq_ite]
-
-/-- `S` sends `0` to `∞` under the Möbius action. -/
-@[simp]
-theorem mapGL_S_smul_zero : mapGL ℚ S • ((0 : ℚ) : OnePoint ℚ) = ∞ := by
-  simp [OnePoint.smul_some_eq_ite]
-
-/-- `T` fixes `∞` under the Möbius action. -/
-@[simp]
-theorem mapGL_T_smul_infty : mapGL ℚ T • (∞ : OnePoint ℚ) = ∞ := by
-  simp [OnePoint.smul_infty_eq_ite]
-
-/-- `T` translates an affine cusp by one. -/
-@[simp]
-theorem mapGL_T_smul_coe (k : ℚ) :
-    mapGL ℚ T • (k : OnePoint ℚ) = ((k + 1 : ℚ) : OnePoint ℚ) := by
-  simp [OnePoint.smul_some_eq_ite]
-
-/-- `T * S` sends `∞` to `1`. -/
-@[simp]
-theorem mapGL_T_mul_S_smul_infty :
-    (mapGL ℚ T * mapGL ℚ S) • (∞ : OnePoint ℚ) = (1 : ℚ) := by
-  rw [mul_smul, mapGL_S_smul_infty, mapGL_T_smul_coe]
-  norm_num
-
-/-- `T * S` sends `0` to `∞`. -/
-@[simp]
-theorem mapGL_T_mul_S_smul_zero :
-    (mapGL ℚ T * mapGL ℚ S) • ((0 : ℚ) : OnePoint ℚ) = ∞ := by
-  rw [mul_smul, mapGL_S_smul_zero, mapGL_T_smul_infty]
-
-/-- `T * S` sends `1` to `0`. -/
-@[simp]
-theorem mapGL_T_mul_S_smul_one :
-    (mapGL ℚ T * mapGL ℚ S) • ((1 : ℚ) : OnePoint ℚ) = (0 : ℚ) := by
-  rw [mul_smul]
-  simp [OnePoint.smul_some_eq_ite]
-
-/-- `(T * S)²` sends `∞` to `0`. -/
-@[simp]
-theorem mapGL_T_mul_S_sq_smul_infty :
-    (mapGL ℚ T * mapGL ℚ S) ^ 2 • (∞ : OnePoint ℚ) = (0 : ℚ) := by
-  rw [pow_two, mul_smul, mapGL_T_mul_S_smul_infty, mapGL_T_mul_S_smul_one]
-
-/-- `(T * S)²` sends `0` to `1`. -/
-@[simp]
-theorem mapGL_T_mul_S_sq_smul_zero :
-    (mapGL ℚ T * mapGL ℚ S) ^ 2 • ((0 : ℚ) : OnePoint ℚ) = (1 : ℚ) := by
-  rw [pow_two, mul_smul, mapGL_T_mul_S_smul_zero, mapGL_T_mul_S_smul_infty]
 
 /-- A `GL(2, ℚ)` translate of `[α] - [β]` is the difference of the translated cusps. -/
 theorem degreeZeroGLRep_single_sub_single (g : GL (Fin 2) ℚ) (α β : OnePoint ℚ) :
@@ -445,6 +393,18 @@ theorem span_mk_degreeZeroRep_tmul_eq_top :
     rfl
   rw [himage, ← Submodule.map_span, ← h, Submodule.map_top, LinearMap.range_eq_top]
   exact Coinvariants.mk_surjective _
+
+/-- The modular symbols `{α, β} ⊗ P` span `𝕄_w(Γ; R)`. -/
+theorem span_symbol_eq_top :
+    Submodule.span R
+      (Set.range fun x : OnePoint ℚ × OnePoint ℚ × homogeneousSubmodule (Fin 2) R w ↦
+        symbol Γ x.1 x.2.1 x.2.2) = ⊤ := by
+  refine eq_top_iff.2 ((span_mk_degreeZeroRep_tmul_eq_top Γ).symm.le.trans
+    (Submodule.span_mono ?_))
+  rintro _ ⟨_, ⟨g, rfl⟩, P, -, rfl⟩
+  refine ⟨(mapGL ℚ g • ∞, mapGL ℚ g • (0 : ℚ), P), ?_⟩
+  dsimp only
+  rw [symbol_apply, degreeZeroRep_apply, degreeZeroGLRep_single_sub_single]
 
 /-- **Finiteness of modular symbols.** For a subgroup `Γ` of finite index in `SL(2, ℤ)`, the
 module of modular symbols `𝕄_w(Γ; R)` is a finitely generated `R`-module. -/

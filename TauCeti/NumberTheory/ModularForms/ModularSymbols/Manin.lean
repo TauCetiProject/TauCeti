@@ -72,6 +72,7 @@ theorem maninSymbol_mul_of_mem {h : SL(2, ℤ)} (hh : h ∈ Γ) (g : SL(2, ℤ))
   exact symbol_mapGL_smul Γ hh _ _ P
 
 /-- The two-term Manin relation: right multiplication by `S` reverses the edge. -/
+@[simp]
 theorem maninSymbol_mul_S (g : SL(2, ℤ)) :
     maninSymbol Γ (g * S) = -(maninSymbol Γ g :
       homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
@@ -81,6 +82,7 @@ theorem maninSymbol_mul_S (g : SL(2, ℤ)) :
   exact LinearMap.congr_fun (symbol_swap Γ (mapGL ℚ g • ∞) (mapGL ℚ g • (0 : ℚ))) P
 
 /-- The Manin symbol is unchanged when its matrix is multiplied by the central element `-1`. -/
+@[simp]
 theorem maninSymbol_neg (g : SL(2, ℤ)) :
     maninSymbol Γ (-g) = (maninSymbol Γ g :
       homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
@@ -120,14 +122,5 @@ theorem span_maninSymbol_eq_top :
     (Submodule.span_mono ?_))
   rintro _ ⟨_, ⟨g, rfl⟩, P, -, rfl⟩
   exact ⟨(g, P), maninSymbol_eq_mk Γ g P⟩
-
-/-- The modular symbols `{α, β} ⊗ P` span `𝕄_w(Γ; R)`. -/
-theorem span_symbol_eq_top :
-    Submodule.span R
-      (Set.range fun x : OnePoint ℚ × OnePoint ℚ × homogeneousSubmodule (Fin 2) R w ↦
-        symbol Γ x.1 x.2.1 x.2.2) = ⊤ := by
-  refine eq_top_iff.2 ((span_maninSymbol_eq_top Γ).symm.le.trans (Submodule.span_mono ?_))
-  rintro _ ⟨⟨g, P⟩, rfl⟩
-  exact ⟨(mapGL ℚ g • ∞, mapGL ℚ g • (0 : ℚ), P), (maninSymbol_apply Γ g P).symm⟩
 
 end TauCeti.ModularSymbols
