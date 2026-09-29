@@ -27,9 +27,11 @@ extension, and faithfully flat extension reflects containment of ideals.
 The descent equivalences use a common universe for the base ring, extension ring, and
 coordinate Hopf algebras, as required by `IsIsogeny.baseChange` and
 `IsCentralIsogeny.baseChange`. The center base-change identity also requires the extension
-ring and coordinate algebra to share a universe. Algebraic closure stays in the universe
-of the field, so these restrictions still allow descent from an algebraic closure when
-the coordinate algebras lie in that universe.
+ring and coordinate algebra to share a universe. On the reflection side,
+`RingHom.CodescendsAlong` quantifies its entire pushout square in one universe, as does
+`RingHom.CodescendsAlong.of_tensorProduct_map`. Algebraic closure stays in the universe of
+the field, so these restrictions still allow descent from an algebraic closure when the
+coordinate algebras lie in that universe.
 
 ## References
 
