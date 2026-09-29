@@ -39,7 +39,7 @@ on the bounding line or on the two bounding rays.
   map of the upper half-plane onto a polygonal domain, continuous and injective up to the real
   axis and tending to a side at infinity, is an affine image of the Schwarz--Christoffel
   primitive.
-* `TauCeti.sum_eq_neg_two_of_polygonal_domain` -- the turning exponents of such a polygonal
+* `TauCeti.exponent_sum_eq_neg_two_of_polygonal_domain` -- the turning exponents of such a polygonal
   domain sum to `-2`: its interior angles sum to `(n - 2) * π`.
 
 ## References
@@ -120,9 +120,8 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
     exact ⟨r, hr, fun w hw hw0 hw1 => h ⟨hw, hw0, hw1⟩⟩
   have hne : ∀ w ∈ upperHalfPlaneSet, w ≠ 0 := fun w (hw : 0 < w.im) h => by
     simp [h] at hw
-  have hmem : ∀ w ∈ upperHalfPlaneSet, -w⁻¹ ∈ upperHalfPlaneSet := fun w (hw : 0 < w.im) => by
-    simpa [upperHalfPlaneSet, neg_div, one_div, inv_neg] using
-      (⟨w, hw⟩ : ℍ).im_inv_neg_coe_pos
+  have hmem : ∀ w ∈ upperHalfPlaneSet, -w⁻¹ ∈ upperHalfPlaneSet :=
+    fun _ hw => im_neg_inv_pos.mpr hw
   -- the value `(p - q) / b` at `0` is not taken elsewhere
   have hnotp : ∀ w : ℂ, 0 ≤ w.im → (p - q) / b ≠ (f (-w⁻¹) - q) / b := fun w hw h => by
     rw [div_left_inj' hb, sub_left_inj] at h
@@ -242,7 +241,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain`, the turning exponents
 sum to `-2`.  Equivalently, the interior angles `(e i + 1) * π` of the polygon sum to
 `(n - 2) * π`, where `n` is the number of vertices. -/
-theorem sum_eq_neg_two_of_polygonal_domain
+theorem exponent_sum_eq_neg_two_of_polygonal_domain
     {ι : Type*} [Fintype ι] (a e : ι → ℝ) (ha : Function.Injective a)
     (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) {v : ι → ℂ} {p : ℂ}
     (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
@@ -264,7 +263,7 @@ theorem sum_eq_neg_two_of_polygonal_domain
   have hpre := (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff a e UpperHalfPlane.I
     hf hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
       (schwarzChristoffelIntegrand_ne_zero a e UpperHalfPlane.I.im_pos), _, hform⟩
-  exact sum_eq_neg_two_of_logDeriv_deriv_eqOn a e hf hpre
+  exact exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn a e hf hpre
     (exists_eqOn_neg_inv_of_tendsto_of_side hfc hfi hfU hfv hp hpf hside)
 
 end TauCeti

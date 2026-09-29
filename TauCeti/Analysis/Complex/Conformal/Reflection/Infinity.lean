@@ -69,6 +69,25 @@ theorem tendsto_mul_logDeriv_deriv_comp_neg_inv_upperHalfPlaneSet
     exact div_nonneg hw.le (Complex.normSq_nonneg _)
   rw [(logDeriv_congr_nhds heq.deriv).eq_of_nhds]
 
+/-- A conjugation-symmetric continuation agreeing with `ψ` above the real axis tends to zero
+at infinity if `z * ψ z` has a finite limit there within the upper half-plane. -/
+private theorem tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
+    {φ ψ : ℂ → ℂ} {c : ℂ}
+    (h : Tendsto (fun z : ℂ => z * ψ z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 c))
+    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφ : EqOn φ ψ upperHalfPlaneSet) : Tendsto φ (cobounded ℂ) (𝓝 0) := by
+  apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
+  have ht := h.mul ((tendsto_inv₀_cobounded (α := ℂ)).mono_left
+    (inf_le_left : cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet ≤ cobounded ℂ))
+  simp only [mul_zero] at ht
+  apply ht.congr'
+  rw [eventuallyEq_inf_principal_iff]
+  exact Eventually.of_forall fun z hz => by
+    have hz0 : z ≠ 0 := by rintro rfl; simp at hz
+    rw [hφ hz]
+    field_simp
+
 /-- A continuation of a polygon map's pre-Schwarzian that is conjugation-symmetric near infinity
 tends to zero there when the inverse coordinate maps a neighborhood of zero to a straight edge.
 Continuity near infinity holds, in particular, for a continuation holomorphic off finitely many
@@ -84,26 +103,31 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv
     (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφ : EqOn φ (logDeriv (deriv (fun w => g (-w⁻¹)))) upperHalfPlaneSet) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
-  apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
-  have ht := (tendsto_mul_logDeriv_deriv_comp_neg_inv_upperHalfPlaneSet
-    hΩopen hΩ hzero hcont hholo hreal hupper hinj).mul
-      ((tendsto_inv₀_cobounded (α := ℂ)).mono_left
-        (inf_le_left : cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet ≤ cobounded ℂ))
-  simp only [mul_zero] at ht
-  apply ht.congr'
-  rw [eventuallyEq_inf_principal_iff]
-  apply Eventually.of_forall
-  intro z hz
-  rw [hφ hz]
-  have hz0 : z ≠ 0 := by rintro rfl; simp at hz
-  field_simp
+  exact tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
+    (tendsto_mul_logDeriv_deriv_comp_neg_inv_upperHalfPlaneSet
+      hΩopen hΩ hzero hcont hholo hreal hupper hinj) hφcont hφconj hφ
+
+/-- Holomorphy is preserved when a half-plane map is read in the coordinate `w ↦ -1 / w`
+and affinely normalized. -/
+theorem differentiableOn_of_eqOn_neg_inv {f g : ℂ → ℂ} {q b : ℂ} {r : ℝ}
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
+    (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b) (Metric.ball 0 r ∩ upperHalfPlaneSet)) :
+    DifferentiableOn ℂ g (Metric.ball 0 r ∩ upperHalfPlaneSet) := by
+  refine DifferentiableOn.congr ?_ fun w hw => hgf hw
+  intro w hw
+  have hw0 : w ≠ 0 := fun h => by simp [h] at hw
+  have hnegInv : -w⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hw.2
+  exact (((hf (-w⁻¹) hnegInv).differentiableAt
+    (isOpen_upperHalfPlaneSet.mem_nhds hnegInv)).comp w
+      (differentiableAt_inv hw0).neg).sub_const q |>.div_const b |>.differentiableWithinAt
 
 /-- **The pre-Schwarzian of a map with a straight side at infinity.** Read the map `f` of the
 upper half-plane in the coordinate `w ↦ -1 / w` at infinity and normalize the target by
 `w ↦ (w - q) / b`. If the result extends to a function `g` which is continuous and injective up to
 a real segment through `0`, holomorphic and upper half-plane valued above it, and real on it, then
 `z * f''(z) / f'(z) → -2` as `z` tends to infinity in the upper half-plane. -/
-theorem tendsto_mul_logDeriv_deriv_of_eqOn_neg_inv {f : ℂ → ℂ} {q b : ℂ} {r : ℝ}
+theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
+    {f : ℂ → ℂ} {q b : ℂ} {r : ℝ}
     (hr : 0 < r) (hb : b ≠ 0)
     (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b)
       (Metric.ball 0 r ∩ upperHalfPlaneSet))
@@ -124,10 +148,7 @@ theorem tendsto_mul_logDeriv_deriv_of_eqOn_neg_inv {f : ℂ → ℂ} {q b : ℂ}
     simpa only [neg_zero] using (tendsto_inv₀_cobounded (α := ℂ)).neg
   filter_upwards [hinv.eventually (Metric.ball_mem_nhds (0 : ℂ) hr)] with z hzball hz
   have hz0 : z ≠ 0 := fun h => by simp [h] at hz
-  have hnegInv : -z⁻¹ ∈ upperHalfPlaneSet := by
-    simp only [upperHalfPlaneSet, mem_ofPred_eq] at hz ⊢
-    simp only [neg_im, inv_im, neg_div, neg_neg]
-    exact div_pos hz (Complex.normSq_pos.mpr hz0)
+  have hnegInv : -z⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hz
   -- Off the origin, the inverse coordinate of the inverse coordinate is the original map.
   have heq : (fun w : ℂ => g (-w⁻¹)) =ᶠ[𝓝 z] fun w : ℂ => (f w - q) / b := by
     filter_upwards [((continuousAt_inv₀ hz0).neg).preimage_mem_nhds
@@ -166,17 +187,8 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
       (fun z => φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z)) (cobounded ℂ))
     (hφf : EqOn φ (logDeriv (deriv f)) upperHalfPlaneSet) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
-  apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
-  have ht := (tendsto_mul_logDeriv_deriv_of_eqOn_neg_inv hr hb hgf hcont hholo hreal hupper
-    hinj).mul ((tendsto_inv₀_cobounded (α := ℂ)).mono_left
-      (inf_le_left : cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet ≤ cobounded ℂ))
-  simp only [mul_zero] at ht
-  apply ht.congr'
-  rw [eventuallyEq_inf_principal_iff]
-  apply Eventually.of_forall
-  intro z hz
-  have hz0 : z ≠ 0 := by rintro rfl; simp at hz
-  rw [hφf hz]
-  field_simp
+  exact tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
+    (tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
+      hr hb hgf hcont hholo hreal hupper hinj) hφcont hφconj hφf
 
 end TauCeti

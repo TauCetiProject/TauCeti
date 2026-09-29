@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Prevertex
 -- coordinate at infinity are used only in the proof.
 import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
 import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
+import TauCeti.Analysis.Contour.PolarPart.PartialFraction
 
 /-!
 # The Schwarz--Christoffel formula from local polygonal boundary data
@@ -46,8 +47,8 @@ identify it with `∑ i, e i / (z - a i)`, and integrating that differential equ
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary` -- a locally
   conformal map of the upper half-plane satisfying the prescribed local side, corner, and infinity
   conditions is an affine image of the Schwarz--Christoffel primitive for `a` and `e`.
-* `TauCeti.sum_eq_neg_two_of_logDeriv_deriv_eqOn` -- if the pre-Schwarzian derivative of such a
-  map is `∑ i, e i / (z - a i)` and infinity lies inside a side, then `∑ i, e i = -2`.
+* `TauCeti.exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn` -- if the pre-Schwarzian derivative of
+  such a map is `∑ i, e i / (z - a i)` and infinity lies inside a side, then `∑ i, e i = -2`.
 
 ## References
 
@@ -61,23 +62,6 @@ open Bornology Complex Filter Set Topology UpperHalfPlane
 
 namespace TauCeti
 
-/-- A map holomorphic on the upper half-plane stays holomorphic when read, and affinely
-normalized, in the coordinate `w ↦ -1 / w` at infinity. -/
-private theorem differentiableOn_of_eqOn_neg_inv {f g : ℂ → ℂ} {q b : ℂ} {r : ℝ}
-    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
-    (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b) (Metric.ball 0 r ∩ upperHalfPlaneSet)) :
-    DifferentiableOn ℂ g (Metric.ball 0 r ∩ upperHalfPlaneSet) := by
-  refine DifferentiableOn.congr ?_ fun w hw => hgf hw
-  intro w hw
-  have hw0 : w ≠ 0 := fun h => by simp [h] at hw
-  have hnegInv : -w⁻¹ ∈ upperHalfPlaneSet := by
-    simp only [upperHalfPlaneSet, mem_ofPred_eq]
-    simp only [neg_im, inv_im, neg_div, neg_neg]
-    exact div_pos hw.2 (Complex.normSq_pos.mpr hw0)
-  exact (((hf (-w⁻¹) hnegInv).differentiableAt
-    (isOpen_upperHalfPlaneSet.mem_nhds hnegInv)).comp w
-      (differentiableAt_inv hw0).neg).sub_const q |>.div_const b |>.differentiableWithinAt
-
 /-- **The closing condition on the Schwarz--Christoffel exponents.**  Let `f` be holomorphic on
 the upper half-plane with pre-Schwarzian derivative `f'' / f' = ∑ i, e i / (z - a i)` there, and
 suppose that in the coordinate at infinity it extends across a straight side, as in
@@ -87,7 +71,8 @@ suppose that in the coordinate at infinity it extends across a straight side, as
 Indeed `z * f'' / f'` tends to `∑ i, e i` at infinity by the displayed formula, and to `-2`
 because infinity is a regular boundary point.  For the turning exponents `e i = α i / π - 1` of a
 polygon with interior angles `α i`, this is the angle sum `∑ i, α i = (n - 2) * π`. -/
-theorem sum_eq_neg_two_of_logDeriv_deriv_eqOn {ι : Type*} [Fintype ι] (a e : ι → ℝ)
+theorem exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn
+    {ι : Type*} [Fintype ι] (a e : ι → ℝ)
     {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hpre : EqOn (logDeriv (deriv f))
       (fun z => ∑ i, (e i : ℂ) / (z - (a i : ℂ))) upperHalfPlaneSet)
@@ -99,23 +84,10 @@ theorem sum_eq_neg_two_of_logDeriv_deriv_eqOn {ι : Type*} [Fintype ι] (a e : �
       InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})) :
     ∑ i, e i = -2 := by
   obtain ⟨r, hr, g, q, b, hb, hgf, hgcont, hgreal, hgupper, hginj⟩ := hinfty
-  have hreg := tendsto_mul_logDeriv_deriv_of_eqOn_neg_inv hr hb hgf hgcont
+  have hreg := tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hb hgf hgcont
     (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
-  -- Each simple fraction `z * e i / (z - a i)` tends to `e i` at infinity.
-  have hsum : Tendsto (fun z : ℂ => z * ∑ i, (e i : ℂ) / (z - (a i : ℂ))) (cobounded ℂ)
-      (𝓝 (∑ i, (e i : ℂ))) := by
-    simp_rw [Finset.mul_sum]
-    refine tendsto_finsetSum _ fun i _ => ?_
-    have hlim : Tendsto (fun z : ℂ => (e i : ℂ) * (1 - (a i : ℂ) * z⁻¹)⁻¹) (cobounded ℂ)
-        (𝓝 ((e i : ℂ) * (1 - (a i : ℂ) * 0)⁻¹)) :=
-      ((((tendsto_inv₀_cobounded (α := ℂ)).const_mul _).const_sub 1).inv₀ (by simp)).const_mul _
-    simp only [mul_zero, sub_zero, inv_one, mul_one] at hlim
-    apply hlim.congr'
-    filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop ‖((a i : ℝ) : ℂ)‖]
-      with z hz
-    have hz0 : z ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt hz)
-    have hza : z - (a i : ℂ) ≠ 0 := sub_ne_zero.mpr fun h => by simp [h] at hz
-    field_simp
+  have hsum := tendsto_mul_finset_sum_div_sub_cobounded Finset.univ
+    (fun i => (a i : ℂ)) (fun i => (e i : ℂ))
   have hlim := tendsto_nhds_unique (hsum.mono_left inf_le_left) (hreg.congr' <| by
     rw [eventuallyEq_inf_principal_iff]
     exact Eventually.of_forall fun z hz => by rw [hpre hz])

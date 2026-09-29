@@ -25,10 +25,12 @@ prevertex to its vertex: `A * vertex i + B = v i`, where `vertex i` is the limit
 
 ## Main results
 
+* `TauCeti.exists_prevertices_of_isJordanCurve_frontier` -- a Carathéodory map of a bounded
+  polygonal Jordan domain with real prevertices mapping to the prescribed vertices.
 * `TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier` --
   a bounded polygonal Jordan domain is the image of the upper half-plane under an affine image of
   a Schwarz--Christoffel primitive, with the prevertices sent to the vertices.
-* `TauCeti.sum_eq_neg_two_of_isJordanCurve_frontier` -- the turning exponents of a bounded
+* `TauCeti.exponent_sum_eq_neg_two_of_isJordanCurve_frontier` -- the turning exponents of a bounded
   polygonal Jordan domain sum to `-2`, so its interior angles sum to `(n - 2) * π`.
 
 ## References
@@ -49,7 +51,7 @@ namespace TauCeti
 infinity to a frontier point `p` which is not a vertex, together with real prevertices `a i` of
 the vertices `v i`: the global data of
 `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain`. -/
-private theorem exists_polygonal_domain_map_of_isJordanCurve_frontier
+theorem exists_prevertices_of_isJordanCurve_frontier
     {ι : Type*} [Finite ι] {e : ι → ℝ} (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1)
     {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
@@ -101,7 +103,7 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
       BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
       ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
   obtain ⟨f, a, p, ha, hfd, hfc, hfi, hfH, hfa, hfp, hpf⟩ :=
-    exists_polygonal_domain_map_of_isJordanCurve_frontier he hUo hUc hUb hUJ hv hcorner
+    exists_prevertices_of_isJordanCurve_frontier he hUo hUc hUb hUJ hv hcorner
   have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
   have hform := eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_domain a e ha he z₀
     hfd hfc hfi hfH.image_eq hfa hfp hpf hside hcorner
@@ -125,7 +127,7 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
 turning exponents sum to `-2`: the interior angles `(e i + 1) * π` at the `n` vertices sum to
 `(n - 2) * π`.  So the Schwarz--Christoffel data of a polygonal Jordan domain always satisfy the
 closing condition `∑ i, e i = -2`. -/
-theorem sum_eq_neg_two_of_isJordanCurve_frontier
+theorem exponent_sum_eq_neg_two_of_isJordanCurve_frontier
     {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1)
     {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
@@ -135,9 +137,9 @@ theorem sum_eq_neg_two_of_isJordanCurve_frontier
       (z ∈ U ↔ |((z - v i) / b).arg| < (e i + 1) * Real.pi / 2)) :
     ∑ i, e i = -2 := by
   obtain ⟨f, a, p, ha, hfd, hfc, hfi, hfH, hfa, hfp, hpf⟩ :=
-    exists_polygonal_domain_map_of_isJordanCurve_frontier he hUo hUc hUb hUJ hv hcorner
-  exact sum_eq_neg_two_of_polygonal_domain a e ha he hfd hfc hfi hfH.image_eq hfa hfp hpf hside
-    hcorner
+    exists_prevertices_of_isJordanCurve_frontier he hUo hUc hUb hUJ hv hcorner
+  exact exponent_sum_eq_neg_two_of_polygonal_domain a e ha he hfd hfc hfi hfH.image_eq hfa hfp
+    hpf hside hcorner
 
 end TauCeti
 

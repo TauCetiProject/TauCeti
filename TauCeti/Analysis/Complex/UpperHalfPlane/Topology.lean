@@ -137,6 +137,13 @@ theorem im_neg_inv_nonneg {w : ℂ} : 0 ≤ (-w⁻¹).im ↔ 0 ≤ w.im := by
   · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
     rw [him, le_div_iff₀ (normSq_pos.mpr hw), zero_mul]
 
+/-- The inversion `w ↦ -w⁻¹` preserves the open upper half-plane. -/
+theorem im_neg_inv_pos {w : ℂ} : 0 < (-w⁻¹).im ↔ 0 < w.im := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  · have him : (-w⁻¹).im = w.im / normSq w := by simp [neg_div]
+    rw [him, lt_div_iff₀ (normSq_pos.mpr hw), zero_mul]
+
 end TauCeti
 
 namespace TauCeti.UpperHalfPlane
