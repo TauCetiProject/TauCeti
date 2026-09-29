@@ -153,6 +153,23 @@ lemma skeletonPairMap_comp {f : ContinuousMap C C'} {g : ContinuousMap C' C''}
       skeletonPairMap f hf n ≫ skeletonPairMap g hg n := by
   ext : 2 <;> rfl
 
+/-- A cellular map induces a map between triples of consecutive skeleta. -/
+def skeletonTripleMap (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
+    skeletonTriple C n ⟶ skeletonTriple C' n :=
+  ⟨ComposableArrows.homMk₂ (skeletonMap f hf n) (skeletonMap f hf (n + 1))
+    (skeletonMap f hf (n + 2)) (by ext x; rfl) (by ext x; rfl)⟩
+
+/-- The inner pair of a skeletal triple map is the map of the lower skeletal pairs. -/
+lemma skeletonTripleMap_innerPair (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
+    TopTriple.innerPair.map (skeletonTripleMap f hf n) = skeletonPairMap f hf n := by
+  ext : 2 <;> rfl
+
+/-- The outer pair of a skeletal triple map is the map of the upper skeletal pairs. -/
+lemma skeletonTripleMap_outerPair (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
+    TopTriple.outerPair.map (skeletonTripleMap f hf n) =
+      skeletonPairMap f hf (n + 1) := by
+  ext : 2 <;> rfl
+
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
 /-- The map induced by a cellular map on the cellular chain group in degree `n`. -/
@@ -178,33 +195,6 @@ lemma cellularChainGroupMap_comp {f : ContinuousMap C C'} {g : ContinuousMap C' 
   simp only [TopPair.singularHomologyMap.eq_def, Functor.map_comp,
     SSetPair.homologyMap_comp]
 
-/-- Naturality of the connecting map from a skeletal pair to the homology of its lower
-skeleton. -/
-@[reassoc]
-lemma skeletonPairδ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
-    skeletonPairδ C R n ≫
-        SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n =
-      cellularChainGroupMap R f hf (n + 1) ≫ skeletonPairδ C' R n := by
-  have h := (skeletonPair C (n + 1)).singularHomologyδ_naturality R
-    (skeletonPairMap f hf (n + 1)) (n + 1) n
-  rw [skeletonPairMap_snd] at h
-  -- Expose the cellular wrappers; the lower space of `skeletonPair` is `skeletonObj`.
-  simp only [skeletonPairδ, cellularChainGroupMap, cellularChainGroup, skeletonHomology]
-  exact h
-
-/-- Naturality of the map from the singular homology of a skeleton to the relative homology of
-its skeletal pair. -/
-@[reassoc (attr := simp)]
-lemma skeletonPairπ_naturality (f : ContinuousMap C C') (hf : IsCellular f) (n : ℕ) :
-    SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n ≫
-        skeletonPairπ C' R n =
-      skeletonPairπ C R n ≫ cellularChainGroupMap R f hf n := by
-  simpa only [cellularChainGroupMap, skeletonPairπ, skeletonPairMap_fst,
-    skeletonPair_fst, TopPair.toSSetPair_map_right,
-    TopPair.toSSetPair_obj_right] using
-      SSetPair.homologyπ_naturality
-        (TopPair.toSSetPair.map (skeletonPairMap f hf n)) R n
-
 /-- The maps induced on consecutive skeletal relative homology groups commute with the
 cellular differential. -/
 @[reassoc]
@@ -212,21 +202,11 @@ lemma cellularDifferential_naturality (f : ContinuousMap C C')
     (hf : IsCellular f) (n : ℕ) :
     cellularChainGroupMap R f hf (n + 1) ≫ cellularDifferential C' R n =
       cellularDifferential C R n ≫ cellularChainGroupMap R f hf n := by
-  simp only [cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ]
-  calc
-    _ = (cellularChainGroupMap R f hf (n + 1) ≫ skeletonPairδ C' R n) ≫
-        skeletonPairπ C' R n := (Category.assoc _ _ _).symm
-    _ = (skeletonPairδ C R n ≫
-        SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n) ≫
-        skeletonPairπ C' R n := by rw [skeletonPairδ_naturality R f hf n]
-    _ = skeletonPairδ C R n ≫
-        (SSet.homologyMap (TopCat.toSSet.map (skeletonMap f hf (n + 1))) R n ≫
-          skeletonPairπ C' R n) := Category.assoc _ _ _
-    _ = skeletonPairδ C R n ≫
-        (skeletonPairπ C R n ≫ cellularChainGroupMap R f hf n) := by
-          rw [skeletonPairπ_naturality R f hf n]
-    _ = (skeletonPairδ C R n ≫ skeletonPairπ C R n) ≫
-        cellularChainGroupMap R f hf n := (Category.assoc _ _ _).symm
+  have h := (skeletonTriple C n).singularHomologyδ_naturality
+    (skeletonTripleMap f hf n) R (n + 1) n
+  rw [skeletonTripleMap_innerPair, skeletonTripleMap_outerPair] at h
+  simp only [cellularDifferential_eq_singularHomologyδ, cellularChainGroupMap]
+  convert h.symm using 1 <;> rfl
 
 /-- The chain map on cellular chains induced by a cellular map. -/
 def cellularChainComplexMap (f : ContinuousMap C C') (hf : IsCellular f) :
