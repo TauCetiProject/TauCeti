@@ -210,7 +210,6 @@ variable [Semiring H] [_root_.HopfAlgebra R H] [CommSemiring A] [Algebra R A]
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 
 /-- `mapValue` preserves convolution inverses when `H` is a Hopf algebra. -/
-@[simp]
 lemma _root_.AlgHom.mapValue_inv (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
     mapValue (H := H) φ f⁻¹ = (mapValue (H := H) φ f)⁻¹ :=
   map_inv (mapValue φ) f
