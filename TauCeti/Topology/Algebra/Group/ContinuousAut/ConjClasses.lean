@@ -42,6 +42,12 @@ theorem smul_conjClasses_mk (φ : ContinuousAut G) (x : G) :
   rw [MulAction.compHom_smul_def, mulAut_smul_conjClasses_mk]
   simp only [coe_toMulAut]
 
+/-- Continuous automorphisms commute with powering conjugacy classes. -/
+@[simp]
+theorem smul_conjClasses_pow (φ : ContinuousAut G) (c : ConjClasses G) (n : ℕ) :
+    φ • (c ^ n) = (φ • c) ^ n := by
+  simp only [MulAction.compHom_smul_def, mulAut_smul_conjClasses_pow]
+
 end Monoid
 
 variable [Group G] [SeparatelyContinuousMul G]
@@ -82,6 +88,16 @@ theorem mk_smul_mk (φ : ContinuousAut G) (x : G) :
     (φ : ContinuousOut G) • ConjClasses.mk x = ConjClasses.mk (φ x) := by
   exact (mk_smul_conjClasses φ (ConjClasses.mk x)).trans
     (ContinuousAut.smul_conjClasses_mk φ x)
+
+/-- Continuous outer automorphisms commute with powering conjugacy classes. -/
+@[simp]
+theorem smul_conjClasses_pow (φ : ContinuousOut G) (c : ConjClasses G) (n : ℕ) :
+    φ • (c ^ n) = (φ • c) ^ n := by
+  induction φ using QuotientGroup.induction_on with
+  | H φ =>
+    -- The quotient representative is definitionally `mk φ`.
+    change (mk φ) • (c ^ n) = ((mk φ) • c) ^ n
+    rw [mk_smul_conjClasses, mk_smul_conjClasses, ContinuousAut.smul_conjClasses_pow]
 
 end ContinuousOut
 

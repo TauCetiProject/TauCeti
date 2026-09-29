@@ -484,6 +484,12 @@ theorem mulAut_smul_conjClasses_mk (φ : MulAut G) (x : G) :
     φ • ConjClasses.mk x = ConjClasses.mk (φ x) :=
   ConjClasses.map_mk _ x
 
+/-- Automorphisms commute with powering conjugacy classes. -/
+@[simp]
+theorem mulAut_smul_conjClasses_pow (φ : MulAut G) (c : ConjClasses G) (n : ℕ) :
+    φ • (c ^ n) = (φ • c) ^ n :=
+  ConjClasses.map_pow φ.toMonoidHom c n
+
 end Monoid
 
 variable [Group G]
