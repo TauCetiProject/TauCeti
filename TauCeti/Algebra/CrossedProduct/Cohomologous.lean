@@ -178,21 +178,24 @@ theorem algEquivOfCoboundary_smul (x : L) (a : CrossedProduct w) :
     algEquivOfCoboundary b h (x • a) = x • algEquivOfCoboundary b h a := by
   rw [coe_algEquivOfCoboundary, map_smul]
 
+/-- `CrossedProduct.algEquivOfCoboundary` restricts to the identity on the embedded copies of
+`L`. -/
+@[simp]
+theorem algEquivOfCoboundary_inc (x : L) : algEquivOfCoboundary b h (inc w x) = inc z x := by
+  rw [← mul_one (inc w x), ← smul_def, algEquivOfCoboundary_smul, map_one, smul_def, mul_one]
+
 /-- The coordinates of `CrossedProduct.algEquivOfCoboundary b h a` are those of `a`, the
 `σ`-th one multiplied by `b(σ)`. -/
 @[simp]
 theorem repr_algEquivOfCoboundary (a : CrossedProduct w) (σ : L ≃ₐ[K] L) :
     (basis z).repr (algEquivOfCoboundary b h a) σ = (basis w).repr a σ * b σ := by
-  induction a using induction_on with
-  | zero => simp
-  | add a a' ha ha' => simp only [map_add, Finsupp.add_apply, ha, ha', add_mul]
-  | smul_basis τ x =>
-    simp only [algEquivOfCoboundary_smul, algEquivOfCoboundary_basis, map_smul,
-      Module.Basis.repr_self, Finsupp.smul_apply, smul_eq_mul]
-    by_cases hτ : τ = σ
-    · subst hτ
-      simp
-    · simp [hτ]
+  -- `Basis.equiv` carries coordinates in `basis w` to coordinates in `(basis z).unitsSMul b`
+  have hrepr : ((basis z).unitsSMul b).repr (algEquivOfCoboundary b h a) = (basis w).repr a := by
+    rw [coe_algEquivOfCoboundary, linearEquivOfCoboundary, Module.Basis.equiv, Equiv.refl_symm,
+      Module.Basis.reindex_refl, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  have hσ := DFunLike.congr_fun hrepr σ
+  rw [Module.Basis.repr_unitsSMul, inv_smul_eq_iff, Units.smul_def, smul_eq_mul] at hσ
+  rw [hσ, mul_comm]
 
 /-- **The crossed products of cohomologous cocycles are isomorphic `K`-algebras.** -/
 theorem nonempty_algEquiv_of_cohomologous (hzw : z.Cohomologous w) :
