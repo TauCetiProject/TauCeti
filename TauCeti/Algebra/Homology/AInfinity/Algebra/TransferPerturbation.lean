@@ -31,7 +31,7 @@ namespace TauCeti.AInfinityAlgebra
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
-/-- The higher bar perturbation followed by a tensor-trick homotopy is locally nilpotent. -/
+/-- The tensor-trick homotopy followed by the higher bar perturbation is locally nilpotent. -/
 theorem exists_pow_higherBarDifferential_comp_homotopy_eq_zero
     {H : Type uH} [AddCommGroup H] [Module R H]
     {dA : Module.End R A} {dH : Module.End R H}
