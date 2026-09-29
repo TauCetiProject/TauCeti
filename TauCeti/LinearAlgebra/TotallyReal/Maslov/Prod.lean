@@ -186,13 +186,6 @@ theorem maslovIndex_prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
   have hL₂ := Λ'.isMaximalTotallyReal 0
   have hL₁₂ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (E × E') Complex.I).restrictScalars ℝ)
       ((Λ 0).prod (Λ' 0)) := hL₁.isMaximalTotallyReal_prod hL₂
-  -- The phases of the two summands multiply to the phase of the direct sum.
-  have hphase (t : I) :
-      hL₁₂.maslovPhase ((Λ.prod Λ').isMaximalTotallyReal t)
-        = hL₁.maslovPhase (Λ.isMaximalTotallyReal t)
-          * hL₂.maslovPhase (Λ'.isMaximalTotallyReal t) := by
-    exact IsMaximalTotallyReal.maslovPhase_prod hL₁ hL₂
-      (Λ.isMaximalTotallyReal t) (Λ'.isMaximalTotallyReal t)
   have hμ₁ : Λ.maslovIndex = Circle.degree (Λ.maslovPhasePath) :=
     Λ.maslovIndex_eq_degree hL₁ (Λ.maslovPhasePath) fun _ => maslovPhasePath_apply _ _
   have hμ₂ : Λ'.maslovIndex = Circle.degree (Λ'.maslovPhasePath) :=
@@ -202,7 +195,11 @@ theorem maslovIndex_prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
   have hμ₃ : (Λ.prod Λ').maslovIndex = Circle.degree ((Λ.maslovPhasePath).mul
       (Λ'.maslovPhasePath)) := by
     refine (Λ.prod Λ').maslovIndex_eq_degree hL₁₂ _ fun t => ?_
-    rw [Path.mul_apply, Circle.coe_mul, maslovPhasePath_apply, maslovPhasePath_apply, hphase]
+    rw [Path.mul_apply, Circle.coe_mul, ← maslovPhasePath_prod_apply Λ Λ' t,
+      maslovPhasePath_apply]
+    -- The two remaining references are proofs of the same `Prop`, and `maslovPhase` reads its
+    -- first argument only through a `Prop`-valued existential, so the two phases are the same.
+    rfl
   rw [hμ₃, hμ₁, hμ₂, Circle.degree_mul]
 
 /-- The direct sum of the two half-turns has Maslov index the sum of the two complex dimensions. -/
