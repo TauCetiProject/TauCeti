@@ -37,15 +37,13 @@ def mapQuotient [N.Normal] : ContinuousAut G →* MulAut (G ⧸ N) where
     obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective x
     simp only [ContinuousMulEquiv.toMulEquiv_eq_coe, QuotientGroup.congr_mk,
       MulAut.one_apply]
-    change ((1 : ContinuousAut G) x : G ⧸ N) = (x : G ⧸ N)
-    rw [ContinuousAut.one_apply]
+    exact congrArg (QuotientGroup.mk' N) (ContinuousAut.one_apply x)
   map_mul' φ ψ := by
     ext x
     obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective x
     simp only [ContinuousMulEquiv.toMulEquiv_eq_coe, QuotientGroup.congr_mk,
       MulAut.mul_apply]
-    change (((φ * ψ) x : G) : G ⧸ N) = (φ (ψ x) : G ⧸ N)
-    rw [ContinuousAut.mul_apply]
+    exact congrArg (QuotientGroup.mk' N) (ContinuousAut.mul_apply φ ψ x)
 
 /-- The quotient automorphism sends the class of `x` to the class of `φ x`. -/
 @[simp]
