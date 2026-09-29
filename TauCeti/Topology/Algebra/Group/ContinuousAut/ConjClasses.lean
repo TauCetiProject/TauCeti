@@ -21,9 +21,13 @@ public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] [TopologicalSpace G]
+variable {G : Type*} [TopologicalSpace G]
 
 namespace ContinuousAut
+
+section Monoid
+
+variable [Monoid G]
 
 /-- A continuous automorphism acts on conjugacy classes by its underlying group
 automorphism. -/
@@ -38,7 +42,9 @@ theorem smul_conjClasses_mk (φ : ContinuousAut G) (x : G) :
   rw [MulAction.compHom_smul_def, mulAut_smul_conjClasses_mk]
   simp only [coe_toMulAut]
 
-variable [SeparatelyContinuousMul G]
+end Monoid
+
+variable [Group G] [SeparatelyContinuousMul G]
 
 /-- Inner automorphisms fix every conjugacy class. -/
 @[simp]
@@ -47,7 +53,7 @@ theorem conj_smul_conjClasses (g : G) (c : ConjClasses G) : conj g • c = c := 
 
 end ContinuousAut
 
-variable [SeparatelyContinuousMul G]
+variable [Group G] [SeparatelyContinuousMul G]
 
 namespace ContinuousOut
 
@@ -65,14 +71,17 @@ instance : MulAction (ContinuousOut G) (ConjClasses G) :=
 /-- The outer action is computed using any representative continuous automorphism. -/
 theorem mk_smul_conjClasses (φ : ContinuousAut G) (c : ConjClasses G) :
     (mk φ) • c = φ • c := by
+  -- `mk` is the quotient coercion; reduce it to expose the `QuotientGroup.lift` computation.
   rw [show mk φ = (φ : ContinuousOut G) from rfl]
   rw [MulAction.compHom_smul_def, QuotientGroup.lift_mk, Equiv.Perm.smul_def,
     MulAction.toPermHom_apply, MulAction.toPerm_apply]
 
 /-- On the class of an element, the outer action sends it to the class of its image. -/
+@[simp]
 theorem mk_smul_mk (φ : ContinuousAut G) (x : G) :
-    (mk φ) • ConjClasses.mk x = ConjClasses.mk (φ x) := by
-  rw [mk_smul_conjClasses, ContinuousAut.smul_conjClasses_mk]
+    (φ : ContinuousOut G) • ConjClasses.mk x = ConjClasses.mk (φ x) := by
+  exact (mk_smul_conjClasses φ (ConjClasses.mk x)).trans
+    (ContinuousAut.smul_conjClasses_mk φ x)
 
 end ContinuousOut
 

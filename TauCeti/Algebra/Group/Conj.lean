@@ -453,19 +453,25 @@ end ConjClasses
 
 namespace TauCeti
 
-variable {G : Type*} [Group G]
+variable {G : Type*}
+
+section Monoid
+
+variable [Monoid G]
 
 /-- An automorphism acts on conjugacy classes by mapping representatives. -/
 instance instMulActionMulAutConjClasses : MulAction (MulAut G) (ConjClasses G) where
   smul φ c := ConjClasses.map φ.toMonoidHom c
   one_smul c := by
     obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
+    -- Expose the action being constructed, so the representative formula applies.
     change ConjClasses.map (1 : MulAut G).toMonoidHom (ConjClasses.mk x) =
       ConjClasses.mk x
     rw [ConjClasses.map_mk]
     simp
   mul_smul φ ψ c := by
     obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
+    -- Expose the action being constructed and multiplication in `MulAut`.
     change ConjClasses.map (φ * ψ).toMonoidHom (ConjClasses.mk x) =
       ConjClasses.map φ.toMonoidHom
         (ConjClasses.map ψ.toMonoidHom (ConjClasses.mk x))
@@ -477,6 +483,10 @@ instance instMulActionMulAutConjClasses : MulAction (MulAut G) (ConjClasses G) w
 theorem mulAut_smul_conjClasses_mk (φ : MulAut G) (x : G) :
     φ • ConjClasses.mk x = ConjClasses.mk (φ x) :=
   ConjClasses.map_mk _ x
+
+end Monoid
+
+variable [Group G]
 
 /-- Inner automorphisms fix every conjugacy class. -/
 @[simp]
