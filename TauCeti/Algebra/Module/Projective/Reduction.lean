@@ -57,19 +57,16 @@ theorem nonempty_linearEquiv_of_quotient_smul_top (hI : I ≤ Ring.jacobson R)
       ((M ⧸ (I • (⊤ : Submodule R M))) ≃ₗ[R] (N ⧸ (I • (⊤ : Submodule R N))))) :
     Nonempty (M ≃ₗ[R] N) := by
   let e := h.some
-  have hMsmall : IsSuperfluous (I • (⊤ : Submodule R M)) :=
-    isSuperfluous_of_le_jacobson <|
-      (Submodule.smul_mono hI le_rfl).trans (Ring.jacobson_smul_top_le R M)
-  have hNsmall : IsSuperfluous (I • (⊤ : Submodule R N)) :=
-    isSuperfluous_of_le_jacobson <|
-      (Submodule.smul_mono hI le_rfl).trans (Ring.jacobson_smul_top_le R N)
   have hMcover : IsProjectiveCover
       (e.toLinearMap ∘ₗ (I • (⊤ : Submodule R M)).mkQ) :=
-    (isProjectiveCover_mkQ_iff.mpr hMsmall).comp e.surjective <| by
+    (isProjectiveCover_mkQ_iff_le_jacobson.mpr <|
+      (Submodule.smul_mono hI le_rfl).trans (Ring.jacobson_smul_top_le R M)).comp
+        e.surjective <| by
       rw [LinearMap.ker_eq_bot.mpr e.injective]
       exact isSuperfluous_bot
   have hNcover : IsProjectiveCover (I • (⊤ : Submodule R N)).mkQ :=
-    isProjectiveCover_mkQ_iff.mpr hNsmall
+    isProjectiveCover_mkQ_iff_le_jacobson.mpr <|
+      (Submodule.smul_mono hI le_rfl).trans (Ring.jacobson_smul_top_le R N)
   exact ⟨(hMcover.exists_linearEquiv hNcover).choose⟩
 
 end Ideal
