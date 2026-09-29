@@ -116,7 +116,6 @@ theorem mkPrincipal_apply (O : NumberFieldOrder K) (x : Kˣ) :
 
 /-- A principal narrow Picard class is trivial exactly when an order unit rescales its
 generator to a totally positive element. -/
-@[simp]
 theorem mkPrincipal_eq_one_iff (O : NumberFieldOrder K) {x : Kˣ} :
     mkPrincipal O x = 1 ↔ ∃ w : O.toSubalgebraˣ, IsTotallyPositive (w • (x : K)) := by
   rw [mkPrincipal_apply, mk_eq_one_iff, O.mem_narrowPrincipal_iff]
@@ -142,7 +141,6 @@ theorem mkPrincipal_eq_one_of_isTotallyPositive (O : NumberFieldOrder K) {x : K�
 
 /-- Every principal narrow Picard class has order dividing two, since a square is totally
 positive at every real place. -/
-@[simp]
 theorem mkPrincipal_sq (O : NumberFieldOrder K) (x : Kˣ) :
     mkPrincipal O x ^ 2 = 1 := by
   rw [← map_pow]
@@ -177,7 +175,6 @@ theorem narrowToPic_surjective (O : NumberFieldOrder K) :
   exact ⟨NarrowPic.mk O I, O.narrowToPic_mk I⟩
 
 /-- The narrow class of a principal ideal maps to the trivial wide Picard class. -/
-@[simp]
 theorem narrowToPic_mkPrincipal (O : NumberFieldOrder K) (x : Kˣ) :
     O.narrowToPic (NarrowPic.mkPrincipal O x) = 1 := by
   rw [NarrowPic.mkPrincipal_apply, O.narrowToPic_mk]
