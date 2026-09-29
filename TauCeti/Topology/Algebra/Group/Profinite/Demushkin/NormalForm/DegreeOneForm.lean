@@ -537,6 +537,19 @@ theorem degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl {f : ℕ} (hf : 0 <
     Finsupp.smul_apply, degreeOneBasis_repr_gradedBracket_inl, Finset.sum_const_zero, add_zero,
     degreeOneBasis_repr_gradedPow_gradedMkZero_inl, toMul_dualBasis_freeProPGen]
 
+/-- **The vanishing `2`-power coordinates of the odd dyadic normal-form word**, for `f ≥ 2`:
+all coordinates except that of `x₁` vanish. -/
+theorem degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl_eq_zero_iff {f : ℕ}
+    (hf : 2 ≤ f) (k : Fin n) :
+    (degreeOneBasis 2 (Fin n)).repr
+        (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
+          demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n _⟩)
+        (Sum.inl k) = 0 ↔ (k : ℕ) ≠ 0 := by
+  obtain ⟨g, hg⟩ : ∃ g, f - 1 = g + 1 := ⟨f - 2, by omega⟩
+  rw [degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl (zero_lt_two.trans_le hf), hg,
+    pow_succ, mul_nsmul, two_nsmul, CharTwo.add_self_eq_zero, add_zero]
+  simp
+
 /-- **The degree-one form of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` is not alternating**, for
 `n ≥ 1` and `f ≥ 1`: its value on the first coordinate character twice is `1`. -/
 theorem not_isAlt_degreeOneForm_demushkinWordTwoOdd (hn : 0 < n) {f : ℕ} (hf : 0 < f) :

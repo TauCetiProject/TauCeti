@@ -24,7 +24,7 @@ with `q = 2` of odd rank: the class in `gr_{m+1}(F)` of a discrepancy between tw
 class `ρ` is the class of a basis modification up to the classes of the powers `x_i^{2^{m+1}}`,
 `i ≥ 2`, which the argument carries along rather than absorbs; in Labute's proof they give rise to
 the factor `x₂^{2^f}` of the normal form. It is the instance of
-`TauCeti.freeProP.range_basisModificationDelta_sup_basisModificationTail_eq_top_of_two` at the
+`TauCeti.freeProP.range_basisModificationDelta_sup_basisModificationTail_eq_top_two` at the
 generator `x₁`: the degree-one form of `ρ` is nondegenerate, `x₁` is the only generator with a
 `2`-power coefficient, and the first coordinate character is orthogonal to the others.
 
@@ -68,15 +68,12 @@ theorem range_basisModificationDelta_sup_basisModificationTail_eq_top_demushkinW
           demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n _⟩)
         (m + 1) = ⊤ := by
   have hn0 : 0 < n := hn.pos
-  refine range_basisModificationDelta_sup_basisModificationTail_eq_top_of_two hm
+  refine range_basisModificationDelta_sup_basisModificationTail_eq_top_two hm
     (i₀ := ⟨0, hn0⟩) ?_ (fun k hk ↦ ?_) fun i hi ↦ ?_
   · rw [span_range_degreeOneDeriv_eq_top_iff_nondegenerate_degreeOneForm]
     exact nondegenerate_degreeOneForm_demushkinWordTwoOdd hn (zero_lt_two.trans_le hf)
-  · -- The coefficient `2^{f-1}` of `π ξ₂` vanishes in `𝔽₂`, since `f ≥ 2`.
-    obtain ⟨g, hg⟩ : ∃ g, f - 1 = g + 1 := ⟨f - 2, by omega⟩
-    rw [degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl (zero_lt_two.trans_le hf),
-      ite_eq_right fun h ↦ hk (Fin.ext h), zero_add, hg, pow_succ, mul_nsmul, two_nsmul,
-      CharTwo.add_self_eq_zero]
+  · exact (degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl_eq_zero_iff hf k).2
+      fun h ↦ hk (Fin.ext h)
   · rw [degreeOneForm_gradedMk_demushkinWordTwoOdd_dualBasis_zero hn0 (zero_lt_two.trans_le hf),
       toMul_dualBasis_freeProPGen, ite_eq_right fun h ↦ hi (Fin.ext h)]
 
