@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.NumberTheory.LocalField.PowerSubgroup
+import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 
 /-!
 # Normalization of the p-adic absolute value
@@ -29,6 +29,7 @@ concrete p-adic norm and valuation APIs.
   `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
   `p ≡ 3 (mod 4)`.
+* `Padic.not_isSquare_five`: `5` is nonsquare in `ℚ_[2]`.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
 `NumberTheory/Padics` development.
@@ -133,5 +134,20 @@ theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
   have hcard : Fintype.card 𝓀[ℚ_[p]] = p := by
     simpa only [Nat.card_eq_fintype_card] using natCard_residueField p
   exact ((FiniteField.isSquare_neg_one_iff).mp hs') (by simpa [hcard] using hp)
+
+/-- `5` is not a square in `ℚ_[2]`, since no square is `5` modulo `8`. -/
+theorem not_isSquare_five : ¬IsSquare (5 : ℚ_[2]) := by
+  rintro ⟨b, hb⟩
+  have hb1 : ‖b‖ ≤ 1 := by
+    have h5 : ‖(5 : ℚ_[2])‖ = 1 := by
+      simpa using (Padic.norm_natCast_eq_one_iff (p := 2) (n := 5)).2 (by norm_num)
+    have : ‖b‖ * ‖b‖ = 1 := by rw [← norm_mul, ← hb, h5]
+    nlinarith [norm_nonneg b]
+  obtain ⟨c, rfl⟩ : ∃ c : ℤ_[2], (c : ℚ_[2]) = b := ⟨⟨b, hb1⟩, rfl⟩
+  have h : c * c = 5 := PadicInt.ext (by push_cast; exact hb.symm)
+  have h8 := congrArg (PadicInt.toZModPow (p := 2) 3) h
+  rw [map_mul, map_ofNat] at h8
+  have hsq : ∀ x : ZMod (2 ^ 3), x * x ≠ 5 := by decide
+  exact hsq _ h8
 
 end Padic

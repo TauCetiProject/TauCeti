@@ -22,6 +22,10 @@ For a field extension `L` of `K` the range of the `q`-power map is a subfield ov
 purely inseparable: every `x : L` has `x ^ q` in that image, and `q` is a power of the exponential
 characteristic.
 
+On a finite field of order `p ^ 2` the Frobenius automorphism `frobeniusEquiv K p`, sending `x`
+to `x ^ p`, is an involution. This is the field automorphism behind Hermitian duality of codes
+over the field of four elements.
+
 ## Main definitions
 
 * `TauCeti.FiniteField.frobeniusFixedSubalgebra`: the subalgebra fixed by an iterate of the
@@ -30,10 +34,14 @@ characteristic.
 ## Main results
 
 * `TauCeti.FiniteField.frobeniusAlgHom_pow_apply`: the `n`-th iterate is the `q ^ n`-power map.
+* `TauCeti.FiniteField.sub_pow_natCard`: the `q`-power map is additive,
+  `(x - y) ^ q = x ^ q - y ^ q`.
 * `TauCeti.FiniteField.mem_frobeniusFixedSubalgebra`: membership in the fixed subalgebra is the
   equation `a ^ q ^ n = a`.
 * `TauCeti.FiniteField.isPurelyInseparable_fieldRange_frobeniusAlgHom`: `L` is purely
   inseparable over the field range of `FiniteField.frobeniusAlgHom K L`.
+* `TauCeti.FiniteField.frobeniusEquiv_involutive`: on a field of order `p ^ 2`, the Frobenius
+  automorphism `x ↦ x ^ p` is an involution.
 
 ## Mathematical context
 
@@ -51,13 +59,23 @@ public section
 
 namespace TauCeti.FiniteField
 
+/-- **Raising to the order of a finite base field is additive**: in a `K`-algebra,
+`(x - y) ^ q = x ^ q - y ^ q` for `q` the number of elements of `K`. -/
+-- Not `@[simp]`: whenever a `Fintype K` instance is available, `Nat.card_eq_fintype_card` rewrites
+-- the left-hand side to `(x - y) ^ Fintype.card K`, so the simpNF linter rejects the attribute.
+theorem sub_pow_natCard (K A : Type*) [Field K] [Finite K] [CommRing A] [Algebra K A] (x y : A) :
+    (x - y) ^ Nat.card K = x ^ Nat.card K - y ^ Nat.card K := by
+  let _ := Fintype.ofFinite K
+  simpa only [_root_.FiniteField.coe_frobeniusAlgHom, Nat.card_eq_fintype_card] using
+    map_sub (_root_.FiniteField.frobeniusAlgHom K A) x y
+
 variable (K A : Type*) [Field K] [Fintype K] [CommRing A] [Algebra K A]
 
 /-- The `n`-th iterate of the Frobenius over a finite base field raises every element to the
 `(Nat.card K) ^ n`-th power. -/
 theorem frobeniusAlgHom_pow_apply (n : ℕ) (x : A) :
-    ((_root_.FiniteField.frobeniusAlgHom K A) ^ n) x = x ^ (Nat.card K) ^ n := by
-  rw [AlgHom.coe_pow, _root_.FiniteField.coe_frobeniusAlgHom, pow_iterate,
+    ((FiniteField.frobeniusAlgHom K A) ^ n) x = x ^ (Nat.card K) ^ n := by
+  rw [AlgHom.coe_pow, FiniteField.coe_frobeniusAlgHom, pow_iterate,
     Nat.card_eq_fintype_card]
 
 /-- **The subalgebra fixed by an iterate of the Frobenius over a finite base field**, the
@@ -67,13 +85,13 @@ For `K = 𝔽_q`, `A` an algebraic closure of `K` and `0 < n` this is the subfie
 elements, but nothing of the sort is asserted here. Unlike `TauCeti.frobeniusFixedSubring`, which
 reads the same subset off `iterateFrobenius`, this needs no exponential characteristic on `A`. -/
 def frobeniusFixedSubalgebra (n : ℕ) : Subalgebra K A :=
-  AlgHom.equalizer ((_root_.FiniteField.frobeniusAlgHom K A) ^ n) (AlgHom.id K A)
+  AlgHom.equalizer ((FiniteField.frobeniusAlgHom K A) ^ n) (AlgHom.id K A)
 
 /-- The Frobenius-fixed subalgebra is the equalizer of the `n`-th Frobenius iterate with the
 identity. -/
 theorem frobeniusFixedSubalgebra_def (n : ℕ) :
     frobeniusFixedSubalgebra K A n =
-      AlgHom.equalizer ((_root_.FiniteField.frobeniusAlgHom K A) ^ n) (AlgHom.id K A) := by
+      AlgHom.equalizer ((FiniteField.frobeniusAlgHom K A) ^ n) (AlgHom.id K A) := by
   rw [frobeniusFixedSubalgebra]
 
 variable {K A}
@@ -85,31 +103,39 @@ theorem mem_frobeniusFixedSubalgebra {n : ℕ} {a : A} :
   rw [frobeniusFixedSubalgebra, AlgHom.mem_equalizer, frobeniusAlgHom_pow_apply, AlgHom.coe_id,
     id_eq]
 
-variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
+variable {K L : Type*} [Field K] [Fintype K] [Field L] [Algebra K L]
 
 /-- **A field is purely inseparable over the image of its finite-base-field Frobenius**
 (the field-theoretic statement in Silverman II.2.11(b)). Every element has its `q`-th power in
 the image, where `q = Nat.card K` is a power of the exponential characteristic. -/
 theorem isPurelyInseparable_fieldRange_frobeniusAlgHom :
-    letI := Fintype.ofFinite K
-    IsPurelyInseparable (_root_.FiniteField.frobeniusAlgHom K L).fieldRange L := by
-  let _ := Fintype.ofFinite K
-  obtain ⟨p, hpK, n, hp, hcard⟩ := _root_.FiniteField.card' K
-  let _ : CharP K p := hpK
-  let _ : ExpChar K p := ExpChar.prime hp
-  have hcard' : Nat.card K = p ^ (n : ℕ) := by
-    rw [Nat.card_eq_fintype_card, hcard]
+    IsPurelyInseparable (FiniteField.frobeniusAlgHom K L).fieldRange L := by
+  obtain ⟨p, _, n, hp, hcard⟩ := FiniteField.card' K
+  have : ExpChar K p := .prime hp
   rw [isPurelyInseparable_iff_pow_mem _ p]
   intro x
-  have hx : x ^ p ^ (n : ℕ) ∈
-      (_root_.FiniteField.frobeniusAlgHom K L).fieldRange := by
-    rw [AlgHom.mem_fieldRange]
-    refine ⟨x, ?_⟩
-    rw [_root_.FiniteField.coe_frobeniusAlgHom, ← Nat.card_eq_fintype_card, hcard']
-  refine ⟨(n : ℕ), ?_⟩
-  refine ⟨⟨x ^ p ^ (n : ℕ), hx⟩, ?_⟩
-  exact IntermediateField.algebraMap_apply
-    (S := (_root_.FiniteField.frobeniusAlgHom K L).fieldRange) _
+  use n
+  refine ⟨⟨x ^ p ^ (n : ℕ), ?_⟩, IntermediateField.algebraMap_apply _ _⟩
+  rw [AlgHom.mem_fieldRange]
+  use x
+  rw [FiniteField.coe_frobeniusAlgHom, hcard]
+
+/-! ### The Frobenius of a field of order `p ^ 2` -/
+
+section Involutive
+
+variable {K : Type*} [Field K] [Finite K] {p : ℕ} [Fact p.Prime] [CharP K p]
+
+/-- On a field of order `p ^ 2`, the Frobenius automorphism `x ↦ x ^ p` is an involution. -/
+theorem frobeniusEquiv_involutive (hK : Nat.card K = p ^ 2) :
+    Function.Involutive (frobeniusEquiv K p) := by
+  let := Fintype.ofFinite K
+  have hcard : Fintype.card K = p ^ 2 := Nat.card_eq_fintype_card.symm.trans hK
+  intro x
+  simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def, RingHom.comp_apply, RingHom.one_def,
+    RingHom.id_apply] using DFunLike.congr_fun (FiniteField.frobenius_pow hcard) x
+
+end Involutive
 
 end TauCeti.FiniteField
 

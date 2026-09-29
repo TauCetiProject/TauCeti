@@ -37,8 +37,9 @@ global variable fixed.
 
 Dropping the global variable — coding through a function that ignores its first argument — gives
 the **ergodic form** of the representation, whose arrays are dissociated as well as exchangeable.
-That is proved in `Arrays.AldousHoover.Dissociated`.  The converse representation direction still
-has to construct the coding function from an exchangeable array.
+That is proved in `Arrays.AldousHoover.Dissociated`.  The converse representation direction, which
+constructs the coding function from an exchangeable array, is proved for separately exchangeable
+arrays in `Arrays.AldousHoover.SeparateRepresentation`.
 
 ## Main definitions
 

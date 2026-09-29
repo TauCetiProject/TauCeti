@@ -36,6 +36,8 @@ with the Frattini subgroup, so `s` is surjective and is a two-sided inverse of `
   criterion for closed subgroups.
 * `IsProP.eq_top_of_sup_proPFrattini_eq_top`: the Frattini subgroup consists of
   non-generators.
+* `IsProP.surjective_of_forall_inv_mul_mem_proPFrattini`: a continuous endomorphism congruent to
+  the identity modulo the Frattini subgroup is surjective.
 * `IsProP.continuousMulEquivOfLeftInverse`: a Frattini cover with a continuous homomorphic
   section is a topological isomorphism, with the section as inverse.
 * `topologicallyGenerates_iff_frattiniQuotient`: a set generates topologically if and only if
@@ -118,6 +120,20 @@ theorem eq_top_of_sup_proPFrattini_eq_top (hG : IsProP p G) {H : Subgroup G}
     exact sup_le hHU (proPFrattini_le hU)
   have hUtop : U.toSubgroup = ⊤ := top_unique htop_le
   exact hp.out.ne_one <| hU.symm.trans (Subgroup.index_eq_one.mpr hUtop)
+
+/-- **An endomorphism congruent to the identity modulo the Frattini subgroup is surjective.** A
+continuous endomorphism `φ` of a pro-`p` group with `g⁻¹ * φ g ∈ Φ(G)` for every `g` has closed
+range, which generates the group together with `Φ(G)`. -/
+theorem surjective_of_forall_inv_mul_mem_proPFrattini (hG : IsProP p G) {φ : G →* G}
+    (hφ : Continuous φ) (h : ∀ g, g⁻¹ * φ g ∈ proPFrattini p G) : Function.Surjective φ := by
+  suffices hr : φ.range = ⊤ from MonoidHom.range_eq_top.mp hr
+  apply hG.eq_top_of_sup_proPFrattini_eq_top
+  · rw [MonoidHom.coe_range]
+    exact hφ.isClosedMap.isClosed_range
+  · refine top_unique fun x _ ↦ ?_
+    have hx := Subgroup.mul_mem_sup (MonoidHom.mem_range.mpr ⟨x, rfl⟩ : φ x ∈ φ.range)
+      (inv_mem (h x))
+    rwa [mul_inv_rev, inv_inv, mul_inv_cancel_left] at hx
 
 end IsProP
 

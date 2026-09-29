@@ -498,6 +498,19 @@ theorem StronglyContinuousSemigroup.realOperator_continuousOn_Ici
   intro t ht
   exact S.realOperator_continuousWithinAt x t ht
 
+/-- The real-time orbit is continuous on all of `ℝ`, using the constant extension at negative
+times. -/
+theorem StronglyContinuousSemigroup.continuous_realOperator_apply
+    (S : StronglyContinuousSemigroup X) (x : X) :
+    Continuous (fun t : ℝ => S.realOperator t x) := by
+  have hneg : ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Iic 0) := by
+    apply (continuousOn_const : ContinuousOn (fun _ : ℝ => x) (Set.Iic 0)).congr
+    intro t ht
+    simp [S.realOperator_def t, Real.toNNReal_of_nonpos ht]
+  have h := hneg.union_of_isClosed (S.realOperator_continuousOn_Ici x)
+    isClosed_Iic isClosed_Ici
+  simpa [Set.Iic_union_Ici] using h
+
 /-- The real-time orbit of a strongly continuous semigroup is continuous at positive times. -/
 theorem StronglyContinuousSemigroup.realOperator_continuousAt_of_pos
     (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :

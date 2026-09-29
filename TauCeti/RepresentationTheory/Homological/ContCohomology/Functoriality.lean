@@ -34,18 +34,27 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
 
 * `TauCeti.ContinuousCohomology.coeffMap`, `TauCeti.ContinuousCohomology.res`,
   `TauCeti.ContinuousCohomology.infl`: the three named instances of `ContinuousCohomology.map`.
+* `TauCeti.ContinuousCohomology.resLE`: restriction along the inclusion of a subgroup into a
+  larger subgroup.
 * `TauCeti.ContinuousCohomology.continuousCohomologyFunctor`: `Hⁿ(G, -)` as a functor.
 * `TauCeti.ContinuousCohomology.resNatTrans`, `TauCeti.ContinuousCohomology.inflNatTrans`.
 
 ## Main results
 
 * `TauCeti.ContinuousCohomology.coeffMap_comp`,
-  `TauCeti.ContinuousCohomology.res_comp_res` and
-  `TauCeti.ContinuousCohomology.infl_comp_infl`: the composition laws of the three named maps.
-* `TauCeti.ContinuousCohomology.coeffMap_comp_res` and
+  `TauCeti.ContinuousCohomology.res_comp_res`, `TauCeti.ContinuousCohomology.res_comp_resLE`,
+  `TauCeti.ContinuousCohomology.resLE_comp_resLE` and
+  `TauCeti.ContinuousCohomology.infl_comp_infl`: the composition laws of the named maps;
+  `TauCeti.ContinuousCohomology.resLE_refl`: restriction along the identity inclusion is the
+  identity.
+* `TauCeti.ContinuousCohomology.coeffMap_comp_res`,
+  `TauCeti.ContinuousCohomology.coeffMap_comp_resLE` and
   `TauCeti.ContinuousCohomology.coeffMap_comp_infl`: naturality of restriction and of inflation in
   the coefficients.
 * `TauCeti.ContinuousCohomology.map_congr`: two compatible pairs that agree induce the same map.
+* `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_one_apply` and
+  `TauCeti.ContinuousCohomology.iCycles_cocyclesMap_two_apply`: evaluation of mapped homogeneous
+  cocycles in degrees one and two.
 -/
 
 public section
@@ -181,6 +190,71 @@ theorem res_comp_res (T : Subgroup S) (X : TopRep R G) (n : ℕ) :
 
 end Res
 
+section ResLE
+
+variable {R} {H S : Subgroup G}
+
+/-- Restriction along the inclusion of a subgroup `H` into a larger subgroup `S`, from the
+cohomology of `S` to that of `H`; the instance of `ContinuousCohomology.map` at the inclusion
+`H ↪ S` and the identity of the coefficients, both subgroups carrying the subspace topology. -/
+noncomputable def resLE (h : H ≤ S) (X : TopRep R G) (n : ℕ) :
+    continuousCohomology n (TopRep.res (S.subtype : S →* G) X) ⟶
+      continuousCohomology n (TopRep.res (H.subtype : H →* G) X) :=
+  _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupInclusion h)
+    (𝟙 (TopRep.res (H.subtype : H →* G) X)) n
+
+-- Not `@[simp]`: `resLE` is the intended normal form, and this lemma unfolds it.
+/-- The defining equation of `resLE`: it is `ContinuousCohomology.map` for the compatible pair
+consisting of the inclusion `H ↪ S` and the identity of the coefficients. -/
+theorem resLE_def (h : H ≤ S) (X : TopRep R G) (n : ℕ) :
+    resLE h X n = _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupInclusion h)
+      (𝟙 (TopRep.res (H.subtype : H →* G) X)) n :=
+  (rfl)
+
+/-- Restriction along the inclusion `H ↪ S` is natural in the coefficients. -/
+@[reassoc]
+theorem coeffMap_comp_resLE (h : H ≤ S) {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
+    coeffMap ((TopRep.resFunctor (S.subtype : S →* G)).map f) n ≫ resLE h Y n =
+      resLE h X n ≫ coeffMap ((TopRep.resFunctor (H.subtype : H →* G)).map f) n :=
+  (_root_.ContinuousCohomology.map_comp (X := TopRep.res (S.subtype : S →* G) X)
+        (ContinuousMonoidHom.id S) (ContinuousMonoidHom.subgroupInclusion h)
+        ((TopRep.resFunctor (S.subtype : S →* G)).map f) (𝟙 _) n).symm.trans
+    (_root_.ContinuousCohomology.map_comp (X := TopRep.res (S.subtype : S →* G) X)
+      (ContinuousMonoidHom.subgroupInclusion h) (ContinuousMonoidHom.id H) (𝟙 _)
+      ((TopRep.resFunctor (H.subtype : H →* G)).map f) n)
+
+/-- Restricting to `S` and then to a subgroup `H ≤ S` is restriction to `H`. -/
+@[reassoc (attr := simp)]
+theorem res_comp_resLE (h : H ≤ S) (X : TopRep R G) (n : ℕ) :
+    res S X n ≫ resLE h X n = res H X n := by
+  refine (_root_.ContinuousCohomology.map_comp (X := X) (ContinuousMonoidHom.subgroupSubtype S)
+      (ContinuousMonoidHom.subgroupInclusion h) (𝟙 _) (𝟙 _) n).symm.trans
+    (map_congr (ContinuousMonoidHom.subgroupSubtype_comp_subgroupInclusion h) (heq_of_eq ?_) n)
+  ext v
+  rfl
+
+/-- Restriction along the inclusion of a subgroup into itself is the identity. -/
+@[simp]
+theorem resLE_refl (X : TopRep R G) (n : ℕ) : resLE (le_refl H) X n = 𝟙 _ :=
+  (map_congr (ContinuousMonoidHom.subgroupInclusion_refl H) (heq_of_eq rfl) n).trans
+    (_root_.ContinuousCohomology.map_id _ n)
+
+/-- Restricting from `T` to `S` and then to `H`, for subgroups `H ≤ S ≤ T`, is restricting from
+`T` to `H`: the transition maps of the system of the `Hⁿ(S, X)` over the subgroups containing `H`
+compose. -/
+@[reassoc (attr := simp)]
+theorem resLE_comp_resLE {T : Subgroup G} (hHS : H ≤ S) (hST : S ≤ T) (X : TopRep R G) (n : ℕ) :
+    resLE hST X n ≫ resLE hHS X n = resLE (hHS.trans hST) X n := by
+  refine (_root_.ContinuousCohomology.map_comp (X := TopRep.res (T.subtype : T →* G) X)
+      (ContinuousMonoidHom.subgroupInclusion hST) (ContinuousMonoidHom.subgroupInclusion hHS)
+      (𝟙 _) (𝟙 _) n).symm.trans
+    (map_congr (ContinuousMonoidHom.subgroupInclusion_comp_subgroupInclusion hHS hST)
+      (heq_of_eq ?_) n)
+  ext v
+  rfl
+
+end ResLE
+
 section Infl
 
 variable (N : Subgroup G) [N.Normal]
@@ -302,6 +376,29 @@ theorem iCycles_cocyclesMap_apply (n : ℕ) (a : _root_.ContinuousCohomology.coc
   have h := ConcreteCategory.congr_hom
     (HomologicalComplex.cyclesMap_i (_root_.ContinuousCohomology.cochainsMap φ f) n) a
   simpa only [ConcreteCategory.comp_apply] using h
+
+/-- A mapped homogeneous one-cocycle is evaluated by applying the underlying additive coefficient
+map after precomposing both arguments with the group homomorphism. -/
+theorem iCycles_cocyclesMap_one_apply (a : _root_.ContinuousCohomology.cocycles X 1)
+    (f' : X.V →+ Y.V) (hf : ∀ m, f.hom m = f' m) (h₀ h₁ : H) :
+    ((TopRep.homogeneousCochains Y).iCycles 1
+        (_root_.ContinuousCohomology.cocyclesMap φ f 1 a)).val h₀ h₁ =
+      f' (((TopRep.homogeneousCochains X).iCycles 1 a).val (φ h₀) (φ h₁)) := by
+  rw [iCycles_cocyclesMap_apply, coe_cochainsMap_f_apply,
+    resolutionMap_succ_apply, resolutionMap_succ_apply,
+    _root_.ContinuousCohomology.resolutionMap_zero, hf]
+
+/-- A mapped homogeneous two-cocycle is evaluated by applying the underlying additive coefficient
+map after precomposing all three arguments with the group homomorphism. -/
+theorem iCycles_cocyclesMap_two_apply (a : _root_.ContinuousCohomology.cocycles X 2)
+    (f' : X.V →+ Y.V) (hf : ∀ m, f.hom m = f' m) (h₀ h₁ h₂ : H) :
+    ((TopRep.homogeneousCochains Y).iCycles 2
+        (_root_.ContinuousCohomology.cocyclesMap φ f 2 a)).val h₀ h₁ h₂ =
+      f' (((TopRep.homogeneousCochains X).iCycles 2 a).val
+        (φ h₀) (φ h₁) (φ h₂)) := by
+  rw [iCycles_cocyclesMap_apply, coe_cochainsMap_f_apply,
+    resolutionMap_succ_apply, resolutionMap_succ_apply, resolutionMap_succ_apply,
+    _root_.ContinuousCohomology.resolutionMap_zero, hf]
 
 /-- A coefficient map along an equality of coefficient objects is the transport along the induced
 equality of cohomology groups. -/

@@ -255,10 +255,8 @@ theorem surjective_of_forall_surjective_mk'_comp {H : Type*} [Group H] [Topologi
     (Subgroup.topologicalClosure_eq_top_iff_forall_map_mk' _).mpr fun U ↦ by
       rw [← MonoidHom.range_comp, MonoidHom.range_eq_top]
       exact h U
-  have hclosed : IsClosed (φ.range : Set G) := by
-    rw [MonoidHom.coe_range]
-    exact (isCompact_range hφ).isClosed
-  exact top_le_iff.mp (hdense ▸ Subgroup.topologicalClosure_minimal _ le_rfl hclosed)
+  exact top_le_iff.mp (hdense ▸ Subgroup.topologicalClosure_minimal _ le_rfl
+    (MonoidHom.isClosed_range_of_continuous hφ))
 
 end DenseSubgroups
 

@@ -30,6 +30,8 @@ complete Hausdorff targets.
 
 * `locUniformSpace_toTopologicalSpace`: the topology `locUniformSpace` induces is `locTopology`.
   This is what a proof rewrites against, so no body in this file needs exposing.
+* `isOpen_map_algebraMap_locUniformSpace`: the image of an open ideal is open for the packaged
+  uniformity on the localization.
 * `locUniformSpace_congr`: presentations sharing a ring of definition share the uniformity, so
   the two completions `A⟨T/s⟩` are the same object.
 * `toCompletionLoc_heq`: the two structure maps `A → A⟨T/s⟩` into them agree. This is what
@@ -124,6 +126,16 @@ theorem locUniformSpace_toTopologicalSpace [IsTopologicalRing A] (P : PairOfDefi
     (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :
     (locUniformSpace P T s S hden).toTopologicalSpace = locTopology P T s S hden := (rfl)
+
+/-- The image of an open ideal stays open under localization at the packaged uniformity. -/
+theorem isOpen_map_algebraMap_locUniformSpace [IsTopologicalRing A]
+    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S]
+    [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
+    letI := locUniformSpace P T s S hden
+    IsOpen (Ideal.map (algebraMap A S) J : Set S) := by
+  have h := isOpen_map_algebraMap_locTopology P T s S hden hJ
+  rwa [← locUniformSpace_toTopologicalSpace P T s S hden] at h
 
 /-- `Aₛ` is a uniform additive group for `locUniformSpace`. The companion of `locUniformSpace`:
 the two together are what `UniformSpace.Completion S` needs. -/

@@ -34,8 +34,6 @@ turning multiplication by `q` into multiplication by `ε`.
 ## Main results
 
 * `TauCeti.LaurentSpecialization.mk_smul`: a Laurent scalar acts on `N_ε` by its value at `ε`.
-* `TauCeti.LaurentSpecialization.map_smul_eq_laurentEval_smul`: an `R`-linear map turning `q`
-  into `ε` turns every Laurent scalar into its value at `ε`.
 * `TauCeti.LaurentSpecialization.lift_mk` and `TauCeti.LaurentSpecialization.hom_ext`: the
   universal property.
 -/
@@ -88,34 +86,6 @@ theorem mk_smul (p : R[T;T⁻¹]) (x : N) : p • mk ε x = laurentEval ε p •
   exact hmem
 
 variable {A : Type*} [AddCommGroup A] [Module R A]
-
-/-- **Scalar compatibility with the specialization at `ε`.**  An `R`-linear map turning
-multiplication by `q` into multiplication by `ε` turns every Laurent scalar into its value at `ε`.
-This is the condition under which `TauCeti.LaurentSpecialization.lift` factors a map through
-`N_ε`. -/
-theorem map_smul_eq_laurentEval_smul (f : N →ₗ[R] A)
-    (hf : ∀ x, f ((T 1 : R[T;T⁻¹]) • x) = (ε : R) • f x) (p : R[T;T⁻¹]) (x : N) :
-    f (p • x) = laurentEval ε p • f x := by
-  have hinv : ∀ x, f ((T (-1) : R[T;T⁻¹]) • x) = ((ε⁻¹ : Rˣ) : R) • f x := fun x => by
-    have hx := hf ((T (-1) : R[T;T⁻¹]) • x)
-    rw [smul_smul, ← T_add, add_neg_cancel, T_zero, one_smul] at hx
-    rw [hx, smul_smul, Units.inv_mul, one_smul]
-  have hT : ∀ (n : ℤ) (x : N), f ((T n : R[T;T⁻¹]) • x) = ((ε ^ n : Rˣ) : R) • f x := by
-    intro n
-    induction n using Int.induction_on with
-    | zero => simp
-    | succ k ih =>
-        intro x
-        rw [T_add, mul_smul, ih, hf, smul_smul, zpow_add_one, Units.val_mul]
-    | pred k ih =>
-        intro x
-        rw [sub_eq_add_neg, T_add, mul_smul, ih, hinv, smul_smul, zpow_add,
-          zpow_neg_one, Units.val_mul]
-  induction p using LaurentPolynomial.induction_on' with
-  | add p q hp hq => rw [add_smul, map_add, hp, hq, map_add, add_smul]
-  | C_mul_T n a =>
-      rw [mul_smul, C_eq_algebraMap, algebraMap_smul, map_smul, hT, map_mul, laurentEval_T,
-        AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply, mul_smul]
 
 /-- **The universal property of the specialization at `ε`**: an `R`-linear map out of `N` which
 turns multiplication by `q` into multiplication by `ε` factors through `N_ε`. -/

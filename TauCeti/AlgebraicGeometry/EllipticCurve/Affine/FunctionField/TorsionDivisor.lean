@@ -20,7 +20,7 @@ pullback along `[n]`.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.exists_principal_zsmul_pointPlace_sub_infinity`: at an `n`-torsion
+* `WeierstrassCurve.Affine.exists_principal_eq_zsmul_ofPoint_sub_infinity`: at an `n`-torsion
   point `T`, the divisor `n(T) - n(O)` is the divisor of a function.
 
 ## References
@@ -36,21 +36,16 @@ namespace WeierstrassCurve.Affine
 open TauCeti AlgebraicGeometry IsDedekindDomain
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
-  [IsDedekindDomain W.CoordinateRing] [DecidableEq F]
+  [IsDedekindDomain W.CoordinateRing] [DecidableEq F] [W.IsElliptic]
 
 /-- **At an `n`-torsion point, `n(T) - n(O)` is the divisor of a function** (Silverman III.8.1). -/
-theorem exists_principal_zsmul_pointPlace_sub_infinity {x y : F} (h : W.Nonsingular x y) {n : ℤ}
-    (hT : n • Point.some x y h = 0) :
+theorem exists_principal_eq_zsmul_ofPoint_sub_infinity {n : ℤ} {T : W.Point} (hT : n • T = 0) :
     ∃ z : W.FunctionFieldˣ, Divisor.principal W.isFunctionField z =
-      n • (WeilDivisor.ofPoint (Place.ofPrime F W.FunctionField
-            (CoordinateRing.pointPlace h.left)) -
-          WeilDivisor.ofPoint (Place.infinity W)) :=
-  W.divisorSum_eq_zero_iff (D := n • ⟨WeilDivisor.ofPoint
-        (Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h.left)) -
-      WeilDivisor.ofPoint (Place.infinity W), by
-    simpa only [AddMonoidHom.mem_ker, Divisor.degreeClass_divisorClass] using
-      W.degreeClass_divisorClass_pointPlace_sub_infinity h.left⟩) |>.1
-    (by rw [map_zsmul, W.divisorSum_pointPlace_sub_infinity h, hT])
+      n • (WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace T).1 -
+        WeilDivisor.ofPoint (Place.infinity W)) := by
+  rw [← coe_pointEquivDegreeOnePlace_zero]
+  exact W.divisorSum_eq_zero_iff (D := n • ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree T .zero⟩) |>.1
+    (by rw [map_zsmul, divisorSum_ofPoint_sub_ofPoint, ← Point.zero_def, sub_zero, hT])
 
 end WeierstrassCurve.Affine
 

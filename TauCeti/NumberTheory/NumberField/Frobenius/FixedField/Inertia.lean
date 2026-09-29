@@ -52,6 +52,8 @@ runs through.
   multiplied by the order of `I(Q) ∩ H`, is the ramification index of `Q` over the base.
 * `Ideal.ramificationIdx_under_fixedField_eq_relIndex`: the ramification index below `L ^ H` is
   `[I(Q) : I(Q) ∩ H]`.
+* `Ideal.isUnramifiedAt_fixedField_iff_inertia_inf_eq_bot`: unramifiedness over `L ^ H` is
+  equivalent to trivial intersection of inertia with `H`.
 * `Ideal.inertiaDeg_under_fixedField_mul_card_inf`: the number of elements of `D(Q) ⊓ H` times the
   residue degree below `L ^ H` is the residue degree of `Q`.
 * `Ideal.inertiaDeg_under_fixedField_eq_relIndex`: that residue degree is `Subgroup.relIndex`,
@@ -170,6 +172,20 @@ theorem ramificationIdx_under_fixedField_eq_relIndex
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
 
 omit [IsGalois K L] in
+/-- A prime of `L` is unramified over `L ^ H` exactly when its inertia group over `K`
+has trivial intersection with `H`. -/
+theorem isUnramifiedAt_fixedField_iff_inertia_inf_eq_bot
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] (H : Subgroup (L ≃ₐ[K] L)) :
+    Algebra.IsUnramifiedAt (𝓞 ↥(fixedField H)) Q ↔
+      Q.inertia (L ≃ₐ[K] L) ⊓ H = ⊥ := by
+  let E := fixedField H
+  let _ : IsScalarTower K E L := E.isScalarTower_mid'
+  let _ : IsGalois E L := IsGalois.of_fixed_field L H
+  rw [Ideal.isUnramifiedAt_iff_inertia_eq_bot (K := E) Q,
+    ← Subgroup.card_eq_one, card_inertia_fixedField_eq_card_inf Q H,
+    Subgroup.card_eq_one]
+
+omit [IsGalois K L] in
 /-- **The residue degree below a fixed field.**  For any subgroup `H` and `E = L ^ H`, the residue
 degree of `Q ∩ 𝓞 E` over `𝓞 K` times the size of the intersection of `H` with the decomposition
 group is the residue degree of `Q` itself.  Stated as a product, so no natural-number division is
@@ -203,6 +219,17 @@ theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
   simp only [Subgroup.relIndex_bot_left, bot_inf_eq] at hidx
   rw [inf_comm, Nat.card_zpowers φ, ← hmul, mul_comm] at hidx
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
+
+/-- The residue degree below the fixed field of a power of a Frobenius is its exponent's
+greatest common divisor with the Frobenius order. -/
+theorem inertiaDeg_under_fixedField_zpowers_pow_eq_gcd (Q : Ideal (𝓞 L)) [Q.IsPrime]
+    (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] {φ : L ≃ₐ[K] L}
+    (hφ : IsArithFrobAt (𝓞 K) φ Q) (k : ℕ) :
+    (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers (φ ^ k))))).inertiaDeg (𝓞 K) =
+      Nat.gcd k (orderOf φ) := by
+  rw [inertiaDeg_under_fixedField_eq_relIndex Q hQ _ hφ,
+    ← zpow_natCast, Subgroup.relIndex_zpowers_zpow]
+  simp
 
 /-- **The residue degree is the least exponent landing in `H`.**  For `φ` a Frobenius at an
 unramified `Q`, the residue degree below `L ^ H` is the smallest `n ≥ 1` with `φ ^ n ∈ H`.

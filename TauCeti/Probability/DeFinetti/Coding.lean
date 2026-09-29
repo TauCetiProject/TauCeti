@@ -12,10 +12,11 @@ public import TauCeti.Probability.Kernel.Randomization
 public import TauCeti.Probability.DeFinetti.Barycenter
 -- Public: `jointPathLaw` and `iidMixtureLaw` appear in the joint statements.
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.PathDisintegration
--- Non-public: de Finetti's theorem is used only inside proofs.
-import TauCeti.Probability.DeFinetti.Theorem
+-- Non-public: de Finetti's theorem, via its subsequence form, is used only inside proofs.
 import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
 import TauCeti.MeasureTheory.Measure.GiryMonad
+import TauCeti.Probability.DeFinetti.Subsequence
+import TauCeti.Probability.Independence.InfinitePi
 
 /-!
 # The coding representation of an exchangeable sequence
@@ -60,6 +61,10 @@ standard Borel hypothesis and for an arbitrary parameter space and arbitrary exc
 * `TauCeti.Probability.ExchangeableLaw.exists_eq_map_unitIntervalCoding` and
   `TauCeti.Probability.exchangeableLaw_iff_exists_coding` — the path-law forms, the second an
   equivalence.
+* `TauCeti.Probability.ConditionallyIIDWith.map_comp_eq_map_unitIntervalCoding_of_ae_eq` and
+  `TauCeti.Probability.ConditionallyIIDWith.exists_map_comp_eq_map_unitIntervalCoding` — **coding
+  given observed coordinates**: once observed coordinates determine the directing measure, the
+  remaining coordinates are coded from them by fresh i.i.d. uniform noise.
 
 ## Implementation
 
@@ -222,6 +227,198 @@ theorem exists_pathLaw_eq_map_unitIntervalCoding {μ : Measure Ω} [IsProbabilit
     rw [pathLaw_def]
     infer_instance
   exact ((exchangeable_iff_exchangeableLaw_pathLaw hX_meas).mp hX).exists_eq_map_unitIntervalCoding
+
+/-- **Coding the unobserved coordinates, keeping the directing measure.** For a conditionally
+i.i.d. process, the coordinates along an injective `g` are, jointly with the directing measure and
+the coordinates along any `e` whose range avoids that of `g`, obtained by coding fresh i.i.d.
+uniform variables by the directing measure. The selection `e` need not be injective. -/
+theorem ConditionallyIIDWith.map_directing_comp_eq_map_unitIntervalCoding {μ : Measure Ω}
+    [IsFiniteMeasure μ] {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α}
+    (h : ConditionallyIIDWith μ X ν) {ι κ : Type*} {e : ι → ℕ} {g : κ → ℕ}
+    (hg : Function.Injective g) (heg : Disjoint (Set.range e) (Set.range g)) :
+    μ.map (fun ω => ((ν ω, fun a => X (e a) ω), fun b => X (g b) ω)) =
+      ((μ.map fun ω => (ν ω, fun a => X (e a) ω)).prod
+          (Measure.infinitePi fun _ : κ => (volume : Measure I))).map
+        (fun q => (q.1, fun b => unitIntervalCoding α q.1.1 (q.2 b))) := by
+  -- Both sides are pushforwards of `π ⊗ (λ_e ⊗ λ_κ)`, where `π = μ.map ν`, `λ_e` is the law of
+  -- the uniform noise read along `e` and `λ_κ` the i.i.d. uniform law on `κ → I`: the coded
+  -- representation of `(ν, X)` reads `X ∘ e` and `X ∘ g` off independent parts of one noise.
+  set c := unitIntervalCoding α
+  set U := Measure.infinitePi fun _ : ℕ => (volume : Measure I)
+  set Uκ := Measure.infinitePi fun _ : κ => (volume : Measure I)
+  set π := μ.map ν
+  have hc := measurable_uncurry_unitIntervalCoding α
+  have hpe : Measurable fun (u : ℕ → I) a => u (e a) :=
+    Measurable.of_eval fun a => measurable_pi_apply (e a)
+  have hpg : Measurable fun (u : ℕ → I) b => u (g b) :=
+    Measurable.of_eval fun b => measurable_pi_apply (g b)
+  have hpath : AEMeasurable (fun ω n => X n ω) μ := AEMeasurable.of_eval h.aemeasurable
+  have hνpath : AEMeasurable (fun ω => (ν ω, fun n => X n ω)) μ :=
+    h.measurable_directing.aemeasurable.prodMk hpath
+  have hjoint : μ.map (fun ω => (ν ω, fun n => X n ω)) =
+      (π.prod U).map fun p => (p.1, fun n => c p.1 (p.2 n)) := by
+    simpa only [jointPathLaw_def] using h.jointPathLaw_eq_map_unitIntervalCoding
+  have hcode : Measurable fun p : ProbabilityMeasure α × (ℕ → I) =>
+      (p.1, fun n => c p.1 (p.2 n)) :=
+    measurable_fst.prodMk measurable_unitIntervalCodingPath
+  have hcodeι : Measurable fun p : ProbabilityMeasure α × (ι → I) =>
+      (p.1, fun a => c p.1 (p.2 a)) :=
+    measurable_fst.prodMk (measurable_pi_uncurry_prod hc)
+  let Θ : ProbabilityMeasure α × ((ι → I) × (κ → I)) →
+      (ProbabilityMeasure α × (ι → α)) × (κ → α) :=
+    fun p => ((p.1, fun a => c p.1 (p.2.1 a)), fun b => c p.1 (p.2.2 b))
+  have hΘ : Measurable Θ :=
+    (measurable_fst.prodMk (measurable_pi_uncurry_prod (ι := ι) hc |>.comp
+      (measurable_fst.prodMk (measurable_fst.comp measurable_snd)))).prodMk
+      (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+        (measurable_fst.prodMk (measurable_snd.comp measurable_snd)))
+  -- The coded law of `(ν, X ∘ e)`.
+  have hleft : μ.map (fun ω => (ν ω, fun a => X (e a) ω)) =
+      (π.prod (U.map fun u a => u (e a))).map fun p => (p.1, fun a => c p.1 (p.2 a)) := by
+    have hF : Measurable fun q : ProbabilityMeasure α × (ℕ → α) => (q.1, fun a => q.2 (e a)) :=
+      measurable_fst.prodMk ((Measurable.of_eval fun a => measurable_pi_apply (e a)).comp
+        measurable_snd)
+    calc μ.map (fun ω => (ν ω, fun a => X (e a) ω))
+        = (μ.map fun ω => (ν ω, fun n => X n ω)).map
+            fun q => (q.1, fun a => q.2 (e a)) :=
+          (AEMeasurable.map_map_of_aemeasurable hF.aemeasurable hνpath).symm
+      _ = ((π.prod U).map (Prod.map id fun u a => u (e a))).map
+            fun p => (p.1, fun a => c p.1 (p.2 a)) := by
+          rw [hjoint, Measure.map_map hF hcode, Measure.map_map hcodeι
+            (measurable_id.prodMap hpe)]
+          rfl
+      _ = _ := by rw [← Measure.map_prod_map _ _ measurable_id hpe, Measure.map_id]
+  -- The coded law of `((ν, X ∘ e), X ∘ g)`.
+  have hright : μ.map (fun ω => ((ν ω, fun a => X (e a) ω), fun b => X (g b) ω)) =
+      (π.prod ((U.map fun u a => u (e a)).prod Uκ)).map Θ := by
+    have hF : Measurable fun q : ProbabilityMeasure α × (ℕ → α) =>
+        ((q.1, fun a => q.2 (e a)), fun b => q.2 (g b)) :=
+      (measurable_fst.prodMk ((Measurable.of_eval fun a => measurable_pi_apply (e a)).comp
+        measurable_snd)).prodMk
+        ((Measurable.of_eval fun b => measurable_pi_apply (g b)).comp measurable_snd)
+    have hsplit : Measurable fun u : ℕ → I => ((fun a => u (e a)), fun b => u (g b)) :=
+      hpe.prodMk hpg
+    calc μ.map (fun ω => ((ν ω, fun a => X (e a) ω), fun b => X (g b) ω))
+        = (μ.map fun ω => (ν ω, fun n => X n ω)).map
+            fun q => ((q.1, fun a => q.2 (e a)), fun b => q.2 (g b)) :=
+          (AEMeasurable.map_map_of_aemeasurable hF.aemeasurable hνpath).symm
+      _ = ((π.prod U).map (Prod.map id fun u => ((fun a => u (e a)), fun b => u (g b)))).map
+            Θ := by
+          rw [hjoint, Measure.map_map hF hcode, Measure.map_map hΘ
+            (measurable_id.prodMap hsplit)]
+          rfl
+      _ = _ := by
+          rw [← Measure.map_prod_map _ _ measurable_id hsplit, Measure.map_id,
+            infinitePi_map_pair_comp _ hg heg]
+  have hΨ : Measurable fun q : (ProbabilityMeasure α × (ι → α)) × (κ → I) =>
+      (q.1, fun b => c q.1.1 (q.2 b)) :=
+    measurable_fst.prodMk (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+      ((measurable_fst.comp measurable_fst).prodMk measurable_snd))
+  rw [hright, hleft]
+  calc (π.prod ((U.map fun u a => u (e a)).prod Uκ)).map Θ
+      = (((π.prod (U.map fun u a => u (e a))).prod Uκ).map MeasurableEquiv.prodAssoc).map Θ := by
+        rw [Measure.prodAssoc_prod]
+    _ = (((π.prod (U.map fun u a => u (e a))).prod Uκ).map
+          (Prod.map (fun p => (p.1, fun a => c p.1 (p.2 a))) id)).map
+          fun q => (q.1, fun b => c q.1.1 (q.2 b)) := by
+        rw [Measure.map_map hΘ MeasurableEquiv.prodAssoc.measurable,
+          Measure.map_map hΨ (hcodeι.prodMap measurable_id)]
+        rfl
+    _ = _ := by rw [← Measure.map_prod_map _ _ hcodeι measurable_id, Measure.map_id]
+
+/-- **Coding the unobserved coordinates from an observed statistic.** Let `Y = φ (X ∘ e)` be a
+measurable statistic of the coordinates along `e` which determines the directing measure almost
+surely, `ν = G Y`. Then the coordinates along an injective `g` whose range avoids that of `e` are
+jointly distributed with `Y` as the coding of fresh i.i.d. uniform variables by `G Y`: given `Y`,
+they are i.i.d. with law `G Y`. -/
+theorem ConditionallyIIDWith.map_comp_eq_map_unitIntervalCoding_of_ae_eq {μ : Measure Ω}
+    [IsFiniteMeasure μ] {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α}
+    (h : ConditionallyIIDWith μ X ν) {ι κ γ : Type*} [MeasurableSpace γ] {e : ι → ℕ}
+    {g : κ → ℕ} (hg : Function.Injective g) (heg : Disjoint (Set.range e) (Set.range g))
+    {φ : (ι → α) → γ} (hφ : Measurable φ) {G : γ → ProbabilityMeasure α} (hG : Measurable G)
+    (hνG : ν =ᵐ[μ] fun ω => G (φ fun a => X (e a) ω)) :
+    μ.map (fun ω => (φ fun a => X (e a) ω, fun b => X (g b) ω)) =
+      ((μ.map fun ω => φ fun a => X (e a) ω).prod
+          (Measure.infinitePi fun _ : κ => (volume : Measure I))).map
+        (fun p => (p.1, fun b => unitIntervalCoding α (G p.1) (p.2 b))) := by
+  -- Push `map_directing_comp_eq_map_unitIntervalCoding` forward along `φ`, then replace the
+  -- directing measure by `G (φ (X ∘ e))` in the coding. The replacement is made on the product of
+  -- the sample space with the noise, where the a.e. identity `hνG` is available.
+  set c := unitIntervalCoding α
+  set Uκ := Measure.infinitePi fun _ : κ => (volume : Measure I)
+  have hc := measurable_uncurry_unitIntervalCoding α
+  -- Replace the observed pair `(ν, X ∘ e)` by a measurable version `Y'`.
+  have hpath : AEMeasurable (fun ω n => X n ω) μ := AEMeasurable.of_eval h.aemeasurable
+  have hY : AEMeasurable (fun ω => (ν ω, fun a => X (e a) ω)) μ :=
+    h.measurable_directing.aemeasurable.prodMk
+      ((Measurable.of_eval fun a => measurable_pi_apply (e a)).comp_aemeasurable hpath)
+  have hYW : AEMeasurable (fun ω => ((ν ω, fun a => X (e a) ω), fun b => X (g b) ω)) μ :=
+    hY.prodMk ((Measurable.of_eval fun b => measurable_pi_apply (g b)).comp_aemeasurable hpath)
+  obtain ⟨Y', hY', hYY'⟩ := hY
+  have hkey : ∀ᵐ ω ∂μ, (Y' ω).1 = G (φ (Y' ω).2) := by
+    filter_upwards [hνG, hYY'] with ω h1 h2
+    rw [← h2]
+    exact h1
+  have hS : Measurable fun q : ProbabilityMeasure α × (ι → α) => φ q.2 := hφ.comp measurable_snd
+  have hΨ : Measurable fun q : (ProbabilityMeasure α × (ι → α)) × (κ → I) =>
+      (φ q.1.2, fun b => c q.1.1 (q.2 b)) :=
+    (hS.comp measurable_fst).prodMk (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+      ((measurable_fst.comp measurable_fst).prodMk measurable_snd))
+  have hΦ : Measurable fun p : γ × (κ → I) => (p.1, fun b => c (G p.1) (p.2 b)) :=
+    measurable_fst.prodMk (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+      ((hG.comp measurable_fst).prodMk measurable_snd))
+  have hΨ₀ : Measurable fun q : (ProbabilityMeasure α × (ι → α)) × (κ → I) =>
+      (q.1, fun b => c q.1.1 (q.2 b)) :=
+    measurable_fst.prodMk (measurable_pi_uncurry_prod (ι := κ) hc |>.comp
+      ((measurable_fst.comp measurable_fst).prodMk measurable_snd))
+  have hSY : Measurable fun ω => φ (Y' ω).2 := hS.comp hY'
+  have hprodY : (μ.map Y').prod Uκ = (μ.prod Uκ).map (Prod.map Y' id) := by
+    rw [← Measure.map_prod_map _ _ hY' measurable_id, Measure.map_id]
+  have hprodSY : (μ.map fun ω => φ (Y' ω).2).prod Uκ =
+      (μ.prod Uκ).map (Prod.map (fun ω => φ (Y' ω).2) id) := by
+    rw [← Measure.map_prod_map _ _ hSY measurable_id, Measure.map_id]
+  calc μ.map (fun ω => (φ fun a => X (e a) ω, fun b => X (g b) ω))
+      = (μ.map fun ω => ((ν ω, fun a => X (e a) ω), fun b => X (g b) ω)).map
+          (Prod.map (fun q => φ q.2) id) :=
+        (AEMeasurable.map_map_of_aemeasurable (hS.prodMap measurable_id).aemeasurable hYW).symm
+    _ = ((μ.map Y').prod Uκ).map fun q => (φ q.1.2, fun b => c q.1.1 (q.2 b)) := by
+        rw [h.map_directing_comp_eq_map_unitIntervalCoding hg heg, Measure.map_congr hYY',
+          Measure.map_map (hS.prodMap measurable_id) hΨ₀]
+        rfl
+    _ = (μ.prod Uκ).map fun q => (φ (Y' q.1).2, fun b => c (Y' q.1).1 (q.2 b)) := by
+        rw [hprodY, Measure.map_map hΨ (hY'.prodMap measurable_id)]
+        rfl
+    _ = (μ.prod Uκ).map fun q => (φ (Y' q.1).2, fun b => c (G (φ (Y' q.1).2)) (q.2 b)) := by
+        refine Measure.map_congr ?_
+        filter_upwards [Measure.quasiMeasurePreserving_fst.ae hkey] with q hq
+        rw [hq]
+    _ = ((μ.map fun ω => φ (Y' ω).2).prod Uκ).map
+          fun p => (p.1, fun b => c (G p.1) (p.2 b)) := by
+        rw [hprodSY, Measure.map_map hΦ (hSY.prodMap measurable_id)]
+        rfl
+    _ = _ := by
+        congr 2
+        refine Measure.map_congr ?_
+        filter_upwards [hYY'] with ω hω
+        rw [← hω]
+
+/-- **Coding the unobserved coordinates from infinitely many observed ones.** The coordinates along
+an injective `e` determine the directing measure through a measurable map `G`, and the coordinates
+along an injective `g` whose range avoids that of `e` are coded from the observed ones by `G` and
+fresh i.i.d. uniform variables. -/
+theorem ConditionallyIIDWith.exists_map_comp_eq_map_unitIntervalCoding {μ : Measure Ω}
+    [IsFiniteMeasure μ] {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α}
+    (h : ConditionallyIIDWith μ X ν) {κ : Type*} {e : ℕ → ℕ} {g : κ → ℕ}
+    (he : Function.Injective e) (hg : Function.Injective g)
+    (heg : Disjoint (Set.range e) (Set.range g)) :
+    ∃ G : (ℕ → α) → ProbabilityMeasure α, Measurable G ∧
+      (ν =ᵐ[μ] fun ω => G fun a => X (e a) ω) ∧
+        μ.map (fun ω => (fun a => X (e a) ω, fun b => X (g b) ω)) =
+          ((μ.map fun ω a => X (e a) ω).prod
+              (Measure.infinitePi fun _ : κ => (volume : Measure I))).map
+            (fun p => (p.1, fun b => unitIntervalCoding α (G p.1) (p.2 b))) := by
+  obtain ⟨G, hG, hνG⟩ := h.exists_measurable_directing_eq_comp he
+  exact ⟨G, hG, hνG, h.map_comp_eq_map_unitIntervalCoding_of_ae_eq hg heg measurable_id hG hνG⟩
 
 end Coding
 

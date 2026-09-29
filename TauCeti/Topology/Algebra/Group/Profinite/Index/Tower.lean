@@ -26,6 +26,8 @@ index computed inside `K`.
 
 * `Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex`: computes the relative factor from
   the finite images of a pair of subgroups when the larger one is closed.
+* `Subgroup.profiniteIndex_subgroupOf_eq_primePower`: the relative factor of a subgroup closed
+  inside a larger closed subgroup, when their relative index is a prime power.
 * `Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex`: primewise index multiplicativity.
 * `Subgroup.profiniteIndex_subgroupOf_mul_profiniteIndex`: supernatural index multiplicativity.
 
@@ -171,6 +173,21 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
         padicValNat.mul hrelne
           Subgroup.index_ne_zero_of_finite,
         Nat.cast_add]
+
+omit [TotallyDisconnectedSpace G] in
+/-- **A closed subgroup of prime-power relative index.** If `H ∩ K` is closed in `K` and the
+relative index `[K : H ∩ K]` is the prime power `q ^ k`, then the supernatural index of `H ∩ K`
+inside the profinite group `K` is that same prime power. -/
+theorem _root_.Subgroup.profiniteIndex_subgroupOf_eq_primePower {H K : Subgroup G}
+    (hHK : IsClosed ((H.subgroupOf K : Subgroup K) : Set K))
+    (hK : IsClosed (K : Set G)) {q : Nat.Primes} {k : ℕ}
+    (h : H.relIndex K = (q : ℕ) ^ k) :
+    Subgroup.profiniteIndex (H.subgroupOf K) = Supernatural.primePower q k := by
+  let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK.isCompact
+  rw [Subgroup.relIndex] at h
+  have : (H.subgroupOf K).FiniteIndex := ⟨by rw [h]; exact pow_ne_zero k q.prop.pos.ne'⟩
+  exact Subgroup.profiniteIndex_eq_primePower
+    ((H.subgroupOf K).isOpen_of_isClosed_of_finiteIndex hHK) h
 
 /-- **Multiplicativity of profinite index through a closed subgroup.** If `H ≤ K ≤ G` and `K`
 is closed, then `[G : H] = [K : H] [G : K]` as supernatural numbers. -/

@@ -27,6 +27,8 @@ group is a continuous image of the free pro-`p` group on any finite type with at
 
 * `TauCeti.freeProP`: the free pro-`p` group on a type.
 * `TauCeti.freeProP.of`: its canonical generators.
+* `TauCeti.freeProPGen`: the generators of `freeProP p (Fin n)` indexed by `ℕ`, with value `1` out
+  of range.
 * `TauCeti.freeProP.fromFreeGroup`: the canonical homomorphism from the discrete free group.
 * `TauCeti.freeProP.lift`: extension from the generators.
 * `TauCeti.freeProP.map`: functoriality in the generating type.
@@ -461,5 +463,52 @@ theorem IsProP.exists_surjective_freeProP (hG : IsProP p G) (h : IsTopologically
   rw [dense_iff_closure_eq, ← Subgroup.topologicalClosure_coe, hgen, Subgroup.coe_top]
 
 end Rank
+
+/-! ## The generators of a free pro-`p` group on `Fin n`, indexed by `ℕ` -/
+
+section NatIndexed
+
+variable (p : ℕ) {n : ℕ}
+
+variable (n) in
+/-- The generators of the free pro-`p` group on `Fin n`, indexed by `ℕ`, with value `1` out of
+range. A word in the generators written on such a tuple, such as a relator of a presentation on
+`Fin n`, carries no index-bound side conditions. -/
+noncomputable def freeProPGen (i : ℕ) : freeProP p (Fin n) :=
+  if h : i < n then freeProP.of ⟨i, h⟩ else 1
+
+/-- In range, `freeProPGen p n i` is the `i`-th free generator. -/
+@[simp]
+theorem freeProPGen_of_lt {i : ℕ} (h : i < n) : freeProPGen p n i = freeProP.of ⟨i, h⟩ := by
+  simp [freeProPGen, h]
+
+/-- Out of range, `freeProPGen p n i` is `1`. -/
+@[simp]
+theorem freeProPGen_eq_one_of_le {i : ℕ} (h : n ≤ i) : freeProPGen p n i = 1 := by
+  simp [freeProPGen, not_lt.mpr h]
+
+/-- On the values of `Fin n`, `freeProPGen p n` is the canonical generator. -/
+theorem freeProPGen_val (i : Fin n) : freeProPGen p n i = freeProP.of i :=
+  freeProPGen_of_lt p i.isLt
+
+/-- The value of a homomorphism on the `ℕ`-indexed generators. -/
+theorem map_freeProPGen {K F : Type*} [Group K] [FunLike F (freeProP p (Fin n)) K]
+    [MonoidHomClass F (freeProP p (Fin n)) K] (φ : F) (i : ℕ) :
+    φ (freeProPGen p n i) = if h : i < n then φ (freeProP.of ⟨i, h⟩) else 1 := by
+  split_ifs with h
+  · rw [freeProPGen_of_lt p h]
+  · rw [freeProPGen_eq_one_of_le p (not_lt.mp h), map_one]
+
+/-- The value of the universal map on the `ℕ`-indexed generators: the prescribed value in range,
+`1` out of range. -/
+theorem freeProP.lift_freeProPGen {P : Type} [Group P] [TopologicalSpace P] [IsTopologicalGroup P]
+    [CompactSpace P] [TotallyDisconnectedSpace P] (hP : IsProP p P) (g : Fin n → P) (i : ℕ) :
+    freeProP.lift hP g (freeProPGen p n i) = if h : i < n then g ⟨i, h⟩ else 1 := by
+  rw [map_freeProPGen]
+  split_ifs
+  · rw [freeProP.lift_of]
+  · rfl
+
+end NatIndexed
 
 end TauCeti

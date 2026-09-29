@@ -17,6 +17,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
 -- Non-public: the trace and the norm of a quadratic irrationality, and the existence of one over a
 -- finite field, are what pin the elliptic normal form; used in proofs only.
 import TauCeti.FieldTheory.Quadratic
+import Mathlib.RingTheory.Trace.Basic
 -- Non-public: `Matrix.GeneralLinearGroup.center_eq_range_scalar` turns a scalar element of `GL₂`
 -- into the scalar matrix of a unit, in a proof only.
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
@@ -33,7 +34,7 @@ character theory of `GL₂(𝔽_q)` is written against:
 * a **central** scalar matrix `a • 1`;
 * a **split semisimple** `TauCeti.diagGL ![a, b]` with `a ≠ b`;
 * a **non-semisimple** Jordan block `TauCeti.jordanGL a 1`;
-* an **elliptic** `TauCeti.GL2NonSplitTorusHom F E hE x`, multiplication by an element of a
+* an **elliptic** `TauCeti.GL2NonSplitTorusHom F E x`, multiplication by an element of a
   degree-`2` extension `E/F` that does not lie in `F`.
 
 `TauCeti.exists_isConj_normalForm` is the resulting statement that every element of `GL₂(F)` is
@@ -68,7 +69,7 @@ families the characteristic polynomial does all the work, and what separates the
 factors: two distinct roots in `F` for `diagGL`, a repeated root for `jordanGL`, and no root in `F`
 for the elliptic form. Reading that off is one equation per pair, and in the elliptic case it needs
 the torus parameter `x` to satisfy the quadratic built from its own trace and norm,
-`TauCeti.Algebra.mul_self_eq_trace_mul_sub_norm`: an eigenvalue of a split or a Jordan form
+`Algebra.IsQuadraticExtension.sq_eq_trace_smul_sub_norm`: an eigenvalue of a split or a Jordan form
 lies in `F`, and `x` does not.
 
 None of those statements needs `F` finite, and the split and non-semisimple ones need no extension
@@ -198,18 +199,18 @@ theorem isConj_jordanGL_one_of_trace_of_det {g : GL (Fin 2) F}
 
 section Elliptic
 
-variable {E : Type*} [Field E] [Algebra F E]
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- **The elliptic normal form.** An element of `GL₂(F)` whose characteristic polynomial
 `X² - t X + d` is satisfied by an element `x` of a degree-`2` extension `E/F` lying outside `F` is
 conjugate to the element `x` of the non-split torus. A root outside `F` already forces the element
 to be non-scalar. -/
-theorem isConj_gl2NonSplitTorusHom_of_trace_of_det (hE : Module.finrank F E = 2)
-    {g : GL (Fin 2) F} {x : Eˣ} (hx : (x : E) ∉ Set.range (algebraMap F E)) {t d : F}
+theorem isConj_gl2NonSplitTorusHom_of_trace_of_det {g : GL (Fin 2) F} {x : Eˣ}
+    (hx : (x : E) ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : (x : E) * x = algebraMap F E t * x - algebraMap F E d)
     (htrace : (g : Matrix (Fin 2) (Fin 2) F).trace = t)
     (hdet : (g : Matrix (Fin 2) (Fin 2) F).det = d) :
-    IsConj g (GL2NonSplitTorusHom F E hE x) := by
+    IsConj g (GL2NonSplitTorusHom F E x) := by
   -- A root outside `F` forces non-scalarness: were `g` the scalar `c`, then `t = c + c` and
   -- `d = c * c`, so `x` would be the double root `algebraMap F E c`.
   have hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2)) := by
@@ -221,11 +222,12 @@ theorem isConj_gl2NonSplitTorusHom_of_trace_of_det (hE : Module.finrank F E = 2)
     rw [map_add, map_mul] at hx2
     exact hx ⟨c, (sub_eq_zero.1 (mul_self_eq_zero.1 (by linear_combination hx2))).symm⟩
   refine (isConj_iff_of_notMem_range_scalar hg
-    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hE hx)).2 ⟨?_, ?_⟩
+    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hx)).2 ⟨?_, ?_⟩
   · rw [htrace, GL2NonSplitTorus.trace_gl2NonSplitTorusHom,
-      Algebra.trace_eq_of_mul_self_eq hE hx hx2]
+      Algebra.trace_eq_of_mul_self_eq hx hx2]
   · rw [hdet, ← Matrix.GeneralLinearGroup.val_det_apply,
-      GL2NonSplitTorus.val_det_gl2NonSplitTorusHom, Algebra.norm_eq_of_mul_self_eq hE hx hx2]
+      GL2NonSplitTorus.val_det_gl2NonSplitTorusHom,
+      Algebra.norm_eq_of_mul_self_eq hx hx2]
 
 end Elliptic
 
@@ -234,17 +236,17 @@ end Elliptic
 /-- **Every element of `GL₂(F)` is conjugate to one of the four normal forms**, for `F` a finite
 field with a supplied degree-`2` extension `E`: a central scalar, a split semisimple
 `diagGL ![a, b]` with `a ≠ b`, a non-semisimple Jordan block `jordanGL a 1`, or an elliptic
-element `GL2NonSplitTorusHom F E hE x` with `x` outside `F`.
+element `GL2NonSplitTorusHom F E x` with `x` outside `F`.
 
 This is what turns a computation of a character at these four normal forms into a full row of the
 character table of `GL₂(𝔽_q)`. -/
 theorem exists_isConj_normalForm [Finite F] (E : Type*) [Field E] [Algebra F E]
-    (hE : Module.finrank F E = 2) (g : GL (Fin 2) F) :
+    [Algebra.IsQuadraticExtension F E] (g : GL (Fin 2) F) :
     (∃ a : Fˣ, Matrix.GeneralLinearGroup.scalar (Fin 2) a = g) ∨
       (∃ a b : Fˣ, a ≠ b ∧ IsConj g (diagGL ![a, b])) ∨
       (∃ a : Fˣ, IsConj g (jordanGL a (1 : F))) ∨
       (∃ x : Eˣ, (x : E) ∉ Set.range (algebraMap F E) ∧
-        IsConj g (GL2NonSplitTorusHom F E hE x)) := by
+        IsConj g (GL2NonSplitTorusHom F E x)) := by
   classical
   by_cases hg : (g : Matrix (Fin 2) (Fin 2) F) ∈ Set.range (Matrix.scalar (Fin 2))
   · refine Or.inl (MonoidHom.mem_range.1 ?_)
@@ -277,7 +279,7 @@ theorem exists_isConj_normalForm [Finite F] (E : Type*) [Field E] [Algebra F E]
         · simp only [Units.val_mk0]
           linear_combination -hb
   · push Not at hsplit
-    obtain ⟨x, hx2⟩ := exists_mul_self_eq_of_finite E hE hsplit
+    obtain ⟨x, hx2⟩ := exists_mul_self_eq_of_finite E hsplit
     have hxF : x ∉ Set.range (algebraMap F E) := by
       rintro ⟨a, rfl⟩
       refine hsplit a ?_
@@ -291,7 +293,7 @@ theorem exists_isConj_normalForm [Finite F] (E : Type*) [Field E] [Algebra F E]
     -- read back through the coercion `Eˣ → E`, which is `Units.val_mk0`.
     refine Or.inr (Or.inr (Or.inr ⟨Units.mk0 x hx0, ?_, ?_⟩))
     · simpa only [Units.val_mk0] using hxF
-    · refine isConj_gl2NonSplitTorusHom_of_trace_of_det hE ?_ ?_ ht.symm hd.symm
+    · refine isConj_gl2NonSplitTorusHom_of_trace_of_det ?_ ?_ ht.symm hd.symm
       · simpa only [Units.val_mk0] using hxF
       · simpa only [Units.val_mk0] using hx2
 
@@ -381,33 +383,33 @@ theorem isConj_jordanGL_one_iff (a b : Fˣ) :
 
 section EllipticUniqueness
 
-variable {E : Type*} [Field E] [Algebra F E]
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- **A scalar is not conjugate to an elliptic normal form.** -/
-theorem not_isConj_scalar_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a : Fˣ) {x : Eˣ}
+theorem not_isConj_scalar_gl2NonSplitTorusHom (a : Fˣ) {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    ¬ IsConj (Matrix.GeneralLinearGroup.scalar (Fin 2) a) (GL2NonSplitTorusHom F E hE x) :=
+    ¬ IsConj (Matrix.GeneralLinearGroup.scalar (Fin 2) a) (GL2NonSplitTorusHom F E x) :=
   not_isConj_of_mem_range_scalar ⟨(a : F), rfl⟩
-    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hE hx)
+    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hx)
 
 /-- **A split semisimple normal form is not conjugate to an elliptic one.** Equal traces and
 determinants make `x` a root of `(X - a) (X - b)`, so `x` would be `a` or `b`, and both lie in
 `F`. -/
-theorem not_isConj_diagGL_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a b : Fˣ) {x : Eˣ}
+theorem not_isConj_diagGL_gl2NonSplitTorusHom (a b : Fˣ) {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    ¬ IsConj (diagGL ![a, b]) (GL2NonSplitTorusHom F E hE x) := by
+    ¬ IsConj (diagGL ![a, b]) (GL2NonSplitTorusHom F E x) := by
   by_cases hab : a = b
   · rw [diagGL_pair_eq_scalar hab]
-    exact not_isConj_scalar_gl2NonSplitTorusHom hE a hx
+    exact not_isConj_scalar_gl2NonSplitTorusHom a hx
   intro h
   obtain ⟨htrace, hdet⟩ := (isConj_iff_of_notMem_range_scalar
     (notMem_range_scalar_diagGL_pair hab)
-    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hE hx)).1 h
+    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hx)).1 h
   rw [trace_diagGL_pair, GL2NonSplitTorus.trace_gl2NonSplitTorusHom] at htrace
   rw [det_diagGL_pair, ← Matrix.GeneralLinearGroup.val_det_apply,
     GL2NonSplitTorus.val_det_gl2NonSplitTorusHom] at hdet
-  have hx2 := Algebra.mul_self_eq_trace_mul_sub_norm hE (x : E)
-  rw [← htrace, ← hdet, map_add, map_mul] at hx2
+  have hx2 := Algebra.IsQuadraticExtension.sq_eq_trace_smul_sub_norm F (x : E)
+  rw [pow_two, Algebra.smul_def, ← htrace, ← hdet, map_add, map_mul] at hx2
   have key : ((x : E) - algebraMap F E (a : F)) * ((x : E) - algebraMap F E (b : F)) = 0 := by
     linear_combination hx2
   rcases mul_eq_zero.1 key with hroot | hroot
@@ -418,9 +420,9 @@ theorem not_isConj_diagGL_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a b
 make `x` a double root of `(X - a)²`, so `x` would be `a`, which lies in `F`. No hypothesis is
 needed on `x`: a torus parameter inside `F` gives the corresponding scalar, which is not conjugate
 to a Jordan block either. -/
-theorem not_isConj_jordanGL_one_gl2NonSplitTorusHom (hE : Module.finrank F E = 2) (a : Fˣ)
+theorem not_isConj_jordanGL_one_gl2NonSplitTorusHom (a : Fˣ)
     (x : Eˣ) :
-    ¬ IsConj (jordanGL a (1 : F)) (GL2NonSplitTorusHom F E hE x) := by
+    ¬ IsConj (jordanGL a (1 : F)) (GL2NonSplitTorusHom F E x) := by
   by_cases hx : (x : E) ∈ Set.range (algebraMap F E)
   · obtain ⟨c, hc⟩ := hx
     have hc0 : c ≠ 0 := by
@@ -433,12 +435,12 @@ theorem not_isConj_jordanGL_one_gl2NonSplitTorusHom (hE : Module.finrank F E = 2
   intro h
   obtain ⟨htrace, hdet⟩ := (isConj_iff_of_notMem_range_scalar
     (notMem_range_scalar_jordanGL_one a)
-    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hE hx)).1 h
+    (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hx)).1 h
   rw [trace_jordanGL, two_mul, GL2NonSplitTorus.trace_gl2NonSplitTorusHom] at htrace
   rw [det_jordanGL_one, ← Matrix.GeneralLinearGroup.val_det_apply,
     GL2NonSplitTorus.val_det_gl2NonSplitTorusHom] at hdet
-  have hx2 := Algebra.mul_self_eq_trace_mul_sub_norm hE (x : E)
-  rw [← htrace, ← hdet, map_add, map_mul] at hx2
+  have hx2 := Algebra.IsQuadraticExtension.sq_eq_trace_smul_sub_norm F (x : E)
+  rw [pow_two, Algebra.smul_def, ← htrace, ← hdet, map_add, map_mul] at hx2
   refine hx ⟨(a : F), (sub_eq_zero.1 (mul_self_eq_zero.1 ?_)).symm⟩
   linear_combination hx2
 

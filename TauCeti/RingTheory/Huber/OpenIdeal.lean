@@ -31,6 +31,7 @@ work is that an *ideal* of `A` containing the image of `Iⁿ` automatically cont
 * `TauCeti.Huber.PairOfDefinition.isOpen_map_of_isOpen_map_extendedIdealOfDefinition`: a ring
   homomorphism that maps an ideal of definition to an open ideal maps every open ideal to an open
   ideal.
+  A variant supplies the target pair of definition from its Huber structure.
 * `TauCeti.Huber.PairOfDefinition.isOpen_span_mul`: the span of a pointwise product of sets is
   open when the two spans are.
 * `TauCeti.Huber.PairOfDefinition.isOpen_span_insert_mul_insert`: its `Finset` form with the two
@@ -46,6 +47,8 @@ work is that an *ideal* of `A` containing the image of `Iⁿ` automatically cont
   within a neighbourhood of zero, by the image of a finite set that spans an open ideal.
 * `TauCeti.Huber.IsTateRing.isOpen_iff_eq_top`: an ideal of a Tate ring is open exactly when it is
   the whole ring.
+* `TauCeti.Huber.IsTateRing.isOpen_map_of_isOpen`: every ring homomorphism from a Tate ring maps
+  open ideals to open ideals.
 
 ## Provenance
 
@@ -139,6 +142,16 @@ theorem isOpen_map_of_isOpen_map_extendedIdealOfDefinition {B : Type*} [CommRing
   apply Ideal.isOpen_of_isOpen_subideal (Ideal.map_mono hn)
   rw [Ideal.map_pow]
   exact hpow n
+
+/-- If the target is Huber, openness of the image of one ideal of definition implies
+openness of the image of every open ideal. -/
+theorem isOpen_map_of_isOpen_map_extendedIdealOfDefinition_of_isHuberRing
+    {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+    (P : PairOfDefinition A) (f : A →+* B)
+    (hP : IsOpen (Ideal.map f P.extendedIdealOfDefinition : Set B))
+    {a : Ideal A} (ha : IsOpen (a : Set A)) : IsOpen (Ideal.map f a : Set B) :=
+  (IsHuberRing.nonempty_pairOfDefinition (A := B)).elim fun Q ↦
+    P.isOpen_map_of_isOpen_map_extendedIdealOfDefinition Q f hP ha
 
 open scoped Pointwise in
 /-- **A span over a pointwise product of sets is open** when the two factors' spans are, since
@@ -291,6 +304,13 @@ theorem IsTateRing.eq_top_of_isOpen [IsTateRing A] {J : Ideal A}
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   obtain ⟨n, hn⟩ := hϖ.isTopologicallyNilpotent.exists_pow_mem_of_mem_nhds (hJ.mem_nhds J.zero_mem)
   exact Ideal.eq_top_of_isUnit_mem J hn (hϖ.isUnit.pow n)
+
+/-- A ring homomorphism from a Tate ring sends every open ideal to an open ideal. -/
+theorem IsTateRing.isOpen_map_of_isOpen [IsTateRing A] {B : Type*} [CommRing B]
+    [TopologicalSpace B] (f : A →+* B) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
+    IsOpen (Ideal.map f J : Set B) := by
+  rw [IsTateRing.eq_top_of_isOpen hJ, Ideal.map_top, Submodule.top_coe]
+  exact isOpen_univ
 
 /-- In a Tate ring, an ideal is open if and only if it is the whole ring `⊤`. -/
 @[simp]

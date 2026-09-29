@@ -55,12 +55,14 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 
 This is the presheaf whose stalks are the ring colimits used in the locally ringed-space
 structure. The topology is forgotten only after taking the limits that define sections. -/
-noncomputable def presentationLimitPresheafInCommRingCat (P : PairOfDefinition A)
+@[expose] noncomputable def presentationLimitPresheafInCommRingCat (P : PairOfDefinition A)
     (Aplus : Subring A) : (TopCat.of ↥(spa Aplus)).Presheaf CommRingCat.{v} :=
   presentationLimitPresheaf P Aplus ⋙
     TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat
 
-private theorem presentationLimitPresheafInCommRingCat_def (P : PairOfDefinition A)
+/-- Forgetting the topology of the presentation-limit presheaf gives its ring presheaf. -/
+@[simp]
+theorem presentationLimitPresheafInCommRingCat_def (P : PairOfDefinition A)
     (Aplus : Subring A) :
     presentationLimitPresheafInCommRingCat P Aplus = presentationLimitPresheaf P Aplus ⋙
       TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat :=
@@ -68,7 +70,6 @@ private theorem presentationLimitPresheafInCommRingCat_def (P : PairOfDefinition
 
 /-- Evaluating the underlying ring presheaf on an open gives the underlying ring of the
 presentation limit over that open. -/
-@[simp]
 theorem presentationLimitPresheafInCommRingCat_obj (P : PairOfDefinition A)
     (Aplus : Subring A) (V : (Opens ↥(spa Aplus))ᵒᵖ) :
     (presentationLimitPresheafInCommRingCat P Aplus).obj V =
@@ -81,7 +82,6 @@ theorem presentationLimitPresheafInCommRingCat_obj (P : PairOfDefinition A)
 /-- Restriction in the underlying ring presheaf is the underlying morphism of the reindexing map
 between presentation limits. The equality transports account for the sealed evaluation theorem
 `presentationLimitPresheaf_obj`. -/
-@[simp]
 theorem presentationLimitPresheafInCommRingCat_map (P : PairOfDefinition A)
     (Aplus : Subring A) {V W : (Opens ↥(spa Aplus))ᵒᵖ} (h : V ⟶ W) :
     (presentationLimitPresheafInCommRingCat P Aplus).map h ≫
@@ -132,8 +132,9 @@ theorem presentationLimitPresheafedSpace_presheaf (P : PairOfDefinition A)
       (presentationLimitPresheafedSpace P Aplus).carrier)
       (presentationLimitPresheafedSpace P Aplus).presheaf
       (TopCat.Presheaf CommRingCat (TopCat.of ↥(spa Aplus)))
-      (presentationLimitPresheafInCommRingCat P Aplus) := by
-  rw [presentationLimitPresheafedSpace_def]
+      (presentationLimitPresheaf P Aplus ⋙
+        TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat) := by
+  rw [presentationLimitPresheafedSpace_def, presentationLimitPresheafInCommRingCat_def]
 
 variable {P : PairOfDefinition A} {Aplus : Subring A}
 

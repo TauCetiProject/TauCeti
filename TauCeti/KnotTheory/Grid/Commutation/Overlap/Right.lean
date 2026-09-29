@@ -43,6 +43,20 @@ The two subcases give different decomposition shapes:
   the underlying recut, so consumers never unfold the definitions. The
   `..._pentagon_toGridRectangle` lemmas give the promoted pentagon's underlying
   rectangle geometry for region and avoidance arguments.
+* `TauCeti.GridRectanglePentagonDecomposition.isRecut_recutRightEqRightFirst`
+  (and the `...Second` analogue): both promotions retain the recut relation after
+  forgetting the pentagon turn row.
+* `TauCeti.GridRectanglePentagonDecomposition.coveredSquares_union_recutRightEqRightFirst`
+  (and the `...Second` analogue): both promotions cover the original region.
+* `TauCeti.GridRectanglePentagonDecomposition.recutRightEqRightFirst_rectangle_geometry`
+  (and the `...Second` analogue): the remaining rectangle's sides, rows, and column subinterval.
+* `TauCeti.GridRectanglePentagonDecomposition.OMonomial_mul_OMonomial_recutRightEqRightFirst`
+  (and the `...Second` analogue): both promotions preserve the product of the underlying
+  rectangle `O`-monomials.
+
+The juxtaposition argument follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
+Links*, Section 5.1. The monomial identities concern the underlying rectangles; pentagon
+weights also account for the two columns next to the commuted grid line.
 -/
 
 public section
@@ -427,6 +441,393 @@ theorem recutRightEqRightSecond_pentagon_toGridRectangle
   rw [D.recutRightEqRightSecond_unfold hcommon hone hrectangle hpentagon hsecond]
   exact congrArg GridRectangleBetween.toGridRectangle
     (GridPentagonBetween.ofRightEq_toGridRectangleBetween _ _ _)
+
+/-- Forgetting the turn row after the first terminal-side promotion gives the ordinary recut. -/
+@[simp]
+theorem recutRightEqRightFirst_toRectangleDecomposition
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightFirst hcommon hone
+        hrectangle hpentagon hfirst).toRectangleDecomposition =
+      D.recutOfIsEmpty hone hrectangle hpentagon := by
+  apply GridRectangleDecomposition.ext
+  · simp
+  · simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,
+      recutRightEqRightFirst_pentagon_right] using
+      (hfirst.trans D.pentagon.right_eq).symm
+  · simp
+  · simp
+
+/-- The promoted first-branch decomposition is a genuine recut of the original two rectangles. -/
+theorem isRecut_recutRightEqRightFirst
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    D.toRectangleDecomposition.IsRecut
+      (D.recutRightEqRightFirst hcommon hone
+        hrectangle hpentagon hfirst).toRectangleDecomposition := by
+  rw [D.recutRightEqRightFirst_toRectangleDecomposition hcommon hone hrectangle hpentagon hfirst]
+  exact D.isRecut_recutOfIsEmpty hone hrectangle hpentagon
+
+/-- The pentagon promoted from the first recut rectangle remains empty. -/
+@[simp]
+theorem isEmpty_pentagon_recutRightEqRightFirst
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightFirst hcommon hone
+        hrectangle hpentagon hfirst).pentagon.IsEmpty := by
+  have h := D.isRecut_recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
+  exact
+    (D.recutRightEqRightFirst hcommon hone
+      hrectangle hpentagon hfirst).isEmpty_pentagon_of_isRecut
+      h
+
+/-- The rectangle left after promoting the first recut rectangle remains empty. -/
+@[simp]
+theorem isEmpty_rectangle_recutRightEqRightFirst
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightFirst hcommon hone
+        hrectangle hpentagon hfirst).rectangle.IsEmpty := by
+  have h := D.isRecut_recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
+  exact
+    (D.recutRightEqRightFirst hcommon hone
+      hrectangle hpentagon hfirst).isEmpty_rectangle_of_isRecut
+      h
+
+/-- The two underlying rectangles of the first promotion cover precisely the original region. -/
+theorem coveredSquares_union_recutRightEqRightFirst
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightFirst hcommon hone
+        hrectangle hpentagon hfirst).pentagon.toGridRectangle.coveredSquares ∪
+      (D.recutRightEqRightFirst hcommon hone
+        hrectangle hpentagon hfirst).rectangle.toGridRectangle.coveredSquares =
+        D.rectangle.toGridRectangle.coveredSquares ∪ D.pentagon.toGridRectangle.coveredSquares := by
+  have h := D.isRecut_recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
+  exact
+    (D.recutRightEqRightFirst hcommon hone
+      hrectangle hpentagon hfirst).coveredSquares_union_of_isRepartition D
+      h.isRepartition
+
+/-- Repartition preserves the product of the `O`-monomials of the underlying rectangles. -/
+theorem OMonomial_mul_OMonomial_recutRightEqRightFirst
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right)
+    (G : GridDiagram n) (R : Type*) [CommSemiring R] :
+    G.OMonomial R
+        (D.recutRightEqRightFirst hcommon hone
+        hrectangle hpentagon hfirst).pentagon.toGridRectangle *
+      G.OMonomial R
+        (D.recutRightEqRightFirst hcommon hone
+        hrectangle hpentagon hfirst).rectangle.toGridRectangle =
+        G.OMonomial R D.rectangle.toGridRectangle *
+          G.OMonomial R D.pentagon.toGridRectangle := by
+  have h := D.isRecut_recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
+  exact
+    (D.recutRightEqRightFirst hcommon hone
+      hrectangle hpentagon hfirst).OMonomial_mul_OMonomial_of_isRepartition D
+      h.isRepartition G R
+
+/-- Forgetting the turn row after the second terminal-side promotion gives the ordinary recut. -/
+@[simp]
+theorem recutRightEqRightSecond_toRectangleDecomposition
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightSecond hcommon hone
+        hrectangle hpentagon hsecond).toRectangleDecomposition =
+      D.recutOfIsEmpty hone hrectangle hpentagon := by
+  apply GridRectangleDecomposition.ext
+  · simp
+  · simp
+  · simp
+  · simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right,
+      recutRightEqRightSecond_pentagon_right] using
+      (hsecond.trans D.pentagon.right_eq).symm
+
+/-- The promoted second-branch decomposition is a genuine recut of the original rectangles. -/
+theorem isRecut_recutRightEqRightSecond
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    D.toRectangleDecomposition.IsRecut
+      (D.recutRightEqRightSecond hcommon hone
+        hrectangle hpentagon hsecond).toRectangleDecomposition := by
+  rw [D.recutRightEqRightSecond_toRectangleDecomposition hcommon hone hrectangle hpentagon hsecond]
+  exact D.isRecut_recutOfIsEmpty hone hrectangle hpentagon
+
+/-- The first rectangle in the second-branch promotion remains empty. -/
+@[simp]
+theorem isEmpty_rectangle_recutRightEqRightSecond
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightSecond hcommon hone
+        hrectangle hpentagon hsecond).rectangle.IsEmpty := by
+  have h := D.isRecut_recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond
+  exact
+    (D.recutRightEqRightSecond hcommon hone
+      hrectangle hpentagon hsecond).isEmpty_rectangle_of_isRecut
+      h
+
+/-- The pentagon promoted from the second recut rectangle remains empty. -/
+@[simp]
+theorem isEmpty_pentagon_recutRightEqRightSecond
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightSecond hcommon hone
+        hrectangle hpentagon hsecond).pentagon.IsEmpty := by
+  have h := D.isRecut_recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond
+  exact
+    (D.recutRightEqRightSecond hcommon hone
+      hrectangle hpentagon hsecond).isEmpty_pentagon_of_isRecut
+      h
+
+/-- The two underlying rectangles of the second promotion cover precisely the original region. -/
+theorem coveredSquares_union_recutRightEqRightSecond
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    (D.recutRightEqRightSecond hcommon hone
+        hrectangle hpentagon hsecond).rectangle.toGridRectangle.coveredSquares ∪
+      (D.recutRightEqRightSecond hcommon hone
+        hrectangle hpentagon hsecond).pentagon.toGridRectangle.coveredSquares =
+        D.rectangle.toGridRectangle.coveredSquares ∪ D.pentagon.toGridRectangle.coveredSquares := by
+  have h := D.isRecut_recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond
+  exact
+    (D.recutRightEqRightSecond hcommon hone
+      hrectangle hpentagon hsecond).coveredSquares_union_of_isRepartition D
+      h.isRepartition
+
+/-- Repartition preserves the product of the `O`-monomials of the underlying rectangles. -/
+theorem OMonomial_mul_OMonomial_recutRightEqRightSecond
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right)
+    (G : GridDiagram n) (R : Type*) [CommSemiring R] :
+    G.OMonomial R
+        (D.recutRightEqRightSecond hcommon hone
+        hrectangle hpentagon hsecond).rectangle.toGridRectangle *
+      G.OMonomial R
+        (D.recutRightEqRightSecond hcommon hone
+        hrectangle hpentagon hsecond).pentagon.toGridRectangle =
+        G.OMonomial R D.rectangle.toGridRectangle *
+          G.OMonomial R D.pentagon.toGridRectangle := by
+  have h := D.isRecut_recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond
+  exact
+    (D.recutRightEqRightSecond hcommon hone
+      hrectangle hpentagon hsecond).OMonomial_mul_OMonomial_of_isRepartition D
+      h.isRepartition G R
+
+/-- Geometry of the rectangle left after the first terminal-side recut: it keeps the
+original rectangle's rows and occupies its initial column subinterval. -/
+theorem recutRightEqRightFirst_rectangle_geometry
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hfirst : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.pentagon.right) :
+    let E := D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
+    E.rectangle.left = D.rectangle.left ∧
+    E.rectangle.right = D.pentagon.left ∧
+    E.rectangle.bottom = D.rectangle.bottom ∧
+    E.rectangle.top = D.rectangle.top ∧
+    E.rectangle.toGridRectangle.coveredColumns ⊆
+      D.rectangle.toGridRectangle.coveredColumns ∧
+    a ∉ E.rectangle.toGridRectangle.coveredColumns ∧
+    a ∈ D.rectangle.toGridRectangle.coveredColumns := by
+  let E := D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
+  obtain ⟨hcol, _, _⟩ :=
+    D.first_recut_branch_data_of_right_eq_right hcommon hone hrectangle hpentagon hfirst
+  simp only [toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
+    toRectangleDecomposition_second_left] at hcol
+  have hdata : D.toRectangleDecomposition.IsRecutOfRightEqRight
+      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
+    rw [D.recutOfIsEmpty_eq_recut]
+    exact D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
+  obtain ⟨_, hsecondLeft⟩ := hdata.recut_sides
+  -- The first rectangle's terminal side forces the second alternative of the recut.
+  have hbranch : (D.recutOfIsEmpty hone hrectangle hpentagon).middle =
+      x.swapColumns D.pentagon.left D.rectangle.right ∧
+      (D.recutOfIsEmpty hone hrectangle hpentagon).second.right = D.pentagon.left := by
+    rcases hdata.recut_branch with h | h
+    · have hh := h.2.2.1
+      rw [hfirst] at hh
+      have hh' : D.rectangle.right = D.rectangle.left := by
+        simpa only [toRectangleDecomposition_first_left, hcommon] using hh
+      exact False.elim (D.rectangle.left_ne_right hh'.symm)
+    · constructor
+      · simpa only [toRectangleDecomposition_second_left,
+          toRectangleDecomposition_first_right] using h.2.1
+      · simpa only [toRectangleDecomposition_second_left] using h.2.2.2
+  have hEleft : E.rectangle.left = D.rectangle.left := by
+    exact (D.recutRightEqRightFirst_rectangle_left hcommon hone hrectangle hpentagon hfirst).trans
+      (hsecondLeft.trans D.toRectangleDecomposition_first_left)
+  have hEright : E.rectangle.right = D.pentagon.left :=
+    (D.recutRightEqRightFirst_rectangle_right hcommon hone hrectangle hpentagon hfirst).trans
+      hbranch.2
+  -- Swapping the two side columns leaves these row endpoints unchanged.
+  have hEbottom : E.rectangle.bottom = D.rectangle.bottom := by
+    rw [GridRectangleBetween.bottom_def, hEleft,
+      D.recutRightEqRightFirst_middle hcommon hone hrectangle hpentagon hfirst,
+      hbranch.1, GridState.swapColumns_apply,
+      Equiv.swap_apply_of_ne_of_ne (Grid.ne_left_of_mem_cIoo hcol).symm
+        D.rectangle.left_ne_right, ← GridRectangleBetween.bottom_def]
+  have hEtop : E.rectangle.top = D.rectangle.top := by
+    rw [GridRectangleBetween.top_def, hEright,
+      D.recutRightEqRightFirst_middle hcommon hone hrectangle hpentagon hfirst,
+      hbranch.1, GridState.swapColumns_apply, Equiv.swap_apply_left,
+      ← GridRectangleBetween.top_def]
+  have ha : a ∈ D.rectangle.toGridRectangle.coveredColumns := by
+    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, hcommon, D.pentagon.right_eq]
+    exact Grid.self_mem_cIco_finRotate (by
+      intro h
+      exact D.rectangle.left_ne_right ((h.trans D.pentagon.right_eq.symm).trans hcommon.symm))
+  have haNot : a ∉ E.rectangle.toGridRectangle.coveredColumns := by
+    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, hEleft, hEright]
+    intro haE
+    have hcol' : D.pentagon.left ∈ Grid.cIoo D.rectangle.left (finRotate n a) := by
+      simpa only [hcommon, D.pentagon.right_eq] using hcol
+    have htail : a ∈ Grid.cIco D.pentagon.left (finRotate n a) :=
+      Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol')
+    exact (Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol')) haE htail
+  -- The new column interval is the initial piece of the old interval.
+  have hCols : E.rectangle.toGridRectangle.coveredColumns ⊆
+      D.rectangle.toGridRectangle.coveredColumns := by
+    intro c hc
+    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, hEleft, hEright] at hc
+    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right]
+    rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol]
+    exact Finset.mem_union.mpr (Or.inl hc)
+  exact ⟨hEleft, hEright, hEbottom, hEtop, hCols, haNot, ha⟩
+
+/-- Geometry of the rectangle left after the second terminal-side recut: it occupies
+an initial subinterval of the original pentagon's columns, away from the swapped columns. -/
+theorem recutRightEqRightSecond_rectangle_geometry
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hsecond : (D.recutOfIsEmpty hone hrectangle hpentagon).second.right =
+      D.pentagon.right) :
+    let E := D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond
+    E.rectangle.left = D.pentagon.left ∧
+    E.rectangle.right = D.rectangle.left ∧
+    E.rectangle.bottom = D.pentagon.bottom ∧
+    E.rectangle.top = D.pentagon.top ∧
+    E.rectangle.toGridRectangle.coveredColumns ⊆
+      D.pentagon.toGridRectangle.coveredColumns ∧
+    a ∉ E.rectangle.toGridRectangle.coveredColumns ∧
+    finRotate n a ∉ E.rectangle.toGridRectangle.coveredColumns := by
+  let E := D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond
+  obtain ⟨hcol, _, _, _⟩ :=
+    D.second_recut_branch_data_of_right_eq_right hcommon hone hrectangle hpentagon hsecond
+  simp only [toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
+    toRectangleDecomposition_second_left] at hcol
+  have hdata : D.toRectangleDecomposition.IsRecutOfRightEqRight
+      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
+    rw [D.recutOfIsEmpty_eq_recut]
+    exact D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
+  have hEleft : E.rectangle.left = D.pentagon.left :=
+    (D.recutRightEqRightSecond_rectangle_left hcommon hone hrectangle hpentagon hsecond).trans
+      (hdata.recut_sides.1.trans D.toRectangleDecomposition_second_left)
+  -- Here the second rectangle carries the common side, forcing the first recut branch.
+  have hfirstRight : (D.recutOfIsEmpty hone hrectangle hpentagon).first.right =
+      D.rectangle.left := by
+    rcases hdata.recut_branch with h | h
+    · simpa only [toRectangleDecomposition_first_left] using h.2.2.1
+    · have hh : D.pentagon.right = D.pentagon.left := by
+        simpa only [toRectangleDecomposition_second_left] using hsecond.symm.trans h.2.2.2
+      exact False.elim (D.pentagon.left_ne_right hh.symm)
+  have hEright : E.rectangle.right = D.rectangle.left :=
+    (D.recutRightEqRightSecond_rectangle_right hcommon hone hrectangle hpentagon hsecond).trans
+      hfirstRight
+  -- Identify the pentagon's rows in the source state to compare the rectangles.
+  have hPbottom : D.pentagon.bottom = x D.pentagon.left := by
+    rw [GridRectangleBetween.bottom_def]
+    exact D.rectangle.map_of_ne _ (Grid.ne_left_of_mem_cIoo hcol).symm
+      (fun h => D.pentagon.left_ne_right (h.trans hcommon))
+  have hPtop : D.pentagon.top = x D.rectangle.left := by
+    rw [GridRectangleBetween.top_def, ← hcommon, D.rectangle.map_right,
+      ← GridRectangleBetween.bottom_def]
+  have hEbottom : E.rectangle.bottom = D.pentagon.bottom := by
+    rw [GridRectangleBetween.bottom_def, hEleft, ← hPbottom]
+  have hEtop : E.rectangle.top = D.pentagon.top := by
+    rw [GridRectangleBetween.top_def, hEright, ← hPtop]
+  have hcol' : D.rectangle.left ∈ Grid.cIoo D.pentagon.left (finRotate n a) := by
+    simpa only [hcommon, D.pentagon.right_eq] using hcol
+  have haNot : a ∉ E.rectangle.toGridRectangle.coveredColumns := by
+    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, hEleft, hEright]
+    intro haE
+    have htail : a ∈ Grid.cIco D.rectangle.left (finRotate n a) :=
+      Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol')
+    exact (Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol')) haE htail
+  have hbNot : finRotate n a ∉ E.rectangle.toGridRectangle.coveredColumns := by
+    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, hEleft, hEright]
+    intro hb
+    exact Grid.right_notMem_cIco D.pentagon.left (finRotate n a)
+      (Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hb hcol')
+  -- Both swapped columns lie beyond this initial piece of the pentagon's interval.
+  have hCols : E.rectangle.toGridRectangle.coveredColumns ⊆
+      D.pentagon.toGridRectangle.coveredColumns := by
+    intro c hc
+    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, hEleft, hEright] at hc
+    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
+      GridRectangleBetween.toGridRectangle_right, D.pentagon.right_eq]
+    rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol']
+    exact Finset.mem_union.mpr (Or.inl hc)
+  exact ⟨hEleft, hEright, hEbottom, hEtop, hCols, haNot, hbNot⟩
 
 end GridRectanglePentagonDecomposition
 

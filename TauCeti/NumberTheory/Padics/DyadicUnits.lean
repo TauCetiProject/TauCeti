@@ -154,6 +154,14 @@ theorem disjoint_unitsPrincipal_zpowers_neg_one {f : ℕ} (hf : 2 ≤ f) :
   · rfl
   · exact absurd (neg_one_mem_unitsPrincipal_two_iff.mp hx) (by omega)
 
+/-- `{±1}` is closed in `ℤ_2ˣ`, being the finite set `{1, -1}`. -/
+theorem isClosed_zpowers_neg_one :
+    IsClosed ((Subgroup.zpowers (-1 : ℤ_[2]ˣ)) : Set ℤ_[2]ˣ) := by
+  apply Set.Finite.isClosed
+  refine ((Set.finite_singleton (-1 : ℤ_[2]ˣ)).insert 1).subset fun x hx ↦ ?_
+  simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using
+    (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hx
+
 /-! ### Indices and levels of `V^(f)` -/
 
 /-- `V^(f) ⊓ U^(2) = U^(f)` for `f ≥ 2`: the even part of `V^(f)` is `U^(f)`. -/

@@ -66,12 +66,12 @@ private local instance [Finite F] : Fact (Nat.Prime (ringChar F)) :=
 
 private abbrev gl2QuadraticExtension [Finite F] := FiniteField.Extension F (ringChar F) 2
 
-private theorem finrank_gl2QuadraticExtension [Finite F] :
-    Module.finrank F (gl2QuadraticExtension F) = 2 :=
-  FiniteField.finrank_extension F (ringChar F) 2
+private local instance [Finite F] :
+    Algebra.IsQuadraticExtension F (gl2QuadraticExtension F) :=
+  ⟨FiniteField.finrank_extension F (ringChar F) 2⟩
 
 variable [Fintype F] (E : Type*) [Field E] [Algebra F E]
-  (hE : Module.finrank F E = 2) {psi : AddChar F ℂ} (hpsi : psi ≠ 1)
+  [hE : Algebra.IsQuadraticExtension F E] {psi : AddChar F ℂ} (hpsi : psi ≠ 1)
 
 private theorem character_degree_eq_of_mem_steinberg {chi : GL (Fin 2) F → ℂ}
     (hchi : chi ∈ Set.range fun alpha : Fˣ →* ℂˣ => (GL2SteinbergTwist F alpha).character) :
@@ -90,13 +90,13 @@ private theorem character_degree_eq_of_mem_principalSeries {chi : GL (Fin 2) F �
 
 private theorem character_degree_eq_of_mem_cuspidal {chi : GL (Fin 2) F → ℂ}
     (hchi : chi ∈
-      (fun theta : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE theta psi).1) ''
+      (fun theta : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E theta psi).1) ''
         {theta | theta.comp (powMonoidHom (Fintype.card F)) ≠ theta}) :
     chi 1 = ((Fintype.card F - 1 : ℕ) : ℂ) := by
   obtain ⟨theta, -, hchi⟩ := hchi
   rw [← hchi]
   simp only
-  rw [GL2CuspidalVirtualCharacter_apply_one hE theta psi,
+  rw [GL2CuspidalVirtualCharacter_apply_one theta psi,
     Nat.cast_sub Fintype.card_pos, Nat.cast_one]
 
 omit E hE hpsi
@@ -106,7 +106,7 @@ theorem irreducibleCharacters_GL2_degree_one_eq_range (hq : 3 ≤ Fintype.card F
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 1} =
       Set.range fun alpha : Fˣ →* ℂˣ => (GL2Linear F alpha).character := by
   rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
-    (finrank_gl2QuadraticExtension F) (primitiveChar_to_Complex_ne_one F)]
+    (primitiveChar_to_Complex_ne_one F)]
   ext chi
   constructor
   · rintro ⟨(((hlin | hstein) | hprincipal) | hcuspidal), hdegree⟩
@@ -117,8 +117,7 @@ theorem irreducibleCharacters_GL2_degree_one_eq_range (hq : 3 ≤ Fintype.card F
     · rw [character_degree_eq_of_mem_principalSeries F hprincipal] at hdegree
       have : Fintype.card F + 1 = 1 := by exact_mod_cast hdegree
       omega
-    · rw [character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F)
-        (finrank_gl2QuadraticExtension F) hcuspidal] at hdegree
+    · rw [character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F) hcuspidal] at hdegree
       have : Fintype.card F - 1 = 1 := by exact_mod_cast hdegree
       omega
   · intro hlin
@@ -129,7 +128,7 @@ theorem irreducibleCharacters_GL2_degree_card_eq_range :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = Fintype.card F} =
       Set.range fun alpha : Fˣ →* ℂˣ => (GL2SteinbergTwist F alpha).character := by
   rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
-    (finrank_gl2QuadraticExtension F) (primitiveChar_to_Complex_ne_one F)]
+    (primitiveChar_to_Complex_ne_one F)]
   have hq : 1 < Fintype.card F := Fintype.one_lt_card
   ext chi
   constructor
@@ -141,8 +140,7 @@ theorem irreducibleCharacters_GL2_degree_card_eq_range :
     · rw [character_degree_eq_of_mem_principalSeries F hprincipal] at hdegree
       have : Fintype.card F + 1 = Fintype.card F := by exact_mod_cast hdegree
       omega
-    · rw [character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F)
-        (finrank_gl2QuadraticExtension F) hcuspidal] at hdegree
+    · rw [character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F) hcuspidal] at hdegree
       have : Fintype.card F - 1 = Fintype.card F := by exact_mod_cast hdegree
       omega
   · intro hstein
@@ -155,7 +153,7 @@ theorem irreducibleCharacters_GL2_degree_card_add_one_eq_image :
       (fun p : (Fˣ →* ℂˣ) × (Fˣ →* ℂˣ) =>
         (GL2PrincipalSeries F p.1 p.2).character) '' {p | p.1 ≠ p.2} := by
   rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
-    (finrank_gl2QuadraticExtension F) (primitiveChar_to_Complex_ne_one F)]
+    (primitiveChar_to_Complex_ne_one F)]
   have hq : 1 < Fintype.card F := Fintype.one_lt_card
   ext chi
   constructor
@@ -167,8 +165,7 @@ theorem irreducibleCharacters_GL2_degree_card_add_one_eq_image :
       have : Fintype.card F = Fintype.card F + 1 := by exact_mod_cast hdegree
       omega
     · exact hprincipal
-    · rw [character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F)
-        (finrank_gl2QuadraticExtension F) hcuspidal] at hdegree
+    · rw [character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F) hcuspidal] at hdegree
       have : Fintype.card F - 1 = Fintype.card F + 1 := by exact_mod_cast hdegree
       omega
   · intro hprincipal
@@ -181,9 +178,9 @@ characters. -/
 theorem irreducibleCharacters_GL2_degree_card_sub_one_eq_image (hq : 3 ≤ Fintype.card F) :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) |
       chi 1 = ((Fintype.card F - 1 : ℕ) : ℂ)} =
-      (fun theta : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E hE theta psi).1) ''
+      (fun theta : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E theta psi).1) ''
         {theta | theta.comp (powMonoidHom (Fintype.card F)) ≠ theta} := by
-  rw [irreducibleCharacters_GL2_eq_union F E hE hpsi]
+  rw [irreducibleCharacters_GL2_eq_union F E hpsi]
   ext chi
   constructor
   · rintro ⟨(((hlin | hstein) | hprincipal) | hcuspidal), hdegree⟩
@@ -198,7 +195,7 @@ theorem irreducibleCharacters_GL2_degree_card_sub_one_eq_image (hq : 3 ≤ Finty
       omega
     · exact hcuspidal
   · intro hcuspidal
-    exact ⟨Or.inr hcuspidal, character_degree_eq_of_mem_cuspidal F E hE hcuspidal⟩
+    exact ⟨Or.inr hcuspidal, character_degree_eq_of_mem_cuspidal F E hcuspidal⟩
 
 omit E hE hpsi
 
@@ -234,10 +231,8 @@ theorem ncard_irreducibleCharacters_GL2_degree_card_sub_one (hq : 3 ≤ Fintype.
       chi 1 = ((Fintype.card F - 1 : ℕ) : ℂ)}.ncard =
       Fintype.card F * (Fintype.card F - 1) / 2 := by
   rw [irreducibleCharacters_GL2_degree_card_sub_one_eq_image F (gl2QuadraticExtension F)
-      (finrank_gl2QuadraticExtension F)
       (primitiveChar_to_Complex_ne_one F) hq,
     ncard_image_GL2CuspidalVirtualCharacter F (gl2QuadraticExtension F)
-      (finrank_gl2QuadraticExtension F)
       (primitiveChar_to_Complex_ne_one F)]
 
 /-- The four irreducible degree families satisfy the degree-squared formula for `GL₂(F)`. -/

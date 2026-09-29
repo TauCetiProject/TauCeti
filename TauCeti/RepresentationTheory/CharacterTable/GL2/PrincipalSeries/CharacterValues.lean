@@ -235,22 +235,22 @@ theorem character_GL2PrincipalSeries_jordanGL (a : Fˣ) {b : F} (hb : b ≠ 0) :
 
 section Elliptic
 
-variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- **The principal series vanishes at an elliptic element.** An element of the non-split torus
 coming from `E ∖ F` has no eigenline over `F`, so it fixes no coset of the Borel subgroup and the
 induced-character sum is empty. -/
 theorem character_GL2PrincipalSeries_gl2NonSplitTorusHom {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    (GL2PrincipalSeries F α β).character (GL2NonSplitTorusHom F E hE x) = 0 := by
+    (GL2PrincipalSeries F α β).character (GL2NonSplitTorusHom F E x) = 0 := by
   classical
   rw [character_GL2PrincipalSeries_eq_indClassFun,
     indClassFun_eq_sum_of_smul_eq_self_mem _ _ (∅ : Finset _) fun t ht => ?_, Finset.sum_empty]
   have : Nonempty {c : GL (Fin 2) F ⧸ GL2Borel F //
-      GL2NonSplitTorusHom F E hE x • c = c} := ⟨⟨t, ht⟩⟩
+      GL2NonSplitTorusHom F E x • c = c} := ⟨⟨t, ht⟩⟩
   have hpos := Nat.card_pos (α := {c : GL (Fin 2) F ⧸ GL2Borel F //
-    GL2NonSplitTorusHom F E hE x • c = c})
-  rw [GL2Borel.natCard_fixedCosets_gl2NonSplitTorusHom hE hx] at hpos
+    GL2NonSplitTorusHom F E x • c = c})
+  rw [GL2Borel.natCard_fixedCosets_gl2NonSplitTorusHom hx] at hpos
   exact absurd hpos (lt_irrefl 0)
 
 end Elliptic

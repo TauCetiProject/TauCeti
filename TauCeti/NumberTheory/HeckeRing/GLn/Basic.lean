@@ -32,6 +32,8 @@ modular forms); the AINTLIB `HeckePair` bundle is replaced by Mathlib's `IsHecke
 
 * `SLnZ`: `SL_n(ℤ)` as a subgroup of `GL_n(ℚ)`, via `mapGL ℚ`.
 * `posDetInt`: integral matrices with positive determinant, Shimura's `Δ`.
+* `intMatrix`: the integral matrix underlying an element of `intEntries n`, as a monoid
+  homomorphism, characterised by `map_intMatrix` and `intMatrix_eq_iff`.
 
 ## Main results
 
@@ -264,6 +266,73 @@ lemma mem_posDetInt_iff {g : GL (Fin n) ℚ} :
 outside this file (`posDetInt` is not `@[expose]`), so consumers that need only positivity, and
 not integrality, must go through this lemma. -/
 lemma posDetInt_le_glpos : posDetInt n ≤ (Matrix.GLPos (Fin n) ℚ).toSubmonoid := inf_le_right
+
+/-- `posDetInt n` is contained in the integral-entry submonoid, forgetting positivity — the other
+projection of the meet, for consumers that need only integrality. -/
+lemma posDetInt_le_intEntries : posDetInt n ≤ intEntries n := inf_le_left
+
+/-- The image of `SL_n(ℤ)` has integer entries. -/
+lemma mapGL_mem_intEntries (σ : SpecialLinearGroup (Fin n) ℤ) : mapGL ℚ σ ∈ intEntries n :=
+  hasIntEntries_of_mem_SLnZ n (coe_mem_SLnZ n σ)
+
+/-- The image in `GL_n(ℚ)` of a subgroup of `SL_n(ℤ)` has integer entries. -/
+lemma map_mapGL_le_intEntries (Γ : Subgroup (SpecialLinearGroup (Fin n) ℤ)) :
+    (Γ.map (mapGL ℚ)).toSubmonoid ≤ intEntries n := by
+  rintro _ ⟨σ, -, rfl⟩
+  exact mapGL_mem_intEntries n σ
+
+/-! ### The integral matrix underlying an element of `intEntries n`
+
+Membership in `intEntries n` is an existential over integral matrices, so reading off *the*
+integral matrix of an element chooses a witness. The choice is harmless: the entrywise cast
+`ℤ → ℚ` is injective, so the witness is unique (`intMatrix_eq_iff`), and `intMatrix` is a monoid
+homomorphism. It is the interface through which integral structures — binary forms with integer
+coefficients, modular symbols — receive the action of a Hecke coset representative. -/
+
+/-- The integral matrix underlying an element of `intEntries n`: the chosen witness of its
+membership, unique because the cast `ℤ → ℚ` is injective (`intMatrix_eq_iff`). -/
+private noncomputable def intMatrixFun (g : intEntries n) : Matrix (Fin n) (Fin n) ℤ :=
+  Classical.choose ((mem_intEntries n).mp g.2)
+
+private lemma map_intMatrixFun (g : intEntries n) :
+    (intMatrixFun n g).map (Int.cast : ℤ → ℚ) = ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) :=
+  (Classical.choose_spec ((mem_intEntries n).mp g.2)).symm
+
+private lemma intMatrixFun_eq_iff {g : intEntries n} {A : Matrix (Fin n) (Fin n) ℤ} :
+    intMatrixFun n g = A ↔
+      ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) = A.map (Int.cast : ℤ → ℚ) :=
+  ⟨fun h ↦ h ▸ (map_intMatrixFun n g).symm,
+    fun h ↦ Matrix.map_injective Int.cast_injective ((map_intMatrixFun n g).trans h)⟩
+
+/-- **The integral matrix underlying an element of `intEntries n`**, as a monoid homomorphism
+`intEntries n →* Matrix (Fin n) (Fin n) ℤ`. It is characterised by `map_intMatrix` (its cast to
+`ℚ` is the matrix of `g`) and `intMatrix_eq_iff`. -/
+noncomputable def intMatrix : intEntries n →* Matrix (Fin n) (Fin n) ℤ where
+  toFun := intMatrixFun n
+  map_one' := (intMatrixFun_eq_iff n).mpr <| by
+    rw [Matrix.map_one _ Int.cast_zero Int.cast_one, OneMemClass.coe_one, Units.val_one]
+  map_mul' g h := (intMatrixFun_eq_iff n).mpr <| by
+    rw [Submonoid.coe_mul, Units.val_mul, ← map_intMatrixFun n g, ← map_intMatrixFun n h]
+    ext i j
+    simp [Matrix.mul_apply, Matrix.map_apply]
+
+/-- The cast to `ℚ` of the integral matrix of `g` is the matrix of `g`. -/
+@[simp] lemma map_intMatrix (g : intEntries n) :
+    (intMatrix n g).map (Int.cast : ℤ → ℚ) = ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) :=
+  map_intMatrixFun n g
+
+/-- **The integral matrix is characterised by its cast**: `intMatrix n g = A` exactly when the
+matrix of `g` is the cast of `A`. This is the introduction rule for computing `intMatrix` at an
+element given by an explicit integral matrix. -/
+lemma intMatrix_eq_iff {g : intEntries n} {A : Matrix (Fin n) (Fin n) ℤ} :
+    intMatrix n g = A ↔
+      ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) = A.map (Int.cast : ℤ → ℚ) :=
+  intMatrixFun_eq_iff n
+
+/-- The integral matrix of the image of `σ ∈ SL_n(ℤ)` is `σ` itself. -/
+@[simp] lemma intMatrix_mapGL (σ : SpecialLinearGroup (Fin n) ℤ) :
+    intMatrix n ⟨mapGL ℚ σ, mapGL_mem_intEntries n σ⟩ = σ :=
+  (intMatrix_eq_iff n).mpr <| by simp [mapGL_coe_matrix, algebraMap_int_eq]
 
 end PosDetInt
 

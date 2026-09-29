@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
-public import TauCeti.Topology.Algebra.Group.Profinite.Presentation
+public import TauCeti.Topology.Algebra.Group.Profinite.Presentation.Basic
 
 /-!
 # Minimal presentations of pro-`p` groups
@@ -25,11 +25,15 @@ from the presentation, and it is the normalization a Demushkin relator satisfies
 
 ## Main results
 
+* `TauCeti.presentedProP.topologicalGeneratorRankNat_le_card`: a pro-`p` group presented on a
+  finite type `X` has rank at most `Nat.card X`.
 * `TauCeti.presentedProP.topologicalGeneratorRankNat_eq_card_iff`: a pro-`p` group presented on a
   finite type `X` has rank `Nat.card X` exactly when the relators lie in the Frattini subgroup of
   the free pro-`p` group on `X`.
 * `TauCeti.presentedProP.subset_proPFrattini_iff_card_eq`: a presentation of `G` on a finite type
   `X` has its relators in the Frattini subgroup exactly when `Nat.card X = d(G)`.
+* `TauCeti.presentedProP.linearIndependent_frattiniQuotient_of`: the classes of the generators of a
+  minimal presentation are linearly independent in the Frattini quotient.
 * `TauCeti.presentedProP.topologicalClosure_normalClosure_eq_proPFrattini`: the relation subgroup
   of a minimal presentation of a group with trivial pro-`p` Frattini subgroup is `Φ(F)`.
 * `TauCeti.IsProP.exists_subset_proPFrattini_continuousMulEquiv_presentedProP`: every
@@ -55,6 +59,16 @@ namespace presentedProP
 
 variable {X : Type u} [Finite X] (rels : Set (freeProP p X))
 
+/-- A pro-`p` group presented on a finite type `X` has topological generator rank at most
+`Nat.card X`: it is the image of the free pro-`p` group on `X`, of rank `Nat.card X`, under the
+continuous surjection `mk`. -/
+theorem topologicalGeneratorRankNat_le_card :
+    topologicalGeneratorRankNat (presentedProP p X rels) isTopologicallyFinitelyGenerated ≤
+      Nat.card X := by
+  rw [← topologicalGeneratorRankNat_freeProP p (isTopologicallyFinitelyGenerated_freeProP p X)]
+  exact topologicalGeneratorRankNat_le_of_surjective (mk p rels : freeProP p X →* _)
+    (map_continuous (mk p rels)) (mk_surjective p rels) _
+
 /-- **Minimal presentations.** A pro-`p` group presented on a finite type `X` has topological
 generator rank `Nat.card X` exactly when every relator lies in the Frattini subgroup of the free
 pro-`p` group on `X`. -/
@@ -67,6 +81,41 @@ theorem topologicalGeneratorRankNat_eq_card_iff :
       (isTopologicallyFinitelyGenerated_freeProP p X) (mk p rels : freeProP p X →* _)
       (map_continuous (mk p rels)) (mk_surjective p rels),
     ker_mk, Subgroup.topologicalClosure_normalClosure_le_iff isClosed_proPFrattini]
+
+omit [Finite X] in
+/-- **The generators of a minimal presentation are linearly independent in the Frattini
+quotient.** If every relator lies in the Frattini subgroup of the free pro-`p` group on `X`, the
+classes of the canonical generators of `⟨X ∣ rels⟩` in its Frattini quotient are linearly
+independent over `𝔽_p`, for a generating type `X` of any cardinality: the relation subgroup lies in
+the Frattini subgroup, so `mk` induces an injection of Frattini quotients. -/
+theorem linearIndependent_frattiniQuotient_of (hrels : rels ⊆ proPFrattini p (freeProP p X)) :
+    LinearIndependent (ZMod p) fun x : X ↦
+      Additive.ofMul
+        (QuotientGroup.mk' (proPFrattini p (presentedProP p X rels)) (of p rels x)) := by
+  have hker : (mk p rels : freeProP p X →* presentedProP p X rels).ker ≤
+      proPFrattini p (freeProP p X) := by
+    rw [ker_mk, Subgroup.topologicalClosure_normalClosure_le_iff isClosed_proPFrattini]
+    exact hrels
+  have hle : proPFrattini p (freeProP p X) ≤
+      (proPFrattini p (presentedProP p X rels)).comap (mk p rels : freeProP p X →* _) :=
+    (mk p rels : freeProP p X →* presentedProP p X rels).proPFrattini_le_comap
+      (map_continuous (mk p rels)) (mk_surjective p rels)
+  -- The map of Frattini quotients induced by `mk` is injective, because the kernel of `mk` lies
+  -- in the Frattini subgroup.
+  have hinj : Function.Injective (QuotientGroup.map _ _ _ hle) := by
+    rw [← MonoidHom.ker_eq_bot_iff, QuotientGroup.ker_map,
+      comap_proPFrattini_eq_of_surjective Fact.out
+        (mk p rels : freeProP p X →* presentedProP p X rels) (map_continuous (mk p rels))
+        (mk_surjective p rels),
+      sup_eq_left.2 hker, Subgroup.map_eq_bot_iff, QuotientGroup.ker_mk']
+  let φ : Additive (freeProP p X ⧸ proPFrattini p (freeProP p X)) →ₗ[ZMod p]
+      Additive (presentedProP p X rels ⧸ proPFrattini p (presentedProP p X rels)) :=
+    (MonoidHom.toAdditive (QuotientGroup.map _ _ _ hle)).toZModLinearMap p
+  have hφ : LinearMap.ker φ = ⊥ := LinearMap.ker_eq_bot.2 fun a b hab ↦
+    Additive.toMul.injective (hinj (Additive.ofMul.injective hab))
+  convert (freeProP.linearIndependent_frattiniQuotient_of p X).map' φ hφ using 1
+  funext x
+  simp [φ, mk_of]
 
 variable {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 

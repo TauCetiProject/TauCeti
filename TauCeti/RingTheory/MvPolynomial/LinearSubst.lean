@@ -34,6 +34,8 @@ forms of degree `n`, through which the modular group acts on period polynomials.
 * `MvPolynomial.aeval_linearSubst`: `linearSubst M p` evaluated at `x` is `p` evaluated at
   `M *ᵥ x`.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
+* `MvPolynomial.linearSubst_diagonal_monomial`: a diagonal matrix scales each monomial by
+  the product of its diagonal entries raised to the corresponding exponents.
 * `MvPolynomial.IsHomogeneous.linearSubst`: the substitution preserves homogeneity.
 * `MvPolynomial.IsHomogeneous.linearSubst_smul`: rescaling the matrix by `c` rescales a form
   of degree `n` by `cⁿ`.
@@ -70,6 +72,24 @@ theorem linearSubst_eq_aeval (M : Matrix σ σ R) :
 theorem linearSubst_X (M : Matrix σ σ R) (i : σ) :
     linearSubst M (X i) = ∑ j, C (M i j) * X j :=
   aeval_X _ _
+
+/-- A diagonal change of variables scales a monomial by the product of its eigenvalues. -/
+@[simp]
+theorem linearSubst_diagonal_monomial [DecidableEq σ] (v : σ → R) (s : σ →₀ ℕ) :
+    linearSubst (Matrix.diagonal v) (monomial s 1) =
+      (s.prod fun i k => v i ^ k) • monomial s 1 := by
+  have h (i : σ) : (∑ j, C ((Matrix.diagonal v) i j) * X j) = C (v i) * X i := by
+    classical
+    have hs : (∑ j, C ((Matrix.diagonal v) i j) * X j) =
+        C ((Matrix.diagonal v) i i) * X i := by
+      apply Finset.sum_eq_single i
+      · intro j _ hji
+        simp [Ne.symm hji]
+      · simp
+    simpa [Matrix.diagonal_apply] using hs
+  rw [linearSubst_eq_aeval, aeval_monomial, monomial_eq]
+  simp only [h, map_one, one_mul, mul_pow, Finsupp.prod, smul_eq_C_mul,
+    Finset.prod_mul_distrib, map_prod, map_pow]
 
 /-- Evaluating `linearSubst M p` at `x` is evaluating `p` at `M *ᵥ x`. -/
 theorem aeval_linearSubst {S : Type*} [CommSemiring S] [Algebra R S] (M : Matrix σ σ R)

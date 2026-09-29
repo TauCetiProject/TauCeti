@@ -104,15 +104,15 @@ theorem character_GL2Steinberg_jordanGL (a : Fˣ) {b : F} (hb : b ≠ 0) :
 
 section Elliptic
 
-variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- **The Steinberg character at an elliptic element is `-1`.** An element of the non-split torus
 coming from `E ∖ F` has no eigenline over `F`, so it fixes no point of the projective line at all
 and only the invariant line contributes. -/
 theorem character_GL2Steinberg_gl2NonSplitTorusHom {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    (GL2Steinberg F).character (GL2NonSplitTorusHom F E hE x) = -1 := by
-  rw [character_GL2Steinberg, GL2Borel.natCard_fixedCosets_gl2NonSplitTorusHom hE hx]
+    (GL2Steinberg F).character (GL2NonSplitTorusHom F E x) = -1 := by
+  rw [character_GL2Steinberg, GL2Borel.natCard_fixedCosets_gl2NonSplitTorusHom hx]
   norm_num
 
 end Elliptic
@@ -146,14 +146,14 @@ theorem character_GL2PrincipalSeries_one_one_jordanGL (a : Fˣ) {b : F} (hb : b 
 
 section Elliptic
 
-variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- The boundary principal series has character `0` at an elliptic element: no point of the
 projective line is fixed, so the permutation character vanishes. -/
 theorem character_GL2PrincipalSeries_one_one_gl2NonSplitTorusHom {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    (GL2PrincipalSeries F 1 1).character (GL2NonSplitTorusHom F E hE x) = 0 :=
-  character_GL2PrincipalSeries_gl2NonSplitTorusHom _ _ hE hx
+    (GL2PrincipalSeries F 1 1).character (GL2NonSplitTorusHom F E x) = 0 :=
+  character_GL2PrincipalSeries_gl2NonSplitTorusHom _ _ hx
 
 end Elliptic
 

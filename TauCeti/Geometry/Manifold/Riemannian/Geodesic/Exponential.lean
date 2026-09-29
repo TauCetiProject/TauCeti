@@ -387,6 +387,23 @@ theorem expDomain_eq_univ_iff {p : M} :
   · rw [mem_expDomain_iff, h v]
     exact mem_univ _
 
+/-- Geodesic completeness at a point is equivalent to every initial velocity admitting a
+geodesic at time `1`. -/
+theorem isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval {p : M} :
+    IsGeodesicallyCompleteAt I M p ↔
+      ∀ v : TangentSpace I p, (1 : ℝ) ∈ geodesicInterval I M p v := by
+  rw [← expDomain_eq_univ_iff, eq_univ_iff_forall]
+  simp only [mem_expDomain_iff]
+
+/-- Failure of geodesic completeness supplies an initial velocity whose geodesic is undefined
+at time `1`. -/
+theorem not_isGeodesicallyCompleteAt_iff_exists_one_notMem_geodesicInterval {p : M} :
+    ¬ IsGeodesicallyCompleteAt I M p ↔
+      ∃ v : TangentSpace I p, (1 : ℝ) ∉ geodesicInterval I M p v := by
+  simpa only [not_forall] using
+    (isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval (I := I) (M := M)
+      (p := p)).not
+
 end TauCeti.Manifold
 
 end

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SheetCount
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.RegularEdge
+import TauCeti.Order.Interval.Finite
 
 /-!
 # The Schwarz--Christoffel map of a simple polygon
@@ -41,23 +42,9 @@ theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary
       (connectedComponentIn (range (schwarzChristoffelCompactifiedBoundary a e z₀))ᶜ
         (schwarzChristoffelPrimitive a e z₀ z₀)) := by
   let F := schwarzChristoffelPrimitive a e z₀
-  let S : ℝ := ∑ i, |a i|
-  let p := S + 1
-  let x := p + 1
-  let q := p + 2
-  have hbound (i : ι) : a i ≤ S := by
-    have hle : |a i| ≤ S := by
-      dsimp [S]
-      exact Finset.single_le_sum (fun j _ => abs_nonneg (a j)) (Finset.mem_univ i)
-    exact (le_abs_self (a i)).trans hle
-  have ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q := by
-    intro i _ hi
-    have := hbound i
-    dsimp [p] at hi
-    exact (not_lt.mpr (by linarith : a i ≤ S + 1)) hi.1
-  have hx : x ∈ Ioo p q := by dsimp [x, q]; constructor <;> linarith
+  obtain ⟨p, q, x, ha, hx⟩ := exists_Ioo_disjoint_range_of_finite a
   obtain ⟨U, hUopen, hxU, G, hGF, hGinj, _, _⟩ :=
-    exists_injOn_schwarzChristoffelPrimitive_continuation a e z₀ ha hx
+    exists_injOn_schwarzChristoffelPrimitive_continuation a e z₀ (fun i _ => ha i) hx
   obtain ⟨ε, hε, hnear⟩ :=
     exists_ball_preimage_schwarzChristoffelPrimitive_subset_of_boundary_injective
       a e z₀ hfinite hinfty hinj x hUopen hxU

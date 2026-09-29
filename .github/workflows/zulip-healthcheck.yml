@@ -2,7 +2,7 @@ name: Zulip PR status (healthcheck)
 
 # Actively probe the Zulip bot's credentials on a schedule, so a broken
 # ZULIP_API_KEY is caught even when no PR opens or builds for a while. The
-# per-PR workflows (zulip-pr.yml / zulip-pr-status.yml) only exercise the
+# per-PR reconciler (pr-status.yml) only exercises the
 # integration when something happens on a PR; this one fails loudly on its own
 # cadence. `check` touches no PR and no message -- it just authenticates and
 # confirms the bot is subscribed to the channel.

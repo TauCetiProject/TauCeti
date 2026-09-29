@@ -55,6 +55,7 @@ is all of `ℤ_2ˣ`, so every subgroup of `ℤ_2ˣ` is pro-`2`.
   read the condition in `ℤ/pℤ` and in the residue field, and
   `TauCeti.unitsPrincipal_one_eq_ker_unitsMap_residue` identifies `U^(1)` with the kernel of
   reduction on units.
+* `TauCeti.unitsPrincipalMk`: the element of `U^(f)` with a prescribed value `v ≡ 1 mod p ^ f`.
 * `TauCeti.isOpen_unitsPrincipal`, `TauCeti.isClosed_unitsPrincipal`,
   `TauCeti.unitsPrincipal_antitone`, `TauCeti.iInf_unitsPrincipal_eq_bot`,
   `TauCeti.hasBasis_nhds_one_unitsPrincipal`: the topology of the filtration.
@@ -135,6 +136,19 @@ theorem mem_unitsPrincipal_one_iff_residue {u : ℤ_[p]ˣ} :
     ← PadicInt.maximalIdeal_eq_span_p, ← IsLocalRing.residue_eq_zero_iff, map_sub, map_one,
     sub_eq_zero]
 
+/-- **The principal unit of level `f ≠ 0` with a prescribed value**: for `v ≡ 1 mod p ^ f`, the
+unit `v` of `ℤ_p`, as an element of `U^(f)`. -/
+noncomputable def unitsPrincipalMk {f : ℕ} (hf : f ≠ 0) {v : ℤ_[p]}
+    (hv : (p : ℤ_[p]) ^ f ∣ v - 1) : unitsPrincipal p f :=
+  ⟨(PadicInt.isUnit_one_add_of_dvd ((dvd_pow_self _ hf).trans hv)).unit, by
+    rw [mem_unitsPrincipal_iff, IsUnit.unit_spec, add_sub_cancel_left]
+    exact hv⟩
+
+@[simp]
+theorem coe_unitsPrincipalMk {f : ℕ} (hf : f ≠ 0) {v : ℤ_[p]} (hv : (p : ℤ_[p]) ^ f ∣ v - 1) :
+    ((unitsPrincipalMk hf hv : ℤ_[p]ˣ) : ℤ_[p]) = v := by
+  rw [unitsPrincipalMk, Subgroup.coe_mk, IsUnit.unit_spec, add_sub_cancel]
+
 variable (p) in
 /-- The principal unit group `1 + pℤ_p` is the kernel of reduction on units. -/
 theorem unitsPrincipal_one_eq_ker_unitsMap_residue :
@@ -181,6 +195,10 @@ group. -/
 theorem isClosed_unitsPrincipal (f : ℕ) : IsClosed (unitsPrincipal p f : Set ℤ_[p]ˣ) := by
   rw [unitsPrincipal, MonoidHom.coe_ker]
   exact isClosed_singleton.preimage ((PadicInt.continuous_toZModPow f).units_map _)
+
+/-- The principal unit groups are compact, being closed in the compact group `ℤ_pˣ`. -/
+instance compactSpace_unitsPrincipal (f : ℕ) : CompactSpace (unitsPrincipal p f) :=
+  isCompact_iff_compactSpace.mp (isClosed_unitsPrincipal p f).isCompact
 
 variable (p) in
 /-- The principal unit groups have trivial intersection: `U^(∞) = {1}`. -/

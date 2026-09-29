@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.CharacterModule
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
-public import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
+public import TauCeti.Algebra.Module.CharacterModule
 
 /-!
 # Finite bilinear modules
@@ -49,8 +48,9 @@ restriction to a subgroup can be degenerate.
   orthogonal complement under an isometry is the orthogonal complement of the inverse image.
 * `TauCeti.FiniteBilinearModule.Isometry.orthogonalComplementEquiv`: the induced equivalence
   between corresponding orthogonal complements.
-* `TauCeti.FiniteBilinearModule.Isometry.isIsotropic_map_iff`: an isometry transports isotropic
-  subgroups.
+* `TauCeti.FiniteBilinearModule.Hom.isIsotropic_map_iff`: the image of a subgroup under a
+  morphism is isotropic exactly when the subgroup is; `Isometry.isIsotropic_map_iff` is the form
+  for an isometry's additive equivalence.
 * `TauCeti.FiniteBilinearModule.Isometry.isIsotropic_comap_iff`: an isometry transports
   isotropic subgroups by inverse image.
 * `TauCeti.FiniteBilinearModule.Isometry.isLagrangian_map_iff`: an isometry transports Lagrangian
@@ -64,123 +64,6 @@ public section
 namespace TauCeti
 
 universe u v w x
-
-section CharacterModuleDuality
-
-/-- The canonical embedding of `AddCircle (1 : ℚ)` into `AddCircle (1 : ℝ)`. -/
-private noncomputable def ratAddCircleToReal : AddCircle (1 : ℚ) →+ AddCircle (1 : ℝ) :=
-  QuotientAddGroup.lift (AddSubgroup.zmultiples (1 : ℚ))
-    ((QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℝ))).comp (Rat.castHom ℝ).toAddMonoidHom)
-    (fun x hx ↦ by
-      obtain ⟨n, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp hx
-      simp only [AddMonoidHom.mem_ker, AddMonoidHom.coe_comp, Function.comp_apply,
-        map_zsmul]
-      have : (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℝ)))
-          ((Rat.castHom ℝ).toAddMonoidHom (1 : ℚ)) = 0 := by
-        simp only [RingHom.toAddMonoidHom_eq_coe]
-        rw [QuotientAddGroup.coe_mk', QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_zmultiples_iff]
-        exact ⟨1, by simp⟩
-      rw [this, smul_zero])
-
-private theorem ratAddCircleToReal_injective : Function.Injective ratAddCircleToReal := by
-  intro a b hab
-  induction a using QuotientAddGroup.induction_on with | H a =>
-  induction b using QuotientAddGroup.induction_on with | H b =>
-  have hdiff : ratAddCircleToReal (QuotientAddGroup.mk a - QuotientAddGroup.mk b) = 0 := by
-    rw [map_sub, sub_eq_zero]
-    exact hab
-  rw [← QuotientAddGroup.mk_sub] at hdiff
-  simp only [ratAddCircleToReal, QuotientAddGroup.lift_mk', AddMonoidHom.coe_comp,
-    Function.comp_apply, RingHom.toAddMonoidHom_eq_coe,
-    QuotientAddGroup.coe_mk'] at hdiff
-  rw [QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_zmultiples_iff] at hdiff
-  obtain ⟨n, hn⟩ := hdiff
-  rw [QuotientAddGroup.eq, AddSubgroup.mem_zmultiples_iff]
-  refine ⟨-n, ?_⟩
-  rw [zsmul_eq_mul, mul_one] at hn ⊢
-  have hn' : (n : ℝ) = ((a - b : ℚ) : ℝ) := hn
-  have hn'' : (n : ℚ) = a - b := by exact_mod_cast hn'
-  have : (-n : ℚ) = -a + b := by
-    rw [hn'']
-    ring
-  exact this
-
-/-- The injective map from `CharacterModule M` to `AddChar M Circle`. -/
-private noncomputable def characterModuleToAddChar (M : Type*) [AddCommGroup M] :
-    CharacterModule M → AddChar M Circle := fun c ↦
-  { toFun := fun m ↦ AddCircle.toCircle (ratAddCircleToReal (c m))
-    map_zero_eq_one' := by simp
-    map_add_eq_mul' := fun x y ↦ by
-      simp only [map_add, AddCircle.toCircle_add] }
-
-private theorem characterModuleToAddChar_injective (M : Type*) [AddCommGroup M] :
-    Function.Injective (characterModuleToAddChar M) := by
-  intro c₁ c₂ h
-  ext m
-  have h_eq : AddCircle.toCircle (ratAddCircleToReal (c₁ m)) =
-      AddCircle.toCircle (ratAddCircleToReal (c₂ m)) := by
-    exact DFunLike.congr_fun h m
-  have h_real := AddCircle.injective_toCircle (T := (1 : ℝ)) one_ne_zero h_eq
-  exact ratAddCircleToReal_injective h_real
-
-/-- The character module of a finite abelian group is finite. -/
-instance (M : Type*) [AddCommGroup M] [Finite M] : Finite (CharacterModule M) := by
-  have : Finite (AddChar M Circle) :=
-    Finite.of_equiv (AddChar M ℂ) AddChar.circleEquivComplex.symm.toEquiv
-  exact Finite.of_injective (characterModuleToAddChar M) (characterModuleToAddChar_injective M)
-
-private theorem card_characterModule_le (M : Type*) [AddCommGroup M] [Finite M] :
-    Nat.card (CharacterModule M) ≤ Nat.card M := by
-  cases nonempty_fintype M
-  have : Fintype (AddChar M Circle) :=
-    Fintype.ofEquiv (AddChar M ℂ) AddChar.circleEquivComplex.symm.toEquiv
-  have : Fintype (CharacterModule M) := Fintype.ofFinite _
-  have hle := Fintype.card_le_of_injective (characterModuleToAddChar M)
-    (characterModuleToAddChar_injective M)
-  have hequiv : Fintype.card (AddChar M Circle) = Fintype.card (AddChar M ℂ) :=
-    Fintype.card_congr AddChar.circleEquivComplex.toEquiv
-  rw [hequiv, AddChar.card_eq] at hle
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-  exact hle
-
-/-- The double dual evaluation map is injective. -/
-private def characterModuleEval (M : Type*) [AddCommGroup M] :
-    M →+ CharacterModule (CharacterModule M) where
-  toFun m :=
-    { toFun := fun c ↦ c m
-      map_zero' := rfl
-      map_add' := fun c₁ c₂ ↦ rfl }
-  map_zero' := by ext c; exact map_zero c
-  map_add' x y := by ext c; exact map_add c x y
-
-private theorem characterModuleEval_injective (M : Type*) [AddCommGroup M] :
-    Function.Injective (characterModuleEval M) := by
-  intro x y hxy
-  have h : ∀ c : CharacterModule M, c (x - y) = 0 := fun c ↦ by
-    have hc : c x = c y := DFunLike.congr_fun hxy c
-    rw [map_sub, hc, sub_self]
-  have hzero := CharacterModule.eq_zero_of_character_apply h
-  exact sub_eq_zero.mp hzero
-
-/-- The cardinality of the character module equals the cardinality of the group. -/
-theorem natCard_characterModule (M : Type*) [AddCommGroup M] [Finite M] :
-    Nat.card (CharacterModule M) = Nat.card M := by
-  cases nonempty_fintype M
-  have : Fintype (CharacterModule M) := Fintype.ofFinite _
-  have : Fintype (CharacterModule (CharacterModule M)) := Fintype.ofFinite _
-  have h1 : Fintype.card M ≤ Fintype.card (CharacterModule (CharacterModule M)) :=
-    Fintype.card_le_of_injective (characterModuleEval M) (characterModuleEval_injective M)
-  have h2 : Fintype.card (CharacterModule (CharacterModule M)) ≤
-      Fintype.card (CharacterModule M) := by
-    have hle := card_characterModule_le (CharacterModule M)
-    rwa [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card] at hle
-  have h3 : Fintype.card (CharacterModule M) ≤ Fintype.card M := by
-    have hle := card_characterModule_le M
-    rwa [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card] at hle
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-  exact le_antisymm h3 (h1.trans h2)
-
-end CharacterModuleDuality
 
 /-- A finite abelian group equipped with a symmetric biadditive pairing into `ℚ/ℤ`.
 
@@ -400,6 +283,11 @@ def toHom (f : Isometry A B) : Hom A B where
 @[simp]
 theorem toHom_apply (f : Isometry A B) (x : A) : f.toHom x = f x := (rfl)
 
+/-- The additive homomorphism underlying `f.toHom` is that of the additive equivalence of `f`. -/
+@[simp]
+theorem toHom_toAddMonoidHom (f : Isometry A B) :
+    f.toHom.toAddMonoidHom = (f.toAddEquiv : A →+ B) := (rfl)
+
 /-- The underlying morphism of an isometry is bijective. -/
 theorem toHom_bijective (f : Isometry A B) : Function.Bijective f.toHom := by
   simpa only [Function.Bijective, Function.Injective, Function.Surjective, toHom_apply,
@@ -504,6 +392,12 @@ theorem toIsometry_toHom (f : Hom A B) (hf : Function.Bijective f) :
   ext
   rfl
 
+end Hom
+
+namespace Isometry
+
+variable {A : FiniteBilinearModule.{u}} {B : FiniteBilinearModule.{v}}
+
 /-- Packaging the underlying morphism of an isometry recovers the isometry. -/
 @[simp]
 theorem toHom_toIsometry (f : Isometry A B) :
@@ -511,7 +405,7 @@ theorem toHom_toIsometry (f : Isometry A B) :
   ext
   rfl
 
-end Hom
+end Isometry
 
 /-- Restrict a finite bilinear module to an additive subgroup.
 
@@ -519,18 +413,7 @@ No nondegeneracy conclusion is asserted: a subgroup of a nondegenerate module ca
 degenerate restricted pairing. -/
 abbrev restrict (H : AddSubgroup A) : FiniteBilinearModule where
   carrier := H
-  pairing :=
-    { toFun := fun (x : H) ↦
-        { toFun := fun (y : H) ↦ A.pairing x.1 y.1
-          map_zero' := A.pairing_zero_right x.1
-          map_add' := fun y z ↦ by
-            simp only [AddSubgroup.coe_add, pairing_add_right] }
-      map_zero' := by
-        ext (x : H)
-        exact A.pairing_zero_left x.1
-      map_add' := fun (x y : H) ↦ by
-        ext (z : H)
-        exact A.pairing_add_left x.1 y.1 z.1 }
+  pairing := (A.pairing.comp H.subtype).compl₂ H.subtype
   pairing_comm x y := A.pairing_comm x.1 y.1
 
 theorem restrict_pairing (H : AddSubgroup A) (x y : H) :
@@ -571,22 +454,8 @@ theorem isNondegenerate_neg : A.neg.IsNondegenerate ↔ A.IsNondegenerate := by
 abbrev prod (B : FiniteBilinearModule) : FiniteBilinearModule where
   carrier := A.carrier × B.carrier
   pairing :=
-    { toFun := fun x ↦
-        { toFun := fun y ↦ A.pairing x.1 y.1 + B.pairing x.2 y.2
-          map_zero' := by
-            simp only [Prod.fst_zero, Prod.snd_zero, pairing_zero_right, add_zero]
-          map_add' := fun y z ↦ by
-            simp only [Prod.fst_add, Prod.snd_add, pairing_add_right]
-            abel }
-      map_zero' := by
-        ext ⟨z₁, z₂⟩
-        exact (congrArg₂ (· + ·) (A.pairing_zero_left z₁) (B.pairing_zero_left z₂)).trans
-          (add_zero 0)
-      map_add' := fun ⟨x₁, x₂⟩ ⟨y₁, y₂⟩ ↦ by
-        ext ⟨z₁, z₂⟩
-        exact (congrArg₂ (· + ·) (A.pairing_add_left x₁ y₁ z₁) (B.pairing_add_left x₂ y₂ z₂)).trans
-          (add_add_add_comm (A.pairing x₁ z₁) (A.pairing y₁ z₁) (B.pairing x₂ z₂)
-            (B.pairing y₂ z₂)) }
+    (A.pairing.comp (AddMonoidHom.fst _ _)).compl₂ (AddMonoidHom.fst _ _) +
+      (B.pairing.comp (AddMonoidHom.snd _ _)).compl₂ (AddMonoidHom.snd _ _)
   pairing_comm := fun ⟨x₁, x₂⟩ ⟨y₁, y₂⟩ ↦
     congrArg₂ (· + ·) (A.pairing_comm x₁ y₁) (B.pairing_comm x₂ y₂)
 
@@ -759,11 +628,18 @@ theorem isIsotropicElem_zero : A.IsIsotropicElem 0 := by
 theorem isIsotropicElem_neg (x : A) : A.IsIsotropicElem (-x) ↔ A.IsIsotropicElem x := by
   rw [isIsotropicElem_def, isIsotropicElem_def, pairing_neg_left, pairing_neg_right, neg_neg]
 
-/-- An isometry preserves isotropic elements. -/
+/-- A morphism of finite bilinear modules preserves and reflects isotropic elements. -/
+@[simp]
+theorem Hom.isIsotropicElem_iff {B : FiniteBilinearModule} (f : Hom A B) (x : A) :
+    B.IsIsotropicElem (f x) ↔ A.IsIsotropicElem x := by
+  rw [isIsotropicElem_def, isIsotropicElem_def, map_pairing]
+
+/-- An isometry preserves and reflects isotropic elements. -/
 @[simp]
 theorem Isometry.isIsotropicElem_iff {B : FiniteBilinearModule} (f : Isometry A B) (x : A) :
     B.IsIsotropicElem (f x) ↔ A.IsIsotropicElem x := by
-  rw [isIsotropicElem_def, isIsotropicElem_def, map_pairing]
+  rw [← f.toHom_apply]
+  exact f.toHom.isIsotropicElem_iff A x
 
 /-- Form negation preserves isotropic elements. -/
 @[simp]
@@ -933,13 +809,26 @@ theorem Isometry.map_mem_orthogonalComplement_of_map_eq {B : FiniteBilinearModul
   rw [← h, ← f.map_orthogonalComplement (H := H)]
   exact AddSubgroup.mem_map_of_mem _ hx
 
-/-- An isometry transports isotropic subgroups. -/
+/-- The image of a subgroup under a morphism of finite bilinear modules is isotropic exactly
+when the subgroup is. -/
+@[simp]
+theorem Hom.isIsotropic_map_iff {B : FiniteBilinearModule} (f : Hom A B) (H : AddSubgroup A) :
+    B.IsIsotropic (H.map f.toAddMonoidHom) ↔ A.IsIsotropic H := by
+  constructor
+  · intro hH x hx y hy
+    rw [← f.map_pairing]
+    exact hH _ (AddSubgroup.mem_map_of_mem _ hx) _ (AddSubgroup.mem_map_of_mem _ hy)
+  · rintro hH _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    exact (f.map_pairing x y).trans (hH x hx y hy)
+
+/-- An isometry transports isotropic subgroups, stated for the image under its additive
+equivalence. -/
 @[simp]
 theorem Isometry.isIsotropic_map_iff {B : FiniteBilinearModule} (f : Isometry A B)
     (H : AddSubgroup A) :
     B.IsIsotropic (H.map f.toAddEquiv) ↔ A.IsIsotropic H := by
-  rw [B.isIsotropic_iff_le_orthogonalComplement, A.isIsotropic_iff_le_orthogonalComplement,
-    ← f.map_orthogonalComplement, AddSubgroup.map_le_map_iff_of_injective f.toAddEquiv.injective]
+  rw [← f.toHom_toAddMonoidHom]
+  exact f.toHom.isIsotropic_map_iff A H
 
 /-- An isometry transports isotropic subgroups by inverse image. -/
 @[simp]

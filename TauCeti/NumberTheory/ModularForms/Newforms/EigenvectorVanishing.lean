@@ -28,7 +28,10 @@ then takes the difference of the two newforms.
 
 ## Main results
 
-* `HeckeRing.GL2.eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew`.
+* `HeckeRing.GL2.mem_cuspFormsOld_of_forall_prime_heckeRingHomCusp_of_one_eq_zero`: a good Hecke
+  eigenvector of `S_k(N, χ)` with `a₁ = 0` is old.
+* `HeckeRing.GL2.eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew`:
+  in the new part, it is zero.
 
 ## References
 
@@ -45,6 +48,19 @@ namespace HeckeRing.GL2
 
 variable {N : ℕ} [NeZero N] {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
 
+/-- **A good Hecke eigenvector with `a₁ = 0` is old**: a cusp form in `S_k(N, χ)` that is an
+eigenvector of the Hecke ring at every prime not dividing `N` and has first `q`-expansion
+coefficient `0` lies in the old subspace, by the Main Lemma. -/
+theorem mem_cuspFormsOld_of_forall_prime_heckeRingHomCusp_of_one_eq_zero
+    {F : cuspFormCharSpace k χ}
+    (ha : ∀ p : ℕ, p.Prime → Nat.Coprime p N →
+      ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) F = c • F)
+    (h1 : (qExpansion 1 (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1 = 0) :
+    (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsOld N k :=
+  mem_cuspFormsOld_of_forall_coprime_qExpansion_coeff_eq_zero F.2 fun n hn ↦
+    qExpansion_coeff_eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_coprime
+      dvd_rfl ha h1 n hn
+
 /-- **A good Hecke eigenvector in the new part with `a₁ = 0` is zero**: a cusp form in
 `S_k(N, χ)ᵐᵉʷ` that is an eigenvector of the Hecke ring at every prime not dividing `N` and has
 first `q`-expansion coefficient `0` vanishes. -/
@@ -56,10 +72,7 @@ theorem eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspForms
     (hnew : (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k) :
     (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) = 0 :=
   (Submodule.disjoint_def.mp (disjoint_cuspFormsOld_cuspFormsNew N k)) _
-    (mem_cuspFormsOld_of_forall_coprime_qExpansion_coeff_eq_zero F.2 fun n hn ↦
-      qExpansion_coeff_eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_coprime
-        dvd_rfl ha h1 n hn)
-    hnew
+    (mem_cuspFormsOld_of_forall_prime_heckeRingHomCusp_of_one_eq_zero ha h1) hnew
 
 end HeckeRing.GL2
 

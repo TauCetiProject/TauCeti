@@ -28,6 +28,8 @@ the usual ungraded dual-number algebra.
 * `TauCeti.dualNumberGrade_zero_eq_ker_snd` and
   `TauCeti.dualNumberGrade_two_eq_ker_fst`: the two nonzero pieces in coordinates.
 * `TauCeti.dualNumberGrade_eq_bot`: every degree other than zero and two vanishes.
+* `TauCeti.dualNumberGradeZeroEquiv` and `TauCeti.dualNumberGradeTwoEquiv`:
+  the two nonzero pieces are linearly equivalent to the base ring.
 
 ## Implementation notes
 
@@ -96,6 +98,62 @@ theorem inr_mem_dualNumberGrade_two (r : R) :
 theorem eps_mem_dualNumberGrade_two :
     DualNumber.eps ∈ dualNumberGrade R 2 := by
   simpa only [DualNumber.eps] using inr_mem_dualNumberGrade_two R 1
+
+/-- The degree-zero piece of the dual numbers is linearly equivalent to the base ring. -/
+noncomputable def dualNumberGradeZeroEquiv : dualNumberGrade R 0 ≃ₗ[R] R where
+  toFun x := x.1.fst
+  invFun r := ⟨TrivSqZeroExt.inl r, inl_mem_dualNumberGrade_zero R r⟩
+  left_inv x := by
+    apply Subtype.ext
+    apply TrivSqZeroExt.ext
+    · simp
+    · simp [(mem_dualNumberGrade_zero (R := R)).mp x.2]
+  right_inv r := by simp
+  map_add' x y := by simp
+  map_smul' r x := by simp
+
+/-- The degree-zero equivalence reads the scalar coordinate. -/
+@[simp]
+theorem dualNumberGradeZeroEquiv_apply (x : dualNumberGrade R 0) :
+    dualNumberGradeZeroEquiv R x = x.1.fst := by
+  unfold dualNumberGradeZeroEquiv
+  rfl
+
+/-- The inverse degree-zero equivalence inserts a scalar dual number. -/
+@[simp]
+theorem dualNumberGradeZeroEquiv_symm_apply (r : R) :
+    (dualNumberGradeZeroEquiv R).symm r =
+      ⟨TrivSqZeroExt.inl r, inl_mem_dualNumberGrade_zero R r⟩ := by
+  unfold dualNumberGradeZeroEquiv
+  rfl
+
+/-- The degree-two piece of the dual numbers is linearly equivalent to the base ring. -/
+noncomputable def dualNumberGradeTwoEquiv : dualNumberGrade R 2 ≃ₗ[R] R where
+  toFun x := x.1.snd
+  invFun r := ⟨TrivSqZeroExt.inr r, inr_mem_dualNumberGrade_two R r⟩
+  left_inv x := by
+    apply Subtype.ext
+    apply TrivSqZeroExt.ext
+    · simp [(mem_dualNumberGrade_two (R := R)).mp x.2]
+    · simp
+  right_inv r := by simp
+  map_add' x y := by simp
+  map_smul' r x := by simp
+
+/-- The degree-two equivalence reads the infinitesimal coordinate. -/
+@[simp]
+theorem dualNumberGradeTwoEquiv_apply (x : dualNumberGrade R 2) :
+    dualNumberGradeTwoEquiv R x = x.1.snd := by
+  unfold dualNumberGradeTwoEquiv
+  rfl
+
+/-- The inverse degree-two equivalence inserts an infinitesimal dual number. -/
+@[simp]
+theorem dualNumberGradeTwoEquiv_symm_apply (r : R) :
+    (dualNumberGradeTwoEquiv R).symm r =
+      ⟨TrivSqZeroExt.inr r, inr_mem_dualNumberGrade_two R r⟩ := by
+  unfold dualNumberGradeTwoEquiv
+  rfl
 
 /-- Multiplication adds degrees in the standard grading of the dual numbers. -/
 theorem mul_mem_dualNumberGrade {m n : ℕ} {x y : DualNumber R}

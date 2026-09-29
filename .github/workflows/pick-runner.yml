@@ -39,6 +39,12 @@ on:
       github:
         description: "`true` when the caller should run on a GitHub-hosted runner"
         value: ${{ jobs.pick.outputs.github }}
+      busy:
+        description: "GitHub-hosted jobs counted busy, when the count completed (for CI telemetry)"
+        value: ${{ jobs.pick.outputs.busy }}
+      budget:
+        description: "the HOSTED_RUNNER_BUDGET the decision used (for CI telemetry)"
+        value: ${{ jobs.pick.outputs.budget }}
 
 jobs:
   pick:
@@ -47,6 +53,8 @@ jobs:
     continue-on-error: true
     outputs:
       github: ${{ steps.pick.outputs.github }}
+      busy: ${{ steps.pick.outputs.busy }}
+      budget: ${{ steps.pick.outputs.budget }}
     steps:
       - name: Check for the App
         id: app
@@ -72,10 +80,13 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
           ORG: ${{ github.repository_owner }}
           BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '16' }}
+          QUEUED_LIMIT: "5"
         run: |
           set -uo pipefail
           decide() {
             echo "github=$1" >> "$GITHUB_OUTPUT"
+            echo "budget=$BUDGET" >> "$GITHUB_OUTPUT"
+            echo "busy=${busy:-}" >> "$GITHUB_OUTPUT"
             echo "$2" | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           }
@@ -86,11 +97,35 @@ jobs:
           repos=$(api --paginate "orgs/$ORG/repos?per_page=100" --jq '.[] | select(.archived | not) | .name') \
             || decide false "Could not list the repositories of $ORG: using Namespace."
 
+          # The cheap answer first. A run is `queued` while its first jobs await dispatch to a runner
+          # (runs held by a concurrency group are `pending` instead, and those awaiting a deployment
+          # approval `waiting`). Every workflow in the organisation starts on a GitHub-hosted runner
+          # except merge-queue builds, which start on Namespace, so queued runs that are not
+          # merge-queue builds are jobs waiting for a GitHub-hosted slot. More than a few of those
+          # means the slots are full, and the answer is Namespace without counting a single job.
+          # Ordinary dispatch keeps a run or two queued for a few seconds even when slots are free,
+          # which is what QUEUED_LIMIT allows for; over 100 queued is saturation whatever they are.
+          #
+          # That is the usual state at busy times, when the full count below costs a call for every
+          # one of the 60 or more active runs; pickers doing it for every build drained the App's
+          # hourly API budget, which it shares with the review and merge automation. One call per
+          # repository answers it instead.
+          export ORG
+          queued=$(printf '%s\n' $repos | xargs -r -P 8 -n 1 bash -c '
+                     timeout 30 gh api "repos/$ORG/$0/actions/runs?status=queued&per_page=100" \
+                       --jq "if .total_count > 100 then 101
+                             else [.workflow_runs[] | select(.event != \"merge_group\")] | length end"' \
+                   | awk '{ s += $1 } END { print s + 0 }') \
+            || decide false "Could not count the queued runs in $ORG: using Namespace."
+          if [ "$queued" -gt "$QUEUED_LIMIT" ]; then
+            busy="saturated"
+            decide false "$queued runs waiting for GitHub-hosted runners in $ORG: slots are full; using Namespace."
+          fi
+
           # The calls are independent, so run them eight at a time: one at a time takes most of a
           # minute when the organisation is busy, and every build waits for this answer.
           # Both listings stop at one page of 100; a larger total fails the call, and so answers
           # Namespace, rather than silently undercounting.
-          export ORG
           runs=$(printf '%s\n' $repos | xargs -r -P 8 -n 1 bash -c '
                    set -o pipefail
                    for status in in_progress queued; do

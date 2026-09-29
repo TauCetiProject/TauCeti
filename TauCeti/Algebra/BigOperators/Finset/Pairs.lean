@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Order.Interval.Finset.Defs
 
@@ -35,11 +36,17 @@ sign of the permutation.
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
+* `TauCeti.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
+  pairs separates into the strictly increasing pairs and the diagonal.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
   over the increasing pairs of a finite ordinal.
 * `TauCeti.prod_prod_Ioi_snoc`: splits the pair product of a tuple with a final entry.
 * `TauCeti.prod_prod_Ioi_append`: the pair product of appended tuples splits into the pair
   products of each tuple and their cross terms.
+* `TauCeti.prod_prod_Ioi_append_of_mul`: the cross term for a bimultiplicative pairing
+  is the pairing of the products.
+* `TauCeti.prod_prod_Ioi_scale`: scaling all entries of a pair product for a symmetric
+  bimultiplicative pairing.
 -/
 
 public section
@@ -47,6 +54,19 @@ public section
 namespace TauCeti
 
 open Finset
+
+/-- A product over weakly increasing pairs splits into the strictly increasing pairs and the
+diagonal. -/
+theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
+    {ι M : Type*} [PartialOrder ι] [Fintype ι]
+    [LocallyFiniteOrderTop ι] [CommMonoid M] (f : ι → ι → M) :
+    (∏ i, ∏ j ∈ Ici i, f i j) = (∏ i, ∏ j ∈ Ioi i, f i j) * ∏ i, f i i := by
+  calc
+    (∏ i, ∏ j ∈ Ici i, f i j) = ∏ i, (f i i * ∏ j ∈ Ioi i, f i j) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      exact (mul_prod_Ioi_eq_prod_Ici (f := f i) i).symm
+    _ = _ := by rw [prod_mul_distrib, mul_comm]
 
 /-- Peel the first two indices off a product over the increasing pairs of `Fin (m + 2)`. -/
 theorem prod_prod_Ioi_eq_of_two {M : Type*} [CommMonoid M] {m : ℕ}
@@ -113,6 +133,90 @@ theorem prod_prod_Ioi_append {A M : Type*} [CommMonoid M] {n m : ℕ}
     rw [hcross]
     simp only [Finset.prod_mul_distrib]
     ac_rfl
+
+/-- The pairwise product of a concatenation for a bimultiplicative pairing. -/
+theorem prod_prod_Ioi_append_of_mul {A M : Type*} [CommMonoid A] [CommMonoid M] (F : A → A → M)
+    (hone_left : ∀ b, F 1 b = 1) (hone_right : ∀ a, F a 1 = 1)
+    (hmul_left : ∀ a b c, F (a * b) c = F a c * F b c)
+    (hmul_right : ∀ a b c, F a (b * c) = F a b * F a c)
+    {m n : ℕ} (p : Fin m → A) (q : Fin n → A) :
+    (∏ i, ∏ j ∈ Ioi i, F (Fin.append p q i) (Fin.append p q j)) =
+      (∏ i, ∏ j ∈ Ioi i, F (p i) (p j)) *
+        (∏ i, ∏ j ∈ Ioi i, F (q i) (q j)) *
+        F (∏ i, p i) (∏ j, q j) := by
+  let h₁ (a : A) : A →* M := {
+    toFun := F a
+    map_one' := hone_right a
+    map_mul' := hmul_right a }
+  let h₂ (b : A) : A →* M := {
+    toFun := fun a => F a b
+    map_one' := hone_left b
+    map_mul' := fun a c => hmul_left a c b }
+  rw [prod_prod_Ioi_append]
+  congr 1
+  calc
+    (∏ i, ∏ j, F (p i) (q j)) = ∏ i, F (p i) (∏ j, q j) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      exact (map_prod (h₁ (p i)) q Finset.univ).symm
+    _ = F (∏ i, p i) (∏ j, q j) :=
+      (map_prod (h₂ (∏ j, q j)) p Finset.univ).symm
+
+/-- Scaling every coefficient in a pairwise product for a symmetric bimultiplicative
+pairing. The self-pairing law supplies the correction for each coefficient pair. -/
+theorem prod_prod_Ioi_scale {A M : Type*} [CommMonoid A] [CommMonoid M] (F : A → A → M)
+    {s : A}
+    (hmul_right : ∀ a b c, F a (b * c) = F a b * F a c)
+    (hcomm : ∀ a b, F a b = F b a) (a : A) (hself : F a a = F a s)
+    {n : ℕ} (w : Fin n → A) :
+    (∏ i, ∏ j ∈ Ioi i, F (a * w i) (a * w j)) =
+      (∏ i, ∏ j ∈ Ioi i, F (w i) (w j)) *
+        F a s ^ n.choose 2 * F a (∏ i, w i) ^ (n - 1) := by
+  have hmul_left (x y z : A) : F (x * y) z = F x z * F y z := by
+    rw [hcomm (x * y) z, hmul_right, hcomm z x, hcomm z y]
+  have hmulmul (b c : A) :
+      F (a * b) (a * c) = F b c * F a s * F a b * F a c := by
+    rw [hmul_left, hmul_right, hmul_right, hself, hcomm b a]
+    ac_rfl
+  have hprod_nonempty {k : ℕ} (v : Fin (k + 1) → A) :
+      (∏ i, F a (v i)) = F a (∏ i, v i) := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      calc
+        (∏ i, F a (v i)) = F a (v 0) * ∏ i : Fin (k + 1), F a (v i.succ) :=
+          Fin.prod_univ_succ _
+        _ = F a (v 0) * F a (∏ i : Fin (k + 1), v i.succ) :=
+          congrArg (F a (v 0) * ·) (ih (fun i => v i.succ))
+        _ = F a (∏ i, v i) := by rw [Fin.prod_univ_succ v, hmul_right]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    cases n with
+    | zero => simp
+    | succ n =>
+      let w₀ := Fin.init w
+      let b := w (Fin.last (n + 1))
+      have hw : w = Fin.snoc w₀ b := (Fin.snoc_init_self w).symm
+      rw [hw]
+      have hs (i : Fin ((n + 1) + 1)) :
+          a * Fin.snoc (α := fun _ => A) w₀ b i =
+            Fin.snoc (α := fun _ => A) (fun j => a * w₀ j) (a * b) i := by
+        rcases i.eq_castSucc_or_eq_last with ⟨j, rfl⟩ | rfl <;> simp
+      simp_rw [hs]
+      have hprod : (∏ i, F a (w₀ i)) = F a (∏ i, w₀ i) :=
+        hprod_nonempty w₀
+      have hchoose : ((n + 1) + 1).choose 2 = (n + 1).choose 2 + (n + 1) := by
+        rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm]
+      rw [prod_prod_Ioi_snoc F (fun j => a * w₀ j) (a * b),
+        prod_prod_Ioi_snoc F w₀ b, ih w₀, Fin.prod_snoc, Nat.add_sub_cancel]
+      simp_rw [hmulmul]
+      simp only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+        hprod, hmul_right, mul_pow, hchoose, pow_add]
+      rw [Nat.add_sub_cancel, pow_succ (F a (∏ i, w₀ i)) n,
+        pow_succ (F a b) n]
+      simp only [pow_one]
+      ac_nf
 
 /-- **A sum over all ordered pairs, folded onto the increasing ones.** A function vanishing on the
 diagonal sums over `l × l` to the sum over the increasing pairs of its value together with its

@@ -46,6 +46,8 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   `TopRep R G`, read off from its operators.
 * `TauCeti.ofDiscreteModuleMap`: a `G`-equivariant `R`-linear map of discrete modules as a
   morphism of `TopRep R G`.
+* `TauCeti.ofDiscreteModuleIso`: a `G`-equivariant `R`-linear equivalence of discrete modules as an
+  isomorphism of `TopRep R G`.
 * `TauCeti.ofDiscreteModulePair`: a compatible pair `(φ : H →* G, f : M →ₗ[R] N)` as the morphism
   `TopRep.res φ (ofDiscreteModule R G M) ⟶ ofDiscreteModule R H N` that
   `ContinuousCohomology.map` consumes.
@@ -73,7 +75,9 @@ provide the basic examples of smooth discrete objects used by coefficient constr
 * `TauCeti.ofDiscreteModuleHomAddEquiv`: morphisms between objects in the image are exactly the
   `G`-equivariant `R`-linear maps.
 * `TauCeti.ofDiscreteModulePair_eq_of_hom_apply`: the compatible pair is the only morphism with its
-  underlying map, which is how statements phrased with it are specialised.
+  underlying map, which is how statements phrased with it are specialised;
+  `TauCeti.ofDiscreteModulePair_heq_of_hom_apply` is its heterogeneous form, for group
+  homomorphisms that agree only propositionally.
 * `TauCeti.res_ofDiscreteModule`: the dictionary commutes with restriction to a subgroup, on the
   nose.
 * `TauCeti.isSmoothDiscrete_of_ρ_apply_eq_self`: a discrete object with trivial action is smooth
@@ -445,6 +449,29 @@ by two `G`-equivariant `R`-linear maps is the morphism named by their composite.
       (ofDiscreteModuleMap_hom_apply f' hf' _).symm.trans
         (TopRep.comp_apply (ofDiscreteModuleMap f hf) (ofDiscreteModuleMap f' hf') m).symm).symm
 
+/-- A `G`-equivariant `R`-linear equivalence of discrete modules as an isomorphism of
+`TopRep R G`, with `ofDiscreteModuleMap` of the equivalence and of its inverse as the two
+directions. The inverse is equivariant by `MulActionHom.inverse`. -/
+def ofDiscreteModuleIso (e : M ≃ₗ[R] N) (he : ∀ (g : G) (m : M), e (g • m) = g • e m) :
+    ofDiscreteModule R G M ≅ ofDiscreteModule R G N where
+  hom := ofDiscreteModuleMap e.toLinearMap he
+  inv := ofDiscreteModuleMap e.symm.toLinearMap fun g n ↦ by
+    simpa only [MulActionHom.inverse_apply, LinearEquiv.coe_coe] using
+      (MulActionHom.inverse (M := G) ⟨e, he⟩ e.symm e.symm_apply_apply e.apply_symm_apply).map_smul
+        g n
+  hom_inv_id := by simp
+  inv_hom_id := by simp
+
+/-- The forward direction of `ofDiscreteModuleIso e he` is `ofDiscreteModuleMap` of `e`. -/
+@[simp] lemma ofDiscreteModuleIso_hom (e : M ≃ₗ[R] N)
+    (he : ∀ (g : G) (m : M), e (g • m) = g • e m) :
+    (ofDiscreteModuleIso e he).hom = ofDiscreteModuleMap e.toLinearMap he := (rfl)
+
+/-- The inverse direction of `ofDiscreteModuleIso e he` acts on underlying modules as `e.symm`. -/
+@[simp] lemma ofDiscreteModuleIso_inv_hom_apply (e : M ≃ₗ[R] N)
+    (he : ∀ (g : G) (m : M), e (g • m) = g • e m) (n : N) :
+    (ofDiscreteModuleIso e he).inv.hom n = e.symm n := (rfl)
+
 variable (R G M N)
 
 /-- The additive bijection between the morphisms of `TopRep R G` from `ofDiscreteModule R G M` to
@@ -534,6 +561,18 @@ lemma ofDiscreteModulePair_eq_of_hom_apply (φ : H →* G) (f : M →ₗ[R] N)
     (hψ : ∀ m : M, ψ.hom m = f m) :
     ofDiscreteModulePair φ f hf = ψ := by
   ext (m : M); exact (hψ m).symm
+
+/-- The heterogeneous form of `TauCeti.ofDiscreteModulePair_eq_of_hom_apply`: a morphism
+`TopRep.res ψ (ofDiscreteModule R G M) ⟶ ofDiscreteModule R H N` whose underlying function is `f`
+is heterogeneously equal to the compatible pair along any `φ = ψ`. This compares compatible pairs
+whose group homomorphisms agree only propositionally, so that their hom-types differ. -/
+lemma ofDiscreteModulePair_heq_of_hom_apply {φ ψ : H →* G} (hφ : φ = ψ) (f : M →ₗ[R] N)
+    (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (g : TopRep.res ψ (ofDiscreteModule R G M) ⟶ ofDiscreteModule R H N)
+    (hg : ∀ m : M, g.hom m = f m) :
+    ofDiscreteModulePair φ f hf ≍ g := by
+  subst hφ
+  exact heq_of_eq (ofDiscreteModulePair_eq_of_hom_apply φ f hf g hg)
 
 end DictionaryPair
 
