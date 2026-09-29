@@ -236,18 +236,22 @@ private theorem exists_mul_mul_inv_eq_splittingAut (σ : L ≃ₐ[K] L) :
 noncomputable def splittingConjugator (σ : L ≃ₐ[K] L) : GL n L :=
   (exists_mul_mul_inv_eq_splittingAut φ σ).choose
 
-/-- `splittingAut φ σ` is conjugation by `splittingConjugator φ σ`. -/
+/-- `splittingAut φ σ` is conjugation by `splittingConjugator φ σ`. It is stated with the matrix
+inverse `(↑g_σ)⁻¹`, the simp normal form of `↑(g_σ⁻¹)` under `Matrix.coe_units_inv`. -/
+@[simp]
 theorem splittingConjugator_mul_mul_inv (σ : L ≃ₐ[K] L) (m : Matrix n n L) :
-    (splittingConjugator φ σ : Matrix n n L) * m *
-      ((splittingConjugator φ σ)⁻¹ : GL n L) = splittingAut φ σ m :=
-  (exists_mul_mul_inv_eq_splittingAut φ σ).choose_spec m
+    (splittingConjugator φ σ : Matrix n n L) * m * (splittingConjugator φ σ : Matrix n n L)⁻¹ =
+      splittingAut φ σ m := by
+  rw [← Matrix.coe_units_inv]
+  exact (exists_mul_mul_inv_eq_splittingAut φ σ).choose_spec m
 
 /-- The **cocycle of a split algebra with chosen descent data**: for a splitting
 `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)` with `n` nonempty, the `2`-cocycle of the conjugators
 `splittingConjugator φ σ`, that is, the unit scalars `c(σ, τ)` with
 `c(σ, τ) · g_σ · σ(g_τ) = g_στ`. -/
 noncomputable def cocycleOfSplitting : TwoCocycle K L :=
-  TwoCocycle.ofConjugators φ (splittingConjugator φ) (splittingConjugator_mul_mul_inv φ)
+  TwoCocycle.ofConjugators φ (splittingConjugator φ) fun σ m ↦ by
+    rw [Matrix.coe_units_inv, splittingConjugator_mul_mul_inv]
 
 /-- The defining property of `cocycleOfSplitting`: with `g_σ = splittingConjugator φ σ`,
 `c(σ, τ) · g_σ · σ(g_τ) = g_στ`. -/
