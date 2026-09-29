@@ -7,9 +7,8 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 import Mathlib.NumberTheory.ModularForms.RamanujanFormula
-import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
-import TauCeti.NumberTheory.ModularForms.Basic
+import TauCeti.NumberTheory.ModularForms.EllipticPoints
 
 /-!
 # The level-one modular invariant
@@ -29,8 +28,9 @@ in the coordinate of `ℂ`, as the analytic order of the composite with `ofCompl
 
 The vanishing comes from the stabilizers: `S` fixes `i` and `S * T` fixes `ρ`, with automorphy
 factors `iᵏ` and `(ρ + 1)ᵏ` in weight `k`, so a form invariant under `S` vanishes at `i` unless
-`4 ∣ k`, and one invariant under `S * T` vanishes at `ρ` unless `6 ∣ k`; in particular `E₆`
-vanishes at `i` and `E₄` at `ρ`.  That the zeros are simple comes from Ramanujan's formulas
+`4 ∣ k`, and one invariant under `S * T` vanishes at `ρ` unless `6 ∣ k`
+(`TauCeti.NumberTheory.ModularForms.EllipticPoints`); in particular `E₆` vanishes at `i` and
+`E₄` at `ρ`.  That the zeros are simple comes from Ramanujan's formulas
 `D E₄ = (E₂ E₄ - E₆) / 3` and `D E₆ = (E₂ E₆ - E₄²) / 2`
 (Mathlib's `Derivative.normalizedDerivOfComplex_E₄` and `Derivative.normalizedDerivOfComplex_E₆`):
 at a zero of `E₄` the derivative is `-E₆ / 3`, and at a zero of `E₆` it is `-E₄² / 2`, neither
@@ -40,9 +40,6 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 
 * `TauCeti.ModularForm.j`, `TauCeti.ModularForm.j_smul`, `TauCeti.ModularForm.j_sub_1728`: the
   invariant, its modular invariance, and the identity `j - 1728 = E₆² / Δ`.
-* `TauCeti.ModularForm.apply_I_eq_zero_of_not_dvd`,
-  `TauCeti.ModularForm.apply_ρ_eq_zero_of_not_dvd`: a form of weight `k` for a group containing
-  `S` vanishes at `i` unless `4 ∣ k`, and for a group containing `S * T` at `ρ` unless `6 ∣ k`.
 * `TauCeti.ModularForm.E₄_ρ`, `TauCeti.ModularForm.E₆_I`: the elliptic zeros of `E₄` and `E₆`.
 * `TauCeti.ModularForm.j_ρ`, `TauCeti.ModularForm.j_I`: `j ρ = 0` and `j i = 1728`.
 * `TauCeti.ModularForm.analyticOrderAt_j_comp_ofComplex_ρ`: `j` vanishes to order `3` at `ρ`.
@@ -130,44 +127,6 @@ theorem j_eq_1728_iff (z : ℍ) : j z = 1728 ↔ E₆ z = 0 := by
 /-! ### The elliptic points -/
 
 open ModularGroup
-
-/-- The automorphy factor of `S` at its fixed point `i` is `i`. -/
-private lemma denom_S_I : denom (mapGL ℝ S) I = Complex.I := by
-  simp [denom, coe_S, mapGL_coe_matrix]
-
-/-- The automorphy factor of `S * T` at its fixed point `ρ` is `ρ + 1`. -/
-private lemma denom_S_mul_T_ρ : denom (mapGL ℝ (S * T)) ρ = ρ + 1 := by
-  simp [denom, coe_S, coe_T, mapGL_coe_matrix, Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- A form of weight `k` for a group containing `S` vanishes at the elliptic point `i` unless
-`4 ∣ k`. -/
-theorem apply_I_eq_zero_of_not_dvd {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)}
-    {k : ℤ} [SlashInvariantFormClass F Γ k] (hS : mapGL ℝ S ∈ Γ) (f : F)
-    (hk : ¬ (4 : ℤ) ∣ k) : f I = 0 := by
-  have hSI : mapGL ℝ S • I = I := by
-    rw [← MulAction.compHom_smul_def]
-    exact stabilizer_I.mpr (by simp)
-  have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hS
-    (det_pos_of_mem_slGL ⟨S, rfl⟩) I
-  rw [hSI, denom_S_I] at h
-  simp at h
-  by_contra hf
-  exact hk ((Complex.isPrimitiveRoot_I.zpow_eq_one_iff_dvd k).mp ((mul_eq_right₀ hf).mp h.symm))
-
-/-- A form of weight `k` for a group containing `S * T` vanishes at the elliptic point `ρ`
-unless `6 ∣ k`. -/
-theorem apply_ρ_eq_zero_of_not_dvd {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)}
-    {k : ℤ} [SlashInvariantFormClass F Γ k] (hST : mapGL ℝ (S * T) ∈ Γ)
-    (f : F) (hk : ¬ (6 : ℤ) ∣ k) : f ρ = 0 := by
-  have hSTρ : mapGL ℝ (S * T) • ρ = ρ := by
-    rw [← MulAction.compHom_smul_def]
-    exact stabilizer_ρ.mpr (by simp)
-  have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hST
-    (det_pos_of_mem_slGL ⟨S * T, rfl⟩) ρ
-  rw [hSTρ, denom_S_mul_T_ρ] at h
-  simp at h
-  by_contra hf
-  exact hk ((isPrimitiveRoot_ρ_add_one.zpow_eq_one_iff_dvd k).mp ((mul_eq_right₀ hf).mp h.symm))
 
 /-- `E₄` vanishes at `ρ`. -/
 @[simp]
