@@ -71,6 +71,21 @@ theorem sturmVariation_of_eval_eq_zero {p q : K[X]} {x : K}
   · rw [sturmVariation_cons hp0]
     simp only [hp, List.signVariations_zero_cons, sturmVariation]
 
+/-- When the first two evaluations are nonzero, a Sturm variation step adds
+one exactly when their signs differ. -/
+theorem sturmVariation_eq_add_of_eval_ne_zero {p q : K[X]} {x : K}
+    (hp : p.eval x ≠ 0) (hq : q.eval x ≠ 0) :
+    sturmVariation p q x = sturmVariation q (-p % q) x +
+      (if SignType.sign (p.eval x) = SignType.sign (q.eval x) then 0 else 1) := by
+  have hp0 : p ≠ 0 := by
+    intro h
+    simp [h] at hp
+  have hq0 : q ≠ 0 := by
+    intro h
+    simp [h] at hq
+  rw [sturmVariation_cons hp0, sturmVariation_cons hq0, sturmSeq_cons hq0,
+    List.map_cons, List.signVariations_cons_cons_of_ne_zero _ hp hq]
+
 variable [IsStrictOrderedRing K]
 
 /-- At a zero of the second polynomial that is not a zero of the first,
