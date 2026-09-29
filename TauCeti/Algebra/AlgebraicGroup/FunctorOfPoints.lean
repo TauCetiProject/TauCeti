@@ -69,7 +69,7 @@ variable [Semiring H] [_root_.HopfAlgebra R H] [CommSemiring A] [Algebra R A]
 `f.toLinearMap ∘ₗ HopfAlgebra.antipode R`. This is well-defined even when `H` is
 noncommutative: `S` is an antihomomorphism (`HopfAlgebra.antipode_mul_antidistrib`), and `A` is
 commutative, so `f ∘ S` is a homomorphism. -/
-noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
+@[expose] noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
   AlgHom.ofLinearMap (f.toLinearMap ∘ₗ antipode R)
     (by simp only [LinearMap.coe_comp, Function.comp_apply, antipode_one, f.toLinearMap_apply,
       map_one])
@@ -81,12 +81,12 @@ noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
 /-- Evaluation of `antipodeComp f` at an element `h : H` is `f (S h)`. -/
 @[simp]
 lemma _root_.AlgHom.antipodeComp_apply (f : H →ₐ[R] A) (h : H) :
-    antipodeComp f h = f (antipode R h) := (rfl)
+    antipodeComp f h = f (antipode R h) := rfl
 
 /-- The underlying linear map of `antipodeComp f` is `f.toLinearMap ∘ₗ antipode R`. -/
 @[simp]
 lemma toLinearMap_antipodeComp (f : H →ₐ[R] A) :
-    (antipodeComp f).toLinearMap = f.toLinearMap ∘ₗ antipode R := (rfl)
+    (antipodeComp f).toLinearMap = f.toLinearMap ∘ₗ antipode R := rfl
 
 /-- The convolution inverse of an `R`-algebra homomorphism `f : H →ₐ[R] A` out of a Hopf
 algebra is `f ∘ S`, where `S` is the antipode. -/
@@ -96,25 +96,25 @@ noncomputable instance instInv : Inv (WithConv (H →ₐ[R] A)) where
 /-- The convolution inverse of `f` is `f ∘ S`, where `S` is the antipode:
 `f⁻¹ = toConv (antipodeComp f.ofConv)`. -/
 lemma convInv_def (f : WithConv (H →ₐ[R] A)) :
-    f⁻¹ = toConv (antipodeComp f.ofConv) := (rfl)
+    f⁻¹ = toConv (antipodeComp f.ofConv) := rfl
 
 /-- The underlying algebra homomorphism of the convolution inverse `f⁻¹` is
 `antipodeComp f.ofConv`. -/
 @[simp]
 lemma ofConv_inv (f : WithConv (H →ₐ[R] A)) :
-    (f⁻¹).ofConv = antipodeComp f.ofConv := (rfl)
+    (f⁻¹).ofConv = antipodeComp f.ofConv := rfl
 
 /-- Passing to underlying linear maps, the convolution inverse has linear map
 `f.ofConv.toLinearMap ∘ₗ antipode R`. -/
 @[simp]
 lemma toLinearMap_convInv (f : WithConv (H →ₐ[R] A)) :
-    (f⁻¹).ofConv.toLinearMap = f.ofConv.toLinearMap ∘ₗ antipode R := (rfl)
+    (f⁻¹).ofConv.toLinearMap = f.ofConv.toLinearMap ∘ₗ antipode R := rfl
 
 /-- Pointwise, the convolution inverse of `f` sends `h` to `f (S h)`, where `S` is the
 antipode. -/
 @[simp]
 lemma convInv_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
-    f⁻¹ h = f.ofConv (antipode R h) := (rfl)
+    f⁻¹ h = f.ofConv (antipode R h) := rfl
 
 /-- For a Hopf algebra `H` over `R` and a commutative `R`-algebra `A`, the convolution
 monoid of `R`-algebra homomorphisms `H →ₐ[R] A` is a group, with inverse `f ↦ f ∘ S`. When
@@ -165,17 +165,17 @@ groups is automatically a group homomorphism, so no separate construction is nee
 /-- `mapValue φ` acts pointwise by post-composition: `(mapValue φ f) = φ ∘ f`. -/
 @[simp]
 lemma mapValue_apply (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
-    mapValue φ f = toConv (φ.comp f.ofConv) := (rfl)
+    mapValue φ f = toConv (φ.comp f.ofConv) := rfl
 
 /-- The underlying algebra homomorphism of `mapValue φ f` is `φ.comp f.ofConv`. -/
 @[simp]
 lemma _root_.AlgHom.ofConv_mapValue (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
-    (mapValue φ f).ofConv = φ.comp f.ofConv := (rfl)
+    (mapValue φ f).ofConv = φ.comp f.ofConv := rfl
 
 /-- Pointwise evaluation of `mapValue φ f` at `h : H`. -/
 @[simp]
 lemma _root_.AlgHom.mapValue_apply_apply (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) (h : H) :
-    (mapValue φ f) h = φ (f h) := (rfl)
+    (mapValue φ f) h = φ (f h) := rfl
 
 /-- `mapValue` preserves the identity: `mapValue (𝟙 A)` is the identity monoid homomorphism. -/
 @[simp]
