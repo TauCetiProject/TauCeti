@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Algebra.Subalgebra.Pi
 public import Mathlib.Algebra.Central.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
 # Transporting and decomposing the center of an algebra
@@ -42,7 +43,24 @@ public section
 namespace Subalgebra
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-  (S : Subalgebra R (Subalgebra.center R A))
+
+/-- The center of an algebra acts on the algebra by its inclusion. -/
+instance centerAlgebra : Algebra (center R A) A :=
+  (center R A).val.toRingHom.toAlgebra' fun z a =>
+    (mem_center_iff.mp z.property a).symm
+
+/-- The structure map from the center to an algebra is inclusion. -/
+@[simp]
+theorem centerAlgebra_algebraMap_apply (z : center R A) :
+    algebraMap (center R A) A z = z := rfl
+
+/-- The structure map from the center is the inclusion homomorphism. -/
+theorem centerAlgebra_algebraMap :
+    algebraMap (center R A) A = (center R A).val.toRingHom := by
+  ext z
+  rfl
+
+variable (S : Subalgebra R (Subalgebra.center R A))
 
 /-- A subalgebra of the center of an algebra acts on the ambient algebra by multiplication. -/
 abbrev centralSubalgebraAlgebra : Algebra S A :=
@@ -73,6 +91,54 @@ theorem isScalarTower_centralSubalgebraAlgebra :
   refine ⟨fun r s a ↦ ?_⟩
   rw [centralSubalgebraAlgebra_smul_def, centralSubalgebraAlgebra_smul_def, ← smul_mul_assoc]
   congr 1
+
+section FiniteOverCenter
+
+local instance : Algebra S A := centralSubalgebraAlgebra S
+local instance : Algebra S (center R A) := S.val.toRingHom.toAlgebra
+
+/-- Finiteness over a central subalgebra implies finiteness over the whole center. -/
+theorem finite_over_center_of_finite [Module.Finite S A] :
+    Module.Finite (center R A) A :=
+  Module.Finite.of_restrictScalars_finite S (center R A) A
+
+end FiniteOverCenter
+
+end Subalgebra
+
+namespace Subalgebra
+
+section FiniteOverCentralSubalgebra
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+  (S : Subalgebra R (center R A))
+
+local instance : Algebra S A := centralSubalgebraAlgebra S
+local instance : Algebra S (center R A) := S.val.toRingHom.toAlgebra
+
+/-- The center, regarded as a submodule over a central subalgebra. -/
+private def centerSubmodule : Submodule S A where
+  carrier := (center R A : Set A)
+  zero_mem' := (center R A).zero_mem
+  add_mem' := fun ha hb => (center R A).add_mem ha hb
+  smul_mem' := by
+    intro s a ha
+    exact (center R A).mul_mem s.val.property ha
+
+/-- If an algebra is Noetherian as a module over a central subalgebra, its center is
+finite over that subalgebra. -/
+theorem finite_center_of_isNoetherian [IsNoetherian S A] :
+    Module.Finite S (center R A) := by
+  exact Module.Finite.of_fg (IsNoetherian.noetherian (centerSubmodule S))
+
+/-- A finite algebra over a Noetherian central subalgebra has Noetherian center. -/
+theorem isNoetherianRing_center_of_finite [IsNoetherianRing S] [Module.Finite S A] :
+    IsNoetherianRing (center R A) := by
+  have hNoetherian : IsNoetherian S A := isNoetherian_of_isNoetherianRing_of_finite S A
+  exact @IsNoetherianRing.of_finite S (center R A) _ _ _ _ _
+    (@finite_center_of_isNoetherian R A _ _ _ S hNoetherian)
+
+end FiniteOverCentralSubalgebra
 
 end Subalgebra
 
