@@ -34,6 +34,13 @@ variable {R : Type u} [Ring R] (k : Type*) [Ring k]
   [Linear k (ModuleCat.{max v w} R)] (M : ModuleCat.{max v w} R)
   {X Y : TopCat.{v}} (f : X ⟶ Y) (N : ModuleCat.{max v w} R)
 
+/-- The map of the singular-chain functor is the chain map induced by the singular simplicial
+map. This records the definitional bridge between Mathlib's functor and the cochain API. -/
+private lemma singularChainComplexFunctor_obj_map {A B : TopCat.{v}} (g : A ⟶ B)
+    (Q : ModuleCat.{max v w} R) :
+    ((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{max v w} R)).obj Q).map g =
+      SSet.chainComplexMap (TopCat.toSSet.map g) Q := rfl
+
 /-- The constant-system comparison of cochain complexes commutes with a continuous map,
 after identifying the pullback of a constant system with the constant system on the source. -/
 @[reassoc]
@@ -67,14 +74,9 @@ lemma twistedCochainComplexConstantIso_hom_space_naturality :
   have hF := congrArg (fun g => F.map g.op) h'
   dsimp only [F] at hF
   dsimp only [iX, iY, c] at hF
-  have hmap :
-      ((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{max v w} R)).obj N).map f =
-        SSet.chainComplexMap (TopCat.toSSet.map f) N := rfl
   simp only [op_comp, Functor.map_comp] at hF
-  rw [hmap] at hF
-  simp only [TopCat.singularCochainComplex, twistedCochainComplex,
-    AlgebraicTopology.singularChainComplexFunctor, SSet.chainComplexFunctor,
-    SSet.chainComplex, SSet.chainComplexMap, twistedCochainComplexMap,
+  rw [singularChainComplexFunctor_obj_map f N] at hF
+  simp only [twistedCochainComplexMap,
     twistedCochainComplexCoefficientMap, twistedCochainComplexConstantIso_hom,
     twistedChainComplexCoefficientIso_inv, TopCat.singularCochainComplexMap,
     Category.assoc] at hF ⊢
