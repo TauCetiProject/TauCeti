@@ -19,8 +19,9 @@ are bundled as monoid homomorphisms into the additive automorphism group, viewed
 multiplicatively so composition has the usual action order.
 
 For `N ≠ 0` the torsion action is the input needed to state Galois equivariance of the Weil
-pairing. Over a finite base field, the distinguished Galois automorphism is Frobenius, so the
-same action also supplies the point-side representation used in the Hasse-bound argument.
+pairing. When `F` is finite and `K` is an algebraic extension of `F`, the `#F`-power Frobenius
+is an `F`-automorphism of `K`, so the same action also supplies the point-side representation
+used in the Hasse-bound argument.
 
 ## Main definitions
 
@@ -87,18 +88,6 @@ theorem torsionGaloisAction_apply_coe (N : ℤ) (e : K ≃ₐ[F] K)
       AddSubgroup.torsionBy (W⁄K).toAffine.Point N) : (W⁄K).toAffine.Point) =
       Multiplicative.toAdd (W.pointGaloisAction e) P := by
   simp [torsionGaloisAction]
-
-omit [W.IsElliptic] in
-/-- The Galois action of `e` on an `N`-torsion point `⟨P, hP⟩` is the `N`-torsion point
-given by Mathlib's point map along `e`. -/
-@[simp]
-theorem torsionGaloisAction_apply_mk (N : ℤ) (e : K ≃ₐ[F] K)
-    (P : (W⁄K).toAffine.Point) (hP : P ∈ AddSubgroup.torsionBy (W⁄K).toAffine.Point N) :
-    Multiplicative.toAdd (W.torsionGaloisAction N e) ⟨P, hP⟩ =
-      ⟨Affine.Point.map e.toAlgHom P, by
-        apply (Submodule.mem_torsionBy_iff _ _).mpr
-        rw [← map_zsmul, (Submodule.mem_torsionBy_iff _ _).mp hP, map_zero]⟩ :=
-  Subtype.ext (torsionGaloisAction_apply_coe W N e ⟨P, hP⟩ |>.trans (pointGaloisAction_apply W e P))
 
 end WeierstrassCurve
 
