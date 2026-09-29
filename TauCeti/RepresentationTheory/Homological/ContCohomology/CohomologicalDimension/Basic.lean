@@ -60,6 +60,8 @@ the intended notion.
 * `TauCeti.cohomologicalDimensionAt_le_iff`, `TauCeti.strictCohomologicalDimensionAt_le_iff`,
   `TauCeti.cohomologicalDimension_le_iff`: each invariant is at most `n` exactly when the
   corresponding predicate holds at `n`.
+* `TauCeti.cohomologicalDimensionAt_eq_zero_iff`: `cd_p G = 0` exactly when continuous cohomology
+  vanishes in every positive degree for every discrete `p`-primary torsion `G`-module.
 * `TauCeti.cohomologicalDimensionAt_le_strictCohomologicalDimensionAt`: `cd_p G ≤ scd_p G` for
   compact `G`.
 
@@ -192,6 +194,18 @@ discrete `p`-primary torsion `M`. -/
 @[simp] theorem cohomologicalDimensionAt_le_iff (n : ℕ) :
     cohomologicalDimensionAt.{v} p G ≤ n ↔ CohomologicalDimensionLE.{v} p G n :=
   leastENatBound_le_iff (fun _ _ hmn h ↦ h.mono hmn) n
+
+/-- **The first value of `p`-cohomological dimension.** One has `cd_p G = 0` exactly when
+`Hⁱ(G, M)` vanishes in every positive degree `i` for every discrete `p`-primary torsion
+`G`-module `M` with continuous action. -/
+@[simp] theorem cohomologicalDimensionAt_eq_zero_iff :
+    cohomologicalDimensionAt.{v} p G = 0 ↔
+      ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+        [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
+        ∀ i : ℕ, 0 < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) := by
+  change cohomologicalDimensionAt.{v} p G = 0 ↔ CohomologicalDimensionLE.{v} p G 0
+  simpa only [Nat.cast_zero, nonpos_iff_eq_zero] using
+    (cohomologicalDimensionAt_le_iff p G 0)
 
 /-- `strictCohomologicalDimensionAt p G ≤ n` exactly when the `p`-primary component of
 `Hⁱ(G, M)` vanishes above `n` for every discrete `M`. -/

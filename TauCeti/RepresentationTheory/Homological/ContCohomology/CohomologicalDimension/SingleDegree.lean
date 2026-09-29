@@ -39,6 +39,9 @@ group is the further reduction to the single module `𝔽_p`.
 * `TauCeti.cohomologicalDimensionAt_le_iff_forall_subsingleton_succ` and
   `TauCeti.cohomologicalDimensionAt_le_iff_forall_finite_subsingleton_succ`: the two tests for
   `cd_p G ≤ n`.
+* `TauCeti.cohomologicalDimensionAt_eq_zero_iff_forall_subsingleton_one` and
+  `TauCeti.cohomologicalDimensionAt_eq_zero_iff_forall_finite_subsingleton_one`: `cd_p G = 0` is
+  detected by `H¹`, on all or only finite discrete `p`-primary torsion modules respectively.
 
 ## References
 
@@ -115,5 +118,26 @@ theorem cohomologicalDimensionAt_le_iff_forall_finite_subsingleton_succ (hp : p 
         Subsingleton (continuousCohomology (n + 1) (ofDiscreteModule ℤ G M)) := by
   rw [cohomologicalDimensionAt_le_iff,
     cohomologicalDimensionLE_iff_forall_finite_subsingleton_succ hp]
+
+/-- **`cd_p G = 0` is detected in degree one.** For a compact group `G`, the vanishing of
+`H¹(G, M)` for every discrete `p`-primary torsion `G`-module `M` is equivalent to the vanishing
+of all positive-degree cohomology, and hence to `cd_p G = 0`. -/
+theorem cohomologicalDimensionAt_eq_zero_iff_forall_subsingleton_one :
+    cohomologicalDimensionAt.{u} p G = 0 ↔
+      ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+        [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
+        Subsingleton (continuousCohomology 1 (ofDiscreteModule ℤ G M)) := by
+  simpa only [Nat.cast_zero, nonpos_iff_eq_zero, zero_add] using
+    (cohomologicalDimensionAt_le_iff_forall_subsingleton_succ p G 0)
+
+/-- **The finite degree-one test for `cd_p G = 0`.** For a compact group `G` and `p ≠ 0`, it is
+enough to test the vanishing of `H¹(G, M)` on finite discrete `p`-primary torsion `G`-modules. -/
+theorem cohomologicalDimensionAt_eq_zero_iff_forall_finite_subsingleton_one (hp : p ≠ 0) :
+    cohomologicalDimensionAt.{u} p G = 0 ↔
+      ∀ (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+        Subsingleton (continuousCohomology 1 (ofDiscreteModule ℤ G M)) := by
+  simpa only [Nat.cast_zero, nonpos_iff_eq_zero, zero_add] using
+    (cohomologicalDimensionAt_le_iff_forall_finite_subsingleton_succ p G hp 0)
 
 end TauCeti
