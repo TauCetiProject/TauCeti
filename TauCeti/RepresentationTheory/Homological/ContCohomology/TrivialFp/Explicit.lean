@@ -9,8 +9,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H2ZMod
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
-public import TauCeti.Topology.Algebra.ContinuousZModDual
 public import TauCeti.Data.ZMod.TrivialAction
+public import TauCeti.Topology.Algebra.ContinuousZModDual
+public import TauCeti.Topology.Algebra.GroupAction.TypeTags
 
 /-!
 # The explicit models of `H¹(G, 𝔽_p)` and `H²(G, 𝔽_p)`
@@ -27,7 +28,9 @@ The comparison for a discrete smooth representation over any scalars is
 coefficients along `trivialFpEquiv p G` lands in `H1 G (ZMod p)` and `H2 G (ZMod p)`, for any
 trivial action of `G` on `ZMod p`. In degree one, the class group of a trivial action is the group
 of continuous characters, so `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of `G`, as an
-`𝔽_p`-vector space.
+`𝔽_p`-vector space. The extensions of a profinite group by `𝔽_p` are written multiplicatively, so
+the degree-two identification is also read on the additive type tag of `Multiplicative (ZMod p)`
+with a trivial action.
 
 ## Main definitions
 
@@ -35,6 +38,8 @@ of continuous characters, so `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of
   the explicit `H1 G (ZMod p)` and `H2 G (ZMod p)` for a trivial action.
 * `TauCeti.cohomFpLinearEquivH2`: the degree-two identification is `𝔽_p`-linear; by
   `TauCeti.cohomFpAddEquivH2_cohomFpMap` it carries `cohomFpMap` to the explicit pullback.
+* `TauCeti.cohomFpAddEquivH2Additive`: `cohomFp p G 2` is the explicit `H²(G, Additive 𝔽_p)` of
+  the additive type tag of a multiplicatively written `𝔽_p` with trivial action.
 * `TauCeti.cohomFpLinearEquivContinuousZModDual`: `H¹(G, 𝔽_p)` is the continuous `𝔽_p`-dual of
   `G`, as an `𝔽_p`-vector space; `TauCeti.cohomFpLinearEquivContinuousZModDual_π_apply` computes
   it on the class of a homogeneous one-cocycle.
@@ -237,6 +242,55 @@ theorem cohomFpLinearEquivContinuousZModDual_π_apply (z : cocycles (trivialFp p
   rfl
 
 end TrivialFp
+
+section AdditiveTypeTag
+
+variable (p : ℕ) (G : Type u) [Group G] [MulDistribMulAction G (Multiplicative (ZMod p))]
+  (htriv : ∀ (g : G) (m : Multiplicative (ZMod p)), g • m = m)
+include htriv
+
+/-- The identification `Additive (Multiplicative (ZMod p)) ≃+ ZMod p` carries a trivial action of
+`G` on the source to the trivial action `TauCeti.trivialZModAction` on the target. -/
+theorem additiveMultiplicative_smul (g : G) (m : Additive (Multiplicative (ZMod p))) :
+    letI := trivialZModAction p G
+    AddEquiv.additiveMultiplicative (ZMod p) (g • m) =
+      g • AddEquiv.additiveMultiplicative (ZMod p) m := by
+  simp only [AddEquiv.additiveMultiplicative_apply, Additive.toMul_smul, htriv]
+  -- The action on the right is `TauCeti.trivialZModAction`, whose scalar multiplication is
+  -- `g • x = x` by definition.
+  rfl
+
+variable [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
+  [hcont : ContinuousSMul G (Multiplicative (ZMod p))]
+
+/-- **`H²(G, 𝔽_p)` is the explicit `H²(G, Additive 𝔽_p)`** of the multiplicatively written
+`𝔽_p` with a trivial action of `G`, read additively: the identification `TauCeti.cohomFpAddEquivH2`
+with the explicit `H²(G, ZMod p)` for the trivial action, followed by the change of coefficients
+along `Additive (Multiplicative (ZMod p)) ≃+ ZMod p`. -/
+noncomputable def cohomFpAddEquivH2Additive :
+    cohomFp p G 2 ≃+ H2 G (Additive (Multiplicative (ZMod p))) :=
+  letI := trivialZModAction p G
+  haveI : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
+  (cohomFpAddEquivH2 p G fun _ _ => rfl).trans
+    (explicitMap2Equiv G (Additive (Multiplicative (ZMod p))) G (ZMod p)
+      (ContinuousMulEquiv.refl G) (AddEquiv.additiveMultiplicative (ZMod p))
+      continuous_of_discreteTopology continuous_of_discreteTopology
+      (additiveMultiplicative_smul p G htriv)).symm
+
+/-- The identification `TauCeti.cohomFpAddEquivH2Additive` is `TauCeti.cohomFpAddEquivH2` for the
+trivial action `TauCeti.trivialZModAction`, followed by the change of coefficients along
+`Additive (Multiplicative (ZMod p)) ≃+ ZMod p`. -/
+theorem cohomFpAddEquivH2Additive_apply (x : cohomFp p G 2) :
+    letI := trivialZModAction p G
+    haveI : ContinuousSMul G (ZMod p) := ⟨continuous_snd⟩
+    cohomFpAddEquivH2Additive p G htriv x =
+      (explicitMap2Equiv G (Additive (Multiplicative (ZMod p))) G (ZMod p)
+        (ContinuousMulEquiv.refl G) (AddEquiv.additiveMultiplicative (ZMod p))
+        continuous_of_discreteTopology continuous_of_discreteTopology
+        (additiveMultiplicative_smul p G htriv)).symm (cohomFpAddEquivH2 p G (fun _ _ => rfl) x) :=
+  (rfl)
+
+end AdditiveTypeTag
 
 section Transport
 

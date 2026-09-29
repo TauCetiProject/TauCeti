@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
 /-!
@@ -20,6 +21,8 @@ of both period polynomials and modular symbols of weight `w + 2`.
 
 * `TauCeti.binaryFormRep R w`: the right action of integral matrices on binary forms of degree
   `w`, as a representation of `(Matrix (Fin 2) (Fin 2) ℤ)ᵐᵒᵖ`.
+* `TauCeti.binaryFormAdjugateRep R w`: the left action `P ↦ P ∣ adj M` of integral matrices, the
+  right action precomposed with the anti-multiplicative adjugate.
 
 ## Main results
 
@@ -71,6 +74,27 @@ theorem binaryFormRep_op_neg (M : Matrix (Fin 2) (Fin 2) ℤ) :
 theorem binaryFormRep_op_neg_of_even (hw : Even w) (M : Matrix (Fin 2) (Fin 2) ℤ) :
     binaryFormRep R w (op (-M)) = binaryFormRep R w (op M) := by
   rw [binaryFormRep_op_neg, hw.neg_one_pow, one_smul]
+
+variable (R w) in
+/-- **The left action `P ↦ P ∣ adj M` of integral matrices on binary forms of degree `w`**, as a
+representation of the matrix monoid: the adjugate is anti-multiplicative, so precomposing the
+right action `TauCeti.binaryFormRep` with it gives a left action. On `SL(2, ℤ)` the adjugate is
+the inverse, so this restricts to `P ↦ P ∣ γ⁻¹`; on a matrix of determinant `n` it is the action
+that appears in the Hecke operators on modular symbols, where `{α, β} ⊗ P` is sent to
+`{δα, δβ} ⊗ (P ∣ adj δ)`. -/
+noncomputable def binaryFormAdjugateRep :
+    Representation R (Matrix (Fin 2) (Fin 2) ℤ) (homogeneousSubmodule (Fin 2) R w) :=
+  (binaryFormRep R w).comp
+    { toFun := fun M ↦ op (adjugate M)
+      map_one' := by simp
+      map_mul' := fun M N ↦ by simp [adjugate_mul_distrib] }
+
+-- Low priority, so that lemmas stated at `binaryFormAdjugateRep` fire before it is unfolded to
+-- the right action.
+@[simp low]
+theorem binaryFormAdjugateRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)
+    (P : homogeneousSubmodule (Fin 2) R w) :
+    binaryFormAdjugateRep R w M P = binaryFormRep R w (op (adjugate M)) P := (rfl)
 
 /-- An integer scalar matrix acts on degree-`w` binary forms by its `w`th power. -/
 @[simp]

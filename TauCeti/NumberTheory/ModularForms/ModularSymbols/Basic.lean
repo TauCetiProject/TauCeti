@@ -42,7 +42,8 @@ representatives and `bᵢ` over a spanning family of the binary forms, span `�
 * `TauCeti.ModularSymbols.degree R`: the degree `∑ nₓ[x] ↦ ∑ nₓ` of a cusp divisor.
 * `TauCeti.ModularSymbols.degreeZero R`: the degree-zero divisors `Div⁰(ℙ¹(ℚ))`, the augmentation
   submodule of the cusp divisors, equal to the kernel of the degree (`degreeZero_eq_ker_degree`).
-* `TauCeti.ModularSymbols.degreeZeroRep R`: the representation of `SL(2, ℤ)` on `Div⁰(ℙ¹(ℚ))`.
+* `TauCeti.ModularSymbols.degreeZeroGLRep R`, `TauCeti.ModularSymbols.degreeZeroRep R`: the
+  representations of `GL(2, ℚ)` and of `SL(2, ℤ)` on `Div⁰(ℙ¹(ℚ))`.
 * `TauCeti.ModularSymbols.binaryFormSLRep R w`: the left action `P ↦ P ∣ γ⁻¹` of `SL(2, ℤ)` on
   binary forms of degree `w`.
 * `TauCeti.ModularSymbols R Γ w`: the module of modular symbols `𝕄_w(Γ; R)`.
@@ -122,12 +123,31 @@ theorem divisorRep_single (g : SL(2, ℤ)) (x : OnePoint ℚ) (r : R) :
 variable {R}
 
 variable (R) in
-/-- The representation of `SL(2, ℤ)` on the degree-zero divisors `Div⁰(ℙ¹(ℚ))`. -/
-noncomputable def degreeZeroRep : Representation R SL(2, ℤ) (degreeZero R) :=
-  (augmentationSubrepresentation R (GL (Fin 2) ℚ) (OnePoint ℚ)).toRepresentation.comp
-    (mapGL ℚ)
+/-- The representation of `GL(2, ℚ)` on the degree-zero divisors `Div⁰(ℙ¹(ℚ))`, through the
+Möbius action on the cusps. Its restriction to `SL(2, ℤ)` is `TauCeti.ModularSymbols.degreeZeroRep`;
+the larger group is what the Hecke operators on modular symbols act through. -/
+noncomputable def degreeZeroGLRep : Representation R (GL (Fin 2) ℚ) (degreeZero R) :=
+  (augmentationSubrepresentation R (GL (Fin 2) ℚ) (OnePoint ℚ)).toRepresentation
 
 @[simp]
+theorem coe_degreeZeroGLRep_apply (g : GL (Fin 2) ℚ) (D : degreeZero R) :
+    (degreeZeroGLRep R g D : R[OnePoint ℚ]) = ofMulAction R (GL (Fin 2) ℚ) (OnePoint ℚ) g D := by
+  rfl
+
+variable (R) in
+/-- The representation of `SL(2, ℤ)` on the degree-zero divisors `Div⁰(ℙ¹(ℚ))`. -/
+noncomputable def degreeZeroRep : Representation R SL(2, ℤ) (degreeZero R) :=
+  (degreeZeroGLRep R).comp (mapGL ℚ)
+
+/-- The `SL(2, ℤ)`-representation on `Div⁰(ℙ¹(ℚ))` is the `GL(2, ℚ)`-representation along
+`mapGL ℚ`. -/
+@[simp]
+theorem degreeZeroRep_apply (g : SL(2, ℤ)) : degreeZeroRep R g = degreeZeroGLRep R (mapGL ℚ g) :=
+  (rfl)
+
+/-- On the underlying divisor, `degreeZeroRep` is the permutation representation `divisorRep`.
+Not `@[simp]`: simp normalises `degreeZeroRep R g` to `degreeZeroGLRep R (mapGL ℚ g)` through
+`degreeZeroRep_apply`, and this lemma is the bridge to `divisorRep` for `rw`. -/
 theorem coe_degreeZeroRep_apply (g : SL(2, ℤ)) (D : degreeZero R) :
     (degreeZeroRep R g D : R[OnePoint ℚ]) = divisorRep R g D := by
   rfl
@@ -235,6 +255,19 @@ theorem binaryFormSLRep_binaryFormRep (γ : SL(2, ℤ)) (P : homogeneousSubmodul
     binaryFormSLRep R w γ (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P) = P := by
   rw [binaryFormSLRep_apply, ← binaryFormRep_op_mul_apply, ← coe_mul, mul_inv_cancel, coe_one,
     op_one, map_one, Module.End.one_apply]
+
+/-- On `SL(2, ℤ)` the adjugate action `TauCeti.binaryFormAdjugateRep` on binary forms is the
+action `P ↦ P ∣ γ⁻¹` defining the modular symbols: the adjugate of a determinant-one matrix is its
+inverse. -/
+@[simp]
+theorem binaryFormAdjugateRep_coe (γ : SL(2, ℤ)) :
+    binaryFormAdjugateRep R w (γ : Matrix (Fin 2) (Fin 2) ℤ) = binaryFormSLRep R w γ := by
+  refine LinearMap.ext fun P ↦ ?_
+  rw [binaryFormAdjugateRep_apply, binaryFormSLRep_apply]
+  -- `rw [SpecialLinearGroup.coe_inv]` fails to build a type-correct motive here because the
+  -- coercion `SL(2, ℤ) → Matrix` unfolds the subtype; the rewrite is done by `congrArg` instead.
+  exact congrArg (fun M : Matrix (Fin 2) (Fin 2) ℤ ↦ binaryFormRep R w (op M) P)
+    (Matrix.SpecialLinearGroup.coe_inv γ).symm
 
 variable (R w) in
 /-- The diagonal representation of `SL(2, ℤ)` on `Div⁰(ℙ¹(ℚ)) ⊗_R Sym^w(R²)`. -/

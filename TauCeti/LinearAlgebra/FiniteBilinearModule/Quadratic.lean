@@ -13,10 +13,10 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 # Finite quadratic modules
 
 A finite quadratic module is a finite abelian group equipped with a quadratic map to `ℚ/ℤ`.
-Its symmetric bilinear pairing is not stored separately: it is the polar form of the quadratic
-map.  This file packages that canonical underlying finite bilinear module and develops restriction,
-form negation, orthogonal products, morphisms, isometries, quadratic-isotropic subgroups, and
-quadratic Lagrangians.
+It extends the finite bilinear module of its symmetric pairing, and the field `polar_eq_pairing'`
+requires that stored pairing to be the polar form of the quadratic map, so the quadratic map
+determines it. This file develops restriction, form negation, orthogonal products, morphisms,
+isometries, quadratic-isotropic subgroups, and quadratic Lagrangians.
 
 The convention is the half-norm convention used for discriminant forms: for an even integral
 lattice the quadratic value of a dual class represented by `x` is `B(x, x) / 2` modulo `ℤ`, and
@@ -299,13 +299,19 @@ theorem toIsometry_toHom (f : Hom A B) (hf : Function.Bijective f) :
   ext
   rfl
 
+end Hom
+
+namespace Isometry
+
+variable {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
+
 /-- Packaging the underlying morphism of an isometry recovers the isometry. -/
 @[simp]
 theorem toHom_toIsometry (f : Isometry A B) :
-    f.toHom.toIsometry f.toHom_bijective = f := by
-  exact DFunLike.ext _ _ fun _ ↦ rfl
+    f.toHom.toIsometry f.toHom_bijective = f :=
+  DFunLike.ext _ _ fun _ ↦ rfl
 
-end Hom
+end Isometry
 
 /-! ## Canonical constructions -/
 
@@ -426,6 +432,10 @@ theorem isNondegenerate_prod (B : FiniteQuadraticModule) :
 
 /-- An element of a finite quadratic module is isotropic when its quadratic value vanishes. -/
 def IsIsotropicElem (x : A) : Prop := A.quadratic x = 0
+
+/-- Quadratic isotropy of an element, unfolded to its defining property. -/
+theorem isIsotropicElem_def (x : A) : A.IsIsotropicElem x ↔ A.quadratic x = 0 :=
+  Iff.rfl
 
 /-- Zero is quadratically isotropic. -/
 @[simp]
@@ -919,13 +929,18 @@ theorem orthogonalQuotientCongr_orthogonalQuotientMk {H K : AddSubgroup A} (hH :
   subst h
   rfl
 
+/-- **Nondegeneracy of the orthogonal quotient.** The quadratic module induced on `H^⊥ / H` is
+nondegenerate exactly when `H` contains the radical of the polar bilinear module of `A`. -/
+theorem isNondegenerate_orthogonalQuotient_iff (H : AddSubgroup A) (hH : A.IsIsotropic H) :
+    (A.orthogonalQuotient H hH).IsNondegenerate ↔ A.toFiniteBilinearModule.radical ≤ H := by
+  rw [FiniteQuadraticModule.IsNondegenerate, A.orthogonalQuotient_toFiniteBilinearModule H hH]
+  exact A.toFiniteBilinearModule.isNondegenerate_orthogonalQuotient_iff H
+
 /-- If `A` is nondegenerate, the quadratic module induced on `H^⊥ / H` is nondegenerate. -/
 theorem IsNondegenerate.isNondegenerate_orthogonalQuotient (hA : A.IsNondegenerate)
     {H : AddSubgroup A} (hH : A.IsIsotropic H) :
-    (A.orthogonalQuotient H hH).IsNondegenerate := by
-  rw [FiniteQuadraticModule.IsNondegenerate, A.orthogonalQuotient_toFiniteBilinearModule H hH]
-  exact FiniteBilinearModule.IsNondegenerate.isNondegenerate_orthogonalQuotient
-    A.toFiniteBilinearModule hA H
+    (A.orthogonalQuotient H hH).IsNondegenerate :=
+  (A.isNondegenerate_orthogonalQuotient_iff H hH).mpr (hA.radical_eq_bot ▸ bot_le)
 
 /-- For nondegenerate `A`, the order of `H^⊥ / H` multiplied by `|H|²` is `|A|`. -/
 theorem IsNondegenerate.card_orthogonalQuotient_mul_card_sq (hA : A.IsNondegenerate)

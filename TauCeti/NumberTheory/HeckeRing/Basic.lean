@@ -10,6 +10,7 @@ public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.NumberTheory.HeckeRing.Defs
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Map
+import Mathlib.Tactic.Group
 
 /-!
 # Hecke rings: the double coset API
@@ -89,6 +90,12 @@ merges. The degree section is instead ported from the AINTLIB `LeanModularForms`
   `DoubleCoset.doubleCoset_eq_iUnion_leftCosets` and `mk_out_mul_injective`.
 * `DoubleCoset.doubleCoset_eq_iUnion_rightCosets_of_forall_exists`: a criterion for a supplied
   family of right-coset representatives to cover a double coset.
+* `DoubleCoset.rightCosetRep_mem`, `DoubleCoset.exists_mem_out_mul_inv_eq_mul_rightCosetRep` and
+  `DoubleCoset.exists_bijective_rightCosetRep_smul_eq`: the representatives `δ τᵥ⁻¹` lie in any
+  submonoid containing `δ` and `Γ₂`; an element `δ h₂⁻¹` of the double coset is a `Γ₁`-multiple of
+  the representative of `h₂`'s class; and any family of representatives of the right cosets is
+  matched with the chosen one by a bijection — the coset bookkeeping every operator built by
+  summing over the decomposition (slash sums, Hecke sums on a representation) reindexes with.
 * `DoubleCoset.doubleCoset_mul_doubleCoset_eq_iUnion_rightCosets`: Shimura's covering identity —
   the products `aᵢbⱼ` of two families of right-coset representatives cover the product set
   `Γ₁δ₁Γ₂ · Γ₂δ₂Γ₃`, though not without repetition.
@@ -725,6 +732,82 @@ lemma exists_rightCosetRep_smul_eq {Γ₁ Γ₂ : Subgroup G} (D : HeckeCoset Δ
   rw [doubleCoset_eq_iUnion_rightCosetRep D] at hx
   obtain ⟨v, hv⟩ := Set.mem_iUnion.mp hx
   exact ⟨v, (rightCoset_eq_iff Γ₁).mpr (by simpa using inv_mem ((mem_rightCoset_iff _).mp hv))⟩
+
+/-- Each representative `δ τᵥ⁻¹` lies in any submonoid `Δ'` containing the chosen `δ` and the
+group `Γ₂`. Only `Γ₂` and `δ` are constrained: nothing is asked of `Γ₁`, nor of `Δ` beyond
+supplying `δ`. The hypothesis on `Γ₂` is used at `τᵥ⁻¹`, which lies in `Γ₂` because `Γ₂` is a
+group. -/
+lemma rightCosetRep_mem {Γ₁ Γ₂ : Subgroup G} (D : HeckeCoset Δ Γ₁ Γ₂) {Δ' : Submonoid G}
+    (hD : (D.out : G) ∈ Δ') (hΓ₂ : Γ₂.toSubmonoid ≤ Δ')
+    (v : DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹) : rightCosetRep D v ∈ Δ' := by
+  have hv : ((v.out : Γ₂) : G)⁻¹ ∈ Γ₂ := inv_mem v.out.2
+  rw [rightCosetRep_def]
+  exact mul_mem hD (hΓ₂ hv)
+
+/-- **An element `δ h₂⁻¹` of the double coset is a `Γ₁`-multiple of the representative attached
+to `h₂`'s class.** For `h₂ ∈ Γ₂`, `δ h₂⁻¹ = γ₁ · rightCosetRep D ⟦h₂⟧` for some `γ₁ ∈ Γ₁`, where
+`δ = D.out`: if `u` is the chosen representative of `⟦h₂⟧` then `δ (u⁻¹ h₂) δ⁻¹ ∈ Γ₁`
+(`conj_mem_of_mk_eq`), and `γ₁` is its inverse.
+
+`hh₂` is part of the statement rather than a side condition: the right-hand side names the class
+`⟦⟨h₂, hh₂⟩⟧`. Membership is a `Prop`, so any proof of `h₂ ∈ Γ₂` names the same class. This is
+the per-summand step behind Shimura's Proposition 3.37: right multiplication by an element of
+`Γ₂` permutes the right cosets `Γ₁ aᵥ`, and a `Γ₁`-invariant summand does not see `γ₁`. -/
+lemma exists_mem_out_mul_inv_eq_mul_rightCosetRep {Γ₁ Γ₂ : Subgroup G}
+    (D : HeckeCoset Δ Γ₁ Γ₂) {h₂ : G} (hh₂ : h₂ ∈ Γ₂) :
+    ∃ γ₁ ∈ Γ₁, (D.out : G) * h₂⁻¹ =
+      γ₁ * rightCosetRep D (QuotientGroup.mk ⟨h₂, hh₂⟩) := by
+  set u : G := (((QuotientGroup.mk ⟨h₂, hh₂⟩ : DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹).out : Γ₂) : G)
+    with hu
+  -- `u` and `h₂` have the same class, so `δ (u⁻¹ h₂) δ⁻¹` lies in `Γ₁`.
+  have hconj : (D.out : G) * (u⁻¹ * h₂) * (D.out : G)⁻¹ ∈ Γ₁ := by
+    rw [hu]
+    simpa using conj_mem_of_mk_eq ((D.out : G)⁻¹) (Quotient.out_eq _)
+  refine ⟨_, inv_mem hconj, ?_⟩
+  rw [rightCosetRep_def, ← hu]
+  group
+
+/-- **Two families of representatives of the same right cosets are matched by a bijection.**
+If the cosets `Γ₁ aᵢ` are pairwise distinct and cover `Γ₁ D.out Γ₂`, then the index type `ι` is
+matched with `DecompQuotient Γ₂ Γ₁ (D.out)⁻¹` — the index Shimura's decomposition sums over — by a
+bijection `φ` carrying each `Γ₁ aᵢ` to `Γ₁ (rightCosetRep D (φ i))`.
+
+This is pure coset bookkeeping. It identifies the two index sets compatibly with the cosets they
+name, and only that: the matched representatives `aᵢ` and `rightCosetRep D (φ i)` differ by a
+factor of `Γ₁`, so a summand that can see the representative still distinguishes them. Equating
+two sums over the families needs, in addition, a summand depending only on the coset — for a
+slash term, `HeckeRing.GL2.slash_eq_of_rightCoset_eq` on a `Γ₁`-invariant function; for a
+representation, `HeckeCoset.comp_eq_of_rightCoset_eq`. -/
+theorem exists_bijective_rightCosetRep_smul_eq {Γ₁ Γ₂ : Subgroup G} (D : HeckeCoset Δ Γ₁ Γ₂)
+    {ι : Type*} (a : ι → G)
+    (hcover : doubleCoset (D.out : G) Γ₁ Γ₂ = ⋃ i, MulOpposite.op (a i) • (Γ₁ : Set G))
+    (hinj : Function.Injective fun i ↦ MulOpposite.op (a i) • (Γ₁ : Set G)) :
+    ∃ φ : ι → DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹, Function.Bijective φ ∧
+      ∀ i, MulOpposite.op (a i) • (Γ₁ : Set G) =
+        MulOpposite.op (rightCosetRep D (φ i)) • (Γ₁ : Set G) := by
+  classical
+  -- Mathlib's own lemma; stated for a submonoid, so `Γ₁` is passed through `toSubmonoid`.
+  have hself : ∀ x : G, x ∈ MulOpposite.op x • (Γ₁ : Set G) := fun x ↦
+    mem_own_rightCoset Γ₁.toSubmonoid x
+  -- Each family's cosets occur in the other: every `aᵢ` lies in the double coset, and every
+  -- chosen representative lies in some `Γ₁ aᵢ`, two right cosets that meet being equal.
+  choose φ hφ using fun i ↦ exists_rightCosetRep_smul_eq D
+    (hcover ▸ Set.mem_iUnion_of_mem i (hself (a i)))
+  have key' : ∀ v, ∃ i, MulOpposite.op (rightCosetRep D v) • (Γ₁ : Set G) =
+      MulOpposite.op (a i) • (Γ₁ : Set G) := by
+    intro v
+    have hmem := rightCosetRep_mem_doubleCoset D v
+    rw [hcover] at hmem
+    obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hmem
+    exact ⟨i, (rightCoset_eq_iff Γ₁).mpr (by simpa using inv_mem ((mem_rightCoset_iff _).mp hi))⟩
+  -- Indices with the same image under `φ` name the same coset of the family `(aᵢ)`, which `hinj`
+  -- then identifies; stated separately so that `hinj` is applied to this equality itself.
+  have hcoset : ∀ i j, φ i = φ j → MulOpposite.op (a i) • (Γ₁ : Set G) =
+      MulOpposite.op (a j) • (Γ₁ : Set G) := fun i j hij ↦ by
+    rw [hφ i, hφ j, hij]
+  refine ⟨φ, ⟨fun i j hij ↦ hinj (hcoset i j hij), fun v ↦ ?_⟩, hφ⟩
+  obtain ⟨i, hi⟩ := key' v
+  exact ⟨i, (op_rightCosetRep_smul_injective D (hi.trans (hφ i))).symm⟩
 
 end DoubleCoset
 
