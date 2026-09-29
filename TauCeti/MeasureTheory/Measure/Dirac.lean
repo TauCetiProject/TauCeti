@@ -69,24 +69,19 @@ theorem measure_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableSpace X]
     rw [Measure.add_apply, Measure.dirac_apply' _ hs,
       Set.indicator_of_notMem hx] at h'
     exact add_eq_zero.mp h'
-  constructor
-  · apply Measure.ext
+  have hsingle (κ : Measure X)
+      (hk : ∀ s, MeasurableSet s → x ∉ s → κ s = 0) :
+      κ = κ Set.univ • Measure.dirac x := by
+    apply Measure.ext
     intro s hs
     by_cases hx : x ∈ s
     · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
         Set.indicator_of_mem hx, Pi.one_apply, smul_eq_mul, mul_one]
-      exact measure_of_measure_compl_eq_zero (hzero sᶜ hs.compl (by simpa)).1
+      exact measure_of_measure_compl_eq_zero (hk sᶜ hs.compl (by simpa))
     · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
         Set.indicator_of_notMem hx, smul_eq_mul, mul_zero]
-      exact (hzero s hs hx).1
-  · apply Measure.ext
-    intro s hs
-    by_cases hx : x ∈ s
-    · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
-        Set.indicator_of_mem hx, Pi.one_apply, smul_eq_mul, mul_one]
-      exact measure_of_measure_compl_eq_zero (hzero sᶜ hs.compl (by simpa)).2
-    · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
-        Set.indicator_of_notMem hx, smul_eq_mul, mul_zero]
-      exact (hzero s hs hx).2
+      exact hk s hs hx
+  exact ⟨hsingle μ (fun s hs hx => (hzero s hs hx).1),
+    hsingle ν (fun s hs hx => (hzero s hs hx).2)⟩
 
 end TauCeti
