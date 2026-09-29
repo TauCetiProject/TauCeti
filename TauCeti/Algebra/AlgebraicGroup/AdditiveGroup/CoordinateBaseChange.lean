@@ -71,9 +71,8 @@ noncomputable abbrev coordinateHopfAlgebraBaseChangeIso :
 /-- The coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum over a domain. -/
 theorem connectedSpace_primeSpectrum_coordinateHopfAlgebra
     (K : Type u) [CommRing K] [IsDomain K] :
-    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra K)) := by
-  change ConnectedSpace (PrimeSpectrum (SymmetricAlgebra K K))
-  infer_instance
+    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra K)) :=
+  inferInstanceAs (ConnectedSpace (PrimeSpectrum (SymmetricAlgebra K K)))
 
 /-- The base change of the coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum
 when the extension ring is a domain. -/
