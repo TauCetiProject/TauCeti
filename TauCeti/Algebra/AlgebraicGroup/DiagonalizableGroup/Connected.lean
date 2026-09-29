@@ -55,7 +55,10 @@ theorem geometricallyConnected_of_isPGroup [ExpChar k p] {G : Type v} [CommGroup
 variable [Fact p.Prime] [CharP k p]
 
 /-- A finite diagonalizable group in characteristic `p` is geometrically connected
-if and only if its character group is a `p`-group. -/
+if and only if its character group is a `p`-group.
+
+Use `rw [geometricallyConnected_iff_isPGroup k p G]` to supply the characteristic
+explicitly when rewriting a geometric connectedness goal. -/
 theorem geometricallyConnected_iff_isPGroup (G : Type v) [CommGroup G] [Finite G] :
     geometricallyConnectedCommHopfAlgProperty k (CommHopfAlgCat.of k (MonoidAlgebra k G)) ↔
       IsPGroup p G := by
@@ -67,7 +70,10 @@ variable {M N : Type v} [CommGroup M] [CommGroup N] (f : M →* N)
 variable [Finite (N ⧸ f.range)]
 
 /-- A finite diagonalizable-group kernel over a connected commutative ring of prime
-characteristic `p` is connected if and only if the character cokernel is a `p`-group. -/
+characteristic `p` is connected if and only if the character cokernel is a `p`-group.
+
+Use `rw [connectedSpace_kernelCoordinate_iff_isPGroup R p f]` to supply the
+characteristic explicitly when rewriting a connectedness goal. -/
 theorem connectedSpace_kernelCoordinate_iff_isPGroup
     (R : Type u) [CommRing R] [ConnectedSpace (PrimeSpectrum R)]
     (p : ℕ) [Fact p.Prime] [CharP R p] (f : M →* N) [Finite (N ⧸ f.range)] :
@@ -81,7 +87,10 @@ theorem connectedSpace_kernelCoordinate_iff_isPGroup
     (connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup R (N ⧸ f.range) p)
 
 /-- A finite diagonalizable-group kernel in characteristic `p` is geometrically
-connected if and only if the character cokernel is a `p`-group. -/
+connected if and only if the character cokernel is a `p`-group.
+
+Use `rw [geometricallyConnected_kernelCoordinate_iff_isPGroup k p f]` to supply the
+characteristic explicitly when rewriting a geometric connectedness goal. -/
 theorem geometricallyConnected_kernelCoordinate_iff_isPGroup :
     geometricallyConnectedCommHopfAlgProperty k
       (CommHopfAlgCat.quotient (CommHopfAlgCat.of k (MonoidAlgebra k N))

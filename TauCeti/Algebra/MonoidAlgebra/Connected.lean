@@ -74,7 +74,10 @@ variable [ConnectedSpace (PrimeSpectrum R)] (G : Type*) [CommGroup G] [Finite G]
 variable (p : ℕ) [Fact p.Prime] [CharP R p]
 
 /-- A finite abelian group has connected group-algebra spectrum over a connected
-commutative ring of prime characteristic `p` if and only if it is a `p`-group. -/
+commutative ring of prime characteristic `p` if and only if it is a `p`-group.
+
+Use `rw [connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup R G p]` to supply
+the characteristic explicitly when rewriting a connectedness goal. -/
 theorem connectedSpace_primeSpectrum_monoidAlgebra_iff_isPGroup :
     ConnectedSpace (PrimeSpectrum R[G]) ↔ IsPGroup p G := by
   let _ : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
