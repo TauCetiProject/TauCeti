@@ -161,30 +161,21 @@ theorem characterOfFun_of (f : X → ZMod p) (x : X) :
     characterOfFun p X f (of x) = Multiplicative.ofAdd (f x) := by
   simp [characterOfFun]
 
-/-- Evaluation of a continuous `𝔽_p`-valued character at the generators, as an additive map. -/
-private noncomputable def evalOfAddMonoidHom :
-    continuousZModDual p (freeProP p X) →+ (X → ZMod p) where
-  toFun φ x := Multiplicative.toAdd (Additive.toMul φ (of x))
-  map_zero' := funext fun x ↦ by simp
-  map_add' φ ψ := funext fun x ↦ by simp [toMul_add]
-
 /-- **The continuous `𝔽_p`-dual of a free pro-`p` group is `𝔽_p^X`.** Evaluation at the generators
 identifies the continuous characters of `freeProP p X` with the arbitrary functions `X → 𝔽_p`, as
 `𝔽_p`-vector spaces; the inverse is `TauCeti.freeProP.characterOfFun`. No finiteness of `X` is
 needed. -/
 noncomputable def continuousZModDualEquiv :
     continuousZModDual p (freeProP p X) ≃ₗ[ZMod p] (X → ZMod p) where
-  toFun := evalOfAddMonoidHom p X
-  map_add' := map_add _
-  map_smul' := ZMod.map_smul _
+  __ := LinearMap.pi fun x ↦ continuousZModDual.evalₗ (of x)
   invFun f := Additive.ofMul (characterOfFun p X f)
-  left_inv φ := Additive.toMul.injective <| hom_ext fun x ↦ by simp [evalOfAddMonoidHom]
-  right_inv f := funext fun x ↦ by simp [evalOfAddMonoidHom]
+  left_inv φ := Additive.toMul.injective <| hom_ext fun x ↦ by simp
+  right_inv f := funext fun x ↦ by simp
 
 @[simp]
 theorem continuousZModDualEquiv_apply (φ : continuousZModDual p (freeProP p X)) (x : X) :
-    continuousZModDualEquiv p X φ x = Multiplicative.toAdd (Additive.toMul φ (of x)) :=
-  (rfl)
+    continuousZModDualEquiv p X φ x = Multiplicative.toAdd (Additive.toMul φ (of x)) := by
+  simp [continuousZModDualEquiv]
 
 @[simp]
 theorem continuousZModDualEquiv_symm_apply (f : X → ZMod p) :

@@ -57,20 +57,17 @@ with `ZMod n`.** The inverse sends `a` to the unique continuous character taking
 -/
 noncomputable def continuousZModDualEquivZMod :
     continuousZModDual n zHat.{u} ≃ₗ[ZMod n] ZMod n :=
-  LinearEquiv.ofBijective
-    (AddMonoidHom.toZModLinearMap n
-      { toFun := fun (χ : continuousZModDual n zHat.{u}) ↦
-          Multiplicative.toAdd (Additive.toMul χ gen)
-        map_zero' := by simp
-        map_add' := fun χ ψ ↦ by simp [toMul_add] })
-    ⟨fun χ ψ h ↦ Additive.toMul.injective (hom_ext (Multiplicative.toAdd.injective h)),
-      fun a ↦ ⟨Additive.ofMul (lift (Multiplicative.ofAdd a)), by simp⟩⟩
+  LinearEquiv.ofBijective (continuousZModDual.evalₗ gen) <| by
+    convert (Additive.toMul.trans ((liftEquiv (Multiplicative (ZMod n))).symm.trans
+      Multiplicative.toAdd)).bijective using 1
+    ext χ
+    simp
 
 /-- Evaluation under `continuousZModDualEquivZMod` is evaluation at `zHat.gen`. -/
 @[simp]
 theorem continuousZModDualEquivZMod_apply (χ : continuousZModDual n zHat.{u}) :
-    continuousZModDualEquivZMod n χ = Multiplicative.toAdd (Additive.toMul χ gen) :=
-  (rfl)
+    continuousZModDualEquivZMod n χ = Multiplicative.toAdd (Additive.toMul χ gen) := by
+  simp [continuousZModDualEquivZMod]
 
 /-- The inverse of evaluation sends `a : ZMod n` to the lift taking `zHat.gen` to `a`. -/
 @[simp]
@@ -126,6 +123,14 @@ at `zHat.gen`. -/
 theorem cohomFpOneEquivZMod_apply [NeZero p] (x : cohomFp p zHat.{u} 1) :
     cohomFpOneEquivZMod p x = Multiplicative.toAdd
       (Additive.toMul (cohomFpLinearEquivContinuousZModDual p zHat.{u} x) gen) := by
+  simp [cohomFpOneEquivZMod]
+
+/-- The inverse of `cohomFpOneEquivZMod` sends `a` to the class attached to the unique continuous
+character of `zHat` taking the canonical generator to `a`. -/
+@[simp]
+theorem cohomFpOneEquivZMod_symm_apply [NeZero p] (a : ZMod p) :
+    (cohomFpOneEquivZMod p).symm a = (cohomFpLinearEquivContinuousZModDual p zHat.{u}).symm
+      (Additive.ofMul (lift (Multiplicative.ofAdd a))) := by
   simp [cohomFpOneEquivZMod]
 
 /-- Canonical continuous `H¹(zHat, 𝔽_p)` has dimension one for prime `p`. -/
