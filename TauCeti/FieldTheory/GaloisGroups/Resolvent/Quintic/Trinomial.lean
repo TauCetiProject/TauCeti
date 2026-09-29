@@ -299,37 +299,48 @@ private theorem c_values : c 5 1 0 = 8 ∧ c 4 2 0 = 40 ∧ c 3 3 0 = 160 ∧ c 
   have hp := eval_eq_zero_of_eq_prod prod_x₂ eval₂_rename_x₂_swap_two_three_mul_swap_three_four
   generalize c 5 1 0 = A1, c 4 2 0 = A2, c 3 3 0 = A3, c 2 4 0 = A4, c 1 5 0 = A5,
     c 1 0 4 = B5, c 0 6 0 = A6, c 0 1 4 = B6 at hP1 hm hp ⊢
+  -- Each integral equation is proved by casting it to `ℂ`, where `hP1`, `hm` and `hp` live.
   -- Six values of `(X - 2)⁴ (X² + 16)` pin down the six constants in front of powers of `a`.
   have E₁ : -A1 + A2 - A3 + A4 - A5 + A6 = 16 := by
-    exact_mod_cast (show (-A1 + A2 - A3 + A4 - A5 + A6 : ℂ) = 16 by linear_combination hP1 1)
+    apply Int.cast_injective (α := ℂ)
+    push_cast
+    linear_combination hP1 1
   have E₂ : A1 + A2 + A3 + A4 + A5 + A6 = 1376 := by
-    exact_mod_cast (show (A1 + A2 + A3 + A4 + A5 + A6 : ℂ) = 1376 by linear_combination hP1 (-1))
+    apply Int.cast_injective (α := ℂ)
+    push_cast
+    linear_combination hP1 (-1)
   have E₃ : -32 * A1 + 16 * A2 - 8 * A3 + 4 * A4 - 2 * A5 + A6 = -64 := by
-    exact_mod_cast (show (-32 * A1 + 16 * A2 - 8 * A3 + 4 * A4 - 2 * A5 + A6 : ℂ) = -64 by
-      linear_combination hP1 2)
+    apply Int.cast_injective (α := ℂ)
+    push_cast
+    linear_combination hP1 2
   have E₄ : 32 * A1 + 16 * A2 + 8 * A3 + 4 * A4 + 2 * A5 + A6 = 5056 := by
-    exact_mod_cast (show (32 * A1 + 16 * A2 + 8 * A3 + 4 * A4 + 2 * A5 + A6 : ℂ) = 5056 by
-      linear_combination hP1 (-2))
+    apply Int.cast_injective (α := ℂ)
+    push_cast
+    linear_combination hP1 (-2)
   have E₅ : -243 * A1 + 81 * A2 - 27 * A3 + 9 * A4 - 3 * A5 + A6 = -704 := by
-    exact_mod_cast (show (-243 * A1 + 81 * A2 - 27 * A3 + 9 * A4 - 3 * A5 + A6 : ℂ) = -704 by
-      linear_combination hP1 3)
+    apply Int.cast_injective (α := ℂ)
+    push_cast
+    linear_combination hP1 3
   have E₆ : 243 * A1 + 81 * A2 + 27 * A3 + 9 * A4 + 3 * A5 + A6 = 14896 := by
-    exact_mod_cast (show (243 * A1 + 81 * A2 + 27 * A3 + 9 * A4 + 3 * A5 + A6 : ℂ) = 14896 by
-      linear_combination hP1 (-3))
+    apply Int.cast_injective (α := ℂ)
+    push_cast
+    linear_combination hP1 (-3)
   obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ :
       A1 = 8 ∧ A2 = 40 ∧ A3 = 160 ∧ A4 = 400 ∧ A5 = 512 ∧ A6 = 256 := by
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> linarith
   push_cast at hm hp
   -- The difference and the sum of the equations at `190 ± 12√31` isolate `B5`, then `B6`.
   obtain rfl : B5 = -3125 := by
-    exact_mod_cast (show (B5 : ℂ) = -3125 by
-      linear_combination (sqrt31 / 154275840000) * (hp - hm) - ((B5 : ℂ) / 31 +
-        203 * sqrt31 ^ 4 / 77500 + 54229 * sqrt31 ^ 2 / 38750 + 3125 / 31) * sqrt31_sq)
+    apply Int.cast_injective (α := ℂ)
+    push_cast
+    linear_combination (sqrt31 / 154275840000) * (hp - hm) - ((B5 : ℂ) / 31 +
+      203 * sqrt31 ^ 4 / 77500 + 54229 * sqrt31 ^ 2 / 38750 + 3125 / 31) * sqrt31_sq
   push_cast at hm hp
   obtain rfl : B6 = -9375 := by
-    exact_mod_cast (show (B6 : ℂ) = -9375 by
-      linear_combination (hp + hm) / (-17003520000) - (-9 * sqrt31 ^ 4 / 25625 -
-        75401 * sqrt31 ^ 2 / 102500 - 13551881 / 102500) * sqrt31_sq)
+    apply Int.cast_injective (α := ℂ)
+    push_cast
+    linear_combination (hp + hm) / (-17003520000) - (-9 * sqrt31 ^ 4 / 25625 -
+      75401 * sqrt31 ^ 2 / 102500 - 13551881 / 102500) * sqrt31_sq
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- **Dummit's formula for the resolvent of a quintic trinomial.** Over every commutative ring,
