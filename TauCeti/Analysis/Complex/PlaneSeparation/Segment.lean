@@ -69,10 +69,10 @@ theorem disjoint_segment_of_im_mul_sub_neg (c u v w x : ℂ)
   · simpa only [neg_mul, Complex.neg_im] using neg_pos.mpr hx
 
 /-- A segment on a supporting line can meet a segment with one endpoint on the line and
-the other strictly above it only at the endpoint on the line. -/
-theorem eq_left_of_mem_segment_of_im_mul_sub_pos (c u v w x z : ℂ)
+the other off the line only at the endpoint on the line. -/
+theorem eq_left_of_mem_segment_of_im_mul_sub_ne (c u v w x z : ℂ)
     (hline : (c * (v - u)).im = 0)
-    (hw : (c * (w - u)).im = 0) (hx : 0 < (c * (x - u)).im)
+    (hw : (c * (w - u)).im = 0) (hx : (c * (x - u)).im ≠ 0)
     (hz₁ : z ∈ segment ℝ u v) (hz₂ : z ∈ segment ℝ w x) : z = w := by
   have hzero : (c * (z - u)).im = 0 := by
     rw [segment_eq_image'] at hz₁
@@ -91,7 +91,7 @@ theorem eq_left_of_mem_segment_of_im_mul_sub_pos (c u v w x z : ℂ)
     simp
   have htzero : t = 0 := by
     have h : t * (c * (x - u)).im = 0 := hcomb ▸ hzero
-    exact (mul_eq_zero.mp h).resolve_right hx.ne'
+    exact (mul_eq_zero.mp h).resolve_right hx
   simp [htzero]
 
 end TauCeti
