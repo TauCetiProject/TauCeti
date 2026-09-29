@@ -111,15 +111,18 @@ theorem sw1_eq_of_equivalent {p q : RegularFormPresentation K}
 
 /-- `w₁` does not depend on the order of the coefficients. -/
 @[simp]
-theorem sw1_comp_perm (w : Fin n → Kˣ) (σ : Equiv.Perm (Fin n)) : sw1 (w ∘ σ) = sw1 w :=
-  Equiv.sum_comp σ fun i => kummerClass (w i)
+theorem sw1_comp_perm (w : Fin n → Kˣ) (σ : Equiv.Perm (Fin n)) : sw1 (w ∘ σ) = sw1 w := by
+  rw [sw1_def, sw1_def]
+  exact Equiv.sum_comp σ fun i => kummerClass (w i)
 
 /-- `w₂` does not depend on the order of the coefficients, because the cup pairing is
 symmetric. -/
 @[simp]
-theorem sw2_comp_perm (w : Fin n → Kˣ) (σ : Equiv.Perm (Fin n)) : sw2 (w ∘ σ) = sw2 w :=
-  sum_sum_Ioi_comp_perm (fun i j => kummerCup K (squareClass (w i)) (squareClass (w j))) σ
-    fun _ _ => kummerCup_comm K _ _
+theorem sw2_comp_perm (w : Fin n → Kˣ) (σ : Equiv.Perm (Fin n)) : sw2 (w ∘ σ) = sw2 w := by
+  rw [sw2_def, sw2_def]
+  exact sum_sum_Ioi_comp_perm
+    (fun i j => kummerCup K (squareClass (w i)) (squareClass (w j))) σ
+      fun _ _ => kummerCup_comm K _ _
 
 /-- A permutation step of a diagonal chain does not change `w₁`. -/
 theorem PermutationStep.sw1_eq {w w' : Fin n → Kˣ} (h : PermutationStep w w') :
@@ -148,8 +151,9 @@ theorem sw2_fin_zero (w : Fin 0 → Kˣ) : sw2 w = 0 := by
   simp [sw2_def]
 
 /-- **`w₂` vanishes in ranks `0` and `1`**: there are no pairs of distinct coefficients. -/
-theorem sw2_eq_zero_of_le_one (hn : n ≤ 1) (w : Fin n → Kˣ) : sw2 w = 0 :=
-  sum_eq_zero fun i _ => sum_eq_zero fun j hj => by
+theorem sw2_eq_zero_of_le_one (hn : n ≤ 1) (w : Fin n → Kˣ) : sw2 w = 0 := by
+  rw [sw2_def]
+  exact sum_eq_zero fun i _ => sum_eq_zero fun j hj => by
     have := Fin.lt_def.mp (mem_Ioi.mp hj)
     omega
 
@@ -174,17 +178,21 @@ product of the Kummer classes of its two coefficients. -/
 theorem sw2_fin_two (w : Fin 2 → Kˣ) :
     sw2 w = (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
       (kummerClass (w 0)) (kummerClass (w 1)) := by
-  simp [sw2_def, Fin.sum_univ_two, show Ioi (1 : Fin 2) = ∅ by decide]
+  have hIoi : Ioi (1 : Fin 2) = ∅ := by decide
+  simp [sw2_def, Fin.sum_univ_two, hIoi]
 
 /-! ### Tuples of squares -/
 
 /-- `w₁` vanishes on a tuple of squares. -/
-theorem sw1_eq_zero_of_isSquare {w : Fin n → Kˣ} (hw : ∀ i, IsSquare (w i)) : sw1 w = 0 :=
-  sum_eq_zero fun i _ => (kummerClass_eq_zero_iff_square K).mpr (Subgroup.mem_square.mpr (hw i))
+theorem sw1_eq_zero_of_isSquare {w : Fin n → Kˣ} (hw : ∀ i, IsSquare (w i)) : sw1 w = 0 := by
+  rw [sw1_def]
+  exact sum_eq_zero fun i _ =>
+    (kummerClass_eq_zero_iff_square K).mpr (Subgroup.mem_square.mpr (hw i))
 
 /-- `w₂` vanishes on a tuple of squares. -/
-theorem sw2_eq_zero_of_isSquare {w : Fin n → Kˣ} (hw : ∀ i, IsSquare (w i)) : sw2 w = 0 :=
-  sum_eq_zero fun i _ => sum_eq_zero fun j _ => by
+theorem sw2_eq_zero_of_isSquare {w : Fin n → Kˣ} (hw : ∀ i, IsSquare (w i)) : sw2 w = 0 := by
+  rw [sw2_def]
+  exact sum_eq_zero fun i _ => sum_eq_zero fun j _ => by
     rw [(squareClass_eq_zero_iff _).mpr (hw i), map_zero, AddMonoidHom.zero_apply]
 
 /-- `w₁⟨1, …, 1⟩ = 0`. -/
