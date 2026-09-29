@@ -65,11 +65,12 @@ section MaximalKernel
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- The pro-`p` kernel has no nontrivial elementary abelian `p`-quotient invariant under the
-ambient group: `Rᵖ[R,G]` is dense in `R` for `R = proPKernel p G`. Indeed, the quotient of `G`
-by `Rᵖ[R,G]` is an extension of `G(p)` by an elementary abelian pro-`p` group, hence is itself
-pro-`p`; the universal property then forces `R` into `Rᵖ[R,G]`. -/
+ambient group: `Rᵖ[R,G] = R` for `R = proPKernel p G`. -/
 theorem pLowerCentralStep_proPKernel :
     pLowerCentralStep p (proPKernel p G) = proPKernel p G := by
+  -- The quotient of `G` by `Rᵖ[R,G]` is an extension of `G(p)` by an elementary abelian
+  -- pro-`p` group, hence is itself pro-`p`; the universal property then forces `R` into
+  -- `Rᵖ[R,G]`.
   let R : Subgroup G := proPKernel p G
   let _ : R.Normal := by dsimp [R]; infer_instance
   let S : Subgroup G := pLowerCentralStep p R
@@ -109,12 +110,13 @@ theorem pLowerCentralStep_proPKernel :
 
 /-- **The pro-`p` kernel has no invariant degree-one classes with trivial `p`-torsion
 coefficients.** For `R = proPKernel p G` and a `T1Space` module `M` with trivial action and killed
-by `p`, `H¹(R, M)^G` is the group of continuous homomorphisms `R ⧸ Rᵖ[R, G] → M`, and the quotient
-is trivial by `pLowerCentralStep_proPKernel`. -/
+by `p`, `H¹(R, M)^G` is trivial. -/
 theorem subsingleton_h1ConjInvariants_proPKernel {M : Type v} [AddCommGroup M]
     [TopologicalSpace M] [IsTopologicalAddGroup M] [T1Space M] [DistribMulAction G M]
     [ContinuousSMul G M] (htriv : ∀ (g : G) (m : M), g • m = m) (hpM : ∀ m : M, p • m = 0) :
     Subsingleton (H1ConjInvariants G M (proPKernel p G)) := by
+  -- `H¹(R, M)^G` is the group of continuous homomorphisms `R ⧸ Rᵖ[R, G] → M`, and the quotient
+  -- is trivial by `pLowerCentralStep_proPKernel`.
   let e := H1ConjInvariantsEquivOfSmulEqSelf htriv p (isClosed_proPKernel (p := p) (G := G)) hpM
   refine ⟨fun x y ↦ e.injective (Additive.toMul.injective (ContinuousMonoidHom.ext fun q ↦ ?_))⟩
   obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective q

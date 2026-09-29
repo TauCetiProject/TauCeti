@@ -55,13 +55,14 @@ variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGro
   [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- **Explicit degree-two inflation from the maximal pro-`p` quotient is injective.** For the
-pro-`p` kernel `R` and trivial discrete coefficients `M` killed by `p`, the five-term sequence
-identifies the kernel of `H²(G ⧸ R, M ^ R) → H²(G, M)` with the image of the transgression from
-`H¹(R, M)^G`, which vanishes by `subsingleton_h1ConjInvariants_proPKernel`. -/
+pro-`p` kernel `R` and trivial discrete coefficients `M` killed by `p`, the explicit inflation
+`H²(G ⧸ R, M ^ R) → H²(G, M)` is injective. -/
 theorem explicitInfl2_proPKernel_injective {M : Type v} [AddCommGroup M] [TopologicalSpace M]
     [IsTopologicalAddGroup M] [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
     (htriv : ∀ (g : G) (m : M), g • m = m) (hpM : ∀ m : M, p • m = 0) :
     Function.Injective (explicitInfl2 G M (proPKernel p G)) := by
+  -- By the five-term sequence, the kernel is the image of the transgression from `H¹(R, M)^G`,
+  -- which vanishes.
   have := subsingleton_h1ConjInvariants_proPKernel htriv hpM
   rw [← AddMonoidHom.ker_eq_bot_iff, ← fiveTerm_exact_H2Q G M
     (proPKernel p G) (isClosed_proPKernel (p := p) (G := G)), AddMonoidHom.range_eq_bot_iff]
@@ -110,11 +111,11 @@ theorem inflH1MaximalProP_apply_eq_infl (x : cohomFp p (maximalProPQuotient p G)
   rw [inflH1MaximalProP_apply, ← ConcreteCategory.comp_apply,
     coeffMap_trivialFpQuotientToInvariantsIso_hom_comp_infl]
 
-/-- **Degree-two inflation from the maximal pro-`p` quotient is injective.** The five-term sequence
-identifies the kernel of `H²(G(p), 𝔽_p) → H²(G, 𝔽_p)` with the transgression range from
-`H¹(R, 𝔽_p)^G`, which is zero because `R / Rᵖ[R,G]` is trivial for the pro-`p` kernel `R`. -/
+/-- **Degree-two inflation from the maximal pro-`p` quotient is injective.** The inflation map
+`H²(G(p), 𝔽_p) → H²(G, 𝔽_p)` is injective. -/
 theorem inflH2MaximalProP_injective :
     Function.Injective (cohomFpMap p (ContinuousMonoidHom.quotientMk (proPKernel p G)) 2) := by
+  -- Transport to the explicit models and apply `explicitInfl2_proPKernel_injective`.
   let R : Subgroup G := proPKernel p G
   -- The explicit models need actions on `ZMod p`; the trivial ones are installed for the proof.
   let := trivialZModAction p G

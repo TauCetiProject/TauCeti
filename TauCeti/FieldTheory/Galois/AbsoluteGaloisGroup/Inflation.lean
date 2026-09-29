@@ -54,9 +54,8 @@ theorem inflH1AbsoluteGaloisProP_apply
       cohomFpMap p (absoluteGaloisGroupProPQuotientMap p K) 1 x :=
   inflH1MaximalProP_apply p (Field.absoluteGaloisGroup K) x
 
-/-- **Degree-two inflation from `G_K(p)` to `G_K` is injective.** The five-term sequence identifies
-its kernel with the transgression range from `H¹(R, 𝔽_p)^{G_K}`. That group is zero because
-`R / Rᵖ[R,G_K]` is trivial for the maximal pro-`p` kernel `R`. -/
+/-- **Degree-two inflation from `G_K(p)` to `G_K` is injective.** The inflation map
+`H²(G_K(p), 𝔽_p) → H²(G_K, 𝔽_p)` is injective. -/
 theorem inflH2AbsoluteGaloisProP_injective :
     Function.Injective (cohomFpMap p (absoluteGaloisGroupProPQuotientMap p K) 2) :=
   inflH2MaximalProP_injective p (Field.absoluteGaloisGroup K)
