@@ -133,9 +133,9 @@ structure LinearizingCoordinate (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (ε : ℝ)
   /-- the source of the reparametrization is the disc of the invariant disc -/
   toEquiv_source : toEquiv.source = Metric.ball 0 (Real.tanh (ε / 2))
   /-- the reparametrization is holomorphic on the disc of the invariant disc -/
-  differentiable : DifferentiableOn ℂ toEquiv.toFun (Metric.ball 0 (Real.tanh (ε / 2)))
+  differentiableOn : DifferentiableOn ℂ toEquiv.toFun (Metric.ball 0 (Real.tanh (ε / 2)))
   /-- the inverse reparametrization is holomorphic on the image of the reparametrization -/
-  differentiable_inv : DifferentiableOn ℂ toEquiv.invFun toEquiv.target
+  differentiableOn_invFun : DifferentiableOn ℂ toEquiv.invFun toEquiv.target
   /-- the reparametrization fixes the centre -/
   zero : toEquiv.toFun 0 = 0
   /-- the reparametrization is the identity outside the disc of the invariant disc, the choice
@@ -229,6 +229,7 @@ theorem LinearizingCoordinate.coordinate_injective (ψ : Γ.LinearizingCoordinat
 /-- **The stabilizer of `z` acts in the coordinate of a local linearizing coordinate by its
 rotation.** The rotation does not depend on the local linearizing coordinate: it is
 `Subgroup.stabilizerRotation Γ z q`, the derivative of `q` at `z`. -/
+@[simp]
 theorem LinearizingCoordinate.coordinate_smul (ψ : Γ.LinearizingCoordinate z ε)
     (q : stabilizer Γ z) (τ : stabilizerBall Γ z ε) :
     coordinate ψ (q • τ) = ((stabilizerRotation Γ z q : ℂˣ) : ℂ) * coordinate ψ τ := by
@@ -273,14 +274,14 @@ there (`TauCeti.isOpen_image_of_differentiableOn_of_injOn`). -/
 theorem LinearizingCoordinate.isOpen_target (ψ : Γ.LinearizingCoordinate z ε) :
     IsOpen ψ.toEquiv.target := by
   rw [← ψ.toEquiv.image_source_eq_target, ψ.toEquiv_source]
-  exact TauCeti.isOpen_image_of_differentiableOn_of_injOn Metric.isOpen_ball ψ.differentiable
+  exact TauCeti.isOpen_image_of_differentiableOn_of_injOn Metric.isOpen_ball ψ.differentiableOn
     ψ.toFun_injOn_ball
 
 /-- **The coordinate of a local linearizing coordinate is holomorphic on the invariant disc**:
 on the ambient upper half-plane, the invariant disc being the ball `Metric.ball z ε`
 (`Subgroup.mem_stabilizerBall`), it is the composition of the disc coordinate, which is holomorphic
 by `UpperHalfPlane.mdifferentiable_discCoordinate`, with the reparametrization
-`Subgroup.LinearizingCoordinate.differentiable`, which is holomorphic on the disc of the invariant
+`Subgroup.LinearizingCoordinate.differentiableOn`, which is holomorphic on the disc of the invariant
 disc and which the disc coordinate maps the invariant disc into. Restricted to
 `Subgroup.stabilizerBall Γ z ε` that composition is
 `Subgroup.LinearizingCoordinate.coordinate`, so this is the holomorphy of that coordinate. -/
@@ -298,7 +299,7 @@ theorem LinearizingCoordinate.mdifferentiableOn_coordinate (ψ : Γ.LinearizingC
     -- the reparametrization is holomorphic at the disc coordinate of `τ`, which lies in its domain
     have hψ : DifferentiableAt ℂ ψ.toEquiv (discCoordinate z (ofComplex (τ : ℂ))) := by
       rw [ofComplex_apply]
-      exact ψ.differentiable.differentiableAt
+      exact ψ.differentiableOn.differentiableAt
         (Metric.isOpen_ball.mem_nhds (mem_ball_discCoordinate ⟨τ, hτball⟩))
     have h : DifferentiableAt ℂ (fun w : ℂ ↦ ψ.toEquiv (discCoordinate z (ofComplex w))) (τ : ℂ) :=
       DifferentiableAt.comp (g := ψ.toEquiv) (f := discCoordinate z ∘ ofComplex) (x := τ) hψ hdisc
@@ -434,6 +435,7 @@ def LinearizingCoordinate.transEquiv (ψ ψ' : Γ.LinearizingCoordinate z ε) : 
 
 /-- The source of the change of local linearizing coordinate is the `target` of `ψ`, its image on
 the disc of the invariant disc. -/
+@[simp]
 theorem LinearizingCoordinate.transEquiv_source (ψ ψ' : Γ.LinearizingCoordinate z ε) :
     (transEquiv ψ ψ').source = ψ.toEquiv.target := by
   simp only [transEquiv, PartialEquiv.trans_source'']
@@ -443,6 +445,7 @@ theorem LinearizingCoordinate.transEquiv_source (ψ ψ' : Γ.LinearizingCoordina
 
 /-- The target of the change of local linearizing coordinate is the `target` of `ψ'`, its image on
 the disc of the invariant disc. -/
+@[simp]
 theorem LinearizingCoordinate.transEquiv_target (ψ ψ' : Γ.LinearizingCoordinate z ε) :
     (transEquiv ψ ψ').target = ψ'.toEquiv.target := by
   simp only [transEquiv, PartialEquiv.trans_target'']
@@ -484,6 +487,7 @@ theorem LinearizingCoordinate.invFun_smul (ψ : Γ.LinearizingCoordinate z ε) {
 
 /-- The change of local linearizing coordinate intertwines the rotation action, being the pullback
 of an equivariant reparametrization by an equivariant inverse. -/
+@[simp]
 theorem LinearizingCoordinate.transEquiv_smul (ψ ψ' : Γ.LinearizingCoordinate z ε) {u : ℂ}
     (hu : u ∈ ψ.toEquiv.target) (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) :
     transEquiv ψ ψ' (ζ • u) = ζ • transEquiv ψ ψ' u := by
@@ -508,7 +512,7 @@ the reparametrization, holomorphic on the disc of the invariant disc. -/
 theorem LinearizingCoordinate.differentiableOn_transEquiv
     (ψ ψ' : Γ.LinearizingCoordinate z ε) :
     DifferentiableOn ℂ (transEquiv ψ ψ') ψ.toEquiv.target :=
-  ψ'.differentiable.comp ψ.differentiable_inv (fun _ hu => ψ.mem_ball_invFun hu)
+  ψ'.differentiableOn.comp ψ.differentiableOn_invFun (fun _ hu => ψ.mem_ball_invFun hu)
 
 /-- **The transition of the local quotient coordinates** of two local linearizing coordinates: the
 descent through `u ↦ u ^ m`, `m = Nat.card (stabilizer Γ z)`, of the `m`-th power of the change of
@@ -585,8 +589,8 @@ def LinearizingCoordinate.discCoordinate (hε : 0 < ε) : Γ.LinearizingCoordina
   ε_pos := hε
   toEquiv := PartialEquiv.ofSet (Metric.ball 0 (Real.tanh (ε / 2)))
   toEquiv_source := rfl
-  differentiable := differentiable_id.differentiableOn
-  differentiable_inv := differentiable_id.differentiableOn
+  differentiableOn := differentiable_id.differentiableOn
+  differentiableOn_invFun := differentiable_id.differentiableOn
   zero := rfl
   toFun_eq_id := fun _ _ => rfl
   invFun_eq_id := fun _ _ => rfl
@@ -695,11 +699,11 @@ def LinearizingCoordinate.rotation (hε : 0 < ε) (ζ : rootsOfUnity (Nat.card (
   -- on the disc the reparametrization is multiplication by `ζ`, or by `ζ⁻¹`, each a
   -- differentiable function of the point, so the reparametrization agrees there with a
   -- differentiable function and is differentiable there by `DifferentiableOn.congr_mono`
-  differentiable := by
+  differentiableOn := by
     have h : Differentiable ℂ (fun w : ℂ => ζ • w) := by fun_prop
     refine h.differentiableOn.congr_mono (fun u hu => ?_) (Set.subset_univ _)
     simp only [reduceIte, hu]
-  differentiable_inv := by
+  differentiableOn_invFun := by
     have h : Differentiable ℂ (fun w : ℂ => ζ⁻¹ • w) := by fun_prop
     refine h.differentiableOn.congr_mono (fun u hu => ?_) (Set.subset_univ _)
     simp only [reduceIte, hu]
