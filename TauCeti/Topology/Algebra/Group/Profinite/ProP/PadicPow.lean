@@ -286,8 +286,7 @@ theorem mul_padicPow (hA : IsProP p A) (a b : A) (hab : Commute a b) (l : ℤ_[p
     hA.mk_padicPow a l (hn _), hA.mk_padicPow b l (hn _), QuotientGroup.mk_mul]
   exact (hab.map (QuotientGroup.mk' U.toSubgroup)).mul_pow (l.appr n)
 
-/-- The `p`-adic power commutes with conjugation: this is `TauCeti.IsProP.map_padicPow` for the
-inner automorphism `MulAut.conj g`. -/
+/-- The `p`-adic power commutes with conjugation: `(g * a * g⁻¹) ^ l = g * a ^ l * g⁻¹`. -/
 @[simp]
 theorem conj_padicPow (hA : IsProP p A) (g a : A) (l : ℤ_[p]) :
     hA.padicPow (g * a * g⁻¹) l = g * hA.padicPow a l * g⁻¹ :=
