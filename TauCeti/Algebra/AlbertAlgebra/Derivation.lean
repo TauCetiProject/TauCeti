@@ -94,27 +94,6 @@ namespace AlbertAlgebra
 
 variable {R : Type*}
 
-/-! ### The index arithmetic of `Fin 3` -/
-
-private theorem add_one_ne_self (j : Fin 3) : j + 1 ≠ j := by revert j; decide
-
-private theorem add_two_ne_add_one (j : Fin 3) : j + 2 ≠ j + 1 := by revert j; decide
-
-private theorem add_one_add_two (j : Fin 3) : j + 1 + 2 = j := by revert j; decide
-
-private theorem add_one_add_one (j : Fin 3) : j + 1 + 1 = j + 2 := by revert j; decide
-
-private theorem add_two_add_one (j : Fin 3) : j + 2 + 1 = j := by revert j; decide
-
-private theorem add_two_add_two (j : Fin 3) : j + 2 + 2 = j + 1 := by revert j; decide
-
-/-- A sum over `Fin 3` read off starting from an arbitrary index. -/
-private theorem sum_fin_three_rotate {M : Type*} [AddCommMonoid M] (f : Fin 3 → M) (j : Fin 3) :
-    ∑ m, f m = f j + f (j + 1) + f (j + 2) := by
-  have h : ∑ m : Fin 3, f (j + m) = ∑ m : Fin 3, f m :=
-    Fintype.sum_equiv (Equiv.addLeft j) _ _ fun _ => rfl
-  rw [← h, Fin.sum_univ_three, add_zero]
-
 /-! ### A derivation has trace-zero values -/
 
 section Derivation
@@ -148,11 +127,13 @@ theorem trace_derivation_apply_diagIdempotent (i : Fin 3) :
 /-- **A derivation kills the trace of an off-diagonal slot.** -/
 theorem trace_derivation_apply_offDiagSingle (j : Fin 3) (a : Octonion R) :
     trace ((D : Module.End R (AlbertAlgebra R)) (offDiagSingle j a)) = 0 := by
+  have h1 : j + 1 ≠ j := add_one_ne_self (by omega) j
   have hne : j + 2 ≠ j := by
-    rw [← add_one_add_one j]
-    exact add_one_add_one_ne_self le_rfl j
+    rw [← add_one_add_one_fin_three j]; exact add_one_add_one_ne_self le_rfl j
+  have h21 : j + 2 ≠ j + 1 := by
+    rw [← add_one_add_one_fin_three j]; exact add_one_ne_self (by omega) (j + 1)
   have hE : diagIdempotent R (j + 1) * offDiagSingle j a = ⅟(2 : R) • offDiagSingle j a := by
-    rw [diagIdempotent_mul_offDiagSingle, ite_eq_right (add_one_ne_self j)]
+    rw [diagIdempotent_mul_offDiagSingle, ite_eq_right h1]
   have h := derivationLieAlgebra.leibniz D (diagIdempotent R (j + 1)) (offDiagSingle j a)
   rw [hE, map_smul] at h
   set U := (D : Module.End R (AlbertAlgebra R)) (diagIdempotent R (j + 1))
@@ -161,15 +142,16 @@ theorem trace_derivation_apply_offDiagSingle (j : Fin 3) (a : Octonion R) :
     have hj := congrArg (fun X : AlbertAlgebra R => X.diag j) h
     simpa only [smul_diag, Pi.smul_apply, smul_eq_mul, add_diag, Pi.add_apply, mul_diag,
       offDiagSingle_diag, offDiagSingle_offDiag, diagIdempotent_diag, diagIdempotent_offDiag,
-      Pi.zero_apply, Pi.single_eq_of_ne (add_one_ne_self j), Pi.single_eq_of_ne hne,
-      Pi.single_eq_of_ne (Ne.symm (add_one_ne_self j)), mul_zero, zero_mul, map_zero,
+      Pi.zero_apply, Pi.single_eq_of_ne h1, Pi.single_eq_of_ne hne,
+      Pi.single_eq_of_ne (Ne.symm h1), mul_zero, zero_mul, map_zero,
       LinearMap.zero_apply, add_zero] using hj
   have e1 : ⅟(2 : R) * W.diag (j + 1) =
       QuadraticMap.associated (Octonion.normQuadraticForm R) (U.offDiag j) a + W.diag (j + 1) := by
     have hj := congrArg (fun X : AlbertAlgebra R => X.diag (j + 1)) h
     simpa only [smul_diag, Pi.smul_apply, smul_eq_mul, add_diag, Pi.add_apply, mul_diag,
       offDiagSingle_diag, offDiagSingle_offDiag, diagIdempotent_diag, diagIdempotent_offDiag,
-      add_one_add_one j, add_one_add_two j, Pi.zero_apply, Pi.single_eq_of_ne hne,
+      add_one_add_one_fin_three j, add_one_add_two_fin_three j, Pi.zero_apply,
+      Pi.single_eq_of_ne hne,
       Pi.single_eq_same, mul_zero, one_mul, map_zero, LinearMap.zero_apply, add_zero,
       zero_add] using hj
   have e2 : ⅟(2 : R) * W.diag (j + 2) =
@@ -177,8 +159,8 @@ theorem trace_derivation_apply_offDiagSingle (j : Fin 3) (a : Octonion R) :
     have hj := congrArg (fun X : AlbertAlgebra R => X.diag (j + 2)) h
     simpa only [smul_diag, Pi.smul_apply, smul_eq_mul, add_diag, Pi.add_apply, mul_diag,
       offDiagSingle_diag, offDiagSingle_offDiag, diagIdempotent_diag, diagIdempotent_offDiag,
-      add_two_add_one j, add_two_add_two j, Pi.zero_apply,
-      Pi.single_eq_of_ne (add_one_ne_self j), Pi.single_eq_of_ne (add_two_ne_add_one j),
+      add_two_add_one_fin_three j, add_two_add_two_fin_three j, Pi.zero_apply,
+      Pi.single_eq_of_ne h1, Pi.single_eq_of_ne h21,
       Pi.single_eq_same, mul_zero, zero_mul, map_zero, LinearMap.zero_apply, add_zero,
       zero_add] using hj
   have h2 : ⅟(2 : R) * 2 = 1 := invOf_mul_self' 2

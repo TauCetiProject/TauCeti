@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Octonion.Basic
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # The split Albert algebra
 
@@ -37,9 +39,10 @@ three diagonal idempotents form a complete orthogonal frame. The **Jordan identi
 it is what makes `H₃(𝕆)` an exceptional Jordan algebra rather than merely a commutative one.
 
 The coordinate isomorphism works for any semiring acting on coefficients that form an additive
-commutative monoid. The trace and its kernel need only a semiring, while the symmetrized product
-needs a commutative ring in which `2` is invertible: over `ℤ` the halved symmetric form of the
-split-octonion norm is not integral.
+commutative monoid. The trace, its kernel and the decomposition of a Hermitian matrix into
+the diagonal frame and the off-diagonal slots need only a semiring, while the symmetrized
+product needs a commutative ring in which `2` is invertible: over `ℤ` the halved symmetric
+form of the split-octonion norm is not integral.
 The dimension counts ask for `StrongRankCondition`, over a semiring for `H₃(𝕆)` itself and over a
 ring for the trace-zero subspace.
 
@@ -404,11 +407,6 @@ theorem trace_diagIdempotent [Semiring R] (i : Fin 3) : trace (diagIdempotent R 
 
 /-! ### The off-diagonal slots -/
 
-/-- A distinct index of `Fin 3` is one of the two shifts of the other. Private: it is `Fin 3`
-arithmetic, used only to read off the Peirce relation below. -/
-private theorem eq_add_one_or_eq_add_two {i j : Fin 3} (h : i ≠ j) : i = j + 1 ∨ i = j + 2 := by
-  revert h; revert i j; decide
-
 /-- The Hermitian octonion matrix whose only nonzero entry is the octonion `a`, in position
 `(j + 1, j + 2)`: the `j`-th **off-diagonal slot** `Fⱼ(a)` of `H₃(𝕆)`. Together with the diagonal
 frame `TauCeti.AlbertAlgebra.diagIdempotent` these span the algebra. -/
@@ -455,7 +453,7 @@ it, while the two other idempotents halve it. -/
   · refine AlbertAlgebra.ext (funext fun m => ?_) (funext fun m => ?_)
     · simp [h]
     · rcases eq_or_ne m j with rfl | hm
-      · rcases eq_add_one_or_eq_add_two h with rfl | rfl
+      · rcases eq_add_one_or_eq_add_two_fin_three h with rfl | rfl
         · simp [h]
         · simp [h]
       · simp [h, Pi.single_eq_of_ne hm]
@@ -463,7 +461,7 @@ it, while the two other idempotents halve it. -/
 /-- **The diagonal frame and the off-diagonal slots span `H₃(𝕆)`**: a Hermitian octonion matrix is
 the combination of the diagonal idempotents read off its diagonal, plus its three off-diagonal
 slots. -/
-theorem eq_sum_smul_diagIdempotent_add_sum_offDiagSingle [CommRing R] (A : AlbertAlgebra R) :
+theorem eq_sum_smul_diagIdempotent_add_sum_offDiagSingle [Semiring R] (A : AlbertAlgebra R) :
     A = (∑ i, A.diag i • diagIdempotent R i) + ∑ i, offDiagSingle i (A.offDiag i) := by
   refine AlbertAlgebra.ext (funext fun m => ?_) (funext fun m => ?_) <;>
     simp only [Fin.sum_univ_three, add_diag, add_offDiag, smul_diag, smul_offDiag,
