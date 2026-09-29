@@ -53,11 +53,6 @@ def skeletonMap (n : ℕ) : skeletonObj C n ⟶ skeletonObj C' n :=
   TopCat.ofHom ⟨fun x ↦ ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1,
     hf n x.2⟩, by fun_prop⟩
 
-@[simp]
-lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
-    ((skeletonMap C C' hf n).hom x).1 =
-      (f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1 := (rfl)
-
 /-- Restriction of a cellular map commutes with the inclusions of consecutive skeleta. -/
 @[reassoc]
 lemma skeletonMap_comp_inclusion (n : ℕ) :
