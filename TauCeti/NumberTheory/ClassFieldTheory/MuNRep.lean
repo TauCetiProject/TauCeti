@@ -26,9 +26,9 @@ which the Kummer isomorphism `TauCeti.kummerIso` is proved. `Field.absoluteGaloi
 it through the restriction isomorphism `TauCeti.absoluteGaloisGroupRestrictEquiv`, an isomorphism
 because the algebraic closure is purely inseparable over `Fˢ`, and `μₙ` is a `ZMod n`-module
 because it is killed by `n`. The result is `muNRep n F`. Its underlying module is related to
-`TauCeti.KummerCoeff F n` only through the additive equivalence `muNRepCoeffDictionary`, whose
+`TauCeti.KummerCoeff F n` only through the additive equivalence `kummerCoeffEquivMuNRep`, whose
 defining property is that it intertwines the action of `σ` on `muNRep n F` with the action of its
-restriction to `Fˢ` (`muNRepCoeffDictionary_smul`); both modules are discrete.
+restriction to `Fˢ` (`kummerCoeffEquivMuNRep_smul`); both modules are discrete.
 
 Pullback along the restriction isomorphism, the degree-one comparison of explicit and canonical
 continuous cohomology, and the fact that continuous cohomology does not see the scalars assemble
@@ -51,7 +51,7 @@ Kummer class `TauCeti.kummerClass`, which lives in the trivial `𝔽₂` coeffic
 
 * `TauCeti.ClassFieldTheory.GalRep n F`: coefficient objects `TopRep (ZMod n) G_F`.
 * `TauCeti.ClassFieldTheory.muNRep n F`: the roots of unity `μₙ(Fˢ)` as a coefficient object.
-* `TauCeti.ClassFieldTheory.muNRepCoeffDictionary`: the identification of its underlying module
+* `TauCeti.ClassFieldTheory.kummerCoeffEquivMuNRep`: the identification of its underlying module
   with `TauCeti.KummerCoeff F n`.
 * `TauCeti.ClassFieldTheory.muNRepH1Equiv`: `H¹(Gal(Fˢ/F), μₙ) ≃+ H¹(G_F, muNRep n F)`.
 * `TauCeti.ClassFieldTheory.kummerEquiv`, `TauCeti.ClassFieldTheory.kummerEquivOfCharZero`: the
@@ -61,8 +61,11 @@ Kummer class `TauCeti.kummerClass`, which lives in the trivial `𝔽₂` coeffic
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.muNRepCoeffDictionary_smul`: the dictionary is equivariant along the
+* `TauCeti.ClassFieldTheory.kummerCoeffEquivMuNRep_smul`: the dictionary is equivariant along the
   restriction isomorphism.
+* `TauCeti.ClassFieldTheory.continuous_kummerCoeffEquivMuNRep`,
+  `TauCeti.ClassFieldTheory.continuous_kummerCoeffEquivMuNRep_symm`: the dictionary and its
+  inverse are continuous.
 * `TauCeti.ClassFieldTheory.isSmoothDiscrete_muNRep`: `muNRep n F` is a smooth discrete
   coefficient object.
 * `TauCeti.ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerCocycleClass`: the Kummer class of
@@ -100,7 +103,7 @@ abbrev GalRep : Type (u + 1) :=
 
 /-- **The `n`th roots of unity `μₙ(Fˢ)` of a separable closure, written additively, as a
 coefficient object.** An automorphism of the algebraic closure acts through its restriction to
-the separable closure, `TauCeti.absoluteGaloisGroupRestrictEquiv`; `muNRepCoeffDictionary`
+the separable closure, `TauCeti.absoluteGaloisGroupRestrictEquiv`; `kummerCoeffEquivMuNRep`
 identifies the underlying module with `TauCeti.KummerCoeff F n`. -/
 def muNRep : GalRep n F :=
   TopRep.res
@@ -112,17 +115,26 @@ instance : DiscreteTopology (muNRep n F).V :=
   inferInstanceAs (DiscreteTopology (KummerCoeff F n))
 
 /-- **The coefficient dictionary** between the Kummer coefficient module `TauCeti.KummerCoeff F n`
-of `Gal(Fˢ/F)` and the underlying module of `muNRep n F`. Both modules are discrete, so the
-dictionary and its inverse are continuous; it is equivariant along the restriction isomorphism by
-`muNRepCoeffDictionary_smul`. -/
-def muNRepCoeffDictionary : KummerCoeff F n ≃+ (muNRep n F).V :=
+of `Gal(Fˢ/F)` and the underlying module of `muNRep n F`. It and its inverse are continuous
+(`continuous_kummerCoeffEquivMuNRep`, `continuous_kummerCoeffEquivMuNRep_symm`), and it is
+equivariant along the restriction isomorphism by `kummerCoeffEquivMuNRep_smul`. -/
+def kummerCoeffEquivMuNRep : KummerCoeff F n ≃+ (muNRep n F).V :=
   AddEquiv.refl _
+
+/-- The coefficient dictionary is continuous, `TauCeti.KummerCoeff F n` being discrete. -/
+theorem continuous_kummerCoeffEquivMuNRep : Continuous (kummerCoeffEquivMuNRep n F) :=
+  continuous_of_discreteTopology
+
+/-- The inverse of the coefficient dictionary is continuous, `muNRep n F` being discrete. -/
+theorem continuous_kummerCoeffEquivMuNRep_symm :
+    Continuous (kummerCoeffEquivMuNRep n F).symm :=
+  continuous_of_discreteTopology
 
 /-- **The coefficient dictionary is equivariant**: `σ ∈ G_F` acts on `muNRep n F` as its
 restriction to the separable closure acts on `TauCeti.KummerCoeff F n`. -/
-theorem muNRepCoeffDictionary_smul (g : Field.absoluteGaloisGroup F) (x : KummerCoeff F n) :
-    muNRepCoeffDictionary n F (absoluteGaloisGroupRestrictEquiv F g • x) =
-      (muNRep n F).ρ g (muNRepCoeffDictionary n F x) :=
+theorem kummerCoeffEquivMuNRep_smul (g : Field.absoluteGaloisGroup F) (x : KummerCoeff F n) :
+    kummerCoeffEquivMuNRep n F (absoluteGaloisGroupRestrictEquiv F g • x) =
+      (muNRep n F).ρ g (kummerCoeffEquivMuNRep n F x) :=
   (rfl)
 
 /-- **`μₙ` is a smooth discrete coefficient object**: the stabilizer of a root of unity is the
@@ -146,9 +158,9 @@ scalars, which continuous cohomology does not see. -/
 def muNRepH1Equiv :
     H1 (AbsoluteGaloisGroup F) (KummerCoeff F n) ≃+ continuousCohomology 1 (muNRep n F) :=
   (explicitMap1Equiv (AbsoluteGaloisGroup F) (KummerCoeff F n) (Field.absoluteGaloisGroup F)
-      (muNRep n F).V (absoluteGaloisGroupRestrictEquiv F) (muNRepCoeffDictionary n F)
-      continuous_of_discreteTopology continuous_of_discreteTopology
-      fun g x => (muNRepCoeffDictionary_smul n F g x).trans
+      (muNRep n F).V (absoluteGaloisGroupRestrictEquiv F) (kummerCoeffEquivMuNRep n F)
+      (continuous_kummerCoeffEquivMuNRep n F) (continuous_kummerCoeffEquivMuNRep_symm n F)
+      fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
         (TopRep.distribMulAction_smul _ g _).symm).trans <|
     (muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete
 
@@ -159,8 +171,8 @@ theorem muNRepH1Equiv_apply (x : H1 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
       (muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete
         (explicitMap1 (AbsoluteGaloisGroup F) (KummerCoeff F n) (Field.absoluteGaloisGroup F)
           (muNRep n F).V (absoluteGaloisGroupRestrictEquiv F)
-          (muNRepCoeffDictionary n F).toAddMonoidHom continuous_of_discreteTopology
-          (fun g x => (muNRepCoeffDictionary_smul n F g x).trans
+          (kummerCoeffEquivMuNRep n F).toAddMonoidHom (continuous_kummerCoeffEquivMuNRep n F)
+          (fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
             (TopRep.distribMulAction_smul _ g _).symm) x) := by
   rw [muNRepH1Equiv, AddEquiv.trans_apply, explicitMap1Equiv_apply]
 
