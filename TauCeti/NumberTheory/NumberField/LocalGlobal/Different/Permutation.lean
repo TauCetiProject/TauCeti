@@ -28,7 +28,9 @@ open IsDedekindDomain IntermediateField NumberField
 
 open scoped NumberField
 
-namespace TauCeti
+namespace IsDedekindDomain.HeightOneSpectrum
+
+open TauCeti
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] [IsGalois K L]
@@ -37,7 +39,7 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
 index over the selected prime of `Lᴴ` times its different exponent is the sum, over the lower
 ramification groups at `Q`, of the numbers of elements outside `H`. -/
 theorem ramificationIdx_mul_multiplicity_differentIdeal_fixedField
-    (H : Subgroup (L ≃ₐ[K] L)) (w : HeightOneSpectrum (𝓞 L)) :
+    (w : HeightOneSpectrum (𝓞 L)) (H : Subgroup (L ≃ₐ[K] L)) :
     w.asIdeal.ramificationIdx (𝓞 ↥(fixedField H)) *
         multiplicity (w.under (𝓞 ↥(fixedField H))).asIdeal
           (differentIdeal (𝓞 K) (𝓞 ↥(fixedField H))) =
@@ -113,6 +115,6 @@ theorem ramificationIdx_mul_multiplicity_differentIdeal_fixedField
   rw [hSum] at hTower
   exact (Nat.add_left_cancel hTower).symm
 
-end TauCeti
+end IsDedekindDomain.HeightOneSpectrum
 
 end
