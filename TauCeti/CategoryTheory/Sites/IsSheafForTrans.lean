@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Sites.IsSheafFor
-public import Mathlib.Topology.Category.TopCat.Opens
+public import TauCeti.CategoryTheory.Sites.Opens
 
 /-!
 # Transitivity of the sheaf condition along a cover of an open set
@@ -39,14 +38,6 @@ universe u w
 namespace TauCeti.TopologicalSpace.Opens
 
 variable {X : Type u} [_root_.TopologicalSpace X] {F : (Opens X)ᵒᵖ ⥤ Type w}
-
--- In `Opens X` there is at most one morphism between two objects, so the value of a family of
--- elements at an arrow depends only on the domain of the arrow.
-private theorem familyOfElements_congr {W V : Opens X} {R : Presieve W}
-    (x : Presieve.FamilyOfElements F R) (f g : V ⟶ W) (hf : R f) (hg : R g) :
-    x f hf = x g hg := by
-  obtain rfl : f = g := Subsingleton.elim _ _
-  rfl
 
 /-- **Transitivity of the sheaf condition along a cover of an open set.** Let `Y i ≤ W` be opens
 covering `W` in the sense that `F` is a sheaf for the family of inclusions `Y i ⟶ W`, and let `S`
