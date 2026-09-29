@@ -17,9 +17,9 @@ product of the two original Brauer classes.
 
 The algebra-level argument is the standard matrix stabilization. If `c` and `d` are cocycles of
 `G = Aut_K(L)`, the two crossed products act by commuting monomial matrices over the crossed
-product for `c * d`. The first action has its nonzero entry in column `r * g` of row `r`; the
-second has its nonzero entry in row `h * s` of column `s`. The cocycle identity says that these
-are algebra maps and commute. They therefore induce
+product for `c * d`. In row `r`, the first action is supported on the single column `r * g`;
+in column `s`, the second is supported on the single row `h * s`. The cocycle identity says that
+these are algebra maps and commute. They therefore induce
 
 `CrossedProduct c ⊗[K] CrossedProduct d ≃ₐ[K]
   Matrix G G (CrossedProduct (c * d))`.
@@ -105,7 +105,8 @@ private theorem rightGenerator_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L)
   split_ifs <;> simp [rightEntry]
 
 omit [IsGalois K L] in
-/-- Row `ρ` of `leftGenerator c d σ x` has its only nonzero entry in column `ρ * σ`. -/
+/-- Left multiplication by `leftGenerator c d σ x` selects rows: row `ρ` of the product is row
+`ρ * σ` of `M`, scaled on the left by `ρ(x) · c(ρ, σ)`. -/
 private theorem leftGenerator_mul_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L)
     (M : Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d))) (ρ υ : L ≃ₐ[K] L) :
     (leftGenerator c d σ x * M) ρ υ = inc (c * d) (ρ x * c.toFun ρ σ) * M (ρ * σ) υ := by
@@ -116,7 +117,8 @@ private theorem leftGenerator_mul_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K]
   · simp
 
 omit [IsGalois K L] in
-/-- Row `ρ` of `rightGenerator c d σ x` has its only nonzero entry in column `σ⁻¹ * ρ`. -/
+/-- Left multiplication by `rightGenerator c d σ x` selects rows: row `ρ` of the product is row
+`σ⁻¹ * ρ` of `M`, scaled on the left by `(x · c(σ, σ⁻¹ * ρ)⁻¹) · u_σ`. -/
 private theorem rightGenerator_mul_apply (c d : TwoCocycle K L) (σ : L ≃ₐ[K] L) (x : L)
     (M : Matrix (L ≃ₐ[K] L) (L ≃ₐ[K] L) (CrossedProduct (c * d))) (ρ υ : L ≃ₐ[K] L) :
     (rightGenerator c d σ x * M) ρ υ =
@@ -368,8 +370,8 @@ noncomputable def tensorProductAlgEquivMatrix (c d : TwoCocycle K L) :
     ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
       (finrank_tensorProduct_eq_matrix c d)).mp hinj⟩
 
-/-- The matrix of `(x • u_σ) ⊗ 1` under `tensorProductAlgEquivMatrix`: row `ρ` has its only
-nonzero entry `ρ(x) · c(ρ, σ)` in column `ρ * σ`. -/
+/-- The matrix of `(x • u_σ) ⊗ 1` under `tensorProductAlgEquivMatrix`: row `ρ` is supported on
+the single column `ρ * σ`, where the entry is `ρ(x) · c(ρ, σ)`. -/
 @[simp]
 theorem tensorProductAlgEquivMatrix_smul_basis_tmul_one_apply (c d : TwoCocycle K L)
     (σ : L ≃ₐ[K] L) (x : L) (ρ τ : L ≃ₐ[K] L) :
@@ -377,8 +379,8 @@ theorem tensorProductAlgEquivMatrix_smul_basis_tmul_one_apply (c d : TwoCocycle 
       if τ = ρ * σ then inc (c * d) (ρ x * c.toFun ρ σ) else 0 := by
   simp [tensorProductAlgEquivMatrix, tensorProductToMatrix, leftAlgHom]
 
-/-- The matrix of `1 ⊗ (y • u_σ)` under `tensorProductAlgEquivMatrix`: column `τ` has its only
-nonzero entry `(y · c(σ, τ)⁻¹) · u_σ` in row `σ * τ`. -/
+/-- The matrix of `1 ⊗ (y • u_σ)` under `tensorProductAlgEquivMatrix`: column `τ` is supported
+on the single row `σ * τ`, where the entry is `(y · c(σ, τ)⁻¹) · u_σ`. -/
 @[simp]
 theorem tensorProductAlgEquivMatrix_one_tmul_smul_basis_apply (c d : TwoCocycle K L)
     (σ : L ≃ₐ[K] L) (y : L) (ρ τ : L ≃ₐ[K] L) :
