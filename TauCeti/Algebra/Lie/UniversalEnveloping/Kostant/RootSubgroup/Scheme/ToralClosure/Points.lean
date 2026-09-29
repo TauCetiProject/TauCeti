@@ -317,7 +317,6 @@ noncomputable def kostantToralSchemePointMulEquiv (A : Type) [CommRing A] :
     (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
 
 /-- The underlying spectrum map of a quotient point of the toral closure. -/
-@[simp]
 theorem kostantToralSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
     (q : WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
       (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A)) :
