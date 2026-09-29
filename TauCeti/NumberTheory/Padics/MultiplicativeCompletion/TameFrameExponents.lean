@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.TwoGeneratorQuotient
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Torsion
 import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
-import Mathlib.NumberTheory.Multiplicity
+import TauCeti.NumberTheory.Multiplicity
 
 /-!
 # Sharp exponents for a tame frame
@@ -25,23 +25,15 @@ other words the left `ℤ_p[G]`-module `ℤ_p[G] ⧸ J` has order `q(L)`, and it
 `p`-power torsion of the `p`-adic completion `A(L)` of `Lˣ`, which is `μ_{p^∞}(L)` with its Galois
 action.
 
-The proof has three steps.
-
-* Since `σ, τ` generate `G`, the quotient `ℤ_p[G] ⧸ J` is a cyclic `ℤ_p`-module, and it is killed
-  by `b ^ orderOf τ - 1` (`MonoidAlgebra.surjective_toSpanSingleton_mk_one`,
-  `MonoidAlgebra.pow_orderOf_sub_one_smul_eq_zero_of_sub_mem`).
-* Any lift `b₀` of the action of `τ` satisfies `b₀ ^ orderOf τ ≡ 1 (mod q(L))`. Since `p` does
-  not divide `orderOf τ`, replacing `b₀` by `b₀ + q(L)` if necessary makes the `p`-adic valuation
-  of `b ^ orderOf τ - 1` exactly that of `q(L)`, so `ℤ_p[G] ⧸ J` has at most `q(L)` elements.
-* The class of a generator of `μ_{p^∞}(L)` in `A(L)` is killed by `J`, so `ℤ_p[G] ⧸ J` maps onto
-  the `p`-power torsion of `A(L)`, which has exactly `q(L)` elements; a surjection between finite
-  sets of the same cardinality is a bijection.
-
-Not every lift works: for `a = b = 1` the quotient is `ℤ_p[G] ⧸ I_G ≅ ℤ_p`, which is infinite.
+The exponents are sharp in that `b` is chosen so that `b ^ orderOf τ - 1` has `p`-adic valuation
+exactly that of `q(L)`; this bounds `ℤ_p[G] ⧸ J`, a cyclic `ℤ_p`-module, by `q(L)`. Not every lift
+works: for `a = b = 1` the quotient is `ℤ_p[G] ⧸ I_G ≅ ℤ_p`, which is infinite.
 
 ## Main statements
 
 * `TauCeti.exists_tameFrame_exponents`: the existence of sharp exponents for a tame frame.
+* `TauCeti.finite_and_natCard_le_of_pow_orderOf_sub_one`: `ℤ_p[G] ⧸ J` has at most `p ^ k`
+  elements when `b ^ orderOf τ - 1` is `p ^ k` times a `p`-adic unit.
 
 ## References
 
@@ -55,42 +47,6 @@ namespace TauCeti
 open _root_.MonoidAlgebra
 
 variable {p : ℕ} [Fact p.Prime]
-
-/-- A lift `b₀` of a unit of order dividing `n` modulo `p ^ k`, with `p ∤ n`, can be moved by a
-multiple of `p ^ k` so that `b ^ n - 1` has `p`-adic valuation exactly `k`. -/
-private theorem exists_modEq_pow_sub_one_eq_mul {k n b₀ : ℕ} (hn : ¬ p ∣ n)
-    (hb₀ : b₀ ^ n ≡ 1 [MOD p ^ k]) :
-    ∃ b : ℕ, b ≡ b₀ [MOD p ^ k] ∧ ∃ c : ℤ, (b : ℤ) ^ n - 1 = (p : ℤ) ^ k * c ∧ ¬ (p : ℤ) ∣ c := by
-  have hp : p.Prime := Fact.out
-  have hpZ : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp
-  have hn0 : n ≠ 0 := by rintro rfl; exact hn (dvd_zero p)
-  rcases k with - | k
-  · -- For `k = 0` the congruence is empty, and `b = 0` gives `b ^ n - 1 = -1`.
-    refine ⟨0, Nat.modEq_one, -1, by simp [zero_pow hn0], fun h ↦ hpZ.not_dvd_one ?_⟩
-    exact (dvd_neg).mp h
-  obtain ⟨c₀, hc₀⟩ : (p : ℤ) ^ (k + 1) ∣ (b₀ : ℤ) ^ n - 1 := by
-    simpa using (Nat.modEq_iff_dvd.mp hb₀.symm)
-  by_cases hc₀p : (p : ℤ) ∣ c₀
-  · -- Replace `b₀` by `b₀ + p ^ (k + 1)`: the derivative term `n b₀ ^ (n - 1)` is prime to `p`.
-    have hb₀p : ¬ (p : ℤ) ∣ b₀ := by
-      intro h
-      have h1 : (p : ℤ) ∣ (b₀ : ℤ) ^ n - 1 :=
-        hc₀ ▸ dvd_mul_of_dvd_left (dvd_pow_self _ k.succ_ne_zero) _
-      exact hpZ.not_dvd_one ((dvd_sub_right (dvd_pow h hn0)).mp h1)
-    obtain ⟨m, hm⟩ := sq_dvd_add_pow_sub_sub ((p : ℤ) ^ (k + 1)) (b₀ : ℤ) n
-    refine ⟨b₀ + p ^ (k + 1), Nat.add_modEq_right,
-      c₀ + (b₀ : ℤ) ^ (n - 1) * n + (p : ℤ) ^ (k + 1) * m, ?_, ?_⟩
-    · push_cast
-      linear_combination hc₀ + hm
-    · intro hdvd
-      have hsplit : c₀ + (b₀ : ℤ) ^ (n - 1) * n + (p : ℤ) ^ (k + 1) * m =
-          (b₀ : ℤ) ^ (n - 1) * n + (c₀ + (p : ℤ) ^ (k + 1) * m) := by ring
-      rw [hsplit, dvd_add_left (dvd_add hc₀p
-        (dvd_mul_of_dvd_left (dvd_pow_self _ k.succ_ne_zero) _))] at hdvd
-      rcases hpZ.dvd_or_dvd hdvd with h | h
-      · exact hb₀p (hpZ.dvd_of_dvd_pow h)
-      · exact hn (Int.natCast_dvd_natCast.mp h)
-  · exact ⟨b₀, Nat.ModEq.refl _, c₀, hc₀, hc₀p⟩
 
 /-- A finite group of `p`-power roots of unity has order `p ^ k`, and a generator: every element
 is a natural power of it. -/
@@ -120,11 +76,11 @@ private theorem exists_units_map_eq_pow {L : Type*} [Field L] {K : Type*} [Field
   rw [pPowerRootsOfUnity_eq_rootsOfUnity_order p L h] at hξ
   simpa using modularCyclotomicCharacter.toFun_spec' (g : L ≃+* L) hξ
 
-/-- If `σ, τ` generate a finite group `G` and `b ^ orderOf τ - 1 = p ^ k * c` with `c` a unit of
+/-- If `σ, τ` generate the monoid `G` and `b ^ orderOf τ - 1 = p ^ k * c` with `c` a unit of
 `ℤ_p`, then `ℤ_p[G] ⧸ ℤ_p[G]·(σ - a, τ - b)` is finite with at most `p ^ k` elements: it is a
 cyclic `ℤ_p`-module killed by `p ^ k`. -/
-private theorem finite_and_natCard_le_of_pow_orderOf_sub_one {G : Type*} [Group G] [Finite G]
-    {σ τ : G} (hgen : Subgroup.closure {σ, τ} = ⊤) {a b c : ℤ_[p]} {k : ℕ} (hc : IsUnit c)
+theorem finite_and_natCard_le_of_pow_orderOf_sub_one {G : Type*} [Monoid G]
+    {σ τ : G} (hgen : Submonoid.closure {σ, τ} = ⊤) {a b c : ℤ_[p]} {k : ℕ} (hc : IsUnit c)
     (hbc : b ^ orderOf τ - 1 = (p : ℤ_[p]) ^ k * c) :
     Finite (MonoidAlgebra ℤ_[p] G ⧸
         Ideal.span {single σ (1 : ℤ_[p]) - single 1 a, single τ 1 - single 1 b}) ∧
@@ -144,7 +100,7 @@ private theorem finite_and_natCard_le_of_pow_orderOf_sub_one {G : Type*} [Group 
       (Submodule.Quotient.mk 1 : MonoidAlgebra ℤ_[p] G ⧸
         Ideal.span {single σ (1 : ℤ_[p]) - single 1 a, single τ 1 - single 1 b}) := by
     intro y
-    obtain ⟨r, rfl⟩ := MonoidAlgebra.surjective_toSpanSingleton_mk_one hgen y
+    obtain ⟨r, rfl⟩ := MonoidAlgebra.toSpanSingleton_mk_one_surjective hgen y
     refine ⟨PadicInt.toZModPow k r, ?_⟩
     have hmem : ((PadicInt.toZModPow k r).val : ℤ_[p]) - r ∈ Ideal.span {(p : ℤ_[p]) ^ k} := by
       rw [← PadicInt.ker_toZModPow, RingHom.mem_ker, map_sub, map_natCast,
@@ -269,8 +225,8 @@ theorem exists_tameFrame_exponents {L : Type*} [Field L] {K : Type*} [Field K] [
     exact_mod_cast congrArg (Int.cast : ℤ → ℤ_[p]) hc
   -- The quotient has at most `q(L)` elements and maps onto the torsion of `A(L)`, which has
   -- exactly `q(L)` elements.
-  obtain ⟨_, hcardle⟩ :=
-    finite_and_natCard_le_of_pow_orderOf_sub_one (a := (a : ℤ_[p])) hgen hcu hbc
+  obtain ⟨_, hcardle⟩ := finite_and_natCard_le_of_pow_orderOf_sub_one (a := (a : ℤ_[p]))
+    (by rw [← Subgroup.closure_toSubmonoid_of_finite, hgen, Subgroup.top_toSubmonoid]) hcu hbc
   obtain ⟨φ, hφ⟩ := exists_surjective_pPowerTorsion_padicCompletionUnits hζμ hgenζ
     (ha ζ hζμ) (hb ζ hζμ)
   have hcardT := natCard_pPowerTorsion_padicCompletionUnits p L
