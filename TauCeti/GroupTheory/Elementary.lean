@@ -297,7 +297,7 @@ theorem IsPHyperelementary.of_injective (h : IsPHyperelementary p G) (f : H →*
   obtain ⟨C, hCnormal, hCcyclic, hCp, hquot⟩ := h
   have := hCcyclic
   refine ⟨C.comap f, hCnormal.comap f,
-    isCyclic_of_injective _ (MonoidHom.subgroupComap_injective_of_injective hf C),
+    isCyclic_of_injective _ (f.subgroupComap_injective C hf),
     fun hdvd => hCp (hdvd.trans (Subgroup.card_comap_dvd_of_injective C f hf)), fun y => ?_⟩
   obtain ⟨k, hk⟩ := hquot (f y)
   exact ⟨k, mem_comap.mpr (by rwa [map_pow])⟩
@@ -344,9 +344,9 @@ theorem IsPElementary.of_injective [Fact p.Prime] (h : IsPElementary p G) (f : H
   obtain ⟨C, P, hC, hCp, hP, hcomm, hcompl⟩ := h
   have := hC
   refine ⟨C.comap f, P.comap f,
-    isCyclic_of_injective _ (MonoidHom.subgroupComap_injective_of_injective hf C),
+    isCyclic_of_injective _ (f.subgroupComap_injective C hf),
     fun hdvd => hCp (hdvd.trans (Subgroup.card_comap_dvd_of_injective C f hf)),
-    hP.of_injective _ (MonoidHom.subgroupComap_injective_of_injective hf P), ?_, ?_⟩
+    hP.of_injective _ (f.subgroupComap_injective P hf), ?_, ?_⟩
   · intro c hc x hx
     refine hf ?_
     rw [map_mul, map_mul]

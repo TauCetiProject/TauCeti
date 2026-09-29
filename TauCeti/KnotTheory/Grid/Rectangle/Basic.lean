@@ -418,7 +418,9 @@ end GridRectangle
 /-- An oriented toroidal rectangle from one grid state to another.
 
 The two states agree outside the two side columns, and in those side columns they exchange the
-two rows. Swapping `left` and `right` gives the complementary oriented rectangle. -/
+two rows. Swapping `left` and `right` gives the complementary oriented rectangle. The two side
+columns determine the rectangle (`GridRectangleBetween.ext`). -/
+@[ext]
 structure GridRectangleBetween {n : ℕ} (x y : GridState n) where
   /-- The initial vertical side. -/
   left : Fin n
@@ -454,15 +456,8 @@ theorem card_sideColumns (R : GridRectangleBetween x y) : R.sideColumns.card = 2
 
 /-- A rectangle between two grid states is determined by its two side columns. -/
 theorem sidePair_injective :
-    Function.Injective fun R : GridRectangleBetween x y => (R.left, R.right) := by
-  intro R S h
-  cases R
-  cases S
-  simp only at h
-  obtain ⟨hleft, hright⟩ := Prod.ext_iff.mp h
-  cases hleft
-  cases hright
-  rfl
+    Function.Injective fun R : GridRectangleBetween x y => (R.left, R.right) :=
+  fun _ _ h ↦ GridRectangleBetween.ext (Prod.ext_iff.1 h).1 (Prod.ext_iff.1 h).2
 
 /-- An oriented rectangle between two grid states has decidable equality: it is determined by its
 ordered pair of side columns, which has decidable equality. -/
@@ -902,15 +897,6 @@ theorem transpose_toGridRectangle (R : GridRectangleBetween x y) :
   unfold GridRectangleBetween.toGridRectangle
   rw [transpose_bottom, transpose_top, transpose_left, transpose_right]
 
-/-- Two oriented rectangles between the same states with equal side columns are equal. -/
-theorem eq_of_sides {R S : GridRectangleBetween x y} (hleft : R.left = S.left)
-    (hright : R.right = S.right) : R = S := by
-  obtain ⟨_, _, _, _, _, _⟩ := R
-  obtain ⟨_, _, _, _, _, _⟩ := S
-  obtain rfl : _ = _ := hleft
-  obtain rfl : _ = _ := hright
-  rfl
-
 end GridRectangleBetween
 
 end TauCeti
@@ -1014,7 +1000,7 @@ theorem swapSides_toGridRectangle (R : GridRectangleBetween x y) :
 /-- Exchanging the two side columns twice gives the original rectangle. -/
 @[simp]
 theorem swapSides_swapSides (R : GridRectangleBetween x y) : R.swapSides.swapSides = R :=
-  eq_of_sides (swapSides_right R) (swapSides_left R)
+  GridRectangleBetween.ext (swapSides_right R) (swapSides_left R)
 
 /-- Exchanging the two side columns gives a genuinely different rectangle, since the two side
 columns are distinct. -/
@@ -1041,7 +1027,7 @@ variable {n : ℕ} {x y : GridState n}
 /-- Reflecting an oriented rectangle twice gives the original rectangle. -/
 @[simp]
 theorem transpose_transpose (R : GridRectangleBetween x y) : R.transpose.transpose = R :=
-  eq_of_sides (transpose_bottom R) (transpose_top R)
+  GridRectangleBetween.ext (transpose_bottom R) (transpose_top R)
 
 /-- The diagonal reflection as an equivalence between oriented rectangles from `x` to `y` and
 oriented rectangles from `x.transpose` to `y.transpose`. Since reflecting twice is the identity,

@@ -168,18 +168,14 @@ theorem isConnected_def :
 @[simp]
 theorem isConnected_iff_card_connectedComponent_eq_one :
     Γ.IsConnected ↔ Fintype.card Γ.ConnectedComponent = 1 := by
+  rw [← Nat.card_eq_fintype_card, Nat.card_eq_one_iff_unique]
   constructor
-  · intro hΓ
-    let _ : Nonempty Γ.E := hΓ.1
-    let _ : MulAction.IsPretransitive Γ.rotationGroup Γ.E := hΓ.2
-    rw [← Nat.card_eq_fintype_card]
-    exact MulAction.card_orbitRelQuotient_eq_one (G := Γ.rotationGroup) (X := Γ.E)
-  · intro hcard
-    have hcardPos : 0 < Fintype.card Γ.ConnectedComponent := hcard ▸ Nat.zero_lt_one
-    have hE : Nonempty Γ.E :=
-      (nonempty_quotient_iff _).mp (Fintype.card_pos_iff.mp hcardPos)
-    exact ⟨hE, (MulAction.pretransitive_iff_subsingleton_quotient Γ.rotationGroup Γ.E).mpr
-      (Fintype.card_le_one_iff_subsingleton.mp hcard.le)⟩
+  · rintro ⟨hE, hΓ⟩
+    exact ⟨(MulAction.pretransitive_iff_subsingleton_quotient _ _).mp hΓ,
+      (nonempty_quotient_iff _).mpr hE⟩
+  · rintro ⟨hsub, hne⟩
+    exact ⟨(nonempty_quotient_iff _).mp hne,
+      (MulAction.pretransitive_iff_subsingleton_quotient _ _).mpr hsub⟩
 
 /-! ### Degrees and Euler characteristic -/
 
@@ -462,19 +458,7 @@ def rotationGroupEquiv (f : Γ.Iso Δ) : Γ.rotationGroup ≃* Δ.rotationGroup 
 private def edgeActionHom (f : Γ.Iso Δ) : Γ.E →ₑ[f.rotationGroupEquiv] Δ.E where
   toFun := f.edge
   map_smul' g e := by
-    have hgroup : (f.rotationGroupEquiv g : Equiv.Perm Δ.E) =
-        f.edge.permCongr (g : Equiv.Perm Γ.E) := by
-      calc
-        _ = f.edge.permCongrHom (g : Equiv.Perm Γ.E) := by
-          rw [rotationGroupEquiv, Subgroup.coe_congrOfMapEq_apply]
-        _ = _ := congrFun (Equiv.permCongrHom_coe f.edge) g
-    calc
-      f.edge (g • e) = f.edge ((g : Equiv.Perm Γ.E) e) := rfl
-      _ = f.edge.permCongr (g : Equiv.Perm Γ.E) (f.edge e) := by
-        rw [Equiv.permCongr_apply, f.edge.symm_apply_apply]
-      _ = f.rotationGroupEquiv g • f.edge e := by
-        simpa only [MulAction.subgroup_smul_def, Equiv.Perm.smul_def] using
-          congrArg (fun p : Equiv.Perm Δ.E ↦ p (f.edge e)) hgroup.symm
+    simp [rotationGroupEquiv, MulAction.subgroup_smul_def, Subgroup.coe_congrOfMapEq_apply]
 
 /-- An isomorphism relabels the connected components of a bipartite ribbon graph. -/
 def connectedComponentEquiv (f : Γ.Iso Δ) : Γ.ConnectedComponent ≃ Δ.ConnectedComponent :=
