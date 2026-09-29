@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Indecomposable
 public import TauCeti.RingTheory.KrullSchmidt.DirectSum
 
@@ -21,17 +21,9 @@ the theorem in its categorical form instead, with `CategoryTheory.Limits.biprodu
 `DirectSum` and isomorphisms of objects in place of linear equivalences. This file restates both
 halves in that form for `ModuleCat A`.
 
-The bridge is `TauCeti.biproductDirectSumEquiv`: the carrier of a finite biproduct in `ModuleCat A`
-is the external direct sum of the carriers of the summands. Mathlib's
-`ModuleCat.biproductIsoPi` identifies the biproduct with the dependent function type, and over a
-finite index type the direct sum is the same thing
-(`DirectSum.linearEquivFunOnFintype`); composing the two is all the transport needs, after which
-`TauCeti.indecomposable_iff_isIndecomposableModule` carries indecomposability across.
-
-## Main definitions
-
-* `TauCeti.biproductDirectSumEquiv`: the carrier of a finite biproduct in `ModuleCat A` is the
-  external direct sum of the carriers of the summands.
+The transport is `TauCeti.biproductDirectSumEquiv`, which identifies the carrier of a finite
+biproduct with the external direct sum of the carriers of the summands, together with
+`TauCeti.indecomposable_iff_isIndecomposableModule`, which carries indecomposability across.
 
 ## Main results
 
@@ -56,12 +48,6 @@ of a finite biproduct can be replaced by `Fin n`, which is what the existence th
 
 ## References
 
-This supplies the categorical half of the uniqueness bullet of Layer 2 ("the Krull-Schmidt
-theorem") of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks for
-the module-level theory to be transported "to `QuiverRep k Q` and to categorical biproducts";
-`TauCeti/Algebra/Category/ModuleCat/Indecomposable.lean` carries indecomposability across, and this
-file carries the decompositions.
-
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4.
 -/
@@ -75,33 +61,6 @@ open CategoryTheory CategoryTheory.Limits DirectSum
 universe u v
 
 variable {A : Type u} [Ring A]
-
-/-! ### The carrier of a biproduct is an external direct sum -/
-
-section Bridge
-
-variable {ι : Type} [Fintype ι] (P : ι → ModuleCat.{v} A)
-
-/-- **The carrier of a finite biproduct in `ModuleCat A` is the external direct sum of the carriers
-of the summands.** This is the transport along which the Krull-Schmidt theorem of
-`TauCeti/RingTheory/KrullSchmidt/DirectSum.lean` is read categorically. -/
-noncomputable def biproductDirectSumEquiv :
-    (biproduct P : ModuleCat.{v} A) ≃ₗ[A] ⨁ i, (P i : Type v) :=
-  (ModuleCat.biproductIsoPi P).toLinearEquiv.trans
-    (DirectSum.linearEquivFunOnFintype A ι fun i ↦ (P i : Type v)).symm
-
-/-- The `i`-th component of `TauCeti.biproductDirectSumEquiv` is the `i`-th biproduct projection. -/
-theorem component_biproductDirectSumEquiv (x : (biproduct P : ModuleCat.{v} A)) (i : ι) :
-    DirectSum.component A ι (fun i ↦ (P i : Type v)) i (biproductDirectSumEquiv P x) =
-      (biproduct.π P i).hom x := by
-  have key : (ModuleCat.biproductIsoPi P).hom ≫
-      ModuleCat.ofHom (LinearMap.proj i : (∀ j, (P j : Type v)) →ₗ[A] (P i : Type v)) =
-      biproduct.π P i := by
-    rw [← ModuleCat.biproductIsoPi_inv_comp_π P i, Iso.hom_inv_id_assoc]
-  rw [← key]
-  rfl
-
-end Bridge
 
 /-! ### The two halves of the Krull-Schmidt theorem, categorically -/
 
