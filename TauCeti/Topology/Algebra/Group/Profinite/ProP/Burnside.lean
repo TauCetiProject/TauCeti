@@ -38,8 +38,8 @@ with the Frattini subgroup, so `s` is surjective and is a two-sided inverse of `
   non-generators.
 * `IsProP.surjective_of_forall_inv_mul_mem_proPFrattini`: a continuous endomorphism congruent to
   the identity modulo the Frattini subgroup is surjective.
-* `IsProP.surjective_of_surjective_comp_of_ker_le_proPFrattini`: a continuous homomorphism out of
-  a compact group whose composite with a Frattini cover is surjective is surjective.
+* `IsProP.surjective_of_surjective_comp_of_ker_le_proPFrattini`: a homomorphism with closed range
+  whose composite with a Frattini cover is surjective is surjective.
 * `IsProP.continuousMulEquivOfLeftInverse`: a Frattini cover with a continuous homomorphic
   section is a topological isomorphism, with the section as inverse.
 * `topologicallyGenerates_iff_frattiniQuotient`: a set generates topologically if and only if
@@ -124,16 +124,14 @@ theorem eq_top_of_sup_proPFrattini_eq_top (hG : IsProP p G) {H : Subgroup G}
   exact hp.out.ne_one <| hU.symm.trans (Subgroup.index_eq_one.mpr hUtop)
 
 /-- **A homomorphism onto a Frattini cover is surjective.** Let `φ : G →* H` have kernel in the
-Frattini subgroup `Φ(G)` of the pro-`p` group `G`. A continuous homomorphism `s` from a compact
-group into `G` whose composite with `φ` is surjective is itself surjective. -/
+Frattini subgroup `Φ(G)` of the pro-`p` group `G`. A homomorphism `s` into `G` with closed range
+whose composite with `φ` is surjective is itself surjective. -/
 theorem surjective_of_surjective_comp_of_ker_le_proPFrattini (hG : IsProP p G) {K H : Type*}
-    [Group K] [TopologicalSpace K] [CompactSpace K] [Group H] {s : K →* G} (hs : Continuous s)
-    {φ : G →* H} (hφs : Function.Surjective (φ ∘ s)) (hker : φ.ker ≤ proPFrattini p G) :
+    [Group K] [Group H] {s : K →* G} (hs : IsClosed (s.range : Set G)) {φ : G →* H}
+    (hφs : Function.Surjective (φ ∘ s)) (hker : φ.ker ≤ proPFrattini p G) :
     Function.Surjective s := by
   suffices hr : s.range = ⊤ from MonoidHom.range_eq_top.mp hr
-  apply hG.eq_top_of_sup_proPFrattini_eq_top
-  · rw [MonoidHom.coe_range]
-    exact (isCompact_range hs).isClosed
+  apply hG.eq_top_of_sup_proPFrattini_eq_top hs
   · refine top_unique fun x _ ↦ ?_
     obtain ⟨k, hk⟩ := hφs (φ x)
     have hmem : (s k)⁻¹ * x ∈ φ.ker := by
@@ -146,7 +144,7 @@ continuous endomorphism `φ` of a pro-`p` group with `g⁻¹ * φ g ∈ Φ(G)` f
 surjective. -/
 theorem surjective_of_forall_inv_mul_mem_proPFrattini (hG : IsProP p G) {φ : G →* G}
     (hφ : Continuous φ) (h : ∀ g, g⁻¹ * φ g ∈ proPFrattini p G) : Function.Surjective φ :=
-  hG.surjective_of_surjective_comp_of_ker_le_proPFrattini hφ
+  hG.surjective_of_surjective_comp_of_ker_le_proPFrattini hφ.isClosedMap.isClosed_range
     (φ := QuotientGroup.mk' (proPFrattini p G))
     (fun y ↦ by
       obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective _ y

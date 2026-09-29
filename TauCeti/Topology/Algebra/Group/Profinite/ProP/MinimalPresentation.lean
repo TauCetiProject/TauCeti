@@ -185,7 +185,7 @@ theorem exists_continuousMulEquiv_comp_eq (g h : freeProP p X →ₜ* H) (hg : F
   have hβ : g.comp β = h := hom_ext fun x ↦ by simp [β, hy]
   have hsurj : Function.Surjective β :=
     (isProP_freeProP p X).surjective_of_surjective_comp_of_ker_le_proPFrattini
-      (s := (β : freeProP p X →* freeProP p X)) β.continuous
+      (s := (β : freeProP p X →* freeProP p X)) (isCompact_range β.continuous).isClosed
       (by simpa [← ContinuousMonoidHom.coe_comp, hβ] using hh) hker
   refine ⟨(isTopologicallyFinitelyGenerated_freeProP p X).continuousMulEquivOfSurjective
     β.continuous hsurj, ContinuousMonoidHom.ext fun x ↦ ?_⟩
@@ -196,6 +196,22 @@ end freeProP
 namespace presentedProP
 
 variable {X : Type u} {rels rels' : Set (freeProP p X)}
+
+omit [Fact p.Prime] in
+private theorem map_topologicalClosure_normalClosure (α : freeProP p X ≃ₜ* freeProP p X)
+    (s : Set (freeProP p X)) :
+    (Subgroup.normalClosure s).topologicalClosure.map α.toMulEquiv.toMonoidHom =
+      (Subgroup.normalClosure (α '' s)).topologicalClosure := by
+  calc
+    _ = ((Subgroup.normalClosure s).map
+        α.toMulEquiv.toMonoidHom).topologicalClosure := by
+      apply SetLike.coe_injective
+      rw [Subgroup.coe_map, Subgroup.topologicalClosure_coe, Subgroup.topologicalClosure_coe,
+        Subgroup.coe_map]
+      exact α.toHomeomorph.image_closure _
+    _ = _ := by
+      rw [Subgroup.map_normalClosure s α.toMulEquiv.toMonoidHom α.surjective]
+      congr 2
 
 /-- **Isomorphic presentations with a minimal target differ by a change of basis.** Let
 `⟨X ∣ rels⟩` and `⟨X ∣ rels'⟩` be pro-`p` groups presented on the same finite type, with the
@@ -224,20 +240,13 @@ theorem exists_continuousMulEquiv_topologicalClosure_normalClosure_image_eq [Fin
     rw [Subgroup.topologicalClosure_normalClosure_le_iff (Subgroup.isClosed_topologicalClosure _)]
     rintro _ ⟨r, hr, rfl⟩
     rw [SetLike.mem_coe, ← mk_eq_one_iff, hαx, mk_relator r hr, map_one]
-  · -- Conversely `α⁻¹ x` dies in `⟨X ∣ rels⟩`, and `α` carries the relation subgroup of `rels`
-    -- into the closed normal closure of `α '' rels`.
-    set K := (Subgroup.normalClosure (α '' rels)).topologicalClosure
-    have hle : (Subgroup.normalClosure rels).topologicalClosure ≤
-        K.comap (α : freeProP p X →* freeProP p X) := by
-      rw [Subgroup.topologicalClosure_normalClosure_le_iff
-        ((Subgroup.isClosed_topologicalClosure _).preimage α.continuous)]
-      exact fun r hr ↦ Subgroup.le_topologicalClosure _
-        (Subgroup.subset_normalClosure ⟨r, hr, rfl⟩)
+  · -- Conversely `α⁻¹ x` dies in `⟨X ∣ rels⟩`.
     have hsymm : α.symm x ∈ (Subgroup.normalClosure rels).topologicalClosure := by
       rw [← mk_eq_one_iff, ← map_eq_one_iff e e.injective, ← hαx, α.apply_symm_apply,
         mk_eq_one_iff]
       exact hx
-    simpa using hle hsymm
+    rw [← map_topologicalClosure_normalClosure α rels, Subgroup.mem_map_equiv]
+    exact hsymm
 
 /-- **Presentations of isomorphic groups, one of them minimal, differ by a change of basis.**
 Pro-`p` groups presented on the same finite type `X`, with the relators `rels'` in the Frattini
@@ -257,18 +266,12 @@ theorem nonempty_continuousMulEquiv_iff [Finite X]
     exact ⟨α, hα⟩
   · rw [mk_eq_one_iff, ← hα]
     exact Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure ⟨r, hr, rfl⟩)
-  · -- `α⁻¹` carries the closed normal closure of `α '' rels` into that of `rels`.
-    have hle : (Subgroup.normalClosure (α '' rels)).topologicalClosure ≤
-        (Subgroup.normalClosure rels).topologicalClosure.comap
-          (α.symm : freeProP p X →* freeProP p X) := by
-      rw [Subgroup.topologicalClosure_normalClosure_le_iff
-        ((Subgroup.isClosed_topologicalClosure _).preimage α.symm.continuous)]
-      rintro _ ⟨s, hs, rfl⟩
-      simp only [SetLike.mem_coe, Subgroup.mem_comap, MonoidHom.coe_ofClass,
-        ContinuousMulEquiv.symm_apply_apply]
-      exact Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hs)
+  · -- Apply `α⁻¹` to the transported relation subgroup.
     rw [mk_eq_one_iff]
-    exact hle (hα ▸ Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
+    have hr' : r ∈ (Subgroup.normalClosure (α '' rels)).topologicalClosure :=
+      hα ▸ Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
+    rw [← map_topologicalClosure_normalClosure α rels, Subgroup.mem_map_equiv] at hr'
+    exact hr'
 
 end presentedProP
 
