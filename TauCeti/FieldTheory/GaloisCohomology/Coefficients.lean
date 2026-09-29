@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsSepClosed
-public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.KrullTopology
@@ -70,8 +68,6 @@ are strictly larger than `Kˣ`.
 
 * `TauCeti.unitsCoeff_continuousSMul`, `TauCeti.kummerCoeff_continuousSMul`: the coefficients are
   discrete modules, that is, the action is continuous.
-* `TauCeti.nsmul_kummerCoeff_eq_zero`: `μₙ` is killed by `n`, so it is a `ZMod n`-module on
-  which `G_K` acts `ZMod n`-linearly.
 * `TauCeti.mem_H0_unitsCoeff_iff`: a unit of `Kˢ` fixed by `G_K` comes from `Kˣ`.
 
 ## References
@@ -130,25 +126,6 @@ instance kummerCoeff_continuousSMul :
     refine ⟨fun h => ?_, fun h => Additive.toMul.injective (Subtype.ext (by simpa using h))⟩
     simpa using
       congrArg (fun v : KummerCoeff K n => (v.toMul : (SeparableClosure K)ˣ)) h
-
-/-- **`μₙ` is killed by `n`**: in additive notation, `ζ ^ n = 1` reads `n • ζ = 0`. -/
-theorem nsmul_kummerCoeff_eq_zero (x : KummerCoeff K n) : n • x = 0 :=
-  Additive.toMul.injective <| Subtype.ext <| by
-    simpa [toMul_nsmul] using (mem_rootsOfUnity n _).1 x.toMul.2
-
-/-- `μₙ` is a `ZMod n`-module, being killed by `n`. This is the scalar structure the coefficient
-objects of Galois cohomology with `ZMod n` coefficients carry. -/
-instance : Module (ZMod n) (KummerCoeff K n) :=
-  AddCommGroup.zmodModule (nsmul_kummerCoeff_eq_zero K n)
-
-/-- The Galois action on `μₙ` is `ZMod n`-linear: it is additive, and `ZMod n`-scalars act through
-integer multiples. -/
-instance : SMulCommClass (AbsoluteGaloisGroup K) (ZMod n) (KummerCoeff K n) :=
-  ⟨fun g c x => ZMod.map_smul (DistribSMul.toAddMonoidHom (KummerCoeff K n) g) c x⟩
-
-/-- `ZMod n` acts continuously on `μₙ`, both being discrete. -/
-instance : ContinuousSMul (ZMod n) (KummerCoeff K n) :=
-  ⟨continuous_of_discreteTopology⟩
 
 /-! ### The two maps of the Kummer sequence -/
 
