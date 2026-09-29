@@ -78,8 +78,7 @@ theorem _root_.Subgroup.card_generatingTriplesOfFullCycleType
       Set (G × G × G)).MapsTo classOf index := by
     intro p hp
     obtain ⟨_, _, h0, h1, hi⟩ := G.mem_generatingTriplesOfFullCycleType.mp hp
-    -- `MapsTo` coerces the target finset to a set; expose finset membership before splitting
-    -- the product index into its three class conditions.
+    -- `MapsTo` coerces the index finset to a set; recover finset membership first.
     change classOf p ∈ index
     change ((ConjClasses.mk p.1, ConjClasses.mk p.2.1), ConjClasses.mk p.2.2) ∈
       ((G.classesOfFullCycleType lam0) ×ˢ (G.classesOfFullCycleType lam1)) ×ˢ
@@ -87,19 +86,8 @@ theorem _root_.Subgroup.card_generatingTriplesOfFullCycleType
     simp only [Finset.mem_product, Subgroup.mem_classesOfFullCycleType_mk]
     exact ⟨⟨h0, h1⟩, hi⟩
   rw [Finset.card_eq_sum_card_fiberwise hmaps]
-  unfold index
-  simp only [Finset.product_eq_sprod, Finset.sum_product]
-  -- The product-sum rewrite leaves the three class binders paired; present them separately.
-  change (∑ C0 ∈ G.classesOfFullCycleType lam0,
-    ∑ C1 ∈ G.classesOfFullCycleType lam1,
-      ∑ Cinf ∈ G.classesOfFullCycleType laminf,
-        {p ∈ G.generatingTriplesOfFullCycleType lam0 lam1 laminf |
-          classOf p = ((C0, C1), Cinf)}.card) =
-      G.genCountType lam0 lam1 laminf
-  change _ = (∑ C0 ∈ G.classesOfFullCycleType lam0,
-    ∑ C1 ∈ G.classesOfFullCycleType lam1,
-      ∑ Cinf ∈ G.classesOfFullCycleType laminf,
-        (generatingProductOneTriples C0 C1 Cinf ⊤).card)
+  simp only [index, Finset.product_eq_sprod, Finset.sum_product,
+    Subgroup.genCountType]
   apply Finset.sum_congr rfl
   intro C0 h0
   apply Finset.sum_congr rfl
