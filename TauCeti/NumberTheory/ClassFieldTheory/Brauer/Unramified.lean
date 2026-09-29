@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
-import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The local invariant of an unramified layer
@@ -225,10 +225,10 @@ theorem unramifiedInvEquiv_unramifiedClass (a : Kˣ) :
       ((normalizedValuation K a).toAdd : ZMod (Module.finrank K L)) := by
   have h : (QuotientAddGroup.quotientKerEquivOfSurjective _ (unramifiedClass_surjective K L)).symm
       (unramifiedClass K L (Additive.ofMul a)) = (Additive.ofMul a : Additive Kˣ) := by
-    rw [AddEquiv.symm_apply_eq]
-    rfl
-  rw [unramifiedInvEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply, h]
-  rfl
+    rw [AddEquiv.symm_apply_eq, QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk]
+  rw [unramifiedInvEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply, h,
+    QuotientAddGroup.quotientAddEquivOfEq_mk,
+    QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk, valuationMod_ofMul]
 
 /-- `H²(Gal(L/K), Lˣ)` of an unramified layer has exactly `[L : K]` elements. -/
 theorem natCard_H2_unramified :
