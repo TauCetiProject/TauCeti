@@ -136,6 +136,17 @@ theorem dedekindZetaCoeff_rat (n : ℕ) :
   let _ : Nonempty {I : Ideal (𝓞 ℚ) // Ideal.absNorm I = n} := rat_normFiber_nonempty n
   exact Nat.card_unique
 
+/-- Over `ℚ`, a nonzero integral ideal is the only one of its absolute norm. -/
+@[simp]
+theorem normFiber_rat_absNorm (I : (Ideal (𝓞 ℚ))⁰) :
+    normFiber ℚ (Ideal.absNorm (I : Ideal (𝓞 ℚ))) = {I} := by
+  refine Finset.eq_singleton_iff_unique_mem.mpr ⟨(mem_normFiber ℚ).mpr rfl, fun J hJ ↦ ?_⟩
+  have := rat_normFiber_subsingleton (Ideal.absNorm (I : Ideal (𝓞 ℚ)))
+  have hJI := Subsingleton.elim
+    (α := {I' : Ideal (𝓞 ℚ) // Ideal.absNorm I' = Ideal.absNorm (I : Ideal (𝓞 ℚ))})
+    ⟨J, (mem_normFiber ℚ).mp hJ⟩ ⟨I, rfl⟩
+  exact Subtype.ext (Subtype.mk.inj hJI)
+
 /-- Over `ℚ`, the trivial ideal weight has coefficient `1` at every positive integer. -/
 theorem normCoeff_one_rat_apply {n : ℕ} (hn : 0 < n) :
     normCoeff ℚ (1 : IdealArithmeticFunction ℚ) n = 1 := by

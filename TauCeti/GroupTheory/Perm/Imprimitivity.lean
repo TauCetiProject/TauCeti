@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.Blocks
-public import TauCeti.GroupTheory.Perm.WreathProduct
+public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 
 /-!
 # Imprimitivity gives a wreath product embedding

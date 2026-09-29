@@ -295,14 +295,7 @@ theorem toHom_bijective (f : Isometry A B) : Function.Bijective f.toHom := by
 def toFiniteBilinearModule (f : Isometry A B) :
     FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule where
   toAddEquiv := f.toLinearEquiv.toAddEquiv
-  map_pairing' x y := by
-    rw [← B.polar_eq_pairing, ← A.polar_eq_pairing]
-    simp only [QuadraticMap.polar]
-    rw [← f.toAddEquiv.map_add]
-    have hxy : B.quadratic (f.toAddEquiv (x + y)) = A.quadratic (x + y) := f.map_app (x + y)
-    have hx : B.quadratic (f.toAddEquiv x) = A.quadratic x := f.map_app x
-    have hy : B.quadratic (f.toAddEquiv y) = A.quadratic y := f.map_app y
-    rw [hxy, hx, hy]
+  map_pairing' := f.toHom.map_pairing
 
 /-- The induced bilinear isometry has the same underlying additive equivalence. -/
 @[simp]

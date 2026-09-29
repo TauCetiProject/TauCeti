@@ -25,7 +25,7 @@ import TauCeti.GroupTheory.QuotientGroup.Basic
 # The class function of `GL₂(𝔽_q)` induced from the non-split torus
 
 Let `E/F` be a quadratic extension of a finite field with `q` elements and let
-`T = TauCeti.GL2NonSplitTorus F E hE` be the resulting elliptic torus of `GL₂(F)`, a copy of `Eˣ`.
+`T = TauCeti.GL2NonSplitTorus F E` be the resulting elliptic torus of `GL₂(F)`, a copy of `Eˣ`.
 This file computes the induced class function `TauCeti.indClassFun T f` on the four families of
 conjugacy classes of `GL₂(F)`: at a central scalar `a` it is `[GL₂(F) : T] = q (q - 1)` copies of
 `f(a)`, it vanishes on the split semisimple and the non-semisimple families, and at an elliptic
@@ -106,22 +106,22 @@ namespace TauCeti
 namespace GL2NonSplitTorus
 
 variable {F : Type*} [Field F] {E : Type*} [Field E] [Algebra F E]
-  {k : Type*} [AddCommMonoid k] (hE : Module.finrank F E = 2)
+  {k : Type*} [AddCommMonoid k] [Algebra.IsQuadraticExtension F E]
 
 variable [Finite F]
 
 /-- **The induced class function vanishes on a non-scalar element with an eigenvalue in `F`**: no
 coset contributes, by `TauCeti.GL2NonSplitTorus.conj_notMem_of_det_sub_algebraMap_eq_zero`. -/
-theorem indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero (f : GL2NonSplitTorus F E hE → k)
+theorem indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero (f : GL2NonSplitTorus F E → k)
     {g : GL (Fin 2) F}
     (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) {a : F}
     (ha : ((g : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0) :
-    indClassFun (GL2NonSplitTorus F E hE) f g = 0 := by
+    indClassFun (GL2NonSplitTorus F E) f g = 0 := by
   classical
   rw [indClassFun_apply]
   exact Finset.sum_eq_zero fun t _ =>
-    dite_eq_right (conj_notMem_of_det_sub_algebraMap_eq_zero hE hg ha _)
+    dite_eq_right (conj_notMem_of_det_sub_algebraMap_eq_zero hg ha _)
 
 /-! ### The four values -/
 
@@ -129,25 +129,25 @@ theorem indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero (f : GL2NonSplitTorus 
 itself and lies in the torus, so each of the `[GL₂(F) : T]` cosets contributes the same value.
 Over a field with `q` elements the index is `q (q - 1)` by
 `TauCeti.GL2NonSplitTorus.index_eq`. -/
-theorem indClassFun_scalar (f : GL2NonSplitTorus F E hE → k) (a : Fˣ) :
-    indClassFun (GL2NonSplitTorus F E hE) f (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
-      (GL2NonSplitTorus F E hE).index •
-        f ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, scalar_mem hE a⟩ := by
+theorem indClassFun_scalar (f : GL2NonSplitTorus F E → k) (a : Fˣ) :
+    indClassFun (GL2NonSplitTorus F E) f (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
+      (GL2NonSplitTorus F E).index •
+        f ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, scalar_mem a⟩ := by
   classical
   have hconj : ∀ x : GL (Fin 2) F,
       x⁻¹ * Matrix.GeneralLinearGroup.scalar (Fin 2) a * x =
         Matrix.GeneralLinearGroup.scalar (Fin 2) a := fun x => by
     rw [mul_assoc, Matrix.GeneralLinearGroup.scalar_commute a x, ← mul_assoc, inv_mul_cancel,
       one_mul]
-  let _ : Fintype (GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE) := Fintype.ofFinite _
+  let _ : Fintype (GL (Fin 2) F ⧸ GL2NonSplitTorus F E) := Fintype.ofFinite _
   rw [indClassFun_apply, Subgroup.index_eq_card, Nat.card_eq_fintype_card, ← Finset.card_univ]
-  exact Finset.sum_eq_card_nsmul fun t _ => by rw [hconj, dite_eq_left (scalar_mem hE a)]
+  exact Finset.sum_eq_card_nsmul fun t _ => by rw [hconj, dite_eq_left (scalar_mem a)]
 
 /-- **The induced class function vanishes on the split semisimple classes**: an invertible
 diagonal matrix with distinct entries is non-scalar and has its entries as eigenvalues in `F`. -/
-theorem indClassFun_diagGL (f : GL2NonSplitTorus F E hE → k) {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
-    indClassFun (GL2NonSplitTorus F E hE) f (diagGL t) = 0 := by
-  refine indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero hE f
+theorem indClassFun_diagGL (f : GL2NonSplitTorus F E → k) {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
+    indClassFun (GL2NonSplitTorus F E) f (diagGL t) = 0 := by
+  refine indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero f
     (notMem_range_scalar_diagGL ht) (a := (t 0 : F)) ?_
   have hsub : ((diagGL t : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) (t 0 : F)) =
@@ -159,9 +159,9 @@ theorem indClassFun_diagGL (f : GL2NonSplitTorus F E hE → k) {t : Fin 2 → F�
 
 /-- **The induced class function vanishes on the non-semisimple classes**: a Jordan block with
 `b ≠ 0` is non-scalar and has its repeated diagonal entry as an eigenvalue in `F`. -/
-theorem indClassFun_jordanGL (f : GL2NonSplitTorus F E hE → k) (a : Fˣ) {b : F} (hb : b ≠ 0) :
-    indClassFun (GL2NonSplitTorus F E hE) f (jordanGL a b) = 0 := by
-  refine indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero hE f
+theorem indClassFun_jordanGL (f : GL2NonSplitTorus F E → k) (a : Fˣ) {b : F} (hb : b ≠ 0) :
+    indClassFun (GL2NonSplitTorus F E) f (jordanGL a b) = 0 := by
+  refine indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero f
     (notMem_range_scalar_jordanGL hb) (a := (a : F)) ?_
   have hsub : ((jordanGL a b : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) (a : F)) = !![0, b; 0, 0] := by
@@ -180,86 +180,86 @@ conjugator represents a nontrivial coset and normalizes the torus. -/
 private theorem exists_frobenius_conjugator_normalizes
     (hu : (u : E) ∉ Set.range (algebraMap F E)) :
     ∃ d : GL (Fin 2) F,
-      d⁻¹ * GL2NonSplitTorusHom F E hE u * d =
-        GL2NonSplitTorusHom F E hE (u ^ Nat.card F) ∧
-      d ∉ GL2NonSplitTorus F E hE ∧
-      ∀ y ∈ GL2NonSplitTorus F E hE, d⁻¹ * y * d ∈ GL2NonSplitTorus F E hE := by
+      d⁻¹ * GL2NonSplitTorusHom F E u * d =
+        GL2NonSplitTorusHom F E (u ^ Nat.card F) ∧
+      d ∉ GL2NonSplitTorus F E ∧
+      ∀ y ∈ GL2NonSplitTorus F E, d⁻¹ * y * d ∈ GL2NonSplitTorus F E := by
   have hupow : ((u ^ Nat.card F : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
     rw [Units.val_pow_eq_pow_val]
-    exact FiniteField.pow_natCard_notMem_range_algebraMap hE hu
+    exact FiniteField.pow_natCard_notMem_range_algebraMap hu
   have hune : (u ^ Nat.card F : Eˣ) ≠ u := fun h =>
     FiniteField.pow_natCard_ne hu (by rw [← Units.val_pow_eq_pow_val, h])
-  have hmemT : ∀ y : GL (Fin 2) F, y ∈ GL2NonSplitTorus F E hE ↔
-      GL2NonSplitTorusHom F E hE u * y = y * GL2NonSplitTorusHom F E hE u := by
+  have hmemT : ∀ y : GL (Fin 2) F, y ∈ GL2NonSplitTorus F E ↔
+      GL2NonSplitTorusHom F E u * y = y * GL2NonSplitTorusHom F E u := by
     intro y
-    rw [← centralizer_gl2NonSplitTorusHom hE hu, Subgroup.mem_centralizer_iff]
+    rw [← centralizer_gl2NonSplitTorusHom hu, Subgroup.mem_centralizer_iff]
     exact ⟨fun h => h _ rfl, fun h z hz => by rw [Set.mem_singleton_iff.mp hz]; exact h⟩
-  have hmemT' : ∀ y : GL (Fin 2) F, y ∈ GL2NonSplitTorus F E hE ↔
-      GL2NonSplitTorusHom F E hE (u ^ Nat.card F) * y =
-        y * GL2NonSplitTorusHom F E hE (u ^ Nat.card F) := by
+  have hmemT' : ∀ y : GL (Fin 2) F, y ∈ GL2NonSplitTorus F E ↔
+      GL2NonSplitTorusHom F E (u ^ Nat.card F) * y =
+        y * GL2NonSplitTorusHom F E (u ^ Nat.card F) := by
     intro y
-    rw [← centralizer_gl2NonSplitTorusHom hE hupow, Subgroup.mem_centralizer_iff]
+    rw [← centralizer_gl2NonSplitTorusHom hupow, Subgroup.mem_centralizer_iff]
     exact ⟨fun h => h _ rfl, fun h z hz => by rw [Set.mem_singleton_iff.mp hz]; exact h⟩
   obtain ⟨c, hc⟩ := isConj_iff.mp
-    ((isConj_gl2NonSplitTorusHom_iff hE (v := u ^ Nat.card F) hu).mpr (Or.inr rfl))
+    ((isConj_gl2NonSplitTorusHom_iff (v := u ^ Nat.card F) hu).mpr (Or.inr rfl))
   refine ⟨c⁻¹, ?_, ?_, ?_⟩
   · rw [inv_inv]
     exact hc
   · intro hmem
-    refine hune (gl2NonSplitTorusHom_injective hE ?_)
+    apply hune
+    apply gl2NonSplitTorusHom_injective (F := F) (E := E)
     rw [← hc]
     have hcomm := (hmemT c⁻¹).mp hmem
-    calc c * GL2NonSplitTorusHom F E hE u * c⁻¹
-        = c * (GL2NonSplitTorusHom F E hE u * c⁻¹) := by group
-      _ = c * (c⁻¹ * GL2NonSplitTorusHom F E hE u) := by rw [hcomm]
-      _ = GL2NonSplitTorusHom F E hE u := by group
+    calc c * GL2NonSplitTorusHom F E u * c⁻¹
+        = c * (GL2NonSplitTorusHom F E u * c⁻¹) := by group
+      _ = c * (c⁻¹ * GL2NonSplitTorusHom F E u) := by rw [hcomm]
+      _ = GL2NonSplitTorusHom F E u := by group
   · intro y hy
     have hcomm := (hmemT y).mp hy
     refine (hmemT' _).mpr ?_
     rw [← hc]
-    calc c * GL2NonSplitTorusHom F E hE u * c⁻¹ * (c * y * c⁻¹)
-        = c * (GL2NonSplitTorusHom F E hE u * y) * c⁻¹ := by group
-      _ = c * (y * GL2NonSplitTorusHom F E hE u) * c⁻¹ := by rw [hcomm]
-      _ = c * y * c⁻¹ * (c * GL2NonSplitTorusHom F E hE u * c⁻¹) := by group
+    calc c * GL2NonSplitTorusHom F E u * c⁻¹ * (c * y * c⁻¹)
+        = c * (GL2NonSplitTorusHom F E u * y) * c⁻¹ := by group
+      _ = c * (y * GL2NonSplitTorusHom F E u) * c⁻¹ := by rw [hcomm]
+      _ = c * y * c⁻¹ * (c * GL2NonSplitTorusHom F E u * c⁻¹) := by group
 
 /-- If conjugation by `x` carries an elliptic element into the torus, the coset of `x` is either
 the identity coset or that of a chosen Frobenius conjugator. -/
 private theorem quotient_eq_one_or_frobenius_conjugator_of_conj_mem
     (hu : (u : E) ∉ Set.range (algebraMap F E)) {d x : GL (Fin 2) F}
-    (hdg : d⁻¹ * GL2NonSplitTorusHom F E hE u * d =
-      GL2NonSplitTorusHom F E hE (u ^ Nat.card F))
-    (hdnorm : ∀ y ∈ GL2NonSplitTorus F E hE, d⁻¹ * y * d ∈ GL2NonSplitTorus F E hE)
-    (hx : x⁻¹ * GL2NonSplitTorusHom F E hE u * x ∈ GL2NonSplitTorus F E hE) :
-    (x : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE) = ((1 : GL (Fin 2) F) : _) ∨
-      (x : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE) = (d : _) := by
-  have hmemT : ∀ y : GL (Fin 2) F, y ∈ GL2NonSplitTorus F E hE ↔
-      GL2NonSplitTorusHom F E hE u * y = y * GL2NonSplitTorusHom F E hE u := by
+    (hdg : d⁻¹ * GL2NonSplitTorusHom F E u * d = GL2NonSplitTorusHom F E (u ^ Nat.card F))
+    (hdnorm : ∀ y ∈ GL2NonSplitTorus F E, d⁻¹ * y * d ∈ GL2NonSplitTorus F E)
+    (hx : x⁻¹ * GL2NonSplitTorusHom F E u * x ∈ GL2NonSplitTorus F E) :
+    (x : GL (Fin 2) F ⧸ GL2NonSplitTorus F E) = ((1 : GL (Fin 2) F) : _) ∨
+      (x : GL (Fin 2) F ⧸ GL2NonSplitTorus F E) = (d : _) := by
+  have hmemT : ∀ y : GL (Fin 2) F, y ∈ GL2NonSplitTorus F E ↔
+      GL2NonSplitTorusHom F E u * y = y * GL2NonSplitTorusHom F E u := by
     intro y
-    rw [← centralizer_gl2NonSplitTorusHom hE hu, Subgroup.mem_centralizer_iff]
+    rw [← centralizer_gl2NonSplitTorusHom hu, Subgroup.mem_centralizer_iff]
     exact ⟨fun h => h _ rfl, fun h z hz => by rw [Set.mem_singleton_iff.mp hz]; exact h⟩
-  obtain ⟨w, hw⟩ := (mem_iff hE).mp hx
-  have hconj : IsConj (GL2NonSplitTorusHom F E hE u) (GL2NonSplitTorusHom F E hE w) :=
+  obtain ⟨w, hw⟩ := mem_iff.mp hx
+  have hconj : IsConj (GL2NonSplitTorusHom F E u) (GL2NonSplitTorusHom F E w) :=
     isConj_iff.mpr ⟨x⁻¹, by rw [inv_inv]; exact hw.symm⟩
-  rcases (isConj_gl2NonSplitTorusHom_iff hE hu).mp hconj with h | h
+  rcases (isConj_gl2NonSplitTorusHom_iff hu).mp hconj with h | h
   · refine Or.inl ?_
     rw [QuotientGroup.eq, mul_one]
     refine Subgroup.inv_mem _ ((hmemT x).mpr ?_)
-    have hxg : x⁻¹ * GL2NonSplitTorusHom F E hE u * x =
-        GL2NonSplitTorusHom F E hE u := by rw [← hw, h]
-    calc GL2NonSplitTorusHom F E hE u * x
-        = x * (x⁻¹ * GL2NonSplitTorusHom F E hE u * x) := by group
-      _ = x * GL2NonSplitTorusHom F E hE u := by rw [hxg]
+    have hxg : x⁻¹ * GL2NonSplitTorusHom F E u * x =
+        GL2NonSplitTorusHom F E u := by rw [← hw, h]
+    calc GL2NonSplitTorusHom F E u * x
+        = x * (x⁻¹ * GL2NonSplitTorusHom F E u * x) := by group
+      _ = x * GL2NonSplitTorusHom F E u := by rw [hxg]
   · refine Or.inr ?_
     rw [QuotientGroup.eq]
-    have hxd : x⁻¹ * GL2NonSplitTorusHom F E hE u * x =
-        d⁻¹ * GL2NonSplitTorusHom F E hE u * d := by rw [hdg, ← hw, h]
-    have hmem : d * x⁻¹ ∈ GL2NonSplitTorus F E hE := by
+    have hxd : x⁻¹ * GL2NonSplitTorusHom F E u * x =
+        d⁻¹ * GL2NonSplitTorusHom F E u * d := by rw [hdg, ← hw, h]
+    have hmem : d * x⁻¹ ∈ GL2NonSplitTorus F E := by
       refine (hmemT _).mpr ?_
-      calc GL2NonSplitTorusHom F E hE u * (d * x⁻¹)
-          = d * (d⁻¹ * GL2NonSplitTorusHom F E hE u * d) * d⁻¹ * (d * x⁻¹) := by group
-        _ = d * (x⁻¹ * GL2NonSplitTorusHom F E hE u * x) * d⁻¹ * (d * x⁻¹) := by
+      calc GL2NonSplitTorusHom F E u * (d * x⁻¹)
+          = d * (d⁻¹ * GL2NonSplitTorusHom F E u * d) * d⁻¹ * (d * x⁻¹) := by group
+        _ = d * (x⁻¹ * GL2NonSplitTorusHom F E u * x) * d⁻¹ * (d * x⁻¹) := by
           rw [hxd]
-        _ = d * x⁻¹ * GL2NonSplitTorusHom F E hE u := by group
+        _ = d * x⁻¹ * GL2NonSplitTorusHom F E u := by group
     have hconjmem := hdnorm _ hmem
     have hrw : d⁻¹ * (d * x⁻¹) * d = x⁻¹ * d := by group
     rwa [hrw] at hconjmem
@@ -273,44 +273,44 @@ The two cosets are pinned by two facts: the elements of the torus conjugate to `
 elliptic element is the whole torus
 (`TauCeti.GL2NonSplitTorus.centralizer_gl2NonSplitTorusHom`), so each of the two accounts for a
 single coset. -/
-theorem indClassFun_gl2NonSplitTorusHom (f : GL2NonSplitTorus F E hE → k)
+theorem indClassFun_gl2NonSplitTorusHom (f : GL2NonSplitTorus F E → k)
     (hu : (u : E) ∉ Set.range (algebraMap F E)) :
-    indClassFun (GL2NonSplitTorus F E hE) f (GL2NonSplitTorusHom F E hE u) =
-      f (unitsEquiv hE u) + f (unitsEquiv hE (u ^ Nat.card F)) := by
+    indClassFun (GL2NonSplitTorus F E) f (GL2NonSplitTorusHom F E u) =
+      f (unitsEquiv u) + f (unitsEquiv (u ^ Nat.card F)) := by
   classical
-  have hgmem : GL2NonSplitTorusHom F E hE u ∈ GL2NonSplitTorus F E hE :=
-    (mem_iff hE).mpr ⟨u, rfl⟩
-  have hgmem' : GL2NonSplitTorusHom F E hE (u ^ Nat.card F) ∈ GL2NonSplitTorus F E hE :=
-    (mem_iff hE).mpr ⟨_, rfl⟩
-  obtain ⟨d, hdg, hdT, hdnorm⟩ := exists_frobenius_conjugator_normalizes hE hu
-  have hne : ((1 : GL (Fin 2) F) : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE) ≠
-      (d : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE) := by
+  have hgmem : GL2NonSplitTorusHom F E u ∈ GL2NonSplitTorus F E :=
+    mem_iff.mpr ⟨u, rfl⟩
+  have hgmem' : GL2NonSplitTorusHom F E (u ^ Nat.card F) ∈ GL2NonSplitTorus F E :=
+    mem_iff.mpr ⟨_, rfl⟩
+  obtain ⟨d, hdg, hdT, hdnorm⟩ := exists_frobenius_conjugator_normalizes hu
+  have hne : ((1 : GL (Fin 2) F) : GL (Fin 2) F ⧸ GL2NonSplitTorus F E) ≠
+      (d : GL (Fin 2) F ⧸ GL2NonSplitTorus F E) := by
     intro h
     rw [QuotientGroup.eq, inv_one, one_mul] at h
     exact hdT h
   -- the torus is abelian, so every function on it is invariant under conjugation
-  have hcomm : ∀ y z : (GL2NonSplitTorus F E hE), z * y * z⁻¹ = y := by
+  have hcomm : ∀ y z : (GL2NonSplitTorus F E), z * y * z⁻¹ = y := by
     intro y z
-    obtain ⟨p, hp⟩ := (mem_iff hE).mp y.2
-    obtain ⟨r, hr⟩ := (mem_iff hE).mp z.2
+    obtain ⟨p, hp⟩ := mem_iff.mp y.2
+    obtain ⟨r, hr⟩ := mem_iff.mp z.2
     refine Subtype.ext ?_
     rw [Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_inv, ← hp, ← hr, ← map_inv, ← map_mul,
       ← map_mul, mul_comm r p, mul_assoc, mul_inv_cancel, mul_one]
   rw [indClassFun_eq_sum_of_smul_eq_self_mem f _
-    ({((1 : GL (Fin 2) F) : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE),
-      (d : GL (Fin 2) F ⧸ GL2NonSplitTorus F E hE)} : Finset _) ?_, Finset.sum_pair hne]
+    ({((1 : GL (Fin 2) F) : GL (Fin 2) F ⧸ GL2NonSplitTorus F E),
+      (d : GL (Fin 2) F ⧸ GL2NonSplitTorus F E)} : Finset _) ?_, Finset.sum_pair hne]
   · congr 1
     · rw [indTerm_eq_of_mk_eq_of_conj (fun y z => congrArg f (hcomm y z)) _ _
           (1 : GL (Fin 2) F) (QuotientGroup.out_eq' _), indTerm_one,
         dite_eq_left hgmem]
-      exact congrArg f (Subtype.ext (coe_unitsEquiv_apply hE u).symm)
+      exact congrArg f (Subtype.ext (coe_unitsEquiv_apply u).symm)
     · rw [indTerm_eq_of_mk_eq_of_conj (fun y z => congrArg f (hcomm y z)) _ _ d
           (QuotientGroup.out_eq' _), indTerm_apply, hdg,
         dite_eq_left hgmem']
-      exact congrArg f (Subtype.ext (coe_unitsEquiv_apply hE _).symm)
+      exact congrArg f (Subtype.ext (coe_unitsEquiv_apply _).symm)
   · intro t ht
     rw [← QuotientGroup.out_eq' t] at ht ⊢
-    rcases quotient_eq_one_or_frobenius_conjugator_of_conj_mem hE hu hdg hdnorm
+    rcases quotient_eq_one_or_frobenius_conjugator_of_conj_mem hu hdg hdnorm
       ((smul_quotientGroup_mk_eq_self_iff _ _ _).mp ht) with h | h <;> simp [h]
 
 end Elliptic
@@ -322,32 +322,32 @@ end GL2NonSplitTorus
 section Representation
 
 variable (F : Type*) [Field F] (E : Type*) [Field E] [Algebra F E]
-  (hE : Module.finrank F E = 2)
+  [Algebra.IsQuadraticExtension F E]
 
 /-- **The line of a character of `Eˣ`, as a representation of the non-split torus**: transport
 `θ` along `TauCeti.GL2NonSplitTorus.unitsEquiv`. -/
-noncomputable def GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) : FDRep ℂ (GL2NonSplitTorus F E hE) :=
-  FDRep.ofLinearCharacter (θ.comp (GL2NonSplitTorus.unitsEquiv hE).symm.toMonoidHom)
+noncomputable def GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) : FDRep ℂ (GL2NonSplitTorus F E) :=
+  FDRep.ofLinearCharacter (θ.comp GL2NonSplitTorus.unitsEquiv.symm.toMonoidHom)
 
 /-- The defining equation of the torus line: it is the line of the linear character `θ` read
 through `TauCeti.GL2NonSplitTorus.unitsEquiv`. -/
 theorem GL2NonSplitTorusRep_def (θ : Eˣ →* ℂˣ) :
-    GL2NonSplitTorusRep F E hE θ =
-      FDRep.ofLinearCharacter (θ.comp (GL2NonSplitTorus.unitsEquiv hE).symm.toMonoidHom) :=
+    GL2NonSplitTorusRep F E θ =
+      FDRep.ofLinearCharacter (θ.comp GL2NonSplitTorus.unitsEquiv.symm.toMonoidHom) :=
   (rfl)
 
 /-- The torus line is one-dimensional. -/
 @[simp]
 theorem finrank_GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) :
-    Module.finrank ℂ (GL2NonSplitTorusRep F E hE θ) = 1 := by
+    Module.finrank ℂ (GL2NonSplitTorusRep F E θ) = 1 := by
   rw [GL2NonSplitTorusRep, FDRep.finrank_ofLinearCharacter]
 
 /-- The character of the torus line is `θ`, read through
 `TauCeti.GL2NonSplitTorus.unitsEquiv`. -/
 @[simp]
-theorem character_GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) (g : GL2NonSplitTorus F E hE) :
-    (GL2NonSplitTorusRep F E hE θ).character g =
-      (θ ((GL2NonSplitTorus.unitsEquiv hE).symm g) : ℂ) :=
+theorem character_GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) (g : GL2NonSplitTorus F E) :
+    (GL2NonSplitTorusRep F E θ).character g =
+      (θ (GL2NonSplitTorus.unitsEquiv.symm g) : ℂ) :=
   FDRep.char_ofLinearCharacter _ g
 
 variable [Finite F]
@@ -355,18 +355,18 @@ variable [Finite F]
 /-- **The elliptic induction** `Ind_{Eˣ}^{GL₂(F)} θ`, the representation induced from the
 non-split torus by a character `θ` of `Eˣ`. -/
 noncomputable def GL2EllipticInduction (θ : Eˣ →* ℂˣ) : FDRep ℂ (GL (Fin 2) F) :=
-  indFDRep (GL2NonSplitTorusRep F E hE θ)
+  indFDRep (GL2NonSplitTorusRep F E θ)
 
 /-- The defining equation of the elliptic induction: it is induced from the non-split torus by
 the torus line of `θ`. -/
 theorem GL2EllipticInduction_def (θ : Eˣ →* ℂˣ) :
-    GL2EllipticInduction F E hE θ = indFDRep (GL2NonSplitTorusRep F E hE θ) :=
+    GL2EllipticInduction F E θ = indFDRep (GL2NonSplitTorusRep F E θ) :=
   (rfl)
 
 /-- The elliptic induction has dimension `q (q - 1)`, the index of the torus. -/
 @[simp]
 theorem finrank_GL2EllipticInduction (θ : Eˣ →* ℂˣ) :
-    Module.finrank ℂ (GL2EllipticInduction F E hE θ) = Nat.card F * (Nat.card F - 1) := by
+    Module.finrank ℂ (GL2EllipticInduction F E θ) = Nat.card F * (Nat.card F - 1) := by
   rw [GL2EllipticInduction, GL2NonSplitTorusRep, finrank_indFDRep_ofLinearCharacter,
     GL2NonSplitTorus.index_eq]
 
@@ -374,11 +374,11 @@ theorem finrank_GL2EllipticInduction (θ : Eˣ →* ℂˣ) :
 contributes the value of `θ` at the unchanged scalar, which comes from `a : Fˣ`. -/
 @[simp]
 theorem character_GL2EllipticInduction_scalar (θ : Eˣ →* ℂˣ) (a : Fˣ) :
-    (GL2EllipticInduction F E hE θ).character (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
+    (GL2EllipticInduction F E θ).character (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       (Nat.card F : ℂ) * ((Nat.card F : ℂ) - 1) *
         θ (Units.map (algebraMap F E : F →* E) a) := by
   rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character,
-    GL2NonSplitTorus.indClassFun_scalar hE _ a, character_GL2NonSplitTorusRep,
+    GL2NonSplitTorus.indClassFun_scalar _ a, character_GL2NonSplitTorusRep,
     GL2NonSplitTorus.unitsEquiv_symm_scalar, GL2NonSplitTorus.index_eq, nsmul_eq_mul, Nat.cast_mul,
     Nat.cast_sub Nat.card_pos]
   ring
@@ -386,26 +386,26 @@ theorem character_GL2EllipticInduction_scalar (θ : Eˣ →* ℂˣ) (a : Fˣ) :
 /-- **The elliptic induced character vanishes on split regular semisimple elements.** -/
 @[simp]
 theorem character_GL2EllipticInduction_diagGL (θ : Eˣ →* ℂˣ) {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
-    (GL2EllipticInduction F E hE θ).character (diagGL t) = 0 := by
+    (GL2EllipticInduction F E θ).character (diagGL t) = 0 := by
   rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character]
-  exact GL2NonSplitTorus.indClassFun_diagGL hE _ ht
+  exact GL2NonSplitTorus.indClassFun_diagGL _ ht
 
 /-- **The elliptic induced character vanishes on the non-semisimple classes.** -/
 @[simp]
 theorem character_GL2EllipticInduction_jordanGL (θ : Eˣ →* ℂˣ) (a : Fˣ) {b : F} (hb : b ≠ 0) :
-    (GL2EllipticInduction F E hE θ).character (jordanGL a b) = 0 := by
+    (GL2EllipticInduction F E θ).character (jordanGL a b) = 0 := by
   rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character]
-  exact GL2NonSplitTorus.indClassFun_jordanGL hE _ a hb
+  exact GL2NonSplitTorus.indClassFun_jordanGL _ a hb
 
 /-- **The elliptic induced character at an elliptic element** is `θ(u) + θ(u^q)`: the two
 contributing cosets carry the two torus elements conjugate to it. -/
 @[simp]
 theorem character_GL2EllipticInduction_gl2NonSplitTorusHom (θ : Eˣ →* ℂˣ) {u : Eˣ}
     (hu : (u : E) ∉ Set.range (algebraMap F E)) :
-    (GL2EllipticInduction F E hE θ).character (GL2NonSplitTorusHom F E hE u) =
+    (GL2EllipticInduction F E θ).character (GL2NonSplitTorusHom F E u) =
       (θ u : ℂ) + θ (u ^ Nat.card F) := by
   rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character,
-    GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom hE _ hu, character_GL2NonSplitTorusRep,
+    GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom _ hu, character_GL2NonSplitTorusRep,
     character_GL2NonSplitTorusRep, MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply]
 
 end Representation

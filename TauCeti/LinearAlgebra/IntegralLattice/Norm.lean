@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
 
@@ -23,6 +24,7 @@ the integral norm on the carrier.
 
 * `TauCeti.IntegralLattice.norm`: the rational quadratic form on ambient vectors.
 * `TauCeti.IntegralLattice.integralNorm`: the induced integer quadratic form on lattice vectors.
+* `TauCeti.IntegralLattice.normParity`: the integral norm modulo two as an additive character.
 * `TauCeti.IntegralLattice.vectorsOfNorm`: the lattice vectors of a specified rational norm.
 
 ## Main results
@@ -170,6 +172,21 @@ theorem integralNorm_add (L : IntegralLattice V) (x y : L) :
   rw [QuadraticMap.map_add L.integralNorm x y, integralNorm,
     LinearMap.BilinMap.polar_toQuadraticMap, L.isSymm_integralForm.eq y x]
   ring
+
+/-- The norm modulo two, as an additive character of the carrier. -/
+noncomputable def normParity (L : IntegralLattice V) : L →+ ZMod 2 where
+  toFun x := (L.integralNorm x : ZMod 2)
+  map_zero' := by simp
+  map_add' x y := by
+    rw [L.integralNorm_add]
+    push_cast
+    simp only [show (2 : ZMod 2) = 0 by decide, zero_mul, add_zero]
+
+/-- The norm parity character evaluates to the norm modulo two. -/
+@[simp]
+theorem normParity_apply (L : IntegralLattice V) (x : L) :
+    L.normParity x = (L.integralNorm x : ZMod 2) :=
+  (rfl)
 
 /-- Integral polarization for a difference. -/
 theorem integralNorm_sub (L : IntegralLattice V) (x y : L) :

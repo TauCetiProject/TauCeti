@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
 module
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.MinimalPresentation
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Basic
 
 /-!
 # The standard dyadic Demushkin presentation `D₀ = ⟨A, S, Y ∣ A²S⁴(S,Y)⟩`
@@ -28,7 +28,8 @@ continuous homomorphism out of `D₀` is determined by its values on `A`, `S` an
 The presentation is moreover minimal: the relator is a product of two squares and a commutator,
 so it lies in the Frattini subgroup of the free pro-`2` group on three generators, and therefore
 `D₀` has topological generator rank exactly `3`. This is the rank `n = 3` of the Demushkin
-invariants of `D₀`.
+invariants of `D₀`: the relator is the `q = 2`, odd-rank normal-form word
+`TauCeti.demushkinWordTwoOdd` with `n = 3` and `f = 2`.
 
 ## Main definitions
 
@@ -42,6 +43,8 @@ invariants of `D₀`.
 
 ## Main results
 
+* `TauCeti.d0Relator_eq_demushkinWordTwoOdd`: the relator is the odd-rank normal-form word at
+  `n = 3`, `f = 2`.
 * `TauCeti.d0_relation`: the marked generators satisfy `A²S⁴(S,Y) = 1`.
 * `TauCeti.d0_hom_ext`: a continuous homomorphism out of `D₀` is determined by its values on
   `A`, `S` and `Y`.
@@ -80,6 +83,12 @@ theorem d0Relator_def :
     d0Relator = freeProP.of 0 ^ 2 * freeProP.of 1 ^ 4 *
       ((freeProP.of 1)⁻¹ * (freeProP.of 2)⁻¹ * freeProP.of 1 * freeProP.of 2) :=
   (rfl)
+
+/-- The relator `A²S⁴(S,Y)` is the `q = 2`, `n` odd normal-form word with `n = 3` and `f = 2`,
+read on the free generators. -/
+theorem d0Relator_eq_demushkinWordTwoOdd :
+    d0Relator = demushkinWordTwoOdd 2 3 (freeProPGen 2 3) := by
+  simp [d0Relator_def, demushkinWordTwoOdd_def, labuteComm_def, freeProPGen_of_lt, List.range_succ]
 
 /-- **`D₀ = ⟨A, S, Y ∣ A²S⁴(S,Y)⟩`**, the standard dyadic one-relator pro-`2` group, presented on
 three generators by the single relator `d0Relator`. -/
@@ -258,15 +267,8 @@ theorem isProP_demushkinD0 : IsProP 2 demushkinD0 :=
 /-- The marked generators `A`, `S`, `Y` topologically generate `D₀`. -/
 theorem d0_topologicallyGenerates :
     (Subgroup.closure ({d0A, d0S, d0Y} : Set demushkinD0)).topologicalClosure = ⊤ := by
-  have h := topologicalClosure_closure_image_eq_top
-    (freeProP.topologicalClosure_closure_range_of_eq_top 2 (Fin 3))
-    (f := (presentedProP.mk 2 {d0Relator}).toMonoidHom)
-    (presentedProP.mk 2 {d0Relator}).continuous
-    (presentedProP.mk_surjective 2 {d0Relator}).denseRange
-  have hof : ⇑(presentedProP.mk 2 {d0Relator}).toMonoidHom ∘ freeProP.of =
-      presentedProP.of 2 {d0Relator} :=
-    funext fun i ↦ presentedProP.mk_of 2 {d0Relator} i
-  rwa [← Set.range_comp, hof, range_presentedProP_of_d0Relator] at h
+  rw [← range_presentedProP_of_d0Relator]
+  exact presentedProP.topologicalClosure_closure_range_of_eq_top
 
 /-- `D₀` is topologically finitely generated, by its three marked generators. -/
 theorem isTopologicallyFinitelyGenerated_demushkinD0 :
@@ -274,16 +276,10 @@ theorem isTopologicallyFinitelyGenerated_demushkinD0 :
   (Set.toFinite {d0A, d0S, d0Y}).isTopologicallyFinitelyGenerated d0_topologicallyGenerates
 
 /-- The relator `A²S⁴(S,Y)` lies in the Frattini subgroup of the free pro-`2` group on three
-generators: `A²` and `S⁴ = (S²)²` are squares and `(S,Y) = ⁅S⁻¹, Y⁻¹⁆` is a commutator. -/
+generators, being the `q = 2`, `n` odd normal-form word with `f = 2 ≥ 1`. -/
 theorem d0Relator_mem_proPFrattini : d0Relator ∈ proPFrattini 2 (freeProP 2 (Fin 3)) := by
-  refine mul_mem (mul_mem (pow_mem_proPFrattini _) ?_) ?_
-  · have h : (freeProP.of (1 : Fin 3) : freeProP 2 (Fin 3)) ^ 4 = (freeProP.of 1 ^ 2) ^ 2 := by
-      rw [← pow_mul]
-    rw [h]
-    exact pow_mem_proPFrattini _
-  · simpa [commutatorElement_def] using commutator_le_proPFrattini Nat.prime_two
-      (Subgroup.commutator_mem_commutator (Subgroup.mem_top (freeProP.of (1 : Fin 3))⁻¹)
-        (Subgroup.mem_top (freeProP.of (2 : Fin 3))⁻¹))
+  rw [d0Relator_eq_demushkinWordTwoOdd]
+  exact demushkinWordTwoOdd_mem_proPFrattini two_pos 3 _
 
 /-- **`D₀` has topological generator rank `3`**: its presentation on `A`, `S`, `Y` is minimal,
 because the relator lies in the Frattini subgroup of the free pro-`2` group. -/

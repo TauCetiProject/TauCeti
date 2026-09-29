@@ -36,6 +36,9 @@ import Mathlib.Tactic.NoncommRing
   otherwise.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
+* `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
+  over a pair of finite types, to the values of its summand at the two points where it is
+  supported, and at the four cells of a rectangle.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
@@ -247,6 +250,42 @@ theorem sum_Icc_neg_one_pow_card_sub_card_right {α R : Type*} [DecidableEq α] 
     exact hsign _ _
   rw [sum_congr rfl hterm, ← mul_sum, sum_Icc_neg_one_pow_card_sub_card_left]
   split_ifs with h <;> simp [h]
+
+/-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
+of its values at those two points. -/
+theorem sum_eq_two {α M : Type*} [Fintype α] [AddCommMonoid M] (f : α → M) (a b : α)
+    (hab : a ≠ b) (h : ∀ x, x ≠ a → x ≠ b → f x = 0) : ∑ x, f x = f a + f b := by
+  classical
+  -- The summand vanishes away from the pair `a`, `b`, so the sum over the whole type is the sum
+  -- over the two-point finset, which `Finset.sum_pair` evaluates.
+  calc (∑ x, f x) = ∑ x ∈ ({a, b} : Finset α), f x := by
+        refine (Finset.sum_subset (s₁ := ({a, b} : Finset α)) (s₂ := (Finset.univ : Finset α))
+          (fun x _ => Finset.mem_univ x) ?_).symm
+        intro x _ hx
+        have hx' : x ≠ a ∧ x ≠ b := by simpa using hx
+        exact h x hx'.1 hx'.2
+    _ = f a + f b := Finset.sum_pair hab
+
+/-- The double sum over a pair of finite types of a function that vanishes outside the four cells
+of the rectangle `i`, `i'` by `j`, `j'` is the sum of its four values there. -/
+theorem sum_eq_four {ι κ M : Type*} [Fintype ι] [Fintype κ] [AddCommMonoid M] (g : ι → κ → M)
+    (i i' : ι) (j j' : κ) (hi'ne : i ≠ i') (hj'ne : j ≠ j')
+    (h0 : ∀ x y, ¬(x = i ∧ y = j) → ¬(x = i ∧ y = j') → ¬(x = i' ∧ y = j)
+      → ¬(x = i' ∧ y = j') → g x y = 0) :
+    (∑ x, ∑ y, g x y) = g i j + g i j' + g i' j + g i' j' := by
+  classical
+  have hzero (x : ι) (hx : x ≠ i) (hx' : x ≠ i') : (∑ y, g x y) = 0 := by
+    apply Finset.sum_eq_zero
+    intro y _
+    exact h0 x y (fun h => hx h.1) (fun h => hx h.1) (fun h => hx' h.1) (fun h => hx' h.1)
+  calc (∑ x, ∑ y, g x y) = (∑ y, g i y) + (∑ y, g i' y) :=
+        sum_eq_two (fun x => ∑ y, g x y) i i' hi'ne (fun x hx hx' => hzero x hx hx')
+    _ = (g i j + g i j') + (g i' j + g i' j') := by
+        rw [sum_eq_two (g i) j j' hj'ne (fun y hyj hyj' => h0 i y (fun h => hyj h.2)
+              (fun h => hyj' h.2) (fun h => hi'ne h.1) (fun h => hi'ne h.1)),
+            sum_eq_two (g i') j j' hj'ne (fun y hyj hyj' => h0 i' y (fun h => hi'ne h.1.symm)
+              (fun h => hi'ne h.1.symm) (fun h => hyj h.2) (fun h => hyj' h.2))]
+    _ = g i j + g i j' + g i' j + g i' j' := by simp only [add_assoc]
 
 end Finset
 

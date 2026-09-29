@@ -36,6 +36,37 @@ instance homogeneousSubmodule_moduleFree {σ R : Type*} [CommSemiring R]
   rw [homogeneousSubmodule_eq_finsupp_supported]
   exact Module.Free.of_basis (basisRestrictSupport R {d : σ →₀ ℕ | d.degree = n})
 
+/-- The restricted-support basis vector is the monomial indexed by its support element. -/
+@[simp]
+theorem coe_basisRestrictSupport_apply {σ R : Type*} [CommSemiring R]
+    (s : Set (σ →₀ ℕ)) (m : s) :
+    ((basisRestrictSupport R s m : restrictSupport R s) : MvPolynomial σ R) =
+      monomial m.1 1 := by
+  classical
+  rw [← (basisRestrictSupport R s).repr_symm_single_one m]
+  -- Mathlib defines this basis through `AddMonoidAlgebra.supportedEquivFinsupp`.
+  -- Its first equivalence wraps `Finsupp.supportedEquivFinsupp` in `ofCoeff`,
+  -- so we expose that representation before simplifying the single basis vector.
+  change (((AddMonoidAlgebra.supportedEquivFinsupp (R := R) (S := R) s).symm
+    (Finsupp.single m (1 : R)) : restrictSupport R s) : MvPolynomial σ R) = monomial m.1 1
+  simp only [AddMonoidAlgebra.supportedEquivFinsupp, LinearEquiv.symm_trans_apply]
+  simp [AddMonoidAlgebra.ofCoeff_single, single_eq_monomial]
+
+/-- The monomial basis of a homogeneous component, indexed by exponent vectors of its degree. -/
+noncomputable def homogeneousMonomialBasis {σ R : Type*} [CommSemiring R] (n : ℕ) :
+    Module.Basis {s : σ →₀ ℕ // s.degree = n} R (homogeneousSubmodule σ R n) :=
+  (basisRestrictSupport R {s : σ →₀ ℕ | s.degree = n}).map
+    (LinearEquiv.ofEq _ _ (homogeneousSubmodule_eq_finsupp_supported σ R n).symm)
+
+/-- A homogeneous monomial basis vector is the corresponding monomial. -/
+@[simp]
+theorem coe_homogeneousMonomialBasis {σ R : Type*} [CommSemiring R] (n : ℕ)
+    (s : {s : σ →₀ ℕ // s.degree = n}) :
+    ((homogeneousMonomialBasis (R := R) n s : homogeneousSubmodule σ R n) :
+      MvPolynomial σ R) = monomial s.1 1 := by
+  simp only [homogeneousMonomialBasis, Module.Basis.map_apply]
+  exact coe_basisRestrictSupport_apply {d : σ →₀ ℕ | d.degree = n} s
+
 /-- The dimension of a homogeneous component is the number of exponent vectors of its degree. -/
 theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]
     [StrongRankCondition R] (n : ℕ) :

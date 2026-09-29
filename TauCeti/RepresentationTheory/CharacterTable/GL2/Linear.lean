@@ -196,11 +196,11 @@ variable {F : Type u} [Field F]
 
 section Elliptic
 
-variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- The linear character at a non-split-torus element is the character applied to its field norm. -/
 theorem character_GL2Linear_gl2NonSplitTorusHom (α : Fˣ →* ℂˣ) (x : Eˣ) :
-    (GL2Linear F α).character (GL2NonSplitTorusHom F E hE x) =
+    (GL2Linear F α).character (GL2NonSplitTorusHom F E x) =
       (α (Algebra.normUnits F x) : ℂ) := by
   rw [character_GL2Linear, GL2NonSplitTorus.det_gl2NonSplitTorusHom]
 
@@ -286,16 +286,16 @@ theorem character_GL2SteinbergTwist_jordanGL (α : Fˣ →* ℂˣ) (a : Fˣ) {b 
 
 section Elliptic
 
-variable {E : Type*} [Field E] [Algebra F E] (hE : Module.finrank F E = 2)
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- The Steinberg twist at an elliptic element is the negative of `α` at its field norm. -/
 theorem character_GL2SteinbergTwist_gl2NonSplitTorusHom (α : Fˣ →* ℂˣ) {x : Eˣ}
     (hx : (x : E) ∉ Set.range (algebraMap F E)) :
-    (GL2SteinbergTwist F α).character (GL2NonSplitTorusHom F E hE x) =
+    (GL2SteinbergTwist F α).character (GL2NonSplitTorusHom F E x) =
       -(α (Algebra.normUnits F x) : ℂ) := by
   rw [character_GL2SteinbergTwist,
-    GL2NonSplitTorus.det_gl2NonSplitTorusHom hE x,
-    character_GL2Steinberg_gl2NonSplitTorusHom hE hx]
+    GL2NonSplitTorus.det_gl2NonSplitTorusHom x,
+    character_GL2Steinberg_gl2NonSplitTorusHom hx]
   ring
 
 end Elliptic

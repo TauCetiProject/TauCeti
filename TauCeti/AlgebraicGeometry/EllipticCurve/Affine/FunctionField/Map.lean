@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRingMap
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 
 /-!
 # The function field along a homomorphism of the base field

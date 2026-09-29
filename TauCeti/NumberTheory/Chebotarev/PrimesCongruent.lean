@@ -64,6 +64,16 @@ variable (F : Type*) [Field F] [NumberField F] (n : ℕ) [NeZero n]
 
 variable [IsGalois ℚ F]
 
+/-- Away from the level, a prime of `𝓞 ℚ` lies in the cyclotomic Frobenius fibre tagged by a
+unit `a` modulo `n` exactly when its norm is congruent to `a` modulo `n`. -/
+theorem mem_frobeniusPrimeSet_galEquivZMod_symm_iff {𝔭 : HeightOneSpectrum (𝓞 ℚ)}
+    (hm : (n : 𝓞 ℚ) ∉ 𝔭.asIdeal) (a : (ZMod n)ˣ) :
+    𝔭 ∈ frobeniusPrimeSet ℚ F (ConjClasses.mk ((Rat.galEquivZMod n F).symm a)) ↔
+      (Ideal.absNorm 𝔭.asIdeal : ZMod n) = a := by
+  rw [mem_frobeniusPrimeSet_mk_iff_autToPow_eq_absNorm (zeta_spec n ℚ F) _ hm,
+    (zeta_spec n ℚ F).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
+    ZMod.unitsMap_self, MonoidHom.id_apply, MulEquiv.apply_symm_apply, eq_comm]
+
 /-- At a nonzero level not congruent to two modulo four, a cyclotomic Frobenius fibre over
 `ℚ` is exactly an invertible arithmetic progression. Primes dividing the level belong to neither
 side. -/
@@ -89,10 +99,7 @@ theorem frobeniusPrimeSet_galEquivZMod_symm_eq_setOf_natCast_absNorm_eq (hn : n 
     have hp := Rat.HeightOneSpectrum.prime_natGenerator 𝔭
     rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hcop hdvd
     exact (hp.coprime_iff_not_dvd.mp hcop) hdvd
-  · rw [mem_frobeniusPrimeSet_mk_iff_autToPow_eq_absNorm (zeta_spec n ℚ F) _ hm,
-      (zeta_spec n ℚ F).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
-      ZMod.unitsMap_self, MonoidHom.id_apply, MulEquiv.apply_symm_apply]
-    simp only [Set.mem_ofPred_eq, eq_comm]
+  · rw [mem_frobeniusPrimeSet_galEquivZMod_symm_iff F n hm, Set.mem_ofPred_eq]
 
 /-- At every nonzero level, the cyclotomic Frobenius fibre differs from its arithmetic
 progression at only finitely many primes. This includes levels congruent to two modulo four,
@@ -106,12 +113,9 @@ theorem finite_symmDiff_frobeniusPrimeSet_galEquivZMod_symm (a : (ZMod n)ˣ) :
   refine (Ideal.finite_factors hn).subset fun 𝔭 h𝔭 ↦ ?_
   rw [Set.mem_ofPred_eq, Ideal.dvd_span_singleton]
   by_contra hm
-  have hiff := mem_frobeniusPrimeSet_mk_iff_autToPow_eq_absNorm
-    (zeta_spec n ℚ F) ((Rat.galEquivZMod n F).symm a) hm
-  rw [(zeta_spec n ℚ F).autToPow_eq_unitsMap_galEquivZMod dvd_rfl,
-    ZMod.unitsMap_self, MonoidHom.id_apply, MulEquiv.apply_symm_apply] at hiff
+  have hiff := mem_frobeniusPrimeSet_galEquivZMod_symm_iff F n hm a
   rcases h𝔭 with ⟨hmem, hnot⟩ | ⟨hmem, hnot⟩
-  · exact hnot (hiff.mp hmem).symm
-  · exact hnot (hiff.mpr hmem.symm)
+  · exact hnot (hiff.mp hmem)
+  · exact hnot (hiff.mpr hmem)
 
 end NumberField.Chebotarev

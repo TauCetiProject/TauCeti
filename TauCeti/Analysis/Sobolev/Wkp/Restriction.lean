@@ -69,15 +69,11 @@ private theorem exists_restrict_step (hU : U ≤ Omega) (k : ℕ)
             (by simpa only [one_smul] using
               Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
       simpa only [one_mul] using r.le_of_opNorm_le hop (iteratedGradient (k + 1) u)
-    have hs {W : Opens E} (w : Wkp mu W p (k + 2)) :
-        ‖w‖ ^ 2 = ‖lowerOrder (k + 1) w‖ ^ 2 + ‖iteratedGradient (k + 1) w‖ ^ 2 := by
-      simpa only [lowerOrder_succ, iteratedGradient_succ] using
-        WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
-          (sobolevStage (mu := mu) (Omega := W) (p := p) k).iteratedGradientL w
-    have ht := hs u
+    have ht := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
     have hn := sq_le_sq₀ (norm_nonneg v) (norm_nonneg _) |>.2 hnorm
     have hd := sq_le_sq₀ (norm_nonneg D) (norm_nonneg _) |>.2 hDn
-    have heq := hs (mk k v D hweak)
+    have heq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k
+      (mk k v D hweak)
     simp only [lowerOrder_mk, iteratedGradient_mk] at heq
     nlinarith [norm_nonneg (mk k v D hweak), norm_nonneg u]
 
@@ -143,14 +139,10 @@ def restrictL (hU : U ≤ Omega) (k : ℕ) : Wkp mu Omega p k →L[ℝ] Wkp mu U
     { toFun := restrictAux hU k
       map_add' := fun u v => by
         apply ext k
-        simp only [← valueL_apply, map_add]
-        simp only [valueL_apply, value_restrictAux]
-        simp only [← valueL_apply, map_add]
+        simp only [value_add, value_restrictAux, map_add]
       map_smul' := fun c u => by
         apply ext k
-        simp only [← valueL_apply, map_smul, RingHom.id_apply]
-        simp only [valueL_apply, value_restrictAux]
-        simp only [← valueL_apply, map_smul] }
+        simp only [value_smul, value_restrictAux, map_smul, RingHom.id_apply] }
     1 (fun u => by
       simpa only [LinearMap.coe_mk, AddHom.coe_mk, one_mul] using norm_restrictAux_le hU k u)
 

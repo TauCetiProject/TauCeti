@@ -148,12 +148,9 @@ private theorem quotientSubobject_ker_eq_mk
     Subobject.mk (quotientSpecι H (HopfIdeal.kerOfSurjective f.hom hf)) = Subobject.mk i := by
   let I : HopfIdeal R H := HopfIdeal.kerOfSurjective f.hom hf
   let F := AlgebraicGeometry.hopfSpec (CommRingCat.of R)
-  let qIso : quotient H I ≅ K :=
-    _root_.CommHopfAlgCat.isoMk (HopfIdeal.kerLiftBialgEquiv f.hom hf) ≪≫
-      _root_.CommHopfAlgCat.ofIsoSelf K
-  have hq : mkQuotient H I ≫ qIso.hom = f := by
-    ext x
-    exact HopfIdeal.kerLiftBialgHom_mk f.hom hf x
+  let qIso : quotient H I ≅ K := quotientKerOfSurjectiveIso f hf
+  have hq : mkQuotient H I ≫ qIso.hom = f :=
+    mkQuotient_comp_quotientKerOfSurjectiveIso_hom f hf
   have hqInv : f ≫ qIso.inv = mkQuotient H I := by
     rw [← hq]
     simp

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RamificationInertia.Basic
 public import Mathlib.NumberTheory.RamificationInertia.Inertia
+import Mathlib.NumberTheory.RamificationInertia.Galois
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 public import Mathlib.Algebra.Algebra.Equiv
 
@@ -221,6 +222,18 @@ end NumberField
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {p : ℕ}
+
+/-- **A ramified prime of a quadratic field has ramification index `2`**, in the form
+`ramificationIdxIn` that names no prime above `p`: the quadratic field is Galois over `ℚ`, so
+the ramification index is the same at every prime above `p`. -/
+theorem ramificationIdxIn_eq_two_of_mem_ramifiedPrimes (hK : finrank ℚ K = 2)
+    (hmem : p ∈ _root_.NumberField.ramifiedPrimes K) :
+    (span {(p : ℤ)} : Ideal ℤ).ramificationIdxIn (𝓞 K) = 2 := by
+  let _ : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
+  have := Fact.mk (_root_.NumberField.prime_of_mem_ramifiedPrimes hmem)
+  obtain ⟨𝔮, _, _⟩ := (inferInstance : Nonempty ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)))
+  rw [Ideal.ramificationIdxIn_eq_ramificationIdx (span {(p : ℤ)}) 𝔮 (K ≃ₐ[ℚ] K)]
+  exact _root_.NumberField.ramificationIdx_eq_two_of_mem_ramifiedPrimes hK hmem 𝔮
 
 /-- **An ideal of prime norm is the unique prime above a ramified rational prime.** If `p`
 ramifies in a quadratic number field, every ideal of absolute norm `p` equals the caller's chosen
