@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.RingTheory.Valuation.LocalSubring
+public import TauCeti.RingTheory.Valuation.Sum
 
 /-!
 # Valuations of polynomial expressions
@@ -85,17 +86,7 @@ does. These bounds evaluate a truncated composite of two power series, such as t
 series after the exponential series, at a point of a nonarchimedean field. -/
 
 variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀]
-  (v : Valuation R Γ₀)
-
-/-- The ultrametric bound on a finite sum, with every term weighted by a common factor `c`. -/
-theorem map_sum_mul_le {ι : Type*} {s : Finset ι} {f : ι → R} {c B : Γ₀}
-    (h : ∀ i ∈ s, v (f i) * c ≤ B) : v (∑ i ∈ s, f i) * c ≤ B := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  · rw [← le_div_iff₀ (zero_lt_iff.mpr hc)]
-    exact v.map_sum_le fun i hi ↦ (le_div_iff₀ (zero_lt_iff.mpr hc)).mpr (h i hi)
-
-variable {v} {x : R} {A S : Γ₀}
+  {v : Valuation R Γ₀} {x : R} {A S : Γ₀}
 
 /-- Weights add under multiplication of polynomials. -/
 theorem map_coeff_mul_mul_pow_le {P Q : R[X]} {a b : ℕ}
@@ -128,20 +119,27 @@ theorem map_coeff_pow_mul_pow_le {Q : R[X]} (hQ : ∀ k, v (Q.coeff k * x ^ k) *
 
 /-- Composition with a polynomial `F` whose coefficients satisfy
 `v (F.coeff n) * A ^ n * S ≤ A * S ^ n` preserves weight `1`. -/
-theorem map_coeff_comp_mul_pow_le {F Q : R[X]} (hA : A ≠ 0) (hS : S ≠ 0)
+theorem map_coeff_comp_mul_pow_le {F Q : R[X]}
     (hF : ∀ n, v (F.coeff n) * A ^ n * S ≤ A * S ^ n)
     (hQ : ∀ k, v (Q.coeff k * x ^ k) * S ≤ A * S ^ k) (k : ℕ) :
     v ((F.comp Q).coeff k * x ^ k) * S ≤ A * S ^ k := by
   rw [comp_eq_sum_left, Polynomial.sum_def, finsetSum_coeff, Finset.sum_mul]
   refine v.map_sum_mul_le fun n _ ↦ ?_
-  have hpos : 0 < A ^ n * S ^ n := zero_lt_iff.mpr (mul_ne_zero (pow_ne_zero n hA)
-    (pow_ne_zero n hS))
-  refine le_of_mul_le_mul_right ?_ hpos
-  calc v ((C (F.coeff n) * Q ^ n).coeff k * x ^ k) * S * (A ^ n * S ^ n)
+  have hQn := map_coeff_pow_mul_pow_le hQ n k
+  rw [coeff_C_mul, mul_assoc, map_mul, mul_assoc]
+  rcases eq_or_ne (A ^ n * S ^ n) 0 with h0 | h0
+  · -- A vanishing scale forces the `n`-th power term, or the weight `S`, to vanish.
+    rcases eq_or_ne S 0 with rfl | hS
+    · simp
+    have hA : A ^ n = 0 := (mul_eq_zero.mp h0).resolve_right (pow_ne_zero n hS)
+    have hv : v ((Q ^ n).coeff k * x ^ k) * S ^ n = 0 :=
+      le_antisymm (hQn.trans_eq (by rw [hA, zero_mul])) zero_le
+    simp [(mul_eq_zero.mp hv).resolve_right (pow_ne_zero n hS)]
+  refine le_of_mul_le_mul_right ?_ (zero_lt_iff.mpr h0)
+  calc v (F.coeff n) * (v ((Q ^ n).coeff k * x ^ k) * S) * (A ^ n * S ^ n)
       = v (F.coeff n) * A ^ n * S * (v ((Q ^ n).coeff k * x ^ k) * S ^ n) := by
-        rw [coeff_C_mul, mul_assoc, map_mul, map_mul, map_mul]
         simp only [mul_comm, mul_left_comm, mul_assoc]
-    _ ≤ A * S ^ n * (A ^ n * S ^ k) := mul_le_mul' (hF n) (map_coeff_pow_mul_pow_le hQ n k)
+    _ ≤ A * S ^ n * (A ^ n * S ^ k) := mul_le_mul' (hF n) hQn
     _ = A * S ^ k * (A ^ n * S ^ n) := by ac_rfl
 
 /-- A polynomial of weight `1` whose coefficients vanish below degree `M` has

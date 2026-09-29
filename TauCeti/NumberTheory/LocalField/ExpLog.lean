@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Exponential
 public import TauCeti.NumberTheory.LocalField.Logarithm
-import Mathlib.RingTheory.PowerSeries.Log
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.Valuation.Polynomial
@@ -24,9 +23,9 @@ depth with `e < (p - 1) * i`. The exponential series converges on `𝓂[K] ^ i`
 
 `exp : 𝓂[K] ^ i → U(K,i)`, `log : U(K,i) → 𝓂[K] ^ i`.
 
-These are the two inverse identities of the deep-unit logarithm: together with the fact that the
-logarithm is an isometry on `U(K,i)` (`TauCeti.valuation_log_sub_log`), they identify the deep
-unit group `U(K,i)` with the deep additive group `𝓂[K] ^ i`.
+These are the two inverse identities of the deep-unit logarithm: they make `exp` and `log`
+mutually inverse bijections between `𝓂[K] ^ i` and `U(K,i)`. Identifying these as groups
+additionally needs the homomorphism property of the logarithm, which this file does not prove.
 
 ## Main results
 
@@ -38,16 +37,10 @@ unit group `U(K,i)` with the deep additive group `𝓂[K] ^ i`.
 
 ## Implementation notes
 
-The identity `log (exp x) = x` is Mathlib's formal identity
-`PowerSeries.subst_log_exp_sub_one`, evaluated at `x`. Its polynomial truncations
-`L_M ∘ E_N` agree with `X` below degree `min M N`
-(`PowerSeries.coeff_trunc_log_comp_trunc_exp_sub_one`). The remaining terms are controlled by
-the weighted coefficient bounds `Valuation.map_coeff_comp_mul_pow_le` and
-`Valuation.map_eval_mul_le`, applied to the `(p - 1)`-st power of the valuation, which makes the
-rational slope `1 / (p - 1)` of the term valuations integral. With `S = v(π) ^ ((p - 1) * i - e)`
-this gives `v(L_M(E_N(x)) - x) ^ (p - 1) ≤ v(x) ^ (p - 1) * S ^ (min M N - 1)`, and letting `N`
-and then `M` tend to infinity gives `log (exp x) = x`. The identity `exp (log u) = u` then follows
-from injectivity of the logarithm on `U(K,i)` (`TauCeti.log_unitFiltration_injective`).
+The identity `log (exp x) = x` is Mathlib's formal identity `PowerSeries.subst_log_exp_sub_one`,
+evaluated at `x`; the weighted bounds of `TauCeti/RingTheory/Valuation/Polynomial.lean` justify
+the evaluation. The identity `exp (log u) = u` then follows from injectivity of the logarithm on
+`U(K,i)` (`TauCeti.log_unitFiltration_injective`).
 
 ## References
 
@@ -277,12 +270,12 @@ theorem exists_mem_unitFiltration_eq_exp (hi : absoluteRamificationIndex K p < (
     exact hv.not_gt (pow_lt_one₀ zero_le (Valuation.integer.v_irreducible_lt_one hπ) hi0)
   exact ⟨Units.mk0 _ hne, (mem_unitFiltration_iff_valuation_sub_one_le hi0 hπ).mpr hv, rfl⟩
 
-/-- At a nonzero deep `x`, the composite of the truncation of the logarithm series below degree
+/-- At a deep `x`, the composite of the truncation of the logarithm series below degree
 `M` after the truncation of `exp - 1` below degree `N` is `x` up to
 `v(x) ^ (p - 1) * S ^ (min M N - 1)`, measured by `powValuation`. -/
 private theorem powValuation_eval_trunc_log_eval_trunc_exp_sub_one_sub_le [CharZero K]
     {π : 𝒪[K]} (hπ : Irreducible π) (hi : absoluteRamificationIndex K p < (p - 1) * i) {x : K}
-    (hx : x ≠ 0) (hxv : valuation K x ≤ valuation K (π : K) ^ i) (M N : ℕ) :
+    (hxv : valuation K x ≤ valuation K (π : K) ^ i) (M N : ℕ) :
     powValuation K p ((PowerSeries.trunc M (PowerSeries.log K)).eval
         ((PowerSeries.trunc N (PowerSeries.exp K - 1)).eval x) - x) *
         valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) ≤
@@ -321,8 +314,7 @@ private theorem powValuation_eval_trunc_log_eval_trunc_exp_sub_one_sub_le [CharZ
     (Valuation.integer.v_irreducible_lt_one hπ).le) (fun k hk => ?_) (fun k => ?_)
   · rw [Polynomial.coeff_sub, PowerSeries.coeff_trunc_log_comp_trunc_exp_sub_one
       (lt_min_iff.mp hk).1 (lt_min_iff.mp hk).2, sub_self]
-  · have hcomp := Valuation.map_coeff_comp_mul_pow_le ((Valuation.ne_zero_iff _).mpr hx) hS0
-      hF hQ k
+  · have hcomp := Valuation.map_coeff_comp_mul_pow_le hF hQ k
     have hXk := hX k
     rw [Polynomial.coeff_sub, sub_mul]
     rw [← le_div_iff₀ (zero_lt_iff.mpr hS0)] at hcomp hXk ⊢
@@ -333,7 +325,7 @@ private theorem powValuation_eval_trunc_log_eval_trunc_exp_sub_one_sub_le [CharZ
 series below degree `M`, evaluated at `exp x - 1`, is `x` up to `v(x) ^ (p - 1) * S ^ (M - 1)`. -/
 private theorem powValuation_eval_trunc_log_exp_sub_one_sub_le [CharZero K] {π : 𝒪[K]}
     (hπ : Irreducible π) (hi : absoluteRamificationIndex K p < (p - 1) * i)
-    (x : (𝓂[K] ^ i : Ideal 𝒪[K])) (hx : (x : K) ≠ 0) (M : ℕ) :
+    (x : (𝓂[K] ^ i : Ideal 𝒪[K])) (M : ℕ) :
     powValuation K p ((PowerSeries.trunc M (PowerSeries.log K)).eval (exp (x : K) - 1) - x) *
         valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) ≤
       powValuation K p (x : K) *
@@ -352,7 +344,7 @@ private theorem powValuation_eval_trunc_log_exp_sub_one_sub_le [CharZero K] {π 
   -- A valuation is locally constant away from `0`, so the bound passes to the limit.
   obtain ⟨N, hN, hMN⟩ := ((hlim.eventually ((valuation K).locally_const
     (by simpa using h0))).and (eventually_ge_atTop M)).exists
-  have h := powValuation_eval_trunc_log_eval_trunc_exp_sub_one_sub_le hπ hi hx
+  have h := powValuation_eval_trunc_log_eval_trunc_exp_sub_one_sub_le hπ hi
     (valuation_le_pow_of_mem_maximalIdeal_pow hπ x) M N
   rwa [min_eq_left hMN, powValuation_apply, hN, ← powValuation_apply] at h
 
@@ -390,7 +382,7 @@ theorem log_exp_of_mem_maximalIdeal_pow (hi : absoluteRamificationIndex K p < (p
   obtain ⟨M₀, hM₀⟩ := exists_pow_lt₀ hS1 (Units.mk0 _ hyS)
   obtain ⟨M, hM, hMM₀⟩ := (((hL.sub_const (x : K)).eventually ((valuation K).locally_const
     (by simpa using hy))).and (eventually_ge_atTop M₀)).exists
-  have h := powValuation_eval_trunc_log_exp_sub_one_sub_le hπ hi x hx M
+  have h := powValuation_eval_trunc_log_exp_sub_one_sub_le hπ hi x M
   rw [powValuation_apply, hM, ← powValuation_apply] at h
   have hlt : A * S ^ M < powValuation K p (log (exp (x : K)) - x) * S :=
     calc A * S ^ M ≤ A * S ^ M₀ := mul_le_mul_right (pow_le_pow_right_of_le_one' hS1.le hMM₀) A
