@@ -89,19 +89,11 @@ theorem h2MuToUnits_range
     (x : continuousCohomology 2
       (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :
     (∃ y, (h2MuToUnits K).hom y = x) ↔ x + x = 0 := by
-  constructor
-  · rintro ⟨y, rfl⟩
-    rw [← two_nsmul]
-    -- `TauCeti.h2MuToUnits` is by definition a composite ending in `h2KummerToUnits K 2`.
-    exact (h2KummerToUnits_range (K := K) (n := 2)
-      (isUnit_of_invertible (2 : K)) _).mp ⟨_, rfl⟩
-  · intro hx
-    have hx' : 2 • x = 0 := by simpa only [two_nsmul] using hx
-    obtain ⟨y, hy⟩ := (h2KummerToUnits_range (K := K) (n := 2)
-      (isUnit_of_invertible (2 : K)) x).mpr hx'
-    refine ⟨(ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).hom 2).hom y, ?_⟩
-    have hcomp := ConcreteCategory.congr_hom
-      (kummerCoeffIsoTrivialF2_hom_comp_h2MuToUnits K) y
-    exact hcomp.trans hy
+  rw [← two_nsmul, ← h2KummerToUnits_range (K := K) (n := 2) (isUnit_of_invertible (2 : K))]
+  -- `TauCeti.h2MuToUnits` is by definition the inverse coefficient transport followed by
+  -- `h2KummerToUnits K 2`, and precomposing with a surjection does not change the range.
+  exact (((ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 2).mapIso
+    (kummerCoeffIsoTrivialF2 K)).symm.toContinuousLinearEquiv.surjective.exists
+      (p := fun z ↦ (h2KummerToUnits K 2).hom z = x)).symm
 
 end TauCeti
