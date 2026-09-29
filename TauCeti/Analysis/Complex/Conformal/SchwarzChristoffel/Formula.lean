@@ -86,7 +86,7 @@ theorem exponent_sum_eq_neg_two_of_logDeriv_deriv_eqOn
   obtain ⟨r, hr, g, q, b, hb, hgf, hgcont, hgreal, hgupper, hginj⟩ := hinfty
   have hreg := tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hb hgf hgcont
     (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
-  have hsum := tendsto_mul_finset_sum_div_sub_cobounded Finset.univ
+  have hsum := tendsto_mul_sum_div_sub_cobounded Finset.univ
     (fun i => (a i : ℂ)) (fun i => (e i : ℂ))
   have hlim := tendsto_nhds_unique (hsum.mono_left inf_le_left) (hreg.congr' <| by
     rw [eventuallyEq_inf_principal_iff]

@@ -65,28 +65,8 @@ theorem tendsto_mul_logDeriv_deriv_comp_neg_inv_upperHalfPlaneSet
       (fun w : ℂ => g (-w⁻¹)) := by
     filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds hz] with w hw
     apply schwarzReflection_of_im_nonneg
-    simp only [neg_im, inv_im, neg_div, neg_neg]
-    exact div_nonneg hw.le (Complex.normSq_nonneg _)
+    exact im_neg_inv_nonneg.mpr hw.le
   rw [(logDeriv_congr_nhds heq.deriv).eq_of_nhds]
-
-/-- A conjugation-symmetric continuation agreeing with `ψ` above the real axis tends to zero
-at infinity if `z * ψ z` has a finite limit there within the upper half-plane. -/
-private theorem tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
-    {φ ψ : ℂ → ℂ} {c : ℂ}
-    (h : Tendsto (fun z : ℂ => z * ψ z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 c))
-    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
-    (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
-    (hφ : EqOn φ ψ upperHalfPlaneSet) : Tendsto φ (cobounded ℂ) (𝓝 0) := by
-  apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
-  have ht := h.mul ((tendsto_inv₀_cobounded (α := ℂ)).mono_left
-    (inf_le_left : cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet ≤ cobounded ℂ))
-  simp only [mul_zero] at ht
-  apply ht.congr'
-  rw [eventuallyEq_inf_principal_iff]
-  exact Eventually.of_forall fun z hz => by
-    have hz0 : z ≠ 0 := by rintro rfl; simp at hz
-    rw [hφ hz]
-    field_simp
 
 /-- A continuation of a polygon map's pre-Schwarzian that is conjugation-symmetric near infinity
 tends to zero there when the inverse coordinate maps a neighborhood of zero to a straight edge.

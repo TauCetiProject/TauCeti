@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
 # The pre-Schwarzian derivative: composition, rigidity, and asymptotics
@@ -117,14 +118,8 @@ theorem tendsto_logDeriv_deriv_comp_neg_inv {g : ℂ → ℂ}
     (hg : AnalyticAt ℂ g 0) (hgn : deriv g 0 ≠ 0) :
     Tendsto (logDeriv (deriv (fun w => g (-w⁻¹))))
       (Bornology.cobounded ℂ) (𝓝 0) := by
-  have h := (tendsto_mul_logDeriv_deriv_comp_neg_inv hg hgn).mul
-    (tendsto_inv₀_cobounded (α := ℂ))
-  simp only [mul_zero] at h
-  apply h.congr'
-  filter_upwards [(tendsto_inv₀_cobounded' (α := ℂ)).eventually self_mem_nhdsWithin]
-    with z hz
-  have hz' : z ≠ 0 := by simpa using hz
-  field_simp
+  exact tendsto_zero_of_tendsto_mul_cobounded le_rfl
+    (tendsto_mul_logDeriv_deriv_comp_neg_inv hg hgn)
 
 /-- **Rigidity of the pre-Schwarzian derivative.** Two holomorphic functions with nonvanishing
 derivatives on a domain have equal pre-Schwarzian derivatives exactly when one is obtained from

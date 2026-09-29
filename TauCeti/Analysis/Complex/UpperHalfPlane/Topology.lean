@@ -29,6 +29,8 @@ period exactly when the original function is invariant under the corresponding t
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
 * `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet`.
+* `TauCeti.tendsto_zero_of_tendsto_mul_cobounded`.
+* `TauCeti.tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet`.
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
@@ -73,6 +75,18 @@ instance cobounded_inf_principal_upperHalfPlaneSet_neBot :
   simp only [Set.mem_preimage, upperHalfPlaneSet, Set.mem_ofPred_eq]
   simpa using ht
 
+/-- If `z * ψ z` has a finite limit at infinity, then `ψ z` tends to zero. -/
+theorem tendsto_zero_of_tendsto_mul_cobounded {l : Filter ℂ} (hl : l ≤ cobounded ℂ)
+    {ψ : ℂ → ℂ} {c : ℂ} (h : Tendsto (fun z => z * ψ z) l (𝓝 c)) :
+    Tendsto ψ l (𝓝 0) := by
+  have ht := h.mul ((tendsto_inv₀_cobounded (α := ℂ)).mono_left hl)
+  simp only [mul_zero] at ht
+  apply ht.congr'
+  filter_upwards [(tendsto_inv₀_cobounded' (α := ℂ)).mono_left hl |>.eventually
+    self_mem_nhdsWithin] with z hz
+  have hz0 : z ≠ 0 := by simpa using hz
+  field_simp
+
 /-- For a function conjugation-symmetric near infinity and continuous at all sufficiently distant
 real points, decay along the upper half-plane implies decay along the whole plane. -/
 theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
@@ -108,6 +122,19 @@ theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
   · exact hupper z hz hi
   · have h := hupper ((starRingEnd ℂ) z) (by simpa using hz) (by simpa using hi.le)
     simpa only [hzconj, norm_conj] using h
+
+/-- A conjugation-symmetric continuation agreeing with `ψ` above the real axis tends to zero
+at infinity if `z * ψ z` has a finite limit there within the upper half-plane. -/
+theorem tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
+    {φ ψ : ℂ → ℂ} {c : ℂ}
+    (h : Tendsto (fun z : ℂ => z * ψ z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 c))
+    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφ : EqOn φ ψ upperHalfPlaneSet) : Tendsto φ (cobounded ℂ) (𝓝 0) := by
+  apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
+  apply (tendsto_zero_of_tendsto_mul_cobounded inf_le_left h).congr'
+  rw [eventuallyEq_inf_principal_iff]
+  exact Eventually.of_forall fun z hz => (hφ hz).symm
 
 /-- A boundary point of the closed upper half-plane whose image avoids the open half-plane image
 maps to the frontier when the map is continuous there. -/
