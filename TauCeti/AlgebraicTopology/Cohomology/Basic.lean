@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Basic
+public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import TauCeti.Algebra.Homology.LinearYoneda
 
 /-!

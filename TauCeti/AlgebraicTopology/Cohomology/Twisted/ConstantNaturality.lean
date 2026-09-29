@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Basic
+public import TauCeti.AlgebraicTopology.Singular.Basic
 
 /-!
 # Naturality of the constant-coefficient comparison for singular cohomology
