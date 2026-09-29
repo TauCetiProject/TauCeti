@@ -25,9 +25,6 @@ subgroup; it says nothing about the base change of the integral carrier, which c
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
-
-The argument follows the sibling smoothness proofs for the other explicit Chevalley carriers,
-such as `TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Smooth`.
 -/
 
 public section
@@ -40,6 +37,8 @@ universe v
 
 variable (n : ℕ) (hn : 4 ≤ n) (k : Type v) [Field k]
 
+-- The argument follows the sibling smoothness proofs for the other explicit Chevalley
+-- carriers, such as `TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Smooth`.
 private theorem isReduced_generatorCoordinateAlgebra :
     ∀ j, IsReduced (generatorCoordinateAlgebra n k j) := by
   let : IsReduced (AdditiveGroup.coordinateHopfAlgebra k) :=

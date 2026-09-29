@@ -25,9 +25,6 @@ subgroup; it says nothing about the base change of the integral carrier, which c
 
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
-
-The argument follows the sibling connectedness proofs for the other explicit Chevalley carriers,
-such as `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`.
 -/
 
 public section
@@ -40,6 +37,8 @@ universe v
 
 variable (n : ℕ) (hn : 4 ≤ n) (k : Type v) [Field k]
 
+-- The argument follows the sibling connectedness proofs for the other explicit Chevalley
+-- carriers, such as `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`.
 private theorem connectedSpace_generatorCoordinateAlgebra :
     ∀ j, ConnectedSpace (PrimeSpectrum (generatorCoordinateAlgebra n k j)) := by
   intro j
