@@ -81,6 +81,20 @@ theorem exponentSum_of [DecidableEq X] (x : X) :
     exponentSum p X (of x) = ofAdd (Pi.single x 1) :=
   (lift_of _ _ x).trans (by congr; exact Subsingleton.elim _ _)
 
+/-- The exponent vector of the `i`-th `ℕ`-indexed generator of `freeProP p (Fin n)` is the
+coordinate vector at `i`; out of range it is `0`. -/
+@[simp]
+theorem toAdd_exponentSum_freeProPGen_apply {n : ℕ} (i : ℕ) (j : Fin n) :
+    (exponentSum p (Fin n) (freeProPGen p n i)).toAdd j = if (j : ℕ) = i then 1 else 0 := by
+  by_cases hi : i < n
+  · rw [freeProPGen_of_lt p hi, exponentSum_of, toAdd_ofAdd]
+    split_ifs with h
+    · obtain rfl : j = ⟨i, hi⟩ := Fin.ext h
+      exact Pi.single_eq_same _ _
+    · exact Pi.single_eq_of_ne (fun h' ↦ h (congrArg Fin.val h')) _
+  · rw [freeProPGen_eq_one_of_le p (not_lt.1 hi), map_one, toAdd_one, Pi.zero_apply,
+      ite_eq_right (j.isLt.trans_le (not_lt.1 hi)).ne]
+
 /-- **The exponent sums of an element of the Frattini subgroup are divisible by `p`.** The
 reduction modulo `p` of the exponent sum at `x` is the continuous `𝔽_p`-valued character
 `TauCeti.freeProP.characterOfFun` with value `1` at `x` and `0` at the other generators, and every

@@ -25,6 +25,8 @@ from the presentation, and it is the normalization a Demushkin relator satisfies
 
 ## Main results
 
+* `TauCeti.presentedProP.topologicalGeneratorRankNat_le_card`: a pro-`p` group presented on a
+  finite type `X` has rank at most `Nat.card X`.
 * `TauCeti.presentedProP.topologicalGeneratorRankNat_eq_card_iff`: a pro-`p` group presented on a
   finite type `X` has rank `Nat.card X` exactly when the relators lie in the Frattini subgroup of
   the free pro-`p` group on `X`.
@@ -56,6 +58,16 @@ variable {p : ℕ} [Fact p.Prime]
 namespace presentedProP
 
 variable {X : Type u} [Finite X] (rels : Set (freeProP p X))
+
+/-- A pro-`p` group presented on a finite type `X` has topological generator rank at most
+`Nat.card X`: it is the image of the free pro-`p` group on `X`, of rank `Nat.card X`, under the
+continuous surjection `mk`. -/
+theorem topologicalGeneratorRankNat_le_card :
+    topologicalGeneratorRankNat (presentedProP p X rels) isTopologicallyFinitelyGenerated ≤
+      Nat.card X := by
+  rw [← topologicalGeneratorRankNat_freeProP p (isTopologicallyFinitelyGenerated_freeProP p X)]
+  exact topologicalGeneratorRankNat_le_of_surjective (mk p rels : freeProP p X →* _)
+    (map_continuous (mk p rels)) (mk_surjective p rels) _
 
 /-- **Minimal presentations.** A pro-`p` group presented on a finite type `X` has topological
 generator rank `Nat.card X` exactly when every relator lies in the Frattini subgroup of the free
