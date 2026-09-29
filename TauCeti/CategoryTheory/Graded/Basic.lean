@@ -96,9 +96,10 @@ variable (R : Type w) [CommRing R] {C : Type u}
 module of morphisms `X → Y` is the external direct sum of the components of `F X Y`.
 
 The two fields of this quiver are `homModule_ofGradedHom` and `grading_ofGradedHom`, and
-`gradedHomOfGradedHom` recovers the graded object `F` itself, degree by degree.  The body is
-exposed, since the module system hides the body of a `def` from the statements of the other
-exported declarations of a module, and the two field equations could not be stated without it. -/
+`gradedHomOfGradedHom` recovers the graded object `F` itself, degree by degree. -/
+-- The body is exposed, since the module system hides the body of a `def` from the statements of
+-- the other exported declarations of a module, and the two field equations could not be stated
+-- without it.
 @[instance_reducible, expose]
 noncomputable def ofGradedHom (F : (X Y : C) → CategoryTheory.GradedObject ℤ (ModuleCat.{v} R)) :
     GradedLinearQuiver R C where
