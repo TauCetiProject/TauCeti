@@ -18,15 +18,16 @@ import TauCeti.GroupTheory.Perm.Basic
 
 A finite bipartite ribbon graph consists of a finite set of edges, finite sets of black and white
 vertices, an endpoint of each colour for every edge, and a cyclic order on the edges incident to
-each vertex.  The cyclic orders are encoded by two permutations of the common edge set.  Requiring
-each incidence fibre to be a single cycle excludes isolated vertices and makes the encoding
-extensional: there is no unused cyclic-order data away from the incident edges.
+each vertex.  The cyclic orders are encoded by two permutations of the common edge set.  The two
+endpoint maps are surjective, which excludes isolated vertices, and requiring each incidence
+fibre to be a single cycle makes the encoding extensional: there is no unused cyclic-order data
+away from the incident edges.
 
-The product of the two vertex rotations determines the face permutation.  Its orbits are the
-faces of the associated oriented combinatorial surface, so the Euler characteristic is
-`|B| + |W| - |E| + |F|`.  This file also provides morphisms, isomorphisms, automorphisms,
-connected components, vertex degrees, the two incidence degree-sum formulas, and the copy of a
-ribbon graph in a higher universe.
+The product of the two vertex rotations determines the face permutation, whose orbits are the
+faces.  Gluing a disc into each face gives a closed oriented surface, one for each connected
+component, and `eulerChar` is its Euler characteristic `|B| + |W| - |E| + |F|`.  This file also
+provides morphisms, isomorphisms, automorphisms, connected components, vertex degrees, the two
+incidence degree-sum formulas, and the copy of a ribbon graph in a higher universe.
 
 ## References
 
@@ -182,9 +183,17 @@ theorem isConnected_iff_card_connectedComponent_eq_one :
 def blackDegree (b : Γ.B) : ℕ :=
   Fintype.card {e : Γ.E // Γ.blackEnd e = b}
 
+/-- The degree of a black vertex is the number of edges whose black end it is. -/
+theorem blackDegree_def (b : Γ.B) :
+    Γ.blackDegree b = Fintype.card {e : Γ.E // Γ.blackEnd e = b} := (rfl)
+
 /-- The degree of a white vertex is the number of incident edges. -/
 def whiteDegree (w : Γ.W) : ℕ :=
   Fintype.card {e : Γ.E // Γ.whiteEnd e = w}
+
+/-- The degree of a white vertex is the number of edges whose white end it is. -/
+theorem whiteDegree_def (w : Γ.W) :
+    Γ.whiteDegree w = Fintype.card {e : Γ.E // Γ.whiteEnd e = w} := (rfl)
 
 /-- Every black vertex has positive degree. -/
 theorem blackDegree_pos (b : Γ.B) : 0 < Γ.blackDegree b := by
@@ -215,7 +224,9 @@ noncomputable def faceCount : ℕ :=
 /-- The number of faces is the number of orbits of the face permutation. -/
 theorem faceCount_def : Γ.faceCount = Fintype.card Γ.Face := (rfl)
 
-/-- The Euler characteristic of the oriented combinatorial surface carried by the ribbon graph. -/
+/-- The Euler characteristic `|B| + |W| + F - |E|` of the closed oriented surface obtained by
+gluing a disc into each face of the ribbon graph (a disjoint union of closed surfaces when the
+graph is disconnected). -/
 noncomputable def eulerChar : ℤ :=
   Fintype.card Γ.B + Fintype.card Γ.W + Γ.faceCount - Fintype.card Γ.E
 
@@ -453,11 +464,18 @@ theorem map_rotationGroup (f : Γ.Iso Δ) :
 def rotationGroupEquiv (f : Γ.Iso Δ) : Γ.rotationGroup ≃* Δ.rotationGroup :=
   Subgroup.congrOfMapEq f.edge.permCongrHom f.map_rotationGroup
 
+/-- The induced equivalence of rotation groups conjugates a permutation by the edge
+equivalence. -/
+@[simp]
+theorem coe_rotationGroupEquiv_apply (f : Γ.Iso Δ) (g : Γ.rotationGroup) :
+    (f.rotationGroupEquiv g : Equiv.Perm Δ.E) = f.edge.permCongr g :=
+  Subgroup.coe_congrOfMapEq_apply _ _ _
+
 /-- The edge equivalence is equivariant for the induced equivalence of rotation groups. -/
 private def edgeActionHom (f : Γ.Iso Δ) : Γ.E →ₑ[f.rotationGroupEquiv] Δ.E where
   toFun := f.edge
   map_smul' g e := by
-    simp [rotationGroupEquiv, MulAction.subgroup_smul_def, Subgroup.coe_congrOfMapEq_apply]
+    simp [MulAction.subgroup_smul_def]
 
 /-- An isomorphism relabels the connected components of a bipartite ribbon graph. -/
 def connectedComponentEquiv (f : Γ.Iso Δ) : Γ.ConnectedComponent ≃ Δ.ConnectedComponent :=
@@ -633,6 +651,7 @@ universe v
 
 /-- The copy of a ribbon graph in a higher universe, with edges and vertices of both colours
 wrapped in `ULift`. -/
+@[expose]
 def ulift : BipartiteRibbonGraph.{max u v} where
   E := ULift.{v} Γ.E
   B := ULift.{v} Γ.B
@@ -660,6 +679,30 @@ def ulift : BipartiteRibbonGraph.{max u v} where
     ext ⟨e⟩
     simp [Equiv.ulift, ULift.ext_iff]
 
+/-- A lifted edge has the lifted black end. -/
+@[simp]
+theorem ulift_blackEnd_up (e : Γ.E) :
+    (Γ.ulift : BipartiteRibbonGraph.{max u v}).blackEnd (ULift.up e) = ULift.up (Γ.blackEnd e) :=
+  (rfl)
+
+/-- A lifted edge has the lifted white end. -/
+@[simp]
+theorem ulift_whiteEnd_up (e : Γ.E) :
+    (Γ.ulift : BipartiteRibbonGraph.{max u v}).whiteEnd (ULift.up e) = ULift.up (Γ.whiteEnd e) :=
+  (rfl)
+
+/-- The black rotation of the lifted graph lifts the black rotation. -/
+@[simp]
+theorem ulift_rotB_up (e : Γ.E) :
+    (Γ.ulift : BipartiteRibbonGraph.{max u v}).rotB (ULift.up e) = ULift.up (Γ.rotB e) :=
+  (rfl)
+
+/-- The white rotation of the lifted graph lifts the white rotation. -/
+@[simp]
+theorem ulift_rotW_up (e : Γ.E) :
+    (Γ.ulift : BipartiteRibbonGraph.{max u v}).rotW (ULift.up e) = ULift.up (Γ.rotW e) :=
+  (rfl)
+
 /-- The number of edges is unchanged by universe lifting. -/
 theorem card_E_ulift :
     Fintype.card (Γ.ulift : BipartiteRibbonGraph.{max u v}).E = Fintype.card Γ.E :=
@@ -674,6 +717,18 @@ def uliftIso : (Γ.ulift : BipartiteRibbonGraph.{max u v}).Iso Γ where
   map_whiteEnd _ := rfl
   map_rotB _ := rfl
   map_rotW _ := rfl
+
+/-- The universe-lifting isomorphism sends a lifted edge to the edge it wraps. -/
+@[simp] theorem uliftIso_edge_apply (e : (Γ.ulift : BipartiteRibbonGraph.{max u v}).E) :
+    Γ.uliftIso.edge e = e.down := (rfl)
+
+/-- The universe-lifting isomorphism sends a lifted black vertex to the vertex it wraps. -/
+@[simp] theorem uliftIso_black_apply (b : (Γ.ulift : BipartiteRibbonGraph.{max u v}).B) :
+    Γ.uliftIso.black b = b.down := (rfl)
+
+/-- The universe-lifting isomorphism sends a lifted white vertex to the vertex it wraps. -/
+@[simp] theorem uliftIso_white_apply (w : (Γ.ulift : BipartiteRibbonGraph.{max u v}).W) :
+    Γ.uliftIso.white w = w.down := (rfl)
 
 end BipartiteRibbonGraph
 

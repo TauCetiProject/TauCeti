@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.RingHoms
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Topology.Algebra.Group.Profinite.Limit
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.GroupAction.TypeTags
@@ -377,6 +378,23 @@ theorem mk_padicPow_quotient (hA : IsProP p A) (N : Subgroup A) [N.Normal]
     [IsClosed (N : Set A)] (a : A) (l : ℤ_[p]) :
     ((hA.padicPow a l : A) : A ⧸ N) = (hA.quotient N).padicPow (a : A ⧸ N) l :=
   hA.map_padicPow (hA.quotient N) (QuotientGroup.mk' N) QuotientGroup.continuous_mk a l
+
+/-- **A `p`-adic power relation between the values of a continuous homomorphism holds in the
+quotient by its kernel**: if `χ : A →ₜ* B` is a continuous homomorphism of pro-`p` groups with
+`χ b = (χ a) ^ l`, then `b = a ^ l` in `A ⧸ ker χ`. -/
+theorem mk_eq_padicPow_mk_of_apply_eq_padicPow {B : Type v} [Group B] [TopologicalSpace B]
+    [IsTopologicalGroup B] [CompactSpace B] [TotallyDisconnectedSpace B] [T1Space B]
+    (hA : IsProP p A) (hB : IsProP p B) (χ : A →ₜ* B) {a b : A} {l : ℤ_[p]}
+    (h : χ b = hB.padicPow (χ a) l) :
+    haveI := χ.isClosed_ker
+    (b : A ⧸ χ.toMonoidHom.ker) =
+      (hA.quotient χ.toMonoidHom.ker).padicPow (a : A ⧸ χ.toMonoidHom.ker) l := by
+  have := χ.isClosed_ker
+  have hcont : Continuous (QuotientGroup.kerLift χ.toMonoidHom) :=
+    (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr χ.continuous
+  refine QuotientGroup.kerLift_injective χ.toMonoidHom ?_
+  rw [(hA.quotient _).map_padicPow hB _ hcont, QuotientGroup.kerLift_mk, QuotientGroup.kerLift_mk]
+  exact h
 
 end Group
 

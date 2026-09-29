@@ -275,14 +275,8 @@ def IsEmptyFor (x : GridState n) : Prop :=
 /-- A rectangle is empty for a grid state exactly when no point of the state lies in its
 interior. -/
 theorem isEmptyFor_iff (x : GridState n) :
-    R.IsEmptyFor x ↔ ∀ p ∈ x.pointSet, p ∉ R.interior := by
-  rw [IsEmptyFor, disjoint_comm, Finset.disjoint_iff_ne]
-  constructor
-  · intro h p hp hpR
-    exact h p hp p hpR rfl
-  · intro h p hp q hq hpq
-    subst hpq
-    exact h p hp hq
+    R.IsEmptyFor x ↔ ∀ p ∈ x.pointSet, p ∉ R.interior :=
+  Finset.disjoint_right
 
 /-- A rectangle is empty for a grid state exactly when the state sends every column strictly
 between its two side columns to a row outside the open arc between its two side rows.
@@ -695,7 +689,7 @@ theorem mem_target_pointSet_iff_of_ne {p : Fin n × Fin n}
 
 /-- The associated rectangle is empty for the source state when no source-state point lies in
 its interior. -/
-def IsEmpty : Prop :=
+protected def IsEmpty : Prop :=
   R.toGridRectangle.IsEmptyFor x
 
 /-- Emptiness of an oriented rectangle is emptiness of its underlying toroidal rectangle for the
@@ -750,13 +744,13 @@ def AvoidsMarkings (G : GridDiagram n) : Prop :=
   R.toGridRectangle.AvoidsMarkings G
 
 /-- The source state has no point in the interior of an empty rectangle between states. -/
-theorem not_mem_interior_of_isEmpty (h : R.IsEmpty) {p : Fin n × Fin n}
+theorem notMem_interior_of_isEmpty (h : R.IsEmpty) {p : Fin n × Fin n}
     (hp : p ∈ x.pointSet) : p ∉ R.toGridRectangle.interior :=
   (R.toGridRectangle.isEmptyFor_iff x).mp h p hp
 
 /-- A rectangle between states is empty exactly when no source-state point lies in its
 interior. -/
-theorem isEmpty_iff :
+protected theorem isEmpty_iff :
     R.IsEmpty ↔ ∀ p ∈ x.pointSet, p ∉ R.toGridRectangle.interior :=
   R.toGridRectangle.isEmptyFor_iff x
 
@@ -777,7 +771,7 @@ theorem isEmpty_of_right_eq_finRotate (h : R.right = finRotate n R.left) : R.IsE
 
 /-- If a target-state point lies on a side column, then it is not in the associated
 rectangle's interior. -/
-theorem not_mem_interior_of_fst_eq_left {p : Fin n × Fin n} (hp : p.1 = R.left) :
+theorem notMem_interior_of_fst_eq_left {p : Fin n × Fin n} (hp : p.1 = R.left) :
     p ∉ R.toGridRectangle.interior := by
   intro hpR
   have hpcol := (R.toGridRectangle.mem_interior p).mp hpR |>.1
@@ -786,7 +780,7 @@ theorem not_mem_interior_of_fst_eq_left {p : Fin n × Fin n} (hp : p.1 = R.left)
 
 /-- If a target-state point lies on the other side column, then it is not in the associated
 rectangle's interior. -/
-theorem not_mem_interior_of_fst_eq_right {p : Fin n × Fin n} (hp : p.1 = R.right) :
+theorem notMem_interior_of_fst_eq_right {p : Fin n × Fin n} (hp : p.1 = R.right) :
     p ∉ R.toGridRectangle.interior := by
   intro hpR
   have hpcol := (R.toGridRectangle.mem_interior p).mp hpR |>.1
@@ -797,25 +791,25 @@ theorem not_mem_interior_of_fst_eq_right {p : Fin n × Fin n} (hp : p.1 = R.righ
 interior. -/
 theorem isEmpty_iff_target :
     R.IsEmpty ↔ ∀ p ∈ y.pointSet, p ∉ R.toGridRectangle.interior := by
-  rw [isEmpty_iff]
+  rw [R.isEmpty_iff]
   constructor
   · intro h p hp
     by_cases hleft : p.1 = R.left
-    · exact R.not_mem_interior_of_fst_eq_left hleft
+    · exact R.notMem_interior_of_fst_eq_left hleft
     by_cases hright : p.1 = R.right
-    · exact R.not_mem_interior_of_fst_eq_right hright
+    · exact R.notMem_interior_of_fst_eq_right hright
     exact h p ((R.mem_target_pointSet_iff_of_ne hleft hright).mp hp)
   · intro h p hp hpR
     have hleft : p.1 ≠ R.left := by
       intro hcol
-      exact R.not_mem_interior_of_fst_eq_left hcol hpR
+      exact R.notMem_interior_of_fst_eq_left hcol hpR
     have hright : p.1 ≠ R.right := by
       intro hcol
-      exact R.not_mem_interior_of_fst_eq_right hcol hpR
+      exact R.notMem_interior_of_fst_eq_right hcol hpR
     exact h p ((R.mem_target_pointSet_iff_of_ne hleft hright).mpr hp) hpR
 
 /-- The target state has no point in the interior of an empty rectangle between states. -/
-theorem not_mem_interior_target_of_isEmpty (h : R.IsEmpty) {p : Fin n × Fin n}
+theorem notMem_interior_target_of_isEmpty (h : R.IsEmpty) {p : Fin n × Fin n}
     (hp : p ∈ y.pointSet) : p ∉ R.toGridRectangle.interior :=
   (R.isEmpty_iff_target).mp h p hp
 

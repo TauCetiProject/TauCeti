@@ -528,7 +528,11 @@ private theorem degreeOneForm_demushkinWordTwoOdd_dualBasis {f : ℕ} (hf : 0 < 
     degreeOneForm_gradedBracket_gradedMkZero, toMul_dualBasis_freeProPGen, Nat.choose_self,
     one_smul, mul_ite, mul_one, mul_zero]
 
-private theorem degreeOneBasis_repr_demushkinWordTwoOdd_inl {f : ℕ} (hf : 0 < f) (k : Fin n) :
+/-- **The `2`-power coordinates of the class of the `q = 2`, `n` odd normal-form word**
+`x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`, for `f ≥ 1`: the coefficient of `π ξ₁` is `1`, that of
+`π ξ₂` is `2^{f-1}`, and the other `2`-power coordinates vanish. -/
+@[simp]
+theorem degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl {f : ℕ} (hf : 0 < f) (k : Fin n) :
     (degreeOneBasis 2 (Fin n)).repr
       (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
         demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩)
@@ -539,6 +543,19 @@ private theorem degreeOneBasis_repr_demushkinWordTwoOdd_inl {f : ℕ} (hf : 0 < 
     Finsupp.smul_apply, degreeOneBasis_repr_gradedBracket_inl, Finset.sum_const_zero, add_zero,
     degreeOneBasis_repr_gradedPow_gradedMkZero_inl, toMul_dualBasis_freeProPGen]
 
+/-- **The vanishing `2`-power coordinates of the odd dyadic normal-form word**, for `f ≥ 2`:
+all coordinates except that of `x₁` vanish. -/
+theorem degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl_eq_zero_iff {f : ℕ}
+    (hf : 2 ≤ f) (k : Fin n) :
+    (degreeOneBasis 2 (Fin n)).repr
+        (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
+          demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n _⟩)
+        (Sum.inl k) = 0 ↔ (k : ℕ) ≠ 0 := by
+  obtain ⟨g, hg⟩ : ∃ g, f - 1 = g + 1 := ⟨f - 2, by omega⟩
+  rw [degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl (zero_lt_two.trans_le hf), hg,
+    pow_succ, mul_nsmul, two_nsmul, CharTwo.add_self_eq_zero, add_zero]
+  simp
+
 /-- **The degree-one form of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` is not alternating**, for
 `n ≥ 1` and `f ≥ 1`: its value on the first coordinate character twice is `1`. -/
 theorem not_isAlt_degreeOneForm_demushkinWordTwoOdd (hn : 0 < n) {f : ℕ} (hf : 0 < f) :
@@ -546,8 +563,20 @@ theorem not_isAlt_degreeOneForm_demushkinWordTwoOdd (hn : 0 < n) {f : ℕ} (hf :
         demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩)).IsAlt := by
   intro h
   have := h (dualBasis 2 (Fin n) ⟨0, hn⟩)
-  rw [degreeOneForm_dualBasis_self, degreeOneBasis_repr_demushkinWordTwoOdd_inl hf] at this
+  rw [degreeOneForm_dualBasis_self, degreeOneBasis_repr_gradedMk_demushkinWordTwoOdd_inl hf] at this
   simp at this
+
+/-- **The first coordinate character splits off the degree-one form of
+`x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`**, for `n ≥ 1` and `f ≥ 1`: pairing any character `χ` with
+the first coordinate character reads off `χ(x₁)`, because `x₁` occurs in no commutator of the
+word. In particular the first coordinate character is orthogonal to all the others. -/
+theorem degreeOneForm_gradedMk_demushkinWordTwoOdd_dualBasis_zero (hn : 0 < n) {f : ℕ}
+    (hf : 0 < f) (χ : continuousZModDual 2 (freeProP 2 (Fin n))) :
+    degreeOneForm (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
+        demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩) χ
+      (dualBasis 2 (Fin n) ⟨0, hn⟩) = (χ.toMul (freeProPGen 2 n 0)).toAdd := by
+  rw [degreeOneForm_demushkinWordTwoOdd_dualBasis hf]
+  simp
 
 /-- **The degree-one form of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` is nondegenerate for `n`
 odd and `f ≥ 1`**: pairing with the `j`-th coordinate character reads off the value of a character
@@ -568,11 +597,8 @@ theorem nondegenerate_degreeOneForm_demushkinWordTwoOdd (hn : Odd n) {f : ℕ} (
   simp only [degreeOneForm_demushkinWordTwoOdd_dualBasis hf] at hχ'
   -- The value at `x₁`.
   have hc0 : (χ.toMul (freeProPGen 2 n 0)).toAdd = 0 := by
-    have h := hχ' 0 (by omega)
-    rw [ite_eq_left rfl, ite_eq_right (by omega), smul_zero, add_zero,
-      Finset.sum_eq_zero fun a _ ↦ by
-        rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero], add_zero] at h
-    exact h
+    rw [← degreeOneForm_gradedMk_demushkinWordTwoOdd_dualBasis_zero (by omega) hf χ]
+    exact hχ _
   -- The value at `x_{j-1}` for `j ≥ 2` even is the pairing with the `j`-th coordinate character.
   have keyEven (j : ℕ) (hjn : j < n) (hj0 : j ≠ 0) (hj : j % 2 = 0) :
       (χ.toMul (freeProPGen 2 n (j - 1))).toAdd = 0 := by

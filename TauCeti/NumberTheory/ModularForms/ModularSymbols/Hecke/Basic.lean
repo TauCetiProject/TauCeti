@@ -46,13 +46,17 @@ integers once the period pairing is shown to be Hecke-equivariant and injective.
 
 ## Main results
 
-* `TauCeti.ModularSymbols.symbolIntRep_mapGL`: on `SL(2, ℤ)` the action is `symbolRep`.
+* `TauCeti.ModularSymbols.symbolIntRep_mapGL`: on `SL(2, ℤ)` the action is `symbolRep`, and
+  `TauCeti.ModularSymbols.mk_symbolIntRep_eq_of_rightCoset_eq`: the class of `δ · x` in
+  `𝕄_w(Γ₁; R)` depends only on the right coset `Γ₁' δ`.
 * `TauCeti.ModularSymbols.heckeSymbol_symbol`: the formula
   `T_D ({α, β} ⊗ P) = ∑ᵥ {aᵥα, aᵥβ} ⊗ (P ∣ adj aᵥ)` over the chosen representatives, and
   `TauCeti.ModularSymbols.heckeSymbol_symbol_eq_sum_of_rightCosets`, the same formula over any
   family of representatives of the right cosets.
 * `TauCeti.ModularSymbols.heckeSymbol_one`: the identity double coset acts as the identity, and
   `TauCeti.ModularSymbols.heckeTSymbol_one`: `T₁ = 1`.
+* `TauCeti.ModularSymbols.heckeTSymbol_congr`: `T_n` transported along an equality of indices,
+  each carrying its own `NeZero` instance.
 
 ## References
 
@@ -133,6 +137,21 @@ theorem mk_comp_symbolIntRep_of_mem {γ : GL (Fin 2) ℚ} (hγ : γ ∈ Γ₁.ma
   rw [symbolIntRep_mapGL]
   refine LinearMap.ext fun x ↦ ?_
   exact Coinvariants.mk_self_apply _ (⟨g, hg⟩ : Γ₁) x
+
+/-- **The class of `δ · x` in `𝕄_w(Γ₁; R)` depends only on the right coset `Γ₁' δ`.** If
+`Γ₁' δ₁ = Γ₁' δ₂` then `δ₂ = (δ₂ δ₁⁻¹) δ₁` with `δ₂ δ₁⁻¹ ∈ Γ₁'` — so `δ₂` is integral along with
+`δ₁` (`HeckeRing.GLn.mem_intEntries_of_rightCoset_eq`) — and the coinvariants do not see that
+factor. -/
+theorem mk_symbolIntRep_eq_of_rightCoset_eq {δ₁ δ₂ : GL (Fin 2) ℚ} (h₁ : δ₁ ∈ intEntries 2)
+    (h : op δ₁ • (Γ₁.map (mapGL ℚ) : Set (GL (Fin 2) ℚ)) =
+      op δ₂ • (Γ₁.map (mapGL ℚ) : Set (GL (Fin 2) ℚ)))
+    (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
+    (Coinvariants.mk _ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R]
+        ModularSymbols R Γ₁ w) (symbolIntRep R w ⟨δ₁, h₁⟩ x) =
+      Coinvariants.mk _ (symbolIntRep R w ⟨δ₂, mem_intEntries_of_rightCoset_eq 2 h₁ h⟩ x) :=
+  LinearMap.congr_fun (HeckeCoset.comp_eq_of_rightCoset_eq (symbolIntRep R w)
+    (map_mapGL_le_intEntries 2 Γ₁) (fun _ hγ ↦ mk_comp_symbolIntRep_of_mem Γ₁ hγ) h₁
+    (mem_intEntries_of_rightCoset_eq 2 h₁ h) h) x
 
 variable [Finite (DecompQuotient (Γ₂.map (mapGL ℚ)) (Γ₁.map (mapGL ℚ)) (D.out : GL (Fin 2) ℚ)⁻¹)]
 
@@ -276,6 +295,12 @@ theorem heckeTSymbol_def (n : ℕ) [NeZero n] :
     heckeTSymbol R w N n =
       heckeSymbol (Gamma1 N) (Gamma1 N) (diagCosetGamma1 N n)
         (Delta0_le_intEntries N (diagCosetGamma1 N n).out.2) := (rfl)
+
+/-- **Transport `T_n` along an equality of indices.** -/
+theorem heckeTSymbol_congr {n m : ℕ} [NeZero n] [NeZero m] (h : n = m) :
+    heckeTSymbol R w N n = heckeTSymbol R w N m := by
+  subst h
+  rfl
 
 /-- The first Hecke operator on modular symbols is the identity. -/
 @[simp]
