@@ -31,7 +31,7 @@ the finite-dimensional augmentation quotient in the subsequent Krull-intersectio
 
 ## Main results
 
-* `TauCeti.Subalgebra.centralSubalgebraAlgebra`: a subalgebra of the center acts on the ambient
+* `Subalgebra.centralSubalgebraAlgebra`: a subalgebra of the center acts on the ambient
   algebra.
 * `TauCeti.UniversalEnvelopingAlgebra.moduleFinite_of_isIntegral_of_span_eq_top`: integral
   canonical images of a finite spanning family imply module-finiteness of the enveloping algebra.
@@ -50,8 +50,6 @@ open scoped Pointwise
 
 universe u v w
 
-namespace TauCeti
-
 namespace Subalgebra
 
 /-- A subalgebra of the center of an algebra acts on the ambient algebra by multiplication. -/
@@ -61,6 +59,8 @@ abbrev centralSubalgebraAlgebra {R A : Type*} [CommSemiring R] [Semiring A] [Alg
     (Subalgebra.mem_center_iff.mp s.1.property a).symm)
 
 end Subalgebra
+
+namespace TauCeti
 
 namespace UniversalEnvelopingAlgebra
 
