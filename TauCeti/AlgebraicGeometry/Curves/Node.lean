@@ -18,8 +18,8 @@ import TauCeti.RingTheory.Node.Flat
 
 For a ring `R` and `a ∈ R`, the morphism `Spec R[x, y] ⧸ (xy - a) ⟶ Spec R` is the local model
 of a node in a family of curves: over a discrete valuation ring with uniformizer `π` and
-`a = πⁿ`, its generic fibre is smooth and its special fibre is the union of two lines crossing
-transversally at the origin.
+`a = πⁿ` with `n > 0`, its generic fibre is smooth and its special fibre is the union of two
+lines crossing transversally at the origin.
 
 This file shows that this morphism is flat, locally of finite presentation, and of pure relative
 dimension one. These are the conditions, beside nodality of the geometric fibres, in the fibrewise
@@ -32,6 +32,7 @@ the node algebra is pure of dimension one (`TauCeti.NodeAlgebra.isPureDimensiona
 
 * `TauCeti.NodeAlgebra.flat_spec`: the local model of a node is flat.
 * `TauCeti.NodeAlgebra.locallyOfFinitePresentation_spec`: it is locally of finite presentation.
+* `TauCeti.NodeAlgebra.fiberIso`: its fibres are spectra of node algebras over residue fields.
 * `TauCeti.NodeAlgebra.pureRelativeDimension_spec`: it has pure relative dimension one.
 
 ## References
@@ -64,13 +65,19 @@ instance locallyOfFinitePresentation_spec :
   (HasRingHomProperty.Spec_iff (P := @LocallyOfFinitePresentation)).mpr <|
     RingHom.finitePresentation_algebraMap.mpr inferInstance
 
-/-- The fibre of the local model of a node over a prime `p` of `R` is homeomorphic to the
-spectrum of the node algebra of the image of `a` in the residue field `κ(p)`. -/
+/-- The fibre of the local model of a node over a prime `p` of `R` is the spectrum of the node
+algebra of the image of `a` in the residue field `κ(p)`. -/
+def fiberIso (p : PrimeSpectrum R) :
+    (Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))).fiber p ≅
+      Spec (.of (NodeAlgebra p.asIdeal.ResidueField (algebraMap R _ a))) :=
+  Arrow.leftFunc.mapIso (Spec.fiberToSpecResidueFieldIso R (NodeAlgebra R a) p) ≪≫
+    Scheme.Spec.mapIso (baseChange a).toRingEquiv.toCommRingCatIso.symm.op
+
+/-- The underlying homeomorphism of `fiberIso`. -/
 private def fiberHomeomorph (p : PrimeSpectrum R) :
     (Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))).fiber p ≃ₜ
       PrimeSpectrum (NodeAlgebra p.asIdeal.ResidueField (algebraMap R _ a)) :=
-  (Arrow.leftFunc.mapIso (Spec.fiberToSpecResidueFieldIso R (NodeAlgebra R a) p)).hom.homeomorph
-    |>.trans (PrimeSpectrum.homeomorphOfRingEquiv (baseChange a).toRingEquiv)
+  (fiberIso a p).hom.homeomorph
 
 /-- The local model of a node has pure relative dimension one: every fibre is a curve all of
 whose irreducible components are one-dimensional. -/
