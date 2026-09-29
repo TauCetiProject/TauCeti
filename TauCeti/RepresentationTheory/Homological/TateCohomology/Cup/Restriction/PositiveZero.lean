@@ -67,12 +67,10 @@ cup product with a degree-zero right factor. -/
 @[simp]
 theorem cupH0_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
     (x : tateCohomology M ((n + 1 : ℕ) : ℤ)) (y : tateCohomology N 0) :
-    (show tateCohomology (M ⊗ N) ((n : ℤ) + 1) ⟶
-        tateCohomology (Rep.res H.subtype (M ⊗ N)) ((n : ℤ) + 1) from
-      posRes (M ⊗ N) H n) (cupH0 M N ((n : ℤ) + 1) x y) =
-      cupH0 (Rep.res H.subtype M) (Rep.res H.subtype N) ((n : ℤ) + 1)
+    posRes (M ⊗ N) H n (cupH0 M N ((n + 1 : ℕ) : ℤ) x y) =
+      cupH0 (Rep.res H.subtype M) (Rep.res H.subtype N) ((n + 1 : ℕ) : ℤ)
         (posRes M H n x) (H0Res N H y) := by
-  simpa only [cup_zero_right, Int.natCast_add, Int.cast_ofNat_Int] using
+  simpa only [cup_zero_right] using
     cup_posRes_zero_right M N H n x y
 
 end TauCeti.TateCohomology
