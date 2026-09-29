@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.InverseLimit
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Commutative
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Basic
 

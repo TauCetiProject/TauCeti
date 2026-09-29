@@ -242,6 +242,14 @@ theorem gradedMk_pow {k : ℕ} (x : pLowerCentralSeries p G k) (n : ℕ) :
     gradedMk p G k (x ^ n) = n • gradedMk p G k x := by
   rw [gradedMk, gradedMk, QuotientGroup.mk_pow, ofMul_pow]
 
+/-- The class of a product of elements of `λ_k` is the sum of their classes. -/
+@[simp]
+theorem gradedMk_list_prod {k : ℕ} (l : List (pLowerCentralSeries p G k)) :
+    gradedMk p G k l.prod = (l.map (gradedMk p G k)).sum := by
+  induction l with
+  | nil => rw [List.prod_nil, List.map_nil, List.sum_nil, gradedMk_one]
+  | cons a l ih => rw [List.prod_cons, List.map_cons, List.sum_cons, gradedMk_mul, ih]
+
 variable (p G) in
 /-- The quotient `λ_k ⧸ λ_{k+1}` is the quotient `λ_k ⧸ λ_kᵖ[λ_k, G]` of `λ_k` by one step of
 the lower `p`-series, since `λ_{k+1} = λ_kᵖ[λ_k, G]`: the identity of `λ_k` descends to a group
@@ -658,6 +666,15 @@ theorem gradedPow_gradedMkZero (g : G) :
     gradedPow p G 0 (gradedMkZero p G g) =
       gradedMk p G 1 ⟨g ^ p, pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g)⟩ := by
   rw [gradedMkZero, gradedPow_gradedMk]
+
+/-- **The class of a `p`-power in `gr_1(G)`**: the class of `g ^ (p * c)` is `c` times the
+`p`-power class `π ⟦g⟧`. -/
+theorem gradedMk_pow_mul (g : G) (c : ℕ) (h : g ^ (p * c) ∈ pLowerCentralSeries p G 1) :
+    gradedMk p G 1 ⟨g ^ (p * c), h⟩ = c • gradedPow p G 0 (gradedMkZero p G g) := by
+  have : (⟨g ^ (p * c), h⟩ : pLowerCentralSeries p G 1) =
+      ⟨g ^ p, pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p g)⟩ ^ c :=
+    Subtype.ext (by simp [pow_mul])
+  rw [this, gradedMk_pow, gradedPow_gradedMkZero]
 
 /-- **`π` is additive above degree zero**, for every `p`: for `k ≥ 1` the image of `λ_k` in
 `G ⧸ λ_{k+2}` is abelian, because `⁅λ_k, λ_k⁆ ≤ λ_{2k+1} ≤ λ_{k+2}`. -/

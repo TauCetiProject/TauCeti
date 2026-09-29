@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Deviation
+public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Pow
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
+import Mathlib.Algebra.Module.Projective
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 
 /-!
 # Basis modifications of a free pro-`p` group and the maps `δ`
@@ -47,6 +51,24 @@ of the iterated `p`-powers `π^j ξ_i` over the generators whose coefficient `c_
 which are the generators contributing no `π`-term to `δ`. For the dyadic relator
 `x₁² x₂^{2^f} ⁅x₂, x₃⁆ ⋯` with `f ≥ 2` these are `x₂, …, x_n`.
 
+Collecting the brackets of `δ` by their degree-`m` entry gives the **partial derivatives**
+`∂_i ρ ∈ gr_0(F)` (`TauCeti.freeProP.degreeOneDeriv`), the `i`-th row of the matrix
+`(a_{ik})` completed skew-symmetrically with diagonal `(p choose 2) c_i`, and the formula
+`δ_ρ(ω) = π (Σ_i c_i ω_i) + Σ_i [ω_i, ∂_i ρ]`. The image of `δ_ρ` is then computed under the
+hypothesis that the derivatives `∂_i ρ` span `gr_0(F)`, which is the nondegeneracy of the form
+`(a_{ik})` completed with that diagonal, and holds for every Demushkin relator in normal form.
+The **span statements** are: if all `c_i = 0`, then `Im δ_ρ` is the span of the brackets
+`[gr_m(F), gr_0(F)]` and `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)` for every `m ≥ 1`, the tail being
+spanned by all the `π^{m+1} ξ_i`; and if `p` is odd and some `c_i ≠ 0`, then
+`gr_{m+1}(F) = Im δ_ρ` for every `m ≥ 1`. The first case is that of the relators
+`x₁^q (x₁, x₂) (x₃, x₄) ⋯` with `q ≠ p`, whose `p`-power part lies in `λ_2(F)`, and the second that
+of `x₁^p (x₁, x₂) (x₃, x₄) ⋯` at odd `p`. Both rest on the spanning of `gr_{m+1}(F)` by `π gr_m(F)`
+and `[gr_m(F), gr_0(F)]` and on the naturality `π ∘ δ_ρ = δ_ρ ∘ π`, which carries the image of `δ_ρ`
+in degree `m` into its image in degree `m + 1`. For `p = 2` and a class with a `p`-power part the
+odd-`p` argument breaks down at the degree-zero defect of `π`, and no span statement is proved here;
+those are the relators `x₁^{2+α} (x₁, x₂) x₃^{2^f} ⋯` and `x₁² x₂^{2^f} (x₂, x₃) ⋯` of the dyadic
+classification, whose levels carry the free parameters `α` and `f` of the normal forms.
+
 ## Main definitions
 
 * `TauCeti.freeProP.basisModification`: the endomorphism `θ_w : F → F`, `x_i ↦ x_i * w_i`.
@@ -54,6 +76,7 @@ which are the generators contributing no `π`-term to `δ`. For the dyadic relat
   `δ : gr_1(F) → gr_m(F)^X → gr_{m+1}(F)`, `(ρ, ω) ↦ δ_ρ(ω)`.
 * `TauCeti.freeProP.basisModificationTail`: the tail `T_j(ρ) ≤ gr_j(F)`, spanned by the `π^j ξ_i`
   with `c_i = 0`.
+* `TauCeti.freeProP.degreeOneDeriv`: the partial derivative `∂_i : gr_1(F) →ₗ[𝔽_p] gr_0(F)`.
 
 ## Main results
 
@@ -65,11 +88,20 @@ which are the generators contributing no `π`-term to `δ`. For the dyadic relat
 * `TauCeti.freeProP.finrank_basisModificationTail`: `dim T_j(ρ)` is the number of indices `i`
   with `c_i = 0`.
 * `TauCeti.freeProP.basisModificationTail_succ`: `T_{j+1}(ρ) = π(T_j(ρ))` for `j ≥ 1`.
+* `TauCeti.freeProP.basisModificationDelta_eq_gradedPow_add_sum`,
+  `TauCeti.freeProP.gradedPow_basisModificationDelta`:
+  `δ_ρ(ω) = π (Σ_i c_i ω_i) + Σ_i [ω_i, ∂_i ρ]`, and `π (δ_ρ(ω)) = δ_ρ(π ω)`.
+* `TauCeti.freeProP.range_basisModificationDelta_eq_span_of_repr_inl_eq_zero`,
+  `TauCeti.freeProP.range_basisModificationDelta_sup_basisModificationTail_eq_top`: for a class
+  without `p`-power part whose derivatives span `gr_0(F)`, `Im δ_ρ = [gr_m(F), gr_0(F)]` and
+  `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)`.
+* `TauCeti.freeProP.range_basisModificationDelta_eq_top_of_odd`: for odd `p` and a class with a
+  `p`-power part whose derivatives span `gr_0(F)`, `gr_{m+1}(F) = Im δ_ρ`.
 
 ## References
 
 * J. Labute, *Classification of Demushkin groups*, Canadian J. Math. 19 (1967), §3,
-  Proposition 5.
+  Proposition 5 and the proof of Theorem 3.
 -/
 
 public section
@@ -250,6 +282,185 @@ theorem gradedMk_inv_mul_basisModification (hm : 1 ≤ m)
 
 end Delta
 
+/-! ### The partial derivatives `∂_i` -/
+
+section Deriv
+
+variable [Fact p.Prime] [Finite X] [LinearOrder X]
+
+variable (p X) in
+/-- **The partial derivative `∂_i`** of a class in `gr_1(F)`: the `𝔽_p`-linear map
+`gr_1(F) → gr_0(F)` given on the standard basis `TauCeti.freeProP.degreeOneBasis` by
+`∂_i (π ξ_i) = (p choose 2) • ξ_i`, `∂_i (π ξ_j) = 0` for `j ≠ i`, `∂_i [ξ_i, ξ_k] = ξ_k`,
+`∂_i [ξ_j, ξ_i] = -ξ_j` and `∂_i [ξ_j, ξ_k] = 0` when `i ∉ {j, k}`. For
+`ρ = Σ_i c_i π ξ_i + Σ_{j<k} a_{jk} [ξ_j, ξ_k]` this is
+`∂_i ρ = (p choose 2) c_i • ξ_i + Σ_{k>i} a_{ik} ξ_k - Σ_{j<i} a_{ji} ξ_j`, the `i`-th row of the
+matrix of the form `(a_{jk})` completed skew-symmetrically, with diagonal `(p choose 2) c_i`,
+read as a vector of `gr_0(F)`. The bracket terms of the basis-modification map are
+`Σ_i [v_i, ∂_i ρ]` (`TauCeti.freeProP.basisModificationDelta_eq_gradedPow_add_sum`). -/
+noncomputable def degreeOneDeriv (i : X) :
+    gradedPiece p (freeProP p X) 1 →ₗ[ZMod p] gradedPiece p (freeProP p X) 0 :=
+  (degreeOneBasis p X).constr (ZMod p) <| Sum.elim
+    (fun j ↦ if j = i then p.choose 2 • gradedMkZero p (freeProP p X) (of i) else 0)
+    fun jk ↦ (if jk.1.1 = i then gradedMkZero p (freeProP p X) (of jk.1.2) else 0) -
+      if jk.1.2 = i then gradedMkZero p (freeProP p X) (of jk.1.1) else 0
+
+/-- `∂_i` on the `p`-power basis vectors: `∂_i (π ξ_i) = (p choose 2) • ξ_i` and `∂_i (π ξ_j) = 0`
+for `j ≠ i`. -/
+theorem degreeOneDeriv_degreeOneBasis_inl (i j : X) :
+    degreeOneDeriv p X i (degreeOneBasis p X (Sum.inl j)) =
+      if j = i then p.choose 2 • gradedMkZero p (freeProP p X) (of i) else 0 := by
+  rw [degreeOneDeriv, Module.Basis.constr_basis, Sum.elim_inl]
+
+/-- `∂_i` on the bracket basis vectors: `∂_i [ξ_j, ξ_k] = ξ_k` if `j = i`, `-ξ_j` if `k = i`, and
+`0` otherwise, for `j < k`. -/
+theorem degreeOneDeriv_degreeOneBasis_inr (i : X) (jk : {ij : X × X // ij.1 < ij.2}) :
+    degreeOneDeriv p X i (degreeOneBasis p X (Sum.inr jk)) =
+      (if jk.1.1 = i then gradedMkZero p (freeProP p X) (of jk.1.2) else 0) -
+        if jk.1.2 = i then gradedMkZero p (freeProP p X) (of jk.1.1) else 0 := by
+  rw [degreeOneDeriv, Module.Basis.constr_basis, Sum.elim_inr]
+
+/-- `∂_i (π ξ_i) = (p choose 2) • ξ_i`. -/
+theorem degreeOneDeriv_gradedPow_gradedMkZero_of_self (i : X) :
+    degreeOneDeriv p X i (gradedPow p (freeProP p X) 0 (gradedMkZero p (freeProP p X) (of i))) =
+      p.choose 2 • gradedMkZero p (freeProP p X) (of i) := by
+  have h := degreeOneDeriv_degreeOneBasis_inl (p := p) i i
+  rwa [degreeOneBasis_apply, degreeOneFamily_inl, ite_eq_left rfl] at h
+
+/-- `∂_i (π ξ_j) = 0` for `j ≠ i`. -/
+theorem degreeOneDeriv_gradedPow_gradedMkZero_of_of_ne {i j : X} (hji : j ≠ i) :
+    degreeOneDeriv p X i (gradedPow p (freeProP p X) 0 (gradedMkZero p (freeProP p X) (of j))) =
+      0 := by
+  have h := degreeOneDeriv_degreeOneBasis_inl (p := p) i j
+  rwa [degreeOneBasis_apply, degreeOneFamily_inl, ite_eq_right hji] at h
+
+/-- `∂_i [ξ_i, ξ_k] = ξ_k` for `i < k`. -/
+theorem degreeOneDeriv_gradedBracket_gradedMkZero_of_left {i k : X} (hik : i < k) :
+    degreeOneDeriv p X i (gradedBracket p (freeProP p X) 0 0
+        (gradedMkZero p (freeProP p X) (of i)) (gradedMkZero p (freeProP p X) (of k))) =
+      gradedMkZero p (freeProP p X) (of k) := by
+  have h := degreeOneDeriv_degreeOneBasis_inr (p := p) i ⟨(i, k), hik⟩
+  rwa [degreeOneBasis_apply, degreeOneFamily_inr, ite_eq_left rfl, ite_eq_right hik.ne',
+    sub_zero] at h
+
+/-- `∂_i [ξ_j, ξ_i] = -ξ_j` for `j < i`. -/
+theorem degreeOneDeriv_gradedBracket_gradedMkZero_of_right {i j : X} (hji : j < i) :
+    degreeOneDeriv p X i (gradedBracket p (freeProP p X) 0 0
+        (gradedMkZero p (freeProP p X) (of j)) (gradedMkZero p (freeProP p X) (of i))) =
+      -gradedMkZero p (freeProP p X) (of j) := by
+  have h := degreeOneDeriv_degreeOneBasis_inr (p := p) i ⟨(j, i), hji⟩
+  rwa [degreeOneBasis_apply, degreeOneFamily_inr, ite_eq_right hji.ne, ite_eq_left rfl,
+    zero_sub] at h
+
+/-- `∂_i [ξ_j, ξ_k] = 0` for `j < k` with `i ∉ {j, k}`. -/
+theorem degreeOneDeriv_gradedBracket_gradedMkZero_of_of_ne {i j k : X} (hjk : j < k) (hj : j ≠ i)
+    (hk : k ≠ i) :
+    degreeOneDeriv p X i (gradedBracket p (freeProP p X) 0 0
+        (gradedMkZero p (freeProP p X) (of j)) (gradedMkZero p (freeProP p X) (of k))) = 0 := by
+  have h := degreeOneDeriv_degreeOneBasis_inr (p := p) i ⟨(j, k), hjk⟩
+  rwa [degreeOneBasis_apply, degreeOneFamily_inr, ite_eq_right hj, ite_eq_right hk, sub_zero] at h
+
+/-- **A class with spanning derivatives, in rank two.** In `F = freeProP p (Fin 2)` the
+derivatives of the bracket class `[ξ_0, ξ_1]` are `∂_0 = ξ_1` and `∂_1 = -ξ_0`, which span
+`gr_0(F)`. This is the class of the surface relation `(x₁, x₂)` of `ℤ_p × ℤ_p`. -/
+theorem span_range_degreeOneDeriv_gradedBracket_gradedMkZero_fin_two :
+    span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p (Fin 2) i
+      (gradedBracket p (freeProP p (Fin 2)) 0 0 (gradedMkZero p (freeProP p (Fin 2)) (of 0))
+        (gradedMkZero p (freeProP p (Fin 2)) (of 1)))) = ⊤ := by
+  have h0 := Submodule.subset_span (R := ZMod p) (Set.mem_range_self
+    (f := fun i ↦ degreeOneDeriv p (Fin 2) i (gradedBracket p (freeProP p (Fin 2)) 0 0
+      (gradedMkZero p (freeProP p (Fin 2)) (of 0)) (gradedMkZero p (freeProP p (Fin 2)) (of 1))))
+    (1 : Fin 2))
+  have h1 := Submodule.subset_span (R := ZMod p) (Set.mem_range_self
+    (f := fun i ↦ degreeOneDeriv p (Fin 2) i (gradedBracket p (freeProP p (Fin 2)) 0 0
+      (gradedMkZero p (freeProP p (Fin 2)) (of 0)) (gradedMkZero p (freeProP p (Fin 2)) (of 1))))
+    (0 : Fin 2))
+  rw [degreeOneDeriv_gradedBracket_gradedMkZero_of_right (show (0 : Fin 2) < 1 by decide)] at h0
+  rw [degreeOneDeriv_gradedBracket_gradedMkZero_of_left (show (0 : Fin 2) < 1 by decide)] at h1
+  rw [eq_top_iff, ← span_gradedMkZero_image_eq_top
+    ((isTopologicallyFinitelyGenerated_freeProP p (Fin 2)).isOpen_pLowerCentralSeries Fact.out 1)
+    (topologicalClosure_closure_range_of_eq_top p (Fin 2)), Submodule.span_le]
+  rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
+  revert i
+  exact Fin.forall_fin_two.mpr ⟨neg_mem_iff.mp h0, h1⟩
+
+/-- **The basis-modification map through the partial derivatives**: for `m ≥ 1`,
+`δ_ρ(v) = π (Σ_i c_i • v_i) + Σ_i [v_i, ∂_i ρ]`, where `c_i` is the coefficient of `π ξ_i` in
+`ρ`. The `p`-power part of `ρ` contributes the single `p`-power `π (Σ_i c_i v_i)`, and all
+brackets are collected in the derivatives. -/
+theorem basisModificationDelta_eq_gradedPow_add_sum [Fintype X] (hm : 1 ≤ m)
+    (ρ : gradedPiece p (freeProP p X) 1) (v : X → gradedPiece p (freeProP p X) m) :
+    basisModificationDelta p X hm ρ v =
+      gradedPow p (freeProP p X) m (∑ i, (degreeOneBasis p X).repr ρ (Sum.inl i) • v i) +
+        ∑ i, gradedBracket p (freeProP p X) m 0 (v i) (degreeOneDeriv p X i ρ) := by
+  -- Both sides are linear in `ρ`; compare them on the standard basis of `gr_1(F)`.
+  have key : (basisModificationDelta p X hm).flip v =
+      (gradedPowAddMonoidHom p (freeProP p X) hm).toZModLinearMap p ∘ₗ
+          (∑ i, (Finsupp.lapply (Sum.inl i) ∘ₗ (degreeOneBasis p X).repr.toLinearMap).smulRight
+            (v i)) +
+        ∑ i, gradedBracketLinear p (freeProP p X) m 0 (v i) ∘ₗ degreeOneDeriv p X i := by
+    refine (degreeOneBasis p X).ext fun b ↦ ?_
+    simp only [LinearMap.flip_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sum_apply,
+      LinearMap.smulRight_apply, LinearEquiv.coe_coe, Module.Basis.repr_self, Finsupp.lapply_apply,
+      AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply, gradedBracketLinear_apply,
+      Finsupp.single_apply]
+    rcases b with j | jk
+    · rw [basisModificationDelta_degreeOneBasis_inl]
+      simp only [Sum.inl.injEq, ite_smul, one_smul, zero_smul, Finset.sum_ite_eq,
+        Finset.mem_univ, ite_true, degreeOneDeriv_degreeOneBasis_inl]
+      congr 1
+      rw [Finset.sum_eq_single j (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij), map_zero])
+        (fun h ↦ (h (Finset.mem_univ j)).elim), ite_eq_left rfl, map_nsmul]
+    · rw [basisModificationDelta_degreeOneBasis_inr]
+      simp only [reduceCtorEq, ite_false, zero_smul, Finset.sum_const_zero, gradedPow_zero,
+        zero_add, degreeOneDeriv_degreeOneBasis_inr, map_sub, Finset.sum_sub_distrib]
+      congr 1
+      · rw [Finset.sum_eq_single jk.1.1 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij), map_zero])
+          (fun h ↦ (h (Finset.mem_univ _)).elim), ite_eq_left rfl]
+      · rw [Finset.sum_eq_single jk.1.2 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij), map_zero])
+          (fun h ↦ (h (Finset.mem_univ _)).elim), ite_eq_left rfl]
+  have h := LinearMap.congr_fun key ρ
+  simpa only [LinearMap.flip_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sum_apply,
+    LinearMap.smulRight_apply, LinearEquiv.coe_coe, Finsupp.lapply_apply,
+    AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply, gradedBracketLinear_apply]
+    using h
+
+/-- **`δ` on a family proportional to a single class**: for `b : X → 𝔽_p` and `v ∈ gr_m(F)`,
+`δ_ρ(b • v) = (Σ_i b_i c_i) • π v + [v, Σ_i b_i • ∂_i ρ]`. -/
+theorem basisModificationDelta_smul [Fintype X] (hm : 1 ≤ m) (ρ : gradedPiece p (freeProP p X) 1)
+    (b : X → ZMod p) (v : gradedPiece p (freeProP p X) m) :
+    basisModificationDelta p X hm ρ (fun i ↦ b i • v) =
+      (∑ i, b i * (degreeOneBasis p X).repr ρ (Sum.inl i)) • gradedPow p (freeProP p X) m v +
+        gradedBracket p (freeProP p X) m 0 v (∑ i, b i • degreeOneDeriv p X i ρ) := by
+  rw [basisModificationDelta_eq_gradedPow_add_sum]
+  congr 1
+  · have h : ∑ i, (degreeOneBasis p X).repr ρ (Sum.inl i) • b i • v =
+        (∑ i, b i * (degreeOneBasis p X).repr ρ (Sum.inl i)) • v := by
+      simp only [smul_smul, Finset.sum_smul, mul_comm]
+    rw [h, ← gradedPowAddMonoidHom_apply hm, ← AddMonoidHom.coe_toZModLinearMap p,
+      map_smul, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply]
+  · simp only [← gradedBracketLinear_apply, map_sum, map_smul, LinearMap.smul_apply]
+
+/-- **Naturality of `δ` under `π`**: for `m ≥ 1`, `π (δ_ρ(v)) = δ_ρ(π v)`, where `δ_ρ` on the left
+is the map in degree `m` and on the right the map in degree `m + 1`. -/
+theorem gradedPow_basisModificationDelta (hm : 1 ≤ m)
+    (ρ : gradedPiece p (freeProP p X) 1) (v : X → gradedPiece p (freeProP p X) m) :
+    gradedPow p (freeProP p X) (m + 1) (basisModificationDelta p X hm ρ v) =
+      basisModificationDelta p X (m := m + 1) (by omega) ρ
+        fun i ↦ gradedPow p (freeProP p X) m (v i) := by
+  cases nonempty_fintype X
+  rw [basisModificationDelta_eq_gradedPow_add_sum, basisModificationDelta_eq_gradedPow_add_sum,
+    gradedPow_add_of_one_le (by omega)]
+  congr 1
+  · congr 1
+    rw [← gradedPowAddMonoidHom_apply hm, ← AddMonoidHom.coe_toZModLinearMap p, map_sum]
+    simp only [map_smul, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply]
+  · rw [← gradedPowAddMonoidHom_apply (by omega : 1 ≤ m + 1), map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [gradedPowAddMonoidHom_apply, gradedPow_gradedBracket_left_zero hm]
+
+end Deriv
+
 /-! ### The tails `T_j` -/
 
 section Tail
@@ -327,5 +538,277 @@ theorem finrank_basisModificationTail (ρ : gradedPiece p (freeProP p X) 1) (j :
     Subtype.val_injective)).trans Nat.card_eq_fintype_card.symm
 
 end Tail
+
+/-! ### The image of `δ` -/
+
+section Span
+
+variable [Fact p.Prime] [Finite X] [LinearOrder X]
+
+/-- **Brackets lie in the image of `δ_ρ`** when `ρ` has no `p`-power part and its partial
+derivatives span `gr_0(F)`: for `v ∈ gr_m(F)` and `y ∈ gr_0(F)`, writing `y = Σ_i b_i ∂_i ρ`, the
+family `b • v` has `δ_ρ(b • v) = [v, y]`. -/
+theorem gradedBracket_mem_range_basisModificationDelta (hm : 1 ≤ m)
+    {ρ : gradedPiece p (freeProP p X) 1}
+    (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
+    (hc : ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0) (v : gradedPiece p (freeProP p X) m)
+    (y : gradedPiece p (freeProP p X) 0) :
+    gradedBracket p (freeProP p X) m 0 v y ∈ LinearMap.range (basisModificationDelta p X hm ρ) := by
+  cases nonempty_fintype X
+  obtain ⟨b, hb⟩ := (mem_span_range_iff_exists_fun (ZMod p)).mp (hρ ▸ Submodule.mem_top :
+    y ∈ span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ))
+  refine ⟨fun i ↦ b i • v, ?_⟩
+  rw [basisModificationDelta_smul, hb]
+  simp only [hc, mul_zero, Finset.sum_const_zero, zero_smul, zero_add]
+
+/-- **The image of `δ_ρ` for a relator without `p`-power part** is the span of the brackets
+`[v, y]` with `v ∈ gr_m(F)` and `y ∈ gr_0(F)`, provided the partial derivatives `∂_i ρ` span
+`gr_0(F)`. -/
+theorem range_basisModificationDelta_eq_span_of_repr_inl_eq_zero (hm : 1 ≤ m)
+    {ρ : gradedPiece p (freeProP p X) 1}
+    (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
+    (hc : ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0) :
+    LinearMap.range (basisModificationDelta p X hm ρ) =
+      span (ZMod p) (Set.range
+        fun vy : gradedPiece p (freeProP p X) m × gradedPiece p (freeProP p X) 0 ↦
+          gradedBracket p (freeProP p X) m 0 vy.1 vy.2) := by
+  cases nonempty_fintype X
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨v, rfl⟩
+    rw [basisModificationDelta_eq_gradedPow_add_sum]
+    simp only [hc, zero_smul, Finset.sum_const_zero, gradedPow_zero, zero_add]
+    refine Submodule.sum_mem _ fun i _ ↦ Submodule.subset_span ?_
+    exact ⟨(v i, degreeOneDeriv p X i ρ), rfl⟩
+  · rw [Submodule.span_le]
+    rintro _ ⟨⟨v, y⟩, rfl⟩
+    exact gradedBracket_mem_range_basisModificationDelta hm hρ hc v y
+
+/-- **The span statement for a relator without `p`-power part**: if `ρ ∈ gr_1(F)` has all
+coefficients `c_i` of `π ξ_i` equal to zero and its partial derivatives `∂_i ρ` span `gr_0(F)`, then
+for every `m ≥ 1`
+  `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)`,
+where the tail `T_{m+1}(ρ)` is spanned by the `p`-powers `π^{m+1} ξ_i` of all the generator
+classes. The image of `δ_ρ` is the span of the brackets `[gr_m(F), gr_0(F)]`, and the tail
+accounts for the `p`-powers: `π` carries `Im δ_ρ` in degree `m` into `Im δ_ρ` in degree `m + 1` and
+`T_{m+1}(ρ)` onto `T_{m+2}(ρ)`. This is the case of the Demushkin relators
+`x₁^q (x₁, x₂) (x₃, x₄) ⋯` with `q ≠ p`, where the `p`-power part of the relator lies in `λ_2(F)`
+and is not seen by `gr_1(F)`. -/
+theorem range_basisModificationDelta_sup_basisModificationTail_eq_top (hm : 1 ≤ m)
+    {ρ : gradedPiece p (freeProP p X) 1}
+    (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
+    (hc : ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0) :
+    LinearMap.range (basisModificationDelta p X hm ρ) ⊔ basisModificationTail p X ρ (m + 1) =
+      ⊤ := by
+  cases nonempty_fintype X
+  have hopen (k : ℕ) :
+      IsOpen (pLowerCentralSeries p (freeProP p X) k : Set (freeProP p X)) :=
+    (isTopologicallyFinitelyGenerated_freeProP p X).isOpen_pLowerCentralSeries Fact.out k
+  induction m, hm using Nat.le_induction with
+  | base =>
+    refine eq_top_of_forall_gradedPow_mem_of_forall_gradedBracket_mem (hopen 3) (fun v ↦ ?_)
+      fun v y ↦
+        Submodule.mem_sup_left (gradedBracket_mem_range_basisModificationDelta le_rfl hρ hc v y)
+    -- `gr_1(F)` is spanned by the `π ξ_i` and the `[ξ_j, ξ_k]`, and `π` is linear on it.
+    suffices h : (⊤ : Submodule (ZMod p) (gradedPiece p (freeProP p X) 1)) ≤
+        (LinearMap.range (basisModificationDelta p X le_rfl ρ) ⊔
+          basisModificationTail p X ρ (1 + 1)).comap
+            ((gradedPowAddMonoidHom p (freeProP p X) le_rfl).toZModLinearMap p) by
+      have h' := h (Submodule.mem_top (x := v))
+      rwa [Submodule.mem_comap, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply] at h'
+    rw [← span_range_degreeOneFamily_of_eq_top p X, Submodule.span_le]
+    rintro _ ⟨k, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_comap, AddMonoidHom.coe_toZModLinearMap,
+      gradedPowAddMonoidHom_apply]
+    rcases k with i | jk
+    · -- `π (π ξ_i) = π² ξ_i` lies in the tail, since `c_i = 0`.
+      have h := gradedPowIter_mem_basisModificationTail (hc i) 2
+      rw [gradedPowIter_succ, gradedPowIter_succ, gradedPowIter_zero] at h
+      rw [degreeOneFamily_inl]
+      exact Submodule.mem_sup_right h
+    · -- `π [ξ_j, ξ_k] = [π ξ_j, ξ_k] + (p choose 2) • [[ξ_j, ξ_k], ξ_j]` is a sum of brackets.
+      rw [degreeOneFamily_inr, gradedPow_gradedBracket_zero_zero]
+      exact Submodule.mem_sup_left
+        (add_mem (gradedBracket_mem_range_basisModificationDelta le_rfl hρ hc _ _)
+          (nsmul_mem (gradedBracket_mem_range_basisModificationDelta le_rfl hρ hc _ _) _))
+  | succ m hm ih =>
+    refine eq_top_of_forall_gradedPow_mem_of_forall_gradedBracket_mem (hopen (m + 1 + 1 + 1))
+      (fun v ↦ ?_) fun v y ↦
+        Submodule.mem_sup_left (gradedBracket_mem_range_basisModificationDelta (by omega) hρ hc v y)
+    -- `v = δ_ρ(w) + t` with `t` in the tail; `π` carries both summands into the next level.
+    obtain ⟨_, ⟨w, rfl⟩, t, ht, rfl⟩ := Submodule.mem_sup.mp (ih ▸ Submodule.mem_top :
+      v ∈ LinearMap.range (basisModificationDelta p X hm ρ) ⊔ basisModificationTail p X ρ (m + 1))
+    rw [gradedPow_add_of_one_le (by omega), gradedPow_basisModificationDelta]
+    refine add_mem (Submodule.mem_sup_left ⟨_, rfl⟩) (Submodule.mem_sup_right ?_)
+    rw [basisModificationTail_succ ρ (by omega : 1 ≤ m + 1)]
+    have h' := Submodule.mem_map_of_mem
+      (f := (gradedPowAddMonoidHom p (freeProP p X) (by omega : 1 ≤ m + 1)).toZModLinearMap p) ht
+    rwa [AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply] at h'
+
+/-- The odd-`p` span statement, in the form in which it is proved: a linear functional `φ` on
+`gr_0(F)` with a value `1` at `y₀` such that `φ(y) • π v + [v, y] ∈ Im δ_ρ` for every `v` and `y`
+forces `Im δ_ρ = gr_{m+1}(F)` for every `m ≥ 1`. -/
+private theorem range_basisModificationDelta_eq_top_of_forall_smul_gradedPow_add_mem (hp : Odd p)
+    {ρ : gradedPiece p (freeProP p X) 1}
+    (φ : gradedPiece p (freeProP p X) 0 →ₗ[ZMod p] ZMod p) {y₀ : gradedPiece p (freeProP p X) 0}
+    (hy₀ : φ y₀ = 1)
+    (hkey : ∀ (m : ℕ) (hm : 1 ≤ m) (v : gradedPiece p (freeProP p X) m)
+      (y : gradedPiece p (freeProP p X) 0),
+      φ y • gradedPow p (freeProP p X) m v + gradedBracket p (freeProP p X) m 0 v y ∈
+        LinearMap.range (basisModificationDelta p X hm ρ))
+    (hm : 1 ≤ m) : LinearMap.range (basisModificationDelta p X hm ρ) = ⊤ := by
+  cases nonempty_fintype X
+  have hopen (k : ℕ) :
+      IsOpen (pLowerCentralSeries p (freeProP p X) k : Set (freeProP p X)) :=
+    (isTopologicallyFinitelyGenerated_freeProP p X).isOpen_pLowerCentralSeries Fact.out k
+  -- Brackets with an element of the kernel of `φ` lie in the image.
+  have hker (m : ℕ) (hm : 1 ≤ m) (v : gradedPiece p (freeProP p X) m)
+      {z : gradedPiece p (freeProP p X) 0} (hz : φ z = 0) :
+      gradedBracket p (freeProP p X) m 0 v z ∈
+        LinearMap.range (basisModificationDelta p X hm ρ) := by
+    have h := hkey m hm v z
+    rwa [hz, zero_smul, zero_add] at h
+  have hsplit (y : gradedPiece p (freeProP p X) 0) : φ (y - φ y • y₀) = 0 := by
+    rw [map_sub, map_smul, hy₀, smul_eq_mul, mul_one]
+    exact sub_self _
+  -- Once `π v` lies in the image, so does every bracket `[v, y]`.
+  have hbr (m : ℕ) (hm : 1 ≤ m) (v : gradedPiece p (freeProP p X) m)
+      (hv : gradedPow p (freeProP p X) m v ∈ LinearMap.range (basisModificationDelta p X hm ρ))
+      (y : gradedPiece p (freeProP p X) 0) :
+      gradedBracket p (freeProP p X) m 0 v y ∈
+        LinearMap.range (basisModificationDelta p X hm ρ) := by
+    have h₁ := hker m hm v (hsplit y)
+    have h₂ := hkey m hm v y₀
+    rw [hy₀, one_smul] at h₂
+    have e : gradedBracket p (freeProP p X) m 0 v y =
+        gradedBracket p (freeProP p X) m 0 v (y - φ y • y₀) +
+          φ y • ((gradedPow p (freeProP p X) m v + gradedBracket p (freeProP p X) m 0 v y₀) -
+            gradedPow p (freeProP p X) m v) := by
+      rw [add_sub_cancel_left]
+      simp only [← gradedBracketLinear_apply, map_sub, map_smul, sub_add_cancel]
+    rw [e]
+    exact add_mem h₁ (Submodule.smul_mem _ _ (sub_mem h₂ hv))
+  -- `π v` lies in the image for every `v ∈ gr_m(F)`, by induction on `m`.
+  have hpow : ∀ (m : ℕ) (hm : 1 ≤ m) (v : gradedPiece p (freeProP p X) m),
+      gradedPow p (freeProP p X) m v ∈ LinearMap.range (basisModificationDelta p X hm ρ) := by
+    intro m hm
+    induction m, hm using Nat.le_induction with
+    | base =>
+      -- `[π u, y₀] = π [u, y₀] = -π [y₀, u - φ(u) y₀] = -[π y₀, u - φ(u) y₀]` for `u ∈ gr_0(F)`.
+      have hy₀u (u : gradedPiece p (freeProP p X) 0) :
+          gradedBracket p (freeProP p X) 1 0 (gradedPow p (freeProP p X) 0 u) y₀ ∈
+            LinearMap.range (basisModificationDelta p X le_rfl ρ) := by
+        have hswap := gradedCast_gradedBracket_swap y₀ u
+        rw [gradedCast_rfl] at hswap
+        have e : gradedBracket p (freeProP p X) 0 0 y₀ (u - φ u • y₀) =
+            gradedBracket p (freeProP p X) 0 0 y₀ u := by
+          rw [map_sub, ← gradedBracketLinear_apply y₀ (φ u • y₀), map_smul,
+            gradedBracketLinear_apply, gradedBracket_self, smul_zero, sub_zero]
+        rw [← gradedPow_gradedBracket_left_zero_of_odd hp, hswap, ← e,
+          ← gradedPowAddMonoidHom_apply le_rfl, map_neg, gradedPowAddMonoidHom_apply,
+          gradedPow_gradedBracket_left_zero_of_odd hp]
+        exact neg_mem (hker 1 le_rfl _ (hsplit u))
+      have hππ (u : gradedPiece p (freeProP p X) 0) :
+          gradedPow p (freeProP p X) 1 (gradedPow p (freeProP p X) 0 u) ∈
+            LinearMap.range (basisModificationDelta p X le_rfl ρ) := by
+        have h := hkey 1 le_rfl (gradedPow p (freeProP p X) 0 u) y₀
+        rw [hy₀, one_smul] at h
+        simpa only [add_sub_cancel_right] using sub_mem h (hy₀u u)
+      intro v
+      suffices h : (⊤ : Submodule (ZMod p) (gradedPiece p (freeProP p X) 1)) ≤
+          (LinearMap.range (basisModificationDelta p X le_rfl ρ)).comap
+            ((gradedPowAddMonoidHom p (freeProP p X) le_rfl).toZModLinearMap p) by
+        have h' := h (Submodule.mem_top (x := v))
+        rwa [Submodule.mem_comap, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply]
+          at h'
+      rw [← span_range_gradedPow_union_range_gradedBracket_eq_top (hopen 2), Submodule.span_le]
+      rintro _ (⟨u, rfl⟩ | ⟨⟨u, y⟩, rfl⟩) <;>
+        rw [SetLike.mem_coe, Submodule.mem_comap, AddMonoidHom.coe_toZModLinearMap,
+          gradedPowAddMonoidHom_apply]
+      · exact hππ u
+      · rw [gradedPow_gradedBracket_left_zero_of_odd hp]
+        exact hbr 1 le_rfl _ (hππ u) y
+    | succ m hm ih =>
+      have hππ (u : gradedPiece p (freeProP p X) m) :
+          gradedPow p (freeProP p X) (m + 1) (gradedPow p (freeProP p X) m u) ∈
+            LinearMap.range (basisModificationDelta p X (by omega) ρ) := by
+        obtain ⟨w, hw⟩ := ih u
+        rw [← hw, gradedPow_basisModificationDelta]
+        exact ⟨_, rfl⟩
+      intro v
+      suffices h : (⊤ : Submodule (ZMod p) (gradedPiece p (freeProP p X) (m + 1))) ≤
+          (LinearMap.range (basisModificationDelta p X (by omega) ρ)).comap
+            ((gradedPowAddMonoidHom p (freeProP p X) (by omega)).toZModLinearMap p) by
+        have h' := h (Submodule.mem_top (x := v))
+        rwa [Submodule.mem_comap, AddMonoidHom.coe_toZModLinearMap, gradedPowAddMonoidHom_apply]
+          at h'
+      rw [← span_range_gradedPow_union_range_gradedBracket_eq_top (hopen (m + 1 + 1)),
+        Submodule.span_le]
+      rintro _ (⟨u, rfl⟩ | ⟨⟨u, y⟩, rfl⟩) <;>
+        rw [SetLike.mem_coe, Submodule.mem_comap, AddMonoidHom.coe_toZModLinearMap,
+          gradedPowAddMonoidHom_apply]
+      · exact hππ u
+      · rw [gradedPow_gradedBracket_left_zero hm]
+        exact hbr (m + 1) (by omega) _ (hππ u) y
+  exact eq_top_of_forall_gradedPow_mem_of_forall_gradedBracket_mem (hopen (m + 1 + 1))
+    (hpow m hm) fun v y ↦ hbr m hm v (hpow m hm v) y
+
+/-- **The span statement for odd `p` and a relator with a `p`-power part**: if `p` is odd,
+`ρ ∈ gr_1(F)` has some coefficient `c_i` of `π ξ_i` nonzero and its partial derivatives `∂_i ρ`
+span `gr_0(F)`, then `δ_ρ` is onto `gr_{m+1}(F)` for every `m ≥ 1`:
+  `gr_{m+1}(F) = Im δ_ρ`.
+This is the case of the Demushkin relators `x₁^p (x₁, x₂) (x₃, x₄) ⋯` at odd `p`. -/
+theorem range_basisModificationDelta_eq_top_of_odd (hp : Odd p) (hm : 1 ≤ m)
+    {ρ : gradedPiece p (freeProP p X) 1}
+    (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
+    (hc : ∃ i, (degreeOneBasis p X).repr ρ (Sum.inl i) ≠ 0) :
+    LinearMap.range (basisModificationDelta p X hm ρ) = ⊤ := by
+  cases nonempty_fintype X
+  -- The derivatives and the `p`-power coefficients as linear maps on `𝔽_p^X`.
+  set D : (X → ZMod p) →ₗ[ZMod p] gradedPiece p (freeProP p X) 0 :=
+    Fintype.linearCombination (ZMod p) fun i ↦ degreeOneDeriv p X i ρ with hD
+  set c : (X → ZMod p) →ₗ[ZMod p] ZMod p :=
+    Fintype.linearCombination (ZMod p) fun i ↦ (degreeOneBasis p X).repr ρ (Sum.inl i) with hcdef
+  have hDtop : LinearMap.range D = ⊤ := by rw [hD, Fintype.range_linearCombination, hρ]
+  have hδ (m : ℕ) (hm : 1 ≤ m) (b : X → ZMod p) (v : gradedPiece p (freeProP p X) m) :
+      basisModificationDelta p X hm ρ (fun i ↦ b i • v) =
+        c b • gradedPow p (freeProP p X) m v + gradedBracket p (freeProP p X) m 0 v (D b) := by
+    rw [basisModificationDelta_smul, hcdef, hD, Fintype.linearCombination_apply,
+      Fintype.linearCombination_apply]
+    simp only [smul_eq_mul]
+  -- `gr_0(F)` has dimension `#X`: the `#X` derivatives span it and the `#X` generator classes are
+  -- linearly independent in it. So the spanning derivatives are a basis and `D` is injective.
+  have hfin : Module.finrank (ZMod p) (gradedPiece p (freeProP p X) 0) = Fintype.card X := by
+    have : Module.Finite (ZMod p) (gradedPiece p (freeProP p X) 0) :=
+      Module.Finite.of_surjective D (LinearMap.range_eq_top.mp hDtop)
+    refine le_antisymm ?_ (LinearIndependent.fintype_card_le_finrank
+      (linearIndependent_gradedPowIter_gradedMkZero_of p X 0))
+    rw [← finrank_top (R := ZMod p), ← hρ]
+    exact finrank_range_le_card _
+  have hB (b : X → ZMod p) (hb : D b = 0) : c b = 0 := by
+    have hli : LinearIndependent (ZMod p) fun i ↦ degreeOneDeriv p X i ρ :=
+      linearIndependent_of_top_le_span_of_card_eq_finrank hρ.ge hfin.symm
+    rw [hD, Fintype.linearCombination_apply] at hb
+    rw [show b = 0 from funext (Fintype.linearIndependent_iff.mp hli b hb), map_zero]
+  -- `c` factors through `D`: `c = φ ∘ D` for `φ := c ∘ s`, with `s` a linear section of `D`.
+  obtain ⟨s, hs⟩ := LinearMap.exists_rightInverse_of_surjective D hDtop
+  have hφ (b : X → ZMod p) : c b = (c ∘ₗ s) (D b) := by
+    have h0 : D (b - s (D b)) = 0 := by
+      rw [map_sub, ← LinearMap.comp_apply, hs, LinearMap.id_apply, sub_self]
+    have h := hB _ h0
+    rw [map_sub] at h
+    have h' : c b = c (s (D b)) := sub_eq_zero.mp h
+    rw [LinearMap.comp_apply]
+    exact h'
+  obtain ⟨i, hi⟩ := hc
+  have hne : (c ∘ₗ s) (D (Pi.single i 1)) ≠ 0 := by
+    rw [← hφ, hcdef, Fintype.linearCombination_apply_single, one_smul]
+    exact hi
+  refine range_basisModificationDelta_eq_top_of_forall_smul_gradedPow_add_mem hp (c ∘ₗ s)
+    (y₀ := ((c ∘ₗ s) (D (Pi.single i 1)))⁻¹ • D (Pi.single i 1)) ?_ (fun m hm v y ↦ ?_) hm
+  · rw [map_smul, smul_eq_mul, inv_mul_cancel₀ hne]
+  · refine ⟨fun j ↦ s y j • v, ?_⟩
+    rw [hδ, hφ, ← LinearMap.comp_apply D s, hs, LinearMap.id_apply]
+
+end Span
 
 end TauCeti.freeProP

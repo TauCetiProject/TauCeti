@@ -86,9 +86,7 @@ noncomputable def presentationToRationalSubsetIndex (Aplus : Subring A)
     PresentationIndex (P := P) Aplus V ⥤ RationalSubsetIndex Aplus V where
   obj i :=
     OrderDual.toDual
-      ⟨spaBasicOpen Aplus i.pres.num i.pres.den,
-        mem_spaRationalOpens.mpr <| mem_spaRationalFamily_iff.mpr
-          ⟨i.pres.num, i.pres.den, i.isOpen_span, Set.ext fun _ ↦ mem_spaBasicOpen⟩,
+      ⟨spaBasicOpen Aplus i.pres.num i.pres.den, spaBasicOpen_mem_spaRationalOpens i.isOpen_span,
         i.le_open⟩
   map {i j} f := homOfLE <| spaBasicOpen_le_spaBasicOpen_iff.mpr <|
     rationalSubset_subset_rationalSubset_of_le Aplus f.le

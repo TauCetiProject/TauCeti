@@ -9,10 +9,10 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
 import Mathlib.GroupTheory.IndexNSmul
-import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The `n`-th power subgroup of a local field
@@ -72,6 +72,7 @@ invertible in `𝒪[K]`, since it then contains the power subgroup attached to t
 * `TauCeti.card_powerClasses_of_isUnit`: `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K)`.
 * `TauCeti.finiteIndex_range_powMonoidHom_of_isUnit`: `(Kˣ)ⁿ` has finite index in `Kˣ`.
 * `TauCeti.card_squareClasses_of_isUnit`: `#(Kˣ ⧸ (Kˣ)²) = 4` when `2` is a unit of `𝒪[K]`.
+* `TauCeti.card_squareClasses`: `#(Kˣ ⧸ (Kˣ)²) = 4 · q ^ v_K(2)` when `2 ≠ 0` in `K`.
 
 ## Implementation notes
 
@@ -434,9 +435,15 @@ theorem finiteIndex_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : �
 then `Kˣ ⧸ (Kˣ)²` has `4` elements: `μ_2(K) = {±1}` has order `2`. -/
 theorem card_squareClasses_of_isUnit (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) = 4 := by
-  have h2K : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
-  have hchar : ringChar K ≠ 2 := fun h ↦ h2K (by exact_mod_cast h ▸ ringChar.Nat.cast_ringChar)
   rw [card_powerClasses_of_isUnit (by exact_mod_cast h2),
-    (IsPrimitiveRoot.neg_one (ringChar K) hchar).card_rootsOfUnity]
+    card_rootsOfUnity_two (two_ne_zero_of_isUnit_two h2)]
+
+/-- **The number of square classes of a nonarchimedean local field.** If `2` is nonzero in `K`,
+then `Kˣ ⧸ (Kˣ)²` has `4 · #𝓀[K] ^ v_K(2)` elements. -/
+@[simp]
+theorem card_squareClasses (h2 : (2 : K) ≠ 0) :
+    Nat.card (Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) =
+      4 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
+  rw [card_powerClasses h2, card_rootsOfUnity_two h2]
 
 end TauCeti

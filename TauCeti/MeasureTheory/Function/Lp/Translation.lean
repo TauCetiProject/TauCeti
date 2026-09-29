@@ -34,6 +34,8 @@ exchanging the order of integration.
   of `Lᵖ`.
 * `MeasureTheory.Measure.coeFn_translateLp`: translation is almost everywhere precomposition by
   addition.
+* `MeasureTheory.Measure.compLpL_translateLp`: translation commutes with postcomposition by a
+  continuous linear map.
 * `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
   `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group of
   vectors.
@@ -94,6 +96,19 @@ theorem coeFn_translateLp (h : E) (f : Lp F p mu) :
     ⇑(translateLp mu p h f) =ᵐ[mu] ⇑f ∘ (· + h) := by
   rw [translateLp]
   exact Lp.coeFn_compMeasurePreservingₗᵢEquiv ℝ _ _ _ f
+
+omit [NormedSpace ℝ E] in
+/-- Translation commutes with postcomposition by a continuous linear map. -/
+theorem compLpL_translateLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (L : F →L[ℝ] G) (h : E) (f : Lp F p mu) :
+    L.compLpL p mu (translateLp mu p h f) = translateLp mu p h (L.compLpL p mu f) := by
+  apply Lp.ext
+  filter_upwards [L.coeFn_compLpL (translateLp mu p h f), coeFn_translateLp (mu := mu) h f,
+    coeFn_translateLp (mu := mu) h (L.compLpL p mu f),
+    (measurePreserving_add_right mu h).quasiMeasurePreserving.tendsto_ae.eventually
+      (L.coeFn_compLpL f)] with x hL htr htrL hLtr
+  rw [hL, htr, htrL]
+  exact hLtr.symm
 
 omit [NormedSpace ℝ E] in
 /-- Translating by `h₁ + h₂` is translating by `h₁` and then by `h₂`. -/

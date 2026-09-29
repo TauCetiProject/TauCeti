@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
+-- Private: injectivity of the scalars is used only inside the form-preservation proof.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 /-!
 # The Lipschitz group acting on its quadratic space by twisted conjugation
@@ -34,12 +36,19 @@ surjectivity results.
 
 ## Main definitions
 
+* `CliffordAlgebra.vectorMap Q x`: the unbundled endomorphism of the quadratic space induced by
+  twisted conjugation by any Clifford unit `x`, the vector part of `involute x * ι v * x⁻¹`.
 * `CliffordAlgebra.lipschitzVectorAction Q x`: the automorphism of the quadratic space
   induced by twisted conjugation by a Lipschitz element.
 * `CliffordAlgebra.lipschitzToOrthogonal Q`: the resulting homomorphism to `O(Q)`.
 
 ## Main results
 
+* `CliffordAlgebra.vectorMap_map_app_of_involute_act_ι_mem_range_ι`: **twisted conjugation by a
+  unit carrying vectors to vectors preserves the quadratic form**, because the twisted conjugate
+  of `ι v` and its grade involute multiply to the scalar `Q v`. This is stated for every unit of
+  the classical Clifford group, so it also serves the identification of that group with the
+  Lipschitz group in `TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup`.
 * `CliffordAlgebra.lipschitzVectorAction_unitι`: **a vector acts by the reflection in its
   orthogonal hyperplane.** This is the identification of the generators referred to above.
 * `CliffordAlgebra.lipschitzVectorAction_map_app`: twisted conjugation by a Lipschitz
@@ -109,13 +118,17 @@ variable {Q}
 
 Twisted conjugation by a Lipschitz element carries vectors to vectors, so it descends to the
 quadratic space through the vector part `CliffordAlgebra.ιInv`. The unbundled form
-`vectorMap` below is a plain linear endomorphism, defined for every unit but meaningful only for
-Lipschitz ones; the bundled automorphism is `lipschitzVectorAction`. -/
+`vectorMap` below is a plain linear endomorphism, defined for every unit but characterized only on
+the units whose twisted conjugation preserves the vectors, the classical Clifford group; the
+bundled automorphism on the Lipschitz group is `lipschitzVectorAction`. -/
 
 variable (Q) [Invertible (2 : R)]
 
-/-- The unbundled twisted-conjugation map on the quadratic space. -/
-private def vectorMap (x : (CliffordAlgebra Q)ˣ) : M →ₗ[R] M :=
+/-- The unbundled twisted-conjugation endomorphism of the quadratic space induced by a Clifford
+unit `x`: the vector part of `involute x * ι Q m * x⁻¹`. It is characterized by
+`ι_vectorMap_apply_of_mem_range_ι` whenever that twisted conjugate is again a vector, as it is for
+every Lipschitz element (`lipschitzGroup.involute_act_ι_mem_range_ι`). -/
+def vectorMap (x : (CliffordAlgebra Q)ˣ) : M →ₗ[R] M :=
   (ιInv Q).comp ((twistedConj Q x).comp (ι Q))
 
 private theorem vectorMap_apply (x : (CliffordAlgebra Q)ˣ) (m : M) :
@@ -123,12 +136,59 @@ private theorem vectorMap_apply (x : (CliffordAlgebra Q)ˣ) (m : M) :
   rw [vectorMap]
   rfl
 
+/-- When the twisted conjugate of a vector is again a vector, `vectorMap` recovers it. -/
+theorem ι_vectorMap_apply_of_mem_range_ι {x : (CliffordAlgebra Q)ˣ} {m : M}
+    (hm : involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
+      ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ LinearMap.range (ι Q)) :
+    ι Q (vectorMap Q x m) =
+      involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
+        ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+  rw [vectorMap_apply, twistedConj_apply]
+  exact ι_ιInv_of_mem Q hm
+
 private theorem ι_vectorMap_apply {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ lipschitzGroup Q) (m : M) :
     ι Q (vectorMap Q x m) = twistedConj Q x (ι Q m) := by
-  rw [vectorMap_apply]
-  have hmem : twistedConj Q x (ι Q m) ∈ LinearMap.range (ι Q) := by
-    simpa only [twistedConj_apply] using lipschitzGroup.involute_act_ι_mem_range_ι hx m
-  exact ι_ιInv_of_mem Q hmem
+  rw [twistedConj_apply]
+  exact ι_vectorMap_apply_of_mem_range_ι Q (lipschitzGroup.involute_act_ι_mem_range_ι hx m)
+
+/-- **Twisted conjugation by a unit carrying vectors to vectors preserves the quadratic form.**
+The twisted conjugate of `ι Q m` and its grade involute `x * ι Q m * involute x⁻¹` multiply to the
+scalar `Q m`. -/
+theorem vectorMap_map_app_of_involute_act_ι_mem_range_ι {x : (CliffordAlgebra Q)ˣ}
+    (hx : ∀ m, involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
+      ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ LinearMap.range (ι Q)) (m : M) :
+    Q (vectorMap Q x m) = Q m := by
+  have hg : ι Q (vectorMap Q x m) =
+      involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
+        ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
+    ι_vectorMap_apply_of_mem_range_ι Q (hx m)
+  -- Applying the grade involution gives the other spelling of the twisted conjugate.
+  have hg' : ι Q (vectorMap Q x m) =
+      (x : CliffordAlgebra Q) * ι Q m *
+        involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+    have h := congrArg (involute (Q := Q)) hg
+    simpa only [involute_ι, map_mul, involute_involute, mul_neg, neg_mul, neg_inj] using h
+  -- The scalar `Q m` commutes past `involute x`, which then cancels `involute x⁻¹`.
+  have hscalar : involute (Q := Q) (x : CliffordAlgebra Q) * algebraMap R _ (Q m) *
+      involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      algebraMap R (CliffordAlgebra Q) (Q m) := by
+    rw [← Algebra.commutes, mul_assoc, ← map_mul, Units.mul_inv, map_one, mul_one]
+  apply algebraMap_injective Q
+  calc algebraMap R (CliffordAlgebra Q) (Q (vectorMap Q x m))
+      = ι Q (vectorMap Q x m) * ι Q (vectorMap Q x m) := (ι_sq_scalar Q _).symm
+    _ = (involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
+          ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) *
+        ((x : CliffordAlgebra Q) * ι Q m *
+          involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) :=
+        congrArg₂ (· * ·) hg hg'
+    _ = involute (Q := Q) (x : CliffordAlgebra Q) *
+          (ι Q m * (((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * x) * ι Q m) *
+        involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+        simp only [mul_assoc]
+    _ = involute (Q := Q) (x : CliffordAlgebra Q) * algebraMap R _ (Q m) *
+        involute (Q := Q) ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+        rw [Units.inv_mul, mul_one, ι_sq_scalar]
+    _ = algebraMap R (CliffordAlgebra Q) (Q m) := hscalar
 
 private theorem vectorMap_one : vectorMap Q 1 = LinearMap.id := by
   ext m
@@ -162,27 +222,6 @@ private theorem vectorMap_eq_reflection (v : M) [Invertible (Q v)] {x : (Cliffor
   ext m
   rw [vectorMap_apply, twistedConj_ι_eq_reflection Q v hx, ιInv_ι]
   rfl
-
-private theorem vectorMap_map_app {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ lipschitzGroup Q) (m : M) :
-    Q (vectorMap Q x m) = Q m := by
-  unfold lipschitzGroup at hx
-  induction hx using Subgroup.closure_induction generalizing m with
-  | mem u hu =>
-    obtain ⟨a, ha⟩ := hu
-    let := u.invertible
-    let : Invertible (ι Q a) := by rwa [ha]
-    let := invertibleOfInvertibleι Q a
-    rw [vectorMap_eq_reflection Q a ha.symm]
-    exact QuadraticMap.map_app_of_mem_orthogonalGroup
-      (QuadraticMap.reflection_mem_orthogonalGroup Q a) m
-  | one => rw [vectorMap_one, LinearMap.id_coe, id_eq]
-  | mul y z hy hz ihy ihz => rw [vectorMap_mul Q hy hz, LinearMap.comp_apply, ihy, ihz]
-  | inv y hy ihy =>
-    have h : vectorMap Q y (vectorMap Q y⁻¹ m) = m := by
-      rw [← LinearMap.comp_apply, ← vectorMap_mul Q hy (inv_mem hy), mul_inv_cancel,
-        vectorMap_one, LinearMap.id_coe, id_eq]
-    calc Q (vectorMap Q y⁻¹ m) = Q (vectorMap Q y (vectorMap Q y⁻¹ m)) := (ihy _).symm
-      _ = Q m := by rw [h]
 
 /-! ### The action of the Lipschitz group -/
 
@@ -253,7 +292,8 @@ that the bundled action defines an element of the orthogonal group and is used t
 theorem lipschitzVectorAction_map_app (x : lipschitzGroup Q) (m : M) :
     Q (lipschitzVectorAction Q x m) = Q m := by
   rw [lipschitzVectorAction_apply]
-  exact vectorMap_map_app Q x.2 m
+  exact vectorMap_map_app_of_involute_act_ι_mem_range_ι Q
+    (lipschitzGroup.involute_act_ι_mem_range_ι x.2) m
 
 variable (Q)
 

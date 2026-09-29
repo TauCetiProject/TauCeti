@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
+import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 
 /-!
 # The abelianization of a free pro-`p` group of finite rank
@@ -44,6 +46,8 @@ of `R`; see `TauCeti.Topology.Algebra.Group.Profinite.Presentation.Abelianizatio
   the isomorphism is induced by `exponentSum`, and its inverse is `u ↦ ∏ x, x_x ^ (u x)`.
 * `TauCeti.freeProP.exponentSum_surjective`, `TauCeti.freeProP.exponentSum_eq_one_iff`: the
   exponent-sum map is surjective, and its kernel is the closed commutator subgroup.
+* `TauCeti.freeProP.dvd_exponentSum_of_mem_proPFrattini`: the exponent sums of an element of the
+  pro-`p` Frattini subgroup are divisible by `p`.
 
 ## References
 
@@ -76,6 +80,33 @@ noncomputable def exponentSum : freeProP p X →ₜ* Multiplicative (X → ℤ_[
 theorem exponentSum_of [DecidableEq X] (x : X) :
     exponentSum p X (of x) = ofAdd (Pi.single x 1) :=
   (lift_of _ _ x).trans (by congr; exact Subsingleton.elim _ _)
+
+/-- **The exponent sums of an element of the Frattini subgroup are divisible by `p`.** The
+reduction modulo `p` of the exponent sum at `x` is the continuous `𝔽_p`-valued character
+`TauCeti.freeProP.characterOfFun` with value `1` at `x` and `0` at the other generators, and every
+such character kills the pro-`p` Frattini subgroup. -/
+theorem dvd_exponentSum_of_mem_proPFrattini {y : freeProP p X}
+    (hy : y ∈ proPFrattini p (freeProP p X)) (x : X) :
+    (p : ℤ_[p]) ∣ (exponentSum p X y).toAdd x := by
+  classical
+  -- the reduction modulo `p` of the exponent sum at `x`, as a continuous character
+  let χ : freeProP p X →ₜ* Multiplicative (ZMod p) :=
+    { toMonoidHom := (PadicInt.toZMod.toAddMonoidHom.comp
+        (Pi.evalAddMonoidHom (fun _ : X ↦ ℤ_[p]) x)).toMultiplicative.comp
+        (exponentSum p X).toMonoidHom
+      continuous_toFun := continuous_ofAdd.comp ((PadicInt.continuous_toZMod.comp
+        ((continuous_apply x).comp continuous_toAdd)).comp (exponentSum p X).continuous) }
+  have hχ : characterOfFun p X (Pi.single x 1) = χ := hom_ext fun z ↦ by
+    obtain rfl | hz := eq_or_ne z x
+    · simp [χ]
+    · simp [χ, hz, Ne.symm hz]
+  have h : (exponentSum p X y).toAdd x ∈ RingHom.ker (PadicInt.toZMod (p := p)) := by
+    have h1 := MonoidHom.mem_ker.mp
+      (proPFrattini_le_ker (by simp) (characterOfFun p X (Pi.single x 1)) hy)
+    rw [hχ] at h1
+    rw [RingHom.mem_ker, ← ofAdd_eq_one]
+    exact h1
+  rwa [PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p, Ideal.mem_span_singleton] at h
 
 end ExponentSum
 

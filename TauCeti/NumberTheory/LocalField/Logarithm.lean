@@ -97,7 +97,7 @@ every principal unit `u ∈ U(K,1)`. -/
 theorem hasSum_log_of_mem_unitFiltration_one (p : ℕ) [Fact p.Prime]
     [FinitePadicExtension K p] {u : Kˣ} (hu : u ∈ unitFiltration K 1) :
     HasSum (fun n : ℕ => (-1) ^ (n + 1) / n * ((u : K) - 1) ^ n) (log (u : K)) := by
-  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have := FinitePadicExtension.charZero K p
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   have hγ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
   have hγ0 : 0 < valuation K (π : K) := by

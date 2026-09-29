@@ -37,6 +37,7 @@ filtration.
   nonarchimedean local fields.
 * `TauCeti.IsTamelyRamified`, `TauCeti.IsWildlyRamified`: the residue characteristic does not
   divide, respectively divides, the ramification index.
+* `TauCeti.IsTotallyRamified`: the ramification index equals the degree, `e(L/K) = [L : K]`.
 
 ## Main results
 
@@ -61,9 +62,9 @@ filtration.
 
 The definition only uses the algebra map and the two normalized valuations, so it does not carry
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
-`ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
-about it assumes compatibility, which makes the restricted valuation trivial on the units of
-`𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
+`ramificationIndex_def` and the reformulations of tame, wild, and total ramification, every public
+theorem about it assumes compatibility, which makes the restricted valuation trivial on the units
+of `𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
 
 ## References
 
@@ -165,6 +166,21 @@ theorem isTamelyRamified_iff_natCast_ne_zero :
   (ringChar.spec 𝓀[K] _).not.symm
 
 end Tame
+
+section Total
+
+variable (K L)
+
+/-- A finite extension of nonarchimedean local fields is totally ramified when its ramification
+index equals its degree. -/
+def IsTotallyRamified : Prop := ramificationIndex K L = Module.finrank K L
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- Total ramification unfolds to its defining equality `e(L/K) = [L : K]`. -/
+theorem isTotallyRamified_iff_ramificationIndex_eq_finrank :
+    IsTotallyRamified K L ↔ ramificationIndex K L = Module.finrank K L := Iff.rfl
+
+end Total
 
 variable [ValuativeExtension K L]
 

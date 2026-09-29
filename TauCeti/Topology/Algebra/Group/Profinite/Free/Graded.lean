@@ -267,6 +267,14 @@ theorem degreeOneBasis_apply (k : X ⊕ {ij : X × X // ij.1 < ij.2}) :
     degreeOneBasis p X k = degreeOneFamily p (of : X → freeProP p X) k :=
   Module.Basis.mk_apply _ _ k
 
+omit [LinearOrder X] in
+/-- **The generator classes span `gr_0` of a free pro-`p` group of finite rank.** -/
+theorem span_gradedMkZero_image_range_of_eq_top :
+    span (ZMod p) (gradedMkZero p (freeProP p X) '' Set.range of) = ⊤ :=
+  span_gradedMkZero_image_eq_top
+    ((isTopologicallyFinitelyGenerated_freeProP p X).isOpen_pLowerCentralSeries Fact.out 1)
+    (topologicalClosure_closure_range_of_eq_top p X)
+
 omit [Finite X] in
 /-- **The dimension of `gr_1` of a free pro-`p` group of finite rank** is `#X + (#X choose 2)`:
 `gr_1(F) ≅ 𝔽_p^X ⊕ Λ²(𝔽_p^X)`. -/

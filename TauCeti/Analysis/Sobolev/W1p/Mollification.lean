@@ -35,6 +35,8 @@ measure; `ℝⁿ` stands for the whole-space case `Ω = ⊤`.
 * `TauCeti.Sobolev1JetLp.normedBumpLp_mem_w1pSubmodule`: mollification preserves `W^{1,p}(ℝⁿ)`.
 * `TauCeti.W1p.normedBumpL`: mollification by a normalized smooth bump, as a continuous linear
   operator on `W^{1,p}(ℝⁿ)`.
+* `TauCeti.W1p.value_normedBumpL`, `TauCeti.W1p.gradient_normedBumpL`: the value and weak
+  gradient of a mollification are the `Lᵖ` mollifications of the value and weak gradient.
 * `TauCeti.W1p.norm_normedBumpL_le_one`: this operator is a contraction.
 * `TauCeti.W1p.tendsto_normedBumpL`: mollifications with shrinking bumps converge in `W^{1,p}`.
 * `TauCeti.W1p.normedBumpL_mem_range_of_ae_eq_zero`: mollifying a Sobolev function whose jet
@@ -96,6 +98,40 @@ theorem W1p.coe_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (u : W
     ((W1p.normedBumpL hp phi u : W1p mu ⊤ p) : Sobolev1JetLp mu ⊤ p) =
       normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (u : Sobolev1JetLp mu ⊤ p) :=
   (rfl)
+
+/-- The value component of a mollified whole-space jet is the mollification of its value
+component. -/
+theorem Sobolev1JetLp.value_normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+    (J : Sobolev1JetLp mu ⊤ p) :
+    Sobolev1JetLp.value (normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) J) =
+      normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (Sobolev1JetLp.value J) := by
+  rw [← Sobolev1JetLp.valueL_apply, ← Sobolev1JetLp.valueL_apply,
+    Sobolev1JetLp.valueL_eq_compLpL]
+  exact compLpL_normedBumpLp hp phi _ J
+
+/-- The gradient component of a mollified whole-space jet is the mollification of its gradient
+component. -/
+theorem Sobolev1JetLp.gradient_normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+    (J : Sobolev1JetLp mu ⊤ p) :
+    Sobolev1JetLp.gradient (normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) J) =
+      normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (Sobolev1JetLp.gradient J) := by
+  rw [← Sobolev1JetLp.gradientL_apply, ← Sobolev1JetLp.gradientL_apply,
+    Sobolev1JetLp.gradientL_eq_compLpL]
+  exact compLpL_normedBumpLp hp phi _ J
+
+/-- The value of a mollified Sobolev function is the `Lᵖ` mollification of its value. -/
+theorem W1p.value_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (u : W1p mu ⊤ p) :
+    W1p.value (W1p.normedBumpL hp phi u) =
+      normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (W1p.value u) := by
+  rw [W1p.value_coe, W1p.coe_normedBumpL, Sobolev1JetLp.value_normedBumpLp, W1p.value_coe]
+
+/-- The weak gradient of a mollified Sobolev function is the `Lᵖ` mollification of its weak
+gradient. -/
+theorem W1p.gradient_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (u : W1p mu ⊤ p) :
+    W1p.gradient (W1p.normedBumpL hp phi u) =
+      normedBumpLp hp phi (mu.restrict ((⊤ : Opens E) : Set E)) (W1p.gradient u) := by
+  rw [W1p.gradient_coe, W1p.coe_normedBumpL, Sobolev1JetLp.gradient_normedBumpLp,
+    W1p.gradient_coe]
 
 /-- Mollification by a normalized nonnegative bump does not increase the `W^{1,p}` norm when
 `p < ∞`. -/
