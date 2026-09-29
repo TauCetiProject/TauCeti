@@ -61,6 +61,13 @@ multiplicative `2`-coboundary, that is `w(σ, τ) = z(σ, τ) · σ(b(τ)) · b(
 def Cohomologous (z w : TwoCocycle K L) : Prop :=
   IsMulCoboundary₂ fun p : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) => w.toFun p.1 p.2 / z.toFun p.1 p.2
 
+/-- The explicit multiplicative coboundary predicate underlying `TwoCocycle.Cohomologous`. -/
+theorem cohomologous_iff_isMulCoboundary₂ {z w : TwoCocycle K L} :
+    z.Cohomologous w ↔
+      IsMulCoboundary₂ fun p : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) =>
+        w.toFun p.1 p.2 / z.toFun p.1 p.2 :=
+  Iff.rfl
+
 /-- The cocycles `z` and `w` are cohomologous if and only if
 `w(σ, τ) = z(σ, τ) · σ(b(τ)) · b(στ)⁻¹ · b(σ)` for some `b : Aut_K(L) → Lˣ`. -/
 theorem cohomologous_iff {z w : TwoCocycle K L} :
