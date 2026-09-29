@@ -27,7 +27,7 @@ namespace TauCeti
 open Equiv Equiv.Perm MulAction
 
 /-- The even part of the cyclic quartic reference group is not transitive. -/
-theorem not_isPretransitive_referenceSubgroup_four_zero_even :
+theorem not_isPretransitive_referenceSubgroup_four_zero_inf_alternatingGroup :
     ¬ IsPretransitive
       ((referenceSubgroup 4 (⟨0, by simp⟩ : TransitiveGroupIndex 4) ⊓
         alternatingGroup (Fin 4)) : Subgroup (Perm (Fin 4))) (Fin 4) := by
@@ -54,7 +54,7 @@ theorem not_isPretransitive_referenceSubgroup_four_zero_even :
   exact not_referenceSubgroup_four_zero_le_alternatingGroup hG
 
 /-- The even part of the dihedral quartic reference group is transitive. -/
-theorem isPretransitive_referenceSubgroup_four_two_even :
+theorem isPretransitive_referenceSubgroup_four_two_inf_alternatingGroup :
     IsPretransitive
       ((referenceSubgroup 4 (⟨2, by simp⟩ : TransitiveGroupIndex 4) ⊓
         alternatingGroup (Fin 4)) : Subgroup (Perm (Fin 4))) (Fin 4) := by
@@ -68,19 +68,20 @@ theorem isPretransitive_referenceSubgroup_four_two_even :
 
 /-- The even part of a transitive quartic permutation group is transitive exactly when the group
 is not the cyclic group `4T1`. In particular, this separates the cyclic and dihedral groups. -/
-theorem TransitiveGroupLabel.isPretransitive_even_iff_ne_zero
+theorem TransitiveGroupLabel.isPretransitive_inf_alternatingGroup_iff_ne_zero
     {j : TransitiveGroupIndex 4} {G : Subgroup (Perm (Fin 4))}
     (h : TransitiveGroupLabel j G) :
     IsPretransitive ((G ⊓ alternatingGroup (Fin 4)) : Subgroup (Perm (Fin 4)))
       (Fin 4) ↔ j ≠ ⟨0, by simp⟩ := by
-  rw [h.isPretransitive_even_iff]
+  rw [h.isPretransitive_inf_alternatingGroup_iff]
   obtain ⟨j, hj⟩ := j
   rw [numTransitiveGroups_four] at hj
   interval_cases j
-  · exact iff_of_false not_isPretransitive_referenceSubgroup_four_zero_even (by simp)
+  · exact iff_of_false not_isPretransitive_referenceSubgroup_four_zero_inf_alternatingGroup
+      (by simp)
   · rw [inf_eq_left.mpr referenceSubgroup_four_one_le_alternatingGroup]
     exact iff_of_true (isPretransitive_referenceSubgroup 4 ⟨1, by simp⟩) (by simp)
-  · exact iff_of_true isPretransitive_referenceSubgroup_four_two_even (by simp)
+  · exact iff_of_true isPretransitive_referenceSubgroup_four_two_inf_alternatingGroup (by simp)
   · rw [referenceSubgroup_four_three, inf_idem, ← referenceSubgroup_four_three]
     exact iff_of_true (isPretransitive_referenceSubgroup 4 ⟨3, by simp⟩) (by simp)
   · rw [referenceSubgroup_four_four, top_inf_eq, ← referenceSubgroup_four_three]

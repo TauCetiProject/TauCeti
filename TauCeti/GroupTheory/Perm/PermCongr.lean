@@ -29,8 +29,8 @@ the acting group: an action of `G` on `α` and the action of the subgroup
   permutation.
 * `Equiv.isPretransitive_map_permCongrHom_iff`: transport preserves transitivity.
 * `Equiv.map_inf_alternatingGroup_permCongrHom`: transport preserves the even part of a subgroup.
-* `Equiv.isPretransitive_even_map_permCongrHom_iff`: transport preserves transitivity of the
-  even part of a subgroup.
+* `Equiv.isPretransitive_inf_alternatingGroup_map_permCongrHom_iff`: transport preserves
+  transitivity of the even part of a subgroup.
 * `Equiv.isPreprimitive_map_permCongrHom_iff`: transport preserves primitivity.
 * `MulAction.isPretransitive_range_toPermHom_iff`, `MulAction.isPreprimitive_range_toPermHom_iff`:
   a group action and its image in the permutations are transitive, respectively primitive,
@@ -98,7 +98,7 @@ theorem map_inf_alternatingGroup_permCongrHom (e : α ≃ β) (G : Subgroup (Per
 /-- Transport along an equivalence preserves transitivity of the intersection of a permutation
 subgroup with the alternating group. -/
 @[simp]
-theorem isPretransitive_even_map_permCongrHom_iff (e : α ≃ β)
+theorem isPretransitive_inf_alternatingGroup_map_permCongrHom_iff (e : α ≃ β)
     (G : Subgroup (Perm α)) :
     IsPretransitive ((G.map e.permCongrHom ⊓ alternatingGroup β) :
       Subgroup (Perm β)) β ↔
