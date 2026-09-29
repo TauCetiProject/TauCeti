@@ -125,9 +125,15 @@ variable (μ : M ⊗ N ⟶ P)
 /-- **The tensor product of cochains**: for cochains `φ : A_p ⟶ M` and `ψ : B_q ⟶ N`, the morphism
 `(A ⊗ B)_n ⟶ P` which on the summand `A_p ⊗ B_q` is `φ ⊗ ψ` followed by the pairing `μ`
 (`TauCeti.ChainComplex.ιTensorObj_tensorCochain`) and vanishes on every other summand
-(`TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne`). -/
+(`TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne` and
+`TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne_right`). -/
 def tensorCochain {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) : (A ⊗ B).X n ⟶ P :=
   mapBifunctorDesc fun i j _ ↦ (extendCochain φ i ⊗ₘ extendCochain ψ j) ≫ μ
+
+private lemma ιMapBifunctor_eq_ιTensorObj (i j n : ℕ) (h : i + j = n) :
+    ιMapBifunctor A B (curriedTensor C) (ComplexShape.down ℕ) i j n h =
+      ιTensorObj A B i j n h :=
+  rfl
 
 @[reassoc]
 private lemma ιTensorObj_tensorCochain_extend {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
@@ -146,12 +152,21 @@ lemma ιTensorObj_tensorCochain {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N
 
 /-- The tensor product of cochains `φ : A_p ⟶ M` and `ψ : B_q ⟶ N` vanishes on the summands
 `A_i ⊗ B_j` with `i ≠ p`. -/
-@[reassoc]
+@[reassoc (attr := simp), simp]
 lemma ιTensorObj_tensorCochain_of_ne {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) {i j n : ℕ}
     (h : i + j = n) (hi : i ≠ p) :
     ιTensorObj A B i j n h ≫ tensorCochain μ φ ψ n = 0 := by
   rw [ιTensorObj_tensorCochain_extend, extendCochain_of_ne _ hi, MonoidalPreadditive.zero_tensor,
     zero_comp]
+
+/-- The tensor product of cochains `φ : A_p ⟶ M` and `ψ : B_q ⟶ N` vanishes on the summands
+`A_i ⊗ B_j` with `j ≠ q`. -/
+@[reassoc (attr := simp), simp]
+lemma ιTensorObj_tensorCochain_of_ne_right {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
+    {i j n : ℕ} (h : i + j = n) (hj : j ≠ q) :
+    ιTensorObj A B i j n h ≫ tensorCochain μ φ ψ n = 0 := by
+  rw [ιTensorObj_tensorCochain_extend, extendCochain_of_ne _ hj,
+    MonoidalPreadditive.tensor_zero, zero_comp]
 
 /-- **The Leibniz rule for the tensor product of cochains**: precomposed with the differential of
 `A ⊗ B`, the tensor product of `φ` and `ψ` is the tensor product of `φ ∘ d` and `ψ` plus `(-1)^p`
@@ -161,8 +176,7 @@ lemma d_comp_tensorCochain {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n 
       tensorCochain μ (A.d (p + 1) p ≫ φ) ψ (n + 1) +
         ((-1 : ℤ) ^ p) • tensorCochain μ φ (B.d (q + 1) q ≫ ψ) (n + 1) := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n + 1) ↦ ?_
-  -- `ιMapBifunctor` for `curriedTensor` is `ιTensorObj` by definition
-  change ιTensorObj A B i j (n + 1) h ≫ _ = ιTensorObj A B i j (n + 1) h ≫ _
+  rw [ιMapBifunctor_eq_ιTensorObj]
   have hd : (A ⊗ B).d (n + 1) n =
       mapBifunctor.D₁ A B (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n +
         mapBifunctor.D₂ A B (curriedTensor C) (ComplexShape.down ℕ) (n + 1) n :=
@@ -200,7 +214,7 @@ lemma tensorHom_f_comp_tensorCochain {A' B' : ChainComplex C ℕ} (f : A' ⟶ A)
     {p q : ℕ} (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
     (f ⊗ₘ g).f n ≫ tensorCochain μ φ ψ n = tensorCochain μ (f.f p ≫ φ) (g.f q ≫ ψ) n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  change ιTensorObj A' B' i j n h ≫ _ = ιTensorObj A' B' i j n h ≫ _
+  rw [ιMapBifunctor_eq_ιTensorObj]
   rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom_assoc, ιTensorObj_tensorCochain_extend,
     ιTensorObj_tensorCochain_extend, extendCochain_comp, extendCochain_comp,
     tensorHom_comp_tensorHom_assoc]
@@ -210,28 +224,28 @@ variable {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
 private lemma tensorCochain_add_left {p q : ℕ} (φ φ' : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
     tensorCochain μ (φ + φ') ψ n = tensorCochain μ φ ψ n + tensorCochain μ φ' ψ n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  change ιTensorObj A B i j n h ≫ _ = ιTensorObj A B i j n h ≫ _
+  rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Preadditive.comp_add, ιTensorObj_tensorCochain_extend, extendCochain_add,
     MonoidalPreadditive.add_tensor, Preadditive.add_comp]
 
 private lemma tensorCochain_add_right {p q : ℕ} (φ : A.X p ⟶ M) (ψ ψ' : B.X q ⟶ N) (n : ℕ) :
     tensorCochain μ φ (ψ + ψ') n = tensorCochain μ φ ψ n + tensorCochain μ φ ψ' n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  change ιTensorObj A B i j n h ≫ _ = ιTensorObj A B i j n h ≫ _
+  rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Preadditive.comp_add, ιTensorObj_tensorCochain_extend, extendCochain_add,
     MonoidalPreadditive.tensor_add, Preadditive.add_comp]
 
 private lemma tensorCochain_smul_left {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
     (n : ℕ) : tensorCochain μ (r • φ) ψ n = r • tensorCochain μ φ ψ n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  change ιTensorObj A B i j n h ≫ _ = ιTensorObj A B i j n h ≫ _
+  rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Linear.comp_smul, ιTensorObj_tensorCochain_extend, extendCochain_smul,
     smul_tensorHom, Linear.smul_comp]
 
 private lemma tensorCochain_smul_right {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
     (n : ℕ) : tensorCochain μ φ (r • ψ) n = r • tensorCochain μ φ ψ n := by
   refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  change ιTensorObj A B i j n h ≫ _ = ιTensorObj A B i j n h ≫ _
+  rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Linear.comp_smul, ιTensorObj_tensorCochain_extend, extendCochain_smul,
     tensorHom_smul, Linear.smul_comp]
 

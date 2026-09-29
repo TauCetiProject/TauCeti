@@ -59,9 +59,13 @@ universe w v u
 
 namespace TopCat
 
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
-  [MonoidalPreadditive C] {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
-  {R S T : C} (u : T ⟶ R ⊗ S)
+attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
+attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
+
+section AlexanderWhitneyDiagonal
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
+  [MonoidalCategory C] [MonoidalPreadditive C] {R S T : C} (u : T ⟶ R ⊗ S)
 
 /-- **The Alexander–Whitney diagonal** `C(X; T) ⟶ C(X; R) ⊗ C(X; S)` of a space `X`: the
 coefficient morphism `u : T ⟶ R ⊗ S`, followed by the chain map induced by the diagonal
@@ -111,6 +115,12 @@ lemma alexanderWhitneyDiagonal_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) :
     ← CategoryTheory.Functor.map_comp_assoc,
     ← CategoryTheory.Functor.map_comp, hdiag, CategoryTheory.Functor.map_comp,
     CategoryTheory.Functor.map_comp_assoc, alexanderWhitney_naturality]
+
+end AlexanderWhitneyDiagonal
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
+  [MonoidalPreadditive C] {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
+  {R S T : C} (u : T ⟶ R ⊗ S)
 
 variable {M N P : C} (μ : M ⊗ N ⟶ P)
 
