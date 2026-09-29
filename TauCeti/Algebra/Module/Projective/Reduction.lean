@@ -12,8 +12,9 @@ import TauCeti.Algebra.Module.ProjectiveCover.Basic
 /-!
 # Projective modules are determined by a radical quotient
 
-Finitely generated projective modules over a ring are determined by their reductions modulo an
-ideal in the Jacobson radical.  Indeed, the quotient map from a projective module to its reduction
+Projective modules over a ring whose submodule lattices are coatomic (for instance, finitely
+generated projective modules) are determined by their reductions modulo an ideal in the Jacobson
+radical.  Indeed, the quotient map from a projective module to its reduction
 is a projective cover, and uniqueness of projective covers identifies the two projective modules.
 
 This is the algebraic lifting step used when integral projective modules are compared through a
@@ -22,8 +23,9 @@ ideal itself to be the whole Jacobson radical.
 
 ## Main result
 
-* `Ideal.nonempty_linearEquiv_of_quotient_smul_top`: two finitely generated projective
-  modules with isomorphic quotients by an ideal in the Jacobson radical are isomorphic.
+* `Ideal.nonempty_linearEquiv_of_quotient_smul_top`: two projective modules with coatomic
+  submodule lattices (e.g. finitely generated ones) and isomorphic quotients by an ideal in the
+  Jacobson radical are isomorphic.
 
 ## References
 
@@ -40,12 +42,13 @@ namespace Ideal
 universe u v w
 
 variable {R : Type u} [Ring R] (I : Ideal R) (M : Type v) (N : Type w)
-  [AddCommGroup M] [Module R M] [Module.Finite R M] [Module.Projective R M]
-  [AddCommGroup N] [Module R N] [Module.Finite R N] [Module.Projective R N]
+  [AddCommGroup M] [Module R M] [IsCoatomic (Submodule R M)] [Module.Projective R M]
+  [AddCommGroup N] [Module R N] [IsCoatomic (Submodule R N)] [Module.Projective R N]
 
-/-- **Finitely generated projectives are determined by a radical quotient.** If `I` lies in the
-Jacobson radical of `R`, then an `R`-linear equivalence between `M / IM` and `N / IN` implies that
-the finitely generated projective modules `M` and `N` are `R`-linearly equivalent.
+/-- **Projectives are determined by a radical quotient.** If `I` lies in the Jacobson radical of
+`R`, then an `R`-linear equivalence between `M / IM` and `N / IN` implies that the projective
+modules `M` and `N` are `R`-linearly equivalent, provided their submodule lattices are coatomic
+(as is the case for finitely generated modules).
 
 Only existence of the resulting equivalence is asserted: both quotient maps are projective covers
 of the same reduced module, so uniqueness of projective covers identifies their sources. -/
