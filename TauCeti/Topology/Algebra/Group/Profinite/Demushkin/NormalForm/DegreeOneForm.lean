@@ -597,11 +597,8 @@ theorem nondegenerate_degreeOneForm_demushkinWordTwoOdd (hn : Odd n) {f : ℕ} (
   simp only [degreeOneForm_demushkinWordTwoOdd_dualBasis hf] at hχ'
   -- The value at `x₁`.
   have hc0 : (χ.toMul (freeProPGen 2 n 0)).toAdd = 0 := by
-    have h := hχ' 0 (by omega)
-    rw [ite_eq_left rfl, ite_eq_right (by omega), smul_zero, add_zero,
-      Finset.sum_eq_zero fun a _ ↦ by
-        rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero], add_zero] at h
-    exact h
+    rw [← degreeOneForm_gradedMk_demushkinWordTwoOdd_dualBasis_zero (by omega) hf χ]
+    exact hχ _
   -- The value at `x_{j-1}` for `j ≥ 2` even is the pairing with the `j`-th coordinate character.
   have keyEven (j : ℕ) (hjn : j < n) (hj0 : j ≠ 0) (hj : j % 2 = 0) :
       (χ.toMul (freeProPGen 2 n (j - 1))).toAdd = 0 := by
