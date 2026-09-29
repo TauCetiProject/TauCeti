@@ -27,9 +27,6 @@ of either ambient group. They complement the prime-to-characteristic criterion f
 
 * J. S. Milne, *Algebraic Groups* (2017), §12.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-The kernel identification is `TauCeti.DiagonalizableGroup.kernelCoordinateIso`;
-scalar extension uses Mathlib's `MonoidAlgebra.scalarTensorEquiv`.
 -/
 
 public section

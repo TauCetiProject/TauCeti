@@ -25,8 +25,6 @@ nonreduced groups of roots of unity of prime-power order.
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
 * J. S. Milne, *Algebraic Groups* (2017), §12.
-
-The converse uses Tau Ceti's normalized finite-subgroup averages.
 -/
 
 public section
