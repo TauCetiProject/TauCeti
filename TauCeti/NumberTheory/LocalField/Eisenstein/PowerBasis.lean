@@ -14,10 +14,10 @@ import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 /-!
 # Valuations in an Eisenstein power basis of a local field
 
-The first `e(L/K)` powers of a uniformizer of `L` occupy distinct congruence classes of the
-additive valuation modulo `e(L/K)`.  Consequently, the valuation of an `𝒪[K]`-linear combination
-of them is the minimum of its term valuations.  An integral generator satisfying an Eisenstein
-polynomial is such a uniformizer, and its power basis has length `e(L/K)`.
+An integral generator satisfying an Eisenstein polynomial is a uniformizer, and its power basis
+has length `e(L/K)`.  By `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible`, the valuation of
+a linear combination in the resulting power basis is therefore the minimum of its term
+valuations.
 
 ## Main result
 
@@ -26,8 +26,6 @@ polynomial is such a uniformizer, and its power basis has length `e(L/K)`.
 * `TauCeti.inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top` and
   `TauCeti.ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top` record its characteristic
   total-ramification consequences.
-* `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible` computes the additive valuation of a
-  linear combination of the first `e(L/K)` powers of a uniformizer of `L`.
 * `TauCeti.addVal_sum_eisenstein_powerBasis` computes the additive valuation of a linear
   combination of powers of an Eisenstein integral generator.
 
@@ -132,54 +130,6 @@ theorem ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top [Algebra K L]
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
     (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) : ramificationIndex K L = f.natDegree :=
   (eisenstein_adjoin_eq_top_data f hf ξ hroot hgen).2.2
-
-/-- **Orthogonality of the powers of a uniformizer.** For a uniformizer `ϖ` of `L` and
-coefficients `c i ∈ 𝒪[K]` indexed by `i < n ≤ e(L/K)`, the terms `c i * ϖ ^ i` have additive
-valuations `e(L/K) v_K(c i) + i` in distinct classes modulo `e(L/K)`, so the additive valuation
-of their sum is the least term valuation. -/
-theorem addVal_sum_algebraMap_mul_pow_of_irreducible [Algebra K L] [ValuativeExtension K L]
-    {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) {n : ℕ} (hn : n ≤ ramificationIndex K L)
-    (c : Fin n → 𝒪[K]) :
-    IsDiscreteValuationRing.addVal 𝒪[L]
-        (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) =
-      ⨅ i, ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
-  classical
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have hterm (i : Fin n) :
-      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) =
-        ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
-    rw [IsDiscreteValuationRing.addVal_mul, IsDiscreteValuationRing.addVal_pow,
-      addVal_algebraMap, IsDiscreteValuationRing.addVal_uniformizer hϖ, nsmul_one]
-  have hdistinct : ∀ i j : Fin n, i ≠ j →
-      algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ) ≠ 0 →
-      algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ) ≠ 0 →
-      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠
-        IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) := by
-    intro i j hij hi0 hj0 hval
-    have hci : c i ≠ 0 := by
-      intro h
-      apply hi0
-      simp [h]
-    have hcj : c j ≠ 0 := by
-      intro h
-      apply hj0
-      simp [h]
-    obtain ⟨ni, ui, hci'⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hci hπ
-    obtain ⟨nj, uj, hcj'⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hcj hπ
-    rw [hterm, hterm, hci', hcj', IsDiscreteValuationRing.addVal_def' ui hπ ni,
-      IsDiscreteValuationRing.addVal_def' uj hπ nj] at hval
-    have hnat : ramificationIndex K L * ni + (i : ℕ) = ramificationIndex K L * nj + (j : ℕ) := by
-      have hval' : ((ramificationIndex K L * ni + (i : ℕ) : ℕ) : ℕ∞) =
-          ramificationIndex K L * nj + (j : ℕ) := by
-        simpa [nsmul_eq_mul] using hval
-      exact_mod_cast hval'
-    have hmod := congrArg (fun m : ℕ ↦ m % ramificationIndex K L) hnat
-    have hijval : (i : ℕ) = (j : ℕ) := by
-      simpa [Nat.add_mod, Nat.mod_eq_of_lt (i.isLt.trans_le hn),
-        Nat.mod_eq_of_lt (j.isLt.trans_le hn)] using hmod
-    exact hij (Fin.ext hijval)
-  rw [IsDiscreteValuationRing.addVal_sum_eq_iInf_of_ne _ hdistinct]
-  exact iInf_congr hterm
 
 /-- The additive valuation of a linear combination in an Eisenstein power basis is the least
 of its term valuations. -/

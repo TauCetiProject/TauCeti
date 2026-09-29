@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.RingTheory.RamificationInertia.Basic
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
+import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
 
 /-!
 # The ramification index of an extension of local fields
@@ -45,6 +46,9 @@ filtration.
   the characteristic property `v_L(x) = e · v_K(x)` on `Kˣ`, multiplicatively and additively.
 * `TauCeti.normalizedValuationWithZero_algebraMap`: the same identity on all of `K`.
 * `TauCeti.addVal_algebraMap`: the corresponding scaling formula on the integer rings.
+* `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible`: the first `e(L/K)` powers of a
+  uniformizer of `L` are orthogonal, so an `𝒪[K]`-linear combination of them has the least
+  term valuation.
 * `TauCeti.ramificationIndex_eq_iff`: `e` is the only natural number with that property.
 * `TauCeti.ramificationIndex_pos`: the ramification index is positive.
 * `TauCeti.normalizedValuation_algebraMap_irreducible` and
@@ -358,6 +362,53 @@ theorem addVal_algebraMap (a : 𝒪[K]) :
       IsDiscreteValuationRing.addVal_pow, hwval, zero_add, hπval,
       IsDiscreteValuationRing.addVal_def' w hπ n]
     simp [nsmul_eq_mul, mul_comm]
+
+/-- **Orthogonality of the powers of a uniformizer.** For a uniformizer `ϖ` of `L` and
+coefficients `c i ∈ 𝒪[K]` indexed by `i < n ≤ e(L/K)`, the terms `c i * ϖ ^ i` have additive
+valuations `e(L/K) v_K(c i) + i` in distinct classes modulo `e(L/K)`, so the additive valuation
+of their sum is the least term valuation. -/
+theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) {n : ℕ}
+    (hn : n ≤ ramificationIndex K L) (c : Fin n → 𝒪[K]) :
+    IsDiscreteValuationRing.addVal 𝒪[L]
+        (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) =
+      ⨅ i, ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
+  classical
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have hterm (i : Fin n) :
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) =
+        ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
+    rw [IsDiscreteValuationRing.addVal_mul, IsDiscreteValuationRing.addVal_pow,
+      addVal_algebraMap, IsDiscreteValuationRing.addVal_uniformizer hϖ, nsmul_one]
+  have hdistinct : ∀ i j : Fin n, i ≠ j →
+      algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ) ≠ 0 →
+      algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ) ≠ 0 →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠
+        IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) := by
+    intro i j hij hi0 hj0 hval
+    have hci : c i ≠ 0 := by
+      intro h
+      apply hi0
+      simp [h]
+    have hcj : c j ≠ 0 := by
+      intro h
+      apply hj0
+      simp [h]
+    obtain ⟨ni, ui, hci'⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hci hπ
+    obtain ⟨nj, uj, hcj'⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hcj hπ
+    rw [hterm, hterm, hci', hcj', IsDiscreteValuationRing.addVal_def' ui hπ ni,
+      IsDiscreteValuationRing.addVal_def' uj hπ nj] at hval
+    have hnat : ramificationIndex K L * ni + (i : ℕ) = ramificationIndex K L * nj + (j : ℕ) := by
+      have hval' : ((ramificationIndex K L * ni + (i : ℕ) : ℕ) : ℕ∞) =
+          ramificationIndex K L * nj + (j : ℕ) := by
+        simpa [nsmul_eq_mul] using hval
+      exact_mod_cast hval'
+    have hmod := congrArg (fun m : ℕ ↦ m % ramificationIndex K L) hnat
+    have hijval : (i : ℕ) = (j : ℕ) := by
+      simpa [Nat.add_mod, Nat.mod_eq_of_lt (i.isLt.trans_le hn),
+        Nat.mod_eq_of_lt (j.isLt.trans_le hn)] using hmod
+    exact hij (Fin.ext hijval)
+  rw [IsDiscreteValuationRing.addVal_sum_eq_iInf_of_ne _ hdistinct]
+  exact iInf_congr hterm
 
 variable (K L) in
 /-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`.
