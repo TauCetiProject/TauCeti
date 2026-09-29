@@ -25,13 +25,12 @@ from the presentation, and it is the normalization a Demushkin relator satisfies
 
 Minimal presentations of a group on a given finite type are unique up to a change of basis of the
 free group. Two continuous surjections `g, h : F ↠ H` from the free pro-`p` group of finite rank,
-with `ker g ≤ Φ(F)`, satisfy `h = g ∘ α` for a continuous automorphism `α` of `F`: sending each
-generator to a preimage under `g` of its image under `h` defines an endomorphism, which is onto by
-Burnside's basis theorem and hence an automorphism by the Hopf property. Consequently two pro-`p`
-groups presented on the same finite type, the second presentation minimal, are topologically
-isomorphic exactly when an automorphism of the free group carries the relation subgroup of the
-first onto that of the second. This is the form in which an isomorphism of one-relator groups
-becomes a statement about the relators, as in Labute's classification of Demushkin groups.
+with `ker g ≤ Φ(F)`, satisfy `h = g ∘ α` for a continuous automorphism `α` of `F`. Consequently two
+pro-`p` groups presented on the same finite type, the second presentation minimal, are
+topologically isomorphic exactly when an automorphism of the free group carries the relation
+subgroup of the first onto that of the second. This is the form in which an isomorphism of
+one-relator groups becomes a statement about the relators, as in Labute's classification of
+Demushkin groups.
 
 ## Main results
 
@@ -176,9 +175,7 @@ variable {X : Type u} [Finite X] {H : Type v} [Group H] [TopologicalSpace H] [T2
 /-- **Two surjections of a free pro-`p` group onto the same group differ by an automorphism when
 one of them is minimal.** Let `F` be the free pro-`p` group on a finite type and let `g, h : F → H`
 be continuous surjections onto a Hausdorff group, the kernel of `g` lying in the Frattini subgroup
-`Φ(F)`. Then `h = g ∘ α` for a continuous automorphism `α` of `F`. The endomorphism `α` sends each
-generator to a preimage under `g` of its image under `h`; it is onto because `g ∘ α = h` is onto
-and `ker g ≤ Φ(F)`, hence an automorphism by the Hopf property. -/
+`Φ(F)`. Then `h = g ∘ α` for a continuous automorphism `α` of `F`. -/
 theorem exists_continuousMulEquiv_comp_eq (g h : freeProP p X →ₜ* H) (hg : Function.Surjective g)
     (hker : (g : freeProP p X →* H).ker ≤ proPFrattini p (freeProP p X))
     (hh : Function.Surjective h) :

@@ -125,8 +125,7 @@ theorem eq_top_of_sup_proPFrattini_eq_top (hG : IsProP p G) {H : Subgroup G}
 
 /-- **A homomorphism onto a Frattini cover is surjective.** Let `φ : G →* H` have kernel in the
 Frattini subgroup `Φ(G)` of the pro-`p` group `G`. A continuous homomorphism `s` from a compact
-group into `G` whose composite with `φ` is surjective is itself surjective: its range is closed, and
-it generates `G` together with `Φ(G)`. -/
+group into `G` whose composite with `φ` is surjective is itself surjective. -/
 theorem surjective_of_surjective_comp_of_ker_le_proPFrattini (hG : IsProP p G) {K H : Type*}
     [Group K] [TopologicalSpace K] [CompactSpace K] [Group H] {s : K →* G} (hs : Continuous s)
     {φ : G →* H} (hφs : Function.Surjective (φ ∘ s)) (hker : φ.ker ≤ proPFrattini p G) :
@@ -143,8 +142,8 @@ theorem surjective_of_surjective_comp_of_ker_le_proPFrattini (hG : IsProP p G) {
     rwa [mul_inv_cancel_left] at hx
 
 /-- **An endomorphism congruent to the identity modulo the Frattini subgroup is surjective.** A
-continuous endomorphism `φ` of a pro-`p` group with `g⁻¹ * φ g ∈ Φ(G)` for every `g` becomes the
-identity on the Frattini quotient `G ⧸ Φ(G)`, so it is onto. -/
+continuous endomorphism `φ` of a pro-`p` group with `g⁻¹ * φ g ∈ Φ(G)` for every `g` is
+surjective. -/
 theorem surjective_of_forall_inv_mul_mem_proPFrattini (hG : IsProP p G) {φ : G →* G}
     (hφ : Continuous φ) (h : ∀ g, g⁻¹ * φ g ∈ proPFrattini p G) : Function.Surjective φ :=
   hG.surjective_of_surjective_comp_of_ker_le_proPFrattini hφ
