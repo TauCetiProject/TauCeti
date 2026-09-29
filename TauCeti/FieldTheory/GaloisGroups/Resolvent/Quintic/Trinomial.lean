@@ -213,7 +213,7 @@ private theorem specialize_X_pow_five_sub_X :
     quinticF20Spec.specialize ℂ (X ^ 5 + C (-1) * X + C 0) = (X - 2) ^ 4 * (X ^ 2 + 16) := by
   rw [ResolventSpec.specialize_def, map_vietaHom_eq_galResolvent quinticF20Spec.orbitProduct_esymm
     prod_x₁, quinticF20Spec_Φ, ← MvPolynomial.map_universalResolvent_eq_galResolvent,
-    universalResolvent_quinticF20Invariant, Polynomial.map_prod, quinticF20OrbitRepresentatives_def]
+    universalResolvent_quinticF20Invariant, Polynomial.map_prod, quinticF20OrbitRepresentatives]
   simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C, MvPolynomial.coe_eval₂Hom,
     eval₂_rename_quinticF20Invariant]
   repeat rw [Finset.prod_insert (by decide)]
