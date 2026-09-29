@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopCat.Sphere
-public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
-public import TauCeti.Geometry.Manifold.Basic
+public import TauCeti.Geometry.Manifold.Incompressible
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 
 /-!
@@ -34,8 +33,8 @@ Chapter II.
 * `TauCeti.IsHakenSurfaceEmbedding`: a proper, incompressible witness with infinite fundamental
   group for Haken-ness, allowing boundary.
 * `TauCeti.IsClosedHakenSurfaceEmbedding`: the closed, bicollared specialization.
-* `TauCeti.IsIrreducibleThreeManifold`: every closed locally flat embedded 2-sphere bounds an
-  embedded 3-ball.
+* `TauCeti.IsSphereBoundsBall`: every closed locally flat embedded 2-sphere bounds an embedded
+  3-ball.
 * `TauCeti.IsHakenThreeManifold` and `TauCeti.IsClosedHakenThreeManifold`: the corresponding
   irreducible existential Haken predicates for ambient 3-manifolds.
 
@@ -93,21 +92,21 @@ theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
 
 end BoundaryAware
 
-/-! ### Irreducible three-manifolds -/
+/-! ### Sphere-bounds-a-ball condition -/
 
-/-- A three-manifold is **irreducible** when every closed locally flat embedded 2-sphere extends
-across an embedded 3-ball.  The disk and its boundary are Mathlib's standard `𝔻 3` and `𝕊 2`
-objects, so this is the usual tame sphere-bounds-a-ball condition. -/
-def IsIrreducibleThreeManifold (M : Type u) [TopologicalSpace M] : Prop :=
+/-- A space satisfies the sphere-bounds-a-ball condition when every closed locally flat embedded
+2-sphere extends across an embedded 3-ball. The disk and its boundary are Mathlib's standard `𝔻 3`
+and `𝕊 2` objects, so this is the usual tame condition used in irreducible 3-manifolds. -/
+def IsSphereBoundsBall (M : Type u) [TopologicalSpace M] : Prop :=
   ∀ f : C((TopCat.sphere 2 : TopCat.{u}), M), IsClosedEmbedding f →
     IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f →
     ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
       g.comp (TopCat.diskBoundaryInclusion 3).hom = f
 
-/-- The sphere-bounds-a-ball condition defining an irreducible 3-manifold. -/
+/-- The sphere-bounds-a-ball condition defining `IsSphereBoundsBall`. -/
 @[simp]
-theorem isIrreducibleThreeManifold_iff (M : Type u) [TopologicalSpace M] :
-    IsIrreducibleThreeManifold M ↔
+theorem isSphereBoundsBall_iff (M : Type u) [TopologicalSpace M] :
+    IsSphereBoundsBall M ↔
       ∀ f : C((TopCat.sphere 2 : TopCat.{u}), M), IsClosedEmbedding f →
         IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f →
         ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
@@ -118,13 +117,13 @@ theorem isIrreducibleThreeManifold_iff (M : Type u) [TopologicalSpace M] :
 
 section BoundaryHakenPredicate
 
-/-- A compact connected 3-manifold is **Haken** when it admits a boundary-aware Haken surface
-embedding.  The source type, its manifold structures, and the map are existential data, so this
-predicate records the geometric witness rather than merely asserting an incompressible map
-exists. -/
+/-- A compact connected **irreducible** 3-manifold is **Haken** when it admits a boundary-aware
+Haken surface embedding. The source type, its manifold structures, and the map are existential
+data, so this predicate records the geometric witness rather than merely asserting an
+incompressible map exists. -/
 def IsHakenThreeManifold (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 3) M] : Prop :=
-  IsIrreducibleThreeManifold M ∧
+  IsSphereBoundsBall M ∧
     ∃ (S : Type u) (tS : TopologicalSpace S)
       (cS : ChartedSpace (EuclideanHalfSpace 2) S),
       letI : TopologicalSpace S := tS
@@ -137,7 +136,7 @@ The ambient compact-connected package is carried by the surface witness. -/
 theorem isHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 3) M] :
     IsHakenThreeManifold M ↔
-      IsIrreducibleThreeManifold M ∧
+      IsSphereBoundsBall M ∧
         ∃ (S : Type u) (tS : TopologicalSpace S)
           (cS : ChartedSpace (EuclideanHalfSpace 2) S),
           letI : TopologicalSpace S := tS
@@ -145,11 +144,12 @@ theorem isHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
           ∃ f : C(S, M), IsHakenSurfaceEmbedding f :=
   Iff.rfl
 
-/-- A boundary-aware Haken surface embedding supplies its ambient Haken predicate. -/
-theorem isHakenThreeManifold_of_isIrreducibleThreeManifold_of_isHakenSurfaceEmbedding {S M : Type u}
+/-- A boundary-aware Haken surface embedding supplies its ambient Haken predicate when the ambient
+sphere-bounds-a-ball condition holds. -/
+theorem isHakenThreeManifold_of_isSphereBoundsBall_of_isHakenSurfaceEmbedding {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 2) S] [ChartedSpace (EuclideanHalfSpace 3) M]
-    (hirr : IsIrreducibleThreeManifold M) {f : C(S, M)}
+    (hirr : IsSphereBoundsBall M) {f : C(S, M)}
     (h : IsHakenSurfaceEmbedding f) : IsHakenThreeManifold M := by
   exact (isHakenThreeManifold_iff M).mpr ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
@@ -180,44 +180,10 @@ end IsHakenThreeManifold
 
 end BoundaryHakenPredicate
 
-/-! ### Closed incompressible surface embeddings -/
-
 section ClosedEmbeddings
 
 variable [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
   [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
-
-/-- A **closed incompressible surface embedding** exhibits a closed connected surface as an
-incompressible surface in a closed connected 3-manifold. Keeping the map as data lets later
-statements name the particular surface rather than hiding it behind an existential. This is not
-the Haken predicate: Haken-ness is a separate property of a 3-manifold asserting the existence of
-an appropriate incompressible surface. -/
-def IsClosedIncompressibleSurfaceEmbedding (f : C(S, M)) : Prop :=
-  IsClosedConnectedSurface S ∧ IsClosedConnectedThreeManifold M ∧ IsIncompressible f
-
-/-- The defining closed-surface, closed-ambient, and incompressibility conditions of
-`IsClosedIncompressibleSurfaceEmbedding`. -/
-@[simp]
-theorem isClosedIncompressibleSurfaceEmbedding_iff {f : C(S, M)} :
-    IsClosedIncompressibleSurfaceEmbedding f ↔ IsClosedConnectedSurface S ∧
-      IsClosedConnectedThreeManifold M ∧ IsIncompressible f :=
-  Iff.rfl
-
-/-- A continuous left inverse gives a closed incompressible surface embedding. -/
-theorem isClosedIncompressibleSurfaceEmbedding_of_leftInverse {f : C(S, M)} {r : C(M, S)}
-    (hS : IsClosedConnectedSurface S) (hM : IsClosedConnectedThreeManifold M)
-    (h : r.comp f = ContinuousMap.id S) :
-    IsClosedIncompressibleSurfaceEmbedding f :=
-  ⟨hS, hM, isIncompressible_of_leftInverse h⟩
-
-/-- A product-slice inclusion is a closed incompressible surface embedding whenever its source and
-ambient product carry the required closed manifold structures. -/
-theorem isClosedIncompressibleSurfaceEmbedding_prodMk {Y : Type*} [TopologicalSpace Y]
-    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) (S × Y)]
-    (hS : IsClosedConnectedSurface S) (hM : IsClosedConnectedThreeManifold (S × Y)) (y₀ : Y) :
-    IsClosedIncompressibleSurfaceEmbedding (ContinuousMap.prodMk (ContinuousMap.id S)
-      (ContinuousMap.const S y₀)) :=
-  ⟨hS, hM, isIncompressible_prodMk y₀⟩
 
 /-- A **closed Haken surface embedding** is a closed incompressible embedding with the geometric
 conditions needed for the usual Haken witness: it is globally bicollared (hence locally flat and
@@ -243,13 +209,13 @@ end ClosedEmbeddings
 
 section Closed
 
-/-- A closed connected 3-manifold is **closed Haken** when it admits a closed Haken surface
-embedding. The source type, its manifold structures, and the map are existential data; the witness
-retains incompressibility, bicollaring, and non-sphericity (with local flatness derived from the
-bicollar). -/
+/-- An irreducible closed connected 3-manifold is **closed Haken** when it admits a closed Haken
+surface embedding. The source type, its manifold structures, and the map are existential data; the
+witness retains incompressibility, bicollaring, and non-sphericity (with local flatness derived
+from the bicollar). -/
 def IsClosedHakenThreeManifold (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] : Prop :=
-  IsIrreducibleThreeManifold M ∧
+  IsSphereBoundsBall M ∧
     ∃ (S : Type u) (tS : TopologicalSpace S)
       (cS : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S),
       letI : TopologicalSpace S := tS
@@ -262,7 +228,7 @@ The ambient closed-connected package is carried by the surface witness. -/
 theorem isClosedHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] :
     IsClosedHakenThreeManifold M ↔
-      IsIrreducibleThreeManifold M ∧
+      IsSphereBoundsBall M ∧
         ∃ (S : Type u) (tS : TopologicalSpace S)
           (cS : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S),
           letI : TopologicalSpace S := tS
@@ -270,14 +236,15 @@ theorem isClosedHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
           ∃ f : C(S, M), IsClosedHakenSurfaceEmbedding f :=
   Iff.rfl
 
-/-- A closed Haken surface embedding supplies its ambient closed-Haken predicate. -/
+/-- A closed Haken surface embedding supplies its ambient closed-Haken predicate when the ambient
+sphere-bounds-a-ball condition holds. -/
 theorem
-    isClosedHakenThreeManifold_of_isIrreducibleThreeManifold_of_isClosedHakenSurfaceEmbedding
+    isClosedHakenThreeManifold_of_isSphereBoundsBall_of_isClosedHakenSurfaceEmbedding
     {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
-    (hirr : IsIrreducibleThreeManifold M) {f : C(S, M)}
+    (hirr : IsSphereBoundsBall M) {f : C(S, M)}
     (h : IsClosedHakenSurfaceEmbedding f) : IsClosedHakenThreeManifold M := by
   exact (isClosedHakenThreeManifold_iff M).mpr
     ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
