@@ -100,13 +100,6 @@ private theorem rowGenerator_apply (σ : L ≃ₐ[K] L) (w : n → L) :
     rowGenerator φ σ w = (fun i ↦ σ (w i)) ᵥ* ((splittingConjugator φ σ)⁻¹ : GL n L) :=
   (rfl)
 
-omit [DecidableEq n] [Nonempty n] in
-/-- Entrywise application of `σ` to `w ᵥ* M` is `σ(w) ᵥ* σ(M)`. -/
-private theorem map_vecMul' (σ : L ≃ₐ[K] L) (w : n → L) (M : Matrix n n L) :
-    (fun i ↦ σ ((w ᵥ* M) i)) = (fun i ↦ σ (w i)) ᵥ* M.map σ := by
-  ext i
-  exact RingHom.map_vecMul (σ : L →+* L) M w i
-
 /-- `g_σ⁻¹` intertwines the entrywise action of `σ` on `φ(1 ⊗ a)` with `φ(1 ⊗ a)`: the matrices
 `φ(1 ⊗ a)` are the fixed points of the twisted action `M ↦ g_σ · σ(M) · g_σ⁻¹`. -/
 private theorem map_mul_inv_eq (σ : L ≃ₐ[K] L) (a : A) :
@@ -151,7 +144,10 @@ private noncomputable def rowCrossedAction :
           (map (σ : L →+* L) (splittingConjugator φ τ)⁻¹ : GL n L) := by
         ext i j
         rw [Matrix.map_apply, GeneralLinearGroup.map_apply, RingHom.coe_coe]
-      simp only [Module.End.mul_apply, rowGenerator_apply, Algebra.lsmul_coe, map_vecMul',
+      have hσ (v : n → L) (M : Matrix n n L) :
+          (fun i ↦ σ ((v ᵥ* M) i)) = (fun i ↦ σ (v i)) ᵥ* M.map σ :=
+        funext (RingHom.map_vecMul (σ : L →+* L) M v)
+      simp only [Module.End.mul_apply, rowGenerator_apply, Algebra.lsmul_coe, hσ,
         vecMul_vecMul, hmap]
       rw [← Units.val_mul, map_inv_mul_inv, Units.val_mul, coe_scalar, scalar_apply,
         ← smul_eq_diagonal_mul, vecMul_smul]
@@ -168,7 +164,10 @@ private theorem commute_rowCrossedAction_rowAction (b : CrossedProduct (cocycleO
     rw [rowCrossedAction, CrossedProduct.lift_smul_basis]
     refine Commute.mul_left (LinearMap.ext fun w ↦ ?_) (LinearMap.ext fun w ↦ ?_)
     · simp [rowAction_apply, smul_vecMul]
-    · simp only [Module.End.mul_apply, rowAction_apply, rowGenerator_apply, map_vecMul',
+    · have hσ (v : n → L) (M : Matrix n n L) :
+          (fun i ↦ σ ((v ᵥ* M) i)) = (fun i ↦ σ (v i)) ᵥ* M.map σ :=
+        funext (RingHom.map_vecMul (σ : L →+* L) M v)
+      simp only [Module.End.mul_apply, rowAction_apply, rowGenerator_apply, hσ,
         vecMul_vecMul, map_mul_inv_eq]
 
 /-- The action of `CrossedProduct c ⊗[K] Aᵐᵒᵖ` on the row vectors `Lⁿ`. -/
