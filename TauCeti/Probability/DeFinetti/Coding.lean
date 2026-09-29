@@ -432,14 +432,15 @@ Conditioning on `Z` as well as on `Y ∘ e` is what the exchangeability over `Z`
 coordinates are conditionally i.i.d. given `(Z, Y ∘ e)`, not merely given `Y ∘ e`. -/
 theorem Exchangeable.exists_map_prodMk_comp_eq_map_coding {γ β : Type*} [MeasurableSpace γ]
     [StandardBorelSpace γ] [Nonempty γ] [MeasurableSpace β] [StandardBorelSpace β] [Nonempty β]
-    {μ : Measure Ω} [IsFiniteMeasure μ] {Z : Ω → γ} {Y : ℕ → Ω → β} (hZ : AEMeasurable Z μ)
-    (hY : ∀ n, AEMeasurable (Y n) μ) (hZY : Exchangeable μ fun n ω => (Z ω, Y n ω))
-    {e g : ℕ → ℕ} (he : Function.Injective e) (hg : Function.Injective g)
+    {μ : Measure Ω} [IsFiniteMeasure μ] {Z : Ω → γ} {Y : ℕ → Ω → β}
+    (hZY : Exchangeable μ fun n ω => (Z ω, Y n ω)) (hZ : AEMeasurable Z μ)
+    (hY : ∀ n, AEMeasurable (Y n) μ) {κ : Type*} {e : ℕ → ℕ} {g : κ → ℕ}
+    (he : Function.Injective e) (hg : Function.Injective g)
     (heg : Disjoint (Set.range e) (Set.range g)) :
     ∃ v : γ × (ℕ → β) → I → β, Measurable (Function.uncurry v) ∧
       μ.map (fun ω => ((Z ω, fun a => Y (e a) ω), fun b => Y (g b) ω)) =
         ((μ.map fun ω => (Z ω, fun a => Y (e a) ω)).prod
-            (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
+            (Measure.infinitePi fun _ : κ => (volume : Measure I))).map
           (fun p => (p.1, fun b => v p.1 (p.2 b))) := by
   -- By de Finetti, the pairs `(Z, Y n)` are conditionally i.i.d. Their directing measure is a
   -- measurable function `F` of the pairs along `e`, hence of `(Z, Y ∘ e)`; code the pairs along `g`
@@ -455,13 +456,14 @@ theorem Exchangeable.exists_map_prodMk_comp_eq_map_coding {γ β : Type*} [Measu
       (unitIntervalCoding (γ × β) (F fun a => (s.1, s.2 a)) t).2) :=
     measurable_snd.comp
       ((measurable_uncurry_unitIntervalCoding (γ × β)).comp ((hF.comp hψ).prodMap measurable_id))
-  have hsnd : Measurable fun p : (γ × (ℕ → β)) × (ℕ → γ × β) => (p.1, fun b => (p.2 b).2) :=
+  have hsnd : Measurable fun p : (γ × (ℕ → β)) × (κ → γ × β) => (p.1, fun b => (p.2 b).2) :=
     measurable_fst.prodMk
       (Measurable.of_eval fun b => ((measurable_pi_apply b).comp measurable_snd).snd)
   refine ⟨_, hv, ?_⟩
-  have h := congrArg (fun m => m.map fun p : (γ × (ℕ → β)) × (ℕ → γ × β) =>
+  have h := congrArg (fun m => m.map fun p : (γ × (ℕ → β)) × (κ → γ × β) =>
     (p.1, fun b => (p.2 b).2)) hcode
   beta_reduce at h
+  have : Countable κ := hg.countable
   rwa [AEMeasurable.map_map_of_aemeasurable hsnd.aemeasurable (by fun_prop),
     Measure.map_map hsnd (by fun_prop)] at h
 
