@@ -64,6 +64,28 @@ noncomputable def higherBarDifferential (𝒜 : AInfinityAlgebra R A) :
     Module.End R (ReducedTensorWords R A) :=
   ReducedTensorWords.gradedCoderiv (𝒜.grading.shift 1) 𝒜.higherTaylor 1
 
+/-- The letter projection of the higher bar differential is the higher Taylor map. -/
+@[simp]
+theorem letter_comp_higherBarDifferential (𝒜 : AInfinityAlgebra R A) :
+    ReducedTensorWords.letter R A ∘ₗ 𝒜.higherBarDifferential = 𝒜.higherTaylor := by
+  exact ReducedTensorWords.letter_comp_gradedCoderiv (𝒜.grading.shift 1) 𝒜.higherTaylor 1
+
+/-- The arity component of the higher bar differential is the higher Taylor component. -/
+@[simp]
+theorem higherBarDifferential_taylorComponent (𝒜 : AInfinityAlgebra R A)
+    (n : {n : ℕ // 0 < n}) :
+    𝒜.higherBarDifferential.taylorComponent n =
+      𝒜.higherTaylor ∘ₗ ReducedTensorWords.of R A n := by
+  exact ReducedTensorWords.taylorComponent_gradedCoderiv
+    (𝒜.grading.shift 1) 𝒜.higherTaylor 1 n
+
+/-- The higher bar differential is a graded coderivation for the suspended grading. -/
+theorem isGradedCoderivation_higherBarDifferential (𝒜 : AInfinityAlgebra R A) :
+    ReducedTensorWords.IsGradedCoderivation (𝒜.grading.shift 1) 1
+      𝒜.higherBarDifferential := by
+  exact ReducedTensorWords.isGradedCoderivation_gradedCoderiv
+    (𝒜.grading.shift 1) 𝒜.higherTaylor 1
+
 /-- The higher bar differential strictly lowers tensor length. -/
 theorem higherBarDifferential_filtration (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
     Submodule.map 𝒜.higherBarDifferential (ReducedTensorWords.filtration R A (n + 1)) ≤
@@ -84,6 +106,43 @@ noncomputable def unaryBarDifferential (𝒜 : AInfinityAlgebra R A) :
     Module.End R (ReducedTensorWords R A) :=
   ReducedTensorWords.gradedCoderiv (𝒜.grading.shift 1)
     ((𝒜.taylor ∘ₗ ReducedTensorWords.ofLetter R A) ∘ₗ ReducedTensorWords.letter R A) 1
+
+/-- The letter projection of the unary bar differential is its unary Taylor map. -/
+@[simp]
+theorem letter_comp_unaryBarDifferential (𝒜 : AInfinityAlgebra R A) :
+    ReducedTensorWords.letter R A ∘ₗ 𝒜.unaryBarDifferential =
+      (𝒜.taylor ∘ₗ ReducedTensorWords.ofLetter R A) ∘ₗ
+        ReducedTensorWords.letter R A := by
+  exact ReducedTensorWords.letter_comp_gradedCoderiv (𝒜.grading.shift 1) _ 1
+
+/-- The arity component of the unary bar differential is its unary Taylor component. -/
+@[simp]
+theorem unaryBarDifferential_taylorComponent (𝒜 : AInfinityAlgebra R A)
+    (n : {n : ℕ // 0 < n}) :
+    𝒜.unaryBarDifferential.taylorComponent n =
+      ((𝒜.taylor ∘ₗ ReducedTensorWords.ofLetter R A) ∘ₗ
+        ReducedTensorWords.letter R A) ∘ₗ ReducedTensorWords.of R A n := by
+  exact ReducedTensorWords.taylorComponent_gradedCoderiv (𝒜.grading.shift 1) _ 1 n
+
+/-- The unary bar differential is a graded coderivation for the suspended grading. -/
+theorem isGradedCoderivation_unaryBarDifferential (𝒜 : AInfinityAlgebra R A) :
+    ReducedTensorWords.IsGradedCoderivation (𝒜.grading.shift 1) 1
+      𝒜.unaryBarDifferential := by
+  exact ReducedTensorWords.isGradedCoderivation_gradedCoderiv (𝒜.grading.shift 1) _ 1
+
+/-- On a pure tensor word, the unary bar differential acts on each letter with the Koszul twist
+on the letters preceding it. -/
+theorem unaryBarDifferential_of_tprod (𝒜 : AInfinityAlgebra R A)
+    {n : ℕ} (hn : 0 < n) (x : Fin n → A) :
+    𝒜.unaryBarDifferential (ReducedTensorWords.of R A ⟨n, hn⟩
+      (PiTensorProduct.tprod R x)) =
+        ∑ p ∈ Finset.range n, ReducedTensorWords.of R A ⟨n, hn⟩
+          (PiTensorProduct.tprod R fun i ↦
+            if i.val < p then (𝒜.grading.shift 1).koszulTwist 1 (x i)
+            else if i.val = p then 𝒜.m 1 ![x i] else x i) := by
+  simpa only [unaryBarDifferential, LinearMap.comp_apply, 𝒜.taylor_ofLetter] using
+    ReducedTensorWords.gradedCoderiv_comp_letter_of_tprod (𝒜.grading.shift 1)
+      (𝒜.taylor ∘ₗ ReducedTensorWords.ofLetter R A) 1 hn x
 
 /-- The bar differential is the sum of its unary and higher parts. -/
 theorem barDifferential_eq_unary_add_higher (𝒜 : AInfinityAlgebra R A) :
