@@ -36,9 +36,6 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 
 ## Main results
 
-* `TauCeti.QuotientGroup.congrOfMapEq_symm_mk`, `TauCeti.QuotientGroup.congrOfMapEq_refl`,
-  `TauCeti.QuotientGroup.congrOfMapEq_trans`: the inverse, identity, and composition coherence
-  identities for transporting coset spaces along isomorphisms.
 * `QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection whose
   kernel lies in the subgroup.
 * `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
@@ -384,45 +381,6 @@ equivalence upgrades to a `MulEquiv`. -/
 theorem QuotientGroup.congrOfMapEq_mk (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
     (h : A.map (e : G →* H) = B) (a : G) :
     QuotientGroup.congrOfMapEq e h (QuotientGroup.mk a) = QuotientGroup.mk (e a) := by rfl
-
-/-- The inverse of `QuotientGroup.congrOfMapEq e h` acts by `e.symm` on representatives. -/
-@[simp]
-theorem QuotientGroup.congrOfMapEq_symm_mk (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
-    (h : A.map (e : G →* H) = B) (b : H) :
-    (QuotientGroup.congrOfMapEq e h).symm (QuotientGroup.mk b) = QuotientGroup.mk (e.symm b) :=
-  (QuotientGroup.congrOfMapEq e h).symm_apply_eq.mpr (by simp)
-
-/-- Restricting the identity isomorphism to coset spaces gives the identity equivalence. -/
-@[simp]
-theorem QuotientGroup.congrOfMapEq_refl {A : Subgroup G}
-    (h : A.map (MulEquiv.refl G : G →* G) = A) :
-    QuotientGroup.congrOfMapEq (MulEquiv.refl G) h = Equiv.refl (G ⧸ A) :=
-  Equiv.ext fun x => by
-    induction x using QuotientGroup.induction_on with | _ a =>
-    simp
-
-/-- Restricting isomorphisms to coset spaces is functorial with respect to composition. -/
-@[simp]
-theorem QuotientGroup.congrOfMapEq_trans (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
-    (h : A.map (e : G →* H) = B) (f : H ≃* K) {C : Subgroup K}
-    (h' : B.map (f : H →* K) = C) :
-    (QuotientGroup.congrOfMapEq e h).trans (QuotientGroup.congrOfMapEq f h') =
-      QuotientGroup.congrOfMapEq (e.trans f)
-        (by rw [MulEquiv.toMonoidHom_trans, ← _root_.Subgroup.map_map, h, h']) :=
-  Equiv.ext fun x => by
-    induction x using QuotientGroup.induction_on with | _ a =>
-    simp
-
--- Not `@[simp]`: with this in the simp set, `QuotientGroup.congrOfMapEq_symm_mk` above is
--- provable by `simp`, which the `simpNF` linter rejects.
-/-- Inverting `QuotientGroup.congrOfMapEq e h` gives `QuotientGroup.congrOfMapEq e.symm`. -/
-theorem QuotientGroup.congrOfMapEq_symm (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
-    (h : A.map (e : G →* H) = B) :
-    (QuotientGroup.congrOfMapEq e h).symm =
-      QuotientGroup.congrOfMapEq e.symm ((_root_.Subgroup.map_symm_eq_iff_map_eq A).mpr h) :=
-  Equiv.ext fun x => by
-    induction x using QuotientGroup.induction_on with | _ b =>
-    simp
 
 /-- **Coset spaces transport along a surjection whose kernel lies in the subgroup.** For `ψ`
 surjective with `ker ψ ≤ A` and `A.map ψ = B`, the map `G ⧸ A → H ⧸ B` induced by `ψ` on
