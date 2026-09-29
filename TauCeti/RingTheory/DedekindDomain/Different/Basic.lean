@@ -12,8 +12,9 @@ public import Mathlib.RingTheory.DedekindDomain.Different
 
 This file supplies general lemmas about trace-dual fractional ideals. The coercion result connects
 the fractional-ideal and submodule trace duals, allowing submodule results such as localization to
-be transferred to fractional ideals. The elementwise description of the trace dual of `S` as the
-inverse of the different ideal is what reads the different off valuations. The identity-extension
+be transferred to fractional ideals. The elementwise descriptions of the trace dual of `S` and of
+the different ideal, each as the inverse of the other, are what read the different off valuations
+and transport it along automorphisms. The identity-extension
 trace-dual theorem gives the unit different, which is used to compute the relative discriminant of
 the identity extension. The trace criterion `TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem`
 decides when an ideal `I` with `I * Q = p · B` divides the different ideal of an extension of
@@ -103,6 +104,67 @@ theorem mem_traceDual_one_iff_forall_mem_differentIdeal [IsDedekindDomain S]
       ((FractionalIdeal.mem_one_iff _).mp (h _ (FractionalIdeal.mem_coeIdeal_of_mem _ hy)))
   · obtain ⟨y, hy, rfl⟩ := (FractionalIdeal.mem_coeIdeal _).mp hw
     exact (FractionalIdeal.mem_one_iff _).mpr (Submodule.mem_one.mp (h y hy))
+
+/-- **The different ideal is the inverse of the trace dual of `S`, elementwise**: an element of
+`S` lies in the different ideal of `S / R` exactly when it multiplies the trace dual of `S` into
+`S`. -/
+theorem mem_differentIdeal_iff_forall_mem_traceDual [IsDedekindDomain S] [IsTorsionFree R S]
+    {y : S} :
+    y ∈ differentIdeal R S ↔
+      ∀ x ∈ Submodule.traceDual R K (1 : Submodule S L), x * algebraMap S L y ∈
+        (1 : Submodule S L) := by
+  refine ⟨fun hy x hx ↦ ?_, fun h ↦ ?_⟩
+  · have hmem : algebraMap S L y ∈ 1 / Submodule.traceDual R K (1 : Submodule S L) := by
+      rw [← coeSubmodule_differentIdeal (A := R) (K := K)]
+      exact ⟨y, hy, rfl⟩
+    rw [mul_comm]
+    exact Submodule.mem_div_iff_forall_mul_mem.mp hmem x hx
+  · have hmem : algebraMap S L y ∈ IsLocalization.coeSubmodule L (differentIdeal R S) := by
+      rw [coeSubmodule_differentIdeal (A := R) (K := K)]
+      exact Submodule.mem_div_iff_forall_mul_mem.mpr fun x hx ↦ mul_comm x _ ▸ h x hx
+    obtain ⟨y', hy', hyy'⟩ := hmem
+    rwa [← IsFractionRing.injective S L hyy']
+
+omit [IsDomain R] [IsFractionRing S L] [IsIntegrallyClosed R] [FiniteDimensional K L] in
+/-- **The trace dual of `S` is stable under the automorphisms of `L / K`**: an automorphism maps
+`S` onto itself and preserves the trace of `L / K`. -/
+theorem apply_mem_traceDual_one_iff {σ : Gal(L/K)} {x : L} :
+    σ x ∈ Submodule.traceDual R K (1 : Submodule S L) ↔
+      x ∈ Submodule.traceDual R K (1 : Submodule S L) := by
+  suffices h : ∀ (τ : Gal(L/K)) (z : L), z ∈ Submodule.traceDual R K (1 : Submodule S L) →
+      τ z ∈ Submodule.traceDual R K (1 : Submodule S L) from
+    ⟨fun hx ↦ by simpa using h σ⁻¹ _ hx, h σ x⟩
+  refine fun τ z hz ↦ Submodule.mem_traceDual.mpr fun a ha ↦ ?_
+  obtain ⟨b, rfl⟩ := Submodule.mem_one.mp ha
+  -- `Tr (τ z · b) = Tr (τ (z · τ⁻¹ b)) = Tr (z · τ⁻¹ b)`, and `τ⁻¹ b` lies in `S`
+  have hb : τ.symm (algebraMap S L b) = algebraMap S L (galRestrict R K L S τ⁻¹ b) :=
+    (algebraMap_galRestrict_apply R τ⁻¹ b).symm
+  have htr : Algebra.traceForm K L (τ z) (algebraMap S L b) =
+      Algebra.traceForm K L z (algebraMap S L (galRestrict R K L S τ⁻¹ b)) := by
+    have hmul : τ z * algebraMap S L b = τ (z * τ.symm (algebraMap S L b)) := by
+      rw [map_mul, AlgEquiv.apply_symm_apply]
+    rw [← hb, Algebra.traceForm_apply, Algebra.traceForm_apply, hmul,
+      Algebra.trace_eq_of_algEquiv]
+  rw [htr]
+  exact Submodule.mem_traceDual.mp hz _ (Submodule.mem_one.mpr ⟨_, rfl⟩)
+
+/-- **The different ideal is stable under the automorphisms of `L / K`**, acting on `S` through
+their restrictions `galRestrict`. -/
+theorem galRestrict_apply_mem_differentIdeal_iff [IsDedekindDomain S] [IsTorsionFree R S]
+    {σ : Gal(L/K)} {y : S} :
+    galRestrict R K L S σ y ∈ differentIdeal R S ↔ y ∈ differentIdeal R S := by
+  suffices h : ∀ (τ : Gal(L/K)) (z : S), z ∈ differentIdeal R S →
+      galRestrict R K L S τ z ∈ differentIdeal R S from
+    ⟨fun hy ↦ by simpa [← MulEquiv.map_mul] using h σ⁻¹ _ hy, h σ y⟩
+  refine fun τ z hz ↦ (mem_differentIdeal_iff_forall_mem_traceDual (K := K) (L := L)).mpr
+    fun x hx ↦ ?_
+  -- `x · τ z = τ (τ⁻¹ x · z)`, where `τ⁻¹ x` lies in the trace dual
+  have hmul := (mem_differentIdeal_iff_forall_mem_traceDual (K := K) (L := L)).mp hz (τ.symm x)
+    (apply_mem_traceDual_one_iff.mpr hx)
+  obtain ⟨b, hb⟩ := Submodule.mem_one.mp hmul
+  refine Submodule.mem_one.mpr ⟨galRestrict R K L S τ b, ?_⟩
+  rw [algebraMap_galRestrict_apply, hb, map_mul, AlgEquiv.apply_symm_apply,
+    algebraMap_galRestrict_apply]
 
 section TraceCriterion
 
