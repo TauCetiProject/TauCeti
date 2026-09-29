@@ -30,14 +30,14 @@ independent of the chosen presentation.
   preserves the prescription property.
 * `TauCeti.hasPrescriptionProperty_comp_equiv_iff`: the corresponding equivalence.
 
-## Implementation notes
+## Reduction compatibility
 
-Explicit continuous `H¹` is functorial in pairs consisting of a group homomorphism and a
-compatible map of coefficient modules (`TauCeti.ContCohomology.explicitMap1Equiv` in the
-invertible case).  The `H¹` equivalence here is this functoriality for the pair
-`(e, compEquiv e χ i)`, so it commutes with the maps on `H¹` induced by reduction
-`I(χ)/pⁱ → I(χ)/p`.  Hence surjectivity of these maps, which is the prescription property,
-transports along `e`.
+`TauCeti.ZModTwist.explicitH1CompEquiv_reduce` states that the equivalences on `H¹` commute
+with every reduction map `I(χ)/pⁱ → I(χ)/pʲ`.  Thus they identify the images of the reduction
+maps, so the prescription property is unchanged by pullback along a topological isomorphism.
+The related functoriality API is `TauCeti.ContCohomology.explicitMap1Equiv`,
+`TauCeti.ContCohomology.explicitMap1_comp`, `TauCeti.ContCohomology.explicitMap1_congr_of_eq`,
+and `TauCeti.ContCohomology.explicitCoeff1_eq_explicitMap1`.
 
 ## References
 
