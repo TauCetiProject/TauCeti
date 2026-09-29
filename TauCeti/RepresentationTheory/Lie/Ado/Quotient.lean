@@ -16,11 +16,12 @@ In positive characteristic, a power of the enveloping-algebra generator of an el
 adjoint action is nilpotent lies in every prescribed power of the central augmentation ideal.
 Consequently, any associative target killing such an ideal power sends that generator to a
 nilpotent element. Its left-regular representation also acts nilpotently. This is the
-nilpotence-preservation step for finite quotients in the positive-characteristic construction of
+nilpotence-preservation step for quotients in the positive-characteristic construction of
 faithful Lie representations.
 
-The statements do not require the target to be finite-dimensional or the Lie algebra to be
-nilpotent. Those properties enter when constructing a target that also separates the Lie algebra.
+These conditional statements do not construct a finite-dimensional separating quotient. That
+construction uses the later Krull-intersection step. The statements do not require the target
+to be finite-dimensional or the Lie algebra to be nilpotent.
 
 This is the quotient-nilpotence step of G. Hochschild, *An Addition to Ado's Theorem*,
 Proceedings of the American Mathematical Society **17** (1966), 531–533.
