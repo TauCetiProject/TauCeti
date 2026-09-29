@@ -243,14 +243,6 @@ theorem hopfSubalgebraι_apply (hA : A.IsHopfSubalgebra) (x : A) :
     (hopfSubalgebraι hA).hom x = x :=
   (rfl)
 
-/-- The inclusion morphism of a Hopf subalgebra commutes with the antipodes: the antipode of the
-Hopf subalgebra is the restriction of that of `H`. -/
-@[simp]
-theorem hopfSubalgebraι_antipode (hA : A.IsHopfSubalgebra) (x : A) :
-    letI := hA.hopfAlgebra
-    (hopfSubalgebraι hA).hom (HopfAlgebra.antipode R x) = HopfAlgebra.antipode R (x : H) :=
-  (rfl)
-
 /-- The inclusion morphism of a Hopf subalgebra is injective. -/
 theorem hopfSubalgebraι_injective (hA : A.IsHopfSubalgebra) :
     Function.Injective (hopfSubalgebraι hA).hom :=
