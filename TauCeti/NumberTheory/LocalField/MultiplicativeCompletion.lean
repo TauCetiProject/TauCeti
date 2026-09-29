@@ -196,9 +196,10 @@ omit [Fact p.Prime] in
 /-- An automorphism acts on a power class through its action on a representative. -/
 @[simp]
 theorem padicCompletionPowerClassMap_mk (σ : L ≃ₐ[K] L) (m : ℕ) (x : Lˣ) :
-    padicCompletionPowerClassMap p L K σ m (QuotientGroup.mk' _ x) =
-      QuotientGroup.mk' _ (Units.map σ.toRingEquiv.toMonoidHom x) :=
-  QuotientGroup.map_mk' _ _ _ _ x
+    padicCompletionPowerClassMap p L K σ m
+        (x : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) =
+      (Units.map σ.toRingEquiv.toMonoidHom x : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) :=
+  QuotientGroup.map_mk _ _ _ _ x
 
 omit [Fact p.Prime] in
 private theorem padicCompletionPowerClassMap_transition (σ : L ≃ₐ[K] L) (m : ℕ)
@@ -262,9 +263,8 @@ def padicCompletionUnitsAut :
         funext m
         change padicCompletionPowerClassMap p L K σ.symm m
           (padicCompletionPowerClassMap p L K σ m (x.1 m)) = x.1 m
-        obtain ⟨y, hy⟩ := QuotientGroup.mk'_surjective _ (x.1 m)
-        rw [← hy]
-        rw [padicCompletionPowerClassMap_mk, padicCompletionPowerClassMap_mk]
+        obtain ⟨y, hy⟩ := QuotientGroup.mk_surjective (x.1 m)
+        rw [← hy, padicCompletionPowerClassMap_mk, padicCompletionPowerClassMap_mk]
         congr 1
         ext
         simp
@@ -273,9 +273,8 @@ def padicCompletionUnitsAut :
         funext m
         change padicCompletionPowerClassMap p L K σ m
           (padicCompletionPowerClassMap p L K σ.symm m (x.1 m)) = x.1 m
-        obtain ⟨y, hy⟩ := QuotientGroup.mk'_surjective _ (x.1 m)
-        rw [← hy]
-        rw [padicCompletionPowerClassMap_mk, padicCompletionPowerClassMap_mk]
+        obtain ⟨y, hy⟩ := QuotientGroup.mk_surjective (x.1 m)
+        rw [← hy, padicCompletionPowerClassMap_mk, padicCompletionPowerClassMap_mk]
         congr 1
         ext
         simp }
