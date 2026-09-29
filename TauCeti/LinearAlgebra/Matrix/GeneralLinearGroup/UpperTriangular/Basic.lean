@@ -29,8 +29,8 @@ defined in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel`.
 * `TauCeti.upperTriangularGroup`: the subgroup of upper-triangular elements of `GL m R`.
 * `TauCeti.UpperTriangularGroup.diag`: the diagonal homomorphism to `m → Rˣ`.
 * `TauCeti.UpperTriangularGroup.diagonalHom`: its section by diagonal matrices.
-* `TauCeti.UpperTriangularGroup.exists_det_eq_one_conjugate_mem`: a triangularizing basis can
-  be rescaled to have determinant one.
+* `TauCeti.UpperTriangularGroup.exists_det_eq_one_map_inv_mul_mul_map_mem`:
+  a triangularizing basis can be rescaled to have determinant one.
 * `TauCeti.UpperTriangularGroup.ker_diag`: identification of the diagonal kernel.
 
 ## References
@@ -156,7 +156,7 @@ theorem diag_diagonalHom (t : m → Rˣ) : diag (diagonalHom t) = t := by
 
 /-- A triangularizing change of basis can be chosen with determinant one. Rescaling one
 column by the inverse determinant preserves the upper-triangular subgroup. -/
-theorem exists_det_eq_one_conjugate_mem {Q ι : Type*} [CommRing Q]
+theorem exists_det_eq_one_map_inv_mul_mul_map_mem {Q ι : Type*} [CommRing Q]
     [Fintype ι] [LinearOrder ι] (f : R →+* Q) (M : GL ι Q) (P : GL ι R)
     (h : (Matrix.GeneralLinearGroup.map f P)⁻¹ * M *
       Matrix.GeneralLinearGroup.map f P ∈ upperTriangularGroup ι Q) :

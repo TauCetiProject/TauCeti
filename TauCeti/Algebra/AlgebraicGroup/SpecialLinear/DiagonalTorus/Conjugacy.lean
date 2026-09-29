@@ -97,7 +97,7 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
           GeneralLinear.pointsMulEquiv (r + 1) (toConv (π : _ →ₐ[k] Q)) *
           Matrix.GeneralLinearGroup.map (algebraMap k Q) P := by
       simpa only [g, π, BialgHom.comp_toAlgHom] using
-        pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGL
+        pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGLKerEquiv_symm
           (R := k) (n := r + 1) P hdet
           (πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q)
     rw [hmatrix', mul_assoc, hmat]

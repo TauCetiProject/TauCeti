@@ -496,7 +496,7 @@ theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm
 
 /-- Conjugation by a determinant-one general-linear matrix, expressed through its corresponding
 special-linear point. -/
-theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGL
+theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGLKerEquiv_symm
     (P : Matrix.GeneralLinearGroup (Fin n) R)
     (hdet : Matrix.GeneralLinearGroup.det P = 1)
     (φ : coordinateHopfAlgebra R n →ₐ[R] A) :

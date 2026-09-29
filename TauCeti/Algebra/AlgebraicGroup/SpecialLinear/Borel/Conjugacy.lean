@@ -71,7 +71,7 @@ theorem exists_conjugate_definingHopfIdeal_le
   obtain ⟨P₀, hP₀⟩ :=
     GeneralLinear.exists_map_inv_mul_mul_map_mem_upperTriangularGroup
       (n := 2) hconn hsolv π
-  obtain ⟨P, hdet, hP⟩ := UpperTriangularGroup.exists_det_eq_one_conjugate_mem
+  obtain ⟨P, hdet, hP⟩ := UpperTriangularGroup.exists_det_eq_one_map_inv_mul_mul_map_mem
     (algebraMap k Q) _ P₀ hP₀
   let g : WithConv (SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] k) :=
     (SpecialLinear.pointsMulEquiv (R := k) (A := k) 2).symm
@@ -86,7 +86,7 @@ theorem exists_conjugate_definingHopfIdeal_le
         GeneralLinear.pointsMulEquiv 2 (toConv (π : _ →ₐ[k] Q)) *
         Matrix.GeneralLinearGroup.map (algebraMap k Q) P := by
     simpa only [g, π, BialgHom.comp_toAlgHom] using
-      SpecialLinear.pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGL
+      SpecialLinear.pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGLKerEquiv_symm
         (R := k) (n := 2) P hdet
         (πS : SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] Q)
   have hmem : toConv ((πS : SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] Q).comp
