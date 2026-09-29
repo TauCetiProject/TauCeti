@@ -53,7 +53,7 @@ noncomputable def labuteAction (χ : F →ₜ* ℤ_[p]ˣ) (γ : orientationQuoti
 
 omit [IsTopologicalGroup F] in
 /-- The character quotient is commutative because it embeds into `ℤ_pˣ`. -/
-private theorem orientationQuotient_isMulCommutative (χ : F →ₜ* ℤ_[p]ˣ) :
+theorem orientationQuotient_isMulCommutative (χ : F →ₜ* ℤ_[p]ˣ) :
     IsMulCommutative (orientationQuotient χ) :=
   Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
     (Abelianization.commutator_subset_ker χ.toMonoidHom)
@@ -91,6 +91,12 @@ theorem labuteAction_add (χ : F →ₜ* ℤ_[p]ˣ) (α : orientationQuotient χ
     (ξ η : labuteE χ) :
     labuteAction χ α (ξ + η) = labuteAction χ α ξ + labuteAction χ α η :=
   (labuteAction_laws χ α α ξ η).2.2
+
+/-- The zero class is fixed by Labute's conjugation action. -/
+@[simp]
+theorem labuteAction_zero (χ : F →ₜ* ℤ_[p]ˣ) (γ : orientationQuotient χ) :
+    labuteAction χ γ 0 = 0 := by
+  simp [labuteAction]
 
 /-- Labute's formula: the class of `y` sends the class of `x` to the class of `y⁻¹xy`. -/
 @[simp]
@@ -143,10 +149,12 @@ theorem relationModuleToLabuteE_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F)
     relationModuleToLabuteE χ R hR
       (Additive.ofMul (r : TopologicalAbelianization R)) =
       labuteRelatorClass χ r (hR r.2) := by
+  -- Unwrap the additive homomorphism so `map_mk` applies to the multiplicative quotient.
   change Additive.ofMul
       (TopologicalAbelianization.map (Subgroup.inclusion hR)
         (Subgroup.continuous_inclusion hR) (r : TopologicalAbelianization R)) = _
   rw [TopologicalAbelianization.map_mk]
+  -- The inclusion of `r : R` and its subtype representative in `ker χ` are definitionally equal.
   rfl
 
 /-- The comparison map respects conjugation by a lift of an element of the character quotient. -/
@@ -205,6 +213,7 @@ theorem labuteModule_smul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     (a : completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) (ξ : labuteE χ) :
     letI := labuteModule hF χ
     a • ξ = labuteSMul hF χ a ξ := by
+  -- Both sides use the same `Module.compHom` action; this exposes its `smul` field.
   change (labuteModule hF χ).smul a ξ = labuteSMul hF χ a ξ
   rfl
 
@@ -267,6 +276,23 @@ theorem labuteSMul_add_right (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     (a : completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) (ξ η : labuteE χ) :
     labuteSMul hF χ a (ξ + η) = labuteSMul hF χ a ξ + labuteSMul hF χ a η :=
   (labuteSMul_laws hF χ a a ξ η).2.2.2
+
+/-- Zero in the completed group algebra acts trivially. -/
+@[simp]
+theorem labuteSMul_zero (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ) (ξ : labuteE χ) :
+    labuteSMul hF χ 0 ξ = 0 := by
+  let _ := labuteModule hF χ
+  rw [← labuteModule_smul]
+  exact zero_smul _ ξ
+
+/-- Every completed scalar sends the zero class to zero. -/
+@[simp]
+theorem labuteSMul_zero_right (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
+    (a : completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) :
+    labuteSMul hF χ a 0 = 0 := by
+  let _ := labuteModule hF χ
+  rw [← labuteModule_smul]
+  exact smul_zero a
 
 /-- The completed action on Labute's module is jointly continuous. -/
 theorem continuous_labuteSMul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ) :
