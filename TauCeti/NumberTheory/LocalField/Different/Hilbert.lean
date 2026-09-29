@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.Minpoly
-public import TauCeti.NumberTheory.LocalField.Different.Basic
 public import TauCeti.NumberTheory.LocalField.Different.Monogenic
 public import TauCeti.NumberTheory.LocalField.Monogenic
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
-public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 public import TauCeti.RingTheory.Valuation.AddValuation
 
 /-!

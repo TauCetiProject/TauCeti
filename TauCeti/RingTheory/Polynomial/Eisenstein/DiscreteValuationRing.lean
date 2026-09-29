@@ -21,7 +21,7 @@ its roots in a torsion-free domain algebra.
 * `Polynomial.IsEisensteinAt.irreducible_coeff_zero` identifies the constant coefficient as an
   irreducible element.
 * `TauCeti.associated_minpoly_of_eisenstein_isRoot` identifies an Eisenstein polynomial
-  with the minimal polynomial of a root up to a unit.
+  over an integrally closed local domain with the minimal polynomial of a root up to a unit.
 -/
 
 public section
@@ -74,12 +74,12 @@ namespace TauCeti
 
 open Module
 
-variable {R S : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+variable {R S : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
   [IsIntegrallyClosed R]
   [CommRing S] [IsDomain S] [Algebra R S] [IsTorsionFree R S]
 
-/-- The minimal polynomial of a root is associated to an Eisenstein polynomial over a discrete
-valuation ring. -/
+/-- The minimal polynomial of a root is associated to an Eisenstein polynomial over an integrally
+closed local domain. -/
 theorem associated_minpoly_of_eisenstein_isRoot
     (f : Polynomial R) (hf : f.IsEisensteinAt (maximalIdeal R)) (ξ : S)
     (hroot : (f.map (algebraMap R S)).IsRoot ξ) : Associated (minpoly R ξ) f := by
