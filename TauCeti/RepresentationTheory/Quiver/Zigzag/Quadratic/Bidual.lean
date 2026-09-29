@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.QuadraticOrthogonal
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.QuadraticDual
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Quadratic.Orthogonal
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Quadratic.Dual
 
 /-!
 # The reverse quadratic relation calculation
@@ -22,7 +22,7 @@ the strict zigzag algebra. The one- and two-vertex exceptions do not have this q
 presentation.
 
 The quadratic dual calculation follows Huerfano--Khovanov, *A category for the adjoint
-representation*, Section 3.
+representation*, Section 6.1.
 -/
 
 public section
@@ -47,15 +47,5 @@ theorem quadraticOrthogonal_signlessPreprojectiveRelators :
     (quadraticZigzagRelations k G) (quadraticZigzagRelations_le_grade_two k G)
   rw [quadraticOrthogonal_quadraticZigzagRelations] at h
   exact h
-
-/-- The defining ideal of the quadratic dual of the signless presentation is generated in the
-opposite path algebra by the quadratic zigzag relation space. -/
-theorem quadraticDualIdeal_signlessPreprojectiveRelators :
-    quadraticDualIdeal k (DoubledQuiver G)
-        (Submodule.span k
-          (Set.range fun v : DoubledQuiver G => signlessPreprojectiveRelator k v)) =
-      TwoSidedIdeal.span (MulOpposite.op ''
-        (quadraticZigzagRelations k G : Set (pathAlgebra k (DoubledQuiver G)))) := by
-  rw [quadraticDualIdeal_eq_span, quadraticOrthogonal_signlessPreprojectiveRelators]
 
 end TauCeti

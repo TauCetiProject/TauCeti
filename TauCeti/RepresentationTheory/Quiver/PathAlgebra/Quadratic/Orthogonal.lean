@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.QuadraticDual
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Quadratic.Dual
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Truncation
 
 /-!
@@ -49,20 +49,25 @@ private theorem gradeTwoPairing_apply (x y : grade k Q 2) :
     gradeTwoPairing k Q x y = pathPairing k Q x.1 y.1 := rfl
 
 omit [Finite Q] [∀ i j : Q, Finite (i ⟶ j)] in
+private theorem gradeTwoPairing_basis
+    (x y : {p : Quiver.TotalPath Q // p.2.2.length = 2}) :
+    gradeTwoPairing k Q (gradeBasis k Q 2 x) (gradeBasis k Q 2 y) =
+      (Finsupp.single x.1 (1 : k)) y.1 := by
+  classical
+  rw [gradeTwoPairing_apply, coe_gradeBasis_apply, coe_gradeBasis_apply,
+    pathPairing_apply_ofPath, ofPath_eq_single, pathAlgebraBasis_repr_single]
+
+omit [Finite Q] [∀ i j : Q, Finite (i ⟶ j)] in
 private theorem gradeTwoPairing_basis_self (x : {p : Quiver.TotalPath Q // p.2.2.length = 2}) :
     gradeTwoPairing k Q (gradeBasis k Q 2 x) (gradeBasis k Q 2 x) = 1 := by
-  classical
-  rw [gradeTwoPairing_apply, coe_gradeBasis_apply,
-    pathPairing_apply_ofPath, ofPath_eq_single, pathAlgebraBasis_repr_single]
+  rw [gradeTwoPairing_basis]
   simp
 
 omit [Finite Q] [∀ i j : Q, Finite (i ⟶ j)] in
 private theorem gradeTwoPairing_basis_ne
     {x y : {p : Quiver.TotalPath Q // p.2.2.length = 2}} (h : x ≠ y) :
     gradeTwoPairing k Q (gradeBasis k Q 2 x) (gradeBasis k Q 2 y) = 0 := by
-  classical
-  rw [gradeTwoPairing_apply, coe_gradeBasis_apply, coe_gradeBasis_apply,
-    pathPairing_apply_ofPath, ofPath_eq_single, pathAlgebraBasis_repr_single]
+  rw [gradeTwoPairing_basis]
   exact Finsupp.single_eq_of_ne (fun e => h (Subtype.ext e.symm))
 
 omit [Finite Q] [∀ i j : Q, Finite (i ⟶ j)] in
