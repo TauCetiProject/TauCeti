@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ProjectiveCover.Basic
+public import Mathlib.Algebra.Module.Projective
+public import Mathlib.RingTheory.Jacobson.Radical
+import TauCeti.Algebra.Module.ProjectiveCover.Basic
 
 /-!
 # Projective modules are determined by a radical quotient
@@ -20,8 +22,8 @@ ideal itself to be the whole Jacobson radical.
 
 ## Main result
 
-* `TauCeti.nonempty_linearEquiv_of_quotient_smul_top`: two finitely generated projective modules
-  with isomorphic quotients by an ideal in the Jacobson radical are isomorphic.
+* `TauCeti.Ideal.nonempty_linearEquiv_of_quotient_smul_top`: two finitely generated projective
+  modules with isomorphic quotients by an ideal in the Jacobson radical are isomorphic.
 
 ## References
 
@@ -32,6 +34,8 @@ semiperfect rings and their uniqueness.
 public section
 
 namespace TauCeti
+
+namespace Ideal
 
 universe u v w
 
@@ -64,5 +68,7 @@ theorem nonempty_linearEquiv_of_quotient_smul_top (hI : I ≤ Ring.jacobson R)
   have hNcover : IsProjectiveCover (I • (⊤ : Submodule R N)).mkQ :=
     isProjectiveCover_mkQ_iff.mpr hNsmall
   exact ⟨(hMcover.exists_linearEquiv hNcover).choose⟩
+
+end Ideal
 
 end TauCeti
