@@ -23,9 +23,10 @@ boundedness theorem: on every ball `B(x₀, R) ⊆ Ω`,
 
 `u ≤ D R^{-n/2} ‖u⁺‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`,
 
-with `D` depending only on `λ`, `Λ` and `n ≥ 3`. No regularity of the coefficients beyond
-measurability is used. This is the first half of the De Giorgi–Nash–Moser theorem; Hölder
-continuity is the second.
+with `D` depending on `λ`, `Λ`, the dimension `n ≥ 3` and the normalization of the additive
+Haar measure used for the `L²` norm. No regularity of the coefficients beyond measurability
+is used. This is the first half of the De Giorgi–Nash–Moser theorem; Hölder continuity is the
+second.
 
 The argument runs on the truncations `(u - k)⁺`. Caccioppoli's inequality for them bounds
 `∇(ψ (u - l)⁺)` by `(u - l)⁺ ∇ψ`; a Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂` on `W^{1,2}_0(Ω)`
@@ -41,7 +42,7 @@ convergence lemma `TauCeti.tendsto_atTop_zero_of_le_mul_pow_mul_rpow` then force
 The Sobolev inequality enters as a hypothesis in the general form, so the theorem applies to any
 exponent `q > 2` for which it is available. In dimension `n ≥ 3` it is the
 Gagliardo–Nirenberg–Sobolev inequality at `q = 2n/(n - 2)`, which holds on every `Ω` with a
-constant independent of `Ω`.
+constant independent of `Ω`, but dependent on the normalization of the additive Haar measure.
 
 ## Main declarations
 
@@ -585,15 +586,16 @@ theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral {q : ℝ≥0∞} (hq : 
 
 /-- **Local boundedness of weak subsolutions in dimension `n ≥ 3` (De Giorgi).** Let `2*` be the
 Sobolev exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this
-forces `n ≥ 3`). There is `D > 0`, depending only on `λ`, `Λ` and the dimension, such that for
-every measurable, uniformly elliptic `a` on `Ω` with constants `λ, Λ`, every weak subsolution
-`u ∈ H¹(Ω)` of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` and every ball `B(x₀, R) ⊆ Ω`,
+forces `n ≥ 3`). There is `D > 0`, depending on `λ`, `Λ`, the dimension and the normalization
+of the additive Haar measure `mu`, such that for every measurable, uniformly elliptic `a` on
+`Ω` with constants `λ, Λ`, every weak subsolution `u ∈ H¹(Ω)` of
+`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` and every ball `B(x₀, R) ⊆ Ω`,
 
 `u ≤ D R^{-n/2} (∫_{B(x₀, R)} (u⁺)²)^{1/2}` almost everywhere on `B(x₀, R/2)`.
 
 The Sobolev inequality needed by `TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral` is
 the Gagliardo–Nirenberg–Sobolev inequality on `W^{1,2}_0(Ω)`, whose constant does not depend on
-`Ω`; this is what makes `D` independent of the domain and the estimate scale invariant. -/
+`Ω`, but does depend on `mu`; this makes `D` independent of the domain. -/
 theorem exists_ae_value_le_mul_rpow_mul_sqrt_setIntegral_of_inv_add_eq_inv {pstar : ℝ≥0∞}
     (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹) :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
