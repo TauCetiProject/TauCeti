@@ -37,6 +37,8 @@ function is compactly supported in `Ω`, and no regularity of `∂Ω` is used.
   against a test function, `∫ Δφ • u = ∫ φ • Δu`.
 * `InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero`: a harmonic function is
   weakly harmonic.
+* `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
+  classical Laplacian.
 -/
 
 public section
@@ -168,5 +170,28 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero
   by_cases hx : x ∈ (Ω : Set E)
   · rw [(hu x hx).2.eq_of_nhds, Pi.zero_apply, smul_zero]
   · simp [φ.zero_on_compl hx]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- Applying the test-function Laplacian operator agrees pointwise with the classical
+Laplacian of the underlying smooth function. -/
+theorem _root_.TestFunction.laplacianCLM_apply (φ : 𝓓(Ω, ℝ)) (y : E) :
+    (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ) y = Δ (φ : E → ℝ) y := by
+  simp only [LineDeriv.laplacianCLM]
+  rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+  simp only [iteratedFDeriv_two_apply, sum_apply, ContinuousLinearMap.comp_apply]
+  apply Finset.sum_congr rfl
+  intro i hi
+  simp only [TestFunction.lineDerivOpCLM_eq_lineDerivCLM]
+  rw [TestFunction.lineDerivCLM_apply_of_le le_top]
+  have hinner :
+      ((TestFunction.lineDerivCLM ℝ ((stdOrthonormalBasis ℝ E) i) φ : 𝓓(Ω, ℝ)) : E → ℝ) =
+      fun z => lineDeriv ℝ (φ : E → ℝ) z ((stdOrthonormalBasis ℝ E) i) :=
+    funext fun z => TestFunction.lineDerivCLM_apply_of_le le_top
+  rw [hinner]
+  rw [lineDeriv_lineDeriv_testFunction φ ((stdOrthonormalBasis ℝ E) i) y]
+  rw [fderiv_clm_apply
+    ((φ.contDiff.fderiv_right (by simp)).differentiable one_ne_zero y)
+    (differentiableAt_const _)]
+  simp
 
 end TauCeti
