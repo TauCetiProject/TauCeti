@@ -81,7 +81,7 @@ variable {R S : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
 /-- The minimal polynomial of a root is associated to an Eisenstein polynomial over an integrally
 closed local domain. -/
 theorem associated_minpoly_of_eisenstein_isRoot
-    (f : Polynomial R) (hf : f.IsEisensteinAt (maximalIdeal R)) (ξ : S)
+    (ξ : S) (f : Polynomial R) (hf : f.IsEisensteinAt (maximalIdeal R))
     (hroot : (f.map (algebraMap R S)).IsRoot ξ) : Associated (minpoly R ξ) f := by
   have hdeg : 0 < f.natDegree := by
     by_contra h
