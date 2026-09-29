@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.NumberTheory.LocalField.PowerSubgroup
+import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 
 /-!
 # Normalization of the p-adic absolute value
