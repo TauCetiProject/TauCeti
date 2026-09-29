@@ -95,7 +95,7 @@ theorem coe_toCocycles₂_sub :
 /-- Two crossed-product cocycles represent the same class in `H²(Aut_K(L), Lˣ)` exactly when
 they are cohomologous. -/
 theorem cohomologyClass_eq_iff : z.cohomologyClass = w.cohomologyClass ↔ z.Cohomologous w := by
-  rw [cohomologous_iff_isMulCoboundary₂]
+  rw [cohomologous_def]
   rw [eq_comm, cohomologyClass_def, cohomologyClass_def, H2π_eq_iff, coe_toCocycles₂_sub]
   constructor
   · intro h

@@ -62,7 +62,7 @@ def Cohomologous (z w : TwoCocycle K L) : Prop :=
   IsMulCoboundary₂ fun p : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) => w.toFun p.1 p.2 / z.toFun p.1 p.2
 
 /-- The explicit multiplicative coboundary predicate underlying `TwoCocycle.Cohomologous`. -/
-theorem cohomologous_iff_isMulCoboundary₂ {z w : TwoCocycle K L} :
+theorem cohomologous_def {z w : TwoCocycle K L} :
     z.Cohomologous w ↔
       IsMulCoboundary₂ fun p : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) =>
         w.toFun p.1 p.2 / z.toFun p.1 p.2 :=
