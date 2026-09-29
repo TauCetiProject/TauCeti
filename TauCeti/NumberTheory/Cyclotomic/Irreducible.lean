@@ -7,6 +7,9 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 
+import Mathlib.FieldTheory.LinearDisjoint
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+
 /-!
 # Irreducibility of the cyclotomic polynomial from the degree of a cyclotomic extension
 
@@ -23,6 +26,8 @@ irreducible over `K`. That converse and Mathlib's forward direction give the equ
   `Φ_n` is irreducible over `K`.
 * `IsCyclotomicExtension.irreducible_cyclotomic_iff_finrank_eq_totient`: `Φ_n` is irreducible over
   `K` if and only if `[L : K] = φ n`.
+* `IsCyclotomicExtension.irreducible_cyclotomic_of_coprime_finrank`: irreducibility is preserved by
+  a finite base change whose degree is coprime to `φ n`.
 
 ## References
 
@@ -93,5 +98,67 @@ Source: as for the two lemmas it combines. -/
 theorem irreducible_cyclotomic_iff_finrank_eq_totient :
     Irreducible (cyclotomic n K) ↔ Module.finrank K L = n.totient :=
   ⟨IsCyclotomicExtension.finrank L, fun h ↦ irreducible_cyclotomic_of_totient_le_finrank K L h.ge⟩
+
+section BaseChange
+
+variable {n : ℕ} [NeZero n] {F : Type*} [Field F] [NeZero (n : F)]
+  {K : Type*} [Field K] [Algebra F K] [FiniteDimensional F K]
+
+/-- Irreducibility of `Φ_n` is preserved by a finite base change of degree coprime to `φ(n)`.
+
+Indeed, inside an algebraic closure of `K`, the cyclotomic extension `F(ζ_n)` has degree `φ(n)`
+over `F`. It is therefore linearly disjoint from `K`, so `K(ζ_n)` still has degree `φ(n)` over
+`K`.
+
+Source: the coprime-degree linear-disjointness argument in Lang, *Algebra*, Chapter VI, §1. -/
+theorem irreducible_cyclotomic_of_coprime_finrank
+    (hirr : Irreducible (cyclotomic n F))
+    (hcop : n.totient.Coprime (Module.finrank F K)) :
+    Irreducible (cyclotomic n K) := by
+  let _ : NeZero (n : K) :=
+    ⟨by
+      rw [← map_natCast (algebraMap F K)]
+      simpa using (algebraMap F K).injective.ne (NeZero.ne (n : F))⟩
+  let _ : NeZero (n : AlgebraicClosure K) :=
+    (inferInstance : NeZero (n : K)).of_injective
+      (algebraMap K (AlgebraicClosure K)).injective
+  let ζ : AlgebraicClosure K :=
+    HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) n |>.choose
+  have hζ : IsPrimitiveRoot ζ n :=
+    HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) n |>.choose_spec
+  let M := IntermediateField.adjoin F ({ζ} : Set (AlgebraicClosure K))
+  let L := IntermediateField.adjoin K ({ζ} : Set (AlgebraicClosure K))
+  let _ : IsCyclotomicExtension {n} F M :=
+    hζ.intermediateField_adjoin_isCyclotomicExtension F
+  let _ : IsCyclotomicExtension {n} K L :=
+    hζ.intermediateField_adjoin_isCyclotomicExtension K
+  let _ : FiniteDimensional F M := IsCyclotomicExtension.finiteDimensional {n} F M
+  let _ : FiniteDimensional K L := IsCyclotomicExtension.finiteDimensional {n} K L
+  have hMfin : Module.finrank F M = n.totient :=
+    IsCyclotomicExtension.finrank M hirr
+  have hdis : M.LinearDisjoint K :=
+    IntermediateField.LinearDisjoint.of_finrank_coprime (hMfin ▸ hcop)
+  have hMle : M ≤ L.restrictScalars F := by
+    change IntermediateField.adjoin F ({ζ} : Set (AlgebraicClosure K)) ≤
+      (IntermediateField.adjoin K ({ζ} : Set (AlgebraicClosure K))).restrictScalars F
+    rw [IntermediateField.adjoin_le_iff]
+    exact fun _ hx ↦ IntermediateField.subset_adjoin K _ hx
+  have hadj : IntermediateField.adjoin K (M : Set (AlgebraicClosure K)) = L := by
+    apply le_antisymm
+    · rw [IntermediateField.adjoin_le_iff]
+      exact fun x hx ↦ hMle hx
+    · change IntermediateField.adjoin K ({ζ} : Set (AlgebraicClosure K)) ≤ _
+      rw [IntermediateField.adjoin_le_iff]
+      intro x hx
+      obtain rfl := Set.mem_singleton_iff.mp hx
+      apply IntermediateField.subset_adjoin K (M : Set (AlgebraicClosure K))
+      change ζ ∈ M
+      exact IntermediateField.subset_adjoin F _ (Set.mem_singleton ζ)
+  have hrank := hdis.adjoin_rank_eq_rank_left_of_isAlgebraic_left
+  rw [hadj, ← Module.finrank_eq_rank' K L, ← Module.finrank_eq_rank' F M] at hrank
+  have hfin : Module.finrank K L = Module.finrank F M := by exact_mod_cast hrank
+  exact irreducible_cyclotomic_of_totient_le_finrank K L (by rw [hfin, hMfin])
+
+end BaseChange
 
 end IsCyclotomicExtension
