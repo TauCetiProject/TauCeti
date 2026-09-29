@@ -54,22 +54,27 @@ open Matrix
 
 variable {K ι : Type*} [CommRing K] [DecidableEq ι] [Fintype ι]
 
-/-- In a type-`D` matrix, the lower-right block is the negative transpose of the upper-left
-block. -/
-@[simp]
-theorem apply_inr_inr (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
-    (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inr j) =
-      -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inl i) := by
+/-- The skew-adjointness equation defining the split type-`D` Lie algebra, as an equation between
+matrices. -/
+private theorem transpose_mul_JD (A : LieAlgebra.Orthogonal.typeD ι K) :
+    (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
+      LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) := by
   have hA := A.2
   -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
   -- provides no public elimination lemma for this subtype membership.
   change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
     skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
   rw [mem_skewAdjointMatricesSubmodule] at hA
-  -- `Matrix.IsSkewAdjoint` is definitionally this matrix equation, with no public equation lemma.
-  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
-    LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
-  have h := congr_fun (congr_fun hA (.inl i)) (.inr j)
+  -- `Matrix.IsSkewAdjoint` is definitionally the displayed equation, with no equation lemma.
+  exact hA
+
+/-- In a type-`D` matrix, the lower-right block is the negative transpose of the upper-left
+block. -/
+@[simp]
+theorem apply_inr_inr (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
+    (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inr j) =
+      -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inl i) := by
+  have h := congr_fun (congr_fun (transpose_mul_JD A) (.inl i)) (.inr j)
   exact neg_eq_iff_eq_neg.mp (by
     simpa [LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply] using h.symm)
 
@@ -77,32 +82,14 @@ theorem apply_inr_inr (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
 theorem apply_inl_inr (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
     (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl i) (.inr j) =
       -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inl j) (.inr i) := by
-  have hA := A.2
-  -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
-  -- provides no public elimination lemma for this subtype membership.
-  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
-    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
-  rw [mem_skewAdjointMatricesSubmodule] at hA
-  -- `Matrix.IsSkewAdjoint` is definitionally this matrix equation, with no public equation lemma.
-  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
-    LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
-  have h := congr_fun (congr_fun hA (.inr j)) (.inr i)
+  have h := congr_fun (congr_fun (transpose_mul_JD A) (.inr j)) (.inr i)
   simpa [LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply] using h
 
 /-- In a type-`D` matrix, the lower-left block is skew-symmetric. -/
 theorem apply_inr_inl (A : LieAlgebra.Orthogonal.typeD ι K) (i j : ι) :
     (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr i) (.inl j) =
       -(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) (.inr j) (.inl i) := by
-  have hA := A.2
-  -- Unfold membership in `typeD` to membership in its skew-adjoint matrix submodule; Mathlib
-  -- provides no public elimination lemma for this subtype membership.
-  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈
-    skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JD ι K) at hA
-  rw [mem_skewAdjointMatricesSubmodule] at hA
-  -- `Matrix.IsSkewAdjoint` is definitionally this matrix equation, with no public equation lemma.
-  change (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)ᵀ * LieAlgebra.Orthogonal.JD ι K =
-    LieAlgebra.Orthogonal.JD ι K * (-(A : Matrix (ι ⊕ ι) (ι ⊕ ι) K)) at hA
-  have h := congr_fun (congr_fun hA (.inl j)) (.inl i)
+  have h := congr_fun (congr_fun (transpose_mul_JD A) (.inl j)) (.inl i)
   simpa [LieAlgebra.Orthogonal.JD, Matrix.mul_apply, Matrix.one_apply] using h
 
 end LieAlgebra.Orthogonal.typeD

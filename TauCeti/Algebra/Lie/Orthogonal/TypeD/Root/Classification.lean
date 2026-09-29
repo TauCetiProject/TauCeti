@@ -86,8 +86,7 @@ private theorem rootSpace_typeDWeightSub_apply_eq_zero
   · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inr a) (.inl b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
     have hneg2 : IsRegular (-(2 : K)) := by
-      rw [show -(2 : K) = (-1) * 2 by ring]
-      exact isUnit_neg_one.isRegular.mul h2
+      simpa using isUnit_neg_one.isRegular.mul h2
     simpa [typeDWeightSub_apply, typeDWeightAdd_apply, coe_typeDDiagonalEquiv_apply,
       one_add_one_eq_two] using hneg2
   · have hp : ¬(b = i ∧ a = j) := by
@@ -105,8 +104,7 @@ private theorem rootSpace_typeDWeightAdd_apply_eq_zero
       (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0 := by
   intro a b hne
   have hneg2 : IsRegular (-(2 : K)) := by
-    rw [show -(2 : K) = (-1) * 2 by ring]
-    exact isUnit_neg_one.isRegular.mul h2
+    simpa using isUnit_neg_one.isRegular.mul h2
   rcases a with a | a <;> rcases b with b | b
   · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inl a) (.inl b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
@@ -117,7 +115,7 @@ private theorem rootSpace_typeDWeightAdd_apply_eq_zero
       rcases hp with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · rfl
       · exact typeDWeightAdd_comm _ _)
-    obtain ⟨k, hk⟩ := exists_isRegular_single_add_single_sub h2 hij a b hp
+    obtain ⟨k, hk⟩ := exists_isRegular_single_add_single_sub (K := K) hij a b hp
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inl a) (.inr b) k
     simpa [typeDWeightAdd_def, Pi.single_apply, eq_comm] using hk
   · obtain ⟨k, hk⟩ :=
@@ -144,7 +142,7 @@ private theorem rootSpace_neg_typeDWeightAdd_apply_eq_zero
   · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inl a) (.inr b)
       (typeDDiagonalEquiv (K := K) (fun _ => 1))
     have h4 : IsRegular ((2 : K) + 2) := by
-      rw [show (2 : K) + 2 = 2 * 2 by ring]
+      rw [← two_mul]
       exact h2.mul h2
     simpa [typeDWeightAdd_apply, coe_typeDDiagonalEquiv_apply,
       one_add_one_eq_two] using h4
@@ -153,21 +151,13 @@ private theorem rootSpace_neg_typeDWeightAdd_apply_eq_zero
       rcases hp with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · rfl
       · exact congrArg Neg.neg (typeDWeightAdd_comm _ _))
-    obtain ⟨k, hk⟩ := exists_isRegular_single_add_single_sub h2 hij a b hp
+    obtain ⟨k, hk⟩ := exists_isRegular_single_add_single_sub (K := K) hij a b hp
     have hneg : IsRegular
         (-((Pi.single (M := fun _ : ι => K) a 1) k +
           (Pi.single (M := fun _ : ι => K) b 1) k -
           ((Pi.single (M := fun _ : ι => K) i 1) k +
             (Pi.single (M := fun _ : ι => K) j 1) k))) := by
-      rw [show -((Pi.single (M := fun _ : ι => K) a 1) k +
-          (Pi.single (M := fun _ : ι => K) b 1) k -
-          ((Pi.single (M := fun _ : ι => K) i 1) k +
-            (Pi.single (M := fun _ : ι => K) j 1) k)) =
-          (-1) * ((Pi.single (M := fun _ : ι => K) a 1) k +
-          (Pi.single (M := fun _ : ι => K) b 1) k -
-          ((Pi.single (M := fun _ : ι => K) i 1) k +
-            (Pi.single (M := fun _ : ι => K) j 1) k)) by ring]
-      exact isUnit_neg_one.isRegular.mul hk
+      simpa using isUnit_neg_one.isRegular.mul hk
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inr a) (.inl b) k
     simp only [typeDMatrixWeight_inr_inl, map_sub, map_neg, typeDWeightAdd_def,
       map_add, typeDWeightEquiv_symm_epsilon, Pi.add_apply, Pi.neg_apply, Pi.sub_apply]

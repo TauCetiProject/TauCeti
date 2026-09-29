@@ -13,8 +13,9 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 # Coordinate separation, supports, splittings and determinants of dependent products
 
 Distinct sums and differences of standard coordinate vectors can be separated at a coordinate
-where their difference is regular, provided `2` is regular. These elementary facts are useful for
-identifying root spaces from their coordinate weights.
+where their difference is regular. Two of these separations compare families that agree after
+doubling, so they assume `2` is regular; separating two unordered sums needs no such hypothesis.
+These elementary facts are useful for identifying root spaces from their coordinate weights.
 
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `ι → M` consists of the families
 vanishing outside `s` — the `Pi` analogue of `Finsupp.supported`. This file records that
@@ -121,9 +122,8 @@ public theorem exists_isRegular_single_sub_single_sub (h2 : IsRegular (2 : K))
       · simpa [hab, hai, haj] using (isRegular_one : IsRegular (1 : K))
 
 /-- If two unordered sums of standard coordinate vectors on different target coordinates have
-different index pairs, then they differ by a regular scalar at some coordinate, provided `2` is
-regular. -/
-public theorem exists_isRegular_single_add_single_sub (h2 : IsRegular (2 : K))
+different index pairs, then they differ by a regular scalar at some coordinate. -/
+public theorem exists_isRegular_single_add_single_sub
     {i j : ι} (hij : i ≠ j) (a b : ι)
     (hne : ¬((a = i ∧ b = j) ∨ (a = j ∧ b = i))) :
     ∃ k, IsRegular
@@ -134,14 +134,11 @@ public theorem exists_isRegular_single_add_single_sub (h2 : IsRegular (2 : K))
   classical
   by_cases hab : a = b
   · subst b
-    refine ⟨a, ?_⟩
     by_cases hai : a = i
-    · subst a
-      simpa [hij] using (isRegular_one : IsRegular (1 : K))
+    · exact ⟨i, by simpa [hai, hij] using (isRegular_one : IsRegular (1 : K))⟩
     · by_cases haj : a = j
-      · subst a
-        simpa [hij] using (isRegular_one : IsRegular (1 : K))
-      · simpa [hai, haj, one_add_one_eq_two] using h2
+      · exact ⟨j, by simpa [haj, hij] using (isRegular_one : IsRegular (1 : K))⟩
+      · exact ⟨i, by simpa [hai, hij] using (isUnit_neg_one.isRegular : IsRegular (-1 : K))⟩
   · by_cases hai : a = i
     · have hbj : b ≠ j := fun h => hne (Or.inl ⟨hai, h⟩)
       have hbi : b ≠ i := fun h => hab (hai.trans h.symm)
@@ -166,8 +163,7 @@ public theorem exists_isRegular_neg_single_add_single_sub_single_add_single
           (Pi.single (M := fun _ : ι => K) j 1) k)) := by
   classical
   have hneg2 : IsRegular (-(2 : K)) := by
-    rw [show -(2 : K) = (-1) * 2 by ring]
-    exact isUnit_neg_one.isRegular.mul h2
+    simpa using isUnit_neg_one.isRegular.mul h2
   by_cases hai : a = i
   · by_cases hbi : b = i
     · subst a
