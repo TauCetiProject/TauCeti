@@ -33,16 +33,6 @@ namespace TauCeti
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] [IsGalois K L]
 
-omit [IsGalois K L] in
-/-- The ramification group over a fixed field has the size of the intersection with the
-corresponding subgroup of the full Galois group. -/
-theorem card_ramificationGroup_fixedField_eq_card_inf (Q : Ideal (𝓞 L))
-    (H : Subgroup (L ≃ₐ[K] L)) (i : ℕ) :
-    Nat.card (Q.ramificationGroup (L ≃ₐ[↥(fixedField H)] L) i) =
-      Nat.card (Q.ramificationGroup (L ≃ₐ[K] L) i ⊓ H : Subgroup (L ≃ₐ[K] L)) := by
-  simpa only [Ideal.ramificationGroup_def] using
-    Ideal.card_inertia_fixedField_eq_card_inf (Q ^ (i + 1)) H
-
 /-- **The different exponent of a fixed field from its permutation action.** The ramification
 index over the selected prime of `Lᴴ` times its different exponent is the sum, over the lower
 ramification groups at `Q`, of the numbers of elements outside `H`. -/
@@ -116,7 +106,9 @@ theorem ramificationIdx_mul_multiplicity_differentIdeal_fixedField
     rw [hE]
     apply finsum_congr
     intro i
-    rw [card_ramificationGroup_fixedField_eq_card_inf (K := K) w.asIdeal H i]
+    simpa only [Ideal.ramificationGroup_def] using
+      congrArg (fun n : ℕ => n - 1)
+        (Ideal.card_inertia_fixedField_eq_card_inf (w.asIdeal ^ (i + 1)) H)
   rw [hK, hE'] at hTower
   rw [hSum] at hTower
   exact (Nat.add_left_cancel hTower).symm
