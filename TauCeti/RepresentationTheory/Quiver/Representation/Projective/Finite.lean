@@ -74,7 +74,7 @@ theorem module_finite_indecProjModule (i : Q) :
         exact S.add_mem hy hz
     | smul c y _ hy =>
         rw [f.map_smul]
-        change (algebraMap k (pathAlgebra k Q) c) • f y ∈ S
+        rw [← algebraMap_smul (pathAlgebra k Q) c (f y)]
         exact S.smul_mem _ hy
   have htop : S = ⊤ := by
     apply Submodule.eq_top_iff'.2
