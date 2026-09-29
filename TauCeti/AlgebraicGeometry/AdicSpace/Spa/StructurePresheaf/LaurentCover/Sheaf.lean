@@ -130,12 +130,6 @@ end Sieve
 
 section Transport
 
--- An equality transport of complete separated rings is undone by the reverse transport.
-private theorem eqToHom_symm_apply_eqToHom_apply {X Y : CompleteSeparatedTopCommRingCat.{v}}
-    (e : X = Y) (x : X) : (eqToHom e.symm).hom.1 ((eqToHom e).hom.1 x) = x := by
-  subst e
-  rfl
-
 variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   (P : PairOfDefinition A) {Aplus : Subring A}
 
@@ -150,8 +144,8 @@ private theorem eqToHom_apply_presentationLimitPresheaf_map_apply {V W : Opens �
       (presentationLimitMap (P := P) h).hom.1
         ((eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op V))).hom.1 x) := by
   rw [Functor.comp_map, Functor.comp_map, presentationLimitPresheaf_map]
-  exact eqToHom_symm_apply_eqToHom_apply
-    (presentationLimitPresheaf_obj P Aplus (Opposite.op W)).symm _
+  exact Iso.hom_inv_id_apply
+    (eqToIso (presentationLimitPresheaf_obj P Aplus (Opposite.op W)).symm) _
 
 end Transport
 
@@ -177,7 +171,8 @@ private theorem isSheafFor_ofArrows_inf_laurentCoverOpen
   let τ (V : Opens ↥(spa Aplus)) := (eqToHom (presentationLimitPresheaf_obj P Aplus
     (Opposite.op V))).hom.1
   have hτ (V : Opens ↥(spa Aplus)) : Function.Injective (τ V) :=
-    Function.LeftInverse.injective (eqToHom_symm_apply_eqToHom_apply _)
+    Function.LeftInverse.injective
+      (eqToIso (presentationLimitPresheaf_obj P Aplus (Opposite.op V))).hom_inv_id_apply
   rw [Presieve.isSheafFor_arrows_iff]
   intro x hx
   have hover : (presentationLimitMap (P := P) inf_le_left).hom.1 (τ _ (x true)) =
@@ -190,7 +185,8 @@ private theorem isSheafFor_ofArrows_inf_laurentCoverOpen
     (fun b ↦ τ _ (x b)) hover
   -- the gluing is `a`, transported back to the presheaf of sets
   let e := presentationLimitPresheaf_obj P Aplus (Opposite.op (spaBasicOpen Aplus T s))
-  have hτa : τ _ ((eqToHom e.symm).hom.1 a) = a := eqToHom_symm_apply_eqToHom_apply e.symm a
+  have hτa : τ _ ((eqToHom e.symm).hom.1 a) = a :=
+    (eqToIso e.symm).hom_inv_id_apply a
   refine ⟨(eqToHom e.symm).hom.1 a, fun b ↦ hτ _ ?_, fun a' ha' ↦ hτ _ ?_⟩
   · rw [eqToHom_apply_presentationLimitPresheaf_map_apply, hτa, ha b]
   · refine Eq.trans ?_ hτa.symm
