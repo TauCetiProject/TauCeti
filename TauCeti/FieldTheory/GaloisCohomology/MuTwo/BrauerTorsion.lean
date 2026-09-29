@@ -57,38 +57,34 @@ variable (K : Type u) [Field K] [Invertible (2 : K)]
 
 /-- **The map from `H²(G_K, 𝔽₂)` to cohomology with multiplicative coefficients.** It is
 the Kummer-sequence map `TauCeti.h2KummerToUnits` at `n = 2`, precomposed with the inverse of the
-coefficient identification `TauCeti.kummerCoeffIsoTrivialF2`. -/
+image of the coefficient identification `TauCeti.kummerCoeffIsoTrivialF2` under the
+continuous-cohomology functor `TauCeti.ContinuousCohomology.continuousCohomologyFunctor`. -/
 noncomputable def h2MuToUnits :
     continuousCohomology 2 (trivialF2 (AbsoluteGaloisGroup K)) ⟶
       continuousCohomology 2
         (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
-  ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).inv 2 ≫
-    h2KummerToUnits K 2
+  ((ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 2).mapIso
+    (kummerCoeffIsoTrivialF2 K)).inv ≫ h2KummerToUnits K 2
 
 /-- Transporting a `μ₂`-class to trivial `𝔽₂` coefficients before applying
 `TauCeti.h2MuToUnits` recovers the Kummer-sequence map at `n = 2`. This equation characterizes
 the coefficient transport used in `TauCeti.h2MuToUnits`. -/
-@[reassoc]
+@[simp, reassoc (attr := simp)]
 theorem kummerCoeffIsoTrivialF2_hom_comp_h2MuToUnits :
     ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).hom 2 ≫ h2MuToUnits K =
-      h2KummerToUnits K 2 := by
-  rw [h2MuToUnits, ← Category.assoc, ← ContinuousCohomology.coeffMap_comp,
-    Iso.hom_inv_id, ContinuousCohomology.coeffMap_id, Category.id_comp]
+      h2KummerToUnits K 2 :=
+  Iso.hom_inv_id_assoc
+    ((ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 2).mapIso
+      (kummerCoeffIsoTrivialF2 K)) _
 
 /-- **The map `H²(G_K, 𝔽₂) → H²(G_K, (Kˢ)ˣ)` is injective.** -/
-theorem h2MuToUnits_injective : Function.Injective (h2MuToUnits K).hom := by
-  intro x y hxy
-  have hback :
-      (ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).inv 2).hom x =
-        (ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).inv 2).hom y := by
-    apply h2KummerToUnits_injective (K := K) (n := 2) (isUnit_of_invertible (2 : K))
-    simpa only [h2MuToUnits, ConcreteCategory.comp_apply] using hxy
-  have hforward := congrArg
-    (ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).hom 2).hom hback
-  simpa only [← ConcreteCategory.comp_apply, ← ContinuousCohomology.coeffMap_comp,
-    Iso.inv_hom_id, ContinuousCohomology.coeffMap_id, ConcreteCategory.id_apply] using hforward
+theorem h2MuToUnits_injective : Function.Injective (h2MuToUnits K).hom :=
+  (h2KummerToUnits_injective (K := K) (n := 2) (isUnit_of_invertible (2 : K))).comp
+    ((ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 2).mapIso
+      (kummerCoeffIsoTrivialF2 K)).symm.toContinuousLinearEquiv.injective
 
 /-- **The image of `H²(G_K, 𝔽₂)` in `H²(G_K, (Kˢ)ˣ)` is the `2`-torsion.** -/
+@[simp]
 theorem h2MuToUnits_range
     (x : continuousCohomology 2
       (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :
@@ -96,11 +92,9 @@ theorem h2MuToUnits_range
   constructor
   · rintro ⟨y, rfl⟩
     rw [← two_nsmul]
-    apply (h2KummerToUnits_range (K := K) (n := 2)
-      (isUnit_of_invertible (2 : K)) _).mp
-    refine ⟨(ContinuousCohomology.coeffMap
-      (kummerCoeffIsoTrivialF2 K).inv 2).hom y, ?_⟩
-    rw [h2MuToUnits, ConcreteCategory.comp_apply]
+    -- `TauCeti.h2MuToUnits` is by definition a composite ending in `h2KummerToUnits K 2`.
+    exact (h2KummerToUnits_range (K := K) (n := 2)
+      (isUnit_of_invertible (2 : K)) _).mp ⟨_, rfl⟩
   · intro hx
     have hx' : 2 • x = 0 := by simpa only [two_nsmul] using hx
     obtain ⟨y, hy⟩ := (h2KummerToUnits_range (K := K) (n := 2)
