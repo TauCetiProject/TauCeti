@@ -159,16 +159,17 @@ theorem prod_apply (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') (t : I) :
 variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ E']
 
 /-- **The loop of Maslov phases of a direct sum is the product of the two loops of Maslov
-phases:** the phase of the direct sum at `t`, read as a complex number, is the product of the two
-phases at `t`. This is the pointwise form of the path equation
-`(Λ.prod Λ').maslovPhasePath = Λ.maslovPhasePath.mul Λ'.maslovPhasePath`, which is stated on `ℂ`
-because `Path` has no `Monoid` instance in the pinned Mathlib and `1 * 1` is not `1` in `Circle`
-definitionally, so a product of two paths out of `1` is a path out of `1 * 1` and not out of `1`.
+phases:** read as a complex number, the phase of the direct sum at `t` is the product of the two
+phases at `t`. -/
+/- The equation is stated on the complex numbers rather than between the two paths because `Path`
+has no `Monoid` instance and `1 * 1` is not `1` in `Circle` definitionally, so
+`Λ.maslovPhasePath.mul Λ'.maslovPhasePath` is a `Path (1 * 1) (1 * 1)` while
+`(Λ.prod Λ').maslovPhasePath` is a `Path 1 1`: the two are not even of the same type, and so cannot
+be compared at all.
 
-The equation is deliberately left out of the `simp` set: `maslovPhasePath_apply` is already a
-`simp` lemma and normalizes the left-hand side first, so `simpNF` reports that this left-hand
-side "simplifies ... using `maslovPhasePath_apply, prod_apply`", i.e. that a `simp` annotation here
-would add a rule that never applies. It is a rewrite rule, to be used with `rw`. -/
+This is deliberately not a `simp` lemma either: `maslovPhasePath_apply` is already a `simp` lemma
+and normalizes the left-hand side before this one can, so the `simpNF` linter rejects the attribute
+as a rule that would never apply. -/
 theorem maslovPhasePath_prod_apply (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') (t : I) :
     ((Λ.prod Λ').maslovPhasePath t : ℂ) =
       (Λ.maslovPhasePath t : ℂ) * (Λ'.maslovPhasePath t : ℂ) := by
