@@ -163,6 +163,8 @@ theorem tensorProduct (h : IsPolarization hℂ hs Q) (h' : IsPolarization h'ℂ 
     -- complexification is injective.
     have := h.nondegenerate.1.isTorsionFree
     have := h'.nondegenerate.1.isTorsionFree
+    have : Module.Flat ℤ (V ⊗[ℤ] V') :=
+      (inferInstance : @Module.Flat ℤ (V ⊗[ℤ] V') _ _ TensorProduct.instModule)
     exact tensorLatticeMap_injective hℂ h'ℂ (hι.trans (map_zero _).symm)
   · rw [HodgeStructure.tensorProduct_F, HodgeStructureOn.F_eq_iSup_piece] at hx hy
     rw [hBℂ]
@@ -213,15 +215,9 @@ theorem Polarization.tensorProduct_hodgeForm_tmul_tmul (P : Polarization hℂ hs
     (P' : Polarization h'ℂ hs') (a c : Vℂ) (b d : V'ℂ) :
     (P.tensorProduct P').hodgeForm (a ⊗ₜ[ℂ] b) (c ⊗ₜ[ℂ] d) =
       P.hodgeForm a c * P'.hodgeForm b d := by
-  have hweil : (hs.tensorProduct hs').weilOperator =
-      TensorProduct.map hs.weilOperator hs'.weilOperator := by
-    refine ((hs.tensorProduct hs').weilOperator_unique _ fun p x hx ↦ ?_).symm
-    rw [← HodgeStructureOn.weilOperator_tensorProduct hs hs']
-    rw [HodgeStructure.tensorProduct_piece] at hx
-    exact (HodgeStructureOn.tensorProduct hs hs').weilOperator_apply_of_mem hx
   rw [Polarization.hodgeForm_apply, Polarization.hodgeForm_apply,
     Polarization.hodgeForm_apply, Polarization.tensorProduct_Q,
-    latticeConj_tensorLatticeMap_tmul hℂ h'ℂ, hweil,
+    latticeConj_tensorLatticeMap_tmul hℂ h'ℂ, HodgeStructure.tensorProduct_weilOperator,
     TensorProduct.map_tmul, LinearMap.BilinForm.tensorDistrib_tmul, smul_eq_mul]
   exact mul_comm _ _
 
