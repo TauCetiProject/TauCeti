@@ -23,7 +23,8 @@ count theorem supplies completeness of the modular search.  Signed least represe
 `5` then recover the integral central-character rows.  The displayed candidate degrees and ordinary
 table are verified by the division-free conversion identity, the degree-square sum, and weighted
 row orthogonality.  The ordinary table is the same matrix as the table of `DihedralGroup 4`, the
-classical example of nonisomorphic groups with equal character tables.
+classical example of nonisomorphic groups with equal character tables; that comparison is made in
+`TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/DihedralQuaternion.lean`.
 
 ## Main definitions
 
