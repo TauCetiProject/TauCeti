@@ -55,17 +55,6 @@ universe u v w
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [Invertible (2 : K)]
 
-private theorem lipschitzToOrthogonal_surjective_of_invertible
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    Function.Surjective (lipschitzToOrthogonal Q) := by
-  have hf : @lipschitzToOrthogonal K V _ _ _ Q (inferInstance : Invertible (2 : K)) =
-      @lipschitzToOrthogonal K V _ _ _ Q
-        (invertibleOfNonzero (NeZero.ne (2 : K))) := by
-    congr 1
-    exact Subsingleton.elim _ _
-  rw [hf]
-  exact lipschitzToOrthogonal_surjective Q hQ
-
 /-- The Clifford norm of an element acting trivially on the quadratic space is a square. -/
 theorem isSquare_cliffordNorm_of_mem_ker (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (x : lipschitzGroup Q) (hx : x ∈ MonoidHom.ker (lipschitzToOrthogonal Q)) :
@@ -99,7 +88,7 @@ noncomputable def orthogonalSpinorNorm (Q : QuadraticForm K V) (hQ : Q.Nondegene
     QuadraticMap.orthogonalGroup Q →* Multiplicative (SquareClassGroup K) := by
   exact MonoidHom.liftOfSurjective
     (G₃ := Multiplicative (SquareClassGroup K))
-    (lipschitzToOrthogonal Q) (lipschitzToOrthogonal_surjective_of_invertible Q hQ)
+    (lipschitzToOrthogonal Q) (lipschitzToOrthogonal_surjective Q hQ)
     (spinorNormDescentData Q hQ)
 
 /-- The descended spinor norm evaluates on a Lipschitz action through its Clifford norm. -/
@@ -113,8 +102,8 @@ theorem orthogonalSpinorNorm_lipschitzToOrthogonal (Q : QuadraticForm K V)
     MonoidHom.liftOfRightInverse_comp_apply
       (G₃ := Multiplicative (SquareClassGroup K))
       (lipschitzToOrthogonal Q)
-      (Function.surjInv (lipschitzToOrthogonal_surjective_of_invertible Q hQ))
-      (Function.rightInverse_surjInv (lipschitzToOrthogonal_surjective_of_invertible Q hQ))
+      (Function.surjInv (lipschitzToOrthogonal_surjective Q hQ))
+      (Function.rightInverse_surjInv (lipschitzToOrthogonal_surjective Q hQ))
       (spinorNormDescentData Q hQ) x
 
 /-- The spinor norm of an orthogonal reflection is the square class of the norm of its
@@ -168,7 +157,7 @@ private theorem exists_spinToSpecialOrthogonal_eq_of_spinorNorm_eq_one [Nontrivi
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (g : QuadraticMap.specialOrthogonalGroup Q) (hg : spinorNorm Q hQ g = 1) :
     ∃ s : spinGroup Q, spinToSpecialOrthogonal Q s = g := by
-  obtain ⟨x, hx⟩ := lipschitzToOrthogonal_surjective_of_invertible Q hQ
+  obtain ⟨x, hx⟩ := lipschitzToOrthogonal_surjective Q hQ
     (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q g)
   have hsquare : IsSquare (cliffordNorm Q x) := by
     have hsquareClass : squareClassHom (cliffordNorm Q x) = 1 := by

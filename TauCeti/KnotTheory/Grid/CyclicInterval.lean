@@ -80,6 +80,8 @@ directions before taking products.
 * `TauCeti.Grid.mem_cIco_of_mem_cIco_of_mem_cIoo`: the membership form of that nesting.
 * `TauCeti.Grid.notMem_cIco_finRotate_left`: a point is never in the half-open arc starting at
   its own cyclic successor.
+* `TauCeti.Grid.self_mem_cIco_finRotate`: a point always lies in a nondegenerate half-open arc
+  ending at its own cyclic successor.
 * `TauCeti.Grid.notMem_cIco_of_cIco_union`: a point missing both halves of a half-open arc
   cut at an interior point misses the whole arc.
 
@@ -834,6 +836,18 @@ theorem notMem_cIco_finRotate_left (c r : Fin n) :
         coe_finRotate_of_ne_last hlast
       rw [hrot] at hmem hne'
       split_ifs at hmem with h <;> omega
+
+/-- A point lies in every nondegenerate half-open cyclic interval ending at its own cyclic
+successor: going clockwise, `a` is the last point reached before `finRotate n a`, so any arc
+that stops there and does not start there has already passed through `a`. -/
+theorem self_mem_cIco_finRotate {a c : Fin n} (h : c ≠ finRotate n a) :
+    a ∈ cIco c (finRotate n a) := by
+  have hmem : a ∈ cIco c (finRotate n a) ∪ cIco (finRotate n a) c := by
+    rw [cIco_union_swap h]
+    exact Finset.mem_univ a
+  -- The complementary arc starts at the cyclic successor of `a`, so it misses `a`: that is
+  -- `notMem_cIco_finRotate_left`, which `simp` applies once `finRotate n a` is normalized.
+  exact (Finset.mem_union.mp hmem).resolve_right (by simp)
 
 /-- A point missing both halves of a half-open cyclic interval cut at an interior point
 misses the whole interval. -/

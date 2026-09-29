@@ -143,12 +143,6 @@ the standard simplex on the product. -/
 private def stdSimplexSet : Set (ι × κ → ℝ) :=
   {f | (∀ q, 0 ≤ f q) ∧ ∑ q, f q = 1}
 
-/-- The real transport plans: nonnegative functions on the product with the prescribed row and
-column sums. This is the standard-simplex picture of `TauCeti.TransportMatrix`. -/
-private def RealPlans (μ : PMF ι) (ν : PMF κ) : Set (ι × κ → ℝ) :=
-  {f | (∀ q, 0 ≤ f q) ∧ (∀ i, ∑ j, f (i, j) = (μ i).toReal) ∧
-    ∀ j, ∑ i, f (i, j) = (ν j).toReal}
-
 /-- The cost of a real transport plan. -/
 private def costFun (c : ι × κ → ℝ) (f : ι × κ → ℝ) : ℝ := ∑ q, c q * f q
 
@@ -156,31 +150,6 @@ namespace TransportMatrix
 
 private theorem cost_eq_costFun (c : ι × κ → ℝ) (A : TransportMatrix μ ν) :
     A.cost c = costFun c A.toRealFun := A.cost_def c
-
-private theorem toRealFun_mem_realPlans (A : TransportMatrix μ ν) :
-    A.toRealFun ∈ RealPlans μ ν :=
-  ⟨A.toRealFun_nonneg, A.sum_toRealFun_row, A.sum_toRealFun_col⟩
-
-/-- The transportation matrix attached to a nonnegative function with the prescribed row and
-column sums. -/
-private def ofRealFun (hf : f ∈ RealPlans μ ν) : TransportMatrix μ ν where
-  matrix i j := ENNReal.ofReal (f (i, j))
-  row_sum i := by
-    rw [← ENNReal.ofReal_sum_of_nonneg fun j _ ↦ hf.1 (i, j), hf.2.1 i,
-      ENNReal.ofReal_toReal (μ.apply_ne_top i)]
-  col_sum j := by
-    rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hf.1 (i, j), hf.2.2 j,
-      ENNReal.ofReal_toReal (ν.apply_ne_top j)]
-
-private theorem toRealFun_ofRealFun (hf : f ∈ RealPlans μ ν) :
-    (ofRealFun hf).toRealFun = f := by
-  funext q
-  rw [toRealFun_apply]
-  exact ENNReal.toReal_ofReal (hf.1 q)
-
-private theorem cost_ofRealFun (c : ι × κ → ℝ) (hf : f ∈ RealPlans μ ν) :
-    (ofRealFun hf).cost c = costFun c f := by
-  rw [cost_eq_costFun, toRealFun_ofRealFun]
 
 end TransportMatrix
 
@@ -625,8 +594,9 @@ theorem exists_cost_eq_finiteDualValue (c : ι × κ → ℝ) (μ : PMF ι) (ν 
       ⨆ p : (ι → ℝ) × (κ → ℝ), ((lagrangian c μ ν f p : ℝ) : EReal) := by
     refine le_iInf₂ fun f hf ↦ ?_
     by_cases hmem : f ∈ RealPlans μ ν
-    · rw [iSup_lagrangian_of_mem c hmem, EReal.coe_le_coe_iff,
-        ← TransportMatrix.cost_ofRealFun c hmem]
+    · rw [iSup_lagrangian_of_mem c hmem, EReal.coe_le_coe_iff]
+      rw [costFun]
+      rw [← TransportMatrix.cost_ofRealFun c hmem]
       exact hA _
     · rw [iSup_lagrangian_of_notMem c hf hmem]
       exact le_top

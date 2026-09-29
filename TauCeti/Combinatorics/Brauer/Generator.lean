@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Brauer.LoopCount
+public import TauCeti.Combinatorics.Brauer.PropagatingNumber
 
 /-!
 # The Brauer generators and their relations
@@ -73,6 +74,8 @@ restated here.
   `TauCeti.BrauerDiagram.topThrough_capCup`: its through strands are the rest.
 * `TauCeti.capCup_ne_permToBrauer`: a cap-cup diagram on a pair of distinct indices is not a
   permutation diagram.
+* `TauCeti.BrauerDiagram.propagatingNumber_capCup`: a cap-cup diagram propagates `k - 2` strands,
+  so the propagating number is not constant.
 * `TauCeti.composeDiagram_capCup_capCup`, `TauCeti.middleLoopCount_capCup_capCup`: the relation
   `e * e = δ • e`.
 * `TauCeti.composeDiagram_permToBrauer_swap_capCup`,
@@ -260,6 +263,19 @@ complement of its cup.
 Not a `simp` lemma, for the reason given for `TauCeti.BrauerDiagram.bottomThrough_capCup`. -/
 theorem topThrough_capCup (hab : a ≠ b) : (capCup a b).topThrough = {a, b}ᶜ := by
   rw [← compl_compl (capCup a b).topThrough, ← topCup_eq_compl, topCup_capCup hab]
+
+/-- **A cap-cup diagram loses exactly the two strands it bends**, so its propagating number is
+`k - 2`. -/
+@[simp]
+theorem propagatingNumber_capCup (hab : a ≠ b) : (capCup a b).propagatingNumber = k - 2 := by
+  have hsum := (capCup a b).propagatingNumber_add_card_bottomCap
+  rw [bottomCap_capCup hab, Finset.card_pair hab] at hsum
+  omega
+
+-- On two strands a cap-cup diagram propagates nothing, so the bound
+-- `TauCeti.BrauerDiagram.propagatingNumber_le` is far from an equality in general.
+example : (capCup (0 : Fin 2) 1).propagatingNumber = 0 := by
+  rw [propagatingNumber_capCup (by decide)]
 
 end BrauerDiagram
 

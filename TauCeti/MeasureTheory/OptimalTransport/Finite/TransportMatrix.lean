@@ -57,6 +57,11 @@ structure TransportMatrix (μ : PMF ι) (ν : PMF κ) where
   /-- Every column has the mass prescribed by the target distribution. -/
   col_sum : ∀ j, ∑ i, matrix i j = ν j
 
+/-- Nonnegative real arrays with the row and column sums prescribed by `μ` and `ν`. -/
+abbrev RealPlans (μ : PMF ι) (ν : PMF κ) : Set (ι × κ → ℝ) :=
+  {f | (∀ q, 0 ≤ f q) ∧ (∀ i, ∑ j, f (i, j) = (μ i).toReal) ∧
+    ∀ j, ∑ i, f (i, j) = (ν j).toReal}
+
 attribute [simp] TransportMatrix.row_sum TransportMatrix.col_sum
 
 namespace TransportMatrix
@@ -146,6 +151,43 @@ theorem sum_toRealFun_col (A : TransportMatrix μ ν) (j : κ) :
   simp only [toRealFun_apply]
   rw [← ENNReal.toReal_sum fun i _ ↦ A.apply_ne_top i j, A.col_sum]
 
+/-- The real entries of a transportation matrix form a real plan. -/
+theorem toRealFun_mem_realPlans (A : TransportMatrix μ ν) :
+    A.toRealFun ∈ RealPlans μ ν :=
+  ⟨A.toRealFun_nonneg, A.sum_toRealFun_row, A.sum_toRealFun_col⟩
+
+/-- Convert a nonnegative real plan with prescribed marginals to a transportation matrix. -/
+def ofRealFun {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) : TransportMatrix μ ν where
+  matrix i j := ENNReal.ofReal (f (i, j))
+  row_sum i := by
+    rw [← ENNReal.ofReal_sum_of_nonneg fun j _ ↦ hf.1 (i, j), hf.2.1 i,
+      ENNReal.ofReal_toReal (μ.apply_ne_top i)]
+  col_sum j := by
+    rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hf.1 (i, j), hf.2.2 j,
+      ENNReal.ofReal_toReal (ν.apply_ne_top j)]
+
+/-- The entries of a matrix converted from a real plan. -/
+@[simp]
+theorem ofRealFun_apply {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) (i : ι) (j : κ) :
+    ofRealFun hf i j = ENNReal.ofReal (f (i, j)) := by
+  rfl
+
+/-- Converting a real plan to a matrix preserves every real entry. -/
+@[simp]
+theorem toRealFun_ofRealFun {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) :
+    (ofRealFun hf).toRealFun = f := by
+  funext q
+  rw [toRealFun_apply]
+  exact ENNReal.toReal_ofReal (hf.1 q)
+
+/-- Converting the real entries of a transportation matrix back recovers the matrix. -/
+@[simp]
+theorem ofRealFun_toRealFun (A : TransportMatrix μ ν) :
+    ofRealFun A.toRealFun_mem_realPlans = A := by
+  apply ext
+  intro i j
+  rw [ofRealFun_apply, toRealFun_apply, ENNReal.ofReal_toReal (A.apply_ne_top i j)]
+
 /-- The real-valued entries of a transportation matrix have total mass one. -/
 theorem sum_toRealFun (A : TransportMatrix μ ν) : ∑ p, A.toRealFun p = 1 := by
   simpa only [toRealFun_apply, toPMF_apply] using PMF.sum_toReal_eq_one A.toPMF
@@ -158,6 +200,11 @@ def cost (c : ι × κ → ℝ) (A : TransportMatrix μ ν) : ℝ := ∑ q, c q 
 the lemma downstream modules should rewrite with. -/
 theorem cost_def (c : ι × κ → ℝ) (A : TransportMatrix μ ν) :
     A.cost c = ∑ q, c q * A.toRealFun q := (rfl)
+
+/-- The cost of a matrix converted from a real plan is the cost of that plan. -/
+theorem cost_ofRealFun (c : ι × κ → ℝ) {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) :
+    (ofRealFun hf).cost c = ∑ q, c q * f q := by
+  rw [cost_def, toRealFun_ofRealFun]
 
 /-- Adding a constant to every entry of a cost adds that constant to the matrix cost. -/
 @[simp]

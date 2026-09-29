@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
@@ -77,6 +78,7 @@ the branch node of the diagram is `α₄`, and `α₂` is the short arm.
 * `TauCeti.IntegralLattice.discriminantQuadraticMap_typeE₇MinusculeWeightClass`: `q(ϖ₇) = 3/4`.
 * `TauCeti.IntegralLattice.isUnimodular_typeE₈RootLattice`: `E₈` is unimodular, so its discriminant
   form is trivial.
+* `TauCeti.IntegralLattice.minimum_typeE₈RootLattice`: `E₈` has minimum `2`.
 
 ## References
 
@@ -712,6 +714,18 @@ theorem isPosDef_typeE₈RootLattice : typeE₈RootLattice.IsPosDef :=
 theorem isEven_typeE₈RootLattice : typeE₈RootLattice.IsEven := by
   rw [typeE₈RootLattice, isEven_ofGramMatrix_iff]
   decide
+
+/-- **The type `E₈` root lattice has minimum `2`**: it is even and positive definite, and its
+simple roots are roots, of norm `2`. -/
+theorem minimum_typeE₈RootLattice : typeE₈RootLattice.minimum = 2 := by
+  have hmem : typeE₈SimpleRoot 0 ∈ typeE₈RootLattice.carrier :=
+    (mem_typeE₈RootLattice_carrier_iff _).mpr fun i ↦
+      ⟨if i = 0 then 1 else 0, by simp [typeE₈SimpleRoot_apply]⟩
+  refine isPosDef_typeE₈RootLattice.minimum_eq_two isEven_typeE₈RootLattice (x := ⟨_, hmem⟩) ?_
+  have h : (typeE₈RootLattice.integralNorm ⟨_, hmem⟩ : ℚ) = 2 := by
+    rw [integralNorm_cast, norm_apply, form_typeE₈SimpleRoot_typeE₈SimpleRoot]
+    decide
+  exact_mod_cast h
 
 /-- **The determinant of the type `E₈` root lattice is `1`.** -/
 @[simp]

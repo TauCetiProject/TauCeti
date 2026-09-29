@@ -42,6 +42,8 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
 
 * `TauCeti.RegularFormClass.hasseInvariant_mk`: its value `∏_{i<j} [(aᵢ, aⱼ)]` on a diagonal
   presentation `⟨a₁, …, aₙ⟩`.
+* `TauCeti.RegularFormClass.omearaHasseSymbol_eq`: O'Meara's `i ≤ j` symbol is the
+  Lam–Serre Hasse invariant times the symbol of the discriminant with `-1`.
 * `TauCeti.RegularFormClass.hasseInvariant_formClass`: the same value on the class of any regular
   form isometric to `⟨a₁, …, aₙ⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_eq_one_of_rank_le_one`: the invariant is trivial in
@@ -68,6 +70,7 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
   American Mathematical Society (2005), Chapter V, Definition 3.17 and Proposition 3.18.
 * J.-P. Serre, *A Course in Arithmetic*, Graduate Texts in Mathematics 7, Springer (1973),
   Chapter IV, §2.1.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), §63:20.
 -/
 
 public section
@@ -124,6 +127,25 @@ theorem hasseInvariant_mk (p : RegularFormPresentation K) :
       ∏ i, ∏ j ∈ Ioi i, quaternionClass (p.2 i) (p.2 j) :=
   liftDiagonal_mk _ hasseProd_eq_of_permutationStep hasseProd_eq_of_binaryStep
     (fun a b _ => hasseProd_rankOne a b) p
+
+/-- O'Meara's Hasse symbol `∏_{i≤j} [(aᵢ,aⱼ)]` equals the Lam–Serre Hasse invariant
+`∏_{i<j} [(aᵢ,aⱼ)]` times `[(d(q),-1)]`. The diagonal correction uses
+`[(a,a)] = [(a,-1)]`, so the discriminant here is the unsigned one. -/
+theorem omearaHasseSymbol_eq (p : RegularFormPresentation K) :
+    (∏ i, ∏ j ∈ Ici i, quaternionClass (p.2 i) (p.2 j)) =
+      hasseInvariant (Quotient.mk (regularFormSetoid K) p) *
+        quaternionClassOnSquareClasses
+          (discr (Quotient.mk (regularFormSetoid K) p)) (squareClass (-1 : Kˣ)) := by
+  let f : Kˣ →* BrauerGroup K :=
+    { toFun := fun a => quaternionClass a (-1)
+      map_one' := quaternionClass_one_left _
+      map_mul' := fun a b => quaternionClass_mul_left a b _ }
+  have hdiag : (∏ i, quaternionClass (p.2 i) (p.2 i)) =
+      quaternionClass (∏ i, p.2 i) (-1) := by
+    simp_rw [quaternionClass_self]
+    exact (map_prod f p.2 Finset.univ).symm
+  rw [prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag, hasseInvariant_mk, discr_mk,
+    quaternionClassOnSquareClasses_squareClass, hdiag, mul_comm]
 
 /-- The Hasse invariant of a regular form isometric to `⟨a₁, …, aₙ⟩` is `∏_{i<j} [(aᵢ, aⱼ)]`. -/
 theorem hasseInvariant_formClass {V : Type*} [AddCommGroup V] [Module K V]

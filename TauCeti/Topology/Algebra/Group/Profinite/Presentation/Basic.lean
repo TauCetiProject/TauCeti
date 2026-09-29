@@ -957,6 +957,13 @@ theorem presentedProP.mk_comp_freeProPGen :
     ⇑(presentedProP.mk p rels) ∘ freeProPGen p n = presentedProPGen p n rels :=
   funext (presentedProP.mk_freeProPGen p n rels)
 
+/-- A continuous homomorphism of the presented group, pulled back to the free group along the
+quotient map, takes on the `ℕ`-indexed free generators its values on `presentedProPGen`. -/
+theorem presentedProP.comp_mk_freeProPGen {K : Type*} [Monoid K] [TopologicalSpace K]
+    (φ : presentedProP p (Fin n) rels →ₜ* K) (i : ℕ) :
+    (φ.comp (presentedProP.mk p rels)) (freeProPGen p n i) = φ (presentedProPGen p n rels i) := by
+  rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, presentedProP.mk_freeProPGen]
+
 end NatIndexed
 
 end TauCeti

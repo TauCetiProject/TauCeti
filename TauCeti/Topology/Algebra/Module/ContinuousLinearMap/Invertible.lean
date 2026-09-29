@@ -6,16 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
-# Persistence of invertibility from convergence of inverses
+# Invertibility of continuous linear maps: persistence and products
 
 The totalized inverse of a continuous linear map is zero when the map is not invertible.
 Consequently, convergence of inverse maps to any nonzero map forces eventual invertibility.
 The inverse of an invertible map also suffices, including on trivial spaces. These results apply
 without completeness or continuity of the original family, and are useful when differentiating
 inverse families.
+
+The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
+exactly when both factors are, which is how block-diagonal second derivatives on a product space
+are shown to be invertible.
 -/
 
 public section
@@ -57,5 +62,38 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
       intro hzero
       exact hE (isInvertible_zero_iff.mp (hzero ▸ hB.inverse)).2
     exact eventually_isInvertible_of_tendsto_inverse h hne
+
+section ProdMap
+
+variable {R M₁ M₂ M₃ M₄ : Type*} [Semiring R]
+  [TopologicalSpace M₁] [AddCommMonoid M₁] [Module R M₁]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  [TopologicalSpace M₃] [AddCommMonoid M₃] [Module R M₃]
+  [TopologicalSpace M₄] [AddCommMonoid M₄] [Module R M₄]
+
+/-- The product `f.prodMap g` of two continuous linear maps is invertible exactly when both
+factors are. -/
+@[simp]
+theorem isInvertible_prodMap_iff {f : M₁ →L[R] M₂} {g : M₃ →L[R] M₄} :
+    (f.prodMap g).IsInvertible ↔ f.IsInvertible ∧ g.IsInvertible := by
+  constructor
+  · intro h
+    -- The inverse of `f` is read off the first coordinate of the inverse of `f.prodMap g` on the
+    -- first factor, and similarly for `g`.
+    refine ⟨IsInvertible.of_inverse (g := fst R M₁ M₃ ∘L (f.prodMap g).inverse ∘L inl R M₂ M₄)
+      ?_ ?_, IsInvertible.of_inverse (g := snd R M₁ M₃ ∘L (f.prodMap g).inverse ∘L inr R M₂ M₄)
+      ?_ ?_⟩
+    · ext v
+      simpa using congrArg Prod.fst (h.self_apply_inverse (inl R M₂ M₄ v))
+    · ext v
+      simpa using congrArg Prod.fst (h.inverse_apply_self (v, 0))
+    · ext v
+      simpa using congrArg Prod.snd (h.self_apply_inverse (inr R M₂ M₄ v))
+    · ext v
+      simpa using congrArg Prod.snd (h.inverse_apply_self (0, v))
+  · rintro ⟨⟨e, rfl⟩, ⟨e', rfl⟩⟩
+    exact ⟨e.prodCongr e', ContinuousLinearEquiv.coe_prodCongr e e'⟩
+
+end ProdMap
 
 end ContinuousLinearMap

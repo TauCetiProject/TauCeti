@@ -62,13 +62,6 @@ contracting equation constrains.
 * `TauCeti.Contraction.quasiIso_incl` and `TauCeti.Contraction.quasiIso_proj`: both structure maps
   of a contraction are quasi-isomorphisms.
 
-This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 3, second bullet: "Package a strong
-deformation retract of cochain complexes `(H,0) ⇄ (A,d)` by maps `i,p` of degree zero and `h` of
-degree `-1`, with `p i = 1`, `1-i p = d h + h d`, and the side conditions `h i=0`, `p h=0`,
-`h²=0` after the standard normalization.  Give a weaker contraction input and prove normalization
-rather than requiring arbitrary callers to supply side conditions."  No formalization is vendored:
-the cochain calculus is Mathlib's.
-
 ## References
 
 * V. K. A. M. Gugenheim, L. A. Lambe, and J. D. Stasheff, *Perturbation theory in differential

@@ -76,7 +76,7 @@ theorem totallyBounded_graphonSpaceI : TotallyBounded (Set.univ : Set GraphonSpa
   intro ε hε
   set δ : ℝ := ε / 4 with hδdef
   have hδ : 0 < δ := by positivity
-  set n : ℕ := 4 ^ (Nat.ceil (1 / δ ^ 2) + 1) with hndef
+  set n : ℕ := 4 ^ (Nat.ceil (1 / δ ^ 2)) with hndef
   have hn0 : 0 < n := pow_pos (by norm_num) _
   have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn0
   have : NeZero n := ⟨hn0.ne'⟩

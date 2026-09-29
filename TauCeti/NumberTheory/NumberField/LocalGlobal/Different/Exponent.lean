@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.LocalGlobal.Different.Basic
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.Different.Hilbert
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Multiplicity
+import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 
 /-!
 # The global different exponent

@@ -51,7 +51,7 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton` and
   `subsingleton_H2_of_subsingleton`: a trivial group has vanishing `H¹` and `H²`.
 * `TauCeti.ContCohomology.subsingleton_H1_of_subsingleton_coefficients` and
-  `subsingleton_H2_of_subsingleton_coefficients`: trivial coefficients have vanishing `H¹` and
+  `subsingleton_H2_of_subsingleton_coefficients`: a zero coefficient group has vanishing `H¹` and
   `H²`.
 * `TauCeti.ContCohomology.nsmul_H2_eq_zero`: `H²(G, M)` is killed by whatever kills the
   coefficients `M`.
@@ -77,25 +77,27 @@ vanishing of the differentials, so that `Zⁱ = Cⁱ ⊓ ker dⁱ` — which is 
 *defined*, taking their closure under the group operations from `AddMonoidHom.ker` — is stated in
 that spelling by `mem_Z1_iff` and `mem_Z2_iff`.
 
-Mathlib's bundled `groupCohomology.cocycles₁` and `cocycles₂` are *not* reused here: they are
-stated for `Rep k G`, which forces the coefficient ring and the group into a single universe, and
-the coefficient modules of a profinite group have to be allowed to live in the group's universe
-with a small coefficient ring such as `ℤ`. The unbundled `IsCocycle₁`/`IsCocycle₂` predicates,
-which Mathlib provides for exactly this purpose, carry no such constraint and are consumed
-directly. The cochain groups themselves are Mathlib's `continuousAddSubgroup`.
+Mathlib's bundled `groupCohomology.cocycles₁` and `cocycles₂` are *not* reused here: Mathlib's
+low-degree group cohomology API states them for `Rep k G` with `k` and `G` in a single universe
+(its binders are `{k G : Type u}`), and the coefficient modules of a profinite group have to be
+allowed to live in the group's universe with a small coefficient ring such as `ℤ`. The unbundled
+`IsCocycle₁`/`IsCocycle₂` predicates, which Mathlib provides for exactly this purpose, carry no
+such constraint and are consumed directly. The cochain groups themselves are Mathlib's
+`continuousAddSubgroup`.
 
 The trivial-action results are the continuous analogues of Mathlib's
 `groupCohomology.cocycles₁IsoOfIsTrivial`, `groupCohomology.coboundaries₁_eq_bot_of_isTrivial` and
 `groupCohomology.H1IsoOfIsTrivial`, in the same order and with the same proof plan; they are
 restated for the unbundled classes because the Mathlib versions are stated for `Rep k G`.
 
-Cochains are not normalised: `f 1 = 0` in degree `1` and the degree-`2` normalisations are the
-lemmas `map_one_of_mem_Z1`, `map_one_fst_of_mem_Z2` and `map_one_snd_of_mem_Z2`, never
-definitional conditions.
+Cochains are not normalised. The identities at the unit, `f 1 = 0` in degree `1` and
+`f (1, g) = f (1, 1)`, `f (g, 1) = g • f (1, 1)` in degree `2`, are the lemmas
+`map_one_of_mem_Z1`, `map_one_fst_of_mem_Z2` and `map_one_snd_of_mem_Z2`, never definitional
+conditions.
 
 `H1` and `H2` divide `Z¹` and `Z²` by the coboundaries *viewed inside the cocycles*, in the
-`AddSubgroup.addSubgroupOf` spelling the roadmap fixes, so that no proof term enters either quotient
-subgroup. Each carrier retains the hypotheses of `TauCeti.ContCohomology.B1_le_Z1`, respectively
+`AddSubgroup.addSubgroupOf` spelling, so that no proof term enters either quotient subgroup. Each
+carrier retains the hypotheses of `TauCeti.ContCohomology.B1_le_Z1`, respectively
 `B2_le_Z2`, through that inclusion theorem, so the subgroup divided out is always the whole of
 `B¹`, respectively `B²`, and never the intersection `B ⊓ Z` that `addSubgroupOf` would cut out at a
 weaker generality; `AddSubgroup.map_addSubgroupOf_eq_of_le` turns those inclusions into that
@@ -103,11 +105,6 @@ identity whenever a consumer needs it spelled out. The two carriers therefore si
 sections:
 `H¹` needs `G` to be a monoid acting continuously, and `H²` needs a continuous multiplication on
 `G` besides, because `d¹` has to preserve continuity for `B² = d¹(C¹)` to consist of cocycles.
-
-This implements the "the complex" milestone of Layer 2 of the human-authored roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, whose §3 fixes every convention above and whose
-`Suggested.lean` fixes the names `C1`, `C2`, `d0`, `d1`, `Z1`, `Z2`, `B1`, `B2`, `H0`, `H1`, `H2`,
-`H1pi`, `H2pi`, `B1_le_Z1` and `B2_le_Z2`.
 
 ## References
 
@@ -576,11 +573,11 @@ variable {G : Type u} [Monoid G] [TopologicalSpace G]
 theorem map_one_of_mem_Z1 {f : G → M} (hf : f ∈ Z1 G M) : f 1 = 0 :=
   groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 hf).2
 
-/-- The first degree-`2` normalisation. -/
+/-- A continuous `2`-cocycle takes the same value at `(1, g)` as at `(1, 1)`. -/
 theorem map_one_fst_of_mem_Z2 {f : G × G → M} (hf : f ∈ Z2 G M) (g : G) : f (1, g) = f (1, 1) :=
   groupCohomology.map_one_fst_of_isCocycle₂ (mem_Z2_iff.1 hf).2 g
 
-/-- The second degree-`2` normalisation. -/
+/-- A continuous `2`-cocycle satisfies `f (g, 1) = g • f (1, 1)`. -/
 theorem map_one_snd_of_mem_Z2 {f : G × G → M} (hf : f ∈ Z2 G M) (g : G) :
     f (g, 1) = g • f (1, 1) :=
   groupCohomology.map_one_snd_of_isCocycle₂ (mem_Z2_iff.1 hf).2 g
@@ -612,6 +609,7 @@ def zeroLocus {f : G → M} (hf : f ∈ Z1 G M) : Subgroup G where
     have h := map_inv_of_mem_Z1 hf g
     rwa [hg, neg_zero, smul_eq_zero_iff_eq] at h
 
+/-- An element lies in the zero locus of a `1`-cocycle exactly when the cocycle vanishes there. -/
 @[simp]
 theorem mem_zeroLocus {f : G → M} (hf : f ∈ Z1 G M) {g : G} : g ∈ zeroLocus hf ↔ f g = 0 :=
   Iff.rfl
@@ -722,16 +720,15 @@ variable (G : Type u) [Monoid G] [TopologicalSpace G]
 
 /-- The first continuous cohomology group `H¹(G, M) = Z¹/B¹`.
 
-The denominator is `B¹` viewed inside `Z¹`, in Mathlib's `AddSubgroup.addSubgroupOf` spelling the
-roadmap fixes, so that no proof term enters the quotient subgroup. The hypotheses in force are
-those of
+The denominator is `B¹` viewed inside `Z¹`, in Mathlib's `AddSubgroup.addSubgroupOf` spelling,
+so that no proof term enters the quotient subgroup. The hypotheses in force are those of
 `TauCeti.ContCohomology.B1_le_Z1`, so the subgroup divided out really is the whole of `B¹`:
 `AddSubgroup.map_addSubgroupOf_eq_of_le (B1_le_Z1 G M)` says its image in `G → M` is `B¹` itself.
 
 `H¹` is used as a bare additive group. It does inherit a quotient topology from the *pointwise*
-topology on `G → M`, and that topology is not the intended one: it need not be discrete, the
-roadmap's witness being trivial `ZMod 2` coefficients on a product of infinitely many copies of
-`C₂`, where no finite set of evaluations isolates the zero character. The comparison of Layer 3 is
+topology on `G → M`, and that topology is not the intended one: it need not be discrete. For
+trivial `ZMod 2` coefficients on a product of infinitely many copies of `C₂`, no finite set of
+evaluations isolates the zero character. The comparison with canonical continuous cohomology is
 therefore stated against `DiscreteH1`. -/
 abbrev H1 :=
   let _h := B1_le_Z1 G M
@@ -886,7 +883,7 @@ variable (G : Type u) [Monoid G] [TopologicalSpace G]
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M] [Subsingleton M]
 
-/-- **Trivial coefficients have vanishing `H¹`**: there is only one cochain. -/
+/-- **A zero coefficient group has vanishing `H¹`**: there is only one cochain. -/
 instance subsingleton_H1_of_subsingleton_coefficients : Subsingleton (H1 G M) :=
   ⟨fun x y => by
     induction x using QuotientAddGroup.induction_on with
@@ -894,7 +891,7 @@ instance subsingleton_H1_of_subsingleton_coefficients : Subsingleton (H1 G M) :=
       induction y using QuotientAddGroup.induction_on with
       | _ f' => exact congrArg (H1pi G M) (Subsingleton.elim f f')⟩
 
-/-- **Trivial coefficients have vanishing `H²`**: there is only one cochain. -/
+/-- **A zero coefficient group has vanishing `H²`**: there is only one cochain. -/
 instance subsingleton_H2_of_subsingleton_coefficients [ContinuousMul G] : Subsingleton (H2 G M) :=
   ⟨fun x y => by
     induction x using QuotientAddGroup.induction_on with

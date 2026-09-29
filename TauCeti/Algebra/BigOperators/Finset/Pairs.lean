@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Order.Interval.Finset.Defs
 
@@ -35,6 +36,8 @@ sign of the permutation.
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
+* `TauCeti.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
+  pairs separates into the strictly increasing pairs and the diagonal.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
   over the increasing pairs of a finite ordinal.
 * `TauCeti.prod_prod_Ioi_snoc`: splits the pair product of a tuple with a final entry.
@@ -51,6 +54,19 @@ public section
 namespace TauCeti
 
 open Finset
+
+/-- A product over weakly increasing pairs splits into the strictly increasing pairs and the
+diagonal. -/
+theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
+    {ι M : Type*} [PartialOrder ι] [Fintype ι]
+    [LocallyFiniteOrderTop ι] [CommMonoid M] (f : ι → ι → M) :
+    (∏ i, ∏ j ∈ Ici i, f i j) = (∏ i, ∏ j ∈ Ioi i, f i j) * ∏ i, f i i := by
+  calc
+    (∏ i, ∏ j ∈ Ici i, f i j) = ∏ i, (f i i * ∏ j ∈ Ioi i, f i j) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      exact (mul_prod_Ioi_eq_prod_Ici (f := f i) i).symm
+    _ = _ := by rw [prod_mul_distrib, mul_comm]
 
 /-- Peel the first two indices off a product over the increasing pairs of `Fin (m + 2)`. -/
 theorem prod_prod_Ioi_eq_of_two {M : Type*} [CommMonoid M] {m : ℕ}

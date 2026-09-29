@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
 /-!
@@ -37,6 +38,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
   nonzero.
 * `QuadraticMap.Nondegenerate.polarBilin_ne_zero`: a nonzero vector has nonzero polar functional
   for a nondegenerate quadratic form.
+* `QuadraticMap.liftOfSurjective`: descent of a quadratic map along a surjective linear map whose
+  kernel lies in the radical.
 * `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a semifield has a vector of
   unit norm.
 * `QuadraticMap.isUnit_apply_smul`: scaling a vector of unit norm by a unit preserves unit norm.
@@ -133,6 +136,29 @@ theorem isUnit_apply_smul {S N : Type*} [CommSemiring S] [AddCommMonoid N] [Modu
     (hc : IsUnit c) (hv : IsUnit (Q v)) : IsUnit (Q (c • v)) := by
   rw [QuadraticMap.map_smul]
   simpa [smul_eq_mul, mul_assoc] using (hc.mul (hc.mul hv))
+
+section LiftOfSurjective
+
+variable {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- Descend a quadratic map along a surjective linear map whose kernel lies in its radical.
+
+Mathlib's `QuadraticMap.lift` descends along the quotient by a submodule of the radical.  A
+quotient is usually presented instead by a surjection onto a concrete group — reduction modulo `m`
+onto `ZMod m`, say — and this is that formulation. -/
+noncomputable def liftOfSurjective (Q : QuadraticMap R M P) (f : M →ₗ[R] N)
+    (hf : Function.Surjective f) (h : LinearMap.ker f ≤ Q.radical) : QuadraticMap R N P :=
+  (Q.lift (LinearMap.ker f) h).comp (f.quotKerEquivOfSurjective hf).symm.toLinearMap
+
+/-- The descended quadratic map takes the original value on every representative. -/
+@[simp]
+theorem liftOfSurjective_apply (Q : QuadraticMap R M P) (f : M →ₗ[R] N)
+    (hf : Function.Surjective f) (h : LinearMap.ker f ≤ Q.radical) (x : M) :
+    liftOfSurjective Q f hf h (f x) = Q x := by
+  rw [liftOfSurjective, QuadraticMap.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.quotKerEquivOfSurjective_symm_apply, QuadraticMap.lift_mk]
+
+end LiftOfSurjective
 
 end QuadraticMap
 

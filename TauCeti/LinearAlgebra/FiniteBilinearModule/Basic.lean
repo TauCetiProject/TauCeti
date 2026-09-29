@@ -504,6 +504,12 @@ theorem toIsometry_toHom (f : Hom A B) (hf : Function.Bijective f) :
   ext
   rfl
 
+end Hom
+
+namespace Isometry
+
+variable {A : FiniteBilinearModule.{u}} {B : FiniteBilinearModule.{v}}
+
 /-- Packaging the underlying morphism of an isometry recovers the isometry. -/
 @[simp]
 theorem toHom_toIsometry (f : Isometry A B) :
@@ -511,7 +517,7 @@ theorem toHom_toIsometry (f : Isometry A B) :
   ext
   rfl
 
-end Hom
+end Isometry
 
 /-- Restrict a finite bilinear module to an additive subgroup.
 

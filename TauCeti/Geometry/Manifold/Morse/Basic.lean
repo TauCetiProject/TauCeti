@@ -123,6 +123,18 @@ theorem IsMorseOn.isManifoldNondegenerateCriticalPoint {I : ModelWithCorners ℝ
     IsManifoldNondegenerateCriticalPoint I f x :=
   h.2 x hx hcrit
 
+/-- The coordinate expression of a function which is Morse on `s` is differentiable at the chart
+image of every point of `s`: either the point is not critical, so the derivative is nonzero, or it
+is a nondegenerate critical point, where the coordinate expression is twice continuously
+differentiable. -/
+theorem IsMorseOn.differentiableAt_comp_extChartAt_symm {I : ModelWithCorners ℝ E H}
+    (h : IsMorseOn I f s) (hx : x ∈ s) :
+    DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  by_cases hcrit : fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0
+  · exact ((isManifoldNondegenerateCriticalPoint_iff I).1
+      (h.isManifoldNondegenerateCriticalPoint hx hcrit)).contDiffAt.differentiableAt two_ne_zero
+  · exact not_not.1 fun hd ↦ hcrit (fderiv_zero_of_not_differentiableAt hd)
+
 /-- The restriction of a Morse function to a smaller set is Morse there. -/
 theorem IsMorseOn.mono {I : ModelWithCorners ℝ E H}
     (h : IsMorseOn I f t) (hst : s ⊆ t) : IsMorseOn I f s :=
@@ -165,6 +177,11 @@ theorem isMorseOn_modelSpace_iff {V : Type*} [NormedAddCommGroup V] [NormedSpace
 /-- A Morse function is a function which is Morse on the whole manifold. -/
 def IsMorse (I : ModelWithCorners ℝ E H) (f : M → ℝ) : Prop :=
   IsMorseOn I f univ
+
+/-- Being Morse on the whole manifold is being a Morse function. -/
+@[simp]
+theorem isMorseOn_univ {I : ModelWithCorners ℝ E H} : IsMorseOn I f univ ↔ IsMorse I f :=
+  Iff.rfl
 
 /-- A function is Morse exactly when it is smooth and all of its critical points are
 nondegenerate. -/

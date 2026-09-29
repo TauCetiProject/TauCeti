@@ -81,6 +81,11 @@ ramification groups are indexed by real numbers `u ≥ -1`, and `G_u` is the who
 group for `u ≤ -1`. -/
 abbrev RamificationIndexDomain : Set ℝ := Set.Ici (-1 : ℝ)
 
+/-- A natural number lies in the domain `[-1, ∞)` of the Herbrand function. -/
+theorem _root_.Nat.cast_mem_ramificationIndexDomain (n : ℕ) :
+    (n : ℝ) ∈ RamificationIndexDomain :=
+  le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)
+
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
