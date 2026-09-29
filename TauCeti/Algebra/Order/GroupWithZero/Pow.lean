@@ -12,7 +12,8 @@ import Mathlib.Tactic
 # Power bounds in ordered monoids with zero
 
 This file contains an exponent-bookkeeping inequality for elements bounded by a power of an
-element at most `1`.
+element at most `1`. It turns valuation estimates for exponential and logarithm coefficients into
+geometric decay on deep ideals.
 
 ## Main results
 
