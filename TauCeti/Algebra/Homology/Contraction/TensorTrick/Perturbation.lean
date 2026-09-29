@@ -1,0 +1,464 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Homology.Contraction.Perturbation
+public import TauCeti.Algebra.Homology.Contraction.TensorTrick.Filtration
+public import TauCeti.LinearAlgebra.TensorCoalgebra.CoalgHom
+
+/-!
+# Perturbing the tensor trick preserves the coalgebra structure
+
+The tensor trick (`TauCeti.LinearSpecialContraction.reducedTensorWords`) turns a special
+contraction of `(M, d)` onto `(N, d')` into a special contraction of the reduced tensor coalgebras
+`Tᶜ(M)` onto `Tᶜ(N)`, with letterwise inclusion `i` and projection `p`, and with homotopy `H`.
+Homological transfer then perturbs the letterwise differential `D` of `Tᶜ(M)` by a graded
+coderivation `δ` which lowers tensor length, such as the part of the bar differential of an `A∞`
+algebra collapsing at least two letters, and applies the basic perturbation lemma
+(`TauCeti.LinearSpecialContraction.perturb`).
+
+This file shows that the output of the perturbation lemma is again compatible with
+deconcatenation: the perturbed inclusion `i' = i - H X i` is a morphism of reduced tensor
+coalgebras, and the perturbed differential `D' = D + p X i` of `Tᶜ(N)` is a graded coderivation.
+Consequently `D'` is determined by its letter component, which carries the transferred operations
+on `N`, and `i'` is determined by its Taylor components.
+
+The key input is that `H` is a *coderivation homotopy*: with `τ` the letterwise Koszul twist,
+
+`Δ H = (H ⊗ i p + τ ⊗ H) Δ`.
+
+## Main results
+
+* `TauCeti.LinearSpecialContraction.deconcatenation_comp_reducedTensorWordsHomotopy`: the
+  tensor-trick homotopy is a coderivation homotopy.
+* `TauCeti.LinearSpecialContraction.map_koszulTwist_comp_reducedTensorWordsHomotopy`: the
+  tensor-trick homotopy anticommutes with the letterwise Koszul twist.
+* `TauCeti.LinearSpecialContraction.isCoalgHom_reducedTensorWords_perturb_incl`: the perturbed
+  inclusion is a coalgebra morphism.
+* `TauCeti.LinearSpecialContraction.isGradedCoderivation_reducedTensorWords_perturbedDifferential`:
+  the perturbed differential is a graded coderivation.
+
+## Implementation notes
+
+The perturbed inclusion is the unique solution of `i' = i - H δ i'`.  Both `Δ i'` and
+`(i' ⊗ i') Δ` solve `F + K F = (i ⊗ i) Δ` for the operator
+`K = (H ⊗ i p + τ ⊗ H) (δ ⊗ 1 + τ ⊗ δ)` on pairs of words.  Since `δ` lowers the total length of
+a pair of words and the other factors preserve it, `K` is locally nilpotent and `1 + K` is
+injective, so the two solutions agree.  No completion and no global bound on word length is
+needed.  The perturbed differential is then conjugate by `i'` to the coderivation `D + δ`, and
+`i'` has the left inverse `p'`.
+
+## References
+
+* V. K. A. M. Gugenheim, L. A. Lambe, and J. D. Stasheff, *Perturbation theory in differential
+  homological algebra II*, Illinois Journal of Mathematics 35 (1991), 357--373.
+* J. Huebschmann and T. Kadeishvili, *Small models for chain algebras*, Mathematische Zeitschrift
+  207 (1991), 245--280.
+-/
+
+public section
+
+open scoped DirectSum TensorProduct
+
+universe uR uM uN
+
+namespace TauCeti
+
+open ReducedTensorWords
+
+variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+namespace LinearSpecialContraction
+
+variable {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN)
+  (G : InternalGrading R M)
+
+/-! ### The tensor-trick homotopy and deconcatenation -/
+
+/-- The letters of the summand of the tensor-trick homotopy acting by `h` at position `J`. -/
+private noncomputable def slotTuple {n : ℕ} (x : Fin n → M) (J : ℕ) : Fin n → M := fun i ↦
+  if i.val < J then G.koszulTwist 1 (x i) else if i.val = J then c.homotopy (x i)
+  else c.incl (c.proj (x i))
+
+/-- The tensor-trick homotopy on a block of a pure tensor word. -/
+private theorem reducedTensorWordsHomotopy_subword {n : ℕ} (x : Fin n → M) (a b : ℕ) :
+    c.reducedTensorWordsHomotopy G (subword R x a b) =
+      ∑ j ∈ Finset.range b, subword R (c.slotTuple G x (a + j)) a b := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb
+  · simp
+  by_cases hab : a + b ≤ n
+  · rw [subword_eq_of_tprod R x hb hab, reducedTensorWordsHomotopy_of_tprod]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [subword_eq_of_tprod R _ hb hab]
+    refine of_tprod_congr R M hb rfl fun i ↦ ?_
+    simp only [slotTuple, Fin.cast_eq_self]
+    split_ifs <;> first | omega | rfl
+  · rw [subword_eq_zero_of_lt_add R x (by omega), map_zero]
+    exact (Finset.sum_eq_zero fun j _ ↦ subword_eq_zero_of_lt_add R _ (by omega)).symm
+
+/-- **The tensor-trick homotopy is a coderivation homotopy.**  Cutting `H z` either cuts to the
+right of the letter carrying `h`, where the letters already carry `i p`, or cuts to its left,
+where the letters passed by `h` carry the Koszul twist:
+
+`Δ H = (H ⊗ (i p)) Δ + (τ ⊗ H) Δ`. -/
+theorem deconcatenation_comp_reducedTensorWordsHomotopy :
+    deconcatenation R M ∘ₗ c.reducedTensorWordsHomotopy G =
+      (TensorProduct.map (c.reducedTensorWordsHomotopy G)
+          (ReducedTensorWords.map (R := R) (c.incl ∘ₗ c.proj)) +
+        TensorProduct.map (ReducedTensorWords.map (R := R) (G.koszulTwist 1))
+          (c.reducedTensorWordsHomotopy G)) ∘ₗ deconcatenation R M := by
+  refine linearMap_ext R M fun ⟨n, hn⟩ x ↦ ?_
+  have hΔ (y : Fin n → M) : deconcatenation R M (subword R y 0 n) =
+      ∑ k ∈ Finset.range n, subword R y 0 k ⊗ₜ[R] subword R y k (n - k) := by
+    simpa using map_deconcatenation_subword R LinearMap.id LinearMap.id y 0 n
+  simp only [LinearMap.comp_apply, LinearMap.add_apply]
+  rw [of_tprod_eq_subword R hn x, reducedTensorWordsHomotopy_subword, map_sum,
+    map_deconcatenation_subword, map_deconcatenation_subword, ← Finset.sum_add_distrib]
+  simp only [hΔ, zero_add]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  rw [Finset.mem_range] at hk
+  rw [← Finset.sum_range_add_sum_Ico _ hk.le, Finset.sum_Ico_eq_sum_range,
+    reducedTensorWordsHomotopy_subword, reducedTensorWordsHomotopy_subword,
+    TensorProduct.sum_tmul, TensorProduct.tmul_sum, map_subword, map_subword]
+  simp only [zero_add]
+  congr 1
+  · refine Finset.sum_congr rfl fun j hj ↦ ?_
+    rw [Finset.mem_range] at hj
+    congr 1
+    refine subword_congr R _ _ (by omega) (by omega) fun l hl ↦ ?_
+    simp only [slotTuple, LinearMap.comp_apply]
+    split_ifs <;> first | omega | rfl
+  · refine Finset.sum_congr rfl fun j hj ↦ ?_
+    rw [Finset.mem_range] at hj
+    congr 1
+    refine subword_congr R _ _ (by omega) (by omega) fun l hl ↦ ?_
+    simp only [slotTuple]
+    split_ifs <;> first | omega | rfl
+
+/-- The tensor-trick homotopy anticommutes with the letterwise Koszul twist: it moves one odd map
+`h` past the letters it acts on. -/
+theorem map_koszulTwist_comp_reducedTensorWordsHomotopy (H : InternalGrading R N)
+    (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
+    (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
+    (hproj : LinearMap.IsHomogeneous c.proj G.piece H.piece 0) :
+    ReducedTensorWords.map (R := R) (G.koszulTwist 1) ∘ₗ c.reducedTensorWordsHomotopy G =
+      -(c.reducedTensorWordsHomotopy G ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist 1)) := by
+  have hhτ : G.koszulTwist 1 ∘ₗ c.homotopy + c.homotopy ∘ₗ G.koszulTwist 1 = 0 := by
+    rw [hh.koszulTwist_comp 1]
+    simp
+  have hτincl : G.koszulTwist 1 ∘ₗ c.incl = c.incl ∘ₗ H.koszulTwist 1 := by
+    simpa using hincl.koszulTwist_comp 1
+  have hτproj : H.koszulTwist 1 ∘ₗ c.proj = c.proj ∘ₗ G.koszulTwist 1 := by
+    simpa using hproj.koszulTwist_comp 1
+  have hτP : G.koszulTwist 1 ∘ₗ (c.incl ∘ₗ c.proj) = (c.incl ∘ₗ c.proj) ∘ₗ G.koszulTwist 1 := by
+    rw [← LinearMap.comp_assoc, hτincl, LinearMap.comp_assoc, hτproj, LinearMap.comp_assoc]
+  refine eq_neg_of_add_eq_zero_left (linearMap_ext R M (N := ReducedTensorWords R M) fun n x ↦ ?_)
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.zero_apply, map_of,
+    reducedTensorWordsHomotopy_of, ← map_add]
+  convert map_zero (of R M n)
+  simp only [LinearMap.sum_apply, map_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_eq_zero fun j hj ↦ ?_
+  rw [Finset.mem_range] at hj
+  rw [← LinearMap.comp_apply (PiTensorProduct.map _) (PiTensorProduct.map _),
+    ← LinearMap.comp_apply (PiTensorProduct.map _) (PiTensorProduct.map _), ← LinearMap.add_apply]
+  refine (LinearMap.congr_fun ?_ _).trans (LinearMap.zero_apply _)
+  rw [← PiTensorProduct.map_comp, ← PiTensorProduct.map_comp,
+    PiTensorProduct.map_add_map_eq_map_update _ _ ⟨j, hj⟩ fun i hi ↦ ?_]
+  · rw [← PiTensorProduct.mapMultilinear_apply]
+    refine MultilinearMap.map_coord_zero _ ⟨j, hj⟩ ?_
+    simpa using hhτ
+  · have hi' : i.val ≠ j := fun h ↦ hi (Fin.ext h)
+    split_ifs
+    · rfl
+    · exact hτP
+
+end LinearSpecialContraction
+
+/-! ### Local nilpotence on pairs of words -/
+
+namespace ReducedTensorWords
+
+variable (R M) in
+/-- On pairs of words, the operator lowering tensor length on one side by a perturbation `d` and
+then applying length-preserving maps is locally nilpotent. -/
+private theorem exists_pow_perturbationTensor_apply_eq_zero
+    {f g t d : Module.End R (ReducedTensorWords R M)}
+    (hf : ∀ n, Submodule.map f (filtration R M n) ≤ filtration R M n)
+    (hg : ∀ n, Submodule.map g (filtration R M n) ≤ filtration R M n)
+    (ht : ∀ n, Submodule.map t (filtration R M n) ≤ filtration R M n)
+    (hd : ∀ n, Submodule.map d (filtration R M (n + 1)) ≤ filtration R M n)
+    (z : ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :
+    ∃ n, (((TensorProduct.map f g + TensorProduct.map t f) ∘ₗ
+      (TensorProduct.map d LinearMap.id + TensorProduct.map t d)) ^ n) z = 0 := by
+  set K := (TensorProduct.map f g + TensorProduct.map t f) ∘ₗ
+    (TensorProduct.map d LinearMap.id + TensorProduct.map t d)
+  have mem : ∀ {e : Module.End R (ReducedTensorWords R M)} {n m : ℕ} {x},
+      (∀ n, Submodule.map e (filtration R M n) ≤ filtration R M n) → x ∈ filtration R M n →
+        n ≤ m → e x ∈ filtration R M m :=
+    fun he hx hnm ↦ filtration_monotone R M hnm (he _ ⟨_, hx, rfl⟩)
+  have key : ∀ n a b x y, x ∈ filtration R M a → y ∈ filtration R M b → a + b ≤ n →
+      (K ^ n) (x ⊗ₜ[R] y) = 0 := by
+    intro n
+    induction n with
+    | zero =>
+        intro a b x y hx _ hab
+        obtain rfl : a = 0 := by omega
+        rw [filtration_zero, Submodule.mem_bot] at hx
+        simp [hx]
+    | succ n ih =>
+        intro a b x y hx hy hab
+        rcases a with _ | a
+        · rw [filtration_zero, Submodule.mem_bot] at hx
+          simp [hx]
+        rcases b with _ | b
+        · rw [filtration_zero, Submodule.mem_bot] at hy
+          simp [hy]
+        have hdx : d x ∈ filtration R M a := hd a ⟨x, hx, rfl⟩
+        have hdy : d y ∈ filtration R M b := hd b ⟨y, hy, rfl⟩
+        rw [pow_succ, Module.End.mul_apply]
+        simp only [K, LinearMap.comp_apply, LinearMap.add_apply, TensorProduct.map_tmul,
+          LinearMap.id_apply, map_add]
+        rw [ih a (b + 1) _ _ (mem hf hdx le_rfl) (mem hg hy le_rfl) (by omega),
+          ih a (b + 1) _ _ (mem ht hdx le_rfl) (mem hf hy le_rfl) (by omega),
+          ih (a + 1) b _ _ (mem hf (mem ht hx le_rfl) le_rfl) (mem hg hdy le_rfl) (by omega),
+          ih (a + 1) b _ _ (mem ht (mem ht hx le_rfl) le_rfl) (mem hf hdy le_rfl) (by omega)]
+        simp
+  induction z using TensorProduct.inductionOn with
+  | tmul x y =>
+      obtain ⟨a, ha⟩ := exists_mem_filtration R M x
+      obtain ⟨b, hb⟩ := exists_mem_filtration R M y
+      exact ⟨a + b, key _ a b x y ha hb le_rfl⟩
+  | add z w hz hw =>
+      obtain ⟨m, hm⟩ := hz
+      obtain ⟨k, hk⟩ := hw
+      refine ⟨k + m, ?_⟩
+      rw [map_add, pow_add, Module.End.mul_apply, hm, map_zero, zero_add, pow_mul_comm,
+        Module.End.mul_apply, hk, map_zero]
+
+end ReducedTensorWords
+
+/-! ### The perturbed tensor-trick contraction -/
+
+namespace LinearSpecialContraction
+
+variable {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN)
+  {G : InternalGrading R M} {H : InternalGrading R N}
+  (hdM : LinearMap.IsHomogeneous dM G.piece G.piece 1)
+  (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
+  (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
+  (hproj : LinearMap.IsHomogeneous c.proj G.piece H.piece 0)
+  {δ : Module.End R (ReducedTensorWords R M)}
+  (hsq : (gradedCoderiv G (dM ∘ₗ letter R M) 1 + δ) ∘ₗ (gradedCoderiv G (dM ∘ₗ letter R M) 1 + δ) =
+    gradedCoderiv G (dM ∘ₗ letter R M) 1 ∘ₗ gradedCoderiv G (dM ∘ₗ letter R M) 1)
+  (hU : IsUnit (1 + δ * (c.reducedTensorWords G H hdM hh hincl hproj).homotopy))
+
+include hsq hU in
+/-- The perturbed inclusion `i' = i - H X i` is the fixed point `i' = i - H δ i'`. -/
+private theorem reducedTensorWords_perturb_incl_add :
+    ((c.reducedTensorWords G H hdM hh hincl hproj).perturb δ hsq hU).incl +
+        c.reducedTensorWordsHomotopy G ∘ₗ δ ∘ₗ
+          ((c.reducedTensorWords G H hdM hh hincl hproj).perturb δ hsq hU).incl =
+      ReducedTensorWords.map (R := R) c.incl := by
+  set T := c.reducedTensorWords G H hdM hh hincl hproj
+  have hX := T.comp_homotopy_comp_perturbationSeries δ hU
+  simp only [perturb_incl, T, reducedTensorWords_incl, reducedTensorWords_homotopy] at hX ⊢
+  have h := congrArg (fun f ↦ c.reducedTensorWordsHomotopy G ∘ₗ f ∘ₗ
+    ReducedTensorWords.map (R := R) c.incl) hX
+  simp only [LinearMap.comp_assoc, LinearMap.sub_comp, LinearMap.comp_sub] at h
+  rw [LinearMap.comp_sub, LinearMap.comp_sub, h]
+  abel
+
+include hsq hU in
+/-- **The coalgebra perturbation lemma for the tensor trick.**  Perturbing the tensor-trick
+contraction by a graded coderivation `δ` which lowers tensor length, the perturbed inclusion
+`i' = i - H X i` is again a morphism of reduced tensor coalgebras.  The unit hypothesis `hU` of
+the perturbation lemma holds automatically for such `δ`, by
+`TauCeti.ReducedTensorWords.exists_pow_comp_apply_eq_zero_of_filtration_lowering` and
+`Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`. -/
+theorem isCoalgHom_reducedTensorWords_perturb_incl (hδ : IsGradedCoderivation G 1 δ)
+    (hδfil : ∀ n, Submodule.map δ (filtration R M (n + 1)) ≤ filtration R M n) :
+    IsCoalgHom R ((c.reducedTensorWords G H hdM hh hincl hproj).perturb δ hsq hU).incl := by
+  -- Strategy: `Δ i'` and `(i' ⊗ i') Δ` both solve `F + K F = (i ⊗ i) Δ`, where
+  -- `K = (H ⊗ i p + τ ⊗ H) (δ ⊗ 1 + τ ⊗ δ)`; the operator `1 + K` is injective since `K` is
+  -- locally nilpotent.  First collect the identities satisfied by `i' = i - H δ i'`.
+  set T := c.reducedTensorWords G H hdM hh hincl hproj
+  set i := ReducedTensorWords.map (R := R) c.incl
+  set p := ReducedTensorWords.map (R := R) c.proj
+  set h := c.reducedTensorWordsHomotopy G
+  set τ := ReducedTensorWords.map (R := R) (G.koszulTwist 1)
+  set X := T.perturbationSeries δ
+  set i' := (T.perturb δ hsq hU).incl
+  have hTi : T.incl = i := c.reducedTensorWords_incl G H hdM hh hincl hproj
+  have hTp : T.proj = p := c.reducedTensorWords_proj G H hdM hh hincl hproj
+  have hTh : T.homotopy = h := c.reducedTensorWords_homotopy G H hdM hh hincl hproj
+  have hfix : i' + h ∘ₗ δ ∘ₗ i' = i :=
+    c.reducedTensorWords_perturb_incl_add hdM hh hincl hproj hsq hU
+  have hi' : i' = i - h ∘ₗ X ∘ₗ i := by
+    rw [← hTi, ← hTh]
+    exact T.perturb_incl δ hsq hU
+  have hhi' : h ∘ₗ i' = 0 := by
+    have h1 := T.homotopy_comp_incl
+    have h2 := T.homotopy_comp_homotopy_assoc (X ∘ₗ T.incl)
+    simp only [hTi, hTh] at h1 h2
+    rw [hi', LinearMap.comp_sub, h1, h2]
+    abel
+  have hττ : τ ∘ₗ τ = LinearMap.id := by
+    rw [← ReducedTensorWords.map_comp, G.koszulTwist_comp_self, ReducedTensorWords.map_id]
+  set π := ReducedTensorWords.map (R := R) (c.incl ∘ₗ c.proj)
+  have hπi' : π ∘ₗ i' = i := by
+    have h1 := T.proj_comp_incl
+    have h2 := T.proj_comp_homotopy_assoc (X ∘ₗ T.incl)
+    simp only [hTi, hTp, hTh] at h1 h2
+    rw [show π = i ∘ₗ p by simp only [π, i, p, ReducedTensorWords.map_comp], hi',
+      LinearMap.comp_sub, LinearMap.comp_assoc, h1, LinearMap.comp_assoc, h2,
+      LinearMap.comp_zero, LinearMap.comp_id]
+    abel
+  have hhτi' : h ∘ₗ τ ∘ₗ i' = 0 := by
+    have h1 := c.map_koszulTwist_comp_reducedTensorWordsHomotopy G H hh hincl hproj
+    rw [← LinearMap.comp_assoc, ← neg_neg (h ∘ₗ τ), ← h1, LinearMap.neg_comp,
+      LinearMap.comp_assoc, hhi', LinearMap.comp_zero]
+    abel
+  -- The three co-Leibniz rules: for `i`, for the homotopy `h`, and for the perturbation `δ`.
+  have hΔi : deconcatenation R M ∘ₗ i = TensorProduct.map i i ∘ₗ deconcatenation R N :=
+    isCoalgHom_iff.mp (isCoalgHom_map c.incl)
+  have hΔh : deconcatenation R M ∘ₗ h =
+      (TensorProduct.map h π + TensorProduct.map τ h) ∘ₗ deconcatenation R M :=
+    c.deconcatenation_comp_reducedTensorWordsHomotopy G
+  have hΔδ : deconcatenation R M ∘ₗ δ =
+      (TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ) ∘ₗ deconcatenation R M := by
+    rw [isGradedCoderivation_iff.mp hδ, LinearMap.lTensor_comp_rTensor, LinearMap.rTensor_def,
+      LinearMap.add_comp]
+  set K := (TensorProduct.map h π + TensorProduct.map τ h) ∘ₗ
+    (TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ)
+  have hK : Function.Injective
+      (1 + K : Module.End R (ReducedTensorWords R M ⊗[R] ReducedTensorWords R M)) := by
+    refine (Module.End.isUnit_iff _).mp
+      (Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (R := R)
+        (M := ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) K fun z ↦ ?_) |>.1
+    exact ReducedTensorWords.exists_pow_perturbationTensor_apply_eq_zero R M
+      (c.reducedTensorWordsHomotopy_filtration G)
+      (fun _ ↦ Submodule.map_le_iff_le_comap.2 fun _ hz ↦ (isCoalgHom_map _).mem_filtration hz)
+      (fun _ ↦ Submodule.map_le_iff_le_comap.2 fun _ hz ↦ (isCoalgHom_map _).mem_filtration hz)
+      hδfil z
+  have hΔh' : ∀ f : ReducedTensorWords R N →ₗ[R] ReducedTensorWords R M,
+      deconcatenation R M ∘ₗ h ∘ₗ f =
+        (TensorProduct.map h π + TensorProduct.map τ h) ∘ₗ deconcatenation R M ∘ₗ f := fun f ↦ by
+    rw [← LinearMap.comp_assoc, hΔh, LinearMap.comp_assoc]
+  have hΔδ' : ∀ f : ReducedTensorWords R N →ₗ[R] ReducedTensorWords R M,
+      deconcatenation R M ∘ₗ δ ∘ₗ f = (TensorProduct.map δ LinearMap.id +
+        TensorProduct.map τ δ) ∘ₗ deconcatenation R M ∘ₗ f := fun f ↦ by
+    rw [← LinearMap.comp_assoc, hΔδ, LinearMap.comp_assoc]
+  -- `Δ i'` solves `F + K F = (i ⊗ i) Δ`.
+  have h1 : deconcatenation R M ∘ₗ i' + K ∘ₗ deconcatenation R M ∘ₗ i' =
+      TensorProduct.map i i ∘ₗ deconcatenation R N := by
+    rw [← hΔi, ← hfix, LinearMap.comp_add, hΔh', hΔδ']
+    simp only [K, LinearMap.comp_assoc]
+  -- So does `(i' ⊗ i') Δ`.
+  have hKi' : K ∘ₗ TensorProduct.map i' i' =
+      TensorProduct.map (h ∘ₗ δ ∘ₗ i') i + TensorProduct.map i' (h ∘ₗ δ ∘ₗ i') := by
+    simp only [K, LinearMap.add_comp, LinearMap.comp_add, LinearMap.comp_assoc,
+      ← TensorProduct.map_comp, LinearMap.id_comp]
+    have hττi' : τ ∘ₗ τ ∘ₗ i' = i' := by
+      rw [← LinearMap.comp_assoc, hττ, LinearMap.id_comp]
+    rw [hπi', hhτi', hhi', hττi', TensorProduct.map_zero_left, TensorProduct.map_zero_right]
+    abel
+  have h2 : TensorProduct.map i' i' + K ∘ₗ TensorProduct.map i' i' = TensorProduct.map i i := by
+    rw [hKi', ← hfix, TensorProduct.map_add_left, TensorProduct.map_add_right,
+      TensorProduct.map_add_right]
+    abel
+  rw [isCoalgHom_iff]
+  refine LinearMap.ext fun z ↦ hK ?_
+  have e1 := LinearMap.congr_fun h1 z
+  have e2 := LinearMap.congr_fun h2 (deconcatenation R N z)
+  simp only [LinearMap.add_apply, LinearMap.comp_apply] at e1 e2
+  simp only [LinearMap.add_apply, Module.End.one_apply, LinearMap.comp_apply, e1, e2]
+
+include hsq hU in
+/-- **The perturbed tensor-trick differential is a coderivation.**  Perturbing the tensor-trick
+contraction by an odd graded coderivation `δ` which lowers tensor length, the perturbed
+differential `D' = D + p X i` of `Tᶜ(N)` is again a graded coderivation for the Koszul signs of
+the grading of `N`. -/
+theorem isGradedCoderivation_reducedTensorWords_perturbedDifferential
+    (hδ : IsGradedCoderivation G 1 δ)
+    (hδdeg : LinearMap.IsHomogeneous δ (gradedPiece G) (gradedPiece G) 1)
+    (hδfil : ∀ n, Submodule.map δ (filtration R M (n + 1)) ≤ filtration R M n) :
+    IsGradedCoderivation H 1
+      ((c.reducedTensorWords G H hdM hh hincl hproj).perturbedDifferential δ) := by
+  -- Strategy: `i' D' = (D + δ) i'`, where `i'` is a coalgebra morphism commuting with the Koszul
+  -- twists and `D + δ` is a graded coderivation.  Hence `(i' ⊗ i')` intertwines the two sides of
+  -- the co-Leibniz rule for `D'`, and `i' ⊗ i'` has the left inverse `p' ⊗ p'`.
+  set T := c.reducedTensorWords G H hdM hh hincl hproj
+  set i := ReducedTensorWords.map (R := R) c.incl
+  set h := c.reducedTensorWordsHomotopy G
+  set τ := ReducedTensorWords.map (R := R) (G.koszulTwist 1)
+  set τN := ReducedTensorWords.map (R := R) (H.koszulTwist 1)
+  set i' := (T.perturb δ hsq hU).incl
+  set D' := T.perturbedDifferential δ
+  set b := gradedCoderiv G (dM ∘ₗ letter R M) 1 + δ
+  have hcoalg : deconcatenation R M ∘ₗ i' = TensorProduct.map i' i' ∘ₗ deconcatenation R N :=
+    isCoalgHom_iff.mp (c.isCoalgHom_reducedTensorWords_perturb_incl hdM hh hincl hproj hsq hU hδ
+      hδfil)
+  have hfix : i' + h ∘ₗ δ ∘ₗ i' = i :=
+    c.reducedTensorWords_perturb_incl_add hdM hh hincl hproj hsq hU
+  have hτh : τ ∘ₗ h = -(h ∘ₗ τ) :=
+    c.map_koszulTwist_comp_reducedTensorWordsHomotopy G H hh hincl hproj
+  have hτδ : τ ∘ₗ δ = -(δ ∘ₗ τ) := by
+    rw [hδdeg.map_koszulTwist_comp 1, mul_one, Int.negOnePow_one, Units.val_neg, Units.val_one,
+      Int.cast_neg, Int.cast_one]
+    exact neg_one_smul R (δ ∘ₗ τ)
+  have hτi : τ ∘ₗ i = i ∘ₗ τN := by
+    have hτincl : G.koszulTwist 1 ∘ₗ c.incl = c.incl ∘ₗ H.koszulTwist 1 := by
+      simpa using hincl.koszulTwist_comp 1
+    simp only [τ, i, τN, ← ReducedTensorWords.map_comp, hτincl]
+  -- `i'` commutes with the twists, since both `τ i'` and `i' τ` solve `F + h δ F = i τ`.
+  have hinj : Function.Injective (1 + h * δ : Module.End R (ReducedTensorWords R M)) := by
+    refine ((Module.End.isUnit_iff _).mp
+      (Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero _ fun z ↦ ?_)).1
+    refine ReducedTensorWords.exists_pow_apply_eq_zero_of_filtration_lowering R M _
+      (fun n ↦ ?_) z
+    rw [Module.End.mul_eq_comp, Submodule.map_comp]
+    exact (Submodule.map_mono (hδfil n)).trans (c.reducedTensorWordsHomotopy_filtration G n)
+  have hτi' : τ ∘ₗ i' = i' ∘ₗ τN := by
+    refine LinearMap.ext fun z ↦ hinj ?_
+    have e1 := LinearMap.congr_fun hfix z
+    have e2 := LinearMap.congr_fun hfix (τN z)
+    have e3 := LinearMap.congr_fun hτi z
+    have e4 := LinearMap.congr_fun hτh (δ (i' z))
+    have e5 := LinearMap.congr_fun hτδ (i' z)
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.neg_apply] at e1 e2 e3 e4 e5
+    simp only [LinearMap.add_apply, Module.End.one_apply, Module.End.mul_apply,
+      LinearMap.comp_apply, e2]
+    rw [← e3, ← e1, map_add, e4, e5, map_neg, neg_neg]
+  -- `D'` is conjugate to the coderivation `D + δ` by the coalgebra morphism `i'`.
+  have hb : IsGradedCoderivation G 1 b :=
+    (mem_gradedCoderivations G).1 ((gradedCoderivations G 1).add_mem
+      ((mem_gradedCoderivations G).2 (isGradedCoderivation_gradedCoderiv G _ 1))
+      ((mem_gradedCoderivations G).2 hδ))
+  have hbi' : b ∘ₗ i' = i' ∘ₗ D' := (T.perturb δ hsq hU).dM_comp_incl
+  have hΔb : deconcatenation R M ∘ₗ b =
+      (TensorProduct.map b LinearMap.id + TensorProduct.map τ b) ∘ₗ deconcatenation R M := by
+    rw [isGradedCoderivation_iff.mp hb, LinearMap.lTensor_comp_rTensor, LinearMap.rTensor_def,
+      LinearMap.add_comp]
+  rw [isGradedCoderivation_iff, LinearMap.lTensor_comp_rTensor, LinearMap.rTensor_def,
+    ← LinearMap.add_comp]
+  have key : TensorProduct.map i' i' ∘ₗ deconcatenation R N ∘ₗ D' =
+      TensorProduct.map i' i' ∘ₗ (TensorProduct.map D' LinearMap.id + TensorProduct.map τN D') ∘ₗ
+        deconcatenation R N := by
+    rw [← LinearMap.comp_assoc, ← hcoalg, LinearMap.comp_assoc, ← hbi', ← LinearMap.comp_assoc,
+      hΔb, LinearMap.comp_assoc, hcoalg]
+    simp only [← LinearMap.comp_assoc, LinearMap.add_comp, LinearMap.comp_add,
+      ← TensorProduct.map_comp, hbi', hτi', LinearMap.id_comp, LinearMap.comp_id]
+  have hleft : TensorProduct.map (T.perturb δ hsq hU).proj (T.perturb δ hsq hU).proj ∘ₗ
+      TensorProduct.map i' i' = LinearMap.id := by
+    rw [← TensorProduct.map_comp, (T.perturb δ hsq hU).proj_comp_incl, TensorProduct.map_id]
+  simpa only [← LinearMap.comp_assoc, hleft, LinearMap.id_comp] using
+    congrArg (TensorProduct.map (T.perturb δ hsq hU).proj (T.perturb δ hsq hU).proj ∘ₗ ·) key
+
+end LinearSpecialContraction
+
+end TauCeti
