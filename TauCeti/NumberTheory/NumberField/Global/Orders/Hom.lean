@@ -76,9 +76,22 @@ theorem map_add (f : Hom O O') (x y : K) : f (x + y) = f x + f y :=
 theorem map_mul (f : Hom O O') (x y : K) : f (x * y) = f x * f y :=
   f.fieldHom.map_mul x y
 
+@[simp]
+theorem map_inv (f : Hom O O') (x : K) : f x⁻¹ = (f x)⁻¹ :=
+  map_inv₀ f.fieldHom x
+
+@[simp]
+theorem map_div (f : Hom O O') (x y : K) : f (x / y) = f x / f y :=
+  map_div₀ f.fieldHom x y
+
 /-- Restrict an order morphism to a ring homomorphism of its two orders. -/
 def toOrderHom (f : Hom O O') : O.toSubalgebra →+* O'.toSubalgebra :=
   f.fieldHom.restrict O.toSubalgebra O'.toSubalgebra (fun _ hx => f.map_mem hx)
+
+@[simp]
+theorem toOrderHom_apply (f : Hom O O') (x : O.toSubalgebra) :
+    ((f.toOrderHom x : O'.toSubalgebra) : L) = f (x : K) :=
+  by simp [toOrderHom]
 
 /-- Two order morphisms agreeing on the ambient field are equal. -/
 @[ext]
