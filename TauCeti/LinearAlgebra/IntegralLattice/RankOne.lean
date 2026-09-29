@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
 
+import Mathlib.Tactic.LinearCombination
+
 /-!
 # The rank-one lattice `⟨2m⟩` and its discriminant form
 

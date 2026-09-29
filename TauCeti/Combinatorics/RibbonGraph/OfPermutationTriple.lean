@@ -116,9 +116,8 @@ on the nose, the product-one convention of a triple being that of a ribbon graph
     rotB_ribbonGraph, rotW_ribbonGraph]
   rfl
 
--- Not `@[simp]`: `BipartiteRibbonGraph.isConnected_iff_card_connectedComponent_eq_one` already
--- rewrites the left-hand side, so this statement is not in simp normal form.
 /-- The graph of a triple is connected exactly when the triple is. -/
+@[simp]
 theorem isConnected_ribbonGraph : t.ribbonGraph.IsConnected ↔ t.IsConnected := by
   rw [BipartiteRibbonGraph.isConnected_def, isConnected_iff, rotationGroup_ribbonGraph]
   exact and_congr (Fin.pos_iff_nonempty.symm.trans Nat.pos_iff_ne_zero) Iff.rfl
