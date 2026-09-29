@@ -100,6 +100,11 @@ noncomputable def spanOrbitEquiv {α : 𝒪[L]}
       Representation.ofMulAction_single, smul_eq_mul, LinearEquiv.coe_coe,
       Representation.subrepresentation_apply, LinearMap.coe_restrict_apply,
       Representation.ofDistribMulAction_apply_apply]
+    -- `orbit G α` is by definition `Set.range (· • α)`, so `linearCombinationEquiv` is used here
+    -- at the type `span 𝒪[K] (orbit G α)` only up to this unfolding, and `simp` cannot apply
+    -- `LinearIndependent.linearCombinationEquiv_apply_coe` across it. Its value on a group-ring
+    -- element is (by `MonoidAlgebra.coeffLinearEquiv_apply` and that lemma, both `rfl`) the linear
+    -- combination of the conjugates of `α` with the coefficients of the element; state it so.
     change Finsupp.linearCombination 𝒪[K] (fun σ : L ≃ₐ[K] L ↦ σ • α) (.single (τ * σ) 1) =
       τ • Finsupp.linearCombination 𝒪[K] (fun σ : L ≃ₐ[K] L ↦ σ • α) (.single σ 1)
     simp [mul_smul]
@@ -110,6 +115,8 @@ omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 theorem coe_spanOrbitEquiv_single {α : 𝒪[L]}
     (h : LinearIndependent K fun σ : L ≃ₐ[K] L ↦ σ (α : L)) (σ : L ≃ₐ[K] L) (r : 𝒪[K]) :
     (spanOrbitEquiv h (MonoidAlgebra.single σ r) : 𝒪[L]) = r • σ • α := by
+  -- As in `spanOrbitEquiv`: the underlying map is, up to unfolding `orbit` to `Set.range`, the
+  -- composite of `MonoidAlgebra.coeffLinearEquiv` and `Finsupp.linearCombination`.
   change Finsupp.linearCombination 𝒪[K] (fun σ : L ≃ₐ[K] L ↦ σ • α) (.single σ r) = _
   simp
 
