@@ -342,30 +342,40 @@ theorem gradedExtEuler_unit :
   simp [eq_comm (a := (0 : ℤ))]
 
 /-- **`χ_q(M, M{1}) = q`**, that is, `q · χ_q(M, M)`: the q-Euler form is q-linear in its second
-argument. -/
-theorem gradedExtEuler_unit_shiftTarget :
-    gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k).shiftTarget = T 1 := by
-  rw [gradedExtEuler_shiftTarget (isGradedEulerAdmissible_unit.{w} k), gradedExtEuler_unit,
-    mul_one]
+argument. This holds for any admissibility witness, e.g.
+`(isGradedEulerAdmissible_unit k).shiftTarget`; the shifted target is written as
+`shiftFunctor _ 1`, the `simp`-normal form of `(shift k).functor`. -/
+@[simp]
+theorem gradedExtEuler_unit_shiftTarget (h : IsGradedEulerAdmissible.{w} k (shift k) (unit k)
+    ((shiftFunctor (GradedVectorSpace k) (1 : ℤ)).obj (unit k))) :
+    gradedExtEuler k (shift k) h = T 1 := by
+  -- `h` and `(isGradedEulerAdmissible_unit k).shiftTarget` differ only in how the shift is spelled.
+  exact (gradedExtEuler_shiftTarget (isGradedEulerAdmissible_unit.{w} k)).trans <| by
+    rw [gradedExtEuler_unit, mul_one]
 
 /-- **`χ_q(M{1}, M) = q⁻¹`**, that is, `q⁻¹ · χ_q(M, M)`: the q-Euler form is q-antilinear in its
-first argument. -/
-theorem gradedExtEuler_unit_shiftSource :
-    gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k).shiftSource = T (-1) := by
-  rw [gradedExtEuler_shiftSource (isGradedEulerAdmissible_unit.{w} k), gradedExtEuler_unit,
-    mul_one]
+first argument. This holds for any admissibility witness, e.g.
+`(isGradedEulerAdmissible_unit k).shiftSource`; the shifted source is written as
+`shiftFunctor _ 1`, the `simp`-normal form of `(shift k).functor`. -/
+@[simp]
+theorem gradedExtEuler_unit_shiftSource (h : IsGradedEulerAdmissible.{w} k (shift k)
+    ((shiftFunctor (GradedVectorSpace k) (1 : ℤ)).obj (unit k)) (unit k)) :
+    gradedExtEuler k (shift k) h = T (-1) := by
+  -- `h` and `(isGradedEulerAdmissible_unit k).shiftSource` differ only in how the shift is spelled.
+  exact (gradedExtEuler_shiftSource (isGradedEulerAdmissible_unit.{w} k)).trans <| by
+    rw [gradedExtEuler_unit, mul_one]
 
 /-- At `q = ε` for a unit `ε : ℤˣ`, the value `χ_q(M, M{1})` becomes `ε`. -/
 theorem laurentEval_gradedExtEuler_unit_shiftTarget (ε : ℤˣ) :
     laurentEval ε (gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k).shiftTarget) =
       ε := by
-  rw [gradedExtEuler_unit_shiftTarget, laurentEval_T_one]
+  simp
 
 /-- At `q = ε` for a unit `ε : ℤˣ`, the value `χ_q(M{1}, M)` becomes `ε⁻¹`. -/
 theorem laurentEval_gradedExtEuler_unit_shiftSource (ε : ℤˣ) :
     laurentEval ε (gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k).shiftSource) =
       ((ε⁻¹ : ℤˣ) : ℤ) := by
-  rw [gradedExtEuler_unit_shiftSource, laurentEval_T, zpow_neg_one]
+  simp
 
 /-- **At `q = -1` a single shift changes the sign**: `χ_q(M, M{1})` specializes to the negative of
 the specialization of `χ_q(M, M)`. -/
