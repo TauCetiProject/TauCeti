@@ -33,7 +33,6 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 universe u v w
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
-variable {A : Type w} [Ring A] [Algebra R A]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
@@ -41,7 +40,8 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- In exponential characteristic `p ≠ 1`, if an algebra map kills a power of the central
 augmentation ideal, then it sends every adjoint-nilpotent Lie element to a nilpotent element. -/
-theorem isNilpotent_map_ι_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp : p ≠ 1)
+theorem isNilpotent_map_ι_of_isNilpotent_ad {A : Type w} [Semiring A] [Algebra R A]
+    (p : ℕ) [ExpChar R p] (hp : p ≠ 1)
     (q : U →ₐ[R] A) (n : ℕ)
     (hq : ∀ z ∈ HopfIdeal.centralAugmentationIdeal R U ^ n, q z = 0)
     {x : L} (hx : IsNilpotent (LieAlgebra.ad R L x)) :
@@ -51,6 +51,8 @@ theorem isNilpotent_map_ι_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp : p ≠
   refine ⟨p ^ e * n, ?_⟩
   rw [← map_pow]
   exact hq _ (he n)
+
+variable {A : Type w} [Ring A] [Algebra R A]
 
 /-- In exponential characteristic `p ≠ 1`, every adjoint-nilpotent Lie element has nilpotent
 image in the quotient by the `n`-th power of the central augmentation ideal. -/
