@@ -22,7 +22,7 @@ ideal itself to be the whole Jacobson radical.
 
 ## Main result
 
-* `TauCeti.Ideal.nonempty_linearEquiv_of_quotient_smul_top`: two finitely generated projective
+* `Ideal.nonempty_linearEquiv_of_quotient_smul_top`: two finitely generated projective
   modules with isomorphic quotients by an ideal in the Jacobson radical are isomorphic.
 
 ## References
@@ -33,7 +33,7 @@ semiperfect rings and their uniqueness.
 
 public section
 
-namespace TauCeti
+open TauCeti
 
 namespace Ideal
 
@@ -70,5 +70,3 @@ theorem nonempty_linearEquiv_of_quotient_smul_top (hI : I ≤ Ring.jacobson R)
   exact ⟨(hMcover.exists_linearEquiv hNcover).choose⟩
 
 end Ideal
-
-end TauCeti
