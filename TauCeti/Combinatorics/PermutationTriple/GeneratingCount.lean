@@ -41,17 +41,6 @@ noncomputable def _root_.Subgroup.genCountType (G : Subgroup (Perm α))
         (generatingProductOneTriples C0 C1 Cinf ⊤).card
 
 open scoped Classical in
-/-- The defining class sum for the generating count at three full cycle types. -/
-theorem _root_.Subgroup.genCountType_def (G : Subgroup (Perm α))
-    (lam0 lam1 laminf : Multiset ℕ) :
-    G.genCountType lam0 lam1 laminf =
-      ∑ C0 ∈ G.classesOfFullCycleType lam0,
-        ∑ C1 ∈ G.classesOfFullCycleType lam1,
-          ∑ Cinf ∈ G.classesOfFullCycleType laminf,
-            (generatingProductOneTriples C0 C1 Cinf ⊤).card := by
-  simp only [Subgroup.genCountType]
-
-open scoped Classical in
 /-- The product-one triples of `G` that generate `G` and have the prescribed cycle types. -/
 noncomputable def _root_.Subgroup.generatingTriplesOfFullCycleType
     (G : Subgroup (Perm α)) (lam0 lam1 laminf : Multiset ℕ) :
