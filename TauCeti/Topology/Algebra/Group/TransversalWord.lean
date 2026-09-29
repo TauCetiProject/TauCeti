@@ -62,11 +62,8 @@ theorem continuous_lWord_inv_smul (hU : IsOpen (U : Set G)) (u : G ⧸ U) :
   rw [h]
   have hfst : Continuous fun q : G × G => (q.1⁻¹ • u : G ⧸ U) :=
     (QuotientGroup.continuous_inv_smul_const U u).comp continuous_fst
-  have haction : Continuous (fun p : G × (G ⧸ U) => p.1⁻¹ • p.2) :=
-    continuous_prod_of_discrete_right.mpr fun v => by
-      simpa using (QuotientGroup.continuous_inv_smul_const U v)
   have hsnd : Continuous fun q : G × G => (q.2⁻¹ • q.1⁻¹ • u : G ⧸ U) :=
-    haction.comp (continuous_snd.prodMk hfst)
+    (QuotientGroup.continuous_inv_smul U).comp (continuous_snd.prodMk hfst)
   exact (continuous_lWord_mul U t).comp (continuous_snd.prodMk (hfst.prodMk hsnd))
 
 end TauCeti

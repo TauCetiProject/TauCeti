@@ -56,11 +56,15 @@ theorem continuous_smul_const (U : Subgroup G) (u : G ⧸ U) :
 /-- Inverse translation of a fixed coset is continuous when the coset quotient is discrete. -/
 theorem continuous_inv_smul_const (U : Subgroup G) [DiscreteTopology (G ⧸ U)]
     (u : G ⧸ U) : Continuous (fun γ : G => γ⁻¹ • u) := by
-  convert continuous_equiv_symm_apply
+  simpa only [MulAction.toPerm_symm_apply] using continuous_equiv_symm_apply
     (f := fun γ : G => (MulAction.toPerm γ : G ⧸ U ≃ G ⧸ U))
-    (fun v => continuous_smul_const U v) u using 1
-  ext γ
-  rfl
+    (fun v => continuous_smul_const U v) u
+
+/-- Inverse translation on a discrete coset quotient is jointly continuous. -/
+theorem continuous_inv_smul (U : Subgroup G) [DiscreteTopology (G ⧸ U)] :
+    Continuous (fun p : G × (G ⧸ U) => p.1⁻¹ • p.2) :=
+  continuous_prod_of_discrete_right.mpr fun u => by
+    simpa using continuous_inv_smul_const U u
 
 section Discrete
 

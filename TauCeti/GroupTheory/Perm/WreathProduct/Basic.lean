@@ -71,13 +71,18 @@ namespace WreathProduct
 
 variable {D ι}
 
+/-- Evaluation of the coordinate action used in the semidirect product. Mathlib's
+`arrowAction` instance is local, so the formula is definitionally equal. -/
+theorem mulAutArrow_apply_apply' (σ : Equiv.Perm ι) (F : ι → D) (i : ι) :
+    mulAutArrow σ F i = F (σ⁻¹ i) := rfl
+
 /-- Multiplication in a permutation wreath product, written in coordinates. -/
 @[simp]
 theorem mul_left (a b : WreathProduct D ι) (i : ι) :
     (a * b).left i = a.left i * b.left (a.right⁻¹ i) := by
   have h := congrFun (SemidirectProduct.mul_left a b) i
   rw [Pi.mul_apply] at h
-  rw [mulAutArrow_apply_apply] at h
+  rw [mulAutArrow_apply_apply'] at h
   exact h
 
 /-- Inversion in a permutation wreath product, written in coordinates. -/
@@ -87,9 +92,7 @@ theorem inv_left (a : WreathProduct D ι) (i : ι) :
   have h := congrFun (SemidirectProduct.inv_left a) i
   have haction : (mulAutArrow a.right⁻¹) a.left⁻¹ i =
       (a.left (a.right i))⁻¹ := by
-    rw [mulAutArrow_apply_apply]
-    simp [Pi.inv_apply]
-    rfl
+    simp only [mulAutArrow_apply_apply', inv_inv, Pi.inv_apply]
   exact h.trans haction
 
 /-- The natural cardinality of a full permutation wreath product with finite index type. -/
@@ -110,7 +113,7 @@ theorem mul_left (Q : Subgroup (Equiv.Perm ι)) (a b : PermSubgroupWreathProduct
     (a * b).left i = a.left i * b.left ((a.right : Equiv.Perm ι)⁻¹ i) := by
   have h := congrFun (SemidirectProduct.mul_left a b) i
   rw [Pi.mul_apply] at h
-  rw [MonoidHom.comp_apply, mulAutArrow_apply_apply] at h
+  rw [MonoidHom.comp_apply, WreathProduct.mulAutArrow_apply_apply'] at h
   exact h
 
 /-- The natural cardinality of a permutation-subgroup wreath product with finite index type. -/
@@ -313,11 +316,7 @@ instance : MulAction (WreathProduct D ι) (ι × Λ) where
     ext
     · simp [Equiv.Perm.mul_apply]
     · simp only [SemidirectProduct.mul_right, Equiv.Perm.coe_mul, Function.comp_apply,
-        SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_apply]
-      -- `simp only` leaves the coordinate action as `(w.right • z.left) _`; this `change`
-      -- unfolds it to evaluation of `z.left` at the inverse-permuted coordinate.
-      change (w.left (w.right (z.right x.1)) *
-        z.left (w.right⁻¹ (w.right (z.right x.1)))) • x.2 = _
+        SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_apply']
       simp [mul_smul]
 
 /-- Evaluation formula for the imprimitive wreath-product action on `ι × Λ`. -/
