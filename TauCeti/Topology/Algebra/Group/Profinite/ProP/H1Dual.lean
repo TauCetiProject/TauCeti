@@ -43,10 +43,10 @@ action of `G` at all. The identification of the two models of degree one is the 
 not restate; on the canonical carrier it reads as `TauCeti.cohomFpLinearEquivContinuousZModDual`,
 the continuous `𝔽_p`-dual of `G`, and `TauCeti.cohomFpEquivFrattiniQuotientDual` here is that
 equivalence followed by the precomposition along the projection to the Frattini quotient. The
-dimension and finiteness of that carrier are `TauCeti.IsProP.rank_cohomFp_one`,
-`TauCeti.IsProP.finrank_cohomFp_one` and `TauCeti.IsProP.finite_cohomFp_one_iff` of
-`TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp`; this file does not restate them, and adds
-on that carrier only the count of elements.
+dimension, finiteness and element count of that carrier are `TauCeti.IsProP.rank_cohomFp_one`,
+`TauCeti.IsProP.finrank_cohomFp_one`, `TauCeti.IsProP.finite_cohomFp_one_iff` and
+`TauCeti.IsProP.natCard_cohomFp` of
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp`; this file does not restate them.
 
 For a profinite pro-`p` group, Burnside's basis theorem in cardinal form
 (`TauCeti.IsProP.topologicalGeneratorRank_eq_rank_continuousZModDual`) transfers from the
@@ -54,9 +54,12 @@ continuous dual to `H¹`, and this is the content of the transfer: the dimension
 over `𝔽_p` is the topological generator rank of `G`, with no finiteness hypothesis. In particular
 `H¹(G, 𝔽_p)` is finite-dimensional exactly when the pro-`p` group `G` is topologically finitely
 generated, which is the finite-dimensionality the two-term Euler formula for an open subgroup
-`U ≤ G` needs for the four spaces `H⁰` and `H¹` of `U` and `G`, and a topologically finitely
-generated `G` has `p ^ d(G)` classes in `H¹(G, 𝔽_p)`, where `d` is the topological generator
-rank. The same count on the canonical carrier is `TauCeti.IsProP.natCard_cohomFp`.
+`U ≤ G` needs for the four spaces `H⁰` and `H¹` of `U` and `G`. The count of elements,
+`p ^ d(G)` for a topologically finitely generated `G` and generator rank `d`, is the existing
+`TauCeti.IsProP.natCard_H1_of_natCard_eq` of
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.Basic`, which this file does
+not restate; the same count on the canonical carrier is `TauCeti.IsProP.natCard_cohomFp` of
+`TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp`.
 
 ## Main definitions
 
@@ -80,10 +83,6 @@ rank. The same count on the canonical carrier is `TauCeti.IsProP.natCard_cohomFp
   same identity, for a topologically finitely generated pro-`p` group.
 * `TauCeti.IsProP.finite_H1_iff`: `H¹(G, 𝔽_p)` is finite-dimensional over `𝔽_p` exactly when
   `G` is topologically finitely generated.
-* `TauCeti.IsProP.natCard_H1`: in that case `H¹(G, 𝔽_p)` has `p ^ d(G)` elements.
-* `TauCeti.IsProP.natCard_cohomFp`: the same count on the carrier `TauCeti.cohomFp p G 1` of the
-  canonical continuous cohomology, whose coefficients carry the trivial action of `G` by
-  themselves.
 
 ## References
 
@@ -214,42 +213,6 @@ theorem IsProP.finite_H1_iff (hG : IsProP p G) (htriv : ∀ (g : G) (m : ZMod p)
   rw [Module.finite_iff_finite (R := ZMod p), (h1EquivContinuousZModDual htriv).toEquiv.finite_iff,
     ← Module.finite_iff_finite (R := ZMod p), hG.finite_continuousZModDual_iff]
 
-/-- **`H¹(G, 𝔽_p)` counts the generators of `G`.** For a topologically finitely generated
-profinite pro-`p` group, `H¹(G, 𝔽_p)` has `p ^ d(G)` elements, where `d` is the topological
-generator rank. -/
-theorem IsProP.natCard_H1 (hG : IsProP p G) (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
-    (hfg : IsTopologicallyFinitelyGenerated G) :
-    Nat.card (H1 G (ZMod p)) = p ^ topologicalGeneratorRankNat G hfg := by
-  -- `hfin` is the finite-dimensionality of the continuous dual, which
-  -- `Module.natCard_eq_pow_finrank` needs to count a finite vector space.
-  have hfin := finite_continuousZModDual (p := p) (G := G) hfg
-  rw [Nat.card_congr (h1EquivContinuousZModDual htriv).toEquiv,
-    Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod,
-    hG.finrank_continuousZModDual_eq_topologicalGeneratorRankNat hfg]
-
 end Burnside
-
-section BurnsideCohomFp
-
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G]
-
-/-- **`TauCeti.cohomFp p G 1` counts the generators of `G`.** For a topologically finitely
-generated profinite pro-`p` group, the degree-one continuous cohomology with trivial `𝔽_p`
-coefficients has `p ^ d(G)` elements, where `d` is the topological generator rank. The dimension
-and finiteness of the same carrier are `TauCeti.IsProP.rank_cohomFp_one`,
-`TauCeti.IsProP.finrank_cohomFp_one` and `TauCeti.IsProP.finite_cohomFp_one_iff` of
-`TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp`, which are not restated here. -/
-theorem IsProP.natCard_cohomFp (hG : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G) :
-    Nat.card (cohomFp p G 1) = p ^ topologicalGeneratorRankNat G hfg := by
-  -- `hfin` is the finite-dimensionality of the continuous dual, which
-  -- `Module.natCard_eq_pow_finrank` needs to count a finite vector space.
-  have hfin : Module.Finite (ZMod p) (continuousZModDual p G) :=
-    hG.finite_continuousZModDual_iff.mpr hfg
-  rw [Nat.card_congr (cohomFpLinearEquivContinuousZModDual p G).toEquiv,
-    Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod,
-    hG.finrank_continuousZModDual_eq_topologicalGeneratorRankNat hfg]
-
-end BurnsideCohomFp
 
 end TauCeti
