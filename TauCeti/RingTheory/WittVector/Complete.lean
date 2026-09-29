@@ -19,23 +19,15 @@ nonarchimedean field `F` of characteristic `p` with pseudouniformiser `ϖ`, the 
 `A_inf = W(𝒪_F)` for its `(p, [ϖ])`-adic topology, the topology for which `A_inf` is a Huber ring
 with pair of definition `(A_inf, (p, [ϖ]))`.
 
-The proof compares the `(p, [ϖ])`-adic filtration with a coordinatewise one.
-
-* `WittVector.pow_dvd_coeff_of_mem_span_p_teichmuller_pow`: the first `m` coordinates
-  of an element of `(p, [ϖ]) ^ (m + n)` are divisible by `ϖ ^ n`.
-* `WittVector.mem_span_p_teichmuller_pow_of_pow_dvd_coeff`: conversely, if `R` is
-  perfect, a Witt vector whose `i`-th coordinate is divisible by `ϖ ^ ((n - i) * p ^ i)` for
-  every `i < n` lies in `(p, [ϖ]) ^ n`. This uses the Teichmüller expansion
-  `x = ∑ [x_i ^ (1 / p ^ i)] p ^ i`
-  (`WittVector.dvd_sub_sum_teichmuller_iterateFrobeniusEquiv_coeff`).
-
-So the two filtrations have the same Cauchy sequences and the same limits, and the limit of a
-`(p, [ϖ])`-adic Cauchy sequence is computed coordinatewise from the `ϖ`-adic limits in `R`.
-
 ## Main results
 
 * `WittVector.forall_coeff_sub_mem_iff`: the first `n` coordinates of `x - y` lie in an
   ideal `J` if and only if the first `n` coordinates of `x` and `y` are congruent modulo `J`.
+* `WittVector.pow_dvd_coeff_of_mem_span_p_teichmuller_pow`: the first `m` coordinates
+  of an element of `(p, [ϖ]) ^ (m + n)` are divisible by `ϖ ^ n`.
+* `WittVector.mem_span_p_teichmuller_pow_of_pow_dvd_coeff`: conversely, if `R` is
+  perfect, a Witt vector whose `i`-th coordinate is divisible by `ϖ ^ ((n - i) * p ^ i)` for
+  every `i < n` lies in `(p, [ϖ]) ^ n`.
 * `WittVector.isHausdorff_span_p_teichmuller`: if `R` has characteristic `p` and is
   `ϖ`-adically Hausdorff, then `𝕎 R` is `(p, [ϖ])`-adically Hausdorff.
 * `WittVector.isPrecomplete_span_p_teichmuller`: if `R` is perfect of characteristic `p`
@@ -88,9 +80,8 @@ theorem pow_dvd_coeff_of_mem_span_p_teichmuller_pow {ϖ : R} {x : 𝕎 R} {m n :
   -- Every coordinate of `v * [ϖ] ^ n = v * [ϖ ^ n]` is divisible by `ϖ ^ n`: reduce modulo
   -- `ϖ ^ n`, where `[ϖ ^ n]` becomes `[0] = 0`.
   have hv : (v * teichmuller p ϖ ^ n).coeff i ∈ span {ϖ ^ n} := by
-    rw [← Ideal.Quotient.eq_zero_iff_mem, ← map_coeff, ← map_pow, map_mul, map_teichmuller,
-      Ideal.Quotient.eq_zero_iff_mem.2 (mem_span_singleton_self _), teichmuller_zero, mul_zero,
-      zero_coeff]
+    rw [← map_pow, ← Ideal.Quotient.eq_zero_iff_mem, ← map_coeff]
+    simp [map_teichmuller, -map_pow, Ideal.Quotient.mk_singleton_self]
   generalize v * teichmuller p ϖ ^ n = w at hv ⊢
   -- The first `m` coordinates of `u * p ^ m` vanish.
   have hu := (forall_coeff_sub_mem_iff (u * (p : 𝕎 R) ^ m + w) w (span {ϖ ^ n}) m).1
@@ -126,22 +117,27 @@ theorem mem_span_p_teichmuller_pow_of_pow_dvd_coeff {ϖ : R} {x : 𝕎 R} {n : �
   cases n with
   | zero => simp
   | succ n =>
-    -- Write `x` as its truncated Teichmüller expansion plus a multiple of `p ^ (n + 1)`.
+    -- Write `x` as its truncated Teichmüller expansion `∑ [x_i ^ (1 / p ^ i)] p ^ i` plus a
+    -- multiple of `p ^ (n + 1)`.
     obtain ⟨c, hc⟩ := dvd_sub_sum_teichmuller_iterateFrobeniusEquiv_coeff x n
     rw [← sub_add_cancel x, hc]
     refine add_mem (mul_mem_right _ _ (pow_mem_pow hpI _)) (sum_mem fun i hi ↦ ?_)
     have hi : i < n + 1 := Nat.lt_succ_of_le (Finset.mem_Iic.1 hi)
     -- The `i`-th term is `[ϖ] ^ (n + 1 - i) * [s] * p ^ i`, which lies in `I ^ (n + 1)`.
     obtain ⟨r, hr⟩ := hx i hi
-    rw [hr, pow_mul, ← iterateFrobeniusEquiv_symm, map_mul, ← iterateFrobeniusEquiv_def,
-      RingEquiv.symm_apply_apply, map_mul, map_pow]
+    -- Taking `p ^ i`-th roots of `x_i = ϖ ^ ((n + 1 - i) * p ^ i) * r` gives
+    -- `x_i ^ (1 / p ^ i) = ϖ ^ (n + 1 - i) * r ^ (1 / p ^ i)`.
+    have hroot : ((_root_.frobeniusEquiv R p).symm ^ i) (x.coeff i) =
+        ϖ ^ (n + 1 - i) * ((_root_.frobeniusEquiv R p).symm ^ i) r := by
+      rw [hr, ← iterateFrobeniusEquiv_symm, pow_mul, ← iterateFrobeniusEquiv_def, map_mul,
+        RingEquiv.symm_apply_apply]
+    rw [hroot, map_mul, map_pow]
     have hle : I ^ (n + 1 - i) * I ^ i ≤ I ^ (n + 1) := by
       rw [← pow_add, Nat.sub_add_cancel hi.le]
     exact hle (mul_mem_mul (mul_mem_right _ _ (pow_mem_pow hϖI _)) (pow_mem_pow hpI _))
 
 /-- If `R` is perfect of characteristic `p` and `ϖ`-adically precomplete, then `𝕎 R` is
-precomplete for the `(p, [ϖ])`-adic filtration. The limit of a Cauchy sequence is computed
-coordinatewise. -/
+precomplete for the `(p, [ϖ])`-adic filtration. -/
 instance isPrecomplete_span_p_teichmuller (ϖ : R) [IsPrecomplete (span {ϖ}) R] :
     IsPrecomplete (span {(p : 𝕎 R), teichmuller p ϖ}) (𝕎 R) where
   prec' f hf := by
@@ -159,6 +155,7 @@ instance isPrecomplete_span_p_teichmuller (ϖ : R) [IsPrecomplete (span {ϖ}) R]
         exact (pow_dvd_pow ϖ (by omega)).trans (key (by omega) (by omega))
     simp only [smul_eq_mul, mul_top, SModEq.sub_mem, span_singleton_pow,
       mem_span_singleton] at hL
+    -- The limit is computed coordinatewise from the `ϖ`-adic limits `L i` in `R`.
     refine ⟨mk p L, fun n ↦ ?_⟩
     -- Compare `f n` with `f N` for `N` large, and `f N` with the limit coordinatewise.
     set M := n * p ^ n
