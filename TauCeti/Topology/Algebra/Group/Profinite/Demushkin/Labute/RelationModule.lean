@@ -40,11 +40,11 @@ variable {p : ℕ} [Fact p.Prime] {F : Type*} [Group F] [TopologicalSpace F]
 
 /-- Labute's `E = X/(X,X)` for `X = ker χ`, written additively. -/
 abbrev labuteE (χ : F →ₜ* ℤ_[p]ˣ) : Type _ :=
-  Additive (TopologicalAbelianization χ.toMonoidHom.ker)
+  Additive (TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker)
 
 /-- The acting group `Γ = F / ker χ`, canonically isomorphic to the image of `χ`. -/
 abbrev orientationQuotient (χ : F →ₜ* ℤ_[p]ˣ) : Type _ :=
-  F ⧸ χ.toMonoidHom.ker
+  F ⧸ (χ : F →* ℤ_[p]ˣ).ker
 
 /-- Labute's `E` is abelian. -/
 theorem labuteE_add_comm (χ : F →ₜ* ℤ_[p]ˣ) (x y : labuteE χ) : x + y = y + x :=
@@ -78,13 +78,14 @@ theorem labuteAction_laws (χ : F →ₜ* ℤ_[p]ˣ) (α β : orientationQuotien
 
 /-- Labute's formula: the class of `y` sends the class of `x` to the class of `y⁻¹xy`. -/
 @[simp]
-theorem labuteAction_mk (χ : F →ₜ* ℤ_[p]ˣ) (y : F) (x : χ.toMonoidHom.ker) :
-    labuteAction χ (QuotientGroup.mk y)
-      (Additive.ofMul (x : TopologicalAbelianization χ.toMonoidHom.ker)) =
+theorem labuteAction_mk (χ : F →ₜ* ℤ_[p]ˣ) (y : F)
+    (x : (χ : F →* ℤ_[p]ˣ).ker) :
+    labuteAction χ (@QuotientGroup.mk F _ (χ : F →* ℤ_[p]ˣ).ker y)
+      (Additive.ofMul (x : TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker)) =
     Additive.ofMul
       ((⟨y⁻¹ * (x : F) * y,
-        (inferInstance : χ.toMonoidHom.ker.Normal).conj_mem' x x.2 y⟩ : χ.toMonoidHom.ker) :
-        TopologicalAbelianization χ.toMonoidHom.ker) := by
+        (inferInstance : (χ : F →* ℤ_[p]ˣ).ker.Normal).conj_mem' x x.2 y⟩ : (χ : F →* ℤ_[p]ˣ).ker) :
+        TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker) := by
   exact congrArg Additive.ofMul (TopologicalAbelianization.mk_inv_smul_mk _ y x)
 
 /-- The inverse-conjugation action is jointly continuous. -/
@@ -92,34 +93,37 @@ theorem continuous_labuteAction (χ : F →ₜ* ℤ_[p]ˣ) :
     Continuous (fun z : orientationQuotient χ × labuteE χ =>
       labuteAction χ z.1 z.2) := by
   have h : Continuous (fun z : orientationQuotient χ × labuteE χ =>
-      (Additive.toMul z.2 : TopologicalAbelianization χ.toMonoidHom.ker)) := continuous_snd
+      (Additive.toMul z.2 : TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker)) := continuous_snd
   exact continuous_smul.comp ((continuous_inv.comp continuous_fst).prodMk h)
 
 /-- The image of a relator in the abelianized character kernel. -/
-noncomputable def labuteRelatorClass (χ : F →ₜ* ℤ_[p]ˣ) (r : F) (hr : r ∈ χ.toMonoidHom.ker) :
+noncomputable def labuteRelatorClass (χ : F →ₜ* ℤ_[p]ˣ) (r : F)
+    (hr : r ∈ (χ : F →* ℤ_[p]ˣ).ker) :
     labuteE χ :=
-  Additive.ofMul ((⟨r, hr⟩ : χ.toMonoidHom.ker) : TopologicalAbelianization χ.toMonoidHom.ker)
+  Additive.ofMul
+    ((⟨r, hr⟩ : (χ : F →* ℤ_[p]ˣ).ker) : TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker)
 
 /-- Conjugating a relator before taking its class agrees with Labute's action. -/
 @[simp]
 theorem labuteAction_relatorClass (χ : F →ₜ* ℤ_[p]ˣ) (y r : F)
-    (hr : r ∈ χ.toMonoidHom.ker) :
-    labuteAction χ (QuotientGroup.mk y) (labuteRelatorClass χ r hr) =
+    (hr : r ∈ (χ : F →* ℤ_[p]ˣ).ker) :
+    labuteAction χ (@QuotientGroup.mk F _ (χ : F →* ℤ_[p]ˣ).ker y)
+      (labuteRelatorClass χ r hr) =
       labuteRelatorClass χ (y⁻¹ * r * y)
-        ((inferInstance : χ.toMonoidHom.ker.Normal).conj_mem' r hr y) :=
+        ((inferInstance : (χ : F →* ℤ_[p]ˣ).ker.Normal).conj_mem' r hr y) :=
   labuteAction_mk χ y ⟨r, hr⟩
 
 /-- Inclusion of the relation subgroup in the character kernel induces `R^{ab} → E`. -/
-noncomputable def relationModuleToLabuteE (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F) [R.Normal]
-    (hR : R ≤ χ.toMonoidHom.ker) :
+noncomputable def relationModuleToLabuteE (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F)
+    (hR : R ≤ (χ : F →* ℤ_[p]ˣ).ker) :
     Additive (TopologicalAbelianization R) →+ labuteE χ :=
   (TopologicalAbelianization.map (Subgroup.inclusion hR)
     (Subgroup.continuous_inclusion hR)).toAdditive
 
 /-- The map from the relation module takes a relator to its class in `E`. -/
 @[simp]
-theorem relationModuleToLabuteE_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F) [R.Normal]
-    (hR : R ≤ χ.toMonoidHom.ker) (r : R) :
+theorem relationModuleToLabuteE_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F)
+    (hR : R ≤ (χ : F →* ℤ_[p]ˣ).ker) (r : R) :
     relationModuleToLabuteE χ R hR
       (Additive.ofMul (r : TopologicalAbelianization R)) =
       labuteRelatorClass χ r (hR r.2) := by
@@ -128,7 +132,7 @@ theorem relationModuleToLabuteE_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F) [
 
 /-- The comparison map respects conjugation by a lift of an element of the character quotient. -/
 theorem relationModuleToLabuteE_smul_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F)
-    [R.Normal] (hR : R ≤ χ.toMonoidHom.ker) (y : F)
+    [R.Normal] (hR : R ≤ (χ : F →* ℤ_[p]ˣ).ker) (y : F)
     (x : Additive (TopologicalAbelianization R)) :
     relationModuleToLabuteE χ R hR
       (Additive.ofMul ((y : F ⧸ R)⁻¹ • Additive.toMul x)) =
@@ -161,9 +165,9 @@ and then using the completed conjugation action. -/
 noncomputable def labuteSMul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     (a : completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) (ξ : labuteE χ) :
     labuteE χ := by
-  letI : IsClosed (χ.toMonoidHom.ker : Set F) :=
+  letI : IsClosed ((χ : F →* ℤ_[p]ˣ).ker : Set F) :=
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
-  letI := (hF.topologicalAbelianization χ.toMonoidHom.ker).completedGroupAlgebraModule
+  letI := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
     (orientationQuotient χ)
   exact completedGroupAlgebra.map ℤ_[p] (orientationQuotientInv χ)
     (continuous_orientationQuotientInv χ) a • ξ
@@ -173,12 +177,12 @@ theorem labuteSMul_of (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     (γ : orientationQuotient χ) (ξ : labuteE χ) :
     labuteSMul hF χ (completedGroupAlgebra.of ℤ_[p] (orientationQuotient χ) γ) ξ =
       labuteAction χ γ ξ := by
-  let _ : IsClosed (χ.toMonoidHom.ker : Set F) :=
+  let _ : IsClosed ((χ : F →* ℤ_[p]ˣ).ker : Set F) :=
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
-  let _ := (hF.topologicalAbelianization χ.toMonoidHom.ker).completedGroupAlgebraModule
+  let _ := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
     (orientationQuotient χ)
   rw [labuteSMul, completedGroupAlgebra.map_of]
-  exact (hF.topologicalAbelianization χ.toMonoidHom.ker).completedGroupAlgebraModule_of_smul
+  exact (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule_of_smul
     (orientationQuotientInv χ γ) ξ
 
 /-- The completed action satisfies the unit, multiplication and additivity laws of a module. -/
@@ -188,9 +192,9 @@ theorem labuteSMul_laws (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
       labuteSMul hF χ (a * b) ξ = labuteSMul hF χ a (labuteSMul hF χ b ξ) ∧
       labuteSMul hF χ (a + b) ξ = labuteSMul hF χ a ξ + labuteSMul hF χ b ξ ∧
       labuteSMul hF χ a (ξ + η) = labuteSMul hF χ a ξ + labuteSMul hF χ a η := by
-  let _ : IsClosed (χ.toMonoidHom.ker : Set F) :=
+  let _ : IsClosed ((χ : F →* ℤ_[p]ˣ).ker : Set F) :=
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
-  let _ := (hF.topologicalAbelianization χ.toMonoidHom.ker).completedGroupAlgebraModule
+  let _ := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
     (orientationQuotient χ)
   simp [labuteSMul, mul_smul, add_smul, smul_add]
 
@@ -198,12 +202,12 @@ theorem labuteSMul_laws (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
 theorem continuous_labuteSMul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ) :
     Continuous (fun z : completedGroupAlgebra ℤ_[p] (orientationQuotient χ) × labuteE χ =>
       labuteSMul hF χ z.1 z.2) := by
-  let _ : IsClosed (χ.toMonoidHom.ker : Set F) :=
+  let _ : IsClosed ((χ : F →* ℤ_[p]ˣ).ker : Set F) :=
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
-  let _ := (hF.topologicalAbelianization χ.toMonoidHom.ker).completedGroupAlgebraModule
+  let _ := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
     (orientationQuotient χ)
   let _ :=
-    (hF.topologicalAbelianization χ.toMonoidHom.ker).continuousSMul_completedGroupAlgebraModule
+    (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).continuousSMul_completedGroupAlgebraModule
       (orientationQuotient χ)
   exact continuous_smul.comp
     (((completedGroupAlgebra.continuous_map ℤ_[p] (orientationQuotientInv χ)
