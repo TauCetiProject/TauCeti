@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Product
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Positive
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees
 
 /-!
 # Restricting a Tate cup product with a degree-zero first factor
@@ -36,49 +36,25 @@ attribute [local instance] Subgroup.fintypeOfFinite
 variable [Fintype G]
 
 /-- Restriction commutes with the Tate cup product in bidegree `(0, n + 1)`. -/
-theorem cup_zero_left_posRes (M N : Rep k G) (H : Subgroup G) (n : ℕ)
-    (x : tateCohomology M 0) (y : tateCohomology N ((n + 1 : ℕ) : ℤ)) :
-    posRes (M ⊗ N) H n
-        (cup M N 0 ((n + 1 : ℕ) : ℤ) ((n + 1 : ℕ) : ℤ) (by omega) x y) =
-      cup (Rep.res H.subtype M) (Rep.res H.subtype N)
-        0 ((n + 1 : ℕ) : ℤ) ((n + 1 : ℕ) : ℤ) (by omega)
-        (H0Res M H x) (posRes N H n y) := by
-  rw [cup_zero_left, cup_zero_left]
+theorem cup_res_zero_positive (M N : Rep k G) (H : Subgroup G) (n : ℕ)
+    (x : tateCohomology M 0) (y : tateCohomology N ((n : ℤ) + 1)) :
+    res (M ⊗ N) H ((n : ℤ) + 1) (cup M N 0 ((n : ℤ) + 1) ((n : ℤ) + 1) (by omega) x y) =
+      cup (Rep.res H.subtype M) (Rep.res H.subtype N) 0 ((n : ℤ) + 1) ((n : ℤ) + 1) (by omega)
+        (res M H 0 x) (res N H ((n : ℤ) + 1) y) := by
+  rw [res_zero, res_ofNat_succ, res_ofNat_succ, cup_zero_left, cup_zero_left]
   induction x using H0_induction_on with
   | h x =>
     rw [cup0H_H0π, H0π_comp_H0Res_apply, cup0H_H0π]
-    let f : N ⟶ M ⊗ N := Rep.tensorInvariant N x ≫ (β_ N M).hom
-    have hnat := posRes_natural N H f n
+    have hnat := posRes_natural N H (Rep.tensorInvariant N x ≫ (β_ N M).hom) n
     have hnat' :
-        (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map f ≫ posRes (M ⊗ N) H n =
+        (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map
+            (Rep.tensorInvariant N x ≫ (β_ N M).hom) ≫ posRes (M ⊗ N) H n =
           posRes N H n ≫ (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map
-            (Rep.resMap H.subtype f) := hnat
-    have hmap : Rep.resMap H.subtype f =
-        Rep.tensorInvariant (Rep.res H.subtype N)
-            ((Submodule.inclusion
-              (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) x) ≫
-          (β_ (Rep.res H.subtype N) (Rep.res H.subtype M)).hom := by
-      ext z
-      -- Restriction retains the underlying module and linear map; spelling out evaluation avoids
-      -- elaborating the two definitionally equal restricted tensor representations separately.
-      change f.hom z =
-        ((Rep.tensorInvariant (Rep.res H.subtype N)
-            ((Submodule.inclusion
-              (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) x) ≫
-          (β_ (Rep.res H.subtype N) (Rep.res H.subtype M)).hom).hom z)
-      dsimp only [f]
-      simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply]
-      let xH : (Rep.res H.subtype M).ρ.invariants :=
-        (Submodule.inclusion
-          (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) x
-      calc
-        ((β_ N M).hom.hom ((Rep.tensorInvariant N x).hom z)) =
-            (x : M.V) ⊗ₜ[k] z := TauCeti.Rep.tensorInvariant_braiding_hom_apply x z
-        _ = (xH : M.V) ⊗ₜ[k] z := rfl
-        _ = ((β_ (Rep.res H.subtype N) (Rep.res H.subtype M)).hom.hom
-            ((Rep.tensorInvariant (Rep.res H.subtype N) xH).hom z)) :=
-          (TauCeti.Rep.tensorInvariant_braiding_hom_apply xH z).symm
-    rw [hmap] at hnat'
+            (Rep.resMap H.subtype (Rep.tensorInvariant N x ≫ (β_ N M).hom)) := hnat
+    rw [TauCeti.Rep.resMap_tensorInvariant_braiding H.subtype x
+      ((Submodule.inclusion
+        (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) x) rfl]
+      at hnat'
     convert congrArg (fun g => g y) hnat' using 1
     simp only [ModuleCat.comp_apply, Int.natCast_add, Int.cast_ofNat_Int, tensor_V, tensor_ρ]
     rfl
