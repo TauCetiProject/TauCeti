@@ -18,6 +18,9 @@ spaces and their endomorphisms with a finite product of copies of the scalars. I
 a Hausdorff locally compact division ring equipped with a topological semiring structure, the
 module topology of a finite-dimensional space is Hausdorff and locally compact. No norm or
 completeness hypothesis on the scalars is needed.
+
+The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
+organizational `ModuleTopology` namespace.
 -/
 
 public section
