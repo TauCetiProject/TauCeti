@@ -96,8 +96,15 @@ theorem map_toFun_mul_toFun (σ τ ρ : L ≃ₐ[K] L) :
   simp only [Units.val_mul, AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass] at h
   rw [← h, mul_comm]
 
+/-- `c(1, σ) = c(1, 1)`, Mathlib's `groupCohomology.map_one_fst_of_isMulCocycle₂` for a
+`2`-cocycle. -/
+@[simp]
+theorem toFun_one_left (σ : L ≃ₐ[K] L) : c.toFun 1 σ = c.toFun 1 1 :=
+  map_one_fst_of_isMulCocycle₂ c.isMulCocycle₂ σ
+
 /-- `c(σ, 1) = σ(c(1, 1))`, Mathlib's `groupCohomology.map_one_snd_of_isMulCocycle₂` read in `L`
-through the Galois action. -/
+through the Galois action. Not a `simp` lemma: at `σ = 1` its left-hand side `c(1, 1)` reappears
+inside its right-hand side, so `simp` would loop. -/
 theorem toFun_one_right (σ : L ≃ₐ[K] L) : (c.toFun σ 1 : L) = σ (c.toFun 1 1 : L) := by
   simp [map_one_snd_of_isMulCocycle₂ c.isMulCocycle₂ σ]
 
@@ -224,8 +231,8 @@ noncomputable instance : NonAssocRing (CrossedProduct c) where
     | zero => simp only [mul_zero]
     | add a b ha hb => simp only [mul_add, ha, hb]
     | smul_basis σ x =>
-      simp only [one_def, smul_basis_mul_smul_basis,
-        map_one_fst_of_isMulCocycle₂ c.isMulCocycle₂ σ, AlgEquiv.one_apply, one_mul]
+      simp only [one_def, smul_basis_mul_smul_basis, c.toFun_one_left, AlgEquiv.one_apply,
+        one_mul]
       congr 1
       calc
         (↑(c.toFun 1 1)⁻¹ : L) * x * c.toFun 1 1 =
@@ -311,8 +318,7 @@ theorem smul_def (x : L) (a : CrossedProduct c) : x • a = inc c x * a := by
   | add a b ha hb => simp only [mul_add, smul_add, ha, hb]
   | smul_basis σ y =>
     rw [← one_smul L (basis c 1), smul_basis_mul_smul_basis]
-    simp only [map_one_fst_of_isMulCocycle₂ c.isMulCocycle₂ σ, AlgEquiv.one_apply, one_mul,
-      smul_smul]
+    simp only [c.toFun_one_left, AlgEquiv.one_apply, one_mul, smul_smul]
     congr 1
     linear_combination (-(x * y)) * Units.inv_mul (c.toFun 1 1)
 
