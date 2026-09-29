@@ -20,7 +20,7 @@ import TauCeti.Topology.Algebra.ContinuousMonoidHom
 This file gives a criterion for the local `p`-adic cyclotomic character to be surjective: every
 `p`-power cyclotomic polynomial must be irreducible over the base field. It is intended for local
 Galois-theory applications where those finite-layer irreducibility results are available; see
-Serre, *Local Fields*, Chapter IV, §2.
+Serre, *Local Fields*, Chapter IV, §4.
 -/
 
 public section

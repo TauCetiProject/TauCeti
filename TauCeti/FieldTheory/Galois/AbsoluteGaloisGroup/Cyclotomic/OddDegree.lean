@@ -18,7 +18,7 @@ full image in `ℤ₂ˣ`. The base case `Φ₁` is linear, while for positive ex
 `2`-power cyclotomic polynomial over `ℤ₂` is Eisenstein.
 
 The predicate `IsDyadicOddCase` packages the two numerical invariants used by the odd dyadic case
-of the local Galois-group classification. See Serre, *Local Fields*, Chapter IV, §2, for the
+of the local Galois-group classification. See Serre, *Local Fields*, Chapter IV, §4, for the
 cyclotomic extensions of local fields.
 -/
 
@@ -41,7 +41,7 @@ theorem range_localCyclotomicCharacter_of_odd_finrank
   rw [MonoidHom.range_eq_top]
   apply localCyclotomicCharacter_surjective_of_irreducible
   intro n
-  apply IsCyclotomicExtension.irreducible_cyclotomic_of_coprime_finrank
+  apply irreducible_cyclotomic_of_coprime_finrank
     (irreducible_cyclotomic_two_pow_ratPadic n)
   cases n with
   | zero => simp

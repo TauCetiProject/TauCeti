@@ -29,8 +29,8 @@ irreducible over `K`. That converse and Mathlib's forward direction give the equ
   `Φ_n` is irreducible over `K`.
 * `IsCyclotomicExtension.irreducible_cyclotomic_iff_finrank_eq_totient`: `Φ_n` is irreducible over
   `K` if and only if `[L : K] = φ n`.
-* `IsCyclotomicExtension.irreducible_cyclotomic_of_coprime_finrank`: irreducibility is preserved by
-  a finite base change whose degree is coprime to `φ n`.
+* `irreducible_cyclotomic_of_coprime_finrank`: irreducibility is preserved by a finite base change
+  whose degree is coprime to `φ n`.
 * `irreducible_cyclotomic_two_pow_ratPadic`: every `2`-power cyclotomic polynomial is irreducible
   over `ℚ₂`.
 
@@ -161,10 +161,6 @@ theorem irreducible_cyclotomic_two_pow_ratPadic (n : ℕ) :
       have hmapped := hq_irr.map (Polynomial.algEquivAevalXAddC (-(1 : ℚ_[2])))
       simpa [Polynomial.algEquivAevalXAddC, ← comp_eq_aeval, comp_assoc] using hmapped
 
-end TauCeti
-
-namespace IsCyclotomicExtension
-
 section BaseChange
 
 variable {n : ℕ} [NeZero n] {F : Type*} [Field F] [NeZero (n : F)]
@@ -220,8 +216,9 @@ theorem irreducible_cyclotomic_of_coprime_finrank
   have hrank := hdis.adjoin_rank_eq_rank_left_of_isAlgebraic_left
   rw [hadj, ← Module.finrank_eq_rank' K L, ← Module.finrank_eq_rank' F M] at hrank
   have hfin : Module.finrank K L = Module.finrank F M := by exact_mod_cast hrank
-  exact irreducible_cyclotomic_of_totient_le_finrank K L (by rw [hfin, hMfin])
+  exact IsCyclotomicExtension.irreducible_cyclotomic_of_totient_le_finrank K L
+    (by rw [hfin, hMfin])
 
 end BaseChange
 
-end IsCyclotomicExtension
+end TauCeti
