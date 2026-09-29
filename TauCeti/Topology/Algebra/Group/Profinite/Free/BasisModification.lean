@@ -114,8 +114,9 @@ relators `x₁^{2+α} (x₁, x₂) x₃^{2^f} ⋯`, where `ξ₁` occurs in a br
 * `TauCeti.freeProP.range_basisModificationDelta_eq_top_of_odd`: for odd `p` and a class with a
   `p`-power part whose derivatives span `gr_0(F)`, `gr_{m+1}(F) = Im δ_ρ`.
 * `TauCeti.freeProP.range_basisModificationDelta_sup_basisModificationTail_eq_top_two`: for
-  `p = 2` and a class whose `2`-power part sits on a single generator `x_{i₀}` not occurring in its
-  brackets, `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)`.
+  `p = 2` and a class whose derivatives span `gr_0(F)` and whose `2`-power part sits on a single
+  generator `x_{i₀}` not occurring in its brackets,
+  `gr_{m+1}(F) = Im δ_ρ + T_{m+1}(ρ)`.
 
 ## References
 
