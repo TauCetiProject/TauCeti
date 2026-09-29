@@ -97,8 +97,11 @@ theorem baseChangeDefiningIdeal_le_generatedDefiningIdeal :
       exact hx
     have hx0 : (coordinateMap A).hom x = 0 := RingHom.mem_ker.mp hxker
     apply RingHom.mem_ker.mpr
+    -- The kernel uses `hom.toAlgHom.toRingHom`; its application is definitionally the
+    -- underlying ring map, so expose that map before rewriting the categorical composition.
     change (GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A weightTable.weight).hom x = 0
     rw [← coordinateMap_comp_weightTorusToBaseChangeCoordinateMap A]
+    -- The underlying map of `≫` is definitionally composition of the two underlying maps.
     change (weightTorusToBaseChangeCoordinateMap A).hom ((coordinateMap A).hom x) = 0
     rw [hx0, map_zero]
 
