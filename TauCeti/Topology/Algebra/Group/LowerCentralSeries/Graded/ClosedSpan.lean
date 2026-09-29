@@ -13,7 +13,7 @@ import Mathlib.Topology.Algebra.ProperAction.Basic
 # Generation of the graded pieces of the closed lower central series
 
 The brackets of a topological generating set with a graded piece topologically generate the next
-piece. For a compact Hausdorff group and a finite generating set, their sums fill the next piece.
+piece. For a compact group and a finite generating set, their sums fill the next piece.
 The distinction matters because the closed lower central series terms need not be open.
 -/
 
@@ -103,9 +103,9 @@ theorem topologicalClosure_closure_lcsBracket_eq_top (n : ℕ) {S : Set G}
   have hxy' : y = x := Subtype.ext hxy
   simpa [U, hxy'] using hy
 
-/-- For a finite generating set in a compact Hausdorff group, every class in the next graded
+/-- For a finite generating set in a compact group, every class in the next graded
 piece is one sum of brackets with the generators. -/
-theorem exists_sum_lcsBracket_eq [CompactSpace G] [T2Space G] (n : ℕ)
+theorem exists_sum_lcsBracket_eq [CompactSpace G] (n : ℕ)
     (S : Finset G) (hS : (Subgroup.closure (S : Set G)).topologicalClosure = ⊤)
     (z : gradedPiece 0 G (0 + n + 1)) :
     ∃ y : S → gradedPiece 0 G n,
