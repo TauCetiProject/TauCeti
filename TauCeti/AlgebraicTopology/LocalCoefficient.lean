@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
+import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import Mathlib.RepresentationTheory.Rep.Basic
 
 /-!
@@ -20,7 +21,8 @@ local coefficients: constant systems, pullback along continuous maps, evaluation
 path transport, and the monodromy representation of the fundamental group.  It also proves that
 these constructions interact in the expected way.  In particular, a morphism of local systems
 induces an intertwining map on monodromy representations, and transport along a path identifies
-the monodromy at its endpoints.
+the monodromy at its endpoints.  Homotopic maps have canonically isomorphic pullback functors,
+with components given by transport along the pointwise paths of the homotopy.
 
 The functorial definition and the monodromy interpretation follow Hatcher, *Algebraic Topology*,
 Section 3.H.
@@ -182,6 +184,34 @@ theorem pullbackConstantIso_inv_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f :
     (M : ModuleCat.{w} R) (x : FundamentalGroupoid X) :
     (pullbackConstantIso (R := R) f M).inv.app x = 𝟙 M :=
   (rfl)
+
+section Homotopy
+
+variable {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {f g : C(X, Y)}
+
+/-- Pullback of local coefficient systems along homotopic maps gives naturally isomorphic
+systems.  At a point `x`, the comparison is transport by the path `t ↦ H (t, x)` traced by
+the homotopy. -/
+def pullbackHomotopyIso (H : f.Homotopy g) :
+    pullback (R := R) f ≅ pullback (R := R) g :=
+  NatIso.ofComponents
+    (fun L ↦ Functor.isoWhiskerRight
+      (asIso (FundamentalGroupoidFunctor.homotopicMapsNatIso H)) L)
+    (fun η ↦ by
+      ext x a
+      exact (η.naturality_apply
+        ((FundamentalGroupoidFunctor.homotopicMapsNatIso H).app x) a).symm)
+
+/-- At a point, the pullback comparison acts by the local system on the path traced by the
+homotopy. -/
+@[simp]
+theorem pullbackHomotopyIso_hom_app_app (H : f.Homotopy g)
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) (x : FundamentalGroupoid X) :
+    ((pullbackHomotopyIso (R := R) H).hom.app L).app x =
+      L.map ⟦H.evalAt x.as⟧ :=
+  (rfl)
+
+end Homotopy
 
 /-- Evaluation of a local coefficient system at a point of the space. -/
 @[expose] def fiberFunctor (R : Type u) [Ring R] (X : TopCat.{v}) (x : X) :
