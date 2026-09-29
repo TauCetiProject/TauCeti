@@ -55,40 +55,19 @@ private theorem rootElementMinpoly
     let E := fixedField (stabilizer (L ≃ₐ[ℚ] L) beta)
     ∃ theta : NumberField.IntegralPrimitiveElement E,
       minpoly ℤ theta.1 = X ^ 3 - 2 := by
-  let E := fixedField (stabilizer (L ≃ₐ[ℚ] L) beta)
-  let betaE : E := ⟨beta, mem_fixedField_stabilizer beta⟩
-  have hbetaevalQ : aeval beta (X ^ 3 - 2 : ℚ[X]) = 0 :=
-    (Polynomial.mem_rootSet.mp hbeta).2
-  have hbeta3 : beta ^ 3 = (2 : L) := by
-    apply sub_eq_zero.mp
-    simpa only [map_sub, map_pow, aeval_X, map_ofNat] using hbetaevalQ
-  have hbetaE3 : betaE ^ 3 = (2 : E) := by
-    apply Subtype.ext
-    exact hbeta3
-  have hbetaevalZ : aeval betaE (X ^ 3 - 2 : ℤ[X]) = 0 := by
-    simp only [map_sub, map_pow, aeval_X, map_ofNat]
-    exact sub_eq_zero.mpr hbetaE3
-  have hbetaInt : IsIntegral ℤ betaE :=
-    ⟨X ^ 3 - 2, by monicity; norm_num, hbetaevalZ⟩
-  let theta : NumberField.IntegralPrimitiveElement E :=
-    ⟨⟨betaE, hbetaInt⟩, adjoin_eq_top_of_fixedField_stabilizer beta⟩
-  refine ⟨theta, ?_⟩
+  have hbetaInt : IsIntegral ℤ beta := by
+    refine ⟨X ^ 3 - 2, by monicity; norm_num, ?_⟩
+    rw [← aeval_def]
+    simpa only [map_sub, map_pow, aeval_X, map_ofNat] using (Polynomial.mem_rootSet.mp hbeta).2
+  let thetaL : 𝓞 L := ⟨beta, hbetaInt⟩
+  have hminQ : minpoly ℚ (thetaL : L) = X ^ 3 - 2 :=
+    (minpoly.eq_of_irreducible_of_monic irreducible_X_pow_three_sub_two
+      (Polynomial.mem_rootSet.mp hbeta).2 (by monicity; norm_num)).symm
+  refine ⟨NumberField.rootIntegralPrimitiveElement (θ := thetaL) (hminQ ▸ hbeta), ?_⟩
+  rw [NumberField.minpoly_rootIntegralPrimitiveElement]
   apply Polynomial.map_injective _ (algebraMap ℤ ℚ).injective_int
-  have hminQ : minpoly ℚ (theta.1 : E) = X ^ 3 - 2 := by
-    symm
-    apply minpoly.eq_of_irreducible_of_monic
-    · exact irreducible_X_pow_three_sub_two
-    · change aeval betaE (X ^ 3 - 2 : ℚ[X]) = 0
-      simp only [map_sub, map_pow, aeval_X, map_ofNat]
-      exact sub_eq_zero.mpr hbetaE3
-    · exact by monicity; norm_num
-  calc
-    (minpoly ℤ theta.1).map (algebraMap ℤ ℚ) = minpoly ℚ (theta.1 : E) :=
-      (NumberField.RingOfIntegers.minpoly_rat_coe theta.1).symm
-    _ = X ^ 3 - 2 := hminQ
-    _ = (X ^ 3 - 2 : ℤ[X]).map (algebraMap ℤ ℚ) := by
-      simp only [Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X,
-        Polynomial.map_ofNat]
+  rw [← NumberField.RingOfIntegers.minpoly_rat_coe, hminQ]
+  simp
 
 private theorem ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two
     {K : Type*} [Field K] [NumberField K]
@@ -183,10 +162,7 @@ private theorem isCyclotomicExtension_fixedField_stabilizer_root
     rw [div_pow, hgamma3, hbeta3, div_self htwo]
   have hzeta1 : zeta ≠ 1 := by
     intro hz
-    apply hne
-    calc
-      gamma = (gamma / beta) * beta := (div_mul_cancel₀ gamma hbeta0).symm
-      _ = beta := by rw [show gamma / beta = 1 from hz, one_mul]
+    exact hne ((div_eq_one_iff_eq hbeta0).mp hz)
   have hzeta : IsPrimitiveRoot zeta 3 := by
     apply IsPrimitiveRoot.mk_of_lt zeta (by decide) hzeta3
     intro l hl hlt
@@ -215,9 +191,8 @@ private theorem isCyclotomicExtension_fixedField_stabilizer_root
     have hmu_mem : delta / beta ∈ IntermediateField.adjoin E ({zeta} : Set L) :=
       hzeta.mem_adjoin_of_pow_eq_one hmu
     have hbeta_mem : beta ∈ IntermediateField.adjoin E ({zeta} : Set L) := by
-      let betaE : E := ⟨beta, mem_fixedField_stabilizer beta⟩
-      change algebraMap E L betaE ∈ IntermediateField.adjoin E ({zeta} : Set L)
-      exact IntermediateField.algebraMap_mem _ betaE
+      exact IntermediateField.algebraMap_mem _
+        (⟨beta, mem_fixedField_stabilizer beta⟩ : E)
     have := (IntermediateField.adjoin E ({zeta} : Set L)).mul_mem hbeta_mem hmu_mem
     rwa [mul_div_cancel₀ delta hbeta0] at this
   refine (IsCyclotomicExtension.iff_adjoin_eq_top {3} E L).mpr ⟨?_, ?_⟩
@@ -225,8 +200,8 @@ private theorem isCyclotomicExtension_fixedField_stabilizer_root
     simp only [Set.mem_singleton_iff] at hn
     subst n
     exact ⟨zeta, hzeta⟩
-  · change Algebra.adjoin E _ = (⊤ : IntermediateField E L).toSubalgebra
-    rw [← hadjoin, IntermediateField.adjoin_toSubalgebra_of_isAlgebraic]
+  · rw [← IntermediateField.top_toSubalgebra, ← hadjoin,
+      IntermediateField.adjoin_toSubalgebra_of_isAlgebraic]
     · apply le_antisymm
       · apply Algebra.adjoin_le
         rintro x ⟨n, hn, -, hx⟩
@@ -311,9 +286,9 @@ theorem exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_X_pow_three_
   let _ : Q.LiesOver p2 := Ideal.LiesOver.trans Q P p2
   have hthree : (3 : 𝓞 E) ∉ P := by
     intro h
-    have h' : (3 : ℤ) ∈ p2 :=
+    have h' : (3 : ℤ) ∈ Ideal.span {(2 : ℤ)} :=
       (Ideal.mem_of_liesOver P p2 (3 : ℤ)).mpr (by simpa using h)
-    rw [show p2 = Ideal.span {(2 : ℤ)} from rfl, Ideal.mem_span_singleton] at h'
+    rw [Ideal.mem_span_singleton] at h'
     norm_num at h'
   have hUnramified : Algebra.IsUnramifiedAt (𝓞 E) Q :=
     IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem L 3 hthree Q
@@ -333,8 +308,8 @@ theorem exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_X_pow_three_
     rw [hbot] at hcardInertia
     simp at hcardInertia
   refine ⟨QQ.under (𝓞 E), ?_, ?_, ?_⟩
-  · change (Q.under (𝓞 E)).under ℤ = p2
-    rw [Ideal.under_under, Q.over_def p2]
+  · rw [HeightOneSpectrum.under_asIdeal, Ideal.under_under]
+    exact (Q.over_def p2).symm
   · exact (NumberField.Chebotarev.under_mem_primesAboveRamifiedPrimes_iff_inertia_ne_bot
       (K := ℚ) (L := L) (E := E) QQ).mpr hinertia
   · exact (NumberField.Chebotarev.under_notMem_ramifiedPrimes_iff_isUnramifiedAt
