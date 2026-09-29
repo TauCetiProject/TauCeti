@@ -25,6 +25,8 @@ theory counts, while the objects being classified are representations.
 
 ## Main results
 
+* `Representation.finite_asModule_iff`: for a finite monoid `G`, the `k[G]`-module attached to a
+  representation is finitely generated if and only if its carrier is finitely generated over `k`.
 * `Representation.asModuleEquiv_apply`, `Representation.asModuleEquiv_symm_apply`,
   `Representation.IntertwiningMap.equivLinearMapAsModule_apply`, and
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
@@ -55,6 +57,23 @@ namespace Representation
 
 variable {k G V W : Type*} [CommSemiring k] [Monoid G]
 variable [AddCommMonoid V] [Module k V] [AddCommMonoid W] [Module k W]
+
+/-- **Finiteness passes through the monoid algebra.** For a finite monoid `G`, the `k[G]`-module
+`ρ.asModule` attached to a representation `ρ` is finitely generated exactly when its carrier is
+finitely generated over `k`. Both directions are transitivity of module-finiteness along
+`k → k[G]`, which is a finite extension because `G` is finite. -/
+@[simp]
+theorem _root_.Representation.finite_asModule_iff [Finite G]
+    (ρ : _root_.Representation k G V) :
+    Module.Finite k[G] ρ.asModule ↔ Module.Finite k V := by
+  constructor
+  · intro h
+    have : Module.Finite k ρ.asModule := Module.Finite.trans k[G] ρ.asModule
+    exact Module.Finite.equiv ρ.asModuleEquiv
+  · intro h
+    have : Module.Finite k ρ.asModule := inferInstance
+    exact Module.Finite.of_restrictScalars_finite k k[G] ρ.asModule
+
 variable {ρ : _root_.Representation k G V} {σ : _root_.Representation k G W}
 
 /-- **Evaluation of the identification of `ρ.asModule` with `V`.** `Representation.asModuleEquiv`

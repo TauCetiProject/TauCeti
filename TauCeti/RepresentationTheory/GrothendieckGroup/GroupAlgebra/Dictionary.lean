@@ -8,12 +8,12 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.ShortExact
 public import Mathlib.RepresentationTheory.Rep.Iso
-public import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.Algebra.MonoidAlgebra.Artinian
+public import TauCeti.RepresentationTheory.AsModule
 
 /-!
-# The dictionary between representations of a finite group and modules over its group algebra
+# The dictionary between representations of a finite monoid and modules over its monoid algebra
 
 Mathlib's `Rep.equivalenceModuleMonoidAlgebra` identifies the `k`-linear representations of a
 monoid `G` with the modules over the monoid algebra `k[G]`, by sending a representation `V` to
@@ -29,18 +29,18 @@ which the Grothendieck group of the finitely generated `k[G]`-modules is read as
 group of representations: the exact structure
 `TauCeti.finiteModulesExactStructure (MonoidAlgebra k G)` is transported to the short exact
 sequences of the abelian category `FDRep k G`, in both directions, by
-`TauCeti.conflation_map_fdRepEquivalence_functor_iff`.
-
-Beside the equivalence the file records that `k[G]` is an Artinian ring whenever `k` is and `G`
-is finite. That instance is what puts the Jordan-Hölder theory of
-`TauCeti.RepresentationTheory.GrothendieckGroup.SimpleBasis` — the simple-class basis of an
-exact `K₀` over an Artinian ring — at the disposal of a group algebra, and through
-`IsArtinianRing`'s Hopkins-Levitzki consequence it also supplies the Noetherianness that makes
-`FGModuleCat k[G]` abelian.
+`TauCeti.conflation_map_fdRepEquivalence_functor_iff`. A **group** algebra is the special case of
+a group `G`, which nothing here needs: `G` is an arbitrary finite monoid throughout.
 
 The equivalence itself needs no hypothesis on `k` beyond `CommRing`, and none on `G` beyond
 `Finite`; only the comparison of exact structures, which reads short exactness in the abelian
-categories `FDRep k G` and `FGModuleCat k[G]`, asks for Artinian coefficients.
+categories `FDRep k G` and `FGModuleCat k[G]`, asks for Noetherian coefficients, the hypothesis
+under which `FGModuleCat` is abelian. `FDRep k G` gets it from `k` directly, and `FGModuleCat k[G]`
+from `TauCeti.isNoetherianRing_monoidAlgebra`. The monoid may live in any universe for the
+dictionary,
+but the exact structure `TauCeti.finiteModulesExactStructure R` is defined only on
+`FGModuleCat.{u} R` for `R : Type u`, so the comparison of exact structures is stated for a monoid
+in the universe of `k`.
 
 ## Main definitions
 
@@ -50,24 +50,14 @@ categories `FDRep k G` and `FGModuleCat k[G]`, asks for Artinian coefficients.
 
 ## Main statements
 
-* `Representation.finite_asModule_iff`: for a finite monoid `G`, the `k[G]`-module attached to a
-  representation is finitely generated if and only if its carrier is finitely generated over `k`.
-* `TauCeti.isArtinianRing_monoidAlgebra`: the monoid algebra of a finite monoid over an Artinian
-  commutative ring is Artinian.
 * `TauCeti.fdRepEquivalence_functor_obj_obj`: the dictionary sends `V` to `V.ρ.asModule`.
 * `TauCeti.fdRepEquivalence_functor_comp_ι`: composed with the inclusion of the finitely generated
   modules it *is* Mathlib's `Rep.toModuleMonoidAlgebra`, precomposed with the forgetful functor
   `FDRep k G ⥤ Rep k G`.
 * `TauCeti.exists_fdRep_linearEquiv`: every finitely generated `k[G]`-module comes from a
   representation.
-* `TauCeti.shortExact_map_fdRepEquivalence_functor_iff` and
-  `TauCeti.conflation_map_fdRepEquivalence_functor_iff`: the dictionary matches short exact
+* `TauCeti.conflation_map_fdRepEquivalence_functor_iff`: the dictionary matches short exact
   sequences of representations with the conflations of the finitely generated `k[G]`-modules.
-
-## References
-
-* [Modular-induction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ModularInduction/README.md),
-  Layer 0, "the Grothendieck group of a group algebra".
 -/
 
 public section
@@ -75,42 +65,15 @@ public section
 open CategoryTheory CategoryTheory.Limits
 open scoped MonoidAlgebra
 
-namespace Representation
-
-variable {k G V : Type*} [CommSemiring k] [Monoid G] [Finite G] [AddCommMonoid V] [Module k V]
-
-/-- **Finiteness passes through the group algebra.** For a finite monoid `G`, the `k[G]`-module
-`ρ.asModule` attached to a representation `ρ` is finitely generated exactly when its carrier is
-finitely generated over `k`. Both directions are transitivity of module-finiteness along
-`k → k[G]`, which is a finite extension because `G` is finite. -/
-theorem finite_asModule_iff (ρ : Representation k G V) :
-    Module.Finite k[G] ρ.asModule ↔ Module.Finite k V := by
-  constructor
-  · intro h
-    have : Module.Finite k ρ.asModule := Module.Finite.trans k[G] ρ.asModule
-    exact Module.Finite.equiv ρ.asModuleEquiv
-  · intro h
-    have : Module.Finite k ρ.asModule := inferInstance
-    exact Module.Finite.of_restrictScalars_finite k k[G] ρ.asModule
-
-end Representation
-
 namespace TauCeti
 
-universe u
-
-/-- **The group algebra of a finite monoid is Artinian** over Artinian coefficients, being a
-module-finite algebra over them. This is the hypothesis of `TauCeti.simpleClassBasis`, and by
-Hopkins-Levitzki it also makes `k[G]` Noetherian, hence `FGModuleCat k[G]` abelian. -/
-instance isArtinianRing_monoidAlgebra (k G : Type*) [CommRing k] [IsArtinianRing k] [Monoid G]
-    [Finite G] : IsArtinianRing (MonoidAlgebra k G) :=
-  IsArtinianRing.of_finite k (MonoidAlgebra k G)
+universe u v
 
 section Dictionary
 
-variable (k G : Type u) [CommRing k] [Monoid G] [Finite G]
+variable (k : Type u) (G : Type v) [CommRing k] [Monoid G] [Finite G]
 
-/-- The module over the group algebra attached to a module-finite representation is finitely
+/-- The module over the monoid algebra attached to a module-finite representation is finitely
 generated. This is the object condition that lets `Rep.toModuleMonoidAlgebra` be restricted to
 the finite objects; it is `Representation.finite_asModule_iff` read on `FDRep k G`. -/
 private theorem isFG_obj_toModuleMonoidAlgebra (A : FDRep k G) :
@@ -167,12 +130,13 @@ theorem fdRepEquivalence_functor_comp_ι :
       forget₂ (FDRep k G) (Rep k G) ⋙ Rep.toModuleMonoidAlgebra := (rfl)
 
 /-- **The object formula**: the dictionary sends a representation to the module it defines over
-the group algebra. -/
+the monoid algebra. -/
+@[simp]
 theorem fdRepEquivalence_functor_obj_obj (V : FDRep k G) :
     ((fdRepEquivalence k G).functor.obj V).obj =
       ModuleCat.of k[G] (Representation.asModule V.ρ) := (rfl)
 
-/-- **Every finitely generated module over the group algebra of a finite monoid comes from a
+/-- **Every finitely generated module over the monoid algebra of a finite monoid comes from a
 representation**, the concrete form of the essential surjectivity of the dictionary. -/
 theorem exists_fdRep_linearEquiv (M : Type u) [AddCommGroup M] [Module k[G] M]
     [Module.Finite k[G] M] :
@@ -186,24 +150,26 @@ end Dictionary
 
 section Exactness
 
-variable (k G : Type u) [CommRing k] [IsArtinianRing k] [Monoid G] [Finite G]
-
-/-- The dictionary matches the short exact sequences of `FDRep k G` with those of
-`FGModuleCat k[G]`: it is an equivalence between abelian categories, hence exact, and faithful,
-hence exactness-reflecting. -/
-theorem shortExact_map_fdRepEquivalence_functor_iff (S : ShortComplex (FDRep k G)) :
-    (S.map (fdRepEquivalence k G).functor).ShortExact ↔ S.ShortExact :=
-  ShortExact.shortExact_map_iff _
+-- `TauCeti.finiteModulesExactStructure` pins the carrier universe of `FGModuleCat R` to the
+-- universe of `R`, so the exact structure on `FGModuleCat.{u} k[G]` exists only when
+-- `k[G] : Type u`, i.e. for `G` in the universe of `k`. The dictionary itself is universe
+-- polymorphic in `G`.
+variable (k G : Type u) [CommRing k] [IsNoetherianRing k] [Monoid G] [Finite G]
 
 /-- **The dictionary is exact.** A short complex of representations is short exact exactly when
 its image is a conflation of the exact structure on the finitely generated `k[G]`-modules — the
-exact structure whose Grothendieck group is `G₀(k[G])`. -/
+exact structure whose Grothendieck group is `G₀(k[G])`. The dictionary is an equivalence between
+abelian categories, hence exact, and faithful, hence exactness-reflecting.
+
+This is deliberately not a `simp` lemma: `TauCeti.finiteModulesExactStructure_conflation_iff` is
+already one, so `simp` rewrites the left-hand side below before this lemma can fire, and tagging it
+fails the `simpNF` linter. -/
 theorem conflation_map_fdRepEquivalence_functor_iff (S : ShortComplex (FDRep k G)) :
     (finiteModulesExactStructure k[G]).Conflation (S.map (fdRepEquivalence k G).functor) ↔
       S.ShortExact :=
   (finiteModulesExactStructure_conflation_iff _ _).trans
     ((ShortExact.shortExact_map_iff (forget₂ (FGModuleCat.{u} k[G]) (ModuleCat.{u} k[G]))).trans
-      (shortExact_map_fdRepEquivalence_functor_iff k G S))
+      (ShortExact.shortExact_map_iff (fdRepEquivalence k G).functor))
 
 end Exactness
 
