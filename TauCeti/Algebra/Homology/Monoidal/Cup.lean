@@ -355,7 +355,7 @@ lemma iCycles_cupCycles (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaObj k 
   iCycles_cupCyclesLeft D μ p q n h a b
 
 omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] in
-private lemma linearYonedaObj_d_apply (K : ChainComplex C ℕ) (i j : ℕ)
+private lemma _root_.ChainComplex.linearYonedaObj_d_apply (K : ChainComplex C ℕ) (i j : ℕ)
     (x : (K.linearYonedaObj k M).X i) :
     (K.linearYonedaObj k M).d i j x = K.d j i ≫ x :=
   rfl
@@ -388,8 +388,8 @@ private lemma homologyπ_cupCycles_toCycles_right (p q n : ℕ) (h : p + q = n)
       rw [d_comp_iCycles, LinearMap.map_zero₂, zero_add] at hd
       apply iCycles_injective
       rw [iCycles_cupCycles, map_zsmul, iCycles_toCycles_apply, iCycles_toCycles_apply,
-        linearYonedaObj_d_apply, linearYonedaObj_d_apply, hd, smul_smul, ← mul_pow, neg_one_mul,
-        neg_neg, one_pow, one_smul]
+        ChainComplex.linearYonedaObj_d_apply, ChainComplex.linearYonedaObj_d_apply, hd, smul_smul,
+        ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
     rw [key, map_zsmul, homologyπ_toCycles_apply, smul_zero]
   · rw [(B.linearYonedaObj k N).toCycles_eq_zero hiq]
     simp
@@ -412,7 +412,7 @@ private lemma homologyπ_cupCycles_toCycles_left (p q n : ℕ) (h : p + q = n) (
       rw [d_comp_iCycles, map_zero, smul_zero, add_zero] at hd
       apply iCycles_injective
       rw [iCycles_cupCycles, iCycles_toCycles_apply, iCycles_toCycles_apply,
-        linearYonedaObj_d_apply, linearYonedaObj_d_apply, hd]
+        ChainComplex.linearYonedaObj_d_apply, ChainComplex.linearYonedaObj_d_apply, hd]
     rw [key, homologyπ_toCycles_apply]
   · rw [(A.linearYonedaObj k M).toCycles_eq_zero hip]
     simp
