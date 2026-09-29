@@ -96,8 +96,11 @@ lemma absolutePicardFunctor_map {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') :
 base changes. -/
 @[simp]
 lemma absolutePicardFunctor_map_apply {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
-    (a : (absolutePicardFunctor f).obj T) :
-    (absolutePicardFunctor f).map φ a =
+    (a : LineBundleClass (pullback T.unop.hom f)) :
+    (@ConcreteCategory.hom _ _ _ _ _ _
+      (LineBundleClass (pullback T.unop.hom f))
+      (LineBundleClass (pullback T'.unop.hom f))
+      ((absolutePicardFunctor f).map φ)) a =
       LineBundleClass.pullback ((Over.pullback f).map φ.unop).left a :=
   rfl
 
@@ -117,7 +120,8 @@ lemma pullback_baseChangeSection_absolutePicardFunctor_map {T T' : (Over S)ᵒ�
       LineBundleClass.pullback φ.unop.left
         (LineBundleClass.pullback (baseChangeSection f x₀ hx₀ T.unop) a) := by
   -- `a` is typed by the functor's object, so the composition law is applied as a term.
-  rw [absolutePicardFunctor_map_apply]
+  change LineBundleClass.pullback (baseChangeSection f x₀ hx₀ T'.unop)
+      (LineBundleClass.pullback ((Over.pullback f).map φ.unop).left a) = _
   refine (LineBundleClass.pullback_comp _ _ a).trans ?_
   rw [baseChangeSection_comp_pullback_map]
   exact (LineBundleClass.pullback_comp _ _ a).symm
@@ -152,8 +156,12 @@ def forgetRigidification : rigidifiedPicardFunctor f x₀ hx₀ ⟶ absolutePica
 /-- Forgetting the trivialization sends a rigidified class to its underlying line-bundle class. -/
 @[simp]
 lemma forgetRigidification_app_apply (T : (Over S)ᵒᵖ)
-    (a : (rigidifiedPicardFunctor f x₀ hx₀).obj T) :
-    (forgetRigidification f x₀ hx₀).app T a = RigidifiedLineBundleClass.toLineBundleClass a :=
+    (a : RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop)) :
+    (@ConcreteCategory.hom _ _ _ _ _ _
+      (RigidifiedLineBundleClass (baseChangeSection f x₀ hx₀ T.unop))
+      (LineBundleClass (pullback T.unop.hom f))
+      ((forgetRigidification f x₀ hx₀).app T)) a =
+      RigidifiedLineBundleClass.toLineBundleClass a :=
   (rfl)
 
 /-- Forgetting the trivialization is injective on rigidified classes over every `T`, because the
