@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 public import Mathlib.Topology.Homotopy.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.Topology.CWComplex.Classical.Quotient
 
 /-!
@@ -69,26 +70,39 @@ section Radial
 
 variable {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The factor by which the radial push at time `t` scales `y`.  At time `1` it is `2` on the ball
-of radius `2⁻¹` and `‖y‖⁻¹` outside it; the truncation `max ‖y‖ 2⁻¹` keeps it continuous. -/
+/-- The scalar form of the straight-line homotopy to the scaled radial retraction. -/
 private def radialFactor (t : I) (y : E) : ℝ := (1 - (t : ℝ)) + (t : ℝ) * (max ‖y‖ 2⁻¹)⁻¹
 
-/-- The radial push of the closed unit ball at time `t`: it scales `y` by `radialFactor t y`. -/
-private def radialPush (t : I) (y : E) : E := radialFactor t y • y
+/-- The radial push of the closed unit ball, interpolating with the scaled radial retraction. -/
+private def radialPush (t : I) (y : E) : E :=
+  (1 - (t : ℝ)) • y + (t : ℝ) • ((2 : ℝ) • radialRetraction 2⁻¹ y)
 
 omit [NormedSpace ℝ E] in
 private lemma max_norm_pos (y : E) : 0 < max ‖y‖ (2 : ℝ)⁻¹ :=
   lt_of_lt_of_le (by norm_num) (le_max_right _ _)
 
 private lemma continuous_radialPush : Continuous fun p : I × E ↦ radialPush p.1 p.2 := by
-  refine Continuous.smul ?_ continuous_snd
-  exact (by fun_prop : Continuous fun p : I × E ↦ 1 - (p.1 : ℝ)).add
-    ((by fun_prop : Continuous fun p : I × E ↦ (p.1 : ℝ)).mul
-      ((by fun_prop : Continuous fun p : I × E ↦ max ‖p.2‖ (2 : ℝ)⁻¹).inv₀
-        fun p ↦ (max_norm_pos p.2).ne'))
+  unfold radialPush
+  refine ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
+    continuous_snd).add ?_
+  refine (continuous_subtype_val.comp continuous_fst).smul ?_
+  exact ((lipschitzWith_radialRetraction (E := E) (r := 2⁻¹)
+    (by norm_num)).continuous.comp continuous_snd).const_smul (2 : ℝ)
+
+private lemma radialPush_eq_factor (t : I) (y : E) :
+    radialPush t y = radialFactor t y • y := by
+  have hret : (2 : ℝ) • radialRetraction (2⁻¹ : ℝ) y =
+      (max ‖y‖ 2⁻¹)⁻¹ • y := by
+    rcases le_total ‖y‖ (2⁻¹ : ℝ) with h | h
+    · rw [radialRetraction_of_norm_le h, max_eq_right h]
+      simp [two_smul]
+    · rw [radialRetraction_of_le_norm h, max_eq_left h]
+      simp [div_eq_mul_inv, smul_smul]
+  rw [radialPush, hret, smul_smul, ← add_smul]
+  rfl
 
 private lemma radialPush_zero (y : E) : radialPush 0 y = y := by
-  simp [radialPush, radialFactor]
+  simp [radialPush]
 
 omit [NormedSpace ℝ E] in
 private lemma one_le_radialFactor (t : I) {y : E} (hy : ‖y‖ ≤ 1) : 1 ≤ radialFactor t y := by
@@ -100,7 +114,8 @@ private lemma one_le_radialFactor (t : I) {y : E} (hy : ‖y‖ ≤ 1) : 1 ≤ r
 
 private lemma norm_radialPush (t : I) {y : E} (hy : ‖y‖ ≤ 1) :
     ‖radialPush t y‖ = radialFactor t y * ‖y‖ := by
-  rw [radialPush, norm_smul, Real.norm_of_nonneg (by linarith [one_le_radialFactor t hy])]
+  rw [radialPush_eq_factor, norm_smul,
+    Real.norm_of_nonneg (by linarith [one_le_radialFactor t hy])]
 
 private lemma norm_le_norm_radialPush (t : I) {y : E} (hy : ‖y‖ ≤ 1) :
     ‖y‖ ≤ ‖radialPush t y‖ := by
@@ -117,13 +132,15 @@ private lemma norm_radialPush_le_one (t : I) {y : E} (hy : ‖y‖ ≤ 1) : ‖r
   nlinarith [norm_nonneg y]
 
 private lemma radialPush_of_norm_eq_one (t : I) {y : E} (hy : ‖y‖ = 1) : radialPush t y = y := by
+  rw [radialPush_eq_factor]
   have h : max ‖y‖ (2 : ℝ)⁻¹ = 1 := by rw [hy]; norm_num
-  simp [radialPush, radialFactor, h]
+  simp [radialFactor, h]
 
 private lemma norm_radialPush_one {y : E} (hy : (2 : ℝ)⁻¹ ≤ ‖y‖) : ‖radialPush 1 y‖ = 1 := by
-  have hpos : 0 < ‖y‖ := lt_of_lt_of_le (by norm_num) hy
-  rw [radialPush, radialFactor, max_eq_left hy, norm_smul]
-  simp [hpos.ne']
+  have h : ‖(2 : ℝ) • radialRetraction 2⁻¹ y‖ = 1 := by
+    rw [norm_smul, norm_radialRetraction (by norm_num : 0 ≤ (2 : ℝ)⁻¹), min_eq_right hy]
+    norm_num
+  simpa [radialPush] using h
 
 end Radial
 
