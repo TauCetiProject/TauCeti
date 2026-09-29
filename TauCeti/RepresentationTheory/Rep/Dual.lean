@@ -14,9 +14,6 @@ Dualizing an equivariant linear map gives an equivariant map in the reverse dire
 These maps supply contragredient functors on categories of representations. For a representation
 on a reflexive module, evaluation identifies the representation with its double dual, naturally
 in the representation. In particular this applies to finite free integral representations.
-
-The constructions reuse Mathlib's `Representation.dual`, `LinearMap.dualMap`, and
-`Module.evalEquiv`.
 -/
 
 public section
