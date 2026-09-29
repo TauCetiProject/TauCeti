@@ -28,10 +28,7 @@ namespace Subgroup
 
 variable {Δ Γ : Subgroup PSL(2, ℝ)}
 
-/-- The sum of local multiplicities over an interior fibre of a finite-index quotient map is
-its subgroup index. This includes elliptic fibres, where the number of points can be smaller
-than the index. -/
-theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_ofQuotient
+private theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_mk
     [DiscreteTopology Γ] (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] (z : ℍ) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     ∑ᶠ y : {y : Δ.CompactifiedQuotient //
@@ -51,9 +48,9 @@ theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_ofQuotient
   let : Fintype C := Fintype.ofFinite C
   let : Fintype F := Fintype.ofFinite F
   have hcard : (∑ y : F, Nat.card {c : C // φ c = y}) = Nat.card C := by
-    have : ∀ y : F, Finite {c : C // φ c = y} := fun _ => inferInstance
-    rw [← Nat.card_sigma]
-    exact Nat.card_congr (Equiv.sigmaFiberEquiv φ)
+    simpa only [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_univ] using
+      (Finset.card_eq_sum_card_fiberwise (s := Finset.univ) (t := Finset.univ)
+        (f := φ) (by simp)).symm
   have hφsurj : Function.Surjective φ := by
     intro y
     obtain ⟨q, rfl⟩ := (orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z)).surjective y
@@ -100,5 +97,18 @@ theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_ofQuotient
       (∑ y : F, localMultiplicity (compactifiedQuotientMap h) y.1) =
           ∑ y : F, Nat.card {c : C // φ c = y} := Finset.sum_congr rfl fun y _ => (hweight y).symm
       _ = Nat.card C := hcard)
+
+/-- The sum of local multiplicities over an interior fibre of a finite-index quotient map is
+its subgroup index. This includes elliptic fibres, where the number of points can be smaller
+than the index. -/
+theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_ofQuotient
+    [DiscreteTopology Γ] (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
+    (p : orbitRel.Quotient Γ ℍ) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+    ∑ᶠ y : {y : Δ.CompactifiedQuotient // compactifiedQuotientMap h y = .ofQuotient p},
+      localMultiplicity (compactifiedQuotientMap h) y.1 =
+        (Δ.subgroupOf Γ).index := by
+  induction p using Quotient.inductionOn' with
+  | _ z => exact sum_localMultiplicity_compactifiedQuotientMap_fiber_mk h z
 
 end Subgroup
