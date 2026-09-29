@@ -14,7 +14,10 @@ public import TauCeti.RingTheory.Huber.Uniform
 A complete Hausdorff Tate ring is *stably uniform* when each of its rational localizations is
 uniform.  A rational localization is represented by a finite numerator set `T`, a denominator
 `s`, and the condition that the ideal spanned by `T` is open.  The coordinate ring is the
-separated completion `A⟨T/s⟩` of the corresponding topological localization.
+separated completion `A⟨T/s⟩` of the corresponding topological localization.  This is Wedhorn's
+convention; a presentation in the convention where only `insert s T` must generate the unit ideal
+is covered by the numerator set `insert s T`, which has the same ring `A₀[T/s]` by
+`TauCeti.Huber.PairOfDefinition.locSubring_insert_eq_of_divBy_mem` (as `s/s = 1`).
 
 The definition quantifies over pairs of definition because the current construction of
 `A⟨T/s⟩` uses one to present its topology.  It does not involve a ring of integral elements:
