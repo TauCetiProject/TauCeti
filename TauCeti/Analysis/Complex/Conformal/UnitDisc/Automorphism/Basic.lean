@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Moebius
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
-import Mathlib.Algebra.Polynomial.Roots
 
 /-!
 # Standard automorphisms of the complex unit disc
@@ -131,58 +130,19 @@ lemma eq_zero_and_eq_one_of_unitDiscStandardAutomorphismFormula_eq_self {u c w�
   have e₁ := e w₁ hd₁ h₁
   have e₂ := e w₂ hd₂ h₂
   have e₃ := e w₃ hd₃ h₃
-  let p : Polynomial ℂ := Polynomial.C ((starRingEnd ℂ) c) * Polynomial.X ^ 2 +
-    Polynomial.C (u - 1) * Polynomial.X - Polynomial.C (u * c)
-  let f : Fin 3 → ℂ := fun i => if i = 0 then w₁ else if i = 1 then w₂ else w₃
-  have hf : Function.Injective f := by
-    intro i j hij
-    fin_cases i <;> fin_cases j <;> simp_all [f]
-  have heval : ∀ i, p.eval (f i) = 0 := by
-    intro i
-    fin_cases i <;> simp [f, p, e₁, e₂, e₃]
-  have hdeg : p.natDegree < 3 := by
-    dsimp [p]
-    have h := Polynomial.natDegree_sub_le
-      (Polynomial.C ((starRingEnd ℂ) c) * Polynomial.X ^ 2 +
-        Polynomial.C (u - 1) * Polynomial.X) (Polynomial.C (u * c))
-    have h' := Polynomial.natDegree_add_le
-      (Polynomial.C ((starRingEnd ℂ) c) * Polynomial.X ^ 2)
-      (Polynomial.C (u - 1) * Polynomial.X)
-    have h₁ : (Polynomial.C ((starRingEnd ℂ) c) * Polynomial.X ^ 2 : Polynomial ℂ).natDegree
-        ≤ 2 := by
-      calc
-        _ ≤ (Polynomial.C ((starRingEnd ℂ) c) : Polynomial ℂ).natDegree +
-              (Polynomial.X ^ 2 : Polynomial ℂ).natDegree := Polynomial.natDegree_mul_le
-        _ = 2 := by simp
-    have h₂ : (Polynomial.C (u - 1) * Polynomial.X : Polynomial ℂ).natDegree ≤ 1 := by
-      calc
-        _ ≤ (Polynomial.C (u - 1) : Polynomial ℂ).natDegree +
-              (Polynomial.X : Polynomial ℂ).natDegree := Polynomial.natDegree_mul_le
-        _ = 1 := by simp only [Polynomial.natDegree_C, Polynomial.natDegree_X, zero_add]
-    have hb : (Polynomial.C ((starRingEnd ℂ) c) * Polynomial.X ^ 2 +
-        Polynomial.C (u - 1) * Polynomial.X : Polynomial ℂ).natDegree ≤ 2 :=
-      h'.trans (max_le h₁ (h₂.trans (by omega)))
-    have hconst : (Polynomial.C (u * c) : Polynomial ℂ).natDegree ≤ 2 := by
-      rw [Polynomial.natDegree_C]
-      omega
-    have ha : (Polynomial.C ((starRingEnd ℂ) c) * Polynomial.X ^ 2 +
-        Polynomial.C (u - 1) * Polynomial.X - Polynomial.C (u * c) : Polynomial ℂ).natDegree
-        ≤ 2 := h.trans (max_le hb hconst)
-    omega
-  have hp : p = 0 := Polynomial.eq_zero_of_natDegree_lt_card_of_eval_eq_zero p hf heval
-    (by simpa using hdeg)
+  have h₁₂ : (starRingEnd ℂ) c * (w₁ + w₂) + (u - 1) = 0 := by
+    have h : ((starRingEnd ℂ) c * (w₁ + w₂) + (u - 1)) * (w₁ - w₂) = 0 := by
+      linear_combination e₁ - e₂
+    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr h₁₂)
+  have h₁₃ : (starRingEnd ℂ) c * (w₁ + w₃) + (u - 1) = 0 := by
+    have h : ((starRingEnd ℂ) c * (w₁ + w₃) + (u - 1)) * (w₁ - w₃) = 0 := by
+      linear_combination e₁ - e₃
+    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr h₁₃)
   have hc : (starRingEnd ℂ) c = 0 := by
-    have h := congrArg (fun q : Polynomial ℂ => q.coeff 2) hp
-    simp only [p, Polynomial.coeff_add, Polynomial.coeff_sub,
-      Polynomial.coeff_C_mul_X_pow, Polynomial.coeff_C_mul_X, Polynomial.coeff_C,
-      Polynomial.coeff_zero] at h
-    simpa using h
-  have hu : u - 1 = 0 := by
-    have h := congrArg (fun q : Polynomial ℂ => q.coeff 1) hp
-    simp only [p, Polynomial.coeff_add, Polynomial.coeff_sub,
-      Polynomial.coeff_C_mul_X_pow, Polynomial.coeff_C_mul_X, Polynomial.coeff_C,
-      Polynomial.coeff_zero] at h
-    simpa using h
+    have h : (starRingEnd ℂ) c * (w₂ - w₃) = 0 := by
+      linear_combination h₁₂ - h₁₃
+    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr h₂₃)
+  have hu : u - 1 = 0 := by simpa [hc] using h₁₂
   exact ⟨(map_eq_zero _).mp hc, sub_eq_zero.mp hu⟩
 
 /-- The inverse of a standard automorphism as a composition of the inverse rotation and

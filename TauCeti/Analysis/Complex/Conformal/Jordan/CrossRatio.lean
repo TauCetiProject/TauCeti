@@ -58,32 +58,6 @@ namespace TauCeti
 
 /-! ### Transport to the disc -/
 
-/-- Along the upper half-plane, a limit of `f = G ∘ h` at a real point `x` is `G (h x)`, when `h`
-is continuous at `x` and maps the upper half-plane into the disc, on whose closure `G` is
-continuous. -/
-private theorem mem_closedBall_and_eq_of_tendsto {G h f : ℂ → ℂ} {x : ℝ} {w : ℂ}
-    (hGc : ContinuousOn G (closedBall 0 1)) (hh : ContinuousAt h (x : ℂ))
-    (hmaps : ∀ z ∈ upperHalfPlaneSet, h z ∈ ball (0 : ℂ) 1)
-    (hf : ∀ z ∈ upperHalfPlaneSet, f z = G (h z))
-    (hfw : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 w)) :
-    h x ∈ closedBall (0 : ℂ) 1 ∧ G (h x) = w := by
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
-  have hev : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (x : ℂ), h z ∈ closedBall (0 : ℂ) 1 :=
-    eventually_nhdsWithin_of_forall fun z hz => ball_subset_closedBall (hmaps z hz)
-  have ht : Tendsto h (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (h x)) :=
-    hh.tendsto.mono_left nhdsWithin_le_nhds
-  have hmem : h x ∈ closedBall (0 : ℂ) 1 := isClosed_closedBall.mem_of_tendsto ht hev
-  refine ⟨hmem, tendsto_nhds_unique ?_ hfw⟩
-  exact ((hGc _ hmem).tendsto.comp (tendsto_nhdsWithin_iff.mpr ⟨ht, hev⟩)).congr'
-    (eventually_nhdsWithin_of_forall fun z hz => (hf z hz).symm)
-
-/-- The denominator of a standard disc automorphism does not vanish at the Cayley transform of a
-real point. -/
-private theorem one_sub_conj_mul_sub_I_div_add_I_ne_zero (c : Complex.UnitDisc) (x : ℝ) :
-    1 - (starRingEnd ℂ) (c : ℂ) * (((x : ℂ) - I) / ((x : ℂ) + I)) ≠ 0 :=
-  (sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one c.norm_lt_one
-    (by simpa only [norm_div] using norm_sub_I_div_add_I_ofReal x)).2
-
 /-- **The two maps in a common disc picture.** Let `f` and `g` be holomorphic bijections of the
 upper half-plane onto a bounded Jordan domain `U`. Then `g` is `G` after the Cayley transform `C`,
 for some `G` continuous and injective on the closed unit disc, and `f` is `G ∘ M ∘ C` for a standard

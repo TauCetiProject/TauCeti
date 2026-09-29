@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
+public import Mathlib.Analysis.Complex.UnitDisc.Basic
 
 /-!
 # Topology of the upper half-plane
@@ -27,6 +28,8 @@ period exactly when the original function is invariant under the corresponding t
 ## Main declarations
 
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
+* `TauCeti.mem_closedBall_and_eq_of_tendsto` — transport a boundary limit through a map
+  continuous on the closed unit disc.
 * `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet`.
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
@@ -43,7 +46,7 @@ period exactly when the original function is invariant under the corresponding t
 
 public section
 
-open Bornology Complex Filter Set Topology UpperHalfPlane
+open Bornology Complex Filter Metric Set Topology UpperHalfPlane
 
 namespace Real
 
@@ -56,6 +59,25 @@ theorem nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
 end Real
 
 namespace TauCeti
+
+/-- Along the upper half-plane, a limit of `f = G ∘ h` at a real point `x` is `G (h x)`, when `h`
+is continuous at `x` and maps the upper half-plane into the disc, on whose closure `G` is
+continuous. -/
+theorem mem_closedBall_and_eq_of_tendsto {G h f : ℂ → ℂ} {x : ℝ} {w : ℂ}
+    (hGc : ContinuousOn G (closedBall 0 1)) (hh : ContinuousAt h (x : ℂ))
+    (hmaps : ∀ z ∈ upperHalfPlaneSet, h z ∈ ball (0 : ℂ) 1)
+    (hf : ∀ z ∈ upperHalfPlaneSet, f z = G (h z))
+    (hfw : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 w)) :
+    h x ∈ closedBall (0 : ℂ) 1 ∧ G (h x) = w := by
+  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
+  have hev : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (x : ℂ), h z ∈ closedBall (0 : ℂ) 1 :=
+    eventually_nhdsWithin_of_forall fun z hz => ball_subset_closedBall (hmaps z hz)
+  have ht : Tendsto h (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (h x)) :=
+    hh.tendsto.mono_left nhdsWithin_le_nhds
+  have hmem : h x ∈ closedBall (0 : ℂ) 1 := isClosed_closedBall.mem_of_tendsto ht hev
+  refine ⟨hmem, tendsto_nhds_unique ?_ hfw⟩
+  exact ((hGc _ hmem).tendsto.comp (tendsto_nhdsWithin_iff.mpr ⟨ht, hev⟩)).congr'
+    (eventually_nhdsWithin_of_forall fun z hz => (hf z hz).symm)
 
 /-- The upper half-plane is unbounded, so the filter along which it approaches infinity is
 nontrivial and limits taken along it are unique. -/
