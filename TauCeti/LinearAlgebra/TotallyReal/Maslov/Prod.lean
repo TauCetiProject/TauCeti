@@ -100,9 +100,12 @@ theorem maslovPhase_prod {L' : Submodule ℝ E} {M' : Submodule ℝ E'}
       rcases x with ⟨x, y⟩
       simp
     rw [← hA, ← hB, h, LinearMap.prodMap_map_prod]
+  -- The determinant of the block diagonal is the product of the two block determinants, which is
+  -- `LinearEquiv.det_prodCongr` read through `LinearEquiv.coe_det`.
   have hdet : LinearMap.det ((LinearEquiv.prodCongr A B : (E × E') →ₗ[ℂ] (E × E'))) =
       LinearMap.det (A : E →ₗ[ℂ] E) * LinearMap.det (B : E' →ₗ[ℂ] E') := by
-    rw [LinearEquiv.coe_prodCongr, LinearMap.det_prodMap]
+    rw [← LinearEquiv.coe_det, ← LinearEquiv.coe_det, ← LinearEquiv.coe_det,
+      LinearEquiv.det_prodCongr, Units.val_mul]
   rw [hP.maslovPhase_congr (hL'.isMaximalTotallyReal_prod hM')
     (hP.map_linearEquiv (LinearEquiv.prodCongr A B)) hsub,
     hP.maslovPhase_map, hdet,
