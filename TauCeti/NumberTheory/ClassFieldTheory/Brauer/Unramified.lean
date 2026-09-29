@@ -74,20 +74,6 @@ namespace TauCeti.ClassFieldTheory
 variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- The normalized valuation of `K` reduced modulo `n`. -/
-private def valuationMod (n : ℕ) : Additive Kˣ →+ ZMod n :=
-  (Int.castAddHom (ZMod n)).comp (normalizedValuation K).toAdditiveLeft
-
-private theorem valuationMod_ofMul (n : ℕ) (a : Kˣ) :
-    valuationMod K n (Additive.ofMul a) = ((normalizedValuation K a).toAdd : ZMod n) :=
-  rfl
-
-private theorem valuationMod_surjective (n : ℕ) : Function.Surjective (valuationMod K n) := by
-  intro m
-  obtain ⟨k, rfl⟩ := ZMod.intCast_surjective m
-  obtain ⟨a, ha⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd k)
-  exact ⟨Additive.ofMul a, by rw [valuationMod_ofMul, ha, toAdd_ofAdd]⟩
-
 variable (L : Type) [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
   [FiniteDimensional K L] [IsGalois K L] [IsUnramified K L]
@@ -201,12 +187,12 @@ theorem unramifiedClass_eq_zero_iff {a : Kˣ} :
     (frobeniusAlgEquiv (K := K) (L := L)) (mem_zpowers_frobeniusAlgEquiv K L) 2 even_two
     (unitsToFrobeniusFixed K L (Additive.ofMul a))).trans (mem_range_norm_iff K L a)
 
-private theorem ker_unramifiedClass_eq_ker_valuationMod :
-    (unramifiedClass K L).ker = (valuationMod K (Module.finrank K L)).ker := by
+private theorem ker_unramifiedClass_eq_ker_normalizedValuationMod :
+    (unramifiedClass K L).ker = (normalizedValuationMod K (Module.finrank K L)).ker := by
   ext a
   rw [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker, ← ofMul_toMul a, unramifiedClass_eq_zero_iff,
     mem_normGroup_iff_dvd_normalizedValuation, IsUnramified.inertiaDegree_eq_finrank,
-    valuationMod_ofMul, ZMod.intCast_zmod_eq_zero_iff_dvd]
+    normalizedValuationMod_ofMul, ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 /-- The identification `H²(Gal(L/K), Lˣ) ≃ ℤ/[L : K]` of an unramified layer, normalized by
 arithmetic Frobenius: it sends the class of `a ∈ Kˣ` to `v_K(a)` modulo `[L : K]`
@@ -214,8 +200,9 @@ arithmetic Frobenius: it sends the class of `a ∈ Kˣ` to `v_K(a)` modulo `[L :
 def unramifiedInvEquiv :
     H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) ≃+ ZMod (Module.finrank K L) :=
   (QuotientAddGroup.quotientKerEquivOfSurjective _ (unramifiedClass_surjective K L)).symm.trans <|
-    (QuotientAddGroup.quotientAddEquivOfEq (ker_unramifiedClass_eq_ker_valuationMod K L)).trans <|
-      QuotientAddGroup.quotientKerEquivOfSurjective _ (valuationMod_surjective K _)
+    (QuotientAddGroup.quotientAddEquivOfEq
+      (ker_unramifiedClass_eq_ker_normalizedValuationMod K L)).trans <|
+      QuotientAddGroup.quotientKerEquivOfSurjective _ (normalizedValuationMod_surjective _)
 
 variable {K L} in
 /-- The class of `a ∈ Kˣ` corresponds to the normalized valuation `v_K(a)` modulo `[L : K]`. -/
@@ -228,7 +215,7 @@ theorem unramifiedInvEquiv_unramifiedClass (a : Kˣ) :
     rw [AddEquiv.symm_apply_eq, QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk]
   rw [unramifiedInvEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply, h,
     QuotientAddGroup.quotientAddEquivOfEq_mk,
-    QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk, valuationMod_ofMul]
+    QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk, normalizedValuationMod_ofMul]
 
 /-- `H²(Gal(L/K), Lˣ)` of an unramified layer has exactly `[L : K]` elements. -/
 theorem natCard_H2_unramified :
