@@ -46,10 +46,6 @@ abbrev labuteE (χ : F →ₜ* ℤ_[p]ˣ) : Type _ :=
 abbrev orientationQuotient (χ : F →ₜ* ℤ_[p]ˣ) : Type _ :=
   F ⧸ (χ : F →* ℤ_[p]ˣ).ker
 
-/-- Labute's `E` is abelian. -/
-theorem labuteE_add_comm (χ : F →ₜ* ℤ_[p]ˣ) (x y : labuteE χ) : x + y = y + x :=
-  add_comm x y
-
 /-- The action of `Γ` on `E` with Labute's inverse-conjugation convention. -/
 noncomputable def labuteAction (χ : F →ₜ* ℤ_[p]ˣ) (γ : orientationQuotient χ)
     (x : labuteE χ) : labuteE χ :=
