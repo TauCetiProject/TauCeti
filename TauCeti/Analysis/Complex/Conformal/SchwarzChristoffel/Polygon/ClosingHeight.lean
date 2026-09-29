@@ -37,7 +37,7 @@ variable {n : ℕ}
 
 /-- If every intermediate vertex is strictly above the line through the first and last
 vertices, a bounded side can meet that line only at one of those two endpoints. -/
-theorem schwarzChristoffelPolygon_bounded_edge_on_closing_line_eq_endpoint
+theorem schwarzChristoffelPolygon_bounded_edgeSet_eq_endpoint_of_im_le
     (a e : Fin (n + 3) → ℝ) (z₀ : UpperHalfPlane)
     (hends : (schwarzChristoffelVertex a e z₀ (Fin.last (n + 2))).im =
       (schwarzChristoffelVertex a e z₀ 0).im)
@@ -110,7 +110,7 @@ theorem schwarzChristoffelPolygon_closing_intersections_of_vertex_heights
     have hzim : z.im ≤ (schwarzChristoffelVertex a e z₀ 0).im := by
       rw [← (Complex.lt_def.mp hl).2]
       exact (Complex.le_def.mp hzbound.1).2.ge
-    rcases schwarzChristoffelPolygon_bounded_edge_on_closing_line_eq_endpoint
+    rcases schwarzChristoffelPolygon_bounded_edgeSet_eq_endpoint_of_im_le
       a e z₀ hends hheight i hz hzim with hfirst | hlast
     · exact hfirst
     · have hle := hzbound.1
@@ -122,7 +122,7 @@ theorem schwarzChristoffelPolygon_closing_intersections_of_vertex_heights
     have hzim : z.im ≤ (schwarzChristoffelVertex a e z₀ 0).im := by
       rw [← hends]
       exact (Complex.le_def.mp hzbound.1).2.ge
-    rcases schwarzChristoffelPolygon_bounded_edge_on_closing_line_eq_endpoint
+    rcases schwarzChristoffelPolygon_bounded_edgeSet_eq_endpoint_of_im_le
       a e z₀ hends hheight i hz hzim with hfirst | hlast
     · have hle := hzbound.2
       rw [hfirst] at hle
