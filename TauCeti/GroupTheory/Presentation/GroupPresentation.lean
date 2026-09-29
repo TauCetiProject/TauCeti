@@ -39,10 +39,6 @@ relations, regarded as a set, defines `TauCeti.GroupPresentation.Group` using Ma
 
 ## Main results
 
-* `TauCeti.GroupPresentation.map_length_relators`: the length of each compiled word is the
-  structural length of the transcribed expression.
-* `TauCeti.GroupPresentation.totalLength_eq_sum_map_length`: the total length is the sum of the
-  structural lengths of the transcribed expressions.
 * `TauCeti.GroupPresentation.relatorSet_eq_relatorSet_transcribed`: the relations of a presentation
   are the relator set of its transcribed expressions.
 -/
@@ -150,18 +146,6 @@ theorem map_length_relatorLetters (P : GroupPresentation) :
 theorem sum_map_length_relatorLetters (P : GroupPresentation) :
     (P.relatorLetters.map List.length).sum = P.totalLength := by
   rw [map_length_relatorLetters, totalLength_def]
-
-/-- The length of each compiled relator word equals the structural length of the
-transcribed relator expression. -/
-@[simp]
-theorem map_length_relators (P : GroupPresentation) :
-    P.relators.map List.length = P.transcribed.map Relator.length := by
-  simp [relators]
-
-/-- The total length is the sum of the structural lengths of the transcribed expressions. -/
-theorem totalLength_eq_sum_map_length (P : GroupPresentation) :
-    P.totalLength = (P.transcribed.map Relator.length).sum := by
-  rw [totalLength_def, map_length_relators]
 
 /-- Every compiled relator word of a presentation is cyclically reduced.
 
