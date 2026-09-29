@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Count.Asymptotic
-public import Mathlib.NumberTheory.NumberField.Ideal.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
@@ -16,8 +15,9 @@ At the trivial modulus every nonzero integral ideal is prime to the modulus, and
 group is the class group. Summing the ray class ideal counting function over the classes then
 counts all nonzero integral ideals of norm at most `x`, exactly the quantity of Mathlib's
 `NumberField.tendsto_norm_le_div_atTop₀`, and the ray class asymptotic gives back its limit: the
-total count divided by `x` tends to the Dedekind zeta residue. This is the agreement between the
-uniform ray class count and the classical ideal count.
+total count divided by `x` tends to the Dedekind zeta residue, the constant of that Mathlib
+theorem. This is the agreement between the uniform ray class count and the classical ideal
+count.
 
 ## Main results
 
@@ -108,18 +108,5 @@ theorem tendsto_rayClassIdealCountingFunction_one [Fintype (RayClassGroup (Modul
   refine h.congr' ?_
   filter_upwards with x
   rw [Finset.sum_div]
-
-/-- **The classical ideal count from the ray class count.** The number of nonzero integral ideals
-of norm at most `x`, divided by `x`, tends to the Dedekind zeta residue; this is Mathlib's
-`NumberField.tendsto_norm_le_div_atTop₀`, obtained here from the uniform ray class count instead
-of from the class group count. -/
-theorem tendsto_card_nonZeroDivisors_absNorm_le_div :
-    Tendsto (fun x : ℝ =>
-      (Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x} : ℝ) / x)
-      atTop (𝓝 (dedekindZeta_residue K)) := by
-  have : Fintype (RayClassGroup (Modulus.one K)) := Fintype.ofFinite _
-  refine (tendsto_rayClassIdealCountingFunction_one (K := K)).congr' ?_
-  filter_upwards with x
-  rw [← sum_rayClassIdealCountingFunction_one, Nat.cast_sum]
 
 end TauCeti.GlobalNumberFields
