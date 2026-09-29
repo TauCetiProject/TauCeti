@@ -45,8 +45,6 @@ the letterwise tuple operation that applies it on a half-open index interval.
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
   elements.
-* `TauCeti.InternalGrading.eq_zero_of_mem_piece_of_ne`: a nonzero element of an internally graded
-  module is homogeneous of at most one degree.
 * `TauCeti.InternalGrading.finite_piece_ne_bot`: a finitely generated internally graded module has
   only finitely many nonzero homogeneous pieces.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`: the twist acts by the Koszul scalar on
@@ -127,13 +125,6 @@ theorem linearMap_ext {N : Type w} [AddCommMonoid N] [Module R N]
     exact h p x hp
   · rw [← Submodule.iSup_eq_span]
     exact G.isInternal.submodule_iSup_eq_top
-
-/-- An element of an internally graded module which belongs to two distinct homogeneous pieces is
-zero.  Equivalently, a nonzero element of an internally graded module is homogeneous of at most
-one degree. -/
-theorem eq_zero_of_mem_piece_of_ne (G : InternalGrading R M) {n m : ℤ} {f : M} (hne : n ≠ m)
-    (hn : f ∈ G.piece n) (hm : f ∈ G.piece m) : f = 0 :=
-  Submodule.disjoint_def.mp (G.isInternal.submodule_iSupIndep.pairwiseDisjoint hne) f hn hm
 
 section Map
 
