@@ -45,13 +45,13 @@ theorem pPowerRootsOfUnity_eq_iSup_rootsOfUnity :
 
 /-- The order of the `p`-power roots of unity, with finiteness made explicit. In local-field
 applications the witness is `finite_pPowerRootsOfUnity`. -/
-@[expose] noncomputable def localRootOfUnityOrder
+noncomputable def localRootOfUnityOrder
     (_h : Finite (pPowerRootsOfUnity p K)) : ℕ :=
   Nat.card (pPowerRootsOfUnity p K)
 
 /-- The order of the `p`-power roots of unity is the cardinality of its subgroup. -/
 @[simp] theorem localRootOfUnityOrder_def (h : Finite (pPowerRootsOfUnity p K)) :
-    localRootOfUnityOrder p K h = Nat.card (pPowerRootsOfUnity p K) := rfl
+    localRootOfUnityOrder p K h = Nat.card (pPowerRootsOfUnity p K) := (rfl)
 
 /-- The order of a finite `p`-power root group is positive. -/
 theorem localRootOfUnityOrder_pos (h : Finite (pPowerRootsOfUnity p K)) :
