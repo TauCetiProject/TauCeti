@@ -94,4 +94,45 @@ theorem eq_left_of_mem_segment_of_im_mul_sub_ne (c u v w x z : ℂ)
     exact (mul_eq_zero.mp h).resolve_right hx
   simp [htzero]
 
+/-- If the interior vertices of a finite polyline lie strictly on one side of a
+supporting line and its endpoints lie on the line, an edge meets a segment on
+the line only at a polyline endpoint. -/
+theorem eq_endpoint_of_mem_segment_of_polyline_edge_of_im_mul_sub_pos {n : ℕ}
+    (c u v : ℂ) (V : Fin (n + 2) → ℂ) (hn : 0 < n)
+    (hline : (c * (v - u)).im = 0)
+    (hfirst : (c * (V 0 - u)).im = 0)
+    (hlast : (c * (V (Fin.last (n + 1)) - u)).im = 0)
+    (hheight : ∀ k : Fin (n + 2), k ≠ 0 → k ≠ Fin.last (n + 1) →
+      0 < (c * (V k - u)).im)
+    (i : Fin (n + 1)) (z : ℂ)
+    (hzline : z ∈ segment ℝ u v)
+    (hzedge : z ∈ segment ℝ (V i.castSucc) (V i.succ)) :
+    z = V 0 ∨ z = V (Fin.last (n + 1)) := by
+  by_cases hi0 : i = 0
+  · have hsucc : i.succ ≠ Fin.last (n + 1) := by
+      rw [hi0, Ne, Fin.ext_iff]
+      simp only [Fin.val_succ, Fin.val_zero, Fin.val_last]
+      omega
+    have hz := eq_left_of_mem_segment_of_im_mul_sub_ne c u v
+      (V i.castSucc) (V i.succ) z hline (by simpa [hi0] using hfirst)
+      (hheight i.succ (Fin.succ_ne_zero i) hsucc).ne' hzline hzedge
+    exact Or.inl (by simpa [hi0] using hz)
+  · have hstart : i.castSucc ≠ (0 : Fin (n + 2)) := by
+      intro h
+      apply hi0
+      apply Fin.ext
+      simpa only [Fin.val_castSucc, Fin.val_zero] using (congrArg Fin.val h)
+    have hhstart := hheight i.castSucc hstart (Fin.castSucc_lt_last i).ne
+    by_cases hilast : i.succ = Fin.last (n + 1)
+    · have hzedge' : z ∈ segment ℝ (V i.succ) (V i.castSucc) := by
+        rwa [segment_symm]
+      have hz := eq_left_of_mem_segment_of_im_mul_sub_ne c u v
+        (V i.succ) (V i.castSucc) z hline (by simpa [hilast] using hlast)
+        hhstart.ne' hzline hzedge'
+      exact Or.inr (by simpa [hilast] using hz)
+    · have hhend := hheight i.succ (Fin.succ_ne_zero i) hilast
+      exact ((Set.disjoint_left.mp
+        (disjoint_segment_of_im_mul_sub_pos c u v
+          (V i.castSucc) (V i.succ) hline hhstart hhend)) hzline hzedge).elim
+
 end TauCeti
