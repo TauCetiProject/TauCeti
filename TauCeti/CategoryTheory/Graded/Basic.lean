@@ -16,12 +16,16 @@ the whole of the data: there is no composition, no identity, and no law relating
 different pairs of objects.
 
 The higher theories of this library are built on such a quiver rather than assumed in it.  A
-differential graded category is a graded linear quiver together with a differential of degree one
-on each hom module, and an `A∞` category is a graded linear quiver together with operations `mₙ`
-of degree `2 - n` in arity `n` for `n ≥ 1`.  Composition is the operation `m₂` of that structure
-and not a datum of the quiver, so a differential graded category is the subcase of an `A∞`
-category in which `m₂` is a strictly unital and strictly associative composition and the operations
-`mₙ` vanish for `n ≥ 3`.
+differential graded category is a graded linear quiver together with a graded composition and
+identities which are unital and associative, and an `A∞` category is a graded linear quiver
+together with operations `mₙ` of degree `2 - n` in arity `n` for `n ≥ 1`.  Composition is the
+operation `m₂` of that structure and not a datum of the quiver, so a differential graded category
+is the subcase of an `A∞` category in which `m₂` is a strictly unital and strictly
+associative composition and the operations `mₙ` vanish for `n ≥ 3`.  The differential is part
+of that structure rather than of the quiver as well: it is the degree-one operation `d = m₁`,
+and a differential graded category requires that it square to zero and be a graded derivation of
+the composition, `d (f ∘ g) = d f ∘ g + (-1)^{|f|} f ∘ d g` for morphisms `f` and `g` of
+degrees `|f|` and `|g|`.
 
 The grading is internal: the morphisms of degree `n` are the submodule `grHom X Y n` of the hom
 module `X → Y`, and the submodule family is an internal direct sum, so every morphism is a finite
@@ -92,7 +96,9 @@ variable (R : Type w) [CommRing R] {C : Type u}
 module of morphisms `X → Y` is the external direct sum of the components of `F X Y`.
 
 The two fields of this quiver are `homModule_ofGradedHom` and `grading_ofGradedHom`, and
-`gradedHomOfGradedHom` recovers the graded object `F` itself, degree by degree. -/
+`gradedHomOfGradedHom` recovers the graded object `F` itself, degree by degree.  The body is
+exposed, since the module system hides the body of a `def` from the statements of the other
+exported declarations of a module, and the two field equations could not be stated without it. -/
 @[instance_reducible, expose]
 noncomputable def ofGradedHom (F : (X Y : C) → CategoryTheory.GradedObject ℤ (ModuleCat.{v} R)) :
     GradedLinearQuiver R C where
