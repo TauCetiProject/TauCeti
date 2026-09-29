@@ -33,9 +33,19 @@ namespace TauCeti
 
 /-- Representatives of the six cosets of the stabilizer of Dummit's quintic invariant.
 They permute the last three indices and fix the first two. -/
-@[expose] def quinticF20OrbitRepresentatives : Finset (Perm (Fin 5)) :=
+def quinticF20OrbitRepresentatives : Finset (Perm (Fin 5)) :=
   {1, swap 2 3, swap 3 4, swap 2 4, swap 2 3 * swap 3 4,
     swap 3 4 * swap 2 3}
+
+/-- A product over the orbit representatives, expanded into its six factors. -/
+theorem prod_quinticF20OrbitRepresentatives {M : Type*} [CommMonoid M] (f : Perm (Fin 5) → M) :
+    ∏ σ ∈ quinticF20OrbitRepresentatives, f σ =
+      f 1 * f (swap 2 3) * f (swap 3 4) * f (swap 2 4) * f (swap 2 3 * swap 3 4) *
+        f (swap 3 4 * swap 2 3) := by
+  rw [quinticF20OrbitRepresentatives]
+  repeat rw [Finset.prod_insert (by decide)]
+  rw [Finset.prod_singleton]
+  simp only [mul_assoc]
 
 noncomputable section
 

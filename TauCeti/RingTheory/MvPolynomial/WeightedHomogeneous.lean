@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
-public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Weighted homogeneity under substitution of homogeneous polynomials
