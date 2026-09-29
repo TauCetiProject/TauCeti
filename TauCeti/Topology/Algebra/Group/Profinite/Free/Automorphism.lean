@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.ContinuousAut
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Surjective
 
