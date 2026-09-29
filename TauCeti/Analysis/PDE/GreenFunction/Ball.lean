@@ -381,6 +381,38 @@ theorem ballPoissonKernel_pos {x y : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ <
   rw [ballPoissonKernel_def]
   positivity
 
+/-- The Poisson kernel is continuous as a function of the boundary point when its pole
+lies strictly inside the unit ball. -/
+theorem continuous_ballPoissonKernel_on_sphere
+    (x : EuclideanSpace ℝ (Fin n)) (hx : ‖x‖ < 1) :
+    Continuous (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
+      ballPoissonKernel n x y) := by
+  rw [continuous_iff_continuousAt]
+  intro y
+  have hn : n ≠ 0 := by
+    intro hn
+    subst n
+    have hy : ‖(y : EuclideanSpace ℝ (Fin 0))‖ = 1 := norm_eq_of_mem_sphere y
+    have hy0 : (y : EuclideanSpace ℝ (Fin 0)) = 0 := Subsingleton.elim _ _
+    simp [hy0] at hy
+  have hxy : x ≠ (y : EuclideanSpace ℝ (Fin n)) := by
+    intro h
+    have hy : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
+    rw [h] at hx
+    linarith
+  have hden : (n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) *
+      ‖x - (y : EuclideanSpace ℝ (Fin n))‖ ^ n ≠ 0 := by
+    have hnpos : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
+    have hvol := volume_real_unitBall_pos n
+    have hnorm : 0 < ‖x - (y : EuclideanSpace ℝ (Fin n))‖ :=
+      norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
+    positivity
+  simp only [ballPoissonKernel_def]
+  apply ContinuousAt.div
+  · fun_prop
+  · fun_prop
+  · exact hden
+
 /-- **The Poisson kernel is the normal derivative of the Green kernel.**  On the unit sphere, the
 derivative of the Green kernel with pole `x` off the sphere, taken in the direction of the outward
 unit normal `y`, is the negative of the Poisson kernel. -/
