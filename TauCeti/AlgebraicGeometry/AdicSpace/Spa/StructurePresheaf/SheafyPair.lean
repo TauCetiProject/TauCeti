@@ -20,7 +20,11 @@ exists because `Aplus` is open. Independence of the choice of `P` is not yet ava
 condition is a priori stronger than sheafhood for one chosen compatible `P`.
 
 The presentation-indexed limit presheaf has not yet been identified as a presheaf with Wedhorn's
-`𝒪_X`. Relating this predicate to Wedhorn's sheafiness requires that identification.
+`𝒪_X`. On rational opens, `presentationLimitRationalIso` identifies its values with the
+completed rational localizations, and `presentationLimitRationalIso_inv_comp_map_comp_hom`
+identifies its restrictions with the canonical comparison maps. These results do not yet give a
+presheaf isomorphism across all opens or independence of the compatible pair of definition.
+Relating this predicate to Wedhorn's sheafiness requires that comparison.
 
 ## References
 
