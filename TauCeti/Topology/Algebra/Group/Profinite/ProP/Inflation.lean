@@ -18,11 +18,10 @@ maximal pro-`p` quotient identifies degree-one continuous cohomology with trivia
 coefficients, and is injective in degree two. These are the low-degree comparison results between
 a profinite group and its maximal pro-`p` quotient.
 
-The degree-one statement follows from the universal property of the maximal pro-`p` quotient,
-because `H¹(-, 𝔽_p)` is the continuous `𝔽_p`-dual. For degree two, the five-term sequence reduces
-the kernel of inflation to the transgression from `H¹(R, 𝔽_p)^G`, where `R` is the pro-`p` kernel.
-The relative elementary abelian quotient `R / Rᵖ[R,G]` is trivial, so this invariant group
-vanishes and inflation is injective.
+Together these let the low-degree `𝔽_p`-cohomology of `G(p)` be studied through `G`: classes in
+`H¹(G, 𝔽_p)` are exactly the inflations of classes in `H¹(G(p), 𝔽_p)`, and a class in
+`H²(G(p), 𝔽_p)` vanishes as soon as its inflation to `G` does. In particular `H²(G(p), 𝔽_p)`
+embeds in `H²(G, 𝔽_p)`, so bounds on the latter bound the former.
 
 ## Main results
 
