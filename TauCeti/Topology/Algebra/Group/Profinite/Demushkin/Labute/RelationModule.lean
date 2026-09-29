@@ -59,7 +59,7 @@ theorem orientationQuotient_isMulCommutative (χ : F →ₜ* ℤ_[p]ˣ) :
     (Abelianization.commutator_subset_ker χ.toMonoidHom)
 
 /-- Labute's conjugation gives an action by additive automorphisms. -/
-theorem labuteAction_laws (χ : F →ₜ* ℤ_[p]ˣ) (α β : orientationQuotient χ)
+private theorem labuteAction_laws (χ : F →ₜ* ℤ_[p]ˣ) (α β : orientationQuotient χ)
     (ξ η : labuteE χ) :
     labuteAction χ 1 ξ = ξ ∧
       labuteAction χ (α * β) ξ = labuteAction χ α (labuteAction χ β ξ) ∧
@@ -158,6 +158,7 @@ theorem relationModuleToLabuteE_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F)
   rfl
 
 /-- The comparison map respects conjugation by a lift of an element of the character quotient. -/
+@[simp]
 theorem relationModuleToLabuteE_smul_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F)
     [R.Normal] (hR : R ≤ (χ : F →* ℤ_[p]ˣ).ker) (y : F)
     (x : Additive (TopologicalAbelianization R)) :
