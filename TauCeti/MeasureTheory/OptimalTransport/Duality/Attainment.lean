@@ -18,17 +18,17 @@ dual problem is *attained*: there is an integrable pair of potentials `φ`, `ψ`
 `φ x + ψ y ≤ c (x, y)` whose value `∫ φ dμ + ∫ ψ dν` equals the optimal transport cost. No
 compactness is assumed, so this is strong duality with dual attainment in the Polish regime.
 
-The optimizer is produced from an optimal plan rather than by approximation. The support of an
-optimal plan of a continuous cost is `c`-cyclically monotone, and by the theorem of Rockafellar
-and Rüschendorf it lies in the `c`-superdifferential of a `c`-concave potential. Boundedness of
-the cost makes that potential and its `c`-transform bounded and real, and continuity of the cost
-makes both upper semicontinuous, hence Borel. The plan is concentrated on its support, which
-lies in the contact set of the pair, so plan and potentials form an optimality certificate
-(`TauCeti.IsDualCertificate`) and complementary slackness closes the duality gap.
+The results are phrased through optimality certificates (`TauCeti.IsDualCertificate`): a
+coupling `π` together with integrable dual feasible potentials `φ`, `ψ` such that `π` is
+concentrated on the contact set `{(x, y) | φ x + ψ y = c (x, y)}`. Such a certificate proves at
+once that `π` is an optimal plan, that `(φ, ψ)` is an optimal dual pair, and that there is no
+duality gap. Here every optimal plan admits a certificate, so the dual optimizer may be chosen
+to certify any given optimal plan, not only one produced by an existence theorem.
 
-The potentials obtained are *`c`-conjugate*: each is the real infimal transform of the other.
-In particular they inherit any uniform modulus of continuity that the sections of the cost share,
-through `TauCeti.uniformContinuous_iInf_sub`.
+The potentials obtained are *`c`-conjugate*: each is the real infimal transform of the other,
+`φ x = ⨅ y, (c (x, y) - ψ y)` and `ψ y = ⨅ x, (c (x, y) - φ x)`. In particular they are bounded,
+and they inherit any uniform modulus of continuity that the sections of the cost share, through
+`TauCeti.uniformContinuous_iInf_sub`.
 
 ## Main statements
 
@@ -89,9 +89,10 @@ theorem IsOptimalCoupling.exists_isDualCertificate_of_continuous [OpensMeasurabl
       (hπ.isCyclicallyMonotone_support (ENNReal.continuous_ofReal.comp hc) hfin)
   -- Rockafellar–Rüschendorf gives a `c`-concave potential, which is bounded and real.
   obtain ⟨φ, hφ, hsub⟩ := hcm.exists_isCConcave_subset_cSuperdifferential
+  obtain ⟨⟨x₀, y₀⟩, hz₀⟩ := (π.nonempty_support (IsProbabilityMeasure.ne_zero π)).mono hsub
+  obtain ⟨a, -, ha, -, -⟩ := exists_coe_of_mem_contactSet (cSuperdifferential_def c φ ▸ hz₀)
   obtain ⟨f, g, hf, hg, hfb, hgb, hfg, hgf⟩ := hφ.exists_real_conjugate
-    ⟨0, forall_mem_range.2 hc0⟩ ⟨M, hM⟩
-    ((π.nonempty_support (IsProbabilityMeasure.ne_zero π)).mono hsub)
+    ⟨0, forall_mem_range.2 hc0⟩ ⟨M, hM⟩ ⟨x₀, a, ha⟩
   -- Both potentials are upper semicontinuous transforms, hence Borel; being bounded, they are
   -- integrable.
   have hfm : Measurable f := by

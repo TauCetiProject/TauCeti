@@ -82,7 +82,7 @@ marginal integrals of a dual pair meaningful.
   `TauCeti.cTransformSymm_cTransform_eq_of_mem_cSuperdifferential` — a potential agrees with its
   double transform at every point of its `c`-superdifferential;
 * `TauCeti.IsCConcave.exists_real_conjugate` — for a bounded cost, a `c`-concave potential with a
-  nonempty `c`-superdifferential and its transform are bounded real potentials, each the real
+  finite value and its transform are bounded real potentials, each the real
   infimal transform of the other.
 
 This is the finite-real algebraic slice of Layer 2, item 2 of the optimal-transport roadmap.
@@ -615,13 +615,13 @@ section Bounded
 variable {c : X × Y → ℝ} {φ : X → EReal}
 
 /-- **`c`-concave potentials of a bounded cost are bounded and real.** If the cost is bounded
-and the `c`-concave potential `φ` has a nonempty `c`-superdifferential, then `φ` and its
+and the `c`-concave potential `φ` takes a finite value somewhere, then `φ` and its
 `c`-transform take only finite values, given by two bounded real potentials `f` and `g`, and
 each of these is the real infimal transform of the other. The pair `(f, g)` is therefore a
 bounded real dual pair with the same contact set as `(φ, φᶜ)`. -/
 theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
     (hcb : BddBelow (Set.range c)) (hca : BddAbove (Set.range c))
-    (hz : (cSuperdifferential c φ).Nonempty) :
+    (hfin : ∃ (x : X) (a : ℝ), φ x = a) :
     ∃ (f : X → ℝ) (g : Y → ℝ), (∀ x, φ x = f x) ∧ (∀ y, cTransform c φ y = g y) ∧
       Bornology.IsBounded (Set.range f) ∧ Bornology.IsBounded (Set.range g) ∧
       (∀ x, f x = ⨅ y, (c (x, y) - g y)) ∧ ∀ y, g y = ⨅ x, (c (x, y) - f x) := by
@@ -629,18 +629,28 @@ theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
   obtain ⟨M, hM⟩ := hca
   have hm' : ∀ z, m ≤ c z := fun z ↦ hm (Set.mem_range_self z)
   have hM' : ∀ z, c z ≤ M := fun z ↦ hM (Set.mem_range_self z)
-  obtain ⟨⟨x₀, y₀⟩, hz₀⟩ := hz
-  have : Nonempty X := ⟨x₀⟩
-  have : Nonempty Y := ⟨y₀⟩
+  obtain ⟨x₀, a, ha⟩ := hfin
   set ψ := cTransform c φ with hψ
-  obtain ⟨a, b, ha, hb, -⟩ := exists_coe_of_mem_contactSet (by rwa [← cSuperdifferential_def])
-  rw [← hψ] at hb
   have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
-  -- Evaluating each transform at the contact point bounds the other potential from above.
+  -- The finite value of `φ` bounds its transform from above.
   have hψ_le (y : Y) : ψ y ≤ ((M - a : ℝ) : EReal) := by
     refine (cTransform_le c φ x₀ y).trans ?_
     rw [ha, ← EReal.coe_sub, EReal.coe_le_coe_iff]
     linarith [hM' (x₀, y)]
+  -- Since `φ x₀` is finite, the transform is not identically `⊥`, so it is finite somewhere.
+  obtain ⟨y₀, hy₀⟩ : ∃ y, ψ y ≠ ⊥ := by
+    by_contra! h
+    have htop : φ x₀ = ⊤ := by
+      rw [← hφψ, cTransformSymm]
+      simp [h]
+    rw [ha] at htop
+    exact EReal.coe_ne_top a htop
+  obtain ⟨b, hb⟩ : ∃ b : ℝ, ψ y₀ = b :=
+    ⟨(ψ y₀).toReal, (EReal.coe_toReal (ne_top_of_le_ne_top (EReal.coe_ne_top _) (hψ_le y₀))
+      hy₀).symm⟩
+  have : Nonempty X := ⟨x₀⟩
+  have : Nonempty Y := ⟨y₀⟩
+  -- That finite value of the transform bounds `φ` from above.
   have hφ_le (x : X) : φ x ≤ ((M - b : ℝ) : EReal) := by
     rw [← hφψ]
     refine (cTransformSymm_le c ψ x y₀).trans ?_
