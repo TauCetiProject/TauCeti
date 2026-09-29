@@ -84,10 +84,10 @@ lemmas hold at that generality, and central simplicity is added only where the d
 Nothing here needs `A` to be finite-dimensional either -- that is a consequence for a nonzero
 splitting, not a hypothesis.
 
-The ascent of splitting fields uses
-`TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv`, the algebra-level base-change cancellation
-for a possibly noncommutative algebra. Mathlib's `Algebra.TensorProduct.cancelBaseChange` asks both
-tensor factors to be commutative, so it does not apply directly here.
+Splitting ascends along field towers: if `L` splits `A`, so does every field extension `M` of `L`
+(`TauCeti.Algebra.IsSplittingField.of_isScalarTower`), and the matrix size does not change. So a
+splitting field may always be enlarged, for instance to its normal closure in order to obtain a
+Galois splitting field. This holds for an arbitrary, possibly noncommutative, `K`-algebra `A`.
 
 ## References
 
@@ -166,9 +166,9 @@ theorem IsSplittingField.matrix (h : IsSplittingField K A L) (n : ℕ) :
 
 /-- **Every further field extension of a splitting field is a splitting field.**
 
-If `L` splits `A` and `M / L / K` is a tower, extending the matrix presentation from `L` to `M`
-and cancelling the successive base changes identifies `M ⊗[K] A` with the same-size matrix
-algebra over `M`. -/
+If `L` splits `A` and `M` is a field extension of `L` (compatibly with `K`), then `M ⊗[K] A` is
+again a full matrix algebra over `M`, of the same size as `L ⊗[K] A` is over `L`. Use this to
+replace a splitting field by any larger field, such as a normal or separable closure of it. -/
 theorem IsSplittingField.of_isScalarTower (h : IsSplittingField K A L)
     (M : Type*) [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M] :
     IsSplittingField K A M := by
