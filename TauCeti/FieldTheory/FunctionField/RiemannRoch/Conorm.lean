@@ -11,14 +11,9 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Basic
 /-!
 # Riemann–Roch spaces under extension of function fields
 
-For an algebraic extension of function fields, the functions in `L(D)` are exactly those
-functions from the smaller field whose images belong to `L(Con D)`. This is the intersection
-step in the comparison of Riemann–Roch spaces after extending the constants. The stronger
-base-change statement, that a basis of `L(D)` over the constants becomes a basis of
-`L(Con D)` over the enlarged constants, requires a further spanning argument.
-
-The proof uses the scaling of orders by the ramification index and existence of a place above
-every place of the smaller field. No separability or exact-constant-field hypothesis is needed.
+For a finite extension of function fields, the functions in `L(D)` are exactly those
+functions from the smaller field whose images belong to `L(Con D)`. This gives the
+intersection of `L(Con D)` with the smaller field as a submodule equality.
 
 ## Reference
 
@@ -41,8 +36,8 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 variable [Algebra.IsIntegral k k'] [FiniteDimensional F F']
 
 /-- A function from `F` belongs to `L(D)` precisely when its image in `F'` belongs to the
-Riemann–Roch space of the conorm of `D`. The converse uses a place of `F'` above each place
-of `F`; the ramification index is positive, so it can be cancelled from the order bound. -/
+Riemann–Roch space of the conorm of `D`. -/
+@[simp]
 theorem mem_riemannRochSpace_conorm_iff (hF' : IsFunctionField k' F')
     (D : Divisor k F) (f : F) :
     algebraMap F F' f ∈ riemannRochSpace (Divisor.conorm k' F' D) ↔
@@ -70,6 +65,7 @@ theorem mem_riemannRochSpace_conorm_iff (hF' : IsFunctionField k' F')
 
 /-- The intersection of `L(Con D)` with the image of `F` is `L(D)`, expressed as a
 `k`-submodule equality. This form can be used without unfolding either Riemann–Roch space. -/
+@[simp]
 theorem riemannRochSpace_conorm_comap (hF' : IsFunctionField k' F')
     (D : Divisor k F) :
     Submodule.comap (IsScalarTower.toAlgHom k F F').toLinearMap
