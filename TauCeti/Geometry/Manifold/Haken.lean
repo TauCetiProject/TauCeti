@@ -16,9 +16,10 @@ This file packages the manifold hypotheses used for the Haken condition in dimen
 The relation `IsHakenSurfaceEmbedding` combines the standard surface and three-manifold
 specializations from `Geometry.Manifold.Basic` with
 boundary preservation, a bicollar, and Tau Ceti's dimension-independent `IsIncompressible`
-predicate.  The surface witness has infinite fundamental group, excluding both spherical and
-projective-plane witnesses.  The closed specialization `IsClosedHakenSurfaceEmbedding` uses
-boundaryless Euclidean-space models and omits the boundary-preservation conjunct.
+predicate.  A boundary-bearing witness may be a disk; a boundaryless witness must have infinite
+fundamental group, excluding spherical and projective-plane witnesses.  The closed specialization
+`IsClosedHakenSurfaceEmbedding` uses boundaryless Euclidean-space models and omits the
+boundary-preservation conjunct.
 
 The product-slice witness is the basic example: a continuous retraction onto the first factor
 makes the inclusion of a surface as a slice incompressible.  This is the standard elementary
@@ -30,13 +31,15 @@ Chapter II.
 
 * `TauCeti.IsClosedIncompressibleSurfaceEmbedding`: a closed connected surface embedded
   incompressibly in a closed connected 3-manifold.
-* `TauCeti.IsHakenSurfaceEmbedding`: a proper, incompressible witness with infinite fundamental
-  group for Haken-ness, allowing boundary.
+* `TauCeti.IsHakenSurfaceEmbedding`: a proper, incompressible witness with either nonempty
+  boundary or infinite fundamental group for Haken-ness, allowing boundary.
 * `TauCeti.IsClosedHakenSurfaceEmbedding`: the closed, bicollared specialization.
 * `TauCeti.IsSphereBoundsBall`: every closed locally flat embedded 2-sphere bounds an embedded
   3-ball.
-* `TauCeti.IsHakenThreeManifold` and `TauCeti.IsClosedHakenThreeManifold`: the corresponding
-  irreducible existential Haken predicates for ambient 3-manifolds.
+* `TauCeti.IsPossiblyNonorientableHakenThreeManifold` and
+  `TauCeti.IsPossiblyNonorientableClosedHakenThreeManifold`: the corresponding irreducible
+  existential Haken predicates for ambient 3-manifolds.  They deliberately leave orientability
+  as a separate hypothesis, since no orientability predicate is available yet.
 
 ## Main results
 
@@ -45,8 +48,8 @@ Chapter II.
   `TauCeti.isClosedIncompressibleSurfaceEmbedding_prodMk` provide reusable incompressible-surface
   witnesses.
 * `TauCeti.isHakenSurfaceEmbedding_iff` exposes the additional Haken-witness conditions.
-* `TauCeti.IsHakenThreeManifold.exists_isOpen_sdiff_range_eq_union` and its closed analogue expose
-  the two-sided complement supplied by the existential surface witness.
+* `TauCeti.IsPossiblyNonorientableHakenThreeManifold.exists_isOpen_sdiff_range_eq_union` and its
+  closed analogue expose the two-sided complement supplied by the existential surface witness.
 -/
 
 public section
@@ -72,22 +75,23 @@ variable [ChartedSpace (EuclideanHalfSpace 2) S]
 It preserves the manifold boundary exactly and is bicollared in the relative model
 `EuclideanHalfSpace 2 × ℝ`, hence is locally flat and a closed embedding. Thus interior points
 cannot land on the ambient boundary, boundary points cannot land in the interior, and the surface
-has two sides even where it meets the boundary. It is also incompressible with infinite
-fundamental group. -/
+has two sides even where it meets the boundary. It is also incompressible, and either has
+nonempty boundary or has infinite fundamental group. -/
 def IsHakenSurfaceEmbedding (f : C(S, M)) : Prop :=
   IsCompactConnectedSurface S ∧ IsCompactConnectedThreeManifold M ∧
     f ⁻¹' (𝓡∂ 3).boundary M = (𝓡∂ 2).boundary S ∧ IsBicollared f ∧
-      IsIncompressible f ∧ ∃ s : S, Infinite (FundamentalGroup S s)
+      IsIncompressible f ∧
+        (((𝓡∂ 2).boundary S).Nonempty ∨ ∃ s : S, Infinite (FundamentalGroup S s))
 
-/-- The defining compact, boundary-preserving, bicollared, incompressible, and infinite
-fundamental-group
+/-- The defining compact, boundary-preserving, bicollared, incompressible, and non-spherical
 conditions of `IsHakenSurfaceEmbedding`. -/
 @[simp]
 theorem isHakenSurfaceEmbedding_iff {f : C(S, M)} :
     IsHakenSurfaceEmbedding f ↔
       IsCompactConnectedSurface S ∧ IsCompactConnectedThreeManifold M ∧
         f ⁻¹' (𝓡∂ 3).boundary M = (𝓡∂ 2).boundary S ∧ IsBicollared f ∧
-          IsIncompressible f ∧ ∃ s : S, Infinite (FundamentalGroup S s) :=
+          IsIncompressible f ∧
+            (((𝓡∂ 2).boundary S).Nonempty ∨ ∃ s : S, Infinite (FundamentalGroup S s)) :=
   Iff.rfl
 
 end BoundaryAware
@@ -96,11 +100,11 @@ end BoundaryAware
 
 section BoundaryHakenPredicate
 
-/-- A compact connected **irreducible** 3-manifold is **Haken** when it admits a boundary-aware
-Haken surface embedding. The source type, its manifold structures, and the map are existential
-data, so this predicate records the geometric witness rather than merely asserting an
-incompressible map exists. -/
-def IsHakenThreeManifold (M : Type u) [TopologicalSpace M]
+/-- A compact connected irreducible 3-manifold is possibly nonorientable Haken when it admits a
+boundary-aware Haken surface embedding. The source type, its manifold structures, and the map are
+existential data, so this predicate records the geometric witness rather than merely asserting an
+incompressible map exists. Orientability is intentionally left as a separate hypothesis. -/
+def IsPossiblyNonorientableHakenThreeManifold (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 3) M] : Prop :=
   IsSphereBoundsBall M ∧
     ∃ (S : Type u) (tS : TopologicalSpace S)
@@ -109,12 +113,13 @@ def IsHakenThreeManifold (M : Type u) [TopologicalSpace M]
       letI : ChartedSpace (EuclideanHalfSpace 2) S := cS
       ∃ f : C(S, M), IsHakenSurfaceEmbedding f
 
-/-- The irreducibility and boundary-aware surface-witness conditions defining a Haken 3-manifold.
-The ambient compact-connected package is carried by the surface witness. -/
+/-- The irreducibility and boundary-aware surface-witness conditions defining a possibly
+nonorientable Haken 3-manifold. The ambient compact-connected package is carried by the surface
+witness. -/
 @[simp]
-theorem isHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
+theorem isPossiblyNonorientableHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 3) M] :
-    IsHakenThreeManifold M ↔
+    IsPossiblyNonorientableHakenThreeManifold M ↔
       IsSphereBoundsBall M ∧
         ∃ (S : Type u) (tS : TopologicalSpace S)
           (cS : ChartedSpace (EuclideanHalfSpace 2) S),
@@ -123,21 +128,26 @@ theorem isHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
           ∃ f : C(S, M), IsHakenSurfaceEmbedding f :=
   Iff.rfl
 
-/-- A boundary-aware Haken surface embedding supplies its ambient Haken predicate when the ambient
-sphere-bounds-a-ball condition holds. -/
-theorem isHakenThreeManifold_of_isSphereBoundsBall_of_isHakenSurfaceEmbedding {S M : Type u}
+/-- A boundary-aware Haken surface embedding supplies its ambient possibly nonorientable Haken
+predicate when the sphere-bounds-a-ball condition holds. -/
+theorem
+    isPossiblyNonorientableHakenThreeManifold_of_isSphereBoundsBall_of_isHakenSurfaceEmbedding
+    {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 2) S] [ChartedSpace (EuclideanHalfSpace 3) M]
     (hirr : IsSphereBoundsBall M) {f : C(S, M)}
-    (h : IsHakenSurfaceEmbedding f) : IsHakenThreeManifold M := by
-  exact (isHakenThreeManifold_iff M).mpr ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+    (h : IsHakenSurfaceEmbedding f) : IsPossiblyNonorientableHakenThreeManifold M := by
+  exact (isPossiblyNonorientableHakenThreeManifold_iff M).mpr
+    ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
-namespace IsHakenThreeManifold
+namespace IsPossiblyNonorientableHakenThreeManifold
 
-/-- A Haken 3-manifold contains a surface with a two-sided open neighbourhood: the complement of
+/-- A possibly nonorientable Haken 3-manifold contains a surface with a two-sided open
+neighbourhood: the complement of
 the surface in that neighbourhood is the union of two disjoint nonempty open sets. -/
 theorem exists_isOpen_sdiff_range_eq_union {M : Type u} [TopologicalSpace M]
-    [ChartedSpace (EuclideanHalfSpace 3) M] (h : IsHakenThreeManifold M) :
+    [ChartedSpace (EuclideanHalfSpace 3) M]
+    (h : IsPossiblyNonorientableHakenThreeManifold M) :
     ∃ (S : Type u) (tS : TopologicalSpace S)
       (cS : ChartedSpace (EuclideanHalfSpace 2) S),
       letI : TopologicalSpace S := tS
@@ -145,17 +155,21 @@ theorem exists_isOpen_sdiff_range_eq_union {M : Type u} [TopologicalSpace M]
       ∃ (f : C(S, M)) (U V W : Set M),
         IsHakenSurfaceEmbedding f ∧ IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧
           V.Nonempty ∧ W.Nonempty ∧ Disjoint V W ∧ U \ range f = V ∪ W := by
-  rcases (isHakenThreeManifold_iff M).mp h with ⟨_hirr, ⟨S, tS, cS, f, hf⟩⟩
+  rcases (isPossiblyNonorientableHakenThreeManifold_iff M).mp h with
+    ⟨_hirr, ⟨S, tS, cS, f, hf⟩⟩
   rcases isHakenSurfaceEmbedding_iff.mp hf with
-    ⟨hS, hM, hboundary, hb, hincompressible, s, hs⟩
-  let _ : Nonempty S := ⟨s⟩
+    ⟨hS, hM, hboundary, hb, hincompressible, hsurface⟩
+  let _ : Nonempty S := by
+    rcases hsurface with ⟨s, _⟩ | ⟨s, _⟩
+    · exact ⟨s⟩
+    · exact ⟨s⟩
   rcases hb.exists_isOpen_sdiff_range_eq_union with ⟨U, V, W, hU, hV, hW, hrange,
     hVne, hWne, hdisjoint, hsdiff⟩
   exact ⟨S, tS, cS, f, U, V, W, isHakenSurfaceEmbedding_iff.mpr
-    ⟨hS, hM, hboundary, hb, hincompressible, s, hs⟩,
+    ⟨hS, hM, hboundary, hb, hincompressible, hsurface⟩,
     hU, hV, hW, hrange, hVne, hWne, hdisjoint, hsdiff⟩
 
-end IsHakenThreeManifold
+end IsPossiblyNonorientableHakenThreeManifold
 
 end BoundaryHakenPredicate
 
@@ -188,11 +202,12 @@ end ClosedEmbeddings
 
 section Closed
 
-/-- An irreducible closed connected 3-manifold is **closed Haken** when it admits a closed Haken
-surface embedding. The source type, its manifold structures, and the map are existential data; the
-witness retains incompressibility, bicollaring, and non-sphericity (with local flatness derived
-from the bicollar). -/
-def IsClosedHakenThreeManifold (M : Type u) [TopologicalSpace M]
+/-- An irreducible closed connected 3-manifold is possibly nonorientable closed Haken when it admits
+a closed Haken surface embedding. The source type, its manifold structures, and the map are
+existential data; the witness retains incompressibility, bicollaring, and non-sphericity (with
+local flatness derived from the bicollar). Orientability is intentionally left as a separate
+hypothesis. -/
+def IsPossiblyNonorientableClosedHakenThreeManifold (M : Type u) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] : Prop :=
   IsSphereBoundsBall M ∧
     ∃ (S : Type u) (tS : TopologicalSpace S)
@@ -201,12 +216,13 @@ def IsClosedHakenThreeManifold (M : Type u) [TopologicalSpace M]
       letI : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S := cS
       ∃ f : C(S, M), IsClosedHakenSurfaceEmbedding f
 
-/-- The irreducibility and closed surface-witness conditions defining a closed Haken 3-manifold.
-The ambient closed-connected package is carried by the surface witness. -/
+/-- The irreducibility and closed surface-witness conditions defining a possibly nonorientable
+closed Haken 3-manifold. The ambient closed-connected package is carried by the surface witness. -/
 @[simp]
-theorem isClosedHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
+theorem isPossiblyNonorientableClosedHakenThreeManifold_iff (M : Type u)
+    [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] :
-    IsClosedHakenThreeManifold M ↔
+    IsPossiblyNonorientableClosedHakenThreeManifold M ↔
       IsSphereBoundsBall M ∧
         ∃ (S : Type u) (tS : TopologicalSpace S)
           (cS : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S),
@@ -215,25 +231,28 @@ theorem isClosedHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
           ∃ f : C(S, M), IsClosedHakenSurfaceEmbedding f :=
   Iff.rfl
 
-/-- A closed Haken surface embedding supplies its ambient closed-Haken predicate when the ambient
-sphere-bounds-a-ball condition holds. -/
+/-- A closed Haken surface embedding supplies its ambient possibly nonorientable closed-Haken
+predicate when the sphere-bounds-a-ball condition holds. -/
 theorem
-    isClosedHakenThreeManifold_of_isSphereBoundsBall_of_isClosedHakenSurfaceEmbedding
+    isPossiblyNonorientableClosedHakenThreeManifold_of
     {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
     (hirr : IsSphereBoundsBall M) {f : C(S, M)}
-    (h : IsClosedHakenSurfaceEmbedding f) : IsClosedHakenThreeManifold M := by
-  exact (isClosedHakenThreeManifold_iff M).mpr
+    (h : IsClosedHakenSurfaceEmbedding f) :
+      IsPossiblyNonorientableClosedHakenThreeManifold M := by
+  exact (isPossiblyNonorientableClosedHakenThreeManifold_iff M).mpr
     ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
-namespace IsClosedHakenThreeManifold
+namespace IsPossiblyNonorientableClosedHakenThreeManifold
 
-/-- A closed Haken 3-manifold contains a surface with a two-sided open neighbourhood: the
+/-- A possibly nonorientable closed Haken 3-manifold contains a surface with a two-sided open
+neighbourhood: the
 complement of the surface in that neighbourhood is the union of two disjoint nonempty open sets. -/
 theorem exists_isOpen_sdiff_range_eq_union {M : Type u} [TopologicalSpace M]
-    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] (h : IsClosedHakenThreeManifold M) :
+    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
+    (h : IsPossiblyNonorientableClosedHakenThreeManifold M) :
     ∃ (S : Type u) (tS : TopologicalSpace S)
       (cS : ChartedSpace (EuclideanSpace ℝ (Fin 2)) S),
       letI : TopologicalSpace S := tS
@@ -241,7 +260,8 @@ theorem exists_isOpen_sdiff_range_eq_union {M : Type u} [TopologicalSpace M]
       ∃ (f : C(S, M)) (U V W : Set M),
         IsClosedHakenSurfaceEmbedding f ∧ IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧
           V.Nonempty ∧ W.Nonempty ∧ Disjoint V W ∧ U \ range f = V ∪ W := by
-  rcases (isClosedHakenThreeManifold_iff M).mp h with ⟨_hirr, ⟨S, tS, cS, f, hf⟩⟩
+  rcases (isPossiblyNonorientableClosedHakenThreeManifold_iff M).mp h with
+    ⟨_hirr, ⟨S, tS, cS, f, hf⟩⟩
   rcases isClosedHakenSurfaceEmbedding_iff.mp hf with ⟨hincompressible, hb, s, hs⟩
   let _ : Nonempty S := ⟨s⟩
   rcases hb.exists_isOpen_sdiff_range_eq_union with ⟨U, V, W, hU, hV, hW, hrange,
@@ -250,7 +270,7 @@ theorem exists_isOpen_sdiff_range_eq_union {M : Type u} [TopologicalSpace M]
     ⟨hincompressible, hb, s, hs⟩,
     hU, hV, hW, hrange, hVne, hWne, hdisjoint, hsdiff⟩
 
-end IsClosedHakenThreeManifold
+end IsPossiblyNonorientableClosedHakenThreeManifold
 
 end Closed
 
