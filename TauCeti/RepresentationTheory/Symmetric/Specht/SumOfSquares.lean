@@ -7,8 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Symmetric.Specht.HookLength
 
--- Non-public: the degree sum `TauCeti.sum_finrank_spechtModule_sq` the identity is read off is
--- used only inside the proofs below; no statement here mentions the character table.
+-- Non-public: the degree sum the identity is read off is used only inside the proofs below; no
+-- statement here mentions the character table.
 import TauCeti.RepresentationTheory.Symmetric.Specht.Orthogonality
 
 /-!
@@ -19,25 +19,22 @@ For every `n`,
 `∑_{μ ⊢ n} (f^μ)² = n !`,
 
 where `f^μ` is the number of standard Young tableaux of shape `μ`.  Both sides count `|Sₙ|`: the
-right-hand side directly, and the left-hand side because the Specht modules are a complete list of
-the irreducible representations of `Sₙ` and `f^μ` is the degree of `S^μ`.
+right-hand side directly, and the left-hand side because the Specht modules `S^μ` are a complete
+list of the irreducible representations of `Sₙ` and `f^μ` is the degree of `S^μ`, so that the sum
+is the sum of the squares of the degrees of the irreducibles.  The identity has an equivalent
+bijective reading through the RSK correspondence, which matches a permutation of `Fin n` with a
+pair of standard tableaux of a common shape.
 
-Only the last step is new here.  The degree sum `∑_μ (dim_ℚ S^μ)² = n !` is
-`TauCeti.sum_finrank_spechtModule_sq`, column orthogonality of the character table of `Sₙ` at the
-class of the identity, and `dim_ℚ S^μ = f^μ` is `TauCeti.finrank_spechtModule`, the standard
-basis of `S^μ`.  Substituting the second into the first is the identity, and substituting the
-hook-length formula in turn expresses each summand by the shape alone.
-
-The classical bijective proof is instead the RSK correspondence, which matches a permutation of
-`Fin n` with a pair of standard tableaux of a common shape; the library does not yet have it.
+Substituting the hook-length formula writes each summand in terms of the shape alone, and
+comparing a single summand with the whole sum bounds `f^μ` by `√(n !)`.
 
 ## Main results
 
 * `TauCeti.sum_sq_standardCount`: **the sum-of-squares identity** `∑_{μ ⊢ n} (f^μ)² = n !`.
 * `TauCeti.sum_sq_factorial_div_prod_hookLength`: the same identity with `f^μ` written by the
   hook-length formula.
-* `TauCeti.standardCount_sq_le_factorial`: the resulting bound `f^μ ≤ √(n !)`, in the form
-  `(f^μ)² ≤ n !`, with `TauCeti.finrank_spechtModule_sq_le_factorial` its degree form.
+* `TauCeti.standardCount_sq_le_factorial`: the resulting bound `f^μ ≤ √(n !)` for a single shape,
+  in the form `(f^μ)² ≤ n !`.
 
 ## References
 
@@ -48,20 +45,17 @@ The classical bijective proof is instead the RSK correspondence, which matches a
 
 public section
 
-open Finset Module Nat
+open Finset Nat
 
 namespace TauCeti
-
-variable {n : ℕ}
 
 /-- **The sum-of-squares identity for standard Young tableaux**: the squares of the numbers `f^μ`
 of standard Young tableaux, summed over the partitions `μ` of `n`, give `n !`.
 
-Both sides count `|Sₙ|`. The classical bijective proof is the RSK correspondence, which matches a
-permutation with a pair of standard tableaux of a common shape; the proof here is the
-representation-theoretic one, `f^μ` being the degree of the Specht module `S^μ`
-(`TauCeti.finrank_spechtModule`) and the degrees of the Specht modules square-summing to `n !`
-(`TauCeti.sum_finrank_spechtModule_sq`). -/
+Both sides count `|Sₙ|`.  On the left, `f^μ` is the degree of the Specht module `S^μ` and the
+Specht modules are a complete list of the irreducible representations of `Sₙ`, so the sum is the
+sum of the squares of the degrees of the irreducibles.  Equivalently, by the RSK correspondence
+the summands count the pairs of standard tableaux of a common shape. -/
 theorem sum_sq_standardCount (n : ℕ) :
     ∑ μ : n.Partition, standardCount (diagramOf μ) ^ 2 = n ! := by
   rw [← sum_finrank_spechtModule_sq n]
@@ -75,19 +69,15 @@ theorem sum_sq_factorial_div_prod_hookLength (n : ℕ) :
   refine .trans (Finset.sum_congr rfl fun μ _ => ?_) (sum_sq_standardCount n)
   rw [standardCount_eq_factorial_div_prod_hookLength, card_diagramOf]
 
-/-- **The tableau count of a single shape is at most `√(n !)`**, in the form `(f^μ)² ≤ n !`: one
-summand of `TauCeti.sum_sq_standardCount` is at most the whole sum. -/
-theorem standardCount_sq_le_factorial (μ : n.Partition) :
-    standardCount (diagramOf μ) ^ 2 ≤ n ! := by
-  rw [← sum_sq_standardCount n]
-  exact Finset.single_le_sum (f := fun ν : n.Partition => standardCount (diagramOf ν) ^ 2)
-    (fun _ _ => Nat.zero_le _) (Finset.mem_univ μ)
-
-/-- **The degree of a Specht module is at most `√(n !)`**, the representation-theoretic reading of
-`TauCeti.standardCount_sq_le_factorial`. -/
-theorem finrank_spechtModule_sq_le_factorial (μ : n.Partition) :
-    finrank ℚ (spechtModule μ) ^ 2 ≤ n ! := by
-  rw [finrank_spechtModule μ]
-  exact standardCount_sq_le_factorial μ
+/-- **A single shape has at most `√(n !)` standard Young tableaux**, in the form `(f^μ)² ≤ n !`
+for a diagram `μ` with `n` cells. -/
+theorem standardCount_sq_le_factorial (μ : YoungDiagram) :
+    standardCount μ ^ 2 ≤ μ.card ! := by
+  have h := Finset.single_le_sum
+    (f := fun ν : μ.card.Partition => standardCount (diagramOf ν) ^ 2)
+    (fun _ _ => Nat.zero_le _) (Finset.mem_univ (shapePartition μ))
+  simp only [diagramOf_shapePartition] at h
+  rw [← sum_sq_standardCount μ.card]
+  exact h
 
 end TauCeti
