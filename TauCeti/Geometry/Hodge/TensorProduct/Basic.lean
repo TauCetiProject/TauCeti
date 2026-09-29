@@ -33,6 +33,8 @@ lattice conjugation is the tensor product of the two lattice conjugations
   product is the tensor product of the Weil operators.
 * `TauCeti.Hodge.HodgeStructure.tensorProduct`: the tensor product of two integral pure Hodge
   structures, on the tensor product of their lattices.
+* `TauCeti.Hodge.HodgeStructure.tensorProduct_weilOperator`: the Weil operator of the integral
+  tensor product is the tensor product of the two Weil operators.
 -/
 
 public section
@@ -225,6 +227,13 @@ theorem tensorProduct_piece (p : ℤ) :
     (hs.tensorProduct hs').piece p = (HodgeStructureOn.tensorProduct hs hs').piece p := by
   rw [tensorProduct, HodgeStructureOn.comap_piece, LinearEquiv.refl_toLinearMap,
     Submodule.comap_id]
+
+/-- The Weil operator of the integral tensor product is the tensor product of the Weil operators. -/
+@[simp]
+theorem tensorProduct_weilOperator :
+    (hs.tensorProduct hs').weilOperator =
+      TensorProduct.map hs.weilOperator hs'.weilOperator := by
+  simp [tensorProduct, HodgeStructureOn.weilOperator_comap]
 
 end HodgeStructure
 
