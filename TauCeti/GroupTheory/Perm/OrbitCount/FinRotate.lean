@@ -13,7 +13,8 @@ public import Mathlib.GroupTheory.Perm.Fin
 
 Cyclic rotation of a nonempty finite ordinal is a single cycle through every point, including the
 singleton case where the rotation is the identity: its full cycle partition has the one part `n`,
-so it has one orbit and order `n`. The orbit count includes fixed points. The formula is useful
+so it has one orbit and order `n`. Its powers with exponent coprime to `n` are again single
+cycles through every point. The orbit count includes fixed points. The formula is useful
 when a traversal permutation is identified, up to conjugacy, with cyclic rotation: it reduces the
 resulting orbit or component count to whether the underlying ordinal is empty.
 -/
@@ -37,6 +38,20 @@ theorem parts_partition_finRotate {n : ℕ} (hn : n ≠ 0) : (finRotate n).parti
 /-- Cyclic rotation of a nonempty finite ordinal of length `n` has order `n`. -/
 theorem orderOf_finRotate {n : ℕ} (hn : n ≠ 0) : orderOf (finRotate n) = n := by
   rw [← lcm_parts_partition, parts_partition_finRotate hn, Multiset.lcm_singleton, normalize_eq]
+
+/-- A power of cyclic rotation of a nonempty finite ordinal of length `n`, with exponent coprime
+to `n`, is again a single cycle through every point: its full cycle partition has the single
+part `n`. -/
+theorem parts_partition_finRotate_pow {n k : ℕ} (hn : n ≠ 0) (hk : k.Coprime n) :
+    (finRotate n ^ k).partition.parts = {n} := by
+  rcases n with _ | _ | n
+  · exact absurd rfl hn
+  · rw [Subsingleton.elim (finRotate 1 ^ k) (finRotate 1)]
+    exact parts_partition_finRotate one_ne_zero
+  · have hk' : k.Coprime (orderOf (finRotate (n + 2))) := by rwa [orderOf_finRotate hn]
+    rw [parts_partition_of_isCycle (isCycle_finRotate.pow_iff.mpr hk'), support_pow_coprime hk',
+      support_finRotate]
+    simp
 
 /-- Cyclic rotation has one orbit when the ordinal is nonempty, and none otherwise. -/
 @[simp]
