@@ -57,7 +57,7 @@ theorem exists_finiteGalois_splittingField :
   let M := IntermediateField.normalClosure K L (SeparableClosure K)
   have hLM : L ≤ M := IntermediateField.le_normalClosure L
   let _ : Algebra L M := (IntermediateField.inclusion hLM).toRingHom.toAlgebra
-  let _ : IsScalarTower K L M := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  let _ : IsScalarTower K L M := IsScalarTower.of_algHom (IntermediateField.inclusion hLM)
   have hMsplit : IsSplittingField K A M :=
     IsSplittingField.of_isScalarTower (K := K) (A := A) (L := L) hLsplit M
   exact ⟨M, inferInstance, inferInstance, hMsplit⟩
