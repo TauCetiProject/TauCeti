@@ -135,11 +135,10 @@ instance gradedObjectShiftEquivFunctorLinear {β : Type*} [AddCommGroup β] [Pre
     (shiftEquiv (GradedObjectWithShift s C) n).functor.Linear R :=
   gradedObjectShiftFunctorLinear R s n
 
-noncomputable instance gradedObjectHasFiniteLimits (β : Type w) [Abelian C] :
-    HasFiniteLimits (GradedObject β C) := by
-  let _ : Preadditive (β → C) := gradedObjectPreadditive β
-  exact ⟨fun _ => Adjunction.hasLimitsOfShape_of_equivalence
-    (piEquivalenceFunctorDiscrete β C).functor⟩
+/-- Graded objects in a category with finite limits have finite limits, computed pointwise. -/
+instance gradedObjectHasFiniteLimits (β : Type w) [HasFiniteLimits C] :
+    HasFiniteLimits (GradedObject β C) :=
+  ⟨fun _ => Adjunction.hasLimitsOfShape_of_equivalence (piEquivalenceFunctorDiscrete β C).functor⟩
 
 /-- The pointwise abelian structure on Mathlib's category of graded objects. -/
 noncomputable instance gradedObjectAbelian (β : Type w) [Abelian C] :
