@@ -374,11 +374,6 @@ theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
               rw [firstOrder_succ, ih]
         _ = value (k + 1 + 1) u := (value_succ (k + 1) u).symm
 
-/-- At first order, the first-order projection preserves the weak gradient. -/
-theorem gradient_firstOrder_zero (u : Wkp mu Omega p 1) :
-    W1p.gradient (firstOrder 0 u) = iteratedGradient 0 u := by
-  simp only [firstOrder_zero, iteratedGradient_zero]
-
 /-- The highest derivative projection is the one stored in the corresponding recursive stage. -/
 theorem iteratedGradient_eq_sobolevStage_iteratedGradientL
     (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
