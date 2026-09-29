@@ -42,7 +42,7 @@ operator into `C¹` dependence of its fixed points on parameters.
 * `BoundedContinuousFunction.hasStrictFDerivAt_comp`: the derivative is strict.
 * `BoundedContinuousFunction.contDiffAt_comp`: the superposition operator is `C¹` near `f₀`.
 * `BoundedContinuousFunction.contDiff_comp`: when `G` is differentiable everywhere with a
-  uniformly continuous derivative, the superposition operator is `C¹`.
+  derivative uniformly continuous on bounded sets, the superposition operator is `C¹`.
 
 ## References
 
@@ -135,12 +135,15 @@ theorem contDiffAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt
   · exact hasFDerivAt_comp hG hGs hG' (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf)
 
 /-- **A superposition operator is `C¹`, global form.** If `G` is Lipschitz and differentiable
-everywhere, with a bounded, uniformly continuous derivative `G'`, then `f ↦ G ∘ f` is continuously
-differentiable on the bounded continuous functions. -/
+everywhere, with a bounded continuous derivative `G'` that is uniformly continuous on every ball
+about `0`, then `f ↦ G ∘ f` is continuously differentiable on the bounded continuous functions.
+Since each bounded continuous `f₀` takes values in a ball, uniform continuity of `G'` on bounded
+sets suffices; it holds for instance when `X` is finite-dimensional. -/
 theorem contDiff_comp (hG : LipschitzWith C G) (hGs : ∀ x, HasFDerivAt G (G' x) x)
-    (hG' : UniformContinuous G') : ContDiff 𝕜 1 (comp G hG : (α →ᵇ X) → α →ᵇ Y) :=
-  contDiff_iff_contDiffAt.2 fun _ ↦
-    contDiffAt_comp hG (s := univ) (fun x _ ↦ hGs x) (uniformContinuousOn_univ.2 hG') one_pos
-      fun _ ↦ subset_univ _
+    (hG' : ∀ r, UniformContinuousOn G' (ball 0 r)) :
+    ContDiff 𝕜 1 (comp G hG : (α →ᵇ X) → α →ᵇ Y) :=
+  contDiff_iff_contDiffAt.2 fun f₀ ↦
+    contDiffAt_comp hG (fun x _ ↦ hGs x) (hG' (‖f₀‖ + 1)) one_pos fun t ↦
+      ball_subset_ball' <| by rw [dist_zero_right]; linarith [norm_coe_le_norm f₀ t]
 
 end BoundedContinuousFunction
