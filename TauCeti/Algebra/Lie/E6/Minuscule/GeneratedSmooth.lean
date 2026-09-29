@@ -71,6 +71,34 @@ theorem generatedCoordinateMap_ker :
   exact CommHopfAlgCat.mkQuotient_ker
     (GeneralLinear.coordinateHopfAlgebra A 27) (generatedDefiningIdeal A)
 
+/-- The `j`th generator coordinate map, factored through the generated subgroup. Contravariantly
+this is the morphism from the `j`th numbered root subgroup, or the weight torus, into the
+subgroup they generate. -/
+noncomputable def generatedCoordinateLift (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+    generatedCoordinateHopfAlgebra A ⟶ generatorCoordinateAlgebra A j :=
+  CommHopfAlgCat.liftQuotient (generatedDefiningIdeal A) (generatorCoordinateMap A j)
+    (generatedDefiningIdeal_toIdeal_le_ker A j)
+
+/-- Composing the generated subgroup's quotient morphism with the `j`th lift recovers the `j`th
+generator coordinate map. This is the defining property of `generatedCoordinateLift`. -/
+@[simp]
+theorem generatedCoordinateMap_comp_generatedCoordinateLift (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+    generatedCoordinateMap A ≫ generatedCoordinateLift A j = generatorCoordinateMap A j := by
+  rw [generatedCoordinateMap, generatedCoordinateLift]
+  exact CommHopfAlgCat.mkQuotient_comp_liftQuotient (generatedDefiningIdeal A)
+    (generatorCoordinateMap A j) (generatedDefiningIdeal_toIdeal_le_ker A j)
+
+/-- The lift is the unique factorization of the `j`th generator coordinate map through the
+generated subgroup, since the quotient morphism is surjective. -/
+theorem generatedCoordinateLift_unique (j : Sum (Fin 6 ⊕ Fin 6) Unit)
+    (g : generatedCoordinateHopfAlgebra A ⟶ generatorCoordinateAlgebra A j)
+    (hg : generatedCoordinateMap A ≫ g = generatorCoordinateMap A j) :
+    g = generatedCoordinateLift A j := by
+  let : Epi (generatedCoordinateMap A) :=
+    ConcreteCategory.epi_of_surjective _ (generatedCoordinateMap_surjective A)
+  exact (cancel_epi (generatedCoordinateMap A)).mp
+    (hg.trans (generatedCoordinateMap_comp_generatedCoordinateLift A j).symm)
+
 /-- The generated coordinate Hopf algebra is a finite-type `A`-algebra, being a quotient of the
 coordinate algebra of `GL₂₇`. -/
 instance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra A) := by
