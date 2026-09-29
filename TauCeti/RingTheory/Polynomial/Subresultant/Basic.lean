@@ -116,12 +116,6 @@ theorem _root_.Polynomial.psc_map [CommRing R] [CommRing S] (f : R →+* S)
     psc (p.map f) (q.map f) m n j = f (psc p q m n j) := by
   simp [psc, RingHom.map_det]
 
-/-- At equal terminal bounds the principal subresultant coefficient is the empty determinant. -/
-@[simp]
-theorem _root_.Polynomial.psc_terminal_eq [CommRing R] (p q : R[X]) (m : ℕ) :
-    psc p q m m m = 1 := by
-  simp [psc, subresultantMatrix]
-
 /-- At the left formal degree bound, the principal coefficient is the corresponding power of the
 left polynomial's coefficient.  This is the terminal coefficient when `m ≤ n`; when `n < m`,
 both sides reduce to `1` because the index is beyond the subresultant range. -/
