@@ -136,8 +136,7 @@ private theorem twoByTwo_simplyBlockedRectangles_swap_id :
   ext r
   simp only [mem_simplyBlockedRectangles, Finset.notMem_empty, iff_false, not_and]
   intro _ hdisjoint _
-  apply Finset.disjoint_left.mp hdisjoint
-    (GridRectangle.squares_eq_coveredSquares r.toGridRectangle ▸ r.left_bottom_mem_squares)
+  apply Finset.disjoint_left.mp hdisjoint r.left_bottom_mem_coveredSquares
   exact twoByTwo.mk_mem_XSet r.left (GridState.twoByTwoSwap r.left) |>.mpr rfl
 
 variable (R : Type*) [CommSemiring R]

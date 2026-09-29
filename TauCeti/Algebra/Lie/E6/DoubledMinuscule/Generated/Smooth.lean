@@ -21,7 +21,7 @@ two schemes are not identified here; neither reductivity nor an identification w
 simply connected type-`E₆` group scheme follows from smoothness alone.
 
 The construction follows the generated subgroup API of
-`TauCeti.Algebra.Lie.E7.Minuscule.GeneratedSmooth`.
+`TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth`.
 
 ## References
 

@@ -9,7 +9,7 @@ public import Mathlib.Data.Fintype.Prod
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Span
-public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 import Mathlib.FieldTheory.Finiteness
@@ -35,9 +35,12 @@ two finite `p`-groups of `p`-class two used as detecting groups for this degree-
 `ℤ/p²` and the Heisenberg group over `𝔽_p`.
 
 In every degree `j`, the iterated `p`-power classes `π^j x'_i ∈ gr_j(F)` of the generators are
-linearly independent, detected in the cyclic groups `ℤ/pʲ⁺¹` of `p`-class `j + 1`; for `j = 1`
-these are the `p`-power part of the basis above. They span the tails of the successive
-approximation of relators in normal form.
+linearly independent, detected in the cyclic groups `ℤ/pʲ⁺¹` of `p`-class `j + 1` through the
+exponent sums modulo `p ^ (j + 1)` (`TauCeti.freeProP.exponentSumZModPow`): the graded map induced
+by the `i`-th of these characters reads off the coefficient of `π^j x'_i`, and on the class of an
+element of `λ_j(F)` it detects whether `p ^ (j + 1)` divides the `i`-th exponent sum. For `j = 1`
+the classes `π x'_i` are the `p`-power part of the basis above. They span the tails of the
+successive approximation of relators in normal form.
 
 At `p = 2` the bracket `[x'_0, x'_1]` in `gr_1(freeProP 2 (Fin 2))` is therefore nonzero, and the
 degree-zero power-defect formula shows that the `2`-power operator on this free pro-`2` group is
@@ -51,6 +54,11 @@ not additive.
 ## Main results
 
 * `TauCeti.freeProP.linearIndependent_degreeOneFamily_of`: the family is linearly independent.
+* `TauCeti.freeProP.dvd_exponentSum_of_mem_pLowerCentralSeries`: the exponent sums of an element
+  of `λ_k(F)` are divisible by `p ^ k`.
+* `TauCeti.freeProP.gradedMap_exponentSumZModPow_gradedMk_eq_zero_iff`: the graded map induced on
+  `gr_k(F)` by the `i`-th exponent sum modulo `p ^ (k + 1)` kills the class of `y ∈ λ_k(F)` exactly
+  when `p ^ (k + 1)` divides the `i`-th exponent sum of `y`.
 * `TauCeti.freeProP.linearIndependent_gradedPowIter_gradedMkZero_of`: the classes `π^j x'_i` are
   linearly independent in `gr_j(F)`, for every `j`.
 * `TauCeti.freeProP.finrank_gradedPiece_one`: `dim gr_1(F) = #X + (#X choose 2)`;
@@ -125,6 +133,75 @@ theorem _root_.MulEquiv.gradedBracket_gradedMkZero_ne_zero_heisenbergGroup
   exact one_ne_zero ((sub_zero (1 : ZMod p)).symm.trans hz)
 
 end Detecting
+
+/-! ### Exponent sums along the lower `p`-series
+
+The character `TauCeti.freeProP.exponentSumZModPow (k + 1) i` of the `i`-th exponent sum modulo
+`p ^ (k + 1)` takes values in the discrete cyclic group `ℤ/pᵏ⁺¹`, whose lower `p`-series stops at
+`λ_{k+1} = 1`. So the graded map it induces on `gr_k(F)` detects the divisibility of the `i`-th
+exponent sum by `p ^ (k + 1)`, and it reads off the coefficient of `π^k x'_i`. -/
+
+namespace freeProP
+
+section ExponentSum
+
+variable {p : ℕ} [Fact p.Prime] {X : Type u}
+
+/-- **Exponent sums along the lower `p`-series**: the exponent sums of an element of `λ_k(F)` are
+divisible by `p ^ k`. -/
+theorem dvd_exponentSum_of_mem_pLowerCentralSeries {k : ℕ} {y : freeProP p X}
+    (hy : y ∈ pLowerCentralSeries p (freeProP p X) k) (i : X) :
+    (p : ℤ_[p]) ^ k ∣ (exponentSum p X y).toAdd i := by
+  rw [← exponentSumZModPow_eq_one_iff]
+  have h := (exponentSumZModPow p X k i).toMonoidHom.map_pLowerCentralSeries_le
+    (exponentSumZModPow p X k i).continuous k ⟨y, hy, rfl⟩
+  rwa [MulEquiv.ulift.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow, Subgroup.mem_bot] at h
+
+/-- **Detecting divisibility on a graded piece**: the graded map induced on `gr_k(F)` by the
+`i`-th exponent sum modulo `p ^ (k + 1)` kills the class of `y ∈ λ_k(F)` exactly when `p ^ (k + 1)`
+divides the `i`-th exponent sum of `y`. -/
+theorem gradedMap_exponentSumZModPow_gradedMk_eq_zero_iff {k : ℕ} (i : X)
+    (y : pLowerCentralSeries p (freeProP p X) k) :
+    gradedMap p (exponentSumZModPow p X (k + 1) i).toMonoidHom
+      (exponentSumZModPow p X (k + 1) i).continuous k (gradedMk p (freeProP p X) k y) = 0 ↔
+      (p : ℤ_[p]) ^ (k + 1) ∣ (exponentSum p X (y : freeProP p X)).toAdd i := by
+  rw [gradedMap_gradedMk, gradedMk_eq_zero_iff, Subgroup.coe_mk,
+    MulEquiv.ulift.pLowerCentralSeries_eq_bot_multiplicative_zmod_pow, Subgroup.mem_bot,
+    ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass, exponentSumZModPow_eq_one_iff]
+
+/-- The graded map induced by the `i`-th exponent sum modulo `p ^ (k + 1)` sends `π^k x'_i` to
+the class `π^k` of the standard generator of `ℤ/pᵏ⁺¹`. -/
+theorem gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_self (k : ℕ) (i : X) :
+    gradedMap p (exponentSumZModPow p X (k + 1) i).toMonoidHom
+      (exponentSumZModPow p X (k + 1) i).continuous k
+        (gradedPowIter p (freeProP p X) k (gradedMkZero p (freeProP p X) (of i))) =
+      gradedPowIter p _ k (gradedMkZero p _ (MulEquiv.ulift.symm (Multiplicative.ofAdd 1))) := by
+  rw [gradedMap_gradedPowIter, gradedMap_gradedMkZero, ContinuousMonoidHom.coe_toMonoidHom,
+    MonoidHom.coe_ofClass, exponentSumZModPow_of_self]
+
+/-- The graded map induced by the `i`-th exponent sum modulo `p ^ (k + 1)` does not kill
+`π^k x'_i`: the class `π^k` of the standard generator of `ℤ/pᵏ⁺¹` is nonzero. -/
+theorem gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_self_ne_zero (k : ℕ) (i : X) :
+    gradedMap p (exponentSumZModPow p X (k + 1) i).toMonoidHom
+      (exponentSumZModPow p X (k + 1) i).continuous k
+        (gradedPowIter p (freeProP p X) k (gradedMkZero p (freeProP p X) (of i))) ≠ 0 := by
+  rw [gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_self]
+  exact MulEquiv.ulift.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow
+
+/-- The graded map induced by the `i`-th exponent sum modulo `p ^ (k + 1)` kills `π^k x'_j` for
+`j ≠ i`. -/
+theorem gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_of_ne (k : ℕ) {i j : X}
+    (hij : j ≠ i) :
+    gradedMap p (exponentSumZModPow p X (k + 1) i).toMonoidHom
+      (exponentSumZModPow p X (k + 1) i).continuous k
+        (gradedPowIter p (freeProP p X) k (gradedMkZero p (freeProP p X) (of j))) = 0 := by
+  rw [gradedMap_gradedPowIter, gradedMap_gradedMkZero, ContinuousMonoidHom.coe_toMonoidHom,
+    MonoidHom.coe_ofClass, exponentSumZModPow_of_of_ne p X _ hij, gradedMkZero_one,
+    gradedPowIter_zero_right]
+
+end ExponentSum
+
+end freeProP
 
 /-! ### The basis of `gr_1` of a free pro-`p` group -/
 
@@ -242,19 +319,14 @@ theorem linearIndependent_gradedPowIter_gradedMkZero_of (j : ℕ) :
       fun i : X ↦ gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) := by
   classical
   refine linearIndependent_iff'.mpr fun s c hc i hi ↦ ?_
-  let e : ULift.{u} (Multiplicative (ZMod (p ^ (j + 1)))) ≃* Multiplicative (ZMod (p ^ (j + 1))) :=
-    MulEquiv.ulift
-  have hP : IsProP p (ULift.{u} (Multiplicative (ZMod (p ^ (j + 1))))) :=
-    ((isProP_iff_isPGroup.mp (isProP_multiplicative_zmod_pow p (j + 1))).of_equiv e.symm).isProP
-  let y : X → ULift.{u} (Multiplicative (ZMod (p ^ (j + 1)))) := fun k ↦
-    if k = i then e.symm (Multiplicative.ofAdd 1) else 1
-  have h := congrArg ((gradedMap p (lift hP y).toMonoidHom (lift hP y).continuous j).toZModLinearMap
-    p) hc
-  simp only [map_sum, map_smul, map_zero, AddMonoidHom.coe_toZModLinearMap,
-    gradedMap_gradedPowIter, gradedMap_gradedMkZero, ContinuousMonoidHom.coe_toMonoidHom] at h
-  rw [Finset.sum_eq_single_of_mem i hi fun k _ hk ↦ by simp [y, hk]] at h
-  refine (smul_eq_zero_iff_left ?_).mp h
-  simpa [y] using e.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow
+  have h := congrArg ((gradedMap p (exponentSumZModPow p X (j + 1) i).toMonoidHom
+    (exponentSumZModPow p X (j + 1) i).continuous j).toZModLinearMap p) hc
+  rw [map_sum, map_zero, Finset.sum_eq_single_of_mem i hi fun k _ hk ↦ by
+    rw [map_smul, AddMonoidHom.coe_toZModLinearMap,
+      gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_of_ne j hk, smul_zero],
+    map_smul, AddMonoidHom.coe_toZModLinearMap] at h
+  exact (smul_eq_zero_iff_left
+    (gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_self_ne_zero j i)).mp h
 
 /-- **The standard basis of `gr_1` of a free pro-`p` group of finite rank**: the `p`-power classes
 `π x'_i` for `i ∈ X` and the brackets `[x'_i, x'_j]` for `i < j` of the generator classes,

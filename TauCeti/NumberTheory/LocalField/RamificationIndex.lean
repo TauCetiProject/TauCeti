@@ -67,9 +67,9 @@ filtration.
 
 The definition only uses the algebra map and the two normalized valuations, so it does not carry
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
-`ramificationIndex_def` and the reformulations of tame, wild, and total ramification, every public
-theorem about it assumes compatibility, which makes the restricted valuation trivial on the units
-of `𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
+`ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
+about it assumes compatibility, which makes the restricted valuation trivial on the units of
+`𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
 
 ## References
 
@@ -83,6 +83,8 @@ noncomputable section
 open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
+
+section Core
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -172,20 +174,32 @@ theorem isTamelyRamified_iff_natCast_ne_zero :
 
 end Tame
 
-section Total
+end Core
 
-variable (K L)
+section Total
 
 /-- A finite extension of nonarchimedean local fields is totally ramified when its ramification
 index equals its degree. -/
-def IsTotallyRamified : Prop := ramificationIndex K L = Module.finrank K L
+def IsTotallyRamified (K L : Type*) [Field K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] : Prop :=
+  ramificationIndex K L = Module.finrank K L
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+variable (K L : Type*) [Field K]
+  [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L]
+
 /-- Total ramification unfolds to its defining equality `e(L/K) = [L : K]`. -/
 theorem isTotallyRamified_iff_ramificationIndex_eq_finrank :
     IsTotallyRamified K L ↔ ramificationIndex K L = Module.finrank K L := Iff.rfl
 
 end Total
+
+section Rest
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L]
 
 variable [ValuativeExtension K L]
 
@@ -470,5 +484,7 @@ theorem isTamelyRamified_tower_iff (M : Type*) [Field M] [ValuativeRel M]
   have hp : (ringChar 𝓀[K]).Prime := CharP.prime_ringChar 𝓀[K]
   simp only [isTamelyRamified_iff, ramificationIndex_tower (K := K) (L := L),
     ← Algebra.ringChar_eq 𝓀[K] 𝓀[L], hp.dvd_mul, not_or]
+
+end Rest
 
 end TauCeti
