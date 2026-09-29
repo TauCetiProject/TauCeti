@@ -178,18 +178,16 @@ theorem cohomFpLinearEquivContinuousZModDual_cohomFpMap (f : H →ₜ* G)
           (eqToHom (res_trivialFp_hom p f)).hom m = f' m :=
         (trivialFpEquiv p H).injective <| by
           simpa [f'] using trivialFpEquiv_eqToHom_res_trivialFp_hom p f m
+      have hf'_symm_apply (z : ZMod p) :
+          f' ((trivialFpEquiv p G).symm z) = (trivialFpEquiv p H).symm z := by
+        apply (trivialFpEquiv p H).injective
+        simp [f']
       apply Subtype.ext
       ext h₀ h₁
       refine (ContinuousCohomology.iCycles_cocyclesMap_one_apply f
         (eqToHom (res_trivialFp_hom p f)) (characterCocycle p χ) f' hf h₀ h₁).trans ?_
       rw [iCycles_characterCocycle, iCycles_characterCocycle,
-        characterCochain_apply, characterCochain_apply]
-      change (trivialFpEquiv p H).symm
-          (trivialFpEquiv p G ((trivialFpEquiv p G).symm
-            (Multiplicative.toAdd (χ.toMul ((f h₀)⁻¹ * f h₁))))) =
-        (trivialFpEquiv p H).symm
-          (Multiplicative.toAdd ((f.continuousZModDualMap χ).toMul (h₀⁻¹ * h₁)))
-      rw [LinearEquiv.apply_symm_apply]
+        characterCochain_apply, characterCochain_apply, hf'_symm_apply]
       apply (trivialFpEquiv p H).injective
       rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
       rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply]
