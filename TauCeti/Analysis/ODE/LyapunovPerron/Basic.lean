@@ -316,6 +316,14 @@ theorem lyapunovPerronIntegral_sub (hα : 0 < α) (hg₁ : Continuous g₁) (hg�
       (integrableOn_lyapunovPerron_unstable hu hα t hg₂.continuousOn fun s _ ↦ hg₂M s)]
   abel
 
+omit [CompleteSpace X] hu in
+/-- The Lyapunov--Perron integral is homogeneous in its forcing term. -/
+theorem lyapunovPerronIntegral_smul (c : ℝ) (g : ℝ → X) (t : ℝ) :
+    lyapunovPerronIntegral A P (c • g) t =
+      c • lyapunovPerronIntegral A P g t := by
+  simp only [lyapunovPerronIntegral, Pi.smul_apply, map_smul, ← smul_sub,
+    intervalIntegral.integral_smul, integral_smul]
+
 /-- Under the backward exponential estimate, the integral terms of the Lyapunov--Perron equation
 solve the forced linear equation `y' = A y + g`. -/
 theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
