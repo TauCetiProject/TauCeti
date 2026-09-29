@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Huber.Restricted.OneVariable
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Ideal
-import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
 # Noetherianity of the one-variable restricted power-series algebra
@@ -41,8 +40,10 @@ transported from the restricted univariate series ring where Weierstrass divisio
 stronger principal-ideal theorem. -/
 theorem isNoetherianRing_restrictedMvPowerSeriesCompletion_one :
     IsNoetherianRing (restrictedMvPowerSeriesCompletion 1 K) := by
-  let _ := TauCeti.PowerSeries.isNoetherianRing_isRestricted_subring (K := K) (c := 1) zero_lt_one
-  exact isNoetherianRing_of_ringEquiv _
-    (restrictedMvPowerSeriesCompletionOneEquiv (R := K)).symm
+  have := TauCeti.PowerSeries.isPrincipalIdealRing_isRestricted_subring (K := K) (c := 1)
+    zero_lt_one
+  have := IsPrincipalIdealRing.of_surjective _
+    (restrictedMvPowerSeriesCompletionOneEquiv (R := K)).symm.surjective
+  exact PrincipalIdealRing.isNoetherianRing
 
 end TauCeti.Huber
