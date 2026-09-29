@@ -42,6 +42,8 @@ localization from `ℤ` to `ℚ` and then by scalar extension from `ℚ` to `ℂ
   nondegeneracy from the integral form.
 * `TauCeti.Hodge.integralFormBaseChange_prod`: scalar extension of a block-diagonal form is
   block diagonal.
+* `TauCeti.Hodge.integralFormBaseChange_tmul`: complexification of the tensor product of two
+  integral forms is the tensor product of their complexifications.
 * `TauCeti.Hodge.integralFormBaseChange_rationalToComplexLinearEquiv_one_tmul`: the complexified
   form computes the rationalified one on purely rational vectors.
 -/
@@ -293,5 +295,36 @@ theorem integralFormBaseChange_prod (h : IsBaseChange A ι) (h' : IsBaseChange A
     simp [LinearMap.prodMap_apply]).symm
 
 end Prod
+
+/-! ### Tensor products -/
+
+section TensorProduct
+
+variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V'] [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
+
+/-- The complexification of the tensor product of two integral forms, along the tensor product of
+two complexifications, is the tensor product of the two complexified forms. -/
+@[simp]
+theorem integralFormBaseChange_tmul (hℂ : IsBaseChange ℂ ιℂ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
+    (Q : LinearMap.BilinForm ℤ V) (Q' : LinearMap.BilinForm ℤ V') :
+    integralFormBaseChange (isBaseChange_tensorLatticeMap hℂ h'ℂ) (Q.tmul Q') =
+      (integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q') := by
+  refine (integralFormBaseChange_unique _ _ _ fun x y ↦ ?_).symm
+  induction x with
+  | tmul v w =>
+    induction y with
+    | tmul v' w' =>
+      rw [tensorLatticeMap_tmul, tensorLatticeMap_tmul, LinearMap.BilinForm.tensorDistrib_tmul,
+        integralFormBaseChange_ι, integralFormBaseChange_ι, smul_eq_mul, ← Int.cast_mul]
+      -- The integral form is applied through the canonical `ℤ`-module structure of `V ⊗[ℤ] V'`,
+      -- which is only defeq, not reducibly, to the one `tensorDistrib_tmul` is stated for.
+      exact congrArg _ (LinearMap.BilinForm.tensorDistrib_tmul ℤ ℤ Q Q' v w v' w').symm
+    | add y y' hy hy' => rw [map_add, map_add, map_add, hy, hy', Int.cast_add]
+  | add x x' hx hx' =>
+    rw [map_add, map_add, LinearMap.add_apply, hx, hx', ← Int.cast_add]
+    exact congrArg _ (LinearMap.map_add₂ (Q.tmul Q') x x' y).symm
+
+end TensorProduct
 
 end TauCeti.Hodge

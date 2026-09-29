@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
 public import TauCeti.NumberTheory.LocalField.SquareClass
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
-import TauCeti.NumberTheory.LocalField.PowerSubgroup
+import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.QuadraticForm.OddValuation
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.Algebra.Group.Units.Basic

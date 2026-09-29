@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # The normalized valuation of a natural number in a local field
@@ -46,6 +47,8 @@ characteristic is the absolute ramification index of `K`.
   is identically zero.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
   `q ^ (-natCastValuation K n hn)`.
+* `TauCeti.IsDiscreteValuationRing.addVal_natCast`: the same valuation in the
+  discrete-valuation-ring convention.
 
 ## References
 
@@ -246,6 +249,24 @@ theorem span_natCast_eq_maximalIdeal_pow (n : ℕ) (hn : (n : K) ≠ 0) :
       Subring.coe_mul, Subring.coe_pow, Subring.coe_natCast] using hu
   rw [← hu', Ideal.span_singleton_mul_left_unit u.isUnit, hπ.maximalIdeal_eq,
     Ideal.span_singleton_pow]
+
+namespace IsDiscreteValuationRing
+
+variable (K) in
+/-- The additive valuation of a nonzero natural-number cast in the integer ring agrees with
+`natCastValuation` of its image in the field. -/
+@[simp] theorem addVal_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
+    _root_.IsDiscreteValuationRing.addVal 𝒪[K] (n : 𝒪[K]) =
+      (natCastValuation K n hn : ℕ∞) := by
+  have hn' : (n : 𝒪[K]) ≠ 0 := fun h => hn (by
+    simpa only [Subring.coe_natCast, Subring.coe_zero] using
+      congrArg (fun x : 𝒪[K] => (x : K)) h)
+  rw [TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton hn',
+    span_natCast_eq_maximalIdeal_pow K n hn,
+    multiplicity_pow_self_of_prime
+      (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field 𝒪[K]) inferInstance)]
+
+end IsDiscreteValuationRing
 
 /-- The multiplicative valuation of a nonzero natural-number cast is the corresponding power of
 the valuation of any uniformizer. -/

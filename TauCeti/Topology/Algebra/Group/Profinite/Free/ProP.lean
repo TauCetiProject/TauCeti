@@ -32,6 +32,7 @@ group is a continuous image of the free pro-`p` group on any finite type with at
 * `TauCeti.freeProP.fromFreeGroup`: the canonical homomorphism from the discrete free group.
 * `TauCeti.freeProP.lift`: extension from the generators.
 * `TauCeti.freeProP.map`: functoriality in the generating type.
+* `TauCeti.freeProP.congr`: the topological isomorphism induced by a bijection of generating types.
 * `TauCeti.freeProC.equivFreeProP`: comparison with the finite-`p` specialization of `freeProC`.
 
 ## Main results
@@ -365,6 +366,53 @@ theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
   obtain ⟨cx, rfl⟩ := freeProC.map_surjective hf cy
   obtain ⟨x, rfl⟩ := (freeProC.equivFreeProP p X).symm.surjective cx
   exact ⟨x, rfl⟩
+
+/-- **The isomorphism of free pro-`p` groups induced by a bijection of the generating types.** It
+sends the generator at `x` to the generator at `σ x`; its inverse is induced by `σ⁻¹`. -/
+noncomputable def congr (σ : X ≃ Y) : freeProP p X ≃ₜ* freeProP p Y where
+  toFun := map σ
+  invFun := map σ.symm
+  left_inv y := by
+    have h : (map (p := p) σ.symm).comp (map σ) = ContinuousMonoidHom.id _ := by
+      rw [← map_comp, Equiv.symm_comp_self, map_id]
+    simpa using DFunLike.congr_fun h y
+  right_inv y := by
+    have h : (map (p := p) σ).comp (map σ.symm) = ContinuousMonoidHom.id _ := by
+      rw [← map_comp, Equiv.self_comp_symm, map_id]
+    simpa using DFunLike.congr_fun h y
+  map_mul' := map_mul _
+  continuous_toFun := (map σ).continuous
+  continuous_invFun := (map σ.symm).continuous
+
+/-- The isomorphism induced by a bijection of generating types is the induced homomorphism
+`TauCeti.freeProP.map`. -/
+theorem coe_congr (σ : X ≃ Y) : ⇑(congr (p := p) σ) = ⇑(map (p := p) σ) := (rfl)
+
+/-- The inverse of the isomorphism induced by a bijection is induced by the inverse bijection. -/
+@[simp]
+theorem congr_symm (σ : X ≃ Y) : (congr (p := p) σ).symm = congr σ.symm :=
+  ContinuousMulEquiv.ext fun _ ↦ rfl
+
+/-- The isomorphism induced by the identity bijection is the identity. -/
+@[simp]
+theorem congr_refl : congr (p := p) (Equiv.refl X) = ContinuousMulEquiv.refl (freeProP p X) :=
+  ContinuousMulEquiv.ext fun y ↦ by
+    rw [coe_congr, Equiv.coe_refl, map_id]
+    rfl
+
+/-- The isomorphisms induced by bijections of generating types compose functorially. -/
+@[simp]
+theorem congr_trans (σ : X ≃ Y) (τ : Y ≃ Z) :
+    congr (p := p) (σ.trans τ) = (congr σ).trans (congr τ) :=
+  ContinuousMulEquiv.ext fun y ↦ by
+    rw [ContinuousMulEquiv.trans_apply, coe_congr, coe_congr, coe_congr, Equiv.coe_trans, map_comp]
+    rfl
+
+/-- The isomorphism induced by a bijection of generating types sends the generator at `x` to the
+generator at `σ x`. -/
+@[simp]
+theorem congr_of (σ : X ≃ Y) (x : X) : congr (p := p) σ (of x) = of (σ x) := by
+  rw [coe_congr, map_of]
 
 end Map
 

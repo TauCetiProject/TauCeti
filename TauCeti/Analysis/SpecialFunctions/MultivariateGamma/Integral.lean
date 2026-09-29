@@ -126,19 +126,17 @@ theorem lintegral_posDef_multivariateGamma (ha : ((p : ℝ) - 1) / 2 < a) :
             (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)))) := fun x => by
     rw [ENNReal.ofReal_mul (det_rpow_mul_exp_neg_trace_nonneg x _), choleskyJacobianDensity_def,
       coe_lowerTriangleGram, mul_comm]
-  have hnonneg : 0 ≤ᵐ[volume.restrict
-      {x : lowerTriangle p → ℝ | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩}]
+  have hnonneg : 0 ≤ᵐ[volume.restrict (posDiagLowerRegion p)]
       fun x : lowerTriangle p → ℝ =>
         ((lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace)) *
           (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))) := by
-    rw [← posDiagLowerRegion_def]
     filter_upwards [ae_restrict_mem (measurableSet_posDiagLowerRegion p)] with x hx
     exact mul_nonneg (det_rpow_mul_exp_neg_trace_nonneg x _) (mul_nonneg (by positivity)
       (Finset.prod_nonneg fun i _ => pow_nonneg ((mem_posDiagLowerRegion p).mp hx i).le _))
   rw [setLIntegral_posDef_symmetricLebesgue p (by fun_prop)]
   simp_rw [hpt]
-  rw [posDiagLowerRegion_def, ← ofReal_integral_eq_lintegral_ofReal
+  rw [← ofReal_integral_eq_lintegral_ofReal
       (integrableOn_lowerTriangle_det_rpow_mul_exp_neg_trace ha) hnonneg,
     integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha]
 
@@ -174,7 +172,7 @@ theorem integral_posDef_multivariateGamma (ha : ((p : ℝ) - 1) / 2 < a) :
         exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) ∂symmetricLebesgue p =
       multivariateGamma p a := by
   rw [integral_posDef_symmetricLebesgue p (Measurable.aestronglyMeasurable (by fun_prop)),
-    ← integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha, ← posDiagLowerRegion_def]
+    ← integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha]
   refine setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x _ => ?_
   simp only [coe_lowerTriangleGram, smul_eq_mul]
   ring

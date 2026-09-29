@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Algebra.Group.Subgroup.Normalizer
 public import TauCeti.GroupTheory.Commutator
 public import TauCeti.GroupTheory.PLowerCentralSeries
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -81,6 +82,7 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
   degree-raising law `⁅λ_j, λ_k⁆ ≤ λ_{j+k+1}`.
 * `MonoidHom.map_pLowerCentralSeries_le`, `MonoidHom.map_pLowerCentralSeries_eq_of_surjective`,
   `ContinuousMulEquiv.map_pLowerCentralSeries_eq`: functoriality of the series.
+* `TauCeti.isTopCharacteristic_pLowerCentralSeries`: every term is topologically characteristic.
 * `TauCeti.pLowerCentralSeries_eq_topologicalClosure`,
   `TauCeti.pLowerCentralSeries_eq_of_discreteTopology`: comparison with the abstract lower
   `p`-central series of the underlying group.
@@ -479,6 +481,25 @@ theorem pLowerCentralSeries_one :
   rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero, pLowerCentralStep_def, coe_top,
     Set.image_univ, commutator_def]
 
+/-- The first term of the closed lower central series is the closure of the commutator subgroup. -/
+theorem pLowerCentralSeries_one_zero :
+    pLowerCentralSeries 0 G 1 = (commutator G).topologicalClosure := by
+  rw [pLowerCentralSeries_one]
+  simp
+
+/-- **`λ_1(G)` lies in the kernel of a homomorphism to an abelian group that kills `p`-th
+powers.** For a homomorphism `φ : G →* K` with closed kernel into a commutative group,
+`λ_1(G) ≤ ker φ` as soon as `φ` kills the `p`-th powers of `G`: the kernel is closed and contains
+`Gᵖ` and `[G, G]`. -/
+theorem _root_.MonoidHom.pLowerCentralSeries_one_le_ker {K : Type*} [CommGroup K] (φ : G →* K)
+    (hφ : IsClosed (φ.ker : Set G)) (hp : ∀ g : G, φ g ^ p = 1) :
+    pLowerCentralSeries p G 1 ≤ φ.ker := by
+  rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero]
+  refine (pLowerCentralStep_le_iff hφ).mpr ⟨fun g _ ↦ ?_, commutator_le.mpr fun g _ g' _ ↦ ?_⟩
+  · rw [MonoidHom.mem_ker, map_pow, hp]
+  · rw [MonoidHom.mem_ker, map_commutatorElement, commutatorElement_eq_one_iff_mul_comm]
+    exact mul_comm _ _
+
 /-- **The degree-raising law.** Commutators of `λ_j` with `λ_k` lie in `λ_{j+k+1}`. -/
 theorem commutator_pLowerCentralSeries_le (j k : ℕ) :
     ⁅pLowerCentralSeries p G j, pLowerCentralSeries p G k⁆ ≤
@@ -594,6 +615,13 @@ theorem _root_.ContinuousMulEquiv.map_pLowerCentralSeries_eq (e : G ≃ₜ* H) (
     e.symm.toMulEquiv.toMonoidHom.map_pLowerCentralSeries_le e.symm.continuous k
       (mem_map_of_mem _ hx)
   exact ⟨e.symm x, hsymm, e.apply_symm_apply x⟩
+
+variable (p) in
+/-- Every term of the lower `p`-series is topologically characteristic, for every topological
+group and every natural number `p`. -/
+theorem isTopCharacteristic_pLowerCentralSeries (k : ℕ) :
+    IsTopCharacteristic G (pLowerCentralSeries p G k) :=
+  isTopCharacteristic_iff_map_eq.mpr fun φ ↦ φ.map_pLowerCentralSeries_eq k
 
 /-- A group isomorphism between discrete groups matches their lower `p`-series term by term. -/
 theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology [DiscreteTopology G]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.PGroup
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
@@ -60,6 +61,7 @@ hold there. Compactness of `G` is assumed exactly where it is used.
   with `TauCeti.proPKernel_maximalProPQuotient_eq_bot` this is idempotence of `G ↦ G(p)`.
 * `TauCeti.map_proPKernel_eq`: continuous multiplicative equivalences preserve the pro-`p`
   kernel.
+* `TauCeti.isTopCharacteristic_proPKernel`: the pro-`p` kernel is topologically characteristic.
 
 ## References
 
@@ -190,6 +192,12 @@ theorem map_proPKernel_eq (e : G ≃ₜ* H) :
     map_proPKernel_le e.symm.toMulEquiv.toMonoidHom e.symm.continuous
       (Subgroup.mem_map_of_mem _ hx)
   exact ⟨e.symm x, hsymm, e.apply_symm_apply x⟩
+
+/-- The pro-`p` kernel is topologically characteristic for every topological group and every
+natural number `p`. -/
+theorem isTopCharacteristic_proPKernel (p : ℕ) :
+    IsTopCharacteristic G (proPKernel p G) :=
+  isTopCharacteristic_iff_map_eq.mpr fun φ ↦ map_proPKernel_eq φ
 
 /-- The map induced on maximal pro-`p` quotients by a continuous homomorphism. -/
 def maximalProPQuotient.map (f : G →* H) (hf : Continuous f) :

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 
 /-!
 # Norms of integral lattices
@@ -40,7 +40,8 @@ the integral norm on the carrier.
 * `TauCeti.IntegralLattice.integralNorm_add`: polarization identity for the integral norm.
 * `TauCeti.IntegralLattice.integralNorm_sub`: subtractive polarization identity for the integral
   norm.
-* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast`: characterization of integer-norm vectors.
+* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast` and
+  `TauCeti.IntegralLattice.mem_vectorsOfNorm_natCast`: characterization of integer-norm vectors.
 
 ## References
 
@@ -211,6 +212,12 @@ theorem mem_vectorsOfNorm_intCast (L : IntegralLattice V) {n : ℤ} {x : L} :
     x ∈ L.vectorsOfNorm (n : ℚ) ↔ L.integralNorm x = n := by
   rw [mem_vectorsOfNorm, ← L.integralNorm_cast x]
   exact Int.cast_inj
+
+/-- Membership in `vectorsOfNorm (n : ℚ)` for a natural number `n` is equivalent to having integral
+norm equal to `n`. -/
+theorem mem_vectorsOfNorm_natCast (L : IntegralLattice V) {n : ℕ} {x : L} :
+    x ∈ L.vectorsOfNorm (n : ℚ) ↔ L.integralNorm x = n := by
+  rw [← Int.cast_natCast, L.mem_vectorsOfNorm_intCast]
 
 /-- The zero vector in an integral lattice has norm zero. -/
 theorem zero_mem_vectorsOfNorm (L : IntegralLattice V) : (0 : L) ∈ L.vectorsOfNorm 0 := by

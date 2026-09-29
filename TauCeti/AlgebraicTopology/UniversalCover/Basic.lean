@@ -26,6 +26,7 @@ the quotient topology coming from the compact-open based-path space.
   `path : Path.Homotopic.Quotient x₀ proj` (the homotopy class of paths from `x₀`),
   topologized as the quotient of `BasedPath x₀` under endpoint-preserving homotopy.
 * `UniversalCover.proj : UniversalCover x₀ → X`: the endpoint projection (auto-generated).
+* `UniversalCover.basepointLift`: the constant-path point over `x₀`.
 * `UniversalCover.sheet`: the sheet indexed by `q : Path.Homotopic.Quotient x₀ x` over a good
   neighborhood `U`, viewed as a subset of `UniversalCover x₀`.
 
@@ -115,11 +116,53 @@ theorem surjective_ofBasedPath (x₀ : X) : Function.Surjective (ofBasedPath x�
 theorem isQuotientMap_ofBasedPath (x₀ : X) : IsQuotientMap (ofBasedPath x₀) :=
   ⟨⟨rfl⟩, surjective_ofBasedPath x₀⟩
 
+/-- Prepending a fixed path is continuous on the based-path quotient. -/
+theorem continuous_prepend {y : X} (γ : Path x₀ y) :
+    Continuous (fun e : UniversalCover y =>
+      mk e.proj ((Path.Homotopic.Quotient.mk γ).trans e.path)) := by
+  rw [(isQuotientMap_ofBasedPath y).continuous_iff]
+  suffices h : Continuous (fun β : BasedPath y =>
+      ofBasedPath x₀ (BasedPath.ofPath (γ.trans β.toPath))) by
+    apply h.congr
+    intro β
+    rw [ofBasedPath_ofPath, Function.comp_apply, ofBasedPath_def,
+      Path.Homotopic.Quotient.mk_trans]
+  refine (continuous_ofBasedPath x₀).comp (Continuous.subtype_mk ?_ _)
+  refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
+  have h_eval : Continuous fun p : BasedPath y × I => p.1.1 p.2 :=
+    continuous_eval.comp (continuous_subtype_val.prodMap continuous_id)
+  -- Unfolding `BasedPath.ofPath` and its continuous-map evaluation exposes concatenation.
+  change Continuous fun p : BasedPath y × I => γ.trans p.1.toPath p.2
+  exact Path.trans_continuous_family (a := fun _ : BasedPath y => x₀)
+    (b := fun _ : BasedPath y => y)
+    (c := fun β : BasedPath y => BasedPath.endpoint β)
+    (fun _ => γ) (Path.continuous_uncurry_iff.mpr continuous_const)
+    (fun β => β.toPath) h_eval
+
 /-- `proj` composed with `ofBasedPath` reads off the endpoint of the representative. -/
 @[simp]
 theorem proj_ofBasedPath (x₀ : X) (γ : BasedPath x₀) :
     proj (ofBasedPath x₀ γ) = BasedPath.endpoint γ :=
   (rfl)
+
+/-- The constant-path point in the fibre of the universal covering projection over `x₀`. -/
+def basepointLift (x₀ : X) : (proj : UniversalCover x₀ → X) ⁻¹' {x₀} :=
+  ⟨ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀)),
+    Set.mem_singleton_iff.mpr (by
+      rw [proj_ofBasedPath]
+      exact BasedPath.endpoint_ofPath _)⟩
+
+/-- The endpoint projection sends the constant-path point to the basepoint. -/
+theorem proj_basepointLift (x₀ : X) : proj (basepointLift x₀ : UniversalCover x₀) = x₀ :=
+  (basepointLift x₀).2
+
+/-- The underlying point of `basepointLift` is represented by the constant path. -/
+@[simp]
+theorem basepointLift_coe (x₀ : X) :
+    (basepointLift x₀ : UniversalCover x₀) =
+      mk x₀ (Path.Homotopic.Quotient.refl x₀) := by
+  simp only [basepointLift]
+  rw [ofBasedPath_ofPath, Path.Homotopic.Quotient.mk_refl]
 
 /-- The endpoint projection of the universal cover has range the path component of `x₀`. -/
 @[simp]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Binary.Generators
+public import TauCeti.InformationTheory.Coding.Binary.TypeII
 public import TauCeti.InformationTheory.Coding.Weight.Enumerator
 
 import Mathlib.Tactic.FinCases
@@ -554,6 +555,10 @@ theorem hammingNorm_mem {x : Fin 24 → ZMod 2} (hx : x ∈ code) :
 theorem isDoublyEven_code : BinaryCode.IsDoublyEven code := by
   rw [code_def, BinaryCode.isDoublyEven_generatedBy_iff]
   exact ⟨by decide +kernel, generator_mul_transpose_eq_zero⟩
+
+/-- The extended binary Golay code is Type II: doubly even and Euclidean self-dual. -/
+theorem isTypeII_code : BinaryCode.IsTypeII code :=
+  isDoublyEven_code.isTypeII euclideanDual_code.symm
 
 private theorem weightDistribution_eq_card (w : ℕ) :
     (code : Set (Fin 24 → ZMod 2)).weightDistribution w =

@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.Orders
 public import TauCeti.GroupTheory.TriangleGroup.Hyperbolic
+import TauCeti.GroupTheory.TriangleGroup.Cyclic
+import TauCeti.GroupTheory.TriangleGroup.Dihedral
+import TauCeti.GroupTheory.TriangleGroup.Polyhedral
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
@@ -48,10 +51,12 @@ both readings. The classification is what the trichotomy amounts to for finitene
 outside the spherical parameters gives an infinite group, while the cyclic and dihedral rows give
 finite groups, of order `Nat.gcd b c` and `2m` by `natCard_one` and `natCard_two_two`, so in
 particular the signatures `(1, m, m)` and `(2, 2, m)` have orders `m` and `2m`. The three
-polyhedral rows are the remaining cases, and neither their finiteness nor the orders the spherical
-table records for them as `2 / χᵒʳᵇ` is established here. That formula is a statement about the
-exact rows, where `2 / χᵒʳᵇ(1, m, m) = m` and `2 / χᵒʳᵇ(2, 2, m) = 2m` are the orders just proved,
-while an unreduced parameter triple `(1, b, c)` has order `Nat.gcd b c`, which is
+polyhedral rows give the finite groups `A₄`, `S₄` and `A₅`, of orders `12`, `24` and `60` by
+`natCard_two_three_three`, `natCard_two_three_four` and `natCard_two_three_five`, the orders the
+spherical table records as `2 / χᵒʳᵇ`. So a sorted positive signature gives a finite triangle
+group exactly when it is a spherical parameter signature. The formula `2 / χᵒʳᵇ` is a statement
+about the exact rows, where `2 / χᵒʳᵇ(1, m, m) = m` and `2 / χᵒʳᵇ(2, 2, m) = 2m` are the orders
+just proved, while an unreduced parameter triple `(1, b, c)` has order `Nat.gcd b c`, which is
 `2 / χᵒʳᵇ(1, b, c)` only when `b = c`.
 
 ## Main definitions
@@ -90,10 +95,9 @@ works on a concrete signature, and a public characteristic lemma
   `TauCeti.not_isSphericalSignature_of_isEuclideanSignature` on exact signatures: the two
   classified lists are disjoint.
 * `TauCeti.TriangleGroup.infinite_of_not_isSphericalParameterSignature`: a signature whose
-  parameters are not a row of the spherical table gives an infinite triangle group; the cyclic and
-  dihedral rows are finite, by `TauCeti.TriangleGroup.finite_one` in
-  `TauCeti.GroupTheory.TriangleGroup.Cyclic` and `TauCeti.TriangleGroup.finite_two_two` in
-  `TauCeti.GroupTheory.TriangleGroup.Dihedral`.
+  parameters are not a row of the spherical table gives an infinite triangle group.
+* `TauCeti.TriangleGroup.finite_iff_isSphericalParameterSignature`: a sorted positive signature
+  gives a finite triangle group exactly when its parameters are a row of the spherical table.
 * `TauCeti.PermutationTriple.geometryType_eq_spherical_iff_orbifoldEulerChar_pos` and its
   Euclidean and hyperbolic counterparts: the sign of the orbifold characteristic is the geometry
   type of a triple with exact orders `(a, b, c)`.
@@ -519,6 +523,25 @@ theorem infinite_of_not_isSphericalParameterSignature {a b c : ℕ} (h₁ : 1 �
     by_contra hcon
     exact h ((isSphericalParameterSignature_iff h₁ h₂ h₃).2 (sub_pos.mpr (not_le.1 hcon)))
   exact hle
+
+/-- **The finite triangle groups.** A sorted positive signature gives a finite triangle group
+exactly when its parameters are a row of the spherical table: the cyclic and dihedral rows and
+the three polyhedral triples `(2, 3, 3)`, `(2, 3, 4)` and `(2, 3, 5)`. -/
+theorem finite_iff_isSphericalParameterSignature {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ : a ≤ b)
+    (h₃ : b ≤ c) : Finite (TriangleGroup a b c) ↔ IsSphericalParameterSignature a b c := by
+  refine ⟨fun _ ↦ by_contra fun h ↦ ?_, fun h ↦ ?_⟩
+  · have := infinite_of_not_isSphericalParameterSignature h₁ h₂ h₃ h
+    exact not_finite (TriangleGroup a b c)
+  · rcases (isSphericalParameterSignature_rows_iff a b c).1 h with
+      ⟨-, -, -, rfl | ⟨rfl, rfl⟩ | h | h | h⟩
+    · exact finite_one (Nat.gcd_pos_of_pos_left _ (by omega))
+    · exact finite_two_two c h₃
+    · obtain ⟨rfl, rfl, rfl⟩ := h
+      exact finite_two_three_three
+    · obtain ⟨rfl, rfl, rfl⟩ := h
+      exact finite_two_three_four
+    · obtain ⟨rfl, rfl, rfl⟩ := h
+      exact finite_two_three_five
 
 end TriangleGroup
 
