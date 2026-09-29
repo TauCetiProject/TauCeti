@@ -51,10 +51,10 @@ theorem cup_res_zero_positive (M N : Rep k G) (H : Subgroup G) (n : ℕ)
             (Rep.tensorInvariant N x ≫ (β_ N M).hom) ≫ posRes (M ⊗ N) H n =
           posRes N H n ≫ (tateCohomologyFunctor ((n + 1 : ℕ) : ℤ)).map
             (Rep.resMap H.subtype (Rep.tensorInvariant N x ≫ (β_ N M).hom)) := hnat
-    rw [TauCeti.Rep.resMap_tensorInvariant_braiding H.subtype x
+    rw [TauCeti.Rep.resMap_tensorInvariant_braiding N H.subtype x
       ((Submodule.inclusion
-        (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) x) rfl]
-      at hnat'
+        (Representation.invariants_le_invariants_comp_subtype (ρ := M.ρ) (H := H))) x)
+      (Submodule.coe_inclusion _ x)] at hnat'
     convert congrArg (fun g => g y) hnat' using 1
     simp only [ModuleCat.comp_apply, Int.natCast_add, Int.cast_ofNat_Int, tensor_V, tensor_ρ]
     rfl

@@ -101,7 +101,7 @@ theorem tensorInvariant_braiding_hom_apply (x : M.ρ.invariants) (y : N.V) :
 
 /-- Restricting `y ↦ x ⊗ₜ y` along a monoid homomorphism gives the same map for the restricted
 representations, tensoring with `x` viewed as an invariant of the restriction. -/
-theorem resMap_tensorInvariant_braiding {H : Type u} [Group H] (f : H →* G)
+theorem resMap_tensorInvariant_braiding (N : _root_.Rep k G) {H : Type u} [Group H] (f : H →* G)
     (x : M.ρ.invariants) (x' : (_root_.Rep.res f M).ρ.invariants) (hx : (x' : M.V) = x) :
     _root_.Rep.resMap f (_root_.Rep.tensorInvariant N x ≫ (β_ N M).hom) =
       _root_.Rep.tensorInvariant (_root_.Rep.res f N) x' ≫
