@@ -15,7 +15,8 @@ import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 The weak maximum principles of `TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple`
 and `TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple` bound a subsolution
-by its frontier values. This file proves the **strong maximum principle** in a finite-dimensional
+by its frontier values; with a zeroth-order term `c ≥ 0`, by a nonnegative upper bound of its
+frontier values. This file proves the **strong maximum principle** in a finite-dimensional
 real inner product space, first for the operator `-Δ - b·∇ + c` with locally bounded drift `b` and
 locally bounded zeroth-order coefficient `c ≥ 0`, and then for the Laplacian: a `C²` subsolution
 `c u ≤ Δ u + ⟪b, ∇u⟫` on a preconnected open set that attains a nonnegative maximum over the set at
@@ -49,7 +50,7 @@ function may be constant near a local maximum and increase further away.
 * `TauCeti.eqOn_const_of_laplacian_add_fderiv_le_mul_of_isMinOn`: the strong minimum principle
   for supersolutions of `-Δ - b·∇ + c`.
 * `TauCeti.eqOn_of_laplacian_add_fderiv_sub_mul_le_of_le_of_eq`: the strong comparison principle
-  for `-Δ - b·∇ + c`, which needs no sign condition.
+  for `-Δ - b·∇ + c`, which needs no sign condition on `c`, `u` or `v`.
 * `TauCeti.eventually_eq_of_laplacian_nonneg_of_isLocalMax`: a function that is `C²` at a local
   maximum point and subharmonic near it is constant near it; its superharmonic mirror image is
   `TauCeti.eventually_eq_of_laplacian_nonpos_of_isLocalMin`.
@@ -257,25 +258,33 @@ theorem eqOn_const_of_laplacian_add_fderiv_le_mul_of_isMinOn (hU : IsOpen U) (ha
   simpa only [Pi.neg_apply, const_apply, neg_inj] using h hx
 
 /-- **Strong comparison principle for `-Δ - b·∇ + c`.** Let `U` be a preconnected open set, let
-`b` and `c ≥ 0` be locally bounded on `U`, and let `u` and `v` be `C²` on `U` with
-`Δ v + ⟪b, ∇v⟫ - c v ≤ Δ u + ⟪b, ∇u⟫ - c u` there. If `u ≤ v` on `U` and they agree at a point of
-`U`, then they agree on all of `U`. No sign condition on `u` or `v` is needed. -/
+`b` be locally bounded and `c` locally bounded above on `U`, and let `u` and `v` be `C²` on `U`
+with `Δ v + ⟪b, ∇v⟫ - c v ≤ Δ u + ⟪b, ∇u⟫ - c u` there. If `u ≤ v` on `U` and they agree at a
+point of `U`, then they agree on all of `U`. No sign condition on `c`, `u` or `v` is needed: since
+`u - v ≤ 0`, the difference is a subsolution for the coefficient `max c 0`. -/
 theorem eqOn_of_laplacian_add_fderiv_sub_mul_le_of_le_of_eq (hU : IsOpen U) (ha : a ∈ U)
     (hUconn : IsPreconnected U) (hucd : ∀ x ∈ U, ContDiffAt ℝ 2 u x)
-    (hvcd : ∀ x ∈ U, ContDiffAt ℝ 2 v x) (hc : ∀ x ∈ U, 0 ≤ c x)
-    (hcbdd : ∀ x ∈ U, (𝓝 x).IsBoundedUnder (· ≤ ·) c)
+    (hvcd : ∀ x ∈ U, ContDiffAt ℝ 2 v x) (hcbdd : ∀ x ∈ U, (𝓝 x).IsBoundedUnder (· ≤ ·) c)
     (hbbdd : ∀ x ∈ U, (𝓝 x).IsBoundedUnder (· ≤ ·) fun y ↦ ‖b y‖)
     (hL : ∀ x ∈ U,
       Δ v x + fderiv ℝ v x (b x) - c x * v x ≤ Δ u x + fderiv ℝ u x (b x) - c x * u x)
     (hle : ∀ x ∈ U, u x ≤ v x) (heq : u a = v a) :
     EqOn u v U := by
-  have h := eqOn_const_of_mul_le_laplacian_add_fderiv_of_isMaxOn (u := u - v) hU ha hUconn
-    (fun x hx => (hucd x hx).sub (hvcd x hx)) hc hcbdd hbbdd
+  -- Since `u - v ≤ 0`, replacing `c` by `max c 0` keeps `u - v` a subsolution.
+  have h := eqOn_const_of_mul_le_laplacian_add_fderiv_of_isMaxOn (u := u - v)
+    (c := fun x ↦ max (c x) 0) hU ha hUconn
+    (fun x hx => (hucd x hx).sub (hvcd x hx)) (fun _ _ => le_max_right _ _)
+    (fun x hx => by
+      obtain ⟨γ, hγ⟩ := hcbdd x hx
+      exact isBoundedUnder_of_eventually_le
+        ((eventually_map.mp hγ).mono fun _ hy => max_le_max_right 0 hy))
+    hbbdd
     (fun x hx => by
       rw [(hucd x hx).laplacian_sub (hvcd x hx),
         fderiv_sub ((hucd x hx).differentiableAt (by simp))
           ((hvcd x hx).differentiableAt (by simp))]
       simp only [Pi.sub_apply, sub_apply]
+      have := mul_le_mul_of_nonpos_right (le_max_left (c x) 0) (sub_nonpos.mpr (hle x hx))
       linarith [hL x hx])
     (by simp [heq])
     (fun x hx => by

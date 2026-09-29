@@ -18,7 +18,8 @@ import Mathlib.Topology.MetricSpace.Bounded
 
 The weak maximum principles of `TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple`
 and `TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple` bound a subsolution
-on a compact set by its frontier values.  This file proves the complementary *local* statement at a
+on a compact set by its frontier values; with a zeroth-order term `c ≥ 0`, by a nonnegative upper
+bound of its frontier values.  This file proves the complementary *local* statement at a
 point where such a bound is attained: **Hopf's boundary-point lemma**, for the operator
 `-Δ - b·∇ + c` with bounded drift `b` and bounded nonnegative zeroth-order coefficient `c`, and in
 particular for the Laplacian.
