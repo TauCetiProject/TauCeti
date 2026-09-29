@@ -104,12 +104,6 @@ lemma convInv_def (f : WithConv (H →ₐ[R] A)) :
 lemma ofConv_inv (f : WithConv (H →ₐ[R] A)) :
     (f⁻¹).ofConv = antipodeComp f.ofConv := rfl
 
-/-- Passing to underlying linear maps, the convolution inverse has linear map
-`f.ofConv.toLinearMap ∘ₗ antipode R`. -/
-@[simp]
-lemma toLinearMap_convInv (f : WithConv (H →ₐ[R] A)) :
-    (f⁻¹).ofConv.toLinearMap = f.ofConv.toLinearMap ∘ₗ antipode R := rfl
-
 /-- Pointwise, the convolution inverse of `f` sends `h` to `f (S h)`, where `S` is the
 antipode. -/
 @[simp]
@@ -203,18 +197,6 @@ lemma mapValue_comp (ψ : B →ₐ[R] C) (φ : A →ₐ[R] B) :
     AlgHom.comp_assoc]
 
 end Bialgebra
-
-section HopfValue
-
-variable [Semiring H] [_root_.HopfAlgebra R H] [CommSemiring A] [Algebra R A]
-variable {B : Type*} [CommSemiring B] [Algebra R B]
-
-/-- `mapValue` preserves convolution inverses when `H` is a Hopf algebra. -/
-lemma _root_.AlgHom.mapValue_inv (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
-    mapValue (H := H) φ f⁻¹ = (mapValue (H := H) φ f)⁻¹ :=
-  map_inv (mapValue φ) f
-
-end HopfValue
 
 section CommHopf
 
