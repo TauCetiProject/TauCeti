@@ -20,7 +20,9 @@ restriction `Gal(M/K) → Gal(L/K)` with the inclusion, for finite Galois extens
 Along such a pair a `2`-cocycle `c` of `Aut_K(L)` with values in `Lˣ` **inflates** to the cocycle
 `c.comap f ι hf : (g, g') ↦ ι (c (f g, f g'))` of `Aut_K(M)`; without the intertwining hypothesis
 this function would not be a cocycle, which is why the hypothesis is an argument of
-`TauCeti.TwoCocycle.comap`.
+`TauCeti.TwoCocycle.comap`. The inflation itself is defined in
+`TauCeti.Algebra.CrossedProduct.Basic`, and `TauCeti.TwoCocycle.Cohomologous.comap` (inflation
+preserves being cohomologous) is in `TauCeti.Algebra.CrossedProduct.Cohomologous`.
 
 The theorem of the file is that inflation does not change the Brauer class of the crossed product.
 Write `A = (L, Gal(L/K), c)`, `B = (M, Gal(M/K), c.comap f ι hf)` and `r = [M : L]`. Choose an
@@ -34,13 +36,8 @@ subgroup `Gal(M/L)`, over which the automorphisms sum to the trace, so that
 Dedekind's independence of characters, which gives `∑_i m*_i · g(m_i) = δ_{g,1}` for `g` fixing
 `L`; and it is bijective because `M_r(A)` is simple and both sides have dimension `[M : K]²`.
 
-## Main definitions
-
-* `TauCeti.TwoCocycle.comap f ι hf c`: the inflation of `c` along the compatible pair `(f, ι)`.
-
 ## Main results
 
-* `TauCeti.TwoCocycle.Cohomologous.comap`: inflation preserves being cohomologous.
 * `TauCeti.CrossedProduct.nonempty_algEquiv_matrix_comap`: for a tower `K ⊆ L ⊆ M` of finite
   Galois extensions, the crossed product of the inflated cocycle is isomorphic to the algebra of
   `[M : L] × [M : L]` matrices over the crossed product of `c`.
@@ -61,50 +58,6 @@ universe u v w
 
 namespace TauCeti
 
-namespace TwoCocycle
-
-variable {K : Type u} [CommSemiring K] {L : Type v} [CommRing L] [Algebra K L]
-  {M : Type w} [CommRing M] [Algebra K M]
-
-/-- The **inflation** of a `2`-cocycle `c` of `Aut_K(L)` along a compatible pair: a homomorphism
-`f : Aut_K(M) → Aut_K(L)` and an embedding `ι : L → M` intertwining it, `ι (f g x) = g (ι x)`.
-Its values are `(g, g') ↦ ι (c (f g, f g'))`; the intertwining hypothesis is what makes this a
-cocycle. -/
-def comap (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : ∀ g x, ι (f g x) = g (ι x))
-    (c : TwoCocycle K L) : TwoCocycle K M where
-  toFun g g' := Units.map (ι : L →* M) (c.toFun (f g) (f g'))
-  isMulCocycle₂ g g' g'' := by
-    have hsmul (x : Lˣ) : g • Units.map (ι : L →* M) x = Units.map (ι : L →* M) (f g • x) :=
-      Units.ext (by simp [AlgEquiv.smul_units_def, hf])
-    have h := c.isMulCocycle₂ (f g) (f g') (f g'')
-    dsimp only at h ⊢
-    rw [← map_mul f, ← map_mul f] at h
-    rw [hsmul, ← map_mul, ← map_mul, h]
-
-variable (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : ∀ g x, ι (f g x) = g (ι x))
-
-/-- The defining equation of the inflated cocycle, `(c.comap f ι hf)(g, g') = ι (c (f g, f g'))`,
-as units. -/
-theorem comap_toFun (c : TwoCocycle K L) (g g' : M ≃ₐ[K] M) :
-    (c.comap f ι hf).toFun g g' = Units.map (ι : L →* M) (c.toFun (f g) (f g')) :=
-  (rfl)
-
-/-- The values of the inflated cocycle, `(c.comap f ι hf)(g, g') = ι (c (f g, f g'))`. -/
-@[simp]
-theorem coe_comap_toFun (c : TwoCocycle K L) (g g' : M ≃ₐ[K] M) :
-    ((c.comap f ι hf).toFun g g' : M) = ι (c.toFun (f g) (f g')) :=
-  (rfl)
-
-/-- Inflation preserves being cohomologous: if `w / z` is the coboundary of `b`, then the
-inflation of `w / z` is the coboundary of `g ↦ ι (b (f g))`. -/
-theorem Cohomologous.comap {z w : TwoCocycle K L} (h : z.Cohomologous w) :
-    (z.comap f ι hf).Cohomologous (w.comap f ι hf) := by
-  obtain ⟨b, hb⟩ := cohomologous_iff.1 h
-  refine cohomologous_iff.2 ⟨fun g ↦ Units.map (ι : L →* M) (b (f g)), fun g g' ↦ ?_⟩
-  simp [hb, ← hf]
-
-end TwoCocycle
-
 namespace CrossedProduct
 
 open Module
@@ -122,7 +75,8 @@ private theorem sum_fiber_apply [IsGalois K M] [DecidableEq (L ≃ₐ[K] L)] (σ
     (z : M) :
     ∑ g ∈ Finset.univ.filter (fun g ↦ f g = σ), g z =
       algebraMap L M (σ (Algebra.trace L M z)) := by
-  have hf : ∀ g x, algebraMap L M (f g x) = g (algebraMap L M x) := hf
+  have hf : ∀ g x, algebraMap L M (f g x) = g (algebraMap L M x) := fun g x ↦ by
+    simpa only [IsScalarTower.coe_toAlgHom'] using hf g x
   have : FiniteDimensional L M := Module.Finite.of_restrictScalars_finite K L M
   have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
   set g₀ := σ.liftNormal M
@@ -187,7 +141,8 @@ private theorem fiberMap_mul_inc_mul [IsGalois K M] (a a' : CrossedProduct c) (y
     fiberMap f hf c a * inc _ y * fiberMap f hf c a' =
       fiberMap f hf c (a * inc c (Algebra.trace L M y) * a') := by
   classical
-  have hf' : ∀ g x, algebraMap L M (f g x) = g (algebraMap L M x) := hf
+  have hf' : ∀ g x, algebraMap L M (f g x) = g (algebraMap L M x) := fun g x ↦ by
+    simpa only [IsScalarTower.coe_toAlgHom'] using hf g x
   induction a using induction_on with
   | zero => simp
   | add a₁ a₂ h₁ h₂ => simp only [map_add, add_mul, h₁, h₂]
@@ -374,8 +329,16 @@ theorem crossedProductClass_comap (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι
   have : IsScalarTower K L M := IsScalarTower.of_algebraMap_eq fun x ↦ (ι.commutes x).symm
   have : FiniteDimensional L M := Module.Finite.of_restrictScalars_finite K L M
   have : NeZero (Module.finrank L M) := ⟨Module.finrank_pos.ne'⟩
-  obtain ⟨e⟩ := CrossedProduct.nonempty_algEquiv_matrix_comap f hf c
-  rw [crossedProductClass_def, crossedProductClass_def,
+  -- with this algebra structure, the tower embedding `L → M` is `ι`
+  have hι : IsScalarTower.toAlgHom K L M = ι :=
+    AlgHom.ext fun x ↦ by rw [IsScalarTower.coe_toAlgHom', RingHom.algebraMap_toAlgebra]; rfl
+  have hf' : ∀ g x, IsScalarTower.toAlgHom K L M (f g x) = g (IsScalarTower.toAlgHom K L M x) := by
+    rw [hι]
+    exact hf
+  have hc : c.comap f ι hf = c.comap f (IsScalarTower.toAlgHom K L M) hf' :=
+    TwoCocycle.ext (funext₂ fun g g' ↦ by rw [TwoCocycle.comap_toFun, TwoCocycle.comap_toFun, hι])
+  obtain ⟨e⟩ := CrossedProduct.nonempty_algEquiv_matrix_comap f hf' c
+  rw [hc, crossedProductClass_def, crossedProductClass_def,
     ← mk_matrix (CSA.of K (CrossedProduct c)) (Module.finrank L M)]
   exact mk_eq_mk_of_algEquiv e
 

@@ -34,6 +34,8 @@ is its value on `u'_σ · u'_τ = w(σ, τ) · u'_{στ}`.
 
 * `TauCeti.TwoCocycle.cohomologous_iff`: being cohomologous, as the explicit formula in `L`.
 * `TauCeti.TwoCocycle.Cohomologous.refl`, `.symm`, `.trans`: it is an equivalence relation.
+* `TauCeti.TwoCocycle.Cohomologous.comap`: inflation along a compatible pair preserves being
+  cohomologous.
 * `TauCeti.CrossedProduct.nonempty_algEquiv_of_cohomologous`: the crossed products of
   cohomologous cocycles are isomorphic `K`-algebras.
 
@@ -47,7 +49,7 @@ public section
 
 open groupCohomology
 
-universe u v
+universe u v w
 
 namespace TauCeti
 
@@ -98,6 +100,21 @@ theorem Cohomologous.trans {z w v : TwoCocycle K L} (h₁ : z.Cohomologous w)
   rw [← div_mul_div_cancel (v.toFun σ τ) (w.toFun σ τ), ← hb σ τ, ← hb' σ τ]
   simp only [Pi.mul_apply, smul_mul', div_eq_mul_inv, mul_inv]
   ac_rfl
+
+section Comap
+
+variable {M : Type w} [CommRing M] [Algebra K M] (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L))
+  (ι : L →ₐ[K] M) (hf : ∀ g x, ι (f g x) = g (ι x))
+
+/-- Inflation preserves being cohomologous: if `w / z` is the coboundary of `b`, then the
+inflation of `w / z` is the coboundary of `g ↦ ι (b (f g))`. -/
+theorem Cohomologous.comap {z w : TwoCocycle K L} (h : z.Cohomologous w) :
+    (z.comap f ι hf).Cohomologous (w.comap f ι hf) := by
+  obtain ⟨b, hb⟩ := cohomologous_iff.1 h
+  refine cohomologous_iff.2 ⟨fun g ↦ Units.map (ι : L →* M) (b (f g)), fun g g' ↦ ?_⟩
+  simp [hb, ← hf]
+
+end Comap
 
 end TwoCocycle
 
