@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
+public import Mathlib.Analysis.Calculus.LogDeriv
+public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
@@ -45,6 +47,11 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.differentiableOn_sub_I_div_add_I_im_nonneg`: in particular, it is holomorphic on a
   neighbourhood of the closed upper half-plane.
 * `TauCeti.hasDerivAt_I_mul_one_add_div_one_sub`: the derivative of the inverse transform.
+* `TauCeti.logDeriv_deriv_I_mul_one_add_div_one_sub`: its pre-Schwarzian.
+* `TauCeti.cayley_simple_fraction`: transport of a real-boundary simple fraction.
+* `TauCeti.ne_of_mem_ball_of_norm_eq_one`: a disc point differs from a circle point.
+* `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
+* `TauCeti.boundaryCayley`: the boundary Cayley map from `ℝ` to `Circle`.
 * `TauCeti.tendsto_sub_I_div_add_I_cobounded`: the transform tends to `1` at infinity.
 
 ## References
@@ -57,6 +64,14 @@ public section
 open Bornology Complex Filter Metric Set Topology
 
 namespace TauCeti
+
+/-- A point of the open unit disc differs from every point of norm one. -/
+theorem ne_of_mem_ball_of_norm_eq_one {ζ w : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1)
+    (hw : ‖w‖ = 1) : ζ ≠ w := by
+  intro h
+  have hnorm := congrArg norm h
+  rw [hw] at hnorm
+  exact (mem_ball_zero_iff.mp hζ).ne hnorm
 
 /-- The denominator of the Cayley transform does not vanish on the closed upper half-plane. -/
 theorem add_I_ne_zero_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) : z + I ≠ 0 := fun h => by
@@ -150,6 +165,12 @@ private theorem sub_I_div_add_I_inverse {w : ℂ} (hw : w ≠ 1) :
   rw [hden, hnum]
   field_simp
 
+/-- The inverse Cayley transform takes the Cayley image of a point back to that point. -/
+theorem I_mul_one_add_sub_I_div_add_I_div_one_sub {z : ℂ} (hz : z + I ≠ 0) :
+    I * (1 + (z - I) / (z + I)) / (1 - (z - I) / (z + I)) = z := by
+  field_simp
+  ring
+
 /-- **The Cayley transform of the open upper half-plane.** The map `z ↦ (z - i) / (z + i)` is a
 bijection from the open upper half-plane onto the open unit disc. -/
 theorem bijOn_sub_I_div_add_I_upperHalfPlaneSet :
@@ -177,8 +198,7 @@ theorem bijOn_I_mul_one_add_div_one_sub_ball :
     rintro rfl
     simp at hw
   · have hz' := add_I_ne_zero_of_im_nonneg (le_of_lt hz)
-    field_simp
-    ring
+    exact I_mul_one_add_sub_I_div_add_I_div_one_sub hz'
 
 /-- **The Cayley transform of the closed upper half-plane.** The map `z ↦ (z - i) / (z + i)` is a
 bijection from the closed upper half-plane onto the closed unit disc with the point `1` removed. -/
@@ -220,6 +240,23 @@ theorem hasDerivAt_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
   field_simp
   ring
 
+/-- The pre-Schwarzian of the inverse Cayley transform is `2 / (1 - ζ)`. -/
+theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} (hζ : ζ ≠ 1) :
+    logDeriv (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) ζ = 2 / (1 - ζ) := by
+  have heq : (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) =ᶠ[𝓝 ζ]
+      fun ξ => 2 * I / (1 - ξ) ^ 2 :=
+    eventuallyEq_of_mem (isOpen_ne.mem_nhds hζ) fun _ hξ =>
+      (hasDerivAt_I_mul_one_add_div_one_sub hξ).deriv
+  have hfun : (fun ξ : ℂ => 2 * I / (1 - ξ) ^ 2) =
+      (fun ξ : ℂ => 2 * I * (1 - ξ) ^ (-2 : ℤ)) := by
+    funext ξ
+    simp [zpow_neg, zpow_ofNat, div_eq_mul_inv]
+  rw [(logDeriv_congr_nhds heq).eq_of_nhds, hfun,
+    logDeriv_const_mul ζ (2 * I) (mul_ne_zero two_ne_zero I_ne_zero),
+    logDeriv_fun_zpow (by fun_prop : DifferentiableAt ℂ (fun ξ : ℂ => 1 - ξ) ζ) (-2),
+    logDeriv_apply, deriv_const_sub_id 1]
+  ring
+
 /-- The Cayley transform tends to `1` at infinity: the point `1` it omits from the closed disc is
 the image of `∞`. -/
 theorem tendsto_sub_I_div_add_I_cobounded :
@@ -233,5 +270,67 @@ theorem tendsto_sub_I_div_add_I_cobounded :
     (eventually_ne_cobounded (0 : ℂ))] with z (hz : z + I ≠ 0)
   field_simp
   ring
+
+/-- The boundary Cayley map from the real line to the unit circle, sending
+`x` to `(x - i) / (x + i)`. -/
+noncomputable def boundaryCayley (x : ℝ) : Circle :=
+  ⟨((x : ℂ) - I) / ((x : ℂ) + I), by
+    refine mem_sphere_zero_iff_norm.2 ?_
+    rw [norm_div]
+    have hnorm : ‖(x : ℂ) - I‖ = ‖(x : ℂ) + I‖ := by
+      rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← normSq_eq_norm_sq,
+        ← normSq_eq_norm_sq]
+      simp [normSq_apply]
+    rw [hnorm]
+    apply div_self
+    rw [norm_ne_zero_iff]
+    intro h
+    have := congrArg im h
+    norm_num at this⟩
+
+/-- The boundary Cayley map as a complex-valued formula. -/
+@[simp]
+theorem coe_boundaryCayley (x : ℝ) :
+    (boundaryCayley x : ℂ) = ((x : ℂ) - I) / ((x : ℂ) + I) :=
+  by rw [boundaryCayley]
+
+/-- The boundary Cayley map never takes the omitted value `1`. -/
+theorem boundaryCayley_ne_one (x : ℝ) : boundaryCayley x ≠ 1 := by
+  intro h
+  have h' := congrArg ((↑) : Circle → ℂ) h
+  simp only [coe_boundaryCayley, Circle.coe_one] at h'
+  have hden : (x : ℂ) + I ≠ 0 := by
+    intro hzero
+    have := congrArg im hzero
+    simp at this
+  rw [div_eq_one_iff_eq hden] at h'
+  have := congrArg im h'
+  norm_num at this
+
+
+/-- Under the inverse Cayley transform `c`, the simple fraction `c' / (c - x)` at a real point `x`
+splits into the simple fraction at its Cayley image and one at `1`. -/
+theorem cayley_simple_fraction {ζ : ℂ} (x : ℝ) (hζ : ζ ∈ ball (0 : ℂ) 1) :
+    1 / (I * (1 + ζ) / (1 - ζ) - x) * (2 * I / (1 - ζ) ^ 2) =
+      1 / (ζ - ((x : ℂ) - I) / ((x : ℂ) + I)) + 1 / (1 - ζ) := by
+  have h1 : 1 - ζ ≠ 0 := sub_ne_zero.mpr
+    (ne_of_mem_ball_of_norm_eq_one hζ norm_one).symm
+  have hxI : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
+  have hD : I * (1 + ζ) - x * (1 - ζ) ≠ 0 := by
+    have hne := ne_of_mem_ball_of_norm_eq_one hζ (Circle.norm_coe (boundaryCayley x))
+    rw [coe_boundaryCayley] at hne
+    intro h
+    apply hne
+    rw [eq_div_iff hxI]
+    linear_combination h
+  have hc : I * (1 + ζ) / (1 - ζ) - x = (I * (1 + ζ) - x * (1 - ζ)) / (1 - ζ) := by
+    field_simp
+  have hw : ζ - ((x : ℂ) - I) / ((x : ℂ) + I) = (I * (1 + ζ) - x * (1 - ζ)) / ((x : ℂ) + I) := by
+    field_simp
+    ring
+  rw [hc, hw]
+  field_simp
+  ring
+
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
@@ -16,12 +17,25 @@ between a self-map of the bundled disc and a scalar representative `ℂ → ℂ`
 representative maps `Metric.ball 0 1` into itself, and bijectively onto itself when the bundled
 map is an equivalence — together with the basic properties of the `Circle` action on the disc: the
 disc is nontrivial, a rotation is determined by its value at any one nonzero point, and hence the
-circle acts faithfully.
+circle acts faithfully. It also records the slit-plane criterion
+`TauCeti.one_sub_div_mem_slitPlane` for a disc point and a circle point.
 -/
 
 public section
 
 namespace TauCeti
+
+open Complex Metric
+
+/-- For `w` on the unit circle and `ζ` in the open unit disc, `1 - ζ / w` lies in the slit plane,
+since `ζ / w` has norm less than one. -/
+theorem one_sub_div_mem_slitPlane (w : Circle) {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1) :
+    1 - ζ / w ∈ slitPlane := by
+  rw [sub_eq_add_neg]
+  apply mem_slitPlane_of_norm_lt_one
+  rw [norm_neg, norm_div, Circle.norm_coe, div_one]
+  exact mem_ball_zero_iff.mp hζ
+
 
 open Complex
 

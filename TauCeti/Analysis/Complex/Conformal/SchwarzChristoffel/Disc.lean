@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.UnitDisc.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
-import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
 
 /-!
@@ -50,10 +50,8 @@ with the prevertex limits carried along.
   equation on the disc.
 * `TauCeti.eqOn_schwarzChristoffelDiscPrimitive` -- the derivative and normalization characterize
   the primitive on the disc.
-* `exists_eqOn_schwarzChristoffelPrimitive_comp_const_mul_schwarzChristoffelDiscPrimitive_add`
-  -- if the turning exponents sum to `-2`, the half-plane primitive composed with the inverse
-  Cayley transform is an affine image of the disc primitive at the Cayley images of the
-  prevertices.
+* `TauCeti.eqOn_schwarzChristoffelPrimitive_comp_I_mul_one_add_div_one_sub` -- the half-plane
+  primitive in inverse Cayley coordinates equals an explicit affine image of the disc primitive.
 * `TauCeti.exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_of_bijOn` -- a half-plane
   Schwarz--Christoffel map onto a domain gives a disc Schwarz--Christoffel map onto the same domain,
   with the same boundary limits at corresponding prevertices.
@@ -70,19 +68,10 @@ noncomputable section
 
 namespace TauCeti
 
-open Complex Filter Metric Set Topology
+open _root_.Complex Filter Metric Set Topology
 open UpperHalfPlane (upperHalfPlaneSet isOpen_upperHalfPlaneSet)
 
 variable {ι : Type*} [Fintype ι]
-
-/-- For `w` on the unit circle and `ζ` in the open unit disc, `1 - ζ / w` lies in the slit plane,
-since `ζ / w` has norm less than one. -/
-private theorem one_sub_div_mem_slitPlane (w : Circle) {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1) :
-    1 - ζ / w ∈ slitPlane := by
-  rw [sub_eq_add_neg]
-  apply mem_slitPlane_of_norm_lt_one
-  rw [norm_neg, norm_div, Circle.norm_coe, div_one]
-  exact mem_ball_zero_iff.mp hζ
 
 private theorem hasDerivAt_one_sub_div (w : Circle) (ζ : ℂ) :
     HasDerivAt (fun ξ : ℂ => 1 - ξ / w) (-(w : ℂ)⁻¹) ζ := by
@@ -144,11 +133,8 @@ theorem logDeriv_schwarzChristoffelDiscIntegrand (w : ι → Circle) (e : ι →
       (one_sub_div_mem_slitPlane (w i) hζ), logDeriv_apply,
       (hasDerivAt_one_sub_div (w i) ζ).deriv]
     have hw : (w i : ℂ) ≠ 0 := Circle.coe_ne_zero _
-    have hζw : (w i : ℂ) - ζ ≠ 0 := by
-      intro h
-      have := congrArg norm (sub_eq_zero.mp h)
-      rw [Circle.norm_coe] at this
-      exact (mem_ball_zero_iff.mp hζ).ne' this
+    have hζw : (w i : ℂ) - ζ ≠ 0 := sub_ne_zero.mpr
+      (ne_of_mem_ball_of_norm_eq_one hζ (Circle.norm_coe (w i))).symm
     have hζw' : ζ - (w i : ℂ) ≠ 0 := by rwa [← neg_sub, neg_ne_zero]
     rw [one_sub_div hw]
     field_simp
@@ -225,57 +211,12 @@ theorem eqOn_schwarzChristoffelDiscPrimitive (w : ι → Circle) (e : ι → ℝ
 
 /-! ### Comparison with the upper-half-plane form -/
 
-/-- The pre-Schwarzian of the inverse Cayley transform is `2 / (1 - ζ)`. -/
-private theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} (hζ : ζ ≠ 1) :
-    logDeriv (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) ζ = 2 / (1 - ζ) := by
-  have heq : (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) =ᶠ[𝓝 ζ]
-      fun ξ => 2 * I / (1 - ξ) ^ 2 :=
-    eventuallyEq_of_mem (isOpen_ne.mem_nhds hζ) fun _ hξ =>
-      (hasDerivAt_I_mul_one_add_div_one_sub hξ).deriv
-  have h1 : 1 - ζ ≠ 0 := sub_ne_zero.mpr hζ.symm
-  have hd : HasDerivAt (fun ξ : ℂ => 2 * I / (1 - ξ) ^ 2) (4 * I / (1 - ζ) ^ 3) ζ := by
-    refine ((hasDerivAt_const ζ (2 * I)).div (((hasDerivAt_id ζ).const_sub 1).pow 2)
-      (pow_ne_zero 2 h1)).congr_deriv ?_
-    simp only [id, Pi.pow_apply]
-    field_simp
-    ring
-  rw [(logDeriv_congr_nhds heq).eq_of_nhds, logDeriv_apply, hd.deriv]
-  field_simp
-  norm_num
-
-/-- Under the inverse Cayley transform `c`, the simple fraction `c' / (c - x)` at a real point `x`
-splits into the simple fraction at its Cayley image and one at `1`. -/
-private theorem cayley_simple_fraction {ζ : ℂ} (x : ℝ) (hζ : ζ ∈ ball (0 : ℂ) 1) :
-    1 / (I * (1 + ζ) / (1 - ζ) - x) * (2 * I / (1 - ζ) ^ 2) =
-      1 / (ζ - ((x : ℂ) - I) / ((x : ℂ) + I)) + 1 / (1 - ζ) := by
-  have h1 : 1 - ζ ≠ 0 := by
-    rintro h
-    rw [sub_eq_zero.mp h |>.symm] at hζ
-    simp at hζ
-  have hxI : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
-  have hD : I * (1 + ζ) - x * (1 - ζ) ≠ 0 := by
-    intro h
-    have him := (bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hζ)
-    have heq : I * (1 + ζ) / (1 - ζ) = x := by
-      rw [div_eq_iff h1]
-      linear_combination h
-    rw [upperHalfPlaneSet, mem_ofPred_eq, heq] at him
-    simp at him
-  have hc : I * (1 + ζ) / (1 - ζ) - x = (I * (1 + ζ) - x * (1 - ζ)) / (1 - ζ) := by
-    field_simp
-  have hw : ζ - ((x : ℂ) - I) / ((x : ℂ) + I) = (I * (1 + ζ) - x * (1 - ζ)) / ((x : ℂ) + I) := by
-    field_simp
-    ring
-  rw [hc, hw]
-  field_simp
-  ring
-
 /-- **The Schwarz--Christoffel formula moves from the half-plane to the disc.**  Suppose the
 turning exponents `e i` sum to `-2`, and let `w i` be the Cayley image `(a i - i) / (a i + i)` of
 the real prevertex `a i`.  Then on the open unit disc, the half-plane primitive composed with the
 inverse Cayley transform `ζ ↦ i (1 + ζ) / (1 - ζ)` is `A * G + B` for some `A ≠ 0` and `B`, where
 `G` is the normalized disc primitive for the prevertices `w` and the same exponents. -/
-theorem exists_eqOn_schwarzChristoffelPrimitive_comp_const_mul_schwarzChristoffelDiscPrimitive_add
+private theorem exists_affine_transport
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : ∑ i, e i = -2) {w : ι → Circle}
     (hw : ∀ i, (w i : ℂ) = (a i - I) / (a i + I)) :
     ∃ A : ℂ, A ≠ 0 ∧ ∃ B : ℂ,
@@ -284,9 +225,8 @@ theorem exists_eqOn_schwarzChristoffelPrimitive_comp_const_mul_schwarzChristoffe
   set F := schwarzChristoffelPrimitive a e z₀
   set c : ℂ → ℂ := fun ζ => I * (1 + ζ) / (1 - ζ) with hc_def
   have hmaps : MapsTo c (ball 0 1) upperHalfPlaneSet := bijOn_I_mul_one_add_div_one_sub_ball.mapsTo
-  have hne : ∀ ζ ∈ ball (0 : ℂ) 1, ζ ≠ 1 := by
-    rintro ζ hζ rfl
-    simp at hζ
+  have hne : ∀ ζ ∈ ball (0 : ℂ) 1, ζ ≠ 1 := fun _ hζ =>
+    ne_of_mem_ball_of_norm_eq_one hζ norm_one
   have hcd : ∀ ζ ∈ ball (0 : ℂ) 1, HasDerivAt c (2 * I / (1 - ζ) ^ 2) ζ := fun ζ hζ =>
     hasDerivAt_I_mul_one_add_div_one_sub (hne ζ hζ)
   have hcne : ∀ ζ ∈ ball (0 : ℂ) 1, 2 * I / (1 - ζ) ^ 2 ≠ 0 := fun ζ hζ =>
@@ -324,6 +264,38 @@ theorem exists_eqOn_schwarzChristoffelPrimitive_comp_const_mul_schwarzChristoffe
   rw [hw i, hc_def]
   linear_combination (e i : ℂ) * cayley_simple_fraction (a i) hζ
 
+/-- The normalized disc primitive is the half-plane primitive in inverse Cayley coordinates,
+with its affine constants fixed by the value and derivative at the disc centre. -/
+theorem eqOn_schwarzChristoffelPrimitive_comp_I_mul_one_add_div_one_sub
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : ∑ i, e i = -2) :
+    EqOn (fun ζ => schwarzChristoffelPrimitive a e z₀ (I * (1 + ζ) / (1 - ζ)))
+      (fun ζ => 2 * I * schwarzChristoffelIntegrand a e I *
+        schwarzChristoffelDiscPrimitive (fun i => boundaryCayley (a i)) e ζ +
+        schwarzChristoffelPrimitive a e z₀ I) (ball 0 1) := by
+  let w : ι → Circle := fun i => boundaryCayley (a i)
+  have hw (i : ι) : (w i : ℂ) = (a i - I) / (a i + I) := coe_boundaryCayley (a i)
+  obtain ⟨K, _, D, hKD⟩ := exists_affine_transport a e z₀ hsum hw
+  have h0 : (0 : ℂ) ∈ ball 0 1 := mem_ball_self one_pos
+  have hD : D = schwarzChristoffelPrimitive a e z₀ I := by
+    have h := hKD h0
+    simpa using h.symm
+  have hI : I ∈ upperHalfPlaneSet := by simp [upperHalfPlaneSet]
+  have hleft : HasDerivAt
+      (fun ζ => schwarzChristoffelPrimitive a e z₀ (I * (1 + ζ) / (1 - ζ)))
+      (schwarzChristoffelIntegrand a e I * (2 * I)) 0 := by
+    have hF0 : HasDerivAt (schwarzChristoffelPrimitive a e z₀)
+        (schwarzChristoffelIntegrand a e I) (I * (1 + (0 : ℂ)) / (1 - 0)) := by
+      simpa using hasDerivAt_schwarzChristoffelPrimitive a e z₀ hI
+    simpa only [Function.comp_def, sub_zero, one_pow, div_one] using hF0.comp 0
+      (hasDerivAt_I_mul_one_add_div_one_sub (by norm_num : (0 : ℂ) ≠ 1))
+  have hright := ((hasDerivAt_schwarzChristoffelDiscPrimitive w e h0).const_mul K).add_const D
+  have hderivEq := (eventuallyEq_of_mem (isOpen_ball.mem_nhds h0)
+    (fun ζ hζ => hKD hζ)).deriv_eq
+  rw [hleft.deriv, hright.deriv] at hderivEq
+  have hKexpr : K = 2 * I * schwarzChristoffelIntegrand a e I := by
+    simpa [mul_comm, mul_left_comm, mul_assoc] using hderivEq.symm
+  simpa only [hKexpr, hD] using hKD
+
 /-- **A half-plane Schwarz--Christoffel map gives a disc Schwarz--Christoffel map.**  Suppose the
 turning exponents sum to `-2` and `z ↦ A * F z + B` maps the upper half-plane bijectively onto
 `U`, where `F` is the half-plane primitive for the prevertices `a`.  Then, with `w i` the Cayley
@@ -334,28 +306,23 @@ the Cayley image of `x`; in particular prevertices go to the same vertices. -/
 theorem exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_of_bijOn
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : ∑ i, e i = -2) {U : Set ℂ} {A B : ℂ}
     (hAB : BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U) :
-    ∃ w : ι → Circle, (∀ i, (w i : ℂ) = (a i - I) / (a i + I)) ∧
-      ∃ A' : ℂ, A' ≠ 0 ∧ ∃ B' : ℂ,
-        BijOn (fun ζ => A' * schwarzChristoffelDiscPrimitive w e ζ + B') (ball 0 1) U ∧
-        ∀ (x : ℝ) (v : ℂ),
-          Tendsto (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B)
-            (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 v) →
-          Tendsto (fun ζ => A' * schwarzChristoffelDiscPrimitive w e ζ + B')
-            (𝓝[ball 0 1] (((x : ℂ) - I) / ((x : ℂ) + I))) (𝓝 v) := by
+    ∃ A' : ℂ, A' ≠ 0 ∧ ∃ B' : ℂ,
+      BijOn (fun ζ => A' * schwarzChristoffelDiscPrimitive
+        (fun i => boundaryCayley (a i)) e ζ + B') (ball 0 1) U ∧
+      ∀ (x : ℝ) (v : ℂ),
+        Tendsto (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B)
+          (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 v) →
+        Tendsto (fun ζ => A' * schwarzChristoffelDiscPrimitive
+          (fun i => boundaryCayley (a i)) e ζ + B')
+          (𝓝[ball 0 1] (boundaryCayley x : ℂ)) (𝓝 v) := by
   have hxI (x : ℝ) : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
-  let w : ι → Circle := fun i => Circle.ofConjDivSelf ((a i : ℂ) + I) (hxI (a i))
-  have hw (i : ι) : (w i : ℂ) = (a i - I) / (a i + I) := by
-    simp [w, Circle.ofConjDivSelf_coe, conj_ofReal, sub_eq_add_neg]
-  obtain ⟨K, hK, D, hKD⟩ :=
-    exists_eqOn_schwarzChristoffelPrimitive_comp_const_mul_schwarzChristoffelDiscPrimitive_add
-      a e z₀ hsum hw
-  -- a constant map is not injective on the upper half-plane
-  have hA : A ≠ 0 := by
-    rintro rfl
-    have h := hAB.injOn (show I ∈ upperHalfPlaneSet by simp [upperHalfPlaneSet])
-      (show 2 * I ∈ upperHalfPlaneSet by simp [upperHalfPlaneSet]) (by simp)
-    have := congrArg Complex.im h
-    norm_num at this
+  let w : ι → Circle := fun i => boundaryCayley (a i)
+  let K : ℂ := 2 * I * schwarzChristoffelIntegrand a e I
+  let D : ℂ := schwarzChristoffelPrimitive a e z₀ I
+  have hKD := eqOn_schwarzChristoffelPrimitive_comp_I_mul_one_add_div_one_sub a e z₀ hsum
+  have hK : K ≠ 0 := mul_ne_zero (mul_ne_zero two_ne_zero I_ne_zero)
+    (schwarzChristoffelIntegrand_ne_zero a e (by simp [upperHalfPlaneSet]))
+  have hA : A ≠ 0 := ne_zero_of_injOn_const_mul_add hAB.injOn
   have heq : EqOn (fun ζ => A * schwarzChristoffelPrimitive a e z₀ (I * (1 + ζ) / (1 - ζ)) + B)
       (fun ζ => A * K * schwarzChristoffelDiscPrimitive w e ζ + (A * D + B)) (ball 0 1) :=
     fun ζ hζ => by
@@ -363,21 +330,18 @@ theorem exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_of_bijOn
       dsimp only at h ⊢
       rw [h]
       ring
-  refine ⟨w, hw, A * K, mul_ne_zero hA hK, A * D + B,
+  refine ⟨A * K, mul_ne_zero hA hK, A * D + B,
     (hAB.comp bijOn_I_mul_one_add_div_one_sub_ball).congr heq, fun x v hv => ?_⟩
   -- the inverse Cayley transform carries the disc near `(x - i) / (x + i)` to the upper
   -- half-plane near `x`
-  have hp1 : ((x : ℂ) - I) / ((x : ℂ) + I) ≠ 1 := by
-    rw [Ne, div_eq_one_iff_eq (hxI x)]
+  have hp1 : (boundaryCayley x : ℂ) ≠ 1 := by
     intro h
-    have := congrArg Complex.im h
-    norm_num at this
-  have hcx : I * (1 + ((x : ℂ) - I) / ((x : ℂ) + I)) / (1 - ((x : ℂ) - I) / ((x : ℂ) + I)) = x := by
-    have := hxI x
-    field_simp
-    ring
+    exact boundaryCayley_ne_one x (Circle.coe_injective (by simpa using h))
+  have hcx : I * (1 + (boundaryCayley x : ℂ)) / (1 - (boundaryCayley x : ℂ)) = x := by
+    rw [coe_boundaryCayley]
+    exact I_mul_one_add_sub_I_div_add_I_div_one_sub (hxI x)
   have hc : Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ))
-      (𝓝[ball 0 1] (((x : ℂ) - I) / ((x : ℂ) + I))) (𝓝[upperHalfPlaneSet] (x : ℂ)) := by
+      (𝓝[ball 0 1] (boundaryCayley x : ℂ)) (𝓝[upperHalfPlaneSet] (x : ℂ)) := by
     refine tendsto_nhdsWithin_iff.mpr ⟨?_, eventually_nhdsWithin_of_forall fun ζ hζ =>
       bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hζ⟩
     have := (hasDerivAt_I_mul_one_add_div_one_sub hp1).continuousAt.tendsto

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pick.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
 /-!
 # Boundary Cayley coordinates and Nevanlinna measure transport
@@ -53,42 +54,6 @@ noncomputable section
 open Complex MeasureTheory Metric Set
 
 namespace TauCeti
-
-/-- The boundary Cayley map from the real line to the unit circle, sending
-`x` to `(x - i) / (x + i)`. -/
-def boundaryCayley (x : ℝ) : Circle :=
-  ⟨((x : ℂ) - I) / ((x : ℂ) + I), by
-    refine mem_sphere_zero_iff_norm.2 ?_
-    rw [norm_div]
-    have hnorm : ‖(x : ℂ) - I‖ = ‖(x : ℂ) + I‖ := by
-      rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← normSq_eq_norm_sq,
-        ← normSq_eq_norm_sq]
-      simp [normSq_apply]
-    rw [hnorm]
-    apply div_self
-    rw [norm_ne_zero_iff]
-    intro h
-    have := congrArg im h
-    norm_num at this⟩
-
-/-- The boundary Cayley map as a complex-valued formula. -/
-@[simp]
-theorem coe_boundaryCayley (x : ℝ) :
-    (boundaryCayley x : ℂ) = ((x : ℂ) - I) / ((x : ℂ) + I) :=
-  by rw [boundaryCayley]
-
-/-- The boundary Cayley map never takes the omitted value `1`. -/
-theorem boundaryCayley_ne_one (x : ℝ) : boundaryCayley x ≠ 1 := by
-  intro h
-  have h' := congrArg ((↑) : Circle → ℂ) h
-  simp only [coe_boundaryCayley, Circle.coe_one] at h'
-  have hden : (x : ℂ) + I ≠ 0 := by
-    intro hzero
-    have := congrArg im hzero
-    simp at this
-  rw [div_eq_one_iff_eq hden] at h'
-  have := congrArg im h'
-  norm_num at this
 
 /-- The real coordinate of a point of the circle.  At the omitted point `1` the denominator is
 zero and Lean's totalized division assigns the harmless value `0`; the measure transport below
@@ -167,9 +132,12 @@ theorem boundaryCayley_circleCayleyInv {z : Circle} (hz : z ≠ 1) :
 /-- The boundary Cayley map is continuous. -/
 @[fun_prop]
 theorem continuous_boundaryCayley : Continuous boundaryCayley := by
-  exact continuous_induced_rng.mpr <| Continuous.div (by fun_prop) (by fun_prop) fun x h ↦ by
-      have := congrArg im h
-      norm_num at this
+  apply continuous_induced_rng.mpr
+  change Continuous (fun x : ℝ => (boundaryCayley x : ℂ))
+  simp_rw [coe_boundaryCayley]
+  exact Continuous.div (by fun_prop) (by fun_prop) fun x h ↦ by
+    have := congrArg im h
+    norm_num at this
 
 /-- The inverse boundary coordinate is measurable on the whole circle. -/
 @[fun_prop]
