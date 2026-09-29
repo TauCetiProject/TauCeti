@@ -368,7 +368,7 @@ private theorem mk_degreeZeroRep_tmul {h : SL(2, ℤ)} (hh : h ∈ Γ) (D : degr
     binaryFormSLRep_binaryFormRep]
 
 /-- The classes of the translates `g([∞] - [0]) ⊗ P` span `𝕄_w(Γ; R)`. -/
-private theorem span_mk_degreeZeroRep_tmul_eq_top :
+theorem span_mk_degreeZeroRep_tmul_eq_top :
     Submodule.span R (Set.image2
       (fun D P ↦ Coinvariants.mk ((symbolRep R w).comp Γ.subtype) (D ⊗ₜ[R] P))
       (Set.range fun g : SL(2, ℤ) ↦ degreeZeroRep R g
