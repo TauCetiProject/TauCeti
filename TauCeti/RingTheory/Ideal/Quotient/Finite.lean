@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Ideal.Extended
-public import TauCeti.RingTheory.Ideal.Operations
 -- Private: the integrality of a nilpotent element and the module structure over a quotient ring
 -- carried by a torsion module are used only inside proofs.
 import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
@@ -120,7 +119,7 @@ theorem finite_quotient_pow_of_algebraMap_mem [Module.Finite R B] {s : Set R} (h
   refine finite_quotient_of_map_algebraMap_le ?_
     (finite_quotient_span_pow_of_adjoin_eq_top hs htop n)
   rw [Ideal.map_algebraMap_pow]
-  exact Ideal.pow_le_pow_left hspan n
+  exact Ideal.pow_right_mono hspan n
 
 end Noncommutative
 

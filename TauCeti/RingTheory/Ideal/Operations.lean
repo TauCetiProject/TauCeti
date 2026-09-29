@@ -20,7 +20,6 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 
 ## Main results
 
-* `Ideal.pow_le_pow_left`: powers of ideals of a possibly noncommutative ring are monotone.
 * `Ideal.eq_one_of_mul_eq_one`: the only factorization of the unit ideal is the trivial one, so a
   factor of `1` is `1`. This is the ideal-theoretic cancellation step behind the fact that the
   divisor antidiagonal of the unit ideal is a singleton.
@@ -57,22 +56,6 @@ theorem toAddSubgroup_mul_eq_closure_mul
     ← Submodule.toAddSubgroup_toAddSubmonoid I, ← Submodule.toAddSubgroup_toAddSubmonoid J,
     hI, hJ, ← _root_.AddSubgroup.mul_toAddSubmonoid,
     AddSubgroup.closure_mul_closure]
-
-section Pow
-
-variable {R : Type*} [Semiring R] {I J : Ideal R}
-
-/-- **Powers of ideals are monotone in the ideal.** Without commutativity the ideals of `R` are
-only a non-unital semiring under multiplication, so the generic ordered-monoid lemma does not
-apply and the induction is spelled out. -/
-theorem pow_le_pow_left (h : I ≤ J) (n : ℕ) : I ^ n ≤ J ^ n := by
-  induction n with
-  | zero => exact le_rfl
-  | succ n ih =>
-    rw [Submodule.pow_succ, Submodule.pow_succ]
-    exact Submodule.mul_le.mpr fun _ hx _ hy ↦ Submodule.mul_mem_mul (ih hx) (h hy)
-
-end Pow
 
 section Mul
 
