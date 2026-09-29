@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ProP
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
 /-!
 # The cyclotomic orientation of the maximal pro-`p` Galois group
@@ -110,15 +111,16 @@ primitive `p`-th root of unity, the cyclotomic character `localCyclotomicCharact
 to `absoluteGaloisGroupProP p K`. -/
 noncomputable def cyclotomicOrientation (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     absoluteGaloisGroupProP p K →* ℤ_[p]ˣ :=
-  QuotientGroup.lift _ (localCyclotomicCharacter p K)
-    (proPKernel_le_ker_localCyclotomicCharacter p K hmu)
+  (ContinuousMonoidHom.quotientLift _
+    ⟨localCyclotomicCharacter p K, localCyclotomicCharacter_continuous p K⟩
+    (proPKernel_le_ker_localCyclotomicCharacter p K hmu)).toMonoidHom
 
 /-- The cyclotomic orientation of the class of `g` is the cyclotomic character of `g`. -/
 @[simp]
 theorem cyclotomicOrientation_mk (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p)
     (g : Field.absoluteGaloisGroup K) :
     cyclotomicOrientation p K hmu (QuotientGroup.mk g) = localCyclotomicCharacter p K g :=
-  (rfl)
+  ContinuousMonoidHom.quotientLift_mk _ _ _ g
 
 /-- The cyclotomic orientation restricts to the cyclotomic character along the quotient map. -/
 @[simp]
@@ -132,7 +134,8 @@ theorem cyclotomicOrientation_comp_mk (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
 Galois group. -/
 theorem cyclotomicOrientation_continuous (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     Continuous (cyclotomicOrientation p K hmu) :=
-  (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr (localCyclotomicCharacter_continuous p K)
+  (ContinuousMonoidHom.quotientLift _ _
+    (proPKernel_le_ker_localCyclotomicCharacter p K hmu)).continuous
 
 /-- The cyclotomic orientation and the cyclotomic character have the same image in `ℤ_pˣ`,
 because the quotient map onto the maximal pro-`p` Galois group is surjective. -/
