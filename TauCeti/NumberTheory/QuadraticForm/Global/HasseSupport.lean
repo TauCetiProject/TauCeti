@@ -80,7 +80,7 @@ theorem finite_setOf_diagonalHasse_ne_one {n : ℕ} (a : Fin n → Kˣ) :
 products have finite support, with an explicit finite exceptional set of places. -/
 theorem exists_diagonalization_diagonalHasse_finite_support
     {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
+    {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) :
     ∃ p : RegularFormPresentation K, Q.Equivalent (presentedForm p) ∧
       ({v : HeightOneSpectrum (𝓞 K) |
         (∏ ij ∈ univ.filter (fun ij : Fin p.1 × Fin p.1 => ij.1 < ij.2),
