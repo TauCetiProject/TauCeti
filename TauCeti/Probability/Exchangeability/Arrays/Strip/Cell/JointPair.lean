@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.Context
+public import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # A common conditional law for off-diagonal pairs
@@ -45,6 +46,26 @@ symmetric. -/
 def offDiagonalPairContext (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :=
   (cellContext e e i j x, cellContext e e j i x)
 
+omit [MeasurableSpace α] in
+/-- The first component is the context of the forward directed cell. -/
+@[simp]
+theorem offDiagonalPairContext_fst (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
+    (offDiagonalPairContext e i j x).1 = cellContext e e i j x := by
+  simp only [offDiagonalPairContext]
+
+omit [MeasurableSpace α] in
+/-- The second component is the context of the reverse directed cell. -/
+@[simp]
+theorem offDiagonalPairContext_snd (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
+    (offDiagonalPairContext e i j x).2 = cellContext e e j i x := by
+  simp only [offDiagonalPairContext]
+
+omit [MeasurableSpace α] in
+/-- Reversing the visible vertices swaps their two directed contexts. -/
+theorem offDiagonalPairContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
+    offDiagonalPairContext e j i x = (offDiagonalPairContext e i j x).swap := by
+  simp only [offDiagonalPairContext, Prod.swap]
+
 /-- Reading the context of an off-diagonal pair is measurable. -/
 theorem measurable_offDiagonalPairContext (e : ℕ → ℕ) (i j : ℕ) :
     Measurable (offDiagonalPairContext (α := α) e i j) :=
@@ -62,7 +83,7 @@ theorem offDiagonalPairContext_pairReindex (e : ℕ → ℕ) (i j : ℕ)
 
 /-- Joint exchangeability transports the law of a pair and its hidden context along any
 permutation that fixes the hidden vertices. -/
-theorem JointlyExchangeable.map_offDiagonalPairContext_eq_of_fixed
+theorem JointlyExchangeable.map_offDiagonalPairContext_entries_eq_of_fixed
     {ρ : Measure (ℕ × ℕ → α)} (hρ : JointlyExchangeable ρ fun p x => x p)
     (e : ℕ → ℕ) (i j : ℕ) (perm : Equiv.Perm ℕ) (he : ∀ a, perm (e a) = e a) :
     ρ.map (fun x => (offDiagonalPairContext e (perm i) (perm j) x,
@@ -86,36 +107,9 @@ theorem JointlyExchangeable.map_offDiagonalPairContext_eq_of_fixed
   rw [hfun]
   simpa only [pairReindex_def, Measure.map_id'] using h
 
-/-- A permutation can transport any ordered pair of distinct visible vertices to another while
-fixing every hidden vertex. -/
-private theorem exists_pair_perm_fixed (e : ℕ → ℕ) {i j i' j' : ℕ}
-    (hij : i ≠ j) (hi'j' : i' ≠ j')
-    (hi : i ∉ Set.range e) (hj : j ∉ Set.range e)
-    (hi' : i' ∉ Set.range e) (hj' : j' ∉ Set.range e) :
-    ∃ perm : Equiv.Perm ℕ, (∀ a, perm (e a) = e a) ∧ perm i = i' ∧ perm j = j' := by
-  let τ := Equiv.swap i i'
-  let υ := Equiv.swap (τ j) j'
-  have hτe (a : ℕ) : τ (e a) = e a :=
-    Equiv.swap_apply_of_ne_of_ne (fun h => hi ⟨a, h⟩) (fun h => hi' ⟨a, h⟩)
-  have hτj : τ j ∉ Set.range e := by
-    by_cases hji' : j = i'
-    · simpa [τ, hji'] using hi
-    · simpa [τ, Equiv.swap_apply_of_ne_of_ne hij.symm hji'] using hj
-  have hτji' : τ j ≠ i' := by
-    intro h
-    exact hij (τ.injective ((Equiv.swap_apply_left i i').trans h.symm))
-  refine ⟨τ.trans υ, ?_, ?_, ?_⟩
-  · intro a
-    simp only [Equiv.trans_apply]
-    rw [hτe, Equiv.swap_apply_of_ne_of_ne
-      (fun h => hτj ⟨a, h⟩) (fun h => hj' ⟨a, h⟩)]
-  · rw [Equiv.trans_apply, Equiv.swap_apply_left]
-    exact Equiv.swap_apply_of_ne_of_ne hτji'.symm hi'j'
-  · rw [Equiv.trans_apply, Equiv.swap_apply_left]
-
 /-- The joint law of a hidden context and its two directed off-diagonal entries is independent
 of the visible ordered pair, provided its vertices are distinct. -/
-theorem JointlyExchangeable.map_offDiagonalPairContext_eq
+theorem JointlyExchangeable.map_offDiagonalPairContext_entries_eq
     {ρ : Measure (ℕ × ℕ → α)} (hρ : JointlyExchangeable ρ fun p x => x p)
     (e : ℕ → ℕ) {i j i' j' : ℕ} (hij : i ≠ j) (hi'j' : i' ≠ j')
     (hi : i ∉ Set.range e) (hj : j ∉ Set.range e)
@@ -123,7 +117,8 @@ theorem JointlyExchangeable.map_offDiagonalPairContext_eq
     ρ.map (fun x => (offDiagonalPairContext e i' j' x, (x (i', j'), x (j', i')))) =
     ρ.map (fun x => (offDiagonalPairContext e i j x, (x (i, j), x (j, i)))) := by
   obtain ⟨perm, he, hpermi, hpermj⟩ := exists_pair_perm_fixed e hij hi'j' hi hj hi' hj'
-  simpa only [hpermi, hpermj] using hρ.map_offDiagonalPairContext_eq_of_fixed e i j perm he
+  simpa only [hpermi, hpermj] using
+    hρ.map_offDiagonalPairContext_entries_eq_of_fixed e i j perm he
 
 /-- All off-diagonal visible pairs have the same canonical conditional kernel, including its
 values on contexts outside the support of the observed law. -/
@@ -139,7 +134,7 @@ theorem JointlyExchangeable.condDistrib_offDiagonalPairContext_eq
     condDistrib (fun x : ℕ × ℕ → α => (x (i, j), x (j, i)))
       (offDiagonalPairContext e i j) ρ := by
   simp only [condDistrib]
-  simp only [hρ.map_offDiagonalPairContext_eq e hij hi'j' hi hj hi' hj']
+  simp only [hρ.map_offDiagonalPairContext_entries_eq e hij hi'j' hi hj hi' hj']
 
 /-- One measurable randomization of the common conditional kernel generates either orientation
 of every off-diagonal visible pair from its context and a fresh uniform variable. -/
