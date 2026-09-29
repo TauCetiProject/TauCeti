@@ -22,7 +22,8 @@ packages those maps for a topological group and the subspace and quotient topolo
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
 A homomorphism from a topological group with open kernel is also continuous, for every topology
-on the target. It also records the pointwise characterization of finite-order continuous
+on the target. Integer powers of continuous homomorphisms into a commutative topological group
+are computed pointwise. It also records the pointwise characterization of finite-order continuous
 homomorphisms and the open kernel of a finite-order continuous character into complex units.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
@@ -117,6 +118,14 @@ namespace ContinuousMonoidHom
 theorem _root_.ContinuousMonoidHom.coe_mk {A B : Type*} [Monoid A] [TopologicalSpace A] [Monoid B]
     [TopologicalSpace B] (f : A →* B) (hf : Continuous f) : ⇑(⟨f, hf⟩ : A →ₜ* B) = f :=
   rfl
+
+/-- Integer powers of continuous homomorphisms into a commutative topological group are computed
+pointwise. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.zpow_apply {A E : Type*} [Monoid A] [TopologicalSpace A]
+    [CommGroup E] [TopologicalSpace E] [IsTopologicalGroup E] (f : A →ₜ* E) (n : ℤ) (a : A) :
+    (f ^ n) a = f a ^ n :=
+  map_zpow (⟨⟨fun g : A →ₜ* E ↦ g a, rfl⟩, fun _ _ ↦ rfl⟩ : (A →ₜ* E) →* E) f n
 
 -- The three definitions below are exposed: downstream, `TopRep.res` objects taken along them have
 -- to be definitionally the ones taken along the bare `Subgroup.subtype`, `Subgroup.inclusion` and
