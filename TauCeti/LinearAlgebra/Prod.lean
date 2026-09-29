@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.Prod
 
 /-!
-# Linear automorphisms of a product that preserve both factors
+# Product linear maps
 
 Mathlib builds the product `e₁.prodCongr e₂` of two linear equivalences, acting on `M₁ × M₂`
-componentwise. This file identifies which automorphisms of `M₁ × M₂` arise this way, and records
-the determinant of such a product.
+componentwise. This file identifies which automorphisms of `M₁ × M₂` arise this way, records the
+determinant of such a product, and records that scalar multiplication on a product of complex
+modules is the product map of the two scalar multiplications.
 
 The characterization needs only containment: an automorphism `g` of `M₁ × M₂` that maps
 `M₁ × 0` into `M₁ × 0` and `0 × M₂` into `0 × M₂` already acts componentwise, and each component
@@ -28,6 +31,8 @@ quadratic forms with the subgroup preserving both summands.
   automorphisms `e₁` of `M₁` and `e₂` of `M₂` exactly when it maps each factor into itself.
 * `LinearEquiv.det_prodCongr`: `det (e₁.prodCongr e₂) = det e₁ * det e₂` for finite free
   modules; this is `LinearMap.det_prodMap` for linear equivalences.
+* `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
+  complex modules is the product map of the two multiplications.
 -/
 
 public section
@@ -93,3 +98,26 @@ theorem det_prodCongr (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) 
 end CommRing
 
 end LinearEquiv
+
+namespace TauCeti
+
+namespace LinearMap
+
+variable {E E' : Type*} [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
+  [AddCommGroup E'] [Module ℝ E'] [Module ℂ E'] [IsScalarTower ℝ ℂ E']
+
+/-- **Multiplication by `i` on a product of complex modules is carried out blockwise.** Read as
+a real-linear map, multiplication by `i` on `E × E'` is the `LinearMap.prodMap` of the
+multiplications by `i` on the two factors. -/
+theorem lsmul_restrictScalars_prodMap :
+    (LinearMap.lsmul ℂ (E × E') Complex.I).restrictScalars ℝ =
+      LinearMap.prodMap ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
+        ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) := by
+  apply LinearMap.ext (R := ℝ)
+  intro x
+  rcases x with ⟨x, y⟩
+  simp [LinearMap.lsmul_apply, LinearMap.prodMap_apply]
+
+end LinearMap
+
+end TauCeti

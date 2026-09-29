@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import TauCeti.LinearAlgebra.TotallyReal.Complex
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 
 /-!
@@ -28,6 +29,13 @@ determinants, and the determinant phase is multiplicative. And the degree of a p
 loops in the circle is the sum of the degrees. Composing the two, and reading the Maslov index as
 the degree of the loop of phases relative to an arbitrary reference subspace, gives the axiom.
 
+The linear-algebra input, that a coordinate submodule `L.prod M` of a product of complex modules is
+maximal totally real whenever the two summands are, is
+`TauCeti.IsMaximalTotallyReal.isMaximalTotallyReal_prod`
+(`TauCeti/LinearAlgebra/TotallyReal/Complex.lean`), and rests on
+`TauCeti.LinearMap.lsmul_restrictScalars_prodMap` (`TauCeti/LinearAlgebra/Prod.lean`), which says
+that multiplication by `i` on a product is the product map of the two multiplications.
+
 The axiom is the additivity half of the standard list of properties of the Maslov index
 (Robbin--Salamon, *The Maslov index for paths*, Topology **32** (1993); McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Appendix C.3). It is what one needs to add up the
@@ -36,8 +44,6 @@ its own totally real boundary condition.
 
 ## Main declarations
 
-* `TauCeti.IsMaximalTotallyReal.isMaximalTotallyReal_prod`: a direct sum of maximal totally real
-  subspaces is maximal totally real in the product of the ambient complex modules.
 * `TauCeti.IsMaximalTotallyReal.maslovPhase_prod`: the Maslov phase of a direct sum is the product
   of the two phases.
 * `TauCeti.TotallyRealLoop.prod`: the loop of coordinate subspaces of a pair of loops.
@@ -67,27 +73,6 @@ variable {E E' : Type*} [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalar
   {L : Submodule ℝ E}
   [AddCommGroup E'] [Module ℝ E'] [Module ℂ E'] [IsScalarTower ℝ ℂ E'] {M : Submodule ℝ E'}
 
-/-- Multiplication by `i` on a product of complex modules is carried out blockwise: read as a
-real-linear map it is the `LinearMap.prodMap` of the multiplications by `i` on the two factors. -/
-private theorem lsmul_restrictScalars_prodMap :
-    (LinearMap.lsmul ℂ (E × E') Complex.I).restrictScalars ℝ =
-      LinearMap.prodMap ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
-        ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) := by
-  apply LinearMap.ext (R := ℝ)
-  intro x
-  rcases x with ⟨x, y⟩
-  simp [LinearMap.lsmul_apply, LinearMap.prodMap_apply]
-
-/-- **A direct sum of maximal totally real subspaces is maximal totally real.** The coordinate
-submodule `L.prod M` of a product of complex modules is maximal totally real for multiplication by
-`i` whenever the two summands are. -/
-theorem isMaximalTotallyReal_prod (hL :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L)
-    (hM : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) M) :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (E × E') Complex.I).restrictScalars ℝ) (L.prod M) := by
-  rw [lsmul_restrictScalars_prodMap]
-  exact hL.prod hM
-
 variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ E']
 
 /-- **The Maslov phase of a direct sum is the product of the two phases:**
@@ -109,11 +94,19 @@ theorem maslovPhase_prod {L' : Submodule ℝ E} {M' : Submodule ℝ E'}
     have h : ((LinearEquiv.prodCongr A B : (E × E') →ₗ[ℂ] (E × E')).restrictScalars ℝ :
         (E × E') →ₗ[ℝ] (E × E')) =
         LinearMap.prodMap (LinearMap.restrictScalars ℝ A.toLinearMap)
-          (LinearMap.restrictScalars ℝ B.toLinearMap) := rfl
+          (LinearMap.restrictScalars ℝ B.toLinearMap) := by
+      apply LinearMap.ext (R := ℝ)
+      intro x
+      rcases x with ⟨x, y⟩
+      simp
     rw [← hA, ← hB, h, LinearMap.prodMap_map_prod]
   have hdet : LinearMap.det ((LinearEquiv.prodCongr A B : (E × E') →ₗ[ℂ] (E × E'))) =
       LinearMap.det (A : E →ₗ[ℂ] E) * LinearMap.det (B : E' →ₗ[ℂ] E') := by
-    have h : (LinearEquiv.prodCongr A B : (E × E') →ₗ[ℂ] (E × E')) = LinearMap.prodMap A B := rfl
+    have h : (LinearEquiv.prodCongr A B : (E × E') →ₗ[ℂ] (E × E')) = LinearMap.prodMap A B := by
+      apply LinearMap.ext
+      intro x
+      rcases x with ⟨x, y⟩
+      simp
     rw [h]
     exact LinearMap.det_prodMap (A : E →ₗ[ℂ] E) (B : E' →ₗ[ℂ] E')
   rw [hP.maslovPhase_congr (hL'.isMaximalTotallyReal_prod hM')
@@ -179,9 +172,7 @@ theorem maslovIndex_prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
   have hμ₃ : (Λ.prod Λ').maslovIndex = Circle.degree ((Λ.maslovPhasePath).mul
       (Λ'.maslovPhasePath)) := by
     refine (Λ.prod Λ').maslovIndex_eq_degree hL₁₂ _ fun t => ?_
-    change (Λ.maslovPhasePath t : ℂ) * Λ'.maslovPhasePath t
-        = hL₁₂.maslovPhase ((Λ.prod Λ').isMaximalTotallyReal t)
-    rw [maslovPhasePath_apply, maslovPhasePath_apply, hphase]
+    rw [Path.mul_apply, Circle.coe_mul, maslovPhasePath_apply, maslovPhasePath_apply, hphase]
   rw [hμ₃, hμ₁, hμ₂, Circle.degree_mul]
 
 /-- The direct sum of the two half-turns has Maslov index the sum of the two complex dimensions. -/
