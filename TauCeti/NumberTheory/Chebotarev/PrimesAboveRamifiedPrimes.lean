@@ -92,11 +92,9 @@ theorem under_mem_primesAboveRamifiedPrimes_of_not_isUnramifiedAt
     [Algebra E L] [IsScalarTower K E L] (Q : HeightOneSpectrum (𝓞 L))
     (hQ : ¬ Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal) :
     Q.under (𝓞 E) ∈ primesAboveRamifiedPrimes K L E := by
-  rw [mem_primesAboveRamifiedPrimes_iff, mem_ramifiedPrimes_iff]
+  rw [mem_primesAboveRamifiedPrimes_iff, HeightOneSpectrum.under_under,
+    mem_ramifiedPrimes_iff]
   intro hur
-  have : Q.asIdeal.LiesOver ((Q.under (𝓞 E)).under (𝓞 K)).asIdeal :=
-    Ideal.LiesOver.trans Q.asIdeal (Q.under (𝓞 E)).asIdeal
-      ((Q.under (𝓞 E)).under (𝓞 K)).asIdeal
   exact hQ (hur Q.asIdeal)
 
 /-- In a Galois extension, the contraction of `Q` to an intermediate number field lies above a
@@ -106,10 +104,7 @@ theorem under_mem_primesAboveRamifiedPrimes_iff_inertia_ne_bot
     (Q : HeightOneSpectrum (𝓞 L)) :
     Q.under (𝓞 E) ∈ primesAboveRamifiedPrimes K L E ↔
       Q.asIdeal.inertia (L ≃ₐ[K] L) ≠ ⊥ := by
-  have hunder : (Q.under (𝓞 E)).under (𝓞 K) = Q.under (𝓞 K) := by
-    apply HeightOneSpectrum.asIdeal_injective
-    simp only [HeightOneSpectrum.under_asIdeal, Ideal.under_under]
-  rw [mem_primesAboveRamifiedPrimes_iff, hunder]
+  rw [mem_primesAboveRamifiedPrimes_iff, HeightOneSpectrum.under_under]
   have h := (under_notMem_ramifiedPrimes_iff_isUnramifiedAt (K := K) (L := L) Q).trans
     (Ideal.isUnramifiedAt_iff_inertia_eq_bot (K := K) Q.asIdeal)
   simpa only [not_not] using not_congr h

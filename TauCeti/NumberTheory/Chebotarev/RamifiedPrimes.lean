@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Discriminant.Different
 public import TauCeti.RingTheory.DedekindDomain.RamificationLocus
 import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.NumberTheory.RamificationInertia.Galois
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # The primes of a number field ramifying in a finite extension
@@ -134,7 +135,6 @@ theorem under_notMem_ramifiedPrimes_iff_isUnramifiedAt [IsGalois K L]
     (Q : HeightOneSpectrum (𝓞 L)) :
     Q.under (𝓞 K) ∉ ramifiedPrimes K L ↔
       Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal := by
-  have : Q.asIdeal.LiesOver (Q.under (𝓞 K)).asIdeal := ⟨rfl⟩
   rw [mem_ramifiedPrimes_iff, not_not]
   constructor
   · intro hur
