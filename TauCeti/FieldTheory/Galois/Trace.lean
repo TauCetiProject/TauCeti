@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Trace.Basic
 import Mathlib.FieldTheory.Normal.Basic
 import Mathlib.LinearAlgebra.LinearIndependent.Basic
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # Sums of Galois automorphisms and the trace
@@ -52,22 +53,18 @@ theorem sum_fiber_apply_eq_algebraMap_trace [FiniteDimensional K M] [IsGalois K 
     refine ⟨fun h x ↦ by rw [← hf, h, AlgEquiv.one_apply], fun h ↦ AlgEquiv.ext fun x ↦
       (algebraMap L M).injective ?_⟩
     rw [hf, h, AlgEquiv.one_apply]
-  have hfix (g : Gal(M/K)) (hg : f g = σ) (x : L) :
-      (g₀⁻¹ * g) (algebraMap L M x) = algebraMap L M x :=
-    (hker _).1 (by rw [map_mul, map_inv, hg, hg₀, inv_mul_cancel]) x
+  -- the kernel of `f` is `Gal(M/L)`, viewed inside `Gal(M/K)`
+  let e : f.ker ≃ Gal(M/L) :=
+    { toFun t := AlgEquiv.ofRingEquiv (f := (t : Gal(M/K)).toRingEquiv) ((hker _).1 t.2)
+      invFun τ := ⟨τ.restrictScalars K, (hker _).2 τ.commutes⟩
+      left_inv _ := Subtype.ext <| AlgEquiv.ext fun _ ↦ rfl
+      right_inv _ := AlgEquiv.ext fun _ ↦ rfl }
   calc ∑ g ∈ Finset.univ.filter (fun g ↦ f g = σ), g z
-      = ∑ τ : Gal(M/L), g₀ (τ z) := by
-        symm
-        refine Finset.sum_bij' (fun τ _ ↦ g₀ * τ.restrictScalars K)
-          (fun g hg ↦ AlgEquiv.ofRingEquiv (f := (g₀⁻¹ * g).toRingEquiv)
-            (hfix g (Finset.mem_filter.1 hg).2)) (fun τ _ ↦ ?_) (fun _ _ ↦ Finset.mem_univ _)
-          (fun τ _ ↦ ?_) (fun g _ ↦ ?_) (fun τ _ ↦ rfl)
-        · rw [Finset.mem_filter, map_mul, hg₀, (hker _).2 τ.commutes, mul_one]
-          exact ⟨Finset.mem_univ _, rfl⟩
-        · ext x
-          simp
-        · ext x
-          simp
+      = ∑ g : {g : Gal(M/K) // f g = σ}, (g : Gal(M/K)) z :=
+        Finset.sum_subtype _ (fun _ ↦ by simp) _
+    _ = ∑ t : f.ker, (g₀ * t) z :=
+        Fintype.sum_equiv (f.subtypeFiberEquivKer hg₀) _ _ fun _ ↦ by simp
+    _ = ∑ τ : Gal(M/L), g₀ (τ z) := Fintype.sum_equiv e _ _ fun _ ↦ rfl
     _ = algebraMap L M (σ (Algebra.trace L M z)) := by
         rw [← map_sum, ← trace_eq_sum_automorphisms, ← hf, hg₀]
 
