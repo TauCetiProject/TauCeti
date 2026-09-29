@@ -29,7 +29,7 @@ bound determines the wild different exponent.
 
 * `TauCeti.NumberField.Sqrt2.adjoin_eq_top`: `𝓞 K = ℤ[θ]`, and `discr_eq_eight`: `discr K = 8`.
 * `TauCeti.NumberField.Sqrt2.eq_span_gen`: the prime above `2` is `(θ)`, with
-  `ramificationIdx_eq_two`: `e = 2`.
+  `ramificationIdx_eq_two`: `e = 2`, and `map_span_two_eq_sq`: `2 𝓞 K = 𝔭²`.
 * `TauCeti.NumberField.Sqrt2.differentIdeal_eq_pow_three` and
   `multiplicity_differentIdeal_eq_three`: `𝔡 = 𝔭³`, that is `v_𝔭(𝔡) = 3`.
 * `TauCeti.NumberField.Sqrt2.multiplicity_span_two_eq_two`: `v_𝔭(2) = 2`.
@@ -120,6 +120,11 @@ theorem ramificationIdx_eq_two : 𝔭.ramificationIdx ℤ = 2 :=
   ramificationIdx_eq_two_of_mem_ramifiedPrimes (p := 2) (finrank_eq_two hmin hgen)
     (two_mem_ramifiedPrimes hmin hgen) 𝔭
 
+/-- **`2 𝓞 K = 𝔭²`** in `ℚ(√2)`. -/
+theorem map_span_two_eq_sq : (span {(2 : ℤ)}).map (algebraMap ℤ (𝓞 K)) = 𝔭 ^ 2 :=
+  map_span_eq_sq_of_mem_ramifiedPrimes (p := 2) (finrank_eq_two hmin hgen)
+    (two_mem_ramifiedPrimes hmin hgen) 𝔭
+
 /-- **The different of `ℚ(√2)` is `𝔭³`.** -/
 theorem differentIdeal_eq_pow_three : differentIdeal ℤ (𝓞 K) = 𝔭 ^ 3 := by
   rw [differentIdeal_eq_span_pow_three hmin hgen, eq_span_gen hmin hgen 𝔭, span_singleton_pow]
@@ -134,10 +139,12 @@ theorem multiplicity_differentIdeal_eq_three :
 
 /-- **The dyadic valuation of `2` in `ℚ(√2)` is `2`**: `v_𝔭(2) = 2`. -/
 theorem multiplicity_span_two_eq_two : multiplicity 𝔭 (span {(2 : 𝓞 K)}) = 2 := by
-  have htwo : (span {(2 : ℤ)}).map (algebraMap ℤ (𝓞 K)) ≠ ⊥ :=
-    map_ne_bot_of_ne_bot (span_singleton_eq_bot.not.mpr two_ne_zero)
-  rw [← map_ofNat (algebraMap ℤ (𝓞 K)) 2, ← Set.image_singleton, ← map_span,
-    ← IsDedekindDomain.ramificationIdx_eq_multiplicity _ 𝔭 htwo, ramificationIdx_eq_two hmin hgen 𝔭]
+  have htwo : span {(2 : ℤ)} ≠ ⊥ := span_singleton_eq_bot.not.mpr two_ne_zero
+  have h𝔭 : 𝔭 ≠ ⊥ := ne_bot_of_liesOver_of_ne_bot htwo 𝔭
+  have hspan : span {(2 : 𝓞 K)} = 𝔭 ^ 2 := by
+    simpa [Ideal.map_span] using map_span_two_eq_sq hmin hgen 𝔭
+  rw [hspan]
+  exact multiplicity_pow_self_of_prime (Ideal.prime_of_isPrime h𝔭 ‹_›) 2
 
 /-- **The wild upper bound is attained in `ℚ(√2)`**: at the dyadic prime,
 `v_𝔭(𝔡) = e − 1 + v_𝔭(e)`, with `e = 2` and both sides equal to `3`. -/

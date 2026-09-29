@@ -122,10 +122,8 @@ theorem multiplicity_differentIdeal_eq_two : multiplicity 𝔭 (differentIdeal �
 
 /-- **The dyadic valuation of `2` in `ℚ(i)` is `2`**: `v_𝔭(2) = 2`. -/
 theorem multiplicity_span_two_eq_two : multiplicity 𝔭 (span {(2 : 𝓞 K)}) = 2 := by
-  have htwo : (span {(2 : ℤ)}).map (algebraMap ℤ (𝓞 K)) ≠ ⊥ :=
-    map_ne_bot_of_ne_bot (span_singleton_eq_bot.not.mpr two_ne_zero)
-  rw [← map_ofNat (algebraMap ℤ (𝓞 K)) 2, ← Set.image_singleton, ← map_span,
-    ← IsDedekindDomain.ramificationIdx_eq_multiplicity _ 𝔭 htwo, ramificationIdx_eq_two hmin hgen 𝔭]
+  rw [← differentIdeal_eq_span_two hmin hgen,
+    multiplicity_differentIdeal_eq_two hmin hgen 𝔭]
 
 /-- **The wild upper bound is strict in `ℚ(i)`**: at the dyadic prime,
 `v_𝔭(𝔡) = 2 < 3 = e − 1 + v_𝔭(e)`. -/
