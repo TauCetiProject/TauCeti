@@ -134,6 +134,8 @@ theorem jordanHolderMultiplicity_vertexSimpleModuleFG_eq_dimVector
 /-- **The Cartan path-count formula.** The multiplicity of `Sᵢ` in the vertex projective `Pⱼ`
 is the number of oriented paths from `j` to `i`. With simples in rows and projectives in columns,
 these are the entries of the Cartan matrix of a finite acyclic path algebra. -/
+-- The general multiplicity and projective-object simp lemmas simplify the left-hand side first;
+-- marking this specialization `@[simp]` fails the `simpNF` linter.
 theorem jordanHolderMultiplicity_indecProjModule_eq_card_path (i j : Q) :
     jordanHolderMultiplicity (pathAlgebra k Q)
       (vertexProjectiveModuleFG k Q j)
