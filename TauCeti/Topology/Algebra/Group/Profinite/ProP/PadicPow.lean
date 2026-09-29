@@ -349,8 +349,8 @@ theorem padicPowHomeomorph_symm (hA : IsProP p A) (u : ℤ_[p]ˣ) :
   Homeomorph.ext fun a ↦ (hA.padicPowHomeomorph u).symm_apply_eq.mpr <| by
     rw [padicPowHomeomorph_apply, padicPowHomeomorph_apply, padicPow_inv_padicPow]
 
-/-- **The `p`-adic power by a unit is injective.** This fails for non-units: the power by `p`
-identifies every element of order `p` with `1`. -/
+/-- **The `p`-adic power by a unit is injective.** This can fail for non-units: when `A` has
+an element of order `p`, the power by `p` identifies it with `1`. -/
 theorem padicPow_left_injective (hA : IsProP p A) (u : ℤ_[p]ˣ) :
     Function.Injective fun a : A ↦ hA.padicPow a u :=
   (hA.padicPowHomeomorph u).injective
