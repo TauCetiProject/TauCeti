@@ -35,7 +35,8 @@ the two sides have the same Brauer class.
   `TauCeti.CrossedProduct.tensorProductAlgEquivMatrix_smul_basis_tmul_one_apply` and
   `TauCeti.CrossedProduct.tensorProductAlgEquivMatrix_one_tmul_smul_basis_apply`.
 * `TauCeti.BrauerGroup.crossedProductClass_mul`: pointwise multiplication of cocycles presents
-  multiplication of their Brauer classes.
+  multiplication of their Brauer classes. Its universe-polymorphic form is
+  `TauCeti.BrauerGroup.crossedProductClass_mul_eq_mk_tensorProduct`.
 
 ## References
 
@@ -389,18 +390,22 @@ end CrossedProduct
 
 namespace BrauerGroup
 
-variable {L : Type u} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
+section
 
-/-- **Multiplication of crossed-product classes.** The pointwise product of two Galois
-`2`-cocycles presents the product of the Brauer classes presented by the two cocycles. -/
-theorem crossedProductClass_mul (c d : TwoCocycle K L) :
-    crossedProductClass (c * d) = crossedProductClass c * crossedProductClass d := by
+variable {L : Type v} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
+
+/-- The crossed product of the pointwise product of two Galois `2`-cocycles is Brauer equivalent
+to the tensor product of the two crossed products. This is the universe-polymorphic form of
+`crossedProductClass_mul`, which can only be stated when `L` lives in the universe of `K`, the
+universe in which `BrauerGroup` carries its multiplication. -/
+theorem crossedProductClass_mul_eq_mk_tensorProduct (c d : TwoCocycle K L) :
+    crossedProductClass (c * d) =
+      mk (CSA.tensorProduct (crossedProductCSA c) (crossedProductCSA d)) := by
   classical
   let e := Fintype.equivFin (L ≃ₐ[K] L)
   let φ := (CrossedProduct.tensorProductAlgEquivMatrix c d).trans
     (Matrix.reindexAlgEquiv K (CrossedProduct (c * d)) e)
-  rw [crossedProductClass_def, crossedProductClass_def, crossedProductClass_def,
-    ← mk_tensorProduct]
+  rw [crossedProductClass_def, crossedProductCSA_def, crossedProductCSA_def]
   calc
     mk (CSA.of K (CrossedProduct (c * d))) =
         mk (CSA.matrix (CSA.of K (CrossedProduct (c * d))) (Fintype.card (L ≃ₐ[K] L))) := by
@@ -410,6 +415,18 @@ theorem crossedProductClass_mul (c d : TwoCocycle K L) :
           (CSA.of K (CrossedProduct d))) := by
       symm
       exact mk_eq_mk_of_algEquiv φ
+
+end
+
+variable {L : Type u} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
+
+/-- **Multiplication of crossed-product classes.** The pointwise product of two Galois
+`2`-cocycles presents the product of the Brauer classes presented by the two cocycles. -/
+@[simp]
+theorem crossedProductClass_mul (c d : TwoCocycle K L) :
+    crossedProductClass (c * d) = crossedProductClass c * crossedProductClass d := by
+  rw [crossedProductClass_mul_eq_mk_tensorProduct, mk_tensorProduct, crossedProductCSA_def,
+    crossedProductCSA_def, crossedProductClass_def, crossedProductClass_def]
 
 end BrauerGroup
 
