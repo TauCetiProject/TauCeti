@@ -55,25 +55,6 @@ variable {M : Type v} [AddCommGroup M] [Module A M]
 variable {N : Type w} [AddCommGroup N] [Module A N]
 variable {P : Type x} [AddCommGroup P] [Module A P]
 
-/-- Postcomposing a map `M × P → N × P` with the lower triangular automorphism
-`(n, p) ↦ (n, p + t n)` replaces its lower-right block `d` by `d + t b`, where `b` is the
-upper-right block. -/
-private theorem isUnit_lowerRightBlock_trans_skewProd (e : (M × P) ≃ₗ[A] (N × P))
-    (t : N →ₗ[A] P)
-    (h : IsUnit
-      ((LinearMap.snd A N P).comp
-        ((e : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P)) +
-      t.comp ((LinearMap.fst A N P).comp
-        ((e : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))))) :
-    IsUnit
-      ((LinearMap.snd A N P).comp
-        (((e.trans ((LinearEquiv.refl A N).skewProd (LinearEquiv.refl A P) t) :
-          (M × P) ≃ₗ[A] (N × P)) : (M × P) →ₗ[A] (N × P)).comp
-            (LinearMap.inr A M P))) := by
-  convert h using 1
-  ext p
-  simp [LinearMap.add_apply]
-
 /-- **Cancellation of a summand with local endomorphism ring.** If `End_A(P)` is local, a linear
 equivalence `M × P ≃ N × P` induces a linear equivalence `M ≃ N`.
 
@@ -95,15 +76,13 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
     ((e.symm : (N × P) →ₗ[A] (M × P)).comp (LinearMap.inr A N P))
   have hinv : c'.comp b + d'.comp d = 1 := by
     ext p
-    change (e.symm (b p, 0)).2 + (e.symm (0, d p)).2 = p
-    change (e.symm (b p, 0) + e.symm (0, d p)).2 = p
-    rw [← map_add]
     have he : e (0, p) = (b p, d p) := by
-      simp only [b, d, LinearMap.comp_apply, LinearMap.inr_apply, LinearMap.fst_apply,
-        LinearMap.snd_apply]
-      exact Prod.ext rfl rfl
-    rw [show (b p, 0) + (0, d p) = (b p, d p) by ext <;> simp]
-    rw [← he, e.symm_apply_apply]
+      simp only [b, d, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.inr_apply,
+        LinearMap.fst_apply, LinearMap.snd_apply]
+    simp only [c', d', LinearMap.add_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      LinearMap.inl_apply, LinearMap.inr_apply, LinearMap.snd_apply, Module.End.one_apply]
+    rw [← Prod.snd_add, ← map_add, Prod.mk_add_mk, add_zero, zero_add, ← he,
+      e.symm_apply_apply]
   have hright : IsUnit d ∨ IsUnit (d + c'.comp b) := by
     by_cases hd : IsUnit d
     · exact Or.inl hd
@@ -128,8 +107,10 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
         ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))) := by
     rcases hright with hd | hd
     · exact ⟨e, hd⟩
-    · exact ⟨e.trans ((LinearEquiv.refl A N).skewProd (LinearEquiv.refl A P) c'),
-        isUnit_lowerRightBlock_trans_skewProd e c' hd⟩
+    · refine ⟨e.trans ((LinearEquiv.refl A N).skewProd (LinearEquiv.refl A P) c'), ?_⟩
+      convert hd using 1
+      ext p
+      simp [b, d, LinearMap.add_apply]
   let a₁ : M →ₗ[A] N := (LinearMap.fst A N P).comp
     ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inl A M P))
   let b₁ : P →ₗ[A] N := (LinearMap.fst A N P).comp
@@ -150,7 +131,7 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
   let diagonal := sourceShear.trans (e₁.trans targetShear)
   have he₁_apply (m : M) (p : P) : e₁ (m, p) =
       (a₁ m + b₁ p, c₁ m + d₁ p) := by
-    rw [show (m, p) = (m, 0) + (0, p) by ext <;> simp, map_add]
+    rw [← Prod.fst_add_snd (m, p), map_add]
     simp only [a₁, b₁, c₁, d₁, LinearMap.comp_apply, LinearMap.inl_apply,
       LinearMap.inr_apply, LinearMap.fst_apply, LinearMap.snd_apply]
     rfl
