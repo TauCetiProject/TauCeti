@@ -8,9 +8,11 @@ module
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
+public import TauCeti.FieldTheory.GaloisCohomology.Inflation
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
+import TauCeti.NumberTheory.LocalField.Frobenius
 
 /-!
 # The local invariant of an unramified layer
@@ -39,6 +41,14 @@ because, in an unramified extension, `a` is a norm if and only if `n ∣ v_K(a)`
 `K` has invariant `1/n`, so its class is the fundamental class of the layer; replacing arithmetic
 by geometric Frobenius would negate every invariant.
 
+The invariants of different unramified layers are compatible. For unramified layers
+`K ⊆ L ⊆ M`, arithmetic Frobenius of `M/K` restricts to that of `L/K`, and inflation
+`H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)` sends the class of `a` to the class of `a ^ [M : L]`
+(`Rep.FiniteCyclicGroup.map_groupCohomologyπEven_two`), whose invariant is again `v_K(a) / n`.
+So inflation preserves the invariant: this is the compatibility the invariants of the unramified
+layers need in order to glue to one invariant on the union of their images in the Brauer group of
+`K`.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.unramifiedClass`: the class in `H²(Gal(L/K), Lˣ)` of an element of
@@ -56,6 +66,10 @@ by geometric Frobenius would negate every invariant.
 * `TauCeti.ClassFieldTheory.unramifiedInv_injective` and
   `TauCeti.ClassFieldTheory.range_unramifiedInv`: the invariant is injective with image the
   subgroup of `ℚ/ℤ` of order `n`.
+* `TauCeti.ClassFieldTheory.map_unramifiedClass`: inflation along unramified layers `K ⊆ L ⊆ M`
+  sends the class of `a` to the class of `a ^ [M : L]`.
+* `TauCeti.ClassFieldTheory.unramifiedInv_map`: inflation along unramified layers preserves the
+  invariant.
 
 ## References
 
@@ -261,5 +275,62 @@ theorem range_unramifiedInv :
   rw [unramifiedInv, AddMonoidHom.coe_comp, Set.range_comp, AddEquiv.coe_toAddMonoidHom,
     (unramifiedInvEquiv K L).surjective.range_eq, Set.image_univ, ← AddMonoidHom.coe_range,
     ZMod.toRatAddCircle_range]
+
+/-! ### Inflation along a tower of unramified layers -/
+
+section Inflation
+
+variable (M : Type) [Field M] [ValuativeRel M] [TopologicalSpace M]
+  [IsNonarchimedeanLocalField M] [Algebra K M] [ValuativeExtension K M]
+  [FiniteDimensional K M] [IsGalois K M] [IsUnramified K M]
+  [Algebra L M] [IsScalarTower K L M] [ValuativeExtension L M]
+
+/-- **Inflation of unramified classes.** For unramified layers `K ⊆ L ⊆ M`, inflation
+`H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)` sends the class of `a ∈ Kˣ` to the class of `a ^ [M : L]`. -/
+@[simp]
+theorem map_unramifiedClass (a : Kˣ) :
+    groupCohomology.map (AlgEquiv.restrictNormalHom L) (unitsInflationHom K L M) 2
+        (unramifiedClass K L (Additive.ofMul a)) =
+      unramifiedClass K M (Additive.ofMul (a ^ Module.finrank L M)) := by
+  -- Restriction `Gal(M/K) → Gal(L/K)` sends arithmetic Frobenius to arithmetic Frobenius.
+  refine map_groupCohomologyπEven_two _ _ (mem_zpowers_frobeniusAlgEquiv K M) _
+    (mem_zpowers_frobeniusAlgEquiv K L) frobeniusAlgEquiv_restrictNormal _
+    (Module.finrank L M) ?_ (unitsToFrobeniusFixed K L (Additive.ofMul a))
+    (unitsToFrobeniusFixed K M (Additive.ofMul (a ^ Module.finrank L M))) ?_
+  · rw [IsGalois.card_aut_eq_finrank, IsGalois.card_aut_eq_finrank,
+      ← Module.finrank_mul_finrank K L M, mul_comm]
+  · -- Both sides are images of `a ^ [M : L]` in `Mˣ`, through `Lˣ` on the right.
+    have hL : (unitsToFrobeniusFixed K L (Additive.ofMul a) : Rep.ofAlgebraAutOnUnits K L) =
+        Rep.toAdditive.symm (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)) := rfl
+    have hM : (unitsToFrobeniusFixed K M (Additive.ofMul (a ^ Module.finrank L M)) :
+        Rep.ofAlgebraAutOnUnits K M) = Rep.toAdditive.symm
+          (Additive.ofMul (Units.map (algebraMap K M : K →* M) (a ^ Module.finrank L M))) := rfl
+    rw [hL, hM]
+    refine Eq.trans ?_ (congrArg (Module.finrank L M • ·) (unitsInflationHom_apply K L M _)).symm
+    have hmap : Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) a) =
+        Units.map (algebraMap K M : K →* M) a :=
+      Units.ext (IsScalarTower.algebraMap_apply K L M _).symm
+    rw [hmap, map_pow, ofMul_pow, map_nsmul]
+    -- The two sides differ only in the `Rep` through which `Mˣ` is written additively.
+    rfl
+
+/-- **The unramified invariant is compatible with inflation.** For unramified layers
+`K ⊆ L ⊆ M`, inflation `H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)` preserves the local invariant. -/
+@[simp]
+theorem unramifiedInv_map (x : H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)) :
+    unramifiedInv K M
+        (groupCohomology.map (AlgEquiv.restrictNormalHom L) (unitsInflationHom K L M) 2 x) =
+      unramifiedInv K L x := by
+  obtain ⟨a, rfl⟩ := unramifiedClass_surjective K L x
+  have : FiniteDimensional L M := FiniteDimensional.right K L M
+  have hm : (Module.finrank L M : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
+  rw [← ofMul_toMul a, map_unramifiedClass, unramifiedInv_unramifiedClass,
+    unramifiedInv_unramifiedClass, map_pow, toAdd_pow, ← Module.finrank_mul_finrank K L M]
+  congr 1
+  rw [nsmul_eq_mul]
+  push_cast
+  field_simp
+
+end Inflation
 
 end TauCeti.ClassFieldTheory
