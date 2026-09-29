@@ -28,6 +28,7 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   transform lands in the closed (open) unit disc exactly at points of the closed (open) upper
   half-plane.
 * `TauCeti.injOn_sub_I_div_add_I`: the transform is injective off its pole `-i`.
+* `TauCeti.sub_I_div_add_I_sub_sub_I_div_add_I`: the difference of two values of the transform.
 * `TauCeti.bijOn_sub_I_div_add_I_upperHalfPlaneSet`: the transform is a bijection from the open
   upper half-plane onto the open unit disc.
 * `TauCeti.bijOn_sub_I_div_add_I_im_nonneg`: the transform is a bijection from the closed upper
@@ -91,6 +92,12 @@ theorem injOn_sub_I_div_add_I :
   rw [div_eq_div_iff hz hw] at h
   have h2 : (2 * I) * (z - w) = 0 := by linear_combination h
   simpa [sub_eq_zero, I_ne_zero] using h2
+
+/-- The Cayley transform has the difference quotient `2 * i / ((s + i) * (t + i))`. -/
+theorem sub_I_div_add_I_sub_sub_I_div_add_I {s t : ℂ} (hs : s + I ≠ 0) (ht : t + I ≠ 0) :
+    (s - I) / (s + I) - (t - I) / (t + I) = 2 * I * (s - t) / ((s + I) * (t + I)) := by
+  rw [div_sub_div _ _ hs ht]
+  ring
 
 /-- The inverse Cayley transform `w ↦ i (1 + w) / (1 - w)` is a right inverse of the transform
 away from `w = 1`, and its value keeps the denominator `z + i` away from `0`. -/
