@@ -13,7 +13,8 @@ import Mathlib.Topology.Algebra.ProperAction.Basic
 # Generation of the graded pieces of the closed lower central series
 
 The brackets of a topological generating set with a graded piece topologically generate the next
-piece. For a compact group and a finite generating set, their sums fill the next piece.
+piece. If the source graded piece is compact and the generating set finite, their sums fill the
+next piece.
 The distinction matters because the closed lower central series terms need not be open.
 -/
 
@@ -27,7 +28,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- The brackets with a topological generating set generate the next closed-series graded piece
 after taking closure. -/
-theorem topologicalClosure_closure_lcsBracket_eq_top (n : ℕ) {S : Set G}
+theorem topologicalClosure_closure_gradedBracket_eq_top (n : ℕ) {S : Set G}
     (hS : (Subgroup.closure S).topologicalClosure = ⊤) :
     (AddSubgroup.closure (Set.range (fun sy : S × gradedPiece 0 G n ↦
       gradedBracket 0 G 0 n (gradedMkZero 0 G sy.1) sy.2))).topologicalClosure = ⊤ := by
@@ -38,6 +39,7 @@ theorem topologicalClosure_closure_lcsBracket_eq_top (n : ℕ) {S : Set G}
     AddSubgroup.isClosed_topologicalClosure _
   have hbracket (g : G) (y : gradedPiece 0 G n) :
       gradedBracket 0 G 0 n (gradedMkZero 0 G g) y ∈ W := by
+    -- For fixed `y`, the preimage of `W` is a closed subgroup containing `S`, hence all of `G`.
     let V : Subgroup G :=
       { carrier := {g | gradedBracket 0 G 0 n (gradedMkZero 0 G g) y ∈ W}
         one_mem' := by simp
@@ -62,6 +64,8 @@ theorem topologicalClosure_closure_lcsBracket_eq_top (n : ℕ) {S : Set G}
     exact htop (hS.symm ▸ Subgroup.mem_top g)
   let K : Subgroup G := pLowerCentralSeries 0 G n
   let H : Subgroup G := pLowerCentralSeries 0 G (0 + n + 1)
+  -- Pull `W` back along the graded quotient map. Every commutator from `G` and `K` lies
+  -- in this closed subgroup of `H`, so the closed commutator step puts all of `H` in it.
   let U : Subgroup H :=
     { carrier := {x | gradedMk 0 G (0 + n + 1) x ∈ W}
       one_mem' := by simp
@@ -103,17 +107,14 @@ theorem topologicalClosure_closure_lcsBracket_eq_top (n : ℕ) {S : Set G}
   have hxy' : y = x := Subtype.ext hxy
   simpa [U, hxy'] using hy
 
-/-- For a finite generating set in a compact group, every class in the next graded
-piece is one sum of brackets with the generators. -/
-theorem exists_sum_lcsBracket_eq [CompactSpace G] (n : ℕ)
+/-- If the source graded piece is compact, every class in the next graded piece is one sum of
+brackets with a finite topological generating set. -/
+theorem exists_sum_gradedBracket_eq (n : ℕ) [CompactSpace (gradedPiece 0 G n)]
     (S : Finset G) (hS : (Subgroup.closure (S : Set G)).topologicalClosure = ⊤)
     (z : gradedPiece 0 G (0 + n + 1)) :
     ∃ y : S → gradedPiece 0 G n,
       (∑ s : S, gradedBracket 0 G 0 n (gradedMkZero 0 G s) (y s)) = z := by
   classical
-  have : CompactSpace (pLowerCentralSeries 0 G n) :=
-    isCompact_iff_compactSpace.mp (isClosed_pLowerCentralSeries n).isCompact
-  have : CompactSpace (gradedPiece 0 G n) := inferInstance
   have : CompactSpace (S → gradedPiece 0 G n) := inferInstance
   have : IsClosed ((pLowerCentralSeries 0 G (0 + n + 1 + 1)).subgroupOf
       (pLowerCentralSeries 0 G (0 + n + 1)) : Set (pLowerCentralSeries 0 G (0 + n + 1))) := by
@@ -147,7 +148,7 @@ theorem exists_sum_lcsBracket_eq [CompactSpace G] (n : ℕ)
     refine AddSubgroup.topologicalClosure_minimal _ ((AddSubgroup.closure_le _).mpr ?_) hrange
     rintro _ ⟨⟨s, y⟩, rfl⟩
     exact hgen ⟨s.1, s.2⟩ y
-  have htop := topologicalClosure_closure_lcsBracket_eq_top n hS
+  have htop := topologicalClosure_closure_gradedBracket_eq_top n hS
   have hsurj : f.range = ⊤ := top_le_iff.mp (htop ▸ hW)
   obtain ⟨y, hy⟩ := hsurj.symm ▸ AddSubgroup.mem_top z
   exact ⟨y, hy⟩
