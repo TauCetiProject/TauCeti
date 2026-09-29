@@ -41,8 +41,13 @@ orbits (`Subgroup.LinearizingCoordinate.quotientCoordinate_eq_iff`), so it is a 
 the quotient of the invariant disc by the stabilizer of `z`; and the quotient coordinates of two
 local linearizing coordinates are related by a map that is holomorphic with holomorphic inverse
 between the open sets of quotient-coordinate values — a biholomorphic transition
-(`Subgroup.LinearizingCoordinate.exists_quotientCoordinate_trans`) — obtained by descending the
-change of coordinate through `u ↦ u ^ m` with `TauCeti.differentiableOn_descendPow`. Since the
+(`Subgroup.LinearizingCoordinate.quotientCoordinateTrans`, holomorphic on the first open set
+(`Subgroup.LinearizingCoordinate.differentiableOn_quotientCoordinateTrans`) into the second
+(`Subgroup.LinearizingCoordinate.quotientCoordinateTrans_mem_quotientImage`) and inverse to the
+transition in the other direction
+(`Subgroup.LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinateTrans`)) — obtained by
+descending the change of coordinate through `u ↦ u ^ m` with
+`TauCeti.differentiableOn_descendPow`. Since the
 rotation by which an element of the stabilizer acts is `Subgroup.stabilizerRotation`, the same
 rotation appears in every local linearizing coordinate
 (`Subgroup.LinearizingCoordinate.coordinate_smul`). The coordinate, and with it the local quotient
@@ -297,8 +302,8 @@ theorem LinearizingCoordinate.mdifferentiableOn_coordinate (ψ : Γ.LinearizingC
 invariant disc by the stabilizer of `z`, `m = Nat.card (stabilizer Γ z)`. Its level sets are the
 orbits of that stabilizer (`Subgroup.LinearizingCoordinate.quotientCoordinate_eq_iff`), so it is a
 coordinate on that quotient, and it is independent of the local linearizing coordinate up to the
-biholomorphic transition of
-`Subgroup.LinearizingCoordinate.exists_quotientCoordinate_trans`, holomorphic there by
+biholomorphic transition
+`Subgroup.LinearizingCoordinate.quotientCoordinateTrans`, holomorphic there by
 `Subgroup.LinearizingCoordinate.mdifferentiableOn_quotientCoordinate`. -/
 def LinearizingCoordinate.quotientCoordinate (ψ : Γ.LinearizingCoordinate z ε)
     (τ : stabilizerBall Γ z ε) : ℂ := coordinate ψ τ ^ Nat.card (stabilizer Γ z)
@@ -572,48 +577,6 @@ theorem LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinateTrans
     rw [transEquiv_smul ψ' ψ hfu ζ, rootsOfUnity.smul_pow]
   simp only [quotientCoordinateTrans]
   rw [TauCeti.descendPow_pow hf, TauCeti.descendPow_pow hg, transEquiv_transEquiv ψ ψ' hu]
-
-/-- **The local quotient coordinates of two local linearizing coordinates are related by a
-biholomorphic transition.** The local quotient coordinate of a local linearizing coordinate
-`Subgroup.LinearizingCoordinate.quotientCoordinate` is a holomorphic function on the invariant
-disc of radius `ε`, constant on the orbits of the stabilizer of `z`
-(`Subgroup.LinearizingCoordinate.quotientCoordinate_smul`), with those orbits as its level sets
-(`Subgroup.LinearizingCoordinate.quotientCoordinate_eq_iff`). Its values range over the open set
-`Subgroup.LinearizingCoordinate.quotientImage` of quotient-coordinate values, and the quotient
-coordinates of two local linearizing coordinates differ by a biholomorphic change of those open
-sets: a holomorphic map `T` between the two open sets of quotient-coordinate values with a
-holomorphic inverse `T'`, each taking the quotient-coordinate values of its own open set into the
-other (`Subgroup.LinearizingCoordinate.quotientCoordinateTrans_mem_quotientImage`), and taking
-the quotient coordinate of a point of the invariant disc in the first local linearizing coordinate
-to its quotient coordinate in the second. The transition is
-`Subgroup.LinearizingCoordinate.quotientCoordinateTrans`, the descent of the change of local
-linearizing coordinate `Subgroup.LinearizingCoordinate.transEquiv` through `u ↦ u ^ m`. -/
-theorem LinearizingCoordinate.exists_quotientCoordinate_trans
-    (ψ ψ' : Γ.LinearizingCoordinate z ε) :
-    ∃ T T' : ℂ → ℂ,
-      IsOpen ψ.quotientImage ∧ IsOpen ψ'.quotientImage ∧
-      DifferentiableOn ℂ T ψ.quotientImage ∧
-      DifferentiableOn ℂ T' ψ'.quotientImage ∧
-      (∀ w ∈ ψ.quotientImage, T w ∈ ψ'.quotientImage) ∧
-      (∀ w ∈ ψ'.quotientImage, T' w ∈ ψ.quotientImage) ∧
-      (∀ τ : stabilizerBall Γ z ε, T (ψ.quotientCoordinate τ) = ψ'.quotientCoordinate τ) ∧
-      (∀ τ : stabilizerBall Γ z ε, T' (ψ'.quotientCoordinate τ) = ψ.quotientCoordinate τ) ∧
-      (∀ w ∈ ψ.quotientImage, (T' ∘ T) w = w) ∧
-      (∀ w ∈ ψ'.quotientImage, (T ∘ T') w = w) :=
-  ⟨LinearizingCoordinate.quotientCoordinateTrans ψ ψ',
-    LinearizingCoordinate.quotientCoordinateTrans ψ' ψ,
-    LinearizingCoordinate.isOpen_quotientImage ψ,
-    LinearizingCoordinate.isOpen_quotientImage ψ',
-    LinearizingCoordinate.differentiableOn_quotientCoordinateTrans ψ ψ',
-    LinearizingCoordinate.differentiableOn_quotientCoordinateTrans ψ' ψ,
-    fun _ hw => LinearizingCoordinate.quotientCoordinateTrans_mem_quotientImage ψ ψ' hw,
-    fun _ hw => LinearizingCoordinate.quotientCoordinateTrans_mem_quotientImage ψ' ψ hw,
-    fun _ => LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinate ψ ψ' _,
-    fun _ => LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinate ψ' ψ _,
-    fun _ hw =>
-      LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinateTrans ψ ψ' hw,
-    fun _ hw =>
-      LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinateTrans ψ' ψ hw⟩
 
 /-- **The disc coordinate centred at `z` is a local linearizing coordinate**: the reparametrization
 by the disc coordinate itself, whose coordinate is the disc coordinate
