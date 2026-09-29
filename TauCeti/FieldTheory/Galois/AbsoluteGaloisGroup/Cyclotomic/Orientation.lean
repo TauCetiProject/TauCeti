@@ -141,6 +141,7 @@ theorem cyclotomicOrientation_continuous (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p
 
 /-- The cyclotomic orientation and the cyclotomic character have the same image in `ℤ_pˣ`,
 because the quotient map onto the maximal pro-`p` Galois group is surjective. -/
+@[simp]
 theorem cyclotomicOrientation_range (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     (cyclotomicOrientation p K hmu).range = (localCyclotomicCharacter p K).range := by
   rw [← cyclotomicOrientation_comp_mk hmu, MonoidHom.range_comp,
