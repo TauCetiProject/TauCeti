@@ -29,7 +29,8 @@ makes the dimension of `H²(G, 𝔽_p)` the relation rank of `G`.
 ## Main results
 
 * `TauCeti.pLowerCentralStep_proPKernel`: the relative elementary abelian `p`-quotient of the
-  pro-`p` kernel is trivial.
+  pro-`p` kernel is trivial, so `H¹(R, M)^G` vanishes for `R` the pro-`p` kernel and trivial
+  coefficients `M` killed by `p` (`TauCeti.subsingleton_h1ConjInvariants_proPKernel`).
 * `TauCeti.maximalProPQuotient.continuousZModDualMap_bijective`: pullback identifies the
   continuous `ZMod p`-valued characters of `G(p)` and `G`.
 * `TauCeti.finite_H1ConjInvariants_iff`: `H¹(N, 𝔽_p)^G` is finite exactly when
@@ -49,7 +50,7 @@ namespace TauCeti
 
 open ContCohomology
 
-universe u
+universe u v
 
 -- For prime `p`, `AddCommGroup (ZMod p)` is also derivable from `[IsSimpleAddGroup (ZMod p)]
 -- [AddGroup.IsNilpotent (ZMod p)]`; that structure is not reducibly the ring one, so the
@@ -79,10 +80,9 @@ theorem pLowerCentralStep_proPKernel :
   let f : (G ⧸ S) →* (G ⧸ R) := QuotientGroup.map S R (MonoidHom.id G)
     (by simpa only [Subgroup.comap_id] using
       pLowerCentralStep_le (p := p) (H := R) (isClosed_proPKernel (p := p) (G := G)))
-  have hf : Continuous f := by
-    refine (QuotientGroup.isQuotientMap_mk S).continuous_iff.mpr ?_
-    change Continuous fun g : G => (g : G ⧸ R)
-    exact QuotientGroup.continuous_mk
+  have hf : Continuous f :=
+    -- `f ∘ QuotientGroup.mk` is `QuotientGroup.mk` by `QuotientGroup.map_mk`, definitionally.
+    (QuotientGroup.isQuotientMap_mk S).continuous_iff.mpr QuotientGroup.continuous_mk
   have hsurj : Function.Surjective f :=
     QuotientGroup.map_surjective_of_surjective (N := S) (M := R) (MonoidHom.id G)
       (QuotientGroup.mk'_surjective R)
@@ -94,16 +94,11 @@ theorem pLowerCentralStep_proPKernel :
     intro x
     obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective x.1
     have hgR : g ∈ R := by
-      have hx := x.2
-      rw [MonoidHom.mem_ker] at hx
-      change f x.1 = 1 at hx
-      rw [← hg] at hx
-      change (g : G ⧸ R) = 1 at hx
-      rw [QuotientGroup.eq_one_iff] at hx
-      exact hx
+      have hx : f x.1 = 1 := x.2
+      rwa [← hg, QuotientGroup.map_mk, MonoidHom.id_apply, QuotientGroup.eq_one_iff] at hx
     apply Subtype.ext
-    change x.1 ^ p = 1
-    rw [← hg, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+    rw [SubgroupClass.coe_pow, OneMemClass.coe_one, ← hg, ← QuotientGroup.mk_pow,
+      QuotientGroup.eq_one_iff]
     exact pow_mem_pLowerCentralStep hgR
   have hGS : IsProP p (G ⧸ S) :=
     (isProP_maximalProPQuotient (p := p) (G := G)).of_ker_isProP hf hsurj hker.isProP
@@ -111,9 +106,25 @@ theorem pLowerCentralStep_proPKernel :
     (pLowerCentralStep_le (p := p) (H := proPKernel p G)
       (isClosed_proPKernel (p := p) (G := G)))
   intro g hg
-  change g ∈ S
   exact (QuotientGroup.eq_one_iff g).mp
     (proPKernel_le_ker hGS (QuotientGroup.mk' S) QuotientGroup.continuous_mk hg)
+
+/-- **The pro-`p` kernel has no invariant degree-one classes with trivial `p`-torsion
+coefficients.** For `R = proPKernel p G` and a `T1Space` module `M` with trivial action and killed
+by `p`, `H¹(R, M)^G` is the group of continuous homomorphisms `R ⧸ Rᵖ[R, G] → M`, and the quotient
+is trivial by `pLowerCentralStep_proPKernel`. -/
+theorem subsingleton_h1ConjInvariants_proPKernel {M : Type v} [AddCommGroup M]
+    [TopologicalSpace M] [IsTopologicalAddGroup M] [T1Space M] [DistribMulAction G M]
+    [ContinuousSMul G M] (htriv : ∀ (g : G) (m : M), g • m = m) (hpM : ∀ m : M, p • m = 0) :
+    Subsingleton (H1ConjInvariants G M (proPKernel p G)) := by
+  let e := H1ConjInvariantsEquivOfSmulEqSelf htriv p (isClosed_proPKernel (p := p) (G := G)) hpM
+  refine ⟨fun x y ↦ e.injective (Additive.toMul.injective (ContinuousMonoidHom.ext fun q ↦ ?_))⟩
+  obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective q
+  have hr : (r : proPKernel p G ⧸ (pLowerCentralStep p (proPKernel p G)).subgroupOf
+      (proPKernel p G)) = 1 := by
+    rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, pLowerCentralStep_proPKernel]
+    exact r.2
+  rw [hr, map_one, map_one]
 
 end MaximalKernel
 
@@ -135,11 +146,8 @@ theorem maximalProPQuotient.continuousZModDualMap_bijective :
     obtain ⟨g, rfl⟩ := maximalProPQuotient.mk_surjective p G x
     have h' := congrArg Additive.toMul h
     have hg := DFunLike.congr_fun h' g
-    rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
+    rwa [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
       ContinuousMonoidHom.toMul_continuousZModDualMap_apply] at hg
-    change χ.toMul (maximalProPQuotient.mk p G g) =
-      ψ.toMul (maximalProPQuotient.mk p G g) at hg
-    exact hg
   · intro χ
     let f : G →* Multiplicative (ZMod p) := χ.toMul.toMonoidHom
     let hP : IsProP p (Multiplicative (ZMod p)) :=
@@ -153,9 +161,7 @@ theorem maximalProPQuotient.continuousZModDualMap_bijective :
     apply ContinuousMonoidHom.ext
     intro g
     rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply]
-    change lift (maximalProPQuotient.mk p G g) = χ.toMul g
-    rw [maximalProPQuotient.mk_apply]
-    exact (maximalProPQuotient.lift_mk hP f χ.toMul.continuous g).trans rfl
+    exact maximalProPQuotient.lift_mk hP f χ.toMul.continuous g
 
 end MaximalDual
 
