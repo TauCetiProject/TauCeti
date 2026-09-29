@@ -128,7 +128,9 @@ theorem cyclotomicOrientation_comp_mk (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     (cyclotomicOrientation p K hmu).comp
         (maximalProPQuotient.mk p (Field.absoluteGaloisGroup K)) =
       localCyclotomicCharacter p K :=
-  MonoidHom.ext (cyclotomicOrientation_mk hmu)
+  congrArg ContinuousMonoidHom.toMonoidHom
+    (ContinuousMonoidHom.quotientLift_comp_quotientMk _ _
+      (proPKernel_le_ker_localCyclotomicCharacter p K hmu))
 
 /-- The cyclotomic orientation is continuous for the quotient topology on the maximal pro-`p`
 Galois group. -/
