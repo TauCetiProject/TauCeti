@@ -83,12 +83,14 @@ section UnderTower
 
 variable {A C : Type*} [CommRing A] [IsDomain A] [CommRing C] [IsDomain C]
   [Algebra A R] [Algebra R C] [Algebra A C] [IsScalarTower A R C]
-  [Algebra.IsIntegral A R] [Algebra.IsIntegral R C] [Algebra.IsIntegral A C]
+  [Algebra.IsIntegral A R] [Algebra.IsIntegral R C]
 
 /-- Contracting a height-one prime through an intermediate integral domain agrees with direct
 contraction. -/
 @[simp]
-theorem under_under (w : HeightOneSpectrum C) : (w.under R).under A = w.under A := by
+theorem under_under (w : HeightOneSpectrum C) :
+    letI : Algebra.IsIntegral A C := Algebra.IsIntegral.trans R
+    (w.under R).under A = w.under A := by
   apply asIdeal_injective
   simp only [under_asIdeal, Ideal.under_under]
 
