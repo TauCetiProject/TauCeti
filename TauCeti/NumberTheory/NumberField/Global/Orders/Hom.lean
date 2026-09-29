@@ -60,19 +60,25 @@ theorem map_mem (f : Hom O O') {x : K} (hx : x ∈ O.toSubalgebra) :
     f x ∈ O'.toSubalgebra :=
   f.map_mem' hx
 
+@[simp]
+theorem map_zero (f : Hom O O') : f (0 : K) = 0 :=
+  f.fieldHom.map_zero
+
+@[simp]
+theorem map_one (f : Hom O O') : f (1 : K) = 1 :=
+  f.fieldHom.map_one
+
+@[simp]
+theorem map_add (f : Hom O O') (x y : K) : f (x + y) = f x + f y :=
+  f.fieldHom.map_add x y
+
+@[simp]
+theorem map_mul (f : Hom O O') (x y : K) : f (x * y) = f x * f y :=
+  f.fieldHom.map_mul x y
+
 /-- Restrict an order morphism to a ring homomorphism of its two orders. -/
 def toOrderHom (f : Hom O O') : O.toSubalgebra →+* O'.toSubalgebra :=
-  { toFun x := ⟨f x, f.map_mem x.property⟩
-    map_one' := Subtype.ext (map_one f.fieldHom)
-    map_mul' x y := Subtype.ext (map_mul f.fieldHom (x : K) y)
-    map_zero' := Subtype.ext (map_zero f.fieldHom)
-    map_add' x y := Subtype.ext (map_add f.fieldHom (x : K) y) }
-
-/-- Restriction to the orders agrees with the ambient field map. -/
-@[simp]
-theorem coe_toOrderHom_apply (f : Hom O O') (x : O.toSubalgebra) :
-    ((f.toOrderHom x : O'.toSubalgebra) : L) = f (x : K) := by
-  simp [toOrderHom]
+  f.fieldHom.restrict O.toSubalgebra O'.toSubalgebra (fun _ hx => f.map_mem hx)
 
 /-- Two order morphisms agreeing on the ambient field are equal. -/
 @[ext]
@@ -109,14 +115,14 @@ theorem comp_apply (g : Hom O' O'') (f : Hom O O') (x : K) :
 theorem toOrderHom_comp (g : Hom O' O'') (f : Hom O O') :
     (g.comp f).toOrderHom = g.toOrderHom.comp f.toOrderHom := by
   ext x
-  simp
+  rfl
 
 /-- Restricting the identity morphism gives the identity on the order. -/
 @[simp]
 theorem toOrderHom_id (O : NumberFieldOrder K) :
     (Hom.id O).toOrderHom = RingHom.id O.toSubalgebra := by
   ext x
-  simp
+  rfl
 
 @[simp]
 theorem id_comp (f : Hom O O') : (Hom.id O').comp f = f := by ext x; rfl
