@@ -110,7 +110,7 @@ end TauCeti
 
 namespace Polynomial
 
-local instance : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance fact_prime_seven_dihedral : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 /-- The reduction of `X⁵ - 5X - 12` modulo `7` is irreducible: it has no root and no monic
 quadratic factor in `𝔽₇`. -/
@@ -129,8 +129,6 @@ theorem irreducible_X_pow_five_sub_five_mul_X_sub_twelve_zmod_seven :
   norm_num only [Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_mul, Polynomial.map_X,
     Polynomial.map_ofNat]
   exact ⟨irreducible_X_pow_five_sub_five_mul_X_sub_twelve_zmod_seven, by compute_degree!⟩
-
-local instance : Fact (Nat.Prime 3) := ⟨by decide⟩
 
 /-- The reduction of `X⁵ - 5X - 12` modulo `3` is `X (X² + X + 2) (X² + 2X + 2)`, with factor
 degrees `{1, 2, 2}`. -/
@@ -168,7 +166,6 @@ degrees `(1,2,2)` modulo `3`. Neither `7` nor `3` divides the discriminant. -/
 @[simp] theorem QuinticCertificate.check_X_pow_five_sub_five_mul_X_sub_twelve :
     (QuinticCertificate.dihedral 7 3 8000 40).check (X ^ 5 - 5 * X - 12) = true := by
   have : Fact (Nat.Prime 7) := ⟨by decide⟩
-  have : Fact (Nat.Prime 3) := ⟨by decide⟩
   have hgood7 : IsGoodPrime (X ^ 5 - 5 * X - 12) 7 := by
     rw [isGoodPrime_iff, discr_X_pow_five_sub_five_mul_X_sub_twelve]
     decide
