@@ -36,6 +36,18 @@ namespace BialgHom
 variable {R A B : Type*} [CommSemiring R]
 variable [Semiring A] [Semiring B] [HopfAlgebra R A] [HopfAlgebra R B]
 
+/-- The linear-map projection of the algebra-hom coercion of a bialgebra homomorphism
+coincides with the linear-map projection of the bialgebra homomorphism. -/
+private lemma coe_algHom_toLinearMap (φ : A →ₐc[R] B) :
+    (φ : A →ₐ[R] B).toLinearMap = φ.toLinearMap :=
+  rfl
+
+/-- The linear-map projection of the coalgebra-hom coercion of a bialgebra homomorphism
+coincides with the linear-map projection of the bialgebra homomorphism. -/
+private lemma coe_coalgHom_toLinearMap (φ : A →ₐc[R] B) :
+    (φ : A →ₗc[R] B).toLinearMap = φ.toLinearMap :=
+  rfl
+
 private lemma toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)) =
       (HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap := by
@@ -47,34 +59,28 @@ private lemma toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
   have hg_left : g * f = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp only [g, f]
-    have h1 := (LinearMap.algHom_comp_convMul_distrib (φ : A →ₐ[R] B)
-      (toConv (HopfAlgebra.antipode R (A := A))) (toConv (LinearMap.id : A →ₗ[R] A))).symm
-    have h2 :
-        (toConv (φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A))) *
-          toConv φ.toLinearMap).ofConv =
-        φ.toLinearMap.comp (toConv (HopfAlgebra.antipode R (A := A)) *
-          toConv LinearMap.id).ofConv :=
-      h1
-    rw [h2]
-    rw [LinearMap.antipode_mul_id]
-    ext a
-    exact (φ : A →ₐ[R] B).commutes (counit a)
+    rw [← coe_algHom_toLinearMap φ]
+    have hdistrib :=
+      (LinearMap.algHom_comp_convMul_distrib (φ : A →ₐ[R] B)
+        (toConv (HopfAlgebra.antipode R (A := A)))
+        (toConv (LinearMap.id : A →ₗ[R] A))).symm
+    simpa only [LinearMap.comp_id] using hdistrib.trans (by
+      rw [LinearMap.antipode_mul_id]
+      ext a
+      exact (φ : A →ₐ[R] B).commutes (counit a))
   have hh_right : f * h = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp only [f, h]
-    have h1 := (LinearMap.convMul_comp_coalgHom_distrib
-      (toConv (LinearMap.id : B →ₗ[R] B)) (toConv (HopfAlgebra.antipode R (A := B)))
-      (φ : A →ₗc[R] B)).symm
-    have h2 :
-        (toConv φ.toLinearMap *
-          toConv ((HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap)).ofConv =
-        (toConv LinearMap.id *
-          toConv (HopfAlgebra.antipode R (A := B))).ofConv.comp φ.toLinearMap :=
-      h1
-    rw [h2]
-    rw [LinearMap.id_mul_antipode]
-    ext a
-    exact congr_arg (algebraMap R B) (CoalgHomClass.counit_comp_apply φ a)
+    rw [← coe_coalgHom_toLinearMap φ]
+    have hdistrib :=
+      (LinearMap.convMul_comp_coalgHom_distrib
+        (toConv (LinearMap.id : B →ₗ[R] B))
+        (toConv (HopfAlgebra.antipode R (A := B)))
+        (φ : A →ₗc[R] B)).symm
+    simpa only [LinearMap.id_comp] using hdistrib.trans (by
+      rw [LinearMap.id_mul_antipode]
+      ext a
+      exact congr_arg (algebraMap R B) (CoalgHomClass.counit_comp_apply φ a))
   exact WithConv.toConv_injective (left_inv_eq_right_inv hg_left hh_right)
 
 end BialgHom
