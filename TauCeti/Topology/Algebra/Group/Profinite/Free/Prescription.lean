@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.Group.CrossedHom
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Cocycle
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.CompatibleSystem
 
 /-!
 # The prescription property for free pro-`p` groups
@@ -20,10 +22,18 @@ coefficient map induces a surjection on `H¹` of a free pro-`p` group
 its values on the generators and takes any prescribed values there, so lifting a cocycle is lifting
 its values on the generators.
 
+Read through Labute's third formulation of the property, this says that for a free pro-`p` group
+of finite rank and any continuous character `χ`, every tuple of `p`-adic integers is the tuple of
+values on the generators of a continuous crossed homomorphism `F → ℤ_p` for `χ`, a continuous `F`
+with `F (x * y) = χ x * F y + F x` (`TauCeti.IsCrossedHom`).
+
 ## Main results
 
 * `TauCeti.freeProP.hasPrescriptionProperty`: every continuous character of a free pro-`p` group
   has the prescription property.
+* `TauCeti.freeProP.exists_continuous_isCrossedHom_forall_apply_of_eq`: on a free pro-`p` group of
+  finite rank, a continuous crossed homomorphism to `ℤ_p` for any continuous character takes any
+  prescribed values on the generators.
 
 ## References
 
@@ -48,5 +58,18 @@ theorem freeProP.hasPrescriptionProperty (χ : freeProP p X →ₜ* ℤ_[p]ˣ) :
   (hasPrescriptionProperty_iff χ).2 fun i hi ↦
     freeProP.explicitCoeff1_surjective (ZModTwist.isProP_multiplicative χ i) _ _
       (ZModTwist.reduce_surjective χ hi)
+
+/-- **Continuous crossed homomorphisms of a free pro-`p` group of finite rank take prescribed
+values on the generators.** For `F = freeProP p X` with `X` finite, a continuous character
+`χ : F →ₜ* ℤ_pˣ` and any `c : X → ℤ_p`, there is a continuous `F : freeProP p X → ℤ_p` with
+`F (x * y) = χ x * F y + F x` and `F (of x) = c x`. -/
+theorem freeProP.exists_continuous_isCrossedHom_forall_apply_of_eq [Finite X]
+    (χ : freeProP p X →ₜ* ℤ_[p]ˣ) (c : X → ℤ_[p]) :
+    ∃ F : freeProP p X → ℤ_[p], Continuous F ∧ IsCrossedHom χ F ∧ ∀ x, F (freeProP.of x) = c x := by
+  obtain ⟨F, hFc, hFmul, hFv⟩ :=
+    (freeProP.hasPrescriptionProperty χ).exists_continuous_forall_mul_eq_and_apply_eq
+      (isProP_freeProP p X) (isTopologicallyFinitelyGenerated_freeProP p X)
+      (freeProP.linearIndependent_frattiniQuotient_of p X) c
+  exact ⟨F, hFc, isCrossedHom_iff.2 hFmul, hFv⟩
 
 end TauCeti

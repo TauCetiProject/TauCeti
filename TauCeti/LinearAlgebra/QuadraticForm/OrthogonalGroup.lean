@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.LinearMap.EqOn
+public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
-import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The orthogonal group of a quadratic form
@@ -52,6 +53,8 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   `QuadraticMap.specialOrthogonalWithinEquiv Q` relating the two spellings.
 * `TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear Q`: the faithful coordinate inclusion of
   a special orthogonal group into matrix `GL`.
+* `TauCeti.QuadraticMap.orthogonalToGeneralLinear Q`: the corresponding faithful coordinate
+  inclusion of the full orthogonal group into matrix `GL`.
 * `TauCeti.QuadraticMap.reflection Q v`: the reflection in the hyperplane orthogonal to a vector `v`
   with `Q v` invertible, built from Mathlib's `Module.reflection`.
 * `TauCeti.QuadraticMap.reflectionOrthogonal Q v`: the same reflection bundled as an element of
@@ -68,7 +71,9 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   identification of the isometries of a quadratic form with the isometries of its polar bilinear
   form. At the level of groups this is
   `TauCeti.QuadraticMap.orthogonalGroup_eq_isometryGroup_polarBilin`: `O(Q)` is the isometry group
-  `TauCeti.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it.
+  `TauCeti.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it. Its
+  determinant-one counterpart is
+  `TauCeti.QuadraticMap.specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin`.
 * `TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv`: the underlying set of the orthogonal
   group is Mathlib's type of self-isometries `Q.IsometryEquiv Q`. This is the compatibility with the
   Mathlib vocabulary; the point of `orthogonalGroup` is the group structure, which
@@ -347,6 +352,41 @@ instance specialOrthogonalGroup_normal (Q : QuadraticMap R M N) :
   rw [specialOrthogonalGroup, Subgroup.inf_subgroupOf_left]
   infer_instance
 
+section PolarBilin
+
+variable (Q : QuadraticForm R M)
+
+/-- When multiplication by two is injective, the special orthogonal group of a quadratic form is
+the determinant-one isometry group of its polar bilinear form. This is the determinant-one
+counterpart of `orthogonalGroup_eq_isometryGroup_polarBilin`. -/
+theorem specialOrthogonalGroup_eq_specialIsometryGroup_polarBilin
+    (h2 : IsSMulRegular R (2 : R)) :
+    specialOrthogonalGroup Q = LinearMap.BilinForm.specialIsometryGroup Q.polarBilin := by
+  ext g
+  rw [mem_specialOrthogonalGroup_iff, LinearMap.BilinForm.mem_specialIsometryGroup_iff,
+    orthogonalGroup_eq_isometryGroup_polarBilin h2]
+
+/-- The canonical group isomorphism between `SO(Q)` and the determinant-one isometry group of the
+polar bilinear form. -/
+noncomputable def specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin
+    (h2 : IsSMulRegular R (2 : R)) :
+    specialOrthogonalGroup Q ≃* LinearMap.BilinForm.specialIsometryGroup Q.polarBilin :=
+  MulEquiv.subgroupCongr (specialOrthogonalGroup_eq_specialIsometryGroup_polarBilin Q h2)
+
+@[simp]
+theorem coe_specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin_apply
+    (h2 : IsSMulRegular R (2 : R)) (g : specialOrthogonalGroup Q) :
+    (specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin Q h2 g : M ≃ₗ[R] M) = g := by
+  simp [specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin]
+
+@[simp]
+theorem coe_specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin_symm_apply
+    (h2 : IsSMulRegular R (2 : R)) (g : LinearMap.BilinForm.specialIsometryGroup Q.polarBilin) :
+    ((specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin Q h2).symm g : M ≃ₗ[R] M) = g := by
+  simp [specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin]
+
+end PolarBilin
+
 end Det
 
 end QuadraticMap
@@ -530,6 +570,55 @@ end Det
 
 section Coordinate
 
+variable {R : Type u} [CommSemiring R] {n : Type v} [Fintype n] [DecidableEq n]
+  {N : Type w} [AddCommMonoid N] [Module R N]
+
+/-- The coordinate inclusion of an orthogonal group into `GL(n, R)`. -/
+noncomputable def _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear
+    (Q : QuadraticMap R (n → R) N) :
+    orthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
+  (matrixGeneralLinearEquiv (n := n) (R := R)).symm.toMonoidHom.comp
+    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.toMonoidHom.comp
+      (orthogonalGroup Q).subtype)
+
+/-- An orthogonal transformation acts through its usual coordinate matrix. -/
+@[simp]
+theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_apply
+    (Q : QuadraticMap R (n → R) N) (g : orthogonalGroup Q) (i j : n) :
+    orthogonalToGeneralLinear Q g i j =
+      (g : (n → R) ≃ₗ[R] (n → R)) (Pi.single j 1) i := by
+  calc
+    _ = (Matrix.mulVec (orthogonalToGeneralLinear Q g : Matrix n n R)
+        (Pi.single j 1)) i := by
+      rw [Matrix.mulVec_single_one, Matrix.col_apply]
+    _ = ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+        (matrixGeneralLinearEquiv (orthogonalToGeneralLinear Q g)))
+          (Pi.single j 1)) i := by
+      rw [matrixGeneralLinearEquiv_apply]
+    _ = _ := by simp [orthogonalToGeneralLinear]
+
+/-- The underlying matrix of the coordinate inclusion is the matrix of the linear equivalence. -/
+@[simp]
+theorem _root_.TauCeti.QuadraticMap.coe_orthogonalToGeneralLinear
+    (Q : QuadraticMap R (n → R) N) (g : orthogonalGroup Q) :
+    ((orthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) : Matrix n n R) =
+      LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap := by
+  ext i j
+  simp only [orthogonalToGeneralLinear_apply, LinearMap.toMatrix'_apply,
+    LinearEquiv.coe_coe]
+
+/-- The coordinate inclusion of an orthogonal group is injective. -/
+theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_injective
+    (Q : QuadraticMap R (n → R) N) :
+    Function.Injective (orthogonalToGeneralLinear Q) :=
+  (matrixGeneralLinearEquiv (n := n) (R := R)).symm.injective.comp
+    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.injective.comp
+      Subtype.coe_injective)
+
+end Coordinate
+
+section SpecialCoordinate
+
 variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
 
@@ -537,9 +626,7 @@ variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
 noncomputable def _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     specialOrthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
-  (Matrix.GeneralLinearGroup.toLin (n := n) (R := R)).symm.toMonoidHom.comp
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.toMonoidHom.comp
-      (specialOrthogonalGroup Q).subtype)
+  (orthogonalToGeneralLinear Q).comp (specialOrthogonalToOrthogonal Q)
 
 /-- A special orthogonal transformation acts through its usual coordinate matrix. -/
 @[simp]
@@ -548,17 +635,16 @@ theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_apply
     (g : specialOrthogonalGroup Q) (i j : n) :
     specialOrthogonalToGeneralLinear Q g i j =
       (g : (n → R) ≃ₗ[R] (n → R)) (Pi.single j 1) i := by
-  rfl
+  rw [specialOrthogonalToGeneralLinear, MonoidHom.comp_apply]
+  rw [orthogonalToGeneralLinear_apply, coe_specialOrthogonalToOrthogonal]
 
 /-- The coordinate inclusion of a special orthogonal group is injective. -/
 theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_injective
     (Q : QuadraticMap R (n → R) N) :
     Function.Injective (specialOrthogonalToGeneralLinear Q) :=
-  (Matrix.GeneralLinearGroup.toLin (n := n) (R := R)).symm.injective.comp
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm.injective.comp
-      Subtype.coe_injective)
+  (orthogonalToGeneralLinear_injective Q).comp specialOrthogonalToOrthogonal_injective
 
-end Coordinate
+end SpecialCoordinate
 
 section Reflection
 
@@ -1019,13 +1105,8 @@ not two, on a nonzero space. On the zero space the two groups coincide
 (`specialOrthogonalWithin_eq_top`). -/
 theorem index_specialOrthogonalWithin [Nontrivial V] (hQ : Q.Nondegenerate) :
     (specialOrthogonalWithin Q).index = 2 := by
-  have hneg : IsPrimitiveRoot (-1 : K) 2 := by
-    refine IsPrimitiveRoot.mk_of_lt _ two_pos (by norm_num) fun l hl hl2 => ?_
-    obtain rfl : l = 1 := by omega
-    rw [pow_one]
-    exact fun h => NeZero.ne (2 : K) (by linear_combination -h)
   rw [specialOrthogonalWithin, Subgroup.index_ker, range_orthogonalDet hQ,
-    hneg.card_rootsOfUnity]
+    card_rootsOfUnity_two (NeZero.ne 2)]
 
 end DetField
 

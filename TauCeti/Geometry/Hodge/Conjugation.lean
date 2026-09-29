@@ -227,6 +227,16 @@ theorem internalHom_toEquiv_apply_apply (ω₁ : Conjugation W₁) (ω₂ : Conj
     (ω₁.internalHom ω₂).toEquiv f x = ω₂.toEquiv (f (ω₁.toEquiv x)) :=
   by simp [internalHom, ω₁.toEquiv_symm]
 
+/-- A complex-linear map is fixed by the internal-hom conjugation exactly when it intertwines the
+two conjugations. -/
+theorem internalHom_toEquiv_eq_self_iff (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂)
+    (f : W₁ →ₗ[ℂ] W₂) :
+    (ω₁.internalHom ω₂).toEquiv f = f ↔ ∀ x, f (ω₁.toEquiv x) = ω₂.toEquiv (f x) := by
+  refine ⟨fun h x ↦ ?_, fun h ↦ LinearMap.ext fun x ↦ ?_⟩
+  · conv_lhs => rw [← h]
+    rw [internalHom_toEquiv_apply_apply, apply_apply]
+  · rw [internalHom_toEquiv_apply_apply, h, apply_apply]
+
 end InternalHom
 
 /-- Mapping a complex subspace twice by a conjugation returns the original subspace. -/

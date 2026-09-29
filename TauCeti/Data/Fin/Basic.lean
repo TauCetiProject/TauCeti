@@ -20,8 +20,8 @@ import Mathlib.Tactic.FinCases
 # Basic results about finite ordinal types
 
 This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, and the final
-value of a partial product.
+permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
+value of a partial product, and the cyclic index arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -40,7 +40,14 @@ range, so the value is a `dite` rather than a plain application.
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
+* `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`.
+* `TauCeti.eq_add_one_or_eq_add_two_fin_three`: a distinct index of `Fin 3` is one of the two
+  shifts of the other.
+* `TauCeti.add_one_add_one_fin_three`, `TauCeti.add_one_add_two_fin_three`,
+  `TauCeti.add_two_add_one_fin_three` and `TauCeti.add_two_add_two_fin_three`: the shifts by `1`
+  and `2` compose cyclically in `Fin 3`.
+* `TauCeti.sum_fin_three_rotate`: a sum over `Fin 3` read off starting from an arbitrary index.
 * `TauCeti.neg_one_pow_val_add_one`: for `n` even, adding one in `Fin n` flips the sign `(-1) ^ ·`
   read off the value.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
@@ -202,6 +209,15 @@ theorem exists_mem_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
     obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.mpr hj.ne
     exact ⟨i, Ioc_subset_Icc_self (by simpa only [Fin.orderSucc_castSucc] using hxj)⟩
 
+/-- **Adding one in `Fin n` never returns to the same element** when `2 ≤ n`. -/
+theorem add_one_ne_self {n : ℕ} [NeZero n] (hn : 2 ≤ n) (i : Fin n) : i + 1 ≠ i := by
+  intro h
+  have hone : (1 : Fin n) = 0 := by
+    apply add_left_cancel (a := i)
+    simpa using h
+  have hval := congrArg Fin.val hone
+  simp [Nat.mod_eq_of_lt (by omega : 1 < n)] at hval
+
 /-- **Adding one twice in `Fin n` never returns to the same element** when `3 ≤ n`. -/
 theorem add_one_add_one_ne_self {n : ℕ} [NeZero n] (hn : 3 ≤ n) (i : Fin n) :
     i + 1 + 1 ≠ i := by
@@ -267,5 +283,30 @@ theorem sum_ite_val_add {M : Type*} [AddCommMonoid M] {n : ℕ} (f : Fin n → M
     intro k _
     have := k.isLt
     exact ite_eq_right (by omega)
+
+/-! ### Cyclic index arithmetic in `Fin 3` -/
+
+/-- **A distinct index of `Fin 3` is one of the two shifts of the other.** -/
+theorem eq_add_one_or_eq_add_two_fin_three {i j : Fin 3} (h : i ≠ j) : i = j + 1 ∨ i = j + 2 := by
+  revert h; revert i j; decide
+
+/-- **Shifting an index of `Fin 3` by one twice is shifting it by two.** -/
+theorem add_one_add_one_fin_three (j : Fin 3) : j + 1 + 1 = j + 2 := by revert j; decide
+
+/-- **Shifting an index of `Fin 3` by one and then by two returns to it.** -/
+theorem add_one_add_two_fin_three (j : Fin 3) : j + 1 + 2 = j := by revert j; decide
+
+/-- **Shifting an index of `Fin 3` by two and then by one returns to it.** -/
+theorem add_two_add_one_fin_three (j : Fin 3) : j + 2 + 1 = j := by revert j; decide
+
+/-- **Shifting an index of `Fin 3` by two twice is shifting it by one.** -/
+theorem add_two_add_two_fin_three (j : Fin 3) : j + 2 + 2 = j + 1 := by revert j; decide
+
+/-- **A sum over `Fin 3` read off starting from an arbitrary index.** -/
+theorem sum_fin_three_rotate {M : Type*} [AddCommMonoid M] (f : Fin 3 → M) (j : Fin 3) :
+    ∑ m, f m = f j + f (j + 1) + f (j + 2) := by
+  have h : ∑ m : Fin 3, f (j + m) = ∑ m : Fin 3, f m :=
+    Fintype.sum_equiv (Equiv.addLeft j) _ _ fun _ => rfl
+  rw [← h, Fin.sum_univ_three, add_zero]
 
 end TauCeti

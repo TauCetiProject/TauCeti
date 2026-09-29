@@ -173,18 +173,7 @@ private theorem translate_one_eq_jet (h : E) (u : Wkp mu ⊤ p 1) :
   apply W1p.ext_value
   rw [← value_one (translateOne h u), value_translateOne, value_one u]
   simp only [W1p.value_coe]
-  apply Lp.ext
-  let nu := mu.restrict ((⊤ : Opens E) : Set E)
-  have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
-    (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
-  filter_upwards [Sobolev1JetLp.value_apply_ae (nu.translateLp p h u.1),
-    Measure.coeFn_translateLp (mu := nu) h u.1,
-    hq.eventually (Sobolev1JetLp.value_apply_ae u.1),
-    Measure.coeFn_translateLp (mu := nu) h (W1p.value u)]
-    with x hv hjet hu hval
-  rw [W1p.value_coe] at hval
-  simpa only [Function.comp_apply] using
-    (hv.trans ((congrArg WithLp.fst hjet).trans (hu.symm.trans hval.symm))).symm
+  exact (Sobolev1JetLp.value_translateLp h u.1).symm
 
 /-- For finite `p`, translation of a fixed whole-space Sobolev function varies continuously
 with the translation vector. -/

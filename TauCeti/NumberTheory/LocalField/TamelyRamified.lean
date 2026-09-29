@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.NumberTheory.LocalField.PowerSubgroup
+import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!

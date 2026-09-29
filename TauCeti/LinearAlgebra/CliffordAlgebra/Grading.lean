@@ -22,8 +22,8 @@ In the other direction, the ordered product `(l.map (ι Q)).prod` of a list of v
 spelling `TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement.lean` uses for the volume element —
 is homogeneous of degree `l.length`, which is Mathlib's
 `SetLike.list_prod_map_mem_graded` for the graded monoid `CliffordAlgebra.evenOdd Q` with the
-degree of each factor read off `CliffordAlgebra.ι_mem_evenOdd_one`. The case of odd length, where
-the product is odd, is the one that matters downstream.
+degree of each factor read off `CliffordAlgebra.ι_mem_evenOdd_one`. Reading it off by the parity of
+the length is what matters downstream.
 
 The coordinate basis of an exterior algebra is homogeneous for this grading: the basis vector
 indexed by `s` has degree `s.card`, and — over a nontrivial ring, where a basis vector is nonzero
@@ -35,9 +35,12 @@ belongs to the grading API independently of any spin representation.
 * `CliffordAlgebra.exists_algebraMap_of_mem_range_ι_pow_zero`: in the even base case the
   element is a scalar.
 * `CliffordAlgebra.exists_ι_of_mem_range_ι_pow_one`: in the odd base case it is a vector.
+* `CliffordAlgebra.ι_range_pow_le_evenOdd`: the `n`-th power of the range of `ι` lies in the
+  graded piece of degree `n`.
 * `CliffordAlgebra.prod_map_ι_mem_evenOdd`: an ordered product of `n` generators is homogeneous
-  of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` reads that off in
-  the odd case.
+  of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_zero_of_even_length` and
+  `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` read that off in the even and the odd
+  case.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
@@ -66,11 +69,26 @@ theorem exists_ι_of_mem_range_ι_pow_one {v : CliffordAlgebra Q}
     (hv : v ∈ LinearMap.range (ι Q) ^ (1 : ZMod 2).val) : ∃ a, ι Q a = v := by
   simpa [ZMod.val_one] using hv
 
+/-- **The `n`-th power of the vectors is homogeneous of degree `n`** for the `ℤ/2` grading: it is
+one of the summands defining `CliffordAlgebra.evenOdd Q n`. -/
+theorem ι_range_pow_le_evenOdd (n : ℕ) :
+    LinearMap.range (ι Q) ^ n ≤ evenOdd Q (n : ZMod 2) := by
+  rw [evenOdd]
+  exact le_iSup (fun j : {m : ℕ // (m : ZMod 2) = (n : ZMod 2)} => LinearMap.range (ι Q) ^ (j : ℕ))
+    ⟨n, rfl⟩
+
 /-- **An ordered product of `n` generators is homogeneous of degree `n`** for the `ℤ/2` grading. -/
 theorem prod_map_ι_mem_evenOdd (l : List M) :
     (l.map (ι Q)).prod ∈ evenOdd Q (l.length : ZMod 2) := by
   simpa using SetLike.list_prod_map_mem_graded (A := evenOdd Q) l (fun _ => (1 : ZMod 2)) (ι Q)
     fun j _ => ι_mem_evenOdd_one Q j
+
+/-- **The ordered product of an even number of vectors is even.** -/
+theorem prod_map_ι_mem_evenOdd_zero_of_even_length {l : List M} (hlen : Even l.length) :
+    (l.map (ι Q)).prod ∈ evenOdd Q 0 := by
+  have h : (l.length : ZMod 2) = 0 := by
+    rw [← ZMod.natCast_mod l.length 2, Nat.even_iff.mp hlen, Nat.cast_zero]
+  exact h ▸ prod_map_ι_mem_evenOdd l
 
 /-- **The ordered product of an odd number of vectors is odd.** -/
 theorem prod_map_ι_mem_evenOdd_one_of_odd_length {l : List M} (hlen : Odd l.length) :

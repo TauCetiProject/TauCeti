@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import Mathlib.LinearAlgebra.Determinant
 
 /-!
@@ -23,6 +24,8 @@ of squares.
   `QuadraticForm.discr'_weightedSumSquares`: over a ring in which two is invertible, the associated
   bilinear form of a diagonal form is the weighted dot product, its Gram matrix in the standard
   basis is the diagonal matrix of the weights, and its discriminant is their product.
+* `QuadraticMap.nondegenerate_weightedSumSquares`: over a ring in which two is invertible, a
+  diagonal form with regular weights is nondegenerate.
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
 * `QuadraticMap.not_anisotropic_weightedSumSquares_of_ternary_eq_zero`: a ternary solution with
   a nonzero third coordinate gives a nonzero isotropic vector in a diagonal form.
@@ -245,6 +248,21 @@ theorem _root_.QuadraticForm.toMatrix'_weightedSumSquares [DecidableEq ι] (w : 
 theorem _root_.QuadraticForm.discr'_weightedSumSquares [DecidableEq ι] (w : ι → R) :
     QuadraticForm.discr' (QuadraticMap.weightedSumSquares R w) = ∏ i, w i := by
   rw [QuadraticForm.discr', QuadraticForm.toMatrix'_weightedSumSquares, Matrix.det_diagonal]
+
+/-- **A diagonal form with regular weights is nondegenerate** when two is invertible. Over a
+domain the hypothesis is that every weight is nonzero (`isRegular_iff_ne_zero`). -/
+theorem _root_.QuadraticMap.nondegenerate_weightedSumSquares {w : ι → R}
+    (hw : ∀ i, IsRegular (w i)) : (QuadraticMap.weightedSumSquares R w).Nondegenerate := by
+  classical
+  -- The associated bilinear form is the weighted dot product
+  -- (`QuadraticMap.associated_weightedSumSquares`), so pairing a vector `x` with the basis vector
+  -- `Pi.single i 1` isolates `w i * x i`, and regularity of `w i` forces `x i = 0`.
+  rw [← QuadraticMap.nondegenerate_associated_iff,
+    (QuadraticForm.associated_isSymm R _).isRefl.nondegenerate_iff_separatingLeft]
+  intro x hx
+  ext i
+  simpa [QuadraticMap.associated_weightedSumSquares, Pi.single_apply,
+    (hw i).left.mul_left_eq_zero_iff] using hx (Pi.single i 1)
 
 /-- **Isometric diagonal forms with unit weights have weight products differing by a square.** An
 isometry of the coordinate spaces changes the Gram matrix of a diagonal form by a congruence, so

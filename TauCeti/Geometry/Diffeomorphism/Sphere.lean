@@ -58,6 +58,8 @@ continuity proved here.
   continuous family of linear isometry equivalences is continuous in the weak Whitney topology.
 * `TauCeti.continuous_orthogonalToDiffSphere`: the reference inclusion `O(n + 1) → Diff(Sⁿ)` is
   continuous.
+* `TauCeti.continuousOrthogonalToDiffSphere`: the reference inclusion packaged as a continuous
+  map.
 
 ## Implementation notes
 
@@ -245,7 +247,7 @@ end LinearIsometryEquiv
 
 namespace TauCeti
 
-open scoped EuclideanSpace
+open scoped EuclideanSpace TauCeti.DiffeomorphWeakWhitney
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)`: an orthogonal transformation of `ℝⁿ⁺¹`
 restricts to a diffeomorphism of the unit sphere `Sⁿ`, and this restriction is a group
@@ -280,5 +282,21 @@ theorem continuous_orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
   refine Diffeomorph.continuous_weakWhitney_iff.mpr ?_
   simpa only [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply] using
     continuous_orthogonalGroupToLinearIsometryEquiv.toContMDiffMap_unitSphereDiffeomorph
+
+/-- The reference inclusion `O(n + 1) → Diff(Sⁿ)`, packaged as a continuous map. -/
+noncomputable def continuousOrthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
+    ContinuousMap (Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
+      (Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :=
+  ⟨orthogonalToDiffSphere n m, continuous_orthogonalToDiffSphere n m⟩
+
+@[simp]
+theorem continuousOrthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
+    continuousOrthogonalToDiffSphere n m A = orthogonalToDiffSphere n m A :=
+  by
+    -- `ContinuousMap` application does not unfold this bundled definition automatically;
+    -- expose the underlying map before closing the resulting reflexive equality.
+    change orthogonalToDiffSphere n m A = orthogonalToDiffSphere n m A
+    rfl
 
 end TauCeti

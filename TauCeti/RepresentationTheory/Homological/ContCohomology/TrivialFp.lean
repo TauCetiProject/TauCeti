@@ -39,10 +39,14 @@ without repeatedly transporting across the definitional equality of trivial repr
 * `TauCeti.trivialFp_ρ_apply_apply`, `TauCeti.smul_trivialFp_V`: the action is trivial.
 * `TauCeti.continuousSMul_trivialFp`: the derived action on the carrier is continuous.
 * `TauCeti.natCard_trivialFp_V`: the `Nat.card` of the carrier is `p`.
-* `TauCeti.nontrivial_cohomFp_zero`: `H⁰(G, 𝔽_p)` is nontrivial.
+* `TauCeti.nontrivial_cohomFp_zero`: `H⁰(G, ZMod p)` is nontrivial.
 * `TauCeti.res_trivialFp`: restriction preserves trivial coefficients on the nose;
   `TauCeti.trivialFpEquiv_eqToHom_res_trivialFp`: the transport along this equality is the identity
   on the underlying values.
+* `TauCeti.trivialFpQuotientToInvariantsIso`: the quotient representation on the invariants of
+  trivial coefficients is canonically the trivial coefficient object of the quotient group.
+* `TauCeti.zmodEquivFixedPointsOfTrivialAction`: for any trivial action on `ZMod p`, the fixed
+  points of a subgroup are additively equivalent to `ZMod p` itself.
 
 ## References
 
@@ -149,6 +153,29 @@ theorem trivialFpEquiv_eqToHom_res_trivialFp (S : Subgroup G)
   -- `res_trivialFp` holds by `rfl` here, so the transport is the identity map.
   (rfl)
 
+section FixedPoints
+
+variable [DistribMulAction G (ZMod p)]
+
+/-- For a trivial action, `ZMod p` is additively equivalent to its subgroup of `N`-fixed points. -/
+noncomputable def zmodEquivFixedPointsOfTrivialAction (N : Subgroup G)
+    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) :
+    ZMod p ≃+ FixedPoints.addSubgroup N (ZMod p) where
+  toFun m := ⟨m, (FixedPoints.mem_addSubgroup N (ZMod p) m).2 fun n ↦ htriv n m⟩
+  invFun m := m
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+/-- The fixed-point equivalence for a trivial action preserves the underlying `ZMod p` value. -/
+@[simp]
+theorem zmodEquivFixedPointsOfTrivialAction_apply (N : Subgroup G)
+    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) (m : ZMod p) :
+    (zmodEquivFixedPointsOfTrivialAction p G N htriv m).1 = m :=
+  by simp [zmodEquivFixedPointsOfTrivialAction]
+
+end FixedPoints
+
 variable [TopologicalSpace G] [IsTopologicalGroup G]
 
 attribute [local instance] TopRep.distribMulAction in
@@ -157,11 +184,69 @@ discrete and the action trivial. -/
 theorem continuousSMul_trivialFp : ContinuousSMul G (trivialFp p G).V :=
   (isSmoothDiscrete_iff_continuousSMul _).1 (isSmoothDiscrete_trivialFp p G)
 
+variable (N : Subgroup G) [N.Normal]
+
+/-- The carrier of trivial coefficients for `G ⧸ N` is continuously linearly equivalent to the
+`N`-invariants of trivial coefficients for `G`, by preserving the underlying `ZMod p` value. -/
+noncomputable def trivialFpQuotientToInvariantsContinuousLinearEquiv :
+    (trivialFp p (G ⧸ N)).V ≃L[ZMod p]
+      ((trivialFp p G).ρ.restrict N.subtype).invariants where
+  toFun x := ⟨(trivialFpEquiv p G).symm (trivialFpEquiv p (G ⧸ N) x),
+    fun n ↦ trivialFp_ρ_apply_apply p G n _⟩
+  invFun x := (trivialFpEquiv p (G ⧸ N)).symm (trivialFpEquiv p G x.1)
+  left_inv x := (trivialFpEquiv p (G ⧸ N)).injective <| by simp
+  right_inv x := Subtype.ext <| (trivialFpEquiv p G).injective <| by simp
+  map_add' x y := Subtype.ext <| (trivialFpEquiv p G).injective <| by simp
+  map_smul' r x := Subtype.ext <| (trivialFpEquiv p G).injective <| by simp
+  continuous_toFun := continuous_of_discreteTopology
+  continuous_invFun := continuous_of_discreteTopology
+
+/-- Trivial coefficients for `G ⧸ N` are the quotient representation on the `N`-invariants of
+trivial coefficients for `G`. This is the coefficient adapter used by inflation. -/
+noncomputable def trivialFpQuotientToInvariantsIso :
+    trivialFp p (G ⧸ N) ≅ TopRep.quotientToInvariants (trivialFp p G) N := by
+  let e := trivialFpQuotientToInvariantsContinuousLinearEquiv p G N
+  let ρe : (trivialFp p (G ⧸ N)).ρ.Equiv
+      (TopRep.quotientToInvariants (trivialFp p G) N).ρ :=
+    ContRepresentation.Equiv.mk e fun q ↦ by
+      induction q using QuotientGroup.induction_on with
+      | H g =>
+        ext x
+        apply (trivialFpEquiv p G).injective
+        simp only [ContinuousLinearMap.comp_apply,
+          ContRepresentation.coe_quotientToInvariants_mk_apply,
+          trivialFp_ρ_apply_apply, e, trivialFpQuotientToInvariantsContinuousLinearEquiv]
+  exact
+    { hom := TopRep.ofHom ρe.toContIntertwiningMap
+      inv := TopRep.ofHom ρe.symm.toContIntertwiningMap
+      hom_inv_id := by
+        ext x
+        -- Unwrap composition in `TopRep` to the inverse law of the representation equivalence.
+        change ρe.symm (ρe x) = x
+        exact ρe.symm_apply_apply x
+      inv_hom_id := by
+        ext x
+        -- The target is a subtype, and `TopRep.ext` has exposed its underlying value.
+        change (ρe (ρe.symm x)).1 = x.1
+        exact congrArg Subtype.val (ρe.apply_symm_apply x) }
+
+omit [TopologicalSpace G] [IsTopologicalGroup G] in
+/-- The coefficient adapter preserves the underlying `ZMod p` value. -/
+@[simp]
+theorem trivialFpEquiv_trivialFpQuotientToInvariantsIso_hom_apply
+    (x : (trivialFp p (G ⧸ N)).V) :
+    trivialFpEquiv p G ((trivialFpQuotientToInvariantsIso p G N).hom x).1 =
+      trivialFpEquiv p (G ⧸ N) x := by
+  -- Expose the bundled representation isomorphism to read its underlying coefficient map.
+  change trivialFpEquiv p G
+    ((trivialFpQuotientToInvariantsContinuousLinearEquiv p G N x).1) = _
+  simp [trivialFpQuotientToInvariantsContinuousLinearEquiv]
+
 /-- Continuous cohomology with trivial `ZMod p` coefficients. -/
 noncomputable abbrev cohomFp (n : ℕ) := continuousCohomology n (trivialFp p G)
 
-/-- `H⁰(G, 𝔽_p)` is nontrivial: it is the invariants of the trivial representation, that is the
-whole of `𝔽_p`. -/
+/-- `H⁰(G, ZMod p)` is nontrivial: it is the invariants of the trivial representation, that is
+the whole of `ZMod p`. -/
 theorem nontrivial_cohomFp_zero [Nontrivial (ZMod p)] : Nontrivial (cohomFp p G 0) := by
   refine (zeroIso (trivialFp p G)).toContinuousLinearEquiv.toEquiv.nontrivial_congr.2
     (Submodule.nontrivial_iff_ne_bot.2 fun h ↦ ?_)
@@ -220,6 +305,52 @@ theorem cohomFpMap_def (φ : H →ₜ* G) (n : ℕ) :
     cohomFpMap p φ n =
       ContinuousCohomology.map φ (eqToHom (res_trivialFp_hom p φ)) n :=
   (rfl)
+
+section Inflation
+
+variable (N : Subgroup G) [N.Normal]
+
+omit [IsTopologicalGroup G] in
+/-- After the trivial-coefficient adapter, the inclusion of quotient invariants is the identity
+coefficient morphism along the quotient map. This pins the coefficient identification used by
+inflation. -/
+theorem trivialFpQuotientToInvariantsIso_hom_comp_quotientToInvariantsι :
+    (TopRep.resFunctor
+          (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)).map
+        (trivialFpQuotientToInvariantsIso p G N).hom ≫
+      TopRep.quotientToInvariantsι (trivialFp p G) N =
+        eqToHom (res_trivialFp_hom p (ContinuousMonoidHom.quotientMk N)) := by
+  ext x
+  apply (trivialFpEquiv p G).injective
+  -- The restricted composite has the same carrier as the quotient coefficient object.
+  change trivialFpEquiv p G
+      ((((trivialFpQuotientToInvariantsIso p G N).hom x :
+        ((trivialFp p G).ρ.restrict N.subtype).invariants) : (trivialFp p G).V)) =
+    trivialFpEquiv p G (eqToHom
+      (res_trivialFp_hom p (ContinuousMonoidHom.quotientMk N)) x)
+  rw [
+    trivialFpEquiv_trivialFpQuotientToInvariantsIso_hom_apply,
+    trivialFpEquiv_eqToHom_res_trivialFp_hom]
+
+/-- With the quotient-invariants coefficient object identified with trivial coefficients,
+canonical inflation is the usual contravariant map along the quotient homomorphism. -/
+theorem coeffMap_trivialFpQuotientToInvariantsIso_hom_comp_infl (n : ℕ) :
+    TauCeti.ContinuousCohomology.coeffMap
+          (trivialFpQuotientToInvariantsIso p G N).hom n ≫
+        TauCeti.ContinuousCohomology.infl N (trivialFp p G) n =
+      cohomFpMap p (ContinuousMonoidHom.quotientMk N) n := by
+  rw [TauCeti.ContinuousCohomology.coeffMap_def,
+    TauCeti.ContinuousCohomology.infl_def, cohomFpMap_def]
+  refine (_root_.ContinuousCohomology.map_comp
+    (X := trivialFp p (G ⧸ N))
+    (Y := TopRep.quotientToInvariants (trivialFp p G) N) (Z := trivialFp p G)
+    (ContinuousMonoidHom.id (G ⧸ N)) (ContinuousMonoidHom.quotientMk N)
+    (trivialFpQuotientToInvariantsIso p G N).hom
+    (TopRep.quotientToInvariantsι (trivialFp p G) N) n).symm.trans ?_
+  exact TauCeti.ContinuousCohomology.map_congr rfl
+    (heq_of_eq (trivialFpQuotientToInvariantsIso_hom_comp_quotientToInvariantsι p N)) n
+
+end Inflation
 
 /-- The general cohomology map along a subgroup inclusion is the named restriction map. -/
 @[simp]
