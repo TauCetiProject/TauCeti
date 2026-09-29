@@ -176,7 +176,7 @@ theorem isConnected_cyclicPowTriple (hn : n ≠ 0) : (cyclicPowTriple n k).IsCon
 
 /-- In nonzero degree, each component of `cyclicPowTriple n k` is a single `n`-cycle exactly
 when `k` and `k + 1` are coprime to `n`. -/
-theorem cycleData_cyclicPowTriple_iff (hn : n ≠ 0) :
+@[simp] theorem cycleData_cyclicPowTriple_iff (hn : n ≠ 0) :
     (cyclicPowTriple n k).cycleData = ({n}, {n}, {n}) ↔
       k.Coprime n ∧ (k + 1).Coprime n := by
   simp [Prod.ext_iff, parts_partition_finRotate hn, hn]
