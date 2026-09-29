@@ -78,9 +78,9 @@ theorem lcsGradedMk_conj (n : ℕ) (g : G) (x : closedLowerCentralSeries G n) :
 /-- The bracket on the graded pieces of the closed lower central series. Its degree is
 `j + k + 1` because the series is indexed from zero. -/
 abbrev lcsBracket (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    (j k : ℕ) (x : lcsGradedPiece G j) (y : lcsGradedPiece G k) :
-    lcsGradedPiece G (j + k + 1) :=
-  gradedBracket 0 G j k x y
+    (j k : ℕ) :
+    lcsGradedPiece G j →+ lcsGradedPiece G k →+ lcsGradedPiece G (j + k + 1) :=
+  gradedBracket 0 G j k
 
 /-- The closed-series bracket on classes is represented by the group commutator. -/
 theorem lcsBracket_mk {j k : ℕ} (x : closedLowerCentralSeries G j)
@@ -93,7 +93,6 @@ theorem lcsBracket_mk {j k : ℕ} (x : closedLowerCentralSeries G j)
   rw [lcsBracket, lcsGradedMk, lcsGradedMk, gradedBracket_gradedMk]
 
 /-- The closed-series bracket is additive in its first argument. -/
-@[simp]
 theorem lcsBracket_add_left {j k : ℕ} (x x' : lcsGradedPiece G j)
     (y : lcsGradedPiece G k) :
     lcsBracket G j k (x + x') y = lcsBracket G j k x y + lcsBracket G j k x' y := by
