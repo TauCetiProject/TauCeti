@@ -52,6 +52,8 @@ runs through.
   multiplied by the order of `I(Q) ∩ H`, is the ramification index of `Q` over the base.
 * `Ideal.ramificationIdx_under_fixedField_eq_relIndex`: the ramification index below `L ^ H` is
   `[I(Q) : I(Q) ∩ H]`.
+* `Ideal.isUnramifiedAt_fixedField_iff_inertia_inf_eq_bot`: unramifiedness over `L ^ H` is
+  equivalent to trivial intersection of inertia with `H`.
 * `Ideal.inertiaDeg_under_fixedField_mul_card_inf`: the number of elements of `D(Q) ⊓ H` times the
   residue degree below `L ^ H` is the residue degree of `Q`.
 * `Ideal.inertiaDeg_under_fixedField_eq_relIndex`: that residue degree is `Subgroup.relIndex`,
@@ -168,6 +170,27 @@ theorem ramificationIdx_under_fixedField_eq_relIndex
   rw [inf_comm, Ideal.card_inertia_eq_ramificationIdx (𝓞 K) (L ≃ₐ[K] L) Q,
     ← ramificationIdx_under_fixedField_mul_card_inf Q H, mul_comm] at hidx
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
+
+omit [IsGalois K L] in
+/-- A prime of `L` is unramified over `L ^ H` exactly when its inertia group over `K`
+has trivial intersection with `H`. -/
+theorem isUnramifiedAt_fixedField_iff_inertia_inf_eq_bot
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] (H : Subgroup (L ≃ₐ[K] L)) :
+    Algebra.IsUnramifiedAt (𝓞 ↥(fixedField H)) Q ↔
+      Q.inertia (L ≃ₐ[K] L) ⊓ H = ⊥ := by
+  let E := fixedField H
+  let _ : IsScalarTower K E L := E.isScalarTower_mid'
+  let _ : IsGalois E L := IsGalois.of_fixed_field L H
+  rw [Ideal.isUnramifiedAt_iff_inertia_eq_bot (K := E) Q]
+  constructor
+  · intro h
+    apply Subgroup.eq_bot_of_card_eq
+    rw [← card_inertia_fixedField_eq_card_inf Q H, h]
+    simp
+  · intro h
+    apply Subgroup.eq_bot_of_card_eq
+    rw [card_inertia_fixedField_eq_card_inf Q H, h]
+    simp
 
 omit [IsGalois K L] in
 /-- **The residue degree below a fixed field.**  For any subgroup `H` and `E = L ^ H`, the residue
