@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Conj
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Compactness.Compact
 
@@ -21,7 +20,7 @@ public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [T2Space G]
 
 /-- In a compact Hausdorff topological group, the set of conjugate pairs is closed. -/
