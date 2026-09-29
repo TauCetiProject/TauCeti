@@ -108,7 +108,7 @@ instance padicCompletionUnitsSMul : SMul ℤ_[p] (Additive ↑(padicCompletionUn
       have hx := (mem_padicCompletionUnits_iff p L x.toMul.1).mp x.toMul.2 m
       rw [map_pow, hx]
       exact PadicInt.pow_appr_eq_pow_appr a
-        (QuotientGroup.pow_range_powMonoidHom_eq_one _ _) (Nat.le_succ m)⟩
+        (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ _) (Nat.le_succ m)⟩
 
 /-- Scalar multiplication in the completion is truncated exponentiation in every coordinate. -/
 @[simp]
@@ -126,7 +126,7 @@ instance padicCompletionUnitsPadicModule :
     funext m
     simpa only [padicCompletionUnits_smul_apply, Nat.cast_one, pow_one] using
       pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq 1 m)
-        (QuotientGroup.pow_range_powMonoidHom_eq_one _ (x.toMul.1 m))
+        (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ (x.toMul.1 m))
   mul_smul a b x := by
     apply Additive.toMul.injective
     apply Subtype.ext
@@ -134,7 +134,7 @@ instance padicCompletionUnitsPadicModule :
     simp only [padicCompletionUnits_smul_apply]
     rw [← pow_mul, mul_comm (b.appr m)]
     exact pow_eq_pow_of_modEq (PadicInt.appr_mul_modEq a b m)
-      (QuotientGroup.pow_range_powMonoidHom_eq_one _ _)
+      (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ _)
   smul_zero a := by
     apply Additive.toMul.injective
     apply Subtype.ext
@@ -153,7 +153,7 @@ instance padicCompletionUnitsPadicModule :
     simp only [padicCompletionUnits_smul_apply, toMul_add, Subgroup.coe_mul, Pi.mul_apply]
     rw [← pow_add]
     exact pow_eq_pow_of_modEq (PadicInt.appr_add_modEq a b m)
-      (QuotientGroup.pow_range_powMonoidHom_eq_one _ _)
+      (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ _)
   zero_smul x := by
     apply Additive.toMul.injective
     apply Subtype.ext
@@ -161,7 +161,7 @@ instance padicCompletionUnitsPadicModule :
     simpa only [padicCompletionUnits_smul_apply, Nat.cast_zero, pow_zero, toMul_zero,
       OneMemClass.coe_one, Pi.one_apply] using
       pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq 0 m)
-        (QuotientGroup.pow_range_powMonoidHom_eq_one _ (x.toMul.1 m))
+        (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ (x.toMul.1 m))
 
 /-- The `ℤ_p`-action extends the intrinsic natural-number action on the completion. -/
 @[simp]
@@ -173,7 +173,7 @@ theorem padicCompletionUnits_natCast_smul (n : ℕ)
   funext m
   rw [padicCompletionUnits_smul_apply, toMul_nsmul]
   exact pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq n m)
-    (QuotientGroup.pow_range_powMonoidHom_eq_one _ (x.toMul.1 m))
+    (QuotientGroup.pow_eq_one_quotient_range_powMonoidHom _ (x.toMul.1 m))
 
 section GaloisAction
 
