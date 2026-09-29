@@ -100,28 +100,6 @@ theorem projectRight_tmul (x : H₁) (y : H₂) :
       Coalgebra.counit (R := R) (A := H₁) x • y := by
   simp [projectRight]
 
-/-- The left projection evaluates on the left inclusion to the identity. -/
-theorem projectLeft_includeLeft (x : H₁) :
-    projectLeft (R := R) (H₁ := H₁) (H₂ := H₂) (includeLeft x) = x := by
-  rw [includeLeft_apply, projectLeft_tmul, Bialgebra.counit_one, one_smul]
-
-/-- The right projection evaluates on the right inclusion to the identity. -/
-theorem projectRight_includeRight (y : H₂) :
-    projectRight (R := R) (H₁ := H₁) (H₂ := H₂) (includeRight y) = y := by
-  rw [includeRight_apply, projectRight_tmul, Bialgebra.counit_one, one_smul]
-
-/-- The left projection evaluates on the right inclusion using the counit. -/
-theorem projectLeft_includeRight (y : H₂) :
-    projectLeft (R := R) (H₁ := H₁) (H₂ := H₂) (includeRight y) =
-      Coalgebra.counit (R := R) (A := H₂) y • (1 : H₁) := by
-  rw [includeRight_apply, projectLeft_tmul]
-
-/-- The right projection evaluates on the left inclusion using the counit. -/
-theorem projectRight_includeLeft (x : H₁) :
-    projectRight (R := R) (H₁ := H₁) (H₂ := H₂) (includeLeft x) =
-      Coalgebra.counit (R := R) (A := H₁) x • (1 : H₂) := by
-  rw [includeLeft_apply, projectRight_tmul]
-
 /-- The left projection is a retraction of the left inclusion. -/
 @[simp]
 theorem projectLeft_comp_includeLeft :
