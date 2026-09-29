@@ -163,7 +163,7 @@ theorem relationModuleToLabuteE_smul_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup
     [R.Normal] (hR : R ≤ (χ : F →* ℤ_[p]ˣ).ker) (y : F)
     (x : Additive (TopologicalAbelianization R)) :
     relationModuleToLabuteE χ R hR
-      (Additive.ofMul ((y : F ⧸ R)⁻¹ • Additive.toMul x)) =
+      ((y : F ⧸ R)⁻¹ • x) =
       labuteAction χ (QuotientGroup.mk y) (relationModuleToLabuteE χ R hR x) := by
   exact congrArg Additive.ofMul
     (TopologicalAbelianization.map_inclusion_mk_smul hR y⁻¹ (Additive.toMul x))
