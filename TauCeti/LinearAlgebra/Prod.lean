@@ -106,13 +106,13 @@ namespace LinearMap
 variable {E E' : Type*} [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
   [AddCommGroup E'] [Module ℝ E'] [Module ℂ E'] [IsScalarTower ℝ ℂ E']
 
-/-- **Multiplication by `i` on a product of complex modules is carried out blockwise.** Read as
-a real-linear map, multiplication by `i` on `E × E'` is the `LinearMap.prodMap` of the
-multiplications by `i` on the two factors. -/
-theorem lsmul_restrictScalars_prodMap :
-    (LinearMap.lsmul ℂ (E × E') Complex.I).restrictScalars ℝ =
-      LinearMap.prodMap ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
-        ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) := by
+/-- **Multiplication by a scalar on a product of complex modules is carried out blockwise.** Read
+as a real-linear map, multiplication by `c` on `E × E'` is the `LinearMap.prodMap` of the
+multiplications by `c` on the two factors. -/
+theorem lsmul_restrictScalars_prodMap (c : ℂ) :
+    (LinearMap.lsmul ℂ (E × E') c).restrictScalars ℝ =
+      LinearMap.prodMap ((LinearMap.lsmul ℂ E c).restrictScalars ℝ)
+        ((LinearMap.lsmul ℂ E' c).restrictScalars ℝ) := by
   apply LinearMap.ext (R := ℝ)
   intro x
   rcases x with ⟨x, y⟩

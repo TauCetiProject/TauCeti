@@ -208,7 +208,7 @@ theorem isMaximalTotallyReal_prod
     (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L)
     (hM : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) M) :
     IsMaximalTotallyReal ((LinearMap.lsmul ℂ (E × E') Complex.I).restrictScalars ℝ) (L.prod M) := by
-  rw [LinearMap.lsmul_restrictScalars_prodMap]
+  rw [LinearMap.lsmul_restrictScalars_prodMap Complex.I]
   exact hL.prod hM
 
 end IsMaximalTotallyReal

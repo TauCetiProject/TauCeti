@@ -32,7 +32,7 @@ maximal totally real whenever the two summands are, is
 `TauCeti.IsMaximalTotallyReal.isMaximalTotallyReal_prod`
 (`TauCeti/LinearAlgebra/TotallyReal/Complex.lean`), and rests on
 `TauCeti.LinearMap.lsmul_restrictScalars_prodMap` (`TauCeti/LinearAlgebra/Prod.lean`), which says
-that multiplication by `i` on a product is the product map of the two multiplications.
+that multiplication by a scalar on a product is the product map of the two multiplications.
 
 The axiom is the additivity half of the standard list of properties of the Maslov index
 (Robbin--Salamon, *The Maslov index for paths*, Topology **32** (1993); McDuff--Salamon,
