@@ -94,11 +94,6 @@ theorem padicCompletionUnitsOf_apply (x : Lˣ) (m : ℕ) :
       QuotientGroup.mk' _ x :=
   by simp [padicCompletionUnitsOf]
 
-/-- The additive form of `A(L)` carries the commutative group structure of the inverse limit. -/
-instance padicCompletionUnitsAddCommGroup :
-    AddCommGroup (Additive ↑(padicCompletionUnits p L)) :=
-  Additive.addCommGroup
-
 /-- A `p`-adic integer acts on `A(L)` by truncated exponentiation: at level `m` it acts through
 its residue modulo `p^m`. -/
 instance padicCompletionUnitsSMul : SMul ℤ_[p] (Additive ↑(padicCompletionUnits p L)) where
