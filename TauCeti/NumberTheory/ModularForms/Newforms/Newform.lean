@@ -135,14 +135,14 @@ public noncomputable def dirichletLift (f : Newform N k) : DirichletCharacter �
   MulChar.ofUnitHom f.χ
 
 /-- The zero extension defining the Dirichlet character of a newform. -/
-theorem dirichletLift_eq_ofUnitHom (f : Newform N k) :
+theorem dirichletLift_def (f : Newform N k) :
     f.dirichletLift = MulChar.ofUnitHom f.χ := (rfl)
 
 /-- Restricting the zero-extended nebentypus to units recovers the character of the newform. -/
 @[simp]
-theorem dirichletLift_toUnitHom (f : Newform N k) :
+theorem dirichletLift_equivToUnitHom (f : Newform N k) :
     MulChar.equivToUnitHom f.dirichletLift = f.χ := by
-  rw [dirichletLift_eq_ofUnitHom]
+  rw [dirichletLift_def]
   exact MulChar.equivToUnitHom.apply_symm_apply f.χ
 
 /-- The zero-extended nebentypus vanishes at indices not coprime to the level. -/

@@ -164,7 +164,7 @@ theorem LSeries_eulerProduct_hasProd (f : Newform N k) {s : ℂ}
           f.dirichletLift p.val *
             (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹)
       (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) := by
-  simpa only [dirichletLift_eq_ofUnitHom, toEigenform_toCuspForm, toEigenform_χ] using
+  simpa only [dirichletLift_def, toEigenform_toCuspForm, toEigenform_χ] using
     (f.toEigenform.LSeries_eulerProduct_hasProd
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hs)
 
@@ -187,7 +187,7 @@ theorem LSeries_eulerProduct (f : Newform N k) {s : ℂ}
             f.dirichletLift p *
               (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s)) := by
-  simpa only [dirichletLift_eq_ofUnitHom, toEigenform_toCuspForm, toEigenform_χ] using
+  simpa only [dirichletLift_def, toEigenform_toCuspForm, toEigenform_χ] using
     (f.toEigenform.LSeries_eulerProduct
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hs)
 
@@ -199,7 +199,7 @@ theorem L_eulerProduct_hasProd (f : Newform N k) (hk : 0 < k) {s : ℂ}
           f.dirichletLift p.val *
             (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹)
       (ModularForm.L hk f.toCuspForm s) := by
-  simpa only [dirichletLift_eq_ofUnitHom, toEigenform_toCuspForm, toEigenform_χ] using
+  simpa only [dirichletLift_def, toEigenform_toCuspForm, toEigenform_χ] using
     (f.toEigenform.L_eulerProduct_hasProd
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hk hs)
 
@@ -222,7 +222,7 @@ theorem L_eulerProduct (f : Newform N k) (hk : 0 < k) {s : ℂ}
             f.dirichletLift p *
               (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (ModularForm.L hk f.toCuspForm s)) := by
-  simpa only [dirichletLift_eq_ofUnitHom, toEigenform_toCuspForm, toEigenform_χ] using
+  simpa only [dirichletLift_def, toEigenform_toCuspForm, toEigenform_χ] using
     (f.toEigenform.L_eulerProduct
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hk hs)
 
