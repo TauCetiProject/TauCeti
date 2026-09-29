@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Naturality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.RestrictScalars
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialFp
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialFp.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit
 
 /-!
