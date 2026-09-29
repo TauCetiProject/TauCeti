@@ -42,6 +42,8 @@ the scalar by which `φ` acts on the class of `x_0` in the abelianization `ℤ_p
 
 * `TauCeti.Peripheral.topologicalClosure_closure_range_basis`: the basis generates `F`
   topologically.
+* `TauCeti.Peripheral.hom_ext_basis`: continuous homomorphisms out of `F` into a Hausdorff monoid
+  that agree on the basis are equal.
 * `TauCeti.Peripheral.prod_mul_cusp`, `TauCeti.Peripheral.prod_ofFn_peripheralTuple`: the
   defining relation `x_0 ⋯ x_{r-1} · cusp x = 1`, and the ordered product of the peripheral tuple
   is `1`.
@@ -90,6 +92,16 @@ theorem topologicalClosure_closure_range_basis [IsTopologicalGroup F]
     (freeProP.topologicalClosure_closure_range_of_eq_top p (Fin r))
     (f := e.symm.toMulEquiv.toMonoidHom) e.symm.continuous e.symm.surjective.denseRange
   rwa [← Set.range_comp] at h
+
+/-- Two continuous homomorphisms out of `F` into a Hausdorff monoid that agree on the basis are
+equal. -/
+theorem hom_ext_basis [IsTopologicalGroup F] {M : Type*} [Monoid M] [TopologicalSpace M]
+    [T2Space M] (e : F ≃ₜ* freeProP p (Fin r)) {f g : F →ₜ* M}
+    (h : ∀ i, f (basis e i) = g (basis e i)) : f = g :=
+  ContinuousMonoidHom.toMonoidHom_injective <|
+    MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top
+      (topologicalClosure_closure_range_basis e) f.continuous g.continuous
+      (Set.forall_mem_range.mpr h)
 
 end Basis
 
@@ -163,6 +175,7 @@ def IsPeripheralAut (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]ˣ) (φ : Co
 
 /-- An automorphism is peripheral of exponent `u` exactly when it carries each `x_i` and the cusp
 to conjugates of their `u`-th powers. -/
+@[simp]
 theorem isPeripheralAut_iff (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]ˣ)
     (φ : ContinuousAut F) :
     IsPeripheralAut hF x u φ ↔
