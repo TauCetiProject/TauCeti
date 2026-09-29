@@ -49,13 +49,6 @@ Chapter II.
   `TauCeti.isClosedIncompressibleSurfaceEmbedding_prodMk` provide reusable incompressible-surface
   witnesses.
 * `TauCeti.isHakenSurfaceEmbedding_iff` exposes the additional Haken-witness conditions.
-* `TauCeti.IsIrreducibleThreeManifold.exists_isClosedEmbedding_disk` consumes irreducibility to
-  produce the embedded 3-ball bounded by a specified locally flat sphere.
-* `TauCeti.isHakenThreeManifold_of_isHakenSurfaceEmbedding` and
-  `TauCeti.isClosedHakenThreeManifold_of_isClosedHakenSurfaceEmbedding` package a surface witness
-  into the corresponding ambient predicate.
-* The `exists_isClosedEmbedding_disk` theorems in the two ambient Haken namespaces expose that
-  ball-bounding consequence through the existential Haken APIs.
 * `TauCeti.IsHakenThreeManifold.exists_isOpen_sdiff_range_eq_union` and its closed analogue expose
   the two-sided complement supplied by the existential surface witness.
 -/
@@ -207,21 +200,6 @@ def IsIrreducibleThreeManifold (M : Type u) [TopologicalSpace M] : Prop :=
     ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
       g.comp (TopCat.diskBoundaryInclusion 3).hom = f
 
-namespace IsIrreducibleThreeManifold
-
-/-- Irreducibility supplies an embedded 3-ball for every specified locally flat embedded sphere.
-This named eliminator lets downstream predicates consume the sphere-bounds-a-ball content rather
-than carrying irreducibility as an unused hypothesis. -/
-theorem exists_isClosedEmbedding_disk {M : Type u} [TopologicalSpace M]
-    (h : IsIrreducibleThreeManifold M)
-    {f : C((TopCat.sphere 2 : TopCat.{u}), M)} (hf : IsClosedEmbedding f)
-    (hflat : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f) :
-    ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
-      g.comp (TopCat.diskBoundaryInclusion 3).hom = f := by
-  exact h f hf hflat
-
-end IsIrreducibleThreeManifold
-
 /-- The sphere-bounds-a-ball condition defining an irreducible 3-manifold. -/
 @[simp]
 theorem isIrreducibleThreeManifold_iff (M : Type u) [TopologicalSpace M] :
@@ -264,24 +242,14 @@ theorem isHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
   Iff.rfl
 
 /-- A boundary-aware Haken surface embedding supplies its ambient Haken predicate. -/
-theorem isHakenThreeManifold_of_isHakenSurfaceEmbedding {S M : Type u}
+theorem isHakenThreeManifold_of_isIrreducibleThreeManifold_of_isHakenSurfaceEmbedding {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanHalfSpace 2) S] [ChartedSpace (EuclideanHalfSpace 3) M]
     (hirr : IsIrreducibleThreeManifold M) {f : C(S, M)}
     (h : IsHakenSurfaceEmbedding f) : IsHakenThreeManifold M := by
-  exact ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+  exact (isHakenThreeManifold_iff M).mpr ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
 namespace IsHakenThreeManifold
-
-/-- The irreducibility component of a Haken predicate bounds every specified locally flat embedded
-2-sphere by an embedded 3-ball. -/
-theorem exists_isClosedEmbedding_disk {M : Type u} [TopologicalSpace M]
-    [ChartedSpace (EuclideanHalfSpace 3) M] (h : IsHakenThreeManifold M)
-    {f : C((TopCat.sphere 2 : TopCat.{u}), M)} (hf : IsClosedEmbedding f)
-    (hflat : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f) :
-    ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
-      g.comp (TopCat.diskBoundaryInclusion 3).hom = f := by
-  exact h.1.exists_isClosedEmbedding_disk hf hflat
 
 /-- A Haken 3-manifold contains a surface with a two-sided open neighbourhood: the complement of
 the surface in that neighbourhood is the union of two disjoint nonempty open sets. -/
@@ -294,12 +262,14 @@ theorem exists_isOpen_sdiff_range_eq_union {M : Type u} [TopologicalSpace M]
       ∃ (f : C(S, M)) (U V W : Set M),
         IsHakenSurfaceEmbedding f ∧ IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧
           V.Nonempty ∧ W.Nonempty ∧ Disjoint V W ∧ U \ range f = V ∪ W := by
-  rcases h.2 with ⟨S, tS, cS, f, hf⟩
-  rcases hf with ⟨hS, hM, hboundary, hb, hincompressible, s, hs⟩
+  rcases (isHakenThreeManifold_iff M).mp h with ⟨_hirr, ⟨S, tS, cS, f, hf⟩⟩
+  rcases isHakenSurfaceEmbedding_iff.mp hf with
+    ⟨hS, hM, hboundary, hb, hincompressible, s, hs⟩
   let _ : Nonempty S := ⟨s⟩
   rcases hb.exists_isOpen_sdiff_range_eq_union with ⟨U, V, W, hU, hV, hW, hrange,
     hVne, hWne, hdisjoint, hsdiff⟩
-  exact ⟨S, tS, cS, f, U, V, W, ⟨hS, hM, hboundary, hb, hincompressible, s, hs⟩,
+  exact ⟨S, tS, cS, f, U, V, W, isHakenSurfaceEmbedding_iff.mpr
+    ⟨hS, hM, hboundary, hb, hincompressible, s, hs⟩,
     hU, hV, hW, hrange, hVne, hWne, hdisjoint, hsdiff⟩
 
 end IsHakenThreeManifold
@@ -396,25 +366,18 @@ theorem isClosedHakenThreeManifold_iff (M : Type u) [TopologicalSpace M]
   Iff.rfl
 
 /-- A closed Haken surface embedding supplies its ambient closed-Haken predicate. -/
-theorem isClosedHakenThreeManifold_of_isClosedHakenSurfaceEmbedding {S M : Type u}
+theorem
+    isClosedHakenThreeManifold_of_isIrreducibleThreeManifold_of_isClosedHakenSurfaceEmbedding
+    {S M : Type u}
     [TopologicalSpace S] [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
     (hirr : IsIrreducibleThreeManifold M) {f : C(S, M)}
     (h : IsClosedHakenSurfaceEmbedding f) : IsClosedHakenThreeManifold M := by
-  exact ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
+  exact (isClosedHakenThreeManifold_iff M).mpr
+    ⟨hirr, ⟨S, inferInstance, inferInstance, f, h⟩⟩
 
 namespace IsClosedHakenThreeManifold
-
-/-- The irreducibility component of a closed Haken predicate bounds every specified locally flat
-embedded 2-sphere by an embedded 3-ball. -/
-theorem exists_isClosedEmbedding_disk {M : Type u} [TopologicalSpace M]
-    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] (h : IsClosedHakenThreeManifold M)
-    {f : C((TopCat.sphere 2 : TopCat.{u}), M)} (hf : IsClosedEmbedding f)
-    (hflat : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ f) :
-    ∃ g : C((TopCat.disk 3 : TopCat.{u}), M), IsClosedEmbedding g ∧
-      g.comp (TopCat.diskBoundaryInclusion 3).hom = f := by
-  exact h.1.exists_isClosedEmbedding_disk hf hflat
 
 /-- A closed Haken 3-manifold contains a surface with a two-sided open neighbourhood: the
 complement of the surface in that neighbourhood is the union of two disjoint nonempty open sets. -/
@@ -427,12 +390,13 @@ theorem exists_isOpen_sdiff_range_eq_union {M : Type u} [TopologicalSpace M]
       ∃ (f : C(S, M)) (U V W : Set M),
         IsClosedHakenSurfaceEmbedding f ∧ IsOpen U ∧ IsOpen V ∧ IsOpen W ∧ range f ⊆ U ∧
           V.Nonempty ∧ W.Nonempty ∧ Disjoint V W ∧ U \ range f = V ∪ W := by
-  rcases h.2 with ⟨S, tS, cS, f, hf⟩
-  rcases hf with ⟨hincompressible, hb, s, hs⟩
+  rcases (isClosedHakenThreeManifold_iff M).mp h with ⟨_hirr, ⟨S, tS, cS, f, hf⟩⟩
+  rcases isClosedHakenSurfaceEmbedding_iff.mp hf with ⟨hincompressible, hb, s, hs⟩
   let _ : Nonempty S := ⟨s⟩
   rcases hb.exists_isOpen_sdiff_range_eq_union with ⟨U, V, W, hU, hV, hW, hrange,
     hVne, hWne, hdisjoint, hsdiff⟩
-  exact ⟨S, tS, cS, f, U, V, W, ⟨hincompressible, hb, s, hs⟩,
+  exact ⟨S, tS, cS, f, U, V, W, isClosedHakenSurfaceEmbedding_iff.mpr
+    ⟨hincompressible, hb, s, hs⟩,
     hU, hV, hW, hrange, hVne, hWne, hdisjoint, hsdiff⟩
 
 end IsClosedHakenThreeManifold
