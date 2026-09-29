@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct
-public import TauCeti.Geometry.Hodge.Decomposition
-public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.Geometry.Hodge.WeilOperator
 
 /-!
 # Tensor products of pure Hodge structures
@@ -30,13 +29,10 @@ lattice conjugation is the tensor product of the two lattice conjugations
   as the supremum of products of Hodge pieces.
 * `TauCeti.Hodge.HodgeStructureOn.tmul_mem_tensorProduct`: pure tensors have the expected total
   Hodge degree.
-* `TauCeti.Hodge.tensorLatticeMap_injective`: the tensor product of two flat lattices embeds in
-  the tensor product of their complexifications.
+* `TauCeti.Hodge.HodgeStructureOn.weilOperator_tensorProduct`: the Weil operator of the tensor
+  product is the tensor product of the Weil operators.
 * `TauCeti.Hodge.HodgeStructure.tensorProduct`: the tensor product of two integral pure Hodge
   structures, on the tensor product of their lattices.
-
-The construction supplies the tensor-product companion requested in Layer 0 of the
-`HodgeStructures` roadmap.
 -/
 
 public section
@@ -170,6 +166,28 @@ theorem tmul_mem_tensorProduct (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
   rw [tensorProduct, ofDecomposition_piece]
   exact InternalGrading.tmul_mem_tensorProduct (pieceGrading hs₁) (pieceGrading hs₂) hx hy
 
+/-- The Weil operator of a tensor product of pure Hodge structures is the tensor product of the
+two Weil operators: on a product of components of degrees `r` and `p - r` both act by
+`i^(2r-n₁) i^(2(p-r)-n₂) = i^(2p-(n₁+n₂))`. -/
+@[simp]
+theorem weilOperator_tensorProduct (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
+    (hs₂ : HodgeStructureOn W₂ ω₂ n₂) :
+    (hs₁.tensorProduct hs₂).weilOperator =
+      TensorProduct.map hs₁.weilOperator hs₂.weilOperator := by
+  refine ((hs₁.tensorProduct hs₂).weilOperator_unique _ fun p x hx ↦ ?_).symm
+  have hle : (hs₁.tensorProduct hs₂).piece p ≤ LinearMap.ker
+      (TensorProduct.map hs₁.weilOperator hs₂.weilOperator -
+        Complex.I ^ (2 * p - (n₁ + n₂)) • LinearMap.id) := by
+    rw [tensorProduct_piece_eq_iSup]
+    refine iSup_le fun r ↦ Submodule.map₂_le.mpr fun a ha b hb ↦ ?_
+    rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply,
+      TensorProduct.mk_apply, TensorProduct.map_tmul, hs₁.weilOperator_apply_of_mem ha,
+      hs₂.weilOperator_apply_of_mem hb, TensorProduct.smul_tmul_smul,
+      ← zpow_add₀ Complex.I_ne_zero, sub_eq_zero]
+    congr 2
+    ring
+  simpa [sub_eq_zero] using hle hx
+
 end HodgeStructureOn
 
 /-! ### The tensor product of two integral Hodge structures -/
@@ -178,20 +196,6 @@ variable {V : Type*} {V' : Type*} {Vℂ : Type*} {V'ℂ : Type*}
 variable [AddCommGroup V] [AddCommGroup V'] [AddCommGroup Vℂ] [Module ℂ Vℂ]
 variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
 variable {ιℂ : V →ₗ[ℤ] Vℂ} {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
-
-/-- The tensor product of two flat (for instance free) lattices embeds in the tensor product of
-their complexifications. -/
-theorem tensorLatticeMap_injective [Module.Flat ℤ V] [Module.Flat ℤ V'] (hℂ : IsBaseChange ℂ ιℂ)
-    (h'ℂ : IsBaseChange ℂ ι'ℂ) : Function.Injective (tensorLatticeMap ιℂ ι'ℂ) := by
-  -- Mathlib's flatness of a tensor product is stated for the tensor-product `ℤ`-module structure,
-  -- which is defeq to the canonical one but not found by instance search for it.
-  have : Module.Flat ℤ (V ⊗[ℤ] V') :=
-    (inferInstance : @Module.Flat ℤ (V ⊗[ℤ] V') _ _ TensorProduct.instModule)
-  intro v w hvw
-  refine Module.Flat.tensorProduct_mk_injective ℤ (V ⊗[ℤ] V') ℂ ?_
-  apply (isBaseChange_tensorLatticeMap hℂ h'ℂ).equiv.injective
-  rw [TensorProduct.mk_apply, TensorProduct.mk_apply, IsBaseChange.equiv_tmul,
-    IsBaseChange.equiv_tmul, one_smul, one_smul, hvw]
 
 namespace HodgeStructure
 

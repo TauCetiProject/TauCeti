@@ -31,11 +31,10 @@ Consequently polarizable Hodge structures are closed under tensor products.
 
 ## Main declarations
 
-* `TauCeti.Hodge.HodgeStructureOn.weilOperator_tensorProduct`: the Weil operator of a tensor
-  product is the tensor product of the Weil operators.
 * `TauCeti.Hodge.IsPolarization.tensorProduct`: the tensor product of two polarizing forms
   polarizes the tensor product.
 * `TauCeti.Hodge.Polarization.tensorProduct`: the tensor product of two polarizations.
+* `TauCeti.Hodge.Polarization.tensorProduct_hodgeForm_tmul_tmul`: the Hodge form on pure tensors.
 * `TauCeti.Hodge.IsPolarizable.tensorProduct`: a tensor product of polarizable pure Hodge
   structures is polarizable.
 
@@ -49,40 +48,6 @@ public section
 open scoped TensorProduct ComplexOrder
 
 namespace TauCeti.Hodge
-
-universe u v
-
-/-! ### The Weil operator of a tensor product -/
-
-namespace HodgeStructureOn
-
-variable {W₁ : Type u} {W₂ : Type v} [AddCommGroup W₁] [Module ℂ W₁]
-  [AddCommGroup W₂] [Module ℂ W₂]
-variable {ω₁ : Conjugation W₁} {ω₂ : Conjugation W₂} {n₁ n₂ : ℤ}
-
-/-- The Weil operator of a tensor product of pure Hodge structures is the tensor product of the
-two Weil operators: on a product of components of degrees `r` and `p - r` both act by
-`i^(2r-n₁) i^(2(p-r)-n₂) = i^(2p-(n₁+n₂))`. -/
-@[simp]
-theorem weilOperator_tensorProduct (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
-    (hs₂ : HodgeStructureOn W₂ ω₂ n₂) :
-    (hs₁.tensorProduct hs₂).weilOperator =
-      TensorProduct.map hs₁.weilOperator hs₂.weilOperator := by
-  refine ((hs₁.tensorProduct hs₂).weilOperator_unique _ fun p x hx ↦ ?_).symm
-  have hle : (hs₁.tensorProduct hs₂).piece p ≤ LinearMap.ker
-      (TensorProduct.map hs₁.weilOperator hs₂.weilOperator -
-        Complex.I ^ (2 * p - (n₁ + n₂)) • LinearMap.id) := by
-    rw [tensorProduct_piece_eq_iSup]
-    refine iSup_le fun r ↦ Submodule.map₂_le.mpr fun a ha b hb ↦ ?_
-    rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply,
-      TensorProduct.mk_apply, TensorProduct.map_tmul, hs₁.weilOperator_apply_of_mem ha,
-      hs₂.weilOperator_apply_of_mem hb, TensorProduct.smul_tmul_smul,
-      ← zpow_add₀ Complex.I_ne_zero, sub_eq_zero]
-    congr 2
-    ring
-  simpa [sub_eq_zero] using hle hx
-
-end HodgeStructureOn
 
 variable {V : Type*} {V' : Type*} {Vℂ : Type*} {V'ℂ : Type*}
 variable [AddCommGroup V] [AddCommGroup V'] [AddCommGroup Vℂ] [Module ℂ Vℂ]
@@ -240,6 +205,25 @@ theorem Polarization.tensorProduct_Q (P : Polarization hℂ hs) (P' : Polarizati
     (P.tensorProduct P').Q = P.Q.tmul P'.Q := by
   rw [Polarization.Q_def, Polarization.Q_def, Polarization.Q_def, Polarization.tensorProduct_Qint,
     integralFormBaseChange_tmul]
+
+/-- The Hodge form of a tensor product of polarizations is the product of their Hodge forms on
+pure tensors. -/
+@[simp]
+theorem Polarization.tensorProduct_hodgeForm_tmul_tmul (P : Polarization hℂ hs)
+    (P' : Polarization h'ℂ hs') (a c : Vℂ) (b d : V'ℂ) :
+    (P.tensorProduct P').hodgeForm (a ⊗ₜ[ℂ] b) (c ⊗ₜ[ℂ] d) =
+      P.hodgeForm a c * P'.hodgeForm b d := by
+  have hweil : (hs.tensorProduct hs').weilOperator =
+      TensorProduct.map hs.weilOperator hs'.weilOperator := by
+    refine ((hs.tensorProduct hs').weilOperator_unique _ fun p x hx ↦ ?_).symm
+    rw [← HodgeStructureOn.weilOperator_tensorProduct hs hs']
+    rw [HodgeStructure.tensorProduct_piece] at hx
+    exact (HodgeStructureOn.tensorProduct hs hs').weilOperator_apply_of_mem hx
+  rw [Polarization.hodgeForm_apply, Polarization.hodgeForm_apply,
+    Polarization.hodgeForm_apply, Polarization.tensorProduct_Q,
+    latticeConj_tensorLatticeMap_tmul hℂ h'ℂ, hweil,
+    TensorProduct.map_tmul, LinearMap.BilinForm.tensorDistrib_tmul, smul_eq_mul]
+  exact mul_comm _ _
 
 /-- **Polarizable Hodge structures are closed under tensor products.** -/
 theorem IsPolarizable.tensorProduct (h : IsPolarizable hℂ hs) (h' : IsPolarizable h'ℂ hs') :

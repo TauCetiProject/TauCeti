@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Map
+public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
@@ -59,6 +60,8 @@ models.
   complexification models.
 * `TauCeti.Hodge.tensorLatticeMap` and `TauCeti.Hodge.isBaseChange_tensorLatticeMap`: the tensor
   product of two complexifications is a complexification of the tensor product of the lattices.
+* `TauCeti.Hodge.tensorLatticeMap_injective`: the tensor product of two flat lattices embeds in
+  the tensor product of their complexifications.
 * `TauCeti.Hodge.latticeConjugation_tensorProduct`: its lattice conjugation is the tensor product
   of the two lattice conjugations.
 
@@ -800,6 +803,20 @@ the two lattices. -/
 theorem isBaseChange_tensorLatticeMap (hℂ : IsBaseChange ℂ ιℂ) (h'ℂ : IsBaseChange ℂ ι'ℂ) :
     IsBaseChange ℂ (tensorLatticeMap ιℂ ι'ℂ) :=
   hℂ.tensorProduct h'ℂ
+
+/-- The tensor product of two flat (for instance free) lattices embeds in the tensor product of
+their complexifications. -/
+theorem tensorLatticeMap_injective [Module.Flat ℤ V] [Module.Flat ℤ V'] (hℂ : IsBaseChange ℂ ιℂ)
+    (h'ℂ : IsBaseChange ℂ ι'ℂ) : Function.Injective (tensorLatticeMap ιℂ ι'ℂ) := by
+  -- Mathlib's flatness of a tensor product is stated for the tensor-product `ℤ`-module structure,
+  -- which is defeq to the canonical one but not found by instance search for it.
+  have : Module.Flat ℤ (V ⊗[ℤ] V') :=
+    (inferInstance : @Module.Flat ℤ (V ⊗[ℤ] V') _ _ TensorProduct.instModule)
+  intro v w hvw
+  refine Module.Flat.tensorProduct_mk_injective ℤ (V ⊗[ℤ] V') ℂ ?_
+  apply (isBaseChange_tensorLatticeMap hℂ h'ℂ).equiv.injective
+  rw [TensorProduct.mk_apply, TensorProduct.mk_apply, IsBaseChange.equiv_tmul,
+    IsBaseChange.equiv_tmul, one_smul, one_smul, hvw]
 
 /-- Lattice conjugation of a tensor product of complexifications conjugates both factors of a
 pure tensor. -/
