@@ -254,6 +254,7 @@ theorem ramificationGroupToUnitFiltrationGraded_eq_of_irreducible {ϖ' : 𝒪[L]
 
 /-- An element of the inertia group `G_0` fixes every Teichmüller representative: its image is
 again fixed by the `q`-th power map and has the same residue. -/
+@[simp]
 theorem smul_teichmullerLift_of_mem_ramificationGroup_zero
     (hσ : σ ∈ ramificationGroup G 𝒪[L] 0) (a : 𝓀[L]) :
     σ • teichmullerLift L a = teichmullerLift L a := by
