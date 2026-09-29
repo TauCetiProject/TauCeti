@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.GeneratedSmooth
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Generated
 import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
@@ -23,12 +23,13 @@ algebra and a Laurent polynomial algebra, respectively, so each has connected sp
 The common-kernel construction then preserves connectedness of the generated subgroup.
 
 This supplies a geometric property of the generated subgroup needed when comparing the
-short-root carrier with a pinned simply connected type-`G₂` group scheme. The comparison
-still requires identifying this subgroup with the scalar extension of the prime-field carrier.
+short-root carrier with a pinned simply connected type-`G₂` group scheme.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
+
+The formal argument follows `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`.
 -/
 
 public section

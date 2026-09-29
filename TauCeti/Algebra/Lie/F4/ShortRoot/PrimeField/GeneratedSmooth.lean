@@ -30,7 +30,7 @@ it as the pinned simply connected group scheme of type `F₄`, are separate ques
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
 
 The base-change argument follows the type-`G₂` short-root carrier construction in
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.GeneratedSmooth`; the generated-subgroup
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Smooth`; the generated-subgroup
 smoothness interface originates in `TauCeti.Algebra.Lie.E7.Minuscule.GeneratedSmooth`.
 -/
 
