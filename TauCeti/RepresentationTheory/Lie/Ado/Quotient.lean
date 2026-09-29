@@ -38,11 +38,11 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- In exponential characteristic `p ≠ 1`, if an algebra map kills a power of the central
+/-- In exponential characteristic `p ≠ 1`, if a ring homomorphism kills a power of the central
 augmentation ideal, then it sends every adjoint-nilpotent Lie element to a nilpotent element. -/
-theorem isNilpotent_map_ι_of_isNilpotent_ad {A : Type w} [Semiring A] [Algebra R A]
+theorem isNilpotent_map_ι_of_isNilpotent_ad {A : Type w} [Semiring A]
     (p : ℕ) [ExpChar R p] (hp : p ≠ 1)
-    (q : U →ₐ[R] A) (n : ℕ)
+    (q : U →+* A) (n : ℕ)
     (hq : ∀ z ∈ HopfIdeal.centralAugmentationIdeal R U ^ n, q z = 0)
     {x : L} (hx : IsNilpotent (LieAlgebra.ad R L x)) :
     IsNilpotent (q (_root_.UniversalEnvelopingAlgebra.ι R x)) := by
@@ -61,7 +61,7 @@ theorem isNilpotent_quotient_ι_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp : 
     IsNilpotent (Ideal.Quotient.mk (HopfIdeal.centralAugmentationIdeal R U ^ n)
       (_root_.UniversalEnvelopingAlgebra.ι R x)) := by
   exact isNilpotent_map_ι_of_isNilpotent_ad R L p hp
-    (Ideal.Quotient.mkₐ R (HopfIdeal.centralAugmentationIdeal R U ^ n)) n
+    (Ideal.Quotient.mkₐ R (HopfIdeal.centralAugmentationIdeal R U ^ n)).toRingHom n
     (fun z hz => Ideal.Quotient.eq_zero_iff_mem.mpr hz) hx
 
 /-- In exponential characteristic `p ≠ 1`, the left-regular Lie representation of such a target
@@ -73,7 +73,7 @@ theorem isNilpotent_leftRegularRep_of_isNilpotent_ad (p : ℕ) [ExpChar R p] (hp
     IsNilpotent (LieHom.leftRegularRep
       (((q : U →ₗ⁅R⁆ A).comp (_root_.UniversalEnvelopingAlgebra.ι R))) x) := by
   exact (LieHom.isNilpotent_leftRegularRep_iff _ _).2
-    (isNilpotent_map_ι_of_isNilpotent_ad R L p hp q n hq hx)
+    (isNilpotent_map_ι_of_isNilpotent_ad R L p hp q.toRingHom n hq hx)
 
 /-- In exponential characteristic `p ≠ 1`, the left-regular representation on the quotient by
 the `n`-th power of the central augmentation ideal sends every adjoint-nilpotent Lie element to
