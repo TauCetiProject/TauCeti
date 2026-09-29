@@ -33,13 +33,22 @@ variable {α : Type*} [Fintype α] [DecidableEq α]
 open scoped Classical in
 /-- The number of product-one triples generating `G` with three specified full cycle types.
 Each type is refined into the conjugacy classes of `G` that it meets. -/
-@[expose]
 noncomputable def _root_.Subgroup.genCountType (G : Subgroup (Perm α))
     (lam0 lam1 laminf : Multiset ℕ) : ℕ :=
   ∑ C0 ∈ G.classesOfFullCycleType lam0,
     ∑ C1 ∈ G.classesOfFullCycleType lam1,
       ∑ Cinf ∈ G.classesOfFullCycleType laminf,
         (generatingProductOneTriples C0 C1 Cinf ⊤).card
+
+open scoped Classical in
+/-- The class-sum formula for the generating count with prescribed full cycle types. -/
+theorem _root_.Subgroup.genCountType_def (G : Subgroup (Perm α))
+    (lam0 lam1 laminf : Multiset ℕ) :
+    G.genCountType lam0 lam1 laminf =
+      ∑ C0 ∈ G.classesOfFullCycleType lam0,
+        ∑ C1 ∈ G.classesOfFullCycleType lam1,
+          ∑ Cinf ∈ G.classesOfFullCycleType laminf,
+            (generatingProductOneTriples C0 C1 Cinf ⊤).card := (rfl)
 
 open scoped Classical in
 /-- The product-one triples of `G` that generate `G` and have the prescribed cycle types. -/
@@ -87,7 +96,7 @@ theorem _root_.Subgroup.card_generatingTriplesOfFullCycleType
     exact ⟨⟨h0, h1⟩, hi⟩
   rw [Finset.card_eq_sum_card_fiberwise hmaps]
   simp only [index, Finset.product_eq_sprod, Finset.sum_product,
-    Subgroup.genCountType]
+    Subgroup.genCountType_def]
   apply Finset.sum_congr rfl
   intro C0 h0
   apply Finset.sum_congr rfl

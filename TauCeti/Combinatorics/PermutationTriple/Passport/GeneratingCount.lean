@@ -37,7 +37,7 @@ private theorem generatedSubgroup_subtype_eq_top_iff (P : PassportSpec n)
       Subgroup.closure {(p.1 : Perm (Fin n)), (p.2.1 : Perm (Fin n))} = P.G := by
   rw [← Subgroup.map_subtype_inj]
   rw [← productOneGeneratedSubgroup_map P.G.subtype p,
-    productOneGeneratedSubgroup]
+    productOneGeneratedSubgroup_def]
   rw [← MonoidHom.range_eq_map]
   simp
 
