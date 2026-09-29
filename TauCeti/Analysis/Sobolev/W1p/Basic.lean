@@ -53,6 +53,8 @@ boundary regularity of `Ω` is used.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset.
+* `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
+  `p ≤ q`.
 
 ## References
 
@@ -603,6 +605,35 @@ theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :
   rw [L2.inner_def]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [RCLike.inner_apply, mul_comm])
+
+section Exponent
+
+variable {q : ENNReal} [Fact (1 <= q)] [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- On a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for `p ≤ q`: the value and the
+weak gradient of `u ∈ W^{1,q}(Ω)` are also in `Lᵖ(Ω)`, and are still related by the weak
+derivative identity. -/
+def W1p.ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) : W1p mu Omega p :=
+  W1p.mk (((Lp.memLp (W1p.value u)).mono_exponent hpq).toLp _)
+    (((Lp.memLp (W1p.gradient u)).mono_exponent hpq).toLp _)
+    (((W1p.hasWeakFDerivOn u).congr_ae (MemLp.coeFn_toLp _).symm).congr_ae_deriv (by
+      filter_upwards [MemLp.coeFn_toLp ((Lp.memLp (W1p.gradient u)).mono_exponent hpq)]
+        with x hx
+      rw [hx]))
+
+/-- Lowering the exponent does not change the value of a Sobolev function. -/
+theorem W1p.value_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
+    ⇑(W1p.value (W1p.ofExponentLE hpq u)) =ᵐ[mu.restrict Omega] W1p.value u := by
+  rw [W1p.ofExponentLE, W1p.value_mk]
+  exact MemLp.coeFn_toLp _
+
+/-- Lowering the exponent does not change the weak gradient of a Sobolev function. -/
+theorem W1p.gradient_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
+    ⇑(W1p.gradient (W1p.ofExponentLE hpq u)) =ᵐ[mu.restrict Omega] W1p.gradient u := by
+  rw [W1p.ofExponentLE, W1p.gradient_mk]
+  exact MemLp.coeFn_toLp _
+
+end Exponent
 
 /-- `W^{1,p}(Ω)` is complete in its value-gradient graph norm. -/
 instance : CompleteSpace (W1p mu Omega p) :=
