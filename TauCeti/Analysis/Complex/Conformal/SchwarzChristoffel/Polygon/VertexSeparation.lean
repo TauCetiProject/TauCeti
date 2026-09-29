@@ -43,8 +43,8 @@ The condition allows both positive and negative turning exponents. -/
 theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_vertex_separation
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, -1 < e k)
-    (hcorner : ∀ k : Fin n, e k.succ < 1)
-    (hne : ∀ k : Fin n, e k.succ ≠ 0)
+    (hcorner : ∀ k : Fin n, k.val + 1 < n → e k.succ < 1)
+    (hne : ∀ k : Fin n, k.val + 1 < n → e k.succ ≠ 0)
     (hsep : ∀ (i j : Fin n), i.val + 1 < j.val →
       let c := Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I)
       let u := schwarzChristoffelVertex a e z₀ i.castSucc
@@ -65,8 +65,8 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_vertex_separation
         a e z₀ ha.monotone i j hadj (ha i.castSucc_lt_succ)
         (ha j.castSucc_lt_succ) (hfinite _)
         (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using
-          (show e i.succ ∈ Ioo (-1 : ℝ) 1 from ⟨he i.succ, hcorner i⟩))
-        (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using hne i)
+          (show e i.succ ∈ Ioo (-1 : ℝ) 1 from ⟨he i.succ, hcorner i (by omega)⟩))
+        (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using hne i (by omega))
         (hfinite _) ⟨hzi, hzj⟩
     exact ⟨hadj.symm, hz⟩
   have hgap : i.val + 1 < j.val := by
