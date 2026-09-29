@@ -19,6 +19,10 @@ finite-dimensional real normed space. The cutoff is equal to one on a neighborho
 set and has topological support in a prescribed open set, which is the localization step used for
 compact exhaustions in domain arguments.
 
+It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
+gradient is at most `c / (R - r)` for a universal constant `c`, the quantitative form needed by
+iteration arguments over families of balls with shrinking gaps.
+
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, §5.2.
@@ -127,5 +131,63 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
   obtain ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩ :=
     hK.exists_contDiff_cutoff hU hKU
   exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
+
+/-- **Radial cutoffs with a quantitative gradient bound.** There is a universal constant `c` such
+that for every centre `x₀` and radii `0 < r < R`, some smooth `ψ` with values in `[0, 1]` equals
+one on `closedBall x₀ r`, has topological support in `closedBall x₀ R`, and satisfies
+
+`‖∇ψ x‖ ≤ c / (R - r)` for every `x`.
+
+The inverse dependence on the gap `R - r` is what iteration arguments over families of balls with
+geometrically shrinking gaps need. The cutoff is `Real.smoothTransition ((R - ‖x - x₀‖) / (R - r))`,
+and `c` is a Lipschitz constant of `Real.smoothTransition`. -/
+theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [CompleteSpace E] :
+    ∃ c : ℝ, 0 ≤ c ∧ ∀ (x₀ : E) {r R : ℝ}, 0 < r → r < R →
+      ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (Metric.closedBall x₀ r) ∧
+        tsupport ψ ⊆ Metric.closedBall x₀ R ∧ ∀ x, ‖∇ ψ x‖ ≤ c / (R - r) := by
+  -- `Real.smoothTransition` factors through the projection onto `[0, 1]`, where it is Lipschitz.
+  obtain ⟨L, hL⟩ : ∃ L, LipschitzWith L Real.smoothTransition := by
+    obtain ⟨L, hL⟩ := (Real.smoothTransition.contDiff (n := 1)).contDiffOn.exists_lipschitzOnWith
+      one_ne_zero (convex_Icc (0 : ℝ) 1) isCompact_Icc
+    refine ⟨L, ?_⟩
+    have := hL.to_restrict.comp (LipschitzWith.projIcc (zero_le_one' ℝ))
+    simpa [Function.comp_def] using this
+  refine ⟨L, L.2, fun x₀ r R hr hrR => ?_⟩
+  have hRr : 0 < R - r := sub_pos.2 hrR
+  set ψ : E → ℝ := fun x => Real.smoothTransition ((R - ‖x - x₀‖) / (R - r))
+  have hone : ∀ x, ‖x - x₀‖ ≤ r → ψ x = 1 := fun x hx =>
+    Real.smoothTransition.one_of_one_le (by rw [le_div_iff₀ hRr]; linarith)
+  refine ⟨ψ, ?_, ?_, fun x hx => hone x (by rwa [Metric.mem_closedBall, dist_eq_norm] at hx),
+    ?_, fun x => ?_⟩
+  · rw [contDiff_iff_contDiffAt]
+    intro x
+    by_cases hx : x = x₀
+    · -- Near the centre, `ψ` is identically one.
+      subst hx
+      have hev : ψ =ᶠ[𝓝 x] fun _ => 1 := by
+        filter_upwards [Metric.ball_mem_nhds x hr] with y hy
+        exact hone y (by rw [Metric.mem_ball, dist_eq_norm] at hy; exact hy.le)
+      exact contDiffAt_const.congr_of_eventuallyEq hev
+    · have hn : ContDiffAt ℝ ∞ (fun y : E => ‖y - x₀‖) x :=
+        (contDiffAt_id.sub contDiffAt_const).norm ℝ (sub_ne_zero.2 hx)
+      exact Real.smoothTransition.contDiffAt.comp x ((contDiffAt_const.sub hn).div_const _)
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  · refine closure_minimal (fun x hx => ?_) Metric.isClosed_closedBall
+    rw [Metric.mem_closedBall, dist_eq_norm]
+    by_contra h
+    exact hx (Real.smoothTransition.zero_of_nonpos
+      (div_nonpos_of_nonpos_of_nonneg (by linarith) hRr.le))
+  · have hlip : LipschitzWith (L * Real.toNNReal (R - r)⁻¹) ψ := by
+      refine hL.comp (LipschitzWith.of_dist_le_mul fun y z => ?_)
+      rw [Real.dist_eq, Real.coe_toNNReal _ (inv_nonneg.2 hRr.le), ← sub_div, abs_div,
+        abs_of_pos hRr, div_eq_inv_mul]
+      gcongr
+      rw [dist_eq_norm, show R - ‖y - x₀‖ - (R - ‖z - x₀‖) = ‖z - x₀‖ - ‖y - x₀‖ by ring,
+        abs_sub_comm]
+      simpa using abs_norm_sub_norm_le (y - x₀) (z - x₀)
+    rw [_root_.gradient, LinearIsometryEquiv.norm_map]
+    refine (norm_fderiv_le_of_lipschitz ℝ hlip).trans_eq ?_
+    rw [NNReal.coe_mul, Real.coe_toNNReal _ (inv_nonneg.2 hRr.le), div_eq_mul_inv]
 
 end TauCeti
