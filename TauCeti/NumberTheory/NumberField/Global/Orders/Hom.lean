@@ -53,6 +53,7 @@ variable {O : NumberFieldOrder K} {O' : NumberFieldOrder L}
 variable {O'' : NumberFieldOrder M}
 variable {O''' : NumberFieldOrder N}
 
+/-- Apply an order morphism to an ambient field element through its field homomorphism. -/
 instance : CoeFun (Hom O O') (fun _ => K → L) := ⟨fun f => f.fieldHom⟩
 
 /-- An order morphism maps elements of the source order into the target order. -/
@@ -71,6 +72,14 @@ theorem map_one (f : Hom O O') : f (1 : K) = 1 :=
 @[simp]
 theorem map_add (f : Hom O O') (x y : K) : f (x + y) = f x + f y :=
   f.fieldHom.map_add x y
+
+@[simp]
+theorem map_neg (f : Hom O O') (x : K) : f (-x) = -f x :=
+  f.fieldHom.map_neg x
+
+@[simp]
+theorem map_sub (f : Hom O O') (x y : K) : f (x - y) = f x - f y :=
+  f.fieldHom.map_sub x y
 
 @[simp]
 theorem map_mul (f : Hom O O') (x y : K) : f (x * y) = f x * f y :=
