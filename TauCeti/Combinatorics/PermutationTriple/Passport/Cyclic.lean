@@ -133,10 +133,11 @@ theorem hasPassport_cyclicPowTriple {k : ℕ} (hk : k.Coprime n) (hk' : (k + 1).
 
 /-- A triple in the passport `cyclicTotallyRamified n` whose component over `0` is rotation is
 `(r, r ^ k)` for a unique-range exponent whose two relevant powers are full cycles. -/
-theorem exists_eq_cyclicPowTriple_of_hasPassport (hn : n ≠ 0) {s : ConnectedTriple n}
+theorem exists_eq_cyclicPowTriple_of_hasPassport {s : ConnectedTriple n}
     (hs : HasPassport s (cyclicTotallyRamified n)) (h0 : s.1.σ0 = finRotate n) :
     ∃ k, k < n ∧ k.Coprime n ∧ (k + 1).Coprime n ∧ s.1 = cyclicPowTriple n k := by
   classical
+  have hn : n ≠ 0 := s.2.ne_zero
   obtain ⟨⟨τ, hτ⟩, -, h1, hinf⟩ := (hasPassport_iff _ _).mp hs
   rw [cycleData_σ1, cyclicTotallyRamified_lam1] at h1
   rw [cycleData_σinf, cyclicTotallyRamified_laminf] at hinf
@@ -153,17 +154,9 @@ theorem exists_eq_cyclicPowTriple_of_hasPassport (hn : n ≠ 0) {s : ConnectedTr
   rw [Finset.mem_range, hord] at hk
   have hsk : s.1 = cyclicPowTriple n k :=
     ext_of_two (by simpa using h0) (by simpa using hk1.symm)
-  have coprime_of_parts {a : ℕ} (ha : (finRotate n ^ a).partition.parts = {n}) :
-      a.Coprime n := by
-    have haorder : orderOf (finRotate n ^ a) = n := by
-      rw [← lcm_parts_partition, ha, Multiset.lcm_singleton, normalize_eq]
-    rw [orderOf_pow, hord, Nat.div_eq_self] at haorder
-    rcases haorder with h | h
-    · exact absurd h hn
-    · rwa [Nat.coprime_iff_gcd_eq_one, Nat.gcd_comm]
-  have hkcop : k.Coprime n := coprime_of_parts (by rwa [hk1])
+  have hkcop : k.Coprime n := (parts_partition_finRotate_pow_eq_singleton_iff hn).mp (by rwa [hk1])
   have hk'cop : (k + 1).Coprime n := by
-    apply coprime_of_parts
+    apply (parts_partition_finRotate_pow_eq_singleton_iff hn).mp
     rw [← parts_partition_inv, ← cyclicPowTriple_σinf, ← hsk]
     exact hinf
   exact ⟨k, hk, hkcop, hk'cop, hsk⟩
@@ -188,7 +181,7 @@ theorem classSet_cyclicTotallyRamified (hn : n ≠ 0) :
     have hs0 : (υ⁻¹ • t).1.σ0 = finRotate n := by
       rw [ConnectedTriple.coe_smul, smul_σ0, ← hυ]
       group
-    obtain ⟨k, hk, hkcop, hk'cop, hkt⟩ := exists_eq_cyclicPowTriple_of_hasPassport hn
+    obtain ⟨k, hk, hkcop, hk'cop, hkt⟩ := exists_eq_cyclicPowTriple_of_hasPassport
       ((hasPassport_smul_iff υ⁻¹ t _).mpr ht) hs0
     refine ⟨k, Finset.mem_filter.mpr ⟨Finset.mem_range.mpr hk, hkcop, hk'cop⟩, ?_⟩
     exact ConnectedIsoClass.mk_eq_mk_iff_exists_smul.mpr ⟨υ⁻¹, Subtype.ext hkt⟩
