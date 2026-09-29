@@ -72,6 +72,26 @@ theorem labuteAction_laws (χ : F →ₜ* ℤ_[p]ˣ) (α β : orientationQuotien
   · simp only [labuteAction, hcomm, mul_inv_rev, mul_smul, toMul_ofMul]
   · simp only [labuteAction, toMul_add, smul_mul', ofMul_mul]
 
+/-- The identity of the character quotient acts trivially. -/
+@[simp]
+theorem labuteAction_one (χ : F →ₜ* ℤ_[p]ˣ) (ξ : labuteE χ) :
+    labuteAction χ 1 ξ = ξ :=
+  (labuteAction_laws χ 1 1 ξ ξ).1
+
+/-- The action respects multiplication in the character quotient. -/
+@[simp]
+theorem labuteAction_mul (χ : F →ₜ* ℤ_[p]ˣ) (α β : orientationQuotient χ)
+    (ξ : labuteE χ) :
+    labuteAction χ (α * β) ξ = labuteAction χ α (labuteAction χ β ξ) :=
+  (labuteAction_laws χ α β ξ ξ).2.1
+
+/-- Each element of the character quotient acts additively. -/
+@[simp]
+theorem labuteAction_add (χ : F →ₜ* ℤ_[p]ˣ) (α : orientationQuotient χ)
+    (ξ η : labuteE χ) :
+    labuteAction χ α (ξ + η) = labuteAction χ α ξ + labuteAction χ α η :=
+  (labuteAction_laws χ α α ξ η).2.2
+
 /-- Labute's formula: the class of `y` sends the class of `x` to the class of `y⁻¹xy`. -/
 @[simp]
 theorem labuteAction_mk (χ : F →ₜ* ℤ_[p]ˣ) (y : F)
@@ -123,7 +143,10 @@ theorem relationModuleToLabuteE_mk (χ : F →ₜ* ℤ_[p]ˣ) (R : Subgroup F)
     relationModuleToLabuteE χ R hR
       (Additive.ofMul (r : TopologicalAbelianization R)) =
       labuteRelatorClass χ r (hR r.2) := by
-  simp [relationModuleToLabuteE, labuteRelatorClass]
+  change Additive.ofMul
+      (TopologicalAbelianization.map (Subgroup.inclusion hR)
+        (Subgroup.continuous_inclusion hR) (r : TopologicalAbelianization R)) = _
+  rw [TopologicalAbelianization.map_mk]
   rfl
 
 /-- The comparison map respects conjugation by a lift of an element of the character quotient. -/
@@ -159,7 +182,34 @@ noncomputable def labuteSMul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     (orientationQuotient χ)
   exact completedGroupAlgebra.map ℤ_[p] invMonoidHom h_inv a • ξ
 
+/-- Labute's completed action as a module over `ℤ_p[[Γ]]`. -/
+@[instance_reducible]
+noncomputable def labuteModule (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ) :
+    Module (completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) (labuteE χ) := by
+  letI : CommGroup (orientationQuotient χ) := by
+    letI : IsMulCommutative (orientationQuotient χ) := orientationQuotient_isMulCommutative χ
+    infer_instance
+  have h_inv : Continuous (invMonoidHom : orientationQuotient χ → orientationQuotient χ) := by
+    simpa only [coe_invMonoidHom] using
+      (continuous_inv : Continuous (fun γ : orientationQuotient χ => γ⁻¹))
+  letI : IsClosed ((χ : F →* ℤ_[p]ˣ).ker : Set F) :=
+    χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
+  letI := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
+    (orientationQuotient χ)
+  exact Module.compHom (labuteE χ)
+    (completedGroupAlgebra.map ℤ_[p] invMonoidHom h_inv).toRingHom
+
+/-- The scalar multiplication in `labuteModule` is Labute's twisted action. -/
+@[simp]
+theorem labuteModule_smul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
+    (a : completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) (ξ : labuteE χ) :
+    letI := labuteModule hF χ
+    a • ξ = labuteSMul hF χ a ξ := by
+  change (labuteModule hF χ).smul a ξ = labuteSMul hF χ a ξ
+  rfl
+
 /-- The completed action extends inverse conjugation by group elements. -/
+@[simp]
 theorem labuteSMul_of (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     (γ : orientationQuotient χ) (ξ : labuteE χ) :
     labuteSMul hF χ (completedGroupAlgebra.of ℤ_[p] (orientationQuotient χ) γ) ξ =
@@ -190,6 +240,33 @@ theorem labuteSMul_laws (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
   let _ := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
     (orientationQuotient χ)
   simp [labuteSMul, mul_smul, add_smul, smul_add]
+
+/-- The unit of the completed group algebra acts trivially. -/
+@[simp]
+theorem labuteSMul_one (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ) (ξ : labuteE χ) :
+    labuteSMul hF χ 1 ξ = ξ :=
+  (labuteSMul_laws hF χ 1 1 ξ ξ).1
+
+/-- The completed action respects multiplication of scalars. -/
+@[simp]
+theorem labuteSMul_mul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
+    (a b : completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) (ξ : labuteE χ) :
+    labuteSMul hF χ (a * b) ξ = labuteSMul hF χ a (labuteSMul hF χ b ξ) :=
+  (labuteSMul_laws hF χ a b ξ ξ).2.1
+
+/-- The completed action respects addition of scalars. -/
+@[simp]
+theorem labuteSMul_add (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
+    (a b : completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) (ξ : labuteE χ) :
+    labuteSMul hF χ (a + b) ξ = labuteSMul hF χ a ξ + labuteSMul hF χ b ξ :=
+  (labuteSMul_laws hF χ a b ξ ξ).2.2.1
+
+/-- Every completed scalar acts additively on Labute's module. -/
+@[simp]
+theorem labuteSMul_add_right (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
+    (a : completedGroupAlgebra ℤ_[p] (orientationQuotient χ)) (ξ η : labuteE χ) :
+    labuteSMul hF χ a (ξ + η) = labuteSMul hF χ a ξ + labuteSMul hF χ a η :=
+  (labuteSMul_laws hF χ a a ξ η).2.2.2
 
 /-- The completed action on Labute's module is jointly continuous. -/
 theorem continuous_labuteSMul (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ) :
