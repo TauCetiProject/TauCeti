@@ -11,9 +11,9 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Basic
 import TauCeti.RingTheory.Huber.RingOfDefinition
 
 /-!
-# Sheafiness of a Huber pair
+# Sheafhood across compatible presentations
 
-`IsSheafyPair Aplus` requires `Aplus` to be a ring of integral elements and the
+`IsSheafyForEveryPresentation Aplus` requires `Aplus` to be a ring of integral elements and the
 presentation-indexed limit presheaf `presentationLimitPresheaf P Aplus` to be a sheaf of complete
 separated topological rings for every pair of definition `P` contained in `Aplus`. Such a pair
 exists because `Aplus` is open. Independence of the choice of `P` is not yet available, so this
@@ -43,10 +43,10 @@ universe v
 variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [IsHuberRing A]
 
-/-- A Huber pair `(A, A⁺)` whose plus ring is `Aplus` and whose presentation-indexed limit
-presheaf is a sheaf for every pair of definition contained in `Aplus`. This presheaf has not yet
-been identified with Wedhorn's `𝒪_X`. -/
-structure IsSheafyPair (Aplus : Subring A) : Prop where
+/-- The plus ring `Aplus` is a ring of integral elements, and its presentation-indexed limit
+presheaf is a sheaf for every compatible pair of definition. This sufficient condition has not
+yet been identified with sheafiness of the pair's canonical structure presheaf. -/
+structure IsSheafyForEveryPresentation (Aplus : Subring A) : Prop where
   /-- `Aplus` is a ring of integral elements of `A`. -/
   isRingOfIntegralElements : IsRingOfIntegralElements Aplus
   /-- The presentation-indexed limit presheaf is a sheaf for each compatible pair of definition. -/
@@ -54,10 +54,10 @@ structure IsSheafyPair (Aplus : Subring A) : Prop where
     Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
       (presentationLimitPresheaf P Aplus)
 
-/-- A sheafy pair has a compatible pair of definition whose presentation-indexed limit
-presheaf is a sheaf. -/
-theorem IsSheafyPair.exists_compatible_isSheaf {Aplus : Subring A}
-    (h : IsSheafyPair Aplus) :
+/-- The universal condition supplies a compatible pair of definition whose presentation-indexed
+limit presheaf is a sheaf. -/
+theorem IsSheafyForEveryPresentation.exists_compatible_isSheaf {Aplus : Subring A}
+    (h : IsSheafyForEveryPresentation Aplus) :
     ∃ P : PairOfDefinition A, P.ringOfDefinition ≤ Aplus ∧
       Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
         (presentationLimitPresheaf P Aplus) := by
