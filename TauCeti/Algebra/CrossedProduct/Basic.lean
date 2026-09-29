@@ -214,12 +214,6 @@ theorem comap_toFun (g g' : M ≃ₐ[K] M) :
     (c.comap f ι hf).toFun g g' = Units.map (ι : L →* M) (c.toFun (f g) (f g')) :=
   (rfl)
 
-/-- The values of the inflated cocycle, `(c.comap f ι hf)(g, g') = ι (c (f g, f g'))`. Not a
-`simp` lemma: `simp` reaches its right-hand side through `comap_toFun` and `Units.coe_map`. -/
-theorem coe_comap_toFun (g g' : M ≃ₐ[K] M) :
-    ((c.comap f ι hf).toFun g g' : M) = ι (c.toFun (f g) (f g')) :=
-  (rfl)
-
 /-- Inflation of the trivial `2`-cocycle is trivial. -/
 @[simp]
 theorem comap_one : (1 : TwoCocycle K L).comap f ι hf = 1 :=

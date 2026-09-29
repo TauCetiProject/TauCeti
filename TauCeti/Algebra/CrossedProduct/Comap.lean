@@ -122,8 +122,8 @@ private theorem fiberMap_mul_inc_mul [IsGalois K M] (a a' : CrossedProduct c) (y
           rw [Finset.mul_sum]
           refine Finset.sum_congr rfl fun g' hg' ↦ ?_
           rw [smul_mul_assoc, basis_mul_inc, ← smul_def, smul_smul, smul_basis_mul_smul_basis,
-            TwoCocycle.coe_comap_toFun, IsScalarTower.coe_toAlgHom', ← hf', (hF g σ).1 hg,
-            (hF g' τ).1 hg']
+            TwoCocycle.comap_toFun, Units.coe_map, MonoidHom.coe_ofClass,
+            IsScalarTower.coe_toAlgHom', ← hf', (hF g σ).1 hg, (hF g' τ).1 hg']
           congr 1
           simp only [C, map_mul]
           ring
