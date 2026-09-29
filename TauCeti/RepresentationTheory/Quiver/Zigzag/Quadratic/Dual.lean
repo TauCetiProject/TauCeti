@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.QuadraticDual
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Quadratic.Dual
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Grading
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Opposite
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Relations
@@ -66,7 +66,7 @@ are excluded.
 
 ## References
 
-S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 3,
+S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 6.1,
 https://arxiv.org/abs/math/0002060, for the quadratic dual of the zigzag algebra.
 -/
 

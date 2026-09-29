@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
+public import Mathlib.Topology.Algebra.Constructions
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
@@ -33,6 +35,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.continuous_toZModPow`, `PadicInt.continuous_toZMod`: truncation modulo `p ^ n` and
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
+* `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
+  reduction and truncation, as divisibility statements.
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
   recovers `toZMod`.
 * `PadicInt.appr_modEq`, `PadicInt.appr_add_modEq`, `PadicInt.appr_mul_modEq`,
@@ -54,6 +58,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   continuous ring homomorphism out of `ℤ_[p] ⧸ (q)`.
 * `PadicInt.surjective_units_map_toZModPow`: every unit of `ZMod (p ^ n)` lifts to a unit of
   `ℤ_[p]`.
+* `PadicInt.unitsToZModPow`: truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous
+  homomorphism to the units of `ZMod (p ^ n)`.
 * `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
   finite of cardinality `p`.
 -/
@@ -107,6 +113,15 @@ theorem continuous_toZMod : Continuous (toZMod : ℤ_[p] → ZMod p) := by
       ker_toZModPow, maximalIdeal_eq_span_p, pow_one]
   rw [h]
   exact (continuous_toZModPow 1).isOpen_preimage _ (isOpen_discrete _)
+
+/-- A `p`-adic integer reduces to `0` modulo `p` exactly when `p` divides it. -/
+theorem toZMod_eq_zero_iff_dvd (x : ℤ_[p]) : toZMod x = 0 ↔ (p : ℤ_[p]) ∣ x := by
+  rw [← RingHom.mem_ker, ker_toZMod, maximalIdeal_eq_span_p, Ideal.mem_span_singleton]
+
+/-- A `p`-adic integer truncates to `0` modulo `p ^ n` exactly when `p ^ n` divides it. -/
+theorem toZModPow_eq_zero_iff_dvd (n : ℕ) (x : ℤ_[p]) :
+    toZModPow n x = 0 ↔ (p : ℤ_[p]) ^ n ∣ x := by
+  rw [← RingHom.mem_ker, ker_toZModPow, Ideal.mem_span_singleton]
 
 /-- Reducing the truncation `x mod p ^ n` further modulo `p` gives `x mod p`. -/
 @[simp]
@@ -262,6 +277,19 @@ theorem surjective_units_map_toZModPow (n : ℕ) :
   · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
     exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
       (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
+
+/-- Truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous homomorphism to the units of
+`ZMod (p ^ n)`. -/
+noncomputable def unitsToZModPow (n : ℕ) : ℤ_[p]ˣ →ₜ* (ZMod (p ^ n))ˣ where
+  toMonoidHom := Units.map (toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom
+  continuous_toFun :=
+    Units.continuous_map (f := (toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom)
+      (continuous_toZModPow n)
+
+@[simp]
+theorem coe_unitsToZModPow_apply (n : ℕ) (u : ℤ_[p]ˣ) :
+    ((unitsToZModPow n u : (ZMod (p ^ n))ˣ) : ZMod (p ^ n)) = toZModPow n (u : ℤ_[p]) :=
+  (rfl)
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

@@ -43,6 +43,8 @@ character `χ`.
 
 ## Main results
 
+* `TauCeti.IsCrossedHom.ringHom_comp`: composing with a semiring homomorphism `φ` gives a crossed
+  homomorphism for `Units.map φ ∘ χ`.
 * `TauCeti.IsCrossedHom.map_pow`: `F (x ^ k) = (1 + χ x + ⋯ + χ x ^ (k - 1)) * F x`.
 * `TauCeti.IsCrossedHom.map_list_prod_of_forall_eq_one`: on a product of elements on which `χ` is
   trivial, `F` is additive.
@@ -96,6 +98,14 @@ theorem comp {H' : Type*} [Group H'] {F'' : Type*} [FunLike F'' H' H] [MonoidHom
     Function.comp_apply]
 
 end IsCrossedHom
+
+/-- The composite of a crossed homomorphism for a character `χ : H →* Rˣ` with a semiring
+homomorphism `φ : R →+* S` is a crossed homomorphism for the character `Units.map φ ∘ χ`. -/
+theorem IsCrossedHom.ringHom_comp {S : Type*} [Semiring S] {χ : H →* Rˣ} {F : H → R}
+    (hF : IsCrossedHom χ F) (φ : R →+* S) :
+    IsCrossedHom ((Units.map (φ : R →* S)).comp χ) (φ ∘ F) := fun x y ↦ by
+  rw [Function.comp_apply, hF.map_mul x y, map_add, _root_.map_mul, MonoidHom.comp_apply,
+    Units.coe_map, MonoidHom.coe_ofClass, Function.comp_apply, Function.comp_apply]
 
 end Semiring
 

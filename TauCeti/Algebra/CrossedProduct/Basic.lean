@@ -39,7 +39,8 @@ Central simplicity of the crossed product of a finite Galois extension of fields
 
 ## Main definitions
 
-* `TauCeti.TwoCocycle K L`: the `2`-cocycles of `L ≃ₐ[K] L` with values in `Lˣ`.
+* `TauCeti.TwoCocycle K L`: the `2`-cocycles of `L ≃ₐ[K] L` with values in `Lˣ`, a commutative
+  group under pointwise multiplication (`TauCeti.TwoCocycle.instCommGroup`).
 * `TauCeti.TwoCocycle.comap f ι hf c`: the inflation of `c` along a homomorphism
   `f : Aut_K(M) → Aut_K(L)` and an embedding `ι : L →ₐ[K] M` intertwining it.
 * `TauCeti.CrossedProduct c`: the crossed-product ring of a cocycle `c`, with its `K`-algebra and
@@ -109,6 +110,77 @@ through the Galois action. Not a `simp` lemma: at `σ = 1` its left-hand side `c
 inside its right-hand side, so `simp` would loop. -/
 theorem toFun_one_right (σ : L ≃ₐ[K] L) : (c.toFun σ 1 : L) = σ (c.toFun 1 1 : L) := by
   simp [map_one_snd_of_isMulCocycle₂ c.isMulCocycle₂ σ]
+
+/-! ### The pointwise group of `2`-cocycles -/
+
+/-- The trivial `2`-cocycle, constantly `1`. -/
+instance : One (TwoCocycle K L) where
+  one := ⟨fun _ _ ↦ 1, fun σ _ _ ↦ by simp⟩
+
+/-- The pointwise product `(c · d)(σ, τ) = c(σ, τ) · d(σ, τ)` of two `2`-cocycles. -/
+instance : Mul (TwoCocycle K L) where
+  mul c d := ⟨fun σ τ ↦ c.toFun σ τ * d.toFun σ τ, fun σ τ ρ ↦ by
+    rw [mul_mul_mul_comm, c.isMulCocycle₂ σ τ ρ, d.isMulCocycle₂ σ τ ρ, smul_mul',
+      mul_mul_mul_comm]⟩
+
+/-- The pointwise inverse `c⁻¹(σ, τ) = c(σ, τ)⁻¹` of a `2`-cocycle. -/
+instance : Inv (TwoCocycle K L) where
+  inv c := ⟨fun σ τ ↦ (c.toFun σ τ)⁻¹, fun σ τ ρ ↦ by
+    rw [← mul_inv, c.isMulCocycle₂ σ τ ρ, mul_inv, smul_inv']⟩
+
+/-- The pointwise quotient `(c / d)(σ, τ) = c(σ, τ) / d(σ, τ)` of two `2`-cocycles. -/
+instance : Div (TwoCocycle K L) where
+  div c d := ⟨fun σ τ ↦ c.toFun σ τ / d.toFun σ τ, fun σ τ ρ ↦ by
+    rw [div_mul_div_comm, c.isMulCocycle₂ σ τ ρ, d.isMulCocycle₂ σ τ ρ, smul_div',
+      div_mul_div_comm]⟩
+
+/-- The pointwise power `cⁿ(σ, τ) = c(σ, τ)ⁿ` of a `2`-cocycle. -/
+instance : Pow (TwoCocycle K L) ℕ where
+  pow c n := ⟨fun σ τ ↦ c.toFun σ τ ^ n, fun σ τ ρ ↦ by
+    rw [← mul_pow, c.isMulCocycle₂ σ τ ρ, mul_pow, smul_pow']⟩
+
+/-- The pointwise integer power `cⁿ(σ, τ) = c(σ, τ)ⁿ` of a `2`-cocycle. -/
+instance : Pow (TwoCocycle K L) ℤ where
+  pow c n := ⟨fun σ τ ↦ c.toFun σ τ ^ n, fun σ τ ρ ↦ by
+    rw [← mul_zpow, c.isMulCocycle₂ σ τ ρ, mul_zpow, smul_zpow']⟩
+
+/-- The trivial `2`-cocycle is constantly `1`. -/
+@[simp]
+theorem toFun_one (σ τ : L ≃ₐ[K] L) : (1 : TwoCocycle K L).toFun σ τ = 1 :=
+  rfl
+
+/-- Multiplication of `2`-cocycles is pointwise multiplication. -/
+@[simp]
+theorem toFun_mul (d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L) :
+    (c * d).toFun σ τ = c.toFun σ τ * d.toFun σ τ :=
+  rfl
+
+/-- Inversion of `2`-cocycles is pointwise inversion. -/
+@[simp]
+theorem toFun_inv (σ τ : L ≃ₐ[K] L) : c⁻¹.toFun σ τ = (c.toFun σ τ)⁻¹ :=
+  rfl
+
+/-- Division of `2`-cocycles is pointwise division. -/
+@[simp]
+theorem toFun_div (d : TwoCocycle K L) (σ τ : L ≃ₐ[K] L) :
+    (c / d).toFun σ τ = c.toFun σ τ / d.toFun σ τ :=
+  rfl
+
+/-- Powers of `2`-cocycles are pointwise powers. -/
+@[simp]
+theorem toFun_pow (n : ℕ) (σ τ : L ≃ₐ[K] L) : (c ^ n).toFun σ τ = c.toFun σ τ ^ n :=
+  rfl
+
+/-- Integer powers of `2`-cocycles are pointwise integer powers. -/
+@[simp]
+theorem toFun_zpow (n : ℤ) (σ τ : L ≃ₐ[K] L) : (c ^ n).toFun σ τ = c.toFun σ τ ^ n :=
+  rfl
+
+/-- The `2`-cocycles form a commutative group under pointwise multiplication, the group of
+`2`-cocycles whose quotient by coboundaries is `H²(Aut_K(L), Lˣ)`. -/
+instance : CommGroup (TwoCocycle K L) :=
+  Function.Injective.commGroup TwoCocycle.toFun (fun _ _ h ↦ TwoCocycle.ext h) rfl
+    (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
 section Comap
 
