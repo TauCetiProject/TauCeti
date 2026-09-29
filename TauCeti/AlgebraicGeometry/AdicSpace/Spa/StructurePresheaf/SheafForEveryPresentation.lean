@@ -25,6 +25,7 @@ completed rational localizations, and `presentationLimitRationalIso_inv_comp_map
 identifies its restrictions with the canonical comparison maps. These results do not yet give a
 presheaf isomorphism across all opens or independence of the compatible pair of definition.
 Relating this predicate to Wedhorn's sheafiness requires that comparison.
+It supplies a condition for the later pair-level predicate without assuming that comparison.
 
 ## References
 
