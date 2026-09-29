@@ -81,6 +81,20 @@ theorem linearIndependent_smul_integerRing {α : 𝒪[L]}
     simp [Algebra.algebraMap_ofSubsemiring_apply]
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- The linear equivalence underlying `spanOrbitEquiv` sends `r σ ∈ 𝒪[K][G]` to `r • σ α`. Its last
+factor `LinearEquiv.ofEq` identifies `span 𝒪[K] (Set.range (· • α))`, the target of
+`LinearIndependent.linearCombinationEquiv`, with the span of the orbit of `α`. -/
+private theorem coe_linearCombinationEquiv_coeffLinearEquiv_single {α : 𝒪[L]}
+    (h : LinearIndependent K fun σ : L ≃ₐ[K] L ↦ σ (α : L)) (σ : L ≃ₐ[K] L) (r : 𝒪[K]) :
+    (((MonoidAlgebra.coeffLinearEquiv 𝒪[K]).trans
+      ((linearIndependent_smul_integerRing h).linearCombinationEquiv.trans
+        (.ofEq _ (span 𝒪[K] (orbit (L ≃ₐ[K] L) α)) (by rw [orbit]))) (MonoidAlgebra.single σ r)) :
+      𝒪[L]) = r • σ • α := by
+  rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
+    MonoidAlgebra.coeffLinearEquiv_apply, MonoidAlgebra.coeff_single,
+    LinearIndependent.linearCombinationEquiv_apply_coe, Finsupp.linearCombination_single]
+
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 /-- **The span of the orbit is free of rank one over the group ring.** If the conjugates of
 `α ∈ 𝒪[L]` are linearly independent over `K`, then `∑ σ, r_σ σ ↦ ∑ σ, r_σ • σ α` is an
 isomorphism from the group ring `𝒪[K][G]`, with `G` acting by left multiplication, onto the
@@ -93,20 +107,16 @@ noncomputable def spanOrbitEquiv {α : 𝒪[L]}
         fun σ ↦ (Module.End.mem_invtSubmodule _).1 <|
           Module.End.span_orbit_mem_invtSubmodule _ α σ) :=
   .mk ((MonoidAlgebra.coeffLinearEquiv 𝒪[K]).trans
-    (linearIndependent_smul_integerRing h).linearCombinationEquiv) fun τ ↦ by
+    ((linearIndependent_smul_integerRing h).linearCombinationEquiv.trans
+      (.ofEq _ _ (by rw [orbit])))) fun τ ↦ by
     ext σ : 2
     refine Subtype.ext ?_
     simp only [LinearMap.coe_comp, Function.comp_apply, MonoidAlgebra.lsingle_apply,
       Representation.ofMulAction_single, smul_eq_mul, LinearEquiv.coe_coe,
       Representation.subrepresentation_apply, LinearMap.coe_restrict_apply,
       Representation.ofDistribMulAction_apply_apply]
-    -- `orbit G α` is by definition `Set.range (· • α)`, so `linearCombinationEquiv` is used here
-    -- at the type `span 𝒪[K] (orbit G α)` only up to this unfolding, and `simp` cannot apply
-    -- `LinearIndependent.linearCombinationEquiv_apply_coe` across it. Its value on a group-ring
-    -- element is (by `MonoidAlgebra.coeffLinearEquiv_apply` and that lemma, both `rfl`) the linear
-    -- combination of the conjugates of `α` with the coefficients of the element; state it so.
-    change Finsupp.linearCombination 𝒪[K] (fun σ : L ≃ₐ[K] L ↦ σ • α) (.single (τ * σ) 1) =
-      τ • Finsupp.linearCombination 𝒪[K] (fun σ : L ≃ₐ[K] L ↦ σ • α) (.single σ 1)
+    rw [coe_linearCombinationEquiv_coeffLinearEquiv_single h,
+      coe_linearCombinationEquiv_coeffLinearEquiv_single h]
     simp [mul_smul]
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
@@ -115,10 +125,8 @@ omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 theorem coe_spanOrbitEquiv_single {α : 𝒪[L]}
     (h : LinearIndependent K fun σ : L ≃ₐ[K] L ↦ σ (α : L)) (σ : L ≃ₐ[K] L) (r : 𝒪[K]) :
     (spanOrbitEquiv h (MonoidAlgebra.single σ r) : 𝒪[L]) = r • σ • α := by
-  -- As in `spanOrbitEquiv`: the underlying map is, up to unfolding `orbit` to `Set.range`, the
-  -- composite of `MonoidAlgebra.coeffLinearEquiv` and `Finsupp.linearCombination`.
-  change Finsupp.linearCombination 𝒪[K] (fun σ : L ≃ₐ[K] L ↦ σ • α) (.single σ r) = _
-  simp
+  rw [spanOrbitEquiv, Representation.Equiv.mk_apply,
+    coe_linearCombinationEquiv_coeffLinearEquiv_single h]
 
 variable [IsGalois K L]
 
