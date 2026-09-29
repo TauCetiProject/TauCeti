@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
-public import TauCeti.Topology.Algebra.Group.Profinite.Section
+public import TauCeti.Topology.Algebra.Group.Quotient.Section
 
 import TauCeti.GroupTheory.Coset.Basic
 
@@ -156,6 +156,35 @@ private theorem resolutionHomotopy_succ_apply (n : ℕ) (F : (resolutionX X (n +
     resolutionHomotopy X w (n + 1) F x = F (w x) x - resolutionHomotopy X w n (F (w x)) :=
   rfl
 
+/-- Pointwise expansion of the successor homotopy step, before applying the induction hypothesis. -/
+private theorem resolutionHomotopy_succ_step (n : ℕ) (F : (resolutionX X (n + 2)).V)
+    (x : G) :
+    (d X (n + 1)).hom (resolutionHomotopy X w (n + 1) F) x +
+        resolutionHomotopy X w (n + 2) ((d X (n + 2)).hom F) x =
+      (d X n).hom (resolutionHomotopy X w n (F (w x))) +
+        resolutionHomotopy X w (n + 1) ((d X (n + 1)).hom (F (w x))) +
+        (F x - F (w x)) := by
+  rw [hom_d_succ_apply_apply, resolutionHomotopy_succ_apply,
+    resolutionHomotopy_succ_apply, hom_d_succ_apply_apply,
+    ContinuousMap.sub_apply, hom_d_succ_apply_apply, map_sub, map_sub]
+  abel
+
+/-- Pointwise expansion of the degree-zero homotopy step. -/
+private theorem resolutionHomotopy_zero_step (F : (resolutionX X (0 + 1)).V) :
+    (d X 0).hom (resolutionHomotopy X w 0 F) +
+        resolutionHomotopy X w (0 + 1) ((d X (0 + 1)).hom F) =
+      F - resolutionPullback X w (0 + 1)
+        ((resolutionMap (ContinuousMonoidHom.subgroupSubtype U)
+          (𝟙 (TopRep.res (U.subtype : U →* G) X)) (0 + 1)).hom F) := by
+  refine ContinuousMap.ext fun x ↦ ?_
+  rw [resolutionHomotopy_zero, zero_apply, map_zero, zero_add,
+    resolutionHomotopy_succ_apply, hom_d_succ_apply_apply,
+    resolutionHomotopy_zero, zero_apply, sub_zero,
+    ContinuousMap.sub_apply, ContinuousMap.sub_apply, resolutionPullback_succ_apply,
+    resolutionMap_subgroupSubtype_succ_apply, resolutionPullback_zero_apply,
+    resolutionMap_subgroupSubtype_zero_apply]
+  simp [d_zero]
+
 /-- **The homotopy identity** `d ∘ h + h ∘ d = id - w^* ∘ res_U` on the coinduced resolution. -/
 private theorem d_resolutionHomotopy_add (n : ℕ) (F : (resolutionX X (n + 1)).V) :
     (d X n).hom (resolutionHomotopy X w n F) +
@@ -164,24 +193,14 @@ private theorem d_resolutionHomotopy_add (n : ℕ) (F : (resolutionX X (n + 1)).
         (𝟙 (TopRep.res (U.subtype : U →* G) X)) (n + 1)).hom F) := by
   induction n with
   | zero =>
-    refine ContinuousMap.ext fun x ↦ ?_
-    rw [resolutionHomotopy_zero, zero_apply, map_zero, zero_add, resolutionHomotopy_succ_apply,
-      hom_d_succ_apply_apply, resolutionHomotopy_zero, zero_apply, sub_zero,
-      ContinuousMap.sub_apply, ContinuousMap.sub_apply, resolutionPullback_succ_apply,
-      resolutionMap_subgroupSubtype_succ_apply, resolutionPullback_zero_apply,
-      resolutionMap_subgroupSubtype_zero_apply]
-    simp [d_zero]
+    exact resolutionHomotopy_zero_step X w F
   | succ n ih =>
     refine ContinuousMap.ext fun x ↦ ?_
-    rw [ContinuousMap.add_apply, ContinuousMap.sub_apply, hom_d_succ_apply_apply,
-      resolutionHomotopy_succ_apply, resolutionHomotopy_succ_apply, hom_d_succ_apply_apply,
-      ContinuousMap.sub_apply, hom_d_succ_apply_apply, map_sub, map_sub,
+    rw [ContinuousMap.add_apply, ContinuousMap.sub_apply,
       resolutionPullback_succ_apply, resolutionMap_subgroupSubtype_succ_apply]
-    -- collect the terms of the homotopy identity at `F (w x)` one level down
-    calc _ = (d X n).hom (resolutionHomotopy X w n (F (w x))) +
-          resolutionHomotopy X w (n + 1) ((d X (n + 1)).hom (F (w x))) + (F x - F (w x)) := by
-          abel
-      _ = _ := by rw [ih]; abel
+    rw [resolutionHomotopy_succ_step]
+    rw [ih]
+    abel
 
 end Homotopy
 
@@ -276,7 +295,7 @@ If the restriction to `U` of a class `x ∈ Hⁿ⁺¹(G, X)` vanishes, then `[G 
 theorem index_nsmul_eq_zero_of_res_eq_zero (hU : IsOpen (U : Set G)) [U.FiniteIndex] {n : ℕ}
     {x : continuousCohomology (n + 1) X} (hx : (res U X (n + 1)).hom x = 0) :
     U.index • x = 0 := by
-  obtain ⟨w, -, hwc, -, -, hw, -⟩ := exists_continuous_rightCosetFactorization_of_isOpen U hU
+  obtain ⟨w, -, hwc, -, -, hw, -⟩ := U.exists_continuous_rightCosetFactorization_of_isOpen hU
   set K := homogeneousCochains X
   set KU := homogeneousCochains (TopRep.res (U.subtype : U →* G) X)
   set φ := cochainsMap (ContinuousMonoidHom.subgroupSubtype U)

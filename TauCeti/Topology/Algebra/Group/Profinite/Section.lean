@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Complement
-public import Mathlib.Topology.Algebra.Group.Quotient
+public import TauCeti.Topology.Algebra.Group.Quotient.Section
 
 import Mathlib.Order.Zorn
 import Mathlib.Tactic.Group
@@ -42,8 +42,6 @@ intersection of a chain of such `C`'s still meets every coset.
 * `TauCeti.exists_continuous_rightCosetFactorization`: the right-coset form, `g = w g * r g` with
   `w g ∈ H` and `r g` depending only on the right coset `H * g`, both continuous, and normalized
   by `w 1 = 1`.
-* `TauCeti.exists_continuous_rightCosetFactorization_of_isOpen`: the same factorization, without
-  the normalization, for an open subgroup of an arbitrary topological group.
 
 ## Implementation notes
 
@@ -51,7 +49,8 @@ The nearby false statement is that `G ⧸ H` is a projective object, so that *ev
 surjection onto it splits: profinite spaces are projective only when they are extremally
 disconnected, and the section below genuinely uses the group structure of the fibres. None of this
 is needed when `H` is *open*: then `G ⧸ H` is discrete and `Quotient.out` is already continuous,
-which is how `TauCeti.exists_continuous_rightCosetFactorization_of_isOpen` is proved.
+which is how `Subgroup.exists_continuous_rightCosetFactorization_of_isOpen` is proved in the
+general quotient section module.
 
 ## References
 
@@ -263,35 +262,6 @@ theorem exists_continuous_section_of_le [CompactSpace G] [TotallyDisconnectedSpa
   exact ⟨fun x => QuotientGroup.mk (t x), QuotientGroup.continuous_mk.comp hcont,
     fun x => by rw [Subgroup.quotientMapOfLE_apply_mk]; exact hsec x, by simp [h1]⟩
 
-/-- The right-coset factorization attached to a continuous section `s` of `G → G ⧸ H`:
-`w g = g * s ⟦g⁻¹⟧ ∈ H` and `r g = (s ⟦g⁻¹⟧)⁻¹`, with `w 1 = s ⟦1⟧`. Inverting exchanges left and
-right cosets, so `r g` lies in `H * g` and depends only on that right coset. -/
-private theorem exists_continuous_rightCosetFactorization_of_section (H : Subgroup G)
-    (s : G ⧸ H → G) (hs_cont : Continuous s)
-    (hs_sec : ∀ x : G ⧸ H, (QuotientGroup.mk (s x) : G ⧸ H) = x) :
-    ∃ (w : G → H) (r : G → G), Continuous w ∧ Continuous r ∧
-      (∀ g : G, (w g : G) * r g = g) ∧
-      (∀ (h : H) (g : G), w ((h : G) * g) = h * w g) ∧
-      (∀ (h : H) (g : G), r ((h : G) * g) = r g) ∧ (w 1 : G) = s (QuotientGroup.mk 1) := by
-  have hcoset : ∀ (h : H) (g : G),
-      (QuotientGroup.mk (((h : G) * g)⁻¹) : G ⧸ H) = QuotientGroup.mk g⁻¹ := by
-    intro h g
-    rw [QuotientGroup.eq]
-    simp [mul_assoc, h.2]
-  have hmem : ∀ g : G, g * s (QuotientGroup.mk g⁻¹) ∈ H := by
-    intro g
-    have h := hs_sec (QuotientGroup.mk g⁻¹)
-    rw [QuotientGroup.eq] at h
-    simpa using H.inv_mem h
-  refine ⟨fun g => ⟨g * s (QuotientGroup.mk g⁻¹), hmem g⟩,
-    fun g => (s (QuotientGroup.mk g⁻¹))⁻¹, ?_, ?_, fun g => by simp, fun h g => ?_, fun h g => ?_,
-    by simp⟩
-  · exact continuous_induced_rng.2 (continuous_id.mul
-      (hs_cont.comp (QuotientGroup.continuous_mk.comp continuous_inv)))
-  · exact (hs_cont.comp (QuotientGroup.continuous_mk.comp continuous_inv)).inv
-  · exact Subtype.ext (by simp only [hcoset, mul_assoc, Subgroup.coe_mul])
-  · simp only [hcoset]
-
 /-- **The right-coset form of the continuous section.** For a closed subgroup `H` of a profinite
 group `G`, every `g : G` factors as `g = w g * r g` with `w g ∈ H`, where `r g` is a representative
 of the *right* coset `H * g` depending only on that coset and `w` is the resulting `H`-valued
@@ -311,25 +281,7 @@ theorem exists_continuous_rightCosetFactorization [CompactSpace G] [TotallyDisco
       (∀ (h : H) (g : G), r ((h : G) * g) = r g) ∧ w 1 = 1 := by
   obtain ⟨s, hs_cont, hs_sec, hs_one⟩ := exists_continuous_section H hH
   obtain ⟨w, r, hw, hr, hwr, hwh, hrh, hw1⟩ :=
-    exists_continuous_rightCosetFactorization_of_section H s hs_cont hs_sec
+    H.exists_continuous_rightCosetFactorization_of_section s hs_cont hs_sec
   exact ⟨w, r, hw, hr, hwr, hwh, hrh, Subtype.ext (hw1.trans hs_one)⟩
-
-/-- **The right-coset factorization for an open subgroup.** For an open subgroup `H` of a
-topological group `G`, every `g : G` factors as `g = w g * r g` with `w g ∈ H`, where `r g` depends
-only on the right coset `H * g`, and both `w` and `r` are continuous. No compactness is needed: the
-coset space `G ⧸ H` is discrete, so the choice of representatives `Quotient.out` is already a
-continuous section. Unlike `TauCeti.exists_continuous_rightCosetFactorization`, the factorization
-is not normalized at `1`. -/
-theorem exists_continuous_rightCosetFactorization_of_isOpen (H : Subgroup G)
-    (hH : IsOpen (H : Set G)) :
-    ∃ (w : G → H) (r : G → G), Continuous w ∧ Continuous r ∧
-      (∀ g : G, (w g : G) * r g = g) ∧
-      (∀ (h : H) (g : G), w ((h : G) * g) = h * w g) ∧
-      (∀ (h : H) (g : G), r ((h : G) * g) = r g) := by
-  have := QuotientGroup.discreteTopology hH
-  obtain ⟨w, r, hw, hr, hwr, hwh, hrh, -⟩ :=
-    exists_continuous_rightCosetFactorization_of_section H Quotient.out
-      continuous_of_discreteTopology QuotientGroup.out_eq'
-  exact ⟨w, r, hw, hr, hwr, hwh, hrh⟩
 
 end TauCeti
