@@ -10,7 +10,7 @@ public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
 public import TauCeti.KnotTheory.Grid.Stabilization.Map
 
 /-!
-# Stabilization invariance reduced to the fully blocked comparison
+# Stabilization invariance reduced to a comparison modulo the variables
 
 Let `G` be a grid diagram of size `n`, let `s` be a column, and let
 `G' = G.stabilizeX s.castSucc (G.X s).castSucc s` be the stabilization splitting the `X`-marking
@@ -30,15 +30,16 @@ quasi-isomorphism if its reduction modulo the variables `V₀, …, V_n`,
 `LinearMap.constantCoeffReduction`, induces a bijection between the homologies of the reductions
 of the two differentials (`quasiIso_stabilizeXOffCenterToCenterHom_of_bijective`).
 
-The reductions are the fully blocked objects of Ozsváth--Stipsicz--Szabó. The reduction of the
-center differential counts the fully blocked rectangles of `G`, so the reduced center complex is
-the fully blocked complex of `G`
+The two reduced differentials give `R`-linear fully blocked rectangle-count complexes. The
+reduction of the center differential counts the fully blocked rectangles of `G`, so over
+`R = ZMod 2` its complex agrees with the library's fully blocked complex of `G`
 (`constantCoeffReduction_stabilizeXCenterDifferential_single_apply`). The reduction of the
 off-center differential counts the fully blocked rectangles of `G'` between off-center states
 (`constantCoeffReduction_stabilizeXOffCenterDifferential_single_apply`). The reduction of `H_I^N`
-counts the empty rectangles from an off-center state to a center state whose only marking is the
-`X`-marking `X₂` (`constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply`). That this
-fully blocked comparison induces a bijection on homology is the combinatorial content of
+counts the empty rectangles from an off-center state to a center state with no `O`-marking and
+whose only `X`-marking is `X₂`
+(`constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply`). That this
+reduced comparison induces a bijection on homology is the combinatorial content of
 stabilization invariance, and is not proved here.
 
 ## Main results
@@ -50,7 +51,8 @@ stabilization invariance, and is not proved here.
 * `TauCeti.GridDiagram.constantCoeffReduction_stabilizeXCenterDifferential_single_apply`,
   `TauCeti.GridDiagram.constantCoeffReduction_stabilizeXOffCenterDifferential_single_apply` and
   `TauCeti.GridDiagram.constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply`: the
-  reductions modulo the variables count fully blocked rectangles.
+  differential reductions count fully blocked rectangles; the map reduction counts rectangles
+  with no `O`-markings and exactly the designated `X`-marking.
 * `TauCeti.GridDiagram.quasiIso_stabilizeXOffCenterToCenterHom_of_bijective`: `H_I^N` is a
   quasi-isomorphism if its reduction modulo the variables induces a bijection on homology.
 * `TauCeti.GridDiagram.quasiIso_stabilizeXMap_of_bijective`: under the same hypothesis the
@@ -122,7 +124,7 @@ end Grading
 
 section Reduction
 
-variable (R : Type*) [CommRing R]
+variable (R : Type*) [CommSemiring R]
 
 /-- The reduction of the center differential modulo the variables counts the fully blocked
 rectangles of `G`: over `ZMod 2` it is the fully blocked differential of `G`. -/
@@ -169,6 +171,12 @@ theorem constantCoeffReduction_stabilizeXOffCenterDifferential_comp_self :
         (G.stabilizeXOffCenterDifferential s R).constantCoeffReduction = 0 := by
   rw [← LinearMap.constantCoeffReduction_comp, stabilizeXOffCenterDifferential_comp_self_eq_zero,
     LinearMap.constantCoeffReduction_zero]
+
+end Reduction
+
+section ReductionRing
+
+variable (R : Type*) [CommRing R] [CharP R 2]
 
 /-- The reduction of `H_I^N` is a chain map between the reductions of the two differentials. -/
 theorem constantCoeffReduction_stabilizeXOffCenterToCenter_comp :
@@ -232,9 +240,10 @@ private noncomputable def stabilizeXOffCenterToCenterHomArrowIso :
     simp [stabilizeXOffCenterComplexIso, stabilizeXCenterComplexIso,
       stabilizeXOffCenterToCenterHom'])
 
-/-- **`H_I^N` is a quasi-isomorphism if its fully blocked reduction is.** If the reduction of
+/-- **`H_I^N` is a quasi-isomorphism if its reduced comparison is.** If the reduction of
 `H_I^N` modulo the variables induces a bijection from the homology of the reduced off-center
-complex to the homology of the reduced center complex, the fully blocked grid homology of `G`, then
+complex to the homology of the reduced center complex, the `R`-linear fully blocked
+rectangle-count homology of `G` (the library's fully blocked homology when `R = ZMod 2`), then
 `H_I^N` is a quasi-isomorphism of complexes over `R[V₀, …, V_n]`. -/
 theorem quasiIso_stabilizeXOffCenterToCenterHom_of_bijective
     (h : Function.Bijective (LinearMap.homologyMap
@@ -268,7 +277,7 @@ theorem quasiIso_stabilizeXOffCenterToCenterHom_of_bijective
     (G.stabilizeXCenterDifferential_comp_self_eq_zero s R)
     (G.stabilizeXOffCenterToCenter_comp_offCenterDifferential s R) h
 
-/-- **The stabilization map is a quasi-isomorphism if the fully blocked comparison is.** Under the
+/-- **The stabilization map is a quasi-isomorphism if the reduced comparison is.** Under the
 hypothesis of `quasiIso_stabilizeXOffCenterToCenterHom_of_bijective`, the comparison map
 `GC⁻(G') ⟶ GC⁻(G)` of complexes over `R[V₀, …, V_{n-1}]` is a quasi-isomorphism. -/
 theorem quasiIso_stabilizeXMap_of_bijective
@@ -281,7 +290,7 @@ theorem quasiIso_stabilizeXMap_of_bijective
   have := G.quasiIso_stabilizeXOffCenterToCenterHom_of_bijective s R h
   G.quasiIso_stabilizeXMap s R
 
-end Reduction
+end ReductionRing
 
 end GridDiagram
 

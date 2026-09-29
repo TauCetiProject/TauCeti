@@ -355,6 +355,7 @@ theorem constantCoeffReduction_single_apply
 /-- **The reduction commutes with setting the variables to zero.** Applying
 `constantCoeffReduction f` to the constant coefficients of `x` gives the constant coefficients of
 `f x`. -/
+@[simp]
 theorem constantCoeffReduction_mapRange_constantCoeff
     (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R))
     (x : ι →₀ MvPolynomial σ R) :
@@ -371,6 +372,7 @@ theorem constantCoeffReduction_mapRange_constantCoeff
       ← Finsupp.smul_single_one i p, map_smul, Finsupp.smul_apply, smul_eq_mul, map_mul]
 
 /-- The reduction of a composite is the composite of the reductions. -/
+@[simp]
 theorem constantCoeffReduction_comp
     (g : (κ →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (μ →₀ MvPolynomial σ R))
     (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R] (κ →₀ MvPolynomial σ R)) :
@@ -378,6 +380,23 @@ theorem constantCoeffReduction_comp
   eq_of_mapRange_constantCoeff _ _ (constantCoeffReduction_mapRange_constantCoeff _)
     (comp_apply_mapRange_constantCoeff g f (constantCoeffReduction_mapRange_constantCoeff f)
       (constantCoeffReduction_mapRange_constantCoeff g)) rfl
+
+/-- The identity map reduces to the identity map. -/
+@[simp]
+theorem constantCoeffReduction_id :
+    (LinearMap.id : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (ι →₀ MvPolynomial σ R)).constantCoeffReduction = LinearMap.id := by
+  exact eq_of_mapRange_constantCoeff _ _
+    (constantCoeffReduction_mapRange_constantCoeff _) (fun _ ↦ rfl) rfl
+
+/-- Reduction commutes with addition of linear maps. -/
+@[simp]
+theorem constantCoeffReduction_add
+    (f g : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (κ →₀ MvPolynomial σ R)) :
+    (f + g).constantCoeffReduction = f.constantCoeffReduction + g.constantCoeffReduction := by
+  ext i c
+  simp [mul_add]
 
 /-- The reduction of the zero map is zero. -/
 @[simp]
@@ -388,6 +407,30 @@ theorem constantCoeffReduction_zero :
   simp
 
 end Reduction
+
+section ReductionRing
+
+variable [CommRing R]
+
+/-- Reduction commutes with negation of linear maps. -/
+@[simp]
+theorem constantCoeffReduction_neg
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (κ →₀ MvPolynomial σ R)) :
+    (-f).constantCoeffReduction = -f.constantCoeffReduction := by
+  ext i c
+  simp
+
+/-- Reduction commutes with subtraction of linear maps. -/
+@[simp]
+theorem constantCoeffReduction_sub
+    (f g : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (κ →₀ MvPolynomial σ R)) :
+    (f - g).constantCoeffReduction = f.constantCoeffReduction - g.constantCoeffReduction := by
+  ext i c
+  simp [mul_sub]
+
+end ReductionRing
 
 section QuasiIso
 

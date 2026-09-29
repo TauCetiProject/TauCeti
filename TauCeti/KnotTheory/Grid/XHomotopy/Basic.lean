@@ -113,8 +113,8 @@ theorem XHomotopyCoefficient_def (k : Fin n) (x y : GridState n) :
   rw [XHomotopyCoefficient]
 
 /-- The constant term of a matrix coefficient of `H_k` counts the contributing rectangles that
-carry no `O`-marking either: setting every variable to zero leaves the fully blocked count of the
-empty rectangles whose only marking is `X_k`. -/
+carry no `O`-marking either: setting every variable to zero leaves the count of the empty
+rectangles whose only marking is `X_k`. -/
 theorem constantCoeff_XHomotopyCoefficient (k : Fin n) (x y : GridState n) :
     MvPolynomial.constantCoeff (G.XHomotopyCoefficient R k x y) =
       (((G.XHomotopyRectangles k x y).filter fun r =>
