@@ -106,6 +106,7 @@ attribute [local instance] Fintype.ofFinite
 
 /-- The inverse dimension-vector equivalence expands an integral vertex vector in the classes of
 the vertex simples. -/
+@[simp]
 theorem pathAlgebraDimensionVectorK0Equiv_symm_apply (d : Q → ℤ) :
     (pathAlgebraDimensionVectorK0Equiv k Q).symm d =
       ∑ i, d i • ExactK0.of (vertexSimpleModuleFG k Q i) := by
