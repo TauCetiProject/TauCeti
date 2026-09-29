@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `Matrix.symplecticGroup`, `Matrix.J`, and the `Matrix.SymplecticGroup` lemmas occur in the
+-- `Matrix.symplecticGroup`, `Matrix.J`, and the `SymplecticGroup` lemmas occur in the
 -- statements below.
 public import Mathlib.LinearAlgebra.SymplecticGroup
 -- This module supplies general-linear-group reindexing and re-exports the `GL` notation and its
@@ -29,9 +29,9 @@ the underlying matrix in `Matrix.symplecticGroup l R`, so the defining condition
 and `Mᵀ J M = J` transfer directly, and `TauCeti.GLSymplectic.mulEquivSymplecticGroup` identifies
 the subgroup with Mathlib's group so that neither view is reproved from the other. Invertibility
 costs nothing: a symplectic matrix has unit determinant
-(`Matrix.SymplecticGroup.symplectic_det`), which is what makes the two carriers agree, and
+(`SymplecticGroup.symplectic_det`), which is what makes the two carriers agree, and
 closure under the unit inverse is Mathlib's computation `M⁻¹ = (-J) Mᵀ J`
-(`Matrix.SymplecticGroup.inv_eq_symplectic_inv`) transported across `Matrix.coe_units_inv`.
+(`SymplecticGroup.inv_eq_symplectic_inv`) transported across `Matrix.coe_units_inv`.
 
 Everything works over an arbitrary commutative ring and an arbitrary finite index type, including
 the empty index type and the zero ring; there is no nontriviality, rank, or characteristic
@@ -71,8 +71,8 @@ symplectic coordinate Hopf algebra and group scheme live in
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §2.3 and §24.6, where `Sp₂ₙ` is introduced as the
-  subgroup of `GL₂ₙ` preserving a nondegenerate alternating form.
+* J. S. Milne, *Algebraic Groups* (2017), 2.10(c), where `Sp₂ₙ` is introduced as the subgroup
+  of `GL₂ₙ` preserving a nondegenerate alternating form.
 
 The identification with Mathlib's `Matrix.symplecticGroup` is routine and is not adapted from the
 reference.
@@ -149,7 +149,7 @@ theorem fromBlocks_diagonal_mem (A D : Matrix l l R) (hAD : Aᵀ * D = 1) :
 variable (l R)
 
 /-- A symplectic matrix, viewed in the general linear group through its unit determinant
-(`Matrix.SymplecticGroup.symplectic_det`). -/
+(`SymplecticGroup.symplectic_det`). -/
 noncomputable def ofSymplecticGroup (S : Matrix.symplecticGroup l R) : GL (l ⊕ l) R :=
   Matrix.GeneralLinearGroup.mk'' _ (SymplecticGroup.symplectic_det S.2)
 
@@ -842,8 +842,8 @@ theorem negativeSumShortRootHom_apply {i j : Fin m} (hij : i ≠ j) (c : Multipl
   rw [negativeSumShortRootUnit]
   rw [ofAdd_toAdd]
 
-/-- **The difference short-root element depends only on its index pair.** Two proofs that the
-indices differ, and two spellings of the same indices, give the same element. -/
+/-- **For a fixed parameter, the difference short-root element depends only on its index pair.**
+Two proofs that the indices differ, and two spellings of the same indices, give the same element. -/
 theorem differenceShortRootUnit_congr {i j i' j' : Fin m} (hij : i ≠ j) (hij' : i' ≠ j')
     (hi : i = i') (hj : j = j') (c : R) :
     differenceShortRootUnit hij c = differenceShortRootUnit hij' c := by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.GeneratedClosedSubgroups
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers
 

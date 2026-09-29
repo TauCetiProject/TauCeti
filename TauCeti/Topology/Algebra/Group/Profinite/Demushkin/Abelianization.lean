@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Torsion
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift

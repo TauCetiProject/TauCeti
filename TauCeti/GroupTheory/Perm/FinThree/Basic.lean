@@ -9,12 +9,18 @@ public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Set.Card
+public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.Complement
+public import Mathlib.GroupTheory.Exponent
 public import Mathlib.GroupTheory.FixedPointFree
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import TauCeti.GroupTheory.TrivialIntersection
+-- Non-public: `alternatingGroup.commutator_perm_le` bounds the commutator subgroup, and the cyclic
+-- group API computes the exponent of the abelianization.
+import Mathlib.GroupTheory.SpecificGroups.Alternating.Centralizer
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!
 # The two subgroups of the symmetric group on three points
@@ -25,10 +31,11 @@ of the two other points, which are `a + 1` and `a + 2` whichever `a` is; this fi
 stabilizer -- by membership, as a set, as a cyclic subgroup and by its order -- and records that
 it is not normal, conjugating its transposition by one that moves `a` off the stabilizer. The
 alternating subgroup `A₃` is the other one, and what is recorded of it here is that it has order
-three and that nothing outside it centralizes it, so that `S₃` is as far from abelian along `A₃`
-as it could be.  The two sit together as a semidirect decomposition `S₃ = A₃ ⋊ ⟨(a+1 a+2)⟩` whose
-complement acts on `A₃` without nonidentity fixed points, which exhibits the stabilizer as a
-Frobenius complement and `S₃` as the smallest Frobenius group.
+three, that nothing outside it centralizes it, and that it is the commutator subgroup, so that
+`S₃` is as far from abelian along `A₃` as it could be and its abelianization has order two. The
+two sit together as a semidirect decomposition `S₃ = A₃ ⋊ ⟨(a+1 a+2)⟩` whose complement acts on
+`A₃` without nonidentity fixed points, which exhibits the stabilizer as a Frobenius complement and
+`S₃` as the smallest Frobenius group.
 
 All the facts about `Fin 3` that the arguments need are settled by `decide` over the six
 permutations.
@@ -49,6 +56,10 @@ permutations.
 * `TauCeti.sign_mul_card_fixedPoints_fin_three`: the ring-valued form of that disjunction, the
   sign times the number of fixed points as their sum less one.
 * `TauCeti.card_alternatingGroup_fin_three`: the alternating subgroup has order three.
+* `TauCeti.commutator_perm_fin_three_eq_alternatingGroup`: the commutator subgroup of `S₃` is `A₃`.
+* `TauCeti.card_abelianization_perm_fin_three` and
+  `TauCeti.exponent_abelianization_perm_fin_three`: the abelianization of `S₃` has order two and
+  exponent two.
 * `TauCeti.centralizer_alternatingGroup_fin_three_le`: only the alternating subgroup centralizes
   the alternating subgroup.
 * `TauCeti.fixedPointFree_conjNormal_alternatingGroup_fin_three`: a point stabilizer acts on the
@@ -63,6 +74,8 @@ permutations.
 -/
 
 public section
+
+open scoped commutatorElement
 
 namespace Equiv.Perm
 
@@ -167,6 +180,55 @@ theorem sign_mul_card_fixedPoints_fin_three {k : Type*} [NonAssocRing k] (σ : E
 theorem card_alternatingGroup_fin_three : Nat.card (alternatingGroup (Fin 3)) = 3 := by
   rw [nat_card_alternatingGroup, Nat.card_eq_fintype_card, Fintype.card_fin]
   rfl
+
+/-- The three-cycle of `Fin 3` is the commutator of the transposition `(0 1)` with the rotation
+`finRotate 3`: a transposition inverts the rotation, so `t c t⁻¹ c⁻¹ = c⁻¹ * c⁻¹ = c`. -/
+private theorem commutatorElement_swap_finRotate_three :
+    ⁅Equiv.swap (0 : Fin 3) 1, finRotate 3⁆ = finRotate 3 := by
+  decide
+
+/-- **The commutator subgroup of `S₃` is `A₃`.** The commutator subgroup of any permutation group
+lies in the alternating subgroup, and on three points the alternating subgroup consists of the
+identity and the two rotations, each of which is a commutator. -/
+@[simp]
+theorem commutator_perm_fin_three_eq_alternatingGroup :
+    commutator (Equiv.Perm (Fin 3)) = alternatingGroup (Fin 3) := by
+  refine le_antisymm alternatingGroup.commutator_perm_le fun g hg ↦ ?_
+  have hrot : finRotate 3 ∈ commutator (Equiv.Perm (Fin 3)) :=
+    commutatorElement_swap_finRotate_three ▸
+      Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
+  -- the even permutations of three points are the identity and the two rotations
+  have key : ∀ g : Equiv.Perm (Fin 3), Equiv.Perm.sign g = 1 →
+      g = 1 ∨ g = finRotate 3 ∨ g = (finRotate 3)⁻¹ := by
+    decide
+  rcases key g (Equiv.Perm.mem_alternatingGroup.mp hg) with rfl | rfl | rfl
+  · exact one_mem _
+  · exact hrot
+  · exact inv_mem hrot
+
+/-- **The abelianization of `S₃` has order two.** The commutator subgroup is `A₃`, of order `3`
+inside a group of order `6`. -/
+@[simp]
+theorem card_abelianization_perm_fin_three :
+    Nat.card (Abelianization (Equiv.Perm (Fin 3))) = 2 := by
+  have hcomm : Nat.card (commutator (Equiv.Perm (Fin 3))) = 3 := by
+    rw [commutator_perm_fin_three_eq_alternatingGroup, card_alternatingGroup_fin_three]
+  have hsix : Nat.card (Equiv.Perm (Fin 3)) = 6 := by
+    rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]
+    rfl
+  have hsplit : Nat.card (Equiv.Perm (Fin 3)) =
+      Nat.card (Abelianization (Equiv.Perm (Fin 3))) * Nat.card (commutator (Equiv.Perm (Fin 3))) :=
+    Subgroup.card_eq_card_quotient_mul_card_subgroup _
+  rw [hsix, hcomm] at hsplit
+  omega
+
+/-- **The abelianization of `S₃` has exponent two**: it is a group of prime order two. -/
+@[simp]
+theorem exponent_abelianization_perm_fin_three :
+    Monoid.exponent (Abelianization (Equiv.Perm (Fin 3))) = 2 := by
+  have : IsCyclic (Abelianization (Equiv.Perm (Fin 3))) :=
+    isCyclic_of_prime_card card_abelianization_perm_fin_three
+  rw [IsCyclic.exponent_eq_card, card_abelianization_perm_fin_three]
 
 /-- **Nothing outside `A₃` centralizes `A₃`.** A permutation commuting with every even permutation
 of three points is itself even; equivalently, the centralizer of the alternating subgroup is the

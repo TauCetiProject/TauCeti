@@ -21,13 +21,15 @@ Demushkin groups,
 
 read on any tuple `x : ℕ → H`, are products of `p`-th powers and Labute commutators
 `(x, y) = x⁻¹y⁻¹xy`, so they lie in `λ_1(H)`, the pro-`p` Frattini subgroup; for this membership
-alone the weaker hypotheses `f ≥ 1` and `2 ∣ a` suffice. This file computes
+alone the weaker hypotheses `f ≥ 1` and `2 ∣ a` suffice, and the classes are computed under
+these weaker hypotheses. This file computes
 their classes in `gr_1(H)`: the class of a Labute commutator is the bracket of the degree-zero
 classes, the class of a `p`-th power `g ^ (p c)` is `c` times the `p`-power class `π ⟦g⟧`, and so
 the class of a normal-form word is the sum of the brackets of its commutator pairs, plus
-`(q / p) • π ξ₁` for the first word and `π ξ₁` for the two dyadic words, where `ξ_i ∈ gr_0(H)` is
-the class of `x_i`. The factors `x₂^{2^f}` and `x₃^{2^f}` with `f ≥ 2`, and `x₁^a` with `4 ∣ a`,
-are fourth powers and lie in `λ_2`, so they do not contribute.
+`(q / p) • π ξ₁` for the first word, `π ξ₁ + 2^{f-1} • π ξ₂` for the odd dyadic word and
+`(1 + a/2) • π ξ₁ + 2^{f-1} • π ξ₃` for the even one, where `ξ_i ∈ gr_0(H)` is the class of
+`x_i`. The factors `x₂^{2^f}` and `x₃^{2^f}` with `f ≥ 2`, and `x₁^a` with `4 ∣ a`, are fourth
+powers and lie in `λ_2`, so under the normal-form hypotheses they do not contribute.
 
 These are the classes of the normal-form relators modulo `λ_2` (Labute, Proposition 4); the
 theorem that a relator whose degree-one form is nondegenerate is carried into one of them by a
@@ -151,12 +153,14 @@ theorem gradedMk_demushkinWordNeTwo {q : ℕ} (hq : p ∣ q) (n : ℕ) (x : ℕ 
 
 omit [Fact p.Prime] in
 /-- **The class of the `q = 2`, `n` odd normal-form word** `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`
-in `gr_1`, for `f ≥ 2`: `π ξ₁ + [ξ₂, ξ₃] + ⋯ + [ξ_{n-1}, ξ_n]`. The factor `x₂^{2^f}` is a
-fourth power, hence lies in `λ_2`. -/
-theorem gradedMk_demushkinWordTwoOdd {f : ℕ} (hf : 2 ≤ f) (n : ℕ) (x : ℕ → H) :
+in `gr_1`, for `f ≥ 1`: `π ξ₁ + 2^{f-1} π ξ₂ + [ξ₂, ξ₃] + ⋯ + [ξ_{n-1}, ξ_n]`. The factor
+`x₂^{2^f}` contributes `π ξ₂` when `f = 1` and nothing when `f ≥ 2`, being then a fourth power,
+hence in `λ_2`. -/
+theorem gradedMk_demushkinWordTwoOdd {f : ℕ} (hf : 0 < f) (n : ℕ) (x : ℕ → H) :
     gradedMk 2 H 1 ⟨demushkinWordTwoOdd f n x,
-        demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n x⟩ =
+        demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n x⟩ =
       gradedPow 2 H 0 (gradedMkZero 2 H (x 0)) +
+        2 ^ (f - 1) • gradedPow 2 H 0 (gradedMkZero 2 H (x 1)) +
         ∑ i ∈ Finset.range (n / 2),
           gradedBracket 2 H 0 0 (gradedMkZero 2 H (x (2 * i + 1)))
             (gradedMkZero 2 H (x (2 * i + 2))) := by
@@ -172,32 +176,31 @@ theorem gradedMk_demushkinWordTwoOdd {f : ℕ} (hf : 2 ≤ f) (n : ℕ) (x : ℕ
     rw [pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two]
     refine Subgroup.list_prod_mem _ ?_
     simpa only [List.forall_mem_map] using fun i _ ↦ labuteComm_mem_proPFrattini Nat.prime_two _ _
-  have hf' : 2 ^ f = 2 * (2 * 2 ^ (f - 2)) := by
-    rw [← mul_assoc, ← pow_two, ← pow_add]
+  have hf' : 2 ^ f = 2 * 2 ^ (f - 1) := by
+    rw [← pow_succ']
     congr 1
     omega
-  have : (⟨demushkinWordTwoOdd f n x,
-      demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n x⟩ :
+  have : (⟨demushkinWordTwoOdd f n x, demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n x⟩ :
         pLowerCentralSeries 2 H 1) =
-      ⟨x 0 ^ (2 * 1), h0⟩ * ⟨x 1 ^ (2 * (2 * 2 ^ (f - 2))), hpow _⟩ * ⟨_, h2⟩ :=
+      ⟨x 0 ^ (2 * 1), h0⟩ * ⟨x 1 ^ (2 * 2 ^ (f - 1)), hpow _⟩ * ⟨_, h2⟩ :=
     Subtype.ext (by
       rw [Subgroup.coe_mul, Subgroup.coe_mul]
       exact (demushkinWordTwoOdd_def f n x).trans (by rw [hf']))
   rw [this, gradedMk_mul, gradedMk_mul, gradedMk_pow_mul, gradedMk_pow_mul,
-    gradedMk_list_prod_labuteComm, one_nsmul, mul_nsmul, nsmul_gradedPiece_eq_zero, nsmul_zero,
-    add_zero]
+    gradedMk_list_prod_labuteComm, one_nsmul]
 
 omit [Fact p.Prime] in
 /-- **The class of the `q = 2`, `n` even normal-form word**
-`x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` in `gr_1`, for `4 ∣ a` and `f ≥ 2`:
-`π ξ₁ + [ξ₁, ξ₂] + [ξ₃, ξ₄] + ⋯ + [ξ_{n-1}, ξ_n]`. The factors `x₁^a` and `x₃^{2^f}` are fourth
-powers, hence lie in `λ_2`. -/
-theorem gradedMk_demushkinWordTwoEven {a f : ℕ} (ha : 4 ∣ a) (hf : 2 ≤ f) (n : ℕ) (x : ℕ → H) :
+`x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` in `gr_1`, for `a` even and `f ≥ 1`:
+`(1 + a/2) π ξ₁ + [ξ₁, ξ₂] + 2^{f-1} π ξ₃ + [ξ₃, ξ₄] + ⋯ + [ξ_{n-1}, ξ_n]`. For `4 ∣ a` and `f ≥ 2`
+the factors `x₁^a` and `x₃^{2^f}` are fourth powers, hence in `λ_2`, and the class is
+`π ξ₁ + [ξ₁, ξ₂] + [ξ₃, ξ₄] + ⋯ + [ξ_{n-1}, ξ_n]`. -/
+theorem gradedMk_demushkinWordTwoEven {a f : ℕ} (ha : 2 ∣ a) (hf : 0 < f) (n : ℕ) (x : ℕ → H) :
     gradedMk 2 H 1 ⟨demushkinWordTwoEven a f n x,
-        demushkinWordTwoEven_mem_pLowerCentralSeries_one (dvd_trans (Dvd.intro 2 rfl) ha)
-          (zero_lt_two.trans_le hf) n x⟩ =
-      gradedPow 2 H 0 (gradedMkZero 2 H (x 0)) +
+        demushkinWordTwoEven_mem_pLowerCentralSeries_one ha hf n x⟩ =
+      (1 + a / 2) • gradedPow 2 H 0 (gradedMkZero 2 H (x 0)) +
         gradedBracket 2 H 0 0 (gradedMkZero 2 H (x 0)) (gradedMkZero 2 H (x 1)) +
+        2 ^ (f - 1) • gradedPow 2 H 0 (gradedMkZero 2 H (x 2)) +
         ∑ i ∈ Finset.range (n / 2 - 1),
           gradedBracket 2 H 0 0 (gradedMkZero 2 H (x (2 * i + 2)))
             (gradedMkZero 2 H (x (2 * i + 3))) := by
@@ -214,22 +217,20 @@ theorem gradedMk_demushkinWordTwoEven {a f : ℕ} (ha : 4 ∣ a) (hf : 2 ≤ f) 
     rw [pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two]
     refine Subgroup.list_prod_mem _ ?_
     simpa only [List.forall_mem_map] using fun i _ ↦ labuteComm_mem_proPFrattini Nat.prime_two _ _
-  have hf' : 2 ^ f = 2 * (2 * 2 ^ (f - 2)) := by
-    rw [← mul_assoc, ← pow_two, ← pow_add]
+  have hf' : 2 ^ f = 2 * 2 ^ (f - 1) := by
+    rw [← pow_succ']
     congr 1
     omega
-  have : (⟨demushkinWordTwoEven (4 * b) f n x,
-      demushkinWordTwoEven_mem_pLowerCentralSeries_one (dvd_trans (Dvd.intro 2 rfl) ⟨b, rfl⟩)
-        (zero_lt_two.trans_le hf) n x⟩ : pLowerCentralSeries 2 H 1) =
-      ⟨x 0 ^ (2 * (1 + 2 * b)), hpow _ _⟩ * ⟨labuteComm (x 0) (x 1), hc⟩ *
-        ⟨x 2 ^ (2 * (2 * 2 ^ (f - 2))), hpow _ _⟩ * ⟨_, h2⟩ :=
+  have : (⟨demushkinWordTwoEven (2 * b) f n x,
+      demushkinWordTwoEven_mem_pLowerCentralSeries_one ⟨b, rfl⟩ hf n x⟩ :
+        pLowerCentralSeries 2 H 1) =
+      ⟨x 0 ^ (2 * (1 + b)), hpow _ _⟩ * ⟨labuteComm (x 0) (x 1), hc⟩ *
+        ⟨x 2 ^ (2 * 2 ^ (f - 1)), hpow _ _⟩ * ⟨_, h2⟩ :=
     Subtype.ext (by
-      have hb : 2 + 4 * b = 2 * (1 + 2 * b) := by ring
+      have hb : 2 + 2 * b = 2 * (1 + b) := by ring
       rw [Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_mul]
       exact (demushkinWordTwoEven_def _ _ _ _).trans (by rw [hf', hb]))
   rw [this, gradedMk_mul, gradedMk_mul, gradedMk_mul, gradedMk_pow_mul, gradedMk_pow_mul,
-    gradedMk_labuteComm, gradedMk_list_prod_labuteComm, add_nsmul, one_nsmul, mul_nsmul,
-    nsmul_gradedPiece_eq_zero, nsmul_zero, add_zero, mul_nsmul, nsmul_gradedPiece_eq_zero,
-    nsmul_zero, add_zero]
+    gradedMk_labuteComm, gradedMk_list_prod_labuteComm, Nat.mul_div_cancel_left b two_pos]
 
 end TauCeti

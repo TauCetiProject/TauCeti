@@ -39,7 +39,7 @@ without repeatedly transporting across the definitional equality of trivial repr
 * `TauCeti.trivialFp_ρ_apply_apply`, `TauCeti.smul_trivialFp_V`: the action is trivial.
 * `TauCeti.continuousSMul_trivialFp`: the derived action on the carrier is continuous.
 * `TauCeti.natCard_trivialFp_V`: the `Nat.card` of the carrier is `p`.
-* `TauCeti.nontrivial_cohomFp_zero`: `H⁰(G, 𝔽_p)` is nontrivial.
+* `TauCeti.nontrivial_cohomFp_zero`: `H⁰(G, ZMod p)` is nontrivial.
 * `TauCeti.res_trivialFp`: restriction preserves trivial coefficients on the nose;
   `TauCeti.trivialFpEquiv_eqToHom_res_trivialFp`: the transport along this equality is the identity
   on the underlying values.
@@ -160,8 +160,8 @@ theorem continuousSMul_trivialFp : ContinuousSMul G (trivialFp p G).V :=
 /-- Continuous cohomology with trivial `ZMod p` coefficients. -/
 noncomputable abbrev cohomFp (n : ℕ) := continuousCohomology n (trivialFp p G)
 
-/-- `H⁰(G, 𝔽_p)` is nontrivial: it is the invariants of the trivial representation, that is the
-whole of `𝔽_p`. -/
+/-- `H⁰(G, ZMod p)` is nontrivial: it is the invariants of the trivial representation, that is
+the whole of `ZMod p`. -/
 theorem nontrivial_cohomFp_zero [Nontrivial (ZMod p)] : Nontrivial (cohomFp p G 0) := by
   refine (zeroIso (trivialFp p G)).toContinuousLinearEquiv.toEquiv.nontrivial_congr.2
     (Submodule.nontrivial_iff_ne_bot.2 fun h ↦ ?_)

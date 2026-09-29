@@ -64,6 +64,9 @@ vacuously about the trivial character.
 
 * `MonoidHom.eq_one_of_map_conjNormal_eq_alternatingGroup`: **a linear character of the alternating
   group fixed by conjugation by an odd permutation is trivial.**
+* `MonoidHom.alternatingGroup_le_ker`: **every homomorphism from `Equiv.Perm α` to a commutative
+  monoid kills the alternating group**, the restriction of such a homomorphism being fixed by every
+  conjugation.
 * `MonoidHom.map_conjNormal_alternatingGroup_eq_inv`: **an odd permutation inverts every linear
   character of the alternating group**, with `MonoidHom.comp_conjNormal_alternatingGroup_eq_inv`
   its form as an equality of homomorphisms.
@@ -188,6 +191,34 @@ theorem eq_one_of_map_conjNormal_eq_alternatingGroup {s : Perm α} (hs : s ∉ a
   have hyx : y = x := Subtype.ext hxy
   rw [MonoidHom.one_apply, ← hyx]
   exact hy
+
+/-- **Every homomorphism from a permutation group to a commutative monoid kills the alternating
+group.** Its restriction to `alternatingGroup α` is fixed by conjugation by every permutation, the
+target being commutative, so by `MonoidHom.eq_one_of_map_conjNormal_eq_alternatingGroup` it is
+trivial as soon as an odd permutation exists; and when `α` has at most one element the alternating
+group is itself trivial. -/
+theorem alternatingGroup_le_ker (χ : Perm α →* M) : alternatingGroup α ≤ χ.ker := by
+  intro x hx
+  rw [MonoidHom.mem_ker]
+  rcases subsingleton_or_nontrivial α with hα | hα
+  · rw [Subsingleton.elim x 1, _root_.map_one]
+  · obtain ⟨s, hs⟩ := sign_surjective α (-1)
+    have hs' : s ∉ alternatingGroup α := by
+      rw [mem_alternatingGroup, hs]
+      decide
+    have hfix : ∀ y : alternatingGroup α,
+        (χ.comp (alternatingGroup α).subtype) (MulAut.conjNormal s y) =
+          (χ.comp (alternatingGroup α).subtype) y := by
+      intro y
+      -- the target is commutative, so `χ s` and `χ s⁻¹` regroup into `χ (s * s⁻¹) = 1`
+      calc χ ((alternatingGroup α).subtype (MulAut.conjNormal s y))
+          = χ s * χ y * χ s⁻¹ := by
+            simp only [Subgroup.coe_subtype, MulAut.conjNormal_apply, _root_.map_mul]
+        _ = χ (s * s⁻¹) * χ y := by rw [_root_.map_mul]; ac_rfl
+        _ = χ y := by simp
+    have hone := eq_one_of_map_conjNormal_eq_alternatingGroup _ hs' hfix
+    have := congrArg (fun f : alternatingGroup α →* M => f ⟨x, hx⟩) hone
+    simpa using this
 
 end Fixed
 
