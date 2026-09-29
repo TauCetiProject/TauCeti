@@ -245,12 +245,8 @@ def mulEquivOfIsMulCommutative [IsMulCommutative G] : ContinuousOut G ≃* Conti
 @[simp]
 theorem mulEquivOfIsMulCommutative_mk [IsMulCommutative G] (φ : ContinuousAut G) :
     mulEquivOfIsMulCommutative (φ : ContinuousOut G) = φ := by
-  change QuotientGroup.quotientBot
-    (QuotientGroup.quotientMulEquivOfEq
-      (ContinuousAut.range_conj_eq_bot_iff.mpr inferInstance) (QuotientGroup.mk φ)) = φ
-  rw [QuotientGroup.quotientMulEquivOfEq_mk]
-  change QuotientGroup.kerLift (MonoidHom.id (ContinuousAut G)) (QuotientGroup.mk φ) = φ
-  rw [QuotientGroup.kerLift_mk, MonoidHom.id_apply]
+  rw [mulEquivOfIsMulCommutative, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    ← MulEquiv.eq_symm_apply, QuotientGroup.quotientBot_symm_apply]
 
 @[simp]
 theorem mulEquivOfIsMulCommutative_symm_apply [IsMulCommutative G] (φ : ContinuousAut G) :
