@@ -122,25 +122,26 @@ end HomExt
 
 section Lift
 
-variable {P : Type u} [Group P] [TopologicalSpace P] [IsTopologicalGroup P] [CompactSpace P]
+variable {P : Type v} [Group P] [TopologicalSpace P] [IsTopologicalGroup P] [CompactSpace P]
   [TotallyDisconnectedSpace P]
 
-/-- The continuous homomorphism from the profinite integers to a profinite group `P` sending the
-generator to `a`. -/
+/-- The continuous homomorphism from the profinite integers to a profinite group `P`, in any
+universe, sending the generator to `a`. -/
 noncomputable def lift (a : P) : zHat.{u} →ₜ* P :=
   (ProfiniteCompletion.continuousMonoidHomEquiv (ULift.{u} (Multiplicative ℤ)) P).symm
     ((zpowersHom P a).comp MulEquiv.ulift.toMonoidHom)
 
 /-- The lift of `a` sends the image of `n ∈ ℤ` to `a ^ n`. -/
 @[simp]
-theorem lift_ofInt (a : P) (z : Multiplicative ℤ) : lift a (ofInt z) = a ^ z.toAdd := by
+theorem lift_ofInt (a : P) (z : Multiplicative ℤ) :
+    (lift a : zHat.{u} →ₜ* P) (ofInt z) = a ^ z.toAdd := by
   rw [lift, coe_ofInt, ProfiniteCompletion.continuousMonoidHomEquiv_symm_apply_etaFn,
     MonoidHom.comp_apply, zpowersHom_apply]
   rfl
 
 /-- The lift of `a` sends the generator to `a`. -/
 @[simp]
-theorem lift_gen (a : P) : lift a gen = a := by
+theorem lift_gen (a : P) : (lift a : zHat.{u} →ₜ* P) gen = a := by
   rw [gen, lift_ofInt, toAdd_ofAdd, zpow_one]
 
 /-- A continuous homomorphism sending the generator to `a` is the lift of `a`. -/
@@ -154,7 +155,7 @@ theorem existsUnique_lift (a : P) : ∃! φ : zHat.{u} →ₜ* P, φ gen = a :=
 
 /-- The lift of a topological generator of a profinite group is surjective. -/
 theorem lift_surjective (a : P) (ha : (Subgroup.zpowers a).topologicalClosure = ⊤) :
-    Function.Surjective (lift a) := by
+    Function.Surjective (lift a : zHat.{u} →ₜ* P) := by
   have hdense : DenseRange (lift a) := by
     rw [denseRange_iff_closure_range]
     apply top_unique
@@ -179,7 +180,7 @@ theorem lift_injective_of_finite_quotients (a : P)
         (ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup) := ⊥
       ∃ q : P →ₜ* (ULift.{u} (Multiplicative ℤ) ⧸ H.toSubgroup),
         q a = QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))) :
-    Function.Injective (lift a) := by
+    Function.Injective (lift a : zHat.{u} →ₜ* P) := by
   intro x y hxy
   apply Subtype.ext
   funext H

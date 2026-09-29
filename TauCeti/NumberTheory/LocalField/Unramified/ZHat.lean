@@ -161,7 +161,8 @@ private theorem exists_finiteQuotient_maximalUnramifiedFrobenius :
 /-- The canonical lift from the profinite integers to the Galois group of the maximal unramified
 extension is bijective. -/
 private theorem maximalUnramifiedFrobeniusLift_bijective :
-    Function.Bijective (zHat.lift (maximalUnramifiedFrobenius K Ω)) :=
+    Function.Bijective (zHat.lift (maximalUnramifiedFrobenius K Ω) :
+      zHat.{u} →ₜ* Gal(maximalUnramifiedExtension K Ω/K)) :=
   ⟨zHat.lift_injective_of_finite_quotients _
       (exists_finiteQuotient_maximalUnramifiedFrobenius K Ω),
     zHat.lift_surjective _ topologicalClosure_zpowers_maximalUnramifiedFrobenius⟩
@@ -170,7 +171,8 @@ private theorem maximalUnramifiedFrobeniusLift_bijective :
 continuous multiplicative equivalence sends arithmetic Frobenius to `zHat.gen`. -/
 noncomputable def maximalUnramifiedGaloisGroupEquivZHat :
     Gal(maximalUnramifiedExtension K Ω/K) ≃ₜ* zHat.{u} := by
-  let f := zHat.lift (maximalUnramifiedFrobenius K Ω)
+  let f : zHat.{u} →ₜ* Gal(maximalUnramifiedExtension K Ω/K) :=
+    zHat.lift (maximalUnramifiedFrobenius K Ω)
   have hf := maximalUnramifiedFrobeniusLift_bijective K Ω
   have : T2Space Gal(maximalUnramifiedExtension K Ω/K) := krullTopology_t2
   let e : zHat.{u} ≃ₜ* Gal(maximalUnramifiedExtension K Ω/K) :=
