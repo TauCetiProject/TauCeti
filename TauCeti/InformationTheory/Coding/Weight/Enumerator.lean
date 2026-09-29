@@ -321,6 +321,15 @@ theorem weightEnumerator_bot {ι R : Type*} [Fintype ι] [Semiring R] [Decidable
 
 variable {ι R : Type*} [Fintype ι] [Zero R] [DecidableEq R]
 
+/-- Summing the coordinate factor of a weight monomial, `X` at a zero letter and `Y` at a nonzero
+one, over an alphabet with `q` letters gives `X + (q - 1) Y`. -/
+theorem sum_ite_eq_zero_X_zero_X_one [Fintype R] :
+    (∑ a : R, if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) =
+      X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1 := by
+  -- Only the letter `0` contributes `X`; the other `q - 1` letters contribute `Y`.
+  rw [Fintype.sum_eq_add_sum_compl 0, sum_congr rfl fun a ha ↦ ite_eq_right (by simpa using ha)]
+  simp [card_compl, Nat.card_eq_fintype_card, Nat.cast_sub Fintype.card_pos]
+
 /-- The whole word space has weight enumerator `(X + (q - 1) Y)^n`. -/
 @[simp]
 theorem weightEnumerator_univ [Finite R] :
@@ -333,16 +342,7 @@ theorem weightEnumerator_univ [Finite R] :
   simp_rw [← prod_ite_eq_zero_eq_pow_mul_pow_hammingNorm]
   rw [← Fintype.prod_sum (fun (_ : ι) (a : R) ↦
     if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1)]
-  have h : (∑ a : R, if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) =
-      X 0 + (Nat.card R - 1 : MvPolynomial (Fin 2) ℤ) * X 1 := by
-    have hs (a : R) : (if a = 0 then (X 0 : MvPolynomial (Fin 2) ℤ) else X 1) =
-        X 1 + if a = 0 then X 0 - X 1 else 0 := by
-      split_ifs <;> ring
-    simp_rw [hs]
-    simp [sum_add_distrib, Nat.card_eq_fintype_card]
-    ring
-  simp_rw [h]
-  simp
+  simp [sum_ite_eq_zero_X_zero_X_one]
 
 end Elementary
 

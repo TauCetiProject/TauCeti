@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Monad
 public import TauCeti.InformationTheory.Coding.Elementary.WeightEnumerator
 
 /-!
@@ -13,8 +14,10 @@ public import TauCeti.InformationTheory.Coding.Elementary.WeightEnumerator
 The repetition and single-parity-check codes are dual. Applying the MacWilliams substitution to
 the explicit parity-check enumerator gives its cardinality times the repetition enumerator. The
 calculation uses the fact that the substitution squares to multiplication of both variables by
-the alphabet size. The converse substitution is already the explicit parity-check enumerator
-formula in `Elementary.WeightEnumerator`.
+the alphabet size. The converse substitution, applied to the repetition enumerator, is the
+parity-check enumerator formula `TauCeti.natCard_mul_weightEnumerator_singleParityCheckCode`.
+Both enumerators are computed directly in `Elementary.WeightEnumerator`, without the MacWilliams
+identity, so these calculations check that identity independently for this pair of dual codes.
 
 Reference: W. C. Huffman and V. Pless, *Fundamentals of Error-Correcting Codes*, §7.2.
 -/
@@ -49,7 +52,7 @@ theorem aeval_weightEnumerator_singleParityCheckCode :
     have hB : T B = q * X 1 := by
       simp [T, A, B, q]
       ring
-    have hformula := natCard_mul_weightEnumerator_singleParityCheckCode ι (F := F)
+    have hformula := natCard_mul_weightEnumerator_singleParityCheckCode F ι
     have htransform : q * T (singleParityCheckCode F ι : Set (ι → F)).weightEnumerator =
         (T A) ^ Fintype.card ι + (q - 1) * (T B) ^ Fintype.card ι := by
       calc
