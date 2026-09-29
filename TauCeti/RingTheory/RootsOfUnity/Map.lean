@@ -57,7 +57,7 @@ theorem pPowerRootsOfUnityMap_injective (f : K →* L)
   simp
 
 /-- Root-group maps compose as the underlying monoid maps do. -/
-theorem pPowerRootsOfUnityMap_comp {M : Type*} [CommMonoid M]
+@[simp] theorem pPowerRootsOfUnityMap_comp {M : Type*} [CommMonoid M]
     (f : K →* L) (g : L →* M) :
     pPowerRootsOfUnityMap p (g.comp f) =
       (pPowerRootsOfUnityMap p g).comp (pPowerRootsOfUnityMap p f) := by

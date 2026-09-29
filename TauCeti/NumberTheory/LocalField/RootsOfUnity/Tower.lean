@@ -43,14 +43,21 @@ theorem localRootOfUnityOrder_dvd_of_fieldHom {F E : Type*} [Field F] [Field E]
     localRootOfUnityOrder p F hF ∣ localRootOfUnityOrder p E hE :=
   localRootOfUnityOrder_dvd_of_injective p f.toMonoidHom f.injective hF hE
 
+/-- A multiplicative isomorphism preserves the order of the finite `p`-power root group. -/
+theorem localRootOfUnityOrder_eq_of_mulEquiv (f : K ≃* L)
+    (hK : Finite (pPowerRootsOfUnity p K))
+    (hL : Finite (pPowerRootsOfUnity p L)) :
+    localRootOfUnityOrder p K hK = localRootOfUnityOrder p L hL := by
+  let _ := hK
+  let _ := hL
+  simpa only [localRootOfUnityOrder_def] using
+    Nat.card_congr (pPowerRootsOfUnityEquiv p f).toEquiv
+
 /-- A field isomorphism preserves the order of the finite `p`-power root group. -/
 theorem localRootOfUnityOrder_eq_of_ringEquiv {F E : Type*} [Field F] [Field E]
     (f : F ≃+* E) (hF : Finite (pPowerRootsOfUnity p F))
     (hE : Finite (pPowerRootsOfUnity p E)) :
-    localRootOfUnityOrder p F hF = localRootOfUnityOrder p E hE := by
-  let _ := hF
-  let _ := hE
-  simpa only [localRootOfUnityOrder_def] using
-    Nat.card_congr (pPowerRootsOfUnityEquiv p f.toMulEquiv).toEquiv
+    localRootOfUnityOrder p F hF = localRootOfUnityOrder p E hE :=
+  localRootOfUnityOrder_eq_of_mulEquiv p f.toMulEquiv hF hE
 
 end TauCeti
