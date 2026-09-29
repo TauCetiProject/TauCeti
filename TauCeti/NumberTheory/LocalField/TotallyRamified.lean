@@ -38,26 +38,34 @@ section Tower
 
 variable (K L) (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
   [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
-  [ValuativeExtension L M] [ValuativeExtension K M]
+  [ValuativeExtension L M]
 
 /-- A tower is totally ramified exactly when both of its steps are totally ramified. -/
 theorem isTotallyRamified_tower_iff :
+    letI : ValuativeExtension K M := ValuativeExtension.trans K L M
     IsTotallyRamified K M ↔ IsTotallyRamified K L ∧ IsTotallyRamified L M := by
+  let _ : ValuativeExtension K M := ValuativeExtension.trans K L M
   simp only [isTotallyRamified_iff_inertiaDegree_eq_one,
     inertiaDegree_tower (K := K) (L := L) M, mul_eq_one]
 
 /-- Total ramification is transitive in a tower. -/
 theorem IsTotallyRamified.trans (hKL : IsTotallyRamified K L)
-    (hLM : IsTotallyRamified L M) : IsTotallyRamified K M :=
+    (hLM : IsTotallyRamified L M) :
+    letI : ValuativeExtension K M := ValuativeExtension.trans K L M
+    IsTotallyRamified K M :=
   (isTotallyRamified_tower_iff K L M).2 ⟨hKL, hLM⟩
 
 /-- The first step of a totally ramified tower is totally ramified. -/
-theorem IsTotallyRamified.tower_bot (hKM : IsTotallyRamified K M) :
+theorem IsTotallyRamified.tower_bot
+    (hKM : letI : ValuativeExtension K M := ValuativeExtension.trans K L M
+      IsTotallyRamified K M) :
     IsTotallyRamified K L :=
   ((isTotallyRamified_tower_iff K L M).1 hKM).1
 
 /-- The second step of a totally ramified tower is totally ramified. -/
-theorem IsTotallyRamified.tower_top (hKM : IsTotallyRamified K M) :
+theorem IsTotallyRamified.tower_top
+    (hKM : letI : ValuativeExtension K M := ValuativeExtension.trans K L M
+      IsTotallyRamified K M) :
     IsTotallyRamified L M :=
   ((isTotallyRamified_tower_iff K L M).1 hKM).2
 
