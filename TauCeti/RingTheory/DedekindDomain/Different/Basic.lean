@@ -125,9 +125,10 @@ theorem mem_differentIdeal_iff_forall_mem_traceDual [IsDedekindDomain S] [IsTors
     obtain ⟨y', hy', hyy'⟩ := hmem
     rwa [← IsFractionRing.injective S L hyy']
 
-omit [IsDomain R] [IsFractionRing S L] [IsIntegrallyClosed R] [FiniteDimensional K L] in
+omit [IsDomain R] [IsFractionRing S L] [IsIntegrallyClosed R] [Algebra.IsSeparable K L] in
 /-- **The trace dual of `S` is stable under the automorphisms of `L / K`**: an automorphism maps
 `S` onto itself and preserves the trace of `L / K`. -/
+@[simp]
 theorem apply_mem_traceDual_one_iff {σ : Gal(L/K)} {x : L} :
     σ x ∈ Submodule.traceDual R K (1 : Submodule S L) ↔
       x ∈ Submodule.traceDual R K (1 : Submodule S L) := by
@@ -150,6 +151,7 @@ theorem apply_mem_traceDual_one_iff {σ : Gal(L/K)} {x : L} :
 
 /-- **The different ideal is stable under the automorphisms of `L / K`**, acting on `S` through
 their restrictions `galRestrict`. -/
+@[simp]
 theorem galRestrict_apply_mem_differentIdeal_iff [IsDedekindDomain S] [IsTorsionFree R S]
     {σ : Gal(L/K)} {y : S} :
     galRestrict R K L S σ y ∈ differentIdeal R S ↔ y ∈ differentIdeal R S := by
