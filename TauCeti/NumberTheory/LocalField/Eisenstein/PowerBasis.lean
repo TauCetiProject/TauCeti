@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
-import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
+import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 
 /-!
@@ -37,43 +37,23 @@ public section
 
 open ValuativeRel IsLocalRing IsNonarchimedeanLocalField
 
-namespace TauCeti
-
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
+
+namespace TauCeti
 
 private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension K L]
     [Module.Finite K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
     (hgen : Algebra.adjoin 𝒪[K] {ξ} = ⊤) :
     Irreducible ξ ∧ inertiaDegree K L = 1 ∧ ramificationIndex K L = f.natDegree := by
-  have hdeg : 0 < f.natDegree := by
-    by_contra h
-    have hdeg0 : f.natDegree = 0 := Nat.eq_zero_of_not_pos h
-    have hlc : IsUnit f.leadingCoeff := notMem_maximalIdeal.mp hf.leading
-    have hc0 : f.coeff 0 = f.leadingCoeff := by
-      rw [← Polynomial.coeff_natDegree, hdeg0]
-    have hmaplc : algebraMap 𝒪[K] 𝒪[L] (f.coeff 0) ≠ 0 :=
-      hc0.symm ▸ (hlc.map (algebraMap 𝒪[K] 𝒪[L])).ne_zero
-    rw [Polynomial.eq_C_of_natDegree_eq_zero hdeg0, Polynomial.map_C] at hroot
-    exact Polynomial.not_isRoot_C _ _ hmaplc hroot
-  have hprim : f.IsPrimitive := by
-    rw [Polynomial.isPrimitive_iff_isUnit_of_C_dvd]
-    intro r hr
-    apply isUnit_of_dvd_unit _ (notMem_maximalIdeal.mp hf.leading)
-    rw [← Polynomial.coeff_natDegree]
-    exact (Polynomial.C_dvd_iff_dvd_coeff r f).mp hr f.natDegree
-  have hfirr : Irreducible f :=
-    hf.irreducible (maximalIdeal.isMaximal 𝒪[K]).isPrime hprim hdeg
   have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
-  have haeval : Polynomial.aeval ξ f = 0 := by
-    simpa [Polynomial.IsRoot, Polynomial.aeval_def] using hroot
-  have hmin_dvd : minpoly 𝒪[K] ξ ∣ f := minpoly.isIntegrallyClosed_dvd hint haeval
   have hassoc : Associated (minpoly 𝒪[K] ξ) f :=
-    (minpoly.irreducible hint).associated_of_dvd hfirr hmin_dvd
+    associated_minpoly_of_eisenstein_isRoot ξ f hf hroot
   have hnatDegree : (minpoly 𝒪[K] ξ).natDegree = f.natDegree :=
     Polynomial.natDegree_eq_of_degree_eq (Polynomial.degree_eq_degree_of_associated hassoc)
+  have hdeg : 0 < f.natDegree := hnatDegree ▸ minpoly.natDegree_pos hint
   let pb : PowerBasis 𝒪[K] 𝒪[L] := PowerBasis.ofAdjoinEqTop' hint hgen
   have hpbdim : pb.dim = f.natDegree := by
     rw [PowerBasis.ofAdjoinEqTop'_dim hint hgen, hnatDegree]
