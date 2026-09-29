@@ -107,12 +107,8 @@ theorem spectralSpace_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
     (TopCat.homeoOfIso (forgetToTop.mapIso e)).trans <|
       TopCat.homeoOfIso (eqToIso
         (presentationLimitPreAdicSpace_carrier P S.plus hpower hP))
-  exact
-    { toT0Space := h.symm.t0Space
-      toCompactSpace := h.symm.compactSpace
-      toQuasiSober := h.isOpenEmbedding.quasiSober
-      toQuasiSeparatedSpace := h.isOpenEmbedding.quasiSeparatedSpace
-      toPrespectralSpace := h.isOpenEmbedding.prespectralSpace }
+  let _ : CompactSpace X := h.symm.compactSpace
+  exact h.isOpenEmbedding.spectralSpace
 
 /-- The underlying topological space of an affinoid pre-adic space is quasi-compact. -/
 theorem compactSpace_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
