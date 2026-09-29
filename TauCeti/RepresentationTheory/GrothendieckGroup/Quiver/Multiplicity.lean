@@ -84,11 +84,12 @@ theorem pathAlgebraDimensionVectorK0Equiv_apply
     (isExhaustiveSimpleFamily_vertexSimpleModuleFG k Q)
   have h := congrFun (b.equivFun_apply x) i
   rw [simpleClassBasis_repr_apply] at h
-  -- The additive-equivalence coercion unfolds to evaluation of `b.equivFun`.
-  change (b.equivFun x) i = pathAlgebraDimensionVectorK0 k Q x i
-  exact h.trans (jordanHolderCoordinate_vertexSimpleModuleFG_eq_dimVector k Q i x)
+  simpa only [pathAlgebraDimensionVectorK0Equiv, LinearEquiv.coe_toAddEquiv,
+    LinearEquiv.coe_addEquiv_apply, b]
+    using h.trans (jordanHolderCoordinate_vertexSimpleModuleFG_eq_dimVector k Q i x)
 
 /-- A vertex simple maps to the corresponding standard basis vector. -/
+@[simp]
 theorem pathAlgebraDimensionVectorK0Equiv_vertexSimple [DecidableEq Q] (i : Q) :
     pathAlgebraDimensionVectorK0Equiv k Q (ExactK0.of (vertexSimpleModuleFG k Q i)) =
       Pi.single i 1 := by
@@ -99,18 +100,25 @@ theorem pathAlgebraDimensionVectorK0Equiv_vertexSimple [DecidableEq Q] (i : Q) :
   funext j
   simp [Pi.single_apply]
 
+section
+
+attribute [local instance] Fintype.ofFinite
+
 /-- The inverse dimension-vector equivalence expands an integral vertex vector in the classes of
 the vertex simples. -/
-theorem pathAlgebraDimensionVectorK0Equiv_symm_apply [Fintype Q] (d : Q → ℤ) :
+theorem pathAlgebraDimensionVectorK0Equiv_symm_apply (d : Q → ℤ) :
     (pathAlgebraDimensionVectorK0Equiv k Q).symm d =
       ∑ i, d i • ExactK0.of (vertexSimpleModuleFG k Q i) := by
   classical
   let b := simpleClassBasis (vertexSimpleModuleFG k Q)
     (pairwise_isEmpty_linearEquiv_vertexSimpleModuleFG k Q)
     (isExhaustiveSimpleFamily_vertexSimpleModuleFG k Q)
-  -- The additive-equivalence inverse is the inverse of `b.equivFun`.
-  change (b.equivFun).symm d = _
-  simpa only [b, simpleClassBasis_apply] using b.equivFun_symm_apply d
+  simpa only [pathAlgebraDimensionVectorK0Equiv,
+    ← LinearEquiv.coe_toAddEquiv_symm, LinearEquiv.coe_toAddEquiv,
+    LinearEquiv.coe_addEquiv_apply, b, simpleClassBasis_apply]
+    using b.equivFun_symm_apply d
+
+end
 
 /-- The multiplicity of `Sᵢ` in a finitely generated `kQ`-module is the dimension of its `i`th
 vertex space. -/

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
-public import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 
 /-!
 # Finiteness of vertex projectives
