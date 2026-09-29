@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representatio
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
 
 /-!
-# The spin and half-spin modules are irreducible modules over the orthogonal Lie algebra
+# Irreducibility of the spin and half-spin modules over the orthogonal Lie algebra
 
 A polarization identifies the split orthogonal matrix Lie algebra — `LieAlgebra.Orthogonal.typeB`
 for an odd polarization, `LieAlgebra.Orthogonal.typeD` for an even one — with the quadratic
@@ -20,14 +20,15 @@ elements of the Clifford algebra, and through the Fock action these act on the s
 `B`, and its two parity summands `TauCeti.SpinPolarizationData.typeDSpinPlusLieRep` and
 `TauCeti.SpinPolarizationData.typeDSpinMinusLieRep` in type `D`.
 
-This file proves that these Lie algebra representations are irreducible, in the strong form that
-their operators generate the full endomorphism algebra of the module. The quadratic elements
-generate the even Clifford subalgebra as an algebra
+This file proves that the operators of these Lie algebra representations generate the full
+endomorphism algebra of the module, and deduces that every invariant subspace is `⊥` or everything:
+the spin module and `S⁺` are irreducible, and so is `S⁻` whenever it is nonzero. The quadratic
+elements generate the even Clifford subalgebra as an algebra
 (`CliffordAlgebra.adjoin_coe_preimage_quadraticLieSubalgebra`), and the even subalgebra acts onto
 the full endomorphism algebra of `S` in odd dimension (`TauCeti.evenSpinAction_surjective`) and of
 each of `S⁺` and `S⁻` in even dimension (`TauCeti.spinPlusAction_surjective`,
-`TauCeti.spinMinusAction_surjective`). Irreducibility, in the form that an invariant subspace is
-`⊥` or everything, is then `Module.End.eq_bot_or_eq_top_of_adjoin_eq_top`.
+`TauCeti.spinMinusAction_surjective`). The invariant-subspace dichotomy is then
+`Module.End.eq_bot_or_eq_top_of_adjoin_eq_top`.
 
 Irreducibility of the Spin *group* representations on the same modules is
 `TauCeti/RepresentationTheory/Spin/Irreducible.lean`; the statements here are the Lie algebra
@@ -36,7 +37,8 @@ their highest weight vectors are known. Nothing here needs the base field to be 
 separably closed: only `2` has to be invertible.
 
 As there, the invariant-subspace statements are in lattice form. `S⁻` is zero when `W = ⊥`, which
-the dichotomy allows; combine it with `TauCeti.nontrivial_spinMinus` for simplicity.
+the dichotomy allows; combine it with `TauCeti.nontrivial_spinMinus`, whose hypothesis `P.W ≠ ⊥`
+rules this out, for simplicity. `S` and `S⁺` always contain the scalars, so need no such hypothesis.
 
 ## Main results
 
@@ -47,9 +49,11 @@ the dichotomy allows; combine it with `TauCeti.nontrivial_spinMinus` for simplic
 * `TauCeti.SpinPolarizationData.adjoin_range_typeDSpinPlusLieRep` and
   `TauCeti.SpinPolarizationData.adjoin_range_typeDSpinMinusLieRep`: the type-`D` half-spin
   operators generate `Module.End K S⁺` and `Module.End K S⁻`.
-* `TauCeti.SpinPolarizationData.eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le` and
-  `TauCeti.SpinPolarizationData.eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le`: **the two
-  type-`D` half-spin modules are irreducible.**
+* `TauCeti.SpinPolarizationData.eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le`: **the even
+  type-`D` half-spin module is irreducible.**
+* `TauCeti.SpinPolarizationData.eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le`: the invariant-
+  subspace dichotomy for the odd type-`D` half-spin module `S⁻`, which is therefore irreducible
+  when `P.W ≠ ⊥` (`TauCeti.nontrivial_spinMinus`).
 
 ## References
 
@@ -153,8 +157,10 @@ theorem eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le (hline : P.line = ⊥)
     rintro _ ⟨x, rfl⟩
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN x)
 
-/-- **The odd type-`D` half-spin module is irreducible**: a subspace of `S⁻` invariant under
-every element of the split even orthogonal Lie algebra is `⊥` or all of `S⁻`. -/
+/-- **The invariant-subspace dichotomy for the odd type-`D` half-spin module**: a subspace of `S⁻`
+invariant under every element of the split even orthogonal Lie algebra is `⊥` or all of `S⁻`. This
+remains true when `S⁻` is zero; combine it with `TauCeti.nontrivial_spinMinus` to obtain
+irreducibility when `P.W ≠ ⊥`. -/
 theorem eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le (hline : P.line = ⊥)
     (N : Submodule K (spinMinus Q P)) (hN : ∀ x, N.map (P.typeDSpinMinusLieRep b hline x) ≤ N) :
     N = ⊥ ∨ N = ⊤ :=
