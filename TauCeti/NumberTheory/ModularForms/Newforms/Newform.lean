@@ -146,6 +146,7 @@ theorem dirichletLift_toUnitHom (f : Newform N k) :
   exact MulChar.equivToUnitHom.apply_symm_apply f.χ
 
 /-- The zero-extended nebentypus vanishes at indices not coprime to the level. -/
+@[simp]
 theorem dirichletLift_apply_eq_zero (f : Newform N k) (n : ℕ) (hn : ¬ n.Coprime N) :
     f.dirichletLift n = 0 := by
   apply MulChar.map_nonunit
