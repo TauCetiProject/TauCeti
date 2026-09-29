@@ -56,6 +56,7 @@ def rightHandedTrefoilArcPair : PerfectMatching (Fin 3 × Fin 4) :=
 
 /-- The six arcs paired by `rightHandedTrefoilArcPair`, with one orientation chosen for each
 unordered pair. -/
+@[simp]
 theorem rightHandedTrefoilArcPair_pairs :
     rightHandedTrefoilArcPair.val (0, 2) = (1, 1) ∧
       rightHandedTrefoilArcPair.val (1, 3) = (2, 0) ∧
@@ -192,27 +193,6 @@ private theorem trefoilSlotSmoothing (b₀ b₁ b₂ : Bool) :
   funext i
   fin_cases i <;> rfl
 
-private def swapProduct {X : Type*} [DecidableEq X] : List (X × X) → Equiv.Perm X
-  | [] => 1
-  | (a, p) :: factors => swapProduct factors * Equiv.swap a p
-
-private def IsSwapForest {X : Type*} [DecidableEq X] : List (X × X) → Prop
-  | [] => True
-  | (a, p) :: factors =>
-      IsSwapForest factors ∧ swapProduct factors p = p ∧ a ≠ p
-
-private theorem orbitCount_swapProduct {X : Type*} [Fintype X] [DecidableEq X]
-    (factors : List (X × X)) (hforest : IsSwapForest factors) :
-    orbitCount (swapProduct factors) + factors.length = Fintype.card X := by
-  induction factors with
-  | nil => simp [swapProduct, orbitCount_one]
-  | cons factor factors ih =>
-      rcases factor with ⟨a, p⟩
-      have hstep := orbitCount_mul_swap_add_one hforest.2.1 hforest.2.2
-      have htail := ih hforest.1
-      simp only [swapProduct, List.length_cons] at hstep ⊢
-      omega
-
 private def trefoilStateForest (b₀ b₁ b₂ : Bool) :
     List ((Fin 3 × Fin 4) × (Fin 3 × Fin 4)) :=
   match b₀, b₁, b₂ with
@@ -261,7 +241,7 @@ private theorem trefoilStatePerm_eq_swapProduct (b₀ b₁ b₂ : Bool) :
 private theorem trefoilStateForest_orbitCount (b₀ b₁ b₂ : Bool) :
     orbitCount (swapProduct (trefoilStateForest b₀ b₁ b₂)) +
       (trefoilStateForest b₀ b₁ b₂).length = 12 := by
-  simpa using orbitCount_swapProduct _ (trefoilStateForest_isForest b₀ b₁ b₂)
+  simpa using orbitCount_swapProduct_add_length (trefoilStateForest_isForest b₀ b₁ b₂)
 
 private def trefoilComponentForest : List ((Fin 3 × Fin 4) × (Fin 3 × Fin 4)) :=
   [((1, 2), (2, 3)), ((0, 3), (1, 2)), ((2, 2), (0, 3)), ((1, 3), (2, 2)),
@@ -295,7 +275,7 @@ theorem rightHandedTrefoilPDCode_componentCount :
   rw [PDCode.componentCount_eq, PDCode.crossingComponentCount_def,
     trefoilComponentPerm_eq_swapProduct, Equiv.orbitCount_permCongr,
     rightHandedTrefoilPDCode_crossinglessComponentCount]
-  have hcount := orbitCount_swapProduct trefoilComponentForest trefoilComponentForest_isForest
+  have hcount := orbitCount_swapProduct_add_length trefoilComponentForest_isForest
   norm_num [trefoilComponentForest] at hcount ⊢
   omega
 

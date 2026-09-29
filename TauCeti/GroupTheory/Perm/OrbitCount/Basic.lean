@@ -39,6 +39,9 @@ permutations of the same type.
   orbit more than `σ` — the extra orbit is the fixed point `p`.
 * `TauCeti.orbitCount_mul_swap_add_one`: multiplying a permutation by a transposition that moves
   one of its fixed points splices that fixed point into another orbit, so the count drops by one.
+* `TauCeti.orbitCount_swapProduct_add_length`: iterating the splicing step, the product of a
+  `TauCeti.IsSwapForest` list of `n` transpositions on a finite type has `n` orbits fewer than the
+  identity.
 * `TauCeti.orbitCount_add_one_of_merge`: if the orbits of `τ` are the orbits of `σ` with the orbit
   of one point and the orbit of another merged, then `τ` has one orbit fewer.
 
@@ -343,6 +346,36 @@ theorem orbitCount_mul_swap_add_one [DecidableEq β] {τ : Equiv.Perm β}
         (F x)).trans ?_
       rw [id, hi]
     exact ((hFsame x).trans hxy).trans (hFsame y).symm
+
+/-- The product `τₙ * ⋯ * τ₁` of the transpositions `τᵢ = Equiv.swap aᵢ pᵢ` listed as
+`[(a₁, p₁), …, (aₙ, pₙ)]`: the head of the list is the rightmost factor, so it is applied first. -/
+@[expose] def swapProduct [DecidableEq β] : List (β × β) → Equiv.Perm β
+  | [] => 1
+  | (a, p) :: factors => swapProduct factors * Equiv.swap a p
+
+/-- A list of transpositions `[(a₁, p₁), …, (aₙ, pₙ)]` is a *swap forest* if each factor
+`Equiv.swap aᵢ pᵢ` moves a point `pᵢ ≠ aᵢ` that the product of the later factors still fixes. Then
+each factor of `TauCeti.swapProduct` splices a fixed point into another orbit, as in
+`TauCeti.orbitCount_mul_swap_add_one`. -/
+@[expose] def IsSwapForest [DecidableEq β] : List (β × β) → Prop
+  | [] => True
+  | (a, p) :: factors =>
+      IsSwapForest factors ∧ swapProduct factors p = p ∧ a ≠ p
+
+/-- **A swap forest removes one orbit per factor.** Iterating
+`TauCeti.orbitCount_mul_swap_add_one`, the product of a swap forest of `n` transpositions on a
+finite type has `n` orbits fewer than the identity. -/
+theorem orbitCount_swapProduct_add_length [DecidableEq β] [Finite β] {factors : List (β × β)}
+    (hforest : IsSwapForest factors) :
+    orbitCount (swapProduct factors) + factors.length = Nat.card β := by
+  induction factors with
+  | nil => simp [swapProduct, orbitCount_one]
+  | cons factor factors ih =>
+      rcases factor with ⟨a, p⟩
+      have hstep := orbitCount_mul_swap_add_one hforest.2.1 hforest.2.2
+      have htail := ih hforest.1
+      simp only [swapProduct, List.length_cons] at hstep ⊢
+      omega
 
 /-- **Merging two orbits removes one orbit.** If every orbit of `σ` is contained in an orbit of
 `τ`, if two points `a` and `b` lying in different orbits of `σ` lie in one orbit of `τ`, and if no
