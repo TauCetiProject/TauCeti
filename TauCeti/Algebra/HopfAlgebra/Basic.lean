@@ -36,18 +36,6 @@ namespace BialgHom
 variable {R A B : Type*} [CommSemiring R]
 variable [Semiring A] [Semiring B] [HopfAlgebra R A] [HopfAlgebra R B]
 
-/-- The linear-map projection of the algebra-hom coercion of a bialgebra homomorphism
-coincides with the linear-map projection of the bialgebra homomorphism. -/
-private lemma coe_algHom_toLinearMap (φ : A →ₐc[R] B) :
-    (φ : A →ₐ[R] B).toLinearMap = φ.toLinearMap :=
-  rfl
-
-/-- The linear-map projection of the coalgebra-hom coercion of a bialgebra homomorphism
-coincides with the linear-map projection of the bialgebra homomorphism. -/
-private lemma coe_coalgHom_toLinearMap (φ : A →ₐc[R] B) :
-    (φ : A →ₗc[R] B).toLinearMap = φ.toLinearMap :=
-  rfl
-
 private lemma toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)) =
       (HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap := by
@@ -56,10 +44,14 @@ private lemma toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     toConv (φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)))
   let h : WithConv (A →ₗ[R] B) :=
     toConv ((HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap)
+  have hφ_alg : φ.toLinearMap = (φ : A →ₐ[R] B).toLinearMap :=
+    (CoalgHom.toLinearMap_eq_ofClass (φ : A →ₗc[R] B)).trans
+      (BialgHom.toAlgHom_toLinearMap φ).symm
+  have hφ_coalg : φ.toLinearMap = (φ : A →ₗc[R] B).toLinearMap := rfl
   have hg_left : g * f = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp only [g, f]
-    rw [← coe_algHom_toLinearMap φ]
+    rw [hφ_alg]
     have hdistrib :=
       (LinearMap.algHom_comp_convMul_distrib (φ : A →ₐ[R] B)
         (toConv (HopfAlgebra.antipode R (A := A)))
@@ -71,7 +63,7 @@ private lemma toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
   have hh_right : f * h = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp only [f, h]
-    rw [← coe_coalgHom_toLinearMap φ]
+    rw [hφ_coalg]
     have hdistrib :=
       (LinearMap.convMul_comp_coalgHom_distrib
         (toConv (LinearMap.id : B →ₗ[R] B))
@@ -91,20 +83,13 @@ variable {R A B F : Type*} [CommSemiring R]
 variable [Semiring A] [Semiring B] [HopfAlgebra R A] [HopfAlgebra R B]
 variable [FunLike F A B] [BialgHomClass F R A B]
 
-/-- The linear-map coercion of a bialgebra-hom-like map coincides with the linear-map
-projection of its bundled bialgebra-hom coercion. -/
-private lemma coe_toBialgHom_toLinearMap (φ : F) :
-    (φ : A →ₐc[R] B).toLinearMap = (φ : A →ₗ[R] B) :=
-  rfl
-
 /-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, as a statement
 about underlying linear maps. -/
 @[simp]
 theorem coe_comp_antipode (φ : F) :
     (φ : A →ₗ[R] B).comp (HopfAlgebra.antipode R (A := A)) =
-      (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) := by
-  simpa only [coe_toBialgHom_toLinearMap] using
-    BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B)
+      (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) :=
+  BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B)
 
 /-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, pointwise. -/
 @[simp]
