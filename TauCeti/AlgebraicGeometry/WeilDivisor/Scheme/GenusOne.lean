@@ -156,6 +156,19 @@ private lemma coe_abelJacobiClass {x : CodimensionOnePoint X}
   rw [WeilDivisor.OrderSystem.coe_weightedAbelJacobiClass,
     WeilDivisor.weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one (by simp [hx])]
 
+/-- Equality in the degree-zero class group is linear equivalence of divisor representatives. -/
+private lemma picZero_eq_iff_linearlyEquivalent
+    {d e : (WeilDivisor.OrderSystem.ofScheme X).picZero
+      (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ))
+      (isWeightedDegreeZero_residueDegree k hX.out)}
+    {D E : SchemeWeilDivisor X}
+    (hd : (d : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) =
+      (WeilDivisor.OrderSystem.ofScheme X).divisorClass D)
+    (he : (e : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) =
+      (WeilDivisor.OrderSystem.ofScheme X).divisorClass E) :
+    d = e ↔ (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent D E := by
+  rw [Subtype.ext_iff, hd, he, WeilDivisor.OrderSystem.divisorClass_eq_iff]
+
 variable (hk : IsIntegrallyClosedIn k X.functionField) (hg : X.genus k = 1)
 include hk hg
 
@@ -164,15 +177,13 @@ private lemma injective_abelJacobiClass :
     Function.Injective fun x : {x : CodimensionOnePoint X //
       (X ↘ Spec (.of k)).residueDegree x = 1} ↦ abelJacobiClass k hx₀ x := by
   intro x y hxy
-  have hlin := (WeilDivisor.OrderSystem.weightedAbelJacobiClass_eq_iff_linearlyEquivalent
-    (S := WeilDivisor.OrderSystem.ofScheme X) _
-    (isWeightedDegreeZero_residueDegree k hX.out) (by simp [hx₀])).mp hxy
-  rw [WeilDivisor.weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one
-      (by simp [x.2]),
-    WeilDivisor.weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one
-      (by simp [y.2]),
-    WeilDivisor.OrderSystem.linearlyEquivalent_iff,
-    WeilDivisor.pointDifference, WeilDivisor.pointDifference, sub_sub_sub_cancel_right,
+  have hlin := (picZero_eq_iff_linearlyEquivalent k
+    (coe_abelJacobiClass k hx₀ x.2) (coe_abelJacobiClass k hx₀ y.2)).mp hxy
+  have hdiff : WeilDivisor.pointDifference x.1 x₀ - WeilDivisor.pointDifference y.1 x₀ =
+      WeilDivisor.ofPoint x.1 - WeilDivisor.ofPoint y.1 := by
+    simp only [WeilDivisor.pointDifference]
+    abel
+  rw [WeilDivisor.OrderSystem.linearlyEquivalent_iff, hdiff,
     ← WeilDivisor.OrderSystem.linearlyEquivalent_iff] at hlin
   exact Subtype.ext (eq_of_linearlyEquivalent_ofPoint_of_genus_eq_one k hk hg x.2 hlin)
 
@@ -192,9 +203,10 @@ private lemma surjective_abelJacobiClass :
   obtain ⟨x, hx, hlin⟩ := exists_linearlyEquivalent_ofPoint_of_genus_eq_one k hk hg
     (D := D + WeilDivisor.ofPoint x₀) (by
       rw [map_add, relativeDegree_ofPoint, hdeg, hx₀, Nat.cast_one, zero_add])
-  refine ⟨⟨x, hx⟩, Subtype.ext ?_⟩
-  rw [coe_abelJacobiClass k hx₀ hx, ← hD, WeilDivisor.OrderSystem.divisorClass_eq_iff,
-    WeilDivisor.OrderSystem.linearlyEquivalent_iff]
+  refine ⟨⟨x, hx⟩, ?_⟩
+  apply (picZero_eq_iff_linearlyEquivalent k
+    (coe_abelJacobiClass k hx₀ hx) hD.symm).mpr
+  rw [WeilDivisor.OrderSystem.linearlyEquivalent_iff]
   have hdiff : WeilDivisor.pointDifference x x₀ - D =
       WeilDivisor.ofPoint x - (D + WeilDivisor.ofPoint x₀) := by
     rw [WeilDivisor.pointDifference]
@@ -250,9 +262,10 @@ theorem degreeOneEquivPicZero_add_eq_iff
         (WeilDivisor.ofPoint z.1 + WeilDivisor.ofPoint x₀) := by
   rw [degreeOneEquivPicZero, Equiv.ofBijective_apply, Equiv.ofBijective_apply,
     Equiv.ofBijective_apply, ← map_add, (classGroupPicZeroAddEquivPicZero k X).injective.eq_iff,
-    Subtype.ext_iff, AddMemClass.coe_add, coe_abelJacobiClass k hx₀ x.2,
-    coe_abelJacobiClass k hx₀ y.2, coe_abelJacobiClass k hx₀ z.2, ← map_add,
-    WeilDivisor.OrderSystem.divisorClass_eq_iff, WeilDivisor.OrderSystem.linearlyEquivalent_iff,
+    picZero_eq_iff_linearlyEquivalent k (by
+      rw [AddMemClass.coe_add, coe_abelJacobiClass k hx₀ x.2,
+        coe_abelJacobiClass k hx₀ y.2, map_add])
+      (coe_abelJacobiClass k hx₀ z.2), WeilDivisor.OrderSystem.linearlyEquivalent_iff,
     WeilDivisor.OrderSystem.linearlyEquivalent_iff]
   have hdiff : WeilDivisor.pointDifference x.1 x₀ + WeilDivisor.pointDifference y.1 x₀ -
       WeilDivisor.pointDifference z.1 x₀ =
