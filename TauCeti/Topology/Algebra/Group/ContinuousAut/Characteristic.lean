@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 
 /-!
 # Topologically characteristic subgroups
@@ -22,10 +20,6 @@ The predicate `TauCeti.IsTopCharacteristic G N` is expressed by the image equati
 and it is stable under arbitrary suprema and infima. A topologically characteristic subgroup is
 normal as soon as inner automorphisms are continuous.
 
-The pro-`p` kernel and pro-`p` Frattini subgroup are topologically characteristic for every
-topological group and every `p`. These examples of the predicate are direct consequences of
-their existing functoriality under continuous multiplicative equivalences.
-
 The characterizations and lattice API parallel Mathlib's API for
 `Subgroup.Characteristic` in `Mathlib.Algebra.Group.Subgroup.Basic`.
 
@@ -39,9 +33,6 @@ The characterizations and lattice API parallel Mathlib's API for
   topologically characteristic.
 * `TauCeti.IsTopCharacteristic.normal`: a topologically characteristic subgroup is normal when
   inner automorphisms are continuous.
-* `TauCeti.isTopCharacteristic_proPKernel`: the pro-`p` kernel is topologically characteristic.
-* `TauCeti.isTopCharacteristic_proPFrattini`: the pro-`p` Frattini subgroup is topologically
-  characteristic.
 -/
 
 public section
@@ -59,6 +50,13 @@ def IsTopCharacteristic (N : Subgroup G) : Prop :=
   ∀ φ : ContinuousAut G, N.map φ.toMulEquiv.toMonoidHom = N
 
 variable {G} {N K : Subgroup G}
+
+/-- A subgroup is topologically characteristic exactly when every continuous automorphism maps
+it onto itself. -/
+theorem isTopCharacteristic_iff_map_eq :
+    IsTopCharacteristic G N ↔
+      ∀ φ : ContinuousAut G, N.map φ.toMulEquiv.toMonoidHom = N :=
+  Iff.rfl
 
 /-- A subgroup is topologically characteristic exactly when it is the preimage of itself under
 every continuous automorphism. -/
@@ -113,6 +111,14 @@ theorem _root_.Subgroup.Characteristic.isTopCharacteristic (hN : N.Characteristi
 
 namespace IsTopCharacteristic
 
+/-- The trivial subgroup is topologically characteristic. -/
+theorem bot : IsTopCharacteristic G (⊥ : Subgroup G) :=
+  isTopCharacteristic_iff_le_map.mpr fun _φ ↦ bot_le
+
+/-- The whole group is topologically characteristic. -/
+theorem top : IsTopCharacteristic G (⊤ : Subgroup G) :=
+  isTopCharacteristic_iff_map_le.mpr fun _φ ↦ le_top
+
 /-- The supremum of two topologically characteristic subgroups is topologically characteristic. -/
 theorem sup (hN : IsTopCharacteristic G N) (hK : IsTopCharacteristic G K) :
     IsTopCharacteristic G (N ⊔ K) := by
@@ -153,17 +159,5 @@ theorem normal [SeparatelyContinuousMul G] (hN : IsTopCharacteristic G N) : N.No
     exact Subgroup.mem_map_of_mem (ContinuousAut.conj g).toMulEquiv.toMonoidHom hn
 
 end IsTopCharacteristic
-
-/-- The pro-`p` kernel is topologically characteristic for every topological group and every
-natural number `p`. -/
-theorem isTopCharacteristic_proPKernel (p : ℕ) :
-    IsTopCharacteristic G (proPKernel p G) :=
-  fun φ ↦ map_proPKernel_eq φ
-
-/-- The pro-`p` Frattini subgroup is topologically characteristic for every topological group and
-every natural number `p`. -/
-theorem isTopCharacteristic_proPFrattini (p : ℕ) :
-    IsTopCharacteristic G (proPFrattini p G) :=
-  fun φ ↦ ContinuousMulEquiv.map_proPFrattini_eq φ
 
 end TauCeti
