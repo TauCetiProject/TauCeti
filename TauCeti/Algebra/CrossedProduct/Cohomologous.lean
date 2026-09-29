@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.CrossedProduct.Basic
-public import Mathlib.LinearAlgebra.Basis.SMul
+import Mathlib.LinearAlgebra.Basis.SMul
 
 /-!
 # Cohomologous cocycles give isomorphic crossed products
