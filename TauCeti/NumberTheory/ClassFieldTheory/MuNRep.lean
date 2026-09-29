@@ -35,7 +35,7 @@ isomorphism gives `kummerEquiv : Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, muNRep n F)` for
 `TauCeti.kummerMap`, not a second Kummer cocycle, and is represented by `g ↦ g α / α` for any
 `n`th root `α` of the unit (`kummerClass_eq_muNRepH1Equiv_kummerCocycleClass`).
 
-In characteristic zero every `n ≠ 0` is invertible, so the Kummer equivalence `kummerEquiv_mixed`
+In characteristic zero every `n ≠ 0` is invertible, so the Kummer equivalence `kummerEquivMixed`
 holds for every `n ≠ 0`. This covers every finite extension of `ℚ_p`, including the exponents
 `n` divisible by `p`, which are units of the field but not of its valuation ring.
 
@@ -50,7 +50,7 @@ Kummer class `TauCeti.kummerClass`, which lives in the trivial `𝔽₂` coeffic
 * `TauCeti.ClassFieldTheory.muNRepCoeffDictionary`: the identification of its underlying module
   with `TauCeti.KummerCoeff F n`.
 * `TauCeti.ClassFieldTheory.muNRepH1Equiv`: `H¹(Gal(Fˢ/F), μₙ) ≃+ H¹(G_F, muNRep n F)`.
-* `TauCeti.ClassFieldTheory.kummerEquiv`, `TauCeti.ClassFieldTheory.kummerEquiv_mixed`: the Kummer
+* `TauCeti.ClassFieldTheory.kummerEquiv`, `TauCeti.ClassFieldTheory.kummerEquivMixed`: the Kummer
   isomorphism `Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, muNRep n F)`, for `n` invertible in `F` and for `n ≠ 0` in
   characteristic zero.
 * `TauCeti.ClassFieldTheory.kummerClass`: the Kummer class of a unit in `H¹(G_F, muNRep n F)`.
@@ -188,15 +188,15 @@ def kummerClass (hn : IsUnit (n : F)) (a : Fˣ) : continuousCohomology 1 (muNRep
 /-- The Kummer equivalence sends the power class of `a` to the Kummer class of `a`. -/
 @[simp]
 theorem kummerEquiv_ofMul_powerClassHom (hn : IsUnit (n : F)) (a : Fˣ) :
-    kummerEquiv F hn (Additive.ofMul (powerClassHom Fˣ n a)) = kummerClass F hn a :=
-  (rfl)
+    kummerEquiv F hn (Additive.ofMul (a : powerClassQuotient Fˣ n)) = kummerClass F hn a := by
+  rw [kummerClass, powerClassHom_apply]
 
 /-- **The Kummer class is the transported Kummer map**: it is `TauCeti.kummerMap` read through
 `muNRepH1Equiv`. -/
 theorem kummerClass_eq_muNRepH1Equiv_kummerMap (hn : IsUnit (n : F)) (a : Fˣ) :
     kummerClass F hn a = muNRepH1Equiv n F (Multiplicative.toAdd (kummerMap F n hn a)) := by
   rw [← kummerEquiv_ofMul_powerClassHom, kummerEquiv_apply, toMul_ofMul, kummerIso_apply,
-    kummerClassMap_powerClassHom]
+    ← powerClassHom_apply, kummerClassMap_powerClassHom]
 
 /-- **The Kummer class of `a` is represented by `g ↦ g α / α`**, transported to `muNRep n F`, for
 any `n`th root `α` of `a` in `Fˢ`. -/
@@ -215,7 +215,8 @@ theorem kummerClass_one (hn : IsUnit (n : F)) : kummerClass F hn 1 = 0 := by
 @[simp]
 theorem kummerClass_mul (hn : IsUnit (n : F)) (a b : Fˣ) :
     kummerClass F hn (a * b) = kummerClass F hn a + kummerClass F hn b := by
-  rw [kummerClass, map_mul, ofMul_mul, map_add, kummerEquiv_ofMul_powerClassHom,
+  rw [kummerClass, map_mul, ofMul_mul, map_add, powerClassHom_apply, powerClassHom_apply,
+    kummerEquiv_ofMul_powerClassHom,
     kummerEquiv_ofMul_powerClassHom]
 
 /-- **The Kummer class of `a` vanishes exactly when `a` is an `n`th power in `F`.** -/
@@ -230,21 +231,21 @@ theorem kummerClass_surjective (hn : IsUnit (n : F)) :
   intro y
   obtain ⟨x, rfl⟩ := (kummerEquiv F hn).surjective y
   obtain ⟨a, ha⟩ := powerClassHom_surjective Fˣ n x.toMul
-  exact ⟨a, by rw [← kummerEquiv_ofMul_powerClassHom, ha, ofMul_toMul]⟩
+  exact ⟨a, by rw [← kummerEquiv_ofMul_powerClassHom, ← powerClassHom_apply, ha, ofMul_toMul]⟩
 
 /-- **The Kummer isomorphism in characteristic zero**, valid for every `n ≠ 0`. This covers every
 finite extension `F` of `ℚ_p` and every exponent, including those divisible by `p`, which are
 units of `F` but not of its valuation ring. -/
-def kummerEquiv_mixed [CharZero F] (hn : n ≠ 0) :
+def kummerEquivMixed [CharZero F] (hn : n ≠ 0) :
     Additive (powerClassQuotient Fˣ n) ≃+ continuousCohomology 1 (muNRep n F) :=
   kummerEquiv F (Nat.cast_ne_zero.2 hn).isUnit
 
 /-- The characteristic-zero Kummer isomorphism sends the power class of `a` to the Kummer class
 of `a`. -/
 @[simp]
-theorem kummerEquiv_mixed_ofMul_powerClassHom [CharZero F] (hn : n ≠ 0) (a : Fˣ) :
-    kummerEquiv_mixed F hn (Additive.ofMul (powerClassHom Fˣ n a)) =
+theorem kummerEquivMixed_ofMul_powerClassHom [CharZero F] (hn : n ≠ 0) (a : Fˣ) :
+    kummerEquivMixed F hn (Additive.ofMul (a : powerClassQuotient Fˣ n)) =
       kummerClass F (Nat.cast_ne_zero.2 hn).isUnit a :=
-  (rfl)
+  kummerEquiv_ofMul_powerClassHom F _ a
 
 end TauCeti.ClassFieldTheory

@@ -919,13 +919,18 @@ theorem orthogonalQuotientCongr_orthogonalQuotientMk {H K : AddSubgroup A} (hH :
   subst h
   rfl
 
+/-- **Nondegeneracy of the orthogonal quotient.** The quadratic module induced on `H^⊥ / H` is
+nondegenerate exactly when `H` contains the radical of the polar bilinear module of `A`. -/
+theorem isNondegenerate_orthogonalQuotient_iff (H : AddSubgroup A) (hH : A.IsIsotropic H) :
+    (A.orthogonalQuotient H hH).IsNondegenerate ↔ A.toFiniteBilinearModule.radical ≤ H := by
+  rw [FiniteQuadraticModule.IsNondegenerate, A.orthogonalQuotient_toFiniteBilinearModule H hH]
+  exact A.toFiniteBilinearModule.isNondegenerate_orthogonalQuotient_iff H
+
 /-- If `A` is nondegenerate, the quadratic module induced on `H^⊥ / H` is nondegenerate. -/
 theorem IsNondegenerate.isNondegenerate_orthogonalQuotient (hA : A.IsNondegenerate)
     {H : AddSubgroup A} (hH : A.IsIsotropic H) :
-    (A.orthogonalQuotient H hH).IsNondegenerate := by
-  rw [FiniteQuadraticModule.IsNondegenerate, A.orthogonalQuotient_toFiniteBilinearModule H hH]
-  exact FiniteBilinearModule.IsNondegenerate.isNondegenerate_orthogonalQuotient
-    A.toFiniteBilinearModule hA H
+    (A.orthogonalQuotient H hH).IsNondegenerate :=
+  (A.isNondegenerate_orthogonalQuotient_iff H hH).mpr (hA.radical_eq_bot ▸ bot_le)
 
 /-- For nondegenerate `A`, the order of `H^⊥ / H` multiplied by `|H|²` is `|A|`. -/
 theorem IsNondegenerate.card_orthogonalQuotient_mul_card_sq (hA : A.IsNondegenerate)

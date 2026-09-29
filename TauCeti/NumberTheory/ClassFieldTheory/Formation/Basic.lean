@@ -94,7 +94,7 @@ finite group and the coefficient ring `ℤ` in one universe and for the coeffici
 same universe, and every carrier of the arithmetic instances is a `Type`, so nothing is lost.
 
 The coefficient module is read as a plain `Rep ℤ G` through `Representation.ofDistribMulAction` at
-the action `TauCeti.TopRep.distribMulAction` derives from the operators of the topological
+the action `TopRep.distribMulAction` derives from the operators of the topological
 representation. Passing instead through `ContRepresentation.toRepresentation` would carry the
 `Module ℤ` instance packaged inside `TopRep`, which is not the instance `AddCommGroup.toIntModule`
 that typeclass synthesis produces for an integral module, and the two are not definitionally
@@ -426,8 +426,9 @@ abbrev H (n : ℕ) : ModuleCat ℤ := groupCohomology (L.rep F) n
 abbrev TateH (r : ℤ) : ModuleCat ℤ := tateCohomology (L.rep F) r
 
 /-- **Tate cohomology of a finite normal layer with trivial integral coefficients**, the Tate
-group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer, and
-the Artin map of a class formation is a cup product between this carrier and `TateH`. -/
+group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer. In a
+class formation, cup product with the fundamental class of the layer carries that degree
+isomorphically onto `TateH` in degree `0`, and the Artin map is the inverse of this isomorphism. -/
 abbrev TrivialTateH (r : ℤ) : ModuleCat ℤ := tateCohomology (Rep.trivial ℤ L.Gal ℤ) r
 
 /-! ### The two low Tate degrees -/
@@ -548,18 +549,8 @@ theorem map_groundLevelEquiv_submoduleOf :
     Submodule.map (L.groundLevelEquiv F).toLinearMap
         ((LinearMap.range (L.rep F).ρ.norm).submoduleOf (L.rep F).ρ.invariants) =
       L.normSubgroup F := by
-  ext y
-  simp only [Submodule.mem_map, Submodule.submoduleOf, Submodule.mem_comap,
-    LinearMap.mem_range, mem_normSubgroup, LinearEquiv.coe_coe]
-  constructor
-  · rintro ⟨z, ⟨v, hv⟩, rfl⟩
-    refine ⟨v, Subtype.ext ?_⟩
-    -- The congruence is bound first: elaborated against the goal, `congrArg` would unify its
-    -- arguments with the two sides of the goal instead of with the two sides of `hv`.
-    have h := congrArg Subtype.val hv
-    exact h
-  · rintro ⟨v, rfl⟩
-    exact ⟨_, ⟨v, rfl⟩, rfl⟩
+  simp only [normSubgroup, norm, LinearMap.range_comp, LinearMap.range_codRestrict,
+    Submodule.submoduleOf]
 
 /-- **Degree-zero Tate cohomology of a finite normal layer is its norm quotient.** This is the
 low-degree identification that the Artin map of a class formation is read through. -/
