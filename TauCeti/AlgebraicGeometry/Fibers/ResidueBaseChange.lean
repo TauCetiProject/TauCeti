@@ -65,7 +65,7 @@ theorem specialFiberBaseChangeIso_hom_fst :
 
 /-- The special-fibre base-change isomorphism preserves projection to the new residue-field
 spectrum. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem specialFiberBaseChangeIso_hom_snd :
     (specialFiberBaseChangeIso f).hom ≫
       pullback.snd
@@ -89,25 +89,32 @@ theorem specialFiberBaseChangeIso_hom_snd :
       simpa only [genericFiber_hom] using
         genericFiberTowerIso_hom_hom R S (ResidueField S) f
 
+attribute [simp] specialFiberBaseChangeIso_hom_snd
+
 /-- The inverse special-fibre base-change isomorphism preserves projection to the original
 scheme. -/
 @[reassoc (attr := simp)]
 theorem specialFiberBaseChangeIso_inv_fst :
     (specialFiberBaseChangeIso f).inv ≫
-        specialFiberι S (genericFiber R S f).hom ≫ genericFiberι R S f =
+        specialFiberι S
+          (pullback.snd f (Spec.map (CommRingCat.ofHom (algebraMap R S)))) ≫
+          genericFiberι R S f =
       genericFiberι (ResidueField R) (ResidueField S)
         (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R)))) ≫
         specialFiberι R f := by
+  change (specialFiberBaseChangeIso f).inv ≫
+    specialFiberι S (genericFiber R S f).hom ≫ genericFiberι R S f = _
   rw [← specialFiberBaseChangeIso_hom_fst f, ← Category.assoc,
     Iso.inv_hom_id, Category.id_comp]
   rfl
 
 /-- The inverse special-fibre base-change isomorphism preserves projection to the new
 residue-field spectrum. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem specialFiberBaseChangeIso_inv_snd :
     (specialFiberBaseChangeIso f).inv ≫
-        pullback.snd (genericFiber R S f).hom
+        pullback.snd
+          (pullback.snd f (Spec.map (CommRingCat.ofHom (algebraMap R S))))
           (Spec.map (CommRingCat.ofHom (residue S))) =
       pullback.snd
         (pullback.snd f (Spec.map (CommRingCat.ofHom (residue R))))
@@ -122,5 +129,7 @@ theorem specialFiberBaseChangeIso_inv_snd :
         (genericFiber R (ResidueField R) f).hom).hom =
     (genericFiber S (ResidueField S) (genericFiber R S f).hom).hom at h
   rw [← h, ← Category.assoc, Iso.inv_hom_id, Category.id_comp]
+
+attribute [simp] specialFiberBaseChangeIso_inv_snd
 
 end TauCeti
