@@ -23,8 +23,11 @@ the scalar data used by subresultant gcd criteria and projection operators.
 ## Main results
 
 * `Polynomial.psc_zero`: the zeroth principal subresultant coefficient is the resultant.
-* `Polynomial.psc_map`: fixed-bound principal subresultant coefficients commute with coefficient
+* `Polynomial.psc_map_map`: fixed-bound principal subresultant coefficients commute with coefficient
   maps.
+* `Polynomial.psc_comm`: swapping the polynomials multiplies by `(-1) ^ ((m - j) * (n - j))`.
+* `Polynomial.psc_C_mul_left`, `Polynomial.psc_C_mul_right`: scaling one polynomial by a constant
+  scales the coefficient by a power of that constant.
 * `Polynomial.psc_left_bound`, `Polynomial.psc_right_bound`: at a formal degree bound, the
   determinant is a power of the coefficient at that bound.
 * `Polynomial.psc_min`: the terminal determinant is a power of the coefficient at the smaller
@@ -91,12 +94,21 @@ theorem _root_.Polynomial.subresultantMatrix_zero [Semiring R]
 
 /-- Mapping coefficients maps every entry of the fixed-bound principal subresultant matrix. -/
 @[simp]
-theorem _root_.Polynomial.subresultantMatrix_map [Semiring R] [Semiring S] (f : R →+* S)
+theorem _root_.Polynomial.subresultantMatrix_map_map [Semiring R] [Semiring S] (f : R →+* S)
     (p q : R[X]) (m n j : ℕ) :
     subresultantMatrix (p.map f) (q.map f) m n j =
       f.mapMatrix (subresultantMatrix p q m n j) := by
   ext i k
   induction k using Fin.addCases <;> simp [subresultantMatrix, apply_ite f]
+
+/-- Swapping the polynomials and their bounds swaps the two column blocks of the principal
+subresultant matrix. -/
+theorem _root_.Polynomial.subresultantMatrix_comm [Semiring R] (p q : R[X]) (m n j : ℕ) :
+    subresultantMatrix p q m n j =
+      (subresultantMatrix q p n m j).reindex (finCongr (add_comm (n - j) (m - j)))
+        (finSumFinEquiv.symm.trans <| (Equiv.sumComm _ _).trans finSumFinEquiv) := by
+  ext i k
+  induction k using Fin.addCases <;> simp [subresultantMatrix]
 
 /-- The principal subresultant coefficient at index `j` and formal degree bounds `m` and `n`.
 
@@ -119,10 +131,45 @@ theorem _root_.Polynomial.psc_zero [CommRing R] (p q : R[X]) (m n : ℕ) :
 /-- Principal subresultant coefficients commute with coefficient maps at fixed bounds.  No
 degree-preservation hypothesis is needed. -/
 @[simp]
-theorem _root_.Polynomial.psc_map [CommRing R] [CommRing S] (f : R →+* S)
+theorem _root_.Polynomial.psc_map_map [CommRing R] [CommRing S] (f : R →+* S)
     (p q : R[X]) (m n j : ℕ) :
     psc (p.map f) (q.map f) m n j = f (psc p q m n j) := by
   simp [psc_def, RingHom.map_det]
+
+/-- Swapping the polynomials and their bounds changes the principal subresultant coefficient by
+the sign `(-1) ^ ((m - j) * (n - j))`. -/
+theorem _root_.Polynomial.psc_comm [CommRing R] (p q : R[X]) (m n j : ℕ) :
+    psc p q m n j = (-1) ^ ((m - j) * (n - j)) * psc q p n m j := by
+  -- The block swap is the Sylvester block swap at bounds `m - j` and `n - j`; read off its sign
+  -- from `resultant_comm` for the pair `X ^ (m - j)`, `1`, whose resultants are units.
+  have hsign := resultant_comm (X ^ (m - j) : ℤ[X]) 1 (m - j) (n - j)
+  rw [resultant, sylvester_comm, Matrix.det_reindex, ← resultant] at hsign
+  simp only [resultant_one_left, coeff_X_pow_self, one_pow, mul_one] at hsign
+  rw [Int.cast_id, mul_left_inj' (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))] at hsign
+  rw [psc_def, psc_def, subresultantMatrix_comm, Matrix.det_reindex, hsign]
+  simp
+
+/-- Scaling the left polynomial by a constant `r` scales its `n - j` columns, hence the principal
+subresultant coefficient, by `r ^ (n - j)`. -/
+theorem _root_.Polynomial.psc_C_mul_left [CommRing R] (p q : R[X]) (r : R) (m n j : ℕ) :
+    psc (C r * p) q m n j = r ^ (n - j) * psc p q m n j := by
+  have : subresultantMatrix (C r * p) q m n j = .of fun i k =>
+      Fin.addCases (fun _ => 1) (fun _ => r) k * subresultantMatrix p q m n j i k := by
+    ext i k
+    induction k using Fin.addCases <;> simp [subresultantMatrix, coeff_C_mul]
+  rw [psc_def, psc_def, this, Matrix.det_mul_row, Fin.prod_univ_add]
+  simp
+
+/-- Scaling the right polynomial by a constant `r` scales its `m - j` columns, hence the principal
+subresultant coefficient, by `r ^ (m - j)`. -/
+theorem _root_.Polynomial.psc_C_mul_right [CommRing R] (p q : R[X]) (r : R) (m n j : ℕ) :
+    psc p (C r * q) m n j = r ^ (m - j) * psc p q m n j := by
+  have : subresultantMatrix p (C r * q) m n j = .of fun i k =>
+      Fin.addCases (fun _ => r) (fun _ => 1) k * subresultantMatrix p q m n j i k := by
+    ext i k
+    induction k using Fin.addCases <;> simp [subresultantMatrix, coeff_C_mul]
+  rw [psc_def, psc_def, this, Matrix.det_mul_row, Fin.prod_univ_add]
+  simp
 
 /-- At the left formal degree bound, the principal coefficient is the corresponding power of the
 left polynomial's coefficient.  This is the terminal coefficient when `m ≤ n`; when `n < m`,
