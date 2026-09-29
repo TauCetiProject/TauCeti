@@ -43,9 +43,8 @@ action of `G` at all. The identification of the two models of degree one is the 
 not restate; on the canonical carrier it reads as `TauCeti.cohomFpLinearEquivContinuousZModDual`,
 the continuous `𝔽_p`-dual of `G`, and `TauCeti.cohomFpEquivFrattiniQuotientDual` here is that
 equivalence followed by the precomposition along the projection to the Frattini quotient. The
-dimension, finiteness and element count of that carrier are `TauCeti.IsProP.rank_cohomFp_one`,
-`TauCeti.IsProP.finrank_cohomFp_one`, `TauCeti.IsProP.finite_cohomFp_one_iff` and
-`TauCeti.IsProP.natCard_cohomFp` of
+dimension and finiteness of that carrier are `TauCeti.IsProP.rank_cohomFp_one`,
+`TauCeti.IsProP.finrank_cohomFp_one` and `TauCeti.IsProP.finite_cohomFp_one_iff` of
 `TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp`; this file does not restate them.
 
 For a profinite pro-`p` group, Burnside's basis theorem in cardinal form
@@ -58,8 +57,8 @@ generated, which is the finite-dimensionality the two-term Euler formula for an 
 `p ^ d(G)` for a topologically finitely generated `G` and generator rank `d`, is the existing
 `TauCeti.IsProP.natCard_H1_of_natCard_eq` of
 `TauCeti.Topology.Algebra.Group.Profinite.ProP.EulerCharacteristic.Basic`, which this file does
-not restate; the same count on the canonical carrier is `TauCeti.IsProP.natCard_cohomFp` of
-`TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp`.
+not restate; on the canonical carrier `TauCeti.cohomFp p G 1` it is that theorem read through the
+existing `TauCeti.cohomFpAddEquivH1`, so it is not restated on that carrier either.
 
 ## Main definitions
 

@@ -19,8 +19,7 @@ stated first for cardinals, with no finiteness hypothesis, and then for the natu
 a topologically finitely generated group; in between, `H¹(G, 𝔽_p)` is finite-dimensional exactly
 when `G` is topologically finitely generated. These are the statements through which a
 finite-dimensionality hypothesis on `H¹(G, 𝔽_p)`, such as the one in the definition of a Demushkin
-group, is converted into finite generation and a rank. For a topologically finitely generated `G`
-the dimension also counts the elements of `H¹(G, 𝔽_p)`, which is `p ^ d(G)`.
+group, is converted into finite generation and a rank.
 
 ## Main results
 
@@ -29,8 +28,6 @@ the dimension also counts the elements of `H¹(G, 𝔽_p)`, which is `p ^ d(G)`.
   topologically finitely generated.
 * `TauCeti.IsProP.finrank_cohomFp_one`: `dim_{𝔽_p} H¹(G, 𝔽_p) = d(G)` for a topologically finitely
   generated pro-`p` group.
-* `TauCeti.IsProP.natCard_cohomFp`: `|H¹(G, 𝔽_p)| = p ^ d(G)` for a topologically finitely generated
-  pro-`p` group.
 
 ## References
 
@@ -66,19 +63,5 @@ theorem IsProP.finrank_cohomFp_one (hG : IsProP p G) (hfg : IsTopologicallyFinit
     Module.finrank (ZMod p) (cohomFp p G 1) = topologicalGeneratorRankNat G hfg := by
   rw [Module.finrank, hG.rank_cohomFp_one,
     ← topologicalGeneratorRankNat_eq_topologicalGeneratorRank, Cardinal.toNat_natCast]
-
-/-- **`H¹(G, 𝔽_p)` counts the generators of `G`.** For a topologically finitely generated
-profinite pro-`p` group, the degree-one continuous cohomology with trivial `𝔽_p` coefficients has
-`p ^ d(G)` elements, where `d` is the topological generator rank: the element count that goes with
-`TauCeti.IsProP.finrank_cohomFp_one` and `TauCeti.IsProP.finite_cohomFp_one_iff`. -/
-theorem IsProP.natCard_cohomFp (hG : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G) :
-    Nat.card (cohomFp p G 1) = p ^ topologicalGeneratorRankNat G hfg := by
-  -- `hfin` is the finite-dimensionality of the continuous dual, which
-  -- `Module.natCard_eq_pow_finrank` needs to count a finite vector space.
-  have hfin : Module.Finite (ZMod p) (continuousZModDual p G) :=
-    hG.finite_continuousZModDual_iff.mpr hfg
-  rw [Nat.card_congr (cohomFpLinearEquivContinuousZModDual p G).toEquiv,
-    Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod,
-    hG.finrank_continuousZModDual_eq_topologicalGeneratorRankNat hfg]
 
 end TauCeti
