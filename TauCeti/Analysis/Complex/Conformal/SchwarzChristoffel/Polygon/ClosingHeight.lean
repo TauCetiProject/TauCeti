@@ -131,7 +131,7 @@ theorem schwarzChristoffelPolygon_closing_intersections_of_vertex_heights
 
 /-- A bounded-side intersection check and strict interior vertex heights make the
 compactified Schwarz--Christoffel boundary simple, including for reentrant corners. -/
-theorem schwarzChristoffelCompactifiedBoundary_injective_of_vertex_heights
+theorem schwarzChristoffelCompactifiedBoundary_injective_of_bounded_intersections_of_vertex_heights
     (a e : Fin (n + 3) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, -1 < e k) (hsum : ∑ k, e k = -2)
     (hheight : ∀ k : Fin (n + 3), k ≠ 0 → k ≠ Fin.last (n + 2) →
