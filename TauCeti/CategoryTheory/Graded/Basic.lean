@@ -50,9 +50,13 @@ recovers the components `F X Y` of `ofGradedHom F` from its grading, degree by d
 
 ## Main results
 
-* `TauCeti.InternalGrading.eq_zero_of_mem_piece_of_ne`: an element of an internally graded module
-  which lies in two distinct degree pieces is zero, so a nonzero morphism of a graded linear quiver
-  is homogeneous of at most one degree.
+* `TauCeti.GradedLinearQuiver.homModule_ofGradedHom`: the hom module of `ofGradedHom F`, the
+  external direct sum of the components of `F X Y`.
+* `TauCeti.GradedLinearQuiver.grading_ofGradedHom`: the internal grading of that hom module, the
+  canonical grading of the external direct sum of the components of `F X Y`.
+* `TauCeti.GradedLinearQuiver.grHomReindex_refl` and
+  `TauCeti.GradedLinearQuiver.grHomReindex_trans`: a homogeneous morphism reindexed by an equation
+  of degrees is the morphism itself, recorded at the new degree, and successive reindexings compose.
 
 ## References
 
@@ -144,6 +148,20 @@ def grHomReindex {n k : ℤ} (h : n = k) (f : grHom R X Y n) : grHom R X Y k :=
 theorem val_grHomReindex (h : n = k) (f : grHom R X Y n) :
     (grHomReindex (R := R) (C := C) h f).1 = f.1 := by
   rw [grHomReindex]
+
+/-- A homogeneous morphism reindexed by reflexivity is the morphism itself. -/
+@[simp]
+theorem grHomReindex_refl (f : grHom R X Y n) : grHomReindex (R := R) (C := C) rfl f = f := by
+  rw [grHomReindex]
+
+/-- A homogeneous morphism reindexed successively along two equations of degrees is the morphism
+reindexed along their composition. -/
+@[simp]
+theorem grHomReindex_trans {n k l : ℤ} (h₁ : n = k) (h₂ : k = l) (f : grHom R X Y n) :
+    grHomReindex (R := R) (C := C) (k := l) h₂
+        (grHomReindex (R := R) (C := C) (k := k) h₁ f)
+      = grHomReindex (R := R) (C := C) (k := l) (h₁.trans h₂) f := by
+  simp only [grHomReindex]
 
 /-! ### An example
 
