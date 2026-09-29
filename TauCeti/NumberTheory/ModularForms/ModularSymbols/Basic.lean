@@ -214,10 +214,10 @@ theorem mapGL_T_mul_S_sq_smul_zero :
     (mapGL ℚ T * mapGL ℚ S) ^ 2 • ((0 : ℚ) : OnePoint ℚ) = (1 : ℚ) := by
   rw [pow_two, mul_smul, mapGL_T_mul_S_smul_zero, mapGL_T_mul_S_smul_infty]
 
-/-- A translate of `[α] - [β]` is the difference of the translated cusps. -/
-theorem degreeZeroRep_single_sub_single (g : SL(2, ℤ)) (α β : OnePoint ℚ) :
-    degreeZeroRep R g ⟨_, single_sub_single_mem_degreeZero α β⟩ =
-      ⟨_, single_sub_single_mem_degreeZero (mapGL ℚ g • α) (mapGL ℚ g • β)⟩ := by
+/-- A `GL(2, ℚ)` translate of `[α] - [β]` is the difference of the translated cusps. -/
+theorem degreeZeroGLRep_single_sub_single (g : GL (Fin 2) ℚ) (α β : OnePoint ℚ) :
+    degreeZeroGLRep R g ⟨_, single_sub_single_mem_degreeZero α β⟩ =
+      ⟨_, single_sub_single_mem_degreeZero (g • α) (g • β)⟩ := by
   ext1
   simp
 
@@ -408,7 +408,7 @@ theorem symbol_mapGL_smul {γ : SL(2, ℤ)} (hγ : γ ∈ Γ) (α β : OnePoint 
       binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P)]
   simp only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype, symbolRep_tmul,
     binaryFormSLRep_binaryFormRep]
-  rw [degreeZeroRep_single_sub_single]
+  rw [degreeZeroRep_apply, degreeZeroGLRep_single_sub_single]
 
 /-- A translate `hD ⊗ P`, for `h ∈ Γ`, is the translate `D ⊗ (P ∣ h)` in `𝕄_w(Γ; R)`. -/
 private theorem mk_degreeZeroRep_tmul {h : SL(2, ℤ)} (hh : h ∈ Γ) (D : degreeZero R)

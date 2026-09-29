@@ -13,9 +13,9 @@ public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Basic
 A Manin symbol is the modular symbol on the oriented edge from `g · ∞` to `g · 0`,
 for `g ∈ SL₂(ℤ)`. These edges generate the modular-symbol module. Reversing an edge
 by `S` gives the two-term relation, and the three edges of the triangle permuted by
-`U = TS` give the three-term relation. Both hold with every homogeneous coefficient
-polynomial. They are the relations used in a finite Manin-symbol presentation and in
-the comparison with period polynomials.
+`U = TS` give the three-term relation. These and invariance under `-1` hold with every
+homogeneous coefficient polynomial. They are the relations used in a finite Manin-symbol
+presentation and in the comparison with period polynomials.
 
 ## References
 
@@ -52,7 +52,8 @@ theorem maninSymbol_eq_mk (g : SL(2, ℤ))
     maninSymbol Γ g P = Coinvariants.mk _
       (degreeZeroRep R g
         ⟨_, single_sub_single_mem_degreeZero ∞ ((0 : ℚ) : OnePoint ℚ)⟩ ⊗ₜ[R] P) := by
-  rw [maninSymbol_apply, symbol_apply, degreeZeroRep_single_sub_single]
+  rw [maninSymbol_apply, symbol_apply, degreeZeroRep_apply,
+    degreeZeroGLRep_single_sub_single]
 
 private theorem maninSymbol_mul (g h : SL(2, ℤ))
     (P : homogeneousSubmodule (Fin 2) R w) :
@@ -78,6 +79,16 @@ theorem maninSymbol_mul_S (g : SL(2, ℤ)) :
   rw [maninSymbol_mul, mapGL_S_smul_infty, mapGL_S_smul_zero, LinearMap.neg_apply,
     maninSymbol_apply]
   exact LinearMap.congr_fun (symbol_swap Γ (mapGL ℚ g • ∞) (mapGL ℚ g • (0 : ℚ))) P
+
+/-- The Manin symbol is unchanged when its matrix is multiplied by the central element `-1`. -/
+theorem maninSymbol_neg (g : SL(2, ℤ)) :
+    maninSymbol Γ (-g) = (maninSymbol Γ g :
+      homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
+  have hS : S * S = (-1 : SL(2, ℤ)) := by
+    apply Subtype.ext
+    simpa only [coe_mul, coe_neg, coe_one] using S_mul_S_eq
+  have hg : -g = g * S * S := by rw [mul_assoc, hS]; simp
+  rw [hg, maninSymbol_mul_S, maninSymbol_mul_S, neg_neg]
 
 /-- The three-term Manin relation for the oriented triangle with vertices
 `g · ∞`, `g · 1`, and `g · 0`. -/
