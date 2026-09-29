@@ -398,6 +398,15 @@ theorem constantCoeffReduction_add
   ext i c
   simp [mul_add]
 
+/-- Reduction commutes with scalar multiplication of linear maps. -/
+@[simp]
+theorem constantCoeffReduction_smul (p : MvPolynomial σ R)
+    (f : (ι →₀ MvPolynomial σ R) →ₗ[MvPolynomial σ R]
+      (κ →₀ MvPolynomial σ R)) :
+    (p • f).constantCoeffReduction = constantCoeff p • f.constantCoeffReduction := by
+  ext i c
+  simp [constantCoeffReduction_single_apply]
+
 /-- The reduction of the zero map is zero. -/
 @[simp]
 theorem constantCoeffReduction_zero :
