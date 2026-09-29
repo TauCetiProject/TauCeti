@@ -40,9 +40,9 @@ Mathlib's `GL(2, ℝ)`-invariance).
 * `UpperHalfPlane.glPosToPSL2R_smul` — the det-normalized projective representative of a
   `GL(2, ℝ)⁺` element (multiplicative by `Real.sqrt_mul` together with the centrality of
   positive scalars) acts on `ℍ` exactly as the original element.
-* `TauCeti.UpperHalfPlane.pslS_smul`, `pslS_smul_pslS_smul` — `TauCeti.pslS` (the
-  `PSL(2, ℝ)` image of `ModularGroup.S`) acts on `ℍ` as `ModularGroup.S` does, and is an
-  involution; `re_pslS_smul` gives its effect on the real part, up to the `normSq` factor.
+* `TauCeti.UpperHalfPlane.pslS_smul` — `TauCeti.pslS` (the `PSL(2, ℝ)` image of
+  `ModularGroup.S`) acts on `ℍ` as `ModularGroup.S` does; `re_pslS_smul` gives its effect on
+  the real part, up to the `normSq` factor.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/PSL2Action.lean`); the AINTLIB Jacobian computation of
@@ -229,11 +229,6 @@ namespace TauCeti.UpperHalfPlane
 /-- `pslS` acts on `ℍ` as `ModularGroup.S` does, i.e. as `z ↦ -1/z`. -/
 theorem pslS_smul (τ : ℍ) : pslS • τ = _root_.ModularGroup.S • τ := by
   rw [pslS_def, psl2zToPSL2R_smul, pslMk_smul]
-
-/-- `pslS` is an involution of `ℍ`. -/
-@[simp]
-theorem pslS_smul_pslS_smul (τ : ℍ) : pslS • pslS • τ = τ := by
-  rw [← mul_smul, pslS_mul_self, one_smul]
 
 /-- `pslS` reverses the sign of the real part, up to the norm-square factor. -/
 theorem re_pslS_smul (τ : ℍ) : (pslS • τ : ℍ).re = -τ.re / Complex.normSq (τ : ℂ) := by
