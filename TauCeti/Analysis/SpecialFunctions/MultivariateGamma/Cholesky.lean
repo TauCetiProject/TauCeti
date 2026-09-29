@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
-public import TauCeti.LinearAlgebra.Matrix.Cholesky.Coordinates
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Cholesky
 public import Mathlib.MeasureTheory.Integral.Pi
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.Gamma
@@ -16,9 +16,9 @@ import Mathlib.MeasureTheory.Integral.Gamma
 
 Every positive-definite symmetric `p × p` matrix is `L * Lᵀ` for a unique lower-triangular `L`
 with positive diagonal, and reading off the on-or-below-diagonal entries of `L` turns the
-positive-definite cone into the region of `TauCeti.lowerTriangle p → ℝ` whose diagonal
-coordinates are positive.  This file evaluates, in those coordinates, the integral whose value
-is `TauCeti.multivariateGamma p a`:
+positive-definite cone into the region `TauCeti.posDiagLowerRegion p` of
+`TauCeti.lowerTriangle p → ℝ` whose diagonal coordinates are positive.  This file evaluates, in
+those coordinates, the integral whose value is `TauCeti.multivariateGamma p a`:
 
 `∫ (det (L * Lᵀ)) ^ (a - (p + 1) / 2) * exp (-trace (L * Lᵀ)) * (2 ^ p * ∏ i, (L i i) ^ (p - i))`
 
@@ -58,18 +58,6 @@ namespace TauCeti
 
 variable {p : ℕ} {a : ℝ}
 
-/-- The region of lower-triangular coordinates on which the Cholesky factors live: the diagonal
-coordinates are positive. -/
-private def posDiagCoordinates (p : ℕ) : Set (lowerTriangle p → ℝ) :=
-  {x | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩}
-
-private theorem measurableSet_posDiagCoordinates : MeasurableSet (posDiagCoordinates p) := by
-  have : posDiagCoordinates p = ⋂ i : Fin p, {x : lowerTriangle p → ℝ | 0 < x ⟨(i, i), le_rfl⟩} :=
-    Set.ext fun _ ↦ by simp [posDiagCoordinates]
-  rw [this]
-  exact MeasurableSet.iInter fun i ↦
-    measurableSet_lt measurable_const (measurable_pi_apply (⟨(i, i), le_rfl⟩ : lowerTriangle p))
-
 /-- The one-dimensional factor of the integrand attached to the coordinate `ij`.  A diagonal
 coordinate contributes a Gamma integrand, restricted to the positive half-line because the
 region constrains it; a strictly lower coordinate contributes a Gaussian integrand. -/
@@ -78,24 +66,6 @@ private def choleskyFactor (a : ℝ) (ij : lowerTriangle p) (t : ℝ) : ℝ :=
     (Ioi (0 : ℝ)).indicator
       (fun s ↦ 2 * s ^ (2 * a - ((ij.1.1 : ℕ) : ℝ) - 1) * exp (-s ^ 2)) t
   else exp (-t ^ 2)
-
-/-- The powers of `√π` contributed by the strictly lower coordinates assemble into the power of
-`π` appearing in `TauCeti.multivariateGamma`. -/
-private theorem sqrt_pi_pow_sum (p : ℕ) :
-    √π ^ (∑ i : Fin p, (i : ℕ)) = π ^ (((p : ℝ) * ((p : ℝ) - 1)) / 4) := by
-  have hsum : ((∑ i : Fin p, (i : ℕ) : ℕ) : ℝ) = (p : ℝ) * ((p : ℝ) - 1) / 2 := by
-    have h := Finset.sum_range_id_mul_two p
-    rw [Fin.sum_univ_eq_sum_range (fun i ↦ i) p]
-    cases p with
-    | zero => simp
-    | succ n =>
-      have hcast : ((∑ i ∈ Finset.range (n + 1), i : ℕ) : ℝ) * 2 = ((n + 1 : ℕ) : ℝ) * (n : ℝ) := by
-        exact_mod_cast congrArg (fun m : ℕ ↦ (m : ℝ)) h
-      push_cast at hcast ⊢
-      linarith
-  rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast (π ^ (1 / 2 : ℝ)) _, ← Real.rpow_mul pi_pos.le, hsum]
-  congr 1
-  ring
 
 /-- Each one-dimensional factor integrates to a Gamma value on the diagonal and to `√π` off it. -/
 private theorem integral_choleskyFactor (ha : ((p : ℝ) - 1) / 2 < a) (ij : lowerTriangle p) :
@@ -120,7 +90,7 @@ private theorem integral_choleskyFactor (ha : ((p : ℝ) - 1) / 2 < a) (ij : low
 /-- On the region the integrand is the product of the one-dimensional factors, and off it both
 sides vanish: a nonpositive diagonal coordinate kills the corresponding factor. -/
 private theorem indicator_eq_prod_choleskyFactor (a : ℝ) (x : lowerTriangle p → ℝ) :
-    (posDiagCoordinates p).indicator
+    (posDiagLowerRegion p).indicator
         (fun y : lowerTriangle p → ℝ ↦
           ((lowerTriangleMatrix p y * (lowerTriangleMatrix p y)ᵀ).det ^
                 (a - ((p : ℝ) + 1) / 2) *
@@ -128,8 +98,8 @@ private theorem indicator_eq_prod_choleskyFactor (a : ℝ) (x : lowerTriangle p 
             (2 ^ p * ∏ i : Fin p, y ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)))) x =
       ∏ ij : lowerTriangle p, choleskyFactor a ij (x ij) := by
   classical
-  by_cases hx : x ∈ posDiagCoordinates p
-  · have hpos : ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩ := hx
+  by_cases hx : x ∈ posDiagLowerRegion p
+  · have hpos : ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩ := (mem_posDiagLowerRegion p).mp hx
     -- Split each factor into the part depending on the exponent and a Gaussian part.
     have hfac : ∀ ij : lowerTriangle p, choleskyFactor a ij (x ij) =
         (if ij.1.1 = ij.1.2 then
@@ -154,7 +124,7 @@ private theorem indicator_eq_prod_choleskyFactor (a : ℝ) (x : lowerTriangle p 
     rw [hcore]
     simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
     ring
-  · obtain ⟨i, hi⟩ := not_forall.1 hx
+  · obtain ⟨i, hi⟩ := not_forall.1 ((mem_posDiagLowerRegion p).not.1 hx)
     rw [Set.indicator_of_notMem hx]
     refine (Finset.prod_eq_zero (Finset.mem_univ (⟨(i, i), le_rfl⟩ : lowerTriangle p)) ?_).symm
     have hmem : x (⟨(i, i), le_rfl⟩ : lowerTriangle p) ∉ Ioi (0 : ℝ) := by simpa using hi
@@ -166,26 +136,27 @@ lower-triangular coordinates with positive diagonal, the Wishart integrand `(det
 `2 ^ p * ∏ i, (L i i) ^ (p - i)` integrates to `Γ_p(a)`. -/
 theorem integral_lowerTriangle_det_rpow_mul_exp_neg_trace
     (ha : ((p : ℝ) - 1) / 2 < a) :
-    ∫ x in {x : lowerTriangle p → ℝ | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩},
+    ∫ x in posDiagLowerRegion p,
         ((lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace)) *
           (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))) =
       multivariateGamma p a := by
-  calc ∫ x in posDiagCoordinates p,
+  calc ∫ x in posDiagLowerRegion p,
           ((lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ (a - ((p : ℝ) + 1) / 2) *
               exp (-(lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace)) *
             (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ)))
       = ∫ x : lowerTriangle p → ℝ, ∏ ij : lowerTriangle p, choleskyFactor a ij (x ij) := by
-        rw [← integral_indicator measurableSet_posDiagCoordinates]
+        rw [← integral_indicator (measurableSet_posDiagLowerRegion p)]
         exact integral_congr_ae (.of_forall (indicator_eq_prod_choleskyFactor a))
     _ = ∏ ij : lowerTriangle p, ∫ t, choleskyFactor a ij t := by
         rw [volume_pi]; exact integral_fintype_prod_eq_prod _
     _ = multivariateGamma p a := by
         rw [Finset.prod_congr rfl fun ij _ ↦ integral_choleskyFactor ha ij,
           prod_lowerTriangle_ite (fun i ↦ Real.Gamma (a - ((i : ℕ) : ℝ) / 2)) fun _ ↦ √π,
-          Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, sqrt_pi_pow_sum,
-          multivariateGamma_def]
-        ring
+          multivariateGamma_eq_prod]
+        refine Finset.prod_congr rfl fun i _ ↦ ?_
+        rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul pi_pos.le, mul_comm]
+        ring_nf
 
 /-- For `((p : ℝ) - 1) / 2 < a`, the Jacobian-weighted Wishart integrand `(det (L * Lᵀ)) ^
 (a - (p + 1) / 2) * exp (-trace (L * Lᵀ)) * (2 ^ p * ∏ i, (L i i) ^ (p - i))` is integrable over
@@ -196,7 +167,7 @@ theorem integrableOn_lowerTriangle_det_rpow_mul_exp_neg_trace
         ((lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ (a - ((p : ℝ) + 1) / 2) *
             exp (-(lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).trace)) *
           (2 ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - (i : ℕ))))
-      {x : lowerTriangle p → ℝ | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩} := by
+      (posDiagLowerRegion p) := by
   -- Were the integrand not integrable the integral would vanish, but it equals the positive
   -- value `Γ_p(a)`.
   by_contra h

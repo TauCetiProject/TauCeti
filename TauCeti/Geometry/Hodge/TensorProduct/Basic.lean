@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct
-public import TauCeti.Geometry.Hodge.Decomposition
+public import TauCeti.Geometry.Hodge.WeilOperator
 
 /-!
 # Tensor products of pure Hodge structures
@@ -14,6 +14,11 @@ public import TauCeti.Geometry.Hodge.Decomposition
 The tensor product of pure Hodge structures is graded by adding bidegrees.  We construct its
 conjugation from the tensor product of the two conjugate-linear involutions and use the internal
 Hodge decompositions to package the total grading as a pure Hodge structure.
+
+For integral pure Hodge structures, the tensor product is carried by the tensor product of the two
+lattices: the tensor product of the two complexifications is a complexification of it, whose
+lattice conjugation is the tensor product of the two lattice conjugations
+(`TauCeti.Hodge.latticeConjugation_tensorProduct`).
 
 ## Main declarations
 
@@ -24,9 +29,12 @@ Hodge decompositions to package the total grading as a pure Hodge structure.
   as the supremum of products of Hodge pieces.
 * `TauCeti.Hodge.HodgeStructureOn.tmul_mem_tensorProduct`: pure tensors have the expected total
   Hodge degree.
-
-The construction supplies the tensor-product companion requested in Layer 0 of the
-`HodgeStructures` roadmap.
+* `TauCeti.Hodge.HodgeStructureOn.weilOperator_tensorProduct`: the Weil operator of the tensor
+  product is the tensor product of the Weil operators.
+* `TauCeti.Hodge.HodgeStructure.tensorProduct`: the tensor product of two integral pure Hodge
+  structures, on the tensor product of their lattices.
+* `TauCeti.Hodge.HodgeStructure.tensorProduct_weilOperator`: the Weil operator of the integral
+  tensor product is the tensor product of the two Weil operators.
 -/
 
 public section
@@ -160,6 +168,73 @@ theorem tmul_mem_tensorProduct (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
   rw [tensorProduct, ofDecomposition_piece]
   exact InternalGrading.tmul_mem_tensorProduct (pieceGrading hs₁) (pieceGrading hs₂) hx hy
 
+/-- The Weil operator of a tensor product of pure Hodge structures is the tensor product of the
+two Weil operators: on a product of components of degrees `r` and `p - r` both act by
+`i^(2r-n₁) i^(2(p-r)-n₂) = i^(2p-(n₁+n₂))`. -/
+@[simp]
+theorem weilOperator_tensorProduct (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
+    (hs₂ : HodgeStructureOn W₂ ω₂ n₂) :
+    (hs₁.tensorProduct hs₂).weilOperator =
+      TensorProduct.map hs₁.weilOperator hs₂.weilOperator := by
+  refine ((hs₁.tensorProduct hs₂).weilOperator_unique _ fun p x hx ↦ ?_).symm
+  have hle : (hs₁.tensorProduct hs₂).piece p ≤ LinearMap.ker
+      (TensorProduct.map hs₁.weilOperator hs₂.weilOperator -
+        Complex.I ^ (2 * p - (n₁ + n₂)) • LinearMap.id) := by
+    rw [tensorProduct_piece_eq_iSup]
+    refine iSup_le fun r ↦ Submodule.map₂_le.mpr fun a ha b hb ↦ ?_
+    rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply,
+      TensorProduct.mk_apply, TensorProduct.map_tmul, hs₁.weilOperator_apply_of_mem ha,
+      hs₂.weilOperator_apply_of_mem hb, TensorProduct.smul_tmul_smul,
+      ← zpow_add₀ Complex.I_ne_zero, sub_eq_zero]
+    congr 2
+    ring
+  simpa [sub_eq_zero] using hle hx
+
 end HodgeStructureOn
+
+/-! ### The tensor product of two integral Hodge structures -/
+
+variable {V : Type*} {V' : Type*} {Vℂ : Type*} {V'ℂ : Type*}
+variable [AddCommGroup V] [AddCommGroup V'] [AddCommGroup Vℂ] [Module ℂ Vℂ]
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ιℂ : V →ₗ[ℤ] Vℂ} {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
+
+namespace HodgeStructure
+
+variable {hℂ : IsBaseChange ℂ ιℂ} {h'ℂ : IsBaseChange ℂ ι'ℂ} {n n' : ℤ}
+
+/-- The tensor product of two integral pure Hodge structures, of weight the sum of the weights. It
+is carried by the tensor product of the lattices, and its Hodge filtration is that of the tensor
+product of the complex Hodge structures (`HodgeStructure.tensorProduct_F`). -/
+noncomputable def tensorProduct (hs : HodgeStructure hℂ n) (hs' : HodgeStructure h'ℂ n') :
+    HodgeStructure (isBaseChange_tensorLatticeMap hℂ h'ℂ) (n + n') :=
+  (HodgeStructureOn.tensorProduct hs hs').comap (LinearEquiv.refl ℂ _) fun x ↦ by
+    rw [latticeConjugation_tensorProduct, LinearEquiv.refl_apply, LinearEquiv.refl_apply]
+
+variable (hs : HodgeStructure hℂ n) (hs' : HodgeStructure h'ℂ n')
+
+/-- The Hodge filtration of the tensor product of two integral Hodge structures is that of the
+tensor product of the complex Hodge structures. -/
+@[simp]
+theorem tensorProduct_F (p : ℤ) :
+    (hs.tensorProduct hs').F p = (HodgeStructureOn.tensorProduct hs hs').F p := by
+  rw [tensorProduct, HodgeStructureOn.comap_F, LinearEquiv.refl_toLinearMap, Submodule.comap_id]
+
+/-- The Hodge components of the tensor product of two integral Hodge structures are those of the
+tensor product of the complex Hodge structures. -/
+@[simp]
+theorem tensorProduct_piece (p : ℤ) :
+    (hs.tensorProduct hs').piece p = (HodgeStructureOn.tensorProduct hs hs').piece p := by
+  rw [tensorProduct, HodgeStructureOn.comap_piece, LinearEquiv.refl_toLinearMap,
+    Submodule.comap_id]
+
+/-- The Weil operator of the integral tensor product is the tensor product of the Weil operators. -/
+@[simp]
+theorem tensorProduct_weilOperator :
+    (hs.tensorProduct hs').weilOperator =
+      TensorProduct.map hs.weilOperator hs'.weilOperator := by
+  simp [tensorProduct, HodgeStructureOn.weilOperator_comap]
+
+end HodgeStructure
 
 end TauCeti.Hodge

@@ -6,18 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
+import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 
 /-!
-# Total ramification in towers
+# Total ramification in towers, and units of totally ramified extensions
 
 The residue-degree characterization of total ramification and multiplicativity of residue degree
 show that a tower is totally ramified exactly when each step is. The predicate and characterization
-are defined in `RamificationIndex` and `InertiaDegree`, respectively.
+are defined in `RamificationIndex` and `InertiaDegree`, respectively. Since the residue fields of a
+totally ramified extension agree, units of the larger ring of integers are units of the smaller one
+up to principal units, and hence up to `n`-th powers for every `n` invertible in `𝒪[L]`.
 
 ## Main results
 
 * `TauCeti.isTotallyRamified_tower_iff`: total ramification is equivalent to total ramification
   of both steps of a tower.
+* `TauCeti.IsTotallyRamified.exists_eq_algebraMap_mul_pow`: in a totally ramified extension,
+  every unit of `𝒪[L]` is a unit of `𝒪[K]` times the `n`-th power of a unit of `𝒪[L]`, for every
+  `n` invertible in `𝒪[L]`.
 
 ## References
 
@@ -70,5 +76,41 @@ theorem IsTotallyRamified.tower_top
   ((isTotallyRamified_tower_iff K L M).1 hKM).2
 
 end Tower
+
+section Units
+
+open ValuativeRel IsLocalRing IsNonarchimedeanLocalField
+
+/-- In a totally ramified extension of nonarchimedean local fields, every unit of `𝒪[L]` is the
+image of a unit of `𝒪[K]` times the `n`-th power of a unit of `𝒪[L]`, for every `n` invertible
+in `𝒪[L]`. -/
+theorem IsTotallyRamified.exists_eq_algebraMap_mul_pow (h : IsTotallyRamified K L) {n : ℕ}
+    (hn : IsUnit (n : 𝒪[L])) (u : 𝒪[L]ˣ) :
+    ∃ (a : 𝒪[K]ˣ) (w : 𝒪[L]ˣ), (u : 𝒪[L]) = algebraMap 𝒪[K] 𝒪[L] a * w ^ n := by
+  -- the residue of `u` comes from a unit `a` of `𝒪[K]`, since the residue fields agree
+  obtain ⟨c, hc⟩ :=
+    (isTotallyRamified_iff_surjective_algebraMap_residueField K L).1 h (residue 𝒪[L] u)
+  obtain ⟨a, rfl⟩ := residue_surjective c
+  rw [ResidueField.algebraMap_residue] at hc
+  have ha : IsUnit (algebraMap 𝒪[K] 𝒪[L] a) := by
+    rw [← notMem_maximalIdeal, ← residue_eq_zero_iff, hc, residue_eq_zero_iff,
+      notMem_maximalIdeal]
+    exact u.isUnit
+  -- the quotient `y = u / a` is a principal unit, hence the `n`-th power of a principal unit
+  set y : 𝒪[L]ˣ := u * ha.unit⁻¹ with hy
+  have hy1 : Units.map (Subring.subtype 𝒪[L] : 𝒪[L] →* L) y ∈ unitFiltration L 1 := by
+    rw [mem_unitFiltration_one_iff_residue_eq_one]
+    simp [hy, ← hc, (ha.map (residue 𝒪[L])).ne_zero]
+  obtain ⟨⟨w, hw⟩, hwy⟩ := (powMonoidHom_unitFiltration_succ_bijective_of_isUnit hn 0).2 ⟨_, hy1⟩
+  let w' := unitFiltrationToIntegerUnits 1 ⟨w, hw⟩
+  refine ⟨(isUnit_of_map_unit _ _ ha).unit, w', ?_⟩
+  have hwy' : w' ^ n = y := by
+    apply Units.map_injective (f := (Subring.subtype 𝒪[L] : 𝒪[L] →* L)) Subtype.coe_injective
+    rw [map_pow, unitsMap_subtype_unitFiltrationToIntegerUnits]
+    exact Subtype.ext_iff.1 hwy
+  rw [← Units.val_pow_eq_pow_val, hwy', IsUnit.unit_spec, ← ha.unit_spec, ← Units.val_mul, hy,
+    mul_comm, inv_mul_cancel_right]
+
+end Units
 
 end TauCeti

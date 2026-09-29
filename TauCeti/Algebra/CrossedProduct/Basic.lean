@@ -45,6 +45,8 @@ Central simplicity of the crossed product of a finite Galois extension of fields
   left `L`-module structures.
 * `TauCeti.CrossedProduct.basis c`: the `L`-basis `u_σ` of the crossed product.
 * `TauCeti.CrossedProduct.inc c`: the embedding of `L` as a `K`-subalgebra.
+* `TauCeti.CrossedProduct.lift`: the universal property, extending `f : L →ₐ[K] R` and elements
+  `u σ ∈ R` satisfying the relations of the crossed product to a `K`-algebra homomorphism.
 
 ## Main results
 
@@ -52,6 +54,8 @@ Central simplicity of the crossed product of a finite Galois extension of fields
   `(x · u_σ) · (y · u_τ) = (x · σ(y) · c(σ, τ)) · u_{στ}`.
 * `TauCeti.CrossedProduct.basis_mul_inc`: `u_σ · x = σ(x) · u_σ`.
 * `TauCeti.CrossedProduct.basis_mul_basis`: `u_σ · u_τ = c(σ, τ) · u_{στ}`.
+* `TauCeti.CrossedProduct.algHom_ext`, `TauCeti.CrossedProduct.lift_unique`: a `K`-algebra
+  homomorphism out of the crossed product is determined by its values on `L` and on the `u_σ`.
 * `TauCeti.CrossedProduct.finrank_eq_finrank_mul_card`: over fields, the `Module.finrank` of the
   crossed product is `Module.finrank K L * Nat.card (Aut_K(L))`; and
   `TauCeti.CrossedProduct.finrank_eq_finrank_sq`: for a finite Galois extension its dimension is
@@ -434,6 +438,80 @@ theorem repr_mul_inc (a : CrossedProduct c) (x : L) (σ : L ≃ₐ[K] L) :
     · subst h
       ring
     · simp [h]
+
+section Lift
+
+variable {R : Type*} [Semiring R] [Algebra K R]
+
+/-- The **universal property of the crossed product**: a `K`-algebra homomorphism `f : L → R`
+together with elements `u σ ∈ R` satisfying `u σ · f(x) = f(σ x) · u σ`,
+`u σ · u τ = f(c(σ, τ)) · u (στ)` and `u 1 = f(c(1, 1))` extends to the `K`-algebra homomorphism
+`x · u_σ ↦ f(x) · u σ` out of `CrossedProduct c`. The last condition is `basis_one`; without it
+`u = 0` would satisfy the first two. -/
+noncomputable def lift (f : L →ₐ[K] R) (u : (L ≃ₐ[K] L) → R)
+    (hf : ∀ σ x, u σ * f x = f (σ x) * u σ)
+    (hu : ∀ σ τ, u σ * u τ = f (c.toFun σ τ) * u (σ * τ)) (hu₁ : u 1 = f (c.toFun 1 1)) :
+    CrossedProduct c →ₐ[K] R :=
+  have hsb (σ : L ≃ₐ[K] L) (x : L) : (Finsupp.lsum K fun σ ↦
+      LinearMap.mulRight K (u σ) ∘ₗ f.toLinearMap) ((basis c).repr (x • basis c σ)) =
+      f x * u σ := by
+    simp
+  AlgHom.ofLinearMap ((Finsupp.lsum K fun σ ↦ LinearMap.mulRight K (u σ) ∘ₗ f.toLinearMap) ∘ₗ
+      (basis c).repr.toLinearMap.restrictScalars K)
+    (by
+      rw [LinearMap.comp_apply, one_def, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe, hsb,
+        hu₁, ← map_mul, Units.inv_mul, map_one])
+    fun a b ↦ by
+      simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe]
+      induction a using induction_on with
+      | zero => simp
+      | add a a' ha ha' => simp only [add_mul, map_add, ha, ha']
+      | smul_basis σ x =>
+        induction b using induction_on with
+        | zero => simp
+        | add b b' hb hb' => simp only [mul_add, map_add, hb, hb']
+        | smul_basis τ y =>
+          rw [smul_basis_mul_smul_basis, hsb, hsb, hsb, map_mul, map_mul, mul_assoc, mul_assoc,
+            ← hu, ← mul_assoc (f (σ y)), ← hf]
+          simp only [mul_assoc]
+
+variable (f : L →ₐ[K] R) (u : (L ≃ₐ[K] L) → R) (hf : ∀ σ x, u σ * f x = f (σ x) * u σ)
+  (hu : ∀ σ τ, u σ * u τ = f (c.toFun σ τ) * u (σ * τ)) (hu₁ : u 1 = f (c.toFun 1 1))
+
+/-- `CrossedProduct.lift` sends `x · u_σ` to `f(x) · u σ`. -/
+@[simp]
+theorem lift_smul_basis (σ : L ≃ₐ[K] L) (x : L) :
+    lift f u hf hu hu₁ (x • basis c σ) = f x * u σ := by
+  simp [lift]
+
+/-- `CrossedProduct.lift` sends the basis element `u_σ` to `u σ`. -/
+@[simp]
+theorem lift_basis (σ : L ≃ₐ[K] L) : lift f u hf hu hu₁ (basis c σ) = u σ := by
+  rw [← one_smul L (basis c σ), lift_smul_basis, map_one, one_mul]
+
+/-- `CrossedProduct.lift` restricts to `f` on the copy `inc c` of `L`. -/
+@[simp]
+theorem lift_inc (x : L) : lift f u hf hu hu₁ (inc c x) = f x := by
+  rw [inc_apply, lift_smul_basis, hu₁, ← map_mul, mul_assoc, Units.inv_mul, mul_one]
+
+/-- **Uniqueness in the universal property**: a `K`-algebra homomorphism out of `CrossedProduct c`
+is determined by its values on the copy `inc c` of `L` and on the basis elements `u_σ`. -/
+@[ext]
+theorem algHom_ext {F G : CrossedProduct c →ₐ[K] R} (hinc : ∀ x, F (inc c x) = G (inc c x))
+    (hbasis : ∀ σ, F (basis c σ) = G (basis c σ)) : F = G :=
+  AlgHom.ext fun a ↦ by
+    induction a using induction_on with
+    | zero => simp
+    | add a b ha hb => simp only [map_add, ha, hb]
+    | smul_basis σ x => rw [smul_def, map_mul, map_mul, hinc, hbasis]
+
+/-- `CrossedProduct.lift` is the unique `K`-algebra homomorphism restricting to `f` on `inc c` and
+sending each `u_σ` to `u σ`. -/
+theorem lift_unique (F : CrossedProduct c →ₐ[K] R) (hinc : ∀ x, F (inc c x) = f x)
+    (hbasis : ∀ σ, F (basis c σ) = u σ) : F = lift f u hf hu hu₁ :=
+  algHom_ext (fun x ↦ by rw [hinc, lift_inc]) fun σ ↦ by rw [hbasis, lift_basis]
+
+end Lift
 
 /-- A crossed product over a nontrivial ring `L` is nontrivial. -/
 instance [Nontrivial L] : Nontrivial (CrossedProduct c) :=

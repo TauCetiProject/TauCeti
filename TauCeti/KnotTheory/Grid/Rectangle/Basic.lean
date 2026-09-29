@@ -15,8 +15,7 @@ public import TauCeti.KnotTheory.Grid.Diagram.Basic
 /-!
 # Rectangles in grid diagrams
 
-This file adds the first rectangle API for the grid-combinatorial lane of the Heegaard Floer
-roadmap. The grid lives on a torus, so the basic one-dimensional ingredient is the circular
+The grid lives on a torus, so the basic one-dimensional ingredient of a rectangle is the circular
 interval in `Fin n`. A grid rectangle carries two finite coordinate sets built from such intervals:
 its `interior`, the product of two open intervals, records the grid points strictly inside and
 is what a grid state must avoid for the rectangle to be empty; its `coveredSquares`, the product
@@ -44,8 +43,8 @@ covered squares further for the gradings.
   named by its lower-left grid point.
 * `TauCeti.GridRectangleBetween`: an oriented rectangle from one grid state to another.
 * `TauCeti.GridRectangleBetween.symm`: the opposite oriented rectangle from `y` to `x`.
-* `TauCeti.GridRectangleBetween.swapSides`: the complementary oriented rectangle from `x` to `y`
-  with its two side columns exchanged.
+* `TauCeti.GridRectangleBetween.swapSides`: the other oriented rectangle from `x` to `y` on the same
+  two side columns, which runs along the complementary column arc and the complementary row arc.
 * `TauCeti.GridRectangleBetween.transpose`: the diagonal reflection of an oriented rectangle, from
   `x.transpose` to `y.transpose`.
 * `TauCeti.GridRectangleBetween.transposeEquiv`: the diagonal reflection packaged as an involutive
@@ -67,11 +66,7 @@ covered squares further for the gradings.
 
 ## References
 
-This supplies a prerequisite for the Tau Ceti Heegaard Floer roadmap,
-`CombinatorialHeegaardFloer/README.md` in TauCetiRoadmap. Lane G.1, "Grid diagrams and grid
-states", asks for rectangles and empty rectangles `Rect°(x, y)`, and Lane G.3, "The complexes
-and `∂² = 0`", uses the opposite-rectangle bookkeeping in the rectangle-pairing arguments. The
-encoding follows the toroidal grid-diagram convention from Ozsváth--Stipsicz--Szabó, *Grid
+The encoding follows the toroidal grid-diagram convention from Ozsváth--Stipsicz--Szabó, *Grid
 Homology for Knots and Links*, Chapter 3; the marking-avoidance condition defining the fully
 blocked complex is in Chapter 4, Section 4.4.
 -/
@@ -412,8 +407,9 @@ end GridRectangle
 /-- An oriented toroidal rectangle from one grid state to another.
 
 The two states agree outside the two side columns, and in those side columns they exchange the
-two rows. Swapping `left` and `right` gives the complementary oriented rectangle. The two side
-columns determine the rectangle (`GridRectangleBetween.ext`). -/
+two rows. Swapping `left` and `right` gives the other oriented rectangle from `x` to `y` on the
+same side columns (`GridRectangleBetween.swapSides`). The two side columns determine the rectangle
+(`GridRectangleBetween.ext`). -/
 @[ext]
 structure GridRectangleBetween {n : ℕ} (x y : GridState n) where
   /-- The initial vertical side. -/
@@ -459,21 +455,25 @@ instance : DecidableEq (GridRectangleBetween x y) :=
   sidePair_injective.decidableEq
 
 /-- For fixed source and target grid states, the oriented rectangles between them form a
-finite type. Each rectangle is determined by its two side columns. -/
-noncomputable instance : Fintype (GridRectangleBetween x y) :=
-  Fintype.ofInjective (fun R : GridRectangleBetween x y => (R.left, R.right))
-    sidePair_injective
+finite type: a rectangle is its ordered pair of side columns, and the pairs that occur form a
+decidable subset of `Fin n × Fin n`. The instance is computable, so `decide` can count
+rectangles on a concrete grid. -/
+instance : Fintype (GridRectangleBetween x y) :=
+  Fintype.ofEquiv {p : Fin n × Fin n // p.1 ≠ p.2 ∧ y p.1 = x p.2 ∧ y p.2 = x p.1 ∧
+      ∀ c, c ≠ p.1 → c ≠ p.2 → y c = x c}
+    { toFun p := ⟨p.1.1, p.1.2, p.2.1, p.2.2.1, p.2.2.2.1, p.2.2.2.2⟩
+      invFun R := ⟨(R.left, R.right), R.left_ne_right, R.map_left, R.map_right, R.map_of_ne⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
 
 /-- The finite set of all oriented rectangles from `x` to `y`. -/
-noncomputable def all (x y : GridState n) : Finset (GridRectangleBetween x y) := by
-  classical
-  exact Finset.univ
+def all (x y : GridState n) : Finset (GridRectangleBetween x y) :=
+  Finset.univ
 
 /-- Membership in `GridRectangleBetween.all` is automatic. -/
 @[simp]
-theorem mem_all (R : GridRectangleBetween x y) : R ∈ all x y := by
-  classical
-  simp [all]
+theorem mem_all (R : GridRectangleBetween x y) : R ∈ all x y :=
+  Finset.mem_univ R
 
 variable (R : GridRectangleBetween x y)
 
@@ -769,8 +769,7 @@ theorem isEmpty_of_right_eq_finRotate (h : R.right = finRotate n R.left) : R.IsE
   rw [isEmpty_iff_forall_notMem_cIoo, h, Grid.cIoo_finRotate_eq_empty]
   exact fun c hc => absurd hc (Finset.notMem_empty c)
 
-/-- If a target-state point lies on a side column, then it is not in the associated
-rectangle's interior. -/
+/-- A point on the initial side column is not in the interior of the associated rectangle. -/
 theorem notMem_interior_of_fst_eq_left {p : Fin n × Fin n} (hp : p.1 = R.left) :
     p ∉ R.toGridRectangle.interior := by
   intro hpR
@@ -778,8 +777,7 @@ theorem notMem_interior_of_fst_eq_left {p : Fin n × Fin n} (hp : p.1 = R.left) 
   rw [hp] at hpcol
   exact R.toGridRectangle.left_notMem_columnInterior hpcol
 
-/-- If a target-state point lies on the other side column, then it is not in the associated
-rectangle's interior. -/
+/-- A point on the terminal side column is not in the interior of the associated rectangle. -/
 theorem notMem_interior_of_fst_eq_right {p : Fin n × Fin n} (hp : p.1 = R.right) :
     p ∉ R.toGridRectangle.interior := by
   intro hpR
@@ -908,8 +906,10 @@ variable {n : ℕ} {x y : GridState n}
 /-- The oriented rectangle from `x` to `y` obtained by exchanging the two side columns.
 
 It connects the same two states `x` and `y` -- the two states still exchange rows at the two
-side columns and agree elsewhere -- but traverses the complementary toroidal region. This is not
-the opposite rectangle `symm`, which runs from `y` back to `x`. -/
+side columns and agree elsewhere -- but runs along the complementary column arc and the
+complementary row arc. Cutting the torus along the two side columns and the two side rows, `R` and
+`R.swapSides` are diagonally opposite pieces; the other two pieces lie in neither. This is not the
+opposite rectangle `symm`, which runs from `y` back to `x`. -/
 def swapSides (R : GridRectangleBetween x y) : GridRectangleBetween x y where
   left := R.right
   right := R.left

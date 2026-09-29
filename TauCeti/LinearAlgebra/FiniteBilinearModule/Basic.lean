@@ -88,23 +88,29 @@ instance : CoeSort FiniteBilinearModule (Type u) := ⟨FiniteBilinearModule.carr
 
 variable (A : FiniteBilinearModule)
 
+/-- The pairing of `0` with any element is zero. -/
 theorem pairing_zero_left (x : A) : A.pairing 0 x = 0 := by
   rw [map_zero]
   rfl
 
+/-- The pairing of any element with `0` is zero. -/
 @[simp]
 theorem pairing_zero_right (x : A) : A.pairing x 0 = 0 := map_zero _
 
+/-- The pairing is additive in its first argument. -/
 theorem pairing_add_left (x y z : A) : A.pairing (x + y) z = A.pairing x z + A.pairing y z :=
   DFunLike.congr_fun (map_add A.pairing x y) z
 
+/-- The pairing is additive in its second argument. -/
 @[simp]
 theorem pairing_add_right (x y z : A) : A.pairing x (y + z) = A.pairing x y + A.pairing x z :=
   map_add (A.pairing x) y z
 
+/-- Negating the first argument negates the pairing. -/
 theorem pairing_neg_left (x y : A) : A.pairing (-x) y = -A.pairing x y :=
   DFunLike.congr_fun (map_neg A.pairing x) y
 
+/-- Negating the second argument negates the pairing. -/
 @[simp]
 theorem pairing_neg_right (x y : A) : A.pairing x (-y) = -A.pairing x y :=
   map_neg (A.pairing x) y
@@ -117,10 +123,13 @@ def toBilin : A →ₗ[ℤ] A →ₗ[ℤ] AddCircle (1 : ℚ) :=
     (fun x y z ↦ A.pairing_add_right x y z)
     (fun r x y ↦ map_zsmul (A.pairing x) r y)
 
+/-- The `ℤ`-bilinear map `toBilin` evaluates to the pairing. -/
 @[simp]
 theorem toBilin_apply (x y : A) : A.toBilin x y = A.pairing x y := by
   rfl
 
+/-- The bilinear map `toBilin` is reflexive: a pairing that vanishes in one order vanishes in the
+other. -/
 theorem isRefl_toBilin : A.toBilin.IsRefl := fun x y h ↦ by
   rw [toBilin_apply, A.pairing_comm, ← toBilin_apply]
   exact h
@@ -152,6 +161,7 @@ theorem IsNondegenerate.bijective (hA : A.IsNondegenerate) : Function.Bijective 
 noncomputable def adjointEquiv (hA : A.IsNondegenerate) : A ≃+ CharacterModule A :=
   AddEquiv.ofBijective A.pairing hA.bijective
 
+/-- The adjoint equivalence sends `x` to its character `A.pairing x`. -/
 @[simp]
 theorem adjointEquiv_apply (hA : A.IsNondegenerate) (x : A) : A.adjointEquiv hA x = A.pairing x :=
   (rfl)
@@ -170,6 +180,7 @@ namespace Hom
 variable {A : FiniteBilinearModule.{u}} {B : FiniteBilinearModule.{v}}
   {C : FiniteBilinearModule.{w}}
 
+/-- A morphism of finite bilinear modules coerces to a function between the underlying groups. -/
 instance : FunLike (Hom A B) A B where
   coe f := f.toAddMonoidHom
   coe_injective f g h := by
@@ -178,10 +189,12 @@ instance : FunLike (Hom A B) A B where
     congr
     exact DFunLike.coe_injective h
 
+/-- A morphism of finite bilinear modules is an additive homomorphism. -/
 instance : AddMonoidHomClass (Hom A B) A B where
   map_add f := f.toAddMonoidHom.map_add
   map_zero f := f.toAddMonoidHom.map_zero
 
+/-- The underlying additive homomorphism of a morphism has the same underlying function. -/
 @[simp]
 theorem coe_toAddMonoidHom (f : Hom A B) : ⇑f.toAddMonoidHom = f := rfl
 
@@ -205,22 +218,27 @@ def comp (g : Hom B C) (f : Hom A B) : Hom A C where
   toAddMonoidHom := g.toAddMonoidHom.comp f.toAddMonoidHom
   map_pairing' x y := (g.map_pairing (f x) (f y)).trans (f.map_pairing x y)
 
+/-- The identity morphism fixes every element. -/
 @[simp]
 theorem id_apply (A : FiniteBilinearModule) (x : A) : id A x = x := (rfl)
 
+/-- A composite of morphisms applies the two morphisms in turn. -/
 @[simp]
 theorem comp_apply (g : Hom B C) (f : Hom A B) (x : A) : g.comp f x = g (f x) := (rfl)
 
+/-- The identity morphism is a left identity for composition. -/
 @[simp]
 theorem id_comp (f : Hom A B) : (id B).comp f = f := by
   ext
   rfl
 
+/-- The identity morphism is a right identity for composition. -/
 @[simp]
 theorem comp_id (f : Hom A B) : f.comp (id A) = f := by
   ext
   rfl
 
+/-- Composition of morphisms is associative. -/
 @[simp]
 theorem comp_assoc {D : FiniteBilinearModule} (h : Hom C D) (g : Hom B C) (f : Hom A B) :
     (h.comp g).comp f = h.comp (g.comp f) := by
@@ -248,13 +266,16 @@ namespace Isometry
 variable {A : FiniteBilinearModule.{u}} {B : FiniteBilinearModule.{v}}
   {C : FiniteBilinearModule.{w}}
 
+/-- An isometry is determined by its underlying additive equivalence. -/
 theorem toAddEquiv_injective : Function.Injective (toAddEquiv : Isometry A B → A ≃+ B)
   | ⟨_, _⟩, ⟨_, _⟩, rfl => rfl
 
+/-- Two isometries are equal exactly when their underlying additive equivalences are. -/
 @[simp]
 theorem toAddEquiv_inj {f g : Isometry A B} : f.toAddEquiv = g.toAddEquiv ↔ f = g :=
   toAddEquiv_injective.eq_iff
 
+/-- An isometry of finite bilinear modules coerces to an equivalence of the underlying groups. -/
 instance : EquivLike (Isometry A B) A B where
   coe f := f.toAddEquiv
   inv f := f.toAddEquiv.symm
@@ -262,12 +283,15 @@ instance : EquivLike (Isometry A B) A B where
   right_inv f := f.toAddEquiv.right_inv
   coe_injective' _ _ h _ := toAddEquiv_injective (DFunLike.coe_injective h)
 
+/-- An isometry of finite bilinear modules is an additive equivalence. -/
 instance : AddEquivClass (Isometry A B) A B where
   map_add f := f.toAddEquiv.map_add'
 
+/-- The underlying additive equivalence of an isometry has the same underlying function. -/
 @[simp]
 theorem coe_toAddEquiv (f : Isometry A B) : ⇑f.toAddEquiv = f := rfl
 
+/-- An isometry preserves the pairing. -/
 @[simp]
 theorem map_pairing (f : Isometry A B) (x y : A) : B.pairing (f x) (f y) = A.pairing x y :=
   f.map_pairing' x y
@@ -277,6 +301,7 @@ def toHom (f : Isometry A B) : Hom A B where
   toAddMonoidHom := f.toAddEquiv.toAddMonoidHom
   map_pairing' := f.map_pairing
 
+/-- The morphism underlying an isometry has the same underlying function. -/
 @[simp]
 theorem toHom_apply (f : Isometry A B) (x : A) : f.toHom x = f x := (rfl)
 
@@ -312,28 +337,35 @@ def trans (f : Isometry A B) (g : Isometry B C) : Isometry A C where
   toAddEquiv := f.toAddEquiv.trans g.toAddEquiv
   map_pairing' x y := (g.map_pairing' (f.toAddEquiv x) (f.toAddEquiv y)).trans (f.map_pairing' x y)
 
+/-- The identity isometry has the identity additive equivalence. -/
 @[simp]
 theorem refl_toAddEquiv (A : FiniteBilinearModule) : (refl A).toAddEquiv = AddEquiv.refl A := (rfl)
 
+/-- The inverse isometry has the inverse additive equivalence. -/
 @[simp]
 theorem symm_toAddEquiv (f : Isometry A B) : f.symm.toAddEquiv = f.toAddEquiv.symm := (rfl)
 
+/-- The composite isometry has the composite additive equivalence. -/
 @[simp]
 theorem trans_toAddEquiv (f : Isometry A B) (g : Isometry B C) :
     (f.trans g).toAddEquiv = f.toAddEquiv.trans g.toAddEquiv := (rfl)
 
+/-- The identity isometry fixes every element. -/
 @[simp]
 theorem refl_apply (A : FiniteBilinearModule) (x : A) : refl A x = x :=
   AddEquiv.refl_apply x
 
+/-- The inverse of an isometry undoes it. -/
 @[simp]
 theorem symm_apply_apply (f : Isometry A B) (x : A) : f.symm (f x) = x :=
   f.toAddEquiv.symm_apply_apply x
 
+/-- An isometry undoes its inverse. -/
 @[simp]
 theorem apply_symm_apply (f : Isometry A B) (x : B) : f (f.symm x) = x :=
   f.toAddEquiv.apply_symm_apply x
 
+/-- A composite of isometries applies the two isometries in turn. -/
 @[simp]
 theorem trans_apply (f : Isometry A B) (g : Isometry B C) (x : A) : (f.trans g) x = g (f x) :=
   f.toAddEquiv.trans_apply g.toAddEquiv x
@@ -378,6 +410,7 @@ noncomputable def toIsometry (f : Hom A B) (hf : Function.Bijective f) : Isometr
   toAddEquiv := AddEquiv.ofBijective f.toAddMonoidHom hf
   map_pairing' := f.map_pairing
 
+/-- The isometry packaged from a bijective morphism has the same underlying function. -/
 @[simp]
 theorem toIsometry_apply (f : Hom A B) (hf : Function.Bijective f) (x : A) :
     f.toIsometry hf x = f x := (rfl)
@@ -413,6 +446,7 @@ abbrev restrict (H : AddSubgroup A) : FiniteBilinearModule where
   pairing := (A.pairing.comp H.subtype).compl₂ H.subtype
   pairing_comm x y := A.pairing_comm x.1 y.1
 
+/-- The restricted pairing pairs elements of the subgroup as elements of the whole module. -/
 theorem restrict_pairing (H : AddSubgroup A) (x y : H) :
     (restrict A H).pairing x y = A.pairing x.1 y.1 := (rfl)
 
@@ -421,6 +455,7 @@ def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where
   toAddMonoidHom := H.subtype
   map_pairing' _ _ := rfl
 
+/-- The inclusion of a restricted module sends an element of the subgroup to itself. -/
 @[simp]
 theorem restrictHom_apply (H : AddSubgroup A) (x : H) : A.restrictHom H x = x := (rfl)
 
@@ -430,6 +465,7 @@ abbrev neg : FiniteBilinearModule where
   pairing := -A.pairing
   pairing_comm x y := congrArg Neg.neg (A.pairing_comm x y)
 
+/-- The negated module pairs elements by the negated pairing. -/
 theorem neg_pairing (x y : A) : A.neg.pairing x y = -A.pairing x y := (rfl)
 
 /-- Form negation preserves nondegeneracy of a finite bilinear module. -/
@@ -456,6 +492,7 @@ abbrev prod (B : FiniteBilinearModule) : FiniteBilinearModule where
   pairing_comm := fun ⟨x₁, x₂⟩ ⟨y₁, y₂⟩ ↦
     congrArg₂ (· + ·) (A.pairing_comm x₁ y₁) (B.pairing_comm x₂ y₂)
 
+/-- The orthogonal direct sum pairs componentwise and adds the two pairings. -/
 theorem prod_pairing (B : FiniteBilinearModule) (x y : A.carrier × B.carrier) :
     (prod A B).pairing x y = A.pairing x.1 y.1 + B.pairing x.2 y.2 :=
   rfl
@@ -483,6 +520,7 @@ end IsometryProd
 /-- The radical is the kernel of the adjoint pairing. -/
 def radical : AddSubgroup A := A.pairing.ker
 
+/-- An element lies in the radical exactly when it pairs trivially with every element. -/
 @[simp]
 theorem mem_radical_iff (x : A) : x ∈ A.radical ↔ ∀ y, A.pairing x y = 0 := by
   rw [radical, AddMonoidHom.mem_ker]
@@ -537,6 +575,8 @@ theorem isNondegenerate_of_radical_eq_bot (h : A.radical = ⊥) : A.IsNondegener
 def orthogonalComplement (H : AddSubgroup A) : AddSubgroup A :=
   (H.toIntSubmodule.orthogonalBilin A.toBilin).toAddSubgroup
 
+/-- An element lies in the orthogonal complement of `H` exactly when it pairs trivially with every
+element of `H`. -/
 @[simp]
 theorem mem_orthogonalComplement_iff (H : AddSubgroup A) (x : A) :
     x ∈ A.orthogonalComplement H ↔ ∀ y ∈ H, A.pairing x y = 0 := by
@@ -559,11 +599,13 @@ theorem orthogonalComplement_anti {H K : AddSubgroup A} (h : H ≤ K) :
     A.orthogonalComplement K ≤ A.orthogonalComplement H :=
   Submodule.orthogonalBilin_le (AddSubgroup.toIntSubmodule.monotone h)
 
+/-- Every element is orthogonal to the trivial subgroup. -/
 @[simp]
 theorem orthogonalComplement_bot : A.orthogonalComplement ⊥ = ⊤ := by
   ext x
   simp
 
+/-- The orthogonal complement of the whole group is the radical. -/
 @[simp]
 theorem orthogonalComplement_top : A.orthogonalComplement ⊤ = A.radical := by
   ext x
@@ -585,6 +627,7 @@ theorem le_orthogonalComplement_orthogonalComplement (H : AddSubgroup A) :
 /-- An element of a finite bilinear module is isotropic when its self-pairing vanishes. -/
 def IsIsotropicElem (x : A) : Prop := A.pairing x x = 0
 
+/-- An element is isotropic exactly when its self-pairing vanishes. -/
 theorem isIsotropicElem_def (x : A) : A.IsIsotropicElem x ↔ A.pairing x x = 0 := Iff.rfl
 
 /-- The zero element is isotropic. -/
