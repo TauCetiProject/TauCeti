@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
-import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Boundary concentration of the Poisson kernel of the ball
@@ -122,13 +121,15 @@ theorem tendsto_setIntegral_ballPoissonKernel_away {z : EuclideanSpace ℝ (Fin 
             (delta / 2) ^ n)) := by
           simp only [setIntegral_const, smul_eq_mul, measureReal_def]
 
-/-- The contribution of essentially bounded boundary data from a fixed positive distance
-away from `z` vanishes in the Poisson integral as the pole approaches `z` from inside the ball. -/
+/-- The contribution of integrable boundary data from a fixed positive distance away from `z`
+vanishes in the Poisson integral as the pole approaches `z` from inside the ball. -/
 theorem tendsto_setIntegral_ballPoissonKernel_mul_away
     (f : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ)
-    (hf : MemLp f ⊤ volume.toSphere)
     {z : EuclideanSpace ℝ (Fin n)} (hz : ‖z‖ = 1)
-    {delta : ℝ} (hdelta : 0 < delta) :
+    {delta : ℝ} (hdelta : 0 < delta)
+    (hf : IntegrableOn f
+      {y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 |
+        delta ≤ dist (y : EuclideanSpace ℝ (Fin n)) z} volume.toSphere) :
     Tendsto (fun x : EuclideanSpace ℝ (Fin n) =>
       ∫ y in {y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 |
           delta ≤ dist (y : EuclideanSpace ℝ (Fin n)) z},
@@ -136,38 +137,51 @@ theorem tendsto_setIntegral_ballPoissonKernel_mul_away
       (nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1)) (nhds 0) := by
   let s : Set (sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :=
     {y | delta ≤ dist (y : EuclideanSpace ℝ (Fin n)) z}
-  let C := lpNorm f ⊤ volume.toSphere
-  have hC : ∀ᵐ y ∂volume.toSphere, ‖f y‖ ≤ C := ae_le_lpNorm_exponent_top hf
+  let B : EuclideanSpace ℝ (Fin n) → ℝ := fun x =>
+    (1 - ‖x‖ ^ 2) /
+      ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) *
+        (delta / 2) ^ n)
+  let C := ∫ y in s, ‖f y‖ ∂volume.toSphere
+  have hs : MeasurableSet s := by
+    exact (isClosed_le continuous_const
+      (continuous_subtype_val.dist continuous_const)).measurableSet
+  have hnear : ∀ᶠ x in nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1),
+      dist x z ≤ delta / 2 := by
+    have hmem : ∀ᶠ x in nhds z, x ∈ ball z (delta / 2) :=
+      Metric.ball_mem_nhds z (half_pos hdelta)
+    filter_upwards [hmem.filter_mono nhdsWithin_le_nhds] with x hx
+    exact (mem_ball.mp hx).le
   have hinside : ∀ᶠ x in nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1),
       ‖x‖ < 1 := by
     filter_upwards [self_mem_nhdsWithin] with x hx
     exact mem_ball_zero_iff.mp hx
-  have hmass := tendsto_setIntegral_ballPoissonKernel_away hz hdelta
-  have hlim : Tendsto (fun x : EuclideanSpace ℝ (Fin n) =>
-      C * ∫ y in s, ballPoissonKernel n x y ∂volume.toSphere)
+  have hlim : Tendsto (fun x : EuclideanSpace ℝ (Fin n) => B x * C)
       (nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1)) (nhds 0) := by
-    simpa only [mul_zero] using hmass.const_mul C
+    have hcont : Continuous (fun x : EuclideanSpace ℝ (Fin n) => B x * C) := by
+      dsimp [B]
+      fun_prop
+    have hval : B z * C = 0 := by simp [B, hz]
+    have ht := hcont.continuousAt.tendsto.mono_left
+      (nhdsWithin_le_nhds : nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1) ≤ nhds z)
+    rwa [hval] at ht
   refine squeeze_zero_norm' ?_ hlim
-  filter_upwards [hinside] with x hx
-  have hK : ∀ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1,
-      0 ≤ ballPoissonKernel n x y := by
-    intro y
-    exact (ballPoissonKernel_pos_on_sphere x hx y).le
+  filter_upwards [hinside, hnear] with x hx hnearx
   let nu : Measure (sphere (0 : EuclideanSpace ℝ (Fin n)) 1) := volume.toSphere
   have hg : Integrable (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
-      C * ballPoissonKernel n x y) (nu.restrict s) :=
-    (integrableOn_ballPoissonKernel x hx.ne s).const_mul C
+      B x * ‖f y‖) (nu.restrict s) := hf.norm.const_mul (B x)
   have hbound : ∀ᵐ (y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) ∂(nu.restrict s),
-      ‖ballPoissonKernel n x y * f y‖ ≤ C * ballPoissonKernel n x y := by
-    filter_upwards [ae_mono Measure.restrict_le_self hC] with y hy
-    rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg (hK y)]
-    simpa only [mul_comm C] using
-      mul_le_mul_of_nonneg_left hy (hK y)
+      ‖ballPoissonKernel n x y * f y‖ ≤ B x * ‖f y‖ := by
+    filter_upwards [ae_restrict_mem hs] with y hy
+    have hK := (ballPoissonKernel_pos_on_sphere x hx y).le
+    rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg hK]
+    exact mul_le_mul_of_nonneg_right
+      (ballPoissonKernel_le_of_dist_le_half_of_le_dist hdelta hx.le hnearx hy)
+      (norm_nonneg _)
   have hmeas : AEStronglyMeasurable
       (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
         ballPoissonKernel n x y * f y) (nu.restrict s) :=
     ((continuous_ballPoissonKernel_on_sphere x hx.ne).aestronglyMeasurable.mono_measure
-      Measure.restrict_le_self).mul (hf.aestronglyMeasurable.mono_measure Measure.restrict_le_self)
+      Measure.restrict_le_self).mul hf.aestronglyMeasurable
   have hweighted : Integrable
       (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
         ballPoissonKernel n x y * f y) (nu.restrict s) :=
@@ -187,10 +201,12 @@ theorem tendsto_setIntegral_ballPoissonKernel_mul_away_of_continuous
           delta ≤ dist (y : EuclideanSpace ℝ (Fin n)) z},
         ballPoissonKernel n x y * f y ∂volume.toSphere)
       (nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1)) (nhds 0) := by
-  obtain ⟨C, hC⟩ := (isCompact_range hf).isBounded.exists_norm_le
-  exact tendsto_setIntegral_ballPoissonKernel_mul_away f
-    (memLp_top_of_bound hf.aestronglyMeasurable C
-      (Filter.Eventually.of_forall fun y => hC (f y) (Set.mem_range_self y))) hz hdelta
+  exact tendsto_setIntegral_ballPoissonKernel_mul_away f hz hdelta
+    (by
+      have hint : Integrable f volume.toSphere := by
+        simpa only [integrableOn_univ] using
+          hf.continuousOn.integrableOn_compact isCompact_univ
+      exact hint.integrableOn)
 
 end TauCeti
 
