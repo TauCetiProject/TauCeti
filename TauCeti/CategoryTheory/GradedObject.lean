@@ -19,7 +19,9 @@ This file equips Mathlib's canonical category `CategoryTheory.GradedObject β C`
 pointwise preadditive, linear, and abelian structures inherited from `C`, with morphisms added
 and scaled componentwise (`CategoryTheory.GradedObject.add_apply`,
 `CategoryTheory.GradedObject.smul_apply`).
-It also records that the canonical reindexing and shift functors are additive and linear.
+It also records that the canonical reindexing and shift functors are additive and linear, and that
+totalizing a graded object, `X ↦ ∐ᵢ Xᵢ`, is left adjoint to the constant graded object
+(`CategoryTheory.GradedObject.totalAdjunction`).
 
 Mathlib provides the category of graded objects and its grading shift, but not these
 structures. They are what homological algebra needs: `Ext` groups, and hence the graded
@@ -73,6 +75,18 @@ theorem add_apply {β : Type w} [Preadditive C] {X Y : GradedObject β C} (f g :
     (f + g) i = f i + g i :=
   rfl
 
+/-- Morphisms of graded objects are negated componentwise. -/
+@[simp]
+theorem neg_apply {β : Type w} [Preadditive C] {X Y : GradedObject β C} (f : X ⟶ Y) (i : β) :
+    (-f) i = -f i :=
+  rfl
+
+/-- Morphisms of graded objects are subtracted componentwise. -/
+@[simp]
+theorem sub_apply {β : Type w} [Preadditive C] {X Y : GradedObject β C} (f g : X ⟶ Y) (i : β) :
+    (f - g) i = f i - g i :=
+  rfl
+
 /-- Morphisms of graded objects are scaled componentwise. -/
 @[simp]
 theorem smul_apply {β : Type w} {R : Type t} [Semiring R] [Preadditive C] [Linear R C]
@@ -106,10 +120,16 @@ instance gradedObjectShiftFunctorLinear {β : Type*} [AddCommGroup β] [Preaddit
     (shiftFunctor (GradedObjectWithShift s C) n).Linear R where
   map_smul _ _ := rfl
 
+/-- The functor of Mathlib's canonical shift autoequivalence on graded objects is additive.
+This is `gradedObjectShiftFunctorAdditive`, restated because `shiftEquiv'` is not reducible, so
+instance search does not see that its functor is `shiftFunctor`. -/
 instance gradedObjectShiftEquivFunctorAdditive {β : Type*} [AddCommGroup β] [Preadditive C]
     (s : β) (n : ℤ) : (shiftEquiv (GradedObjectWithShift s C) n).functor.Additive :=
   gradedObjectShiftFunctorAdditive s n
 
+/-- The functor of Mathlib's canonical shift autoequivalence on graded objects is linear.
+This is `gradedObjectShiftFunctorLinear`, restated because `shiftEquiv'` is not reducible, so
+instance search does not see that its functor is `shiftFunctor`. -/
 instance gradedObjectShiftEquivFunctorLinear {β : Type*} [AddCommGroup β] [Preadditive C]
     (R : Type t) [Semiring R] [Linear R C] (s : β) (n : ℤ) :
     (shiftEquiv (GradedObjectWithShift s C) n).functor.Linear R :=
@@ -127,8 +147,18 @@ noncomputable instance gradedObjectAbelian (β : Type w) [Abelian C] :
   let _ : Preadditive (β → C) := gradedObjectPreadditive β
   exact abelianOfEquivalence (piEquivalenceFunctorDiscrete β C).functor
 
-noncomputable instance gradedObjectWithShiftAbelian {β : Type w} [AddCommGroup β]
-    (s : β) [Abelian C] : Abelian (GradedObjectWithShift s C) :=
-  gradedObjectAbelian β
-
 end TauCeti
+
+namespace CategoryTheory.GradedObject
+
+/-- **Totalizing a graded object is left adjoint to the constant graded object**: morphisms
+`∐ᵢ Xᵢ ⟶ Y` correspond to families of morphisms `Xᵢ ⟶ Y`. -/
+noncomputable def totalAdjunction (β : Type) (C : Type u) [Category.{v} C] [HasCoproducts.{0} C] :
+    total β C ⊣ Functor.pi' fun _ : β ↦ 𝟭 C := by
+  -- `GradedObject.total` is by definition `X ↦ ∐ᵢ Xᵢ`, the colimit of the diagram
+  -- `Discrete β ⥤ C` corresponding to `X`.
+  change (piEquivalenceFunctorDiscrete β C).functor ⋙ colim ⊣ _
+  exact ((piEquivalenceFunctorDiscrete β C).toAdjunction.comp colimConstAdj).ofNatIsoRight
+    (Iso.refl _)
+
+end CategoryTheory.GradedObject

@@ -288,24 +288,14 @@ theorem isEmpty_iso_unit_shift_pow {j : ℤ} (hj : j ≠ 0) :
 
 /-! ### Totalizing the grading -/
 
-private noncomputable abbrev gradedConst : ModuleCat.{u} k ⥤ GradedVectorSpace k :=
-  Functor.const (Discrete ℤ) ⋙ (piEquivalenceFunctorDiscrete ℤ (ModuleCat.{u} k)).inverse
-
-private noncomputable def totalGradedConstAdj :
-    GradedObject.total ℤ (ModuleCat.{u} k) ⊣ gradedConst k := by
-  -- `GradedObject.total` is by definition `V ↦ ∐ᵢ Vᵢ`, which is the colimit of the diagram
-  -- `Discrete ℤ ⥤ ModuleCat k` corresponding to `V`.
-  change ((piEquivalenceFunctorDiscrete ℤ (ModuleCat.{u} k)).functor ⋙ colim) ⊣ _
-  exact (piEquivalenceFunctorDiscrete ℤ (ModuleCat.{u} k)).toAdjunction.comp colimConstAdj
-
 /-- **Totalizing the grading is invariant under the shift**: `{1} ⋙ U ≅ U`. Both functors are left
 adjoint to the constant functor. -/
 noncomputable def shiftCompTotalIso :
     (shift k).functor ⋙ GradedObject.total ℤ (ModuleCat.{u} k) ≅
       GradedObject.total ℤ (ModuleCat.{u} k) :=
   Adjunction.leftAdjointUniq
-    ((shift k).toAdjunction.comp (totalGradedConstAdj k))
-    ((totalGradedConstAdj k).ofNatIsoRight (Iso.refl _))
+    ((shift k).toAdjunction.comp (GradedObject.totalAdjunction ℤ (ModuleCat.{u} k)))
+    ((GradedObject.totalAdjunction ℤ (ModuleCat.{u} k)).ofNatIsoRight (Iso.refl _))
 
 private noncomputable def coproductUnitIso :
     (∐ fun i : ℤ ↦ unit k i) ≅ ModuleCat.of k k where
