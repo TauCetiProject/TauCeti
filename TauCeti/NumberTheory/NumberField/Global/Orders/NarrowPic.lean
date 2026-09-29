@@ -124,7 +124,8 @@ theorem mkPrincipal_eq_one_of_isTotallyPositive (O : NumberFieldOrder K) {x : K�
 positive at every real place. -/
 @[simp]
 theorem mkPrincipal_sq (O : NumberFieldOrder K) (x : Kˣ) :
-    mkPrincipal O x ^ 2 = 1 := by
+    mk O (toPrincipalIdeal O.toSubalgebra K x) ^ 2 = 1 := by
+  change mkPrincipal O x ^ 2 = 1
   rw [← map_pow]
   exact mkPrincipal_eq_one_of_isTotallyPositive O
     (mem_totallyPositiveUnits.mp (sq_mem_totallyPositiveUnits x))
@@ -157,7 +158,6 @@ theorem narrowToPic_surjective (O : NumberFieldOrder K) :
     (fun I => ⟨NarrowPic.mk O I, O.narrowToPic_mk I⟩) c
 
 /-- The narrow class of a principal ideal maps to the trivial wide Picard class. -/
-@[simp]
 theorem narrowToPic_mkPrincipal (O : NumberFieldOrder K) (x : Kˣ) :
     O.narrowToPic (NarrowPic.mkPrincipal O x) = 1 := by
   rw [NarrowPic.mkPrincipal_apply, O.narrowToPic_mk]
