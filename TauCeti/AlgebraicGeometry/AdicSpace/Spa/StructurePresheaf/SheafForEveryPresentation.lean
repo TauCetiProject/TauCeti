@@ -16,16 +16,15 @@ import TauCeti.RingTheory.Huber.RingOfDefinition
 `IsSheafyForEveryPresentation Aplus` requires `Aplus` to be a ring of integral elements and the
 presentation-indexed limit presheaf `presentationLimitPresheaf P Aplus` to be a sheaf of complete
 separated topological rings for every pair of definition `P` contained in `Aplus`. Such a pair
-exists because `Aplus` is open. Independence of the choice of `P` is not yet available, so this
-condition is a priori stronger than sheafhood for one chosen compatible `P`.
+exists because `Aplus` is open. This universal condition is a priori stronger than sheafhood for
+one chosen compatible `P`.
 
-The presentation-indexed limit presheaf has not yet been identified as a presheaf with Wedhorn's
-`𝒪_X`. On rational opens, `presentationLimitRationalIso` identifies its values with the
+On rational opens, `presentationLimitRationalIso` identifies the presheaf's values with the
 completed rational localizations, and `presentationLimitRationalIso_inv_comp_map_comp_hom`
-identifies its restrictions with the canonical comparison maps. These results do not yet give a
-presheaf isomorphism across all opens or independence of the compatible pair of definition.
-Relating this predicate to Wedhorn's sheafiness requires that comparison.
-It supplies a condition for the later pair-level predicate without assuming that comparison.
+identifies its restrictions with the canonical comparison maps. These rational-open comparisons
+do not themselves identify the presentation-indexed presheaf with Wedhorn's `𝒪_X` on all opens
+or establish independence of the compatible pair of definition. The predicate concerns only the
+presentation-indexed presheaves; it makes no claim about a canonical pair-level structure presheaf.
 
 ## References
 
@@ -45,8 +44,9 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [IsHuberRing A]
 
 /-- The plus ring `Aplus` is a ring of integral elements, and its presentation-indexed limit
-presheaf is a sheaf for every compatible pair of definition. This sufficient condition has not
-yet been identified with sheafiness of the pair's canonical structure presheaf. -/
+presheaf is a sheaf for every compatible pair of definition. This condition concerns the
+presentation-indexed presheaves, without identifying them with a canonical pair-level structure
+presheaf. -/
 structure IsSheafyForEveryPresentation (Aplus : Subring A) : Prop where
   /-- `Aplus` is a ring of integral elements of `A`. -/
   isRingOfIntegralElements : IsRingOfIntegralElements Aplus
