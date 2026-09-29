@@ -70,4 +70,16 @@ theorem generatedCoordinateHopfAlgebra_def :
         (generatedDefiningIdeal A) := by
   simp [generatedCoordinateHopfAlgebra]
 
+/-- Each generator factors uniquely through the generated subgroup's coordinate quotient. -/
+theorem existsUnique_generatorCoordinateMap_factor (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+    ∃! g : CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A 54)
+        (generatedDefiningIdeal A) ⟶ generatorCoordinateAlgebra A j,
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54)
+        (generatedDefiningIdeal A) ≫ g = generatorCoordinateMap A j := by
+  rw [generatedDefiningIdeal_def]
+  refine ⟨CommHopfAlgCat.commonKernelLift (generatorCoordinateMap A) j, ?_, ?_⟩
+  · exact CommHopfAlgCat.mkQuotient_comp_commonKernelLift (generatorCoordinateMap A) j
+  · intro g hg
+    exact CommHopfAlgCat.commonKernelLift_unique (generatorCoordinateMap A) j g hg
+
 end TauCeti.E6DoubledMinuscule

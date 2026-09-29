@@ -29,10 +29,9 @@ requires a separate comparison.
 
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
 * R. Steinberg, *Lectures on Chevalley Groups*, Section 3.
-
-The argument uses the general connectedness theorem for common-kernel Hopf quotients in
-`TauCeti.Algebra.AlgebraicGroup.Connected.Generated`; its specialization follows the tripled
-type-`D₄` argument in `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`.
+* `TauCeti.Algebra.AlgebraicGroup.Connected.Generated`, connectedness of common-kernel quotients.
+* `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`, the analogous result for the tripled
+  type-`D₄` generated subgroup.
 -/
 
 public section
