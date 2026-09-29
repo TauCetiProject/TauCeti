@@ -27,31 +27,23 @@ namespace ContinuousAut
 
 /-- A continuous automorphism acts on conjugacy classes by its underlying group
 automorphism. -/
-instance : MulAction (ContinuousAut G) (ConjClasses G) where
-  smul φ c := ConjClasses.map φ.toMulEquiv.toMonoidHom c
-  one_smul c := by
-    obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
-    rfl
-  mul_smul φ ψ c := by
-    obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
-    rfl
+instance : MulAction (ContinuousAut G) (ConjClasses G) :=
+  MulAction.compHom (ConjClasses G) (toMulAut : ContinuousAut G →* MulAut G)
 
 /-- The action of a continuous automorphism on a conjugacy class is computed on a
 representative. -/
 @[simp]
 theorem smul_conjClasses_mk (φ : ContinuousAut G) (x : G) :
     φ • ConjClasses.mk x = ConjClasses.mk (φ x) := by
-  exact ConjClasses.map_mk _ x
+  rw [MulAction.compHom_smul_def, mulAut_smul_conjClasses_mk]
+  simp only [coe_toMulAut]
 
 variable [SeparatelyContinuousMul G]
 
 /-- Inner automorphisms fix every conjugacy class. -/
 @[simp]
 theorem conj_smul_conjClasses (g : G) (c : ConjClasses G) : conj g • c = c := by
-  obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
-  rw [smul_conjClasses_mk]
-  exact (ConjClasses.mk_eq_mk_iff_isConj.mpr
-    (isConj_iff.mpr ⟨g, (conj_apply g x).symm⟩)).symm
+  rw [MulAction.compHom_smul_def, toMulAut_conj, mulAut_conj_smul_conjClasses]
 
 end ContinuousAut
 
@@ -61,33 +53,21 @@ namespace ContinuousOut
 
 /-- The action of continuous automorphisms on conjugacy classes factors through
 continuous outer automorphisms. -/
-instance : MulAction (ContinuousOut G) (ConjClasses G) where
-  smul c x := Quotient.liftOn' c (fun φ : ContinuousAut G => φ • x) (by
-    intro φ ψ h
-    obtain ⟨g, hg⟩ := QuotientGroup.leftRel_apply.mp h
-    have hinner : φ⁻¹ * ψ = ContinuousAut.conj g := hg.symm
-    have hψ : ψ = φ * ContinuousAut.conj g := by
-      calc
-        ψ = φ * (φ⁻¹ * ψ) := by simp
-        _ = φ * ContinuousAut.conj g := by rw [hinner]
-    rw [hψ, mul_smul, ContinuousAut.conj_smul_conjClasses])
-  one_smul x := by
-    -- The quotient's identity is represented by the identity automorphism.
-    change (1 : ContinuousAut G) • x = x
-    exact one_smul _ x
-  mul_smul c d x := by
-    induction c using Quotient.inductionOn' with
-    | h φ =>
-      induction d using Quotient.inductionOn' with
-      | h ψ =>
-        -- Multiplication of quotient classes is represented by multiplication upstairs.
-        change (φ * ψ) • x = φ • ψ • x
-        exact mul_smul φ ψ x
+instance : MulAction (ContinuousOut G) (ConjClasses G) :=
+  MulAction.compHom (ConjClasses G) <|
+    QuotientGroup.lift (ContinuousAut.conj : G →* ContinuousAut G).range
+      (MulAction.toPermHom (ContinuousAut G) (ConjClasses G)) (by
+        rintro φ ⟨g, rfl⟩
+        exact MonoidHom.mem_ker.mpr <| Equiv.ext fun c => by
+          simpa only [MulAction.toPermHom_apply, MulAction.toPerm_apply,
+            Equiv.Perm.one_apply] using ContinuousAut.conj_smul_conjClasses g c)
 
 /-- The outer action is computed using any representative continuous automorphism. -/
 theorem mk_smul_conjClasses (φ : ContinuousAut G) (c : ConjClasses G) :
-    (mk φ) • c = φ • c :=
-  rfl
+    (mk φ) • c = φ • c := by
+  rw [show mk φ = (φ : ContinuousOut G) from rfl]
+  rw [MulAction.compHom_smul_def, QuotientGroup.lift_mk, Equiv.Perm.smul_def,
+    MulAction.toPermHom_apply, MulAction.toPerm_apply]
 
 /-- On the class of an element, the outer action sends it to the class of its image. -/
 theorem mk_smul_mk (φ : ContinuousAut G) (x : G) :

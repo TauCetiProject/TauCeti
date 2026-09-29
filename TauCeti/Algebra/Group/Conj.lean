@@ -63,6 +63,8 @@ conjugation action.
   `ConjClasses.pow_mul`: the identity and composition laws for that power.
 * `ConjClasses.map_mk`: the computation rule for `ConjClasses.map` on representatives,
   with `ConjClasses.map_pow` the consequence that the power is natural in the monoid.
+* `TauCeti.mulAut_smul_conjClasses_mk`: an automorphism acts on a conjugacy class by
+  mapping its representative; inner automorphisms fix every class.
 * `ConjClasses.mk_ne_mk_of_orderOf_ne`: elements of different orders lie in different conjugacy
   classes.
 
@@ -448,3 +450,41 @@ private theorem pow_two_cyclicFour :
     mk_ne_mk_of_orderOf_ne (by rw [horder, horderSquare]; decide)⟩
 
 end ConjClasses
+
+namespace TauCeti
+
+variable {G : Type*} [Group G]
+
+/-- An automorphism acts on conjugacy classes by mapping representatives. -/
+instance instMulActionMulAutConjClasses : MulAction (MulAut G) (ConjClasses G) where
+  smul φ c := ConjClasses.map φ.toMonoidHom c
+  one_smul c := by
+    obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
+    change ConjClasses.map (1 : MulAut G).toMonoidHom (ConjClasses.mk x) =
+      ConjClasses.mk x
+    rw [ConjClasses.map_mk]
+    simp
+  mul_smul φ ψ c := by
+    obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
+    change ConjClasses.map (φ * ψ).toMonoidHom (ConjClasses.mk x) =
+      ConjClasses.map φ.toMonoidHom
+        (ConjClasses.map ψ.toMonoidHom (ConjClasses.mk x))
+    simp only [ConjClasses.map_mk]
+    exact congrArg ConjClasses.mk (MulAut.mul_apply G φ ψ x)
+
+/-- The automorphism action is computed on representatives. -/
+@[simp]
+theorem mulAut_smul_conjClasses_mk (φ : MulAut G) (x : G) :
+    φ • ConjClasses.mk x = ConjClasses.mk (φ x) :=
+  ConjClasses.map_mk _ x
+
+/-- Inner automorphisms fix every conjugacy class. -/
+@[simp]
+theorem mulAut_conj_smul_conjClasses (g : G) (c : ConjClasses G) :
+    MulAut.conj g • c = c := by
+  obtain ⟨x, rfl⟩ := ConjClasses.exists_rep c
+  rw [mulAut_smul_conjClasses_mk]
+  exact (ConjClasses.mk_eq_mk_iff_isConj.mpr
+    (isConj_iff.mpr ⟨g, (MulAut.conj_apply g x).symm⟩)).symm
+
+end TauCeti
