@@ -21,15 +21,9 @@ a splitting `φ : L ⊗[K] A ≃ₐ[L] Mₙ(L)`. This file proves that the cross
 `c = cocycleOfSplitting φ` has the Brauer class of `A`, and deduces that every central simple
 algebra split by `L` has the class of a crossed product over `L`.
 
-The proof exhibits a `(CrossedProduct c, A)`-bimodule of the right size. On the row vectors
-`W = Lⁿ`, the algebra `A` acts on the right through `a ↦ φ(1 ⊗ a)`, the field `L` acts by scalars,
-and `u_σ` acts by `w ↦ σ(w) · g_σ⁻¹`, where `g_σ = splittingConjugator φ σ`. Since `g_σ` conjugates
-the entrywise action of `σ` on `φ(1 ⊗ a)` back to `φ(1 ⊗ a)`, these operators commute with `A`,
-and the defining relation `c(σ, τ) · g_σ · σ(g_τ) = g_στ` of the cocycle is exactly the relation
-`u_σ · u_τ = c(σ, τ) · u_στ`. This gives a `K`-algebra homomorphism
-`CrossedProduct c ⊗[K] Aᵐᵒᵖ → End_K(W)`, which is injective because its source is simple and
-bijective because both sides have dimension `(n · [L : K])²`. Hence `CrossedProduct c ⊗[K] Aᵐᵒᵖ`
-is split and `[CrossedProduct c] = [A]`.
+Together with the existence of finite Galois splitting fields, this shows that every Brauer class
+of `K` is the class of a crossed product, i.e. that the crossed-product construction from Galois
+`2`-cocycles to the Brauer group is surjective.
 
 ## Main results
 
