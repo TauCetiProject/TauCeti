@@ -94,8 +94,11 @@ theorem isScalarTower_centralSubalgebraAlgebra :
 
 section FiniteOverCenter
 
-local instance : Algebra S A := centralSubalgebraAlgebra S
-local instance : Algebra S (center R A) := S.val.toRingHom.toAlgebra
+/-- The local algebra structure on the ambient algebra for the finiteness transfer. -/
+local instance finiteOverCenterAlgebra : Algebra S A := centralSubalgebraAlgebra S
+/-- The local algebra structure on the center for the finiteness transfer. -/
+local instance finiteOverCenterCenterAlgebra : Algebra S (center R A) :=
+  S.val.toRingHom.toAlgebra
 
 /-- Finiteness over a central subalgebra implies finiteness over the whole center. -/
 theorem finite_over_center_of_finite [Module.Finite S A] :
@@ -113,8 +116,11 @@ section FiniteOverCentralSubalgebra
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
   (S : Subalgebra R (center R A))
 
-local instance : Algebra S A := centralSubalgebraAlgebra S
-local instance : Algebra S (center R A) := S.val.toRingHom.toAlgebra
+/-- The local algebra structure on the ambient algebra for the Noetherian transfer. -/
+local instance finiteOverCentralSubalgebraAlgebra : Algebra S A := centralSubalgebraAlgebra S
+/-- The local algebra structure on the center for the Noetherian transfer. -/
+local instance finiteOverCentralSubalgebraCenterAlgebra : Algebra S (center R A) :=
+  S.val.toRingHom.toAlgebra
 
 /-- The center, regarded as a submodule over a central subalgebra. -/
 private def centerSubmodule : Submodule S A where
