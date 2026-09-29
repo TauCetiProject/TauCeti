@@ -138,10 +138,12 @@ private theorem unitsVal_injective : Function.Injective (unitsVal (K := K)) :=
     (Additive.toMul.injective (Units.ext h))
 
 /-- **The level of an open subgroup `U` is the unit group of its fixed field**: a unit of `Kˢ`
-lies in the level `((Kˢ)ˣ)^U` exactly when it lies in the fixed field of `U`. -/
+lies in the level `((Kˢ)ˣ)^U` exactly when it lies in the fixed field of `U`. Its `simp` priority
+is high so that `simp` uses it in preference to the generic `Formation.mem_level`. -/
+@[simp high]
 theorem mem_level_unitsFormation_iff {U : OpenSubgroup (AbsoluteGaloisGroup K)}
     {x : UnitsCoeff K} :
-    unitsCoeffEquivUnitsFormation K x ∈ (unitsFormation K).level U ↔
+    (dsimp% only (unitsCoeffEquivUnitsFormation K x ∈ (unitsFormation K).level U)) ↔
       ((x.toMul : Kˢˣ) : Kˢ) ∈ IntermediateField.fixedField U.toSubgroup := by
   rw [Formation.mem_level, IntermediateField.mem_fixedField_iff]
   refine forall₂_congr fun u _ => ?_
