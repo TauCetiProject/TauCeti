@@ -33,8 +33,9 @@ of the two differentials (`quasiIso_stabilizeXOffCenterToCenterHom_of_bijective`
 The two reduced differentials give `R`-linear fully blocked rectangle-count complexes. The
 reduction of the center differential counts the fully blocked rectangles of `G`, so over
 `R = ZMod 2` its complex agrees with the library's fully blocked complex of `G`
-(`constantCoeffReduction_stabilizeXCenterDifferential_single_apply`). The reduction of the
-off-center differential counts the fully blocked rectangles of `G'` between off-center states
+(`constantCoeffReduction_stabilizeXCenterDifferential_eq_fullyBlockedDifferential`).
+The reduction of the off-center differential counts the fully blocked rectangles of `G'`
+between off-center states
 (`constantCoeffReduction_stabilizeXOffCenterDifferential_single_apply`). The reduction of `H_I^N`
 counts the empty rectangles from an off-center state to a center state with no `O`-marking and
 whose only `X`-marking is `X₂`
@@ -53,6 +54,8 @@ stabilization invariance, and is not proved here.
   `TauCeti.GridDiagram.constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply`: the
   differential reductions count fully blocked rectangles; the map reduction counts rectangles
   with no `O`-markings and exactly the designated `X`-marking.
+* Over `ZMod 2`, the reduced center differential is the fully blocked differential of `G`
+  (`constantCoeffReduction_stabilizeXCenterDifferential_eq_fullyBlockedDifferential`).
 * `TauCeti.GridDiagram.quasiIso_stabilizeXOffCenterToCenterHom_of_bijective`: `H_I^N` is a
   quasi-isomorphism if its reduction modulo the variables induces a bijection on homology.
 * `TauCeti.GridDiagram.quasiIso_stabilizeXMap_of_bijective`: under the same hypothesis the
@@ -128,6 +131,7 @@ variable (R : Type*) [CommSemiring R]
 
 /-- The reduction of the center differential modulo the variables counts the fully blocked
 rectangles of `G`: over `ZMod 2` it is the fully blocked differential of `G`. -/
+@[simp]
 theorem constantCoeffReduction_stabilizeXCenterDifferential_single_apply (x y : GridState n)
     (c : R) :
     (G.stabilizeXCenterDifferential s R).constantCoeffReduction (Finsupp.single x c) y =
@@ -137,6 +141,7 @@ theorem constantCoeffReduction_stabilizeXCenterDifferential_single_apply (x y : 
 
 /-- The reduction of the off-center differential modulo the variables counts the fully blocked
 rectangles of the stabilization between off-center states. -/
+@[simp]
 theorem constantCoeffReduction_stabilizeXOffCenterDifferential_single_apply
     (y z : G.StabilizeXOffCenterState s) (c : R) :
     (G.stabilizeXOffCenterDifferential s R).constantCoeffReduction (Finsupp.single y c) z =
@@ -147,6 +152,7 @@ theorem constantCoeffReduction_stabilizeXOffCenterDifferential_single_apply
 /-- The reduction of `H_I^N` modulo the variables counts the empty rectangles of the stabilization
 from an off-center state to a center state that carry no `O`-marking and whose only `X`-marking is
 the southeast `X`-marking `X₂` of the new block. -/
+@[simp]
 theorem constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply
     (y : G.StabilizeXOffCenterState s) (x : GridState n) (c : R) :
     (G.stabilizeXOffCenterToCenter s R).constantCoeffReduction (Finsupp.single y c) x =
@@ -155,6 +161,16 @@ theorem constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply
           (G.stabilizeX s.castSucc (G.X s).castSucc s).OColumns r.toGridRectangle = ∅).card := by
   rw [LinearMap.constantCoeffReduction_single_apply, stabilizeXOffCenterToCenter_single_apply,
     constantCoeff_XHomotopyCoefficient]
+
+/-- Over `ZMod 2`, the reduced center differential is the fully blocked differential of `G`. -/
+theorem constantCoeffReduction_stabilizeXCenterDifferential_eq_fullyBlockedDifferential :
+    (G.stabilizeXCenterDifferential s (ZMod 2)).constantCoeffReduction =
+      G.fullyBlockedDifferential := by
+  refine Finsupp.lhom_ext' fun x => LinearMap.ext_ring (Finsupp.ext fun y => ?_)
+  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply]
+  rw [G.constantCoeffReduction_stabilizeXCenterDifferential_single_apply s (ZMod 2) x y 1,
+    G.fullyBlockedDifferential_single_apply x y]
+  simp [fullyBlockedRectangleCount]
 
 variable [CharP R 2]
 
