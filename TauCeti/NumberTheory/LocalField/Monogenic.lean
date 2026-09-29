@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.IntegerRing
+import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
+import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
 # Integral generators of finite local-field extensions
@@ -15,7 +17,8 @@ The integer ring of a finite extension of nonarchimedean local fields is generat
 integral element over the base integer ring. An integral power basis can be chosen whose
 generator also generates the field extension and whose length is the field degree. These results
 let ramification and different computations use a generator without imposing a separate
-monogenicity hypothesis.
+monogenicity hypothesis. When the extension is totally ramified, every uniformizer of `L` is
+such a generator.
 
 ## References
 
@@ -49,5 +52,14 @@ theorem exists_integerRing_powerBasis_intermediateField_adjoin_eq_top_and_dim_eq
     (R := 𝒪[K]) (S := 𝒪[L]) K L
   refine ⟨pb, hpb, ?_⟩
   rw [← pb.finrank, finrank_integerRing K L]
+
+variable {K L}
+
+/-- In a totally ramified extension of nonarchimedean local fields, every uniformizer of `L`
+generates `𝒪[L]` as an `𝒪[K]`-algebra. -/
+theorem IsTotallyRamified.adjoin_eq_top_of_irreducible (h : IsTotallyRamified K L) {ϖ : 𝒪[L]}
+    (hϖ : Irreducible ϖ) : Algebra.adjoin 𝒪[K] {ϖ} = ⊤ :=
+  IsLocalRing.adjoin_eq_top_of_algebraMap_residueField_surjective_of_span_eq_maximalIdeal
+    ((isTotallyRamified_iff_surjective_algebraMap_residueField K L).1 h) hϖ.maximalIdeal_eq.symm
 
 end TauCeti

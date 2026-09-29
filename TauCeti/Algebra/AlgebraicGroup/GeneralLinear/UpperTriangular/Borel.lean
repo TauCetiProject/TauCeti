@@ -156,17 +156,9 @@ theorem exists_conjugate_definingHopfIdeal_le [IsAlgClosed k]
     rw [HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv,
       GeneralLinear.pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_inv, inv_inv,
       map_inv, Algebra.toRingHom_ofId]
-  have hle : definingHopfIdeal k n ≤ I.conjugate g := by
-    intro x hx
-    rw [HopfIdeal.mem_conjugate, ← HopfIdeal.mem_toIdeal,
-      ← CommHopfAlgCat.mkQuotient_eq_zero_iff]
-    refine definingHopfIdeal_toIdeal_le_ker_of_isUpperTriangular k n
-      ((π : GeneralLinear.coordinateHopfAlgebra k n →ₐ[k] Q).comp
-        (HopfAlgebra.pointConjugationAlgHom g)) ?_ hx
-    rw [← GeneralLinear.pointsMulEquiv_apply, hkey]
-    exact UpperTriangularGroup.mem_iff.mp hP
-  refine ⟨g⁻¹, ?_⟩
-  simpa using HopfIdeal.conjugate_mono g⁻¹ hle
+  exact ⟨g⁻¹, HopfIdeal.conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
+    I (definingHopfIdeal k n) g
+    ((mem_definingPointsSubgroup_iff k n _).mpr (by rw [hkey]; exact hP))⟩
 
 variable (k n)
 

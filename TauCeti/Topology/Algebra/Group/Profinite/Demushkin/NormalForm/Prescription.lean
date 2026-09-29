@@ -25,7 +25,8 @@ generators are
 * `q ≠ 2`, relator `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`: `χ(x₂) = (1 - q)⁻¹`, all other
   `χ(x_i) = 1`;
 * `q = 2`, `n` odd, relator `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`: `χ(x₁) = -1`,
-  `χ(x₃) = (1 - 2^f)⁻¹`, all other `χ(x_i) = 1`;
+  `χ(x₃) = (1 - 2^f)⁻¹`, all other `χ(x_i) = 1`; at level `f = ∞`, on the relator
+  `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`, `χ(x₁) = -1` and all other `χ(x_i) = 1`;
 * `q = 2`, `n` even, relator `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`:
   `χ(x₂) = -(1 + a)⁻¹`, `χ(x₄) = (1 - 2^f)⁻¹`, all other `χ(x_i) = 1`; in rank two, on the word
   `x₁^{2+a} (x₁, x₂)` with no level, `χ(x₁) = 1` and `χ(x₂) = -(1 + a)⁻¹`.
@@ -52,28 +53,38 @@ vanishes, so the standard orientation has the prescription property.
 * `TauCeti.IsCrossedHom.mul_mul_map_labuteComm`: the value of a crossed homomorphism on Labute's
   commutator; `TauCeti.IsCrossedHom.map_demushkinWordNeTwo`,
   `TauCeti.IsCrossedHom.map_demushkinWordTwoOdd`, `TauCeti.IsCrossedHom.map_demushkinWordTwoEven`,
-  `TauCeti.IsCrossedHom.map_demushkinWordTwoRankTwo`: its value on the four normal-form words.
+  `TauCeti.IsCrossedHom.map_demushkinWordTwoRankTwo`,
+  `TauCeti.IsCrossedHom.map_demushkinWordTwoOddTop`: its value on the five normal-form words.
 * `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordNeTwo_iff`,
   `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_iff`,
   `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordTwoEven_iff`,
-  `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordTwoRankTwo_iff`: a continuous
+  `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordTwoRankTwo_iff`,
+  `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_iff`: a continuous
   character of a normal-form presentation has the prescription property exactly when it takes the
   tabulated values; the `_of_apply_eq` versions are the existence halves, without the minimality
   and rank hypotheses.
 * `TauCeti.hasPrescriptionProperty_orientationNeTwo`,
   `TauCeti.hasPrescriptionProperty_orientationTwoOdd`,
   `TauCeti.hasPrescriptionProperty_orientationTwoEven`,
-  `TauCeti.hasPrescriptionProperty_orientationTwoRankTwo`: the standard orientations have the
+  `TauCeti.hasPrescriptionProperty_orientationTwoRankTwo`,
+  `TauCeti.hasPrescriptionProperty_orientationTwoOddTop`: the standard orientations have the
   prescription property; `TauCeti.eq_orientationNeTwo_of_hasPrescriptionProperty`,
   `TauCeti.eq_orientationTwoOdd_of_hasPrescriptionProperty`,
   `TauCeti.eq_orientationTwoEven_of_hasPrescriptionProperty`,
-  `TauCeti.eq_orientationTwoRankTwo_of_hasPrescriptionProperty`: a character with the
+  `TauCeti.eq_orientationTwoRankTwo_of_hasPrescriptionProperty`,
+  `TauCeti.eq_orientationTwoOddTop_of_hasPrescriptionProperty`: a character with the
   prescription property is the orientation with its own marked values.
 * `TauCeti.existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordNeTwo`,
   `TauCeti.existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd`,
   `TauCeti.existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoEven`,
-  `TauCeti.existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoRankTwo`: each
-  normal form has exactly one continuous character with the prescription property.
+  `TauCeti.existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoRankTwo`,
+  `TauCeti.existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop`: each
+  normal form has exactly one continuous character with the prescription property; for the odd
+  word at `f = ∞` this holds in every odd rank, including rank one.
+* `TauCeti.hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one_iff` and
+  `TauCeti.existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one`: in rank
+  one, where the odd word reads `x₁²` and the group is `ℤ/2`, the prescription property means
+  `χ(x₁) = -1`, and the sign character is the unique character with it.
 
 ## References
 
@@ -170,6 +181,15 @@ theorem IsCrossedHom.map_demushkinWordTwoOdd (f n : ℕ) (x : ℕ → H) :
   simp only [hF.map_mul, hF.map_pow, _root_.map_mul, _root_.map_pow, Units.val_mul,
     Units.val_pow_eq_pow_val, hF.map_list_range_prod_labuteComm, geom_sum_two]
   ring
+
+/-- The value of a crossed homomorphism on the `q = 2`, `n` odd normal-form word at level
+`f = ∞`, `x₁² (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`. -/
+theorem IsCrossedHom.map_demushkinWordTwoOddTop (n : ℕ) (x : ℕ → H) :
+    F (demushkinWordTwoOddTop n x) =
+      (χ (x 0) : R) ^ 2 * ∑ i ∈ range (n / 2), F (labuteComm (x (2 * i + 1)) (x (2 * i + 2))) +
+        ((χ (x 0) : R) + 1) * F (x 0) := by
+  rw [demushkinWordTwoOddTop_def, hF.map_mul, hF.map_pow, _root_.map_pow,
+    Units.val_pow_eq_pow_val, hF.map_list_range_prod_labuteComm, geom_sum_two]
 
 /-- The value of a crossed homomorphism on the `q = 2`, `n` even normal-form word
 `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
@@ -405,6 +425,28 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_of_apply_eq
     rw [freeProPGen_eq_one_of_le 2 (by omega : n ≤ 2 * 0 + 1)]
     simp [labuteComm_def, hF.map_one]
 
+/-- **The prescription property forces `χ(x₁) = -1` on the `q = 2`, `n` odd normal form**, for
+`n ≥ 1`, whenever the relator `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` lies in the Frattini
+subgroup, as it does for `f ≥ 1` (`TauCeti.demushkinWordTwoOdd_mem_proPFrattini`) and at rank one
+for every `f`, where it reads `x₁²`: the crossed homomorphism with `F(x₁) = 1` and `F(x_i) = 0`
+otherwise takes the value `χ(x₁) + 1` on the relator. This is the one clause of the forced
+computation that survives at rank one. -/
+theorem apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd
+    (hr : demushkinWordTwoOdd f n (freeProPGen 2 n) ∈ proPFrattini 2 (freeProP 2 (Fin n)))
+    (hn : 0 < n) (hχ : HasPrescriptionProperty χ) : χ (presentedProPGen 2 n _ 0) = -1 := by
+  have hrels : ({demushkinWordTwoOdd f n (freeProPGen 2 n)} : Set (freeProP 2 (Fin n))) ⊆
+      proPFrattini 2 (freeProP 2 (Fin n)) :=
+    Set.singleton_subset_iff.2 hr
+  obtain ⟨F, hF, hFv, hFr⟩ := hχ.exists_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels hn
+  have hr := hFr _ rfl
+  rw [hF.map_demushkinWordTwoOdd, Finset.sum_eq_zero fun i _ ↦
+    hF.map_labuteComm_eq_zero_of_eq_zero (by rw [hFv, ite_eq_right (by omega)])
+      (by rw [hFv, ite_eq_right (by omega)])] at hr
+  simp only [hFv 0, hFv 1, ite_eq_left, ite_eq_right one_ne_zero, mul_zero, add_zero, zero_add,
+    mul_one] at hr
+  rw [← presentedProP.comp_mk_freeProPGen]
+  exact Units.val_inj.1 (by rw [Units.val_neg, Units.val_one]; linear_combination hr)
+
 /-- **The prescription property forces the tabulated values, `q = 2` and `n` odd** (Labute,
 Theorem 4, the forced computation on a derivation). For `f ≥ 1` and `n ≥ 3` odd, a continuous
 character of the pro-`2` group presented by `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)` has the
@@ -449,17 +491,8 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_iff (hf : 0 < 
       ← Units.val_mul] at hFr
     exact (Units.mul_right_eq_zero _).1 hFr
   -- `j = 1`: `χ(x₁) = -1`.
-  have hx0 : χ (presentedProPGen 2 n _ 0) = -1 := by
-    obtain ⟨F, hF, hFv, hFr⟩ :=
-      hχ.exists_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels (by omega : 0 < n)
-    have hr := hFr _ rfl
-    rw [hF.map_demushkinWordTwoOdd, Finset.sum_eq_zero fun i _ ↦
-      hF.map_labuteComm_eq_zero_of_eq_zero (by rw [hFv, ite_eq_right (by omega)])
-        (by rw [hFv, ite_eq_right (by omega)])] at hr
-    simp only [hFv 0, hFv 1, ite_eq_left, ite_eq_right one_ne_zero, mul_zero, add_zero, zero_add,
-      mul_one] at hr
-    rw [← presentedProP.comp_mk_freeProPGen]
-    exact Units.val_inj.1 (by rw [Units.val_neg, Units.val_one]; linear_combination hr)
+  have hx0 := apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd
+    f n χ (demushkinWordTwoOdd_mem_proPFrattini hf n _) (by omega) hχ
   -- `j = 3`: `χ(x₂) = 1`.
   have hx1 : χ (presentedProPGen 2 n _ 1) = 1 := by
     obtain ⟨F, hF, hFv, hFr⟩ :=
@@ -557,7 +590,165 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd (
       (χ (presentedProPGen 2 n _ 2) : ℤ_[2]) * hu')
   · exact h i hi₀ hi₂
 
+/-- **The prescription property in rank one** (Labute, Remark 2 (iii)). On one generator the
+`q = 2`, `n` odd word `x₁² x₂^{2^f}` reads `x₁²` for every level `f`, the presented group is
+`ℤ/2`, and a continuous character has the prescription property exactly when `χ(x₁) = -1`: on the
+relator `x₁²` every crossed homomorphism takes the value `(χ(x₁) + 1) F(x₁)`. -/
+theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one_iff
+    (χ : presentedProP 2 (Fin 1) {demushkinWordTwoOdd f 1 (freeProPGen 2 1)} →ₜ* ℤ_[2]ˣ) :
+    HasPrescriptionProperty χ ↔ χ (presentedProPGen 2 1 _ 0) = -1 := by
+  have hmem : demushkinWordTwoOdd f 1 (freeProPGen 2 1) ∈ proPFrattini 2 (freeProP 2 (Fin 1)) := by
+    rw [demushkinWordTwoOdd_one f _ (freeProPGen_eq_one_of_le 2 le_rfl)]
+    exact pow_mem_proPFrattini _
+  refine ⟨apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd
+    f 1 χ hmem one_pos, fun h₀ ↦ ?_⟩
+  refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
+    fun F hFc hF r hr ↦ ?_
+  rw [Set.mem_singleton_iff.mp hr, hF.map_demushkinWordTwoOdd, presentedProP.comp_mk_freeProPGen,
+    h₀, freeProPGen_eq_one_of_le 2 le_rfl, hF.map_one, map_one]
+  simp
+
+/-- **`ℤ/2`, presented on one generator by `x₁²`, has exactly one character with the prescription
+property**, the sign character `χ(x₁) = -1`, for every level `f`. -/
+theorem existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one :
+    ∃! χ : presentedProP 2 (Fin 1) {demushkinWordTwoOdd f 1 (freeProPGen 2 1)} →ₜ* ℤ_[2]ˣ,
+      HasPrescriptionProperty χ := by
+  refine ⟨orientationTwoOdd f 1 1,
+    (hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one_iff f _).2
+      (orientationTwoOdd_presentedProPGen_zero f 1 1 one_pos), fun χ hχ ↦ ?_⟩
+  refine presentedProP.hom_ext_of fun i ↦ ?_
+  obtain rfl := Subsingleton.elim i 0
+  rw [← presentedProPGen_val, Fin.val_zero,
+    (hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one_iff f χ).1 hχ,
+    orientationTwoOdd_presentedProPGen_zero f 1 1 one_pos]
+
 end TwoOdd
+
+/-! ### The `q = 2`, `n` odd normal form at level `f = ∞` -/
+
+section TwoOddTop
+
+variable (n : ℕ)
+  (χ : presentedProP 2 (Fin n) {demushkinWordTwoOddTop n (freeProPGen 2 n)} →ₜ* ℤ_[2]ˣ)
+
+/-- **The tabulated values give the prescription property, `q = 2` and `n` odd, at level
+`f = ∞`** (Labute, Theorem 4, existence). A continuous character of the pro-`2` group presented by
+`x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` with `χ(x₁) = -1` and `χ(x_i) = 1` otherwise has the prescription
+property: on the relator, every crossed homomorphism for `χ ∘ mk` takes the value
+`(χ(x₁) + 1) F(x₁) = 0`. -/
+theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_of_apply_eq
+    (h₀ : χ (presentedProPGen 2 n _ 0) = -1)
+    (h : ∀ i, i ≠ 0 → χ (presentedProPGen 2 n _ i) = 1) : HasPrescriptionProperty χ := by
+  refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
+    fun F hFc hF r hr ↦ ?_
+  rw [Set.mem_singleton_iff.mp hr, hF.map_demushkinWordTwoOddTop,
+    presentedProP.comp_mk_freeProPGen, h₀, Finset.sum_eq_zero fun i _ ↦
+      hF.map_labuteComm_eq_zero_of_eq_one
+        (by rw [presentedProP.comp_mk_freeProPGen]; exact h _ (by omega))
+        (by rw [presentedProP.comp_mk_freeProPGen]; exact h _ (by omega))]
+  simp
+
+/-- **The prescription property forces `χ(x₁) = -1` on the `q = 2`, `n` odd normal form at level
+`f = ∞`**, for `n ≥ 1`: the crossed homomorphism with `F(x₁) = 1` and `F(x_i) = 0` otherwise
+takes the value `χ(x₁) + 1` on the relator `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
+theorem apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOddTop
+    (hn : 0 < n) (hχ : HasPrescriptionProperty χ) : χ (presentedProPGen 2 n _ 0) = -1 := by
+  have hrels : ({demushkinWordTwoOddTop n (freeProPGen 2 n)} : Set (freeProP 2 (Fin n))) ⊆
+      proPFrattini 2 (freeProP 2 (Fin n)) :=
+    Set.singleton_subset_iff.2 (demushkinWordTwoOddTop_mem_proPFrattini n _)
+  obtain ⟨F, hF, hFv, hFr⟩ := hχ.exists_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels hn
+  have hr := hFr _ rfl
+  rw [hF.map_demushkinWordTwoOddTop, Finset.sum_eq_zero fun i _ ↦
+    hF.map_labuteComm_eq_zero_of_eq_zero (by rw [hFv, ite_eq_right (by omega)])
+      (by rw [hFv, ite_eq_right (by omega)])] at hr
+  simp only [hFv 0, ite_eq_left, mul_zero, zero_add, mul_one] at hr
+  rw [← presentedProP.comp_mk_freeProPGen]
+  exact Units.val_inj.1 (by rw [Units.val_neg, Units.val_one]; linear_combination hr)
+
+/-- **The prescription property forces the tabulated values, `q = 2` and `n` odd, at level
+`f = ∞`** (Labute, Theorem 4, the forced computation on a derivation). For `n` odd, a continuous
+character of the pro-`2` group presented by `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` has the prescription
+property exactly when `χ(x₁) = -1` and `χ(x_i) = 1` for every other `i`. At `n = 1` this is the
+rank-one statement for `ℤ/2`. -/
+theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_iff (hn : Odd n) :
+    HasPrescriptionProperty χ ↔
+      χ (presentedProPGen 2 n _ 0) = -1 ∧ ∀ i, i ≠ 0 → χ (presentedProPGen 2 n _ i) = 1 := by
+  refine ⟨fun hχ ↦ ?_, fun h ↦
+    hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_of_apply_eq n χ h.1 h.2⟩
+  have hrels : ({demushkinWordTwoOddTop n (freeProPGen 2 n)} : Set (freeProP 2 (Fin n))) ⊆
+      proPFrattini 2 (freeProP 2 (Fin n)) :=
+    Set.singleton_subset_iff.2 (demushkinWordTwoOddTop_mem_proPFrattini n _)
+  obtain ⟨k, hk⟩ := hn
+  -- For the crossed homomorphism `F` with `F (x_i) = δ_{ij}`, `j ≥ 1`, only the commutator factor
+  -- `(x_a, x_b)` containing `x_j` contributes to the value `χ(x₁)² F (x_a, x_b)` on the relator,
+  -- so `F (x_a, x_b) = 0`.
+  have hval : ∀ j, 0 < j → j < n → ∀ F : freeProP 2 (Fin n) → ℤ_[2],
+      IsCrossedHom (χ.comp (presentedProP.mk 2 _)) F →
+      (∀ i, F (freeProPGen 2 n i) = if i = j then 1 else 0) →
+      F (demushkinWordTwoOddTop n (freeProPGen 2 n)) = 0 →
+      F (labuteComm (freeProPGen 2 n (2 * ((j - 1) / 2) + 1))
+        (freeProPGen 2 n (2 * ((j - 1) / 2) + 2))) = 0 := by
+    intro j hj₀ hj F hF hFv hFr
+    rw [hF.map_demushkinWordTwoOddTop, Finset.sum_eq_single ((j - 1) / 2)
+      (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_zero
+        (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)]))
+      (fun h0 ↦ absurd (mem_range.2 (by omega)) h0), hFv 0, ite_eq_right (by omega), mul_zero,
+      add_zero, ← Units.val_pow_eq_pow_val] at hFr
+    exact (Units.mul_right_eq_zero _).1 hFr
+  refine ⟨apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOddTop
+    n χ (by omega) hχ, fun i hi₀ ↦ ?_⟩
+  by_cases hin : i < n
+  · rw [← presentedProP.comp_mk_freeProPGen]
+    rcases Nat.even_or_odd i with ⟨m, hm⟩ | ⟨m, hm⟩
+    · -- `i ≥ 2` even: the partner of `x_i` in its commutator factor is `x_{i-1}`.
+      obtain ⟨F, hF, hFv, hFr⟩ :=
+        hχ.exists_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels (by omega : i - 1 < n)
+      have hc := hval (i - 1) (by omega) (by omega) F hF hFv (hFr _ rfl)
+      rw [(by omega : 2 * ((i - 1 - 1) / 2) + 1 = i - 1),
+        (by omega : 2 * ((i - 1 - 1) / 2) + 2 = i)] at hc
+      exact hF.eq_one_of_map_labuteComm_eq_zero_left (by rw [hFv, ite_eq_left rfl])
+        (by rw [hFv, ite_eq_right (by omega)]) hc
+    · -- `i` odd: the partner is `x_{i+1}`, which exists because `n` is odd.
+      obtain ⟨F, hF, hFv, hFr⟩ :=
+        hχ.exists_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels (by omega : i + 1 < n)
+      have hc := hval (i + 1) (by omega) (by omega) F hF hFv (hFr _ rfl)
+      rw [(by omega : 2 * ((i + 1 - 1) / 2) + 1 = i),
+        (by omega : 2 * ((i + 1 - 1) / 2) + 2 = i + 1)] at hc
+      exact hF.eq_one_of_map_labuteComm_eq_zero_right (by rw [hFv, ite_eq_right (by omega)])
+        (by rw [hFv, ite_eq_left rfl]) hc
+  · rw [presentedProPGen_eq_one_of_le 2 n _ (not_lt.1 hin), map_one]
+
+/-- **The standard orientation of the `q = 2`, `n` odd normal form at level `f = ∞` has the
+prescription property**, for `0 < n`. -/
+theorem hasPrescriptionProperty_orientationTwoOddTop (hn : 0 < n) :
+    HasPrescriptionProperty (orientationTwoOddTop n) :=
+  hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_of_apply_eq n _
+    (orientationTwoOddTop_presentedProPGen_zero n hn)
+    fun _ hi₀ ↦ orientationTwoOddTop_presentedProPGen_of_ne n hi₀
+
+/-- **Uniqueness of the canonical character of the `q = 2`, `n` odd normal form at level
+`f = ∞`**: for `n` odd, a character with the prescription property is the standard orientation. -/
+theorem eq_orientationTwoOddTop_of_hasPrescriptionProperty (hn : Odd n)
+    (hχ : HasPrescriptionProperty χ) : χ = orientationTwoOddTop n := by
+  obtain ⟨h₀, h⟩ :=
+    (hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_iff n χ hn).1 hχ
+  refine presentedProP.hom_ext_of fun i ↦ ?_
+  rw [orientationTwoOddTop_of, ← presentedProPGen_val]
+  split_ifs with hi₀
+  · rw [hi₀]
+    exact h₀
+  · exact h i hi₀
+
+/-- **The `q = 2`, `n` odd normal form at level `f = ∞` has exactly one character with the
+prescription property** (Labute, Theorem 4, for the normal form `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`
+with `n` odd): the standard orientation, with `χ(x₁) = -1` and `χ(x_i) = 1` otherwise. -/
+theorem existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop (hn : Odd n) :
+    ∃! χ : presentedProP 2 (Fin n) {demushkinWordTwoOddTop n (freeProPGen 2 n)} →ₜ* ℤ_[2]ˣ,
+      HasPrescriptionProperty χ :=
+  ⟨orientationTwoOddTop n, hasPrescriptionProperty_orientationTwoOddTop n hn.pos,
+    fun χ hχ ↦ eq_orientationTwoOddTop_of_hasPrescriptionProperty n χ hn hχ⟩
+
+end TwoOddTop
 
 /-! ### The `q = 2`, `n` even normal form -/
 

@@ -38,9 +38,8 @@ carries the markings of the squares it covers, `GridRectangle.coveredSquares`, n
 grid points in its open interior. That is the region the Maslov and Alexander grading changes are
 computed against in `Grading/MarkingCount.lean`, and it is the region used throughout this file.
 It is also the region the marking-avoidance predicate `GridRectangle.AvoidsMarkings` of the grid
-differential tests, under its other name `GridRectangle.squares`;
-`GridRectangle.squares_eq_coveredSquares` identifies the two, which is what makes the fully blocked
-count a specialization of a matrix coefficient here.
+differential tests, which is what makes the fully blocked count a specialization of a matrix
+coefficient here.
 
 *Which grading the variables carry.* Giving `V_c` bidegree `(-2, -1)` makes the differential
 homogeneous of bidegree `(-1, 0)`: `maslovO_sub_two_mul_card_OColumns_eq_maslovO_sub_one` and
@@ -405,8 +404,7 @@ theorem fullyBlockedRectangles_eq_filter (x y : GridState n) :
   classical
   ext r
   simp only [Finset.mem_filter, mem_fullyBlockedRectangles, mem_unblockedRectangles,
-    GridRectangleBetween.avoidsMarkings_iff, GridRectangle.squares_eq_coveredSquares,
-    G.OColumns_eq_empty_iff]
+    GridRectangleBetween.avoidsMarkings_iff, G.OColumns_eq_empty_iff]
   tauto
 
 /-- The constant term of a matrix coefficient of the unblocked differential is the number of

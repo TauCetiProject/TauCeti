@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Composite
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Action
 public import TauCeti.NumberTheory.ModularForms.Newforms.Basic
@@ -39,6 +40,7 @@ that the character, the eigenvalue system and the analytic invariants travel wit
 * `HeckeRing.GL2.EigenformAwayFromLevel`: the bundled good Hecke eigenform, with its
   eigenvalue system `EigenformAwayFromLevel.eigenvalue` at the indices coprime to the level.
 * `HeckeRing.GL2.Newform`: the bundled newform.
+* `HeckeRing.GL2.Newform.dirichletLift`: its nebentypus as a zero-extended Dirichlet character.
 
 ## Main results
 
@@ -126,6 +128,29 @@ theorem ext {f g : EigenformAwayFromLevel N k} (h : f.toCuspForm = g.toCuspForm)
 end EigenformAwayFromLevel
 
 namespace Newform
+
+/-- The nebentypus of a newform, extended by zero from units modulo `N` to a Dirichlet
+character. This packages Mathlib's `MulChar.ofUnitHom` for formulas attached to the newform. -/
+public noncomputable def dirichletLift (f : Newform N k) : DirichletCharacter ℂ N :=
+  MulChar.ofUnitHom f.χ
+
+/-- The zero extension defining the Dirichlet character of a newform. -/
+theorem dirichletLift_def (f : Newform N k) :
+    f.dirichletLift = MulChar.ofUnitHom f.χ := (rfl)
+
+/-- Restricting the zero-extended nebentypus to units recovers the character of the newform. -/
+@[simp]
+theorem dirichletLift_equivToUnitHom (f : Newform N k) :
+    MulChar.equivToUnitHom f.dirichletLift = f.χ := by
+  rw [dirichletLift_def]
+  exact MulChar.equivToUnitHom.apply_symm_apply f.χ
+
+/-- The zero-extended nebentypus vanishes at indices not coprime to the level. -/
+@[simp]
+theorem dirichletLift_apply_eq_zero (f : Newform N k) (n : ℕ) (hn : ¬ n.Coprime N) :
+    f.dirichletLift n = 0 := by
+  apply MulChar.map_nonunit
+  simpa only [ZMod.isUnit_iff_coprime] using hn
 
 /-- The normalisation `a₁ = 1`, as a simp lemma. The eigenvector equation `isEigen` has no simp
 form: its right-hand side depends on the coprimality proof, so no rewrite rule can produce it. -/

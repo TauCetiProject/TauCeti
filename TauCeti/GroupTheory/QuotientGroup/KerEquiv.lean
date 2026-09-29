@@ -23,7 +23,8 @@ belongs beside `QuotientGroup.quotientKerEquivOfSurjective` in Mathlib.
 ## Main statements
 
 * `TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk`: the isomorphism
-  `G ⧸ φ.ker ≃* M` sends the class of `g` to `φ g`.
+  `G ⧸ φ.ker ≃* M` sends the class of `g` to `φ g`; its additive counterpart is
+  `TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk`.
 -/
 
 public section
@@ -36,7 +37,9 @@ variable {G M : Type*} [Group G] [Group M] (φ : G →* M) (hφ : Function.Surje
 
 /-- The first isomorphism theorem for a surjective homomorphism sends the class of `g` to
 `φ g`. -/
-@[simp]
+@[to_additive (attr := simp) TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk
+  /-- The first isomorphism theorem for a surjective additive homomorphism sends the class of
+  `g` to `φ g`. -/]
 theorem quotientKerEquivOfSurjective_apply_mk (g : G) :
     _root_.QuotientGroup.quotientKerEquivOfSurjective φ hφ (_root_.QuotientGroup.mk g) = φ g :=
   rfl

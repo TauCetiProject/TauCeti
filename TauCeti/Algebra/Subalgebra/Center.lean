@@ -15,7 +15,8 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 
 Constructions on `Subalgebra.center` that Mathlib states only for `Subring.center`, or only
 as an equality of subalgebras, and that are needed whenever a structure theorem presents an algebra
-up to an algebra equivalence, together with the criterion for a commutative algebra to be central.
+up to an algebra equivalence, together with the criterion for a commutative algebra to be central
+and the ring of scalars a central subalgebra provides.
 
 * `TauCeti.centerCongr` transports the center along an algebra equivalence. It is the
   `Subalgebra` counterpart of Mathlib's `Subring.centerCongr`, which sees only the ring
@@ -28,9 +29,52 @@ up to an algebra equivalence, together with the criterion for a commutative alge
 * `TauCeti.isCentral_iff_surjective_algebraMap` records that a commutative algebra is central
   exactly when its structure map is surjective, the precise sense in which centrality is a strong
   condition on a field extension.
+* `Subalgebra.centralSubalgebraAlgebra` makes a subalgebra of the center into a ring of scalars
+  for the ambient algebra, so that finiteness and integrality over it can be stated. Its structure
+  map and action are `Subalgebra.centralSubalgebraAlgebra_algebraMap_apply` and
+  `Subalgebra.centralSubalgebraAlgebra_smul_def`, and
+  `Subalgebra.isScalarTower_centralSubalgebraAlgebra` records that the base ring, the subalgebra
+  and the ambient algebra form a scalar tower.
 -/
 
 public section
+
+namespace Subalgebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+  (S : Subalgebra R (Subalgebra.center R A))
+
+/-- A subalgebra of the center of an algebra acts on the ambient algebra by multiplication. -/
+abbrev centralSubalgebraAlgebra : Algebra S A :=
+  (((center R A).val.comp S.val).toRingHom.toAlgebra' fun s a ↦
+    (mem_center_iff.mp s.1.property a).symm)
+
+/-- The structure map of `Subalgebra.centralSubalgebraAlgebra` is the inclusion of `S` into the
+ambient algebra. -/
+@[simp]
+theorem centralSubalgebraAlgebra_algebraMap_apply (s : S) :
+    letI := centralSubalgebraAlgebra S
+    algebraMap S A s = ((s : center R A) : A) :=
+  rfl
+
+/-- `Subalgebra.centralSubalgebraAlgebra` makes `S` act by multiplication in the ambient
+algebra. -/
+@[simp]
+theorem centralSubalgebraAlgebra_smul_def (s : S) (a : A) :
+    letI := centralSubalgebraAlgebra S
+    s • a = ((s : center R A) : A) * a :=
+  rfl
+
+/-- `R`, a subalgebra `S` of the center, and the ambient algebra form a scalar tower: the two
+actions of `R` on the ambient algebra agree because `S` acts by multiplication. -/
+theorem isScalarTower_centralSubalgebraAlgebra :
+    letI := centralSubalgebraAlgebra S
+    IsScalarTower R S A := by
+  refine ⟨fun r s a ↦ ?_⟩
+  rw [centralSubalgebraAlgebra_smul_def, centralSubalgebraAlgebra_smul_def, ← smul_mul_assoc]
+  congr 1
+
+end Subalgebra
 
 namespace TauCeti
 

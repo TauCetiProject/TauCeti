@@ -39,6 +39,8 @@ of `R`; see `TauCeti.Topology.Algebra.Group.Profinite.Presentation.Abelianizatio
 * `TauCeti.freeProP.abelianizationEquiv`: the topological isomorphism
   `TopologicalAbelianization (freeProP p X) ≃ₜ* Multiplicative (X → ℤ_[p])` induced by the
   exponent-sum map.
+* `TauCeti.freeProP.exponentSumZModPow`: the `i`-th exponent sum modulo `p ^ k`, as a continuous
+  character `freeProP p X →ₜ* ULift (Multiplicative (ZMod (p ^ k)))`.
 
 ## Main results
 
@@ -81,6 +83,20 @@ theorem exponentSum_of [DecidableEq X] (x : X) :
     exponentSum p X (of x) = ofAdd (Pi.single x 1) :=
   (lift_of _ _ x).trans (by congr; exact Subsingleton.elim _ _)
 
+/-- The exponent vector of the `i`-th `ℕ`-indexed generator of `freeProP p (Fin n)` is the
+coordinate vector at `i`; out of range it is `0`. -/
+@[simp]
+theorem toAdd_exponentSum_freeProPGen_apply {n : ℕ} (i : ℕ) (j : Fin n) :
+    (exponentSum p (Fin n) (freeProPGen p n i)).toAdd j = if (j : ℕ) = i then 1 else 0 := by
+  by_cases hi : i < n
+  · rw [freeProPGen_of_lt p hi, exponentSum_of, toAdd_ofAdd]
+    split_ifs with h
+    · obtain rfl : j = ⟨i, hi⟩ := Fin.ext h
+      exact Pi.single_eq_same _ _
+    · exact Pi.single_eq_of_ne (fun h' ↦ h (congrArg Fin.val h')) _
+  · rw [freeProPGen_eq_one_of_le p (not_lt.1 hi), map_one, toAdd_one, Pi.zero_apply,
+      ite_eq_right (j.isLt.trans_le (not_lt.1 hi)).ne]
+
 /-- **The exponent sums of an element of the Frattini subgroup are divisible by `p`.** The
 reduction modulo `p` of the exponent sum at `x` is the continuous `𝔽_p`-valued character
 `TauCeti.freeProP.characterOfFun` with value `1` at `x` and `0` at the other generators, and every
@@ -107,6 +123,56 @@ theorem dvd_exponentSum_of_mem_proPFrattini {y : freeProP p X}
     rw [RingHom.mem_ker, ← ofAdd_eq_one]
     exact h1
   rwa [PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p, Ideal.mem_span_singleton] at h
+
+/-! ### The exponent sums modulo `p ^ k` -/
+
+section ExponentSumZModPow
+
+/-- **The `i`-th exponent sum modulo `p ^ k`**, as a continuous character of the free pro-`p`
+group into the discrete cyclic group `ℤ/pᵏ`, written multiplicatively and lifted to the universe
+of `X`: it sends `y` to the reduction modulo `p ^ k` of the exponent of the generator `x_i` in `y`.
+It takes the generator `x_i` to the standard generator of `ℤ/pᵏ` and kills the other generators,
+so it reads off the coefficient of `x_i` on the graded pieces of the lower `p`-series. -/
+noncomputable def exponentSumZModPow (k : ℕ) (i : X) :
+    freeProP p X →ₜ* ULift.{u} (Multiplicative (ZMod (p ^ k))) where
+  toFun y := MulEquiv.ulift.symm (ofAdd (PadicInt.toZModPow k ((exponentSum p X y).toAdd i)))
+  map_one' := by simp
+  map_mul' y z := by
+    rw [map_mul, toAdd_mul, Pi.add_apply, map_add, ofAdd_add, map_mul]
+  continuous_toFun := continuous_of_discreteTopology.comp (continuous_ofAdd.comp
+    ((PadicInt.continuous_toZModPow k).comp ((continuous_apply i).comp
+      (continuous_toAdd.comp (exponentSum p X).continuous))))
+
+theorem exponentSumZModPow_apply (k : ℕ) (i : X) (y : freeProP p X) :
+    exponentSumZModPow p X k i y =
+      MulEquiv.ulift.symm (ofAdd (PadicInt.toZModPow k ((exponentSum p X y).toAdd i))) :=
+  (rfl)
+
+/-- The `i`-th exponent sum modulo `p ^ k` of `y` vanishes exactly when `p ^ k` divides the
+`i`-th exponent sum of `y`. -/
+@[simp]
+theorem exponentSumZModPow_eq_one_iff (k : ℕ) (i : X) (y : freeProP p X) :
+    exponentSumZModPow p X k i y = 1 ↔ (p : ℤ_[p]) ^ k ∣ (exponentSum p X y).toAdd i := by
+  rw [exponentSumZModPow_apply, MulEquiv.map_eq_one_iff, ofAdd_eq_one, ← RingHom.mem_ker,
+    PadicInt.ker_toZModPow, Ideal.mem_span_singleton]
+
+/-- The `i`-th exponent sum modulo `p ^ k` sends the generator `x_i` to the standard generator of
+`ℤ/pᵏ`. -/
+@[simp]
+theorem exponentSumZModPow_of_self (k : ℕ) (i : X) :
+    exponentSumZModPow p X k i (of i) = MulEquiv.ulift.symm (ofAdd 1) := by
+  classical
+  rw [exponentSumZModPow_apply, exponentSum_of, toAdd_ofAdd, Pi.single_eq_same, map_one]
+
+/-- The `i`-th exponent sum modulo `p ^ k` kills the generators other than `x_i`. -/
+@[simp]
+theorem exponentSumZModPow_of_of_ne (k : ℕ) {i j : X} (hij : j ≠ i) :
+    exponentSumZModPow p X k i (of j) = 1 := by
+  classical
+  rw [exponentSumZModPow_apply, exponentSum_of, toAdd_ofAdd, Pi.single_eq_of_ne hij.symm,
+    map_zero, ofAdd_zero, map_one]
+
+end ExponentSumZModPow
 
 end ExponentSum
 

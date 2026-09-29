@@ -43,6 +43,8 @@ the standard subgroup as a Borel subgroup.
     geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra`: solvability of
   geometric points.
 * `TauCeti.SpecialLinear.Borel.isBorel_definingHopfIdeal`: the standard subgroup is Borel.
+* `TauCeti.SpecialLinear.Borel.isBorelOverAlgClosed_definingHopfIdeal`: its algebraically closed
+  formulation, used to classify the Borel subgroups by conjugacy.
 
 ## References
 
@@ -412,17 +414,26 @@ section Field
 
 variable {k : Type u} [Field k]
 
-private theorem isBorelOverAlgClosed_definingHopfIdeal [IsAlgClosed k] :
+/-- The standard upper-triangular subgroup of `SL₂` is smooth, geometrically connected,
+and geometrically solvable. -/
+theorem isBorelCandidate_definingHopfIdeal (k : Type u) [Field k] :
+    HopfIdeal.IsBorelCandidate k
+      (FiniteTypeCommHopfAlgCat.of k (SpecialLinear.coordinateHopfAlgebra k 2))
+      (definingHopfIdeal k) :=
+  HopfIdeal.IsBorelCandidate.mk
+    (smoothCommHopfAlgProperty_coordinateHopfAlgebra k)
+    (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k)
+    (geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra k)
+
+/-- Over an algebraically closed field, the standard upper-triangular subgroup of `SL₂`
+is a Borel subgroup: it is maximal among smooth, connected, solvable closed subgroups. -/
+theorem isBorelOverAlgClosed_definingHopfIdeal (k : Type u) [Field k] [IsAlgClosed k] :
     HopfIdeal.IsBorelOverAlgClosed k
-      ⟨SpecialLinear.coordinateHopfAlgebra k 2,
-        (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+      (FiniteTypeCommHopfAlgCat.of k (SpecialLinear.coordinateHopfAlgebra k 2))
       (definingHopfIdeal k) := by
   rw [HopfIdeal.isBorelOverAlgClosed_iff]
   refine ⟨inferInstance, ?_⟩
-  refine ⟨HopfIdeal.IsBorelCandidate.mk
-    (smoothCommHopfAlgProperty_coordinateHopfAlgebra k)
-    (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k)
-    (geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra k), ?_⟩
+  refine ⟨isBorelCandidate_definingHopfIdeal k, ?_⟩
   intro I hI hIB
   exact definingHopfIdeal_le_of_le_of_smooth_of_geometricallySolvable
     I hIB hI.smooth hI.geometricallySolvable
@@ -446,7 +457,7 @@ theorem isBorel_definingHopfIdeal :
   have hmap : I'.map (FiniteTypeCommHopfAlgCat.toBialgHom e.hom) = definingHopfIdeal K := by
     exact map_baseChangeHopfIdeal_definingHopfIdeal k K
   have hpull := HopfIdeal.IsBorelOverAlgClosed.of_map_eq e hmap
-    (isBorelOverAlgClosed_definingHopfIdeal (k := K))
+    (isBorelOverAlgClosed_definingHopfIdeal K)
   exact (HopfIdeal.isBorel_iff_isBorelOverAlgClosed_baseChange
     k (SpecialLinear.coordinateHopfAlgebra k 2) (definingHopfIdeal k)).2 (by
       simpa only [K, H, H', I'] using hpull)

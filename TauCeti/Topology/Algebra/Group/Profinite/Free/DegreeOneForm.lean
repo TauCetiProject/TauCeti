@@ -67,7 +67,9 @@ characters on the images of the generators. Bringing a relator into normal form 
   the degree-one form is skew-symmetric, hence reflexive, alternating for odd `p`, and symmetric
   for `p = 2`.
 * `TauCeti.freeProP.heisenbergFunctional_gradedMap`, `TauCeti.freeProP.degreeOneForm_gradedMap`:
-  the transformation law under a continuous homomorphism between free pro-`p` groups.
+  the transformation law under a continuous homomorphism between free pro-`p` groups; hence
+  nondegeneracy of the form is invariant under topological isomorphisms
+  (`TauCeti.freeProP.nondegenerate_degreeOneForm_gradedMap_iff`).
 * `TauCeti.freeProP.degreeOneForm_dualBasis_of_lt`,
   `TauCeti.freeProP.degreeOneForm_dualBasis_of_gt`, `TauCeti.freeProP.degreeOneForm_dualBasis_self`:
   the matrix of the degree-one form in the dual basis of the generators is read off the
@@ -478,6 +480,26 @@ theorem degreeOneForm_gradedMap (φ : freeProP p X →ₜ* freeProP p Y)
     rw [degreeOneForm_apply, LinearMap.compl₁₂_apply, degreeOneForm_apply,
       ContinuousMonoidHom.toMul_continuousZModDualMap,
       ContinuousMonoidHom.toMul_continuousZModDualMap, heisenbergFunctional_gradedMap]
+
+/-- **Nondegeneracy of the degree-one form is invariant under topological isomorphisms** of free
+pro-`p` groups: the form of `e_* ρ` is the form of `ρ` transported along the transpose of `e`,
+which is a linear automorphism of the continuous duals. -/
+theorem nondegenerate_degreeOneForm_gradedMap_iff (e : freeProP p X ≃ₜ* freeProP p Y)
+    (ρ : gradedPiece p (freeProP p X) 1) :
+    (degreeOneForm (gradedMap p (e : freeProP p X →ₜ* freeProP p Y).toMonoidHom
+        (e : freeProP p X →ₜ* freeProP p Y).continuous 1 ρ)).Nondegenerate ↔
+      (degreeOneForm ρ).Nondegenerate := by
+  let T := LinearEquiv.ofBijective
+    (ContinuousMonoidHom.continuousZModDualMap (n := p) (e : freeProP p X →ₜ* freeProP p Y))
+    e.continuousZModDualMap_bijective
+  have h : degreeOneForm (gradedMap p (e : freeProP p X →ₜ* freeProP p Y).toMonoidHom
+      (e : freeProP p X →ₜ* freeProP p Y).continuous 1 ρ) =
+        LinearMap.BilinForm.congr T.symm (degreeOneForm ρ) := by
+    rw [degreeOneForm_gradedMap]
+    ext χ ψ
+    rw [LinearMap.compl₁₂_apply, LinearMap.BilinForm.congr_apply, LinearEquiv.symm_symm]
+    rfl
+  rw [h, LinearMap.BilinForm.nondegenerate_congr_iff]
 
 end Form
 

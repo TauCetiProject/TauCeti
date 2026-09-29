@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialFp
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialFp.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Empty
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank
@@ -39,6 +39,8 @@ A free pro-`p` group is not Demushkin, since its `H²(G, 𝔽_p)` vanishes.
 * `TauCeti.IsDemushkin.exists_mem_proPFrattini_continuousMulEquiv_presentedProP`: a Demushkin group
   is a one-relator pro-`p` group with relator in the Frattini subgroup.
 * `TauCeti.IsDemushkin.demushkinRank_pos`: a Demushkin group has positive rank.
+* `TauCeti.IsDemushkin.card_pos_presentedProP`: a presentation of a Demushkin group has at least
+  one generator.
 * `TauCeti.not_isDemushkin_freeProP`: a free pro-`p` group is not Demushkin.
 
 ## References
@@ -183,6 +185,14 @@ theorem demushkinRank_pos : 0 < demushkinRank hG := by
   exact one_ne_zero h2
 
 end IsDemushkin
+
+/-- **A presentation of a Demushkin group has at least one generator**: the rank of the group is
+positive and at most the number of generators. -/
+theorem IsDemushkin.card_pos_presentedProP {X : Type v} [Finite X] {rels : Set (freeProP p X)}
+    (hG : IsDemushkin p (presentedProP p X rels)) : 0 < Nat.card X := by
+  have h := hG.demushkinRank_pos
+  rw [demushkinRank_def] at h
+  exact h.trans_le (presentedProP.topologicalGeneratorRankNat_le_card rels)
 
 /-- **A free pro-`p` group is not Demushkin**: its `H²(F, 𝔽_p)` vanishes, so it is not
 one-dimensional. This covers the trivial group and `ℤ_p`. -/

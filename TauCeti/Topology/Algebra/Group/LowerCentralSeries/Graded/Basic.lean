@@ -367,6 +367,11 @@ variable (p G) in
 def gradedMkZero (g : G) : gradedPiece p G 0 :=
   gradedMk p G 0 ⟨g, mem_pLowerCentralSeries_zero p g⟩
 
+/-- The class map from a topological group to degree zero of its lower `p`-series is continuous. -/
+theorem continuous_gradedMkZero : Continuous (gradedMkZero p G) := by
+  unfold gradedMkZero gradedMk
+  exact continuous_quotient_mk'.comp (continuous_id.subtype_mk _)
+
 /-- The class in degree zero of an element of `λ_0` is the class of the underlying element. -/
 @[simp]
 theorem gradedMk_zero (x : pLowerCentralSeries p G 0) :
@@ -588,6 +593,17 @@ theorem gradedBracketLinear_apply {j k : ℕ} (x : gradedPiece p G j) (y : grade
 theorem gradedBracket_self {k : ℕ} (x : gradedPiece p G k) : gradedBracket p G k k x x = 0 := by
   obtain ⟨x, rfl⟩ := gradedMk_surjective k x
   rw [gradedBracket_gradedMk, gradedMk_eq_zero_iff, coe_mk, commutatorElement_self]
+  exact one_mem _
+
+/-- **The bracket of a commutative group vanishes** in every degree, since it is the class of a
+commutator. -/
+@[simp]
+theorem gradedBracket_eq_zero_of_isMulCommutative [IsMulCommutative G] {j k : ℕ}
+    (x : gradedPiece p G j) (y : gradedPiece p G k) : gradedBracket p G j k x y = 0 := by
+  obtain ⟨x, rfl⟩ := gradedMk_surjective j x
+  obtain ⟨y, rfl⟩ := gradedMk_surjective k y
+  rw [gradedBracket_gradedMk, gradedMk_eq_zero_iff, coe_mk,
+    commutatorElement_eq_one_iff_mul_comm.mpr (IsMulCommutative.is_comm.comm _ _)]
   exact one_mem _
 
 /-- **Skew-symmetry**: `[y, x] = -[x, y]`, transported to a common degree. -/

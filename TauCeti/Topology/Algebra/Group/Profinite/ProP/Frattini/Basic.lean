@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import TauCeti.GroupTheory.ExponentPrime
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!
@@ -68,6 +69,8 @@ and total disconnectedness are assumed exactly where they are used.
   exactly when `G` is commutative of exponent dividing `p`.
 * `ContinuousMulEquiv.map_proPFrattini_eq`: the pro-`p` Frattini subgroup is characteristic under
   continuous automorphisms.
+* `TauCeti.isTopCharacteristic_proPFrattini`: the pro-`p` Frattini subgroup is topologically
+  characteristic.
 * `TauCeti.map_proPFrattini_eq_of_surjective`: a continuous surjection of profinite groups carries
   the pro-`p` Frattini subgroup onto the pro-`p` Frattini subgroup.
 
@@ -217,6 +220,12 @@ theorem _root_.ContinuousMulEquiv.map_proPFrattini_eq (e : G ≃ₜ* H) :
     e.symm.toMulEquiv.toMonoidHom.map_proPFrattini_le e.symm.continuous e.symm.surjective
       (Subgroup.mem_map_of_mem _ hx)
   exact ⟨e.symm x, hsymm, e.apply_symm_apply x⟩
+
+/-- The pro-`p` Frattini subgroup is topologically characteristic for every topological group and
+every natural number `p`. -/
+theorem isTopCharacteristic_proPFrattini (p : ℕ) :
+    IsTopCharacteristic G (proPFrattini p G) :=
+  isTopCharacteristic_iff_map_eq.mpr fun φ ↦ ContinuousMulEquiv.map_proPFrattini_eq φ
 
 /-! ### The verbal description -/
 

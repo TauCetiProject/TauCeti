@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Group.CrossedHom
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Cocycle
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.CompatibleSystem
+import TauCeti.Topology.Algebra.Group.Profinite.Free.PadicUnits
 
 /-!
 # The prescription property for free pro-`p` groups
@@ -34,6 +35,13 @@ with `F (x * y) = χ x * F y + F x` (`TauCeti.IsCrossedHom`).
 * `TauCeti.freeProP.exists_continuous_isCrossedHom_forall_apply_of_eq`: on a free pro-`p` group of
   finite rank, a continuous crossed homomorphism to `ℤ_p` for any continuous character takes any
   prescribed values on the generators.
+* `TauCeti.freeProP.crossedHom`: that crossed homomorphism, with
+  `TauCeti.IsCrossedHom.eq_crossedHom` its uniqueness and
+  `TauCeti.freeProP.crossedHom_apply_eq_sum` the linearity of its values in the prescribed values
+  on the generators.
+* `TauCeti.IsCrossedHom.pow_dvd_sub_of_forall_of_eq`: two continuous crossed homomorphisms with
+  the same values on the generators, for characters congruent modulo `p ^ k`, are congruent modulo
+  `p ^ k`.
 
 ## References
 
@@ -71,5 +79,91 @@ theorem freeProP.exists_continuous_isCrossedHom_forall_apply_of_eq [Finite X]
       (isProP_freeProP p X) (isTopologicallyFinitelyGenerated_freeProP p X)
       (freeProP.linearIndependent_frattiniQuotient_of p X) c
   exact ⟨F, hFc, isCrossedHom_iff.2 hFmul, hFv⟩
+
+namespace freeProP
+
+section Finite
+
+variable [Finite X] (χ : freeProP p X →ₜ* ℤ_[p]ˣ) (c : X → ℤ_[p])
+
+/-- **The continuous crossed homomorphism with prescribed values on the generators.** For a
+continuous character `χ` of the free pro-`p` group on a finite type `X` and `c : X → ℤ_p`, the
+continuous crossed homomorphism `F : freeProP p X → ℤ_p` for `χ` with `F (of x) = c x`. It is the
+only one (`TauCeti.IsCrossedHom.eq_crossedHom`), and its value at a fixed element is `ℤ_p`-linear
+in `c` (`TauCeti.freeProP.crossedHom_apply_eq_sum`). -/
+noncomputable def crossedHom : freeProP p X → ℤ_[p] :=
+  (exists_continuous_isCrossedHom_forall_apply_of_eq χ c).choose
+
+theorem continuous_crossedHom : Continuous (crossedHom χ c) :=
+  (exists_continuous_isCrossedHom_forall_apply_of_eq χ c).choose_spec.1
+
+theorem isCrossedHom_crossedHom : IsCrossedHom χ (crossedHom χ c) :=
+  (exists_continuous_isCrossedHom_forall_apply_of_eq χ c).choose_spec.2.1
+
+@[simp]
+theorem crossedHom_of (x : X) : crossedHom χ c (of x) = c x :=
+  (exists_continuous_isCrossedHom_forall_apply_of_eq χ c).choose_spec.2.2 x
+
+variable {χ}
+
+/-- **A continuous crossed homomorphism is determined by its values on the generators**: it is
+`crossedHom χ` of those values. -/
+theorem _root_.TauCeti.IsCrossedHom.eq_crossedHom {F : freeProP p X → ℤ_[p]}
+    (hF : IsCrossedHom χ F) (hFc : Continuous F) : F = crossedHom χ fun x ↦ F (of x) :=
+  hF.eq_of_eqOn_of_topologicalClosure_closure_eq_top (isCrossedHom_crossedHom χ _) hFc
+    (continuous_crossedHom χ _) (topologicalClosure_closure_range_of_eq_top p X)
+    (by rintro _ ⟨x, rfl⟩; rw [crossedHom_of])
+
+end Finite
+
+/-- **Crossed homomorphisms with the same values on the generators, for characters congruent
+modulo `p ^ k`, are congruent modulo `p ^ k`**: their truncations modulo `p ^ k` are continuous
+crossed homomorphisms for the same character of `F` agreeing on the generators. -/
+theorem _root_.TauCeti.IsCrossedHom.pow_dvd_sub_of_forall_of_eq {χ χ' : freeProP p X →ₜ* ℤ_[p]ˣ}
+    {k : ℕ} (hχ : ∀ x, (p : ℤ_[p]) ^ k ∣ (χ' (of x) : ℤ_[p]) - χ (of x))
+    {f f' : freeProP p X → ℤ_[p]} (hf : IsCrossedHom χ f) (hf' : IsCrossedHom χ' f')
+    (hfc : Continuous f) (hf'c : Continuous f') (hff' : ∀ x, f (of x) = f' (of x))
+    (g : freeProP p X) : (p : ℤ_[p]) ^ k ∣ f' g - f g := by
+  -- The truncated characters agree.
+  have hχeq :
+      (Units.map (PadicInt.toZModPow (p := p) k : ℤ_[p] →* ZMod (p ^ k))).comp χ'.toMonoidHom =
+        (Units.map (PadicInt.toZModPow (p := p) k : ℤ_[p] →* ZMod (p ^ k))).comp χ.toMonoidHom := by
+    refine MonoidHom.ext fun g ↦ Units.ext ?_
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, Units.coe_map, Units.coe_map,
+      MonoidHom.coe_ofClass, ← sub_eq_zero, ← map_sub, PadicInt.toZModPow_eq_zero_iff_dvd]
+    exact freeProP.pow_dvd_sub_of_forall_of hχ g
+  have hf₀ : IsCrossedHom χ.toMonoidHom f := isCrossedHom_iff.2 fun x y ↦ hf.map_mul x y
+  have hf'₀ : IsCrossedHom χ'.toMonoidHom f' := isCrossedHom_iff.2 fun x y ↦ hf'.map_mul x y
+  have h1 := hf₀.ringHom_comp (PadicInt.toZModPow k)
+  have h2 := hf'₀.ringHom_comp (PadicInt.toZModPow k)
+  rw [hχeq] at h2
+  have h := h1.eq_of_eqOn_of_topologicalClosure_closure_eq_top h2
+    ((PadicInt.continuous_toZModPow k).comp hfc) ((PadicInt.continuous_toZModPow k).comp hf'c)
+    (topologicalClosure_closure_range_of_eq_top p X)
+    (by rintro _ ⟨x, rfl⟩; simp [hff' x])
+  rw [← PadicInt.toZModPow_eq_zero_iff_dvd, map_sub, sub_eq_zero]
+  exact (congrFun h g).symm
+
+/-- **The value of a crossed homomorphism is linear in its values on the generators**: `crossedHom
+χ c` is the `ℤ_p`-combination, with coefficients `c x`, of the Kronecker crossed homomorphisms
+taking the value `1` at one generator and `0` at the others. -/
+theorem crossedHom_apply_eq_sum [Fintype X] [DecidableEq X] (χ : freeProP p X →ₜ* ℤ_[p]ˣ)
+    (c : X → ℤ_[p]) (g : freeProP p X) :
+    crossedHom χ c g = ∑ x, c x * crossedHom χ (Pi.single x 1) g := by
+  have hF : IsCrossedHom χ fun g ↦ ∑ x, c x * crossedHom χ (Pi.single x 1) g :=
+    isCrossedHom_iff.2 fun g h ↦ by
+      simp only [(isCrossedHom_crossedHom χ _).map_mul g h, mul_add, Finset.sum_add_distrib,
+        Finset.mul_sum]
+      congr 1
+      exact Finset.sum_congr rfl fun x _ ↦ by ring
+  have hFc : Continuous fun g ↦ ∑ x, c x * crossedHom χ (Pi.single x 1) g :=
+    continuous_finsetSum _ fun x _ ↦ continuous_const.mul (continuous_crossedHom χ _)
+  have h := hF.eq_crossedHom hFc
+  have hval : (fun x ↦ ∑ y, c y * crossedHom χ (Pi.single y 1) (of x)) = c := funext fun x ↦ by
+    simp [Pi.single_apply]
+  rw [hval] at h
+  exact (congrFun h g).symm
+
+end freeProP
 
 end TauCeti
