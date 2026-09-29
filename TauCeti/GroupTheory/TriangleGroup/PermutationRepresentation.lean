@@ -222,16 +222,16 @@ noncomputable def cosetTriple : PermutationTriple n :=
   (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).1
 
 @[simp]
-theorem cosetTriple_σ0 : (cosetTriple H e).σ0 = e.permutationRepresentation (x a b c) :=
-  (rfl)
+theorem cosetTriple_σ0 : (cosetTriple H e).σ0 = e.permutationRepresentation (x a b c) := by
+  rw [cosetTriple, permutationTripleEquiv_apply_σ0]
 
 @[simp]
-theorem cosetTriple_σ1 : (cosetTriple H e).σ1 = e.permutationRepresentation (y a b c) :=
-  (rfl)
+theorem cosetTriple_σ1 : (cosetTriple H e).σ1 = e.permutationRepresentation (y a b c) := by
+  rw [cosetTriple, permutationTripleEquiv_apply_σ1]
 
 @[simp]
-theorem cosetTriple_σinf : (cosetTriple H e).σinf = e.permutationRepresentation (z a b c) :=
-  (rfl)
+theorem cosetTriple_σinf : (cosetTriple H e).σinf = e.permutationRepresentation (z a b c) := by
+  rw [cosetTriple, permutationTripleEquiv_apply_σinf]
 
 theorem cosetTriple_σ0_pow : (cosetTriple H e).σ0 ^ a = 1 :=
   (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).2.1

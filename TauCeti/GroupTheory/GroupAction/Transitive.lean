@@ -151,8 +151,10 @@ noncomputable def quotientComapStabilizerEquiv (ρ : G →* Perm X) (hρ : IsPre
 `ρ g x`. -/
 @[simp]
 theorem quotientComapStabilizerEquiv_mk (ρ : G →* Perm X) (hρ : IsPretransitive ρ.range X)
-    (x : X) (g : G) : quotientComapStabilizerEquiv ρ hρ x (QuotientGroup.mk g) = ρ g x :=
-  (rfl)
+    (x : X) (g : G) : quotientComapStabilizerEquiv ρ hρ x (QuotientGroup.mk g) = ρ g x := by
+  rw [quotientComapStabilizerEquiv, Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+    TauCeti.quotientStabilizerEquiv_mk]
+  rfl
 
 /-- The identification of the coset space with `X` carries left multiplication by `g` to `ρ g`. -/
 theorem quotientComapStabilizerEquiv_smul (ρ : G →* Perm X) (hρ : IsPretransitive ρ.range X)

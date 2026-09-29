@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.TriangleGroup.PermutationRepresentation
 public import TauCeti.Combinatorics.PermutationTriple.Orders
 public import TauCeti.Combinatorics.PermutationTriple.Regular
 public import TauCeti.GroupTheory.GroupAction.Stabilizer
@@ -34,6 +33,8 @@ the representation, `TauCeti.TriangleGroup.range_toPerm`).
   `n` with component orders dividing `a`, `b`, `c`.
 * `TauCeti.TriangleGroup.regularIsoClassEquiv`: for `n ≠ 0`, the bijection between these classes
   and the normal subgroups of index `n` of `Δ(a, b, c)`.
+* `TauCeti.TriangleGroup.automorphismGroupMulEquivQuotientKer`: the automorphism group of a regular
+  triple is the opposite of the triangle group modulo the kernel of its representation.
 
 ## Main results
 
@@ -66,6 +67,78 @@ open Equiv
 public section
 
 namespace TauCeti
+
+namespace PermutationTriple
+
+variable {n : ℕ} {t : PermutationTriple n}
+
+private noncomputable def automorphismGroupEvalEquiv
+    (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃ Fin n :=
+  Equiv.ofBijective (fun τ : t.automorphismGroup ↦ τ • i) ⟨by
+      intro τ σ h
+      apply Subtype.ext
+      have hfix : (((σ⁻¹ * τ : t.automorphismGroup) : Perm (Fin n))) i = i := by
+        change ((σ : Perm (Fin n))⁻¹ * (τ : Perm (Fin n))) i = i
+        rw [Perm.mul_apply]
+        rw [show (τ : Perm (Fin n)) i = (σ : Perm (Fin n)) i from h]
+        exact (σ : Perm (Fin n)).symm_apply_apply i
+      have hone : (σ⁻¹ * τ : t.automorphismGroup) = 1 := Subtype.ext <|
+        eq_one_of_mem_automorphismGroup_of_apply_eq ht.isConnected.isPretransitive
+          (σ⁻¹ * τ).2 hfix
+      exact congrArg Subtype.val <| calc
+        τ = σ * (σ⁻¹ * τ) := by simp
+        _ = σ := by rw [hone, mul_one],
+    by
+      intro j
+      exact ht.isPretransitive.exists_smul_eq i j⟩
+
+private noncomputable def monodromyGroupEvalEquiv
+    (ht : t.IsRegular) (i : Fin n) : t.monodromyGroup ≃ Fin n :=
+  Equiv.ofBijective (fun g : t.monodromyGroup ↦ g • i) ⟨by
+      let _ : IsCancelSMul t.monodromyGroup (Fin n) := ht.isCancelSMul
+      exact fun g h hgh ↦ IsCancelSMul.right_cancel g h i hgh,
+    by
+      intro j
+      exact ht.isConnected.isPretransitive.exists_smul_eq i j⟩
+
+private noncomputable def automorphismGroupEquivMonodromyGroup
+    (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃ t.monodromyGroup :=
+  (automorphismGroupEvalEquiv ht i).trans (monodromyGroupEvalEquiv ht i).symm
+
+private theorem automorphismGroupEquivMonodromyGroup_smul
+    (ht : t.IsRegular) (i : Fin n) (τ : t.automorphismGroup) :
+    automorphismGroupEquivMonodromyGroup ht i τ • i = τ • i := by
+  change monodromyGroupEvalEquiv ht i
+      ((monodromyGroupEvalEquiv ht i).symm (automorphismGroupEvalEquiv ht i τ)) =
+    automorphismGroupEvalEquiv ht i τ
+  exact Equiv.apply_symm_apply _ _
+
+private noncomputable def automorphismGroupMulEquivMonodromyGroupOpposite
+    (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃* t.monodromyGroupᵐᵒᵖ where
+  toEquiv := (automorphismGroupEquivMonodromyGroup ht i).trans MulOpposite.opEquiv
+  map_mul' τ σ := by
+    apply MulOpposite.unop_injective
+    change automorphismGroupEquivMonodromyGroup ht i (τ * σ) =
+      automorphismGroupEquivMonodromyGroup ht i σ *
+        automorphismGroupEquivMonodromyGroup ht i τ
+    let _ : IsCancelSMul t.monodromyGroup (Fin n) := ht.isCancelSMul
+    apply IsCancelSMul.right_cancel _ _ i
+    rw [automorphismGroupEquivMonodromyGroup_smul, mul_smul, mul_smul,
+      automorphismGroupEquivMonodromyGroup_smul]
+    rw [← automorphismGroupEquivMonodromyGroup_smul ht i σ]
+    change (τ : Perm (Fin n))
+        (((automorphismGroupEquivMonodromyGroup ht i σ : t.monodromyGroup) : Perm (Fin n)) i) =
+      ((automorphismGroupEquivMonodromyGroup ht i σ : t.monodromyGroup) : Perm (Fin n))
+        ((τ : Perm (Fin n)) i)
+    have hτ : (τ : Perm (Fin n)) ∈
+        Subgroup.centralizer (t.monodromyGroup : Set (Perm (Fin n))) := by
+      rw [← automorphismGroup_eq_centralizer_monodromyGroup]
+      exact τ.2
+    exact DFunLike.congr_fun (Subgroup.mem_centralizer_iff.mp hτ
+      (automorphismGroupEquivMonodromyGroup ht i σ)
+      (automorphismGroupEquivMonodromyGroup ht i σ).2).symm i
+
+end PermutationTriple
 
 namespace TriangleGroup
 
@@ -113,6 +186,7 @@ theorem hasDividingOrders_cosetTriple : (cosetTriple H e).HasDividingOrders a b 
     ⟨cosetTriple_σ0_pow H e, cosetTriple_σ1_pow H e, cosetTriple_σinf_pow H e⟩
 
 /-- The coset triple of a subgroup is regular exactly when the subgroup is normal. -/
+@[simp]
 theorem isRegular_cosetTriple_iff : (cosetTriple H e).IsRegular ↔ H.Normal := by
   rw [← normal_comap_stabilizer_toPerm_iff _ (cosetTriple_σ0_pow H e) (cosetTriple_σ1_pow H e)
     (cosetTriple_σinf_pow H e) (isConnected_cosetTriple H e) (e (1 : TriangleGroup a b c)),
@@ -226,6 +300,20 @@ theorem coe_regularIsoClassEquiv_mk [NeZero n] (h : IsoClass.mk t ∈ regularIso
       ((coe_regularIsoClassEquiv_symm_apply N (cosetEquivFin N.1 N.2.2)).trans
         (IsoClass.mk_eq_mk_iff.mpr (equivalent_cosetTriple_ker_toPerm t ha hb hc hr _))).symm
   rw [key]
+
+/-- The automorphism group of a regular triple is the opposite of the triangle group modulo the
+kernel of its representation. This kernel is the normal subgroup selected by
+`TauCeti.TriangleGroup.regularIsoClassEquiv`, by
+`TauCeti.TriangleGroup.coe_regularIsoClassEquiv_mk`. The opposite occurs because automorphisms act
+on the right of the regular monodromy action. -/
+noncomputable def automorphismGroupMulEquivQuotientKer (ht : t.IsRegular) :
+    t.automorphismGroup ≃* (TriangleGroup a b c ⧸ (toPerm t ha hb hc).ker)ᵐᵒᵖ := by
+  let i : Fin n := ⟨0, Nat.pos_of_ne_zero ht.isConnected.ne_zero⟩
+  let quotientKerMulEquivMonodromyGroup :=
+    (QuotientGroup.quotientKerEquivRange (toPerm t ha hb hc)).trans
+      (MulEquiv.subgroupCongr (range_toPerm t ha hb hc))
+  exact (PermutationTriple.automorphismGroupMulEquivMonodromyGroupOpposite ht i).trans <|
+    (MulEquiv.op quotientKerMulEquivMonodromyGroup).symm
 
 end NormalSubgroup
 
