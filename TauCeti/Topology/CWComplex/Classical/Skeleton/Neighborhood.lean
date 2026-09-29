@@ -15,34 +15,38 @@ public import TauCeti.Topology.CWComplex.Classical.Quotient
 Let `C` be a relative CW complex and `n : ℕ`, and write `Xⁿ = skeletonLT C (n + 1)` and
 `Xⁿ⁻¹ = skeletonLT C n` for the skeleta made of the cells of dimension at most `n` and below `n`.
 Removing from `Xⁿ` the image `map n j '' ball 0 2⁻¹` of the inner half of every open `n`-cell
-leaves the subset `TauCeti.skeletonNbhd C n`: `Xⁿ⁻¹` together with the outer halves of the open
+leaves `TauCeti.skeletonNeighborhood C n`: `Xⁿ⁻¹` together with the outer halves of the open
 `n`-cells.  It is a neighbourhood of `Xⁿ⁻¹` in `Xⁿ`, and it deformation retracts onto `Xⁿ⁻¹`, so
 `(Xⁿ, Xⁿ⁻¹)` is a good pair in the sense of Hatcher.
 
-The deformation is one homotopy `TauCeti.skeletonNbhdHomotopy C n` of the whole of `Xⁿ`, starting
-at the identity.  Inside each closed `n`-cell, read through the characteristic map, it pushes
+The deformation is one homotopy `TauCeti.skeletonNeighborhoodHomotopy C n` of the whole of
+`Xⁿ`, starting at the identity.  Inside each closed `n`-cell, read through the characteristic map,
+it pushes
 points radially outwards: the point `y` of the closed unit ball moves along the segment from `y`
 to `2 • y` if `‖y‖ ≤ 2⁻¹`, and to `‖y‖⁻¹ • y` otherwise.  It fixes `Xⁿ⁻¹` pointwise at all times,
-keeps `skeletonNbhd C n` inside itself at all times, and at the end sends `skeletonNbhd C n` into
-`Xⁿ⁻¹`.  Consequently the inclusion of pairs `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, skeletonNbhd C n)` is a homotopy
-equivalence of pairs, while in the second pair `Xⁿ⁻¹` lies in the interior of the subspace and can
+keeps `skeletonNeighborhood C n` inside itself at all times, and at the end sends
+`skeletonNeighborhood C n` into `Xⁿ⁻¹`.  Consequently the inclusion of pairs
+`(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, skeletonNeighborhood C n)` is a homotopy equivalence of pairs, while in the
+second pair `Xⁿ⁻¹` lies in the interior of the subspace and can
 be excised.
 
 ## Main definitions
 
-* `TauCeti.skeletonNbhd C n`: `Xⁿ` minus the inner halves of the open `n`-cells.
-* `TauCeti.skeletonNbhdHomotopy C n`: the homotopy of `Xⁿ` from the identity to
-  `TauCeti.skeletonNbhdRetraction C n`.
+* `TauCeti.skeletonNeighborhood C n`: `Xⁿ` minus the inner halves of the open `n`-cells.
+* `TauCeti.skeletonNeighborhoodHomotopy C n`: the homotopy of `Xⁿ` from the identity to
+  `TauCeti.skeletonNeighborhoodEndpoint C n`.
 
 ## Main results
 
 * `TauCeti.isClosed_iUnion_map_closedBall`: the closed cores of radius `r < 1` of the open
   `n`-cells form a closed set.
-* `TauCeti.skeletonLT_subset_interior_skeletonNbhd`: `skeletonNbhd C n` is a neighbourhood of
-  `Xⁿ⁻¹` in `Xⁿ`.
-* `TauCeti.skeletonNbhdHomotopy_apply_of_mem`: the homotopy fixes `Xⁿ⁻¹`.
-* `TauCeti.skeletonNbhdHomotopy_mem`: the homotopy keeps `skeletonNbhd C n` inside itself.
-* `TauCeti.skeletonNbhdRetraction_mem`: its endpoint sends `skeletonNbhd C n` into `Xⁿ⁻¹`.
+* `TauCeti.skeletonLT_subset_interior_skeletonNeighborhood`: `skeletonNeighborhood C n` is a
+  neighbourhood of `Xⁿ⁻¹` in `Xⁿ`.
+* `TauCeti.skeletonNeighborhoodHomotopy_apply_of_mem`: the homotopy fixes `Xⁿ⁻¹`.
+* `TauCeti.skeletonNeighborhoodHomotopy_mem`: the homotopy keeps
+  `skeletonNeighborhood C n` inside itself.
+* `TauCeti.skeletonNeighborhoodEndpoint_mem`: its endpoint sends
+  `skeletonNeighborhood C n` into `Xⁿ⁻¹`.
 
 ## References
 
@@ -128,23 +132,23 @@ variable {X : Type u} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [
 /-- The `n`-skeleton `Xⁿ = skeletonLT C (n + 1)` of a relative CW complex with the inner half
 `map n j '' ball 0 2⁻¹` of every open `n`-cell removed: `Xⁿ⁻¹ = skeletonLT C n` together with the
 outer halves of the open `n`-cells.  It is a neighbourhood of `Xⁿ⁻¹` in `Xⁿ`
-(`TauCeti.skeletonLT_subset_interior_skeletonNbhd`) which deformation retracts onto `Xⁿ⁻¹` through
-`TauCeti.skeletonNbhdHomotopy`. -/
-def skeletonNbhd (n : ℕ) : Set X :=
+(`TauCeti.skeletonLT_subset_interior_skeletonNeighborhood`) which deformation retracts onto
+`Xⁿ⁻¹` through `TauCeti.skeletonNeighborhoodHomotopy`. -/
+def skeletonNeighborhood (n : ℕ) : Set X :=
   (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) \ ⋃ j : cell C n, map n j '' ball 0 2⁻¹
 
 variable {C}
 
 @[simp]
-lemma mem_skeletonNbhd {n : ℕ} {x : X} :
-    x ∈ skeletonNbhd C n ↔ x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) ∧
+lemma mem_skeletonNeighborhood {n : ℕ} {x : X} :
+    x ∈ skeletonNeighborhood C n ↔ x ∈ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) ∧
       ∀ (j : cell C n) (y : Fin n → ℝ), ‖y‖ < 2⁻¹ → map n j y ≠ x := by
-  simp [skeletonNbhd]
+  simp [skeletonNeighborhood]
 
 variable (C)
 
-lemma skeletonNbhd_subset_skeletonLT_succ (n : ℕ) :
-    skeletonNbhd C n ⊆ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) :=
+lemma skeletonNeighborhood_subset_skeletonLT_succ (n : ℕ) :
+    skeletonNeighborhood C n ⊆ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) :=
   sdiff_subset
 
 variable {C}
@@ -181,9 +185,9 @@ private lemma mem_skeletonLT_or_exists_map {n : ℕ} {x : X}
   · exact .inr ⟨j, y, hy, rfl⟩
   · exact .inl (cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩)
 
-lemma skeletonLT_subset_skeletonNbhd (n : ℕ) :
-    (skeletonLT C (n : ℕ∞) : Set X) ⊆ skeletonNbhd C n := by
-  refine fun x hx ↦ mem_skeletonNbhd.2 ⟨skeletonLT_mono (mod_cast n.le_succ) hx, ?_⟩
+lemma skeletonLT_subset_skeletonNeighborhood (n : ℕ) :
+    (skeletonLT C (n : ℕ∞) : Set X) ⊆ skeletonNeighborhood C n := by
+  refine fun x hx ↦ mem_skeletonNeighborhood.2 ⟨skeletonLT_mono (mod_cast n.le_succ) hx, ?_⟩
   rintro j y hy rfl
   exact map_notMem_skeletonLT j (hy.trans (by norm_num)) hx
 
@@ -225,18 +229,18 @@ theorem isClosed_iUnion_map_closedBall (n : ℕ) {r : ℝ} (hr : r < 1) :
     simp [Ne.symm hm]
 
 variable (C) in
-/-- **`TauCeti.skeletonNbhd C n` is a neighbourhood of `Xⁿ⁻¹ = skeletonLT C n` in
+/-- **`TauCeti.skeletonNeighborhood C n` is a neighbourhood of `Xⁿ⁻¹ = skeletonLT C n` in
 `Xⁿ = skeletonLT C (n + 1)`.** -/
-theorem skeletonLT_subset_interior_skeletonNbhd (n : ℕ) :
+theorem skeletonLT_subset_interior_skeletonNeighborhood (n : ℕ) :
     (Subtype.val ⁻¹' (skeletonLT C n : Set X) : Set (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) ⊆
-      interior (Subtype.val ⁻¹' skeletonNbhd C n) := by
+      interior (Subtype.val ⁻¹' skeletonNeighborhood C n) := by
   -- The complement of the closed cores of radius `2⁻¹` is open, contains `skeletonLT C n`, and
-  -- lies in `TauCeti.skeletonNbhd C n`.
+  -- lies in `TauCeti.skeletonNeighborhood C n`.
   have hK := isClosed_iUnion_map_closedBall (C := C) n (r := 2⁻¹) (by norm_num)
   refine fun x hx ↦ interior_maximal (t := (Subtype.val ⁻¹'
     (⋃ j : cell C n, map n j '' closedBall 0 2⁻¹))ᶜ) (fun y hy ↦ ?_)
     (hK.preimage continuous_subtype_val).isOpen_compl ?_
-  · refine mem_skeletonNbhd.2 ⟨y.2, fun j z hz h ↦ hy (mem_iUnion.2 ⟨j, z, ?_, h⟩)⟩
+  · refine mem_skeletonNeighborhood.2 ⟨y.2, fun j z hz h ↦ hy (mem_iUnion.2 ⟨j, z, ?_, h⟩)⟩
     exact mem_closedBall_zero_iff.2 hz.le
   · rintro hx'
     obtain ⟨j, y, hy, hxy⟩ := mem_iUnion.1 hx'
@@ -325,10 +329,11 @@ private lemma pushMap_apply_coe {n : ℕ} (p : I × (skeletonLT C ((n + 1 : ℕ)
   (rfl)
 
 variable (C) in
-/-- The endpoint of `TauCeti.skeletonNbhdHomotopy`: the self-map of `Xⁿ = skeletonLT C (n + 1)`
+/-- The endpoint of `TauCeti.skeletonNeighborhoodHomotopy`: the self-map of
+`Xⁿ = skeletonLT C (n + 1)`
 which pushes the outer half of every open `n`-cell onto its boundary and expands the inner half
-over the whole cell.  It sends `TauCeti.skeletonNbhd C n` into `Xⁿ⁻¹ = skeletonLT C n`. -/
-def skeletonNbhdRetraction (n : ℕ) :
+over the whole cell.  It sends `TauCeti.skeletonNeighborhood C n` into `Xⁿ⁻¹ = skeletonLT C n`. -/
+def skeletonNeighborhoodEndpoint (n : ℕ) :
     C((skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X), (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :=
   (pushMap C n).curry 1
 
@@ -336,10 +341,10 @@ variable (C) in
 /-- The radial deformation of the `n`-skeleton `Xⁿ = skeletonLT C (n + 1)` of a relative CW
 complex: inside each closed `n`-cell, read through the characteristic map, it moves `y` along the
 segment from `y` to `2 • y` if `‖y‖ ≤ 2⁻¹` and to `‖y‖⁻¹ • y` otherwise.  It fixes
-`Xⁿ⁻¹ = skeletonLT C n`, keeps `TauCeti.skeletonNbhd C n` inside itself, and ends at
-`TauCeti.skeletonNbhdRetraction C n`. -/
-def skeletonNbhdHomotopy (n : ℕ) :
-    (ContinuousMap.id _).Homotopy (skeletonNbhdRetraction C n) where
+`Xⁿ⁻¹ = skeletonLT C n`, keeps `TauCeti.skeletonNeighborhood C n` inside itself, and ends at
+`TauCeti.skeletonNeighborhoodEndpoint C n`. -/
+def skeletonNeighborhoodHomotopy (n : ℕ) :
+    (ContinuousMap.id _).Homotopy (skeletonNeighborhoodEndpoint C n) where
   toContinuousMap := pushMap C n
   map_zero_left x := by
     refine Subtype.ext ?_
@@ -349,45 +354,57 @@ def skeletonNbhdHomotopy (n : ℕ) :
         pushVal_map 0 j hy.le, radialPush_zero]
   map_one_left _ := rfl
 
-private lemma coe_skeletonNbhdHomotopy_apply {n : ℕ} (t : I)
+private lemma coe_skeletonNeighborhoodHomotopy_apply {n : ℕ} (t : I)
     (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
-    (skeletonNbhdHomotopy C n (t, x) : X) = pushVal (C := C) n (t, (x : X)) :=
+    (skeletonNeighborhoodHomotopy C n (t, x) : X) = pushVal (C := C) n (t, (x : X)) :=
   (rfl)
 
 /-- The deformation fixes `Xⁿ⁻¹ = skeletonLT C n` pointwise. -/
-lemma skeletonNbhdHomotopy_apply_of_mem {n : ℕ} (t : I)
+@[simp]
+lemma skeletonNeighborhoodHomotopy_apply_of_mem {n : ℕ} (t : I)
     (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) (hx : (x : X) ∈ (skeletonLT C n : Set X)) :
-    skeletonNbhdHomotopy C n (t, x) = x :=
+    skeletonNeighborhoodHomotopy C n (t, x) = x :=
   Subtype.ext (pushVal_of_mem_skeletonLT t hx)
 
-/-- The deformation keeps `TauCeti.skeletonNbhd C n` inside itself at every time. -/
-lemma skeletonNbhdHomotopy_mem {n : ℕ} (t : I) (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
-    (hx : (x : X) ∈ skeletonNbhd C n) :
-    (skeletonNbhdHomotopy C n (t, x) : X) ∈ skeletonNbhd C n := by
+/-- The endpoint of the deformation fixes `Xⁿ⁻¹ = skeletonLT C n` pointwise. -/
+@[simp]
+lemma skeletonNeighborhoodEndpoint_apply_of_mem {n : ℕ}
+    (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
+    (hx : (x : X) ∈ (skeletonLT C n : Set X)) :
+    skeletonNeighborhoodEndpoint C n x = x := by
+  rw [← (skeletonNeighborhoodHomotopy C n).apply_one,
+    skeletonNeighborhoodHomotopy_apply_of_mem 1 x hx]
+
+/-- The deformation keeps `TauCeti.skeletonNeighborhood C n` inside itself at every time. -/
+lemma skeletonNeighborhoodHomotopy_mem {n : ℕ} (t : I)
+    (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
+    (hx : (x : X) ∈ skeletonNeighborhood C n) :
+    (skeletonNeighborhoodHomotopy C n (t, x) : X) ∈ skeletonNeighborhood C n := by
   obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
-  · rw [skeletonNbhdHomotopy_apply_of_mem t x hx']
+  · rw [skeletonNeighborhoodHomotopy_apply_of_mem t x hx']
     exact hx
-  have hy2 : (2 : ℝ)⁻¹ ≤ ‖y‖ := not_lt.1 fun h ↦ (mem_skeletonNbhd.1 hx).2 j y h hxy
-  rw [coe_skeletonNbhdHomotopy_apply, ← hxy, pushVal_map t j hy.le]
+  have hy2 : (2 : ℝ)⁻¹ ≤ ‖y‖ := not_lt.1 fun h ↦ (mem_skeletonNeighborhood.1 hx).2 j y h hxy
+  rw [coe_skeletonNeighborhoodHomotopy_apply, ← hxy, pushVal_map t j hy.le]
   set z := radialPush t y
   have hz : ‖y‖ ≤ ‖z‖ := norm_le_norm_radialPush t hy.le
   rcases (norm_radialPush_le_one t hy.le).lt_or_eq with hz1 | hz1
-  · refine mem_skeletonNbhd.2 ⟨map_mem_skeletonLT_succ j hz1.le, fun i w hw h ↦ ?_⟩
+  · refine mem_skeletonNeighborhood.2 ⟨map_mem_skeletonLT_succ j hz1.le, fun i w hw h ↦ ?_⟩
     obtain ⟨-, rfl⟩ := (map_eq_map_iff (hw.trans (by norm_num)) hz1).1 h
     linarith
-  · exact skeletonLT_subset_skeletonNbhd n
+  · exact skeletonLT_subset_skeletonNeighborhood n
       (cellFrontier_subset_skeletonLT n j ⟨z, mem_sphere_zero_iff_norm.2 hz1, rfl⟩)
 
-/-- The endpoint of the deformation sends `TauCeti.skeletonNbhd C n` into
+/-- The endpoint of the deformation sends `TauCeti.skeletonNeighborhood C n` into
 `Xⁿ⁻¹ = skeletonLT C n`. -/
-lemma skeletonNbhdRetraction_mem {n : ℕ} (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
-    (hx : (x : X) ∈ skeletonNbhd C n) :
-    (skeletonNbhdRetraction C n x : X) ∈ (skeletonLT C n : Set X) := by
+lemma skeletonNeighborhoodEndpoint_mem {n : ℕ} (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
+    (hx : (x : X) ∈ skeletonNeighborhood C n) :
+    (skeletonNeighborhoodEndpoint C n x : X) ∈ (skeletonLT C n : Set X) := by
   obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
-  · rw [← (skeletonNbhdHomotopy C n).apply_one, skeletonNbhdHomotopy_apply_of_mem 1 x hx']
+  · rw [← (skeletonNeighborhoodHomotopy C n).apply_one,
+      skeletonNeighborhoodHomotopy_apply_of_mem 1 x hx']
     exact hx'
-  have hy2 : (2 : ℝ)⁻¹ ≤ ‖y‖ := not_lt.1 fun h ↦ (mem_skeletonNbhd.1 hx).2 j y h hxy
-  rw [← (skeletonNbhdHomotopy C n).apply_one, coe_skeletonNbhdHomotopy_apply, ← hxy,
+  have hy2 : (2 : ℝ)⁻¹ ≤ ‖y‖ := not_lt.1 fun h ↦ (mem_skeletonNeighborhood.1 hx).2 j y h hxy
+  rw [← (skeletonNeighborhoodHomotopy C n).apply_one, coe_skeletonNeighborhoodHomotopy_apply, ← hxy,
     pushVal_map 1 j hy.le]
   exact cellFrontier_subset_skeletonLT n j
     ⟨_, mem_sphere_zero_iff_norm.2 (norm_radialPush_one hy2), rfl⟩

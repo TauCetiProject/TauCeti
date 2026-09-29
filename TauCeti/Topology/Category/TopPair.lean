@@ -83,16 +83,15 @@ lemma ofInclusionMap_snd_apply (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s →
     (x : s) : (Hom.snd (ofInclusionMap hst hst' g hg) x).1 = (g ⟨x.1, hst x.2⟩).1 := (rfl)
 
 @[simp]
-lemma ofInclusionMap_id (h : ∀ x : t, (x : X) ∈ s → (ContinuousMap.id t x : X) ∈ s) :
-    ofInclusionMap hst hst (ContinuousMap.id t) h = 𝟙 (ofInclusion hst) := by
+lemma ofInclusionMap_id :
+    ofInclusionMap hst hst (ContinuousMap.id t) (fun _ hx ↦ hx) = 𝟙 (ofInclusion hst) := by
   ext : 2 <;> rfl
 
 @[reassoc]
 lemma ofInclusionMap_comp (g : C(t, t')) (g' : C(t', t''))
     (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
-    (hg' : ∀ x : t', (x : Y) ∈ s' → (g' x : Z) ∈ s'')
-    (h : ∀ x : t, (x : X) ∈ s → (g'.comp g x : Z) ∈ s'') :
-    ofInclusionMap hst hst'' (g'.comp g) h =
+    (hg' : ∀ x : t', (x : Y) ∈ s' → (g' x : Z) ∈ s'') :
+    ofInclusionMap hst hst'' (g'.comp g) (fun x hx ↦ hg' (g x) (hg x hx)) =
       ofInclusionMap hst hst' g hg ≫ ofInclusionMap hst' hst'' g' hg' := by
   ext : 2 <;> rfl
 

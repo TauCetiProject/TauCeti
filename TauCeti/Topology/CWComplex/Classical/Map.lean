@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.CWComplex.Classical.Skeleton
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
 # Cellular maps of relative CW complexes
