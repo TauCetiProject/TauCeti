@@ -29,6 +29,8 @@ vanishes and inflation is injective.
 * `TauCeti.explicitInfl2_proPKernel_injective`: explicit degree-two inflation from `G ⧸ R` to `G`,
   for `R` the pro-`p` kernel, is injective for trivial coefficients killed by `p`.
 * `TauCeti.inflH1MaximalProP`: degree-one inflation from `G(p)` to `G` is a linear equivalence.
+* `TauCeti.cohomFpAddEquivH2_cohomFpMap_quotientMk_eq_explicitInfl2`: the canonical degree-two
+  map along a quotient is explicit inflation under the cocycle comparison.
 * `TauCeti.inflH2MaximalProP_injective`: degree-two inflation from `G(p)` to `G` is injective.
 
 ## References
@@ -110,17 +112,42 @@ theorem inflH1MaximalProP_apply_eq_infl (x : cohomFp p (maximalProPQuotient p G)
   rw [inflH1MaximalProP_apply, ← ConcreteCategory.comp_apply,
     coeffMap_trivialFpQuotientToInvariantsIso_hom_comp_infl]
 
-omit [Fact p.Prime] in
-/-- For a trivial action, `ZMod p` is its own subgroup of `N`-fixed points. -/
-private noncomputable def zmodEquivFixedPointsOfTrivialAction
-    {G : Type u} [Group G] [DistribMulAction G (ZMod p)] (N : Subgroup G)
-    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) :
-    ZMod p ≃+ FixedPoints.addSubgroup N (ZMod p) where
-  toFun m := ⟨m, (FixedPoints.mem_addSubgroup N (ZMod p) m).2 fun n ↦ htriv n m⟩
-  invFun m := m
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
+omit [TotallyDisconnectedSpace G] in
+/-- Under the explicit degree-two comparison, the canonical cohomology map along a quotient is
+explicit inflation after identifying the trivial coefficients with the subgroup-fixed points. -/
+theorem cohomFpAddEquivH2_cohomFpMap_quotientMk_eq_explicitInfl2
+    (N : Subgroup G) [N.Normal] [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
+    [DistribMulAction (G ⧸ N) (ZMod p)] [ContinuousSMul (G ⧸ N) (ZMod p)]
+    (htrivG : ∀ (g : G) (m : ZMod p), g • m = m)
+    (htrivQ : ∀ (q : G ⧸ N) (m : ZMod p), q • m = m)
+    (e : ZMod p ≃+ FixedPoints.addSubgroup N (ZMod p))
+    (he : ∀ m, (e m).1 = m)
+    (hequiv : ∀ (q : G ⧸ N) (m : ZMod p),
+      e ((ContinuousMulEquiv.refl (G ⧸ N)) q • m) = q • e m)
+    (x : cohomFp p (G ⧸ N) 2) :
+    cohomFpAddEquivH2 p G htrivG
+        (cohomFpMap p (ContinuousMonoidHom.quotientMk N) 2 x) =
+      explicitInfl2 G (ZMod p) N
+        (explicitMap2Equiv (G ⧸ N) (ZMod p) (G ⧸ N)
+          (FixedPoints.addSubgroup N (ZMod p)) (ContinuousMulEquiv.refl (G ⧸ N)) e
+          continuous_of_discreteTopology continuous_of_discreteTopology hequiv
+          (cohomFpAddEquivH2 p (G ⧸ N) htrivQ x)) := by
+  rw [cohomFpAddEquivH2_cohomFpMap p (G ⧸ N) htrivQ htrivG]
+  generalize cohomFpAddEquivH2 p (G ⧸ N) htrivQ x = y
+  induction y using QuotientAddGroup.induction_on with
+  | H c =>
+    -- `explicitMap2_mk` is applied as a term to `explicitMap2Equiv`, whose continuity proof does
+    -- not reduce to its coercion during rewriting.
+    rw [explicitMap2_mk, explicitMap2Equiv_apply]
+    refine Eq.trans ?_ (congrArg (explicitInfl2 G (ZMod p) N)
+      (explicitMap2_mk (G ⧸ N) (ZMod p) (G ⧸ N) _ _ _ _ _ c)).symm
+    rw [explicitInfl2_mk]
+    -- Both cocycles read `c` at the images of the two arguments in the quotient.
+    refine congrArg _ (Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_))
+    rw [cocyclesMap2_apply, cocyclesMap2_apply]
+    exact (he _).symm.trans
+      (congrArg Subtype.val (cocyclesMap2_apply (G ⧸ N) (ZMod p) (G ⧸ N) _
+        (ContinuousMulEquiv.refl (G ⧸ N)) e.toAddMonoidHom _ hequiv c _ _)).symm
 
 /-- **Degree-two inflation from the maximal pro-`p` quotient is injective.** The five-term sequence
 identifies the kernel of `H²(G(p), 𝔽_p) → H²(G, 𝔽_p)` with the transgression range from
@@ -135,7 +162,7 @@ theorem inflH2MaximalProP_injective :
   have : ContinuousSMul (G ⧸ R) (ZMod p) := ⟨continuous_snd⟩
   have htrivG : ∀ (g : G) (m : ZMod p), g • m = m := fun _ _ ↦ rfl
   have htrivQ : ∀ (q : G ⧸ R) (m : ZMod p), q • m = m := fun _ _ ↦ rfl
-  let eR := zmodEquivFixedPointsOfTrivialAction p R htrivG
+  let eR := zmodEquivFixedPointsOfTrivialAction p G R htrivG
   have hequiv : ∀ (q : G ⧸ R) (m : ZMod p),
       eR ((ContinuousMulEquiv.refl (G ⧸ R)) q • m) = q • eR m := by
     intro q m
@@ -148,34 +175,15 @@ theorem inflH2MaximalProP_injective :
   let eFix := explicitMap2Equiv (G ⧸ R) (ZMod p) (G ⧸ R) (FixedPoints.addSubgroup R (ZMod p))
     (ContinuousMulEquiv.refl (G ⧸ R)) eR continuous_of_discreteTopology
       continuous_of_discreteTopology hequiv
-  -- On the explicit models, the cohomology map is explicit inflation after identifying `ZMod p`
-  -- with its `R`-fixed points.
-  have hmap (x : cohomFp p (G ⧸ R) 2) :
-      cohomFpAddEquivH2 p G htrivG
-          (cohomFpMap p (ContinuousMonoidHom.quotientMk R) 2 x) =
-        explicitInfl2 G (ZMod p) R (eFix (cohomFpAddEquivH2 p (G ⧸ R) htrivQ x)) := by
-    rw [cohomFpAddEquivH2_cohomFpMap p (G ⧸ R) htrivQ htrivG]
-    generalize cohomFpAddEquivH2 p (G ⧸ R) htrivQ x = y
-    induction y using QuotientAddGroup.induction_on with
-    | H c =>
-      -- `explicitMap2_mk` is applied as a term to `eFix`: `explicitMap2Equiv` states the continuity
-      -- of the coefficient map at the equivalence, which `rw` does not identify with its coercion.
-      rw [explicitMap2_mk, explicitMap2Equiv_apply]
-      -- `explicitMap2_mk` is applied as a term: `explicitMap2Equiv` states the continuity of the
-      -- coefficient map at the equivalence, which `rw` does not identify with its coercion.
-      refine Eq.trans ?_ (congrArg (explicitInfl2 G (ZMod p) R)
-        (explicitMap2_mk (G ⧸ R) (ZMod p) (G ⧸ R) _ _ _ _ _ c)).symm
-      rw [explicitInfl2_mk]
-      -- Both cocycles read `c` at the images of the two arguments in `G ⧸ R`.
-      refine congrArg _ (Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_))
-      rw [cocyclesMap2_apply, cocyclesMap2_apply]
-      exact (congrArg Subtype.val (cocyclesMap2_apply (G ⧸ R) (ZMod p) (G ⧸ R) _
-        (ContinuousMulEquiv.refl (G ⧸ R)) eR.toAddMonoidHom _ hequiv c _ _)).symm
   intro x y hxy
   apply (cohomFpAddEquivH2 p (G ⧸ R) htrivQ).injective
   apply eFix.injective
   apply explicitInfl2_proPKernel_injective (p := p) htrivG
     fun m ↦ by rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]
-  rw [← hmap, ← hmap, hxy]
+  rw [← cohomFpAddEquivH2_cohomFpMap_quotientMk_eq_explicitInfl2 p G R htrivG htrivQ
+      eR (zmodEquivFixedPointsOfTrivialAction_apply p G R htrivG) hequiv,
+    ← cohomFpAddEquivH2_cohomFpMap_quotientMk_eq_explicitInfl2 p G R htrivG htrivQ eR
+      (zmodEquivFixedPointsOfTrivialAction_apply p G R htrivG) hequiv,
+    hxy]
 
 end TauCeti

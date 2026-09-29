@@ -505,36 +505,21 @@ theorem _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map
     apply (TopRep.homogeneousCochains Y).iCycles_injective 2
     apply Subtype.ext
     ext g₀ g₁ g₂
-    -- Both cocycle maps read a homogeneous cocycle at `(φ g₀, φ g₁, φ g₂)` and apply the
-    -- coefficient map, `F` on one side and the pair built from `f` on the other.
-    have hL : ∀ u : _root_.ContinuousCohomology.cocycles X 2,
-        ((TopRep.homogeneousCochains Y).iCycles 2
-            (_root_.ContinuousCohomology.cocyclesMap φ F 2 u)).val g₀ g₁ g₂ =
-          F.hom (((TopRep.homogeneousCochains X).iCycles 2 u).val (φ g₀) (φ g₁) (φ g₂)) := by
-      intro u
-      rw [TauCeti.ContinuousCohomology.iCycles_cocyclesMap_apply,
-        TauCeti.ContinuousCohomology.coe_cochainsMap_f_apply,
-        TauCeti.ContinuousCohomology.resolutionMap_succ_apply,
-        TauCeti.ContinuousCohomology.resolutionMap_succ_apply,
-        TauCeti.ContinuousCohomology.resolutionMap_succ_apply,
-        _root_.ContinuousCohomology.resolutionMap_zero]
-    have hR : ∀ w : _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G X.V) 2,
-        ((TopRep.homogeneousCochains (ofDiscreteModule ℤ H Y.V)).iCycles 2
-            (_root_.ContinuousCohomology.cocyclesMap φ (ofDiscreteModulePair (φ : H →* G)
-              f.toIntLinearMap fun h m ↦ hf h m) 2 w)).val g₀ g₁ g₂ =
-          f (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val
-            (φ g₀) (φ g₁) (φ g₂)) := by
-      intro w
-      rw [TauCeti.ContinuousCohomology.iCycles_cocyclesMap_apply,
-        TauCeti.ContinuousCohomology.coe_cochainsMap_f_apply,
-        TauCeti.ContinuousCohomology.resolutionMap_succ_apply,
-        TauCeti.ContinuousCohomology.resolutionMap_succ_apply,
-        TauCeti.ContinuousCohomology.resolutionMap_succ_apply,
-        _root_.ContinuousCohomology.resolutionMap_zero]
-      exact ofDiscreteModulePair_hom_apply _ _ _ _
-    refine (hL _).trans ?_
-    rw [hF, iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply,
-      iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply, hR]
+    have hF' (m : X.V) :
+        (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap
+          (fun h m ↦ hf h m)).hom m = f m :=
+      ofDiscreteModulePair_hom_apply (φ : H →* G) f.toIntLinearMap
+        (fun h m ↦ hf h m) m
+    -- Applied as a term because the cocycle is definitionally in the restriction of scalars of
+    -- `cocycles X 2`, which `rw` does not identify with the source of `cocyclesMap φ F 2`.
+    refine (TauCeti.ContinuousCohomology.iCycles_cocyclesMap_two_apply φ F _ f hF
+      g₀ g₁ g₂).trans ?_
+    rw [iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply,
+      iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply,
+      TauCeti.ContinuousCohomology.iCycles_cocyclesMap_two_apply φ
+        (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) _ f
+        hF']
+    rfl
 
 end OfDiscrete
 

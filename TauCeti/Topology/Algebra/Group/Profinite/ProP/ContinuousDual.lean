@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Topology.Algebra.ContinuousZModDual
+public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
@@ -41,6 +42,8 @@ Frattini quotient is an isomorphism of `𝔽_p`-vector spaces from the continuou
 * `TauCeti.continuousZModDualMap_quotientMk_bijective`: for a normal subgroup `N ≤ Φ(G)`, the
   continuous `𝔽_p`-dual of `G ⧸ N` is the continuous `𝔽_p`-dual of `G`, by precomposition with the
   quotient map.
+* `TauCeti.maximalProPQuotient.continuousZModDualMap_bijective`: pullback identifies the
+  continuous `ZMod p`-valued characters of `G(p)` and `G`.
 
 ## References
 
@@ -201,5 +204,36 @@ theorem continuousZModDualMap_quotientMk_bijective {N : Subgroup G} [N.Normal]
     apply Additive.toMul.injective
     rw [ContinuousMonoidHom.toMul_continuousZModDualMap, toMul_ofMul,
       ContinuousMonoidHom.quotientLift_comp_quotientMk]
+
+/-- Pullback along the maximal pro-`p` quotient identifies the continuous `ZMod p`-valued
+characters of the quotient with those of the original topological group. -/
+theorem maximalProPQuotient.continuousZModDualMap_bijective :
+    Function.Bijective
+      ((⟨maximalProPQuotient.mk p G, maximalProPQuotient.continuous_mk p G⟩ :
+          G →ₜ* maximalProPQuotient p G).continuousZModDualMap (n := p)) := by
+  constructor
+  · intro χ ψ h
+    apply Additive.toMul.injective
+    apply ContinuousMonoidHom.ext
+    intro x
+    obtain ⟨g, rfl⟩ := maximalProPQuotient.mk_surjective p G x
+    have h' := congrArg Additive.toMul h
+    have hg := DFunLike.congr_fun h' g
+    rwa [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
+      ContinuousMonoidHom.toMul_continuousZModDualMap_apply] at hg
+  · intro χ
+    let f : G →* Multiplicative (ZMod p) := χ.toMul.toMonoidHom
+    let hP : IsProP p (Multiplicative (ZMod p)) :=
+      IsPGroup.isProP (ZModModule.isPGroup_multiplicative (n := p) (G := ZMod p))
+    let lift := maximalProPQuotient.lift hP f χ.toMul.continuous
+    have hlift : Continuous lift :=
+      maximalProPQuotient.continuous_lift hP f χ.toMul.continuous
+    refine ⟨Additive.ofMul (⟨lift, hlift⟩ :
+      maximalProPQuotient p G →ₜ* Multiplicative (ZMod p)), ?_⟩
+    apply Additive.toMul.injective
+    apply ContinuousMonoidHom.ext
+    intro g
+    rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply]
+    exact maximalProPQuotient.lift_mk hP f χ.toMul.continuous g
 
 end TauCeti

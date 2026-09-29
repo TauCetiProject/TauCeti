@@ -45,6 +45,8 @@ without repeatedly transporting across the definitional equality of trivial repr
   on the underlying values.
 * `TauCeti.trivialFpQuotientToInvariantsIso`: the quotient representation on the invariants of
   trivial coefficients is canonically the trivial coefficient object of the quotient group.
+* `TauCeti.zmodEquivFixedPointsOfTrivialAction`: for any trivial action on `ZMod p`, the fixed
+  points of a subgroup are additively equivalent to `ZMod p` itself.
 
 ## References
 
@@ -150,6 +152,29 @@ theorem trivialFpEquiv_eqToHom_res_trivialFp (S : Subgroup G)
     trivialFpEquiv p S (eqToHom (res_trivialFp p G S) x) = trivialFpEquiv p G x :=
   -- `res_trivialFp` holds by `rfl` here, so the transport is the identity map.
   (rfl)
+
+section FixedPoints
+
+variable [DistribMulAction G (ZMod p)]
+
+/-- For a trivial action, `ZMod p` is additively equivalent to its subgroup of `N`-fixed points. -/
+noncomputable def zmodEquivFixedPointsOfTrivialAction (N : Subgroup G)
+    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) :
+    ZMod p ≃+ FixedPoints.addSubgroup N (ZMod p) where
+  toFun m := ⟨m, (FixedPoints.mem_addSubgroup N (ZMod p) m).2 fun n ↦ htriv n m⟩
+  invFun m := m
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+/-- The fixed-point equivalence for a trivial action preserves the underlying `ZMod p` value. -/
+@[simp]
+theorem zmodEquivFixedPointsOfTrivialAction_apply (N : Subgroup G)
+    (htriv : ∀ (g : G) (m : ZMod p), g • m = m) (m : ZMod p) :
+    (zmodEquivFixedPointsOfTrivialAction p G N htriv m).1 = m :=
+  by simp [zmodEquivFixedPointsOfTrivialAction]
+
+end FixedPoints
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
 

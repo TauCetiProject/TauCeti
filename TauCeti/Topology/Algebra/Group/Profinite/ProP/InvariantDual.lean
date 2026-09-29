@@ -31,8 +31,6 @@ makes the dimension of `H²(G, 𝔽_p)` the relation rank of `G`.
 * `TauCeti.pLowerCentralStep_proPKernel`: the relative elementary abelian `p`-quotient of the
   pro-`p` kernel is trivial, so `H¹(R, M)^G` vanishes for `R` the pro-`p` kernel and trivial
   coefficients `M` killed by `p` (`TauCeti.subsingleton_h1ConjInvariants_proPKernel`).
-* `TauCeti.maximalProPQuotient.continuousZModDualMap_bijective`: pullback identifies the
-  continuous `ZMod p`-valued characters of `G(p)` and `G`.
 * `TauCeti.finite_H1ConjInvariants_iff`: `H¹(N, 𝔽_p)^G` is finite exactly when
   `N ⧸ Nᵖ[N, G]` is topologically finitely generated.
 * `TauCeti.natCard_H1ConjInvariants`: in that case `H¹(N, 𝔽_p)^G` has `p ^ d(N ⧸ Nᵖ[N, G])`
@@ -127,43 +125,6 @@ theorem subsingleton_h1ConjInvariants_proPKernel {M : Type v} [AddCommGroup M]
   rw [hr, map_one, map_one]
 
 end MaximalKernel
-
-section MaximalDual
-
-variable [Fact p.Prime]
-
-/-- Pullback along the maximal pro-`p` quotient identifies the continuous `ZMod p`-valued
-characters of the quotient with those of the original profinite group. -/
-theorem maximalProPQuotient.continuousZModDualMap_bijective :
-    Function.Bijective
-      ((⟨maximalProPQuotient.mk p G, maximalProPQuotient.continuous_mk p G⟩ :
-          G →ₜ* maximalProPQuotient p G).continuousZModDualMap (n := p)) := by
-  constructor
-  · intro χ ψ h
-    apply Additive.toMul.injective
-    apply ContinuousMonoidHom.ext
-    intro x
-    obtain ⟨g, rfl⟩ := maximalProPQuotient.mk_surjective p G x
-    have h' := congrArg Additive.toMul h
-    have hg := DFunLike.congr_fun h' g
-    rwa [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
-      ContinuousMonoidHom.toMul_continuousZModDualMap_apply] at hg
-  · intro χ
-    let f : G →* Multiplicative (ZMod p) := χ.toMul.toMonoidHom
-    let hP : IsProP p (Multiplicative (ZMod p)) :=
-      IsPGroup.isProP (ZModModule.isPGroup_multiplicative (n := p) (G := ZMod p))
-    let lift := maximalProPQuotient.lift hP f χ.toMul.continuous
-    have hlift : Continuous lift :=
-      maximalProPQuotient.continuous_lift hP f χ.toMul.continuous
-    refine ⟨Additive.ofMul (⟨lift, hlift⟩ :
-      maximalProPQuotient p G →ₜ* Multiplicative (ZMod p)), ?_⟩
-    apply Additive.toMul.injective
-    apply ContinuousMonoidHom.ext
-    intro g
-    rw [ContinuousMonoidHom.toMul_continuousZModDualMap_apply]
-    exact maximalProPQuotient.lift_mk hP f χ.toMul.continuous g
-
-end MaximalDual
 
 /-! ### Invariant degree-one classes -/
 
