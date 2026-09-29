@@ -318,6 +318,7 @@ theorem lyapunovPerronIntegral_sub (hα : 0 < α) (hg₁ : Continuous g₁) (hg�
 
 omit [CompleteSpace X] hu in
 /-- The Lyapunov--Perron integral is homogeneous in its forcing term. -/
+@[simp]
 theorem lyapunovPerronIntegral_smul (c : ℝ) (g : ℝ → X) (t : ℝ) :
     lyapunovPerronIntegral A P (c • g) t =
       c • lyapunovPerronIntegral A P g t := by

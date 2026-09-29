@@ -11,12 +11,13 @@ public import TauCeti.Analysis.ODE.LyapunovPerron.Basic
 # The Lyapunov--Perron integral as a bounded linear operator
 
 The two integral terms of the Lyapunov--Perron equation act linearly on a bounded continuous
-forcing term on the nonnegative time axis. An exponential dichotomy bounds this operator in the
-sup norm by `2 K / α`. This is the linear part of the derivative of the Lyapunov--Perron map;
+forcing term on the nonnegative time axis. Forward and backward exponential estimates bound this
+operator in the sup norm by `2 K / α`. This is the linear part of the derivative of the
+Lyapunov--Perron map;
 packaging it as a continuous linear map makes the implicit-function argument for smooth stable
 and unstable manifolds possible.
 
-The integral and dichotomy estimates follow Coppel, *Dichotomies in Stability Theory*,
+The integral and exponential estimates follow Coppel, *Dichotomies in Stability Theory*,
 Chapter 5.
 -/
 
@@ -32,17 +33,9 @@ namespace ContinuousLinearMap
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 variable {A P : X →L[ℝ] X} {K α : ℝ≥0}
 
-private theorem lyapunovPerronMap_id_apply
-    (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
-    (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
-    (hα : 0 < α) (γ : ℝ≥0 →ᵇ X) (t : ℝ≥0) :
-    lyapunovPerronMap A P id hs hu hα LipschitzWith.id 0 γ t =
-      lyapunovPerronIntegral A P (fun s ↦ γ s.toNNReal) t := by
-  simp [lyapunovPerronMap_apply]
-
 /-- The integral part of the Lyapunov--Perron equation, acting on bounded continuous curves on
-`[0, ∞)`. Its value at `t` is the forward integral in the stable directions minus the improper
-backward integral in the complementary directions. -/
+`[0, ∞)`. Its value at `t` is the forward integral of the `P` component minus the improper
+backward integral of the remainder `v - P v`. -/
 def lyapunovPerronIntegralCLM
     (A P : X →L[ℝ] X)
     (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
@@ -55,7 +48,7 @@ def lyapunovPerronIntegralCLM
       map_add' := by
         intro γ η
         ext t
-        simp only [F, lyapunovPerronMap_id_apply]
+        simp only [F, lyapunovPerronMap_apply, map_zero, zero_add, id_eq]
         have hc (ζ : ℝ≥0 →ᵇ X) : Continuous fun s : ℝ ↦ ζ s.toNNReal :=
           ζ.continuous.comp continuous_real_toNNReal
         have hb (ζ : ℝ≥0 →ᵇ X) (s : ℝ) : ‖ζ s.toNNReal‖ ≤ ‖ζ‖ :=
@@ -67,13 +60,13 @@ def lyapunovPerronIntegralCLM
           funext s
           simp
         rw [hfun] at h
-        simpa only [BoundedContinuousFunction.add_apply, lyapunovPerronMap_id_apply,
-          add_comm] using eq_add_of_sub_eq h
+        simpa only [BoundedContinuousFunction.add_apply, lyapunovPerronMap_apply,
+          map_zero, zero_add, id_eq, add_comm] using eq_add_of_sub_eq h
       map_smul' := by
         intro c γ
         ext t
-        simp only [F, lyapunovPerronMap_id_apply, BoundedContinuousFunction.smul_apply,
-          RingHom.id_apply]
+        simp only [F, lyapunovPerronMap_apply, map_zero, zero_add, id_eq,
+          BoundedContinuousFunction.smul_apply, RingHom.id_apply]
         rw [← lyapunovPerronIntegral_smul]
         rfl }
   L.mkContinuous (2 * K / α) (fun γ ↦ by
@@ -92,7 +85,7 @@ theorem lyapunovPerronIntegralCLM_apply
     (hα : 0 < α) (γ : ℝ≥0 →ᵇ X) (t : ℝ≥0) :
     lyapunovPerronIntegralCLM A P hs hu hα γ t =
       lyapunovPerronIntegral A P (fun s ↦ γ s.toNNReal) t := by
-  exact lyapunovPerronMap_id_apply hs hu hα γ t
+  simp [lyapunovPerronIntegralCLM, lyapunovPerronMap_apply]
 
 /-- The Lyapunov--Perron integral has sup-operator norm at most `2 K / α`. -/
 theorem norm_lyapunovPerronIntegralCLM_le
