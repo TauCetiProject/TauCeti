@@ -53,23 +53,20 @@ theorem generatedCoordinateHopfAlgebra_def :
 /-- The quotient coordinate morphism `O(GL₂₇) ⟶ O(generated subgroup)`, representing its closed
 immersion into `GL₂₇`. -/
 noncomputable def generatedCoordinateMap :
-    GeneralLinear.coordinateHopfAlgebra A 27 ⟶ generatedCoordinateHopfAlgebra A := by
-  rw [generatedCoordinateHopfAlgebra_def]
-  exact CommHopfAlgCat.mkQuotient _ _
+    GeneralLinear.coordinateHopfAlgebra A 27 ⟶ generatedCoordinateHopfAlgebra A :=
+  CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 27) (generatedDefiningIdeal A)
 
 /-- The generated subgroup coordinate morphism is surjective. -/
-theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom := by
-  rw [generatedCoordinateMap]
-  exact CommHopfAlgCat.mkQuotient_surjective
+theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=
+  CommHopfAlgCat.mkQuotient_surjective
     (GeneralLinear.coordinateHopfAlgebra A 27) (generatedDefiningIdeal A)
 
 /-- The kernel of the generated subgroup coordinate morphism is its defining ideal. -/
 @[simp]
 theorem generatedCoordinateMap_ker :
     RingHom.ker (generatedCoordinateMap A).hom =
-      (generatedDefiningIdeal A).toIdeal := by
-  rw [generatedCoordinateMap]
-  exact CommHopfAlgCat.mkQuotient_ker
+      (generatedDefiningIdeal A).toIdeal :=
+  CommHopfAlgCat.mkQuotient_ker
     (GeneralLinear.coordinateHopfAlgebra A 27) (generatedDefiningIdeal A)
 
 /-- The `j`th generator coordinate map, factored through the generated subgroup. Contravariantly
@@ -84,9 +81,8 @@ noncomputable def generatedCoordinateLift (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
 generator coordinate map. This is the defining property of `generatedCoordinateLift`. -/
 @[simp]
 theorem generatedCoordinateMap_comp_generatedCoordinateLift (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
-    generatedCoordinateMap A ≫ generatedCoordinateLift A j = generatorCoordinateMap A j := by
-  rw [generatedCoordinateMap, generatedCoordinateLift]
-  exact CommHopfAlgCat.mkQuotient_comp_liftQuotient (generatedDefiningIdeal A)
+    generatedCoordinateMap A ≫ generatedCoordinateLift A j = generatorCoordinateMap A j :=
+  CommHopfAlgCat.mkQuotient_comp_liftQuotient (generatedDefiningIdeal A)
     (generatorCoordinateMap A j) (generatedDefiningIdeal_toIdeal_le_ker A j)
 
 /-- The lift is the unique factorization of the `j`th generator coordinate map through the
@@ -94,11 +90,9 @@ generated subgroup, since the quotient morphism is surjective. -/
 theorem generatedCoordinateLift_unique (j : Sum (Fin 6 ⊕ Fin 6) Unit)
     (g : generatedCoordinateHopfAlgebra A ⟶ generatorCoordinateAlgebra A j)
     (hg : generatedCoordinateMap A ≫ g = generatorCoordinateMap A j) :
-    g = generatedCoordinateLift A j := by
-  let : Epi (generatedCoordinateMap A) :=
-    ConcreteCategory.epi_of_surjective _ (generatedCoordinateMap_surjective A)
-  exact (cancel_epi (generatedCoordinateMap A)).mp
-    (hg.trans (generatedCoordinateMap_comp_generatedCoordinateLift A j).symm)
+    g = generatedCoordinateLift A j :=
+  CommHopfAlgCat.liftQuotient_unique (generatedDefiningIdeal A) (generatorCoordinateMap A j)
+    (generatedDefiningIdeal_toIdeal_le_ker A j) g hg
 
 /-- The generated coordinate Hopf algebra is a finite-type `A`-algebra, being a quotient of the
 coordinate algebra of `GL₂₇`. -/
