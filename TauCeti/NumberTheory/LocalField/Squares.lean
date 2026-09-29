@@ -257,13 +257,13 @@ theorem exists_mem_unitFiltration_not_isSquare (h2 : (2 : K) ≠ 0) :
 /-- Every unit of depth `2 * dyadicLevel K + 1` is a square. -/
 theorem unitFiltration_le_square (h2 : (2 : K) ≠ 0) :
     unitFiltration K (2 * dyadicLevel K h2 + 1) ≤ Subgroup.square Kˣ := by
-  rw [square_eq_powMonoidHom_two_range]
+  rw [square_eq_range_powMonoidHom]
   simpa only [dyadicLevel_def] using unitFiltration_le_range_powMonoidHom_two h2
 
 /-- The sharp depth cannot be decreased: units at `2 * dyadicLevel K` are not all squares. -/
 theorem not_unitFiltration_le_square (h2 : (2 : K) ≠ 0) :
     ¬ (unitFiltration K (2 * dyadicLevel K h2) ≤ Subgroup.square Kˣ) := by
-  rw [square_eq_powMonoidHom_two_range]
+  rw [square_eq_range_powMonoidHom]
   simpa only [dyadicLevel_def] using not_unitFiltration_le_range_powMonoidHom_two h2
 
 /-- The exact depth of the local square theorem: `U(K, n)` consists of squares if and only if

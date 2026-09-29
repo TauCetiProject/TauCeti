@@ -7,9 +7,9 @@ module
 
 public import TauCeti.FieldTheory.Galois.Minpoly
 public import TauCeti.NumberTheory.LocalField.Different.Basic
+public import TauCeti.NumberTheory.LocalField.Monogenic
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
-public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Valuation.AddValuation
 
 /-!
@@ -94,7 +94,7 @@ theorem differentExponent_eq_finsum_lowerRamificationGroup :
     differentExponent K L =
       ∑ᶠ i : ℕ, (Nat.card (LocalFieldsRamification.lowerRamificationGroup K L i) - 1) := by
   classical
-  obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := 𝒪[K]) (S := 𝒪[L])
+  obtain ⟨x, hx⟩ := exists_integerRing_adjoin_eq_top K L
   have h := natCast_differentExponent_eq_sum_addVal_smul_sub K L hx
   rw [TauCeti.IsLocalRing.sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one hx,
     Nat.cast_inj] at h

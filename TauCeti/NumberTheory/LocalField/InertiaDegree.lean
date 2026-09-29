@@ -41,6 +41,8 @@ side, and conversely.
 * `TauCeti.inertiaDegree_eq_inertiaDeg`: the intrinsic residue degree agrees with
   `Ideal.inertiaDeg` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.
+* `TauCeti.isTotallyRamified_iff_inertiaDegree_eq_one`: total ramification is equivalent to
+  residue degree one; `TauCeti.IsTotallyRamified.inertiaDegree_eq_one` is the forward direction.
 * `TauCeti.inertiaDegree_tower`: multiplicativity `f(M/K) = f(L/K) · f(M/L)` in a tower.
 * `TauCeti.natCard_residueField`: `#𝓀[L] = #𝓀[K] ^ f(L/K)`.
 
@@ -105,6 +107,27 @@ theorem ramificationIndex_mul_inertiaDegree :
   symm
   refine Fintype.sum_eq_single (⟨𝓂[L], hmem⟩ : ↥(Ideal.primesOver 𝓂[K] 𝒪[L])) fun q hq ↦ ?_
   exact absurd (Subtype.ext (by simpa [hs] using q.2)) hq
+
+variable (K L) in
+/-- A finite extension of nonarchimedean local fields is totally ramified if and only if its
+residue degree is one. -/
+theorem isTotallyRamified_iff_inertiaDegree_eq_one :
+    IsTotallyRamified K L ↔ inertiaDegree K L = 1 := by
+  let _ : Module.Finite K L := finite_of_valuativeExtension K L
+  constructor
+  · intro h
+    have hef := ramificationIndex_mul_inertiaDegree (K := K) (L := L)
+    rw [(isTotallyRamified_iff_ramificationIndex_eq_finrank K L).mp h] at hef
+    exact Nat.eq_of_mul_eq_mul_left Module.finrank_pos (by simpa using hef)
+  · intro hf
+    rw [isTotallyRamified_iff_ramificationIndex_eq_finrank, ← ramificationIndex_mul_inertiaDegree,
+      hf, mul_one]
+
+/-- A totally ramified extension of nonarchimedean local fields has residue degree one. -/
+@[simp]
+theorem IsTotallyRamified.inertiaDegree_eq_one (h : IsTotallyRamified K L) :
+    inertiaDegree K L = 1 :=
+  (isTotallyRamified_iff_inertiaDegree_eq_one K L).mp h
 
 variable (K L) in
 /-- **Multiplicativity of the residue degree in a tower** `M/L/K`: `f(M/K) = f(L/K) · f(M/L)`.

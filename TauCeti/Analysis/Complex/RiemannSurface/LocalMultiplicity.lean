@@ -321,4 +321,27 @@ theorem localMultiplicity_pow_zero (m : ℕ) : localMultiplicity (fun z : ℂ �
   · rw [localMultiplicity_eq_analyticOrderNatAt_sub, analyticOrderNatAt,
       analyticOrderAt_pow_sub_zero_pow hm, ENat.toNat_natCast]
 
+/-- If a holomorphic map has coordinate expression `z ↦ z ^ m` in charts that send the source
+point and its image to zero, then its local multiplicity is `m`. -/
+theorem localMultiplicity_eq_of_coordinate_eventuallyEq_pow_zero
+    {e : OpenPartialHomeomorph X ℂ} {e' : OpenPartialHomeomorph Y ℂ}
+    (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 Y)
+    (hx : x ∈ e.source) (hfx : f x ∈ e'.source)
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    {m : ℕ} (hm : 0 < m) (hex : e x = 0) (hefx : e' (f x) = 0)
+    (hpow : (fun z ↦ e' (f (e.symm z))) =ᶠ[𝓝 0] fun z : ℂ ↦ z ^ m) :
+    localMultiplicity f x = m := by
+  rw [localMultiplicity_eq_analyticOrderNatAt he he' hx hfx hf, hex, hefx]
+  have hsub : (fun z ↦ e' (f (e.symm z)) - 0) =ᶠ[𝓝 0]
+      fun z : ℂ ↦ z ^ m - 0 ^ m := by
+    filter_upwards [hpow] with z hz
+    simp [hz, hm.ne']
+  calc
+    analyticOrderNatAt (fun z ↦ e' (f (e.symm z)) - 0) 0 =
+        analyticOrderNatAt (fun z : ℂ ↦ z ^ m - 0 ^ m) 0 :=
+      TauCeti.analyticOrderNatAt_congr hsub
+    _ = localMultiplicity (fun z : ℂ ↦ z ^ m) 0 := by
+      rw [localMultiplicity_eq_analyticOrderNatAt_sub]
+    _ = m := localMultiplicity_pow_zero m
+
 end TauCeti.RiemannSurface

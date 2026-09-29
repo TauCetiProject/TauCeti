@@ -79,6 +79,9 @@ which no action appears at all (`TauCeti.presentedProP.card_add_finrank_cohomFp_
 * `TauCeti.natCard_H2_quotient_of_le_proPFrattini`: for profinite `G` with `H²(G, 𝔽_p) = 0` and
   `N ≤ Φ(G)` closed normal, `H²(G ⧸ N, 𝔽_p)` has `p ^ d(N ⧸ Nᵖ[N, G])` elements;
   `TauCeti.finite_H2_quotient_iff_of_le_proPFrattini` is the finiteness criterion.
+* `TauCeti.h2DualEquiv`: for `G ≅ F ⧸ R` with `F` a free pro-`p` group and `R ≤ Φ(F)` closed
+  normal, the inverse transgression identifies `H²(G, 𝔽_p)` with the continuous `𝔽_p`-dual of
+  `R ⧸ Rᵖ[R, F]`.
 * `TauCeti.natCard_H2_of_le_proPFrattini`: for `G ≅ F ⧸ R` with `F` a free pro-`p` group and
   `R ≤ Φ(F)` closed normal, `H²(G, 𝔽_p)` has `p ^ d(R ⧸ Rᵖ[R, F])` elements;
   `TauCeti.finite_H2_iff_of_le_proPFrattini` is the finiteness criterion, and
@@ -213,6 +216,34 @@ variable (hRc : IsClosed (R : Set (freeProP p X))) (hR : R ≤ proPFrattini p (f
   (htriv : ∀ (g : G) (m : ZMod p), g • m = m)
 include hRc hR e htrivF htriv
 
+/-- **`H²(G, 𝔽_p)` is the continuous `𝔽_p`-dual of `R ⧸ Rᵖ[R, F]`.** Let `F` be the free pro-`p`
+group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup, and let `G ≅ F ⧸ R` be a group acting
+trivially on `𝔽_p`, as does `F`. The inverse of the transgression
+`H¹(R, 𝔽_p)^F → H²(F ⧸ R, 𝔽_p)`, followed by the identification of the invariant classes with the
+characters of `R ⧸ Rᵖ[R, F]` (`TauCeti.ContCohomology.H1ConjInvariantsEquivOfSmulEqSelf`),
+identifies `H²(G, 𝔽_p)` with the continuous `𝔽_p`-dual of `R ⧸ Rᵖ[R, F]`. Its defining equation
+is `TauCeti.h2DualEquiv_h2QuotientEquiv_transgression`. -/
+noncomputable def h2DualEquiv :
+    H2 G (ZMod p) ≃+ continuousZModDual p (R ⧸ (pLowerCentralStep p R).subgroupOf R) :=
+  haveI := freeProP.subsingleton_H2_zmod (p := p) (X := X)
+  ((h2QuotientEquiv e htrivF htriv).symm.trans (AddEquiv.ofBijective _
+    (transgression_bijective_of_le_proPFrattini hRc hR htrivF
+      (ZModModule.char_nsmul_eq_zero p))).symm).trans
+    (H1ConjInvariantsEquivOfSmulEqSelf htrivF p hRc (ZModModule.char_nsmul_eq_zero p))
+
+/-- **The dual equivalence inverts the transgression**: the class of `H²(G, 𝔽_p)` transgressed
+from an invariant class `y ∈ H¹(R, 𝔽_p)^F` is sent to the character of `R ⧸ Rᵖ[R, F]` that `y`
+represents. -/
+theorem h2DualEquiv_h2QuotientEquiv_transgression
+    (y : H1ConjInvariants (freeProP p X) (ZMod p) R) :
+    h2DualEquiv hRc hR e htrivF htriv
+        (h2QuotientEquiv e htrivF htriv (transgression (freeProP p X) (ZMod p) R hRc y)) =
+      H1ConjInvariantsEquivOfSmulEqSelf htrivF p hRc (ZModModule.char_nsmul_eq_zero p) y := by
+  rw [h2DualEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply, AddEquiv.symm_apply_apply]
+  congr 1
+  exact (AddEquiv.ofBijective _ _).symm_apply_eq.2 rfl
+
+
 /-- **Finiteness of `H²(G, 𝔽_p)` for a quotient of a free pro-`p` group.** Let `F` be the free
 pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup, and let `G ≅ F ⧸ R` be a group
 acting trivially on `𝔽_p`, as does `F`. Then `H²(G, 𝔽_p)` is finite exactly when `R ⧸ Rᵖ[R, F]`
@@ -247,7 +278,6 @@ theorem lift_rank_H2_of_le_proPFrattini :
     Cardinal.lift.{u} (Module.rank (ZMod p) (H2 G (ZMod p))) =
       Cardinal.lift.{v} (topologicalGeneratorRank (R ⧸ (pLowerCentralStep p R).subgroupOf R)) := by
   have := freeProP.subsingleton_H2_zmod (p := p) (X := X)
-  have hpM : ∀ m : ZMod p, p • m = 0 := fun m ↦ by rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]
   -- `R ⧸ Rᵖ[R, F]` is a profinite pro-`p` group: `IsClosed` and `CompactSpace` are the instances
   -- its topology and Burnside's basis theorem need.
   have := isClosed_pLowerCentralStep_subgroupOf (p := p) R
@@ -257,10 +287,7 @@ theorem lift_rank_H2_of_le_proPFrattini :
   -- Transgression and the duality of `TauCeti.ContCohomology.H1ConjInvariantsEquivOfSmulEqSelf`
   -- identify `H²(G, 𝔽_p)` with the continuous `𝔽_p`-dual of `R ⧸ Rᵖ[R, F]`, additively, hence
   -- `𝔽_p`-linearly; Burnside's basis theorem in cardinal form reads its dimension as the rank.
-  have f : H2 G (ZMod p) ≃+ continuousZModDual p (R ⧸ (pLowerCentralStep p R).subgroupOf R) :=
-    ((h2QuotientEquiv e htrivF htriv).symm.trans (AddEquiv.ofBijective _
-      (transgression_bijective_of_le_proPFrattini hRc hR htrivF hpM)).symm).trans
-      (H1ConjInvariantsEquivOfSmulEqSelf htrivF p hRc hpM)
+  have f := h2DualEquiv hRc hR e htrivF htriv
   rw [hQ.topologicalGeneratorRank_eq_rank_continuousZModDual]
   exact (LinearEquiv.ofBijective (f.toAddMonoidHom.toZModLinearMap p) f.bijective).lift_rank_eq
 

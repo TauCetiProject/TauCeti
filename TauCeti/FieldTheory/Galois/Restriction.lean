@@ -28,7 +28,8 @@ of restriction of scalars.
   `AlgEquiv.restrictNormalHom`.
 * `AlgEquiv.restrictNormal_eq_one_iff_algebraMap`: restriction is trivial precisely when the
   automorphism fixes the intermediate field pointwise.
-* `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one`: the restriction kernel is
+* `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one` and
+  `AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom`: the restriction kernel is
   the image of restriction of scalars.
 * `AlgEquiv.restrictNormal_mul_restrictScalars`: multiplying by an automorphism of the top field
   over the intermediate one does not change the restriction.
@@ -121,6 +122,15 @@ theorem AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one
     let τ : M ≃ₐ[L] M := AlgEquiv.ofRingEquiv (f := σ.toRingEquiv)
       ((AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M σ).1 h)
     exact ⟨τ, AlgEquiv.ext fun x ↦ by simp [τ]⟩
+
+/-- The image of `Gal(M/L)` in `Gal(M/K)` under restriction of scalars is the kernel of
+restriction to `L`. -/
+theorem AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom :
+    (AlgEquiv.restrictScalarsHom (S := L) K).range =
+      (AlgEquiv.restrictNormalHom (F := K) (K₁ := M) L).ker := by
+  ext σ
+  rw [AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one K L M, MonoidHom.mem_ker,
+    AlgEquiv.restrictNormalHom_apply_eq_restrictNormal]
 
 /-- Multiplying by an automorphism of `M/L` does not change the restriction to `L`. -/
 @[simp]

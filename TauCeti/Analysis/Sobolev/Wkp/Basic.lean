@@ -297,6 +297,18 @@ def value (k : ℕ) (u : Wkp mu Omega p k) : Lp ℝ p (mu.restrict Omega) :=
 theorem valueL_apply (k : ℕ) (u : Wkp mu Omega p k) : valueL k u = value k u :=
   (rfl)
 
+/-- The value component preserves addition. -/
+@[simp]
+theorem value_add (k : ℕ) (u v : Wkp mu Omega p k) :
+    value k (u + v) = value k u + value k v := by
+  simpa only [← valueL_apply] using (valueL k).map_add u v
+
+/-- The value component preserves scalar multiplication. -/
+@[simp]
+theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
+    value k (c • u) = c • value k u := by
+  simpa only [← valueL_apply] using (valueL k).map_smul c u
+
 @[simp]
 theorem value_zero (u : Wkp mu Omega p 0) : value 0 u = u :=
   by simp only [value, valueL, ContinuousLinearMap.id_apply]
@@ -437,6 +449,15 @@ theorem norm_iteratedGradient_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
       simpa only [iteratedGradient_succ] using WeakDerivStep.norm_weakFDeriv_le
         (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
+/-- At order at least two, the squared graph norm is the sum of the squared norms of
+the lower-order component and highest weak derivative. -/
+theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two (k : ℕ)
+    (u : Wkp mu Omega p (k + 2)) :
+    ‖u‖ ^ 2 = ‖lowerOrder (k + 1) u‖ ^ 2 + ‖iteratedGradient (k + 1) u‖ ^ 2 := by
+  simpa only [lowerOrder_succ, iteratedGradient_succ] using
+    WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
+      (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
+
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative. -/
 theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k : ℕ)
@@ -447,9 +468,7 @@ theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k : ℕ)
       simpa only [lowerOrder_zero, iteratedGradient_zero] using
         W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u
   | succ k =>
-      simpa only [lowerOrder_succ, iteratedGradient_succ] using
-        WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
-          (sobolevStage (mu := mu) (Omega := Omega) (p := (2 : ENNReal)) k).iteratedGradientL u
+      exact norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
 
 end Wkp
 

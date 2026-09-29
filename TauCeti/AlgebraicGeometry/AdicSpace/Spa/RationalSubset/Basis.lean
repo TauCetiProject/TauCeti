@@ -365,6 +365,13 @@ theorem top_mem_spaRationalOpens (Aplus : Subring A) :
     (⊤ : Opens (spa Aplus)) ∈ spaRationalOpens Aplus :=
   mem_spaRationalOpens.mpr (univ_mem_spaRationalFamily Aplus)
 
+omit [IsTopologicalRing A] in
+/-- The basic open `R(T/s)` is a rational open as soon as its numerator ideal `T · A` is open. -/
+theorem spaBasicOpen_mem_spaRationalOpens {Aplus : Subring A} {T : Finset A} {s : A}
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    spaBasicOpen Aplus T s ∈ spaRationalOpens Aplus :=
+  ⟨T, s, hT, Set.ext fun _ ↦ mem_spaBasicOpen⟩
+
 /-- **Wedhorn Remark 7.30(5)** in the bundled form: the rational opens are closed under binary
 meet. Meet of `Opens` is intersection of the underlying sets, so this is
 `inter_mem_spaRationalFamily` read through `mem_spaRationalOpens`. -/

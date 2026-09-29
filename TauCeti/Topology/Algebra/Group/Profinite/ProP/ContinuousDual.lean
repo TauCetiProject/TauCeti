@@ -38,6 +38,9 @@ Frattini quotient is an isomorphism of `𝔽_p`-vector spaces from the continuou
   Frattini subgroup.
 * `TauCeti.frattiniQuotientDualEquiv`: the continuous `𝔽_p`-dual of the Frattini quotient is the
   continuous `𝔽_p`-dual of `G`.
+* `TauCeti.continuousZModDualMap_quotientMk_bijective`: for a normal subgroup `N ≤ Φ(G)`, the
+  continuous `𝔽_p`-dual of `G ⧸ N` is the continuous `𝔽_p`-dual of `G`, by precomposition with the
+  quotient map.
 
 ## References
 
@@ -180,5 +183,23 @@ theorem frattiniQuotientDualEquiv_symm_apply_mk (x : continuousZModDual p G) (g 
     Additive.toMul ((frattiniQuotientDualEquiv (p := p) (G := G)).symm x)
       (g : G ⧸ proPFrattini p G) = Additive.toMul x g := by
   rw [← frattiniQuotientDualEquiv_apply, LinearEquiv.apply_symm_apply]
+
+/-- **The characters of a quotient by a subgroup of the Frattini subgroup.** For a normal subgroup
+`N ≤ proPFrattini p G`, precomposition with the quotient map `G → G ⧸ N` is a bijection from the
+continuous `𝔽_p`-dual of `G ⧸ N` onto that of `G`: every continuous `𝔽_p`-valued character of `G`
+kills the pro-`p` Frattini subgroup, hence `N`, and so descends to the quotient. -/
+theorem continuousZModDualMap_quotientMk_bijective {N : Subgroup G} [N.Normal]
+    (hN : N ≤ proPFrattini p G) :
+    Function.Bijective ((ContinuousMonoidHom.quotientMk N).continuousZModDualMap (n := p)) := by
+  refine ⟨fun χ ψ h ↦ Additive.toMul.injective (ContinuousMonoidHom.ext fun q ↦ ?_), fun χ ↦ ?_⟩
+  · obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+    have := congrArg (fun x : continuousZModDual p G ↦ Additive.toMul x g) h
+    simpa only [ContinuousMonoidHom.toMul_continuousZModDualMap_apply,
+      ContinuousMonoidHom.quotientMk_apply] using this
+  · refine ⟨Additive.ofMul (ContinuousMonoidHom.quotientLift N (Additive.toMul χ)
+      (hN.trans (proPFrattini_le_ker (by simp) (Additive.toMul χ)))), ?_⟩
+    apply Additive.toMul.injective
+    rw [ContinuousMonoidHom.toMul_continuousZModDualMap, toMul_ofMul,
+      ContinuousMonoidHom.quotientLift_comp_quotientMk]
 
 end TauCeti

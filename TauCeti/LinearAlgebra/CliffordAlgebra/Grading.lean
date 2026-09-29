@@ -35,6 +35,8 @@ belongs to the grading API independently of any spin representation.
 * `CliffordAlgebra.exists_algebraMap_of_mem_range_ι_pow_zero`: in the even base case the
   element is a scalar.
 * `CliffordAlgebra.exists_ι_of_mem_range_ι_pow_one`: in the odd base case it is a vector.
+* `CliffordAlgebra.ι_range_pow_le_evenOdd`: the `n`-th power of the range of `ι` lies in the
+  graded piece of degree `n`.
 * `CliffordAlgebra.prod_map_ι_mem_evenOdd`: an ordered product of `n` generators is homogeneous
   of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` reads that off in
   the odd case.
@@ -65,6 +67,14 @@ theorem exists_algebraMap_of_mem_range_ι_pow_zero {v : CliffordAlgebra Q}
 theorem exists_ι_of_mem_range_ι_pow_one {v : CliffordAlgebra Q}
     (hv : v ∈ LinearMap.range (ι Q) ^ (1 : ZMod 2).val) : ∃ a, ι Q a = v := by
   simpa [ZMod.val_one] using hv
+
+/-- **The `n`-th power of the vectors is homogeneous of degree `n`** for the `ℤ/2` grading: it is
+one of the summands defining `CliffordAlgebra.evenOdd Q n`. -/
+theorem ι_range_pow_le_evenOdd (n : ℕ) :
+    LinearMap.range (ι Q) ^ n ≤ evenOdd Q (n : ZMod 2) := by
+  rw [evenOdd]
+  exact le_iSup (fun j : {m : ℕ // (m : ZMod 2) = (n : ZMod 2)} => LinearMap.range (ι Q) ^ (j : ℕ))
+    ⟨n, rfl⟩
 
 /-- **An ordered product of `n` generators is homogeneous of degree `n`** for the `ℤ/2` grading. -/
 theorem prod_map_ι_mem_evenOdd (l : List M) :

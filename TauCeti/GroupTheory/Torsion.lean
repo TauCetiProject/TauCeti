@@ -32,6 +32,9 @@ of the quotient identification is `TauCeti.quotientTorsionContinuousMulEquiv` in
 * `TauCeti.mem_torsion_iff_of_mulEquiv`: an element is torsion exactly when its `M`-coordinate
   vanishes.
 * `TauCeti.torsionMulEquiv`: the torsion subgroup of `A` is isomorphic to `T`.
+* `TauCeti.natCard_torsion_of_mulEquiv`, `TauCeti.finite_torsion_of_mulEquiv`,
+  `TauCeti.isCyclic_torsion_of_mulEquiv`: the torsion subgroup of `A` has the cardinality of `T`,
+  and it is finite, respectively cyclic, when `T` is.
 * `TauCeti.torsionFactorAddEquiv`: two decompositions of `A` have isomorphic torsion factors.
 * `TauCeti.quotientTorsionMulEquiv`: the quotient of `A` by its torsion subgroup is isomorphic to
   `M`.
@@ -136,7 +139,31 @@ theorem torsionFactorAddEquiv_symm_apply {M' T' : Type*} [AddMonoid M'] [IsAddTo
     (torsionFactorAddEquiv hT hT' e e').symm t' = (e (e'.symm (ofAdd (0, t')))).toAdd.2 :=
   (rfl)
 
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` torsion, the
+torsion subgroup of `A` has the cardinality of `T`. -/
+theorem natCard_torsion_of_mulEquiv (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T)) :
+    Nat.card (torsion A) = Nat.card T := by
+  rw [Nat.card_congr (torsionMulEquiv hT e).toEquiv, Nat.card_congr toAdd]
+
 end Monoid
+
+section AddGroup
+
+variable [CommGroup A] [AddMonoid M] [AddGroup T] [IsAddTorsionFree M]
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` finite, the
+torsion subgroup of `A` is finite. -/
+theorem finite_torsion_of_mulEquiv [Finite T] (e : A ≃* Multiplicative (M × T)) :
+    Finite (torsion A) :=
+  Finite.of_equiv _ (torsionMulEquiv isAddTorsion_of_finite e).symm.toEquiv
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` a cyclic
+torsion group, the torsion subgroup of `A` is cyclic. -/
+theorem isCyclic_torsion_of_mulEquiv [IsAddCyclic T] (hT : IsAddTorsion T)
+    (e : A ≃* Multiplicative (M × T)) : IsCyclic (torsion A) :=
+  isCyclic_of_surjective (torsionMulEquiv hT e).symm (torsionMulEquiv hT e).symm.surjective
+
+end AddGroup
 
 section Quotient
 

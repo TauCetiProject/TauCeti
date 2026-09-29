@@ -93,6 +93,18 @@ def Sobolev1JetLp.valueL :
 def Sobolev1JetLp.value (J : Sobolev1JetLp mu Omega p) : Lp ℝ p (mu.restrict Omega) :=
   Sobolev1JetLp.valueL J
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- Applying the bundled value projection gives the value component of a Sobolev jet. -/
+@[simp]
+theorem Sobolev1JetLp.valueL_apply (J : Sobolev1JetLp mu Omega p) :
+    Sobolev1JetLp.valueL J = Sobolev1JetLp.value J := (rfl)
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- The bundled value projection is postcomposition with the first projection of the fibre. -/
+theorem Sobolev1JetLp.valueL_eq_compLpL :
+    Sobolev1JetLp.valueL (mu := mu) (Omega := Omega) (p := p) =
+      (WithLp.fstL 2 ℝ ℝ E).compLpL p (mu.restrict Omega) := (rfl)
+
 /-- The continuous linear projection from an `Lᵖ` Sobolev jet to its gradient component. -/
 def Sobolev1JetLp.gradientL :
     Sobolev1JetLp mu Omega p →L[ℝ] Lp E p (mu.restrict Omega) :=
@@ -101,6 +113,18 @@ def Sobolev1JetLp.gradientL :
 /-- The gradient component of an `Lᵖ` Sobolev jet. -/
 def Sobolev1JetLp.gradient (J : Sobolev1JetLp mu Omega p) : Lp E p (mu.restrict Omega) :=
   Sobolev1JetLp.gradientL J
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- Applying the bundled gradient projection gives the gradient component of a Sobolev jet. -/
+@[simp]
+theorem Sobolev1JetLp.gradientL_apply (J : Sobolev1JetLp mu Omega p) :
+    Sobolev1JetLp.gradientL J = Sobolev1JetLp.gradient J := (rfl)
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
+/-- The bundled gradient projection is postcomposition with the second projection of the fibre. -/
+theorem Sobolev1JetLp.gradientL_eq_compLpL :
+    Sobolev1JetLp.gradientL (mu := mu) (Omega := Omega) (p := p) =
+      (WithLp.sndL 2 ℝ ℝ E).compLpL p (mu.restrict Omega) := (rfl)
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
 @[simp]

@@ -19,16 +19,18 @@ relator word. This file covers the forms with finite `f`, presented by the words
 
 where `(x, y) = x⁻¹y⁻¹xy` is Labute's commutator. In the two `q = 2` forms Labute also allows
 `f = ∞`, meaning that the factor `x₂^{2^f}`, resp. `x₃^{2^f}`, is absent. The words below take a
-natural number `f` and do not define those forms; only the rank-two even form is reached, since
-on its two generators `x₃ = 1` and the even word reads as the `f = ∞` relator `x₁^{2+α} (x₁, x₂)`.
-This file defines the commutator and the three words on an arbitrary tuple `x : ℕ → H` of group
+natural number `f` and do not define those forms, with one exception: the even form of rank two,
+`x₁^{2+α} (x₁, x₂)`, is the `f = ∞` relator on two generators, where `x₃ = 1` makes the even word
+read the same for every `f`; it has its own word `demushkinWordTwoRankTwo`, with no level.
+This file defines the commutator and the four words on an arbitrary tuple `x : ℕ → H` of group
 elements, so that the same word can be read in a free pro-`p` group and in any group that
 receives it. Read on the `ℕ`-indexed generators `TauCeti.freeProPGen` and
 `TauCeti.presentedProPGen`, which are `1` out of range, the words carry no index-bound side
 conditions.
 
-Under the conditions `p ∣ q` for the first word, `0 < f` for the second, and `2 ∣ a` together with
-`0 < f` for the third, each word is a product of `p`-th powers and commutators, so it lies in the
+Under the conditions `p ∣ q` for the first word, `0 < f` for the second, `2 ∣ a` together with
+`0 < f` for the third, and `2 ∣ a` for the rank-two word, each word is a product of `p`-th powers
+and commutators, so it lies in the
 pro-`p` Frattini subgroup of every topological group, in particular of the free pro-`p` group.
 Hence, under the same conditions, the presentation of a normal form on `n` generators is minimal:
 the presented group has topological generator rank exactly `n`.
@@ -37,21 +39,25 @@ the presented group has topological generator rank exactly `n`.
 
 * `TauCeti.labuteComm`: Labute's commutator `(x, y) = x⁻¹y⁻¹xy`.
 * `TauCeti.demushkinWordNeTwo`, `TauCeti.demushkinWordTwoOdd`, `TauCeti.demushkinWordTwoEven`:
-  the three normal-form relator words, on an arbitrary tuple.
+  the three normal-form relator words, on an arbitrary tuple; `TauCeti.demushkinWordTwoRankTwo`:
+  the even word of rank two, `x₁^{2+α} (x₁, x₂)`, with no level; `TauCeti.demushkinWordTwoEven_two`
+  reads the even word at rank two as it.
 
 ## Main results
 
-* `TauCeti.demushkinWordNeTwo_presentedProPGen_eq_one` and its two companions: the generators of the
-  normal-form presentation satisfy its defining relation.
+* `TauCeti.demushkinWordNeTwo_presentedProPGen_eq_one` and its three companions: the generators of
+  the normal-form presentation satisfy its defining relation.
 * `TauCeti.demushkinWordNeTwo_mem_proPFrattini`, `TauCeti.demushkinWordTwoOdd_mem_proPFrattini`,
-  `TauCeti.demushkinWordTwoEven_mem_proPFrattini`: each word lies in the pro-`p` Frattini
-  subgroup, for `p ∣ q`, resp. `0 < f`, resp. `2 ∣ a` and `0 < f`.
-* `TauCeti.topologicalGeneratorRankNat_presentedProP_demushkinWordNeTwo` and its two companions:
-  under the same conditions, the normal-form presentation on `n` generators is minimal.
-* `TauCeti.map_demushkinWordNeTwo_eq_one` and its two companions: a character into a commutative
-  group kills the word as soon as its values on the generators carrying a power have trivial
-  power: `χ(x₁)^q = 1`, resp. `χ(x₁)² = 1` and `χ(x₂)^{2^f} = 1`, resp. `χ(x₁)^{2+a} = 1` and
-  `χ(x₃)^{2^f} = 1`.
+  `TauCeti.demushkinWordTwoEven_mem_proPFrattini`,
+  `TauCeti.demushkinWordTwoRankTwo_mem_proPFrattini`: each word lies in the pro-`p` Frattini
+  subgroup, for `p ∣ q`, resp. `0 < f`, resp. `2 ∣ a` and `0 < f`, resp. `2 ∣ a`.
+* `TauCeti.topologicalGeneratorRankNat_presentedProP_demushkinWordNeTwo` and its three
+  companions: under the same conditions, the normal-form presentation on `n` generators, resp. on
+  two generators, is minimal.
+* `TauCeti.map_demushkinWordNeTwo_eq_one` and its three companions: a character into a
+  commutative group kills the word as soon as its values on the generators carrying a power have
+  trivial power: `χ(x₁)^q = 1`, resp. `χ(x₁)² = 1` and `χ(x₂)^{2^f} = 1`, resp. `χ(x₁)^{2+a} = 1`
+  and `χ(x₃)^{2^f} = 1`, resp. `χ(x₁)^{2+a} = 1`.
 
 ## References
 
@@ -135,6 +141,13 @@ theorem demushkinWordNeTwo_def (q n : ℕ) (x : ℕ → H) :
       x 0 ^ q * ((List.range (n / 2)).map fun i ↦ labuteComm (x (2 * i)) (x (2 * i + 1))).prod :=
   (rfl)
 
+/-- At `q = 0` and rank two the word is the single commutator `(x₁, x₂)`, the surface relation of
+`ℤ_p × ℤ_p`. -/
+@[simp]
+theorem demushkinWordNeTwo_zero_two (x : ℕ → H) :
+    demushkinWordNeTwo 0 2 x = labuteComm (x 0) (x 1) := by
+  simp [demushkinWordNeTwo_def]
+
 /-- The `q = 2`, `n` odd normal-form word `x₁² x₂^{2^f} (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)`, on an
 arbitrary tuple `x : ℕ → H`, with `x 0` playing the role of `x₁`. The parameter `f` is finite;
 the word has `n / 2` commutator factors. -/
@@ -169,6 +182,26 @@ theorem demushkinWordTwoEven_def (a f n : ℕ) (x : ℕ → H) :
           labuteComm (x (2 * i + 2)) (x (2 * i + 3))).prod :=
   (rfl)
 
+/-- The `q = 2` normal-form word of rank two, `x₁^{2+a} (x₁, x₂)`, on an arbitrary tuple
+`x : ℕ → H`, with `x 0` playing the role of `x₁`. It is the `n = 2` member of the even family
+with the factor `x₃^{2^f}` absent, Labute's level `f = ∞`, so it carries no level: on a tuple with
+`x 2 = 1` it agrees with `demushkinWordTwoEven a f 2 x` for every `f`
+(`TauCeti.demushkinWordTwoEven_two`). -/
+def demushkinWordTwoRankTwo (a : ℕ) (x : ℕ → H) : H :=
+  x 0 ^ (2 + a) * labuteComm (x 0) (x 1)
+
+/-- The defining equation of `TauCeti.demushkinWordTwoRankTwo`. -/
+theorem demushkinWordTwoRankTwo_def (a : ℕ) (x : ℕ → H) :
+    demushkinWordTwoRankTwo a x = x 0 ^ (2 + a) * labuteComm (x 0) (x 1) :=
+  (rfl)
+
+/-- At rank `2` the even word is the rank-two word: the factor `x₃^{2^f}` is `1` because the third
+generator is out of range, and the commutator product beyond `(x₁, x₂)` is empty. -/
+@[simp]
+theorem demushkinWordTwoEven_two (a f : ℕ) (x : ℕ → H) (hx : x 2 = 1) :
+    demushkinWordTwoEven a f 2 x = demushkinWordTwoRankTwo a x := by
+  simp [demushkinWordTwoEven_def, demushkinWordTwoRankTwo_def, hx]
+
 variable {K F : Type*} [Group K] [FunLike F H K] [MonoidHomClass F H K] (φ : F)
 
 /-- A homomorphism reads the `q ≠ 2` word on the image tuple. -/
@@ -192,6 +225,12 @@ theorem map_demushkinWordTwoEven (a f n : ℕ) (x : ℕ → H) :
   simp only [demushkinWordTwoEven_def, map_mul, map_pow, map_list_prod, List.map_map,
     Function.comp_def, map_labuteComm]
 
+/-- A homomorphism reads the rank-two `q = 2` word on the image tuple. -/
+@[simp]
+theorem map_demushkinWordTwoRankTwo (a : ℕ) (x : ℕ → H) :
+    φ (demushkinWordTwoRankTwo a x) = demushkinWordTwoRankTwo a (φ ∘ x) := by
+  simp only [demushkinWordTwoRankTwo_def, map_mul, map_pow, Function.comp_apply, map_labuteComm]
+
 variable {A : Type*} [CommGroup A]
 
 /-- In a commutative group the `q ≠ 2` word is `x₁^q`. -/
@@ -211,6 +250,12 @@ theorem demushkinWordTwoOdd_eq_of_commGroup (f n : ℕ) (x : ℕ → A) :
 theorem demushkinWordTwoEven_eq_of_commGroup (a f n : ℕ) (x : ℕ → A) :
     demushkinWordTwoEven a f n x = x 0 ^ (2 + a) * x 2 ^ 2 ^ f := by
   simp [demushkinWordTwoEven_def]
+
+/-- In a commutative group the rank-two `q = 2` word is `x₁^{2+a}`. -/
+@[simp]
+theorem demushkinWordTwoRankTwo_eq_of_commGroup (a : ℕ) (x : ℕ → A) :
+    demushkinWordTwoRankTwo a x = x 0 ^ (2 + a) := by
+  simp [demushkinWordTwoRankTwo_def]
 
 variable {G : Type*} [Group G] {F' : Type*} [FunLike F' G A] [MonoidHomClass F' G A] (χ : F')
 
@@ -233,6 +278,13 @@ theorem map_demushkinWordTwoEven_eq_one (a f n : ℕ) {x : ℕ → G} (h₀ : χ
     (h₂ : χ (x 2) ^ 2 ^ f = 1) : χ (demushkinWordTwoEven a f n x) = 1 := by
   rw [map_demushkinWordTwoEven, demushkinWordTwoEven_eq_of_commGroup, Function.comp_apply,
     Function.comp_apply, h₀, h₂, one_mul]
+
+/-- A character into a commutative group whose value on `x₁` has trivial `(2 + a)`-th power kills
+the rank-two `q = 2` word. -/
+theorem map_demushkinWordTwoRankTwo_eq_one (a : ℕ) {x : ℕ → G} (h₀ : χ (x 0) ^ (2 + a) = 1) :
+    χ (demushkinWordTwoRankTwo a x) = 1 := by
+  rw [map_demushkinWordTwoRankTwo, demushkinWordTwoRankTwo_eq_of_commGroup, Function.comp_apply,
+    h₀]
 
 end Words
 
@@ -269,6 +321,15 @@ theorem demushkinWordTwoEven_presentedProPGen_eq_one (a f n : ℕ) :
   rw [← presentedProP.mk_comp_freeProPGen, ← map_demushkinWordTwoEven]
   exact presentedProP.mk_relator _ (Set.mem_singleton _)
 
+/-- The `ℕ`-indexed generators of the rank-two `q = 2` normal-form presentation satisfy its
+defining relation `x₁^{2+a} (x₁, x₂) = 1`. -/
+@[simp]
+theorem demushkinWordTwoRankTwo_presentedProPGen_eq_one (a : ℕ) :
+    demushkinWordTwoRankTwo a
+      (presentedProPGen p 2 {demushkinWordTwoRankTwo a (freeProPGen p 2)}) = 1 := by
+  rw [← presentedProP.mk_comp_freeProPGen, ← map_demushkinWordTwoRankTwo]
+  exact presentedProP.mk_relator _ (Set.mem_singleton _)
+
 end Relation
 
 /-! ### The words lie in the Frattini subgroup -/
@@ -300,6 +361,13 @@ theorem demushkinWordTwoEven_mem_proPFrattini {a f : ℕ} (ha : 2 ∣ a) (hf : 0
     (labuteComm_mem_proPFrattini Nat.prime_two _ _))
     (pow_mem_proPFrattini_of_dvd (dvd_pow_self 2 hf.ne') _)) (Subgroup.list_prod_mem _ ?_)
   simpa only [List.forall_mem_map] using fun i _ ↦ labuteComm_mem_proPFrattini Nat.prime_two _ _
+
+/-- For `a` even, the rank-two `q = 2` word lies in the pro-`2` Frattini subgroup: `x₁^{2+a}` is a
+square and `(x₁, x₂)` is a commutator. -/
+theorem demushkinWordTwoRankTwo_mem_proPFrattini {a : ℕ} (ha : 2 ∣ a) (x : ℕ → H) :
+    demushkinWordTwoRankTwo a x ∈ proPFrattini 2 H :=
+  mul_mem (pow_mem_proPFrattini_of_dvd (dvd_add (dvd_refl 2) ha) _)
+    (labuteComm_mem_proPFrattini Nat.prime_two _ _)
 
 end Frattini
 
@@ -343,6 +411,16 @@ theorem topologicalGeneratorRankNat_presentedProP_demushkinWordTwoEven {a f : �
   simpa using (presentedProP.topologicalGeneratorRankNat_eq_card_iff
     {demushkinWordTwoEven a f n (freeProPGen 2 n)}).mpr
     (Set.singleton_subset_iff.mpr (demushkinWordTwoEven_mem_proPFrattini ha hf n _))
+
+/-- **The rank-two `q = 2` normal-form presentation is minimal**: for `a` even, the pro-`2` group
+presented on two generators by `x₁^{2+a} (x₁, x₂)` has topological generator rank `2`. -/
+theorem topologicalGeneratorRankNat_presentedProP_demushkinWordTwoRankTwo {a : ℕ} (ha : 2 ∣ a) :
+    topologicalGeneratorRankNat
+      (presentedProP 2 (Fin 2) {demushkinWordTwoRankTwo a (freeProPGen 2 2)})
+      presentedProP.isTopologicallyFinitelyGenerated = 2 := by
+  simpa using (presentedProP.topologicalGeneratorRankNat_eq_card_iff
+    {demushkinWordTwoRankTwo a (freeProPGen 2 2)}).mpr
+    (Set.singleton_subset_iff.mpr (demushkinWordTwoRankTwo_mem_proPFrattini ha _))
 
 end Minimal
 

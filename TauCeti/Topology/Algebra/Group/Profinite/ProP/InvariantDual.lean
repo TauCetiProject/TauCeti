@@ -70,9 +70,7 @@ theorem finite_H1ConjInvariants_iff :
     (isPGroup_quotient_pLowerCentralStep_subgroupOf N).isProP
   rw [(H1ConjInvariantsEquivOfSmulEqSelf htriv p hN fun m ↦ by
     rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]).toEquiv.finite_iff,
-    ← Module.finite_iff_finite (R := ZMod p), ← Module.rank_lt_aleph0_iff,
-    ← hQ.topologicalGeneratorRank_eq_rank_continuousZModDual,
-    topologicalGeneratorRank_lt_aleph0_iff]
+    ← Module.finite_iff_finite (R := ZMod p), hQ.finite_continuousZModDual_iff]
 
 /-- **`H¹(N, 𝔽_p)^G` counts the generators of `N ⧸ Nᵖ[N, G]`.** For a closed normal subgroup `N`
 of a profinite group `G` with `N ⧸ Nᵖ[N, G]` topologically finitely generated, the

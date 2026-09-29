@@ -130,8 +130,9 @@ theorem twistedHeckeSlashSum_eq_sum_of_rightCosets {ι : Type*} [Fintype ι]
   classical
   -- The coset bookkeeping is not twisted: matching this family against the one
   -- `twistedHeckeSlashSum` sums over involves no weight and no character, so it is
-  -- `exists_bijective_rightCosetRep_smul_eq` of `HeckeSlash/Independence.lean`, shared with the
-  -- unweighted `heckeSlashSum_eq_sum_of_rightCosets`. Only the per-summand step below is twisted.
+  -- `DoubleCoset.exists_bijective_rightCosetRep_smul_eq` of `HeckeRing/Basic.lean`, shared with
+  -- the unweighted `heckeSlashSum_eq_sum_of_rightCosets`. Only the per-summand step below is
+  -- twisted.
   obtain ⟨φ, hbij, hφ⟩ := exists_bijective_rightCosetRep_smul_eq D a hcover hinj
   rw [twistedHeckeSlashSum_def]
   refine (Fintype.sum_bijective φ hbij _ _ fun i ↦ ?_).symm

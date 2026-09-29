@@ -32,7 +32,7 @@ quotients by squares.
 
 * `TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow`: the class of a unit in `Mˣ ⧸ (Mˣ)ⁿ` is
   trivial iff the unit is an `n`th power in `M`.
-* `TauCeti.square_eq_powMonoidHom_two_range`: `G²` is the range of the squaring homomorphism.
+* `TauCeti.square_eq_range_powMonoidHom`: `G²` is the range of the squaring homomorphism.
 * `MonoidHom.square_le_comap`: `G² ≤ (H²).comap f` for a homomorphism `f : G →* H`.
 * `TauCeti.index_square_le_of_closure_eq_top`: `[G : G²] ≤ 2 ^ S.card`.
 
@@ -108,7 +108,7 @@ private theorem index_powMonoidHom_range_le_of_closure_eq_top {G : Type*} [CommG
 
 /-- In a commutative group, Mathlib's subgroup of squares agrees with the range of the
 squaring homomorphism. -/
-theorem square_eq_powMonoidHom_two_range {G : Type*} [CommGroup G] :
+theorem square_eq_range_powMonoidHom {G : Type*} [CommGroup G] :
     Subgroup.square G = (powMonoidHom 2 : G →* G).range := by
   ext g
   rw [Subgroup.mem_square, MonoidHom.mem_range]
@@ -131,7 +131,7 @@ the image of `S`. -/
 theorem index_square_le_of_closure_eq_top {G : Type*} [CommGroup G]
     {S : Finset G} (hS : Subgroup.closure (S : Set G) = ⊤) :
     (Subgroup.square G).index ≤ 2 ^ S.card := by
-  rw [square_eq_powMonoidHom_two_range]
+  rw [square_eq_range_powMonoidHom]
   exact index_powMonoidHom_range_le_of_closure_eq_top (by norm_num) hS
 
 end TauCeti

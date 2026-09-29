@@ -414,7 +414,7 @@ section OfDiscrete
 /-! ### Discrete smooth representations over any scalars
 
 The continuous cohomology of a discrete `X : TopRep k G` is that of its carrier `X.V` as a discrete
-`ℤ`-module (`TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntIso`), so the
+`ℤ`-module (`TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv`), so the
 `ℤ`-comparisons above identify the explicit `H¹` and `H²` of `X.V` with `continuousCohomology 1 X`
 and `continuousCohomology 2 X`. -/
 
@@ -428,16 +428,33 @@ variable [ContinuousSMul G X.V]
 the action read off from `X`, is Mathlib's `continuousCohomology 1 X`. -/
 noncomputable def _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete :
     H1 G X.V ≃+ continuousCohomology 1 X :=
-  (explicitH1AddEquivContinuousCohomology G X.V).trans
-    (ofDiscreteModuleRestrictScalarsIntIso X 1).toContinuousLinearEquiv.toAddEquiv
+  (explicitH1AddEquivContinuousCohomology G X.V).trans (ofDiscreteModuleRestrictScalarsIntEquiv X 1)
+
+/-- The degree-one comparison for a discrete `X` is the `ℤ`-comparison of its carrier followed by
+`ofDiscreteModuleRestrictScalarsIntEquiv`. -/
+-- Not `@[simp]`: the comparison is the intended normal form, and this lemma unfolds it.
+theorem _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply (x : H1 G X.V) :
+    X.explicitH1AddEquivContinuousCohomologyOfDiscrete x =
+      ofDiscreteModuleRestrictScalarsIntEquiv X 1
+        (explicitH1AddEquivContinuousCohomology G X.V x) :=
+  (rfl)
 
 /-- The explicit `H²` of the carrier of a discrete smooth representation `X` over any scalars, with
 the action read off from `X`, is Mathlib's `continuousCohomology 2 X`. -/
 noncomputable def _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete
     [LocallyCompactSpace G] :
     H2 G X.V ≃+ continuousCohomology 2 X :=
-  (explicitH2AddEquivContinuousCohomology G X.V).trans
-    (ofDiscreteModuleRestrictScalarsIntIso X 2).toContinuousLinearEquiv.toAddEquiv
+  (explicitH2AddEquivContinuousCohomology G X.V).trans (ofDiscreteModuleRestrictScalarsIntEquiv X 2)
+
+/-- The degree-two comparison for a discrete `X` is the `ℤ`-comparison of its carrier followed by
+`ofDiscreteModuleRestrictScalarsIntEquiv`. -/
+-- Not `@[simp]`: the comparison is the intended normal form, and this lemma unfolds it.
+theorem _root_.TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_apply
+    [LocallyCompactSpace G] (x : H2 G X.V) :
+    X.explicitH2AddEquivContinuousCohomologyOfDiscrete x =
+      ofDiscreteModuleRestrictScalarsIntEquiv X 2
+        (explicitH2AddEquivContinuousCohomology G X.V x) :=
+  (rfl)
 
 end OfDiscrete
 

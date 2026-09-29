@@ -34,6 +34,8 @@ the affine form.
   `!![2, -2; -2, 2]`.
 * `TauCeti.IntegralLattice.affineA1RadicalQuotientIsometry`: the isometry from the radical
   quotient of `affineA1` to `a1`.
+* `TauCeti.IntegralLattice.infinite_vectorsOfNorm_zero_hyperbolicPlane`: the hyperbolic plane
+  has infinitely many vectors of norm zero, so shells of an indefinite lattice need not be finite.
 
 ## References
 
@@ -248,6 +250,19 @@ theorem isIndefinite_hyperbolicPlane : hyperbolicPlane.IsIndefinite := by
     norm_num
   · refine ⟨![1, -1], ?_⟩
     norm_num
+
+/-- **The hyperbolic plane has an infinite shell of norm zero.** It is nondegenerate, but every
+integer multiple of the first coordinate vector is isotropic, so the finiteness of shells of a
+positive definite lattice cannot be weakened to nondegeneracy. -/
+theorem infinite_vectorsOfNorm_zero_hyperbolicPlane :
+    (hyperbolicPlane.vectorsOfNorm 0).Infinite := by
+  let f : ℤ → hyperbolicPlane := fun a ↦
+    ⟨![(a : ℚ), 0], (mem_hyperbolicPlane_carrier_iff _).mpr fun i ↦ by
+      fin_cases i <;> simp⟩
+  refine Set.infinite_of_injective_forall_mem (f := f) (fun a b hab ↦ ?_) fun a ↦ ?_
+  · have := congrArg (fun x : hyperbolicPlane ↦ (x : Fin 2 → ℚ) 0) hab
+    simpa [f] using this
+  · simp [f, mem_vectorsOfNorm]
 
 /-- The hyperbolic plane has signature `(1, 0, 1)`. -/
 @[simp]
