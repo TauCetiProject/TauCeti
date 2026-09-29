@@ -20,7 +20,7 @@ its roots in a torsion-free domain algebra.
 
 * `Polynomial.IsEisensteinAt.irreducible_coeff_zero` identifies the constant coefficient as an
   irreducible element.
-* `TauCeti.Polynomial.associated_minpoly_of_eisenstein_isRoot` identifies an Eisenstein polynomial
+* `TauCeti.associated_minpoly_of_eisenstein_isRoot` identifies an Eisenstein polynomial
   with the minimal polynomial of a root up to a unit.
 -/
 
@@ -70,7 +70,7 @@ theorem irreducible_coeff_zero {f : R[X]} (hf : f.IsEisensteinAt (maximalIdeal R
 
 end Polynomial.IsEisensteinAt
 
-namespace TauCeti.Polynomial
+namespace TauCeti
 
 open Module
 
@@ -109,4 +109,4 @@ theorem associated_minpoly_of_eisenstein_isRoot
   exact (minpoly.irreducible hξ).associated_of_dvd hfirr
     (minpoly.isIntegrallyClosed_dvd hξ haeval)
 
-end TauCeti.Polynomial
+end TauCeti
