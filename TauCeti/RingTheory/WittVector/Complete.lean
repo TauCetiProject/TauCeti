@@ -21,9 +21,9 @@ and separatedness of `A_inf = W(𝒪_F)` for its `(p, [ϖ])`-adic topology, the 
 
 The proof compares the `(p, [ϖ])`-adic filtration with a coordinatewise one.
 
-* `TauCeti.WittVector.pow_dvd_coeff_of_mem_span_p_teichmuller_pow`: the first `m` coordinates
+* `WittVector.pow_dvd_coeff_of_mem_span_p_teichmuller_pow`: the first `m` coordinates
   of an element of `(p, [ϖ]) ^ (m + n)` are divisible by `ϖ ^ n`.
-* `TauCeti.WittVector.mem_span_p_teichmuller_pow_of_pow_dvd_coeff`: conversely, if `R` is
+* `WittVector.mem_span_p_teichmuller_pow_of_pow_dvd_coeff`: conversely, if `R` is
   perfect, a Witt vector whose `i`-th coordinate is divisible by `ϖ ^ ((n - i) * p ^ i)` for
   every `i < n` lies in `(p, [ϖ]) ^ n`. This uses the Teichmüller expansion
   `x = ∑ [x_i ^ (1 / p ^ i)] p ^ i`
@@ -34,34 +34,38 @@ So the two filtrations have the same Cauchy sequences and the same limits, and t
 
 ## Main results
 
-* `TauCeti.WittVector.forall_coeff_sub_mem_iff`: the first `n` coordinates of `x - y` lie in an
+* `WittVector.forall_coeff_sub_mem_iff`: the first `n` coordinates of `x - y` lie in an
   ideal `J` if and only if the first `n` coordinates of `x` and `y` are congruent modulo `J`.
-* `TauCeti.WittVector.isHausdorff_span_p_teichmuller`: if `R` has characteristic `p` and is
+* `WittVector.isHausdorff_span_p_teichmuller`: if `R` has characteristic `p` and is
   `ϖ`-adically Hausdorff, then `𝕎 R` is `(p, [ϖ])`-adically Hausdorff.
-* `TauCeti.WittVector.isPrecomplete_span_p_teichmuller`: if `R` is perfect of characteristic `p`
+* `WittVector.isPrecomplete_span_p_teichmuller`: if `R` is perfect of characteristic `p`
   and `ϖ`-adically precomplete, then `𝕎 R` is `(p, [ϖ])`-adically precomplete.
-* `TauCeti.WittVector.isAdicComplete_span_p_teichmuller`: if `R` is perfect of characteristic
+* `WittVector.isAdicComplete_span_p_teichmuller`: if `R` is perfect of characteristic
   `p` and `ϖ`-adically complete, then `𝕎 R` is `(p, [ϖ])`-adically complete.
 
 ## References
 
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017, §3.1.
+* J. Jiang, `Mathlib.RingTheory.WittVector.Complete` in Mathlib: the `p`-adic case
+  `WittVector.isAdicCompleteIdealSpanP`. The proof of `WittVector.isPrecomplete_span_p_teichmuller`
+  adapts its coordinatewise diagonal construction of the limit.
 -/
 
 public section
 
-namespace TauCeti.WittVector
+namespace WittVector
 
-open Ideal _root_.WittVector
+open Ideal
 
 variable {p : ℕ} [hp : Fact p.Prime] {R : Type*} [CommRing R]
 
-local notation "𝕎" => _root_.WittVector p
+local notation "𝕎" => WittVector p
 
 /-- The first `n` coordinates of `x - y` lie in an ideal `J` if and only if the first `n`
 coordinates of `x` and `y` are congruent modulo `J`. The coordinates of a difference of Witt
 vectors are not the differences of the coordinates, but they agree modulo `J` below `n`. -/
-theorem forall_coeff_sub_mem_iff (J : Ideal R) (x y : 𝕎 R) (n : ℕ) :
+@[simp]
+theorem forall_coeff_sub_mem_iff (x y : 𝕎 R) (J : Ideal R) (n : ℕ) :
     (∀ i < n, (x - y).coeff i ∈ J) ↔ ∀ i < n, x.coeff i - y.coeff i ∈ J := by
   have := le_coeff_eq_iff_le_sub_coeff_eq_zero (x := map (Ideal.Quotient.mk J) x)
     (y := map (Ideal.Quotient.mk J) y) (n := n)
@@ -89,7 +93,7 @@ theorem pow_dvd_coeff_of_mem_span_p_teichmuller_pow {ϖ : R} {x : 𝕎 R} {m n :
       zero_coeff]
   generalize v * teichmuller p ϖ ^ n = w at hv ⊢
   -- The first `m` coordinates of `u * p ^ m` vanish.
-  have hu := (forall_coeff_sub_mem_iff (span {ϖ ^ n}) (u * (p : 𝕎 R) ^ m + w) w m).1
+  have hu := (forall_coeff_sub_mem_iff (u * (p : 𝕎 R) ^ m + w) w (span {ϖ ^ n}) m).1
     (fun j hj ↦ by
       rw [add_sub_cancel_right, mul_pow_charP_coeff_zero _ hj]
       exact zero_mem _) i hi
@@ -145,7 +149,7 @@ instance isPrecomplete_span_p_teichmuller (ϖ : R) [IsPrecomplete (span {ϖ}) R]
     -- The coordinates of `f (k + k)` and `f (l + l)` below `k` agree modulo `ϖ ^ k`.
     have key {k l : ℕ} (hkl : k ≤ l) {i : ℕ} (hi : i < k) :
         ϖ ^ k ∣ (f (k + k)).coeff i - (f (l + l)).coeff i :=
-      mem_span_singleton.1 <| (forall_coeff_sub_mem_iff (span {ϖ ^ k}) _ _ k).1
+      mem_span_singleton.1 <| (forall_coeff_sub_mem_iff _ _ (span {ϖ ^ k}) k).1
         (fun _ hj ↦ mem_span_singleton.2 <|
           pow_dvd_coeff_of_mem_span_p_teichmuller_pow (hf (by omega)) hj) i hi
     -- Hence the `i`-th coordinate of `f (2 * (k + i + 1))` is `ϖ`-adically Cauchy in `k`.
@@ -164,7 +168,7 @@ instance isPrecomplete_span_p_teichmuller (ϖ : R) [IsPrecomplete (span {ϖ}) R]
     have hM : (n - i) * p ^ i ≤ M :=
       Nat.mul_le_mul (Nat.sub_le n i) (Nat.pow_le_pow_right hp.out.pos hi.le)
     refine (pow_dvd_pow ϖ hM).trans (mem_span_singleton.1 <|
-      (forall_coeff_sub_mem_iff (span {ϖ ^ M}) (f N) (mk p L) n).2 (fun j hj ↦ ?_) i hi)
+      (forall_coeff_sub_mem_iff (f N) (mk p L) (span {ϖ ^ M}) n).2 (fun j hj ↦ ?_) i hi)
     rw [mem_span_singleton, coeff_mk,
       ← sub_add_sub_cancel _ ((f (M + j + 1 + (M + j + 1))).coeff j)]
     refine dvd_add ?_ (hL j M)
@@ -180,6 +184,6 @@ end PerfectRing
 
 end CharP
 
-end TauCeti.WittVector
+end WittVector
 
 end
