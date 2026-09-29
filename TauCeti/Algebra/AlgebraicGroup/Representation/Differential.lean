@@ -83,8 +83,10 @@ theorem differential_apply (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) 
 theorem Hom.map_differential (f : Hom R H M N)
     (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (m : M) :
     f (differential (R := R) (H := H) (M := M) d m) =
-      differential (R := R) (H := H) (M := N) d (f m) :=
-  f.map_convolutionAction _ m
+      differential (R := R) (H := H) (M := N) d (f m) := by
+  simpa only [differential_apply, convolutionAction_apply, ofConv_toConv] using
+    f.map_convolutionAction
+      (toConv ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap)) m
 
 /-- The coefficient of `ε` in the action of a tangent dual-number point on `1 ⊗ m`
 is the differentiated action on `m`. The counit coefficient algebra is identified with `R`
