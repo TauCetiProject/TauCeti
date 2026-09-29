@@ -140,22 +140,21 @@ theorem _root_.Polynomial.subresultantCoeff_map_map [CommRing R] [CommRing S]
       f (subresultantCoeff p q m n j k) := by
   simp [subresultantCoeff_def, RingHom.map_det]
 
-set_option backward.defeqAttrib.useBackward true in
 private theorem sign_blockSwap (m n : ℕ) :
     Equiv.Perm.sign
         ((finSumFinEquiv.symm.trans <| (Equiv.sumComm _ _).trans finSumFinEquiv).trans
           (finCongr (add_comm n m)).symm) =
       (-1) ^ (m * n) := by
   rw [Equiv.Perm.sign_eq_prod_prod_Ioi]
-  dsimp
-  simp only [Fin.cast_lt_cast]
+  simp only [Equiv.trans_apply, finCongr_symm, finCongr_apply, Fin.cast_lt_cast]
   simp_rw [← finSumFinEquiv.prod_comp, ← Finset.prod_map_equiv finSumFinEquiv.symm]
   simp only [Equiv.symm_apply_apply, ← Fin.val_fin_lt, Equiv.symm_symm, Function.comp_apply,
     ← Finset.prod_ite_mem_eq (Finset.map _ _), Finset.mem_map_equiv, Finset.mem_Ioi,
-    Fintype.prod_sum_type, finSumFinEquiv_apply_left, Fin.val_castAdd, Sum.swap_inl,
-    finSumFinEquiv_apply_right, Fin.val_natAdd, Sum.swap_inr, add_lt_add_iff_left,
-    ← ite_not (α := ℤˣ) (p := _ < _) (y := 1), ← ite_and, and_not_self]
-  simp [(Fin.isLt _).trans_le, (Fin.isLt _).le.trans, pow_mul]
+    Fintype.prod_sum_type, finSumFinEquiv_apply_left, Fin.val_castAdd,
+    finSumFinEquiv_apply_right, Fin.val_natAdd, add_lt_add_iff_left,
+    ← ite_not (α := ℤˣ) (p := _ < _) (y := 1), ← ite_and]
+  simp [(Fin.isLt _).trans_le, (Fin.isLt _).le.trans, pow_mul,
+    fun a b : Fin _ => iff_false_intro fun h : a < b ∧ b ≤ a => h.1.not_ge h.2]
 
 /-- Swapping the inputs changes every coefficient minor by the Sylvester block-swap sign. -/
 theorem _root_.Polynomial.subresultantCoeff_comm [CommRing R]
