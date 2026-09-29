@@ -30,8 +30,9 @@ Galois-module theory of local units.
 * `padicCompletionUnits`: the inverse-limit carrier `A(L)`.
 * `padicCompletionUnitsPadicModule`: its intrinsic `ℤ_p`-module structure.
 * `padicCompletionUnitsAut`: the coordinatewise Galois action.
-* `padicCompletionUnitsRepresentation`: the `ℤ_p`-linear Galois representation on `A(L)`; its
-  `Representation.asModule` is the integral `ℤ_p[Gal(L/K)]`-module `A(L)`.
+* `padicCompletionUnitsRepresentation`: the `ℤ_p`-linear Galois representation on `A(L)`.
+* `padicCompletionUnitsModule`: the integral `ℤ_p[Gal(L/K)]`-module structure on `A(L)`, namely
+  Mathlib's `Representation.asModule` structure of `padicCompletionUnitsRepresentation`.
 
 ## References
 
@@ -331,6 +332,27 @@ def padicCompletionUnitsRepresentation :
 theorem padicCompletionUnitsRepresentation_apply (σ : L ≃ₐ[K] L) :
     padicCompletionUnitsRepresentation p L K σ = padicCompletionUnitsLinearMap p L K σ :=
   (rfl)
+
+/-- The integral `ℤ_p[Gal(L/K)]`-module structure on `A(L)`: the `Representation.asModule`
+structure of the Galois representation, placed on `A(L)` itself. -/
+instance padicCompletionUnitsModule :
+    Module (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) (Additive ↑(padicCompletionUnits p L)) :=
+  inferInstanceAs (Module _ (padicCompletionUnitsRepresentation p L K).asModule)
+
+/-- A group-algebra monomial acts through the corresponding field automorphism, scaled by its
+coefficient. -/
+@[simp]
+theorem padicCompletionUnits_single_smul (σ : L ≃ₐ[K] L) (a : ℤ_[p])
+    (x : ↑(padicCompletionUnits p L)) :
+    (MonoidAlgebra.single σ a : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) • Additive.ofMul x =
+      a • Additive.ofMul (padicCompletionUnitsAut p L K σ x) :=
+  (padicCompletionUnitsRepresentation p L K).single_smul a σ (Additive.ofMul x)
+
+/-- Restriction of the group-algebra action recovers the intrinsic `ℤ_p`-action on `A(L)`. -/
+instance padicCompletionUnits_isScalarTower :
+    IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+      (Additive ↑(padicCompletionUnits p L)) :=
+  inferInstanceAs (IsScalarTower ℤ_[p] _ (padicCompletionUnitsRepresentation p L K).asModule)
 
 end GaloisAction
 
