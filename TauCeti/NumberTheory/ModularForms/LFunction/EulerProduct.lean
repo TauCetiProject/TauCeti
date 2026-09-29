@@ -25,6 +25,10 @@ including its bad-prime eigenrelations, gives the newform Euler product.
 ## References
 
 * F. Diamond and J. Shurman, *A First Course in Modular Forms*, Proposition 5.8.5 and §5.9.
+* C. Birkbeck and the LeanModularForms contributors, AINTLIB,
+  `projects/LeanModularForms/LeanModularForms/Modularforms/LFunctionEuler.lean`,
+  [revision `112d12d95`](https://github.com/CBirkbeck/AINTLIB/blob/112d12d95e9c19f0d477b7a687bd49563ab8d07d/projects/LeanModularForms/LeanModularForms/Modularforms/LFunctionEuler.lean)
+  (Apache 2.0 license).
 -/
 
 public section
