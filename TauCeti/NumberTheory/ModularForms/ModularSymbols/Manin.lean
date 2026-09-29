@@ -87,7 +87,7 @@ theorem maninSymbol_add_mul_T_mul_S_add_mul_T_mul_S_sq (g : SL(2, ℤ)) :
         (0 : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   ext P
   simp only [LinearMap.add_apply, LinearMap.zero_apply]
-  rw [maninSymbol_apply, maninSymbol_mul, maninSymbol_mul,
+  rw [maninSymbol_apply, maninSymbol_mul, maninSymbol_mul, map_pow, map_mul,
     mapGL_T_mul_S_smul_infty, mapGL_T_mul_S_smul_zero,
     mapGL_T_mul_S_sq_smul_infty, mapGL_T_mul_S_sq_smul_zero]
   calc

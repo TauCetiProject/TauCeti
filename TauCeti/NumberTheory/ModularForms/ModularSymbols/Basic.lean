@@ -185,34 +185,34 @@ theorem mapGL_T_smul_coe (k : ℚ) :
 /-- `T * S` sends `∞` to `1`. -/
 @[simp]
 theorem mapGL_T_mul_S_smul_infty :
-    mapGL ℚ (T * S) • (∞ : OnePoint ℚ) = (1 : ℚ) := by
-  rw [map_mul, mul_smul, mapGL_S_smul_infty, mapGL_T_smul_coe]
+    (mapGL ℚ T * mapGL ℚ S) • (∞ : OnePoint ℚ) = (1 : ℚ) := by
+  rw [mul_smul, mapGL_S_smul_infty, mapGL_T_smul_coe]
   norm_num
 
 /-- `T * S` sends `0` to `∞`. -/
 @[simp]
 theorem mapGL_T_mul_S_smul_zero :
-    mapGL ℚ (T * S) • ((0 : ℚ) : OnePoint ℚ) = ∞ := by
-  rw [map_mul, mul_smul, mapGL_S_smul_zero, mapGL_T_smul_infty]
+    (mapGL ℚ T * mapGL ℚ S) • ((0 : ℚ) : OnePoint ℚ) = ∞ := by
+  rw [mul_smul, mapGL_S_smul_zero, mapGL_T_smul_infty]
 
 /-- `T * S` sends `1` to `0`. -/
 @[simp]
 theorem mapGL_T_mul_S_smul_one :
-    mapGL ℚ (T * S) • ((1 : ℚ) : OnePoint ℚ) = (0 : ℚ) := by
-  rw [map_mul, mul_smul]
+    (mapGL ℚ T * mapGL ℚ S) • ((1 : ℚ) : OnePoint ℚ) = (0 : ℚ) := by
+  rw [mul_smul]
   simp [OnePoint.smul_some_eq_ite]
 
 /-- `(T * S)²` sends `∞` to `0`. -/
 @[simp]
 theorem mapGL_T_mul_S_sq_smul_infty :
-    mapGL ℚ ((T * S) ^ 2) • (∞ : OnePoint ℚ) = (0 : ℚ) := by
-  rw [map_pow, pow_two, mul_smul, mapGL_T_mul_S_smul_infty, mapGL_T_mul_S_smul_one]
+    (mapGL ℚ T * mapGL ℚ S) ^ 2 • (∞ : OnePoint ℚ) = (0 : ℚ) := by
+  rw [pow_two, mul_smul, mapGL_T_mul_S_smul_infty, mapGL_T_mul_S_smul_one]
 
 /-- `(T * S)²` sends `0` to `1`. -/
 @[simp]
 theorem mapGL_T_mul_S_sq_smul_zero :
-    mapGL ℚ ((T * S) ^ 2) • ((0 : ℚ) : OnePoint ℚ) = (1 : ℚ) := by
-  rw [map_pow, pow_two, mul_smul, mapGL_T_mul_S_smul_zero, mapGL_T_mul_S_smul_infty]
+    (mapGL ℚ T * mapGL ℚ S) ^ 2 • ((0 : ℚ) : OnePoint ℚ) = (1 : ℚ) := by
+  rw [pow_two, mul_smul, mapGL_T_mul_S_smul_zero, mapGL_T_mul_S_smul_infty]
 
 /-- A translate of `[α] - [β]` is the difference of the translated cusps. -/
 theorem degreeZeroRep_single_sub_single (g : SL(2, ℤ)) (α β : OnePoint ℚ) :
