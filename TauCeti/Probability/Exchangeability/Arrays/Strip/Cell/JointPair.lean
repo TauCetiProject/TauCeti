@@ -117,7 +117,7 @@ theorem JointlyExchangeable.map_offDiagonalPairContext_entries_eq
     ρ.map (fun x => (offDiagonalPairContext e i' j' x, (x (i', j'), x (j', i')))) =
     ρ.map (fun x => (offDiagonalPairContext e i j x, (x (i, j), x (j, i)))) := by
   obtain ⟨perm, he, hpermi, hpermj⟩ :=
-    exists_pair_perm_fixed (Set.range e) hij hi'j' hi hj hi' hj'
+    exists_pair_perm_fixed (s := Set.range e) hij hi'j' hi hj hi' hj'
   have he' (a : ℕ) : perm (e a) = e a := he (e a) ⟨a, rfl⟩
   simpa only [hpermi, hpermj] using
     hρ.map_offDiagonalPairContext_entries_eq_of_fixed e i j perm he'

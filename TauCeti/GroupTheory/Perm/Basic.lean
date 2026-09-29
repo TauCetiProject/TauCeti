@@ -181,7 +181,7 @@ theorem swap_apply_notMem {α : Type*} [DecidableEq α] {s : Finset α} {a b z :
 
 /-- Any ordered pair of distinct points outside `s` can be carried to another such pair by a
 permutation fixing `s` pointwise. -/
-theorem exists_pair_perm_fixed {α : Type*} (s : Set α)
+theorem exists_pair_perm_fixed {α : Type*} {s : Set α}
     {i j i' j' : α} (hij : i ≠ j) (hi'j' : i' ≠ j')
     (hi : i ∉ s) (hj : j ∉ s) (hi' : i' ∉ s) (hj' : j' ∉ s) :
     ∃ perm : Equiv.Perm α, (∀ a ∈ s, perm a = a) ∧ perm i = i' ∧ perm j = j' := by
