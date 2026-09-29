@@ -34,9 +34,6 @@ variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
 noncomputable instance instTopologicalSpaceModuleEnd : TopologicalSpace (Module.End K V) :=
   moduleTopology K (Module.End K V)
 
-instance instIsModuleTopologyModuleEnd : IsModuleTopology K (Module.End K V) :=
-  inferInstance
-
 /-- Composition of endomorphisms is continuous for their module topology. -/
 instance instIsTopologicalRingModuleEnd : IsTopologicalRing (Module.End K V) :=
   IsModuleTopology.isTopologicalRing K (Module.End K V)
