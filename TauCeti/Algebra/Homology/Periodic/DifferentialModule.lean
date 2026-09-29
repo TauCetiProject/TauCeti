@@ -68,12 +68,6 @@ namespace TauCeti
 
 open CategoryTheory Category Limits Preadditive
 
--- The category structure and the functors below are exposed, as for Mathlib's differential
--- objects: a morphism `M ⟶ N` of differential modules must unfold to a
--- `DifferentialModule.Hom M N`, and the functors are used through their definitional component
--- formulas.
-@[expose] public section
-
 variable (C : Type u) [Category.{v} C]
 
 /-- A **differential module** in a category `C` with zero morphisms: an object `X` with an
@@ -108,12 +102,12 @@ structure Hom (M N : DifferentialModule C) where
 attribute [reassoc (attr := simp)] Hom.comm
 
 /-- The identity morphism of a differential module. -/
-@[simps]
+@[expose, simps]
 def Hom.id (M : DifferentialModule C) : Hom M M where
   f := 𝟙 _
 
 /-- The composition of morphisms of differential modules. -/
-@[simps]
+@[expose, simps]
 def Hom.comp {M N P : DifferentialModule C} (φ : Hom M N) (ψ : Hom N P) : Hom M P where
   f := φ.f ≫ ψ.f
 
@@ -135,7 +129,7 @@ theorem hom_ext {φ ψ : M ⟶ N} (h : φ.f = ψ.f) : φ = ψ :=
 
 /-- A constructor for morphisms of differential modules when the commutativity condition is not
 obvious. -/
-@[simps]
+@[expose, simps]
 def homMk (f : M.X ⟶ N.X) (comm : f ≫ N.d = M.d ≫ f) : M ⟶ N :=
   ⟨f, comm⟩
 
@@ -148,7 +142,7 @@ instance : HasZeroMorphisms (DifferentialModule C) where
 
 variable (C) in
 /-- The forgetful functor sending a differential module to its underlying object. -/
-@[simps]
+@[expose, simps]
 def forget : DifferentialModule C ⥤ C where
   obj M := M.X
   map φ := φ.f
@@ -160,7 +154,7 @@ instance (φ : M ⟶ N) [IsIso φ] : IsIso φ.f := (forget C).map_isIso φ
 
 /-- A constructor for isomorphisms of differential modules from an isomorphism of the underlying
 objects commuting with the differentials. -/
-@[simps]
+@[expose, simps]
 def isoMk (e : M.X ≅ N.X) (comm : e.hom ≫ N.d = M.d ≫ e.hom) : M ≅ N where
   hom := homMk e.hom comm
   inv := homMk e.inv (by rw [e.inv_comp_eq, reassoc_of% comm, e.hom_inv_id, comp_id])
@@ -236,7 +230,7 @@ variable [HasZeroMorphisms C]
 variable (C) in
 /-- The one-periodic complex of a differential module: the object and the differential in the
 unique degree of `ZMod 1`. -/
-@[implicit_reducible, simps]
+@[expose, implicit_reducible, simps]
 def toOnePeriodicComplex :
     DifferentialModule C ⥤ HomologicalComplex C (ComplexShape.up (ZMod 1)) where
   obj M :=
@@ -251,7 +245,7 @@ def toOnePeriodicComplex :
 variable (C) in
 /-- The differential module of a one-periodic complex `K`: the object `K.X 0` with the
 differential `K.d 0 0`. -/
-@[implicit_reducible, simps]
+@[expose, implicit_reducible, simps]
 def ofOnePeriodicComplex :
     HomologicalComplex C (ComplexShape.up (ZMod 1)) ⥤ DifferentialModule C where
   obj K :=
@@ -265,7 +259,7 @@ def ofOnePeriodicComplex :
 variable (C) in
 /-- Differential modules are equivalent to one-periodic complexes, that is to homological
 complexes of shape `ComplexShape.up (ZMod 1)`. -/
-@[simps]
+@[expose, simps]
 def onePeriodicComplexEquivalence :
     DifferentialModule C ≌ HomologicalComplex C (ComplexShape.up (ZMod 1)) where
   functor := toOnePeriodicComplex C
@@ -309,7 +303,7 @@ variable [HasZeroMorphisms C] {S : Type*} [AddMonoidWithOne S] [HasShift C S]
 /-- The differential object of a differential module `M`, for a natural isomorphism
 `e : shiftFunctor C 1 ≅ 𝟭 C`: the differential is `M.d ≫ e.inv.app M.X : M.X ⟶ M.X⟦1⟧`, and its
 shifted square vanishes because `M.d ≫ M.d = 0`. -/
-@[implicit_reducible, simps]
+@[expose, implicit_reducible, simps]
 def toDifferentialObject : DifferentialModule C ⥤ DifferentialObject S C where
   obj M :=
     { obj := M.X
@@ -325,7 +319,7 @@ def toDifferentialObject : DifferentialModule C ⥤ DifferentialObject S C where
 
 /-- The differential module of a differential object `Y`, for a natural isomorphism
 `e : shiftFunctor C 1 ≅ 𝟭 C`: the differential is `Y.d ≫ e.hom.app Y.obj : Y.obj ⟶ Y.obj`. -/
-@[implicit_reducible, simps]
+@[expose, implicit_reducible, simps]
 def ofDifferentialObject : DifferentialObject S C ⥤ DifferentialModule C where
   obj Y :=
     { X := Y.obj
@@ -343,7 +337,7 @@ def ofDifferentialObject : DifferentialObject S C ⥤ DifferentialModule C where
 
 /-- For a natural isomorphism `e : shiftFunctor C 1 ≅ 𝟭 C`, differential modules are equivalent to
 Mathlib's differential objects `DifferentialObject S C`. -/
-@[simps]
+@[expose, simps]
 def differentialObjectEquivalence : DifferentialModule C ≌ DifferentialObject S C where
   functor := toDifferentialObject e
   inverse := ofDifferentialObject e
@@ -362,7 +356,7 @@ variable (C) in
 /-- The differential module obtained by forgetting the parity of a two-periodic complex `K`: the
 object `K.X 0 ⊞ K.X 1`, with the differential whose components are `K.d 0 1 : K.X 0 ⟶ K.X 1`
 and `K.d 1 0 : K.X 1 ⟶ K.X 0`. -/
-@[implicit_reducible, simps obj_X map_f]
+@[expose, implicit_reducible, simps obj_X map_f]
 noncomputable def forgetParity :
     HomologicalComplex C (ComplexShape.up (ZMod 2)) ⥤ DifferentialModule C where
   obj K :=
@@ -373,11 +367,15 @@ noncomputable def forgetParity :
     { f := biprod.map (φ.f 0) (φ.f 1)
       comm := by ext <;> simp }
 
+/-- Precomposing the differential after forgetting parity with the left inclusion recovers the
+differential from degree zero to degree one. -/
 @[reassoc (attr := simp)]
 theorem inl_forgetParity_obj_d (K : HomologicalComplex C (ComplexShape.up (ZMod 2))) :
     biprod.inl ≫ ((forgetParity C).obj K).d = K.d 0 1 ≫ biprod.inr :=
   biprod.inl_desc _ _
 
+/-- Precomposing the differential after forgetting parity with the right inclusion recovers the
+differential from degree one to degree zero. -/
 @[reassoc (attr := simp)]
 theorem inr_forgetParity_obj_d (K : HomologicalComplex C (ComplexShape.up (ZMod 2))) :
     biprod.inr ≫ ((forgetParity C).obj K).d = K.d 1 0 ≫ biprod.inl :=
@@ -398,7 +396,5 @@ instance {R : Type w'} [Semiring R] [Linear R C] : (forgetParity C).Linear R whe
 end ForgetParityPreadditive
 
 end DifferentialModule
-
-end
 
 end TauCeti
