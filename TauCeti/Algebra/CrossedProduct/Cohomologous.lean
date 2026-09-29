@@ -158,19 +158,25 @@ noncomputable def algEquivOfCoboundary : CrossedProduct w ≃ₐ[K] CrossedProdu
   .ofLinearEquiv ((linearEquivOfCoboundary z w b).restrictScalars K)
     (linearEquivOfCoboundary_one b h) (linearEquivOfCoboundary_mul b h)
 
+/-- As a function, `CrossedProduct.algEquivOfCoboundary b h` is
+`linearEquivOfCoboundary z w b`: `AlgEquiv.ofLinearEquiv` and `LinearEquiv.restrictScalars` do not
+change the underlying function, so this holds by `rfl`. -/
+private theorem coe_algEquivOfCoboundary :
+    ⇑(algEquivOfCoboundary b h) = linearEquivOfCoboundary z w b :=
+  rfl
+
 /-- `CrossedProduct.algEquivOfCoboundary` sends `u'_σ` to `b(σ) · u_σ`. -/
 @[simp]
 theorem algEquivOfCoboundary_basis (σ : L ≃ₐ[K] L) :
     algEquivOfCoboundary b h (basis w σ) = (b σ : L) • basis z σ := by
-  -- `algEquivOfCoboundary b h` is `linearEquivOfCoboundary z w b` as a function
-  have := linearEquivOfCoboundary_smul_basis (z := z) (w := w) b σ 1
-  rwa [one_smul, one_mul] at this
+  rw [coe_algEquivOfCoboundary, ← one_smul L (basis w σ), linearEquivOfCoboundary_smul_basis,
+    one_mul]
 
 /-- `CrossedProduct.algEquivOfCoboundary` is `L`-linear. -/
 @[simp]
 theorem algEquivOfCoboundary_smul (x : L) (a : CrossedProduct w) :
-    algEquivOfCoboundary b h (x • a) = x • algEquivOfCoboundary b h a :=
-  map_smul (linearEquivOfCoboundary z w b) x a
+    algEquivOfCoboundary b h (x • a) = x • algEquivOfCoboundary b h a := by
+  rw [coe_algEquivOfCoboundary, map_smul]
 
 /-- The coordinates of `CrossedProduct.algEquivOfCoboundary b h a` are those of `a`, the
 `σ`-th one multiplied by `b(σ)`. -/
