@@ -70,19 +70,6 @@ theorem isEffective_equivCartierDivisor_iff (hX : ∀ x : X, coheight x ≤ 1)
     (equivCartierDivisor hX D).IsEffective ↔
       WeilDivisor.IsEffective D := by
   rw [Scheme.CartierDivisor.isEffective_iff_toWeilDivisor hX]
-  have h : (equivCartierDivisor hX D).toWeilDivisor = D := by
-    rw [← equivCartierDivisor_symm_apply hX (equivCartierDivisor hX D)]
-    exact (equivCartierDivisor hX).left_inv D
-  rw [h]
-
--- The general effectivity criterion rewrites the Cartier side before this constructor form.
-@[simp]
-private theorem isEffective_cartierDivisor_iff (hX : ∀ x : X, coheight x ≤ 1)
-    (D : SchemeWeilDivisor X) :
-    WeilDivisor.IsEffective ((IsLocallyPrincipal.cartierDivisor hX
-      (isLocallyPrincipal_of_forall_coheight_le_one hX D)).toWeilDivisor) ↔
-        WeilDivisor.IsEffective D := by
-  rw [← equivCartierDivisor_apply hX D]
   rw [← equivCartierDivisor_symm_apply hX (equivCartierDivisor hX D),
     AddEquiv.symm_apply_apply]
 
