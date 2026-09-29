@@ -418,6 +418,7 @@ theorem fullyBlockedRectangles_eq_filter (x y : GridState n) :
 
 /-- The constant term of a matrix coefficient of the unblocked differential is the number of
 fully blocked rectangles it counts. -/
+@[simp]
 theorem constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles (x y : GridState n) :
     constantCoeff (G.unblockedCoefficient R x y) =
       ((G.fullyBlockedRectangles x y).card : R) := by

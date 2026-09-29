@@ -131,7 +131,6 @@ variable (R : Type*) [CommSemiring R]
 
 /-- The reduction of the center differential modulo the variables counts the fully blocked
 rectangles of `G`: over `ZMod 2` it is the fully blocked differential of `G`. -/
-@[simp]
 theorem constantCoeffReduction_stabilizeXCenterDifferential_single_apply (x y : GridState n)
     (c : R) :
     (G.stabilizeXCenterDifferential s R).constantCoeffReduction (Finsupp.single x c) y =
@@ -141,7 +140,6 @@ theorem constantCoeffReduction_stabilizeXCenterDifferential_single_apply (x y : 
 
 /-- The reduction of the off-center differential modulo the variables counts the fully blocked
 rectangles of the stabilization between off-center states. -/
-@[simp]
 theorem constantCoeffReduction_stabilizeXOffCenterDifferential_single_apply
     (y z : G.StabilizeXOffCenterState s) (c : R) :
     (G.stabilizeXOffCenterDifferential s R).constantCoeffReduction (Finsupp.single y c) z =
@@ -152,7 +150,6 @@ theorem constantCoeffReduction_stabilizeXOffCenterDifferential_single_apply
 /-- The reduction of `H_I^N` modulo the variables counts the empty rectangles of the stabilization
 from an off-center state to a center state that carry no `O`-marking and whose only `X`-marking is
 the southeast `X`-marking `X₂` of the new block. -/
-@[simp]
 theorem constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply
     (y : G.StabilizeXOffCenterState s) (x : GridState n) (c : R) :
     (G.stabilizeXOffCenterToCenter s R).constantCoeffReduction (Finsupp.single y c) x =
