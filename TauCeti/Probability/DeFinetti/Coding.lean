@@ -65,7 +65,7 @@ standard Borel hypothesis and for an arbitrary parameter space and arbitrary exc
   `TauCeti.Probability.ConditionallyIIDWith.exists_map_comp_eq_map_unitIntervalCoding` — **coding
   given observed coordinates**: once observed coordinates determine the directing measure, the
   remaining coordinates are coded from them by fresh i.i.d. uniform noise.
-* `TauCeti.Probability.Exchangeable.exists_map_prodMk_comp_eq_map_coding` — the same coding for a
+* `TauCeti.Probability.Exchangeable.exists_map_comp_eq_map_coding_of_prodMk` — the same coding for a
   sequence exchangeable over a random element `Z`, with `Z` among the observed data.
 
 ## Implementation
@@ -430,7 +430,7 @@ measurable map applied to fresh i.i.d. uniform variables.
 
 Conditioning on `Z` as well as on `Y ∘ e` is what the exchangeability over `Z` buys: the coded
 coordinates are conditionally i.i.d. given `(Z, Y ∘ e)`, not merely given `Y ∘ e`. -/
-theorem Exchangeable.exists_map_prodMk_comp_eq_map_coding {γ β : Type*} [MeasurableSpace γ]
+theorem Exchangeable.exists_map_comp_eq_map_coding_of_prodMk {γ β : Type*} [MeasurableSpace γ]
     [StandardBorelSpace γ] [Nonempty γ] [MeasurableSpace β] [StandardBorelSpace β] [Nonempty β]
     {μ : Measure Ω} [IsFiniteMeasure μ] {Z : Ω → γ} {Y : ℕ → Ω → β}
     (hZY : Exchangeable μ fun n ω => (Z ω, Y n ω)) (hZ : AEMeasurable Z μ)

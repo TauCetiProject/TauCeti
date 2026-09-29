@@ -180,7 +180,7 @@ theorem JointlyExchangeable.exists_vertex_strip_coding
       (Measurable.of_eval fun k ↦ hsquare.prodMk (hstrip (w k)))
     simp only [hτe, hτw, Equiv.Perm.coe_one, id] at key
     rwa [pathLaw_def]
-  obtain ⟨v, hv, hcode⟩ := hexch.exists_map_prodMk_comp_eq_map_coding
+  obtain ⟨v, hv, hcode⟩ := hexch.exists_map_comp_eq_map_coding_of_prodMk
     hsquare.aemeasurable (fun k ↦ (hstrip (w k)).aemeasurable)
     (Equiv.natSumNatEquivNat.injective.comp Sum.inl_injective)
     (Equiv.natSumNatEquivNat.injective.comp Sum.inr_injective)
