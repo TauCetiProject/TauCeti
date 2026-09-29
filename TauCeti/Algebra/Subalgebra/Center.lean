@@ -36,6 +36,12 @@ and the ring of scalars a central subalgebra provides.
   `Subalgebra.centralSubalgebraAlgebra_smul_def`, and
   `Subalgebra.isScalarTower_centralSubalgebraAlgebra` records that the base ring, the subalgebra
   and the ambient algebra form a scalar tower.
+* `Subalgebra.centerAlgebra` gives the whole center its canonical scalar action by inclusion.
+  `Subalgebra.finite_over_center_of_finite` transfers module finiteness from a central
+  subalgebra to the center. `Subalgebra.finite_center_of_isNoetherian` makes the center finite
+  over that subalgebra when the ambient algebra is Noetherian as a module; together with
+  `Subalgebra.isNoetherianRing_center_of_finite`, this supplies a Noetherian center for
+  applications of the generalized Krull intersection theorem.
 -/
 
 public section
@@ -113,7 +119,7 @@ namespace Subalgebra
 
 section FiniteOverCentralSubalgebra
 
-variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
   (S : Subalgebra R (center R A))
 
 /-- The local algebra structure on the ambient algebra for the Noetherian transfer. -/
@@ -137,6 +143,19 @@ theorem finite_center_of_isNoetherian [IsNoetherian S A] :
     Module.Finite S (center R A) := by
   exact Module.Finite.of_fg (IsNoetherian.noetherian (centerSubmodule S))
 
+end FiniteOverCentralSubalgebra
+
+section NoetherianCenter
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+  (S : Subalgebra R (center R A))
+
+/-- The local algebra structure on the ambient algebra for the Noetherian-center theorem. -/
+local instance noetherianCenterAlgebra : Algebra S A := centralSubalgebraAlgebra S
+/-- The local algebra structure on the center for the Noetherian-center theorem. -/
+local instance noetherianCenterCenterAlgebra : Algebra S (center R A) :=
+  S.val.toRingHom.toAlgebra
+
 /-- A finite algebra over a Noetherian central subalgebra has Noetherian center. -/
 theorem isNoetherianRing_center_of_finite [IsNoetherianRing S] [Module.Finite S A] :
     IsNoetherianRing (center R A) := by
@@ -144,7 +163,7 @@ theorem isNoetherianRing_center_of_finite [IsNoetherianRing S] [Module.Finite S 
   exact @IsNoetherianRing.of_finite S (center R A) _ _ _ _ _
     (@finite_center_of_isNoetherian R A _ _ _ S hNoetherian)
 
-end FiniteOverCentralSubalgebra
+end NoetherianCenter
 
 end Subalgebra
 

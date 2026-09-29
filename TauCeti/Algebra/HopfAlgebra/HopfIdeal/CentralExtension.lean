@@ -44,6 +44,7 @@ theorem mem_centralAugmentationCenterIdeal (z : Subalgebra.center K H) :
 
 /-- The full central augmentation ideal is extended from the corresponding ideal of the
 commutative center. -/
+@[simp]
 theorem map_centralAugmentationCenterIdeal :
     Ideal.map (Subalgebra.center K H).val.toRingHom
       (centralAugmentationCenterIdeal K H) = centralAugmentationIdeal K H := by
@@ -61,14 +62,6 @@ theorem map_centralAugmentationCenterIdeal :
       rw [mem_centralAugmentationCenterIdeal]
       exact (mem_augmentation K H).mp ((mem_centralAugmentation K H).mp hx).2
     exact Ideal.mem_map_of_mem _ hz
-
-/-- Powers of the central augmentation ideal are extended from powers of its ideal in the
-commutative center. -/
-theorem map_centralAugmentationCenterIdeal_pow (n : ℕ) :
-    Ideal.map (Subalgebra.center K H).val.toRingHom
-      (centralAugmentationCenterIdeal K H ^ n) = centralAugmentationIdeal K H ^ n := by
-  rw [← map_centralAugmentationCenterIdeal K H]
-  exact Ideal.map_algebraMap_pow _ n
 
 /-- Krull intersection for the central augmentation ideal of a Hopf algebra finite over its
 Noetherian center. An element of all powers is fixed by a central scalar of augmentation zero. -/
