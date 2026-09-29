@@ -26,8 +26,6 @@ subgroup; it says nothing about the base change of the integral carrier, which c
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
 
-The argument follows the sibling smoothness proof
-`TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Smooth`.
 -/
 
 public section
@@ -40,6 +38,8 @@ universe v
 
 variable (k : Type v) [Field k]
 
+-- The argument follows the sibling proof in
+-- `TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Smooth`.
 private theorem isReduced_generatorCoordinateAlgebra :
     ∀ j, IsReduced (generatorCoordinateAlgebra k j) := by
   let : IsReduced (AdditiveGroup.coordinateHopfAlgebra k) :=

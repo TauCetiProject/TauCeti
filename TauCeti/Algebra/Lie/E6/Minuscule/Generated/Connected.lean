@@ -26,8 +26,6 @@ subgroup; it says nothing about the base change of the integral carrier, which c
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
 
-The argument follows the sibling connectedness proof
-`TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Connected`.
 -/
 
 public section
@@ -40,6 +38,8 @@ universe v
 
 variable (k : Type v) [Field k]
 
+-- The argument follows the sibling proof in
+-- `TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Connected`.
 private theorem connectedSpace_generatorCoordinateAlgebra :
     ∀ j, ConnectedSpace (PrimeSpectrum (generatorCoordinateAlgebra k j)) := by
   intro j
