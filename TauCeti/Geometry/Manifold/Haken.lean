@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Real
-public import Mathlib.Topology.Maps.Basic
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 public import TauCeti.Geometry.Manifold.Basic
@@ -20,8 +18,8 @@ This file packages the manifold hypotheses used for the Haken condition in dimen
 specializations of the dimension-independent compact-connected manifold predicate, using
 Mathlib's Euclidean half-space models.  The relation `IsHakenSurfaceEmbedding` combines these with
 boundary preservation, a bicollar, and Tau Ceti's dimension-independent `IsIncompressible`
-predicate.  The closed specialization `IsClosedHakenSurfaceEmbedding` additionally records a
-global bicollar.
+predicate.  The closed specialization `IsClosedHakenSurfaceEmbedding` uses boundaryless
+Euclidean-space models and omits the boundary-preservation conjunct.
 
 The product-slice witness is the basic example: a continuous retraction onto the first factor
 makes the inclusion of a surface as a slice incompressible.  This is the standard elementary
@@ -296,9 +294,10 @@ theorem isClosedIncompressibleSurfaceEmbedding_prodMk {Y : Type*} [TopologicalSp
 /-- A **closed Haken surface embedding** is a closed incompressible embedding with the geometric
 conditions needed for the usual Haken witness: it is globally bicollared (hence locally flat and
 two-sided), and its source has a nontrivial fundamental group, excluding the spherical case. The
-separate `IsClosedIncompressibleSurfaceEmbedding` package intentionally remains the
-dimension-independent topological core; a Haken predicate may existentially quantify this stronger
-relation without admitting wild, one-sided, or spherical surfaces. -/
+dimension-independent topological core is `IsIncompressible`; the separate
+`IsClosedIncompressibleSurfaceEmbedding` package combines it with dimension-specific closed
+surface and ambient-manifold predicates. A Haken predicate may existentially quantify this
+stronger relation without admitting wild, one-sided, or spherical surfaces. -/
 def IsClosedHakenSurfaceEmbedding (f : C(S, M)) : Prop :=
   IsClosedIncompressibleSurfaceEmbedding f ∧
     IsBicollared f ∧ ∃ s : S, Nontrivial (FundamentalGroup S s)
