@@ -85,7 +85,7 @@ def IsCompactConnectedThreeManifold (M : Type*) [TopologicalSpace M]
 theorem isCompactConnectedSurface_iff
     [ChartedSpace (EuclideanHalfSpace 2) S] :
     IsCompactConnectedSurface S ↔
-      T2Space S ∧ SecondCountableTopology S ∧ IsManifold (𝓡∂ 2) ∞ S ∧
+      T2Space S ∧ SecondCountableTopology S ∧ IsManifold (𝓡∂ 2) 0 S ∧
         IsCompact (univ : Set S) ∧ IsConnected (univ : Set S) :=
   isCompactConnectedManifold_iff 2 S
 
@@ -94,14 +94,14 @@ theorem isCompactConnectedSurface_iff
 theorem isCompactConnectedThreeManifold_iff
     [ChartedSpace (EuclideanHalfSpace 3) M] :
     IsCompactConnectedThreeManifold M ↔
-      T2Space M ∧ SecondCountableTopology M ∧ IsManifold (𝓡∂ 3) ∞ M ∧
+      T2Space M ∧ SecondCountableTopology M ∧ IsManifold (𝓡∂ 3) 0 M ∧
         IsCompact (univ : Set M) ∧ IsConnected (univ : Set M) :=
   isCompactConnectedManifold_iff 3 M
 
 /-- The usual compactness, connectedness, separation, and countability typeclasses supply the
 compact-connected-surface predicate. -/
 theorem isCompactConnectedSurface (S : Type*) [TopologicalSpace S]
-    [ChartedSpace (EuclideanHalfSpace 2) S] [IsManifold (𝓡∂ 2) ∞ S]
+    [ChartedSpace (EuclideanHalfSpace 2) S] [IsManifold (𝓡∂ 2) 0 S]
     [T2Space S] [SecondCountableTopology S] [CompactSpace S] [ConnectedSpace S] :
     IsCompactConnectedSurface S :=
   isCompactConnectedManifold 2 S
@@ -109,19 +109,19 @@ theorem isCompactConnectedSurface (S : Type*) [TopologicalSpace S]
 /-- The usual compactness, connectedness, separation, and countability typeclasses supply the
 compact-connected-3-manifold predicate. -/
 theorem isCompactConnectedThreeManifold (M : Type*) [TopologicalSpace M]
-    [ChartedSpace (EuclideanHalfSpace 3) M] [IsManifold (𝓡∂ 3) ∞ M]
+    [ChartedSpace (EuclideanHalfSpace 3) M] [IsManifold (𝓡∂ 3) 0 M]
     [T2Space M] [SecondCountableTopology M] [CompactSpace M] [ConnectedSpace M] :
     IsCompactConnectedThreeManifold M :=
   isCompactConnectedManifold 3 M
 
 /-- A **closed connected surface** is a compact, connected, Hausdorff, second-countable,
-boundaryless smooth 2-manifold. The dimension is pinned by the Euclidean 2-space model. -/
+boundaryless topological 2-manifold. The dimension is pinned by the Euclidean 2-space model. -/
 def IsClosedConnectedSurface (S : Type*) [TopologicalSpace S]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] : Prop :=
   IsClosedConnectedManifold 2 S
 
 /-- A **closed connected 3-manifold** is a compact, connected, Hausdorff, second-countable,
-boundaryless smooth 3-manifold. -/
+boundaryless topological 3-manifold. -/
 def IsClosedConnectedThreeManifold (M : Type*) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] : Prop :=
   IsClosedConnectedManifold 3 M
@@ -132,7 +132,7 @@ connected surface. -/
 theorem isClosedConnectedSurface_iff
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] :
     IsClosedConnectedSurface S ↔
-      T2Space S ∧ SecondCountableTopology S ∧ IsManifold (𝓡 2) ∞ S ∧
+      T2Space S ∧ SecondCountableTopology S ∧ IsManifold (𝓡 2) 0 S ∧
         IsCompact (univ : Set S) ∧ IsConnected (univ : Set S) :=
   isClosedConnectedManifold_iff 2 S
 
@@ -142,14 +142,14 @@ connected 3-manifold. -/
 theorem isClosedConnectedThreeManifold_iff
     [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] :
     IsClosedConnectedThreeManifold M ↔
-      T2Space M ∧ SecondCountableTopology M ∧ IsManifold (𝓡 3) ∞ M ∧
+      T2Space M ∧ SecondCountableTopology M ∧ IsManifold (𝓡 3) 0 M ∧
         IsCompact (univ : Set M) ∧ IsConnected (univ : Set M) :=
   isClosedConnectedManifold_iff 3 M
 
 /-- The usual compactness, connectedness, separation, and countability typeclasses supply the
 closed-connected-surface predicate. -/
 theorem isClosedConnectedSurface (S : Type*) [TopologicalSpace S]
-    [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] [IsManifold (𝓡 2) ∞ S]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 2)) S] [IsManifold (𝓡 2) 0 S]
     [T2Space S] [SecondCountableTopology S] [CompactSpace S] [ConnectedSpace S] :
     IsClosedConnectedSurface S :=
   isClosedConnectedManifold 2 S
@@ -157,7 +157,7 @@ theorem isClosedConnectedSurface (S : Type*) [TopologicalSpace S]
 /-- The usual compactness, connectedness, separation, and countability typeclasses supply the
 closed-connected-3-manifold predicate. -/
 theorem isClosedConnectedThreeManifold (M : Type*) [TopologicalSpace M]
-    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] [IsManifold (𝓡 3) ∞ M]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] [IsManifold (𝓡 3) 0 M]
     [T2Space M] [SecondCountableTopology M] [CompactSpace M] [ConnectedSpace M] :
     IsClosedConnectedThreeManifold M :=
   isClosedConnectedManifold 3 M
