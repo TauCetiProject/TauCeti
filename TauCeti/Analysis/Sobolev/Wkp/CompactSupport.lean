@@ -37,40 +37,15 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- Forget the derivatives above first order in a higher-order Sobolev function. -/
-def firstOrder : (k : ℕ) → Wkp mu Omega p (k + 1) → W1p mu Omega p
-  | 0, u => u
-  | k + 1, u => firstOrder k (lowerOrder (k + 1) u)
-
-/-- The first-order part of a first-order Sobolev function is itself. -/
-@[simp] theorem firstOrder_zero (u : Wkp mu Omega p 1) : firstOrder 0 u = u := by
-  simp only [firstOrder]
-
-/-- Forgetting one derivative before taking the first-order part has no effect. -/
-@[simp] theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
-    firstOrder (k + 1) u = firstOrder k (lowerOrder (k + 1) u) := by
-  simp only [firstOrder]
-
-/-- Forgetting higher derivatives preserves the `Lᵖ` value. -/
-@[simp] theorem value_firstOrder (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
-    W1p.value (firstOrder k u) = value (k + 1) u := by
-  induction k with
-  | zero => exact (value_one u).symm
-  | succ k ih =>
-      calc
-        W1p.value (firstOrder (k + 1) u) =
-            value (k + 1) (lowerOrder (k + 1) u) := ih _
-        _ = value (k + 1 + 1) u := (value_succ (k + 1) u).symm
-
 /-- First-order projection commutes with whole-space mollification. -/
 theorem firstOrder_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) :
     firstOrder k (normedBumpL hp phi (k + 1) u) =
       W1p.normedBumpL hp phi (firstOrder k u) := by
   induction k with
-  | zero => simpa only [firstOrder] using congrArg (fun f => f u) (normedBumpL_one hp phi)
+  | zero => simpa only [firstOrder_zero] using congrArg (fun f => f u) (normedBumpL_one hp phi)
   | succ k ih =>
-      rw [firstOrder, lowerOrder_normedBumpL, ih, firstOrder]
+      rw [firstOrder_succ, lowerOrder_normedBumpL, ih, firstOrder_succ]
 
 /-- Mollification of a higher-order Sobolev function whose first-order jet has compact
 support is the image of a smooth compactly supported test function. -/
@@ -113,7 +88,8 @@ theorem mem_wkp0Submodule_top_of_firstOrder_ae_eq_zero (hp : p ≠ ∞)
       exact ofTestFunctionₗ_mem_wkp0Submodule (mu := mu) (Omega := (⊤ : Opens E))
         (p := p) (k + 1) psi)
 
-private theorem firstOrder_ae_eq_zero_of_value_ae_eq_zero
+/-- If the value vanishes almost everywhere off a compact set, so does its first-order jet. -/
+theorem firstOrder_ae_eq_zero_of_value_ae_eq_zero
     (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) {K : Set E} (hK : IsCompact K)
     (hu : ∀ᵐ x ∂(mu.restrict ((⊤ : Opens E) : Set E)), x ∉ K →
       value (k + 1) u x = 0) :
