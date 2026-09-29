@@ -38,6 +38,8 @@ localization from `ℤ` to `ℚ` and then by scalar extension from `ℚ` to `ℂ
   integral form and its flip passes to the extension.
 * `TauCeti.Hodge.integralFormBaseChange_conj`: the complex extension commutes with lattice-induced
   conjugation.
+* `TauCeti.Hodge.integralFormBaseChange_congr_integralEquivToComplex`: the complex extension is
+  compatible with transport of the integral form along a lattice equivalence.
 * `TauCeti.Hodge.integralFormBaseChange_nondegenerate`: the complex extension inherits
   nondegeneracy from the integral form.
 * `TauCeti.Hodge.integralFormBaseChange_prod`: scalar extension of a block-diagonal form is
@@ -133,6 +135,22 @@ theorem integralFormBaseChange_conj (hℂ : IsBaseChange ℂ ιℂ) (Q : LinearM
   | tmul v => simpa using integralFormBaseChange_conj_right hℂ Q v y
   | smul z x hx => simp [hx]
   | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂]
+
+/-- Complexification is compatible with transport of an integral form along a lattice
+equivalence `e`: the complexified transported form, evaluated on the complexifications of `x` and
+`y`, is the complexified form evaluated on `x` and `y`. -/
+@[simp]
+theorem integralFormBaseChange_congr_integralEquivToComplex {V' V'ℂ : Type*} [AddCommGroup V']
+    [AddCommGroup V'ℂ] [Module ℂ V'ℂ] {ι'ℂ : V' →ₗ[ℤ] V'ℂ} (hℂ : IsBaseChange ℂ ιℂ)
+    (h'ℂ : IsBaseChange ℂ ι'ℂ) (e : V ≃ₗ[ℤ] V') (Q : LinearMap.BilinForm ℤ V) (x y : Vℂ) :
+    integralFormBaseChange h'ℂ (LinearMap.BilinForm.congr e Q)
+        (integralEquivToComplex hℂ h'ℂ e x) (integralEquivToComplex hℂ h'ℂ e y) =
+      integralFormBaseChange hℂ Q x y := by
+  have h := integralFormBaseChange_unique hℂ Q
+    ((integralFormBaseChange h'ℂ (LinearMap.BilinForm.congr e Q)).compl₁₂
+      (integralEquivToComplex hℂ h'ℂ e).toLinearMap (integralEquivToComplex hℂ h'ℂ e).toLinearMap)
+    fun x y ↦ by simp [LinearMap.BilinForm.congr_apply]
+  exact LinearMap.congr_fun₂ h x y
 
 private theorem integralFormToRat_nondegenerate {Q : LinearMap.BilinForm ℤ V}
     (hQ : Q.Nondegenerate) : (Q.baseChange ℚ).Nondegenerate := by

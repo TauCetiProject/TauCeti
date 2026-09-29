@@ -193,6 +193,14 @@ theorem coe_isometryGroupEquivIsometryEquiv_symm (B : BilinForm R M) (e : B.Isom
 
 section Congr
 
+/-- An automorphism lies in `Aut(M, B)` exactly when transporting `B` along it returns `B`. -/
+theorem mem_isometryGroup_iff_congr_eq {e : M ≃ₗ[R] M} :
+    e ∈ isometryGroup B ↔ LinearMap.BilinForm.congr e B = B := by
+  rw [mem_isometryGroup_iff]
+  refine ⟨fun he => LinearMap.BilinForm.ext fun x y => ?_, fun he x y => ?_⟩
+  · simpa using (he (e.symm x) (e.symm y)).symm
+  · simpa using (LinearMap.congr_fun₂ he (e x) (e y)).symm
+
 /-- Conjugation by `e` carries `Aut(M, B)` onto `Aut(M', B ∘ e⁻¹)`. -/
 private theorem map_isometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M') :
     (isometryGroup B).map (LinearEquiv.autCongr e : _ →* _)

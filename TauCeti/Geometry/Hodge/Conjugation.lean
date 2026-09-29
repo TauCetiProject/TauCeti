@@ -56,6 +56,8 @@ models.
 * `TauCeti.Hodge.latticeConjugation`: the abstract map bundled as a `Conjugation`.
 * `TauCeti.Hodge.integralMapToComplex`: complexification of an integral linear map between abstract
   complexification models.
+* `TauCeti.Hodge.integralEquivToComplex`: complexification of an integral linear equivalence,
+  commuting with lattice-induced conjugation.
 
 The base-change design follows the discussion by Johan Commelin, Andrew Yang, Kevin Buzzard, and
 Joël Riou in the `#mathlib4` Zulip thread *Complexifications with a view towards Hodge theory*. The
@@ -711,6 +713,54 @@ theorem integralMapToComplex_commutes_conj (h₁ : IsBaseChange ℂ ι₁)
   | tmul x => simp
   | smul z x hx => simp [hx]
   | add x y hx hy => simp [hx, hy]
+
+/-- The complexification of a linear equivalence of integral modules between abstract
+complexification models: its two directions are the complexifications of `e` and of `e.symm`. -/
+noncomputable def integralEquivToComplex (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂)
+    (e : V₁ ≃ₗ[ℤ] V₂) : W₁ ≃ₗ[ℂ] W₂ :=
+  LinearEquiv.ofLinearMap (integralMapToComplex h₁ ι₂ e) (integralMapToComplex h₂ ι₁ e.symm)
+    (h₂.algHom_ext _ _ fun x ↦ by simp) (h₁.algHom_ext _ _ fun x ↦ by simp)
+
+/-- The complexification of a linear equivalence is, as a linear map, the complexification of the
+underlying integral map. -/
+theorem coe_integralEquivToComplex (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂)
+    (e : V₁ ≃ₗ[ℤ] V₂) :
+    (integralEquivToComplex h₁ h₂ e : W₁ →ₗ[ℂ] W₂) = integralMapToComplex h₁ ι₂ e :=
+  (rfl)
+
+/-- The complexification of a linear equivalence agrees with it on integral vectors. -/
+@[simp]
+theorem integralEquivToComplex_apply_ι (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂)
+    (e : V₁ ≃ₗ[ℤ] V₂) (x : V₁) : integralEquivToComplex h₁ h₂ e (ι₁ x) = ι₂ (e x) :=
+  integralMapToComplex_apply_ι h₁ ι₂ e x
+
+/-- The inverse of a complexified linear equivalence is the complexification of the inverse. -/
+@[simp]
+theorem integralEquivToComplex_symm (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂)
+    (e : V₁ ≃ₗ[ℤ] V₂) :
+    (integralEquivToComplex h₁ h₂ e).symm = integralEquivToComplex h₂ h₁ e.symm :=
+  (rfl)
+
+/-- Complexification sends the identity equivalence to the identity equivalence. -/
+@[simp]
+theorem integralEquivToComplex_refl (h₁ : IsBaseChange ℂ ι₁) :
+    integralEquivToComplex h₁ h₁ (LinearEquiv.refl ℤ V₁) = LinearEquiv.refl ℂ W₁ :=
+  LinearEquiv.toLinearMap_injective (h₁.algHom_ext _ _ fun x ↦ by simp)
+
+/-- Complexification preserves composition of linear equivalences. -/
+theorem integralEquivToComplex_trans (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂)
+    (h₃ : IsBaseChange ℂ ι₃) (e : V₁ ≃ₗ[ℤ] V₂) (f : V₂ ≃ₗ[ℤ] V₃) :
+    integralEquivToComplex h₁ h₃ (e.trans f) =
+      (integralEquivToComplex h₁ h₂ e).trans (integralEquivToComplex h₂ h₃ f) :=
+  LinearEquiv.toLinearMap_injective (h₁.algHom_ext _ _ fun x ↦ by simp)
+
+/-- The complexification of a linear equivalence commutes with lattice-induced conjugation. -/
+@[simp]
+theorem integralEquivToComplex_commutes_conj (h₁ : IsBaseChange ℂ ι₁)
+    (h₂ : IsBaseChange ℂ ι₂) (e : V₁ ≃ₗ[ℤ] V₂) (x : W₁) :
+    integralEquivToComplex h₁ h₂ e (latticeConj h₁ x) =
+      latticeConj h₂ (integralEquivToComplex h₁ h₂ e x) :=
+  integralMapToComplex_commutes_conj h₁ h₂ e x
 
 end IntegralMaps
 
