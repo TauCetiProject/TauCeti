@@ -35,10 +35,11 @@ variable {n : ℕ}
 
 /-- On an injective Schwarz--Christoffel boundary, two distinct
 bounded sides can meet only when consecutive, at their common finite vertex. -/
-theorem schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injective
+theorem schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injOn
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l)
-    (hinj : Function.Injective (schwarzChristoffelBoundary a e z₀))
+    (hinj : InjOn (schwarzChristoffelBoundary a e z₀)
+      (Icc (a 0) (a (Fin.last (n + 1)))))
     (i j : Fin (n + 1)) (hij : i < j)
     (z : ℂ) (hzi : z ∈ (schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc)
     (hzj : z ∈ (schwarzChristoffelPolygon a e z₀).edgeSet ℝ j.castSucc.castSucc) :
@@ -56,7 +57,10 @@ theorem schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_inject
   rw [← hedges j] at hzj
   obtain ⟨x, hx, rfl⟩ := hzi
   obtain ⟨y, hy, hxy⟩ := hzj
-  have hxeq : x = y := hinj hxy.symm
+  have hxeq : x = y := hinj
+    ⟨(ha.monotone (Fin.zero_le _)).trans hx.1, hx.2.trans (ha.monotone (Fin.le_last _))⟩
+    ⟨(ha.monotone (Fin.zero_le _)).trans hy.1, hy.2.trans (ha.monotone (Fin.le_last _))⟩
+    hxy.symm
   have hindex : j.val ≤ i.val + 1 := by
     have h : a j.castSucc ≤ a i.succ := by rw [← hxeq] at hy; exact hy.1.trans hx.2
     have h' : j.castSucc ≤ i.succ := (ha.le_iff_le).mp h
@@ -175,8 +179,8 @@ theorem schwarzChristoffelCompactifiedBoundary_injective_iff_edge_intersections
   · intro hinj
     have hB := ((schwarzChristoffelCompactifiedBoundary_injective_iff a e z₀).mp hinj).1
     exact ⟨fun i j hij z hzi hzj =>
-      schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injective
-        a e z₀ ha hfinite hB
+      schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injOn
+        a e z₀ ha hfinite hB.injOn
         i j hij z hzi hzj,
       fun i z hzi hzleft =>
         schwarzChristoffelPolygon_bounded_edgeSet_last_eq_first_vertex_of_injective
