@@ -53,6 +53,9 @@ the representation, `TauCeti.TriangleGroup.range_toPerm`).
 * `TauCeti.TriangleGroup.coe_regularIsoClassEquiv_mk` and
   `TauCeti.TriangleGroup.coe_regularIsoClassEquiv_symm_apply`: the two directions of
   `TauCeti.TriangleGroup.regularIsoClassEquiv`.
+* `TauCeti.TriangleGroup.kerLift_automorphismGroupMulEquivQuotientKer_apply`: the coset that
+  `TauCeti.TriangleGroup.automorphismGroupMulEquivQuotientKer` assigns to an automorphism `τ` moves
+  the sheet `0` to `τ 0`.
 
 ## References
 
@@ -306,7 +309,9 @@ theorem coe_regularIsoClassEquiv_mk [NeZero n] (h : IsoClass.mk t ∈ regularIso
 kernel of its representation. This kernel is the normal subgroup selected by
 `TauCeti.TriangleGroup.regularIsoClassEquiv`, by
 `TauCeti.TriangleGroup.coe_regularIsoClassEquiv_mk`. The opposite occurs because automorphisms act
-on the right of the regular monodromy action. -/
+on the right of the regular monodromy action. An automorphism `τ` goes to the coset of the elements
+moving the sheet `0` to `τ 0`
+(`TauCeti.TriangleGroup.kerLift_automorphismGroupMulEquivQuotientKer_apply`). -/
 noncomputable def automorphismGroupMulEquivQuotientKer (ht : t.IsRegular) :
     t.automorphismGroup ≃* (TriangleGroup a b c ⧸ (toPerm t ha hb hc).ker)ᵐᵒᵖ := by
   let i : Fin n := ⟨0, Nat.pos_of_ne_zero ht.isConnected.ne_zero⟩
@@ -315,6 +320,28 @@ noncomputable def automorphismGroupMulEquivQuotientKer (ht : t.IsRegular) :
       (MulEquiv.subgroupCongr (range_toPerm t ha hb hc))
   exact (PermutationTriple.automorphismGroupMulEquivMonodromyGroupOpposite ht i).trans <|
     (MulEquiv.op quotientKerMulEquivMonodromyGroup).symm
+
+/-- The characteristic property of `TauCeti.TriangleGroup.automorphismGroupMulEquivQuotientKer`:
+the coset that an automorphism `τ` goes to moves the sheet `0` to `τ 0`. -/
+@[simp]
+theorem kerLift_automorphismGroupMulEquivQuotientKer_apply (ht : t.IsRegular) (h0 : 0 < n)
+    (τ : t.automorphismGroup) :
+    QuotientGroup.kerLift (toPerm t ha hb hc)
+        (automorphismGroupMulEquivQuotientKer t ha hb hc ht τ).unop ⟨0, h0⟩ =
+      (τ : Perm (Fin n)) ⟨0, h0⟩ := by
+  have hq (x : TriangleGroup a b c ⧸ (toPerm t ha hb hc).ker) :
+      (((QuotientGroup.quotientKerEquivRange (toPerm t ha hb hc)).trans
+        (MulEquiv.subgroupCongr (range_toPerm t ha hb hc)) x : t.monodromyGroup) :
+          Perm (Fin n)) = QuotientGroup.kerLift (toPerm t ha hb hc) x :=
+    -- The first isomorphism theorem sends the coset of `g` to `toPerm t ha hb hc g` by definition.
+    QuotientGroup.induction_on x fun _ ↦ rfl
+  rw [automorphismGroupMulEquivQuotientKer, MulEquiv.trans_apply, MulEquiv.op_apply_symm_apply,
+    Function.comp_apply, Function.comp_apply, MulOpposite.unop_op, ← hq,
+    MulEquiv.apply_symm_apply]
+  simpa only [PermutationTriple.automorphismGroupMulEquivMonodromyGroupOpposite,
+    MulEquiv.coe_mk, Equiv.trans_apply, MulOpposite.opEquiv_apply, MulOpposite.unop_op,
+    Subgroup.smul_def, Perm.smul_def] using
+    PermutationTriple.automorphismGroupEquivMonodromyGroup_smul ht ⟨0, h0⟩ τ
 
 end NormalSubgroup
 
