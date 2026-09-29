@@ -32,7 +32,7 @@ as a `ℤ_p`-module is the torsion of the underlying multiplicative group: being
   `TauCeti.pPowerRootsOfUnity p L`.
 * `TauCeti.padicCompletionUnitsOf_injOn_pPowerRootsOfUnity`: finitely many `p`-power roots of
   unity embed into `A(L)`.
-* `TauCeti.card_torsion_padicCompletionUnits`: the torsion of `A(L)` has order `q(L)`.
+* `TauCeti.natCard_torsion_padicCompletionUnits`: the torsion of `A(L)` has order `q(L)`.
 * `TauCeti.mem_torsion_padicCompletionUnits_iff`: the `ℤ_p`-torsion submodule of `A(L)` is the
   additive form of its group torsion.
 
@@ -149,7 +149,7 @@ theorem padicCompletionUnitsOf_injOn_pPowerRootsOfUnity (h : Finite (pPowerRoots
 
 /-- When `L` has only finitely many `p`-power roots of unity, the torsion of `A(L)` has order
 `q(L)`, the order of the group of `p`-power roots of unity of `L`. -/
-theorem card_torsion_padicCompletionUnits (h : Finite (pPowerRootsOfUnity p L)) :
+theorem natCard_torsion_padicCompletionUnits (h : Finite (pPowerRootsOfUnity p L)) :
     Nat.card (CommGroup.torsion ↑(padicCompletionUnits p L)) = localRootOfUnityOrder p L h := by
   rw [torsion_padicCompletionUnits, localRootOfUnityOrder_def, ← SetLike.coe_sort_coe,
     Subgroup.coe_map,
@@ -160,7 +160,7 @@ theorem card_torsion_padicCompletionUnits (h : Finite (pPowerRootsOfUnity p L)) 
 theorem finite_torsion_padicCompletionUnits (h : Finite (pPowerRootsOfUnity p L)) :
     Finite (CommGroup.torsion ↑(padicCompletionUnits p L)) :=
   Nat.finite_of_card_ne_zero <| by
-    rw [card_torsion_padicCompletionUnits p L h]
+    rw [natCard_torsion_padicCompletionUnits p L h]
     exact (localRootOfUnityOrder_pos p L h).ne'
 
 /-- The `ℤ_p`-torsion submodule of `A(L)` is the additive form of its group torsion: an element
