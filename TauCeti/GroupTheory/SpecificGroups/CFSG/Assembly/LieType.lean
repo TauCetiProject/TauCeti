@@ -41,8 +41,6 @@ The construction follows the family modules it imports.
   the parameter to the odd half-Frobenius exponent.
 * `TauCeti.ValidLieTypeIndex.steinberg_steinberg_of_usesHalfFrobenius`: on half-Frobenius
   families, the Steinberg endomorphism squares to the `q`-power Frobenius.
-* `TauCeti.ValidLieTypeIndex.FixedPoints_eq_of_not_usesHalfFrobenius`: on ordinary and
-  graph-twisted families, the fixed subgroup agrees with `GraphTwistedIndex.FixedPoints`.
 * `TauCeti.ValidLieTypeIndex.Group_eq_of_not_usesHalfFrobenius`: on ordinary and graph-twisted
   families, the candidate group agrees with `GraphTwistedIndex.Group`.
 
@@ -134,16 +132,6 @@ abbrev FixedPoints (d : ValidLieTypeIndex) : Type := ↥(fixedSubgroup d.steinbe
 No finiteness or simplicity instance is assumed or supplied. -/
 abbrev Group (d : ValidLieTypeIndex) : Type := FixedPointCandidate d.steinberg
 
-/-- On the thirteen ordinary or graph-twisted families, the fixed subgroup of the Steinberg
-endomorphism is that of the existing graph-twisted assembly. -/
-theorem FixedPoints_eq_of_not_usesHalfFrobenius (d : ValidLieTypeIndex)
-    (h : ¬ d.1.UsesHalfFrobenius) : d.FixedPoints = GraphTwistedIndex.FixedPoints ⟨d, h⟩ := by
-  obtain ⟨d, hv⟩ := d
-  cases d
-  all_goals first
-  | rfl
-  | exact absurd (by simp [LieTypeIndex.usesHalfFrobenius_iff]) h
-
 /-- On the thirteen ordinary or graph-twisted families, the assembled candidate is the
 existing graph-twisted assembly's candidate. -/
 theorem Group_eq_of_not_usesHalfFrobenius (d : ValidLieTypeIndex)
@@ -153,8 +141,6 @@ theorem Group_eq_of_not_usesHalfFrobenius (d : ValidLieTypeIndex)
   all_goals first
   | rfl
   | exact absurd (by simp [LieTypeIndex.usesHalfFrobenius_iff]) h
-
-example (d : ValidLieTypeIndex) : _root_.Group d.FixedPoints := inferInstance
 
 example (d : ValidLieTypeIndex) : _root_.Group d.Group := inferInstance
 
