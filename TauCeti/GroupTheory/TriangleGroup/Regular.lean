@@ -71,79 +71,6 @@ public section
 
 namespace TauCeti
 
-namespace PermutationTriple
-
-variable {n : ℕ} {t : PermutationTriple n}
-
-private noncomputable def automorphismGroupEvalEquiv
-    (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃ Fin n :=
-  Equiv.ofBijective (fun τ : t.automorphismGroup ↦ τ • i) ⟨by
-      intro τ σ h
-      apply Subtype.ext
-      have hfix : (((σ⁻¹ * τ : t.automorphismGroup) : Perm (Fin n))) i = i := by
-        dsimp only at h
-        rw [Subgroup.smul_def, Subgroup.smul_def, Perm.smul_def, Perm.smul_def] at h
-        rw [Subgroup.coe_mul, Subgroup.coe_inv, Perm.mul_apply, h, Perm.inv_def, symm_apply_apply]
-      have hone : (σ⁻¹ * τ : t.automorphismGroup) = 1 := Subtype.ext <|
-        eq_one_of_mem_automorphismGroup_of_apply_eq ht.isConnected.isPretransitive
-          (σ⁻¹ * τ).2 hfix
-      exact congrArg Subtype.val <| calc
-        τ = σ * (σ⁻¹ * τ) := by simp
-        _ = σ := by rw [hone, mul_one],
-    by
-      intro j
-      exact ht.isPretransitive.exists_smul_eq i j⟩
-
-private noncomputable def monodromyGroupEvalEquiv
-    (ht : t.IsRegular) (i : Fin n) : t.monodromyGroup ≃ Fin n :=
-  Equiv.ofBijective (fun g : t.monodromyGroup ↦ g • i) ⟨by
-      let _ : IsCancelSMul t.monodromyGroup (Fin n) := ht.isCancelSMul
-      exact fun g h hgh ↦ IsCancelSMul.right_cancel g h i hgh,
-    by
-      intro j
-      exact ht.isConnected.isPretransitive.exists_smul_eq i j⟩
-
-private theorem automorphismGroupEvalEquiv_apply (ht : t.IsRegular) (i : Fin n)
-    (τ : t.automorphismGroup) : automorphismGroupEvalEquiv ht i τ = τ • i :=
-  Equiv.ofBijective_apply _ _ _
-
-private theorem monodromyGroupEvalEquiv_apply (ht : t.IsRegular) (i : Fin n)
-    (g : t.monodromyGroup) : monodromyGroupEvalEquiv ht i g = g • i :=
-  Equiv.ofBijective_apply _ _ _
-
-private noncomputable def automorphismGroupEquivMonodromyGroup
-    (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃ t.monodromyGroup :=
-  (automorphismGroupEvalEquiv ht i).trans (monodromyGroupEvalEquiv ht i).symm
-
-private theorem automorphismGroupEquivMonodromyGroup_smul
-    (ht : t.IsRegular) (i : Fin n) (τ : t.automorphismGroup) :
-    automorphismGroupEquivMonodromyGroup ht i τ • i = τ • i := by
-  rw [automorphismGroupEquivMonodromyGroup, Equiv.trans_apply, ← monodromyGroupEvalEquiv_apply ht,
-    Equiv.apply_symm_apply, automorphismGroupEvalEquiv_apply]
-
-private noncomputable def automorphismGroupMulEquivMonodromyGroupOpposite
-    (ht : t.IsRegular) (i : Fin n) : t.automorphismGroup ≃* t.monodromyGroupᵐᵒᵖ where
-  toEquiv := (automorphismGroupEquivMonodromyGroup ht i).trans MulOpposite.opEquiv
-  map_mul' τ σ := by
-    apply MulOpposite.unop_injective
-    simp only [Equiv.toFun_as_coe, Equiv.trans_apply, MulOpposite.opEquiv_apply,
-      MulOpposite.unop_mul, MulOpposite.unop_op]
-    let _ : IsCancelSMul t.monodromyGroup (Fin n) := ht.isCancelSMul
-    apply IsCancelSMul.right_cancel _ _ i
-    rw [automorphismGroupEquivMonodromyGroup_smul, mul_smul, mul_smul,
-      automorphismGroupEquivMonodromyGroup_smul]
-    rw [← automorphismGroupEquivMonodromyGroup_smul ht i σ]
-    simp only [Subgroup.smul_def, Perm.smul_def]
-    have hτ : (τ : Perm (Fin n)) ∈
-        Subgroup.centralizer (t.monodromyGroup : Set (Perm (Fin n))) := by
-      rw [← automorphismGroup_eq_centralizer_monodromyGroup]
-      exact τ.2
-    simpa only [Perm.mul_apply] using DFunLike.congr_fun (Subgroup.mem_centralizer_iff.mp hτ
-      (automorphismGroupEquivMonodromyGroup ht i σ)
-      (automorphismGroupEquivMonodromyGroup ht i σ).2).symm i
-
-end PermutationTriple
-
 namespace TriangleGroup
 
 variable {a b c n : ℕ} (t : PermutationTriple n) (ha : t.σ0 ^ a = 1) (hb : t.σ1 ^ b = 1)
@@ -338,10 +265,8 @@ theorem kerLift_automorphismGroupMulEquivQuotientKer_apply (ht : t.IsRegular) (h
   rw [automorphismGroupMulEquivQuotientKer, MulEquiv.trans_apply, MulEquiv.op_apply_symm_apply,
     Function.comp_apply, Function.comp_apply, MulOpposite.unop_op, ← hq,
     MulEquiv.apply_symm_apply]
-  simpa only [PermutationTriple.automorphismGroupMulEquivMonodromyGroupOpposite,
-    MulEquiv.coe_mk, Equiv.trans_apply, MulOpposite.opEquiv_apply, MulOpposite.unop_op,
-    Subgroup.smul_def, Perm.smul_def] using
-    PermutationTriple.automorphismGroupEquivMonodromyGroup_smul ht ⟨0, h0⟩ τ
+  simpa only [Subgroup.smul_def, Perm.smul_def] using
+    PermutationTriple.unop_automorphismGroupMulEquivMonodromyGroupOpposite_smul ht ⟨0, h0⟩ τ
 
 end NormalSubgroup
 
