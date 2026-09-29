@@ -154,16 +154,7 @@ theorem mk_neg (A : SL(2, S)) : ((-A : SL(2, S)) : PSL(2, S)) = A := by
 
 end Matrix.ProjectiveSpecialLinearGroup
 
-namespace TauCeti
-
-/-- The image of `ModularGroup.S` (the matrix `!![0, -1; 1, 0]`, representing the Möbius map
-`z ↦ -1/z`) in `PSL(2, ℝ)`. -/
-noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ))
-
--- The body of `pslS` is not `@[expose]`d, so modules importing this one rewrite through this
--- equation (e.g. `PSL/Action.lean`'s `pslS_smul`) rather than unfolding the definition.
-/-- `pslS` is the image of `ModularGroup.S` under `psl2zToPSL2R`. -/
-theorem pslS_def : pslS = psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ)) := by rfl
+namespace ModularGroup
 
 /-- `ModularGroup.S` is its own inverse in `PSL(2, ℤ)`. -/
 theorem S_inv_PSL2Z :
@@ -177,10 +168,23 @@ theorem S_mul_S_PSL2Z :
     (_root_.ModularGroup.S : PSL(2, ℤ)) * (_root_.ModularGroup.S : PSL(2, ℤ)) = 1 :=
   inv_eq_iff_mul_eq_one.mp S_inv_PSL2Z
 
+end ModularGroup
+
+namespace TauCeti
+
+/-- The image of `ModularGroup.S` (the matrix `!![0, -1; 1, 0]`, representing the Möbius map
+`z ↦ -1/z`) in `PSL(2, ℝ)`. -/
+noncomputable def pslS : PSL(2, ℝ) := psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ))
+
+-- The body of `pslS` is not `@[expose]`d, so modules importing this one rewrite through this
+-- equation (e.g. `PSL/Action.lean`'s `pslS_smul`) rather than unfolding the definition.
+/-- `pslS` is the image of `ModularGroup.S` under `psl2zToPSL2R`. -/
+theorem pslS_def : pslS = psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ)) := by rfl
+
 /-- `pslS` squares to the identity of `PSL(2, ℝ)`. -/
 @[simp]
 theorem pslS_mul_self : pslS * pslS = 1 := by
-  rw [pslS, ← map_mul, S_mul_S_PSL2Z, map_one]
+  rw [pslS, ← map_mul, _root_.ModularGroup.S_mul_S_PSL2Z, map_one]
 
 /-- `pslS` is its own inverse. -/
 @[simp]
