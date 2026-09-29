@@ -43,6 +43,7 @@ theorem tensorInvariant_hom_apply (M : Rep k G) {N : Rep k G} (y : N.ρ.invarian
   (rfl)
 
 /-- Restricting the map `m ↦ m ⊗ y` gives the map defined by the restricted invariant. -/
+@[simp]
 theorem resMap_tensorInvariant (M N : Rep k G) (H : Subgroup G)
     (y : N.ρ.invariants) :
     Rep.resMap H.subtype (tensorInvariant M y) =
