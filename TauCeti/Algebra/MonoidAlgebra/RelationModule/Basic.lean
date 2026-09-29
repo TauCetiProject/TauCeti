@@ -34,6 +34,8 @@ generator rank of its absolute Galois group (NSW (7.4.1)) is its analogue over `
 * `TauCeti.MonoidAlgebra.relationModule_def`: the relation module as the kernel of `e_i ↦ g_i - 1`.
 * `TauCeti.MonoidAlgebra.mem_relationModule_iff`: membership as the relation `∑ c_i (g_i - 1) = 0`.
 * `TauCeti.MonoidAlgebra.range_linearCombination_le_ker_augmentation`: the map lands in `I_G`.
+* `TauCeti.MonoidAlgebra.mapRingHom_linearCombination`: the map commutes with changing
+  coefficients along a ring homomorphism.
 * `TauCeti.MonoidAlgebra.range_linearCombination_eq_ker_augmentation`: the map is onto `I_G` when
   the `g_i` generate `G`, and `range_linearCombination_eq_ker_augmentation_iff` is the converse
   over a nontrivial ring.
@@ -90,6 +92,17 @@ theorem range_linearCombination_le_ker_augmentation (g : ι → G) :
       RingHom.ker (augmentation R G) := by
   rw [Fintype.range_linearCombination, ker_augmentation_eq_span]
   exact Submodule.span_mono (Set.range_subset_iff.2 fun i ↦ ⟨g i, rfl⟩)
+
+/-- Changing coefficients along a ring homomorphism `f : R →+* S` commutes with the map
+`e_i ↦ g_i - 1`. -/
+@[simp]
+theorem mapRingHom_linearCombination {S : Type*} [Ring S] (f : R →+* S) (g : ι → G)
+    (c : ι → MonoidAlgebra R G) :
+    mapRingHom G f
+        (Fintype.linearCombination (MonoidAlgebra R G) (fun i ↦ single (g i) (1 : R) - 1) c) =
+      Fintype.linearCombination (MonoidAlgebra S G) (fun i ↦ single (g i) (1 : S) - 1)
+        fun i ↦ mapRingHom G f (c i) := by
+  simp [Fintype.linearCombination_apply, mapRingHom_single]
 
 end Monoid
 

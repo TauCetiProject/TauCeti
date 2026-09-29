@@ -71,7 +71,9 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   identification of the isometries of a quadratic form with the isometries of its polar bilinear
   form. At the level of groups this is
   `TauCeti.QuadraticMap.orthogonalGroup_eq_isometryGroup_polarBilin`: `O(Q)` is the isometry group
-  `TauCeti.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it.
+  `TauCeti.BilinForm.isometryGroup` of `Q.polarBilin`, so the bilinear-form API applies to it. Its
+  determinant-one counterpart is
+  `TauCeti.QuadraticMap.specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin`.
 * `TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv`: the underlying set of the orthogonal
   group is Mathlib's type of self-isometries `Q.IsometryEquiv Q`. This is the compatibility with the
   Mathlib vocabulary; the point of `orthogonalGroup` is the group structure, which
@@ -349,6 +351,41 @@ instance specialOrthogonalGroup_normal (Q : QuadraticMap R M N) :
     ((specialOrthogonalGroup Q).subgroupOf (orthogonalGroup Q)).Normal := by
   rw [specialOrthogonalGroup, Subgroup.inf_subgroupOf_left]
   infer_instance
+
+section PolarBilin
+
+variable (Q : QuadraticForm R M)
+
+/-- When multiplication by two is injective, the special orthogonal group of a quadratic form is
+the determinant-one isometry group of its polar bilinear form. This is the determinant-one
+counterpart of `orthogonalGroup_eq_isometryGroup_polarBilin`. -/
+theorem specialOrthogonalGroup_eq_specialIsometryGroup_polarBilin
+    (h2 : IsSMulRegular R (2 : R)) :
+    specialOrthogonalGroup Q = LinearMap.BilinForm.specialIsometryGroup Q.polarBilin := by
+  ext g
+  rw [mem_specialOrthogonalGroup_iff, LinearMap.BilinForm.mem_specialIsometryGroup_iff,
+    orthogonalGroup_eq_isometryGroup_polarBilin h2]
+
+/-- The canonical group isomorphism between `SO(Q)` and the determinant-one isometry group of the
+polar bilinear form. -/
+noncomputable def specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin
+    (h2 : IsSMulRegular R (2 : R)) :
+    specialOrthogonalGroup Q ≃* LinearMap.BilinForm.specialIsometryGroup Q.polarBilin :=
+  MulEquiv.subgroupCongr (specialOrthogonalGroup_eq_specialIsometryGroup_polarBilin Q h2)
+
+@[simp]
+theorem coe_specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin_apply
+    (h2 : IsSMulRegular R (2 : R)) (g : specialOrthogonalGroup Q) :
+    (specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin Q h2 g : M ≃ₗ[R] M) = g := by
+  simp [specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin]
+
+@[simp]
+theorem coe_specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin_symm_apply
+    (h2 : IsSMulRegular R (2 : R)) (g : LinearMap.BilinForm.specialIsometryGroup Q.polarBilin) :
+    ((specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin Q h2).symm g : M ≃ₗ[R] M) = g := by
+  simp [specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin]
+
+end PolarBilin
 
 end Det
 

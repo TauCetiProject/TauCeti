@@ -23,8 +23,9 @@ than as a conjugacy.
 
 A degree read as a sum of local multiplicities over a whole fibre rests on the local statement
 recorded here: close to a point where the multiplicity of `f` is positive, every nearby fibre is
-finite, nonempty, and carries exactly the multiplicity of the base point. Nonconstancy of `f` near
-`x` is therefore spelled as the hypothesis `¬ EventuallyConst f (𝓝 x)`, which says that
+finite, nonempty, and carries exactly the multiplicity of the base point, and the neighbourhood of
+the point on which it is counted may be taken inside any prescribed neighbourhood. Nonconstancy of
+`f` near `x` is therefore spelled as the hypothesis `¬ EventuallyConst f (𝓝 x)`, which says that
 `localMultiplicity f x` is positive, so the count is a positive integer.
 
 ## Main declarations
@@ -134,15 +135,16 @@ private theorem exists_radius_of_notEventuallyConst
   · exact hA₁ (hdist1 z hz)
 
 /-- The chart form of `TauCeti.RiemannSurface.exists_nhds_localMultiplicity_fiber_sum`, read in
-arbitrary charts `e` at `x` and `e'` at `f x` of the maximal atlases. The public statement
-instantiates them with the preferred charts. -/
+arbitrary charts `e` at `x` and `e'` at `f x` of the maximal atlases, with the neighbourhood `U`
+produced inside the neighbourhood `Ω₀` of `x` on which `f` is differentiable. The public statement
+instantiates the charts with the preferred charts and `Ω₀` with the prescribed neighbourhood. -/
 private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
     [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
     (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (he' : e' ∈ maximalAtlas 𝓘(ℂ) 1 Y)
-    (hx : x ∈ e.source) (hfx : f x ∈ e'.source)
-    (hDiff : ∃ Ω ∈ 𝓝 x, ∀ y ∈ Ω, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hx : x ∈ e.source) (hfx : f x ∈ e'.source) {Ω₀ : Set X} (hΩ₀mem : Ω₀ ∈ 𝓝 x)
+    (hΩ₀ : ∀ y ∈ Ω₀, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
     (hne : ¬ EventuallyConst f (𝓝 x)) :
-    ∃ U ∈ 𝓝 x, ∃ V ∈ 𝓝 (f x),
+    ∃ U ∈ 𝓝 x, U ⊆ Ω₀ ∧ ∃ V ∈ 𝓝 (f x),
       f ⁻¹' {f x} ∩ U = {x} ∧
       ∀ y' ∈ V,
         (f ⁻¹' {y'} ∩ U) ≠ ∅ ∧
@@ -160,7 +162,6 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
   -- `¬ EventuallyConst f (𝓝 x)` says the count is positive by `localMultiplicity_pos_iff`, so
   -- each such fibre is nonempty.
   -- The neighbourhood on which `f` is differentiable, taken open.
-  obtain ⟨Ω₀, hΩ₀mem, hΩ₀⟩ := hDiff
   have hΩopen : IsOpen (interior Ω₀) := isOpen_interior
   have hΩmem : interior Ω₀ ∈ 𝓝 x :=
     hΩopen.mem_nhds (mem_interior_iff_mem_nhds.2
@@ -242,8 +243,10 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
         simp
       · rw [hb]
         exact (Set.mem_image e.symm _ _).2 ⟨e x, Metric.mem_ball_self hr, e.left_inv hx⟩
-  refine ⟨e.symm '' Metric.ball (e x) r, hU,
+  refine ⟨e.symm '' Metric.ball (e x) r, hU, ?_,
     (e' : Y → ℂ) ⁻¹' Metric.ball (e' (f x)) δ ∩ e'.source, hV, hcenter, ?_⟩
+  · rintro _ ⟨z, hz, rfl⟩
+    exact interior_subset (hcoord z hz).1
   intro y' hy'
   by_cases hcentral : y' = f x
   · -- The central fibre inside the chart neighbourhood is the singleton `{x}`.
@@ -370,30 +373,32 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
       exact Set.nonempty_iff_ne_empty.1 ⟨x', hx'⟩
 
 /-- **The local fibre count.** Let `f : X → Y` be differentiable at every point of a neighbourhood
-of `x` and not constant near `x`. There are neighbourhoods `U` of `x` and `V` of `f x` such that
-`x` is the only preimage of `f x` inside `U`, and for every `y' ∈ V` the fibre of `y'` meets `U`,
-is finite there, and the sum of the local multiplicities over it is exactly
-`localMultiplicity f x`.
+of `x` and not constant near `x`, and let `W` be any neighbourhood of `x`. There are
+neighbourhoods `U ⊆ W` of `x` and `V` of `f x` such that `x` is the only preimage of `f x` inside
+`U`, and for every `y' ∈ V` the fibre of `y'` meets `U`, is finite there, and the sum of the local
+multiplicities over it is exactly `localMultiplicity f x`.
 
 This is the counting consequence of the local normal form `z ↦ z ^ m` of a nonconstant
 holomorphic map, read without choosing a conjugacy: the multiplicity of `f` at `x` is the number
-of preimages of a nearby value, counted with multiplicities. -/
+of preimages of a nearby value, counted with multiplicities. That `U` can be taken inside any
+prescribed neighbourhood is what makes the counts at the finitely many points of a fibre combine
+into a count over the whole fibre. -/
 theorem exists_nhds_localMultiplicity_fiber_sum
     [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
     (hDiff : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
-    (hne : ¬ EventuallyConst f (𝓝 x)) :
-    ∃ U ∈ 𝓝 x, ∃ V ∈ 𝓝 (f x),
+    (hne : ¬ EventuallyConst f (𝓝 x)) {W : Set X} (hW : W ∈ 𝓝 x) :
+    ∃ U ∈ 𝓝 x, U ⊆ W ∧ ∃ V ∈ 𝓝 (f x),
       f ⁻¹' {f x} ∩ U = {x} ∧
       ∀ y' ∈ V,
         (f ⁻¹' {y'} ∩ U) ≠ ∅ ∧
         (f ⁻¹' {y'} ∩ U).Finite ∧
-        (∑ᶠ x' ∈ f ⁻¹' {y'} ∩ U, localMultiplicity f x') = localMultiplicity f x :=
-  exists_nhds_localMultiplicity_fiber_sum_of_charts
-    (X := X) (Y := Y) (f := f) (x := x) (e := chartAt ℂ x) (e' := chartAt ℂ (f x))
+        (∑ᶠ x' ∈ f ⁻¹' {y'} ∩ U, localMultiplicity f x') = localMultiplicity f x := by
+  obtain ⟨U, hU, hUW, h⟩ := exists_nhds_localMultiplicity_fiber_sum_of_charts
+    (e := chartAt ℂ x) (e' := chartAt ℂ (f x))
     (he := chart_mem_maximalAtlas x) (he' := chart_mem_maximalAtlas (f x))
     (hx := mem_chart_source ℂ x) (hfx := mem_chart_source ℂ (f x))
-    (hDiff := ⟨{y | MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y}, hDiff, fun _ hy => hy⟩)
-    (hne := hne)
+    (hΩ₀mem := inter_mem hDiff hW) (hΩ₀ := fun _ hy => hy.1) (hne := hne)
+  exact ⟨U, hU, hUW.trans inter_subset_right, h⟩
 
 end TauCeti.RiemannSurface
 
