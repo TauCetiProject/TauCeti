@@ -61,9 +61,10 @@ theorem single_sub_one_ne_zero [Nontrivial R] {g : G} (hg : g ≠ 1) :
 
 namespace MonoidAlgebra
 
-variable {R : Type*} [CommRing R] {M : Type*}
+variable {R : Type*} [CommSemiring R] {M : Type*}
 
 /-- An element of `R[M]` lies in `I • R[M]` exactly when all of its coefficients lie in `I`. -/
+@[simp]
 theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
     x ∈ I • (⊤ : Submodule R (MonoidAlgebra R M)) ↔ ∀ m, x.coeff m ∈ I := by
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
@@ -76,6 +77,7 @@ theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
       Submodule.smul_mem_smul (hx m) (Submodule.mem_top (x := MonoidAlgebra.single m (1 : R)))
 
 /-- Applying a ring homomorphism `f` to the coefficients kills exactly `ker f • R[M]`. -/
+@[simp]
 theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* S)
     {x : MonoidAlgebra R M} :
     MonoidAlgebra.mapRingHom M f x = 0 ↔

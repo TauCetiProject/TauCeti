@@ -38,8 +38,8 @@ a finitely generated `R`-module, and hence bijective. No completeness of `R` is 
 
 * `TauCeti.MonoidAlgebra.exists_linearEquiv_linearCombination_comp_eq`: the presentation maps
   `e_i ↦ g_i - 1` and `e_i ↦ g'_i - 1` of two generating families differ by an automorphism.
-* `TauCeti.MonoidAlgebra.relationModule_linearEquiv_of_closure`: two generating families of the
-  same size have isomorphic relation modules.
+* `TauCeti.MonoidAlgebra.nonempty_relationModule_linearEquiv_of_closure`: two generating families
+  of the same size have isomorphic relation modules.
 
 ## References
 
@@ -189,7 +189,7 @@ theorem exists_linearEquiv_linearCombination_comp_eq {g g' : ι → G}
 /-- **The relation module depends only on the number of generators.** Two generating families of a
 finite group `G`, indexed by the same finite type, have isomorphic relation modules over the group
 algebra `R[G]` of `G` over a local ring `R`. -/
-theorem relationModule_linearEquiv_of_closure {g g' : ι → G}
+theorem nonempty_relationModule_linearEquiv_of_closure {g g' : ι → G}
     (hg : Subgroup.closure (Set.range g) = ⊤) (hg' : Subgroup.closure (Set.range g') = ⊤) :
     Nonempty (relationModule R G g ≃ₗ[MonoidAlgebra R G] relationModule R G g') := by
   obtain ⟨θ, hθ⟩ := exists_linearEquiv_linearCombination_comp_eq R hg hg'
