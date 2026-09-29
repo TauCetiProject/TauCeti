@@ -479,6 +479,12 @@ theorem pLowerCentralSeries_one :
   rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero, pLowerCentralStep_def, coe_top,
     Set.image_univ, commutator_def]
 
+/-- The first term of the closed lower central series is the closure of the commutator subgroup. -/
+theorem pLowerCentralSeries_one_zero :
+    pLowerCentralSeries 0 G 1 = (commutator G).topologicalClosure := by
+  rw [pLowerCentralSeries_one]
+  simp
+
 /-- **`λ_1(G)` lies in the kernel of a homomorphism to an abelian group that kills `p`-th
 powers.** For a homomorphism `φ : G →* K` with closed kernel into a commutative group,
 `λ_1(G) ≤ ker φ` as soon as `φ` kills the `p`-th powers of `G`: the kernel is closed and contains

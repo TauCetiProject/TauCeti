@@ -23,18 +23,13 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-private theorem lowerCentralSeries_one_zero :
-    pLowerCentralSeries 0 G 1 = (_root_.commutator G).topologicalClosure := by
-  rw [pLowerCentralSeries_one]
-  simp
-
 /-- The zero-th graded piece of the closed lower central series, with its quotient topology,
 is the topological abelianization of `G` in additive notation. -/
 noncomputable def lcsGradedPieceZeroEquiv :
     gradedPiece 0 G 0 ≃ₜ+ Additive (TopologicalAbelianization G) := by
   let e : gradedPiece 0 G 0 ≃+ Additive (TopologicalAbelianization G) :=
     (gradedPieceZeroEquiv 0 G).trans
-      (QuotientGroup.quotientMulEquivOfEq (lowerCentralSeries_one_zero (G := G))).toAdditive
+      (QuotientGroup.quotientMulEquivOfEq (pLowerCentralSeries_one_zero (G := G))).toAdditive
   have he : Continuous e := by
     apply (QuotientGroup.isQuotientMap_mk
       ((pLowerCentralSeries 0 G 1).subgroupOf (pLowerCentralSeries 0 G 0))).continuous_iff.mpr
@@ -70,7 +65,7 @@ theorem lcsGradedPieceZeroEquiv_mk (g : G) :
       Additive.ofMul (g : TopologicalAbelianization G) := by
   -- Reduce the constructed topological equivalence to its underlying quotient equivalence.
   change ((gradedPieceZeroEquiv 0 G).trans
-    (QuotientGroup.quotientMulEquivOfEq (lowerCentralSeries_one_zero (G := G))).toAdditive)
+    (QuotientGroup.quotientMulEquivOfEq (pLowerCentralSeries_one_zero (G := G))).toAdditive)
       (gradedMkZero 0 G g) = _
   simp [gradedPieceZeroEquiv_gradedMkZero, QuotientGroup.quotientMulEquivOfEq_mk]
 
