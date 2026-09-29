@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
 
@@ -36,11 +37,14 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   automorphism does not vanish at a real boundary point in Cayley coordinates.
 * `TauCeti.bijOn_sub_I_div_add_I_upperHalfPlaneSet`: the transform is a bijection from the open
   upper half-plane onto the open unit disc.
+* `TauCeti.bijOn_I_mul_one_add_div_one_sub_ball`: its inverse `w ↦ i (1 + w) / (1 - w)` is a
+  bijection from the open unit disc onto the open upper half-plane.
 * `TauCeti.bijOn_sub_I_div_add_I_im_nonneg`: the transform is a bijection from the closed upper
   half-plane onto the closed unit disc minus `1`.
 * `TauCeti.differentiableOn_sub_I_div_add_I`: the transform is holomorphic away from its pole.
 * `TauCeti.differentiableOn_sub_I_div_add_I_im_nonneg`: in particular, it is holomorphic on a
   neighbourhood of the closed upper half-plane.
+* `TauCeti.hasDerivAt_I_mul_one_add_div_one_sub`: the derivative of the inverse transform.
 * `TauCeti.tendsto_sub_I_div_add_I_cobounded`: the transform tends to `1` at infinity.
 
 ## References
@@ -163,6 +167,19 @@ theorem bijOn_sub_I_div_add_I_upperHalfPlaneSet :
     rw [UpperHalfPlane.upperHalfPlaneSet, mem_ofPred_eq, ← norm_sub_I_div_add_I_lt_one_iff hne, heq]
     exact mem_ball_zero_iff.mp hw
 
+/-- **The inverse Cayley transform.** The map `w ↦ i (1 + w) / (1 - w)` is a bijection from the
+open unit disc onto the open upper half-plane; it inverts `z ↦ (z - i) / (z + i)`. -/
+theorem bijOn_I_mul_one_add_div_one_sub_ball :
+    BijOn (fun w : ℂ => I * (1 + w) / (1 - w)) (ball 0 1)
+      UpperHalfPlane.upperHalfPlaneSet := by
+  refine bijOn_sub_I_div_add_I_upperHalfPlaneSet.symm ⟨fun w hw => ?_, fun z hz => ?_⟩
+  · refine (sub_I_div_add_I_inverse ?_).2
+    rintro rfl
+    simp at hw
+  · have hz' := add_I_ne_zero_of_im_nonneg (le_of_lt hz)
+    field_simp
+    ring
+
 /-- **The Cayley transform of the closed upper half-plane.** The map `z ↦ (z - i) / (z + i)` is a
 bijection from the closed upper half-plane onto the closed unit disc with the point `1` removed. -/
 theorem bijOn_sub_I_div_add_I_im_nonneg :
@@ -191,6 +208,17 @@ theorem differentiableOn_sub_I_div_add_I :
 theorem differentiableOn_sub_I_div_add_I_im_nonneg :
     DifferentiableOn ℂ (fun z : ℂ => (z - I) / (z + I)) {z | 0 ≤ z.im} :=
   differentiableOn_sub_I_div_add_I.mono fun _ hz => add_I_ne_zero_of_im_nonneg hz
+
+/-- The derivative of the inverse Cayley transform `w ↦ i (1 + w) / (1 - w)` away from its pole
+at `1` is `2 i / (1 - w) ^ 2`. -/
+theorem hasDerivAt_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
+    HasDerivAt (fun u : ℂ => I * (1 + u) / (1 - u)) (2 * I / (1 - w) ^ 2) w := by
+  have h1 : 1 - w ≠ 0 := sub_ne_zero.mpr hw.symm
+  refine ((((hasDerivAt_id w).const_add 1).const_mul I).div
+    ((hasDerivAt_id w).const_sub 1) h1).congr_deriv ?_
+  simp only [id]
+  field_simp
+  ring
 
 /-- The Cayley transform tends to `1` at infinity: the point `1` it omits from the closed disc is
 the image of `∞`. -/
