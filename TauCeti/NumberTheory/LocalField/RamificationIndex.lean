@@ -175,14 +175,14 @@ section Total
 
 /-- A finite extension of nonarchimedean local fields is totally ramified when its ramification
 index equals its degree. -/
-def IsTotallyRamified (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
-    [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-    [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] : Prop :=
+def IsTotallyRamified (K L : Type*) [Field K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] : Prop :=
   ramificationIndex K L = Module.finrank K L
 
-variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+variable (K L : Type*) [Field K]
+  [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L]
 
 /-- Total ramification unfolds to its defining equality `e(L/K) = [L : K]`. -/
 theorem isTotallyRamified_iff_ramificationIndex_eq_finrank :
