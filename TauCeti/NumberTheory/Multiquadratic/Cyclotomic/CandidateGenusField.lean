@@ -25,7 +25,8 @@ real `d` it is the narrow candidate only.
 
 * `TauCeti.Multiquadratic.candidateGenusField_eq_map_characterSubfield_genusCharGroup`: the
   candidate genus field is the image in `ℂ` of the character subfield of the genus character
-  group.
+  group. The generators are the rescaled roots of
+  `TauCeti.NumberTheory.Multiquadratic.Cyclotomic.FundamentalDiscriminant`.
 
 ## References
 
@@ -39,34 +40,27 @@ open IntermediateField IsCyclotomicExtension IsCyclotomicExtension.Rat
 namespace TauCeti.Multiquadratic
 
 variable {d : ℤ} (hd : Squarefree d) (K : IntermediateField ℚ ℂ) [NumberField K]
-  [IsCyclotomicExtension {(∏ P ∈ genusPrimeDiscriminants hd, P).natAbs} ℚ K] [IsAbelianGalois ℚ K]
+  [IsCyclotomicExtension {(∏ P ∈ genusPrimeDiscriminants hd, P).natAbs} ℚ K]
 
 /-- **The candidate genus field is cut out of the cyclotomic field by the genus characters.** For
 squarefree `d` with fundamental discriminant `D` and a cyclotomic subfield `K ⊆ ℂ` of level `|D|`,
 the candidate genus field of `ℚ(√d)` is the image in `ℂ` of the intermediate field of `K` that the
-character correspondence attaches to the genus character group of `D`. -/
+character correspondence attaches to the genus character group of `D`. The correspondence is
+taken for the abelian Galois structure of the cyclotomic extension. -/
 theorem candidateGenusField_eq_map_characterSubfield_genusCharGroup
     (R : Type*) [CommRing R] [CharZero R]
     [HasEnoughRootsOfUnity R
       (Monoid.exponent (ZMod (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs)ˣ)] :
+    haveI := IsCyclotomicExtension.isAbelianGalois
+      {(∏ P ∈ genusPrimeDiscriminants hd, P).natAbs} ℚ K
     candidateGenusField hd =
       ((intermediateFieldEquivSubgroupChar (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs K R).symm
         ((genusCharGroup (genusPrimeDiscriminants hd) (genusPrimeDiscriminants_spec hd).1).map
           (MulChar.ringHomCompHom (Int.castRingHom R)))).map K.val := by
+  have := IsCyclotomicExtension.isAbelianGalois
+    {(∏ P ∈ genusPrimeDiscriminants hd, P).natAbs} ℚ K
   rw [characterSubfield_genusCharGroup_eq_adjoin_range _ _ R
     (genusFieldRootOfPrimeDiscriminant hd K) (genusFieldRootOfPrimeDiscriminant_sq hd K),
-    adjoin_map, ← Set.range_comp, candidateGenusField_def]
-  refine le_antisymm (adjoin_le_iff.mpr ?_) (adjoin_le_iff.mpr ?_)
-  · rintro _ ⟨P, rfl⟩
-    have hscale : genusFieldRoot hd P =
-        (algebraMap ℚ ℂ (genusFieldRootScale hd P))⁻¹ *
-          (K.val ∘ genusFieldRootOfPrimeDiscriminant hd K) P := by
-      rw [Function.comp_apply, coe_val, coe_genusFieldRootOfPrimeDiscriminant, ← mul_assoc,
-        inv_mul_cancel₀ ((map_ne_zero _).mpr (genusFieldRootScale_ne_zero hd P)), one_mul]
-    rw [hscale]
-    exact mul_mem (inv_mem (IntermediateField.algebraMap_mem _ _)) (subset_adjoin ℚ _ ⟨P, rfl⟩)
-  · rintro _ ⟨P, rfl⟩
-    rw [Function.comp_apply, coe_val, coe_genusFieldRootOfPrimeDiscriminant]
-    exact mul_mem (IntermediateField.algebraMap_mem _ _) (subset_adjoin ℚ _ ⟨P, rfl⟩)
+    map_adjoin_range_genusFieldRootOfPrimeDiscriminant]
 
 end TauCeti.Multiquadratic

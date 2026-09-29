@@ -227,11 +227,11 @@ theorem genusFieldRoot_mem_of_isCyclotomicExtension
 
 /-- The rational scalar turning the chosen root of the radicand of `P` into a root of `P`
 itself: `2` when `P` is an even prime discriminant, `1` otherwise. -/
-noncomputable def genusFieldRootScale (P : {P // P ∈ genusPrimeDiscriminants hd}) : ℚ :=
+private noncomputable def genusFieldRootScale (P : {P // P ∈ genusPrimeDiscriminants hd}) : ℚ :=
   if (P : ℤ) = 4 * primeDiscriminantRadicand P then 2 else 1
 
 /-- The scale is nonzero. -/
-theorem genusFieldRootScale_ne_zero (P : {P // P ∈ genusPrimeDiscriminants hd}) :
+private theorem genusFieldRootScale_ne_zero (P : {P // P ∈ genusPrimeDiscriminants hd}) :
     genusFieldRootScale hd P ≠ 0 := by
   unfold genusFieldRootScale
   split_ifs <;> norm_num
@@ -243,7 +243,7 @@ noncomputable def genusFieldRootOfPrimeDiscriminant
   ⟨algebraMap ℚ ℂ (genusFieldRootScale hd P) * genusFieldRoot hd P,
     K.mul_mem (K.algebraMap_mem _) (genusFieldRoot_mem_of_isCyclotomicExtension hd K P)⟩
 
-@[simp] theorem coe_genusFieldRootOfPrimeDiscriminant
+private theorem coe_genusFieldRootOfPrimeDiscriminant
     (P : {P // P ∈ genusPrimeDiscriminants hd}) :
     (genusFieldRootOfPrimeDiscriminant hd K P : ℂ) =
       algebraMap ℚ ℂ (genusFieldRootScale hd P) * genusFieldRoot hd P := by
@@ -268,6 +268,27 @@ noncomputable def genusFieldRootOfPrimeDiscriminant
     conv_rhs => rw [h]
     push_cast
     ring
+
+include K in
+/-- **The rescaled roots generate the candidate genus field.** Viewed in `ℂ`, the compositum of the
+square roots of the prime discriminants dividing `D` is the candidate genus field of `ℚ(√d)`: each
+rescaled root is a rational multiple of a chosen root and conversely. -/
+theorem map_adjoin_range_genusFieldRootOfPrimeDiscriminant :
+    (adjoin ℚ (Set.range (genusFieldRootOfPrimeDiscriminant hd K))).map K.val =
+      candidateGenusField hd := by
+  rw [adjoin_map, ← Set.range_comp, candidateGenusField_def]
+  refine le_antisymm (adjoin_le_iff.mpr ?_) (adjoin_le_iff.mpr ?_)
+  · rintro _ ⟨P, rfl⟩
+    rw [Function.comp_apply, coe_val, coe_genusFieldRootOfPrimeDiscriminant]
+    exact mul_mem (IntermediateField.algebraMap_mem _ _) (subset_adjoin ℚ _ ⟨P, rfl⟩)
+  · rintro _ ⟨P, rfl⟩
+    have hscale : genusFieldRoot hd P =
+        (algebraMap ℚ ℂ (genusFieldRootScale hd P))⁻¹ *
+          (K.val ∘ genusFieldRootOfPrimeDiscriminant hd K) P := by
+      rw [Function.comp_apply, coe_val, coe_genusFieldRootOfPrimeDiscriminant, ← mul_assoc,
+        inv_mul_cancel₀ ((map_ne_zero _).mpr (genusFieldRootScale_ne_zero hd P)), one_mul]
+    rw [hscale]
+    exact mul_mem (inv_mem (IntermediateField.algebraMap_mem _ _)) (subset_adjoin ℚ _ ⟨P, rfl⟩)
 
 end Cyclotomic
 
