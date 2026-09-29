@@ -42,8 +42,6 @@ the carrier is reductive.
 
 public section
 
-open CategoryTheory
-
 namespace TauCeti.E7Minuscule
 
 universe u
