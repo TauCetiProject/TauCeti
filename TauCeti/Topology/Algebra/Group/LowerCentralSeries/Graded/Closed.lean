@@ -205,16 +205,10 @@ theorem IsProP.mk_commutatorElement_padicPow_left (hG : IsProP p G) {j k : ℕ}
   have hy : (y : G) ∈ pLowerCentralSeries 0 G k := by
     rw [← closedLowerCentralSeries_def]
     exact y.2
-  have hxy := commutator_mem_pLowerCentralSeries hx hy
-  have hxx := commutator_mem_pLowerCentralSeries hx hxy
-  have hcommRaw : Commute (QuotientGroup.mk' N (x : G))
-      (QuotientGroup.mk' N ⁅(x : G), (y : G)⁆) :=
-    QuotientGroup.commute_mk_iff.mpr
-      (pLowerCentralSeries_antitone (by omega) hxx)
   have hcomm : Commute ((x : G) : G ⧸ N)
       ⁅((x : G) : G ⧸ N), ((y : G) : G ⧸ N)⁆ := by
-    rw [map_commutatorElement] at hcommRaw
-    exact hcommRaw
+    simpa only [← QuotientGroup.mk'_apply, map_commutatorElement] using
+      commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries hx hy) (x : G)
   -- Restate coercions as the quotient homomorphism so its map lemmas apply.
   change QuotientGroup.mk' N ⁅(x : G) ^ n, (y : G)⁆ =
     QuotientGroup.mk' N (⁅(x : G), (y : G)⁆ ^ n)
@@ -254,16 +248,10 @@ theorem IsProP.mk_commutatorElement_padicPow_right (hG : IsProP p G) {j k : ℕ}
   have hy : (y : G) ∈ pLowerCentralSeries 0 G k := by
     rw [← closedLowerCentralSeries_def]
     exact y.2
-  have hxy := commutator_mem_pLowerCentralSeries hx hy
-  have hyy := commutator_mem_pLowerCentralSeries hy hxy
-  have hcommRaw : Commute (QuotientGroup.mk' N (y : G))
-      (QuotientGroup.mk' N ⁅(x : G), (y : G)⁆) :=
-    QuotientGroup.commute_mk_iff.mpr
-      (pLowerCentralSeries_antitone (by omega) hyy)
   have hcomm : Commute ((y : G) : G ⧸ N)
       ⁅((x : G) : G ⧸ N), ((y : G) : G ⧸ N)⁆ := by
-    rw [map_commutatorElement] at hcommRaw
-    exact hcommRaw
+    simpa only [← QuotientGroup.mk'_apply, map_commutatorElement] using
+      commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries hx hy) (y : G)
   -- Restate coercions as the quotient homomorphism so its map lemmas apply.
   change QuotientGroup.mk' N ⁅(x : G), (y : G) ^ n⁆ =
     QuotientGroup.mk' N (⁅(x : G), (y : G)⁆ ^ n)
