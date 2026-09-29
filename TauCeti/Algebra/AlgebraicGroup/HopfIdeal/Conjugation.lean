@@ -112,6 +112,22 @@ theorem conjugate_mono (g : WithConv (H →ₐ[R] R)) {I J : HopfIdeal R H} (h :
   intro x hx
   exact mem_conjugate.mpr (h (mem_conjugate.mp hx))
 
+/-- If a conjugated point annihilates `J` and the kernel of the original point is contained in
+`I`, then conjugating `J` by the inverse point gives an ideal contained in `I`. -/
+theorem conjugate_inv_le_of_mem_quotientPointsSubgroup
+    {A : Type w} [CommRing A] [Algebra R A]
+    (I J : HopfIdeal R H) (g : WithConv (H →ₐ[R] R))
+    (π : H →ₐ[R] A) (hker : ∀ x, π x = 0 → x ∈ I)
+    (hmem : WithConv.toConv (π.comp (HopfAlgebra.pointConjugationAlgHom g)) ∈
+      CommHopfAlgCat.quotientPointsSubgroup (CommHopfAlgCat.of R H) J
+        (CommAlgCat.of R A)) :
+    J.conjugate g⁻¹ ≤ I := by
+  have hle : J ≤ I.conjugate g := by
+    intro x hx
+    rw [mem_conjugate]
+    exact hker _ ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mp hmem x hx)
+  simpa using conjugate_mono g⁻¹ hle
+
 /-- Conjugation preserves and reflects containment of Hopf ideals. -/
 @[simp]
 theorem conjugate_le_conjugate_iff (I J : HopfIdeal R H)

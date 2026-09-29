@@ -163,17 +163,9 @@ theorem exists_det_eq_one_conjugate_mem {Q ι : Type*} [CommRing Q]
     ∃ P' : GL ι R, Matrix.GeneralLinearGroup.det P' = 1 ∧
       (Matrix.GeneralLinearGroup.map f P')⁻¹ * M *
         Matrix.GeneralLinearGroup.map f P' ∈ upperTriangularGroup ι Q := by
-  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
-  · let _ := hι
-    refine ⟨P, ?_, h⟩
-    apply Units.ext
-    rw [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_isEmpty]
-    rfl
-  let u : ι → Rˣ := Pi.mulSingle i (Matrix.GeneralLinearGroup.det P)⁻¹
+  obtain ⟨u, hu⟩ := exists_det_mul_diagGL_eq_one P
   let D : upperTriangularGroup ι R := diagonalHom u
-  refine ⟨P * D, ?_, ?_⟩
-  · rw [map_mul, coe_diagonalHom, det_diagGL,
-      Fintype.prod_pi_mulSingle' i, mul_inv_cancel]
+  refine ⟨P * D, by simpa only [D, coe_diagonalHom] using hu, ?_⟩
   · have hD : Matrix.GeneralLinearGroup.map f (D : GL ι R) ∈
         upperTriangularGroup ι Q := (map f D).property
     rw [map_mul, _root_.mul_inv_rev]

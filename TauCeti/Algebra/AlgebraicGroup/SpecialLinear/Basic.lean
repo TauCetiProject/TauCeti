@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.GeomSum
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
 
 /-!
 # The special linear group coordinate Hopf algebra
@@ -454,6 +455,46 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
   apply Matrix.GeneralLinearGroup.ext
   intro i j
   rfl
+
+/-- Conjugating an `SLₙ` point by the point attached to the inverse of `s` becomes ordinary
+matrix conjugation after extension of scalars and inclusion into `GLₙ`. -/
+theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm
+    (s : Matrix.SpecialLinearGroup (Fin n) R)
+    (φ : coordinateHopfAlgebra R n →ₐ[R] A) :
+    Matrix.SpecialLinearGroup.toGL
+      (pointsMulEquiv (R := R) (A := A) n
+        (toConv (φ.comp (HopfAlgebra.pointConjugationAlgHom
+          ((pointsMulEquiv (R := R) (A := R) n).symm s⁻¹))))) =
+      (Matrix.GeneralLinearGroup.map (algebraMap R A) s)⁻¹ *
+        GeneralLinear.pointsMulEquiv n
+          (toConv (φ.comp (coordinateMap R n).hom)) *
+        Matrix.GeneralLinearGroup.map (algebraMap R A) s := by
+  let g := (pointsMulEquiv (R := R) (A := R) n).symm s⁻¹
+  have hπ : Matrix.SpecialLinearGroup.toGL
+      (pointsMulEquiv (R := R) (A := A) n (toConv φ)) =
+      GeneralLinear.pointsMulEquiv n
+        (toConv (φ.comp (coordinateMap R n).hom)) :=
+    (pointsMulEquiv_toGL R n _).symm
+  have hg : Matrix.SpecialLinearGroup.toGL
+      (pointsMulEquiv (R := R) (A := A) n
+        (AlgHom.mapValue (H := coordinateHopfAlgebra R n) (Algebra.ofId R A) g)) =
+      Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹ := by
+    rw [pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, map_inv, map_inv, map_inv]
+    congr 1
+    ext i j
+    rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
+      Matrix.SpecialLinearGroup.map_apply_coe, Matrix.GeneralLinearGroup.map_apply]
+    rfl
+  change Matrix.SpecialLinearGroup.toGL
+      (pointsMulEquiv (R := R) (A := A) n
+        (toConv (φ.comp (HopfAlgebra.pointConjugationAlgHom g)))) = _
+  calc
+    _ = Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹ *
+        Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) n (toConv φ)) *
+        (Matrix.GeneralLinearGroup.map (algebraMap R A) s⁻¹)⁻¹ := by
+      rw [HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv,
+        map_mul, map_mul, map_inv, hg]
+    _ = _ := by rw [hπ, map_inv, inv_inv]
 
 end Points
 
