@@ -38,7 +38,6 @@ variable [Fintype G]
 /-- Restriction commutes with the Tate cup product in bidegree `(n + 1, 0)`.
 The comparison of restricted tensor products is definitional. Use this as an explicit rewrite:
 `simp` first reduces the degree-zero cup product to `cupH0`. -/
-@[simp]
 theorem cup_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
     (x : tateCohomology M ((n + 1 : ℕ) : ℤ)) (y : tateCohomology N 0) :
     posRes (M ⊗ N) H n
@@ -63,5 +62,18 @@ theorem cup_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
     simp only [ModuleCat.comp_apply]
     simp only [Int.natCast_add, Int.cast_ofNat_Int, tensor_V, tensor_ρ]
     rfl
+
+/-- The `cupH0` form of positive-degree cup restriction, used after `simp` unfolds a cup with a
+degree-zero right factor. -/
+@[simp]
+theorem cupH0_posRes_zero_right (M N : Rep k G) (H : Subgroup G) (n : ℕ)
+    (x : tateCohomology M ((n + 1 : ℕ) : ℤ)) (y : tateCohomology N 0) :
+    (show tateCohomology (M ⊗ N) ((n : ℤ) + 1) ⟶
+        tateCohomology (Rep.res H.subtype (M ⊗ N)) ((n : ℤ) + 1) from
+      posRes (M ⊗ N) H n) (cupH0 M N ((n : ℤ) + 1) x y) =
+      cupH0 (Rep.res H.subtype M) (Rep.res H.subtype N) ((n : ℤ) + 1)
+        (posRes M H n x) (H0Res N H y) := by
+  simpa only [cup_zero_right, Int.natCast_add, Int.cast_ofNat_Int] using
+    cup_posRes_zero_right M N H n x y
 
 end TauCeti.TateCohomology
