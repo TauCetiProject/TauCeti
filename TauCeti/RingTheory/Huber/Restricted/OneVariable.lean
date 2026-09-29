@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
-public import Mathlib.RingTheory.MvPowerSeries.Rename
+public import TauCeti.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.PowerSeries.Restricted
 
 /-!
@@ -23,7 +23,9 @@ series ring. Composing that comparison with the variable-renaming equivalence id
 completed Huber algebra with Mathlib's univariate restricted-series ring.
 
 The comparison is stated over commutative normed rings because Mathlib packages variable
-renaming of power series, `MvPowerSeries.rename`, only over a commutative semiring.
+renaming of power series, `MvPowerSeries.rename`, only over a commutative semiring. The
+ultrametric hypothesis is needed only for the target ring: Mathlib defines
+`PowerSeries.IsRestricted.subring` only under `[IsUltrametricDist R]`.
 
 ## Main results
 
@@ -50,16 +52,6 @@ section Comparison
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NonarchimedeanRing R]
 
 omit [IsUltrametricDist R] [NonarchimedeanRing R] in
-private theorem coeff_renameEquiv_finOne (f : MvPowerSeries (Fin 1) R) (n : ℕ) :
-    PowerSeries.coeff n (MvPowerSeries.renameEquiv R finOneEquiv f) =
-      MvPowerSeries.coeff ((Finsupp.uniqueEquiv (0 : Fin 1)).symm n) f := by
-  have hn : Finsupp.single () n =
-      Finsupp.embDomain finOneEquiv.toEmbedding ((Finsupp.uniqueEquiv (0 : Fin 1)).symm n) := by
-    ext; simp
-  rw [← PowerSeries.coeff_coeToMvPowerSeries, MvPowerSeries.renameEquiv_apply, hn]
-  exact MvPowerSeries.coeff_embDomain_rename _ _ _
-
-omit [IsUltrametricDist R] [NonarchimedeanRing R] in
 /-- **Renaming the sole variable preserves restrictedness.** The Huber predicate asks directly
 that the coefficients tend to zero, while Mathlib's radius-one predicate asks the same of their
 norms. The exponent sets are identified by the unique-coordinate equivalence. -/
@@ -72,14 +64,12 @@ theorem isRestricted_renameEquiv_finOne_iff {f : MvPowerSeries (Fin 1) R} :
   constructor
   · intro hf
     exact (hf.comp (Finsupp.uniqueEquiv (0 : Fin 1)).symm.injective.tendsto_cofinite).congr'
-      (Filter.Eventually.of_forall fun n ↦ (coeff_renameEquiv_finOne f n).symm)
+      (Filter.Eventually.of_forall fun n ↦ (PowerSeries.coeff_rename finOneEquiv f n).symm)
   · intro hf
     refine (hf.comp (Finsupp.uniqueEquiv (0 : Fin 1)).injective.tendsto_cofinite).congr' ?_
     filter_upwards with n
-    simp only [Function.comp_apply]
-    rw [coeff_renameEquiv_finOne]
-    exact congrArg (fun m ↦ MvPowerSeries.coeff m f)
-      ((Finsupp.uniqueEquiv (0 : Fin 1)).left_inv n)
+    exact (PowerSeries.coeff_rename finOneEquiv f _).trans <|
+      congrArg (fun m ↦ MvPowerSeries.coeff m f) ((Finsupp.uniqueEquiv (0 : Fin 1)).left_inv n)
 
 /-- **The two one-variable restricted-series models are the same ring.** The Huber model uses
 `Fin 1` as its variable type; Mathlib's `PowerSeries` uses `Unit`. The equivalence is variable
