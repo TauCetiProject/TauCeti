@@ -29,6 +29,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   half-plane.
 * `TauCeti.injOn_sub_I_div_add_I`: the transform is injective off its pole `-i`.
 * `TauCeti.sub_I_div_add_I_sub_sub_I_div_add_I`: the difference of two values of the transform.
+* `TauCeti.continuousAt_sub_I_div_add_I` and `TauCeti.norm_sub_I_div_add_I_ofReal`:
+  continuity and unit norm at real boundary points.
 * `TauCeti.bijOn_sub_I_div_add_I_upperHalfPlaneSet`: the transform is a bijection from the open
   upper half-plane onto the open unit disc.
 * `TauCeti.bijOn_sub_I_div_add_I_im_nonneg`: the transform is a bijection from the closed upper
@@ -73,6 +75,19 @@ theorem norm_sub_I_div_add_I_lt_one_iff {z : ℂ} (hz : z + I ≠ 0) :
   rw [norm_div, div_lt_one (norm_pos_iff.mpr hz), ← sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _),
     norm_add_I_sq]
   constructor <;> intro h <;> linarith
+
+/-- The Cayley transform is continuous at every real point. -/
+theorem continuousAt_sub_I_div_add_I (x : ℝ) :
+    ContinuousAt (fun z : ℂ => (z - I) / (z + I)) (x : ℂ) :=
+  (continuousAt_id.sub continuousAt_const).div (continuousAt_id.add continuousAt_const)
+    (add_I_ne_zero_of_im_nonneg (by simp))
+
+/-- The Cayley transform of a real point lies on the unit circle. -/
+@[simp] theorem norm_sub_I_div_add_I_ofReal (x : ℝ) :
+    ‖((x : ℂ) - I) / ((x : ℂ) + I)‖ = 1 := by
+  have hx : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
+  refine le_antisymm ((norm_sub_I_div_add_I_le_one_iff hx).mpr (by simp)) (not_lt.mp fun h => ?_)
+  simpa using (norm_sub_I_div_add_I_lt_one_iff hx).mp h
 
 /-- The closed-disc criterion in the normal form used by `simp` after `norm_div`. -/
 @[simp] theorem norm_sub_I_div_norm_add_I_le_one_iff {z : ℂ} (hz : z + I ≠ 0) :

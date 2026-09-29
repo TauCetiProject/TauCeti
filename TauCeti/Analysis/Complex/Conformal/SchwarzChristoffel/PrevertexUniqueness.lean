@@ -15,10 +15,9 @@ A bounded polygonal Jordan domain is the image of the upper half-plane under an 
 `A * F + B` of a normalized Schwarz--Christoffel primitive `F`, with the prevertex `a i` going to
 the vertex `v i`; this is
 `TauCeti.exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier`.
-This file shows that the prevertices are determined by the domain and its labelled
-vertices up to a real Möbius transformation. Two such representations have prevertex families
-with the same cross-ratios. If they share three prevertices, they share all of them, and the two
-maps coincide on the upper half-plane.
+This file shows that two such representations have prevertex families with the same cross-ratios.
+If they share three prevertices, they share all of them, and the two maps coincide on the upper
+half-plane.
 
 The argument is the boundary correspondence of two conformal maps onto a Jordan domain
 (`TauCeti.crossRatio_eq_of_tendsto_of_bijOn_upperHalfPlaneSet` and
@@ -48,17 +47,14 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-- With distinct prevertices and exponents greater than `-1`, an affine image of the
-Schwarz--Christoffel primitive tends at each prevertex to the same affine image of its vertex. -/
-private theorem tendsto_const_mul_schwarzChristoffelPrimitive_add {a e : ι → ℝ} (ha : Injective a)
-    (he : ∀ i, -1 < e i) (z₀ : UpperHalfPlane) (A B : ℂ) (i : ι) :
+/-- If the total exponent at a prevertex is greater than `-1`, an affine image of the
+Schwarz--Christoffel primitive tends there to the affine image of its vertex. -/
+private theorem tendsto_const_mul_schwarzChristoffelPrimitive_add {a e : ι → ℝ}
+    (he : ∀ i, -1 < ∑ l with a l = a i, e l)
+    (z₀ : UpperHalfPlane) (A B : ℂ) (i : ι) :
     Tendsto (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B)
       (𝓝[upperHalfPlaneSet] ((a i : ℝ) : ℂ)) (𝓝 (A * schwarzChristoffelVertex a e z₀ i + B)) := by
-  have hsum : -1 < ∑ l with a l = a i, e l := by
-    rw [Finset.sum_eq_single_of_mem i (by simp) fun l hl hli =>
-      absurd (ha (Finset.mem_filter.mp hl).2) hli]
-    exact he i
-  exact ((tendsto_schwarzChristoffelPrimitive a e z₀ i hsum).const_mul A).add_const B
+  exact ((tendsto_schwarzChristoffelPrimitive a e z₀ i (he i)).const_mul A).add_const B
 
 /-- An affine image of the Schwarz--Christoffel primitive is holomorphic on the upper
 half-plane. -/
@@ -68,15 +64,16 @@ private theorem differentiableOn_const_mul_schwarzChristoffelPrimitive_add (a e 
       upperHalfPlaneSet :=
   ((differentiableOn_schwarzChristoffelPrimitive a e z₀).const_mul A).add_const B
 
-/-- **Schwarz--Christoffel prevertices are determined up to a Möbius transformation.** Let
+/-- **Schwarz--Christoffel prevertices have equal cross-ratios.** Let
 `A * F + B` and `A' * F' + B'` be affine images of normalized Schwarz--Christoffel primitives
-with distinct prevertices `a` and `a'` and exponents greater than `-1`. Suppose both map the upper
+whose total exponents at each prevertex exceed `-1`. Suppose both map the upper
 half-plane bijectively onto the same bounded domain whose frontier is a Jordan curve. Suppose also
 that they send each prevertex to the same vertex. Then the prevertex families `a` and `a'` have
 the same cross-ratios. -/
 theorem crossRatio_eq_of_bijOn_schwarzChristoffelPrimitive {U : Set ℂ} (hUb : IsBounded U)
-    (hUJ : IsJordanCurve (frontier U)) {a e a' e' : ι → ℝ} (ha : Injective a)
-    (ha' : Injective a') (he : ∀ i, -1 < e i) (he' : ∀ i, -1 < e' i) (z₀ z₀' : UpperHalfPlane)
+    (hUJ : IsJordanCurve (frontier U)) {a e a' e' : ι → ℝ}
+    (he : ∀ i, -1 < ∑ l with a l = a i, e l)
+    (he' : ∀ i, -1 < ∑ l with a' l = a' i, e' l) (z₀ z₀' : UpperHalfPlane)
     {A B A' B' : ℂ}
     (hf : BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U)
     (hf' : BijOn (fun z => A' * schwarzChristoffelPrimitive a' e' z₀' z + B') upperHalfPlaneSet U)
@@ -88,35 +85,37 @@ theorem crossRatio_eq_of_bijOn_schwarzChristoffelPrimitive {U : Set ℂ} (hUb : 
   crossRatio_eq_of_tendsto_of_bijOn_upperHalfPlaneSet hUb hUJ
     (differentiableOn_const_mul_schwarzChristoffelPrimitive_add a e z₀ A B)
     (differentiableOn_const_mul_schwarzChristoffelPrimitive_add a' e' z₀' A' B') hf hf'
-    (tendsto_const_mul_schwarzChristoffelPrimitive_add ha he z₀ A B)
-    (fun m => hv m ▸ tendsto_const_mul_schwarzChristoffelPrimitive_add ha' he' z₀' A' B' m) i j k l
+    (tendsto_const_mul_schwarzChristoffelPrimitive_add he z₀ A B)
+    (fun m => hv m ▸ tendsto_const_mul_schwarzChristoffelPrimitive_add he' z₀' A' B' m) i j k l
 
 /-- **Three prevertices determine a Schwarz--Christoffel representation.** Let `A * F + B` and
-`A' * F' + B'` be affine images of normalized Schwarz--Christoffel primitives with distinct
-prevertices `a` and `a'` and exponents greater than `-1`. Suppose both map the upper half-plane
+`A' * F' + B'` be affine images of normalized Schwarz--Christoffel primitives whose total
+exponents at each prevertex are greater than `-1`. Suppose both map the upper half-plane
 bijectively onto the same bounded domain whose frontier is a Jordan curve. Suppose also that they
-send each prevertex to the same vertex. If `a` and `a'` agree at three distinct indices, then
+send each prevertex to the same vertex. If `a` and `a'` agree at three distinct prevertices, then
 `a' = a` and the two maps coincide on the upper half-plane. -/
 theorem eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive {U : Set ℂ} (hUb : IsBounded U)
-    (hUJ : IsJordanCurve (frontier U)) {a e a' e' : ι → ℝ} (ha : Injective a)
-    (ha' : Injective a') (he : ∀ i, -1 < e i) (he' : ∀ i, -1 < e' i) (z₀ z₀' : UpperHalfPlane)
+    (hUJ : IsJordanCurve (frontier U)) {a e a' e' : ι → ℝ}
+    (he : ∀ i, -1 < ∑ l with a l = a i, e l)
+    (he' : ∀ i, -1 < ∑ l with a' l = a' i, e' l) (z₀ z₀' : UpperHalfPlane)
     {A B A' B' : ℂ}
     (hf : BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U)
     (hf' : BijOn (fun z => A' * schwarzChristoffelPrimitive a' e' z₀' z + B') upperHalfPlaneSet U)
     (hv : ∀ i, A' * schwarzChristoffelVertex a' e' z₀' i + B' =
       A * schwarzChristoffelVertex a e z₀ i + B)
-    {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (hi : a' i = a i) (hj : a' j = a j)
+    {i j k : ι} (hij : a i ≠ a j) (hik : a i ≠ a k) (hjk : a j ≠ a k)
+    (hi : a' i = a i) (hj : a' j = a j)
     (hk : a' k = a k) :
     a' = a ∧ EqOn (fun z => A' * schwarzChristoffelPrimitive a' e' z₀' z + B')
       (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet := by
   have hd := differentiableOn_const_mul_schwarzChristoffelPrimitive_add a e z₀ A B
   have hd' := differentiableOn_const_mul_schwarzChristoffelPrimitive_add a' e' z₀' A' B'
-  have ht := tendsto_const_mul_schwarzChristoffelPrimitive_add ha he z₀ A B
-  have ht' (m : ι) := hv m ▸ tendsto_const_mul_schwarzChristoffelPrimitive_add ha' he' z₀' A' B' m
+  have ht := tendsto_const_mul_schwarzChristoffelPrimitive_add he z₀ A B
+  have ht' (m : ι) := hv m ▸ tendsto_const_mul_schwarzChristoffelPrimitive_add he' z₀' A' B' m
   have heq : EqOn (fun z => A' * schwarzChristoffelPrimitive a' e' z₀' z + B')
       (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet :=
-    eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn hUb hUJ hd' hd hf' hf (ha.ne hij) (ha.ne hik)
-      (ha.ne hjk) (hi ▸ ht' i) (hj ▸ ht' j) (hk ▸ ht' k) (ht i) (ht j) (ht k)
+    eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn hUb hUJ hd' hd hf' hf hij hik
+      hjk (hi ▸ ht' i) (hj ▸ ht' j) (hk ▸ ht' k) (ht i) (ht j) (ht k)
   refine ⟨funext fun m => ?_, heq⟩
   -- the second map also tends to the `m`-th vertex at `a m`, so `a' m = a m`
   refine eq_of_tendsto_of_bijOn_upperHalfPlaneSet hUb hUJ hd' hf' (ht' m) ?_

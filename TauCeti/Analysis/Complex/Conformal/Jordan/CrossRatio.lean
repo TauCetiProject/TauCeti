@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Approach
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.Algebra.Field.LinearFractional
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.Complex.Conformal.Caratheodory
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
@@ -55,28 +56,6 @@ open UpperHalfPlane (upperHalfPlaneSet isOpen_upperHalfPlaneSet)
 
 namespace TauCeti
 
-/-! ### Cross-ratios -/
-
-/-- **Maps with factorized difference quotients preserve cross-ratios.** If
-`φ s - φ t = κ * (s - t) / (d s * d t)` for all `s` and `t` in `S`, with `κ` and the values of `d`
-on `S` nonzero, then `φ` preserves the cross-ratio `(p - r) * (q - s) / ((p - s) * (q - r))` of any
-four points of `S`. Möbius transformations have difference quotients of this form. -/
-theorem crossRatio_comp_eq_of_sub_eq_div {𝕜 : Type*} [Field 𝕜] {φ d : 𝕜 → 𝕜} {κ : 𝕜}
-    {S : Set 𝕜} (hκ : κ ≠ 0) (hd : ∀ t ∈ S, d t ≠ 0)
-    (hφ : ∀ s ∈ S, ∀ t ∈ S, φ s - φ t = κ * (s - t) / (d s * d t))
-    {p q r s : 𝕜} (hp : p ∈ S) (hq : q ∈ S) (hr : r ∈ S) (hs : s ∈ S) :
-    (φ p - φ r) * (φ q - φ s) / ((φ p - φ s) * (φ q - φ r)) =
-      (p - r) * (q - s) / ((p - s) * (q - r)) := by
-  have hL : κ ^ 2 / (d p * d q * d r * d s) ≠ 0 :=
-    div_ne_zero (pow_ne_zero 2 hκ)
-      (mul_ne_zero (mul_ne_zero (mul_ne_zero (hd p hp) (hd q hq)) (hd r hr)) (hd s hs))
-  rw [hφ p hp r hr, hφ q hq s hs, hφ p hp s hs, hφ q hq r hr,
-    show κ * (p - r) / (d p * d r) * (κ * (q - s) / (d q * d s)) =
-      (p - r) * (q - s) * (κ ^ 2 / (d p * d q * d r * d s)) by ring,
-    show κ * (p - s) / (d p * d s) * (κ * (q - r) / (d q * d r)) =
-      (p - s) * (q - r) * (κ ^ 2 / (d p * d q * d r * d s)) by ring,
-    mul_div_mul_right _ _ hL]
-
 /-! ### Transport to the disc -/
 
 /-- Along the upper half-plane, a limit of `f = G ∘ h` at a real point `x` is `G (h x)`, when `h`
@@ -97,18 +76,6 @@ private theorem mem_closedBall_and_eq_of_tendsto {G h f : ℂ → ℂ} {x : ℝ}
   refine ⟨hmem, tendsto_nhds_unique ?_ hfw⟩
   exact ((hGc _ hmem).tendsto.comp (tendsto_nhdsWithin_iff.mpr ⟨ht, hev⟩)).congr'
     (eventually_nhdsWithin_of_forall fun z hz => (hf z hz).symm)
-
-/-- The Cayley transform is continuous at every real point. -/
-private theorem continuousAt_sub_I_div_add_I (x : ℝ) :
-    ContinuousAt (fun z : ℂ => (z - I) / (z + I)) (x : ℂ) :=
-  (continuousAt_id.sub continuousAt_const).div (continuousAt_id.add continuousAt_const)
-    (add_I_ne_zero_of_im_nonneg (by simp))
-
-/-- The Cayley transform of a real point lies on the unit circle. -/
-private theorem norm_sub_I_div_add_I_ofReal (x : ℝ) : ‖((x : ℂ) - I) / ((x : ℂ) + I)‖ = 1 := by
-  have hx : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
-  refine le_antisymm ((norm_sub_I_div_add_I_le_one_iff hx).mpr (by simp)) (not_lt.mp fun h => ?_)
-  simpa using (norm_sub_I_div_add_I_lt_one_iff hx).mp h
 
 /-- The denominator of a standard disc automorphism does not vanish at the Cayley transform of a
 real point. -/
