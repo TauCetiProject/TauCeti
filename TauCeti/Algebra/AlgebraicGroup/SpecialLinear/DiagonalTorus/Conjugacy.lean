@@ -82,21 +82,13 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
     ((DiagonalizableGroup.groupLikeSpannedProperty_iff k _).mp hI) π
   obtain ⟨P, hdet, hmat⟩ := exists_det_eq_one_mul_map_eq_map_mul_diagGL (algebraMap k Q)
     _ P₀ t hmat₀
-  let s : Matrix.SpecialLinearGroup (Fin (r + 1)) k :=
-    Matrix.SpecialLinearGroup.toGLKerEquiv.symm ⟨P, hdet⟩
   let g : WithConv (coordinateHopfAlgebra k (r + 1) →ₐ[k] k) :=
-    (pointsMulEquiv (R := k) (A := k) (r + 1)).symm s⁻¹
-  have hs : Matrix.SpecialLinearGroup.toGL s = P :=
-    congrArg Subtype.val
-      (Matrix.SpecialLinearGroup.toGLKerEquiv.apply_symm_apply ⟨P, hdet⟩)
+    (pointsMulEquiv (R := k) (A := k) (r + 1)).symm
+      (Matrix.SpecialLinearGroup.toGLKerEquiv.symm ⟨P, hdet⟩)⁻¹
   -- The generic point of the subgroup, conjugated by `g`, is diagonal.
   have hdiag : Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := k) (A := Q) (r + 1)
       (toConv ((πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q).comp
         (HopfAlgebra.pointConjugationAlgHom g)))) = diagGL t := by
-    have hmatrix := pointsMulEquiv_comp_pointConjugationAlgHom_symm
-      (R := k) (n := r + 1) s
-      (πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q)
-    rw [hs] at hmatrix
     have hmatrix' : Matrix.SpecialLinearGroup.toGL
         (pointsMulEquiv (R := k) (A := Q) (r + 1)
           (toConv ((πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q).comp
@@ -104,7 +96,10 @@ theorem exists_conjugate_diagonalTorusDefiningIdeal_le
         (Matrix.GeneralLinearGroup.map (algebraMap k Q) P)⁻¹ *
           GeneralLinear.pointsMulEquiv (r + 1) (toConv (π : _ →ₐ[k] Q)) *
           Matrix.GeneralLinearGroup.map (algebraMap k Q) P := by
-      simpa only [g, π, BialgHom.comp_toAlgHom] using hmatrix
+      simpa only [g, π, BialgHom.comp_toAlgHom] using
+        pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGL
+          (R := k) (n := r + 1) P hdet
+          (πS : coordinateHopfAlgebra k (r + 1) →ₐ[k] Q)
     rw [hmatrix', mul_assoc, hmat]
     simp
   have hmem := (mem_quotientPointsSubgroup_diagonalTorusDefiningIdeal_iff r k Q

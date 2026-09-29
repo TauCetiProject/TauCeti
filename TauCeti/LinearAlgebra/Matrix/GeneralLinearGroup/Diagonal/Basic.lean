@@ -399,8 +399,7 @@ theorem exists_det_mul_diagGL_eq_one {ι : Type*} [Fintype ι] [DecidableEq ι]
   · let _ := hι
     have hP : Matrix.GeneralLinearGroup.det P = 1 := by
       apply Units.ext
-      rw [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_isEmpty]
-      rfl
+      simp [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_isEmpty]
     refine ⟨1, ?_⟩
     simp [hP]
   refine ⟨Pi.mulSingle i (Matrix.GeneralLinearGroup.det P)⁻¹, ?_⟩

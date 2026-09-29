@@ -73,13 +73,9 @@ theorem exists_conjugate_definingHopfIdeal_le
       (n := 2) hconn hsolv π
   obtain ⟨P, hdet, hP⟩ := UpperTriangularGroup.exists_det_eq_one_conjugate_mem
     (algebraMap k Q) _ P₀ hP₀
-  let s : Matrix.SpecialLinearGroup (Fin 2) k :=
-    Matrix.SpecialLinearGroup.toGLKerEquiv.symm ⟨P, hdet⟩
   let g : WithConv (SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] k) :=
-    (SpecialLinear.pointsMulEquiv (R := k) (A := k) 2).symm s⁻¹
-  have hs : Matrix.SpecialLinearGroup.toGL s = P :=
-    congrArg Subtype.val
-      (Matrix.SpecialLinearGroup.toGLKerEquiv.apply_symm_apply ⟨P, hdet⟩)
+    (SpecialLinear.pointsMulEquiv (R := k) (A := k) 2).symm
+      (Matrix.SpecialLinearGroup.toGLKerEquiv.symm ⟨P, hdet⟩)⁻¹
   -- Identify conjugation of the quotient's generic `SL₂` point with ordinary matrix
   -- conjugation by the determinant-one triangularizing matrix.
   have hmatrix : Matrix.SpecialLinearGroup.toGL
@@ -89,10 +85,10 @@ theorem exists_conjugate_definingHopfIdeal_le
       (Matrix.GeneralLinearGroup.map (algebraMap k Q) P)⁻¹ *
         GeneralLinear.pointsMulEquiv 2 (toConv (π : _ →ₐ[k] Q)) *
         Matrix.GeneralLinearGroup.map (algebraMap k Q) P := by
-    have h := SpecialLinear.pointsMulEquiv_comp_pointConjugationAlgHom_symm
-      (R := k) (n := 2) s (πS : SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] Q)
-    rw [hs] at h
-    simpa only [g, π, BialgHom.comp_toAlgHom] using h
+    simpa only [g, π, BialgHom.comp_toAlgHom] using
+      SpecialLinear.pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGL
+        (R := k) (n := 2) P hdet
+        (πS : SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] Q)
   have hmem : toConv ((πS : SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] Q).comp
       (HopfAlgebra.pointConjugationAlgHom g)) ∈
       CommHopfAlgCat.quotientPointsSubgroup (SpecialLinear.coordinateHopfAlgebra k 2)
@@ -103,8 +99,7 @@ theorem exists_conjugate_definingHopfIdeal_le
           (toConv ((πS : SpecialLinear.coordinateHopfAlgebra k 2 →ₐ[k] Q).comp
             (HopfAlgebra.pointConjugationAlgHom g)))) ∈ upperTriangularGroup (Fin 2) Q := by
       rwa [hmatrix]
-    exact SL2Borel.mem_iff.mpr
-      (TauCeti.blockTriangular_id_iff.mp (UpperTriangularGroup.mem_iff.mp htri))
+    exact SL2Borel.mem_iff.mpr (GL2Borel.mem_iff.mp htri)
   -- Vanishing of the standard Borel ideal on this conjugated generic point gives the
   -- scheme-theoretic containment, rather than only containment on `k`-points.
   exact ⟨g⁻¹, HopfIdeal.conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient

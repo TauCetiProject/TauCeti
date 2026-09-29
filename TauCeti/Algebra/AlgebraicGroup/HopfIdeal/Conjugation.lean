@@ -144,8 +144,7 @@ theorem conjugate_inv_le_of_mem_quotientPointsSubgroup_mkQuotient
       (CommHopfAlgCat.quotient (CommHopfAlgCat.of R H) I))
     (by
       intro x hx
-      -- Recover the concrete quotient map from its algebra-homomorphism coercion.
-      change (CommHopfAlgCat.mkQuotient (CommHopfAlgCat.of R H) I).hom x = 0 at hx
+      rw [BialgHom.coe_toAlgHom] at hx
       exact HopfIdeal.mem_toIdeal.mp
         ((CommHopfAlgCat.mkQuotient_eq_zero_iff (CommHopfAlgCat.of R H) I x).mp hx)) hmem
 
