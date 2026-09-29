@@ -24,6 +24,11 @@ half-plane.
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
 
+The real-part map `re : ℍ → ℝ` is continuous and open, so taking closures commutes with taking
+preimages under it. In particular the closure of the open half-plane `{z | a < z.re}` is the
+closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transported by the
+`PSL(2, ℝ)`-action, this identifies the boundary of a half-plane bounded by a geodesic line.
+
 ## Main declarations
 
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
