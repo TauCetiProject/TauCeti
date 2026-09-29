@@ -62,7 +62,7 @@ def firstOrder : (k : ℕ) → Wkp mu Omega p (k + 1) → W1p mu Omega p
         _ = value (k + 1 + 1) u := (value_succ (k + 1) u).symm
 
 /-- First-order projection commutes with whole-space mollification. -/
-@[simp] theorem firstOrder_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+theorem firstOrder_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu ⊤ p (k + 1)) :
     firstOrder k (normedBumpL hp phi (k + 1) u) =
       W1p.normedBumpL hp phi (firstOrder k u) := by
