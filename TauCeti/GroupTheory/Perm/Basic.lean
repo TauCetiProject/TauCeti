@@ -258,18 +258,21 @@ theorem swap_braid {α : Type*} [DecidableEq α] {a b c : α} (hab : a ≠ b) (h
 carries `a` to `b`. Together with `TauCeti.swap_mul_swap_apply_middle` and
 `TauCeti.swap_mul_swap_apply_right` this evaluates that product, which for three distinct points
 is the three-cycle `a ↦ b ↦ c ↦ a`, at each of the three points it moves. -/
+@[simp]
 theorem swap_mul_swap_apply_left {α : Type*} [DecidableEq α] {a b c : α} (hab : a ≠ b)
     (hca : c ≠ a) : (Equiv.swap a b * Equiv.swap b c) a = b := by
   rw [Equiv.Perm.mul_apply, Equiv.swap_apply_of_ne_of_ne hab hca.symm, Equiv.swap_apply_left]
 
 /-- The product `Equiv.swap a b * Equiv.swap b c` of two transpositions sharing the point `b`
 carries `b` to `c`, the point the second transposition moves it to. -/
+@[simp]
 theorem swap_mul_swap_apply_middle {α : Type*} [DecidableEq α] {a b c : α} (hca : c ≠ a)
     (hcb : c ≠ b) : (Equiv.swap a b * Equiv.swap b c) b = c := by
   rw [Equiv.Perm.mul_apply, Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne hca hcb]
 
 /-- The product `Equiv.swap a b * Equiv.swap b c` of two transpositions sharing the point `b`
 carries `c` to `a`, through the shared point `b`; no distinctness is needed for this value. -/
+@[simp]
 theorem swap_mul_swap_apply_right {α : Type*} [DecidableEq α] (a b c : α) :
     (Equiv.swap a b * Equiv.swap b c) c = a := by
   rw [Equiv.Perm.mul_apply, Equiv.swap_apply_right, Equiv.swap_apply_right]

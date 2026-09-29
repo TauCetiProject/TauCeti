@@ -26,19 +26,19 @@ diagrams, which are the remaining defining relations of the Brauer algebra `B_k(
   `(e_{a,b} * e_{b,c}) * s_{a,b} = e_{a,b} * s_{b,c}`, Brauer's `sᵢ eᵢ₊₁ eᵢ = sᵢ₊₁ eᵢ` and
   `eᵢ eᵢ₊₁ sᵢ = eᵢ sᵢ₊₁`.
 
-Everything rests on one computation. Two cap-cup diagrams sharing exactly one point stack to a
-**relabelled** cap-cup diagram: `TauCeti.composeDiagram_capCup_capCup_eq_relabel_left` says that
-stacking `e_{b,c}` above `e_{a,b}` renames the top boundary of `e_{a,b}` by the three-cycle
+Two cap-cup diagrams sharing exactly one point stack to a **relabelled** cap-cup diagram.
+`TauCeti.composeDiagram_capCup_capCup_eq_relabel_left` says that stacking `e_{b,c}` above
+`e_{a,b}` renames the top boundary of `e_{a,b}` by the three-cycle
 `Equiv.swap a b * Equiv.swap b c` carrying `a ↦ b ↦ c ↦ a`, and
 `TauCeti.composeDiagram_capCup_capCup_eq_relabel_right` says that stacking them the other way round
 renames the bottom boundary by the same three-cycle. Equivalently, by
 `TauCeti.composeDiagram_permToBrauer_left`, stacking `e_{b,c}` above `e_{a,b}` has the same effect
 as stacking the diagram of that three-cycle above `e_{a,b}`: the horizontal arcs of the upper copy
-are absorbed by those of the lower one. Both are read off the conjugation identity
-`TauCeti.composeDiagram_permToBrauer_conj_capCup`, which writes `e_{b,c}` as a conjugate of
-`e_{a,b}`, together with the associativity of stacking, so no walk along a strand is analysed for
-them; the three values of the three-cycle are
-`TauCeti.swap_mul_swap_apply_left`, `TauCeti.swap_mul_swap_apply_middle` and
+are absorbed by those of the lower one. They are the sharpest statement about a stack of two
+overlapping pairs: the three relations on overlapping pairs below are the consequences of them
+that the presentation of `B_k(δ)` names, and a consumer needing such a stack in some other
+combination should reach for them rather than for those relations. The values of the three-cycle
+are `TauCeti.swap_mul_swap_apply_left`, `TauCeti.swap_mul_swap_apply_middle` and
 `TauCeti.swap_mul_swap_apply_right` in `TauCeti/GroupTheory/Perm/Basic.lean`.
 
 The suffixes `_left` and `_right` name which factor of `TauCeti.composeDiagram` the overlapping
@@ -46,9 +46,10 @@ pair `e_{b,c}` is, as in `TauCeti.composeDiagram_permToBrauer_left` and
 `TauCeti.composeDiagram_permToBrauer_right`: `_left` is the stack with `e_{b,c}` above `e_{a,b}`
 and `_right` the stack with `e_{b,c}` below it.
 
-Disjoint pairs do not overlap at all, so their stack is a genuinely new diagram — the one with two
-caps and two cups — and `TauCeti.composeDiagram_capCup_capCup_comm` is proved by reading its arcs
-off the composition lemmas of `TauCeti/Combinatorics/Brauer/Compose.lean` point by point.
+Disjoint pairs do not overlap at all, so their stack is not a relabelled cap-cup diagram but a
+genuinely new one, the diagram with two caps and two cups;
+`TauCeti.composeDiagram_capCup_capCup_comm` says that this diagram does not depend on the order
+the two copies are stacked in.
 
 Each relation comes with the middle-loop count of every stack it names, so that it is a relation
 for the loop-weighted multiplication `D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂`
@@ -88,12 +89,7 @@ variable {k : ℕ} {a b c d : Fin k}
 
 /-! ### Two cap-cup diagrams sharing one point -/
 
-/-- A cap-cup diagram absorbs the diagram of the three-cycle `a ↦ b ↦ c ↦ a` stacked above it.
-The transposition of the pair is absorbed by `TauCeti.composeDiagram_capCup_permToBrauer_swap`,
-and what is left is `TauCeti.composeDiagram_capCup_permToBrauer_swap_capCup`.
-
-Private: this is the shared proof step of the two stacking formulas below and of the relation
-`e * (e' * e) = e`, all of which are public. -/
+/-- A cap-cup diagram absorbs the diagram of the three-cycle `a ↦ b ↦ c ↦ a` stacked above it. -/
 private theorem composeDiagram_capCup_permToBrauer_mul_capCup (hab : a ≠ b) (c : Fin k) :
     composeDiagram (capCup a b)
         (composeDiagram (permToBrauer (Equiv.swap a b * Equiv.swap b c)) (capCup a b)) =
@@ -295,6 +291,7 @@ point that the upper copy also caps is the shared point `b`, and the cup there r
 the upper copy sends through to the boundary. On the degenerate pair `a = b` there is no cap at
 all: the upper copy is the identity diagram (`TauCeti.capCup_self`), which closes up no loop
 either, so no hypothesis on the pair `{a, b}` is needed. -/
+@[simp]
 theorem middleLoopCount_capCup_composeDiagram_capCup_capCup (hcb : c ≠ b) (hca : c ≠ a) :
     middleLoopCount (capCup a b) (composeDiagram (capCup b c) (capCup a b)) = 0 := by
   obtain rfl | hab := eq_or_ne a b
@@ -332,6 +329,7 @@ middle point that the lower copy also cups is the shared point `b`, and the cap 
 which the lower copy sends through to the boundary. On the degenerate pair `a = b` there is no cup
 at all: the lower copy is the identity diagram (`TauCeti.capCup_self`), which closes up no loop
 either, so no hypothesis on the pair `{a, b}` is needed. -/
+@[simp]
 theorem middleLoopCount_composeDiagram_capCup_capCup_capCup (hcb : c ≠ b) (hca : c ≠ a) :
     middleLoopCount (composeDiagram (capCup a b) (capCup b c)) (capCup a b) = 0 := by
   obtain rfl | hab := eq_or_ne a b
