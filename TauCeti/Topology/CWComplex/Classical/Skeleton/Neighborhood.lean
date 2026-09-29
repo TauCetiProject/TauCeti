@@ -334,7 +334,7 @@ variable (C) in
 which pushes the outer half of every open `n`-cell onto its boundary and expands the inner half
 over the whole cell.  It sends `TauCeti.skeletonNeighborhood C n` into `Xⁿ⁻¹ = skeletonLT C n`. -/
 def skeletonNeighborhoodEndpoint (n : ℕ) :
-    C((skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X), (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :=
+    C(skeletonLT C ((n + 1 : ℕ) : ℕ∞), skeletonLT C ((n + 1 : ℕ) : ℕ∞)) :=
   (pushMap C n).curry 1
 
 variable (C) in
