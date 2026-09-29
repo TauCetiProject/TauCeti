@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
 import Mathlib.GroupTheory.IndexNSmul
-import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
