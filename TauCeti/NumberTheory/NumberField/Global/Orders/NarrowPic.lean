@@ -77,6 +77,7 @@ theorem mk_eq_one_iff (O : NumberFieldOrder K) {I : O.invertibleProperFractional
 
 /-- Two invertible fractional ideals have the same narrow Picard class exactly when they differ
 by a principal ideal with a totally positive generator. -/
+@[simp]
 theorem mk_eq_mk_iff (O : NumberFieldOrder K) {I J : O.invertibleProperFractionalIdeals} :
     mk O I = mk O J ↔ ∃ P ∈ O.narrowPrincipal, I * P = J :=
   QuotientGroup.mk'_eq_mk' O.narrowPrincipal
@@ -188,7 +189,7 @@ theorem narrowToPic_mk_eq_one_iff (O : NumberFieldOrder K)
   rw [O.narrowToPic_mk, ClassGroup.mk_eq_one_iff_exists]
 
 /-- The kernel of the forgetful map consists exactly of narrow classes of principal ideals. -/
-theorem ker_narrowToPic (O : NumberFieldOrder K) :
+theorem narrowToPic_ker (O : NumberFieldOrder K) :
     MonoidHom.ker O.narrowToPic = (NarrowPic.mkPrincipal O).range := by
   have hker : MonoidHom.ker O.narrowToPic =
       Subgroup.map (NarrowPic.mk O) (MonoidHom.ker O.mkPic) :=

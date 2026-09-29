@@ -154,6 +154,11 @@ ideals, by `NumberFieldOrder.isProperFractionalIdeal_of_isUnit`. -/
 abbrev invertibleProperFractionalIdeals (O : NumberFieldOrder K) :=
   (FractionalIdeal (nonZeroDivisors O.toSubalgebra) K)ˣ
 
+/-- Every invertible fractional ideal of an order is proper. -/
+theorem invertible_isProper (I : O.invertibleProperFractionalIdeals) :
+    O.IsProperFractionalIdeal I :=
+  O.isProperFractionalIdeal_of_isUnit I.isUnit
+
 /-- A fractional ideal with a multiplicative inverse is proper. -/
 theorem isProperFractionalIdeal_of_mul_eq_one
     {I J : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K} (hIJ : I * J = 1) :
