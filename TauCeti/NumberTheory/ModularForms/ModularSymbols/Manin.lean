@@ -45,30 +45,21 @@ theorem maninSymbol_apply (g : SL(2, ℤ))
     maninSymbol Γ g P = symbol Γ (mapGL ℚ g • ∞) (mapGL ℚ g • (0 : ℚ)) P :=
   by unfold maninSymbol; rfl
 
+/-- A Manin symbol is the coinvariant class of the translate of `[∞] - [0]` tensored with
+its coefficient polynomial. -/
+theorem maninSymbol_eq_mk (g : SL(2, ℤ))
+    (P : homogeneousSubmodule (Fin 2) R w) :
+    maninSymbol Γ g P = Coinvariants.mk _
+      (degreeZeroRep R g
+        ⟨_, single_sub_single_mem_degreeZero ∞ ((0 : ℚ) : OnePoint ℚ)⟩ ⊗ₜ[R] P) := by
+  rw [maninSymbol_apply, symbol_apply, degreeZeroRep_single_sub_single]
+
 private theorem maninSymbol_mul (g h : SL(2, ℤ))
     (P : homogeneousSubmodule (Fin 2) R w) :
     maninSymbol Γ (g * h) P =
       symbol Γ (mapGL ℚ g • (mapGL ℚ h • ∞))
         (mapGL ℚ g • (mapGL ℚ h • (0 : ℚ))) P := by
   rw [maninSymbol_apply, map_mul, mul_smul, mul_smul]
-
-private theorem S_smul_infty : (mapGL ℚ S • (∞ : OnePoint ℚ)) = (0 : ℚ) := by
-  simp [OnePoint.smul_infty_eq_ite]
-
-private theorem S_smul_zero : (mapGL ℚ S • ((0 : ℚ) : OnePoint ℚ)) = ∞ := by
-  simp [OnePoint.smul_some_eq_ite]
-
-private theorem TS_smul_infty : (mapGL ℚ (T * S) • (∞ : OnePoint ℚ)) = (1 : ℚ) := by
-  rw [map_mul, mul_smul]
-  simp [OnePoint.smul_infty_eq_ite, OnePoint.smul_some_eq_ite]
-
-private theorem TS_smul_zero : (mapGL ℚ (T * S) • ((0 : ℚ) : OnePoint ℚ)) = ∞ := by
-  rw [map_mul, mul_smul]
-  simp [OnePoint.smul_infty_eq_ite, OnePoint.smul_some_eq_ite]
-
-private theorem TS_smul_one : (mapGL ℚ (T * S) • ((1 : ℚ) : OnePoint ℚ)) = (0 : ℚ) := by
-  rw [map_mul, mul_smul]
-  simp [OnePoint.smul_some_eq_ite]
 
 /-- The subgroup relation for Manin symbols. Left multiplication of an edge by an element of
 `Γ` can be transferred to the right action on its coefficient polynomial. -/
@@ -84,27 +75,21 @@ theorem maninSymbol_mul_S (g : SL(2, ℤ)) :
     maninSymbol Γ (g * S) = -(maninSymbol Γ g :
       homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   ext P
-  rw [maninSymbol_mul, S_smul_infty, S_smul_zero, LinearMap.neg_apply,
+  rw [maninSymbol_mul, mapGL_S_smul_infty, mapGL_S_smul_zero, LinearMap.neg_apply,
     maninSymbol_apply]
-  exact congrArg (fun F : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w ↦ F P)
-    (symbol_swap Γ (mapGL ℚ g • ∞) (mapGL ℚ g • (0 : ℚ)))
+  exact LinearMap.congr_fun (symbol_swap Γ (mapGL ℚ g • ∞) (mapGL ℚ g • (0 : ℚ))) P
 
 /-- The three-term Manin relation for the oriented triangle with vertices
 `g · ∞`, `g · 1`, and `g · 0`. -/
-theorem maninSymbol_add_mul_TS_add_mul_TS_sq (g : SL(2, ℤ)) :
+theorem maninSymbol_add_mul_T_mul_S_add_mul_T_mul_S_sq (g : SL(2, ℤ)) :
     maninSymbol Γ g + maninSymbol Γ (g * (T * S)) +
       maninSymbol Γ (g * (T * S) ^ 2) =
         (0 : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   ext P
   simp only [LinearMap.add_apply, LinearMap.zero_apply]
-  have hcycle :
-      (mapGL ℚ ((T * S) ^ 2) • (∞ : OnePoint ℚ)) = (0 : ℚ) := by
-    rw [map_pow, pow_two, mul_smul, TS_smul_infty, TS_smul_one]
-  have hcycle' :
-      (mapGL ℚ ((T * S) ^ 2) • ((0 : ℚ) : OnePoint ℚ)) = (1 : ℚ) := by
-    rw [map_pow, pow_two, mul_smul, TS_smul_zero, TS_smul_infty]
   rw [maninSymbol_apply, maninSymbol_mul, maninSymbol_mul,
-    TS_smul_infty, TS_smul_zero, hcycle, hcycle']
+    mapGL_T_mul_S_smul_infty, mapGL_T_mul_S_smul_zero,
+    mapGL_T_mul_S_sq_smul_infty, mapGL_T_mul_S_sq_smul_zero]
   calc
     _ = (symbol Γ (mapGL ℚ g • ∞) (mapGL ℚ g • (0 : ℚ)) P +
           symbol Γ (mapGL ℚ g • (0 : ℚ)) (mapGL ℚ g • (1 : ℚ)) P) +
@@ -114,8 +99,8 @@ theorem maninSymbol_add_mul_TS_add_mul_TS_sq (g : SL(2, ℤ)) :
       rw [← LinearMap.add_apply, symbol_add_symbol]
     _ = 0 := by rw [← LinearMap.add_apply, symbol_add_symbol, symbol_self]; simp
 
-/-- Manin symbols span the modular-symbol module: every degree-zero divisor is a sum of
-unimodular edges, before passing to the coinvariants. -/
+/-- The Manin symbols `maninSymbol Γ g P`, for `g ∈ SL(2, ℤ)` and homogeneous binary forms
+`P` of degree `w`, span `𝕄_w(Γ; R)`. -/
 theorem span_maninSymbol_eq_top :
     Submodule.span R
       (Set.range fun x : SL(2, ℤ) × homogeneousSubmodule (Fin 2) R w ↦
@@ -123,11 +108,15 @@ theorem span_maninSymbol_eq_top :
   refine eq_top_iff.2 ((span_mk_degreeZeroRep_tmul_eq_top Γ).symm.le.trans
     (Submodule.span_mono ?_))
   rintro _ ⟨_, ⟨g, rfl⟩, P, -, rfl⟩
-  refine ⟨(g, P), ?_⟩
-  dsimp only
-  rw [maninSymbol_apply, symbol_apply]
-  congr 2
-  ext1
-  simp
+  exact ⟨(g, P), maninSymbol_eq_mk Γ g P⟩
+
+/-- The modular symbols `{α, β} ⊗ P` span `𝕄_w(Γ; R)`. -/
+theorem span_symbol_eq_top :
+    Submodule.span R
+      (Set.range fun x : OnePoint ℚ × OnePoint ℚ × homogeneousSubmodule (Fin 2) R w ↦
+        symbol Γ x.1 x.2.1 x.2.2) = ⊤ := by
+  refine eq_top_iff.2 ((span_maninSymbol_eq_top Γ).symm.le.trans (Submodule.span_mono ?_))
+  rintro _ ⟨⟨g, P⟩, rfl⟩
+  exact ⟨(mapGL ℚ g • ∞, mapGL ℚ g • (0 : ℚ), P), (maninSymbol_apply Γ g P).symm⟩
 
 end TauCeti.ModularSymbols
