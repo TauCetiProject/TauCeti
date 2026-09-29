@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation
+public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 
 /-!
 # The Green kernel and the Poisson kernel of the Euclidean unit ball
@@ -381,10 +382,20 @@ theorem ballPoissonKernel_pos {x y : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ <
   rw [ballPoissonKernel_def]
   positivity
 
+/-- The Poisson kernel with a pole in the open ball is positive on the unit sphere. -/
+theorem ballPoissonKernel_pos_on_sphere (x : EuclideanSpace ℝ (Fin n)) (hx : ‖x‖ < 1)
+    (y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :
+    0 < ballPoissonKernel n x y := by
+  apply ballPoissonKernel_pos hx
+  intro h
+  have hy : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
+  rw [h] at hx
+  linarith
+
 /-- The Poisson kernel is continuous as a function of the boundary point when its pole
-lies strictly inside the unit ball. -/
+lies off the unit sphere. -/
 theorem continuous_ballPoissonKernel_on_sphere
-    (x : EuclideanSpace ℝ (Fin n)) (hx : ‖x‖ < 1) :
+    (x : EuclideanSpace ℝ (Fin n)) (hx : ‖x‖ ≠ 1) :
     Continuous (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
       ballPoissonKernel n x y) := by
   rw [continuous_iff_continuousAt]
@@ -399,7 +410,7 @@ theorem continuous_ballPoissonKernel_on_sphere
     intro h
     have hy : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
     rw [h] at hx
-    linarith
+    exact hx hy
   have hden : (n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) *
       ‖x - (y : EuclideanSpace ℝ (Fin n))‖ ^ n ≠ 0 := by
     have hnpos : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
@@ -412,6 +423,20 @@ theorem continuous_ballPoissonKernel_on_sphere
   · fun_prop
   · fun_prop
   · exact hden
+
+/-- The Poisson kernel is integrable over any subset of the sphere when its pole
+lies off the sphere. -/
+theorem integrableOn_ballPoissonKernel
+    (x : EuclideanSpace ℝ (Fin n)) (hx : ‖x‖ ≠ 1)
+    (s : Set (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)) :
+    IntegrableOn (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
+      ballPoissonKernel n x y) s volume.toSphere := by
+  have hint : Integrable (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
+      ballPoissonKernel n x y) volume.toSphere := by
+    simpa only [integrableOn_univ] using
+      (continuous_ballPoissonKernel_on_sphere x hx).continuousOn.integrableOn_compact
+        isCompact_univ
+  exact hint.integrableOn
 
 /-- **The Poisson kernel is the normal derivative of the Green kernel.**  On the unit sphere, the
 derivative of the Green kernel with pole `x` off the sphere, taken in the direction of the outward

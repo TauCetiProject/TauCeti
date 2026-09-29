@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
-public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 
 /-!
 # Boundary concentration of the Poisson kernel of the ball
@@ -30,23 +29,9 @@ open MeasureTheory Metric Set Filter
 
 variable {n : ℕ}
 
-/-- The Poisson kernel is integrable over any subset of the sphere for a pole
-strictly inside the ball. -/
-theorem integrableOn_ballPoissonKernel
-    (x : EuclideanSpace ℝ (Fin n)) (hx : ‖x‖ < 1)
-    (s : Set (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)) :
-    IntegrableOn (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
-      ballPoissonKernel n x y) s volume.toSphere := by
-  have hint : Integrable (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
-      ballPoissonKernel n x y) volume.toSphere := by
-    simpa only [integrableOn_univ] using
-      (continuous_ballPoissonKernel_on_sphere x hx).continuousOn.integrableOn_compact
-        isCompact_univ
-  exact hint.integrableOn
-
 /-- Far from a boundary point `z`, the Poisson kernel is bounded by its vanishing
 numerator divided by a denominator depending only on the separation distance. -/
-theorem ballPoissonKernel_le_of_dist_le_half {x z : EuclideanSpace ℝ (Fin n)}
+theorem ballPoissonKernel_le_of_dist_le_half_of_le_dist {x z : EuclideanSpace ℝ (Fin n)}
     {delta : ℝ} (hdelta : 0 < delta) (hx : ‖x‖ ≤ 1)
     (hnear : dist x z ≤ delta / 2)
     {y : EuclideanSpace ℝ (Fin n)} (hfar : delta ≤ dist y z) :
@@ -115,14 +100,9 @@ theorem tendsto_setIntegral_ballPoissonKernel_away {z : EuclideanSpace ℝ (Fin 
     rwa [hval] at ht
   refine squeeze_zero' ?_ ?_ hlim
   · filter_upwards [hinside] with x hx
-    exact setIntegral_nonneg hs (fun y hy =>
-      (ballPoissonKernel_pos hx (by
-        intro h
-        have hy' : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
-        rw [h] at hx
-        linarith)).le)
+    exact setIntegral_nonneg hs (fun y hy => (ballPoissonKernel_pos_on_sphere x hx y).le)
   · filter_upwards [hinside, hnear] with x hx hnearx
-    have hint := integrableOn_ballPoissonKernel x hx s
+    have hint := integrableOn_ballPoissonKernel x hx.ne s
     have hconst : IntegrableOn
         (fun _y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
           (1 - ‖x‖ ^ 2) /
@@ -135,7 +115,7 @@ theorem tendsto_setIntegral_ballPoissonKernel_away {z : EuclideanSpace ℝ (Fin 
               (delta / 2) ^ n) ∂volume.toSphere := by
               apply setIntegral_mono_on hint hconst hs
               intro y hy
-              exact ballPoissonKernel_le_of_dist_le_half hdelta hx.le hnearx hy
+              exact ballPoissonKernel_le_of_dist_le_half_of_le_dist hdelta hx.le hnearx hy
       _ = (volume.toSphere s).toReal * ((1 - ‖x‖ ^ 2) /
           ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) *
             (delta / 2) ^ n)) := by
@@ -144,7 +124,9 @@ theorem tendsto_setIntegral_ballPoissonKernel_away {z : EuclideanSpace ℝ (Fin 
 /-- The contribution of boundary data from a fixed positive distance away from `z`
 vanishes in the Poisson integral as the pole approaches `z` from inside the ball. -/
 theorem tendsto_setIntegral_ballPoissonKernel_mul_away
-    (f : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ) (hf : Continuous f)
+    (f : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ)
+    (hf : AEStronglyMeasurable f volume.toSphere)
+    (hbounded : Bornology.IsBounded (Set.range f))
     {z : EuclideanSpace ℝ (Fin n)} (hz : ‖z‖ = 1)
     {delta : ℝ} (hdelta : 0 < delta) :
     Tendsto (fun x : EuclideanSpace ℝ (Fin n) =>
@@ -154,7 +136,7 @@ theorem tendsto_setIntegral_ballPoissonKernel_mul_away
       (nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1)) (nhds 0) := by
   let s : Set (sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :=
     {y | delta ≤ dist (y : EuclideanSpace ℝ (Fin n)) z}
-  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hf.continuousOn
+  obtain ⟨C, hC⟩ := hbounded.exists_norm_le
   have hinside : ∀ᶠ x in nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1),
       ‖x‖ < 1 := by
     filter_upwards [self_mem_nhdsWithin] with x hx
@@ -169,23 +151,43 @@ theorem tendsto_setIntegral_ballPoissonKernel_mul_away
   have hK : ∀ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1,
       0 ≤ ballPoissonKernel n x y := by
     intro y
-    apply (ballPoissonKernel_pos hx ?_).le
-    intro h
-    have hy : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
-    rw [h] at hx
-    linarith
+    exact (ballPoissonKernel_pos_on_sphere x hx y).le
   let nu : Measure (sphere (0 : EuclideanSpace ℝ (Fin n)) 1) := volume.toSphere
   have hg : Integrable (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
       C * ballPoissonKernel n x y) (nu.restrict s) :=
-    (integrableOn_ballPoissonKernel x hx s).const_mul C
+    (integrableOn_ballPoissonKernel x hx.ne s).const_mul C
   have hbound : ∀ᵐ (y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) ∂(nu.restrict s),
       ‖ballPoissonKernel n x y * f y‖ ≤ C * ballPoissonKernel n x y := by
     filter_upwards [] with y
     rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg (hK y)]
     simpa only [mul_comm C] using
-      mul_le_mul_of_nonneg_left (hC y (mem_univ _)) (hK y)
-  have h := norm_integral_le_of_norm_le hg hbound
+      mul_le_mul_of_nonneg_left (hC (f y) (Set.mem_range_self y)) (hK y)
+  have hmeas : AEStronglyMeasurable
+      (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
+        ballPoissonKernel n x y * f y) (nu.restrict s) :=
+    ((continuous_ballPoissonKernel_on_sphere x hx.ne).aestronglyMeasurable.mono_measure
+      Measure.restrict_le_self).mul (hf.mono_measure Measure.restrict_le_self)
+  have hweighted : Integrable
+      (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
+        ballPoissonKernel n x y * f y) (nu.restrict s) :=
+    Integrable.mono' hg hmeas hbound
+  have h := (norm_integral_le_integral_norm _).trans
+    (integral_mono_ae hweighted.norm hg hbound)
   simpa only [integral_const_mul] using h
+
+/-- The far-field Poisson integral of continuous boundary data vanishes as the pole
+approaches the boundary point through the open ball. -/
+theorem tendsto_setIntegral_ballPoissonKernel_mul_away_of_continuous
+    (f : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ) (hf : Continuous f)
+    {z : EuclideanSpace ℝ (Fin n)} (hz : ‖z‖ = 1)
+    {delta : ℝ} (hdelta : 0 < delta) :
+    Tendsto (fun x : EuclideanSpace ℝ (Fin n) =>
+      ∫ y in {y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 |
+          delta ≤ dist (y : EuclideanSpace ℝ (Fin n)) z},
+        ballPoissonKernel n x y * f y ∂volume.toSphere)
+      (nhdsWithin z (ball (0 : EuclideanSpace ℝ (Fin n)) 1)) (nhds 0) := by
+  exact tendsto_setIntegral_ballPoissonKernel_mul_away f hf.aestronglyMeasurable
+    (isCompact_range hf).isBounded hz hdelta
 
 end TauCeti
 
