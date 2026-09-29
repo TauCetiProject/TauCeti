@@ -182,6 +182,26 @@ noncomputable def homUnitLinearEquiv (V : GradedVectorSpace k) :
   (homUnitHomLinearEquiv k V).trans
     (ModuleCat.homLinearEquiv.trans (LinearMap.ringLmapEquivSelf k k _))
 
+/-- `homUnitLinearEquiv` evaluates the degree-zero component of a morphism at `1 ∈ k`. -/
+@[simp]
+theorem homUnitLinearEquiv_apply {V : GradedVectorSpace k} (f : unit k ⟶ V) :
+    homUnitLinearEquiv k V f = (f 0).hom ((unitObjZeroLinearEquiv k).symm 1) := by
+  simp [homUnitLinearEquiv, homUnitHomLinearEquiv_apply, unitObjZeroLinearEquiv]
+  -- Mathlib has no simp lemma for `ModuleCat.homLinearEquiv`, which is `ModuleCat.Hom.hom` by
+  -- definition.
+  rfl
+
+/-- The degree-zero component of the morphism out of `unit k` corresponding to `v ∈ V₀` is the
+identification `unit k 0 ≅ k` followed by `c ↦ c • v`. -/
+@[simp]
+theorem homUnitLinearEquiv_symm_apply_zero {V : GradedVectorSpace k} (v : V 0) :
+    (homUnitLinearEquiv k V).symm v 0 =
+      (unitObjZeroIso k).hom ≫ ModuleCat.ofHom (LinearMap.toSpanSingleton k (V 0) v) := by
+  simp [homUnitLinearEquiv, homUnitHomLinearEquiv_symm_apply_zero]
+  -- Mathlib has no simp lemma for `ModuleCat.homLinearEquiv.symm`, which is `ModuleCat.ofHom` by
+  -- definition; `LinearMap.toSpanSingleton k _ v` is `LinearMap.smulRight 1 v` by definition.
+  rfl
+
 /-- `unit k` is projective because epimorphisms of graded objects are componentwise epimorphisms
 and the one-dimensional module `k` is projective. -/
 instance : Projective (unit k) where
@@ -211,6 +231,7 @@ theorem finiteDimensional_unit_obj (i : ℤ) : FiniteDimensional k (unit k i) :=
     infer_instance
 
 /-- The piece of `unit k` in degree `i` has dimension `1` if `i = 0` and `0` otherwise. -/
+@[simp]
 theorem finrank_unit_obj (i : ℤ) :
     Module.finrank k (unit k i) = if i = 0 then 1 else 0 := by
   split_ifs with hi
@@ -228,6 +249,7 @@ theorem nonempty_linearEquiv_hom_unit_shift_pow (j : ℤ) :
 
 /-- **The degree-zero morphisms `Hom(M, M{j})`** between `M = unit k` and its shifts: they form a
 one-dimensional space for `j = 0` and vanish otherwise. -/
+@[simp]
 theorem finrank_hom_unit_shift_pow (j : ℤ) :
     Module.finrank k (unit k ⟶ ((shift k) ^ j).functor.obj (unit k)) =
       if j = 0 then 1 else 0 := by
@@ -321,6 +343,7 @@ theorem isGradedEulerAdmissible_unit :
 
 /-- **`χ_q(M, M) = 1`**: the only surviving bigraded `Ext` group of `(M, M)` is the
 one-dimensional space of degree-zero endomorphisms. -/
+@[simp]
 theorem gradedExtEuler_unit :
     gradedExtEuler k (shift k) (isGradedEulerAdmissible_unit.{w} k) = 1 := by
   rw [gradedExtEuler_projective k (shift k) (isGradedEulerAdmissible_unit.{w} k), ← T_zero]
@@ -373,6 +396,7 @@ variable [HasExt.{w'} (ModuleCat.{u} k)]
 
 /-- **The ungraded Ext-Euler characteristic `χ(k, k) = 1`** in `ModuleCat k`, for any
 admissibility witness: `k` is projective with one-dimensional endomorphisms. -/
+@[simp]
 theorem extEuler_moduleCat_field_self
     (h : IsEulerAdmissible.{w'} k (ModuleCat.of k k) (ModuleCat.of k k)) :
     extEuler.{w'} k h = 1 := by

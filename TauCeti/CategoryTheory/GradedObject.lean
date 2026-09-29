@@ -17,7 +17,8 @@ public import Mathlib.CategoryTheory.Linear.LinearFunctor
 
 This file equips Mathlib's canonical category `CategoryTheory.GradedObject β C` with the
 pointwise preadditive, linear, and abelian structures inherited from `C`, with morphisms added
-and scaled componentwise (`TauCeti.GradedObject.add_apply`, `TauCeti.GradedObject.smul_apply`).
+and scaled componentwise (`CategoryTheory.GradedObject.add_apply`,
+`CategoryTheory.GradedObject.smul_apply`).
 It also records that the canonical reindexing and shift functors are additive and linear.
 
 Mathlib provides the category of graded objects and its grading shift, but not these
@@ -30,13 +31,13 @@ instances, categories of graded objects such as graded vector spaces
 
 public section
 
-namespace TauCeti
-
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Preadditive
 
 universe w v u t
 
 variable {C : Type u} [Category.{v} C]
+
+namespace TauCeti
 
 /-- Pointwise addition of morphisms of graded objects. -/
 instance gradedObjectHomAdd (β : Type w) [Preadditive C] (X Y : GradedObject β C) :
@@ -62,7 +63,9 @@ instance gradedObjectLinear (β : Type w) (R : Type t) [Semiring R] [Preadditive
   smul_comp := by intros; funext i; apply Linear.smul_comp
   comp_smul := by intros; funext i; apply Linear.comp_smul
 
-namespace GradedObject
+end TauCeti
+
+namespace CategoryTheory.GradedObject
 
 /-- Morphisms of graded objects are added componentwise. -/
 @[simp]
@@ -77,7 +80,9 @@ theorem smul_apply {β : Type w} {R : Type t} [Semiring R] [Preadditive C] [Line
     (r • f) i = r • f i :=
   rfl
 
-end GradedObject
+end CategoryTheory.GradedObject
+
+namespace TauCeti
 
 /-- Reindexing a graded object is additive. -/
 instance gradedObjectComapAdditive {I J : Type*} [Preadditive C] (f : J → I) :
