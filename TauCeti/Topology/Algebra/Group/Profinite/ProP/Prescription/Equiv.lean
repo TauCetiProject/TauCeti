@@ -13,7 +13,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Basic
 The twisted coefficient system `I(χ)/pⁱ` and the prescription property of a continuous
 `p`-adic character are intrinsic to the source topological group.  If `e : H ≃ₜ* G`, then
 pullback along `e` identifies `I(χ)/pⁱ` with `I(χ ∘ e)/pⁱ`, compatibly with the
-reductions between levels.  The resulting equivalences on explicit continuous `H¹` show that
+reductions between levels (at the coefficient level any continuous homomorphism `H →ₜ* G`
+suffices).  The resulting equivalences on explicit continuous `H¹` show that
 `χ` has the prescription property exactly when `χ ∘ e` does.
 
 This transport is the naturality input needed to define the canonical character of a Demushkin
@@ -23,11 +24,19 @@ independent of the chosen presentation.
 ## Main results
 
 * `TauCeti.ZModTwist.compEquiv`: the coefficient equivalence
-  `I(χ)/pⁱ ≃ I(χ ∘ e)/pⁱ`.
+  `I(χ)/pⁱ ≃ I(χ ∘ f)/pⁱ` for a continuous homomorphism `f : H →ₜ* G`.
 * `TauCeti.ZModTwist.explicitH1CompEquiv`: the induced equivalence on explicit continuous `H¹`.
 * `TauCeti.HasPrescriptionProperty.comp_equiv`: pullback along a topological group isomorphism
   preserves the prescription property.
 * `TauCeti.hasPrescriptionProperty_comp_equiv_iff`: the corresponding equivalence.
+
+## Implementation notes
+
+The equivalence on explicit continuous `H¹` is `TauCeti.ContCohomology.explicitMap1Equiv`
+applied to the compatible pair `(e, compEquiv e χ i)`; its compatibility with reduction follows
+from the naturality lemmas `TauCeti.ContCohomology.explicitMap1_comp`,
+`TauCeti.ContCohomology.explicitMap1_congr_of_eq` and
+`TauCeti.ContCohomology.explicitCoeff1_eq_explicitMap1`.
 
 ## References
 
@@ -61,10 +70,10 @@ private theorem reduce_toAddMonoidHom_smul (χ : G →ₜ* ℤ_[p]ˣ) {i j : ℕ
   simp only [reduce_toAddMonoidHom_apply, val_reduce, val_smul, map_mul]
   rw [castHom_charScalar χ h g]
 
-/-- Pullback along a topological group isomorphism identifies the twisted coefficient modules
-for `χ` and `χ ∘ e`.  On residue classes this is the identity. -/
-noncomputable def compEquiv (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) :
-    ZModTwist χ i ≃+ ZModTwist (χ.comp (e : H →ₜ* G)) i where
+/-- Pullback along a continuous group homomorphism `f` identifies the twisted coefficient modules
+for `χ` and `χ ∘ f`.  On residue classes this is the identity. -/
+noncomputable def compEquiv (f : H →ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) :
+    ZModTwist χ i ≃+ ZModTwist (χ.comp f) i where
   toFun x := ⟨x.val⟩
   invFun x := ⟨x.val⟩
   left_inv _ := rfl
@@ -72,46 +81,45 @@ noncomputable def compEquiv (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : �
   map_add' _ _ := rfl
 
 @[simp]
-theorem compEquiv_apply (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ)
+theorem compEquiv_apply (f : H →ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ)
     (x : ZModTwist χ i) :
-    (compEquiv e χ i x).val = x.val := (rfl)
-
-private theorem compEquiv_toAddMonoidHom_apply (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ)
-    (i : ℕ) (x : ZModTwist χ i) :
-    ((compEquiv e χ i).toAddMonoidHom x).val = x.val := (rfl)
+    (compEquiv f χ i x).val = x.val := (rfl)
 
 @[simp]
-theorem compEquiv_symm_apply (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ)
-    (x : ZModTwist (χ.comp (e : H →ₜ* G)) i) :
-    ((compEquiv e χ i).symm x).val = x.val := (rfl)
+theorem compEquiv_symm_apply (f : H →ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ)
+    (x : ZModTwist (χ.comp f) i) :
+    ((compEquiv f χ i).symm x).val = x.val := (rfl)
 
 /-- The coefficient equivalence for a pulled-back character is equivariant along the group
-isomorphism. -/
-theorem compEquiv_smul (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) (h : H)
+homomorphism. -/
+@[simp]
+theorem compEquiv_smul (f : H →ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) (h : H)
     (x : ZModTwist χ i) :
-    (compEquiv e χ i).toAddMonoidHom ((e : H →ₜ* G) h • x) =
-      h • (compEquiv e χ i).toAddMonoidHom x := by
+    compEquiv f χ i (f h • x) = h • compEquiv f χ i x := by
   apply ZModTwist.ext
-  simp only [compEquiv_toAddMonoidHom_apply, val_smul, charScalar_apply,
-    ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_coe]
+  simp only [compEquiv_apply, val_smul, charScalar_apply, ContinuousMonoidHom.comp_toFun]
 
 /-- The coefficient equivalence for a pulled-back character commutes with reduction between
 levels. -/
-theorem compEquiv_reduce (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) {i j : ℕ} (h : j ≤ i)
+@[simp]
+theorem compEquiv_reduce (f : H →ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) {i j : ℕ} (h : j ≤ i)
     (x : ZModTwist χ i) :
-    (compEquiv e χ j).toAddMonoidHom ((reduce χ h).toAddMonoidHom x) =
-      (reduce (χ.comp (e : H →ₜ* G)) h).toAddMonoidHom
-        ((compEquiv e χ i).toAddMonoidHom x) := by
+    compEquiv f χ j (reduce χ h x) = reduce (χ.comp f) h (compEquiv f χ i x) := by
   apply ZModTwist.ext
-  simp only [compEquiv_toAddMonoidHom_apply, reduce_toAddMonoidHom_apply, val_reduce]
+  simp only [compEquiv_apply, val_reduce]
+
+private theorem compEquiv_toAddMonoidHom_smul (f : H →ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ)
+    (h : H) (x : ZModTwist χ i) :
+    (compEquiv f χ i).toAddMonoidHom (f h • x) = h • (compEquiv f χ i).toAddMonoidHom x :=
+  compEquiv_smul f χ i h x
 
 /-- Pullback along a topological group isomorphism identifies explicit continuous `H¹` with
 twisted coefficients. -/
-noncomputable abbrev explicitH1CompEquiv (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) :
+noncomputable def explicitH1CompEquiv (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) :
     H1 G (ZModTwist χ i) ≃+ H1 H (ZModTwist (χ.comp (e : H →ₜ* G)) i) :=
   explicitMap1Equiv G (ZModTwist χ i) H
-    (ZModTwist (χ.comp (e : H →ₜ* G)) i) e (compEquiv e χ i)
-    continuous_of_discreteTopology continuous_of_discreteTopology (compEquiv_smul e χ i)
+    (ZModTwist (χ.comp (e : H →ₜ* G)) i) e (compEquiv (e : H →ₜ* G) χ i)
+    continuous_of_discreteTopology continuous_of_discreteTopology (compEquiv_smul (e : H →ₜ* G) χ i)
 
 /-- The equivalence on explicit continuous `H¹` is pullback along the topological group
 isomorphism and the coefficient equivalence `ZModTwist.compEquiv`. -/
@@ -120,11 +128,12 @@ theorem explicitH1CompEquiv_apply (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (
     (x : H1 G (ZModTwist χ i)) :
     explicitH1CompEquiv e χ i x =
       explicitMap1 G (ZModTwist χ i) H
-        (ZModTwist (χ.comp (e : H →ₜ* G)) i) e (compEquiv e χ i).toAddMonoidHom
-        continuous_of_discreteTopology (compEquiv_smul e χ i) x :=
+        (ZModTwist (χ.comp (e : H →ₜ* G)) i) e (compEquiv (e : H →ₜ* G) χ i).toAddMonoidHom
+        continuous_of_discreteTopology (compEquiv_smul (e : H →ₜ* G) χ i) x :=
   explicitMap1Equiv_apply G (ZModTwist χ i) H
-    (ZModTwist (χ.comp (e : H →ₜ* G)) i) e (compEquiv e χ i)
-    continuous_of_discreteTopology continuous_of_discreteTopology (compEquiv_smul e χ i) x
+    (ZModTwist (χ.comp (e : H →ₜ* G)) i) e (compEquiv (e : H →ₜ* G) χ i)
+    continuous_of_discreteTopology continuous_of_discreteTopology
+    (compEquiv_smul (e : H →ₜ* G) χ i) x
 
 /-- The additive homomorphism underlying `explicitH1CompEquiv` is the compatible-pair pullback
 map used to define it. -/
@@ -132,8 +141,8 @@ private theorem explicitH1CompEquiv_toAddMonoidHom (e : H ≃ₜ* G)
     (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) :
     (explicitH1CompEquiv e χ i).toAddMonoidHom =
       explicitMap1 G (ZModTwist χ i) H
-        (ZModTwist (χ.comp (e : H →ₜ* G)) i) e (compEquiv e χ i).toAddMonoidHom
-        continuous_of_discreteTopology (compEquiv_smul e χ i) := by
+        (ZModTwist (χ.comp (e : H →ₜ* G)) i) e (compEquiv (e : H →ₜ* G) χ i).toAddMonoidHom
+        continuous_of_discreteTopology (compEquiv_toAddMonoidHom_smul (e : H →ₜ* G) χ i) := by
   apply AddMonoidHom.ext
   exact explicitH1CompEquiv_apply e χ i
 
@@ -186,17 +195,17 @@ theorem explicitH1CompEquiv_reduce (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) 
       ← explicitMap1_comp (hcomp := fun k m => by
         simp only [ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_id, id_eq,
           AddMonoidHom.comp_apply]
-        rw [hrG', compEquiv_smul]),
+        rw [hrG', compEquiv_toAddMonoidHom_smul]),
       ← explicitMap1_comp (hcomp := fun k m => by
         simp only [ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_id, id_eq,
           AddMonoidHom.comp_apply]
-        rw [compEquiv_smul, hrH'])]
+        rw [compEquiv_toAddMonoidHom_smul, hrH'])]
     apply explicitMap1_congr_of_eq
     · apply ContinuousMonoidHom.ext
       intro k
       rfl
     · apply AddMonoidHom.ext
-      exact compEquiv_reduce e χ h
+      exact compEquiv_reduce (e : H →ₜ* G) χ h
   exact DFunLike.congr_fun hnat x
 
 end ZModTwist
@@ -215,6 +224,7 @@ theorem HasPrescriptionProperty.comp_equiv {e : H ≃ₜ* G} {χ : G →ₜ* ℤ
 
 /-- A character has the prescription property if and only if its pullback along a topological
 group isomorphism does. -/
+@[simp]
 theorem hasPrescriptionProperty_comp_equiv_iff (e : H ≃ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) :
     HasPrescriptionProperty (χ.comp (e : H →ₜ* G)) ↔ HasPrescriptionProperty χ := by
   refine ⟨fun h ↦ ?_, HasPrescriptionProperty.comp_equiv⟩
