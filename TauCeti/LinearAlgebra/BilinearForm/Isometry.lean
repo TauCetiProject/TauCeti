@@ -564,6 +564,13 @@ theorem coe_specialIsometryWithinEquiv_apply (g : specialIsometryWithin B) :
       ((g : isometryGroup B) : M ≃ₗ[R] M) := by
   simp [specialIsometryWithinEquiv, Subgroup.subgroupOfEquivOfLe]
 
+@[simp]
+theorem coe_specialIsometryWithinEquiv_symm_apply (g : specialIsometryGroup B) :
+    (((specialIsometryWithinEquiv B).symm g : specialIsometryWithin B) : isometryGroup B) =
+      specialIsometryToIsometry B g := by
+  ext1
+  simp [specialIsometryWithinEquiv, Subgroup.subgroupOfEquivOfLe]
+
 /-- On a subsingleton module every isometry has determinant one. -/
 theorem specialIsometryWithin_eq_top [Subsingleton M] : specialIsometryWithin B = ⊤ := by
   refine eq_top_iff.mpr fun g _ ↦ ?_
@@ -606,6 +613,16 @@ theorem coe_specialIsometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R]
       (e.symm.trans (g : M ≃ₗ[R] M)).trans e := by
   rw [specialIsometryGroupCongr, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
     MulEquiv.coe_subgroupMap_apply, LinearEquiv.autCongr_apply]
+
+@[simp]
+theorem coe_specialIsometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
+    (g : specialIsometryGroup (LinearMap.BilinForm.congr e B)) :
+    ((specialIsometryGroupCongr B e).symm g : M ≃ₗ[R] M) =
+      (e.trans (g : M' ≃ₗ[R] M')).trans e.symm := by
+  rw [← (LinearEquiv.autCongr e).injective.eq_iff, LinearEquiv.autCongr_apply,
+    ← coe_specialIsometryGroupCongr_apply, MulEquiv.apply_symm_apply]
+  ext x
+  simp
 
 end Congr
 

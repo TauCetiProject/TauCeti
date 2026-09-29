@@ -379,6 +379,12 @@ theorem coe_specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin_apply
     (specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin Q h2 g : M ≃ₗ[R] M) = g := by
   simp [specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin]
 
+@[simp]
+theorem coe_specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin_symm_apply
+    (h2 : IsSMulRegular R (2 : R)) (g : LinearMap.BilinForm.specialIsometryGroup Q.polarBilin) :
+    ((specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin Q h2).symm g : M ≃ₗ[R] M) = g := by
+  simp [specialOrthogonalGroupEquivSpecialIsometryGroupPolarBilin]
+
 end PolarBilin
 
 end Det
