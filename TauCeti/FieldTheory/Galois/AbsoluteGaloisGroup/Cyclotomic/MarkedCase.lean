@@ -40,6 +40,7 @@ variable {K}
 
 /-- A field in which `2 ≠ 0` (for example, any field of characteristic zero) is never in the
 free arithmetic case at `p = 2`, since `-1` is a primitive square root of unity. -/
+@[simp]
 theorem not_isFreeCase_two [NeZero (2 : K)] : ¬ IsFreeCase 2 K := by
   rw [isFreeCase_iff]
   push Not
