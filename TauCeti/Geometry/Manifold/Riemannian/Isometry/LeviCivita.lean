@@ -27,8 +27,6 @@ exponential maps along Riemannian isometries.
 
 In the namespace `TauCeti.RiemannianIsometry`:
 
-* `inner_mpullback`: pulling back along a Riemannian isometry preserves pointwise inner products
-  of vector fields.
 * `koszul_mpullback`: the Koszul expression is natural under Riemannian isometries.
 * `mfderiv_apply_mpullback_of_isLeviCivitaConnection`: **naturality of Levi-Civita
   connections** under Riemannian isometries.
@@ -61,27 +59,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
 
-/-- Pulling back vector fields along a Riemannian isometry preserves their pointwise inner
-products. -/
-@[simp]
-theorem inner_mpullback (Φ : RiemannianIsometry I J M N) (Y Z : Π y : N, TangentSpace J y)
-    (x : M) :
-    inner ℝ (mpullback I J Φ Y x) (mpullback I J Φ Z x) = inner ℝ (Y (Φ x)) (Z (Φ x)) := by
-  rw [← Φ.inner_mfderiv x]
-  -- `⇑Φ.toDiffeomorph` is `⇑Φ` by definition (`coe_toDiffeomorph` is `rfl`).
-  exact congrArg₂ (inner ℝ) (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Y x)
-    (Φ.toDiffeomorph.mfderiv_apply_mpullback (by simp) Z x)
-
-variable [IsManifold I 2 M] [IsManifold J 2 N] [CompleteSpace E]
+variable [IsManifold I 2 M] [IsManifold J 2 N]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
 
 /-- **Naturality of the Koszul expression.** The Koszul expression of the pullbacks of three
 vector fields along a Riemannian isometry `Φ` is the Koszul expression of the fields themselves,
 evaluated at the image point. -/
 @[simp]
-theorem koszul_mpullback (Φ : RiemannianIsometry I J M N) {X Y Z : Π y : N, TangentSpace J y}
-    {x : M} (hX : MDiffAt (T% X) (Φ x)) (hY : MDiffAt (T% Y) (Φ x))
-    (hZ : MDiffAt (T% Z) (Φ x)) :
+theorem koszul_mpullback [CompleteSpace E] (Φ : RiemannianIsometry I J M N)
+    {X Y Z : Π y : N, TangentSpace J y} {x : M} (hX : MDiffAt (T% X) (Φ x))
+    (hY : MDiffAt (T% Y) (Φ x)) (hZ : MDiffAt (T% Z) (Φ x)) :
     koszul I (mpullback I J Φ X) (mpullback I J Φ Y) (mpullback I J Φ Z) x =
       koszul J X Y Z (Φ x) := by
   -- Directional derivatives of inner products: the chain rule through `Φ`.
