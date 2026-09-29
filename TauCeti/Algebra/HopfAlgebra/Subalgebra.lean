@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.Coalgebra.CoassocSimps
+import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
 # Hopf subalgebras
@@ -70,7 +71,7 @@ variable {A : Subalgebra R H} [Module.Flat R H] [Module.Flat R A]
 
 private theorem map_val_injective :
     Function.Injective (Algebra.TensorProduct.map A.val A.val) :=
-  TensorProduct.map_injective_of_flat_flat A.val.toLinearMap A.val.toLinearMap
+  Algebra.TensorProduct.map_injective_of_flat_flat A.val A.val
     Subtype.val_injective Subtype.val_injective
 
 private theorem map_val_map_val_injective :
