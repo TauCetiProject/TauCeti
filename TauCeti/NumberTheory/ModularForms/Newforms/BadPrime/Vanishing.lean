@@ -97,6 +97,7 @@ theorem heckeUCuspNat_mem_cuspFormsOld_of_sq_dvd (hp : p.Prime) (hpsq : p ^ 2 �
 /-- **A newform has `a_p = 0` when `p² ∣ N` and its nebentypus is defined modulo `N / p`**
 (Atkin–Lehner for trivial nebentypus; Li; Miyake, Theorem 4.6.17). With
 `Newform.heckeUCuspNat_eq_qExpansion_coeff_smul` this says `U_p f = 0`. -/
+@[simp]
 theorem Newform.qExpansion_coeff_prime_eq_zero_of_sq_dvd (f : Newform N k) (hp : p.Prime)
     (hpsq : p ^ 2 ∣ N) (hχ : f.dirichletLift.FactorsThrough (N / p)) :
     (qExpansion 1 f.toCuspForm).coeff p = 0 := by
