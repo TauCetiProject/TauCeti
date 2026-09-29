@@ -304,7 +304,7 @@ orbits of that stabilizer (`Subgroup.LinearizingCoordinate.quotientCoordinate_eq
 coordinate on that quotient, and it is independent of the local linearizing coordinate up to the
 biholomorphic transition
 `Subgroup.LinearizingCoordinate.quotientCoordinateTrans`, holomorphic there by
-`Subgroup.LinearizingCoordinate.mdifferentiableOn_quotientCoordinate`. -/
+`Subgroup.LinearizingCoordinate.differentiableOn_quotientCoordinateTrans`. -/
 def LinearizingCoordinate.quotientCoordinate (ψ : Γ.LinearizingCoordinate z ε)
     (τ : stabilizerBall Γ z ε) : ℂ := coordinate ψ τ ^ Nat.card (stabilizer Γ z)
 
@@ -563,20 +563,8 @@ the transition is a biholomorphic change of the local quotient coordinate. -/
 theorem LinearizingCoordinate.quotientCoordinateTrans_quotientCoordinateTrans
     (ψ ψ' : Γ.LinearizingCoordinate z ε) {w : ℂ} (hw : w ∈ ψ.quotientImage) :
     quotientCoordinateTrans ψ' ψ (quotientCoordinateTrans ψ ψ' w) = w := by
-  obtain ⟨u, hu, rfl⟩ := hw
-  have hf : ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ,
-      (transEquiv ψ ψ' (ζ • (u : ℂ))) ^ Nat.card (stabilizer Γ z)
-        = (transEquiv ψ ψ' (u : ℂ)) ^ Nat.card (stabilizer Γ z) := by
-    intro ζ
-    rw [transEquiv_smul ψ ψ' hu ζ, rootsOfUnity.smul_pow]
-  have hfu : transEquiv ψ ψ' (u : ℂ) ∈ ψ'.toEquiv.target := transEquiv_mem_target ψ ψ' hu
-  have hg : ∀ ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ,
-      (transEquiv ψ' ψ (ζ • transEquiv ψ ψ' (u : ℂ))) ^ Nat.card (stabilizer Γ z)
-        = (transEquiv ψ' ψ (transEquiv ψ ψ' (u : ℂ))) ^ Nat.card (stabilizer Γ z) := by
-    intro ζ
-    rw [transEquiv_smul ψ' ψ hfu ζ, rootsOfUnity.smul_pow]
-  simp only [quotientCoordinateTrans]
-  rw [TauCeti.descendPow_pow hf, TauCeti.descendPow_pow hg, transEquiv_transEquiv ψ ψ' hu]
+  obtain ⟨τ, rfl⟩ := (ψ.mem_quotientImage_iff w).mp hw
+  simp
 
 /-- **The disc coordinate centred at `z` is a local linearizing coordinate**: the reparametrization
 by the disc coordinate itself, whose coordinate is the disc coordinate
