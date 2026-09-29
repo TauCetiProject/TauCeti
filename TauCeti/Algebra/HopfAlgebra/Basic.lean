@@ -37,17 +37,17 @@ variable {R A B : Type*} [CommSemiring R]
 variable [Semiring A] [Semiring B] [HopfAlgebra R A] [HopfAlgebra R B]
 
 private lemma toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
-    φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)) =
-      (HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap := by
-  let f : WithConv (A →ₗ[R] B) := toConv φ.toLinearMap
+    (φ : A →ₗ[R] B).comp (HopfAlgebra.antipode R (A := A)) =
+      (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) := by
+  let f : WithConv (A →ₗ[R] B) := toConv (φ : A →ₗ[R] B)
   let g : WithConv (A →ₗ[R] B) :=
-    toConv (φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)))
+    toConv ((φ : A →ₗ[R] B).comp (HopfAlgebra.antipode R (A := A)))
   let h : WithConv (A →ₗ[R] B) :=
-    toConv ((HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap)
-  have hφ_alg : φ.toLinearMap = (φ : A →ₐ[R] B).toLinearMap :=
-    (CoalgHom.toLinearMap_eq_ofClass (φ : A →ₗc[R] B)).trans
-      (BialgHom.toAlgHom_toLinearMap φ).symm
-  have hφ_coalg : φ.toLinearMap = (φ : A →ₗc[R] B).toLinearMap := rfl
+    toConv ((HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B))
+  have hφ_alg : (φ : A →ₗ[R] B) = (φ : A →ₐ[R] B).toLinearMap :=
+    (BialgHom.toAlgHom_toLinearMap φ).symm
+  have hφ_coalg : (φ : A →ₗ[R] B) = (φ : A →ₗc[R] B).toLinearMap :=
+    (CoalgHom.toLinearMap_eq_ofClass (φ : A →ₗc[R] B)).symm
   have hg_left : g * f = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp only [g, f]
@@ -88,8 +88,12 @@ about underlying linear maps. -/
 @[simp]
 theorem coe_comp_antipode (φ : F) :
     (φ : A →ₗ[R] B).comp (HopfAlgebra.antipode R (A := A)) =
-      (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) :=
-  BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B)
+      (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) := by
+  ext a
+  simp only [LinearMap.comp_apply]
+  have h := LinearMap.congr_fun (BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B)) a
+  simpa only [LinearMap.comp_apply, LinearMap.coe_ofClass, BialgHom.coe_toLinearMap,
+    BialgHom.coe_coe] using h
 
 /-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, pointwise. -/
 @[simp]
