@@ -331,7 +331,6 @@ theorem _root_.Subgroup.map_map_conj (R : Subgroup G) (f : G →* H) (g : G) :
   exact congrArg (Subgroup.map · R) (MonoidHom.ext fun x ↦ by simp)
 
 /-- Conjugating a subgroup first by `g` and then by `h` is conjugation by `h * g`. -/
-@[simp]
 theorem _root_.Subgroup.map_conj_map_conj (R : Subgroup G) (g h : G) :
     (R.map (MulAut.conj g).toMonoidHom).map (MulAut.conj h).toMonoidHom =
       R.map (MulAut.conj (h * g)).toMonoidHom := by
