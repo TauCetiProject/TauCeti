@@ -75,17 +75,9 @@ namespace Subrepresentation
 variable {k G V : Type*} [Semiring k] [Monoid G] [AddCommMonoid V] [Module k V]
   {ρ : Representation k G V}
 
-/-- The bottom and top subrepresentations are distinct when the ambient space is nontrivial. -/
-theorem bot_ne_top [Nontrivial V] : (⊥ : Subrepresentation ρ) ≠ ⊤ := fun hc =>
-  _root_.bot_ne_top (α := Submodule k V) (by
-    rw [← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), hc])
-
-/-- The top and bottom subrepresentations are distinct when the ambient space is nontrivial. -/
-theorem top_ne_bot [Nontrivial V] : (⊤ : Subrepresentation ρ) ≠ ⊥ :=
-  bot_ne_top.symm
-
 instance instNontrivial [Nontrivial V] : Nontrivial (Subrepresentation ρ) :=
-  ⟨⊥, ⊤, bot_ne_top⟩
+  ⟨⟨⊥, ⊤, fun hc => _root_.bot_ne_top (α := Submodule k V) (by
+    rw [← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), hc])⟩⟩
 
 end Subrepresentation
 
@@ -309,7 +301,7 @@ is `Representation.exists_isAtom_le` applied to the whole space, which is nonzer
 because `V` is; the scalars need only be a division ring and the acting monoid stays arbitrary. -/
 theorem exists_isAtom [FiniteDimensional k V] [Nontrivial V] (ρ : Representation k G V) :
     ∃ σ : Subrepresentation ρ, IsAtom σ :=
-  let ⟨σ, _, hσ⟩ := exists_isAtom_le Subrepresentation.top_ne_bot
+  let ⟨σ, _, hσ⟩ := exists_isAtom_le top_ne_bot
   ⟨σ, hσ⟩
 
 end DivisionRing
