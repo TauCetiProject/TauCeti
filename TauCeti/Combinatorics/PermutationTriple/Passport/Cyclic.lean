@@ -58,26 +58,40 @@ open PermutationTriple
 
 variable {n : ℕ}
 
-/-- For exponents below the degree, the triples `cyclicPowTriple n j` and `cyclicPowTriple n k`
-are isomorphic only when `j = k`: a relabeling fixing the rotation `r` commutes with its
-powers. -/
-theorem mk_cyclicPowTriple_eq_mk_cyclicPowTriple_iff {j k : ℕ} (hj : j < n) (hk : k < n) :
+/-- In nonzero degree, the triples `cyclicPowTriple n j` and `cyclicPowTriple n k` are isomorphic
+exactly when their exponents are congruent modulo `n`: a relabeling fixing the rotation `r`
+commutes with its powers. -/
+theorem mk_cyclicPowTriple_eq_mk_cyclicPowTriple_iff (hn : n ≠ 0) {j k : ℕ} :
     mk ⟨cyclicPowTriple n j, isConnected_cyclicPowTriple
-      (Nat.ne_of_gt (Nat.lt_of_le_of_lt (Nat.zero_le j) hj))⟩ =
+      hn⟩ =
         mk ⟨cyclicPowTriple n k, isConnected_cyclicPowTriple
-          (Nat.ne_of_gt (Nat.lt_of_le_of_lt (Nat.zero_le j) hj))⟩ ↔ j = k := by
-  have hn : n ≠ 0 := by omega
-  refine ⟨fun h => ?_, fun h => h ▸ rfl⟩
-  obtain ⟨τ, hτ⟩ := mk_eq_mk_iff_exists_smul.mp h
-  have hτ' := congrArg Subtype.val hτ
-  rw [ConnectedTriple.coe_smul] at hτ'
-  have h0 := congrArg PermutationTriple.σ0 hτ'
-  have h1 := congrArg PermutationTriple.σ1 hτ'
-  simp only [smul_σ0, smul_σ1, cyclicPowTriple_σ0, cyclicPowTriple_σ1] at h0 h1
-  rw [← conj_pow, h0] at h1
-  have hord := orderOf_finRotate hn
-  exact (pow_injOn_Iio_orderOf (x := finRotate n) (by rw [hord]; exact hj)
-    (by rw [hord]; exact hk) h1.symm)
+          hn⟩ ↔ j ≡ k [MOD n] := by
+  constructor
+  · intro h
+    obtain ⟨τ, hτ⟩ := mk_eq_mk_iff_exists_smul.mp h
+    have hτ' := congrArg Subtype.val hτ
+    rw [ConnectedTriple.coe_smul] at hτ'
+    have h0 := congrArg PermutationTriple.σ0 hτ'
+    have h1 := congrArg PermutationTriple.σ1 hτ'
+    simp only [smul_σ0, smul_σ1, cyclicPowTriple_σ0, cyclicPowTriple_σ1] at h0 h1
+    rw [← conj_pow, h0] at h1
+    rw [pow_eq_pow_iff_modEq, orderOf_finRotate hn] at h1
+    exact h1.symm
+  · intro hjk
+    have hp : finRotate n ^ j = finRotate n ^ k := by
+      rw [pow_eq_pow_iff_modEq, orderOf_finRotate hn]
+      exact hjk
+    have ht : cyclicPowTriple n j = cyclicPowTriple n k :=
+      ext_of_two (by simp) (by simpa using hp)
+    exact congrArg mk (Subtype.ext ht)
+
+/-- For exponents below the degree, the triples `cyclicPowTriple n j` and `cyclicPowTriple n k`
+are isomorphic exactly when `j = k`. -/
+theorem mk_cyclicPowTriple_eq_mk_cyclicPowTriple_iff_of_lt {j k : ℕ} (hj : j < n) (hk : k < n) :
+    mk ⟨cyclicPowTriple n j, isConnected_cyclicPowTriple (by omega)⟩ =
+        mk ⟨cyclicPowTriple n k, isConnected_cyclicPowTriple (by omega)⟩ ↔ j = k := by
+  rw [mk_cyclicPowTriple_eq_mk_cyclicPowTriple_iff (by omega)]
+  simp [Nat.ModEq, Nat.mod_eq_of_lt hj, Nat.mod_eq_of_lt hk]
 
 end ConnectedIsoClass
 
@@ -224,7 +238,7 @@ theorem passportSize_cyclicTotallyRamified (hp : p.Prime) :
     Nat.card_Icc, Nat.add_sub_cancel]
   intro j hj k hk hjk
   rw [Finset.coe_Icc, Set.mem_Icc] at hj hk
-  exact (ConnectedIsoClass.mk_cyclicPowTriple_eq_mk_cyclicPowTriple_iff
+  exact (ConnectedIsoClass.mk_cyclicPowTriple_eq_mk_cyclicPowTriple_iff_of_lt
     (by omega) (by omega)).mp hjk
 
 /-- The passport of degree `5` with monodromy `C₅` and cycle partitions `([5], [5], [5])` has

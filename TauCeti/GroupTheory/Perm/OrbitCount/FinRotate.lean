@@ -56,6 +56,7 @@ theorem parts_partition_finRotate_pow {n k : ℕ} (hn : n ≠ 0) (hk : k.Coprime
 
 /-- A power of cyclic rotation of a nonempty finite ordinal of length `n` is a single cycle
 through every point exactly when its exponent is coprime to `n`. -/
+@[simp]
 theorem parts_partition_finRotate_pow_eq_singleton_iff {n k : ℕ} (hn : n ≠ 0) :
     (finRotate n ^ k).partition.parts = {n} ↔ k.Coprime n := by
   refine ⟨fun h => ?_, parts_partition_finRotate_pow hn⟩
