@@ -56,7 +56,7 @@ theorem sturmVariation_cons {p : K[X]} (hp : p ≠ 0) (q : K[X]) (x : K) :
   simp only [sturmVariation, sturmSeq_cons hp, List.map_cons]
 
 /-- A zero first value is deleted when counting Sturm variations. -/
-@[simp] theorem sturmVariation_of_eval_eq_zero {p q : K[X]} {x : K}
+theorem sturmVariation_of_eval_eq_zero {p q : K[X]} {x : K}
     (hp : p.eval x = 0) :
     sturmVariation p q x = sturmVariation q (-p % q) x := by
   by_cases hp0 : p = 0
