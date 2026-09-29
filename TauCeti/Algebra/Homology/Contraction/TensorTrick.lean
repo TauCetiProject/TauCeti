@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Contraction.Linear
+public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 
 /-!
@@ -84,20 +85,6 @@ private noncomputable def slotSum (n : ℕ) (f g k : Module.End R M) :
     Module.End R (TensorPower R n M) :=
   ∑ j ∈ Finset.range n, PiTensorProduct.map (slotFamily n f g k j)
 
-/-- Two tensor maps whose factors agree away from one position add up to the tensor map with the
-sum of their factors at that position. -/
-private theorem map_add_map_eq {n : ℕ} (A B : Fin n → M →ₗ[R] M) (k : Fin n)
-    (h : ∀ i, i ≠ k → A i = B i) :
-    PiTensorProduct.map A + PiTensorProduct.map B =
-      PiTensorProduct.map (Function.update A k (A k + B k)) := by
-  have hB : B = Function.update A k (B k) := by
-    funext i
-    by_cases hi : i = k
-    · subst hi
-      simp
-    · simp [Function.update_of_ne hi, h i hi]
-  rw [PiTensorProduct.map_update_add, Function.update_eq_self, ← hB]
-
 /-! ### The contraction identity on words of one length -/
 
 section Core
@@ -115,7 +102,7 @@ private theorem slot_cross_eq_zero (hdτ : d ∘ₗ τ + τ ∘ₗ d = 0) (hhτ 
   rw [← PiTensorProduct.map_comp, ← PiTensorProduct.map_comp]
   rcases lt_or_gt_of_ne hpj with hlt | hgt
   · -- `d` acts before `h`: the two sides differ only at position `p`, by `d τ` against `τ d`
-    rw [map_add_map_eq _ _ ⟨p, hp⟩ fun i hi ↦ ?_]
+    rw [PiTensorProduct.map_add_map_eq_map_update _ _ ⟨p, hp⟩ fun i hi ↦ ?_]
     · rw [← PiTensorProduct.mapMultilinear_apply]
       refine MultilinearMap.map_coord_zero _ ⟨p, hp⟩ ?_
       simpa [slotFamily_apply, hlt] using hdτ
@@ -123,7 +110,7 @@ private theorem slot_cross_eq_zero (hdτ : d ∘ₗ τ + τ ∘ₗ d = 0) (hhτ 
       simp only [slotFamily_apply]
       split_ifs <;> first | omega | simp
   · -- `h` acts before `d`: the two sides differ only at position `j`, by `τ h` against `h τ`
-    rw [map_add_map_eq _ _ ⟨j, hj⟩ fun i hi ↦ ?_]
+    rw [PiTensorProduct.map_add_map_eq_map_update _ _ ⟨j, hj⟩ fun i hi ↦ ?_]
     · rw [← PiTensorProduct.mapMultilinear_apply]
       refine MultilinearMap.map_coord_zero _ ⟨j, hj⟩ ?_
       simpa [slotFamily_apply, hgt] using hhτ
@@ -142,7 +129,7 @@ private theorem slot_diag_eq (hττ : τ ∘ₗ τ = LinearMap.id)
       PiTensorProduct.map (slotFamily n LinearMap.id LinearMap.id P p) -
         PiTensorProduct.map (slotFamily n LinearMap.id P P p) := by
   rw [← PiTensorProduct.map_comp, ← PiTensorProduct.map_comp,
-    map_add_map_eq _ _ ⟨p, hp⟩ fun i hi ↦ ?_]
+    PiTensorProduct.map_add_map_eq_map_update _ _ ⟨p, hp⟩ fun i hi ↦ ?_]
   · have hk : (slotFamily n τ d LinearMap.id p ⟨p, hp⟩ ∘ₗ slotFamily n τ h P p ⟨p, hp⟩ +
         slotFamily n τ h P p ⟨p, hp⟩ ∘ₗ slotFamily n τ d LinearMap.id p ⟨p, hp⟩) =
         LinearMap.id - P := by
