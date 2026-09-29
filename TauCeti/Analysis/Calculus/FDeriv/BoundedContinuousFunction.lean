@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
-public import TauCeti.Topology.ContinuousMap.Bounded.Basic
 public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
@@ -18,12 +17,13 @@ Let `G : X → Y` be a Lipschitz map between normed spaces over `ℝ` or `ℂ`. 
 `BoundedContinuousFunction.comp G hG : (α →ᵇ X) → (α →ᵇ Y)`, for the sup norm. This file shows
 that it is continuously differentiable wherever `G` is, in the following uniform sense.
 
-Suppose that `G` has derivative `G' x` at every point `x` of a set `s`, that the derivative is a
-bounded continuous function `G' : X →ᵇ (X →L[𝕜] Y)`, uniformly continuous on `s`, and that the
-values of `f₀` stay a fixed distance `δ > 0` inside `s`. Then the superposition operator is
-differentiable at `f₀`, and its derivative is pointwise application of the family of derivatives,
-`h ↦ (t ↦ G' (f₀ t) (h t))`, that is `applyCLM (G'.compContinuous f₀.toContinuousMap)`. The
-derivative is moreover strict, and the operator is `C¹` near `f₀`.
+Suppose that `G` has derivative `G' x` at every point `x` of a set `s`, that
+`G' : X → (X →L[𝕜] Y)` is uniformly continuous on `s`, and that the values of `f₀` stay a fixed
+distance `δ > 0` inside `s`. Nothing is assumed about `G'` off `s`. Then the superposition
+operator is differentiable at `f₀`, and its derivative is pointwise application of the family of
+derivatives, `h ↦ (t ↦ G' (f₀ t) (h t))`, that is `applyCLM Φ` for the bounded continuous family
+`Φ t = G' (f₀ t)`; the Lipschitz constant of `G` bounds `G'` on `s`, so this family is bounded.
+The derivative is moreover strict, and the operator is `C¹` near `f₀`.
 
 Uniform continuity of `G'` is what makes the remainder estimate hold with one constant at all
 the points `f₀ t` at once; nothing makes the range of `f₀` compact, for instance for curves on
@@ -59,7 +59,8 @@ namespace BoundedContinuousFunction
 
 variable {α 𝕜 X Y : Type*} [TopologicalSpace α] [RCLike 𝕜]
   [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-  {G : X → Y} {C : ℝ≥0} {G' : X →ᵇ (X →L[𝕜] Y)} {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ}
+  {G : X → Y} {C : ℝ≥0} {G' : X → X →L[𝕜] Y} {s : Set X} {f₀ : α →ᵇ X} {δ : ℝ}
+  {Φ : α →ᵇ (X →L[𝕜] Y)}
 
 /-- If the values of `f₀` stay `δ > 0` inside `s`, then so do the values of every function
 uniformly within `δ / 2` of `f₀`, with the margin `δ / 2`. -/
@@ -68,24 +69,22 @@ private theorem ball_half_subset_of_mem_ball {f : α →ᵇ X} (hf₀ : ∀ t, b
   (ball_subset_ball' (by linarith [dist_coe_le_dist (f := f) (g := f₀) t, mem_ball.1 hf])).trans
     (hf₀ t)
 
-/-- The derivative `f ↦ (h ↦ (t ↦ G' (f t) (h t)))` of the superposition operator is continuous at
-every function whose values stay a positive distance inside a set where `G'` is uniformly
-continuous. -/
-private theorem continuousAt_applyCLM_compContinuous (hG' : UniformContinuousOn G' s)
-    (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) :
-    ContinuousAt (fun f : α →ᵇ X ↦ applyCLM (G'.compContinuous f.toContinuousMap)) f₀ :=
-  applyCLM.continuous.continuousAt.comp <|
-    (uniformContinuousOn_compContinuous_left G' hG').continuousOn.continuousAt <|
-      mem_of_superset (ball_mem_nhds f₀ hδ) fun _ hf t ↦
-        hf₀ t <| mem_ball.2 <| (dist_coe_le_dist t).trans_lt hf
+/-- Along a function `f` with values in `s`, the derivatives `t ↦ G' (f t)` form a bounded
+continuous family: they are bounded by the Lipschitz constant of `G`. -/
+private theorem exists_eq_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
+    (hG' : UniformContinuousOn G' s) {f : α →ᵇ X} (hf : ∀ t, f t ∈ s) :
+    ∃ Φ : α →ᵇ (X →L[𝕜] Y), ∀ t, Φ t = G' (f t) :=
+  ⟨ofNormedAddCommGroup (fun t ↦ G' (f t)) (hG'.continuousOn.comp_continuous f.continuous hf) C
+    fun t ↦ (hGs _ (hf t)).le_of_lipschitz hG, fun _ ↦ rfl⟩
 
 /-- **The derivative of a superposition operator.** Let `G` be Lipschitz, with derivative `G' x`
-at every point `x` of `s`, where `G'` is bounded continuous and uniformly continuous on `s`. If the
-values of `f₀` stay a distance `δ > 0` inside `s`, then `f ↦ G ∘ f` is differentiable at `f₀` for
-the sup norm, with derivative `h ↦ (t ↦ G' (f₀ t) (h t))`. -/
+at every point `x` of `s`, where `G'` is uniformly continuous on `s`. If the values of `f₀` stay a
+distance `δ > 0` inside `s`, then `f ↦ G ∘ f` is differentiable at `f₀` for the sup norm, with
+derivative `h ↦ (t ↦ G' (f₀ t) (h t))`, that is `applyCLM Φ` for the bounded continuous family
+`Φ t = G' (f₀ t)`. -/
 theorem hasFDerivAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
-    (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) :
-    HasFDerivAt (comp G hG) (applyCLM (G'.compContinuous f₀.toContinuousMap)) f₀ := by
+    (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
+    (hΦ : ∀ t, Φ t = G' (f₀ t)) : HasFDerivAt (comp G hG) (applyCLM Φ) f₀ := by
   let _ : NormedSpace ℝ X := .restrictScalars ℝ 𝕜 X
   rw [hasFDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff]
   intro c hc
@@ -108,37 +107,65 @@ theorem hasFDerivAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivA
         ((mem_ball.1 hx).le.trans (min_le_right _ _)))
     (mem_ball_self hρ) hmem
   rw [add_sub_cancel_left] at key
-  simpa using key.trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm h t) hc.le)
+  simpa [hΦ] using key.trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm h t) hc.le)
+
+/-- The superposition operator is differentiable at every function whose values stay a positive
+distance inside `s`. -/
+private theorem hasFDerivAt_fderiv_comp (hG : LipschitzWith C G)
+    (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x) (hG' : UniformContinuousOn G' s) (hδ : 0 < δ)
+    (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) : HasFDerivAt (comp G hG) (fderiv 𝕜 (comp G hG) f₀) f₀ :=
+  have ⟨_, hΦ⟩ := exists_eq_comp hG hGs hG' fun t ↦ hf₀ t (mem_ball_self hδ)
+  (hasFDerivAt_comp hG hGs hG' hδ hf₀ hΦ).differentiableAt.hasFDerivAt
+
+/-- The derivative of the superposition operator is continuous at every function whose values
+stay a positive distance inside a set where `G'` is uniformly continuous. -/
+private theorem continuousAt_fderiv_comp (hG : LipschitzWith C G)
+    (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x) (hG' : UniformContinuousOn G' s) (hδ : 0 < δ)
+    (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) : ContinuousAt (fderiv 𝕜 (comp G hG)) f₀ := by
+  refine Metric.continuousAt_iff (β := (α →ᵇ X) →L[𝕜] α →ᵇ Y) |>.2 fun ε hε ↦ ?_
+  obtain ⟨η, hη, hG'η⟩ := Metric.uniformContinuousOn_iff_le.1 hG' (ε / 2) (half_pos hε)
+  refine ⟨min (δ / 2) η, lt_min (half_pos hδ) hη, fun f hf ↦ ?_⟩
+  have hfδ : f ∈ ball f₀ (δ / 2) := mem_ball.2 (hf.trans_le (min_le_left _ _))
+  have hfs := ball_half_subset_of_mem_ball hf₀ hfδ
+  obtain ⟨Φ, hΦ⟩ := exists_eq_comp hG hGs hG' fun t ↦ hfs t (mem_ball_self (half_pos hδ))
+  obtain ⟨Φ₀, hΦ₀⟩ := exists_eq_comp hG hGs hG' fun t ↦ hf₀ t (mem_ball_self hδ)
+  rw [(hasFDerivAt_comp hG hGs hG' (half_pos hδ) hfs hΦ).fderiv,
+    (hasFDerivAt_comp hG hGs hG' hδ hf₀ hΦ₀).fderiv, dist_eq_norm, ← map_sub]
+  refine ((norm_applyCLM_apply_le _).trans ?_).trans_lt (half_lt_self hε)
+  refine (norm_le (half_pos hε).le).2 fun t ↦ ?_
+  rw [coe_sub, Pi.sub_apply, hΦ, hΦ₀, ← dist_eq_norm]
+  exact hG'η _ (hfs t (mem_ball_self (half_pos hδ))) _ (hf₀ t (mem_ball_self hδ))
+    ((dist_coe_le_dist t).trans (hf.le.trans (min_le_right _ _)))
 
 /-- **Strict differentiability of a superposition operator.** Under the hypotheses of
 `BoundedContinuousFunction.hasFDerivAt_comp`, the derivative
 `h ↦ (t ↦ G' (f₀ t) (h t))` of `f ↦ G ∘ f` at `f₀` is strict. -/
 theorem hasStrictFDerivAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
-    (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) :
-    HasStrictFDerivAt (comp G hG) (applyCLM (G'.compContinuous f₀.toContinuousMap)) f₀ :=
-  hasStrictFDerivAt_of_hasFDerivAt_of_continuousAt
-    (f' := fun f : α →ᵇ X ↦ applyCLM (G'.compContinuous f.toContinuousMap))
+    (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
+    (hΦ : ∀ t, Φ t = G' (f₀ t)) : HasStrictFDerivAt (comp G hG) (applyCLM Φ) f₀ := by
+  rw [← (hasFDerivAt_comp hG hGs hG' hδ hf₀ hΦ).fderiv]
+  exact hasStrictFDerivAt_of_hasFDerivAt_of_continuousAt
     (mem_of_superset (ball_mem_nhds f₀ (half_pos hδ)) fun _ hf ↦
-      hasFDerivAt_comp hG hGs hG' (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf))
-    (continuousAt_applyCLM_compContinuous hG' hδ hf₀)
+      hasFDerivAt_fderiv_comp hG hGs hG' (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf))
+    (continuousAt_fderiv_comp hG hGs hG' hδ hf₀)
 
-/-- **A superposition operator is `C¹`.** Under the hypotheses of
-`BoundedContinuousFunction.hasFDerivAt_comp`, the map `f ↦ G ∘ f` is continuously differentiable
-at `f₀`. -/
+/-- **A superposition operator is `C¹`.** Let `G` be Lipschitz, with derivative `G' x` at every
+point `x` of `s`, where `G'` is uniformly continuous on `s`. If the values of `f₀` stay a distance
+`δ > 0` inside `s`, then the map `f ↦ G ∘ f` is continuously differentiable at `f₀`. -/
 theorem contDiffAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
     (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) :
     ContDiffAt 𝕜 1 (comp G hG) f₀ := by
-  refine contDiffAt_one_iff.2 ⟨fun f : α →ᵇ X ↦ applyCLM (G'.compContinuous f.toContinuousMap),
-    ball f₀ (δ / 2), ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_, fun f hf ↦ ?_⟩
-  · exact (continuousAt_applyCLM_compContinuous hG' (half_pos hδ)
+  refine contDiffAt_one_iff.2 ⟨fderiv 𝕜 (comp G hG), ball f₀ (δ / 2),
+    ball_mem_nhds f₀ (half_pos hδ), fun f hf ↦ ?_, fun f hf ↦ ?_⟩
+  · exact (continuousAt_fderiv_comp hG hGs hG' (half_pos hδ)
       (ball_half_subset_of_mem_ball hf₀ hf)).continuousWithinAt
-  · exact hasFDerivAt_comp hG hGs hG' (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf)
+  · exact hasFDerivAt_fderiv_comp hG hGs hG' (half_pos hδ) (ball_half_subset_of_mem_ball hf₀ hf)
 
 /-- **A superposition operator is `C¹`, global form.** If `G` is Lipschitz and differentiable
-everywhere, with a bounded continuous derivative `G'` that is uniformly continuous on every ball
-about `0`, then `f ↦ G ∘ f` is continuously differentiable on the bounded continuous functions.
-Since each bounded continuous `f₀` takes values in a ball, uniform continuity of `G'` on bounded
-sets suffices; it holds for instance when `X` is finite-dimensional. -/
+everywhere, with a derivative `G'` that is uniformly continuous on every ball about `0`, then
+`f ↦ G ∘ f` is continuously differentiable on the bounded continuous functions. Since each
+bounded continuous `f₀` takes values in a ball, uniform continuity of `G'` on bounded sets
+suffices; it holds for instance when `X` is finite-dimensional and `G'` is continuous. -/
 theorem contDiff_comp (hG : LipschitzWith C G) (hGs : ∀ x, HasFDerivAt G (G' x) x)
     (hG' : ∀ r, UniformContinuousOn G' (ball 0 r)) :
     ContDiff 𝕜 1 (comp G hG : (α →ᵇ X) → α →ᵇ Y) :=
