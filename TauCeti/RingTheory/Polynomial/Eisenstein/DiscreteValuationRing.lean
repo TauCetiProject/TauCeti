@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
+public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 
 /-!
