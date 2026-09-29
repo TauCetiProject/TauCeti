@@ -124,12 +124,12 @@ theorem norm_coeff_mul_pow_le_closedDiscGaussValuation (hr₀ : 0 < r) (hr₁ : 
     (n : ℕ) :
     ‖MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) R)‖ * r ^ n ≤
       closedDiscGaussValuation hr₀ hr₁ f := by
-  have hbdd := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-    (toRestrictedSubring ((abs_of_pos hr₀).trans_le hr₁) f).2
-  simp only [PowerSeries.HasGaussNorm, coe_toRestrictedSubring, PowerSeries.coeff_rename,
-    Subsingleton.elim (finOneEquiv.symm ()) 0] at hbdd
-  rw [coe_closedDiscGaussValuation]
-  exact le_ciSup hbdd n
+  simpa only [closedDiscGaussValuation, Valuation.comap_apply,
+    TauCeti.PowerSeries.coe_gaussValuation, coe_toRestrictedSubring,
+    PowerSeries.coeff_rename, Subsingleton.elim (finOneEquiv.symm ()) 0] using
+    (PowerSeries.le_gaussNorm norm r _
+      (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
+        (toRestrictedSubring ((abs_of_pos hr₀).trans_le hr₁) f).2) n)
 
 /-- A common bound on the coefficient norms of `f` bounds its Gauss valuation, since `r ≤ 1`. -/
 theorem closedDiscGaussValuation_le_of_forall_norm_coeff_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
