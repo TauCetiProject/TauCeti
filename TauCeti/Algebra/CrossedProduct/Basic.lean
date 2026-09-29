@@ -25,8 +25,8 @@ The **crossed product** `(L, Aut_K(L), c)` is the free `L`-module on symbols `u_
 exactly the cocycle identity. The cocycle is not assumed normalized: the identity element is
 `c(1, 1)⁻¹ · u_1`, and `L` embeds by `x ↦ (x · c(1, 1)⁻¹) · u_1`.
 
-The carrier is the type of finitely supported functions `Aut_K(L) →₀ L`, so the coordinates of an
-element are the coordinates `(CrossedProduct.basis c).repr` in the `L`-basis `u_σ`, and the
+An element is a wrapper around a finitely supported function `Aut_K(L) →₀ L`, its coordinates
+`(CrossedProduct.basis c).repr` in the `L`-basis `u_σ`, and the
 crossed product is a `K`-algebra of `K`-dimension `[L : K] · #Aut_K(L)`, that is `[L : K]²` when
 `L/K` is finite Galois. It is **not** an `L`-algebra: `L` acts on the left by multiplication, but
 is not central unless the automorphism group is trivial.
@@ -101,32 +101,44 @@ end TwoCocycle
 
 /-- The **crossed-product algebra** `(L, Aut_K(L), c)` of a `2`-cocycle `c`: the free `L`-module on
 symbols `u_σ`, one for each `σ : L ≃ₐ[K] L`, with the multiplication
-`(x · u_σ) · (y · u_τ) = (x · σ(y) · c(σ, τ)) · u_{στ}`. Its carrier is `Aut_K(L) →₀ L`, the
-coordinates in the basis `CrossedProduct.basis c`. -/
-@[expose, nolint unusedArguments]
-def CrossedProduct (_c : TwoCocycle K L) : Type v :=
-  (L ≃ₐ[K] L) →₀ L
+`(x · u_σ) · (y · u_τ) = (x · σ(y) · c(σ, τ)) · u_{στ}`. An element is a wrapper around its
+coordinates `Aut_K(L) →₀ L` in the basis `CrossedProduct.basis c`; the cocycle is a parameter of
+the type so that the multiplication can be an instance. -/
+structure CrossedProduct (c : TwoCocycle K L) : Type v where
+  /-- The element of the crossed product with the given coordinates in the basis `u_σ`. -/
+  ofFinsupp ::
+  /-- The coordinates `σ ↦ a_σ` of an element in the basis `u_σ`. -/
+  toFinsupp : (L ≃ₐ[K] L) →₀ L
 
 namespace CrossedProduct
 
 variable (c : TwoCocycle K L)
 
 noncomputable instance : AddCommGroup (CrossedProduct c) :=
-  inferInstanceAs (AddCommGroup ((L ≃ₐ[K] L) →₀ L))
+  Equiv.addCommGroup ⟨toFinsupp, ofFinsupp, fun _ ↦ rfl, fun _ ↦ rfl⟩
+
+/-- The identification of the crossed product with its coordinates `Aut_K(L) →₀ L` as an additive
+group, forgetting the multiplication. -/
+def equivFinsupp : CrossedProduct c ≃+ ((L ≃ₐ[K] L) →₀ L) where
+  toFun := toFinsupp
+  invFun := ofFinsupp
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
 
 /-- `L` acts on the crossed product by left multiplication; see `CrossedProduct.smul_def`. -/
 noncomputable instance : Module L (CrossedProduct c) :=
-  inferInstanceAs (Module L ((L ≃ₐ[K] L) →₀ L))
+  (equivFinsupp c).module L
 
 noncomputable instance : Module K (CrossedProduct c) :=
-  inferInstanceAs (Module K ((L ≃ₐ[K] L) →₀ L))
+  (equivFinsupp c).module K
 
-instance : IsScalarTower K L (CrossedProduct c) :=
-  inferInstanceAs (IsScalarTower K L ((L ≃ₐ[K] L) →₀ L))
+instance : IsScalarTower K L (CrossedProduct c) where
+  smul_assoc r x a := (equivFinsupp c).injective (smul_assoc r x a.toFinsupp)
 
 /-- The `L`-basis `u_σ` of the crossed product, indexed by `L ≃ₐ[K] L`. -/
 noncomputable def basis : Module.Basis (L ≃ₐ[K] L) L (CrossedProduct c) :=
-  .ofRepr (LinearEquiv.refl L _)
+  .ofRepr ((equivFinsupp c).linearEquiv L)
 
 /-- The multiplication of the crossed product,
 `(∑ x_σ · u_σ) · (∑ y_τ · u_τ) = ∑ (x_σ · σ(y_τ) · c(σ, τ)) · u_{στ}`. -/
