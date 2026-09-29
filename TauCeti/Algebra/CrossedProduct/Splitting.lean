@@ -157,8 +157,9 @@ private theorem exists_scalar_mul_eq (g : (L ≃ₐ[K] L) → GL n L)
   have hcoe (x : GL n L) : ((map (σ : L →+* L) x : GL n L) : Matrix n n L) =
       (x : Matrix n n L).map σ := by
     ext; simp
-  refine exists_scalar_mul_eq_of_forall_conj_eq fun m ↦ ?_
-  obtain ⟨m, rfl⟩ := σ.mapMatrix.surjective m
+  refine exists_scalar_mul_eq_of_forall_conj_eq fun x ↦ Units.ext ?_
+  obtain ⟨m, hm⟩ := σ.mapMatrix.surjective (x : Matrix n n L)
+  simp only [Units.val_mul, ← hm]
   rw [hg, AlgEquiv.mapMatrix_apply, splittingAut_mul, ← hg, ← hg]
   simp only [Matrix.map_mul, _root_.mul_inv_rev, Units.val_mul, ← map_inv, hcoe, mul_assoc]
 
@@ -200,6 +201,7 @@ noncomputable def TwoCocycle.ofConjugators (g : (L ≃ₐ[K] L) → GL n L)
 
 /-- The defining property of `TwoCocycle.ofConjugators`:
 `c(σ, τ) · g_σ · σ(g_τ) = g_στ`. -/
+@[simp]
 theorem TwoCocycle.scalar_ofConjugators_mul (g : (L ≃ₐ[K] L) → GL n L)
     (hg : ∀ σ m, (g σ : Matrix n n L) * m * ((g σ)⁻¹ : GL n L) = splittingAut φ σ m)
     (σ τ : L ≃ₐ[K] L) :
@@ -249,6 +251,7 @@ noncomputable def cocycleOfSplitting : TwoCocycle K L :=
 
 /-- The defining property of `cocycleOfSplitting`: with `g_σ = splittingConjugator φ σ`,
 `c(σ, τ) · g_σ · σ(g_τ) = g_στ`. -/
+@[simp]
 theorem scalar_cocycleOfSplitting_mul (σ τ : L ≃ₐ[K] L) :
     scalar n ((cocycleOfSplitting φ).toFun σ τ) *
         (splittingConjugator φ σ * map (σ : L →+* L) (splittingConjugator φ τ)) =

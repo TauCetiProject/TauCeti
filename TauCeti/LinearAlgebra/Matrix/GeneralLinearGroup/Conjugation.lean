@@ -26,7 +26,7 @@ construction of the Galois `2`-cocycle of a split central simple algebra.
 * `Matrix.GeneralLinearGroup.det_sub_algebraMap_conj`: shifting a matrix by a scalar and taking its
   determinant is invariant under conjugation.
 * `Matrix.GeneralLinearGroup.exists_scalar_mul_eq_of_forall_conj_eq`: two elements of `GL n R`
-  inducing the same conjugation of `Matrix n n R` differ by a unit scalar.
+  inducing the same conjugation of `GL n R` differ by a unit scalar.
 * `Matrix.GeneralLinearGroup.scalar_injective`: for nonempty `n`, the scalar embedding
   `Rˣ → GL n R` is injective.
 -/
@@ -64,17 +64,15 @@ theorem det_sub_algebraMap_conj (g x : GL n R) (a : R) :
   rw [hsplit, Matrix.coe_units_inv, Matrix.det_conj' x.isUnit]
 
 /-- **An inner automorphism determines its conjugator up to a scalar.** If `g` and `h` in
-`GL n R` conjugate every matrix in the same way, then `g` is `h` multiplied by the scalar matrix
-of a unit `u`. -/
+`GL n R` conjugate every element of `GL n R` in the same way, then `g` is `h` multiplied by the
+scalar matrix of a unit `u`. -/
 theorem exists_scalar_mul_eq_of_forall_conj_eq {g h : GL n R}
-    (H : ∀ m : Matrix n n R, (g : Matrix n n R) * m * ((g⁻¹ : GL n R) : Matrix n n R) =
-      h * m * ((h⁻¹ : GL n R) : Matrix n n R)) :
+    (H : ∀ x : GL n R, g * x * g⁻¹ = h * x * h⁻¹) :
     ∃ u : Rˣ, scalar n u * h = g := by
   -- `h⁻¹ * g` commutes with every unit, so it is a scalar
   have hz : h⁻¹ * g ∈ Subgroup.center (GL n R) := Subgroup.mem_center_iff.mpr fun x ↦ by
-    have e : g * x * g⁻¹ = h * x * h⁻¹ := Units.ext (by simpa only [Units.val_mul] using H x)
     calc x * (h⁻¹ * g) = h⁻¹ * (h * x * h⁻¹) * g := by group
-      _ = h⁻¹ * (g * x * g⁻¹) * g := by rw [e]
+      _ = h⁻¹ * (g * x * g⁻¹) * g := by rw [H]
       _ = h⁻¹ * g * x := by group
   rw [center_eq_range_scalar] at hz
   obtain ⟨u, hu⟩ := hz
