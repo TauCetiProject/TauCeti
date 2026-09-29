@@ -20,18 +20,9 @@ subgroup `H` of `G`, and that for every normal subgroup `N` of prime index in su
 order of `H²(H ⧸ N, A^N)` divides `[H : N]`. Then the order of `H²(G, A)` divides `#G`
 (`natCard_groupCohomology_two_dvd_natCard`); in particular `H²(G, A)` is finite.
 
-The proof is by induction on `#G`. A nontrivial finite solvable group `H` has a normal subgroup `N`
-of prime index (`Group.IsSolvable.exists_normal_index_prime`). Since `H¹(N, A) = 0`, the
-inflation-restriction sequence `0 ⟶ H²(H ⧸ N, A^N) ⟶ H²(H, A) ⟶ H²(N, A)` is exact, so the order
-of `H²(H, A)` divides `[H : N] * #H²(N, A)`, and `#H²(N, A)` divides `#N` by induction.
-
 This is how the upper bound `#H²(Gal(L/K), Lˣ) ≤ [L : K]` for a finite Galois extension of local
 fields is reduced to cyclic extensions of prime degree: `Gal(L/K)` is solvable, Hilbert's
 Theorem 90 gives the vanishing of `H¹`, and the cyclic case is a Herbrand quotient computation.
-
-The subgroups of `G` enter through injective homomorphisms `H →* G` rather than through
-`Subgroup G`. A subgroup of a subgroup is then again such a homomorphism, by composition, and the
-induction needs no identification of `Subgroup ↥H` with a subgroup of `G`.
 
 ## Main statements
 
@@ -56,6 +47,15 @@ namespace TauCeti.groupCohomology
 open _root_.groupCohomology
 
 variable {k G : Type u} [CommRing k] [Group G]
+
+/- The proof is by induction on `#H`. A nontrivial finite solvable group `H` has a normal subgroup
+`N` of prime index (`Group.IsSolvable.exists_normal_index_prime`). Since `H¹(N, A) = 0`, the
+inflation-restriction sequence `0 ⟶ H²(H ⧸ N, A^N) ⟶ H²(H, A) ⟶ H²(N, A)` is exact, so the order
+of `H²(H, A)` divides `[H : N] * #H²(N, A)`, and `#H²(N, A)` divides `#N` by induction.
+
+The subgroups of `G` enter through injective homomorphisms `H →* G` rather than through
+`Subgroup G`. A subgroup of a subgroup is then again such a homomorphism, by composition, and the
+induction needs no identification of `Subgroup ↥H` with a subgroup of `G`. -/
 
 /-- The induction behind `natCard_groupCohomology_two_dvd_natCard`, on the order `n` of a group
 `H` mapping injectively to `G`. -/
