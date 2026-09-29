@@ -31,7 +31,7 @@ namespace TauCeti
 variable (p : ℕ) (K : Type*) [Field K]
 
 /-- The subgroup of `Kˣ` consisting of roots of unity of `p`-power order. -/
-def pPowerRootsOfUnity : Subgroup Kˣ := CommGroup.primaryComponent Kˣ p
+abbrev pPowerRootsOfUnity : Subgroup Kˣ := CommGroup.primaryComponent Kˣ p
 
 /-- A unit is a `p`-power root of unity exactly when some power of `p` kills it. -/
 theorem mem_pPowerRootsOfUnity_iff (x : Kˣ) :
