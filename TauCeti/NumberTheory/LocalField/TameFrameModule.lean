@@ -34,18 +34,11 @@ of `e₀, e₁`.
 
 ## Main definitions
 
-* `TauCeti.MonoidAlgebra.tameFrameRelations`: two generators subject to the relation
+* `TauCeti.tameFrameRelations`: two generators subject to the relation
   `(σ - a) e₀ + (τ - b) e₁ = 0`.
-* `TauCeti.MonoidAlgebra.TameFrameModule`: the module `R[G]² / R[G]·(σ - a, τ - b)` it presents.
-* `TauCeti.MonoidAlgebra.tameFrameSolution`: the solution of the relation in a module `M` given by
+* `TauCeti.TameFrameModule`: the module `R[G]² / R[G]·(σ - a, τ - b)` it presents.
+* `TauCeti.tameFrameSolution`: the solution of the relation in a module `M` given by
   `x, y ∈ M` with `(σ - a) x + (τ - b) y = 0`.
-
-## Implementation notes
-
-`tameFrameRelations` is reducible, so that its generator type is `Fin 2` at reducible
-transparency and generators can be written as `Finsupp.single (0 : Fin 2) 1`. The keys of the
-generic `Module.Relations` simp lemmas then no longer match, so the universal property is
-evaluated with `rw [Module.Relations.Solution.fromQuotient_toQuotient]` rather than `simp`.
 
 ## References
 
@@ -54,7 +47,7 @@ evaluated with `rw [Module.Relations.Solution.fromQuotient_toQuotient]` rather t
 
 public section
 
-namespace TauCeti.MonoidAlgebra
+namespace TauCeti
 
 open _root_.MonoidAlgebra
 
@@ -62,6 +55,10 @@ universe u v
 
 variable (R : Type u) [Ring R] (G : Type v) [Monoid G]
 
+-- `tameFrameRelations` is reducible so that its generator type is `Fin 2` at reducible
+-- transparency and generators can be written as `Finsupp.single (0 : Fin 2) 1`. The keys of the
+-- generic `Module.Relations` simp lemmas then no longer match, so the universal property is
+-- evaluated with `rw [Module.Relations.Solution.fromQuotient_toQuotient]` rather than `simp`.
 /-- The relations of the **tame-frame module** of two elements `σ, τ` of `G` and two coefficients
 `a, b` of `R`: two generators `e₀, e₁` subject to the single relation
 `(σ - a) e₀ + (τ - b) e₁ = 0`. -/
@@ -83,11 +80,24 @@ variable {R G} {σ τ : G} {a b : R} {M : Type*} [AddCommGroup M] [Module (Monoi
 `x, y` satisfying the relation `(σ - a) x + (τ - b) y = 0`. Its
 `Module.Relations.Solution.fromQuotient` is the left `R[G]`-linear map out of the tame-frame
 module sending `e₀, e₁` to `x, y`. -/
-@[expose, simps]
 noncomputable def tameFrameSolution (x y : M)
     (h : (single σ (1 : R) - single 1 a) • x + (single τ (1 : R) - single 1 b) • y = 0) :
     (tameFrameRelations R G σ τ a b).Solution M where
   var := ![x, y]
   linearCombination_var_relation _ := by simpa [sub_smul] using h
 
-end TauCeti.MonoidAlgebra
+/-- The solution `tameFrameSolution x y h` sends the generator `e₀` to `x`. -/
+@[simp]
+theorem tameFrameSolution_var_zero (x y : M)
+    (h : (single σ (1 : R) - single 1 a) • x + (single τ (1 : R) - single 1 b) • y = 0) :
+    (tameFrameSolution x y h).var 0 = x := by
+  simp [tameFrameSolution]
+
+/-- The solution `tameFrameSolution x y h` sends the generator `e₁` to `y`. -/
+@[simp]
+theorem tameFrameSolution_var_one (x y : M)
+    (h : (single σ (1 : R) - single 1 a) • x + (single τ (1 : R) - single 1 b) • y = 0) :
+    (tameFrameSolution x y h).var 1 = y := by
+  simp [tameFrameSolution]
+
+end TauCeti

@@ -17,12 +17,13 @@ kernel of `TauCeti.MonoidAlgebra.augmentation R G`. Its kernel is the **relation
 family. When the `g_i` generate `G`, the map is onto `I_G`, giving Lyndon's exact sequence
 `0 → relationModule R G g → R[G]^ι → I_G → 0`.
 
-For a presentation `1 → N → F → G → 1` of `G` by the free group `F` on the `g_i`, the relation
-module is the abelianised relation group `N^ab` with its conjugation action of `G` (Lyndon's
-identification, NSW (5.6.6)). Here the kernel is taken as the definition, so no group-theoretic
-carrier is needed. Over `R = ℤ_p` it is the module `R^ab(p)` compared with the `p`-completed units
-of a local field in the computation of the generator rank of its absolute Galois group
-(NSW (7.4.1)).
+When `G` is a group, the `g_i` generate `G` and `R = ℤ`, the relation module is the abelianised
+relation group `N^ab` of the presentation `1 → N → F → G → 1` of `G` by the free group `F` on the
+`g_i`, with its conjugation action of `G` (Lyndon's identification, NSW (5.6.6)). Since `ℤ[G]^ι`
+and `I_G` are free abelian groups, for a general ring `R` it is the scalar extension `R ⊗_ℤ N^ab`.
+Here the kernel is taken as the definition, so no group-theoretic carrier is needed. The module
+`R^ab(p)` compared with the `p`-completed units of a local field in the computation of the
+generator rank of its absolute Galois group (NSW (7.4.1)) is its analogue over `R = ℤ_p`.
 
 ## Main definitions
 
@@ -58,8 +59,9 @@ section Monoid
 variable [Monoid G]
 
 /-- The **relation module** of a family `g : ι → G`: the kernel of the left `R[G]`-linear map
-`R[G]^ι → R[G]` sending the `i`-th basis vector to `g_i - 1`. For a generating family it is the
-relation module `N^ab` of the presentation of `G` on the `g_i` (NSW (5.6.6)). -/
+`R[G]^ι → R[G]` sending the `i`-th basis vector to `g_i - 1`. For a generating family of a group
+it is `R ⊗_ℤ N^ab`, for `N^ab` the relation module of the presentation of `G` on the `g_i`
+(NSW (5.6.6)); for `R = ℤ` it is `N^ab` itself. -/
 @[expose]
 noncomputable def relationModule (g : ι → G) :
     Submodule (MonoidAlgebra R G) (ι → MonoidAlgebra R G) :=
