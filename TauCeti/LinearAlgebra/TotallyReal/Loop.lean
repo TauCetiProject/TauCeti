@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # Loops of totally real subspaces
@@ -25,6 +26,8 @@ it is how boundary conditions of Cauchy--Riemann operators are given in practice
 * `TauCeti.TotallyRealLoop.isMaximalTotallyReal`: every subspace of such a loop is maximal
   totally real.
 * `TauCeti.TotallyRealLoop.const`: the constant loop at a maximal totally real subspace.
+* `TauCeti.TotallyRealLoop.map`: pointwise image under a closed path of complex-linear
+  automorphisms.
 * `TauCeti.TotallyRealLoop.rotation`: the half-turn `t ↦ e^{iπt} L₀`, which closes up since
   `-L₀ = L₀`.
 
@@ -96,6 +99,34 @@ noncomputable def const {L₀ : Submodule ℝ E}
 theorem const_apply {L₀ : Submodule ℝ E}
     (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) (t : I) :
     const hL₀ t = L₀ :=
+  (rfl)
+
+/-- The pointwise image of a totally real loop under a closed continuous path of complex-linear
+automorphisms. -/
+noncomputable def map (Λ : TotallyRealLoop E) (B : I → E ≃L[ℂ] E)
+    (hB : Continuous fun t => (B t : E →L[ℂ] E)) (hB01 : B 0 = B 1) :
+    TotallyRealLoop E where
+  toFun t := (Λ t).map (((B t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ)
+  exists_frame := by
+    obtain ⟨L₀, hL₀, A, hA, hΛ⟩ := Λ.exists_frame
+    refine ⟨L₀, hL₀, fun t => (A t).trans (B t), ?_, ?_⟩
+    · have h : Continuous fun t => (B t : E →L[ℂ] E) ∘L (A t : E →L[ℂ] E) :=
+        ((ContinuousLinearMap.compL ℂ E E E).continuous.comp hB).clm_apply hA
+      convert h using 1
+      funext t
+      ext x
+      rfl
+    · intro t
+      rw [hΛ t, ← Submodule.map_comp]
+      congr 1
+  toFun_zero_eq_toFun_one := by
+    rw [Λ.toFun_zero_eq_toFun_one, hB01]
+
+@[simp]
+theorem map_apply (Λ : TotallyRealLoop E) (B : I → E ≃L[ℂ] E)
+    (hB : Continuous fun t => (B t : E →L[ℂ] E)) (hB01 : B 0 = B 1) (t : I) :
+    Λ.map B hB hB01 t =
+      (Λ t).map (((B t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) :=
   (rfl)
 
 variable [FiniteDimensional ℂ E]
