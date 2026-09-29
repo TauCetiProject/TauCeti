@@ -76,11 +76,9 @@ theorem map_add (f : Hom O O') (x y : K) : f (x + y) = f x + f y :=
 theorem map_mul (f : Hom O O') (x y : K) : f (x * y) = f x * f y :=
   f.fieldHom.map_mul x y
 
-@[simp]
 theorem map_inv (f : Hom O O') (x : K) : f x⁻¹ = (f x)⁻¹ :=
   map_inv₀ f.fieldHom x
 
-@[simp]
 theorem map_div (f : Hom O O') (x y : K) : f (x / y) = f x / f y :=
   map_div₀ f.fieldHom x y
 
