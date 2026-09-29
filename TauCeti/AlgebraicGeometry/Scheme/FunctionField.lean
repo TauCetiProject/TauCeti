@@ -31,7 +31,9 @@ Weil differentials, the Riemann–Roch theorem of function fields) be applied to
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_toNat_trdeg_functionField`:
   `dim X = trdeg_k k(X)`;
 * `TauCeti.AlgebraicGeometry.isFunctionField_functionField_iff`: `k(X)` is an algebraic
-  function field over `k` if and only if `X` has dimension one.
+  function field over `k` if and only if `X` has dimension one;
+  `TauCeti.AlgebraicGeometry.isFunctionField_functionField_of_forall_coheight_le_one` reads the
+  dimension off the codimensions of the points.
 
 ## References
 
@@ -124,6 +126,19 @@ theorem isFunctionField_functionField_iff :
     IsFunctionField k X.functionField ↔ topologicalKrullDim X = 1 := by
   rw [isFunctionField_iff_trdeg_eq_one, topologicalKrullDim_eq_toNat_trdeg_functionField k,
     Nat.cast_eq_one, Cardinal.toNat_eq_one]
+
+/-- An integral scheme locally of finite type over `k` all of whose points have codimension at
+most one, one of them exactly one, is a curve: its function field is an algebraic function field
+of one variable over `k`. -/
+theorem isFunctionField_functionField_of_forall_coheight_le_one
+    (hX : ∀ y : X, Order.coheight y ≤ 1) {x₀ : X} (hx₀ : Order.coheight x₀ = 1) :
+    IsFunctionField k X.functionField := by
+  refine (isFunctionField_functionField_iff k).mpr (le_antisymm ?_ ?_)
+  · rw [topologicalKrullDim_eq_iSup_coheight]
+    exact iSup_le fun y ↦ by exact_mod_cast hX y
+  · have h := coheight_le_topologicalKrullDim x₀
+    rw [hx₀] at h
+    exact_mod_cast h
 
 end AlgebraicGeometry
 
