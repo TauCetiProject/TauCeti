@@ -154,14 +154,16 @@ private theorem mem_ball_discCoordinate (τ : stabilizerBall Γ z ε) :
   rw [mem_ball_zero_iff]
   exact (mem_ball_iff_norm_discCoordinate_lt (z := z) (τ := (τ : ℍ)) (ε := ε)).mp hball
 
-/-- A rotation of a point of the disc of the invariant disc lies in it, the modulus of a root of
-unity being one by `Complex.norm_eq_one_of_mem_rootsOfUnity`. -/
+/-- A rotation of a point of the disc of the invariant disc lies in it, that disc being
+`TauCeti.rootsOfUnityBall`, the invariant set of the `Nat.card (stabilizer Γ z)`-th roots of
+unity. -/
 private theorem mem_ball_smul (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) {w : ℂ}
     (hw : w ∈ Metric.ball 0 (Real.tanh (ε / 2))) :
     ζ • w ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
-  rw [mem_ball_zero_iff] at hw ⊢
-  rw [rootsOfUnity.smul_eq_mul, norm_mul, Complex.norm_eq_one_of_mem_rootsOfUnity ζ.2, one_mul]
-  exact hw
+  have hζw := (TauCeti.rootsOfUnityBall (Nat.card (stabilizer Γ z))
+    (Real.tanh (ε / 2))).smul_mem ζ (TauCeti.mem_rootsOfUnityBall.mpr
+      (mem_ball_zero_iff.mp hw))
+  exact mem_ball_zero_iff.mpr (TauCeti.mem_rootsOfUnityBall.mp hζw)
 
 /-- The reparametrization of a local linearizing coordinate is injective on the disc of the
 invariant disc, being a partial equivalence on its source. -/
