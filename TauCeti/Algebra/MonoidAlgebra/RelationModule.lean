@@ -31,6 +31,7 @@ generator rank of its absolute Galois group (NSW (7.4.1)) is its analogue over `
 
 ## Main statements
 
+* `TauCeti.MonoidAlgebra.relationModule_def`: the relation module as the kernel of `e_i ↦ g_i - 1`.
 * `TauCeti.MonoidAlgebra.mem_relationModule_iff`: membership as the relation `∑ c_i (g_i - 1) = 0`.
 * `TauCeti.MonoidAlgebra.range_linearCombination_le_ker_augmentation`: the map lands in `I_G`.
 * `TauCeti.MonoidAlgebra.range_linearCombination_eq_ker_augmentation`: the map is onto `I_G` when
@@ -68,12 +69,19 @@ noncomputable def relationModule (g : ι → G) :
 
 variable {R G}
 
+/-- The relation module of `g` is the kernel of the map `R[G]^ι → R[G]`, `e_i ↦ g_i - 1`. -/
+theorem relationModule_def (g : ι → G) :
+    relationModule R G g =
+      LinearMap.ker (Fintype.linearCombination (MonoidAlgebra R G)
+        fun i ↦ single (g i) (1 : R) - 1) := by
+  rw [relationModule]
+
 /-- A family of coefficients lies in the relation module of `g` exactly when
 `∑ c_i (g_i - 1) = 0`. -/
 @[simp]
 theorem mem_relationModule_iff {g : ι → G} {c : ι → MonoidAlgebra R G} :
     c ∈ relationModule R G g ↔ ∑ i, c i * (single (g i) (1 : R) - 1) = 0 := by
-  simp [relationModule, Fintype.linearCombination_apply]
+  simp [relationModule_def, Fintype.linearCombination_apply]
 
 /-- The map `e_i ↦ g_i - 1` lands in the augmentation ideal. -/
 theorem range_linearCombination_le_ker_augmentation (g : ι → G) :
