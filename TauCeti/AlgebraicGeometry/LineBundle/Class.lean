@@ -109,6 +109,7 @@ lemma mk_trivial : mk (InvertibleSheaf.trivial X) = (1 : LineBundleClass X) :=
 
 /-- The class of a line bundle is the tensor unit exactly when the line bundle is isomorphic to
 the structure sheaf. -/
+@[simp]
 lemma mk_eq_one_iff {L : InvertibleSheaf X} :
     mk L = 1 ↔ Nonempty (L.obj ≅ 𝟙_ X.Modules) := by
   rw [← mk_trivial, mk_eq_mk_iff, InvertibleSheaf.trivial_obj]

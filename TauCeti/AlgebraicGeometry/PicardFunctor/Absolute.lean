@@ -190,17 +190,16 @@ lemma range_forgetRigidification :
 Picard functor of classes of line bundles trivial along the base-changed section. -/
 def rigidifiedPicardFunctorIsoTrivialAlongSection :
     rigidifiedPicardFunctor f x₀ hx₀ ≅ (trivialAlongSectionSubfunctor f x₀ hx₀).toFunctor :=
-  have : IsIso (Subfunctor.lift (forgetRigidification f x₀ hx₀)
-      (range_forgetRigidification f x₀ hx₀).le) := by
-    rw [NatTrans.isIso_iff_isIso_app]
-    intro T
-    rw [isIso_iff_bijective]
-    refine ⟨fun a b hab ↦ forgetRigidification_app_injective f x₀ hx₀ T
-      (congrArg Subtype.val hab), fun ⟨a, ha⟩ ↦ ?_⟩
-    rw [← range_forgetRigidification, Subfunctor.range_obj] at ha
-    obtain ⟨b, rfl⟩ := ha
-    exact ⟨b, rfl⟩
-  asIso (Subfunctor.lift (forgetRigidification f x₀ hx₀) (range_forgetRigidification f x₀ hx₀).le)
+  have rangeLiftIsIso (G : Subfunctor (absolutePicardFunctor f))
+      (h : Subfunctor.range (forgetRigidification f x₀ hx₀) = G) :
+      IsIso (Subfunctor.lift (forgetRigidification f x₀ hx₀) h.le) := by
+    cases h
+    simpa only [Subfunctor.toRange] using
+      (inferInstance : IsIso (Subfunctor.toRange (forgetRigidification f x₀ hx₀)))
+  letI := rangeLiftIsIso (trivialAlongSectionSubfunctor f x₀ hx₀)
+    (range_forgetRigidification f x₀ hx₀)
+  asIso (Subfunctor.lift (forgetRigidification f x₀ hx₀)
+    (range_forgetRigidification f x₀ hx₀).le)
 
 /-- The isomorphism followed by the inclusion of the subfunctor is forgetting the
 trivialization. -/
