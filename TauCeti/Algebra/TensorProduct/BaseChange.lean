@@ -40,11 +40,12 @@ with passing to the opposite algebra, and composes in stages:
 * `TauCeti.ScalarAut.baseChangeMap_smul`: scalar extension of an algebra map is equivariant for
   scalar automorphisms.
 
-None is reproved from scratch: the first and third upgrade Mathlib's linear equivalences
-`TensorProduct.AlgebraTensorModule.distribBaseChange` and
-`TensorProduct.AlgebraTensorModule.cancelBaseChange` to algebra equivalences, and the second
-composes `AlgEquiv.toOpposite` with Mathlib's `Algebra.TensorProduct.opAlgEquiv`. The fourth
-reorders the factors of the third using `Algebra.TensorProduct.comm`.
+None is reproved from scratch: `baseChangeTensorAlgEquiv` and `baseChangeTowerAlgEquiv` upgrade
+Mathlib's linear equivalences `TensorProduct.AlgebraTensorModule.distribBaseChange` and
+`TensorProduct.AlgebraTensorModule.cancelBaseChange` to algebra equivalences, while
+`baseChangeOpAlgEquiv` composes `AlgEquiv.toOpposite` with Mathlib's
+`Algebra.TensorProduct.opAlgEquiv`. `baseChangeTowerRingEquiv` reorders the factors of
+`baseChangeTowerAlgEquiv` using `Algebra.TensorProduct.comm`.
 
 ## Implementation notes
 
