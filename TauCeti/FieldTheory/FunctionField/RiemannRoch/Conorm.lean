@@ -37,6 +37,8 @@ variable [Algebra.IsIntegral k k'] [FiniteDimensional F F']
 
 /-- A function from `F` belongs to `L(D)` precisely when its image in `F'` belongs to the
 Riemann–Roch space of the conorm of `D`. -/
+-- This equivalence is for targeted rewriting: `simpNF` rejects it as a simp lemma because
+-- simplification unfolds Riemann–Roch membership on the left-hand side.
 theorem mem_riemannRochSpace_conorm_iff (hF' : IsFunctionField k' F')
     (D : Divisor k F) (f : F) :
     algebraMap F F' f ∈ riemannRochSpace (Divisor.conorm k' F' D) ↔
