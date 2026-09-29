@@ -14,8 +14,9 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Nonc
 For a polygon with reentrant corners, ordered prevertices and integrable exponents alone do not
 make its boundary simple. The criterion here checks the bounded arc using only the finite
 Schwarz--Christoffel vertices. At each nonadjacent pair of sides, the two endpoints of the later
-side must lie strictly on the same side of the earlier side's supporting line. At an adjacent pair,
-a nonzero turning exponent makes their common vertex the only intersection.
+side must lie strictly on the same side of the earlier side's supporting line. With strictly
+ordered prevertices, turning exponents in `(-1, 1) \ {0}` at the interior vertices make each
+adjacent pair meet only at its common vertex.
 
 The criterion is sufficient for injectivity between the first and last prevertices. To obtain a
 simple compactified boundary, the two sides incident to infinity must also be checked.
@@ -37,9 +38,10 @@ namespace TauCeti
 variable {n : ℕ}
 
 /-- Strict signed heights at the endpoints of every nonadjacent later side, together with
-nonzero turning exponents at the interior vertices, make the bounded Schwarz--Christoffel
-boundary arc injective. Heights are measured after rotating each earlier side to the real axis.
-The condition allows both positive and negative turning exponents. -/
+strictly ordered prevertices and turning exponents in `(-1, 1) \ {0}` at the interior vertices,
+make the bounded Schwarz--Christoffel boundary arc injective. Heights are measured after rotating
+each earlier side to the real axis. The condition allows both positive and negative turning
+exponents. -/
 theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_vertex_separation
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, -1 < e k)
@@ -60,12 +62,13 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_vertex_separation
     a e z₀ ha.monotone hfinite
   intro i j hij z hzi hzj
   by_cases hadj : i.val + 1 = j.val
-  · have hz : z = schwarzChristoffelVertex a e z₀ i.succ :=
+  · have hcornerI : e i.succ ∈ Ioo (-1 : ℝ) 1 :=
+      ⟨he i.succ, hcorner i (by omega)⟩
+    have hz : z = schwarzChristoffelVertex a e z₀ i.succ :=
       schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacent
         a e z₀ ha.monotone i j hadj (ha i.castSucc_lt_succ)
         (ha j.castSucc_lt_succ) (hfinite _)
-        (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using
-          (show e i.succ ∈ Ioo (-1 : ℝ) 1 from ⟨he i.succ, hcorner i (by omega)⟩))
+        (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using hcornerI)
         (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using hne i (by omega))
         (hfinite _) ⟨hzi, hzj⟩
     exact ⟨hadj.symm, hz⟩
