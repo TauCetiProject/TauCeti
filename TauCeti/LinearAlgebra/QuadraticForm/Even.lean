@@ -29,10 +29,9 @@ universe u
 
 variable {M : Type u} [AddCommGroup M] [Module ℤ M]
 
-namespace LinearMap.BilinForm
-
 /-- The quadratic form whose polar form is an even symmetric integral bilinear form. -/
-def halfNormQuadratic (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
+def _root_.LinearMap.BilinForm.halfNormQuadratic
+    (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
     (heven : ∀ x, Even (B x x)) : QuadraticForm ℤ M where
   toFun x := B x x / 2
   toFun_smul a x := by
@@ -61,48 +60,47 @@ def halfNormQuadratic (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
 
 /-- The quadratic form of an even bilinear form evaluates to half its self-pairing. -/
 @[simp]
-theorem halfNormQuadratic_apply (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
+theorem _root_.LinearMap.BilinForm.halfNormQuadratic_apply
+    (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
     (heven : ∀ x, Even (B x x)) (x : M) :
-    halfNormQuadratic B hB heven x = B x x / 2 :=
-  by simp [halfNormQuadratic]
+    B.halfNormQuadratic hB heven x = B x x / 2 :=
+  by simp [LinearMap.BilinForm.halfNormQuadratic]
 
 /-- Twice the half-norm recovers the self-pairing. -/
-theorem two_mul_halfNormQuadratic (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
+theorem _root_.LinearMap.BilinForm.two_mul_halfNormQuadratic
+    (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
     (heven : ∀ x, Even (B x x)) (x : M) :
-    2 * halfNormQuadratic B hB heven x = B x x := by
-  rw [halfNormQuadratic_apply]
+    2 * B.halfNormQuadratic hB heven x = B x x := by
+  rw [LinearMap.BilinForm.halfNormQuadratic_apply]
   exact Int.two_mul_ediv_two_of_even (heven x)
 
 /-- The polar form of the half-norm quadratic form is the original bilinear form. -/
 @[simp]
-theorem polarBilin_halfNormQuadratic (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
+theorem _root_.LinearMap.BilinForm.polarBilin_halfNormQuadratic
+    (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
     (heven : ∀ x, Even (B x x)) :
-    (halfNormQuadratic B hB heven).polarBilin = B := by
+    (B.halfNormQuadratic hB heven).polarBilin = B := by
   apply LinearMap.ext₂
   intro x y
-  have hxy := two_mul_halfNormQuadratic B hB heven (x + y)
-  have hx := two_mul_halfNormQuadratic B hB heven x
-  have hy := two_mul_halfNormQuadratic B hB heven y
+  have hxy := B.two_mul_halfNormQuadratic hB heven (x + y)
+  have hx := B.two_mul_halfNormQuadratic hB heven x
+  have hy := B.two_mul_halfNormQuadratic hB heven y
   simp only [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar]
   simp only [map_add, LinearMap.add_apply] at hxy
   nlinarith [hB.eq x y]
 
-end LinearMap.BilinForm
-
-namespace QuadraticForm
-
 /-- The polar form of an integer quadratic form has even diagonal. -/
-theorem even_polarBilin_self (Q : _root_.QuadraticForm ℤ M) (x : M) :
+theorem _root_.QuadraticForm.even_polarBilin_self (Q : _root_.QuadraticForm ℤ M) (x : M) :
     Even (Q.polarBilin x x) := by
   rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self]
   exact ⟨Q x, by simp [two_mul]⟩
 
 /-- Taking the half-norm of the polar form recovers the quadratic form. -/
 @[simp]
-theorem halfNormQuadratic_polarBilin (Q : _root_.QuadraticForm ℤ M) :
+theorem _root_.QuadraticForm.halfNormQuadratic_polarBilin (Q : _root_.QuadraticForm ℤ M) :
     LinearMap.BilinForm.halfNormQuadratic Q.polarBilin
       (by constructor; intro x y; exact QuadraticMap.polar_comm Q x y)
-      (even_polarBilin_self Q) = Q := by
+      (Q.even_polarBilin_self) = Q := by
   apply QuadraticMap.ext
   intro x
   apply mul_left_cancel₀ (by norm_num : (2 : ℤ) ≠ 0)
@@ -111,7 +109,7 @@ theorem halfNormQuadratic_polarBilin (Q : _root_.QuadraticForm ℤ M) :
   ring
 
 /-- Integer quadratic forms with equal polar forms are equal. -/
-theorem eq_of_polarBilin_eq (Q₁ Q₂ : _root_.QuadraticForm ℤ M)
+theorem _root_.QuadraticForm.eq_of_polarBilin_eq (Q₁ Q₂ : _root_.QuadraticForm ℤ M)
     (h : Q₁.polarBilin = Q₂.polarBilin) : Q₁ = Q₂ := by
   apply QuadraticMap.ext
   intro x
@@ -120,36 +118,32 @@ theorem eq_of_polarBilin_eq (Q₁ Q₂ : _root_.QuadraticForm ℤ M)
   omega
 
 /-- The polar form of an integer quadratic form is symmetric with even diagonal. -/
-theorem polarBilin_isSymm_and_even (Q : _root_.QuadraticForm ℤ M) :
+theorem _root_.QuadraticForm.polarBilin_isSymm_and_even (Q : _root_.QuadraticForm ℤ M) :
     Q.polarBilin.IsSymm ∧ ∀ x, Even (Q.polarBilin x x) := by
   constructor
   · constructor
     intro x y
     exact QuadraticMap.polar_comm Q x y
-  · exact even_polarBilin_self Q
-
-end QuadraticForm
-
-namespace LinearMap.BilinForm
+  · exact Q.even_polarBilin_self
 
 /-- An even symmetric integer bilinear form is the polar form of a unique quadratic form. -/
-theorem existsUnique_polarBilin (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
+theorem _root_.LinearMap.BilinForm.existsUnique_polarBilin
+    (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm)
     (heven : ∀ x, Even (B x x)) :
     ∃! Q : _root_.QuadraticForm ℤ M, Q.polarBilin = B := by
-  refine ⟨halfNormQuadratic B hB heven, polarBilin_halfNormQuadratic B hB heven, ?_⟩
+  refine ⟨B.halfNormQuadratic hB heven, B.polarBilin_halfNormQuadratic hB heven, ?_⟩
   intro Q hQ
   exact QuadraticForm.eq_of_polarBilin_eq Q _
-    (hQ.trans (polarBilin_halfNormQuadratic B hB heven).symm)
+    (hQ.trans (B.polarBilin_halfNormQuadratic hB heven).symm)
 
 /-- A symmetric integer bilinear form has even diagonal exactly when it is a polar form. -/
-theorem even_iff_exists_polarBilin (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm) :
+theorem _root_.LinearMap.BilinForm.even_iff_exists_polarBilin
+    (B : _root_.LinearMap.BilinForm ℤ M) (hB : B.IsSymm) :
     (∀ x, Even (B x x)) ↔ ∃ Q : _root_.QuadraticForm ℤ M, Q.polarBilin = B := by
   constructor
   · intro heven
-    exact ⟨halfNormQuadratic B hB heven, polarBilin_halfNormQuadratic B hB heven⟩
+    exact ⟨B.halfNormQuadratic hB heven, B.polarBilin_halfNormQuadratic hB heven⟩
   · rintro ⟨Q, rfl⟩
     exact QuadraticForm.even_polarBilin_self Q
-
-end LinearMap.BilinForm
 
 end TauCeti
