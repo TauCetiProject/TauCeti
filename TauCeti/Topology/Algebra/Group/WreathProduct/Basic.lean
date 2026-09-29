@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Defs.Induced
 public import Mathlib.Topology.Algebra.Group.Basic
-public import TauCeti.Topology.Algebra.GroupAction.Discrete
+public import TauCeti.Topology.Discrete
 
 /-!
 # Coordinate topology on permutation wreath products

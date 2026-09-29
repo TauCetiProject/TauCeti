@@ -71,8 +71,10 @@ namespace WreathProduct
 
 variable {D ι}
 
-/-- Evaluation of the coordinate action used in the semidirect product. Mathlib's
-`arrowAction` instance is local, so the formula is definitionally equal. -/
+/-- Evaluation of a coordinate of `mulAutArrow σ F`: the permutation acts on the base by
+precomposition with `σ⁻¹`. -/
+-- Mathlib's `mulAutArrow_apply_apply` retains an unevaluated action from its local
+-- `arrowAction` instance. Here that action evaluates by definitional equality.
 theorem mulAutArrow_apply_apply' (σ : Equiv.Perm ι) (F : ι → D) (i : ι) :
     mulAutArrow σ F i = F (σ⁻¹ i) := rfl
 

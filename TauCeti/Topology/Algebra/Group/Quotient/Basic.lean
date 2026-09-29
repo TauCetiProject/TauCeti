@@ -10,7 +10,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
-public import TauCeti.Topology.Algebra.GroupAction.Discrete
+public import TauCeti.Topology.Discrete
 
 /-!
 # Quotients of topological groups by subgroups
