@@ -25,10 +25,9 @@ pointwise product `1 * 1` of the trivial function with itself is `1`, whose coef
 
 * `TauCeti.NumberField.GaussianRationals.dedekindZetaCoeff_five`: `ℚ(i)` has two integral
   ideals of absolute norm `5`.
-* `TauCeti.NumberField.GaussianRationals.normCoeff_one_apply_five`: the trivial ideal
-  arithmetic function regroups to the coefficient `2` at `5`.
-* `TauCeti.NumberField.GaussianRationals.not_forall_normCoeff_mul_eq_pmul`: over `ℚ(i)`, the norm
-  coefficients of a pointwise product are not the pointwise products of the norm coefficients.
+Together with `TauCeti.normCoeff_one_apply` and
+`TauCeti.not_forall_normCoeff_mul_eq_pmul`, this gives the trivial ideal weight's coefficient
+at `5` and the failure of a pointwise-product formula over `ℚ(i)`.
 -/
 
 public section
@@ -56,20 +55,5 @@ theorem dedekindZetaCoeff_five (hmin : minpoly ℤ θ = X ^ 2 + 1)
   rw [← card_normFiber_eq_dedekindZetaCoeff K (by norm_num),
     ← Finset.card_map (Function.Embedding.subtype _), hfiber,
     Finset.card_pair (span_two_add_ne_span_two_sub hmin hgen)]
-
-/-- The trivial ideal arithmetic function of `ℚ(i)` regroups to the coefficient `2` at `5`. -/
-theorem normCoeff_one_apply_five (hmin : minpoly ℤ θ = X ^ 2 + 1)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    normCoeff K (1 : IdealArithmeticFunction K) 5 = 2 := by
-  simp [dedekindZetaCoeff_five hmin hgen]
-
-/-- **Over `ℚ(i)`, regrouping by norm has no pointwise-product formula.** The two ideals of
-norm `5` give `normCoeff (1 * 1) 5 = 2`, while `(normCoeff 1).pmul (normCoeff 1)` is `4`
-there. -/
-theorem not_forall_normCoeff_mul_eq_pmul (hmin : minpoly ℤ θ = X ^ 2 + 1)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    ¬ ∀ f g : IdealArithmeticFunction K,
-      normCoeff K (f * g) = (normCoeff K f).pmul (normCoeff K g) :=
-  TauCeti.not_forall_normCoeff_mul_eq_pmul K (n := 5) (by simp [dedekindZetaCoeff_five hmin hgen])
 
 end TauCeti.NumberField.GaussianRationals
