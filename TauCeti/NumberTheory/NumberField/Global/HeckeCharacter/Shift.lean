@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.One
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Instances.RealVectorSpace
 import TauCeti.Analysis.Normed.Field.CompactGroup
+import TauCeti.Analysis.SpecialFunctions.Complex.CpowCharacter
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Compact
 import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
@@ -73,34 +74,17 @@ namespace HeckeCharacter
 
 /-! ### The norm characters `‖·‖ ^ s` -/
 
-/-- The complex power `‖c‖ ^ s` of the idele class norm, as a homomorphism to `ℂ`. -/
-private def normPowAux (s : ℂ) : IdeleClassGroup (𝓞 K) K →* ℂ where
-  toFun c := (((ideleClassNorm c : ℝ≥0) : ℝ) : ℂ) ^ s
-  map_one' := by simp
-  map_mul' c d := by
-    simp only [map_mul, Units.val_mul, NNReal.coe_mul, Complex.ofReal_mul]
-    exact Complex.mul_cpow_ofReal_nonneg (coe_ideleClassNorm_pos c).le
-      (coe_ideleClassNorm_pos d).le s
-
 variable (K) in
 /-- **The norm character** `c ↦ ‖c‖ ^ s` of the idele class group, for a complex exponent `s`.
 It is unitary exactly when `s` is purely imaginary. -/
-def normPow (s : ℂ) : HeckeCharacter K where
-  toMonoidHom := (normPowAux s).toHomUnits
-  continuous_toFun := by
-    refine Units.isEmbedding_val₀.continuous_iff.mpr ?_
-    exact (Complex.continuous_ofReal.comp (NNReal.continuous_coe.comp
-      (Units.continuous_val.comp continuous_ideleClassNorm))).cpow continuous_const
-      fun c ↦ Complex.ofReal_mem_slitPlane.mpr (coe_ideleClassNorm_pos c)
+def normPow (s : ℂ) : HeckeCharacter K :=
+  cpowCharacter ideleClassNorm continuous_ideleClassNorm s
 
 /-- The value of the norm character `‖·‖ ^ s` at an idele class `c` is `‖c‖ ^ s`. -/
 @[simp]
 theorem normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
     ((normPow K s c : ℂˣ) : ℂ) = (((ideleClassNorm c : ℝ≥0) : ℝ) : ℂ) ^ s :=
-  by
-    -- Expose the monoid homomorphism stored in the continuous homomorphism.
-    change ((normPowAux s).toHomUnits c : ℂ) = normPowAux s c
-    exact MonoidHom.coe_toHomUnits (normPowAux s) c
+  coe_cpowCharacter_apply _ _ s c
 
 /-- The absolute value of `‖c‖ ^ s` is `‖c‖ ^ Re s`. -/
 theorem norm_normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
@@ -110,13 +94,11 @@ theorem norm_normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
 /-- The zeroth power of the idele class norm is the trivial character. -/
 @[simp]
 theorem normPow_zero : normPow K 0 = 1 :=
-  ContinuousMonoidHom.ext fun c ↦ Units.ext <| by simp
+  cpowCharacter_zero _ _
 
 /-- Norm characters multiply by adding exponents. -/
-theorem normPow_add (s t : ℂ) : normPow K (s + t) = normPow K s * normPow K t := by
-  refine ContinuousMonoidHom.ext fun c ↦ Units.ext ?_
-  simp only [ContinuousMonoidHom.mul_apply, Units.val_mul, normPow_apply]
-  exact Complex.cpow_add _ _ (Complex.ofReal_ne_zero.mpr (coe_ideleClassNorm_pos c).ne')
+theorem normPow_add (s t : ℂ) : normPow K (s + t) = normPow K s * normPow K t :=
+  cpowCharacter_add _ _ s t
 
 /-- The norm character with the negated exponent is the inverse character. -/
 theorem normPow_neg (s : ℂ) : normPow K (-s) = (normPow K s)⁻¹ :=

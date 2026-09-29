@@ -25,6 +25,7 @@ applied.  For a positive real exponent `r` that range is reached exactly on the 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
 * `TauCeti.cpow_sum` -- a principal power of a finite sum splits into a product for a nonzero
   complex base.
+* `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
 -/
@@ -58,6 +59,12 @@ theorem cpow_sum {ι : Type*} {x : ℂ} (hx : x ≠ 0) (f : ι → ℂ) (s : Fin
     x ^ (∑ i ∈ s, f i) = ∏ i ∈ s, x ^ f i :=
   map_sum (⟨⟨fun y ↦ x ^ y, Complex.cpow_zero x⟩,
     fun y z ↦ Complex.cpow_add y z hx⟩ : ℂ →+ Additive ℂ) f s
+
+/-- A principal complex power of the positive real `Real.exp t` is `exp (t * s)`: the principal
+logarithm of `Real.exp t` is `t`. -/
+theorem ofReal_exp_cpow (t : ℝ) (s : ℂ) : ((Real.exp t : ℝ) : ℂ) ^ s = exp (t * s) := by
+  rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 (Real.exp_pos t).ne'),
+    ← ofReal_log (Real.exp_pos t).le, Real.log_exp]
 
 /-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a
 positive `r` and a base whose argument lies in the sector `(-(r * π), r * π]`.  The intermediate

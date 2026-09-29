@@ -18,6 +18,7 @@ complex-valued character by taking a fixed complex power.
 
 * `TauCeti.cpowCharacter`: the character `x ↦ (f x) ^ s` associated to a continuous
   homomorphism `f : G →* ℝ≥0ˣ` and an exponent `s : ℂ`.
+* `TauCeti.normCpowCharacter`: the character `x ↦ ‖x‖ ^ s` of the units of a normed division ring.
 -/
 
 public section
@@ -62,5 +63,38 @@ theorem cpowCharacter_add (f : G →* NNRealˣ) (hf : Continuous f) (s t : ℂ) 
     cpowCharacter f hf (s + t) = cpowCharacter f hf s * cpowCharacter f hf t :=
   ContinuousMonoidHom.ext fun x ↦ Units.ext <| by
     simp [cpow_add _ _ (ofReal_ne_zero.2 (NNReal.coe_ne_zero.mpr (f x).ne_zero))]
+
+section NormCpow
+
+variable (𝕜 : Type*) [NormedDivisionRing 𝕜]
+
+/-- The character `x ↦ ‖x‖ ^ s` of the units of a normed division ring, for a complex exponent
+`s`. -/
+def normCpowCharacter (s : ℂ) : 𝕜ˣ →ₜ* ℂˣ :=
+  cpowCharacter (Units.map nnnormHom.toMonoidHom) (by
+    apply Units.isEmbedding_val₀.continuous_iff.mpr
+    simp only [Function.comp_def, Units.coe_map, MonoidHom.coe_mk, ZeroHom.toFun_eq_coe,
+      MonoidWithZeroHom.toZeroHom_coe, OneHom.coe_mk, nnnormHom_apply]
+    fun_prop) s
+
+/-- Evaluating `normCpowCharacter 𝕜 s` at `x` gives `‖x‖ ^ s`. -/
+@[simp]
+theorem coe_normCpowCharacter_apply (s : ℂ) (x : 𝕜ˣ) :
+    (normCpowCharacter 𝕜 s x : ℂ) = (‖(x : 𝕜)‖ : ℂ) ^ s := by
+  simp only [normCpowCharacter, coe_cpowCharacter_apply, Units.coe_map, MonoidHom.coe_mk,
+    ZeroHom.toFun_eq_coe, MonoidWithZeroHom.toZeroHom_coe, OneHom.coe_mk, nnnormHom_apply,
+    coe_nnnorm]
+
+/-- The exponent `0` gives the trivial character. -/
+@[simp]
+theorem normCpowCharacter_zero : normCpowCharacter 𝕜 0 = 1 :=
+  cpowCharacter_zero _ _
+
+/-- Adding exponents multiplies the characters. -/
+theorem normCpowCharacter_add (s t : ℂ) :
+    normCpowCharacter 𝕜 (s + t) = normCpowCharacter 𝕜 s * normCpowCharacter 𝕜 t :=
+  cpowCharacter_add _ _ s t
+
+end NormCpow
 
 end TauCeti

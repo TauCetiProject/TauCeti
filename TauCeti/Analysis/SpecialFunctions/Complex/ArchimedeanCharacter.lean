@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.Analysis.SpecialFunctions.Complex.CpowCharacter
 public import TauCeti.Geometry.Lie.Exponential.Units.Complex
 
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Data.SignType.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
 /-!
@@ -30,7 +32,6 @@ It is proved by lifting through the covering map `exp : ℂ → ℂ \ {0}`
 
 ## Main definitions
 
-* `TauCeti.normCpowCharacter`: the character `x ↦ ‖x‖ ^ s` of the units of a normed division ring.
 * `TauCeti.realSignCharacter`: the sign character of `ℝˣ`.
 * `TauCeti.complexAngularCharacter`: the character `z ↦ z / |z|` of `ℂˣ`.
 * `TauCeti.realUnitsCharacter s ε`: the character `x ↦ |x| ^ s * sgn(x) ^ ε` of `ℝˣ`.
@@ -67,54 +68,19 @@ open Complex
 
 /-! ### The basic characters -/
 
-section NormCpow
-
-variable (𝕜 : Type*) [NormedDivisionRing 𝕜]
-
-/-- The character `x ↦ ‖x‖ ^ s` of the units of a normed division ring, for a complex exponent
-`s`. -/
-def normCpowCharacter (s : ℂ) : 𝕜ˣ →ₜ* ℂˣ :=
-  cpowCharacter (Units.map nnnormHom.toMonoidHom) (by
-    apply Units.isEmbedding_val₀.continuous_iff.mpr
-    change Continuous fun x : 𝕜ˣ ↦ ‖(x : 𝕜)‖₊
-    fun_prop) s
-
-/-- Evaluating `normCpowCharacter 𝕜 s` at `x` gives `‖x‖ ^ s`. -/
-@[simp]
-theorem coe_normCpowCharacter_apply (s : ℂ) (x : 𝕜ˣ) :
-    (normCpowCharacter 𝕜 s x : ℂ) = (‖(x : 𝕜)‖ : ℂ) ^ s :=
-  by
-    unfold normCpowCharacter
-    rw [coe_cpowCharacter_apply]
-    rfl
-
-/-- The exponent `0` gives the trivial character. -/
-@[simp]
-theorem normCpowCharacter_zero : normCpowCharacter 𝕜 0 = 1 :=
-  cpowCharacter_zero _ _
-
-/-- Adding exponents multiplies the characters. -/
-theorem normCpowCharacter_add (s t : ℂ) :
-    normCpowCharacter 𝕜 (s + t) = normCpowCharacter 𝕜 s * normCpowCharacter 𝕜 t :=
-  cpowCharacter_add _ _ s t
-
-end NormCpow
-
-private lemma coe_sign_eq_div_abs (x : ℝˣ) :
-    (SignType.sign (x : ℝ) : ℂ) = ((x : ℝ) : ℂ) / ((|(x : ℝ)| : ℝ) : ℂ) := by
-  rw [← SignType.map_cast ofRealHom, ofRealHom_eq_coe,
-    eq_div_iff (ofReal_ne_zero.2 (abs_ne_zero.2 x.ne_zero)), ← ofReal_mul, sign_mul_abs]
-
 /-- The sign character `x ↦ sgn x` of `ℝˣ`, with values `±1` in `ℂˣ`. -/
 def realSignCharacter : ℝˣ →ₜ* ℂˣ where
   toMonoidHom := Units.map ((SignType.castHom : SignType →*₀ ℂ).toMonoidHom.comp
     (signHom : ℝ →*₀ SignType).toMonoidHom)
   continuous_toFun := by
     refine Units.isEmbedding_val₀.continuous_iff.mpr ?_
-    change Continuous fun x : ℝˣ ↦ (SignType.sign (x : ℝ) : ℂ)
-    simp only [coe_sign_eq_div_abs]
-    exact (continuous_ofReal.comp Units.continuous_val).div
-      (continuous_ofReal.comp (continuous_abs.comp Units.continuous_val)) fun x ↦ by simp
+    simp only [Units.map_comp, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe, MonoidHom.coe_comp,
+      Function.comp_def, Units.coe_map, MonoidHom.coe_mk, ZeroHom.toFun_eq_coe,
+      MonoidWithZeroHom.toZeroHom_coe, signHom_apply, OneHom.coe_mk, SignType.castHom_apply,
+      ← SignType.map_cast ofRealHom, sign_eq_div_abs, ofRealHom_eq_coe]
+    exact continuous_ofReal.comp <|
+      Units.continuous_val.div (continuous_abs.comp Units.continuous_val) fun x ↦
+        abs_ne_zero.2 x.ne_zero
 
 /-- Evaluating the sign character at `x` gives the sign of `x`. -/
 @[simp]
@@ -151,13 +117,24 @@ theorem coe_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
       ((|(x : ℝ)| : ℝ) : ℂ) ^ s * (SignType.sign (x : ℝ) : ℂ) ^ ε.val := by
   simp [realUnitsCharacter]
 
+/-- With parity `0`, `realUnitsCharacter s 0` is the norm-power character `x ↦ |x| ^ s`. -/
+@[simp]
+theorem realUnitsCharacter_zero_right (s : ℂ) : realUnitsCharacter s 0 = normCpowCharacter ℝ s := by
+  simp [realUnitsCharacter]
+
+/-- With exponent `0`, `realUnitsCharacter 0 ε` is the power `sgn ^ ε` of the sign character. -/
+@[simp]
+theorem realUnitsCharacter_zero_left (ε : ZMod 2) :
+    realUnitsCharacter 0 ε = realSignCharacter ^ ε.val := by
+  rw [realUnitsCharacter, normCpowCharacter_zero]
+  exact one_mul (realSignCharacter ^ ε.val)
+
 /-- The sign character has order two. -/
 theorem realSignCharacter_sq : realSignCharacter ^ 2 = 1 :=
   ContinuousMonoidHom.ext fun x ↦ Units.ext <| by
     rcases lt_or_gt_of_ne x.ne_zero with h | h <;> simp [h]
 
 /-- The parameters `(0, 0)` give the trivial character of `ℝˣ`. -/
-@[simp]
 theorem realUnitsCharacter_zero_zero : realUnitsCharacter 0 0 = 1 := by
   simp [realUnitsCharacter]
 
@@ -167,10 +144,6 @@ theorem realUnitsCharacter_add (s t : ℂ) (ε η : ZMod 2) :
   rw [realUnitsCharacter, realUnitsCharacter, realUnitsCharacter, normCpowCharacter_add,
     ZMod.val_add, ← pow_eq_pow_mod _ realSignCharacter_sq, pow_add]
   exact mul_mul_mul_comm (normCpowCharacter ℝ s) _ _ _
-
-private lemma ofReal_exp_cpow (t : ℝ) (s : ℂ) : ((Real.exp t : ℝ) : ℂ) ^ s = exp (t * s) := by
-  rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 (Real.exp_pos t).ne'),
-    ← ofReal_log (Real.exp_pos t).le, Real.log_exp]
 
 /-- Restricting `realUnitsCharacter s ε` to the positive reals gives `expUnitHom s`; the sign
 parameter is invisible on the identity component. -/
@@ -183,7 +156,9 @@ theorem realUnitsCharacter_comp_expUnitHom (s : ℂ) (ε : ZMod 2) :
     ofReal_exp_cpow]
   simp
 
-private lemma realUnitsCharacter_neg_one (s : ℂ) (ε : ZMod 2) :
+/-- Evaluating `realUnitsCharacter s ε` at `-1` gives `(-1) ^ ε`; the exponent `s` is invisible
+there. -/
+theorem realUnitsCharacter_neg_one (s : ℂ) (ε : ZMod 2) :
     (realUnitsCharacter s ε (-1) : ℂ) = (-1) ^ ε.val := by
   simp
 
@@ -271,8 +246,22 @@ theorem coe_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
     (complexUnitsCharacter s k z : ℂ) = (‖(z : ℂ)‖ : ℂ) ^ s * ((z : ℂ) / ‖(z : ℂ)‖) ^ k := by
   simp [complexUnitsCharacter]
 
-/-- The parameters `(0, 0)` give the trivial character of `ℂˣ`. -/
+/-- With angular frequency `0`, `complexUnitsCharacter s 0` is the norm-power character
+`z ↦ |z| ^ s`. -/
 @[simp]
+theorem complexUnitsCharacter_zero_right (s : ℂ) :
+    complexUnitsCharacter s 0 = normCpowCharacter ℂ s := by
+  simp [complexUnitsCharacter]
+
+/-- With exponent `0`, `complexUnitsCharacter 0 k` is the power `(z / |z|) ^ k` of the angular
+character. -/
+@[simp]
+theorem complexUnitsCharacter_zero_left (k : ℤ) :
+    complexUnitsCharacter 0 k = complexAngularCharacter ^ k := by
+  rw [complexUnitsCharacter, normCpowCharacter_zero]
+  exact one_mul (complexAngularCharacter ^ k)
+
+/-- The parameters `(0, 0)` give the trivial character of `ℂˣ`. -/
 theorem complexUnitsCharacter_zero_zero : complexUnitsCharacter 0 0 = 1 := by
   simp [complexUnitsCharacter]
 
