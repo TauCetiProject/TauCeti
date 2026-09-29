@@ -13,11 +13,14 @@ public import Mathlib.Logic.Relation
 # Dual graphs of geometric nodal curves
 
 This file defines `TauCeti.DualGraph`, a finite nonempty connected graph with natural number
-vertex weights, together with its first Betti number and the weighted invariant
-`arithmeticGenus`. No curve appears in this file: the structure is the combinatorial shape that
-the dual graph of a proper geometric nodal curve has, with vertices standing for irreducible
-components, edges for nodes and weights for component genera, and the comparison with an actual
-curve is not defined or proved here.
+vertex weights, together with its half-edge incidence and valence. No curve appears in this
+file: the structure is the combinatorial shape that the dual graph of a proper geometric nodal
+curve has, with vertices standing for irreducible components, edges for nodes and weights for
+component genera, and the comparison with an actual curve is not defined or proved here.
+
+The graph invariants that only make sense against a curve, the first Betti number and the
+arithmetic genus, are deliberately not defined here. They belong with the node-splitting and
+normalization stages that construct a curve's dual graph, which are not yet on `main`.
 
 Edges carry two half-edges even when both endpoints agree, so a loop contributes two to the
 valence of its vertex. `valence` counts half-edges at a vertex, which is the form in which the
@@ -29,8 +32,6 @@ stability condition of a stable curve is stated.
 * `TauCeti.DualGraph.HalfEdge`: an edge together with an endpoint index.
 * `TauCeti.DualGraph.incident`: the half-edges meeting a given vertex.
 * `TauCeti.DualGraph.valence`: the number of half-edges at a vertex, counting loops twice.
-* `TauCeti.DualGraph.firstBetti`: first Betti number by Euler characteristic.
-* `TauCeti.DualGraph.arithmeticGenus`: the weighted invariant `∑ genus + firstBetti`.
 
 ## References
 
@@ -93,22 +94,6 @@ def HalfEdge.vertex (h : G.HalfEdge) : G.Vertex := G.endpoint h.1 h.2
 @[simp]
 theorem HalfEdge.vertex_mk (e : G.Edge) (i : Fin 2) :
     HalfEdge.vertex G (e, i) = G.endpoint e i := by rfl
-
-/-- The first Betti number of the connected dual graph, by Euler characteristic. -/
-def firstBetti : ℕ := Fintype.card G.Edge + 1 - Fintype.card G.Vertex
-
--- `by rfl`, not `rfl`: `firstBetti` is not `@[expose]`, so a theorem exported from this module
--- cannot unfold it in term mode.
-@[simp]
-theorem firstBetti_def : G.firstBetti = Fintype.card G.Edge + 1 - Fintype.card G.Vertex := by rfl
-
-/-- The arithmetic genus encoded by a connected weighted dual graph. -/
-def arithmeticGenus : ℕ := (∑ v, G.genus v) + G.firstBetti
-
--- `by rfl`, not `rfl`: `arithmeticGenus` is not `@[expose]`, so a theorem exported from this
--- module cannot unfold it in term mode.
-@[simp]
-theorem arithmeticGenus_def : G.arithmeticGenus = (∑ v, G.genus v) + G.firstBetti := by rfl
 
 section Valence
 
