@@ -21,6 +21,9 @@ The Serre relations give the required vanishing Lie brackets. The generic Kostan
 root-subgroup theorem then transports those brackets through integral divided-power
 exponentials; no factorial is inverted.
 
+The proof structure is adapted from
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.SimpleRootRelations`.
+
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
