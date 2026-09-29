@@ -20,8 +20,9 @@ file records the integer thresholds: a quadratic field with `|discr K| ≤ 9`, a
 field with `|discr K| ≤ 15`, and a cubic field with `|discr K| ≤ 49` have class number `1`.
 
 The proofs follow the pattern of Mathlib's `IsCyclotomicExtension.Rat.three_pid` and `five_pid`
-in `Mathlib.NumberTheory.NumberField.Cyclotomic.PID`, with the signature left free and the
-discriminant bounded by an integer instead of computed.
+in `Mathlib.NumberTheory.NumberField.Cyclotomic.PID`, with the discriminant bounded by an
+integer instead of computed; the two signature-independent results split into the cases
+`r₂ = 0` and `r₂ = 1`, and the real quadratic result fixes `r₂ = 0`.
 
 ## Main results
 
@@ -43,7 +44,8 @@ namespace TauCeti.NumberField
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- **Quadratic fields of discriminant at most `9` in absolute value have class number `1`.**
-Minkowski's bound is `16` when `K` is real and `π² > 9` when `K` is imaginary. -/
+Minkowski's bound `(4/π)^{r₂} · √|discr K| / 2` is below `2` when `|discr K| < 16` for real `K`
+and when `|discr K| < π²` for imaginary `K`; `9` is below both thresholds. -/
 theorem isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine
     (hfin : Module.finrank ℚ K = 2) (hdisc : (discr K).natAbs ≤ 9) :
     IsPrincipalIdealRing (𝓞 K) := by
@@ -62,7 +64,7 @@ theorem isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine
   · nlinarith [pi_gt_three]
 
 /-- **Real quadratic fields of discriminant at most `15` have class number `1`.** Minkowski's
-bound is `16` when `K` is totally real of degree `2`. -/
+bound `√|discr K| / 2` is below `2` when `|discr K| < 16`. -/
 theorem isPrincipalIdealRing_of_finrank_eq_two_of_nrComplexPlaces_eq_zero_of_natAbs_discr_le_fifteen
     (hfin : Module.finrank ℚ K = 2) (hr : nrComplexPlaces K = 0)
     (hdisc : (discr K).natAbs ≤ 15) : IsPrincipalIdealRing (𝓞 K) := by
@@ -75,8 +77,9 @@ theorem isPrincipalIdealRing_of_finrank_eq_two_of_nrComplexPlaces_eq_zero_of_nat
   exact h15.trans_lt (by norm_num)
 
 /-- **Cubic fields of discriminant at most `49` in absolute value have class number `1`.**
-Minkowski's bound is `81` when `K` is totally real and `(9π/4)² > 49` when `K` has a complex
-place. -/
+Minkowski's bound `(4/π)^{r₂} · (2/9) · √|discr K|` is below `2` when `|discr K| < 81` for
+totally real `K` and when `|discr K| < (9π/4)²` for `K` with a complex place; `49` is below both
+thresholds. -/
 theorem isPrincipalIdealRing_of_finrank_eq_three_of_natAbs_discr_le_forty_nine
     (hfin : Module.finrank ℚ K = 3) (hdisc : (discr K).natAbs ≤ 49) :
     IsPrincipalIdealRing (𝓞 K) := by
