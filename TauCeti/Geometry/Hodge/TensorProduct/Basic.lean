@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct
 public import TauCeti.Geometry.Hodge.Decomposition
+public import Mathlib.RingTheory.Flat.Basic
 
 /-!
 # Tensor products of pure Hodge structures
@@ -14,6 +15,11 @@ public import TauCeti.Geometry.Hodge.Decomposition
 The tensor product of pure Hodge structures is graded by adding bidegrees.  We construct its
 conjugation from the tensor product of the two conjugate-linear involutions and use the internal
 Hodge decompositions to package the total grading as a pure Hodge structure.
+
+For integral pure Hodge structures, the tensor product is carried by the tensor product of the two
+lattices: the tensor product of the two complexifications is a complexification of it, whose
+lattice conjugation is the tensor product of the two lattice conjugations
+(`TauCeti.Hodge.latticeConjugation_tensorProduct`).
 
 ## Main declarations
 
@@ -24,6 +30,10 @@ Hodge decompositions to package the total grading as a pure Hodge structure.
   as the supremum of products of Hodge pieces.
 * `TauCeti.Hodge.HodgeStructureOn.tmul_mem_tensorProduct`: pure tensors have the expected total
   Hodge degree.
+* `TauCeti.Hodge.tensorLatticeMap_injective`: the tensor product of two flat lattices embeds in
+  the tensor product of their complexifications.
+* `TauCeti.Hodge.HodgeStructure.tensorProduct`: the tensor product of two integral pure Hodge
+  structures, on the tensor product of their lattices.
 
 The construction supplies the tensor-product companion requested in Layer 0 of the
 `HodgeStructures` roadmap.
@@ -161,5 +171,57 @@ theorem tmul_mem_tensorProduct (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
   exact InternalGrading.tmul_mem_tensorProduct (pieceGrading hs₁) (pieceGrading hs₂) hx hy
 
 end HodgeStructureOn
+
+/-! ### The tensor product of two integral Hodge structures -/
+
+variable {V : Type*} {V' : Type*} {Vℂ : Type*} {V'ℂ : Type*}
+variable [AddCommGroup V] [AddCommGroup V'] [AddCommGroup Vℂ] [Module ℂ Vℂ]
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ιℂ : V →ₗ[ℤ] Vℂ} {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
+
+/-- The tensor product of two flat (for instance free) lattices embeds in the tensor product of
+their complexifications. -/
+theorem tensorLatticeMap_injective [Module.Flat ℤ V] [Module.Flat ℤ V'] (hℂ : IsBaseChange ℂ ιℂ)
+    (h'ℂ : IsBaseChange ℂ ι'ℂ) : Function.Injective (tensorLatticeMap ιℂ ι'ℂ) := by
+  -- Mathlib's flatness of a tensor product is stated for the tensor-product `ℤ`-module structure,
+  -- which is defeq to the canonical one but not found by instance search for it.
+  have : Module.Flat ℤ (V ⊗[ℤ] V') :=
+    (inferInstance : @Module.Flat ℤ (V ⊗[ℤ] V') _ _ TensorProduct.instModule)
+  intro v w hvw
+  refine Module.Flat.tensorProduct_mk_injective ℤ (V ⊗[ℤ] V') ℂ ?_
+  apply (isBaseChange_tensorLatticeMap hℂ h'ℂ).equiv.injective
+  rw [TensorProduct.mk_apply, TensorProduct.mk_apply, IsBaseChange.equiv_tmul,
+    IsBaseChange.equiv_tmul, one_smul, one_smul, hvw]
+
+namespace HodgeStructure
+
+variable {hℂ : IsBaseChange ℂ ιℂ} {h'ℂ : IsBaseChange ℂ ι'ℂ} {n n' : ℤ}
+
+/-- The tensor product of two integral pure Hodge structures, of weight the sum of the weights. It
+is carried by the tensor product of the lattices, and its Hodge filtration is that of the tensor
+product of the complex Hodge structures (`HodgeStructure.tensorProduct_F`). -/
+noncomputable def tensorProduct (hs : HodgeStructure hℂ n) (hs' : HodgeStructure h'ℂ n') :
+    HodgeStructure (isBaseChange_tensorLatticeMap hℂ h'ℂ) (n + n') :=
+  (HodgeStructureOn.tensorProduct hs hs').comap (LinearEquiv.refl ℂ _) fun x ↦ by
+    rw [latticeConjugation_tensorProduct, LinearEquiv.refl_apply, LinearEquiv.refl_apply]
+
+variable (hs : HodgeStructure hℂ n) (hs' : HodgeStructure h'ℂ n')
+
+/-- The Hodge filtration of the tensor product of two integral Hodge structures is that of the
+tensor product of the complex Hodge structures. -/
+@[simp]
+theorem tensorProduct_F (p : ℤ) :
+    (hs.tensorProduct hs').F p = (HodgeStructureOn.tensorProduct hs hs').F p := by
+  rw [tensorProduct, HodgeStructureOn.comap_F, LinearEquiv.refl_toLinearMap, Submodule.comap_id]
+
+/-- The Hodge components of the tensor product of two integral Hodge structures are those of the
+tensor product of the complex Hodge structures. -/
+@[simp]
+theorem tensorProduct_piece (p : ℤ) :
+    (hs.tensorProduct hs').piece p = (HodgeStructureOn.tensorProduct hs hs').piece p := by
+  rw [tensorProduct, HodgeStructureOn.comap_piece, LinearEquiv.refl_toLinearMap,
+    Submodule.comap_id]
+
+end HodgeStructure
 
 end TauCeti.Hodge

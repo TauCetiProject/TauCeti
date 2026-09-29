@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.LinearAlgebra.Complex.Conjugation
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Conjugation and maps on complexifications
@@ -56,6 +57,10 @@ models.
 * `TauCeti.Hodge.latticeConjugation`: the abstract map bundled as a `Conjugation`.
 * `TauCeti.Hodge.integralMapToComplex`: complexification of an integral linear map between abstract
   complexification models.
+* `TauCeti.Hodge.tensorLatticeMap` and `TauCeti.Hodge.isBaseChange_tensorLatticeMap`: the tensor
+  product of two complexifications is a complexification of the tensor product of the lattices.
+* `TauCeti.Hodge.latticeConjugation_tensorProduct`: its lattice conjugation is the tensor product
+  of the two lattice conjugations.
 
 The base-change design follows the discussion by Johan Commelin, Andrew Yang, Kevin Buzzard, and
 Joël Riou in the `#mathlib4` Zulip thread *Complexifications with a view towards Hodge theory*. The
@@ -764,5 +769,67 @@ theorem map_latticeConj_prod (U : Submodule ℂ Vℂ) (U' : Submodule ℂ V'ℂ)
     Conjugation.map_prod (latticeConjugation_prodMap_toEquiv_apply hℂ h'ℂ) U U'
 
 end Prod
+
+section TensorProduct
+
+variable {V : Type u} {Vℂ : Type v} [AddCommGroup V]
+variable [AddCommGroup Vℂ] [Module ℂ Vℂ] {ιℂ : V →ₗ[ℤ] Vℂ}
+variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V']
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ] {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
+
+variable (ιℂ ι'ℂ) in
+/-- The integral structure map `v ⊗ v' ↦ ιℂ v ⊗ ι'ℂ v'` of a tensor product of two
+complexifications.
+
+It is the map of `IsBaseChange.tensorProduct`, restated through `AddMonoidHom.toIntLinearMap` so
+that both sides carry their canonical `ℤ`-module structures: a tensor product also carries the
+`ℤ`-module structure induced from a factor, which is equal but not reducibly defeq to the
+canonical one that the lattice API of this file is stated for. -/
+noncomputable def tensorLatticeMap : V ⊗[ℤ] V' →ₗ[ℤ] Vℂ ⊗[ℂ] V'ℂ :=
+  (TensorProduct.mapOfCompatibleSMul ℂ ℤ ℤ Vℂ V'ℂ ∘ₗ
+    TensorProduct.map ιℂ ι'ℂ).toAddMonoidHom.toIntLinearMap
+
+/-- The structure map of a tensor product of complexifications on a pure tensor. -/
+@[simp]
+theorem tensorLatticeMap_tmul (v : V) (v' : V') :
+    tensorLatticeMap ιℂ ι'ℂ (v ⊗ₜ v') = ιℂ v ⊗ₜ[ℂ] ι'ℂ v' :=
+  (rfl)
+
+/-- The tensor product of two complexifications is a complexification of the tensor product of
+the two lattices. -/
+theorem isBaseChange_tensorLatticeMap (hℂ : IsBaseChange ℂ ιℂ) (h'ℂ : IsBaseChange ℂ ι'ℂ) :
+    IsBaseChange ℂ (tensorLatticeMap ιℂ ι'ℂ) :=
+  hℂ.tensorProduct h'ℂ
+
+/-- Lattice conjugation of a tensor product of complexifications conjugates both factors of a
+pure tensor. -/
+@[simp]
+theorem latticeConj_tensorLatticeMap_tmul (hℂ : IsBaseChange ℂ ιℂ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
+    (x : Vℂ) (y : V'ℂ) :
+    latticeConj (isBaseChange_tensorLatticeMap hℂ h'ℂ) (x ⊗ₜ[ℂ] y) =
+      latticeConj hℂ x ⊗ₜ[ℂ] latticeConj h'ℂ y := by
+  induction x using hℂ.inductionOn with
+  | tmul v =>
+    induction y using h'ℂ.inductionOn with
+    | tmul w => simpa using latticeConj_ι (isBaseChange_tensorLatticeMap hℂ h'ℂ) (v ⊗ₜ w)
+    | smul z y hy => simp [TensorProduct.tmul_smul, hy]
+    | add y y' hy hy' => simp [TensorProduct.tmul_add, hy, hy']
+  | smul z x hx => simp [← TensorProduct.smul_tmul', hx]
+  | add x x' hx hx' => simp [TensorProduct.add_tmul, hx, hx']
+
+/-- The lattice conjugation of a tensor product of complexifications is the tensor product of the
+two lattice conjugations. -/
+theorem latticeConjugation_tensorProduct (hℂ : IsBaseChange ℂ ιℂ) (h'ℂ : IsBaseChange ℂ ι'ℂ) :
+    latticeConjugation (isBaseChange_tensorLatticeMap hℂ h'ℂ) =
+      (latticeConjugation hℂ).tensorProduct (latticeConjugation h'ℂ) := by
+  ext x
+  induction x with
+  | tmul x y =>
+    rw [latticeConjugation_toEquiv_apply, Conjugation.tensorProduct_toEquiv_tmul,
+      latticeConj_tensorLatticeMap_tmul, latticeConjugation_toEquiv_apply,
+      latticeConjugation_toEquiv_apply]
+  | add x y hx hy => simp_all
+
+end TensorProduct
 
 end TauCeti.Hodge
