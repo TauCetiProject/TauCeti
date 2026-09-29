@@ -15,6 +15,7 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 
 This file records general-purpose facts about permutations: a transposition preserves the
 complement of a set containing neither of its swapped points, an identity between transpositions,
+the values of the three-cycle written as a product of two transpositions sharing a point,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a permutation transported along an injection, the combination of two
@@ -223,6 +224,26 @@ theorem swap_braid {α : Type*} [DecidableEq α] {a b c : α} (hab : a ≠ b) (h
       _ = Equiv.swap c a := Equiv.swap_comm a c
       _ = Equiv.swap b c * Equiv.swap a b * Equiv.swap b c :=
           (Equiv.swap_mul_swap_mul_swap hab hac).symm
+
+/-- The product `Equiv.swap a b * Equiv.swap b c` of two transpositions sharing the point `b`
+carries `a` to `b`. Together with `TauCeti.swap_mul_swap_apply_middle` and
+`TauCeti.swap_mul_swap_apply_right` this evaluates that product, which for three distinct points
+is the three-cycle `a ↦ b ↦ c ↦ a`, at each of the three points it moves. -/
+theorem swap_mul_swap_apply_left {α : Type*} [DecidableEq α] {a b c : α} (hab : a ≠ b)
+    (hca : c ≠ a) : (Equiv.swap a b * Equiv.swap b c) a = b := by
+  rw [Equiv.Perm.mul_apply, Equiv.swap_apply_of_ne_of_ne hab hca.symm, Equiv.swap_apply_left]
+
+/-- The product `Equiv.swap a b * Equiv.swap b c` of two transpositions sharing the point `b`
+carries `b` to `c`, the point the second transposition moves it to. -/
+theorem swap_mul_swap_apply_middle {α : Type*} [DecidableEq α] {a b c : α} (hca : c ≠ a)
+    (hcb : c ≠ b) : (Equiv.swap a b * Equiv.swap b c) b = c := by
+  rw [Equiv.Perm.mul_apply, Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne hca hcb]
+
+/-- The product `Equiv.swap a b * Equiv.swap b c` of two transpositions sharing the point `b`
+carries `c` to `a`, through the shared point `b`; no distinctness is needed for this value. -/
+theorem swap_mul_swap_apply_right {α : Type*} [DecidableEq α] (a b c : α) :
+    (Equiv.swap a b * Equiv.swap b c) c = a := by
+  rw [Equiv.Perm.mul_apply, Equiv.swap_apply_right, Equiv.swap_apply_right]
 
 /-- **A permutation along an injection extends to a permutation of the ambient type.** Given an
 injection `e : α → γ`, every permutation `σ` of `α` is realized along `e` by some
