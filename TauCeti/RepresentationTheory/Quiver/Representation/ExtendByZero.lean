@@ -321,6 +321,7 @@ variable (M N)
 
 /-- **Extension by zero reflects and preserves isomorphism**: two representations of `Q'` are
 isomorphic exactly when their extensions by zero are. -/
+@[simp]
 theorem nonempty_extendByZeroRep_iso_iff :
     Nonempty (φ.extendByZeroRep M ≅ φ.extendByZeroRep N) ↔ Nonempty (M ≅ N) :=
   ⟨fun ⟨e⟩ ↦ ⟨(φ.fullyFaithfulExtendByZeroFunctor k).preimageIso e⟩,

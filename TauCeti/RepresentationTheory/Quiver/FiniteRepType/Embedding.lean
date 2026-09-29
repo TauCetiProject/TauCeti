@@ -23,10 +23,11 @@ infinite representation type itself. This is the reduction by which the non-Dynk
 Gabriel's theorem is proved: a connected quiver whose underlying graph is not a Dynkin diagram
 contains a subquiver whose graph is an extended Dynkin diagram, and each of those has infinitely
 many indecomposables. The two smallest extended Dynkin diagrams are the loop `Ã₀` and the double
-edge `Ã₁`, and for them the infinite families are already known: the nilpotent Jordan blocks of the
-loop quiver (`TauCeti.not_isFiniteRepType_oneLoop`) and of the Kronecker quiver `• ⇉ •`
-(`TauCeti.not_isFiniteRepType_kronecker`). Transported along the reduction, they say that a quiver
-of finite representation type has no loops (`TauCeti.IsFiniteRepType.isEmpty_hom_self`) and at
+edge `Ã₁`. The loop quiver has infinitely many nilpotent Jordan block representations
+(`TauCeti.not_isFiniteRepType_oneLoop`), and the Kronecker quiver `• ⇉ •` has infinitely many
+indecomposable representations (`TauCeti.not_isFiniteRepType_kronecker`). Transported along the
+reduction, they say that a quiver of finite representation type has no loops
+(`TauCeti.IsFiniteRepType.isEmpty_hom_self`) and at
 most one arrow from any vertex to any other (`TauCeti.IsFiniteRepType.subsingleton_hom`).
 
 ## Main results
