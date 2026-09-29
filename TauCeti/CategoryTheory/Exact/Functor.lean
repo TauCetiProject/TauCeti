@@ -122,15 +122,21 @@ theorem iff_of_iso [F.Additive] [G.Additive] (e : F ≅ G) :
     E.IsConflationExact E' F ↔ E.IsConflationExact E' G :=
   ⟨fun hF ↦ hF.of_iso e, fun hG ↦ hG.of_iso e.symm⟩
 
+omit [HasZeroObject C] [HasBinaryBiproducts C] [HasZeroObject D] [HasBinaryBiproducts D] in
+/-- Mapping an opposite short complex and then unopposing agrees with mapping its unopposite. -/
+private theorem unop_map_op [F.Additive] (S : ShortComplex Cᵒᵖ) :
+    (S.map F.op).unop = S.unop.map F := by
+  cases S
+  rfl
+
 /-- Passing to opposite categories preserves conflation-exactness. -/
 theorem op [F.Additive] (hF : E.IsConflationExact E' F) :
     E.op.IsConflationExact E'.op F.op where
   map_conflation {S} hS := by
     have h := hF.map_conflation ((E.op_conflation S).mp hS)
     exact (E'.op_conflation (S.map F.op)).mpr (by
-      convert h using 1
-      cases S
-      rfl)
+      rw [unop_map_op]
+      exact h)
 
 end IsConflationExact
 

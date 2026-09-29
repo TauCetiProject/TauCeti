@@ -7,8 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Bicartesian
 public import TauCeti.CategoryTheory.Exact.Functor
-import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
-import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!
 # Exact functors preserve admissible base change
@@ -40,25 +39,6 @@ variable {C : Type u₁} {D : Type u₂}
   [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
   {E : ExactStructure C} {E' : ExactStructure D} {F : C ⥤ D} [F.Additive]
 
-private noncomputable instance : PreservesBinaryBiproducts F :=
-  preservesBinaryBiproducts_of_preservesBiproducts F
-
-/-- The short complex associated to the image of a square is isomorphic to the image of its
-short complex. The middle isomorphism is the canonical comparison for a biproduct. -/
-private noncomputable def mapShortComplexIso
-    {W X Y Z : C} {f : W ⟶ X} {g : W ⟶ Y} {h : X ⟶ Z} {i : Y ⟶ Z}
-    (sq : CommSq f g h i) :
-    sq.shortComplex.map F ≅ (F.map_commSq sq).shortComplex :=
-  ShortComplex.isoMk (Iso.refl _) (F.mapBiprod X Y) (Iso.refl _)
-    (by
-      dsimp only [ShortComplex.map, CommSq.shortComplex, Functor.map_commSq]
-      simpa only [Iso.refl_hom, Category.id_comp, Functor.map_neg] using
-        (biprod.map_lift_mapBiprod F X Y f (-g)).symm)
-    (by
-      dsimp only [ShortComplex.map, CommSq.shortComplex, Functor.map_commSq]
-      simpa only [Iso.refl_hom, Category.comp_id] using
-        (biprod.mapBiprod_hom_desc F X Y h i))
-
 /-- A conflation-exact functor preserves a pushout square of an inflation. The square may be
 formed along an arbitrary morphism; no preservation of arbitrary pushouts is assumed. -/
 theorem map_isPushout (hF : E.IsConflationExact E' F)
@@ -68,7 +48,7 @@ theorem map_isPushout (hF : E.IsConflationExact E' F)
   let sq := hsq.toCommSq
   let sq' := F.map_commSq sq
   have hc : E'.Conflation sq'.shortComplex :=
-    E'.conflation_of_iso (mapShortComplexIso (F := F) sq)
+    E'.conflation_of_iso (commSqShortComplexMapIso (F := F) sq)
       (hF.map_conflation (E.conflation_shortComplex_of_isPushout_of_isInflation hf hsq))
   have hp := E'.isKernelCokernelPair sq'.shortComplex hc
   exact IsPushout.of_isColimit' sq'
