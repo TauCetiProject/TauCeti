@@ -12,7 +12,6 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.DedekindZeta
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.ResidueDegree
 import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.NumberTheory.NumberField.DirichletDensityBounds
 
@@ -41,8 +40,7 @@ Comparison with `x / log x` is a theorem rather than the definition. The prime i
 `π_K(x) ~ Li(x) ~ x / log x`, obtained from the boundary data
 `TauCeti.LFunctions.primeIdealVonMangoldtBoundary` of the Dedekind zeta function through
 `TauCeti.primeIdealTheorem_of_boundary`, shows that `S` has natural density `δ` exactly when
-`π_S(x) / (x / log x) → δ`, equivalently when `π_S(x) = δ Li(x) + o(x / log x)`. In particular
-the `O(√x)` primes of residue degree greater than one have natural density zero.
+`π_S(x) / (x / log x) → δ`, equivalently when `π_S(x) = δ Li(x) + o(x / log x)`.
 
 ## Main results
 
@@ -62,9 +60,6 @@ the `O(√x)` primes of residue degree greater than one have natural density zer
   only if `π_S(x) / (x / log x) → δ`, if and only if `π_S(x) = δ Li(x) + o(x / log x)`.
 * `NumberField.Set.hasNaturalDensity_zero_iff_isLittleO`: `S` has natural density zero if and only
   if `π_S(x) = o(x / log x)`.
-* `TauCeti.hasNaturalDensity_higherDegreePrimes`: the primes of residue degree greater than one have
-  natural density zero, and `TauCeti.hasNaturalDensity_inter_compl_higherDegreePrimes_iff` lets a
-  natural density be computed on the primes of residue degree one alone.
 * `NumberField.Set.isUpperDirichletDensityBound_of_eventually_primeCount_le` and
   `NumberField.Set.isLowerDirichletDensityBound_of_eventually_le_primeCount`: an eventual
   one-sided bound on the proportion of primes of `S` below `x` is the same one-sided bound for
@@ -79,9 +74,10 @@ function `t ↦ t ^ (-s)` (`TauCeti.tsum_mul_le_of_summatory_le`) turns an event
 infinity as `s → 1⁺` (`TauCeti.tendsto_primeIdealZetaSum_univ_atTop`), so the constant `C`
 disappears from the ratio `P_S(s) / P(s)`.
 
-The definition, its elementary calculus, and the comparison with Dirichlet density are standard;
-see J.-P. Serre, *A Course in Arithmetic*, Chapter VI, §4, J.-P. Serre, *Corps locaux*, Chapter
-VI, or J. Neukirch, *Algebraic Number Theory*, Chapter VII, §13.
+For the natural and Dirichlet densities of rational primes and the implication from natural to
+Dirichlet density, see J.-P. Serre, *A Course in Arithmetic*, Chapter VI, §4.5. For Dirichlet
+density of prime ideals in number fields, see J. Neukirch, *Algebraic Number Theory*,
+Chapter VII, §13.
 -/
 
 public section
@@ -435,31 +431,3 @@ theorem hasNaturalDensity_zero_iff_isLittleO :
 end PrimeIdealTheorem
 
 end NumberField.Set
-
-open IsDedekindDomain NumberField NumberField.Set
-
-namespace TauCeti
-
-variable {K : Type*} [Field K] [NumberField K]
-
-/-- **The primes of residue degree greater than one have natural density zero**: there are
-`O(√x)` of them of norm at most `x`, which is `o(x / log x)`. -/
-theorem hasNaturalDensity_higherDegreePrimes : HasNaturalDensity (higherDegreePrimes K) 0 :=
-  hasNaturalDensity_zero_iff_isLittleO.2 primeCount_higherDegreePrimes_isLittleO
-
-/-- **The primes of residue degree one have natural density one.** -/
-theorem hasNaturalDensity_compl_higherDegreePrimes :
-    HasNaturalDensity (higherDegreePrimes K)ᶜ 1 := by
-  simpa using hasNaturalDensity_higherDegreePrimes.compl
-
-/-- **Natural density only sees primes of residue degree one.** A set `S` of primes has natural
-density `δ` if and only if its primes of residue degree one do. -/
-theorem hasNaturalDensity_inter_compl_higherDegreePrimes_iff
-    {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ} :
-    HasNaturalDensity (S ∩ (higherDegreePrimes K)ᶜ) δ ↔ HasNaturalDensity S δ := by
-  refine hasNaturalDensity_iff_of_symmDiff <|
-    hasNaturalDensity_higherDegreePrimes.zero_of_subset fun 𝔭 h𝔭 => ?_
-  simp only [Set.mem_symmDiff, Set.mem_inter_iff, Set.mem_compl_iff] at h𝔭
-  tauto
-
-end TauCeti
