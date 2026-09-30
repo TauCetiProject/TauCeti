@@ -12,9 +12,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 # Closedness of the matrix symplectic group
 
 The defining equation `M J Mᵀ = J` of `Matrix.symplecticGroup` is polynomial in the entries, so it
-is a closed condition in the entrywise matrix topology. Unlike the orthogonal group the symplectic
-group is not compact, so closedness cannot be read off a compactness statement and is proved
-directly here.
+is a closed condition in the entrywise matrix topology, and closedness is proved directly from that
+equation here.
 
 `TauCeti.GLSymplectic` is the same condition on the underlying matrix of a unit, so its carrier is
 the preimage of the symplectic group under the continuous inclusion of the units.

@@ -140,8 +140,8 @@ theorem expUnitHom_inj {x y : R} : expUnitHom x = expUnitHom y ↔ x = y :=
   expUnitHom_injective.eq_iff
 
 /-- **Exponential lines determine their generators.** If `exp (t • x) = exp (t • y)` for every
-real `t` then `x = y`: the two one-parameter subgroups agree, so `expUnitHom_injective` identifies
-their velocities. This replaces differentiating the two lines at `t = 0`. -/
+real `t` then `x = y`. Comparing an exponential line with a known one therefore identifies its
+generator. -/
 theorem eq_of_forall_exp_smul_eq {x y : R}
     (h : ∀ t : ℝ, NormedSpace.exp (t • x) = NormedSpace.exp (t • y)) : x = y := by
   apply expUnitHom_injective
