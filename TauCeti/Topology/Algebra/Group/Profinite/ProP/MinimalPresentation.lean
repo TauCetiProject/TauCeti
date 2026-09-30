@@ -197,22 +197,6 @@ namespace presentedProP
 
 variable {X : Type u} {rels rels' : Set (freeProP p X)}
 
-omit [Fact p.Prime] in
-private theorem map_topologicalClosure_normalClosure (α : freeProP p X ≃ₜ* freeProP p X)
-    (s : Set (freeProP p X)) :
-    (Subgroup.normalClosure s).topologicalClosure.map α.toMulEquiv.toMonoidHom =
-      (Subgroup.normalClosure (α '' s)).topologicalClosure := by
-  calc
-    _ = ((Subgroup.normalClosure s).map
-        α.toMulEquiv.toMonoidHom).topologicalClosure := by
-      apply SetLike.coe_injective
-      rw [Subgroup.coe_map, Subgroup.topologicalClosure_coe, Subgroup.topologicalClosure_coe,
-        Subgroup.coe_map]
-      exact α.toHomeomorph.image_closure _
-    _ = _ := by
-      rw [Subgroup.map_normalClosure s α.toMulEquiv.toMonoidHom α.surjective]
-      congr 2
-
 /-- **Isomorphic presentations with a minimal target differ by a change of basis.** Let
 `⟨X ∣ rels⟩` and `⟨X ∣ rels'⟩` be pro-`p` groups presented on the same finite type, with the
 relators `rels'` in the Frattini subgroup of the free pro-`p` group `F` on `X`. Every topological
@@ -245,7 +229,7 @@ theorem exists_continuousMulEquiv_topologicalClosure_normalClosure_image_eq [Fin
       rw [← mk_eq_one_iff, ← map_eq_one_iff e e.injective, ← hαx, α.apply_symm_apply,
         mk_eq_one_iff]
       exact hx
-    rw [← map_topologicalClosure_normalClosure α rels, Subgroup.mem_map_equiv]
+    rw [← α.map_topologicalClosure_normalClosure rels, Subgroup.mem_map_equiv]
     exact hsymm
 
 /-- **Presentations of isomorphic groups, one of them minimal, differ by a change of basis.**
@@ -270,7 +254,7 @@ theorem nonempty_continuousMulEquiv_iff [Finite X]
     rw [mk_eq_one_iff]
     have hr' : r ∈ (Subgroup.normalClosure (α '' rels)).topologicalClosure :=
       hα ▸ Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr)
-    rw [← map_topologicalClosure_normalClosure α rels, Subgroup.mem_map_equiv] at hr'
+    rw [← α.map_topologicalClosure_normalClosure rels, Subgroup.mem_map_equiv] at hr'
     exact hr'
 
 end presentedProP

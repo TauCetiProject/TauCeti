@@ -65,6 +65,8 @@ series of a profinite group.
   a subgroup into the topological closure of its image; `MonoidHom.map_topologicalClosure`: with
   equality when the subgroup's closure is compact and the target Hausdorff.
   `Subgroup.isClosed_map` says that images of compact subgroups in Hausdorff groups are closed.
+* `ContinuousMulEquiv.map_topologicalClosure_normalClosure`: a topological group isomorphism
+  carries the closed normal closure of a set onto the closed normal closure of its image.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
 * `Subgroup.topologicalClosure_commutator_le_of_forall_commutatorElement_mem`: a closed normal
@@ -234,6 +236,21 @@ theorem _root_.MonoidHom.map_topologicalClosure [T2Space H] (f : G →* H)
   rw [topologicalClosure_coe] at hS
   rw [← SetLike.coe_set_eq, coe_map, topologicalClosure_coe, topologicalClosure_coe, coe_map]
   exact image_closure_of_isCompact hS hf.continuousOn
+
+/-- A topological group isomorphism carries the closed normal closure of a set onto the closed
+normal closure of its image. -/
+theorem _root_.ContinuousMulEquiv.map_topologicalClosure_normalClosure (α : G ≃ₜ* H)
+    (s : Set G) :
+    (normalClosure s).topologicalClosure.map α.toMulEquiv.toMonoidHom =
+      (normalClosure (α '' s)).topologicalClosure := by
+  calc
+    _ = ((normalClosure s).map α.toMulEquiv.toMonoidHom).topologicalClosure := by
+      apply SetLike.coe_injective
+      rw [coe_map, topologicalClosure_coe, topologicalClosure_coe, coe_map]
+      exact α.toHomeomorph.image_closure _
+    _ = _ := by
+      rw [map_normalClosure s α.toMulEquiv.toMonoidHom α.surjective]
+      congr 2
 
 open scoped commutatorElement in
 /-- A closed subgroup containing the commutators `⁅A, B⁆` contains the commutators
