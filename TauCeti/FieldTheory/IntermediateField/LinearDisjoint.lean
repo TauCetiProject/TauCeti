@@ -31,19 +31,21 @@ universe u v
 
 variable {k : Type u} {L : Type v} [Field k] [Field L] [Algebra k L]
 
-/-- A finite extension linearly disjoint from `D` has the same degree after adjoining `D`. -/
+/-- Extending scalars from `D` to its compositum with `A` amounts to adjoining `A` to `D`. -/
+theorem extendScalars_le_sup_right_eq_adjoin (A D : IntermediateField k L) :
+    IntermediateField.extendScalars (le_sup_right : D ≤ A ⊔ D) =
+      IntermediateField.adjoin D (A : Set L) := by
+  apply IntermediateField.restrictScalars_injective k
+  rw [IntermediateField.extendScalars_restrictScalars,
+    IntermediateField.restrictScalars_adjoin_eq_sup, sup_comm,
+    IntermediateField.adjoin_self]
+
+/-- An algebraic extension linearly disjoint from `D` has the same degree after adjoining `D`. -/
 theorem finrank_extendScalars_sup_eq_finrank_of_linearDisjoint
-    (A D : IntermediateField k L) [FiniteDimensional k A] (hAD : A.LinearDisjoint D) :
+    (A D : IntermediateField k L) [Algebra.IsAlgebraic k A] (hAD : A.LinearDisjoint D) :
     Module.finrank D (IntermediateField.extendScalars (le_sup_right : D ≤ A ⊔ D)) =
       Module.finrank k A := by
-  let : Algebra.IsAlgebraic k A := Algebra.IsAlgebraic.of_finite k A
-  have heq : IntermediateField.extendScalars (le_sup_right : D ≤ A ⊔ D) =
-      IntermediateField.adjoin D (A : Set L) := by
-    apply IntermediateField.restrictScalars_injective k
-    rw [IntermediateField.extendScalars_restrictScalars,
-      IntermediateField.restrictScalars_adjoin_eq_sup, sup_comm,
-      IntermediateField.adjoin_self]
-  rw [heq]
+  rw [extendScalars_le_sup_right_eq_adjoin]
   exact congrArg Cardinal.toNat hAD.adjoin_rank_eq_rank_left_of_isAlgebraic_left
 
 /-- Base change by a finite linearly disjoint extension preserves the degree of an intermediate

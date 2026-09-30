@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Polynomial.IsIntegral
 public import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 
 import Mathlib.FieldTheory.PrimitiveElement
+import Mathlib.FieldTheory.Relrank
 
 /-!
 # Minimal polynomials over a relatively algebraically closed base field
@@ -264,33 +265,41 @@ theorem mem_range_algebraMap_of_mem_adjoin_of_isSeparable_of_isIntegrallyClosedI
     adjoin_le_iff.2 (by rwa [AlgHom.coe_fieldRange, IsScalarTower.coe_toAlgHom'])
   exact AlgHom.mem_fieldRange.1 (hle (heq ▸ subset_adjoin k _ (Set.mem_insert z _)))
 
-end Field
-
-variable {k : Type u} {L : Type v} [Field k] [Field L] [Algebra k L]
-
-/-- For `k` relatively algebraically closed in `B`, `A/k` finite separable, and `L = A · B`
-(that is, `A ⊔ B = ⊤`), the degrees satisfy `[L : A(x)] = [B : k(x)]` for every `x ∈ B`.
+/-- For `k` relatively algebraically closed in `F`, `A/k` finite separable, and `E = A · F`
+(inside `E`), the degrees satisfy `[E : A(x)] = [F : k(x)]` for every `x ∈ F`.
 This is the finite separable case of Stichtenoth, *Algebraic Function Fields and Codes*, second
 edition, Proposition 3.6.1(c). -/
 theorem finrank_sup_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn
-    (A B : IntermediateField k L) (x : B)
+    (hex : IsIntegrallyClosedIn k F) (A : IntermediateField k E)
     [FiniteDimensional k A] [Algebra.IsSeparable k A]
-    (hex : IsIntegrallyClosedIn k B)
-    (hAB : A ⊔ B = ⊤) :
-    Module.finrank ↥(A ⊔ k⟮(x : L)⟯) L =
-      Module.finrank ↥(k⟮(x : L)⟯)
-        (IntermediateField.extendScalars
-          (IntermediateField.adjoin_simple_le_iff.mpr x.property)) := by
-  have h : A.LinearDisjoint B :=
-    linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hex A
-  let C : IntermediateField k L := k⟮(x : L)⟯
-  have hCB : C ≤ B := IntermediateField.adjoin_simple_le_iff.mpr x.property
-  have hdegree := finrank_sup_eq_finrank_of_linearDisjoint A B C hCB h
+    (h : A ⊔ (IsScalarTower.toAlgHom k F E).fieldRange = ⊤) (x : F) :
+    Module.finrank ↥(A ⊔ k⟮algebraMap F E x⟯) E = Module.finrank k⟮x⟯ F := by
+  let f : F →ₐ[k] E := IsScalarTower.toAlgHom k F E
+  let B : IntermediateField k E := f.fieldRange
+  let C : IntermediateField k E := k⟮algebraMap F E x⟯
+  have hx : algebraMap F E x ∈ B := ⟨x, rfl⟩
+  have hexB : IsIntegrallyClosedIn k B := (f.equivFieldRange.isIntegrallyClosedIn).mp hex
+  have hCB : C ≤ B := IntermediateField.adjoin_simple_le_iff.mpr hx
+  have hld : A.LinearDisjoint B :=
+    linearDisjoint_of_isIntegrallyClosedIn_of_finiteDimensional hexB A
+  have hdegree := finrank_sup_eq_finrank_of_linearDisjoint A B C hCB hld
+  change A ⊔ B = ⊤ at h
   have htop : (IntermediateField.extendScalars (sup_le_sup_left hCB A) :
-      IntermediateField ↥(A ⊔ C) L) = ⊤ := by
+      IntermediateField ↥(A ⊔ C) E) = ⊤ := by
     ext y
-    simp only [IntermediateField.mem_extendScalars, hAB, IntermediateField.mem_top]
+    simp only [IntermediateField.mem_extendScalars, h, IntermediateField.mem_top]
   rw [htop, IntermediateField.finrank_top'] at hdegree
-  exact hdegree
+  change Module.finrank ↥(A ⊔ C) E = Module.finrank k⟮x⟯ F
+  rw [hdegree]
+  have hC : (k⟮x⟯ : IntermediateField k F).map f = C := by
+    simp only [C, IntermediateField.adjoin_map, Set.image_singleton, f,
+      IsScalarTower.toAlgHom_apply]
+  have hrank := IntermediateField.relfinrank_map_map (k⟮x⟯ : IntermediateField k F) ⊤ f
+  rw [hC, ← AlgHom.fieldRange_eq_map] at hrank
+  rw [IntermediateField.relfinrank_eq_finrank_of_le hCB,
+    IntermediateField.relfinrank_top_right] at hrank
+  simpa only [C] using hrank
+
+end Field
 
 end TauCeti
