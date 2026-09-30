@@ -53,6 +53,8 @@ the alternating group.
 * `TauCeti.isSplittingField_discrField`: if `E` contains a square root of the discriminant, the
   discriminant field is a splitting field of `X ^ 2 - C f.discr`.
 * `TauCeti.discrField_map`: it is natural in the extension.
+* `TauCeti.discrField_baseChange`: after extending the base field, it is the compositum of the
+  new base field with the original discriminant field.
 * `TauCeti.discrField_eq_bot_iff`, `TauCeti.finrank_discrField_eq_two`: the discriminant field is
   `F` exactly when the discriminant is a square, and has degree `2` otherwise.
 * `TauCeti.isGalois_discrField`: away from characteristic `2`, and for nonzero discriminant, it is
@@ -109,12 +111,7 @@ theorem isSplittingField_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.di
 
 /-- **Naturality in the extension.** An `F`-isomorphism of extensions carries the discriminant
 field of `f` in one to the discriminant field of `f` in the other. Taking `E' = E` it says that
-every `F`-automorphism of `E` maps the discriminant field onto itself.
-
-Base change of the base field needs no separate statement: `Polynomial.Monic.discr_map` turns the
-discriminant of `f.map φ` into the image of `discr f`, so the results below apply verbatim to
-`discrField (f.map φ) E`, and in particular the degree stays `2` as long as `E` contains a square
-root of that image and the image is not a square in the base field. -/
+every `F`-automorphism of `E` maps the discriminant field onto itself. -/
 @[simp]
 theorem discrField_map {E' : Type w} [Field E'] [Algebra F E'] (ψ : E ≃ₐ[F] E') :
     (discrField f E).map ψ.toAlgHom = discrField f E' := by
@@ -124,6 +121,28 @@ theorem discrField_map {E' : Type w} [Field E'] [Algebra F E'] (ψ : E ≃ₐ[F]
   · rintro _ ⟨x, hx, rfl⟩
     exact Polynomial.rootSet_mapsTo ψ.toAlgHom hx
   · exact ⟨ψ.symm y, Polynomial.rootSet_mapsTo ψ.symm.toAlgHom hy, ψ.apply_symm_apply y⟩
+
+/-- **Base change of the discriminant field.** In a tower `E / K / F`, the discriminant field of
+`f` after extending scalars from `F` to `K` is the compositum in `E` of `K` with the original
+discriminant field. Since a field extension preserves polynomial degree, no hypothesis on `f` is
+needed. When the image of `f.discr` remains a nonsquare in `K`, the base-changed field is still
+quadratic over `K` by
+`TauCeti.finrank_discrField_baseChange_eq_two`. -/
+theorem discrField_baseChange {K : Type w} [Field K] [Algebra F K] [Algebra K E]
+    [IsScalarTower F K E] :
+    discrField (f.map (algebraMap F K)) E =
+      IntermediateField.adjoin K (discrField f E : Set E) := by
+  have hdeg : (f.map (algebraMap F K)).natDegree = f.natDegree :=
+    Polynomial.natDegree_map (algebraMap F K)
+  have hroots :
+      (X ^ 2 - C ((algebraMap F K) f.discr) : K[X]).rootSet E =
+        (X ^ 2 - C f.discr : F[X]).rootSet E := by
+    have hpoly : (X ^ 2 - C ((algebraMap F K) f.discr) : K[X]) =
+        (X ^ 2 - C f.discr : F[X]).map (algebraMap F K) := by
+      rw [Polynomial.map_sub, Polynomial.map_pow, map_X, map_C]
+    rw [hpoly, Polynomial.rootSet_map E K]
+  rw [discrField, discrField, Polynomial.discr_map_of_natDegree_eq _ hdeg, hroots,
+    IntermediateField.adjoin_adjoin_right]
 
 /-- **The trivial case.** Once `E` contains a square root of the discriminant, the discriminant
 field is the base field exactly when the discriminant is a square in the base field. -/
@@ -166,6 +185,22 @@ theorem finrank_discrField_eq_two {δ : E} (hδ : δ ^ 2 = algebraMap F E f.disc
     hsq ((finrank_discrField_eq_one_iff hδ).mp (hrank.trans h1))
   rw [hrank]
   omega
+
+/-- If the discriminant remains a nonsquare after extending scalars from `F` to `K`, then the
+compositum of `K` with the original discriminant field is quadratic over `K`. This is the
+quadratic, nonsplit case of `TauCeti.discrField_baseChange`. -/
+theorem finrank_discrField_baseChange_eq_two {K : Type w} [Field K] [Algebra F K] [Algebra K E]
+    [IsScalarTower F K E] {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr)
+    (hsq : ¬ IsSquare ((algebraMap F K) f.discr)) :
+    Module.finrank K (IntermediateField.adjoin K (discrField f E : Set E)) = 2 := by
+  have hdeg : (f.map (algebraMap F K)).natDegree = f.natDegree :=
+    Polynomial.natDegree_map (algebraMap F K)
+  rw [← discrField_baseChange]
+  apply finrank_discrField_eq_two (f := f.map (algebraMap F K)) (E := E) (δ := δ)
+  · rw [Polynomial.discr_map_of_natDegree_eq _ hdeg,
+      ← IsScalarTower.algebraMap_apply F K E]
+    exact hδ
+  · rwa [Polynomial.discr_map_of_natDegree_eq _ hdeg]
 
 /-- Away from characteristic `2`, the discriminant field of a polynomial with nonzero discriminant
 is a Galois extension of the base field: it is the splitting field of `X ^ 2 - C f.discr`, which is
