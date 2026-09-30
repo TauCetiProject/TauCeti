@@ -24,6 +24,9 @@ velocity field of a curve is generally not the restriction of an ambient vector 
 ## Main results
 
 * `mfderiv_alongCurveWithin_mpullback`: naturality for a field pulled back from the target.
+* `differentiableWithinAt_sectionCoord_mfderiv` and
+  `differentiableAt_sectionCoord_mfderiv`: regularity of a tangent field transported by an
+  isometry.
 * `mfderiv_alongCurveWithin`: naturality for an arbitrary differentiable tangent field along the
   curve.
 * `mfderiv_alongCurve`: the unrestricted form.
@@ -102,7 +105,7 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 /-- The differential of a Riemannian isometry carries a tangent field along `γ` that is
 differentiable in local coordinates to a tangent field along `Φ ∘ γ` that is differentiable in
 local coordinates. -/
-private theorem differentiableWithinAt_sectionCoord_mfderiv (Φ : RiemannianIsometry I J M N)
+theorem differentiableWithinAt_sectionCoord_mfderiv (Φ : RiemannianIsometry I J M N)
     {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t) :
@@ -141,6 +144,22 @@ private theorem differentiableWithinAt_sectionCoord_mfderiv (Φ : RiemannianIsom
   exact differentiableWithinAt_sectionCoord (Φ ∘ γ)
     (fun r ↦ mfderiv I J Φ (γ r) (V r)) hΦtotal
     (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (Φ (γ t)))
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)] in
+/-- The differential of a Riemannian isometry carries a tangent field along `γ` that is
+differentiable in local coordinates to a tangent field along `Φ ∘ γ` that is differentiable in
+local coordinates. -/
+theorem differentiableAt_sectionCoord_mfderiv (Φ : RiemannianIsometry I J M N)
+    {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {t : ℝ}
+    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
+    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t) :
+    DifferentiableAt ℝ
+      (sectionCoord (F := F) (Φ ∘ γ) (fun r ↦ mfderiv I J Φ (γ r) (V r)) (Φ (γ t))) t := by
+  rw [← differentiableWithinAt_univ]
+  exact Φ.differentiableWithinAt_sectionCoord_mfderiv hγ.mdifferentiableWithinAt
+    hV.differentiableWithinAt
 
 /-- **Naturality of covariant differentiation along a curve under a Riemannian isometry.**
 The differential of an isometry carries the Levi-Civita derivative of a differentiable tangent
