@@ -55,6 +55,8 @@ is carried by a shear automorphism of `F × F'` onto `ker φ × F'`.
   elements.
 * `TauCeti.fittingIdeal_eq_bot_of_lt_finrank`: a free module of rank `n` has `Fitt_k = ⊥` for
   `k < n`.
+* `TauCeti.fittingIdeal_eq_top_iff_finrank_le`: over a nontrivial ring, a free module of rank
+  `n` has `Fitt_k = ⊤` exactly when `n ≤ k`.
 * `TauCeti.fittingIdeal_quotient_zero`: `Fitt₀(R ⧸ I) = I`.
 
 ## References
@@ -374,6 +376,14 @@ theorem fittingIdeal_eq_bot_of_lt_finrank [Free R F] [Module.Finite R F] {k : �
   have hsize : finrank R F - k = finrank R F - k - 1 + 1 := by omega
   rw [fittingIdeal_eq_minorsIdeal_ker (φ := LinearMap.id) surjective_id, ker_id,
     hsize, Submodule.minorsIdeal_bot]
+
+/-- A free module of rank `n` over a nontrivial ring has `Fitt_k = ⊤` exactly when `n ≤ k`. -/
+theorem fittingIdeal_eq_top_iff_finrank_le [Nontrivial R] [Free R F] [Module.Finite R F]
+    {k : ℕ} : fittingIdeal R F k = ⊤ ↔ finrank R F ≤ k := by
+  refine ⟨fun h ↦ not_lt.1 fun hk ↦ ?_,
+    fittingIdeal_eq_top_of_surjective (φ := LinearMap.id) Function.surjective_id⟩
+  rw [fittingIdeal_eq_bot_of_lt_finrank hk] at h
+  exact bot_ne_top h
 
 /-- The zeroth Fitting ideal of `R ⧸ I` is `I`. -/
 @[simp]

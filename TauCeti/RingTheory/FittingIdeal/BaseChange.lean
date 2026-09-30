@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.RingTheory.FittingIdeal.Generators
-import TauCeti.LinearAlgebra.Multilinear.Span
 
 /-!
 # Base change of Fitting ideals
@@ -23,7 +22,8 @@ the base-changed relations generate the extension of the ideal of minors of the 
 Since localization is a base change (`IsLocalizedModule.isBaseChange`), the Fitting ideals of a
 module commute with localization. This is the compatibility needed for the Fitting ideals of a
 quasi-coherent module of finite type to glue to a quasi-coherent ideal sheaf; for the sheaf of
-relative differentials of a relative curve, the first Fitting ideal cuts out its singular locus.
+relative differentials, this compatibility is used in constructing the intended singular-locus
+ideal.
 
 Base change to the residue field `κ(p)` of a prime `p` identifies the zero locus of `Fitt_k(M)`:
 `Fitt_k(M) ⊆ p` exactly when the fibre `κ(p) ⊗[R] M` has dimension greater than `k`.
@@ -37,8 +37,6 @@ Base change to the residue field `κ(p)` of a prime `p` identifies the zero locu
 * `TauCeti.fittingIdeal_baseChange`: `Fitt_k(S ⊗[R] M) = Fitt_k(M) S`.
 * `IsBaseChange.fittingIdeal_eq_map`: the same for any base change of `M`, in particular for a
   localization of `M`.
-* `TauCeti.fittingIdeal_eq_top_iff_finrank_le`: a free module of rank `n` over a nontrivial ring
-  has `Fitt_k = ⊤` exactly when `n ≤ k`.
 * `TauCeti.fittingIdeal_le_iff_lt_finrank`: `Fitt_k(M) ⊆ p` exactly when
   `k < dim_{κ(p)} κ(p) ⊗[R] M`.
 
@@ -161,14 +159,6 @@ namespace TauCeti
 
 variable {R F M : Type*} [CommRing R] [AddCommGroup F] [Module R F] [AddCommGroup M]
   [Module R M] [Module.Finite R M]
-
-/-- A free module of rank `n` over a nontrivial ring has `Fitt_k = ⊤` exactly when `n ≤ k`. -/
-theorem fittingIdeal_eq_top_iff_finrank_le [Nontrivial R] [Free R F] [Module.Finite R F]
-    {k : ℕ} : fittingIdeal R F k = ⊤ ↔ finrank R F ≤ k := by
-  refine ⟨fun h ↦ not_lt.1 fun hk ↦ ?_,
-    fittingIdeal_eq_top_of_surjective (φ := LinearMap.id) Function.surjective_id⟩
-  rw [fittingIdeal_eq_bot_of_lt_finrank hk] at h
-  exact bot_ne_top h
 
 /-- The zero locus of the `k`-th Fitting ideal of a finite module `M` is the set of primes `p` at
 which the fibre `κ(p) ⊗[R] M` has dimension greater than `k`. -/
