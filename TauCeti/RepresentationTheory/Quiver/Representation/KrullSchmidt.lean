@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
-public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
 # The Krull-Schmidt theorem for quiver representations
@@ -32,7 +31,10 @@ finite-dimensional over the base field
 over the path algebra, which is the finiteness hypothesis the module-level theorem asks for. The
 path algebra itself need not be finite-dimensional: over the quiver with one vertex and one loop it
 is `k[X]`, and a representation of that quiver is a finite-dimensional vector space with an
-endomorphism, whose decomposition is the primary decomposition of a `k[X]`-module.
+endomorphism, whose indecomposable summands are the cyclic modules `k[X] / (p ^ e)` with `p`
+irreducible, the Jordan blocks of the endomorphism when `k` is algebraically closed. That
+decomposition refines the primary decomposition of the module, whose `p`-primary component is the
+sum of all the summands for that `p`.
 
 ## Main results
 
