@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.TwoEven.KernelSpan
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.KernelSpan
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.SuccessiveApproximation.Basic
 
 /-!
@@ -20,12 +20,13 @@ elsewhere, corrections are made inside the kernel of the exponent sum at `x₄`.
 kernel in the first term of the lower `2`-central series are killed by `χ`. Labute's constrained
 span and graded-functional statements therefore feed the general successive-approximation theorem: a
 relator with the same degree-one class as `r_f`, lying in that exponent-sum kernel and killed by
-the coordinate crossed homomorphisms, is the image of `r_f` under an automorphism whose changes
-of all the free generators lie in that exponent-sum kernel and in `λ₁(F)`, so are killed by `χ`.
+every coordinate crossed homomorphism except the one at `x₂`, is the image of `r_f` under an
+automorphism whose changes of all the free generators lie in that exponent-sum kernel and in
+`λ₁(F)`, so are killed by `χ`.
 
 This is the limit step in the second even-rank family of Labute's classification, the family with
 orientation image `{ ±1 } × U^(f)`. It turns the infinitesimal Lemmas 3 and 4 proved in
-`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.TwoEven.KernelSpan` into an exact
+`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.KernelSpan` into an exact
 equality of relators.
 
 ## Main result
