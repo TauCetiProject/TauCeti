@@ -164,7 +164,7 @@ theorem isReal_comap (f : Hom O O') {w : InfinitePlace L} (hw : w.IsReal) :
 
 /-- A morphism of orders preserves total positivity in the ambient number fields. In
 particular it takes generators of narrowly principal fractional ideals to positive generators. -/
-theorem pos_of_totallyPos (f : Hom O O') {x : K} (hx : IsTotallyPositive x) :
+theorem isTotallyPositive_map (f : Hom O O') {x : K} (hx : IsTotallyPositive x) :
     IsTotallyPositive (f x) :=
   hx.map f.fieldHom
 
