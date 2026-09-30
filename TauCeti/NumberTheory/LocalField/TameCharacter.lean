@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Kummer.Character
-public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
@@ -291,31 +290,16 @@ theorem isLocallyConstant_inertiaKummerCharacter :
 
 variable (m hm) in
 /-- **The Kummer character of a unit is trivial.** For `u ∈ U(K,0) = 𝒪[K]ˣ` and `m` prime to `p`,
-inertia fixes the `m`-th roots of `u`: writing `u = ζ v` with `ζ` a `(q - 1)`-st root of unity and
-`v` a principal unit, the roots of `ζ` are roots of unity of order prime to `p`, and `v` is an
-`m`-th power in `K`. -/
+inertia fixes the `m`-th roots of `u`, which are unramified by
+`TauCeti.mem_maximalUnramifiedExtension_of_pow_eq`: writing `u = ζ v` with `ζ` a `(q - 1)`-st root
+of unity and `v` a principal unit, the roots of `ζ` are roots of unity of order prime to `p`, and
+`v` is an `m`-th power in `K`. -/
 theorem inertiaKummerCharacter_eq_one_of_mem_unitFiltration_zero {u : Kˣ}
-    (hu : u ∈ unitFiltration K 0) : inertiaKummerCharacter K m hm u = 1 := by
-  set x := unitFiltrationZeroEquivProd K ⟨u, hu⟩
-  have hdec : u = (x.1 : Kˣ) * x.2 := by
-    rw [← coe_unitFiltrationZeroEquivProd_symm_apply, ContinuousMulEquiv.symm_apply_apply]
-  rw [hdec, inertiaKummerCharacter_mul]
-  -- The roots of the Teichmüller component are roots of unity of order prime to `p`.
-  have hζ : inertiaKummerCharacter K m hm (x.1 : Kˣ) = 1 := by
-    refine (inertiaKummerCharacter_eq_one_iff (root_pow hm _)).2 fun σ hσ ↦ ?_
-    refine apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one hσ
-      (Nat.Coprime.mul_left hm (natCard_sub_one_coprime_ringChar K)) ?_
-    rw [pow_mul, root_pow, ← map_pow, ← Units.val_pow_eq_pow_val,
-      (mem_rootsOfUnity _ _).1 x.1.2, Units.val_one, map_one]
-  -- The principal-unit component is an `m`-th power in `K`, whose roots inertia fixes.
-  have hv : inertiaKummerCharacter K m hm (x.2 : Kˣ) = 1 := by
-    obtain ⟨w, hw⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit
-      (isUnit_natCast_of_coprime_ringChar hm) x.2.2
-    have hroot : (algebraMap K (AlgebraicClosure K) w) ^ m =
-        algebraMap K (AlgebraicClosure K) (x.2 : Kˣ) := by
-      rw [← map_pow, ← hw, powMonoidHom_apply, Units.val_pow_eq_pow_val]
-    exact (inertiaKummerCharacter_eq_one_iff hroot).2 fun σ _ ↦ AlgEquiv.commutes σ _
-  rw [hζ, hv, one_mul]
+    (hu : u ∈ unitFiltration K 0) : inertiaKummerCharacter K m hm u = 1 :=
+  (inertiaKummerCharacter_eq_one_iff (root_pow hm u)).2 fun _ hσ ↦
+    mem_inertiaSubgroup_iff.1 hσ _ <| mem_maximalUnramifiedExtension_of_pow_eq
+      ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.1 hm.symm) hu
+      (root_pow hm u)
 
 /-- **Independence of the uniformizer.** Any two uniformizers of `K` have the same Kummer character
 on inertia, since their ratio is a unit. -/
