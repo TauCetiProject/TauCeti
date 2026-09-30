@@ -137,11 +137,22 @@ private def centerSubmodule : Submodule S A where
     intro s a ha
     exact (center R A).mul_mem s.val.property ha
 
+/-- The submodule of central elements has the canonical center's `S`-module structure. -/
+private def centerSubmoduleEquiv : (centerSubmodule S) ≃ₗ[S] center R A where
+  toFun x := ⟨x.1, x.2⟩
+  invFun x := ⟨x.1, x.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
 /-- If an algebra is Noetherian as a module over a central subalgebra, its center is
 finite over that subalgebra. -/
 theorem finite_center_of_isNoetherian [IsNoetherian S A] :
     Module.Finite S (center R A) := by
-  exact Module.Finite.of_fg (IsNoetherian.noetherian (centerSubmodule S))
+  have : Module.Finite S (centerSubmodule S) :=
+    Module.Finite.of_fg (IsNoetherian.noetherian (centerSubmodule S))
+  exact Module.Finite.equiv (centerSubmoduleEquiv S)
 
 end FiniteOverCentralSubalgebra
 
