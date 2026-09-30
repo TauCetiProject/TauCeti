@@ -11,7 +11,7 @@ public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
-public import TauCeti.Topology.Algebra.GroupAction.InternalHom
+public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
 
 /-!
 # Short exact sequences of discrete modules, and the low-degree connecting maps
@@ -417,6 +417,38 @@ theorem evalPairing_dual_proj (ψ : InternalHom G B N) (a : A) :
       InternalHom.evalPairing G ψ (S.incl a) := by
   rw [dual_proj]
   exact InternalHom.evalPairing_precomp S.inclDistribMulActionHom ψ a
+
+/-- The equivariant inclusion of the dual sequence is precomposition with the equivariant projection
+of the original sequence. -/
+@[simp]
+theorem dual_inclDistribMulActionHom :
+    (S.dual N hB).inclDistribMulActionHom = InternalHom.precomp G S.projDistribMulActionHom :=
+  DistribMulActionHom.ext fun _ => rfl
+
+/-- The equivariant projection of the dual sequence is precomposition with the equivariant inclusion
+of the original sequence. -/
+@[simp]
+theorem dual_projDistribMulActionHom :
+    (S.dual N hB).projDistribMulActionHom = InternalHom.precomp G S.inclDistribMulActionHom :=
+  DistribMulActionHom.ext fun _ => rfl
+
+/-- **Evaluation is a morphism from a sequence to its double dual, on the inclusions.** The
+inclusion of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
+class of `a : A` to the evaluation class of `S.incl a`. -/
+theorem dual_dual_incl_eval (hB' : ∀ ψ : InternalHom G B N, p • ψ = 0) (a : A) :
+    ((S.dual N hB).dual N hB').incl (InternalHom.eval G A N a) =
+      InternalHom.eval G B N (S.incl a) := by
+  rw [dual_incl, dual_projDistribMulActionHom]
+  exact InternalHom.precomp_precomp_eval S.inclDistribMulActionHom a
+
+/-- **Evaluation is a morphism from a sequence to its double dual, on the projections.** The
+projection of the double dual sequence `0 → A^{∨∨} → B^{∨∨} → C^{∨∨} → 0` carries the evaluation
+class of `b : B` to the evaluation class of `S.proj b`. -/
+theorem dual_dual_proj_eval (hB' : ∀ ψ : InternalHom G B N, p • ψ = 0) (b : B) :
+    ((S.dual N hB).dual N hB').proj (InternalHom.eval G B N b) =
+      InternalHom.eval G C N (S.proj b) := by
+  rw [dual_proj, dual_inclDistribMulActionHom]
+  exact InternalHom.precomp_precomp_eval S.projDistribMulActionHom b
 
 end Dual
 
