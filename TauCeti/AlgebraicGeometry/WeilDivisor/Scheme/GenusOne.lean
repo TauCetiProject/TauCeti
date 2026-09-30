@@ -253,8 +253,7 @@ theorem coe_degreeOneEquivPicZero_apply
     (x : {x : CodimensionOnePoint X // (X ↘ Spec (.of k)).residueDegree x = 1}) :
     (degreeOneEquivPicZero k hx₀ hk hg x : Additive (LineBundleClass X)) =
       Additive.ofMul (toLineBundleClass hX.out (WeilDivisor.pointDifference x.1 x₀)) := by
-  change (classGroupPicZeroAddEquivPicZero k X (abelJacobiClass k hx₀ x) :
-    Additive (LineBundleClass X)) = _
+  simp only [degreeOneEquivPicZero, Equiv.ofBijective_apply]
   rw [coe_classGroupPicZeroAddEquivPicZero_apply,
     coe_abelJacobiClass k hx₀ x.2, classGroupAddEquivLineBundleClass_apply,
     classGroupToLineBundleClass_divisorClass]
@@ -275,9 +274,7 @@ theorem degreeOneEquivPicZero_add_eq_iff
       (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent
         (WeilDivisor.ofPoint x.1 + WeilDivisor.ofPoint y.1)
         (WeilDivisor.ofPoint z.1 + WeilDivisor.ofPoint x₀) := by
-  change classGroupPicZeroAddEquivPicZero k X (abelJacobiClass k hx₀ x) +
-      classGroupPicZeroAddEquivPicZero k X (abelJacobiClass k hx₀ y) =
-      classGroupPicZeroAddEquivPicZero k X (abelJacobiClass k hx₀ z) ↔ _
+  simp only [degreeOneEquivPicZero, Equiv.ofBijective_apply]
   rw [← map_add, (classGroupPicZeroAddEquivPicZero k X).injective.eq_iff,
     abelJacobiClass_add_eq_iff_linearlyEquivalent k hx₀ x y z,
     WeilDivisor.OrderSystem.linearlyEquivalent_iff,
