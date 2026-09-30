@@ -67,7 +67,7 @@ namespace TauCeti
 
 open Multiplicative
 
-universe u
+universe u v
 
 variable (p : ℕ) [Fact p.Prime] (X : Type u)
 
@@ -346,6 +346,21 @@ theorem apply_eq_prod_padicPow_exponentSum [Fintype X] {A : Type*} [CommGroup A]
     ((exponentSum p X y).toAdd x)
   rw [MonoidHom.coe_ofClass] at hmap
   rw [hmap, TopologicalAbelianization.lift_mk]
+
+/-- **The exponent vector under a continuous homomorphism of free pro-`p` groups** is the linear
+image of the exponent vector: `exponentSum (φ y) = ∑ x, (exponentSum y)_x • exponentSum (φ x_x)`.
+The vectors `exponentSum (φ x_x)` are the columns of the matrix of the abelianization of `φ`. -/
+theorem toAdd_exponentSum_apply_eq_sum_smul [Fintype X] {Y : Type v}
+    (φ : freeProP p X →ₜ* freeProP p Y) (y : freeProP p X) :
+    (exponentSum p Y (φ y)).toAdd =
+      ∑ x, (exponentSum p X y).toAdd x • (exponentSum p Y (φ (of x))).toAdd := by
+  have h := apply_eq_prod_padicPow_exponentSum p X (isProP_multiplicative_pi_padicInt p Y)
+    ((exponentSum p Y).comp φ) y
+  rw [ContinuousMonoidHom.coe_comp, Function.comp_apply] at h
+  rw [h, toAdd_prod]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [Function.comp_apply, ← ofAdd_toAdd (exponentSum p Y (φ (of x))), IsProP.padicPow_ofAdd_pi,
+    toAdd_ofAdd, toAdd_ofAdd]
 
 end freeProP
 

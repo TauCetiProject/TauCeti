@@ -617,6 +617,21 @@ theorem degreeOneForm_injective_of_two (hp : p = 2) :
     exact h₁.symm.trans h₂
   · rw [← degreeOneForm_dualBasis_of_lt ρ₁ hij, ← degreeOneForm_dualBasis_of_lt ρ₂ hij, h]
 
+/-- **The degree-one form of a class without `p`-power part is alternating**, for every `p`
+including `p = 2`: such a class is a combination of bracket classes `[⟦x_i⟧, ⟦x_j⟧]`, on which
+`B(χ, χ) = χ x_i · χ x_j - χ x_j · χ x_i = 0`. -/
+theorem isAlt_degreeOneForm_of_repr_inl_eq_zero (ρ : gradedPiece p (freeProP p X) 1)
+    (hc : ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0) : (degreeOneForm ρ).IsAlt := by
+  classical
+  cases nonempty_fintype X
+  intro χ
+  rw [← (degreeOneBasis p X).sum_repr ρ, map_sum, LinearMap.sum_apply, LinearMap.sum_apply]
+  refine Finset.sum_eq_zero fun k _ ↦ ?_
+  rcases k with i | ⟨⟨i, j⟩, hij⟩
+  · rw [hc, zero_smul, map_zero, LinearMap.zero_apply, LinearMap.zero_apply]
+  · rw [map_smul, LinearMap.smul_apply, LinearMap.smul_apply, degreeOneBasis_apply,
+      degreeOneFamily_inr, degreeOneForm_gradedBracket_gradedMkZero, mul_comm, sub_self, smul_zero]
+
 end Coordinates
 
 /-! ### The `p`-power coordinates

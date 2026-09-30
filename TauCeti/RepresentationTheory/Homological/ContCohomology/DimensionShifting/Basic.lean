@@ -315,22 +315,7 @@ degree**: `δ : Hⁱ(G, Coind_1^G M ⧸ M) ⟶ Hⁱ⁺¹(G, M)` for `i ≥ 1` an
 theorem isIso_coindBotShortExact_delta (i : ℕ) (hi : 0 < i) :
     IsIso ((coindBotShortExact G M).delta i) := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hi.ne'
-  -- the middle term of the forgotten cochain sequence has zero homology in positive degrees
-  have hzero (m : ℕ) : IsZero (((coindBotShortExact G M).continuousCochainsShortExact.map
-      ((forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).mapHomologicalComplex _)).X₂.homology (m + 1)) :=
-    ((forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map_isZero (TopModuleCat.isZero_of_subsingleton
-      (continuousCohomology (m + 1) (ofDiscreteModule ℤ G (DiscreteCoind G ⊥ M))))).of_iso
-      (((coindBotShortExact G M).continuousCochainsShortExact.X₂.sc (m + 1)).mapHomologyIso
-        (forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)))
-  have : IsIso ((forget₂ (TopModuleCat ℤ) (ModuleCat ℤ)).map
-      ((coindBotShortExact G M).delta (n + 1))) := by
-    rw [(coindBotShortExact G M).forget₂_map_delta]
-    -- the objects of the composite match the ends of the two `mapHomologyIso`s only after
-    -- unfolding, which instance resolution does not do, so the instances are given by hand
-    exact IsIso.comp_isIso' (Iso.isIso_inv _) (IsIso.comp_isIso'
-      ((coindBotShortExact G M).continuousCochainsShortExact_shortExact.isIso_δ (n + 1) (n + 1 + 1)
-        rfl (hzero n) (hzero (n + 1))) (Iso.isIso_hom _))
-  exact TopModuleCat.isIso_of_isIso_forget₂_map _
+  exact (coindBotShortExact G M).isIso_delta (n + 1)
 
 /-- **Dimension shifting in every positive degree**, `Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)` for
 `i ≥ 1` and a compact group `G`, as an isomorphism of Mathlib's canonical continuous cohomology. Its

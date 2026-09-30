@@ -19,7 +19,7 @@ is the generator, and the casts of natural numbers and integers are its powers.
 
 The ring is commutative, and the multiplication is jointly continuous, so `Additive zHat` is a
 compact, totally disconnected topological commutative ring in which the integers are dense
-(`zHat.denseRange_ofInt` and `zHat.ofMul_ofInt`). The defining equations for the product and the
+(`zHat.denseRange_intCast`). The defining equations for the product and the
 unit are recorded as `simp` lemmas on both sides of the equivalence between `zHat` and
 `Additive zHat`, and the casts are read in `zHat` by the `simp` lemmas `zHat.toMul_natCast` and
 `zHat.toMul_intCast`; in the other direction `simp` reads a power of the generator as a cast
@@ -39,6 +39,7 @@ powering first by `a` and then by `b` is powering by the product `a * b` defined
 * `TauCeti.zHat.toMul_mul`, `TauCeti.zHat.ofMul_lift`: the product is the lift.
 * `TauCeti.zHat.toMul_one`, `TauCeti.zHat.toMul_natCast`, `TauCeti.zHat.toMul_intCast`,
   `TauCeti.zHat.ofMul_ofInt`: the unit and the casts of integers are the powers of the generator.
+* `TauCeti.zHat.denseRange_intCast`: the integers are dense in the ring.
 
 ## Implementation notes
 
@@ -129,6 +130,15 @@ ring. -/
 theorem ofMul_ofInt (z : Multiplicative ℤ) :
     ofMul ((ofInt : Multiplicative ℤ →* zHat.{u}) z) = (z.toAdd : Additive zHat.{u}) := by
   rw [← ofAdd_toAdd z, ofInt_ofAdd, ← toMul_intCast, ofMul_toMul, toAdd_ofAdd]
+
+/-- The integers are dense in the ring of profinite integers. -/
+theorem denseRange_intCast : DenseRange (Int.cast : ℤ → Additive zHat.{u}) := by
+  have h : (Int.cast : ℤ → Additive zHat.{u}) =
+      (ofMul ∘ (ofInt : Multiplicative ℤ →* zHat.{u})) ∘ Multiplicative.ofAdd :=
+    funext fun k ↦ by simp
+  rw [h]
+  exact (ofMul.surjective.denseRange.comp denseRange_ofInt continuous_ofMul).comp
+    Multiplicative.ofAdd.surjective.denseRange continuous_of_discreteTopology
 
 /-- The ring of profinite integers is a topological ring: its additive group is the topological
 group `zHat`, and the product is jointly continuous. -/

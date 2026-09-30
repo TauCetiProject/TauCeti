@@ -16,8 +16,9 @@ For a module over a topological semiring with a finite basis, the module topolog
 coordinate topology through that basis. This identifies the canonical topology used on quadratic
 spaces and their endomorphisms with a finite product of copies of the scalars. In particular, over
 a Hausdorff locally compact division ring equipped with a topological semiring structure, the
-module topology of a finite-dimensional space is Hausdorff and locally compact. No norm or
-completeness hypothesis on the scalars is needed.
+module topology of a finite-dimensional space is Hausdorff and locally compact, and every subspace
+of a finite-dimensional space is closed. No norm or completeness hypothesis on the scalars is
+needed.
 
 The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
 organizational `ModuleTopology` namespace.
@@ -82,5 +83,17 @@ theorem locallyCompactSpace_moduleTopology [LocallyCompactSpace K] :
   let _ : TopologicalSpace V := moduleTopology K V
   let b := Module.finBasis K V
   exact ModuleTopology.locallyCompactSpace b
+
+/-- Every subspace of a finite-dimensional space over a Hausdorff division ring equipped with a
+topological semiring structure is closed for the module topology. -/
+theorem _root_.Submodule.isClosed_of_isModuleTopology [T2Space K] [TopologicalSpace V]
+    [IsModuleTopology K V] (W : Submodule K V) : IsClosed (W : Set V) := by
+  have : T2Space (V ⧸ W) := ModuleTopology.t2Space (Module.finBasis K (V ⧸ W))
+  have : ContinuousAdd (V ⧸ W) := IsModuleTopology.toContinuousAdd K (V ⧸ W)
+  have hW : (W : Set V) = W.mkQ ⁻¹' {0} := by
+    ext x
+    simp [Submodule.Quotient.mk_eq_zero]
+  rw [hW]
+  exact isClosed_singleton.preimage (IsModuleTopology.continuous_of_linearMap W.mkQ)
 
 end TauCeti

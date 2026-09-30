@@ -45,7 +45,8 @@ the acyclicity of `Coind_1^G A` in every positive degree: for `n ≥ 1` the conn
 bijective (in degree `0` they are only surjective, since `H⁰` of the middle term need not vanish),
 transitivity of coinduction identifies `Coind_U^G (Coind_1^U A)` with `Coind_1^G A`, and the
 commuting square carries bijectivity of the Shapiro map in degree `n ≥ 1` to bijectivity in degree
-`n + 1`. The degrees `0` and `1` proved here directly are the base cases of this induction.
+`n + 1`. The degrees `0` and `1` proved here directly are the base cases of this induction, which is
+carried out in `TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.AllDegrees`.
 
 ## Main definitions
 

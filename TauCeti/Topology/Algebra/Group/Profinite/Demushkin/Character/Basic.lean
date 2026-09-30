@@ -7,12 +7,12 @@ module
 
 public import TauCeti.RingTheory.AdicCompletion.Newton
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Criterion
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.CrossedHomLinearization
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.PadicUnits
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Presentation
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
 
 /-!
@@ -51,7 +51,11 @@ uniform in `p`.
   `TauCeti.hasPrescriptionProperty_iff_eq_demushkinCharacter`: the canonical character has the
   prescription property, and it is the only character that does.
 * `TauCeti.demushkinCharacter_of_equiv`, `TauCeti.range_demushkinCharacter_of_equiv`: the
-  canonical character, and its image, are invariant under topological isomorphism.
+  canonical character, and its image, are invariant under topological isomorphism, across
+  universes.
+* `TauCeti.range_demushkinCharacter_eq_of_equiv`: the image of the canonical character of `G` is
+  `A` as soon as `G` is isomorphic to a group all of whose characters with the prescription property
+  have image `A`; this reads the image table of the normal forms on the canonical character.
 * `TauCeti.isClosed_range_demushkinCharacter`: the image of the canonical character is a closed
   subgroup of `ℤ_pˣ`, contained in the principal units
   (`TauCeti.demushkinCharacter_apply_mem_unitsPrincipal_one`).
@@ -69,7 +73,7 @@ namespace TauCeti
 
 open freeProP Matrix
 
-universe u v
+universe u v w
 
 -- Preferring the ring path keeps a single additive structure on `ZMod p`, so that the trivial
 -- action installed below is the one the cocycles and the degree-one form are stated against.
@@ -260,24 +264,43 @@ theorem isClosed_range_demushkinCharacter :
   rw [MonoidHom.coe_range]
   exact (isCompact_range (demushkinCharacter hG).continuous).isClosed
 
-variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
-  [TotallyDisconnectedSpace H]
+variable {H : Type w} [Group H] [TopologicalSpace H]
 
-/-- **The canonical character is invariant under topological isomorphism**: transporting the
-Demushkin structure along `e : G ≃ₜ* H` transports the canonical character. -/
+/-- Pulling the canonical character back along a topological group isomorphism `e : H ≃ₜ* G` does
+not change its image. The group `H` may live in any universe and need not be known to be
+Demushkin. -/
+theorem range_demushkinCharacter_comp_equiv (e : H ≃ₜ* G) :
+    ((demushkinCharacter hG).comp (e : H →ₜ* G)).toMonoidHom.range =
+      (demushkinCharacter hG).toMonoidHom.range :=
+  MonoidHom.range_comp_of_surjective _ _ e.surjective
+
+/-- **The image of the canonical character, read through an isomorphism**: if `e : G ≃ₜ* H` and
+every continuous character of `H` with the prescription property has image `A`, then the canonical
+character of `G` has image `A`. This is how the image table of the normal forms, stated for any
+character with the prescription property of the presented group, is read on the canonical
+character of a Demushkin group isomorphic to that presented group. -/
+theorem range_demushkinCharacter_eq_of_equiv (e : G ≃ₜ* H) {A : Subgroup ℤ_[p]ˣ}
+    (hA : ∀ χ : H →ₜ* ℤ_[p]ˣ, HasPrescriptionProperty χ → χ.toMonoidHom.range = A) :
+    (demushkinCharacter hG).toMonoidHom.range = A := by
+  rw [← range_demushkinCharacter_comp_equiv hG e.symm]
+  exact hA _ (hasPrescriptionProperty_demushkinCharacter hG).comp_equiv
+
+variable [IsTopologicalGroup H] [CompactSpace H] [TotallyDisconnectedSpace H]
+  (hH : IsDemushkin p H)
+
+/-- **The canonical character is invariant under topological isomorphism**: along `e : G ≃ₜ* H`,
+the canonical character of `H` is the canonical character of `G` pulled back along `e⁻¹`. The two
+groups may live in different universes. -/
 theorem demushkinCharacter_of_equiv (e : G ≃ₜ* H) :
-    demushkinCharacter (IsDemushkin.of_equiv p hG e) =
-      (demushkinCharacter hG).comp (e.symm : H →ₜ* G) :=
+    demushkinCharacter hH = (demushkinCharacter hG).comp (e.symm : H →ₜ* G) :=
   (((hasPrescriptionProperty_demushkinCharacter hG).comp_equiv (e := e.symm)).eq_demushkinCharacter
-    (IsDemushkin.of_equiv p hG e)).symm
+    hH).symm
 
 /-- **The image of the canonical character is invariant under topological isomorphism.** -/
 theorem range_demushkinCharacter_of_equiv (e : G ≃ₜ* H) :
-    (demushkinCharacter (IsDemushkin.of_equiv p hG e)).toMonoidHom.range =
-      (demushkinCharacter hG).toMonoidHom.range := by
-  rw [demushkinCharacter_of_equiv hG e]
-  exact (MonoidHom.range_comp _ _).trans
-    (by rw [MonoidHom.range_eq_top.mpr e.symm.surjective, Subgroup.map_top])
+    (demushkinCharacter hH).toMonoidHom.range = (demushkinCharacter hG).toMonoidHom.range := by
+  rw [demushkinCharacter_of_equiv hG hH e]
+  exact range_demushkinCharacter_comp_equiv hG e.symm
 
 end Demushkin
 

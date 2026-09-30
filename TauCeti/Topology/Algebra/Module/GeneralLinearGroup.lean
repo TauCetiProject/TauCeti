@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
+public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # The topology of finite-dimensional linear automorphisms
@@ -18,6 +19,12 @@ topology on that algebra records both an automorphism and its inverse. Transport
 along Mathlib's `LinearMap.GeneralLinearGroup.generalLinearEquiv` equips linear automorphisms with
 a topological group structure. In particular, continuity into this group is equivalent to
 continuity of both the forward and inverse endomorphisms.
+
+Over a field, the endomorphism algebra of a finite-dimensional space is itself finite-dimensional,
+so its module topology is Hausdorff when the field is Hausdorff and locally compact when the field
+is locally compact. The unit topology inherits both properties, so the linear automorphisms of a
+finite-dimensional space over a Hausdorff locally compact field form a locally compact group. This
+is the local-compactness input for the orthogonal point group over `ℝ` and `ℚ_p`.
 -/
 
 public section
@@ -110,5 +117,41 @@ theorem continuous_linearEquiv_iff {X : Type*} [TopologicalSpace X]
 theorem continuous_linearEquiv_toLinearMap :
     Continuous (fun e : V ≃ₗ[K] V => (e : Module.End K V)) :=
   (continuous_linearEquiv_iff.mp (continuous_id : Continuous (fun e : V ≃ₗ[K] V => e))).1
+
+section FiniteDimensional
+
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- The endomorphism algebra of a finite-dimensional space over a Hausdorff field is Hausdorff. -/
+instance instT2SpaceModuleEnd [T2Space K] : T2Space (Module.End K V) :=
+  t2Space_moduleTopology
+
+/-- The endomorphism algebra of a finite-dimensional space over a locally compact field is
+locally compact. -/
+instance instLocallyCompactSpaceModuleEnd [LocallyCompactSpace K] :
+    LocallyCompactSpace (Module.End K V) :=
+  locallyCompactSpace_moduleTopology
+
+/-- The linear automorphisms of a finite-dimensional space over a Hausdorff field form a
+Hausdorff space. -/
+instance instT2SpaceLinearEquiv [T2Space K] : T2Space (V ≃ₗ[K] V) :=
+  (generalLinearContinuousMulEquiv (K := K) (V := V)).toHomeomorph.symm.isEmbedding.t2Space
+
+end FiniteDimensional
+
+section LocallyCompact
+
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
+  [LocallyCompactSpace K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- The linear automorphisms of a finite-dimensional space over a Hausdorff locally compact field
+form a locally compact group: the automorphism group is closed in the product of two copies of the
+locally compact endomorphism algebra, through an automorphism and its inverse. -/
+instance instLocallyCompactSpaceLinearEquiv : LocallyCompactSpace (V ≃ₗ[K] V) :=
+  (generalLinearContinuousMulEquiv (K := K) (V := V)).toHomeomorph.locallyCompactSpace_iff.mp
+    inferInstance
+
+end LocallyCompact
 
 end TauCeti

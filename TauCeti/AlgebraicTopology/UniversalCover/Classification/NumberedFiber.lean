@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Fundamenta
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Transport
 public import TauCeti.Topology.Covering.Monodromy.Transitive
 public import TauCeti.Topology.Homotopy.Monodromy.Functoriality
+import TauCeti.Topology.Covering.Clopen
 
 /-!
 # Numbered, pointed and bare connected covers of degree `n`
@@ -49,8 +50,8 @@ their simultaneous-conjugacy classes (`TauCeti.ConnectedIsoClass`) and to marked
 the diagonal action: a classification of numbered covers that is equivariant for relabelling
 therefore descends to the other two rigidifications.
 
-Over a path-connected base the degree does not depend on the basepoint, and a connected cover has
-positive degree.
+Over a path-connected base the degree does not depend on the basepoint, and over a preconnected
+base a connected cover has positive degree.
 
 Over a path-connected, locally path-connected base, a numbered cover is determined up to
 isomorphism by its monodromy representation read through the numbering,
@@ -77,8 +78,9 @@ representations into an isomorphism of `π₁(X, x)`-sets preserving the labels.
 * `TauCeti.ConnectedFiberNumberedCoverClass.markLabel_eq_markLabel_iff` and
   `TauCeti.ConnectedFiberNumberedCoverClass.markedOrbitRelQuotientEquiv`: pointed classes are
   diagonal orbits of marked numbered classes.
-* `TauCeti.ConnectedCover.nonempty_equiv_fin_of`: a path transports the degree between fibres;
-  `TauCeti.ConnectedCover.ne_zero`: over a path-connected base the degree is positive.
+* `TauCeti.ConnectedCover.nonempty_equiv_fin_of_mem_connectedComponent`: the degree is the same
+  over the whole connected component of the base point;
+  `TauCeti.ConnectedCover.ne_zero`: over a preconnected base the degree is positive.
 * `TauCeti.connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq`: two numbered
   covers are isomorphic exactly when their numbered monodromy representations agree.
 
@@ -155,48 +157,22 @@ private theorem coe_fiberEquiv_apply {p q : ConnectedCoveringSpace X} (f : p ≅
     (e : ⇑p.proj ⁻¹' {x}) : (fiberEquiv f e : (q : TopCat)) = f.hom.hom.left e.1 :=
   rfl
 
-/- The pointwise laws isolate how the cover-category wrappers act on total-space points. -/
+/-- The identity isomorphism of covers acts on total-space points as the identity. -/
 private theorem coverMap_id_apply (p : ConnectedCoveringSpace X) (e : (p : TopCat)) :
     (Iso.refl p).hom.hom.left e = e :=
   rfl
 
+/-- A composite of cover morphisms acts on total-space points as the composite of the maps. -/
 private theorem coverMap_comp_apply {p q r : ConnectedCoveringSpace X}
     (f : p ⟶ q) (g : q ⟶ r) (e : (p : TopCat)) :
     (f ≫ g).hom.left e = g.hom.left (f.hom.left e) :=
   rfl
 
+/-- The two directions of an isomorphism of covers cancel on total-space points. -/
 private theorem coverMap_inv_apply {p q : ConnectedCoveringSpace X}
     (f : p ≅ q) (e : (q : TopCat)) :
-    f.hom.hom.left (f.inv.hom.left e) = e := by
-  rw [← coverMap_comp_apply f.inv f.hom e, f.inv_hom_id]
-  exact coverMap_id_apply q e
-
-private theorem fiberEquiv_refl (p : ConnectedCoveringSpace X) :
-    fiberEquiv (x := x) (Iso.refl p) = Equiv.refl _ := by
-  apply Equiv.ext
-  intro e
-  apply Subtype.ext
-  rw [coe_fiberEquiv_apply]
-  exact coverMap_id_apply p e.1
-
-private theorem fiberEquiv_symm {p q : ConnectedCoveringSpace X} (f : p ≅ q) :
-    fiberEquiv (x := x) f.symm = (fiberEquiv f).symm := by
-  apply Equiv.ext
-  intro e
-  apply (fiberEquiv f).injective
-  rw [Equiv.apply_symm_apply]
-  apply Subtype.ext
-  rw [coe_fiberEquiv_apply, coe_fiberEquiv_apply]
-  exact coverMap_inv_apply f e.1
-
-private theorem fiberEquiv_trans {p q r : ConnectedCoveringSpace X} (f : p ≅ q) (g : q ≅ r) :
-    fiberEquiv (x := x) (f ≪≫ g) = (fiberEquiv f).trans (fiberEquiv g) := by
-  apply Equiv.ext
-  intro e
-  apply Subtype.ext
-  rw [coe_fiberEquiv_apply, Equiv.trans_apply, coe_fiberEquiv_apply,
-    coe_fiberEquiv_apply]
-  exact coverMap_comp_apply f.hom g.hom e.1
+    f.hom.hom.left (f.inv.hom.left e) = e :=
+  Iso.inv_hom_id_apply ((CoveringSpace.FullSubcategory.totalSpace X _).mapIso f) e
 
 /-! ### Isomorphisms -/
 
@@ -211,61 +187,39 @@ def ConnectedPointedCoverIso (c c' : ConnectedPointedCover x n) : Prop :=
   ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.1 = c'.e.1
 
 /-- A numbered isomorphism consists of a cover isomorphism preserving every fibre label. -/
-@[simp]
 theorem connectedFiberNumberedCoverIso_iff_exists {c c' : ConnectedFiberNumberedCover x n} :
     ConnectedFiberNumberedCoverIso c c' ↔
       ∃ f : c.cover ≅ c'.cover, ∀ i, f.hom.hom.left (c.ν.symm i).1 = (c'.ν.symm i).1 :=
   Iff.rfl
 
 /-- A pointed isomorphism consists of a cover isomorphism preserving the chosen point. -/
-@[simp]
 theorem connectedPointedCoverIso_iff_exists {c c' : ConnectedPointedCover x n} :
     ConnectedPointedCoverIso c c' ↔
       ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.1 = c'.e.1 :=
   Iff.rfl
 
-/-- A numbered isomorphism is an isomorphism of covers whose bijection of fibres intertwines the
-numberings. -/
-private theorem connectedFiberNumberedCoverIso_iff_fiberEquiv
-    {c c' : ConnectedFiberNumberedCover x n} :
-    ConnectedFiberNumberedCoverIso c c' ↔
-      ∃ f : c.cover ≅ c'.cover, (fiberEquiv f).trans c'.ν = c.ν := by
-  refine exists_congr fun f => ⟨fun h => ?_, fun h i => ?_⟩
-  · refine Equiv.ext fun e => ?_
-    obtain ⟨i, rfl⟩ := c.ν.symm.surjective e
-    rw [Equiv.trans_apply, Equiv.apply_symm_apply, ← Equiv.eq_symm_apply, Subtype.ext_iff,
-      coe_fiberEquiv_apply, h i]
-  · have hi : c.ν.symm i = (fiberEquiv f).symm (c'.ν.symm i) := by
-      rw [← h]
-      rfl
-    rw [← coe_fiberEquiv_apply, hi, apply_symm_apply]
-
-private theorem connectedPointedCoverIso_iff_fiberEquiv {c c' : ConnectedPointedCover x n} :
-    ConnectedPointedCoverIso c c' ↔ ∃ f : c.cover ≅ c'.cover, fiberEquiv f c.e = c'.e :=
-  exists_congr fun f => by rw [Subtype.ext_iff, coe_fiberEquiv_apply]
-
 namespace ConnectedFiberNumberedCoverIso
 
 @[refl]
 theorem refl (c : ConnectedFiberNumberedCover x n) : ConnectedFiberNumberedCoverIso c c :=
-  connectedFiberNumberedCoverIso_iff_fiberEquiv.2
-    ⟨Iso.refl _, by rw [fiberEquiv_refl, Equiv.refl_trans]⟩
+  ⟨Iso.refl _, fun _ => coverMap_id_apply _ _⟩
 
 @[symm]
 theorem symm {c c' : ConnectedFiberNumberedCover x n} (h : ConnectedFiberNumberedCoverIso c c') :
     ConnectedFiberNumberedCoverIso c' c := by
-  obtain ⟨f, hf⟩ := connectedFiberNumberedCoverIso_iff_fiberEquiv.1 h
-  refine connectedFiberNumberedCoverIso_iff_fiberEquiv.2 ⟨f.symm, ?_⟩
-  rw [fiberEquiv_symm, ← hf, ← Equiv.trans_assoc, Equiv.symm_trans_self, Equiv.refl_trans]
+  obtain ⟨f, hf⟩ := h
+  refine ⟨f.symm, fun i => ?_⟩
+  rw [← hf i]
+  exact coverMap_inv_apply f.symm _
 
 @[trans]
 theorem trans {c c' c'' : ConnectedFiberNumberedCover x n}
     (h : ConnectedFiberNumberedCoverIso c c') (h' : ConnectedFiberNumberedCoverIso c' c'') :
     ConnectedFiberNumberedCoverIso c c'' := by
-  obtain ⟨f, hf⟩ := connectedFiberNumberedCoverIso_iff_fiberEquiv.1 h
-  obtain ⟨g, hg⟩ := connectedFiberNumberedCoverIso_iff_fiberEquiv.1 h'
-  refine connectedFiberNumberedCoverIso_iff_fiberEquiv.2 ⟨f ≪≫ g, ?_⟩
-  rw [fiberEquiv_trans, Equiv.trans_assoc, hg, hf]
+  obtain ⟨f, hf⟩ := h
+  obtain ⟨g, hg⟩ := h'
+  refine ⟨f ≪≫ g, fun i => ?_⟩
+  rw [Iso.trans_hom, coverMap_comp_apply, hf i, hg i]
 
 end ConnectedFiberNumberedCoverIso
 
@@ -273,23 +227,23 @@ namespace ConnectedPointedCoverIso
 
 @[refl]
 theorem refl (c : ConnectedPointedCover x n) : ConnectedPointedCoverIso c c :=
-  connectedPointedCoverIso_iff_fiberEquiv.2
-    ⟨Iso.refl _, by rw [fiberEquiv_refl, Equiv.refl_apply]⟩
+  ⟨Iso.refl _, coverMap_id_apply _ _⟩
 
 @[symm]
 theorem symm {c c' : ConnectedPointedCover x n} (h : ConnectedPointedCoverIso c c') :
     ConnectedPointedCoverIso c' c := by
-  obtain ⟨f, hf⟩ := connectedPointedCoverIso_iff_fiberEquiv.1 h
-  exact connectedPointedCoverIso_iff_fiberEquiv.2
-    ⟨f.symm, by rw [fiberEquiv_symm, ← hf, symm_apply_apply]⟩
+  obtain ⟨f, hf⟩ := h
+  refine ⟨f.symm, ?_⟩
+  rw [← hf]
+  exact coverMap_inv_apply f.symm _
 
 @[trans]
 theorem trans {c c' c'' : ConnectedPointedCover x n} (h : ConnectedPointedCoverIso c c')
     (h' : ConnectedPointedCoverIso c' c'') : ConnectedPointedCoverIso c c'' := by
-  obtain ⟨f, hf⟩ := connectedPointedCoverIso_iff_fiberEquiv.1 h
-  obtain ⟨g, hg⟩ := connectedPointedCoverIso_iff_fiberEquiv.1 h'
-  exact connectedPointedCoverIso_iff_fiberEquiv.2
-    ⟨f ≪≫ g, by rw [fiberEquiv_trans, Equiv.trans_apply, hf, hg]⟩
+  obtain ⟨f, hf⟩ := h
+  obtain ⟨g, hg⟩ := h'
+  refine ⟨f ≪≫ g, ?_⟩
+  rw [Iso.trans_hom, coverMap_comp_apply, hf, hg]
 
 end ConnectedPointedCoverIso
 
@@ -308,29 +262,29 @@ instance connectedCoverSetoid (x : X) (n : ℕ) : Setoid (ConnectedCover x n) :=
 /-! ### Isomorphism classes -/
 
 /-- Fibre-numbered connected covers of degree `n` up to label-preserving isomorphism. -/
-@[expose] def ConnectedFiberNumberedCoverClass (x : X) (n : ℕ) : Type (u + 1) :=
+def ConnectedFiberNumberedCoverClass (x : X) (n : ℕ) : Type (u + 1) :=
   Quotient (connectedFiberNumberedCoverSetoid x n)
 
 /-- Pointed connected covers of degree `n` up to pointed isomorphism. -/
-@[expose] def ConnectedPointedCoverClass (x : X) (n : ℕ) : Type (u + 1) :=
+def ConnectedPointedCoverClass (x : X) (n : ℕ) : Type (u + 1) :=
   Quotient (connectedPointedCoverSetoid x n)
 
 /-- Connected covers of degree `n` up to isomorphism. -/
-@[expose] def ConnectedCoverClass (x : X) (n : ℕ) : Type (u + 1) :=
+def ConnectedCoverClass (x : X) (n : ℕ) : Type (u + 1) :=
   Quotient (connectedCoverSetoid x n)
 
 /-- The isomorphism class of a fibre-numbered cover. -/
-@[expose] def ConnectedFiberNumberedCoverClass.mk (c : ConnectedFiberNumberedCover x n) :
+def ConnectedFiberNumberedCoverClass.mk (c : ConnectedFiberNumberedCover x n) :
     ConnectedFiberNumberedCoverClass x n :=
   Quotient.mk _ c
 
 /-- The isomorphism class of a pointed cover. -/
-@[expose] def ConnectedPointedCoverClass.mk (c : ConnectedPointedCover x n) :
+def ConnectedPointedCoverClass.mk (c : ConnectedPointedCover x n) :
     ConnectedPointedCoverClass x n :=
   Quotient.mk _ c
 
 /-- The isomorphism class of a cover. -/
-@[expose] def ConnectedCoverClass.mk (c : ConnectedCover x n) : ConnectedCoverClass x n :=
+def ConnectedCoverClass.mk (c : ConnectedCover x n) : ConnectedCoverClass x n :=
   Quotient.mk _ c
 
 @[simp]
@@ -351,6 +305,30 @@ theorem ConnectedCoverClass.mk_eq_mk_iff {c c' : ConnectedCover x n} :
 theorem ConnectedFiberNumberedCoverClass.mk_surjective :
     Function.Surjective (mk : ConnectedFiberNumberedCover x n → _) :=
   Quotient.mk_surjective
+
+/-- A function on numbered covers that is constant on label-preserving isomorphism classes, as a
+function on the classes. -/
+def ConnectedFiberNumberedCoverClass.lift {α : Sort*} (f : ConnectedFiberNumberedCover x n → α)
+    (hf : ∀ c c', ConnectedFiberNumberedCoverIso c c' → f c = f c') :
+    ConnectedFiberNumberedCoverClass x n → α :=
+  Quotient.lift f hf
+
+@[simp]
+theorem ConnectedFiberNumberedCoverClass.lift_mk {α : Sort*}
+    (f : ConnectedFiberNumberedCover x n → α)
+    (hf : ∀ c c', ConnectedFiberNumberedCoverIso c c' → f c = f c')
+    (c : ConnectedFiberNumberedCover x n) :
+    ConnectedFiberNumberedCoverClass.lift f hf (ConnectedFiberNumberedCoverClass.mk c) = f c :=
+  (rfl)
+
+/-- A property of the classes holds for every class once it holds for the class of every numbered
+cover. -/
+@[elab_as_elim]
+theorem ConnectedFiberNumberedCoverClass.ind
+    {motive : ConnectedFiberNumberedCoverClass x n → Prop}
+    (h : ∀ c, motive (ConnectedFiberNumberedCoverClass.mk c))
+    (C : ConnectedFiberNumberedCoverClass x n) : motive C :=
+  Quotient.ind h C
 
 theorem ConnectedPointedCoverClass.mk_surjective :
     Function.Surjective (mk : ConnectedPointedCover x n → _) :=
@@ -409,20 +387,8 @@ noncomputable def ConnectedCover.numbering (c : ConnectedCover x n) :
   cover := c.cover
   ν := c.nonempty_equiv_fin.some
 
-/-- Chooses a numbering of the fibre of a pointed cover. Marking the label of the chosen point
-recovers the pointed cover. -/
-@[expose] noncomputable def ConnectedPointedCover.numbering (c : ConnectedPointedCover x n) :
-    ConnectedFiberNumberedCover x n where
-  cover := c.cover
-  ν := c.nonempty_equiv_fin.some
-
 @[simp]
 theorem ConnectedCover.numbering_cover (c : ConnectedCover x n) : c.numbering.cover = c.cover :=
-  (rfl)
-
-@[simp]
-theorem ConnectedPointedCover.numbering_cover (c : ConnectedPointedCover x n) :
-    c.numbering.cover = c.cover :=
   (rfl)
 
 @[simp]
@@ -435,13 +401,6 @@ theorem ConnectedCover.forgetNumbering_numbering (c : ConnectedCover x n) :
     c.numbering.forgetNumbering = c :=
   (rfl)
 
-/-- A pointed cover is its chosen numbering with the label of its chosen point marked. -/
-@[simp]
-theorem ConnectedPointedCover.markLabel_numbering (c : ConnectedPointedCover x n) :
-    c.numbering.markLabel (c.numbering.ν c.e) = c := by
-  obtain ⟨cover, e, h⟩ := c
-  exact congrArg (fun e' => ConnectedPointedCover.mk cover e' h) (symm_apply_apply _ e)
-
 /-- Forgetting the numbering, on isomorphism classes. -/
 def ConnectedFiberNumberedCoverClass.forgetNumbering :
     ConnectedFiberNumberedCoverClass x n → ConnectedCoverClass x n :=
@@ -451,11 +410,11 @@ def ConnectedFiberNumberedCoverClass.forgetNumbering :
 
 /-- Keeping only the point labelled `i`, on isomorphism classes: a label-preserving isomorphism
 preserves in particular the point labelled `i`. -/
-def ConnectedFiberNumberedCoverClass.markLabel (i : Fin n) :
-    ConnectedFiberNumberedCoverClass x n → ConnectedPointedCoverClass x n :=
-  Quotient.map (·.markLabel i) fun _ _ h => by
+def ConnectedFiberNumberedCoverClass.markLabel (C : ConnectedFiberNumberedCoverClass x n)
+    (i : Fin n) : ConnectedPointedCoverClass x n :=
+  Quotient.map (·.markLabel i) (fun _ _ h => by
     obtain ⟨f, hf⟩ := h
-    exact Exists.intro f (hf i)
+    exact Exists.intro f (hf i)) C
 
 /-- Forgetting the chosen point, on isomorphism classes. -/
 def ConnectedPointedCoverClass.forgetPoint :
@@ -470,9 +429,8 @@ theorem ConnectedFiberNumberedCoverClass.forgetNumbering_mk (c : ConnectedFiberN
   (rfl)
 
 @[simp]
-theorem ConnectedFiberNumberedCoverClass.markLabel_mk (i : Fin n)
-    (c : ConnectedFiberNumberedCover x n) :
-    (mk c).markLabel i = ConnectedPointedCoverClass.mk (c.markLabel i) :=
+theorem ConnectedFiberNumberedCoverClass.markLabel_mk (c : ConnectedFiberNumberedCover x n)
+    (i : Fin n) : (mk c).markLabel i = ConnectedPointedCoverClass.mk (c.markLabel i) :=
   (rfl)
 
 @[simp]
@@ -483,8 +441,8 @@ theorem ConnectedPointedCoverClass.forgetPoint_mk (c : ConnectedPointedCover x n
 /-- The forgetful triangle commutes: marking a label and then forgetting the point is forgetting
 the numbering. -/
 @[simp]
-theorem ConnectedFiberNumberedCoverClass.forgetPoint_markLabel (i : Fin n)
-    (C : ConnectedFiberNumberedCoverClass x n) :
+theorem ConnectedFiberNumberedCoverClass.forgetPoint_markLabel
+    (C : ConnectedFiberNumberedCoverClass x n) (i : Fin n) :
     (C.markLabel i).forgetPoint = C.forgetNumbering :=
   Quotient.inductionOn C fun _ => rfl
 
@@ -497,7 +455,9 @@ theorem ConnectedFiberNumberedCoverClass.forgetNumbering_surjective :
 theorem ConnectedPointedCoverClass.exists_markLabel_eq (C : ConnectedPointedCoverClass x n) :
     ∃ (N : ConnectedFiberNumberedCoverClass x n) (i : Fin n), N.markLabel i = C := by
   obtain ⟨c, rfl⟩ := mk_surjective C
-  exact ⟨.mk c.numbering, c.numbering.ν c.e, congrArg mk c.markLabel_numbering⟩
+  refine ⟨.mk c.forgetPoint.numbering, c.forgetPoint.numbering.ν c.e, congrArg mk ?_⟩
+  obtain ⟨cover, e, h⟩ := c
+  exact congrArg (fun e' => ConnectedPointedCover.mk cover e' h) (symm_apply_apply _ e)
 
 /-! ### Relabelling the fibre -/
 
@@ -526,10 +486,11 @@ theorem forgetNumbering_smul (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCove
     (τ • c).forgetNumbering = c.forgetNumbering :=
   (rfl)
 
+/-- Relabelling by `τ` and then marking the label `i` marks the original label `τ.symm i`. -/
 @[simp]
 theorem markLabel_smul (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCover x n) (i : Fin n) :
-    (τ • c).markLabel (τ i) = c.markLabel i := by
-  have h : (τ • c).ν.symm (τ i) = c.ν.symm i := by simp
+    (τ • c).markLabel i = c.markLabel (τ.symm i) := by
+  have h : (τ • c).ν.symm i = c.ν.symm (τ.symm i) := by simp
   exact congrArg (fun e => ConnectedPointedCover.mk c.cover e ⟨c.ν⟩) h
 
 /-- An isomorphism of the underlying covers makes two numbered covers isomorphic after the
@@ -539,7 +500,7 @@ private theorem exists_smul_iso_of_iso {c c' : ConnectedFiberNumberedCover x n}
     ∃ τ : Perm (Fin n), ConnectedFiberNumberedCoverIso (τ • c) c' ∧
       ∀ i, τ i = c'.ν (fiberEquiv f (c.ν.symm i)) :=
   ⟨(c.ν.symm.trans (fiberEquiv f)).trans c'.ν,
-    connectedFiberNumberedCoverIso_iff_fiberEquiv.2 ⟨f, by ext; simp⟩, fun _ => rfl⟩
+    ⟨f, fun i => by rw [← coe_fiberEquiv_apply]; simp⟩, fun _ => rfl⟩
 
 end ConnectedFiberNumberedCover
 
@@ -556,61 +517,60 @@ namespace ConnectedFiberNumberedCoverClass
 open ConnectedFiberNumberedCover
 
 instance : SMul (Perm (Fin n)) (ConnectedFiberNumberedCoverClass x n) where
-  smul τ := Quotient.map (τ • ·) fun _ _ h => h.smul τ
+  smul τ := lift (fun c => mk (τ • c)) fun _ _ h => mk_eq_mk_iff.2 (h.smul τ)
 
 @[simp]
 theorem smul_mk (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCover x n) :
     τ • mk c = mk (τ • c) :=
-  (rfl)
+  lift_mk _ _ c
 
-instance : MulAction (Perm (Fin n)) (ConnectedFiberNumberedCoverClass x n) where
-  one_smul C := Quotient.inductionOn C fun c => congrArg mk (one_smul _ c)
-  mul_smul τ σ C := Quotient.inductionOn C fun c => congrArg mk (mul_smul τ σ c)
+instance : MulAction (Perm (Fin n)) (ConnectedFiberNumberedCoverClass x n) :=
+  mk_surjective.mulAction mk fun τ c => (smul_mk τ c).symm
 
 @[simp]
 theorem forgetNumbering_smul (τ : Perm (Fin n)) (C : ConnectedFiberNumberedCoverClass x n) :
     (τ • C).forgetNumbering = C.forgetNumbering :=
   Quotient.inductionOn C fun _ => rfl
 
+/-- Relabelling a class by `τ` and then marking the label `i` marks the original label
+`τ.symm i`. -/
 @[simp]
 theorem markLabel_smul (τ : Perm (Fin n)) (C : ConnectedFiberNumberedCoverClass x n)
-    (i : Fin n) : (τ • C).markLabel (τ i) = C.markLabel i :=
+    (i : Fin n) : (τ • C).markLabel i = C.markLabel (τ.symm i) :=
   Quotient.inductionOn C fun c => congrArg ConnectedPointedCoverClass.mk (c.markLabel_smul τ i)
 
 /-- **Forgetting the numbering is passing to the relabelling orbit.** Two numbered classes have
 the same underlying cover exactly when a relabelling carries one to the other. -/
-@[simp]
 theorem forgetNumbering_eq_forgetNumbering_iff {C C' : ConnectedFiberNumberedCoverClass x n} :
-    C.forgetNumbering = C'.forgetNumbering ↔ ∃ τ : Perm (Fin n), τ • C = C' := by
+    C.forgetNumbering = C'.forgetNumbering ↔ ∃ τ : Perm (Fin n), τ • C' = C := by
   refine ⟨fun h => ?_, ?_⟩
   · obtain ⟨c, rfl⟩ := mk_surjective C
     obtain ⟨c', rfl⟩ := mk_surjective C'
     rw [forgetNumbering_mk, forgetNumbering_mk] at h
-    obtain ⟨f⟩ := ConnectedCoverClass.mk_eq_mk_iff.1 h
+    obtain ⟨f⟩ := ConnectedCoverClass.mk_eq_mk_iff.1 h.symm
     obtain ⟨τ, hτ, -⟩ := exists_smul_iso_of_iso f
     exact ⟨τ, by rw [smul_mk, mk_eq_mk_iff.2 hτ]⟩
   · rintro ⟨τ, rfl⟩
-    exact (forgetNumbering_smul τ C).symm
+    exact forgetNumbering_smul τ C'
 
 /-- **Marking a label is passing to the diagonal relabelling orbit.** Two numbered classes with
-marked labels give the same pointed class exactly when a relabelling carries the first class to
-the second and the first label to the second. -/
-@[simp]
+marked labels give the same pointed class exactly when a relabelling carries the second class to
+the first and the second label to the first. -/
 theorem markLabel_eq_markLabel_iff {C C' : ConnectedFiberNumberedCoverClass x n} {i j : Fin n} :
-    C.markLabel i = C'.markLabel j ↔ ∃ τ : Perm (Fin n), τ • C = C' ∧ τ i = j := by
+    C.markLabel i = C'.markLabel j ↔ ∃ τ : Perm (Fin n), τ • C' = C ∧ τ j = i := by
   refine ⟨fun h => ?_, ?_⟩
   · obtain ⟨c, rfl⟩ := mk_surjective C
     obtain ⟨c', rfl⟩ := mk_surjective C'
     rw [markLabel_mk, markLabel_mk] at h
-    obtain ⟨f, hf⟩ := ConnectedPointedCoverClass.mk_eq_mk_iff.1 h
+    obtain ⟨f, hf⟩ := ConnectedPointedCoverClass.mk_eq_mk_iff.1 h.symm
     obtain ⟨τ, hτ, hτi⟩ := exists_smul_iso_of_iso f
-    have he : fiberEquiv f (c.ν.symm i) = c'.ν.symm j :=
+    have he : fiberEquiv f (c'.ν.symm j) = c.ν.symm i :=
       Subtype.ext ((coe_fiberEquiv_apply f _).trans hf)
     refine ⟨τ, by rw [smul_mk, mk_eq_mk_iff.2 hτ], ?_⟩
     rw [hτi]
-    exact (congrArg c'.ν he).trans (apply_symm_apply _ _)
+    exact (congrArg c.ν he).trans (apply_symm_apply _ _)
   · rintro ⟨τ, rfl, rfl⟩
-    exact (markLabel_smul τ C i).symm
+    rw [markLabel_smul, symm_apply_apply]
 
 /-- The bare isomorphism classes of connected covers of degree `n` are the relabelling orbits of
 the numbered classes. -/
@@ -618,7 +578,7 @@ noncomputable def orbitRelQuotientEquiv :
     MulAction.orbitRel.Quotient (Perm (Fin n)) (ConnectedFiberNumberedCoverClass x n) ≃
       ConnectedCoverClass x n :=
   (Quotient.congrRight fun _ _ => by
-    rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Setoid.ker_def, eq_comm,
+    rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Setoid.ker_def,
       forgetNumbering_eq_forgetNumbering_iff]).trans
     (Setoid.quotientKerEquivOfSurjective _ forgetNumbering_surjective)
 
@@ -627,6 +587,12 @@ theorem orbitRelQuotientEquiv_mk (C : ConnectedFiberNumberedCoverClass x n) :
     orbitRelQuotientEquiv (Quotient.mk _ C) = C.forgetNumbering :=
   (rfl)
 
+/-- The inverse of `orbitRelQuotientEquiv` sends the bare class of a numbered class to its orbit. -/
+@[simp]
+theorem orbitRelQuotientEquiv_symm_forgetNumbering (C : ConnectedFiberNumberedCoverClass x n) :
+    orbitRelQuotientEquiv.symm C.forgetNumbering = Quotient.mk _ C :=
+  orbitRelQuotientEquiv.symm_apply_eq.2 (orbitRelQuotientEquiv_mk C).symm
+
 /-- The pointed isomorphism classes of connected covers of degree `n` are the orbits of the
 diagonal relabelling action on numbered classes with a marked label. -/
 noncomputable def markedOrbitRelQuotientEquiv :
@@ -634,10 +600,10 @@ noncomputable def markedOrbitRelQuotientEquiv :
       ConnectedPointedCoverClass x n :=
   (Quotient.congrRight fun ⟨C, i⟩ ⟨C', j⟩ => by
     rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Setoid.ker_def]
-    dsimp only
-    rw [eq_comm, markLabel_eq_markLabel_iff]
+    dsimp only [Function.uncurry_apply_pair]
+    rw [markLabel_eq_markLabel_iff]
     simp [Prod.ext_iff, Perm.smul_def]).trans
-    (Setoid.quotientKerEquivOfSurjective (fun Ci => Ci.1.markLabel Ci.2) fun C =>
+    (Setoid.quotientKerEquivOfSurjective (Function.uncurry markLabel) fun C =>
       let ⟨N, i, h⟩ := C.exists_markLabel_eq
       ⟨(N, i), h⟩)
 
@@ -646,21 +612,29 @@ theorem markedOrbitRelQuotientEquiv_mk (C : ConnectedFiberNumberedCoverClass x n
     markedOrbitRelQuotientEquiv (Quotient.mk _ (C, i)) = C.markLabel i :=
   (rfl)
 
+/-- The inverse of `markedOrbitRelQuotientEquiv` sends the pointed class obtained by marking the
+label `i` of a numbered class to the orbit of that class and label. -/
+@[simp]
+theorem markedOrbitRelQuotientEquiv_symm_markLabel (C : ConnectedFiberNumberedCoverClass x n)
+    (i : Fin n) : markedOrbitRelQuotientEquiv.symm (C.markLabel i) = Quotient.mk _ (C, i) :=
+  markedOrbitRelQuotientEquiv.symm_apply_eq.2 (markedOrbitRelQuotientEquiv_mk C i).symm
+
 end ConnectedFiberNumberedCoverClass
 
 /-! ### Degree and inhabited fibres -/
 
 namespace ConnectedCover
 
-/-- A path from `x` to `y` identifies their fibres, so the degree agrees at the two points. -/
-theorem nonempty_equiv_fin_of (c : ConnectedCover x n) {y : X} (γ : Path x y) :
-    Nonempty (⇑c.cover.proj ⁻¹' {y} ≃ Fin n) :=
-  c.nonempty_equiv_fin.map fun ν => (coveringFiberEquiv c.cover.isCoveringMap_proj
-    (Path.Homotopic.Quotient.mk γ)).symm.trans ν
+/-- The degree is the same over every point of the connected component of `x`: the number of
+points in a fibre of a covering map is locally constant. -/
+theorem nonempty_equiv_fin_of_mem_connectedComponent (c : ConnectedCover x n) {y : X}
+    (hy : y ∈ connectedComponent x) : Nonempty (⇑c.cover.proj ⁻¹' {y} ≃ Fin n) :=
+  (c.cover.isCoveringMap_proj.isClopen_setOf_nonempty_fiber_equiv (Fin n)).connectedComponent_subset
+    c.nonempty_equiv_fin hy
 
-variable [PathConnectedSpace X]
+variable [PreconnectedSpace X]
 
-/-- A connected cover of a path-connected space has positive degree. -/
+/-- A connected cover of a preconnected space has positive degree. -/
 theorem ne_zero (c : ConnectedCover x n) : n ≠ 0 := by
   rintro rfl
   obtain ⟨ν⟩ := c.nonempty_equiv_fin
@@ -682,36 +656,42 @@ theorem ConnectedPointedCoverClass.forgetPoint_surjective (hn : n ≠ 0) :
 
 /-! ### Numbered monodromy -/
 
+/-- **Isomorphic numbered covers have the same numbered monodromy.** A label-preserving
+isomorphism of covers identifies their monodromy representations `π₁(X, x) →* Equiv.Perm (Fin n)`
+read through the numberings; this direction needs no hypothesis on the base. -/
+theorem ConnectedFiberNumberedCoverIso.permCongrHom_comp_monodromyPerm_eq
+    {c c' : ConnectedFiberNumberedCover x n} (h : ConnectedFiberNumberedCoverIso c c') :
+    c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) =
+      c'.ν.permCongrHom.toMonoidHom.comp (c'.cover.isCoveringMap_proj.monodromyPerm x) := by
+  obtain ⟨f, hf⟩ := connectedFiberNumberedCoverIso_iff_exists.1 h
+  refine (c.cover.isCoveringMap_proj.permutationRepresentation_eq_of_fiberMap
+    c'.cover.isCoveringMap_proj x c.ν c'.ν f.hom.hom.left.hom
+    (CoveringSpace.proj_hom_comp_hom_left_hom ((ConnectedCoveringSpace.forget X).map f.hom))
+    fun e => ?_).symm
+  rw [← c'.ν.apply_symm_apply (c.ν e)]
+  refine congrArg c'.ν (Subtype.ext ?_)
+  rw [Function.fiberMap_apply_coe, ← hf, symm_apply_apply]
+
 section Monodromy
 
 variable [PathConnectedSpace X] [LocallyPathConnectedSpace X]
 
-/-- **A numbered connected cover is determined by its numbered monodromy.** Two numbered covers
-are isomorphic, by an isomorphism preserving every label, exactly when their monodromy
-representations `π₁(X, x) →* Equiv.Perm (Fin n)`, read through the numberings, agree. -/
-theorem connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq
-    {c c' : ConnectedFiberNumberedCover x n} :
-    ConnectedFiberNumberedCoverIso c c' ↔
-      c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) =
-        c'.ν.permCongrHom.toMonoidHom.comp (c'.cover.isCoveringMap_proj.monodromyPerm x) := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · obtain ⟨f, hf⟩ := connectedFiberNumberedCoverIso_iff_exists.1 h
-    refine (c.cover.isCoveringMap_proj.permutationRepresentation_eq_of_fiberMap
-      c'.cover.isCoveringMap_proj x c.ν c'.ν f.hom.hom.left.hom
-      (CoveringSpace.proj_hom_comp_hom_left_hom ((ConnectedCoveringSpace.forget X).map f.hom))
-      fun e => ?_).symm
-    rw [← c'.ν.apply_symm_apply (c.ν e)]
-    refine congrArg c'.ν (Subtype.ext ?_)
-    rw [Function.fiberMap_apply_coe, ← hf, symm_apply_apply]
+/-- **Numbered covers with the same numbered monodromy are isomorphic.** Over a path-connected,
+locally path-connected base, if the monodromy representations `π₁(X, x) →* Equiv.Perm (Fin n)` of
+two numbered covers, read through their numberings, agree, then some isomorphism of the covers
+preserves every label. -/
+theorem ConnectedFiberNumberedCoverIso.of_permCongrHom_comp_monodromyPerm_eq
+    {c c' : ConnectedFiberNumberedCover x n}
+    (h : c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) =
+      c'.ν.permCongrHom.toMonoidHom.comp (c'.cover.isCoveringMap_proj.monodromyPerm x)) :
+    ConnectedFiberNumberedCoverIso c c' := by
   -- The relabelling `c.ν.trans c'.ν.symm` of fibres is `π₁(X, x)`-equivariant; the fibre-action
   -- functor is fully faithful, so it is the fibre map of an isomorphism of covers.
   have hcomm : ∀ (γ : FundamentalGroup X x) e,
       (c.ν.trans c'.ν.symm) (c.cover.isCoveringMap_proj.monodromy γ e) =
         c'.cover.isCoveringMap_proj.monodromy γ ((c.ν.trans c'.ν.symm) e) := fun γ e => by
-    have := DFunLike.congr_fun (DFunLike.congr_fun h γ) (c.ν e)
-    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, permCongrHom_coe,
-      permCongr_apply, symm_apply_apply, IsCoveringMap.coe_monodromyPerm] at this
-    simp only [trans_apply, this, symm_apply_apply]
+    simpa [permCongr_apply, symm_apply_eq] using
+      DFunLike.congr_fun (DFunLike.congr_fun h γ) (c.ν e)
   let F := ConnectedCoveringSpace.forget X ⋙ CoveringSpace.fiberActionFunctor x
   let φ : F.obj c.cover ≅ F.obj c'.cover :=
     Action.mkIso (Equiv.toIso (c.ν.trans c'.ν.symm)) fun γ => by
@@ -728,6 +708,17 @@ theorem connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq
   exact (Function.fiberMap_apply_coe _ (CoveringSpace.proj_hom_comp_hom_left_hom
     ((ConnectedCoveringSpace.forget X).map (F.preimage φ.hom))) x (c.ν.symm i)).symm.trans
     (congrArg Subtype.val hi)
+
+/-- **A numbered connected cover is determined by its numbered monodromy.** Two numbered covers
+are isomorphic, by an isomorphism preserving every label, exactly when their monodromy
+representations `π₁(X, x) →* Equiv.Perm (Fin n)`, read through the numberings, agree. -/
+theorem connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq
+    {c c' : ConnectedFiberNumberedCover x n} :
+    ConnectedFiberNumberedCoverIso c c' ↔
+      c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) =
+        c'.ν.permCongrHom.toMonoidHom.comp (c'.cover.isCoveringMap_proj.monodromyPerm x) :=
+  ⟨ConnectedFiberNumberedCoverIso.permCongrHom_comp_monodromyPerm_eq,
+    ConnectedFiberNumberedCoverIso.of_permCongrHom_comp_monodromyPerm_eq⟩
 
 end Monodromy
 

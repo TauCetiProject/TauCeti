@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.BraidWord.PDCode
-public import TauCeti.KnotTheory.PDCode.Kauffman
+public import TauCeti.KnotTheory.PDCode.Components
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -26,7 +26,7 @@ first Reidemeister move, and shows that these closures are knots.
 * `TauCeti.BraidWord.toPDCode_closure_sigma_zero`: forgetting the orientation, the closure of
   `σ 0` is the kink.
 * `TauCeti.BraidWord.toPDCode_closure_sigma_zero_inv`: the closure of `σ 0⁻¹` is the mirror kink.
-* `TauCeti.BraidWord.componentCount_closure_sigma_zero_zpow`: the closure of `σ 0 ^ ε` has one
+* `TauCeti.BraidWord.componentCount_closure_single`: the closure of `σ 0 ^ ε` has one
   component.
 -/
 
@@ -70,25 +70,6 @@ private theorem crossingsAt_single_ne_nil (ε : ℤˣ) (p : Fin 2) :
   have := h 0
   fin_cases p <;> simp [Fin.ext_iff] at this
 
-/-- The unoriented code of the positive kink is the kink. -/
-private theorem positiveKink_toPDCode : OrientedPDCode.positiveKink.toPDCode = kink := by
-  have hslot (slot : Fin 4) : crossingSlotEquiv 1 (0, slot) = slot := by
-    ext
-    rw [crossingSlotEquiv_apply_val]
-    simp
-  apply PDCode.ext
-  · simp [OrientedPDCode.positiveKink, Equiv.Perm.one_def]
-  · apply Subtype.ext
-    refine Equiv.ext fun h ↦ ?_
-    obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv 1).surjective h
-    have hi : i = 0 := Subsingleton.elim _ _
-    subst hi
-    rw [kink_edgePair_apply, hslot, hslot]
-    simp only [OrientedPDCode.positiveKink, PerfectMatching.val_mk, slotSmoothing_true]
-  · simp [OrientedPDCode.positiveKink]
-  · funext i
-    simp [OrientedPDCode.positiveKink]
-
 /-- The closure of a one-letter word on two strands carries the orientation of the positive
 kink. -/
 private theorem orientation_closure_single (ε : ℤˣ) :
@@ -97,10 +78,10 @@ private theorem orientation_closure_single (ε : ℤˣ) :
   have : Subsingleton (Fin w.length) := inferInstanceAs (Subsingleton (Fin 1))
   funext h
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv w.length).surjective h
-  rw [orientation_closure]
+  rw [orientation_closure, OrientedPDCode.orientation_positiveKink]
   have hi : i = 0 := Subsingleton.elim _ _
   subst hi
-  fin_cases slot <;> simp [OrientedPDCode.positiveKink, Fin.ext_iff, crossingSlotEquiv_apply_val]
+  fin_cases slot <;> simp [Fin.ext_iff, crossingSlotEquiv_apply_val] <;> simp [w]
 
 /-- The closure of a one-letter word on two strands has no crossing-free component. -/
 private theorem crossinglessComponents_closure_single (ε : ℤˣ) :
@@ -137,23 +118,26 @@ theorem toPDCode_closure_sigma_zero_inv :
 theorem closure_sigma_zero :
     closure ([(0, 1)] : BraidWord 2) = OrientedPDCode.positiveKink := by
   apply OrientedPDCode.ext
-  · rw [toPDCode_closure_sigma_zero, positiveKink_toPDCode]
+  · rw [toPDCode_closure_sigma_zero, OrientedPDCode.toPDCode_positiveKink]
   · exact orientation_closure_single 1
-  · exact crossinglessComponents_closure_single 1
+  · rw [OrientedPDCode.crossinglessComponents_positiveKink]
+    exact crossinglessComponents_closure_single 1
 
 /-- The closure of the negative crossing `σ 0⁻¹` on two strands is the mirror image of the
 positive kink. -/
 theorem closure_sigma_zero_inv :
     closure ([(0, -1)] : BraidWord 2) = OrientedPDCode.positiveKink.mirror := by
   apply OrientedPDCode.ext
-  · rw [toPDCode_closure_sigma_zero_inv, OrientedPDCode.mirror_toPDCode, positiveKink_toPDCode]
+  · rw [toPDCode_closure_sigma_zero_inv, OrientedPDCode.mirror_toPDCode,
+      OrientedPDCode.toPDCode_positiveKink]
   · rw [OrientedPDCode.mirror_orientation]
     exact orientation_closure_single (-1)
-  · rw [OrientedPDCode.mirror_crossinglessComponents]
+  · rw [OrientedPDCode.mirror_crossinglessComponents,
+      OrientedPDCode.crossinglessComponents_positiveKink]
     exact crossinglessComponents_closure_single (-1)
 
 /-- The closure of a single crossing on two strands is a knot. -/
-theorem componentCount_closure_sigma_zero_zpow (ε : ℤˣ) :
+theorem componentCount_closure_single (ε : ℤˣ) :
     (closure ([(0, ε)] : BraidWord 2)).componentCount = 1 := by
   rcases Int.units_eq_one_or ε with rfl | rfl
   · rw [toPDCode_closure_sigma_zero, componentCount_eq, crossingComponentCount_kink,
