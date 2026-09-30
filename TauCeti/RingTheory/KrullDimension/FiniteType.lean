@@ -238,6 +238,7 @@ private theorem height_eq_ringKrullDim_of_isMaximal_of_isDomain {A : Type*} [Com
 variable (k) in
 /-- Every maximal ideal of a finitely generated algebra with irreducible spectrum over a field
 has height the Krull dimension of the algebra. -/
+@[simp]
 theorem height_eq_ringKrullDim_of_isMaximal {A : Type*} [CommRing A] [Algebra k A]
     [Algebra.FiniteType k A] [IrreducibleSpace (PrimeSpectrum A)]
     (m : Ideal A) [m.IsMaximal] : (m.height : WithBot ℕ∞) = ringKrullDim A := by
