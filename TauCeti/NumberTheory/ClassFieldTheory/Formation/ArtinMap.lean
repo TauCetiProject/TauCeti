@@ -161,8 +161,11 @@ theorem ker_artinMap : (cf.artinMap L).ker = (L.normSubgroup F).toAddSubgroup :=
   exact cf.artinMap_eq_zero_iff L a
 
 /-- **The Artin map is surjective** onto the abelianized Galois group of the layer. -/
-theorem surjective_artinMap : Function.Surjective (cf.artinMap L) :=
-  (cf.artinEquiv L).surjective.comp (L.normQuotientMk_surjective F)
+theorem surjective_artinMap : Function.Surjective (cf.artinMap L) := by
+  intro σ
+  obtain ⟨x, rfl⟩ := (cf.artinEquiv L).surjective σ
+  obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  exact ⟨a, by rw [artinMap_apply, NormalLayer.normQuotientMk_apply]⟩
 
 include cf in
 /-- **Norm index**: the norm quotient `A^U / N_{U/V}(A^V)` of a finite normal layer of a class
@@ -176,8 +179,8 @@ generates the norm quotient. -/
 theorem isGenerator_artinMap_iff (a : F.level L.ground) :
     AddSubgroup.zmultiples (cf.artinMap L a) = ⊤ ↔
       AddSubgroup.zmultiples (L.normQuotientMk F a) = ⊤ := by
-  rw [artinMap_apply, AddSubgroup.eq_top_iff', AddSubgroup.eq_top_iff',
-    (cf.artinEquiv L).surjective.forall]
-  simp only [AddSubgroup.mem_zmultiples_iff, ← map_zsmul, (cf.artinEquiv L).injective.eq_iff]
+  rw [artinMap_apply, ← AddMonoidHom.coe_ofClass, ← AddMonoidHom.map_zmultiples,
+    ← AddSubgroup.map_equiv_top (cf.artinEquiv L),
+    (AddSubgroup.map_injective (cf.artinEquiv L).injective).eq_iff]
 
 end TauCeti.ClassFieldTheory.ClassFormation
