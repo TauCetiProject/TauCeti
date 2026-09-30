@@ -13,6 +13,8 @@ public import Mathlib.Topology.Category.TopCat.Opens
 
 A family of elements indexed by arrows between opens depends only on the domain, since there is
 at most one arrow between two opens.
+
+Use `TauCeti.CategoryTheory.familyOfElements_congr x f g hf hg` to compare these values.
 -/
 
 public section
