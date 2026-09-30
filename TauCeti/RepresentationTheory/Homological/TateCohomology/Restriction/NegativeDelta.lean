@@ -17,9 +17,9 @@ Let `H` be a subgroup of a finite group `G` and `S` a short exact sequence of
 `G`-representations. Restricting `S` to `H` keeps it short exact, and in negative degrees Tate
 restriction commutes with the connecting maps of the two long exact sequences:
 
-`Ĥʳ(G, X₃) ⟶ Ĥʳ⁺¹(G, X₁)`
-`    ↓               ↓`
-`Ĥʳ(H, X₃) ⟶ Ĥʳ⁺¹(H, X₁)`
+`\hat{H}^r(G, X₃) ⟶ \hat{H}^{r+1}(G, X₁)`
+`       ↓                   ↓`
+`\hat{H}^r(H, X₃) ⟶ \hat{H}^{r+1}(H, X₁)`
 
 for `r < 0` (`TauCeti.TateCohomology.δ_comp_res_of_neg`). This is what lets a statement about
 restriction be moved across negative degrees by dimension shifting, as in the proof that
@@ -61,7 +61,7 @@ variable {R G : Type u} [CommRing R] [Group G] [Fintype G]
 attribute [local instance] Subgroup.fintypeOfFinite Subgroup.fintypeQuotientOfFiniteIndex
 
 /-- **In negative degrees Tate restriction is the transfer of group homology**: through the
-comparison `toGroupHomology` of `Ĥ^{-(n+1)}` with `Hₙ`, restriction to `H` is the transfer. -/
+comparison `toGroupHomology` of `\hat{H}^{-(n+1)}` with `Hₙ`, restriction to `H` is the transfer. -/
 @[reassoc]
 theorem res_comp_toGroupHomology (M : Rep R G) (H : Subgroup G) (n : ℕ) :
     res M H (Int.negSucc n) ≫ toGroupHomology (Rep.res H.subtype M) n =
@@ -131,8 +131,8 @@ private theorem δ_comp_res_neg_one {S : ShortComplex (Rep R G)} (hS : S.ShortEx
 
 /-- **Tate restriction commutes with the connecting maps in negative degrees.** For a short exact
 sequence `S` of `G`-representations and a subgroup `H`, restriction to `H` intertwines the
-connecting map `Ĥʳ(G, X₃) ⟶ Ĥʳ⁺¹(G, X₁)` of `S` with the connecting map of its restriction to `H`,
-for every `r < 0`. -/
+connecting map `\hat{H}^r(G, X₃) ⟶ \hat{H}^{r+1}(G, X₁)` of `S` with the connecting map of its
+restriction to `H`, for every `r < 0`. -/
 @[reassoc]
 theorem δ_comp_res_of_neg {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (H : Subgroup G)
     {r : ℤ} (hr : r < 0) :

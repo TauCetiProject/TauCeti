@@ -14,26 +14,26 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functorial
 # Connecting maps of Tate cohomology in negative degrees
 
 Let `G` be a finite group and `S` a short exact sequence of representations of `G`. In degrees at
-most `-2` Tate cohomology is group homology, `Ĥ^{-(n+1)}(G, M) ≅ Hₙ(G, M)` for `n > 0`
+most `-2` Tate cohomology is group homology, `\hat{H}^{-(n+1)}(G, M) ≅ Hₙ(G, M)` for `n > 0`
 (`TauCeti.TateCohomology.negSuccIso`), and in degree `-1` it is the kernel of the norm modulo the
 augmentation submodule, a submodule of `H₀(G, M) = M_G`. This file compares the connecting maps of
 the long exact sequence of Tate cohomology of `S` in negative degrees with those of group homology,
-and computes the connecting map `Ĥ⁻¹(G, X₃) ⟶ Ĥ⁰(G, X₁)`, which crosses the junction of the Tate
-complex, on representatives.
+and computes the connecting map `\hat{H}^{-1}(G, X₃) ⟶ \hat{H}^0(G, X₁)`, which crosses the
+junction of the Tate complex, on representatives.
 
-The comparison `TauCeti.TateCohomology.toGroupHomology : Ĥ^{-(n+1)}(G, M) ⟶ Hₙ(G, M)` is induced by
-the identity in negative degrees, from the Tate complex to the complex of inhomogeneous chains
-reindexed by `n ↦ -(n+1)` and extended by zero to the nonnegative degrees. It is `negSuccIso` for
-`n > 0` and the inclusion of `Ĥ⁻¹(G, M)` into `H₀(G, M)` for `n = 0`; in particular it is injective
-in every degree. It commutes with the connecting maps because the connecting maps of an extended
-sequence are those of the original one
+The comparison `TauCeti.TateCohomology.toGroupHomology : \hat{H}^{-(n+1)}(G, M) ⟶ Hₙ(G, M)` is
+induced by the identity in negative degrees, from the Tate complex to the complex of inhomogeneous
+chains reindexed by `n ↦ -(n+1)` and extended by zero to the nonnegative degrees. It is
+`negSuccIso` for `n > 0` and the inclusion of `\hat{H}^{-1}(G, M)` into `H₀(G, M)` for `n = 0`; in
+particular it is injective in every degree. It commutes with the connecting maps because the
+connecting maps of an extended sequence are those of the original one
 (`CategoryTheory.ShortComplex.ShortExact.extend_δ_comp_extendHomologyIso_hom`). This is how Tate
 restriction, which is the transfer of group homology in negative degrees, is shown to commute with
 the connecting maps there.
 
 ## Main definitions
 
-* `TauCeti.TateCohomology.toGroupHomology`: the comparison `Ĥ^{-(n+1)}(G, M) ⟶ Hₙ(G, M)`.
+* `TauCeti.TateCohomology.toGroupHomology`: the comparison `\hat{H}^{-(n+1)}(G, M) ⟶ Hₙ(G, M)`.
 
 ## Main results
 
@@ -42,8 +42,8 @@ the connecting maps there.
   `TauCeti.TateCohomology.HNegOneπ_comp_toGroupHomology`: the comparison is `negSuccIso` for
   `n > 0`, and sends the class of a norm-zero element to its class in `H₀(G, M)` for `n = 0`.
 * `TauCeti.TateCohomology.δ_comp_negSuccIso_hom`: through `negSuccIso`, the Tate connecting map
-  `Ĥ^{-(n+2)}(G, X₃) ⟶ Ĥ^{-(n+1)}(G, X₁)` is the connecting map `H_{n+1}(G, X₃) ⟶ Hₙ(G, X₁)` of
-  group homology, for `n > 0`.
+  `\hat{H}^{-(n+2)}(G, X₃) ⟶ \hat{H}^{-(n+1)}(G, X₁)` is the connecting map
+  `H_{n+1}(G, X₃) ⟶ Hₙ(G, X₁)` of group homology, for `n > 0`.
 * `TauCeti.TateCohomology.δ_HNegOneπ`: the class of a norm-zero `z ∈ X₃` goes to the class of the
   invariant `x ∈ X₁` whose image in `X₂` is the norm of a lift of `z`.
 
@@ -115,17 +115,17 @@ private def toExtendChains : tateComplexFunctor R G ⟶
       -- In degree `-(n+1)` the Tate map of `f` is its map on `n`-chains, by definition.
       exact (Iso.inv_hom_id_assoc _ _).symm
 
-/-- The comparison `Ĥ^{-(n+1)}(G, M) ⟶ Hₙ(G, M)` induced on homology by the identity in negative
-degrees. It is `negSuccIso` for `n > 0` (`toGroupHomology_eq_negSuccIso_hom`), and the inclusion of
-`Ĥ⁻¹(G, M)` into `H₀(G, M)` for `n = 0` (`HNegOneπ_comp_toGroupHomology`). -/
+/-- The comparison `\hat{H}^{-(n+1)}(G, M) ⟶ Hₙ(G, M)` induced on homology by the identity in
+negative degrees. It is `negSuccIso` for `n > 0` (`toGroupHomology_eq_negSuccIso_hom`), and the
+inclusion of `\hat{H}^{-1}(G, M)` into `H₀(G, M)` for `n = 0` (`HNegOneπ_comp_toGroupHomology`). -/
 def toGroupHomology (M : Rep R G) (n : ℕ) :
     tateCohomology M (Int.negSucc n) ⟶ groupHomology M n :=
   homologyMap (toExtendChainsApp M) (Int.negSucc n) ≫
     ((inhomogeneousChains M).extendHomologyIso _ (embeddingUpIntLE_f_eq_negSucc n)).hom
 
 /-- **The comparison with group homology commutes with the connecting maps**: through
-`toGroupHomology`, the Tate connecting map `Ĥ^{-(n+2)}(G, X₃) ⟶ Ĥ^{-(n+1)}(G, X₁)` is the connecting
-map `H_{n+1}(G, X₃) ⟶ Hₙ(G, X₁)` of group homology, for every `n : ℕ`. -/
+`toGroupHomology`, the Tate connecting map `\hat{H}^{-(n+2)}(G, X₃) ⟶ \hat{H}^{-(n+1)}(G, X₁)` is
+the connecting map `H_{n+1}(G, X₃) ⟶ Hₙ(G, X₁)` of group homology, for every `n : ℕ`. -/
 @[reassoc]
 theorem δ_comp_toGroupHomology {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (n : ℕ) :
     _root_.TateCohomology.δ hS (Int.negSucc (n + 1)) ≫ toGroupHomology S.X₁ n =
@@ -164,8 +164,8 @@ theorem toGroupHomology_eq_negSuccIso_hom (M : Rep R G) (n : ℕ) [NeZero n] :
   (homologyMap_toExtendChainsApp_comp_extendHomologyIso_hom M n).trans (negSuccIso_hom M n).symm
 
 /-- **The connecting maps of Tate cohomology below degree `-1` are those of group homology**:
-through `negSuccIso`, the Tate connecting map `Ĥ^{-(n+2)}(G, X₃) ⟶ Ĥ^{-(n+1)}(G, X₁)` is the
-connecting map `H_{n+1}(G, X₃) ⟶ Hₙ(G, X₁)` of group homology, for `n > 0`. -/
+through `negSuccIso`, the Tate connecting map `\hat{H}^{-(n+2)}(G, X₃) ⟶ \hat{H}^{-(n+1)}(G, X₁)`
+is the connecting map `H_{n+1}(G, X₃) ⟶ Hₙ(G, X₁)` of group homology, for `n > 0`. -/
 @[reassoc]
 theorem δ_comp_negSuccIso_hom {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (n : ℕ)
     [NeZero n] :
@@ -240,8 +240,8 @@ section NegOne
 
 /-- **The connecting map from degree `-1` to degree `0`, on representatives.** Let `z ∈ X₃` have
 norm zero, let `y ∈ X₂` lift `z`, and let `x ∈ X₁` be the invariant element whose image in `X₂` is
-the norm of `y`. Then the connecting map sends the class of `z` in `Ĥ⁻¹(G, X₃)` to the class of `x`
-in `Ĥ⁰(G, X₁)`. -/
+the norm of `y`. Then the connecting map sends the class of `z` in `\hat{H}^{-1}(G, X₃)` to the
+class of `x` in `\hat{H}^0(G, X₁)`. -/
 theorem δ_HNegOneπ {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
     (z : LinearMap.ker S.X₃.ρ.norm) (y : S.X₂) (hy : S.g.hom y = z) (x : S.X₁.ρ.invariants)
     (hx : S.f.hom x = S.X₂.ρ.norm y) :
