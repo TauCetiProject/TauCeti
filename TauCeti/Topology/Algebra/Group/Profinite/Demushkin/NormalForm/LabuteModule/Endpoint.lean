@@ -42,7 +42,7 @@ public section
 
 namespace TauCeti
 
-variable (n : ℕ) (hu : (-1 : ℤ_[2]ˣ) ∈ unitsPrincipal 2 1)
+variable (n : ℕ)
 
 /-- **The kernel of the orientation at the finite dyadic endpoint.** For `1 < n`, the
 kernel on `F = freeProP 2 (Fin n)` of the character with `χ(x₂) = -1` and `χ(x_i) = 1` for
@@ -50,14 +50,14 @@ kernel on `F = freeProP 2 (Fin n)` of the character with `χ(x₂) = -1` and `χ
 parity condition on `n`; for even `n` it is Labute's `X = ker χ` for the even-rank endpoint
 `Im χ = {±1}`. -/
 theorem ker_orientationNeTwo_two_comp_mk (hn : 1 < n) :
-    ((orientationNeTwo 2 n (-1) hu).comp (presentedProP.mk 2 _)).toMonoidHom.ker =
+    ((orientationNeTwo 2 n (-1) (by simp)).comp (presentedProP.mk 2 _)).toMonoidHom.ker =
       (Subgroup.normalClosure (insert (freeProPGen 2 n 1 ^ 2)
         (freeProPGen 2 n '' {i | i ≠ 1}))).topologicalClosure := by
   refine freeProP.ker_eq_topologicalClosure_normalClosure_insert_pow_image_freeProPGen _
-    ((orientationNeTwo 2 n (-1) hu).comp (presentedProP.mk 2 _)).isClosed_ker
-    (fun i hi ↦ orientationNeTwo_comp_mk_freeProPGen_of_ne 2 n (-1) hu hi) two_pos ?_
+    ((orientationNeTwo 2 n (-1) (by simp)).comp (presentedProP.mk 2 _)).isClosed_ker
+    (fun i hi ↦ orientationNeTwo_comp_mk_freeProPGen_of_ne 2 n (-1) _ hi) two_pos ?_
   rw [ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
-    orientationNeTwo_comp_mk_freeProPGen_one 2 n (-1) hu hn, ← orderOf_units,
+    orientationNeTwo_comp_mk_freeProPGen_one 2 n (-1) _ hn, ← orderOf_units,
     Units.val_neg, Units.val_one, orderOf_neg_one, ringChar.eq_zero]
   norm_num
 
@@ -68,21 +68,21 @@ over `Λ = ℤ_2[[F ⧸ X]]`, through conjugation, by the classes of `x₂²` an
 (Labute, §4, p. 121). No parity condition on `n` is needed; the even-rank endpoint is the case of
 even `n`. -/
 theorem span_topologicalAbelianization_ker_orientationNeTwo_two_comp_mk_eq_top (hn : 1 < n) :
-    haveI := ((orientationNeTwo 2 n (-1) hu).comp (presentedProP.mk 2 _)).isClosed_ker
+    haveI := ((orientationNeTwo 2 n (-1) (by simp)).comp (presentedProP.mk 2 _)).isClosed_ker
     letI := ((isProP_freeProP 2 (Fin n)).topologicalAbelianization
-      ((orientationNeTwo 2 n (-1) hu).comp (presentedProP.mk 2 _)).toMonoidHom.ker
+      ((orientationNeTwo 2 n (-1) (by simp)).comp (presentedProP.mk 2 _)).toMonoidHom.ker
       ).completedGroupAlgebraModule (freeProP 2 (Fin n) ⧸
-        ((orientationNeTwo 2 n (-1) hu).comp (presentedProP.mk 2 _)).toMonoidHom.ker)
+        ((orientationNeTwo 2 n (-1) (by simp)).comp (presentedProP.mk 2 _)).toMonoidHom.ker)
     Submodule.span (completedGroupAlgebra ℤ_[2] (freeProP 2 (Fin n) ⧸
-        ((orientationNeTwo 2 n (-1) hu).comp (presentedProP.mk 2 _)).toMonoidHom.ker))
+        ((orientationNeTwo 2 n (-1) (by simp)).comp (presentedProP.mk 2 _)).toMonoidHom.ker))
       (Additive.ofMul '' ((QuotientGroup.mk :
-        ((orientationNeTwo 2 n (-1) hu).comp (presentedProP.mk 2 _)).toMonoidHom.ker →
+        ((orientationNeTwo 2 n (-1) (by simp)).comp (presentedProP.mk 2 _)).toMonoidHom.ker →
           TopologicalAbelianization
-            ((orientationNeTwo 2 n (-1) hu).comp (presentedProP.mk 2 _)).toMonoidHom.ker) ''
+            ((orientationNeTwo 2 n (-1) (by simp)).comp (presentedProP.mk 2 _)).toMonoidHom.ker) ''
         (Subtype.val ⁻¹' (insert (freeProPGen 2 n 1 ^ 2)
           (freeProPGen 2 n '' {i | i ≠ 1}))))) = ⊤ :=
   (isProP_freeProP 2 (Fin n)).span_completedGroupAlgebraModule_topologicalAbelianization_eq_top _
     (((finite_range_freeProPGen 2 n).subset (Set.image_subset_range _ _)).insert _)
-    (ker_orientationNeTwo_two_comp_mk n hu hn).symm
+    (ker_orientationNeTwo_two_comp_mk n hn).symm
 
 end TauCeti

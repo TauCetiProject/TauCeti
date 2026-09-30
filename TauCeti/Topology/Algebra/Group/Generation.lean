@@ -120,8 +120,7 @@ theorem _root_.MonoidHom.ker_eq_topologicalClosure_normalClosure_insert_pow_of_o
   have hNker : N ≤ χ.ker := by
     refine Subgroup.topologicalClosure_minimal _ (Subgroup.normalClosure_le_normal ?_) hker
     rintro x (rfl | hx)
-    · change χ (a ^ m) = 1
-      rw [map_pow, ← ha, pow_orderOf_eq_one]
+    · rw [SetLike.mem_coe, MonoidHom.mem_ker, map_pow, ← ha, pow_orderOf_eq_one]
     · exact MonoidHom.mem_ker.2 (hS x hx)
   have haN : a ^ m ∈ N :=
     Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure (Set.mem_insert _ _))
@@ -150,10 +149,8 @@ theorem _root_.MonoidHom.ker_eq_topologicalClosure_normalClosure_insert_pow_of_o
   refine le_antisymm (fun x hx ↦ ?_) hNker
   obtain ⟨z, hz⟩ := Subgroup.mem_zpowers_iff.mp
     (hzpowers ▸ Subgroup.mem_top (x : G ⧸ N))
-  let χQ : (G ⧸ N) →* A := QuotientGroup.lift N χ hNker
   have hχz : (χ a) ^ z = 1 := by
-    change χQ (a : G ⧸ N) ^ z = 1
-    rw [← map_zpow, hz]
+    rw [← QuotientGroup.lift_mk N hNker a, ← map_zpow, hz, QuotientGroup.lift_mk]
     exact MonoidHom.mem_ker.mp hx
   obtain ⟨k, rfl⟩ : (m : ℤ) ∣ z := by
     rw [← ha, orderOf_dvd_iff_zpow_eq_one]
