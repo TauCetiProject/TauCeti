@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Sturm.Sequence
 public import TauCeti.Algebra.Polynomial.Sturm.Signs
-public import TauCeti.Algebra.Polynomial.FieldDivision
+import TauCeti.Algebra.Polynomial.FieldDivision
 
 /-!
 # Variations of a Sturm sequence at a point
