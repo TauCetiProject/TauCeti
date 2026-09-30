@@ -30,11 +30,11 @@ coefficient ring. Read in a field it gives Artin's induction theorem for class f
 
 ## Main definitions
 
-* `TauCeti.artinCoeff`: the Artin coefficient `m_C` of a subgroup.
+* `Subgroup.artinCoeff`: the Artin coefficient `m_C` of a subgroup.
 
 ## Main results
 
-* `TauCeti.artinCoeff_eq_zero_of_not_isCyclic`: a non-cyclic subgroup has coefficient `0`.
+* `Subgroup.artinCoeff_eq_zero_of_not_isCyclic`: a non-cyclic subgroup has coefficient `0`.
 * `TauCeti.sum_artinCoeff_of_mem_eq_one`: the Artin coefficients of the subgroups containing a
   fixed element sum to `1`.
 * `TauCeti.sum_artinCoeff_mul_card_fixedBy`: **Artin's identity for fixed points**,
@@ -50,7 +50,7 @@ public section
 
 open ArithmeticFunction MulAction
 
-namespace TauCeti
+namespace Subgroup
 
 variable {G : Type*} [Group G]
 
@@ -61,30 +61,37 @@ noncomputable def artinCoeff (C : Subgroup G) : ℤ :=
 
 /-- The defining formula for the Artin coefficient. -/
 theorem artinCoeff_def (C : Subgroup G) :
-    artinCoeff C = ∑ᶠ (D : Subgroup G) (_ : IsCyclic D ∧ C ≤ D), moebius (C.relIndex D) := (rfl)
+    C.artinCoeff = ∑ᶠ (D : Subgroup G) (_ : IsCyclic D ∧ C ≤ D), moebius (C.relIndex D) := (rfl)
 
 /-- A subgroup that is not cyclic has Artin coefficient `0`: no cyclic subgroup contains it. -/
+@[simp]
 theorem artinCoeff_eq_zero_of_not_isCyclic {C : Subgroup G} (h : ¬ IsCyclic C) :
-    artinCoeff C = 0 := by
+    C.artinCoeff = 0 := by
   refine finsum_eq_zero_of_forall_eq_zero fun D => ?_
   by_cases hD : IsCyclic D ∧ C ≤ D
   · have := hD.1
     exact absurd (Subgroup.isCyclic_of_le hD.2) h
   · simp [finsum_eq_if, hD]
 
+end Subgroup
+
+namespace TauCeti
+
+variable {G : Type*} [Group G]
+
 /-- **The Artin coefficients of the subgroups containing a fixed element sum to `1`.** This is the
 pointwise content of Artin's identity: it is the fibrewise statement that
 `TauCeti.sum_artinCoeff_mul_card_fixedBy` integrates over `G`. -/
 theorem sum_artinCoeff_of_mem_eq_one [Finite G] (y : G) :
-    ∑ᶠ (C : Subgroup G) (_ : y ∈ C), artinCoeff C = 1 := by
+    ∑ᶠ (C : Subgroup G) (_ : y ∈ C), C.artinCoeff = 1 := by
   classical
   have : Fintype (Subgroup G) := Fintype.ofFinite _
   -- Exchanging the two sums leaves, for each cyclic `D` containing `y`, the Möbius sum over the
   -- interval between `⟨y⟩` and `D`, which vanishes unless `D = ⟨y⟩`.
-  have h1 : ∑ᶠ (C : Subgroup G) (_ : y ∈ C), artinCoeff C
-      = ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), artinCoeff C :=
+  have h1 : ∑ᶠ (C : Subgroup G) (_ : y ∈ C), C.artinCoeff
+      = ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), C.artinCoeff :=
     finsum_cond_eq_sum_of_cond_iff _ (by simp)
-  have h2 : ∀ C : Subgroup G, artinCoeff C
+  have h2 : ∀ C : Subgroup G, C.artinCoeff
       = ∑ D ∈ Finset.univ.filter (fun D : Subgroup G => IsCyclic D ∧ C ≤ D),
           moebius (C.relIndex D) := fun C => finsum_cond_eq_sum_of_cond_iff _ (by simp)
   rw [h1]
@@ -119,7 +126,7 @@ spaces `G ⧸ C`, weighted by `m_C · |C|`, add up to `|G|`.
 The identity holds in `ℤ`, before any choice of coefficient ring: both the Artin coefficients and
 the fixed-point counts are integers. -/
 theorem sum_artinCoeff_mul_card_fixedBy [Finite G] (g : G) :
-    ∑ᶠ C : Subgroup G, artinCoeff C * Nat.card C * Nat.card (fixedBy (G ⧸ C) g) =
+    ∑ᶠ C : Subgroup G, C.artinCoeff * Nat.card C * Nat.card (fixedBy (G ⧸ C) g) =
       (Nat.card G : ℤ) := by
   classical
   have : Fintype G := Fintype.ofFinite _
@@ -127,22 +134,22 @@ theorem sum_artinCoeff_mul_card_fixedBy [Finite G] (g : G) :
   -- `|C| · #(G ⧸ C)^g` counts the `x : G` with `x⁻¹gx ∈ C`, so the weighted sum becomes a sum
   -- over `G` of the coefficients of the subgroups containing `x⁻¹gx`.
   have step : ∀ C : Subgroup G,
-      artinCoeff C * Nat.card C * Nat.card (fixedBy (G ⧸ C) g)
-        = ∑ x : G, if x⁻¹ * g * x ∈ C then artinCoeff C else 0 := by
+      C.artinCoeff * Nat.card C * Nat.card (fixedBy (G ⧸ C) g)
+        = ∑ x : G, if x⁻¹ * g * x ∈ C then C.artinCoeff else 0 := by
     intro C
     have hc : (Nat.card {x : G | x⁻¹ * g * x ∈ C} : ℤ)
         = ∑ x : G, if x⁻¹ * g * x ∈ C then (1 : ℤ) else 0 := by
       rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter]
       push_cast
       rfl
-    rw [mul_assoc, ← Nat.cast_mul, ← card_conj_mem_eq_card_mul_card_fixedBy C g, hc,
+    rw [mul_assoc, ← Nat.cast_mul, ← C.card_conj_mem_eq_card_mul_card_fixedBy g, hc,
       Finset.mul_sum]
     exact Finset.sum_congr rfl fun x _ => by split <;> simp
   rw [finsum_eq_sum_of_fintype, Finset.sum_congr rfl (fun C _ => step C), Finset.sum_comm]
-  have hinner : ∀ x : G, ∑ C : Subgroup G, (if x⁻¹ * g * x ∈ C then artinCoeff C else 0) = 1 := by
+  have hinner : ∀ x : G, ∑ C : Subgroup G, (if x⁻¹ * g * x ∈ C then C.artinCoeff else 0) = 1 := by
     intro x
-    have hcv : ∑ᶠ (C : Subgroup G) (_ : x⁻¹ * g * x ∈ C), artinCoeff C
-        = ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => x⁻¹ * g * x ∈ C), artinCoeff C :=
+    have hcv : ∑ᶠ (C : Subgroup G) (_ : x⁻¹ * g * x ∈ C), C.artinCoeff
+        = ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => x⁻¹ * g * x ∈ C), C.artinCoeff :=
       finsum_cond_eq_sum_of_cond_iff _ (by simp)
     rw [← Finset.sum_filter, ← hcv]
     exact sum_artinCoeff_of_mem_eq_one _

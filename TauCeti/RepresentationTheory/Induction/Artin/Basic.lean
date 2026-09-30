@@ -83,16 +83,16 @@ integral identity `TauCeti.sum_artinCoeff_of_mem_eq_one` read in an arbitrary co
 the subgroups missing `y` contribute zero, as do the non-cyclic ones. -/
 private theorem sum_artinCoeff_containing_eq_one {R : Type*} [AddCommGroupWithOne R]
     [Fintype (Subgroup G)] (y : G) :
-    (∑ C : Subgroup G, if _h : y ∈ C then (artinCoeff C : R) else (0 : R)) = 1 := by
+    (∑ C : Subgroup G, if _h : y ∈ C then (C.artinCoeff : R) else (0 : R)) = 1 := by
   classical
-  have hcv : ∑ᶠ (C : Subgroup G) (_ : y ∈ C), artinCoeff C
-      = ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), artinCoeff C :=
+  have hcv : ∑ᶠ (C : Subgroup G) (_ : y ∈ C), C.artinCoeff
+      = ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), C.artinCoeff :=
     finsum_cond_eq_sum_of_cond_iff _ (by simp)
-  have hint : ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), artinCoeff C = 1 := by
+  have hint : ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), C.artinCoeff = 1 := by
     rw [← hcv]
     exact sum_artinCoeff_of_mem_eq_one y
-  calc (∑ C : Subgroup G, if _h : y ∈ C then (artinCoeff C : R) else (0 : R))
-      = ((∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), artinCoeff C : ℤ) : R) := by
+  calc (∑ C : Subgroup G, if _h : y ∈ C then (C.artinCoeff : R) else (0 : R))
+      = ((∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), C.artinCoeff : ℤ) : R) := by
         rw [Finset.sum_filter, Int.cast_sum]
         exact Finset.sum_congr rfl fun C _ => by split <;> simp
     _ = 1 := by rw [hint, Int.cast_one]
@@ -110,12 +110,12 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
   let _ := Fintype.ofFinite G
   let _ := Fintype.ofFinite (Subgroup G)
   let α : Subgroup G → (G → k) := fun C ↦
-    artinCoeff C • (Nat.card C • indClassFun C (fun _ : C ↦ (1 : k)))
+    C.artinCoeff • (Nat.card C • indClassFun C (fun _ : C ↦ (1 : k)))
   have hα (C : Subgroup G) : α C ∈ indVirtualCharacters k G (fun C ↦ IsCyclic C) := by
     by_cases hC : IsCyclic C
     · exact AddSubgroup.zsmul_mem _ (AddSubgroup.nsmul_mem _
         (indClassFun_mem_indVirtualCharacters hC one_mem_virtualCharacters) _) _
-    · simp [α, artinCoeff_eq_zero_of_not_isCyclic hC]
+    · simp [α, Subgroup.artinCoeff_eq_zero_of_not_isCyclic hC]
   suffices hsum : ∑ C, α C = Nat.card G • (1 : G → k) by
     rw [← hsum]
     exact AddSubgroup.sum_mem _ fun C _ ↦ hα C

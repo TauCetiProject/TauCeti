@@ -38,8 +38,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
-* `TauCeti.preimage_mk_fixedBy`: the cosets fixed by `g` pull back to `{x | x⁻¹ g x ∈ H}`.
-* `TauCeti.card_conj_mem_eq_card_mul_card_fixedBy`: there are `|H|` times as many elements
+* `Subgroup.preimage_mk_fixedBy`: the cosets fixed by `g` pull back to `{x | x⁻¹ g x ∈ H}`.
+* `Subgroup.card_conj_mem_eq_card_mul_card_fixedBy`: there are `|H|` times as many elements
   conjugating `g` into `H` as there are cosets of `H` fixed by `g`.
 * `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
@@ -104,7 +104,7 @@ theorem smul_quotientGroup_mk_eq_self_iff (H : Subgroup G) (g s : G) :
 
 Not a `simp` lemma: it moves between a preimage and a set comprehension, neither of which is
 simpler than the other. -/
-theorem preimage_mk_fixedBy (H : Subgroup G) (g : G) :
+theorem _root_.Subgroup.preimage_mk_fixedBy (H : Subgroup G) (g : G) :
     QuotientGroup.mk ⁻¹' (fixedBy (G ⧸ H) g) = {x : G | x⁻¹ * g * x ∈ H} := by
   ext x
   rw [Set.mem_preimage, mem_fixedBy, Set.mem_ofPred_eq]
@@ -114,9 +114,9 @@ theorem preimage_mk_fixedBy (H : Subgroup G) (g : G) :
 `Nat.card H` elements, so the elements `x` with `x⁻¹gx ∈ H` number `|H|` times the number of cosets
 fixed by `g`.  This is the division-free form in which an induced permutation character is
 evaluated. -/
-theorem card_conj_mem_eq_card_mul_card_fixedBy (H : Subgroup G) (g : G) :
+theorem _root_.Subgroup.card_conj_mem_eq_card_mul_card_fixedBy (H : Subgroup G) (g : G) :
     Nat.card {x : G | x⁻¹ * g * x ∈ H} = Nat.card H * Nat.card (fixedBy (G ⧸ H) g) := by
-  rw [← preimage_mk_fixedBy H g,
+  rw [← H.preimage_mk_fixedBy g,
     Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet H _), Nat.card_prod]
 
 /-- Left translation on the cosets of the trivial subgroup is left translation in the group.

@@ -22,7 +22,9 @@ when `H = ⊤` and `0` otherwise.
 Both the version with `A` itself cyclic and the version for an interval `H ≤ C ≤ D` below a cyclic
 subgroup `D` of an ambient group are recorded; the latter is the form in which the coefficients of
 Artin's induction theorem are summed, where the ambient group is arbitrary and only the subgroups
-carrying a nonzero coefficient are cyclic.
+carrying a nonzero coefficient are cyclic.  The interval version is intrinsically local: only `D`
+is asked to be finite, the subgroups between `H` and `D` being the subgroups of `↥D` above
+`H.subgroupOf D`.
 
 ## Main results
 
@@ -70,47 +72,46 @@ theorem sum_moebius_index (H : Subgroup A) :
   simp [Subgroup.index_eq_one]
 
 open scoped Classical in
-/-- **Möbius sum over an interval below a cyclic subgroup.** For `H ≤ D` with `D` cyclic, the
-Möbius function of the relative index `[D : C]`, summed over the subgroups `C` of the ambient group
-between `H` and `D`, is `1` when `H = D` and `0` otherwise. -/
-theorem sum_moebius_relIndex {G : Type*} [Group G] [Finite G] {H D : Subgroup G} [IsCyclic D]
+/-- **Möbius sum over an interval below a cyclic subgroup.** For `H ≤ D` with `D` a finite cyclic
+subgroup, the Möbius function of the relative index `[D : C]`, summed over the subgroups `C` of the
+ambient group between `H` and `D`, is `1` when `H = D` and `0` otherwise. -/
+theorem sum_moebius_relIndex {G : Type*} [Group G] {H D : Subgroup G} [Finite D] [IsCyclic D]
     (hHD : H ≤ D) :
     ∑ᶠ (C : Subgroup G) (_ : H ≤ C ∧ C ≤ D), moebius (C.relIndex D) =
       if H = D then 1 else 0 := by
   classical
-  have : Fintype (Subgroup G) := Fintype.ofFinite _
-  have : Fintype (Subgroup D) := Fintype.ofFinite _
-  -- The subgroups of `G` between `H` and `D` are the subgroups of `↥D` above `H.subgroupOf D`,
-  -- and the relative index `[D : C]` is the index of `C.subgroupOf D` in `↥D` by definition.
-  have key : ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => H ≤ C ∧ C ≤ D),
-        moebius (C.relIndex D)
-      = ∑ C' ∈ Finset.univ.filter (fun C' : Subgroup D => H.subgroupOf D ≤ C'),
-        moebius C'.index := by
-    refine Finset.sum_nbij' (fun C => C.subgroupOf D) (fun C' => C'.map D.subtype)
-      ?_ ?_ ?_ ?_ (fun _ _ => rfl)
-    · intro C hC
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hC ⊢
-      exact Subgroup.subgroupOf_mono D hC.1
-    · intro C' hC'
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hC' ⊢
+  -- The subgroups of `G` between `H` and `D` are the images under `D.subtype` of the subgroups of
+  -- `↥D` above `H.subgroupOf D`, and the relative index `[D : C]` is the index of `C.subgroupOf D`
+  -- in `↥D` by definition.
+  have himage : (fun C' : Subgroup D => C'.map D.subtype) ''
+      {C' : Subgroup D | H.subgroupOf D ≤ C'} = {C : Subgroup G | H ≤ C ∧ C ≤ D} := by
+    ext C
+    simp only [Set.mem_image, Set.mem_ofPred_eq]
+    constructor
+    · rintro ⟨C', hC', rfl⟩
       refine ⟨?_, Subgroup.map_subtype_le C'⟩
       calc H = (H.subgroupOf D).map D.subtype := (Subgroup.map_subgroupOf_eq_of_le hHD).symm
         _ ≤ C'.map D.subtype := Subgroup.map_mono hC'
-    · intro C hC
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hC
-      exact Subgroup.map_subgroupOf_eq_of_le hC.2
-    · intro C' _
-      rw [← Subgroup.comap_subtype, Subgroup.comap_map_eq_self_of_injective D.subtype_injective]
-  have key' : ∑ᶠ (C' : Subgroup D) (_ : H.subgroupOf D ≤ C'), moebius C'.index
-      = ∑ C' ∈ Finset.univ.filter (fun C' : Subgroup D => H.subgroupOf D ≤ C'),
-        moebius C'.index :=
-    finsum_cond_eq_sum_of_cond_iff _ (by simp)
-  rw [finsum_cond_eq_sum_of_cond_iff _
-      (t := Finset.univ.filter (fun C : Subgroup G => H ≤ C ∧ C ≤ D)) (by simp), key, ← key',
-    sum_moebius_index]
+    · rintro ⟨hHC, hCD⟩
+      exact ⟨C.subgroupOf D, Subgroup.subgroupOf_mono D hHC,
+        Subgroup.map_subgroupOf_eq_of_le hCD⟩
+  have hrel (C' : Subgroup D) : (C'.map D.subtype).relIndex D = C'.index := by
+    change ((C'.map D.subtype).subgroupOf D).index = C'.index
+    rw [← Subgroup.comap_subtype, Subgroup.comap_map_eq_self_of_injective D.subtype_injective]
   have hiff : (H.subgroupOf D = ⊤) ↔ (H = D) := by
     rw [Subgroup.subgroupOf_eq_top]
     exact ⟨fun h => le_antisymm hHD h, fun h => h ▸ le_rfl⟩
-  simp only [hiff]
+  -- Each `rfl` below only moves between `C ∈ {C | p C}` and `p C`: the sums that
+  -- `finsum_mem_image` relates are written with set membership as their condition, while
+  -- `sum_moebius_index` and the statement here are written with the condition itself.
+  calc ∑ᶠ (C : Subgroup G) (_ : H ≤ C ∧ C ≤ D), moebius (C.relIndex D)
+      = ∑ᶠ C ∈ (fun C' : Subgroup D => C'.map D.subtype) ''
+          {C' : Subgroup D | H.subgroupOf D ≤ C'}, moebius (C.relIndex D) := by
+        rw [himage]; rfl
+    _ = ∑ᶠ (C' : Subgroup D) (_ : H.subgroupOf D ≤ C'), moebius C'.index := by
+        rw [finsum_mem_image (Subgroup.map_injective D.subtype_injective).injOn]
+        simp only [hrel]
+        rfl
+    _ = if H = D then 1 else 0 := by rw [sum_moebius_index, hiff]
 
 end IsCyclic
