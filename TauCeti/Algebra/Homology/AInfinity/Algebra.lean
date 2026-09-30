@@ -26,6 +26,8 @@ vanish, rather than being unconstrained data hidden from the bar construction.
 * `TauCeti.AInfinityAlgebra`: an uncurved nonunital `A∞` algebra.
 * `TauCeti.AInfinityAlgebra.barDifferential`: its square-zero bar coderivation.
 * `TauCeti.AInfinityAlgebra.ofStasheff`: construct an algebra from the unsuspended identities.
+* `TauCeti.AInfinityAlgebra.ofTaylor`: construct an algebra from a degree-one Taylor map whose
+  bar coderivation squares to zero.
 * `TauCeti.AInfinityAlgebra.differential`: the unary operation as a linear endomorphism.
 * `TauCeti.AInfinityAlgebra.mul`: the binary operation as a bilinear map.
 
@@ -189,6 +191,53 @@ theorem ext {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.gradi
       have hFF' := AInfinity.IsSuspension.taylor_eq hFm hFm'
       subst F'
       rfl
+
+/-- Construct an `A∞` algebra from a Taylor map of degree one for the suspended grading whose bar
+coderivation squares to zero.  Its operations are the desuspension of the Taylor map. -/
+noncomputable def ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    (hF : LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
+      (G.shift 1).piece 1)
+    (hsq : ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 ∘ₗ
+      ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 = 0) :
+    AInfinityAlgebra R A where
+  grading := G
+  m := AInfinity.desuspension G F
+  m_zero := AInfinity.desuspension_zero G F
+  m_degree _ hn := AInfinity.isHomogeneous_desuspension hF hn
+  taylor := F
+  taylor_isSuspension := AInfinity.isSuspension_desuspension G F
+  bar_square_zero := hsq
+
+@[simp]
+theorem ofTaylor_grading (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    (hF hsq) : (ofTaylor G F hF hsq).grading = G := (rfl)
+
+@[simp]
+theorem ofTaylor_m (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A) (hF hsq) :
+    (ofTaylor G F hF hsq).m = AInfinity.desuspension G F := (rfl)
+
+@[simp]
+theorem ofTaylor_taylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    (hF hsq) : (ofTaylor G F hF hsq).taylor = F := (rfl)
+
+/-- The bar differential of the algebra built from a Taylor map is the coderivation it generates. -/
+@[simp]
+theorem barDifferential_ofTaylor (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    (hF hsq) :
+    (ofTaylor G F hF hsq).barDifferential = ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 :=
+  (rfl)
+
+/-- The operations of an `A∞` algebra are the desuspension of its Taylor map. -/
+theorem m_eq_desuspension (𝒜 : AInfinityAlgebra R A) :
+    𝒜.m = AInfinity.desuspension 𝒜.grading 𝒜.taylor :=
+  𝒜.taylor_isSuspension.eq_desuspension 𝒜.m_zero
+
+/-- Every `A∞` algebra is built from its own Taylor map. -/
+@[simp]
+theorem ofTaylor_self (𝒜 : AInfinityAlgebra R A) :
+    ofTaylor 𝒜.grading 𝒜.taylor (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree)
+      𝒜.bar_square_zero = 𝒜 :=
+  ext (ofTaylor_grading _ _ _ _) (by rw [ofTaylor_m, 𝒜.m_eq_desuspension])
 
 /-! ### Low-arity identities -/
 

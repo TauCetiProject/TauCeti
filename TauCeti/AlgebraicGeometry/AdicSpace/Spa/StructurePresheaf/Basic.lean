@@ -526,6 +526,15 @@ theorem presentationLimitMap_comp {U V W : Opens ↥(spa Aplus)} (h₁ : W ≤ V
   erw [presentationLimitMap_comp_π]
   rfl
 
+/-- **A transport between presentation limits along an equality of opens is a restriction
+map**: the `eqToHom` of `presentationLimit V = presentationLimit W` induced by `V = W` is the
+restriction map along `W ≤ V`. -/
+theorem eqToHom_presentationLimit {V W : Opens ↥(spa Aplus)} (e : V = W)
+    (e' : presentationLimit (P := P) Aplus V = presentationLimit (P := P) Aplus W) :
+    eqToHom e' = presentationLimitMap (P := P) e.ge := by
+  subst e
+  simp
+
 /-- **The presheaf `V ↦ presentationLimit V`** on `Spa(A,A⁺)`, valued in
 `CompleteSeparatedTopCommRingCat`. Both functor laws are reindexing identities for the limit:
 restricting along `le_refl` is the identity on the index, and restricting twice is restricting

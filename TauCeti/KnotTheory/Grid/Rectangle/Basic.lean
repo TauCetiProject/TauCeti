@@ -35,14 +35,12 @@ covered squares further for the gradings.
 ## Main definitions
 
 * `TauCeti.GridRectangle`: a toroidal rectangle, represented by its four cyclic sides.
-* `TauCeti.GridRectangle.symm`: the opposite toroidal rectangle with side columns reversed.
 * `TauCeti.GridRectangle.transpose`: the diagonal reflection of a toroidal rectangle, exchanging
   the column and row sides.
 * `TauCeti.GridRectangle.interior`: the finite set of grid points strictly inside the rectangle.
 * `TauCeti.GridRectangle.coveredSquares`: the finite set of squares the rectangle covers, each
   named by its lower-left grid point.
 * `TauCeti.GridRectangleBetween`: an oriented rectangle from one grid state to another.
-* `TauCeti.GridRectangleBetween.symm`: the opposite oriented rectangle from `y` to `x`.
 * `TauCeti.GridRectangleBetween.swapSides`: the other oriented rectangle from `x` to `y` on the same
   two side columns, which runs along the complementary column arc and the complementary row arc.
 * `TauCeti.GridRectangleBetween.transpose`: the diagonal reflection of an oriented rectangle, from
@@ -56,7 +54,9 @@ covered squares further for the gradings.
 * `TauCeti.GridRectangle.isEmptyFor_iff_forall_notMem_cIoo`: emptiness of a toroidal rectangle
   for a grid state, quantified over the columns strictly inside it, and
   `TauCeti.GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo`, its form for an oriented
-  rectangle and its source state.
+  rectangle and its source state, with
+  `TauCeti.GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo_target` the same test read through
+  the target state.
 * `TauCeti.GridRectangleBetween.isEmpty_of_right_eq_finRotate`: a rectangle one column wide is
   empty.
 * `TauCeti.GridRectangle.avoidsMarkings_iff_forall`: marking avoidance tested column by column.
@@ -79,6 +79,7 @@ namespace TauCeti
 The interior is the product of the clockwise open interval from `left` to `right` with the
 clockwise open interval from `bottom` to `top`. Degenerate side choices are allowed at this
 level; their interiors are empty in the degenerate direction. -/
+@[ext]
 structure GridRectangle (n : ℕ) where
   /-- The initial vertical side of the rectangle. -/
   left : Fin n
@@ -92,40 +93,6 @@ structure GridRectangle (n : ℕ) where
 namespace GridRectangle
 
 variable {n : ℕ} (R : GridRectangle n)
-
-/-- The opposite toroidal rectangle, obtained by reversing the two vertical sides while
-keeping the horizontal sides fixed. -/
-def symm : GridRectangle n where
-  left := R.right
-  right := R.left
-  bottom := R.bottom
-  top := R.top
-
-/-- The opposite rectangle's left side is the original right side. -/
-@[simp]
-theorem symm_left : R.symm.left = R.right :=
-  rfl
-
-/-- The opposite rectangle's right side is the original left side. -/
-@[simp]
-theorem symm_right : R.symm.right = R.left :=
-  rfl
-
-/-- The opposite rectangle has the same bottom row. -/
-@[simp]
-theorem symm_bottom : R.symm.bottom = R.bottom :=
-  rfl
-
-/-- The opposite rectangle has the same top row. -/
-@[simp]
-theorem symm_top : R.symm.top = R.top :=
-  rfl
-
-/-- Reversing a toroidal rectangle twice gives the original rectangle. -/
-@[simp]
-theorem symm_symm : R.symm.symm = R := by
-  cases R
-  rfl
 
 /-- The columns strictly inside a toroidal grid rectangle. -/
 noncomputable def columnInterior : Finset (Fin n) :=
@@ -184,12 +151,6 @@ theorem notMem_interior_of_fst_eq_left {p : Fin n × Fin n} (hp : p.1 = R.left) 
 theorem notMem_interior_of_fst_eq_right {p : Fin n × Fin n} (hp : p.1 = R.right) :
     p ∉ R.interior :=
   fun h ↦ R.right_notMem_columnInterior (hp ▸ ((R.mem_interior p).1 h).1)
-
-/-- A coordinate pair lies in the rectangle interior exactly when its column and row lie in
-the corresponding open cyclic intervals. -/
-theorem mk_mem_interior (c r : Fin n) :
-    (c, r) ∈ R.interior ↔ c ∈ R.columnInterior ∧ r ∈ R.rowInterior := by
-  simp
 
 /-- A rectangle has empty interior if its two column sides coincide. -/
 @[simp]
@@ -564,80 +525,20 @@ theorem mem_toGridRectangle_interior (p : Fin n × Fin n) :
       p.1 ∈ Grid.cIoo R.left R.right ∧ p.2 ∈ Grid.cIoo (x R.left) (x R.right) := by
   simp [bottom, top]
 
-/-- The opposite oriented rectangle, obtained by reversing the two side columns.
+/-- Membership in the covered squares of an oriented rectangle is membership in the half-open
+cyclic intervals between its side columns and the corresponding source-state rows. -/
+theorem mem_toGridRectangle_coveredSquares (p : Fin n × Fin n) :
+    p ∈ R.toGridRectangle.coveredSquares ↔
+      p.1 ∈ Grid.cIco R.left R.right ∧ p.2 ∈ Grid.cIco (x R.left) (x R.right) := by
+  simp [bottom, top]
 
-If `R` goes from `x` to `y`, then `R.symm` goes from `y` back to `x`. It has the same two
-horizontal side rows and traverses the complementary horizontal direction on the torus. -/
-def symm (R : GridRectangleBetween x y) : GridRectangleBetween y x where
-  left := R.right
-  right := R.left
-  left_ne_right := R.left_ne_right.symm
-  map_left := R.map_left.symm
-  map_right := R.map_right.symm
-  map_of_ne c hleft hright := (R.map_of_ne c hright hleft).symm
-
-/-- The opposite rectangle's left side is the original right side. -/
-@[simp]
-theorem symm_left (R : GridRectangleBetween x y) : R.symm.left = R.right :=
-  rfl
-
-/-- The opposite rectangle's right side is the original left side. -/
-@[simp]
-theorem symm_right (R : GridRectangleBetween x y) : R.symm.right = R.left :=
-  rfl
-
-/-- Reversing an oriented rectangle twice gives the original rectangle. -/
-@[simp]
-theorem symm_symm (R : GridRectangleBetween x y) : R.symm.symm = R := by
-  cases R
-  rfl
-
-/-- Reversal is injective on oriented rectangles. -/
-@[simp]
-theorem symm_inj {R S : GridRectangleBetween x y} : R.symm = S.symm ↔ R = S := by
-  constructor
-  · intro h
-    simpa using congrArg symm h
-  · intro h
-    simp [h]
-
-/-- Opposite rectangles give an equivalence between rectangles from `x` to `y` and from `y`
-to `x`. -/
-def symmEquiv (x y : GridState n) : GridRectangleBetween x y ≃ GridRectangleBetween y x where
-  toFun := symm
-  invFun := symm
-  left_inv := symm_symm
-  right_inv := symm_symm
-
-/-- Applying the opposite-rectangle equivalence is `GridRectangleBetween.symm`. -/
-@[simp]
-theorem symmEquiv_apply (R : GridRectangleBetween x y) :
-    symmEquiv x y R = R.symm :=
-  rfl
-
-/-- Applying the inverse opposite-rectangle equivalence is `GridRectangleBetween.symm`. -/
-@[simp]
-theorem symmEquiv_symm_apply (R : GridRectangleBetween y x) : (symmEquiv x y).symm R = R.symm :=
-  rfl
-
-/-- The opposite rectangle has the same bottom row. -/
-@[simp]
-theorem symm_bottom (R : GridRectangleBetween x y) : R.symm.bottom = R.bottom := by
-  simp [bottom, symm, R.map_right]
-
-/-- The opposite rectangle has the same top row. -/
-@[simp]
-theorem symm_top (R : GridRectangleBetween x y) : R.symm.top = R.top := by
-  simp [top, symm, R.map_left]
-
-/-- The associated toroidal rectangle of the opposite oriented rectangle is the opposite of
-the associated toroidal rectangle. -/
-@[simp]
-theorem symm_toGridRectangle (R : GridRectangleBetween x y) :
-    R.symm.toGridRectangle = R.toGridRectangle.symm := by
-  cases R with
-  | mk left right left_ne_right map_left map_right map_of_ne =>
-      simp [toGridRectangle, GridRectangle.symm, symm, bottom, top, map_left, map_right]
+/-- The covered squares of an oriented rectangle, read through its target state: the rows it
+covers run from the target-state row at its terminal side to the target-state row at its initial
+side. -/
+theorem mem_toGridRectangle_coveredSquares_target (p : Fin n × Fin n) :
+    p ∈ R.toGridRectangle.coveredSquares ↔
+      p.1 ∈ Grid.cIco R.left R.right ∧ p.2 ∈ Grid.cIco (y R.right) (y R.left) := by
+  rw [mem_toGridRectangle_coveredSquares, R.map_left, R.map_right]
 
 /-- The two side rows of a rectangle between states are distinct. -/
 theorem bottom_ne_top : R.bottom ≠ R.top := by
@@ -679,30 +580,6 @@ theorem left_top_mem_target : (R.left, R.top) ∈ y.pointSet := by
 theorem right_bottom_mem_target : (R.right, R.bottom) ∈ y.pointSet := by
   simp [bottom, R.map_right]
 
-/-- The lower-left corner of the opposite rectangle is a target-state point of the original
-rectangle. -/
-theorem symm_left_bottom_mem_source (R : GridRectangleBetween x y) :
-    (R.symm.left, R.symm.bottom) ∈ y.pointSet := by
-  simpa only [symm_left, symm_bottom] using R.right_bottom_mem_target
-
-/-- The upper-right corner of the opposite rectangle is a target-state point of the original
-rectangle. -/
-theorem symm_right_top_mem_source (R : GridRectangleBetween x y) :
-    (R.symm.right, R.symm.top) ∈ y.pointSet := by
-  simpa only [symm_right, symm_top] using R.left_top_mem_target
-
-/-- The upper-left corner of the opposite rectangle is a source-state point of the original
-rectangle. -/
-theorem symm_left_top_mem_target (R : GridRectangleBetween x y) :
-    (R.symm.left, R.symm.top) ∈ x.pointSet := by
-  simpa only [symm_left, symm_top] using R.right_top_mem_source
-
-/-- The lower-right corner of the opposite rectangle is a source-state point of the original
-rectangle. -/
-theorem symm_right_bottom_mem_target (R : GridRectangleBetween x y) :
-    (R.symm.right, R.symm.bottom) ∈ x.pointSet := by
-  simpa only [symm_right, symm_bottom] using R.left_bottom_mem_source
-
 /-- Away from the two side columns, membership in the source and target states is identical. -/
 theorem mem_target_pointSet_iff_of_ne {p : Fin n × Fin n}
     (hleft : p.1 ≠ R.left) (hright : p.1 ≠ R.right) :
@@ -730,11 +607,6 @@ theorem mem_emptyRectangles (R : GridRectangleBetween x y) :
     R ∈ emptyRectangles x y ↔ R.IsEmpty := by
   classical
   simp [emptyRectangles]
-
-/-- Every rectangle in `emptyRectangles` is empty. -/
-theorem isEmpty_of_mem_emptyRectangles {R : GridRectangleBetween x y}
-    (hR : R ∈ emptyRectangles x y) : R.IsEmpty :=
-  (mem_emptyRectangles R).mp hR
 
 /-- In grid size at most two, every oriented rectangle between grid states is empty. -/
 theorem isEmpty_of_le_two (hn : n ≤ 2) (R : GridRectangleBetween x y) : R.IsEmpty :=
@@ -801,6 +673,17 @@ theorem isEmpty_iff_target :
 theorem notMem_interior_target_of_isEmpty (h : R.IsEmpty) {p : Fin n × Fin n}
     (hp : p ∈ y.pointSet) : p ∉ R.toGridRectangle.interior :=
   (R.isEmpty_iff_target).mp h p hp
+
+/-- A rectangle between states is empty exactly when the target state sends every column strictly
+between its two side columns to a row outside the open arc between its two side rows, read
+through the target state: from its row at the terminal side to its row at the initial side.
+
+This is `isEmpty_iff_forall_notMem_cIoo` for rectangles into a distinguished target state. -/
+theorem isEmpty_iff_forall_notMem_cIoo_target :
+    R.IsEmpty ↔ ∀ c ∈ Grid.cIoo R.left R.right, y c ∉ Grid.cIoo (y R.right) (y R.left) := by
+  rw [isEmpty_iff_forall_notMem_cIoo, bottom_def, top_def, R.map_left, R.map_right]
+  exact forall₂_congr fun c hc => by
+    rw [R.map_of_ne c (Grid.ne_left_of_mem_cIoo hc) (Grid.ne_right_of_mem_cIoo hc)]
 
 /-- A rectangle between states avoids markings exactly when neither marking set meets the
 squares it covers. -/
@@ -872,13 +755,12 @@ theorem transpose_top (R : GridRectangleBetween x y) : R.transpose.top = R.right
   simp only [GridRectangleBetween.top, transpose_right, GridState.transpose_apply,
     Equiv.symm_apply_apply]
 
-/-- The toroidal rectangle of the reflected oriented rectangle, written out by its four sides. -/
+/-- The associated toroidal rectangle of the reflected oriented rectangle is the reflection of the
+associated toroidal rectangle. -/
 @[simp]
 theorem transpose_toGridRectangle (R : GridRectangleBetween x y) :
-    R.transpose.toGridRectangle =
-      { left := R.bottom, right := R.top, bottom := R.left, top := R.right } := by
-  unfold GridRectangleBetween.toGridRectangle
-  rw [transpose_bottom, transpose_top, transpose_left, transpose_right]
+    R.transpose.toGridRectangle = R.toGridRectangle.transpose := by
+  ext <;> simp
 
 end GridRectangleBetween
 
@@ -1003,14 +885,6 @@ theorem transpose_inj {R S : GridRectangleBetween x y} :
     R.transpose = S.transpose ↔ R = S :=
   (transposeEquiv x y).apply_eq_iff_eq
 
-/-- The interior of the reflected rectangle is the diagonal reflection of the interior of the
-original rectangle. This is the oriented-rectangle corollary of
-`GridRectangle.interior_transpose`. -/
-theorem interior_transpose (R : GridRectangleBetween x y) :
-    R.transpose.toGridRectangle.interior = R.toGridRectangle.interior.image Prod.swap := by
-  rw [transpose_toGridRectangle]
-  exact R.toGridRectangle.interior_transpose
-
 /-- The diagonal reflection preserves emptiness of a rectangle between grid states. -/
 @[simp]
 theorem isEmpty_transpose (R : GridRectangleBetween x y) :
@@ -1018,15 +892,6 @@ theorem isEmpty_transpose (R : GridRectangleBetween x y) :
   rw [isEmpty_iff_toGridRectangle_isEmptyFor, isEmpty_iff_toGridRectangle_isEmptyFor,
     transpose_toGridRectangle]
   exact R.toGridRectangle.isEmptyFor_transpose x
-
-/-- The squares covered by the reflected rectangle are the diagonal reflections of the squares
-covered by the original rectangle. This is the oriented-rectangle corollary of
-`GridRectangle.coveredSquares_transpose`. -/
-theorem coveredSquares_transpose (R : GridRectangleBetween x y) :
-    R.transpose.toGridRectangle.coveredSquares =
-      R.toGridRectangle.coveredSquares.image Prod.swap := by
-  rw [transpose_toGridRectangle]
-  exact R.toGridRectangle.coveredSquares_transpose
 
 /-- The diagonal reflection preserves marking avoidance of a rectangle between grid states. -/
 @[simp]

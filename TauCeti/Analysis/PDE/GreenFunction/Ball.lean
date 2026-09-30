@@ -43,6 +43,7 @@ dimension two that kernel vanishes identically, so the planar case is instead
 ## Main declarations
 
 * `TauCeti.ballGreenCorrector`: the reflected Newtonian kernel correcting the boundary values.
+* `TauCeti.harmonicOnNhd_ballGreenCorrector`: harmonicity of the corrector inside the ball.
 * `TauCeti.ballGreenKernel`: the Dirichlet Green kernel of the unit ball.
 * `TauCeti.ballGreenKernel_comm`: symmetry of the Green kernel in its two arguments.
 * `TauCeti.harmonicAt_ballGreenKernel`: harmonicity in `y` away from the pole.
@@ -67,7 +68,7 @@ noncomputable section
 
 namespace TauCeti
 
-open InnerProductSpace MeasureTheory Metric
+open InnerProductSpace MeasureTheory Metric TopologicalSpace
 
 open scoped RealInnerProductSpace
 
@@ -199,6 +200,21 @@ theorem harmonicAt_ballGreenCorrector {x y : EuclideanSpace ℝ (Fin n)}
     exact (harmonicAt_comp_const_add_smul_iff (-(‖x‖⁻¹ • x)) (norm_ne_zero_iff.mpr hx)).2
       (harmonicAt_newtonianKernel n hne)
 
+/-- The reflected-pole corrector is harmonic throughout the open unit ball whenever the
+pole lies in the closed unit ball. -/
+theorem harmonicOnNhd_ballGreenCorrector {x : EuclideanSpace ℝ (Fin n)}
+    (hx : ‖x‖ ≤ 1) : HarmonicOnNhd (ballGreenCorrector n x)
+      (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))) := by
+  intro y hy
+  have hy' : ‖y‖ < 1 := by simpa using hy
+  have hxy : ‖x‖ * ‖y‖ < 1 := by
+    calc
+      ‖x‖ * ‖y‖ ≤ 1 * ‖y‖ := mul_le_mul_of_nonneg_right hx (norm_nonneg y)
+      _ = ‖y‖ := one_mul _
+      _ < 1 := hy'
+  exact harmonicAt_ballGreenCorrector
+    (norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos hxy.ne)
+
 /-- The scalar identity turning the derivative of the corrector into the normalization of the
 derivative of the Newtonian kernel. -/
 private theorem inv_mul_div_two_mul_two (hn : n ≠ 2) (w : ℝ) :
@@ -314,29 +330,10 @@ theorem ballGreenKernel_pos (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)} (h
     rw [norm_sub_sq_real, real_inner_comm x y]
     nlinarith [mul_pos hx' hy']
   rw [ballGreenKernel_def, ballGreenCorrector_def, newtonianKernel_def,
-    norm_rpow_eq_norm_sq_rpow, ← mul_sub]
-  obtain hn1 | hn3 : n = 1 ∨ 3 ≤ n := by
-    have := nontrivial_of_ne y x hxy
-    have : 0 < n := by simpa using Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ (Fin n))
-    omega
-  · have hn1ℝ : (n : ℝ) = 1 := by exact_mod_cast hn1
-    have hc : (n : ℝ) * ((n : ℝ) - 2) *
-        volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) < 0 := by
-      rw [hn1ℝ]
-      linarith
-    have hexp : (0 : ℝ) < (2 - (n : ℝ)) / 2 := by
-      rw [hn1ℝ]
-      norm_num
-    exact mul_pos_of_neg_of_neg (inv_lt_zero.mpr hc)
-      (sub_neg.mpr (Real.rpow_lt_rpow hsub.le hlt hexp))
-  · have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn3
-    have hc : 0 < ((n : ℝ) * ((n : ℝ) - 2) *
-        volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ := by
-      have hnpos : (0 : ℝ) < n := by linarith
-      have hnsub : (0 : ℝ) < (n : ℝ) - 2 := by linarith
-      positivity
-    have hexp : (2 - (n : ℝ)) / 2 < 0 := by linarith
-    exact mul_pos hc (sub_pos.mpr (Real.rpow_lt_rpow_of_neg hsub hlt hexp))
+    norm_rpow_eq_norm_sq_rpow, mul_sub]
+  exact sub_pos.mpr (by simpa only [mul_sub] using
+    (newtonianKernel_rpow_sq_lt n hn
+      (pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)) hsub hlt))
 
 /-- The Fréchet derivative of the Green kernel of the unit ball in `y`, away from the pole and
 wherever the reflection polynomial `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` is positive. -/
@@ -374,8 +371,7 @@ theorem ballPoissonKernel_def (x y : EuclideanSpace ℝ (Fin n)) :
 point. -/
 theorem ballPoissonKernel_pos {x y : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1) (hxy : x ≠ y) :
     0 < ballPoissonKernel n x y := by
-  have := nontrivial_of_ne x y hxy
-  have hn : 0 < n := by simpa using Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ (Fin n))
+  have hn : 0 < n := pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)
   have hω := volume_real_unitBall_pos n
   have hsub : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
   have hx' : 0 < 1 - ‖x‖ ^ 2 := by nlinarith [norm_nonneg x]

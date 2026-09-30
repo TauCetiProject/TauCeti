@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Basic.Complex.Basic
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
@@ -64,6 +65,11 @@ models.
   product of its complexifications.
 * `TauCeti.Hodge.latticeConjugation_tensorProduct`: its lattice conjugation is the tensor product
   of the two lattice conjugations.
+* `TauCeti.Hodge.dualLatticeMap` and `TauCeti.Hodge.isBaseChange_dualLatticeMap`: the complex
+  dual of a complexification of a finite free lattice is a complexification of the dual lattice.
+* `TauCeti.Hodge.latticeConjugation_dual`: its lattice conjugation is the twisted transpose of the
+  lattice conjugation, and `TauCeti.Hodge.integralMapToComplex_dualMap` says that complexifying
+  the transpose of an integral map gives the transpose of its complexification.
 
 The base-change design follows the discussion by Johan Commelin, Andrew Yang, Kevin Buzzard, and
 Joël Riou in the `#mathlib4` Zulip thread *Complexifications with a view towards Hodge theory*. The
@@ -844,5 +850,78 @@ theorem latticeConjugation_tensorProduct (hℂ : IsBaseChange ℂ ιℂ) (h'ℂ 
   | add x y hx hy => simp_all
 
 end TensorProduct
+
+section Dual
+
+variable {V : Type u} {Vℂ : Type v} [AddCommGroup V]
+variable [AddCommGroup Vℂ] [Module ℂ Vℂ] {ιℂ : V →ₗ[ℤ] Vℂ}
+
+/-- The integral structure map `f ↦ (ιℂ v ↦ f v)` of the complex dual of a complexification: an
+integral functional on the lattice extends complex-linearly to the complexification.
+
+It is Mathlib's `IsBaseChange.toDual`, restated through `AddMonoidHom.toIntLinearMap` so that the
+dual space carries its canonical `ℤ`-module structure: the space of complex functionals also
+carries the `ℤ`-module structure of `LinearMap.module`, which is equal but not reducibly defeq to
+the canonical one that the lattice API of this file is stated for. -/
+noncomputable def dualLatticeMap (hℂ : IsBaseChange ℂ ιℂ) :
+    Module.Dual ℤ V →ₗ[ℤ] Module.Dual ℂ Vℂ :=
+  hℂ.toDual.toAddMonoidHom.toIntLinearMap
+
+/-- The extension of an integral functional takes the given integer values on integral vectors. -/
+@[simp]
+theorem dualLatticeMap_apply_ι (hℂ : IsBaseChange ℂ ιℂ) (f : Module.Dual ℤ V) (v : V) :
+    dualLatticeMap hℂ f (ιℂ v) = (f v : ℂ) := by
+  simp [dualLatticeMap, IsBaseChange.toDual_comp_apply]
+
+/-- The twisted transpose of the lattice conjugation fixes the extension of every integral
+functional. -/
+theorem dual_latticeConjugation_toEquiv_dualLatticeMap (hℂ : IsBaseChange ℂ ιℂ)
+    (f : Module.Dual ℤ V) :
+    (latticeConjugation hℂ).dual.toEquiv (dualLatticeMap hℂ f) = dualLatticeMap hℂ f :=
+  hℂ.algHom_ext _ _ fun v ↦ by simp [star_intCast]
+
+variable [Module.Free ℤ V] [Module.Finite ℤ V]
+
+/-- The complex dual of a complexification of a finite free lattice is a complexification of the
+dual lattice. -/
+theorem isBaseChange_dualLatticeMap (hℂ : IsBaseChange ℂ ιℂ) :
+    IsBaseChange ℂ (dualLatticeMap hℂ) :=
+  hℂ.dual
+
+/-- Lattice conjugation on the complex dual of a complexification is the twisted transpose of the
+lattice conjugation: it conjugates the value of a functional at the conjugate vector. -/
+@[simp]
+theorem latticeConj_dualLatticeMap_apply (hℂ : IsBaseChange ℂ ιℂ) (φ : Module.Dual ℂ Vℂ)
+    (x : Vℂ) :
+    latticeConj (isBaseChange_dualLatticeMap hℂ) φ x = star (φ (latticeConj hℂ x)) := by
+  rw [← latticeConj_unique (isBaseChange_dualLatticeMap hℂ)
+    (latticeConjugation hℂ).dual.toEquiv.toLinearMap
+    (dual_latticeConjugation_toEquiv_dualLatticeMap hℂ)]
+  simp
+
+/-- The lattice conjugation of the complex dual of a complexification is the twisted transpose of
+the lattice conjugation. -/
+theorem latticeConjugation_dual (hℂ : IsBaseChange ℂ ιℂ) :
+    latticeConjugation (isBaseChange_dualLatticeMap hℂ) = (latticeConjugation hℂ).dual := by
+  ext φ x
+  simp
+
+variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V']
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ] {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
+
+/-- Complexifying the transpose of an integral linear map gives the transpose of its
+complexification. -/
+@[simp]
+theorem integralMapToComplex_dualMap (h'ℂ : IsBaseChange ℂ ι'ℂ) (hℂ : IsBaseChange ℂ ιℂ)
+    (f : V' →ₗ[ℤ] V) :
+    integralMapToComplex (isBaseChange_dualLatticeMap hℂ) (dualLatticeMap h'ℂ) f.dualMap =
+      (integralMapToComplex h'ℂ ιℂ f).dualMap := by
+  refine (isBaseChange_dualLatticeMap hℂ).algHom_ext _ _ fun φ ↦ ?_
+  rw [integralMapToComplex_apply_ι]
+  refine h'ℂ.algHom_ext _ _ fun v ↦ ?_
+  rw [LinearMap.dualMap_apply, integralMapToComplex_apply_ι, dualLatticeMap_apply_ι,
+    dualLatticeMap_apply_ι, LinearMap.dualMap_apply]
+
+end Dual
 
 end TauCeti.Hodge

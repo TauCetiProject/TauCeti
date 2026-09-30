@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -42,6 +43,9 @@ elements of `M`, on which such structure is defined. The image is represented in
   descriptions of surjectivity and injectivity of the map induced on homology.
 * `LinearMap.ker_le_range_mappingCone_iff`: a chain map induces a bijection on homology exactly when
   its mapping cone is exact.
+* `HomologicalComplex.quasiIso_iff_bijective_homologyMap`: a morphism of complexes of modules of
+  shape `ComplexShape.refl Unit`, that is, of modules with a square-zero endomorphism, is a
+  quasi-isomorphism exactly when it induces a bijection on `ker d ⧸ im d`.
 -/
 
 public section
@@ -327,3 +331,71 @@ theorem ker_le_range_mappingCone_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (
 end Map
 
 end LinearMap
+
+/-! ### Quasi-isomorphisms of one-object complexes -/
+
+namespace HomologicalComplex
+
+variable {S : Type*} [Ring S] {K L : HomologicalComplex (ModuleCat S) (ComplexShape.refl Unit)}
+
+variable (K) in
+/-- The unique differential of a complex of shape `ComplexShape.refl Unit` squares to zero, as a
+linear map. -/
+theorem hom_d_comp_hom_d : (K.d () ()).hom ∘ₗ (K.d () ()).hom = 0 := by
+  rw [← ModuleCat.hom_comp, K.d_comp_d, ModuleCat.hom_zero]
+
+/-- The unique component of a morphism of complexes of shape `ComplexShape.refl Unit` is a chain
+map in the sense of `LinearMap.homologyMap`. -/
+theorem Hom.hom_f_comp_hom_d (φ : K ⟶ L) :
+    (φ.f ()).hom ∘ₗ (K.d () ()).hom = (L.d () ()).hom ∘ₗ (φ.f ()).hom := by
+  rw [← ModuleCat.hom_comp, ← ModuleCat.hom_comp, φ.comm]
+
+/-- **Quasi-isomorphisms of one-object complexes are detected on `ker d ⧸ im d`.** A morphism of
+complexes of modules of shape `ComplexShape.refl Unit` is a quasi-isomorphism exactly when its
+unique component induces a bijection between the concrete homologies `LinearMap.homology`. -/
+theorem quasiIso_iff_bijective_homologyMap (φ : K ⟶ L) :
+    QuasiIso φ ↔ Function.Bijective (LinearMap.homologyMap (φ.f ()).hom K.hom_d_comp_hom_d
+      L.hom_d_comp_hom_d φ.hom_f_comp_hom_d) := by
+  -- Compute Mathlib's homology through the explicit left homology data of modules, whose
+  -- homology is `ker d` modulo the range of `d` in `ker d`, the concrete homology up to
+  -- `Submodule.quotEquivOfEq`.
+  rw [quasiIso_iff, Unique.forall_iff, quasiIsoAt_iff,
+    ShortComplex.quasiIso_iff_isIso_leftHomologyMap' _ (K.sc ()).moduleCatLeftHomologyData
+      (L.sc ()).moduleCatLeftHomologyData, ConcreteCategory.isIso_iff_bijective]
+  set ψ := (shortComplexFunctor _ _ ()).map φ
+  set A := ShortComplex.leftHomologyMap' ψ (K.sc ()).moduleCatLeftHomologyData
+    (L.sc ()).moduleCatLeftHomologyData
+  let eK := Submodule.quotEquivOfEq _ _
+    ((K.d () ()).hom.range_moduleCatToCycles_eq_boundariesInKer K.hom_d_comp_hom_d)
+  let eL := Submodule.quotEquivOfEq _ _
+    ((L.d () ()).hom.range_moduleCatToCycles_eq_boundariesInKer L.hom_d_comp_hom_d)
+  have key (z : LinearMap.ker (K.d () ()).hom) :
+      eL (A.hom (Submodule.Quotient.mk z)) =
+        LinearMap.homologyMap (φ.f ()).hom K.hom_d_comp_hom_d L.hom_d_comp_hom_d
+          φ.hom_f_comp_hom_d (eK (Submodule.Quotient.mk z)) := by
+    have hπ : A.hom (Submodule.Quotient.mk z) = Submodule.Quotient.mk ((ShortComplex.cyclesMap' ψ
+        (K.sc ()).moduleCatLeftHomologyData (L.sc ()).moduleCatLeftHomologyData).hom z) :=
+      congr($(ShortComplex.leftHomologyπ_naturality' ψ
+        (K.sc ()).moduleCatLeftHomologyData (L.sc ()).moduleCatLeftHomologyData).hom z)
+    have hi : (L.sc ()).moduleCatLeftHomologyData.i.hom ((ShortComplex.cyclesMap' ψ
+        (K.sc ()).moduleCatLeftHomologyData (L.sc ()).moduleCatLeftHomologyData).hom z) =
+        (φ.f ()).hom z :=
+      congr($(ShortComplex.cyclesMap'_i ψ
+        (K.sc ()).moduleCatLeftHomologyData (L.sc ()).moduleCatLeftHomologyData).hom z)
+    have hw : (ShortComplex.cyclesMap' ψ (K.sc ()).moduleCatLeftHomologyData
+        (L.sc ()).moduleCatLeftHomologyData).hom z =
+        (⟨(φ.f ()).hom z, LinearMap.map_mem_ker_of_comp_eq _ φ.hom_f_comp_hom_d z.2⟩ :
+          LinearMap.ker (L.d () ()).hom) :=
+      Subtype.ext hi
+    rw [hπ, hw]
+    simp only [eK, Submodule.quotEquivOfEq_mk, LinearMap.homologyMap_mk]
+    exact Submodule.quotEquivOfEq_mk _ _ _ _
+  have hA : eL ∘ A.hom = LinearMap.homologyMap (φ.f ()).hom K.hom_d_comp_hom_d
+      L.hom_d_comp_hom_d φ.hom_f_comp_hom_d ∘ eK := by
+    funext c
+    obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ c
+    exact key z
+  rw [← EquivLike.comp_bijective (ConcreteCategory.hom A) eL, ← EquivLike.bijective_comp eK]
+  exact iff_of_eq (congrArg _ hA)
+
+end HomologicalComplex

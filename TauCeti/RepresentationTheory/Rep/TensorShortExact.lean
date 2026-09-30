@@ -26,6 +26,10 @@ are of this kind.
   underlying linear maps form an exact pair.
 * `Rep.shortExact_map_tensorLeft_of_injective`: tensoring on the left preserves a short exact
   sequence as soon as the tensored first map stays injective.
+* `Rep.exists_leftInverse_of_rightInverse`, `Rep.exists_rightInverse_of_leftInverse`: a short
+  exact sequence of representations has a `k`-linear retraction of its first map exactly when it
+  has a `k`-linear section of its last map.
+* `Rep.leftInverse_whiskerLeft`: tensoring on the left keeps a `k`-linear retraction.
 * `Rep.shortExact_map_tensorLeft_of_leftInverse`,
   `Rep.shortExact_map_tensorLeft_of_rightInverse`: tensoring on the left preserves a short exact
   sequence whose first map has a `k`-linear retraction, or whose last map has a `k`-linear
@@ -71,16 +75,47 @@ theorem shortExact_map_tensorLeft_of_injective {S : ShortComplex (Rep.{u} k G)}
   epi_g := (epi_iff_surjective _).2 <|
     LinearMap.lTensor_surjective M.V ((epi_iff_surjective S.g).1 inferInstance)
 
+/-- Tensoring on the left with `M` keeps a `k`-linear retraction `r` of a morphism of
+representations: `M ⊗ r` is a retraction of `M ◁ f`. -/
+theorem leftInverse_whiskerLeft (M : Rep k G) {A B : Rep.{u} k G} (f : A ⟶ B)
+    {r : B.V →ₗ[k] A.V} (hr : Function.LeftInverse r f.hom) :
+    Function.LeftInverse (LinearMap.lTensor M.V r) (M ◁ f).hom := fun x ↦ by
+  have h : r ∘ₗ f.hom.toLinearMap = LinearMap.id := LinearMap.ext hr
+  rw [hom_whiskerLeft, ← Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.toLinearMap_lTensor, ← LinearMap.lTensor_comp_apply, h,
+    LinearMap.lTensor_id, LinearMap.id_apply]
+
 /-- Tensoring on the left with `M` sends an exact sequence ending in an epimorphism to a
 short exact sequence if the first map has a `k`-linear retraction. -/
 theorem shortExact_map_tensorLeft_of_leftInverse {S : ShortComplex (Rep.{u} k G)}
     (hS : S.Exact) [Epi S.g]
     (M : Rep k G) (r : S.X₂.V →ₗ[k] S.X₁.V) (hr : Function.LeftInverse r S.f.hom) :
-    (S.map (tensorLeft M)).ShortExact := by
-  refine shortExact_map_tensorLeft_of_injective hS M
-    (Function.LeftInverse.injective (g := LinearMap.lTensor M.V r) fun x ↦ ?_)
-  have h : r ∘ₗ S.f.hom.toLinearMap = LinearMap.id := LinearMap.ext hr
-  simp only [← LinearMap.lTensor_comp_apply, h, LinearMap.lTensor_id, LinearMap.id_apply]
+    (S.map (tensorLeft M)).ShortExact :=
+  shortExact_map_tensorLeft_of_injective hS M (leftInverse_whiskerLeft M S.f hr).injective
+
+/-- In a short exact sequence of representations, a `k`-linear section of the last map gives a
+`k`-linear retraction of the first map. -/
+theorem exists_leftInverse_of_rightInverse {S : ShortComplex (Rep.{u} k G)} (hS : S.Exact)
+    [Mono S.f] {s : S.X₃.V →ₗ[k] S.X₂.V} (hs : Function.RightInverse s S.g.hom) :
+    ∃ r : S.X₂.V →ₗ[k] S.X₁.V, Function.LeftInverse r S.f.hom := by
+  have tfae := ((exact_iff_function_exact S).1 hS).split_tfae
+    ((mono_iff_injective S.f).1 inferInstance) hs.surjective
+  have key : (∃ l, S.g.hom.toLinearMap ∘ₗ l = LinearMap.id) ↔
+      ∃ l, l ∘ₗ S.f.hom.toLinearMap = LinearMap.id := tfae.out 1 2
+  obtain ⟨r, hr⟩ := key.1 ⟨s, LinearMap.ext hs⟩
+  exact ⟨r, LinearMap.congr_fun hr⟩
+
+/-- In a short exact sequence of representations, a `k`-linear retraction of the first map gives
+a `k`-linear section of the last map. -/
+theorem exists_rightInverse_of_leftInverse {S : ShortComplex (Rep.{u} k G)} (hS : S.Exact)
+    [Epi S.g] {r : S.X₂.V →ₗ[k] S.X₁.V} (hr : Function.LeftInverse r S.f.hom) :
+    ∃ s : S.X₃.V →ₗ[k] S.X₂.V, Function.RightInverse s S.g.hom := by
+  have tfae := ((exact_iff_function_exact S).1 hS).split_tfae hr.injective
+    ((epi_iff_surjective S.g).1 inferInstance)
+  have key : (∃ l, S.g.hom.toLinearMap ∘ₗ l = LinearMap.id) ↔
+      ∃ l, l ∘ₗ S.f.hom.toLinearMap = LinearMap.id := tfae.out 1 2
+  obtain ⟨s, hs⟩ := key.2 ⟨r, LinearMap.ext hr⟩
+  exact ⟨s, LinearMap.congr_fun hs⟩
 
 /-- Tensoring on the left with `M` sends an exact sequence starting in a monomorphism to a
 short exact sequence if the last map has a `k`-linear section. -/
@@ -89,12 +124,7 @@ theorem shortExact_map_tensorLeft_of_rightInverse {S : ShortComplex (Rep.{u} k G
     (M : Rep k G) (s : S.X₃.V →ₗ[k] S.X₂.V) (hs : Function.RightInverse s S.g.hom) :
     (S.map (tensorLeft M)).ShortExact := by
   have : Epi S.g := (epi_iff_surjective S.g).2 hs.surjective
-  have h : S.g.hom.toLinearMap ∘ₗ s = LinearMap.id := LinearMap.ext hs
-  have tfae := ((exact_iff_function_exact S).1 hS).split_tfae
-    ((mono_iff_injective S.f).1 inferInstance) ((epi_iff_surjective S.g).1 inferInstance)
-  have key : (∃ l, S.g.hom.toLinearMap ∘ₗ l = LinearMap.id) ↔
-      ∃ l, l ∘ₗ S.f.hom.toLinearMap = LinearMap.id := tfae.out 1 2
-  obtain ⟨r, hr⟩ := key.1 ⟨s, h⟩
-  exact shortExact_map_tensorLeft_of_leftInverse hS M r (LinearMap.congr_fun hr)
+  obtain ⟨r, hr⟩ := exists_leftInverse_of_rightInverse hS hs
+  exact shortExact_map_tensorLeft_of_leftInverse hS M r hr
 
 end Rep

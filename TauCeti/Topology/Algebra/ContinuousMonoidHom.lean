@@ -23,8 +23,10 @@ provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, togeth
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
 A homomorphism from a topological group with open kernel is also continuous, for every topology
 on the target. Integer powers of continuous homomorphisms into a commutative topological group
-are computed pointwise. It also records the pointwise characterization of finite-order continuous
-homomorphisms and the open kernel of a finite-order continuous character into complex units.
+are computed pointwise, and the multiplicative isomorphism underlying a continuous multiplicative
+isomorphism has the same underlying function. It also records the pointwise characterization of
+finite-order continuous homomorphisms and the open kernel of a finite-order continuous character
+into complex units.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -117,6 +119,14 @@ namespace ContinuousMonoidHom
 @[simp]
 theorem _root_.ContinuousMonoidHom.coe_mk {A B : Type*} [Monoid A] [TopologicalSpace A] [Monoid B]
     [TopologicalSpace B] (f : A →* B) (hf : Continuous f) : ⇑(⟨f, hf⟩ : A →ₜ* B) = f :=
+  rfl
+
+/-- The multiplicative isomorphism underlying a continuous multiplicative isomorphism has the same
+underlying function.  This is the `ContinuousMulEquiv` analogue of `RingEquiv.coe_toMulEquiv`. -/
+@[to_additive (attr := simp) /-- The additive isomorphism underlying a continuous additive
+isomorphism has the same underlying function. -/]
+theorem _root_.ContinuousMulEquiv.coe_toMulEquiv {A B : Type*} [Mul A] [TopologicalSpace A] [Mul B]
+    [TopologicalSpace B] (f : A ≃ₜ* B) : ⇑(f : A ≃* B) = f :=
   rfl
 
 /-- Integer powers of continuous homomorphisms into a commutative topological group are computed

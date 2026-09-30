@@ -20,9 +20,9 @@ More precisely `U` has a subset `s` converging to `1` such that the presentation
 in the language of Ribes–Zalesskii, `s` is a basis of `U` converging to `1`.
 
 The proof is cohomological. A free pro-`p` group has `cd_p F ≤ 1`
-(`TauCeti.freeProP.cohomologicalDimensionAt_le_one`), and `cd_p ≤ 1` passes to closed subgroups
-by Shapiro's lemma in degree two (`TauCeti.cohomologicalDimensionAt_le_of_isClosed_of_le_one`),
-so `cd_p U ≤ 1`; Serre's theorem at arbitrary rank
+(`TauCeti.freeProP.cohomologicalDimensionAt_le_one`), and `cd_p` is monotone in a closed subgroup
+by Shapiro's lemma (`TauCeti.cohomologicalDimensionAt_le_of_isClosed`), so `cd_p U ≤ 1`; Serre's
+theorem at arbitrary rank
 (`IsProP.exists_convergesToOne_continuousMulEquiv_presentation_of_cohomologicalDimensionAt_le_one`)
 then identifies `U` with the free pro-`p` group on a pointed profinite space. The same argument
 applies verbatim to a closed subgroup of any pro-`p` group with `cd_p ≤ 1`, and that is the form
@@ -82,8 +82,8 @@ theorem exists_convergesToOne_continuousMulEquiv_of_cohomologicalDimensionAt_le_
     ∃ s : Set U, ConvergesToOne s ∧ ∃ e : freeProPInsertOne p s ≃ₜ* U,
       ∀ x : ↥(insert (1 : U) s), e (freeProCPointed.of (finiteGroupClassP.{u} p) _ x) = x := by
   have : CompactSpace U := isCompact_iff_compactSpace.mp hU.isCompact
-  have hcdU : cohomologicalDimensionAt.{u} p U ≤ 1 := mod_cast
-    cohomologicalDimensionAt_le_of_isClosed_of_le_one (by exact_mod_cast hcd) hU le_rfl
+  have hcdU : cohomologicalDimensionAt.{u} p U ≤ 1 :=
+    (cohomologicalDimensionAt_le_of_isClosed hU).trans hcd
   have hU' : IsProP p U := hG.subgroup U
   obtain ⟨s, hs, e, he⟩ :=
     hU'.exists_convergesToOne_continuousMulEquiv_presentation_of_cohomologicalDimensionAt_le_one
@@ -100,8 +100,7 @@ variable {X : Type u}
 generators and for `p ≠ 0`: `cd_p (freeProP p X) ≤ 1` passes to closed subgroups. -/
 theorem cohomologicalDimensionAt_le_one_of_isClosed (hp : p ≠ 0) {U : Subgroup (freeProP p X)}
     (hU : IsClosed (U : Set (freeProP p X))) : cohomologicalDimensionAt.{u} p U ≤ 1 :=
-  mod_cast cohomologicalDimensionAt_le_of_isClosed_of_le_one
-    (by exact_mod_cast cohomologicalDimensionAt_le_one hp) hU le_rfl
+  (cohomologicalDimensionAt_le_of_isClosed hU).trans (cohomologicalDimensionAt_le_one hp)
 
 /-- **The pro-`p` Nielsen–Schreier theorem.** A closed subgroup `U` of the free pro-`p` group on
 any type `X` is free pro-`p` on a pointed profinite space: some subset `s` of `U` converging to

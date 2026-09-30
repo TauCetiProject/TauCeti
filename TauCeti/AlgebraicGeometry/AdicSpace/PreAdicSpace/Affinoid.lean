@@ -23,13 +23,15 @@ pre-adic space has a spectral underlying topological space. The latter is the qu
 input used to distinguish genuinely non-affinoid spaces later.
 
 The further condition defining a pre-adic space in Wedhorn's sense is local: it asks for an
-affinoid open cover and for the structure presheaf to be adapted to the basis of all affinoid open
+affinoid open cover and for the structure presheaf to be adapted to the set of all affinoid open
 subspaces. That condition is not imposed here.
 
 ## Main definitions
 
-* `TauCeti.PreAdicSpace.isAffinoid`: the isomorphism-invariant object property of being an
-  affinoid pre-adic space.
+* `TauCeti.PreAdicSpace.isAffinoidModel`: the object property of being a presentation-limit
+  pre-adic space of a Huber pair.
+* `TauCeti.PreAdicSpace.isAffinoid`: the isomorphism closure of `isAffinoidModel`, the
+  isomorphism-invariant object property of being an affinoid pre-adic space.
 * `TauCeti.AffinoidPreAdicSpace`: the full subcategory of affinoid pre-adic spaces.
 * `TauCeti.AffinoidPreAdicSpace.ofPresentation`: the canonical affinoid object attached to a
   Huber pair, a compatible pair of definition, and its presentation-limit presheaf.
@@ -51,7 +53,9 @@ universe u
 
 namespace PreAdicSpace
 
-private def isAffinoidModel : ObjectProperty PreAdicSpace.{u} := fun X ↦
+/-- The presentation-limit pre-adic spaces of Huber pairs, as an object property of `𝒱^pre`.
+The affinoid pre-adic spaces are the objects isomorphic to one of these. -/
+def isAffinoidModel : ObjectProperty PreAdicSpace.{u} := fun X ↦
   ∃ (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
     (_ : IsHuberRing A) (S : Pair A) (P : PairOfDefinition A)
     (hP : P.ringOfDefinition ≤ S.plus),
@@ -63,8 +67,9 @@ construction of `presentationLimitPreAdicSpace`.
 
 The existentially quantified type carries all of its topological-ring and Huber instances. This
 keeps the property at the natural universe of `PreAdicSpace` and does not choose a global plus
-ring or pair of definition. -/
-def isAffinoid : ObjectProperty PreAdicSpace.{u} :=
+ring or pair of definition. The definition is reducible so that the instances of
+`ObjectProperty.isoClosure`, in particular closure under isomorphisms, apply to `isAffinoid`. -/
+abbrev isAffinoid : ObjectProperty PreAdicSpace.{u} :=
   isAffinoidModel.isoClosure
 
 /-- Characterisation of an affinoid pre-adic space by an affinoid presentation and an

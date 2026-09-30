@@ -90,19 +90,13 @@ theorem forall_exp_smul_mem_orthogonalGroup_iff_mem_so (A : Matrix n n ℝ) :
   rw [LieAlgebra.Orthogonal.mem_so]
   constructor
   · intro h
-    apply TauCeti.expUnitHom_injective (R := Matrix n n ℝ)
-    apply ContinuousMonoidHom.ext
-    intro t
-    apply Units.ext
-    rw [← ofAdd_toAdd t]
-    simp only [TauCeti.expUnitHom_apply, TauCeti.expUnit_coe]
-    have horth := h (Multiplicative.toAdd t)
+    refine TauCeti.eq_of_forall_exp_smul_eq fun s => ?_
+    have horth := h s
     rw [Matrix.mem_orthogonalGroup_iff'] at horth
     calc
-      exp ((Multiplicative.toAdd t) • Aᵀ) =
-          exp (((Multiplicative.toAdd t) • A)ᵀ) := by rw [Matrix.transpose_smul]
-      _ = (exp ((Multiplicative.toAdd t) • A))ᵀ := Matrix.exp_transpose _
-      _ = exp ((Multiplicative.toAdd t) • (-A)) := by
+      exp (s • Aᵀ) = exp ((s • A)ᵀ) := by rw [Matrix.transpose_smul]
+      _ = (exp (s • A))ᵀ := Matrix.exp_transpose _
+      _ = exp (s • (-A)) := by
         rw [smul_neg, Matrix.exp_neg, Matrix.inv_eq_left_inv horth]
   · intro hA t
     have hAso : A ∈ LieAlgebra.Orthogonal.so n ℝ :=

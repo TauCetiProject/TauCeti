@@ -116,22 +116,8 @@ theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
           have := FinitePadicExtension.charZero K p
           exact Nat.cast_ne_zero.mpr hn) =
       absoluteRamificationIndex K p * padicValNat p n := by
-  let hnQ : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have := FinitePadicExtension.charZero K p
-  let hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hmap : Units.map (algebraMap ℚ_[p] K : ℚ_[p] →* K)
-      (Units.mk0 (n : ℚ_[p]) hnQ) = Units.mk0 (n : K) hnK := by
-    ext
-    simp
-  have h := toAdd_normalizedValuation_algebraMap (K := ℚ_[p]) (L := K)
-    (Units.mk0 (n : ℚ_[p]) hnQ)
-  rw [hmap, toAdd_normalizedValuation_natCast K n hnK,
-    toAdd_normalizedValuation_natCast ℚ_[p] n hnQ,
-    Padic.natCastValuation_eq_padicValNat] at h
-  have hnval : natCastValuation K n hnK =
-      ramificationIndex ℚ_[p] K * padicValNat p n := by
-    exact_mod_cast h
-  simpa only [absoluteRamificationIndex] using hnval
+  rw [natCastValuation_eq_ramificationIndex_mul (K := ℚ_[p]) n (Nat.cast_ne_zero.mpr hn),
+    Padic.natCastValuation_eq_padicValNat, absoluteRamificationIndex]
 
 variable {K} in
 /-- In a finite extension `K/ℚ_[p]`, the valuation of a nonzero natural number `n` is

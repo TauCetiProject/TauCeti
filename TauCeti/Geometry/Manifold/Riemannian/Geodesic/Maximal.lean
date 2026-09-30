@@ -186,6 +186,15 @@ theorem isPreconnected_geodesicInterval {p : M} {v : TangentSpace I p} :
     IsPreconnected (geodesicInterval I M p v) :=
   ordConnected_geodesicInterval.isPreconnected
 
+omit [I.Boundaryless] in
+/-- A nonempty maximal geodesic interval contains the initial parameter: any geodesic witness is
+defined on an open interval around `0`. Unlike `zero_mem_geodesicInterval`, this needs no
+boundarylessness. -/
+theorem zero_mem_geodesicInterval_of_mem {p : M} {v : TangentSpace I p} {t : ℝ}
+    (h : t ∈ geodesicInterval I M p v) : (0 : ℝ) ∈ geodesicInterval I M p v := by
+  obtain ⟨γ, a, b, hγ, -⟩ := mem_geodesicInterval_iff.1 h
+  exact hγ.subset_geodesicInterval hγ.zero_mem
+
 /-- The initial parameter belongs to the maximal geodesic interval. -/
 @[simp] theorem zero_mem_geodesicInterval {p : M} {v : TangentSpace I p} :
     (0 : ℝ) ∈ geodesicInterval I M p v := by

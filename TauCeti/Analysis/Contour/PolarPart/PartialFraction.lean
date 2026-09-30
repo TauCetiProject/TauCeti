@@ -78,6 +78,27 @@ theorem tendsto_sum_div_sub_cobounded (S : Finset ℂ) (c : ℂ → ℂ) :
 
 end Finset
 
+namespace TauCeti
+
+/-- Multiplying a finite partial-fraction sum by `z` at infinity recovers the sum of its
+coefficients. The poles may be indexed with repetitions. -/
+theorem tendsto_mul_sum_div_sub_cobounded {ι : Type*} {S : Finset ι} (a c : ι → ℂ) :
+    Tendsto (fun z : ℂ => z * ∑ i ∈ S, c i / (z - a i)) (cobounded ℂ)
+      (𝓝 (∑ i ∈ S, c i)) := by
+  simp_rw [Finset.mul_sum]
+  refine tendsto_finsetSum _ fun i _ => ?_
+  have hlim : Tendsto (fun z : ℂ => c i * (1 - a i * z⁻¹)⁻¹) (cobounded ℂ)
+      (𝓝 (c i * (1 - a i * 0)⁻¹)) :=
+    ((((tendsto_inv₀_cobounded (α := ℂ)).const_mul _).const_sub 1).inv₀ (by simp)).const_mul _
+  simp only [mul_zero, sub_zero, inv_one, mul_one] at hlim
+  apply hlim.congr'
+  filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop ‖a i‖] with z hz
+  have hz0 : z ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt hz)
+  have hza : z - a i ≠ 0 := sub_ne_zero.mpr fun h => by simp [h] at hz
+  field_simp
+
+end TauCeti
+
 namespace TauCeti.Contour
 
 /-- At a point `s ∈ S`, the partial-fraction sum `z ↦ ∑ t ∈ S, c t / (z - t)` has residue
