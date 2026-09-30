@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Basic
 import Mathlib.GroupTheory.GroupAction.Transitive
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.FieldTheory.Kummer.Extension
 
@@ -202,13 +203,9 @@ theorem irreducible_map_discrField_congr {E' : Type w} [Field E'] [Algebra F E']
       Irreducible (g.map (algebraMap F (discrField f E'))) := by
   have := isSplittingField_discrField hδ
   have := isSplittingField_discrField hδ'
-  let ψ : discrField f E ≃ₐ[F] discrField f E' :=
-    (IsSplittingField.algEquiv _ (X ^ 2 - C f.discr)).trans
-      (IsSplittingField.algEquiv _ (X ^ 2 - C f.discr)).symm
-  have hψ : (ψ.toRingEquiv : discrField f E →+* discrField f E').comp (algebraMap F _) =
-      algebraMap F _ := RingHom.ext ψ.commutes
-  rw [← MulEquiv.irreducible_iff (mapEquiv ψ.toRingEquiv), mapEquiv_apply, Polynomial.map_map,
-    hψ]
+  exact irreducible_map_iff_of_algEquiv
+    ((IsSplittingField.algEquiv _ (X ^ 2 - C f.discr)).trans
+      (IsSplittingField.algEquiv _ (X ^ 2 - C f.discr)).symm) g
 
 /-! ## The comparison with the even part of the Galois group -/
 
@@ -264,19 +261,6 @@ theorem evenAutSubgroup_eq_fixingSubgroup (hchar : ringChar F ≠ 2)
         linear_combination -hfix
       exact (mul_eq_zero.mp hdouble).resolve_left h2
 
-open scoped Classical in
-/-- **The comparison theorem.** In a Galois splitting extension, and away from characteristic `2`,
-the discriminant field of a monic separable polynomial is the field fixed by the automorphisms
-acting on the roots by an even permutation. -/
-theorem fixedField_evenAutSubgroup [IsGalois F E] (hf : f.Monic) (hsep : f.Separable)
-    (hchar : ringChar F ≠ 2) :
-    IntermediateField.fixedField (evenAutSubgroup f E) = discrField f E := by
-  obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
-    ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
-  rw [discrField_eq_adjoin_simple (hf.discrSqrt_sq hsep e),
-    evenAutSubgroup_eq_fixingSubgroup hchar e,
-    InfiniteGalois.fixedField_fixingSubgroup]
-
 /-- **The comparison theorem, from the other side.** Away from characteristic `2`, the
 automorphisms of a splitting extension that fix the discriminant field of a monic separable
 polynomial are exactly those acting on its roots by an even permutation. Unlike
@@ -287,6 +271,15 @@ theorem fixingSubgroup_discrField (hf : f.Monic) (hsep : f.Separable) (hchar : r
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
   rw [discrField_eq_adjoin_simple (hf.discrSqrt_sq hsep e),
     evenAutSubgroup_eq_fixingSubgroup hchar e]
+
+open scoped Classical in
+/-- **The comparison theorem.** In a Galois splitting extension, and away from characteristic `2`,
+the discriminant field of a monic separable polynomial is the field fixed by the automorphisms
+acting on the roots by an even permutation. -/
+theorem fixedField_evenAutSubgroup [IsGalois F E] (hf : f.Monic) (hsep : f.Separable)
+    (hchar : ringChar F ≠ 2) :
+    IntermediateField.fixedField (evenAutSubgroup f E) = discrField f E := by
+  rw [← fixingSubgroup_discrField hf hsep hchar, InfiniteGalois.fixedField_fixingSubgroup]
 
 open scoped Classical in
 /-- In a normal splitting extension, the even part of the automorphism group acts transitively on

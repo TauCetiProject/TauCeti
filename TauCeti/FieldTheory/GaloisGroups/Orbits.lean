@@ -324,6 +324,8 @@ theorem irreducible_map_iff_isPretransitive_fixingSubgroup [Normal F E]
   -- The roots of `p` over `F` and over `K` are the same subset of `E`.
   let g : p.rootSet E ≃ (p.map (algebraMap F K)).rootSet E :=
     Equiv.subtypeEquivProp (rootSet_map E K p).symm
+  -- `fixingSubgroupEquiv` preserves the underlying function of an automorphism, and `g`
+  -- preserves the underlying root, so both sides of equivariance reduce to `⟨σ x, _⟩`.
   exact (MulAction.isPretransitive_congr (φ := K.fixingSubgroupEquiv)
     (f := ⟨g, fun _ _ ↦ rfl⟩) K.fixingSubgroupEquiv.surjective g.bijective).symm
 
