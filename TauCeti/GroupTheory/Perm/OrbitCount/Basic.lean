@@ -349,16 +349,18 @@ theorem orbitCount_mul_swap_add_one [DecidableEq β] {τ : Equiv.Perm β}
 
 /-- The product `τₙ * ⋯ * τ₁` of the transpositions `τᵢ = Equiv.swap aᵢ pᵢ` listed as
 `[(a₁, p₁), …, (aₙ, pₙ)]`: the head of the list is the rightmost factor, so it is applied first. -/
-@[expose] def swapProduct [DecidableEq β] : List (β × β) → Equiv.Perm β
+def swapProduct [DecidableEq β] : List (β × β) → Equiv.Perm β
   | [] => 1
   | (a, p) :: factors => swapProduct factors * Equiv.swap a p
 
 /-- The empty product of transpositions is the identity. -/
-@[simp] theorem swapProduct_nil [DecidableEq β] : swapProduct ([] : List (β × β)) = 1 := rfl
+@[simp] theorem swapProduct_nil [DecidableEq β] : swapProduct ([] : List (β × β)) = 1 := by
+  rw [swapProduct]
 
 /-- The head of the list is the rightmost factor of `TauCeti.swapProduct`. -/
 @[simp] theorem swapProduct_cons [DecidableEq β] (a p : β) (factors : List (β × β)) :
-    swapProduct ((a, p) :: factors) = swapProduct factors * Equiv.swap a p := rfl
+    swapProduct ((a, p) :: factors) = swapProduct factors * Equiv.swap a p := by
+  rw [swapProduct]
 
 /-- The product of a concatenation of transposition lists: the factors of the first list act
 first, so they appear on the right. -/

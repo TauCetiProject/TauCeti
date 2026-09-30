@@ -224,7 +224,8 @@ private theorem trefoilStatePerm_eq_swapProduct (b₀ b₁ b₂ : Bool) :
       swapProduct (trefoilStateForest b₀ b₁ b₂) := by
   cases b₀ <;> cases b₁ <;> cases b₂ <;>
     simp only [Bool.not_false, Bool.not_true, PDCode.slotSmoothing_false,
-      PDCode.slotSmoothing_true, rightHandedTrefoilArcPair, PerfectMatching.val_mk] <;>
+      PDCode.slotSmoothing_true, rightHandedTrefoilArcPair, PerfectMatching.val_mk,
+      trefoilStateForest, swapProduct_nil, swapProduct_cons] <;>
     decide
 
 private theorem trefoilStateForest_orbitCount (b₀ b₁ b₂ : Bool) :
