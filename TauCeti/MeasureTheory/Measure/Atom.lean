@@ -118,9 +118,9 @@ theorem _root_.AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom
 Borel space, if the restriction of a finite measure `ν` to every measurable set is a scalar
 multiple of `ν`, then `ν` is its total mass times a Dirac measure.
 
-This identifies the measures spanning extreme rays of the cone of finite measures: splitting
-`ν = ν.restrict s + ν.restrict sᶜ`, both summands can be multiples of `ν` only if one of `s`,
-`sᶜ` is null, so the whole space is an atom. -/
+This identifies the measures spanning extreme rays of the cone of finite measures as the positive
+multiples of point masses; it is used to show that the extreme rays of the completely monotone
+cone are exponentials. -/
 theorem _root_.MeasureTheory.Measure.exists_eq_smul_dirac_of_forall_restrict_eq_smul
     {Z : Type*} [MeasurableSpace Z] [StandardBorelSpace Z] [Nonempty Z]
     (ν : Measure Z) [IsFiniteMeasure ν]

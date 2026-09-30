@@ -12,20 +12,17 @@ import TauCeti.MeasureTheory.Measure.Atom
 # Extremal completely monotone functions are exponentials
 
 The functions that are continuous on `[0, ∞)` and completely monotone on `(0, ∞)` form a convex
-cone. A function `f` in this cone spans an extreme ray when every decomposition `f = g + h` inside
-the cone, compared on `[0, ∞)`, has `g` a scalar multiple of `f`. This file shows that such an `f`
-is `t ↦ f 0 * exp (-(t * p))` on `[0, ∞)` for some rate `p ≥ 0`: the exponentials are the only
-possible extreme rays.
-
-By the Hausdorff–Bernstein–Widder theorem `f` is the Laplace transform of its finite Bernstein
-measure `μ`. Splitting `μ` along a measurable set and its complement splits `f` inside the cone,
-so each restriction of `μ` is proportional to `μ`, and a finite measure on `ℝ≥0` with this
-property is a point mass.
+cone. A nonzero function `f` in this cone spans an extreme ray exactly when it satisfies the
+decomposition condition: every decomposition `f = g + h` inside the cone, compared on `[0, ∞)`,
+has `g` a scalar multiple of `f`. This file shows that any `f` in the cone satisfying the
+decomposition condition (including `f = 0`) is `t ↦ f 0 * exp (-(t * p))` on `[0, ∞)` for some
+rate `p ≥ 0`: the exponentials are the only possible extreme rays.
 
 ## Main declarations
 
 * `TauCeti.IsContinuousCompletelyMonotoneOnIoi.exists_eq_mul_exp_neg_mul_of_extreme_ray`: a
-  completely monotone function spanning an extreme ray is a nonnegative multiple of an exponential.
+  completely monotone function satisfying the decomposition condition (in particular, one spanning
+  an extreme ray) is a nonnegative multiple of an exponential.
 
 ## References
 
