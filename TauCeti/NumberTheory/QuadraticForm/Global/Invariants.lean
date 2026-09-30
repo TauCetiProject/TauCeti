@@ -109,6 +109,7 @@ def discrAtFinitePlace (v : HeightOneSpectrum (𝓞 K)) : SquareClassGroup (v.ad
   (algebraMap K (v.adicCompletion K)).squareClassMap I.discr
 
 /-- Unfolds `discrAtFinitePlace`. -/
+@[simp]
 theorem discrAtFinitePlace_def (v : HeightOneSpectrum (𝓞 K)) :
     I.discrAtFinitePlace v = (algebraMap K (v.adicCompletion K)).squareClassMap I.discr :=
   (rfl)
@@ -121,6 +122,7 @@ def discrAtRealPlace (w : {w : InfinitePlace K // w.IsReal}) : SquareClassGroup 
   (embedding_of_isReal w.2).squareClassMap I.discr
 
 /-- Unfolds `discrAtRealPlace`. -/
+@[simp]
 theorem discrAtRealPlace_def (w : {w : InfinitePlace K // w.IsReal}) :
     I.discrAtRealPlace w = (embedding_of_isReal w.2).squareClassMap I.discr :=
   (rfl)
@@ -130,6 +132,7 @@ def realNegativeIndex (w : {w : InfinitePlace K // w.IsReal}) : ℕ :=
   I.rank - I.realPositiveIndex w
 
 /-- Unfolds `realNegativeIndex`. -/
+@[simp]
 theorem realNegativeIndex_def (w : {w : InfinitePlace K // w.IsReal}) :
     I.realNegativeIndex w = I.rank - I.realPositiveIndex w :=
   (rfl)
@@ -140,6 +143,7 @@ def realHasse (w : {w : InfinitePlace K // w.IsReal}) : ℤˣ :=
   (-1) ^ (I.realNegativeIndex w).choose 2
 
 /-- Unfolds `realHasse`. -/
+@[simp]
 theorem realHasse_def (w : {w : InfinitePlace K // w.IsReal}) :
     I.realHasse w = (-1) ^ (I.realNegativeIndex w).choose 2 :=
   (rfl)
@@ -226,8 +230,9 @@ theorem hasseProduct_eq_neg_one_pow_card
     (hs : I.finiteHasse = (T : Set (HeightOneSpectrum (𝓞 K))).mulIndicator fun _ ↦ -1)
     (hr : ∀ w, I.realHasse w = 1) :
     I.hasseProduct = (-1) ^ T.card := by
-  rw [hasseProduct_eq_prod_of_mulSupport_subset I (hs ▸ Set.mulSupport_mulIndicator_subset)]
-  simp [hs, hr, Finset.prod_mulIndicator_subset _ subset_rfl]
+  rw [hasseProduct_eq_prod_of_mulSupport_subset I (hs ▸ Set.mulSupport_mulIndicator_subset),
+    Finset.prod_eq_one fun w _ ↦ hr w]
+  simp [hs, Finset.prod_mulIndicator_subset _ subset_rfl]
 
 /-- A system with Hasse sign `-1` exactly at the finite places of `T` has all finite Hasse signs
 trivial exactly when `T` is empty. -/
@@ -246,13 +251,13 @@ theorem isAdmissible_positiveDefinite_iff_even_card {n : ℕ} (hn : 3 ≤ n) :
       GlobalFormInvariants K).IsAdmissible ↔ Even T.card := by
   have hprod := hasseProduct_eq_neg_one_pow_card
     (⟨n, 0, (T : Set _).mulIndicator fun _ ↦ -1, fun _ ↦ n⟩ : GlobalFormInvariants K) T rfl
-    fun w ↦ by simp [realHasse_def, realNegativeIndex_def]
+    fun w ↦ by simp
   refine ⟨fun hI ↦ ?_, fun hT ↦ ⟨by dsimp only; omega, fun _ ↦ le_rfl, fun w ↦ ?_,
     T.finite_toSet.subset Set.mulSupport_mulIndicator_subset,
     fun h ↦ by dsimp only at h; omega, fun h ↦ by dsimp only at h; omega, ?_⟩⟩
   · rw [← neg_one_pow_eq_one_iff_even (by decide : (-1 : ℤˣ) ≠ 1), ← hprod]
     exact hI.hasseProduct_eq_one
-  · simp [discrAtRealPlace_def, realNegativeIndex_def]
+  · simp
   · rw [hprod, hT.neg_one_pow]
 
 /-- **The rank-one exception.** The rank-one system with trivial discriminant, positive index `1`
@@ -264,7 +269,7 @@ theorem isAdmissible_rankOne_iff_eq_empty :
       GlobalFormInvariants K).IsAdmissible ↔ T = ∅ := by
   have hprod := hasseProduct_eq_neg_one_pow_card
     (⟨1, 0, (T : Set _).mulIndicator fun _ ↦ -1, fun _ ↦ 1⟩ : GlobalFormInvariants K) T rfl
-    fun w ↦ by simp [realHasse_def, realNegativeIndex_def]
+    fun w ↦ by simp
   refine ⟨fun hI ↦ ?_, fun hT ↦ ?_⟩
   · exact (forall_finiteHasse_eq_one_iff_eq_empty _ T rfl).1
       (hI.finiteHasse_eq_one_of_rank_eq_one rfl)
@@ -273,7 +278,7 @@ theorem isAdmissible_rankOne_iff_eq_empty :
       (∅ : Finset (HeightOneSpectrum (𝓞 K))).finite_toSet.subset
         Set.mulSupport_mulIndicator_subset,
       fun _ v ↦ by simp, fun h ↦ by dsimp only at h; omega, by rw [hprod]; simp⟩
-    simp [discrAtRealPlace_def, realNegativeIndex_def]
+    simp
 
 /-- **The rank-two exception.** The rank-two system with discriminant the class of `-1`, positive
 index `1` at every real place and Hasse sign `-1` exactly at the finite places of `T` is admissible
@@ -285,12 +290,12 @@ theorem isAdmissible_rankTwo_iff_eq_empty :
   have hprod := hasseProduct_eq_neg_one_pow_card
     (⟨2, squareClass (-1), (T : Set _).mulIndicator fun _ ↦ -1, fun _ ↦ 1⟩ :
       GlobalFormInvariants K) T rfl
-    fun w ↦ by simp [realHasse_def, realNegativeIndex_def]
+    fun w ↦ by simp
   -- The image of `-1` in every completion is `-1`.
   have hdisc (v : HeightOneSpectrum (𝓞 K)) :
       (⟨2, squareClass (-1), (T : Set _).mulIndicator fun _ ↦ -1, fun _ ↦ 1⟩ :
         GlobalFormInvariants K).discrAtFinitePlace v = squareClass (-1) := by
-    simp [discrAtFinitePlace_def]
+    simp
   refine ⟨fun hI ↦ ?_, fun hT ↦ ?_⟩
   · exact (forall_finiteHasse_eq_one_iff_eq_empty _ T rfl).1
       fun v ↦ hI.finiteHasse_eq_one_of_rank_eq_two rfl v (hdisc v)
@@ -299,7 +304,7 @@ theorem isAdmissible_rankTwo_iff_eq_empty :
       (∅ : Finset (HeightOneSpectrum (𝓞 K))).finite_toSet.subset
         Set.mulSupport_mulIndicator_subset,
       fun h ↦ by dsimp only at h; omega, fun _ v _ ↦ by simp, by rw [hprod]; simp⟩
-    simp [discrAtRealPlace_def, realNegativeIndex_def, one_nsmul]
+    simp [one_nsmul]
 
 end Examples
 
