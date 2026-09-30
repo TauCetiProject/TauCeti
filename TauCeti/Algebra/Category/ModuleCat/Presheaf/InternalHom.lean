@@ -177,7 +177,6 @@ variable (M N : PresheafOfModulesOfCommRing.{u} R)
 restriction along the iterated-slice equivalence: a section of `𝓗om(M, N)` over `Y.left`,
 viewed as a morphism `M|_{Y.left} ⟶ N|_{Y.left}`, is sent to the section of
 `𝓗om(M|_X, N|_X)` over `Y` given by the same morphism on the iterated slice over `Y`. -/
-@[simp]
 theorem ihomObjEquiv_ihomComparison_natTrans_app_app (Y : Over X)
     (s : ((ihom M).obj N).obj (op Y.left)) :
     ihomObjEquiv Y ((pushforward₀ (Over.forget X) R).obj M)
