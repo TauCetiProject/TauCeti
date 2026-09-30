@@ -262,6 +262,7 @@ def toCoindBot (A : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
   coindBotUnit A ≫ (coindBotFunctor k G).map (ModuleCat.ofHom r)
 
 /-- The morphism attached to `r` sends `a` to the function `g ↦ r (g • a)`. -/
+@[simp]
 theorem toCoindBot_hom_apply_coe (A : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
     (r : A.V →ₗ[k] X) (a : A) (g : G) :
     (dsimp% only (((toCoindBot A r).hom a).1 g)) = r (A.ρ g a) := by
@@ -273,6 +274,7 @@ theorem toCoindBot_hom_apply_coe (A : Rep k G) {X : Type u} [AddCommGroup X] [Mo
 
 /-- If `r` is a retraction of `f : A ⟶ B`, then `f` followed by `n ↦ (g ↦ r (g • n))` is the
 embedding of `A` into its coinduced representation. -/
+@[reassoc]
 theorem comp_toCoindBot_of_leftInverse {A B : Rep k G} (f : A ⟶ B) {r : B.V →ₗ[k] A.V}
     (hr : Function.LeftInverse r f.hom) : f ≫ toCoindBot B r = coindBotUnit A := by
   apply Rep.hom_ext
@@ -414,6 +416,7 @@ theorem fromIndBot_hom_mk (B : Rep k G) {X : Type u} [AddCommGroup X] [Module k 
 
 /-- If `s` is a section of `f : B ⟶ A`, then `⟦g ⊗ₜ a⟧ ↦ g⁻¹ • s a` followed by `f` is the
 projection of the representation induced from the trivial subgroup onto `A`. -/
+@[reassoc]
 theorem fromIndBot_comp_of_rightInverse {A B : Rep k G} (f : B ⟶ A)
     {s : A.V →ₗ[k] B.V} (hs : Function.RightInverse s f.hom) :
     fromIndBot B s ≫ f = indBotCounit A :=

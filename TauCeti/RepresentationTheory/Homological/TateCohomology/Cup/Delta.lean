@@ -60,7 +60,7 @@ private def toDimensionShiftUpSES {S : ShortComplex (Rep k G)} (hS : S.ShortExac
   { τ₁ := 𝟙 S.X₁
     τ₂ := toCoindBot S.X₂ r
     τ₃ := hS.exact.desc (toCoindBot S.X₂ r ≫ dimensionShiftUpπ S.X₁)
-      (by rw [reassoc_of% (comp_toCoindBot_of_leftInverse S.f hr),
+      (by rw [comp_toCoindBot_of_leftInverse_assoc S.f hr,
         coindBotUnit_comp_dimensionShiftUpπ])
     comm₁₂ := by
       rw [Category.id_comp]
