@@ -21,7 +21,7 @@ kernel in the first term of the lower `2`-central series are killed by `χ`. Lab
 span and graded-functional statements therefore feed the general successive-approximation theorem: a
 relator with the same degree-one class as `r_f`, lying in that exponent-sum kernel and killed by
 the coordinate crossed homomorphisms, is the image of `r_f` under an automorphism whose changes
-of all the free generators stay in the exponent-sum kernel.
+of all the free generators lie in that exponent-sum kernel and in `λ₁(F)`, so are killed by `χ`.
 
 This is the limit step in the second even-rank family of Labute's classification, the family with
 orientation image `{ ±1 } × U^(f)`. It turns the infinitesimal Lemmas 3 and 4 proved in
@@ -55,10 +55,11 @@ values `χ(x₂) = -1`, `χ(x₄)(1 - 2^f) = 1`, and `χ(x_i) = 1` otherwise. If
 `w = x₁² (x₁, x₂) x₃^(2^f) (x₃, x₄) ⋯`, lies in the kernel of the exponent sum at
 `x₄`, and is killed by every coordinate crossed homomorphism for `χ` except the one at `x₂`,
 then an automorphism `e` of `F` carries `w` to `r`. Moreover every generator change
-`x_i⁻¹ e(x_i)` lies in the kernel of the exponent sum at `x₄`.
+`x_i⁻¹ e(x_i)` lies both in the kernel of the exponent sum at `x₄` and in `λ₁(F)`.
 
 The last clause records that the approximation preserves the orientation: an element of the
-exponent-sum kernel which lies in `λ₁(F)` is killed by `χ` at these marked values. -/
+exponent-sum kernel which lies in `λ₁(F)` is killed by `χ` at these marked values
+(`ContinuousMonoidHom.apply_eq_one_of_mem_exponentSumKer_of_mem_pLowerCentralSeries_one`). -/
 theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_isCrossedHom_eq_zero
     (hn : Even n) (hn3 : 3 < n) {f : ℕ} (hf : 2 ≤ f)
     (h₁ : χ (of ⟨1, by omega⟩) = -1)
@@ -73,7 +74,8 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_isCrosse
     (hrD : ∀ i : Fin n, i ≠ ⟨1, by omega⟩ →
       crossedHom χ (Pi.single i 1) r = 0) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
-      (∀ i, (of i)⁻¹ * e (of i) ∈ exponentSumKer 2 (Fin n) ⟨3, hn3⟩) ∧
+      (∀ i, (of i)⁻¹ * e (of i) ∈
+        exponentSumKer 2 (Fin n) ⟨3, hn3⟩ ⊓ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1) ∧
         e (demushkinWordTwoEven 0 f n (freeProPGen 2 n)) = r := by
   classical
   let i₁ : Fin n := ⟨1, by omega⟩
@@ -84,21 +86,26 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_isCrosse
   let X := exponentSumKer 2 (Fin n) i₃
   let Z : Set (freeProP 2 (Fin n)) := {z | z ∈ X ∧
     ∀ i : Fin n, i ≠ i₁ → crossedHom χ (Pi.single i 1) z = 0}
-  refine exists_continuousMulEquiv_apply_eq Z (fun _ ↦ X) (fun _ ↦ isClosed_exponentSumKer i₃)
+  refine exists_continuousMulEquiv_apply_eq Z (fun _ ↦ X ⊓ pLowerCentralSeries 2 _ 1)
+    (fun _ ↦ (isClosed_exponentSumKer i₃).inter (isClosed_pLowerCentralSeries 1))
     ?_ w r hρ ?_ ?_
   · intro ω hω _ c hc
-    dsimp only [X] at hω hc ⊢
+    rw [mem_inf] at hc ⊢
+    refine ⟨?_, (basisModification ω).toMonoidHom.map_pLowerCentralSeries_le
+      (basisModification ω).continuous 1 (mem_map_of_mem _ hc.2)⟩
+    replace hc := hc.1
+    dsimp only [X] at hc ⊢
     rw [mem_exponentSumKer_iff] at hc ⊢
     rw [toAdd_exponentSum_basisModification, Finset.sum_apply]
     apply Finset.sum_eq_zero
     intro j _
-    rw [Pi.smul_apply, Pi.add_apply, mem_exponentSumKer_iff.mp (hω j), add_zero]
+    rw [Pi.smul_apply, Pi.add_apply, mem_exponentSumKer_iff.mp (hω j).1, add_zero]
     by_cases hj : j = i₃
     · subst j
       simp [hc]
     · simp [hj]
   · intro φ hφ hφX
-    dsimp only [X] at hφX
+    replace hφX : ∀ i, (of i)⁻¹ * φ (of i) ∈ X := fun i ↦ (hφX i).1
     let ωφ : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 := fun i ↦
         (⟨(of i)⁻¹ * φ (of i), hφ (of i)⟩ :
           pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
@@ -164,7 +171,7 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_isCrosse
     obtain ⟨v, hv, hvz⟩ := Submodule.mem_map.mp hzδ
     choose ω hωX hωv using fun i ↦
       mem_gradedPieceOf_iff.mp (Submodule.mem_pi.mp hv i (Set.mem_univ i))
-    refine ⟨ω, hωX, ?_⟩
+    refine ⟨ω, fun i ↦ mem_inf.mpr ⟨hωX i, pLowerCentralSeries_antitone hm (ω i).2⟩, ?_⟩
     rw [funext hωv, hvz]
 
 end TauCeti.freeProP
