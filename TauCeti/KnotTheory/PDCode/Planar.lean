@@ -32,7 +32,12 @@ component of the graph contributes at most `2`, with equality exactly for a sphe
 **planar** (`TauCeti.PDCode.IsPlanar`) when the Euler characteristic is twice the number of
 connected components, the monodromy orbits of the triple. For a connected code this is Euler's
 count of `n + 2` regions (`TauCeti.PDCode.isPlanar_iff_faceCount_eq_of_isConnected`).
-Crossing-free circles play no part: the code records them only by their number.
+
+Throughout, the underlying graph is the one supported on the crossings: its vertices are the
+crossings and its edges the arcs between them. The crossing-free circles of a code
+(`TauCeti.PDCode.crossinglessComponentCount`) are not part of it, so they contribute neither faces
+to `TauCeti.PDCode.faceCount` nor connected components to the monodromy orbits. They play no part
+in planarity either, since a circle alone always lies in a sphere.
 
 Planarity is invariant under mirroring and relabelling. The one-crossing kink is planar, while the
 one-crossing code whose arcs join opposite slots, two circles meeting in a single crossing, is not
@@ -47,14 +52,15 @@ that the second and third Reidemeister moves need beyond the algebraic operation
 * `TauCeti.PDCode.crossingRotation`: the counterclockwise rotation of the slots at each crossing.
 * `TauCeti.PDCode.toPermutationTriple`: the permutation triple of the underlying graph.
 * `TauCeti.PDCode.facePerm` and `TauCeti.PDCode.faceCount`: the face traversal and the number of
-  faces.
-* `TauCeti.PDCode.IsPlanar`: every connected component of the graph is a sphere.
+  faces of the underlying graph.
+* `TauCeti.PDCode.IsPlanar`: every connected component of the underlying graph is a sphere.
 
 ## Main results
 
 * `TauCeti.PDCode.eulerChar_toPermutationTriple`: the Euler characteristic is `faceCount - n`.
-* `TauCeti.PDCode.faceCount_le`: a code with `c` connected components has at most `n + 2 * c`
-  faces, with equality exactly for planar codes (`TauCeti.PDCode.isPlanar_iff_faceCount_eq`).
+* `TauCeti.PDCode.faceCount_le`: if the underlying graph has `c` connected components, it has at
+  most `n + 2 * c` faces, with equality exactly for planar codes
+  (`TauCeti.PDCode.isPlanar_iff_faceCount_eq`).
 * `TauCeti.PDCode.isPlanar_mirror` and `TauCeti.PDCode.isPlanar_relabel`: invariance.
 * `TauCeti.PDCode.isPlanar_kink` and `TauCeti.PDCode.exists_not_isPlanar`.
 
@@ -143,7 +149,8 @@ theorem facePerm_apply (D : PDCode n) (h : Fin (4 * n)) :
     D.facePerm h = D.edgePair.val (D.crossingRotation h) :=
   (rfl)
 
-/-- The number of faces of the underlying graph: the orbits of the face traversal. -/
+/-- The number of faces of the underlying graph: the orbits of the face traversal. Crossing-free
+circles are not part of this graph and contribute no faces. -/
 noncomputable def faceCount (D : PDCode n) : ℕ :=
   orbitCount D.facePerm
 
@@ -218,7 +225,8 @@ theorem eulerChar_toPermutationTriple (D : PDCode n) :
   push_cast
   ring
 
-/-- A PD-code with `c` connected components has at most `n + 2 * c` faces. -/
+/-- If the underlying graph of a PD-code has `c` connected components, it has at most `n + 2 * c`
+faces. -/
 theorem faceCount_le (D : PDCode n) :
     D.faceCount ≤ n + 2 * Nat.card D.toPermutationTriple.MonodromyOrbit := by
   have h : D.toPermutationTriple.eulerChar ≤
@@ -232,7 +240,8 @@ theorem faceCount_le (D : PDCode n) :
 /-- A PD-code is **planar** when every connected component of its underlying graph, with the
 counterclockwise rotation at each crossing, is embedded in a sphere. Since each component has
 Euler characteristic at most `2`, with equality exactly for the sphere, this says that the Euler
-characteristic is twice the number of components. -/
+characteristic is twice the number of components. Crossing-free circles are not part of the
+underlying graph and do not affect planarity. -/
 def IsPlanar (D : PDCode n) : Prop :=
   D.toPermutationTriple.eulerChar = 2 * Nat.card D.toPermutationTriple.MonodromyOrbit
 
@@ -242,14 +251,15 @@ theorem isPlanar_def (D : PDCode n) :
       D.toPermutationTriple.eulerChar = 2 * Nat.card D.toPermutationTriple.MonodromyOrbit :=
   Iff.rfl
 
-/-- A PD-code with `c` connected components is planar exactly when it has `n + 2 * c` faces, the
-largest possible number. -/
+/-- A PD-code whose underlying graph has `c` connected components is planar exactly when the
+graph has `n + 2 * c` faces, the largest possible number. -/
 theorem isPlanar_iff_faceCount_eq (D : PDCode n) :
     D.IsPlanar ↔ D.faceCount = n + 2 * Nat.card D.toPermutationTriple.MonodromyOrbit := by
   rw [isPlanar_def, eulerChar_toPermutationTriple]
   omega
 
-/-- A connected PD-code with `n` crossings is planar exactly when it has `n + 2` faces. -/
+/-- A PD-code with `n` crossings and connected underlying graph is planar exactly when the graph
+has `n + 2` faces. -/
 theorem isPlanar_iff_faceCount_eq_of_isConnected {D : PDCode n}
     (hD : D.toPermutationTriple.IsConnected) : D.IsPlanar ↔ D.faceCount = n + 2 := by
   have := hD.isPretransitive
