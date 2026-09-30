@@ -234,11 +234,9 @@ trivial exactly when `T` is empty. -/
 theorem forall_finiteHasse_eq_one_iff_eq_empty
     (hs : I.finiteHasse = (T : Set (HeightOneSpectrum (𝓞 K))).mulIndicator fun _ ↦ -1) :
     (∀ v, I.finiteHasse v = 1) ↔ T = ∅ := by
-  refine ⟨fun h ↦ Finset.eq_empty_of_forall_notMem fun v hv ↦ ?_, fun hT v ↦ ?_⟩
-  · have hv' := h v
-    rw [hs, Set.mulIndicator_of_mem (Finset.mem_coe.2 hv)] at hv'
-    exact absurd hv' (by decide)
-  · rw [hs, hT, Finset.coe_empty, Set.mulIndicator_empty]
+  refine funext_iff.symm.trans ?_
+  rw [hs, Set.mulIndicator_eq_one, Function.mulSupport_const (by decide : (-1 : ℤˣ) ≠ 1)]
+  simp
 
 /-- **The positive-definite systems of trivial discriminant.** In rank `n ≥ 3`, the system with
 trivial global discriminant, positive index `n` at every real place and Hasse sign `-1` exactly at
