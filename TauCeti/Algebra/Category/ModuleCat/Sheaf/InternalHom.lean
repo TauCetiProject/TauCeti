@@ -33,7 +33,7 @@ rests, for sources `M` that are only locally free.
 
 ## Main declarations
 
-* `SheafOfModules.isSheaf_ihom_val`: the presheaf internal Hom from any presheaf of modules into
+* `PresheafOfModules.isSheaf_ihom_val`: the presheaf internal Hom from any presheaf of modules into
   a sheaf of modules is a sheaf;
 * `SheafOfModules.ihomCompForgetIso`: the underlying presheaf of the sheaf internal Hom is the
   presheaf internal Hom, naturally in the source and target;
@@ -108,7 +108,7 @@ private def ihomPresheafIsoLinearHom (M : PresheafOfModules.{u} (ringCatSheaf R)
 /-- The presheaf internal Hom from a presheaf of modules into a sheaf of modules is a sheaf: its
 underlying presheaf of sets is the sheaf of local linear morphisms. No sheaf condition is needed
 on the source. -/
-theorem _root_.SheafOfModules.isSheaf_ihom_val
+theorem _root_.PresheafOfModules.isSheaf_ihom_val
     (M : PresheafOfModules.{u} (ringCatSheaf R).obj)
     (N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
     Presheaf.IsSheaf J ((ihom M).obj N.val).presheaf :=
@@ -200,7 +200,7 @@ private theorem ihomCompForgetIsoApp_naturality (M : _root_.SheafOfModules.{u}
 
 /-- The underlying presheaf of the internal Hom of sheaves of modules is the internal Hom of the
 underlying presheaves: the sheafification defining the former is an isomorphism, since the latter
-is already a sheaf (`SheafOfModules.isSheaf_ihom_val`). -/
+is already a sheaf (`PresheafOfModules.isSheaf_ihom_val`). -/
 def _root_.SheafOfModules.ihomCompForgetIso :
     ihom M ⋙ forget (ringCatSheaf R) ≅ forget (ringCatSheaf R) ⋙ ihom M.val :=
   NatIso.ofComponents (ihomCompForgetIsoApp M)

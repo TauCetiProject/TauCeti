@@ -153,9 +153,26 @@ def linearHomObjEquiv (U : C) :
     ext V m
     rfl
 
-private theorem linearHomObjEquiv_app (U : C)
+/-- Evaluate a local linear Hom section at a slice object and a source section. -/
+def linearHomApp (U : C) (φ : (M.linearHom N).obj.obj (op U))
+    (V : Over U) (m : M.obj (op V.left)) : N.val.obj (op V.left) :=
+  φ.val.app (op V) m
+
+-- This is not a simp lemma: `Over.forget_obj` rewrites the dependent module structure in its
+-- left-hand side.
+/-- The morphism associated to a local linear Hom section evaluates to the section's component. -/
+theorem linearHomObjEquiv_app (U : C)
     (φ : (M.linearHom N).obj.obj (op U)) (V : Over U) (m : M.obj (op V.left)) :
-    ((M.linearHomObjEquiv N U φ).app (op V)) m = φ.val.app (op V) m := by
+    ((M.linearHomObjEquiv N U φ).app (op V)) m = M.linearHomApp N U φ V m := by
+  rfl
+
+/-- The local linear Hom section associated to a morphism evaluates to the morphism's component. -/
+@[simp]
+theorem linearHomObjEquiv_symm_app (U : C)
+    (φ : (pushforward₀ (Over.forget U) R.obj).obj M ⟶
+      (pushforward₀ (Over.forget U) R.obj).obj N.val)
+    (V : Over U) (m : M.obj (op V.left)) :
+    M.linearHomApp N U ((M.linearHomObjEquiv N U).symm φ) V m = (φ.app (op V)) m := by
   rfl
 
 -- This is not a simp lemma: `Over.forget_obj` and `Over.mk_left` rewrite the slice object
@@ -180,18 +197,25 @@ variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
 /-- Sections of the linear Hom sheaf over an object are precisely morphisms between the
 restricted sheaves of modules.
 
-Evaluate a section `s` on a slice object `V` using
-`((linearHomObjEquiv M N U s).val.app (op V)) m`. Construct a section from a morphism
-with `(linearHomObjEquiv M N U).symm`; its evaluation simplifies by
-`Equiv.apply_symm_apply`, without unfolding the sheaf construction. -/
+The lemmas `linearHomObjEquiv_app` and `linearHomObjEquiv_symm_app` give the componentwise
+evaluation formulas in both directions. -/
 def linearHomObjEquiv (U : C) :
     (M.val.linearHom N).obj.obj (op U) ≃ (M.over U ⟶ N.over U) :=
   (M.val.linearHomObjEquiv N U).trans
     ((fullyFaithfulForget _).homEquiv (X := M.over U) (Y := N.over U)).symm
 
-private theorem linearHomObjEquiv_app (U : C)
+/-- The morphism associated to a local linear Hom section evaluates to the section's component. -/
+theorem linearHomObjEquiv_app (U : C)
     (φ : (M.val.linearHom N).obj.obj (op U)) (V : Over U) (m : M.val.obj (op V.left)) :
-    ((linearHomObjEquiv M N U φ).val.app (op V)) m = φ.val.app (op V) m := by
+    ((linearHomObjEquiv M N U φ).val.app (op V)) m = M.val.linearHomApp N U φ V m := by
+  rfl
+
+/-- The local linear Hom section associated to a morphism evaluates to the morphism's component. -/
+@[simp]
+theorem linearHomObjEquiv_symm_app (U : C) (φ : M.over U ⟶ N.over U)
+    (V : Over U) (m : M.val.obj (op V.left)) :
+    M.val.linearHomApp N U ((linearHomObjEquiv M N U).symm φ) V m =
+      (φ.val.app (op V)) m := by
   rfl
 
 /-- Restriction of a Hom section restricts its component linear maps. -/
