@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.FiniteHasse
 public import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
+import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
@@ -105,40 +106,14 @@ theorem _root_.QuadraticForm.hasFiniteMulSupport_finiteHasse
     {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
     (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
     Function.HasFiniteMulSupport (Q.finiteHasse hQ) := by
-  obtain ⟨p, hp, hfinite⟩ := exists_diagonalization_diagonalHasse_finite_support hQ
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   have hp' : Q.Equivalent
       (QuadraticMap.weightedSumSquares K fun i ↦ (p.2 i : K)) := by
     rwa [← presentedForm_eq_weightedSumSquares_coe]
-  rw [Function.HasFiniteMulSupport, Function.mulSupport]
-  refine hfinite.subset fun v hv ↦ ?_
-  simp only [Set.mem_ofPred_eq] at hv ⊢
-  rw [Q.finiteHasse_eq_prod_hilbertSymbol hQ hp' v] at hv
-  classical
-  have hpairs :
-      (∏ i, ∏ j ∈ Ioi i,
-          hilbertSymbol (v.unitAtFinitePlace (p.2 i)) (v.unitAtFinitePlace (p.2 j))) =
-        ∏ ij ∈ univ.filter (fun ij : Fin p.1 × Fin p.1 ↦ ij.1 < ij.2),
-          hilbertSymbol (v.unitAtFinitePlace (p.2 ij.1))
-            (v.unitAtFinitePlace (p.2 ij.2)) := by
-    calc
-      _ = ∏ i, ∏ j, if i < j then
-          hilbertSymbol (v.unitAtFinitePlace (p.2 i)) (v.unitAtFinitePlace (p.2 j)) else 1 := by
-        apply Finset.prod_congr rfl
-        intro i _
-        rw [← Finset.filter_lt_eq_Ioi, Finset.prod_filter]
-      _ = ∏ ij ∈ univ.product univ, if ij.1 < ij.2 then
-          hilbertSymbol (v.unitAtFinitePlace (p.2 ij.1))
-            (v.unitAtFinitePlace (p.2 ij.2)) else 1 := by
-        simpa using (Finset.prod_product univ univ
-          (fun ij : Fin p.1 × Fin p.1 ↦ if ij.1 < ij.2 then
-            hilbertSymbol (v.unitAtFinitePlace (p.2 ij.1))
-              (v.unitAtFinitePlace (p.2 ij.2)) else 1)).symm
-      _ = _ := by
-        have huniv : (univ : Finset (Fin p.1 × Fin p.1)) = univ.product univ := by
-          ext
-          simp
-        rw [← huniv]
-        rw [Finset.prod_filter]
-  rwa [hpairs] at hv
+  rw [show Q.finiteHasse hQ = fun v ↦ ∏ i, ∏ j ∈ Ioi i,
+      hilbertSymbol (v.unitAtFinitePlace (p.2 i)) (v.unitAtFinitePlace (p.2 j)) from
+    funext (Q.finiteHasse_eq_prod_hilbertSymbol hQ hp')]
+  fun_prop
 
 end TauCeti
