@@ -172,6 +172,13 @@ two outputs. The name follows the written order of the composite `cup ∘ₗ cap
 noncomputable def orthogonalCupCap : Module.End k (⨂[k]^2 (Fin n → k)) :=
   orthogonalCup k n ∘ₗ orthogonalCap k n
 
+/-- The Brauer generator `e` as a composite of linear maps: the companion of
+`TauCeti.orthogonalCupCap_apply` at the level of maps, so that the kernel and range calculus for a
+composition applies to `e` without rebuilding the composite by extensionality. -/
+theorem orthogonalCupCap_eq_comp :
+    orthogonalCupCap k n = orthogonalCup k n ∘ₗ orthogonalCap k n :=
+  (rfl)
+
 @[simp]
 theorem orthogonalCupCap_apply (x : ⨂[k]^2 (Fin n → k)) :
     orthogonalCupCap k n x = orthogonalCup k n (orthogonalCap k n x) :=

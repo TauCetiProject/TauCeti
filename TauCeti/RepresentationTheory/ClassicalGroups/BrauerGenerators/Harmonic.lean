@@ -35,11 +35,11 @@ trace; the two examples at the end of the file check the `8 = 9 - 1` half of tha
 the part visible without the symmetric/exterior splitting.
 
 The splitting needs `n` invertible in `k` and not merely nonzero as a natural number: where
-`(n : k) = 0` the cap kills the cup, so the Brauer generator `e = cup ∘ cap` squares to zero
-instead of being a multiple of an idempotent, and the trace line lies **inside** the harmonic
-tensors rather than complementing them. Both dimension counts survive there, because the cap is
-surjective and the cup injective for purely combinatorial reasons: the cap sends `e₀ ⊗ e₀` to
-`1`, and the `e₀ ⊗ e₀` coordinate of `cup c` is `c`.
+`(n : k) = 0` the cap kills the cup, so the Brauer generator `e = cup ∘ cap` squares to zero, and
+for `n ≠ 0` the trace line then lies **inside** the harmonic tensors instead of complementing
+them. Both dimension counts survive there, because the cap is surjective and the cup injective for
+purely combinatorial reasons: the cap sends `e₀ ⊗ e₀` to `1`, and the `e₀ ⊗ e₀` coordinate of
+`cup c` is `c`.
 
 ## Main definitions
 
@@ -75,6 +75,8 @@ surjective and the cup injective for purely combinatorial reasons: the cap sends
   `TauCeti.isIdempotentElem_orthogonalTraceProjection`: **`n⁻¹ • e` is the projection onto the
   trace line along the harmonic tensors** — it kills the harmonic tensors, fixes the trace line
   pointwise, and is idempotent.
+* `TauCeti.commute_orthogonalTraceProjection_tensorPower`: **the projection is equivariant**, so
+  the splitting it effects is one of representations.
 * `TauCeti.finrank_orthogonalHarmonicTensors`: **the harmonic tensors have codimension one**,
   `dim (harmonic) + 1 = n²`, and `TauCeti.finrank_orthogonalTraceLine`: for `n ≠ 0` the trace
   line is a line.
@@ -183,28 +185,26 @@ squares to zero, its kernel is still exactly the harmonic tensors. Nor does it n
 `n = 0` the cap and the cup are both the zero map, and both kernels are everything. -/
 theorem ker_orthogonalCupCap :
     LinearMap.ker (orthogonalCupCap k n) = LinearMap.ker (orthogonalCap k n) := by
-  have hcomp : orthogonalCupCap k n = orthogonalCup k n ∘ₗ orthogonalCap k n :=
-    LinearMap.ext (orthogonalCupCap_apply k n)
+  rw [orthogonalCupCap_eq_comp]
   obtain _ | m := n
   · have hcap : orthogonalCap k 0 = 0 := by
       refine PiTensorProduct.ext ?_
       ext v
       simp [dotProduct]
     have hcup : orthogonalCup k 0 = 0 := LinearMap.ext_ring (by simp)
-    rw [hcomp, hcap, hcup, LinearMap.zero_comp, LinearMap.ker_zero, LinearMap.ker_zero]
-  · rw [hcomp, LinearMap.ker_comp_of_ker_eq_bot _
+    rw [hcap, hcup, LinearMap.zero_comp, LinearMap.ker_zero, LinearMap.ker_zero]
+  · rw [LinearMap.ker_comp_of_ker_eq_bot _
       (LinearMap.ker_eq_bot_of_injective (orthogonalCup_injective k (m + 1)))]
 
 /-- The image of the Brauer generator `e = cup ∘ cap` is the trace line, the cap being
 surjective. For `n = 0` the cup is the zero map and both images are `⊥`. -/
 theorem range_orthogonalCupCap :
     LinearMap.range (orthogonalCupCap k n) = LinearMap.range (orthogonalCup k n) := by
-  have hcomp : orthogonalCupCap k n = orthogonalCup k n ∘ₗ orthogonalCap k n :=
-    LinearMap.ext (orthogonalCupCap_apply k n)
+  rw [orthogonalCupCap_eq_comp]
   obtain _ | m := n
   · have hcup : orthogonalCup k 0 = 0 := LinearMap.ext_ring (by simp)
-    rw [hcomp, hcup, LinearMap.zero_comp, LinearMap.range_zero, LinearMap.range_zero]
-  · rw [hcomp, LinearMap.range_comp_of_range_eq_top _
+    rw [hcup, LinearMap.zero_comp, LinearMap.range_zero, LinearMap.range_zero]
+  · rw [LinearMap.range_comp_of_range_eq_top _
       (LinearMap.range_eq_top_of_surjective _ (orthogonalCap_surjective k (m + 1)))]
 
 /-! ### The two summands as subrepresentations -/
@@ -276,8 +276,10 @@ theorem isCompl_orthogonalHarmonicTensors_orthogonalTraceLine (hn : IsUnit (n : 
 
 /-- **The projection onto the trace line along the harmonic tensors**: the Brauer generator
 `e = cup ∘ cap` normalized by the loop value. It takes the invertibility of `n` as an argument
-rather than an inverse in `k`, because no projection exists where `(n : k) = 0`: there `e` squares
-to zero. -/
+rather than an inverse in `k` because the normalization is what needs `n⁻¹`: where `(n : k) = 0`
+the generator `e` squares to zero, and then for `n ≠ 0` the trace line lies inside the harmonic
+tensors, so no projection onto it along them exists at all. (For `n = 0` the tensor square is the
+zero module, where the zero map is such a projection.) -/
 noncomputable def orthogonalTraceProjection (hn : IsUnit (n : k)) :
     Module.End k (⨂[k]^2 (Fin n → k)) :=
   ((hn.unit⁻¹ : kˣ) : k) • orthogonalCupCap k n
@@ -319,6 +321,14 @@ theorem isIdempotentElem_orthogonalTraceProjection (hn : IsUnit (n : k)) :
   rw [Module.End.mul_apply]
   exact orthogonalTraceProjection_apply_of_mem_orthogonalTraceLine k n hn
     (orthogonalTraceProjection_apply_mem_orthogonalTraceLine k n hn x)
+
+/-- **The projection commutes with the orthogonal action**, being a scalar multiple of the Brauer
+generator `e`, which centralizes that action. So the splitting it effects is a splitting of
+representations, and consumers can use it equivariantly without unfolding it. -/
+theorem commute_orthogonalTraceProjection_tensorPower (hn : IsUnit (n : k))
+    (g : Matrix.orthogonalGroup (Fin n) k) :
+    Commute (orthogonalTraceProjection k n hn) ((stdOrthogonalRep k n).tensorPower 2 g) :=
+  (commute_orthogonalCupCap_tensorPower k n g).smul_left _
 
 end CommRing
 
