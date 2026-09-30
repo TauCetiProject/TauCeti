@@ -23,7 +23,7 @@ Concretely, a point is a family `(ζ_m)_m` of roots of unity with `ζ_m ^ (m / n
 `μ_m(E)`, and is a topological group; for a domain `E` the levels are finite, so it is compact.
 
 When `E` is a separably closed field of exponential characteristic `p`, this is the group written
-`Ẑ^{(p')}(1)`: as a profinite group it is `∏_{ℓ ≠ p} ℤ_ℓ`, while the twist `(1)` records the action
+`ℤ̂^{(p')}(1)`: as a profinite group it is `∏_{ℓ ≠ p} ℤ_ℓ`, while the twist `(1)` records the action
 of automorphisms of `E` on it. For a local field `K` with residue characteristic `p`, the inertia
 group of `K` maps to it through the tame character.
 
@@ -78,7 +78,7 @@ theorem mem_primeToPTateModuleSubgroup_iff
 /-- The **prime-to-`p` Tate module** `lim_{m ≠ 0, (m, p) = 1} μ_m(E)` of the roots of unity of
 `E`: the compatible families of roots of unity of order prime to `p`, along the power maps
 `ζ ↦ ζ ^ (m / n)`. For a separably closed field of exponential characteristic `p` it is the group
-`Ẑ^{(p')}(1)`. It carries the inverse-limit topology. -/
+`ℤ̂^{(p')}(1)`. It carries the inverse-limit topology. -/
 def PrimeToPTateModule : Type _ :=
   primeToPTateModuleSubgroup p E
 

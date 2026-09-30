@@ -28,18 +28,18 @@ the power maps `μ_m → μ_n`, `ζ ↦ ζ ^ (m / n)`, for `n ∣ m`, because `�
 root of `a`, and they are locally constant for the Krull topology. Together they form the
 continuous homomorphism
 
-`tameKummerCharacter K a : I_K →ₜ* Ẑ^{(p')}(1) = lim_{p ∤ m} μ_m(K^{alg})`
+`tameKummerCharacter K a : I_K →ₜ* ℤ̂^{(p')}(1) = lim_{p ∤ m} μ_m(K^{alg})`
 
 into the prime-to-`p` Tate module `TauCeti.PrimeToPTateModule`. It is multiplicative in `a` and
 trivial on the units `𝒪[K]ˣ`: a unit is a `(q − 1)`-st root of unity times a principal unit, the
 former has roots of unity of order prime to `p` as its `m`-th roots, and the latter is an `m`-th
 power in `K`. So all uniformizers `π` give the same character, the **tame character**
 
-`inertiaTameCharacter K : I_K →ₜ* Ẑ^{(p')}(1)`, `σ ↦ (σ(π^{1/m})/π^{1/m})_m`,
+`inertiaTameCharacter K : I_K →ₜ* ℤ̂^{(p')}(1)`, `σ ↦ (σ(π^{1/m})/π^{1/m})_m`,
 
 independent of the uniformizer and of the chosen roots. Classically it is surjective with kernel
 the wild inertia group `P_K`, so that it identifies the tame inertia group `I_K/P_K` with
-`Ẑ^{(p')}(1)`; this file constructs the character, and does not prove those two facts.
+`ℤ̂^{(p')}(1)`; this file constructs the character, and does not prove those two facts.
 
 ## Main definitions
 
@@ -361,7 +361,7 @@ end Level
 /-! ### The tame Kummer character with values in the Tate module -/
 
 /-- **The tame Kummer character** of `a ∈ Kˣ`: the continuous homomorphism from the inertia
-subgroup of `K` to the prime-to-`p` Tate module `Ẑ^{(p')}(1) = lim_{p ∤ m} μ_m(K^{alg})`,
+subgroup of `K` to the prime-to-`p` Tate module `ℤ̂^{(p')}(1) = lim_{p ∤ m} μ_m(K^{alg})`,
 `σ ↦ (σ(α_m)/α_m)_m` for any roots `α_m` of `X ^ m − a`. Its components are the characters
 `TauCeti.inertiaKummerCharacter K m hm a`. At a uniformizer `a = π` it is the tame character of
 `K`. -/
@@ -404,7 +404,7 @@ theorem tameKummerCharacter_eq_of_isUniformizer {π π' : Kˣ} (hπ : IsUniformi
 /-! ### The tame character -/
 
 variable (K) in
-/-- **The tame character** of `K`: the continuous homomorphism `I_K →ₜ* Ẑ^{(p')}(1)`,
+/-- **The tame character** of `K`: the continuous homomorphism `I_K →ₜ* ℤ̂^{(p')}(1)`,
 `σ ↦ (σ(π^{1/m})/π^{1/m})_m`, for a uniformizer `π` of `K` and any `m`-th roots `π^{1/m}` of it.
 It depends neither on `π` (`TauCeti.inertiaTameCharacter_eq_tameKummerCharacter`) nor on the roots
 (`TauCeti.coe_proj_inertiaTameCharacter_apply`). -/
