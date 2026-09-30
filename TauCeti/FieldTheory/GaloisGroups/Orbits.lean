@@ -27,8 +27,10 @@ turns this into a bijection with the distinct monic irreducible factors of `p`, 
 the members of `Polynomial.Factors p`.
 
 The dictionary also identifies transitivity of the root action with irreducibility for a
-separable polynomial of positive degree, and records the same descriptions for the action inside
-the splitting field itself, where an irreducible polynomial acts transitively.
+separable polynomial of positive degree, together with its relative form: inside a normal
+extension, irreducibility over an intermediate field is transitivity of the subgroup fixing that
+field. It records the same descriptions for the action inside the splitting field itself, where an
+irreducible polynomial acts transitively.
 
 For the intrinsic action, this file also records the evaluation rule on the splitting field and
 the instances identifying `Polynomial.Gal p` as a Galois group for that field over the base.
@@ -53,6 +55,9 @@ the instances identifying `Polynomial.Gal p` as a Galois group for that field ov
   `E`, if the automorphism group `Gal(E/F)` is transitive on the roots, then so is `p.Gal`.
 * `TauCeti.isPretransitive_algEquiv_rootSet_iff_gal`: in a normal splitting extension `E`, the
   automorphism group `Gal(E/F)` is transitive on the roots exactly when `p.Gal` is.
+* `TauCeti.irreducible_map_iff_isPretransitive_fixingSubgroup`: in a normal splitting extension
+  `E`, a separable `p` stays irreducible over an intermediate field `K` exactly when the
+  automorphisms fixing `K` act transitively on the roots.
 * `TauCeti.mem_orbit_iff_minpoly_eq_splittingField`,
   `TauCeti.image_val_orbit_eq_rootSet_minpoly_splittingField`,
   `TauCeti.natCard_orbit_eq_natDegree_minpoly_splittingField`: the same three descriptions of an
@@ -297,6 +302,30 @@ theorem isPretransitive_algEquiv_rootSet_iff_gal [Normal F E] :
   obtain ⟨g, rfl⟩ := h.exists_smul_eq x y
   obtain ⟨σ, rfl⟩ := Gal.restrict_surjective p E g
   exact ⟨σ, Subtype.ext <| by simp⟩
+
+/-- **Irreducibility over an intermediate field.** Let `E` be a normal extension of `F` in which a
+separable polynomial `p` of positive degree splits, and let `K` be an intermediate field. Then `p`
+stays irreducible over `K` exactly when the automorphisms of `E` fixing `K` act transitively on the
+roots of `p` in `E`.
+
+This is `TauCeti.isPretransitive_iff_irreducible` over the base `K`, read through
+`IntermediateField.fixingSubgroupEquiv`, which identifies the automorphisms of `E` over `K` with the
+automorphisms of `E` over `F` that fix `K`. -/
+theorem irreducible_map_iff_isPretransitive_fixingSubgroup [Normal F E]
+    (K : IntermediateField F E) (hsep : p.Separable) (hdeg : 0 < p.natDegree) :
+    Irreducible (p.map (algebraMap F K)) ↔
+      MulAction.IsPretransitive K.fixingSubgroup (p.rootSet E) := by
+  have : Fact (((p.map (algebraMap F K)).map (algebraMap K E)).Splits) := by
+    rw [Polynomial.map_map, ← IsScalarTower.algebraMap_eq]
+    infer_instance
+  have : Normal K E := Normal.tower_top_of_normal F K E
+  rw [← isPretransitive_iff_irreducible (p := p.map (algebraMap F K)) E hsep.map
+    (by rwa [natDegree_map]), ← isPretransitive_algEquiv_rootSet_iff_gal]
+  -- The roots of `p` over `F` and over `K` are the same subset of `E`.
+  let g : p.rootSet E ≃ (p.map (algebraMap F K)).rootSet E :=
+    Equiv.subtypeEquivProp (rootSet_map E K p).symm
+  exact (MulAction.isPretransitive_congr (φ := K.fixingSubgroupEquiv)
+    (f := ⟨g, fun _ _ ↦ rfl⟩) K.fixingSubgroupEquiv.surjective g.bijective).symm
 
 /-! ## The action inside the splitting field -/
 
