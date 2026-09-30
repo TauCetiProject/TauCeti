@@ -23,6 +23,9 @@ permutation with one of a *different* type and are stated to allow that; the thi
 permutations of the same type.
 
 * `TauCeti.orbitCount_conj`: conjugation does not change the number of orbits.
+* `TauCeti.orbitCount_prodCongrRight_const`: permuting the second factor of a product by the same
+  permutation over every point of the first multiplies the number of orbits by the size of the
+  first factor.
 * `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
   of parts in Mathlib's full, fixed-point-aware permutation partition, through the decomposition
   `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints` of `TauCeti.GroupTheory.Perm.Partition`.
@@ -152,6 +155,26 @@ theorem _root_.Equiv.orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
       simpa only [Equiv.permCongrHom_coe] using map_zpow e.permCongrHom σ i
     rw [← hz, Equiv.permCongr_apply, Equiv.symm_apply_apply] at hi
     exact hi
+
+/-- Rotating the second coordinate of `α × β` by the same permutation `τ` over every point of `α`
+has one copy of each orbit of `τ` over every point of `α`. -/
+theorem orbitCount_prodCongrRight_const (τ : Equiv.Perm β) :
+    orbitCount (Equiv.prodCongrRight fun _ : α ↦ τ) = Nat.card α * orbitCount τ := by
+  let f : Equiv.Perm β →* Equiv.Perm (α × β) :=
+    { toFun := fun σ ↦ Equiv.prodCongrRight fun _ ↦ σ
+      map_one' := rfl
+      map_mul' := fun _ _ ↦ rfl }
+  have hsc : ∀ x y : α × β, SameCycle (Equiv.prodCongrRight fun _ : α ↦ τ) x y ↔
+      (1 : Equiv.Perm α).SameCycle x.1 y.1 ∧ τ.SameCycle x.2 y.2 := by
+    rintro ⟨a, b⟩ ⟨a', b'⟩
+    have hpow (k : ℤ) :
+        (Equiv.prodCongrRight fun _ : α ↦ τ) ^ k = Equiv.prodCongrRight fun _ ↦ τ ^ k :=
+      (map_zpow f τ k).symm
+    simp only [SameCycle, hpow, Equiv.prodCongrRight_apply, Prod.mk.injEq, one_zpow, one_apply]
+    exact ⟨fun ⟨k, ha, hb⟩ ↦ ⟨⟨0, ha⟩, k, hb⟩, fun ⟨⟨_, ha⟩, k, hb⟩ ↦ ⟨k, ha, hb⟩⟩
+  rw [orbitCount_def, Nat.card_congr ((Quotient.congr (rb := (SameCycle.setoid 1).prod
+    (SameCycle.setoid τ)) (Equiv.refl _) hsc).trans (Setoid.prodQuotientEquiv _ _).symm),
+    Nat.card_prod, ← orbitCount_def, ← orbitCount_def, orbitCount_one]
 
 section Finite
 

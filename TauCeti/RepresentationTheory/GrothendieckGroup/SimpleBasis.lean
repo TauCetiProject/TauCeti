@@ -69,8 +69,6 @@ variable (R) (S : Type w) [AddCommGroup S] [Module R S]
 private noncomputable def jordanHolderInvariant :
     ExactK0.AdditiveInvariant (finiteModulesExactStructure R) ℤ where
   obj M := jordanHolderMultiplicity R M S
-  map_iso {_ _} e := congrArg Int.ofNat
-    (jordanHolderMultiplicity_eq_of_linearEquiv (FGModuleCat.isoToLinearEquiv e) S)
   map_conflation {T} hT := by
     have hshort := (finiteModulesExactStructure_conflation_iff R T).mp hT
     have hexact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hshort.exact

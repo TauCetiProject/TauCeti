@@ -97,8 +97,6 @@ zero. -/
 noncomputable def toBoundedDerivedK0 : AbelianK0 A →+ TriangulatedK0 (DerivedCategory.Bounded A) :=
   lift
     { obj := fun X ↦ TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X)
-      map_iso := fun _ _ e ↦ TriangulatedK0.of_congr
-        ((DerivedCategory.Bounded.singleFunctor A 0).mapIso e)
       map_shortExact := fun _ hS ↦ TriangulatedK0.of_singleFunctor_shortExact hS }
 
 /-- The canonical map to derived `K₀` sends an object class to the class of its degree-zero
