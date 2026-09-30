@@ -30,8 +30,8 @@ The statement is given in three forms.
 
 * For a tower `M/L/K` with `L/K` Galois, the image of `G^v` under restriction to `L` is the
   upper ramification group of `L/K` at `v`.
-* For a normal subgroup `H`, the quotient filtration `upperRamificationGroupQuotient H` of
-  `G ⧸ H` is the image of `G^v` in `G ⧸ H`.
+* For a normal subgroup `H`, define the quotient filtration `upperRamificationGroupQuotient H`
+  of `G ⧸ H` as the image of `G^v` and express it as `G^v H / H`.
 * For every compatible local-field structure on `M^H`, the restriction equivalence
   `IsGalois.normalAutEquivQuotient` carries this quotient filtration to the upper filtration of
   `M^H/K`.
@@ -51,7 +51,8 @@ As a consequence, every upper break of `L/K` is an upper break of `M/K`.
   break of `M/K`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_fixedField`: the quotient filtration
   maps to `Gal(M^H/K)^v` under `G ⧸ H ≃* Gal(M^H/K)`.
-* `TauCeti.LocalFieldsRamification.upperRamificationGroup_quotient`: `(G/H)^v = G^v H / H`.
+* `TauCeti.LocalFieldsRamification.upperRamificationGroup_quotient`: the defined quotient
+  filtration equals `G^v H / H`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroupQuotient_antitone`: the quotient
   filtration is decreasing.
 
@@ -124,12 +125,22 @@ def upperRamificationGroupQuotient (v : RamificationIndexDomain) :
     Subgroup ((M ≃ₐ[K] M) ⧸ H) :=
   (upperRamificationGroup K M v).map (QuotientGroup.mk' H)
 
-/-- **The upper numbering is compatible with quotients.** For a normal subgroup `H` of
-`G = Gal(M/K)`, `(G/H)^v = G^v H / H`. -/
+/-- For a normal subgroup `H` of `G = Gal(M/K)`, the defined quotient filtration is
+`G^v H / H`. -/
 theorem upperRamificationGroup_quotient (v : RamificationIndexDomain) :
     upperRamificationGroupQuotient H v =
       (upperRamificationGroup K M v ⊔ H).map (QuotientGroup.mk' H) := by
   simp [upperRamificationGroupQuotient, Subgroup.map_sup]
+
+/-- A representative belongs to the quotient upper ramification group exactly when it belongs
+to `G^v H`. -/
+@[simp]
+theorem mem_upperRamificationGroupQuotient_mk_iff (v : RamificationIndexDomain)
+    (σ : M ≃ₐ[K] M) :
+    QuotientGroup.mk' H σ ∈ upperRamificationGroupQuotient H v ↔
+      σ ∈ upperRamificationGroup K M v ⊔ H := by
+  rw [← Subgroup.mem_comap, upperRamificationGroupQuotient,
+    QuotientGroup.comap_map_mk', sup_comm]
 
 /-- The upper ramification filtration on a quotient is decreasing. -/
 theorem upperRamificationGroupQuotient_antitone :
