@@ -35,8 +35,6 @@ symmetric polynomials. This is the integral orbit product used by a resolvent sp
 
 * `MvPolynomial.rename_eq_rename_iff`: two permutations give the same renaming exactly when
   their quotient stabilizes the polynomial.
-* `TauCeti.rename_inv_rename` and `TauCeti.rename_rename_inv`:
-  renaming by a permutation and its inverse cancel.
 * `MvPolynomial.card_renameOrbit`: the rename-orbit has size the index of the stabilizer.
 * `MvPolynomial.renameOrbit_rename` and `MvPolynomial.universalResolvent_rename`: renaming an
   invariant does not change its orbit or universal resolvent.
@@ -59,36 +57,11 @@ public section
 
 open Polynomial
 
-namespace TauCeti
-
-section Stabilizer
-
-open _root_.MvPolynomial
-
-variable {σ R : Type*} [CommSemiring R]
-
-/-- Renaming by a permutation and then its inverse recovers the polynomial. -/
-theorem rename_inv_rename (g : Equiv.Perm σ) (p : MvPolynomial σ R) :
-    rename ⇑g⁻¹ (rename ⇑g p) = p := by
-  rw [rename_rename, ← Equiv.Perm.coe_mul, inv_mul_cancel, Equiv.Perm.coe_one,
-    rename_id_apply]
-
-/-- Renaming by the inverse permutation and then the permutation recovers the polynomial. -/
-theorem rename_rename_inv (g : Equiv.Perm σ) (p : MvPolynomial σ R) :
-    rename ⇑g (rename ⇑g⁻¹ p) = p := by
-  simpa only [inv_inv] using rename_inv_rename g⁻¹ p
-
-end Stabilizer
-
-end TauCeti
-
 namespace MvPolynomial
 
 section Stabilizer
 
 variable {σ R : Type*} [CommSemiring R]
-
-open TauCeti
 
 /-- The stabilizer of a multivariable polynomial under permutation of its variables. -/
 def renameStabilizer (Φ : MvPolynomial σ R) : Subgroup (Equiv.Perm σ) where
@@ -100,7 +73,7 @@ def renameStabilizer (Φ : MvPolynomial σ R) : Subgroup (Equiv.Perm σ) where
   inv_mem' {a} ha := by
     simp only [Set.mem_ofPred_eq] at ha ⊢
     conv_lhs => rw [← ha]
-    exact rename_inv_rename a _
+    exact (renameEquiv R a).symm_apply_apply _
 
 @[simp]
 theorem mem_renameStabilizer {Φ : MvPolynomial σ R} {e : Equiv.Perm σ} :
@@ -114,11 +87,13 @@ theorem rename_eq_rename_iff (Φ : MvPolynomial σ R) (a b : Equiv.Perm σ) :
   constructor
   · intro h
     have h' := congrArg (rename (⇑a⁻¹)) h
-    rw [rename_inv_rename] at h'
+    -- The cancellation lemma rewrites the bundled equivalence, rather than bare `rename`.
+    change (renameEquiv R a).symm ((renameEquiv R a) Φ) = _ at h'
+    rw [(renameEquiv R a).symm_apply_apply] at h'
     simpa only [rename_rename, ← Equiv.Perm.coe_mul] using h'.symm
   · intro h
     have h' := congrArg (rename (⇑a)) h
-    simpa only [rename_rename_inv, rename_rename, ← Equiv.Perm.coe_mul,
+    simpa only [rename_rename, ← Equiv.Perm.coe_mul,
       mul_inv_cancel_left] using h'.symm
 
 /-- A polynomial is symmetric exactly when its stabilizer is the whole symmetric group. -/
@@ -139,10 +114,13 @@ theorem renameStabilizer_rename (e : Equiv.Perm σ) (Φ : MvPolynomial σ R) :
   rw [Subgroup.mem_map_equiv, mem_renameStabilizer, mem_renameStabilizer, hconj]
   constructor
   · intro h
-    rw [h, rename_inv_rename]
+    rw [h]
+    exact (renameEquiv R e).symm_apply_apply Φ
   · intro h
-    have h' := congrArg (rename (⇑e⁻¹⁻¹)) h
-    rwa [rename_inv_rename, inv_inv] at h'
+    have h' := congrArg (renameEquiv R e) h
+    -- Bundle the inverse renaming so `apply_symm_apply` can match it.
+    change (renameEquiv R e) ((renameEquiv R e).symm (rename ⇑τ (rename ⇑e Φ))) = _ at h'
+    rwa [(renameEquiv R e).apply_symm_apply] at h'
 
 end Stabilizer
 

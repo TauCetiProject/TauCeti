@@ -10,7 +10,6 @@ public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
 public import TauCeti.RingTheory.Polynomial.Factors
 
 import Mathlib.FieldTheory.Galois.Infinite
-import Mathlib.FieldTheory.Minpoly.IsConjRoot
 import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.RingTheory.Polynomial.Roots
 
@@ -246,23 +245,6 @@ private theorem exists_cosetValue_eq (hf : f.Monic) (hsep : f.Separable) (hdeg :
   obtain ⟨τ, rfl⟩ := (MvPolynomial.mem_renameOrbit _ _).1 hΨ
   exact ⟨τ, cosetValue_mk spec e τ⟩
 
--- Every monic irreducible factor of the resolvent is the minimal polynomial of a value of the
--- orbit.
-omit [Fact ((f.map (algebraMap F E)).Splits)] in
-private theorem exists_minpoly_cosetValue_eq (hf : f.Monic) (hsep : f.Separable)
-    (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (q : (spec.specialize F f).Factors) :
-    ∃ c, minpoly F (cosetValue spec e c) = q := by
-  have hsplits : ((spec.specialize F f).map (algebraMap F E)).Splits := by
-    rw [map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e, MvPolynomial.galResolvent_def]
-    exact Splits.prod fun _ _ => Splits.X_sub_C _
-  have hfact : Fact (((spec.specialize F f).map (algebraMap F E)).Splits) := ⟨hsplits⟩
-  let _ := hfact
-  obtain ⟨x, hx⟩ := exists_mem_rootSet_minpoly_eq E
-    (spec.monic_specialize F f).ne_zero q
-  obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hsep hdeg e
-    (aeval_eq_zero_of_mem_rootSet x.2)
-  exact ⟨c, by rw [hc]; exact hx⟩
-
 -- A separable resolvent takes pairwise distinct values on the cosets of `H`.
 omit [Fact ((f.map (algebraMap F E)).Splits)] in
 private theorem cosetValue_injective (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
@@ -342,7 +324,7 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic) (hsep : f.
     {c d : Equiv.Perm (Fin n) ⧸ spec.H} :
     minpoly F (cosetValue spec e c) = minpoly F (cosetValue spec e d) ↔
       c ∈ MulAction.orbit ((Gal.galActionHom f E).range.map
-        (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n))) d := by
+        e.permCongrHom.toMonoidHom) d := by
   constructor
   · intro h
     obtain ⟨ϕ, hϕ⟩ := (Normal.minpoly_eq_iff_mem_orbit E).1 h
@@ -358,30 +340,41 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic) (hsep : f.
     exact (congrArg (minpoly F) (apply_cosetValue spec e ϕ d)).symm.trans
       (minpoly.algEquiv_eq ϕ _)
 
--- The roots of the minimal polynomial of a value of the orbit are the values on the orbit of its
--- coset under the Galois image.
-private theorem image_cosetValue_orbit [Normal F E] (e : f.rootSet E ≃ Fin n)
-    (c : Equiv.Perm (Fin n) ⧸ spec.H) :
-    cosetValue spec e ''
-        MulAction.orbit ((Gal.galActionHom f E).range.map
-          (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n))) c
-      = (minpoly F (cosetValue spec e c)).rootSet E := by
-  have hint : IsIntegral F (cosetValue spec e c) := Algebra.IsIntegral.isIntegral _
-  ext z
-  rw [← isConjRoot_iff_mem_minpoly_rootSet hint, isConjRoot_iff_orbitRel,
-    MulAction.orbitRel_apply, MulAction.mem_orbit_symm]
-  constructor
-  · rintro ⟨d, hd, rfl⟩
-    obtain ⟨⟨π, hπ⟩, rfl⟩ := MulAction.mem_orbit_iff.1 hd
-    obtain ⟨ϕ, rfl⟩ := exists_eq_of_mem_image e hπ
-    exact MulAction.mem_orbit_iff.2 ⟨ϕ, apply_cosetValue spec e ϕ c⟩
-  · intro hz
-    obtain ⟨ϕ, rfl⟩ := MulAction.mem_orbit_iff.1 hz
-    refine ⟨e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ)) • c, ?_, ?_⟩
-    · exact MulAction.mem_orbit_iff.2
-        ⟨⟨_, Subgroup.mem_map_of_mem _ (MonoidHom.mem_range.2
-          ⟨Gal.restrict f E ϕ, rfl⟩)⟩, rfl⟩
-    · exact (apply_cosetValue spec e ϕ c).symm
+-- The specialized resolvent splits over the field containing the numbered roots.
+omit [Fact ((f.map (algebraMap F E)).Splits)] in
+private theorem splits_specialize (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+    (e : f.rootSet E ≃ Fin n) :
+    ((spec.specialize F f).map (algebraMap F E)).Splits := by
+  rw [map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e, MvPolynomial.galResolvent_def]
+  exact Splits.prod fun _ _ => Splits.X_sub_C _
+
+-- A separable resolvent identifies the cosets with its roots.
+omit [Fact ((f.map (algebraMap F E)).Splits)] in
+private noncomputable def cosetValueEquiv (hf : f.Monic) (hsep : f.Separable)
+    (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
+    (hres : (spec.specialize F f).Separable) :
+    Equiv.Perm (Fin n) ⧸ spec.H ≃ (spec.specialize F f).rootSet E :=
+  Equiv.ofBijective
+    (fun c => ⟨cosetValue spec e c, mem_rootSet.mpr
+      ⟨(spec.monic_specialize F f).ne_zero, aeval_cosetValue spec hf hsep hdeg e c⟩⟩)
+    ⟨fun _ _ h => cosetValue_injective spec hf hsep hdeg e hres (congrArg Subtype.val h), by
+      intro x
+      obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hsep hdeg e
+        (aeval_eq_zero_of_mem_rootSet x.2)
+      exact ⟨c, Subtype.ext hc⟩⟩
+
+-- This bijection preserves the orbit relation, by the minimal-polynomial descriptions.
+private theorem cosetValueEquiv_orbitRel [Normal F E] (hf : f.Monic) (hsep : f.Separable)
+    (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
+    (hres : (spec.specialize F f).Separable)
+    [Fact (((spec.specialize F f).map (algebraMap F E)).Splits)]
+    (c d : Equiv.Perm (Fin n) ⧸ spec.H) :
+    MulAction.orbitRel ((Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom) _ c d ↔
+      MulAction.orbitRel (spec.specialize F f).Gal _
+        (cosetValueEquiv spec hf hsep hdeg e hres c)
+        (cosetValueEquiv spec hf hsep hdeg e hres d) := by
+  rw [MulAction.orbitRel_apply, MulAction.orbitRel_apply, mem_orbit_iff_minpoly_eq E]
+  exact (minpoly_cosetValue_eq_iff spec hf hsep hdeg e hres).symm
 
 /-- **The factorization theorem for a separable resolvent.** Let `f` be monic and separable of
 degree `n`, let `E` be a normal splitting extension, number the roots of `f` in `E` by `e`, and
@@ -395,22 +388,13 @@ The degree of each factor is the size of the matching orbit,
 noncomputable def orbitQuotientEquivFactors [Normal F E] (hf : f.Monic) (hsep : f.Separable)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable) :
     MulAction.orbitRel.Quotient ((Gal.galActionHom f E).range.map
-      (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n)))
-        (Equiv.Perm (Fin n) ⧸ spec.H) ≃ (spec.specialize F f).Factors :=
-  Equiv.ofBijective
-    (Quotient.lift
-      (fun c => (⟨minpoly F (cosetValue spec e c), by
-          have hint : IsIntegral F (cosetValue spec e c) := Algebra.IsIntegral.isIntegral _
-          exact ⟨minpoly.irreducible hint, minpoly.monic hint,
-            minpoly.dvd F _ (aeval_cosetValue spec hf hsep hdeg e c)⟩⟩ :
-            (spec.specialize F f).Factors))
-      fun _ _ hcd => Subtype.ext ((minpoly_cosetValue_eq_iff spec hf hsep hdeg e hres).2 hcd))
-    ⟨by
-      refine fun a b => Quotient.inductionOn₂ a b fun c d hcd => Quotient.sound ?_
-      exact (minpoly_cosetValue_eq_iff spec hf hsep hdeg e hres).1 (Subtype.ext_iff.1 hcd), by
-      intro q
-      obtain ⟨c, hc⟩ := exists_minpoly_cosetValue_eq spec hf hsep hdeg e q
-      exact ⟨Quotient.mk _ c, Subtype.ext hc⟩⟩
+      e.permCongrHom.toMonoidHom)
+        (Equiv.Perm (Fin n) ⧸ spec.H) ≃ (spec.specialize F f).Factors := by
+  haveI : Fact (((spec.specialize F f).map (algebraMap F E)).Splits) :=
+    ⟨splits_specialize spec hf hsep hdeg e⟩
+  exact (Quotient.congr (cosetValueEquiv spec hf hsep hdeg e hres)
+    (cosetValueEquiv_orbitRel spec hf hsep hdeg e hres)).trans
+      (TauCeti.orbitQuotientEquivFactors _ E (spec.monic_specialize F f).ne_zero)
 
 /-- The factorization equivalence sends the orbit of the coset of `τ` to the minimal polynomial
 of the value at the roots of `f` of the invariant renamed along `τ`. -/
@@ -421,8 +405,12 @@ theorem orbitQuotientEquivFactors_apply_mk [Normal F E] (hf : f.Monic) (hsep : f
     ((spec.orbitQuotientEquivFactors hf hsep hdeg e hres
         (Quotient.mk _ (τ : Equiv.Perm (Fin n) ⧸ spec.H)) : (spec.specialize F f).Factors) : F[X])
       = minpoly F (MvPolynomial.eval₂ (Int.castRingHom E) (fun i => ((e.symm i : f.rootSet E) : E))
-          (MvPolynomial.rename ⇑τ spec.Φ)) :=
-  (rfl)
+          (MvPolynomial.rename ⇑τ spec.Φ)) := by
+  have : Fact (((spec.specialize F f).map (algebraMap F E)).Splits) :=
+    ⟨splits_specialize spec hf hsep hdeg e⟩
+  rw [orbitQuotientEquivFactors, Equiv.trans_apply, Quotient.congr_mk,
+    TauCeti.orbitQuotientEquivFactors_apply_mk]
+  rfl
 
 /-- A factor corresponds to the orbit of the coset of `τ` exactly when it is the minimal
 polynomial of the value at the roots of `f` of the invariant renamed along `τ`. -/
@@ -444,25 +432,31 @@ theorem natCard_orbit_eq_natDegree_factor [Normal F E] (hf : f.Monic) (hsep : f.
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable)
     (ω : MulAction.orbitRel.Quotient
       ((Gal.galActionHom f E).range.map
-        (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n)))
+        e.permCongrHom.toMonoidHom)
       (Equiv.Perm (Fin n) ⧸ spec.H)) :
     Nat.card (MulAction.orbitRel.Quotient.orbit ω)
       = ((spec.orbitQuotientEquivFactors hf hsep hdeg e hres ω : (spec.specialize F f).Factors) :
           F[X]).natDegree := by
+  have : Fact (((spec.specialize F f).map (algebraMap F E)).Splits) :=
+    ⟨splits_specialize spec hf hsep hdeg e⟩
+  let v := cosetValueEquiv spec hf hsep hdeg e hres
   induction ω using Quotient.inductionOn with | h c => ?_
-  induction c using QuotientGroup.induction_on with | H τ => ?_
-  have hint : IsIntegral F (cosetValue spec e (τ : Equiv.Perm (Fin n) ⧸ spec.H)) :=
-    Algebra.IsIntegral.isIntegral _
-  have hqsep : (minpoly F (cosetValue spec e (τ : Equiv.Perm (Fin n) ⧸ spec.H))).Separable :=
-    hres.of_dvd (minpoly.dvd F _ (aeval_cosetValue spec hf hsep hdeg e _))
-  have hsplits : ((minpoly F (cosetValue spec e (τ : Equiv.Perm (Fin n) ⧸ spec.H))).map
-      (algebraMap F E)).Splits :=
-    Normal.splits' _
+  have himage : v '' MulAction.orbit
+      ((Gal.galActionHom f E).range.map e.permCongrHom.toMonoidHom) c =
+      MulAction.orbit (spec.specialize F f).Gal (v c) := by
+    ext x
+    constructor
+    · rintro ⟨d, hd, rfl⟩
+      exact (cosetValueEquiv_orbitRel spec hf hsep hdeg e hres d c).mp hd
+    · intro hx
+      obtain ⟨d, rfl⟩ := v.surjective x
+      exact ⟨d, (cosetValueEquiv_orbitRel spec hf hsep hdeg e hres d c).mpr hx, rfl⟩
   rw [MulAction.orbitRel.Quotient.orbit_mk,
-    ← Nat.card_image_of_injective (cosetValue_injective spec hf hsep hdeg e hres),
-    image_cosetValue_orbit spec e, Nat.card_eq_fintype_card,
-    card_rootSet_eq_natDegree hqsep hsplits, orbitQuotientEquivFactors_apply_mk]
-  rfl
+    ← Nat.card_image_of_injective v.injective, himage]
+  simpa only [orbitQuotientEquivFactors, Equiv.trans_apply, Quotient.congr_mk,
+    MulAction.orbitRel.Quotient.orbit_mk] using
+    TauCeti.natCard_orbit_eq_natDegree_factor E (spec.monic_specialize F f).ne_zero
+      (Quotient.mk _ (v c)) (hres.of_dvd (Factors.dvd _))
 
 open scoped Classical in
 /-- **The factor degrees of a separable resolvent are the orbit sizes.** Under the hypotheses of
@@ -475,7 +469,7 @@ theorem map_natDegree_normalizedFactors_specialize [Normal F E] (hf : f.Monic)
     (UniqueFactorizationMonoid.normalizedFactors (spec.specialize F f)).map natDegree
       = Finset.univ.val.map fun ω : MulAction.orbitRel.Quotient
           ((Gal.galActionHom f E).range.map
-            (↑e.permCongrHom : Equiv.Perm (f.rootSet E) →* Equiv.Perm (Fin n)))
+            e.permCongrHom.toMonoidHom)
           (Equiv.Perm (Fin n) ⧸ spec.H) => Nat.card (MulAction.orbitRel.Quotient.orbit ω) := by
   have hg0 : spec.specialize F f ≠ 0 := (spec.monic_specialize F f).ne_zero
   have := Factors.finite hg0
