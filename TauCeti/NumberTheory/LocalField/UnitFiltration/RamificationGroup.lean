@@ -84,6 +84,8 @@ particular the wild inertia group `G_1`, is a `p`-group.
   action with finite `G_0`, the positive-depth ramification groups, are `p`-groups.
 * `TauCeti.ramificationGroupOneSylow` and `TauCeti.eq_ramificationGroupOneSylow`: the wild inertia
   group `G_1`, viewed inside `G_0`, is its unique normal Sylow `p`-subgroup.
+* `TauCeti.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: `G_1` is
+  trivial exactly when `p` does not divide the order of `G_0`, the tame case.
 
 ## Implementation notes
 
@@ -649,5 +651,24 @@ theorem eq_ramificationGroupOneSylow (p : ℕ) [CharP 𝓀[L] p]
     Sylow.unique_of_normal (ramificationGroupOneSylow (G := G) (L := L) p)
       (ramificationGroupOneSylow_normal (G := G) (L := L) p)
   exact Subsingleton.elim _ _
+
+variable (G) in
+/-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
+first ramification group `G_1` is trivial if and only if `p` does not divide the order of the
+inertia group `G_0`: `G_1` is the Sylow `p`-subgroup of `G_0`. -/
+theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
+    [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
+    ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) := by
+  have hp : p.Prime := CharP.char_is_prime 𝓀[L] p
+  let _ : Fact p.Prime := ⟨hp⟩
+  -- `#G_1 = p ^ (v_p #G_0)`, since `G_1` is a Sylow `p`-subgroup of `G_0`.
+  have hcard : Nat.card (ramificationGroup G 𝒪[L] 1) =
+      p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p := by
+    rw [← Sylow.card_eq_multiplicity (ramificationGroupOneSylow G p)]
+    exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
+      (ramificationGroup_antitone G 𝒪[L] (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
+  rw [← Subgroup.card_eq_one, hcard, pow_eq_one_iff_right hp.ne_one,
+    Nat.factorization_eq_zero_iff]
+  simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
 
 end TauCeti

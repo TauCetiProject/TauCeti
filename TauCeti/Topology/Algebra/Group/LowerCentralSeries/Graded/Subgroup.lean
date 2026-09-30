@@ -135,6 +135,14 @@ theorem gradedBracket_mem_gradedPieceOf_right {K : Subgroup G} [K.Normal] {j k :
   exact gradedMk_mem_gradedPieceOf
     (commutator_le_right ⊤ K (commutator_mem_commutator (mem_top (x : G)) hyK))
 
+/-- **The iterated `p`-powers of brackets lie in `gr(K)` when `K` contains the commutator
+subgroup**: `π^m [ξ_g, ξ_h] ∈ gr_{m+1}(K)`. -/
+theorem gradedPowIterBracket_mem_gradedPieceOf {K : Subgroup G} (hK : commutator G ≤ K) (m : ℕ)
+    (g h : G) : gradedPowIterBracket p G m g h ∈ gradedPieceOf p K (m + 1) := by
+  rw [gradedPowIterBracket_def]
+  exact gradedMk_mem_gradedPieceOf
+    (K.pow_mem (hK (commutator_mem_commutator (mem_top g) (mem_top h))) _)
+
 /-- **Every bracket lies in `gr(K)` when `K` contains the commutator subgroup.** -/
 theorem gradedBracket_mem_gradedPieceOf_of_commutator_le {K : Subgroup G} (hK : commutator G ≤ K)
     {j k : ℕ} (x : gradedPiece p G j) (y : gradedPiece p G k) :
