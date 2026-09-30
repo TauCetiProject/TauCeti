@@ -48,19 +48,20 @@ lemma squareCell_apply (H : C(unitInterval × unitInterval, X))
 /-- A cell whose image lies in `V`, regarded as a map with codomain `V`. -/
 def squareCellIn (H : C(unitInterval × unitInterval, X))
     (a b c d : unitInterval) (V : Set X) (hV : MapsTo H (uIcc a b ×ˢ uIcc c d) V) :
-    C(unitInterval × unitInterval, V) :=
+    C(unitInterval × unitInterval, V) := by
+  have subpath_mem (s t u : unitInterval) : Path.id.subpath s t u ∈ uIcc s t := by
+    have hr := Set.mem_range_self u (f := Path.id.subpath s t)
+    rw [Path.range_subpath] at hr
+    simpa using hr
+  exact
   ⟨fun z ↦ ⟨squareCell H a b c d z, hV (by
     constructor
-    · have hr := Set.mem_range_self z.1 (f := Path.id.subpath a b)
-      rw [Path.range_subpath] at hr
-      simpa using hr
-    · have hr := Set.mem_range_self z.2 (f := Path.id.subpath c d)
-      rw [Path.range_subpath] at hr
-      simpa using hr)⟩,
+    · exact subpath_mem a b z.1
+    · exact subpath_mem c d z.2)⟩,
     (squareCell H a b c d).continuous.subtype_mk _⟩
 
 @[simp]
-lemma squareCellIn_apply (H : C(unitInterval × unitInterval, X))
+lemma coe_squareCellIn_apply (H : C(unitInterval × unitInterval, X))
     (a b c d : unitInterval) (V : Set X) (hV : MapsTo H (uIcc a b ×ˢ uIcc c d) V)
     (z : unitInterval × unitInterval) :
     (squareCellIn H a b c d V hV z).1 = squareCell H a b c d z :=
@@ -100,18 +101,18 @@ def squareCellTop (H : C(unitInterval × unitInterval, X))
 
 /-- The bottom edge of a cell, viewed in the ambient space. -/
 @[simp]
-lemma squareCellBottom_apply (H : C(unitInterval × unitInterval, X))
+lemma coe_squareCellBottom_apply (H : C(unitInterval × unitInterval, X))
     (a b c d : unitInterval) (V : Set X)
     (hV : MapsTo H (uIcc a b ×ˢ uIcc c d) V) (t : unitInterval) :
     (squareCellBottom H a b c d V hV t).1 =
       H ((Path.id.subpath a b) t, c) := by
-  -- The subtype-valued mapped path reduces to the two cell subpaths by definitional equality.
+  -- `simp` does not unfold the subtype-valued mapped path; expose its cell subpaths first.
   change H ((Path.id.subpath a b) t, (Path.id.subpath c d) 0) = _
   simp
 
 /-- The right edge of a cell, viewed in the ambient space. -/
 @[simp]
-lemma squareCellRight_apply (H : C(unitInterval × unitInterval, X))
+lemma coe_squareCellRight_apply (H : C(unitInterval × unitInterval, X))
     (a b c d : unitInterval) (V : Set X)
     (hV : MapsTo H (uIcc a b ×ˢ uIcc c d) V) (t : unitInterval) :
     (squareCellRight H a b c d V hV t).1 =
@@ -122,7 +123,7 @@ lemma squareCellRight_apply (H : C(unitInterval × unitInterval, X))
 
 /-- The left edge of a cell, viewed in the ambient space. -/
 @[simp]
-lemma squareCellLeft_apply (H : C(unitInterval × unitInterval, X))
+lemma coe_squareCellLeft_apply (H : C(unitInterval × unitInterval, X))
     (a b c d : unitInterval) (V : Set X)
     (hV : MapsTo H (uIcc a b ×ˢ uIcc c d) V) (t : unitInterval) :
     (squareCellLeft H a b c d V hV t).1 =
@@ -133,7 +134,7 @@ lemma squareCellLeft_apply (H : C(unitInterval × unitInterval, X))
 
 /-- The top edge of a cell, viewed in the ambient space. -/
 @[simp]
-lemma squareCellTop_apply (H : C(unitInterval × unitInterval, X))
+lemma coe_squareCellTop_apply (H : C(unitInterval × unitInterval, X))
     (a b c d : unitInterval) (V : Set X)
     (hV : MapsTo H (uIcc a b ×ˢ uIcc c d) V) (t : unitInterval) :
     (squareCellTop H a b c d V hV t).1 =
@@ -158,6 +159,8 @@ theorem squareCellBottom_trans_right_eq_left_trans_top
     { toContinuousMap := G, map_zero_left := fun _ ↦ rfl, map_one_left := fun _ ↦ rfl }
   have h := Path.Homotopic.map_trans_evalAt K (Path.id : Path (0 : unitInterval) 1)
   apply Path.Homotopic.Quotient.eq.mpr
+  -- These identifications unfold the mapped product paths and `Homotopy.evalAt`;
+  -- `Path.map_coe`, `Path.prod_coe`, and `ContinuousMap.curry_apply` are definitional here.
   have hb : squareCellBottom H a b c d V hV =
       Path.id.map (map_continuous (G.curry 0)) := by ext t; rfl
   have hr : squareCellRight H a b c d V hV = K.evalAt 1 := by ext t; rfl
