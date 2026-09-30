@@ -14,17 +14,17 @@ public import TauCeti.CategoryTheory.Monoidal.Preadditive
 /-!
 # Cup products of cochains along a diagonal
 
-Let `C` be a `k`-linear abelian monoidal category, let `A`, `B` and `E` be chain complexes in `C`
-indexed by `ℕ`, and let `D : E ⟶ A ⊗ B` be a chain map, a *diagonal*.  Given a pairing
-`μ : M ⊗ N ⟶ P` of coefficient objects, a cochain `φ : A_p ⟶ M` and a cochain `ψ : B_q ⟶ N`
-have the cup product `φ ⌣ ψ : E_n ⟶ P`, for `p + q = n`: the degree-`n` component of `D`, followed
-by the projection of `(A ⊗ B)_n` onto its summand `A_p ⊗ B_q`, by `φ ⊗ ψ` and by `μ`.  Since `D`
-is a chain map and the tensor product carries the Koszul signs, it satisfies the Leibniz rule
-`(φ ⌣ ψ) ∘ d = (φ ∘ d) ⌣ ψ + (-1)^p φ ⌣ (ψ ∘ d)`.  Hence a cocycle cupped with a cocycle is a
-cocycle, a coboundary cupped with a cocycle (in either order) is a coboundary, and the cup
-product descends to a `k`-bilinear map `Hᵖ(Hom(A, M)) × H^q(Hom(B, N)) ⟶ Hⁿ(Hom(E, P))` on the
-cohomology of the complexes `ChainComplex.linearYonedaObj`.  It is natural along maps of
-diagonals.
+Let `C` be a `k`-linear preadditive monoidal category with finite biproducts, let `A`, `B` and `E`
+be chain complexes in `C` indexed by `ℕ`, and let `D : E ⟶ A ⊗ B` be a chain map, a *diagonal*.
+Given a pairing `μ : M ⊗ N ⟶ P` of coefficient objects, a cochain `φ : A_p ⟶ M` and a cochain
+`ψ : B_q ⟶ N` have the cup product `φ ⌣ ψ : E_n ⟶ P`, for `p + q = n`: the degree-`n` component
+of `D`, followed by the projection of `(A ⊗ B)_n` onto its summand `A_p ⊗ B_q`, by `φ ⊗ ψ` and by
+`μ`.  Since `D` is a chain map and the tensor product carries the Koszul signs, it satisfies the
+Leibniz rule `(φ ⌣ ψ) ∘ d = (φ ∘ d) ⌣ ψ + (-1)^p φ ⌣ (ψ ∘ d)`.  When `C` is moreover abelian, a
+cocycle cupped with a cocycle is a cocycle, a coboundary cupped with a cocycle (in either order)
+is a coboundary, and the cup product descends to a `k`-bilinear map
+`Hᵖ(Hom(A, M)) × H^q(Hom(B, N)) ⟶ Hⁿ(Hom(E, P))` on the cohomology of the complexes
+`ChainComplex.linearYonedaObj`.  It is natural along maps of diagonals.
 
 The singular cup product is the case where `D` is the Alexander–Whitney map precomposed with the
 diagonal of a space; there `φ ⌣ ψ` evaluates a singular simplex on its front `p`-face and its back
@@ -56,11 +56,11 @@ open CategoryTheory Limits MonoidalCategory HomologicalComplex
 
 namespace TauCeti.ChainComplex
 
-variable {C : Type*} [Category* C] [Abelian C]
+variable {C : Type*} [Category* C]
 
 section Extend
 
-variable {A : ChainComplex C ℕ} {M : C}
+variable [Preadditive C] {A : ChainComplex C ℕ} {M : C}
 
 /-- A morphism `A_p ⟶ M` as a family of morphisms `A_i ⟶ M` in all degrees, zero away from `p`. -/
 private def extendCochain {p : ℕ} (φ : A.X p ⟶ M) (i : ℕ) : A.X i ⟶ M :=
@@ -116,11 +116,10 @@ private lemma extendCochain_comp {A' : ChainComplex C ℕ} (g : A' ⟶ A) {p : �
 
 end Extend
 
-variable [MonoidalCategory C] [MonoidalPreadditive C] {A B E : ChainComplex C ℕ} {M N P : C}
-
 section Tensor
 
-variable (μ : M ⊗ N ⟶ P)
+variable [Preadditive C] [HasFiniteBiproducts C] [MonoidalCategory C] [MonoidalPreadditive C]
+  {A B : ChainComplex C ℕ} {M N P : C} (μ : M ⊗ N ⟶ P)
 
 /-- **The tensor product of cochains**: for cochains `φ : A_p ⟶ M` and `ψ : B_q ⟶ N`, the morphism
 `(A ⊗ B)_n ⟶ P` which on the summand `A_p ⊗ B_q` is `φ ⊗ ψ` followed by the pairing `μ`
@@ -251,6 +250,11 @@ private lemma tensorCochain_smul_right {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (�
 
 end Tensor
 
+attribute [local instance] Abelian.hasFiniteBiproducts
+
+variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B E : ChainComplex C ℕ}
+  {M N P : C}
+
 section Cochain
 
 variable {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C] (D : E ⟶ A ⊗ B)
@@ -277,6 +281,7 @@ def cupCochain (p q n : ℕ) (_ : p + q = n) :
 
 /-- The cup product of cochains is the component of the diagonal followed by the tensor product of
 cochains. -/
+@[simp]
 lemma cupCochain_apply (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) :
     cupCochain k D μ p q n h φ ψ = D.f n ≫ tensorCochain μ φ ψ n :=
   LinearMap.mk₂_apply ..
@@ -361,6 +366,7 @@ def cupCycles (p q n : ℕ) (h : p + q = n) :
     simp [iCycles_cupCyclesLeft]
 
 /-- On underlying cochains, the cup product of cocycles is the cup product of cochains. -/
+@[simp]
 lemma iCycles_cupCycles (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaObj k M).cycles p)
     (b : (B.linearYonedaObj k N).cycles q) :
     (E.linearYonedaObj k P).iCycles n (cupCycles k D μ p q n h a b) =
