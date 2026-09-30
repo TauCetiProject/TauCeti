@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.BranchLogRoot
 public import TauCeti.Analysis.Complex.Conformal.SquareRoots
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 import TauCeti.Analysis.Complex.Conformal.Moebius
