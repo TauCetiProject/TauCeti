@@ -554,7 +554,8 @@ theorem IsDemushkin.profiniteIndex_subgroupOf_map_powMonoidHom_range_lt_of_demus
   · obtain ⟨s, hs, hqs⟩ := hG.exists_demushkinQ_eq_pow h0
     have hs₂ : p = 2 → 2 ≤ s := fun hp2 ↦ by
       by_contra! hlt
-      exact hq2 (by rw [hqs, hp2, show s = 1 by omega, pow_one])
+      have hs1 : s = 1 := by omega
+      exact hq2 (by rw [hqs, hp2, hs1, pow_one])
     rw [range_demushkinCharacter_eq_unitsPrincipal hG hqs hq2,
       profiniteIndex_subgroupOf_map_powMonoidHom_unitsPrincipal hs hs₂]
     exact hlt le_rfl

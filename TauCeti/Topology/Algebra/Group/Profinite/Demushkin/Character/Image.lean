@@ -186,7 +186,8 @@ theorem demushkinQ_ne_two_iff_range_demushkinCharacter_le :
     obtain ⟨k, hk, hqk⟩ := hG.exists_demushkinQ_eq_pow h0
     have hk₂ : 2 ≤ k := by
       by_contra! hlt
-      exact hq (by rw [hqk, show k = 1 by omega, pow_one])
+      have hk1 : k = 1 := by omega
+      exact hq (by rw [hqk, hk1, pow_one])
     rw [hqk]
     exact pow_dvd_pow 2 hk₂
   · -- `q(G) = 2` forces `p = 2`, since `p ∣ q(G)`, and then `4 ∣ 2`.
