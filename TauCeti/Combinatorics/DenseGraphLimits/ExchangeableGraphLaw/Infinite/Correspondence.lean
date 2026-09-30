@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Correspondence
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.DissociatedRepresentation
-public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.InfiniteSampling
+public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Sampling
 
 /-!
 # Graphon mixtures and exchangeable laws on infinite graphs
@@ -54,14 +54,19 @@ def graphonMixtureLawEquiv :
     ProbabilityMeasure GraphonSpaceI ≃ InfiniteExchangeableGraphLaw :=
   mixtureExchangeableLawEquiv.trans exchangeableGraphLawEquivInfinite
 
+/-- The correspondence sends a mixing measure to the extension of its finite-window mixture
+law. -/
+theorem graphonMixtureLawEquiv_apply (P : ProbabilityMeasure GraphonSpaceI) :
+    graphonMixtureLawEquiv P = exchangeableGraphLawEquivInfinite (mixtureExchangeableLaw P) := by
+  rw [graphonMixtureLawEquiv, Equiv.trans_apply, mixtureExchangeableLawEquiv_apply]
+
 /-- A Dirac mixing measure gives the infinite joint sampling law of its graphon. -/
 @[simp]
 theorem graphonMixtureLawEquiv_dirac
     (W : Graphon unitInterval (volume : Measure unitInterval)) :
     graphonMixtureLawEquiv (diracProba (SeparationQuotient.mk W)) =
       exchangeableGraphLawEquivInfinite (sampleExchangeableLaw W) := by
-  rw [graphonMixtureLawEquiv, Equiv.trans_apply, mixtureExchangeableLawEquiv_apply,
-    mixtureExchangeableLaw_diracProba]
+  rw [graphonMixtureLawEquiv_apply, mixtureExchangeableLaw_diracProba]
 
 /-- The upper mass of each finite window of a graphon mixture is the mixing average of its
 homomorphism density. -/
@@ -70,8 +75,7 @@ theorem graphonMixtureLawEquiv_upperMass (P : ProbabilityMeasure GraphonSpaceI)
     {k : ℕ} (F : SimpleGraph (Fin k)) [DecidableRel F.Adj] :
     (exchangeableGraphLawEquivInfinite.symm (graphonMixtureLawEquiv P)).upperMass F =
       ∫ x, homDensityOnSpace F x ∂(P : Measure GraphonSpaceI) := by
-  rw [graphonMixtureLawEquiv, Equiv.trans_apply, Equiv.symm_apply_apply,
-    mixtureExchangeableLawEquiv_apply, upperMass_mixtureExchangeableLaw]
+  rw [graphonMixtureLawEquiv_apply, Equiv.symm_apply_apply, upperMass_mixtureExchangeableLaw]
 
 end DenseGraphLimits
 

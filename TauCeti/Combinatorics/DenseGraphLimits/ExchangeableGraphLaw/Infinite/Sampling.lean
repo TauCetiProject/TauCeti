@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite
+public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Basic
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Sampling
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Infinite
 
