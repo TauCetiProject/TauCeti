@@ -47,8 +47,7 @@ variable {p : ℕ} [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
 from `2` is isomorphic to the standard one-relator presentation on its generator rank. Under this
 isomorphism the canonical character takes the value `(1 - q)⁻¹` on the second marked generator
 and is trivial on every other marked generator. -/
-theorem isDemushkin_marked_of_q_ne_two (hG : IsDemushkin p G) (hq : demushkinQ hG ≠ 2)
-    (hn : 2 ≤ demushkinRank hG) :
+theorem isDemushkin_marked_of_q_ne_two (hG : IsDemushkin p G) (hq : demushkinQ hG ≠ 2) :
     ∃ e : G ≃ₜ* presentedProP p (Fin (demushkinRank hG))
         {demushkinWordNeTwo (demushkinQ hG) (demushkinRank hG)
           (freeProPGen p (demushkinRank hG))},
@@ -66,9 +65,13 @@ theorem isDemushkin_marked_of_q_ne_two (hG : IsDemushkin p G) (hq : demushkinQ h
     · subst p
       exact hG.even_demushkinRank_of_demushkinQ_ne_two hq
     · exact hG.even_demushkinRank_of_ne_two hp
+  have hn : 1 < demushkinRank hG := by
+    obtain ⟨k, hk⟩ := heven
+    have := hG.demushkinRank_pos
+    omega
   obtain ⟨hvalue, htrivial⟩ :=
     demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordNeTwo hG
-      hG.prime_dvd_demushkinQ heven (by omega) e
+      hG.prime_dvd_demushkinQ heven hn e
   exact ⟨hvalue, fun i hi _ ↦ htrivial i hi⟩
 
 end TauCeti
