@@ -91,7 +91,8 @@ include hG
 higher power of `p`**: it takes values in `1 + p^kℤ_p` exactly when `p^k` divides the `q`-invariant.
 For `q(G) = 0` this holds for every `k`. -/
 @[simp] theorem range_demushkinCharacter_le_unitsPrincipal_iff (k : ℕ) :
-    (demushkinCharacter hG).toMonoidHom.range ≤ unitsPrincipal p k ↔ p ^ k ∣ demushkinQ hG := by
+    (↑(demushkinCharacter hG) : G →* ℤ_[p]ˣ).range ≤ unitsPrincipal p k ↔
+      p ^ k ∣ demushkinQ hG := by
   obtain ⟨r, hr, ⟨e⟩⟩ := hG.exists_mem_proPFrattini_continuousMulEquiv_presentedProP
     (ULift.{v} (Fin (demushkinRank hG))) (by simp)
   have hP := IsDemushkin.of_equiv p hG e.symm
@@ -102,6 +103,8 @@ For `q(G) = 0` this holds for every `k`. -/
     (MonoidHom.range_comp _ _).trans (by
       rw [MonoidHom.range_eq_top.mpr e.surjective, Subgroup.map_top])
   have hχ := (hasPrescriptionProperty_demushkinCharacter hG).comp_equiv (e := e)
+  change (demushkinCharacter hG).toMonoidHom.range ≤ unitsPrincipal p k ↔
+    p ^ k ∣ demushkinQ hG
   rw [← hrange, hχ.range_le_unitsPrincipal_iff_forall_pow_dvd_exponentSum hr
     (hG.nondegenerate_degreeOneForm hr e), demushkinQ_congr hG hP e.symm]
   -- Read `q` off the exponent vector `q • w` of the relator, with `w x₀ = 1`.
@@ -123,7 +126,7 @@ For `q(G) = 0` this holds for every `k`. -/
 /-- **The canonical character of a Demushkin group is trivial exactly when `q(G) = 0`**, that is
 when the abelianization of `G` is torsion-free. -/
 @[simp] theorem range_demushkinCharacter_eq_bot_iff :
-    (demushkinCharacter hG).toMonoidHom.range = ⊥ ↔ demushkinQ hG = 0 := by
+    (↑(demushkinCharacter hG) : G →* ℤ_[p]ˣ).range = ⊥ ↔ demushkinQ hG = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ eq_bot_iff.2 ?_⟩
   · have hdvd := (range_demushkinCharacter_le_unitsPrincipal_iff hG (demushkinQ hG)).1
       (h ▸ bot_le)
