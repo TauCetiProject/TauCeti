@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Add
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 -- Proof-only: the class-group point map sends a point to the point under its place.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Place
 -- Proof-only: a restricted rational place is rational.
@@ -25,23 +26,20 @@ A morphism `f : Hom W₁ W₂` of elliptic curves is recorded by its tautologica
 point at the place of `P` (`WeierstrassCurve.Affine.reductionOfDegreeEqOne`). This file defines
 that map, `Hom.pointMap`, and proves the facts that make it the action of `f` on points:
 
-* it is additive **in the morphism**, since the tautological point is and reduction is;
-* for an isogeny `φ`, the place of `φ P` is the restriction of the place of `P` along `φ^*`, so
-  `φ` sends `P` to the point lying under it, and composites act by composition;
-* the zero morphism sends every point to `O` and the identity fixes every point, so `n • id` acts
-  as multiplication by `n`;
-* for a separable isogeny over a separably closed field it is the class-group point map
-  `TauCeti.Isogeny.toPointHom`, so there it is additive in the point as well.
+* it is additive **in the morphism**;
+* for an isogeny `φ`, the place of `φ P` is the restriction of the place of `P` along `φ^*`,
+  and composites act by composition;
+* the zero morphism sends every point to `O` and the identity fixes every point;
+* for a separable isogeny over a separably closed field it agrees with the additive class-group
+  point map `TauCeti.Isogeny.toPointHom`.
 
-**Rigidity.** A nonzero morphism has finite fibres on points, because a place of `F(W₂)` has only
-finitely many places above it. So two morphisms agreeing on infinitely many points are equal:
-their difference has an infinite fibre over `O`. Over a separably closed field the points are
-infinitely many, and a morphism is determined by its action on them.
+**Rigidity.** A nonzero morphism has finite fibres on points. Thus two morphisms agreeing on
+infinitely many points are equal. Over a separably closed field the points are infinitely many,
+and a morphism is determined by its action on them.
 
 Rigidity yields **additivity of composition in the inner variable** wherever the outer morphism
-acts additively on points, which the additive group structure on `Hom` does not provide by
-construction. For a separable isogeny `φ` over a separably closed field this gives
-`φ ∘ (f + g) = φ ∘ f + φ ∘ g`, because both sides act on every point in the same way.
+acts additively on points. For a separable isogeny `φ` over a separably closed field this gives
+`φ ∘ (f + g) = φ ∘ f + φ ∘ g`.
 
 ## Main definitions
 
@@ -52,12 +50,16 @@ construction. For a separable isogeny `φ` over a separably closed field this gi
 * `TauCeti.Isogeny.Hom.add_pointMap`: the action is additive in the morphism.
 * `TauCeti.Isogeny.Hom.pointMap_ofIsogeny_eq_iff`: an isogeny sends `P` to `Q` exactly when the
   place of `P` restricts along its pullback to the place of `Q`.
+* `TauCeti.Isogeny.Hom.pointMap_ofIsogeny_eq_iff_restrict`: the criterion as equality of places.
 * `TauCeti.Isogeny.Hom.comp_pointMap`: a composite acts by composition.
 * `TauCeti.Isogeny.Hom.pointMap_ofIsogeny_eq_toPointHom`: for a separable isogeny over a
   separably closed field the action is the class-group point map.
+* `TauCeti.Isogeny.Hom.pointMap_add`: the point map of a separable isogeny is additive.
 * `TauCeti.Isogeny.Hom.finite_setOf_pointMap_eq`: a nonzero morphism has finite fibres.
 * `TauCeti.Isogeny.Hom.eq_of_infinite_setOf_pointMap_eq` and `TauCeti.Isogeny.Hom.ext_pointMap`:
   rigidity.
+* `TauCeti.Isogeny.Hom.comp_add_of_pointMap_add`: composition is additive in the inner morphism
+  when the outer point map is additive and the source has infinitely many points.
 * `TauCeti.Isogeny.Hom.ofIsogeny_comp_add`: composition with a separable isogeny over a separably
   closed field is additive in the inner morphism.
 
@@ -121,7 +123,7 @@ theorem nsmul_pointMap (n : ℕ) (f : Hom W₁ W₂) (P : W₁.Point) :
     (n • f).pointMap P = n • f.pointMap P := by
   rw [pointMap, tautologicalPoint_nsmul, map_nsmul, map_nsmul, pointMap]
 
-/-- **Every morphism sends `O` to `O`**: the tautological point has a pole of `x` at infinity. -/
+/-- **Every morphism sends `O` to `O`.** -/
 @[simp]
 theorem pointMap_zero (f : Hom W₁ W₂) : f.pointMap 0 = 0 := by
   have h0 : (W₁.pointEquivDegreeOnePlace 0).1 = Place.infinity W₁ :=
@@ -129,7 +131,7 @@ theorem pointMap_zero (f : Hom W₁ W₂) : f.pointMap 0 = 0 := by
   rw [pointMap_eq_iff, h0, (Point.equivBaseChangeSelf W₂).map_zero, map_zero, sub_zero]
   exact tautologicalPoint_mem_polePoints f
 
-/-- **The identity fixes every point**: the generic point reduces to `P` at the place of `P`. -/
+/-- **The identity morphism fixes every point.** -/
 @[simp]
 theorem id_pointMap (P : W₁.Point) : (id W₁).pointMap P = P := by
   rw [pointMap, id_def, tautologicalPoint_ofIsogeny, Isogeny.id_pullback,
@@ -141,8 +143,7 @@ section Isogeny
 variable (φ : Isogeny W₁ W₂)
 
 /-- **An isogeny sends a point to the point under it.** If the place of `P` restricts along `φ^*`
-to the place of `Q`, then `φ` sends `P` to `Q`: at `Q = O` the pulled-back `x` has a pole at `P`,
-and at `Q = (a, b)` the pulled-back coordinates are congruent to `a` and `b` there. -/
+to the place of `Q`, then `φ` sends `P` to `Q`. -/
 theorem pointMap_ofIsogeny_of_isEquiv {P : W₁.Point} {Q : W₂.Point}
     (h : (((W₁.pointEquivDegreeOnePlace P).1.valuation).comap
       (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
@@ -167,8 +168,7 @@ theorem pointMap_ofIsogeny_of_isEquiv {P : W₁.Point} {Q : W₂.Point}
     exact ⟨hx, hy⟩
 
 /-- **The place of the image of `P` is the restriction of the place of `P`** along the pullback of
-the isogeny, in valuation form. The restriction of a rational place is rational, so it is the place
-of a point of `W₂`, which `pointMap_ofIsogeny_of_isEquiv` identifies as the image. -/
+the isogeny, expressed as equivalence of valuations. -/
 theorem isEquiv_comap_pointMap_ofIsogeny (P : W₁.Point) :
     (((W₁.pointEquivDegreeOnePlace P).1.valuation).comap
       (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
@@ -200,6 +200,18 @@ theorem pointMap_ofIsogeny_eq_iff {P : W₁.Point} {Q : W₂.Point} :
           (W₂.pointEquivDegreeOnePlace Q).1.valuation :=
   ⟨fun h ↦ h ▸ isEquiv_comap_pointMap_ofIsogeny φ P, pointMap_ofIsogeny_of_isEquiv φ⟩
 
+/-- **An isogeny sends `P` to `Q` exactly when the place of `P` restricts to the place of `Q`.** -/
+theorem pointMap_ofIsogeny_eq_iff_restrict {P : W₁.Point} {Q : W₂.Point} :
+    letI := φ.fieldPullback.toRingHom.toAlgebra
+    letI := φ.finiteDimensional_functionField fun _ ↦ rfl
+    (ofIsogeny φ).pointMap P = Q ↔
+      (W₁.pointEquivDegreeOnePlace P).1.restrict F W₂.FunctionField =
+        (W₂.pointEquivDegreeOnePlace Q).1 := by
+  let _ := φ.fieldPullback.toRingHom.toAlgebra
+  have := φ.finiteDimensional_functionField fun _ ↦ rfl
+  exact (pointMap_ofIsogeny_eq_iff φ).trans
+    (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField _ _).symm
+
 /-- **For a separable isogeny over a separably closed field the action on points is the
 class-group point map**, both sending `P` to the point under it. In particular it is additive
 in the point there. -/
@@ -217,10 +229,18 @@ theorem pointMap_ofIsogeny_eq_toPointHom [IsSepClosed F]
     (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField _ _).mp
       (φ.coe_pointEquivDegreeOnePlace_toPointHom (fun _ ↦ rfl) P).symm
 
+/-- **A separable isogeny over a separably closed field acts additively on points.** -/
+theorem pointMap_add [IsSepClosed F]
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (P Q : W₁.Point) :
+    (ofIsogeny φ).pointMap (P + Q) =
+      (ofIsogeny φ).pointMap P + (ofIsogeny φ).pointMap Q := by
+  have := W₂.isIntegrallyClosed_coordinateRing
+  rw [pointMap_ofIsogeny_eq_toPointHom, map_add,
+    ← pointMap_ofIsogeny_eq_toPointHom, ← pointMap_ofIsogeny_eq_toPointHom]
+
 end Isogeny
 
-/-- **A composite acts on points by composition.** For two isogenies the place of `P` restricts
-along the composite pullback in two steps; a zero factor sends everything to `O`. -/
+/-- **A composite acts on points by composition.** -/
 @[simp]
 theorem comp_pointMap [W₃.IsElliptic] (g : Hom W₂ W₃) (f : Hom W₁ W₂) (P : W₁.Point) :
     (g.comp f).pointMap P = g.pointMap (f.pointMap P) := by
@@ -234,9 +254,7 @@ theorem comp_pointMap [W₃.IsElliptic] (g : Hom W₂ W₃) (f : Hom W₁ W₂) 
     (ψ.fieldPullback : W₃.FunctionField →+* W₂.FunctionField)).trans
       (isEquiv_comap_pointMap_ofIsogeny ψ _)
 
-/-- **A nonzero morphism has finite fibres on points.** The places of the points in a fibre of an
-isogeny all restrict to the place of the same point, and a place has only finitely many places
-above it. -/
+/-- **A nonzero morphism has finite fibres on points.** -/
 theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Point) :
     {P | f.pointMap P = Q}.Finite := by
   obtain ⟨φ, rfl⟩ := (eq_zero_or_exists_ofIsogeny f).resolve_left hf
@@ -253,8 +271,7 @@ theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Po
   exact (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField _ _).mpr
     ((pointMap_ofIsogeny_eq_iff φ).mp hP)
 
-/-- **Rigidity: two morphisms agreeing on infinitely many points are equal**, their difference
-having an infinite fibre over `O`. -/
+/-- **Rigidity: two morphisms agreeing on infinitely many points are equal.** -/
 theorem eq_of_infinite_setOf_pointMap_eq {f g : Hom W₁ W₂}
     (h : {P | f.pointMap P = g.pointMap P}.Infinite) : f = g := by
   by_contra hfg
@@ -267,17 +284,23 @@ theorem ext_pointMap [Infinite W₁.Point] {f g : Hom W₁ W₂}
     (h : ∀ P, f.pointMap P = g.pointMap P) : f = g :=
   eq_of_infinite_setOf_pointMap_eq (by simpa [h] using Set.infinite_univ)
 
+/-- **Composition is additive in the inner morphism** when the source has infinitely many points
+and the outer morphism acts additively on points. -/
+theorem comp_add_of_pointMap_add [W₃.IsElliptic] [Infinite W₁.Point]
+    (h : Hom W₂ W₃) (hadd : ∀ P Q, h.pointMap (P + Q) = h.pointMap P + h.pointMap Q)
+    (f g : Hom W₁ W₂) : h.comp (f + g) = h.comp f + h.comp g := by
+  refine ext_pointMap fun P ↦ ?_
+  simp only [comp_pointMap, add_pointMap, hadd]
+
 omit [DecidableEq F] in
 /-- **Composition with a separable isogeny over a separably closed field is additive in the inner
-morphism.** Both sides act on each point as `P ↦ φ (f P + g P)`, the action of `φ` being additive
-there, and a morphism is determined by its action on points. -/
+morphism.** -/
 theorem ofIsogeny_comp_add [IsSepClosed F] [W₃.IsElliptic] (φ : Isogeny W₂ W₃)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₂.FunctionField] (f g : Hom W₁ W₂) :
     (ofIsogeny φ).comp (f + g) = (ofIsogeny φ).comp f + (ofIsogeny φ).comp g := by
   classical
-  refine ext_pointMap fun P ↦ ?_
-  have := W₃.isIntegrallyClosed_coordinateRing
-  simp only [add_pointMap, comp_pointMap, pointMap_ofIsogeny_eq_toPointHom, map_add]
+  have := WeierstrassCurve.Affine.infinite_point W₁
+  exact comp_add_of_pointMap_add (ofIsogeny φ) (pointMap_add φ) f g
 
 end TauCeti.Isogeny.Hom
 
