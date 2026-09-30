@@ -256,14 +256,6 @@ theorem comap_subgroupB : (T.comap f hf).subgroupB = T.subgroupB.comap f :=
 theorem comap_subgroupN : (T.comap f hf).subgroupN = T.subgroupN.comap f :=
   (rfl)
 
-/-- Membership in the `B` subgroup of the pulled-back Tits system. -/
-theorem mem_comap_subgroupB {x : H} : x ∈ (T.comap f hf).subgroupB ↔ f x ∈ T.subgroupB := by
-  rw [comap_subgroupB, Subgroup.mem_comap]
-
-/-- Membership in the `N` subgroup of the pulled-back Tits system. -/
-theorem mem_comap_subgroupN {x : H} : x ∈ (T.comap f hf).subgroupN ↔ f x ∈ T.subgroupN := by
-  rw [comap_subgroupN, Subgroup.mem_comap]
-
 /-- The Weyl group of the pulled-back Tits system is the Weyl group of the original one: the
 class of `n ∈ f⁻¹(N)` corresponds to the class of `f n`. -/
 noncomputable def comapWeylGroupMulEquiv : (T.comap f hf).WeylGroup ≃* T.WeylGroup :=
@@ -274,7 +266,7 @@ noncomputable def comapWeylGroupMulEquiv : (T.comap f hf).WeylGroup ≃* T.WeylG
 @[simp]
 theorem comapWeylGroupMulEquiv_mk (n : (T.comap f hf).subgroupN) :
     T.comapWeylGroupMulEquiv f hf (QuotientGroup.mk n) =
-      QuotientGroup.mk ⟨f n, (T.mem_comap_subgroupN f hf).mp n.2⟩ :=
+      QuotientGroup.mk ⟨f n, by simpa using n.2⟩ :=
   comapWeylGroupHom_mk T n
 
 /-- The simple reflections of the pulled-back Tits system are the preimages of the simple
