@@ -78,16 +78,19 @@ theorem ladderValley_zero_zero (m : ℕ) : ladderValley u d m 0 0 = 1 := by
   simp [ladderValley]
 
 /-- A final climb extends a valley word. -/
+@[simp]
 theorem u_mul_ladderValley (m s r : ℕ) :
     u (m + r) * ladderValley u d m s r = ladderValley u d m s (r + 1) := by
   simp [ladderValley, List.range_succ, mul_assoc]
 
 /-- An initial descent extends a valley word. -/
+@[simp]
 theorem ladderValley_mul_d (m s r : ℕ) :
     ladderValley u d m s r * d (m + s) = ladderValley u d m (s + 1) r := by
   simp [ladderValley, List.range_succ, mul_assoc]
 
 /-- A descent onto the bottom of a word without climbs lengthens the descent. -/
+@[simp]
 theorem d_mul_ladderValley_succ_zero (m s : ℕ) :
     d m * ladderValley u d (m + 1) s 0 = ladderValley u d m (s + 1) 0 := by
   simp [ladderValley, List.range_succ_eq_map, Function.comp_def, add_assoc, add_comm 1]
@@ -106,6 +109,7 @@ private theorem neg_mul_neg_one_pow (a b : A) (r : ℕ) :
 /-- **A final descent moves the valley down.** If the turns at every positive rung cancel, then
 descending one rung after the valley word with bottom `m + 1` gives, up to the sign `(-1) ^ r`,
 the valley word with bottom `m`, one more descent and the same number `r` of climbs. -/
+@[simp]
 theorem d_mul_ladderValley (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) (m s r : ℕ) :
     d (m + r) * ladderValley u d (m + 1) s r = (-1) ^ r * ladderValley u d m (s + 1) r := by
   induction r with
@@ -125,6 +129,7 @@ theorem d_mul_ladderValley (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) 
 
 /-- **A valley at the bottom rung cannot be followed by a descent.** If the turns at every rung
 cancel, then descending after a valley word which reaches rung `0` and climbs back up vanishes. -/
+@[simp]
 theorem d_mul_ladderValley_zero_eq_zero (hud₀ : d 0 * u 0 = 0)
     (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) (s r : ℕ) :
     d r * ladderValley u d 0 s (r + 1) = 0 := by
