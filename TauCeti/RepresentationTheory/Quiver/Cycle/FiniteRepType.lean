@@ -71,11 +71,9 @@ objects only through its definition. The components of an endomorphism are read 
 
 ## References
 
-This proves the `Ã` half of the "Gabriel's dichotomy" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md` for the cyclically oriented
-cycle. See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of
-Associative Algebras*, Volume I, Chapter VII, and H. Derksen, J. Weyman, *An Introduction to Quiver
-Representations*, Chapter 4.
+* I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
+  Algebras*, Volume I, Chapter VII.
+* H. Derksen, J. Weyman, *An Introduction to Quiver Representations*, Chapter 4.
 -/
 
 public section
@@ -145,6 +143,15 @@ private noncomputable def cycleApp
     AdjoinRoot ((X : k[X]) ^ (m + 1)) →ₗ[k] AdjoinRoot ((X : k[X]) ^ (m + 1)) :=
   (f.app (i : Paths (Quiver.Cycle n))).hom
 
+/-- The component at a vertex is the value of the natural transformation at the corresponding
+object of `CategoryTheory.Paths`, named through `CategoryTheory.Paths.of`. This is what the
+identities below rewrite with: unfolding `cycleApp` instead leaves a vertex where an object of
+`CategoryTheory.Paths` is expected, and the goal is then no longer type-correct at the transparency
+`rw` matches at, so the `CategoryTheory.NatTrans` lemmas cease to apply to it. -/
+private theorem cycleApp_def (f : cycleNilpotentRep k n m ⟶ cycleNilpotentRep k n m)
+    (i : Quiver.Cycle n) :
+    cycleApp f i = (f.app ((Paths.of (Quiver.Cycle n)).obj i)).hom := (rfl)
+
 /-- An endomorphism is determined by its components. -/
 private theorem cycleNilpotentRep_hom_ext
     {f g : cycleNilpotentRep k n m ⟶ cycleNilpotentRep k n m}
@@ -153,14 +160,24 @@ private theorem cycleNilpotentRep_hom_ext
   funext v
   exact ModuleCat.hom_ext (h v)
 
+/-- The zero morphism, the identity and a composite are read off componentwise. Each of the three
+identities below closes with a `rfl` that only reconciles the `k`-module instances carried by
+`ModuleCat.of k (AdjoinRoot (Xᵐ⁺¹))` with those on `AdjoinRoot (Xᵐ⁺¹)` itself; the two sides are
+otherwise identical. -/
 private theorem cycleApp_zero (i : Quiver.Cycle n) :
-    cycleApp (0 : cycleNilpotentRep k n m ⟶ cycleNilpotentRep k n m) i = 0 := (rfl)
+    cycleApp (0 : cycleNilpotentRep k n m ⟶ cycleNilpotentRep k n m) i = 0 := by
+  rw [cycleApp_def, NatTrans.app_zero, ModuleCat.hom_zero]
+  rfl
 
 private theorem cycleApp_id (i : Quiver.Cycle n) :
-    cycleApp (𝟙 (cycleNilpotentRep k n m)) i = LinearMap.id := (rfl)
+    cycleApp (𝟙 (cycleNilpotentRep k n m)) i = LinearMap.id := by
+  rw [cycleApp_def, NatTrans.id_app, ModuleCat.hom_id]
+  rfl
 
 private theorem cycleApp_comp (f g : cycleNilpotentRep k n m ⟶ cycleNilpotentRep k n m)
-    (i : Quiver.Cycle n) : cycleApp (f ≫ g) i = (cycleApp g i).comp (cycleApp f i) := (rfl)
+    (i : Quiver.Cycle n) : cycleApp (f ≫ g) i = (cycleApp g i).comp (cycleApp f i) := by
+  rw [cycleApp_def, cycleApp_def, cycleApp_def, NatTrans.comp_app, ModuleCat.hom_comp]
+  rfl
 
 /-- **Naturality along the arrow out of a vertex**: the component at the head of the arrow
 intertwines multiplication by the weight with the component at its tail. -/

@@ -29,7 +29,8 @@ injectivity is what makes the family a subquiver rather than a closed walk, and 
 covers the degenerate case of a single vertex. Its smallest instance is a pair of vertices joined
 in both directions, which is the `Ã₁` graph in the orientation the Kronecker quiver does not
 provide, and which `TauCeti.IsFiniteRepType.isEmpty_hom_of_hom` rules out; together with the two
-statements above, a quiver of finite representation type has a *simple* underlying graph.
+statements above, no arrow of a quiver of finite representation type admits a reverse arrow, so the
+underlying graph of such a quiver is *simple*.
 
 ## Main results
 
@@ -38,8 +39,8 @@ statements above, a quiver of finite representation type has a *simple* underlyi
   parallel arrows.
 * `TauCeti.not_isFiniteRepType_of_injective_of_nonempty_hom_succ`: a quiver carrying an oriented
   cycle through distinct vertices has infinite representation type.
-* `TauCeti.IsFiniteRepType.isEmpty_hom_of_hom`: in a quiver of finite representation type, two
-  distinct vertices are never joined in both directions.
+* `TauCeti.IsFiniteRepType.isEmpty_hom_of_hom`: in a quiver of finite representation type an arrow
+  admits no reverse arrow.
 
 ## Implementation notes
 
@@ -131,13 +132,17 @@ theorem not_isFiniteRepType_of_injective_of_nonempty_hom_succ {n : ℕ} (x : Fin
   fun h ↦ not_isFiniteRepType_cycle k n
     (h.of_quiverEmbedding (cycleEmbedding hx fun i ↦ (hα i).some))
 
-/-- **In a quiver of finite representation type two distinct vertices are never joined in both
-directions**: a pair of opposite arrows is an oriented cycle through two distinct vertices. This is
-the `Ã₁` obstruction in the orientation the Kronecker quiver does not provide, so with
-`TauCeti.IsFiniteRepType.isEmpty_hom_self` and `TauCeti.IsFiniteRepType.subsingleton_hom` it says
-that the underlying graph of such a quiver is simple. -/
+/-- **In a quiver of finite representation type an arrow admits no reverse arrow**: between
+distinct vertices a pair of opposite arrows is an oriented cycle through two vertices, and at a
+single vertex it is a loop. This is the `Ã₁` obstruction in the orientation the Kronecker quiver
+does not provide, so with `TauCeti.IsFiniteRepType.isEmpty_hom_self` and
+`TauCeti.IsFiniteRepType.subsingleton_hom` it says that the underlying graph of such a quiver is
+simple. -/
 theorem IsFiniteRepType.isEmpty_hom_of_hom (h : IsFiniteRepType.{u, v, w, u} k Q) {i j : Q}
-    (hij : i ≠ j) (α : i ⟶ j) : IsEmpty (j ⟶ i) := by
+    (α : i ⟶ j) : IsEmpty (j ⟶ i) := by
+  by_cases hij : i = j
+  · subst hij
+    exact h.isEmpty_hom_self i
   refine ⟨fun β ↦ not_isFiniteRepType_of_injective_of_nonempty_hom_succ (n := 0) ![i, j] ?_ ?_ h⟩
   · intro a b hab
     fin_cases a <;> fin_cases b <;> simp_all

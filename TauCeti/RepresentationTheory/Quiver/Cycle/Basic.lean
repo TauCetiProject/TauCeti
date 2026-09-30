@@ -23,7 +23,7 @@ This file carries only the vertex and arrow data, together with the induction pr
 a vertex back to the first one along the arrows that are not the closing one
 (`TauCeti.Quiver.Cycle.induction_of_ne_last`). That principle is what makes the cycle's
 representations tractable: an endomorphism of a representation whose non-closing arrows all act
-invertibly is constant along the cycle, which is how
+by the identity is constant along the cycle, which is how
 `TauCeti.RepresentationTheory.Quiver.Cycle.FiniteRepType` computes endomorphism algebras.
 
 ## Main definitions
@@ -37,8 +37,9 @@ invertibly is constant along the cycle, which is how
 
 ## Main results
 
-* `TauCeti.Quiver.Cycle.eq_succ_of_hom` and `TauCeti.Quiver.Cycle.nonempty_hom_iff`: an arrow runs
-  from a vertex to its cyclic successor, and there is one whenever it can.
+* `TauCeti.Quiver.Cycle.eq_succ_of_hom`: every arrow runs from a vertex to its cyclic successor.
+* `TauCeti.Quiver.Cycle.nonempty_hom_iff` and `TauCeti.Quiver.Cycle.isEmpty_hom_iff`: there is an
+  arrow from a vertex to its cyclic successor, and between no other pair of vertices.
 * `TauCeti.Quiver.Cycle.succ_last`: the arrow out of the last vertex closes the cycle.
 * `TauCeti.Quiver.Cycle.induction_of_ne_last`: a property of vertices that holds at `first` and
   passes along the arrow out of every vertex other than `last` holds at every vertex.
@@ -57,11 +58,9 @@ wrap around, which is exactly what excluding `TauCeti.Quiver.Cycle.last` supplie
 
 ## References
 
-This file supplies the vertex and arrow data of the cycle quiver, the `Ã` obstruction of the
-non-Dynkin half of Gabriel's theorem in Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, alongside the loop quiver of
-`TauCeti.RepresentationTheory.Quiver.OneLoop.Basic` and the generalized Kronecker quiver of
-`TauCeti.RepresentationTheory.Quiver.Kronecker.Basic`.
+The cycle quiver is the cyclic orientation of the extended Dynkin diagram `Ã_{n+1}`, one of the
+obstructions in the non-Dynkin half of Gabriel's theorem; see I. Assem, D. Simson, A. Skowroński,
+*Elements of the Representation Theory of Associative Algebras*, Volume I, Chapter VII.
 -/
 
 public section
@@ -125,8 +124,15 @@ def arrow (i : Cycle n) : i ⟶ i.succ := PLift.up rfl
 theorem eq_succ_of_hom {i j : Cycle n} (e : i ⟶ j) : j = i.succ := e.down
 
 /-- There is an arrow from `i` to `j` exactly when `j` is the cyclic successor of `i`. -/
+@[simp]
 theorem nonempty_hom_iff {i j : Cycle n} : Nonempty (i ⟶ j) ↔ j = i.succ :=
   ⟨fun ⟨e⟩ ↦ eq_succ_of_hom e, fun h ↦ ⟨PLift.up h⟩⟩
+
+/-- The arrow type from `i` to `j` is empty unless `j` is the cyclic successor of `i`. -/
+@[simp]
+theorem isEmpty_hom_iff {i j : Cycle n} : IsEmpty (i ⟶ j) ↔ j ≠ i.succ := by
+  rw [← not_nonempty_iff]
+  exact not_congr nonempty_hom_iff
 
 /-- **The arrow out of the last vertex closes the cycle**, running back to the first vertex. -/
 @[simp] theorem succ_last : (last : Cycle n).succ = first := by
@@ -143,7 +149,8 @@ theorem induction_of_ne_last {P : Cycle n → Prop} (hfirst : P first)
   obtain ⟨⟨v, hv⟩⟩ := i
   induction v with
   | zero =>
-    rw [show (⟨⟨0, hv⟩⟩ : Cycle n) = first from ext (Fin.ext (by simp))]
+    have hzero : (⟨⟨0, hv⟩⟩ : Cycle n) = first := ext (Fin.ext (by simp))
+    rw [hzero]
     exact hfirst
   | succ v ih =>
     have hvlt : v < n + 2 := by omega
