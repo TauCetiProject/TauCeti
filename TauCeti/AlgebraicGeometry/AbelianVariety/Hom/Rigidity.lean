@@ -98,13 +98,13 @@ lemma toOverHom_equivPointed_symm_apply {A B : AbelianVariety K}
     toOverHom ((equivPointed A B).symm f) = f :=
   toOverHom_mk' _ _ _
 
+end Hom
+
 /-- The pointed morphism underlying a homomorphism is its morphism over `Spec K`. -/
 @[simp]
 lemma coe_equivPointed_apply {A B : AbelianVariety K} (f : A ⟶ B) :
-    (equivPointed A B f : A.toOver ⟶ B.toOver) = toOverHom f :=
-  by simp [equivPointed]
-
-end Hom
+    (Hom.equivPointed A B f : A.toOver ⟶ B.toOver) = Hom.toOverHom f :=
+  by simp [Hom.equivPointed]
 
 end AbelianVariety
 
