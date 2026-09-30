@@ -304,24 +304,6 @@ theorem shapiroMapTopRep_def (A : SmoothDiscreteTopRep.{v, u, u} R U) (n : ℕ) 
       _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U)
         (TopRep.ofHom (coindCounit R G U A)) n := (rfl)
 
-omit [CompactSpace G] in
-/-- Naturality of continuous cohomology under simultaneous change of group and coefficients. -/
-private theorem map_naturality
-    {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-    {X X' : TopRep.{u} R G} {Y Y' : TopRep.{u} R H}
-    (phi : H →ₜ* G) (f : TopRep.res (phi : H →* G) X ⟶ Y)
-    (f' : TopRep.res (phi : H →* G) X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
-    (h : (TopRep.resFunctor (phi : H →* G)).map a ≫ f' = f ≫ b) (n : ℕ) :
-    _root_.ContinuousCohomology.map phi f n ≫ coeffMap b n =
-      coeffMap a n ≫ _root_.ContinuousCohomology.map phi f' n := by
-  rw [coeffMap_def, coeffMap_def,
-    ← _root_.ContinuousCohomology.map_comp phi (ContinuousMonoidHom.id H) f b n,
-    ← _root_.ContinuousCohomology.map_comp (ContinuousMonoidHom.id G) phi a f' n]
-  apply map_congr
-  · ext x
-    rfl
-  · exact heq_of_eq h.symm
-
 /-- The coefficient square behind the comparison of the two Shapiro maps: transporting a
 coinduced function from the discrete `ℤ`-module model to the scalar-restricted representation
 and then evaluating at `1` agrees with evaluating first and transporting afterwards. Both
@@ -371,7 +353,7 @@ private theorem shapiroMap_comp_ofDiscreteModuleRestrictScalarsIntIso_hom
   -- Move the coefficient transports past the change-of-group maps (`shapiro_coeff_square`), then
   -- move scalar restriction past the generic Shapiro map
   -- (`map_comp_restrictScalarsIntIso_hom_of_hom`).
-  have hsquare := map_naturality (ContinuousMonoidHom.subgroupSubtype U) _ _ _ _
+  have hsquare := map_comp_coeffMap (ContinuousMonoidHom.subgroupSubtype U) _ _ _ _
     (shapiro_coeff_square U A) n
   have hscalar := ContCohomology.map_comp_restrictScalarsIntIso_hom_of_hom
     (ContinuousMonoidHom.subgroupSubtype U) (TopRep.ofHom (coindCounit R G U A)) n

@@ -253,20 +253,6 @@ private theorem shapiroMapTopRep_cup_of_compatible
     simpa only [ContinuousCohomology.shapiroMapTopRep_def,
       ContinuousCohomology.res_def, fX] using h
 
-omit [CompactSpace G] in
-private theorem cup_coeffMap_left_id {Y' Z' : TopRep.{v} R G}
-    (Q : TopPairing X Y' Z') (P : TopPairing X Y Z) (fY : Y' ⟶ Y) (fZ : Z' ⟶ Z)
-    (hcompat : ∀ (x : X.V) (y : Y'.V), fZ (Q.bil x y) = P.bil x (fY y))
-    (m n : ℕ) (a : continuousCohomology m X) (b : continuousCohomology n Y') :
-    ContinuousCohomology.coeffMap fZ (m + n) (Q.cup m n a b) =
-      P.cup m n a (ContinuousCohomology.coeffMap fY n b) := by
-  have h := Q.cup_coeffMap P (𝟙 X) fY fZ (fun x y ↦ by
-    -- `𝟙 X` acts on elements as the identity.
-    change fZ (Q.bil x y) = P.bil x (fY y)
-    exact hcompat x y) m n a b
-  rw [ContinuousCohomology.coeffMap_id] at h
-  exact h
-
 private theorem cup_projection_of_compatible [TotallyDisconnectedSpace G]
     (hU : IsOpen (U : Set G)) [U.FiniteIndex]
     (Y₀ Z₀ : SmoothDiscreteTopRep.{u, v, v} R G) (P : TopPairing X Y₀.obj Z₀.obj)
@@ -297,7 +283,7 @@ private theorem cup_projection_of_compatible [TotallyDisconnectedSpace G]
           (U.isClosed_of_isOpen hU) AY n b))).symm).trans ?_
   refine (ContinuousCohomology.corestrictionTopRep_shapiroMapTopRep_apply
     U Z₀ hU (m + n) (Q.cup m n a b')).trans ?_
-  refine (cup_coeffMap_left_id Q P (coindTraceHom R G U Y₀)
+  refine (Q.cup_coeffMap_left_id P (coindTraceHom R G U Y₀)
     (coindTraceHom R G U Z₀) htrace m n a b').trans ?_
   apply congrArg (P.cup m n a)
   rw [ContinuousCohomology.corestrictionTopRep_def, ConcreteCategory.comp_apply]
