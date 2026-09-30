@@ -53,6 +53,8 @@ consumer may rely on that.
   the Weierstrass polynomial.
 * `WeierstrassCurve.Affine.isIntegral_genericY`: it is integral over any commutative
   `R[X]`-algebra mapping compatibly to the function field.
+* `WeierstrassCurve.Affine.FunctionField.ringHom_ext`: a ring homomorphism out of the function
+  field is determined by the constants and the generic coordinates.
 * `WeierstrassCurve.Affine.algebraMap_eq_aeval_genericX`: the image of `R[X]` in the
   function field is the polynomials in the generic `x`-coordinate.
 * `WeierstrassCurve.Affine.algebraMap_mem_adjoin_genericX_genericY`: the coordinate ring, read
@@ -122,6 +124,20 @@ to the function field. -/
 theorem genericX_eq_algebraMap : genericX W = algebraMap R[X] W.FunctionField X := by
   rw [genericX_def, WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
     IsScalarTower.algebraMap_apply R[X] W.CoordinateRing W.FunctionField]
+
+variable {W} in
+/-- **Ring homomorphisms out of the function field are determined by the constants and the generic
+coordinates.** The function field is a localization of the coordinate ring, which is generated
+over `R` by the classes of `x` and `y`. -/
+theorem FunctionField.ringHom_ext {S : Type*} [Semiring S] {f g : W.FunctionField →+* S}
+    (hc : ∀ a : R, f (algebraMap R W.FunctionField a) = g (algebraMap R W.FunctionField a))
+    (hx : f W.genericX = g W.genericX) (hy : f W.genericY = g W.genericY) : f = g := by
+  refine IsLocalization.ringHom_ext (nonZeroDivisors W.CoordinateRing) <|
+    AdjoinRoot.ringHom_ext (Polynomial.ringHom_ext (fun a ↦ ?_) ?_) ?_
+  · simpa only [IsScalarTower.algebraMap_apply R W.CoordinateRing W.FunctionField,
+      AdjoinRoot.algebraMap_eq', RingHom.comp_apply, Polynomial.algebraMap_eq] using hc a
+  · simpa [genericX_def, CoordinateRing.mk_C_eq_algebraMap] using hx
+  · simpa [genericY_def] using hy
 
 /-- **Evaluating at the generic point is reduction modulo the Weierstrass relation.** A bivariate
 polynomial over `R`, pushed to the function field and evaluated at `(genericX, genericY)`, is the
