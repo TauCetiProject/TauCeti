@@ -29,11 +29,19 @@ The **local symbol** `localSymbol P tr` is the cup product along a coefficient p
 The **Steinberg relation** `(a, b) = 0` for `a + b = 1` is proved for the cup product along every
 coefficient pairing (`cup_kummerClass_eq_zero_of_add_eq_one`), by computing the cup product of
 Kummer classes on explicit cocycles and applying Tate's argument
-`TauCeti.explicitCup11_kummerMap_eq_zero_of_add_eq_one`. It is recorded for the local symbol at the
-pairing of a primitive root (`localSymbol_kummerClass_steinberg`).
+`TauCeti.explicitCup11_kummerMap_eq_zero_of_add_eq_one`. It is recorded for the local symbol along
+every coefficient pairing, in particular at the pairing of a primitive root
+(`localSymbol_kummerClass_eq_zero_of_add_eq_one`).
+
+The explicit computation goes through `kummerCoeffPairing P`, the pairing `P` read on the Kummer
+coefficients `TauCeti.KummerCoeff F n` of `Gal(Fˢ/F)`: on classes transported by `muNRepH1Equiv`,
+the cup product along `P` is the transported explicit cup product along `kummerCoeffPairing P`
+(`cup_muNRepH1Equiv`).
 
 ## Main definitions
 
+* `TauCeti.ClassFieldTheory.kummerCoeffPairing`: a coefficient pairing on `muNRep n F`, read on
+  `TauCeti.KummerCoeff F n`.
 * `TauCeti.ClassFieldTheory.kummerCupPairing`: the coefficient pairing `μₙ × μₙ → μₙ` of a
   primitive `n`th root of unity `ζ ∈ F`.
 * `TauCeti.ClassFieldTheory.localSymbol`: cup product along a coefficient pairing followed by an
@@ -41,13 +49,17 @@ pairing of a primitive root (`localSymbol_kummerClass_steinberg`).
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.kummerCoeffPairing_smul`: `kummerCoeffPairing P` is equivariant for
+  `Gal(Fˢ/F)`.
+* `TauCeti.ClassFieldTheory.cup_muNRepH1Equiv`: the cup product along `P` of transported classes
+  is the transported explicit cup product along `kummerCoeffPairing P`.
 * `TauCeti.ClassFieldTheory.kummerCupPairing_bil_apply`: the pairing sends `(ζ ^ i, y)` to `i • y`.
 * `TauCeti.ClassFieldTheory.localSymbol_kummerClass_mul`,
   `TauCeti.ClassFieldTheory.localSymbol_kummerClass_mul_right`: bilinearity on Kummer classes.
 * `TauCeti.ClassFieldTheory.cup_kummerClass_eq_zero_of_add_eq_one`: the Steinberg relation for the
   cup product of Kummer classes along any coefficient pairing.
-* `TauCeti.ClassFieldTheory.localSymbol_kummerClass_steinberg`: the Steinberg relation for the
-  local symbol at the pairing of a primitive root.
+* `TauCeti.ClassFieldTheory.localSymbol_kummerClass_eq_zero_of_add_eq_one`: the Steinberg
+  relation for the local symbol along any coefficient pairing.
 
 ## References
 
@@ -76,21 +88,24 @@ section Transport
 
 variable (P : TopPairing (muNRep n F) (muNRep n F) (muNRep n F))
 
-/-- The pairing `P` read on the Kummer coefficients through the dictionary. -/
-private def kummerCoeffPairing : KummerCoeff F n →+ KummerCoeff F n →+ KummerCoeff F n :=
+/-- The coefficient pairing `P` on `muNRep n F`, read on the Kummer coefficients
+`TauCeti.KummerCoeff F n` through the dictionary `kummerCoeffEquivMuNRep`
+(`kummerCoeffEquivMuNRep_kummerCoeffPairing`). It is the pairing along which cup products on
+`muNRep n F` are computed on explicit cocycles of `Gal(Fˢ/F)` (`cup_muNRepH1Equiv`). -/
+def kummerCoeffPairing : KummerCoeff F n →+ KummerCoeff F n →+ KummerCoeff F n :=
   (((LinearMap.toAddMonoidHom'.comp P.bil.toAddMonoidHom).compl₂
       (kummerCoeffEquivMuNRep n F).toAddMonoidHom).compr₂
     (kummerCoeffEquivMuNRep n F).symm.toAddMonoidHom).comp
     (kummerCoeffEquivMuNRep n F).toAddMonoidHom
 
-/-- `kummerCoeffPairing P` is `P` under the dictionary. -/
-private theorem kummerCoeffEquivMuNRep_kummerCoeffPairing (x y : KummerCoeff F n) :
+/-- `kummerCoeffPairing P` is `P` under the dictionary `kummerCoeffEquivMuNRep`. -/
+theorem kummerCoeffEquivMuNRep_kummerCoeffPairing (x y : KummerCoeff F n) :
     kummerCoeffEquivMuNRep n F (kummerCoeffPairing P x y) =
       P.bil (kummerCoeffEquivMuNRep n F x) (kummerCoeffEquivMuNRep n F y) := by
   simp [kummerCoeffPairing]
 
 /-- `kummerCoeffPairing P` is equivariant for `Gal(Fˢ/F)`, since `P` is equivariant for `G_F`. -/
-private theorem kummerCoeffPairing_smul (g : AbsoluteGaloisGroup F) (x y : KummerCoeff F n) :
+theorem kummerCoeffPairing_smul (g : AbsoluteGaloisGroup F) (x y : KummerCoeff F n) :
     kummerCoeffPairing P (g • x) (g • y) = g • kummerCoeffPairing P x y := by
   obtain ⟨g, rfl⟩ := (absoluteGaloisGroupRestrictEquiv F).surjective g
   refine (kummerCoeffEquivMuNRep n F).injective ?_
@@ -98,8 +113,10 @@ private theorem kummerCoeffPairing_smul (g : AbsoluteGaloisGroup F) (x y : Kumme
     kummerCoeffEquivMuNRep_smul, kummerCoeffEquivMuNRep_smul, P.equivariant,
     kummerCoeffEquivMuNRep_kummerCoeffPairing]
 
-/-- The cup product of `P` on transported classes is the transported explicit cup product. -/
-private theorem cup_muNRepH1Equiv (x y : H1 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
+/-- **The cup product along `P` on explicit cocycles**: the cup product along `P` of classes
+transported by `muNRepH1Equiv` is the transport by `muNRepH2Equiv` of their explicit cup product
+along `kummerCoeffPairing P`. -/
+theorem cup_muNRepH1Equiv (x y : H1 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
     P.cup 1 1 (muNRepH1Equiv n F x) (muNRepH1Equiv n F y) =
       muNRepH2Equiv n F (explicitCup11 (AbsoluteGaloisGroup F) (KummerCoeff F n)
         (KummerCoeff F n) (KummerCoeff F n) (kummerCoeffPairing P) continuous_of_discreteTopology
@@ -207,11 +224,12 @@ theorem localSymbol_kummerClass_mul_right (hn : IsUnit (n : F)) (a b b' : Fˣ) :
         localSymbol P tr (kummerClass F hn a) (kummerClass F hn b') := by
   rw [kummerClass_mul, map_add]
 
-/-- **The Steinberg relation for the local symbol** at the pairing of a primitive `n`th root of
-unity `ζ ∈ F`: `(a, b) = 0` whenever `a + b = 1`. -/
-theorem localSymbol_kummerClass_steinberg [NeZero n] (ζ : F) (hζ : IsPrimitiveRoot ζ n)
-    (hn : IsUnit (n : F)) {a b : Fˣ} (hab : (a : F) + b = 1) :
-    localSymbol (kummerCupPairing ζ hζ) tr (kummerClass F hn a) (kummerClass F hn b) = 0 := by
+/-- **The Steinberg relation for the local symbol** along any coefficient pairing `P`, in
+particular along the pairing `kummerCupPairing ζ hζ` of a primitive `n`th root of unity `ζ ∈ F`:
+`(a, b) = 0` whenever `a + b = 1`. -/
+theorem localSymbol_kummerClass_eq_zero_of_add_eq_one (hn : IsUnit (n : F)) {a b : Fˣ}
+    (hab : (a : F) + b = 1) :
+    localSymbol P tr (kummerClass F hn a) (kummerClass F hn b) = 0 := by
   rw [localSymbol_apply, cup_kummerClass_eq_zero_of_add_eq_one _ hn hab, map_zero]
 
 end LocalSymbol
