@@ -256,11 +256,9 @@ theorem adjoin_quadraticLieSubalgebra :
 subalgebra is determined by its values on the quadratic elements. -/
 theorem adjoin_coe_preimage_quadraticLieSubalgebra :
     Algebra.adjoin R (((↑) : even Q → CliffordAlgebra Q) ⁻¹' quadraticLieSubalgebra Q) = ⊤ := by
-  apply Subalgebra.map_injective (f := (even Q).val) Subtype.val_injective
-  rw [AlgHom.map_adjoin, Algebra.map_top, Subalgebra.range_val, Subalgebra.coe_val,
-    Set.image_preimage_eq_of_subset, adjoin_quadraticLieSubalgebra]
-  rw [Subtype.range_val]
-  exact fun x hx => quadraticLieSubalgebra_le_even Q hx
+  have := Algebra.adjoin_adjoin_coe_preimage (R := R)
+    (s := (quadraticLieSubalgebra Q : Set (CliffordAlgebra Q)))
+  rwa [adjoin_quadraticLieSubalgebra] at this
 
 /-- **The quadratic elements are the image of the second exterior power.** This is the sense in
 which the Lie subalgebra realizes `⋀[R]^2 M` inside the Clifford algebra; the map itself is

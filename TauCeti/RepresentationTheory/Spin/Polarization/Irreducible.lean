@@ -28,7 +28,7 @@ elements generate the even Clifford subalgebra as an algebra
 the full endomorphism algebra of `S` in odd dimension (`TauCeti.evenSpinAction_surjective`) and of
 each of `S⁺` and `S⁻` in even dimension (`TauCeti.spinPlusAction_surjective`,
 `TauCeti.spinMinusAction_surjective`). The invariant-subspace dichotomy is then
-`Module.End.eq_bot_or_eq_top_of_adjoin_eq_top`.
+`TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top`.
 
 Irreducibility of the Spin *group* representations on the same modules is
 `TauCeti/RepresentationTheory/Spin/Irreducible.lean`; the statements here are the Lie algebra
@@ -122,7 +122,7 @@ theorem adjoin_range_typeBSpinLieRep :
 element of the split odd orthogonal Lie algebra is `⊥` or all of `S`. -/
 theorem eq_bot_or_eq_top_of_map_typeBSpinLieRep_le (N : Submodule K (ExteriorAlgebra K P.W))
     (hN : ∀ x, N.map (P.typeBSpinLieRep b z hz x) ≤ N) : N = ⊥ ∨ N = ⊤ :=
-  Module.End.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeBSpinLieRep b z hz) <| by
+  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeBSpinLieRep b z hz) <| by
     rintro _ ⟨x, rfl⟩
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN x)
 
@@ -153,7 +153,7 @@ every element of the split even orthogonal Lie algebra is `⊥` or all of `S⁺`
 theorem eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le (hline : P.line = ⊥)
     (N : Submodule K (spinPlus Q P)) (hN : ∀ x, N.map (P.typeDSpinPlusLieRep b hline x) ≤ N) :
     N = ⊥ ∨ N = ⊤ :=
-  Module.End.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeDSpinPlusLieRep b hline) <| by
+  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeDSpinPlusLieRep b hline) <| by
     rintro _ ⟨x, rfl⟩
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN x)
 
@@ -164,7 +164,7 @@ irreducibility when `P.W ≠ ⊥`. -/
 theorem eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le (hline : P.line = ⊥)
     (N : Submodule K (spinMinus Q P)) (hN : ∀ x, N.map (P.typeDSpinMinusLieRep b hline x) ≤ N) :
     N = ⊥ ∨ N = ⊤ :=
-  Module.End.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeDSpinMinusLieRep b hline) <| by
+  TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeDSpinMinusLieRep b hline) <| by
     rintro _ ⟨x, rfl⟩
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN x)
 
