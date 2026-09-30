@@ -274,12 +274,13 @@ theorem explicitH1AddEquivContinuousCohomology_corestriction (x : H1 U M) :
 
 /-- **In degree two, corestriction is the explicit transversal formula** of
 `TauCeti.ContCohomology.explicitCor2`, under the comparisons of `H²` with the canonical carrier.
-The instance `LocallyCompactSpace U` is the one the degree-two comparison for `U` is stated with;
-it always holds here, `U` being closed in the compact group `G`. -/
-theorem explicitH2AddEquivContinuousCohomology_corestriction [LocallyCompactSpace U]
-    (x : H2 U M) :
+The degree-two comparison for `U` needs `U` to be locally compact, which holds because `U` is
+closed in the compact group `G`. -/
+theorem explicitH2AddEquivContinuousCohomology_corestriction (x : H2 U M) :
+    haveI : LocallyCompactSpace U := (U.isClosed_of_isOpen hU).locallyCompactSpace
     corestriction U M hU 2 (explicitH2AddEquivContinuousCohomology U M x) =
       explicitH2AddEquivContinuousCohomology G M (explicitCor2 G M U hU x) := by
+  have : LocallyCompactSpace U := (U.isClosed_of_isOpen hU).locallyCompactSpace
   set y := (explicitShapiro2 G U M (U.isClosed_of_isOpen hU)).symm x with hy
   have hx : explicitH2AddEquivContinuousCohomology U M x =
       shapiroMap U M 2 (explicitH2AddEquivContinuousCohomology G (DiscreteCoind G U M) y) := by
