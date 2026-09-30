@@ -244,17 +244,16 @@ theorem hasFDerivAt_halfSpaceGreenKernel (hn : n ≠ 2) {v x y : E}
 /-- On the boundary, the derivative in the negative normal direction of the Green kernel is
 the negative Poisson kernel. -/
 theorem fderiv_halfSpaceGreenKernel_normal (hn : n ≠ 2) {v x y : E}
-    (hx : ⟪v, x⟫_ℝ ≠ 0) (hy : ⟪v, y⟫_ℝ = 0) :
+    (hxy : y ≠ x) (hy : ⟪v, y⟫_ℝ = 0) :
     fderiv ℝ (halfSpaceGreenKernel n v x) y (-v) =
       -halfSpacePoissonKernel n v x y := by
-  have hxy : y ≠ x := by
-    intro h
-    rw [h] at hy
-    exact hx hy
-  have hyref : y ≠ (ℝ ∙ v)ᗮ.reflection x :=
-    ne_reflection_orthogonal_singleton_of_inner_ne_neg (by
-      rw [hy]
-      exact Ne.symm (neg_ne_zero.mpr hx))
+  have hyref : y ≠ (ℝ ∙ v)ᗮ.reflection x := by
+    by_cases hx : ⟪v, x⟫_ℝ = 0
+    · rw [reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hx]
+      exact hxy
+    · exact ne_reflection_orthogonal_singleton_of_inner_ne_neg (by
+        rw [hy]
+        exact Ne.symm (neg_ne_zero.mpr hx))
   have hnorm := norm_sub_reflection_orthogonal_singleton_eq_of_inner_eq_zero x hy
   rw [(hasFDerivAt_halfSpaceGreenKernel hn hxy hyref).fderiv, sub_apply]
   simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
