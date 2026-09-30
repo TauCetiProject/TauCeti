@@ -20,14 +20,14 @@ theorem the submodule `k[G] v` has a complement `Q`, so that `k[G] × Q ≃ k[G]
 
 ## Main statements
 
-* `TauCeti.MonoidAlgebra.nonempty_quotient_span_singleton_linearEquiv_of_injective`: under
+* `TauCeti.nonempty_quotient_span_singleton_linearEquiv_of_injective`: under
   Maschke's condition, the quotient of `k[G]²` by an injectively generated singleton relation is
   linearly equivalent to `k[G]`.
 -/
 
 public section
 
-namespace TauCeti.MonoidAlgebra
+namespace TauCeti
 
 open _root_.MonoidAlgebra
 
@@ -62,4 +62,4 @@ theorem nonempty_quotient_span_singleton_linearEquiv_of_injective [Finite G]
     ⟨(LinearEquiv.prodComm A Q A).trans eProd⟩
   exact ⟨(S.quotientEquivOfIsCompl Q hSQ).trans eQ⟩
 
-end TauCeti.MonoidAlgebra
+end TauCeti

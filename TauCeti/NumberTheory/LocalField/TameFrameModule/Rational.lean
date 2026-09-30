@@ -24,7 +24,7 @@ For a finite group and natural-number exponents, nonzero finite cardinality of t
 `ℤ_p[G] / (σ - a, τ - b)` implies that this map is injective. Over a field whose characteristic
 does not divide `#G`, an injective tame-frame relation map presents one copy of the regular
 representation `k[G]`: this is the Maschke cancellation theorem
-`TauCeti.MonoidAlgebra.nonempty_quotient_span_singleton_linearEquiv_of_injective` applied to the
+`TauCeti.nonempty_quotient_span_singleton_linearEquiv_of_injective` applied to the
 defining relation.
 
 These results supply the injectivity and cancellation inputs used to identify the rationalized
@@ -72,8 +72,8 @@ theorem tameFrameRelationMap_injective_of_card_ne_zero [Finite G]
     simpa using congrArg (fun y : Fin 2 →₀ MonoidAlgebra ℤ_[p] G ↦ y 0) hx
   have hτ : x * (single τ (1 : ℤ_[p]) - single 1 (b : ℤ_[p])) = 0 := by
     simpa using congrArg (fun y : Fin 2 →₀ MonoidAlgebra ℤ_[p] G ↦ y 1) hx
-  have ha := MonoidAlgebra.nat_eq_one_of_mul_single_sub_eq_zero hx0 (isOfFinOrder_of_finite σ) hσ
-  have hb := MonoidAlgebra.nat_eq_one_of_mul_single_sub_eq_zero hx0 (isOfFinOrder_of_finite τ) hτ
+  have ha := nat_eq_one_of_mul_single_sub_eq_zero hx0 (isOfFinOrder_of_finite σ) hσ
+  have hb := nat_eq_one_of_mul_single_sub_eq_zero hx0 (isOfFinOrder_of_finite τ) hτ
   subst a
   subst b
   let I : Ideal (MonoidAlgebra ℤ_[p] G) := Ideal.span
@@ -115,7 +115,7 @@ theorem nonempty_tameFrameModule_linearEquiv_of_relationMap_injective [Finite G]
   let v : Fin 2 →₀ A := (tameFrameRelations k G σ τ a b).relation ()
   have hmap : tameFrameRelationMap k G σ τ a b = LinearMap.toSpanSingleton A (Fin 2 →₀ A) v :=
     LinearMap.ext fun x ↦ by rw [tameFrameRelationMap_apply, LinearMap.toSpanSingleton_apply]
-  obtain ⟨e⟩ := MonoidAlgebra.nonempty_quotient_span_singleton_linearEquiv_of_injective v
+  obtain ⟨e⟩ := nonempty_quotient_span_singleton_linearEquiv_of_injective v
     (hmap ▸ hinj)
   -- `TameFrameModule` is the quotient by the span of the relations, which is the range of the
   -- relation map.

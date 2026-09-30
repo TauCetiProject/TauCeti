@@ -13,21 +13,23 @@ public import Mathlib.GroupTheory.OrderOfElement
 
 Let `g` be an element of a monoid `G` and `c` a scalar of a commutative ring `R`. A nonzero
 element `x` of the monoid algebra `R[G]` with `x (g - c) = 0` is an eigenvector of right
-multiplication by `g` with eigenvalue `c`. Right multiplication by `g ^ orderOf g = 1` is the
-identity, so when `R` has no zero divisors the eigenvalue is a root of unity of order dividing
-`orderOf g`. In characteristic zero the only natural number that is such a root of unity is `1`.
+multiplication by `g` with eigenvalue `c`. When `g` has finite order, right multiplication by
+`g ^ orderOf g = 1` is the identity, so when `R` has no zero divisors the eigenvalue is a root of
+unity of order dividing `orderOf g`. The equality `c ^ orderOf g = 1` also holds when `g` has
+infinite order, but is then vacuous because `orderOf g = 0`. In characteristic zero the only
+natural number that is such a root of unity is `1`.
 
 ## Main statements
 
-* `TauCeti.MonoidAlgebra.pow_orderOf_eq_one_of_mul_single_sub_eq_zero`: the eigenvalue `c`
+* `TauCeti.pow_orderOf_eq_one_of_mul_single_sub_eq_zero`: the eigenvalue `c`
   satisfies `c ^ orderOf g = 1`.
-* `TauCeti.MonoidAlgebra.nat_eq_one_of_mul_single_sub_eq_zero`: in characteristic zero, a
+* `TauCeti.nat_eq_one_of_mul_single_sub_eq_zero`: in characteristic zero, a
   natural-number eigenvalue of an element of finite order is `1`.
 -/
 
 public section
 
-namespace TauCeti.MonoidAlgebra
+namespace TauCeti
 
 open _root_.MonoidAlgebra
 
@@ -75,4 +77,4 @@ theorem nat_eq_one_of_mul_single_sub_eq_zero [CharZero R] {x : MonoidAlgebra R G
     exact_mod_cast pow_orderOf_eq_one_of_mul_single_sub_eq_zero hx h
   exact (Nat.pow_eq_one.mp ha).resolve_right hg.orderOf_pos.ne'
 
-end TauCeti.MonoidAlgebra
+end TauCeti
