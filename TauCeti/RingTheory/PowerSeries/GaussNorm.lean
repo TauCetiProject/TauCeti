@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.PowerSeries.Restricted
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Topology.Order.LiminfLimsup
+import Mathlib.RingTheory.Polynomial.GaussNorm
 
 /-!
 # The Gauss norm of restricted power series
@@ -509,9 +510,11 @@ noncomputable def gaussValuation (hc : 0 < c) :
     PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg⟩
   map_zero' := NNReal.eq <| PowerSeries.gaussNorm_zero norm c norm_zero
   map_one' := NNReal.eq <| by
-    -- the constant series `1` has its only nonzero coefficient in degree `0`
-    refine (gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_).trans (by simp)
-    rcases m with _ | m <;> simp [PowerSeries.coeff_one]
+    change (1 : PowerSeries R).gaussNorm norm c = 1
+    rw [← map_one (PowerSeries.C : R →+* PowerSeries R)]
+    exact (PowerSeries.gaussNorm_C
+      (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
+      (hc := hc.le) (r := (1 : R))).trans norm_one
   map_mul' f g := NNReal.eq <| gaussNorm_mul_of_isRestricted hc f.2 g.2
   map_add_le_max' f g :=
     PowerSeries.gaussNorm_add_le_max norm c _ _ hc.le norm_nonneg
@@ -531,8 +534,9 @@ theorem gaussValuation_C (hc : 0 < c) (a : R) :
         PowerSeries.IsRestricted.subring (R := R) c) = ‖a‖₊ := by
   apply NNReal.eq
   rw [coe_gaussValuation]
-  refine (gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_).trans (by simp)
-  rcases m with _ | m <;> simp [PowerSeries.coeff_C]
+  exact PowerSeries.gaussNorm_C
+    (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
+    (hc := hc.le) (r := a)
 
 /-- The Gauss valuation of the variable is the radius. -/
 @[simp]
@@ -544,13 +548,16 @@ theorem gaussValuation_X (hc : 0 < c) :
         PowerSeries.IsRestricted.subring (R := R) c) = ⟨c, hc.le⟩ := by
   apply NNReal.eq
   rw [coe_gaussValuation]
-  calc
-    _ = c := (gaussNorm_eq_of_forall_le (s := 1) fun m ↦ ?_).trans (by simp)
-    _ = ((⟨c, hc.le⟩ : ℝ≥0) : ℝ) := rfl
-  by_cases hm : m = 1
-  · subst m
-    simp [PowerSeries.coeff_X]
-  · simp [PowerSeries.coeff_X, hm, hc.le]
+  -- The coercion to reals exposes the Gauss norm and the real radius.
+  change (PowerSeries.X : PowerSeries R).gaussNorm norm c = c
+  rw [PowerSeries.X_eq]
+  have h := PowerSeries.gaussNorm_monomial
+      (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
+      (hc := hc.le) (n := 1) (r := (1 : R))
+  have hv : (⇑(NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue : R → ℝ) =
+      norm := rfl
+  rw [hv] at h
+  simpa only [norm_one, one_mul, pow_one] using h
 
 /-- The Gauss valuation vanishes only at zero: its support is trivial. -/
 @[simp]
