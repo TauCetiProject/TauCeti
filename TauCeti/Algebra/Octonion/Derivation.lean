@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Action.Regular
+public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import TauCeti.Algebra.Lie.Derivation.Basic
-public import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 public import TauCeti.Algebra.Octonion.Basic
 public import TauCeti.LinearAlgebra.CrossProduct
+import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 
 /-!
 # Derivations of the split octonions
@@ -51,7 +52,11 @@ because `M` has trace zero
 (`TauCeti.Octonion.upperDerivation` and `TauCeti.Octonion.lowerDerivation`) are attached to a
 vector `u`, are read off the idempotent `⟨1, 0, 0, 0⟩`, and exchange the two vector entries; there
 they are the two nonzero pieces of the `ℤ/3`-grading of `𝕆` by scalar diagonal, upper vector and
-lower vector. Together the three families depend on `8 + 3 + 3 = 14` independent parameters, so
+lower vector. That grading is visible in the five brackets between the three families: `𝔰𝔩₃` acts
+on the upper family by its defining representation and on the lower one by the dual, two upper or
+two lower derivations bracket into the opposite vector family by twice the cross product, and an
+upper against a lower one brackets back into `𝔰𝔩₃` through `TauCeti.Octonion.slOfVectors`.
+Together the three families depend on `8 + 3 + 3 = 14` independent parameters, so
 `14 ≤ finrank (Der 𝕆)`.
 
 ## Main definitions
@@ -64,6 +69,8 @@ lower vector. Together the three families depend on `8 + 3 + 3 = 14` independent
   three-parameter families of derivations attached to a vector.
 * `TauCeti.Octonion.derivationOfTriple`: the three families assembled into one linear map out of
   `𝔰𝔩₃ × R³ × R³`.
+* `TauCeti.Octonion.slOfVectors`: the trace-zero matrix through which an upper and a lower vector
+  derivation bracket back into `𝔰𝔩₃`.
 
 ## Main results
 
@@ -78,7 +85,13 @@ lower vector. Together the three families depend on `8 + 3 + 3 = 14` independent
 * `TauCeti.Octonion.isFaithful_imaginaryLieSubmodule`: when scalar multiplication by `2` on `𝕆` is
   regular, `Der 𝕆` acts faithfully on `Im 𝕆`; `TauCeti.Octonion.instIsFaithfulImaginaryLieSubmodule`
   is the instance form of that, under `[NoZeroSMulDivisors R (Octonion R)]` and `[NeZero (2 : R)]`.
-* `TauCeti.Octonion.injective_derivationOfTriple`: the fourteen parameters are independent, and
+* `TauCeti.Octonion.lie_slDerivation_upperDerivation`,
+  `TauCeti.Octonion.lie_slDerivation_lowerDerivation`,
+  `TauCeti.Octonion.lie_upperDerivation_upperDerivation`,
+  `TauCeti.Octonion.lie_lowerDerivation_lowerDerivation` and
+  `TauCeti.Octonion.lie_upperDerivation_lowerDerivation`: the brackets of the three families with
+  one another, the relations of the `ℤ/3`-grading.
+* `TauCeti.Octonion.derivationOfTriple_injective`: the fourteen parameters are independent, and
   `TauCeti.Octonion.fourteen_le_finrank_derivationLieAlgebra`: hence `14 ≤ finrank (Der 𝕆)` over a
   field. In particular `Der 𝕆` is not the zero Lie algebra
   (`TauCeti.Octonion.instNontrivialDerivationLieAlgebra`), so none of the above is vacuous.
@@ -101,10 +114,14 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (O
 `(D : Module.End R (Octonion R))`, which is the simp-normal form of their action there.
 
 The three families are built from an underlying endomorphism and a private membership lemma, so
-that the bundled objects are the only public surface; their four entrywise `simp` lemmas are that
-surface, and no consumer unfolds a definition. Only the rank bound asks for a field, and only
-because `TauCeti.finrank_sl` and the finite-dimensionality of `Der 𝕆` are what turn an injection
-into an inequality of ranks.
+that the bundled objects are the only public surface; their four entrywise `simp` lemmas and their
+five brackets are that surface, and no consumer unfolds a definition. Those brackets are checked
+entry by entry like the Leibniz rules of the two vector families, the trace-zero hypothesis
+entering the `𝔰𝔩₃` ones as the substitution `M 2 2 = -(M 0 0 + M 1 1)`. Only the rank bound asks
+for a field, and only because `TauCeti.finrank_sl` and the finite-dimensionality of `Der 𝕆` are
+what turn an injection into an inequality of ranks; that one lemma is the whole of this file's use
+of `TauCeti/Algebra/Lie/GeneralLinear/Finrank.lean`, which is therefore imported privately, while
+`𝔰𝔩₃` itself, which the statements do mention, comes from Mathlib.
 
 ## References
 
@@ -565,6 +582,101 @@ def lowerDerivation : (Fin 3 → R) →ₗ[R] derivationLieAlgebra R (Octonion R
 @[simp] theorem lowerDerivation_apply_w (t : Fin 3 → R) (x : Octonion R) :
     ((lowerDerivation t : Module.End R (Octonion R)) x).w = (x.a - x.b) • t := (rfl)
 
+/-! ### The brackets of the three families -/
+
+/-- The last diagonal entry of a trace-zero `3 × 3` matrix, in the form in which the coordinate
+proofs of the brackets below eliminate it. -/
+private theorem sl_coe_apply_two_two (M : LieAlgebra.SpecialLinear.sl (Fin 3) R) :
+    (M : Matrix (Fin 3) (Fin 3) R) 2 2 =
+      -((M : Matrix (Fin 3) (Fin 3) R) 0 0 + (M : Matrix (Fin 3) (Fin 3) R) 1 1) := by
+  have h : (M : Matrix (Fin 3) (Fin 3) R).trace = 0 := LinearMap.mem_ker.mp M.2
+  rw [Matrix.trace_fin_three] at h
+  exact eq_neg_of_add_eq_zero_right h
+
+/-- **The `𝔰𝔩₃` parameter of the bracket of an upper and a lower vector derivation**: the matrix
+`⟨u, t⟩ • 1 - 3 • u tᵀ`, whose trace vanishes because the rank-one matrix `u tᵀ` has trace
+`⟨u, t⟩`.  See `TauCeti.Octonion.lie_upperDerivation_lowerDerivation`. -/
+def slOfVectors (u t : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
+  ⟨(u ⬝ᵥ t) • 1 - (3 : R) • Matrix.vecMulVec u t, LinearMap.mem_ker.mpr <|
+    show Matrix.trace ((u ⬝ᵥ t) • (1 : Matrix (Fin 3) (Fin 3) R) -
+        (3 : R) • Matrix.vecMulVec u t) = 0 by
+      simp
+      ring⟩
+
+@[simp] theorem coe_slOfVectors (u t : Fin 3 → R) :
+    (slOfVectors u t : Matrix (Fin 3) (Fin 3) R) =
+      (u ⬝ᵥ t) • 1 - (3 : R) • Matrix.vecMulVec u t := (rfl)
+
+/-- **The upper vector derivations carry the defining representation of `𝔰𝔩₃`**:
+`⁅slDerivation M, upperDerivation u⁆ = upperDerivation (M u)`, the degree `0` piece of the
+`ℤ/3`-grading acting on the degree `1` piece. -/
+@[simp] theorem lie_slDerivation_upperDerivation (M : LieAlgebra.SpecialLinear.sl (Fin 3) R)
+    (u : Fin 3 → R) :
+    ⁅slDerivation M, upperDerivation u⁆ =
+      upperDerivation ((M : Matrix (Fin 3) (Fin 3) R) *ᵥ u) := by
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ (funext fun i => ?_)
+  · simp [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
+  · simp [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
+  · simp [Matrix.mulVec_smul]
+  · fin_cases i <;>
+      simp [cross_apply, Matrix.mulVec, vec3_dotProduct, Matrix.transpose_apply, Matrix.vecHead,
+        Matrix.vecTail, sl_coe_apply_two_two M] <;> ring
+
+/-- **The lower vector derivations carry the dual of the defining representation of `𝔰𝔩₃`**:
+`⁅slDerivation M, lowerDerivation t⁆ = lowerDerivation (-(Mᵀ t))`, the degree `0` piece of the
+`ℤ/3`-grading acting on the degree `2` piece. -/
+@[simp] theorem lie_slDerivation_lowerDerivation (M : LieAlgebra.SpecialLinear.sl (Fin 3) R)
+    (t : Fin 3 → R) :
+    ⁅slDerivation M, lowerDerivation t⁆ =
+      lowerDerivation (-((M : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ t)) := by
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ (funext fun i => ?_) ?_
+  · simp [Matrix.dotProduct_mulVec, Matrix.mulVec_transpose]
+  · simp [Matrix.dotProduct_mulVec, Matrix.mulVec_transpose]
+  · fin_cases i <;>
+      simp [cross_apply, Matrix.mulVec, vec3_dotProduct, Matrix.transpose_apply, Matrix.vecHead,
+        Matrix.vecTail, sl_coe_apply_two_two M] <;> ring
+  · simp [Matrix.mulVec_smul]
+
+/-- **Two upper vector derivations bracket into the lower family**, by twice the cross product:
+`⁅upperDerivation u, upperDerivation u'⁆ = lowerDerivation (2 (u ⨯₃ u'))`.  In the `ℤ/3`-grading
+this is `1 + 1 = 2`. -/
+@[simp] theorem lie_upperDerivation_upperDerivation (u u' : Fin 3 → R) :
+    ⁅upperDerivation u, upperDerivation u'⁆ = lowerDerivation ((2 : R) • (u ⨯₃ u')) := by
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ (funext fun i => ?_)
+    (funext fun i => ?_)
+  · simp [cross_apply, Matrix.vecHead, Matrix.vecTail]; ring
+  · simp [cross_apply, Matrix.vecHead, Matrix.vecTail]; ring
+  · fin_cases i <;> simp [cross_apply, vec3_dotProduct] <;> ring
+  · fin_cases i <;> simp [cross_apply] <;> ring
+
+/-- **Two lower vector derivations bracket into the upper family**, by twice the cross product:
+`⁅lowerDerivation t, lowerDerivation t'⁆ = upperDerivation (2 (t ⨯₃ t'))`.  In the `ℤ/3`-grading
+this is `2 + 2 = 1`. -/
+@[simp] theorem lie_lowerDerivation_lowerDerivation (t t' : Fin 3 → R) :
+    ⁅lowerDerivation t, lowerDerivation t'⁆ = upperDerivation ((2 : R) • (t ⨯₃ t')) := by
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ (funext fun i => ?_)
+    (funext fun i => ?_)
+  · simp [cross_apply, Matrix.vecHead, Matrix.vecTail]; ring
+  · simp [cross_apply, Matrix.vecHead, Matrix.vecTail]; ring
+  · fin_cases i <;> simp [cross_apply] <;> ring
+  · fin_cases i <;> simp [cross_apply, vec3_dotProduct] <;> ring
+
+/-- **An upper and a lower vector derivation bracket back into `𝔰𝔩₃`**:
+`⁅upperDerivation u, lowerDerivation t⁆ = slDerivation (slOfVectors u t)`.  In the `ℤ/3`-grading
+this is `1 + 2 = 0`, the bracket that makes the fourteen derivations a Lie subalgebra. -/
+@[simp] theorem lie_upperDerivation_lowerDerivation (u t : Fin 3 → R) :
+    ⁅upperDerivation u, lowerDerivation t⁆ = slDerivation (slOfVectors u t) := by
+  refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ (funext fun i => ?_)
+    (funext fun i => ?_)
+  · simp [dotProduct_comm t u]
+  · simp [dotProduct_comm t u]
+  · fin_cases i <;>
+      simp [cross_apply, Matrix.mulVec, vec3_dotProduct, Matrix.one_apply,
+        Matrix.vecMulVec_apply] <;> ring
+  · fin_cases i <;>
+      simp [cross_apply, Matrix.mulVec, vec3_dotProduct, Matrix.one_apply,
+        Matrix.vecMulVec_apply] <;> ring
+
 /-! ### Fourteen independent derivations -/
 
 /-- **The fourteen-parameter family of derivations of `𝕆`**: a trace-zero matrix together with an
@@ -584,7 +696,7 @@ theorem derivationOfTriple_apply (M : LieAlgebra.SpecialLinear.sl (Fin 3) R)
 /-- **The fourteen-parameter family is faithful in its parameters.**  Applying a derivation in the
 family to the idempotent `⟨1, 0, 0, 0⟩` reads off the upper and the lower vector, and applying it
 to a vector matrix with upper entry `v` and nothing else then reads off `M v`. -/
-theorem injective_derivationOfTriple :
+theorem derivationOfTriple_injective :
     Function.Injective (derivationOfTriple (R := R)) := by
   refine (injective_iff_map_eq_zero _).mpr ?_
   rintro ⟨M, u, t⟩ h
@@ -610,7 +722,7 @@ below.  The matching upper bound, and with it the identification of `Der 𝕆` w
 Lie algebra `G₂`, is not proved here. -/
 theorem fourteen_le_finrank_derivationLieAlgebra (K : Type*) [Field K] :
     14 ≤ Module.finrank K (derivationLieAlgebra K (Octonion K)) := by
-  have h := LinearMap.finrank_le_finrank_of_injective (injective_derivationOfTriple (R := K))
+  have h := LinearMap.finrank_le_finrank_of_injective (derivationOfTriple_injective (R := K))
   rwa [Module.finrank_prod, Module.finrank_prod, finrank_sl, Module.finrank_fintype_fun_eq_card,
     Fintype.card_fin] at h
 
