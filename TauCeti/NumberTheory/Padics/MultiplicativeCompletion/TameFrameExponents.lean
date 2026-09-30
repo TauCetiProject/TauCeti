@@ -9,6 +9,7 @@ public import TauCeti.Algebra.MonoidAlgebra.TwoGeneratorQuotient
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Torsion
 import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
 import TauCeti.NumberTheory.Multiplicity
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Sharp exponents for a tame frame
@@ -34,6 +35,8 @@ works: for `a = b = 1` the quotient is `ℤ_p[G] ⧸ I_G ≅ ℤ_p`, which is in
 * `TauCeti.exists_tameFrame_exponents`: the existence of sharp exponents for a tame frame.
 * `TauCeti.finite_and_natCard_le_of_pow_orderOf_sub_one`: `ℤ_p[G] ⧸ J` has at most `p ^ k`
   elements when `b ^ orderOf τ - 1` is `p ^ k` times a `p`-adic unit.
+* `TauCeti.not_exists_tameFrame_exponents_one_one`: when `q(L) = 2` and the automorphism group is
+  nontrivial, the identity pair cannot have sharp exponents.
 
 ## References
 
@@ -233,5 +236,108 @@ theorem exists_tameFrame_exponents {L : Type*} [Field L] {K : Type*} [Field K] [
     (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) h
   have hbij := hφ.bijective_of_nat_card_le (hcardle.trans (hcardT.trans hk).ge)
   exact ⟨(Nat.card_eq_of_bijective φ hbij).trans hcardT, ⟨LinearEquiv.ofBijective φ hbij⟩⟩
+
+/-! ### The generating hypothesis is necessary -/
+
+/-- **The identity pair does not have sharp tame-frame exponents.** Suppose the finite group of
+`2`-power roots of unity of `L` has order two and `Aut_K(L)` is finite and nontrivial. There are
+no exponents through which the identity pair acts on those roots for which the corresponding
+two-generator quotient of `ℤ_2[Aut_K(L)]` also has order two.
+
+Indeed, the action equations on `-1` force both exponents to be odd. Reduction modulo two then
+makes both relations vanish, so the quotient surjects onto `𝔽₂[Aut_K(L)]`, which has at least
+four elements. This shows that the generating hypothesis of `exists_tameFrame_exponents` cannot
+be omitted. -/
+theorem not_exists_tameFrame_exponents_one_one (L : Type*) [Field L]
+    (K : Type*) [Field K] [Algebra K L] [Finite (L ≃ₐ[K] L)] [Nontrivial (L ≃ₐ[K] L)]
+    (hchar : (2 : L) ≠ 0) (hfinite : Finite (pPowerRootsOfUnity 2 L))
+    (hq : localRootOfUnityOrder 2 L hfinite = 2) :
+    ¬ ∃ a b : ℕ,
+      (∀ ζ ∈ pPowerRootsOfUnity 2 L, Units.map ((1 : L ≃ₐ[K] L) : L →* L) ζ = ζ ^ a) ∧
+      (∀ ζ ∈ pPowerRootsOfUnity 2 L, Units.map ((1 : L ≃ₐ[K] L) : L →* L) ζ = ζ ^ b) ∧
+      Nat.card (MonoidAlgebra ℤ_[2] (L ≃ₐ[K] L) ⧸ Ideal.span
+        {single (1 : L ≃ₐ[K] L) (1 : ℤ_[2]) - a,
+          single (1 : L ≃ₐ[K] L) (1 : ℤ_[2]) - b}) = localRootOfUnityOrder 2 L hfinite := by
+  classical
+  rintro ⟨a, b, ha, hb, hcard⟩
+  have hneg : (-1 : Lˣ) ∈ pPowerRootsOfUnity 2 L :=
+    (mem_pPowerRootsOfUnity_iff 2 L _).2 ⟨1, by norm_num⟩
+  have hne : (-1 : Lˣ) ≠ 1 := by
+    intro h
+    have hval := congrArg Units.val h
+    simp only [Units.val_neg, Units.val_one] at hval
+    have htwo := congrArg (fun x : L ↦ x + 1) hval
+    norm_num at htwo
+    exact hchar htwo.symm
+  have exponent_odd {n : ℕ}
+      (hn : ∀ ζ ∈ pPowerRootsOfUnity 2 L,
+        Units.map ((1 : L ≃ₐ[K] L) : L →* L) ζ = ζ ^ n) : Odd n :=
+    (neg_one_pow_eq_neg_one_iff_odd (R := Lˣ) hne).1 <| by
+      simpa using (hn (-1) hneg).symm
+  have haodd : Odd a := exponent_odd ha
+  have hbodd : Odd b := exponent_odd hb
+  let G := L ≃ₐ[K] L
+  let J : Ideal (MonoidAlgebra ℤ_[2] G) := Ideal.span
+    {single (1 : G) (1 : ℤ_[2]) - a, single (1 : G) (1 : ℤ_[2]) - b}
+  let f : MonoidAlgebra ℤ_[2] G →+* MonoidAlgebra (ZMod 2) G :=
+    MonoidAlgebra.mapRingHom G PadicInt.toZMod
+  have odd_cast_eq_one {n : ℕ} (hn : Odd n) : (n : ZMod 2) = 1 := by
+    obtain ⟨k, rfl⟩ := hn
+    have htwo : (2 : ZMod 2) = 0 := by
+      change ((2 : ℕ) : ZMod 2) = 0
+      exact ZMod.natCast_self 2
+    calc
+      ((2 * k + 1 : ℕ) : ZMod 2) = (2 : ZMod 2) * (k : ZMod 2) + 1 := by norm_cast
+      _ = 0 * (k : ZMod 2) + 1 := by rw [htwo]
+      _ = 1 := by ring
+  have ha2 : (a : ZMod 2) = 1 := odd_cast_eq_one haodd
+  have hb2 : (b : ZMod 2) = 1 := odd_cast_eq_one hbodd
+  have hJ : J ≤ RingHom.ker f := by
+    dsimp only [J]
+    rw [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+    constructor
+    · change f (single (1 : G) (1 : ℤ_[2]) - a) = 0
+      simp only [f, map_sub, MonoidAlgebra.mapRingHom_single, map_one, natCast_def, ha2,
+        map_natCast, sub_self]
+    · change f (single (1 : G) (1 : ℤ_[2]) - b) = 0
+      simp only [f, map_sub, MonoidAlgebra.mapRingHom_single, map_one, natCast_def, hb2,
+        map_natCast, sub_self]
+  have hJtwo : J.IsTwoSided := by
+    dsimp only [J]
+    apply Ideal.isTwoSided_span_of_subset_center
+    rw [Set.insert_subset_iff, Set.singleton_subset_iff]
+    constructor <;> rw [Semigroup.mem_center_iff]
+    · intro y
+      rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
+    · intro y
+      rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
+  let _ : J.IsTwoSided := hJtwo
+  let φ : (MonoidAlgebra ℤ_[2] G ⧸ J) →+* MonoidAlgebra (ZMod 2) G :=
+    Ideal.Quotient.lift J f fun x hx ↦ RingHom.mem_ker.mp (hJ hx)
+  have hf : Function.Surjective f := by
+    change Function.Surjective
+      (MonoidAlgebra.map (M := G) (PadicInt.toZMod (p := 2)).toAddMonoidHom)
+    exact MonoidAlgebra.map_surjective _
+      (ZMod.ringHom_surjective (PadicInt.toZMod (p := 2)))
+  have hφ : Function.Surjective φ :=
+    Ideal.Quotient.lift_surjective_of_surjective J _ hf
+  have hcard' : Nat.card (MonoidAlgebra ℤ_[2] G ⧸ J) = 2 := by
+    dsimp only [J, G]
+    exact hcard.trans hq
+  let _ : Finite (MonoidAlgebra ℤ_[2] G ⧸ J) :=
+    Nat.finite_of_card_ne_zero (hcard'.trans_ne (by norm_num))
+  let _ : Fintype G := Fintype.ofFinite G
+  have hle : Nat.card (MonoidAlgebra (ZMod 2) G) ≤ 2 := by
+    calc
+      Nat.card (MonoidAlgebra (ZMod 2) G) ≤ Nat.card (MonoidAlgebra ℤ_[2] G ⧸ J) :=
+        Nat.card_le_card_of_surjective φ hφ
+      _ = 2 := hcard'
+  have hfour : 4 ≤ Nat.card (MonoidAlgebra (ZMod 2) G) := by
+    rw [Nat.card_congr (MonoidAlgebra.coeffEquiv (R := ZMod 2) (M := G))]
+    rw [Nat.card_eq_fintype_card, Fintype.card_finsupp, ZMod.card]
+    calc
+      4 = 2 ^ 2 := by norm_num
+      _ ≤ 2 ^ Fintype.card G := Nat.pow_le_pow_right (by norm_num) Fintype.one_lt_card
+  omega
 
 end TauCeti
