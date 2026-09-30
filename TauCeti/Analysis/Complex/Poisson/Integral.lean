@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Poisson
+public import TauCeti.Analysis.Complex.Poisson.Basic
 public import Mathlib.Analysis.Complex.Harmonic.Poisson
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 
