@@ -23,14 +23,15 @@ contain a basepoint `x`, and `A ∩ B` is simply connected. This file proves tha
 
 is an isomorphism. The inverse is constructed from the fundamental-groupoid gluing theorem. Local
 functors on `A` and `B` send chosen connecting paths back to the basepoint; a gauge conjugation on
-the second functor makes the two functors agree strictly on the overlap. Gluing then supplies the
-inverse. Surjectivity is the existing generation half of van Kampen.
+the second functor (`CategoryTheory.Functor.copyObj`) makes the two functors agree strictly on the
+overlap. Gluing then supplies the inverse. Surjectivity is the existing generation half of van
+Kampen.
 
 ## Main declarations
 
-* `TauCeti.vanKampenLift`: the canonical homomorphism from the free product.
-* `TauCeti.vanKampenLift_bijective`: the canonical homomorphism is bijective.
-* `TauCeti.vanKampenEquiv`: the resulting multiplicative equivalence.
+* `TauCeti.FundamentalGroup.vanKampenLift`: the canonical homomorphism from the free product.
+* `TauCeti.FundamentalGroup.vanKampenLift_bijective`: the canonical homomorphism is bijective.
+* `TauCeti.FundamentalGroup.vanKampenEquiv`: the resulting multiplicative equivalence.
 
 ## References
 
@@ -44,17 +45,6 @@ open CategoryTheory Set Topology
 open scoped FundamentalGroupoid Monoid.Coprod
 
 namespace TauCeti
-
-private noncomputable def basedFunctor {C : Type*} [CategoryTheory.Groupoid C] (x₀ : C)
-    (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Group G] (f : End x₀ →* G) : C ⥤ SingleObj G where
-  obj _ := SingleObj.star G
-  map {x y} g := f (τ x ≫ g ≫ inv (τ y))
-  map_id x := by
-    rw [Category.id_comp, IsIso.hom_inv_id, ← End.one_def, map_one, SingleObj.id_as_one]
-  map_comp {x y z} g h := by
-    rw [SingleObj.comp_as_mul, ← map_mul]
-    congr 1
-    simp [End.mul_def, Category.assoc]
 
 private noncomputable def connectingHom {C : Type*} [CategoryTheory.Groupoid C] (x₀ : C)
     (h : ∀ y : C, Nonempty (x₀ ⟶ y)) (y : C) : x₀ ⟶ y :=
@@ -109,23 +99,15 @@ private theorem rightHom_base (hB : IsPathConnected B) (hxB : x ∈ B) :
     rightHom hB hxB (FundamentalGroupoid.mk (rightBase hxB)) = 𝟙 _ := by
   simp [rightHom]
 
-private noncomputable def gaugeConjugate {C : Type*} [CategoryTheory.Groupoid C]
-    {G : Type*} [Group G] (F : C ⥤ SingleObj G)
-    (k : ∀ z : C, F.obj z ⟶ SingleObj.star G) : C ⥤ SingleObj G where
-  obj _ := SingleObj.star G
-  map {y z} g := inv (k y) ≫ F.map g ≫ k z
-  map_id y := by simp
-  map_comp {y z w} g h := by simp [Category.assoc]
-
 private noncomputable def leftFunctor (hA : IsPathConnected A) (hxA : x ∈ A) (hxB : x ∈ B) :
     FundamentalGroupoid A ⥤
       SingleObj (FundamentalGroup A (leftBase hxA) ∗ FundamentalGroup B (rightBase hxB)) :=
-  basedFunctor _ (leftHom hA hxA) Monoid.Coprod.inl
+  TauCeti.Groupoid.functorOfEndHom _ (leftHom hA hxA) Monoid.Coprod.inl
 
 private noncomputable def rightFunctor (hB : IsPathConnected B) (hxA : x ∈ A) (hxB : x ∈ B) :
     FundamentalGroupoid B ⥤
       SingleObj (FundamentalGroup A (leftBase hxA) ∗ FundamentalGroup B (rightBase hxB)) :=
-  basedFunctor _ (rightHom hB hxB) Monoid.Coprod.inr
+  TauCeti.Groupoid.functorOfEndHom _ (rightHom hB hxB) Monoid.Coprod.inr
 
 private noncomputable def leftOverlapFunctor (hA : IsPathConnected A) (hxA : x ∈ A)
     (hxB : x ∈ B) : FundamentalGroupoid ↥(A ∩ B) ⥤
@@ -194,7 +176,8 @@ private noncomputable def adjustedRightFunctor (hA : IsPathConnected A)
     (hB : IsPathConnected B) (hAB : IsSimplyConnected (A ∩ B))
     (hxA : x ∈ A) (hxB : x ∈ B) : FundamentalGroupoid B ⥤
       SingleObj (FundamentalGroup A (leftBase hxA) ∗ FundamentalGroup B (rightBase hxB)) :=
-  gaugeConjugate (rightFunctor hB hxA hxB) (rightGauge hA hB hAB hxA hxB)
+  (rightFunctor hB hxA hxB).copyObj (fun _ ↦ SingleObj.star _)
+    fun z ↦ asIso (rightGauge hA hB hAB hxA hxB z)
 
 private theorem rightGauge_inter (hA : IsPathConnected A) (hB : IsPathConnected B)
     (hAB : IsSimplyConnected (A ∩ B)) (hxA : x ∈ A) (hxB : x ∈ B)
@@ -231,7 +214,8 @@ private theorem overlapCompatibility (hA : IsPathConnected A) (hB : IsPathConnec
   have h := overlapGauge_naturality hA hB hAB hxA hxB g
   simp only [rightOverlapFunctor, leftOverlapFunctor, Functor.comp_map] at h
   simp only [eqToHom_refl, Category.id_comp, Category.comp_id, Functor.comp_map,
-    adjustedRightFunctor, gaugeConjugate, rightGauge_inter, h, IsIso.inv_hom_id_assoc]
+    adjustedRightFunctor, Functor.copyObj, asIso_hom, asIso_inv, rightGauge_inter, h,
+    IsIso.inv_hom_id_assoc]
 
 private abbrev twoOpenCover (A B : Set X) : Bool → Set X := fun b => Bool.rec B A b
 
@@ -290,31 +274,6 @@ private noncomputable def gluedFunctor (hCover : interior A ∪ interior B = uni
     (localFunctor hA hB hAB hxA hxB)
     (localFunctor_compatibility hA hB hAB hxA hxB)
 
-/-- The canonical homomorphism from the free product of the fundamental groups of two
-subspaces to the fundamental group of the ambient space. -/
-noncomputable def vanKampenLift (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x ∈ B) :
-    (_root_.FundamentalGroup A ⟨x, hxA⟩ ∗ _root_.FundamentalGroup B ⟨x, hxB⟩) →*
-      _root_.FundamentalGroup X x :=
-  Monoid.Coprod.lift
-    (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal A) ⟨x, hxA⟩)
-    (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩)
-
-/-- `vanKampenLift` restricts on the left factor to the map induced by inclusion. -/
-@[simp]
-theorem vanKampenLift_inl (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x ∈ B)
-    (g : _root_.FundamentalGroup A ⟨x, hxA⟩) :
-    vanKampenLift A B x hxA hxB (Monoid.Coprod.inl g) =
-      _root_.FundamentalGroup.map (ContinuousMap.subtypeVal A) ⟨x, hxA⟩ g :=
-  (rfl)
-
-/-- `vanKampenLift` restricts on the right factor to the map induced by inclusion. -/
-@[simp]
-theorem vanKampenLift_inr (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x ∈ B)
-    (g : _root_.FundamentalGroup B ⟨x, hxB⟩) :
-    vanKampenLift A B x hxA hxB (Monoid.Coprod.inr g) =
-      _root_.FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩ g :=
-  (rfl)
-
 private noncomputable def vanKampenInverse (hCover : interior A ∪ interior B = univ)
     (hA : IsPathConnected A) (hB : IsPathConnected B) (hAB : IsSimplyConnected (A ∩ B))
     (hxA : x ∈ A) (hxB : x ∈ B) : _root_.FundamentalGroup X x →*
@@ -348,7 +307,7 @@ private theorem vanKampenInverse_map_left (hCover : interior A ∪ interior B = 
         (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal A) (leftBase hxA) g) =
       Monoid.Coprod.inl g := by
   refine (vanKampenInverse_map_subtypeVal hCover hA hB hAB hxA hxB true hxA g).trans ?_
-  simp [localFunctor, leftFunctor, basedFunctor]
+  simp [localFunctor, leftFunctor]
 
 private theorem vanKampenInverse_map_right (hCover : interior A ∪ interior B = univ)
     (hA : IsPathConnected A) (hB : IsPathConnected B) (hAB : IsSimplyConnected (A ∩ B))
@@ -357,7 +316,39 @@ private theorem vanKampenInverse_map_right (hCover : interior A ∪ interior B =
         (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal B) (rightBase hxB) g) =
       Monoid.Coprod.inr g := by
   refine (vanKampenInverse_map_subtypeVal hCover hA hB hAB hxA hxB false hxB g).trans ?_
-  simp [localFunctor, adjustedRightFunctor, gaugeConjugate, rightFunctor, basedFunctor]
+  simp only [localFunctor, adjustedRightFunctor, Functor.copyObj, rightFunctor, asIso_inv,
+    asIso_hom, rightGauge_base, IsIso.inv_id, Groupoid.functorOfEndHom_map, rightHom_base,
+    Category.comp_id, Category.id_comp]
+  -- The remaining identity is on an object of the form `(functorOfEndHom _ _ _).obj _`, which
+  -- `simp` does not match against `Monoid.Coprod.inr g : SingleObj.star _ ⟶ SingleObj.star _`.
+  exact Category.id_comp _
+
+namespace FundamentalGroup
+
+/-- The canonical homomorphism from the free product of the fundamental groups of two
+subspaces to the fundamental group of the ambient space. -/
+noncomputable def vanKampenLift (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x ∈ B) :
+    (_root_.FundamentalGroup A ⟨x, hxA⟩ ∗ _root_.FundamentalGroup B ⟨x, hxB⟩) →*
+      _root_.FundamentalGroup X x :=
+  Monoid.Coprod.lift
+    (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal A) ⟨x, hxA⟩)
+    (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩)
+
+/-- `vanKampenLift` restricts on the left factor to the map induced by inclusion. -/
+@[simp]
+theorem vanKampenLift_apply_inl (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x ∈ B)
+    {g : _root_.FundamentalGroup A ⟨x, hxA⟩} :
+    vanKampenLift A B x hxA hxB (Monoid.Coprod.inl g) =
+      _root_.FundamentalGroup.map (ContinuousMap.subtypeVal A) ⟨x, hxA⟩ g :=
+  (rfl)
+
+/-- `vanKampenLift` restricts on the right factor to the map induced by inclusion. -/
+@[simp]
+theorem vanKampenLift_apply_inr (A B : Set X) (x : X) (hxA : x ∈ A) (hxB : x ∈ B)
+    {g : _root_.FundamentalGroup B ⟨x, hxB⟩} :
+    vanKampenLift A B x hxA hxB (Monoid.Coprod.inr g) =
+      _root_.FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩ g :=
+  (rfl)
 
 /-- **The based Seifert--van Kampen theorem for a simply connected overlap.**
 
@@ -379,11 +370,10 @@ theorem vanKampenLift_bijective (hCover : interior A ∪ interior B = univ)
   · exact Function.LeftInverse.injective fun g ↦ DFunLike.congr_fun hleft g
   · rw [← MonoidHom.range_eq_top, Monoid.Coprod.range_eq]
     rw [show (vanKampenLift A B x hxA hxB).comp Monoid.Coprod.inl = _ from
-        MonoidHom.ext (vanKampenLift_inl A B x hxA hxB),
+        MonoidHom.ext fun _ ↦ vanKampenLift_apply_inl A B x hxA hxB,
       show (vanKampenLift A B x hxA hxB).comp Monoid.Coprod.inr = _ from
-        MonoidHom.ext (vanKampenLift_inr A B x hxA hxB)]
-    exact TauCeti.FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB
-      hAB.isPathConnected hxA hxB
+        MonoidHom.ext fun _ ↦ vanKampenLift_apply_inr A B x hxA hxB]
+    exact range_map_subtypeVal_sup_eq_top hCover hA hB hAB.isPathConnected hxA hxB
 
 /-- The equivalence in the based Seifert--van Kampen theorem for two path-connected sets with
 simply connected intersection. Its underlying homomorphism is `vanKampenLift`. -/
@@ -405,5 +395,7 @@ theorem vanKampenEquiv_toMonoidHom (hCover : interior A ∪ interior B = univ)
         _root_.FundamentalGroup X x) =
       vanKampenLift A B x hxA hxB :=
   (rfl)
+
+end FundamentalGroup
 
 end TauCeti
