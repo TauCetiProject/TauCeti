@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney
 # The cup product in singular cohomology
 
 Let `C` be a `k`-linear preadditive monoidal category with coproducts.  For a space `X`, the
-Alexander–Whitney diagonal `TopCat.alexanderWhitneyDiagonal u X` is the chain map
+Alexander–Whitney diagonal `X.alexanderWhitneyDiagonal u` is the chain map
 `C(X; T) ⟶ C(X; R) ⊗ C(X; S)` obtained from a coefficient morphism `u : T ⟶ R ⊗ S`, the map
 induced by the diagonal `X ⟶ X × X`, and the Alexander–Whitney map
 `TopCat.alexanderWhitney X X R S`.  It sends a singular simplex `σ` to
@@ -65,12 +65,12 @@ attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 section AlexanderWhitneyDiagonal
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
-  [MonoidalCategory C] [MonoidalPreadditive C] {R S T : C} (u : T ⟶ R ⊗ S)
+  [MonoidalCategory C] [MonoidalPreadditive C] {R S T : C}
 
 /-- **The Alexander–Whitney diagonal** `C(X; T) ⟶ C(X; R) ⊗ C(X; S)` of a space `X`: the
 coefficient morphism `u : T ⟶ R ⊗ S`, followed by the chain map induced by the diagonal
 `X ⟶ X × X` and by the Alexander–Whitney map `TopCat.alexanderWhitney X X R S`. -/
-def alexanderWhitneyDiagonal (X : TopCat.{w}) :
+def alexanderWhitneyDiagonal (X : TopCat.{w}) (u : T ⟶ R ⊗ S) :
     (toSSet.obj X).chainComplex T ⟶ (toSSet.obj X).chainComplex R ⊗ (toSSet.obj X).chainComplex S :=
   ((SSet.chainComplexFunctor C).map u).app _ ≫
     SSet.chainComplexMap (toSSet.map (lift (𝟙 X) (𝟙 X))) (R ⊗ S) ≫ alexanderWhitney X X R S
@@ -78,9 +78,9 @@ def alexanderWhitneyDiagonal (X : TopCat.{w}) :
 /-- The Alexander–Whitney diagonal sends a singular `n`-simplex `σ` to
 `∑_{p + q = n} σ|[0, …, p] ⊗ σ|[p, …, n]`, after the coefficient morphism `u`. -/
 @[reassoc (attr := simp)]
-lemma ιChainComplex_alexanderWhitneyDiagonal_f {X : TopCat.{w}} {n : ℕ}
+lemma ιChainComplex_alexanderWhitneyDiagonal_f (X : TopCat.{w}) (u : T ⟶ R ⊗ S) {n : ℕ}
     (σ : (toSSet.obj X) _⦋n⦌) :
-    (toSSet.obj X).ιChainComplex σ ≫ (alexanderWhitneyDiagonal u X).f n =
+    (toSSet.obj X).ιChainComplex σ ≫ (X.alexanderWhitneyDiagonal u).f n =
       u ≫ ∑ p : Fin (n + 1),
         ((toSSet.obj X).ιChainComplex
             ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ⊗ₘ
@@ -104,9 +104,10 @@ lemma ιChainComplex_alexanderWhitneyDiagonal_f {X : TopCat.{w}} {n : ℕ}
 
 /-- The Alexander–Whitney diagonal is natural in the space. -/
 @[reassoc]
-lemma alexanderWhitneyDiagonal_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) :
-    SSet.chainComplexMap (toSSet.map f) T ≫ alexanderWhitneyDiagonal u Y =
-      alexanderWhitneyDiagonal u X ≫
+lemma alexanderWhitneyDiagonal_naturality {X Y : TopCat.{w}} (f : X ⟶ Y)
+    (u : T ⟶ R ⊗ S) :
+    SSet.chainComplexMap (toSSet.map f) T ≫ Y.alexanderWhitneyDiagonal u =
+      X.alexanderWhitneyDiagonal u ≫
         (SSet.chainComplexMap (toSSet.map f) R ⊗ₘ SSet.chainComplexMap (toSSet.map f) S) := by
   have hdiag : f ≫ lift (𝟙 Y) (𝟙 Y) = lift (𝟙 X) (𝟙 X) ≫ (f ⊗ₘ f) := by
     ext <;> simp
@@ -122,17 +123,18 @@ section Cochain
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [MonoidalCategory C]
   [MonoidalPreadditive C] {k : Type*} [CommSemiring k] [Linear k C] [MonoidalLinear k C]
-  {R S T : C} (u : T ⟶ R ⊗ S) {M N P : C} (μ : M ⊗ N ⟶ P)
+  {R S T M N P : C}
 
 /-- **The cup product of singular cochains on a simplex**: for cochains `φ` of degree `p` and `ψ`
 of degree `q`, the value of `φ ⌣ ψ` on a singular `(p + q)`-simplex `σ` is `φ` of the front
 `p`-face of `σ` tensored with `ψ` of its back `q`-face, followed by `μ`, after the coefficient
 morphism `u`. -/
-lemma ιChainComplex_cupCochain_alexanderWhitneyDiagonal (X : TopCat.{w}) (p q n : ℕ)
+lemma ιChainComplex_cupCochain_alexanderWhitneyDiagonal (X : TopCat.{w}) (u : T ⟶ R ⊗ S)
+    (μ : M ⊗ N ⟶ P) (p q n : ℕ)
     (h : p + q = n) (φ : ((toSSet.obj X).chainComplex R).X p ⟶ M)
     (ψ : ((toSSet.obj X).chainComplex S).X q ⟶ N) (σ : (toSSet.obj X) _⦋n⦌) :
     (toSSet.obj X).ιChainComplex σ ≫
-        TauCeti.ChainComplex.cupCochain k (alexanderWhitneyDiagonal u X) μ p q n h φ ψ =
+        TauCeti.ChainComplex.cupCochain k (X.alexanderWhitneyDiagonal u) μ p q n h φ ψ =
       u ≫ (((toSSet.obj X).ιChainComplex
             ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫ φ) ⊗ₘ
           ((toSSet.obj X).ιChainComplex
@@ -165,38 +167,40 @@ end Cochain
 section Cohomology
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
-  [MonoidalPreadditive C] {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
-  {R S T : C} (u : T ⟶ R ⊗ S) {M N P : C} (μ : M ⊗ N ⟶ P)
+  [MonoidalPreadditive C] {R S T M N P : C}
 
-variable (k) in
 /-- **The cup product on singular cohomology**,
 `Hᵖ(X; R, M) × H^q(X; S, N) ⟶ Hⁿ(X; T, P)` for `p + q = n`: the cup product of cohomology classes
-along the Alexander–Whitney diagonal `TopCat.alexanderWhitneyDiagonal u X` and the pairing
+along the Alexander–Whitney diagonal `X.alexanderWhitneyDiagonal u` and the pairing
 `μ : M ⊗ N ⟶ P`, `k`-bilinear and natural in `X` (`TopCat.singularCup_naturality`). -/
-def singularCup (X : TopCat.{w}) (p q n : ℕ) (h : p + q = n) :
+def singularCup (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C] [MonoidalLinear k C]
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ P) (p q n : ℕ) (h : p + q = n) :
     X.singularCohomology R k M p →ₗ[k] X.singularCohomology S k N q →ₗ[k]
       X.singularCohomology T k P n :=
-  TauCeti.ChainComplex.cup k (alexanderWhitneyDiagonal u X) μ p q n h
+  TauCeti.ChainComplex.cup k (X.alexanderWhitneyDiagonal u) μ p q n h
 
 /-- The cup product of the classes of two singular cocycles is the class of their cup product. -/
 @[simp]
-lemma singularCup_homologyπ (X : TopCat.{w}) (p q n : ℕ) (h : p + q = n)
+lemma singularCup_homologyπ (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ P) (p q n : ℕ) (h : p + q = n)
     (a : (X.singularCochainComplex R k M).cycles p)
     (b : (X.singularCochainComplex S k N).cycles q) :
-    singularCup k u μ X p q n h ((X.singularCochainComplex R k M).homologyπ p a)
+    X.singularCup k u μ p q n h ((X.singularCochainComplex R k M).homologyπ p a)
         ((X.singularCochainComplex S k N).homologyπ q b) =
       (X.singularCochainComplex T k P).homologyπ n
-        (TauCeti.ChainComplex.cupCycles k (alexanderWhitneyDiagonal u X) μ p q n h a b) :=
+        (TauCeti.ChainComplex.cupCycles k (X.alexanderWhitneyDiagonal u) μ p q n h a b) :=
   TauCeti.ChainComplex.cup_homologyπ _ _ _ _ _ _ _ _
 
 /-- **Naturality of the cup product**: for a continuous map `f : X ⟶ Y`, pulling back two
 cohomology classes of `Y` along `f` and cupping them is pulling back their cup product. -/
-lemma singularCup_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (p q n : ℕ) (h : p + q = n)
+lemma singularCup_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ P)
+    (p q n : ℕ) (h : p + q = n)
     (α : Y.singularCohomology R k M p) (β : Y.singularCohomology S k N q) :
-    singularCup k u μ X p q n h (TopCat.singularCohomologyMap f p α)
+    X.singularCup k u μ p q n h (TopCat.singularCohomologyMap f p α)
         (TopCat.singularCohomologyMap f q β) =
-      TopCat.singularCohomologyMap f n (singularCup k u μ Y p q n h α β) :=
-  TauCeti.ChainComplex.cup_naturality _ μ _ _ _ _ (alexanderWhitneyDiagonal_naturality u f)
+      TopCat.singularCohomologyMap f n (Y.singularCup k u μ p q n h α β) :=
+  TauCeti.ChainComplex.cup_naturality _ μ _ _ _ _ (alexanderWhitneyDiagonal_naturality f u)
     p q n h α β
 
 end Cohomology
