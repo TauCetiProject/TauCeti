@@ -20,6 +20,8 @@ finite places.
 
 The exceptional set is the union of the dyadic places and the primes supporting the diagonal
 coefficients. Every regular global form has a diagonalization with this finite support property.
+This packages the good-place Hilbert-symbol calculation already proved in `HilbertSymbol`; it
+does not use the later form-level `finiteHasse` invariant.
 
 The good-place calculation follows O'Meara, *Introduction to Quadratic Forms*, 66:6, using the
 unramified norm-equation calculation for each pair of coefficients.
