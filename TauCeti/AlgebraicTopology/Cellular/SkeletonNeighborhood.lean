@@ -74,7 +74,7 @@ def skeletonNeighborhoodToPair (n : ℕ) : skeletonNeighborhoodPair C n ⟶ skel
   TopPair.ofInclusionMap _ _ (skeletonNeighborhoodEndpoint C n) fun x hx ↦
     skeletonNeighborhoodEndpoint_mem x hx
 
-/-- The inverse followed by the inclusion is homotopic to the identity on the skeletal pair. -/
+/-- The inclusion followed by the inverse is homotopic to the identity on the skeletal pair. -/
 def skeletonPairToNeighborhoodHomotopy (n : ℕ) :
     TopPair.Homotopy (skeletonPairToNeighborhood C n ≫ skeletonNeighborhoodToPair C n)
       (𝟙 (skeletonPair C n)) := by
@@ -87,7 +87,7 @@ def skeletonPairToNeighborhoodHomotopy (n : ℕ) :
     exact hx
   exact TopPair.ofInclusionHomotopy (skeletonNeighborhoodHomotopy C n).symm hF
 
-/-- The inclusion followed by the inverse is homotopic to the identity on the neighborhood
+/-- The inverse followed by the inclusion is homotopic to the identity on the neighborhood
 pair. -/
 def skeletonNeighborhoodToPairHomotopy (n : ℕ) :
     TopPair.Homotopy (skeletonNeighborhoodToPair C n ≫ skeletonPairToNeighborhood C n)
