@@ -78,12 +78,14 @@ theorem isAlgebraicOnIdentityComponent_iff (t : ContinuousInfinityType K) :
 
 /-- The infinity type attached to integer embedding exponents is algebraic on the identity
 component. -/
+@[simp]
 theorem isAlgebraicOnIdentityComponent_toContinuous (n : AlgebraicInfinityType K) :
     (AlgebraicInfinityType.toContinuous n).IsAlgebraicOnIdentityComponent := by
   exact ⟨n, rfl, rfl, rfl⟩
 
 /-- A finite-order sign type is algebraic on the identity component, even if its parity differs
 from that of the zero algebraic infinity type. -/
+@[simp]
 theorem isAlgebraicOnIdentityComponent_finiteOrder (ε : FiniteOrderInfinityType K) :
     (FiniteOrderInfinityType.toContinuous ε).IsAlgebraicOnIdentityComponent := by
   rw [isAlgebraicOnIdentityComponent_iff]
