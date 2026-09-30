@@ -33,6 +33,22 @@ open Topology
 
 namespace TauCeti.Toric
 
+private theorem PartialDiffeomorph.symm_trans_symm
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {H₁ H₂ H₃ : Type*} [TopologicalSpace H₁] [TopologicalSpace H₂] [TopologicalSpace H₃]
+    {I : ModelWithCorners 𝕜 E H₁} {J : ModelWithCorners 𝕜 F H₂}
+    {K : ModelWithCorners 𝕜 G H₃}
+    {M N P : Type*} [TopologicalSpace M] [ChartedSpace H₁ M]
+    [TopologicalSpace N] [ChartedSpace H₂ N]
+    [TopologicalSpace P] [ChartedSpace H₃ P]
+    {n : WithTop ℕ∞} (Φ : PartialDiffeomorph I J M N n)
+    (Ψ : PartialDiffeomorph I K M P n) :
+    (Φ.symm.trans Ψ).symm = Ψ.symm.trans Φ := by
+  rfl
+
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {σ τ υ : PointedCone ℝ V} {rσ rτ rυ kσ kτ kυ lσ lτ lυ : ℕ}
 
@@ -90,9 +106,10 @@ the other restriction. -/
     (x : AffineSemigroupComplexPoint (dualSemigroup hi υ)) :
     faceOverlapPartialDiffeomorph hi hσ hτ hυσ hυτ hBσ hBτ hBυ κσ κτ κυ
       gσ gτ gυ n (faceAffinePointMap hi hυσ x) = faceAffinePointMap hi hυτ x := by
+  have hx : x ∈ (hσ.faceAffinePointPartialDiffeomorph hi hυσ hBσ κσ gσ hBυ κυ gυ n).source :=
+    by simp
   have hinv := (hσ.faceAffinePointPartialDiffeomorph hi hυσ hBσ κσ gσ hBυ κυ gυ n).left_inv
-    (show x ∈ (hσ.faceAffinePointPartialDiffeomorph hi hυσ hBσ κσ gσ hBυ κυ gυ n).source
-      by simp)
+    hx
   simpa [faceOverlapPartialDiffeomorph,
     IsRegularCone.faceAffinePointPartialDiffeomorph_apply] using
     congrArg (faceAffinePointMap hi hυτ) hinv
@@ -107,6 +124,14 @@ the other restriction. -/
       gσ gτ gυ n).symm =
       faceOverlapPartialDiffeomorph hi hτ hσ hυτ hυσ hBτ hBσ hBυ κτ κσ κυ
         gτ gσ gυ n := by
-  rfl
+  let hυ := hσ.of_isFaceOf hυσ
+  let _ := affinePointTopology gσ
+  let _ := affinePointTopology gτ
+  let _ := affinePointTopology gυ
+  let _ := coneChartedSpace hi hσ.toIsToricCone hBσ κσ gσ
+  let _ := coneChartedSpace hi hτ.toIsToricCone hBτ κτ gτ
+  let _ := coneChartedSpace hi hυ.toIsToricCone hBυ κυ gυ
+  unfold faceOverlapPartialDiffeomorph
+  exact PartialDiffeomorph.symm_trans_symm _ _
 
 end TauCeti.Toric
