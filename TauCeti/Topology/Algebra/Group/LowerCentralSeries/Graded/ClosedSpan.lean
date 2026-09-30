@@ -107,6 +107,53 @@ theorem topologicalClosure_closure_gradedBracket_eq_top (n : ℕ) {S : Set G}
   have hxy' : y = x := Subtype.ext hxy
   simpa [U, hxy'] using hy
 
+/-- If a finite indexed family topologically generates the group and the source graded piece is
+compact, every class in the next graded piece is a sum of one bracket with each member of the
+family. The indexing keeps separate coefficients even when two generators coincide. -/
+theorem exists_sum_gradedBracket_eq_of_range {ι : Type*} [Fintype ι]
+    (n : ℕ) [CompactSpace (gradedPiece 0 G n)] (s : ι → G)
+    (hs : (Subgroup.closure (Set.range s)).topologicalClosure = ⊤)
+    (z : gradedPiece 0 G (0 + n + 1)) :
+    ∃ y : ι → gradedPiece 0 G n,
+      (∑ i, gradedBracket 0 G 0 n (gradedMkZero 0 G (s i)) (y i)) = z := by
+  classical
+  have : CompactSpace (ι → gradedPiece 0 G n) := inferInstance
+  have : IsClosed ((pLowerCentralSeries 0 G (0 + n + 1 + 1)).subgroupOf
+      (pLowerCentralSeries 0 G (0 + n + 1)) : Set (pLowerCentralSeries 0 G (0 + n + 1))) :=
+    (isClosed_pLowerCentralSeries (0 + n + 1 + 1)).preimage continuous_subtype_val
+  have : T2Space (gradedPiece 0 G (0 + n + 1)) := QuotientGroup.instT2Space
+  let f : (ι → gradedPiece 0 G n) →+ gradedPiece 0 G (0 + n + 1) :=
+    { toFun := fun y ↦ ∑ i, gradedBracket 0 G 0 n (gradedMkZero 0 G (s i)) (y i)
+      map_zero' := by simp
+      map_add' := by
+        intro x y
+        simp only [Pi.add_apply, map_add, Finset.sum_add_distrib] }
+  have hf : Continuous f := by
+    apply continuous_finsetSum
+    intro i _
+    exact (continuous_gradedBracket (p := 0) (G := G) 0 n).comp
+      (continuous_const.prodMk (continuous_apply i))
+  have hrange : IsClosed (f.range : Set (gradedPiece 0 G (0 + n + 1))) :=
+    (isCompact_range hf).isClosed
+  have hgen (i : ι) (y : gradedPiece 0 G n) :
+      gradedBracket 0 G 0 n (gradedMkZero 0 G (s i)) y ∈ f.range := by
+    refine ⟨Pi.single i y, ?_⟩
+    simp only [f, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
+    rw [Finset.sum_eq_single i]
+    · simp
+    · intro j _ hji
+      simp [hji]
+    · simp
+  have hW : (AddSubgroup.closure (Set.range (fun sy : Set.range s × gradedPiece 0 G n ↦
+      gradedBracket 0 G 0 n (gradedMkZero 0 G sy.1) sy.2))).topologicalClosure ≤ f.range := by
+    refine AddSubgroup.topologicalClosure_minimal _ ((AddSubgroup.closure_le _).mpr ?_) hrange
+    rintro _ ⟨⟨⟨g, i, rfl⟩, y⟩, rfl⟩
+    exact hgen i y
+  have htop := topologicalClosure_closure_gradedBracket_eq_top n hs
+  have hsurj : f.range = ⊤ := top_le_iff.mp (htop ▸ hW)
+  obtain ⟨y, hy⟩ := hsurj.symm ▸ AddSubgroup.mem_top z
+  exact ⟨y, hy⟩
+
 /-- If the source graded piece is compact, every class in the next graded piece is one sum of
 brackets with a finite topological generating set. -/
 theorem exists_sum_gradedBracket_eq (n : ℕ) [CompactSpace (gradedPiece 0 G n)]
@@ -114,43 +161,11 @@ theorem exists_sum_gradedBracket_eq (n : ℕ) [CompactSpace (gradedPiece 0 G n)]
     (z : gradedPiece 0 G (0 + n + 1)) :
     ∃ y : S → gradedPiece 0 G n,
       (∑ s : S, gradedBracket 0 G 0 n (gradedMkZero 0 G s) (y s)) = z := by
-  classical
-  have : CompactSpace (S → gradedPiece 0 G n) := inferInstance
-  have : IsClosed ((pLowerCentralSeries 0 G (0 + n + 1 + 1)).subgroupOf
-      (pLowerCentralSeries 0 G (0 + n + 1)) : Set (pLowerCentralSeries 0 G (0 + n + 1))) := by
-    exact (isClosed_pLowerCentralSeries (0 + n + 1 + 1)).preimage continuous_subtype_val
-  have : T2Space (gradedPiece 0 G (0 + n + 1)) := QuotientGroup.instT2Space
-  let f : (S → gradedPiece 0 G n) →+ gradedPiece 0 G (0 + n + 1) :=
-    { toFun := fun y ↦ ∑ s : S, gradedBracket 0 G 0 n (gradedMkZero 0 G s) (y s)
-      map_zero' := by simp
-      map_add' := by
-        intro x y
-        simp only [Pi.add_apply, map_add, Finset.sum_add_distrib] }
-  have hf : Continuous f := by
-    apply continuous_finsetSum
-    intro s _
-    exact (continuous_gradedBracket (p := 0) (G := G) 0 n).comp
-      (continuous_const.prodMk (continuous_apply s))
-  have hrange : IsClosed (f.range : Set (gradedPiece 0 G (0 + n + 1))) :=
-    (isCompact_range hf).isClosed
-  have hgen (s : S) (y : gradedPiece 0 G n) :
-      gradedBracket 0 G 0 n (gradedMkZero 0 G s) y ∈ f.range := by
-    refine ⟨Pi.single s y, ?_⟩
-    simp only [f, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
-    rw [Finset.sum_eq_single s]
-    · simp
-    · intro t _ hts
-      simp [hts]
-    · intro hs
-      exact False.elim (hs (Finset.mem_attach S s))
-  have hW : (AddSubgroup.closure (Set.range (fun sy : ↥(S : Set G) × gradedPiece 0 G n ↦
-      gradedBracket 0 G 0 n (gradedMkZero 0 G sy.1) sy.2))).topologicalClosure ≤ f.range := by
-    refine AddSubgroup.topologicalClosure_minimal _ ((AddSubgroup.closure_le _).mpr ?_) hrange
-    rintro _ ⟨⟨s, y⟩, rfl⟩
-    exact hgen ⟨s.1, s.2⟩ y
-  have htop := topologicalClosure_closure_gradedBracket_eq_top n hS
-  have hsurj : f.range = ⊤ := top_le_iff.mp (htop ▸ hW)
-  obtain ⟨y, hy⟩ := hsurj.symm ▸ AddSubgroup.mem_top z
-  exact ⟨y, hy⟩
+  apply exists_sum_gradedBracket_eq_of_range n ((↑) : S → G) _ z
+  have hrange : Set.range ((↑) : S → G) = (S : Set G) := by
+    ext g
+    simp
+  rw [hrange]
+  exact hS
 
 end TauCeti
