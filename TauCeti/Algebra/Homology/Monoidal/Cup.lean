@@ -100,7 +100,7 @@ private lemma extendCochain_add {p : ℕ} (φ φ' : A.X p ⟶ M) (i : ℕ) :
     simp [extendCochain_self]
   · simp [extendCochain_of_ne _ h]
 
-private lemma extendCochain_smul {k : Type*} [Ring k] [Linear k C] {p : ℕ} (r : k)
+private lemma extendCochain_smul {k : Type*} [Semiring k] [Linear k C] {p : ℕ} (r : k)
     (φ : A.X p ⟶ M) (i : ℕ) :
     extendCochain (r • φ) i = r • extendCochain φ i := by
   by_cases h : i = p
@@ -219,8 +219,6 @@ lemma tensorHom_f_comp_tensorCochain {A' B' : ChainComplex C ℕ} (f : A' ⟶ A)
     ιTensorObj_tensorCochain_extend, extendCochain_comp, extendCochain_comp,
     tensorHom_comp_tensorHom_assoc]
 
-variable {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C]
-
 /-- The tensor product of cochains is additive in the first cochain. -/
 lemma tensorCochain_add_left {p q : ℕ} (φ φ' : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
     tensorCochain μ (φ + φ') ψ n = tensorCochain μ φ ψ n + tensorCochain μ φ' ψ n := by
@@ -236,6 +234,8 @@ lemma tensorCochain_add_right {p q : ℕ} (φ : A.X p ⟶ M) (ψ ψ' : B.X q ⟶
   rw [ιMapBifunctor_eq_ιTensorObj]
   simp only [Preadditive.comp_add, ιTensorObj_tensorCochain_extend, extendCochain_add,
     MonoidalPreadditive.tensor_add, Preadditive.add_comp]
+
+variable {k : Type*} [Semiring k] [Linear k C] [MonoidalLinear k C]
 
 /-- The tensor product of cochains is `k`-linear in the first cochain. -/
 lemma tensorCochain_smul_left {p q : ℕ} (r : k) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N)
