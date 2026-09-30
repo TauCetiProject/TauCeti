@@ -117,9 +117,7 @@ theorem mk_symbolIntRep_tmul (Γ : Subgroup SL(2, ℤ)) (δ : intEntries 2) (α 
       symbol Γ ((δ : GL (Fin 2) ℚ) • α) ((δ : GL (Fin 2) ℚ) • β)
         (binaryFormRep R w (op (adjugate (intMatrix 2 δ))) P) := by
   rw [symbolIntRep_tmul, symbol_apply, binaryFormAdjugateRep_apply]
-  congr 2
-  ext1
-  simp
+  rw [degreeZeroGLRep_single_sub_single]
 
 /-! ### The Hecke operator of a double coset -/
 

@@ -30,6 +30,8 @@ the element `y - t ^ (1/p) * x` of `F · k'` is a `p`-th root of `u`, and `u ^ (
 
 * `TauCeti.finiteDimensional_of_constantCompositum_eq_top`: a compositum with finite constants
   is finite over the original field.
+* `TauCeti.finiteDimensional_base_of_constantCompositum_eq_top`: conversely, for an exact `k` and
+  separable `k' / k`, a compositum finite over the original field has finite constants.
 * `TauCeti.isSeparable_of_constantCompositum_eq_top`: the compositum of a separable constant
   field extension is separable over the original field.
 * `TauCeti.separableClosure_eq_bot_of_constantCompositum_eq_top`: for a separable constant field
@@ -76,6 +78,17 @@ theorem finiteDimensional_of_constantCompositum_eq_top [FiniteDimensional k k']
   have := IntermediateField.finiteDimensional_adjoin hi
   rw [htop] at this
   exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
+
+/-- **Finiteness of the compositum detects finiteness of the constants**: if `k` is exact in `F`,
+`k' / k` is separable and the compositum `F · k'` is finite over `F`, then `k' / k` is finite.  This
+is the converse of `TauCeti.finiteDimensional_of_constantCompositum_eq_top`, by the degree identity
+`[F · k' : F] = [k' : k]` of linear disjointness. -/
+theorem finiteDimensional_base_of_constantCompositum_eq_top [FiniteDimensional F F']
+    [Algebra.IsSeparable k k'] (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) : FiniteDimensional k k' := by
+  have hrank := finrank_constantCompositum_eq_finrank_of_isSeparable F k' F' hex
+  rw [h, IntermediateField.finrank_top'] at hrank
+  exact Module.finite_of_finrank_pos (hrank ▸ Module.finrank_pos)
 
 /-- A separable extension of the constant field produces a separable compositum over the
 original field. -/

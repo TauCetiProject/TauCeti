@@ -137,8 +137,8 @@ theorem lintegral_posDef_multivariateGamma (ha : ((p : ℝ) - 1) / 2 < a) :
   rw [setLIntegral_posDef_symmetricLebesgue p (by fun_prop)]
   simp_rw [hpt]
   rw [← ofReal_integral_eq_lintegral_ofReal
-      (integrableOn_lowerTriangle_det_rpow_mul_exp_neg_trace ha) hnonneg,
-    integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha]
+      (integrableOn_lowerTriangle_det_rpow_mul_exp_neg_trace fun _ ↦ ha) hnonneg,
+    integral_lowerTriangle_det_rpow_mul_exp_neg_trace fun _ ↦ ha]
 
 /-- For `((p : ℝ) - 1) / 2 < a` the integrand `(det A) ^ (a - (p + 1) / 2) * exp (-trace A)` is
 integrable over the positive-definite cone against `TauCeti.symmetricLebesgue p`. -/
@@ -172,7 +172,7 @@ theorem integral_posDef_multivariateGamma (ha : ((p : ℝ) - 1) / 2 < a) :
         exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace) ∂symmetricLebesgue p =
       multivariateGamma p a := by
   rw [integral_posDef_symmetricLebesgue p (Measurable.aestronglyMeasurable (by fun_prop)),
-    ← integral_lowerTriangle_det_rpow_mul_exp_neg_trace ha]
+    ← integral_lowerTriangle_det_rpow_mul_exp_neg_trace fun _ ↦ ha]
   refine setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x _ => ?_
   simp only [coe_lowerTriangleGram, smul_eq_mul]
   ring

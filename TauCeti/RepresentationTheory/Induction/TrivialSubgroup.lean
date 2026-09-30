@@ -243,6 +243,14 @@ theorem coindBotEquivPi_symm_apply_coe (X : Type u) [AddCommGroup X] [Module k X
     (dsimp% only (((coindBotEquivPi k G X).symm f).1)) = f :=
   (rfl)
 
+/-- Evaluation at `1` is a `k`-linear retraction of the embedding of a representation into the
+representation coinduced from the trivial subgroup. -/
+theorem leftInverse_coindBotUnit (A : Rep k G) :
+    Function.LeftInverse (LinearMap.proj 1 ∘ₗ (coindBotEquivPi k G A.V).toLinearMap)
+      (coindBotUnit A).hom := fun a ↦ by
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply,
+    coindBotUnit_hom_apply_coe, map_one, Module.End.one_apply]
+
 end Coinduction
 
 section Induction

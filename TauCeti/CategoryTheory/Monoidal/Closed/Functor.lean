@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
+public import Mathlib.CategoryTheory.Monoidal.Braided.Reflection
 public import TauCeti.CategoryTheory.Adjunction.Mates
 public import TauCeti.CategoryTheory.Monoidal.Functor
 -- Non-public: the mate through the identity adjunctions and the invertibility of precomposing an
@@ -45,7 +46,11 @@ definition and characteristic formulas follow the mate-based development in
 * `CategoryTheory.Functor.coev_ihomComparison`: its characteristic equation against
   coevaluation;
 * `CategoryTheory.Functor.ihomComparison_whiskerLeft`: its naturality in the source of the
-  internal Hom.
+  internal Hom;
+* `CategoryTheory.Monoidal.Reflective.ihomComparisonUnitIso`: the comparison with the internal
+  Hom transported to a reflective subcategory;
+* `CategoryTheory.Monoidal.Reflective.ihomComparison_app_eq_ihomComparisonUnitIso_inv`:
+  identifies that comparison with the internal-Hom comparison of the reflective right adjoint.
 -/
 
 public section
@@ -344,3 +349,75 @@ end InternalHomComparison
 
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Monoidal.Reflective
+
+open CategoryTheory.Functor
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C]
+variable {D : Type u₂} [Category.{v₂} D]
+variable [MonoidalCategory D] [SymmetricCategory D] [MonoidalClosed D]
+variable [MonoidalCategory C]
+variable {L : D ⥤ C} [L.Monoidal] {R : C ⥤ D} [R.Faithful] [R.Full]
+
+/-- The unit isomorphism comparing the internal Hom transported to a reflective subcategory with
+the ambient internal Hom. -/
+def ihomComparisonUnitIso (adj : L ⊣ R) (A : C) :
+    letI : MonoidalClosed C := monoidalClosed adj
+    𝟭 C ⋙ (R ⋙ ihom (R.obj A)) ≅ ihom A ⋙ R :=
+  NatIso.ofComponents (fun X ↦ @asIso _ _ _ _
+    (adj.unit.app ((ihom (R.obj A)).obj (R.obj X)))
+    (instIsIsoAppUnitObjIhom adj X (R.obj A))) (fun {X Y} f ↦ by
+      exact adj.unit.naturality ((ihom (R.obj A)).map (R.map f)))
+
+/-- For the closed structure supplied by Day reflection, the internal-Hom comparison of the
+reflective right adjoint is the inverse of the adjunction unit. -/
+theorem ihomComparison_app_eq_ihomComparisonUnitIso_inv (adj : L ⊣ R) (A B : C) :
+    letI : MonoidalClosed C := monoidalClosed adj
+    letI : R.LaxMonoidal := adj.rightAdjointLaxMonoidal
+    (R.ihomComparison A).natTrans.app B = (ihomComparisonUnitIso adj A).inv.app B := by
+  let _ : MonoidalClosed C := monoidalClosed adj
+  let _ : R.LaxMonoidal := adj.rightAdjointLaxMonoidal
+  apply uncurry_injective
+  rw [CategoryTheory.Functor.uncurry_ihomComparison]
+  let comm₁ : R ⋙ tensorLeft (R.obj A) ⋙ L ≅ tensorLeft A ⋙ 𝟭 C :=
+    NatIso.ofComponents (fun X ↦
+      (Functor.Monoidal.μIso L (R.obj A) (R.obj X)).symm ≪≫
+        asIso (adj.counit.app A ⊗ₘ adj.counit.app X)) (fun _ ↦ by
+      dsimp
+      rw [Category.assoc, ← Functor.OplaxMonoidal.δ_natural_right_assoc,
+        tensorHom_def', ← MonoidalCategory.whiskerLeft_comp_assoc,
+        Adjunction.counit_naturality, whisker_exchange,
+        tensorHom_def_assoc, MonoidalCategory.whiskerLeft_comp])
+  set comm₂ := ihomComparisonUnitIso adj A
+  have hc := Adjunction.map_restrictFullyFaithful_counit_app
+    ((ihom.adjunction (R.obj A)).comp adj)
+    (Functor.FullyFaithful.ofFullyFaithful R)
+    (Functor.FullyFaithful.id _) comm₁ comm₂ B
+  have hev' : (ihom.ev A).app B =
+      (((ihom.adjunction (R.obj A)).comp adj).restrictFullyFaithful
+        (Functor.FullyFaithful.ofFullyFaithful R)
+        (Functor.FullyFaithful.id _) comm₁ comm₂).counit.app B := rfl
+  rw [uncurry_eq]
+  dsimp only [Functor.id_map, Functor.id_obj] at hc
+  rw [Adjunction.rightAdjointLaxMonoidal_μ]
+  rw [Adjunction.homEquiv_unit]
+  rw [hev', hc, R.map_comp, R.map_comp]
+  have hcomm₁ : Functor.OplaxMonoidal.δ L (R.obj A) (R.obj ((ihom A).obj B)) ≫
+      (adj.counit.app A ⊗ₘ adj.counit.app ((ihom A).obj B)) =
+      comm₁.hom.app ((ihom A).obj B) := rfl
+  have hcancel : Functor.OplaxMonoidal.δ L (R.obj A) (R.obj ((ihom A).obj B)) ≫
+      (adj.counit.app A ⊗ₘ adj.counit.app ((ihom A).obj B)) ≫
+        comm₁.inv.app ((ihom A).obj B) = 𝟙 _ := by
+    rw [← Category.assoc, hcomm₁]
+    exact comm₁.hom_inv_id_app ((ihom A).obj B)
+  slice_lhs 2 4 =>
+    rw [← R.map_comp, ← R.map_comp, hcancel, R.map_id]
+  rw [Category.id_comp (R.map _)]
+  rw [R.map_comp, Adjunction.comp_counit_app, R.map_comp, Functor.comp_map, curriedTensor_obj_map,
+    ihom.ihom_adjunction_counit, adj.unit_naturality_assoc, adj.unit_naturality_assoc,
+    adj.right_triangle_components, Category.comp_id]
+
+end CategoryTheory.Monoidal.Reflective

@@ -172,8 +172,7 @@ theorem ringHomOfRationalSubsetSubset_mem_completedPlusSubring (P : PairOfDefini
   have _ := isTopologicalRing_locUniformSpace P T' s' S' hden'
   have _ := isHuberRing_completion_locTopology P T' s' S' hden'
   have hB := isRingOfIntegralElements_completedPlusSubring P Aplus hIplus hAplus T' s' S' hden'
-  have _ := hB.isIntegrallyClosedIn
-  refine fun f hf ↦ mem_of_forall_vle_one hB.isOpen fun w hw ↦ ?_
+  refine fun f hf ↦ hB.mem_of_forall_vle_one fun w hw ↦ ?_
   simpa only [comap_vle, map_one] using
     ((mem_spa_iff _ _).mp (comap_ringHomOfRationalSubsetSubset_mem_spa P Aplus hAplus
       T s S hden T' s' S' hden' hsub w hw)).2 f hf

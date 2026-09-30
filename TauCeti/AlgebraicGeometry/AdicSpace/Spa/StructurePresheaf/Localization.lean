@@ -57,17 +57,15 @@ private theorem exists_presentation_refining (hT : IsOpen (Ideal.span (T : Set A
     {V : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus) (hVW : V ≤ spaBasicOpen Aplus T s) :
     ∃ p : Presentation P, IsOpen (Ideal.span (p.num : Set A) : Set A) ∧
       V = spaBasicOpen Aplus p.num p.den ∧ ∃ r, p.den = s * r ∧ ∀ t ∈ T, t * r ∈ p.num := by
-  obtain ⟨T', s', hT', hVeq⟩ := mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp hV)
+  obtain ⟨T', s', hT', rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hV
   let p : Presentation P := ⟨T, s, hasDenominatorPower_of_isOpen_span P T s _ hT⟩
   let q : Presentation P := ⟨T', s', hasDenominatorPower_of_isOpen_span P T' s' _ hT'⟩
-  refine ⟨p.commonRefinement q, ?_, ?_, Presentation.le_def.mp (p.le_commonRefinement_left q)⟩
-  · classical
-    rw [Presentation.commonRefinement_num]
-    exact P.isOpen_span_insert_mul_insert hT hT'
-  · have hVq : V = spaBasicOpen Aplus q.num q.den :=
-      Opens.ext (hVeq.trans (Set.ext fun _ ↦ mem_spaBasicOpen).symm)
-    rw [spaBasicOpen_commonRefinement, ← hVq]
-    exact (inf_eq_right.mpr hVW).symm
+  refine ⟨p.commonRefinement q, ?_,
+    ((spaBasicOpen_commonRefinement Aplus p q).trans (inf_eq_right.mpr hVW)).symm,
+    Presentation.le_def.mp (p.le_commonRefinement_left q)⟩
+  classical
+  rw [Presentation.commonRefinement_num]
+  exact P.isOpen_span_insert_mul_insert hT hT'
 
 /-! ### The presentation over `A⟨T/s⟩` -/
 
@@ -115,20 +113,6 @@ private theorem isOpen_span_locPresentation_num {p : Presentation P}
   have hopen := isOpen_map_algebraMap_locUniformSpace P T s S hden hp
   rw [coe_locPresentation_num, ← Ideal.map_span, hρ, ← Ideal.map_map]
   exact isOpen_map_coeRingHom hopen
-
--- `A_U⁺` consists of power-bounded elements when `A⁺` does.
-private theorem isPowerBounded_of_mem_completedPlusSubring
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    ∀ ⦃b⦄, b ∈ completedPlusSubring P Aplus T s S hden → IsPowerBounded b := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  have _ := isHuberRing_completion_locTopology P T s S hden
-  exact fun _ hb ↦ mem_powerBoundedSubring.mp
-    (completedPlusSubring_le_powerBoundedSubring P Aplus hAplus T s S hden hb)
 
 /-! ### The ring isomorphism as an isomorphism of objects -/
 
@@ -211,7 +195,7 @@ private theorem homOfRationalSubsetSubset_comp_locPresentationIso_hom
     letI := isTopologicalRing_locUniformSpace P T s S hden
     homOfRationalSubsetSubset Aplus hAplus h ≫ (locPresentationIso P T s S hden hle').hom =
       (locPresentationIso P T s S hden hle).hom ≫ homOfRationalSubsetSubset _
-        (isPowerBounded_of_mem_completedPlusSubring P Aplus T s S hden hAplus) hB := by
+        (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) hB := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -242,14 +226,6 @@ private theorem homOfRationalSubsetSubset_comp_locPresentationIso_hom
 
 /-! ### The isomorphism for a chosen presentation -/
 
--- A transport between presentation limits along an equality of opens is a restriction map.
-private theorem eqToHom_presentationLimit {R : Type v} [CommRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] {Q : PairOfDefinition R} {Rplus : Subring R} {V W : Opens ↥(spa Rplus)}
-    (e : V = W) (e' : presentationLimit (P := Q) Rplus V = presentationLimit (P := Q) Rplus W) :
-    eqToHom e' = presentationLimitMap (P := Q) e.ge := by
-  subst e
-  simp
-
 -- The isomorphism of Remark 8.4 computed through a presentation `p` of `V` that refines `(T, s)`:
 -- `𝒪_X(V) ≅ A⟨p⟩ ≅ A⟨T/s⟩⟨ρ(p)⟩ ≅ 𝒪_U(j⁻¹V)`.
 private noncomputable def presentationLimitLocIsoAux (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
@@ -268,7 +244,7 @@ private noncomputable def presentationLimitLocIsoAux (hAplus : ∀ ⦃a⦄, a �
   eqToIso (congrArg (presentationLimit (P := P) Aplus) hpV.2.1) ≪≫
     presentationLimitRationalIso Aplus hAplus p hpV.1 ≪≫ locPresentationIso P T s S hden hpV.2.2 ≪≫
     (presentationLimitRationalIso _
-      (isPowerBounded_of_mem_completedPlusSubring P Aplus T s S hden hAplus) _
+      (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) _
       (isOpen_span_locPresentation_num P T s S hden hpV.1)).symm ≪≫
     eqToIso (congrArg (presentationLimit (P := completionLocalization P T s S hden)
       (completedPlusSubring P Aplus T s S hden))
@@ -302,7 +278,7 @@ private theorem presentationLimitMap_comp_presentationLimitLocIsoAux_hom
     exact locOpensComap_mono P Aplus T s S hden h
   have hX := presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p p' hp hp' h
   have hY := presentationLimitRationalIso_inv_comp_map_comp_hom _
-    (isPowerBounded_of_mem_completedPlusSubring P Aplus T s S hden hAplus) _ _
+    (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) _ _
     (isOpen_span_locPresentation_num P T s S hden hp)
     (isOpen_span_locPresentation_num P T s S hden hp') hB
   rw [Iso.inv_comp_eq] at hX
@@ -335,6 +311,23 @@ noncomputable def presentationLimitLocIso (hAplus : ∀ ⦃a⦄, a ∈ Aplus →
         (completedPlusSubring P Aplus T s S hden) (locOpensComap P Aplus T s S hden V) :=
   presentationLimitLocIsoAux P Aplus T s S hden hAplus
     (exists_presentation_refining P Aplus T s hT hV hVW).choose_spec
+
+/-- **Transport of `presentationLimitLocIso` along an equality of rational opens**: the
+isomorphisms at two equal opens `V = V'` agree up to the transports of the two presentation limits
+along that equality. -/
+theorem presentationLimitLocIso_hom_congr (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) {V V' : Opens ↥(spa Aplus)} (e : V = V')
+    (hV : V ∈ spaRationalOpens Aplus) (hV' : V' ∈ spaRationalOpens Aplus)
+    (hVW : V ≤ spaBasicOpen Aplus T s) (hVW' : V' ≤ spaBasicOpen Aplus T s) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom =
+      eqToHom (congrArg _ e) ≫
+        (presentationLimitLocIso P Aplus T s S hden hAplus hT V' hV' hVW').hom ≫
+        eqToHom (congrArg _ (congrArg (locOpensComap P Aplus T s S hden) e.symm)) := by
+  subst e
+  simp
 
 /-- **Wedhorn's Remark 8.4 is natural in `V`.** For rational opens `V' ⊆ V ⊆ R(T/s)`, the
 isomorphisms `presentationLimitLocIso` at `V` and at `V'` carry the restriction map of `V' ⊆ V`

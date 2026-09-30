@@ -539,6 +539,37 @@ theorem freeProPGen_eq_one_of_le {i : ℕ} (h : n ≤ i) : freeProPGen p n i = 1
 theorem freeProPGen_val (i : Fin n) : freeProPGen p n i = freeProP.of i :=
   freeProPGen_of_lt p i.isLt
 
+variable (n) in
+/-- The `ℕ`-indexed generators take finitely many values: the canonical generators and `1`. -/
+theorem finite_range_freeProPGen : (Set.range (freeProPGen p n)).Finite := by
+  refine ((Set.finite_range (freeProP.of : Fin n → freeProP p (Fin n))).insert 1).subset ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases h : i < n
+  · exact Or.inr ⟨⟨i, h⟩, (freeProPGen_of_lt p h).symm⟩
+  · exact Or.inl (freeProPGen_eq_one_of_le p (not_lt.mp h))
+
+/-- A set containing every `ℕ`-indexed generator generates the free pro-`p` group topologically. -/
+theorem topologicalClosure_closure_eq_top_of_range_freeProPGen_subset {s : Set (freeProP p (Fin n))}
+    (hs : Set.range (freeProPGen p n) ⊆ s) : (Subgroup.closure s).topologicalClosure = ⊤ := by
+  refine top_le_iff.1 ?_
+  rw [← freeProP.topologicalClosure_closure_range_of_eq_top p (Fin n)]
+  refine Subgroup.topologicalClosure_mono (Subgroup.closure_mono ?_)
+  rintro _ ⟨i, rfl⟩
+  exact hs ⟨i, freeProPGen_val p i⟩
+
+/-- Two marked generators `x_j`, `x_k` together with the remaining generators `x_i`, `i ≠ j, k`,
+generate the free pro-`p` group topologically. -/
+theorem topologicalClosure_closure_insert_insert_image_freeProPGen_eq_top (j k : ℕ) :
+    (Subgroup.closure (insert (freeProPGen p n j) (insert (freeProPGen p n k)
+      (freeProPGen p n '' {i | i ≠ j ∧ i ≠ k})))).topologicalClosure = ⊤ := by
+  refine topologicalClosure_closure_eq_top_of_range_freeProPGen_subset p ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases hij : i = j
+  · exact Or.inl (by rw [hij])
+  by_cases hik : i = k
+  · exact Or.inr (Or.inl (by rw [hik]))
+  exact Or.inr (Or.inr ⟨i, ⟨hij, hik⟩, rfl⟩)
+
 /-- The value of a homomorphism on the `ℕ`-indexed generators. -/
 theorem map_freeProPGen {K F : Type*} [Group K] [FunLike F (freeProP p (Fin n)) K]
     [MonoidHomClass F (freeProP p (Fin n)) K] (φ : F) (i : ℕ) :
