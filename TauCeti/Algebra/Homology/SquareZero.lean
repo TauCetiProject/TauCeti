@@ -348,11 +348,11 @@ variable {ι κ : Type*}
 bases: `LinearMap.mappingCone d e f` transported along `Finsupp.sumFinsuppLEquivProdFinsupp`. -/
 noncomputable def sumMappingCone (d : (ι →₀ S) →ₗ[S] (ι →₀ S)) (e : (κ →₀ S) →ₗ[S] (κ →₀ S))
     (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) : ((ι ⊕ κ) →₀ S) →ₗ[S] ((ι ⊕ κ) →₀ S) :=
-  (sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ mappingCone d e f ∘ₗ
-    (sumFinsuppLEquivProdFinsupp S).toLinearMap
+  (sumFinsuppLEquivProdFinsupp S).symm.conjRingEquiv (mappingCone d e f)
 
 /-- The mapping cone on `(ι ⊕ κ) →₀ S` is the mapping cone on `(ι →₀ S) × (κ →₀ S)` between the
 two `Finsupp` sum-product equivalences. -/
+@[simp]
 theorem sumMappingCone_apply (d : (ι →₀ S) →ₗ[S] (ι →₀ S)) (e : (κ →₀ S) →ₗ[S] (κ →₀ S))
     (f : (ι →₀ S) →ₗ[S] (κ →₀ S)) (x : (ι ⊕ κ) →₀ S) :
     sumMappingCone d e f x =
@@ -393,10 +393,9 @@ to zero. -/
 theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)} {e : (κ →₀ S) →ₗ[S] (κ →₀ S)}
     {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) :
     sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 := by
-  refine LinearMap.ext fun x ↦ ?_
-  rw [comp_apply, sumMappingCone_apply, sumMappingCone_apply, LinearEquiv.apply_symm_apply,
-    ← comp_apply (mappingCone d e f), mappingCone_comp_self f hd he hf, zero_apply, map_zero,
-    zero_apply]
+  unfold sumMappingCone
+  rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp,
+    mappingCone_comp_self f hd he hf, map_zero]
 
 /-- The mapping cone on `(ι ⊕ κ) →₀ S` is exact exactly when the mapping cone on
 `(ι →₀ S) × (κ →₀ S)` is. -/
@@ -404,7 +403,12 @@ theorem ker_le_range_sumMappingCone_iff {d : (ι →₀ S) →ₗ[S] (ι →₀ 
     {e : (κ →₀ S) →ₗ[S] (κ →₀ S)} {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} :
     ker (sumMappingCone d e f) ≤ range (sumMappingCone d e f) ↔
       ker (mappingCone d e f) ≤ range (mappingCone d e f) := by
-  rw [sumMappingCone, LinearEquiv.ker_comp, ker_comp, range_comp, LinearEquiv.range_comp,
+  change ker ((sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ mappingCone d e f ∘ₗ
+    (sumFinsuppLEquivProdFinsupp S).toLinearMap) ≤
+    range ((sumFinsuppLEquivProdFinsupp S).symm.toLinearMap ∘ₗ mappingCone d e f ∘ₗ
+      (sumFinsuppLEquivProdFinsupp S).toLinearMap) ↔
+      ker (mappingCone d e f) ≤ range (mappingCone d e f)
+  rw [LinearEquiv.ker_comp, ker_comp, range_comp, LinearEquiv.range_comp,
     Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
   exact Submodule.comap_le_comap_iff_of_surjective (LinearEquiv.surjective _)
 
