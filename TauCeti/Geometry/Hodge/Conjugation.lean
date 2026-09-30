@@ -70,6 +70,13 @@ models.
 * `TauCeti.Hodge.latticeConjugation_dual`: its lattice conjugation is the twisted transpose of the
   lattice conjugation, and `TauCeti.Hodge.integralMapToComplex_dualMap` says that complexifying
   the transpose of an integral map gives the transpose of its complexification.
+* `TauCeti.Hodge.homLatticeMap` and `TauCeti.Hodge.isBaseChange_homLatticeMap`: the space of
+  complex-linear maps between two complexifications, the source lattice being finite free, is a
+  complexification of the space of integral linear maps between the lattices.
+* `TauCeti.Hodge.latticeConjugation_internalHom`: its lattice conjugation is the internal-hom
+  conjugation, and `TauCeti.Hodge.integralMapToComplex_lcomp_comp_llcomp` says that complexifying
+  pre- and post-composition by integral maps gives pre- and post-composition by their
+  complexifications.
 
 The base-change design follows the discussion by Johan Commelin, Andrew Yang, Kevin Buzzard, and
 Joël Riou in the `#mathlib4` Zulip thread *Complexifications with a view towards Hodge theory*. The
@@ -923,5 +930,84 @@ theorem integralMapToComplex_dualMap (h'ℂ : IsBaseChange ℂ ι'ℂ) (hℂ : I
     dualLatticeMap_apply_ι, LinearMap.dualMap_apply]
 
 end Dual
+
+section InternalHom
+
+universe u₁ v₁ u₂ v₂ u₃ v₃ u₄ v₄
+
+variable {V₁ : Type u₁} {V₂ : Type u₂} {W₁ : Type v₁} {W₂ : Type v₂}
+variable [AddCommGroup V₁] [AddCommGroup V₂]
+variable [AddCommGroup W₁] [Module ℂ W₁] [AddCommGroup W₂] [Module ℂ W₂]
+variable {ι₁ : V₁ →ₗ[ℤ] W₁} {ι₂ : V₂ →ₗ[ℤ] W₂}
+
+/-- The integral structure map `φ ↦ integralMapToComplex h₁ ι₂ φ` of the space of complex-linear
+maps between two complexifications: an integral linear map between the lattices extends
+complex-linearly to the complexifications (`TauCeti.Hodge.homLatticeMap_apply`).
+
+It is Mathlib's `IsBaseChange.linearMapLeftRightHom`, restated through
+`AddMonoidHom.toIntLinearMap` so that both spaces of linear maps carry their canonical `ℤ`-module
+structures: a space of linear maps also carries the `ℤ`-module structure of `LinearMap.module`,
+which is equal but not reducibly defeq to the canonical one that the lattice API of this file is
+stated for. -/
+noncomputable def homLatticeMap (h₁ : IsBaseChange ℂ ι₁) (ι₂ : V₂ →ₗ[ℤ] W₂) :
+    (V₁ →ₗ[ℤ] V₂) →ₗ[ℤ] (W₁ →ₗ[ℂ] W₂) :=
+  (h₁.linearMapLeftRightHom ι₂).toAddMonoidHom.toIntLinearMap
+
+/-- The structure map of a space of linear maps between complexifications sends an integral linear
+map to its complexification. -/
+@[simp]
+theorem homLatticeMap_apply (h₁ : IsBaseChange ℂ ι₁) (ι₂ : V₂ →ₗ[ℤ] W₂) (f : V₁ →ₗ[ℤ] V₂) :
+    homLatticeMap h₁ ι₂ f = integralMapToComplex h₁ ι₂ f :=
+  h₁.algHom_ext _ _ fun x ↦ by simp [homLatticeMap]
+
+variable [Module.Free ℤ V₁] [Module.Finite ℤ V₁]
+
+/-- The space of complex-linear maps between two complexifications is a complexification of the
+space of integral linear maps between the lattices, when the source lattice is finite free. -/
+theorem isBaseChange_homLatticeMap (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂) :
+    IsBaseChange ℂ (homLatticeMap h₁ ι₂) :=
+  h₁.linearMapLeftRight h₂
+
+/-- Lattice conjugation on the space of complex-linear maps between two complexifications
+conjugates the input and the output of a map. -/
+theorem latticeConj_homLatticeMap_apply (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂)
+    (φ : W₁ →ₗ[ℂ] W₂) (x : W₁) :
+    latticeConj (isBaseChange_homLatticeMap h₁ h₂) φ x =
+      latticeConj h₂ (φ (latticeConj h₁ x)) := by
+  rw [← latticeConj_unique (isBaseChange_homLatticeMap h₁ h₂)
+    ((latticeConjugation h₁).internalHom (latticeConjugation h₂)).toEquiv.toLinearMap
+    fun f ↦ ?_]
+  · simp
+  · rw [homLatticeMap_apply, LinearEquiv.coe_coe, Conjugation.internalHom_toEquiv_eq_self_iff]
+    simp [integralMapToComplex_commutes_conj h₁ h₂]
+
+/-- The lattice conjugation of the space of complex-linear maps between two complexifications is
+the internal-hom conjugation of the two lattice conjugations. -/
+theorem latticeConjugation_internalHom (h₁ : IsBaseChange ℂ ι₁) (h₂ : IsBaseChange ℂ ι₂) :
+    latticeConjugation (isBaseChange_homLatticeMap h₁ h₂) =
+      (latticeConjugation h₁).internalHom (latticeConjugation h₂) := by
+  ext φ x
+  simp [latticeConj_homLatticeMap_apply h₁ h₂]
+
+variable {V₃ : Type u₃} {V₄ : Type u₄} {W₃ : Type v₃} {W₄ : Type v₄}
+variable [AddCommGroup V₃] [AddCommGroup V₄]
+variable [AddCommGroup W₃] [Module ℂ W₃] [AddCommGroup W₄] [Module ℂ W₄]
+variable {ι₃ : V₃ →ₗ[ℤ] W₃}
+
+/-- Complexifying the map `φ ↦ g ∘ φ ∘ f` of pre- and post-composition by integral linear maps
+gives pre- and post-composition by their complexifications. -/
+theorem integralMapToComplex_lcomp_comp_llcomp (h₁ : IsBaseChange ℂ ι₁)
+    (h₂ : IsBaseChange ℂ ι₂) (h₃ : IsBaseChange ℂ ι₃) (ι₄ : V₄ →ₗ[ℤ] W₄)
+    (f : V₃ →ₗ[ℤ] V₁) (g : V₂ →ₗ[ℤ] V₄) :
+    integralMapToComplex (isBaseChange_homLatticeMap h₁ h₂) (homLatticeMap h₃ ι₄)
+        (LinearMap.lcomp ℤ V₄ f ∘ₗ LinearMap.llcomp ℤ V₁ V₂ V₄ g) =
+      LinearMap.lcomp ℂ W₄ (integralMapToComplex h₃ ι₁ f) ∘ₗ
+        LinearMap.llcomp ℂ W₁ W₂ W₄ (integralMapToComplex h₂ ι₄ g) := by
+  refine (isBaseChange_homLatticeMap h₁ h₂).algHom_ext _ _ fun φ ↦ ?_
+  rw [integralMapToComplex_apply_ι]
+  simp [LinearMap.lcomp_apply', LinearMap.llcomp_apply', integralMapToComplex_comp h₃ h₁,
+    integralMapToComplex_comp h₁ h₂]
+
+end InternalHom
 
 end TauCeti.Hodge

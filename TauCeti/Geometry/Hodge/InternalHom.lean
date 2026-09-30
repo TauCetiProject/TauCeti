@@ -30,6 +30,15 @@ the dual Hodge structure on `V^*` and the Hodge structure on `W` along Mathlib's
 equivalence `V^* ⊗ W ≃ₗ[ℂ] Hom_ℂ(V, W)`; that comparison is
 `TauCeti.Hodge.HodgeStructureOn.internalHom_piece_eq_comap`.
 
+The Weil operator of the internal hom conjugates a map by the two Weil operators,
+`C(f) = C_W ∘ f ∘ C_V⁻¹`, and the internal hom is functorial in morphisms: contravariantly in `V`
+and covariantly in `W`.
+
+For integral structures on lattices `V_ℤ` and `W_ℤ`, with `V_ℤ` finite free, the internal hom is
+an integral pure Hodge structure on the lattice `Hom_ℤ(V_ℤ, W_ℤ)`: the complex-linear maps between
+the complexifications are a complexification of the integral linear maps, whose lattice
+conjugation is the internal-hom conjugation (`TauCeti.Hodge.latticeConjugation_internalHom`).
+
 When `V` and `W` have the same weight, the internal hom has weight `0`, and its real vectors of
 type `(0,0)` — equivalently, its real vectors in `F^0` — are exactly the morphisms of pure Hodge
 structures `V → W`. For integral structures this reads `Hom_HS(V, W) = Hom_ℤ(V, W) ∩ F^0`: an
@@ -54,6 +63,12 @@ internal hom, the conjugation condition being automatic for complexified integra
   `TauCeti.Hodge.HodgeStructureOn.internalHom_F_eq_comap`: over a finite-dimensional source, the
   internal-hom components and filtration are the pullbacks of those of `V^* ⊗ W` along the
   contraction equivalence.
+* `TauCeti.Hodge.HodgeStructureOn.weilOperator_internalHom`: the Weil operator of the internal hom
+  is conjugation by the Weil operators, so that
+  `TauCeti.Hodge.HodgeStructureOn.weilOperator_internalHom_apply_weilOperator` gives
+  `C(f) (C_V x) = C_W (f x)`.
+* `TauCeti.Hodge.HodgeStructureOn.IsMorphism.internalHomMap`: pre- and post-composition by
+  morphisms is a morphism between internal homs.
 * `TauCeti.Hodge.HodgeStructureOn.isMorphism_iff_mem_internalHom_piece` and
   `TauCeti.Hodge.HodgeStructureOn.isMorphism_iff_mem_internalHom_F`: the morphisms of pure Hodge
   structures of the same weight are the real vectors of type `(0,0)` of the internal hom, or
@@ -62,6 +77,14 @@ internal hom, the conjugation condition being automatic for complexified integra
   `TauCeti.Hodge.HodgeStructure.Hom.exists_toIntLinearMap_eq_iff`: an integral linear map is a
   morphism of integral pure Hodge structures exactly when its complexification lies in `F^0` of
   the internal hom.
+* `TauCeti.Hodge.HodgeStructure.internalHom`: the internal hom of integral pure Hodge structures,
+  on the lattice of integral linear maps, with `TauCeti.Hodge.HodgeStructure.internalHom_F`,
+  `…internalHom_piece` and `…internalHom_weilOperator` identifying its filtration, components and
+  Weil operator with those of the complex internal hom.
+* `TauCeti.Hodge.HodgeStructure.Hom.internalHomMap`: the morphism `φ ↦ g ∘ φ ∘ f` between
+  integral internal homs induced by morphisms `f` and `g`, with
+  `TauCeti.Hodge.HodgeStructure.Hom.internalHomMap_id` and `…internalHomMap_comp` its
+  functoriality.
 
 This is the internal-hom companion to duals and tensor products for pure Hodge structures;
 the convention follows Peters--Steenbrink, *Mixed Hodge Structures*, §2.1.
@@ -438,6 +461,43 @@ theorem internalHom_F_eq_comap (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
 
 end Contraction
 
+/-! ### The Weil operator of the internal hom -/
+
+/-- The scalar identity behind `TauCeti.Hodge.HodgeStructureOn.weilOperator_internalHom`: the
+inverse Weil operator of the source on degree `a`, followed by the Weil operator of the target on
+degree `a + r`, is the Weil scalar of degree `r` in weight `n₂ - n₁`. -/
+private theorem neg_one_zpow_mul_I_zpow_mul_I_zpow (n₁ n₂ a r : ℤ) :
+    (-1 : ℂ) ^ n₁ * Complex.I ^ (2 * a - n₁) * Complex.I ^ (2 * (a + r) - n₂) =
+      Complex.I ^ (2 * r - (n₂ - n₁)) := by
+  -- Write `-1 = i^2`; the exponents then add up to `2r - (n₂ - n₁) + 4a`, and `i^(4a) = 1`.
+  rw [show (-1 : ℂ) = Complex.I ^ (2 : ℤ) by simp, ← zpow_mul, ← zpow_add₀ Complex.I_ne_zero,
+    ← zpow_add₀ Complex.I_ne_zero,
+    show 2 * n₁ + (2 * a - n₁) + (2 * (a + r) - n₂) = 2 * r - (n₂ - n₁) + 4 * a by ring,
+    zpow_add₀ Complex.I_ne_zero, zpow_mul]
+  simp
+
+/-- **The Weil operator of the internal hom** is conjugation by the Weil operators: it sends a
+map `f` to `C_W ∘ f ∘ C_V⁻¹`. -/
+@[simp]
+theorem weilOperator_internalHom (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
+    (hs₂ : HodgeStructureOn W₂ ω₂ n₂) :
+    (hs₁.internalHom hs₂).weilOperator =
+      (hs₁.weilOperatorEquiv.arrowCongr hs₂.weilOperatorEquiv).toLinearMap := by
+  refine ((hs₁.internalHom hs₂).weilOperator_unique _ fun r φ hφ ↦ ?_).symm
+  refine hs₁.linearMap_ext_of_piece fun a x hx ↦ ?_
+  have hφx := hs₁.map_mem_piece_of_mem_internalHom_piece hs₂ hφ hx
+  simp only [LinearEquiv.coe_coe, LinearEquiv.arrowCongr_apply, weilOperatorEquiv_symm_apply,
+    weilOperatorEquiv_apply, hs₁.weilOperator_apply_of_mem hx, map_smul,
+    hs₂.weilOperator_apply_of_mem hφx, LinearMap.smul_apply, smul_smul]
+  rw [← neg_one_zpow_mul_I_zpow_mul_I_zpow n₁ n₂ a r]
+
+/-- The Weil operators intertwine evaluation: `C(f) (C_V x) = C_W (f x)`. -/
+theorem weilOperator_internalHom_apply_weilOperator (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
+    (hs₂ : HodgeStructureOn W₂ ω₂ n₂) (φ : W₁ →ₗ[ℂ] W₂) (x : W₁) :
+    (hs₁.internalHom hs₂).weilOperator φ (hs₁.weilOperator x) = hs₂.weilOperator (φ x) := by
+  rw [weilOperator_internalHom, LinearEquiv.coe_coe, LinearEquiv.arrowCongr_apply,
+    ← weilOperatorEquiv_apply, LinearEquiv.symm_apply_apply, weilOperatorEquiv_apply]
+
 /-! ### Morphisms as Hodge classes of the internal hom -/
 
 variable {n : ℤ} {hs₁ : HodgeStructureOn W₁ ω₁ n} {hs₂ : HodgeStructureOn W₂ ω₂ n}
@@ -472,6 +532,28 @@ of the internal hom. -/
 theorem IsMorphism.mem_internalHom_piece (h : IsMorphism hs₁ hs₂ g) :
     g ∈ (hs₁.internalHom hs₂).piece 0 :=
   (isMorphism_iff_mem_internalHom_piece.mp h).1
+
+variable {W₁' W₂' : Type*} [AddCommGroup W₁'] [Module ℂ W₁'] [AddCommGroup W₂'] [Module ℂ W₂']
+variable {ω₁' : Conjugation W₁'} {ω₂' : Conjugation W₂'} {m : ℤ}
+
+/-- **Functoriality of the internal hom.** Pre-composition by a morphism into the source and
+post-composition by a morphism out of the target, `φ ↦ g ∘ φ ∘ f`, is a morphism between the
+internal homs. -/
+theorem IsMorphism.internalHomMap {hs₁ : HodgeStructureOn W₁ ω₁ n}
+    {hs₂ : HodgeStructureOn W₂ ω₂ m} {hs₁' : HodgeStructureOn W₁' ω₁' n}
+    {hs₂' : HodgeStructureOn W₂' ω₂' m} {f : W₁' →ₗ[ℂ] W₁} {g : W₂ →ₗ[ℂ] W₂'}
+    (hf : IsMorphism hs₁' hs₁ f) (hg : IsMorphism hs₂ hs₂' g) :
+    IsMorphism (hs₁.internalHom hs₂) (hs₁'.internalHom hs₂')
+      (LinearMap.lcomp ℂ W₂' f ∘ₗ LinearMap.llcomp ℂ W₁ W₂ W₂' g) where
+  commutes_conj φ := by
+    ext x
+    simp [LinearMap.lcomp_apply', LinearMap.llcomp_apply', hf.commutes_conj, hg.commutes_conj]
+  map_F_le p := by
+    rintro _ ⟨φ, hφ, rfl⟩
+    rw [SetLike.mem_coe, mem_internalHom_F_iff] at hφ
+    rw [mem_internalHom_F_iff]
+    intro q x hx
+    exact hg.map_F_le _ ⟨_, hφ q _ (hf.map_F_le q ⟨x, hx, rfl⟩), rfl⟩
 
 end HodgeStructureOn
 
@@ -523,5 +605,105 @@ theorem exists_toIntLinearMap_eq_iff (φ : V₁ →ₗ[ℤ] V₂) :
   exact f.toLinearMap_mem_internalHom_F
 
 end HodgeStructure.Hom
+
+/-! ### The internal hom of two integral Hodge structures -/
+
+namespace HodgeStructure
+
+variable {V₁ V₂ : Type*} [AddCommGroup V₁] [AddCommGroup V₂]
+variable {ι₁ : V₁ →ₗ[ℤ] W₁} {ι₂ : V₂ →ₗ[ℤ] W₂} {h₁ : IsBaseChange ℂ ι₁} {h₂ : IsBaseChange ℂ ι₂}
+variable [Module.Free ℤ V₁] [Module.Finite ℤ V₁] {n₁ n₂ : ℤ}
+
+/-- **The internal hom of two integral pure Hodge structures**, of weight `n₂ - n₁`. It is carried
+by the lattice of integral linear maps `Hom_ℤ(V₁, V₂)`, and its Hodge filtration is that of the
+internal hom of the complex Hodge structures (`HodgeStructure.internalHom_F`). -/
+noncomputable def internalHom (hs₁ : HodgeStructure h₁ n₁) (hs₂ : HodgeStructure h₂ n₂) :
+    HodgeStructure (isBaseChange_homLatticeMap h₁ h₂) (n₂ - n₁) :=
+  (HodgeStructureOn.internalHom hs₁ hs₂).comap (LinearEquiv.refl ℂ _) fun x ↦ by
+    rw [latticeConjugation_internalHom, LinearEquiv.refl_apply, LinearEquiv.refl_apply]
+
+variable (hs₁ : HodgeStructure h₁ n₁) (hs₂ : HodgeStructure h₂ n₂)
+
+/-- The Hodge filtration of the internal hom of two integral Hodge structures is that of the
+internal hom of the complex Hodge structures. -/
+@[simp]
+theorem internalHom_F (p : ℤ) :
+    (hs₁.internalHom hs₂).F p = (HodgeStructureOn.internalHom hs₁ hs₂).F p := by
+  rw [internalHom, HodgeStructureOn.comap_F, LinearEquiv.refl_toLinearMap, Submodule.comap_id]
+
+/-- The Hodge components of the internal hom of two integral Hodge structures are those of the
+internal hom of the complex Hodge structures. -/
+@[simp]
+theorem internalHom_piece (p : ℤ) :
+    (hs₁.internalHom hs₂).piece p = (HodgeStructureOn.internalHom hs₁ hs₂).piece p := by
+  rw [internalHom, HodgeStructureOn.comap_piece, LinearEquiv.refl_toLinearMap,
+    Submodule.comap_id]
+
+/-- The Weil operator of the integral internal hom is conjugation by the Weil operators. -/
+@[simp]
+theorem internalHom_weilOperator :
+    (hs₁.internalHom hs₂).weilOperator =
+      (hs₁.weilOperatorEquiv.arrowCongr hs₂.weilOperatorEquiv).toLinearMap := by
+  simp [internalHom, HodgeStructureOn.weilOperator_comap,
+    HodgeStructureOn.weilOperator_internalHom]
+
+namespace Hom
+
+variable {V₁' V₂' W₁' W₂' : Type*} [AddCommGroup V₁'] [AddCommGroup V₂']
+variable [AddCommGroup W₁'] [Module ℂ W₁'] [AddCommGroup W₂'] [Module ℂ W₂']
+variable {ι₁' : V₁' →ₗ[ℤ] W₁'} {ι₂' : V₂' →ₗ[ℤ] W₂'}
+variable {h₁' : IsBaseChange ℂ ι₁'} {h₂' : IsBaseChange ℂ ι₂'}
+variable [Module.Free ℤ V₁'] [Module.Finite ℤ V₁']
+variable {hs₁ hs₂} {hs₁' : HodgeStructure h₁' n₁} {hs₂' : HodgeStructure h₂' n₂}
+
+/-- The morphism `φ ↦ g ∘ φ ∘ f` between integral internal homs induced by a morphism `f` into the
+source and a morphism `g` out of the target. -/
+noncomputable def internalHomMap (f : Hom hs₁' hs₁) (g : Hom hs₂ hs₂') :
+    Hom (hs₁.internalHom hs₂) (hs₁'.internalHom hs₂') where
+  toIntLinearMap :=
+    LinearMap.lcomp ℤ V₂' f.toIntLinearMap ∘ₗ LinearMap.llcomp ℤ V₁ V₂ V₂' g.toIntLinearMap
+  map_mem_F p φ hφ := by
+    rw [integralMapToComplex_lcomp_comp_llcomp h₁ h₂, ← toLinearMap_def, ← toLinearMap_def,
+      internalHom_F]
+    rw [internalHom_F] at hφ
+    exact (f.isMorphism.internalHomMap g.isMorphism).map_F_le p ⟨φ, hφ, rfl⟩
+
+/-- The integral map underlying `TauCeti.Hodge.HodgeStructure.Hom.internalHomMap` is pre- and
+post-composition by the integral maps. -/
+@[simp]
+theorem internalHomMap_toIntLinearMap (f : Hom hs₁' hs₁) (g : Hom hs₂ hs₂') :
+    (f.internalHomMap g).toIntLinearMap =
+      LinearMap.lcomp ℤ V₂' f.toIntLinearMap ∘ₗ LinearMap.llcomp ℤ V₁ V₂ V₂' g.toIntLinearMap :=
+  (rfl)
+
+/-- The morphism between integral internal homs acts on a complex-linear map by pre- and
+post-composition. -/
+@[simp]
+theorem internalHomMap_apply (f : Hom hs₁' hs₁) (g : Hom hs₂ hs₂') (φ : W₁ →ₗ[ℂ] W₂) :
+    f.internalHomMap g φ = g.toLinearMap ∘ₗ φ ∘ₗ f.toLinearMap := by
+  rw [toLinearMap_def, internalHomMap_toIntLinearMap, integralMapToComplex_lcomp_comp_llcomp h₁ h₂]
+  simp [toLinearMap_def, LinearMap.lcomp_apply', LinearMap.llcomp_apply', LinearMap.comp_assoc]
+
+/-- The internal hom of identity morphisms is the identity. -/
+@[simp]
+theorem internalHomMap_id : (id hs₁).internalHomMap (id hs₂) = id (hs₁.internalHom hs₂) := by
+  ext φ
+  simp
+
+/-- The internal hom is functorial: contravariant in the source and covariant in the target. -/
+@[simp]
+theorem internalHomMap_comp {V₁'' V₂'' W₁'' W₂'' : Type*} [AddCommGroup V₁''] [AddCommGroup V₂'']
+    [AddCommGroup W₁''] [Module ℂ W₁''] [AddCommGroup W₂''] [Module ℂ W₂'']
+    {ι₁'' : V₁'' →ₗ[ℤ] W₁''} {ι₂'' : V₂'' →ₗ[ℤ] W₂''} {h₁'' : IsBaseChange ℂ ι₁''}
+    {h₂'' : IsBaseChange ℂ ι₂''} [Module.Free ℤ V₁''] [Module.Finite ℤ V₁'']
+    {hs₁'' : HodgeStructure h₁'' n₁} {hs₂'' : HodgeStructure h₂'' n₂}
+    (f : Hom hs₁' hs₁) (f' : Hom hs₁'' hs₁') (g : Hom hs₂ hs₂') (g' : Hom hs₂' hs₂'') :
+    (f.comp f').internalHomMap (g'.comp g) = (f'.internalHomMap g').comp (f.internalHomMap g) := by
+  ext φ
+  simp
+
+end Hom
+
+end HodgeStructure
 
 end TauCeti.Hodge
