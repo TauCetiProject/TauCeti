@@ -8,12 +8,14 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
 /-!
 # Inner automorphisms act trivially on continuous cohomology
 
-Let `G` be a locally compact topological group, `X` a topological representation of `G` and
-`g : G`. The compatible pair consisting of the inner automorphism `x ↦ g⁻¹ * x * g` of `G` and the
+Let `G` be a locally compact topological group, `X` a smooth discrete topological representation
+of `G`, and let `g : G`. The compatible pair consisting of the inner automorphism
+`x ↦ g⁻¹ * x * g` of `G` and the
 action `X.ρ g` of `g` on the coefficients induces an endomorphism of `Hⁿ(G, X)`, the conjugation
 map `g_*` of Neukirch–Schmidt–Wingberg (Chapter I, §5). This file proves that it is the identity
 in every degree (`TauCeti.ContinuousCohomology.map_eq_id_of_inner`), for Mathlib's canonical
@@ -123,6 +125,7 @@ theorem resolutionTranslate_one (n : ℕ) : resolutionTranslate X 1 n = 𝟙 _ :
   | zero => rfl
   | succ n ih =>
     ext F x
+    -- The identity morphism on a successor resolution term evaluates to `F x` by definition.
     change ((resolutionTranslate X 1 (n + 1)).hom F) x = F x
     rw [resolutionTranslate_succ_apply, mul_one, ih]
     rfl
@@ -134,6 +137,7 @@ theorem resolutionTranslate_mul (b : G) (n : ℕ) :
   | zero => simp
   | succ n ih =>
     ext F x
+    -- Evaluation of the composite is evaluation of its two underlying homomorphisms.
     change ((resolutionTranslate X (a * b) (n + 1)).hom F) x =
       ((resolutionTranslate X a (n + 1)).hom ((resolutionTranslate X b (n + 1)).hom F)) x
     rw [resolutionTranslate_succ_apply, resolutionTranslate_succ_apply,
@@ -201,6 +205,24 @@ theorem translateHomotopy_succ_apply (n : ℕ) (F : (resolutionX X (n + 1 + 1)).
       (resolutionTranslate X a n).hom (F x (x * a)) - translateHomotopy X a n (F x) :=
   (rfl)
 
+private theorem translateHomotopy_identity_succ_apply (n : ℕ)
+    (F : (resolutionX X (n + 1 + 1)).V) (x : G)
+    (ih : ∀ (v : (resolutionX X (n + 1)).V),
+      (d X n).hom (translateHomotopy X a n v) +
+          translateHomotopy X a (n + 1) ((d X (n + 1)).hom v) =
+        (resolutionTranslate X a (n + 1)).hom v - v) :
+    ((d X (n + 1)).hom (translateHomotopy X a (n + 1) F) +
+      translateHomotopy X a (n + 1 + 1) ((d X (n + 1 + 1)).hom F)) x =
+      ((resolutionTranslate X a (n + 1 + 1)).hom F - F) x := by
+  have hcancel := eq_sub_of_add_eq' (ih (F x))
+  rw [ContinuousMap.add_apply, hom_d_succ_apply_apply, translateHomotopy_succ_apply,
+    translateHomotopy_succ_apply, hom_d_succ_apply_apply, map_sub, ContinuousMap.sub_apply,
+    hom_d_succ_apply_apply]
+  simp only [map_sub]
+  rw [resolutionTranslate_d_apply, ContinuousMap.sub_apply, resolutionTranslate_succ_apply,
+    hcancel]
+  abel
+
 /-- **The homotopy identity** `d (h F) + h (d F) = T F - F`: the prism operator is a chain homotopy
 from the identity to right translation. It holds for every element of the resolution, invariant or
 not. -/
@@ -216,15 +238,7 @@ theorem d_translateHomotopy_add_translateHomotopy_d (n : ℕ) (F : (resolutionX 
       translateHomotopy_zero]
     simp [d_zero, ContIntertwiningMap.id_apply]
   | succ n ih =>
-    refine ContinuousMap.ext fun x => ?_
-    have hcancel := eq_sub_of_add_eq' (ih (F x))
-    rw [ContinuousMap.add_apply, hom_d_succ_apply_apply, translateHomotopy_succ_apply,
-      translateHomotopy_succ_apply, hom_d_succ_apply_apply, map_sub, ContinuousMap.sub_apply,
-      hom_d_succ_apply_apply]
-    simp only [map_sub]
-    rw [resolutionTranslate_d_apply, ContinuousMap.sub_apply, resolutionTranslate_succ_apply,
-      hcancel]
-    abel
+    exact ContinuousMap.ext fun x => translateHomotopy_identity_succ_apply X a n F x ih
 
 /-- **The prism operator is `G`-equivariant**, because left and right translations commute. -/
 theorem translateHomotopy_ρ (n : ℕ) (g : G) (F : (resolutionX X (n + 1)).V) :
@@ -282,8 +296,8 @@ variable [LocallyCompactSpace G]
 pair consisting of the inner automorphism `x ↦ g⁻¹ * x * g` of `G` and the action of `g` on the
 coefficients, which is NSW's conjugation `g_*`, induces the identity of `Hⁿ(G, X)` in every degree.
 The homomorphism and the coefficient map are taken as hypotheses on their values, so that the
-statement applies to any presentation of the pair with discrete coefficients. -/
-theorem map_eq_id_of_inner (n : ℕ) :
+statement applies to any presentation of the pair with smooth discrete coefficients. -/
+theorem map_eq_id_of_inner (_hX : IsSmoothDiscrete k X) (n : ℕ) :
     map φ f n = 𝟙 (continuousCohomology n X) := by
   set K := homogeneousCochains X
   ext x
