@@ -28,9 +28,9 @@ inverse. Surjectivity is the existing generation half of van Kampen.
 
 ## Main declarations
 
-* `TauCeti.FundamentalGroup.vanKampenLift`: the canonical homomorphism from the free product.
-* `TauCeti.FundamentalGroup.vanKampenLift_bijective`: the canonical homomorphism is bijective.
-* `TauCeti.FundamentalGroup.vanKampenEquiv`: the resulting multiplicative equivalence.
+* `FundamentalGroup.vanKampenLift`: the canonical homomorphism from the free product.
+* `FundamentalGroup.vanKampenLift_bijective`: the canonical homomorphism is bijective.
+* `FundamentalGroup.vanKampenEquiv`: the resulting multiplicative equivalence.
 
 ## References
 
@@ -43,7 +43,7 @@ public section
 open CategoryTheory Set Topology
 open scoped FundamentalGroupoid Monoid.Coprod
 
-namespace TauCeti.FundamentalGroup
+namespace FundamentalGroup
 
 private noncomputable def basedFunctor {C : Type*} [CategoryTheory.Groupoid C] (x₀ : C)
     (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Group G] (f : End x₀ →* G) : C ⥤ SingleObj G where
@@ -426,7 +426,8 @@ theorem vanKampenLift_bijective (hCover : interior A ∪ interior B = univ)
   · rw [← MonoidHom.range_eq_top, Monoid.Coprod.range_eq]
     change ((_root_.FundamentalGroup.map (ContinuousMap.subtypeVal A) ⟨x, hxA⟩).range ⊔
       (_root_.FundamentalGroup.map (ContinuousMap.subtypeVal B) ⟨x, hxB⟩).range) = ⊤
-    exact range_map_subtypeVal_sup_eq_top hCover hA hB hAB.isPathConnected hxA hxB
+    exact TauCeti.FundamentalGroup.range_map_subtypeVal_sup_eq_top hCover hA hB
+      hAB.isPathConnected hxA hxB
 
 /-- The equivalence in the based Seifert--van Kampen theorem for two path-connected sets with
 simply connected intersection. Its underlying homomorphism is `vanKampenLift`. -/
@@ -449,4 +450,4 @@ theorem vanKampenEquiv_toMonoidHom (hCover : interior A ∪ interior B = univ)
       vanKampenLift A B x hxA hxB :=
   rfl
 
-end TauCeti.FundamentalGroup
+end FundamentalGroup
