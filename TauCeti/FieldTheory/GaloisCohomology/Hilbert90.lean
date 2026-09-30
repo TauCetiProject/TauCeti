@@ -9,10 +9,10 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Hilbert90
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
+public import TauCeti.FieldTheory.GaloisCohomology.Norm
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Transgression
-public import TauCeti.RingTheory.Norm.Units
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 
 /-!
@@ -42,8 +42,6 @@ multiplicative `1`-cocycle `Gal(F/K) → Fˣ`, which is a coboundary by Noether'
 
 * `TauCeti.isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints`: Hilbert 90 at a finite layer
   `Gal(L/K) ⧸ U` with coefficients `(Lˣ)^U`.
-* `TauCeti.mem_range_rep_norm_iff_mem_normGroup`: the representation norm on `Lˣ` has the same
-  range on elements of `Kˣ` as the field norm.
 * `TauCeti.subsingleton_H1_additive_units`: `H¹(Gal(L/K), Lˣ) = 0` for any Galois `L/K`.
 * `TauCeti.subsingleton_H1_unitsCoeff`: `H¹(G_K, (Kˢ)ˣ) = 0`.
 * `TauCeti.subsingleton_H1_unitsCoeff_fixingSubgroup`,
@@ -64,34 +62,6 @@ namespace TauCeti
 
 open ContCohomology groupCohomology
 open CategoryTheory
-
-section RepresentationNorm
-
-variable {K L : Type} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
-
-/-- The image of `a ∈ Kˣ` in `Lˣ` lies in the range of the representation norm for
-`Gal(L/K)` exactly when `a` lies in the field norm group `N_{L/K}(Lˣ)`. -/
-theorem mem_range_rep_norm_iff_mem_normGroup (a : Kˣ) :
-    (Rep.toAdditive.symm (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)) :
-        Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) ∈
-        LinearMap.range (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ).norm.hom.toLinearMap ↔
-      a ∈ normGroup K L := by
-  rw [mem_normGroup_iff]
-  constructor
-  · rintro ⟨y, hy⟩
-    refine ⟨(Rep.toAdditive y).toMul, (algebraMap K L).injective ?_⟩
-    rw [← norm_ofAlgebraAutOnUnits_eq]
-    exact congr(((Additive.toMul (Rep.toAdditive $hy) : Lˣ) : L)).trans (by simp)
-  · rintro ⟨y, hy⟩
-    refine ⟨Rep.toAdditive.symm (Additive.ofMul y), ?_⟩
-    apply Rep.toAdditive.injective
-    apply Additive.toMul.injective
-    apply Units.ext
-    have h := norm_ofAlgebraAutOnUnits_eq (K := K) y
-    simp only [hy] at h
-    exact h
-
-end RepresentationNorm
 
 section FiniteLevel
 

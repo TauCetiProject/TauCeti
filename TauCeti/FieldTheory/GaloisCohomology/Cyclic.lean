@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Inflation
+public import TauCeti.FieldTheory.GaloisCohomology.Norm
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import TauCeti.RingTheory.Norm.Units
 public import Mathlib.FieldTheory.Galois.Basic
-import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
