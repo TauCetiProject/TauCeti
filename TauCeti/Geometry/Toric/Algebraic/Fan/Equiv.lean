@@ -285,13 +285,8 @@ theorem regular_iff (e : FanEquiv Φ Ψ) : Ψ.IsRegular ↔ Φ.IsRegular := by
   · intro hΦ
     rw [Fan.isRegular_iff] at hΦ ⊢
     intro τ hτ
-    have hσ := hΦ _ (by simpa only [symm_realEquiv] using (e.symm.map_mem τ).2 hτ)
-    have hmap := hσ.map_equiv e.map_lattice
-    have hcomp : (e.realEquiv : V →ₗ[ℝ] V').comp
-        (e.realEquiv.symm : V' →ₗ[ℝ] V) = LinearMap.id := by
-      ext x
-      simp
-    simpa only [PointedCone.map_map, hcomp, PointedCone.map_id] using hmap
+    exact (isRegularCone_map_equiv_iff e.symm.map_lattice).1
+      (hΦ _ ((e.symm.map_mem τ).2 hτ))
 
 /-- The ambient linear equivalence carries the support of the source fan onto the support of the
 target fan. -/
