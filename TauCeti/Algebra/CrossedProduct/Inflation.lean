@@ -171,27 +171,6 @@ variable (M : IntermediateField K (SeparableClosure K))
   [FiniteDimensional K M] [IsGalois K M]
 
 omit [FiniteDimensional K L] [FiniteDimensional K M] in
-/-- Restricting first to a larger intermediate field and then along its inclusion into `L`
-agrees with restricting directly to `L`. -/
-theorem restrictNormalHom_of_comap (hLM : L ≤ M) (g : AbsoluteGaloisGroup K) :
-    (IntermediateField.inclusion hLM).restrictNormalHom
-        (AlgEquiv.restrictNormalHom M g) =
-      AlgEquiv.restrictNormalHom L g := by
-  apply (IntermediateField.inclusion hLM).restrictNormalHom_eq_iff.2
-  intro x
-  apply M.val.injective
-  have hM := M.val.restrictNormalHom_commutes g
-    (IntermediateField.inclusion hLM x)
-  rw [show M.val.restrictNormalHom g = AlgEquiv.restrictNormalHom M g from
-    M.val.restrictNormalHom_eq_iff.2 fun y ↦
-      (AlgEquiv.restrictNormal_commutes g M y).symm] at hM
-  have hL := L.val.restrictNormalHom_commutes g x
-  rw [show L.val.restrictNormalHom g = AlgEquiv.restrictNormalHom L g from
-    L.val.restrictNormalHom_eq_iff.2 fun y ↦
-      (AlgEquiv.restrictNormal_commutes g L y).symm] at hL
-  exact hM.trans (by simpa using hL.symm)
-
-omit [FiniteDimensional K L] [FiniteDimensional K M] in
 /-- Refining a finite Galois subextension before inflation does not change the cocycle on the
 absolute Galois group. -/
 theorem TwoCocycle.inflate_comap (hLM : L ≤ M) (c : TwoCocycle K L) :
@@ -199,9 +178,15 @@ theorem TwoCocycle.inflate_comap (hLM : L ≤ M) (c : TwoCocycle K L) :
       (IntermediateField.inclusion hLM)
       (fun g x ↦ (IntermediateField.inclusion hLM).restrictNormalHom_commutes g x)).inflate M =
         c.inflate L := by
+  algebraize [(IntermediateField.inclusion hLM).toRingHom]
+  have : IsScalarTower L M (SeparableClosure K) := IsScalarTower.of_algebraMap_eq' rfl
+  have h (g : AbsoluteGaloisGroup K) : (IntermediateField.inclusion hLM).restrictNormalHom
+      (AlgEquiv.restrictNormalHom M g) = AlgEquiv.restrictNormalHom L g := by
+    rw [show IntermediateField.inclusion hLM = IsScalarTower.toAlgHom K L M from rfl,
+      AlgHom.restrictNormalHom_toAlgHom,
+      ← IsScalarTower.AlgEquiv.restrictNormalHom_comp_apply]
   ext g k
-  rw [TwoCocycle.inflate_toFun, TwoCocycle.comap_toFun, TwoCocycle.inflate_toFun,
-    restrictNormalHom_of_comap, restrictNormalHom_of_comap]
+  rw [TwoCocycle.inflate_toFun, TwoCocycle.comap_toFun, TwoCocycle.inflate_toFun, h, h]
   rfl
 
 /-- Refining the finite Galois subextension on which a cocycle is defined does not change its
