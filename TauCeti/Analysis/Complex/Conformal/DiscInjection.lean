@@ -86,7 +86,7 @@ private lemma exists_sq_eq_sub_injOn_ne_zero {U : Set ℂ} (hUs : HasHolomorphic
     rintro ⟨z, hz, hza⟩
     have hza' : z - a = 0 := hza
     exact ha (sub_eq_zero.mp hza' ▸ hz)
-  obtain ⟨h, hhd, hheq⟩ := hUs.exists_differentiableOn_sq_eq hsub hzero
+  obtain ⟨h, hhd, hheq⟩ := hUs hsub hzero
   have hsq : ∀ z ∈ U, h z ^ 2 = z - a := fun z hz => hheq hz
   refine ⟨h, hhd, hsq, fun z₁ hz₁ z₂ hz₂ hEq => ?_, fun z hz hz0 => ?_⟩
   · have hdiff : z₁ - a = z₂ - a := by rw [← hsq z₁ hz₁, ← hsq z₂ hz₂]; exact hEq

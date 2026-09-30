@@ -58,16 +58,9 @@ variable {U : Set ℂ}
 
 /-- A set `U ⊆ ℂ` **has holomorphic square roots** if every function holomorphic and nowhere zero
 on `U` is, on `U`, the square of a function holomorphic on `U`. -/
-def HasHolomorphicSquareRoots (U : Set ℂ) : Prop :=
+@[expose] def HasHolomorphicSquareRoots (U : Set ℂ) : Prop :=
   ∀ ⦃g : ℂ → ℂ⦄, DifferentiableOn ℂ g U → 0 ∉ g '' U →
     ∃ f : ℂ → ℂ, DifferentiableOn ℂ f U ∧ EqOn (fun z => f z ^ 2) g U
-
-/-- A function holomorphic and nowhere zero on a set with holomorphic square roots has a
-holomorphic square root there. -/
-theorem HasHolomorphicSquareRoots.exists_differentiableOn_sq_eq (hU : HasHolomorphicSquareRoots U)
-    {g : ℂ → ℂ} (hg : DifferentiableOn ℂ g U) (hg₀ : 0 ∉ g '' U) :
-    ∃ f : ℂ → ℂ, DifferentiableOn ℂ f U ∧ EqOn (fun z => f z ^ 2) g U :=
-  hU hg hg₀
 
 /-- **A simply connected open set has holomorphic square roots.** This is the case `n = 2` of
 `TauCeti.exists_differentiableOn_pow_eq`. -/
@@ -84,7 +77,7 @@ theorem HasHolomorphicSquareRoots.image (hU : HasHolomorphicSquareRoots U) (hUo 
     HasHolomorphicSquareRoots (φ '' U) := by
   intro g hg hg₀
   have hmaps : MapsTo φ U (φ '' U) := mapsTo_image φ U
-  obtain ⟨f, hfd, hfsq⟩ := hU.exists_differentiableOn_sq_eq (hg.comp hφ hmaps) (by
+  obtain ⟨f, hfd, hfsq⟩ := hU (hg.comp hφ hmaps) (by
     rintro ⟨z, hz, hgz⟩
     exact hg₀ ⟨φ z, hmaps hz, hgz⟩)
   have hinv := (surjOn_image φ U).mapsTo_invFunOn
