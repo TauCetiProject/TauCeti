@@ -37,13 +37,14 @@ constant graphon `1/2`**, whatever the probability carrier of the constant graph
 
 The difference kernel is `1/2` on the two off-diagonal cells and `-1/2` on the two diagonal cells,
 each of mass `1/4`; an off-diagonal cell attains `1/8`, and no rectangle does better. -/
+@[simp]
 theorem cutDist_finiteGraphGraphonOnFin_top_two_const_half {Ω : Type*} [MeasurableSpace Ω]
     (μ : Measure Ω) [IsProbabilityMeasure μ] :
     cutDist (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
-      (Graphon.const μ ⟨1 / 2, by norm_num, by norm_num⟩) = 1 / 8 := by
+      (Graphon.const μ ⟨2⁻¹, by norm_num, by norm_num⟩) = 1 / 8 := by
   rw [cutDist_const_right]
   set K := (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))).toSymmKernel -
-    (Graphon.const (uniformOn Set.univ) ⟨1 / 2, by norm_num, by norm_num⟩).toSymmKernel
+    (Graphon.const (uniformOn Set.univ) ⟨2⁻¹, by norm_num, by norm_num⟩).toSymmKernel
   have hK (i j : Fin 2) : K i j = ((if i = j then -1 else 1 : ℤ) : ℝ) / 2 := by
     by_cases h : i = j <;> simp [K, h] <;> norm_num
   have hrect (S T : Finset (Fin 2)) : K.rectIntegral (uniformOn Set.univ) S T =

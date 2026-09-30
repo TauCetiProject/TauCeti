@@ -69,7 +69,7 @@ example (U : Graphon ℝ (Measure.dirac 0)) (W : Graphon ℝ (Measure.dirac 1)) 
 -- for an interior parameter there are infinitely many of them.
 example {p : I} :
     cutDistPullback (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
-      (Graphon.const (bernoulliMeasure (0 : ℝ) 1 p) ⟨1 / 2, by norm_num, by norm_num⟩) =
+      (Graphon.const (bernoulliMeasure (0 : ℝ) 1 p) ⟨2⁻¹, by norm_num, by norm_num⟩) =
       1 / 8 := by
   rw [← cutDist_eq_cutDistPullback, cutDist_finiteGraphGraphonOnFin_top_two_const_half]
 
@@ -77,7 +77,7 @@ example {p : I} :
 -- a continuous direction at once.
 example :
     cutDistPullback (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
-      (Graphon.const (volume : Measure I) ⟨1 / 2, by norm_num, by norm_num⟩) = 1 / 8 := by
+      (Graphon.const (volume : Measure I) ⟨2⁻¹, by norm_num, by norm_num⟩) = 1 / 8 := by
   rw [← cutDist_eq_cutDistPullback, cutDist_finiteGraphGraphonOnFin_top_two_const_half]
 
 end DenseGraphLimits
