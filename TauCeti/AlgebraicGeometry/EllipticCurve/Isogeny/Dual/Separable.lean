@@ -40,7 +40,6 @@ separable isogeny over a separably closed field is additive in the inner morphis
 
 * `TauCeti.Isogeny.dual_comp` and `TauCeti.Isogeny.eq_dual_iff_comp_eq`: `φ̂ ∘ φ = [deg φ]`, and
   this characterises `φ̂`.
-* `TauCeti.Isogeny.comp_mulByIntIsogenyOfNeZero`: `φ ∘ [n] = [n] ∘ φ`.
 * `TauCeti.Isogeny.comp_dual`: `φ ∘ φ̂ = [deg φ]`.
 * `TauCeti.Isogeny.degree_dual`: `deg φ̂ = deg φ`.
 * `TauCeti.Isogeny.ofIsogeny_dual_comp_ofIsogeny` and

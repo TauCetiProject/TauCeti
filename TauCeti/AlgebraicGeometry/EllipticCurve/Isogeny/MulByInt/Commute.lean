@@ -38,6 +38,7 @@ variable {F : Type*} [Field F] [IsSepClosed F] {W₁ W₂ : WeierstrassCurve.Aff
 
 /-- **A separable isogeny commutes with multiplication by `n`** over a separably closed field:
 `φ ∘ [n] = [n] ∘ φ` (Silverman III.4.8). -/
+@[simp]
 theorem comp_mulByIntIsogenyOfNeZero {n : ℤ} (hn : n ≠ 0) :
     φ.comp (mulByIntIsogenyOfNeZero W₁ hn) = (mulByIntIsogenyOfNeZero W₂ hn).comp φ :=
   Hom.ofIsogeny_injective <| by
