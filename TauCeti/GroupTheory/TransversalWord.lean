@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.Complement
 public import TauCeti.GroupTheory.Index.Two
 import Mathlib.GroupTheory.IndexNormal
 import Mathlib.Tactic.Group
@@ -44,9 +45,9 @@ In the word calculus, the transversal is a variable, and only `lWord_mem` and
 
 The word calculus takes a map `t : G ⧸ U → G` because its consuming formulas index by `G ⧸ U`.
 The map satisfies `↑(t u) = u` when membership in `U` is needed; `Quotient.out` is the canonical
-example. A Mathlib `Subgroup.LeftTransversal` yields such a map via its
-`Subgroup.IsComplement.leftQuotientEquiv`, with the representative property given by
-`quotientGroupMk_leftQuotientEquiv`.
+example. A Mathlib `Subgroup.LeftTransversal` yields the map `TauCeti.leftTransversalRep` via
+`Subgroup.IsComplement.leftQuotientEquiv`; `TauCeti.leftTransversalRep_mk` gives its
+representative property.
 
 The transversal word supplies the subgroup-valued arguments in the cochain formulas for
 corestriction; its cocycle and change-of-transversal identities support their algebraic proofs.
@@ -59,6 +60,24 @@ namespace TauCeti
 variable {G : Type*} [Group G]
 
 variable (U : Subgroup G) (t t' : G ⧸ U → G)
+
+/-- Representatives supplied by Mathlib's bundled left transversal. -/
+@[expose] noncomputable def leftTransversalRep (s : U.LeftTransversal) : G ⧸ U → G :=
+  fun x => (s.2.leftQuotientEquiv x : G)
+
+/-- The representative of a coset from a bundled left transversal. -/
+theorem leftTransversalRep_apply (s : U.LeftTransversal) (x : G ⧸ U) :
+    leftTransversalRep U s x = (s.2.leftQuotientEquiv x : G) := rfl
+
+/-- The chosen representative belongs to the left transversal. -/
+theorem leftTransversalRep_mem (s : U.LeftTransversal) (x : G ⧸ U) :
+    leftTransversalRep U s x ∈ (s : Set G) :=
+  (s.2.leftQuotientEquiv x).2
+
+/-- The chosen representative maps back to its coset. -/
+@[simp] theorem leftTransversalRep_mk (s : U.LeftTransversal) (x : G ⧸ U) :
+    (QuotientGroup.mk (leftTransversalRep U s x) : G ⧸ U) = x :=
+  s.2.quotientGroupMk_leftQuotientEquiv x
 
 /-- The **transversal word** `ℓᵗ_u(γ) = (t u)⁻¹ * γ * t (γ⁻¹ • u)` of a subgroup `U ≤ G`, a map
 `t : G ⧸ U → G`, a coset `u` and a group element `γ`. It lies in `U` as soon as `t` is a

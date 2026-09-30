@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 public import TauCeti.GroupTheory.TransversalWord
-public import Mathlib.GroupTheory.Complement
 
 /-!
 # The monomial homomorphism of a subgroup transversal
@@ -15,7 +14,7 @@ public import Mathlib.GroupTheory.Complement
 A transversal for `U ≤ G` embeds `G` in the permutation wreath product with base group `U`
 and coordinates indexed by `G ⧸ U`. Its permutation part is left translation on cosets; its
 coordinate at `x` is the transversal word `r(x)⁻¹ g r(g⁻¹ • x)`, where
-`r = monomialRep U s` for `s : U.LeftTransversal`. Mathlib's bundled transversal supplies
+`r = leftTransversalRep U s` for `s : U.LeftTransversal`. Mathlib's bundled transversal supplies
 the representatives and their section property; the monomial maps consume that same choice.
 The cocycle law gives the homomorphism, and both the coset-indexed and finite-coordinate forms
 are injective. The public maps are called as `TauCeti.monomialHom U s` and
@@ -36,29 +35,20 @@ universe u v
 
 variable {G : Type u} [Group G] (U : Subgroup G)
 
-/-- Representatives supplied by Mathlib's bundled left transversal. -/
-noncomputable def monomialRep (s : U.LeftTransversal) : G ⧸ U → G :=
-  fun x => (s.2.leftQuotientEquiv x : G)
-
-/-- The chosen representative maps back to its coset. -/
-theorem monomialRep_mk (s : U.LeftTransversal) (x : G ⧸ U) :
-    (QuotientGroup.mk (monomialRep U s x) : G ⧸ U) = x :=
-  s.2.quotientGroupMk_leftQuotientEquiv x
-
 /-- The monomial homomorphism associated to a bundled transversal `s` of `U`. Its permutation
 part is left translation on `G ⧸ U`; the coordinate at `x` is the element
-`r(x)⁻¹ g r(g⁻¹ • x)` of `U`, where `r = monomialRep U s`. -/
+`r(x)⁻¹ g r(g⁻¹ • x)` of `U`, where `r = leftTransversalRep U s`. -/
 noncomputable def monomialHom (s : U.LeftTransversal) :
     G →* WreathProduct U (G ⧸ U) where
-  toFun g := ⟨(fun x => ⟨lWord U (monomialRep U s) x g,
-    lWord_mem U (monomialRep U s) (monomialRep_mk U s) x g⟩),
+  toFun g := ⟨(fun x => ⟨lWord U (leftTransversalRep U s) x g,
+    lWord_mem U (leftTransversalRep U s) (leftTransversalRep_mk U s) x g⟩),
     MulAction.toPermHom G (G ⧸ U) g⟩
   map_one' := by
     apply SemidirectProduct.ext
     · funext x
       apply Subtype.ext
       simpa only [SemidirectProduct.one_left, Pi.one_apply, OneMemClass.coe_one] using
-        lWord_one U (monomialRep U s) x
+        lWord_one U (leftTransversalRep U s) x
     · exact map_one (MulAction.toPermHom G (G ⧸ U))
   map_mul' g h := by
     apply SemidirectProduct.ext
@@ -67,14 +57,14 @@ noncomputable def monomialHom (s : U.LeftTransversal) :
       have hperm : ((MulAction.toPermHom G (G ⧸ U) g)⁻¹ x) = g⁻¹ • x := by
         rw [← map_inv, MulAction.toPermHom_apply, MulAction.toPerm_apply]
       simpa only [WreathProduct.mul_left, Subgroup.coe_mul, hperm] using
-        (lWord_mul_lWord U (monomialRep U s) x g h).symm
+        (lWord_mul_lWord U (leftTransversalRep U s) x g h).symm
     · exact map_mul (MulAction.toPermHom G (G ⧸ U)) g h
 
 /-- The coordinate of the monomial homomorphism is the transversal word as an element of `U`. -/
 @[simp] theorem monomialHom_left (s : U.LeftTransversal)
     (g : G) (x : G ⧸ U) :
-    (monomialHom U s g).left x = ⟨lWord U (monomialRep U s) x g,
-      lWord_mem U (monomialRep U s) (monomialRep_mk U s) x g⟩ := by
+    (monomialHom U s g).left x = ⟨lWord U (leftTransversalRep U s) x g,
+      lWord_mem U (leftTransversalRep U s) (leftTransversalRep_mk U s) x g⟩ := by
   rfl
 
 /-- The permutation part of the monomial homomorphism translates left cosets. -/
@@ -96,15 +86,20 @@ theorem monomialHom_injective (s : U.LeftTransversal) :
   have hx : g • x = h • x := by
     have := congrArg (fun w : WreathProduct U (G ⧸ U) => w.right x) heq
     simpa only [monomialHom_right] using this
-  have hw : lWord U (monomialRep U s) (g • x) g = lWord U (monomialRep U s) (g • x) h := by
+  have hw : lWord U (leftTransversalRep U s) (g • x) g =
+      lWord U (leftTransversalRep U s) (g • x) h := by
     have := congrArg (fun w : WreathProduct U (G ⧸ U) => ((w.left (g • x) : U) : G)) heq
     simpa only [monomialHom_left, Subtype.coe_mk] using this
-  have heq' : g * (monomialRep U s) x = h * (monomialRep U s) x := by
+  have heq' : g * (leftTransversalRep U s) x = h * (leftTransversalRep U s) x := by
     calc
-      g * (monomialRep U s) x = (monomialRep U s) (g • x) * lWord U (monomialRep U s) (g • x) g :=
-        (transversal_smul_mul_lWord U (monomialRep U s) x g).symm
-      _ = (monomialRep U s) (h • x) * lWord U (monomialRep U s) (h • x) h := by rw [← hx, hw]
-      _ = h * (monomialRep U s) x := transversal_smul_mul_lWord U (monomialRep U s) x h
+      g * (leftTransversalRep U s) x =
+          (leftTransversalRep U s) (g • x) *
+            lWord U (leftTransversalRep U s) (g • x) g :=
+        (transversal_smul_mul_lWord U (leftTransversalRep U s) x g).symm
+      _ = (leftTransversalRep U s) (h • x) *
+          lWord U (leftTransversalRep U s) (h • x) h := by rw [← hx, hw]
+      _ = h * (leftTransversalRep U s) x :=
+        transversal_smul_mul_lWord U (leftTransversalRep U s) x h
   exact mul_right_cancel heq'
 
 section FiniteCoordinates
@@ -129,8 +124,8 @@ theorem monomialFinHom_apply (s : U.LeftTransversal)
     (e : G ⧸ U ≃ Fin U.index)
     (g : G) (i : Fin U.index) :
     (monomialFinHom U s e g).left i =
-      ⟨lWord U (monomialRep U s) (e.symm i) g,
-        lWord_mem U (monomialRep U s) (monomialRep_mk U s) _ g⟩ := by
+      ⟨lWord U (leftTransversalRep U s) (e.symm i) g,
+        lWord_mem U (leftTransversalRep U s) (leftTransversalRep_mk U s) _ g⟩ := by
   simp [monomialFinHom]
 
 /-- The finite permutation coordinate translates the corresponding coset. -/

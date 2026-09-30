@@ -40,9 +40,9 @@ theorem continuous_monomialHom [TopologicalSpace G] [SeparatelyContinuousMul G]
   constructor
   · intro x
     have h : Continuous (fun g : G =>
-        (⟨lWord U (monomialRep U s) x g,
-          lWord_mem U (monomialRep U s) (monomialRep_mk U s) x g⟩ : U)) :=
-      (continuous_lWord U (monomialRep U s) hU x).subtype_mk _
+        (⟨lWord U (leftTransversalRep U s) x g,
+          lWord_mem U (leftTransversalRep U s) (leftTransversalRep_mk U s) x g⟩ : U)) :=
+      (continuous_lWord U (leftTransversalRep U s) hU x).subtype_mk _
     exact h.congr fun g => by
       apply Subtype.ext
       simp only [monomialHom_left, Subtype.coe_mk]
