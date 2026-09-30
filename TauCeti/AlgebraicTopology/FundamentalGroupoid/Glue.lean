@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.CoverGeneration
-public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
+public import TauCeti.Topology.MetricSpace.Lebesgue
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.CategoryTheory.Functor.OfSequence
 
@@ -22,15 +22,12 @@ uniqueness statement `TauCeti.FundamentalGroupoid.functor_ext`, this is the univ
 behind the groupoid Seifert--van Kampen theorem; no connectedness assumption is made on the sets
 `U i` or on their intersections.
 
-The value of the glued functor on a path is computed along a uniform subdivision of the unit
-interval which is fine enough, by the Lebesgue number lemma, for every piece of the path to lie
-in a single `U i`: it is the composite of the values of the functors `F i` on the pieces. The
-value does not depend on the member of the cover chosen for a piece, by the compatibility on
-intersections, nor on the subdivision, since refining a subdivision does not change it. Two
-homotopic paths have the same value: a grid subdivision of the homotopy square, again fine
-enough by the Lebesgue number lemma, has every cell inside a single `U i`, where the boundary
-of the cell is a relation in the fundamental groupoid of `U i`; the relations of the cells
-telescope along each row of the grid.
+The covering hypothesis holds for every open cover of `X`, and more generally for every family
+whose interiors cover `X`. To define a functor out of the fundamental groupoid of `X`, it
+therefore suffices to give compatible functors out of the fundamental groupoids of the members
+of such a cover; `map_subtypeVal_comp_glue` and `glue_obj_mk` compute the result on each member.
+This is how `TauCeti.FundamentalGroupoid.isColimitCechCocone` constructs the functor induced by
+a cocone over the Čech diagram of an open cover.
 
 ## Main declarations
 
@@ -119,27 +116,6 @@ private lemma convexComb_convexComb (lo hi a b s : I) :
   simp only [Icc.coe_convexComb]
   ring
 
-/-- A subpath between two parameters of an interval that `γ` maps into `V` lies in `V`. -/
-private lemma subpath_apply_mem {x y : X} {γ : Path x y} {V : Set X} {lo hi : I}
-    (hγ : ∀ t ∈ Icc lo hi, γ t ∈ V) {a b : I} (ha : a ∈ Icc lo hi) (hb : b ∈ Icc lo hi) (t : I) :
-    γ.subpath a b t ∈ V := by
-  obtain ⟨s, hs, hst⟩ : γ.subpath a b t ∈ γ '' uIcc a b :=
-    Path.range_subpath γ a b ▸ mem_range_self t
-  exact hst ▸ hγ s (uIcc_subset_Icc ha hb hs)
-
-include hU in
-/-- The Lebesgue number lemma for the cover `U`, pulled back along a map from a compact metric
-space. -/
-private lemma exists_lebesgue {Y : Type*} [PseudoMetricSpace Y] [CompactSpace Y] (f : C(Y, X)) :
-    ∃ δ > 0, ∀ y, ∃ i, ∀ y' ∈ ball y δ, f y' ∈ U i := by
-  obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric isCompact_univ
-    (c := fun i ↦ interior (f ⁻¹' U i)) (fun _ ↦ isOpen_interior) fun y _ ↦ by
-      obtain ⟨i, hi⟩ := hU (f y)
-      exact mem_iUnion.2
-        ⟨i, mem_interior_iff_mem_nhds.2 (f.continuous.continuousAt.preimage_mem_nhds hi)⟩
-  exact ⟨δ, hδ, fun y ↦ (h y (mem_univ y)).imp fun i hi y' hy' ↦
-    interior_subset (s := f ⁻¹' U i) (hi hy')⟩
-
 /-- A mesh bound: from some point on, `1 / N` is below a given positive number. -/
 private lemma exists_one_div_lt {δ : ℝ} (hδ : 0 < δ) :
     ∃ N₀ : ℕ, ∀ N, N₀ ≤ N → N ≠ 0 ∧ (1 / N : ℝ) < δ := by
@@ -156,17 +132,19 @@ private def IsFine {x y : X} (γ : Path x y) (N : ℕ) : Prop :=
 include hU in
 private lemma exists_isFine {x y : X} (γ : Path x y) :
     ∃ N₀, ∀ N, N₀ ≤ N → N ≠ 0 ∧ IsFine U γ N := by
-  obtain ⟨δ, hδ, h⟩ := exists_lebesgue hU γ.toContinuousMap
+  obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds isCompact_univ
+    (c := fun i ↦ γ ⁻¹' U i) fun t _ ↦
+      (hU (γ t)).imp fun _ ↦ γ.continuous.continuousAt.preimage_mem_nhds
   obtain ⟨N₀, hN₀⟩ := exists_one_div_lt hδ
   refine ⟨N₀, fun N hN ↦ ⟨(hN₀ N hN).1, fun k ↦ ?_⟩⟩
-  obtain ⟨i, hi⟩ := h (pt N k)
-  refine ⟨i, fun t ht ↦ hi t ?_⟩
+  obtain ⟨i, hi⟩ := h (pt N k) (mem_univ _)
+  refine ⟨i, fun t ht ↦ hi ?_⟩
   rw [mem_ball, Subtype.dist_eq, Real.dist_eq]
   exact (abs_sub_pt_le ht).trans_lt (hN₀ N hN).2
 
 private lemma IsFine.subpath_mem {x y : X} {γ : Path x y} {N : ℕ} (h : IsFine U γ N) (k : ℕ) :
     ∃ i, ∀ t, γ.subpath (pt N k) (pt N (k + 1)) t ∈ U i :=
-  (h k).imp fun _ hi ↦ subpath_apply_mem hi mem_Icc_pt mem_Icc_pt_succ
+  (h k).imp fun _ hi ↦ Path.subpath_apply_mem hi mem_Icc_pt mem_Icc_pt_succ
 
 section Construction
 
@@ -236,6 +214,23 @@ private lemma locVal_trans (i : ι) {x y z : X} (P : Path x y) (Q : Path y z)
     simp only [Path.codRestrict_coe, Path.trans_apply]
     split_ifs <;> simp
   simp only [locVal, h, Path.Homotopic.Quotient.mk_trans]
+  rw [← comp_eq, Functor.map_comp]
+  simp
+
+include hF in
+/-- Local values compose along a relation `[P] ⬝ [Q] = [R]` between the homotopy classes of the
+restrictions of the paths to `U i`. -/
+private lemma locVal_comp_eq_of_trans (i : ι) {x y z : X} (P : Path x y) (Q : Path y z)
+    (R : Path x z) (hP : ∀ t, P t ∈ U i) (hQ : ∀ t, Q t ∈ U i) (hR : ∀ t, R t ∈ U i)
+    (h : Path.Homotopic.Quotient.trans
+        (Path.Homotopic.Quotient.mk
+          (P.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨y, P.target ▸ hP 1⟩) hP))
+        (Path.Homotopic.Quotient.mk
+          (Q.codRestrict (x := ⟨y, P.target ▸ hP 1⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hQ)) =
+      Path.Homotopic.Quotient.mk
+        (R.codRestrict (x := ⟨x, P.source ▸ hP 0⟩) (y := ⟨z, Q.target ▸ hQ 1⟩) hR)) :
+    locVal hU F hF i P hP ≫ locVal hU F hF i Q hQ = locVal hU F hF i R hR := by
+  simp only [locVal, ← h]
   rw [← comp_eq, Functor.map_comp]
   simp
 
@@ -319,9 +314,9 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
     (hbc : ∃ i, ∀ t, γ.subpath b c t ∈ U i) (hac : ∃ i, ∀ t, γ.subpath a c t ∈ U i) :
     pathVal hU F hF (γ.subpath a b) hab ≫ pathVal hU F hF (γ.subpath b c) hbc =
       pathVal hU F hF (γ.subpath a c) hac := by
-  rw [pathVal_eq hU F hF i _ _ (subpath_apply_mem hγ ha hb),
-    pathVal_eq hU F hF i _ _ (subpath_apply_mem hγ hb hc),
-    pathVal_eq hU F hF i _ _ (subpath_apply_mem hγ ha hc)]
+  rw [pathVal_eq hU F hF i _ _ (Path.subpath_apply_mem hγ ha hb),
+    pathVal_eq hU F hF i _ _ (Path.subpath_apply_mem hγ hb hc),
+    pathVal_eq hU F hF i _ _ (Path.subpath_apply_mem hγ ha hc)]
   have hlohi : lo ≤ hi := ha.1.trans ha.2
   obtain ⟨a', rfl⟩ : ∃ a', Icc.convexComb lo hi a' = a := ⟨_, (Icc.eq_convexComb ha.1 ha.2).symm⟩
   obtain ⟨b', rfl⟩ : ∃ b', Icc.convexComb lo hi b' = b := ⟨_, (Icc.eq_convexComb hb.1 hb.2).symm⟩
@@ -346,15 +341,15 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
   let qab : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
       ⟨γ (Icc.convexComb lo hi b'), hbU⟩ :=
     (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi b')).codRestrict
-      (subpath_apply_mem hγ ha hb)
+      (Path.subpath_apply_mem hγ ha hb)
   let qbc : Path (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i)
       ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
     (γ.subpath (Icc.convexComb lo hi b') (Icc.convexComb lo hi c')).codRestrict
-      (subpath_apply_mem hγ hb hc)
+      (Path.subpath_apply_mem hγ hb hc)
   let qac : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
       ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
     (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
-      (subpath_apply_mem hγ ha hc)
+      (Path.subpath_apply_mem hγ ha hc)
   have cast_subpath_eq_codRestrict (r s : I)
       (hrU : γ (Icc.convexComb lo hi r) ∈ U i) (hsU : γ (Icc.convexComb lo hi s) ∈ U i)
       (hr : (⟨γ (Icc.convexComb lo hi r), hrU⟩ : U i) = p r)
@@ -368,23 +363,16 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
     simp only [Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
     exact congrArg γ (convexComb_convexComb lo hi r s t).symm
   have hab' : (p.subpath a' b').cast hpa hpb = qab :=
-    cast_subpath_eq_codRestrict a' b' haU hbU hpa hpb (subpath_apply_mem hγ ha hb)
+    cast_subpath_eq_codRestrict a' b' haU hbU hpa hpb (Path.subpath_apply_mem hγ ha hb)
   have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
-    cast_subpath_eq_codRestrict b' c' hbU hcU hpb hpc (subpath_apply_mem hγ hb hc)
+    cast_subpath_eq_codRestrict b' c' hbU hcU hpb hpc (Path.subpath_apply_mem hγ hb hc)
   have hac' : (p.subpath a' c').cast hpa hpc = qac :=
-    cast_subpath_eq_codRestrict a' c' haU hcU hpa hpc (subpath_apply_mem hγ ha hc)
+    cast_subpath_eq_codRestrict a' c' haU hcU hpa hpc (Path.subpath_apply_mem hγ ha hc)
   have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
       (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
     rw [← hab', ← hbc', ← hac']
     exact Path.Homotopic.Quotient.subpath_cast_trans p a' b' c' hpa hpb hpc
-  have hmap := congrArg (F i).map hquot
-  rw [← comp_eq] at hmap
-  rw [Functor.map_comp] at hmap
-  dsimp only [qab, qbc, qac] at hmap
-  simp only [locVal]
-  slice_lhs 3 4 => simp
-  simp only [Category.id_comp]
-  slice_lhs 2 3 => rw [hmap]
+  exact locVal_comp_eq_of_trans hU F hF i _ _ _ _ _ _ hquot
 
 include hF in
 private lemma pathVal_congr {x y x' y' : X} (P : Path x y) (Q : Path x' y') (hx : x = x')
@@ -410,11 +398,11 @@ private lemma map_segVal_eq {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ
     (hpt : ∀ j, a ≤ j → j ≤ b → pt N j ∈ Icc lo hi) :
     Functor.OfSequence.map (segVal hU F hF γ h) a b hab =
       pathVal hU F hF (γ.subpath (pt N a) (pt N b))
-        ⟨i, subpath_apply_mem hγ (hpt a le_rfl hab) (hpt b hab le_rfl)⟩ := by
+        ⟨i, Path.subpath_apply_mem hγ (hpt a le_rfl hab) (hpt b hab le_rfl)⟩ := by
   induction b, hab using Nat.le_induction with
   | base =>
     rw [Functor.OfSequence.map_id, pathVal_eq hU F hF i _ _
-      (subpath_apply_mem hγ (hpt a le_rfl le_rfl) (hpt a le_rfl le_rfl)),
+      (Path.subpath_apply_mem hγ (hpt a le_rfl le_rfl) (hpt a le_rfl le_rfl)),
       locVal_eq_eqToHom hU F hF i _ _ fun t ↦ by simp]
     simp
   | succ b hab ih =>
@@ -481,33 +469,16 @@ include hU in
 private lemma exists_isFine_homotopy {x y : X} {p q : Path x y} (H : p.Homotopy q) :
     ∃ N, N ≠ 0 ∧ ∀ l k, ∃ i, ∀ t ∈ Icc (pt N l) (pt N (l + 1)),
       ∀ s ∈ Icc (pt N k) (pt N (k + 1)), H (t, s) ∈ U i := by
-  obtain ⟨δ, hδ, h⟩ := exists_lebesgue hU H.toContinuousMap
+  obtain ⟨δ, hδ, h⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds isCompact_univ
+    (c := fun i ↦ H ⁻¹' U i) fun ts _ ↦
+      (hU (H ts)).imp fun _ ↦ H.continuous.continuousAt.preimage_mem_nhds
   obtain ⟨N, hN⟩ := exists_one_div_lt hδ
   refine ⟨N, (hN N le_rfl).1, fun l k ↦ ?_⟩
-  obtain ⟨i, hi⟩ := h (pt N l, pt N k)
-  refine ⟨i, fun t ht s hs ↦ hi (t, s) ?_⟩
+  obtain ⟨i, hi⟩ := h (pt N l, pt N k) (mem_univ _)
+  refine ⟨i, fun t ht s hs ↦ hi ?_⟩
   rw [mem_ball, Prod.dist_eq, max_lt_iff, Subtype.dist_eq, Subtype.dist_eq, Real.dist_eq,
     Real.dist_eq]
   exact ⟨(abs_sub_pt_le ht).trans_lt (hN N le_rfl).2, (abs_sub_pt_le hs).trans_lt (hN N le_rfl).2⟩
-
-/-- The value of `γ.trans δ` at a parameter in the first half is a value of `γ`. -/
-private lemma trans_apply_of_le {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
-    (hu : (u : ℝ) ≤ 1 / 2) (v : I) (hv : (v : ℝ) = 2 * u) : γ.trans δ u = γ v := by
-  rw [Path.trans_apply]
-  split_ifs
-  exact congrArg γ (Subtype.ext hv.symm)
-
-/-- The value of `γ.trans δ` at a parameter in the second half is a value of `δ`. -/
-private lemma trans_apply_of_ge {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
-    (hu : 1 / 2 ≤ (u : ℝ)) (v : I) (hv : (v : ℝ) = 2 * u - 1) : γ.trans δ u = δ v := by
-  rw [Path.trans_apply]
-  split_ifs with h
-  · have hu' : (u : ℝ) = 1 / 2 := le_antisymm h hu
-    have hv_zero : v = 0 := Subtype.ext (by rw [hv, hu']; norm_num)
-    rw [hv_zero, δ.source]
-    convert γ.target using 2
-    exact Subtype.ext (by norm_num [hu'])
-  · exact congrArg δ (Subtype.ext hv.symm)
 
 private lemma pt_eq_one {N k : ℕ} (hN : N ≠ 0) (hk : N ≤ k) : pt N k = 1 := by
   rw [pt, Set.Icc.addNSMul, projIcc_of_right_le]
@@ -521,7 +492,7 @@ private lemma trans_pt_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : �
   · obtain rfl : k = 0 := by omega
     simp [pt_zero]
   have hN' : (0 : ℝ) < N := by exact_mod_cast hN
-  refine trans_apply_of_le γ δ ?_ _ ?_
+  refine Path.trans_apply_of_le γ δ ?_ _ ?_
   · rw [coe_pt (by omega : k ≤ N + N), div_le_iff₀ (by push_cast; positivity)]
     push_cast
     have hk' : (k : ℝ) ≤ N := by exact_mod_cast hk
@@ -535,7 +506,7 @@ private lemma trans_pt_right {x y z : X} (γ : Path x y) (δ : Path y z) {N : �
     (k : ℕ) : γ.trans δ (pt (N + N) (N + k)) = δ (pt N k) := by
   rcases le_or_gt k N with hk | hk
   · have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
-    refine trans_apply_of_ge γ δ ?_ _ ?_
+    refine Path.trans_apply_of_ge γ δ ?_ _ ?_
     · rw [coe_pt (by omega : N + k ≤ N + N), le_div_iff₀ (by push_cast; positivity)]
       push_cast
       have hk' : (0 : ℝ) ≤ k := by positivity
@@ -550,7 +521,7 @@ private lemma trans_subpath_left {x y z : X} (γ : Path x y) (δ : Path y z) {N 
     (t : I) : (γ.trans δ).subpath (pt (N + N) k) (pt (N + N) (k + 1)) t =
       γ.subpath (pt N k) (pt N (k + 1)) t := by
   have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.zero_lt_of_lt hk
-  refine trans_apply_of_le γ δ ?_ _ ?_
+  refine Path.trans_apply_of_le γ δ ?_ _ ?_
   · rw [coe_convexComb_pt (by omega : k < N + N), div_le_iff₀ (by push_cast; positivity)]
     push_cast
     have hk' : (k : ℝ) + 1 ≤ N := by exact_mod_cast hk
@@ -565,7 +536,7 @@ private lemma trans_subpath_right {x y z : X} (γ : Path x y) (δ : Path y z) {N
     (γ.trans δ).subpath (pt (N + N) (N + k)) (pt (N + N) (N + k + 1)) t =
       δ.subpath (pt N k) (pt N (k + 1)) t := by
   have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.zero_lt_of_lt hk
-  refine trans_apply_of_ge γ δ ?_ _ ?_
+  refine Path.trans_apply_of_ge γ δ ?_ _ ?_
   · rw [coe_convexComb_pt (by omega : N + k < N + N), le_div_iff₀ (by push_cast; positivity)]
     push_cast
     have hk' : (0 : ℝ) ≤ k := by positivity
