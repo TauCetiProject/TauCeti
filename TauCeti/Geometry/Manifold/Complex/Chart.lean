@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.LocalDegree
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Analytic
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
-import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 
 /-!
@@ -175,8 +175,8 @@ theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
   have hGdiff : DifferentiableAt ℂ G (c' y) := by
     have hFcx : F (c x) = c' y := by simp only [F, c.left_inv hcx, hfx]
     rw [← hFcx]
-    exact (hFa.hasStrictDerivAt.to_local_left_inverse hFderiv hGleft).hasStrictFDerivAt
-      |>.differentiableAt
+    exact ((analyticAt_comp_iff_of_deriv_ne_zero hFa hFderiv).mp
+      (analyticAt_id.congr hGleft.symm)).differentiableAt
   have hGmd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) G (c' y) := hGdiff.mdifferentiableAt
   have hinner : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (G ∘ c') y :=
     hGmd.comp y (mdifferentiableAt_of_mem_maximalAtlas (chart_mem_maximalAtlas (f x))
