@@ -38,6 +38,7 @@ variable {G X : Type*} [Group G] [MulAction G X] [FaithfulSMul G X]
 
 /-- In a faithful primitive action, the fixed-point set of a nontrivial point stabilizer is the
 singleton consisting of that point. -/
+@[simp]
 theorem fixedPoints_stabilizer_eq_singleton (a : X) (ha : stabilizer G a ≠ ⊥) :
     fixedPoints (stabilizer G a) X = {a} := by
   apply Set.Subset.antisymm
