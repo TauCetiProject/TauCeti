@@ -60,24 +60,24 @@ private theorem tensorShearInv_comp_hom :
 
 /-- The coordinate automorphism of `(g, h) ↦ (g, gh)` on the tensor square of a
 commutative Hopf algebra. -/
-noncomputable def tensorShear : H ⊗[R] H ≃ₐ[R] H ⊗[R] H :=
+noncomputable def tensorShearMulRight : H ⊗[R] H ≃ₐ[R] H ⊗[R] H :=
   AlgEquiv.ofAlgHom tensorShearHom tensorShearInv
     tensorShearHom_comp_inv tensorShearInv_comp_hom
 
 /-- The tensor shear fixes the first coordinate and multiplies the second by it. -/
 @[simp]
-theorem tensorShear_tmul (a b : H) :
-    tensorShear (R := R) (a ⊗ₜ[R] b) =
+theorem tensorShearMulRight_tmul (a b : H) :
+    tensorShearMulRight (R := R) (a ⊗ₜ[R] b) =
       (a ⊗ₜ[R] 1) * Coalgebra.comul (R := R) b := by
-  simp [tensorShear, tensorShearHom]
+  simp [tensorShearMulRight, tensorShearHom]
 
 /-- The inverse tensor shear divides the second coordinate by the first. -/
 @[simp]
-theorem tensorShear_symm_tmul (a b : H) :
-    (tensorShear (R := R)).symm (a ⊗ₜ[R] b) =
+theorem tensorShearMulRight_symm_tmul (a b : H) :
+    (tensorShearMulRight (R := R)).symm (a ⊗ₜ[R] b) =
       (a ⊗ₜ[R] 1) * TensorProduct.map (HopfAlgebraStruct.antipode R) LinearMap.id
         (Coalgebra.comul (R := R) b) := by
-  simp only [tensorShear, AlgEquiv.ofAlgHom_symm_apply, tensorShearInv, lift_tmul,
+  simp only [tensorShearMulRight, AlgEquiv.ofAlgHom_symm_apply, tensorShearInv, lift_tmul,
     includeLeft_apply, AlgHom.convMul_apply]
   congr 1
   induction Coalgebra.comul (R := R) b with

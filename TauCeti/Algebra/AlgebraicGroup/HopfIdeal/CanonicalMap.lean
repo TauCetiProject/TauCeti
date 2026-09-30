@@ -67,7 +67,7 @@ theorem canonicalMap_comp_mapOfCompatibleSMul (I : HopfIdeal R H) :
     (I.canonicalMap.restrictScalars R).comp
         (mapOfCompatibleSMul I.coinvariants R R H H) =
       (Algebra.TensorProduct.map (AlgHom.id R H) (Ideal.Quotient.mkₐ R I.toIdeal)).comp
-        (HopfAlgebra.tensorShear (R := R)).toAlgHom := by
+        (HopfAlgebra.tensorShearMulRight (R := R)).toAlgHom := by
   apply Algebra.TensorProduct.ext'
   intro a b
   simp
@@ -84,7 +84,7 @@ theorem canonicalMap_surjective (I : HopfIdeal R H) :
   have hcomp : Function.Surjective ((I.canonicalMap.restrictScalars R).comp
       (mapOfCompatibleSMul I.coinvariants R R H H)) := by
     rw [canonicalMap_comp_mapOfCompatibleSMul]
-    exact hmap.comp (HopfAlgebra.tensorShear (R := R)).surjective
+    exact hmap.comp (HopfAlgebra.tensorShearMulRight (R := R)).surjective
   exact Function.Surjective.of_comp (f := I.canonicalMap) hcomp
 
 end TauCeti.HopfIdeal
