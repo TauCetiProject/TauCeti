@@ -22,6 +22,10 @@ This file records two facts about Mathlib's extension of scalars `ModuleCat.exte
   `s ⊗ m ↦ s • m / 1` (`TauCeti.ModuleCat.extendScalarsLocalizationIso`). This identifies the
   restriction of the quasi-coherent sheaf `M~` on `Spec R` to a basic open `D(r)` with the sheaf
   associated with `M_r` on `Spec R_r`.
+
+Use `TauCeti.ModuleCat.extendScalarsLocalizationIso M T` explicitly. These declarations belong
+to `TauCeti.ModuleCat`, while `M` has Mathlib's `_root_.ModuleCat R` type, so dot notation on `M`
+does not resolve them.
 -/
 
 public section
