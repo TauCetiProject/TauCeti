@@ -105,6 +105,47 @@ private def kernelPairBackward (f : H ⟶ K) :
   exact Algebra.TensorProduct.lift (Algebra.ofId _ _) (kernelPairRatio f)
     (fun _ _ ↦ Commute.all _ _)
 
+private theorem kernelPairRight_apply (f : H ⟶ K) (x : K) :
+    let := f.hom.toAlgHom.toAlgebra
+    kernelPairRight f x =
+      (ofConv (toConv (Algebra.TensorProduct.includeLeft :
+        K →ₐ[R] K ⊗[R] (K ⧸ (kernelHopfIdeal f).toIdeal)) *
+        toConv (Algebra.TensorProduct.includeRight.comp
+          (Ideal.Quotient.mkₐ R (kernelHopfIdeal f).toIdeal))) :
+        K →ₐ[R] K ⊗[R] (K ⧸ (kernelHopfIdeal f).toIdeal)) x := by
+  -- The constructor retains the convolution's underlying ring homomorphism;
+  -- only its scalar-compatibility proof changes.
+  rfl
+
+private theorem kernelPairForward_tmul (f : H ⟶ K) (x y : K) :
+    let := f.hom.toAlgHom.toAlgebra
+    kernelPairForward f (x ⊗ₜ[H] y) =
+      (x ⊗ₜ[R] (1 : K ⧸ (kernelHopfIdeal f).toIdeal)) * kernelPairRight f y := by
+  let := f.hom.toAlgHom.toAlgebra
+  rw [kernelPairForward, Algebra.TensorProduct.lift_tmul]
+  simp only [Algebra.ofId_apply, Algebra.TensorProduct.algebraMap_apply,
+    Algebra.algebraMap_self, RingHom.id_apply]
+
+private theorem kernelPairRatio_mk (f : H ⟶ K) (x : K) :
+    let := f.hom.toAlgHom.toAlgebra
+    kernelPairRatio f (Ideal.Quotient.mk (kernelHopfIdeal f).toIdeal x) =
+      (ofConv ((toConv ((Algebra.TensorProduct.includeLeft :
+        K →ₐ[K] K ⊗[H] K).restrictScalars R))⁻¹ *
+        toConv ((Algebra.TensorProduct.includeRight :
+          K →ₐ[H] K ⊗[H] K).restrictScalars R))) x := by
+  -- The quotient lift evaluates to its defining homomorphism on representatives.
+  -- Reduction here also unfolds the kernel-membership proof passed to the lift,
+  -- whose type prevents rewriting directly with `Ideal.Quotient.liftₐ_apply`.
+  rfl
+
+private theorem kernelPairBackward_tmul (f : H ⟶ K) (x : K)
+    (y : K ⧸ (kernelHopfIdeal f).toIdeal) :
+    let := f.hom.toAlgHom.toAlgebra
+    kernelPairBackward f (x ⊗ₜ[R] y) =
+      (x ⊗ₜ[H] (1 : K)) * kernelPairRatio f y := by
+  let := f.hom.toAlgHom.toAlgebra
+  simp [kernelPairBackward]
+
 /-- The two coordinate constructions compose to the identity on the kernel pair. -/
 private theorem kernelPairBackward_comp_forward (f : H ⟶ K) :
     letI := f.hom.toAlgHom.toAlgebra
@@ -125,24 +166,25 @@ private theorem kernelPairBackward_comp_forward (f : H ⟶ K) :
           K →ₐ[R] K ⊗[R] (K ⧸ (kernelHopfIdeal f).toIdeal))) = toConv l := by
       apply ofConv_injective
       ext x
-      simp [kernelPairBackward, l]
+      simp [AlgHom.mapValue_apply, kernelPairBackward_tmul, l]
     have hr : AlgHom.mapValue ((kernelPairBackward f).restrictScalars R)
         (toConv (Algebra.TensorProduct.includeRight.comp
           (Ideal.Quotient.mkₐ R (kernelHopfIdeal f).toIdeal))) =
         (toConv l)⁻¹ * toConv r := by
       apply ofConv_injective
       ext x
-      dsimp [kernelPairBackward, kernelPairRatio, l, r, AlgHom.mapValue]
-      simp [← Algebra.TensorProduct.one_def]
-      rfl
+      simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+        AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply,
+        Ideal.Quotient.mkₐ_eq_mk, kernelPairBackward_tmul, kernelPairRatio_mk,
+        ← Algebra.TensorProduct.one_def, one_mul, l, r]
     rw [hl, hr, mul_inv_cancel_left]
   apply Algebra.TensorProduct.ext
   · exact Subsingleton.elim _ _
   · ext x
-    -- Expand the private coordinate maps at the right tensor generator.
-    change kernelPairBackward f (1 * kernelPairRight f x) = r x
-    rw [one_mul]
-    exact AlgHom.congr_fun (congrArg ofConv he) x
+    simpa only [AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
+      kernelPairForward_tmul, ← Algebra.TensorProduct.one_def, one_mul,
+      kernelPairRight_apply, AlgHom.id_apply, AlgHom.mapValue_apply, ofConv_toConv,
+      AlgHom.restrictScalars_apply, r] using AlgHom.congr_fun (congrArg ofConv he) x
 
 /-- The two coordinate constructions compose to the identity on the source times the kernel. -/
 private theorem kernelPairForward_comp_backward (f : H ⟶ K) :
@@ -165,28 +207,29 @@ private theorem kernelPairForward_comp_backward (f : H ⟶ K) :
           K →ₐ[K] K ⊗[H] K).restrictScalars R)) = toConv l := by
       apply ofConv_injective
       ext x
-      dsimp [kernelPairForward, l, AlgHom.mapValue]
-      simp
+      simp [AlgHom.mapValue_apply, kernelPairForward_tmul, l]
     have hr : AlgHom.mapValue ((kernelPairForward f).restrictScalars R)
         (toConv ((Algebra.TensorProduct.includeRight :
           K →ₐ[H] K ⊗[H] K).restrictScalars R)) = toConv l * toConv r := by
       apply ofConv_injective
       ext x
-      dsimp [kernelPairForward, kernelPairRight, l, r, AlgHom.mapValue]
-      exact one_mul ((toConv l * toConv r).ofConv x)
+      simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+        AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply,
+        kernelPairForward_tmul, ← Algebra.TensorProduct.one_def, one_mul,
+        kernelPairRight_apply, l, r]
     rw [hl, hr, inv_mul_cancel_left]
   apply Algebra.TensorProduct.ext
   · exact Subsingleton.elim _ _
   · ext x
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (kernelHopfIdeal f).toIdeal x
-    -- Evaluate the private quotient lift at a representative before using cancellation.
-    change kernelPairForward f ((1 : K ⊗[H] K) *
-      (ofConv ((toConv ((Algebra.TensorProduct.includeLeft :
-        K →ₐ[K] K ⊗[H] K).restrictScalars R))⁻¹ *
-        toConv ((Algebra.TensorProduct.includeRight :
-          K →ₐ[H] K ⊗[H] K).restrictScalars R))) x) = r x
-    rw [one_mul]
-    exact AlgHom.congr_fun (congrArg ofConv he) x
+    have hx := AlgHom.congr_fun (congrArg ofConv he) x
+    simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+      AlgHom.restrictScalars_apply] at hx
+    simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+      Algebra.TensorProduct.includeRight_apply, Ideal.Quotient.mkₐ_eq_mk,
+      kernelPairBackward_tmul, kernelPairRatio_mk,
+      ← Algebra.TensorProduct.one_def, one_mul, AlgHom.id_apply]
+    exact hx
 
 /-- The coordinate algebra of the kernel pair of an affine group homomorphism is the tensor
 product of the source coordinate algebra with that of its scheme-theoretic kernel.
@@ -217,8 +260,8 @@ theorem kernelPairTensorEquiv_tmul (f : H ⟶ K) (x y : K) :
       Algebra.TensorProduct.map (AlgHom.id R K)
         (Ideal.Quotient.mkₐ R (kernelHopfIdeal f).toIdeal) := by
     ext <;> simp
-  -- The private lift evaluates on a tensor to multiplication by its right component.
-  change (x ⊗ₜ[R] (1 : K ⧸ (kernelHopfIdeal f).toIdeal)) * kernelPairRight f y = _
+  simp only [kernelPairTensorEquiv, AlgEquiv.ofAlgHom_apply,
+    kernelPairForward_tmul, kernelPairRight_apply]
   congr 1
   rw [← hm]
   exact AlgHom.convMul_apply
@@ -250,11 +293,11 @@ theorem kernelPairTensorEquiv_symm_tmul_mk (f : H ⟶ K) (x y : K) :
     apply Algebra.TensorProduct.ext'
     intro a b
     simp [l, r, AlgHom.convInv_apply, Algebra.TensorProduct.tmul_mul_tmul]
-  -- Evaluation of the private quotient lift gives the ratio of the two universal points.
-  change (x ⊗ₜ[H] (1 : K)) * (ofConv ((toConv l)⁻¹ * toConv r)) y = _
+  simp only [kernelPairTensorEquiv, AlgEquiv.ofAlgHom_symm, AlgEquiv.ofAlgHom_apply,
+    kernelPairBackward_tmul, kernelPairRatio_mk]
   congr 1
   rw [AlgHom.convMul_apply, hm]
-  rfl
+  simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply]
 
 end
 end TauCeti.CommHopfAlgCat
