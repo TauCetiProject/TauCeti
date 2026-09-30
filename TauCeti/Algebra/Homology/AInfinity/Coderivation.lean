@@ -32,6 +32,9 @@ ordinary associativity when the higher operations vanish, and arity four is then
   on homogeneous tensors.
 * `TauCeti.AInfinity.suspensionTaylor`: the Taylor map suspending a family of operations, which
   realizes `IsSuspension` for every family (`TauCeti.AInfinity.isSuspension_suspensionTaylor`).
+* `TauCeti.AInfinity.desuspension`: the operations suspended by a Taylor map, of the degrees of
+  `A∞` operations when the Taylor map has degree one
+  (`TauCeti.AInfinity.isHomogeneous_desuspension`).
 * `TauCeti.AInfinity.IsSuspension.taylorComponent_comp_self_apply`: the arity component of the
   coderivation square is the suspended Stasheff sum.
 * `TauCeti.AInfinity.IsSuspension.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero`:
@@ -188,6 +191,90 @@ theorem IsSuspension.isHomogeneous {G : InternalGrading R A}
   · intro a u _hu ihu
     rw [map_smul]
     exact Submodule.smul_mem _ _ ihu
+
+/-- The **desuspension** of a Taylor map `F : Tᶜ(sA) ⟶ sA`: the operations whose suspension it is.
+In positive arity `n` it evaluates `F` on words of length `n` after twisting the `i`-th letter by
+the Koszul twist of parameter `n - 1 - i`, which undoes the suspension sign; in arity zero it is
+zero.  It inverts `suspensionTaylor` (`suspensionTaylor_desuspension`). -/
+noncomputable def desuspension (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    (n : ℕ) : MultilinearMap R (fun _ : Fin n ↦ A) A :=
+  if hn : 0 < n then
+    (PiTensorProduct.lift.symm (F ∘ₗ ReducedTensorWords.of R A ⟨n, hn⟩)).compLinearMap
+      fun i ↦ G.koszulTwist ((n : ℤ) - 1 - i)
+  else 0
+
+/-- The desuspension of a Taylor map vanishes in arity zero. -/
+@[simp]
+theorem desuspension_zero (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A) :
+    desuspension G F 0 = 0 := by
+  rw [desuspension, dite_eq_right (by omega)]
+
+/-- In positive arity, the desuspension evaluates the Taylor map on the word of Koszul-twisted
+letters. -/
+theorem desuspension_apply (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
+    {n : ℕ} (hn : 0 < n) (x : Fin n → A) :
+    desuspension G F n x =
+      F (ReducedTensorWords.of R A ⟨n, hn⟩
+        (PiTensorProduct.tprod R fun i ↦ G.koszulTwist ((n : ℤ) - 1 - i) (x i))) := by
+  rw [desuspension, dite_eq_left hn, MultilinearMap.compLinearMap_apply, PiTensorProduct.lift_symm,
+    LinearMap.compMultilinearMap_apply, LinearMap.comp_apply]
+
+/-- Suspending the desuspension of a Taylor map recovers it. -/
+@[simp]
+theorem suspensionTaylor_desuspension (G : InternalGrading R A)
+    (F : ReducedTensorWords R A →ₗ[R] A) : suspensionTaylor G (desuspension G F) = F := by
+  refine ReducedTensorWords.linearMap_ext R A fun n x ↦ ?_
+  rw [suspensionTaylor_of_tprod, desuspension_apply G F n.2]
+  congr 3
+  funext i
+  rw [← LinearMap.comp_apply (G.koszulTwist _), InternalGrading.koszulTwist_comp_self,
+    LinearMap.id_apply]
+
+/-- Every Taylor map is the suspension of its desuspension. -/
+theorem isSuspension_desuspension (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A) :
+    IsSuspension G F (desuspension G F) := by
+  simpa only [suspensionTaylor_desuspension] using
+    isSuspension_suspensionTaylor G (desuspension G F)
+
+/-- Operations without an arity-zero term are the desuspension of any Taylor map suspending them;
+together with `isSuspension_desuspension`, the uncurved operations and their Taylor maps determine
+each other. -/
+theorem IsSuspension.eq_desuspension {G : InternalGrading R A}
+    {F : ReducedTensorWords R A →ₗ[R] A} {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    (hFm : IsSuspension G F m) (hm0 : m 0 = 0) : m = desuspension G F := by
+  funext n
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [hm0, desuspension_zero]
+  · ext x
+    rw [desuspension_apply G F hn, hFm.taylor_eq (isSuspension_suspensionTaylor G m),
+      suspensionTaylor_of_tprod]
+    congr 1
+    funext i
+    rw [← LinearMap.comp_apply (G.koszulTwist _), InternalGrading.koszulTwist_comp_self,
+      LinearMap.id_apply]
+
+/-- The desuspension of a Taylor map of degree one for the suspended grading has, in each positive
+arity `n`, the degree `2 - n` of an `A∞` operation.  This is the converse of
+`IsSuspension.isHomogeneous`. -/
+theorem isHomogeneous_desuspension {G : InternalGrading R A}
+    {F : ReducedTensorWords R A →ₗ[R] A}
+    (hF : LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
+      (G.shift 1).piece 1) {n : ℕ} (hn : 0 < n) :
+    MultilinearMap.IsHomogeneous (desuspension G F n) (fun _ ↦ G.piece) G.piece (2 - n) := by
+  rw [MultilinearMap.isHomogeneous_def]
+  intro d x hx
+  rw [desuspension_apply G F hn]
+  have hw := ReducedTensorWords.mem_gradedPiece_of_tprod (G.shift 1) hn
+    (fun i ↦ G.koszulTwist ((n : ℤ) - 1 - i) (x i)) (fun i ↦ d i - 1) fun i ↦ by
+      rw [InternalGrading.shift_piece, sub_add_cancel]
+      exact G.koszulTwist_mem_piece (hx i) _
+  have h := hF.map_mem hw
+  rw [InternalGrading.shift_piece] at h
+  have hdeg : (∑ i, (d i - 1)) + 1 + 1 = (∑ i, d i) + (2 - (n : ℤ)) := by
+    simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, mul_one]
+    ring
+  rwa [hdeg] at h
 
 /-- The arity-`n` Taylor component of the square of the suspended bar coderivation is the
 suspended Stasheff sum.  The input elements are recorded with their unsuspended degrees `d`; they
