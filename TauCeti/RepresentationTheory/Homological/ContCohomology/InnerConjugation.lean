@@ -125,10 +125,8 @@ theorem resolutionTranslate_one (n : ℕ) : resolutionTranslate X 1 n = 𝟙 _ :
   | zero => rfl
   | succ n ih =>
     ext F x
-    -- The identity morphism on a successor resolution term evaluates to `F x` by definition.
-    change ((resolutionTranslate X 1 (n + 1)).hom F) x = F x
-    rw [resolutionTranslate_succ_apply, mul_one, ih]
-    rfl
+    simp only [ContIntertwiningMap.toContinuousLinearMap_apply]
+    rw [TopRep.id_apply, resolutionTranslate_succ_apply, mul_one, ih, TopRep.id_apply]
 
 /-- Translation by a product is the composite of the two right translations. -/
 theorem resolutionTranslate_mul (b : G) (n : ℕ) :
@@ -137,12 +135,10 @@ theorem resolutionTranslate_mul (b : G) (n : ℕ) :
   | zero => simp
   | succ n ih =>
     ext F x
-    -- Evaluation of the composite is evaluation of its two underlying homomorphisms.
-    change ((resolutionTranslate X (a * b) (n + 1)).hom F) x =
-      ((resolutionTranslate X a (n + 1)).hom ((resolutionTranslate X b (n + 1)).hom F)) x
-    rw [resolutionTranslate_succ_apply, resolutionTranslate_succ_apply,
-      resolutionTranslate_succ_apply, mul_assoc, ih]
-    rfl
+    simp only [ContIntertwiningMap.toContinuousLinearMap_apply]
+    rw [ConcreteCategory.comp_apply, resolutionTranslate_succ_apply,
+      resolutionTranslate_succ_apply, resolutionTranslate_succ_apply, mul_assoc, ih,
+      ConcreteCategory.comp_apply]
 
 /-- **Right translation is a chain map**: it commutes with the differential of the coinduced
 resolution. -/
