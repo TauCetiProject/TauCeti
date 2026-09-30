@@ -14,13 +14,13 @@ import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 /-!
 # Distributional Laplacian of the Green kernel of the unit ball
 
-For a pole in the open unit ball, the Green kernel is the Newtonian fundamental solution
+For a pole in the closed unit ball, the Green kernel is the Newtonian fundamental solution
 minus a correction harmonic throughout the ball. Thus its distributional negative Laplacian
 is the Dirac mass at the pole. This is the interior equation for the Dirichlet Green
 function; its zero boundary values are proved with the kernel construction.
 
-The argument is the fundamental-solution identity and Green's second identity against
-test functions, as in Evans, *Partial Differential Equations*, Section 2.2.
+This weak Green equation characterizes the kernel's interior response to a point source;
+see Evans, *Partial Differential Equations*, Section 2.2.
 -/
 
 public section
@@ -37,8 +37,9 @@ variable {n : ℕ}
 /-- The unit-ball Green kernel has distributional negative Laplacian equal to a Dirac mass
 at its pole. The test function is supported strictly inside the ball, so no boundary term
 appears. -/
+@[simp]
 theorem integral_laplacian_mul_ballGreenKernel (hn : 3 ≤ n)
-    {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1)
+    {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≤ 1)
     (φ : 𝓓((⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))), ℝ)) :
     ∫ y, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y * ballGreenKernel n x y =
       -(φ : EuclideanSpace ℝ (Fin n) → ℝ) x := by
@@ -47,7 +48,7 @@ theorem integral_laplacian_mul_ballGreenKernel (hn : 3 ≤ n)
     fun y => TestFunction.laplacianCLM_apply φ y
   have hc : LocallyIntegrableOn (ballGreenCorrector n x)
       (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))) volume :=
-    (harmonicOnNhd_ballGreenCorrector hx.le).contDiffOn.continuousOn.locallyIntegrableOn
+    (harmonicOnNhd_ballGreenCorrector hx).contDiffOn.continuousOn.locallyIntegrableOn
       (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))).isOpen.measurableSet
   have hcint : Integrable (fun y => Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y *
       ballGreenCorrector n x y) volume := by
@@ -76,7 +77,7 @@ theorem integral_laplacian_mul_ballGreenKernel (hn : 3 ≤ n)
   have hcorrector : ∫ y, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y *
       ballGreenCorrector n x y = 0 := by
     simpa only [smul_eq_mul] using
-      (harmonicOnNhd_ballGreenCorrector hx.le).integral_laplacian_smul_eq_zero (μ := volume) φ
+      (harmonicOnNhd_ballGreenCorrector hx).integral_laplacian_smul_eq_zero (μ := volume) φ
   simp_rw [ballGreenKernel_def, mul_sub]
   rw [integral_sub hni hcint, hcorrector, sub_zero]
   exact integral_laplacian_mul_newtonianKernel_sub hn (φ.contDiff.of_le (by norm_num))
