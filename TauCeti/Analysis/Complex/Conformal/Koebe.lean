@@ -204,7 +204,7 @@ theorem exists_isPointedDiscInjectionOn_one_lt_norm_deriv {U : Set ℂ} (hUo : I
   -- A value of the disc omitted by `U`, and a holomorphic square root of the Möbius factor there.
   obtain ⟨a, haU, haU'⟩ := Set.exists_of_ssubset (hUd.ssubset_of_ne hUne)
   have ha1 : ‖a‖ < 1 := mem_ball_zero_iff.mp haU
-  obtain ⟨h, hhd, hhsq⟩ := hUs
+  obtain ⟨h, hhd, hhsq⟩ := hUs.exists_differentiableOn_sq_eq
     ((differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one ha1).mono hUd)
     (zero_notMem_image_moebius ha1 hUd haU')
   have hhmem : ∀ z ∈ U, h z ∈ ball (0 : ℂ) 1 := fun z hz =>

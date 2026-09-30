@@ -21,10 +21,11 @@ Beyond connectedness, this is the only consequence of simple connectivity that t
 Riemann mapping theorem uses: the Koebe square-root trick takes a square root of `z - a` to inject
 a proper domain into the disc, and a square root of a disc automorphism to beat a map that is not
 onto. Isolating it as a hypothesis lets that proof run on every domain with the property, and so
-shows that such a domain is conformally a disc, hence simply connected
+shows that a connected open *proper* subset of `ℂ` with the property is conformally a disc. Since
+`ℂ` itself is convex, every connected open set with the property is therefore simply connected
 (`TauCeti.HasHolomorphicSquareRoots.isSimplyConnected`, in
-`Conformal/RiemannMapping/Existence.lean`). For an open connected set the two conditions are
-therefore equivalent. In Rudin's list of characterisations of simply connected plane domains, this
+`Conformal/RiemannMapping/Existence.lean`), and for an open connected set the two conditions are
+equivalent. In Rudin's list of characterisations of simply connected plane domains, this
 file gives (b) ⇒ (i) (`IsSimplyConnected.hasHolomorphicSquareRoots`); the converse (i) ⇒ (b) is
 `TauCeti.HasHolomorphicSquareRoots.isSimplyConnected`. A property that is easier to verify from the
 geometry of the complement — for example vanishing of the winding numbers of cycles in `U` about
@@ -57,16 +58,19 @@ open Function Set
 variable {U : Set ℂ}
 
 /-- A set `U ⊆ ℂ` **has holomorphic square roots** if every function holomorphic and nowhere zero
-on `U` is, on `U`, the square of a function holomorphic on `U`. -/
-@[expose] def HasHolomorphicSquareRoots (U : Set ℂ) : Prop :=
-  ∀ ⦃g : ℂ → ℂ⦄, DifferentiableOn ℂ g U → 0 ∉ g '' U →
+on `U` is, on `U`, the square of a function holomorphic on `U`. It is introduced by the anonymous
+constructor and eliminated by `TauCeti.HasHolomorphicSquareRoots.exists_differentiableOn_sq_eq`. -/
+structure HasHolomorphicSquareRoots (U : Set ℂ) : Prop where
+  /-- A function holomorphic and nowhere zero on `U` is, on `U`, the square of a function
+  holomorphic on `U`. -/
+  exists_differentiableOn_sq_eq ⦃g : ℂ → ℂ⦄ : DifferentiableOn ℂ g U → 0 ∉ g '' U →
     ∃ f : ℂ → ℂ, DifferentiableOn ℂ f U ∧ EqOn (fun z => f z ^ 2) g U
 
 /-- **A simply connected open set has holomorphic square roots.** This is the case `n = 2` of
 `TauCeti.exists_differentiableOn_pow_eq`. -/
 theorem _root_.IsSimplyConnected.hasHolomorphicSquareRoots (hUc : IsSimplyConnected U)
     (hUo : IsOpen U) : HasHolomorphicSquareRoots U :=
-  fun _ hg hg₀ => exists_differentiableOn_pow_eq hUc hUo hg hg₀ two_ne_zero
+  ⟨fun _ hg hg₀ => exists_differentiableOn_pow_eq hUc hUo hg hg₀ two_ne_zero⟩
 
 /-- **Holomorphic square roots are carried along injective holomorphic maps.** If `U` is open and
 has holomorphic square roots, and `φ` is holomorphic and injective on `U`, then `φ '' U` has
@@ -75,9 +79,9 @@ holomorphic square roots: a root of `g ∘ φ` on `U`, composed with the holomor
 theorem HasHolomorphicSquareRoots.image (hU : HasHolomorphicSquareRoots U) (hUo : IsOpen U)
     {φ : ℂ → ℂ} (hφ : DifferentiableOn ℂ φ U) (hφi : InjOn φ U) :
     HasHolomorphicSquareRoots (φ '' U) := by
-  intro g hg hg₀
+  refine ⟨fun g hg hg₀ => ?_⟩
   have hmaps : MapsTo φ U (φ '' U) := mapsTo_image φ U
-  obtain ⟨f, hfd, hfsq⟩ := hU (hg.comp hφ hmaps) (by
+  obtain ⟨f, hfd, hfsq⟩ := hU.exists_differentiableOn_sq_eq (hg.comp hφ hmaps) (by
     rintro ⟨z, hz, hgz⟩
     exact hg₀ ⟨φ z, hmaps hz, hgz⟩)
   have hinv := (surjOn_image φ U).mapsTo_invFunOn
