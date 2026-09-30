@@ -24,10 +24,12 @@ onto. Isolating it as a hypothesis lets that proof run on every domain with the 
 shows that such a domain is conformally a disc, hence simply connected
 (`TauCeti.HasHolomorphicSquareRoots.isSimplyConnected`, in
 `Conformal/RiemannMapping/Existence.lean`). For an open connected set the two conditions are
-therefore equivalent; this is the implication (i) ⇒ (b) of Rudin's list of characterisations of
-simply connected plane domains. A property that is easier to verify from the geometry of the
-complement — for example vanishing of the winding numbers of cycles in `U` about points outside
-`U`, via the homology form of Cauchy's theorem — thereby becomes a proof of simple connectivity.
+therefore equivalent. In Rudin's list of characterisations of simply connected plane domains, this
+file gives (b) ⇒ (i) (`IsSimplyConnected.hasHolomorphicSquareRoots`); the converse (i) ⇒ (b) is
+`TauCeti.HasHolomorphicSquareRoots.isSimplyConnected`. A property that is easier to verify from the
+geometry of the complement — for example vanishing of the winding numbers of cycles in `U` about
+points outside `U`, via the homology form of Cauchy's theorem — thereby becomes a proof of simple
+connectivity.
 
 ## Main definitions
 
@@ -60,12 +62,6 @@ def HasHolomorphicSquareRoots (U : Set ℂ) : Prop :=
   ∀ ⦃g : ℂ → ℂ⦄, DifferentiableOn ℂ g U → 0 ∉ g '' U →
     ∃ f : ℂ → ℂ, DifferentiableOn ℂ f U ∧ EqOn (fun z => f z ^ 2) g U
 
-/-- Unfolding `TauCeti.HasHolomorphicSquareRoots`. -/
-theorem hasHolomorphicSquareRoots_iff :
-    HasHolomorphicSquareRoots U ↔ ∀ ⦃g : ℂ → ℂ⦄, DifferentiableOn ℂ g U → 0 ∉ g '' U →
-      ∃ f : ℂ → ℂ, DifferentiableOn ℂ f U ∧ EqOn (fun z => f z ^ 2) g U :=
-  Iff.rfl
-
 /-- A function holomorphic and nowhere zero on a set with holomorphic square roots has a
 holomorphic square root there. -/
 theorem HasHolomorphicSquareRoots.exists_differentiableOn_sq_eq (hU : HasHolomorphicSquareRoots U)
@@ -91,9 +87,7 @@ theorem HasHolomorphicSquareRoots.image (hU : HasHolomorphicSquareRoots U) (hUo 
   obtain ⟨f, hfd, hfsq⟩ := hU.exists_differentiableOn_sq_eq (hg.comp hφ hmaps) (by
     rintro ⟨z, hz, hgz⟩
     exact hg₀ ⟨φ z, hmaps hz, hgz⟩)
-  have hinv : MapsTo (invFunOn φ U) (φ '' U) U := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact invFunOn_mem ⟨z, hz, rfl⟩
+  have hinv := (surjOn_image φ U).mapsTo_invFunOn
   refine ⟨f ∘ invFunOn φ U, hfd.comp (DifferentiableOn.invFunOn hφ hUo hφi) hinv, ?_⟩
   rintro _ ⟨z, hz, rfl⟩
   simpa only [comp_apply, hφi.leftInvOn_invFunOn hz] using hfsq hz

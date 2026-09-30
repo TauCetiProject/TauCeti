@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Koebe
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-import Mathlib.Analysis.Convex.Contractible
+import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Biholomorph
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 
@@ -84,8 +84,8 @@ theorem riemannMapping_of_hasHolomorphicSquareRoots {Ω : Set ℂ} (hΩo : IsOpe
     (hΩc : IsConnected Ω) (hΩs : HasHolomorphicSquareRoots Ω) (hΩ : Ω ≠ univ) :
     ∃ f : ℂ → ℂ, BijOn f Ω (ball 0 1) ∧ DifferentiableOn ℂ f Ω ∧ ∀ z ∈ Ω, deriv f z ≠ 0 := by
   obtain ⟨z₀, hz₀⟩ := hΩc.nonempty
-  obtain ⟨g, hg, hmax⟩ := exists_isMaxOn_norm_deriv hΩo hΩc.isPreconnected hz₀
-    (exists_isPointedDiscInjectionOn hΩs hΩo hΩ hz₀)
+  obtain ⟨g, hg, hmax⟩ :=
+    exists_isMaxOn_norm_deriv_of_hasHolomorphicSquareRoots hΩs hΩo hΩc.isPreconnected hΩ hz₀
   exact ⟨g, ⟨hg.mapsTo, hg.injOn, surjOn_ball_of_isMaxOn hΩo hΩs hz₀ hg hmax⟩,
     hg.differentiableOn, fun z hz => hg.deriv_ne_zero hΩo hz⟩
 
@@ -108,11 +108,9 @@ theorem HasHolomorphicSquareRoots.isSimplyConnected {Ω : Set ℂ} (hΩs : HasHo
     (hΩo : IsOpen Ω) (hΩc : IsConnected Ω) : IsSimplyConnected Ω := by
   by_cases hΩ : Ω = univ
   · subst hΩ
-    have : ContractibleSpace (univ : Set ℂ) := convex_univ.contractibleSpace univ_nonempty
-    exact SimplyConnectedSpace.ofContractible _
+    exact (Homeomorph.Set.univ ℂ).toHomotopyEquiv.simplyConnectedSpace
   obtain ⟨f, hbij, hfd, -⟩ := riemannMapping_of_hasHolomorphicSquareRoots hΩo hΩc hΩs hΩ
-  have : ContractibleSpace (ball (0 : ℂ) 1) :=
-    (convex_ball (0 : ℂ) 1).contractibleSpace (nonempty_ball.2 one_pos)
+  have : ContractibleSpace (ball (0 : ℂ) 1) := contractibleSpace_ball one_pos
   exact (hfd.toHomeomorphOfBijOn hΩo hbij).toHomotopyEquiv.simplyConnectedSpace
 
 /-- **Simple connectivity of a plane domain is the existence of holomorphic square roots.** A

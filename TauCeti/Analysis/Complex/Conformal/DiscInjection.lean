@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.BranchLogRoot
 public import TauCeti.Analysis.Complex.Conformal.SquareRoots
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 import TauCeti.Analysis.Complex.Conformal.Moebius
-import Mathlib.Analysis.Convex.Contractible
+import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
 # A proper domain with holomorphic square roots injects holomorphically into the unit disc
@@ -25,8 +25,8 @@ This is the classical square-root construction. Pick `a ∉ U`. On `U` the nonva
 holomorphic logarithm branch `L`, not from Mathlib's continuous root branch. Then:
 
 * `h` is injective, since `h z₁ = h z₂` forces `z₁ - a = z₂ - a` after squaring;
-* `h '' U` is open (open mapping theorem: `h` is injective, hence nonconstant, on the connected
-  `U`), so it contains a ball `ball w₀ r`;
+* `h '' U` is open (open mapping theorem: `h` is injective, hence nonconstant near each point of
+  the open `U`), so it contains a ball `ball w₀ r`;
 * `-h z` **avoids** that ball for every `z ∈ U`: otherwise `-h z = h z'`, and squaring gives
   `z' = z`, hence `h z = -h z` and so `h z = 0`, which is impossible;
 * therefore `r ≤ ‖h z + w₀‖` throughout `U`.
@@ -206,8 +206,7 @@ example :
     HasHolomorphicSquareRoots (ball (0 : ℂ) 1) ∧ IsOpen (ball (0 : ℂ) 1)
       ∧ (ball (0 : ℂ) 1) ≠ univ := by
   refine ⟨?_, isOpen_ball, ?_⟩
-  · have : ContractibleSpace (ball (0 : ℂ) 1) :=
-      Convex.contractibleSpace (convex_ball (0 : ℂ) 1) (nonempty_ball.2 one_pos)
+  · have : ContractibleSpace (ball (0 : ℂ) 1) := contractibleSpace_ball one_pos
     exact IsSimplyConnected.hasHolomorphicSquareRoots (SimplyConnectedSpace.ofContractible _)
       isOpen_ball
   · intro hcon

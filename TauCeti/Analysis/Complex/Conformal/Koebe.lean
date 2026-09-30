@@ -22,9 +22,9 @@ maximizer; this file supplies the other half: a maximizer cannot omit a value of
 The engine is a statement about the disc alone: **a proper open subset of the unit disc containing
 the origin and having holomorphic square roots admits a holomorphic injection back into the disc
 that fixes the origin and has derivative of norm exceeding `1` there** — no proper subdomain is
-extremal. Simple connectivity enters only through the square roots
-(`IsSimplyConnected.hasHolomorphicSquareRoots`), and only through them does it enter the
-Riemann mapping theorem at all.
+extremal. Simple connectivity enters this step only through the square roots
+(`IsSimplyConnected.hasHolomorphicSquareRoots`), and it enters the Riemann mapping theorem only
+through them and through connectedness.
 
 ## The construction
 
