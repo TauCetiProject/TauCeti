@@ -46,6 +46,12 @@ private abbrev C (p q : ℕ) :=
 def realCliffordResidue (p q : ℕ) : ℕ :=
   (q + 8 - p % 8) % 8
 
+/-- The defining formula of the real Clifford residue. Importing modules do not see the body of
+`realCliffordResidue`, so this is how they compute it at a given signature, e.g. with
+`rw [realCliffordResidue_def]` or `norm_num [realCliffordResidue_def]`. -/
+theorem realCliffordResidue_def (p q : ℕ) : realCliffordResidue p q = (q + 8 - p % 8) % 8 :=
+  (rfl)
+
 /-- The real Clifford residue is one of the eight table indices. -/
 theorem realCliffordResidue_lt_eight (p q : ℕ) : realCliffordResidue p q < 8 := by
   rw [realCliffordResidue]
