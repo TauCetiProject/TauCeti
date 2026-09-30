@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
+public import Mathlib.Algebra.Homology.Homotopy
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
@@ -292,43 +292,60 @@ variable [LocallyCompactSpace G]
 pair consisting of the inner automorphism `x ↦ g⁻¹ * x * g` of `G` and the action of `g` on the
 coefficients, which is NSW's conjugation `g_*`, induces the identity of `Hⁿ(G, X)` in every degree.
 The homomorphism and the coefficient map are taken as hypotheses on their values, so that the
-statement applies to any presentation of the pair with smooth discrete coefficients. The
-`IsSmoothDiscrete` hypothesis keeps this public result within the roadmap's discrete-coefficient
-scope; the homotopy proof itself does not use it. -/
+statement applies to any presentation of the pair. The coefficient representation is smooth
+discrete: its underlying module has the discrete topology and every point stabilizer is open. -/
 theorem map_eq_id_of_inner (_hX : IsSmoothDiscrete k X) (n : ℕ) :
     map φ f n = 𝟙 (continuousCohomology n X) := by
-  set K := homogeneousCochains X
-  ext x
-  obtain ⟨z, rfl⟩ := K.homologyπ_surjective n x
-  set c := K.iCycles n z
-  -- the underlying cochain of `z` is invariant and killed by the differential
-  have hcocycle : (d X (n + 1)).hom c.1 = 0 := by
-    have h := ConcreteCategory.congr_hom (K.iCycles_d n (n + 1)) z
-    simp only [ConcreteCategory.comp_apply] at h
-    exact (homogeneousCochains.d_apply X n c).symm.trans (congrArg Subtype.val h)
-  -- on it, the cochain map of the pair is right translation by `g`
-  have hmap : (K.iCycles n (cocyclesMap φ f n z)).1 =
-      (resolutionTranslate X g (n + 1)).hom c.1 := by
-    rw [iCycles_cocyclesMap_apply, coe_cochainsMap_f_apply,
+  classical
+  let K := homogeneousCochains X
+  -- Restrict the prism operator to homogeneous cochains.
+  let h : ∀ i j, (ComplexShape.up ℕ).Rel j i → (K.X i ⟶ K.X j) := fun i j hij => by
+    obtain rfl := hij
+    exact TopModuleCat.ofHom ((translateHomotopy X g (j + 1)).restrict
+      (fun _ hv => translateHomotopy_mem_invariants X g hv))
+  -- The prism identity identifies the difference with Mathlib's null-homotopic map.
+  have heq : cochainsMap φ f - 𝟙 K = Homotopy.nullHomotopicMap' h := by
+    ext i v : 3
+    apply Subtype.ext
+    simp only [HomologicalComplex.sub_f_apply, HomologicalComplex.id_f]
+    have hs := TopModuleCat.hom_sub k ((cochainsMap φ f).f i) (𝟙 (K.X i))
+    dsimp only [TopModuleCat.Hom.hom] at hs
+    rw [hs, sub_apply,
+      TopModuleCat.hom_id k (K.X i), ContinuousLinearMap.id_apply, Submodule.coe_sub,
+      coe_cochainsMap_f_apply,
       resolutionMap_hom_apply_eq_resolutionTranslate g φ hφ f hf,
-      (ContRepresentation.mem_invariants _).1 c.2 g]
-  have hdiff := resolutionTranslate_sub_self_of_d_eq_zero X g hcocycle
-  rw [map_π_apply, TopModuleCat.hom_id, ContinuousLinearMap.id_apply]
-  cases n with
-  | zero =>
-    congr 1
-    refine K.iCycles_injective 0 (Subtype.ext ?_)
-    rw [hmap, ← sub_eq_zero, hdiff, translateHomotopy_zero]
-    simp
-  | succ m =>
-    rw [← sub_eq_zero, ← map_sub]
-    let b : K.X m := ⟨translateHomotopy X g (m + 1) c.1, translateHomotopy_mem_invariants X g c.2⟩
-    refine (K.homologyπ_eq_zero_iff (m + 1) (by simp)).2 ⟨b, K.iCycles_injective (m + 1) ?_⟩
-    have h := ConcreteCategory.congr_hom (K.toCycles_i m (m + 1)) b
-    simp only [ConcreteCategory.comp_apply] at h
-    refine Subtype.ext ?_
-    rw [h, homogeneousCochains.d_apply, map_sub, Submodule.coe_sub, hmap]
-    exact hdiff.symm
+      (ContRepresentation.mem_invariants _).1 v.2 g]
+    have hh (j : ℕ) (w : K.X (j + 1)) :
+        (h (j + 1) j (ComplexShape.up_mk _ _ rfl) w).1 = translateHomotopy X g (j + 1) w.1 := rfl
+    have hd (j : ℕ) (w : K.X j) :
+        (K.d j (j + 1) w).1 = (d X (j + 1)).hom w.1 :=
+      homogeneousCochains.d_apply X j w
+    cases i with
+    | zero =>
+      rw [Homotopy.nullHomotopicMap'_f_of_not_rel_right
+        (ComplexShape.up_mk 0 1 rfl) (by simp)]
+      simp only [ConcreteCategory.comp_apply]
+      rw [hh, hd]
+      have hid := d_translateHomotopy_add_translateHomotopy_d X g 0 v.1
+      simpa only [translateHomotopy_zero, zero_apply, map_zero, zero_add]
+        using hid.symm
+    | succ i =>
+      rw [Homotopy.nullHomotopicMap'_f
+        (ComplexShape.up_mk i (i + 1) rfl)
+        (ComplexShape.up_mk (i + 1) (i + 1 + 1) rfl)]
+      have ha := TopModuleCat.hom_add k
+        (K.d (i + 1) (i + 1 + 1) ≫ h _ _ (ComplexShape.up_mk _ _ rfl))
+        (h _ _ (ComplexShape.up_mk _ _ rfl) ≫ K.d i (i + 1))
+      dsimp only [TopModuleCat.Hom.hom] at ha
+      rw [ha, add_apply, Submodule.coe_add]
+      simp only [ConcreteCategory.comp_apply]
+      rw [hh, hd, hd, hh]
+      exact (d_translateHomotopy_add_translateHomotopy_d X g (i + 1) v.1).symm.trans
+        (add_comm _ _)
+  have ho : Homotopy (cochainsMap φ f) (𝟙 K) :=
+    Homotopy.equivSubZero.symm
+      (heq.symm ▸ Homotopy.nullHomotopy' h)
+  exact (ho.homologyMap_eq n).trans (HomologicalComplex.homologyMap_id K n)
 
 end Inner
 
