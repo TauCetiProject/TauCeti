@@ -45,27 +45,16 @@ public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G] {A : Type*}
+section Mul
 
-/-- The **right-translation stabilizer** of `f : G → A`: the subgroup of those `g` with
-`f (x * g) = f x` for every `x : G`. For a locally constant `f` on a compact group it is open
-(`TauCeti.isOpen_rightTranslationStabilizer`), which is the sense in which `f` is *uniformly*
-locally constant. -/
-def rightTranslationStabilizer (f : G → A) : Subgroup G where
-  carrier := {g | ∀ x : G, f (x * g) = f x}
-  one_mem' x := by rw [mul_one]
-  mul_mem' {g g'} hg hg' x := by rw [← mul_assoc, hg' (x * g), hg x]
-  inv_mem' {g} hg x := by rw [← hg (x * g⁻¹), inv_mul_cancel_right]
-
-@[simp]
-theorem mem_rightTranslationStabilizer {f : G → A} {g : G} :
-    g ∈ rightTranslationStabilizer f ↔ ∀ x : G, f (x * g) = f x := Iff.rfl
+variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {A : Type*}
 
 /-- **Uniform local constancy on a compact set, in a parameter.** For a locally constant `f` on a
-topological group, a compact set `K` and a continuous family `σ : P → G` of right translations,
-every parameter has a neighbourhood on which `x ↦ f (x * σ p)` does not change at all on `K`: the
-neighbourhood is uniform in `x ∈ K`. No compactness of `G` is needed, only of `K`. -/
-theorem exists_isOpen_forall_mem_mul_right_eq [TopologicalSpace G] [ContinuousMul G]
+space with a continuous multiplication, a compact set `K` and a continuous family `σ : P → G` of
+right translations, every parameter has a neighbourhood on which `x ↦ f (x * σ p)` does not change
+at all on `K`: the neighbourhood is uniform in `x ∈ K`. No compactness of `G` is needed, only of
+`K`, and no group structure. -/
+theorem exists_isOpen_forall_mem_mul_right_eq
     {f : G → A} (hf : IsLocallyConstant f) {K : Set G} (hK : IsCompact K) {P : Type*}
     [TopologicalSpace P] {σ : P → G} (hσ : Continuous σ) (p₀ : P) :
     ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x ∈ K, f (x * σ p) = f (x * σ p₀) := by
@@ -81,6 +70,24 @@ theorem exists_isOpen_forall_mem_mul_right_eq [TopologicalSpace G] [ContinuousMu
     generalized_tube_lemma hK (isCompact_singleton (x := p₀)) hopen fun q hq => by
       simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff.mp hq.2]
   exact ⟨v, hvopen, hv rfl, fun p hp x hx => huv (Set.mk_mem_prod (hKu hx) hp)⟩
+
+end Mul
+
+variable {G : Type*} [Group G] {A : Type*}
+
+/-- The **right-translation stabilizer** of `f : G → A`: the subgroup of those `g` with
+`f (x * g) = f x` for every `x : G`. For a locally constant `f` on a compact group it is open
+(`TauCeti.isOpen_rightTranslationStabilizer`), which is the sense in which `f` is *uniformly*
+locally constant. -/
+def rightTranslationStabilizer (f : G → A) : Subgroup G where
+  carrier := {g | ∀ x : G, f (x * g) = f x}
+  one_mem' x := by rw [mul_one]
+  mul_mem' {g g'} hg hg' x := by rw [← mul_assoc, hg' (x * g), hg x]
+  inv_mem' {g} hg x := by rw [← hg (x * g⁻¹), inv_mul_cancel_right]
+
+@[simp]
+theorem mem_rightTranslationStabilizer {f : G → A} {g : G} :
+    g ∈ rightTranslationStabilizer f ↔ ∀ x : G, f (x * g) = f x := Iff.rfl
 
 /-- A locally constant function on a compact topological group is *uniformly* locally constant:
 its right-translation stabilizer is an open subgroup, so a single open neighbourhood of `1` makes
