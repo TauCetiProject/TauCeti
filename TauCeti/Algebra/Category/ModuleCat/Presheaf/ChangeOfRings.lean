@@ -14,7 +14,8 @@ public import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
 For presheaves of commutative rings `R` and `S` and a morphism `α : R ⟶ S`, restriction of scalars
 from presheaves of `S`-modules to presheaves of
 `R`-modules is lax symmetric monoidal. Its unit map is `α` itself, sectionwise, and its tensor map
-sends a pure tensor `m ⊗ n` to the same pure tensor, now regarded over the smaller ring.
+sends a pure tensor `m ⊗ₜ[R.obj X] n` of sections over `X` to the pure tensor `m ⊗ₜ[S.obj X] n`,
+balanced over `S.obj X`.
 
 Combining it with precomposition, the pushforward of presheaves of modules along a functor and
 a morphism of presheaves of commutative rings is lax symmetric monoidal. Consequently its left
