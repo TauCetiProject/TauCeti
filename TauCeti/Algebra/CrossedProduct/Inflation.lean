@@ -107,17 +107,24 @@ def inflateClass (c : TwoCocycle K L) :
   explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)
     (H2pi _ _ (c.inflateZ2 L))
 
-/-- Cohomologous crossed-product cocycles have the same class after inflation to continuous
-cohomology. -/
-theorem inflateClass_eq_of_cohomologous {z w : TwoCocycle K L} (h : z.Cohomologous w) :
-    z.inflateClass L = w.inflateClass L := by
+/-- The representative of the continuous cohomology class `inflateClass`. -/
+theorem inflateClass_def (c : TwoCocycle K L) :
+    c.inflateClass L =
+      explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)
+        (H2pi _ _ (c.inflateZ2 L)) :=
+  (rfl)
+
+/-- The difference of inflated cohomologous cocycles is the inflation of their finite
+coboundary, hence is a continuous coboundary. -/
+private theorem inflateZ2_sub_mem_B2 {z w : TwoCocycle K L} (h : z.Cohomologous w) :
+    ((z.inflateZ2 L : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K) -
+      w.inflateZ2 L) ∈ B2 (AbsoluteGaloisGroup K) (UnitsCoeff K) := by
   obtain ⟨b, hb⟩ := cohomologous_def.1 h.symm
-  apply congrArg (explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K))
-  refine H2pi_eq_iff.2 (mem_B2_iff'.2 ⟨(fun σ : L ≃ₐ[K] L ↦
+  refine mem_B2_iff'.2 ⟨(fun σ : L ≃ₐ[K] L ↦
     Additive.ofMul (Units.map L.val.toRingHom.toMonoidHom (b σ))) ∘
       AlgEquiv.restrictNormalHom L,
     continuous_of_discreteTopology.comp (InfiniteGalois.restrictNormalHom_continuous L),
-    fun g k ↦ ?_⟩)
+    fun g k ↦ ?_⟩
   have hbgk := congrArg (Units.map L.val.toRingHom.toMonoidHom)
     (hb (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k))
   apply Additive.toMul.injective
@@ -131,6 +138,13 @@ theorem inflateClass_eq_of_cohomologous {z w : TwoCocycle K L} (h : z.Cohomologo
   congr 2
   exact (AlgEquiv.restrictNormal_commutes g L _).symm
 
+/-- Cohomologous crossed-product cocycles have the same class after inflation to continuous
+cohomology. -/
+theorem inflateClass_eq_of_cohomologous {z w : TwoCocycle K L} (h : z.Cohomologous w) :
+    z.inflateClass L = w.inflateClass L := by
+  apply congrArg (explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K))
+  exact H2pi_eq_iff.2 (inflateZ2_sub_mem_B2 L h)
+
 end Finite
 
 section Refinement
@@ -139,14 +153,6 @@ variable {L} {M : IntermediateField K (SeparableClosure K)} [Normal K L] [Normal
   (π : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hπι : ∀ g x, ι (π g x) = g (ι x))
   (hι : ∀ x, M.val (ι x) = L.val x)
 include hπι hι
-
-/-- Along a compatible pair `(π, ι)` whose embedding `ι` is compatible with the inclusions into
-`Kˢ`, `π` carries restriction to `M` to restriction to `L`. -/
-private theorem restrictNormalHom_of_compatible (g : AbsoluteGaloisGroup K) :
-    π (AlgEquiv.restrictNormalHom M g) = AlgEquiv.restrictNormalHom L g :=
-  AlgEquiv.ext fun x ↦ L.val.injective <| (hι _).symm.trans <|
-    (congrArg M.val (hπι _ x)).trans <| (AlgEquiv.restrictNormal_commutes g M (ι x)).trans <|
-      (congrArg g (hι x)).trans (AlgEquiv.restrictNormal_commutes g L x).symm
 
 /-- Refining a normal subextension along a compatible pair `(π, ι)`, with `ι` compatible with the
 inclusions into `Kˢ`, before inflation does not change the cocycle on the absolute Galois
@@ -158,6 +164,12 @@ theorem inflate_comap (c : TwoCocycle K L) : (c.comap π ι hπι).inflate M = c
   simpa using hι (c.toFun (AlgEquiv.restrictNormalHom L g) (AlgEquiv.restrictNormalHom L k))
 
 variable [FiniteDimensional K L] [FiniteDimensional K M]
+
+/-- Refining the finite normal subextension along a compatible pair does not change the inflated
+continuous cocycle. -/
+theorem inflateZ2_comap (c : TwoCocycle K L) :
+    (c.comap π ι hπι).inflateZ2 M = c.inflateZ2 L :=
+  Subtype.ext (by rw [coe_inflateZ2, coe_inflateZ2, inflate_comap π ι hπι hι])
 
 /-- Refining the finite normal subextension on which a cocycle is defined, along a compatible pair
 `(π, ι)` with `ι` compatible with the inclusions into `Kˢ`, does not change its inflated
@@ -262,6 +274,31 @@ def finiteLevelClass (c : TwoCocycle K L) :
         (UnitsCoeff K)) :=
   H2pi _ _ (c.finiteLevelZ2 L)
 
+/-- The representative of the finite-level cohomology class `finiteLevelClass`. -/
+theorem finiteLevelClass_def (c : TwoCocycle K L) :
+    c.finiteLevelClass L = H2pi _ _ (c.finiteLevelZ2 L) :=
+  (rfl)
+
+/-- Pointwise, inflating the finite-level cocycle along the quotient map recovers the directly
+inflated cocycle. -/
+private theorem cocyclesMap2_finiteLevelZ2_apply (c : TwoCocycle K L)
+    (g h : AbsoluteGaloisGroup K) :
+    (cocyclesMap2 _ _ _ _
+      (ContinuousMonoidHom.quotientMk
+        (galoisOpenNormalSubgroup K L L.val).toSubgroup)
+      (FixedPoints.addSubgroup
+        (galoisOpenNormalSubgroup K L L.val).toSubgroup (UnitsCoeff K)).subtype
+      (continuous_fixedPoints_addSubgroup_subtype _ _ _)
+      (subtype_quotientMk_smul _ _ _)
+      (c.finiteLevelZ2 L) :
+        AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K) (g, h) =
+      (c.inflateZ2 L : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K)
+        (g, h) := by
+  rw [cocyclesMap2_apply, AddSubgroup.subtype_apply, ContinuousMonoidHom.quotientMk_apply,
+    ContinuousMonoidHom.quotientMk_apply, finiteLevelZ2_apply, ← galoisQuotientHom_apply,
+    ← galoisQuotientHom_apply, galoisQuotientHom_mk, galoisQuotientHom_mk, coe_inflateZ2]
+  simp only [coe_toCocycles₂, inflate_toFun]
+
 /-- Inflating the finite-level representative gives the cocycle obtained directly by restricting
 absolute Galois automorphisms to `L`. -/
 private theorem explicitInfl2_finiteLevelClass (c : TwoCocycle K L) :
@@ -273,10 +310,7 @@ private theorem explicitInfl2_finiteLevelClass (c : TwoCocycle K L) :
   apply Subtype.ext
   funext p
   obtain ⟨g, h⟩ := p
-  rw [cocyclesMap2_apply, AddSubgroup.subtype_apply, ContinuousMonoidHom.quotientMk_apply,
-    ContinuousMonoidHom.quotientMk_apply, finiteLevelZ2_apply, ← galoisQuotientHom_apply,
-    ← galoisQuotientHom_apply, galoisQuotientHom_mk, galoisQuotientHom_mk, coe_inflateZ2]
-  simp only [coe_toCocycles₂, inflate_toFun]
+  exact cocyclesMap2_finiteLevelZ2_apply L c g h
 
 /-- **The inflated crossed-product class is the finite-quotient comparison class.** More
 precisely, its explicit `H²` representative is the image of the class at the quotient

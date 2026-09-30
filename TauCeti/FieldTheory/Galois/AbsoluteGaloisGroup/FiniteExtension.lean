@@ -68,6 +68,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`: the isomorphism sends the class of `g`
   to `σ.restrictNormalHom g`.
+* `TauCeti.restrictNormalHom_of_compatible`: a compatible pair between normal subextensions of
+  `Kˢ` carries restriction to the larger field to restriction to the smaller field.
 
 ## References
 
@@ -206,6 +208,28 @@ theorem quotientFixingSubgroupFieldRangeEquiv_mk (g : AbsoluteGaloisGroup K) :
     AlgEquiv.restrictNormalHom_apply, ← AlgHom.equivFieldRange_apply_coe]
 
 end Normal
+
+/-! ### Restriction along compatible normal subextensions -/
+
+section CompatibleRestriction
+
+variable {K : Type*} [Field K]
+  {E M : IntermediateField K (SeparableClosure K)} [Normal K E] [Normal K M]
+  (pi : (M ≃ₐ[K] M) →* (E ≃ₐ[K] E)) (iota : E →ₐ[K] M)
+  (hpiiota : ∀ g x, iota (pi g x) = g (iota x))
+  (hiota : ∀ x, M.val (iota x) = E.val x)
+include hpiiota hiota
+
+/-- Along a compatible pair `(pi, iota)` between normal subextensions of `Kˢ`, with `iota`
+compatible with their inclusions into `Kˢ`, `pi` carries restriction to `M` to restriction to
+`E`. -/
+theorem restrictNormalHom_of_compatible (g : AbsoluteGaloisGroup K) :
+    pi (AlgEquiv.restrictNormalHom M g) = AlgEquiv.restrictNormalHom E g :=
+  AlgEquiv.ext fun x ↦ E.val.injective <| (hiota _).symm.trans <|
+    (congrArg M.val (hpiiota _ x)).trans <| (AlgEquiv.restrictNormal_commutes g M (iota x)).trans <|
+      (congrArg g (hiota x)).trans (AlgEquiv.restrictNormal_commutes g E x).symm
+
+end CompatibleRestriction
 
 /-! ### Finite normal extensions: the open normal subgroup -/
 
