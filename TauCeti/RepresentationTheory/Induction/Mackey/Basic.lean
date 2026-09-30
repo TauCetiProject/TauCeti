@@ -127,6 +127,16 @@ theorem mackeyCoset_out (s : G) (H K : Subgroup G)
     mackeyCoset s H K u = QuotientGroup.mk ((u.out : G) * s) := by
   rw [← mackeyCoset_mk s H K u.out, QuotientGroup.out_eq']
 
+/-- `TauCeti.mackeyCoset` is `K`-equivariant for the translation actions of `K` on
+`K ⧸ (K ⊓ sHs⁻¹)` and on `G ⧸ H`. -/
+theorem mackeyCoset_smul (s : G) (H K : Subgroup G) (k : K)
+    (u : K ⧸ (mackeySubgroup s H K).subgroupOf K) :
+    mackeyCoset s H K (k • u) = (k : G) • mackeyCoset s H K u := by
+  induction u using QuotientGroup.induction_on with
+  | H u =>
+    rw [MulAction.Quotient.smul_mk, mackeyCoset_mk, mackeyCoset_mk, MulAction.Quotient.smul_mk,
+      smul_eq_mul, smul_eq_mul, Subgroup.coe_mul, mul_assoc]
+
 /-- **The double-coset splitting of `G ⧸ H`.**  Sorting the left cosets of `H` by the double coset
 they lie in, `G ⧸ H` is the disjoint union over `K \ G / H` of the `K`-orbits, and the orbit of
 `sH` is a copy of `K ⧸ (K ⊓ sHs⁻¹)`.
@@ -180,6 +190,14 @@ theorem mackeyQuotientEquiv_apply (H K : Subgroup G)
         K ⧸ (mackeySubgroup D.out H K).subgroupOf K) :
     mackeyQuotientEquiv H K p = mackeyCoset p.1.out H K p.2 :=
   (rfl)
+
+/-- `TauCeti.mackeyQuotientEquiv` is `K`-equivariant: translation by `k ∈ K` keeps the double coset
+of an index and translates its coset of the Mackey subgroup. -/
+theorem smul_mackeyQuotientEquiv (H K : Subgroup G) (k : K)
+    (D : DoubleCoset.Quotient (K : Set G) (H : Set G))
+    (u : K ⧸ (mackeySubgroup D.out H K).subgroupOf K) :
+    (k : G) • mackeyQuotientEquiv H K ⟨D, u⟩ = mackeyQuotientEquiv H K ⟨D, k • u⟩ := by
+  rw [mackeyQuotientEquiv_apply, mackeyQuotientEquiv_apply, mackeyCoset_smul]
 
 /-- **The double-coset index formula** `[G : H] = ∑_{KsH ∈ K \ G / H} [K : K ⊓ sHs⁻¹]`, obtained by
 counting `TauCeti.mackeyQuotientEquiv`.  It is the dimension shadow of the Mackey decomposition:
