@@ -148,6 +148,10 @@ instance : Zero (M ⟶ N) where
 
 instance : HasZeroMorphisms (DifferentialModule C) where
 
+-- The forgetful and bridge functors expose their object reductions so their direct component
+-- equations have matching morphism types. A propositional object equation cannot supply this
+-- definitional equality, even with a parenthesized `rfl` proof.
+-- The bridges also need `implicit_reducible` so `simp` can match the dependent component types.
 variable (C) in
 /-- The forgetful functor sending a differential module to its underlying object. -/
 @[expose, simps]
