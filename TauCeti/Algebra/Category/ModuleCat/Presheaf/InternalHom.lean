@@ -177,6 +177,7 @@ variable (M N : PresheafOfModulesOfCommRing.{u} R)
 restriction along the iterated-slice equivalence: a section of `𝓗om(M, N)` over `Y.left`,
 viewed as a morphism `M|_{Y.left} ⟶ N|_{Y.left}`, is sent to the section of
 `𝓗om(M|_X, N|_X)` over `Y` given by the same morphism on the iterated slice over `Y`. -/
+@[simp]
 theorem ihomObjEquiv_ihomComparison_natTrans_app_app (Y : Over X)
     (s : ((ihom M).obj N).obj (op Y.left)) :
     ihomObjEquiv Y ((pushforward₀ (Over.forget X) R).obj M)
@@ -205,35 +206,48 @@ private theorem bijective_ihomComparison_natTrans_app_app (Y : Over X) :
     Function.Bijective
       ((((pushforward₀ (Over.forget X) R).ihomComparison M).natTrans.app N).app (op Y)) := by
   let F := pushforward₀ (Over.forget X) R
-  -- Restriction along the two halves of the iterated-slice equivalence. Restricting along `fwd`
-  -- and then back along `bwd` is the identity on morphisms, because
-  -- `(Over.iteratedSliceForward Y).obj ((Over.iteratedSliceBackward Y).obj W)` is `W` up to
-  -- structure eta; `bwd.map` therefore inverts `fwd.map` on the left.
+  -- Restriction along the two halves of the iterated-slice equivalence.
   let fwd := pushforward₀ (Over.iteratedSliceForward Y) ((Over.forget Y.left).op ⋙ R)
   let bwd := pushforward₀ (Over.iteratedSliceBackward Y)
     ((Over.forget Y).op ⋙ (Over.forget X).op ⋙ R)
+  have left_inv (φ : (pushforward₀ (Over.forget Y.left) R).obj M ⟶
+      (pushforward₀ (Over.forget Y.left) R).obj N) :
+      bwd.map (fwd.map φ) = φ := by
+    ext Z m
+    -- The counit is built from identity isomorphisms, so its underlying map acts trivially.
+    let c := (Over.iteratedSliceEquiv Y).counit.app Z.unop
+    have hn := PresheafOfModulesOfCommRing.naturality_apply φ c.op m
+    have hM : M.map c.left.op m = m :=
+      (ConcreteCategory.congr_hom (M.map_id _) m).trans rfl
+    have hN (n : N.obj (op Z.unop.left)) : N.map c.left.op n = n :=
+      (ConcreteCategory.congr_hom (N.map_id _) n).trans rfl
+    exact (hn.trans (hN _)).symm.trans (congrArg (φ.app' Z) hM)
+  have right_inv (ψ : (pushforward₀ (Over.forget Y) ((Over.forget X).op ⋙ R)).obj
+      (F.obj M) ⟶ (pushforward₀ (Over.forget Y) ((Over.forget X).op ⋙ R)).obj (F.obj N)) :
+      fwd.map (bwd.map ψ) = ψ := by
+    ext Z m
+    -- The unit is built from identity isomorphisms. Naturality along it gives the equality on
+    -- components, since both source and target map identities to identities.
+    let u := (Over.iteratedSliceEquiv Y).unit.app Z.unop
+    have hn := PresheafOfModulesOfCommRing.naturality_apply ψ u.op m
+    have hM : M.map u.left.left.op m = m :=
+      (ConcreteCategory.congr_hom (M.map_id _) m).trans rfl
+    have hN (n : N.obj (op Z.unop.left.left)) : N.map u.left.left.op n = n :=
+      (ConcreteCategory.congr_hom (N.map_id _) n).trans rfl
+    exact (hn.trans (hN _)).symm.trans (congrArg (ψ.app' Z) hM)
   refine ⟨fun s s' h ↦ ?_, fun t ↦ ?_⟩
   · apply (ihomObjEquiv Y.left M N).injective
-    exact congrArg bwd.map ((ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s).symm.trans
+    have hmaps := (ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s).symm.trans
       ((congrArg (ihomObjEquiv Y (F.obj M) (F.obj N)) h).trans
-        (ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s')))
+        (ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y s'))
+    change fwd.map (ihomObjEquiv Y.left M N s) =
+      fwd.map (ihomObjEquiv Y.left M N s') at hmaps
+    exact (left_inv _).symm.trans ((congrArg bwd.map hmaps).trans (left_inv _))
   · let ψ := ihomObjEquiv Y (F.obj M) (F.obj N) t
     refine ⟨(ihomObjEquiv Y.left M N).symm (bwd.map ψ),
       (ihomObjEquiv Y (F.obj M) (F.obj N)).injective
         ((ihomObjEquiv_ihomComparison_natTrans_app_app X M N Y _).trans
-          ((congrArg fwd.map (Equiv.apply_symm_apply _ _)).trans ?_))⟩
-    ext Z m
-    -- It remains to compare `ψ` at `Z` and at the image of `Z` under the equivalence, which
-    -- differs from `Z` only in its structure morphism. The unit `u` of `Over.iteratedSliceEquiv Y`
-    -- is built from `Iso.refl`, so `u.left.left` is definitionally an identity; restriction along
-    -- it is the identity by `map_id`, whose `restrictScalarsId'` inverse acts trivially on
-    -- elements.
-    let u := (Over.iteratedSliceEquiv Y).unit.app Z.unop
-    have hn := PresheafOfModulesOfCommRing.naturality_apply ψ u.op m
-    have hM : M.map u.left.left.op m = m := (ConcreteCategory.congr_hom (M.map_id _) m).trans rfl
-    have hN (n : N.obj (op Z.unop.left.left)) : N.map u.left.left.op n = n :=
-      (ConcreteCategory.congr_hom (N.map_id _) n).trans rfl
-    exact (hn.trans (hN _)).symm.trans (congrArg (ψ.app' Z) hM)
+          ((congrArg fwd.map (Equiv.apply_symm_apply _ _)).trans (right_inv ψ)))⟩
 
 /-- Restriction to the slice over `X` commutes with internal Hom: the canonical comparison
 `𝓗om(M, N)|_X ⟶ 𝓗om(M|_X, N|_X)` is an isomorphism for every presheaf of modules `M`. -/
