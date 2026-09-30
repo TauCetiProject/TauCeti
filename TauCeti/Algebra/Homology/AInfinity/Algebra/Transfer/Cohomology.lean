@@ -39,6 +39,8 @@ than merely an abstract minimal structure.
 * `TauCeti.AInfinityAlgebra.minimalModel_m_two`: its binary operation is the cohomology product.
 * `TauCeti.AInfinityAlgebra.isQuasiIso_minimalModelInclusion`: the extending morphism is a
   quasi-isomorphism.
+* `TauCeti.AInfinityAlgebra.cohomologyMap_minimalModelInclusion_cohomologyEquiv`: the extending
+  morphism induces the identity on cohomology.
 
 ## References
 
@@ -79,6 +81,13 @@ private theorem isHomogeneous_toBoundaries :
   intro p x hx
   exact (𝒜.grading.mem_submodule_piece 𝒜.boundaries
     𝒜.isHomogeneous_boundaries).2 (𝒜.differential_mem_piece hx)
+
+/-- A cycle has zero boundary. -/
+private theorem toBoundaries_eq_zero_of_mem_cycles {x : A} (hx : x ∈ 𝒜.cycles) :
+    𝒜.toBoundaries x = 0 := by
+  apply Subtype.ext
+  rw [toBoundaries, LinearMap.codRestrict_apply, ZeroMemClass.coe_zero]
+  rwa [cycles_def, LinearMap.mem_ker] at hx
 
 private theorem toBoundaries_surjective : Function.Surjective 𝒜.toBoundaries := by
   rintro ⟨y, hy⟩
@@ -198,12 +207,8 @@ private theorem contractionProj_apply (x : A) :
 private theorem contractionProj_incl (x : 𝒜.Cohomology) :
     𝒜.contractionProj (𝒜.contractionIncl x) = x := by
   rw [contractionProj_apply]
-  have hd : 𝒜.toBoundaries (𝒜.contractionIncl x) = 0 := by
-    apply Subtype.ext
-    -- Expose the inclusion through cycles so its cycle equation is the goal.
-    change 𝒜.differential (𝒜.cycleRepresentative x : A) = 0
-    have h := 𝒜.mem_cycles.mp (𝒜.cycleRepresentative x).2
-    rwa [← differential_apply] at h
+  have hd := 𝒜.toBoundaries_eq_zero_of_mem_cycles (x := 𝒜.contractionIncl x)
+    (𝒜.cycleRepresentative x).2
   apply Eq.trans _ (𝒜.cohomologyClass_cycleRepresentative x)
   congr 1
   apply Subtype.ext
@@ -213,14 +218,8 @@ private theorem contractionProj_incl (x : 𝒜.Cohomology) :
 private theorem cycleProjection_incl (x : 𝒜.Cohomology) :
     𝒜.cycleProjection (𝒜.contractionIncl x) = 𝒜.cycleRepresentative x := by
   apply Subtype.ext
-  rw [coe_cycleProjection]
-  have hd : 𝒜.toBoundaries (𝒜.contractionIncl x) = 0 := by
-    apply Subtype.ext
-    -- Expose the inclusion through cycles so its cycle equation is the goal.
-    change 𝒜.differential (𝒜.cycleRepresentative x : A) = 0
-    have h := 𝒜.mem_cycles.mp (𝒜.cycleRepresentative x).2
-    rwa [← differential_apply] at h
-  rw [hd, map_zero, sub_zero]
+  rw [coe_cycleProjection, 𝒜.toBoundaries_eq_zero_of_mem_cycles (x := 𝒜.contractionIncl x)
+    (𝒜.cycleRepresentative x).2, map_zero, sub_zero]
   rfl
 
 private theorem contractionProj_differential (x : A) :
@@ -368,6 +367,7 @@ theorem cohomologyContraction_incl_mem_cycles (x : 𝒜.Cohomology) :
   exact (𝒜.cycleRepresentative x).2
 
 /-- The inclusion of the cohomology contraction chooses a representative of the given class. -/
+@[simp]
 theorem cohomologyClass_cohomologyContraction_incl (x : 𝒜.Cohomology) :
     𝒜.cohomologyClass (𝒜.cohomologyContraction_incl_mem_cycles x) = x := by
   calc
@@ -464,16 +464,7 @@ theorem minimalModel_m_two (x y : 𝒜.Cohomology) :
       (𝒜.mul (𝒜.cycleRepresentative x) (𝒜.cycleRepresentative y)) =
       ⟨𝒜.mul (𝒜.cycleRepresentative x) (𝒜.cycleRepresentative y), hz⟩ := by
     apply Subtype.ext
-    rw [coe_cycleProjection]
-    have hd : 𝒜.toBoundaries
-        (𝒜.mul (𝒜.cycleRepresentative x) (𝒜.cycleRepresentative y)) = 0 := by
-      apply Subtype.ext
-      -- Expose the boundary subtype so the previously established cycle equation applies.
-      change 𝒜.differential
-        (𝒜.mul (𝒜.cycleRepresentative x) (𝒜.cycleRepresentative y)) = 0
-      have h := 𝒜.mem_cycles.mp hz
-      rwa [← differential_apply] at h
-    rw [hd, map_zero, sub_zero]
+    rw [coe_cycleProjection, 𝒜.toBoundaries_eq_zero_of_mem_cycles hz, map_zero, sub_zero]
   rw [hq]
   calc
     𝒜.cohomologyClass hz = 𝒜.cohomologyMul
@@ -502,6 +493,12 @@ theorem linearPart_minimalModelInclusion :
     𝒜.minimalModelInclusion.linearPart = 𝒜.cohomologyContraction.incl := by
   unfold minimalModelInclusion minimalModel
   rw [linearPart_transferInclusion]
+
+/-- The morphism from the minimal model to the original algebra induces the identity on
+cohomology, once the minimal model is identified with its own cohomology. -/
+theorem cohomologyMap_minimalModelInclusion_cohomologyEquiv (x : 𝒜.Cohomology) :
+    𝒜.minimalModelInclusion.cohomologyMap (𝒜.isMinimal_minimalModel.cohomologyEquiv x) = x := by
+  simp
 
 /-- The morphism from the minimal model to the original algebra is a quasi-isomorphism. -/
 theorem isQuasiIso_minimalModelInclusion : 𝒜.minimalModelInclusion.IsQuasiIso :=

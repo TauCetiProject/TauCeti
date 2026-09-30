@@ -105,7 +105,7 @@ theorem exists_rightInverse (hf : IsHomogeneous f G.piece H.piece r)
     exact congrArg Subtype.val h
   · rw [isHomogeneous_def]
     intro q y hy
-    rw [show q + -r = q - r by rfl, rightInverse_apply_of_mem hf hsurj y hy]
+    rw [← sub_eq_add_neg, rightInverse_apply_of_mem hf hsurj y hy]
     exact (pieceSection hf hsurj q ⟨y, hy⟩).2
 
 end TauCeti.LinearMap.IsHomogeneous
