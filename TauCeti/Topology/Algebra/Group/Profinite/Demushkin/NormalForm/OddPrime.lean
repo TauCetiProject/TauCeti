@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Criterion
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.QInvariant
-public import TauCeti.Topology.Algebra.Group.Profinite.Free.SuccessiveApproximation
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.SuccessiveApproximation.Basic
 
 /-!
 # Labute's normal form at an odd prime with `q = p`

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
+import TauCeti.Data.Fin.DistinctPairs
 import TauCeti.LinearAlgebra.Matrix.Dual
 import TauCeti.LinearAlgebra.Matrix.Gram
 
@@ -233,67 +234,16 @@ private lemma typeDRawRootEquiv_apply (r : TypeDRawIndex n) :
 
 /-! ### The Bourbaki order -/
 
-private lemma one_le_val_sub {n : ℕ} (hn : 1 ≤ n) (p : TypeDPair n) :
-    1 ≤ ((p.val.2 - p.val.1 : Fin n) : ℕ) := by
-  let _ : NeZero n := ⟨by omega⟩
-  have h : (p.val.2 - p.val.1 : Fin n) ≠ 0 := fun h =>
-    p.property (sub_eq_zero.mp h).symm
-  have : ((p.val.2 - p.val.1 : Fin n) : ℕ) ≠ 0 := by
-    simpa [Fin.val_eq_zero_iff] using h
-  omega
-
-private def typeDDifference (hn : 1 ≤ n) (p : TypeDPair n) : Fin (n - 1) :=
-  ⟨((p.val.2 - p.val.1 : Fin n) : ℕ) - 1, by
-    have h₁ := one_le_val_sub hn p
-    have h₂ := (p.val.2 - p.val.1 : Fin n).isLt
-    omega⟩
-
-private def typeDSucc (i : Fin (n - 1)) : Fin n := ⟨(i : ℕ) + 1, by omega⟩
-
-private lemma typeDSucc_ne_zero (hn : 1 ≤ n) (i : Fin (n - 1)) :
-    typeDSucc i ≠ (⟨0, by omega⟩ : Fin n) := by
-  let _ : NeZero n := ⟨by omega⟩
-  intro h
-  have := congrArg Fin.val h
-  simp [typeDSucc] at this
-
-/-- Enumerate ordered distinct pairs by their nonzero cyclic difference first, then their source. -/
-private def typeDPairEquiv (n : ℕ) (hn : 1 ≤ n) : TypeDPair n ≃ Fin (n - 1) × Fin n := by
-  letI : NeZero n := ⟨by omega⟩
-  refine ⟨(fun p => (typeDDifference hn p, p.val.1)),
-    (fun q => ⟨(q.2, q.2 + typeDSucc q.1), by
-      intro h
-      refine typeDSucc_ne_zero hn q.1 ?_
-      have h0 : q.2 + 0 = q.2 + typeDSucc q.1 := by simpa using h
-      exact (add_left_cancel h0).symm⟩), ?_, ?_⟩
-  · intro p
-    have h₁ := one_le_val_sub hn p
-    have hx : typeDSucc (typeDDifference hn p) = p.val.2 - p.val.1 :=
-      Fin.ext (by simp [typeDSucc, typeDDifference]; omega)
-    refine Subtype.ext (Prod.ext rfl ?_)
-    -- the inverse sends `q` to `(q.2, q.2 + typeDSucc q.1)`, so the goal left by `Prod.ext` is
-    -- the displayed equation on second components only after unfolding that anonymous constructor
-    change p.val.1 + typeDSucc (typeDDifference hn p) = p.val.2
-    rw [hx]
-    abel
-  · intro q
-    refine Prod.ext (Fin.ext ?_) rfl
-    -- likewise `typeDDifference` of the constructed pair is by definition the displayed
-    -- truncated subtraction of `Fin` values
-    change ((q.2 + typeDSucc q.1 - q.2 : Fin n) : ℕ) - 1 = (q.1 : ℕ)
-    simp [typeDSucc]
-
-private def typeDPairFinEquiv (n : ℕ) (hn : 1 ≤ n) : TypeDPair n ≃ Fin (n * (n - 1)) :=
-  (typeDPairEquiv n hn).trans (finProdFinEquiv.trans (finCongr (Nat.mul_comm (n - 1) n)))
-
-private lemma typeDDifference_val (hn : 1 ≤ n) (p : TypeDPair n) :
-    (typeDDifference hn p : ℕ) = ((p.val.2 - p.val.1 : Fin n) : ℕ) - 1 := rfl
+/-- Enumerate ordered distinct pairs by their nonzero cyclic difference first, then their source
+(`finDistinctPairsEquiv`). -/
+private def typeDPairFinEquiv (n : ℕ) : TypeDPair n ≃ Fin (n * (n - 1)) :=
+  (finDistinctPairsEquiv n).trans (finProdFinEquiv.trans (finCongr (Nat.mul_comm (n - 1) n)))
 
 /-- The numerical value of the pair enumeration: the source index runs fastest, the cyclic
 difference of the pair slowest. -/
-private lemma typeDPairFinEquiv_val (hn : 1 ≤ n) (p : TypeDPair n) :
-    (typeDPairFinEquiv n hn p : ℕ) = (p.val.1 : ℕ) + n * (typeDDifference hn p : ℕ) := by
-  simp [typeDPairFinEquiv, typeDPairEquiv, finProdFinEquiv]
+private lemma typeDPairFinEquiv_val (p : TypeDPair n) :
+    (typeDPairFinEquiv n p : ℕ) = (p.val.1 : ℕ) + n * (((p.val.2 - p.val.1 : Fin n) : ℕ) - 1) := by
+  simp [typeDPairFinEquiv, finProdFinEquiv, finDistinctPairsEquiv_apply_fst_val]
 
 private def typeDChainEndIndex (n : ℕ) (hn : 2 ≤ n) : Fin (n * (n - 1)) :=
   ⟨n - 1, lt_mul_of_one_lt_left (by omega) hn⟩
@@ -304,7 +254,7 @@ private def typeDForkOldIndex (n : ℕ) (hn : 2 ≤ n) : Fin (n * (n - 1)) :=
 /-- The pair enumeration with the fork root moved directly after the `n - 1` chain roots. -/
 private def typeDBourbakiPairEquiv (n : ℕ) (hn : 2 ≤ n) :
     TypeDPair n ≃ Fin (n * (n - 1)) :=
-  (typeDPairFinEquiv n (by omega)).trans
+  (typeDPairFinEquiv n).trans
     (Equiv.swap (typeDChainEndIndex n hn) (typeDForkOldIndex n hn))
 
 /-- The explicit signed-pair enumeration of all `2 * n * (n - 1)` roots, with positive roots
@@ -348,22 +298,22 @@ private def typeDSimpleRawIndex (n : ℕ) (hn : 4 ≤ n) (i : Fin n) : TypeDRawI
 
 private lemma typeDPairFinEquiv_chain (hn : 2 ≤ n) (i : Fin n)
     (hi : (i : ℕ) + 1 < n) :
-    typeDPairFinEquiv n (by omega)
+    typeDPairFinEquiv n
         ⟨(i, ⟨(i : ℕ) + 1, hi⟩), by simp [Fin.ext_iff]⟩ =
       ⟨i, lt_of_lt_of_le i.isLt (Nat.le_mul_of_pos_right n (by omega))⟩ := by
   apply Fin.ext
-  rw [typeDPairFinEquiv_val, typeDDifference_val]
+  rw [typeDPairFinEquiv_val]
   have hdiff : (((⟨(i : ℕ) + 1, hi⟩ : Fin n) - i : Fin n) : ℕ) = 1 := by
     have heq : n - (i : ℕ) + ((i : ℕ) + 1) = n + 1 := by omega
     simp only [Fin.sub_def, heq, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega : 1 < n)]
   simp [hdiff]
 
 private lemma typeDPairFinEquiv_fork (hn : 2 ≤ n) :
-    typeDPairFinEquiv n (by omega)
+    typeDPairFinEquiv n
         ⟨(⟨n - 1, by omega⟩, ⟨n - 2, by omega⟩), by simp [Fin.ext_iff]; omega⟩ =
       typeDForkOldIndex n hn := by
   apply Fin.ext
-  rw [typeDPairFinEquiv_val, typeDDifference_val]
+  rw [typeDPairFinEquiv_val]
   have hdiff : (((⟨n - 2, by omega⟩ : Fin n) - ⟨n - 1, by omega⟩ : Fin n) : ℕ) = n - 1 := by
     have heq : n - (n - 1) + (n - 2) = n - 1 := by omega
     simp only [Fin.sub_def, heq, Nat.mod_eq_of_lt (by omega : n - 1 < n)]

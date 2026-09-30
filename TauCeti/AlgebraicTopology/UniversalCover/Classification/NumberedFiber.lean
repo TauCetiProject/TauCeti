@@ -24,11 +24,10 @@ rigidification has its own notion of isomorphism:
 * a **bare** cover `TauCeti.ConnectedCover x n` carries neither, and its isomorphisms are all
   isomorphisms of covers.
 
-All three are built on `TauCeti.ConnectedCoveringSpace X` and additionally carry
-path-connectedness of the total space. The degree is a parameter rather than something recovered
-afterwards: it is the cardinality of the fibre over `x`, recorded by the numbering itself or by
-the existence of one. Isomorphism is an equivalence relation in each case, and the three types of
-isomorphism classes are the quotients
+All three are built on `TauCeti.ConnectedCoveringSpace X`. The degree is a parameter rather than
+something recovered afterwards: it is the cardinality of the fibre over `x`, recorded by the
+numbering itself or by the existence of one. Isomorphism is an equivalence relation in each case,
+and the three types of isomorphism classes are the quotients
 `TauCeti.ConnectedFiberNumberedCoverClass`, `TauCeti.ConnectedPointedCoverClass` and
 `TauCeti.ConnectedCoverClass`.
 
@@ -112,8 +111,6 @@ structure ConnectedFiberNumberedCover (x : X) (n : ℕ) where
   cover : ConnectedCoveringSpace X
   /-- The numbering of the fibre over the basepoint. -/
   ν : ⇑cover.proj ⁻¹' {x} ≃ Fin n
-  /-- The total space is path connected. -/
-  pathConnected : PathConnectedSpace (cover : TopCat)
 
 /-- A connected covering space of `X` of degree `n` with one chosen point of its fibre over `x`.
 Only that point is rigidified: the relabellings of the fibre fixing it survive. -/
@@ -124,8 +121,6 @@ structure ConnectedPointedCover (x : X) (n : ℕ) where
   e : ⇑cover.proj ⁻¹' {x}
   /-- The fibre over the basepoint has `n` points. -/
   nonempty_equiv_fin : Nonempty (⇑cover.proj ⁻¹' {x} ≃ Fin n)
-  /-- The total space is path connected. -/
-  pathConnected : PathConnectedSpace (cover : TopCat)
 
 /-- A connected covering space of `X` whose fibre over `x` has `n` points, with no further
 rigidification. -/
@@ -134,8 +129,6 @@ structure ConnectedCover (x : X) (n : ℕ) where
   cover : ConnectedCoveringSpace X
   /-- The fibre over the basepoint has `n` points. -/
   nonempty_equiv_fin : Nonempty (⇑cover.proj ⁻¹' {x} ≃ Fin n)
-  /-- The total space is path connected. -/
-  pathConnected : PathConnectedSpace (cover : TopCat)
 
 variable {x : X} {n : ℕ}
 
@@ -374,7 +367,6 @@ def ConnectedFiberNumberedCover.forgetNumbering (c : ConnectedFiberNumberedCover
     ConnectedCover x n where
   cover := c.cover
   nonempty_equiv_fin := ⟨c.ν⟩
-  pathConnected := c.pathConnected
 
 /-- Keeping only the point labelled `i`. -/
 -- The type of `e` depends on the projected cover, so this definition must expose that projection.
@@ -384,14 +376,12 @@ def ConnectedFiberNumberedCover.forgetNumbering (c : ConnectedFiberNumberedCover
   cover := c.cover
   e := c.ν.symm i
   nonempty_equiv_fin := ⟨c.ν⟩
-  pathConnected := c.pathConnected
 
 /-- Forgetting the chosen point. -/
 def ConnectedPointedCover.forgetPoint (c : ConnectedPointedCover x n) :
     ConnectedCover x n where
   cover := c.cover
   nonempty_equiv_fin := c.nonempty_equiv_fin
-  pathConnected := c.pathConnected
 
 @[simp]
 theorem ConnectedFiberNumberedCover.forgetNumbering_cover (c : ConnectedFiberNumberedCover x n) :
@@ -418,7 +408,6 @@ noncomputable def ConnectedCover.numbering (c : ConnectedCover x n) :
     ConnectedFiberNumberedCover x n where
   cover := c.cover
   ν := c.nonempty_equiv_fin.some
-  pathConnected := c.pathConnected
 
 /-- Chooses a numbering of the fibre of a pointed cover. Marking the label of the chosen point
 recovers the pointed cover. -/
@@ -426,7 +415,6 @@ recovers the pointed cover. -/
     ConnectedFiberNumberedCover x n where
   cover := c.cover
   ν := c.nonempty_equiv_fin.some
-  pathConnected := c.pathConnected
 
 @[simp]
 theorem ConnectedCover.numbering_cover (c : ConnectedCover x n) : c.numbering.cover = c.cover :=
@@ -451,8 +439,8 @@ theorem ConnectedCover.forgetNumbering_numbering (c : ConnectedCover x n) :
 @[simp]
 theorem ConnectedPointedCover.markLabel_numbering (c : ConnectedPointedCover x n) :
     c.numbering.markLabel (c.numbering.ν c.e) = c := by
-  obtain ⟨cover, e, h, hp⟩ := c
-  exact congrArg (fun e' => ConnectedPointedCover.mk cover e' h hp) (symm_apply_apply _ e)
+  obtain ⟨cover, e, h⟩ := c
+  exact congrArg (fun e' => ConnectedPointedCover.mk cover e' h) (symm_apply_apply _ e)
 
 /-- Forgetting the numbering, on isomorphism classes. -/
 def ConnectedFiberNumberedCoverClass.forgetNumbering :
@@ -517,7 +505,7 @@ namespace ConnectedFiberNumberedCover
 
 /-- The symmetric group on the labels acts on numberings by relabelling: `τ • ν = ν.trans τ`. -/
 instance : SMul (Perm (Fin n)) (ConnectedFiberNumberedCover x n) where
-  smul τ c := ⟨c.cover, c.ν.trans τ, c.pathConnected⟩
+  smul τ c := ⟨c.cover, c.ν.trans τ⟩
 
 @[simp]
 theorem smul_cover (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCover x n) :
@@ -542,7 +530,7 @@ theorem forgetNumbering_smul (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCove
 theorem markLabel_smul (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCover x n) (i : Fin n) :
     (τ • c).markLabel (τ i) = c.markLabel i := by
   have h : (τ • c).ν.symm (τ i) = c.ν.symm i := by simp
-  exact congrArg (fun e => ConnectedPointedCover.mk c.cover e ⟨c.ν⟩ c.pathConnected) h
+  exact congrArg (fun e => ConnectedPointedCover.mk c.cover e ⟨c.ν⟩) h
 
 /-- An isomorphism of the underlying covers makes two numbered covers isomorphic after the
 relabelling it induces on the fibre. -/
@@ -629,16 +617,10 @@ the numbered classes. -/
 noncomputable def orbitRelQuotientEquiv :
     MulAction.orbitRel.Quotient (Perm (Fin n)) (ConnectedFiberNumberedCoverClass x n) ≃
       ConnectedCoverClass x n :=
-  Equiv.ofBijective
-    (Quotient.lift forgetNumbering fun _ _ ⟨τ, hτ⟩ =>
-      (forgetNumbering_eq_forgetNumbering_iff.2 ⟨τ, hτ⟩).symm)
-    ⟨fun C C' => Quotient.inductionOn₂ C C' fun _ _ h =>
-        Quotient.sound (by
-          obtain ⟨τ, hτ⟩ := forgetNumbering_eq_forgetNumbering_iff.1 h
-          exact ⟨τ⁻¹, inv_smul_eq_iff.2 hτ.symm⟩),
-      fun C => by
-        obtain ⟨N, h⟩ := forgetNumbering_surjective C
-        exact ⟨Quotient.mk _ N, h⟩⟩
+  (Quotient.congrRight fun _ _ => by
+    rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Setoid.ker_def, eq_comm,
+      forgetNumbering_eq_forgetNumbering_iff]).trans
+    (Setoid.quotientKerEquivOfSurjective _ forgetNumbering_surjective)
 
 @[simp]
 theorem orbitRelQuotientEquiv_mk (C : ConnectedFiberNumberedCoverClass x n) :
@@ -650,18 +632,14 @@ diagonal relabelling action on numbered classes with a marked label. -/
 noncomputable def markedOrbitRelQuotientEquiv :
     MulAction.orbitRel.Quotient (Perm (Fin n)) (ConnectedFiberNumberedCoverClass x n × Fin n) ≃
       ConnectedPointedCoverClass x n :=
-  Equiv.ofBijective
-    (Quotient.lift (fun Ci => Ci.1.markLabel Ci.2) fun _ _ ⟨τ, hτ⟩ =>
-      (markLabel_eq_markLabel_iff.2 ⟨τ, congrArg Prod.fst hτ, congrArg Prod.snd hτ⟩).symm)
-    ⟨fun C C' => Quotient.inductionOn₂ C C' fun _ _ h =>
-        Quotient.sound (by
-          obtain ⟨τ, hτ, hτi⟩ := markLabel_eq_markLabel_iff.1 h
-          refine ⟨τ⁻¹, Prod.ext ?_ ?_⟩
-          · exact inv_smul_eq_iff.2 hτ.symm
-          · simp [← hτi]),
-      fun C => by
-        obtain ⟨N, i, h⟩ := C.exists_markLabel_eq
-        exact ⟨Quotient.mk _ (N, i), h⟩⟩
+  (Quotient.congrRight fun ⟨C, i⟩ ⟨C', j⟩ => by
+    rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Setoid.ker_def]
+    dsimp only
+    rw [eq_comm, markLabel_eq_markLabel_iff]
+    simp [Prod.ext_iff, Perm.smul_def]).trans
+    (Setoid.quotientKerEquivOfSurjective (fun Ci => Ci.1.markLabel Ci.2) fun C =>
+      let ⟨N, i, h⟩ := C.exists_markLabel_eq
+      ⟨(N, i), h⟩)
 
 @[simp]
 theorem markedOrbitRelQuotientEquiv_mk (C : ConnectedFiberNumberedCoverClass x n) (i : Fin n) :
@@ -700,7 +678,7 @@ theorem ConnectedPointedCoverClass.forgetPoint_surjective (hn : n ≠ 0) :
   have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
   obtain ⟨i⟩ := this
   let e := ν.symm i
-  exact ⟨mk ⟨c.cover, e, c.nonempty_equiv_fin, c.pathConnected⟩, rfl⟩
+  exact ⟨mk ⟨c.cover, e, c.nonempty_equiv_fin⟩, rfl⟩
 
 /-! ### Numbered monodromy -/
 

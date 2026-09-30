@@ -72,6 +72,8 @@ with it. This is the bonding operation of a levelwise comparison along the lower
   group is continuous exactly when its composites with the quotient maps `G → G ⧸ λ_k` are.
 * `TauCeti.IsProP.hasAntitoneBasis_nhds_one_pLowerCentralSeries`: in a topologically finitely
   generated pro-`p` group the lower `p`-series is a neighbourhood basis of `1`.
+* `TauCeti.IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries`: in a pro-`p` group, membership
+  in a closed subgroup is detected on the quotients `G ⧸ λ_k`.
 
 ## References
 
@@ -312,6 +314,22 @@ theorem IsProP.hasAntitoneBasis_nhds_one_pLowerCentralSeries (hG : IsProP p G)
     (𝓝 (1 : G)).HasAntitoneBasis fun k ↦ (pLowerCentralSeries p G k : Set G) :=
   hasAntitoneBasis_nhds_one_of_iInf_eq_bot pLowerCentralSeries_antitone
     (hfg.isOpen_pLowerCentralSeries hp) (hG.iInf_pLowerCentralSeries_eq_bot hp)
+
+/-- **Membership in a closed subgroup is detected on the lower `p`-series.** In a compact pro-`p`
+group, an element whose class modulo every `λ_k` is the class of an element of the closed subgroup
+`H` lies in `H`: it lies in `H ⊔ U` for every open normal subgroup `U`, since `U` contains a term
+of the series, and `H` is the infimum of those. No finite generation is needed. -/
+theorem IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries (hG : IsProP p G) (hp : p.Prime)
+    {H : Subgroup G} (hH : IsClosed (H : Set G)) {g : G}
+    (h : ∀ k, (g : G ⧸ pLowerCentralSeries p G k) ∈
+      H.map (QuotientGroup.mk' (pLowerCentralSeries p G k))) :
+    g ∈ H := by
+  rw [H.eq_iInf_sup_openNormalSubgroup hH, Subgroup.mem_iInf]
+  intro U
+  obtain ⟨k, hk⟩ := hG.exists_pLowerCentralSeries_le hp U
+  obtain ⟨x, hxH, hx⟩ := Subgroup.mem_map.mp (h k)
+  have := Subgroup.mul_mem_sup hxH (hk (QuotientGroup.eq.mp hx))
+  rwa [mul_inv_cancel_left] at this
 
 /-- A map into a pro-`p` group is continuous exactly when all of its composites with the quotient
 maps `G → G ⧸ λ_k` are. No finite generation is needed. -/
