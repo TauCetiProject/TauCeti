@@ -229,11 +229,11 @@ private theorem mem_ball_of_norm_mul_sub_lt {p v z : ℂ} {r : ℝ}
   exact lt_of_mul_lt_mul_right hz (norm_nonneg v)
 
 /-- Two points of `ball p r` on the same open side of a line through `p` lie in the same
-component of the complement of a curve that agrees with that line in `ball p r`: the open half-ball
-between them is convex and misses the curve. -/
+component of the complement of a curve contained in that line within `ball p r`: the open
+half-ball between them is convex and misses the curve. -/
 theorem mem_connectedComponentIn_of_locally_eq_line_of_im_pos
     {C : Set ℂ} {p v x y : ℂ} {r : ℝ}
-    (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) (hx : x ∈ ball p r)
+    (hline : ∀ z ∈ ball p r, z ∈ C → (v * (z - p)).im = 0) (hx : x ∈ ball p r)
     (hy : y ∈ ball p r) (hx' : 0 < (v * (x - p)).im) (hy' : 0 < (v * (y - p)).im) :
     y ∈ connectedComponentIn Cᶜ x := by
   have hside : {z : ℂ | 0 < (v * (z - p)).im} = {z | (v * p).im < (v * z).im} := by
@@ -244,7 +244,7 @@ theorem mem_connectedComponentIn_of_locally_eq_line_of_im_pos
     exact (convex_ball p r).inter
       (convex_halfSpace_gt (Complex.imLm.comp (LinearMap.mulLeft ℝ v)).isLinear _)
   exact hS.isPreconnected.subset_connectedComponentIn ⟨hx, hx'⟩
-    (fun z hz hzC => hz.2.ne' ((hline z hz.1).mp hzC)) ⟨hy, hy'⟩
+    (fun z hz hzC => hz.2.ne' (hline z hz.1 hzC)) ⟨hy, hy'⟩
 
 /-- For `0 < s < r * ‖v‖`, the point `p + I * s / v` lies in `ball p r`, on the positive side of
 the line `{z | (v * (z - p)).im = 0}`. -/
@@ -366,10 +366,11 @@ theorem IsJordanCurve.notMem_connectedComponentIn_of_locally_eq_line {C : Set �
   -- `a` and `b` are joined off `C` to the model points `p ± I * s / v` on their sides
   obtain ⟨ha₀b, ha₀⟩ := add_I_mul_div_mem_ball hv p hs hsr
   obtain ⟨hb₀b, hb₀⟩ := sub_I_mul_div_mem_ball hv p hs hsr
-  have haa₀ := mem_connectedComponentIn_of_locally_eq_line_of_im_pos hline ha ha₀b ha' ha₀
-  have hline' : ∀ z ∈ ball p r, z ∈ C ↔ (-v * (z - p)).im = 0 := fun z hz => by
+  have haa₀ := mem_connectedComponentIn_of_locally_eq_line_of_im_pos
+    (fun z hz => (hline z hz).mp) ha ha₀b ha' ha₀
+  have hline' : ∀ z ∈ ball p r, z ∈ C → (-v * (z - p)).im = 0 := fun z hz hCz => by
     rw [neg_mul, neg_im, neg_eq_zero]
-    exact hline z hz
+    exact (hline z hz).mp hCz
   have hbb₀ := mem_connectedComponentIn_of_locally_eq_line_of_im_pos hline' hb hb₀b
     (by rw [neg_mul, neg_im]; linarith) (by rw [neg_mul, neg_im]; linarith)
   intro hab
