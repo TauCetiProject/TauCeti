@@ -39,6 +39,10 @@ closes up to a crossing-free circle.
 
 * `TauCeti.BraidWord.edgePair_closure_outgoingSlot`: the arcs of the closure join each crossing
   to the next crossing along the same strand position.
+* `TauCeti.BraidWord.edgePair_closure_incomingSlot`: the same arcs, read from the crossing they
+  enter.
+* `TauCeti.BraidWord.edgePair_closure_crossingSlotEquiv_zero` and its siblings for the slots `1`,
+  `2` and `3`: the arc at each slot of a crossing of the closure.
 * `TauCeti.BraidWord.crossingSign_closure`: the sign of each crossing is the sign of its letter.
 * `TauCeti.BraidWord.writhe_closure`: the writhe of the closure is the exponent sum of the braid.
 * `TauCeti.BraidWord.closure_nil`: the closure of the empty word on `n` strands is the
@@ -102,17 +106,17 @@ involving `p` are fixed. -/
 def nextCrossing (p : Fin n) : Equiv.Perm (Fin w.length) :=
   (w.crossingsAt p).formPerm
 
+/-- The successor along a strand position is the cyclic permutation of the crossings involving it,
+listed from the bottom. -/
+theorem nextCrossing_def (p : Fin n) : w.nextCrossing p = (w.crossingsAt p).formPerm :=
+  (rfl)
+
 /-- Along a strand position, each crossing involving it is followed by the next one in the
 bottom-to-top list `TauCeti.BraidWord.crossingsAt`, and the topmost by the lowest. -/
 theorem nextCrossing_apply_getElem (p : Fin n) (k : ℕ) (hk : k < (w.crossingsAt p).length) :
     w.nextCrossing p (w.crossingsAt p)[k] =
       (w.crossingsAt p)[(k + 1) % (w.crossingsAt p).length]'(Nat.mod_lt _ (by omega)) :=
   List.formPerm_apply_getElem _ (w.sortedLT_crossingsAt p).nodup k hk
-
-/-- A crossing not involving a strand position is fixed by the successor along it. -/
-theorem nextCrossing_apply_of_notMem {p : Fin n} {j : Fin w.length}
-    (hj : j ∉ w.crossingsAt p) : w.nextCrossing p j = j :=
-  List.formPerm_apply_of_notMem hj
 
 /-- The next crossing along a position involves that position exactly when the current one
 does. -/
@@ -311,6 +315,53 @@ theorem edgePair_closure_outgoingSlot {j : Fin w.length} {p : Fin n}
   simp only [crossing_closure]
   simp only [closure, PerfectMatching.congr_val_apply, Equiv.symm_apply_apply, arcMatching_apply,
     arc, w.isOutgoing_outgoingSlot j p, ↓reduceIte, w.slotStrand_outgoingSlot hj]
+
+/-- The arc entering a crossing from below on the position `p` leaves the previous crossing along
+`p` upwards. -/
+theorem edgePair_closure_incomingSlot {j : Fin w.length} {p : Fin n}
+    (hj : j ∈ w.crossingsAt p) :
+    w.closure.edgePair.val (w.closure.crossing j (w.incomingSlot j p)) =
+      w.closure.crossing ((w.nextCrossing p).symm j)
+        (w.outgoingSlot ((w.nextCrossing p).symm j) p) := by
+  simp only [crossing_closure]
+  simp only [closure, PerfectMatching.congr_val_apply, Equiv.symm_apply_apply, arcMatching_apply,
+    arc, w.not_isOutgoing_incomingSlot j p, ↓reduceIte, w.slotStrand_incomingSlot hj]
+
+/-- The arc at slot `0` of a crossing, entering it from below on the upper position of its letter,
+leaves the previous crossing along that position upwards. -/
+@[simp]
+theorem edgePair_closure_crossingSlotEquiv_zero (j : Fin w.length) :
+    w.closure.edgePair.val (crossingSlotEquiv w.length (j, 0)) =
+      crossingSlotEquiv w.length ((w.nextCrossing (strandSucc w[j.1].1)).symm j,
+        w.outgoingSlot ((w.nextCrossing (strandSucc w[j.1].1)).symm j) (strandSucc w[j.1].1)) := by
+  simpa [crossing_closure] using w.edgePair_closure_incomingSlot (w.mem_crossingsAt_strandSucc j)
+
+/-- The arc at slot `1` of a crossing, leaving it upwards on the upper position of its letter,
+enters the next crossing along that position from below. -/
+@[simp]
+theorem edgePair_closure_crossingSlotEquiv_one (j : Fin w.length) :
+    w.closure.edgePair.val (crossingSlotEquiv w.length (j, 1)) =
+      crossingSlotEquiv w.length (w.nextCrossing (strandSucc w[j.1].1) j,
+        w.incomingSlot (w.nextCrossing (strandSucc w[j.1].1) j) (strandSucc w[j.1].1)) := by
+  simpa [crossing_closure] using w.edgePair_closure_outgoingSlot (w.mem_crossingsAt_strandSucc j)
+
+/-- The arc at slot `2` of a crossing, leaving it upwards on the lower position of its letter,
+enters the next crossing along that position from below. -/
+@[simp]
+theorem edgePair_closure_crossingSlotEquiv_two (j : Fin w.length) :
+    w.closure.edgePair.val (crossingSlotEquiv w.length (j, 2)) =
+      crossingSlotEquiv w.length (w.nextCrossing (strand w[j.1].1) j,
+        w.incomingSlot (w.nextCrossing (strand w[j.1].1) j) (strand w[j.1].1)) := by
+  simpa [crossing_closure] using w.edgePair_closure_outgoingSlot (w.mem_crossingsAt_strand j)
+
+/-- The arc at slot `3` of a crossing, entering it from below on the lower position of its letter,
+leaves the previous crossing along that position upwards. -/
+@[simp]
+theorem edgePair_closure_crossingSlotEquiv_three (j : Fin w.length) :
+    w.closure.edgePair.val (crossingSlotEquiv w.length (j, 3)) =
+      crossingSlotEquiv w.length ((w.nextCrossing (strand w[j.1].1)).symm j,
+        w.outgoingSlot ((w.nextCrossing (strand w[j.1].1)).symm j) (strand w[j.1].1)) := by
+  simpa [crossing_closure] using w.edgePair_closure_incomingSlot (w.mem_crossingsAt_strand j)
 
 /-- The strand entering the crossing of a letter on the lower position of the letter is over
 exactly for a positive letter. -/

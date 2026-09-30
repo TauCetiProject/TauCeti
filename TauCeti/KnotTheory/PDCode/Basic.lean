@@ -836,7 +836,7 @@ theorem mirror_eq_self_of_zero_crossings (D : OrientedPDCode 0) :
 
 This concrete code is a semantic witness that the presentation permits a genuine positive
 crossing, not only crossing-free links. -/
-def positiveKink : OrientedPDCode 1 where
+@[expose] def positiveKink : OrientedPDCode 1 where
   halfEdge := Equiv.refl _
   edgePair := PerfectMatching.mk (Equiv.swap 0 1 * Equiv.swap 2 3)
     (by intro h; fin_cases h <;> simp [Equiv.swap_apply_def])

@@ -69,11 +69,8 @@ theorem toBraid_append (w w' : BraidWord n) : toBraid (w ++ w') = toBraid w * to
 /-- Reversing a word and negating all its signs represents the inverse braid. -/
 theorem toBraid_reverse_map_neg (w : BraidWord n) :
     toBraid (w.reverse.map fun x ↦ (x.1, -x.2)) = (toBraid w)⁻¹ := by
-  induction w with
-  | nil => simp
-  | cons x w ih =>
-    simp only [List.reverse_cons, List.map_append, toBraid_append, ih, List.map_cons,
-      List.map_nil, toBraid_cons, Units.val_neg, zpow_neg, toBraid_nil, mul_one, mul_inv_rev]
+  simp only [toBraid, List.prod_inv_reverse, List.map_reverse, List.map_map, Function.comp_def,
+    Units.val_neg, zpow_neg]
 
 /-- Every braid is represented by a braid word. -/
 theorem toBraid_surjective : Function.Surjective (toBraid (n := n)) := by
