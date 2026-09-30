@@ -13,11 +13,12 @@ import Mathlib.LinearAlgebra.Matrix.Notation
 # The dilations in `SL(2, ℝ)`
 
 The diagonal matrices `dilation s = !![exp (s / 2), 0; 0, exp (-(s / 2))]` form a one-parameter
-subgroup of `SL(2, ℝ)` (`dilation_zero`, `dilation_add`, `dilation_inv`), the diagonal torus of
-`SL(2, ℝ)` parametrised by the logarithm of the eigenvalue ratio. Acting on the upper half-plane
-by Möbius transformations they are the dilations `z ↦ exp s * z`, which is why the parameter is
-`s` rather than the eigenvalue `exp (s / 2)`: `dilation s` moves a point of the imaginary axis by
-hyperbolic distance `s`.
+subgroup of `SL(2, ℝ)` (`dilation_zero`, `dilation_add`, `dilation_inv`): the positive component
+of the diagonal subgroup of `SL(2, ℝ)`, parametrised by the logarithm of the eigenvalue ratio.
+Acting on the upper half-plane by Möbius transformations they are the dilations
+`z ↦ exp s * z`, which is why the parameter is `s` rather than the eigenvalue `exp (s / 2)`:
+`dilation s` moves a point of the imaginary axis upward by the signed displacement `s`, that is,
+by hyperbolic distance `|s|`, upward for `s > 0` and downward for `s < 0`.
 
 ## Main declarations
 
