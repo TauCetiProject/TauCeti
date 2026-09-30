@@ -39,8 +39,8 @@ normalization in which ray class L-functions are studied.
   character is induced from a primitive character of its conductor.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_inv`,
   `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_zpow_dvd`, and
-  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_mul_dvd_lcm`: the conductor and the group
-  operations.
+  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_mul_dvd_lcm_conductor`: the
+  conductor and the group operations.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.isPrimitive_rayClassCharacterAt_conductor`: a
   finite-order Hecke character is the pullback of a primitive ray class character of its
   conductor, namely its representative there.
@@ -150,13 +150,6 @@ theorem conductor_inv (η : RayClassCharacter 𝔪) : η⁻¹.conductor = η.con
     exact inv_mem (HeckeCharacter.mem_range_ofRayClassCharacter_conductor _)
   exact Modulus.dvd_antisymm (key η) (inv_inv η ▸ key η⁻¹)
 
-/-- The conductor of a power of a ray class character divides its conductor. -/
-theorem conductor_pow_dvd (η : RayClassCharacter 𝔪) (n : ℕ) :
-    (η ^ n).conductor ∣ η.conductor := by
-  rw [conductor, HeckeCharacter.conductor_dvd_iff,
-    map_pow (HeckeCharacter.ofRayClassCharacter 𝔪) η n]
-  exact pow_mem (HeckeCharacter.mem_range_ofRayClassCharacter_conductor _) n
-
 /-- The conductor of an integer power of a ray class character divides its conductor. -/
 theorem conductor_zpow_dvd (η : RayClassCharacter 𝔪) (n : ℤ) :
     (η ^ n).conductor ∣ η.conductor := by
@@ -164,9 +157,14 @@ theorem conductor_zpow_dvd (η : RayClassCharacter 𝔪) (n : ℤ) :
     map_zpow (HeckeCharacter.ofRayClassCharacter 𝔪) η n]
   exact zpow_mem (HeckeCharacter.mem_range_ofRayClassCharacter_conductor _) n
 
+/-- The conductor of a power of a ray class character divides its conductor. -/
+theorem conductor_pow_dvd (η : RayClassCharacter 𝔪) (n : ℕ) :
+    (η ^ n).conductor ∣ η.conductor := by
+  simpa only [zpow_natCast η n] using conductor_zpow_dvd η n
+
 /-- The conductor of a product of ray class characters divides the least common multiple of their
 conductors. -/
-theorem conductor_mul_dvd_lcm (η ψ : RayClassCharacter 𝔪) :
+theorem conductor_mul_dvd_lcm_conductor (η ψ : RayClassCharacter 𝔪) :
     (η * ψ).conductor ∣ η.conductor.lcm ψ.conductor := by
   rw [conductor, HeckeCharacter.conductor_dvd_iff, map_mul]
   exact mul_mem

@@ -36,8 +36,8 @@ this one in `TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Conducto
   comes from a ray class character of `𝔪` exactly when its conductor divides `𝔪`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.conductor_inv`,
   `TauCeti.GlobalNumberFields.HeckeCharacter.conductor_zpow_dvd`, and
-  `TauCeti.GlobalNumberFields.HeckeCharacter.conductor_mul_dvd_lcm`: the conductor and the group
-  operations.
+  `TauCeti.GlobalNumberFields.HeckeCharacter.conductor_mul_dvd_lcm_conductor`: the conductor and the
+  group operations.
 
 ## References
 
@@ -121,19 +121,19 @@ theorem conductor_inv {χ : HeckeCharacter K} (hχ : χ⁻¹.IsFiniteOrder) :
   refine ⟨inv_mem (mem_range_ofRayClassCharacter_conductor _), fun 𝔫 h𝔫 ↦ ?_⟩
   exact (conductor_dvd_iff _).mpr (inv_inv χ ▸ inv_mem h𝔫)
 
-/-- The conductor of a power of a finite-order Hecke character divides its conductor. -/
-theorem conductor_pow_dvd {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder) (n : ℕ) :
-    (χ ^ n).conductor hχ.pow ∣ χ.conductor hχ :=
-  (conductor_dvd_iff _).mpr (pow_mem (mem_range_ofRayClassCharacter_conductor hχ) n)
-
 /-- The conductor of an integer power of a finite-order Hecke character divides its conductor. -/
 theorem conductor_zpow_dvd {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder) (n : ℤ) :
     (χ ^ n).conductor hχ.zpow ∣ χ.conductor hχ :=
   (conductor_dvd_iff _).mpr (zpow_mem (mem_range_ofRayClassCharacter_conductor hχ) n)
 
+/-- The conductor of a power of a finite-order Hecke character divides its conductor. -/
+theorem conductor_pow_dvd {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder) (n : ℕ) :
+    (χ ^ n).conductor hχ.pow ∣ χ.conductor hχ := by
+  simpa only [zpow_natCast] using conductor_zpow_dvd hχ n
+
 /-- The conductor of a product of finite-order Hecke characters divides the least common multiple
 of their conductors. -/
-theorem conductor_mul_dvd_lcm {χ ψ : HeckeCharacter K} (hχ : χ.IsFiniteOrder)
+theorem conductor_mul_dvd_lcm_conductor {χ ψ : HeckeCharacter K} (hχ : χ.IsFiniteOrder)
     (hψ : ψ.IsFiniteOrder) :
     (χ * ψ).conductor (hχ.mul hψ) ∣ (χ.conductor hχ).lcm (ψ.conductor hψ) :=
   (conductor_dvd_iff _).mpr (mul_mem
