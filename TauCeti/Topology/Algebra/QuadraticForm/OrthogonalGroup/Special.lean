@@ -12,10 +12,11 @@ public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 /-!
 # The determinant-one subgroup of an orthogonal group
 
-For a nondegenerate quadratic form over a Hausdorff topological field of characteristic
-different from two, every orthogonal determinant is `1` or `-1`. Continuity of the
-determinant therefore makes the special orthogonal group both open and closed in the
-orthogonal group. The topology is the one induced from linear automorphisms.
+Over a Hausdorff topological commutative ring, the determinant-one subgroup is closed
+when the underlying module is finite free. For a nondegenerate quadratic form over a
+field of characteristic different from two, every orthogonal determinant is `1` or
+`-1`, so this subgroup is also open. The topology is the one induced from linear
+automorphisms.
 -/
 
 public section
@@ -28,25 +29,26 @@ open TauCeti _root_.QuadraticMap
 
 open scoped Topology
 
-variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
+section CommRing
+
+variable {K V : Type*} [CommRing K] [TopologicalSpace K] [IsTopologicalRing K]
   [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] (Q : QuadraticForm K V)
+  [Module.Free K V] [Module.Finite K V] (Q : QuadraticForm K V)
 
 /-- The determinant is continuous on the orthogonal group. -/
 @[continuity, fun_prop]
 theorem continuous_orthogonalDet : Continuous (orthogonalDet Q) := by
   have hsub : Continuous (fun g : orthogonalGroup Q => (g : V ≃ₗ[K] V)) :=
     continuous_subtype_val
-  have hmap : Continuous (fun g : orthogonalGroup Q =>
-      ((g : V ≃ₗ[K] V) : Module.End K V)) :=
-    continuous_linearEquiv_toLinearMap.comp hsub
+  obtain ⟨hmap, hmap_inv⟩ := continuous_linearEquiv_iff.mp hsub
   have h := LinearMap.continuous_det_moduleTopology.comp hmap
   have hval : Continuous (fun g : orthogonalGroup Q => (orthogonalDet Q g : K)) := by
     simpa only [Function.comp_def, orthogonalDet_apply, LinearEquiv.coe_det] using h
   apply Units.continuous_iff.mpr
   refine ⟨hval, ?_⟩
-  simpa only [Function.comp_def, map_inv, Units.val_inv_eq_inv_val] using
-    hval.comp (continuous_inv : Continuous fun g : orthogonalGroup Q => g⁻¹)
+  have h := LinearMap.continuous_det_moduleTopology.comp hmap_inv
+  simpa only [Function.comp_def, ← LinearEquiv.coe_det, map_inv,
+    orthogonalDet_apply, Units.val_inv_eq_inv_val] using h
 
 /-- The scalar determinant is continuous on the orthogonal group. -/
 @[continuity, fun_prop]
@@ -71,7 +73,11 @@ theorem isClosed_specialOrthogonalWithin :
   rw [hset]
   exact isClosed_singleton.preimage (continuous_orthogonalDet_val Q)
 
-variable [NeZero (2 : K)]
+end CommRing
+
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
+  [T2Space K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [NeZero (2 : K)] (Q : QuadraticForm K V)
 
 /-- The determinant-one subgroup is open in the orthogonal group. -/
 theorem isOpen_specialOrthogonalWithin (hQ : Q.Nondegenerate) :
