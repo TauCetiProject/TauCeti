@@ -88,22 +88,20 @@ theorem hasFDerivAt_apply_eq_of_mem_subdifferential {f' : E →L[ℝ] ℝ}
   obtain ⟨r, hr⟩ : ∃ r : ℝ, f x = r :=
     ⟨_, (EReal.coe_toReal (ne_top_of_mem_subdifferential B hy)
       (ne_bot_of_mem_subdifferential B hy)).symm⟩
-  have hline : HasDerivAt (fun t : ℝ => x + t • v) v 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const v).const_add x
   have hderiv : HasDerivAt (fun t : ℝ => (f (x + t • v)).toReal - t * B v y)
       (f' v - B v y) 0 := by
-    have := (hf.comp_hasDerivAt_of_eq (0 : ℝ) hline (by simp)).sub
+    have := (hf.hasLineDerivAt v).sub
       ((hasDerivAt_id (0 : ℝ)).mul_const (B v y))
     rw [one_mul] at this
     exact this
   have hmin : IsLocalMin (fun t : ℝ => (f (x + t • v)).toReal - t * B v y) 0 := by
     have hcont : Tendsto (fun t : ℝ => x + t • v) (𝓝 0) (𝓝 x) := by
-      simpa using hline.continuousAt.tendsto
+      exact Continuous.tendsto' (by fun_prop) 0 x (by simp)
     filter_upwards [hcont.eventually hdom] with t ht
     have hle : ((r + t * B v y : ℝ) : EReal) ≤ f (x + t • v) := by
       have := add_le_of_mem_subdifferential B hy (x + t • v)
-      rwa [hr, add_sub_cancel_left, map_smul, LinearMap.smul_apply, smul_eq_mul,
-        ← EReal.coe_add] at this
+      have hpair : B (x + t • v - x) y = t * B v y := by simp
+      simpa only [hr, hpair, EReal.coe_add, EReal.coe_mul] using this
     have := EReal.toReal_le_toReal hle (EReal.coe_ne_bot _) ht
     simp only [EReal.toReal_coe] at this
     simp only [zero_smul, add_zero, hr, EReal.toReal_coe, zero_mul, sub_zero]

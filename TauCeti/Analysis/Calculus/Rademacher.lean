@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Rademacher
 public import Mathlib.Analysis.Convex.Continuous
-public import Mathlib.Analysis.Convex.Measure
+public import TauCeti.Analysis.Convex.Measure
 
 /-!
 # Rademacher's theorem for locally Lipschitz and convex functions
@@ -84,13 +84,6 @@ theorem ae_differentiableAt_of_mem (hf : LocallyLipschitzOn s f) (hs : IsOpen s)
   exact (hx hxs).differentiableAt (hs.mem_nhds hxs)
 
 end LocallyLipschitzOn
-
-/-- Almost every point of a convex set in a finite-dimensional real normed space is an interior
-point, since the frontier of the set is null for every additive Haar measure. -/
-theorem Convex.ae_mem_interior (hs : Convex ℝ s) : ∀ᵐ x ∂μ, x ∈ s → x ∈ interior s := by
-  refine ae_iff.2 (measure_mono_null (fun x hx => ?_) (hs.addHaar_frontier μ))
-  simp only [mem_ofPred_eq, not_imp] at hx
-  exact ⟨subset_closure hx.1, hx.2⟩
 
 namespace ConvexOn
 
