@@ -7,10 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Commute
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Kernel
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Comp
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Separability
 
 /-!
@@ -93,14 +92,6 @@ theorem eq_dual_iff_comp_eq {χ : Isogeny W₂ W₁} :
 @[simp]
 theorem degree_dual : φ.dual.degree = φ.degree :=
   degree_eq_of_comp_eq_mulByIntIsogenyOfNeZero_degree φ.dual_comp
-
-/-- **A separable isogeny commutes with multiplication by `n`** over a separably closed field:
-`φ ∘ [n] = [n] ∘ φ` (Silverman III.4.8). -/
-theorem comp_mulByIntIsogenyOfNeZero {n : ℤ} (hn : n ≠ 0) :
-    φ.comp (mulByIntIsogenyOfNeZero W₁ hn) = (mulByIntIsogenyOfNeZero W₂ hn).comp φ :=
-  Hom.ofIsogeny_injective <| by
-    simp only [← Hom.ofIsogeny_comp_ofIsogeny, ofIsogeny_mulByIntIsogeny,
-      Hom.ofIsogeny_comp_zsmul, Hom.zsmul_comp, Hom.comp_id, Hom.id_comp]
 
 /-- **`φ` composed with its dual is multiplication by `deg φ`** on `W₂` (Silverman III.6.2(a)). -/
 @[simp]
