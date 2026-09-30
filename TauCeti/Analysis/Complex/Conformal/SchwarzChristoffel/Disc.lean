@@ -103,7 +103,7 @@ theorem differentiableOn_schwarzChristoffelDiscIntegrand (w : ι → Circle) (e 
     DifferentiableOn ℂ (schwarzChristoffelDiscIntegrand w e) (ball 0 1) := by
   intro ζ hζ
   exact DifferentiableWithinAt.fun_finsetProd fun i _ =>
-    ((hasDerivAt_one_sub_div (w i) ζ).differentiableAt.cpow_const
+    ((hasDerivAt_one_sub_div (w i : ℂ) ζ).differentiableAt.cpow_const
       (one_sub_div_mem_slitPlane (w i) hζ)).differentiableWithinAt
 
 /-- The disc Schwarz--Christoffel integrand has no zero in the open unit disc. -/
@@ -125,9 +125,9 @@ theorem logDeriv_schwarzChristoffelDiscIntegrand (w : ι → Circle) (e : ι →
     funext (schwarzChristoffelDiscIntegrand_def w e)
   rw [hfun, logDeriv_fun_prod]
   · refine Finset.sum_congr rfl fun i _ => ?_
-    rw [logDeriv_fun_cpow (hasDerivAt_one_sub_div (w i) ζ).differentiableAt
+    rw [logDeriv_fun_cpow (hasDerivAt_one_sub_div (w i : ℂ) ζ).differentiableAt
       (one_sub_div_mem_slitPlane (w i) hζ), logDeriv_apply,
-      (hasDerivAt_one_sub_div (w i) ζ).deriv]
+      (hasDerivAt_one_sub_div (w i : ℂ) ζ).deriv]
     have hw : (w i : ℂ) ≠ 0 := Circle.coe_ne_zero _
     have hζw : (w i : ℂ) - ζ ≠ 0 := sub_ne_zero.mpr
       (ne_of_mem_ball_of_norm_eq_one hζ (Circle.norm_coe (w i))).symm
@@ -137,7 +137,7 @@ theorem logDeriv_schwarzChristoffelDiscIntegrand (w : ι → Circle) (e : ι →
     ring
   · exact fun i _ => cpow_ne_zero_iff.mpr
       (Or.inl (slitPlane_ne_zero (one_sub_div_mem_slitPlane (w i) hζ)))
-  · exact fun i _ => (hasDerivAt_one_sub_div (w i) ζ).differentiableAt.cpow_const
+  · exact fun i _ => (hasDerivAt_one_sub_div (w i : ℂ) ζ).differentiableAt.cpow_const
       (one_sub_div_mem_slitPlane (w i) hζ)
 
 /-- The **normalized disc Schwarz--Christoffel primitive**: the integral of
