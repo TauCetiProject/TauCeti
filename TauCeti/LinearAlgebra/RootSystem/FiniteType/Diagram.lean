@@ -103,10 +103,10 @@ namespace DynkinType
 
 /-- **The diagram of type `Aₙ` is the path graph**: in Bourbaki's numbering, the nodes `i` and `j`
 are joined exactly when they are consecutive. -/
+@[simp]
 theorem diagramGraph_cartanMatrix_A (n : ℕ) :
-    (diagramGraph (DynkinType.A n).cartanMatrix : _root_.SimpleGraph (Fin n)) =
+    (diagramGraph (CartanMatrix.A n) : _root_.SimpleGraph (Fin n)) =
       _root_.SimpleGraph.pathGraph n := by
-  rw [cartanMatrix_A]
   ext i j
   rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
   simp [CartanMatrix.A, Fin.ext_iff]

@@ -270,12 +270,14 @@ end PathGraph
 private theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
     (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
       (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
-  rw [DynkinType.diagramGraph_cartanMatrix_A, SimpleGraph.pathGraph_adj]
+  rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
+    SimpleGraph.pathGraph_adj]
 
 /-- The two-colouring of `Aₙ` by the parity of the node, read from the path graph. -/
-private def aColoring (n : ℕ) : (diagramGraph (DynkinType.A n).cartanMatrix).Coloring Bool :=
-  (SimpleGraph.pathGraph.bicoloring n).comp
-    (SimpleGraph.Hom.ofLE (DynkinType.diagramGraph_cartanMatrix_A n).le)
+private def aColoring (n : ℕ) : (diagramGraph (DynkinType.A n).cartanMatrix).Coloring Bool := by
+  simpa only [DynkinType.rank_A, DynkinType.cartanMatrix_A] using
+    (SimpleGraph.pathGraph.bicoloring n).comp
+      (SimpleGraph.Hom.ofLE (DynkinType.diagramGraph_cartanMatrix_A n).le)
 
 section CommRing
 
