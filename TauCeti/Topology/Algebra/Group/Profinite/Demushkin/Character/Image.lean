@@ -8,11 +8,6 @@ module
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.CharacterImage
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.QInvariant
-import Mathlib.LinearAlgebra.Matrix.BilinearForm
-import Mathlib.LinearAlgebra.Matrix.Nondegenerate
-import TauCeti.LinearAlgebra.Quotient.PiSpanSingleton
-import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.Valuation.FinsetDvd
 
 /-!
 # The image of the canonical character of a Demushkin group
@@ -32,7 +27,8 @@ group. For
 `q = 2` the equivalence only says that `χ` is not congruent to `1` modulo `4`: the image is then a
 closed subgroup of `ℤ_2ˣ` not contained in `1 + 4ℤ_2`, and `q` does not determine which one.
 
-The equivalence is a statement about any one-relator pro-`p` group `⟨X ∣ r⟩` with `r ∈ Φ(F)` whose
+The equivalence is a statement about any one-relator pro-`p` group `⟨X ∣ r⟩` with finite `X`
+and `r ∈ Φ(F)` whose
 relator has nondegenerate degree-one form, and it is proved there
 (`TauCeti.HasPrescriptionProperty.range_le_unitsPrincipal_iff_forall_pow_dvd_exponentSum`): the
 character with the prescription property is `≡ 1 mod p^k` on the generators exactly when every
@@ -49,9 +45,9 @@ of `r` in turn compute `q`, through the abelianization `G^{ab} ≅ ℤ_p^{n-1} �
 ## Main results
 
 * `TauCeti.HasPrescriptionProperty.range_le_unitsPrincipal_iff_forall_pow_dvd_exponentSum`: for a
-  one-relator pro-`p` group whose relator has nondegenerate degree-one form, the character with the
-  prescription property lands in `1 + p^kℤ_p` exactly when `p^k` divides every exponent sum of the
-  relator.
+  one-relator pro-`p` group on finitely many generators whose relator has nondegenerate degree-one
+  form, the character with the prescription property lands in `1 + p^kℤ_p` exactly when `p^k`
+  divides every exponent sum of the relator.
 * `TauCeti.range_demushkinCharacter_le_unitsPrincipal_iff`: **the canonical character of a
   Demushkin group lands in `1 + p^kℤ_p` exactly when `p^k ∣ q(G)`.**
 * `TauCeti.range_demushkinCharacter_eq_bot_iff`: the canonical character is trivial exactly when
@@ -70,7 +66,7 @@ public section
 
 namespace TauCeti
 
-open freeProP Matrix
+open freeProP
 
 universe u v
 
@@ -103,6 +99,8 @@ For `q(G) = 0` this holds for every `k`. -/
     (MonoidHom.range_comp _ _).trans (by
       rw [MonoidHom.range_eq_top.mpr e.surjective, Subgroup.map_top])
   have hχ := (hasPrescriptionProperty_demushkinCharacter hG).comp_equiv (e := e)
+  -- The character's coercion to a monoid homomorphism is definitionally `toMonoidHom`, whose
+  -- range is the form used by `hrange` and the presentation theorem below.
   change (demushkinCharacter hG).toMonoidHom.range ≤ unitsPrincipal p k ↔
     p ^ k ∣ demushkinQ hG
   rw [← hrange, hχ.range_le_unitsPrincipal_iff_forall_pow_dvd_exponentSum hr

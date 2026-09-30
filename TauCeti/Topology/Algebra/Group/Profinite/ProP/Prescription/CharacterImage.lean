@@ -17,14 +17,14 @@ import TauCeti.RingTheory.Valuation.FinsetDvd
 /-!
 # The image of a prescribed character of a one-relator pro-`p` group
 
-For a one-relator presentation `G = ⟨X ∣ r⟩` with `r` in the Frattini subgroup and
+For a one-relator presentation `G = ⟨X ∣ r⟩` with finite `X`, `r` in the Frattini subgroup and
 nondegenerate degree-one form, a character with Labute's prescription property takes values in
 `1 + p^kℤ_p` exactly when `p^k` divides every exponent sum of `r`.
 
 ## Main result
 
 * `TauCeti.HasPrescriptionProperty.range_le_unitsPrincipal_iff_forall_pow_dvd_exponentSum`:
-  character image containment is equivalent to divisibility of every exponent sum.
+  for finite `X`, character image containment is equivalent to divisibility of every exponent sum.
 
 ## References
 
@@ -54,12 +54,12 @@ private theorem range_le_unitsPrincipal_iff_forall_of (χ : presentedProP p X {r
     (k : ℕ) :
     χ.toMonoidHom.range ≤ unitsPrincipal p k ↔
       ∀ x, (p : ℤ_[p]) ^ k ∣ ((χ.comp (presentedProP.mk p {r}) (of x) : ℤ_[p]ˣ) : ℤ_[p]) - 1 := by
-  refine ⟨fun h x ↦ mem_unitsPrincipal_iff.1 (h ⟨_, rfl⟩), ?_⟩
-  rintro h _ ⟨g, rfl⟩
-  obtain ⟨g, rfl⟩ := presentedProP.mk_surjective p {r} g
-  have := freeProP.pow_dvd_sub_of_forall_of (χ := 1) (χ' := χ.comp (presentedProP.mk p {r}))
-    (fun x ↦ by simpa [ContinuousMonoidHom.coe_one] using h x) g
-  exact mem_unitsPrincipal_iff.2 (by simpa [ContinuousMonoidHom.coe_one] using this)
+  rw [MonoidHom.range_le_iff_of_topologicalClosure_closure_eq_top
+    presentedProP.topologicalClosure_closure_range_of_eq_top χ.continuous
+    (isClosed_unitsPrincipal p k)]
+  simp only [Set.forall_mem_range, ContinuousMonoidHom.coe_toMonoidHom,
+    MonoidHom.coe_ofClass, mem_unitsPrincipal_iff, ContinuousMonoidHom.coe_comp,
+    Function.comp_apply, presentedProP.mk_of]
 
 /-- The exponent sum at `x` is a crossed homomorphism for the trivial character. -/
 private theorem isCrossedHom_one_exponentSum (x : X) :
@@ -123,7 +123,8 @@ private theorem pow_succ_dvd_sub_one_of_forall_pow_succ_dvd_exponentSum [Finite 
   exact mul_dvd_mul_left _ ((PadicInt.toZMod_eq_zero_iff_dvd _).1 (congrFun hs0 x))
 
 /-- **The level of the character with the prescription property is the content of the exponent
-vector of the relator.** Let `G = ⟨X ∣ r⟩` be a one-relator pro-`p` group with `r ∈ Φ(F)` whose
+vector of the relator.** Let `G = ⟨X ∣ r⟩` be a one-relator pro-`p` group with finite `X` and
+`r ∈ Φ(F)` whose
 class in `gr_1(F)` has nondegenerate degree-one form, and let `χ : G → ℤ_pˣ` be a continuous
 character with the prescription property. Then `χ` takes values in `1 + p^kℤ_p` exactly when `p^k`
 divides the exponent sum of `r` at every generator. -/
