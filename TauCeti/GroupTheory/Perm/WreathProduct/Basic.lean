@@ -61,24 +61,12 @@ section General
 
 variable (D : Type u) [Group D] (Q : Type v) [Group Q] (X : Type w) [MulAction Q X]
 
-/-- The action of the top group `Q` on the base group `X → D` by permutation of coordinates.
-It sends `f` to the function `x ↦ f (q⁻¹ • x)`. -/
-def wreathAut : Q →* MulAut (X → D) :=
-  mulAutArrow
-
-/-- The permutation action on the base group is precomposition by the inverse action on `X`. -/
-@[simp]
-theorem wreathAut_apply (q : Q) (f : X → D) (x : X) :
-    wreathAut D Q X q f x = f (q⁻¹ • x) := by
-  rw [wreathAut, mulAutArrow_apply_apply]
-  change (@arrowAction Q X D _ _).smul q f x = _
-  rfl
-
-/-- The permutation wreath product with base group `X → D` and top group `Q`.
+/-- The permutation wreath product with base group `X → D` and top group `Q`, where `Q` acts on
+the base through Mathlib's `mulAutArrow`, sending `f` to `x ↦ f (q⁻¹ • x)`.
 
 Its multiplication is
 `(f, q) * (g, r) = (fun x ↦ f x * g (q⁻¹ • x), q * r)`. -/
-abbrev PermutationWreathProduct := SemidirectProduct (X → D) Q (wreathAut D Q X)
+abbrev PermutationWreathProduct := SemidirectProduct (X → D) Q mulAutArrow
 
 namespace PermutationWreathProduct
 
@@ -88,13 +76,18 @@ variable {D Q X}
 @[simp]
 theorem mul_left (a b : PermutationWreathProduct D Q X) (x : X) :
     (a * b).left x = a.left x * b.left (a.right⁻¹ • x) := by
-  rw [SemidirectProduct.mul_left, Pi.mul_apply, wreathAut_apply]
+  rw [SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_apply]
+  -- The coordinate action on `X → D` is `arrowAction`, which evaluates at `a.right⁻¹ • x`.
+  rfl
 
 /-- Inversion in a permutation wreath product, written in base coordinates. -/
 @[simp]
 theorem inv_left (a : PermutationWreathProduct D Q X) (x : X) :
     a⁻¹.left x = (a.left (a.right • x))⁻¹ := by
-  rw [SemidirectProduct.inv_left, wreathAut_apply, inv_inv, Pi.inv_apply]
+  rw [SemidirectProduct.inv_left, mulAutArrow_apply_apply]
+  -- The coordinate action on `X → D` is `arrowAction`, which evaluates at `a.right⁻¹⁻¹ • x`.
+  change (a.left (a.right⁻¹⁻¹ • x))⁻¹ = _
+  rw [inv_inv]
 
 /-- The natural cardinality of a permutation wreath product with finite index type. -/
 theorem card [Finite X] : Nat.card (PermutationWreathProduct D Q X) =
