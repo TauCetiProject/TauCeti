@@ -58,13 +58,13 @@ theorem sturmVariation_def (p q : K[X]) (x : K) :
   · simp [sturmVariation, sturmSeq_zero_right, hp]
 
 /-- Evaluation of the first entry gives the recursion for Sturm variations. -/
-theorem sturmVariation_cons {p : K[X]} (hp : p ≠ 0) (q : K[X]) (x : K) :
+private theorem sturmVariation_cons {p : K[X]} (hp : p ≠ 0) (q : K[X]) (x : K) :
     sturmVariation p q x =
       (p.eval x :: (sturmSeq q (-p % q)).map (fun r => r.eval x)).signVariations := by
   simp only [sturmVariation, sturmSeq_cons hp, List.map_cons]
 
 /-- A zero first value is deleted when counting Sturm variations. -/
-theorem sturmVariation_of_eval_eq_zero {p q : K[X]} {x : K}
+theorem sturmVariation_eq_of_eval_eq_zero {p q : K[X]} {x : K}
     (hp : p.eval x = 0) :
     sturmVariation p q x = sturmVariation q (-p % q) x := by
   by_cases hp0 : p = 0
@@ -87,7 +87,7 @@ variable [IsStrictOrderedRing K]
 
 /-- At a zero of the nonzero second polynomial that is not a zero of the first,
 the first Sturm variation step contributes exactly one sign change. -/
-@[simp] theorem sturmVariation_eq_add_one_of_eval_ne_zero_of_eval_eq_zero
+theorem sturmVariation_eq_add_one_of_eval_ne_zero_of_eval_eq_zero
     {p q : K[X]} {x : K}
     (hp : p.eval x ≠ 0) (hq0 : q ≠ 0) (hq : q.eval x = 0) :
     sturmVariation p q x = sturmVariation q (-p % q) x + 1 := by
