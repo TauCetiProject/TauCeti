@@ -61,7 +61,7 @@ of functions on divisors requires.
   second variable.
 * `TauCeti.Isogeny.weilPairing_self` and `TauCeti.Isogeny.neg_weilPairing`: the pairing is
   alternating, hence skew-symmetric.
-* `TauCeti.Isogeny.eq_zero_of_forall_weilPairing_eq_zero_left`: the pairing is nondegenerate in
+* `TauCeti.Isogeny.weilPairing_nondegenerate`: the pairing is nondegenerate in
   its first variable.
 
 ## References
@@ -385,7 +385,7 @@ theorem neg_weilPairing (S T : Submodule.torsionBy ℤ W.toAffine.Point (N : ℤ
 
 /-- **The Weil pairing is nondegenerate in its first variable**: if `e_N(S, T) = 1` for every
 `T`, then `S = O`. -/
-theorem eq_zero_of_forall_weilPairing_eq_zero_left
+theorem weilPairing_nondegenerate
     {S : Submodule.torsionBy ℤ W.toAffine.Point (N : ℤ)} (hS : ∀ T, weilPairing W N hN S T = 0) :
     S = 0 :=
   eq_zero_of_forall_weilPairing_eq_zero W N hN fun T ↦ by
