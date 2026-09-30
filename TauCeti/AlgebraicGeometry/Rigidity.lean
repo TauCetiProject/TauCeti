@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Group.Abelian
+public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
+public import Mathlib.AlgebraicGeometry.Geometrically.Integral
+public import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 
 /-!
 # The rigidity lemma
@@ -19,16 +21,19 @@ through the projection to `Y`: for any `K`-rational point `x₀` of `X`,
 
 Over an algebraically closed field the proof runs as follows. The morphism
 `γ = (pr₂, f) : X × Y ⟶ Y × Z` is proper over `Y`, and its fibre over `y₀` has a single point
-in its image. By Zariski's main theorem, `γ` then has finite fibres over an open neighbourhood `U`
-of `y₀`. For a closed point `y ∈ U`, the fibre `X × {y}` is irreducible, so its finite image under
-`γ` is a single point; hence `f (x, y) = f (x₀, y)` on the closed points of the dense open subset
+in its image. By Zariski's main theorem, `γ` has finite image on each fibre `X × {y}` for `y` in
+an open neighbourhood `U` of `y₀`. For a closed point `y ∈ U`, the fibre `X × {y}` is
+irreducible, so its finite image under `γ` is a single point; hence `f (x, y) = f (x₀, y)` on the
+closed points of the dense open subset
 `pr₂⁻¹ U`, and so everywhere, since `X × Y` is reduced and `Z` is separated. The general case
 follows by base change to an algebraic closure, which is faithful on schemes over `Spec K`.
 
 This is the argument of Mathlib's
 `AlgebraicGeometry.isCommMonObj_of_isProper_of_isIntegral_tensorObj_of_isAlgClosed` (Andrew Yang
 and Christian Merten), which proves commutativity of proper group schemes by running it for the
-commutator map; here it is carried out for an arbitrary morphism `f`.
+commutator map; here it is carried out for an arbitrary morphism `f`. The descent to an arbitrary
+field follows `AlgebraicGeometry.isCommMonObj_of_isProper_of_geometricallyIntegral` in the same
+Mathlib file (Andrew Yang and Christian Merten).
 
 ## Main declarations
 
@@ -37,9 +42,9 @@ commutator map; here it is carried out for an arbitrary morphism `f`.
 * `TauCeti.AlgebraicGeometry.exists_forall_finite_image_preimage_of_finite_image_preimage`: if
   a morphism proper over a base has finite image on one fibre, it does so on the fibres over a
   neighbourhood;
-* `TauCeti.AlgebraicGeometry.rigidity_of_isAlgClosed`: the rigidity lemma over an algebraically
-  closed field;
-* `TauCeti.AlgebraicGeometry.rigidity`: the rigidity lemma over an arbitrary field.
+* `TauCeti.AlgebraicGeometry.eq_snd_comp_lift_comp_of_isAlgClosed`: the rigidity lemma over an
+  algebraically closed field;
+* `TauCeti.AlgebraicGeometry.eq_snd_comp_lift_comp`: the rigidity lemma over an arbitrary field.
 
 ## References
 
@@ -106,7 +111,7 @@ theorem exists_forall_finite_image_preimage_of_finite_image_preimage
 locally of finite type over `K` with `X × Y` integral, and `Z` separated and locally of finite
 type over `K`. If `f : X × Y ⟶ Z` sends the fibre `X × {y₀}` over a `K`-point `y₀` of `Y` to a
 single `K`-point `z₀` of `Z`, then `f (x, y) = f (x₀, y)` for any `K`-point `x₀` of `X`. -/
-theorem rigidity_of_isAlgClosed [IsAlgClosed K] {X Y Z : Over (Spec (.of K))}
+theorem eq_snd_comp_lift_comp_of_isAlgClosed [IsAlgClosed K] {X Y Z : Over (Spec (.of K))}
     [IsProper X.hom] [LocallyOfFiniteType Y.hom] [IsIntegral (X ⊗ Y).left]
     [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
     (f : X ⊗ Y ⟶ Z) (x₀ : 𝟙_ _ ⟶ X) (y₀ : 𝟙_ _ ⟶ Y) (z₀ : 𝟙_ _ ⟶ Z)
@@ -183,7 +188,7 @@ geometrically integral and locally of finite type over `K`, and `Z` separated an
 finite type over `K`. If `f : X × Y ⟶ Z` sends the fibre `X × {y₀}` over a `K`-point `y₀` of `Y`
 to a single `K`-point `z₀` of `Z`, then `f` factors through the projection to `Y`:
 `f (x, y) = f (x₀, y)` for any `K`-point `x₀` of `X`. -/
-theorem rigidity {X Y Z : Over (Spec (.of K))}
+theorem eq_snd_comp_lift_comp {X Y Z : Over (Spec (.of K))}
     [IsProper X.hom] [GeometricallyIntegral X.hom]
     [LocallyOfFiniteType Y.hom] [GeometricallyIntegral Y.hom]
     [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
@@ -199,7 +204,7 @@ theorem rigidity {X Y Z : Over (Spec (.of K))}
   have : IsIntegral (F.obj X ⊗ F.obj Y).left := by dsimp [F]; infer_instance
   have : IsSeparated (F.obj Z).hom := by dsimp [F]; infer_instance
   have : LocallyOfFiniteType (F.obj Z).hom := by dsimp [F]; infer_instance
-  have H := rigidity_of_isAlgClosed (Functor.LaxMonoidal.μ F X Y ≫ F.map f)
+  have H := eq_snd_comp_lift_comp_of_isAlgClosed (Functor.LaxMonoidal.μ F X Y ≫ F.map f)
     (Functor.LaxMonoidal.ε F ≫ F.map x₀) (Functor.LaxMonoidal.ε F ≫ F.map y₀)
     (Functor.LaxMonoidal.ε F ≫ F.map z₀) (by
       rw [← Category.assoc, ← F.map_id, Functor.Monoidal.toUnit_ε_assoc, ← F.map_comp,
