@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Kummer.Character
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia
 public import TauCeti.NumberTheory.LocalField.Uniformizer
@@ -103,13 +104,10 @@ private theorem apply_div_eq_apply_div {σ : Gal(AlgebraicClosure K/K)}
   rw [div_eq_div_iff hα hβ]
   linear_combination -hfix
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- Nonzero elements of `K` have nonzero roots in the algebraic closure. -/
-private theorem ne_zero_of_pow_eq_algebraMap {m : ℕ} (hm : m ≠ 0) {a : Kˣ}
-    {α : AlgebraicClosure K} (hα : α ^ m = algebraMap K (AlgebraicClosure K) a) : α ≠ 0 := by
-  rintro rfl
-  rw [zero_pow hm] at hα
-  exact (by simp : algebraMap K (AlgebraicClosure K) (a : K) ≠ 0) hα.symm
+/-- For `m` prime to `p`, the `m`-th roots of an element of `Kˣ` are nonzero. -/
+private theorem ne_zero_of_pow_eq_algebraMap {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K])) {a : Kˣ}
+    {α : AlgebraicClosure K} (hα : α ^ m = algebraMap K (AlgebraicClosure K) a) : α ≠ 0 :=
+  ne_zero_pow (ne_zero_of_coprime_ringChar hm) (by simp [hα])
 
 variable (K) in
 /-- A chosen `m`-th root of `a` in the algebraic closure; the Kummer character does not depend on
@@ -123,13 +121,6 @@ private theorem root_pow {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K])) (a : Kˣ)
   (IsAlgClosed.exists_pow_nat_eq (algebraMap K (AlgebraicClosure K) a)
     (Nat.pos_of_ne_zero (ne_zero_of_coprime_ringChar hm))).choose_spec
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- For a root `α` of `a ∈ Kˣ`, the quotient `σ(α)/α` is an `m`-th root of unity. -/
-private theorem apply_div_pow_eq_one (σ : Gal(AlgebraicClosure K/K)) {m : ℕ} {a : Kˣ}
-    {α : AlgebraicClosure K} (hα : α ^ m = algebraMap K (AlgebraicClosure K) a) :
-    (σ α / α) ^ m = 1 := by
-  rw [div_pow, ← map_pow, hα, AlgEquiv.commutes, div_self (by simp)]
-
 variable (K) in
 /-- The quotient `σ(α)/α` for the chosen root `α` of `X ^ m − a`. -/
 private def kummerRatio (m : ℕ) (hm : m.Coprime (ringChar 𝓀[K])) (a : Kˣ)
@@ -142,17 +133,17 @@ private theorem kummerRatio_eq {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K])) {a 
     (hα : α ^ m = algebraMap K (AlgebraicClosure K) a) :
     kummerRatio K m hm a σ = σ α / α :=
   apply_div_eq_apply_div hσ hm
-    (ne_zero_of_pow_eq_algebraMap (ne_zero_of_coprime_ringChar hm) (root_pow hm a))
+    (ne_zero_of_pow_eq_algebraMap hm (root_pow hm a))
     ((root_pow hm a).trans hα.symm)
 
 private theorem kummerRatio_one {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K])) (a : Kˣ) :
     kummerRatio K m hm a 1 = 1 :=
-  div_self (ne_zero_of_pow_eq_algebraMap (ne_zero_of_coprime_ringChar hm) (root_pow hm a))
+  div_self (ne_zero_of_pow_eq_algebraMap hm (root_pow hm a))
 
 private theorem kummerRatio_mul {m : ℕ} (hm : m.Coprime (ringChar 𝓀[K])) (a : Kˣ)
     {σ : Gal(AlgebraicClosure K/K)} (hσ : σ ∈ inertiaSubgroup K) (τ : Gal(AlgebraicClosure K/K)) :
     kummerRatio K m hm a (σ * τ) = kummerRatio K m hm a σ * kummerRatio K m hm a τ := by
-  have hα := ne_zero_of_pow_eq_algebraMap (ne_zero_of_coprime_ringChar hm) (root_pow hm a)
+  have hα := ne_zero_of_pow_eq_algebraMap hm (root_pow hm a)
   -- `σ(τα)/(τα) = σ(α)/α`, as `τα` is another root of `X ^ m − a`.
   have hτα : (τ (root K m hm a)) ^ m = algebraMap K (AlgebraicClosure K) a := by
     rw [← map_pow, root_pow, AlgEquiv.commutes]
@@ -171,7 +162,8 @@ def inertiaKummerCharacter (m : ℕ) (hm : m.Coprime (ringChar 𝓀[K])) (a : K�
     inertiaSubgroup K →* rootsOfUnity m (AlgebraicClosure K) :=
   haveI : NeZero m := ⟨ne_zero_of_coprime_ringChar hm⟩
   { toFun σ := rootsOfUnity.mkOfPowEq (kummerRatio K m hm a σ.1)
-      (apply_div_pow_eq_one _ (root_pow hm a))
+      (apply_div_pow_eq_one (ne_zero_of_pow_eq_algebraMap hm (root_pow hm a))
+        (by rw [root_pow]; exact AlgEquiv.commutes σ.1 _))
     map_one' := rootsOfUnity.coe_injective (kummerRatio_one hm a)
     map_mul' σ τ := rootsOfUnity.coe_injective (kummerRatio_mul hm a σ.2 τ.1) }
 
@@ -194,7 +186,7 @@ theorem apply_eq_inertiaKummerCharacter_mul {σ : Gal(AlgebraicClosure K/K)}
     σ α = ((inertiaKummerCharacter K m hm a ⟨σ, hσ⟩ : (AlgebraicClosure K)ˣ) :
       AlgebraicClosure K) * α := by
   rw [coe_inertiaKummerCharacter_apply hσ hα,
-    div_mul_cancel₀ _ (ne_zero_of_pow_eq_algebraMap (ne_zero_of_coprime_ringChar hm) hα)]
+    div_mul_cancel₀ _ (ne_zero_of_pow_eq_algebraMap hm hα)]
 
 /-- The Kummer character is trivial at `σ` exactly when `σ` fixes a root of `X ^ m − a`, and then
 it fixes all of them. -/
@@ -204,7 +196,7 @@ theorem inertiaKummerCharacter_apply_eq_one_iff {σ : Gal(AlgebraicClosure K/K)}
     inertiaKummerCharacter K m hm a ⟨σ, hσ⟩ = 1 ↔ σ α = α := by
   rw [← rootsOfUnity.coe_injective.eq_iff, coe_inertiaKummerCharacter_apply hσ hα,
     OneMemClass.coe_one, Units.val_one,
-    div_eq_one_iff_eq (ne_zero_of_pow_eq_algebraMap (ne_zero_of_coprime_ringChar hm) hα)]
+    div_eq_one_iff_eq (ne_zero_of_pow_eq_algebraMap hm hα)]
 
 /-- The Kummer character is trivial exactly when inertia fixes a root of `X ^ m − a`, and then it
 fixes all of them. -/
