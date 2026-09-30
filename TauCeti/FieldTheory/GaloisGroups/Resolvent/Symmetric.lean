@@ -33,6 +33,8 @@ symmetric polynomials. This is the integral orbit product used by a resolvent sp
 
 ## Main results
 
+* `MvPolynomial.rename_eq_rename_iff`: two permutations give the same renaming exactly when
+  their quotient stabilizes the polynomial.
 * `MvPolynomial.card_renameOrbit`: the rename-orbit has size the index of the stabilizer.
 * `MvPolynomial.renameOrbit_rename` and `MvPolynomial.universalResolvent_rename`: renaming an
   invariant does not change its orbit or universal resolvent.
@@ -77,6 +79,19 @@ def renameStabilizer (Φ : MvPolynomial σ R) : Subgroup (Equiv.Perm σ) where
 theorem mem_renameStabilizer {Φ : MvPolynomial σ R} {e : Equiv.Perm σ} :
     e ∈ renameStabilizer Φ ↔ rename (⇑e) Φ = Φ :=
   Iff.rfl
+
+/-- Two permutations rename a polynomial identically exactly when their quotient stabilizes it. -/
+theorem rename_eq_rename_iff (Φ : MvPolynomial σ R) (a b : Equiv.Perm σ) :
+    rename (⇑a) Φ = rename (⇑b) Φ ↔ a⁻¹ * b ∈ renameStabilizer Φ := by
+  rw [mem_renameStabilizer]
+  constructor
+  · intro h
+    have h' := congrArg (rename (⇑a⁻¹)) h
+    simpa only [rename_rename, ← Equiv.Perm.coe_mul, inv_mul_cancel,
+      Equiv.Perm.coe_one, rename_id_apply] using h'.symm
+  · intro h
+    have h' := congrArg (rename (⇑a)) h
+    simpa only [rename_rename, ← Equiv.Perm.coe_mul, mul_inv_cancel_left] using h'.symm
 
 /-- A polynomial is symmetric exactly when its stabilizer is the whole symmetric group. -/
 @[simp]
