@@ -36,7 +36,7 @@ variable {K V N : Type*} [CommRing K] [TopologicalSpace K] [IsTopologicalRing K]
 
 /-- The determinant is continuous on the orthogonal group. -/
 @[continuity, fun_prop]
-theorem continuous_orthogonalDet : Continuous (orthogonalDet Q) := by
+theorem _root_.QuadraticMap.continuous_orthogonalDet : Continuous (orthogonalDet Q) := by
   have hsub : Continuous (fun g : orthogonalGroup Q => (g : V ≃ₗ[K] V)) :=
     continuous_subtype_val
   obtain ⟨hmap, hmap_inv⟩ := continuous_linearEquiv_iff.mp hsub
@@ -51,14 +51,14 @@ theorem continuous_orthogonalDet : Continuous (orthogonalDet Q) := by
 
 /-- The scalar determinant is continuous on the orthogonal group. -/
 @[continuity, fun_prop]
-theorem continuous_orthogonalDet_val :
+theorem _root_.QuadraticMap.continuous_orthogonalDet_val :
     Continuous (fun g : orthogonalGroup Q => (orthogonalDet Q g : K)) :=
   Units.continuous_val.comp (continuous_orthogonalDet Q)
 
 variable [T2Space K]
 
 /-- The determinant-one subgroup is closed in the orthogonal group. -/
-theorem isClosed_specialOrthogonalWithin :
+theorem _root_.QuadraticMap.isClosed_specialOrthogonalWithin :
     IsClosed (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) := by
   have hset : (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) =
       {g | (orthogonalDet Q g : K) = 1} := by
@@ -79,7 +79,7 @@ variable {K V : Type*} [CommRing K] [IsDomain K] [TopologicalSpace K]
   [Module.Free K V] [Module.Finite K V] (Q : QuadraticForm K V)
 
 /-- The determinant-one subgroup is open in the orthogonal group. -/
-theorem isOpen_specialOrthogonalWithin (hQ : Q.polarBilin.SeparatingLeft) :
+theorem _root_.QuadraticMap.isOpen_specialOrthogonalWithin (hQ : Q.polarBilin.SeparatingLeft) :
     IsOpen (specialOrthogonalWithin Q : Set (orthogonalGroup Q)) := by
   have hrange : Set.range (fun g : orthogonalGroup Q => (orthogonalDet Q g : K)) ⊆
       ({1, -1} : Set K) := by
