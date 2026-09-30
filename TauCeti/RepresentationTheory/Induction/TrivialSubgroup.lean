@@ -289,6 +289,19 @@ theorem indBotFunctor_map_hom_mk {X Y : ModuleCat.{u} k} (f : X ⟶ Y) (g : G) (
       IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) Y) g (f.hom x) :=
   (rfl)
 
+/-- Two morphisms out of the representation induced from the trivial subgroup agree once they
+agree on the generators `⟦g ⊗ₜ x⟧`. -/
+theorem indBot_hom_ext {X : Type u} [AddCommGroup X] [Module k X] {B : Rep k G}
+    {f f' : indBot k G X ⟶ B}
+    (h : ∀ (g : G) (x : X),
+      f.hom (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X) g x) =
+        f'.hom
+          (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X) g x)) :
+    f = f' :=
+  Rep.hom_ext <| IntertwiningMap.ext <|
+    IndV.hom_ext (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X)
+      fun g ↦ LinearMap.ext (h g)
+
 /-- The canonical projection from the representation induced from the trivial subgroup on the
 underlying module of `A` onto `A`, `⟦g ⊗ₜ a⟧ ↦ A.ρ g⁻¹ a`. -/
 def indBotCounit (A : Rep k G) : indBot k G A.V ⟶ A :=
@@ -345,23 +358,11 @@ theorem indBotMap_hom_mk {A B : Rep k G} (f : A ⟶ B) (g : G) (a : A) :
 /-- The projection from an induced representation is natural in the representation. -/
 @[reassoc]
 theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
-    indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f := by
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply Representation.IndV.hom_ext (⊥ : Subgroup G).subtype
-    (Representation.trivial k (⊥ : Subgroup G) A.V)
-  intro g
-  apply LinearMap.ext
-  intro a
-  -- Evaluate both composites on the generators of the induced representation.
-  change (indBotCounit B).hom ((indBotMap f).hom
-      (Representation.IndV.mk (⊥ : Subgroup G).subtype
-        (Representation.trivial k (⊥ : Subgroup G) A.V) g a)) =
-    f.hom ((indBotCounit A).hom
-      (Representation.IndV.mk (⊥ : Subgroup G).subtype
-        (Representation.trivial k (⊥ : Subgroup G) A.V) g a))
-  rw [indBotMap_hom_mk, indBotCounit_hom_mk, indBotCounit_hom_mk]
-  exact (Rep.hom_comm_apply f g⁻¹ a).symm
+    indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f :=
+  indBot_hom_ext fun g a ↦ by
+    rw [Rep.hom_comp, Rep.hom_comp, IntertwiningMap.comp_apply, IntertwiningMap.comp_apply,
+      indBotMap_hom_mk, indBotCounit_hom_mk, indBotCounit_hom_mk]
+    exact (Rep.hom_comm_apply f g⁻¹ a).symm
 
 /-- The morphism `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x` to a representation from the representation induced from
 the trivial subgroup, attached to a `k`-linear map `s`. -/
@@ -385,20 +386,10 @@ theorem fromIndBot_hom_mk (B : Rep k G) {X : Type u} [AddCommGroup X] [Module k 
 projection of the representation induced from the trivial subgroup onto `A`. -/
 theorem fromIndBot_comp_of_rightInverse {A B : Rep k G} (f : B ⟶ A)
     {s : A.V →ₗ[k] B.V} (hs : Function.RightInverse s f.hom) :
-    fromIndBot B s ≫ f = indBotCounit A := by
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply Representation.IndV.hom_ext (⊥ : Subgroup G).subtype
-    (Representation.trivial k (⊥ : Subgroup G) A.V)
-  intro g
-  apply LinearMap.ext
-  intro a
-  -- Evaluate both sides on the generators of the induced representation.
-  change f.hom ((fromIndBot B s).hom (IndV.mk (⊥ : Subgroup G).subtype
-      (Representation.trivial k (⊥ : Subgroup G) A.V) g a)) =
-    (indBotCounit A).hom (IndV.mk (⊥ : Subgroup G).subtype
-      (Representation.trivial k (⊥ : Subgroup G) A.V) g a)
-  rw [fromIndBot_hom_mk, indBotCounit_hom_mk, Rep.hom_comm_apply, hs a]
+    fromIndBot B s ≫ f = indBotCounit A :=
+  indBot_hom_ext fun g a ↦ by
+    rw [Rep.hom_comp, IntertwiningMap.comp_apply, fromIndBot_hom_mk, indBotCounit_hom_mk,
+      Rep.hom_comm_apply, hs a]
 
 /-- Induction on the underlying module, viewed as an endofunctor of representations. -/
 @[expose] def indBotRepFunctor : Rep k G ⥤ Rep k G :=
@@ -410,25 +401,11 @@ theorem fromIndBot_comp_of_rightInverse {A B : Rep k G} (f : B ⟶ A)
 
 /-- The induction endofunctor acts on morphisms by `indBotMap`. -/
 @[simp] theorem indBotRepFunctor_map (f : A ⟶ B) :
-    (indBotRepFunctor (k := k) (G := G)).map f = indBotMap f := by
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply Representation.IndV.hom_ext (⊥ : Subgroup G).subtype
-    (Representation.trivial k (⊥ : Subgroup G) A.V)
-  intro g
-  apply LinearMap.ext
-  intro a
+    (indBotRepFunctor (k := k) (G := G)).map f = indBotMap f :=
   -- The functor composition and `indBotMap` have the same underlying induction map;
-  -- `indBotMap` inserts `eqToHom` transports for the public `indBot` presentation.
-  -- Normalize those transports here, then compare both maps on `IndV.mk` generators.
-  change ((indBotFunctor k G).map ((forget₂ (Rep k G) (ModuleCat k)).map f)).hom
-      (IndV.mk (⊥ : Subgroup G).subtype
-        (Representation.trivial k (⊥ : Subgroup G) A.V) g a) =
-    (indBotMap f).hom
-      (IndV.mk (⊥ : Subgroup G).subtype
-        (Representation.trivial k (⊥ : Subgroup G) A.V) g a)
-  exact (indBotFunctor_map_hom_mk
-    ((forget₂ (Rep k G) (ModuleCat k)).map f) g a).trans
+  -- `indBotMap` only inserts identity `eqToHom` transports for the public `indBot` presentation.
+  indBot_hom_ext fun g a ↦
+    (indBotFunctor_map_hom_mk ((forget₂ (Rep k G) (ModuleCat k)).map f) g a).trans
       (indBotMap_hom_mk f g a).symm
 
 /-- The canonical projection from induction, as a natural transformation. -/
