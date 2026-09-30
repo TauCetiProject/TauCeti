@@ -109,22 +109,24 @@ theorem harmonicAt_halfSpaceGreenKernel_left {v x y : E}
 
 /-- The Poisson kernel for the half-space with unit inward normal `v`. Its boundary
 normalization is `2 ⟪v,x⟫ / (n ωₙ ‖y-x‖ⁿ)`, where `ωₙ` is the volume of the unit ball. -/
-def halfSpacePoissonKernel (n : ℕ) (v x y : EuclideanSpace ℝ (Fin n)) : ℝ :=
-  2 * ⟪v, x⟫_ℝ *
+def halfSpacePoissonKernel (n : ℕ)
+    (v : {w : EuclideanSpace ℝ (Fin n) // ‖w‖ = 1})
+    (x y : EuclideanSpace ℝ (Fin n)) : ℝ :=
+  2 * ⟪(v : EuclideanSpace ℝ (Fin n)), x⟫_ℝ *
     (((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
       ‖y - x‖ ^ (-(n : ℝ)))
 
 /-- The defining formula for the half-space Poisson kernel. -/
-theorem halfSpacePoissonKernel_def (v x y : E) :
+theorem halfSpacePoissonKernel_def (v : {w : E // ‖w‖ = 1}) (x y : E) :
     halfSpacePoissonKernel n v x y =
-      2 * ⟪v, x⟫_ℝ *
+      2 * ⟪(v : E), x⟫_ℝ *
         (((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ * ‖y - x‖ ^ (-(n : ℝ))) := by
   rw [halfSpacePoissonKernel]
 
 /-- The usual quotient form of the half-space Poisson kernel. -/
-theorem halfSpacePoissonKernel_eq_div (v x y : E) :
+theorem halfSpacePoissonKernel_eq_div (v : {w : E // ‖w‖ = 1}) (x y : E) :
     halfSpacePoissonKernel n v x y =
-      (2 * ⟪v, x⟫_ℝ) /
+      (2 * ⟪(v : E), x⟫_ℝ) /
         ((n : ℝ) * volume.real (ball (0 : E) 1) * ‖y - x‖ ^ n) := by
   rw [halfSpacePoissonKernel_def, Real.rpow_neg (norm_nonneg _) _,
     Real.rpow_natCast]
@@ -132,8 +134,8 @@ theorem halfSpacePoissonKernel_eq_div (v x y : E) :
   ring
 
 /-- The half-space Poisson kernel is positive for an interior pole and a distinct point. -/
-theorem halfSpacePoissonKernel_pos {v x y : E}
-    (hx : 0 < ⟪v, x⟫_ℝ) (hxy : y ≠ x) :
+theorem halfSpacePoissonKernel_pos {v : {w : E // ‖w‖ = 1}} {x y : E}
+    (hx : 0 < ⟪(v : E), x⟫_ℝ) (hxy : y ≠ x) :
     0 < halfSpacePoissonKernel n v x y := by
   rw [halfSpacePoissonKernel_def]
   have hn : 0 < n := pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)
@@ -163,9 +165,9 @@ theorem hasFDerivAt_halfSpaceGreenKernel (hn : n ≠ 2) {v x y : E}
 /-- On the boundary, the derivative in the negative normal direction of the Green kernel is
 the negative Poisson kernel. -/
 theorem fderiv_halfSpaceGreenKernel_normal (hn : n ≠ 2) {v x y : E}
-    (hxy : y ≠ x) (hy : ⟪v, y⟫_ℝ = 0) :
+    (hv : ‖v‖ = 1) (hxy : y ≠ x) (hy : ⟪v, y⟫_ℝ = 0) :
     fderiv ℝ (halfSpaceGreenKernel n v x) y (-v) =
-      -halfSpacePoissonKernel n v x y := by
+      -halfSpacePoissonKernel n ⟨v, hv⟩ x y := by
   have hyref : y ≠ (ℝ ∙ v)ᗮ.reflection x := by
     by_cases hx : ⟪v, x⟫_ℝ = 0
     · rw [reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hx]
