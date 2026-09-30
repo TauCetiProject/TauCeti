@@ -68,6 +68,11 @@ conjugation action.
 * `ConjClasses.mk_ne_mk_of_orderOf_ne`: elements of different orders lie in different conjugacy
   classes.
 
+The automorphism action lemmas are in `TauCeti`: use
+`TauCeti.mulAut_smul_conjClasses_mk φ x` to compute on a representative,
+`TauCeti.mulAut_smul_conjClasses_pow φ C n` for powers, and
+`TauCeti.mulAut_smul_conjClasses_inv φ C` for inversion.
+
 ## Implementation notes
 
 The inversion is an instance rather than a plain function so that the notation `C⁻¹`, the
