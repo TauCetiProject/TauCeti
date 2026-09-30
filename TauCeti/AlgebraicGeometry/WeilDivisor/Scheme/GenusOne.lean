@@ -169,6 +169,19 @@ private lemma picZero_eq_iff_linearlyEquivalent
     d = e ↔ (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent D E := by
   rw [Subtype.ext_iff, hd, he, WeilDivisor.OrderSystem.divisorClass_eq_iff]
 
+/-- The sum of two Abel–Jacobi classes equals a third exactly when their point-difference
+divisors are linearly equivalent. -/
+private lemma abelJacobiClass_add_eq_iff_linearlyEquivalent
+    (x y z : {x : CodimensionOnePoint X //
+      (X ↘ Spec (.of k)).residueDegree x = 1}) :
+    abelJacobiClass k hx₀ x + abelJacobiClass k hx₀ y = abelJacobiClass k hx₀ z ↔
+      (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent
+        (WeilDivisor.pointDifference x.1 x₀ + WeilDivisor.pointDifference y.1 x₀)
+        (WeilDivisor.pointDifference z.1 x₀) := by
+  exact picZero_eq_iff_linearlyEquivalent k (by
+    rw [AddMemClass.coe_add, coe_abelJacobiClass k hx₀ x.2,
+      coe_abelJacobiClass k hx₀ y.2, map_add]) (coe_abelJacobiClass k hx₀ z.2)
+
 variable (hk : IsIntegrallyClosedIn k X.functionField) (hg : X.genus k = 1)
 include hk hg
 
@@ -240,7 +253,9 @@ theorem coe_degreeOneEquivPicZero_apply
     (x : {x : CodimensionOnePoint X // (X ↘ Spec (.of k)).residueDegree x = 1}) :
     (degreeOneEquivPicZero k hx₀ hk hg x : Additive (LineBundleClass X)) =
       Additive.ofMul (toLineBundleClass hX.out (WeilDivisor.pointDifference x.1 x₀)) := by
-  rw [degreeOneEquivPicZero, Equiv.ofBijective_apply, coe_classGroupPicZeroAddEquivPicZero_apply,
+  change (classGroupPicZeroAddEquivPicZero k X (abelJacobiClass k hx₀ x) :
+    Additive (LineBundleClass X)) = _
+  rw [coe_classGroupPicZeroAddEquivPicZero_apply,
     coe_abelJacobiClass k hx₀ x.2, classGroupAddEquivLineBundleClass_apply,
     classGroupToLineBundleClass_divisorClass]
 
@@ -260,12 +275,12 @@ theorem degreeOneEquivPicZero_add_eq_iff
       (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent
         (WeilDivisor.ofPoint x.1 + WeilDivisor.ofPoint y.1)
         (WeilDivisor.ofPoint z.1 + WeilDivisor.ofPoint x₀) := by
-  rw [degreeOneEquivPicZero, Equiv.ofBijective_apply, Equiv.ofBijective_apply,
-    Equiv.ofBijective_apply, ← map_add, (classGroupPicZeroAddEquivPicZero k X).injective.eq_iff,
-    picZero_eq_iff_linearlyEquivalent k (by
-      rw [AddMemClass.coe_add, coe_abelJacobiClass k hx₀ x.2,
-        coe_abelJacobiClass k hx₀ y.2, map_add])
-      (coe_abelJacobiClass k hx₀ z.2), WeilDivisor.OrderSystem.linearlyEquivalent_iff,
+  change classGroupPicZeroAddEquivPicZero k X (abelJacobiClass k hx₀ x) +
+      classGroupPicZeroAddEquivPicZero k X (abelJacobiClass k hx₀ y) =
+      classGroupPicZeroAddEquivPicZero k X (abelJacobiClass k hx₀ z) ↔ _
+  rw [← map_add, (classGroupPicZeroAddEquivPicZero k X).injective.eq_iff,
+    abelJacobiClass_add_eq_iff_linearlyEquivalent k hx₀ x y z,
+    WeilDivisor.OrderSystem.linearlyEquivalent_iff,
     WeilDivisor.OrderSystem.linearlyEquivalent_iff]
   have hdiff : WeilDivisor.pointDifference x.1 x₀ + WeilDivisor.pointDifference y.1 x₀ -
       WeilDivisor.pointDifference z.1 x₀ =
