@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
+import Mathlib.Algebra.BigOperators.Field
+
 /-!
 # The checkerboard lattice and the type `Dₙ` discriminant form
 

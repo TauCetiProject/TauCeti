@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Group.Integral
@@ -30,6 +31,7 @@ domain is needed.
 
 * `TauCeti.HasWeakLineDerivOn.comp_add_right`: translation of a weak directional derivative.
 * `TauCeti.HasWeakFDerivOn.comp_add_right`: translation of a weak Fréchet derivative.
+* `TauCeti.HasWeakFDerivOn.translateLp`: whole-space translation of an `Lᵖ` weak derivative.
 * `TauCeti.HasWeakFDerivOn.differenceQuotient`: the weak derivative of a difference quotient.
 
 ## References
@@ -52,6 +54,11 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega V : Opens E}
   {u u' : E → F} {U : E → E →L[ℝ] F} {v h : E}
+
+local instance weakDerivTranslation_isAddHaarMeasure :
+    (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
+  rw [Opens.coe_top, Measure.restrict_univ]
+  infer_instance
 
 /-- A translated function has the translated weak directional derivative on every open set whose
 translate lies in the original domain. -/
@@ -87,6 +94,20 @@ theorem HasWeakFDerivOn.comp_add_right
   rw [hasWeakFDerivOn_iff]
   intro w
   exact (hu.hasWeakLineDerivOn w).comp_add_right hVO
+
+/-- On the whole space, translating an `Lᵖ` function and its weak Fréchet derivative by the
+same vector preserves the weak-derivative identity. -/
+theorem HasWeakFDerivOn.translateLp {p : ENNReal} [Fact (1 ≤ p)]
+    {f : Lp F p (mu.restrict ((⊤ : Opens E) : Set E))}
+    {D : Lp (E →L[ℝ] F) p (mu.restrict ((⊤ : Opens E) : Set E))}
+    (hf : HasWeakFDerivOn mu ⊤ f D) (h : E) :
+    HasWeakFDerivOn mu ⊤
+      ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h f)
+      ((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h D) := by
+  let nu := mu.restrict ((⊤ : Opens E) : Set E)
+  have htrans := hf.comp_add_right (V := (⊤ : Opens E)) (h := h) (fun _ _ => by simp)
+  exact (htrans.congr_ae (Measure.coeFn_translateLp (mu := nu) h f).symm).congr_ae_deriv
+    (Measure.coeFn_translateLp (mu := nu) h D).symm
 
 /-- The weak derivative of the difference quotient of `u` in direction `w` with step `t` is the
 corresponding difference quotient of its weak derivative. Both `V ⊆ Ω` and

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomFp
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank
 
 /-!
@@ -28,20 +29,30 @@ elements (`TauCeti.presentedProP.natCard_H2`) and `R ⧸ Rᵖ[R, F]` is elementa
 is its `𝔽_p`-dimension `d + (d choose 2) = d (d + 1) / 2`.
 
 This is the value against which the normalisation of `H²` is checked: an `H²` counting `d choose 2`
-or `d ^ 2` classes for `(ℤ/p)^d` would be wrong. The statements are about the order of the explicit
-continuous cohomology `H2 G (ZMod p)`, with the action of `G` on `𝔽_p` carried as an instance as in
-`TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank`; no triviality hypothesis is needed,
-since `G` is a `p`-group (`TauCeti.isPGroup_of_proPFrattini_eq_bot`) and a `p`-group can only act
-trivially on `𝔽_p` (`IsPGroup.smul_zmod_eq_self`).
+or `d ^ 2` classes for `(ℤ/p)^d` would be wrong. The counting statements are about the order of the
+explicit continuous cohomology `H2 G (ZMod p)`, with the action of `G` on `𝔽_p` carried as an
+instance as in `TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank`; no triviality
+hypothesis is needed, since `G` is a `p`-group (`TauCeti.isPGroup_of_proPFrattini_eq_bot`) and a
+`p`-group can only act trivially on `𝔽_p` (`IsPGroup.smul_zmod_eq_self`). The count is then read
+as the `𝔽_p`-dimension of the continuous cohomology `cohomFp p G 2` with trivial coefficients,
+through `TauCeti.cohomFpLinearEquivH2`.
 
 ## Main results
 
 * `TauCeti.natCard_H2_of_proPFrattini_eq_bot`: for a topologically finitely generated profinite
   group `G` with `Φ(G) = 1`, `H²(G, 𝔽_p)` has `p ^ (d(G) (d(G) + 1) / 2)` elements;
-  `TauCeti.finite_H2_of_proPFrattini_eq_bot` records its finiteness.
+  `TauCeti.finite_H2_of_proPFrattini_eq_bot` records its finiteness, and
+  `TauCeti.finrank_cohomFp_two_of_proPFrattini_eq_bot` reads the count as
+  `dim H²(G, 𝔽_p) = d(G) (d(G) + 1) / 2`.
 * `TauCeti.topologicalGeneratorRankNat_pi_multiplicative_zmod`: `d((ℤ/p)^X) = #X`.
 * `TauCeti.natCard_H2_pi_multiplicative_zmod`: `H²((ℤ/p)^X, 𝔽_p)` has `p ^ (#X (#X + 1) / 2)`
   elements.
+* `TauCeti.proPFrattini_multiplicative_zmod_eq_bot` and
+  `TauCeti.topologicalGeneratorRankNat_multiplicative_zmod`: the cyclic group `ℤ/p` itself has
+  trivial pro-`p` Frattini subgroup and `d(ℤ/p) = 1`.
+* `TauCeti.finrank_cohomFp_one_multiplicative_zmod` and
+  `TauCeti.finrank_cohomFp_two_multiplicative_zmod`: `H¹(ℤ/p, 𝔽_p)` and `H²(ℤ/p, 𝔽_p)` are
+  one-dimensional.
 
 ## References
 
@@ -121,6 +132,27 @@ theorem finite_H2_of_proPFrattini_eq_bot (hfg : IsTopologicallyFinitelyGenerated
   Nat.finite_of_card_ne_zero <|
     (natCard_H2_of_proPFrattini_eq_bot hfg hΦ) ▸ pow_ne_zero _ (Fact.out : p.Prime).ne_zero
 
+omit [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)] in
+/-- **The relation rank of a finite elementary abelian `p`-group, as a dimension.** Let `G` be a
+topologically finitely generated profinite group with trivial pro-`p` Frattini subgroup and
+topological generator rank `d = d(G)`. Then `H²(G, 𝔽_p)` with trivial coefficients is
+`d (d + 1) / 2`-dimensional over `𝔽_p`. -/
+theorem finrank_cohomFp_two_of_proPFrattini_eq_bot (hfg : IsTopologicallyFinitelyGenerated G)
+    (hΦ : proPFrattini p G = ⊥) :
+    Module.finrank (ZMod p) (cohomFp p G 2) =
+      topologicalGeneratorRankNat G hfg * (topologicalGeneratorRankNat G hfg + 1) / 2 := by
+  -- The explicit `H²(G, 𝔽_p)` needs an action of `G` on `𝔽_p`; the trivial one is installed for
+  -- the duration of the proof and does not appear in the statement.
+  let _ : DistribMulAction G (ZMod p) := DistribMulAction.compHom (ZMod p) (1 : G →* (ZMod p)ˣ)
+  have htriv : ∀ (g : G) (m : ZMod p), g • m = m := fun _ m ↦ one_smul (ZMod p)ˣ m
+  have : ContinuousSMul G (ZMod p) := ⟨continuous_snd.congr fun x ↦ (htriv x.1 x.2).symm⟩
+  have : Finite (H2 G (ZMod p)) := finite_H2_of_proPFrattini_eq_bot hfg hΦ
+  have : Module.Finite (ZMod p) (H2 G (ZMod p)) := Module.Finite.of_finite
+  rw [(cohomFpLinearEquivH2 p G htriv).finrank_eq]
+  have hpow := Module.natCard_eq_pow_finrank (K := ZMod p) (V := H2 G (ZMod p))
+  rw [natCard_H2_of_proPFrattini_eq_bot hfg hΦ, Nat.card_zmod] at hpow
+  exact (Nat.pow_right_injective (Fact.out : p.Prime).two_le hpow).symm
+
 end ElementaryAbelian
 
 /-! ### The example `(ℤ/p)ⁿ` -/
@@ -171,5 +203,44 @@ theorem natCard_H2_pi_multiplicative_zmod :
     topologicalGeneratorRankNat_pi_multiplicative_zmod]
 
 end PiZMod
+
+/-! ### The example `ℤ/p` -/
+
+section ZMod
+
+variable (p : ℕ) [Fact p.Prime]
+
+/-- The pro-`p` Frattini subgroup of the cyclic group `ℤ/p` is trivial. -/
+@[simp]
+theorem proPFrattini_multiplicative_zmod_eq_bot : proPFrattini p (Multiplicative (ZMod p)) = ⊥ :=
+  (proPFrattini_eq_bot_iff Fact.out).mpr
+    ⟨⟨⟨mul_comm⟩⟩, by rw [Monoid.exponent_multiplicative, ZMod.exponent]⟩
+
+/-- **`d(ℤ/p) = 1`.** The topological generator rank of the cyclic group `ℤ/p` is `1`. -/
+@[simp]
+theorem topologicalGeneratorRankNat_multiplicative_zmod
+    (h : IsTopologicallyFinitelyGenerated (Multiplicative (ZMod p))) :
+    topologicalGeneratorRankNat (Multiplicative (ZMod p)) h = 1 :=
+  topologicalGeneratorRankNat_eq_of_natCard_eq_pow h (proPFrattini_multiplicative_zmod_eq_bot p)
+    (by rw [Nat.card_congr Multiplicative.ofAdd.symm, Nat.card_zmod, pow_one])
+
+/-- **`H¹(ℤ/p, 𝔽_p)` is one-dimensional**: the cyclic group `ℤ/p` has topological generator rank
+one. -/
+@[simp]
+theorem finrank_cohomFp_one_multiplicative_zmod :
+    Module.finrank (ZMod p) (cohomFp p (Multiplicative (ZMod p)) 1) = 1 := by
+  rw [(isProP_of_proPFrattini_eq_bot
+    (proPFrattini_multiplicative_zmod_eq_bot p)).finrank_cohomFp_one
+    isTopologicallyFinitelyGenerated_of_fg, topologicalGeneratorRankNat_multiplicative_zmod]
+
+/-- **`H²(ℤ/p, 𝔽_p)` is one-dimensional**: the relation rank of the cyclic group `ℤ/p` is
+`1 · 2 / 2 = 1`. -/
+@[simp]
+theorem finrank_cohomFp_two_multiplicative_zmod :
+    Module.finrank (ZMod p) (cohomFp p (Multiplicative (ZMod p)) 2) = 1 := by
+  rw [finrank_cohomFp_two_of_proPFrattini_eq_bot isTopologicallyFinitelyGenerated_of_fg
+    (proPFrattini_multiplicative_zmod_eq_bot p), topologicalGeneratorRankNat_multiplicative_zmod]
+
+end ZMod
 
 end TauCeti

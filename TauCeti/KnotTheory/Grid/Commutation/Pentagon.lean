@@ -81,6 +81,8 @@ here.
   with those of the underlying rectangle away from columns `a` and `b`.
 * `TauCeti.GridPentagonBetween.disjoint_coveredSquares_XSet_iff`: the `X`-avoidance condition
   column by column.
+* `TauCeti.GridPentagonBetween.coveredSquares_subset_union_of_stacked`: a pentagon spanning a
+  pentagon with a rectangle stacked on it covers only squares one of those two covers.
 * `TauCeti.GridDiagram.pentagonWeight_eq_prod_coveredSquares`,
   `TauCeti.GridDiagram.pentagonWeight_eq_prod_swapColumns`: the weight as a product over the
   covered squares, and as the product of the variables of the covered `O`-markings of the
@@ -143,10 +145,9 @@ theorem turn_mem_cIco (P : GridPentagonBetween a s x y) :
 theorem left_injective :
     Function.Injective fun P : GridPentagonBetween a s x y => P.left := by
   intro P Q h
-  obtain ⟨P, hP, _⟩ := P
-  obtain ⟨Q, hQ, _⟩ := Q
-  obtain rfl : P = Q :=
-    GridRectangleBetween.sidePair_injective (Prod.ext h (hP.trans hQ.symm))
+  obtain ⟨P, _, _⟩ := P
+  obtain ⟨Q, _, _⟩ := Q
+  obtain rfl : P = Q := GridRectangleBetween.left_injective h
   rfl
 
 /-- There is at most one pentagon between two grid states: its initial side is the unique column
@@ -324,6 +325,46 @@ theorem mem_coveredSquares_iff_of_ne (P : GridPentagonBetween a s x y) {p : Fin 
     GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
     GridRectangleBetween.toGridRectangle_top, P.right_eq, ha, hb, ne_eq, not_false_eq_true,
     true_and, false_and, or_false] using P.mem_coveredSquares p
+
+/-- A pentagon spanning a pentagon with a toroidal rectangle stacked on it covers only squares
+one of those two covers.
+
+The hypotheses place `P` directly below `r`, the top row of `P` being the bottom row of `r`, and
+make `Q` span the two of them: the rows of `Q` run from the bottom row of `P` to the top row of
+`r`, and its column arc lies inside both of theirs. The two columns next to the replaced grid
+line are what makes this more than the corresponding statement about the underlying rectangles:
+in column `a` the arc of `Q` above the turn row is cut into the arc of `P` above the turn row and
+a band of rows of `r`, and in column `finRotate n a` the arc of `Q` below the turn row is the one
+`P` covers, because the two pentagons share a bottom row. -/
+theorem coveredSquares_subset_union_of_stacked {u v u' v' : GridState n}
+    (Q : GridPentagonBetween a s u v) (P : GridPentagonBetween a s u' v') (r : GridRectangle n)
+    (hbottom : Q.bottom = P.bottom) (htop : Q.top = r.top) (hcut : P.top = r.bottom)
+    (hP : Grid.cIco Q.left (finRotate n a) ⊆ Grid.cIco P.left (finRotate n a))
+    (hr : Grid.cIco Q.left (finRotate n a) ⊆ Grid.cIco r.left r.right) :
+    Q.coveredSquares ⊆ P.coveredSquares ∪ r.coveredSquares := by
+  have ha : a ∈ Grid.cIco r.left r.right := hr (Grid.self_mem_cIco_finRotate Q.left_ne)
+  have hmem_r {p : Fin n × Fin n} (hcol : p.1 ∈ Grid.cIco r.left r.right)
+      (hrow : p.2 ∈ Grid.cIco r.bottom r.top) : p ∈ r.coveredSquares :=
+    (r.mem_coveredSquares p).2 ⟨(r.mem_coveredColumns p.1).2 hcol, (r.mem_coveredRows p.2).2 hrow⟩
+  intro p hp
+  rcases (Q.mem_coveredSquares p).mp hp with ⟨hne, hcol, hrow⟩ | ⟨hcol, hrow⟩ | ⟨hcol, hrow⟩
+  · rw [hbottom, htop] at hrow
+    rcases Finset.mem_union.mp
+      (Grid.cIco_subset_cIco_union_cIco (w := r.bottom) hrow) with hrow' | hrow'
+    · exact Finset.mem_union.mpr (Or.inr (hmem_r (hr hcol) hrow'))
+    · refine Finset.mem_union.mpr (Or.inl ((P.mem_coveredSquares p).2 (Or.inl ⟨hne, hP hcol, ?_⟩)))
+      rwa [hcut]
+  · rw [htop] at hrow
+    have hs : p.2 ≠ s := Grid.ne_left_of_mem_cIoo hrow
+    rcases Finset.mem_union.mp (Grid.cIco_subset_cIco_union_cIco (w := r.bottom)
+      (Grid.cIoo_subset_cIco _ _ hrow)) with hrow' | hrow'
+    · refine Finset.mem_union.mpr (Or.inr (hmem_r ?_ hrow'))
+      rwa [hcol]
+    · refine Finset.mem_union.mpr (Or.inl
+        ((P.mem_coveredSquares p).2 (Or.inr (Or.inl ⟨hcol, Grid.mem_cIoo_of_mem_cIco ?_ hs⟩))))
+      rwa [hcut]
+  · rw [hbottom] at hrow
+    exact Finset.mem_union.mpr (Or.inl ((P.mem_coveredSquares p).2 (Or.inr (Or.inr ⟨hcol, hrow⟩))))
 
 /-- A pentagon carries no `X`-marking exactly when the underlying rectangle carries none away
 from columns `a` and `finRotate n a`, the `X`-marking of column `a` is not above the turn row,

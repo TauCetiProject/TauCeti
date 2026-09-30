@@ -317,6 +317,23 @@ theorem suspExp_congr {k : ℕ} {d e : ℕ → ℤ} (h : ∀ i < k, d i = e i) :
   intro i hi
   rw [h i (Finset.mem_range.1 hi)]
 
+/-- When all `k` inputs have the same degree `c`, the suspension exponent is
+`(k choose 2) * c = k (k - 1) / 2 * c`. -/
+@[simp]
+theorem suspExp_const (k : ℕ) (c : ℤ) : suspExp k (fun _ ↦ c) = (k.choose 2 : ℤ) * c := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [suspExp_def] at ih ⊢
+    have hsum : ∑ i ∈ Finset.range k, (((k + 1 : ℕ) : ℤ) - 1 - i) * c =
+        ∑ i ∈ Finset.range k, (((k : ℤ) - 1 - i) * c + c) :=
+      Finset.sum_congr rfl fun i _ ↦ by push_cast; ring
+    rw [Finset.sum_range_succ, hsum, Finset.sum_add_distrib, ih, Nat.choose_succ_succ,
+      Nat.choose_one_right]
+    simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    push_cast
+    ring
+
 /-- Split the suspension exponent between an initial block and the block following it. -/
 theorem suspExp_add (a b : ℕ) (d : ℕ → ℤ) :
     suspExp (a + b) d =

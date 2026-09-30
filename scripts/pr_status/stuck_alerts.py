@@ -163,6 +163,9 @@ SCHEDULERS = {
     "update.yml":            ("daily mathlib bump",       30),
     "lint-full.yml":         ("daily full lint",          30),
     "pages.yml":             ("pages / doc-gen publish",  30),
+    # Hourly, but a run after a pin bump re-analyzes all of TauCeti and holds the
+    # concurrency group for hours, so allow for one of those.
+    "api-docs.yml":          ("API docs (doc-gen4)",       8),
     "housekeeping.yml":      ("queue housekeeping",        7),
     "zulip-healthcheck.yml": ("zulip healthcheck",        15),
     "merge-sweep.yml":       ("merge sweep",               4),

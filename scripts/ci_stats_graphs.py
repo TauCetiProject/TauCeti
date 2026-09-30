@@ -10,6 +10,9 @@ The database is the `ci.sqlite.gz` asset of https://github.com/TauCetiProject/Ta
   ci-fleet-30d.svg   the same for the last 30 days in 2-hour bins
   ci-stats.json      the binned series behind both, for anyone who wants the numbers
 
+and the daily charts of ci_daily_graphs.py (build duration, waits, phases, failures, runner-minutes,
+merge queue, runner picker).
+
 The fleet timeline has three panels on one time axis, after Marcelo Lynch's mathlib4 fleet graph:
 
   1. Jobs running (time-averaged over each bin), stacked by runner and kind, against the 20-job cap
@@ -37,6 +40,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ci_daily_graphs  # noqa: E402
 from chart_style import AXIS, BG, MUTED, PANEL, PALETTE, TEXT, base_css, card_rect, css_px, svg_unit  # noqa: E402
 
 UTC = dt.timezone.utc
@@ -386,9 +390,13 @@ def main(argv=None):
                     "all TauCetiProject repositories")
         svgs[name] = render(data, title, subtitle, annotations)
         ET.fromstring(svgs[name])  # refuse to publish a malformed SVG
+    files = {f"ci-fleet-{name}.svg": svg for name, svg in svgs.items()}
+    files.update(ci_daily_graphs.charts(db, until))
+    for svg in files.values():
+        ET.fromstring(svg)  # refuse to publish a malformed SVG
     # Written only once every chart has rendered and parsed, so a failure leaves the fallbacks.
-    for name, svg in svgs.items():
-        (out / f"ci-fleet-{name}.svg").write_text(svg)
+    for name, svg in files.items():
+        (out / name).write_text(svg)
     (out / "ci-stats.json").write_text(json.dumps(stats, separators=(",", ":")))
 
 

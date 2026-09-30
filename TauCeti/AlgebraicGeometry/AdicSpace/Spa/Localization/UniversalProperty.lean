@@ -208,9 +208,8 @@ theorem existsUnique_continuous_ringHom_of_isUnit_of_forall_comap_mem_rationalSu
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   refine existsUnique_continuous_ringHom_completion_locTopology P T s S hden hφ hs fun t ht ↦ ?_
   have := hB.isIntegrallyClosedIn
-  exact mem_powerBoundedSubring.mp
-    (hB.le_powerBoundedSubring (mem_of_forall_vle_one hB.isOpen fun w hw ↦
-      vle_one_of_comap_mem_rationalSubset hs (hfac w hw) ht))
+  exact hB.isPowerBounded_of_mem <| mem_of_forall_vle_one hB.isOpen fun w hw ↦
+    vle_one_of_comap_mem_rationalSubset hs (hfac w hw) ht
 
 /-- **Wedhorn's Lemma 8.1.** The geometric universal property in the shape Wedhorn states it: the
 unit `φ s` is not assumed but derived from the factorisation, which is step 1. -/

@@ -268,6 +268,20 @@ section BaseChange
 
 variable {k' : Type*} [Field k'] [Algebra k k'] [Algebra k' F] [IsScalarTower k k' F]
 
+/-- An algebraic extension of the base field preserves transcendence degree one. -/
+theorem trdeg_eq_one_iff_of_isAlgebraic_base [Algebra.IsAlgebraic k k'] :
+    Algebra.trdeg k' F = 1 ↔ Algebra.trdeg k F = 1 := by
+  have h := lift_trdeg_add_eq k k' F
+  rw [trdeg_eq_zero_iff.mpr (inferInstance : Algebra.IsAlgebraic k k'),
+    Cardinal.lift_zero, zero_add] at h
+  constructor
+  · intro h'
+    apply Cardinal.lift_injective
+    rw [← h, h']
+  · intro h'
+    apply Cardinal.lift_injective
+    rw [h, h']
+
 /-- An intermediate field `k'` between `k` and an algebraic function field `F / k` over which `F`
 is again an algebraic function field is algebraic over `k`. -/
 theorem IsFunctionField.isAlgebraic_base (hF : IsFunctionField k F)
@@ -282,9 +296,7 @@ theorem IsFunctionField.of_isAlgebraic (hF : IsFunctionField k F) [Algebra.IsAlg
   have : Algebra.EssFiniteType k F := hF.essFiniteType
   have : Algebra.EssFiniteType k' F := Algebra.EssFiniteType.of_comp k k' F
   rw [isFunctionField_iff_trdeg_eq_one]
-  have h := lift_trdeg_add_eq k k' F
-  rw [trdeg_eq_zero_iff.mpr ‹Algebra.IsAlgebraic k k'›, hF.trdeg_eq_one] at h
-  simpa using h
+  exact trdeg_eq_one_iff_of_isAlgebraic_base.mpr hF.trdeg_eq_one
 
 /-- Shrinking the base field of an algebraic function field along a finite extension leaves an
 algebraic function field: if `F` is a function field over `k'` and `k'` is finite over `k`, then
@@ -296,9 +308,8 @@ theorem IsFunctionField.of_finiteDimensional (hF' : IsFunctionField k' F)
   have : Algebra.EssFiniteType k' F := hF'.essFiniteType
   have : Algebra.EssFiniteType k F := Algebra.EssFiniteType.comp k k' F
   rw [isFunctionField_iff_trdeg_eq_one]
-  have h := lift_trdeg_add_eq k k' F
-  rw [trdeg_eq_zero_iff.mpr (Algebra.IsAlgebraic.of_finite k k'), hF'.trdeg_eq_one] at h
-  simpa using h.symm
+  let : Algebra.IsAlgebraic k k' := Algebra.IsAlgebraic.of_finite k k'
+  exact trdeg_eq_one_iff_of_isAlgebraic_base.mp hF'.trdeg_eq_one
 
 /-- An intermediate field of an algebraic function field `F / k` is a legitimate base field for
 `F` exactly when it is algebraic over `k`. -/

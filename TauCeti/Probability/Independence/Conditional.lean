@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import Mathlib.Probability.Independence.Process.Basic
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
 
 /-!
@@ -31,12 +32,31 @@ the generic contraction-independence identity that feeds them:
   (Lemma 1.3): if the pair laws agree, `(X, W) =ᵈ (X, W')`, and `σ(W) ≤ σ(W')`, then conditioning
   the indicator of `X ⁻¹' A` on the finer `σ(W')` equals conditioning on the coarser `σ(W)`.  Its
   pair-law/L² machinery is generic conditional-expectation infrastructure, kept `private` here.
+* `iCondIndep_of_condIndep_compl` — a family is conditionally independent if each member is
+  conditionally independent of all the others together. It turns local deletion arguments into
+  simultaneous conditional independence.
 
-These feed the de Finetti block-product factorisation / prefix-deletion drop-info step —
-the standard conditional-independence characterisation of the de Finetti route; see Kallenberg,
-*Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
+The first four results feed the de Finetti block-product factorisation / prefix-deletion drop-info
+step — the standard conditional-independence characterisation of the de Finetti route; see
+Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
 `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
+
+The complement criterion turns one-cell deletion arguments into conditional independence of all
+visible array cells given the crossing strips.
+
+For a random path `x : ι → α` over a countable index type, two further results specialize these
+criteria to the coordinate restrictions `s.domRestrict x`:
+
+* `condIndepFun_domRestrict_of_subset` — weak union for coordinate restrictions: conditioning on
+  more coordinates from the second side preserves conditional independence.
+* `condIndepFun_domRestrict_of_reindexing` — if a law-preserving reindexing of the coordinates
+  fixes those in `C` and reads the coordinates in `D` off those in `R ⊆ D`, then the coordinates
+  in `C` are conditionally independent of those in `D` given those in `R`;
+  `condIndepFun_domRestrict_of_finite_reindexing` extends this to an infinite set of coordinates
+  from its finite subsets. These are the local conditional-independence principles behind the
+  Aldous--Hoover representation of exchangeable arrays, where the reindexings come from the
+  symmetry of the array law.
 -/
 
 public section
@@ -541,6 +561,136 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω 
   exact (ae_eq_of_integral_mul_eq_of_integral_sq_eq hμ₁sq_int hμ₂sq_int hμ₂μ₁_int
     h_cross h_sq_eq).symm
 
+variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace Ω]
+  {μ : Measure Ω} [IsFiniteMeasure μ]
+  {m' : MeasurableSpace Ω} (hm' : m' ≤ mΩ)
+  {m : ι → MeasurableSpace Ω}
+
+/-- A family is conditionally independent when each member is conditionally independent of all
+the others together, given the same conditioning sigma-algebra. This criterion applies when
+local independence is proved by removing one coordinate from a process. -/
+theorem iCondIndep_of_condIndep_compl
+    (hm : ∀ i, m i ≤ mΩ)
+    (h : ∀ i, CondIndep m' (m i) (⨆ j : {j : ι // j ≠ i}, m j.1)
+      (mΩ := mΩ) hm' μ) :
+    iCondIndep m' hm' m μ := by
+  classical
+  refine (iCondIndep_iff m' hm' m hm μ).2 ?_
+  intro s f hf
+  induction s using Finset.induction_on with
+  | empty =>
+      simp only [Finset.notMem_empty, Set.iInter_of_empty, Set.iInter_univ,
+        Set.indicator_univ, Finset.prod_empty, condExp_const hm']
+      filter_upwards [] with ω
+      rfl
+  | @insert a s ha ih =>
+    have hrest : MeasurableSet[⨆ j : {j : ι // j ≠ a}, m j.1]
+        (⋂ j ∈ s, f j) := by
+      apply Finset.measurableSet_biInter
+      intro j hj
+      exact (le_iSup (fun k : {k : ι // k ≠ a} => m k.1)
+        ⟨j, fun hja => ha (hja ▸ hj)⟩) (f j)
+          (hf j (Finset.mem_insert_of_mem hj))
+    have hfactor := (condIndep_iff m' (m a) (⨆ j : {j : ι // j ≠ a}, m j.1)
+      hm' (hm a) (iSup_le fun j => hm j.1) μ).1 (h a)
+      (f a) (⋂ j ∈ s, f j) (hf a (Finset.mem_insert_self _ _)) hrest
+    simpa only [Finset.set_biInter_insert, Finset.prod_insert ha] using
+      hfactor.trans (Filter.EventuallyEq.rfl.mul (ih (fun j hj =>
+        hf j (Finset.mem_insert_of_mem hj))))
+
 end Probability
 
 end TauCeti
+
+namespace TauCeti.Probability
+
+/-! ### Conditional independence of coordinate restrictions -/
+
+variable {ι α : Type*} [Countable ι] [MeasurableSpace α] [StandardBorelSpace α]
+  {ρ : Measure (ι → α)} [IsFiniteMeasure ρ]
+
+/-- **Weak union for coordinate restrictions.** If `f` is conditionally independent of the
+coordinates in `D` given those in `R`, then it stays so given the coordinates in any `H` with
+`R ⊆ H ⊆ D`. -/
+theorem condIndepFun_domRestrict_of_subset {β : Type*} [MeasurableSpace β]
+    {f : (ι → α) → β} (hf : Measurable f) {R H D : Set ι}
+    (h : f ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ] D.domRestrict)
+    (hRH : R ⊆ H) (hHD : H ⊆ D) :
+    f ⟂ᵢ[H.domRestrict, Set.measurable_restrict _; ρ] D.domRestrict := by
+  have hle : ∀ {s t : Set ι}, s ⊆ t →
+      MeasurableSpace.comap (s.domRestrict (π := fun _ ↦ α)) inferInstance ≤
+        MeasurableSpace.comap (t.domRestrict (π := fun _ ↦ α)) inferInstance := fun hst ↦ by
+    rw [← Set.domRestrict₂_comp_domRestrict hst, ← MeasurableSpace.comap_comp]
+    exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hst).comap_le
+  rw [condIndepFun_iff_condIndep] at h ⊢
+  exact condIndep_of_condIndep_of_le_of_le hf.comap_le (Set.measurable_restrict _).comap_le
+    (Set.measurable_restrict _).comap_le h (hle hRH) (hle hHD)
+
+/-- **Conditional independence from a law-preserving reindexing.** Let `r` reindex the coordinates
+of a random path `x : ι → α` without changing its law. If `r` fixes every coordinate in `C` and
+maps the coordinates in `D` into `R ⊆ D`, then the coordinates in `C` are conditionally
+independent of those in `D` given those in `R`. -/
+theorem condIndepFun_domRestrict_of_reindexing {C R D : Set ι} (hRD : R ⊆ D) (r : ι → ι)
+    (hr : ρ.map (fun x i ↦ x (r i)) = ρ) (hfix : ∀ i ∈ C, r i = i) (hinto : Set.MapsTo r D R) :
+    C.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ] D.domRestrict := by
+  let H : (ι → α) → ι → α := fun x i ↦ x (r i)
+  have hH : Measurable H := Measurable.of_eval fun i ↦ measurable_pi_apply (r i)
+  have hfixed : ∀ x, C.domRestrict (H x) = C.domRestrict x := fun x ↦ by
+    funext c
+    simp only [Set.domRestrict_apply, H, hfix c.1 c.2]
+  let K : (R → α) → D → α := fun y q ↦ y ⟨r q, hinto q.2⟩
+  have hK : Measurable K := Measurable.of_eval fun _ ↦ measurable_pi_apply _
+  let W : (ι → α) → D → α := K ∘ R.domRestrict
+  have hW_eq : W = fun x ↦ D.domRestrict (H x) := (rfl)
+  have hW : Measurable W := hK.comp (Set.measurable_restrict R)
+  have hWR : MeasurableSpace.comap W inferInstance ≤
+      MeasurableSpace.comap (R.domRestrict (π := fun _ ↦ α)) inferInstance := by
+    rw [← MeasurableSpace.comap_comp]
+    exact MeasurableSpace.comap_mono hK.comap_le
+  have hRD' : MeasurableSpace.comap (R.domRestrict (π := fun _ ↦ α)) inferInstance ≤
+      MeasurableSpace.comap (D.domRestrict (π := fun _ ↦ α)) inferInstance := by
+    rw [← Set.domRestrict₂_comp_domRestrict hRD, ← MeasurableSpace.comap_comp]
+    exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hRD).comap_le
+  -- Reindexing fixes the `C`-coordinates and turns the `D`-coordinates into `W`, which is read
+  -- off the `R`-coordinates; Kallenberg's contraction-independence lemma then drops `D` to `R`.
+  have hpair : ρ.map (fun x ↦ (C.domRestrict x, W x)) =
+      ρ.map (fun x ↦ (C.domRestrict x, D.domRestrict x)) := by
+    have hcomp : (fun x ↦ (C.domRestrict x, W x)) =
+        (fun x ↦ (C.domRestrict x, D.domRestrict x)) ∘ H := by
+      funext x
+      exact Prod.ext (hfixed x).symm (congrFun hW_eq x)
+    rw [hcomp, ← Measure.map_map (by fun_prop) hH, hr]
+  rw [condIndepFun_iff_condIndep]
+  refine CondIndep.symm ?_
+  refine condIndep_of_indicator_condExp_eq (Set.measurable_restrict D).comap_le
+    (Set.measurable_restrict R).comap_le (Set.measurable_restrict C).comap_le ?_
+  rintro _ ⟨A, hA, rfl⟩
+  rw [sup_eq_left.mpr hRD']
+  have hcontr := condExp_indicator_eq_of_law_eq_of_comap_le C.domRestrict W D.domRestrict
+    (Set.measurable_restrict C) hW (Set.measurable_restrict D) hpair (hWR.trans hRD') hA
+  exact hcontr.trans (TauCeti.MeasureTheory.condExp_ae_eq_of_le_of_le hWR hRD'
+    (Set.measurable_restrict D).comap_le hcontr).symm
+
+/-- **Conditional independence from law-preserving reindexings of finite coordinate sets.** The
+coordinates in `U` are conditionally independent of those in `D` given those in `R ⊆ D` as soon as
+every finite subset of `U` is fixed by some law-preserving reindexing that maps `D` into `R`. The
+reindexing may depend on the finite subset. -/
+theorem condIndepFun_domRestrict_of_finite_reindexing {R D U : Set ι} (hRD : R ⊆ D)
+    (hreindex : ∀ C : Set ι, C.Finite → C ⊆ U →
+      ∃ r : ι → ι, ρ.map (fun x i ↦ x (r i)) = ρ ∧ (∀ i ∈ C, r i = i) ∧ Set.MapsTo r D R) :
+    U.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ] D.domRestrict := by
+  classical
+  apply Kernel.IndepFun.process_indepFun
+    (fun i : U ↦ measurable_pi_apply i.1) (Set.measurable_restrict _)
+  intro F
+  let C : Set ι := Subtype.val '' (F : Set U)
+  have hC : C.Finite := F.finite_toSet.image Subtype.val
+  have hCU : C ⊆ U := by rintro i ⟨j, _, rfl⟩; exact j.2
+  suffices h : C.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ]
+      D.domRestrict by
+    exact h.comp (Measurable.of_eval fun i : F ↦
+      measurable_pi_apply (⟨i.1.1, ⟨i.1, i.2, rfl⟩⟩ : C)) measurable_id
+  obtain ⟨r, hr, hfix, hinto⟩ := hreindex C hC hCU
+  exact condIndepFun_domRestrict_of_reindexing hRD r hr hfix hinto
+
+end TauCeti.Probability

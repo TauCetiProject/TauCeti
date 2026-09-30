@@ -10,11 +10,15 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import Mathlib.GroupTheory.Coset.Card
 import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Point stabilisers: their cardinality, and when they are normal
+
+A subgroup inclusion restricts to an injective map on point stabilizers, so the smaller
+stabilizer order divides the larger one.
 
 A count defined through a point stabiliser is useful only alongside the rules for moving it.
 Three such rules are recorded here, all consequences of Mathlib machinery rather than new
@@ -78,6 +82,25 @@ normality of it is equivalent to freeness of the action of the image.
 public section
 
 namespace Subgroup
+
+variable {G X : Type*} [Group G] [MulAction G X]
+  {Δ Γ : Subgroup G} (h : Δ ≤ Γ) (x : X)
+
+/-- Inclusion of groups restricts to an inclusion of their stabilizers at the same point. -/
+def stabilizerInclusion : MulAction.stabilizer Δ x →* MulAction.stabilizer Γ x where
+  toFun g := ⟨⟨g.1.1, h g.1.2⟩, g.2⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+/-- The inclusion of point stabilizers is injective. -/
+theorem stabilizerInclusion_injective : Function.Injective (stabilizerInclusion h x) := by
+  intro a b hab
+  exact Subtype.ext (Subtype.ext (congrArg (fun g : MulAction.stabilizer Γ x => g.1.1) hab))
+
+/-- The stabilizer order for a subgroup divides that for a larger group. -/
+theorem card_stabilizer_dvd_card_stabilizer (h : Δ ≤ Γ) (x : X) :
+    Nat.card (MulAction.stabilizer Δ x) ∣ Nat.card (MulAction.stabilizer Γ x) :=
+  card_dvd_of_injective (stabilizerInclusion h x) (stabilizerInclusion_injective h x)
 
 open MulAction
 

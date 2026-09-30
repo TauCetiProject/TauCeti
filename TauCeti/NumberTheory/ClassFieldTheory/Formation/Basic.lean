@@ -94,7 +94,7 @@ finite group and the coefficient ring `ℤ` in one universe and for the coeffici
 same universe, and every carrier of the arithmetic instances is a `Type`, so nothing is lost.
 
 The coefficient module is read as a plain `Rep ℤ G` through `Representation.ofDistribMulAction` at
-the action `TauCeti.TopRep.distribMulAction` derives from the operators of the topological
+the action `TopRep.distribMulAction` derives from the operators of the topological
 representation. Passing instead through `ContRepresentation.toRepresentation` would carry the
 `Module ℤ` instance packaged inside `TopRep`, which is not the instance `AddCommGroup.toIntModule`
 that typeclass synthesis produces for an integral module, and the two are not definitionally
@@ -269,10 +269,9 @@ theorem degree_eq_natCard_gal : L.degree = Nat.card L.Gal :=
 
 /-- The degree of a layer is the relative index of its top subgroup in its ground subgroup. -/
 theorem degree_eq_relIndex :
-    L.degree = L.top.toSubgroup.relIndex L.ground.toSubgroup :=
-  by
-    rw [Subgroup.relIndex]
-    exact L.degree_eq_natCard_gal
+    L.degree = L.top.toSubgroup.relIndex L.ground.toSubgroup := by
+  rw [Subgroup.relIndex]
+  exact L.degree_eq_natCard_gal
 
 /-- The layer `V ◁ ⊤` cut out by an open normal subgroup of `G`. These layers are the finite
 Galois extensions of the ground field of a formation on `G`. -/
@@ -426,8 +425,9 @@ abbrev H (n : ℕ) : ModuleCat ℤ := groupCohomology (L.rep F) n
 abbrev TateH (r : ℤ) : ModuleCat ℤ := tateCohomology (L.rep F) r
 
 /-- **Tate cohomology of a finite normal layer with trivial integral coefficients**, the Tate
-group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer, and
-the Artin map of a class formation is a cup product between this carrier and `TateH`. -/
+group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer. In a
+class formation, cup product with the fundamental class of the layer carries that degree
+isomorphically onto `TateH` in degree `0`, and the Artin map is the inverse of this isomorphism. -/
 abbrev TrivialTateH (r : ℤ) : ModuleCat ℤ := tateCohomology (Rep.trivial ℤ L.Gal ℤ) r
 
 /-! ### The two low Tate degrees -/
@@ -462,8 +462,8 @@ theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
         (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
-            (Finsupp.single g 1))) := by
-  exact TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_symm_of g
+            (Finsupp.single g 1))) :=
+  TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_symm_of g
 
 /-- **In positive degrees the Tate cohomology of a finite normal layer is its ordinary
 cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, stated between the
@@ -490,8 +490,7 @@ landing in the ground level through `groundLevelEquiv`. -/
 def norm : F.level L.top →ₗ[ℤ] F.level L.ground :=
   (L.groundLevelEquiv F).toLinearMap ∘ₗ
     (L.rep F).ρ.norm.codRestrict (L.rep F).ρ.invariants fun x ↦
-      (Representation.mem_invariants _ _).2 fun g ↦ by
-        rw [← LinearMap.comp_apply, Representation.self_comp_norm]
+      (Representation.mem_invariants _ _).2 fun g ↦ Representation.self_norm_apply _ g x
 
 /-- The norm of a layer is the sum of the Galois conjugates: `N_{U/V}(x) = ∑_{γ ∈ U ⧸ V} γ x`. -/
 @[simp]
@@ -548,18 +547,8 @@ theorem map_groundLevelEquiv_submoduleOf :
     Submodule.map (L.groundLevelEquiv F).toLinearMap
         ((LinearMap.range (L.rep F).ρ.norm).submoduleOf (L.rep F).ρ.invariants) =
       L.normSubgroup F := by
-  ext y
-  simp only [Submodule.mem_map, Submodule.submoduleOf, Submodule.mem_comap,
-    LinearMap.mem_range, mem_normSubgroup, LinearEquiv.coe_coe]
-  constructor
-  · rintro ⟨z, ⟨v, hv⟩, rfl⟩
-    refine ⟨v, Subtype.ext ?_⟩
-    -- The congruence is bound first: elaborated against the goal, `congrArg` would unify its
-    -- arguments with the two sides of the goal instead of with the two sides of `hv`.
-    have h := congrArg Subtype.val hv
-    exact h
-  · rintro ⟨v, rfl⟩
-    exact ⟨_, ⟨v, rfl⟩, rfl⟩
+  simp only [normSubgroup, norm, LinearMap.range_comp, LinearMap.range_codRestrict,
+    Submodule.submoduleOf]
 
 /-- **Degree-zero Tate cohomology of a finite normal layer is its norm quotient.** This is the
 low-degree identification that the Artin map of a class formation is read through. -/

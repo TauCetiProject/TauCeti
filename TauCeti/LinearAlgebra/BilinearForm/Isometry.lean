@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
+import Mathlib.LinearAlgebra.Charpoly.BaseChange
 
 /-!
 # The isometry group of a bilinear form
@@ -53,11 +54,15 @@ Two statements are worth singling out.
 
 * `TauCeti.BilinForm.IsIsometry`: an endomorphism preserves a bilinear form.
 * `TauCeti.BilinForm.isometryGroup`: the isometry group `Aut(M, B) ≤ M ≃ₗ[R] M`.
+* `LinearMap.BilinForm.specialIsometryGroup`: the determinant-one isometry group of `B`.
 * `TauCeti.BilinForm.IsIsometry.toIsometryGroup`: an isometry of a left-separating form on a finite
   free module over an integral domain, as an element of the isometry group.
 * `TauCeti.BilinForm.isometryGroupBaseChange`: base change of isometries, as a group homomorphism.
+* `LinearMap.BilinForm.specialIsometryGroupBaseChange`: base change of determinant-one isometries.
 * `TauCeti.BilinForm.isometryGroupCongr`: transport of the isometry group along a linear
   equivalence.
+* `LinearMap.BilinForm.specialIsometryGroupCongr`: the corresponding transport of its
+  determinant-one subgroup.
 
 ## Main results
 
@@ -457,3 +462,197 @@ end CommRing
 end BilinForm
 
 end TauCeti
+
+/-! ### The determinant-one isometry group
+
+These declarations live in Mathlib's `LinearMap.BilinForm` namespace so that dot notation such as
+`B.specialIsometryGroup` works on a bilinear form `B`. -/
+
+namespace LinearMap.BilinForm
+
+open Module TauCeti.BilinForm
+open LinearMap (BilinForm)
+open scoped TensorProduct
+
+section CommRing
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
+
+/-- The determinant-one isometry group of a bilinear form.
+
+The determinant is Mathlib's `LinearEquiv.det`, which is `1` by convention on a module that is not
+finite free; on such a module this subgroup is therefore all of `isometryGroup B`. -/
+noncomputable def specialIsometryGroup (B : BilinForm R M) : Subgroup (M ≃ₗ[R] M) :=
+  isometryGroup B ⊓ (LinearEquiv.det (R := R) (M := M)).ker
+
+@[simp]
+theorem mem_specialIsometryGroup_iff {e : M ≃ₗ[R] M} :
+    e ∈ specialIsometryGroup B ↔ e ∈ isometryGroup B ∧ LinearEquiv.det e = 1 :=
+  Iff.rfl
+
+/-- Every determinant-one isometry is an isometry. -/
+theorem specialIsometryGroup_le_isometryGroup (B : BilinForm R M) :
+    specialIsometryGroup B ≤ isometryGroup B :=
+  inf_le_left
+
+/-- The determinant-one isometry group is normal in the full isometry group. -/
+instance specialIsometryGroup_normal (B : BilinForm R M) :
+    ((specialIsometryGroup B).subgroupOf (isometryGroup B)).Normal := by
+  rw [specialIsometryGroup, Subgroup.inf_subgroupOf_left]
+  infer_instance
+
+/-- The determinant of an isometry, as a homomorphism to the units of the base ring. -/
+noncomputable def isometryDet (B : BilinForm R M) : isometryGroup B →* Rˣ :=
+  LinearEquiv.det.comp (isometryGroup B).subtype
+
+@[simp]
+theorem isometryDet_apply (g : isometryGroup B) :
+    isometryDet B g = LinearEquiv.det (g : M ≃ₗ[R] M) :=
+  by rw [isometryDet, MonoidHom.comp_apply, Subgroup.coe_subtype]
+
+/-- The determinant-one subgroup regarded as a subgroup of the full isometry group. -/
+noncomputable def specialIsometryWithin (B : BilinForm R M) : Subgroup (isometryGroup B) :=
+  (isometryDet B).ker
+
+@[simp]
+theorem mem_specialIsometryWithin_iff {g : isometryGroup B} :
+    g ∈ specialIsometryWithin B ↔ LinearEquiv.det (g : M ≃ₗ[R] M) = 1 :=
+  Iff.rfl
+
+/-- The two ambient-group presentations of the determinant-one isometry group agree. -/
+theorem specialIsometryWithin_eq_subgroupOf :
+    specialIsometryWithin B = (specialIsometryGroup B).subgroupOf (isometryGroup B) := by
+  ext g
+  simp [Subgroup.mem_subgroupOf, g.2]
+
+/-- The inclusion from determinant-one isometries to all isometries. -/
+noncomputable def specialIsometryToIsometry (B : BilinForm R M) :
+    specialIsometryGroup B →* isometryGroup B :=
+  Subgroup.inclusion (specialIsometryGroup_le_isometryGroup B)
+
+@[simp]
+theorem coe_specialIsometryToIsometry (g : specialIsometryGroup B) :
+    ((specialIsometryToIsometry B g : isometryGroup B) : M ≃ₗ[R] M) = g :=
+  by simp [specialIsometryToIsometry]
+
+/-- The determinant of a determinant-one isometry is one. -/
+@[simp]
+theorem det_coe_specialIsometryGroup (g : specialIsometryGroup B) :
+    LinearEquiv.det (g : M ≃ₗ[R] M) = 1 := by
+  exact (mem_specialIsometryGroup_iff.mp g.2).2
+
+/-- Inclusion of determinant-one isometries into all isometries is injective. -/
+theorem specialIsometryToIsometry_injective :
+    Function.Injective (specialIsometryToIsometry B) :=
+  Subgroup.inclusion_injective _
+
+/-- The image of the determinant-one isometry group in the full isometry group is the determinant
+kernel. -/
+@[simp]
+theorem range_specialIsometryToIsometry :
+    (specialIsometryToIsometry B).range = specialIsometryWithin B := by
+  rw [specialIsometryWithin_eq_subgroupOf, specialIsometryToIsometry,
+    Subgroup.inclusion_range]
+
+/-- The determinant kernel inside the isometry group is canonically isomorphic to the
+determinant-one subgroup of the ambient linear automorphism group. -/
+noncomputable def specialIsometryWithinEquiv (B : BilinForm R M) :
+    specialIsometryWithin B ≃* specialIsometryGroup B :=
+  (MulEquiv.subgroupCongr specialIsometryWithin_eq_subgroupOf).trans
+    (Subgroup.subgroupOfEquivOfLe (specialIsometryGroup_le_isometryGroup B))
+
+@[simp]
+theorem coe_specialIsometryWithinEquiv_apply (g : specialIsometryWithin B) :
+    ((specialIsometryWithinEquiv B g : specialIsometryGroup B) : M ≃ₗ[R] M) =
+      ((g : isometryGroup B) : M ≃ₗ[R] M) := by
+  simp [specialIsometryWithinEquiv, Subgroup.subgroupOfEquivOfLe]
+
+@[simp]
+theorem coe_specialIsometryWithinEquiv_symm_apply (g : specialIsometryGroup B) :
+    (((specialIsometryWithinEquiv B).symm g : specialIsometryWithin B) : isometryGroup B) =
+      specialIsometryToIsometry B g := by
+  ext1
+  simp [specialIsometryWithinEquiv, Subgroup.subgroupOfEquivOfLe]
+
+/-- On a subsingleton module every isometry has determinant one. -/
+theorem specialIsometryWithin_eq_top [Subsingleton M] : specialIsometryWithin B = ⊤ := by
+  refine eq_top_iff.mpr fun g _ ↦ ?_
+  rw [mem_specialIsometryWithin_iff, Subsingleton.elim (g : M ≃ₗ[R] M) 1, map_one]
+
+section Congr
+
+variable {M' : Type*} [AddCommGroup M'] [Module R M']
+
+private theorem map_specialIsometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M') :
+    (specialIsometryGroup B).map (LinearEquiv.autCongr e : _ →* _) =
+      specialIsometryGroup (LinearMap.BilinForm.congr e B) := by
+  ext g
+  simp only [Subgroup.mem_map, MonoidHom.coe_ofClass, mem_specialIsometryGroup_iff]
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    refine ⟨(isometryGroupCongr B e ⟨a, ha.1⟩).2, ?_⟩
+    rw [LinearEquiv.autCongr_apply, LinearEquiv.det_conj, ha.2]
+  · intro hg
+    refine ⟨(LinearEquiv.autCongr e).symm g, ?_, (LinearEquiv.autCongr e).apply_symm_apply g⟩
+    refine ⟨?_, ?_⟩
+    · exact ((isometryGroupCongr B e).symm ⟨g, hg.1⟩).2
+    · rw [LinearEquiv.autCongr_symm_apply]
+      calc
+        LinearEquiv.det ((e.trans g).trans e.symm) = LinearEquiv.det g := by
+          simpa only [LinearEquiv.symm_symm] using LinearEquiv.det_conj g e.symm
+        _ = 1 := hg.2
+
+/-- Transporting a bilinear form along a linear equivalence transports its determinant-one
+isometry group. -/
+noncomputable def specialIsometryGroupCongr (B : BilinForm R M) (e : M ≃ₗ[R] M') :
+    specialIsometryGroup B ≃* specialIsometryGroup (LinearMap.BilinForm.congr e B) :=
+  ((LinearEquiv.autCongr e).subgroupMap _).trans
+    (MulEquiv.subgroupCongr (map_specialIsometryGroup B e))
+
+@[simp]
+theorem coe_specialIsometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
+    (g : specialIsometryGroup B) :
+    (specialIsometryGroupCongr B e g : M' ≃ₗ[R] M') =
+      (e.symm.trans (g : M ≃ₗ[R] M)).trans e := by
+  rw [specialIsometryGroupCongr, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
+    MulEquiv.coe_subgroupMap_apply, LinearEquiv.autCongr_apply]
+
+@[simp]
+theorem coe_specialIsometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
+    (g : specialIsometryGroup (LinearMap.BilinForm.congr e B)) :
+    ((specialIsometryGroupCongr B e).symm g : M ≃ₗ[R] M) =
+      (e.trans (g : M' ≃ₗ[R] M')).trans e.symm := by
+  rw [← (LinearEquiv.autCongr e).injective.eq_iff, LinearEquiv.autCongr_apply,
+    ← coe_specialIsometryGroupCongr_apply, MulEquiv.apply_symm_apply]
+  ext x
+  simp
+
+end Congr
+
+section BaseChange
+
+variable (A : Type*) [CommRing A] [Algebra R A] [Module.Free R M] [Module.Finite R M]
+
+/-- Base change preserves determinant-one isometries. -/
+noncomputable def specialIsometryGroupBaseChange (B : BilinForm R M) :
+    specialIsometryGroup B →* specialIsometryGroup (LinearMap.BilinForm.baseChange A B) where
+  toFun g := ⟨isometryGroupBaseChange A B
+      ⟨g, specialIsometryGroup_le_isometryGroup B g.2⟩, by
+    refine mem_specialIsometryGroup_iff.mpr ⟨(isometryGroupBaseChange A B _).2, ?_⟩
+    rw [coe_isometryGroupBaseChange, LinearEquiv.det_baseChange,
+      (mem_specialIsometryGroup_iff.mp g.2).2, map_one]⟩
+  map_one' := Subtype.ext (by simp [isometryGroupBaseChange])
+  map_mul' g h := Subtype.ext (by simp [isometryGroupBaseChange, LinearEquiv.baseChange_mul])
+
+@[simp]
+theorem coe_specialIsometryGroupBaseChange (B : BilinForm R M)
+    (g : specialIsometryGroup B) :
+    (specialIsometryGroupBaseChange A B g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) =
+      LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) :=
+  by simp [specialIsometryGroupBaseChange, isometryGroupBaseChange]
+
+end BaseChange
+
+end CommRing
+
+end LinearMap.BilinForm

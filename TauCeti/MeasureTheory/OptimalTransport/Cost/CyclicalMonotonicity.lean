@@ -31,6 +31,8 @@ require additional hypotheses.
 ## Main statements
 
 * `TauCeti.IsCyclicallyMonotone` — finite `c`-cyclical monotonicity of a set of pairs;
+* `TauCeti.isCyclicallyMonotone_ofReal_iff` — for a nonnegative real cost, the property is the
+  same for the cost and for its image in `ℝ≥0∞`;
 * `TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support` — the support of an optimal coupling
   of finite cost for a continuous cost `c : X × Y → ℝ≥0∞` is `c`-cyclically monotone.
 
@@ -119,6 +121,19 @@ theorem isCyclicallyMonotone_empty [Preorder M] (c : X × Y → M) :
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp
     · exact absurd (hmem ⟨0, hn⟩) (Set.notMem_empty _)
+
+/-- For a nonnegative real cost, cyclical monotonicity is the same condition for the cost and for
+its image in `ℝ≥0∞`, since `ENNReal.ofReal` is additive and order-reflecting on nonnegative
+reals. This moves the property between the extended-nonnegative primal interface and the real
+`c`-transform interface. -/
+theorem isCyclicallyMonotone_ofReal_iff {c : X × Y → ℝ} (hc : ∀ z, 0 ≤ c z) {S : Set (X × Y)} :
+    IsCyclicallyMonotone (fun z ↦ ENNReal.ofReal (c z)) S ↔ IsCyclicallyMonotone c S := by
+  simp only [isCyclicallyMonotone_iff]
+  refine forall_congr' fun n ↦ forall_congr' fun x ↦ forall_congr' fun y ↦
+    imp_congr_right fun _ ↦ forall_congr' fun σ ↦ ?_
+  rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hc _,
+    ← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hc _,
+    ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun i _ ↦ hc _)]
 
 section Support
 

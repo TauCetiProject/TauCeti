@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.QuotientGroup.Index
+public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
@@ -27,6 +28,8 @@ nor total disconnectedness is needed, so the results apply in particular to prof
 
 * `QuotientGroup.instDiscreteTopology`: the quotient of a discrete group by any subgroup is
   discrete.
+* `QuotientGroup.continuous_mapOfLE`: the quotient homomorphism `G ⧸ V →* G ⧸ U` for normal
+  subgroups `V ≤ U` is continuous.
 * `QuotientGroup.isClopen_image_mk`: the image of an open subgroup of `G` under the
   quotient map `G → G ⧸ N` is clopen.
 * `QuotientGroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond,
@@ -56,6 +59,21 @@ instance instDiscreteTopology (H : Subgroup G) : DiscreteTopology (G ⧸ H) :=
   QuotientGroup.discreteTopology (isOpen_discrete _)
 
 end Discrete
+
+section MapOfLE
+
+variable {G : Type*} [Group G] [TopologicalSpace G] {U V : Subgroup G} [U.Normal] [V.Normal]
+
+/-- The quotient homomorphism `G ⧸ V →* G ⧸ U` for normal subgroups `V ≤ U` of a topological
+group is continuous: composed with the quotient map of `G` modulo `V` it is the quotient map
+modulo `U`, and `G ⧸ V` carries the quotient topology. -/
+theorem continuous_mapOfLE (hVU : V ≤ U) : Continuous (mapOfLE hVU) :=
+  (_root_.QuotientGroup.isQuotientMap_mk V).continuous_iff.mpr <| by
+    rw [← _root_.QuotientGroup.coe_mk' V, ← MonoidHom.coe_comp, mapOfLE_comp_mk',
+      _root_.QuotientGroup.coe_mk']
+    exact _root_.QuotientGroup.continuous_mk
+
+end MapOfLE
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] {N : Subgroup G}
   [N.Normal]
