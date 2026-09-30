@@ -41,6 +41,8 @@ see `TauCeti/Combinatorics/Brauer/Diagram.lean`.
   matchings.
 * `TauCeti.IsPerfectMatching.sign_eq`: a perfect matching of a type of cardinality `2 * m` has
   sign `(-1) ^ m`.
+* `TauCeti.IsPerfectMatching.two_mul_orbitCount`: a perfect matching has half as many orbits as
+  points.
 * `TauCeti.IsPerfectMatching.even_orbitCount_mul`: the product of two perfect matchings has an even
   number of orbits.
 
@@ -443,6 +445,24 @@ theorem IsPerfectMatching.even_orbitCount_mul [Finite α] {f g : Equiv.Perm α}
   have hparity : (Fintype.card α - orbitCount (f * g)) % 2 = 1 := by omega
   rw [hparity, pow_one] at hs
   exact absurd hs (by decide)
+
+/-- **A perfect matching has half as many orbits as points**: its orbits are its pairs. -/
+theorem IsPerfectMatching.two_mul_orbitCount [Finite α] {f : Equiv.Perm α}
+    (hf : IsPerfectMatching f) : 2 * orbitCount f = Nat.card α := by
+  classical
+  have := Fintype.ofFinite α
+  have hsupp : f.support = Finset.univ :=
+    Finset.eq_univ_of_forall fun a => Equiv.Perm.mem_support.mpr (hf.2 a)
+  have hsq : f ^ 2 = 1 := Equiv.ext fun a => by simp [sq, hf.1 a]
+  have htwo : ∀ k ∈ f.cycleType, k = 2 := fun k hk =>
+    le_antisymm (Nat.le_of_dvd two_pos ((Equiv.Perm.dvd_of_mem_cycleType hk).trans
+      (orderOf_dvd_of_pow_eq_one hsq))) (Equiv.Perm.two_le_of_mem_cycleType hk)
+  have hsum := f.sum_cycleType
+  rw [Multiset.eq_replicate_of_mem htwo, Multiset.sum_replicate, smul_eq_mul, hsupp,
+    Finset.card_univ] at hsum
+  rw [f.orbitCount_eq_card_parts_partition, Equiv.Perm.parts_partition, hsupp, Finset.card_univ,
+    Nat.sub_self, Multiset.replicate_zero, add_zero, Nat.card_eq_fintype_card, ← hsum]
+  ring
 
 end Parity
 
