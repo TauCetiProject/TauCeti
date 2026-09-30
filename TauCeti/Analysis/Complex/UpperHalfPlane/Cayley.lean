@@ -30,7 +30,7 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   half-plane.
 * `TauCeti.injOn_sub_I_div_add_I`: the transform is injective off its pole `-i`.
 * `TauCeti.sub_I_div_add_I_sub_sub_I_div_add_I`: the difference of two values of the transform.
-* `TauCeti.continuousAt_sub_I_div_add_I` and `TauCeti.norm_sub_I_div_add_I_ofReal`:
+* `TauCeti.continuousAt_sub_I_div_add_I` and `TauCeti.norm_sub_I_div_norm_add_I_ofReal`:
   continuity and unit norm at real boundary points.
 * `TauCeti.one_sub_conj_mul_sub_I_div_add_I_ne_zero`: the denominator of a standard disc
   automorphism does not vanish at a real boundary point in Cayley coordinates.
@@ -86,7 +86,7 @@ theorem continuousAt_sub_I_div_add_I (x : ℝ) :
     (add_I_ne_zero_of_im_nonneg (by simp))
 
 /-- The Cayley transform of a real point lies on the unit circle. -/
-@[simp] theorem norm_sub_I_div_add_I_ofReal (x : ℝ) :
+@[simp] theorem norm_sub_I_div_norm_add_I_ofReal (x : ℝ) :
     ‖(x : ℂ) - I‖ / ‖(x : ℂ) + I‖ = 1 := by
   rw [← norm_div]
   have hx : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
@@ -101,7 +101,7 @@ theorem one_sub_conj_mul_sub_I_div_add_I_ne_zero (c : Complex.UnitDisc) (x : ℝ
   have hnorm : ‖(c : ℂ)‖ * ‖((x : ℂ) - I) / ((x : ℂ) + I)‖ = 1 := by
     have := congrArg norm (sub_eq_zero.mp h)
     simpa [norm_mul] using this.symm
-  rw [norm_div, norm_sub_I_div_add_I_ofReal x, mul_one] at hnorm
+  rw [norm_div, norm_sub_I_div_norm_add_I_ofReal x, mul_one] at hnorm
   exact (ne_of_lt c.norm_lt_one) hnorm
 
 /-- The closed-disc criterion in the normal form used by `simp` after `norm_div`. -/
