@@ -230,6 +230,7 @@ theorem pointMap_ofIsogeny_eq_toPointHom [IsSepClosed F]
       (φ.coe_pointEquivDegreeOnePlace_toPointHom (fun _ ↦ rfl) P).symm
 
 /-- **A separable isogeny over a separably closed field acts additively on points.** -/
+@[simp]
 theorem pointMap_add [IsSepClosed F]
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (P Q : W₁.Point) :
     (ofIsogeny φ).pointMap (P + Q) =
@@ -295,6 +296,7 @@ theorem comp_add_of_pointMap_add [W₃.IsElliptic] [Infinite W₁.Point]
 omit [DecidableEq F] in
 /-- **Composition with a separable isogeny over a separably closed field is additive in the inner
 morphism.** -/
+@[simp]
 theorem ofIsogeny_comp_add [IsSepClosed F] [W₃.IsElliptic] (φ : Isogeny W₂ W₃)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₂.FunctionField] (f g : Hom W₁ W₂) :
     (ofIsogeny φ).comp (f + g) = (ofIsogeny φ).comp f + (ofIsogeny φ).comp g := by
