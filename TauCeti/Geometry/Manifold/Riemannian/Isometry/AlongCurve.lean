@@ -24,9 +24,6 @@ velocity field of a curve is generally not the restriction of an ambient vector 
 ## Main results
 
 * `mfderiv_alongCurveWithin_mpullback`: naturality for a field pulled back from the target.
-* `differentiableWithinAt_sectionCoord_mfderiv` and
-  `differentiableAt_sectionCoord_mfderiv`: regularity of a tangent field transported by an
-  isometry.
 * `mfderiv_alongCurveWithin`: naturality for an arbitrary differentiable tangent field along the
   curve.
 * `mfderiv_alongCurve`: the unrestricted form.
@@ -99,75 +96,12 @@ theorem mfderiv_alongCurve_mpullback (Φ : RiemannianIsometry I J M N)
 
 /-! ### Arbitrary tangent fields along a curve -/
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)] in
-/-- The differential of a Riemannian isometry carries a tangent field along `γ` that is
-differentiable in local coordinates to a tangent field along `Φ ∘ γ` that is differentiable in
-local coordinates. -/
-theorem differentiableWithinAt_sectionCoord_mfderiv (Φ : RiemannianIsometry I J M N)
-    {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
-    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t) :
-    DifferentiableWithinAt ℝ
-      (sectionCoord (F := F) (Φ ∘ γ) (fun r ↦ mfderiv I J Φ (γ r) (V r)) (Φ (γ t))) s t := by
-  -- Lift `V` to a differentiable curve in the tangent bundle, then push it forward by the
-  -- smooth tangent map of `Φ`.
-  let e := trivializationAt E (TangentSpace I) (γ t)
-  have hbase : γ t ∈ e.baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
-  have hnear : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
-    hγ.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hbase)
-  have hcoord : DifferentiableWithinAt ℝ
-      (fun r ↦ (e (TotalSpace.mk' E (γ r) (V r))).2) s t := by
-    apply hV.congr_of_eventuallyEq
-    · filter_upwards [hnear] with r hr
-      rw [sectionCoord_apply,
-        Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) e hr]
-    · rw [sectionCoord_apply,
-        Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) e hbase]
-  have htotal : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I.tangent
-      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t := by
-    rw [e.mdifferentiableWithinAt_totalSpace_iff I]
-    · exact ⟨hγ, mdifferentiableWithinAt_iff_differentiableWithinAt.mpr hcoord⟩
-    · exact (Bundle.Trivialization.mem_source e).2 hbase
-  have hΦtotal : MDifferentiableWithinAt 𝓘(ℝ, ℝ) J.tangent
-      (fun r ↦ TotalSpace.mk' F (Φ (γ r)) (mfderiv I J Φ (γ r) (V r))) s t := by
-    have htotal' :=
-      Φ.toDiffeomorph.tangent.contMDiff.contMDiffAt.mdifferentiableAt (by simp)
-        |>.comp_mdifferentiableWithinAt t htotal
-    have hmap : tangentMap I J Φ ∘ (fun r ↦ TotalSpace.mk' E (γ r) (V r)) =
-        fun r ↦ TotalSpace.mk' F (Φ (γ r)) (mfderiv I J Φ (γ r) (V r)) := by
-      funext r
-      exact TotalSpace.ext tangentMap_proj (heq_of_eq tangentMap_snd)
-    simpa only [Diffeomorph.coe_tangent, coe_toDiffeomorph, hmap] using htotal'
-  exact differentiableWithinAt_sectionCoord (Φ ∘ γ)
-    (fun r ↦ mfderiv I J Φ (γ r) (V r)) hΦtotal
-    (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (Φ (γ t)))
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)] in
-/-- The differential of a Riemannian isometry carries a tangent field along `γ` that is
-differentiable in local coordinates to a tangent field along `Φ ∘ γ` that is differentiable in
-local coordinates. -/
-theorem differentiableAt_sectionCoord_mfderiv (Φ : RiemannianIsometry I J M N)
-    {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {t : ℝ}
-    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t) :
-    DifferentiableAt ℝ
-      (sectionCoord (F := F) (Φ ∘ γ) (fun r ↦ mfderiv I J Φ (γ r) (V r)) (Φ (γ t))) t := by
-  rw [← differentiableWithinAt_univ]
-  exact Φ.differentiableWithinAt_sectionCoord_mfderiv hγ.mdifferentiableWithinAt
-    hV.differentiableWithinAt
-
 /-- **Naturality of covariant differentiation along a curve under a Riemannian isometry.**
 The differential of an isometry carries the Levi-Civita derivative of a differentiable tangent
 field along `γ` to the derivative of the transported field along `Φ ∘ γ`.
 
-Differentiability of a tangent field along a curve is expressed in the local coordinates used by
-`CovariantDerivative.alongCurveWithin`. This is the weakest hypothesis needed by the product rule
-which characterizes the derivative. -/
+The hypothesis `hV` expresses differentiability of the tangent field in local bundle
+coordinates. -/
 theorem mfderiv_alongCurveWithin (Φ : RiemannianIsometry I J M N)
     {γ : ℝ → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set ℝ} {t : ℝ}
     (hs : UniqueDiffWithinAt ℝ s t)
@@ -182,7 +116,11 @@ theorem mfderiv_alongCurveWithin (Φ : RiemannianIsometry I J M N)
     fun r ↦ mfderiv I J Φ (γ r) (V r)
   have hΦγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) J (Φ ∘ γ) s t :=
     (Φ.mdifferentiableAt (γ t)).comp_mdifferentiableWithinAt t hγ
-  have hΦV := Φ.differentiableWithinAt_sectionCoord_mfderiv hγ hV
+  have hΦV : DifferentiableWithinAt ℝ
+      (sectionCoord (F := F) (Φ ∘ γ)
+        (fun r ↦ mfderiv I J Φ (γ r) (V r)) (Φ (γ t))) s t := by
+    simpa only [coe_toDiffeomorph] using
+      Φ.toDiffeomorph.differentiableWithinAt_sectionCoord_mfderiv hγ hV
   -- Test both sides against pullbacks of differentiable fields `Y` on the target: the
   -- metric-compatible product rules on source and target differentiate the same inner product.
   refine TauCeti.eq_of_forall_inner_section_eq (I := J)
