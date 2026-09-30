@@ -36,18 +36,9 @@ say that such a representation is irreducible only if it is the trivial represen
 Equivalently: over a field of characteristic `p`, the trivial module is the only irreducible
 module of a finite `p`-group.
 
-The proof is an orbit count rather than a fixed-point theorem for unipotent operators. Because `p`
-annihilates `k` it annihilates the module, which is therefore a `ZMod p`-module; the `ZMod p`-span
-`A` of the orbit of one nonzero vector is spanned by finitely many vectors over a finite field,
-hence is a *finite* set, and every `ρ g` carries it into itself. Its cardinality is a positive
-power of `p`. The group acts on `A` through a group of permutations in which every element has
-`p`-power order, and a `p`-group acting on a finite set of cardinality divisible by `p` cannot
-have exactly one fixed point, the orbits of size greater than one having size divisible by `p`.
-The zero vector is one fixed point, so there is another, and it is a nonzero invariant vector.
-
-Finiteness of the group is what the count needs, and it is not an artifact of the bookkeeping: for
-an infinite group the orbit of a vector need not be finite, and the corresponding statement is
-Kolchin's theorem on groups of unipotent operators, which is proved differently.
+The group is assumed finite. For an infinite group the analogous statement is Kolchin's theorem,
+which fixes a vector of a *finite-dimensional* vector space under a group of unipotent operators;
+that theorem is not proved here, and no statement about an infinite group is claimed.
 
 ## Main results
 
