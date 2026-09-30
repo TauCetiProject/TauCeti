@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.LinearRecurrence.Inequality
-public import TauCeti.RingTheory.Ideal.RelationDimension
+public import TauCeti.Algebra.Algebra.RelationDimension
 
 /-!
 # The Golod–Shafarevich inequality for finite-dimensional algebras

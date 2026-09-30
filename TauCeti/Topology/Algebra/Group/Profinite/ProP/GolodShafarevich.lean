@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Ideal.GolodShafarevich
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationCocycle
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.RelationRank
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Cocycle
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank
 
 /-!
 # The Golod–Shafarevich inequality for finite `p`-groups
@@ -35,7 +35,7 @@ subgroup `R` as a closed normal subgroup, with `r = r(G)`. Write `gᵢ = π xᵢ
   it is additive and conjugation-equivariant, so `D R` lies in the `A`-span `S` of the `D ρⱼ`.
   Modulo `S`, `D` therefore descends to a function `δ` on `G`, and extending `δ` linearly to `A`
   inverts the map `a ↦ ∑ aᵢ (gᵢ - 1)` modulo `S`. Hence the relation module of the `gᵢ`
-  (`TauCeti.MonoidAlgebra.relationModule`) is spanned by the `r` vectors `D ρⱼ`.
+  (`TauCeti.MonoidAlgebra.relationModule`) is contained in the span of the `r` vectors `D ρⱼ`.
 * The relators lie in the Frattini subgroup of `F`, and composing `D` with the augmentation
   `A → 𝔽_p` gives a continuous homomorphism to an elementary abelian `p`-group, so the entries of
   every `D ρⱼ` lie in `I`.
@@ -72,29 +72,6 @@ attribute [local instance 2000] Ring.toAddCommGroup
 variable {p : ℕ} [Fact p.Prime] {X : Type u} [Fintype X] {G : Type u} [Group G] [Finite G]
   [TopologicalSpace G] [DiscreteTopology G]
 
-omit [Fintype X] in
-/-- The cocycle `D : F → 𝔽_p[G]^X` of a continuous homomorphism `π : F → G` from a free pro-`p`
-group to a finite discrete group, for the action of `F` on `𝔽_p[G]^X` by left multiplication
-through `π`: it is locally constant and sends the generators to the standard basis vectors. -/
-private theorem exists_cocycle [Finite X] [DecidableEq X] (π : freeProP p X →ₜ* G) :
-    ∃ D : freeProP p X → X → MonoidAlgebra (ZMod p) G, IsLocallyConstant D ∧
-      (∀ g h, D (g * h) = single (π g) (1 : ZMod p) • D h + D g) ∧
-      ∀ i, D (freeProP.of i) = Pi.single i 1 := by
-  -- `F` acts on the discrete module `𝔽_p[G]` by left multiplication through `π`.
-  let : TopologicalSpace (MonoidAlgebra (ZMod p) G) := ⊥
-  have : DiscreteTopology (MonoidAlgebra (ZMod p) G) := ⟨rfl⟩
-  let : DistribMulAction (freeProP p X) (MonoidAlgebra (ZMod p) G) :=
-    DistribMulAction.compHom _ ((MonoidAlgebra.of (ZMod p) G).comp π.toMonoidHom)
-  have : ContinuousSMul (freeProP p X) (MonoidAlgebra (ZMod p) G) :=
-    ⟨(continuous_of_discreteTopology (f := fun y : G × MonoidAlgebra (ZMod p) G ↦
-      single y.1 (1 : ZMod p) * y.2)).comp (π.continuous.prodMap continuous_id)⟩
-  have : Finite (MonoidAlgebra (ZMod p) G) := Module.finite_of_finite (ZMod p)
-  have hM : IsProP p (Multiplicative (X → MonoidAlgebra (ZMod p) G)) :=
-    IsPGroup.isProP (ZModModule.isPGroup_multiplicative (n := p))
-  obtain ⟨D, hD, hDof⟩ := freeProP.exists_mem_Z1_forall_apply_of_eq hM fun i ↦ Pi.single i 1
-  obtain ⟨hDc, hDcoc⟩ := mem_Z1_iff.1 hD
-  exact ⟨D, IsLocallyConstant.iff_continuous D |>.2 hDc, hDcoc, hDof⟩
-
 /-- **The Golod–Shafarevich inequality.** A nontrivial finite `p`-group `G`, with the discrete
 topology, satisfies `d(G)² < 4 r(G)`, where `d(G)` is its generator rank and
 `r(G) = dim_{𝔽_p} H²(G, 𝔽_p)` is its relation rank. Finite generation follows from
@@ -129,7 +106,7 @@ theorem _root_.IsPGroup.sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohom
     obtain ⟨⟨ρ, hρR⟩, -, hρ⟩ := Finset.mem_image.1 ρ.2
     rw [← hρ]
     exact (topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).2 hrels hρR
-  obtain ⟨D, hD, hcoc, hDof⟩ := exists_cocycle π
+  obtain ⟨D, hD, hcoc, hDof⟩ := exists_locallyConstant_cocycle_of_freeProP π
   -- The `π xᵢ` generate `G`, so the `π xᵢ - 1` generate the augmentation ideal as a left ideal.
   have hgen : Subgroup.closure (Set.range fun i ↦ π (freeProP.of i)) = ⊤ := by
     have h := topologicalClosure_closure_image_eq_top

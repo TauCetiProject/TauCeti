@@ -13,8 +13,9 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 # Relations from cocycles on a free pro-`p` group
 
 A locally constant cocycle sends the kernel of a presentation to the span of its values on normal
-generators. When it takes standard basis values on free generators, those values span the relation
-module. Its values on Frattini elements have zero augmentation in every coordinate.
+generators. When it takes standard basis values on free generators, the relation module is
+contained in the span of those values. Its values on Frattini elements have zero augmentation in
+every coordinate.
 -/
 
 public section
@@ -29,6 +30,30 @@ attribute [local instance 2000] Ring.toAddCommGroup
 
 variable {p : ℕ} [Fact p.Prime] {X : Type u} [Fintype X] {G : Type u} [Group G] [Finite G]
   [TopologicalSpace G] [DiscreteTopology G]
+
+omit [Fintype X] in
+/-- The cocycle `D : F → 𝔽_p[G]^X` of a continuous homomorphism `π : F → G` from a free pro-`p`
+group to a finite discrete group, for the action of `F` on `𝔽_p[G]^X` by left multiplication
+through `π`: it is locally constant and sends the generators to the standard basis vectors. -/
+theorem exists_locallyConstant_cocycle_of_freeProP [Finite X] [DecidableEq X]
+    (π : freeProP p X →ₜ* G) :
+    ∃ D : freeProP p X → X → MonoidAlgebra (ZMod p) G, IsLocallyConstant D ∧
+      (∀ g h, D (g * h) = single (π g) (1 : ZMod p) • D h + D g) ∧
+      ∀ i, D (freeProP.of i) = Pi.single i 1 := by
+  -- `F` acts on the discrete module `𝔽_p[G]` by left multiplication through `π`.
+  let : TopologicalSpace (MonoidAlgebra (ZMod p) G) := ⊥
+  have : DiscreteTopology (MonoidAlgebra (ZMod p) G) := ⟨rfl⟩
+  let : DistribMulAction (freeProP p X) (MonoidAlgebra (ZMod p) G) :=
+    DistribMulAction.compHom _ ((MonoidAlgebra.of (ZMod p) G).comp π.toMonoidHom)
+  have : ContinuousSMul (freeProP p X) (MonoidAlgebra (ZMod p) G) :=
+    ⟨(continuous_of_discreteTopology (f := fun y : G × MonoidAlgebra (ZMod p) G ↦
+      single y.1 (1 : ZMod p) * y.2)).comp (π.continuous.prodMap continuous_id)⟩
+  have : Finite (MonoidAlgebra (ZMod p) G) := Module.finite_of_finite (ZMod p)
+  have hM : IsProP p (Multiplicative (X → MonoidAlgebra (ZMod p) G)) :=
+    IsPGroup.isProP (ZModModule.isPGroup_multiplicative (n := p))
+  obtain ⟨D, hD, hDof⟩ := freeProP.exists_mem_Z1_forall_apply_of_eq hM fun i ↦ Pi.single i 1
+  obtain ⟨hDc, hDcoc⟩ := mem_Z1_iff.1 hD
+  exact ⟨D, IsLocallyConstant.iff_continuous D |>.2 hDc, hDcoc, hDof⟩
 
 section Cocycle
 
@@ -100,11 +125,11 @@ theorem mem_span_of_map_eq_one {s : Finset (freeProP p X)}
   exact (closure_minimal hsub hC hw').2
 
 omit [Finite G] in
-/-- **The relations among the `π xᵢ - 1` are spanned by the images of the relators.** Let
+/-- **The relations among the `π xᵢ - 1` lie in the span of the relator images.** Let
 `π : F ↠ G` be a continuous surjection from a free pro-`p` group onto a discrete group, whose
 kernel is the closed normal closure of a finite set `s`, and let `D : F → 𝔽_p[G]^X` be a locally
-constant cocycle with `D xᵢ = eᵢ`. Then the relation module of the family `π xᵢ` is spanned over
-`𝔽_p[G]` by the `D ρ`, `ρ ∈ s`. -/
+constant cocycle with `D xᵢ = eᵢ`. Then the relation module of the family `π xᵢ` is contained
+in the `𝔽_p[G]`-span of the `D ρ`, `ρ ∈ s`. -/
 theorem relationModule_le_span [DecidableEq X] (hπ : Function.Surjective π)
     {s : Finset (freeProP p X)}
     (hs : ∀ w, π w = 1 ↔ w ∈ (normalClosure (s : Set (freeProP p X))).topologicalClosure)
