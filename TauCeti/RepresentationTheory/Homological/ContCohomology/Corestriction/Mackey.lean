@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Induction.Mackey.Basic
 
 /-!
@@ -29,9 +28,9 @@ summand is `TauCeti.ContCohomology.explicitMackeyTerm0` in degree zero and its c
 
 The proof is a choice of transversal. The left cosets `G ⧸ U` split, along
 `TauCeti.mackeyQuotientEquiv`, as the disjoint union over `D ∈ V \ G / U` of the `V`-orbits
-`V ⧸ (V ⊓ sUs⁻¹)`, and `TauCeti.mackeyTransversal` picks the representative `v.out * D.out` of the
+`V ⧸ (V ⊓ sUs⁻¹)`, and `Subgroup.mackeyTransversal` picks the representative `v.out * D.out` of the
 coset indexed by `(D, v)`. For `k ∈ V` its transversal word is the conjugate of the transversal
-word of the Mackey subgroup in `V` (`TauCeti.lWord_mackeyTransversal`):
+word of the Mackey subgroup in `V` (`Subgroup.lWord_mackeyTransversal`):
 
 ```text
 ℓ_{(D, v)}(k) = s⁻¹ ℓ_v(k) s.
@@ -44,18 +43,18 @@ Sorting the corestriction sum over `G ⧸ U` by double cosets therefore gives th
 counterparts) turns that into the statement for the canonical corestriction
 (`explicitCor0_mackey`, `explicitCor1_mackey`, `explicitCor2_mackey`). In positive degrees
 openness of `U` is what makes the corestrictions continuous, and it makes each Mackey subgroup open
-in `V` (`TauCeti.isOpen_mackeySubgroup_subgroupOf`); `V` is arbitrary.
+in `V` (`Subgroup.isOpen_mackeySubgroup_subgroupOf`); `V` is arbitrary.
 
 ## Main definitions
 
-* `TauCeti.mackeyTransversal`: the transversal of `G ⧸ U` adapted to the double cosets `V \ G / U`.
-* `TauCeti.continuousMackeyToH`: the conjugation `V ⊓ sUs⁻¹ → U` as a continuous homomorphism.
+* `Subgroup.mackeyTransversal`: the transversal of `G ⧸ U` adapted to the double cosets `V \ G / U`.
+* `Subgroup.continuousMackeyToH`: the conjugation `V ⊓ sUs⁻¹ → U` as a continuous homomorphism.
 * `TauCeti.ContCohomology.explicitMackeyTerm0`, `explicitMackeyTerm1`, `explicitMackeyTerm2`: the
   summand `cor^V_{V ⊓ sUs⁻¹} ∘ (s)_* ∘ res` attached to `s` in degrees zero, one and two.
 
 ## Main results
 
-* `TauCeti.lWord_mackeyTransversal`: the transversal word of the adapted transversal at an element
+* `Subgroup.lWord_mackeyTransversal`: the transversal word of the adapted transversal at an element
   of `V` is the conjugate of a transversal word of the Mackey subgroup in `V`.
 * `TauCeti.ContCohomology.cochainsCor1_mackeyTransversal`,
   `TauCeti.ContCohomology.cochainsCor2_mackeyTransversal`: the Mackey formula on cochains.
@@ -72,11 +71,11 @@ public section
 
 open scoped Pointwise
 
-namespace TauCeti
-
 universe u v
 
-section Transversal
+namespace Subgroup
+
+open TauCeti
 
 variable {G : Type u} [Group G] (U V : Subgroup G)
 
@@ -94,14 +93,15 @@ theorem mackeyTransversal_mackeyQuotientEquiv
     mackeyTransversal U V (mackeyQuotientEquiv U V p) = (p.2.out : G) * p.1.out := by
   rw [mackeyTransversal, Equiv.symm_apply_apply]
 
-/-- `TauCeti.mackeyTransversal` is a transversal: it picks a representative of every coset. -/
+/-- `Subgroup.mackeyTransversal` is a transversal: it picks a representative of every coset. -/
+@[simp]
 theorem mk_mackeyTransversal (q : G ⧸ U) :
     (QuotientGroup.mk (mackeyTransversal U V q) : G ⧸ U) = q := by
   obtain ⟨p, rfl⟩ := (mackeyQuotientEquiv U V).surjective q
   rw [mackeyTransversal_mackeyQuotientEquiv, mackeyQuotientEquiv_apply, mackeyCoset_out]
 
 /-- **The transversal word of the adapted transversal.** At an element `k` of `V` and the coset
-indexed by `(D, w)`, the transversal word of `TauCeti.mackeyTransversal` is the conjugate by
+indexed by `(D, w)`, the transversal word of `Subgroup.mackeyTransversal` is the conjugate by
 `D.out` of the transversal word of the Mackey subgroup `V ⊓ D.out U D.out⁻¹` in `V`, taken at the
 canonical transversal `Quotient.out`. -/
 theorem lWord_mackeyTransversal (D : DoubleCoset.Quotient (V : Set G) (U : Set G))
@@ -142,14 +142,14 @@ def continuousMackeyToH [ContinuousMul G] (s : G) :
       coe_mackeyToH_apply]
     fun_prop
 
-/-- `TauCeti.continuousMackeyToH` evaluates as `TauCeti.mackeyToH`. -/
+/-- `Subgroup.continuousMackeyToH` evaluates as `TauCeti.mackeyToH`. -/
 @[simp]
 theorem continuousMackeyToH_apply [ContinuousMul G] (s : G)
     (y : (mackeySubgroup s U V).subgroupOf V) :
     continuousMackeyToH U V s y = mackeyToH s U V y :=
   (rfl)
 
-/-- The homomorphism underlying `TauCeti.continuousMackeyToH` is `TauCeti.mackeyToH`. -/
+/-- The homomorphism underlying `Subgroup.continuousMackeyToH` is `TauCeti.mackeyToH`. -/
 @[simp]
 theorem coe_continuousMackeyToH [ContinuousMul G] (s : G) :
     (continuousMackeyToH U V s : (mackeySubgroup s U V).subgroupOf V →* U) = mackeyToH s U V :=
@@ -157,7 +157,9 @@ theorem coe_continuousMackeyToH [ContinuousMul G] (s : G) :
 
 end Topological
 
-end Transversal
+end Subgroup
+
+namespace TauCeti
 
 namespace ContCohomology
 
@@ -175,29 +177,17 @@ theorem smul_mackeyToH_smul (s : G) (y : (mackeySubgroup s U V).subgroupOf V) (m
   group
 
 /-- `TauCeti.ContCohomology.smul_mackeyToH_smul` for the continuous conjugation
-`TauCeti.continuousMackeyToH`, the form taken by the compatible-pair maps in positive degrees. -/
+`Subgroup.continuousMackeyToH`, the form taken by the compatible-pair maps in positive degrees. -/
 theorem smul_continuousMackeyToH_smul [TopologicalSpace G] [ContinuousMul G] (s : G)
     (y : (mackeySubgroup s U V).subgroupOf V) (m : M) :
-    DistribSMul.toAddMonoidHom M s (continuousMackeyToH U V s y • m) =
+    DistribSMul.toAddMonoidHom M s (U.continuousMackeyToH V s y • m) =
       y • DistribSMul.toAddMonoidHom M s m := by
-  rw [continuousMackeyToH_apply]
+  rw [Subgroup.continuousMackeyToH_apply]
   exact smul_mackeyToH_smul G M U V s y m
 
 variable [U.FiniteIndex]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
-
-/-- Sorting a sum over `G ⧸ U` by the double cosets `V \ G / U`, along
-`TauCeti.mackeyQuotientEquiv`. -/
-private theorem sum_mackeyQuotientEquiv {A : Type*} [AddCommMonoid A]
-    [Fintype (DoubleCoset.Quotient (V : Set G) (U : Set G))] (F : G ⧸ U → A) :
-    ∑ q : G ⧸ U, F q =
-      ∑ D : DoubleCoset.Quotient (V : Set G) (U : Set G),
-        ∑ w : V ⧸ (mackeySubgroup D.out U V).subgroupOf V, F (mackeyQuotientEquiv U V ⟨D, w⟩) := by
-  -- The fibrewise instances are needed before `Fintype` can be found on the sigma type.
-  let _ : ∀ D : DoubleCoset.Quotient (V : Set G) (U : Set G),
-      Fintype (V ⧸ (mackeySubgroup D.out U V).subgroupOf V) := fun _ => inferInstance
-  rw [← (mackeyQuotientEquiv U V).sum_comp F, Fintype.sum_sigma]
 
 /-! ### Degree zero -/
 
@@ -226,41 +216,47 @@ theorem explicitCor0_mackey (m : H0 U M) :
       letI := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
       ∑ D : DoubleCoset.Quotient (V : Set G) (U : Set G), explicitMackeyTerm0 G M U V D.out m := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
+  -- Instance search does not find the fibrewise instances as a family.
+  let _ : ∀ D : DoubleCoset.Quotient (V : Set G) (U : Set G),
+      Fintype (V ⧸ (mackeySubgroup D.out U V).subgroupOf V) := fun _ => inferInstance
   apply Subtype.ext
-  rw [coe_explicitRes0, explicitCor0_eq_transversal G M U (mackeyTransversal U V)
-      (mk_mackeyTransversal U V), coe_explicitCor0Transversal, AddSubgroup.val_finsetSum,
-    sum_mackeyQuotientEquiv G U V]
+  rw [coe_explicitRes0, explicitCor0_eq_transversal G M U (U.mackeyTransversal V)
+      (U.mk_mackeyTransversal V), coe_explicitCor0Transversal, AddSubgroup.val_finsetSum,
+    sum_mackeyQuotientEquiv U V]
   refine Finset.sum_congr rfl fun D _ => ?_
   rw [coe_explicitMackeyTerm0]
   refine Finset.sum_congr rfl fun w _ => ?_
-  rw [mackeyTransversal_mackeyQuotientEquiv, mul_smul]
+  rw [Subgroup.mackeyTransversal_mackeyQuotientEquiv, mul_smul]
 
 /-! ### Degree one -/
 
 section DegreeOneCochain
 
 /-- **The Mackey formula for the degree-one corestriction cochain.** At the adapted transversal
-`TauCeti.mackeyTransversal`, the restriction to `V` of the corestriction of a `1`-cochain `f` on
+`Subgroup.mackeyTransversal`, the restriction to `V` of the corestriction of a `1`-cochain `f` on
 `U` is, on the nose, the sum over the double cosets `V \ G / U` of the corestrictions, from the
 Mackey subgroups to `V` at the canonical transversal, of the conjugates
 `y ↦ s • f (s⁻¹ y s)` of `f`. -/
 theorem cochainsCor1_mackeyTransversal (f : U → M) (k : V) :
-    cochainsCor1 G M U (mackeyTransversal U V) (mk_mackeyTransversal U V) f k =
+    cochainsCor1 G M U (U.mackeyTransversal V) (U.mk_mackeyTransversal V) f k =
       letI := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
       ∑ D : DoubleCoset.Quotient (V : Set G) (U : Set G),
         cochainsCor1 V M ((mackeySubgroup D.out U V).subgroupOf V) Quotient.out
           Quotient.out_eq
           (cochainsMap1 (mackeyToH D.out U V) (DistribSMul.toAddMonoidHom M D.out) f) k := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  rw [cochainsCor1_apply, sum_mackeyQuotientEquiv G U V]
+  -- Instance search does not find the fibrewise instances as a family.
+  let _ : ∀ D : DoubleCoset.Quotient (V : Set G) (U : Set G),
+      Fintype (V ⧸ (mackeySubgroup D.out U V).subgroupOf V) := fun _ => inferInstance
+  rw [cochainsCor1_apply, sum_mackeyQuotientEquiv U V]
   refine Finset.sum_congr rfl fun D _ => ?_
   rw [cochainsCor1_apply]
   refine Finset.sum_congr rfl fun w _ => ?_
   rw [cochainsMap1_apply, DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def, ← mul_smul]
-  refine congrArg₂ (· • ·) (mackeyTransversal_mackeyQuotientEquiv U V ⟨D, w⟩)
+  refine congrArg₂ (· • ·) (U.mackeyTransversal_mackeyQuotientEquiv V ⟨D, w⟩)
     (congrArg f (Subtype.ext ?_))
   rw [coe_mackeyToH_apply]
-  exact lWord_mackeyTransversal U V D w k
+  exact U.lWord_mackeyTransversal V D w k
 
 end DegreeOneCochain
 
@@ -274,18 +270,19 @@ variable [TopologicalSpace G] [IsTopologicalGroup G]
 `cor^V_{V ⊓ sUs⁻¹} ∘ (s)_* ∘ res : H¹(U, M) → H¹(V, M)`. -/
 noncomputable def explicitMackeyTerm1 (s : G) : H1 U M →+ H1 V M :=
   (explicitCor1 V M ((mackeySubgroup s U V).subgroupOf V)
-      (isOpen_mackeySubgroup_subgroupOf U V hU s)).comp
-    (explicitMap1 U M ((mackeySubgroup s U V).subgroupOf V) M (continuousMackeyToH U V s)
+      (U.isOpen_mackeySubgroup_subgroupOf V hU s)).comp
+    (explicitMap1 U M ((mackeySubgroup s U V).subgroupOf V) M (U.continuousMackeyToH V s)
       (DistribSMul.toAddMonoidHom M s) ((continuous_const_smul s).congr fun _ => rfl)
       (smul_continuousMackeyToH_smul G M U V s))
 
 /-- The degree-one Mackey summand sends the class of a continuous `1`-cocycle to the class of the
 corestriction, at the canonical transversal, of its conjugate. -/
+@[simp]
 theorem explicitMackeyTerm1_mk (s : G) (f : Z1 U M) :
     explicitMackeyTerm1 G M U V hU s (f : H1 U M) =
       (cocyclesCor1 V M ((mackeySubgroup s U V).subgroupOf V) Quotient.out Quotient.out_eq
-        (isOpen_mackeySubgroup_subgroupOf U V hU s)
-        (cocyclesMap1 U M ((mackeySubgroup s U V).subgroupOf V) M (continuousMackeyToH U V s)
+        (U.isOpen_mackeySubgroup_subgroupOf V hU s)
+        (cocyclesMap1 U M ((mackeySubgroup s U V).subgroupOf V) M (U.continuousMackeyToH V s)
           (DistribSMul.toAddMonoidHom M s) ((continuous_const_smul s).congr fun _ => rfl)
           (smul_continuousMackeyToH_smul G M U V s) f) : H1 V M) := by
   rw [explicitMackeyTerm1, AddMonoidHom.comp_apply, explicitMap1_mk, explicitCor1_mk]
@@ -301,7 +298,7 @@ theorem explicitCor1_mackey (x : H1 U M) :
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
   induction x using QuotientAddGroup.induction_on with
   | H f =>
-    rw [explicitCor1_eq_transversal G M U (mackeyTransversal U V) (mk_mackeyTransversal U V) hU,
+    rw [explicitCor1_eq_transversal G M U (U.mackeyTransversal V) (U.mk_mackeyTransversal V) hU,
       explicitCor1Transversal_mk, explicitRes1_mk]
     simp only [explicitMackeyTerm1_mk]
     rw [← QuotientAddGroup.mk_sum]
@@ -311,7 +308,7 @@ theorem explicitCor1_mackey (x : H1 U M) :
       coe_cocyclesCor1]
     refine (cochainsCor1_mackeyTransversal G M U V f k).trans
       (Finset.sum_congr rfl fun D _ => ?_)
-    rw [coe_cocyclesCor1, cocyclesMap1_coe, coe_continuousMackeyToH]
+    rw [coe_cocyclesCor1, cocyclesMap1_coe, Subgroup.coe_continuousMackeyToH]
 
 end DegreeOne
 
@@ -323,7 +320,7 @@ section DegreeTwoCochain
 `TauCeti.ContCohomology.cochainsCor1_mackeyTransversal`: at the adapted transversal the identity
 holds on the nose. -/
 theorem cochainsCor2_mackeyTransversal (f : U × U → M) (k l : V) :
-    cochainsCor2 G M U (mackeyTransversal U V) (mk_mackeyTransversal U V) f (k, l) =
+    cochainsCor2 G M U (U.mackeyTransversal V) (U.mk_mackeyTransversal V) f (k, l) =
       letI := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
       ∑ D : DoubleCoset.Quotient (V : Set G) (U : Set G),
         cochainsCor2 V M ((mackeySubgroup D.out U V).subgroupOf V) Quotient.out
@@ -331,7 +328,10 @@ theorem cochainsCor2_mackeyTransversal (f : U × U → M) (k l : V) :
           (cochainsMap2 (mackeyToH D.out U V) (DistribSMul.toAddMonoidHom M D.out) f)
           (k, l) := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  rw [cochainsCor2_apply, sum_mackeyQuotientEquiv G U V]
+  -- Instance search does not find the fibrewise instances as a family.
+  let _ : ∀ D : DoubleCoset.Quotient (V : Set G) (U : Set G),
+      Fintype (V ⧸ (mackeySubgroup D.out U V).subgroupOf V) := fun _ => inferInstance
+  rw [cochainsCor2_apply, sum_mackeyQuotientEquiv U V]
   refine Finset.sum_congr rfl fun D _ => ?_
   rw [cochainsCor2_apply]
   refine Finset.sum_congr rfl fun w _ => ?_
@@ -339,12 +339,12 @@ theorem cochainsCor2_mackeyTransversal (f : U × U → M) (k l : V) :
   have hk : ((k : G))⁻¹ • mackeyQuotientEquiv U V ⟨D, w⟩ =
       mackeyQuotientEquiv U V ⟨D, k⁻¹ • w⟩ := by
     rw [← smul_mackeyQuotientEquiv, Subgroup.coe_inv]
-  refine congrArg₂ (· • ·) (mackeyTransversal_mackeyQuotientEquiv U V ⟨D, w⟩)
+  refine congrArg₂ (· • ·) (U.mackeyTransversal_mackeyQuotientEquiv V ⟨D, w⟩)
     (congrArg f (Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)))
   · rw [coe_mackeyToH_apply]
-    exact lWord_mackeyTransversal U V D w k
+    exact U.lWord_mackeyTransversal V D w k
   · rw [Subtype.coe_mk, hk, coe_mackeyToH_apply]
-    exact lWord_mackeyTransversal U V D (k⁻¹ • w) l
+    exact U.lWord_mackeyTransversal V D (k⁻¹ • w) l
 
 end DegreeTwoCochain
 
@@ -358,18 +358,19 @@ variable [TopologicalSpace G] [IsTopologicalGroup G]
 `cor^V_{V ⊓ sUs⁻¹} ∘ (s)_* ∘ res : H²(U, M) → H²(V, M)`. -/
 noncomputable def explicitMackeyTerm2 (s : G) : H2 U M →+ H2 V M :=
   (explicitCor2 V M ((mackeySubgroup s U V).subgroupOf V)
-      (isOpen_mackeySubgroup_subgroupOf U V hU s)).comp
-    (explicitMap2 U M ((mackeySubgroup s U V).subgroupOf V) M (continuousMackeyToH U V s)
+      (U.isOpen_mackeySubgroup_subgroupOf V hU s)).comp
+    (explicitMap2 U M ((mackeySubgroup s U V).subgroupOf V) M (U.continuousMackeyToH V s)
       (DistribSMul.toAddMonoidHom M s) ((continuous_const_smul s).congr fun _ => rfl)
       (smul_continuousMackeyToH_smul G M U V s))
 
 /-- The degree-two Mackey summand sends the class of a continuous `2`-cocycle to the class of the
 corestriction, at the canonical transversal, of its conjugate. -/
+@[simp]
 theorem explicitMackeyTerm2_mk (s : G) (f : Z2 U M) :
     explicitMackeyTerm2 G M U V hU s (f : H2 U M) =
       (cocyclesCor2 V M ((mackeySubgroup s U V).subgroupOf V) Quotient.out Quotient.out_eq
-        (isOpen_mackeySubgroup_subgroupOf U V hU s)
-        (cocyclesMap2 U M ((mackeySubgroup s U V).subgroupOf V) M (continuousMackeyToH U V s)
+        (U.isOpen_mackeySubgroup_subgroupOf V hU s)
+        (cocyclesMap2 U M ((mackeySubgroup s U V).subgroupOf V) M (U.continuousMackeyToH V s)
           (DistribSMul.toAddMonoidHom M s) ((continuous_const_smul s).congr fun _ => rfl)
           (smul_continuousMackeyToH_smul G M U V s) f) : H2 V M) := by
   rw [explicitMackeyTerm2, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
@@ -385,7 +386,7 @@ theorem explicitCor2_mackey (x : H2 U M) :
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
   induction x using QuotientAddGroup.induction_on with
   | H f =>
-    rw [explicitCor2_eq_transversal G M U (mackeyTransversal U V) (mk_mackeyTransversal U V) hU,
+    rw [explicitCor2_eq_transversal G M U (U.mackeyTransversal V) (U.mk_mackeyTransversal V) hU,
       explicitCor2Transversal_mk, explicitRes2_mk]
     simp only [explicitMackeyTerm2_mk]
     rw [← QuotientAddGroup.mk_sum]
@@ -396,7 +397,7 @@ theorem explicitCor2_mackey (x : H2 U M) :
       coe_cocyclesCor2]
     refine (cochainsCor2_mackeyTransversal G M U V f k l).trans
       (Finset.sum_congr rfl fun D _ => ?_)
-    rw [coe_cocyclesCor2, cocyclesMap2_coe, coe_continuousMackeyToH]
+    rw [coe_cocyclesCor2, cocyclesMap2_coe, Subgroup.coe_continuousMackeyToH]
 
 end DegreeTwo
 

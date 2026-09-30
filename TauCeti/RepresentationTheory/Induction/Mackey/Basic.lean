@@ -199,6 +199,19 @@ theorem smul_mackeyQuotientEquiv (H K : Subgroup G) (k : K)
     (k : G) • mackeyQuotientEquiv H K ⟨D, u⟩ = mackeyQuotientEquiv H K ⟨D, k • u⟩ := by
   rw [mackeyQuotientEquiv_apply, mackeyQuotientEquiv_apply, mackeyCoset_smul]
 
+/-- **Sorting a sum over `G ⧸ H` by double cosets.**  Along `TauCeti.mackeyQuotientEquiv`, a sum
+over the left cosets `G ⧸ H` is the sum over the double cosets `K \ G / H` of the sums over the
+`K`-orbits `K ⧸ (K ⊓ sHs⁻¹)`. -/
+theorem sum_mackeyQuotientEquiv {A : Type*} [AddCommMonoid A] (H K : Subgroup G)
+    [Fintype (G ⧸ H)] [Fintype (DoubleCoset.Quotient (K : Set G) (H : Set G))]
+    [∀ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
+      Fintype (K ⧸ (mackeySubgroup D.out H K).subgroupOf K)]
+    (F : G ⧸ H → A) :
+    ∑ q : G ⧸ H, F q =
+      ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
+        ∑ u : K ⧸ (mackeySubgroup D.out H K).subgroupOf K, F (mackeyQuotientEquiv H K ⟨D, u⟩) := by
+  rw [← (mackeyQuotientEquiv H K).sum_comp F, Fintype.sum_sigma]
+
 /-- **The double-coset index formula** `[G : H] = ∑_{KsH ∈ K \ G / H} [K : K ⊓ sHs⁻¹]`, obtained by
 counting `TauCeti.mackeyQuotientEquiv`.  It is the dimension shadow of the Mackey decomposition:
 applying `TauCeti.character_resFDRep_indFDRep_mackey` at the identity recovers it, multiplied by
@@ -331,14 +344,10 @@ theorem indClassFun_mackey [H.FiniteIndex] {f : H → k} (hf : f ∈ ClassFuncti
       = ∑ t : G ⧸ H, indTerm f (x : G) t.out := by
         rw [indClassFun_apply]
         exact Finset.sum_congr rfl fun t _ => (indTerm_apply _ _ _).symm
-    _ = ∑ p : Σ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
-            K ⧸ (mackeySubgroup D.out H K).subgroupOf K,
-          indTerm f (x : G) (mackeyQuotientEquiv H K p).out :=
-        (Equiv.sum_comp (mackeyQuotientEquiv H K) _).symm
     _ = ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
           ∑ u : K ⧸ (mackeySubgroup D.out H K).subgroupOf K,
             indTerm f (x : G) ((u.out : G) * D.out) := by
-        rw [← Finset.univ_sigma_univ, Finset.sum_sigma]
+        rw [sum_mackeyQuotientEquiv H K]
         refine Finset.sum_congr rfl fun D _ => Finset.sum_congr rfl fun u _ => ?_
         -- The two representatives `(Φ ⟨D, u⟩).out` and `u.out * D.out` span one coset of `H`.
         refine indTerm_eq_of_mk_eq hf _ _ _ ?_
