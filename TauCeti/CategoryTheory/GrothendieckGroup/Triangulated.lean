@@ -60,9 +60,6 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
 
 ## References
 
-* [Tau Ceti's Grothendieck groups, Cartan maps, and Euler forms roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/README.md),
-  Layer 2's triangulated `K₀` target and its accompanying
-  [`Suggested.lean` formal sketch](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/Suggested.lean).
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II,
   Exercise II.9.15, where `K₀` of a triangulated category is presented by the distinguished
   triangles, and Section 6 for the presentation engine consumed here.
@@ -80,8 +77,8 @@ section Relations
 
 variable {C : Type u} [Category.{v} C] [HasShift C ℤ] [EssentiallySmall.{w} C]
 
-/-- The relation `[T.obj₂] - [T.obj₁] - [T.obj₃]` attached to a triangle. It is imposed in
-triangulated `K₀` exactly for the distinguished triangles. -/
+/-- The relation `[T.obj₂] - [T.obj₁] - [T.obj₃]` attached to a triangle. Triangulated `K₀`
+imposes it for every distinguished triangle. -/
 noncomputable def triangleRelation (T : Triangle C) : FreeAbelianGroup (ObjectCode C) :=
   freeOf T.obj₂ - freeOf T.obj₁ - freeOf T.obj₃
 
@@ -171,8 +168,7 @@ theorem of_eq_add_of_distTriang {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z} {h : Z �
 first two terms. -/
 theorem of_eq_sub_of_distTriang {T : Triangle C} (hT : T ∈ distTriang C) :
     (of T.obj₃ : TriangulatedK0 C) = of T.obj₂ - of T.obj₁ := by
-  rw [of_distTriang hT]
-  abel
+  rw [of_distTriang hT, add_sub_cancel_left]
 
 /-- The class of the zero object vanishes: it is the third term of the contractible triangle. -/
 @[simp]
@@ -239,6 +235,12 @@ theorem hom_ext {f g : TriangulatedK0 C →+ G} (h : ∀ X : C, f (of X) = g (of
 
 end HomExt
 
+/-- A homomorphism into triangulated `K₀` whose range contains the class of every object is
+surjective. -/
+theorem surjective_of_forall_of_mem_range {G : Type*} [AddGroup G] {f : G →+ TriangulatedK0 C}
+    (h : ∀ X : C, of X ∈ f.range) : Function.Surjective f :=
+  PresentedK0.surjective_of_forall_of_mem_range h
+
 variable {G : Type*} [AddCommGroup G]
 
 variable (C) in
@@ -265,7 +267,7 @@ theorem AdditiveInvariant.map_iso (a : AdditiveInvariant C G) ⦃X Y : C⦄ (e :
     (Triangle.distinguished_iff_of_isZero₃ _ (isZero_zero C)).2 (by dsimp; infer_instance)
   simpa [h0] using (a.map_distTriang hT).symm
 
-private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant C G) :
+private def AdditiveInvariant.toPresented (a : AdditiveInvariant C G) :
     PresentedK0.AdditiveInvariant (triangulatedRelations C) G where
   obj := a.obj
   map_iso := a.map_iso
@@ -274,10 +276,6 @@ private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant C
     rw [map_triangleRelation_eq_zero_iff, freeLift_freeOf a.map_iso,
       freeLift_freeOf a.map_iso, freeLift_freeOf a.map_iso]
     exact a.map_distTriang hT
-
-@[simp] private lemma AdditiveInvariant.toPresented_obj (a : AdditiveInvariant C G) :
-    a.toPresented.obj = a.obj :=
-  (rfl)
 
 /-- The homomorphism out of triangulated `K₀` induced by a triangle-additive invariant. -/
 noncomputable def lift (a : AdditiveInvariant C G) : TriangulatedK0 C →+ G :=
@@ -440,18 +438,8 @@ theorem fromSplit_unique (f : SplitK0 C →+ TriangulatedK0 C)
 
 /-- The canonical comparison out of split `K₀` is surjective: the classes of objects generate
 triangulated `K₀`, so triangulated `K₀` is a quotient of split `K₀`. -/
-theorem fromSplit_surjective : Function.Surjective (fromSplit C) := by
-  intro x
-  induction x using TriangulatedK0.induction_on with
-  | zero => exact ⟨0, map_zero _⟩
-  | of X => exact ⟨SplitK0.of X, fromSplit_of X⟩
-  | add a b ha hb =>
-    obtain ⟨a', rfl⟩ := ha
-    obtain ⟨b', rfl⟩ := hb
-    exact ⟨a' + b', map_add _ _ _⟩
-  | neg a ha =>
-    obtain ⟨a', rfl⟩ := ha
-    exact ⟨-a', map_neg _ _⟩
+theorem fromSplit_surjective : Function.Surjective (fromSplit C) :=
+  surjective_of_forall_of_mem_range fun X => ⟨SplitK0.of X, fromSplit_of X⟩
 
 /-- **Naturality of the comparison out of split `K₀`** in a triangulated functor, which is in
 particular additive and so also acts on split `K₀`. -/

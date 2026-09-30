@@ -45,7 +45,7 @@ dyadic normal-form word `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` the tails are t
 `x_i^{2^{m+1}}` of the generators `x₂, …, x_n` other than the one carrying the square, and the
 argument yields the relator in the intermediate form `x₁² r₀(x) x₂^{α₂} ⋯ x_n^{α_n}` with `2`-adic
 exponents `α₂, …, α_n` divisible by `4`
-(`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.TwoOdd.Approximation`), before the
+(`TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Odd.Approximation`), before the
 tail relator `r₀(x) x₂^{α₂} ⋯ x_n^{α_n}` is normalised in its own right. For the even-rank word
 `x₁^{2+α} (x₁, x₂) x₃^{2^f} ⋯` a tail is placed in front of the word, which is why the theorem
 takes two lists of tail positions.

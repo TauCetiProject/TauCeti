@@ -191,7 +191,7 @@ private theorem rawPointAction_naturality (rho : Comodule R H V)
     rfl
   have hpoint :
       (mapPoints (H := H) phi x).ofConv = phi.hom.comp x.ofConv := by
-    rfl
+    rw [mapPoints_apply, ofConv_toConv]
   have h := DFunLike.congr_fun
     (Comodule.rTensor_comp_endOfPoint V phi.hom x.ofConv) z
   rw [hscalar, hpoint]
@@ -316,6 +316,7 @@ private theorem mapPoints_universal {A : Type (max u v w)} [CommRing A] [Algebra
     mapPoints (H := H) (CommAlgCat.ofHom phi)
         (toConv ULift.algEquiv.symm.toAlgHom) =
       toConv (phi.comp ULift.algEquiv.symm.toAlgHom) := by
+  rw [mapPoints_apply, ofConv_toConv]
   rfl
 
 omit [AddCommMonoid V] [Module R V] in

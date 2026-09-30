@@ -273,6 +273,11 @@ theorem hom_ext {f g : ExactK0 E →+ G} (h : ∀ X : C, f (of X) = g (of X)) : 
 
 end HomExt
 
+/-- A homomorphism into exact `K₀` whose range contains the class of every object is surjective. -/
+theorem surjective_of_forall_of_mem_range {G : Type*} [AddGroup G] {f : G →+ ExactK0 E}
+    (h : ∀ X : C, of X ∈ f.range) : Function.Surjective f :=
+  PresentedK0.surjective_of_forall_of_mem_range h
+
 variable {G : Type*} [AddCommGroup G]
 
 variable (E) in
@@ -429,10 +434,15 @@ private noncomputable def leftInvariant : AdditiveInvariant E (ExactK0 E' →+ G
 noncomputable def bilift : ExactK0 E →+ ExactK0 E' →+ G :=
   lift a.leftInvariant
 
-/-- The two-variable descent evaluates on object classes as the original invariant. -/
+/-- The two-variable descent at an object class of the first variable is the one-sided descent in
+the second variable. -/
 @[simp]
+lemma bilift_of (X : C) : a.bilift (of X) = a.toRightAdditiveInvariant.rightLift X := by
+  rw [bilift, lift_of, leftInvariant]
+
+/-- The two-variable descent evaluates on object classes as the original invariant. -/
 lemma bilift_of_of (X : C) (Y : D) : a.bilift (of X) (of Y) = a.obj X Y := by
-  rw [bilift, lift_of, leftInvariant, RightAdditiveInvariant.rightLift_of]
+  rw [bilift_of, RightAdditiveInvariant.rightLift_of]
 
 /-- The two-variable descent is the unique biadditive map with the prescribed values on pairs of
 object classes. -/
@@ -561,18 +571,8 @@ theorem ofLE_unique (h : ∀ S : ShortComplex C, E.Conflation S → E''.Conflati
 /-- The comparison map is surjective: exact `K₀` is a quotient of the exact `K₀` of any exact
 structure with fewer conflations. -/
 theorem ofLE_surjective (h : ∀ S : ShortComplex C, E.Conflation S → E''.Conflation S) :
-    Function.Surjective (ofLE h) := by
-  intro x
-  induction x using ExactK0.induction_on with
-  | zero => exact ⟨0, map_zero _⟩
-  | of X => exact ⟨of X, ofLE_of h X⟩
-  | add a b ha hb =>
-    obtain ⟨a', rfl⟩ := ha
-    obtain ⟨b', rfl⟩ := hb
-    exact ⟨a' + b', map_add _ _ _⟩
-  | neg a ha =>
-    obtain ⟨a', rfl⟩ := ha
-    exact ⟨-a', map_neg _ _⟩
+    Function.Surjective (ofLE h) :=
+  surjective_of_forall_of_mem_range fun X => ⟨of X, ofLE_of h X⟩
 
 /-- The comparison map of an exact structure with itself is the identity. -/
 @[simp]
@@ -618,46 +618,32 @@ theorem fromSplit_unique (f : SplitK0 C →+ ExactK0 E)
 
 /-- The canonical comparison out of split `K₀` is surjective: the classes of objects generate
 exact `K₀`, so the exact `K₀` of any exact structure is a quotient of split `K₀`. -/
-theorem fromSplit_surjective : Function.Surjective (fromSplit E) := by
-  intro x
-  induction x using ExactK0.induction_on with
-  | zero => exact ⟨0, map_zero _⟩
-  | of X => exact ⟨SplitK0.of X, fromSplit_of (E := E) X⟩
-  | add a b ha hb =>
-    obtain ⟨a', rfl⟩ := ha
-    obtain ⟨b', rfl⟩ := hb
-    exact ⟨a' + b', map_add _ _ _⟩
-  | neg a ha =>
-    obtain ⟨a', rfl⟩ := ha
-    exact ⟨-a', map_neg _ _⟩
+theorem fromSplit_surjective : Function.Surjective (fromSplit E) :=
+  surjective_of_forall_of_mem_range fun X => ⟨SplitK0.of X, fromSplit_of (E := E) X⟩
 
 /-- The canonical comparison from split `K₀` to exact `K₀` is an equivalence when every
 conflation splits. -/
 noncomputable def fromSplitEquiv
     (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) :
-    SplitK0 C ≃+ ExactK0 E := by
+    SplitK0 C ≃+ ExactK0 E :=
   let a : AdditiveInvariant E (SplitK0 C) :=
     { obj := SplitK0.of
       map_conflation := fun {S} hS ↦ by
         obtain ⟨s⟩ := h hS
         rw [SplitK0.of_congr s.isoBinaryBiproduct, SplitK0.of_biprod] }
-  apply AddEquiv.ofBijective (fromSplit E)
-  constructor
-  · intro x y hxy
-    have hleft : (lift a).comp (fromSplit E) = AddMonoidHom.id (SplitK0 C) := by
-      apply SplitK0.hom_ext
-      intro X
-      rw [AddMonoidHom.comp_apply, fromSplit_of, lift_of, AddMonoidHom.id_apply]
-    apply_fun lift a at hxy
-    simpa only [← AddMonoidHom.comp_apply, hleft, AddMonoidHom.id_apply] using hxy
-  · exact fromSplit_surjective
+  (fromSplit E).toAddEquiv (lift a)
+    (SplitK0.hom_ext fun X ↦ by
+      rw [AddMonoidHom.comp_apply, fromSplit_of, lift_of, AddMonoidHom.id_apply])
+    (hom_ext fun X ↦ by
+      rw [AddMonoidHom.comp_apply, lift_of, AddMonoidHom.id_apply]
+      exact fromSplit_of X)
 
 /-- The split-to-exact equivalence acts by the canonical comparison homomorphism. -/
 @[simp]
 lemma fromSplitEquiv_apply
     (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (x : SplitK0 C) :
     fromSplitEquiv h x = fromSplit E x :=
-  AddEquiv.ofBijective_apply _ _ _
+  (rfl)
 
 /-- The inverse split-to-exact equivalence sends an object class to its split class. -/
 @[simp]

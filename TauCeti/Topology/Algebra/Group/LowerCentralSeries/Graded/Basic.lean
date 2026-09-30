@@ -417,6 +417,19 @@ theorem gradedMkZero_pow (g : G) (n : ℕ) : gradedMkZero p G (g ^ n) = n • gr
   rw [← gradedMk_zero ⟨g, mem_pLowerCentralSeries_zero p g⟩, ← gradedMk_pow]
   exact gradedMk_zero _
 
+/-- The degree-zero class of a product of elements of `G` is the sum of their classes. -/
+@[simp]
+theorem gradedMkZero_list_prod (l : List G) :
+    gradedMkZero p G l.prod = (l.map (gradedMkZero p G)).sum := by
+  induction l with
+  | nil => rw [List.prod_nil, List.map_nil, List.sum_nil, gradedMkZero_one]
+  | cons a l ih => rw [List.prod_cons, List.map_cons, List.sum_cons, gradedMkZero_mul, ih]
+
+-- Not `@[simp]`: `gradedMkZero_mul` and `gradedMkZero_inv` already rewrite the left-hand side.
+/-- The degree-zero class is invariant under conjugation, since `gr_0(G)` is abelian. -/
+theorem gradedMkZero_conj (c g : G) : gradedMkZero p G (c⁻¹ * g * c) = gradedMkZero p G g := by
+  simp only [gradedMkZero_mul, gradedMkZero_inv, neg_add_cancel_comm]
+
 @[simp]
 theorem gradedPieceZeroEquiv_gradedMkZero (g : G) :
     gradedPieceZeroEquiv p G (gradedMkZero p G g) =
