@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.NumberTheory.LocalField.Teichmuller
 import TauCeti.Topology.Algebra.Group.Subgroup
@@ -357,11 +358,16 @@ is prime to the residue characteristic of `K`, every `m`-th root of unity `ζ` o
 root of `X^{q^{φ(m)}} − X`, so an arithmetic Frobenius lift sends it to `ζ ^ q`. -/
 theorem apply_of_pow_eq_one (hσ : IsArithFrobeniusLift K σ) {m : ℕ}
     (hm : m.Coprime (ringChar 𝓀[K])) {ζ : AlgebraicClosure K} (hζ : ζ ^ m = 1) :
-    DFunLike.coe (F := Gal(AlgebraicClosure K/K)) σ ζ = ζ ^ Nat.card 𝓀[K] :=
-  isArithFrobeniusLift_iff.1 hσ ζ m.totient
+    DFunLike.coe (F := Gal(AlgebraicClosure K/K)) σ ζ = ζ ^ Nat.card 𝓀[K] := by
+  -- `q` is a power of `p`, hence prime to `m`.
+  have hq : (Nat.card 𝓀[K]).Coprime m := by
+    let _ := Fintype.ofFinite 𝓀[K]
+    obtain ⟨d, -, hd⟩ := FiniteField.card 𝓀[K] (ringChar 𝓀[K])
+    rw [Nat.card_eq_fintype_card, hd]
+    exact hm.symm.pow_left _
+  exact isArithFrobeniusLift_iff.1 hσ ζ m.totient
     (Nat.totient_pos.2 (Nat.pos_of_ne_zero (ne_zero_of_coprime_ringChar hm))).ne'
-    (pow_natCard_pow_totient_eq_self
-      ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.1 hm.symm) hζ)
+    (pow_pow_totient_eq_self hq hζ)
 
 /-- **The arithmetic Frobenius lifts form a left coset of the inertia subgroup**: they are the
 elements of `σ I_K`, for any one of them `σ`. -/

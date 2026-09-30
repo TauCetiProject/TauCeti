@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Tame.Character
 public import TauCeti.NumberTheory.LocalField.Unramified.ZHat
+import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
 /-!
 # The tame quotient of the absolute Galois group
@@ -95,7 +96,7 @@ instance : TotallyDisconnectedSpace (tameQuotient K) :=
 
 /-- The quotient map `G_K →ₜ* G_K^t` onto the tame quotient. -/
 def toTameQuotient : Field.absoluteGaloisGroup K →ₜ* tameQuotient K :=
-  ⟨QuotientGroup.mk' _, QuotientGroup.continuous_mk⟩
+  ContinuousMonoidHom.quotientMk _
 
 variable {K} in
 /-- An element of `G_K` has trivial image in the tame quotient exactly when it is wild. -/
@@ -165,17 +166,13 @@ theorem range_tameInertiaHom :
 the identification `Gal(K^{ur}/K) ≃ₜ* ℤ̂` carrying arithmetic Frobenius to `1`. It is well defined
 on the tame quotient because wild inertia fixes `K^{ur}`. -/
 def tameQuotientToZHat : tameQuotient K →ₜ* zHat.{u} :=
-  let f : Field.absoluteGaloisGroup K →* zHat.{u} :=
-    (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K) : _ →* _).comp
-      (restrictMaximalUnramifiedHom K)
-  have hf : wildInertiaSubgroup K ≤ f.ker := fun σ hσ ↦ by
+  let f : Field.absoluteGaloisGroup K →ₜ* zHat.{u} :=
+    (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K) : _ →ₜ* _).comp
+      ⟨restrictMaximalUnramifiedHom K, continuous_restrictMaximalUnramifiedHom K⟩
+  ContinuousMonoidHom.quotientLift _ f fun σ hσ ↦ by
     have h := wildInertiaSubgroup_le_inertiaSubgroup K hσ
     rw [← ker_restrictMaximalUnramifiedHom, MonoidHom.mem_ker] at h
-    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, h, map_one]
-  -- On representatives, the lift is `f`, a composite of continuous maps.
-  ⟨QuotientGroup.lift _ f hf, (QuotientGroup.isQuotientMap_mk _).continuous_iff.2 <| by
-    exact (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)).continuous.comp
-      (continuous_restrictMaximalUnramifiedHom K)⟩
+    simp [f, MonoidHom.mem_ker, h]
 
 variable {K} in
 /-- The image in `ℤ̂` of the class of `σ` is the image of the restriction of `σ` to `K^{ur}`. -/
@@ -184,7 +181,7 @@ theorem tameQuotientToZHat_toTameQuotient (σ : Field.absoluteGaloisGroup K) :
     tameQuotientToZHat K (toTameQuotient K σ) =
       maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)
         (restrictMaximalUnramifiedHom K σ) :=
-  (rfl)
+  ContinuousMonoidHom.quotientLift_mk _ _ _ σ
 
 /-- **Exactness in the middle**: the kernel of `G_K^t → ℤ̂` is the image of `ℤ̂^{(p')}(1)`, since
 both are the image of the inertia subgroup. -/
@@ -199,6 +196,14 @@ theorem ker_tameQuotientToZHat :
       map_eq_one_iff _ (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)).injective]
   rw [range_tameInertiaHom, ← h,
     Subgroup.map_comap_eq_self_of_surjective (toTameQuotient_surjective K)]
+
+variable {K} in
+/-- The map `G_K^t → ℤ̂` kills tame inertia: the elementwise form of `ker_tameQuotientToZHat`. -/
+@[simp]
+theorem tameQuotientToZHat_tameInertiaHom
+    (x : PrimeToPTateModule (ringChar 𝓀[K]) (AlgebraicClosure K)) :
+    tameQuotientToZHat K (tameInertiaHom K x) = 1 :=
+  (ker_tameQuotientToZHat K).ge ⟨x, rfl⟩
 
 /-! ### The conjugation action -/
 

@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Kummer.Extension
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 
@@ -159,20 +160,6 @@ theorem maximalUnramifiedExtension_eq_adjoin :
   exact ⟨fun ⟨f, hne, hx⟩ ↦ ⟨f, fun hf ↦ hne (by simp [hf]), hx⟩,
     fun ⟨f, hf, hx⟩ ↦ ⟨f, FiniteField.X_pow_card_pow_sub_X_ne_zero _ hf Finite.one_lt_card, hx⟩⟩
 
-variable {K} in
-/-- If the residue characteristic of `K` does not divide `n`, every `n`-th root of unity `ζ` in a
-monoid satisfies `ζ ^ q ^ φ(n) = ζ`, where `q` is the cardinality of the residue field: `q` is a
-power of `p`, hence prime to `n`, so `q ^ φ(n) ≡ 1 [MOD n]` by Euler's theorem. -/
-theorem pow_natCard_pow_totient_eq_self {M : Type*} [Monoid M] {n : ℕ}
-    (hn : ¬ ringChar 𝓀[K] ∣ n) {ζ : M} (hζ : ζ ^ n = 1) :
-    ζ ^ Nat.card 𝓀[K] ^ n.totient = ζ := by
-  let _ := Fintype.ofFinite 𝓀[K]
-  obtain ⟨d, hp, hd⟩ := FiniteField.card 𝓀[K] (ringChar 𝓀[K])
-  have hq : (Nat.card 𝓀[K]).Coprime n := by
-    rw [Nat.card_eq_fintype_card, hd]
-    exact ((Nat.Prime.coprime_iff_not_dvd hp).2 hn).pow_left _
-  rw [pow_eq_pow_mod _ hζ, Nat.ModEq.pow_totient hq, ← pow_eq_pow_mod _ hζ, pow_one]
-
 variable {K Ω} in
 /-- **Roots of unity of order prime to `p` are unramified.** If the residue characteristic of `K`
 does not divide `n`, every `n`-th root of unity of `Ω` lies in the maximal unramified extension,
@@ -182,9 +169,15 @@ theorem mem_maximalUnramifiedExtension_of_pow_eq_one {n : ℕ} (hn : ¬ ringChar
   have hn0 : n ≠ 0 := by
     rintro rfl
     exact hn (dvd_zero _)
+  -- `q` is a power of `p`, hence prime to `n`.
+  have hq : (Nat.card 𝓀[K]).Coprime n := by
+    let _ := Fintype.ofFinite 𝓀[K]
+    obtain ⟨d, hp, hd⟩ := FiniteField.card 𝓀[K] (ringChar 𝓀[K])
+    rw [Nat.card_eq_fintype_card, hd]
+    exact (hp.coprime_iff_not_dvd.2 hn).pow_left _
   rw [maximalUnramifiedExtension_eq_adjoin]
   exact subset_adjoin _ _ ⟨n.totient, (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn0)).ne',
-    pow_natCard_pow_totient_eq_self hn hζ⟩
+    pow_pow_totient_eq_self hq hζ⟩
 
 variable {K Ω} in
 /-- **Radicals of units are unramified.** If the residue characteristic of `K` does not divide `m`,
