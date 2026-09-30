@@ -77,7 +77,8 @@ private theorem map_val_injective :
 private theorem map_val_map_val_injective :
     Function.Injective (TensorProduct.map A.val.toLinearMap
       (TensorProduct.map A.val.toLinearMap A.val.toLinearMap)) :=
-  TensorProduct.map_injective_of_flat_flat _ _ Subtype.val_injective map_val_injective
+  Algebra.TensorProduct.map_injective_of_flat_flat A.val
+    (Algebra.TensorProduct.map A.val A.val) Subtype.val_injective map_val_injective
 
 variable (hA : A.IsHopfSubalgebra)
 include hA
@@ -98,6 +99,7 @@ noncomputable def comulAlgHom : A →ₐ[R] A ⊗[R] A :=
     (((Bialgebra.comulAlgHom R H).comp A.val).codRestrict _ hA.comulAlgHom_comp_val_mem_range)
 
 /-- The comultiplication of a Hopf subalgebra is the restriction of that of `H`. -/
+@[simp]
 theorem map_val_comulAlgHom (x : A) :
     Algebra.TensorProduct.map A.val A.val (hA.comulAlgHom x) = Coalgebra.comul (R := R) (x : H) :=
   (AlgEquiv.ofInjective_apply _ map_val_injective _).symm.trans
