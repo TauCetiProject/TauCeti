@@ -37,10 +37,10 @@ triangle group in `PSL(2, ℝ)`.
   `trace A ^ 2 = (2 cos (π / k)) ^ 2` with `2 ≤ k`, then the class of `A` has `k`-th power `1`.
 * `Matrix.SpecialLinearGroup.rotation`: the rotation matrix `!![cos θ, sin θ; -sin θ, cos θ]`;
   `rotation_zero`, `rotation_add` and `rotation_neg` make the family a one-parameter subgroup.
-* `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix (`conjRotation_zero`
-  identifies the unconjugated case with `rotation`), with its trace `trace_conjRotation`, the trace
-  `trace_conjRotation_mul_conjRotation` of a product, and the trace
-  `trace_commutatorElement_conjRotation` of a commutator.
+* `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix
+  (`conjRotation_zero_right` identifies the unconjugated case with `rotation`), with its trace
+  `trace_conjRotation`, the trace `trace_conjRotation_mul_conjRotation` of a product, and the
+  trace `trace_commutatorElement_conjRotation` of a commutator.
 
 ## References
 
@@ -173,7 +173,7 @@ theorem coe_conjRotation (θ t : ℝ) :
 -- Not `@[simp]`: `conjRotation θ 0` is the form the triangle-group generators use, and the
 -- `@[simp]` trace lemmas below are stated in it.
 /-- The unconjugated case of `conjRotation` is `rotation`. -/
-theorem conjRotation_zero (θ : ℝ) : conjRotation θ 0 = rotation θ :=
+theorem conjRotation_zero_right (θ : ℝ) : conjRotation θ 0 = rotation θ :=
   SpecialLinearGroup.ext _ _ fun i j => by
     fin_cases i <;> fin_cases j <;> simp
 

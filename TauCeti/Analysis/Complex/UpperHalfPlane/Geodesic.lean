@@ -148,6 +148,7 @@ theorem mem_range_geodesicLine_iff (g : PSL(2, ℝ)) (z : ℍ) :
 
 /-- Multiplying the representative by `pslS` reverses the parametrisation of a geodesic line:
 `z ↦ -1/z` runs the upward imaginary axis downward. -/
+@[simp]
 theorem geodesicLine_mul_pslS (g : PSL(2, ℝ)) (t : ℝ) :
     geodesicLine (g * pslS) t = geodesicLine g (-t) := by
   have h : geodesicLine pslS t = geodesicLine 1 (-t) := by
@@ -161,6 +162,7 @@ theorem geodesicLine_mul_pslS (g : PSL(2, ℝ)) (t : ℝ) :
 /-- The geodesic lines of `g` and `g * pslS` have the same image: `z ↦ -1/z` fixes the
 imaginary axis setwise, reversing its direction. (The two half-planes it bounds are swapped
 instead.) -/
+@[simp]
 theorem range_geodesicLine_mul_pslS (g : PSL(2, ℝ)) :
     Set.range (geodesicLine (g * pslS)) = Set.range (geodesicLine g) := by
   have h : geodesicLine (g * pslS) = geodesicLine g ∘ Neg.neg := funext (geodesicLine_mul_pslS g)
