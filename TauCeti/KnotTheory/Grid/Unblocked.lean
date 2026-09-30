@@ -382,12 +382,19 @@ theorem constantCoeff_sum_OMonomial {x y : GridState n} (s : Finset (GridRectang
     G.OColumns r.toGridRectangle = ∅]
   have h₁ : ∀ r ∈ s.filter fun r => G.OColumns r.toGridRectangle = ∅,
       constantCoeff (G.OMonomial R r.toGridRectangle) = 1 := fun r hr => by
-    rw [OMonomial, (Finset.mem_filter.mp hr).2, Finset.prod_empty, map_one]
+    rw [G.OMonomial_eq_monomial R, (Finset.mem_filter.mp hr).2, Finset.sum_empty,
+      MvPolynomial.constantCoeff_monomial]
+    simp
   have h₂ : ∀ r ∈ s.filter fun r => ¬G.OColumns r.toGridRectangle = ∅,
       constantCoeff (G.OMonomial R r.toGridRectangle) = 0 := fun r hr => by
     obtain ⟨c, hc⟩ := Finset.nonempty_iff_ne_empty.mpr (Finset.mem_filter.mp hr).2
-    rw [OMonomial, map_prod]
-    exact Finset.prod_eq_zero hc (by simp)
+    rw [G.OMonomial_eq_monomial R, MvPolynomial.constantCoeff_monomial]
+    have hsum : (∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1) ≠
+        (0 : Fin n →₀ ℕ) := by
+      intro h
+      have hc0 := congrArg (fun d : Fin n →₀ ℕ => d c) h
+      simp [Finsupp.finsetSum_apply, Finsupp.single_apply, hc] at hc0
+    simp [hsum]
   rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_const, Finset.sum_const_zero,
     nsmul_eq_mul, mul_one, add_zero]
 
