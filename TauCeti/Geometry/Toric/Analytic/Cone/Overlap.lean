@@ -33,22 +33,6 @@ open Topology
 
 namespace TauCeti.Toric
 
-private theorem PartialDiffeomorph.symm_trans_symm
-    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-    {H₁ H₂ H₃ : Type*} [TopologicalSpace H₁] [TopologicalSpace H₂] [TopologicalSpace H₃]
-    {I : ModelWithCorners 𝕜 E H₁} {J : ModelWithCorners 𝕜 F H₂}
-    {K : ModelWithCorners 𝕜 G H₃}
-    {M N P : Type*} [TopologicalSpace M] [ChartedSpace H₁ M]
-    [TopologicalSpace N] [ChartedSpace H₂ N]
-    [TopologicalSpace P] [ChartedSpace H₃ P]
-    {n : WithTop ℕ∞} (Φ : PartialDiffeomorph I J M N n)
-    (Ψ : PartialDiffeomorph I K M P n) :
-    (Φ.symm.trans Ψ).symm = Ψ.symm.trans Φ := by
-  rfl
-
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {σ τ υ : PointedCone ℝ V} {rσ rτ rυ kσ kτ kυ lσ lτ lυ : ℕ}
 
@@ -132,6 +116,6 @@ the other restriction. -/
   let _ := coneChartedSpace hi hτ.toIsToricCone hBτ κτ gτ
   let _ := coneChartedSpace hi hυ.toIsToricCone hBυ κυ gυ
   unfold faceOverlapPartialDiffeomorph
-  exact PartialDiffeomorph.symm_trans_symm _ _
+  rfl
 
 end TauCeti.Toric
