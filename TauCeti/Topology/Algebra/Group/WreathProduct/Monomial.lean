@@ -34,64 +34,59 @@ variable {G : Type u} [Group G] (U : Subgroup G)
 /-- The monomial homomorphism is continuous when `U` is open and multiplication on `G` is
 separately continuous. -/
 theorem continuous_monomialHom [TopologicalSpace G] [SeparatelyContinuousMul G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
-    Continuous (monomialHom U t ht) := by
+    (hU : IsOpen (U : Set G)) (s : U.LeftTransversal) :
+    Continuous (monomialHom U s) := by
   apply WreathProduct.continuous_iff.mpr
   constructor
   · intro x
     have h : Continuous (fun g : G =>
-        (⟨lWord U t x g, lWord_mem U t ht x g⟩ : U)) :=
-      (continuous_lWord U t hU x).subtype_mk _
+        (⟨lWord U (monomialRep U s) x g,
+          lWord_mem U (monomialRep U s) (monomialRep_mk U s) x g⟩ : U)) :=
+      (continuous_lWord U (monomialRep U s) hU x).subtype_mk _
     exact h.congr fun g => by
       apply Subtype.ext
       simp only [monomialHom_left, Subtype.coe_mk]
   · intro x
     exact (QuotientGroup.continuous_smul_const U x).congr fun g =>
-      (monomialHom_right U t ht g x).symm
+      (monomialHom_right U s g x).symm
 
 /-- The continuous monomial homomorphism for an open subgroup and a chosen transversal. -/
 noncomputable def monomialContinuousHom [TopologicalSpace G] [SeparatelyContinuousMul G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x) :
+    (hU : IsOpen (U : Set G)) (s : U.LeftTransversal) :
     G →ₜ* WreathProduct U (G ⧸ U) :=
-  ⟨monomialHom U t ht, continuous_monomialHom U hU t ht⟩
+  ⟨monomialHom U s, continuous_monomialHom U hU s⟩
 
 /-- The continuous monomial homomorphism has the same underlying homomorphism. -/
 @[simp] theorem monomialContinuousHom_apply [TopologicalSpace G] [SeparatelyContinuousMul G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x) (g : G) :
-    monomialContinuousHom U hU t ht g = monomialHom U t ht g := by
+    (hU : IsOpen (U : Set G)) (s : U.LeftTransversal) (g : G) :
+    monomialContinuousHom U hU s g = monomialHom U s g := by
   rfl
 
 section FiniteCoordinates
 
 /-- The finite-coordinate monomial homomorphism is continuous for an open subgroup. -/
 theorem continuous_monomialFinHom [TopologicalSpace G] [SeparatelyContinuousMul G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x)
+    (hU : IsOpen (U : Set G)) (s : U.LeftTransversal)
     (e : G ⧸ U ≃ Fin U.index) :
-    Continuous (monomialFinHom U t ht e) := by
+    Continuous (monomialFinHom U s e) := by
   have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
   have h := (WreathProduct.continuous_congr
-      e continuous_of_discreteTopology).comp (continuous_monomialHom U hU t ht)
-  exact h.congr fun g => (monomialFinHom_apply U t ht e g).symm
+      e continuous_of_discreteTopology).comp (continuous_monomialHom U hU s)
+  exact h.congr fun g => (monomialFinHom_apply U s e g).symm
 
 /-- The finite-coordinate continuous monomial homomorphism for an open subgroup. -/
 noncomputable def monomialFinContinuousHom [TopologicalSpace G] [SeparatelyContinuousMul G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x)
+    (hU : IsOpen (U : Set G)) (s : U.LeftTransversal)
     (e : G ⧸ U ≃ Fin U.index) :
     G →ₜ* WreathProduct U (Fin U.index) :=
-  ⟨monomialFinHom U t ht e, continuous_monomialFinHom U hU t ht e⟩
+  ⟨monomialFinHom U s e, continuous_monomialFinHom U hU s e⟩
 
 /-- The finite-coordinate continuous map has the finite-coordinate monomial homomorphism as
 its underlying map. -/
 @[simp] theorem monomialFinContinuousHom_apply [TopologicalSpace G] [SeparatelyContinuousMul G]
-    (hU : IsOpen (U : Set G)) (t : G ⧸ U → G)
-    (ht : ∀ x, (QuotientGroup.mk (t x) : G ⧸ U) = x)
+    (hU : IsOpen (U : Set G)) (s : U.LeftTransversal)
     (e : G ⧸ U ≃ Fin U.index) (g : G) :
-    monomialFinContinuousHom U hU t ht e g = monomialFinHom U t ht e g := by
+    monomialFinContinuousHom U hU s e g = monomialFinHom U s e g := by
   rfl
 
 end FiniteCoordinates
