@@ -420,13 +420,18 @@ theorem tameQuotientToZHat_comp_lift (hσ : IsArithFrobeniusLift K σ) :
       ContinuousMonoidHom.id zHat.{u} :=
   zHat.hom_ext (by simp [hσ.tameQuotientToZHat_eq_gen])
 
+/-- **The splitting by a Frobenius lift**, pointwise: `G_K^t → ℤ̂` sends the image of `x ∈ ℤ̂`
+under the section `ℤ̂ → G_K^t` determined by an arithmetic Frobenius lift back to `x`. -/
+theorem tameQuotientToZHat_lift (hσ : IsArithFrobeniusLift K σ) (x : zHat.{u}) :
+    tameQuotientToZHat K (zHat.lift (toTameQuotient K σ) x) = x :=
+  DFunLike.congr_fun hσ.tameQuotientToZHat_comp_lift x
+
 end IsArithFrobeniusLift
 
 /-- **The map `G_K^t → ℤ̂` is surjective**, being split by any Frobenius lift. -/
 theorem tameQuotientToZHat_surjective : Function.Surjective (tameQuotientToZHat K) := by
   obtain ⟨σ, hσ⟩ := exists_isArithFrobeniusLift K
-  exact fun x ↦ ⟨zHat.lift (toTameQuotient K σ) x,
-    DFunLike.congr_fun hσ.tameQuotientToZHat_comp_lift x⟩
+  exact fun x ↦ ⟨zHat.lift (toTameQuotient K σ) x, hσ.tameQuotientToZHat_lift x⟩
 
 /-! ### The tame frame on finite quotients -/
 

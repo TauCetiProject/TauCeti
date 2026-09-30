@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.OrderOfElement
-public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Data.Nat.Totient
 public import TauCeti.Data.Nat.Factorization.MulDvd
+import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Orders of elements and cardinalities
