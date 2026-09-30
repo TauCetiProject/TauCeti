@@ -70,6 +70,8 @@ theorem isSheafFor_trans {W : Opens X} {ι : Type*} (Y : ι → Opens X) (hY : �
           ht j (g ≫ homOfLE inf_le_right) (by simpa using hg)]
         exact TauCeti.CategoryTheory.Presieve.familyOfElements_congr x _ _ _ _
     have hZ : Z ≤ Y i ⊓ Y j := le_inf gi.le gj.le
+    -- Factor both arrows from `Z` through the meet's canonical inclusions; uniqueness of
+    -- morphisms between opens then lets `hij` identify their restrictions.
     rw [show gi = homOfLE hZ ≫ homOfLE inf_le_left from Subsingleton.elim _ _,
       show gj = homOfLE hZ ≫ homOfLE inf_le_right from Subsingleton.elim _ _, op_comp, op_comp,
       Functor.map_comp_apply, Functor.map_comp_apply, hij]
