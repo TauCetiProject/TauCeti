@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.BoundaryCorrespondence
-public import TauCeti.Analysis.Complex.PlaneSeparation.LocalSeparation
+public import TauCeti.Topology.FilledHull
 public import TauCeti.Topology.JordanCurve.Basic
 public import TauCeti.Topology.UniformlyLocallyConnected
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Biholomorph
+import TauCeti.Analysis.Complex.PlaneSeparation.LocalSeparation
 
 /-!
 # Jordan domains, and the domains a conformal map takes onto a disc
