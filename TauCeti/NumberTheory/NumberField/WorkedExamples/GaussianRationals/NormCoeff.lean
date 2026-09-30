@@ -54,6 +54,6 @@ theorem dedekindZetaCoeff_five (hmin : minpoly ℤ θ = X ^ 2 + 1)
       exact ⟨⟨J, by rw [← absNorm_ne_zero_iff_mem_nonZeroDivisors, hJ]; norm_num⟩, hJ, rfl⟩
   rw [← card_normFiber_eq_dedekindZetaCoeff K (by norm_num),
     ← Finset.card_map (Function.Embedding.subtype _), hfiber,
-    Finset.card_pair (span_two_add_ne_span_two_sub hmin hgen)]
+    Finset.card_pair (span_two_add_ne_span_two_sub hmin)]
 
 end TauCeti.NumberField.GaussianRationals
