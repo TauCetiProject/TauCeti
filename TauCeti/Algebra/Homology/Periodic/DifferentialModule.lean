@@ -135,14 +135,6 @@ theorem hom_ext {φ ψ : M ⟶ N} (h : φ.f = ψ.f) : φ = ψ :=
   change (Hom.comp φ ψ).f = _
   simp [Hom.comp]
 
-/-- A constructor for morphisms of differential modules when the commutativity condition is not
-obvious. -/
-def homMk (f : M.X ⟶ N.X) (comm : f ≫ N.d = M.d ≫ f) : M ⟶ N :=
-  ⟨f, comm⟩
-
-@[simp] theorem homMk_f (f : M.X ⟶ N.X) (comm : f ≫ N.d = M.d ≫ f) :
-    (homMk f comm).f = f := by simp [homMk]
-
 instance : Zero (M ⟶ N) where
   zero := { f := 0 }
 
@@ -165,18 +157,18 @@ instance (φ : M ⟶ N) [IsIso φ] : IsIso φ.f := (forget C).map_isIso φ
 /-- A constructor for isomorphisms of differential modules from an isomorphism of the underlying
 objects commuting with the differentials. -/
 def isoMk (e : M.X ≅ N.X) (comm : e.hom ≫ N.d = M.d ≫ e.hom) : M ≅ N where
-  hom := homMk e.hom comm
-  inv := homMk e.inv (by rw [e.inv_comp_eq, reassoc_of% comm, e.hom_inv_id, comp_id])
+  hom := Hom.mk e.hom comm
+  inv := Hom.mk e.inv (by rw [e.inv_comp_eq, reassoc_of% comm, e.hom_inv_id, comp_id])
 
 @[simp] theorem isoMk_hom (e : M.X ≅ N.X)
     (comm : e.hom ≫ N.d = M.d ≫ e.hom) :
-    (isoMk e comm).hom = homMk e.hom comm := by
+    (isoMk e comm).hom = Hom.mk e.hom comm := by
   simp [isoMk]
 
 @[simp] theorem isoMk_inv (e : M.X ≅ N.X)
     (comm : e.hom ≫ N.d = M.d ≫ e.hom) :
     (isoMk e comm).inv =
-      homMk e.inv (by rw [e.inv_comp_eq, reassoc_of% comm, e.hom_inv_id, comp_id]) := by
+      Hom.mk e.inv (by rw [e.inv_comp_eq, reassoc_of% comm, e.hom_inv_id, comp_id]) := by
   simp [isoMk]
 
 /-- A morphism of differential modules is an isomorphism exactly when its underlying morphism
@@ -284,7 +276,7 @@ def onePeriodicComplexEquivalence :
   functor := toOnePeriodicComplex C
   inverse := ofOnePeriodicComplex C
   unitIso := NatIso.ofComponents (fun M ↦ isoMk (Iso.refl M.X) (by simp))
-    (fun φ ↦ by ext; simp [isoMk, homMk])
+    (fun φ ↦ by ext; simp [isoMk])
   counitIso := NatIso.ofComponents
     (fun K ↦ HomologicalComplex.Hom.isoOfComponents
       (fun i ↦ K.XIsoOfEq (Subsingleton.elim _ _))
@@ -300,7 +292,7 @@ def onePeriodicComplexEquivalence :
     intro M
     ext i
     obtain rfl := Subsingleton.elim i 0
-    simp [isoMk, homMk]
+    simp [isoMk]
 
 @[simp] theorem onePeriodicComplexEquivalence_functor :
     (onePeriodicComplexEquivalence C).functor = toOnePeriodicComplex C := by
@@ -374,7 +366,7 @@ def differentialObjectEquivalence : DifferentialModule C ≌ DifferentialObject 
   functor := toDifferentialObject e
   inverse := ofDifferentialObject e
   unitIso := NatIso.ofComponents (fun M ↦ isoMk (Iso.refl M.X) (by simp))
-    (fun φ ↦ by ext; simp [isoMk, homMk])
+    (fun φ ↦ by ext; simp [isoMk])
   counitIso := NatIso.ofComponents (fun Y ↦ DifferentialObject.mkIso (Iso.refl Y.obj) (by simp))
 
 @[simp] theorem differentialObjectEquivalence_functor :
