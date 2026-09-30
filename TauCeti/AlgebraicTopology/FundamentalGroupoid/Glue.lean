@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.CoverGeneration
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Analysis.Convex.Contractible
+public import Mathlib.CategoryTheory.Functor.OfSequence
 
 /-!
 # Gluing functors out of the fundamental groupoid
@@ -395,27 +396,6 @@ private lemma pathVal_congr {x y x' y' : X} (P : Path x y) (Q : Path x' y') (hx 
   rw [pathVal_eq hU F hF i P hP fun t ↦ h t ▸ hi t, pathVal_eq hU F hF i Q _ hi]
   exact locVal_congr hU F hF i P Q hx hy h _ hi
 
-/-- The composite `f 0 ≫ f 1 ≫ ⋯ ≫ f (n - 1)` of a string of composable morphisms. -/
-private def chain {A : ℕ → D} (f : ∀ k, A k ⟶ A (k + 1)) : ∀ n, A 0 ⟶ A n
-  | 0 => 𝟙 _
-  | n + 1 => chain f n ≫ f n
-
-private lemma chain_zero {A : ℕ → D} (f : ∀ k, A k ⟶ A (k + 1)) : chain f 0 = 𝟙 _ := (rfl)
-
-private lemma chain_succ {A : ℕ → D} (f : ∀ k, A k ⟶ A (k + 1)) (n : ℕ) :
-    chain f (n + 1) = chain f n ≫ f n := (rfl)
-
-/-- Composites of two strings of composable morphisms related by a ladder of commuting squares
-are related by the outer rungs. -/
-private lemma chain_comp_eq {A B : ℕ → D} (f : ∀ k, A k ⟶ A (k + 1)) (g : ∀ k, B k ⟶ B (k + 1))
-    (r : ∀ k, A k ⟶ B k) {n : ℕ} (w : ∀ k < n, f k ≫ r (k + 1) = r k ≫ g k) :
-    chain f n ≫ r n = r 0 ≫ chain g n := by
-  induction n with
-  | zero => simp [chain_zero]
-  | succ n ih =>
-    rw [chain_succ, chain_succ, Category.assoc, w n n.lt_succ_self,
-      reassoc_of% (ih fun k hk ↦ w k (hk.trans n.lt_succ_self))]
-
 include hF in
 /-- The value of `γ` on the `k`-th piece of the uniform partition into `N` pieces. -/
 private def segVal {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (k : ℕ) :
@@ -425,20 +405,21 @@ private def segVal {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (k : 
 include hF in
 /-- On a run of partition points inside an interval which `γ` maps into one member of the cover,
 the composite of the segment values is the value of the subpath between the extreme points. -/
-private lemma chain_segVal_eq {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (i : ι)
+private lemma map_segVal_eq {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (i : ι)
     {lo hi : I} (hγ : ∀ t ∈ Icc lo hi, γ t ∈ U i) {a b : ℕ} (hab : a ≤ b)
     (hpt : ∀ j, a ≤ j → j ≤ b → pt N j ∈ Icc lo hi) :
-    chain (segVal hU F hF γ h) b =
-      chain (segVal hU F hF γ h) a ≫ pathVal hU F hF (γ.subpath (pt N a) (pt N b))
+    Functor.OfSequence.map (segVal hU F hF γ h) a b hab =
+      pathVal hU F hF (γ.subpath (pt N a) (pt N b))
         ⟨i, subpath_apply_mem hγ (hpt a le_rfl hab) (hpt b hab le_rfl)⟩ := by
   induction b, hab using Nat.le_induction with
   | base =>
-    rw [pathVal_eq hU F hF i _ _
+    rw [Functor.OfSequence.map_id, pathVal_eq hU F hF i _ _
       (subpath_apply_mem hγ (hpt a le_rfl le_rfl) (hpt a le_rfl le_rfl)),
       locVal_eq_eqToHom hU F hF i _ _ fun t ↦ by simp]
     simp
   | succ b hab ih =>
-    rw [chain_succ, ih fun j hj hj' ↦ hpt j hj (by omega), Category.assoc, segVal,
+    rw [Functor.OfSequence.map_comp _ a b (b + 1) hab b.le_succ,
+      ih fun j hj hj' ↦ hpt j hj (by omega), Functor.OfSequence.map_le_succ, segVal,
       pathVal_subpath_trans hU F hF γ i hγ (hpt a le_rfl (by omega)) (hpt b hab (by omega))
         (hpt (b + 1) (by omega) le_rfl)]
 
@@ -446,19 +427,20 @@ include hF in
 /-- The value of `γ` computed along the uniform partition into `N` pieces. -/
 private def liftN {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (hN : N ≠ 0) :
     glueObj hU F x ⟶ glueObj hU F y :=
-  eqToHom (by rw [pt_zero, γ.source]) ≫ chain (segVal hU F hF γ h) N ≫
-    eqToHom (by rw [pt_self hN, γ.target])
+  eqToHom (by rw [pt_zero, γ.source]) ≫
+    Functor.OfSequence.map (segVal hU F hF γ h) 0 N N.zero_le ≫
+      eqToHom (by rw [pt_self hN, γ.target])
 
 include hF in
 /-- For a path inside one member of the cover, the partition value is the local value. -/
 private lemma liftN_eq_locVal {x y : X} (γ : Path x y) {N : ℕ} (h : IsFine U γ N) (hN : N ≠ 0)
     (i : ι) (hγ : ∀ t, γ t ∈ U i) : liftN hU F hF γ h hN = locVal hU F hF i γ hγ := by
   have hmem : ∀ t, γ.subpath (pt N 0) (pt N N) t ∈ U i := fun _ ↦ hγ _
-  rw [liftN, chain_segVal_eq hU F hF γ h i (lo := 0) (hi := 1) (fun t _ ↦ hγ t) (Nat.zero_le N)
+  rw [liftN, map_segVal_eq hU F hF γ h i (lo := 0) (hi := 1) (fun t _ ↦ hγ t) (Nat.zero_le N)
     fun j _ _ ↦ ⟨unitInterval.nonneg', unitInterval.le_one'⟩, pathVal_eq hU F hF i _ _ hmem,
     locVal_congr hU F hF i _ γ (by rw [pt_zero, γ.source]) (by rw [pt_self hN, γ.target])
       (fun t ↦ by simp [Path.subpath, pt_zero, pt_self hN]) hmem hγ]
-  simp [chain_zero]
+  simp
 
 include hF in
 private lemma liftN_congr {x y : X} (γ : Path x y) {N N' : ℕ} (hNN' : N = N') (h : IsFine U γ N)
@@ -472,17 +454,22 @@ include hF in
 private lemma liftN_mul {x y : X} (γ : Path x y) {M N : ℕ} (hM : M ≠ 0) (hN : N ≠ 0)
     (h : IsFine U γ N) (h' : IsFine U γ (M * N)) :
     liftN hU F hF γ h' (mul_ne_zero hM hN) = liftN hU F hF γ h hN := by
-  have key : ∀ k (hk : k ≤ N), chain (segVal hU F hF γ h') (M * k) =
-      eqToHom (by rw [pt_zero, pt_zero]) ≫ chain (segVal hU F hF γ h) k ≫
-        eqToHom (by rw [pt_mul hM hk]) := by
+  have key : ∀ k (hk : k ≤ N),
+      Functor.OfSequence.map (segVal hU F hF γ h') 0 (M * k) (M * k).zero_le =
+        eqToHom (by rw [pt_zero, pt_zero]) ≫
+          Functor.OfSequence.map (segVal hU F hF γ h) 0 k k.zero_le ≫
+            eqToHom (by rw [pt_mul hM hk]) := by
     intro k hk
     induction k with
-    | zero => simp [chain_zero]
+    | zero => simp [Functor.OfSequence.map_id]
     | succ k ih =>
       obtain ⟨i, hi⟩ := h k
-      rw [chain_segVal_eq hU F hF γ h' i hi (Nat.mul_le_mul_left M k.le_succ) fun j hj hj' ↦
+      rw [Functor.OfSequence.map_comp _ 0 (M * k) (M * (k + 1)) (M * k).zero_le
+          (Nat.mul_le_mul_left M k.le_succ),
+        map_segVal_eq hU F hF γ h' i hi (Nat.mul_le_mul_left M k.le_succ) fun j hj hj' ↦
           ⟨pt_mul hM (k.le_succ.trans hk) ▸ pt_mono _ hj, pt_mul hM hk ▸ pt_mono _ hj'⟩,
-        ih (by omega), chain_succ, segVal,
+        ih (by omega), Functor.OfSequence.map_comp _ 0 k (k + 1) k.zero_le k.le_succ,
+        Functor.OfSequence.map_le_succ, segVal,
         pathVal_congr hU F hF _ _ (by rw [pt_mul hM (k.le_succ.trans hk)])
           (by rw [pt_mul hM hk]) (fun t ↦ by rw [pt_mul hM (k.le_succ.trans hk), pt_mul hM hk]) _
           (h.subpath_mem k)]
@@ -588,14 +575,6 @@ private lemma trans_subpath_right {x y z : X} (γ : Path x y) (δ : Path y z) {N
     field_simp
     ring
 
-private lemma chain_add {A : ℕ → D} (f : ∀ k, A k ⟶ A (k + 1)) (a b : ℕ) :
-    chain f (a + b) = chain f a ≫ chain (A := fun k ↦ A (a + k)) (fun k ↦ f (a + k)) b := by
-  induction b with
-  | zero => simp [chain_zero]
-  | succ b ih =>
-    rw [chain_succ (A := fun k ↦ A (a + k)), ← Category.assoc, ← ih]
-    exact chain_succ f (a + b)
-
 include hF in
 private lemma pathVal_eq_eqToHom {x y : X} (P : Path x y) (hP : ∃ i, ∀ t, P t ∈ U i)
     (hconst : ∀ t, P t = x) :
@@ -642,30 +621,45 @@ private lemma lift_trans {x y z : X} (γ : Path x y) (δ : Path y z) :
   obtain ⟨hN, hγ⟩ := h₁ N (by omega)
   obtain ⟨-, hδ⟩ := h₂ N (by omega)
   obtain ⟨hNN, hγδ⟩ := h₃ (N + N) (by omega)
-  have first : ∀ k (hk : k ≤ N), chain (segVal hU F hF (γ.trans δ) hγδ) k =
-      eqToHom (by rw [pt_zero, pt_zero, Path.source, Path.source]) ≫
-        chain (segVal hU F hF γ hγ) k ≫ eqToHom (by rw [trans_pt_left γ δ hk]) := by
+  have first : ∀ k (hk : k ≤ N),
+      Functor.OfSequence.map (segVal hU F hF (γ.trans δ) hγδ) 0 k k.zero_le =
+        eqToHom (by rw [pt_zero, pt_zero, Path.source, Path.source]) ≫
+          Functor.OfSequence.map (segVal hU F hF γ hγ) 0 k k.zero_le ≫
+            eqToHom (by rw [trans_pt_left γ δ hk]) := by
     intro k hk
     induction k with
-    | zero => simp [chain_zero]
+    | zero => simp [Functor.OfSequence.map_id]
     | succ k ih =>
-      rw [chain_succ, chain_succ, ih (by omega), segVal, segVal,
+      rw [Functor.OfSequence.map_comp _ 0 k (k + 1) k.zero_le k.le_succ,
+        Functor.OfSequence.map_comp _ 0 k (k + 1) k.zero_le k.le_succ,
+        Functor.OfSequence.map_le_succ, Functor.OfSequence.map_le_succ, ih (by omega), segVal,
+        segVal,
         pathVal_congr hU F hF _ _ (trans_pt_left γ δ (by omega)) (trans_pt_left γ δ hk)
           (trans_subpath_left γ δ (by omega)) _ (hγ.subpath_mem k)]
       simp
-  have second : chain (A := fun k ↦ glueObj hU F (γ.trans δ (pt (N + N) (N + k))))
-      (fun k ↦ segVal hU F hF (γ.trans δ) hγδ (N + k)) N =
-      eqToHom (by rw [trans_pt_right γ δ hN]) ≫ chain (segVal hU F hF δ hδ) N ≫
-        eqToHom (by rw [trans_pt_right γ δ hN]) := by
-    rw [← Category.assoc, ← comp_eqToHom_iff]
-    refine chain_comp_eq (A := fun k ↦ glueObj hU F (γ.trans δ (pt (N + N) (N + k))))
-      (B := fun k ↦ glueObj hU F (δ (pt N k))) _ _
-      (fun k ↦ eqToHom (by rw [trans_pt_right γ δ hN])) fun k hk ↦ ?_
-    rw [segVal, segVal, pathVal_congr hU F hF _ _ (trans_pt_right γ δ hN k)
-      (trans_pt_right γ δ hN (k + 1)) (trans_subpath_right γ δ hk) _ (hδ.subpath_mem k)]
-    simp
+  have second : ∀ k (hk : k ≤ N),
+      Functor.OfSequence.map (segVal hU F hF (γ.trans δ) hγδ) N (N + k) (N.le_add_right k) =
+        eqToHom (by rw [← trans_pt_right γ δ hN 0, Nat.add_zero]) ≫
+          Functor.OfSequence.map (segVal hU F hF δ hδ) 0 k k.zero_le ≫
+            eqToHom (by rw [trans_pt_right γ δ hN]) := by
+    intro k hk
+    induction k with
+    | zero => simp [Functor.OfSequence.map_id]
+    | succ k ih =>
+      have step : Functor.OfSequence.map (segVal hU F hF (γ.trans δ) hγδ) (N + k) (N + (k + 1))
+          (by omega) = segVal hU F hF (γ.trans δ) hγδ (N + k) :=
+        Functor.OfSequence.map_le_succ _ (N + k)
+      rw [Functor.OfSequence.map_comp _ N (N + k) (N + (k + 1)) (N.le_add_right k) (by omega),
+        Functor.OfSequence.map_comp _ 0 k (k + 1) k.zero_le k.le_succ, step,
+        Functor.OfSequence.map_le_succ, ih (by omega), segVal,
+        segVal, pathVal_congr hU F hF _ _ (trans_pt_right γ δ hN k)
+          (trans_pt_right γ δ hN (k + 1)) (trans_subpath_right γ δ (by omega)) _
+          (hδ.subpath_mem k)]
+      simp
   rw [lift_eq_liftN hU F hF _ hγδ hNN, lift_eq_liftN hU F hF _ hγ hN,
-    lift_eq_liftN hU F hF _ hδ hN, liftN, liftN, liftN, chain_add, first N le_rfl, second]
+    lift_eq_liftN hU F hF _ hδ hN, liftN, liftN, liftN,
+    Functor.OfSequence.map_comp _ 0 N (N + N) N.zero_le (N.le_add_right N), first N le_rfl,
+    second N le_rfl]
   simp
 
 /-- A path traced by a homotopy of paths: the `k`-th partition point, while the homotopy
@@ -732,10 +726,18 @@ private lemma lift_eq_of_homotopy {x y : X} {p q : Path x y} (H : p.Homotopy q) 
     (hcell l k).imp fun i hi t ↦ hi _ (convexComb_mem_Icc_pt N l t) _ mem_Icc_pt
   have hstep : ∀ l, liftN hU F hF _ (hrow l) hN = liftN hU F hF _ (hrow (l + 1)) hN := by
     intro l
-    have hsq := chain_comp_eq (segVal hU F hF _ (hrow l)) (segVal hU F hF _ (hrow (l + 1)))
-      (fun k ↦ pathVal hU F hF (colSeg H N l k) (hcol l k)) (n := N) fun k _ ↦ by
-        obtain ⟨i, hi⟩ := hcell l k
-        exact pathVal_cell hU F hF H N l k i hi _ _ _ _
+    -- The values of the columns of the `l`-th row of cells form a natural transformation between
+    -- the sequences of segment values along its two sides.
+    have hsq : Functor.OfSequence.map (segVal hU F hF _ (hrow l)) 0 N N.zero_le ≫
+        pathVal hU F hF (colSeg H N l N) (hcol l N) =
+          pathVal hU F hF (colSeg H N l 0) (hcol l 0) ≫
+            Functor.OfSequence.map (segVal hU F hF _ (hrow (l + 1))) 0 N N.zero_le :=
+      (NatTrans.ofSequence (F := Functor.ofSequence (segVal hU F hF _ (hrow l)))
+        (G := Functor.ofSequence (segVal hU F hF _ (hrow (l + 1))))
+        (fun k ↦ pathVal hU F hF (colSeg H N l k) (hcol l k)) fun k ↦ by
+          obtain ⟨i, hi⟩ := hcell l k
+          rw [Functor.ofSequence_map_homOfLE_succ, Functor.ofSequence_map_homOfLE_succ]
+          exact pathVal_cell hU F hF H N l k i hi _ _ _ _).naturality (homOfLE N.zero_le)
     rw [pathVal_eq_eqToHom hU F hF (colSeg H N l 0) _ fun t ↦ by simp [colSeg, pt_zero],
       pathVal_eq_eqToHom hU F hF (colSeg H N l N) _ fun t ↦ by simp [colSeg, pt_self hN],
       comp_eqToHom_iff] at hsq
