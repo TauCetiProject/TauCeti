@@ -195,7 +195,7 @@ noncomputable def transIsoBot [DistribMulAction (⊥ : Subgroup U) A]
     [DistribMulAction (⊥ : Subgroup G) A] :
     ofDiscreteModule ℤ G (DiscreteCoind G U (DiscreteCoind U (⊥ : Subgroup U) A)) ≅
       ofDiscreteModule ℤ G (DiscreteCoind G (⊥ : Subgroup G) A) :=
-  transIso (Subgroup.map_bot U.subtype) (TauCeti.bot_smul_eq_bot_smul (U := U)) hU
+  transIso (Subgroup.map_bot U.subtype) (fun v w a _ => TauCeti.bot_smul_eq_bot_smul v w a) hU
 
 -- The carrier of `ofDiscreteModule ℤ G M` is `M` by definition, but only the `show` makes the
 -- coinduced function applicable to a group element.
