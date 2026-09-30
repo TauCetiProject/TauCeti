@@ -30,7 +30,7 @@ equality of relators.
 
 ## Main result
 
-* `exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_isCrossedHom_eq_zero`:
+* `exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_forall_crossedHom_eq_zero`:
   the constrained successive-approximation theorem at `r_f`.
 
 ## References
@@ -60,7 +60,7 @@ then an automorphism `e` of `F` carries `w` to `r`. Moreover every generator cha
 The last clause records that the approximation preserves the orientation: an element of the
 exponent-sum kernel which lies in `λ₁(F)` is killed by `χ` at these marked values
 (`ContinuousMonoidHom.apply_eq_one_of_mem_exponentSumKer_of_mem_pLowerCentralSeries_one`). -/
-theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_isCrossedHom_eq_zero
+theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_forall_crossedHom_eq_zero
     (hn : Even n) (hn3 : 3 < n) {f : ℕ} (hf : 2 ≤ f)
     (h₁ : χ (of ⟨1, by omega⟩) = -1)
     (h₃ : (χ (of ⟨3, hn3⟩) : ℤ_[2]) * (1 - 2 ^ f) = 1)
@@ -86,24 +86,26 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_isCrosse
   let X := exponentSumKer 2 (Fin n) i₃
   let Z : Set (freeProP 2 (Fin n)) := {z | z ∈ X ∧
     ∀ i : Fin n, i ≠ i₁ → crossedHom χ (Pi.single i 1) z = 0}
+  have hmapX (ω : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
+      (hω : ∀ j, (ω j : freeProP 2 (Fin n)) ∈ X) {c : freeProP 2 (Fin n)} (hc : c ∈ X) :
+      basisModification ω c ∈ X := by
+    dsimp only [X] at hc ⊢
+    rw [mem_exponentSumKer_iff] at hc ⊢
+    rw [toAdd_exponentSum_basisModification, Finset.sum_apply]
+    refine Finset.sum_eq_zero fun j _ ↦ ?_
+    rw [Pi.smul_apply, Pi.add_apply, mem_exponentSumKer_iff.mp (hω j), add_zero]
+    by_cases hj : j = i₃
+    · subst j
+      simp [hc]
+    · simp [hj]
   refine exists_continuousMulEquiv_apply_eq Z (fun _ ↦ X ⊓ pLowerCentralSeries 2 _ 1)
     (fun _ ↦ (isClosed_exponentSumKer i₃).inter (isClosed_pLowerCentralSeries 1))
     ?_ w r hρ ?_ ?_
   · intro ω hω _ c hc
     rw [mem_inf] at hc ⊢
-    refine ⟨?_, (basisModification ω).toMonoidHom.map_pLowerCentralSeries_le
-      (basisModification ω).continuous 1 (mem_map_of_mem _ hc.2)⟩
-    replace hc := hc.1
-    dsimp only [X] at hc ⊢
-    rw [mem_exponentSumKer_iff] at hc ⊢
-    rw [toAdd_exponentSum_basisModification, Finset.sum_apply]
-    apply Finset.sum_eq_zero
-    intro j _
-    rw [Pi.smul_apply, Pi.add_apply, mem_exponentSumKer_iff.mp (hω j).1, add_zero]
-    by_cases hj : j = i₃
-    · subst j
-      simp [hc]
-    · simp [hj]
+    exact ⟨hmapX ω (fun j ↦ (hω j).1) hc.1,
+      (basisModification ω).toMonoidHom.map_pLowerCentralSeries_le
+        (basisModification ω).continuous 1 (mem_map_of_mem _ hc.2)⟩
   · intro φ hφ hφX
     replace hφX : ∀ i, (of i)⁻¹ * φ (of i) ∈ X := fun i ↦ (hφX i).1
     let ωφ : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 := fun i ↦
@@ -119,15 +121,7 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_isCrosse
           · rw [hχ k hk₁ hk, one_pow]) (hφX j) (hφ (of j))
     have hφwX : φ w ∈ X := by
       rw [hφeq]
-      exact (by
-        rw [mem_exponentSumKer_iff, toAdd_exponentSum_basisModification, Finset.sum_apply]
-        apply Finset.sum_eq_zero
-        intro j _
-        rw [Pi.smul_apply, Pi.add_apply, mem_exponentSumKer_iff.mp (hφX j), add_zero]
-        by_cases hj : j = i₃
-        · subst j
-          simp [w, i₃]
-        · simp [hj])
+      exact hmapX ωφ hφX (by simp [X, w, i₃])
     refine ⟨mul_mem (inv_mem hφwX) hrX, ?_⟩
     intro i hi
     have hφw : crossedHom χ (Pi.single i 1) (φ w) = 0 := by
