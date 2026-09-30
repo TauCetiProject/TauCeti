@@ -17,7 +17,8 @@ required to be commutative.
 
 Mathlib already constructs the convolution `Monoid` on `WithConv (H →ₐ[R] A)` for `H` a
 bialgebra (`Mathlib/RingTheory/Bialgebra/Convolution.lean`): multiplication is the
-convolution product `(f * g)(h) = ∑ f(h₍₁₎) * g(h₍₂₎)` and the unit is `algebraMap ∘ ε`.
+convolution product `(f * g)(h) = ∑ f(h₍₁₎) * g(h₍₂₎)` and the unit is
+`algebraMap ∘ ε`.
 What is added here is the **inverse** and hence the **group** structure, available exactly
 when `H` carries an antipode `S`: the inverse of `f` is `f ∘ S`.
 
@@ -47,7 +48,8 @@ the inverse.
 ## References
 
 The convolution monoid on algebra homomorphisms builds on Mathlib's convolution monoid of
-Yaël Dillies and Michał Mrugała, and the Hopf convolution algebra developed by Michał Mrugała and Yunzhou Xie.
+Yaël Dillies and Michał Mrugała, and the Hopf convolution algebra developed by
+Michał Mrugała and Yunzhou Xie.
 -/
 
 public section
@@ -128,7 +130,8 @@ noncomputable instance instGroup : Group (WithConv (H →ₐ[R] A)) where
     -- Distribute `f` over the convolution product `S * id`.
     have key := LinearMap.algHom_comp_convMul_distrib f.ofConv
       (toConv (antipode R)) (toConv LinearMap.id)
-    -- `key : f ∘ (S * id) = ((f ∘ S) * (f ∘ id)).ofConv`. Use `S * id = 1` and `f ∘ id = f`.
+    -- `key : f ∘ (S * id) = ((f ∘ S) * (f ∘ id)).ofConv`.
+    -- Use `S * id = 1` and `f ∘ id = f`.
     rw [LinearMap.antipode_mul_id, ofConv_toConv, ofConv_toConv, LinearMap.comp_id] at key
     -- So `((f ∘ S) * f).ofConv = f ∘ 1`, the linear unit `1` being `algebraMap ∘ counit`.
     rw [← key, LinearMap.convOne_def, ofConv_toConv]
