@@ -16,8 +16,6 @@ The coordinate-free complex torus acts on each affine chart by multiplication of
 values. Restriction to a face commutes with this action, so the chart actions glue to an action
 on the analytic realization. The chart inclusions are equivariant, and the action is jointly
 continuous for the monomial-embedding topology.
-This is the topological part of the roadmap's glued action target. Holomorphy awaits the global
-complex-manifold structure, while character equivariance is left for a later stage.
 
 ## References
 
