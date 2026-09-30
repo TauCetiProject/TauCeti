@@ -22,13 +22,12 @@ is the transpose of the braided evaluation `Yᵛ ⊗ Y ⟶ Y ⊗ Yᵛ ⟶ 𝟙_ 
 commutative ring it is the evaluation map `m ↦ (φ ↦ φ m)` into the double dual, `Module.Dual.eval`
 in Mathlib; for sheaves of modules it is the map `𝓔 ⟶ 𝓗om(𝓗om(𝓔, 𝒪), 𝒪)`.
 
-The map is natural in `Y`, and it is an isomorphism whenever `Y` has a left dual `D`. Indeed,
-transporting the pairing of `D` and `Y` along `TauCeti.ihomUnitIso` makes `Yᵛ` a left dual of `Y`
-whose evaluation is that of the internal hom, and swapping it with the braiding makes `Y` a left
-dual of `Yᵛ`. The comparison `TauCeti.ihomUnitIso` for this swapped pairing identifies `Y` with
-the internal hom `(Yᵛ ⟶[C] 𝟙_ C)`, and its inverse is exactly the double-dual map. So in a closed
-symmetric monoidal category such as `QCoh(X)`, every dualizable object is canonically isomorphic
-to its double dual, with the duals computed by internal homs into the unit.
+The map is natural in `Y`, and it is an isomorphism whenever `Y` has a left or a right dual. So in
+a closed symmetric monoidal category such as `QCoh(X)` or modules over a commutative ring, every
+dualizable object is canonically isomorphic to its double dual, with the duals computed by
+internal homs into the unit. The `IsIso` instances are found by instance search, so
+`asIso (doubleDualMap Y)` is available for any object with a `HasLeftDual` or `HasRightDual`
+instance, for example a finite projective module.
 
 ## Main declarations
 
