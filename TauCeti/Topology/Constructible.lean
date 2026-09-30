@@ -35,9 +35,10 @@ theorem isNowhereDense_frontier (hs : IsConstructible s) : IsNowhereDense (front
 
 /-- A dense constructible set has dense interior, with no separation hypothesis. -/
 theorem dense_interior (hs : IsConstructible s) (hd : Dense s) : Dense (interior s) := by
-  have h := hs.isNowhereDense_frontier
-  rw [IsNowhereDense, isClosed_frontier.closure_eq, frontier, hd.closure_eq,
-    Set.sdiff_eq, Set.univ_inter, interior_eq_empty_iff_dense_compl, compl_compl] at h
-  exact h
+  have h := (isClosed_isNowhereDense_iff_compl.mp
+    ⟨isClosed_frontier, hs.isNowhereDense_frontier⟩).2
+  have hi : (frontier s)ᶜ = interior s := by
+    simpa [hd.closure_eq, Set.sdiff_eq] using closure_sdiff_frontier s
+  exact hi ▸ h
 
 end Topology.IsConstructible
