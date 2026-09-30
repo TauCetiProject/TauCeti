@@ -10,10 +10,6 @@ public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Shift
 public import TauCeti.NumberTheory.NumberField.Global.InfinityType.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Connected
 
-import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
-import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
-import TauCeti.NumberTheory.NumberField.Global.Places.Completion
-
 /-!
 # The infinity type of a Hecke character
 
@@ -102,6 +98,20 @@ theorem infiniteComponent_mul (χ ψ : HeckeCharacter K) (w : InfinitePlace K) :
     (χ * ψ).infiniteComponent w = χ.infiniteComponent w * ψ.infiniteComponent w :=
   (rfl)
 
+/-- Components of the inverse of a Hecke character are the inverses of the components. -/
+@[simp]
+theorem infiniteComponent_inv (χ : HeckeCharacter K) (w : InfinitePlace K) :
+    χ⁻¹.infiniteComponent w = (χ.infiniteComponent w)⁻¹ :=
+  (rfl)
+
+/-- Components of a power of a Hecke character are the powers of the components. -/
+@[simp]
+theorem infiniteComponent_pow (χ : HeckeCharacter K) (n : ℕ) (w : InfinitePlace K) :
+    (χ ^ n).infiniteComponent w = χ.infiniteComponent w ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
+
 /-- The **component of a Hecke character at a real place `w`**, as a character of `ℝˣ`: the
 component at `w` transported along the isomorphism `ℝ ≃ K_w` inverse to the real extension
 embedding. -/
@@ -148,6 +158,21 @@ theorem realComponent_mul (χ ψ : HeckeCharacter K) (w : {w : InfinitePlace K /
     (χ * ψ).realComponent w = χ.realComponent w * ψ.realComponent w :=
   (rfl)
 
+/-- Real components of the inverse of a Hecke character are the inverses of the real
+components. -/
+@[simp]
+theorem realComponent_inv (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsReal}) :
+    χ⁻¹.realComponent w = (χ.realComponent w)⁻¹ :=
+  (rfl)
+
+/-- Real components of a power of a Hecke character are the powers of the real components. -/
+@[simp]
+theorem realComponent_pow (χ : HeckeCharacter K) (n : ℕ) (w : {w : InfinitePlace K // w.IsReal}) :
+    (χ ^ n).realComponent w = χ.realComponent w ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
+
 /-- The trivial Hecke character has trivial complex components. -/
 @[simp]
 theorem complexComponent_one (w : {w : InfinitePlace K // w.IsComplex}) :
@@ -160,6 +185,23 @@ components. -/
 theorem complexComponent_mul (χ ψ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsComplex}) :
     (χ * ψ).complexComponent w = χ.complexComponent w * ψ.complexComponent w :=
   (rfl)
+
+/-- Complex components of the inverse of a Hecke character are the inverses of the complex
+components. -/
+@[simp]
+theorem complexComponent_inv (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsComplex}) :
+    χ⁻¹.complexComponent w = (χ.complexComponent w)⁻¹ :=
+  (rfl)
+
+/-- Complex components of a power of a Hecke character are the powers of the complex
+components. -/
+@[simp]
+theorem complexComponent_pow (χ : HeckeCharacter K) (n : ℕ)
+    (w : {w : InfinitePlace K // w.IsComplex}) :
+    (χ ^ n).complexComponent w = χ.complexComponent w ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
 
 /-! ### The infinity type -/
 
@@ -253,6 +295,47 @@ theorem exists_finiteOrderInfinityType {χ : HeckeCharacter K} (hχ : χ.IsFinit
 
 /-! ### The norm characters -/
 
+/-- The component of the norm character `‖·‖ ^ s` at an infinite place `w` sends `u` to
+`|u|_w ^ s`, for the normalized absolute value `|·|_w` of `K_w`. -/
+theorem coe_infiniteComponent_normPow_apply (s : ℂ) (w : InfinitePlace K) (u : w.Completionˣ) :
+    ((normPow K s).infiniteComponent w u : ℂ) =
+      ((infiniteCompletionNormalizedAbsValue w u : ℝ) : ℂ) ^ s := by
+  simp [IdeleClassGroup.ofCompletion_apply]
+
+/-- The component of the norm character `‖·‖ ^ s` at a real place is `x ↦ |x| ^ s`. -/
+@[simp]
+theorem realComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsReal}) :
+    (normPow K s).realComponent w = normCpowCharacter ℝ s := by
+  refine ContinuousMonoidHom.ext fun x ↦ Units.ext ?_
+  obtain ⟨y, rfl⟩ :=
+    (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).surjective x
+  have hy : ‖((Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2) y : ℝˣ) : ℝ)‖ =
+      ‖(y : w.1.Completion)‖ :=
+    (congrArg norm (continuousMulEquivRealOfIsReal_apply w.2 _)).trans <|
+      (isometry_extensionEmbeddingOfIsReal w.2).norm_map_of_map_zero (map_zero _) y
+  rw [realComponent_apply, ContinuousMulEquiv.symm_apply_apply,
+    coe_infiniteComponent_normPow_apply, coe_normCpowCharacter_apply, hy,
+    infiniteCompletionNormalizedAbsValue_of_isReal _ w.2]
+
+/-- The component of the norm character `‖·‖ ^ s` at a complex place is `z ↦ |z| ^ (2 * s)`,
+since the normalized absolute value of a complex place is the square of the usual one. -/
+@[simp]
+theorem complexComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsComplex}) :
+    (normPow K s).complexComponent w = normCpowCharacter ℂ (2 * s) := by
+  refine ContinuousMonoidHom.ext fun z ↦ Units.ext ?_
+  obtain ⟨y, rfl⟩ :=
+    (Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).surjective z
+  have hy : ‖((Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2) y : ℂˣ) :
+      ℂ)‖ = ‖(y : w.1.Completion)‖ :=
+    (congrArg norm (continuousMulEquivComplexOfIsComplex_apply w.2 _)).trans <|
+      (isometry_extensionEmbedding w.1).norm_map_of_map_zero (map_zero _) y
+  have harg : Complex.arg (‖(y : w.1.Completion)‖ : ℂ) = 0 :=
+    Complex.arg_ofReal_of_nonneg (norm_nonneg _)
+  rw [complexComponent_apply, ContinuousMulEquiv.symm_apply_apply,
+    coe_infiniteComponent_normPow_apply, coe_normCpowCharacter_apply, hy,
+    infiniteCompletionNormalizedAbsValue_of_isComplex _ w.2, Complex.ofReal_pow,
+    Complex.cpow_ofNat_mul' (by simp [harg, Real.pi_pos]) (by simp [harg, Real.pi_pos.le])]
+
 /-- **The infinity type of the norm character `‖·‖ ^ s`**: modulus exponent `s` and parity `0` at
 every real place, and modulus exponent `2 * s` and angular frequency `0` at every complex place,
 since the normalized absolute value of a complex place is the square of the usual one. -/
@@ -261,33 +344,8 @@ theorem infinityType_normPow (s : ℂ) :
       { realExponent := fun _ ↦ s
         realParity := 0
         complexExponent := fun _ ↦ 2 * s
-        complexAngularFrequency := 0 } := by
-  refine infinityType_eq_iff.2 ⟨fun w ↦ ?_, fun w ↦ ?_⟩ <;> dsimp only
-  · refine ContinuousMonoidHom.ext fun x ↦ Units.ext ?_
-    obtain ⟨y, rfl⟩ :=
-      (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).surjective x
-    rw [realComponent_apply, ContinuousMulEquiv.symm_apply_apply, infiniteComponent_apply,
-      normPow_apply, Pi.zero_apply, realUnitsCharacter_zero_right, coe_normCpowCharacter_apply,
-      IdeleClassGroup.ofCompletion_apply, ideleClassNorm_mk, coe_ideleNorm_ofCompletion,
-      infiniteCompletionNormalizedAbsValue_of_isReal _ w.2]
-    have hy : ((Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2) y : ℝˣ) : ℝ) =
-        extensionEmbeddingOfIsReal w.2 y :=
-      continuousMulEquivRealOfIsReal_apply w.2 _
-    rw [hy, (isometry_extensionEmbeddingOfIsReal w.2).norm_map_of_map_zero (map_zero _)]
-  · refine ContinuousMonoidHom.ext fun z ↦ Units.ext ?_
-    obtain ⟨y, rfl⟩ :=
-      (Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).surjective z
-    rw [complexComponent_apply, ContinuousMulEquiv.symm_apply_apply, infiniteComponent_apply,
-      normPow_apply, Pi.zero_apply, complexUnitsCharacter_zero_right, coe_normCpowCharacter_apply,
-      IdeleClassGroup.ofCompletion_apply, ideleClassNorm_mk, coe_ideleNorm_ofCompletion,
-      infiniteCompletionNormalizedAbsValue_of_isComplex _ w.2]
-    have harg : Complex.arg (‖(y : w.1.Completion)‖ : ℂ) = 0 :=
-      Complex.arg_ofReal_of_nonneg (norm_nonneg _)
-    have hy : ((Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2) y : ℂˣ) :
-        ℂ) = extensionEmbedding w.1 y :=
-      continuousMulEquivComplexOfIsComplex_apply w.2 _
-    rw [hy, (isometry_extensionEmbedding w.1).norm_map_of_map_zero (map_zero _), Complex.ofReal_pow,
-      Complex.cpow_ofNat_mul' (by simp [harg, Real.pi_pos]) (by simp [harg, Real.pi_pos.le])]
+        complexAngularFrequency := 0 } :=
+  infinityType_eq_iff.2 ⟨fun w ↦ by simp, fun w ↦ by simp⟩
 
 /-- **The norm character `‖·‖ ^ s` has finite order exactly when `s = 0`.**  For `s ≠ 0` its
 modulus exponents at the infinite places are nonzero, although for purely imaginary `s` its
