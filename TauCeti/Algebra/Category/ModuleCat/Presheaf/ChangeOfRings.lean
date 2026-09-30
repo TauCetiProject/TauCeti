@@ -25,8 +25,9 @@ invertible after sheafification is the remaining step toward strong symmetric mo
 
 * `PresheafOfModules.restrictScalarsLaxMonoidal`: its lax monoidal structure;
 * `PresheafOfModules.restrictScalarsLaxBraided`: compatibility with the symmetric braiding;
-* `PresheafOfModules.pushforward`: pushforward along a ringed-functor morphism;
-* `PresheafOfModules.pushforwardLaxBraided`: pushforward is lax symmetric monoidal.
+* `PresheafOfModules.pushforwardLaxMonoidal`: Mathlib's
+  `PresheafOfModulesOfCommRing.pushforward` is lax monoidal;
+* `PresheafOfModules.pushforwardLaxBraided`: it is moreover lax symmetric monoidal.
 
 No formalization is vendored. The construction is obtained sectionwise from Mathlib's lax
 monoidal restriction of scalars for `ModuleCat`.
@@ -139,26 +140,19 @@ instance restrictScalarsLaxBraided :
     intro m n
     rfl
 
-/-- Pushforward of presheaves of modules along a functor of sites and a morphism of coefficient
-presheaves, factored as precomposition followed by restriction of scalars. -/
-abbrev pushforward (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
-    {S : Cᵒᵖ ⥤ CommRingCat.{u}}
-    (α : S ⟶ F.op ⋙ R) :
-    PresheafOfModulesOfCommRing.{u} R ⥤ PresheafOfModulesOfCommRing.{u} S :=
-  PresheafOfModulesOfCommRing.pushforward₀ F R ⋙
-    PresheafOfModulesOfCommRing.restrictScalars α
-
 /-- Pushforward of presheaves of modules is lax monoidal. -/
 instance pushforwardLaxMonoidal (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
     {S : Cᵒᵖ ⥤ CommRingCat.{u}}
     (α : S ⟶ F.op ⋙ R) :
-    (pushforward F α).LaxMonoidal := inferInstance
+    (PresheafOfModulesOfCommRing.pushforward.{u} α).LaxMonoidal :=
+  inferInstanceAs (PresheafOfModulesOfCommRing.pushforward₀ F R ⋙
+    PresheafOfModulesOfCommRing.restrictScalars α).LaxMonoidal
 
 /-- Pushforward of presheaves of modules preserves the symmetric braiding. -/
 instance pushforwardLaxBraided (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
     {S : Cᵒᵖ ⥤ CommRingCat.{u}}
     (α : S ⟶ F.op ⋙ R) :
-    (pushforward F α).LaxBraided where
+    (PresheafOfModulesOfCommRing.pushforward.{u} α).LaxBraided where
   braided M N := by
     apply _root_.PresheafOfModules.hom_ext
     intro X
