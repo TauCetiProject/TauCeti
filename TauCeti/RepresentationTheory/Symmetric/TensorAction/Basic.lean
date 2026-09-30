@@ -30,6 +30,11 @@ It reuses `PiTensorProduct.reindex`; the convention is
 * `permTensorActionAlgHom` is its `Representation.asAlgebraHom` extension to `R[S_d]`.
 * `TauCeti.tensorPowerBasis` is the monomial basis of `(Rⁿ)^{⊗d}`, on which the action is a
   reindexing.
+
+## Main results
+
+* `TauCeti.finrank_tensorPower` is the dimension count `dim (Rⁿ)^{⊗d} = nᵈ` that the monomial
+  basis supplies.
 -/
 
 public section
@@ -160,6 +165,13 @@ theorem tensorPowerBasis_apply (f : Fin d → Fin n) :
     tensorPowerBasis R n d f = PiTensorProduct.tprod R fun i => Pi.single (f i) (1 : R) := by
   classical
   rw [tensorPowerBasis, Basis.piTensorProduct_apply]
+  simp
+
+/-- **The dimension of `(Rⁿ)^{⊗d}` is `nᵈ`**, read off the monomial basis
+`TauCeti.tensorPowerBasis`, whose index type is `Fin d → Fin n`. -/
+theorem finrank_tensorPower [StrongRankCondition R] :
+    Module.finrank R (⨂[R] _ : Fin d, Fin n → R) = n ^ d := by
+  rw [Module.finrank_eq_card_basis (tensorPowerBasis R n d), Fintype.card_fun]
   simp
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already
