@@ -16,15 +16,9 @@ for the connecting maps `δ` of the upward dimension-shifting sequence when `y` 
 and of the downward one when `q < 0` (`TauCeti.TateCohomology.cup_dimensionShiftUpIso_hom`,
 `TauCeti.TateCohomology.cup_dimensionShiftDownIso_hom`). This file extends the rule, in every
 degree `q`, to the connecting maps of every short exact sequence `0 → N₁ → N₂ → N₃ → 0` whose first
-map has a `k`-linear retraction (`TauCeti.TateCohomology.cup_δ_of_leftInverse`).
-
-For `q ≥ 0`, a retraction `r` gives a morphism from the sequence to the upward dimension-shifting
-sequence of `N₁` which is the identity on `N₁`: on `N₂` it is `n ↦ (g ↦ r (g • n))`. For `q < 0`,
-the corresponding `k`-linear section `s` of the last map gives a morphism to the sequence from the
-downward dimension-shifting sequence of `N₃` which is the identity on `N₃`: on `Ind_⊥^G N₃` it is
-`⟦g ⊗ₜ n⟧ ↦ g⁻¹ • s n`. In either case the connecting maps of the two sequences, and of their tensor
-products with the first factor, are related by naturality of the connecting maps, and the cup
-product is natural in the second variable.
+map has a `k`-linear retraction (`TauCeti.TateCohomology.cup_δ_of_leftInverse`). This applies in
+particular to the tensor products of the dimension-shifting sequences with a representation, which
+are split `k`-linearly but in general not as sequences of representations.
 
 ## Main statements
 
@@ -48,6 +42,15 @@ open CategoryTheory Limits MonoidalCategory Rep
 namespace TauCeti.TateCohomology
 
 variable {k G : Type u} [CommRing k] [Group G]
+
+/- Proof of `cup_δ_of_leftInverse` for `0 → N₁ → N₂ → N₃ → 0` and `y` of degree `q`. For `q ≥ 0`,
+a retraction `r` of the first map gives a morphism from the sequence to the upward
+dimension-shifting sequence of `N₁` which is the identity on `N₁`: on `N₂` it is
+`n ↦ (g ↦ r (g • n))`. For `q < 0`, the corresponding `k`-linear section `s` of the last map gives
+a morphism to the sequence from the downward dimension-shifting sequence of `N₃` which is the
+identity on `N₃`: on `Ind_⊥^G N₃` it is `⟦g ⊗ₜ n⟧ ↦ g⁻¹ • s n`. In either case the connecting maps
+of the two sequences, and of their tensor products with the first factor, are related by
+naturality of the connecting maps, and the cup product is natural in the second variable. -/
 
 /-- The morphism from a short exact sequence whose first map has a `k`-linear retraction `r` to the
 upward dimension-shifting sequence of its first term: the identity on the first term, and
@@ -88,8 +91,7 @@ private def fromDimensionShiftDownSES {S : ShortComplex (Rep k G)} (hS : S.Short
 variable [Fintype G]
 
 /-- The rule `x ∪ δ y = (-1)^p δ (x ∪ y)` for a short exact sequence whose first map has a
-`k`-linear retraction, when `y` has degree `q ≥ 0`: compare with the upward dimension-shifting
-sequence of the first term. -/
+`k`-linear retraction, when `y` has degree `q ≥ 0`. -/
 private theorem cup_δ_of_leftInverse_of_nonneg (M : Rep k G) {S : ShortComplex (Rep k G)}
     (hS : S.ShortExact) {r : S.X₂.V →ₗ[k] S.X₁.V} (hr : Function.LeftInverse r S.f.hom)
     (hMS : (S.map (tensorLeft M)).ShortExact) {p q n : ℤ} (hq : 0 ≤ q) (h : p + q = n)
@@ -123,8 +125,7 @@ private theorem cup_δ_of_leftInverse_of_nonneg (M : Rep k G) {S : ShortComplex 
   rfl
 
 /-- The rule `x ∪ δ y = (-1)^p δ (x ∪ y)` for a short exact sequence whose last map has a
-`k`-linear section, when `y` has degree `q < 0`: compare with the downward dimension-shifting
-sequence of the last term. -/
+`k`-linear section, when `y` has degree `q < 0`. -/
 private theorem cup_δ_of_rightInverse_of_neg (M : Rep k G) {S : ShortComplex (Rep k G)}
     (hS : S.ShortExact) {s : S.X₃.V →ₗ[k] S.X₂.V} (hs : Function.RightInverse s S.g.hom)
     (hMS : (S.map (tensorLeft M)).ShortExact) {p q n : ℤ} (hq : q < 0) (h : p + q = n)

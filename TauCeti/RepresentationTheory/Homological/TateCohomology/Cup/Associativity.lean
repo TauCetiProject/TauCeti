@@ -12,17 +12,8 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 
 For a finite group `G`, the tensor associator identifies the two ways to cup three Tate classes
 `x`, `y`, `z` of arbitrary integer degrees `p`, `q`, `s`:
-`α ((x ∪ y) ∪ z) = x ∪ (y ∪ z)` (`TauCeti.TateCohomology.cup_assoc`).
-
-When `z` has degree zero both sides are computed by the degree-zero product `cupH0`. The general
-case follows by induction on `s`, upwards through the dimension shift
-`0 → P → Coind_⊥^G P → dimensionShiftUp P → 0` and downwards through
-`0 → dimensionShiftDown P → Ind_⊥^G P → P → 0`. On the left the cup product with `z` satisfies
-`(x ∪ y) ∪ δ z = (-1)^(p + q) δ ((x ∪ y) ∪ z)` by its definition, and the associator commutes with
-the connecting maps. On the right, `y ∪ δ z = (-1)^q δ (y ∪ z)` by definition, and
-`x ∪ δ w = (-1)^p δ (x ∪ w)` for the connecting map `δ` of the tensor product of the shifting
-sequence with `N`, which is split `k`-linearly, by `TauCeti.TateCohomology.cup_δ_of_leftInverse`
-in all degrees. The two signs agree.
+`α ((x ∪ y) ∪ z) = x ∪ (y ∪ z)` (`TauCeti.TateCohomology.cup_assoc`). Products of three Tate
+classes may therefore be rebracketed freely, whatever their degrees.
 
 ## Main statements
 
@@ -66,6 +57,16 @@ private theorem cup_assoc_zero_right (M N P : Rep k G) {p q r : ℤ} (h : p + q 
 
 /-! ### Associativity in all tridegrees -/
 
+/- Proof of `cup_assoc`. When `z` has degree zero both sides are computed by the degree-zero
+product `cupH0`. The general case follows by induction on `s`, upwards through the dimension shift
+`0 → P → Coind_⊥^G P → dimensionShiftUp P → 0` and downwards through
+`0 → dimensionShiftDown P → Ind_⊥^G P → P → 0`. On the left the cup product with `z` satisfies
+`(x ∪ y) ∪ δ z = (-1)^(p + q) δ ((x ∪ y) ∪ z)` by its definition, and the associator commutes with
+the connecting maps. On the right, `y ∪ δ z = (-1)^q δ (y ∪ z)` by definition, and
+`x ∪ δ w = (-1)^p δ (x ∪ w)` for the connecting map `δ` of the tensor product of the shifting
+sequence with `N`, which is split `k`-linearly, by `cup_δ_of_leftInverse` in all degrees. The two
+signs agree. -/
+
 /-- The associator commutes with the connecting maps of the tensor products of a short exact
 sequence with `M ⊗ N` and with `N` and then `M`. -/
 private theorem map_associator_δ (M N : Rep k G) {S : ShortComplex (Rep k G)}
@@ -80,8 +81,8 @@ private theorem map_associator_δ (M N : Rep k G) {S : ShortComplex (Rep k G)}
     using congrArg (fun φ ↦ φ w)
       (_root_.TateCohomology.δ_naturality h₁ h₂ (S.mapNatTrans (tensorLeftTensor M N).hom) n)
 
-/-- The upward step in the proof of `cup_assoc`: associativity for a last class of degree `s ≥ 0`
-in the upward shift of `P` gives associativity for a last class of degree `s + 1` in `P`. -/
+/-- Associativity for a last class of degree `s ≥ 0` in the upward shift of `P` implies
+associativity for a last class of degree `s + 1` in `P`. -/
 private theorem cup_assoc_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : 0 ≤ s)
     (h₂ : q + s = r₂) (h : p + q + s = r) (x : tateCohomology M p) (y : tateCohomology N q)
     (ih : ∀ z : tateCohomology (dimensionShiftUp P) s,
@@ -117,9 +118,8 @@ private theorem cup_assoc_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : 0
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, curriedTensor_obj_obj] at hR
   rw [hL, ih, hR, smul_smul, ← Int.negOnePow_add, add_comm q p]
 
-/-- The downward step in the proof of `cup_assoc`: associativity for a last class of degree
-`s + 1` in the downward shift of `P`, where `s < 0`, gives associativity for a last class of
-degree `s` in `P`. -/
+/-- Associativity for a last class of degree `s + 1` in the downward shift of `P`, where `s < 0`,
+implies associativity for a last class of degree `s` in `P`. -/
 private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : s < 0)
     (h₂ : q + s = r₂) (h : p + q + s = r) (x : tateCohomology M p) (y : tateCohomology N q)
     (ih : ∀ z : tateCohomology (dimensionShiftDown P) (s + 1),
@@ -175,8 +175,7 @@ private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs 
   rw [negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hTN
   rw [← hR, ← hTN, map_zsmul_unit, smul_smul, ← Int.negOnePow_add]
 
-/-- Associativity of the Tate cup product when the last class has nonnegative degree, by
-induction on that degree through the upward dimension shift. -/
+/-- Associativity of the Tate cup product when the last class has nonnegative degree. -/
 private theorem cup_assoc_of_nonneg (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : 0 ≤ s)
     (h₂ : q + s = r₂) (h : p + q + s = r) (x : tateCohomology M p) (y : tateCohomology N q)
     (z : tateCohomology P s) :
@@ -193,8 +192,7 @@ private theorem cup_assoc_of_nonneg (M N P : Rep k G) {p q s r₂ r : ℤ} (hs :
     obtain rfl : r = p + q + s + 1 := by omega
     exact cup_assoc_add_one M N P hs rfl rfl x y (ih (dimensionShiftUp P) rfl rfl) z
 
-/-- Associativity of the Tate cup product when the last class has negative degree, by induction
-on that degree through the downward dimension shift. -/
+/-- Associativity of the Tate cup product when the last class has negative degree. -/
 private theorem cup_assoc_of_neg (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : s < 0)
     (h₂ : q + s = r₂) (h : p + q + s = r) (x : tateCohomology M p) (y : tateCohomology N q)
     (z : tateCohomology P s) :
