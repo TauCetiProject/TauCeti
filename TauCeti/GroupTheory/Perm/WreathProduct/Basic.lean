@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.PUnit
 public import Mathlib.Data.Finite.Perm
 public import Mathlib.GroupTheory.SemidirectProduct
+public import TauCeti.Algebra.Group.Action.End
 
 /-!
 # Permutation wreath products
@@ -74,22 +75,18 @@ namespace PermutationWreathProduct
 
 variable {D Q X}
 
-private lemma mulAutArrow_apply_coordinate (q : Q) (f : X → D) (x : X) :
-    mulAutArrow q f x = f (q⁻¹ • x) := by
-  rw [mulAutArrow_apply_apply]
-  rfl
-
 /-- Multiplication in a permutation wreath product, written in base coordinates. -/
 @[simp]
 theorem mul_left (a b : PermutationWreathProduct D Q X) (x : X) :
     (a * b).left x = a.left x * b.left (a.right⁻¹ • x) := by
-  rw [SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_coordinate]
+  rw [SemidirectProduct.mul_left, Pi.mul_apply, mulAutArrow_apply_apply_eq_apply_inv_smul]
 
 /-- Inversion in a permutation wreath product, written in base coordinates. -/
 @[simp]
 theorem inv_left (a : PermutationWreathProduct D Q X) (x : X) :
     a⁻¹.left x = (a.left (a.right • x))⁻¹ := by
-  rw [SemidirectProduct.inv_left, mulAutArrow_apply_coordinate, Pi.inv_apply, inv_inv]
+  rw [SemidirectProduct.inv_left, mulAutArrow_apply_apply_eq_apply_inv_smul, Pi.inv_apply,
+    inv_inv]
 
 /-- The natural cardinality of a permutation wreath product with finite index type. -/
 theorem card [Finite X] : Nat.card (PermutationWreathProduct D Q X) =

@@ -1,0 +1,39 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Group.Action.End
+
+/-!
+# Coordinates of `mulAutArrow`
+
+Mathlib's `mulAutArrow` lets a group `G` acting on `A` act on `A → M` by multiplicative
+automorphisms. Its generated simp lemma `mulAutArrow_apply_apply` rewrites the value to a scalar
+action through the non-instance `arrowAction`, which cannot be unfolded further without that
+local instance. This file records the evaluation formula in plain coordinates.
+
+## Main results
+
+* `TauCeti.mulAutArrow_apply_apply_eq_apply_inv_smul`: `mulAutArrow g f a = f (g⁻¹ • a)`.
+-/
+
+public section
+
+namespace TauCeti
+
+variable {G M A : Type*} [Group G] [MulAction G A] [Monoid M]
+
+/-- The automorphism `mulAutArrow g` of `A → M` evaluates coordinates through `g⁻¹`:
+`mulAutArrow g f a = f (g⁻¹ • a)`. -/
+-- `mulAutArrow_apply_apply` leaves `(g • f) a` for the non-instance `arrowAction`; its
+-- `arrowAction_smul` is stated with a bare `SMul.smul` and does not match, so the remaining
+-- step is the defining equation of that action.
+theorem mulAutArrow_apply_apply_eq_apply_inv_smul (g : G) (f : A → M) (a : A) :
+    mulAutArrow g f a = f (g⁻¹ • a) := by
+  rw [mulAutArrow_apply_apply]
+  rfl
+
+end TauCeti
