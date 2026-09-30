@@ -72,7 +72,7 @@ variable {K L : Type*} [CommSemiring K] [CommRing L] [Algebra K L]
 include h in
 /-- In an automorphism group of order two, the product of two nontrivial automorphisms is
 trivial. -/
-private theorem mul_eq_one_of_ne_one {σ τ : L ≃ₐ[K] L} (hσ : σ ≠ 1) (hτ : τ ≠ 1) :
+private theorem mul_eq_one_of_ne_one_of_ne_one {σ τ : L ≃ₐ[K] L} (hσ : σ ≠ 1) (hτ : τ ≠ 1) :
     σ * τ = 1 := by
   obtain ⟨ρ, -, hρ⟩ := (Nat.card_eq_two_iff' (1 : L ≃ₐ[K] L)).1 h
   rw [hρ σ hσ, hρ τ hτ, ← pow_two, ← h, pow_card_eq_one']
@@ -100,7 +100,8 @@ def quadratic (b : Kˣ) : TwoCocycle K L where
     · simp
     rcases eq_or_ne ρ 1 with rfl | hρ
     · simp
-    simp [hσ, hτ, hρ, mul_eq_one_of_ne_one h hσ hτ, mul_eq_one_of_ne_one h hτ hρ, hb]
+    simp [hσ, hτ, hρ, mul_eq_one_of_ne_one_of_ne_one h hσ hτ,
+      mul_eq_one_of_ne_one_of_ne_one h hτ hρ, hb]
 
 /-- The quadratic cocycle is trivial when its second argument is; with
 `TauCeti.TwoCocycle.toFun_one_left`, it is also trivial when its first argument is. -/
@@ -111,7 +112,8 @@ theorem quadratic_toFun_one_right (b : Kˣ) (σ : L ≃ₐ[K] L) : (quadratic h 
 /-- On two nontrivial automorphisms, which are both the generator, the quadratic cocycle of `b`
 takes the value `b`. -/
 @[simp]
-theorem quadratic_toFun_of_ne_one (b : Kˣ) {σ τ : L ≃ₐ[K] L} (hσ : σ ≠ 1) (hτ : τ ≠ 1) :
+theorem quadratic_toFun_of_ne_one_of_ne_one (b : Kˣ) {σ τ : L ≃ₐ[K] L} (hσ : σ ≠ 1)
+    (hτ : τ ≠ 1) :
     (quadratic h b).toFun σ τ = Units.map (algebraMap K L : K →* L) b := by
   simp [quadratic, hσ, hτ]
 
@@ -123,7 +125,7 @@ theorem quadratic_one : quadratic h (1 : Kˣ) = 1 :=
     · simp
     rcases eq_or_ne τ 1 with rfl | hτ
     · simp
-    simp [quadratic_toFun_of_ne_one h _ hσ hτ]
+    simp [quadratic_toFun_of_ne_one_of_ne_one h _ hσ hτ]
 
 /-- The quadratic cocycle is multiplicative in `b`. -/
 @[simp]
@@ -133,7 +135,7 @@ theorem quadratic_mul (a b : Kˣ) : quadratic h (a * b) = quadratic h a * quadra
     · simp
     rcases eq_or_ne τ 1 with rfl | hτ
     · simp
-    simp [quadratic_toFun_of_ne_one h _ hσ hτ]
+    simp [quadratic_toFun_of_ne_one_of_ne_one h _ hσ hτ]
 
 end TwoCocycle
 
@@ -163,7 +165,7 @@ theorem cohomologyClass_quadratic {σ : L ≃ₐ[K] L}
   -- `Additive Lˣ` only up to unfolding `Rep.ofMulDistribMulAction`, so `toMul_zero` and
   -- `toMul_ofMul` do not fire syntactically; the remaining goals hold by `rfl`.
   interval_cases i <;> interval_cases j <;>
-    simp [quadratic_toFun_of_ne_one h b hσ1 hσ1] <;> rfl
+    simp [quadratic_toFun_of_ne_one_of_ne_one h b hσ1 hσ1] <;> rfl
 
 /-- The class of the quadratic cocycle of `b` vanishes exactly when `b` is a norm from `L`. -/
 @[simp]
