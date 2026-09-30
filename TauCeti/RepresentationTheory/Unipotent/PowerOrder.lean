@@ -65,9 +65,6 @@ irreducibility corollaries below are accordingly the infinite-group counterparts
 * A. Borel, *Linear Algebraic Groups*, §4.8, for Kolchin's theorem.
 * J. L. Alperin, *Local Representation Theory*, Cambridge University Press (1986), for the
   characteristic-`p` statement that the trivial module is the only simple module of a `p`-group.
-
-This supplies the fixed-vector milestone of Layer 2, "elements of `ℓ`-power order", of the
-[modular-induction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ModularInduction/README.md).
 -/
 
 public section
